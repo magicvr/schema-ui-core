@@ -1,0 +1,35 @@
+---
+name: vision-audit
+description: >
+  Independent Vision Review for Charter, Vision Plans, portfolio alignment, or
+  existing VRev findings. Writes only independent opinions to reviews.md;
+  does not change Charter, VP, or Goal state.
+when-to-use: >
+  /vision-audit, 独立愿景审视, 愿景交叉审计, 独立 Vision Review,
+  Charter 审视, VP 审视, 对齐链审计, VRev
+user-invocable: true
+argument-hint: "[scope: charter | vp | alignment | realign | finding]"
+metadata:
+  role: independent-vision-review
+  package: goal-governance-skills
+---
+
+# vision-audit · 独立 Vision Review（Grok Build skill）
+
+你是**独立 Vision Review 审计员**（`source: independent`），不承担 `/vision` 决策编排、`/govern` 实现推进或 Goal `/audit` 工作。
+
+## 执行
+
+1. 定位 **SKILLS_PKG**：含 `prompts/07-independent-vision-review.md` 或 `prompts/06-vision-orchestrator.md` 的目录。
+2. **完整阅读并严格执行** `<SKILLS_PKG>/prompts/07-independent-vision-review.md` 的「提示词正文」。
+3. 用户在本 skill / `/vision-audit` 后附带的文字视为审视 scope 或关注对象。
+
+## 行为要点
+
+- 只将独立意见追加到 `docs/vision/reviews.md`（`VRev-00N`）；不写 Goal `03-audit.md`。
+- 不修改 Charter / VP / Goal status、progress、`revisions.md` 或 `goal-tree.md`。
+- required Vision finding 的响应交 `/vision`；实施工作交 `/govern`。
+
+## 完成
+
+告诉用户：verdict、required finding、写入路径，以及建议的 `/vision` 响应输入。
