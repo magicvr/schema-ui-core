@@ -1,10 +1,10 @@
-﻿---
+---
 title: 目标树 · workspace-001-mvp-admin-foundation
 status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.2.0
+version: 0.3.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -37,4 +37,4 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架
 
 - `progress` 仅在目标内存在显式可枚举检查点且已按 P-001 派生时填写；Root 纲领 6 点均未完成 → `—`。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
-- R1 阶段内 GOAL-002 宜先落约定；GOAL-003 ∥ GOAL-004 可并行 scaffold。
+- R1：A-001 required 已于 2026-07-31 `/govern` 响应闭合；约定文档 + `apps/api` + `apps/web` 骨架已实施；成功标准已勾选，**未**标 `done`（建议阶段审后再关门）。

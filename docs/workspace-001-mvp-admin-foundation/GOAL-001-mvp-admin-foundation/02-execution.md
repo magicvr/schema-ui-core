@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-001
@@ -46,12 +46,25 @@ version: 0.2.0
 - 同步 [goal-tree.md](../goal-tree.md)。
 - **未做**（事实）：仍无 `apps/*` 应用代码；未搬平行仓库源文件；`I-PROTO-001` 等协议项仍 open。
 
+### 2026-07-31 · 响应 R1 交叉审并实施骨架
+
+- `/govern` 响应用户指令：闭合 GOAL-002/003/004 independent A-001 required，再推进 R1。
+- 子目标决策与响应：
+  - GOAL-002 D-002 + A-002：创建权 **(A)**；运行入口两档
+  - GOAL-003 D-002 + A-002：module path `github.com/magicvr/schema-ui-core/apps/api`；I-003-002 required+verified
+  - GOAL-004 D-002 + A-002：分层 **(B)** 预建 host/protocol/renderer；I-004-002 required+verified
+- 产物：
+  - `docs/architecture/monorepo-layout.md` + 根 `README.md` + `directory-layout` 更新
+  - `apps/api` 可运行骨架（`/healthz` 验证）
+  - `apps/web` Vite/React/Tailwind/shadcn 骨架（`npm run build` 通过）
+- **未做**：R1 子目标未标 `done`（建议阶段审）；`I-PROTO-001` 等仍 open；无业务能力。
+
 ## 待办（计划 · 非完成事实）
 
-1. 推进 GOAL-002 约定落盘，再并行 GOAL-003 / GOAL-004 骨架实施。
+1. R1 三目标阶段自审或 `/audit` 后按需关门。
 2. R2：冻结 MVP 覆盖子集（`I-PROTO-001`）并留决策证据。
 3. 按 R3–R6 推进；开放 required 信息项到期前不得越过对应门禁。
 
 ## 进度评估
 
-**开区完成 + R1 已立项**：I-STACK 门禁已闭；应用代码与协议覆盖冻结仍为 0。纲领检查点 0/6 完成 → progress 仍为 `—`。
+**R1 骨架实施完成（文档 + 双端可运行/可构建）**；R1 子目标 success 勾选但未 `done`。协议覆盖冻结仍 0。纲领检查点仍无正式「R1 完成」关门 → progress 仍为 `—`。

@@ -1,0 +1,11 @@
+# Local build output
+/bin/
+*.exe
+*.test
+*.out
+coverage.out
+
+# Secrets (keep .env.example)
+.env
+.env.*
+!.env.example
