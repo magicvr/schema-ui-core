@@ -1,6 +1,6 @@
 ---
 title: R6 集成验收与 VP 证据计划
-status: draft
+status: frozen
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-008-r6-integration-acceptance-vp-evidence
@@ -9,7 +9,7 @@ version: 0.2.0
 
 # R6 集成验收与 VP 证据计划
 
-> 状态：**冻结候选，尚未正式冻结**。本文件已把 VP 三条退出判据映射为验收矩阵、决定最低环境矩阵、验证 evidence schema 候选，并登记账号权限 oracle 候选；正式冻结仍须阶段 1 计划审视通过（A-002）且 D-002 由用户裁决接受。权威边界为 [Root](../../GOAL-001-mvp-admin-foundation/00-meta.md)、[VP-001](../../../vision/plans/VP-001-mvp-admin-foundation.md) 与 [I-PROTO-001 v0.1.3](../../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)。
+> **已冻结（2026-08-01，D-002 / A-002）**。本文件曾是阶段 1 的「冻结候选」计划稿；其正文中的候选/规划表述为历史时点语义。权威冻结与执行结果以 [GOAL-008 03-audit](../03-audit.md)（A-002/A-003/A-005/A-006）、D-002/D-005 与正式 [evidence-index.json](evidence/acceptance/evidence-index.json)（mode: acceptance）为准。R6 已关门（GOAL-008 `done`）。权威边界为 [Root](../../GOAL-001-mvp-admin-foundation/00-meta.md)、[VP-001](../../../vision/plans/VP-001-mvp-admin-foundation.md) 与 [I-PROTO-001 v0.1.3](../../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)。
 
 ## 1. 目的与证据原则
 
@@ -43,7 +43,7 @@ R6 要把“可运行、可 fork、MVP 协议边界内可验证、账号权限�
 | C-005 | 账号权限允许路径（dev session 有 admin+editor）符合 oracle | 3 | `GET /api/accounts/me`；`apps/web/src/protocol/conformance/permissions-inheritance`（17 例 fixture） | session 含 `roles:[admin,editor]`；permission-inheritance 17 例 pass | runtime-probes；GOAL-006 `dperm/cases.json` | 拒绝路径见 oracle（C-006） |
 | C-006 | 账号权限拒绝路径 / fail-closed 可见 | 3 | oracle 冻结场景：无能力时权限表达式求值 false、项目隐藏 | 拒绝路径按冻结 oracle 显式可见（不靠总体 pass 掩盖） | `attachments/account-permission-oracle.md`（I-008-003 候选） | 见 oracle 排除项 |
 | C-007 | R2 v0.1.3 纳入域可追溯且回归不扩大边界 | 2 | `cd apps/web && npm test`（stage3 222 项，含 request-construction non-batch 64） | 每个纳入域从 R5 登记追到实现与可执行验证；include-partial/exclude 不变 | `I-007-001-registry.md`；`I-PROTO-001 v0.1.3` | batch request-construction 与 reactions multi-round 为既有排除（D-008/D-010） |
-| C-008 | 证据包可解析、文件摘要可重算 | 1、2、3 | `node validate-evidence-dry-run.mjs`（ajv 2020 校验） | schema 校验通过；5 个 artifact SHA-256 可重算 | `evidence-index.schema.json`；`evidence-index.dry-run.json` | 正式 acceptance index 尚未持久化（阶段 2） |
+| C-008 | 证据包可解析、文件摘要可重算 | 1、2、3 | `node build-acceptance-index.mjs`（ajv 2020 校验） | schema 校验通过；artifact SHA-256 可重算 | `evidence-index.schema.json`；`evidence/acceptance/evidence-index.json` | 正式 acceptance index 已持久化（阶段 2，mode: acceptance，7 artifact verified） |
 
 ## 3. 拟议证据包
 

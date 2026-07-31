@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-01
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -16,7 +16,7 @@ version: 0.2.0
 
 | 顺序 | VP | 意图 | 前置 | 状态 |
 |------|----|------|------|------|
-| 1 | [VP-001-mvp-admin-foundation](plans/VP-001-mvp-admin-foundation.md) | 初始化 React + Go Admin MVP，覆盖固定协议来源、核心账号权限与协议范例验证。 | 无 | active（lead: workspace-001-mvp-admin-foundation） |
+| 1 | [VP-001-mvp-admin-foundation](plans/VP-001-mvp-admin-foundation.md) | 初始化 React + Go Admin MVP，覆盖固定协议来源、核心账号权限与协议范例验证。 | 无 | **closed**（2026-08-01；lead: workspace-001-mvp-admin-foundation；三条退出判据经 R6 工作区 Q2 证据满足，用户确认关门） |
 
 ## 已确认的后续方向（尚未建立 VP）
 

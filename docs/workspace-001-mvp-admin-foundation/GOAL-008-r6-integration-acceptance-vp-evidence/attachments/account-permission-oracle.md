@@ -1,7 +1,7 @@
 ---
-title: I-008-003 · 账号权限跨层集成 oracle（冻结候选）
-status: draft
-doc_type: oracle-candidate
+title: I-008-003 · 账号权限跨层集成 oracle（冻结）
+status: frozen
+doc_type: oracle
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-008-r6-integration-acceptance-vp-evidence
@@ -9,9 +9,9 @@ version: 0.1.0
 related_info: I-008-003
 ---
 
-# I-008-003 · 账号权限跨层集成 oracle（冻结候选）
+# I-008-003 · 账号权限跨层集成 oracle（冻结）
 
-> **性质**：`I-008-003` 的回答候选。把“账号与权限前后端集成的正向/拒绝路径、身份载体与期望结果”固化为可执行场景，供阶段 2 账号权限验收与 R6 关门对照。**冻结候选，尚未正式冻结**；正式冻结在阶段 1 计划审视通过后确定。证据源：R4 设计/fixtures（GOAL-006 D-004）、运行时实测（`runtime-probes.log`）、R6 E2E（`apps/web/e2e/shell.spec.ts`）与本仓可复跑入口。
+> **已冻结（2026-08-01，I-008-003 verified / D-002 / A-002）**。本文件曾是「冻结候选」稿；正文中的候选表述为历史时点语义，权威冻结与执行结果以 [GOAL-008 03-audit](../03-audit.md)（A-002/A-003/A-005/A-006）、D-002/D-005 与 acceptance 证据为准。R6 已关门（GOAL-008 `done`）。
 
 ## 1. 范围与载体
 

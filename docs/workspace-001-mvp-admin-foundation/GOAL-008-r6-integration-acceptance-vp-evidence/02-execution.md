@@ -1,11 +1,11 @@
 ---
 id: GOAL-008-r6-integration-acceptance-vp-evidence
 doc: execution
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.3.2
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-008
@@ -93,11 +93,17 @@ version: 0.3.2
 - **A-005（self · close-out · pass）**：R6 关门条件核对——意见台账开放 required=0（A-001 fixed；A-002/A-003/A-004 pass）、五项 I-008 verified、四条验收证据链 + 三条 VP 判据映射可核对、evidence-index（mode: acceptance）overallOutcome=pass。见 [03-audit.md](03-audit.md)。
 - GOAL-008 **可关门**；Root R6 / `progress` / status 变化与 VP-001 关门提案**待用户授权**（Root 由 `/govern`、VP 由 `/vision`）。
 
+### 2026-08-01 · 独立关门交叉审计（A-006）+ 用户关门授权
+
+- **A-006（independent · close-out · pass）**：GitHub Copilot `/audit` 独立复核——工作区绑定合格、意见台账 0 open required、`I-008-001`～`I-008-005` 均可指向证据、acceptance index schema 可解析 + 7/7 SHA-256 可重算、C-001～C-008 与 CI/Linux 证据可核对、VP 三判据汇编 Q2 存在、状态分离正确。新增 recommended `F-008-003`（文档标签滞后）与 `F-008-004`（builder 模块解析）。
+- **F-008-004 fixed**：`build-acceptance-index.mjs` / `validate-evidence-dry-run.mjs` 将 Ajv 解析锚定到 `apps/web` 依赖；本轮自 `attachments/` 直接重跑 `node build-acceptance-index.mjs` → `ACCEPTANCE_INDEX_VALIDATION_OK`（7 hashed）、`node validate-evidence-dry-run.mjs` → `SCHEMA_VALIDATION_OK`（5 hashed），输出与既有 evidence JSON 逐字节一致（git diff 为空）。
+- **F-008-003 fixed**：本目标 `00-meta` 概述/成功标准/路线图阶段 4 同步为完成语义；`R6-acceptance-plan.md` 与 `account-permission-oracle.md` frontmatter `status: draft` → `frozen`。
+- **用户 `/govern` 授权关门（2026-08-01）**：响应 A-006；GOAL-008 → **`done`**；Root R6 → 完成、`progress` 5/6 → 6/6、Root status → `done`（Root D-016）。见 [01-decision.md](01-decision.md) D-006。VP-001 保持 `active`，关门另走 `/vision`。
+
 ## 待办（计划 · 非完成事实）
 
-1. **用户授权** GOAL-008 → `done`、Root R6 检查点完成、Root `progress` 5/6 → 6/6、Root status 变化（`/govern` 用户裁决）。
-2. VP-001 关门另走 `/vision`（读取 R6 工作区证据、形成关门提案并获得用户确认）。
+1. **VP-001 关门**：由 `/vision` 读取本目标 [vp-evidence-assembly.md](attachments/vp-evidence-assembly.md) 与工作区 Q2 证据，形成关门提案并获用户确认。GOAL-008 侧的 Root R6/progress/status 已由用户 `/govern` 授权完成（D-006 / Root D-016）。
 
 ## 进度评估
 
-阶段 1 冻结、阶段 2 执行完成、阶段 3 VP 汇编完成、阶段 4 close-out 审计完成（A-005 pass，开放 required=0）。GOAL-008 满足关门条件，**尚未改 status=done**（待用户授权）；Root `progress` 仍 `5/6`；VP-001 保持 `active`，关门待 `/vision`。
+**GOAL-008 已关门（2026-08-01）**：阶段 1 冻结、阶段 2 执行、阶段 3 VP 汇编、阶段 4 close-out 全部完成；A-005 self + A-006 independent 双 close-out 均 pass、开放 required=0；用户授权 GOAL-008 → `done`。Root R6 → 完成、`progress` **6/6**、Root status → `done`。VP-001 保持 `active`，关门提案由 `/vision` 另行处理。
