@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { loadAccountContext } from "@/account/context";
 import { App } from "@/app/App";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import { loadAppManifest } from "@/protocol/app-manifest";
@@ -22,10 +23,13 @@ if (!root) {
 applyStoredTheme();
 
 loadAppManifest()
-  .then((manifest) => {
+  .then(async (manifest) => {
+    // R4: attach the account $context snapshot before first render so the
+    // shell's navigation permission checks evaluate against real identity.
+    const { context } = await loadAccountContext();
     createRoot(root).render(
       <StrictMode>
-        <App manifest={manifest} />
+        <App manifest={manifest} navigationContext={context} />
       </StrictMode>,
     );
   })
