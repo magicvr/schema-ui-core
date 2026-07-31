@@ -44,6 +44,13 @@ version: 0.2.0
 - **验收矩阵与 oracle 升级为冻结候选（I-008-001/003）**：[R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0 新增 §2b 验收矩阵 C-001～C-008 与 §4c 环境矩阵；新增 [account-permission-oracle.md](attachments/account-permission-oracle.md) v0.1.0（正向 P-1～P-4、拒绝 D-1～D-6）。D-002 仍为 proposed，阶段 1 未冻结。
 - 本轮后五项 required 均进入「有证据/已决定」的冻结候选状态；阶段 1 正式冻结、阶段 2 开放仍须计划审视（A-002）与用户确认。Root `progress: 5/6`、VP-001 `active` 不变。
 
+### 2026-08-01 · CI 首跑（GitHub Actions · r6-basic-matrix）
+
+- 推送 `f3e04f6..43369fb` 到 `origin/dev` 触发 `.github/workflows/r6-basic-matrix.yml`；run `30666932343` **success**。
+- 三 job 全绿：**api**（Linux Go 1.26）22s；**web**（Linux Node 22）27s；**browser E2E**（Linux Node 22，Playwright Chromium）53s。浏览器 E2E 在 CI 上通过 shell 渲染 + `/api` proxy 账号上下文场景，与本地一致。
+- 非阻断注解（不影响成功）：`actions/checkout`/`setup-node`/`setup-go` 触发 Node 20 弃用强制跑在 Node 24（GitHub 侧行为）；`setup-go` 缓存因 `apps/api/go.sum` 不存在而 skip（API 无外部依赖，`go.mod` 仅 module + go 版本行，无 requires；`go test ./...` 与 `go build ./...` 仍通过）。
+- 意义：`I-008-002` 的干净安装（`npm ci`）与 Linux/CI 等价证据、`I-008-005` 的浏览器矩阵 CI 证据已由**实际首跑**闭合；不再停留在「已配置未跑通」。
+
 ## 待办（计划 · 非完成事实）
 
 1. 阶段 1 计划审视（A-002）：核对验收矩阵、环境矩阵、账号权限 oracle 与 evidence schema 候选；D-002 由 proposed 冻结为 accepted；开放 required finding = 0。
