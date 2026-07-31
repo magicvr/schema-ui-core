@@ -114,3 +114,49 @@ export async function fetchRecords(
   }
   return parseRecordList(await response.json());
 }
+
+export interface RecordPatch {
+  name?: string;
+  status?: string;
+  owner?: string;
+}
+
+export async function updateRecord(
+  fetcher: typeof fetch,
+  baseURL: string,
+  id: string,
+  patch: RecordPatch,
+): Promise<RecordItem> {
+  const response = await fetcher(`${baseURL}/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!response.ok) {
+    throw new Error(`record update failed: HTTP ${response.status}`);
+  }
+  const value: unknown = await response.json();
+  if (!isRecord(value)) {
+    return fail("updateRecord", "expected an object response");
+  }
+  return {
+    id: requireString(value.id, "id"),
+    name: requireString(value.name, "name"),
+    status: requireString(value.status, "status"),
+    owner: requireString(value.owner, "owner"),
+    updatedAt: requireString(value.updatedAt, "updatedAt"),
+  };
+}
+
+export async function deleteRecord(
+  fetcher: typeof fetch,
+  baseURL: string,
+  id: string,
+): Promise<void> {
+  const response = await fetcher(`${baseURL}/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!response.ok && response.status !== 204) {
+    throw new Error(`record delete failed: HTTP ${response.status}`);
+  }
+}

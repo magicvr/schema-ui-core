@@ -39,6 +39,18 @@
       "route": "/search-form-table"
     },
     {
+      "pageId": "list-edit-lifecycle",
+      "title": "List + edit lifecycle",
+      "schemaUrl": "/api/schema/list-edit-lifecycle",
+      "route": "/list-edit-lifecycle"
+    },
+    {
+      "pageId": "form-controls",
+      "title": "Form controls",
+      "schemaUrl": "/api/schema/form-controls",
+      "route": "/form-controls"
+    },
+    {
       "pageId": "settings",
       "title": "Settings",
       "schemaUrl": "/api/schema/settings",
@@ -72,6 +84,16 @@
             "pageRef": "search-form-table",
             "label": "Search + table",
             "icon": "search"
+          },
+          {
+            "pageRef": "list-edit-lifecycle",
+            "label": "List + edit",
+            "icon": "pen"
+          },
+          {
+            "pageRef": "form-controls",
+            "label": "Form controls",
+            "icon": "form"
           }
         ]
       },

@@ -264,6 +264,8 @@ describe("manifest loading and expression boundaries", () => {
       "activity",
       "data-table",
       "search-form-table",
+      "list-edit-lifecycle",
+      "form-controls",
       "settings",
     ]);
   });

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策记录 · GOAL-007
@@ -116,3 +116,27 @@ P-005 信息台账维护在 [00-meta.md](00-meta.md)。本目标 `I-007-001` 在
 **影响**：
 
 阶段 2 进入实施准备；本决策不修改成功标准、不改变 `I-PROTO-003` / `I-PROTO-004` 状态、不抬升 Root `progress`（仍 4/6）。批次 2a 完成后应补阶段自审（self）再进入批次 2b/2c。
+
+## D-005 · 落地批次 2b：D-FORM 控件与 D-ACT 动作（2026-07-31）
+
+**日期**：2026-07-31
+**状态**：accepted
+
+**决定**：
+
+按 D-004 批次划分实施并记录批次 2b：实现 D-FORM §5 白名单控件表面（`apps/web/src/renderer/form-controls.ts` / `.tsx`，含 2.6/2.7 版本/capability 门禁与 `defaultValue` wire 类型校验）与 D-ACT 非批量行动作（`row-action.ts` 复用 R4 `executeAction` 时序引擎），补 Go 编辑生命周期支撑（`PATCH`/`DELETE /api/records/{id}`，mutex 保护 + `validatePatch` fail-closed），落地 `form-controls` 与 `list-edit-lifecycle` 范例页及接线；批次完成后更新 `I-007-001-registry.md` 与 `02-execution` 为已发生事实，并补阶段自审（A-003）。
+
+**为什么**：
+
+- D-004 将 P1 `admin-list-edit-lifecycle`（D-ACT+D-DATA+D-FORM）归入批次 2b；批次 2a（数据/表格）完成后按依赖推进控件/动作，Go 仅需扩展编辑/删除，无新数据源前置。
+- D-FORM 依赖冻结的 §5 白名单与 2.6/2.7 版本/capability 规则，实现时须 fail-closed（非白名单 type、wire 类型失配、能力缺失均拒绝），不越 R5 非目标（完整 registry / 多选批量）。
+- D-ACT 复用 R4 已审计的 `executeAction` 引擎，仅做 UI 参数包装，不重新发明权限时序；Q1=否排除批量。
+
+**未选方案**：
+
+- 批次 2b 与 2c 合并实现：证据分散，Renderer 接线（D-COMP）是独立前置，仍按 D-004 分批落地更可验证。
+- 在 Go 侧引入 DB/持久化：MVP 无 DB，`sync.RWMutex` 进程内数据集足够支持范例生命周期，越界即偏离非目标。
+
+**影响**：
+
+批次 2b 完成；`I-PROTO-003`（父目标）与 `I-PROTO-004` 仍 open，验收/关门须以阶段 3 可执行证据闭合，`I-PROTO-004` 在阶段 3 结构校验实现前决策。Root `progress` 仍 4/6。批次 2c（D-EXPR + Renderer 接线）待推进。

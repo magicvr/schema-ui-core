@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-007
@@ -57,13 +57,39 @@ version: 0.4.0
 
 **未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open）状态；Root `progress` 4/6；批次 2b（D-FORM/D-ACT）、2c（D-EXPR/Renderer）未开始。
 
+### 2026-07-31 · R5 阶段 2：批次 2b 实施完成（D-FORM / D-ACT）
+
+**D-FORM 控件表面**（`apps/web/src/renderer/form-controls.ts`）：
+- `FormControlType` 白名单（§5 冻结：base input/select + 2.6 extended textarea/switch/checkbox/radio + 2.7 advanced cascader/checkboxGroup/richText/password）+ `isWhitelistedFormControl`；`wireKindOf`（string/boolean/string-array 映射）、`coerceFieldValue`（defaultValue 应用 + 类型强转）、`validateDefaultValue`（wire 类型失配 fail-closed）。
+- `checkFormCapabilities` / `checkFormCapabilitiesRaw`：版本/capability 门禁（extended ≥2.6 + `form.controls.extended`；advanced ≥2.7 + `form.controls.advanced`；select multiple ≥2.6；非白名单 `FORM_TYPE_NOT_WHITELISTED` fail-closed）。新增 `form-controls.test.ts` 13 项。
+- `form-controls.tsx`：`FormControls` 组件渲染全部 10 种白名单控件（input/password/select 单多选/radio/checkboxGroup/cascader/switch/checkbox/textarea/richText）。
+
+**D-ACT 非批量动作**（`apps/web/src/renderer/row-action.ts`）：
+- `runRowAction` 包装 R4 `executeAction` 时序引擎：`visible`/`confirm`/`confirmed`/`disabled`/`requiresSelection` 参数透传，返回 outcome/reason/permissionDenied/confirmed。新增 `row-action.test.ts` 5 项（执行/权限拒绝/隐藏 NOT_VISIBLE/确认取消+确认/disabled）。
+
+**Go 编辑生命周期支撑**（`apps/api/internal/handler/records.go`）：
+- 新增 `PATCH /api/records/{id}`（指针字段部分更新 + `validatePatch` 空值 fail-closed，`INVALID_PATCH_BODY`/`INVALID_PATCH_FIELD`）与 `DELETE /api/records/{id}`（204 `NoContent`）。`recordHandler` 增加 `sync.RWMutex` 保护共享数据集（MVP 无 DB）。`records_test.go` 新增 5 项（update、update invalid、update 404、delete、delete 404）。`go test ./...` 全绿（**18 顶层 / 26 含 Evaluate 子测试**）、`go build ./...` 通过。
+
+**Web 客户端编辑/删除**（`apps/web/src/renderer/records.ts`）：
+- `updateRecord`（PATCH，部分字段 + fail-closed 形状校验）与 `deleteRecord`（DELETE，204 成功）。`records.test.ts` 新增 4 项（update 成功/400、delete 204/404）。
+
+**范例页与接线**（`apps/web/src/app/`）：
+- `examples/form-controls-page.tsx`：全部白名单控件 + 版本/capability 门禁展示 + Serialize values。
+- `examples/list-edit-lifecycle-page.tsx`：列表 + 行编辑（Edit/Delete 经 D-ACT `runRowAction` 门禁，PATCH 保存、DELETE 确认）+ `DataTable` 复用。
+- `examples/registry.tsx` 注册 `form-controls`/`list-edit-lifecycle`；`App.tsx` icon registry 补 `form`/`pen`；`app-manifest.json` 登记两页面 + sidebar「Examples」组；`app-manifest.test.ts` 页面清单断言同步；`upstream-fixtures.test.ts` `STATIC_MANIFEST_SHA256` 更新；`app-examples.test.tsx` 新增 2 项表面测试（list-edit-lifecycle Edit/Delete 门禁、form-controls capability 门禁通过）。
+
+**测试 / 构建证据**：
+- `npm test` 全绿（**11 测试文件 / 138 项**）；`npm run build`（tsc + vite）通过（修复一处 TS6133 未用变量后）。
+- 登记表 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) 升 **v0.3.0**：D-FORM/D-ACT 行「现状」→ 已实现，验证命令与证据入账。
+
+**未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open）状态；Root `progress` 4/6；批次 2c（D-EXPR/Renderer）与阶段 3/4 未开始。
+
 ## 待办
 
-1. **批次 2b**：D-FORM §5 白名单控件 + D-ACT 非批量动作（范例 `admin-list-edit-lifecycle`）。
-2. **批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。
-3. 落地 `node`/`page` schema 校验与已纳入 fixtures 对照（`reactions`、`component-format`、`request-construction`、`response-mapping`、`query-serialization`、`static-data`、`actions`、`request-lifecycle`、`table-sort`、`search-table`、`runtime-defaults` 等），登记可执行验证入口；`I-PROTO-004` 决策先于阶段 3 结构校验实现。
-4. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门。
+1. **批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。
+2. 落地 `node`/`page` schema 校验与已纳入 fixtures 对照（`reactions`、`component-format`、`request-construction`、`response-mapping`、`query-serialization`、`static-data`、`actions`、`request-lifecycle`、`table-sort`、`search-table`、`runtime-defaults` 等），登记可执行验证入口；`I-PROTO-004` 决策先于阶段 3 结构校验实现。
+3. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门。
 
 ## 进度评估
 
-**阶段 1/4 完成（契约发现与登记）；阶段 2 批次 2a 完成（D-DATA/D-TABLE 范例 + Go 支撑）**。批次 2b、2c（阶段 2 剩余）、阶段 3（结构/行为验证）、阶段 4（验收/关门）未开始（进度仅为展示，不放行阶段、不推导 `done`）。
+**阶段 1/4 完成（契约发现与登记）；阶段 2 批次 2a（D-DATA/D-TABLE）与批次 2b（D-FORM/D-ACT）完成**。批次 2c（阶段 2 剩余）、阶段 3（结构/行为验证）、阶段 4（验收/关门）未开始（进度仅为展示，不放行阶段、不推导 `done`）。

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.0
+version: 0.5.0
 ---
 
 # GOAL-007 · R5 · 纳入域范例与契约验证
@@ -35,7 +35,7 @@ version: 0.4.0
 ## 高层路线图（P-001）
 
 1. **契约发现与登记**：**完成**；`I-007-001` 登记表已落盘 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md)（2026-07-31），逐纳入域登记范例路径 + 结构/行为验证入口，对齐 [I-PROTO-001 v0.1.3] §3 候选与协议清单 §2.5；D-APP/D-PERM 复用产物与可执行验证命令已核验（`npm test` 94 项 / `npm run build` / `go test ./...` / `go build ./...`）。
-2. **范例页/场景实现**：**批次 2a 完成（D-DATA/D-TABLE）**；按登记表为未覆盖域落地可观察范例页（含必要的 React 页面/组件与 Go 数据/动作路径支撑），复用 R3/R4 已有产物。批次 2a：Go `GET /api/records`（list/detail）+ Web `records.ts`/`use-records.ts` + `data-table.tsx` + `search-form-table`/`data-table` 范例页；`npm test` 114 项 / `go test` 21 项 / build / Edge 实测全绿。批次 2b（D-FORM 控件 + D-ACT 动作）、2c（D-EXPR + Renderer 接线）未开始；`I-PROTO-004` 在阶段 3 结构校验实现前决策。
+2. **范例页/场景实现**：**批次 2a（D-DATA/D-TABLE）与批次 2b（D-FORM/D-ACT）完成**；按登记表为未覆盖域落地可观察范例页（含必要的 React 页面/组件与 Go 数据/动作路径支撑），复用 R3/R4 已有产物。批次 2a：Go `GET /api/records`（list/detail）+ Web `records.ts`/`use-records.ts` + `data-table.tsx` + `search-form-table`/`data-table` 范例页；`npm test` 114 项 / `go test` 21 项 / build / Edge 实测全绿。批次 2b：D-FORM §5 白名单控件表面（`form-controls.ts`/`.tsx`，2.6/2.7 版本/capability 门禁）+ D-ACT 非批量动作（`row-action.ts` 复用 R4 `executeAction`）+ Go `PATCH`/`DELETE /api/records/{id}` + `form-controls`/`list-edit-lifecycle` 范例页；`npm test` 138 项 / `go test` 18 顶层 / build 全绿。批次 2c（D-EXPR + Renderer 接线）未开始；`I-PROTO-004` 在阶段 3 结构校验实现前决策。
 3. **结构/行为验证**：**未开始**；`node`/`page` schema 校验、`component-format` 五 case 与已纳入 fixtures 对照，登记可执行验证命令/步骤。
 4. **验收与关门**：**未开始**；闭合父目标 `I-PROTO-003`（每纳入域范例路径 + 验证入口均有可核对证据）→ 自审/关门审计。
 
@@ -63,6 +63,7 @@ version: 0.4.0
 
 - 立项日期：2026-07-31，承接 R4 关门（GOAL-006 `done`）。
 - 批次 2a 落地（2026-07-31）：D-DATA/D-TABLE 范例 + Go 列表/详情支撑实现完成（详见 02-execution）；登记表升 v0.2.0。`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。
+- 批次 2b 落地（2026-07-31）：D-FORM 控件表面 + D-ACT 非批量动作 + Go PATCH/DELETE + `form-controls`/`list-edit-lifecycle` 范例页实现完成（详见 02-execution）；A-003 批次自审（self）pass；登记表升 v0.3.0。`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。`I-PROTO-004` 仍 open（non-blocking，阶段 3 结构校验前决策）。
 - Root 纲领进度仍为 `4/6`；本目标推进不抬升 progress，不放行 Root `done`，不改变 `I-PROTO-003` / `I-PROTO-004` 状态。
 - R4 关门时登记的 recommended 跟踪项（F-002 Renderer 接线 / F-003 token 会话 / F-004 双端一致性 oracle）标注「随 R5 / 生产化 / `I-PROTO-004` 解决」——本目标为这些跟踪项提供落地窗口，但 recommended 不阻断 R5 推进。
 - 结论与进度只写已发生事实；「未开始」阶段不得写成已完成。

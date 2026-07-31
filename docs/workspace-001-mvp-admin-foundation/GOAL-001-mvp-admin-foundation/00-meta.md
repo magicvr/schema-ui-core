@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.10.1
+version: 0.11.0
 progress: 4/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -49,7 +49,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
 | R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | **完成** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture）与关门（A-004 self + A-005 independent 均 pass）完成，GOAL-006 `done` |
-| R5 | 纳入域范例与契约验证 | 阶段 1 完成 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`）；GOAL-007 阶段 1（`I-007-001` 登记表）已完成（2026-07-31），阶段 2-4 未开始 |
+| R5 | 纳入域范例与契约验证 | 阶段 1 + 批次 2a/2b 完成 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`）；GOAL-007 阶段 1（`I-007-001` 登记表）与阶段 2 批次 2a（D-DATA/D-TABLE）、批次 2b（D-FORM/D-ACT）已完成（2026-07-31），批次 2c 与阶段 3/4 未开始 |
 | R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
 
 纲领阶段串行；同一阶段内可并行子目标。阶段完成须更新本表标记，并不得假装未满足退出条件。
@@ -85,3 +85,5 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R4 实施与关门（2026-07-31）：GOAL-006 实施完成（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture、94 项 web 测试、构建与 HTTP 运行时证据）；A-004 关门自审（self）与 A-005 独立关门复审（independent）均 pass、开放 required=0；经用户 `/govern` 授权 GOAL-006 → `done`，纲领 R4 → 完成，`progress` → `4/6`（goal-tree 同步）。recommended 跟踪项 F-002～F-004 随 R5 / 生产化 / `I-PROTO-004` 解决。
 - R5 立项（2026-07-31）：经用户 `/govern` 确认 slug，立项 `GOAL-007-r5-examples-contract-verification`（`active`）进入 R5 规划（D-011）；为 11 个纳入域交付范例 + 结构/行为验证，R5 验收前闭合 `I-PROTO-003`。goal-tree 与路线图已同步；`progress` 维持 `4/6`，`I-PROTO-003` / `I-PROTO-004` 状态不变。
 - R5 阶段 1（2026-07-31）：GOAL-007 响应 A-001（independent pass，用户裁决「不需要自审，直接推进」）并完成契约发现登记——`I-007-001` 登记表落盘（attachments/I-007-001-registry.md v0.1.0），D-APP/D-PERM 复用产物与可执行验证命令核验入账，`I-007-001` → `verified`（登记层面）。阶段 2-4 未开始；`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。`progress` 维持 `4/6`。
+- R5 阶段 2 批次 2a（2026-07-31）：GOAL-007 按 D-004 实施批次 2a（D-DATA/D-TABLE 范例 + Go 列表/详情 API），`npm test` 114 项 / `go test` 21 项 / build / Edge 实测全绿，A-002 批次自审（self）pass，登记表升 v0.2.0。`I-PROTO-003` 仍 open；`progress` 维持 `4/6`。
+- R5 阶段 2 批次 2b（2026-07-31）：GOAL-007 按 D-004 实施批次 2b（D-FORM 控件表面 + D-ACT 非批量动作 + Go PATCH/DELETE + `form-controls`/`list-edit-lifecycle` 范例页），`npm test` 138 项 / `go test` 18 顶层 / build 全绿，A-003 批次自审（self）pass，登记表升 v0.3.0。`I-PROTO-003` 仍 open（验收/关门门禁）；`I-PROTO-004`（non-blocking）在阶段 3 结构校验实现前决策；批次 2c（D-EXPR + Renderer 接线）与阶段 3/4 未开始。`progress` 维持 `4/6`。
