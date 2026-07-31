@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.6.0
+version: 0.6.4
 ---
 
 # 执行记录 · GOAL-001
@@ -86,12 +86,42 @@ version: 0.6.0
 - **维持事实**：R1 完成；GOAL-002/003/004 = `done`；`progress` = **1/6**；`I-PROTO-001` = **collecting**；R2 进行中。
 - **未做**：未改任何子目标 status；未 verified `I-PROTO-001`；未冻结覆盖表；未建 R3 子目标；未改 VP/Charter。
 
+### 2026-07-31 · 响应 Root A-003（R2 草案冻结就绪性）
+
+- `/govern` 用户指令：先处理 A-003 的 `F-001` / `F-002`；由用户确认或修订 `I-PROTO-001` 草案 Q1-Q5 后，再评估 R2 冻结。
+- 已记录编排响应 [A-004](03-audit.md)：两项 finding 均保持 **required / open**；本回合只固化可核对的修正路径与待裁决项，不将候选边界冒充为已修复。
+- P-004.1 待用户选择：修订草案后是否需要同 scope 的 self audit；未自动跳过，也未强制执行。
+- **未做**：未改 D-005 的 proposed 状态；未修改草案 disposition；未将 `I-PROTO-001` 标为 verified；未冻结 R2；未改 status / progress / goal-tree。
+
+### 2026-07-31 · 记录 A-003 的用户裁决并收敛批量动作边界
+
+- 用户书面确认：Q1=否、Q2=是、Q3=否、Q4=冻结时原则+初表且 R3 不得静默扩域、Q5=否；并选择在草案修订后补同 scope self audit。
+- 记录决策 [D-007](01-decision.md)：Q1、Q3-Q5 和自审选择已落盘；草案的 D-ACT/D-TABLE 与 `actions` / `request-lifecycle` fixture 映射据 Q1 收敛为非批量子集。
+- **阻塞事实**：Q2=是未列明具体 2.6/2.7 扩展控件、组件 type 或验证子集；因此 D-FORM/D-COMP 初始白名单未形成，A-003 `F-001` 保持 open，尚不能执行用户要求的同 scope self audit。
+- **未做**：未把任何未命名的扩展控件写成已纳入；未关闭 F-001/F-002；未标记 `I-PROTO-001` 为 verified；未冻结 R2；未改 status / progress / goal-tree。
+
+### 2026-07-31 · 澄清 Q2 全量控件范围并完成 R2 同 scope self audit
+
+- 用户书面澄清：Q2 纳入 2.6/2.7 **全部**表单控件。
+- 依据固定提交 `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` 抽查 migration、component registry、node/page schema、`component-format` cases 与 form-controls 场景；将可核对的 type 初表、版本/capability、结构验证与场景边界写入草案 §5/§5.1。
+- 记录决策 [D-008](01-decision.md)：表单 `select.mode: multiple` 纳入 2.6，而 D-TABLE 多选批量仍按 Q1 排除；两者未混为 batch action 语义。
+- 执行用户要求的同 scope self audit [A-005](03-audit.md)：A-003 `F-001` / `F-002` 以 `fixed` 留痕；本 audit scope 的开放 required = 0。
+- **未做**：未将 `I-PROTO-001` 标为 verified；未写 R2 正式冻结决定；未改变 Root status / progress / goal-tree，也未开始 R3-R5 实施。
+
+### 2026-07-31 · 正式冻结 R2 / I-PROTO-001 覆盖基线
+
+- 用户经 `/govern` 书面确认：按 [I-PROTO-001 覆盖表](attachments/I-PROTO-001-coverage-draft.md) **v0.1.3** 正式冻结 R2 / `I-PROTO-001`。
+- 记录决策 [D-009](01-decision.md)：`I-PROTO-001` → **verified**；冻结范围为附件所列 7 个 `include`、4 个 `include-partial` 与 `D-UPLOAD=exclude`，并保留 D-COMP/D-FORM 初始白名单和非批量 action/table 边界。
+- 纲领路线图：**R2 → 完成**；R1-R6 显式检查点完成数由 1 增至 2，Root 派生 `progress` → **2/6**；已同步 [00-meta.md](00-meta.md) 与 [goal-tree.md](../goal-tree.md)。
+- 已追加审计响应 [A-006](03-audit.md)：接受 A-005 的 `pass` 作为冻结证据，保留 A-003 `F-001` / `F-002` 的 `fixed` 闭合。
+- **未做**：未将冻结基线表述为完整协议支持；未开始 R3/R4/R5 实现；`I-PROTO-002` / `I-PROTO-003` 仍分别为 R4 / R5 的开放 required 门禁。
+
 ## 待办（计划 · 非完成事实）
 
-1. 用户确认/修订 `I-PROTO-001` 草案（附件 Q1–Q5）→ 冻结决策 → `verified`。
-2. R2 冻结完成后规划 R3 Admin 外壳子目标。
-3. 按 R3–R6 推进；开放 required 信息项到期前不得越过对应门禁。
+1. 规划 R3 Admin 外壳与导航子目标。
+2. R4 前闭合 `I-PROTO-002`，R5 验收前闭合 `I-PROTO-003`。
+3. 按 R3-R6 推进；开放 required 信息项到期前不得越过对应门禁。
 
 ## 进度评估
 
-**R1 完成**（002/003/004 `done`；A-001 independent pass 已由 A-002/D-006 响应）。progress **1/6**。**R2 进行中**：纳入/排除表草案已落盘，`I-PROTO-001` 仍为 collecting，覆盖子集**未冻结**。
+**R1、R2 完成**（R1：002/003/004 `done`；R2：D-009 冻结 v0.1.3、`I-PROTO-001=verified`）。显式路线图完成数为 **2/6**。冻结仅固定后续范围，不代表 R3-R5 实施或全协议支持。

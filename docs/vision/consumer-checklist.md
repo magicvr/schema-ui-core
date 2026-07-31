@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.3.0
+version: 0.3.1
 ---
 
 # 愿景完整安装核对
@@ -38,7 +38,7 @@ version: 0.3.0
 ## 结论（2026-07-31）
 
 - 开区前愿景 MUST 与开区后工作区/Root MUST 均已 **present**（含 `docs/contracts/`）。完整治理安装文件集在冷启动顺序上可记为**通过**。  
-- **不**自动放行实现：VP-001 协议覆盖子集尚未冻结（Root `I-PROTO-001` open）；无 React/Go 实现证据。  
+- R2 覆盖子集已按 Root D-009 冻结（`I-PROTO-001=verified`，v0.1.3）；**不**自动放行 R3-R5 实现、验证或 VP 关门，也不主张完整协议支持。
 - 实现推进继续走 **`/govern`**；Vision required findings `F-V001`/`F-V002` 已 `fixed`（见 [reviews.md](reviews.md)）。  
 - 开放 recommended：`F-V003`（双线维护契约，后续 VP 前处理）。
 - VRev-003 响应后：`F-V006` → `fixed`（H-001 分列）；`F-V007` → `accepted-residual`（消费仓不携带 monorepo dogfood runtime；矩阵路径为生成仓发布溯源，非本仓须复现证据）。
