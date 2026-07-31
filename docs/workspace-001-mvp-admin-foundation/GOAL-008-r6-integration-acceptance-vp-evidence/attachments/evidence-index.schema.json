@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-ui-core.local/r6/evidence-index.schema.json",
+  "title": "R6 evidence index (draft)",
+  "description": "Candidate schema for GOAL-008 planning. It is not an acceptance contract until I-008-004 is verified and the plan is frozen.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "mode",
+    "goalId",
+    "workspaceId",
+    "vpId",
+    "repositoryRevision",
+    "worktreeState",
+    "startedAt",
+    "completedAt",
+    "environmentRef",
+    "rerunRules",
+    "results",
+    "exclusions",
+    "residuals",
+    "overallOutcome"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "0.1.0-draft"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["planning", "acceptance"]
+    },
+    "goalId": {
+      "type": "string",
+      "const": "GOAL-008-r6-integration-acceptance-vp-evidence"
+    },
+    "workspaceId": {
+      "type": "string",
+      "const": "workspace-001-mvp-admin-foundation"
+    },
+    "vpId": {
+      "type": "string",
+      "const": "VP-001-mvp-admin-foundation"
+    },
+    "repositoryRevision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "worktreeState": {
+      "type": "string",
+      "enum": ["clean", "dirty", "unknown"]
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environmentRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rerunRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/result"
+      }
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/limitation"
+      }
+    },
+    "residuals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/limitation"
+      }
+    },
+    "overallOutcome": {
+      "type": "string",
+      "enum": ["draft", "pass", "fail", "conditional", "blocked"]
+    }
+  },
+  "$defs": {
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "claimRefs",
+        "command",
+        "cwd",
+        "exitCode",
+        "outcome",
+        "artifact",
+        "artifactStatus"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exitCode": {
+          "type": ["integer", "null"]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["pass", "fail", "skipped", "not-run", "blocked"]
+        },
+        "artifact": {
+          "type": ["string", "null"]
+        },
+        "artifactStatus": {
+          "type": "string",
+          "enum": ["verified", "not-captured", "not-applicable", "missing"]
+        },
+        "sha256": {
+          "type": ["string", "null"],
+          "pattern": "^([0-9a-f]{64})$"
+        }
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "reason", "reviewTrigger"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewTrigger": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.0
+version: 0.1.1
 ---
 
 # GOAL-008 · R6 · 集成验收与 VP 证据
@@ -58,11 +58,17 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-008-001 | required | VP-001 三条退出判据分别需要哪些最小验收主张、证据与允许的有界排除？ | 阶段 1 计划冻结 / 阶段 4 VP 提案输入 | 阶段 1 结束前 | 对照 VP-001、Root 成功标准、R2/R5 登记与历史 residual，完成并审视验收矩阵 | **collecting** | — | [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.1.0 为规划草案；尚未冻结 |
-| I-008-002 | required | “可运行、可 fork”的干净环境、依赖安装、双服务启动、端口/env 与最小浏览器/API 路径是什么？ | 阶段 1 计划冻结 / 阶段 2 执行 | 阶段 1 结束前 | 在隔离/干净工作副本演练启动路径，记录 OS、runtime、命令、env 与失败模式 | open | — | 当前只有既有本地构建/测试入口；无 R6 干净启动证据 |
-| I-008-003 | required | 账号与权限前后端集成的正向/拒绝 oracle、身份载体与期望错误/可见性结果是什么？ | 阶段 2 账号权限验收 / 关门 | 阶段 1 结束前 | 对照 GOAL-006 设计/fixtures 与当前 host/API，冻结端到端场景和预期 | open | — | 待确认；不得用单端单测替代集成 oracle |
-| I-008-004 | required | R6 机器可读证据包的 schema、revision identity、目录、哈希与重跑规则是什么？ | 阶段 2 证据采集 / 阶段 3 汇编 | 阶段 1 结束前 | 定义 evidence index + result 记录格式；用一次 dry-run 验证可解析性和文件摘要 | open | — | 当前命令默认输出文本，尚无 R6 evidence artifact |
-| I-008-005 | required | R6 的验收环境矩阵如何处理 Windows 本地、Linux/CI 等价、浏览器 E2E 与缺失平台证据？ | 阶段 1 计划冻结 / 阶段 4 关门主张 | 阶段 1 结束前 | 盘点现有 CI/浏览器能力；决定最低矩阵，或由用户书面接受有范围与复审触发的 residual | open | — | 当前未发现 CI workflow 或现成浏览器 E2E / JSON reporter；是否纳入最低集待决策 |
+| I-008-001 | required | VP-001 三条退出判据分别需要哪些最小验收主张、证据与允许的有界排除？ | 阶段 1 计划冻结 / 阶段 4 VP 提案输入 | 阶段 1 结束前 | 对照 VP-001、Root 成功标准、R2/R5 登记与历史 residual，完成并审视验收矩阵 | **collecting** | — | [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.1.1 已补入 R5 输入与本地基线；尚未冻结 |
+| I-008-002 | required | “可运行、可 fork”的干净环境、依赖安装、双服务启动、端口/env 与最小浏览器/API 路径是什么？ | 阶段 1 计划冻结 / 阶段 2 执行 | 阶段 1 结束前 | 在隔离/干净工作副本演练启动路径，记录 OS、runtime、命令、env 与失败模式 | **collecting** | — | 已核对 Web/API 命令、revision/runtime 与 health/proxy 入口；干净安装、双服务 R6 运行记录仍缺 |
+| I-008-003 | required | 账号与权限前后端集成的正向/拒绝 oracle、身份载体与期望错误/可见性结果是什么？ | 阶段 2 账号权限验收 / 关门 | 阶段 1 结束前 | 对照 GOAL-006 设计/fixtures 与当前 host/API，冻结端到端场景和预期 | **collecting** | — | R4 单端/fixture/HTTP 事实已映射；API→Web/Renderer/动作链 oracle 尚未冻结 |
+| I-008-004 | required | R6 机器可读证据包的 schema、revision identity、目录、哈希与重跑规则是什么？ | 阶段 2 证据采集 / 阶段 3 汇编 | 阶段 1 结束前 | 定义 evidence index + result 记录格式；用一次 dry-run 验证可解析性和文件摘要 | **collecting** | — | 已新增 draft schema 与 planning dry-run；尚未验证为正式 contract，结果 artifact 仍未持久化 |
+| I-008-005 | required | R6 的验收环境矩阵如何处理 Windows 本地、Linux/CI 等价、浏览器 E2E 与缺失平台证据？ | 阶段 1 计划冻结 / 阶段 4 关门主张 | 阶段 1 结束前 | 盘点现有 CI/浏览器能力；决定最低矩阵，或由用户书面接受有范围与复审触发的 residual | **collecting** | — | 已记录 Windows baseline 与未发现 CI/browser/reporter；最低矩阵及缺失平台处理尚待决定 |
+
+## 阶段 1 当前收集结论（2026-08-01）
+
+- 本轮把可复核的本地入口、环境身份和 R4/R5 复用输入落到计划与执行记录；这推进了信息收集，但没有关闭任何 required 门禁。
+- `I-008-004` 的 draft schema/dry-run 只证明候选记录形状可被 JSON 解析，不证明正式验收 contract 已冻结，也不证明结果文件已按 SHA-256 持久化。
+- `I-008-005` 涉及最低环境矩阵和缺失平台证据如何影响关门主张；若采用 residual 或有界实验，需要用户书面范围、期限、缓解和复审触发，当前未作该裁决。
 
 ## 父目标
 

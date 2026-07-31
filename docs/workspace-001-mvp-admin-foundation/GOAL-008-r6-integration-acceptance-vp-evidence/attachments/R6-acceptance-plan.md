@@ -4,7 +4,7 @@ status: draft
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-008-r6-integration-acceptance-vp-evidence
-version: 0.1.0
+version: 0.1.1
 ---
 
 # R6 集成验收与 VP 证据计划
@@ -78,6 +78,23 @@ attachments/evidence/
 | 双服务 runtime | 待 `I-008-002` 冻结 | 启动/停止、端口/env、health、manifest、API proxy 与浏览器场景 |
 | 协议回归 | 复用 Web stage3 / upstream / renderer tests | per-suite executed/excluded 结果与 v0.1.3 映射 |
 | 账号权限 E2E | 待 `I-008-003` 冻结 | 正向、拒绝、缺上下文/能力与动作路径预期 |
+
+## 4b. 规划期能力基线（2026-08-01）
+
+以下是当前 revision 上为阶段 1 收集的本地能力事实，不是 R6 验收证据：
+
+| 项 | 结果 | 边界 |
+|----|------|------|
+| revision / worktree | `7d20acc7702bcc0e514f787c455bf9c93d5b832f` / clean | 仅绑定本次规划复跑；尚未形成持久化 acceptance artifact |
+| Web | `cd apps/web && npm test`：15 files / 395 tests passed；`npm run build` passed | 依赖树为当前工作副本；干净安装重跑规则仍待 I-008-002 |
+| API | `cd apps/api && go test ./...` passed；`go build ./...` passed | 未覆盖 Linux/CI 等价性 |
+| runtime entry | API `:8080/healthz`；Web `:5173`，`/api` proxy 到 API | 双服务启动/停止与浏览器关键路径尚未按 R6 contract 持久化 |
+| environment | Windows/amd64；Node `v22.17.0`；npm `10.9.2`；Go `1.26.0`；Vitest `3.2.7` | 不代表最低支持矩阵已决定 |
+| CI / browser / reporter | 未发现 `.github/workflows`、Playwright/Puppeteer/Cypress 等 runner 或 JSON/JUnit/evidence writer | I-008-005 仍需决定最低矩阵，不能把缺失当作已验证 |
+
+`I-008-004` 的候选 schema 与 dry-run 分别见
+[`evidence-index.schema.json`](evidence-index.schema.json) 和
+[`evidence-index.dry-run.json`](evidence-index.dry-run.json)。二者都明确标为 draft/planning，dry-run 的结果没有持久化产物摘要，不能替代阶段 2 证据。
 
 ## 5. 阶段门禁
 
