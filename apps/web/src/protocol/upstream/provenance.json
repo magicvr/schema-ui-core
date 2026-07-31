@@ -1,0 +1,19 @@
+{
+  "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
+  "sourceCommit": "ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
+  "artifactVersion": "2.7.0",
+  "artifacts": [
+    {
+      "path": "docs/schemas/app-manifest.schema.json",
+      "sha256": "294eb0f391a515a123ed07ef5e19b40f1126fbe57e585ebdf639a34232a6c2e8"
+    },
+    {
+      "path": "conformance/fixtures/app-manifest/cases.json",
+      "sha256": "8aafd684a40c4350d39ce0c94ab3c986455cb21fe0ebc37e4f3640261163405e"
+    },
+    {
+      "path": "conformance/fixtures/app-navigation/cases.json",
+      "sha256": "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897"
+    }
+  ]
+}

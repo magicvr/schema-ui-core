@@ -1,0 +1,70 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "homePageRef": "overview",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "overview",
+      "title": "Overview",
+      "schemaUrl": "/api/schema/overview",
+      "route": "/overview"
+    },
+    {
+      "pageId": "catalog",
+      "title": "Catalog",
+      "schemaUrl": "/api/schema/catalog",
+      "route": "/catalog"
+    },
+    {
+      "pageId": "activity",
+      "title": "Activity",
+      "schemaUrl": "/api/schema/activity",
+      "route": "/activity"
+    },
+    {
+      "pageId": "settings",
+      "title": "Settings",
+      "schemaUrl": "/api/schema/settings",
+      "route": "/settings"
+    }
+  ],
+  "navigation": {
+    "top": [
+      {
+        "pageRef": "overview",
+        "label": "Overview",
+        "icon": "dashboard"
+      }
+    ],
+    "sidebar": [
+      {
+        "pageRef": "catalog",
+        "label": "Catalog",
+        "icon": "boxes"
+      },
+      {
+        "label": "Workspace",
+        "icon": "folder",
+        "items": [
+          {
+            "pageRef": "activity",
+            "label": "Activity",
+            "icon": "activity"
+          }
+        ]
+      }
+    ],
+    "user": [
+      {
+        "pageRef": "settings",
+        "label": "Settings",
+        "icon": "settings"
+      }
+    ]
+  }
+}

@@ -13,6 +13,7 @@ export function ThemeToggle() {
       variant="outline"
       size="sm"
       aria-label="Toggle color theme"
+      title="Toggle color theme"
       onClick={() => {
         const next = !isDark();
         document.documentElement.classList.toggle("dark", next);
@@ -22,7 +23,6 @@ export function ThemeToggle() {
       <Sun className="h-4 w-4 dark:hidden" />
       <Moon className="hidden h-4 w-4 dark:block" />
       <span className="sr-only">Toggle theme</span>
-      主题
     </Button>
   );
 }

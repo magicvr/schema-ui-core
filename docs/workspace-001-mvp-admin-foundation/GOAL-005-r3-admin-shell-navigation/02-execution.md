@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-005
@@ -35,13 +35,34 @@ version: 0.2.0
 - 在 `apps/web` 执行 `npm run build` 通过；`npm test` 因没有 `test` script 失败。该结果只记录当前 R1 骨架构建事实，不构成 R3 验收。
 - 未修改 `apps/web`、Root `status/progress`、GOAL-005 `status` 或 `goal-tree.md`；`I-005-001` 至 `I-005-005` 仍为 `required/open`。
 
-## 待办（计划 · 非完成事实）
+上述三段记录的是规划阶段当时的工作树快照。以下条目记录其后的真实实施事实，不改写历史审计结论。
 
-1. 对照固定上游资料和 fixture，解析 `I-005-001` 至 `I-005-005`，并为 `I-005-001` 记录 vendor 或 pin 远程校验方式及失败边界。
-2. 在 required 信息项可核对后，记录 R3 的 manifest 最小子集、路由映射、默认/fallback/active-route 和 shell 边界决策。
-3. 按冻结方案在 `apps/web` 实施，并为无效 manifest、未知路由、fallback 和 active-route 建立可核对测试/运行时证据。
-4. R3 实施完成后执行阶段自审，响应全部相关意见，确认无开放 required finding 后再申请 R3 关门。
+### 2026-07-31 · R3 方案冻结与工作树实施
+
+- 记录决策 [D-005](01-decision.md)：冻结 R3 的 2.7 manifest 子集、pinned artifact/hash、三 slot navigation projection、D4a route/active/fallback 语义、参数 pageRef href 规则、shell 固定区域和 R4/R5 边界。
+- `I-005-001` 至 `I-005-005` 已依据 D-005 和下列可核对产物标为 `verified`；Root `I-PROTO-004` 仍保持 `open` / `non-blocking`。
+- 在 `apps/web/src/protocol/app-manifest.ts` 实现 exact `2.7` manifest validation、`loadAppManifest()`、D4a route matching、home/deep-link/fallback、schema/logo URL resolution 和受限 navigation expression evaluation。
+- 在 `apps/web/src/app/navigation.ts` 实现 `top` / `sidebar` / `user` projection、group pruning、context filtering、active-route 和参数 pageRef 绑定；在 `apps/web/src/app/App.tsx` 实现 header、desktop sidebar、mobile navigation、main surface、History API 和 unknown-route fallback；`main.tsx` 在 loader 失败时渲染 `ManifestFailure`。
+- 添加真实静态 manifest：`apps/web/public/.well-known/schema-ui/app-manifest.json`；添加固定来源记录：`apps/web/src/protocol/upstream/provenance.json`。
+
+### 2026-07-31 · R3 验证事实
+
+- `apps/web/src/protocol/upstream-fixtures.test.ts` 校验 pinned schema、两个 behavior fixture 的 SHA-256 与来源 commit；机器断言执行 35/37 个 app-manifest cases、16/16 个 app-navigation cases，并登记两条 error-envelope 排除理由。negotiation/decoupled cases 的适配器只用于 fixture 对照，不扩展生产 host API。
+- `apps/web/src/protocol/app-manifest.test.ts` 通过 `loadAppManifest()` 验证 `public/.well-known/schema-ui/app-manifest.json` 的真实字节；`apps/web/src/app/App.integration.test.tsx` 覆盖 root→home、站内 History 导航、popstate、未知路由 fallback、参数链接/context 和 ManifestFailure surface。
+- 在 `apps/web` 执行 `npm test`：4 个测试文件、73 个测试全部通过（13 manifest unit + 3 navigation unit + 53 pinned fixture/provenance + 4 shell integration）。
+- 在 `apps/web` 执行 `npm run build`：`tsc -b && vite build` 成功。
+- 当前 R3 实现仍是未提交工作树事实；本条不声称代码已进入 HEAD、已发布或已通过完整协议 conformance。最终命令输出与运行时检查在关门审计响应中记录。
+
+### 2026-07-31 · dev server 运行时复核
+
+- 复用当前 `apps/web` dev server `http://127.0.0.1:4173/` 进行 HTTP 检查：`/.well-known/schema-ui/app-manifest.json` 返回 `200`、`application/json`，`protocolVersion` 为 `2.7`，包含 4 个 pages；根入口返回 `200` 并提供应用 boot shell。
+- `App.integration.test.tsx` 已对根路径到 home 的 replace、站内 History API 导航、popstate、未知路由 fallback、参数链接/context 和 ManifestFailure surface 作行为断言；本条 HTTP 结果与该集成证据共同构成 R3 运行时入口复核，不宣称完整生产发布。
+
+## 关门前剩余动作（计划 · 非完成事实）
+
+1. 按 P-004.1 由用户决定是否执行与 A-004 同 scope 的实施阶段 self audit；执行后响应全部相关意见。
+2. 在无开放 required finding 且成功标准全部有证据后，将 GOAL-005 标为 `done`，同步 Root R3 检查点和 `goal-tree.md`。
 
 ## 进度评估
 
-R3 当前为 `active` 的规划阶段；目标五件套、范围、路线图和信息台账已建立，代码实现为未开始，`I-005-001` 至 `I-005-005` 均为 `open`。本次规划阶段同 scope 自审已完成，但不改变 Root `progress: 2/6`，也不构成 R3 实施或验收完成。
+R3 当前为 `active` 的实施/关门阶段；D-005 已冻结方案，五项 required 信息已 verified，工作树实现、73 项自动化测试、构建事实和 dev server 入口复核已落盘。仍待 P-004.1 用户裁决、实施阶段 self audit、A-004 F-003 合法闭合和最终 `done` 同步；在此之前 Root `progress` 保持 `2/6`。

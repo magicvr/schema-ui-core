@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.5.3
+version: 0.6.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
