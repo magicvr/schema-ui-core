@@ -145,3 +145,95 @@ func TestRecordsDetailNotFound(t *testing.T) {
 		t.Fatalf("error = %v, want RECORD_NOT_FOUND", body["error"])
 	}
 }
+
+func sendJSON(t *testing.T, mux *http.ServeMux, method, path, body string) (int, map[string]any) {
+	t.Helper()
+	var reader *strings.Reader
+	if body == "" {
+		reader = strings.NewReader("")
+	} else {
+		reader = strings.NewReader(body)
+	}
+	req := httptest.NewRequest(method, path, reader)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	var out map[string]any
+	if rr.Body.Len() > 0 && rr.Header().Get("Content-Type") != "" {
+		_ = json.NewDecoder(rr.Body).Decode(&out)
+	}
+	return rr.Code, out
+}
+
+func TestRecordsUpdate(t *testing.T) {
+	mux := recordsMux()
+	code, body := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3",
+		`{"name":"Hooli Rebrand","status":"archived"}`)
+	if code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", code, http.StatusOK)
+	}
+	if body["name"] != "Hooli Rebrand" || body["status"] != "archived" {
+		t.Fatalf("updated = %v, want name=Hooli Rebrand status=archived", body)
+	}
+	// Persisted: a subsequent GET reflects the patch.
+	_, detail := getJSON(t, mux, "/api/records/rec-3")
+	if detail["name"] != "Hooli Rebrand" {
+		t.Fatalf("detail name = %v, want Hooli Rebrand", detail["name"])
+	}
+}
+
+func TestRecordsUpdateInvalidFailClosed(t *testing.T) {
+	mux := recordsMux()
+	for _, body := range []string{
+		`{"name":""}`,
+		`{"status":""}`,
+		`not json`,
+	} {
+		code, out := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3", body)
+		if code != http.StatusBadRequest {
+			t.Fatalf("%s: status = %d, want %d", body, code, http.StatusBadRequest)
+		}
+		if _, ok := out["error"]; !ok {
+			t.Fatalf("%s: error code missing in %v", body, out)
+		}
+	}
+}
+
+func TestRecordsUpdateNotFound(t *testing.T) {
+	code, body := sendJSON(t, recordsMux(), http.MethodPatch, "/api/records/rec-999",
+		`{"name":"x"}`)
+	if code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d", code, http.StatusNotFound)
+	}
+	if body["error"] != "RECORD_NOT_FOUND" {
+		t.Fatalf("error = %v, want RECORD_NOT_FOUND", body["error"])
+	}
+}
+
+func TestRecordsDelete(t *testing.T) {
+	mux := recordsMux()
+	req := httptest.NewRequest(http.MethodDelete, "/api/records/rec-3", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNoContent)
+	}
+	// Removed from the list and detail now 404s.
+	_, list := getJSON(t, mux, "/api/records")
+	if list["total"] != float64(7) {
+		t.Fatalf("total = %v, want 7 after delete", list["total"])
+	}
+	code, _ := getJSON(t, mux, "/api/records/rec-3")
+	if code != http.StatusNotFound {
+		t.Fatalf("detail status = %d, want %d after delete", code, http.StatusNotFound)
+	}
+}
+
+func TestRecordsDeleteNotFound(t *testing.T) {
+	req := httptest.NewRequest(http.MethodDelete, "/api/records/rec-999", nil)
+	rr := httptest.NewRecorder()
+	recordsMux().ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNotFound)
+	}
+}

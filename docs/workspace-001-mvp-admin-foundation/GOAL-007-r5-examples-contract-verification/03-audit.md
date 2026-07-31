@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-007
@@ -117,3 +117,51 @@ version: 0.3.0
 ### 结论 + 建议下一步
 
 批次 2a 实施与证据满足阶段 2 内推进条件：`npm test` 114 项 / `go test` 21 项 / build / 浏览器实测均通过，登记表与执行记录已同步，无开放 required finding，无到期 required 信息项影响本 scope。`I-PROTO-003` 仍 open（验收/关门门禁），本自审不放行验收或关门。建议按 D-004 进入批次 2b（D-FORM §5 白名单控件 + D-ACT 非批量动作）。
+
+## A-003 · R5 阶段 2 批次 2b 自审：D-FORM 控件与 D-ACT 动作（2026-07-31）
+
+- **source**：self
+- **auditor**：Claude Code · `/govern`
+- **类型**：execution-facts
+- **scope**：GOAL-007 批次 2b 实施——D-FORM §5 白名单控件表面（含 2.6/2.7 版本/capability 门禁）、D-ACT 非批量行动作（复用 R4 `executeAction` 时序引擎）、Go PATCH/DELETE 编辑生命周期支撑与范例页的实现、登记表同步与阶段 2 内可推进性。
+- **verdict**：pass
+
+### 范围与区间
+
+本意见只审计批次 2b 的实施事实与阶段门禁，**不**审计批次 2c（D-EXPR + Renderer 接线）、阶段 3 的 fixtures 正式执行、`I-PROTO-003` 闭合或 R5 关门。当前工作区 `workspace-001-mvp-admin-foundation`，Root `GOAL-001-mvp-admin-foundation`，canonical 范围一致；`shared_materials_catalog: none`，本 scope 不依赖共享资料引用。
+
+### 成果（有证据）
+
+- **D-FORM 控件表面**（`apps/web/src/renderer/form-controls.ts`）：`FormControlType` §5 白名单（base input/select；2.6 extended textarea/switch/checkbox/radio；2.7 advanced cascader/checkboxGroup/richText/password）+ `isWhitelistedFormControl`；`wireKindOf`（string/boolean/string-array）；`coerceFieldValue`（defaultValue 应用 + 强转）；`validateDefaultValue`（wire 类型失配 fail-closed `DEFAULT_VALUE_TYPE_MISMATCH`）；`checkFormCapabilities`/`checkFormCapabilitiesRaw`（extended ≥2.6 + `form.controls.extended`；advanced ≥2.7 + `form.controls.advanced`；select multiple ≥2.6；非白名单 `FORM_TYPE_NOT_WHITELISTED`）。`form-controls.tsx` `FormControls` 渲染全部 10 种控件。`form-controls.test.ts` **13 项**通过。
+- **D-ACT 非批量动作**（`apps/web/src/renderer/row-action.ts`）：`runRowAction` 包装 R4 `executeAction`，`visible`/`confirm`/`confirmed`/`disabled`/`requiresSelection` 透传，返回 outcome/reason/permissionDenied/confirmed。`row-action.test.ts` **5 项**（执行、权限拒绝、隐藏 NOT_VISIBLE、确认取消+确认、disabled）通过。
+- **Go 编辑生命周期支撑**（`apps/api/internal/handler/records.go`）：新增 `PATCH /api/records/{id}`（指针字段部分更新，`validatePatch` 空值 fail-closed）与 `DELETE /api/records/{id}`（204）；`recordHandler` 以 `sync.RWMutex` 保护共享数据集（MVP 无 DB）。`records_test.go` 新增 **5 项**（update、update invalid、update 404、delete、delete 404）。`go test ./...` 全绿（**18 顶层 / 26 含 Evaluate 子测试**）、`go build ./...` 通过。
+- **Web 客户端**（`apps/web/src/renderer/records.ts`）：`updateRecord`（PATCH，部分字段 + fail-closed 形状校验）与 `deleteRecord`（DELETE，204）。`records.test.ts` 新增 **4 项**。
+- **范例页与接线**（`apps/web/src/app/`）：`form-controls-page.tsx`（全控件 + 门禁展示 + Serialize）、`list-edit-lifecycle-page.tsx`（列表 + 行编辑/删除经 D-ACT 门禁，PATCH/DELETE 回写，复用 `DataTable`）；`registry.tsx` 注册两页；`App.tsx` icon 补 `form`/`pen`；`app-manifest.json` 登记 `form-controls`/`list-edit-lifecycle` + sidebar「Examples」组；`app-manifest.test.ts` 页面断言、`upstream-fixtures.test.ts` `STATIC_MANIFEST_SHA256` 同步；`app-examples.test.tsx` 新增 **2 项**表面测试（list-edit-lifecycle Edit/Delete 门禁、form-controls capability 门禁）。
+- **测试 / 构建证据**：`npm test` 全绿（**11 测试文件 / 138 项**）；`npm run build`（tsc + vite）通过（修复一处 TS6133 未用变量后）。登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) 升 **v0.3.0**。
+
+### 对照成功标准（批次 2b 相关）
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| 未覆盖域（D-FORM / D-ACT）具备可运行前后端范例路径 | 已达成 | 上述控件表面 + `runRowAction` + Go PATCH/DELETE + 范例页 |
+| 结构验证可执行（`node`/`page` schema） | 阶段 3（未开始） | 依赖 `I-PROTO-004` 决策；不在批次 2b 范围 |
+| 行为验证与 R2 基线一致（fixtures 正式执行） | 阶段 3（未开始） | 实现路径已落地，upstream cases 对照执行留待阶段 3 |
+| 父目标 `I-PROTO-003` 闭合 | 未开始 | 验收/关门门禁；批次 2b 不触碰 |
+
+### Findings
+
+无 required finding。
+
+批次 2b 范围内未发现阻断项。以下为如实记录，不构成必改：
+
+- D-FORM / D-ACT 的 upstream fixtures（`component-format`、`actions`、`request-lifecycle` 非批量子集）**实现路径已落地**，但对照 `cases.json` 的正式执行属阶段 3，`I-007-001` 只确认登记（非逐域验证已执行）。
+- 批次 2b 范例页（`form-controls` / `list-edit-lifecycle`）的渲染由 `app-examples.test.tsx` **jsdom 表面测试**覆盖；与批次 2a 的 Edge headless 浏览器实测不同，本轮未重跑真实浏览器渲染。该差异不阻断阶段 2 内推进，阶段 3/4 可补浏览器复核。
+- `I-PROTO-004`（vendor vs pin，non-blocking）仍 open，决策时点定在阶段 3 结构校验实现前，不阻断批次 2b/2c。
+
+### 必改项汇总
+
+无。
+
+### 结论 + 建议下一步
+
+批次 2b 实施与证据满足阶段 2 内推进条件：`npm test` 138 项 / `go test` 18 顶层 / build 通过，登记表与执行记录已同步，无开放 required finding，无到期 required 信息项影响本 scope。`I-PROTO-003` 仍 open（验收/关门门禁），本自审不放行验收或关门。建议按 D-004 进入批次 2c（D-EXPR `form-with-reactions` + Renderer 接线）。

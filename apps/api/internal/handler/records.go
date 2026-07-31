@@ -2,10 +2,12 @@ package handler
 
 import (
 	"cmp"
+	"encoding/json"
 	"net/http"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,9 +30,19 @@ type recordList struct {
 	PageSize int      `json:"pageSize"`
 }
 
-// recordHandler serves the R5 D-DATA list/detail example API (static data).
+// recordHandler serves the R5 D-DATA list/detail example API (static data) and
+// the R5 D-ACT edit lifecycle (PATCH/DELETE). State is guarded by a mutex; the
+// MVP has no DB, so mutations live in the process.
 type recordHandler struct {
+	mu      sync.RWMutex
 	records []record
+}
+
+// recordPatch is the PATCH body: pointer fields so absent keys are untouched.
+type recordPatch struct {
+	Name   *string `json:"name"`
+	Status *string `json:"status"`
+	Owner  *string `json:"owner"`
 }
 
 var recordSortFields = []string{"name", "status", "owner", "updatedAt"}
@@ -61,6 +73,8 @@ func recordsHandler(mux *http.ServeMux) {
 	h := &recordHandler{records: staticRecords()}
 	mux.Handle("GET /api/records", h.list())
 	mux.Handle("GET /api/records/{id}", h.detail())
+	mux.Handle("PATCH /api/records/{id}", h.update())
+	mux.Handle("DELETE /api/records/{id}", h.delete())
 }
 
 // list serves GET /api/records with q / sort / order / page / pageSize params.
@@ -96,12 +110,15 @@ func (h *recordHandler) list() http.Handler {
 		}
 
 		q := strings.ToLower(strings.TrimSpace(query.Get("q")))
-		items := make([]record, 0, len(h.records))
-		for _, rec := range h.records {
+		h.mu.RLock()
+		all := h.records
+		items := make([]record, 0, len(all))
+		for _, rec := range all {
 			if q == "" || matches(rec, q) {
 				items = append(items, rec)
 			}
 		}
+		h.mu.RUnlock()
 		slices.SortFunc(items, func(a, b record) int {
 			var byField int
 			switch sortField {
@@ -136,13 +153,92 @@ func (h *recordHandler) list() http.Handler {
 func (h *recordHandler) detail() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		idx := slices.IndexFunc(h.records, func(rec record) bool { return rec.ID == id })
-		if idx < 0 {
+		h.mu.RLock()
+		rec, ok := findRecord(h.records, id)
+		h.mu.RUnlock()
+		if !ok {
 			writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
 			return
 		}
-		writeJSON(w, http.StatusOK, h.records[idx])
+		writeJSON(w, http.StatusOK, rec)
 	})
+}
+
+// update serves PATCH /api/records/{id} for the D-ACT edit lifecycle.
+func (h *recordHandler) update() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		var patch recordPatch
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&patch); err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
+			return
+		}
+		if err := validatePatch(patch); err != "" {
+			writeError(w, http.StatusBadRequest, "INVALID_PATCH_FIELD", err)
+			return
+		}
+
+		h.mu.Lock()
+		idx := slices.IndexFunc(h.records, func(rec record) bool { return rec.ID == id })
+		if idx < 0 {
+			h.mu.Unlock()
+			writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
+			return
+		}
+		rec := h.records[idx]
+		if patch.Name != nil {
+			rec.Name = *patch.Name
+		}
+		if patch.Status != nil {
+			rec.Status = *patch.Status
+		}
+		if patch.Owner != nil {
+			rec.Owner = *patch.Owner
+		}
+		h.records[idx] = rec
+		h.mu.Unlock()
+		writeJSON(w, http.StatusOK, rec)
+	})
+}
+
+// delete serves DELETE /api/records/{id} for the D-ACT edit lifecycle.
+func (h *recordHandler) delete() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		h.mu.Lock()
+		idx := slices.IndexFunc(h.records, func(rec record) bool { return rec.ID == id })
+		if idx < 0 {
+			h.mu.Unlock()
+			writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
+			return
+		}
+		h.records = slices.Delete(h.records, idx, idx+1)
+		h.mu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+func findRecord(records []record, id string) (record, bool) {
+	idx := slices.IndexFunc(records, func(rec record) bool { return rec.ID == id })
+	if idx < 0 {
+		return record{}, false
+	}
+	return records[idx], true
+}
+
+// validatePatch rejects empty trimmed strings for the mutable fields.
+func validatePatch(patch recordPatch) string {
+	if patch.Name != nil && strings.TrimSpace(*patch.Name) == "" {
+		return "name must not be empty"
+	}
+	if patch.Status != nil && strings.TrimSpace(*patch.Status) == "" {
+		return "status must not be empty"
+	}
+	if patch.Owner != nil && strings.TrimSpace(*patch.Owner) == "" {
+		return "owner must not be empty"
+	}
+	return ""
 }
 
 func matches(rec record, q string) bool {

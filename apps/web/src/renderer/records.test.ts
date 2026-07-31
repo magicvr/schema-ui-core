@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildRecordsQuery,
+  deleteRecord,
   fetchRecords,
   parseRecordList,
+  updateRecord,
   type RecordList,
 } from "@/renderer/records";
 
@@ -108,5 +110,59 @@ describe("fetchRecords (request-construction)", () => {
     await expect(
       fetchRecords(fetcher as unknown as typeof fetch, "/api/records", {}),
     ).rejects.toThrow("HTTP 500");
+  });
+});
+
+describe("updateRecord (PATCH)", () => {
+  it("sends a PATCH and maps the response", async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(String(input)).toBe("/api/records/rec-3");
+      expect(init?.method).toBe("PATCH");
+      return new Response(
+        JSON.stringify({
+          id: "rec-3",
+          name: "Hooli Rebrand",
+          status: "archived",
+          owner: "carol",
+          updatedAt: "2026-07-31T00:00:00Z",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+    const updated = await updateRecord(
+      fetcher as unknown as typeof fetch,
+      "/api/records",
+      "rec-3",
+      { name: "Hooli Rebrand", status: "archived" },
+    );
+    expect(updated.name).toBe("Hooli Rebrand");
+    expect(updated.status).toBe("archived");
+  });
+
+  it("throws on a non-OK response", async () => {
+    const fetcher = vi.fn(async () => new Response("bad", { status: 400 }));
+    await expect(
+      updateRecord(fetcher as unknown as typeof fetch, "/api/records", "rec-3", { name: "" }),
+    ).rejects.toThrow("HTTP 400");
+  });
+});
+
+describe("deleteRecord (DELETE)", () => {
+  it("sends a DELETE and resolves on 204", async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(String(input)).toBe("/api/records/rec-3");
+      expect(init?.method).toBe("DELETE");
+      return new Response(null, { status: 204 });
+    });
+    await expect(
+      deleteRecord(fetcher as unknown as typeof fetch, "/api/records", "rec-3"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("throws on a non-OK response", async () => {
+    const fetcher = vi.fn(async () => new Response("bad", { status: 404 }));
+    await expect(
+      deleteRecord(fetcher as unknown as typeof fetch, "/api/records", "rec-999"),
+    ).rejects.toThrow("HTTP 404");
   });
 });
