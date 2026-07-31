@@ -1,0 +1,15 @@
+# Dependencies & build
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Local env (keep examples if added later)
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs / OS
+*.log
+.DS_Store
