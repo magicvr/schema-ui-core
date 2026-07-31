@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.5.2
+version: 0.5.3
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -21,7 +21,8 @@ workspace_id: workspace-001-mvp-admin-foundation
 GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=2/6
 ├── GOAL-002-r1-repo-layout-conventions  [done]  R1 · 仓库布局与包管理约定
 ├── GOAL-003-r1-api-go-scaffold          [done]  R1 · Go API 工程骨架
-└── GOAL-004-r1-web-react-scaffold       [done]  R1 · React Web 工程骨架
+├── GOAL-004-r1-web-react-scaffold       [done]  R1 · React Web 工程骨架
+└── GOAL-005-r3-admin-shell-navigation   [active] R3 · Admin 外壳与导航
 ```
 
 ## 状态表
@@ -32,6 +33,7 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=2/6
 | GOAL-002-r1-repo-layout-conventions | R1 · 仓库布局与包管理约定 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
 | GOAL-003-r1-api-go-scaffold | R1 · Go API 工程骨架 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
 | GOAL-004-r1-web-react-scaffold | R1 · React Web 工程骨架 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
+| GOAL-005-r3-admin-shell-navigation | R3 · Admin 外壳与导航 | GOAL-001-mvp-admin-foundation | active | — | 2026-07-31 |
 
 ## 说明
 
