@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.4.0
 ---
 
 # 决策记录 · GOAL-001
@@ -16,7 +16,7 @@ version: 0.2.0
 
 | ID | 级别 | 最晚阶段 | 状态 | 阻断 |
 |----|------|----------|------|------|
-| I-PROTO-001 | required | R2 方案冻结前 | open | 未 verified 前不得冻结实施范围、不得主张完整协议支持 |
+| I-PROTO-001 | required | R2 方案冻结前 | **collecting**（草案已落盘，未冻结） | 未 verified 前不得冻结实施范围、不得主张完整协议支持 |
 | I-PROTO-002 | required | R4 实施前 | open | 未 verified 前不得宣称账号权限链路完成 |
 | I-PROTO-003 | required | R5 验收前 | open | 未 verified 前不得验收/对照 VP 退出判据关门 |
 | I-PROTO-004 | non-blocking | 实施前为宜 | open | 不阻断开区；影响校验工程策略 |
@@ -130,3 +130,88 @@ version: 0.2.0
 3. R1 可运行后 self 阶段审；再进入 R2。
 
 - 闭合 VRev `F-V001` 只证明清单提取，不证明覆盖冻结（Charter H-001 分列）。
+
+## D-005 · 进入 R2 并起草 I-PROTO-001 纳入/排除表（草案 · 未冻结）
+
+**日期**：2026-07-31  
+**状态**：proposed（草案已落盘；**待用户确认后**升 `accepted` 并 `I-PROTO-001` → verified）  
+**关联信息项**：`I-PROTO-001` → `collecting`（**非** verified）
+
+**决定**：
+
+1. 纲领阶段 **进入 R2**（R1 已完成；R2 标记为进行中）。
+2. 对照 [protocol-inventory-v2.7.0.md](../../vision/protocol-inventory-v2.7.0.md) §3，落盘纳入/排除**草案**：  
+   [attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md)
+3. **草案默认取向**（可被用户改写，确认前不构成冻结）：
+   - **include（8）**：`D-NODE`、`D-EXPR`、`D-DATA`、`D-ACT`、`D-PERM`、`D-APP`、`D-VER`、`D-VAL`
+   - **include-partial（3）**：`D-COMP`（组件 type 白名单）、`D-TABLE`（排序+搜索表；**不含**多选批量）、`D-FORM`（基础表单；**不含** 2.6/2.7 扩展进阶控件）
+   - **exclude（1）**：`D-UPLOAD`
+   - fixture：`uploads` exclude；`scenarios` 仅 support-only；`component-format` partial；其余与上表 include 域对齐为 include
+4. **明确不做的主张**：本决策**不**将 `I-PROTO-001` 标为 verified；**不**放行 R4/R5 实施范围冻结；**不**主张“支持全部协议功能”。
+5. **本回合不新建 R2 子目标**：覆盖冻结以 Root 决策 + 附件表为主交付；确认冻结后再按需拆 R3+ 子目标。
+
+**为什么**：
+
+- 用户 `/govern` 指令：进入 R2 并起草 `I-PROTO-001` 纳入/排除表草案。
+- P-005：允许带未知推进信息收集；草案 = `collecting`，冻结才 `verified`。
+- Charter 要求核心账号权限 + 每纳入域可验证；`mvp_candidate` 不可直接当覆盖集（D-003）。
+- R1 已关门，R2 为下一串行纲领阶段。
+
+**未选方案**：
+
+- **直接把 inventory 全 domain 标 include**：违反 MVP 最小与 Charter 非目标，且无法在本波次举证。
+- **静默 verified**：无用户确认的纳入边界，属伪闭合。
+- **立刻建 R2 细子目标再写表**：表尚未确认，拆目标易空转；P-001 允许先决策再按阶段立项。
+- **把 D-UPLOAD / 进阶表单强行纳入 MVP**：扩大 R4/R5 面，偏离“核心账号权限 + 基架范例”。
+
+**影响**：
+
+- R2 进行中；信息项 `I-PROTO-001` = collecting。
+- **仍阻断**：方案冻结完成宣称、R4 权限实施范围定稿、R5 验收对照、任何全协议支持表述。
+- 不修改子目标 status；不改 `progress`（仍 1/6，R2 检查点未完成）。
+
+**后续**：
+
+1. 用户确认或修订草案开放点 Q1–Q5（见附件 §5）。  
+2. 确认后追加正式冻结决策（见后续 D 号），并将 `I-PROTO-001` → `verified`。  
+3. 再规划 R3 外壳子目标；R4 依赖已冻结的 `D-PERM` 边界（`I-PROTO-002`）。
+
+## D-006 · 响应 A-001：接受 R1 独立复核 pass，继续 R2 收集且不冻结覆盖
+
+**日期**：2026-07-31  
+**状态**：accepted  
+**关联意见**：Root `03-audit` **A-001**（independent，verdict=pass）→ 响应节 **A-002**  
+**关联信息项**：`I-PROTO-001` 保持 **collecting**（**不** verified）
+
+**决定**：
+
+1. **接受** A-001 对 R1 关门证据的独立复核结论：**pass**（开放 required finding = 0）。  
+2. **维持** R1 完成事实不变：纲领 R1 = 完成；GOAL-002/003/004 保持 `done`；Root `progress` 保持 **1/6**；不回退、不重开 R1。  
+3. **不**因 A-001 另做 Root 级 R1 自审（P-004.1：用户本轮书面确认以独立意见推进；子目标侧已有各 A-003 self pass 作既有自审证据）。  
+4. **继续** R2 的 `I-PROTO-001` 信息收集：草案 [attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md) 与 D-005（proposed）仍有效。  
+5. **明确不做**：不将 `I-PROTO-001` 标为 verified；不冻结 MVP 协议覆盖范围；不主张“支持全部协议功能”；不进入 R3/R4 实施范围定稿；不改 Root `status`。
+
+**为什么**：
+
+- 用户 `/govern` 指令原文：确认 R1 关门证据复核为 pass；维持 R1 完成事实；继续 R2 `I-PROTO-001` 信息收集；不冻结协议覆盖范围。  
+- A-001 独立复现了可执行证据，与三子目标 A-003 self pass 同向、无冲突 required。  
+- P-005 / D-003：覆盖子集冻结须用户对纳入表书面确认后另决策；本回合仅响应审计，不越权闭合信息门禁。
+
+**未选方案**：
+
+- **因独立审 pass 而静默冻结 I-PROTO-001**：A-001 scope 仅 R1，不含覆盖冻结；且用户明确禁止。  
+- **回退或重开 R1**：无 contradictory finding；与 pass 结论相反。  
+- **未问用户即强制 Root 再自审一遍 R1**：用户已书面选择基于现有独立意见继续。  
+- **跳过响应留痕直接推进 R3**：须先闭合 R2 信息门禁（`I-PROTO-001` verified）后再谈 R3 立项。
+
+**影响**：
+
+- A-001 无 required finding 需 `fixed`/`residual`/`overruled`；响应 = 接受 verdict + 维持阶段事实。  
+- R2 仍进行中；`I-PROTO-001` 仍阻断「方案冻结完成」宣称。  
+- progress / goal-tree 状态表不因本决策变化。
+
+**后续**：
+
+1. 用户确认/修订草案 Q1–Q5 → 正式冻结决策 → `I-PROTO-001` → `verified`。  
+2. 冻结后再规划 R3 Admin 外壳子目标。  
+3. 可选：对 R2 草案另跑 `/audit`（非本回合强制）。

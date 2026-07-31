@@ -47,4 +47,4 @@ MVP 纲领阶段写在 Root Goal 路线图中；纲领阶段通常串行，同�
 ## 备注
 
 - 开区：`/govern` · 2026-07-31；用户确认 slug、`vision_role: primary`、`primary_plan=VP-001-mvp-admin-foundation`。
-- 协议覆盖子集**尚未冻结**；实施前须闭合 Root 信息项 `I-PROTO-001` 等（见 Root `00-meta` / `01-decision`）。
+- 协议覆盖子集**尚未冻结**；R2 进行中：Root `I-PROTO-001` = `collecting`，草案见 `GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md`（D-005）。冻结前不得主张完整协议支持。
