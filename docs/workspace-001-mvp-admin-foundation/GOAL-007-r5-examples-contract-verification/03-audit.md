@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.9.0
+version: 0.12.0
 ---
 
 # 审计 · GOAL-007
@@ -441,3 +441,165 @@ A-005 四项 required finding 的 `fixed` 闭合可复核，阶段 2 在修复�
 | date | actor | summary |
 |------|-------|---------|
 | 2026-08-01 | `/govern` | 响应 A-006（independent, pass）：用户裁决「不需要自审，直接推进」（P-004 §3.1）。采纳 pass；开放 required=0。A-006 recommended：**F-003**（登记表 §4 计数）→ 随登记表 v0.6.0 **fixed**；**F-001/F-002**（ActionButtonView errors UI / 范例页门禁一致性）→ 跟踪，不阻断阶段 3。主路径：`I-PROTO-004`=**vendor**（D-008）+ 阶段 3 落地——schemas/fixtures vendor+SHA pin；Ajv 结构校验；纳入 fixture suites 执行/覆盖记账（`npm test` **326** 项 / build / go test 全绿）。`I-PROTO-003` 仍 open（验收/关门）；Root `progress` 仍 4/6。 |
+
+## A-007 · R5 阶段 3 独立复核：结构/行为验证完成主张与阶段 4 就绪性（2026-08-01）
+
+- **source**：independent
+- **auditor**：Grok 4.5 · xAI · `/audit`
+- **类型**：execution-facts
+- **scope**：复核 GOAL-007 阶段 3（`I-PROTO-004`=vendor + schemas/fixtures pin + Ajv 结构校验 + 纳入 fixture 对照/覆盖记账）的完成主张是否可成立；评估进入阶段 4（验收 / `I-PROTO-003` 闭合 / 关门）的就绪性与证据缺口。**不**放行 `I-PROTO-003`、R5 验收或关门；**不**抬升 Root `progress`。
+- **verdict**：conditional
+
+### 范围与区间
+
+当前工作区 `workspace-001-mvp-admin-foundation`，Root `GOAL-001-mvp-admin-foundation`，canonical `docs/workspace-001-mvp-admin-foundation/`。`plan_refs` / `primary_plan` = `VP-001-mvp-admin-foundation`；`shared_materials_catalog: none`，本意见未把共享资料引用当作事实或关闭证据。
+
+范围权威：
+
+- 冻结覆盖 [I-PROTO-001 v0.1.3](../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md) §2 fixture 映射与 §5.1 结构验证要求
+- GOAL-007 路线图阶段 3 定义与 D-008（vendor + 阶段 3）
+- 登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) v0.6.0
+
+本轮只读核验：目标五件套 + 登记表 + Root `I-PROTO-003`/`I-PROTO-004` 状态 + 直接读代码（`conformance/*`、`upstream/provenance.json`、`docs/schemas/*`）+ **当前工作树复跑命令** + provenance SHA 全量核对。
+
+### 成果（有证据）
+
+**命令复跑（本审计会话，2026-08-01）**
+
+| 命令 | 结果 |
+|------|------|
+| `cd apps/web && npm test` | **15 文件 / 326 项**全绿（含 `stage3-fixtures.test.ts` **153** 项） |
+| `cd apps/web && npm run build` | tsc + vite 通过 |
+| `cd apps/api && go test ./...` | account + handler 包全绿 |
+| `cd apps/api && go build ./...` | 通过 |
+| provenance SHA 全量 | **20/20** artifacts 与本地文件一致（`sourceCommit=ca9e5fe…`，`artifactVersion=2.7.0`） |
+
+**阶段 3 可复核落地（与 02-execution / D-008 一致）**
+
+| 面 | 证据 |
+|----|------|
+| I-PROTO-004=vendor | Root D-012 + GOAL-007 D-008；`docs/schemas/` 含 node/page/action/reaction/component-registry（+既有 app-manifest）；fixtures 于 `apps/web/src/protocol/upstream/*.cases.json` |
+| SHA pin | `apps/web/src/protocol/upstream/provenance.json` 锁定 6 schema + 14 fixture suites；本轮 20/20 哈希一致 |
+| 结构校验 | `conformance/schema-validate.ts`（Ajv draft-07）；page/node 有合法样本 `ok=true` 与缺 type / 缺 protocolVersion 拒绝断言 |
+| 行为对照（已执行） | component-format 5、query-serialization 16、static-data 9、request-lifecycle 4、runtime-defaults 9、response-mapping 23、search-table 11、table-sort 14、version-negotiation 44、actions 11（均 `assertCoverage` 全量执行） |
+| 覆盖记账（未执行 host） | reactions **16/16 排除**（MVP `$context` vs 上游 multi-round `$deps`，D-008 已决策）；request-construction **75/75**（batch=Q1 排除 + non-batch=deferred 统一引擎） |
+| 登记表 | v0.6.0 逐域现状与验证入口已更新；§4 计数与 §2 对齐（A-006 F-003 响应闭合） |
+| 门禁诚实性 | 父目标 `I-PROTO-003` 仍 **open/required**；阶段 4 **未**声称完成；Root `progress` 仍 **4/6** |
+
+**Ajv 探针（本轮）**
+
+- `reaction` 缺 `dependencies` → `ok: false`；含 `dependencies: []` 合法样本 → `ok: true`
+- `action` `{type,method,url}` request 形状 → `ok: true`
+
+### 对照成功标准（阶段 3 / 进入阶段 4）
+
+| 标准 | 结论 | 证据 |
+|------|------|------|
+| 结构验证可执行（node/page schema） | **部分满足** | page/node 样本 + 拒绝路径有断言；action/reaction 导出可调但测试断言薄弱（见 F-002） |
+| component-format 五 case 对照 | **满足** | 5/5 执行通过 |
+| 行为验证与 R2 基线一致、不越界 | **条件满足** | 已执行 suite 有对照；排除/deferred 有记账理由；**未**静默伪通过 reactions/request-construction |
+| 冻结 include suite 均有可执行对照或合法边界 | **缺口** | `reactions`、`request-construction` 为冻结 §2 **include**，执行数为 **0**（见 F-001） |
+| 每纳入域范例路径 + 验证入口（I-PROTO-003） | **未闭合**（正确） | 登记表 + 阶段 3 证据可支撑验收准备，但 Root `I-PROTO-003` 仍 open；不得据此关门 |
+| 排除项明确 | **满足** | D-UPLOAD、batch Q1、scenarios 非自动化门禁与文档一致 |
+
+### Findings
+
+#### F-001 · 冻结 include suite `request-construction` / `reactions` 执行数为 0，阶段 3「完成」易被误读为全 suite 已对照
+
+- **level**：required
+- **severity**：medium
+- **status**：open
+- **影响门禁**：阶段 3 完成认定的无条件表述；阶段 4 / `I-PROTO-003` 闭合叙述（若把「阶段 3 完成」直接当作全部冻结行为入口已绿）
+- **证据**：
+  - [I-PROTO-001 v0.1.3 §2](../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)：`request-construction` → **include**（D-DATA）；`reactions` → **include**（D-EXPR）
+  - `stage3-fixtures.test.ts`：两 suite 均 `assertCoverage(..., [], exclusions)`，**executedIds 为空**；reactions 16 全排除、request-construction 75 全 deferred/Q1
+  - 登记表 v0.6.0 已诚实写「记账排除 / deferred」，但 `00-meta` / `02-execution` / goal-tree 摘要统一写「阶段 3 **完成**」，未附 include-suite 执行矩阵
+  - D-008 对 reactions 的「vendor+account 排除、拒绝伪通过」决策成立且可核对；request-construction non-batch 的「deferred 统一引擎」是工程延期，**不是**冻结 Q1 式边界排除
+- **必改**（进入阶段 4 / 闭合 `I-PROTO-003` 前至少满足其一组合）：
+  1. 在登记表（或 `02-execution`）落盘 **include suite 执行矩阵**：suite → executed N / excluded(reason) / deferred(reason)，避免「阶段 3 完成 = 全部 include 已绿」；
+  2. 对 `request-construction` **non-batch** 子集：落地可执行 host/adapter 对照（`fixed`），或用户书面 **`accepted-residual`**（范围 + 复审触发），或新决策将冻结 suite 改为 include-partial 并写清边界；
+  3. 对 `reactions`：将 MVP `$context` 验证入口（`reactions.test.ts` + `form-with-reactions`）在登记表升格为 **正式 D-EXPR 行为验证入口**，并显式声明上游 multi-round suite **不在** MVP 语义子集（与 D-008 对齐）；若需与冻结 §2 `include` 字面完全一致，则 residual 或修订冻结。
+- **禁止**：在未处理上述项时，用「阶段 3 完成 + 326 全绿」直接关闭 `I-PROTO-003` 或主张「全部纳入 fixture 已对照通过」。
+
+#### F-002 · action / reaction 结构校验缺少「合法样本必须 ok」的可核对断言
+
+- **level**：required
+- **severity**：medium
+- **status**：open
+- **影响门禁**：阶段 3 结构验证完成认定（D-VAL / D-ACT / D-EXPR schema 面）；§5.1「结构契约随纳入域带入」
+- **证据**：
+  - `stage3-fixtures.test.ts`「validates a minimal reaction document」使用**缺少** `dependencies` 的文档，却只断言 `typeof ok.ok === "boolean"`，**不**要求 `ok === true` 或 `ok === false`
+  - 本轮探针：该样本实际 `ok: false`（`must have required property 'dependencies'`）；合法 `{dependencies:[], when, fulfill}` 才 `ok: true`——测试未锁住任一路径
+  - **action** schema 在 `validateAgainstSchema` 中可编译且本轮探针 request/navigate 合法样本 `ok: true`，但 stage3 **无任何** action 正/负向断言
+  - page/node 路径有完整正/负向断言，形成对比
+- **必改**：为 `reaction` 与 `action` 各补至少：1 条合法样本 `expect(ok).toBe(true)` + 1 条非法样本 `expect(ok).toBe(false)`（reaction 合法样本须含 `dependencies`）；不得用「typeof boolean」充当结构校验完成证据。
+
+#### F-003 · Conformance 适配器与生产 host 路径分离（recommended）
+
+- **level**：recommended
+- **severity**：medium
+- **status**：open
+- **说明**：query-serialization / response-mapping / table-sort 等 stage3 绿测跑在 `conformance/*` 纯适配器上；生产 `records.ts` 的 `buildRecordsQuery` / `parseRecordList` 是独立实现，**不**调用 `serializeQuery` / `mapResponse`。阶段 3 证明「冻结 fixture 语义可复现」，**不**自动证明生产路径与 ADR 全量一致。验收叙述应区分「conformance oracle」与「host 单元/范例证据」。
+- **证据**：`conformance/query-serialize.ts` vs `renderer/records.ts`；`conformance/response-mapping.ts` vs `parseRecordList`。
+
+#### F-004 · `component-registry.json` 已 vendor+pin 但未参与 membership 校验（recommended）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：冻结 §5.1 要求 type 解析到白名单 **与 registry**；当前 Renderer 用硬编码 `WHITELISTED_NODE_TYPES`，registry 文件仅 pin 存在。硬编码表与 §5 一致则风险可控；阶段 4 可补「registry 键 ⊆/⊇ §5」对照或加载 registry 做 membership。
+- **证据**：`docs/schemas/component-registry.json` 在 provenance；`render.ts` `WHITELISTED_NODE_TYPES`；无读取 registry 的校验代码。
+
+#### F-005 · A-006 recommended F-001/F-002 仍开放（recommended · 跟踪）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：ActionButtonView 在 `visible:false` 时不展示 `gate.errors`；部分范例页直连 `FormControls` 未硬阻断。A-006 响应已标跟踪、不阻断阶段 3；阶段 4 可一并处理或继续 residual 跟踪。
+- **证据**：A-006 响应表；`render.tsx` / `form-controls-page.tsx`。
+
+### 必改项汇总
+
+1. **F-001**：include suite 执行矩阵 + `request-construction` non-batch 与 `reactions` MVP 入口的 fixed / residual / 冻结修订之一；禁止用「阶段 3 完成」静默覆盖 0 执行 suite。
+2. **F-002**：为 action/reaction 结构校验补合法/非法可核对断言。
+
+开放 required = **2**。可继续准备阶段 4 材料，但 **不得**无条件认定阶段 3 行为/结构证据已完整覆盖冻结 include 面，**不得**关闭 `I-PROTO-003` / 放行 R5 验收或关门。
+
+### 信息门禁（P-005）
+
+| 项 | 状态 | 本 scope |
+|----|------|----------|
+| `I-007-001` | verified（登记 + 阶段 3 执行证据） | 不单独等于 `I-PROTO-003` |
+| 父目标 `I-PROTO-003` | **open / required**；最晚 R5 验收前 | **阻断验收/关门** |
+| 父目标 `I-PROTO-004` | **verified**（vendor） | 阶段 3 前置已满足 |
+| 到期 required 信息项 | 无（未进入正式验收） | 进入阶段 4 时 `I-PROTO-003` 即到期门禁 |
+
+### 与既有意见的异同
+
+- **与 A-006（independent, pass）**：一致认为 A-005 修复可重复、可进入阶段 3；本意见在阶段 3 **落地后**复核，发现结构断言空洞与 include suite 0 执行缺口 → **conditional**。
+- **与 D-008 / 02-execution**：采纳 vendor、reactions 不伪通过、request-construction 记账的方向正确；本意见要求把「记账/deferred」提升为验收前可裁决的显式矩阵与闭合路径，而不是否定阶段 3 实现事实。
+- **与 A-002～A-004（self）**：阶段 2 实现证据仍成立；本意见不重开 A-005 已 fixed 项。
+- **无同 scope self 审计**覆盖阶段 3：用户此前对 A-006 裁决跳过自审；本独立意见作为阶段 3 交叉台账。P-004：若用户还要阶段 3 自审，由 `/govern` 询问，本意见不代替。
+
+### 结论 + 建议给编排器/用户的下一步
+
+阶段 3 的 vendor/pin、Ajv 入口、多数 include suite 对照与 326 测试/构建证据**真实可复核**；reactions 排除与 request-construction 记账**未**伪装为 pass。但冻结 include 面存在 **0 执行** suite，且 action/reaction 结构断言不完整，故 **verdict = conditional**。不得关闭 `I-PROTO-003`，不得放行 R5 验收/关门，不得抬升 Root `progress`（仍 4/6）。
+
+建议使用：
+
+```text
+/govern workspace-001-mvp-admin-foundation GOAL-007-r5-examples-contract-verification
+```
+
+响应 A-007：优先 `fixed` 路径闭合 F-002（补 action/reaction 结构断言）；对 F-001 落盘 suite 执行矩阵并选择 request-construction non-batch 与 reactions MVP 入口的 fixed / accepted-residual / 冻结修订；然后进入阶段 4 验收材料与 `I-PROTO-003` 闭合评审（仍须用户确认）。P-004：可询问是否需要阶段 3 自审。
+
+### 声明
+
+本意见不修改 status/progress、路线图检查点、`I-PROTO-003` / `I-PROTO-004` 状态或 goal-tree；finding 响应与阶段推进由 `/govern` 处理。
+
+## 响应（对 A-007）
+
+| date | actor | summary |
+|------|-------|---------|
+| 2026-08-01 | `/govern` | 响应 A-007（independent, conditional）：用户裁决「不需要自审，直接推进」（P-004 §3.1）。**F-002 → `fixed`**：action/reaction 结构正负向断言。**F-001 → 组合闭合**：① §2b 执行矩阵；② `reactions` MVP 正式入口升格；③ `request-construction` 初记 residual（D-009）后由用户澄清 **更正为 fixed**（见下行 D-010）。 |
+| 2026-08-01 | `/govern` | **D-010 更正**：`request-construction` non-batch → **`fixed`**。落地 `conformance/request-construction.ts`（`constructRequest`）；stage3 执行 non-batch **64/64** 对照；batch **11** 仍 Q1 排除。登记表 **v0.8.0**。证据：`npm test` **395** 项 / build 全绿。开放 required 仍 **0**。**不**关闭 `I-PROTO-003`；阶段 4 未开始；Root `progress` 仍 4/6。 |

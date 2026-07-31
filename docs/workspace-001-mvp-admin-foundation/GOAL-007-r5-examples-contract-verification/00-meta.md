@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.8.0
+version: 0.10.0
 ---
 
 # GOAL-007 · R5 · 纳入域范例与契约验证
@@ -36,7 +36,7 @@ version: 0.8.0
 
 1. **契约发现与登记**：**完成**；`I-007-001` 登记表已落盘 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md)（2026-07-31），逐纳入域登记范例路径 + 结构/行为验证入口，对齐 [I-PROTO-001 v0.1.3] §3 候选与协议清单 §2.5；D-APP/D-PERM 复用产物与可执行验证命令已核验（`npm test` 94 项 / `npm run build` / `go test ./...` / `go build ./...`）。
 2. **范例页/场景实现**：**批次 2a（D-DATA/D-TABLE）、批次 2b（D-FORM/D-ACT）与批次 2c（D-EXPR/D-COMP）完成**；按登记表为未覆盖域落地可观察范例页（含必要的 React 页面/组件与 Go 数据/动作路径支撑），复用 R3/R4 已有产物。批次 2a：Go `GET /api/records`（list/detail）+ Web `records.ts`/`use-records.ts` + `data-table.tsx` + `search-form-table`/`data-table` 范例页；`npm test` 114 项 / `go test` 21 项 / build / Edge 实测全绿。批次 2b：D-FORM §5 白名单控件表面（`form-controls.ts`/`.tsx`，2.6/2.7 版本/capability 门禁）+ D-ACT 非批量动作（`row-action.ts` 复用 R4 `executeAction`）+ Go `PATCH`/`DELETE /api/records/{id}` + `form-controls`/`list-edit-lifecycle` 范例页；`npm test` 138 项 / `go test` 18 顶层 / build 全绿。批次 2c：D-EXPR 反应引擎（`reactions.ts` 复用 `evaluateExpression`）+ D-COMP 最小 Renderer 接线（`render.ts`/`.tsx`，resolve R4 F-002）+ `form-with-reactions` 范例页；`npm test` 166 项 / `npm run build` / `go test` / Edge 实测全绿。**阶段 2 全部落地**；`I-PROTO-004` 在阶段 3 结构校验实现前决策。
-3. **结构/行为验证**：**完成（2026-08-01）**；`I-PROTO-004`=vendor；`docs/schemas/` 增补 node/page/action/reaction/component-registry；纳入 fixtures vendor+SHA pin；Ajv 结构校验 + `apps/web/src/protocol/conformance/*` 行为对照；`npm test` 326 项（含 stage3 153）/ build / go test 全绿。reactions 全量记账排除（MVP `$context` 子集）；request-construction batch Q1 排除、其余 deferred 统一引擎。
+3. **结构/行为验证**：**完成（2026-08-01）**；`I-PROTO-004`=vendor；schemas/fixtures vendor+SHA pin；Ajv + conformance 对照；A-007/D-010 后 `npm test` **395** 项（stage3 **222**）。include suite 以登记表 **§2b** 为准：多数 suite 已执行；`reactions` 上游 0 执行（MVP 正式入口 = `reactions.test.ts` + `/form-with-reactions`）；`request-construction` non-batch **64/64 fixed**（batch Q1 排除）。**禁止**将「全绿」读成 batch 或上游 multi-round reactions 已对照。
 4. **验收与关门**：**未开始**；闭合父目标 `I-PROTO-003`（每纳入域范例路径 + 验证入口均有可核对证据）→ 自审/关门审计。
 
 ## 成功标准（暂定 · 可随契约发现细化）
@@ -51,7 +51,7 @@ version: 0.8.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-007-001 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 对照 [I-PROTO-001 v0.1.3] §3 与协议清单 §2.5，登记每纳入域的范例路径与验证命令/步骤 | **verified** | 2026-07-31 登记完成；2026-08-01 阶段 3 将可执行验证入口与 suite 对照结果写入登记表 v0.6.0（登记+阶段 3 执行证据；**不**单独等于 `I-PROTO-003` 闭合） | [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) v0.6.0 |
+| I-007-001 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 对照 [I-PROTO-001 v0.1.3] §3 与协议清单 §2.5，登记每纳入域的范例路径与验证命令/步骤 | **verified** | 2026-07-31 登记；2026-08-01 阶段 3 + A-007/D-010：登记表 **v0.8.0**（§2b 矩阵、reactions 正式入口、request-construction non-batch fixed）；**不**单独等于 `I-PROTO-003` 闭合 | [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) v0.8.0 |
 
 父目标 `I-PROTO-003`（required，R5 验收/关门门禁）由 Root 维护，本目标通过范例路径 + 阶段 3 可执行验证为其提供证据，**验收前**须正式闭合。`I-PROTO-004`（vendor vs pin）→ **verified**（2026-08-01 D-008 vendor）。
 
@@ -67,6 +67,7 @@ version: 0.8.0
 - 批次 2c 落地（2026-08-01）：D-EXPR 反应引擎（`reactions.ts`，复用 `evaluateExpression`）+ D-COMP 最小 Renderer 接线（`render.ts`/`render.tsx`，resolve R4 F-002）+ `form-with-reactions` 范例页实现完成（详见 02-execution）；A-004 批次自审（self）pass；登记表升 v0.4.0。**阶段 2 全部落地**；`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。`I-PROTO-004` 仍 open（non-blocking，阶段 3 结构校验前决策）。
 - A-005 响应（2026-08-01）：A-005（independent, conditional）对阶段 2 完成主张提出 F-001～F-004（required）与 A-002～A-004（self, pass）同 scope 分歧；用户裁决「不需要自审，直接推进」，F-001～F-004 按 **`fixed`** 合法闭合（action 表达式 fail-closed、RenderPage 接入 D-FORM 门禁、defaultValue 2.7+advanced 双门禁、Renderer whitelist 扩展至冻结 §5 全部 node type），F-005 同步；`npm test` 173 项 / build / `go test` / Edge 实测全绿；登记表升 v0.5.0；D-007 已留痕。
 - A-006 响应 + 阶段 3（2026-08-01）：A-006（independent, pass）闭合复核成立；用户裁决「不需要自审，直接推进」；`I-PROTO-004`=vendor（D-008）；阶段 3 结构/行为验证落地（schemas+fixtures vendor、Ajv、conformance 适配器）；`npm test` **326** 项 / build / go test 全绿；登记表 v0.6.0。阶段 4 与 `I-PROTO-003` 仍未闭合。
+- A-007 响应（2026-08-01）：A-007（independent, conditional）F-002 **fixed**、F-001 矩阵 + reactions 正式入口；request-construction 初记 residual 后由用户澄清 → **D-010 fixed**（non-batch 64 执行）；`npm test` **395** 项；登记表 v0.8.0。开放 required=0。阶段 4 与 `I-PROTO-003` 仍未闭合。
 - Root 纲领进度仍为 `4/6`；本目标推进不抬升 progress，不放行 Root `done`；`I-PROTO-004` 已 verified，`I-PROTO-003` 仍 open。
 - R4 关门时登记的 recommended 跟踪项（F-002 Renderer 接线 / F-003 token 会话 / F-004 双端一致性 oracle）标注「随 R5 / 生产化 / `I-PROTO-004` 解决」——本目标为这些跟踪项提供落地窗口，但 recommended 不阻断 R5 推进。
 - 结论与进度只写已发生事实；「未开始」阶段不得写成已完成。

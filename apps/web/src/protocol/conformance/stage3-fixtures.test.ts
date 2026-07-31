@@ -19,6 +19,7 @@ import { runSearchTable } from "./search-table";
 import { runTableSort } from "./table-sort";
 import { negotiateVersion } from "./version-negotiate";
 import { runActionOutcome } from "./actions-outcome";
+import { constructRequest } from "./request-construction";
 import {
   sampleWhitelistedPage,
   validateAgainstSchema,
@@ -145,13 +146,54 @@ describe("stage 3 · structural schema validation", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("validates a minimal reaction document", () => {
-    const ok = validateAgainstSchema("reaction", {
+  it("accepts a minimal legal reaction document (dependencies required)", () => {
+    const result = validateAgainstSchema("reaction", {
+      dependencies: [],
       when: "$context.user.roles.contains('admin')",
       fulfill: { visible: false },
     });
-    // reaction schema shape may use different property names — assert function runs.
-    expect(typeof ok.ok).toBe("boolean");
+    expect(result.ok, JSON.stringify(result.errors)).toBe(true);
+  });
+
+  it("rejects a reaction missing required dependencies", () => {
+    const result = validateAgainstSchema("reaction", {
+      when: "$context.user.roles.contains('admin')",
+      fulfill: { visible: false },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a minimal legal request action", () => {
+    const result = validateAgainstSchema("action", {
+      type: "request",
+      method: "GET",
+      url: "/api/records",
+    });
+    expect(result.ok, JSON.stringify(result.errors)).toBe(true);
+  });
+
+  it("accepts a minimal legal navigate action", () => {
+    const result = validateAgainstSchema("action", {
+      type: "navigate",
+      url: "/data-table",
+    });
+    expect(result.ok, JSON.stringify(result.errors)).toBe(true);
+  });
+
+  it("rejects an action missing type", () => {
+    const result = validateAgainstSchema("action", {
+      method: "GET",
+      url: "/api/records",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects a request action missing url", () => {
+    const result = validateAgainstSchema("action", {
+      type: "request",
+      method: "GET",
+    });
+    expect(result.ok).toBe(false);
   });
 });
 
@@ -318,7 +360,7 @@ describe("stage 3 · reactions fixtures (coverage accounting)", () => {
   });
 });
 
-describe("stage 3 · request-construction fixtures (coverage accounting)", () => {
+describe("stage 3 · request-construction fixtures", () => {
   const suite = loadSuite("request-construction");
   const batchIds = suite.value.cases
     .filter((c) => c.input.kind === "batchRequest")
@@ -326,23 +368,27 @@ describe("stage 3 · request-construction fixtures (coverage accounting)", () =>
   const nonBatch = suite.value.cases.filter((c) => c.input.kind !== "batchRequest");
 
   /**
-   * Full request-construction host (row/form/page/dataRef URL + body mapping)
-   * is not yet a single production module in this MVP; batch is Q1=exclude.
-   * Stage 3 pins the suite and accounts every case. Non-batch cases are tracked
-   * as deferred host mapping (implementation path exists partially via records
-   * / row-action); batch cases are hard-excluded per freeze Q1.
+   * Non-batch kinds execute against constructRequest adapter (A-007 F-001 fixed).
+   * batchRequest remains Q1-excluded (multi-select batch outside MVP include-partial).
    */
   const exclusions: Record<string, string> = {};
   for (const id of batchIds) {
     exclusions[id] =
       "Excluded: batchRequest depends on D-TABLE multi-select batch (Q1=否 / include-partial D-ACT).";
   }
-  for (const fixtureCase of nonBatch) {
-    exclusions[fixtureCase.id] =
-      "Deferred host mapping: full request-construction engine not yet unified in MVP host; suite vendored+pinned; partial paths covered by records.ts / row-action.ts unit tests.";
-  }
 
-  assertCoverage(suite.value, [], exclusions, "request-construction");
+  assertCoverage(
+    suite.value,
+    nonBatch.map((c) => c.id),
+    exclusions,
+    "request-construction",
+  );
+
+  for (const fixtureCase of nonBatch) {
+    it(fixtureCase.id, () => {
+      expect(constructRequest(fixtureCase.input)).toEqual(fixtureCase.expected);
+    });
+  }
 
   it("excludes all batchRequest cases per Q1 freeze", () => {
     expect(batchIds.length).toBeGreaterThan(0);

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.7.0
+version: 0.9.0
 ---
 
 # 决策记录 · GOAL-007
@@ -227,3 +227,72 @@ F-001～F-004 以 `fixed` 合法闭合，F-005 同步；`npm test` 14 文件 **1
 - 父目标 `I-PROTO-004` → **verified**（vendor 策略与 pin 证据落盘）。
 - 阶段 3 实施完成（结构校验可跑 + 纳入 suites 执行/覆盖记账）；阶段 4（验收/关门）与 `I-PROTO-003` 仍 open。
 - Root `progress` 仍 `4/6`。
+
+## D-009 · 响应 A-007：F-002 fixed + F-001 矩阵/入口升格 + request-construction residual（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+1. **P-004 §3.1**：对 A-007（independent, conditional）用户裁决「**不需要自审，直接推进**」。
+2. **F-002 → `fixed`**：为 `reaction` 与 `action` 结构校验各补可核对断言——合法样本 `expect(ok).toBe(true)`、非法样本 `expect(ok).toBe(false)`（reaction 合法样本须含 `dependencies`）；落在 `apps/web/src/protocol/conformance/stage3-fixtures.test.ts`。
+3. **F-001 → 组合闭合**：
+   - 在登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) **§2b** 落盘 **include suite 执行矩阵**（suite → executed / excluded / deferred|residual），禁止把「阶段 3 完成 + 测试全绿」读成全部冻结 include suite 已 host 对照通过。
+   - **`reactions`**：将 MVP `$context` 验证入口（`reactions.test.ts` + `/form-with-reactions`）升格为 **正式 D-EXPR 行为验证入口**；显式声明上游 multi-round `$deps` suite **不在** MVP 语义子集（对齐 D-008，**不**伪通过）。
+   - **`request-construction` non-batch** → **`accepted-residual`**（用户书面「… request-construction … residual」；本决策将 R1/R2 标签歧义按 **residual** 语义解释，**不**采用本轮落地统一 host adapter 的 fixed 路径，也**不**修订 v0.1.3 冻结表）：
+     - **范围**：冻结 §2 include 的 non-batch case **不**作为 stage3 全量 host 对照绿项；batch 仍 Q1 排除。
+     - **缓解 / 监控**：suite vendor+SHA pin 保留；partial 路径由 `records.ts` / `row-action.ts` 单元与范例覆盖；矩阵与登记表诚实记账 executed=0。
+     - **复审触发**：落地统一 request-construction host/adapter 时；或进入 R6 集成验收前；或用户要求撤回 residual。
+4. **A-007 recommended** F-003～F-005 继续跟踪，**不阻断**进入阶段 4 材料准备。
+5. **不**关闭父目标 `I-PROTO-003`；**不**放行 R5 验收/关门；**不**抬升 Root `progress`（仍 4/6）。
+
+**为什么**：
+
+- A-007 核验阶段 3 vendor/Ajv/多数 suite 真实可复核，同时指出 include 面 0 执行与 action/reaction 断言空洞——F-002 低成本可 `fixed`；F-001 需显式矩阵 + 入口/residual 裁决，避免验收叙述静默覆盖缺口。
+- `reactions` 排除理由已在 D-008 成立；升格 MVP 入口满足「有可执行行为验证」而不假装上游 suite 已跑。
+- non-batch request-construction 统一引擎超出本轮 R5 最短路径；用户选 residual 并书面留痕，符合 P-003/P-004 三路径之一。
+
+**未选方案**：
+
+- **request-construction R1 fixed（统一 adapter）**：工作量大，可在 residual 复审触发时再做；本轮用户明确 residual。
+- **修订冻结 v0.1.3 为 include-partial**：触及 Root 覆盖表新版本与重估，范围大于必要。
+- 先做阶段 3 self 再响应：用户裁决跳过。
+
+**影响**：
+
+- A-007 开放 required → **0**（F-002 fixed；F-001 矩阵 + reactions 升格 + request-construction accepted-residual）。
+- 登记表 → **v0.7.0**；`npm test` **331** 项。
+- 阶段 4 / `I-PROTO-003` 仍 open；可进入验收材料准备，但闭合 `I-PROTO-003` 仍须逐域证据评审与用户确认。
+
+> **部分 supersede**：`request-construction` non-batch 的 **accepted-residual** 路径由 **D-010** 更正为 **`fixed`**（用户澄清）。矩阵 / reactions / F-002 部分仍有效。
+
+## D-010 · 更正 A-007 F-001：request-construction non-batch → fixed（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+用户澄清：`request-construction` 要求 **`fixed`**（可执行 host/adapter 对照），**不是** accepted-residual。
+
+1. **supersede** D-009 中关于 `request-construction` non-batch 的 residual 范围/缓解/复审触发。
+2. 落地 `apps/web/src/protocol/conformance/request-construction.ts`（`constructRequest`），在 stage3 对 **全部 non-batch** case 执行 `expect(constructRequest(input)).toEqual(expected)`。
+3. **batchRequest** 仍按冻结 Q1=否 **排除**（不改 v0.1.3）。
+4. 登记表 §2b 矩阵更新为 non-batch **executed**；审计响应与执行记录更正 residual 表述。
+
+**为什么**：
+
+- 用户原文「R1 residual」存在 R1=fixed 与 residual 的标签冲突；澄清后以 **fixed** 为准。
+- fixed 满足 A-007 F-001 必改项「落地可执行 host/adapter 对照」，且不静默伪通过 batch。
+
+**未选方案**：
+
+- 维持 residual：与用户澄清冲突。
+- 同时执行 batch：违反 Q1 / include-partial D-ACT。
+
+**影响**：
+
+- A-007 F-001 中 request-construction 闭合路径 = **`fixed`**（+ 既有矩阵与 reactions 升格）。
+- `npm test` **395** 项（+64 non-batch）；登记表 **v0.8.0**。
+- 仍 **不**关闭 `I-PROTO-003`；阶段 4 未开始；Root `progress` 仍 4/6。

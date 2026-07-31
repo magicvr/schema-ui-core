@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-01
 parent: null
-version: 0.19.0
+version: 0.21.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -42,7 +42,7 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=4/6
 ## 说明
 
 - Root `progress: 4/6` = 纲领路线图 R1–R6 中 R1、R2、R3、R4 已完成（等权派生）；**不**放行 R5/R6、不关闭未相关 finding、不推导 Root `done`。
-- R5：GOAL-007-r5-examples-contract-verification（`active`）。阶段 1–2 完成（见历史条目）。**A-006（independent, pass）响应 + 阶段 3 完成**（2026-08-01）：用户裁决「不需要自审，直接推进」；`I-PROTO-004`=**vendor**（Root D-012 / GOAL-007 D-008）→ verified；schemas/fixtures vendor+SHA pin；Ajv 结构校验 + conformance 行为对照（`npm test` **326** 项 / build / go test 全绿）；登记表 v0.6.0。**阶段 4（验收/关门）未开始**；`I-PROTO-003` 仍 open。Root `progress` 仍 **4/6**（阶段 3 不抬升纲领检查点）。
+- R5：GOAL-007-r5-examples-contract-verification（`active`）。阶段 1–3 完成（见历史条目）。**A-007 响应 + D-010 更正**（2026-08-01）：F-002 **fixed**；F-001 矩阵 + reactions 正式入口 + request-construction non-batch **fixed**（`constructRequest`，64/64；batch Q1 排除）；`npm test` **395** 项；登记表 v0.8.0；开放 required=0。**阶段 4（验收/关门）未开始**；`I-PROTO-003` 仍 open。Root `progress` 仍 **4/6**。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
 - R1：2026-07-31 `/govern` 阶段/关门自审 A-003（self）对 002/003/004 均为 **pass** → 三子目标 `done`；Root 纲领 R1 → 完成。Root A-001（independent）R1 证据复核 **pass** → A-002/D-006 响应：维持完成事实。
 - R2：完成；用户书面确认按 v0.1.3 覆盖表正式冻结，D-009 / A-006 已留痕，`I-PROTO-001` = `verified`。冻结范围不等同于完整协议支持或 R3-R5 实施完成。

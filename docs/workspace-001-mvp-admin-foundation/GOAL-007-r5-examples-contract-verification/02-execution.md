@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.8.0
+version: 0.10.0
 ---
 
 # 执行记录 · GOAL-007
@@ -180,13 +180,55 @@ version: 0.8.0
 
 **未改动**：父目标 `I-PROTO-003`（required，open，R5 验收/关门门禁）；Root `progress` 4/6；阶段 4（验收/关门）未开始。`I-PROTO-004` → verified（Root 同步）。
 
+### 2026-08-01 · 响应 A-007：F-002 fixed + F-001 矩阵/入口 + request-construction residual
+
+用户裁决「不需要自审，直接推进」；`request-construction` non-batch 选 **accepted-residual**（D-009）。
+
+**F-002 · action/reaction 结构断言（fixed）**
+
+- 文件：`apps/web/src/protocol/conformance/stage3-fixtures.test.ts`
+- 替换空洞 `typeof ok.ok === "boolean"`：
+  - reaction 合法（含 `dependencies: []`）→ `ok === true`
+  - reaction 缺 `dependencies` → `ok === false`
+  - action request/navigate 合法 → `ok === true`
+  - action 缺 `type` / request 缺 `url` → `ok === false`
+- stage3 文件：**158** 项（原 153 +5 net）。
+
+**F-001 · 执行矩阵 + reactions 升格 + residual**
+
+- 登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) 升 **v0.7.0**：新增 **§2b include suite 执行矩阵**；D-EXPR 正式行为入口 = `reactions.test.ts` + `/form-with-reactions`；上游 reactions suite 16/16 排除声明保留；request-construction non-batch 标 **accepted-residual**（范围 / 缓解 / 复审触发见 D-009）。
+- **未**实现统一 request-construction host adapter（本轮 residual，非 fixed）。
+
+**测试 / 构建证据**
+
+- `cd apps/web && npm test` → **15 文件 / 331 项**全绿。
+- `cd apps/web && npm run build` 通过。
+- `cd apps/api && go test ./...` / `go build ./...` 通过（Go 侧无改动）。
+
+**未改动**：父目标 `I-PROTO-003` 仍 **open**；阶段 4 未开始；Root `progress` 仍 **4/6**。A-007 开放 required → **0**。
+
+### 2026-08-01 · D-010 更正：request-construction non-batch → fixed
+
+用户澄清 residual → **fixed**。
+
+**实现**：
+
+- 新增 `apps/web/src/protocol/conformance/request-construction.ts`（`constructRequest`）：覆盖 dataRef / rowAction / formAction / rowNavigate / recordSource / pageTrigger* / outcomeNavigate。
+- `stage3-fixtures.test.ts`：non-batch **64** case 全量执行对照；batchRequest **11** 仍 Q1 排除。
+- 登记表升 **v0.8.0**（§2b：request-construction executed **64/75**）。
+
+**证据**：`cd apps/web && npm test` → **15 文件 / 395 项**全绿；`npm run build` 通过。
+
+**未改动**：`I-PROTO-003` open；阶段 4 未开始；Root `progress` 4/6；reactions 上游仍 0 执行（MVP 正式入口保留）。
+
 ## 待办
 
 1. ~~**批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。~~ **完成（2026-08-01）**。
 2. ~~落地 `node`/`page` schema 校验与已纳入 fixtures 对照；`I-PROTO-004` vendor。~~ **完成（2026-08-01，阶段 3）**。
-3. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门（阶段 4）。
-4. 可选：补齐 `request-construction` 统一 host 引擎；MVP `$context` reactions 与上游 suite 的差异文档化给验收。
+3. ~~响应 A-007 F-001/F-002。~~ **完成（2026-08-01，D-009 + D-010 fixed）**。
+4. **阶段 4**：闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门（须逐域证据评审 + 用户确认）。
+5. 可选：A-007 recommended（conformance vs 生产 host 分离、registry membership、UI 一致性）；batch 仍在 Q1 外。
 
 ## 进度评估
 
-**阶段 1–3 完成**（契约发现与登记；范例实现；结构/行为验证）。**阶段 4（验收与关门）未开始**。进度仅为展示，不放行验收、不推导 `done`，不抬升 Root `progress`（仍 4/6）。
+**阶段 1–3 完成**（含 A-007 必改闭合；request-construction non-batch **fixed**；行为面以 §2b 矩阵为准）。**阶段 4（验收与关门）未开始**；`I-PROTO-003` 仍 open。进度仅为展示，不放行验收、不推导 `done`，不抬升 Root `progress`（仍 4/6）。

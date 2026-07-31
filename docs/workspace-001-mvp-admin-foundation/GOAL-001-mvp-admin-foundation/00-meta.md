@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.12.0
+version: 0.14.0
 progress: 4/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -49,7 +49,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
 | R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | **完成** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture）与关门（A-004 self + A-005 independent 均 pass）完成，GOAL-006 `done` |
-| R5 | 纳入域范例与契约验证 | 阶段 1–3 完成（阶段 4 未开始） | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`）；GOAL-007 阶段 1–2 已完成；阶段 3（`I-PROTO-004`=vendor + schema/fixture 对照，`npm test` 326）完成（2026-08-01）；阶段 4 验收/关门与 `I-PROTO-003` 闭合未开始 |
+| R5 | 纳入域范例与契约验证 | 阶段 1–3 完成（阶段 4 未开始） | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`）；GOAL-007 阶段 3 + A-007/D-010（F-002 fixed；矩阵；reactions 正式入口；request-construction non-batch **fixed** 64/64；`npm test` **395**）；阶段 4 与 `I-PROTO-003` 闭合未开始 |
 | R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
 
 纲领阶段串行；同一阶段内可并行子目标。阶段完成须更新本表标记，并不得假装未满足退出条件。
@@ -64,7 +64,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-PROTO-001 | required | 哪些 `domain_id` / fixture suite 纳入 VP-001 MVP？ | R2 冻结基线 / 后续实施范围 | R2 结束前 | 对照 [protocol-inventory](../../vision/protocol-inventory-v2.7.0.md) §3 决策并落盘纳入/排除表 | **verified** | 2026-07-31 用户书面确认 v0.1.3；覆盖变更须新决策与版本 | 冻结基线：[attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md) v0.1.3；D-009；A-005 以 `fixed` 留痕 F-001/F-002 |
 | I-PROTO-002 | required | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | R4 实施 | R4 实施前 | 设计最小 API + 对照 permissions-inheritance fixtures | **verified** | 2026-07-31 方案冻结时闭合（GOAL-006 D-004）；闭合仅覆盖设计/映射，不放行实施本身 | GOAL-006 D-004 + [attachments/dperm/](../../workspace-001-mvp-admin-foundation/GOAL-006-r4-account-permission/attachments/dperm/) 固定资料（cases.json 17 例、node.schema、ADR-0023 等，SHA-256 核验） |
-| I-PROTO-003 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 为纳入域登记范例路径与验证命令/步骤 | open | — | GOAL-007 已提供登记表 v0.6.0 + 阶段 3 可执行证据；**验收前**须正式闭合 |
+| I-PROTO-003 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 为纳入域登记范例路径与验证命令/步骤 | open | — | GOAL-007 登记表 **v0.8.0** + 阶段 3 + A-007/D-010 证据；**验收前**须正式闭合 |
 | I-PROTO-004 | non-blocking | 是否 vendor 上游 schemas/fixtures，或 pin 远程校验？ | R1–R5 工程策略 | 阶段 3 结构校验前 | 决策 vendor vs pin；记录维护成本 | **verified** | 2026-08-01 GOAL-007 D-008：vendor @ `ca9e5fe…`，schemas+fixtures SHA pin | `docs/schemas/*` + `apps/web/src/protocol/upstream/provenance.json` |
 | I-STACK-001 | required | 前端/后端具体脚手架与包管理（目录布局、模块边界）？ | R1 实施 | R1 实施前 | 用户确认或有界 spike 后写入决策 | verified | — | 2026-07-31 D-004：`apps/web`+`apps/api`；Web=npm+Vite+React+TS+Tailwind/shadcn；API=Go modules；结构参考平行仓择优移植 |
 | I-STACK-002 | non-blocking | monorepo vs 前后端分仓、默认端口与 env 约定 | R1 约定 | R1 内 | 决策落盘即可 | verified | — | 2026-07-31 D-004：本仓 monorepo `apps/*`；默认端口/env 在 GOAL-002/003 约定中细化 |
@@ -90,3 +90,4 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R5 阶段 2 批次 2c（2026-08-01）：GOAL-007 按 D-004 实施批次 2c（D-EXPR `reactions.ts` + D-COMP `render.ts`/`render.tsx` 最小 Renderer 接线，resolve R4 F-002 + `form-with-reactions` 范例页），`npm test` 166 项 / `npm run build` / `go test` / Edge 实测全绿，A-004 批次自审（self）pass，登记表升 v0.4.0。阶段 2 全部落地；阶段 3/4 未开始。
 - R5 A-005 响应（2026-08-01）：GOAL-007 响应 A-005（independent, conditional）——用户裁决「不需要自审，直接推进」，F-001～F-004 按 `fixed` 合法闭合（action 表达式 fail-closed、RenderPage 接入 D-FORM 门禁、defaultValue 2.7+advanced 双门禁、Renderer whitelist 扩展至冻结 §5 全部 node type），F-005 本行投影同步；`npm test` 173 项 / build / `go test` / Edge 实测全绿；登记表升 v0.5.0（D-007）。`I-PROTO-003` 仍 open；`progress` 维持 `4/6`。
 - R5 阶段 3 + I-PROTO-004（2026-08-01）：GOAL-007 响应 A-006（independent pass，用户「不需要自审」），`I-PROTO-004` → **verified**（vendor）；阶段 3 结构/行为验证落地（schemas/fixtures vendor、Ajv、conformance 适配器，`npm test` **326**）；登记表 v0.6.0。`I-PROTO-003` 仍 open；`progress` 维持 `4/6`（不因阶段 3 抬升纲领检查点）。
+- R5 A-007 / D-010（2026-08-01）：GOAL-007 响应 A-007——F-002 fixed、F-001 矩阵 + reactions 正式入口；request-construction 由 residual **更正为 fixed**（D-010，non-batch 64 执行）；`npm test` **395**；登记表 v0.8.0；开放 required=0。`I-PROTO-003` 仍 open；阶段 4 未开始；`progress` 维持 `4/6`。
