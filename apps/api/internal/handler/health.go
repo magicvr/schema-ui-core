@@ -15,9 +15,10 @@ type healthResponse struct {
 	Commit    string    `json:"commit,omitempty"`
 }
 
-// Register mounts R1 routes. No business domain routes.
+// Register mounts R1 routes and the R4 account session route.
 func Register(mux *http.ServeMux) {
 	mux.Handle("GET /healthz", healthz())
+	accountsHandler(mux)
 }
 
 func healthz() http.Handler {
@@ -35,4 +36,8 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+func writeError(w http.ResponseWriter, status int, code, message string) {
+	writeJSON(w, status, map[string]string{"error": code, "message": message})
 }
