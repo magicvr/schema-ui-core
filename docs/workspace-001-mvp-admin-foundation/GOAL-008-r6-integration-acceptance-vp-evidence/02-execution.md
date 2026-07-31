@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.3.0
+version: 0.3.1
 ---
 
 # 执行记录 · GOAL-008
@@ -79,12 +79,20 @@ version: 0.3.0
 - **A-003（self · pass）**：阶段 2 退出条件核对——C-001～C-008 全执行并落盘、evidence-index（mode: acceptance）经 ajv 校验（7 SHA-256 verified、overallOutcome=pass）、失败/排除显式记录、无新关键未知。见 [03-audit.md](03-audit.md)。
 - 阶段 2 → 3 门禁通过；阶段 3「VP 证据汇编与缺口整改」可开始。Root `progress: 5/6`、VP-001 `active` 不变。
 
+### 2026-08-01 · 阶段 3 VP 证据汇编
+
+- 新增 [vp-evidence-assembly.md](attachments/vp-evidence-assembly.md)：VP-001 三条退出判据逐条指向工作区 Q2 证据。
+  - **判据 1**（可运行/可 fork/固定协议边界）→ evidence-index C-001～C-004、CI run `30666932343`、protocol-inventory v2.7.0 pin。
+  - **判据 2**（受控覆盖清单 + 实现/范例/验证路径）→ I-PROTO-001 v0.1.3、I-007-001 registry、stage3 conformance 222 项、docs/schemas vendor。
+  - **判据 3**（账号权限前后端集成）→ runtime-probes `/api/accounts/me`、E2E session 断言、account-permission-oracle、dperm cases 17 例。
+- **缺口检查**：无 required 缺口；浏览器级拒绝未断言属登记排除（C-006，真实 manifest 无权限门控项），reactions/batch/D-UPLOAD 为既有冻结排除。边界主张与 I-PROTO-001 v0.1.3、R5 一致。
+- 阶段 3 汇编完成；阶段 3→4 门禁审视待做。Root `progress: 5/6`、VP-001 `active` 不变。
+
 ## 待办（计划 · 非完成事实）
 
-1. 阶段 3 VP 证据汇编：三条退出判据各指向 Q2 工作区证据；required 缺口按 P-003 合法闭合。
-2. 阶段 3 → 4 门禁审视；完成 R6 close-out 审计后，再由用户决定 Root R6 / `progress` / status。
-3. VP 关门另走 `/vision`（读取 R6 工作区证据、形成关门提案并获得用户确认）。
+1. 阶段 4 R6 close-out 审计（A-005）：开放 required=0 后，由用户授权 Root R6 / `progress` / status 变化。
+2. VP 关门另走 `/vision`（读取 R6 工作区证据、形成关门提案并获得用户确认）。
 
 ## 进度评估
 
-阶段 1 冻结、阶段 2 执行完成、阶段 2→3 门禁通过（A-003 pass）：C-001～C-008 全执行、正式 `evidence-index.json`（mode: acceptance）经 schema 校验（7 artifact SHA-256 verified、overallOutcome=pass）、排除显式。阶段 3 未开始。Root `progress` 仍 `5/6`，没有 R6 关门完成事实。
+阶段 1 冻结、阶段 2 执行完成、阶段 2→3 门禁通过（A-003 pass）、阶段 3 VP 证据汇编完成、阶段 3→4 门禁通过（A-004 pass）。阶段 4 close-out 审计未做。Root `progress` 仍 `5/6`，没有 R6 关门完成事实，VP-001 保持 `active`。

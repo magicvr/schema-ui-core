@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.3
+version: 0.2.4
 ---
 
 # GOAL-008 · R6 · 集成验收与 VP 证据
@@ -40,10 +40,11 @@ version: 0.2.3
 |------|------|------|----------|
 | 1 | 验收合同与证据计划冻结 | **已冻结**（2026-08-01） | `I-008-001`～`I-008-005` 均有证据结论或合规 residual；验收矩阵、环境矩阵、账号权限 oracle 与证据格式经计划阶段审视（A-002），无开放 required finding |
 | 2 | 集成验收执行 | **已完成**（2026-08-01） | 在已声明 revision/环境运行 Web、API、协议回归与账号权限集成检查；原始/机器可读结果落盘；失败与排除不被隐藏 |
-| 3 | VP 证据汇编与缺口整改 | 未开始 | VP 三条退出判据逐条指向工作区 Q2 证据；所有 required 缺口 fixed 或经用户书面 residual/overruled；边界主张一致 |
+| 3 | VP 证据汇编与缺口整改 | **已完成**（2026-08-01） | VP 三条退出判据逐条指向工作区 Q2 证据；所有 required 缺口 fixed 或经用户书面 residual/overruled；边界主张一致 |
 | 4 | R6 关门审计与 VP 提案输入 | 未开始 | R6 close-out 审计结论可核对、开放 required=0；用户另行授权 Root R6/`progress`/status 变化，并由 `/vision` 决定是否提出 VP 关门 |
 
 > 阶段 2 → 3 门禁已过（A-003 pass，2026-08-01）：C-001～C-008 全执行、evidence-index（mode: acceptance）经 schema 校验、排除显式。阶段 3 可开始。
+> 阶段 3 已汇编（2026-08-01）：VP 三条退出判据逐条指向工作区 Q2 证据（[vp-evidence-assembly.md](attachments/vp-evidence-assembly.md)）；无 required 缺口、边界一致。阶段 3→4 门禁待审。
 
 阶段通常串行；若阶段 2 内的 Web/API、协议回归、账号权限与证据打包已由阶段 1 冻结为独立执行块，可并行收集，但不得越过同一 required 信息门禁。
 

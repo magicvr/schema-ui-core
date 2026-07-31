@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-008
@@ -29,6 +29,7 @@ version: 0.3.0
 | A-001 | 2026-08-01 | self | 阶段 1 验收合同与证据计划 | fail | 1 |
 | A-002 | 2026-08-01 | self | 阶段 1 冻结候选计划审视（矩阵/环境/oracle/schema/CI） | pass | 0 |
 | A-003 | 2026-08-01 | self | 阶段 2 → 3 门禁（集成验收执行证据） | pass | 0 |
+| A-004 | 2026-08-01 | self | 阶段 3 → 4 门禁（VP 证据汇编） | pass | 0 |
 
 ## A-001 · 阶段 1 计划与信息门禁自审（2026-08-01）
 
@@ -195,3 +196,43 @@ version: 0.3.0
 ### 结论 + 建议下一步
 
 阶段 2 退出条件全部满足（pass）：集成验收已执行、机器可读证据已按 schema 落盘、失败/排除显式。**可进入阶段 3「VP 证据汇编与缺口整改」**：把 VP 三条退出判据逐条指向工作区 Q2 证据，required 缺口按 P-003 闭合，边界主张一致。
+
+## A-004 · 阶段 3 → 4 门禁审视（2026-08-01）
+
+- **source**：self
+- **auditor**：Claude Code `/govern`
+- **类型**：stage / execution-facts
+- **scope**：GOAL-008 阶段 3「VP 证据汇编与缺口整改」→ 阶段 4 门禁；VP-001 三条退出判据的 Q2 证据映射
+- **verdict**：pass
+
+### 范围与区间
+
+本审视核对阶段 3 退出条件：VP 三条判据逐条指向工作区 Q2 证据；无未闭合 required 缺口；边界主张一致。本审视不把汇编写成 VP 已可关门，也不改 Goal/VP status。
+
+### 成果（有证据）
+
+- **汇编产物**：[vp-evidence-assembly.md](attachments/vp-evidence-assembly.md) v0.1.0 把 VP-001 三条退出判据逐条映射到工作区 Q2 证据：
+  - 判据 1 → evidence-index C-001～C-004（web/api test+build、双服务+proxy、浏览器 E2E）+ CI run `30666932343` + protocol pin；
+  - 判据 2 → I-PROTO-001 v0.1.3、I-007-001 registry、stage3 conformance、docs/schemas；
+  - 判据 3 → runtime-probes `/api/accounts/me`、E2E session 断言、account-permission-oracle、dperm 17 例。
+- **缺口**：无 required 缺口；浏览器级拒绝未断言（C-006）与 reactions/batch/D-UPLOAD 均为登记排除，边界与 I-PROTO-001 v0.1.3、R5 一致。
+
+### 对照阶段 3 退出条件
+
+| 退出条件 | 状态 | 证据 |
+|----------|------|------|
+| VP 三条判据逐条指向工作区 Q2 证据 | **达成** | vp-evidence-assembly.md 三条映射表 |
+| 所有 required 缺口 fixed 或用户书面 residual/overruled | **达成** | 无 required 缺口；排除项已登记 |
+| 边界主张一致 | **达成** | 与 I-PROTO-001 v0.1.3、R5 登记一致 |
+
+### Findings
+
+无 open required / recommended finding 影响本门禁。
+
+### 必改项汇总（required 列表）
+
+无 open required。
+
+### 结论 + 建议下一步
+
+阶段 3 退出条件满足（pass）：VP 三条退出判据均有 Q2 工作区证据，无 required 缺口，边界一致。**可进入阶段 4「R6 关门审计与 VP 提案输入」**：跑 close-out 自审，开放 required=0 后由用户授权 Root R6/`progress`/status 变化；VP 关门提案另走 `/vision`。
