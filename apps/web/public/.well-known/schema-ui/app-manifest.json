@@ -27,6 +27,18 @@
       "route": "/activity"
     },
     {
+      "pageId": "data-table",
+      "title": "Data table",
+      "schemaUrl": "/api/schema/data-table",
+      "route": "/data-table"
+    },
+    {
+      "pageId": "search-form-table",
+      "title": "Search + table",
+      "schemaUrl": "/api/schema/search-form-table",
+      "route": "/search-form-table"
+    },
+    {
       "pageId": "settings",
       "title": "Settings",
       "schemaUrl": "/api/schema/settings",
@@ -46,6 +58,22 @@
         "pageRef": "catalog",
         "label": "Catalog",
         "icon": "boxes"
+      },
+      {
+        "label": "Examples",
+        "icon": "folder",
+        "items": [
+          {
+            "pageRef": "data-table",
+            "label": "Data table",
+            "icon": "table"
+          },
+          {
+            "pageRef": "search-form-table",
+            "label": "Search + table",
+            "icon": "search"
+          }
+        ]
       },
       {
         "label": "Workspace",

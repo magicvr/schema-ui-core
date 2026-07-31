@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-007
@@ -28,12 +28,42 @@ version: 0.2.0
 - 核验并登记已有可执行验证入口：`cd apps/web && npm test`（6 测试文件 / 94 项，覆盖 app-manifest / app-navigation / permissions-inheritance / account context / navigation / App integration）、`npm run build`、`cd apps/api && go test ./...`、`go build ./...`；D-APP（App.tsx / navigation.ts / app-manifest.ts / 静态 manifest）与 D-PERM（permissions.ts / account context / Go session/permission/handler）复用产物入账。
 - `I-007-001` → `verified`（**登记层面**）：登记表已建立并核验复用命令；阶段 3 的逐域结构/行为验证执行仍未开始，`I-PROTO-003` 保持 open。**未**修改 `apps/*` 实现。
 
+### 2026-07-31 · R5 阶段 2：实施子方案定稿
+
+- 用户裁决「不需要自审，直接推进」（P-004 §3.1 应答），并选择「先落实施子方案再实现」。
+- 记录决策 D-004：阶段 2 分三批实施（2a D-DATA/D-TABLE + Go 数据支撑 → 2b D-FORM/D-ACT → 2c D-EXPR + Renderer 接线）；`I-PROTO-004`（vendor vs pin）决策时点定在阶段 3 结构校验实现前，不阻断阶段 2。
+- 批次 2a 完成前不修改 `apps/*`；阶段 2 落地以 03 逐批记录证据，全部完成后再进入阶段 3。
+
+### 2026-07-31 · R5 阶段 2：批次 2a 实施完成（D-DATA / D-TABLE）
+
+**Go 列表/详情数据 API**（`apps/api/internal/handler/records.go`）：
+- 新增 `GET /api/records`（查询参数 `q` / `sort` / `order` / `page` / `pageSize`，`sort` 白名单 name/status/owner/updatedAt）与 `GET /api/records/{id}`（404 `RECORD_NOT_FOUND`）。静态 dev 数据集 8 条（`staticRecords()`，去业务化）；错误 fail-closed（非法参数 400）。
+- 注册于 `handler.Register`（health.go）；新增 `records_test.go` 6 项测试（默认列表、搜索、排序 desc、分页、非法参数、详情/404）。`go test ./...` 全绿（**21 项**）、`go build ./...` 通过。
+
+**Web 数据客户端与表格组件**（`apps/web/src/`）：
+- `renderer/records.ts`：`RecordItem`/`RecordList` 类型、`buildRecordsQuery`（query-serialization）、`parseRecordList`（response-mapping，fail-closed）、`fetchRecords`（request-construction）。新增 `records.test.ts` 11 项。
+- `components/data-table.tsx`：泛型可排序表格（`DataTable<T>`，aria-sort、asc/desc 切换、加载/错误/空态、自定义渲染）。新增 `data-table.test.tsx` 6 项。
+- `renderer/use-records.ts`：`useRecords` hook（query 状态、请求、loading/error、取消）。
+
+**范例页与接线**（`apps/web/src/app/`）：
+- `examples/data-table-page.tsx` 与 `examples/search-form-table-page.tsx`（搜索表单 + 表格）；`examples/registry.tsx` 按 pageId 分发到 `DataTable`/`SearchFormTable`；`App.tsx` `PageSurface` 命中范例页时渲染真实页面，否则维持 manifest fallback。
+- `public/.well-known/schema-ui/app-manifest.json` 登记 `data-table`（`/data-table`）与 `search-form-table`（`/search-form-table`）页面，sidebar 新增「Examples」分组；`App.tsx` icon registry 补 `table`/`search`。
+- 静态 manifest SHA 变更 → 同步 `upstream-fixtures.test.ts` 的 `STATIC_MANIFEST_SHA256`；`app-manifest.test.ts` 页面清单断言更新。
+
+**测试 / 构建 / 运行时证据**：
+- `npm test` 全绿（**9 测试文件 / 114 项**）；`npm run build`（tsc + vite）通过。
+- 运行时实测（起 `apps/api` + `apps/web` dev，Edge headless）：`/data-table` 渲染真实数据（Acme Console / Northwind Sales / Hooli Connect / Umbrella Ops…，含 active/pending 状态、alice 所有者），`/search-form-table` 渲染「8 records」+ `rec-8` Globex Admin；两页均无 Loading/Error。API 冒烟：list 默认（8 条）、`q=alice`（3 条）、`sort=updatedAt&order=desc`、detail `rec-3`、404 均正确；Vite 代理 `/api` 正常。
+- 登记表 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) 升 **v0.2.0**：D-DATA/D-TABLE 行「现状」→ 已实现，验证入口命令与证据入账，阶段 3 待接入清单移出已落地映射路径。
+
+**未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open）状态；Root `progress` 4/6；批次 2b（D-FORM/D-ACT）、2c（D-EXPR/Renderer）未开始。
+
 ## 待办
 
-1. 按登记表实现未覆盖域的范例页/场景（含必要 React/Go 支撑路径），复用并复核 R3/R4 已有产物。
-2. 落地 `node`/`page` schema 校验与已纳入 fixtures 对照（`reactions`、`component-format`、`request-construction`、`response-mapping`、`query-serialization`、`static-data`、`actions`、`request-lifecycle`、`table-sort`、`search-table`、`runtime-defaults` 等），登记可执行验证入口。
-3. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门。
+1. **批次 2b**：D-FORM §5 白名单控件 + D-ACT 非批量动作（范例 `admin-list-edit-lifecycle`）。
+2. **批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。
+3. 落地 `node`/`page` schema 校验与已纳入 fixtures 对照（`reactions`、`component-format`、`request-construction`、`response-mapping`、`query-serialization`、`static-data`、`actions`、`request-lifecycle`、`table-sort`、`search-table`、`runtime-defaults` 等），登记可执行验证入口；`I-PROTO-004` 决策先于阶段 3 结构校验实现。
+4. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门。
 
 ## 进度评估
 
-**契约发现与登记完成（阶段 1/4）**：`I-007-001` 登记表已落盘、复用命令已核验。范例实现（阶段 2）、结构/行为验证（阶段 3）、验收/关门（阶段 4）未开始（进度仅为展示，不放行阶段、不推导 `done`）。
+**阶段 1/4 完成（契约发现与登记）；阶段 2 批次 2a 完成（D-DATA/D-TABLE 范例 + Go 支撑）**。批次 2b、2c（阶段 2 剩余）、阶段 3（结构/行为验证）、阶段 4（验收/关门）未开始（进度仅为展示，不放行阶段、不推导 `done`）。

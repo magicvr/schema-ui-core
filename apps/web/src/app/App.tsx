@@ -7,13 +7,16 @@ import {
   LayoutDashboard,
   LogOut,
   PanelLeft,
+  Search,
   Settings,
+  Table2,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
+import { EXAMPLE_PAGES } from "@/app/examples/registry";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +35,9 @@ const iconRegistry: Record<string, LucideIcon> = {
   home: Home,
   logout: LogOut,
   menu: PanelLeft,
+  search: Search,
   settings: Settings,
+  table: Table2,
   user: UserRound,
 };
 
@@ -198,6 +203,10 @@ function PageSurface({
   }
 
   const pageTitle = route.page.title ?? route.page.titleKey ?? route.page.pageId;
+  const ExamplePage = EXAMPLE_PAGES[route.page.pageId];
+  if (ExamplePage !== undefined) {
+    return <ExamplePage />;
+  }
   return (
     <section className="space-y-8" aria-labelledby="page-title">
       <div className="flex flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
