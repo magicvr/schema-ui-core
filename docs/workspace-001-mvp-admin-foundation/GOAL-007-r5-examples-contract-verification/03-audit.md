@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.7.0
+version: 0.9.0
 ---
 
 # 审计 · GOAL-007
@@ -318,3 +318,126 @@ version: 0.7.0
 | date | actor | summary |
 |------|-------|---------|
 | 2026-08-01 | `/govern` | 响应 A-005（independent, conditional）：用户裁决「不需要自审，直接推进」（P-004 §3.1），并按 **`fixed`** 路径闭合 F-001～F-004；F-005（recommended）同步。实施与证据：F-001 → `fixed`（`render.ts` 以 `resolveActionGate` 区分「属性缺省」与「显式非法表达式」，显式非法 `visibleWhen`/`disabledWhen` fail-closed 并出 `ACTION_GATE_EXPRESSION_INVALID` 可核对错误；`tableActionGate` 返回 `{visible, disabled, errors}`，补非法 visible/disabled 回归测试）；F-002 → `fixed`（`render.tsx` `FormView` 经 `gateRenderFormFields` 在渲染前执行 D-FORM §5 whitelist、版本与 capability 门禁，非法 type / 低版本 / 缺 capability 拒绝受影响字段并出 `role="alert"` 错误；补 Renderer 级测试）；F-003 → `fixed`（`checkFormCapabilities` 为任一 `defaultValue` 字段增加 `protocolVersion >= 2.7` + `form.controls.advanced` 双门禁，补 2.6 / 2.7 缺 capability / 2.7 完整 capability 三组回归测试）；F-004 → `fixed`（Renderer whitelist 从 form/section/table 扩展至冻结 §5 全部 node type：grid/section/tabs/text/table/recordView/actionButton + form，逐 type 落 dispatch 与测试，不再静默窄于 v0.1.3 初表；无范围缩小故无需 Root 覆盖表修订）。F-005 → `fixed`（Root 00-meta R5 行同步「批次 2c 完成 / 阶段 2 全部落地」）。测试 / 构建 / 运行时：`npm test` 14 文件 **173 项** 全绿（+7：render.test.ts 重写 gate 断言 + render.test.tsx 新增 D-FORM 门禁拒绝与 §5 node dispatch 测试）、`npm run build`（tsc + vite）通过、`go test ./...` / `go build ./...` 通过、Edge headless 实测 `/form-with-reactions`（4 字段 + 无 alert）与 `/form-controls`、`/list-edit-lifecycle`、`/data-table`、`/search-form-table`（0 门禁错误）。D-007 已留痕。`I-PROTO-003` 仍 open（验收/关门门禁，阶段 3/4 未开始）。 |
+
+## A-006 · A-005 finding 闭合复审 + 阶段 2 完成后就绪性（2026-08-01）
+
+- **source**：independent
+- **auditor**：Grok 4.5 · xAI · `/audit`
+- **类型**：finding-closure + execution-facts
+- **scope**：复核 GOAL-007 对 A-005 F-001～F-004（required）与 F-005（recommended）的 `fixed` 闭合证据；核对「阶段 2 全部落地」主张在修复后是否可成立；评估进入阶段 3（结构/行为验证）的就绪性。**不**审计尚未执行的 schema/fixture 正式对照、`I-PROTO-003` 闭合、R5 验收或关门。
+- **verdict**：pass
+
+### 范围与区间
+
+当前工作区 `workspace-001-mvp-admin-foundation`，Root `GOAL-001-mvp-admin-foundation`，canonical `docs/workspace-001-mvp-admin-foundation/`。工作区 `plan_refs` / `primary_plan` = `VP-001-mvp-admin-foundation`；`shared_materials_catalog: none`，本意见未把共享资料引用当作事实或关闭证据。范围权威仍为 Root 冻结 [I-PROTO-001 v0.1.3](../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)。
+
+本轮只读核验：目标五件套 + `attachments/I-007-001-registry.md` v0.5.0 + 直接读代码（`render.ts` / `render.tsx` / `form-controls.ts` 及对应测试）+ 当前工作树复跑命令。
+
+### 成果（有证据）
+
+**命令复跑（本审计会话，2026-08-01）**
+
+| 命令 | 结果 |
+|------|------|
+| `cd apps/web && npm test` | 14 文件 / **173** 项全绿 |
+| `cd apps/web && npm run build` | tsc + vite 通过 |
+| `cd apps/api && go test ./...` | account + handler 包全绿（含 records list/detail/PATCH/DELETE 等） |
+| `cd apps/api && go build ./...` | 通过 |
+
+**A-005 F-001～F-005 闭合核对**
+
+| Finding | 声明闭合 | 本轮核对 | 结论 |
+|---------|----------|----------|------|
+| F-001 非法 action 表达式 fail-open | fixed | `resolveActionGate` 区分 absent → default vs 显式非法 → `ACTION_GATE_EXPRESSION_INVALID`；`tableActionGate` 返回 `{visible, disabled, errors}`（非法 visible → false，非法 disabled → true）；`render.test.ts` 含缺省 vs 非法、非法 visible/disabled 回归 | **闭合成立** |
+| F-002 RenderPage 未执行 D-FORM 门禁 | fixed | `FormView` 调用 `gateRenderFormFields`；whitelist / version / capability 拒绝字段并以 `role="alert"` 列出；`render.test.tsx` 覆盖缺 capability、未知 type | **闭合成立** |
+| F-003 defaultValue 缺 2.7+advanced | fixed | `checkFormCapabilities` 对任一 `defaultValue` 要求 `protocolVersion >= 2.7` + `form.controls.advanced`；`form-controls.test.ts` 含 2.6 / 缺 advanced / 完整 capability 三组 | **闭合成立** |
+| F-004 Renderer whitelist 窄于 §5 | fixed | `WHITELISTED_NODE_TYPES` + `isWhitelistedNodeType` 覆盖 grid/section/tabs/text/table/recordView/actionButton/form；`render.tsx` 逐 type dispatch；测试断言 §5 全 true、chart/modal/upload 仍 false；非缩小范围故无需新版覆盖表 | **闭合成立** |
+| F-005 Root R5 投影落后 | fixed | Root `00-meta.md` R5 行已写「阶段 1 + 批次 2a/2b/2c 完成（阶段 2 全部落地），阶段 3/4 未开始」；`progress` 仍 4/6 | **闭合成立** |
+
+**阶段 2 实现事实（与 A-002～A-004 一致，修复后仍成立）**
+
+- 批次 2a：Go records API + Web records/DataTable + `/data-table` `/search-form-table`。
+- 批次 2b：D-FORM 控件表面 + D-ACT `runRowAction` + PATCH/DELETE + `/form-controls` `/list-edit-lifecycle`。
+- 批次 2c：D-EXPR `reactions.ts` + D-COMP `RenderPage` + `/form-with-reactions`。
+- 登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) v0.5.0；`I-007-001` = verified（**登记层面**，非逐域验证已执行）。
+- 阶段 3/4 与父目标 `I-PROTO-003`（required，open）均未声称完成——文档与代码边界一致。
+
+### 对照成功标准（本 scope）
+
+| 标准 | 结论 | 证据 |
+|------|------|------|
+| A-005 required findings 合法闭合 | 满足 | 上表 F-001～F-004；路径 `fixed` + 代码/测试可重复核对 |
+| 阶段 2「全部落地」在修复后可成立 | 满足（条件见下） | 实现 + 173 项 web + build + go test/build；A-005 所指 fail-open / 窄 whitelist 已修 |
+| 结构/行为正式验证 | 未到阶段 | schema vendor/pin（`I-PROTO-004`）与纳入 fixtures 对照属阶段 3；本意见不把「未开始」改写为失败 |
+| `I-PROTO-003` / R5 验收关门 | 未到阶段且保持阻断 | Root 信息项仍 open/required；本意见不关闭、不放行 |
+
+### Findings
+
+无 **required** finding。开放 required = **0**。
+
+以下为 recommended / 如实记录，**不阻断**阶段 3 启动，亦**不**重新打开 A-005 F-001～F-004：
+
+#### F-001 · ActionButtonView 在 `visible: false` 时不渲染 `gate.errors`（recommended）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：`tableActionGate` API 与单元测试已对非法 `visibleWhen` 产出 `ACTION_GATE_EXPRESSION_INVALID`（F-001 核心 fail-closed 已满足）。`ActionButtonView` 在 `!gate.visible` 时直接 `return null`，UI 不展示 errors；非法 `disabledWhen` 路径则会在禁用按钮旁列出 errors。若阶段 3 希望「页面可观察错误」与 API 一致，可在隐藏路径保留可核对 alert（或文档明确仅 API/测试为核对面）。
+- **证据**：`apps/web/src/renderer/render.tsx` `ActionButtonView`；对比 `tableActionGate` + `render.test.ts`。
+
+#### F-002 · 范例页直连 `FormControls` 未强制 `gateRenderFormFields` 硬阻断（recommended）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：RenderPage 路径已闭合 F-002。`form-controls-page` 调用 `checkFormCapabilitiesRaw` 并展示错误，但 `gates.length > 0` 时仍渲染控件；`list-edit-lifecycle` 编辑表单直接使用 `FormControls` 未走 Renderer 门禁。属范例页一致性/教学路径，不否定 Renderer 级修复；阶段 3 可统一「展示路径必过门禁」纪律。
+- **证据**：`apps/web/src/app/examples/form-controls-page.tsx`、`list-edit-lifecycle-page.tsx`。
+
+#### F-003 · 登记表 §4 复用产物计数与 v0.5.0 §2 不一致（recommended）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：§2 验证入口已更新为 web 173 项 / form-controls 14 / render 14 / render.tsx 7；§4 复用表仍残留 v0.3/v0.4 计数（如 form-controls 13、render 11、render.tsx 4）。不改变实现事实，建议 `/govern` 同步文案，避免阶段 3 对照时误读。
+- **证据**：`attachments/I-007-001-registry.md` §2 vs §4。
+
+### 必改项汇总
+
+无。开放 required = 0。
+
+### 信息门禁（P-005）
+
+| 项 | 状态 | 本 scope |
+|----|------|----------|
+| `I-007-001` | verified（登记层面） | 不阻断阶段 3 启动 |
+| 父目标 `I-PROTO-003` | open / required；最晚 R5 验收前 | **阻断验收/关门**；不阻断阶段 3 实施 |
+| 父目标 `I-PROTO-004` | open / non-blocking | 阶段 3 **结构校验实现前**须决策 vendor vs pin（既定时点） |
+| 到期 required 信息项 | 无 | 本轮未到 R5 验收 |
+
+### 与既有意见的异同
+
+- **与 A-005**：同 scope 下 A-005 为 conditional（4 required open）；本意见在 D-007 / `fixed` 落地后复核闭合证据，**pass**。不否定 A-005 当时的发现，只确认响应后证据链可重复。
+- **与 A-002～A-004（self, pass）**：一致认为阶段 2 有可复核实现与测试；A-005 曾指出 self 漏检 fail-open / 窄 whitelist——本轮确认该缺口已修，与 self 的「批次可推进」结论在修复后可对齐。
+- **与响应表（A-005 响应）**：响应声明的测试计数（173）、闭合路径与本轮复跑一致；未发现「声明 fixed 但代码仍 fail-open」的关闭不实。
+
+### 结论 + 建议给编排器/用户的下一步
+
+A-005 四项 required finding 的 `fixed` 闭合可复核，阶段 2 在修复后可作为进入阶段 3 的基线；**verdict = pass**。不得据此关闭 `I-PROTO-003`、放行 R5 验收/关门，或抬升 Root `progress`（仍 4/6）。
+
+建议使用：
+
+```text
+/govern workspace-001-mvp-admin-foundation GOAL-007-r5-examples-contract-verification
+```
+
+响应 A-006（无 required）：可选同步登记表 §4 文案与 recommended F-001/F-002 UI 一致性；**主路径**进入阶段 3——先决策 `I-PROTO-004`（vendor vs pin），再落地 `node`/`page`/`action`/`reaction` schema 校验与已纳入 fixtures（含 `component-format` 五 case、`reactions`、`request-*`、`table-sort`/`search-table`、`runtime-defaults` 等）的可执行对照。
+
+### 声明
+
+本意见不修改 status/progress、路线图检查点、`I-PROTO-003` / `I-PROTO-004` 状态或 goal-tree；finding 响应与阶段推进由 `/govern` 处理。
+
+## 响应（对 A-006）
+
+| date | actor | summary |
+|------|-------|---------|
+| 2026-08-01 | `/govern` | 响应 A-006（independent, pass）：用户裁决「不需要自审，直接推进」（P-004 §3.1）。采纳 pass；开放 required=0。A-006 recommended：**F-003**（登记表 §4 计数）→ 随登记表 v0.6.0 **fixed**；**F-001/F-002**（ActionButtonView errors UI / 范例页门禁一致性）→ 跟踪，不阻断阶段 3。主路径：`I-PROTO-004`=**vendor**（D-008）+ 阶段 3 落地——schemas/fixtures vendor+SHA pin；Ajv 结构校验；纳入 fixture suites 执行/覆盖记账（`npm test` **326** 项 / build / go test 全绿）。`I-PROTO-003` 仍 open（验收/关门）；Root `progress` 仍 4/6。 |

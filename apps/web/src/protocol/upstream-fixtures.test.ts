@@ -583,20 +583,18 @@ describe("pinned schema-ui-docs fixture artifacts", () => {
       "https://github.com/magicvr/schema-ui-docs/tree/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
     );
     expect(provenanceArtifact.value.artifactVersion).toBe("2.7.0");
-    expect(provenanceArtifact.value.artifacts).toEqual([
-      {
-        path: "docs/schemas/app-manifest.schema.json",
-        sha256: APP_MANIFEST_SCHEMA_SHA256,
-      },
-      {
-        path: "conformance/fixtures/app-manifest/cases.json",
-        sha256: APP_MANIFEST_FIXTURE_SHA256,
-      },
-      {
-        path: "conformance/fixtures/app-navigation/cases.json",
-        sha256: APP_NAVIGATION_FIXTURE_SHA256,
-      },
-    ]);
+    // R3 baseline artifacts remain pinned; R5 stage 3 extends provenance with
+    // additional schemas/fixtures (see stage3-fixtures.test.ts for full set).
+    const byPath = new Map(
+      provenanceArtifact.value.artifacts.map((artifact) => [artifact.path, artifact.sha256]),
+    );
+    expect(byPath.get("docs/schemas/app-manifest.schema.json")).toBe(APP_MANIFEST_SCHEMA_SHA256);
+    expect(byPath.get("conformance/fixtures/app-manifest/cases.json")).toBe(
+      APP_MANIFEST_FIXTURE_SHA256,
+    );
+    expect(byPath.get("conformance/fixtures/app-navigation/cases.json")).toBe(
+      APP_NAVIGATION_FIXTURE_SHA256,
+    );
     expect(createHash("sha256").update(schemaArtifact.bytes).digest("hex")).toBe(
       APP_MANIFEST_SCHEMA_SHA256,
     );

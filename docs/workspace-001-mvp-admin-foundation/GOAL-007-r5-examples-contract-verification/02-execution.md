@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 执行记录 · GOAL-007
@@ -139,12 +139,54 @@ version: 0.7.0
 
 **未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open，non-blocking，阶段 3 结构校验前决策）状态；Root `progress` 4/6；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。
 
+### 2026-08-01 · 响应 A-006 + I-PROTO-004=vendor + 阶段 3 落地
+
+用户裁决「不需要自审，直接推进」；`I-PROTO-004` 选 **vendor**；进入阶段 3（D-008）。
+
+**Vendor 产物**（pin commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`，`artifactVersion` 2.7.0）：
+
+- Schemas → `docs/schemas/`：`node` / `page` / `action` / `reaction` / `component-registry`（叠加既有 `app-manifest`）；SHA 记入 `apps/web/src/protocol/upstream/provenance.json`。
+- Fixtures → `apps/web/src/protocol/upstream/*.cases.json`：actions、component-format、query-serialization、reactions、request-construction、request-lifecycle、response-mapping、runtime-defaults、search-table、static-data、table-sort、version-negotiation（叠加既有 app-manifest / app-navigation）。
+
+**结构校验**（`apps/web/src/protocol/conformance/schema-validate.ts`，Ajv draft-07）：
+
+- `validateAgainstSchema('page'|'node'|…)`；§5 白名单 sample page 可过 `page`/`node` schema；缺 type / 缺 protocolVersion 拒绝。
+
+**行为 fixture 适配器**（`apps/web/src/protocol/conformance/`）：
+
+| Suite | 处理 | 说明 |
+|-------|------|------|
+| component-format | 全量执行 5 | 格式 wire 类型无强制转换 |
+| query-serialization | 全量执行 16 | ADR-0010 序列化 |
+| static-data | 全量执行 9 | static/ref 形状 |
+| request-lifecycle | 全量执行 4 | latest-wins / hide-drop |
+| runtime-defaults | 全量执行 9 | baseURL / defaults / form init |
+| response-mapping | 全量执行 23 | table/chart/formRecord/recordView |
+| search-table | 全量执行 11 | 四层 merge + selection |
+| table-sort | 全量执行 14 | 三态 sort + L2 validate |
+| version-negotiation | 全量执行 44 | 严格版本 + capability |
+| actions | 全量执行 11 | 非批量 transport→events |
+| reactions | 全量记账排除 16 | 上游 `$deps` 字段写引擎 ∉ MVP `$context` 子集 |
+| request-construction | 全量记账 75 | batch Q1 排除；其余 deferred 统一引擎（partial 由 records/row-action 覆盖） |
+
+**测试 / 构建证据**：
+
+- `cd apps/web && npm test` → **15 文件 / 326 项** 全绿（+153 stage3 + 既有 173）。
+- `cd apps/web && npm run build`（tsc + vite）通过。
+- `cd apps/api && go test ./...` / `go build ./...` 通过（Go 侧无改动）。
+- 依赖：`ajv@8`（devDependency，schema 校验）。
+
+**登记表**：`attachments/I-007-001-registry.md` 升 **v0.6.0**——阶段 3 验证入口命令与逐 suite 执行状态入账；§4 复用计数与 §2 对齐（A-006 F-003）。
+
+**未改动**：父目标 `I-PROTO-003`（required，open，R5 验收/关门门禁）；Root `progress` 4/6；阶段 4（验收/关门）未开始。`I-PROTO-004` → verified（Root 同步）。
+
 ## 待办
 
 1. ~~**批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。~~ **完成（2026-08-01）**。
-2. 落地 `node`/`page` schema 校验与已纳入 fixtures 对照（`reactions`、`component-format`、`request-construction`、`response-mapping`、`query-serialization`、`static-data`、`actions`、`request-lifecycle`、`table-sort`、`search-table`、`runtime-defaults` 等），登记可执行验证入口；`I-PROTO-004` 决策先于阶段 3 结构校验实现。
-3. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门。
+2. ~~落地 `node`/`page` schema 校验与已纳入 fixtures 对照；`I-PROTO-004` vendor。~~ **完成（2026-08-01，阶段 3）**。
+3. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门（阶段 4）。
+4. 可选：补齐 `request-construction` 统一 host 引擎；MVP `$context` reactions 与上游 suite 的差异文档化给验收。
 
 ## 进度评估
 
-**阶段 1/4 完成（契约发现与登记）；阶段 2 批次 2a（D-DATA/D-TABLE）、批次 2b（D-FORM/D-ACT）与批次 2c（D-EXPR/D-COMP）完成——阶段 2 全部落地**。阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始（进度仅为展示，不放行阶段、不推导 `done`）。
+**阶段 1–3 完成**（契约发现与登记；范例实现；结构/行为验证）。**阶段 4（验收与关门）未开始**。进度仅为展示，不放行验收、不推导 `done`，不抬升 Root `progress`（仍 4/6）。

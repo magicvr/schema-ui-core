@@ -4,8 +4,8 @@ doc: decision
 status: active
 parent: null
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.6.0
+updated: 2026-08-01
+version: 0.7.0
 ---
 
 # 决策记录 · GOAL-001
@@ -17,9 +17,9 @@ version: 0.6.0
 | ID | 级别 | 最晚阶段 | 状态 | 阻断 |
 |----|------|----------|------|------|
 | I-PROTO-001 | required | R2 方案冻结前 | **verified**（D-009；v0.1.3 冻结基线） | R2 已冻结；不得把该子集表述为完整协议支持，R4/R5 仍受各自信息门禁约束 |
-| I-PROTO-002 | required | R4 实施前 | open | 未 verified 前不得宣称账号权限链路完成 |
+| I-PROTO-002 | required | R4 实施前 | **verified**（GOAL-006 D-004） | 设计/映射闭合；R4 已关门 |
 | I-PROTO-003 | required | R5 验收前 | open | 未 verified 前不得验收/对照 VP 退出判据关门 |
-| I-PROTO-004 | non-blocking | 实施前为宜 | open | 不阻断开区；影响校验工程策略 |
+| I-PROTO-004 | non-blocking | 阶段 3 结构校验前 | **verified**（GOAL-007 D-008 vendor） | schemas/fixtures 进仓 + SHA pin |
 | I-STACK-001 | required | R1 实施前 | **verified**（D-004） | 已确认 monorepo 布局与包管理；可启动 R1 子目标实施 |
 | I-STACK-002 | non-blocking | R1 内 | **verified**（D-004） | monorepo `apps/web`+`apps/api`；端口/env 细节随 GOAL-002/003 |
 
@@ -383,3 +383,25 @@ version: 0.6.0
 
 - 工作区 `goal-tree.md` 新增 `GOAL-007-r5-examples-contract-verification`（`active`）；Root 路线图 R5 标记为「规划中」。
 - 不修改 `I-PROTO-003` / `I-PROTO-004` 状态；不改变 Root `status` / `progress`；放行 R5 验收仍受 `I-PROTO-003` 门禁约束。
+
+## D-012 · I-PROTO-004 选定 vendor（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+将 `I-PROTO-004`（vendor vs pin）定为 **vendor**：上游 `schema-ui-docs@2.7.0` commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` 的结构 schema 与纳入 fixture suites 固定进仓，并由 SHA 在 `apps/web/src/protocol/upstream/provenance.json` 锁定。执行与证据由 GOAL-007 D-008 / 阶段 3 承载。
+
+**为什么**：
+
+- 与 R3 已 vendor 的 `app-manifest.schema.json` 模式一致；离线/CI 可复核。
+- 阶段 3 结构校验实现前的既定决策时点已到（GOAL-007 A-006 建议路径）。
+
+**未选方案**：
+
+- **pin 远程校验**：依赖网络与上游可用性，不利于 fork/离线证据。
+
+**影响**：
+
+- `I-PROTO-004` → **verified**；`I-PROTO-003` 仍 open；Root `progress` 仍 4/6。
