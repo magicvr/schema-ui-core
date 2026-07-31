@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r1-api-go-scaffold
 title: R1 · Go API 工程骨架
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-003 · R1 · Go API 工程骨架

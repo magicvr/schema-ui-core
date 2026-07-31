@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r1-web-react-scaffold
 doc: execution
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-004
@@ -29,11 +29,16 @@ version: 0.2.0
 - 验证：`npm install`；`npm run build` 成功（tsc -b + vite build）。
 - **未做**：Admin 导航壳、业务路由、协议 Renderer 实现。
 
+### 2026-07-31 · 阶段/关门自审通过 → done
+
+- `/govern` 与 GOAL-002/003 同轮：R1 阶段自审；写入 **A-003**（source: self；verdict: **pass**）。
+- 本轮复验：`npm run build` 成功；成功标准对照见 A-003。
+- `status` → **`done`**；同步 goal-tree。
+
 ## 待办（计划 · 非完成事实）
 
-1. 本地 `npm run dev` 人工确认主题切换（构建已过）。
-2. 阶段自审 / 可选 `/audit` 后评估关门。
+- （本目标已关门）可选浏览器点选主题（recommended，非阻断）。
 
 ## 进度评估
 
-**可构建前端骨架已落地**；对照成功标准见 `00-meta` 勾选。未标 `done`。
+**已关门**（A-003 pass）。可构建 React Web 骨架与 UI 基线交付完成。

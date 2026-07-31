@@ -1,11 +1,11 @@
 ---
 id: GOAL-002-r1-repo-layout-conventions
 doc: decision
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.2.1
 ---
 
 # 决策记录 · GOAL-002

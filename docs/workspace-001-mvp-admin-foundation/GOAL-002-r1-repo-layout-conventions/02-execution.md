@@ -1,11 +1,11 @@
 ---
 id: GOAL-002-r1-repo-layout-conventions
 doc: execution
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-002
@@ -25,11 +25,16 @@ version: 0.2.0
 - 新建根 [README.md](../../../README.md)：文档入口 + 运行契约链到 monorepo 与 app README。
 - **未**在本目标创建可运行 `apps/*` 工程树（服从 D-002）。
 
+### 2026-07-31 · 阶段/关门自审通过 → done
+
+- `/govern` 用户指令：R1 阶段自审，通过则关门。
+- 写入 `03-audit` **A-003**（source: self；verdict: **pass**）；对照成功标准全部达成；开放 required = 0。
+- `status` → **`done`**；同步 goal-tree。
+
 ## 待办（计划 · 非完成事实）
 
-1. 阶段自审 / 可选 `/audit` 后评估关门。
-2. 003/004 README 稳定后可再收紧根 README 链接表述（已预留）。
+- （本目标已关门）可选：003/004 稳定后微调根 README 措辞（非阻断）。
 
 ## 进度评估
 
-**约定文档已落盘**；成功标准必达项对照见 `00-meta` 勾选。未标 `done`（建议阶段审后再关门）。
+**已关门**（A-003 pass）。约定文档与 D-002 边界交付完成。

@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r1-web-react-scaffold
 title: R1 · React Web 工程骨架
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-004 · R1 · React Web 工程骨架

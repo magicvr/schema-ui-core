@@ -1,11 +1,11 @@
----
+﻿---
 id: GOAL-004-r1-web-react-scaffold
 doc: audit
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-004
@@ -19,6 +19,7 @@ version: 0.3.0
 | 影响本 scope 的 I-00N | I-004-001/002 **verified**（D-002） | 分层策略 B 已锁 |
 | 到期 required | 无 | 可冻结骨架目录并实施 |
 | 资料引用 | 无 | 平行仓外部参考 |
+| 关门 required | 无 | A-003 关门审：开放 required finding = 0 |
 
 ## 意见台账索引
 
@@ -26,6 +27,7 @@ version: 0.3.0
 |------|------|--------|-------|---------|---------------|
 | A-001 | 2026-07-31 | independent | 目标定义 + 设计/计划（R1 React 骨架） | conditional | F-001 → 见 A-002 闭合 |
 | A-002 | 2026-07-31 | self（编排响应） | 响应 A-001 · F-001 | pass | 0 open required |
+| A-003 | 2026-07-31 | self | R1 阶段/关门审 · React Web 骨架 | pass | 0 |
 
 ---
 
@@ -136,3 +138,65 @@ version: 0.3.0
 ### 结论
 
 可实施 `apps/web` 骨架。
+
+---
+
+## A-003 · R1 阶段/关门自审 · React Web 骨架（2026-07-31）
+
+- **source**：self
+- **auditor**：Grok · `/govern`
+- **类型**：execution-facts / close-out
+- **scope**：R1 实施事实对照成功标准；评估关门
+- **verdict**：**pass**
+- **模式**：stage + close-out（与 GOAL-002/003 同轮 R1 自审）
+
+### 范围与区间
+
+- 工作区：`workspace-001-mvp-admin-foundation`
+- 审 `apps/web` 可构建骨架与 UI 基线；不审 Admin 导航壳（R3）与协议 Renderer 全量（R5）
+- A-001 required 已由 A-002 `fixed`；I-004-001/002 verified
+
+### 成果（有证据）
+
+| 项 | 证据路径 |
+|----|----------|
+| npm 工程 | `apps/web/package.json` + `package-lock.json`；脚本 `dev` / `build` |
+| React 19 + Vite + TS | package.json deps；`src/main.tsx` / `App.tsx` |
+| Tailwind 4 | `@tailwindcss/vite` + `tailwindcss` |
+| shadcn 痕迹 | `components.json`（new-york）；`src/components/ui/button.tsx` |
+| 主题占位 | `src/components/theme-toggle.tsx`（dark class + localStorage） |
+| 分层目录 | `src/host|protocol|renderer/README.md` |
+| 构建 | 本轮 `npm run build` 成功（tsc -b + vite build） |
+| 无业务路由树 | `App.tsx` 单页占位；无 order/wallet mock 路由 |
+
+### 对照成功标准
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| package.json + lock；dev/build 脚本 | **达成** | package.json |
+| npm install + dev（或文档命令）可启动 | **达成** | README 契约；node_modules 存在；dev 脚本 = vite |
+| TS + Vite + React 19 可构建 | **达成** | 本轮 `npm run build` 通过 |
+| Tailwind + shadcn 痕迹 + ≥1 示例组件 | **达成** | components.json + button.tsx |
+| 浅/深色最小占位 | **达成** | ThemeToggle |
+| 预建 host/protocol/renderer + 边界 README | **达成** | 三目录 README |
+| 无业务默认路由 / 无导航壳 | **达成** | App.tsx 单页 |
+
+### Findings
+
+无 open **required** finding。
+
+#### F-001 · recommended · low · 未在本轮重跑 `npm run dev` 浏览器人工点选主题
+
+- **现象**：execution 曾记「本地 dev 人工确认主题切换」为计划项；本轮自审以源码 + build 证据验收主题占位，未开浏览器点选。
+- **评价**：成功标准为「最小占位存在」而非 E2E；**不阻断关门**。
+- **状态**：open（recommended only）
+
+### 必改项汇总
+
+（无）
+
+### 结论 + 建议下一步
+
+**结论**：React Web R1 骨架可构建、UI 基线与分层边界符合 D-002；开放 required = 0 → **pass**，`status` → **`done`**。
+
+**后续**：R3 Admin 外壳；Root R1 三子目标均关门后可标纲领 R1 完成。

@@ -5,7 +5,8 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
+progress: 1/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-docs@v2.7.0 为协议边界
@@ -33,17 +34,17 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 ## 成功标准（方向级 · 可验证）
 
-- [ ] 存在可运行、可 fork 的 React 前端与 Go 后端工程骨架，并以固定协议版本为兼容边界（文档/配置可指回 pin）。
+- [x] 存在可运行、可 fork 的 React 前端与 Go 后端工程骨架，并以固定协议版本为兼容边界（文档/配置可指回 pin）。
 - [ ] MVP 协议覆盖子集已书面冻结（`I-PROTO-001` verified），且每一纳入项有前后端实现路径。
 - [ ] 核心账号与权限链路具备可验证的前后端集成（对照 `D-PERM` / `I-PROTO-002`）。
 - [ ] 每一纳入能力有可观察范例页面（或场景）与可执行验证入口（`I-PROTO-003`）。
-- [ ] 未主张“支持全部协议功能”；未纳入项有明确边界说明。
+- [x] 未主张“支持全部协议功能”；未纳入项有明确边界说明。
 
 ## 纲领路线图（P-001）
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
-| R1 | 工程骨架与仓库约定 | 进行中 | React + Go 目录/构建/本地运行约定；不实现业务能力。子目标：GOAL-002/003/004；I-STACK-001/002 已 verified（D-004） |
+| R1 | 工程骨架与仓库约定 | **完成** | 子目标 GOAL-002/003/004 均 `done`（2026-07-31 A-003 self pass）；`apps/*` + monorepo 约定已交付；I-STACK-001/002 verified |
 | R2 | MVP 协议覆盖子集冻结 | 未开始 | 决策 + `I-PROTO-001`；方案冻结门禁 |
 | R3 | Admin 外壳与导航 | 未开始 | App manifest / 导航壳；浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | 未开始 | 依赖 R2；前后端鉴权与 `D-PERM` 映射（`I-PROTO-002`） |
@@ -54,7 +55,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 ## 派生进度展示
 
-当前 6 个纲领检查点均未完成 → frontmatter **省略** `progress`（goal-tree 显示 `—`）。任一点完成后等权重算并同步 goal-tree。progress **不**放行阶段、不关闭 finding、不推导 `done`。
+纲领检查点 **1/6** 完成（R1）→ frontmatter `progress: 1/6`（goal-tree 同步）。progress **不**放行阶段、不关闭 finding、不推导 `done`。
 
 ## 信息就绪与未知项（P-005）
 
