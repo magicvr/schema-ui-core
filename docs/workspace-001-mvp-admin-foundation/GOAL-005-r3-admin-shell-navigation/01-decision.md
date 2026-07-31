@@ -5,14 +5,14 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.1
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-005
 
 ## 信息需求与阶段门禁
 
-P-005 信息台账维护在 [00-meta.md](00-meta.md)。本目标的 `I-005-001` 至 `I-005-005` 均为 required/open；在对应最晚阶段前未 verified，且没有用户书面接受的有界 residual 时，不得冻结方案或进入受影响的实施门禁。
+P-005 信息台账维护在 [00-meta.md](00-meta.md)。D-005 已将 `I-005-001` 至 `I-005-005` 的可核对结论落盘并标为 `verified`；后续协议、路由或 shell 边界变化须重新核验对应证据，不得把本目标的 R3 子集扩大为完整协议支持。
 
 父目标的 `I-PROTO-002` 与 `I-PROTO-003` 分别属于 R4/R5 的后续门禁。本目标不修改其状态，也不以 `I-PROTO-001=verified` 替代它们。
 
@@ -98,3 +98,35 @@ R3 规划以 `protocol-inventory-v2.7.0.md` 登记的 source commit `ca9e5fe207c
 **影响**：
 
 这只闭合 A-001 的 F-001 文档一致性 finding，不验证或关闭任何 `I-005-*`。R3 仍不得方案冻结、实施或关门；用户在未来拟用独立审计推进方案冻结前，仍须按 P-004.1 决定是否进行同 scope 自审。
+
+## D-005 · 冻结 R3 manifest、导航、路由与 shell 子集
+
+**日期**：2026-07-31
+**状态**：accepted
+**关联信息项**：`I-005-001` 至 `I-005-005` → `verified`
+
+**决定**：
+
+1. **协议与来源**：R3 采用 `schema-ui-docs@2.7.0`、commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` 作为固定来源。仓库内保留 `docs/schemas/app-manifest.schema.json` 与 app-manifest/app-navigation fixture 副本，并以 `apps/web/src/protocol/upstream/provenance.json` 记录来源、相对路径和 SHA-256；运行时不访问远程协议源。生产 validator 是针对 R3 2.7 host subset 的 fail-fast TypeScript 实现，不宣称完整 JSON Schema 或完整 conformance 支持。
+2. **装载与失败边界**：`loadAppManifest()` 只接受 HTTP 成功且能通过 `validateAppManifest()` 的 JSON；HTTP、解析、协议版本、必需 capability、字段和导航结构错误均以 `ManifestError` fail closed，`main.tsx` 渲染 `ManifestFailure`，不渲染不可信页面。
+3. **导航映射**：manifest 的 `navigation.top`、`navigation.sidebar`、`navigation.user` 分别投影到 header、desktop sidebar/mobile nav 和 user navigation。`pageRef` 解析到注册 page 的 route；`url` 保留为站内 URL；group 只保留可见 child，空 group 被移除；`visibleWhen`/`permissions.view` 只做当前上下文的结构过滤，不构成 R4 身份或权限实现。
+4. **路由与 active**：D4a 依次按 literal 数量、route 模板长度、声明顺序选择匹配；URL query 不参与 route match，空或尾斜杠 segment 不被规范化。`/` 在有非参数 `homePageRef` 时用 `history.replaceState` 进入 home；已知 deep link 优先；站内链接用 `pushState`；未知路径保留并显示 fallback，可返回 home。参数化 `pageRef` 只有当前路径能提供绑定参数时才生成具体 href，但仍可作为 active 匹配目标。
+5. **shell 边界**：R3 固定 app identity/header、top/user navigation、responsive mobile navigation、desktop sidebar、main page surface 和 route fallback。page schema renderer、业务页面、真实身份/权限上下文、R4 权限产品化、R5 全量 renderer、完整主题系统和完整协议支持均留在后续目标。
+6. **上游 fixture 对照**：测试执行 35/37 个 app-manifest cases 与 16/16 个 app-navigation cases；4 个 negotiation 与 1 个 decoupled-version case 使用明确标注的 fixture-only adapter，不改变生产 host API。仅排除两条 upstream M1 schema error-envelope case，因为上游使用 `CAPABILITY_REQUIRED` 聚合错误，而 R3 fail-fast host 使用 `MISSING_REQUIRED_CAPABILITY`；排除原因由机器断言和测试台账固定。
+
+**为什么**：
+
+- 这些结论直接对应 `I-005-001` 至 `I-005-005`，并能由实现、固定 artifact、fixture 测试和 App 集成测试复核。
+- 2.7 exact host 与 fixture-only negotiation 分离，避免将旧版本协商样例误写成生产兼容承诺。
+- 明确 empty/unknown/fallback、参数 href、空上下文和 R4/R5 边界，避免实现细节在关门时被误读为更大的产品承诺。
+
+**未选方案**：
+
+- **运行时远程拉取 schema 或 fixture**：不可复现且会使固定来源之外的网络状态影响验证；采用仓库内 pinned copy + hash。
+- **把 2.5 negotiation 当作生产 loader 能力**：R3 生产 host 保持 exact `2.7`，协商样例仅在 fixture adapter 中验证。
+- **为参数化 pageRef 伪造默认参数**：会生成不可证明的 URL；无绑定时不提供 href。
+- **把空 navigation context 解释为 R4 鉴权**：R3 只定义结构过滤和可注入测试 context，真实身份/权限来源留给 R4。
+
+**影响**：
+
+本决策冻结 R3 实施与验收边界，允许响应 A-004 F-001；不修改 Root `I-PROTO-004`、`I-PROTO-002` 或 `I-PROTO-003`，也不直接将 GOAL-005 标为 `done`。实施事实和关门证据分别记录在 `02-execution.md` 与 `03-audit.md`。

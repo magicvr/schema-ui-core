@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.6.5
+version: 0.7.0
 ---
 
 # 执行记录 · GOAL-001
@@ -116,16 +116,22 @@ version: 0.6.5
 - 已追加审计响应 [A-006](03-audit.md)：接受 A-005 的 `pass` 作为冻结证据，保留 A-003 `F-001` / `F-002` 的 `fixed` 闭合。
 - **未做**：未将冻结基线表述为完整协议支持；未开始 R3/R4/R5 实现；`I-PROTO-002` / `I-PROTO-003` 仍分别为 R4 / R5 的开放 required 门禁。
 
-### 2026-07-31 · 立项 R3 Admin 外壳与导航子目标
+### 2026-07-31 · 立项 R3 Admin 外壳与导航子目标（历史快照）
 
 - 按 R2 冻结后的 Root 路线图和 D-009/A-006 留痕，创建 [GOAL-005-r3-admin-shell-navigation](../GOAL-005-r3-admin-shell-navigation/00-meta.md)。
 - 在 R3 五件套中记录 App manifest 装载、Admin shell、导航入口和路由语义的范围、四阶段路线图，以及 `I-005-001` 至 `I-005-005` required/open 信息项。
 - 同步 `goal-tree.md` 新增 GOAL-005；Root 仍为 `active`、纲领进度仍为 `2/6`。
-- **未做**：未修改 `apps/web`，未实现 manifest loader/router/navigation/shell；未关闭 `I-PROTO-002` / `I-PROTO-003`，未开始 R3 实施。
+- **截至立项时未做**：未修改 `apps/web`，未实现 manifest loader/router/navigation/shell；未关闭 `I-PROTO-002` / `I-PROTO-003`，未开始 R3 实施。后续实施事实见下一节。
+
+### 2026-07-31 · GOAL-005 R3 实施事实
+
+- GOAL-005 已依据 D-005 冻结 R3 的 2.7 manifest 子集、pinned schema/fixture provenance、三 slot navigation projection、D4a route/active/fallback、参数 pageRef href 和 shell/R4/R5 边界。
+- `apps/web` 工作树已包含 manifest validator/loader、navigation projection、History shell、ManifestFailure、静态 manifest 和 upstream fixture 对照；GOAL-005 执行台账记录 73 项测试通过、`npm run build` 成功，以及 dev server manifest endpoint 返回 `200`、协议 `2.7`、4 pages。
+- 当前事实仍是未提交工作树；GOAL-005 保持 `active`，等待 P-004.1 self-audit 选择和最终关门。Root 继续保持 `active`、progress `2/6`，R4/R5 与 `I-PROTO-002`/`I-PROTO-003` 不受本次 R3 实施事实改变。
 
 ## 待办（计划 · 非完成事实）
 
-1. 解析并冻结 R3 的 manifest、导航、路由和 shell 契约。
+1. 完成 GOAL-005 的实施阶段 self-audit 与关门；R3 manifest、导航、路由和 shell 契约已由 GOAL-005 D-005 冻结。
 2. R4 前闭合 `I-PROTO-002`，R5 验收前闭合 `I-PROTO-003`。
 3. 按 R3-R6 推进；开放 required 信息项到期前不得越过对应门禁。
 

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.0
+version: 0.6.0
 ---
 
 # 审计 · GOAL-005
@@ -16,10 +16,10 @@ version: 0.4.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | `I-005-001` 至 `I-005-005` 均 open/required | 见 [00-meta.md](00-meta.md) |
-| 到期 required 是否已 verified / residual | 当前未进入方案冻结或实施门禁；不能放行 | 未有用户书面 residual；五项均 open；A-001 F-001 已由 A-002 `fixed` |
-| 固定资料引用 | 部分固定（愿景/清单级 pin） | artifact `2.7.0` + commit `ca9e5fe…` 已登记；`shared_materials_catalog: none`，无工作区共享资料引用；本地 schema/fixture 接入仍待确认 |
-| 当前实现证据 | 未开始 | `apps/web` 仍为 R1 单页占位；无 router / manifest loader / navigation shell 实现 |
+| 影响本 scope 的 I-00N | `I-005-001` 至 `I-005-005` 均 `verified` | 见 [00-meta.md](00-meta.md) 与 D-005；A-005 响应确认冻结证据已入账 |
+| 到期 required 是否已 verified / residual | **信息项已满足；关门仍阻断** | A-004 F-001 已由 A-005 `fixed`；实施 self-audit 选择和 A-004 F-003 仍未闭合 |
+| 固定资料引用 | 已固定 R3 subset 资料 | artifact `2.7.0` + commit `ca9e5fe…`、本地 schema/fixture copies 与 provenance SHA-256 已登记；`shared_materials_catalog: none`；不宣称完整官方 conformance |
+| 当前实现证据 | **已入执行台账，仍为未提交工作树** | `02-execution.md` 记录 manifest loader、校验、导航投影、History shell、73 tests、build 和 dev server HTTP 复核；代码尚未声称进入 HEAD |
 
 ## 意见台账索引
 
@@ -28,12 +28,14 @@ version: 0.4.0
 | A-001 | 2026-07-31 | independent | R3 目标定义 / 规划立项与信息门禁就绪性 | conditional | 1（F-001） |
 | A-002 | 2026-07-31 | self（编排响应） | A-001 F-001 修正与 recommended 响应 | conditional | 0（F-001 fixed；`I-005-*` 仍 open） |
 | A-003 | 2026-07-31 | self | R3 规划阶段同 scope 自审 | conditional | 0（无新增 finding；`I-005-*` 仍 open） |
+| A-004 | 2026-07-31 | independent | R3 实现 / 执行事实 / 验证 / 关门就绪 | **fail** | 3（F-001～F-003；另见 recommended F-004～F-006） |
+| A-005 | 2026-07-31 | self（/govern 响应） | 响应 A-004 F-001～F-003 | **conditional** | 1（F-003；等待 P-004.1） |
 
 ## 当前开放门禁
 
 - `I-005-001` 至 `I-005-005` 在其最晚阶段前必须完成验证，或按 P-004 留下有范围和复审触发的用户书面 residual。
 - A-001 **F-001** 已由 A-002 以 `fixed` 闭合：I 表与 D-002 现均要求在方案冻结前处理 `I-005-001` 至 `I-005-005`；这不等同于任何信息项已 verified，也不放行方案冻结。
-- 在相关 required 信息项和审计意见处理完成前，不得把 R3 方案冻结、实现或 `status: done` 写成已放行事实。
+- **A-004 / A-005**：F-001（方案冻结）与 F-002（执行事实）已由 A-005 以 `fixed` 闭合；F-003 的 fixture、集成和 dev server 证据已补入，但实施同 scope self-audit 仍须由用户按 P-004.1 明确选择，因此 F-003 继续开放。**不得**将 R3 标为 `done`，也不得把本响应或单元测试/exit code 单独当作放行证据。
 - 本目标不处理父目标的 `I-PROTO-002` / `I-PROTO-003`；它们仍分别阻断 R4 实施和 R5 验收/关门。
 - 父目标 `I-PROTO-004`（vendor vs pin）仍 open（non-blocking 于 Root），现已通过 `I-005-001` 显式关联；关闭该项时仍须记录校验方式和失败边界。
 
@@ -186,8 +188,8 @@ version: 0.4.0
 
 ## 当前结论与下一步
 
-- 一句话结论：R3 的信息表与 D-002 现已一致，A-001 F-001 已闭合；五项 required 信息仍 open，方案冻结、实施和关门均未放行。
-- 建议下一步：信息收集 `I-005-*`（勿实施代码）；本轮规划阶段同 scope 自审已完成，信息项全部 verified 或经用户书面接受有界 residual 后再冻结方案、进入实施，并在 R3 实施完成后执行阶段自审再申请关门。
+- 一句话结论：A-001/A-002/A-003 属**规划阶段历史**；A-004（independent）对当前工作树复核后，R3 **实现代码已出现且单元测试/构建可跑通**，但治理台账、P-005 信息门禁、方案冻结与验收证据严重滞后，**关门就绪 fail**。
+- 建议下一步：用 **`/govern` 响应 A-004**——先闭合 F-001～F-003（回填决策/执行事实、关闭或 residual `I-005-*`、补齐可核对验证与成功标准证据），再讨论是否进入 R3 阶段自审与关门；不要仅凭截图或 exit code 放行。
 - **声明**：上表索引以外的聊天讨论不构成正式意见。
 
 ---
@@ -236,3 +238,174 @@ version: 0.4.0
 **结论**：GOAL-005 的目标定义、边界和 A-001 响应仍然诚实，当前没有非法放行或 Charter/VP 越界；但五项 required 信息尚未验证，本地协议接入和 R3 行为验证均未开始，因此本同 scope 自审为 **conditional**。本意见不放行方案冻结、R3 实施、验收或 `done`，也不改变 `status`、Root `progress` 或 `goal-tree.md`。
 
 **建议下一步**：按固定 commit 收集并记录 `I-005-001` 至 `I-005-005` 的本地接入、映射、fallback、active-route 和 shell 边界证据；关闭 `I-005-001` 时明确 Root `I-PROTO-004` 的 vendor/pin 选择及失败边界。信息项全部 verified 或经用户书面接受有界 residual 后，再冻结方案并进入实施。
+
+---
+
+## A-004 · R3 实现 / 执行事实 / 验证 / 关门就绪独立审计（2026-07-31）
+
+- **source**：independent
+- **auditor**：Grok（`/audit` · independent · Grok Build）
+- **类型**：execution-facts + close-out
+- **scope**：`workspace-001-mvp-admin-foundation` / `GOAL-005-r3-admin-shell-navigation` 的 **R3 实现、执行事实台账、验证证据与关门就绪**。对照工作区绑定、本目标五件套、历史 A-001～A-003（仅作历史上下文）、以及当前 `apps/web` 工作树代码/测试。**不审** R4/R5 父级门禁改写、Vision Review；**不**把浏览器截图或 exit code 单独当作放行证明。
+- **verdict**：**fail**
+- **完整意见**：本节即全文（未另附 attachments）
+- **审计区间**：2026-07-31；git HEAD `ed029e8`（规划自审 A-003 文档提交）；R3 实现主要为**未提交工作树**（`apps/web` 已修改 + 新增 untracked 源码/测试/静态 manifest）
+
+### 范围与区间
+
+| 项 | 值 |
+|----|-----|
+| 工作区 | `workspace-001-mvp-admin-foundation`（`root_goal=GOAL-001-mvp-admin-foundation`，`canonical_scope` 已校验，`shared_materials_catalog: none`，`plan_refs`/`primary_plan=VP-001-mvp-admin-foundation`） |
+| 被审目标 | `GOAL-005-r3-admin-shell-navigation`（`parent=GOAL-001-mvp-admin-foundation`，文档 `status=active`） |
+| 代码范围 | `apps/web/src/protocol/app-manifest.ts`、`apps/web/src/app/navigation.ts`、`App.tsx`、`main.tsx`、对应 `*.test.ts`、`public/.well-known/schema-ui/app-manifest.json`、`package.json`/`vitest.config.ts` |
+| 明确不在 scope | 改 status/progress/goal-tree；Vision Review；R4 权限产品化；R5 Renderer 全量 |
+
+### 成果（有证据 · 工作树现场复核）
+
+| 主张 | 证据 | 核对 |
+|------|------|------|
+| 工作区绑定与目标树索引仍一致 | [workspace.md](../workspace.md)、[goal-tree.md](../goal-tree.md)；GOAL-005 挂 Root，`progress` 显示仍为 Root `2/6` | 通过（绑定）；**不**证明 R3 完成 |
+| A-001 F-001～F-003 的 `fixed` 文档证据仍在 | A-002；`00-meta` 五项最晚阶段均为「方案冻结前」；`I-005-001` 挂钩 Root `I-PROTO-004`；Root R3 文案「规划中」 | 通过（历史闭合仍有效） |
+| 工作树存在 manifest 校验/装载实现 | [app-manifest.ts](../../../apps/web/src/protocol/app-manifest.ts)：`validateAppManifest`、`loadAppManifest`、`matchRoute`、`resolveInitialRoute`、表达式可见性；pin 注释 commit `ca9e5fe…` / protocol `2.7` | 通过（代码存在） |
+| 工作树存在导航投影与 Admin shell | [navigation.ts](../../../apps/web/src/app/navigation.ts)；[App.tsx](../../../apps/web/src/app/App.tsx) header/sidebar/main + fallback surface；[main.tsx](../../../apps/web/src/main.tsx) 装载失败 fail-closed | 通过（代码存在） |
+| 默认静态 manifest 端点与样例文件 | `DEFAULT_MANIFEST_PATH = /.well-known/schema-ui/app-manifest.json`；[public/.../app-manifest.json](../../../apps/web/public/.well-known/schema-ui/app-manifest.json) 含 4 pages + top/sidebar/user | 通过（结构自检 ok） |
+| 单元测试与构建可复跑 | 本审在 `apps/web` 执行：`npm test` → **15/15 passed**（`app-manifest.test.ts` 12 + `navigation.test.ts` 3）；`npm run build` → **成功** | 通过（可重复命令证据；**不等于**关门） |
+| 边界文案仍排除 R4/R5 全量 | `apps/web` README / protocol README；GOAL-005 排除项 | 通过（意图边界） |
+| 实现**未**进入 git 历史提交 | `git status`：修改 `App.tsx`/`main.tsx`/`package.json` 等；untracked `navigation.ts`、`app-manifest.ts`、tests、`public/`、`vitest.config.ts` | 事实：工作树态，非已发布提交 |
+
+### 对照成功标准（关门就绪）
+
+| 成功标准（00-meta） | 当前判断 | 证据 |
+|--------------------|----------|------|
+| R3 必需信息项 verified 或有界 residual | **未满足** | [00-meta.md](00-meta.md) `I-005-001`～`005` 均为 `required/open`；无 residual 留痕 |
+| manifest 装载使用已冻结 schema/版本/最小子集 + 失败边界 | **部分代码有、治理未冻结** | 代码固定 `protocolVersion=2.7` 与手写校验器 + load 失败 UI；`01-decision` **无**方案冻结决策；未 vendor 官方 `app-manifest.schema.json` |
+| Admin shell / 默认·fallback·active-route 可复核 | **单元层部分可复核；运行时壳层不足** | `matchRoute`/`resolveInitialRoute`/`projectNavigation` 有测试；App shell History 行为、真实 manifest 装载、未知路由 UI **无**自动化/运行时留痕 |
+| `app-manifest` / `app-navigation` 验证路径已执行 | **未满足** | 无上游 fixture suite 执行记录；测试为自建 in-memory fixture，未引用 inventory 的 `conformance/fixtures/app-manifest|app-navigation` |
+| R4/R5/完整协议仍边界外；无开放 required finding 才关门 | **边界意图大致保持；关门阻断** | 无 Renderer 实现；但 A-004 自身开放 required findings；`I-005-*` 仍 open |
+
+### 对照 P-005 / 执行台账
+
+| 门禁 / 台账 | 当前判断 | 证据 |
+|-------------|----------|------|
+| D-002「先 I-005 再冻结再实施」 | **已被工作树实现越过** | 五项 I 仍 open；无冻结决策；却已有完整 loader/shell/导航代码 |
+| `02-execution` 事实时间线 | **与工作树严重不一致** | 仍写「未修改 apps/web」「代码实现为未开始」「`npm test` 无 script」；与当前 vitest 15 测、shell 实现矛盾 |
+| Root 纲领 R3 | 仍「规划中 / 尚未实施」文案 | Root `00-meta` R3 行；与工作树不符（本 independent 不改 Root） |
+
+### Findings
+
+#### F-001 · required · 高 · 方案冻结门禁被绕过（`I-005-001`～`005` 仍 open）
+
+- **问题**：D-002 / I 表要求方案冻结前关闭或 residual 五项 required 信息；当前工作树已交付 manifest 校验、装载、导航投影、History shell 与静态 demo manifest，但 `00-meta` 仍标五项 `open`，`01-decision` 无最小子集/路由语义/shell 边界冻结决策，亦无用户书面 residual。
+- **证据**：
+  - [00-meta.md](00-meta.md) 信息表：`I-005-001`～`005` = required/open，最晚「方案冻结前」
+  - [01-decision.md](01-decision.md)：仅 D-001～D-004（立项/路线/上游边界/A-001 响应），无冻结正文
+  - 工作树实现：`app-manifest.ts`、`navigation.ts`、`App.tsx`、`main.tsx`、`public/.../app-manifest.json`
+- **影响门禁**：方案冻结（已过时未闭合）、实施合法性、验收/关门（P-005）
+- **建议闭合**：
+  1. **fixed（推荐）**：回填可核对结论，将 `I-005-001`～`005` 标为 verified（含 vendor/pin 与失败边界、映射、default/fallback/active-route、shell 边界），并落盘方案冻结决策；或
+  2. 用户书面 **accepted-residual**（范围 + 复审触发）后有界推进；或
+  3. 若实现与契约不一致则 **fixed** 改代码/测试并对齐冻结文。
+
+#### F-002 · required · 高 · 执行事实台账未记录实现（台账与工作树脱节）
+
+- **问题**：`02-execution` / 进度评估仍主张「未改 apps/web、实现未开始、无 test script」；A-003 亦基于该历史快照。独立复核时工作树已有大量 R3 实现与可运行测试，但目标执行台账无对应时间线事实。关门或阶段自审若只读 02-execution 会得到**过时假阴性**；若只读代码会得到**无治理锚点的实现**。
+- **证据**：
+  - [02-execution.md](02-execution.md) 时间线与「进度评估」段
+  - `git status`：R3 相关文件 modified/untracked，未入当前 HEAD 提交
+  - 本审 `npm test` 15/15、`npm run build` 成功（与 execution 中「无 test script」冲突）
+- **影响门禁**：实施事实可审计性、阶段自审、关门
+- **建议闭合**：**fixed**——在 `/govern` 下用 `03-update-execution` 记录真实产物路径、命令结果与未提交边界；禁止把未入账代码写成已验收完成。
+
+#### F-003 · required · 高 · 验证与关门证据不足（exit code ≠ release）
+
+- **问题**：成功标准要求可核对的结构/行为/运行时证据与 `app-manifest`/`app-navigation` 验证路径。当前仅有自建 unit tests + production build。**缺少**：（1）对照 inventory 固定 commit 的上游 fixture 套件执行或等价可追溯映射；（2）对真实静态 manifest 的校验用例；（3）shell 集成/History/未知路由 UI/装载失败 UI 的自动化或可复核运行时记录；（4）成功标准勾选与阶段自审（实施后）。仅 `npm test`/`npm run build` exit 0 **不能**证明 R3 关门。
+- **证据**：
+  - 测试文件仅 `src/**/*.test.ts`，environment=`node`，无 DOM/App 测试
+  - 仓库无 `conformance/fixtures/app-manifest` / `app-navigation` 本地执行入口或结果
+  - 成功标准复选框全未勾选；无实施阶段 self 审计
+  - 本审故意不把 exit code 升格为验收
+- **影响门禁**：验收、关门
+- **建议闭合**：**fixed**——补验证矩阵与结果落盘（至少：无效 manifest、未知路由 fallback、home 默认路由、active-route、装载失败；并记录与上游 fixture 的对照或有界 residual）；再跑实施阶段自审。
+
+#### F-004 · recommended · 中 · 本地校验器为手写子集，非官方 schema/fixture 权威接入
+
+- **问题**：`validateAppManifest` 为 TypeScript 手写规则，pin 了 `2.7` 与 source commit 字符串，但未 vendor `docs/schemas/app-manifest.schema.json`，也未跑上游 behavioral fixtures。Root `I-PROTO-004` 仍 open；`I-005-001` 要求关闭时说明 vendor/pin 与失败边界——当前代码隐含「手写 pin 语义」，治理未裁决。
+- **证据**：`APP_MANIFEST_SOURCE` / `APP_MANIFEST_PROTOCOL_VERSION`；仓库无 `vendor/` schema；inventory §2.2/§2.3 路径未本地化
+- **建议**：在关闭 `I-005-001` 时明确策略；若保留手写校验，写清与官方 schema 的等价范围与漂移风险，并规划 fixture 对照。
+
+#### F-005 · recommended · 中 · 生产 shell 导航上下文恒为空，权限/visibleWhen 门控在 UI 中恒不生效
+
+- **问题**：`App.tsx` 固定 `context: { user: {}, features: {} }`。单元测试覆盖了 admin role 下显示 gated 链接，但真实 UI 永远用空上下文，导致带 `permissions`/`visibleWhen` 的导航项在运行时被过滤。R3 可声明「不做 R4 鉴权产品」，但若 demo manifest 或契约依赖条件导航，当前行为会误导验收。
+- **证据**：[App.tsx](../../../apps/web/src/app/App.tsx) `useMemo(() => ({ user: {}, features: {} }))`；[navigation.test.ts](../../../apps/web/src/app/navigation.test.ts) 含 roles 用例
+- **建议**：决策并写明「R3 仅结构投影、上下文恒空」或提供可注入的 stub 上下文；避免用 unit 通过暗示 UI 已演示条件导航。
+
+#### F-006 · recommended · 低 · 参数化 `pageRef` 导航的 `href` 直接暴露路由模板
+
+- **问题**：`linkTarget` 对 `pageRef` 返回 `page.route`；若 route 为 `/orders/{id}`，投影 `href` 为字面模板，点击无法得到合法具体路径。active 匹配用 D4a 可对具体路径高亮，但链接目标仍不可用。
+- **证据**：[navigation.ts](../../../apps/web/src/app/navigation.ts) `linkTarget`；测试 manifest 含 `orders-detail` 的 `/orders/{id}` 且不断言 href
+- **建议**：冻结导航规则——禁止参数页作可点 pageRef、或要求绑定默认参数/仅作 active 匹配；补测试。
+
+### 必改项汇总
+
+| # | 级别 | 摘要 | 建议 |
+|---|------|------|------|
+| F-001 | **required** | `I-005-*` 仍 open 却已实现，方案冻结门禁被绕过 | 回填 verified/residual + 冻结决策，或对齐/回退实现 |
+| F-002 | **required** | `02-execution` 与工作树脱节，实施事实未入账 | `/govern` 补执行事实；勿静默改 status 为 done |
+| F-003 | **required** | 验证/关门证据不足；exit code 不能放行 | 补 fixture/运行时矩阵与实施阶段自审 |
+| F-004 | recommended | 手写校验 vs 官方 schema/I-PROTO-004 | 关闭 I-005-001 时写清策略 |
+| F-005 | recommended | 空 NavigationContext 使条件导航 UI 失效 | 决策并文档化或提供 stub |
+| F-006 | recommended | 参数化 pageRef href 为模板字面量 | 冻结规则 + 测试 |
+
+### 与既有意见的异同
+
+| 意见 | 关系 |
+|------|------|
+| A-001（independent，规划定义） | 历史；F-001 文档一致性已由 A-002 fixed。本审**不重复**该 finding，转为检查**实施后门禁是否仍被遵守**。 |
+| A-002（self 响应） | 历史响应有效；**不**覆盖实现/关门 scope。 |
+| A-003（self，规划阶段） | 历史快照（当时无 R3 代码、`npm test` 无 script）在当时可成立；**当前工作树已使其对实现现状过时**。本审以现场代码为准，不指责 A-003 造假。 |
+| 本 A-004 | 首次对 **implementation / execution-facts / verification / close-out** 出 independent 意见；verdict **fail**。 |
+
+### 结论 + 建议给编排器/用户的下一步
+
+**结论**：工作树显示 R3 **已有可构建、可单测的 Admin shell/导航/manifest 子集实现**，这是真实工程进展；但治理上仍停留在「规划 + 信息 open」、执行台账未记录实现、方案未冻结、上游行为验证与 shell 运行时证据不足。因此就 **关门就绪** 而言 verdict = **fail**。不得将 GOAL-005 标为 `done`，不得抬升 Root `progress` 的 R3 完成态，不得用截图或 exit code 单独结项。
+
+**建议 `/govern` 输入**（示例）：
+
+```text
+/govern 响应 workspace-001 GOAL-005 A-004：
+1) fixed F-001：回填 I-005-001…005 证据/决策（或用户 residual）并落盘方案冻结
+2) fixed F-002：02-execution 记录工作树实现事实与 npm test/build 结果（标明未提交边界）
+3) fixed F-003：补 app-manifest/app-navigation 对照验证与 shell 运行时/集成证据后再谈关门
+4) 酌情处理 F-004…F-006
+5) 完成后做 R3 实施阶段自审；无开放 required finding 再申请 done
+```
+
+### 声明
+
+本意见 `source: independent`，**仅追加**本目标 `03-audit.md`；**不修改** `00-meta` / `01-decision` / `02-execution` / `goal-tree` / 代码 / `status` / `progress`。响应、finding 闭合与阶段推进由 **`/govern`** 处理。
+
+---
+
+## A-005 · `/govern` 响应 A-004（2026-07-31）
+
+- **source**：self（编排响应）
+- **scope**：响应 A-004 的 R3 实现、执行事实、验证证据与关门就绪 findings；不把本响应当作实施阶段同 scope self-audit，也不覆盖 R4/R5 或 Vision Review。
+- **verdict**：**conditional**
+- **依据**：当前工作树与目标台账已补齐 A-004 指出的方案、执行事实和验证证据，但 P-004.1 要求的“已有 independent、是否还要同 scope self-audit”尚未得到用户书面选择。
+
+### Finding 响应
+
+| Finding | 本次响应 | 证据与边界 |
+|---------|----------|------------|
+| F-001 · required | `fixed` | `00-meta.md` 的 `I-005-001`～`I-005-005` 已标为 `verified`；D-005 冻结 2.7 manifest 子集、pinned provenance/hash、navigation、D4a route/fallback、shell 边界与 R4/R5 排除项。 |
+| F-002 · required | `fixed` | `02-execution.md` 已记录实现产物、未提交工作树边界、73 tests、build 和运行时入口复核；不声称已进入 HEAD、发布或完整 conformance。 |
+| F-003 · required | **仍开放** | upstream fixture 对照、真实静态 manifest、App 集成行为和 dev server HTTP 证据已入账；但实施阶段 self-audit 尚未执行，且不得在用户裁决前静默跳过或强制执行。 |
+| F-004 · recommended | 非阻断跟进已记录 | 已加入 pinned schema/fixture/provenance 与 subset 边界；R3 仍是手写 host subset，Root `I-PROTO-004` 保持 open。 |
+| F-005 · recommended | 非阻断跟进已记录 | D-005 固定生产默认 context 为空，同时 `App` 支持注入 `navigationContext`；真实身份/权限产品化留给 R4。 |
+| F-006 · recommended | 非阻断跟进已记录 | D-005 固定参数 pageRef 仅在可绑定时生成具体 href；无绑定和有绑定路径均有直接测试，避免模板字面量链接。 |
+
+### P-004.1 待用户裁决
+
+A-004 是 independent，A-003 仅覆盖规划阶段，不能替代实施同 scope self-audit。本台账已明确保留 F-003 的开放 required 门禁；在用户明确选择“执行 self-audit”或“跳过 self-audit”之前，不推进 `status: done`、Root R3 完成检查点或 `goal-tree.md`。
+
+本 A-005 仅记录 `/govern` 响应与可核对证据，不改变 GOAL-005、Root 或 `goal-tree.md` 的状态/进度。
