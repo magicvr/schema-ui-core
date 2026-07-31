@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.3
+version: 0.5.0
 ---
 
 # 决策记录 · GOAL-001
@@ -330,3 +330,31 @@ version: 0.4.3
 
 1. 规划 R3 Admin 外壳与导航子目标。
 2. 在 R4 前闭合 `I-PROTO-002`，在 R5 验收前闭合 `I-PROTO-003`。
+
+## D-010 · 维持 R3 关门并立项 R4 核心账号与权限
+
+**日期**：2026-07-31
+**状态**：accepted
+**关联意见**：GOAL-005 A-007（independent close-out `pass`）与 A-008（编排响应）已留痕
+
+**决定**：
+
+1. 采纳 GOAL-005 A-007 F-001：`03-audit.md` 顶部「信息就绪核对」表的 HEAD/工作树快照已绑定 A-006 审计时点，并注明当前 HEAD `f70f98d` / 实现提交 `0b83c94`。
+2. 记录 A-007 F-002 为关闭 `I-PROTO-004` 时的跟进要求：补 schema-conformance 运行器校验（官方 `app-manifest.schema.json`）或显式记录等价范围与漂移风险。该要求不改变 `I-PROTO-004` 的 non-blocking 级别。
+3. 维持 GOAL-005 R3 关门事实（`done` 不变），并立项 `GOAL-006-r4-account-permission` 进入 R4 规划。
+4. `I-PROTO-002`（required，R4 实施门禁）保持 open；R4 **实施**前须合法闭合。`I-PROTO-003` 仍为 R5 验收/关门门禁。Root `progress` 维持 `3/6`。
+
+**为什么**：
+
+- A-007 独立复审对 R3 关门证据给出 `pass` 且无新 required；采纳两条 recommended 只改善台账可读性与后续工程质量，不重新打开已关门门禁。
+- R4 规划阶段允许登记信息项与路线图；放行 R4 **实施**仍受 `I-PROTO-002` 门禁约束，故立项不抬升 Root progress。
+
+**未选方案**：
+
+- **维持 R4「未开始」并推迟立项**：会丢失信息门禁登记时机，且与「R3 关门后进入 R4 规划」的推进意图不符。
+- **放行 R4 实施或修改 `I-PROTO-002` 状态**：`I-PROTO-002` 未 verified 前不得宣称账号权限链路完成，也不得越过实施门禁。
+
+**影响**：
+
+- 工作区 `goal-tree.md` 新增 `GOAL-006-r4-account-permission`（`active`）；Root 路线图 R4 标记为「规划中」。
+- 不修改 `I-PROTO-002` / `I-PROTO-003` / `I-PROTO-004` 状态；不改变 Root `status` / `progress`。
