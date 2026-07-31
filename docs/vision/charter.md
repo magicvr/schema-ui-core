@@ -57,7 +57,7 @@ parent: null
 
 | id | 假设 / 未知 | 影响 | 状态 |
 |----|-------------|------|------|
-| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，才能冻结 MVP 的协议覆盖边界。 | VP-001 的协议实现计划与“完整协议覆盖”声明 | verified（清单已落盘 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)；**覆盖子集尚未冻结**） |
+| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | VP-001 的协议实现计划与“完整协议覆盖”声明 | **分列（不得读成「覆盖已可冻结」）**：① 清单提取 = `verified`（已落盘 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② 覆盖子集冻结 = `open`（开区后由 **`/govern`** 决策与信息门禁；未冻结前不得主张“支持全部协议功能”）。`F-V006` → `fixed`。 |
 
 ## 与工作区 / VP 的关系
 

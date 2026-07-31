@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Charter 修订台账
@@ -15,3 +15,4 @@ version: 0.1.0
 | id | date | class | scope | summary |
 |----|------|-------|-------|---------|
 | VR-001 | 2026-07-31 | initial | Charter 初建 | 用户确认唯一愿景、外部协议来源 `schema-ui-docs@v2.7.0`、React + Go 技术方向、三条非目标，以及首个 MVP VP。当前无既有 VP 或工作区，因此无 re-align 影响。 |
+| VR-002 | 2026-07-31 | editorial | H-001 状态措辞 | 响应 VRev-003 `F-V006`：将 H-001 状态分列「清单提取 verified / 覆盖子集冻结 open」，避免读成覆盖已可冻结。`vision_id@version` 仍为 `schema-ui-core-admin-foundation@0.1.0`；**无** strategic、**无** re-align。 |
