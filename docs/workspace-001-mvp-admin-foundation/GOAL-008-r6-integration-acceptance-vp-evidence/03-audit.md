@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计 · GOAL-008
@@ -28,6 +28,7 @@ version: 0.2.0
 |------|------|--------|-------|---------|---------------|
 | A-001 | 2026-08-01 | self | 阶段 1 验收合同与证据计划 | fail | 1 |
 | A-002 | 2026-08-01 | self | 阶段 1 冻结候选计划审视（矩阵/环境/oracle/schema/CI） | pass | 0 |
+| A-003 | 2026-08-01 | self | 阶段 2 → 3 门禁（集成验收执行证据） | pass | 0 |
 
 ## A-001 · 阶段 1 计划与信息门禁自审（2026-08-01）
 
@@ -155,3 +156,42 @@ version: 0.2.0
 
 - 阶段 2 执行开始：按 evidence index 持久化 Web/API/协议回归/账号权限集成结果，失败与排除显式列出。
 - 阶段 2 完成后做阶段 2→3 门禁审视；全部 required 闭合后，再由用户授权 Root R6 / `progress` / status，VP 关门另走 `/vision`。
+
+## A-003 · 阶段 2 → 3 门禁审视（2026-08-01）
+
+- **source**：self
+- **auditor**：Claude Code `/govern`
+- **类型**：stage / execution-facts
+- **scope**：GOAL-008 阶段 2「集成验收执行」→ 阶段 3「VP 证据汇编与缺口整改」门禁；验收矩阵 C-001～C-008；`evidence-index.json`（mode: acceptance）
+- **verdict**：pass
+
+### 范围与区间
+
+本审视核对阶段 2 退出条件是否满足（冻结矩阵 required item 全运行并落盘；失败/未执行/排除显式；evidence index 可解析且文件摘要可重算；新发现关键未知已回流信息表），以决定是否放行阶段 3。本审视不把 evidence index 写成 VP 关门证据，也不改 Goal/VP status。
+
+### 成果（有证据）
+
+- **C-001～C-008 全部执行并落盘**（revision `a941bedb1fc2cd4859a408df50653e867da35ff2`，worktree clean）：web test/build（15 files / 395 tests pass）、api test/build、双服务+health/proxy/账号上下文/records 探测、浏览器 E2E（1 passed / 0 unexpected）、D-PERM fixtures、stage3 conformance。原始输出见 `attachments/evidence/acceptance/results/`。
+- **正式 evidence index**：`attachments/evidence/acceptance/evidence-index.json`（`mode: acceptance`，**7 artifact SHA-256 verified，overallOutcome=pass**），经 [build-acceptance-index.mjs](attachments/build-acceptance-index.mjs) 用 ajv 2020 校验通过、可重跑。
+- **排除显式记录**：reactions multi-round 16/16（Root D-008）、request-construction batch 11（Root D-010 Q1=否）、D-UPLOAD 整域（I-PROTO-001 v0.1.3）、本地非干净安装（`npm ci` 由 CI run `30667596846` 覆盖）、浏览器级拒绝未断言（真实 manifest 无权限门控项，拒绝以 renderer/组件层 oracle 断言）——均列入 evidence-index exclusions，未用总体 pass 掩盖。
+
+### 对照阶段 2 退出条件
+
+| 退出条件 | 状态 | 证据 |
+|----------|------|------|
+| 冻结矩阵全部 required execution item 已运行并落盘 | **达成** | C-001～C-008 均有结果 artifact（evidence-index 7 项） |
+| 失败、未执行、排除与平台缺口显式 | **达成** | evidence-index exclusions 5 项 + 各结果 outcome |
+| evidence index 可解析、文件摘要可重算 | **达成** | ajv 校验 OK；7 SHA-256 可重算（build-acceptance-index.mjs） |
+| 新发现关键未知已回流信息表，未静默扩域 | **达成** | 未发现新关键未知；边界未扩大 |
+
+### Findings
+
+无 open required / recommended finding 影响本门禁。`F-008-002`（CI 注解，recommended）不阻断。
+
+### 必改项汇总（required 列表）
+
+无 open required。
+
+### 结论 + 建议下一步
+
+阶段 2 退出条件全部满足（pass）：集成验收已执行、机器可读证据已按 schema 落盘、失败/排除显式。**可进入阶段 3「VP 证据汇编与缺口整改」**：把 VP 三条退出判据逐条指向工作区 Q2 证据，required 缺口按 P-003 闭合，边界主张一致。
