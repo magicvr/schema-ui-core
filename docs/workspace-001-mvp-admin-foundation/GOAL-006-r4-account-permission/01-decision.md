@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-006
@@ -78,3 +78,63 @@ R4 规划以 `protocol-inventory-v2.7.0.md` 登记的 source commit `ca9e5fe207c
 **影响**：
 
 该决定固定证据方向，不代表当前已有本地 schema、fixture、运行时或 conformance 结果。
+
+## D-004 · 冻结 R4 方案：账号权限最小 API 与 D-PERM 映射
+
+**日期**：2026-07-31
+**状态**：accepted（用户按 `/govern` 建议确认「按此方向冻结」）
+
+**决定**：
+
+按固定协议 `schema-ui-docs@v2.7.0`（commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`）冻结 R4 最小 API 与 `D-PERM` 映射，闭合本目标 `I-006-001` 与父目标 `I-PROTO-002`（二者均为 required，现 `verified`）。
+
+**1. 最小 API（账号会话最小闭环）**
+
+| 端点 | 语义 | 输入 → 输出 |
+|------|------|-------------|
+| `GET /api/accounts/me` | 返回当前账号会话与权限上下文（`$context` 快照来源） | 会话 → `{ user, features }` |
+| `POST /api/accounts/login`（可选） | 会话建立（本仓脚手架可先于 e2e 用静态/注入会话） | 凭据 → 会话 token |
+| `POST /api/accounts/logout`（可选） | 会话失效 | 会话 → 空 |
+
+R4 实施范围仅包含最小会话与权限求值链路；不建账号 CRUD 管理页、不建 SSO/联邦、不做细粒度审计后台。会话方案（静态/注入 vs token）与端点形态在实施计划（`02-execution` 路线图）落地时记录事实，不改变本冻结的契约语义。
+
+**2. D-PERM 结构/行为映射（冻结）**
+
+- **`$context` 快照**：前端 Renderer 只读消费 `$context.user.*` / `$context.features.*`（页面快照语义，ADR-0003），由 `GET /api/accounts/me` 提供；不是安全边界。
+- **`permissions`**：`view` / `edit` / `delete` 三个标准键（`node.schema.json` `Permissions`）；表达式仅允许 `$context.*`，禁止 `$deps.*`（`01-node-protocol.md` §3.9）。
+- **`permissionCascade`**：仅 `section` / `grid` / `form` / `tabs` / `table` 可声明；`keys` 非空、去重、仅 `edit` / `delete`，且须同名 `permissions.<key>`（ADR-0023 / `node.schema.json` `PermissionCascade`）。
+- **有效权限公式**（参与 cascade 的目标）：`effectivePermission(t, k) = AND(根到 t 路径上声明 k ∈ permissionCascade.keys 的祖先的 permissions[k]) AND (t.permissions[k]，若 t 自身声明)`；未声明按 `true`；只能收紧、不能放宽（ADR-0023 D3 / `01-node-protocol.md` §3.9.1）。
+- **权限结构边**：Node `children[]`、`tabs.props.items[].content`、`table.props.actions[]`、`table.props.toolbar[]`、default form 隐式 `submitAction`；`table.props.columns[]` 不在树上（只本地 `permissions`，不吃 cascade）；modal `content` 与 navigate 新页面是新根（ADR-0023 D2a）。
+- **`permissionIntent`**：仅 RowAction、toolbar Trigger、`actionButton.props` 可声明 `edit` / `delete`；未标注意图不参与 `edit` / `delete` 继承；不得从 `key` / `actionRef` / HTTP method / 文案推断意图（ADR-0023 D4b / component-registry）。
+- **表单 edit 目标白名单**：default form（`mode` 缺省或 `default`）的 `input` / `inputNumber` / `datePicker` / `dateRangePicker` / `select` / `upload`；`submitAction` 为隐式 edit 目标（不写 intent）；search form 不参与（ADR-0023 D4a）。
+- **执行时序**（Renderer）：`visibleWhen` → effective/local permission → `disabled` OR `requiresSelection` → fail-closed stop → `confirm` → Action/form submit；拒绝后不得展示 confirm、不得构造/发送 request/navigate/modal/submit（ADR-0023 D4c / renderer-spec §7.1）。
+- **门控**：出现 `permissionCascade` 或 `permissionIntent` 须 `meta.protocolVersion ≥ "2.3"` 且 `requiredCapabilities` 含 `permissions.inheritance`；缺失由 L2 fail-closed（错误码 `PROTOCOL_VERSION_TOO_LOW` / `CAPABILITY_REQUIRED`）。
+- **L2 校验错误码**：`PERMISSION_CASCADE_TYPE_INVALID`、`PERMISSION_CASCADE_KEYS_INVALID`、`PERMISSION_CASCADE_SOURCE_MISSING`、`PERMISSION_INTENT_FORBIDDEN`、`PERMISSION_INTENT_INVALID`（fixture 断言）。
+- **前后端职责**：React 主责 UI 显隐/禁用与 intent 求值（renderer-spec）；Go 主责鉴权与权限模型、账号会话；后端**独立鉴权**，不把前端 `$context` 权限结果当安全边界（协议总纲 / ADR-0023 背景）。
+- **行为权威**：`conformance/fixtures/permissions-inheritance/cases.json`（fixtureVersion 1.0，17 cases：13 valid + 4 invalid；target kinds：formField 7 / formSubmit 7 / rowAction 5 / actionButton 5 / toolbarTrigger 2 / column 1）。本仓不 vendor 上游 reference-js/python/runner，仅作参考。
+
+**3. 固定资料证据（本地落盘，SHA-256 核验）**
+
+资料落盘于 `attachments/dperm/`，均取自固定 commit `ca9e5fe…`：
+
+| 文件 | SHA-256 |
+|------|---------|
+| `permissions-inheritance/cases.json` | `ac124fa1d831d0aa2544b7544b1e177c3498c8c3b36ee4d535e8c3f2f5b8849e` |
+| `docs/schemas/node.schema.json` | `967c0d4fa9068eb0ebd09456905f17087624b54150dafd5d53b28c31bd04fb16` |
+| `docs/decisions/0023-container-permission-inheritance.md` | `1a82bdf0e39747eb200f1c55682160c297d10820084a95b0e33febd14765209c` |
+| `docs/05-scenarios/permission-inheritance.md` | `94df1dae0d9f49c7eef7bcba7da66219592a311c1ddf9a1ec1c653d660311c6b` |
+
+语义规范原文见固定 commit：`docs/01-node-protocol.md` §3.9 / §3.9.1（`permissions` / `permissionCascade`）、`docs/03-component-registry.md`（intent 挂载点矩阵、表单 edit 目标）、`docs/08-renderer-spec.md` §7.1（执行时序与门禁）；inventory §2.4 ADR-0023 索引一致。
+
+**未选方案**：
+
+- 以硬编码角色表代替 `D-PERM` 契约映射：无法证明与固定协议语义一致（D-001 沿袭）。
+- 在 R3 目标中补鉴权：越过 R3 关门边界与 `I-PROTO-002` 门禁（D-001 沿袭）。
+- 将 Go 侧做成「按前端权限结果过滤」：把展示层权限当安全边界，违反 ADR-0023「后端仍必须独立鉴权」。
+- 在方案冻结阶段就实施代码：`I-PROTO-002` 仅闭合设计/映射门禁，R4 实施仍需用户指令与实施事实记录（见 02-execution 完成后边界）。
+
+**影响**：
+
+- `I-006-001`（required）→ **verified**：证据 = 本 D-004 + `attachments/dperm/` 固定资料（SHA-256）+ 覆盖表 v0.1.3 `D-PERM=include`、`permissions-inheritance=include`。
+- 父目标 `I-PROTO-002`（required，R4 实施门禁）→ **verified**：证据 = 本 D-004 + `attachments/dperm/`；闭合范围仅限「账号权限最小 API 与 D-PERM 映射」设计结论，**不**放行 R4 实施本身，也**不**改变 `I-PROTO-003`（R5 验收/关门）或 `I-PROTO-004`（vendor vs pin，仍 open）。
+- 方案冻结不等于实施：R4 实施、前后端代码、fixture 测试与运行时证据仍须按 02-execution 路线图推进并记事实；实施完成且阶段自审通过前不讨论 `done`。

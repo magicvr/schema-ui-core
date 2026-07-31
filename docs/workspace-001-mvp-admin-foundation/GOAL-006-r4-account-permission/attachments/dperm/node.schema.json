@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://internal/schema-ui/node.schema.json",
+  "title": "Schema-UI Node",
+  "description": "参见 docs/01-node-protocol.md，本文件是其权威机器可读版本",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "组件类型标识，需存在于 component-registry.json 中"
+    },
+    "id": {
+      "type": "string",
+      "description": "【可选，since 0.2】页面内唯一标识，用于定位/埋点/增量 patch，Renderer 需校验重复"
+    },
+    "props": {
+      "type": "object",
+      "description": "业务级配置参数，禁止出现 CSS 属性名",
+      "not": {
+        "anyOf": [
+          { "required": ["margin"] },
+          { "required": ["padding"] },
+          { "required": ["color"] },
+          { "required": ["background"] },
+          { "required": ["fontSize"] },
+          { "required": ["fontWeight"] },
+          { "required": ["border"] },
+          { "required": ["borderRadius"] },
+          { "required": ["width"] },
+          { "required": ["height"] },
+          { "required": ["zIndex"] },
+          { "required": ["boxShadow"] },
+          { "required": ["lineHeight"] },
+          { "required": ["letterSpacing"] },
+          { "required": ["textAlign"] },
+          { "required": ["minWidth"] },
+          { "required": ["maxWidth"] },
+          { "required": ["minHeight"] },
+          { "required": ["maxHeight"] }
+        ]
+      }
+    },
+    "data": {
+      "$ref": "#/definitions/DataRef"
+    },
+    "children": {
+      "type": "array",
+      "items": { "$ref": "#" }
+    },
+    "reactions": {
+      "type": "array",
+      "items": { "$ref": "reaction.schema.json" }
+    },
+    "states": {
+      "$ref": "#/definitions/StatesMap"
+    },
+    "visibleWhen": {
+      "$ref": "#/definitions/VisibleWhen",
+      "description": "【可选，since 0.2】节点级条件渲染，见 docs/01-node-protocol.md §3.8"
+    },
+    "permissions": {
+      "$ref": "#/definitions/Permissions",
+      "description": "【可选，since 0.2】权限控制，见 docs/01-node-protocol.md §3.9"
+    },
+    "permissionCascade": {
+      "$ref": "#/definitions/PermissionCascade",
+      "description": "【可选，since 2.3 / ADR-0023】容器对后代 edit/delete 目标的显式权限收紧边界；仅 section/grid/form/tabs/table 可用，由 L2 校验位置与同名 permissions 来源"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "definitions": {
+    "DataRef": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["static", "ref", "api"]
+        },
+        "value": {},
+        "ref": { "type": "string" },
+        "url": {
+          "type": "string",
+          "pattern": "^/(?!/)[^\\s\\\\]*$",
+          "description": "source: api 的请求地址必须是 baseURL 下的单斜杠相对路径"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET"],
+          "default": "GET",
+          "description": "只读数据加载方法。source: api 时可选，缺省为 GET；写操作必须使用 Action"
+        },
+        "params": {
+          "type": "object",
+          "description": "【可选】URL query 参数映射，对所有 HTTP method 均不隐式进入请求体；key 必须非空，值只允许 string/finite number/boolean/null 标量，或完整单个 $deps.<path> 整值替换（禁止对象、数组、模板拼接和条件判断），见 ADR-0010、docs/04-datasource-contract.md §3.1 与 docs/08-renderer-spec.md §2.3",
+          "propertyNames": { "type": "string", "minLength": 1 },
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
+          },
+          "not": {
+            "required": ["responseMapping"],
+            "description": "responseMapping 禁止放入 params——它不属于请求参数（ADR-0005 D1），应声明在 data 顶级字段中"
+          }
+        },
+        "responseMapping": {
+          "$ref": "#/definitions/ResponseMapping",
+          "description": "【可选，since 0.2.4】响应字段名映射，点路径字符串，仅适用于 source: api 或 source: ref 指向 API datasource；静态引用目标禁用规则由 L2 执行，见 docs/04-datasource-contract.md §4.1.1"
+        }
+      },
+      "required": ["source"],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": { "source": { "const": "static" } },
+          "required": ["source", "value"],
+          "not": {
+            "anyOf": [
+              { "required": ["ref"] },
+              { "required": ["url"] },
+              { "required": ["method"] },
+              { "required": ["params"] },
+              { "required": ["responseMapping"] }
+            ]
+          }
+        },
+        {
+          "properties": { "source": { "const": "ref" } },
+          "required": ["source", "ref"],
+          "not": {
+            "anyOf": [
+              { "required": ["value"] },
+              { "required": ["url"] },
+              { "required": ["method"] },
+              { "required": ["params"] }
+            ]
+          }
+        },
+        {
+          "properties": { "source": { "const": "api" } },
+          "required": ["source", "url"],
+          "not": {
+            "anyOf": [
+              { "required": ["value"] },
+              { "required": ["ref"] }
+            ]
+          }
+        }
+      ]
+    },
+    "StatesMap": {
+      "type": "object",
+      "description": "组件级空态/加载态/错误态定制（since 0.2），仅对 component-registry.json 中 supportsStates: true 的组件有效",
+      "properties": {
+        "loading": { "$ref": "#/definitions/StateContent" },
+        "empty": { "$ref": "#/definitions/StateContent" },
+        "error": { "$ref": "#/definitions/StateContent" }
+      },
+      "additionalProperties": false
+    },
+    "ResponseMapping": {
+      "type": "object",
+      "description": "响应字段名映射。仅描述 Renderer 如何从响应体中取值，不属于请求参数。",
+      "properties": {
+        "list": {
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*$",
+          "description": "当前数据数组在响应体中的点路径，如 result.records"
+        },
+        "total": {
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*$",
+          "description": "总条数在响应体中的点路径，如 result.totalCount"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "StateContent": {
+      "type": "object",
+      "description": "仅允许语义级文案/插画标识，不允许样式类字段。各状态下字段的语义侧重点不同：loading/empty 使用 text，error 使用 fallbackText（可操作错误提示）；illustration 三种状态均可使用",
+      "properties": {
+        "text": { "type": "string", "description": "状态文案，用于 loading/empty 状态的纯展示说明" },
+        "illustration": { "type": "string", "description": "语义级插画标识，三种状态均可使用" },
+        "fallbackText": { "type": "string", "description": "可操作的错误提示文案（如含重试引导），用于 error 状态。与 text 的语义区别：text 为纯展示，fallbackText 暗示可恢复操作" }
+      },
+      "additionalProperties": false
+    },
+    "VisibleWhen": {
+      "type": "object",
+      "description": "节点级条件渲染（since 0.2），复用 02-reaction-expression.md 白名单解析器",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": ["form", "row"],
+          "description": "【可选，since 0.2】表达式求值作用域，form（默认）或 row"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$" },
+          "uniqueItems": true,
+          "description": "显式声明的依赖字段名（无 $deps./$row. 前缀，取完整点路径）。表单上下文：form 为字段名，row 为 $row. 后缀完整路径；可声明空数组。"
+        },
+        "when": {
+          "type": "string",
+          "minLength": 1,
+          "description": "白名单表达式，与 reactions[].when 同语法"
+        }
+      },
+      "required": ["when"],
+      "additionalProperties": false
+    },
+    "Permissions": {
+      "type": "object",
+      "description": "权限控制（since 0.2），按动作分组的映射表，表达式仅允许 $context.*",
+      "properties": {
+        "view": { "type": "string", "description": "可见性条件" },
+        "edit": { "type": "string", "description": "可编辑/可操作条件" },
+        "delete": { "type": "string", "description": "可删除条件" }
+      },
+      "additionalProperties": {
+        "type": "string",
+        "description": "扩展动作键（如 approve/export）；协议层不限制键名，建议由接入方通过项目级 CI/Review 约束"
+      },
+      "minProperties": 1
+    },
+    "PermissionCascade": {
+      "type": "object",
+      "description": "【since 2.3 / ADR-0023】显式 edit/delete 权限继承边界；keys 中每个键须由同一 Node 的 permissions.<key> 提供表达式，位置与能力门控由 L2 校验",
+      "properties": {
+        "keys": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["edit", "delete"]
+          }
+        }
+      },
+      "required": ["keys"],
+      "additionalProperties": false
+    }
+  }
+}
