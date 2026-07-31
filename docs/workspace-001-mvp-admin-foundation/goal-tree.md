@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-01
 parent: null
-version: 0.18.0
+version: 0.19.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -42,7 +42,7 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=4/6
 ## 说明
 
 - Root `progress: 4/6` = 纲领路线图 R1–R6 中 R1、R2、R3、R4 已完成（等权派生）；**不**放行 R5/R6、不关闭未相关 finding、不推导 Root `done`。
-- R5：GOAL-007-r5-examples-contract-verification 已立项（`active`）。**阶段 1 契约发现与登记完成**（2026-07-31）：`I-007-001` 登记表落盘并核验 D-APP/D-PERM 复用验证命令，`I-007-001` → `verified`（登记层面）。**阶段 2 批次 2a 完成（D-DATA/D-TABLE）**（2026-07-31）：Go `GET /api/records`（list/detail）+ Web `records.ts`/`data-table.tsx` + `search-form-table`/`data-table` 范例页落地，`npm test` 114 项 / `go test` 21 项 / build / Edge 实测全绿；A-002 批次自审（self）pass。**阶段 2 批次 2b 完成（D-FORM/D-ACT）**（2026-07-31）：D-FORM §5 白名单控件表面 + D-ACT 非批量动作（复用 R4 `executeAction`）+ Go `PATCH`/`DELETE /api/records/{id}` + `form-controls`/`list-edit-lifecycle` 范例页落地，`npm test` 138 项 / `go test` 18 顶层 / build 全绿；A-003 批次自审（self）pass。**阶段 2 批次 2c 完成（D-EXPR/D-COMP）**（2026-08-01）：D-EXPR 反应引擎（`reactions.ts` 复用 `evaluateExpression`）+ D-COMP 最小 Renderer 接线（`render.ts`/`render.tsx`，resolve R4 F-002）+ `form-with-reactions` 范例页落地，`npm test` 166 项 / `npm run build` / `go test` / Edge 实测全绿；A-004 批次自审（self）pass。**A-005（independent, conditional）响应完成**（2026-08-01）：用户裁决「不需要自审，直接推进」，F-001～F-004 按 `fixed` 合法闭合（action 表达式 fail-closed、RenderPage 接入 D-FORM 门禁、defaultValue 2.7+advanced 双门禁、Renderer whitelist 扩展至冻结 §5 全部 node type），F-005 同步；`npm test` 173 项 / build / `go test` / Edge 实测全绿（D-007 已留痕）。**阶段 2 全部落地**；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。R5 **验收/关门**受父目标 `I-PROTO-003`（required，验收前闭合）门禁约束；阶段 1、批次 2a、批次 2b、批次 2c 均不抬升 progress。
+- R5：GOAL-007-r5-examples-contract-verification（`active`）。阶段 1–2 完成（见历史条目）。**A-006（independent, pass）响应 + 阶段 3 完成**（2026-08-01）：用户裁决「不需要自审，直接推进」；`I-PROTO-004`=**vendor**（Root D-012 / GOAL-007 D-008）→ verified；schemas/fixtures vendor+SHA pin；Ajv 结构校验 + conformance 行为对照（`npm test` **326** 项 / build / go test 全绿）；登记表 v0.6.0。**阶段 4（验收/关门）未开始**；`I-PROTO-003` 仍 open。Root `progress` 仍 **4/6**（阶段 3 不抬升纲领检查点）。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
 - R1：2026-07-31 `/govern` 阶段/关门自审 A-003（self）对 002/003/004 均为 **pass** → 三子目标 `done`；Root 纲领 R1 → 完成。Root A-001（independent）R1 证据复核 **pass** → A-002/D-006 响应：维持完成事实。
 - R2：完成；用户书面确认按 v0.1.3 覆盖表正式冻结，D-009 / A-006 已留痕，`I-PROTO-001` = `verified`。冻结范围不等同于完整协议支持或 R3-R5 实施完成。

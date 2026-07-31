@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 决策记录 · GOAL-007
@@ -197,3 +197,33 @@ P-005 信息台账维护在 [00-meta.md](00-meta.md)。本目标 `I-007-001` 在
 **影响**：
 
 F-001～F-004 以 `fixed` 合法闭合，F-005 同步；`npm test` 14 文件 **173 项** / `npm run build` / `go test ./...` / `go build ./...` / Edge headless 实测全绿。`I-PROTO-003`（父目标，required，R5 验收/关门）与 `I-PROTO-004`（non-blocking，阶段 3 前决策）仍 open；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。Root `progress` 仍 `4/6`。
+
+## D-008 · 响应 A-006 + I-PROTO-004=vendor + 进入阶段 3（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+1. **P-004 §3.1**：对 A-006（independent, pass）用户裁决「**不需要自审，直接推进**」。
+2. **响应 A-006**：采纳 `verdict: pass`；开放 required=0；A-005 F-001～F-005 闭合成立。A-006 recommended F-001/F-002（UI/范例页一致性）跟踪至后续产品化或验收补强，**不阻断**阶段 3；F-003（登记表 §4 计数）随本轮登记表同步闭合。
+3. **`I-PROTO-004` = vendor**（父目标信息项）：将上游 `schema-ui-docs@2.7.0`（commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`）的结构 schema（`node`/`page`/`action`/`reaction`/`component-registry`，叠加既有 `app-manifest`）与纳入 fixture suites **vendor 进仓**并 SHA pin（`apps/web/src/protocol/upstream/provenance.json`），校验离线可复现；**不**采用远程 pin-only 校验路径。
+4. **进入阶段 3**：落地可执行结构校验（Ajv draft-07）与纳入行为 fixture 对照（`apps/web/src/protocol/conformance/*` + `stage3-fixtures.test.ts`）。
+
+**为什么**：
+
+- A-006 复核确认阶段 2 修复可重复，建议主路径进入阶段 3 且先决 `I-PROTO-004`。
+- vendor 与既有 R3 `app-manifest.schema.json` + fixture pin 模式一致，CI/离线可复核，维护成本明确（升级需新 commit pin + SHA）。
+- 阶段 3 是 `I-PROTO-003` / R5 验收前的结构与行为证据层；不抬升 Root `progress`，不关闭 `I-PROTO-003`。
+
+**未选方案**：
+
+- **pin 远程校验**：依赖网络与上游可用性，与「可 fork 基架 / 离线证据」方向不符。
+- 先做 A-006 self 审计再推进：独立 pass + 既有批次 self（A-002～A-004）已覆盖；用户明确跳过。
+- 将 upstream `reactions` 全套强制映射到 MVP host：上游为 multi-round `$deps` 字段写引擎，超出冻结 MVP D-EXPR（仅 `$context` visible/disabled）；选择 **vendor+account 排除** 而非静默伪通过。
+
+**影响**：
+
+- 父目标 `I-PROTO-004` → **verified**（vendor 策略与 pin 证据落盘）。
+- 阶段 3 实施完成（结构校验可跑 + 纳入 suites 执行/覆盖记账）；阶段 4（验收/关门）与 `I-PROTO-003` 仍 open。
+- Root `progress` 仍 `4/6`。

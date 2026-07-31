@@ -20,5 +20,14 @@ uses `CAPABILITY_REQUIRED`, while this fail-fast host validator exposes
 fixture-only adapters; the production host still accepts exactly protocol
 `2.7`.
 
-R4 permissions, R5 page rendering, and full protocol conformance remain outside
-this goal.
+R4 permissions and R5 page rendering live outside the original R3 goal.
+
+R5 stage 3 (I-PROTO-004 = vendor) extends this package:
+
+- Additional schemas in `docs/schemas/` (`node`, `page`, `action`, `reaction`,
+  `component-registry`) plus the existing app-manifest schema
+- Vendored fixture suites under `upstream/*.cases.json` with SHA pins in
+  `upstream/provenance.json`
+- Conformance adapters and tests under `conformance/` (Ajv structural checks +
+  behavior suite runners). MVP D-EXPR reactions remain `$context` only; the
+  upstream multi-round `$deps` reactions suite is accounted as excluded.

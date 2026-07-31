@@ -1,0 +1,946 @@
+{
+  "fixtureVersion": "1.0",
+  "category": "reactions",
+  "cases": [
+    {
+      "id": "stable-snapshot-defers-dependent-visibility",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true,
+          "status": "archived"
+        },
+        "fields": [
+          {
+            "field": "status",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "closed"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": [
+          {
+            "id": "closeReason",
+            "when": "$deps.status == 'closed'"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": true,
+          "status": "closed"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true,
+              "status": "archived"
+            },
+            "observations": {
+              "closeReason": false
+            },
+            "commits": [
+              {
+                "field": "status",
+                "value": "closed"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "snapshot": {
+              "trigger": true,
+              "status": "closed"
+            },
+            "observations": {
+              "closeReason": true
+            },
+            "commits": []
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "multiple-fields-commit-in-one-batch",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true,
+          "first": "old-a",
+          "second": "old-b"
+        },
+        "fields": [
+          {
+            "field": "first",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "new-a"
+                }
+              }
+            ]
+          },
+          {
+            "field": "second",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "new-b"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": true,
+          "first": "new-a",
+          "second": "new-b"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true,
+              "first": "old-a",
+              "second": "old-b"
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "first",
+                "value": "new-a"
+              },
+              {
+                "field": "second",
+                "value": "new-b"
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "same-field-later-value-write-wins",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true,
+          "tier": "bronze"
+        },
+        "fields": [
+          {
+            "field": "tier",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "silver"
+                }
+              },
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "gold"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": true,
+          "tier": "gold"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true,
+              "tier": "bronze"
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "tier",
+                "value": "gold"
+              }
+            ]
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MULTIPLE_VALUE_WRITES",
+            "field": "tier",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-equal-write-does-not-schedule-next-round",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "status": "closed"
+        },
+        "fields": [
+          {
+            "field": "status",
+            "reactions": [
+              {
+                "when": "$deps.status == 'closed'",
+                "fulfill": {
+                  "value": "closed"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "status": "closed"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "status": "closed"
+            },
+            "observations": {},
+            "commits": []
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "baseline-restores-when-condition-becomes-false",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true,
+          "status": "baseline"
+        },
+        "baselines": {
+          "status": "baseline"
+        },
+        "fields": [
+          {
+            "field": "status",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "active"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": [
+          {
+            "id": "statusIsBaseline",
+            "when": "$deps.status == 'baseline'"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": true,
+          "status": "active"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true,
+              "status": "baseline"
+            },
+            "observations": {
+              "statusIsBaseline": true
+            },
+            "commits": [
+              {
+                "field": "status",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "snapshot": {
+              "trigger": true,
+              "status": "active"
+            },
+            "observations": {
+              "statusIsBaseline": false
+            },
+            "commits": []
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "baseline-restores-after-trigger-turns-false",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true,
+          "status": "baseline"
+        },
+        "baselines": {
+          "status": "baseline"
+        },
+        "resetMissingOtherwise": true,
+        "externalUpdates": [
+          {
+            "afterRound": 1,
+            "values": {
+              "trigger": false
+            }
+          }
+        ],
+        "fields": [
+          {
+            "field": "status",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": "active"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": false,
+          "status": "baseline"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true,
+              "status": "baseline"
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "status",
+                "value": "active"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "snapshot": {
+              "trigger": false,
+              "status": "active"
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "status",
+                "value": "baseline"
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "strict-comparison-does-not-coerce-types",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "count": 1,
+          "label": "1",
+          "enabled": true
+        },
+        "fields": [],
+        "observers": [
+          {
+            "id": "numberEqualsNumber",
+            "when": "$deps.count == 1.0"
+          },
+          {
+            "id": "numberEqualsString",
+            "when": "$deps.count == '1'"
+          },
+          {
+            "id": "booleanEqualsNumber",
+            "when": "$deps.enabled == 1"
+          },
+          {
+            "id": "numberGreaterThanZero",
+            "when": "$deps.count > 0"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "count": 1,
+          "label": "1",
+          "enabled": true
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "count": 1,
+              "label": "1",
+              "enabled": true
+            },
+            "observations": {
+              "numberEqualsNumber": true,
+              "numberEqualsString": false,
+              "booleanEqualsNumber": false,
+              "numberGreaterThanZero": true
+            },
+            "commits": []
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "contains-uses-strict-element-equality",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "roles": [
+            "admin",
+            1
+          ]
+        },
+        "fields": [],
+        "observers": [
+          {
+            "id": "containsString",
+            "when": "$deps.roles contains 'admin'"
+          },
+          {
+            "id": "containsNumber",
+            "when": "$deps.roles contains 1"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "roles": [
+            "admin",
+            1
+          ]
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "roles": [
+                "admin",
+                1
+              ]
+            },
+            "observations": {
+              "containsString": true,
+              "containsNumber": true
+            },
+            "commits": []
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "missing-field-commits-explicit-null",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true
+        },
+        "fields": [
+          {
+            "field": "result",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": null
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": true,
+          "result": null
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "result",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "explicit-write-wins-over-implicit-baseline-reset",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "keep": false,
+          "reset": true,
+          "status": "baseline"
+        },
+        "baselines": {
+          "status": "baseline"
+        },
+        "externalUpdates": [
+          {
+            "afterRound": 1,
+            "values": {
+              "keep": true,
+              "reset": false
+            }
+          }
+        ],
+        "fields": [
+          {
+            "field": "status",
+            "reactions": [
+              {
+                "when": "$deps.keep == true",
+                "fulfill": {
+                  "value": "active"
+                }
+              },
+              {
+                "when": "$deps.reset == true",
+                "fulfill": {
+                  "value": "temporary"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "keep": true,
+          "reset": false,
+          "status": "active"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "keep": false,
+              "reset": true,
+              "status": "baseline"
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "status",
+                "value": "temporary"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "snapshot": {
+              "keep": true,
+              "reset": false,
+              "status": "temporary"
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "status",
+                "value": "active"
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "json-number-exponent-and-unicode-code-point-order",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "count": 1,
+          "astral": "𐀀"
+        },
+        "fields": [],
+        "observers": [
+          {
+            "id": "exponentEqualsInteger",
+            "when": "$deps.count == 1e0"
+          },
+          {
+            "id": "unicodeCodePointOrder",
+            "when": "$deps.astral > ''"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "count": 1,
+          "astral": "𐀀"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "count": 1,
+              "astral": "𐀀"
+            },
+            "observations": {
+              "exponentEqualsInteger": true,
+              "unicodeCodePointOrder": true
+            },
+            "commits": []
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "loop-protection-stops-after-ten-rounds",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "toggle": "a"
+        },
+        "maxRounds": 10,
+        "fields": [
+          {
+            "field": "toggle",
+            "reactions": [
+              {
+                "when": "$deps.toggle == 'a'",
+                "fulfill": {
+                  "value": "b"
+                },
+                "otherwise": {
+                  "value": "a"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": false,
+        "code": "REACTION_LOOP_LIMIT",
+        "maxRounds": 10,
+        "values": {
+          "toggle": "a"
+        },
+        "roundCount": 10,
+        "dependencyFields": [
+          "toggle"
+        ]
+      }
+    },
+    {
+      "id": "nested-boolean-and-number-are-not-deep-equal",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "trigger": true,
+          "result": [
+            true
+          ]
+        },
+        "fields": [
+          {
+            "field": "result",
+            "reactions": [
+              {
+                "when": "$deps.trigger == true",
+                "fulfill": {
+                  "value": [
+                    1
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "trigger": true,
+          "result": [
+            1
+          ]
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "trigger": true,
+              "result": [
+                true
+              ]
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "result",
+                "value": [
+                  1
+                ]
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "boolean-switch-equality-and-value",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "enabled": false,
+          "note": ""
+        },
+        "fields": [
+          {
+            "field": "note",
+            "reactions": [
+              {
+                "when": "$deps.enabled == true",
+                "fulfill": {
+                  "value": "on"
+                },
+                "otherwise": {
+                  "value": "off"
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "enabled": false,
+          "note": "off"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "enabled": false,
+              "note": ""
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "note",
+                "value": "off"
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "select-multiple-contains-literal",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "roleIds": [
+            "admin",
+            "ops"
+          ],
+          "flag": false
+        },
+        "fields": [
+          {
+            "field": "flag",
+            "reactions": [
+              {
+                "when": "$deps.roleIds contains \"admin\"",
+                "fulfill": {
+                  "value": true
+                },
+                "otherwise": {
+                  "value": false
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "roleIds": [
+            "admin",
+            "ops"
+          ],
+          "flag": true
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "roleIds": [
+                "admin",
+                "ops"
+              ],
+              "flag": false
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "flag",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "cascader-path-contains-literal",
+      "protocolVersion": "2.7",
+      "category": "reactions",
+      "input": {
+        "initialValues": {
+          "regionPath": [
+            "east",
+            "shanghai",
+            "pudong"
+          ],
+          "flag": false
+        },
+        "fields": [
+          {
+            "field": "flag",
+            "reactions": [
+              {
+                "when": "$deps.regionPath contains \"shanghai\"",
+                "fulfill": {
+                  "value": true
+                },
+                "otherwise": {
+                  "value": false
+                }
+              }
+            ]
+          }
+        ],
+        "observers": []
+      },
+      "expected": {
+        "ok": true,
+        "values": {
+          "regionPath": [
+            "east",
+            "shanghai",
+            "pudong"
+          ],
+          "flag": true
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "snapshot": {
+              "regionPath": [
+                "east",
+                "shanghai",
+                "pudong"
+              ],
+              "flag": false
+            },
+            "observations": {},
+            "commits": [
+              {
+                "field": "flag",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "warnings": []
+      }
+    }
+  ]
+}

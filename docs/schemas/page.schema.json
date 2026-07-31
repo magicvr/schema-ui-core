@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://internal/schema-ui/page.schema.json",
+  "title": "Schema-UI Page Document",
+  "description": "顶层页面文档结构 Schema，校验 meta + datasources + body + actions 的整体结构。参见 docs/01-node-protocol.md §2",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "页面元信息",
+      "properties": {
+        "pageId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "protocolVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "必填（since 0.2），格式 MAJOR.MINOR。当前协议制品为 \"2.7\"。使用 permissionCascade 或 permissionIntent 时必须 \"2.3\" 并声明 permissions.inheritance；使用 type: recordView 时必须 \"2.4\" 并声明 record.view.load；使用 sortable/sortField/defaultSort 时必须 \"2.5\" 并声明 table.sort；使用 textarea/switch/checkbox/radio 或 select.mode:multiple 时必须 \"2.6\" 并声明 form.controls.extended；使用 cascader/checkboxGroup/richText/password 或 defaultValue 时必须 \"2.7\" 并声明 form.controls.advanced；2.2 字段仍要求至少 \"2.2\"。L2 强制字段集→版本下限（V282、ADR-0023/0024/0027/0028/0029–0033）"
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "description": "可选（since 0.2.6），页面依赖的 Renderer 执行能力列表。预定义键含 actions.upload、actions.row.request、actions.page.trigger、actions.row.navigate、form.record.load、table.selection、actions.batch.request、permissions.inheritance、record.view.load、app.manifest、app.navigation、table.sort、form.controls.extended、form.controls.advanced",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": ["pageId", "title", "protocolVersion"],
+      "additionalProperties": false
+    },
+    "datasources": {
+      "type": "object",
+      "description": "【可选】页面级预声明数据源，key-value 映射，供 body 内节点通过 ref 引用。禁止使用 source: ref（引用链），仅允许 source: api 或 source: static",
+      "additionalProperties": {
+        "$ref": "#/definitions/DatasourceDeclaration"
+      }
+    },
+    "body": {
+      "$ref": "node.schema.json",
+      "description": "页面主体，根 Node"
+    },
+    "actions": {
+      "type": "object",
+      "description": "【可选】页面级可复用动作定义，完整契约见 docs/07-actions-contract.md",
+      "additionalProperties": {
+        "$ref": "action.schema.json"
+      }
+    }
+  },
+  "required": ["meta", "body"],
+  "additionalProperties": false,
+  "definitions": {
+    "DatasourceDeclaration": {
+      "type": "object",
+      "description": "页面级数据源声明。仅允许 source: api 或 source: static，禁止 source: ref（引用链会导致递归风险，需 ADR 定义持久性/循环检测后方可开放）",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["api", "static"],
+          "description": "数据源类型。仅 api 或 static，禁止 ref"
+        },
+        "value": {},
+        "url": {
+          "type": "string",
+          "pattern": "^/(?!/)[^\\s\\\\]*$",
+          "description": "页面级 API 数据源地址必须是 baseURL 下的单斜杠相对路径"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET"],
+          "default": "GET",
+          "description": "页面级数据源只允许 GET；写操作必须使用 Action"
+        },
+        "params": {
+          "type": "object",
+          "description": "【可选】URL query 参数映射，对所有 HTTP method 均不隐式进入请求体；key 必须非空，值只允许 string/finite number/boolean/null 标量（禁止对象和数组）。页面级 datasources 无 form 上下文，完整 $deps.* 会由 L3a 以 NON_FORM_DATA_PARAMS 拒绝；见 ADR-0010、docs/04-datasource-contract.md §3.1 与 docs/08-renderer-spec.md §2.3",
+          "propertyNames": { "type": "string", "minLength": 1 },
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
+          },
+          "not": {
+            "required": ["responseMapping"],
+            "description": "responseMapping 禁止放入 params——它不属于请求参数（ADR-0005 D1），应声明在顶级字段中"
+          }
+        },
+        "responseMapping": {
+          "$ref": "node.schema.json#/definitions/ResponseMapping",
+          "description": "【可选，since 0.2.4】响应字段名映射"
+        }
+      },
+      "required": ["source"],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": { "source": { "const": "static" } },
+          "required": ["source", "value"],
+          "not": {
+            "anyOf": [
+              { "required": ["url"] },
+              { "required": ["method"] },
+              { "required": ["params"] },
+              { "required": ["responseMapping"] }
+            ]
+          }
+        },
+        {
+          "properties": { "source": { "const": "api" } },
+          "required": ["source", "url"],
+          "not": { "required": ["value"] }
+        }
+      ]
+    }
+  }
+}
