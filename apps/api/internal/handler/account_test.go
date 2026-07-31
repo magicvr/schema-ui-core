@@ -58,6 +58,24 @@ func TestAccountsMeNoSessionFailsClosed(t *testing.T) {
 	}
 }
 
+func TestAccountsMeNilProviderFailsClosed(t *testing.T) {
+	mux := http.NewServeMux()
+	// Nil sessionProvider must not panic and must fail closed.
+	h := &accountHandler{}
+	mux.Handle("GET /api/accounts/me", h.me())
+
+	req := httptest.NewRequest(http.MethodGet, "/api/accounts/me", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+	}
+	if got := rr.Body.String(); got != "" && !containsString(got, "UNAUTHENTICATED") {
+		t.Fatalf("body = %q, want UNAUTHENTICATED error", got)
+	}
+}
+
 func containsString(haystack, needle string) bool {
 	for i := 0; i+len(needle) <= len(haystack); i++ {
 		if haystack[i:i+len(needle)] == needle {

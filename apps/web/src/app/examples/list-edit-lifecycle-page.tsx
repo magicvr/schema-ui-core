@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
@@ -12,6 +12,7 @@ import {
   type RecordPatch,
 } from "@/renderer/records";
 import { useRecords } from "@/renderer/use-records";
+import type { NavigationContext } from "@/protocol/app-manifest";
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
@@ -26,6 +27,9 @@ const EDIT_FIELDS: FormControlField[] = [
 ];
 
 // Page document consumed by the R4 executeAction gate (D-ACT row actions).
+// The table cascades edit/delete intents to its row actions; the source
+// expressions are evaluated against the real $context so a non-admin session
+// produces an observable denial (buttons disabled).
 const PAGE_DOCUMENT = {
   meta: {
     protocolVersion: "2.7",
@@ -33,6 +37,12 @@ const PAGE_DOCUMENT = {
   },
   body: {
     type: "table",
+    id: "records-table",
+    permissionCascade: { keys: ["edit", "delete"] },
+    permissions: {
+      edit: '$context.user.roles contains "admin"',
+      delete: '$context.user.roles contains "admin"',
+    },
     props: {
       columns: [{ field: "name" }],
       actions: [
@@ -43,7 +53,7 @@ const PAGE_DOCUMENT = {
   },
 } as const;
 
-function actionGate(targetId: string, context: Record<string, unknown>) {
+function actionGate(targetId: string, context: NavigationContext) {
   return runRowAction({
     page: PAGE_DOCUMENT as unknown as Record<string, unknown>,
     targetId,
@@ -63,7 +73,12 @@ function formatUpdatedAt(value: string): string {
   });
 }
 
-export function ListEditLifecyclePage() {
+export interface ListEditLifecyclePageProps {
+  /** Real $context snapshot from the boot /me session (App passes it down). */
+  context?: NavigationContext;
+}
+
+export function ListEditLifecyclePage({ context = {} }: ListEditLifecyclePageProps) {
   const { list, loading, error, query, setQuery } = useRecords();
   const [editId, setEditId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Record<string, unknown>>({});
@@ -72,8 +87,7 @@ export function ListEditLifecyclePage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  // R4 D-PERM context: the dev session carries admin + editor roles.
-  const context = useMemo(() => ({ user: { roles: ["admin"] }, features: {} }), []);
+  // Row actions gate through the D-PERM engine against the boot session.
   const editGate = actionGate("edit", context);
   const deleteGate = actionGate("delete", context);
 

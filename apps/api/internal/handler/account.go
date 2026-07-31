@@ -8,8 +8,8 @@ import (
 
 // accountHandler serves the R4 minimal session contract.
 type accountHandler struct {
-	// sessionProvider is injectable for tests; nil means the static dev
-	// session. Fail-closed: an empty provider never produces a session.
+	// sessionProvider is injectable for tests; nil is fail-closed and produces
+	// no session (the /me endpoint responds Unauthorized).
 	sessionProvider func() (account.Session, bool)
 }
 
@@ -25,7 +25,12 @@ func accountsHandler(mux *http.ServeMux) {
 // me returns the current account session and $context snapshot: { user, features }.
 func (h *accountHandler) me() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		session, ok := h.sessionProvider()
+		provider := h.sessionProvider
+		if provider == nil {
+			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+			return
+		}
+		session, ok := provider()
 		if !ok {
 			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 			return

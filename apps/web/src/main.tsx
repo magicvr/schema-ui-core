@@ -26,10 +26,18 @@ loadAppManifest()
   .then(async (manifest) => {
     // R4: attach the account $context snapshot before first render so the
     // shell's navigation permission checks evaluate against real identity.
-    const { context } = await loadAccountContext();
+    // A failed load is not fatal: surface it as a banner instead of dropping it.
+    const { context, error: accountError } = await loadAccountContext();
+    if (accountError !== null) {
+      console.error("[account] failed to load session snapshot:", accountError);
+    }
     createRoot(root).render(
       <StrictMode>
-        <App manifest={manifest} navigationContext={context} />
+        <App
+          manifest={manifest}
+          navigationContext={context}
+          accountError={accountError ?? undefined}
+        />
       </StrictMode>,
     );
   })

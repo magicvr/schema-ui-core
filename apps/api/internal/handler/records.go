@@ -9,6 +9,15 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+)
+
+// Limits for the R5 D-DATA API (F-009-007): write bodies and page size are
+// bounded so the demo API fails closed on oversized input.
+const (
+	maxRecordBodyBytes = 4 << 10
+	maxPageSize        = 100
 )
 
 // record is the R5 D-DATA example domain entity (de-business-ified static dev
@@ -32,10 +41,12 @@ type recordList struct {
 
 // recordHandler serves the R5 D-DATA list/detail example API (static data) and
 // the R5 D-ACT edit lifecycle (PATCH/DELETE). State is guarded by a mutex; the
-// MVP has no DB, so mutations live in the process.
+// MVP has no DB, so mutations live in the process. Write routes gate through a
+// fail-closed session check (F-009-006).
 type recordHandler struct {
-	mu      sync.RWMutex
-	records []record
+	mu              sync.RWMutex
+	records         []record
+	sessionProvider func() (account.Session, bool)
 }
 
 // recordPatch is the PATCH body: pointer fields so absent keys are untouched.
@@ -70,11 +81,36 @@ func staticRecords() []record {
 }
 
 func recordsHandler(mux *http.ServeMux) {
-	h := &recordHandler{records: staticRecords()}
+	h := &recordHandler{records: staticRecords(), sessionProvider: sessionProvider}
+	h.routes(mux)
+}
+
+func (h *recordHandler) routes(mux *http.ServeMux) {
 	mux.Handle("GET /api/records", h.list())
 	mux.Handle("GET /api/records/{id}", h.detail())
 	mux.Handle("PATCH /api/records/{id}", h.update())
 	mux.Handle("DELETE /api/records/{id}", h.delete())
+}
+
+// writeGate enforces fail-closed authorization on record write routes
+// (F-009-006): a valid session is required and the caller must hold the admin
+// role. On denial it writes the error response and returns ok=false.
+func (h *recordHandler) writeGate(w http.ResponseWriter) (account.Session, bool) {
+	provider := h.sessionProvider
+	if provider == nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+		return account.Session{}, false
+	}
+	session, ok := provider()
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+		return account.Session{}, false
+	}
+	if !account.Allow(`$context.user.roles contains "admin"`, session.User, session.Features) {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "admin role required")
+		return account.Session{}, false
+	}
+	return session, true
 }
 
 // list serves GET /api/records with q / sort / order / page / pageSize params.
@@ -106,6 +142,10 @@ func (h *recordHandler) list() http.Handler {
 		pageSize, ok := intParam(query.Get("pageSize"), 10)
 		if !ok {
 			writeError(w, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer")
+			return
+		}
+		if pageSize > maxPageSize {
+			writeError(w, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must not exceed 100")
 			return
 		}
 
@@ -167,7 +207,11 @@ func (h *recordHandler) detail() http.Handler {
 // update serves PATCH /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) update() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := h.writeGate(w); !ok {
+			return
+		}
 		id := r.PathValue("id")
+		r.Body = http.MaxBytesReader(w, r.Body, maxRecordBodyBytes)
 		var patch recordPatch
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&patch); err != nil {
@@ -196,6 +240,7 @@ func (h *recordHandler) update() http.Handler {
 		if patch.Owner != nil {
 			rec.Owner = *patch.Owner
 		}
+		rec.UpdatedAt = time.Now().UTC()
 		h.records[idx] = rec
 		h.mu.Unlock()
 		writeJSON(w, http.StatusOK, rec)
@@ -205,6 +250,9 @@ func (h *recordHandler) update() http.Handler {
 // delete serves DELETE /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) delete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := h.writeGate(w); !ok {
+			return
+		}
 		id := r.PathValue("id")
 		h.mu.Lock()
 		idx := slices.IndexFunc(h.records, func(rec record) bool { return rec.ID == id })

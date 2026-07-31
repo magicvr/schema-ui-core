@@ -134,6 +134,35 @@ describe("App shell integration", () => {
     });
     expect(viewer.textContent).not.toContain("Detail");
   });
+
+  it("surfaces a non-blocking notice when the account session fails to load", async () => {
+    window.history.replaceState({}, "", "/home");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <App
+          manifest={testManifest()}
+          navigationContext={{}}
+          accountError={new Error("account unavailable")}
+        />,
+      );
+    });
+    // Fail-closed: the shell still renders, but the failure is observable.
+    expect(container.textContent).toContain("Account session failed to load");
+    expect(container.querySelector("h1")?.textContent).toBe("Home");
+
+    const healthy = document.createElement("div");
+    document.body.appendChild(healthy);
+    const healthyRoot = createRoot(healthy);
+    activeRoots.push({ root: healthyRoot, container: healthy });
+    await act(async () => {
+      healthyRoot.render(<App manifest={testManifest()} navigationContext={{}} />);
+    });
+    expect(healthy.textContent).not.toContain("Account session failed to load");
+  });
 });
 
 describe("manifest failure surface", () => {

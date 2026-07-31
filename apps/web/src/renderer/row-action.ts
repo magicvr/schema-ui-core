@@ -1,4 +1,5 @@
 import { executeAction, type ExecutionResult } from "@/renderer/permissions";
+import type { NavigationContext } from "@/protocol/app-manifest";
 
 /**
  * R5 D-ACT non-batch row action execution (frozen Q1: batch excluded).
@@ -13,7 +14,7 @@ export type RowActionOutcome = ExecutionResult["outcome"];
 export interface RowActionRequest {
   page: Record<string, unknown>;
   targetId: string;
-  context: Record<string, unknown>;
+  context: NavigationContext;
   /** Defaults to true; a hidden action fails closed as NOT_VISIBLE. */
   visible?: boolean;
   confirm?: boolean;

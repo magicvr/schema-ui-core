@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-009
@@ -59,3 +59,21 @@ version: 0.1.0
 
 - 符合 P-003：正式意见在被审目标台账；长文可附件。
 - 用户明确要求审计内容作独立附件。
+
+## D-004 · F-009-006/007 纳入实施（2026-08-01）
+
+**决定**：
+
+用户裁决 I-009-001/002 为「都纳入实施」：F-009-006（records 写路由 fail-closed 鉴权）与 F-009-007（body/pageSize 上限）从 recommended 升格为本目标实施项，不做 accepted-residual。
+
+**为什么**：
+
+- F-009-006 严重度 med（误用时 high）：演示 API 存在鉴权库却不挂写路由，易与「后端独立鉴权」叙事混淆；挂 fail-closed 检查成本低、收益明确。
+- F-009-007 低风险高性价比：`MaxBytesReader` + `pageSize` 上限 + 400 测试改动极小。
+
+**未选方案**：
+
+- **对 006/007 作 accepted-residual**：用户否决；两条均可在 MVP 范围内低成本落地。
+- **只做一条**：用户选择两条都做，避免留半截鉴权/上限。
+
+**执行证据**：`records.go` `writeGate()`（401/403）+ `MaxBytesReader` 4 KiB + `pageSize ≤ 100`；`TestRecordsWriteRequiresSession`、`TestRecordsWriteDeniedWithoutAdminRole`、`TestRecordsUpdateBodyTooLarge`、`TestRecordsListPageSizeCap`。

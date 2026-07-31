@@ -50,6 +50,8 @@ const iconRegistry: Record<string, LucideIcon> = {
 export interface AppProps {
   manifest: AppManifest;
   navigationContext?: NavigationContext;
+  /** Set when the boot /me session failed; surfaces a non-blocking notice. */
+  accountError?: unknown;
 }
 
 function currentLocationPath() {
@@ -175,10 +177,12 @@ function PageSurface({
   manifest,
   path,
   onNavigate,
+  navigationContext,
 }: {
   manifest: AppManifest;
   path: string;
   onNavigate: (href: string) => void;
+  navigationContext: NavigationContext;
 }) {
   const route = matchRoute(manifest.pages, path);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
@@ -211,7 +215,7 @@ function PageSurface({
   const pageTitle = route.page.title ?? route.page.titleKey ?? route.page.pageId;
   const ExamplePage = EXAMPLE_PAGES[route.page.pageId];
   if (ExamplePage !== undefined) {
-    return <ExamplePage />;
+    return <ExamplePage context={navigationContext} />;
   }
   return (
     <section className="space-y-8" aria-labelledby="page-title">
@@ -274,7 +278,7 @@ function PageSurface({
   );
 }
 
-export function App({ manifest, navigationContext = {} }: AppProps) {
+export function App({ manifest, navigationContext = {}, accountError }: AppProps) {
   const [path, setPath] = useState(() => {
     const requested = currentLocationPath();
     const initial = resolveInitialRoute(manifest, requested);
@@ -313,6 +317,14 @@ export function App({ manifest, navigationContext = {} }: AppProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {accountError !== undefined ? (
+        <div
+          role="alert"
+          className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive"
+        >
+          Account session failed to load; permissions and navigation may be incomplete.
+        </div>
+      ) : null}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
         <div className="flex min-h-16 items-center gap-4 px-4 sm:px-6">
           <a
@@ -374,7 +386,12 @@ export function App({ manifest, navigationContext = {} }: AppProps) {
         </aside>
 
         <main id="main" className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
-          <PageSurface manifest={manifest} path={path} onNavigate={onNavigate} />
+          <PageSurface
+            manifest={manifest}
+            path={path}
+            onNavigate={onNavigate}
+            navigationContext={navigationContext}
+          />
         </main>
       </div>
     </div>
