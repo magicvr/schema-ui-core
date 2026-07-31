@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-005
@@ -63,6 +63,12 @@ version: 0.4.0
 - 用户已按 P-004.1 明确选择执行与 A-004 同 scope 的实施阶段 self-audit；A-006 已追加到 `03-audit.md`，verdict 为 `pass`。
 - A-004 F-003 已由 A-006 以 `fixed` 合法闭合；F-004～F-006 保持 recommended、非阻断跟进。
 - GOAL-005 已标为 `done`，Root R3 检查点和 `goal-tree.md` 已同步；Root 仍为 `active`、progress `3/6`。
+
+### 2026-07-31 · `/govern` 响应 A-007（关门复审建议）
+
+- 采纳 A-007 F-001：`03-audit.md`「信息就绪核对」表的 HEAD/工作树快照已绑定 A-006 审计时点（`0b83c941…`），并注明当前 HEAD `f70f98d`、实现提交 `0b83c94`。
+- 记录 A-007 F-002：随父目标 `I-PROTO-004` 关闭补 schema-conformance 等价性校验（官方 `app-manifest.schema.json` 运行器）或显式记录等价范围与漂移风险。
+- 响应记录为 A-008；R3 关门事实维持，Root 转入 R4 规划（立项 `GOAL-006-r4-account-permission`）。本次未修改代码、`status` 或 `progress`。
 
 ## 完成后边界
 

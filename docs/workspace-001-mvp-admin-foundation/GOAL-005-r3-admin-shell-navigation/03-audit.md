@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.7.0
+version: 0.9.0
 ---
 
 # 审计 · GOAL-005
@@ -19,7 +19,7 @@ version: 0.7.0
 | 影响本 scope 的 I-00N | `I-005-001` 至 `I-005-005` 均 `verified` | 见 [00-meta.md](00-meta.md) 与 D-005；A-005 响应确认冻结证据已入账 |
 | 到期 required 是否已 verified / residual | **已满足；无开放 required** | I-005-001 至 I-005-005 均已 verified；A-004 F-001～F-003 均已按 `fixed` 闭合，A-006 self-audit 通过 |
 | 固定资料引用 | 已固定 R3 subset 资料 | artifact `2.7.0` + commit `ca9e5fe…`、本地 schema/fixture copies 与 provenance SHA-256 已登记；`shared_materials_catalog: none`；不宣称完整官方 conformance |
-| 当前实现证据 | **已入执行台账并进入当前 HEAD** | `02-execution.md` 记录 manifest loader、校验、导航投影、History shell、73 tests、build 和 dev server HTTP 复核；当前 HEAD 为 `0b83c941...`，工作树干净 |
+| 当前实现证据 | **已入执行台账并进入当前 HEAD** | `02-execution.md` 记录 manifest loader、校验、导航投影、History shell、73 tests、build 和 dev server HTTP 复核。**本表 HEAD/工作树行是 A-006（`0b83c941…`，工作树干净）审计时点快照**；当前 HEAD 已前进至 `f70f98d`（R3 关门文档提交），R3 实现提交 `0b83c94` 已进入 HEAD，工作树干净。见 A-007 复核动作与下方响应节（F-001 采纳）。 |
 
 ## 意见台账索引
 
@@ -31,14 +31,17 @@ version: 0.7.0
 | A-004 | 2026-07-31 | independent | R3 实现 / 执行事实 / 验证 / 关门就绪 | **fail** | 3（F-001～F-003；另见 recommended F-004～F-006） |
 | A-005 | 2026-07-31 | self（/govern 响应） | 响应 A-004 F-001～F-003 | **conditional** | 1（F-003；等待 P-004.1） |
 | A-006 | 2026-07-31 | self | R3 实施阶段同 scope self-audit / 执行事实 / 验证 / 关门 | **pass** | 0（F-001～F-003 fixed；F-004～F-006 recommended） |
+| A-007 | 2026-07-31 | independent | R3 关门独立复审（close-out / finding-closure / 执行与验证证据复核） | **pass** | 0（无新 required；F-001/F-002 recommended 见本节） |
+| A-008 | 2026-07-31 | self（编排响应） | 响应 A-007 F-001/F-002；维持 R3 关门；转入 R4 规划 | **pass** | 0（F-001 采纳、F-002 记录跟进） |
 
 ## 当前开放门禁
 
 - `I-005-001` 至 `I-005-005` 均已在其最晚阶段前完成验证；本目标没有开放 required 信息项。
 - A-001 **F-001** 已由 A-002 以 `fixed` 闭合（历史响应）：I 表与 D-002 已统一要求在方案冻结前处理 `I-005-001` 至 `I-005-005`；后续 D-005 与验证证据已完成当前 R3 关门所需闭环。
 - **A-004 / A-005 / A-006**：F-001（方案冻结）、F-002（执行事实）和 F-003（验证与关门证据）均已以 `fixed` 合法闭合；A-006 记录用户按 P-004.1 明确选择执行 self-audit，且 verdict 为 `pass`。F-004～F-006 仍为 recommended、非阻断跟进。
+- **A-007**（independent，verdict **pass**，无新 required）：F-001 已采纳（索引表快照绑定审计时点，见下）；F-002 已记录为随 Root `I-PROTO-004` 决策跟进的 recommended 项（见下「A-007 编排响应」）。本目标不因采纳建议而重新打开已关门的 required。
 - 本目标不处理父目标的 `I-PROTO-002` / `I-PROTO-003`；它们仍分别阻断 R4 实施和 R5 验收/关门。
-- 父目标 `I-PROTO-004`（vendor vs pin）仍 open（non-blocking 于 Root），现已通过 `I-005-001` 显式关联；关闭该项时仍须记录校验方式和失败边界。
+- 父目标 `I-PROTO-004`（vendor vs pin）仍 open（non-blocking 于 Root），现已通过 `I-005-001` 显式关联；关闭该项时仍须记录校验方式和失败边界。A-007 F-002 已在下方响应节登记为该项关闭时的跟进要求。
 
 ---
 
@@ -466,3 +469,145 @@ A-004 是 independent，A-003 仅覆盖规划阶段，不能替代实施同 scop
 ### 声明
 
 本意见 `source: self`，仅追加本目标 `03-audit.md` 并记录本轮合法 finding 闭合；目标状态、Root R3 检查点和 `goal-tree.md` 的同步由 `/govern` 在本次关门写入。
+
+---
+
+## A-007 · R3 关门独立复审（close-out / finding-closure）（2026-07-31）
+
+- **source**：independent
+- **auditor**：GitHub Copilot（`/audit` · independent）
+- **类型**：close-out + finding-closure + execution-facts（复核）
+- **scope**：`workspace-001-mvp-admin-foundation` / `GOAL-005-r3-admin-shell-navigation` 的**关门复审**：目标定义与成功标准、A-001/A-004 必改项闭合证据、P-005 信息门禁、执行事实台账、验证与运行时证据、R4/R5 边界。**不审**父目标门禁改写、Vision Review、完整协议 conformance；不改 `status`/`progress`/goal-tree。
+- **verdict**：**pass**
+- **完整意见**：本节即全文（未另附 attachments）
+- **审计区间**：2026-07-31；当前 git HEAD `f70f98d`（GOAL-005 R3 关门文档提交），工作树干净，`git diff --check` 通过；R3 实现提交为 `0b83c94`（与 A-006 记录的审计时点一致）。
+
+### 范围与区间
+
+| 项 | 值 |
+|----|-----|
+| 工作区 | `workspace-001-mvp-admin-foundation`（`root_goal=GOAL-001-mvp-admin-foundation`，`canonical_scope` 已校验，`shared_materials_catalog: none`，`plan_refs`/`primary_plan=VP-001-mvp-admin-foundation`） |
+| 被审目标 | `GOAL-005-r3-admin-shell-navigation`（`parent=GOAL-001-mvp-admin-foundation`，`status=done`） |
+| 代码范围 | `apps/web/src/protocol/app-manifest.ts`、`apps/web/src/protocol/upstream-fixtures.test.ts`、`apps/web/src/protocol/upstream/provenance.json`、`apps/web/src/app/navigation.ts`、`App.tsx`、`App.integration.test.tsx`、`main.tsx`、`public/.well-known/schema-ui/app-manifest.json`、`docs/schemas/app-manifest.schema.json` |
+| 明确不在 scope | 改 status/progress/goal-tree；Vision Review；R4 权限产品化；R5 Renderer 全量；完整协议 conformance |
+
+### 复核动作（本审独立执行）
+
+- 重跑 `npm test -- --run`：**4 个测试文件、73/73 通过**（navigation 3 + app-manifest 13 + upstream-fixtures 53 + App.integration 4）——与 A-006 / 02-execution 记录一致。
+- 重跑 `npm run build`（`tsc -b && vite build`）：**成功**。
+- HTTP 运行时复核（`vite preview` @ 4173）：`/.well-known/schema-ui/app-manifest.json` → **200 application/json**、`protocolVersion=2.7`、**4 pages**、`homePageRef=overview`；`/` → **200 text/html**；deep link `/catalog` → **200 text/html**——与 02-execution 的 dev server 复核一致。
+- Git：`0b83c94` 为 R3 实现提交（与 A-006 审计时 HEAD 一致），`f70f98d` 为关门文档提交（当前 HEAD），工作树干净、`git diff --check` 无输出。
+- fixture 计数：`app-manifest.cases.json` 37 例（35 执行 + 2 排除，排除理由为 M1 error-envelope 差异且覆盖断言机器校验）；`app-navigation.cases.json` 16 例全部执行。
+- provenance：source commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`、artifact `2.7.0`、三份 SHA-256 与静态 manifest hash 均在测试中断言且通过。
+- 父目标：`I-PROTO-002`/`I-PROTO-003` 仍为 required/open（R4/R5 门禁），`I-PROTO-004` 仍为 open/non-blocking；R4/R5 纲领仍「未开始」。
+
+### 成果（有证据 · 本审复核）
+
+| 主张 | 证据 | 核对 |
+|------|------|------|
+| 五项 required 信息已 verified，最晚阶段均在方案冻结前 | [00-meta.md](00-meta.md) `I-005-001`～`005`；[01-decision.md](01-decision.md) D-005 | 通过 |
+| 方案冻结已落盘（2.7 子集、pin、导航、D4a、shell 边界、R4/R5 排除） | D-005 | 通过 |
+| 执行事实台账已记录实现、测试、构建、运行时与边界（历史时间线） | [02-execution.md](02-execution.md) | 通过 |
+| A-004 F-001～F-003 均合法 `fixed`；F-004～F-006 保持 recommended | [03-audit.md](03-audit.md) A-005/A-006 | 通过（本审重跑证据复核一致） |
+| 上游 fixture 对照 35/37 + 16/16，排除透明 | `upstream-fixtures.test.ts`；case 文件计数 | 通过 |
+| 73 测试与构建可重复通过 | 本审重跑 `npm test` / `npm run build` | 通过 |
+| 运行时入口可复核 | 本审 HTTP 检查（manifest/root/deep-link 均 200） | 通过 |
+| R4/R5 与完整协议边界未越过 | 父目标 [00-meta](../GOAL-001-mvp-admin-foundation/00-meta.md) 信息表；GOAL-005 排除项 | 通过 |
+
+### 对照成功标准（关门）
+
+| 成功标准（00-meta） | 判断 | 证据 |
+|--------------------|------|------|
+| R3 必需信息项已验证或有界 residual | **满足** | 五项 verified；无伪造 residual |
+| 冻结 schema/版本/子集 + 失败边界 | **满足** | D-005、`app-manifest.ts`、unit/integration 测试 |
+| shell 由冻结导航数据进入页面；默认/fallback/active 可复核 | **满足** | `App.integration.test.tsx`（root→home、popstate、unknown fallback + 返回 home、参数链接/context）；navigation tests；HTTP 复核 |
+| app-manifest/app-navigation 验证路径已执行 | **满足** | `upstream-fixtures.test.ts` 35/37 + 16/16 + 覆盖断言 |
+| R4/R5/完整协议保持边界外且无开放 required | **满足** | 父目标门禁状态；本审未发现开放 required |
+
+### Findings
+
+#### F-001 · recommended · 低 · 台账索引「当前 HEAD」快照未绑定审计时点
+
+- **问题**：`03-audit.md` 顶部「信息就绪核对」表写「当前 HEAD 为 `0b83c941…`，工作树干净」，该表述是 A-006 审计时点的快照；当前 HEAD 已前进至 `f70f98d`（关门文档提交）。A-006 自身段落正确标注了审计区间，不构成错误；但索引表未绑定审计 ID/日期，未来读者可能误读为当前状态。
+- **证据**：`03-audit.md`「信息就绪核对」表；`git log`（`0b83c94` → `f70f98d`）。
+- **影响**：台账可读性/可审计性（无门禁影响）。
+- **建议**：由 `/govern` 将索引表快照声明绑定到对应 A-00N/日期，或更新为当前 HEAD 并注明历史快照位置。
+
+#### F-002 · recommended · 低 · F-004 遗留（手写校验 vs 官方 schema）仍无运行器级等价校验
+
+- **问题**：A-004 F-004（recommended）指出生产 validator 为手写子集。本审确认：schema artifact 的**字节 hash** 被 pin 并在测试中断言，但测试套件**没有**用官方 JSON Schema（`docs/schemas/app-manifest.schema.json`）实际校验 manifest（无 ajv 等 schema 运行器）；pin 只能证明字节一致，不能证明手写规则与 schema 语义等价。D-005 已明确声明「不宣称完整 JSON Schema 或完整 conformance 支持」，因此这仍是**已声明边界内的非阻断跟进**，不是新 required。
+- **证据**：`upstream-fixtures.test.ts`（仅 hash 断言 schema）；`app-manifest.ts`（手写校验）；D-005。
+- **影响**：Root `I-PROTO-004`（open/non-blocking）决策后的工程质量，不影响 R3 关门。
+- **建议**：关闭 Root `I-PROTO-004` 时补 schema-conformance 运行器，或显式记录等价范围与漂移风险。
+
+### 必改项汇总
+
+| # | 级别 | 摘要 | 建议 |
+|---|------|------|------|
+| F-001 | recommended | 索引表 HEAD 快照未绑定审计时点 | `/govern` 更新或注明 |
+| F-002 | recommended | 手写 validator 与官方 schema 等价性无运行器校验（已声明边界内） | 随 Root `I-PROTO-004` 决策跟进 |
+
+本审**无 required / 必改项**；不存在未合法闭合的 required finding。
+
+### 与既有意见的异同
+
+| 意见 | 关系 |
+|------|------|
+| A-001（independent，规划） | F-001 已由 A-002 `fixed`；本审确认闭合证据仍在。 |
+| A-004（independent，实现/关门就绪） | F-001～F-003 的 `fixed` 闭合证据本审**可重复核对**（I 表、D-005、02-execution、fixture/集成/HTTP 证据）；F-004～F-006 保持 recommended；本审 F-002 是对 F-004 跟进项的状态确认，不重复出 required。 |
+| A-006（self，实施同 scope + 关门） | verdict `pass` 的主张本审复核一致（73 测、构建、fixture 对照、边界）；本审作为 independent 独立复核与 A-006 结论一致，证据为本审独立重跑而非复读。 |
+| 本 A-007 | 首次对**已关门状态**做独立 close-out 复审；verdict **pass**。 |
+
+### 结论 + 建议给编排器/用户的下一步
+
+**结论**：GOAL-005 的 R3 冻结子集——方案冻结、五项 required 信息验证、实施、fixture/集成/运行时验证、实施阶段 self-audit 与必改项闭合——**证据充分且可重复核对**；R4/R5 边界未被动摇，目标 `done` 与其成功标准一致，无假完成或名不副实。verdict = **pass**。
+
+**建议 `/govern` 输入**（示例）：
+
+```text
+/govern 响应 workspace-001 GOAL-005 A-007：
+1) 采纳 F-001（可选）：索引表 HEAD 快照绑定审计时点或更新
+2) 记录 F-002（可选跟进）：随 Root I-PROTO-004 决策补 schema 等价性校验
+3) R3 关门维持；进入 R4 规划（注意 I-PROTO-002 为 R4 实施门禁）
+```
+
+### 声明
+
+本意见 `source: independent`，**仅追加**本目标 `03-audit.md`；**不修改** `00-meta` / `01-decision` / `02-execution` / `goal-tree` / 代码 / `status` / `progress`。响应、finding 闭合与阶段推进由 **`/govern`** 处理。
+
+---
+
+## A-008 · `/govern` 响应 A-007（2026-07-31）
+
+- **source**：self（编排响应）
+- **auditor**：Codex（`/govern`）
+- **类型**：response
+- **scope**：响应 A-007 的两条 recommended（F-001 索引表快照时点、F-002 schema 等价性跟进）；维持 R3 关门事实；转入 R4 规划。**不**重开 A-004/A-006 已 `fixed` 的 required，不改 R4/R5 父级门禁，不写 Vision Review。
+- **verdict**：**pass**
+- **完整意见**：本节即全文（未另附 attachments）
+
+### 响应哪些意见 / Findings
+
+| 原意见 | 处理 | 说明 |
+|--------|------|------|
+| A-007 F-001 · recommended · 低 | **采纳并修正** | 索引表「当前实现证据」行的 HEAD 快照已绑定 A-006 审计时点（`0b83c941…`），并注明当前 HEAD `f70f98d` / 实现提交 `0b83c94` 已进入 HEAD、工作树干净。原 A-006 段落本就正确标注审计区间，无需改写。 |
+| A-007 F-002 · recommended · 低 | **记录为跟进** | 手写 validator 与官方 `app-manifest.schema.json` 的等价性目前仅有字节 hash 断言、无 schema 运行器校验——这是 D-005 已声明边界内的非阻断项。登记：关闭父目标 `I-PROTO-004`（vendor vs pin）时须补 schema-conformance 运行器校验，或显式记录等价范围与漂移风险。本目标不新增 required，不升格 A-004 F-004。 |
+
+### 关闭证据
+
+| Finding | 状态 | 证据路径 |
+|---------|------|----------|
+| A-007 F-001 | 已采纳（recommended，非门禁） | 本 `03-audit.md`「信息就绪核对」表「当前实现证据」行（绑定 A-006 审计时点 + 当前 HEAD）。 |
+| A-007 F-002 | 已登记为跟进 | 本响应节 + 父目标 `I-PROTO-004` 关闭要求（见 Root [00-meta](../../GOAL-001-mvp-admin-foundation/00-meta.md)）。 |
+
+### 仍开放项
+
+- A-007 无 open required；A-004 F-004～F-006 保持 recommended、非阻断。
+- 父目标 `I-PROTO-002`（required，R4 实施门禁）、`I-PROTO-003`（required，R5 验收/关门门禁）仍 open；`I-PROTO-004`（non-blocking）仍 open，其关闭将携带 F-002 的等价性校验要求。
+- 本目标 `I-005-*` 均 verified；无新的本目标信息门禁。
+
+### 结论 + 建议下一步
+
+**结论**：A-007 的独立 close-out 复审 verdict 为 **pass** 且无新 required，证据与 A-006 一致；本响应采纳两条 recommended 建议，R3 关门事实维持。GOAL-005 `done` 不因本响应改变；Root 按 R4 规划推进，R4 实施受父目标 `I-PROTO-002` 门禁约束。
+
+**建议下一步**：新建 `GOAL-006-r4-account-permission`（R4 核心账号与权限）五件套并登记 `I-006-001`（账号权限最小 API 与 `D-PERM` 映射）；R4 方案冻结前验证 `I-006-001`，R4 **实施**前闭合父目标 `I-PROTO-002`。收集信息阶段不实施代码。
