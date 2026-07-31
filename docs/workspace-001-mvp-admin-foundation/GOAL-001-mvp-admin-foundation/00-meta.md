@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.16.0
+version: 0.17.0
 progress: 5/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -39,6 +39,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - [x] 每一纳入项具备可核对的前后端实现路径（R3-R5）。（R3 外壳、R4 账号权限、R5 纳入域范例+API/Renderer 路径；R6 集成验收另计）
 - [x] 核心账号与权限链路具备可验证的前后端集成（对照 `D-PERM` / `I-PROTO-002`）。
 - [x] 每一纳入能力有可观察范例页面（或场景）与可执行验证入口（`I-PROTO-003` → **verified**，Root D-013 / GOAL-007 D-011）。
+- [ ] R6 已对照 VP-001 三条退出判据完成集成验收、证据汇编与关门审计，并形成工作区内可复核的 VP 提案输入。
 - [x] 未主张“支持全部协议功能”；未纳入项有明确边界说明。
 
 ## 纲领路线图（P-001）
@@ -50,13 +51,13 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | **完成** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture）与关门（A-004 self + A-005 independent 均 pass）完成，GOAL-006 `done` |
 | R5 | 纳入域范例与契约验证 | **完成** | GOAL-007 `done`（A-008 self + A-009 independent 均 pass；D-012 / Root D-014）；`I-PROTO-003` verified；登记表 v0.8.1；`npm test` 395 |
-| R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
+| R6 | 集成验收与 VP 证据 | **规划中** | GOAL-008 `active`：四阶段验收/证据计划与 `I-008-001`～`I-008-005` 已登记；尚未冻结计划或执行验收；不自动改 VP status |
 
 纲领阶段串行；同一阶段内可并行子目标。阶段完成须更新本表标记，并不得假装未满足退出条件。
 
 ## 派生进度展示
 
-纲领检查点 **5/6** 完成（R1–R5）→ frontmatter `progress: 5/6`（goal-tree 同步）。R6 未开始。progress **不**放行 R6/VP 关门、不关闭 finding、不推导 Root `done`。
+纲领检查点 **5/6** 完成（R1–R5）→ frontmatter `progress: 5/6`（goal-tree 同步）。R6 已进入规划但检查点未完成。progress **不**放行 R6/VP 关门、不关闭 finding、不推导 Root `done`。
 
 ## 信息就绪与未知项（P-005）
 
@@ -93,3 +94,4 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R5 A-007 / D-010（2026-08-01）：GOAL-007 响应 A-007——F-002 fixed、F-001 矩阵 + reactions 正式入口；request-construction 由 residual **更正为 fixed**（D-010，non-batch 64 执行）；`npm test` **395**；登记表 v0.8.0；开放 required=0。
 - R5 阶段 4（2026-08-01）：GOAL-007 D-011 进入验收；复跑 395 / build / go 全绿；Root **D-013** 闭合 `I-PROTO-003` → **verified**；GOAL-007 A-008 关门自审（self）pass。
 - R5 关门（2026-08-01）：GOAL-007 A-009 independent 关门复审 **pass**；用户 `/govern` 响应 A-009 并授权 GOAL-007 → **`done`**；Root **D-014** 纲领 R5 → 完成，`progress` → **5/6**（goal-tree 同步）。R6 未开始；不放行 Root/VP 关门。
+- R6 规划（2026-08-01）：用户 `/govern` 规划 R6，立项 `GOAL-008-r6-integration-acceptance-vp-evidence`（`active`）；验收矩阵与 evidence schema 仍为草案，五个 required 信息项尚未闭合。Root `progress` 保持 `5/6`；未执行 R6 验收、未改 VP status、未标 Root `done`。

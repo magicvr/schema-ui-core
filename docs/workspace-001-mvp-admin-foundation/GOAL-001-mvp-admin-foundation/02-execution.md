@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.10.0
+version: 0.11.0
 ---
 
 # 执行记录 · GOAL-001
@@ -164,12 +164,20 @@ version: 0.10.0
 - Root **D-014**：纲领 R5 → **完成**；`progress` **4/6 → 5/6**；goal-tree 同步。
 - **未做**：R6 实施；VP 关门；Root `done`；完整协议支持主张。
 
+### 2026-08-01 · GOAL-008 R6 立项（规划）
+
+- 用户调用 `/govern 规划 R6 — 集成验收与 VP 证据`；记录 Root [D-015](01-decision.md)。
+- 创建 [GOAL-008-r6-integration-acceptance-vp-evidence](../GOAL-008-r6-integration-acceptance-vp-evidence/00-meta.md) 五件套与 [R6 验收计划草案](../GOAL-008-r6-integration-acceptance-vp-evidence/attachments/R6-acceptance-plan.md) v0.1.0。
+- GOAL-008 登记四阶段路线与 `I-008-001`～`I-008-005` required 信息项；Root 路线图 R6 → **规划中**，成功标准新增对应未完成检查项。
+- 同步 [goal-tree.md](../goal-tree.md) 新增 GOAL-008（`active`）；Root `progress` 维持 **5/6**。
+- **未做**：未修改 `apps/*`；未冻结 R6 验收合同；未执行/持久化 R6 验收证据；未改 VP status；未标 Root `done`。
+
 ## 待办（计划 · 非完成事实）
 
 1. ~~R5 验收前闭合 `I-PROTO-003`。~~ **完成（D-013）**。
 2. ~~GOAL-007 `done` + 纲领 R5 / progress 5/6。~~ **完成（D-014）**。
-3. 推进 **R6**（集成验收与 VP 证据）；开放 recommended 跟踪随 R6/产品化。
+3. 推进 GOAL-008 **R6 阶段 1**：闭合验收合同、环境、账号权限 oracle、evidence schema 与平台矩阵信息项；开放 recommended 跟踪随 R6/产品化。
 
 ## 进度评估
 
-**R1–R5 完成**；显式路线图完成数 **5/6**。R6 未开始。不代表完整协议 conformance、VP 关门或 Root `done`。
+**R1–R5 完成**；显式路线图完成数 **5/6**。R6 已立项并处于规划中，尚无验收完成事实。不代表完整协议 conformance、VP 关门或 Root `done`。
