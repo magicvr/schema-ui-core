@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.7.0
+version: 0.9.0
 ---
 
 # 决策记录 · GOAL-001
@@ -18,7 +18,7 @@ version: 0.7.0
 |----|------|----------|------|------|
 | I-PROTO-001 | required | R2 方案冻结前 | **verified**（D-009；v0.1.3 冻结基线） | R2 已冻结；不得把该子集表述为完整协议支持，R4/R5 仍受各自信息门禁约束 |
 | I-PROTO-002 | required | R4 实施前 | **verified**（GOAL-006 D-004） | 设计/映射闭合；R4 已关门 |
-| I-PROTO-003 | required | R5 验收前 | open | 未 verified 前不得验收/对照 VP 退出判据关门 |
+| I-PROTO-003 | required | R5 验收前 | **verified**（Root D-013 / GOAL-007 D-011） | 登记表 v0.8.0 + 阶段 3/4 证据；不放行 VP 关门 |
 | I-PROTO-004 | non-blocking | 阶段 3 结构校验前 | **verified**（GOAL-007 D-008 vendor） | schemas/fixtures 进仓 + SHA pin |
 | I-STACK-001 | required | R1 实施前 | **verified**（D-004） | 已确认 monorepo 布局与包管理；可启动 R1 子目标实施 |
 | I-STACK-002 | non-blocking | R1 内 | **verified**（D-004） | monorepo `apps/web`+`apps/api`；端口/env 细节随 GOAL-002/003 |
@@ -405,3 +405,69 @@ version: 0.7.0
 **影响**：
 
 - `I-PROTO-004` → **verified**；`I-PROTO-003` 仍 open；Root `progress` 仍 4/6。
+
+## D-013 · 闭合 I-PROTO-003（R5 验收证据）（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+将父信息项 **`I-PROTO-003`**（required：每条纳入能力的范例页路径与自动化/手工验证入口）标为 **`verified`**。
+
+**证据链（可核对）**：
+
+1. 登记权威：[GOAL-007/attachments/I-007-001-registry.md](../GOAL-007-r5-examples-contract-verification/attachments/I-007-001-registry.md) **v0.8.0**——11 纳入域（D-NODE、D-EXPR、D-COMP、D-DATA、D-ACT、D-PERM、D-APP、D-TABLE、D-FORM、D-VER、D-VAL）均登记范例路径 + 结构/行为入口。
+2. 阶段 3 可执行验证：`apps/web` stage3 **222** + 全量 **395** 项测试；schemas/fixtures vendor + SHA pin；§2b include suite 执行矩阵（含 reactions 上游排除 + MVP 正式入口；request-construction non-batch 64/64）。
+3. 阶段 4 复跑（2026-08-01）：`npm test` 395 全绿、`npm run build` 通过、`go test ./...` / `go build ./...` 通过。
+4. 范例可观察路径：`/data-table`、`/search-form-table`、`/form-controls`、`/list-edit-lifecycle`、`/form-with-reactions` + R3/R4 复用 D-APP/D-PERM（见 GOAL-007 02-execution）。
+5. 决策与审计：GOAL-007 D-011；A-007 required 已闭；A-008 关门自审（self）。
+
+**诚实边界（不静默覆盖）**：
+
+- 上游 `reactions` suite **不**计为 host 全量对照；MVP D-EXPR 以 `reactions.test.ts` + 范例页为准。
+- `request-construction` **batch** 仍 Q1 排除。
+- recommended（conformance vs 生产 host 分离、registry membership、部分范例 UI 一致性）**不**作为 `I-PROTO-003` 开放 required。
+- **不**等同 VP 关门、完整协议支持或 Root `done`。
+
+**为什么**：
+
+- `I-PROTO-003` 最晚需要阶段为 R5 验收前；GOAL-007 阶段 1–3 证据 + 阶段 4 复跑与逐域核对已满足「每纳入能力有范例路径 + 验证入口」。
+- 用户 `/govern` 进入阶段 4（GOAL-007 D-011）。
+
+**未选方案**：
+
+- 维持 open 直至 GOAL-007 `done`：会把信息门禁与目标 status 绑定过紧；信息项可在验收证据齐备时 verified，目标 `done` 另需关门审计与用户授权。
+- 要求上游 reactions 16 case 全绿才闭合：超出冻结 MVP `$context` 子集（D-008）。
+
+**影响**：
+
+- `I-PROTO-003` → **verified**；Root 成功标准「每一纳入能力有可观察范例…（I-PROTO-003）」可勾选。
+- Root `progress` 仍 **4/6**（R5 纲领检查点仍待 GOAL-007 正式 `done`）。
+- R6 / VP 退出判据仍未开始。
+
+## D-014 · 授权 R5 纲领检查点完成（GOAL-007 done → progress 5/6）（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+1. 采纳 GOAL-007 关门事实：A-009 independent pass 已响应；GOAL-007 → **`done`**（GOAL-007 D-012）。
+2. Root 纲领路线图 **R5** → **完成**。
+3. 派生 `progress` 由 **4/6** 重算为 **5/6**（等权：R1–R5 完成 / R1–R6 共 6 检查点）；同步 `00-meta` frontmatter 与 `goal-tree.md`。
+4. **不**启动 R6 实施、**不**改 VP status、**不**标 Root `done`、**不**主张完整协议支持。
+
+**为什么**：
+
+- 用户书面指令：响应 A-009 + 授权 GOAL-007 done + Root R5/`progress=5/6` 同步。
+- 关门条件可核对：`I-PROTO-003` verified；A-008 + A-009 均 pass；开放 required finding = 0。
+
+**未选方案**：
+
+- 保持 progress 4/6 至 R6 开始：违反「纲领检查点完成即重算 progress」的派生规则。
+- 同时宣称 VP 可关门：VP 退出判据仍需 R6 工作区证据。
+
+**影响**：
+
+- Root `progress: 5/6`；下一纲领阶段为 **R6**（未开始）。

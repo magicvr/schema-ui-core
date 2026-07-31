@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.8.0
+updated: 2026-08-01
+version: 0.10.0
 ---
 
 # 执行记录 · GOAL-001
@@ -150,11 +150,26 @@ version: 0.8.0
 - 同步 `goal-tree.md` 新增 GOAL-007；Root 路线图 R5 标记为「规划中」。Root `progress` 维持 `4/6`。
 - **截至立项时未做**：未修改 `apps/*`，未开始 `I-007-001` 登记与范例/验证实现；`I-PROTO-003` 仍 open（R5 验收前须闭合）。
 
+### 2026-08-01 · R5 阶段 4：I-PROTO-003 闭合（验收证据）
+
+- 用户经 `/govern` 进入 GOAL-007 阶段 4（GOAL-007 D-011）。
+- 复跑：`apps/web` `npm test` **395** 项 / `npm run build`；`apps/api` `go test ./...` / `go build ./...` 全绿。
+- Root **D-013**：`I-PROTO-003` → **verified**（证据：GOAL-007 登记表 v0.8.0 + 阶段 3/4 + A-008 self pass）。
+- GOAL-007 成功标准已勾选；当时仍 **`active`**（未授权 `done`）。
+
+### 2026-08-01 · R5 关门：GOAL-007 done + progress 5/6
+
+- A-009（independent, pass）独立关门复审落盘；开放 required=0。
+- 用户 `/govern`：响应 A-009；授权 GOAL-007 → **`done`**（GOAL-007 D-012）。
+- Root **D-014**：纲领 R5 → **完成**；`progress` **4/6 → 5/6**；goal-tree 同步。
+- **未做**：R6 实施；VP 关门；Root `done`；完整协议支持主张。
+
 ## 待办（计划 · 非完成事实）
 
-1. R5 验收前闭合 `I-PROTO-003`（经 GOAL-007 `I-007-001` 登记范例路径与验证入口）。
-2. 按 R5-R6 推进；开放 required 信息项到期前不得越过对应门禁。
+1. ~~R5 验收前闭合 `I-PROTO-003`。~~ **完成（D-013）**。
+2. ~~GOAL-007 `done` + 纲领 R5 / progress 5/6。~~ **完成（D-014）**。
+3. 推进 **R6**（集成验收与 VP 证据）；开放 recommended 跟踪随 R6/产品化。
 
 ## 进度评估
 
-**R1、R2、R3、R4 完成**（R1：002/003/004 `done`；R2：D-009 冻结 v0.1.3、`I-PROTO-001=verified`；R3：GOAL-005 `done`；R4：GOAL-006 `done`、`I-PROTO-002` 方案冻结时闭合）。显式路线图完成数为 **4/6**。R5 已立项规划中；R4 关门仅覆盖其冻结子集，不代表 R5 实施、完整协议 conformance 或 VP 关门。
+**R1–R5 完成**；显式路线图完成数 **5/6**。R6 未开始。不代表完整协议 conformance、VP 关门或 Root `done`。

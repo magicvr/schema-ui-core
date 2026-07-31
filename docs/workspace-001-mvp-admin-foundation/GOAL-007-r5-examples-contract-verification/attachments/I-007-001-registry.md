@@ -5,7 +5,7 @@ doc_type: info-registry
 created: 2026-07-31
 updated: 2026-08-01
 parent: GOAL-007-r5-examples-contract-verification
-version: 0.8.0
+version: 0.8.1
 related_info: I-007-001
 coverage_freeze: GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md v0.1.3
 inventory: docs/vision/protocol-inventory-v2.7.0.md
@@ -93,11 +93,13 @@ inventory_pin: ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b
 
 ## 5. 变更规则
 
-- 本表是 `I-007-001` 的信息登记，**不是** R5 关门证据；`I-PROTO-003` 的闭合仍须阶段 3 的可执行验证结果与阶段 4 验收。
+- 本表是 `I-007-001` 的信息登记与阶段 4 验收权威索引；`I-PROTO-003` → **verified**（2026-08-01 Root D-013）以本表 v0.8.x + 阶段 3/4 命令证据闭合。GOAL-007 正式 `done` 仍须用户授权。
 - 覆盖范围变更须改 [I-PROTO-001 v0.1.3]（新决策 + 新版本），并同步重估本表。
 - 阶段 2/3 实现落盘后，更新本表对应行的「现状」与验证命令为已发生事实。
 
 > 变更：v0.4.0（2026-08-01）——批次 2c 实现落盘：D-EXPR 行「现状」→ 已实现（`reactions.ts` + `form-with-reactions` 范例页），D-COMP 行「现状」→ 已实现（`render.ts`/`render.tsx` 最小 Renderer，resolve F-002），P2 `form-with-reactions` 标记已实现；验证命令计数更新（web 166 项 / 14 文件），浏览器渲染新增 `/form-with-reactions` Edge headless 实测。
+
+> 变更：v0.8.1（2026-08-01）——阶段 4 验收戳：复跑 `npm test` 395 / build / go 全绿；`I-PROTO-003` verified（Root D-013）；§1/§2b 内容同 v0.8.0。
 
 > 变更：v0.8.0（2026-08-01）——D-010：`request-construction` non-batch **fixed**（`constructRequest`，64/64 执行）；batch 仍 Q1 排除；web **395** 项 / stage3 **222**。
 

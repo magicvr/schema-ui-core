@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-r5-examples-contract-verification
 doc: decision
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.9.0
+version: 0.11.0
 ---
 
 # 决策记录 · GOAL-007
@@ -296,3 +296,64 @@ F-001～F-004 以 `fixed` 合法闭合，F-005 同步；`npm test` 14 文件 **1
 - A-007 F-001 中 request-construction 闭合路径 = **`fixed`**（+ 既有矩阵与 reactions 升格）。
 - `npm test` **395** 项（+64 non-batch）；登记表 **v0.8.0**。
 - 仍 **不**关闭 `I-PROTO-003`；阶段 4 未开始；Root `progress` 仍 4/6。
+
+## D-011 · 进入 R5 阶段 4：验收材料 + 闭合 I-PROTO-003 + 关门自审（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+用户确认「进入 R5 阶段 4」。执行验收与关门路径（不自动将 GOAL-007 标为 `done`）：
+
+1. **复跑证据命令**（本会话）：`cd apps/web && npm test` → **15 文件 / 395 项**全绿；`npm run build` 通过；`cd apps/api && go test ./...` / `go build ./...` 通过。
+2. **逐域验收核对**以登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) **v0.8.0** §1 + §2b 为准：11 纳入域均有范例路径 + 可执行结构/行为入口；诚实边界——上游 `reactions` suite **0 执行**（MVP 正式入口 = `reactions.test.ts` + `/form-with-reactions`）；`request-construction` batch **Q1 排除**；non-batch **64/64** 已执行。
+3. **闭合父目标 `I-PROTO-003`** → `verified`：证据链 = 登记表 v0.8.0 + 阶段 3 conformance（stage3 **222**）+ 本轮复跑命令 + 历史 Edge/jsdom 范例路径证据（见 02-execution）。同步 Root 决策与信息表（Root D-013）。
+4. **关门自审**：对本目标成功标准与 `I-PROTO-003` 证据写 **A-008**（`source: self`，close-out）。
+5. **recommended 跟踪**（A-007 F-003～F-005 等）：**不阻断**本阶段验收与 `I-PROTO-003` 闭合；继续跟踪至产品化 / R6，验收叙述区分 conformance oracle 与生产 host。
+6. **不**在本决策将 GOAL-007 → `done`；**不**抬升 Root `progress`（仍 4/6）。`done` 与纲领 R5 完成须用户在 A-008（及可选 `/audit`）后另行授权。
+
+**为什么**：
+
+- 路线图阶段 1–3 与 A-007 required 均已合法闭合；阶段 4 是 `I-PROTO-003` 的最晚需要阶段。
+- 用户本轮指令进入阶段 4；主路径含验收材料、信息门禁闭合与关门向自审（P-002）。
+- 与 R4（GOAL-006）对称：先 self close-out，再可选独立复审，最后用户授权 `done`。
+
+**未选方案**：
+
+- **直接 `done` 且跳过自审**：违反关门检查建议与本目标此前批次自审纪律。
+- **本轮强制修完全部 recommended**：扩大范围且非 required；用户未要求。
+- **将上游 reactions multi-round 伪造成 pass**：违反 D-008 边界。
+
+**影响**：
+
+- `I-PROTO-003` → **verified**；GOAL-007 成功标准可勾选；阶段 4 材料完成。
+- GOAL-007 保持 `active` 直至用户授权关门；Root `progress` 仍 **4/6**。
+- 可选下一步：`/audit` 独立关门复审，或用户授权 `done` + Root R5 检查点 → `progress` 5/6。
+
+## D-012 · 响应 A-009 并授权 GOAL-007 关门（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+1. **响应 A-009**（independent, pass）：采纳 `verdict: pass`；开放 required = 0；无冲突意见需 P-004 裁决。
+2. **recommended 跟踪**（A-008 F-001～F-003 及同源 A-007 项）：继续跟踪至 R6/产品化，**不阻断**本目标 `done`。
+3. **用户书面授权**：GOAL-007 → **`status: done`**。
+4. **Root 同步**（Root D-014）：纲领 R5 检查点 → **完成**；派生 `progress` → **5/6**；goal-tree 树与表同步。
+5. **边界**：不放行 R6、不改 VP status、不标 Root `done`、不主张完整协议支持。
+
+**为什么**：
+
+- A-008（self, pass）与 A-009（independent, pass）同向；信息门禁 `I-007-001` / `I-PROTO-003` / `I-PROTO-004` 均 verified；成功标准可核对。
+- 用户本轮明确指令：响应 A-009 + 授权 `done` + Root R5/`progress=5/6` 同步。
+
+**未选方案**：
+
+- 仅响应 A-009 而不改 status：与用户明确授权冲突。
+- 同时启动 R6 或 VP 关门：超出本指令范围。
+
+**影响**：
+
+- GOAL-007 `done`；Root `progress` **5/6**；R6 为下一纲领阶段（未开始）。

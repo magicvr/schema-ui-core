@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-r5-examples-contract-verification
 doc: audit
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.12.0
+version: 0.14.0
 ---
 
 # 审计 · GOAL-007
@@ -603,3 +603,173 @@ A-005 四项 required finding 的 `fixed` 闭合可复核，阶段 2 在修复�
 |------|-------|---------|
 | 2026-08-01 | `/govern` | 响应 A-007（independent, conditional）：用户裁决「不需要自审，直接推进」（P-004 §3.1）。**F-002 → `fixed`**：action/reaction 结构正负向断言。**F-001 → 组合闭合**：① §2b 执行矩阵；② `reactions` MVP 正式入口升格；③ `request-construction` 初记 residual（D-009）后由用户澄清 **更正为 fixed**（见下行 D-010）。 |
 | 2026-08-01 | `/govern` | **D-010 更正**：`request-construction` non-batch → **`fixed`**。落地 `conformance/request-construction.ts`（`constructRequest`）；stage3 执行 non-batch **64/64** 对照；batch **11** 仍 Q1 排除。登记表 **v0.8.0**。证据：`npm test` **395** 项 / build 全绿。开放 required 仍 **0**。**不**关闭 `I-PROTO-003`；阶段 4 未开始；Root `progress` 仍 4/6。 |
+
+## A-008 · R5 阶段 4 关门自审：验收证据与 I-PROTO-003 闭合（2026-08-01）
+
+- **source**：self
+- **auditor**：Grok 4.5 · xAI · `/govern`
+- **类型**：close-out
+- **scope**：GOAL-007 成功标准全量对照；阶段 1–4 证据链；父目标 `I-PROTO-003` 闭合合法性；是否具备用户授权 `done` 的条件。**不**修改 status 为 `done`；**不**抬升 Root `progress`；**不**放行 VP/R6。
+- **verdict**：pass
+
+### 范围与区间
+
+当前工作区 `workspace-001-mvp-admin-foundation`，Root `GOAL-001-mvp-admin-foundation`，canonical `docs/workspace-001-mvp-admin-foundation/`。`plan_refs` / `primary_plan` = `VP-001-mvp-admin-foundation`；`shared_materials_catalog: none`。范围权威为冻结 [I-PROTO-001 v0.1.3] 与登记表 [I-007-001-registry.md](attachments/I-007-001-registry.md) **v0.8.0**。
+
+本意见在阶段 4 复跑命令与 D-011 / Root D-013 落盘后书写。
+
+### 成果（有证据）
+
+**命令复跑（本会话，2026-08-01）**
+
+| 命令 | 结果 |
+|------|------|
+| `cd apps/web && npm test` | **15 文件 / 395 项**全绿（含 stage3 **222**） |
+| `cd apps/web && npm run build` | tsc + vite 通过 |
+| `cd apps/api && go test ./...` | 全绿 |
+| `cd apps/api && go build ./...` | 通过 |
+
+**阶段与决策**
+
+| 阶段 | 状态 | 关键证据 |
+|------|------|----------|
+| 1 登记 | 完成 | `I-007-001` verified；登记表 v0.8.0 |
+| 2 范例实现 | 完成 | 批次 2a/2b/2c + A-005 fixed |
+| 3 结构/行为 | 完成 | vendor+Ajv+conformance；A-007/D-010 required 闭 |
+| 4 验收 | 材料完成 | D-011；逐域核对表（02-execution）；Root D-013 |
+
+**意见台账**：A-001～A-007 相关 required 均已合法闭合；本 scope 开放 required finding = **0**。
+
+**信息门禁**
+
+| 项 | 状态 |
+|----|------|
+| `I-007-001` | verified |
+| `I-PROTO-003` | **verified**（Root D-013） |
+| `I-PROTO-004` | verified |
+| 到期未处理 required 信息项 | **无** |
+
+### 对照成功标准
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| 每纳入域范例路径 + 验证入口 | **达成** | 登记表 §1 十一域 + 02 验收表 |
+| 未覆盖域前后端范例 | **达成** | D-DATA/TABLE/FORM/ACT/EXPR + Go records API |
+| 结构验证可执行 | **达成** | Ajv page/node/action/reaction 正负向；component-format 5/5 |
+| 行为验证不越 v0.1.3 | **达成** | §2b 矩阵；排除项诚实记账 |
+| `I-PROTO-003` verified；无开放 required finding | **达成** | D-013；开放 required=0 |
+| 目标 status=`done` | **未执行** | 须用户另行授权；本自审不改 status |
+
+### Findings
+
+无 **required** finding。开放 required = **0**。
+
+以下 recommended / 跟踪（**不阻断**用户授权 `done`）：
+
+#### F-001 · Conformance oracle 与生产 host 路径分离（recommended · 沿用 A-007 F-003）
+
+- **level**：recommended
+- **severity**：medium
+- **status**：open
+- **说明**：阶段 3 绿测证明冻结 fixture 语义可复现；生产 `records.ts` 等未必调用同一 adapter。R6/产品化应区分叙述或逐步统一。
+
+#### F-002 · component-registry membership 未加载校验（recommended · 沿用 A-007 F-004）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：硬编码 `WHITELISTED_NODE_TYPES` 与 §5 一致则风险可控；可补 registry 键对照。
+
+#### F-003 · 范例页 / ActionButton errors UI 一致性（recommended · 沿用 A-006/A-007）
+
+- **level**：recommended
+- **severity**：low
+- **status**：open
+- **说明**：RenderPage 门禁已闭；部分范例直连 `FormControls`、隐藏 action 不展示 gate.errors——教学/UI 一致性，非 I-PROTO-003 缺口。
+
+### 必改项汇总
+
+无。
+
+### 与既有意见的异同
+
+- **与 A-007（conditional）**：required 已由 D-009/D-010 fixed；本意见确认阶段 4 验收后证据仍成立 → **pass**。
+- **与 A-002～A-004（self）**：阶段 2 实现证据仍成立；本意见覆盖全目标成功标准与信息门禁。
+- **与 Root D-013**：采纳 `I-PROTO-003` verified；本意见不反向打开。
+
+### 结论 + 建议下一步
+
+GOAL-007 在 R5 范围内**具备关门条件**（成功标准可勾选、`I-PROTO-003` verified、无开放 required finding、关门向自审 pass）。**verdict = pass**。
+
+建议：
+
+1. 可选：`/audit` 独立关门复审（与 GOAL-006 对称）。
+2. 用户授权后：GOAL-007 → `done`；Root 纲领 R5 → 完成；`progress` → **5/6**；再规划 R6。
+3. recommended 跟踪至 R6/产品化，不阻断本目标 `done`。
+
+### 声明
+
+本意见不修改 status/progress；`done` 与 Root 检查点变更须 `/govern` + 用户确认。
+
+## A-009 · R5 独立关门复审：验收证据、信息门禁与当前运行态（2026-08-01）
+
+- **source**：independent
+- **auditor**：GitHub Copilot
+- **类型**：close-out
+- **scope**：GOAL-007 的关门条件，包括成功标准、阶段 3/4 可执行证据、`I-007-001` 与父目标 `I-PROTO-003` / `I-PROTO-004`、既有 required finding 的闭合，以及当前 Web / API 运行态。**不**修改 GOAL-007 `status`、Root `progress`、VP 或 R6 状态。
+- **verdict**：pass
+
+### 范围与区间
+
+当前工作区为 `workspace-001-mvp-admin-foundation`，Root 为 `GOAL-001-mvp-admin-foundation`，canonical 范围为 `docs/workspace-001-mvp-admin-foundation/`。工作区的 `plan_refs` / `primary_plan` 指向 `VP-001-mvp-admin-foundation`，该 VP 的 `vision_ref` 与 active Charter `schema-ui-core-admin-foundation@0.1.0` 一致。`shared_materials_catalog: none`，本次没有把共享资料引用当作范围事实或关门证据。
+
+本轮独立核对了 GOAL-007 五件套、登记表 v0.8.1、Root D-013、A-007/A-008 的 finding 响应、阶段 3 conformance 实现和当前工作树的命令结果。
+
+### 成果（有证据）
+
+- **信息门禁**：`I-007-001`、父目标 `I-PROTO-003`（Root D-013）及 `I-PROTO-004` 均为 `verified`；其证据分别可回指登记表、D-013 和 vendor + SHA pin。没有到期且未闭合的 required 信息项。
+- **逐域验收**：登记表 §1 覆盖 11 个纳入域，且 §2b 明确区分已执行、排除与正式补充入口。`request-construction` non-batch 为 **64/64** 可执行对照；batch 的 11 项仍按 Q1 排除。上游 `reactions` 的 16 项被诚实记为 MVP `$context` 子集外，正式验证入口为 `reactions.test.ts` 与 `/form-with-reactions`，没有把该排除表述为 host 对照通过。
+- **结构与固定协议**：`stage3-fixtures.test.ts` 对 page/node/action/reaction 均含合法通过与非法拒绝断言。复核 `provenance.json` 的 **20/20** 个 vendored schema/fixture，SHA-256 mismatch = **0**，来源仍为 `schema-ui-docs` commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`、artifact version `2.7.0`。
+- **当前可执行证据**：本审计会话复跑 `cd apps/web && npm test`，结果为 **15 文件 / 395 项**通过（stage3 **222**）；`npm run build` 成功。`cd apps/api && go test ./...` 与 `go build ./...` 均成功。
+- **运行时入口**：预览服务的 `/.well-known/schema-ui/app-manifest.json`、`/` 与 `/form-with-reactions` 均返回 HTTP 200；manifest 为 `protocolVersion=2.7`、9 个页面、`homePageRef=overview`。
+
+### 对照成功标准
+
+| 标准 | 结论 | 证据 |
+|------|------|------|
+| 11 个纳入域均有范例路径与可执行验证入口 | 满足 | 登记表 v0.8.1 §1、§2、§2b |
+| 未覆盖域具备可运行的前后端范例 | 满足 | records API、五条 Examples 路由、Web/API 测试与构建 |
+| 结构与行为验证不超出冻结边界 | 满足 | Ajv 正负向断言、fixture 执行矩阵、Q1/reactions 边界 |
+| `I-PROTO-003` 在验收前合法闭合 | 满足 | Root D-013、D-011、登记表 v0.8.1 与本轮复跑 |
+| 无开放 required finding 或 required 信息项阻断关门 | 满足 | A-007 required 已由 D-009/D-010 fixed；A-008 与本轮复核均为 pass |
+| 完整协议、VP 或 Root 已关门 | 未主张 | 本审计不将 R5 证据扩大为这些结论 |
+
+### Findings
+
+无 required finding。开放 required = **0**。
+
+A-008 的 recommended 跟踪项（conformance oracle 与生产 host 分离、registry membership、范例页/ActionButton UI 一致性）仍保持 open，但其范围不构成 `I-PROTO-003` 或 GOAL-007 关门门禁，且本轮未发现将它们伪装为已修正或“完整协议支持”的表述。
+
+### 必改项汇总
+
+无。GOAL-007 的关门范围内不存在需要以 `fixed`、`accepted-residual` 或 `user-overruled` 路径处理的开放 required finding。
+
+### 与既有意见的异同
+
+- 与 A-007（independent，conditional）一致承认其当时指出的阶段 3 缺口；D-009/D-010 的 `fixed` 响应已补足 action/reaction 结构断言、执行矩阵和 non-batch request-construction 对照，本轮直接复跑后未发现 reopening 证据。
+- 与 A-008（self，pass）同向，但本意见重新执行 Web/Go 验证、核对 vendored artifact SHA 和预览运行态，而非仅复述其结论。
+- 没有与本关门 scope 相冲突的 relevant verdict，也没有开放 required finding 需要 P-004 裁决。
+
+### 结论 + 建议给编排器/用户的下一步
+
+GOAL-007 的 R5 关门条件可复核成立，**verdict = pass**。本意见不授权或执行 `done`；由用户通过 `/govern` 决定是否将 GOAL-007 标为 `done`，并在授权后把 Root 的 R5 纲领检查点更新为完成、派生 `progress` 更新为 `5/6`。R6、VP 关门和 recommended 跟踪项仍应作为后续范围处理。
+
+### 声明
+
+本意见不修改 status/progress、路线图检查点、Root/VP 状态或 goal-tree；finding 响应与正式关门由 `/govern` 处理。
+
+## 响应（对 A-009）
+
+| date | actor | summary |
+|------|-------|---------|
+| 2026-08-01 | `/govern` | 响应 A-009（independent, pass）：采纳 **pass**；开放 required=0。recommended 跟踪项（A-008 F-001～F-003 / A-007 F-003～F-005）**不阻断**关门，继续跟踪至 R6/产品化。用户书面授权 GOAL-007 → **`done`**；Root 纲领 R5 → **完成**；派生 `progress` → **5/6**（goal-tree 同步）。D-012 / Root D-014 已留痕。**不**放行 R6、VP 关门或 Root `done`；不主张完整协议支持。 |

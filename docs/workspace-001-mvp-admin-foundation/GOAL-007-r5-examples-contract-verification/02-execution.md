@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-r5-examples-contract-verification
 doc: execution
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.10.0
+version: 0.12.0
 ---
 
 # 执行记录 · GOAL-007
@@ -221,14 +221,70 @@ version: 0.10.0
 
 **未改动**：`I-PROTO-003` open；阶段 4 未开始；Root `progress` 4/6；reactions 上游仍 0 执行（MVP 正式入口保留）。
 
+### 2026-08-01 · R5 阶段 4：验收材料 + I-PROTO-003 闭合 + 关门自审
+
+用户确认「进入 R5 阶段 4」（D-011）。
+
+**命令复跑（本会话新鲜证据）**
+
+| 命令 | 结果 |
+|------|------|
+| `cd apps/web && npm test` | **15 文件 / 395 项**全绿（stage3 **222**） |
+| `cd apps/web && npm run build` | tsc + vite 通过 |
+| `cd apps/api && go test ./...` | account + handler 全绿 |
+| `cd apps/api && go build ./...` | 通过 |
+
+**逐域验收核对（摘要 · 权威见登记表 v0.8.0 §1）**
+
+| domain | 范例 / 路径 | 结构入口 | 行为入口 | 核对 |
+|--------|-------------|----------|----------|------|
+| D-NODE | 任意合法 page 基座 | Ajv page/node | — | OK |
+| D-EXPR | `/form-with-reactions` | reaction schema 正负向 | **MVP**：`reactions.test.ts` + 范例；上游 reactions 16 排除 | OK（诚实边界） |
+| D-COMP | 范例页 + RenderPage | node/page + §5 whitelist | component-format **5/5** | OK |
+| D-DATA | `/data-table` `/search-form-table` | page schema | query/static/response + request-construction non-batch **64/64** | OK |
+| D-ACT | `/list-edit-lifecycle` | action schema 正负向 | actions **11/11** + request-lifecycle **4/4** | OK |
+| D-PERM | R4 复用 | validatePermissions | permissions-inheritance 17 | OK |
+| D-APP | R3 外壳/导航 | app-manifest schema | app-manifest / app-navigation | OK |
+| D-TABLE | data-table / search | page schema | table-sort **14/14** + search-table **11/11** | OK |
+| D-FORM | `/form-controls` | node/page + capability 门禁 | component-format 子集 + 单元 | OK |
+| D-VER | 全站 negotiate | — | version-negotiation **44/44** + runtime-defaults **9/9** | OK |
+| D-VAL | 构建/加载结构校验 | 6 schemas vendor | Ajv validateAgainstSchema | OK |
+
+排除项仍明确：**D-UPLOAD**、batch request-construction（Q1）、scenarios 非自动化门禁。
+
+**信息门禁**
+
+- Root `I-PROTO-003` → **verified**（Root D-013；证据链 = 登记表 v0.8.0 + 阶段 3 + 本轮复跑）。
+- `I-007-001` 保持 verified。
+
+**审计**
+
+- A-008 关门自审（`source: self`）写入 `03-audit.md`。
+
+**未做（计划 / 待用户）**（本条写于阶段 4 验收当时；关门见下一节）
+
+- GOAL-007 → `done`（须用户授权）。
+- Root 纲领 R5 检查点完成 / `progress` → 5/6。
+- 可选 `/audit` 独立关门复审。
+- recommended 修补（A-007 F-003～F-005 等）本轮不实施。
+
+### 2026-08-01 · R5 关门：响应 A-009 + GOAL-007 done + Root progress 5/6
+
+- **A-009**（independent, pass）独立关门复审落盘：开放 required=0；复跑 395 / build / go；provenance 20/20；预览 HTTP 200。
+- 用户 `/govern` 指令：响应 A-009，授权 GOAL-007 → **`done`**，Root R5 纲领检查点完成，`progress` → **5/6**。
+- **D-012** 留痕；`03-audit` 响应表已写；五件套 `status: done`。
+- Root **D-014** + goal-tree：R5 完成，`progress: 5/6`。
+- **未做**：R6 实施；VP 关门；Root `done`；recommended 全部 fixed。
+
 ## 待办
 
-1. ~~**批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。~~ **完成（2026-08-01）**。
-2. ~~落地 `node`/`page` schema 校验与已纳入 fixtures 对照；`I-PROTO-004` vendor。~~ **完成（2026-08-01，阶段 3）**。
-3. ~~响应 A-007 F-001/F-002。~~ **完成（2026-08-01，D-009 + D-010 fixed）**。
-4. **阶段 4**：闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门（须逐域证据评审 + 用户确认）。
-5. 可选：A-007 recommended（conformance vs 生产 host 分离、registry membership、UI 一致性）；batch 仍在 Q1 外。
+1. ~~**批次 2c**…~~ **完成**。
+2. ~~阶段 3…~~ **完成**。
+3. ~~A-007 响应…~~ **完成**。
+4. ~~阶段 4 验收…~~ **完成**。
+5. ~~用户授权 done + Root R5 / progress 5/6。~~ **完成（2026-08-01，D-012 / Root D-014 / A-009 响应）**。
+6. 可选（跟踪 · 非本目标门禁）：A-008 recommended；R6 集成验收。
 
 ## 进度评估
 
-**阶段 1–3 完成**（含 A-007 必改闭合；request-construction non-batch **fixed**；行为面以 §2b 矩阵为准）。**阶段 4（验收与关门）未开始**；`I-PROTO-003` 仍 open。进度仅为展示，不放行验收、不推导 `done`，不抬升 Root `progress`（仍 4/6）。
+**GOAL-007 `done`**。阶段 1–4 与关门审计（A-008 self + A-009 independent）均 pass；`I-PROTO-003` verified。Root `progress` **5/6**。不放行 Root/VP 关门或完整协议支持主张。
