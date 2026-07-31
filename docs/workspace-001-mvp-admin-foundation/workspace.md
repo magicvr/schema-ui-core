@@ -10,7 +10,7 @@ plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.1.1
 ---
 
 # 工作区上下文 · MVP Admin 基架
@@ -47,4 +47,4 @@ MVP 纲领阶段写在 Root Goal 路线图中；纲领阶段通常串行，同�
 ## 备注
 
 - 开区：`/govern` · 2026-07-31；用户确认 slug、`vision_role: primary`、`primary_plan=VP-001-mvp-admin-foundation`。
-- 协议覆盖子集**尚未冻结**；R2 进行中：Root `I-PROTO-001` = `collecting`，草案见 `GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md`（D-005）。冻结前不得主张完整协议支持。
+- 协议覆盖子集已按 Root D-009 正式冻结：`I-PROTO-001` = `verified`，基线见 `GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md` v0.1.3。该事实不等同于完整协议支持或 R3-R5 实现完成。

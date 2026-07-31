@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.1
-progress: 1/6
+version: 0.4.4
+progress: 2/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-docs@v2.7.0 为协议边界
@@ -35,7 +35,8 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 ## 成功标准（方向级 · 可验证）
 
 - [x] 存在可运行、可 fork 的 React 前端与 Go 后端工程骨架，并以固定协议版本为兼容边界（文档/配置可指回 pin）。
-- [ ] MVP 协议覆盖子集已书面冻结（`I-PROTO-001` verified），且每一纳入项有前后端实现路径。
+- [x] MVP 协议覆盖子集已书面冻结（`I-PROTO-001` verified）。
+- [ ] 每一纳入项具备可核对的前后端实现路径（R3-R5）。
 - [ ] 核心账号与权限链路具备可验证的前后端集成（对照 `D-PERM` / `I-PROTO-002`）。
 - [ ] 每一纳入能力有可观察范例页面（或场景）与可执行验证入口（`I-PROTO-003`）。
 - [x] 未主张“支持全部协议功能”；未纳入项有明确边界说明。
@@ -45,7 +46,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
 | R1 | 工程骨架与仓库约定 | **完成** | 子目标 GOAL-002/003/004 均 `done`（各 A-003 self pass）；Root A-001 independent pass → A-002/D-006 已响应并维持；`apps/*` + monorepo 约定已交付；I-STACK-001/002 verified |
-| R2 | MVP 协议覆盖子集冻结 | **进行中** | 纳入/排除**草案**（D-005 + attachment）；`I-PROTO-001`=`collecting`；A-002/D-006 明确**继续收集、不冻结** |
+| R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
 | R3 | Admin 外壳与导航 | 未开始 | App manifest / 导航壳；浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | 未开始 | 依赖 R2；前后端鉴权与 `D-PERM` 映射（`I-PROTO-002`） |
 | R5 | 纳入域范例与契约验证 | 未开始 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`） |
@@ -55,13 +56,13 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 ## 派生进度展示
 
-纲领检查点 **1/6** 完成（R1）→ frontmatter `progress: 1/6`（goal-tree 同步）。progress **不**放行阶段、不关闭 finding、不推导 `done`。
+纲领检查点 **2/6** 完成（R1、R2）→ frontmatter `progress: 2/6`（goal-tree 同步）。progress **不**放行后续阶段、不关闭 finding、不推导 `done`。
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-PROTO-001 | required | 哪些 `domain_id` / fixture suite 纳入 VP-001 MVP？ | 方案冻结（R2）/ 后续实施范围 | R2 结束前 | 对照 [protocol-inventory](../../vision/protocol-inventory-v2.7.0.md) §3 决策并落盘纳入/排除表 | **collecting** | 用户确认草案 Q1–Q5 后冻结 | 草案：[attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md)（D-005）；**非** verified |
+| I-PROTO-001 | required | 哪些 `domain_id` / fixture suite 纳入 VP-001 MVP？ | R2 冻结基线 / 后续实施范围 | R2 结束前 | 对照 [protocol-inventory](../../vision/protocol-inventory-v2.7.0.md) §3 决策并落盘纳入/排除表 | **verified** | 2026-07-31 用户书面确认 v0.1.3；覆盖变更须新决策与版本 | 冻结基线：[attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md) v0.1.3；D-009；A-005 以 `fixed` 留痕 F-001/F-002 |
 | I-PROTO-002 | required | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | R4 实施 | R4 实施前 | 设计最小 API + 对照 permissions-inheritance fixtures | open | — | 待 R2 后细化 |
 | I-PROTO-003 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 为纳入域登记范例路径与验证命令/步骤 | open | — | 待 R2 纳入表 |
 | I-PROTO-004 | non-blocking | 是否 vendor 上游 schemas/fixtures，或 pin 远程校验？ | R1–R5 工程策略 | R1/实施前为宜 | 决策 vendor vs pin；记录维护成本 | open | — | 待确认 |
@@ -78,4 +79,4 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - Charter H-001：清单提取 verified；覆盖子集冻结仍 open（本目标 `I-PROTO-001`）。
 - recommended 愿景项 `F-V003`（双线分支契约）不在本 Root 门禁内；后续双线 VP 前由 `/vision` 处理。
 - R1 子目标（2026-07-31）：`GOAL-002-r1-repo-layout-conventions`、`GOAL-003-r1-api-go-scaffold`、`GOAL-004-r1-web-react-scaffold`。
-- R1 独立复核：Root A-001 pass；编排响应 A-002 + D-006（2026-07-31）；覆盖仍未冻结。
+- R1 独立复核：Root A-001 pass；编排响应 A-002 + D-006（2026-07-31）。R2 覆盖基线随后由 D-009 冻结；本事实不放行 R3-R5 实施。

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.0
+version: 0.4.3
 ---
 
 # 决策记录 · GOAL-001
@@ -16,7 +16,7 @@ version: 0.4.0
 
 | ID | 级别 | 最晚阶段 | 状态 | 阻断 |
 |----|------|----------|------|------|
-| I-PROTO-001 | required | R2 方案冻结前 | **collecting**（草案已落盘，未冻结） | 未 verified 前不得冻结实施范围、不得主张完整协议支持 |
+| I-PROTO-001 | required | R2 方案冻结前 | **verified**（D-009；v0.1.3 冻结基线） | R2 已冻结；不得把该子集表述为完整协议支持，R4/R5 仍受各自信息门禁约束 |
 | I-PROTO-002 | required | R4 实施前 | open | 未 verified 前不得宣称账号权限链路完成 |
 | I-PROTO-003 | required | R5 验收前 | open | 未 verified 前不得验收/对照 VP 退出判据关门 |
 | I-PROTO-004 | non-blocking | 实施前为宜 | open | 不阻断开区；影响校验工程策略 |
@@ -215,3 +215,118 @@ version: 0.4.0
 1. 用户确认/修订草案 Q1–Q5 → 正式冻结决策 → `I-PROTO-001` → `verified`。  
 2. 冻结后再规划 R3 Admin 外壳子目标。  
 3. 可选：对 R2 草案另跑 `/audit`（非本回合强制）。
+
+## D-007 · 响应 A-003 的用户裁决：固定已定边界，保留 Q2 控件清单为未决
+
+**日期**：2026-07-31
+**状态**：accepted（已确认部分；**不是** R2 冻结决定）
+**关联意见**：Root `03-audit` A-003 / A-004
+**关联信息项**：`I-PROTO-001` 保持 **collecting**；A-003 `F-001` / `F-002` 保持 **open / required**
+
+**决定**：
+
+1. **Q1**：D-TABLE 的多选批量不进入 MVP。D-ACT 只纳入与非批量 page/row action 及 request lifecycle 对齐的语义；依赖 D-TABLE 多选批量的 action/request 语义不在本次覆盖范围。
+2. **Q3**：D-UPLOAD 保持 `exclude`。
+3. **Q4**：R2 冻结前必须写入 D-COMP 的边界原则与初始 type 表；R3 可以在不改变该范围的前提下实现，任何扩域须另行决策，不得静默发生。
+4. **Q5**：`scenarios` 不进入自动化门禁，只作为范例或手工验证路径。
+5. **P-004.1**：用户选择在草案具备可核对修订后，补一次 R2 `I-PROTO-001` 同 scope self audit。
+6. **Q2**：用户确认方向为“是”，即允许纳入一个或多个 2.6/2.7 扩展控件；但尚未列明实际控件、组件 type、结构验证或 fixture 子集。该方向**不**等同于把全部扩展控件纳入，也不改变当前 `I-PROTO-001=collecting`、`F-001=open` 或 R2 未冻结的状态。
+
+**为什么**：
+
+- 用户对 A-004 的书面回复确认了 Q1、Q3-Q5 和同 scope self audit 的选择；P-004 要求将这些裁决留痕。
+- A-003 F-002 要求 D-ACT/D-TABLE 对批量语义有一致的覆盖与验证边界，Q1 已足以先收敛该项。
+- A-003 F-001 要求可逐项核对的 D-COMP/D-FORM 边界。仅回答 Q2=是不足以确定哪些扩展控件和验证子集进入 MVP，不能据此伪造白名单或冻结。
+
+**未选方案**：
+
+- **把 Q2=是解释为全部 2.6/2.7 扩展控件**：用户未给出该范围，且会越过 MVP 最小边界。
+- **把 Q2=是解释为任取一个控件并自行挑选**：控件选择、type 与验证要求仍属用户未确认事实。
+- **因 Q1/Q3-Q5 已定而直接冻结 R2**：F-001 尚无可核对白名单和表单子集，P-005 门禁仍开。
+
+**影响**：
+
+- 草案按 Q1、Q3-Q5 修订 D-ACT/D-TABLE、fixture 与待确认表；`F-002` 仍等待同 scope self audit 后才可评估 `fixed`。
+- `F-001` 保持 open，直至用户列明 Q2 纳入控件，并在草案中给出 D-COMP/D-FORM 初始 type 表和结构验证子集。
+- Root `status: active`、R2=进行中、`I-PROTO-001=collecting` 与 `progress: 1/6` 不变；不更新 `goal-tree.md`。
+
+**后续**：
+
+1. 用户列明 Q2 要纳入的具体 2.6/2.7 控件（或明确全部），以及适用的 type / 验证预期。
+2. 补齐 D-COMP/D-FORM 初始 type 表与 `component-format` / 相关结构验证子集，完成草案修订。
+3. 执行用户要求的同 scope self audit；根据可核对证据再评估 F-001/F-002 的闭合与 R2 冻结。
+
+## D-008 · 澄清 Q2：纳入全部 2.6 / 2.7 表单控件及其版本能力
+
+**日期**：2026-07-31
+**状态**：accepted（范围澄清；**不是** R2 冻结决定）
+**关联意见**：Root `03-audit` A-003 / A-004
+**关联信息项**：`I-PROTO-001` 仍为 **collecting**，待正式冻结决定
+
+**决定**：
+
+1. 用户确认：MVP D-FORM 纳入固定上游 `schema-ui-docs@v2.7.0` 的全部 2.6 与 2.7 表单控件能力。
+2. 2.6 范围为：`textarea`、`switch`、`checkbox`、`radio`，以及 `select.props.mode: multiple`；页面须声明 `protocolVersion >= "2.6"` 与 `form.controls.extended`。
+3. 2.7 范围为：`cascader`、`checkboxGroup`、`richText`、`password`，以及任一纳入字段的 `props.defaultValue`；页面须声明 `protocolVersion >= "2.7"` 与 `form.controls.advanced`。`defaultValue` 是属性能力，不是独立 component type。
+4. Q1 仅排除 D-TABLE 的多选批量及其 action/request 语义；它**不**排除表单内 `select.props.mode: multiple`，两者的 payload 和动作语义不同。
+5. D-COMP 初始 type 表与验证边界按修订草案 §5/§5.1 固化：它是当前 MVP 的最小白名单，不宣称支持完整 registry；任何新增 type 或扩域仍须另行决策。
+
+**为什么**：
+
+- 用户明确将 Q2 从“纳入任一扩展控件”澄清为“纳入 2.6/2.7 全部控件”。
+- 固定提交的 migration、registry、node/page schema 与 fixture 内容给出了可逐项核对的 type、版本、capability 与结构验证依据，可补足 A-003 F-001 所要求的初表和验证边界。
+- 将 D-TABLE 批量语义与表单多值 select 区分，避免 Q1 被误解为缩小用户刚确认的 2.6 控件范围。
+
+**未选方案**：
+
+- **只选其中一部分 2.6/2.7 控件**：与用户“全部控件”的书面确认相反。
+- **将 `props.defaultValue` 当成独立 type**：与上游 2.7 迁移定义不符。
+- **把全量 registry 一并纳入**：超出本目标的 MVP 初始白名单，也会违反 D-COMP 的 partial 边界。
+
+**影响**：
+
+- 修订草案已经将 2.6/2.7 类型、`defaultValue`、版本/capability 与验证子集写为可核对边界；`component-format` 的现有五个 format cases 只作为格式非强制转换验证，不能替代 type 白名单检查。
+- Q5 不变：form-controls 场景保持范例/手工路径，不成为自动化门禁。
+- A-005 将在同 scope 自审中复核 F-001/F-002 的修订；即便通过，`I-PROTO-001` 仍须由用户确认后另行冻结并转为 `verified`。
+
+**后续**：
+
+1. 执行同 scope self audit，核对草案与固定提交的类型、版本/capability、结构和 fixture 边界。
+2. 若自审无开放 required finding，向用户提出 R2 正式冻结决定；未确认前不得改 `I-PROTO-001`、status 或 progress。
+
+## D-009 · 正式冻结 R2 / I-PROTO-001 的 v0.1.3 覆盖边界
+
+**日期**：2026-07-31
+**状态**：accepted
+**关联信息项**：`I-PROTO-001` → **verified**
+**关联意见**：A-003 `F-001` / `F-002` 已由 A-005 以 `fixed` 合法闭合
+
+**决定**：
+
+1. 按用户本轮书面确认，正式冻结 [I-PROTO-001 覆盖表](attachments/I-PROTO-001-coverage-draft.md) **v0.1.3**，作为 VP-001 MVP 的 R2 覆盖基线。
+2. 冻结范围以该表为准：7 个 `include` 域、4 个 `include-partial` 域及 `D-UPLOAD` 的 `exclude`，包括 D-COMP/D-FORM 白名单、D-ACT/D-TABLE 的非批量边界和 fixture 映射；不得将其扩大为完整 registry、全协议支持或未列 type。
+3. `I-PROTO-001` 自 `collecting` 转为 **`verified`**，R2 标记为完成，Root 派生进度按 R1-R6 路线图重算为 **2/6**；Root `status` 仍为 `active`。
+4. 本冻结只固定后续实施与验证的范围，**不**证明 R3-R5 已实施、已通过 conformance，或 VP 已可关门。`I-PROTO-002` / `I-PROTO-003` 继续分别阻断 R4 / R5。
+5. 对覆盖子集的任何扩大、缩小或语义变更，必须追加新的 D-00N、修订覆盖表版本，并重新评估 `I-PROTO-002` / `I-PROTO-003`；不得静默改写 v0.1.3 基线。
+
+**为什么**：
+
+- 覆盖表规定的闭合条件是用户书面确认 → Root 冻结决策 → `I-PROTO-001` → `verified`；本轮指令满足该确认。
+- A-005 同 scope self audit 为 `pass`，A-003 的 required `F-001` / `F-002` 已有可核对的 `fixed` 留痕；当前 scope 没有开放 required finding。
+- Charter / VP 的协议 pin、工作区绑定和 Vision required 门禁均已核对；本决定仅实例化已确认的 MVP 子集，不改变愿景或协议源。
+
+**未选方案**：
+
+- **冻结完整协议或完整 registry**：超出 v0.1.3 的明确 include/include-partial/exclude 边界，也会违反既有 MVP 非目标。
+- **继续保持 `collecting` 或接受 residual**：用户已明确要求正式冻结，且所需修订与自审证据已经齐备。
+- **同时启动 R3-R5 实施**：本轮只确认 R2 范围；后续阶段仍须分别规划并满足 `I-PROTO-002` / `I-PROTO-003` 门禁。
+
+**影响**：
+
+- 允许以 v0.1.3 作为 R3-R5 的范围基线进行后续规划；不自动创建子目标或放行具体实现。
+- 更新 Root 信息表、路线图、执行/审计响应和工作区 `goal-tree.md` 的同一事实投影。
+
+**后续**：
+
+1. 规划 R3 Admin 外壳与导航子目标。
+2. 在 R4 前闭合 `I-PROTO-002`，在 R5 验收前闭合 `I-PROTO-003`。

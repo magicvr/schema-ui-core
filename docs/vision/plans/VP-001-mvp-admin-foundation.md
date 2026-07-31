@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.2.1
 parent: null
 ---
 
@@ -28,7 +28,7 @@ parent: null
 
 上述引用固定协议来源。本地实施清单与 React/Go/范例/验证映射见 [protocol-inventory-v2.7.0.md](../protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`，2026-07-31）。
 
-**仍未冻结**：哪些协议能力域纳入本 VP 的 MVP 覆盖子集。冻结与实施门禁核验由挂接工作区内 **`/govern`** 完成（Root `I-PROTO-001` 等）；在此之前不得主张“支持全部协议功能”。
+**已冻结的覆盖基线**：挂接工作区的 Root D-009 已将 [I-PROTO-001 覆盖表](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md) **v0.1.3** 冻结为 MVP 子集，`I-PROTO-001=verified`。该冻结不等同于完整协议支持、R3-R5 实现/验收完成或本 VP 可关门。
 
 ## 方向级退出判据
 
@@ -59,3 +59,4 @@ parent: null
 | 2026-07-31 | 用户确认首个 MVP 意图、技术方向、协议来源和方向级退出判据。 |
 | 2026-07-31 | `/vision` 响应 VRev：链接协议清单；明确覆盖子集未冻结。 |
 | 2026-07-31 | `/govern` 开区：绑定 `workspace-001-mvp-admin-foundation`；`status` `planned` → `active`；`lead_workspace` 已填。 |
+| 2026-07-31 | `/govern`：Root D-009 按 v0.1.3 正式冻结 R2 覆盖基线；未改变本 VP 的 `active` 状态或 R3-R5 实施门禁。 |
