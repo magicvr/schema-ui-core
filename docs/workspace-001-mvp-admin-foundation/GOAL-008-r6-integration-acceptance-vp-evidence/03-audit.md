@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计 · GOAL-008
@@ -30,6 +30,7 @@ version: 0.4.0
 | A-002 | 2026-08-01 | self | 阶段 1 冻结候选计划审视（矩阵/环境/oracle/schema/CI） | pass | 0 |
 | A-003 | 2026-08-01 | self | 阶段 2 → 3 门禁（集成验收执行证据） | pass | 0 |
 | A-004 | 2026-08-01 | self | 阶段 3 → 4 门禁（VP 证据汇编） | pass | 0 |
+| A-005 | 2026-08-01 | self | R6 关门审计（close-out） | pass | 0 |
 
 ## A-001 · 阶段 1 计划与信息门禁自审（2026-08-01）
 
@@ -236,3 +237,48 @@ version: 0.4.0
 ### 结论 + 建议下一步
 
 阶段 3 退出条件满足（pass）：VP 三条退出判据均有 Q2 工作区证据，无 required 缺口，边界一致。**可进入阶段 4「R6 关门审计与 VP 提案输入」**：跑 close-out 自审，开放 required=0 后由用户授权 Root R6/`progress`/status 变化；VP 关门提案另走 `/vision`。
+
+## A-005 · R6 关门审计（close-out · 2026-08-01）
+
+- **source**：self
+- **auditor**：Claude Code `/govern`
+- **类型**：close-out
+- **scope**：GOAL-008「R6 · 集成验收与 VP 证据」全目标关门；VP-001 三条退出判据的 Q2 证据；`I-008-001`～`I-008-005`
+- **verdict**：pass
+
+### 范围与区间
+
+本审计核对 R6 关门条件：相关意见无未合法闭合的 required；相关信息项无未处理关门 required；成功标准逐条可核对；并有阶段/关门向审计。本审计**不**自行改 Root `progress`/status 或 VP status（须用户授权 / `/vision`）。
+
+### 成果（有证据）
+
+- **意见台账**：A-001（F-008-001 已 fixed）、A-002/A-003/A-004 均 pass；**开放 required = 0**。无 independent 意见、无冲突。
+- **信息台账**：`I-008-001`～`I-008-005` 均 verified（矩阵/运行环境/账号权限 oracle/evidence schema/环境矩阵）。
+- **验收证据**：`evidence-index.json`（mode: acceptance，revision `a941bed`，worktree clean）7 artifact SHA-256 verified、overallOutcome=pass；5 项排除显式、residuals=0。
+- **VP 证据汇编**：[vp-evidence-assembly.md](attachments/vp-evidence-assembly.md) 三条退出判据逐条映射 Q2 证据。
+- **CI**：`.github/workflows/r6-basic-matrix.yml` 首跑 green（run `30666932343`）；后续 dev 推送均 green。
+
+### 对照成功标准
+
+| 成功标准 | 状态 | 证据 |
+|----------|------|------|
+| 受控验收矩阵映射 VP 三条判据（主张/入口/预期/证据/排除/residual） | **达成** | R6-acceptance-plan v0.2.0 §2b C-001～C-008 |
+| React+Go 干净环境可复现启动 + 浏览器/API 关键路径，证据绑定 revision/runtime/worktree | **达成** | evidence-index（revision `a941bed`/clean/env）+ C-003/C-004 |
+| R2 v0.1.3 每个纳入域可从 R5 登记追到实现/范例/验证，R6 回归不扩大边界 | **达成** | I-007-001 registry v0.8.1 + stage3 conformance + C-007 |
+| 账号权限链路含可核对正向/拒绝路径，不依赖未声明业务模块 | **达成** | account-permission-oracle（P-1～P-4 / D-1～D-6）+ runtime-probes + C-005 |
+| 机器可读索引完整记录命令/退出码/时间/环境/结果/排除/文件摘要，稳定寻址 | **达成** | evidence-index.json（schema 校验）+ build-acceptance-index.mjs |
+| R6 关门审计无开放 required；Root/VP 变化仍分别等用户与 `/vision` | **达成** | 本 A-005；用户授权项在响应节说明 |
+
+### Findings
+
+无 open required / recommended 影响本关门。`F-008-002`（CI 注解，recommended）不阻断。
+
+### 必改项汇总（required 列表）
+
+无 open required。
+
+### 结论 + 建议下一步
+
+R6 目标满足关门条件（pass）：四条验收证据链 + 三条 VP 判据映射均可核对，意见/信息台账均闭合，开放 required=0。**GOAL-008 可关门（status → done）**。后续受控动作：
+1. **用户授权** Root R6 检查点完成、Root `progress` 5/6 → 6/6、Root status 变化（用户 `/govern` 决定）；
+2. VP-001 关门提案另走 `/vision`（读取 R6 工作区证据、用户确认）。

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.3.1
+version: 0.3.2
 ---
 
 # 执行记录 · GOAL-008
@@ -88,11 +88,16 @@ version: 0.3.1
 - **缺口检查**：无 required 缺口；浏览器级拒绝未断言属登记排除（C-006，真实 manifest 无权限门控项），reactions/batch/D-UPLOAD 为既有冻结排除。边界主张与 I-PROTO-001 v0.1.3、R5 一致。
 - 阶段 3 汇编完成；阶段 3→4 门禁审视待做。Root `progress: 5/6`、VP-001 `active` 不变。
 
+### 2026-08-01 · 阶段 4 R6 关门审计（A-005）
+
+- **A-005（self · close-out · pass）**：R6 关门条件核对——意见台账开放 required=0（A-001 fixed；A-002/A-003/A-004 pass）、五项 I-008 verified、四条验收证据链 + 三条 VP 判据映射可核对、evidence-index（mode: acceptance）overallOutcome=pass。见 [03-audit.md](03-audit.md)。
+- GOAL-008 **可关门**；Root R6 / `progress` / status 变化与 VP-001 关门提案**待用户授权**（Root 由 `/govern`、VP 由 `/vision`）。
+
 ## 待办（计划 · 非完成事实）
 
-1. 阶段 4 R6 close-out 审计（A-005）：开放 required=0 后，由用户授权 Root R6 / `progress` / status 变化。
-2. VP 关门另走 `/vision`（读取 R6 工作区证据、形成关门提案并获得用户确认）。
+1. **用户授权** GOAL-008 → `done`、Root R6 检查点完成、Root `progress` 5/6 → 6/6、Root status 变化（`/govern` 用户裁决）。
+2. VP-001 关门另走 `/vision`（读取 R6 工作区证据、形成关门提案并获得用户确认）。
 
 ## 进度评估
 
-阶段 1 冻结、阶段 2 执行完成、阶段 2→3 门禁通过（A-003 pass）、阶段 3 VP 证据汇编完成、阶段 3→4 门禁通过（A-004 pass）。阶段 4 close-out 审计未做。Root `progress` 仍 `5/6`，没有 R6 关门完成事实，VP-001 保持 `active`。
+阶段 1 冻结、阶段 2 执行完成、阶段 3 VP 汇编完成、阶段 4 close-out 审计完成（A-005 pass，开放 required=0）。GOAL-008 满足关门条件，**尚未改 status=done**（待用户授权）；Root `progress` 仍 `5/6`；VP-001 保持 `active`，关门待 `/vision`。
