@@ -4,7 +4,7 @@ status: active
 created: 2026-07-29
 updated: 2026-07-31
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # docs/vision · 愿景层
@@ -35,13 +35,14 @@ version: 0.2.0
 
 | 文件 | 状态 / 说明 |
 |------|-------------|
-| [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.1.0` |
-| [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **planned** · 首个 MVP 意图；零工作区绑定 |
+| [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.1.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
+| [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **active** · lead: workspace-001-mvp-admin-foundation |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
 | [reviews.md](reviews.md) | Vision Review 台账（`VRev-*`） |
-| [workspaces.md](workspaces.md) | 工作区贡献图（当前尚未开区） |
+| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary 区） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议实施清单（`F-V001` 证据） |
+| [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | 实现层 primary 工作区 · Root `GOAL-001-mvp-admin-foundation` |
 
 模板（冷启动复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`。
 
