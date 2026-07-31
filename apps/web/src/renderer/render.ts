@@ -1,6 +1,12 @@
 import { evaluateExpression, isValidExpression } from "@/protocol/app-manifest";
 
 import {
+  checkFormCapabilitiesRaw,
+  isWhitelistedFormControl,
+  type FormControlField,
+  type FormControlGateError,
+} from "@/renderer/form-controls";
+import {
   parseAndEvaluateReactions,
   type FormControlStateMap,
   type ReactionError,
@@ -17,15 +23,23 @@ import {
  * A page document looks like the example pages' `PAGE_DOCUMENT`:
  *   { meta: { protocolVersion, requiredCapabilities }, body: Node }
  *
- * Node types supported (whitelist):
- *   - form        → FormControls (with reactions applied to field state)
- *   - section     → container passthrough
- *   - table       → DataTable (whitelisted; the example page owns data wiring)
+ * Node types supported (frozen §5 whitelist):
+ *   - layout:  grid / section / tabs
+ *   - data/action: text / table / recordView / actionButton
+ *   - form:    form → FormControls (with reactions applied to field state)
  * The form control whitelist itself is enforced by D-FORM
  * (isWhitelistedFormControl / checkFormCapabilities).
  */
 
-export type RenderNodeType = "form" | "section" | "table";
+export type RenderNodeType =
+  | "form"
+  | "section"
+  | "table"
+  | "grid"
+  | "tabs"
+  | "text"
+  | "recordView"
+  | "actionButton";
 
 export interface RenderMeta {
   protocolVersion: string;
@@ -56,6 +70,29 @@ export interface RenderSectionNode {
   children: RenderNode[];
 }
 
+export interface RenderGridNode {
+  type: "grid";
+  id?: string;
+  props?: Record<string, unknown>;
+  children?: RenderNode[];
+}
+
+export interface RenderTabsNode {
+  type: "tabs";
+  id?: string;
+  props?: Record<string, unknown>;
+  children?: RenderNode[];
+}
+
+export interface RenderTextNode {
+  type: "text";
+  id?: string;
+  props?: {
+    text?: string;
+  };
+  children?: RenderNode[];
+}
+
 export interface RenderTableNode {
   type: "table";
   id?: string;
@@ -67,7 +104,36 @@ export interface RenderTableNode {
   children?: RenderNode[];
 }
 
-export type RenderNode = RenderFormNode | RenderSectionNode | RenderTableNode;
+export interface RenderRecordViewNode {
+  type: "recordView";
+  id?: string;
+  props?: {
+    record?: Record<string, unknown>;
+  };
+  children?: RenderNode[];
+}
+
+export interface RenderActionButtonNode {
+  type: "actionButton";
+  id?: string;
+  props?: {
+    label?: string;
+    actionId?: string;
+    visibleWhen?: unknown;
+    disabledWhen?: unknown;
+  };
+  children?: RenderNode[];
+}
+
+export type RenderNode =
+  | RenderFormNode
+  | RenderSectionNode
+  | RenderGridNode
+  | RenderTabsNode
+  | RenderTextNode
+  | RenderTableNode
+  | RenderRecordViewNode
+  | RenderActionButtonNode;
 
 export interface RenderPageDocument {
   meta: RenderMeta;
@@ -86,7 +152,35 @@ export interface RenderError {
   message: string;
 }
 
-const WHITELISTED_NODE_TYPES = new Set<RenderNodeType>(["form", "section", "table"]);
+export type ActionGateErrorCode = "ACTION_GATE_EXPRESSION_INVALID";
+
+export interface ActionGateError {
+  code: ActionGateErrorCode;
+  path: string;
+  message: string;
+}
+
+export type ActionGateResult =
+  | { kind: "ok"; value: boolean }
+  | { kind: "error"; error: ActionGateError };
+
+export interface RenderFormFieldGate {
+  /** Fields that passed the type whitelist and the version/capability gate. */
+  fields: FormControlField[];
+  /** Deterministic errors for rejected fields and gate failures. */
+  errors: FormControlGateError[];
+}
+
+const WHITELISTED_NODE_TYPES = new Set<RenderNodeType>([
+  "form",
+  "section",
+  "table",
+  "grid",
+  "tabs",
+  "text",
+  "recordView",
+  "actionButton",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -129,20 +223,51 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderFormNode;
   }
-  if (value.type === "section") {
-    const section: RenderSectionNode = {
-      type: "section",
-      children: Array.isArray(value.children)
-        ? (value.children as RenderNode[])
-        : [],
-    };
-    if (typeof value.id === "string") {
-      section.id = value.id;
-    }
-    if (isRecord(value.props)) {
-      section.props = value.props;
-    }
-    return section;
+  if (value.type === "section" || value.type === "grid" || value.type === "tabs") {
+    return {
+      type: value.type,
+      ...(value.id === undefined ? {} : { id: value.id }),
+      ...(isRecord(value.props) ? { props: value.props } : {}),
+      ...(Array.isArray(value.children) ? { children: value.children } : {}),
+    } as RenderNode;
+  }
+  if (value.type === "text") {
+    return {
+      type: "text",
+      ...(value.id === undefined ? {} : { id: value.id }),
+      props: {
+        ...(isRecord(value.props) && typeof value.props.text === "string"
+          ? { text: value.props.text }
+          : {}),
+      },
+      ...(value.children === undefined ? {} : { children: value.children }),
+    } as RenderTextNode;
+  }
+  if (value.type === "recordView") {
+    return {
+      type: "recordView",
+      ...(value.id === undefined ? {} : { id: value.id }),
+      props: {
+        ...(isRecord(value.props) && isRecord(value.props.record)
+          ? { record: value.props.record }
+          : {}),
+      },
+      ...(value.children === undefined ? {} : { children: value.children }),
+    } as RenderRecordViewNode;
+  }
+  if (value.type === "actionButton") {
+    const props = isRecord(value.props) ? value.props : {};
+    return {
+      type: "actionButton",
+      ...(value.id === undefined ? {} : { id: value.id }),
+      props: {
+        ...(typeof props.label === "string" ? { label: props.label } : {}),
+        ...(typeof props.actionId === "string" ? { actionId: props.actionId } : {}),
+        ...(props.visibleWhen === undefined ? {} : { visibleWhen: props.visibleWhen }),
+        ...(props.disabledWhen === undefined ? {} : { disabledWhen: props.disabledWhen }),
+      },
+      ...(value.children === undefined ? {} : { children: value.children }),
+    } as RenderActionButtonNode;
   }
   return {
     type: "table",
@@ -180,30 +305,142 @@ export function resolveFormReactions(
   return parseAndEvaluateReactions(form.props.reactions, context, fieldIds);
 }
 
-/** Applies a permission gate to a row action via the frozen $context engine. */
-export function gateAction(
+/**
+ * Resolves a table action gate expression.
+ *
+ * Distinguishes an absent property (→ `absentDefault`) from an explicit but
+ * invalid expression (→ fail-closed `error`, no silent default). Valid $context
+ * expressions are evaluated against the frozen engine; booleans pass through.
+ */
+export function resolveActionGate(
   expression: unknown,
   context: Record<string, unknown>,
-  defaultValue = true,
-): boolean {
+  absentDefault: boolean,
+  path: string,
+): ActionGateResult {
+  if (expression === undefined || expression === null) {
+    return { kind: "ok", value: absentDefault };
+  }
   if (typeof expression === "boolean") {
-    return expression;
+    return { kind: "ok", value: expression };
   }
   if (typeof expression === "string") {
-    if (!isValidExpression(expression)) {
-      return defaultValue;
+    if (isValidExpression(expression)) {
+      return { kind: "ok", value: evaluateExpression(expression, context) };
     }
-    return evaluateExpression(expression, context);
+    return {
+      kind: "error",
+      error: { code: "ACTION_GATE_EXPRESSION_INVALID", path, message: expression },
+    };
   }
-  return defaultValue;
+  return {
+    kind: "error",
+    error: {
+      code: "ACTION_GATE_EXPRESSION_INVALID",
+      path,
+      message: `expected a boolean or $context expression, got ${typeof expression}`,
+    },
+  };
 }
 
-/** Evaluates a whitelisted table action's visibility/disabled gate. */
+/**
+ * Evaluates a whitelisted table action's visibility/disabled gate.
+ * Explicit invalid expressions fail closed (hidden / disabled) and are reported.
+ */
 export function tableActionGate(
   action: Record<string, unknown>,
   context: Record<string, unknown>,
-): { visible: boolean; disabled: boolean } {
-  const visible = gateAction(action.visibleWhen, context);
-  const disabled = gateAction(action.disabledWhen, context, false);
-  return { visible, disabled };
+): { visible: boolean; disabled: boolean; errors: ActionGateError[] } {
+  const visible = resolveActionGate(action.visibleWhen, context, true, "visibleWhen");
+  const disabled = resolveActionGate(action.disabledWhen, context, false, "disabledWhen");
+  const errors = [visible, disabled]
+    .filter((result): result is { kind: "error"; error: ActionGateError } => result.kind === "error")
+    .map((result) => result.error);
+  return {
+    visible: visible.kind === "ok" ? visible.value : false,
+    disabled: disabled.kind === "ok" ? disabled.value : true,
+    errors,
+  };
+}
+
+/**
+ * Parses and gates a form node's raw fields against the D-FORM §5 whitelist
+ * and the page meta version/capability rules (F-002 / F-003).
+ *
+ * Returns only the fields that pass every gate; rejected fields produce
+ * deterministic errors instead of being silently rendered (or silently dropped).
+ */
+export function gateRenderFormFields(
+  metaValue: unknown,
+  rawFields: unknown,
+  path: string,
+): RenderFormFieldGate {
+  const errors: FormControlGateError[] = [];
+  if (!isRecord(metaValue)) {
+    return {
+      fields: [],
+      errors: [{ code: "FORM_META_INVALID", path: "meta", message: "page meta must be an object" }],
+    };
+  }
+  const raw = Array.isArray(rawFields) ? rawFields : null;
+  if (raw === null) {
+    return {
+      fields: [],
+      errors: [
+        { code: "FORM_FIELDS_INVALID", path, message: "form node requires a fields array" },
+      ],
+    };
+  }
+
+  const fields: FormControlField[] = [];
+  for (const [index, entry] of raw.entries()) {
+    if (!isRecord(entry) || typeof entry.id !== "string" || typeof entry.type !== "string") {
+      errors.push({
+        code: "FORM_FIELD_INVALID",
+        path: `${path}[${index}]`,
+        message: "field requires string id and type",
+      });
+      continue;
+    }
+    if (!isWhitelistedFormControl(entry.type)) {
+      errors.push({
+        code: "FORM_TYPE_NOT_WHITELISTED",
+        path: `${path}[${index}].type`,
+        message: `field type "${entry.type}" is outside the frozen §5 whitelist`,
+      });
+      continue;
+    }
+    fields.push({
+      id: entry.id,
+      type: entry.type,
+      ...(typeof entry.label === "string" ? { label: entry.label } : {}),
+      ...(entry.mode === "multiple" ? { mode: "multiple" } : {}),
+      ...(Array.isArray(entry.options)
+        ? {
+            options: entry.options
+              .filter((option): option is Record<string, unknown> => isRecord(option))
+              .filter(
+                (option): option is Record<string, unknown> & { value: string } =>
+                  typeof option.value === "string",
+              )
+              .map((option) => ({
+                value: option.value,
+                ...(typeof option.label === "string" ? { label: option.label } : {}),
+              })),
+          }
+        : {}),
+      ...(entry.defaultValue !== undefined ? { defaultValue: entry.defaultValue } : {}),
+    });
+  }
+
+  const validFields: FormControlField[] = [];
+  for (const field of fields) {
+    const gate = checkFormCapabilitiesRaw(metaValue, [field]);
+    if (gate.length === 0) {
+      validFields.push(field);
+    } else {
+      errors.push(...gate.map((error) => ({ ...error, path: `fields[${field.id}]` })));
+    }
+  }
+  return { fields: validFields, errors };
 }

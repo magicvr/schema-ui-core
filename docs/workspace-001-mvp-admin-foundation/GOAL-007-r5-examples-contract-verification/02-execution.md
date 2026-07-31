@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 执行记录 · GOAL-007
@@ -103,6 +103,39 @@ version: 0.6.0
 - `npm test` 全绿（**14 测试文件 / 166 项**，+28：reactions 12 + render 11 + render.tsx 4 + app-examples 1）；`npm run build`（tsc + vite）通过（修复一处 TS2322 section 节点类型 + 一处 TS2352 字段转换）。
 - Edge headless 实测 `/form-with-reactions`：渲染 Admin/Viewer/audit 切换、全部 4 个字段（Name/Kind/Approval/Audit note）、无 `role="alert"` 错误。Go 侧无改动（`go test ./...`/`go build ./...` 保持通过）。
 - 登记表 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) 升 **v0.4.0**：D-EXPR/D-COMP 行「现状」→ 已实现，验证命令与证据入账，P2 `form-with-reactions` 标记已实现。
+
+**未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open，non-blocking，阶段 3 结构校验前决策）状态；Root `progress` 4/6；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。
+
+### 2026-08-01 · 响应 A-005：F-001～F-004 以 fixed 闭合 + F-005 同步
+
+用户裁决「不需要自审，直接推进」（P-004 §3.1），按 **`fixed`** 路径响应 A-005（independent, conditional）4 项 required findings（D-007 已留痕）。直接读代码核验了 A-005 的主张（`render.ts` `gateAction` fail-open、`render.tsx` `FormView` 未执行 D-FORM 门禁、`checkFormCapabilities` 无 defaultValue 2.7+advanced 门禁、renderer whitelist 窄于 §5 初表）后实施修正：
+
+**F-001 · action 表达式 fail-closed**（`apps/web/src/renderer/render.ts`）：
+- 以 `resolveActionGate(expression, context, absentDefault, path)` 替代 `gateAction`：`undefined`/`null` → absent default；boolean → 直通；合法 `$context` 表达式 → 求值；**显式非法**字符串或非表达式值 → `{ kind: "error", code: "ACTION_GATE_EXPRESSION_INVALID" }` fail-closed，不再静默返回 `defaultValue`。
+- `tableActionGate` 改为返回 `{ visible, disabled, errors }`：显式非法 `visibleWhen` → `visible: false` + error；显式非法 `disabledWhen` → `disabled: true` + error；缺省门禁不产生 error。
+- 测试（`render.test.ts`）：重写 gate 断言为 `resolveActionGate`/`tableActionGate` 新 API；补非法 visible/disabled 回归测试与「缺省 vs 显式非法」区分断言。
+
+**F-002 · RenderPage 执行 D-FORM 门禁**（`render.ts` / `render.tsx`）：
+- 新增 `gateRenderFormFields(metaValue, rawFields, path)`：解析原始字段为 `FormControlField`，校验 §5 whitelist（未知 type → `FORM_TYPE_NOT_WHITELISTED`），并按字段运行 `checkFormCapabilitiesRaw`（version/capability/defaultValue），只返回通过门禁的字段，拒绝字段以确定错误返回。
+- `FormView`（`render.tsx`）渲染前调用 `gateRenderFormFields`：门禁错误以 `role="alert"` 列出，受影响字段不渲染（不再直接强转后交给 `FormControls` 静默渲染）。
+- 测试（`render.test.tsx`）：fixture meta 补 `form.controls.extended`（此前缺 capability 却断言 textarea/switch 正常渲染——即 A-005 所指）；新增「缺 capability 字段被拒并出 `FORM_CAPABILITY_REQUIRED`」「未知 type 被拒并出 `FORM_TYPE_NOT_WHITELISTED`」。
+
+**F-003 · defaultValue 2.7 + advanced 双门禁**（`apps/web/src/renderer/form-controls.ts`）：
+- `checkFormCapabilities` 字段循环为任一 `field.defaultValue !== undefined` 增加：`protocolVersion >= 2.7`（否则 `FORM_VERSION_TOO_LOW`）+ `requiredCapabilities` 含 `form.controls.advanced`（否则 `FORM_CAPABILITY_REQUIRED`），与既有 wire 类型校验叠加。
+- 测试（`form-controls.test.ts`）：补 2.6（version too low）、2.7 缺 advanced capability、2.7 完整 capability（pass）三组回归；修正原「base meta 接受 input defaultValue」的 fail-open 断言。
+
+**F-004 · Renderer whitelist 对齐冻结 §5**（`render.ts` / `render.tsx`）：
+- `RenderNodeType` 从 form/section/table **扩展至冻结 §5 全部 node type**：layout `grid`/`section`/`tabs`；data/action `text`/`table`/`recordView`/`actionButton`；`form`。`parseRenderNode` 与 `RenderPage`/dispatch 层为每个 type 落渲染（GridView/TabsView/TextView/RecordView/ActionButtonView），未知 type 仍 fail-closed 出 alert。
+- **未做范围缩小** → 不需 Root 覆盖表修订或新版 v0.1.3 冻结；A-005 F-004 所指「静默窄于初表」以补齐缺口闭合。
+- 测试：`render.test.ts` `isWhitelistedNodeType` 断言 8 个 §5 type 全 `true`（非 §5 如 chart/modal/upload 仍 false）；`render.test.tsx` 新增 §5 全 node dispatch 渲染测试。
+
+**F-005 · Root 投影同步**：Root `00-meta.md` R5 行更新为「阶段 1 + 批次 2a/2b/2c 完成（阶段 2 全部落地），阶段 3/4 未开始」；`progress` 仍 4/6。
+
+**测试 / 构建 / 运行时证据**：
+- `npm test` 全绿（**14 测试文件 / 173 项**，+7：render.test.ts 重写 + render.test.tsx 新增 3 项）；`npm run build`（tsc + vite）通过（修复 option 类型收窄、`node.props` optional 链、tabs label 类型断言）。
+- `go test ./...` / `go build ./...` 通过（Go 侧无改动）。
+- Edge headless 实测 `/form-with-reactions`：4 字段（Name/Kind/Approval/Audit note）+ Context snapshot + 无 `role="alert"`；`/form-controls`、`/list-edit-lifecycle`、`/data-table`、`/search-form-table` 均 0 门禁错误。
+- 登记表 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) D-COMP 行同步为「Renderer whitelist = 冻结 §5 全部 node type」（v0.5.0）。
 
 **未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open，non-blocking，阶段 3 结构校验前决策）状态；Root `progress` 4/6；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。
 

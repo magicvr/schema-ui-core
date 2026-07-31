@@ -229,6 +229,23 @@ export function checkFormCapabilities(
         });
       }
     }
+    if (field.defaultValue !== undefined) {
+      // Frozen 2.7 rule: any field defaultValue requires 2.7 + advanced.
+      if (!versionAtLeast(meta.protocolVersion, 2, 7)) {
+        errors.push({
+          code: "FORM_VERSION_TOO_LOW",
+          path: `fields[${field.id}].defaultValue`,
+          message: "defaultValue requires protocol >= 2.7",
+        });
+      }
+      if (!capabilities.has(FORM_CONTROLS_ADVANCED_CAPABILITY)) {
+        errors.push({
+          code: "FORM_CAPABILITY_REQUIRED",
+          path: `fields[${field.id}].defaultValue`,
+          message: "defaultValue requires form.controls.advanced",
+        });
+      }
+    }
     const defaultValueError = validateDefaultValue(field);
     if (defaultValueError !== null) {
       errors.push(defaultValueError);

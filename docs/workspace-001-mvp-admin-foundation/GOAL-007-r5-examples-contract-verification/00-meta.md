@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.6.0
+version: 0.7.0
 ---
 
 # GOAL-007 · R5 · 纳入域范例与契约验证
@@ -51,7 +51,7 @@ version: 0.6.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-007-001 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 对照 [I-PROTO-001 v0.1.3] §3 与协议清单 §2.5，登记每纳入域的范例路径与验证命令/步骤 | **verified** | 2026-07-31 R5 阶段 1 完成：登记表落盘并已核验复用产物命令；执行验证仍属阶段 3（I-007-001 只确认登记，不确认逐域验证已执行） | [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) v0.4.0（2026-08-01 批次 2c 更新） |
+| I-007-001 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 对照 [I-PROTO-001 v0.1.3] §3 与协议清单 §2.5，登记每纳入域的范例路径与验证命令/步骤 | **verified** | 2026-07-31 R5 阶段 1 完成：登记表落盘并已核验复用产物命令；执行验证仍属阶段 3（I-007-001 只确认登记，不确认逐域验证已执行） | [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) v0.5.0（2026-08-01 A-005 响应后更新） |
 
 父目标 `I-PROTO-003`（required，R5 验收/关门门禁）由 Root 维护，本目标通过闭合 `I-007-001` 为其提供证据。`I-PROTO-004`（vendor vs pin，non-blocking）仍 open；不阻断 R5 规划，实施前可结合 schema/fixture 校验策略一并处理。
 
@@ -65,6 +65,7 @@ version: 0.6.0
 - 批次 2a 落地（2026-07-31）：D-DATA/D-TABLE 范例 + Go 列表/详情支撑实现完成（详见 02-execution）；登记表升 v0.2.0。`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。
 - 批次 2b 落地（2026-07-31）：D-FORM 控件表面 + D-ACT 非批量动作 + Go PATCH/DELETE + `form-controls`/`list-edit-lifecycle` 范例页实现完成（详见 02-execution）；A-003 批次自审（self）pass；登记表升 v0.3.0。`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。`I-PROTO-004` 仍 open（non-blocking，阶段 3 结构校验前决策）。
 - 批次 2c 落地（2026-08-01）：D-EXPR 反应引擎（`reactions.ts`，复用 `evaluateExpression`）+ D-COMP 最小 Renderer 接线（`render.ts`/`render.tsx`，resolve R4 F-002）+ `form-with-reactions` 范例页实现完成（详见 02-execution）；A-004 批次自审（self）pass；登记表升 v0.4.0。**阶段 2 全部落地**；`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。`I-PROTO-004` 仍 open（non-blocking，阶段 3 结构校验前决策）。
+- A-005 响应（2026-08-01）：A-005（independent, conditional）对阶段 2 完成主张提出 F-001～F-004（required）与 A-002～A-004（self, pass）同 scope 分歧；用户裁决「不需要自审，直接推进」，F-001～F-004 按 **`fixed`** 合法闭合（action 表达式 fail-closed、RenderPage 接入 D-FORM 门禁、defaultValue 2.7+advanced 双门禁、Renderer whitelist 扩展至冻结 §5 全部 node type），F-005 同步；`npm test` 173 项 / build / `go test` / Edge 实测全绿；登记表升 v0.5.0；D-007 已留痕。阶段 3/4 仍未开始。
 - Root 纲领进度仍为 `4/6`；本目标推进不抬升 progress，不放行 Root `done`，不改变 `I-PROTO-003` / `I-PROTO-004` 状态。
 - R4 关门时登记的 recommended 跟踪项（F-002 Renderer 接线 / F-003 token 会话 / F-004 双端一致性 oracle）标注「随 R5 / 生产化 / `I-PROTO-004` 解决」——本目标为这些跟踪项提供落地窗口，但 recommended 不阻断 R5 推进。
 - 结论与进度只写已发生事实；「未开始」阶段不得写成已完成。

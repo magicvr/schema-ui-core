@@ -144,13 +144,32 @@ describe("checkFormCapabilities", () => {
     expect(errors.some((error) => error.code === "FORM_TYPE_NOT_WHITELISTED")).toBe(true);
   });
 
+  it("gates any defaultValue behind protocol 2.7 + form.controls.advanced", () => {
+    // 2.6 (below the defaultValue floor) → version error only.
+    const lowVersion = checkFormCapabilities(
+      { protocolVersion: "2.6", requiredCapabilities: ["app.manifest", "form.controls.advanced"] },
+      [{ id: "d", type: "input", defaultValue: "ok" }],
+    );
+    expect(lowVersion).toHaveLength(1);
+    expect(lowVersion[0]!.code).toBe("FORM_VERSION_TOO_LOW");
+
+    // 2.7 but missing form.controls.advanced → capability error only.
+    const missingCap = checkFormCapabilities(baseMeta, [
+      { id: "d", type: "input", defaultValue: "ok" },
+    ]);
+    expect(missingCap).toHaveLength(1);
+    expect(missingCap[0]!.code).toBe("FORM_CAPABILITY_REQUIRED");
+
+    // 2.7 + full advanced → passes (wire type matches).
+    expect(
+      checkFormCapabilities(advancedMeta, [{ id: "d", type: "input", defaultValue: "ok" }]),
+    ).toEqual([]);
+  });
+
   it("rejects defaultValue type mismatch", () => {
-    const errors = checkFormCapabilities(baseMeta, [
+    const errors = checkFormCapabilities(advancedMeta, [
       { id: "d", type: "input", defaultValue: 42 },
     ]);
     expect(errors.some((error) => error.code === "DEFAULT_VALUE_TYPE_MISMATCH")).toBe(true);
-    expect(
-      checkFormCapabilities(baseMeta, [{ id: "d", type: "input", defaultValue: "ok" }]),
-    ).toEqual([]);
   });
 });
