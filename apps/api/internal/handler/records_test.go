@@ -6,11 +6,21 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 )
 
 func recordsMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	recordsHandler(mux)
+	return mux
+}
+
+func recordsMuxWith(session func() (account.Session, bool)) *http.ServeMux {
+	mux := http.NewServeMux()
+	h := &recordHandler{records: staticRecords(), sessionProvider: session}
+	h.routes(mux)
 	return mux
 }
 
@@ -126,6 +136,59 @@ func TestRecordsListInvalidParamsFailClosed(t *testing.T) {
 	}
 }
 
+func TestRecordsListPageSizeCap(t *testing.T) {
+	code, body := getJSON(t, recordsMux(), "/api/records?pageSize=1000")
+	if code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", code, http.StatusBadRequest)
+	}
+	if body["error"] != "INVALID_PAGE_SIZE" {
+		t.Fatalf("error = %v, want INVALID_PAGE_SIZE", body["error"])
+	}
+}
+
+func TestRecordsWriteRequiresSession(t *testing.T) {
+	mux := recordsMuxWith(nil)
+	code, body := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3", `{"name":"x"}`)
+	if code != http.StatusUnauthorized {
+		t.Fatalf("PATCH status = %d, want %d", code, http.StatusUnauthorized)
+	}
+	if body["error"] != "UNAUTHENTICATED" {
+		t.Fatalf("PATCH error = %v, want UNAUTHENTICATED", body["error"])
+	}
+	req := httptest.NewRequest(http.MethodDelete, "/api/records/rec-3", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("DELETE status = %d, want %d", rr.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestRecordsWriteDeniedWithoutAdminRole(t *testing.T) {
+	mux := recordsMuxWith(func() (account.Session, bool) {
+		return account.Session{User: account.User{Roles: []string{"editor"}}}, true
+	})
+	for _, method := range []string{http.MethodPatch, http.MethodDelete} {
+		code, body := sendJSON(t, mux, method, "/api/records/rec-3", `{"name":"x"}`)
+		if code != http.StatusForbidden {
+			t.Fatalf("%s status = %d, want %d", method, code, http.StatusForbidden)
+		}
+		if body["error"] != "FORBIDDEN" {
+			t.Fatalf("%s error = %v, want FORBIDDEN", method, body["error"])
+		}
+	}
+}
+
+func TestRecordsUpdateBodyTooLarge(t *testing.T) {
+	huge := `{"name":"` + strings.Repeat("x", maxRecordBodyBytes) + `"}`
+	code, body := sendJSON(t, recordsMux(), http.MethodPatch, "/api/records/rec-3", huge)
+	if code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", code, http.StatusBadRequest)
+	}
+	if _, ok := body["error"]; !ok {
+		t.Fatalf("error code missing in %v", body)
+	}
+}
+
 func TestRecordsDetail(t *testing.T) {
 	code, body := getJSON(t, recordsMux(), "/api/records/rec-3")
 	if code != http.StatusOK {
@@ -179,6 +242,36 @@ func TestRecordsUpdate(t *testing.T) {
 	_, detail := getJSON(t, mux, "/api/records/rec-3")
 	if detail["name"] != "Hooli Rebrand" {
 		t.Fatalf("detail name = %v, want Hooli Rebrand", detail["name"])
+	}
+}
+
+func TestRecordsUpdateRefreshesUpdatedAt(t *testing.T) {
+	mux := recordsMux()
+	_, before := getJSON(t, mux, "/api/records/rec-3")
+	beforeValue, ok := before["updatedAt"].(string)
+	if !ok {
+		t.Fatalf("updatedAt = %v, want string", before["updatedAt"])
+	}
+	beforeTime, err := time.Parse(time.RFC3339, beforeValue)
+	if err != nil {
+		t.Fatalf("parse before updatedAt %q: %v", beforeValue, err)
+	}
+
+	code, body := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3",
+		`{"name":"Refreshed"}`)
+	if code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", code, http.StatusOK)
+	}
+	afterValue, ok := body["updatedAt"].(string)
+	if !ok {
+		t.Fatalf("updatedAt = %v, want string", body["updatedAt"])
+	}
+	afterTime, err := time.Parse(time.RFC3339, afterValue)
+	if err != nil {
+		t.Fatalf("parse after updatedAt %q: %v", afterValue, err)
+	}
+	if !afterTime.After(beforeTime) {
+		t.Fatalf("updatedAt = %v, want after %v", afterValue, beforeValue)
 	}
 }
 
