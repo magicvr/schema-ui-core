@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.2.0
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-docs@v2.7.0 为协议边界
@@ -43,7 +43,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
-| R1 | 工程骨架与仓库约定 | 未开始 | React + Go 目录/构建/本地运行约定；不实现业务能力 |
+| R1 | 工程骨架与仓库约定 | 进行中 | React + Go 目录/构建/本地运行约定；不实现业务能力。子目标：GOAL-002/003/004；I-STACK-001/002 已 verified（D-004） |
 | R2 | MVP 协议覆盖子集冻结 | 未开始 | 决策 + `I-PROTO-001`；方案冻结门禁 |
 | R3 | Admin 外壳与导航 | 未开始 | App manifest / 导航壳；浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | 未开始 | 依赖 R2；前后端鉴权与 `D-PERM` 映射（`I-PROTO-002`） |
@@ -64,8 +64,8 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | I-PROTO-002 | required | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | R4 实施 | R4 实施前 | 设计最小 API + 对照 permissions-inheritance fixtures | open | — | 待 R2 后细化 |
 | I-PROTO-003 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 为纳入域登记范例路径与验证命令/步骤 | open | — | 待 R2 纳入表 |
 | I-PROTO-004 | non-blocking | 是否 vendor 上游 schemas/fixtures，或 pin 远程校验？ | R1–R5 工程策略 | R1/实施前为宜 | 决策 vendor vs pin；记录维护成本 | open | — | 待确认 |
-| I-STACK-001 | required | 前端/后端具体脚手架与包管理（目录布局、模块边界）？ | R1 实施 | R1 实施前 | 用户确认或有界 spike 后写入决策 | open | — | 已知 React+Go+Tailwind/shadcn 方向；脚手架未定 |
-| I-STACK-002 | non-blocking | monorepo vs 前后端分仓、默认端口与 env 约定 | R1 约定 | R1 内 | 决策落盘即可 | open | — | 待确认 |
+| I-STACK-001 | required | 前端/后端具体脚手架与包管理（目录布局、模块边界）？ | R1 实施 | R1 实施前 | 用户确认或有界 spike 后写入决策 | verified | — | 2026-07-31 D-004：`apps/web`+`apps/api`；Web=npm+Vite+React+TS+Tailwind/shadcn；API=Go modules；结构参考平行仓择优移植 |
+| I-STACK-002 | non-blocking | monorepo vs 前后端分仓、默认端口与 env 约定 | R1 约定 | R1 内 | 决策落盘即可 | verified | — | 2026-07-31 D-004：本仓 monorepo `apps/*`；默认端口/env 在 GOAL-002/003 约定中细化 |
 
 ## 父目标
 
@@ -76,3 +76,4 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - 开区日期：2026-07-31。
 - Charter H-001：清单提取 verified；覆盖子集冻结仍 open（本目标 `I-PROTO-001`）。
 - recommended 愿景项 `F-V003`（双线分支契约）不在本 Root 门禁内；后续双线 VP 前由 `/vision` 处理。
+- R1 子目标（2026-07-31）：`GOAL-002-r1-repo-layout-conventions`、`GOAL-003-r1-api-go-scaffold`、`GOAL-004-r1-web-react-scaffold`。
