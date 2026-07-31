@@ -118,10 +118,10 @@ attachments/evidence/
 | 平台 / 轨道 | 机制 | 执行点 | 状态 |
 |-------------|------|--------|------|
 | Windows/amd64 本地 | 开发机命令（npm test/build、go test/build、双服务、Playwright） | 本机 | **已验证**（阶段 1 dry-run + E2E 通过） |
-| Linux/amd64 CI 等价 | `.github/workflows/r6-basic-matrix.yml`：web job（Node 22 + npm ci + test/build）、api job（Go 1.26 + test/build）、browser-e2e job（Playwright Chromium） | GitHub Actions | **已配置**；实际跑绿待推送到远端后复核 |
-| 浏览器 E2E | Playwright Chromium，webServer 启动双服务；`apps/web/e2e/shell.spec.ts` | 本机 + CI | **本机已验证**；CI 待首跑 |
+| Linux/amd64 CI 等价 | `.github/workflows/r6-basic-matrix.yml`：web job（Node 22 + npm ci + test/build）、api job（Go 1.26 + test/build）、browser-e2e job（Playwright Chromium） | GitHub Actions | **首跑 green**（run `30666932343`：api 22s / web 27s / browser-e2e 53s） |
+| 浏览器 E2E | Playwright Chromium，webServer 启动双服务；`apps/web/e2e/shell.spec.ts` | 本机 + CI | **本机 + CI 均 pass** |
 
-边界：若 CI 首跑失败或超时，属阶段 2 执行事实，须在验收记录中显式列失败/排除，不得用本地 pass 掩盖；不静默降级回 residual。
+边界：若后续 CI 失败或超时，属阶段 2 执行事实，须在验收记录中显式列失败/排除，不得用本地 pass 掩盖；不静默降级回 residual。非阻断注解：`setup-go` 缓存因 `apps/api/go.sum` 缺失而 skip（API 无外部依赖，`go test`/`go build` 仍通过）。
 
 ## 5. 阶段门禁
 
@@ -154,7 +154,7 @@ attachments/evidence/
 
 ## 6. 当前已知缺口
 
-- CI workflow 已新增但**尚未实际跑绿**（需推送到远端触发 GitHub Actions）；Linux/CI 等价证据为空，不能把「已配置」当作「已跑通」。
+- CI 首跑已 green（run `30666932343`）；Linux/CI 等价与浏览器 E2E 的 CI 证据已闭合。遗留非阻断注解：Node 20 弃用（GitHub 强制 Node 24）与 `apps/api/go.sum` 缺失（API 无外部依赖，setup-go 缓存 skip，`go test`/`go build` 仍通过）。
 - Vitest/Go 当前命令未统一输出 JSON evidence artifact；阶段 2 需要证据 writer 或结构化结果落盘（`I-008-004` 已通过 draft schema dry-run 证明形状可解析）。
 - 账号权限跨层正向已实测（C-005）；**拒绝路径 oracle 已登记候选**（[account-permission-oracle.md](account-permission-oracle.md)，I-008-003），阶段 2 执行前需审视通过。
 - R5 recommended 项可作为整改候选；是否升级为 R6 required 必须有风险依据或用户/审计决定。
