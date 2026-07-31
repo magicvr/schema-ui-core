@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.5.0
+version: 0.8.0
 ---
 
 # 审计 · GOAL-006
@@ -28,6 +28,9 @@ version: 0.5.0
 | A-001 | 2026-07-31 | self | R4 实施阶段（E1–E8） | pass | 0 |
 | A-002 | 2026-07-31 | independent | R4 实施阶段（execution-facts） | pass | 0 |
 | A-003 | 2026-07-31 | self（response） | 响应 A-002 · 合并意见与文档同步 | pass | 0 |
+| A-004 | 2026-07-31 | self | R4 关门自审（close-out） | pass | 0 |
+| A-005 | 2026-07-31 | independent | R4 关门复审（close-out） | pass | 0 |
+| A-006 | 2026-07-31 | self（response） | 响应 A-005 · 执行 R4 关门 | pass | 0 |
 
 ---
 
@@ -216,6 +219,208 @@ A-002 已响应：verdict 采纳（pass）、required=0、F-001/F-002 文档修�
 
 本条为编排响应（self/response），不冒充 independent；未修改 status/progress、未将 GOAL-006 标 `done`、未改 goal-tree 状态列。
 
+---
+
+## A-004 · R4 关门自审（2026-07-31）
+
+- **source**：self
+- **auditor**：Claude · `/govern`
+- **类型**：close-out
+- **scope**：GOAL-006（R4 核心账号与权限）关门审计：成功标准对照、信息门禁、意见台账、实施证据、边界确认
+- **verdict**：**pass**（具备关门条件）
+
+### 范围与区间
+
+- 工作区：`workspace-001-mvp-admin-foundation`；目标：`GOAL-006-r4-account-permission`；canonical：`docs/workspace-001-mvp-admin-foundation/`。
+- 依据：00-meta（成功标准/路线图/信息表）、01-decision（D-001～D-004）、02-execution（时间线 E1–E8 与证据）、03-audit（A-001/A-002/A-003）、`apps/api` / `apps/web` 代码与测试、`attachments/dperm/` 固定资料。
+- `shared_materials_catalog: none`；未使用共享资料。
+
+### 对照成功标准
+
+| 标准（00-meta） | 状态 | 证据 |
+|-----------------|------|------|
+| `I-006-001` 已由证据验证；未知项未被默认为已知 | **达成** | D-004 + `attachments/dperm/` SHA-256 核验；A-001/A-002 复核 |
+| 最小 API 与 D-PERM 映射已冻结；`I-PROTO-002` 合法闭合 | **达成** | D-004（2026-07-31 方案冻结）；Root meta 同步留痕 |
+| 前后端链路可核对实现与验证路径；R3 context 真实来源衔接 | **达成** | `apps/api` 会话+鉴权、`apps/web` `$context` 挂载+D-PERM 引擎；`go test`/`go build`、web 94 项测试、`npm run build`、HTTP 运行时/代理联调证据；A-001/A-002 pass |
+| R5 Renderer/范例与完整协议支持保持边界外；关门前无开放 required finding | **达成** | 未实现 R5 Renderer 全量/范例页；`I-PROTO-003`（R5 验收/关门）不属本目标；03-audit 台账开放 required=0 |
+
+### 关门条件核对
+
+| 项 | 状态 |
+|----|------|
+| 相关意见无未合法闭合 required | ✓（A-001/A-002/A-003 均 pass，0 required） |
+| 关门 required 信息项已处理 | ✓（`I-006-001` verified；`I-PROTO-002` verified；`I-PROTO-003` 属 R5 不阻 R4 关门） |
+| 至少一次阶段/关门向审计 | ✓（A-001 self 实施 + A-002 independent 实施；A-004 关门自审 + 独立关门复审待跑） |
+| 成功标准对照可核对 | ✓（上表） |
+
+### Findings
+
+无新增 required finding。
+
+- **F-001（recommended）**：`executeAction` 引擎尚未被完整 Renderer 集成层消费（随 R5 接线；与 A-001 F-001 / A-002 F-003 同向，保持跟踪）。
+- **F-002（recommended）**：token 会话（login/logout 可选端点）未实现；静态/注入会话为 D-004 允许最小闭环，上生产前另决策（与 A-001 F-002 / A-002 F-004 同向，保持跟踪）。
+- **F-003（recommended）**：Go `Allow` 与 Web 求值器无共享 oracle；关闭 `I-PROTO-004` 时补结构/表达式一致性校验（与 A-001 F-003 / A-002 F-005 同向，保持跟踪）。
+
+以上均为 recommended / 非阻断跟踪项；开放 required=0。
+
+### 必改项汇总
+
+（无。开放 required = 0。）
+
+### 结论 + 建议下一步
+
+GOAL-006（R4 核心账号与权限）**具备关门条件**：成功标准全达成、信息门禁 closed、意见台账开放 required=0、实施证据可核对、边界未越界。建议：跑独立关门复审（`/audit GOAL-006`，对齐 R3 A-007 模式）；独立意见响应后，经用户确认将 GOAL-006 标 `done`、Root 纲领 R4 检查点完成（progress → 4/6）、同步 goal-tree。
+
+### 声明
+
+本条为 self close-out，不冒充 independent；未修改 status/progress，未将 GOAL-006 标 `done`，未改 goal-tree 状态列；`done` 与 progress 变更须独立关门复审通过并经用户确认后执行。
+
+---
+
+## A-005 · R4 关门独立复审（2026-07-31）
+
+- **source**：independent
+- **auditor**：Grok
+- **类型** / **scope**：close-out / GOAL-006 R4 关门复审（复核 A-004 self close-out 的关门主张与证据）
+- **verdict**：**pass**（同意 A-004：具备关门条件）
+
+### 范围与区间
+
+- 工作区：`workspace-001-mvp-admin-foundation`（本审计复核 `workspace.md`：`root_goal=GOAL-001-mvp-admin-foundation`、`canonical_scope=docs/workspace-001-mvp-admin-foundation/`、`plan_refs`/`primary_plan=VP-001-mvp-admin-foundation`、`shared_materials_catalog: none`）。
+- 目标：`GOAL-006-r4-account-permission`；依据 00-meta（成功标准/路线图/信息表）、01-decision（D-001～D-004）、02-execution（E1–E8 时间线）、03-audit（A-001～A-004）、`apps/api` / `apps/web` 源码与测试、`attachments/dperm/`（含 ADR-0023 与 `cases.json`）。
+- 本意见**独立复跑** `go test` / `npm run test` / SHA-256，并对照 `permissions.ts` 与 ADR-0023 D2a/D3/D3b/D4a/D4b/D4c；**不**采信 A-004 自审断言为唯一依据。
+- 未读取其他工作区；未将共享资料目录外路径当跨区权威；**不**执行 `done` 或 Root progress 变更。
+
+### 成果（有证据）
+
+| 核对项 | 证据（本审计复核） |
+|--------|-------------------|
+| Go 测试 | `Set-Location apps\api; go test ./...` → `internal/account` **ok**、`internal/handler` **ok**（其余包 no test files） |
+| Web 测试 | `Set-Location apps\web; npm run test` → **94** tests passed / 6 files；其中 `permissions-inheritance.test.ts` **18**（1 SHA 完整性 + 17 cases） |
+| `cases.json` SHA-256 | PowerShell `Get-FileHash -Algorithm SHA256` → `AC124FA1D831D0AA2544B7544B1E177C3498C8C3B36EE4D535E8C3F2F5B8849E`（小写与 D-004 / 测试常量一致：`ac124fa1d831d0aa2544b7544b1e177c3498c8c3b36ee4d535e8c3f2f5b8849e`） |
+| fixture 结构 | `fixtureVersion=1.0`、`category=permissions-inheritance`、**17** 例；其中 **5** 例含 `expected.execution`；invalid 4 例走 `expected.validation` 错误码路径（本审计抽样 `capability-is-required-for-intent` → `CAPABILITY_REQUIRED`） |
+| D-PERM ↔ ADR-0023 | `apps/web/src/renderer/permissions.ts`：`CASCADE_TYPES` = section/grid/form/tabs/table；结构边 children / tabs content / table actions·toolbar / form submit；columns 仅本地且禁 intent（D2a）；`effectivePermission` 祖先 cascade AND + 本地（D3）；未标注/columns/search 不参与 cascade（D3b）；`FORM_EDIT_FIELD_TYPES` 六类 + 隐式 submit（D4a）；intent 挂载 RowAction/toolbar/actionButton（D4b）；`executeAction` 时序 visible → permission → disabled/requiresSelection → confirm → action（D4c）；7 个 L2 错误码齐全 |
+| 最小 API / 会话 | `GET /api/accounts/me` 仅见 `handler/account.go`；`StaticDevSession` 静态注入；**无** `POST .../login`/`logout`、**无**账号 CRUD/SSO 路由（`apps` 内 grep 无匹配） |
+| Web `$context` 衔接 | `main.tsx` → `loadAccountContext` → `App` `navigationContext`；失败降级见 `context.ts` / 3 例测试 |
+| 边界（R5 外） | 引擎仅由 `permissions-inheritance.test.ts` 与 `permissions.ts` 自身消费；**无**完整 Renderer 页面运行时接线主张；无范例页/mock-app 业务演示产物纳入本目标 |
+
+### 对照成功标准
+
+| 标准（00-meta） | 状态 | 证据 |
+|-----------------|------|------|
+| `I-006-001` 已由证据验证；未知项未被默认为已知 | **达成** | D-004 + `attachments/dperm/` SHA-256 本审计复算一致 |
+| 最小 API 与 D-PERM 映射已冻结；`I-PROTO-002` 合法闭合 | **达成** | 01-decision D-004；Root `I-PROTO-002` = verified（设计/映射门禁）；实施未越界 |
+| 前后端链路可核对实现与验证路径；R3 context 真实来源衔接 | **达成** | 上表 go/web 测试、源码路径、`main.tsx` 注入；A-001/A-002 实施 pass 与本轮复跑一致 |
+| R5 Renderer/范例与完整协议支持保持边界外；关门前无开放 required finding | **达成** | 边界核对见上；台账 A-001～A-004 与本 A-005 开放 required=0。注：00-meta 第 4 条 checkbox 仍为 `[ ]`（见 F-001 recommended），**不**否定事实达成 |
+
+### 关门条件核对
+
+| 项 | 状态 | 证据 |
+|----|------|------|
+| 相关意见无未合法闭合 required | ✓ | A-001～A-004 均为 pass、0 required；A-003 已响应 A-002；无 required finding 待三路径闭合 |
+| 关门 required 信息项已处理 | ✓ | `I-006-001` verified；父目标 `I-PROTO-002` verified；`I-PROTO-003` 属 R5 验收/关门，**不阻** R4 关门；`I-PROTO-004` non-blocking/open |
+| 至少一次阶段/关门向审计 | ✓ | A-001 self 实施 + A-002 independent 实施；A-004 self close-out；**本 A-005** independent close-out |
+| 成功标准对照可核对 | ✓ | 上表；实施证据可独立复现 |
+| A-004 关门主张是否成立 | ✓ | 与本审计独立证据一致；**无**越界实施或虚构完成项 |
+
+### Findings
+
+无新增 **required** finding。
+
+- **F-001（recommended · low）**：GOAL-006 `00-meta` 成功标准第 4 条 checkbox 仍为未勾；Root `GOAL-001/00-meta` 纲领 R4 行与备注仍写「方案冻结 / 实施未开始」（与 GOAL-006 实施+关门事实不同步）。建议 `/govern` 在用户确认 `done` 时一并勾选并刷新 Root 纲领表述与 `progress` 派生源。**不**据此否决关门条件。
+- **F-002（recommended · med，与 A-004 F-001 / A-002 F-003 / A-001 F-001 同向）**：D-PERM 引擎与 17 例 fixture 已对齐，完整 Renderer 集成层尚未消费该引擎；R5 接线前不得主张「页面运行时已全面应用 D-PERM」。
+- **F-003（recommended · low，与 A-004 F-002 同向）**：token 会话 / login·logout 未实现；静态/注入会话符合 D-004 允许的最小闭环，上生产前另决策。
+- **F-004（recommended · low，与 A-004 F-003 同向）**：Go `Allow`/`Evaluate` 与 Web 求值器无共享 oracle；关闭 `I-PROTO-004` 时再考虑结构/表达式一致性校验。
+
+### 必改项汇总
+
+（无。开放 required = 0。）
+
+### 与既有意见的异同（与 A-004 self close-out 比较）
+
+| 维度 | A-004 (self close-out) | A-005 (independent close-out) |
+|------|------------------------|-------------------------------|
+| verdict | pass（具备关门条件） | **pass**（一致） |
+| 证据方式 | 引用实施事实 + 既有 A-001/A-002 | **独立复跑** go test / npm test（94）/ SHA-256 + 源码与 ADR 语义对照 |
+| required | 0 | 0（一致） |
+| recommended | F-001～F-003（集成/token/双端） | 保留为 F-002～F-004；**新增** F-001 文档 checkbox / Root 纲领表述滞后 |
+| 差异 | 关门条件表含「独立关门复审待跑」 | 本条补齐独立关门复审；本轮**未**重跑 `npm run build` / `go build` / HTTP 运行时（采信 02-execution 与 A-002 已记录运行时证据，标为**非本轮复现**） |
+
+### 结论 + 建议给编排器/用户的下一步
+
+GOAL-006（R4 核心账号与权限）**独立复核同意 A-004 关门主张**：**verdict: pass**。成功标准可核对达成、信息门禁合法、实施证据可独立复现、边界未越 R5/CRUD/SSO、台账无未闭合 required finding。
+
+建议用户通过 **`/govern`** 响应本意见后，经用户确认：将 GOAL-006 标 `done`、Root 纲领 R4 检查点完成（`progress` → **4/6**）、同步 `goal-tree.md` 与 Root `00-meta` 表述，并处理 F-001 文档勾选。**不得**仅凭本 pass 静默改 status/progress。
+
+### 声明
+
+本意见 **source: independent**，不修改 `00-meta` 的 status/检查点/派生 progress、不改方案正文、不改 goal-tree 状态列；响应与关门（`done` / Root progress）由 **`/govern` + 用户确认** 执行。
+
+---
+
+## A-006 · 响应 A-005：合并独立关门复审并执行 R4 关门（2026-07-31）
+
+- **source**：self（编排响应记录；**不是** independent）
+- **auditor**：Claude · `/govern`
+- **类型**：response
+- **scope**：响应 A-005（R4 关门 independent pass）；处理 F-001 文档滞后；经用户确认执行 GOAL-006 `done` 与 Root R4 检查点完成
+- **verdict**：**pass**（被响应意见无开放 required）
+
+### 范围与区间
+
+- 工作区：`workspace-001-mvp-admin-foundation`；目标：`GOAL-006-r4-account-permission`；Root：`GOAL-001-mvp-admin-foundation`。
+- 依据：A-005 全文、A-004 关门主张、00-meta 成功标准、02-execution 证据、goal-tree。
+
+### 用户裁决留痕
+
+- 用户经 `/govern` 连续指示推进 GOAL-006 完成（含实施→自审→`/audit` 独立审计→合并响应→关门），本响应执行关门即获授权；P-004 无未决 required（A-001～A-005 均 pass、0 required）。
+- A-005 无 required；recommended 按非必改处理（见关闭证据表）。
+
+### 响应哪些意见 / 关闭证据表
+
+| 对象 | 处置 | 状态 | 证据路径 |
+|------|------|------|----------|
+| A-005 verdict=pass | **accepted** | done | 本 A-006；03-audit 台账 |
+| A-005 required findings | 无（N/A） | 开放 required=0 | — |
+| F-001 文档滞后（00-meta 第 4 条 checkbox / Root 纲领 R4 表述） | **fixed**（按事实刷新） | done | 00-meta 成功标准第 4 条勾选、路线图步骤 4=完成；Root 00-meta 纲领 R4=完成、progress→4/6；goal-tree 同步 |
+| F-002 引擎未被 Renderer 消费（与 A-004 F-001 同向） | **accepted-residual（非必改）** | open（跟踪） | R5 Renderer 接线时解决；关门前不主张「页面运行时已全面应用 D-PERM」 |
+| F-003 token 会话未做（与 A-004 F-002 同向） | **accepted-residual（非必改）** | open（跟踪） | 静态/注入为 D-004 允许最小闭环；上生产前另决策 |
+| F-004 Go/Web 无共享 oracle（与 A-004 F-003 同向） | **accepted-residual（非必改）** | open（跟踪） | 关闭 `I-PROTO-004` 时补一致性校验 |
+
+### 关门执行记录
+
+| 项 | 变更 |
+|----|------|
+| GOAL-006 `00-meta.status` | `active` → **`done`**（成功标准全达成、信息门禁 closed、意见台账 0 required、证据可核对） |
+| GOAL-006 成功标准 | 第 4 条「R5 边界外 + 关门前无开放 required finding」勾选 |
+| GOAL-006 路线图 | 步骤 4「验证与关门」→ **完成** |
+| Root `GOAL-001` 纲领 R4 | 「方案冻结」→ **完成**（R4 实施+关门证据）；`progress` `3/6` → **`4/6`**（等权派生：R1–R4 完成） |
+| goal-tree | GOAL-006 → `done`；Root progress → `4/6`；R4 说明刷新 |
+
+### Findings
+
+无新增 finding。A-005 的 F-001 已以 `fixed`（关门时文档同步）留痕；F-002/F-003/F-004 保持 recommended/open 并跟踪。
+
+### 必改项汇总
+
+（无。开放 required = 0。）
+
+### 仍开放项（非关门阻断）
+
+| 项 | 状态 | 门禁 / 触发 |
+|----|------|-------------|
+| `I-PROTO-003`（R5 验收/关门） | open / required | R5 验收前（不属本目标） |
+| `I-PROTO-004`（vendor vs pin） | open / non-blocking | 关闭时补一致性校验（F-004） |
+| F-002 / F-003 / F-004 | recommended / open | R5 / 生产化 / I-PROTO-004 |
+
+### 结论 + 建议下一步
+
+A-005 已响应：verdict 采纳（pass）、required=0、F-001 文档修正落地、F-002～F-004 跟踪。GOAL-006（R4 核心账号与权限）**正式关门**（`done`）；Root 纲领 R4 检查点完成，`progress` → **4/6**。下一步：R5 规划（纳入域范例与契约验证，`I-PROTO-003` 门禁）。
+
+### 声明
+
+本条为编排响应（self/response），不冒充 independent；状态变更来自用户 `/govern` 授权 + 关门条件满足，非审计自行放行；F-002～F-004 为 recommended 跟踪项，不阻断 R4 关门。
+
 ## 当前开放门禁
 
 - `I-006-001`（required/**verified**）：2026-07-31 方案冻结时已由 D-004 证据验证（`attachments/dperm/` 固定资料 SHA-256）。
@@ -225,4 +430,4 @@ A-002 已响应：verdict 采纳（pass）、required=0、F-001/F-002 文档修�
 
 ## 备注
 
-R4 实施阶段自审 A-001（self, pass）与独立交叉审计 A-002（independent, pass）均已落盘；A-003（response）已合并 A-002 意见并完成文档同步（F-001/F-002 fixed，F-003～F-005 跟踪）。实施阶段证据可核对；R4 关门自审与 `done` 评估须经 `/govern` 响应意见并由用户确认后进行，不得静默关门。
+R4 实施阶段 A-001（self）与 A-002（independent）均 pass；A-003（response）合并实施意见并同步文档；A-004（self close-out）与 A-005（independent close-out）均确认具备关门条件；A-006（response）经用户 `/govern` 授权执行 GOAL-006 **`done`** 与 Root R4 检查点完成（`progress` → 4/6）。F-002～F-004 为 recommended 跟踪项（R5 / 生产化 / I-PROTO-004）。

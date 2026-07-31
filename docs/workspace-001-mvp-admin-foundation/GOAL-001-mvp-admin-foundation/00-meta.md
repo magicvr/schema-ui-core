@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.8.0
-progress: 3/6
+version: 0.9.0
+progress: 4/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-docs@v2.7.0 为协议边界
@@ -37,7 +37,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - [x] 存在可运行、可 fork 的 React 前端与 Go 后端工程骨架，并以固定协议版本为兼容边界（文档/配置可指回 pin）。
 - [x] MVP 协议覆盖子集已书面冻结（`I-PROTO-001` verified）。
 - [ ] 每一纳入项具备可核对的前后端实现路径（R3-R5）。
-- [ ] 核心账号与权限链路具备可验证的前后端集成（对照 `D-PERM` / `I-PROTO-002`）。
+- [x] 核心账号与权限链路具备可验证的前后端集成（对照 `D-PERM` / `I-PROTO-002`）。
 - [ ] 每一纳入能力有可观察范例页面（或场景）与可执行验证入口（`I-PROTO-003`）。
 - [x] 未主张“支持全部协议功能”；未纳入项有明确边界说明。
 
@@ -48,7 +48,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | R1 | 工程骨架与仓库约定 | **完成** | 子目标 GOAL-002/003/004 均 `done`（各 A-003 self pass）；Root A-001 independent pass → A-002/D-006 已响应并维持；`apps/*` + monorepo 约定已交付；I-STACK-001/002 verified |
 | R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
 | R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
-| R4 | 核心账号与权限 | **方案冻结** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施未开始 |
+| R4 | 核心账号与权限 | **完成** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture）与关门（A-004 self + A-005 independent 均 pass）完成，GOAL-006 `done` |
 | R5 | 纳入域范例与契约验证 | 未开始 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`） |
 | R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
 
@@ -56,7 +56,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 ## 派生进度展示
 
-纲领检查点 **3/6** 完成（R1、R2、R3）→ frontmatter `progress: 3/6`（goal-tree 同步）。progress **不**放行后续阶段、不关闭 finding、不推导 Root `done`。
+纲领检查点 **4/6** 完成（R1、R2、R3、R4）→ frontmatter `progress: 4/6`（goal-tree 同步）。progress **不**放行后续阶段、不关闭 finding、不推导 Root `done`。
 
 ## 信息就绪与未知项（P-005）
 
@@ -82,3 +82,4 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R1 独立复核：Root A-001 pass；编排响应 A-002 + D-006（2026-07-31）。R2 覆盖基线随后由 D-009 冻结；本事实不放行 R3-R5 实施。
 - R4 规划（2026-07-31）：GOAL-005 A-007 independent 关门复审 `pass`、A-008 响应其 recommended 后，立项 `GOAL-006-r4-account-permission`（`active`）。`I-006-001` 在 R4 方案冻结前验证；`I-PROTO-002` 保持 open 作为 R4 **实施**门禁。A-007 F-002（schema 等价性校验）已登记为关闭 `I-PROTO-004` 时的跟进项。
 - R4 方案冻结（2026-07-31）：GOAL-006 D-004 冻结账号权限最小 API 与 `D-PERM` 映射（对照 `permissions-inheritance` fixtures 17 例等固定资料，SHA-256 落盘 `GOAL-006/attachments/dperm/`），`I-006-001` → `verified`，`I-PROTO-002` → `verified`（实施门禁闭合，仅覆盖设计/映射结论）。R4 **实施未开始**；`progress` 保持 `3/6`，不放行实施，不推导 `done`。
+- R4 实施与关门（2026-07-31）：GOAL-006 实施完成（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture、94 项 web 测试、构建与 HTTP 运行时证据）；A-004 关门自审（self）与 A-005 独立关门复审（independent）均 pass、开放 required=0；经用户 `/govern` 授权 GOAL-006 → `done`，纲领 R4 → 完成，`progress` → `4/6`（goal-tree 同步）。recommended 跟踪项 F-002～F-004 随 R5 / 生产化 / `I-PROTO-004` 解决。
