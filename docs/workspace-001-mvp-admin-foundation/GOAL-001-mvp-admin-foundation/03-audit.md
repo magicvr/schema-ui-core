@@ -363,7 +363,7 @@ R2 草案作为信息收集成果**可接受**，且其“未冻结”状态记�
 
 | 项 | 状态 | 影响门禁 |
 |----|------|----------|
-| I-PROTO-002 | open / required | R4 实施前 |
+| I-PROTO-002 | verified（2026-07-31 方案冻结闭合） | R4 实施前（已闭合：GOAL-006 D-004 + `attachments/dperm/` 固定资料） |
 | I-PROTO-003 | open / required | R5 验收前 |
 | I-PROTO-004 | open / non-blocking | 工程策略 |
 

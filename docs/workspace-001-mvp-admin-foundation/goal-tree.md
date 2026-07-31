@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.8.0
+version: 0.9.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -44,4 +44,4 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=3/6
 - R1：2026-07-31 `/govern` 阶段/关门自审 A-003（self）对 002/003/004 均为 **pass** → 三子目标 `done`；Root 纲领 R1 → 完成。Root A-001（independent）R1 证据复核 **pass** → A-002/D-006 响应：维持完成事实。
 - R2：完成；用户书面确认按 v0.1.3 覆盖表正式冻结，D-009 / A-006 已留痕，`I-PROTO-001` = `verified`。冻结范围不等同于完整协议支持或 R3-R5 实施完成。
 - R3：完成；GOAL-005 A-006 `source: self` / `verdict: pass` 已留痕，73 项测试、构建、固定 fixture 对照和 HTTP 入口证据已入账；A-007 independent 关门复审 `pass`，A-008 已响应其 recommended（F-001 索引表时点绑定、F-002 schema 等价性随 Root `I-PROTO-004` 跟进）。R4/R5 与完整协议支持仍在后续范围。
-- R4：规划中；GOAL-006 已立项为 `active`，`I-006-001` 在方案冻结前验证，父目标 `I-PROTO-002` 为 R4 **实施**门禁。本条目反映规划事实，不放行 R4 实施。
+- R4：方案冻结完成；GOAL-006 D-004 冻结账号权限最小 API 与 `D-PERM` 映射（对照固定 `permissions-inheritance` fixtures 17 例等资料，SHA-256 落盘 `GOAL-006/attachments/dperm/`）；`I-006-001` verified；父目标 `I-PROTO-002` 已于方案冻结时闭合（`verified`）。R4 **实施未开始**：本条目只反映方案冻结事实，不放行实施或 `done`。

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.7.0
+version: 0.8.0
 progress: 3/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -48,7 +48,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | R1 | 工程骨架与仓库约定 | **完成** | 子目标 GOAL-002/003/004 均 `done`（各 A-003 self pass）；Root A-001 independent pass → A-002/D-006 已响应并维持；`apps/*` + monorepo 约定已交付；I-STACK-001/002 verified |
 | R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
 | R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
-| R4 | 核心账号与权限 | **规划中** | 依赖 R2；GOAL-006 已立项（`I-006-001` 方案冻结前验证；`I-PROTO-002` 为 R4 **实施**门禁） |
+| R4 | 核心账号与权限 | **方案冻结** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施未开始 |
 | R5 | 纳入域范例与契约验证 | 未开始 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`） |
 | R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
 
@@ -63,7 +63,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-PROTO-001 | required | 哪些 `domain_id` / fixture suite 纳入 VP-001 MVP？ | R2 冻结基线 / 后续实施范围 | R2 结束前 | 对照 [protocol-inventory](../../vision/protocol-inventory-v2.7.0.md) §3 决策并落盘纳入/排除表 | **verified** | 2026-07-31 用户书面确认 v0.1.3；覆盖变更须新决策与版本 | 冻结基线：[attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md) v0.1.3；D-009；A-005 以 `fixed` 留痕 F-001/F-002 |
-| I-PROTO-002 | required | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | R4 实施 | R4 实施前 | 设计最小 API + 对照 permissions-inheritance fixtures | open | — | 待 R2 后细化 |
+| I-PROTO-002 | required | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | R4 实施 | R4 实施前 | 设计最小 API + 对照 permissions-inheritance fixtures | **verified** | 2026-07-31 方案冻结时闭合（GOAL-006 D-004）；闭合仅覆盖设计/映射，不放行实施本身 | GOAL-006 D-004 + [attachments/dperm/](../../workspace-001-mvp-admin-foundation/GOAL-006-r4-account-permission/attachments/dperm/) 固定资料（cases.json 17 例、node.schema、ADR-0023 等，SHA-256 核验） |
 | I-PROTO-003 | required | 每条纳入能力的范例页路径与自动化/手工验证入口？ | R5 验收 / 关门 | R5 验收前 | 为纳入域登记范例路径与验证命令/步骤 | open | — | 待 R2 纳入表 |
 | I-PROTO-004 | non-blocking | 是否 vendor 上游 schemas/fixtures，或 pin 远程校验？ | R1–R5 工程策略 | R1/实施前为宜 | 决策 vendor vs pin；记录维护成本 | open | — | 待确认 |
 | I-STACK-001 | required | 前端/后端具体脚手架与包管理（目录布局、模块边界）？ | R1 实施 | R1 实施前 | 用户确认或有界 spike 后写入决策 | verified | — | 2026-07-31 D-004：`apps/web`+`apps/api`；Web=npm+Vite+React+TS+Tailwind/shadcn；API=Go modules；结构参考平行仓择优移植 |
@@ -81,3 +81,4 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R1 子目标（2026-07-31）：`GOAL-002-r1-repo-layout-conventions`、`GOAL-003-r1-api-go-scaffold`、`GOAL-004-r1-web-react-scaffold`。
 - R1 独立复核：Root A-001 pass；编排响应 A-002 + D-006（2026-07-31）。R2 覆盖基线随后由 D-009 冻结；本事实不放行 R3-R5 实施。
 - R4 规划（2026-07-31）：GOAL-005 A-007 independent 关门复审 `pass`、A-008 响应其 recommended 后，立项 `GOAL-006-r4-account-permission`（`active`）。`I-006-001` 在 R4 方案冻结前验证；`I-PROTO-002` 保持 open 作为 R4 **实施**门禁。A-007 F-002（schema 等价性校验）已登记为关闭 `I-PROTO-004` 时的跟进项。
+- R4 方案冻结（2026-07-31）：GOAL-006 D-004 冻结账号权限最小 API 与 `D-PERM` 映射（对照 `permissions-inheritance` fixtures 17 例等固定资料，SHA-256 落盘 `GOAL-006/attachments/dperm/`），`I-006-001` → `verified`，`I-PROTO-002` → `verified`（实施门禁闭合，仅覆盖设计/映射结论）。R4 **实施未开始**；`progress` 保持 `3/6`，不放行实施，不推导 `done`。
