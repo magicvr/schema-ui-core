@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-005
@@ -27,6 +27,7 @@ version: 0.3.0
 |----|------|--------|-------|---------|---------------|
 | A-001 | 2026-07-31 | independent | R3 目标定义 / 规划立项与信息门禁就绪性 | conditional | 1（F-001） |
 | A-002 | 2026-07-31 | self（编排响应） | A-001 F-001 修正与 recommended 响应 | conditional | 0（F-001 fixed；`I-005-*` 仍 open） |
+| A-003 | 2026-07-31 | self | R3 规划阶段同 scope 自审 | conditional | 0（无新增 finding；`I-005-*` 仍 open） |
 
 ## 当前开放门禁
 
@@ -186,5 +187,52 @@ version: 0.3.0
 ## 当前结论与下一步
 
 - 一句话结论：R3 的信息表与 D-002 现已一致，A-001 F-001 已闭合；五项 required 信息仍 open，方案冻结、实施和关门均未放行。
-- 建议下一步：信息收集 `I-005-*`（勿实施代码）；在提出方案冻结前先完成 P-004.1 的同 scope 自审选择。
+- 建议下一步：信息收集 `I-005-*`（勿实施代码）；本轮规划阶段同 scope 自审已完成，信息项全部 verified 或经用户书面接受有界 residual 后再冻结方案、进入实施，并在 R3 实施完成后执行阶段自审再申请关门。
 - **声明**：上表索引以外的聊天讨论不构成正式意见。
+
+---
+
+## A-003 · R3 规划阶段同 scope 自审计（2026-07-31）
+
+- **source**：self
+- **auditor**：Codex（`/govern`）
+- **类型**：stage
+- **scope**：与 A-001 对齐的 R3 目标定义、规划立项、P-001 路线图、P-005 信息门禁、A-001/A-002 响应，以及当前 `apps/web`、固定上游协议入口和可运行构建证据。**不审** R3 实施完成、验收关门、R4/R5 父级门禁、Vision Review。
+- **审计区间**：2026-07-31；A-002 对应 HEAD `dbca1ed15364dd5110ea26f3a055db0c22049964`，工作区无未提交改动。
+- **verdict**：**conditional**
+- **完整意见**：本节即全文（未另附 attachments）
+
+### P-004.1 裁决
+
+用户本轮明确要求进行 GOAL-005 同 scope 自审，因此本节正式形成 `source: self` 意见；A-002 仍仅是编排响应，不被当作本次自审的替代。该自审不改变目标状态或任何信息项状态。
+
+### 成果（有证据）
+
+| 主张 | 证据 | 核对 |
+|------|------|------|
+| 工作区、Root、目标树绑定一致 | [workspace.md](../workspace.md)、[goal-tree.md](../goal-tree.md)、Root `00-meta.md`；Root `active`、`progress=2/6`，GOAL-005 `active` | 通过 |
+| A-001 F-001/F-002/F-003 的响应记录与当前文档一致 | A-002 的闭合表；`00-meta.md` 中五项 I 的最晚阶段均为“方案冻结前”；`I-005-001` 显式关联 Root `I-PROTO-004`；Root R3 为“规划中” | 通过 |
+| R3 未被提前写成实施完成 | [App.tsx](../../../apps/web/src/app/App.tsx) 仍为 R1 单页占位；[main.tsx](../../../apps/web/src/main.tsx) 直接挂载 `App`；无 manifest loader、router、navigation shell | 通过 |
+| 固定上游定位未漂移 | [protocol-inventory-v2.7.0.md](../../vision/protocol-inventory-v2.7.0.md) 与 GOAL-005 均为 artifact `2.7.0` / commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`；三个固定 raw 入口本次均返回 HTTP 200 | 通过（仅证明入口可达） |
+| 当前构建事实可复核 | `apps/web` 执行 `npm run build` 通过；`npm test` 失败，因为 package 没有 `test` script | 通过（不构成 R3 验收） |
+
+### 对照当前门禁
+
+| 门禁 / 成功标准 | 当前判断 | 证据 |
+|----------------|----------|------|
+| `I-005-001` 至 `I-005-005` 在方案冻结前 verified 或有界 residual | **未满足，仍阻断** | [00-meta.md](00-meta.md) 仍将五项标为 `required/open`；没有用户书面 residual |
+| 本地 manifest schema、app-navigation fixture、校验入口 | **未满足** | 固定协议清单可追溯，但本地不存在 `docs/schemas/app-manifest.schema.json`、`conformance/fixtures/app-navigation/` 或仓库级 `vendor/`；`apps/web/package.json` 无 schema/conformance 校验脚本 |
+| manifest loader、Admin shell、router、default/fallback/active-route 行为 | **未开始** | `apps/web/src/app/App.tsx`、`apps/web/src/main.tsx` 与目标执行记录均显示 R1 占位 |
+| 不越过 R4/R5、完整协议和关门边界 | **满足当前规划边界** | GOAL-005 `00-meta.md` 排除项、D-003 与当前 Root `I-PROTO-002/003` 状态 |
+
+### Findings
+
+- 本轮**未发现新的 required finding**，也未发现 A-001 F-001/F-002/F-003 的 `fixed` 证据失效。
+- 五项 `I-005-*` 仍是当前方案冻结门禁中的开放 required 信息项，不是已验证事实，也没有被本审计静默关闭；其开放状态继续阻断方案冻结、实施、验收和关门。
+- `npm run build` 通过只证明 R1 Vite/TypeScript 骨架可构建；`npm test` 无可运行脚本，不能把构建结果解释为 R3 行为验证。
+
+### 结论 + 建议下一步
+
+**结论**：GOAL-005 的目标定义、边界和 A-001 响应仍然诚实，当前没有非法放行或 Charter/VP 越界；但五项 required 信息尚未验证，本地协议接入和 R3 行为验证均未开始，因此本同 scope 自审为 **conditional**。本意见不放行方案冻结、R3 实施、验收或 `done`，也不改变 `status`、Root `progress` 或 `goal-tree.md`。
+
+**建议下一步**：按固定 commit 收集并记录 `I-005-001` 至 `I-005-005` 的本地接入、映射、fallback、active-route 和 shell 边界证据；关闭 `I-005-001` 时明确 Root `I-PROTO-004` 的 vendor/pin 选择及失败边界。信息项全部 verified 或经用户书面接受有界 residual 后，再冻结方案并进入实施。
