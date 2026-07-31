@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.4.0
+version: 0.6.0
 ---
 
 # 执行记录 · GOAL-001
@@ -69,12 +69,29 @@ version: 0.4.0
 - Root：纲领 **R1 → 完成**；成功标准第 1 项与「未主张全协议」勾选；`progress: 1/6`；同步 goal-tree。
 - **未做**：未进入 R2；`I-PROTO-001` 等仍 open；无业务/鉴权/外壳。
 
+### 2026-07-31 · 进入 R2 并起草 I-PROTO-001 纳入/排除表
+
+- `/govern` 用户指令：进入 R2；起草 `I-PROTO-001` 纳入/排除表草案。
+- 记录决策 [D-005](01-decision.md)（状态 **proposed** / 草案）。
+- 落盘附件：[attachments/I-PROTO-001-coverage-draft.md](attachments/I-PROTO-001-coverage-draft.md)。
+- 信息项：`I-PROTO-001` → **collecting**（证据 = 草案附件；**非** verified）。
+- 纲领路线图：**R2 → 进行中**；`progress` 仍为 **1/6**（R2 检查点未完成）。
+- **未做**：未冻结覆盖子集；未建 R2 子目标；未启动 R3/R4 实施；未改 VP/Charter 覆盖主张。
+
+### 2026-07-31 · 响应 Root A-001（R1 独立复核 pass）
+
+- `/govern` 用户指令：确认 A-001 为 pass；维持 R1 完成事实；继续 R2 `I-PROTO-001` 信息收集；**不**冻结协议覆盖范围。
+- 记录决策 [D-006](01-decision.md)（accepted）。
+- 审计响应节 [A-002](03-audit.md)（source: self/response）：采纳 A-001 verdict；无 required finding 需闭合；P-004.1 用户书面选择不另做 Root R1 自审。
+- **维持事实**：R1 完成；GOAL-002/003/004 = `done`；`progress` = **1/6**；`I-PROTO-001` = **collecting**；R2 进行中。
+- **未做**：未改任何子目标 status；未 verified `I-PROTO-001`；未冻结覆盖表；未建 R3 子目标；未改 VP/Charter。
+
 ## 待办（计划 · 非完成事实）
 
-1. R1 三目标阶段自审或 `/audit` 后按需关门。
-2. R2：冻结 MVP 覆盖子集（`I-PROTO-001`）并留决策证据。
+1. 用户确认/修订 `I-PROTO-001` 草案（附件 Q1–Q5）→ 冻结决策 → `verified`。
+2. R2 冻结完成后规划 R3 Admin 外壳子目标。
 3. 按 R3–R6 推进；开放 required 信息项到期前不得越过对应门禁。
 
 ## 进度评估
 
-**R1 骨架实施完成（文档 + 双端可运行/可构建）**；R1 子目标 success 勾选但未 `done`。协议覆盖冻结仍 0。纲领检查点仍无正式「R1 完成」关门 → progress 仍为 `—`。
+**R1 完成**（002/003/004 `done`；A-001 independent pass 已由 A-002/D-006 响应）。progress **1/6**。**R2 进行中**：纳入/排除表草案已落盘，`I-PROTO-001` 仍为 collecting，覆盖子集**未冻结**。
