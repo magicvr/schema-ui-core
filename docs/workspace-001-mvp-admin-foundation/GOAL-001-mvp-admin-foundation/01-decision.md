@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-001
@@ -20,8 +20,8 @@ version: 0.1.0
 | I-PROTO-002 | required | R4 实施前 | open | 未 verified 前不得宣称账号权限链路完成 |
 | I-PROTO-003 | required | R5 验收前 | open | 未 verified 前不得验收/对照 VP 退出判据关门 |
 | I-PROTO-004 | non-blocking | 实施前为宜 | open | 不阻断开区；影响校验工程策略 |
-| I-STACK-001 | required | R1 实施前 | open | 未确认前不批量生成业务代码树 |
-| I-STACK-002 | non-blocking | R1 内 | open | — |
+| I-STACK-001 | required | R1 实施前 | **verified**（D-004） | 已确认 monorepo 布局与包管理；可启动 R1 子目标实施 |
+| I-STACK-002 | non-blocking | R1 内 | **verified**（D-004） | monorepo `apps/web`+`apps/api`；端口/env 细节随 GOAL-002/003 |
 
 ## D-001 · 开区并挂接 VP-001 为 primary
 
@@ -60,6 +60,8 @@ version: 0.1.0
 
 - **立刻拆一堆前后端子目标**：在覆盖与脚手架未定时易返工，且易跳过信息门禁。
 
+> **后续**：2026-07-31 在 `I-STACK-001` verified（D-004）后，按阶段创建 R1 三子目标（GOAL-002/003/004）；**不**撤回本条「开区当下不批量建细目标」的历史决定。
+
 ## D-003 · 协议边界与禁止主张
 
 **决定**：
@@ -69,5 +71,62 @@ version: 0.1.0
 - `mvp_candidate` 仅作 R2 决策输入。
 
 **为什么**：
+
+## D-004 · R1 脚手架与平行仓复用策略（闭合 I-STACK-001 / I-STACK-002）
+
+**日期**：2026-07-31  
+**状态**：accepted  
+**关联信息项**：`I-STACK-001` → `verified`；`I-STACK-002` → `verified`
+
+**决定**：
+
+1. **仓库形态（I-STACK-002）**：本仓 **monorepo**  
+   - 前端：`apps/web/`  
+   - 后端：`apps/api/`  
+   - 治理与分发保持根级：`docs/`、`skills/`、`AGENTS.md` 等  
+2. **前端包管理与工具链（I-STACK-001）**：  
+   - **npm** + `package-lock.json`（与平行仓 `allinme.web-client` 一致）  
+   - Vite + React + TypeScript  
+   - R1 即接入 **Tailwind CSS + shadcn/ui 基线** + 浅/深色最小占位（完整 Admin 外壳仍属 R3）  
+3. **后端包管理与布局（I-STACK-001）**：  
+   - Go modules，module 根在 `apps/api/`  
+   - 分层取向：`cmd/server`、`internal/`、`pkg/`（参考平行仓，不照搬 module path）  
+4. **平行仓复用（本地已克隆，主看 `dev`）**：  
+   - 来源：`../allinme.core-api` @ `dev`（观察提交 `387896d`）、`../allinme.web-client` @ `dev`（`57616d4`）  
+   - 策略：**结构 + 通用层参考 / 择优移植，禁止整仓拷贝**  
+   - **可参考**：Go cmd/internal/pkg、Makefile/env/health 模式、JWT/SQLite/response 等通用模式（R1 不强制完整 auth）；Web 的 host/protocol/renderer 边界与 Vite 习惯  
+   - **不搬入 MVP 默认树**：订单 / 钱包 / 通知等业务域与对应 mock；平行仓 page schema 中曾出现的协议 **2.4** 声明（本仓目标为 **schema-ui-docs@v2.7.0**）  
+5. **R1 子目标拆分**：  
+   - `GOAL-002-r1-repo-layout-conventions` — 布局与包管理约定落盘  
+   - `GOAL-003-r1-api-go-scaffold` — Go 可运行骨架  
+   - `GOAL-004-r1-web-react-scaffold` — React 可运行骨架（含 Tailwind/shadcn 基线）  
+6. **仍开放**：`I-PROTO-004`（vendor vs pin）non-blocking；默认端口具体数字在 GOAL-002/003 细化（建议沿用 API `:8080` 作起点，未写死为门禁）。
+
+**为什么**：
+
+- R1 实施前 required `I-STACK-001` 必须闭合，否则不得批量生成代码树。  
+- 单仓 monorepo 符合 Charter「可 fork 的 React+Go 基架」。  
+- 平行仓已验证可运行分层，但含业务非目标与旧协议痕迹，整拷风险高于收益。  
+- 用户 2026-07-31 在 `/govern` 中确认全部推荐项。
+
+**未选方案**：
+
+- **根下短名 `web/` + `api/`**：亦可，但与后续可能的 `apps/docs-site` 等扩展相比，`apps/*` 更清晰。  
+- **仅本仓写约定、实现仍在外部平行仓**：不利 VP 证据落在本工作区，不作 MVP 主路径。  
+- **pnpm**：省磁盘但与现成 `package-lock` 平行仓摩擦更大。  
+- **R1 不做 Tailwind/shadcn、R3 再加**：增加产品化债；用户未选。  
+- **整树拷贝再删业务**：噪声与协议版本污染风险高。  
+- **单一大 R1 子目标**：并行与验收边界糊。
+
+**影响**：
+
+- 放行 R1 子目标创建与骨架实施；**不**放行 R2 协议覆盖冻结（`I-PROTO-001` 仍 open）。  
+- 不自动创建应用代码（本决策只定布局与子目标）。
+
+**后续**：
+
+1. 执行 GOAL-002 → 约定文档 / 占位。  
+2. 并行 GOAL-003 / GOAL-004 骨架。  
+3. R1 可运行后 self 阶段审；再进入 R2。
 
 - 闭合 VRev `F-V001` 只证明清单提取，不证明覆盖冻结（Charter H-001 分列）。

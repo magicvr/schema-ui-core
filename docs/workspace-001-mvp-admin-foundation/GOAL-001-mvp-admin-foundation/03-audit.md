@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001
@@ -18,8 +18,8 @@ version: 0.1.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-00N | 已登记 | 见 [00-meta.md](00-meta.md)：I-PROTO-001…004、I-STACK-001…002 |
-| 到期 required 是否已 verified / residual | 不适用（刚开区） | R1 前关注 I-STACK-001；R2 前关注 I-PROTO-001 |
-| 资料引用是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
+| 到期 required 是否已 verified / residual | I-STACK-001 verified（D-004）；I-PROTO-001 仍 open（R2 前） | R1 实施门禁已满足；不得越过 R2 覆盖冻结 |
+| 资料引用是否固定且用户确认 | 无 | `shared_materials_catalog: none`；平行仓为外部参考非资料目录 |
 
 ## 意见台账索引
 
