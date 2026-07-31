@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.1.1
 ---
 
 # 执行记录 · GOAL-005
@@ -21,9 +21,16 @@ version: 0.1.0
 - 同步工作区 `goal-tree.md`，Root `status` 仍为 `active`、`progress` 仍为 `2/6`。
 - 本次没有修改 `apps/web`，没有产生 manifest loader、router、navigation 或 shell 的实现证据；父目标 `I-PROTO-002` / `I-PROTO-003` 未改变。
 
+### 2026-07-31 · `/govern` 响应 A-001
+
+- 采用 D-004 修正 A-001 F-001：`I-005-003` 和 `I-005-004` 的最晚需要阶段均改为「方案冻结前」，与 D-002 一致。
+- 采纳 A-001 F-002：在 `I-005-001` 中显式关联 Root `I-PROTO-004`；未改变其在 Root 中的 `open` / `non-blocking` 状态，也未将其伪装成已验证。
+- 采纳 A-001 F-003：Root 路线图的 R3 文案改为「规划中」，仅反映本目标已进入规划阶段；Root `progress` 保持 `2/6`。
+- 本次没有修改 `apps/web`，没有收集或验证任何 `I-005-*`，也没有放行方案冻结、实现或 `done`。本响应不是同 scope 自审；是否需要自审仍待用户按 P-004.1 决定。
+
 ## 待办（计划 · 非完成事实）
 
-1. 对照固定上游资料和 fixture，解析 `I-005-001` 至 `I-005-005`，补齐 manifest、导航和 shell 的未决契约。
+1. 对照固定上游资料和 fixture，解析 `I-005-001` 至 `I-005-005`，并为 `I-005-001` 记录 vendor 或 pin 远程校验方式及失败边界。
 2. 在 required 信息项可核对后，记录 R3 的 manifest 最小子集、路由映射、默认/fallback/active-route 和 shell 边界决策。
 3. 按冻结方案在 `apps/web` 实施，并为无效 manifest、未知路由、fallback 和 active-route 建立可核对测试/运行时证据。
 4. 执行阶段自审，响应全部相关意见，确认无开放 required finding 后再申请 R3 关门。
