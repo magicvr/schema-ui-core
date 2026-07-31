@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.1.0
+version: 0.1.1
 ---
 
 # GOAL-005 · R3 · Admin 外壳与导航
@@ -53,13 +53,15 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-005-001 | required | App manifest 的最小 schema、来源、版本和本地校验入口是什么？ | 方案冻结 / 实施 | 方案冻结前 | 对照 `S-09`、`docs/schemas/app-manifest.schema.json` 和固定 artifact；确认本仓库接入方式 | open | 不延期；方案冻结前复核 | 上游路径和版本已登记；本地接入仍待确认 |
+| I-005-001 | required | App manifest 的最小 schema、来源、版本和本地校验入口是什么？ | 方案冻结 / 实施 | 方案冻结前 | 对照 `S-09`、`docs/schemas/app-manifest.schema.json` 和固定 artifact；结合 Root `I-PROTO-004` 记录 vendor 或 pin 远程校验方式及失败边界 | open | 不延期；方案冻结前复核 | 已显式依赖 Root `I-PROTO-004`；本地接入仍待确认 |
 | I-005-002 | required | manifest 条目如何映射为导航项、路由入口和层级关系？ | 方案冻结 / 实施 | 方案冻结前 | 对照 `S-09` 与 `conformance/fixtures/app-navigation/`，形成映射决策并记录反例 | open | 不延期；方案冻结前复核 | 当前未找到本地映射实现；待确认 |
-| I-005-003 | required | 默认路由、未知路由和 fallback 页面/行为分别是什么？ | 方案冻结 / 实施 / 验收 | 实施前 | 从导航 fixture 和 shell 边界中收集规则，补充路由测试案例 | open | 不延期；实施前复核 | 当前未发现 fallback 契约；待确认 |
-| I-005-004 | required | active-route 的来源、匹配优先级、重定向和 URL 语义是什么？ | 方案冻结 / 实施 / 验收 | 实施前 | 设计并验证 URL/route 状态矩阵，记录用户可见行为 | open | 不延期；实施前复核 | 当前 `main.tsx` 无 router；待确认 |
+| I-005-003 | required | 默认路由、未知路由和 fallback 页面/行为分别是什么？ | 方案冻结 / 实施 / 验收 | 方案冻结前 | 从导航 fixture 和 shell 边界中收集规则，补充路由测试案例 | open | 不延期；方案冻结前复核 | A-001 F-001 响应已对齐最晚阶段；fallback 契约仍待确认 |
+| I-005-004 | required | active-route 的来源、匹配优先级、重定向和 URL 语义是什么？ | 方案冻结 / 实施 / 验收 | 方案冻结前 | 设计并验证 URL/route 状态矩阵，记录用户可见行为 | open | 不延期；方案冻结前复核 | A-001 F-001 响应已对齐最晚阶段；当前 `main.tsx` 无 router |
 | I-005-005 | required | Admin shell 的产品边界包含哪些固定区域，哪些留给业务页或后续产品化？ | 目标方案 / 实施 | 方案冻结前 | 对照 Charter、VP、R3 边界并取得用户确认；将未决取舍写入决策 | open | 不延期；方案冻结前复核 | 当前只能确认“Admin 外壳 + 导航壳”；具体边界待确认 |
 
 父目标的 `I-PROTO-001=verified` 仅表示 R2 冻结范围；不解除本目标的未知项，也不代表 R3-R5 已实施或完整协议已支持。
+
+Root `I-PROTO-004` 仍是父目标的 `open` / `non-blocking` 工程策略项，不会被本目标静默升格为独立 required。它与 `I-005-001` 的依赖已显式登记：关闭 `I-005-001` 时必须说明采用 vendor 还是 pin 远程校验，以及相应失败边界。
 
 ## 父目标
 
