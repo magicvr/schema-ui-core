@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-01
 parent: null
-version: 0.24.0
+version: 0.25.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -44,7 +44,7 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=5/6
 ## 说明
 
 - Root `progress: 5/6` = 纲领路线图 R1–R6 中 R1–R5 已完成（等权派生）；**不**放行 R6、不关闭未相关 finding、不推导 Root `done` 或 VP 关门。
-- R6：GOAL-008-r6-integration-acceptance-vp-evidence → **`active` / 规划中**（2026-08-01）；四阶段计划与 `I-008-001`～`I-008-005` 已登记，验收合同尚未冻结、R6 验收未执行；Root `progress` 保持 `5/6`，VP-001 保持 `active`。
+- R6：GOAL-008-r6-integration-acceptance-vp-evidence → **`active` / 阶段 1 已冻结**（2026-08-01）。五项 `I-008` required 均 verified（A-002 pass、F-008-001 fixed）；D-004 用户裁决搭建最小 CI+浏览器矩阵，`.github/workflows/r6-basic-matrix.yml` 首跑 green（run `30666932343`）；验收矩阵 C-001～C-008、账号权限 oracle 已落盘。阶段 2 执行未开始、R6 验收未执行；Root `progress` 保持 `5/6`，VP-001 保持 `active`。
 - R5：GOAL-007-r5-examples-contract-verification → **`done`**（2026-08-01）。A-008 self pass + A-009 independent pass；`I-PROTO-003` verified；用户 `/govern` 响应 A-009 授权关门（D-012 / Root D-014）；`progress` **4/6 → 5/6**。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
 - R1：2026-07-31 `/govern` 阶段/关门自审 A-003（self）对 002/003/004 均为 **pass** → 三子目标 `done`；Root 纲领 R1 → 完成。Root A-001（independent）R1 证据复核 **pass** → A-002/D-006 响应：维持完成事实。

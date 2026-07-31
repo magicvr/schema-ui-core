@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.2.1
 ---
 
 # GOAL-008 · R6 · 集成验收与 VP 证据
@@ -38,7 +38,7 @@ version: 0.2.0
 
 | 阶段 | 名称 | 状态 | 退出条件 |
 |------|------|------|----------|
-| 1 | 验收合同与证据计划冻结 | **冻结候选，待审视** | `I-008-001`～`I-008-005` 均有证据结论或合规 residual；验收矩阵、环境矩阵、账号权限 oracle 与证据格式经计划阶段审视（A-002），无开放 required finding |
+| 1 | 验收合同与证据计划冻结 | **已冻结**（2026-08-01） | `I-008-001`～`I-008-005` 均有证据结论或合规 residual；验收矩阵、环境矩阵、账号权限 oracle 与证据格式经计划阶段审视（A-002），无开放 required finding |
 | 2 | 集成验收执行 | 未开始 | 在已声明 revision/环境运行 Web、API、协议回归与账号权限集成检查；原始/机器可读结果落盘；失败与排除不被隐藏 |
 | 3 | VP 证据汇编与缺口整改 | 未开始 | VP 三条退出判据逐条指向工作区 Q2 证据；所有 required 缺口 fixed 或经用户书面 residual/overruled；边界主张一致 |
 | 4 | R6 关门审计与 VP 提案输入 | 未开始 | R6 close-out 审计结论可核对、开放 required=0；用户另行授权 Root R6/`progress`/status 变化，并由 `/vision` 决定是否提出 VP 关门 |
@@ -58,18 +58,19 @@ version: 0.2.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-008-001 | required | VP-001 三条退出判据分别需要哪些最小验收主张、证据与允许的有界排除？ | 阶段 1 计划冻结 / 阶段 4 VP 提案输入 | 阶段 1 结束前 | 对照 VP-001、Root 成功标准、R2/R5 登记与历史 residual，完成并审视验收矩阵 | **有证据（冻结候选）** | — | [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0 §2b 验收矩阵 C-001～C-008；待阶段 1 计划审视（A-002）确认后 verified |
-| I-008-002 | required | “可运行、可 fork”的干净环境、依赖安装、双服务启动、端口/env 与最小浏览器/API 路径是什么？ | 阶段 1 计划冻结 / 阶段 2 执行 | 阶段 1 结束前 | 在隔离/干净工作副本演练启动路径，记录 OS、runtime、命令、env 与失败模式 | **有证据（冻结候选）** | — | 本地双服务/health/proxy/账号上下文/records 实测落盘 `evidence/planning/results/runtime-probes.log`；干净安装（`npm ci`）+ Linux/CI 等价由 **GitHub Actions 首跑 green**（run `30666932343`，api/web/browser-e2e 全 pass）闭合 |
-| I-008-003 | required | 账号与权限前后端集成的正向/拒绝 oracle、身份载体与期望错误/可见性结果是什么？ | 阶段 2 账号权限验收 / 关门 | 阶段 1 结束前 | 对照 GOAL-006 设计/fixtures 与当前 host/API，冻结端到端场景和预期 | **有证据（冻结候选）** | — | [account-permission-oracle.md](attachments/account-permission-oracle.md) v0.1.0（P-1～P-4 正向、D-1～D-6 拒绝）；待审视后 verified |
-| I-008-004 | required | R6 机器可读证据包的 schema、revision identity、目录、哈希与重跑规则是什么？ | 阶段 2 证据采集 / 阶段 3 汇编 | 阶段 1 结束前 | 定义 evidence index + result 记录格式；用一次 dry-run 验证可解析性和文件摘要 | **有证据（冻结候选）** | — | `evidence-index.schema.json` + `validate-evidence-dry-run.mjs` 校验通过：**可解析、5 artifact SHA-256 可重算**；正式 acceptance index 属阶段 2 |
-| I-008-005 | required | R6 的验收环境矩阵如何处理 Windows 本地、Linux/CI 等价、浏览器 E2E 与缺失平台证据？ | 阶段 1 计划冻结 / 阶段 4 关门主张 | 阶段 1 结束前 | 盘点现有 CI/浏览器能力；决定最低矩阵，或由用户书面接受有范围与复审触发的 residual | **已决定（冻结候选）** | — | 用户裁决“搭建最小 CI+浏览器矩阵”（D-004）；workflow + Playwright 已建、本机 E2E 通过；**GitHub Actions 首跑 green**（run `30666932343`，browser-e2e job 53s pass） |
+| I-008-001 | required | VP-001 三条退出判据分别需要哪些最小验收主张、证据与允许的有界排除？ | 阶段 1 计划冻结 / 阶段 4 VP 提案输入 | 阶段 1 结束前 | 对照 VP-001、Root 成功标准、R2/R5 登记与历史 residual，完成并审视验收矩阵 | **verified**（A-002） | — | [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0 §2b 验收矩阵 C-001～C-008 |
+| I-008-002 | required | “可运行、可 fork”的干净环境、依赖安装、双服务启动、端口/env 与最小浏览器/API 路径是什么？ | 阶段 1 计划冻结 / 阶段 2 执行 | 阶段 1 结束前 | 在隔离/干净工作副本演练启动路径，记录 OS、runtime、命令、env 与失败模式 | **verified**（A-002） | — | 本地双服务/health/proxy/账号上下文/records 实测落盘 `evidence/planning/results/runtime-probes.log`；干净安装（`npm ci`）+ Linux/CI 等价由 **GitHub Actions 首跑 green**（run `30666932343`，api/web/browser-e2e 全 pass）闭合 |
+| I-008-003 | required | 账号与权限前后端集成的正向/拒绝 oracle、身份载体与期望错误/可见性结果是什么？ | 阶段 2 账号权限验收 / 关门 | 阶段 1 结束前 | 对照 GOAL-006 设计/fixtures 与当前 host/API，冻结端到端场景和预期 | **verified**（A-002） | — | [account-permission-oracle.md](attachments/account-permission-oracle.md) v0.1.0（P-1～P-4 正向、D-1～D-6 拒绝） |
+| I-008-004 | required | R6 机器可读证据包的 schema、revision identity、目录、哈希与重跑规则是什么？ | 阶段 2 证据采集 / 阶段 3 汇编 | 阶段 1 结束前 | 定义 evidence index + result 记录格式；用一次 dry-run 验证可解析性和文件摘要 | **verified**（A-002） | — | `evidence-index.schema.json` + `validate-evidence-dry-run.mjs` 校验通过：**可解析、5 artifact SHA-256 可重算**；正式 acceptance index 属阶段 2 |
+| I-008-005 | required | R6 的验收环境矩阵如何处理 Windows 本地、Linux/CI 等价、浏览器 E2E 与缺失平台证据？ | 阶段 1 计划冻结 / 阶段 4 关门主张 | 阶段 1 结束前 | 盘点现有 CI/浏览器能力；决定最低矩阵，或由用户书面接受有范围与复审触发的 residual | **verified**（A-002） | — | 用户裁决“搭建最小 CI+浏览器矩阵”（D-004）；workflow + Playwright 已建、本机 E2E 通过；**GitHub Actions 首跑 green**（run `30666932343`，browser-e2e job 53s pass） |
 
 ## 阶段 1 当前收集结论（2026-08-01）
 
+- **阶段 1 已冻结**：A-002 计划审视 pass，D-002 冻结为 accepted，F-008-001 关闭（`fixed`），五项 `I-008-001`～`I-008-005` 均 `verified`。阶段 2 可开始。
 - 本轮按用户裁决（D-004）搭建最小 CI + 浏览器矩阵：`.github/workflows/r6-basic-matrix.yml`（web/api/browser-e2e 三 job）、Playwright `apps/web/e2e/shell.spec.ts`、`playwright.config.ts`；本地 Playwright E2E 通过（shell 渲染 + `/api/accounts/me` 经 proxy 返回 dev session + `/api/records`）。
 - `I-008-004` 的 draft schema 已用真实 artifact dry-run 验证：**可解析、5 个 artifact SHA-256 可重算**；dry-run 持久化为 `evidence/planning/evidence-index.dry-run.json`，校验脚本 `validate-evidence-dry-run.mjs` 可重跑。
-- `I-008-001` 验收矩阵（C-001～C-008）与 `I-008-003` 账号权限 oracle 已升级为冻结候选；`I-008-005` 已由用户裁决（D-004）。五项均进入「有证据/已决定」可审视状态，但**正式冻结仍未发生**：须阶段 1 计划审视（A-002）通过、D-002 冻结、用户确认后才进入阶段 2。
 - **GitHub Actions 首跑已 green**（run `30666932343`）：api/web/browser-e2e 三 job 全 pass，`I-008-002`（`npm ci` 干净安装 + Linux 等价）与 `I-008-005`（浏览器矩阵 CI 证据）已由实际运行闭合；非阻断注解为 Node 20 弃用与 `go.sum` 缺失（API 无外部依赖）。
+- 阶段 2 执行尚未开始；Root `progress: 5/6`、VP-001 `active` 不变。
 
 ## 父目标
 

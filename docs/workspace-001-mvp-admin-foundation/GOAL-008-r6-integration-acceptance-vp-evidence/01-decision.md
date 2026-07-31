@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.2.1
 ---
 
 # 决策记录 · GOAL-008
@@ -47,11 +47,11 @@ version: 0.2.0
 ## D-002 · 提出“四阶段 + 机器可读证据索引”的 R6 计划
 
 **日期**：2026-08-01
-**状态**：proposed（规划草案，尚未冻结）
+**状态**：accepted（阶段 1 计划审视 A-002 pass 后，用户 `/govern` 授权冻结）
 
 **决定**：
 
-提出以下 R6 执行结构，详见 [attachments/R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.1.0：
+提出以下 R6 执行结构，详见 [attachments/R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0：
 
 1. 验收合同与证据计划冻结；
 2. 集成验收执行；
@@ -74,8 +74,9 @@ version: 0.2.0
 
 **影响**：
 
-- 本决策不放行阶段 2；`I-008-001` 保持 `collecting`，其余 required 保持 `open`。
-- 计划阶段下一步是收集/验证五个信息项，并对冻结候选做同 scope 计划审视。
+- **本决策已冻结**（2026-08-01，A-002 pass + 用户授权）：阶段 1 冻结候选计划正式成为 R6 执行计划；阶段 2 可开始。
+- `I-008-001`～`I-008-005` 均 `verified`（见 [03-audit.md](03-audit.md) A-002 / F-008-001 响应）；CI 首跑 green。
+- 阶段 2 执行须按 evidence index 持久化结果；Root `progress: 5/6`、VP-001 `active` 不变。
 
 ## D-003 · 记录阶段 1 本地能力基线与证据边界
 
@@ -139,7 +140,7 @@ version: 0.2.0
 ## D-005 · R6 验收矩阵与证据形状升级为冻结候选（I-008-001/003/004）
 
 **日期**：2026-08-01
-**状态**：proposed（冻结候选，待阶段 1 计划审视通过后 accepted）
+**状态**：accepted（A-002 计划审视 pass 后随 D-002 冻结）
 
 **决定**：
 
