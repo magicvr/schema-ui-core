@@ -41,3 +41,4 @@ version: 0.2.0
 - **不**自动放行实现：VP-001 协议覆盖子集尚未冻结；无 React/Go 实现证据。  
 - 开区与实现推进走 **`/govern`**；Vision required findings `F-V001`/`F-V002` 已 `fixed`（见 [reviews.md](reviews.md)）。  
 - 开放 recommended：`F-V003`（双线维护契约，后续 VP 前处理）。
+- VRev-003 响应后：`F-V006` → `fixed`（H-001 分列）；`F-V007` → `accepted-residual`（消费仓不携带 monorepo dogfood runtime；矩阵路径为生成仓发布溯源，非本仓须复现证据）。
