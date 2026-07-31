@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-001-mvp-admin-foundation
 title: MVP Admin 基架
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.2.1
+updated: 2026-08-01
+version: 0.3.0
 parent: null
 ---
 
@@ -50,7 +50,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-01 | **closed** | 三条方向级退出判据均以挂接工作区 Q2 证据满足：React+Go 可运行/可 fork/固定协议边界（evidence-index C-001~C-004 + CI run `30666932343`）；受控覆盖清单每项有实现/范例/验证（I-PROTO-001 v0.1.3 + I-007-001 registry + stage3 conformance）；核心账号权限前后端集成不依赖未声明业务模块（runtime-probes + account-permission-oracle P-1~P-4/D-1~D-6 + dperm 17 例）。GOAL-008 与 Root `GOAL-001` 均 `done`（A-005 self + A-006 independent close-out 双 pass，开放 required=0）。 | [vp-evidence-assembly.md](../../workspace-001-mvp-admin-foundation/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/vp-evidence-assembly.md)；[evidence-index.json](../../workspace-001-mvp-admin-foundation/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/evidence/acceptance/evidence-index.json)；[Root GOAL-001 00-meta](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/00-meta.md) | 有界 closed：`reactions` multi-round（16/16）、request-construction batch（11）、D-UPLOAD 整域为冻结边界排除（I-PROTO-001 v0.1.3，Root D-008/D-010）；浏览器级拒绝路径未断言（真实 manifest 无权限门控项，拒绝以 renderer/组件层 oracle 断言，C-006 exclusion）——均点名工作区 `workspace-001-mvp-admin-foundation` 与目标 GOAL-001/GOAL-008，非 required 缺口。 |
 
 ## 规划修订短史
 
@@ -60,3 +60,4 @@ parent: null
 | 2026-07-31 | `/vision` 响应 VRev：链接协议清单；明确覆盖子集未冻结。 |
 | 2026-07-31 | `/govern` 开区：绑定 `workspace-001-mvp-admin-foundation`；`status` `planned` → `active`；`lead_workspace` 已填。 |
 | 2026-07-31 | `/govern`：Root D-009 按 v0.1.3 正式冻结 R2 覆盖基线；未改变本 VP 的 `active` 状态或 R3-R5 实施门禁。 |
+| 2026-08-01 | `/vision`：三条方向级退出判据经工作区 Q2 证据满足（GOAL-008/GOAL-001 均 `done`，A-005 + A-006 close-out 双 pass），用户确认关门 → `status` `active` → `closed`；关门记录 + roadmap 已同步。 |

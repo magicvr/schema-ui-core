@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-mvp-admin-foundation
 doc: decision
-status: active
+status: done
 parent: null
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.10.0
+version: 0.11.0
 ---
 
 # 决策记录 · GOAL-001
@@ -502,3 +502,30 @@ version: 0.10.0
 - `goal-tree.md` 新增 GOAL-008（`active`）；Root R6 显示「规划中」。
 - Root `status: active`、`progress: 5/6`、R1-R5 关门事实与 VP-001 `status: active` 均不变。
 - 下一步是 GOAL-008 阶段 1 信息收集与计划审视，不是直接宣称 R6 实施或 VP 关门。
+
+## D-016 · 授权 R6 检查点完成与 Root 关门（GOAL-008 done → progress 6/6 / status done）（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+1. 采纳 GOAL-008 关门事实：A-005 self + A-006 independent close-out 均 **pass**、开放 required=0（GOAL-008 D-006 已响应并授权）；GOAL-008 → **`done`**。
+2. Root 纲领路线图 **R6** → **完成**。
+3. 派生 `progress` 由 **5/6** 重算为 **6/6**（等权：R1–R6 全部完成）；Root `status` → **`done`**；同步 `00-meta` frontmatter、成功标准与 `goal-tree.md`。
+4. **不**改 VP-001 status（保持 `active`）；**不**主张完整协议支持或发布就绪；R6 `pass`/Root `done` ≠ VP 已关门。
+
+**为什么**：
+
+- 用户书面指令：响应 A-006（GOAL-008 independent close-out pass）、授权 GOAL-008 → done、决定 Root R6 / `progress` 6/6 / Root status。
+- Root 全部 7 条成功标准已可核对满足；R1–R6 六个纲领检查点全部完成；关门条件（无未闭合 required、无到期 required I-00N、有关门向审计、成功标准可核对）成立。
+
+**未选方案**：
+
+- **保持 Root `active` 至 VP 关门**：Root 是工作区目标树事实，其 `done` 取决于纲领路线图与成功标准（已满足）；VP 关门是 `/vision` 的独立决策层动作，不阻断 Root `done`。goal-tree 与 VP 状态分离原则支持二者独立推进。
+- **同时把 VP-001 标 `closed`**：违反 alignment「VP 关门须工作区证据 + `/vision` + 用户确认」，越权。
+
+**影响**：
+
+- Root `status: done`、`progress: 6/6`、R6=完成；goal-tree 同步。
+- VP-001 仍 `active`；`/vision` 可读取 GOAL-008 工作区 Q2 证据（[vp-evidence-assembly](../GOAL-008-r6-integration-acceptance-vp-evidence/attachments/vp-evidence-assembly.md)）形成关门提案。

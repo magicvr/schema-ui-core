@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 
-const require = createRequire(import.meta.url);
+// Ajv is not installed inside attachments/; anchor resolution to apps/web
+// deps so this script reruns directly from this directory (F-008-004).
+const require = createRequire(resolve(dirname(fileURLToPath(import.meta.url)), "../../../../apps/web/package.json"));
 const { default: Ajv } = require("ajv/dist/2020.js");
 
 const here = dirname(fileURLToPath(import.meta.url)); // attachments/

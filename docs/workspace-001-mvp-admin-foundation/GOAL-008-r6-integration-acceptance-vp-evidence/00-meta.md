@@ -1,11 +1,11 @@
 ---
 id: GOAL-008-r6-integration-acceptance-vp-evidence
 title: R6 · 集成验收与 VP 证据
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.5
+version: 0.3.0
 ---
 
 # GOAL-008 · R6 · 集成验收与 VP 证据
@@ -14,7 +14,7 @@ version: 0.2.5
 
 承接 Root 已完成的 R1-R5，围绕 [VP-001 的三条方向级退出判据](../../vision/plans/VP-001-mvp-admin-foundation.md#方向级退出判据)建立可复核的集成验收合同、执行证据与工作区证据索引。目标是回答“当前工作区的 React + Go Admin MVP 是否有足够证据支持提出 VP 关门”，而不是仅重述既有测试通过或自动修改 VP 状态。
 
-本目标处于**规划期**。当前只固化范围、路线、信息门禁与证据形状；R6 验收执行、Root `6/6`、Root `done` 与 VP `closed` 均未发生。
+**R6 已关门（2026-08-01）**：四阶段全部完成，A-005 self close-out 与 A-006 independent close-out 均 **pass**、开放 required=0；用户 `/govern` 授权 GOAL-008 → `done`、Root R6/`progress` 6/6/Root `done`（Root [D-016](../GOAL-001-mvp-admin-foundation/01-decision.md)）。VP-001 是否关门由 `/vision` 另作决定。
 
 ## 范围边界
 
@@ -41,22 +41,22 @@ version: 0.2.5
 | 1 | 验收合同与证据计划冻结 | **已冻结**（2026-08-01） | `I-008-001`～`I-008-005` 均有证据结论或合规 residual；验收矩阵、环境矩阵、账号权限 oracle 与证据格式经计划阶段审视（A-002），无开放 required finding |
 | 2 | 集成验收执行 | **已完成**（2026-08-01） | 在已声明 revision/环境运行 Web、API、协议回归与账号权限集成检查；原始/机器可读结果落盘；失败与排除不被隐藏 |
 | 3 | VP 证据汇编与缺口整改 | **已完成**（2026-08-01） | VP 三条退出判据逐条指向工作区 Q2 证据；所有 required 缺口 fixed 或经用户书面 residual/overruled；边界主张一致 |
-| 4 | R6 关门审计与 VP 提案输入 | **close-out 审计完成（A-005 pass）；待用户授权** | R6 close-out 审计结论可核对、开放 required=0；用户另行授权 Root R6/`progress`/status 变化，并由 `/vision` 决定是否提出 VP 关门 |
+| 4 | R6 关门审计与 VP 提案输入 | **已完成**（2026-08-01） | A-005 self + A-006 independent close-out 均 pass、开放 required=0；用户 `/govern` 授权 GOAL-008 → `done`、Root R6/`progress`/status（Root D-016）；VP-001 关门提案另走 `/vision` |
 
 > 阶段 2 → 3 门禁已过（A-003 pass，2026-08-01）：C-001～C-008 全执行、evidence-index（mode: acceptance）经 schema 校验、排除显式。阶段 3 可开始。
 > 阶段 3 已汇编（2026-08-01）：VP 三条退出判据逐条指向工作区 Q2 证据（[vp-evidence-assembly.md](attachments/vp-evidence-assembly.md)）；无 required 缺口、边界一致。阶段 3→4 门禁待审。
-> 阶段 4（2026-08-01）：A-005 close-out **pass**（开放 required=0、四条验收证据链+三条 VP 判据映射可核对）；GOAL-008 可关门。Root R6/progress/status 变化与 VP 关门提案须用户授权（Root 由 `/govern`，VP 由 `/vision`）。
+> 阶段 4（2026-08-01）：A-005 close-out **pass**（开放 required=0、四条验收证据链+三条 VP 判据映射可核对）→ A-006 independent close-out **pass** → 用户 `/govern` 授权 GOAL-008 → **`done`**、Root R6 完成、`progress` 6/6、Root status `done`（Root D-016）。VP-001 关门另走 `/vision`。
 
 阶段通常串行；若阶段 2 内的 Web/API、协议回归、账号权限与证据打包已由阶段 1 冻结为独立执行块，可并行收集，但不得越过同一 required 信息门禁。
 
 ## 成功标准（规划基线）
 
-- [ ] 一份受控验收矩阵把 VP-001 三条退出判据映射为明确主张、执行入口、预期结果、证据路径、排除与 residual；不存在“测试全绿即可关 VP”的隐含规则。
-- [ ] React + Go 基架在声明的干净环境完成可复现启动与浏览器/API 关键路径验证；证据绑定 repo revision、依赖/runtime 版本与工作树状态。
-- [ ] R2 v0.1.3 的每个纳入域均可从 R5 登记表追到实现、范例/场景与可执行验证，且 R6 回归没有越过 include-partial / exclude 边界。
-- [ ] 核心账号与权限链路至少包含可核对的前后端正向与拒绝路径，证明集成不依赖未声明业务模块。
-- [ ] 机器可读证据索引完整记录命令、退出码、时间、环境、结果、排除/残余与文件摘要；证据可由工作区目标记录稳定寻址。
-- [ ] R6 关门审计无开放 required finding；Root R6 完成、Root `done` 与 VP 关门仍分别等待用户和 `/vision` 的后续受控决定。
+- [x] 一份受控验收矩阵把 VP-001 三条退出判据映射为明确主张、执行入口、预期结果、证据路径、排除与 residual；不存在“测试全绿即可关 VP”的隐含规则。（R6-acceptance-plan §2b C-001～C-008，2026-08-01 冻结）
+- [x] React + Go 基架在声明的干净环境完成可复现启动与浏览器/API 关键路径验证；证据绑定 repo revision、依赖/runtime 版本与工作树状态。（evidence-index：revision `a941bed…` / clean / env）
+- [x] R2 v0.1.3 的每个纳入域均可从 R5 登记表追到实现、范例/场景与可执行验证，且 R6 回归没有越过 include-partial / exclude 边界。（I-007-001 registry + stage3 conformance + C-007）
+- [x] 核心账号与权限链路至少包含可核对的前后端正向与拒绝路径，证明集成不依赖未声明业务模块。（account-permission-oracle P-1～P-4 / D-1～D-6 + runtime-probes + C-005）
+- [x] 机器可读证据索引完整记录命令、退出码、时间、环境、结果、排除/残余与文件摘要；证据可由工作区目标记录稳定寻址。（evidence-index.json 经 schema 校验、7 artifact SHA-256 verified）
+- [x] R6 关门审计无开放 required finding；Root R6 完成、Root `done` 与 VP 关门仍分别等待用户和 `/vision` 的后续受控决定。（A-005/A-006 pass → Root D-016 授权；VP 另走 `/vision`）
 
 ## 信息就绪与未知项（P-005）
 
@@ -85,3 +85,4 @@ version: 0.2.5
 - 工作区：`workspace-001-mvp-admin-foundation`；canonical 范围：`docs/workspace-001-mvp-admin-foundation/`。
 - 本目标继承 Root 的 `primary_plan: VP-001-mvp-admin-foundation` 语境，不扩写第二套愿景边界。
 - R4/R5 的 recommended 跟踪项可作为 R6 缺口输入，但不会在没有 required 升级或用户裁决时自动阻断。
+- **R6 关门（2026-08-01）**：用户 `/govern` 响应 A-006（independent close-out pass）并授权 GOAL-008 → `done`；Root R6 → 完成、`progress` 5/6 → 6/6、Root status → `done`（Root D-016）；goal-tree 同步。VP-001 保持 `active`，关门提案由 `/vision` 读取 [vp-evidence-assembly.md](attachments/vp-evidence-assembly.md) 与工作区 Q2 证据后用户确认。R6 `pass` 不等于完整协议支持、发布就绪或 VP 已关门。

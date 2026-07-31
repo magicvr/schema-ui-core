@@ -1,11 +1,11 @@
 ---
 id: GOAL-008-r6-integration-acceptance-vp-evidence
 doc: decision
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.1
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-008
@@ -163,3 +163,33 @@ version: 0.2.1
 
 - 计划附件与 oracle 附件成为冻结候选；`I-008-001`/`I-008-003`/`I-008-004` 有证据路径可审视。
 - 阶段 1 仍未冻结；阶段 2 仍关闭；Root `progress: 5/6`、VP-001 `active` 不变。
+
+## D-006 · 响应 A-006 并授权 GOAL-008 关门（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+**关联意见**：[03-audit.md](03-audit.md) A-006（independent · close-out · pass）
+**关联决策**：Root [D-016](../GOAL-001-mvp-admin-foundation/01-decision.md)
+
+**决定**：
+
+1. 接受 A-006 `pass` 结论（与 A-005 self close-out `pass` 同向、无冲突）；本目标无未合法闭合的 required finding，`I-008-001`～`I-008-005` 均 verified。
+2. **GOAL-008 → `done`**（用户 `/govern` 授权）：R6 四阶段完成、验收矩阵 C-001～C-008 全执行、`evidence-index.json`（mode: acceptance）7 artifact SHA-256 verified、VP 三判据 Q2 汇编落盘。
+3. recommended 处置：`F-008-003`（文档标签同步冻结/完成语义）与 `F-008-004`（evidence builder 锚定 `apps/web` 依赖、可自 `attachments/` 重跑）→ **fixed**；`F-008-002`（CI Node 20 弃用 / go.sum 缓存 skip）→ tracked，不阻断。
+4. Root 纲领 **R6** → 完成；`progress` 5/6 → **6/6**；Root status → `done`（Root D-016）。
+5. VP-001 保持 `active`：关门提案由 `/vision` 读取工作区 Q2 证据并经用户确认；R6 `pass` 不等于 VP 已关门或完整协议支持。
+
+**为什么**：
+
+- A-005 与 A-006 双关门审计均 pass、开放 required=0，满足「相关意见无未合法闭合 required、相关信息项无未处理关门 required、至少有阶段/关门向审计、成功标准可核对」的关门条件。
+- 用户本轮 `/govern` 明确指令：响应 A-006、授权 GOAL-008 → done、决定 Root R6 / progress 6/6 / status。
+
+**未选方案**：
+
+- **保持 active 待 VP 关门**：目标自身关门条件已满足；VP 关门是 `/vision` 的独立决策，不阻断本目标 `done`。
+- **不改文档标签 / 不修 builder**：A-006 的 recommended 可修可不修；两者成本低且直接改善台账可读性与证据可重跑性，本轮一并处理。
+
+**影响**：
+
+- GOAL-008 `status` → `done`；goal-tree 同步；Root R6 完成、`progress: 6/6`、Root status → `done`。
+- VP-001 仍 `active`；`/vision` 可读取本目标 [vp-evidence-assembly.md](attachments/vp-evidence-assembly.md) 与 evidence 目录作为关门提案输入。
