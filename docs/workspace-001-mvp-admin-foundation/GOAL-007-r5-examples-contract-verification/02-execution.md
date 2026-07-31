@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.5.0
+updated: 2026-08-01
+version: 0.6.0
 ---
 
 # 执行记录 · GOAL-007
@@ -84,12 +84,34 @@ version: 0.5.0
 
 **未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open）状态；Root `progress` 4/6；批次 2c（D-EXPR/Renderer）与阶段 3/4 未开始。
 
+### 2026-08-01 · R5 阶段 2：批次 2c 实施完成（D-EXPR / D-COMP）
+
+**D-EXPR 反应引擎**（`apps/web/src/renderer/reactions.ts`）：
+- `ReactionRule`/`ReactionApply`（fieldId + 显式 visible/disabled 布尔）、`parseReactionRule`（fail-closed：非对象、缺 id/when、非法表达式 `REACTION_EXPRESSION_INVALID`、apply 缺 fieldId/非布尔 `REACTION_APPLY_INVALID`）、`evaluateReactions`（复用 `evaluateExpression`，frozen $context 子集；未知 apply 字段 `REACTION_APPLY_FIELD_UNKNOWN` fail-closed）、`parseAndEvaluateReactions`。新增 `reactions.test.ts` **12 项**。
+- `evaluateExpression` 表达式语法校验从 `app-manifest.ts` 以 `isValidExpression` 导出复用（同一 frozen 语法，不重复实现）。
+
+**D-COMP 最小 Renderer 接线**（`apps/web/src/renderer/render.ts` / `render.tsx`，resolve R4 推荐跟踪项 F-002）：
+- `render.ts`：`parseRenderNode`（whitelist form/section/table，未知 type `RENDER_UNKNOWN_NODE_TYPE` fail-closed，form 缺 fields `RENDER_FORM_FIELD_INVALID`）、`collectFieldIds`、`resolveFormReactions`、`gateAction`（布尔或 $context 表达式）、`tableActionGate`（visible/disabled 独立求值）。新增 `render.test.ts` **11 项**。
+- `render.tsx`：`RenderPage` 分发层——form 经 `FormControls` 渲染并应用 reaction 状态（隐藏/禁用字段），section 容器递归，未知 type 出 `role="alert"`；`FormControls` 增加 `fieldDisabled` 按字段禁用（向后兼容）。新增 `render.test.tsx` **4 项**（默认全显、reaction 隐藏、reaction 禁用、未知 type fail-closed）。
+- 这是「Renderer 接线」落地：`render.tsx` 消费 D-EXPR（reactions）与 D-FORM（FormControls），resolve GOAL-006 F-003/F-002 跟踪项（renderer 集成层消费引擎）。
+
+**范例页与接线**（`apps/web/src/app/`）：
+- `examples/form-with-reactions-page.tsx`：D-EXPR 范例——Admin/Viewer 角色 + audit feature 切换改变 `$context` 快照，`RenderPage` 重新应用字段显隐/禁用（approval 仅 admin 可见、auditNote 无 audit 时禁用）；页面展示 `JSON.stringify(context)`。
+- `examples/registry.tsx` 注册 `form-with-reactions`；`App.tsx` icon registry 补 `reaction`（Zap）；`app-manifest.json` 登记页面 + sidebar「Examples」组；`app-manifest.test.ts` 页面清单断言同步；`upstream-fixtures.test.ts` `STATIC_MANIFEST_SHA256` 更新（新值 `0475f7bb…5e120`）；`app-examples.test.tsx` 新增 1 项表面测试（context 快照 + 表单字段渲染）。
+
+**测试 / 构建 / 运行时证据**：
+- `npm test` 全绿（**14 测试文件 / 166 项**，+28：reactions 12 + render 11 + render.tsx 4 + app-examples 1）；`npm run build`（tsc + vite）通过（修复一处 TS2322 section 节点类型 + 一处 TS2352 字段转换）。
+- Edge headless 实测 `/form-with-reactions`：渲染 Admin/Viewer/audit 切换、全部 4 个字段（Name/Kind/Approval/Audit note）、无 `role="alert"` 错误。Go 侧无改动（`go test ./...`/`go build ./...` 保持通过）。
+- 登记表 [attachments/I-007-001-registry.md](attachments/I-007-001-registry.md) 升 **v0.4.0**：D-EXPR/D-COMP 行「现状」→ 已实现，验证命令与证据入账，P2 `form-with-reactions` 标记已实现。
+
+**未改动**：`I-PROTO-003`（父目标，open）与 `I-PROTO-004`（open，non-blocking，阶段 3 结构校验前决策）状态；Root `progress` 4/6；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。
+
 ## 待办
 
-1. **批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。
+1. ~~**批次 2c**：D-EXPR `form-with-reactions` + Renderer 接线（D-COMP，resolve F-002）。~~ **完成（2026-08-01）**。
 2. 落地 `node`/`page` schema 校验与已纳入 fixtures 对照（`reactions`、`component-format`、`request-construction`、`response-mapping`、`query-serialization`、`static-data`、`actions`、`request-lifecycle`、`table-sort`、`search-table`、`runtime-defaults` 等），登记可执行验证入口；`I-PROTO-004` 决策先于阶段 3 结构校验实现。
 3. 闭合父目标 `I-PROTO-003` 并完成 R5 自审/关门。
 
 ## 进度评估
 
-**阶段 1/4 完成（契约发现与登记）；阶段 2 批次 2a（D-DATA/D-TABLE）与批次 2b（D-FORM/D-ACT）完成**。批次 2c（阶段 2 剩余）、阶段 3（结构/行为验证）、阶段 4（验收/关门）未开始（进度仅为展示，不放行阶段、不推导 `done`）。
+**阶段 1/4 完成（契约发现与登记）；阶段 2 批次 2a（D-DATA/D-TABLE）、批次 2b（D-FORM/D-ACT）与批次 2c（D-EXPR/D-COMP）完成——阶段 2 全部落地**。阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始（进度仅为展示，不放行阶段、不推导 `done`）。

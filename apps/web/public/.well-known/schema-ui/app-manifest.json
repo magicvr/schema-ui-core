@@ -51,6 +51,12 @@
       "route": "/form-controls"
     },
     {
+      "pageId": "form-with-reactions",
+      "title": "Form with reactions",
+      "schemaUrl": "/api/schema/form-with-reactions",
+      "route": "/form-with-reactions"
+    },
+    {
       "pageId": "settings",
       "title": "Settings",
       "schemaUrl": "/api/schema/settings",
@@ -94,6 +100,11 @@
             "pageRef": "form-controls",
             "label": "Form controls",
             "icon": "form"
+          },
+          {
+            "pageRef": "form-with-reactions",
+            "label": "Form with reactions",
+            "icon": "reaction"
           }
         ]
       },

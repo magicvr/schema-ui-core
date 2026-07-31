@@ -9,6 +9,8 @@ export interface FormControlsProps {
   values: Record<string, unknown>;
   onChange: (id: string, value: unknown) => void;
   disabled?: boolean;
+  /** Per-field disabled override (R5 renderer reaction state). */
+  fieldDisabled?: (id: string) => boolean;
   idPrefix?: string;
 }
 
@@ -265,13 +267,15 @@ function FieldControl({
   values,
   onChange,
   disabled,
+  idPrefix,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
   onChange: (id: string, value: unknown) => void;
   disabled?: boolean;
+  idPrefix?: string;
 }) {
-  const id = `field-${field.id}`;
+  const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = field.label ?? field.type;
   const value = displayValue(field, values[field.id]);
 
@@ -374,6 +378,8 @@ export function FormControls({
   values,
   onChange,
   disabled = false,
+  fieldDisabled,
+  idPrefix,
 }: FormControlsProps) {
   return (
     <div className={cn("grid gap-4", fields.length > 1 && "sm:grid-cols-2")}>
@@ -383,7 +389,8 @@ export function FormControls({
           field={field}
           values={values}
           onChange={onChange}
-          disabled={disabled}
+          disabled={disabled || (fieldDisabled?.(field.id) ?? false)}
+          idPrefix={idPrefix}
         />
       ))}
     </div>

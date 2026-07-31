@@ -11,6 +11,22 @@ const TEMPLATE_NAME_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 const EXPRESSION_PATTERN =
   /^\$context\.(user|features)\.([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s+(==|!=|contains)\s+(.+)$/;
 
+/** True when `expression` matches the frozen $context expression grammar. */
+export function isValidExpression(expression: string): boolean {
+  if (!expression.startsWith("$context.")) {
+    return false;
+  }
+  const match = EXPRESSION_PATTERN.exec(expression);
+  if (!match) {
+    return false;
+  }
+  const literal = match[4]!.trim();
+  return (
+    /^true$|^false$|^-?\d+(?:\.\d+)?$/.test(literal) ||
+    /^"(?:[^"\\]|\\.)*"$/.test(literal)
+  );
+}
+
 export type ManifestErrorCode =
   | "MANIFEST_LOAD_FAILED"
   | "MISSING_PROTOCOL_VERSION"
