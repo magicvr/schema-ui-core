@@ -1,18 +1,18 @@
 ---
 id: GOAL-005-r3-admin-shell-navigation
 title: R3 · Admin 外壳与导航
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-005 · R3 · Admin 外壳与导航
 
 ## 概述
 
-在 `apps/web` 的 R1 React 工程骨架之上，交付由 App manifest 驱动的 Admin 外壳、导航入口与路由边界。当前工作树已包含 manifest loader、2.7 子集校验、导航投影、History 路由和 shell；目标仍保持 `active`，等待实施阶段自审与关门记录。
+在 `apps/web` 的 R1 React 工程骨架之上，交付由 App manifest 驱动的 Admin 外壳、导航入口与路由边界。当前 HEAD 已包含 manifest loader、2.7 子集校验、导航投影、History 路由和 shell；目标已完成 R3 实施阶段自审与关门记录。
 
 范围依据：Root 已将 R3 定义为“Admin 外壳与导航”；协议资料将 `D-APP` 映射为 React 侧的“装载与导航壳”，并固定 `S-09`、App Manifest schema 及 `app-manifest` / `app-navigation` fixture 的上游路径。固定资料版本为 `schema-ui-docs` artifact `2.7.0`，source commit 为 `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`。
 
@@ -37,17 +37,23 @@ version: 0.2.0
 1. **契约发现与信息就绪**：**完成**；五项 `I-005-*` 已由固定 artifact、代码和测试证据验证。
 2. **方案冻结**：**完成**；D-005 记录 manifest 子集、路由、导航和 shell 边界。
 3. **R3 实施**：**完成**；工作树已落地 loader、Admin shell、导航投影和 History 路由，保持 R4/R5 边界。
-4. **验证与关门**：**进行中**；固定 fixture、集成测试、静态 manifest loader 和构建已复核，待实施阶段 self audit 与最终台账闭合。
+4. **验证与关门**：**完成**；固定 fixture、集成测试、静态 manifest loader、HTTP 入口和构建已复核，A-006 实施阶段 self-audit 通过并完成台账闭合。
 
-以上状态只记录当前可核对事实；`active` 仍表示关门审计尚未完成。
+以上状态只记录当前可核对事实；本目标已 `done`，Root 仍保持 `active` 以继续 R4-R6。
 
 ## 成功标准
 
-- [ ] R3 必需信息项已由证据验证，或有用户书面接受的有界 residual；未知项没有被默认为已知。
-- [ ] manifest 装载使用已冻结的 schema/版本/最小子集，并有可核对的无效输入或装载失败处理边界。
-- [ ] Admin shell 能由已冻结的导航数据进入页面，默认路由、fallback 和 active-route 语义可通过测试或运行时证据复核。
-- [ ] `app-manifest` / `app-navigation` 的验证路径已执行并记录结果；未用 excluded reference/runner 替代语义验证。
-- [ ] R4 权限、R5 Renderer/范例和完整协议支持仍保持边界外；目标关门前无开放 required finding。
+- [x] R3 必需信息项已由证据验证，或有用户书面接受的有界 residual；未知项没有被默认为已知。
+- [x] manifest 装载使用已冻结的 schema/版本/最小子集，并有可核对的无效输入或装载失败处理边界。
+- [x] Admin shell 能由已冻结的导航数据进入页面，默认路由、fallback 和 active-route 语义可通过测试或运行时证据复核。
+- [x] `app-manifest` / `app-navigation` 的验证路径已执行并记录结果；未用 excluded reference/runner 替代语义验证。
+- [x] R4 权限、R5 Renderer/范例和完整协议支持仍保持边界外；目标关门前无开放 required finding。
+
+## 关门结论
+
+- 用户已按 P-004.1 明确选择执行实施阶段同 scope self-audit；A-006 verdict 为 `pass`。
+- A-004 F-003 已以 `fixed` 合法闭合；A-004 F-004～F-006 保持 recommended、非阻断跟进。
+- 本目标的完成仅覆盖 R3 冻结子集与边界，不推导完整协议 conformance，也不改变父目标 R4/R5 门禁。
 
 ## 信息就绪与未知项（P-005）
 
@@ -69,4 +75,4 @@ Root `I-PROTO-004` 仍是父目标的 `open` / `non-blocking` 工程策略项，
 
 ## 备注
 
-本目标的 `status: active` 表示 R3 实施事实已产生，但在阶段 self audit、required finding 闭合和关门记录完成前不表示目标已 `done`。
+本目标的 `status: done` 表示 R3 实施阶段 self-audit、required finding 闭合和关门记录均已完成；Root 仍按后续 R4-R6 继续保持 `active`。

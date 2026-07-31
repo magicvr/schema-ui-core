@@ -1,11 +1,11 @@
 ﻿---
 id: GOAL-005-r3-admin-shell-navigation
 doc: audit
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 审计 · GOAL-005
@@ -17,9 +17,9 @@ version: 0.6.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-00N | `I-005-001` 至 `I-005-005` 均 `verified` | 见 [00-meta.md](00-meta.md) 与 D-005；A-005 响应确认冻结证据已入账 |
-| 到期 required 是否已 verified / residual | **信息项已满足；关门仍阻断** | A-004 F-001 已由 A-005 `fixed`；实施 self-audit 选择和 A-004 F-003 仍未闭合 |
+| 到期 required 是否已 verified / residual | **已满足；无开放 required** | I-005-001 至 I-005-005 均已 verified；A-004 F-001～F-003 均已按 `fixed` 闭合，A-006 self-audit 通过 |
 | 固定资料引用 | 已固定 R3 subset 资料 | artifact `2.7.0` + commit `ca9e5fe…`、本地 schema/fixture copies 与 provenance SHA-256 已登记；`shared_materials_catalog: none`；不宣称完整官方 conformance |
-| 当前实现证据 | **已入执行台账，仍为未提交工作树** | `02-execution.md` 记录 manifest loader、校验、导航投影、History shell、73 tests、build 和 dev server HTTP 复核；代码尚未声称进入 HEAD |
+| 当前实现证据 | **已入执行台账并进入当前 HEAD** | `02-execution.md` 记录 manifest loader、校验、导航投影、History shell、73 tests、build 和 dev server HTTP 复核；当前 HEAD 为 `0b83c941...`，工作树干净 |
 
 ## 意见台账索引
 
@@ -30,12 +30,13 @@ version: 0.6.0
 | A-003 | 2026-07-31 | self | R3 规划阶段同 scope 自审 | conditional | 0（无新增 finding；`I-005-*` 仍 open） |
 | A-004 | 2026-07-31 | independent | R3 实现 / 执行事实 / 验证 / 关门就绪 | **fail** | 3（F-001～F-003；另见 recommended F-004～F-006） |
 | A-005 | 2026-07-31 | self（/govern 响应） | 响应 A-004 F-001～F-003 | **conditional** | 1（F-003；等待 P-004.1） |
+| A-006 | 2026-07-31 | self | R3 实施阶段同 scope self-audit / 执行事实 / 验证 / 关门 | **pass** | 0（F-001～F-003 fixed；F-004～F-006 recommended） |
 
 ## 当前开放门禁
 
-- `I-005-001` 至 `I-005-005` 在其最晚阶段前必须完成验证，或按 P-004 留下有范围和复审触发的用户书面 residual。
-- A-001 **F-001** 已由 A-002 以 `fixed` 闭合：I 表与 D-002 现均要求在方案冻结前处理 `I-005-001` 至 `I-005-005`；这不等同于任何信息项已 verified，也不放行方案冻结。
-- **A-004 / A-005**：F-001（方案冻结）与 F-002（执行事实）已由 A-005 以 `fixed` 闭合；F-003 的 fixture、集成和 dev server 证据已补入，但实施同 scope self-audit 仍须由用户按 P-004.1 明确选择，因此 F-003 继续开放。**不得**将 R3 标为 `done`，也不得把本响应或单元测试/exit code 单独当作放行证据。
+- `I-005-001` 至 `I-005-005` 均已在其最晚阶段前完成验证；本目标没有开放 required 信息项。
+- A-001 **F-001** 已由 A-002 以 `fixed` 闭合（历史响应）：I 表与 D-002 已统一要求在方案冻结前处理 `I-005-001` 至 `I-005-005`；后续 D-005 与验证证据已完成当前 R3 关门所需闭环。
+- **A-004 / A-005 / A-006**：F-001（方案冻结）、F-002（执行事实）和 F-003（验证与关门证据）均已以 `fixed` 合法闭合；A-006 记录用户按 P-004.1 明确选择执行 self-audit，且 verdict 为 `pass`。F-004～F-006 仍为 recommended、非阻断跟进。
 - 本目标不处理父目标的 `I-PROTO-002` / `I-PROTO-003`；它们仍分别阻断 R4 实施和 R5 验收/关门。
 - 父目标 `I-PROTO-004`（vendor vs pin）仍 open（non-blocking 于 Root），现已通过 `I-005-001` 显式关联；关闭该项时仍须记录校验方式和失败边界。
 
@@ -409,3 +410,59 @@ version: 0.6.0
 A-004 是 independent，A-003 仅覆盖规划阶段，不能替代实施同 scope self-audit。本台账已明确保留 F-003 的开放 required 门禁；在用户明确选择“执行 self-audit”或“跳过 self-audit”之前，不推进 `status: done`、Root R3 完成检查点或 `goal-tree.md`。
 
 本 A-005 仅记录 `/govern` 响应与可核对证据，不改变 GOAL-005、Root 或 `goal-tree.md` 的状态/进度。
+
+---
+
+## A-006 · R3 实施阶段同 scope self-audit 与关门审计（2026-07-31）
+
+- **source**：self
+- **auditor**：Codex（`/govern`）
+- **类型**：stage + close-out
+- **scope**：`workspace-001-mvp-admin-foundation` / `GOAL-005-r3-admin-shell-navigation` 的 R3 实施阶段同 scope self-audit、执行事实、验证证据与关门就绪；响应 A-004 F-001～F-006。**不审** R4/R5 父级门禁改写、Vision Review 或完整协议 conformance。
+- **verdict**：**pass**
+- **审计区间**：2026-07-31；当前 git HEAD `0b83c9413d7177471c37d3e568e493ef845b95d4`，工作树干净，`git diff --check` 通过。
+- **完整意见**：本节即全文（未另附 attachments）
+
+### P-004.1 裁决
+
+用户已明确选择执行 GOAL-005 实施阶段同 scope self-audit。该选择解除 A-005 记录的裁决等待；本审计不静默跳过 self-audit，也不把 A-005 编排响应冒充为本审计。
+
+### 成果（有证据）
+
+| 主张 | 证据 | 核对 |
+|------|------|------|
+| 五项 R3 required 信息已验证 | GOAL-005 `00-meta.md` / D-005；`I-005-001`～`I-005-005` 均为 `verified`，固定 artifact `2.7.0`、source commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` 与本地 SHA-256 已登记 | 通过 |
+| manifest 校验、装载和失败边界可复核 | `apps/web/src/protocol/app-manifest.test.ts` 覆盖 pinned `2.7`、未知字段、能力/版本/路由错误、静态 manifest loader 和 503 fail-closed；`App.integration.test.tsx` 覆盖 `ManifestFailure` | 通过 |
+| 导航、路由和 shell 行为可复核 | `apps/web/src/app/App.integration.test.tsx` 覆盖 root→home、History、popstate、unknown-route fallback、返回 home、参数 pageRef/context；`navigation.test.ts` 覆盖投影和 active-route | 通过 |
+| 上游 fixture 对照完整且边界透明 | `upstream-fixtures.test.ts` 固定 source/provenance 与三份 SHA-256，执行 35/37 个 `app-manifest` cases、16/16 个 `app-navigation` cases；两条排除均记录为 error-envelope 差异且在 R3 子集外 | 通过 |
+| 当前运行时入口与构建可复核 | `npm test -- --run`：4 个测试文件、73/73 通过；`npm run build`：`tsc -b && vite build` 成功；manifest endpoint 返回 `200 application/json`、协议 `2.7`、4 pages，根入口返回 `200 text/html` | 通过 |
+| 范围边界未越过 R4/R5 | GOAL-005 排除项、D-005 与 Root `I-PROTO-002` / `I-PROTO-003` 状态保持不变；本审计不将 R3 子集表述为完整协议支持 | 通过 |
+
+### 对照成功标准（关门）
+
+| 成功标准（00-meta） | 当前判断 | 证据 |
+|----------------------|----------|------|
+| R3 required 信息 verified 或有界 residual | **满足** | `I-005-001`～`I-005-005` 均 `verified` |
+| 冻结 schema/版本/子集与失败边界 | **满足** | D-005、`app-manifest.ts`、manifest unit/integration tests |
+| Admin shell、默认/fallback/active-route 可复核 | **满足** | `App.integration.test.tsx`、`navigation.test.ts`、HTTP root/manifest 复核 |
+| app-manifest/app-navigation 验证路径已执行 | **满足** | `upstream-fixtures.test.ts`：35/37 + 16/16，排除理由已登记 |
+| R4/R5/完整协议保持边界外且无开放 required | **满足** | A-004 F-001～F-003 均已合法 `fixed`；F-004～F-006 为 recommended/non-blocking |
+
+### Finding 响应与闭合
+
+| Finding | 本次结果 | 证据与边界 |
+|---------|----------|------------|
+| A-004 F-001 · required | 保持 `fixed` | A-005 已记录 D-005、五项 I verified 与 R3 边界；本审计复核一致 |
+| A-004 F-002 · required | 保持 `fixed` | `02-execution.md` 已记录真实产物、测试、构建、HTTP 与当前 HEAD/工作树事实 |
+| A-004 F-003 · required | **`fixed`** | 本 A-006 完成同 scope self-audit；fixture 对照、静态 manifest、App 集成、HTTP 与 build/test 证据均可复核 |
+| A-004 F-004 · recommended | 非阻断跟进 | R3 保持手写 host subset 与 pinned provenance；Root `I-PROTO-004` 仍为 open/non-blocking，不在本目标中静默关闭 |
+| A-004 F-005 · recommended | 非阻断跟进 | D-005 的 context 注入/默认空 context 边界保持；真实身份与权限产品化留给 R4 |
+| A-004 F-006 · recommended | 非阻断跟进 | 参数 pageRef 仅在可绑定时生成具体 href；集成测试覆盖 `/catalog/42` 参数链接 |
+
+### 结论
+
+本 scope 无开放 required finding，无到期未处理 required 信息项，成功标准均有可核对证据；因此 A-006 verdict 为 **pass**，GOAL-005 可标为 `done`。该结论只关闭 R3 目标，不修改 A-004/A-005 历史结论，不关闭 Root `I-PROTO-004`，也不推导 R4/R5 或完整协议 conformance 完成。
+
+### 声明
+
+本意见 `source: self`，仅追加本目标 `03-audit.md` 并记录本轮合法 finding 闭合；目标状态、Root R3 检查点和 `goal-tree.md` 的同步由 `/govern` 在本次关门写入。

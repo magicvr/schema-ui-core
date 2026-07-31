@@ -1,11 +1,11 @@
 ---
 id: GOAL-005-r3-admin-shell-navigation
 doc: execution
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-005
@@ -51,18 +51,24 @@ version: 0.3.0
 - `apps/web/src/protocol/app-manifest.test.ts` 通过 `loadAppManifest()` 验证 `public/.well-known/schema-ui/app-manifest.json` 的真实字节；`apps/web/src/app/App.integration.test.tsx` 覆盖 root→home、站内 History 导航、popstate、未知路由 fallback、参数链接/context 和 ManifestFailure surface。
 - 在 `apps/web` 执行 `npm test`：4 个测试文件、73 个测试全部通过（13 manifest unit + 3 navigation unit + 53 pinned fixture/provenance + 4 shell integration）。
 - 在 `apps/web` 执行 `npm run build`：`tsc -b && vite build` 成功。
-- 当前 R3 实现仍是未提交工作树事实；本条不声称代码已进入 HEAD、已发布或已通过完整协议 conformance。最终命令输出与运行时检查在关门审计响应中记录。
+- 截至本条记录，R3 实现是未提交工作树事实；本条不声称代码已进入 HEAD、已发布或已通过完整协议 conformance。最终命令输出与运行时检查在关门审计响应中记录。
 
 ### 2026-07-31 · dev server 运行时复核
 
 - 复用当前 `apps/web` dev server `http://127.0.0.1:4173/` 进行 HTTP 检查：`/.well-known/schema-ui/app-manifest.json` 返回 `200`、`application/json`，`protocolVersion` 为 `2.7`，包含 4 个 pages；根入口返回 `200` 并提供应用 boot shell。
 - `App.integration.test.tsx` 已对根路径到 home 的 replace、站内 History API 导航、popstate、未知路由 fallback、参数链接/context 和 ManifestFailure surface 作行为断言；本条 HTTP 结果与该集成证据共同构成 R3 运行时入口复核，不宣称完整生产发布。
 
-## 关门前剩余动作（计划 · 非完成事实）
+## 目标关门事实
 
-1. 按 P-004.1 由用户决定是否执行与 A-004 同 scope 的实施阶段 self audit；执行后响应全部相关意见。
-2. 在无开放 required finding 且成功标准全部有证据后，将 GOAL-005 标为 `done`，同步 Root R3 检查点和 `goal-tree.md`。
+- 用户已按 P-004.1 明确选择执行与 A-004 同 scope 的实施阶段 self-audit；A-006 已追加到 `03-audit.md`，verdict 为 `pass`。
+- A-004 F-003 已由 A-006 以 `fixed` 合法闭合；F-004～F-006 保持 recommended、非阻断跟进。
+- GOAL-005 已标为 `done`，Root R3 检查点和 `goal-tree.md` 已同步；Root 仍为 `active`、progress `3/6`。
+
+## 完成后边界
+
+1. R4 前闭合 `I-PROTO-002`，R5 验收前闭合 `I-PROTO-003`。
+2. 按 R4-R6 推进；开放 required 信息项到期前不得越过对应门禁。
 
 ## 进度评估
 
-R3 当前为 `active` 的实施/关门阶段；D-005 已冻结方案，五项 required 信息已 verified，工作树实现、73 项自动化测试、构建事实和 dev server 入口复核已落盘。仍待 P-004.1 用户裁决、实施阶段 self audit、A-004 F-003 合法闭合和最终 `done` 同步；在此之前 Root `progress` 保持 `2/6`。
+R3 已完成：D-005 冻结方案，五项 required 信息已 verified，工作树实现、73 项自动化测试、构建、固定 fixture 对照和 dev server 入口复核均已落盘；A-006 self-audit 通过且无开放 required finding。Root `progress` 已从 `2/6` 同步为 `3/6`，不代表 R4-R6 或完整协议支持完成。
