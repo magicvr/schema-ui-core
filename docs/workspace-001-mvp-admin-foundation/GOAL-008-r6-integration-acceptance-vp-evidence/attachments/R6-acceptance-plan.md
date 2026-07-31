@@ -4,12 +4,12 @@ status: draft
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-008-r6-integration-acceptance-vp-evidence
-version: 0.1.1
+version: 0.2.0
 ---
 
 # R6 集成验收与 VP 证据计划
 
-> 状态：**规划草案，尚未冻结**。本文件定义待验证的验收与证据结构，不证明任何 R6 主张已经满足。权威边界为 [Root](../../GOAL-001-mvp-admin-foundation/00-meta.md)、[VP-001](../../../vision/plans/VP-001-mvp-admin-foundation.md) 与 [I-PROTO-001 v0.1.3](../../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)。
+> 状态：**冻结候选，尚未正式冻结**。本文件已把 VP 三条退出判据映射为验收矩阵、决定最低环境矩阵、验证 evidence schema 候选，并登记账号权限 oracle 候选；正式冻结仍须阶段 1 计划审视通过（A-002）且 D-002 由用户裁决接受。权威边界为 [Root](../../GOAL-001-mvp-admin-foundation/00-meta.md)、[VP-001](../../../vision/plans/VP-001-mvp-admin-foundation.md) 与 [I-PROTO-001 v0.1.3](../../GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)。
 
 ## 1. 目的与证据原则
 
@@ -22,7 +22,7 @@ R6 要把“可运行、可 fork、MVP 协议边界内可验证、账号权限�
 5. **完整性**：机器可读 index 列举全部结果文件及 SHA-256；Markdown 仅作人类索引，不取代原始记录。
 6. **状态分离**：证据齐备只能支持提出 R6/VP 决定，不自动改变 Goal 或 VP status。
 
-## 2. VP 退出判据映射草案
+## 2. VP 退出判据映射（冻结候选）
 
 | VP 判据 | R6 验收主张 | 最低证据候选 | 计划工作区产物 | 阻断信息项 |
 |---------|-------------|--------------|------------------|------------|
@@ -30,9 +30,24 @@ R6 要把“可运行、可 fork、MVP 协议边界内可验证、账号权限�
 | 2 · 受控 MVP 覆盖中每项有实现、范例/场景与验证路径 | R2 v0.1.3 的 11 个纳入域均能从 R5 登记追到当前实现和可执行验证，回归结果不扩大边界 | 覆盖基线 hash/version；R5 registry snapshot；stage3 per-suite executed/excluded；schema/fixture SHA；范例路由 smoke | `coverage/coverage-map.json`；`coverage/conformance-results.json`；Q2 链接表 | I-008-001、I-008-004、I-008-005 |
 | 3 · 核心账号权限前后端集成，不依赖未声明业务模块 | 账号上下文由 API 到 Web/Renderer/动作链可观察；允许路径与拒绝路径均符合冻结 oracle | API session/account result；Web context；D-PERM fixture/host 对照；浏览器正向/拒绝场景；依赖边界清单 | `account-permission/scenarios.json`；HTTP/browser 结果；依赖清单 | I-008-003、I-008-004、I-008-005 |
 
+## 2b. 验收矩阵（I-008-001 · 冻结候选）
+
+> 每条 R6 主张点名服务哪条 VP 判据 / 哪个 R6 成功标准，并给出执行入口、预期结果与证据路径；`exclude` 明确列出，禁止“测试全绿即关 VP”的隐含规则。本矩阵为**冻结候选**，正式冻结在阶段 1 审视通过后由 D-002 接受确定。
+
+| # | 主张（claim） | VP 判据 | 执行入口（命令 / 运行态） | 预期结果 | 证据路径 | 排除 / residual |
+|----|--------------|---------|---------------------------|----------|----------|-----------------|
+| C-001 | Web 测试与构建在声明环境可复现 | 1 | `cd apps/web && npm test`；`cd apps/web && npm run build` | 15 files / 395 tests pass；Vite build pass | `attachments/evidence/planning/results/{web-test,web-build}.log`（draft dry-run 已哈希） | 干净安装重跑见 CI |
+| C-002 | API 测试与构建在声明环境可复现 | 1 | `cd apps/api && go test ./...`；`cd apps/api && go build ./...` | go test/build pass | `attachments/evidence/planning/results/{api-test,api-build}.log` | — |
+| C-003 | 双服务启动、health 与 Web→API proxy 成立 | 1、3 | 启动 `go run ./cmd/server`（:8080）与 `npm run dev`（:5173）；`GET /healthz`、`GET /`、`GET /api/accounts/me`、`GET /api/records` | 全部 HTTP 200；`/api` proxy 命中 Go API | `attachments/evidence/planning/results/runtime-probes.log` | 端口为本地声明值 |
+| C-004 | 浏览器关键路径（shell 渲染 + 账号上下文经 proxy） | 1、3 | `cd apps/web && npm run test:e2e`（Playwright Chromium，webServer 双服务） | shell 渲染、manifest 导航、`/api/accounts/me` 返回 dev-001 session、`/api/records` 非空 | `apps/web/e2e/shell.spec.ts`；`test-results/r6-overview.png` | Windows 本地已验证；Linux/CI 由 workflow 承接 |
+| C-005 | 账号权限允许路径（dev session 有 admin+editor）符合 oracle | 3 | `GET /api/accounts/me`；`apps/web/src/protocol/conformance/permissions-inheritance`（17 例 fixture） | session 含 `roles:[admin,editor]`；permission-inheritance 17 例 pass | runtime-probes；GOAL-006 `dperm/cases.json` | 拒绝路径见 oracle（C-006） |
+| C-006 | 账号权限拒绝路径 / fail-closed 可见 | 3 | oracle 冻结场景：无能力时权限表达式求值 false、项目隐藏 | 拒绝路径按冻结 oracle 显式可见（不靠总体 pass 掩盖） | `attachments/account-permission-oracle.md`（I-008-003 候选） | 见 oracle 排除项 |
+| C-007 | R2 v0.1.3 纳入域可追溯且回归不扩大边界 | 2 | `cd apps/web && npm test`（stage3 222 项，含 request-construction non-batch 64） | 每个纳入域从 R5 登记追到实现与可执行验证；include-partial/exclude 不变 | `I-007-001-registry.md`；`I-PROTO-001 v0.1.3` | batch request-construction 与 reactions multi-round 为既有排除（D-008/D-010） |
+| C-008 | 证据包可解析、文件摘要可重算 | 1、2、3 | `node validate-evidence-dry-run.mjs`（ajv 2020 校验） | schema 校验通过；5 个 artifact SHA-256 可重算 | `evidence-index.schema.json`；`evidence-index.dry-run.json` | 正式 acceptance index 尚未持久化（阶段 2） |
+
 ## 3. 拟议证据包
 
-以下为 `I-008-004` 的候选，不是已冻结 schema：
+以下为 `I-008-004` 的候选，schema 已通过 dry-run 校验（可解析、哈希可重算），**尚未**冻结为正式 acceptance contract：
 
 ```text
 attachments/evidence/
@@ -75,26 +90,38 @@ attachments/evidence/
 | Web build | `cd apps/web && npm run build` | 依赖/runtime 版本、输出摘要、可 fork 干净安装步骤 |
 | API test | `cd apps/api && go test ./...` | 结构化或可解析结果、Go/OS 版本、race/平台范围决定 |
 | API build | `cd apps/api && go build ./...` | binary/package identity 与构建环境 |
-| 双服务 runtime | 待 `I-008-002` 冻结 | 启动/停止、端口/env、health、manifest、API proxy 与浏览器场景 |
+| 双服务 runtime | 已冻结候选（C-003）：`go run ./cmd/server` + `npm run dev`，health/proxy/账号上下文/records | 按 evidence index 持久化启动/停止、端口/env、结果 |
 | 协议回归 | 复用 Web stage3 / upstream / renderer tests | per-suite executed/excluded 结果与 v0.1.3 映射 |
-| 账号权限 E2E | 待 `I-008-003` 冻结 | 正向、拒绝、缺上下文/能力与动作路径预期 |
+| 账号权限 E2E | 已冻结候选（C-004/C-005/C-006）：Playwright shell.spec + oracle | 正向、拒绝、缺上下文/能力与动作路径预期 |
 
 ## 4b. 规划期能力基线（2026-08-01）
 
-以下是当前 revision 上为阶段 1 收集的本地能力事实，不是 R6 验收证据：
+以下是阶段 1 收集的本地能力事实；`I-008-005` 已由用户裁决采用「本轮搭建最小 CI + 浏览器矩阵」而非接受平台 residual：
 
 | 项 | 结果 | 边界 |
 |----|------|------|
-| revision / worktree | `7d20acc7702bcc0e514f787c455bf9c93d5b832f` / clean | 仅绑定本次规划复跑；尚未形成持久化 acceptance artifact |
-| Web | `cd apps/web && npm test`：15 files / 395 tests passed；`npm run build` passed | 依赖树为当前工作副本；干净安装重跑规则仍待 I-008-002 |
-| API | `cd apps/api && go test ./...` passed；`go build ./...` passed | 未覆盖 Linux/CI 等价性 |
-| runtime entry | API `:8080/healthz`；Web `:5173`，`/api` proxy 到 API | 双服务启动/停止与浏览器关键路径尚未按 R6 contract 持久化 |
-| environment | Windows/amd64；Node `v22.17.0`；npm `10.9.2`；Go `1.26.0`；Vitest `3.2.7` | 不代表最低支持矩阵已决定 |
-| CI / browser / reporter | 未发现 `.github/workflows`、Playwright/Puppeteer/Cypress 等 runner 或 JSON/JUnit/evidence writer | I-008-005 仍需决定最低矩阵，不能把缺失当作已验证 |
+| revision / worktree | `f3e04f6bd5c1f4ba6b7b72444fd9a0a0ab52d4d5` / clean（阶段 1 本轮运行时） | 证据 dry-run 绑定该 revision；阶段 2 以冻结 revision 重跑 |
+| Web | `cd apps/web && npm test`：15 files / 395 tests passed；`npm run build` passed | 本地依赖树；干净安装重跑由 CI workflow 承接（`npm ci`） |
+| API | `cd apps/api && go test ./...` passed；`go build ./...` passed | Linux/CI 等价由 workflow 承接 |
+| runtime entry | API `:8080/healthz`；Web `:5173`（`host:127.0.0.1`），`/api` proxy 到 API | 双服务启动/health/proxy/账号上下文/records 已实测（C-003/C-004） |
+| environment | Windows/amd64；Node `v22.17.0`；npm `10.9.2`；Go `1.26.0`；Vitest `3.2.7`；Playwright `1.62.1` | 最低矩阵已决定（见 §4c），Linux/CI 证据待 workflow 首跑 |
+| CI / browser / reporter | 新增 `.github/workflows/r6-basic-matrix.yml`（web/api/browser-e2e 三 job）；Playwright Chromium 已本地跑通 | CI 实际首跑尚未发生（需推送到远端），不能把「已配置」写成「已跑绿」 |
 
 `I-008-004` 的候选 schema 与 dry-run 分别见
 [`evidence-index.schema.json`](evidence-index.schema.json) 和
-[`evidence-index.dry-run.json`](evidence-index.dry-run.json)。二者都明确标为 draft/planning，dry-run 的结果没有持久化产物摘要，不能替代阶段 2 证据。
+[`evidence-index.dry-run.json`](evidence-index.dry-run.json)。schema 已通过 [validate-evidence-dry-run.mjs](validate-evidence-dry-run.mjs)（ajv 2020）校验：**可解析、5 个 artifact SHA-256 可重算**；但仍为 draft，正式 acceptance index 属阶段 2。
+
+## 4c. 最低环境矩阵决定（I-008-005 · 冻结候选）
+
+用户于 2026-08-01 裁决：**本轮搭建最小 CI + 浏览器矩阵**，不接受“Windows-only + 平台 residual”。
+
+| 平台 / 轨道 | 机制 | 执行点 | 状态 |
+|-------------|------|--------|------|
+| Windows/amd64 本地 | 开发机命令（npm test/build、go test/build、双服务、Playwright） | 本机 | **已验证**（阶段 1 dry-run + E2E 通过） |
+| Linux/amd64 CI 等价 | `.github/workflows/r6-basic-matrix.yml`：web job（Node 22 + npm ci + test/build）、api job（Go 1.26 + test/build）、browser-e2e job（Playwright Chromium） | GitHub Actions | **已配置**；实际跑绿待推送到远端后复核 |
+| 浏览器 E2E | Playwright Chromium，webServer 启动双服务；`apps/web/e2e/shell.spec.ts` | 本机 + CI | **本机已验证**；CI 待首跑 |
+
+边界：若 CI 首跑失败或超时，属阶段 2 执行事实，须在验收记录中显式列失败/排除，不得用本地 pass 掩盖；不静默降级回 residual。
 
 ## 5. 阶段门禁
 
@@ -127,8 +154,7 @@ attachments/evidence/
 
 ## 6. 当前已知缺口
 
-- 仓库未发现 CI workflow；Linux/CI 等价证据为空。
-- 未发现现成浏览器 E2E 或统一 runtime smoke runner。
-- Vitest/Go 当前命令未统一输出本计划拟议的 JSON evidence artifact。
-- 账号权限已有 R4 单元/fixture/HTTP 证据，但 R6 的跨层正向/拒绝 oracle 尚未冻结。
+- CI workflow 已新增但**尚未实际跑绿**（需推送到远端触发 GitHub Actions）；Linux/CI 等价证据为空，不能把「已配置」当作「已跑通」。
+- Vitest/Go 当前命令未统一输出 JSON evidence artifact；阶段 2 需要证据 writer 或结构化结果落盘（`I-008-004` 已通过 draft schema dry-run 证明形状可解析）。
+- 账号权限跨层正向已实测（C-005）；**拒绝路径 oracle 已登记候选**（[account-permission-oracle.md](account-permission-oracle.md)，I-008-003），阶段 2 执行前需审视通过。
 - R5 recommended 项可作为整改候选；是否升级为 R6 required 必须有风险依据或用户/审计决定。

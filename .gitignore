@@ -27,6 +27,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# --- R6 evidence artifacts (tracked; hashes must stay recomputable) ---
+!**/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/evidence/**
+
 # --- Node / frontend ---
 node_modules/
 dist/
@@ -37,6 +40,12 @@ coverage/
 *.tsbuildinfo
 .npm
 .eslintcache
+
+# --- Playwright ---
+apps/**/test-results/
+apps/**/playwright-report/
+apps/**/blob-report/
+apps/**/playwright/.cache/
 
 # --- Go / backend ---
 bin/
