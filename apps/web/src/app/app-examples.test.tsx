@@ -68,6 +68,12 @@ function exampleManifest() {
         schemaUrl: "/schema/form-controls",
         route: "/form-controls",
       },
+      {
+        pageId: "form-with-reactions",
+        title: "Form with reactions",
+        schemaUrl: "/schema/form-with-reactions",
+        route: "/form-with-reactions",
+      },
     ],
     navigation: {
       sidebar: [
@@ -75,6 +81,7 @@ function exampleManifest() {
         { pageRef: "search-form-table", label: "Search + table" },
         { pageRef: "list-edit-lifecycle", label: "List + edit" },
         { pageRef: "form-controls", label: "Form controls" },
+        { pageRef: "form-with-reactions", label: "Form with reactions" },
       ],
     },
   });
@@ -124,6 +131,14 @@ describe("R5 example pages in the shell", () => {
     expect(container.querySelector("h1")?.textContent).toContain("Form controls");
     // The capability gate passes for the 2.7 + extended/advanced meta.
     expect(container.textContent).toContain("Capability gate");
+  });
+
+  it("renders the form-with-reactions example surface with the context toggles", async () => {
+    const container = await renderApp("/form-with-reactions");
+    expect(container.querySelector("h1")?.textContent).toContain("Form with reactions");
+    // The reaction page exposes the $context snapshot and renders form controls.
+    expect(container.textContent).toContain("Context snapshot");
+    expect(container.textContent).toContain("Name (input)");
   });
 
   it("keeps the manifest fallback for non-example pages", async () => {

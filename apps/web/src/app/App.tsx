@@ -13,6 +13,7 @@ import {
   Settings,
   Table2,
   UserRound,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -39,6 +40,7 @@ const iconRegistry: Record<string, LucideIcon> = {
   logout: LogOut,
   menu: PanelLeft,
   pen: Pencil,
+  reaction: Zap,
   search: Search,
   settings: Settings,
   table: Table2,

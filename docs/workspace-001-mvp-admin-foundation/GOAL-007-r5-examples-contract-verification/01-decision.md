@@ -4,8 +4,8 @@ doc: decision
 status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.4.0
+updated: 2026-08-01
+version: 0.5.0
 ---
 
 # 决策记录 · GOAL-007
@@ -140,3 +140,29 @@ P-005 信息台账维护在 [00-meta.md](00-meta.md)。本目标 `I-007-001` 在
 **影响**：
 
 批次 2b 完成；`I-PROTO-003`（父目标）与 `I-PROTO-004` 仍 open，验收/关门须以阶段 3 可执行证据闭合，`I-PROTO-004` 在阶段 3 结构校验实现前决策。Root `progress` 仍 4/6。批次 2c（D-EXPR + Renderer 接线）待推进。
+
+## D-006 · 落地批次 2c：D-EXPR 反应引擎与 D-COMP 最小 Renderer 接线（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+按 D-004 批次划分实施并记录批次 2c：实现 D-EXPR 反应引擎（`apps/web/src/renderer/reactions.ts`，复用 `evaluateExpression`，frozen $context 表达式子集）与 D-COMP 最小 Renderer 接线（`render.ts`/`render.tsx`，whitelist form/section/table fail-closed，resolve R4 推荐跟踪项 F-002），落地 `form-with-reactions` 范例页（Admin/Viewer 角色 + audit feature 切换演示字段显隐/禁用）及注册接线；批次完成后更新 `I-007-001-registry.md`（v0.4.0）与 `02-execution` 为已发生事实，并补阶段自审（A-004）。
+
+**为什么**：
+
+- D-004 将 P2 `form-with-reactions`（D-EXPR+D-FORM）与 Renderer 接线（D-COMP，resolve R4 F-002/F-003「Renderer 集成层尚未消费引擎」跟踪项）归入批次 2c；批次 2b（控件/动作）完成后按依赖推进表达式与 Renderer。
+- D-EXPR 复用 R3 已审计的 `evaluateExpression`（导航 visibleWhen 同源），以 `isValidExpression` 导出同一语法校验，不重复发明表达式语义；reactions 仅操作 frozen $context 快照，Q=否排除 field-value 触发。
+- D-COMP 以「最小 Renderer 接线」落地：只 dispatch whitelist 的 form/section/table 节点，未知 type fail-closed 出 alert；不做完整 component registry，不越 R5 非目标。
+- `reaction.schema.json` 结构校验仍随 `I-PROTO-004`（阶段 3 前决策），批次 2c 不假装已完成 schema 级验证。
+
+**未选方案**：
+
+- 批次 2c 实现完整 component registry / 全量 node 树渲染：超出 R5 非目标（完整 registry），且 `node`/`page` schema 校验须先决策 `I-PROTO-004`。
+- 在 reactions 中引入 field-value 触发：`evaluateExpression` frozen 语法仅支持 `$context.user`/`$context.features`，扩展即偏离冻结子集。
+- 跳过 Renderer 接线只做范例页：F-002 跟踪项要求 renderer 集成层消费引擎，否则「页面运行时已应用 D-PERM/D-EXPR」主张不成立。
+
+**影响**：
+
+批次 2c 完成；`I-PROTO-003`（父目标）与 `I-PROTO-004`（non-blocking）仍 open，验收/关门须以阶段 3 可执行证据闭合，`I-PROTO-004` 在阶段 3 结构校验实现前决策。Root `progress` 仍 4/6。阶段 2 全部落地，阶段 3（结构/行为验证）待推进。

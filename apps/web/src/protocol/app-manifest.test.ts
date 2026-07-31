@@ -266,6 +266,7 @@ describe("manifest loading and expression boundaries", () => {
       "search-form-table",
       "list-edit-lifecycle",
       "form-controls",
+      "form-with-reactions",
       "settings",
     ]);
   });

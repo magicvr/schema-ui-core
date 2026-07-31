@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.4.0
+updated: 2026-08-01
+version: 0.5.0
 ---
 
 # 审计 · GOAL-007
@@ -165,3 +165,53 @@ version: 0.4.0
 ### 结论 + 建议下一步
 
 批次 2b 实施与证据满足阶段 2 内推进条件：`npm test` 138 项 / `go test` 18 顶层 / build 通过，登记表与执行记录已同步，无开放 required finding，无到期 required 信息项影响本 scope。`I-PROTO-003` 仍 open（验收/关门门禁），本自审不放行验收或关门。建议按 D-004 进入批次 2c（D-EXPR `form-with-reactions` + Renderer 接线）。
+
+## A-004 · R5 阶段 2 批次 2c 自审：D-EXPR 反应引擎与 D-COMP Renderer 接线（2026-08-01）
+
+- **source**：self
+- **auditor**：Claude Code · `/govern`
+- **类型**：execution-facts
+- **scope**：GOAL-007 批次 2c 实施——D-EXPR 反应引擎（复用 `evaluateExpression`）、D-COMP 最小 Renderer 接线（resolve R4 F-002）、`form-with-reactions` 范例页的实现、登记表同步与阶段 2 内可推进性。
+- **verdict**：pass
+
+### 范围与区间
+
+本意见只审计批次 2c 的实施事实与阶段门禁，**不**审计阶段 3 的 fixtures/schema 正式执行、`I-PROTO-003` 闭合或 R5 关门。当前工作区 `workspace-001-mvp-admin-foundation`，Root `GOAL-001-mvp-admin-foundation`，canonical 范围一致；`shared_materials_catalog: none`，本 scope 不依赖共享资料引用。
+
+### 成果（有证据）
+
+- **D-EXPR 反应引擎**（`apps/web/src/renderer/reactions.ts`）：`ReactionRule`/`ReactionApply`（显式 visible/disabled 布尔）；`parseReactionRule` fail-closed（非对象 `REACTION_APPLY_INVALID`、缺 id/when、非法表达式 `REACTION_EXPRESSION_INVALID`、apply 缺 fieldId/非布尔）；`evaluateReactions` 复用 `evaluateExpression`（frozen $context 子集，含 `contains`/`==`/`!=`），未知 apply 字段 `REACTION_APPLY_FIELD_UNKNOWN` fail-closed；`parseAndEvaluateReactions`。`reactions.test.ts` **12 项**通过。`app-manifest.ts` 新增 `isValidExpression` 导出（同一 frozen 语法，`app-manifest.test.ts` 不回归）。
+- **D-COMP 最小 Renderer 接线**（`apps/web/src/renderer/render.ts`/`.tsx`）：`parseRenderNode` whitelist form/section/table，未知 type `RENDER_UNKNOWN_NODE_TYPE` fail-closed；form 缺 fields `RENDER_FORM_FIELD_INVALID`；`collectFieldIds`/`resolveFormReactions`/`gateAction`/`tableActionGate`。`render.test.ts` **11 项** + `render.test.tsx` **4 项**（默认全显、reaction 隐藏、reaction 禁用、未知 type alert）。`FormControls` 增加 `fieldDisabled` 按字段禁用（向后兼容，`form-controls.test.ts` 不回归）。
+- **resolve F-002**：Renderer 集成层（`RenderPage`）消费 D-EXPR（reactions）与 D-FORM（FormControls）——即 GOAL-006 F-003/F-002 跟踪项「Renderer 接线」落地；本 scope 不主张「页面运行时已全面应用 D-PERM」（权限引擎经 R4 既有 `row-action.ts` 路径消费，非本批次新增）。
+- **范例页与接线**（`apps/web/src/app/`）：`form-with-reactions-page.tsx`（Admin/Viewer + audit feature 切换 → `$context` 快照 → 字段显隐/禁用）；`registry.tsx`/`App.tsx` icon（`reaction`=Zap）/`app-manifest.json`（页面 + sidebar）/`app-manifest.test.ts` 断言/`upstream-fixtures.test.ts` `STATIC_MANIFEST_SHA256`（`0475f7bb…5e120`）/`app-examples.test.tsx`（+1 项）同步。
+- **测试 / 构建 / 运行时证据**：`npm test` 全绿（**14 文件 / 166 项**，+28）；`npm run build`（tsc + vite）通过；Edge headless 实测 `/form-with-reactions` 渲染 Admin/Viewer/audit 切换 + 全部 4 字段 + 无 `role="alert"`。Go 侧无改动（`go test ./...`/`go build ./...` 通过）。登记表升 **v0.4.0**。
+
+### 对照成功标准（批次 2c 相关）
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| D-EXPR 具备可运行范例路径 | 已达成 | `reactions.ts` + `form-with-reactions` 范例页 + Edge 实测 |
+| D-COMP Renderer 接线消费引擎 | 已达成 | `RenderPage` 消费 reactions/FormControls；whitelist fail-closed |
+| 结构验证可执行（`node`/`page`/`reaction` schema） | 阶段 3（未开始） | 依赖 `I-PROTO-004` 决策；不在批次 2c 范围 |
+| 行为验证与 R2 基线一致（`reactions`/`component-format` fixtures 正式执行） | 阶段 3（未开始） | 实现路径已落地，upstream cases 对照执行留待阶段 3 |
+| 父目标 `I-PROTO-003` 闭合 | 未开始 | 验收/关门门禁；批次 2c 不触碰 |
+
+### Findings
+
+无 required finding。
+
+批次 2c 范围内未发现阻断项。以下为如实记录，不构成必改：
+
+- D-EXPR 的 upstream `reactions` fixture 与 D-COMP 的 `component-format`（5 case）**实现路径已落地**，但对照 `cases.json` 的正式执行属阶段 3，`I-007-001` 只确认登记（非逐域验证已执行）。
+- `reaction.schema.json` / `node`/`page` schema 结构校验依赖 `I-PROTO-004`（vendor vs pin）决策，批次 2c 未做 schema 级验证。
+- 批次 2c 范例页（`form-with-reactions`）有 Edge headless 实测；reactions/render 逻辑另有单元测试覆盖。jsdom 表面测试覆盖 App 级接线。
+- `I-PROTO-004`（vendor vs pin，non-blocking）仍 open，决策时点定在阶段 3 结构校验实现前，不阻断批次 2c。
+
+### 必改项汇总
+
+无。
+
+### 结论 + 建议下一步
+
+批次 2c 实施与证据满足阶段 2 内推进条件：`npm test` 166 项 / `npm run build` / `go test` / Edge 实测均通过，登记表与执行记录已同步，无开放 required finding，无到期 required 信息项影响本 scope。`I-PROTO-003` 仍 open（验收/关门门禁），本自审不放行验收或关门。阶段 2 全部落地，建议进入阶段 3（结构/行为验证）：先按 `I-PROTO-004` 决策 vendor vs pin，再接入 `node`/`page`/`reaction` schema 校验与已纳入 fixtures 对照。
+
