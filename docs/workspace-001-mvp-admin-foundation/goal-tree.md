@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.3.0
+version: 0.4.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -18,23 +18,23 @@ workspace_id: workspace-001-mvp-admin-foundation
 ## 树
 
 ```text
-GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架
-├── GOAL-002-r1-repo-layout-conventions  [active]  R1 · 仓库布局与包管理约定
-├── GOAL-003-r1-api-go-scaffold          [active]  R1 · Go API 工程骨架
-└── GOAL-004-r1-web-react-scaffold       [active]  R1 · React Web 工程骨架
+GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=1/6
+├── GOAL-002-r1-repo-layout-conventions  [done]  R1 · 仓库布局与包管理约定
+├── GOAL-003-r1-api-go-scaffold          [done]  R1 · Go API 工程骨架
+└── GOAL-004-r1-web-react-scaffold       [done]  R1 · React Web 工程骨架
 ```
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-mvp-admin-foundation | MVP Admin 基架 | null | active | — | 2026-07-31 |
-| GOAL-002-r1-repo-layout-conventions | R1 · 仓库布局与包管理约定 | GOAL-001-mvp-admin-foundation | active | — | 2026-07-31 |
-| GOAL-003-r1-api-go-scaffold | R1 · Go API 工程骨架 | GOAL-001-mvp-admin-foundation | active | — | 2026-07-31 |
-| GOAL-004-r1-web-react-scaffold | R1 · React Web 工程骨架 | GOAL-001-mvp-admin-foundation | active | — | 2026-07-31 |
+| GOAL-001-mvp-admin-foundation | MVP Admin 基架 | null | active | 1/6 | 2026-07-31 |
+| GOAL-002-r1-repo-layout-conventions | R1 · 仓库布局与包管理约定 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
+| GOAL-003-r1-api-go-scaffold | R1 · Go API 工程骨架 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
+| GOAL-004-r1-web-react-scaffold | R1 · React Web 工程骨架 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
 
 ## 说明
 
-- `progress` 仅在目标内存在显式可枚举检查点且已按 P-001 派生时填写；Root 纲领 6 点均未完成 → `—`。
+- Root `progress: 1/6` = 纲领路线图 R1–R6 中 R1 已完成（等权派生）；**不**放行 R2、不关闭 finding、不推导 Root `done`。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
-- R1：A-001 required 已于 2026-07-31 `/govern` 响应闭合；约定文档 + `apps/api` + `apps/web` 骨架已实施；成功标准已勾选，**未**标 `done`（建议阶段审后再关门）。
+- R1：2026-07-31 `/govern` 阶段/关门自审 A-003（self）对 002/003/004 均为 **pass** → 三子目标 `done`；Root 纲领 R1 → 完成。

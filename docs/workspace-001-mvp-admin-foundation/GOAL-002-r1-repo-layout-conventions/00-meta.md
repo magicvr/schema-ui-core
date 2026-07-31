@@ -1,11 +1,11 @@
 ---
 id: GOAL-002-r1-repo-layout-conventions
 title: R1 · 仓库布局与包管理约定
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-002 · R1 · 仓库布局与包管理约定

@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r1-api-go-scaffold
 doc: execution
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-003
@@ -28,11 +28,16 @@ version: 0.2.0
 - 验证：`go test ./...` 通过；`go build` 后进程在 `:18080` 上 `GET /healthz` 返回 `status=ok`。
 - **未做**：业务路由、JWT/SQLite、协议兼容。
 
+### 2026-07-31 · 阶段/关门自审通过 → done
+
+- `/govern` 与 GOAL-002 同轮：R1 阶段自审；写入 **A-003**（source: self；verdict: **pass**）。
+- 本轮复验：`go test ./...` 通过；`HTTP_ADDR=:18081` 下 `/healthz` → HTTP 200 `status=ok`。
+- `status` → **`done`**；同步 goal-tree。
+
 ## 待办（计划 · 非完成事实）
 
-1. 阶段自审 / 可选 `/audit` 后评估关门。
-2. R4 再议 auth 模式。
+- （本目标已关门）R4 再议 auth 模式。
 
 ## 进度评估
 
-**可运行骨架已落地**；对照成功标准见 `00-meta` 勾选。未标 `done`。
+**已关门**（A-003 pass）。可运行 Go API 骨架交付完成。

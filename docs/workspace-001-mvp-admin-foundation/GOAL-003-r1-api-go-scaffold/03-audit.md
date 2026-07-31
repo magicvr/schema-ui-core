@@ -1,11 +1,11 @@
----
+﻿---
 id: GOAL-003-r1-api-go-scaffold
 doc: audit
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-003
@@ -19,6 +19,7 @@ version: 0.3.0
 | 影响本 scope 的 I-00N | I-003-001/002 **verified**（D-002） | module path required 已闭合 |
 | 到期 required | 无 | 可写 go.mod / 实施骨架 |
 | 资料引用 | 无 | 平行仓外部参考，非 shared_materials |
+| 关门 required | 无 | A-003 关门审：开放 required finding = 0 |
 
 ## 意见台账索引
 
@@ -26,6 +27,7 @@ version: 0.3.0
 |------|------|--------|-------|---------|---------------|
 | A-001 | 2026-07-31 | independent | 目标定义 + 设计/计划（R1 Go 骨架） | conditional | F-001 → 见 A-002 闭合 |
 | A-002 | 2026-07-31 | self（编排响应） | 响应 A-001 · F-001 | pass | 0 open required |
+| A-003 | 2026-07-31 | self | R1 阶段/关门审 · Go API 骨架 | pass | 0 |
 
 ---
 
@@ -138,3 +140,56 @@ version: 0.3.0
 ### 结论
 
 可实施 `apps/api` 骨架。
+
+---
+
+## A-003 · R1 阶段/关门自审 · Go API 骨架（2026-07-31）
+
+- **source**：self
+- **auditor**：Grok · `/govern`
+- **类型**：execution-facts / close-out
+- **scope**：R1 实施事实对照成功标准；评估关门
+- **verdict**：**pass**
+- **模式**：stage + close-out（与 GOAL-002 同轮 R1 自审）
+
+### 范围与区间
+
+- 工作区：`workspace-001-mvp-admin-foundation`
+- 审 `apps/api` 骨架可运行性与 R1 边界；不审业务 API / auth / 协议兼容
+- A-001 required 已由 A-002 `fixed`；I-003-001/002 verified
+
+### 成果（有证据）
+
+| 项 | 证据路径 |
+|----|----------|
+| module path 正确 | `apps/api/go.mod` → `github.com/magicvr/schema-ui-core/apps/api`；`go 1.26` |
+| 入口与分层 | `cmd/server/main.go`；`internal/config|server|handler`；`pkg/version` |
+| Makefile | `run` / `build` / `test` 目标存在 |
+| 探活 | `GET /healthz`；`go test ./...` 通过；本轮 `HTTP_ADDR=:18081` 进程返回 `{"status":"ok",...}` |
+| 文档 | `README.md`、`.env.example`（默认 `:8080`） |
+| 无业务鉴权中间件 | handler 仅 health；config 注释 no auth/DB |
+
+### 对照成功标准
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| `go.mod` module path = 本仓 path | **达成** | `apps/api/go.mod` |
+| `cmd/server` 可 `go run` / `make run` | **达成** | Makefile + 本轮 binary 启动 |
+| `/healthz` 可验证 | **达成** | health_test + 本轮 HTTP 200 |
+| Makefile 至少含 `run` | **达成** | Makefile；另有 build/test |
+| README + `.env.example` 端口/env | **达成** | 二者均在；`HTTP_ADDR=:8080` |
+| 未默认挂业务鉴权中间件 | **达成** | 源码扫描无 JWT/auth 中间件挂载 |
+
+### Findings
+
+无 open **required** finding。
+
+### 必改项汇总
+
+（无）
+
+### 结论 + 建议下一步
+
+**结论**：Go API R1 骨架可运行、边界清晰；开放 required = 0 → **pass**，`status` → **`done`**。
+
+**后续**：R4 再议 auth；Root R1 在 002/004 同轮关门后可标完成。

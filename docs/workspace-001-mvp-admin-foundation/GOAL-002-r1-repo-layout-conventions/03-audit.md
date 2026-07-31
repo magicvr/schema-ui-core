@@ -1,11 +1,11 @@
 ---
 id: GOAL-002-r1-repo-layout-conventions
 doc: audit
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-002
@@ -19,6 +19,7 @@ version: 0.3.0
 | 影响本 scope 的 I-00N | 无本目标独立 required | 依赖 Root I-STACK-001/002 = verified（D-004） |
 | 到期 required | 无 | R1 实施门禁已由父目标闭合 |
 | 资料引用 | 无 | `shared_materials_catalog: none`；平行仓为外部参考 |
+| 关门 required | 无 | A-003 关门审：开放 required finding = 0 |
 
 ## 意见台账索引
 
@@ -26,6 +27,7 @@ version: 0.3.0
 |------|------|--------|-------|---------|---------------|
 | A-001 | 2026-07-31 | independent | 目标定义 + 设计/计划（R1 三目标之约定目标） | conditional | F-001, F-002 → 见 A-002 闭合 |
 | A-002 | 2026-07-31 | self（编排响应） | 响应 A-001 · F-001/F-002 | pass | 0 open required |
+| A-003 | 2026-07-31 | self | R1 阶段/关门审 · 约定文档交付 | pass | 0 |
 
 ---
 
@@ -136,3 +138,62 @@ version: 0.3.0
 ### 结论
 
 开放 required = **0**；可推进本目标文档实施与 003/004 建树。
+
+---
+
+## A-003 · R1 阶段/关门自审 · 仓库布局约定（2026-07-31）
+
+- **source**：self
+- **auditor**：Grok · `/govern`
+- **类型**：execution-facts / close-out
+- **scope**：R1 实施事实对照成功标准；评估关门
+- **verdict**：**pass**
+- **模式**：stage + close-out（用户指令：通过则关门）
+
+### 范围与区间
+
+- 工作区：`workspace-001-mvp-admin-foundation`
+- 审实施后交付物与边界（D-002）；**不**把 003/004 可运行性算作 002 独有门禁
+- 相关意见：A-001 required 已由 A-002 `fixed`；recommended F-003/F-004 不阻断
+
+### 成果（有证据）
+
+| 项 | 证据路径 |
+|----|----------|
+| monorepo 约定落盘 | `docs/architecture/monorepo-layout.md`（`apps/web`/`apps/api`、包管理、命令契约、owned-by） |
+| 治理目录挂接 | `docs/architecture/directory-layout.md`（含 `apps/*` 链） |
+| 根 README 入口 | 仓库根 `README.md` → monorepo + `apps/api`/`apps/web` README |
+| 创建权服从 D-002 | 002 未首次创建可运行 `apps/*`；树由 003/004 交付 |
+| 无业务域默认树 | monorepo 约定边界 + 目录观察无 order/wallet 等 MVP 默认 |
+
+### 对照成功标准
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| monorepo 约定：`apps/web`、`apps/api`、与 docs/skills 边界 | **达成** | `monorepo-layout.md` §布局与边界 |
+| 前端：npm + `package-lock.json`（工作目录 `apps/web`） | **达成** | monorepo §前端；落地见 GOAL-004 |
+| 后端：Go modules（`apps/api` 独立 `go.mod`） | **达成** | monorepo §后端；落地见 GOAL-003 |
+| 未把业务域目录当 MVP 默认树 | **达成** | 约定非目标 + 002 未建业务树 |
+| 未在本目标内首次创建可运行 `apps/*` | **达成** | D-002 + execution；骨架属 003/004 |
+| 期望命令契约 + owned-by 003/004 | **达成** | monorepo §命令；根 README |
+| 根 README 链到约定与 app README | **达成** | 根 `README.md` |
+
+### Findings
+
+无 open **required** finding。
+
+#### F-001 · recommended · low · recommended 历史项未升格
+
+- **现象**：A-001 F-003（软依赖）仍为 recommended open，未写入显式检查点。
+- **评价**：路径已由 D-004 锁定且文档已 merged；**不阻断关门**。
+- **状态**：open（recommended only）
+
+### 必改项汇总
+
+（无）
+
+### 结论 + 建议下一步
+
+**结论**：约定文档与创建权边界满足本目标成功标准；开放 required = **0**；信息门禁无到期 required → **pass**，按用户指令将 `status` → **`done`**。
+
+**后续**：Root 在 003/004 亦关门后可将纲领 R1 标完成；进入 R2 协议覆盖冻结（`I-PROTO-001`）。

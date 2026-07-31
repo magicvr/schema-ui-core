@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-001
@@ -58,6 +58,16 @@ version: 0.3.0
   - `apps/api` 可运行骨架（`/healthz` 验证）
   - `apps/web` Vite/React/Tailwind/shadcn 骨架（`npm run build` 通过）
 - **未做**：R1 子目标未标 `done`（建议阶段审）；`I-PROTO-001` 等仍 open；无业务能力。
+
+### 2026-07-31 · R1 子目标阶段/关门自审全部通过
+
+- `/govern` 用户指令：GOAL-002 R1 自审通过则关门；再审 GOAL-003/004。
+- 自审结果（各目标 `03-audit` **A-003**，source: self）：
+  - GOAL-002 → **pass** → `done`（约定文档 + D-002 边界）
+  - GOAL-003 → **pass** → `done`（`apps/api`；本轮 `/healthz` 200）
+  - GOAL-004 → **pass** → `done`（`apps/web`；本轮 `npm run build` 成功）
+- Root：纲领 **R1 → 完成**；成功标准第 1 项与「未主张全协议」勾选；`progress: 1/6`；同步 goal-tree。
+- **未做**：未进入 R2；`I-PROTO-001` 等仍 open；无业务/鉴权/外壳。
 
 ## 待办（计划 · 非完成事实）
 
