@@ -2,9 +2,9 @@
 title: 文档体系说明（消费方精简入口）
 status: active
 created: 2026-07-18
-updated: 2026-07-30
+updated: 2026-07-31
 parent: null
-version: 0.11.0
+version: 0.11.1
 ---
 
 # docs/ · 文档体系（消费方）
@@ -27,11 +27,14 @@ docs/
 │   ├── overview.md
 │   └── directory-layout.md
 ├── templates/                # 五件套 + workspace-context + vision 冷启动模板
+├── contracts/                # 消费适配器 canonical 机读契约（分发 Skills 时 MUST）
+├── standalone-bootstrap.md   # 完整安装 MUST 第三同步点
 ├── vision/
 │   ├── alignment.md          # 愿景对齐契约（必备规则面）
-│   ├── README.md             # 消费方愿景说明
+│   ├── README.md             # 规则面 + 本仓实例索引
 │   ├── charter.md            # 冷启动后由 /vision 创建（实例）
-│   └── plans/VP-*.md         # 冷启动后创建
+│   ├── plans/VP-*.md         # 冷启动后创建
+│   └── protocol-inventory-*.md  # 可选：外部协议实施清单
 └── workspace-<NNN>-<slug>/   # 工作区：goal-tree + GOAL-* 五件套
 ```
 

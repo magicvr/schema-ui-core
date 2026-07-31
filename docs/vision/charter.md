@@ -1,0 +1,77 @@
+---
+doc_type: vision-charter
+vision_id: schema-ui-core-admin-foundation
+title: Schema UI Core 中型项目 Admin 基架
+status: active
+version: 0.1.0
+effective_date: 2026-07-31
+primary_workspace: null
+created: 2026-07-31
+updated: 2026-07-31
+parent: null
+---
+
+# Charter · Schema UI Core 中型项目 Admin 基架
+
+## 目的陈述
+
+以 `magicvr/schema-ui-docs` 所定义的前后端协议为兼容边界，构建一个面向中型项目、可被后续项目 fork 的基础 Admin 框架：前端采用 React，后端采用 Go，并让协议驱动的页面、数据与交互能力有可运行、可验证的实现路径。
+
+## 协议来源
+
+| 项 | 值 |
+|----|----|
+| canonical source | https://github.com/magicvr/schema-ui-docs |
+| release ref | `v2.7.0` |
+| pinned commit | `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` |
+| manifest | https://raw.githubusercontent.com/magicvr/schema-ui-docs/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b/protocol-manifest.json |
+
+该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。MVP 覆盖子集冻结与实现核验仍由工作区内 **`/govern`** 推进。
+
+## 方向级成功边界
+
+在本愿景仍为 `active` 的前提下，下列方向成立即视为仍在愿景内；它们不是可关门的执行 checklist：
+
+1. 提供可 fork 的 React 前端与 Go 后端 Admin 基架，并对 `schema-ui-docs` `v2.7.0` 的协议能力形成可验证的兼容实现与示例路径。
+2. MVP 覆盖最核心的账号与权限能力；每一纳入范围的协议功能均有范例页面和对应的验证路径。
+3. 前端经产品化后可被 fork 项目直接使用，采用 Tailwind CSS 与 shadcn/ui 风格组件，支持浅色和深色模式，并以 Linear 与 Vercel Dashboard 的克制、工作导向体验为参考。
+4. 维护可供不同起点 fork 的两条演进线：最小可扩展的 MVP 基架，以及逐步覆盖常见 Admin 领域能力的完整实现线。
+
+## 非目标
+
+本 Charter 不要求、也不把下列事项写成愿景成功条件：
+
+- 不建设特定业务领域的终端产品；钱包、订单、类目、通知等属于后续扩展实现线的候选能力。
+- 不在本项目内重新定义或替代 `schema-ui-docs` 的协议语义；协议变更应回到上游契约或形成明确的兼容决策。
+- MVP 不承诺完整业务模块目录，只覆盖协议示例、基础 Admin 外壳，以及核心账号与权限能力。
+
+## 原则摘要
+
+- 协议优先：固定上游版本并以可复核的协议清单约束前后端实现，避免用本地假设替代契约。
+- 可 fork 优先：把通用、可扩展的基架与特定业务模块分开，降低后继项目的二次开发成本。
+- 范例即验证：协议支持不能只停留在声明，每个纳入能力都应有可观察的示例与测试路径。
+- 分支语义清晰：MVP 线保持最小可扩展性，完整实现线承载可复用的常见 Admin 能力；二者的兼容与维护策略必须可说明。
+- 操作原则以 [docs/architecture/principles.md](../architecture/principles.md) P-001 至 P-006 为准。
+
+## 战略假设与未知
+
+| id | 假设 / 未知 | 影响 | 状态 |
+|----|-------------|------|------|
+| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，才能冻结 MVP 的协议覆盖边界。 | VP-001 的协议实现计划与“完整协议覆盖”声明 | verified（清单已落盘 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)；**覆盖子集尚未冻结**） |
+
+## 与工作区 / VP 的关系
+
+- 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
+- 首个意图已落盘为 [VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md)，其 `vision_ref` 精确引用本版本。
+- 工作区与 Root 创建时必须挂接 `plan_refs` / `primary_plan`；当前尚未创建工作区，`primary_workspace` 为 `null`。
+
+## 现行版本
+
+| 项 | 值 |
+|----|----|
+| `vision_id` | `schema-ui-core-admin-foundation` |
+| 版本 | `0.1.0` |
+| 状态 | `active` |
+| 引用格式 | `schema-ui-core-admin-foundation@0.1.0` |
+
+修订史见 [revisions.md](revisions.md)，愿景审视台账见 [reviews.md](reviews.md)。
