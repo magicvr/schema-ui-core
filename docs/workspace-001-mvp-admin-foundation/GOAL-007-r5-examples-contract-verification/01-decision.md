@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-007
@@ -84,3 +84,35 @@ P-005 信息台账维护在 [00-meta.md](00-meta.md)。本目标 `I-007-001` 在
 **影响**：
 
 阶段 1 完成；阶段 2（范例页/场景实现）、阶段 3（结构/行为验证）、阶段 4（验收与关门）未开始。`I-PROTO-003` 仍 open；R5 验收/关门前须以阶段 3 可执行证据闭合。
+
+## D-004 · 落地 R5 阶段 2：范例页/场景实现子方案（2026-07-31）
+
+**日期**：2026-07-31
+**状态**：accepted
+
+**决定**：
+
+采用「三个批次 + I-PROTO-004 决策时点」的阶段 2 实施子方案，按登记表为未覆盖域落地可观察范例页：
+
+- **批次 2a · D-DATA / D-TABLE 范例与 Go 数据支撑**：Go 新增列表/详情数据 API（对照 `I-PROTO-002` 最小 API 纪律，落在 `apps/api/internal/handler/`）；Web 新增数据表格组件（排序声明 + 基础列表交互）；范例页 `search-form-table` / `data-table`。
+- **批次 2b · D-FORM 控件与 D-ACT 动作**：Web 实现 §5 白名单的 2.6/2.7 表单控件子集（`form-controls-*`）；复用 R4 `executeAction` 时序引擎，落地非批量行动作；范例页 `admin-list-edit-lifecycle`。
+- **批次 2c · D-EXPR 与 Renderer 接线**：落地 `form-with-reactions` 范例页（复用 `evaluateExpression`）；在 `apps/web/src/renderer/` 完成最小 Renderer 接线（D-COMP，resolve R4 推荐跟踪项 F-002），仅覆盖已纳入白名单 type，不做完整 registry。
+- **`I-PROTO-004` 决策时点**：**阶段 3 结构校验实现前**决策 vendor vs pin（影响 `node`/`page`/`action`/`reaction` schema 校验命令落地方式）；阶段 2 范例页不依赖该决策，可按已 vendor 的 `app-manifest.schema.json` 与本地样例先行实现。`I-PROTO-004` 保持 `non-blocking` / open。
+- 每个批次完成即更新 `I-007-001-registry.md` 对应行「现状」为已发生事实，并在 `02-execution` 记录实际命令/证据；阶段 2 全部落地后再进入阶段 3。
+
+**为什么**：
+
+- 登记表 §3 将 P1/P2 候选归组为 `search-form-table` / `data-table`（D-DATA+D-TABLE）、`admin-list-edit-lifecycle`（D-ACT+D-DATA+D-FORM）、`form-with-reactions`（D-EXPR+D-FORM）——按依赖排序：先数据/表格（Go 支撑 + 前端组件），再控件/动作，最后表达式与 Renderer 接线。
+- Go 现仅 `accounts/me` + `health`，无列表/详情 API（登记表 D-DATA 行「需补」），故批次 2a 先补数据支撑，避免前端范例无真实数据源。
+- `apps/web/src/renderer/` 现仅 `permissions.ts`（空分层，登记表 D-COMP 行已标注），Renderer 接线是 D-COMP 范例页的前置，故放在批次 2c 且限定白名单 type，不越 R5 非目标。
+- 用户确认「不需要自审，直接推进」，且选择「先落实施子方案再实现」——本决策是实施前的最小子方案固化，不替代逐批次的 03 执行记录。
+
+**未选方案**：
+
+- 一次性实现全部 6 个未覆盖域范例页：范围与证据分散，验收时难逐域核对，且 Go 数据支撑是共同前置，按批落地更可验证。
+- 先决策 `I-PROTO-004`（vendor vs pin）再实现：该决策只影响阶段 3 的 schema 校验命令形态，不阻断阶段 2 范例页；提前决策会把 non-blocking 项升级为阶段 2 前置，无必要。
+- 阶段 2 直接复用 dev server 可打开作为关门证据：不满足 `I-PROTO-003`「每纳入域范例路径 + 验证入口可核对」，验证执行仍归阶段 3。
+
+**影响**：
+
+阶段 2 进入实施准备；本决策不修改成功标准、不改变 `I-PROTO-003` / `I-PROTO-004` 状态、不抬升 Root `progress`（仍 4/6）。批次 2a 完成后应补阶段自审（self）再进入批次 2b/2c。

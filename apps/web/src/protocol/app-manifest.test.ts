@@ -262,6 +262,8 @@ describe("manifest loading and expression boundaries", () => {
       "overview",
       "catalog",
       "activity",
+      "data-table",
+      "search-form-table",
       "settings",
     ]);
   });

@@ -57,7 +57,7 @@ const APP_MANIFEST_FIXTURE_SHA256 =
 const APP_NAVIGATION_FIXTURE_SHA256 =
   "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897";
 const STATIC_MANIFEST_SHA256 =
-  "ba0b9c48ab1ed0a3048617b1b593bdeb143dc49331a7c51be313c1e966b4301b";
+  "1accbeda6f5885fd2b4ec57797014a12994664eadc681e58c1cf9a5004c2e31f";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = readFileSync(new URL(relativePath, import.meta.url));
