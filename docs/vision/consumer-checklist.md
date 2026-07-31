@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 愿景完整安装核对
@@ -32,13 +32,14 @@ version: 0.2.0
 | 愿景树 | `workspaces.md` | present | [workspaces.md](workspaces.md)。 |
 | 愿景树 | `consumer-checklist.md` | present | 本文件。 |
 | 意图 | 至少一个 `plans/VP-*.md` | present | [VP-001](plans/VP-001-mvp-admin-foundation.md)。 |
-| 工作区 | 显式 `workspace.md` | not applicable yet | 仅在开区后变为 MUST；开区由 **`/govern`**（须挂 `primary_plan`）。 |
-| 目标 | 工作区 `goal-tree.md` 与 Root 五件套 | not applicable yet | 仅在开区后变为 MUST。 |
+| 工作区 | 显式 `workspace.md` | **present** | [workspace-001-mvp-admin-foundation/workspace.md](../workspace-001-mvp-admin-foundation/workspace.md)；`primary_plan`=VP-001；`vision_role: primary`。 |
+| 目标 | 工作区 `goal-tree.md` 与 Root 五件套 | **present** | [goal-tree.md](../workspace-001-mvp-admin-foundation/goal-tree.md)；Root `GOAL-001-mvp-admin-foundation`。 |
 
 ## 结论（2026-07-31）
 
-- 开区前愿景 MUST 行均已 **present**（含 `docs/contracts/`）。在仅考核「开区前完整治理安装文件集」时，可记为**通过**（工作区/Root 行仍为 N/A until 开区）。  
-- **不**自动放行实现：VP-001 协议覆盖子集尚未冻结；无 React/Go 实现证据。  
-- 开区与实现推进走 **`/govern`**；Vision required findings `F-V001`/`F-V002` 已 `fixed`（见 [reviews.md](reviews.md)）。  
+- 开区前愿景 MUST 与开区后工作区/Root MUST 均已 **present**（含 `docs/contracts/`）。完整治理安装文件集在冷启动顺序上可记为**通过**。  
+- **不**自动放行实现：VP-001 协议覆盖子集尚未冻结（Root `I-PROTO-001` open）；无 React/Go 实现证据。  
+- 实现推进继续走 **`/govern`**；Vision required findings `F-V001`/`F-V002` 已 `fixed`（见 [reviews.md](reviews.md)）。  
 - 开放 recommended：`F-V003`（双线维护契约，后续 VP 前处理）。
 - VRev-003 响应后：`F-V006` → `fixed`（H-001 分列）；`F-V007` → `accepted-residual`（消费仓不携带 monorepo dogfood runtime；矩阵路径为生成仓发布溯源，非本仓须复现证据）。
+- 2026-07-31 `/govern` 开区：`workspace-001-mvp-admin-foundation` + Root；VP-001 → `active`。

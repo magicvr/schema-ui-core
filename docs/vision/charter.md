@@ -5,7 +5,7 @@ title: Schema UI Core 中型项目 Admin 基架
 status: active
 version: 0.1.0
 effective_date: 2026-07-31
-primary_workspace: null
+primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
@@ -63,7 +63,7 @@ parent: null
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 首个意图已落盘为 [VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md)，其 `vision_ref` 精确引用本版本。
-- 工作区与 Root 创建时必须挂接 `plan_refs` / `primary_plan`；当前尚未创建工作区，`primary_workspace` 为 `null`。
+- 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）。
 
 ## 现行版本
 
