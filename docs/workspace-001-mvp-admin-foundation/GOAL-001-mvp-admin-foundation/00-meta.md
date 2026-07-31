@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.18.0
+version: 0.18.1
 progress: 6/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -95,4 +95,5 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R5 阶段 4（2026-08-01）：GOAL-007 D-011 进入验收；复跑 395 / build / go 全绿；Root **D-013** 闭合 `I-PROTO-003` → **verified**；GOAL-007 A-008 关门自审（self）pass。
 - R5 关门（2026-08-01）：GOAL-007 A-009 independent 关门复审 **pass**；用户 `/govern` 响应 A-009 并授权 GOAL-007 → **`done`**；Root **D-014** 纲领 R5 → 完成，`progress` → **5/6**（goal-tree 同步）。R6 未开始；不放行 Root/VP 关门。
 - R6 规划（2026-08-01）：用户 `/govern` 规划 R6，立项 `GOAL-008-r6-integration-acceptance-vp-evidence`（`active`）；验收矩阵与 evidence schema 仍为草案，五个 required 信息项尚未闭合。Root `progress` 保持 `5/6`；未执行 R6 验收、未改 VP status、未标 Root `done`。
-- R6 关门（2026-08-01）：GOAL-008 四阶段完成，A-005 self + A-006 independent close-out 均 **pass**、开放 required=0、`I-008-001`～`I-008-005` verified；用户 `/govern` 响应 A-006 并授权（Root **D-016**）：GOAL-008 → `done`、R6 → 完成、`progress` 5/6 → **6/6**、Root status → **`done`**（goal-tree 同步）。VP-001 保持 `active`；关门提案由 `/vision` 读取工作区 Q2 证据（[vp-evidence-assembly](../GOAL-008-r6-integration-acceptance-vp-evidence/attachments/vp-evidence-assembly.md)）后用户确认。R6 `pass`/Root `done` 不等于完整协议支持、发布就绪或 VP 已关门。
+- R6 关门（2026-08-01）：GOAL-008 四阶段完成，A-005 self + A-006 independent close-out 均 **pass**、开放 required=0、`I-008-001`～`I-008-005` verified；用户 `/govern` 响应 A-006 并授权（Root **D-016**）：GOAL-008 → `done`、R6 → 完成、`progress` 5/6 → **6/6**、Root status → **`done`**（goal-tree 同步）。VP-001 随后经 `/vision` **closed**。R6 `pass`/Root `done` 不等于完整协议支持或发布就绪。
+- 关门后修正跟随（2026-08-01）：用户立项子目标 [`GOAL-009-mvp-bugfix-followup`](../GOAL-009-mvp-bugfix-followup/00-meta.md)（`active`，`progress: 0/5`），承接 `apps/api`+`apps/web` 代码审视 required findings；附件 [audit-code-review-bugs-2026-08-01.md](../GOAL-009-mvp-bugfix-followup/attachments/audit-code-review-bugs-2026-08-01.md)。**不**改写本 Root 纲领 6/6 或 `status: done`；**不**重开 VP-001 范围。
