@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.0
+version: 0.1.1
 ---
 
 # 执行记录 · GOAL-008
@@ -26,6 +26,16 @@ version: 0.1.0
 - 盘点未发现仓库 CI workflow、现成浏览器 E2E、JSON/JUnit/coverage reporter 或统一 R6 evidence writer；本次命令输出未按拟议证据合同持久化。
 - 因验收合同尚未冻结、revision/environment identity 与原始结果未按 R6 schema 落盘，上述结果**只作为规划输入**，不得计为阶段 2 完成、R6 关门或 VP 关门证据。
 
+### 2026-08-01 · 阶段 1 本地能力基线盘点
+
+- 在工作树 clean、revision `7d20acc7702bcc0e514f787c455bf9c93d5b832f` 上记录环境：Windows/amd64、Node `v22.17.0`、npm `10.9.2`、Go `1.26.0`。
+- 从 `apps/web` 执行 `npm test`：15 个测试文件、395 项测试通过；执行 `npm run build`：TypeScript/Vite build 通过。
+- 从 `apps/api` 执行 `go test ./...` 与 `go build ./...`：均退出码 0。
+- 核对运行入口：`apps/api` 的 `go run ./cmd/server` / `make run` 默认服务 `:8080`，`GET /healthz` 返回健康结果；`apps/web` 的 `npm run dev` 默认 `:5173`，Vite 将 `/api` proxy 到 `http://127.0.0.1:8080`。
+- 只读扫描未发现 `.github/workflows`、Playwright/Puppeteer/Cypress/Selenium/WebDriver runner、JSON/JUnit reporter 或统一 evidence writer；该事实只说明当前仓库能力边界，不决定最低验收矩阵。
+- 新增候选记录形状：[evidence-index.schema.json](attachments/evidence-index.schema.json) 与 [evidence-index.dry-run.json](attachments/evidence-index.dry-run.json)。dry-run 使用 `mode: planning`、`overallOutcome: blocked`，结果 artifact 状态为 `not-captured`；它没有被计为 R6 验收 evidence。
+- 以上动作缩小了 `I-008-002`、`I-008-004`、`I-008-005` 的未知范围；`I-008-001` 仍需冻结验收矩阵，`I-008-003` 仍需冻结 API→Web/Renderer/动作链 oracle。五项 required 尚未闭合。
+
 ## 待办（计划 · 非完成事实）
 
 1. 收集并闭合 `I-008-001`～`I-008-005`，冻结验收矩阵、最低环境、账号权限 oracle 与 evidence schema。
@@ -35,4 +45,4 @@ version: 0.1.0
 
 ## 进度评估
 
-R6 已立项并完成规划草案；阶段 1 仍为规划中，五个 required 信息项尚未全部验证。没有 R6 验收完成事实。
+R6 已立项并完成规划草案；本轮补充了本地能力基线与 draft evidence schema，但阶段 1 仍为规划中，五个 required 信息项尚未全部验证。没有 R6 验收完成事实。

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "0.1.0-draft",
+  "mode": "planning",
+  "goalId": "GOAL-008-r6-integration-acceptance-vp-evidence",
+  "workspaceId": "workspace-001-mvp-admin-foundation",
+  "vpId": "VP-001-mvp-admin-foundation",
+  "repositoryRevision": "7d20acc7702bcc0e514f787c455bf9c93d5b832f",
+  "worktreeState": "clean",
+  "startedAt": "2026-08-01T03:46:27+08:00",
+  "completedAt": "2026-08-01T03:46:36+08:00",
+  "environmentRef": "windows/amd64; node v22.17.0; npm 10.9.2; go1.26.0; vitest 3.2.7",
+  "rerunRules": [
+    "Run each command from the recorded cwd against one repository revision.",
+    "Record the environment and worktree state before execution.",
+    "Persist result artifacts before calculating SHA-256; missing artifacts remain explicit.",
+    "Do not combine results from different revisions or environments."
+  ],
+  "results": [
+    {
+      "id": "web-test",
+      "claimRefs": ["I-008-002", "VP-001.exit-1"],
+      "command": "npm test",
+      "cwd": "apps/web",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": null,
+      "artifactStatus": "not-captured",
+      "sha256": null
+    },
+    {
+      "id": "web-build",
+      "claimRefs": ["I-008-002", "VP-001.exit-1"],
+      "command": "npm run build",
+      "cwd": "apps/web",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": null,
+      "artifactStatus": "not-captured",
+      "sha256": null
+    },
+    {
+      "id": "api-test",
+      "claimRefs": ["I-008-002", "VP-001.exit-1"],
+      "command": "go test ./...",
+      "cwd": "apps/api",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": null,
+      "artifactStatus": "not-captured",
+      "sha256": null
+    },
+    {
+      "id": "api-build",
+      "claimRefs": ["I-008-002", "VP-001.exit-1"],
+      "command": "go build ./...",
+      "cwd": "apps/api",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": null,
+      "artifactStatus": "not-captured",
+      "sha256": null
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "no-r6-artifacts",
+      "scope": "planning baseline",
+      "reason": "The candidate schema was not yet the frozen R6 acceptance contract.",
+      "reviewTrigger": "Verify I-008-004 and freeze the plan before stage 2."
+    }
+  ],
+  "residuals": [
+    {
+      "id": "platform-matrix-undecided",
+      "scope": "I-008-005",
+      "reason": "No CI workflow, browser runner, or Linux-equivalent evidence was found in this repository.",
+      "reviewTrigger": "Decide the minimum matrix or obtain a user-recorded bounded residual before stage 2."
+    },
+    {
+      "id": "cross-layer-oracle-undecided",
+      "scope": "I-008-003",
+      "reason": "R4 unit, fixture, and HTTP facts do not yet freeze an API-to-Web/Renderer action oracle.",
+      "reviewTrigger": "Define and review positive and denial scenarios before account-permission execution."
+    }
+  ],
+  "overallOutcome": "blocked"
+}

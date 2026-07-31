@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.0
+version: 0.1.1
 ---
 
 # 决策记录 · GOAL-008
@@ -76,3 +76,31 @@ version: 0.1.0
 
 - 本决策不放行阶段 2；`I-008-001` 保持 `collecting`，其余 required 保持 `open`。
 - 计划阶段下一步是收集/验证五个信息项，并对冻结候选做同 scope 计划审视。
+
+## D-003 · 记录阶段 1 本地能力基线与证据边界
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+1. 将当前 revision `7d20acc7702bcc0e514f787c455bf9c93d5b832f` 的 Windows/amd64 能力盘点记录为阶段 1 的规划输入：Node `v22.17.0`、npm `10.9.2`、Go `1.26.0`、Vitest `3.2.7`；Web `15` 个测试文件 / `395` 项测试通过且 build 通过，API `go test ./...` 与 `go build ./...` 通过。
+2. 将实际入口固定为候选命令与运行态：`apps/web` 下 `npm test` / `npm run build`，`apps/api` 下 `go test ./...` / `go build ./...`；API `GET /healthz`、Web `:5173` 到 API `:8080` 的 `/api` proxy 作为后续验收入口候选。
+3. 新增 `attachments/evidence-index.schema.json` 与 `attachments/evidence-index.dry-run.json` 作为 `I-008-004` 的 draft 候选；它们必须保持 `planning`/`draft` 语义，不能当作正式 R6 evidence artifact。
+4. 记录未发现 `.github/workflows`、专用浏览器 E2E runner 或 JSON/JUnit/evidence writer；这使 `I-008-005` 继续处于收集状态，不静默把当前 Windows 结果扩展为 Linux/CI 或浏览器证据。
+
+**为什么**：
+
+- 这些事实均由当前工作树的命令、配置和只读扫描直接核对，能够缩小 `I-008-002`、`I-008-004`、`I-008-005` 的未知范围。
+- R4 已有的单端、fixture 和 HTTP 事实可以作为 `I-008-003` 的输入，但不能替代尚未冻结的 API→Web/Renderer/动作链正向/拒绝 oracle。
+
+**未选方案**：
+
+- **把本地命令全绿写成阶段 1 已冻结或 R6 已验收**：会绕过 revision/environment identity、artifact hash、跨层 oracle 和平台矩阵门禁。
+- **把没有 CI/browser runner 写成已接受 residual**：当前没有用户书面范围、期限、缓解与复审触发，不满足 P-004.4。
+
+**影响**：
+
+- `I-008-001`～`I-008-005` 均进入“已收集但未闭合”的可追踪状态（`collecting`）；阶段 1 仍未冻结，阶段 2 仍关闭。
+- Root `progress: 5/6`、GOAL-008 `active`、VP-001 `active` 与应用代码不变。
+- 下一步是验证 draft schema/dry-run、冻结跨层账号权限 oracle 和最低环境矩阵候选，再进行同 scope 计划审视；若需要 residual/有界实验，先按 P-004.4 请求用户裁决。
