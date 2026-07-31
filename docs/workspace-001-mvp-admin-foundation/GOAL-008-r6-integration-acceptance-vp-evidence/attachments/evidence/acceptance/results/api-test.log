@@ -1,0 +1,7 @@
+?   	github.com/magicvr/schema-ui-core/apps/api/cmd/server	[no test files]
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/account	(cached)
+?   	github.com/magicvr/schema-ui-core/apps/api/internal/config	[no test files]
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/handler	(cached)
+?   	github.com/magicvr/schema-ui-core/apps/api/internal/server	[no test files]
+?   	github.com/magicvr/schema-ui-core/apps/api/pkg/version	[no test files]
+exit=0

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.1
+version: 0.2.2
 ---
 
 # 执行记录 · GOAL-008
@@ -59,12 +59,27 @@ version: 0.2.1
 - **F-008-001 关闭（fixed）**：A-001 的必改项满足；响应节已落盘。
 - 阶段 1 冻结完成；阶段 2 集成验收执行未开始。Root `progress: 5/6`、VP-001 `active` 不变。
 
+### 2026-08-01 · 阶段 2 集成验收执行
+
+- 在声明 revision `a941bedb1fc2cd4859a408df50653e867da35ff2`（worktree clean）执行验收矩阵 C-001～C-008：
+  - **C-001**：web test/build（15 files / 395 tests pass；Vite build pass）
+  - **C-002**：api test/build（`go test ./...`、`go build ./...` pass）
+  - **C-003**：双服务启动 + health/proxy/账号上下文/records 探测（`GET /healthz` 200、`GET /` 200、`GET /api/accounts/me` 200 dev-001 session、`GET /api/records` 200、`GET /api/records/rec-1` 200、`GET /api/records?sort=INVALID` 400、manifest 200）
+  - **C-004**：浏览器 E2E（Playwright Chromium）1 passed / 0 unexpected；截图 `r6-overview.png`
+  - **C-005**：账号权限正向（`/api/accounts/me` dev session roles=[admin,editor]）+ D-PERM fixtures（`permissions-inheritance.test.ts` 在 web-test 内）
+  - **C-006**：拒绝路径 oracle 依赖（renderer/组件层，见 oracle D-1～D-6；浏览器层不伪造，已列入 exclusion）
+  - **C-007**：stage3 conformance（`stage3-fixtures.test.ts` 在 web-test 内，含 request-construction non-batch）
+  - **C-008**：机器可读 evidence index 生成并经 schema 校验
+- 结果按 `evidence-index.schema.json` 持久化为 **`attachments/evidence/acceptance/evidence-index.json`**（`mode: acceptance`，**7 artifact 全部 SHA-256 verified，overallOutcome=pass**）；原始输出在 `attachments/evidence/acceptance/results/*`。生成脚本 [build-acceptance-index.mjs](attachments/build-acceptance-index.mjs) 可重跑。
+- **失败 / 未执行 / 排除显式记录**（不隐藏）：reactions multi-round 16/16（D-008）、request-construction batch 11（D-010 Q1=否）、D-UPLOAD 整域（v0.1.3）、本地非干净安装（`npm ci` 干净安装由 CI run `30667596846` 覆盖）、浏览器级拒绝未断言（真实 manifest 无权限门控项，拒绝以 renderer/组件层断言）——均列入 evidence-index exclusions。
+- 阶段 2 全部 required execution item 已运行并落盘；evidence index 可解析、文件摘要可重算。阶段 2 → 阶段 3 门禁审视待做。
+
 ## 待办（计划 · 非完成事实）
 
-1. 阶段 2 执行：按 evidence index 运行 Web、API、协议回归与账号权限集成检查，持久化机器可读结果，显式记录失败/排除/平台缺口。
-2. 阶段 2 → 3 门禁审视通过后汇编 VP 证据（三条退出判据各指向 Q2 工作区证据）。
+1. 阶段 2 → 3 门禁审视：核对 evidence index 可解析/文件摘要可重算、失败/未执行/排除显式、关键未知已回流信息表。
+2. 阶段 3 VP 证据汇编：三条退出判据各指向 Q2 工作区证据；required 缺口按 P-003 合法闭合。
 3. 完成 R6 close-out 审计后，再由用户决定 Root R6 / `progress` / status；VP 关门另走 `/vision`。
 
 ## 进度评估
 
-阶段 1 已冻结（A-002 pass、D-002 accepted、F-008-001 fixed）：验收矩阵、环境矩阵、账号权限 oracle、evidence schema 与 CI 首跑均 verified。阶段 2 集成验收执行尚未开始；Root `progress` 仍 `5/6`，没有 R6 验收完成事实。
+阶段 1 已冻结；阶段 2 集成验收已执行：验收矩阵 C-001～C-008 全部运行并落盘，正式 `evidence-index.json`（mode: acceptance）经 schema 校验（7 artifact SHA-256 verified、overallOutcome=pass），失败/排除显式记录。阶段 2 → 3 门禁审视未做、阶段 3 未开始。Root `progress` 仍 `5/6`，没有 R6 关门完成事实。

@@ -1,0 +1,19 @@
+=== R6 stage-2 runtime probe: 2026-07-31T21:54:34Z revision=a941bedb1fc2cd4859a408df50653e867da35ff2 ===
+[1] GET /healthz (API :8080)
+  HTTP 200
+{"status":"ok","timestamp":"2026-07-31T21:54:34.8086373Z","version":"0.1.0","commit":"unknown"}
+
+[2] GET / (Web :5173)
+  HTTP 200
+[3] GET /api/accounts/me via Web proxy
+  HTTP 200
+{"user":{"id":"dev-001","name":"Dev Admin","roles":["admin","editor"]},"features":{"beta":true}}
+
+[4] GET /api/records via Web proxy
+  HTTP 200
+[5] GET /api/records/rec-1 detail
+  HTTP 200
+[6] GET /api/records?sort=INVALID (fail path)
+  HTTP 400
+[7] GET manifest .well-known
+  HTTP 200
