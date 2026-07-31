@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.5.0
-progress: 2/6
+version: 0.6.0
+progress: 3/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-docs@v2.7.0 为协议边界
@@ -47,7 +47,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 |------|------|------|------|
 | R1 | 工程骨架与仓库约定 | **完成** | 子目标 GOAL-002/003/004 均 `done`（各 A-003 self pass）；Root A-001 independent pass → A-002/D-006 已响应并维持；`apps/*` + monorepo 约定已交付；I-STACK-001/002 verified |
 | R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
-| R3 | Admin 外壳与导航 | 实施/关门中 | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建与 dev server 入口复核；实施 self-audit 和关门门禁仍未完成，浅色/深色基线可后置产品化 VP |
+| R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | 未开始 | 依赖 R2；前后端鉴权与 `D-PERM` 映射（`I-PROTO-002`） |
 | R5 | 纳入域范例与契约验证 | 未开始 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`） |
 | R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
@@ -56,7 +56,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 ## 派生进度展示
 
-纲领检查点 **2/6** 完成（R1、R2）→ frontmatter `progress: 2/6`（goal-tree 同步）。progress **不**放行后续阶段、不关闭 finding、不推导 `done`。
+纲领检查点 **3/6** 完成（R1、R2、R3）→ frontmatter `progress: 3/6`（goal-tree 同步）。progress **不**放行后续阶段、不关闭 finding、不推导 Root `done`。
 
 ## 信息就绪与未知项（P-005）
 

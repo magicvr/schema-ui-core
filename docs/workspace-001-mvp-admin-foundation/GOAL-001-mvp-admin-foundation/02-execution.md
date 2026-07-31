@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 执行记录 · GOAL-001
@@ -127,14 +127,21 @@ version: 0.7.0
 
 - GOAL-005 已依据 D-005 冻结 R3 的 2.7 manifest 子集、pinned schema/fixture provenance、三 slot navigation projection、D4a route/active/fallback、参数 pageRef href 和 shell/R4/R5 边界。
 - `apps/web` 工作树已包含 manifest validator/loader、navigation projection、History shell、ManifestFailure、静态 manifest 和 upstream fixture 对照；GOAL-005 执行台账记录 73 项测试通过、`npm run build` 成功，以及 dev server manifest endpoint 返回 `200`、协议 `2.7`、4 pages。
-- 当前事实仍是未提交工作树；GOAL-005 保持 `active`，等待 P-004.1 self-audit 选择和最终关门。Root 继续保持 `active`、progress `2/6`，R4/R5 与 `I-PROTO-002`/`I-PROTO-003` 不受本次 R3 实施事实改变。
+- 截至本条记录，事实仍是未提交工作树；GOAL-005 保持 `active`，等待 P-004.1 self-audit 选择和最终关门。Root 继续保持 `active`、progress `2/6`，R4/R5 与 `I-PROTO-002`/`I-PROTO-003` 不受本次 R3 实施事实改变。
+
+### 2026-07-31 · GOAL-005 R3 self-audit 与关门
+
+- 用户按 P-004.1 明确选择执行 GOAL-005 实施阶段同 scope self-audit；GOAL-005 `03-audit.md` 追加 A-006，`source: self`、`verdict: pass`。
+- A-004 F-003 已由 A-006 以 `fixed` 合法闭合；F-004～F-006 保持 recommended、非阻断跟进；A-004/A-005 历史结论未改写。
+- 在当前 HEAD `0b83c9413d7177471c37d3e568e493ef845b95d4` 复跑 `apps/web`：`npm test -- --run` 为 4 个测试文件、73/73 通过；`npm run build` 成功；`git diff --check` 通过。
+- 复核 `http://127.0.0.1:4173/.well-known/schema-ui/app-manifest.json` 返回 `200 application/json`、协议 `2.7`、4 个 pages；根入口返回 `200 text/html`；工作树干净。
+- GOAL-005 已完成并标为 `done`；Root R3 检查点完成，Root `progress` 从 `2/6` 同步为 `3/6`，Root 仍保持 `active`。R4/R5 与完整协议 conformance 仍不在本次关门范围。
 
 ## 待办（计划 · 非完成事实）
 
-1. 完成 GOAL-005 的实施阶段 self-audit 与关门；R3 manifest、导航、路由和 shell 契约已由 GOAL-005 D-005 冻结。
-2. R4 前闭合 `I-PROTO-002`，R5 验收前闭合 `I-PROTO-003`。
-3. 按 R3-R6 推进；开放 required 信息项到期前不得越过对应门禁。
+1. R4 前闭合 `I-PROTO-002`，R5 验收前闭合 `I-PROTO-003`。
+2. 按 R4-R6 推进；开放 required 信息项到期前不得越过对应门禁。
 
 ## 进度评估
 
-**R1、R2 完成**（R1：002/003/004 `done`；R2：D-009 冻结 v0.1.3、`I-PROTO-001=verified`）。显式路线图完成数为 **2/6**。冻结仅固定后续范围，不代表 R3-R5 实施或全协议支持。
+**R1、R2、R3 完成**（R1：002/003/004 `done`；R2：D-009 冻结 v0.1.3、`I-PROTO-001=verified`；R3：GOAL-005 `done`、A-006 self pass）。显式路线图完成数为 **3/6**。R3 关门仅覆盖其冻结子集，不代表 R4-R5 实施或全协议支持。
