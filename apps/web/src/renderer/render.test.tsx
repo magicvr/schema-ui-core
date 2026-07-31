@@ -36,7 +36,10 @@ async function renderDocument(pageDoc: RenderPageDocument, context: Record<strin
 
 function reactionFormDocument(reactions: unknown[]): RenderPageDocument {
   return {
-    meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+    meta: {
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "form.controls.extended"],
+    },
     body: {
       type: "form",
       id: "reactive-form",
@@ -96,5 +99,81 @@ describe("RenderPage form node with reactions", () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "outside the §5 renderer whitelist",
     );
+  });
+
+  it("rejects a field whose capability gate fails and reports the gate error", async () => {
+    // textarea requires 2.6 + form.controls.extended; the meta only declares app.manifest.
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "form",
+        id: "gated-form",
+        props: {
+          fields: [
+            { id: "name", label: "Name", type: "input" },
+            { id: "notes", label: "Notes", type: "textarea" },
+          ],
+        },
+      },
+    };
+    const container = await renderDocument(pageDoc, {});
+    // The compliant input still renders; the gated textarea is rejected.
+    expect(container.textContent).toContain("Name");
+    expect(container.textContent).not.toContain("Notes");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "FORM_CAPABILITY_REQUIRED",
+    );
+  });
+
+  it("rejects an unknown field type and reports it", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "form",
+        id: "typed-form",
+        props: {
+          fields: [{ id: "up", label: "Upload", type: "upload" }],
+        },
+      },
+    };
+    const container = await renderDocument(pageDoc, {});
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "FORM_TYPE_NOT_WHITELISTED",
+    );
+  });
+
+  it("dispatches the remaining frozen §5 node types", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "grid",
+        id: "g1",
+        props: { columns: 2 },
+        children: [
+          { type: "text", props: { text: "hello text" } },
+          {
+            type: "recordView",
+            props: { record: { id: "rec-1", status: "active" } },
+          },
+          {
+            type: "actionButton",
+            props: { label: "Approve", actionId: "approve", visibleWhen: true },
+          },
+          {
+            type: "tabs",
+            props: {},
+            children: [
+              { type: "text", props: { text: "tab one" } },
+              { type: "text", props: { text: "tab two" } },
+            ],
+          },
+        ],
+      },
+    };
+    const container = await renderDocument(pageDoc, {});
+    expect(container.textContent).toContain("hello text");
+    expect(container.textContent).toContain("rec-1");
+    expect(container.textContent).toContain("Approve");
+    expect(container.textContent).toContain("tab one");
   });
 });

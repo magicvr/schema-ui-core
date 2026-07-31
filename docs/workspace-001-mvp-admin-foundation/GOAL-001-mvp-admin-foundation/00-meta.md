@@ -49,7 +49,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 | R2 | MVP 协议覆盖子集冻结 | **完成** | 用户书面确认按 `I-PROTO-001-coverage-draft.md` v0.1.3 冻结；D-009 记录决定，A-005 已以 `fixed` 闭合 F-001/F-002，`I-PROTO-001` = `verified` |
 | R3 | Admin 外壳与导航 | **完成** | GOAL-005 已记录 D-005 冻结、R3 实现、73 项测试、构建、fixture/HTTP 入口复核；A-006 实施 self-audit 通过，F-003 已 fixed，浅色/深色基线可后置产品化 VP |
 | R4 | 核心账号与权限 | **完成** | 依赖 R2；GOAL-006 D-004 冻结最小 API 与 D-PERM 映射，`I-006-001` verified；`I-PROTO-002`（R4 **实施**门禁）已于方案冻结时闭合；R4 实施（Go 会话/鉴权、Web `$context`、D-PERM 引擎、17 例 fixture）与关门（A-004 self + A-005 independent 均 pass）完成，GOAL-006 `done` |
-| R5 | 纳入域范例与契约验证 | 阶段 1 + 批次 2a/2b 完成 | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`）；GOAL-007 阶段 1（`I-007-001` 登记表）与阶段 2 批次 2a（D-DATA/D-TABLE）、批次 2b（D-FORM/D-ACT）已完成（2026-07-31），批次 2c 与阶段 3/4 未开始 |
+| R5 | 纳入域范例与契约验证 | 阶段 1 + 批次 2a/2b/2c 完成（阶段 2 全部落地） | 每纳入域范例页 + 结构/行为验证路径（`I-PROTO-003`）；GOAL-007 阶段 1（`I-007-001` 登记表）与阶段 2 批次 2a（D-DATA/D-TABLE）、批次 2b（D-FORM/D-ACT）、批次 2c（D-EXPR/D-COMP）已完成（2026-07-31/08-01），阶段 3/4 未开始 |
 | R6 | 集成验收与 VP 证据 | 未开始 | 对照 VP 退出判据收集工作区证据；不自动改 VP status |
 
 纲领阶段串行；同一阶段内可并行子目标。阶段完成须更新本表标记，并不得假装未满足退出条件。
@@ -87,3 +87,5 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 - R5 阶段 1（2026-07-31）：GOAL-007 响应 A-001（independent pass，用户裁决「不需要自审，直接推进」）并完成契约发现登记——`I-007-001` 登记表落盘（attachments/I-007-001-registry.md v0.1.0），D-APP/D-PERM 复用产物与可执行验证命令核验入账，`I-007-001` → `verified`（登记层面）。阶段 2-4 未开始；`I-PROTO-003` 仍 open，验收前须以阶段 3 可执行证据闭合。`progress` 维持 `4/6`。
 - R5 阶段 2 批次 2a（2026-07-31）：GOAL-007 按 D-004 实施批次 2a（D-DATA/D-TABLE 范例 + Go 列表/详情 API），`npm test` 114 项 / `go test` 21 项 / build / Edge 实测全绿，A-002 批次自审（self）pass，登记表升 v0.2.0。`I-PROTO-003` 仍 open；`progress` 维持 `4/6`。
 - R5 阶段 2 批次 2b（2026-07-31）：GOAL-007 按 D-004 实施批次 2b（D-FORM 控件表面 + D-ACT 非批量动作 + Go PATCH/DELETE + `form-controls`/`list-edit-lifecycle` 范例页），`npm test` 138 项 / `go test` 18 顶层 / build 全绿，A-003 批次自审（self）pass，登记表升 v0.3.0。`I-PROTO-003` 仍 open（验收/关门门禁）；`I-PROTO-004`（non-blocking）在阶段 3 结构校验实现前决策；批次 2c（D-EXPR + Renderer 接线）与阶段 3/4 未开始。`progress` 维持 `4/6`。
+- R5 阶段 2 批次 2c（2026-08-01）：GOAL-007 按 D-004 实施批次 2c（D-EXPR `reactions.ts` + D-COMP `render.ts`/`render.tsx` 最小 Renderer 接线，resolve R4 F-002 + `form-with-reactions` 范例页），`npm test` 166 项 / `npm run build` / `go test` / Edge 实测全绿，A-004 批次自审（self）pass，登记表升 v0.4.0。阶段 2 全部落地；阶段 3/4 未开始。
+- R5 A-005 响应（2026-08-01）：GOAL-007 响应 A-005（independent, conditional）——用户裁决「不需要自审，直接推进」，F-001～F-004 按 `fixed` 合法闭合（action 表达式 fail-closed、RenderPage 接入 D-FORM 门禁、defaultValue 2.7+advanced 双门禁、Renderer whitelist 扩展至冻结 §5 全部 node type），F-005 本行投影同步；`npm test` 173 项 / build / `go test` / Edge 实测全绿；登记表升 v0.5.0（D-007）。`I-PROTO-003` 仍 open；`progress` 维持 `4/6`。

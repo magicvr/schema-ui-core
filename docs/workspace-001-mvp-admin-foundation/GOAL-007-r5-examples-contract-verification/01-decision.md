@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-07-31
 updated: 2026-08-01
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 决策记录 · GOAL-007
@@ -166,3 +166,34 @@ P-005 信息台账维护在 [00-meta.md](00-meta.md)。本目标 `I-007-001` 在
 **影响**：
 
 批次 2c 完成；`I-PROTO-003`（父目标）与 `I-PROTO-004`（non-blocking）仍 open，验收/关门须以阶段 3 可执行证据闭合，`I-PROTO-004` 在阶段 3 结构校验实现前决策。Root `progress` 仍 4/6。阶段 2 全部落地，阶段 3（结构/行为验证）待推进。
+
+## D-007 · 响应 A-005：以 fixed 路径闭合 F-001～F-004（2026-08-01）
+
+**日期**：2026-08-01
+**状态**：accepted
+
+**决定**：
+
+用户裁决「不需要自审，直接推进」（P-004 §3.1），并按 **`fixed`** 路径响应 A-005（independent, conditional）的 4 项 required findings，F-005（recommended）同步：
+
+- **F-001（fixed）**：`render.ts` 以 `resolveActionGate` 区分「属性缺省（→ absent default）」与「显式非法表达式（→ fail-closed + `ACTION_GATE_EXPRESSION_INVALID` 可核对错误）」；`tableActionGate` 改为返回 `{ visible, disabled, errors }`，显式非法 `visibleWhen` 拒绝/隐藏、非法 `disabledWhen` fail-closed 禁用；补非法 visible/disabled 回归测试。
+- **F-002（fixed）**：`render.tsx` `FormView` 在渲染前经 `gateRenderFormFields` 解析字段并执行 D-FORM §5 whitelist、版本与 capability 门禁；非法 type、低版本或缺 capability 拒绝受影响字段并在页内出 `role="alert"` 确定错误；补 Renderer 级测试（缺 capability 拒绝、未知 type 拒绝）。
+- **F-003（fixed）**：`checkFormCapabilities` 为任一出现 `defaultValue` 的字段增加 `protocolVersion >= 2.7` + `form.controls.advanced` 双门禁（沿用冻结 §5「2.7 属性能力」行）；补 2.6、2.7 缺 capability、2.7 完整 capability 三组回归测试。
+- **F-004（fixed）**：Renderer node whitelist 从 form/section/table **扩展至冻结 §5 全部 node type**（layout：grid/section/tabs；data/action：text/table/recordView/actionButton；form），逐 type 落 `parseRenderNode` dispatch 与 `RenderPage` 渲染 + 测试；**不做范围缩小**，故不需要 Root 覆盖表修订或新版 v0.1.3 冻结。
+- **F-005（fixed）**：Root `00-meta.md` R5 行同步「批次 2c 完成 / 阶段 2 全部落地」。
+
+**为什么**：
+
+- A-005 为独立审计，其对同一冻结范围的 F-001～F-004 主张经 `/govern` 直接读代码核验成立（`render.ts` `gateAction` 对非法表达式返回 `defaultValue`、`render.tsx` `FormView` 未调 `checkFormCapabilities`、`checkFormCapabilities` 对 `defaultValue` 无 2.7+advanced 门禁、renderer whitelist 静默窄于 §5 初表），与 A-002～A-004（self, pass）构成同 scope 分歧，须按 P-004 §3.2 用户裁决。
+- 四项均为真实 fail-open/契约缺口，`fixed` 是最低成本、最可核对的闭合路径；不改变 v0.1.3 冻结基线，不抬升 `progress`，不触碰 `I-PROTO-003` / `I-PROTO-004` 状态。
+- 用户本轮裁决「不需要自审」，延续此前节奏（D-003/D-004）。
+
+**未选方案**：
+
+- `accepted-residual`：接受残余风险需书面范围与复审触发，且四项缺口会在阶段 3 schema/fixture 对照中复发，成本高于直接修正。
+- `user-overruled`：代码证据支持 A-005 主张，驳回会使 R5 验收证据链失真。
+- 先做 self 审计再响应：批次自审 A-002～A-004 已覆盖各批实现事实，本轮以代码核验 + 回归测试替代新增自审，证据充分。
+
+**影响**：
+
+F-001～F-004 以 `fixed` 合法闭合，F-005 同步；`npm test` 14 文件 **173 项** / `npm run build` / `go test ./...` / `go build ./...` / Edge headless 实测全绿。`I-PROTO-003`（父目标，required，R5 验收/关门）与 `I-PROTO-004`（non-blocking，阶段 3 前决策）仍 open；阶段 3（结构/行为验证）与阶段 4（验收/关门）未开始。Root `progress` 仍 `4/6`。

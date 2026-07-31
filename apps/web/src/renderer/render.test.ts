@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   collectFieldIds,
-  gateAction,
   isWhitelistedNodeType,
   parseRenderNode,
+  resolveActionGate,
   resolveFormReactions,
   tableActionGate,
   type RenderFormNode,
@@ -36,16 +36,21 @@ function formNode(): RenderFormNode {
 }
 
 describe("isWhitelistedNodeType", () => {
-  it("accepts the three whitelisted node types", () => {
+  it("accepts the frozen §5 whitelisted node types", () => {
     expect(isWhitelistedNodeType("form")).toBe(true);
     expect(isWhitelistedNodeType("section")).toBe(true);
     expect(isWhitelistedNodeType("table")).toBe(true);
+    expect(isWhitelistedNodeType("grid")).toBe(true);
+    expect(isWhitelistedNodeType("tabs")).toBe(true);
+    expect(isWhitelistedNodeType("text")).toBe(true);
+    expect(isWhitelistedNodeType("recordView")).toBe(true);
+    expect(isWhitelistedNodeType("actionButton")).toBe(true);
   });
 
-  it("rejects everything outside the §5 renderer whitelist", () => {
+  it("rejects everything outside the frozen §5 renderer whitelist", () => {
     expect(isWhitelistedNodeType("chart")).toBe(false);
     expect(isWhitelistedNodeType("modal")).toBe(false);
-    expect(isWhitelistedNodeType("grid")).toBe(false);
+    expect(isWhitelistedNodeType("upload")).toBe(false);
   });
 });
 
@@ -115,20 +120,48 @@ describe("resolveFormReactions", () => {
   });
 });
 
-describe("gateAction / tableActionGate", () => {
+describe("resolveActionGate", () => {
   it("accepts booleans and evaluates expressions against $context", () => {
-    expect(gateAction(true, CONTEXT)).toBe(true);
-    expect(gateAction(false, CONTEXT)).toBe(false);
-    expect(gateAction('$context.user.roles contains "admin"', CONTEXT)).toBe(true);
-    expect(gateAction('$context.user.roles contains "guest"', CONTEXT)).toBe(false);
+    expect(resolveActionGate(true, CONTEXT, true, "visibleWhen")).toEqual({
+      kind: "ok",
+      value: true,
+    });
+    expect(resolveActionGate(false, CONTEXT, true, "visibleWhen")).toEqual({
+      kind: "ok",
+      value: false,
+    });
+    expect(resolveActionGate('$context.user.roles contains "admin"', CONTEXT, true, "visibleWhen")).toEqual({
+      kind: "ok",
+      value: true,
+    });
+    expect(resolveActionGate('$context.user.roles contains "guest"', CONTEXT, true, "visibleWhen")).toEqual({
+      kind: "ok",
+      value: false,
+    });
   });
 
-  it("returns the default for invalid expressions (fail-closed)", () => {
-    expect(gateAction("$deps.x == true", CONTEXT)).toBe(true);
-    expect(gateAction("$deps.x == true", CONTEXT, false)).toBe(false);
-    expect(gateAction(42, CONTEXT)).toBe(true);
+  it("uses the absent default only when the property is missing, not on invalid expressions", () => {
+    // Absent → default applies.
+    expect(resolveActionGate(undefined, CONTEXT, true, "visibleWhen")).toEqual({
+      kind: "ok",
+      value: true,
+    });
+    expect(resolveActionGate(null, CONTEXT, true, "visibleWhen")).toEqual({
+      kind: "ok",
+      value: true,
+    });
+    // Explicit invalid string → error (fail closed), NOT the default.
+    const invalid = resolveActionGate("$deps.x == true", CONTEXT, true, "visibleWhen");
+    expect(invalid).toEqual({
+      kind: "error",
+      error: { code: "ACTION_GATE_EXPRESSION_INVALID", path: "visibleWhen", message: "$deps.x == true" },
+    });
+    // Explicit non-expression value → error (fail closed).
+    expect(resolveActionGate(42, CONTEXT, true, "visibleWhen")).toMatchObject({ kind: "error" });
   });
+});
 
+describe("tableActionGate", () => {
   it("gates visible and disabled independently", () => {
     expect(
       tableActionGate(
@@ -138,12 +171,38 @@ describe("gateAction / tableActionGate", () => {
         },
         CONTEXT,
       ),
-    ).toEqual({ visible: true, disabled: true });
+    ).toEqual({ visible: true, disabled: true, errors: [] });
     expect(
       tableActionGate(
         { visibleWhen: '$context.features.audit == false' },
         CONTEXT,
       ),
-    ).toEqual({ visible: false, disabled: false });
+    ).toEqual({ visible: false, disabled: false, errors: [] });
+  });
+
+  it("fails closed with a checkable error on an invalid visibleWhen", () => {
+    const result = tableActionGate(
+      { visibleWhen: "$deps.x == true" },
+      CONTEXT,
+    );
+    expect(result.visible).toBe(false);
+    expect(result.errors).toEqual([
+      { code: "ACTION_GATE_EXPRESSION_INVALID", path: "visibleWhen", message: "$deps.x == true" },
+    ]);
+  });
+
+  it("fails closed with a checkable error on an invalid disabledWhen", () => {
+    const result = tableActionGate(
+      { visibleWhen: true, disabledWhen: "$deps.y == 1" },
+      CONTEXT,
+    );
+    expect(result.disabled).toBe(true);
+    expect(result.errors).toEqual([
+      { code: "ACTION_GATE_EXPRESSION_INVALID", path: "disabledWhen", message: "$deps.y == 1" },
+    ]);
+  });
+
+  it("defaults absent gates without errors", () => {
+    expect(tableActionGate({}, CONTEXT)).toEqual({ visible: true, disabled: false, errors: [] });
   });
 });
