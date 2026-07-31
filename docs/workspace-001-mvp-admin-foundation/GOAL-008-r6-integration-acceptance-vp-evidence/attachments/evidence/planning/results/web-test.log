@@ -1,0 +1,29 @@
+
+> schema-ui-core-web@0.1.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/magicvr/Documents/Code/schema-ui-core/apps/web[39m
+
+ [32m✓[39m src/renderer/records.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/account/context.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/renderer/row-action.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/app/navigation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/renderer/form-controls.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/renderer/reactions.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/renderer/render.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/protocol/app-manifest.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/protocol/upstream-fixtures.test.ts [2m([22m[2m53 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/renderer/permissions-inheritance.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/protocol/conformance/stage3-fixtures.test.ts [2m([22m[2m222 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/components/data-table.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/renderer/render.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/app/App.integration.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 90[2mms[22m[39m
+ [32m✓[39m src/app/app-examples.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 133[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m      Tests [22m [1m[32m395 passed[39m[22m[90m (395)[39m
+[2m   Start at [22m 04:43:20
+[2m   Duration [22m 2.09s[2m (transform 917ms, setup 0ms, collect 2.80s, tests 565ms, environment 4.41s, prepare 3.69s)[22m
+
+web-test exit=0

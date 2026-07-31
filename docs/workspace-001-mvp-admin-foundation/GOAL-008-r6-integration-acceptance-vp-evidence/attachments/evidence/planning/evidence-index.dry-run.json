@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "0.1.0-draft",
+  "mode": "planning",
+  "goalId": "GOAL-008-r6-integration-acceptance-vp-evidence",
+  "workspaceId": "workspace-001-mvp-admin-foundation",
+  "vpId": "VP-001-mvp-admin-foundation",
+  "repositoryRevision": "f3e04f6bd5c1f4ba6b7b72444fd9a0a0ab52d4d5",
+  "worktreeState": "clean",
+  "startedAt": "2026-08-01T04:43:00+08:00",
+  "completedAt": "2026-08-01T04:47:45+08:00",
+  "environmentRef": "windows/amd64; node v22.17.0; npm 10.9.2; go1.26.0; vitest 3.2.7",
+  "rerunRules": [
+    "Run each command from the recorded cwd against one repository revision.",
+    "Record the environment and worktree state before execution.",
+    "Persist result artifacts before calculating SHA-256; missing artifacts remain explicit.",
+    "Do not combine results from different revisions or environments."
+  ],
+  "results": [
+    {
+      "id": "web-test",
+      "claimRefs": [
+        "I-008-002",
+        "VP-001.exit-1",
+        "C-001"
+      ],
+      "command": "npm test",
+      "cwd": "apps/web",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": "evidence/planning/results/web-test.log",
+      "artifactStatus": "verified",
+      "sha256": "2fd8cd643f725164a0bdb97145f3d875ba3e319c0db1fd7fa0172bfb93b66cd2"
+    },
+    {
+      "id": "web-build",
+      "claimRefs": [
+        "I-008-002",
+        "VP-001.exit-1",
+        "C-001"
+      ],
+      "command": "npm run build",
+      "cwd": "apps/web",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": "evidence/planning/results/web-build.log",
+      "artifactStatus": "verified",
+      "sha256": "cfdf349cd73872da57f6087bfe1ed5d790a02cbe5e6184b2dd545843283c0bfd"
+    },
+    {
+      "id": "api-test",
+      "claimRefs": [
+        "I-008-002",
+        "VP-001.exit-1",
+        "C-001"
+      ],
+      "command": "go test ./...",
+      "cwd": "apps/api",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": "evidence/planning/results/api-test.log",
+      "artifactStatus": "verified",
+      "sha256": "19b66da718660e9556565e316e66de8af1c204350ad784b37fc9a56bb20ed31a"
+    },
+    {
+      "id": "api-build",
+      "claimRefs": [
+        "I-008-002",
+        "VP-001.exit-1",
+        "C-001"
+      ],
+      "command": "go build ./...",
+      "cwd": "apps/api",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": "evidence/planning/results/api-build.log",
+      "artifactStatus": "verified",
+      "sha256": "13e72bca228ae11ecee4f17552247c073bf9f22e69d5fe54aefa53eb7b319707"
+    },
+    {
+      "id": "runtime-probes",
+      "claimRefs": [
+        "I-008-002",
+        "I-008-003",
+        "VP-001.exit-1",
+        "VP-001.exit-3",
+        "C-002"
+      ],
+      "command": "dual-service startup + HTTP probes (see log)",
+      "cwd": "repo-root",
+      "exitCode": 0,
+      "outcome": "pass",
+      "artifact": "evidence/planning/results/runtime-probes.log",
+      "artifactStatus": "verified",
+      "sha256": "0670c41ddd833590382be98eeaf656f943b6cdc78e201d676b91a344766bc377"
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "clean-install-not-executed-locally",
+      "scope": "I-008-002",
+      "reason": "Local run reused the existing dependency tree; clean npm ci / fresh checkout is covered by the CI workflow being added for I-008-005.",
+      "reviewTrigger": "CI run on a fresh Linux checkout must produce equivalent install/build/test results."
+    }
+  ],
+  "residuals": [
+    {
+      "id": "platform-matrix-undecided",
+      "scope": "I-008-005",
+      "reason": "Windows local evidence captured; Linux/CI equivalence and browser E2E are being added as a minimal CI + browser matrix per user decision.",
+      "reviewTrigger": "CI workflow + browser runner must execute before I-008-005 is closed."
+    },
+    {
+      "id": "cross-layer-oracle-undecided",
+      "scope": "I-008-003",
+      "reason": "Runtime probe confirms the forward path (GET /api/accounts/me returns dev session with admin+editor roles); denial-path visibility oracle at the API-to-Web/Renderer layer is being defined.",
+      "reviewTrigger": "Freeze the oracle before stage 2 account-permission execution."
+    }
+  ],
+  "overallOutcome": "blocked"
+}

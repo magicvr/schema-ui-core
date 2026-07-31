@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.1
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-008
@@ -104,3 +104,61 @@ version: 0.1.1
 - `I-008-001`～`I-008-005` 均进入“已收集但未闭合”的可追踪状态（`collecting`）；阶段 1 仍未冻结，阶段 2 仍关闭。
 - Root `progress: 5/6`、GOAL-008 `active`、VP-001 `active` 与应用代码不变。
 - 下一步是验证 draft schema/dry-run、冻结跨层账号权限 oracle 和最低环境矩阵候选，再进行同 scope 计划审视；若需要 residual/有界实验，先按 P-004.4 请求用户裁决。
+
+## D-004 · 最低环境矩阵采用“本轮搭建最小 CI + 浏览器矩阵”（用户裁决 · I-008-005）
+
+**日期**：2026-08-01
+**状态**：accepted（用户 `/govern` 裁决）
+
+**决定**：
+
+1. `I-008-005` 的答案是**不**接受“Windows-only + 平台 residual”，而是**本轮搭建最小 CI + 浏览器矩阵**作为 R6 最低验收矩阵。
+2. 具体机制：
+   - **Windows/amd64 本地**：开发机命令（web/api test+build、双服务启动、Playwright）——本机已验证（阶段 1 dry-run + E2E 通过）。
+   - **Linux/amd64 CI 等价**：新增 `.github/workflows/r6-basic-matrix.yml`（web / api / browser-e2e 三 job，Node 22 + Go 1.26 + Playwright Chromium）。
+   - **浏览器 E2E**：Playwright，`apps/web/e2e/shell.spec.ts`，webServer 启动双服务，验证 shell 渲染 + `/api` proxy 账号上下文。
+3. CI 实际首跑发生在推送到远端后；在跑绿前，不得把“已配置”写成“已跑绿”，Linux 等价证据按阶段 2 执行事实处理。
+
+**为什么**：
+
+- 用户明确选择“本轮搭建最小 CI + 浏览器矩阵”而非接受有界 residual（P-004.4 裁决点，用户决定）。
+- VP-001 退出判据要求“可运行、可 fork、可验证”；缺少 Linux/CI 与浏览器证据会削弱 fork 与集成验证主张。
+- Playwright 为最小浏览器 runner；workflow 覆盖干净安装（`npm ci`）与 Linux 等价。
+
+**未选方案**：
+
+- **接受有界 residual（Windows-only）**：用户未选；缺失 Linux/浏览器证据会让 VP-001 判据 1/3 的“可 fork、可验证”主张证据不足。
+- **延后裁决**：用户未选；阶段 1 冻结继续受阻。
+
+**影响**：
+
+- 新增 `.github/workflows/r6-basic-matrix.yml`、`apps/web/playwright.config.ts`、`apps/web/e2e/shell.spec.ts`；`apps/web/package.json` 增加 `@playwright/test` 与 `test:e2e`；`apps/web/vite.config.ts` 固定 `host:127.0.0.1`（保证浏览器矩阵在 Windows/IPv6 与 CI 上确定性）。
+- `I-008-005` → 由“待决定”转为“决定 + 机制已建”，状态进入可审视的冻结候选；Linux/CI 跑绿仍为阶段 2 执行事实。
+- Root `progress: 5/6`、GOAL-008 `active`、VP-001 `active` 不变。
+
+## D-005 · R6 验收矩阵与证据形状升级为冻结候选（I-008-001/003/004）
+
+**日期**：2026-08-01
+**状态**：proposed（冻结候选，待阶段 1 计划审视通过后 accepted）
+
+**决定**：
+
+1. [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0 将 VP 三条退出判据映射为验收矩阵（C-001～C-008），并把最低环境矩阵（§4c）、evidence schema 校验结论（§3）登记为冻结候选。
+2. [account-permission-oracle.md](attachments/account-permission-oracle.md) v0.1.0 登记账号权限跨层正向/拒绝 oracle（I-008-003）。
+3. `evidence-index.schema.json` 经 [validate-evidence-dry-run.mjs](attachments/validate-evidence-dry-run.mjs) 校验：可解析、5 个 artifact SHA-256 可重算；仍为 draft，正式 acceptance index 属阶段 2。
+4. 本决策不把阶段 1 标为冻结，不放行阶段 2；D-002 仍为 proposed 直至计划审视通过。
+
+**为什么**：
+
+- 阶段 1 退出条件要求五项 required 信息有证据结论或合规 residual；本轮已把矩阵、环境、oracle 与 schema 形状落到候选，并实际执行本地 dry-run/E2E 作为证据。
+- 生成候选后，由同 scope 计划审视（A-002）核对后再由用户确认冻结，避免“自写自冻结”。
+
+**未选方案**：
+
+- **直接冻结**：跳过计划审视；违反阶段 1 门禁（需审视通过 + 0 开放 required）。
+- **维持全部 collecting**：不反映本轮已发生的本地能力、矩阵与 oracle 证据。
+
+**影响**：
+
+- 计划附件与 oracle 附件成为冻结候选；`I-008-001`/`I-008-003`/`I-008-004` 有证据路径可审视。
+- 阶段 1 仍未冻结；阶段 2 仍关闭；Root `progress: 5/6`、VP-001 `active` 不变。
