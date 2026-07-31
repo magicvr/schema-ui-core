@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-07-31
 parent: null
-version: 0.11.0
+version: 0.12.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -23,7 +23,8 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=4/6
 ├── GOAL-003-r1-api-go-scaffold          [done]  R1 · Go API 工程骨架
 ├── GOAL-004-r1-web-react-scaffold       [done]  R1 · React Web 工程骨架
 ├── GOAL-005-r3-admin-shell-navigation   [done]  R3 · Admin 外壳与导航
-└── GOAL-006-r4-account-permission       [done]  R4 · 核心账号与权限
+├── GOAL-006-r4-account-permission       [done]  R4 · 核心账号与权限
+└── GOAL-007-r5-examples-contract-verification [active]  R5 · 纳入域范例与契约验证
 ```
 
 ## 状态表
@@ -36,10 +37,12 @@ GOAL-001-mvp-admin-foundation  [active]  MVP Admin 基架  progress=4/6
 | GOAL-004-r1-web-react-scaffold | R1 · React Web 工程骨架 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
 | GOAL-005-r3-admin-shell-navigation | R3 · Admin 外壳与导航 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
 | GOAL-006-r4-account-permission | R4 · 核心账号与权限 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
+| GOAL-007-r5-examples-contract-verification | R5 · 纳入域范例与契约验证 | GOAL-001-mvp-admin-foundation | active | — | 2026-07-31 |
 
 ## 说明
 
 - Root `progress: 4/6` = 纲领路线图 R1–R6 中 R1、R2、R3、R4 已完成（等权派生）；**不**放行 R5/R6、不关闭未相关 finding、不推导 Root `done`。
+- R5：GOAL-007-r5-examples-contract-verification 已立项（`active`，规划中），承接 R2 v0.1.3 基线为 11 纳入域交付范例 + 结构/行为验证；R5 **验收/关门**受父目标 `I-PROTO-003`（required，验收前闭合）门禁约束，立项不抬升 progress。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
 - R1：2026-07-31 `/govern` 阶段/关门自审 A-003（self）对 002/003/004 均为 **pass** → 三子目标 `done`；Root 纲领 R1 → 完成。Root A-001（independent）R1 证据复核 **pass** → A-002/D-006 响应：维持完成事实。
 - R2：完成；用户书面确认按 v0.1.3 覆盖表正式冻结，D-009 / A-006 已留痕，`I-PROTO-001` = `verified`。冻结范围不等同于完整协议支持或 R3-R5 实施完成。

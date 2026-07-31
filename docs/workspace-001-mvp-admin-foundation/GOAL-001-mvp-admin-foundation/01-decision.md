@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-07-31
 updated: 2026-07-31
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 决策记录 · GOAL-001
@@ -358,3 +358,28 @@ version: 0.5.0
 
 - 工作区 `goal-tree.md` 新增 `GOAL-006-r4-account-permission`（`active`）；Root 路线图 R4 标记为「规划中」。
 - 不修改 `I-PROTO-002` / `I-PROTO-003` / `I-PROTO-004` 状态；不改变 Root `status` / `progress`。
+
+## D-011 · 立项 R5 纳入域范例与契约验证
+
+**日期**：2026-07-31
+**状态**：accepted
+
+**决定**：
+
+维持 R4 关门事实（GOAL-006 `done` 不变，Root `progress` 4/6），并立项 `GOAL-007-r5-examples-contract-verification` 进入 R5 规划。R5 范围：为 [I-PROTO-001 v0.1.3 覆盖表](attachments/I-PROTO-001-coverage-draft.md) 的 11 个纳入域交付可观察范例页/场景 + 结构/行为验证路径，并在 R5 验收前闭合 `I-PROTO-003`（required）。Root 路线图 R5 标记为「规划中」；`progress` 维持 `4/6`。
+
+**为什么**：
+
+- R5 成功标准「每一纳入项具备可核对的前后端实现路径」与「每一纳入能力有可观察范例页面与可执行验证入口（I-PROTO-003）」直接对应本子目标交付物。
+- R3/R4 已有 D-APP 外壳与 D-PERM 链路可作对应域范例既有证据，R5 聚焦补齐其余纳入域并统一登记验证入口。
+
+**未选方案**：
+
+- **维持 R5「未开始」并推迟立项**：`I-PROTO-003` 的登记需要在本阶段建立信息项（`I-007-001`），推迟立项会丢失门禁登记时机。
+- **直接放行 R5 实施或修改 `I-PROTO-003` 状态**：`I-PROTO-003` 未 verified 前不得宣称 R5 验收/关门完成；立项不等于放行验收。
+- **一次性实现完整 Renderer / 全 registry**：超出 v0.1.3 冻结边界，违反 MVP 非目标。
+
+**影响**：
+
+- 工作区 `goal-tree.md` 新增 `GOAL-007-r5-examples-contract-verification`（`active`）；Root 路线图 R5 标记为「规划中」。
+- 不修改 `I-PROTO-003` / `I-PROTO-004` 状态；不改变 Root `status` / `progress`；放行 R5 验收仍受 `I-PROTO-003` 门禁约束。

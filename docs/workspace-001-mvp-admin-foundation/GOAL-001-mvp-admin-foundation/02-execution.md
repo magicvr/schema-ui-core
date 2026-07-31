@@ -137,11 +137,24 @@ version: 0.8.0
 - 复核 `http://127.0.0.1:4173/.well-known/schema-ui/app-manifest.json` 返回 `200 application/json`、协议 `2.7`、4 个 pages；根入口返回 `200 text/html`；工作树干净。
 - GOAL-005 已完成并标为 `done`；Root R3 检查点完成，Root `progress` 从 `2/6` 同步为 `3/6`，Root 仍保持 `active`。R4/R5 与完整协议 conformance 仍不在本次关门范围。
 
+### 2026-07-31 · GOAL-006 R4 方案冻结、实施与关门（事实补录）
+
+- R4 方案冻结：GOAL-006 D-004 冻结账号权限最小 API 与 `D-PERM` 映射（对照 `permissions-inheritance` 等固定 fixture，SHA-256 落盘 `GOAL-006/attachments/dperm/`）；`I-006-001` → `verified`，父目标 `I-PROTO-002` → `verified`（R4 **实施**门禁闭合，仅覆盖设计/映射）。
+- R4 实施完成：Go 会话与 `/api/accounts/me`、Go 独立鉴权、Web `$context` 挂载、D-PERM 求值引擎与 17 例 fixture 对照（13 valid 求值 + 4 invalid 错误码）落地；`go test`/`go build`、web 94 项测试、`npm run build`、HTTP 运行时与代理联调证据入账；A-001（self）与 A-002（independent）实施阶段均 pass。
+- R4 关门完成：A-004 关门自审（self）与 A-005 独立关门复审（independent）均 pass、开放 required=0；经用户 `/govern` 授权 GOAL-006 → `done`，Root 纲领 R4 检查点完成，`progress` 从 `3/6` 同步为 `4/6`，goal-tree 同步。recommended 跟踪项 F-002～F-004 随 R5 / 生产化 / `I-PROTO-004` 解决。
+
+### 2026-07-31 · GOAL-007 R5 立项（规划）
+
+- 经用户 `/govern` 确认 slug，立项 `GOAL-007-r5-examples-contract-verification`（`active`），进入 R5 规划（D-011）。
+- 范围：为 [I-PROTO-001 v0.1.3 覆盖表](attachments/I-PROTO-001-coverage-draft.md) 的 11 个纳入域交付可观察范例页/场景 + 结构/行为验证路径，R5 验收前闭合 `I-PROTO-003`。
+- 同步 `goal-tree.md` 新增 GOAL-007；Root 路线图 R5 标记为「规划中」。Root `progress` 维持 `4/6`。
+- **截至立项时未做**：未修改 `apps/*`，未开始 `I-007-001` 登记与范例/验证实现；`I-PROTO-003` 仍 open（R5 验收前须闭合）。
+
 ## 待办（计划 · 非完成事实）
 
-1. R4 前闭合 `I-PROTO-002`，R5 验收前闭合 `I-PROTO-003`。
-2. 按 R4-R6 推进；开放 required 信息项到期前不得越过对应门禁。
+1. R5 验收前闭合 `I-PROTO-003`（经 GOAL-007 `I-007-001` 登记范例路径与验证入口）。
+2. 按 R5-R6 推进；开放 required 信息项到期前不得越过对应门禁。
 
 ## 进度评估
 
-**R1、R2、R3 完成**（R1：002/003/004 `done`；R2：D-009 冻结 v0.1.3、`I-PROTO-001=verified`；R3：GOAL-005 `done`、A-006 self pass）。显式路线图完成数为 **3/6**。R3 关门仅覆盖其冻结子集，不代表 R4-R5 实施或全协议支持。
+**R1、R2、R3、R4 完成**（R1：002/003/004 `done`；R2：D-009 冻结 v0.1.3、`I-PROTO-001=verified`；R3：GOAL-005 `done`；R4：GOAL-006 `done`、`I-PROTO-002` 方案冻结时闭合）。显式路线图完成数为 **4/6**。R5 已立项规划中；R4 关门仅覆盖其冻结子集，不代表 R5 实施、完整协议 conformance 或 VP 关门。
