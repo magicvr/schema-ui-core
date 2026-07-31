@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.1
+version: 0.2.0
 ---
 
 # 审计 · GOAL-008
@@ -17,16 +17,17 @@ version: 0.1.1
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-00N | 已登记 | `I-008-001`～`I-008-005` 均为 required |
-| 到期 required 是否已 verified / residual | 未到期但尚未闭合 | 最晚均为阶段 1 结束前；当前只允许规划收集，不放行阶段 2 |
+| 到期 required 是否已 verified / residual | 本轮全部闭合 | 五项均「有证据/已决定」；CI 首跑 green 闭合 I-008-002/005；无需 residual |
 | 资料引用是否固定且用户确认 | 无 | `shared_materials_catalog: none`；本目标不使用共享资料目录 |
 | Vision required finding | 0 open | VRev-003 `pass`；`F-V003` recommended 不阻断本 R6 规划 |
-| 相关 Goal required finding | 1 open | 本轮 A-001 的 `F-008-001`；Root 历史 A-001～A-006 仅覆盖 R1/R2 |
+| 相关 Goal required finding | 1 open → 本轮响应后 0 | A-001 `F-008-001` 经 A-002 计划审视通过后由响应节关闭 |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required |
 |------|------|--------|-------|---------|---------------|
 | A-001 | 2026-08-01 | self | 阶段 1 验收合同与证据计划 | fail | 1 |
+| A-002 | 2026-08-01 | self | 阶段 1 冻结候选计划审视（矩阵/环境/oracle/schema/CI） | pass | 0 |
 
 ## A-001 · 阶段 1 计划与信息门禁自审（2026-08-01）
 
@@ -80,3 +81,77 @@ version: 0.1.1
 - 继续收集五项 required，并在 D-002 从 proposed 进入冻结候选后重新执行同 scope 计划审视。
 - 若先出现 independent 审计而无同 scope self audit，进入后续门禁前按 P-004.1 询问用户是否需要自审。
 - 任何 required finding 未按 `fixed` / `accepted-residual` / `user-overruled` 合法闭合前，不得进入 R6 阶段 2 或关门。
+
+## A-002 · 阶段 1 冻结候选计划审视（2026-08-01）
+
+- **source**：self
+- **auditor**：Claude Code `/govern`
+- **类型**：stage / design-plan（同 scope 计划审视）
+- **scope**：GOAL-008 阶段 1「验收合同与证据计划冻结」；`I-008-001`～`I-008-005`；验收矩阵 C-001～C-008；环境矩阵（D-004）；账号权限 oracle；evidence schema dry-run；CI 首跑
+- **verdict**：pass
+
+### 范围与区间
+
+本审视核对阶段 1 是否具备冻结条件（五项 required 有证据结论或合规 residual；矩阵/环境/oracle/schema 可审视；无开放 required finding）。本审视**不**放行阶段 2 执行，也不把本地/CI 通过写成 R6 验收完成。
+
+### 成果（有证据）
+
+- **I-008-001**：验收矩阵 C-001～C-008 已落盘 [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0 §2b，覆盖 VP 三条退出判据，每条有主张/入口/预期/证据/排除。
+- **I-008-002**：本地双服务/health/proxy/账号上下文/records 实测（`evidence/planning/results/runtime-probes.log`）+ GitHub Actions 首跑 green（`npm ci` 干净安装 + Linux 等价）。
+- **I-008-003**：账号权限跨层 oracle 已登记 [account-permission-oracle.md](attachments/account-permission-oracle.md) v0.1.0（正向 P-1～P-4、拒绝 D-1～D-6、排除与边界）。
+- **I-008-004**：evidence schema 经 [validate-evidence-dry-run.mjs](attachments/validate-evidence-dry-run.mjs) 校验 **可解析、5 artifact SHA-256 可重算**，dry-run 持久化为 `evidence/planning/evidence-index.dry-run.json`。
+- **I-008-005**：用户裁决（D-004）搭建最小 CI + 浏览器矩阵；CI 首跑 run `30666932343` **success**（api 22s / web 27s / browser-e2e 53s）。
+
+### 对照阶段 1 退出条件
+
+| 退出条件 | 状态 | 证据 |
+|----------|------|------|
+| 五项 required 有证据结论或合规 residual | **达成** | 均「有证据/已决定」，无需 residual |
+| 验收矩阵 / 环境矩阵 / oracle / 证据格式可审视 | **达成** | R6-acceptance-plan v0.2.0 §2b/§4c；account-permission-oracle v0.1.0；schema dry-run |
+| 计划审视无开放 required finding | **达成** | 本轮 A-002 pass；F-008-001 由响应节关闭 |
+| D-002 由 proposed 冻结为 accepted | **本轮完成** | 见 [01-decision.md](01-decision.md) D-002 更新 |
+
+### Findings
+
+#### F-008-002 · CI 非阻断注解（recommended，不阻断）
+
+- 严重度：low
+- 建议：recommended
+- 描述：CI run `30666932343` 两条非阻断注解——`actions/checkout`/`setup-node`/`setup-go` 触发 Node 20 弃用强制跑 Node 24（GitHub 侧行为）；`setup-go` 缓存因 `apps/api/go.sum` 缺失 skip（API 无外部依赖）。均不影响 job 成功。
+- 状态：open（recommended，不阻断阶段 1 冻结）
+
+### 必改项汇总（required 列表）
+
+无 open required。
+
+### 结论 + 建议下一步
+
+阶段 1 冻结候选经审视通过（pass）：五项 required 均有实际证据且 CI 首跑 green；验收矩阵、环境矩阵、账号权限 oracle 与 evidence schema 可支持阶段 2 执行。D-002 已按用户授权冻结为 accepted。**阶段 1 冻结完成，可进入阶段 2**；阶段 2 执行时须按 evidence index 持久化结果、显式记录失败/排除，并按 `I-008-004` 的 schema 产出正式 acceptance index。
+
+---
+
+## 响应节 · 响应 A-001 · 关闭 F-008-001（2026-08-01）
+
+**响应**：A-001（self · fail · F-008-001 required「阶段 1 required 信息尚未闭合」）。
+
+**关闭证据表**：
+
+| finding / I-00N | 状态 | 证据路径 |
+|-----------------|------|----------|
+| `F-008-001` | **fixed** | 五项 required 均已闭合；A-002 计划审视 pass（见上）；CI 首跑 green |
+| `I-008-001` | verified | [R6-acceptance-plan.md](attachments/R6-acceptance-plan.md) v0.2.0 §2b 验收矩阵 |
+| `I-008-002` | verified | `evidence/planning/results/runtime-probes.log` + run `30666932343`（npm ci + Linux） |
+| `I-008-003` | verified | [account-permission-oracle.md](attachments/account-permission-oracle.md) v0.1.0 |
+| `I-008-004` | verified | `validate-evidence-dry-run.mjs`（SCHEMA_VALIDATION_OK）+ `evidence-index.dry-run.json` |
+| `I-008-005` | verified | D-004（用户裁决）+ run `30666932343` browser-e2e pass |
+
+**闭合路径**：`fixed`（可核对修正；用户 `/govern` 授权阶段 1 冻结并响应 A-001）。
+
+**仍开放项**：`F-008-002`（recommended，CI 注解清理，不阻断）。
+
+**结论**：A-001 的必改项已满足——五项 required 信息完成/审视且无合规 residual 需要；阶段 2 门禁解除，等待阶段 2 执行。
+
+## 下一审视点
+
+- 阶段 2 执行开始：按 evidence index 持久化 Web/API/协议回归/账号权限集成结果，失败与排除显式列出。
+- 阶段 2 完成后做阶段 2→3 门禁审视；全部 required 闭合后，再由用户授权 Root R6 / `progress` / status，VP 关门另走 `/vision`。

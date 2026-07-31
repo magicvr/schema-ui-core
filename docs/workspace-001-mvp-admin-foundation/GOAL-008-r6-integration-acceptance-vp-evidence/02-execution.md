@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.2.1
 ---
 
 # 执行记录 · GOAL-008
@@ -51,13 +51,20 @@ version: 0.2.0
 - 非阻断注解（不影响成功）：`actions/checkout`/`setup-node`/`setup-go` 触发 Node 20 弃用强制跑在 Node 24（GitHub 侧行为）；`setup-go` 缓存因 `apps/api/go.sum` 不存在而 skip（API 无外部依赖，`go.mod` 仅 module + go 版本行，无 requires；`go test ./...` 与 `go build ./...` 仍通过）。
 - 意义：`I-008-002` 的干净安装（`npm ci`）与 Linux/CI 等价证据、`I-008-005` 的浏览器矩阵 CI 证据已由**实际首跑**闭合；不再停留在「已配置未跑通」。
 
+### 2026-08-01 · 阶段 1 冻结（A-002 计划审视 + D-002 冻结 + F-008-001 关闭）
+
+- 推送 `43369fb..11d0166`（CI 结果记录）到 `origin/dev`。
+- **A-002（self · pass）**：阶段 1 冻结候选计划审视——五项 `I-008` 均 verified，验收矩阵 C-001～C-008、环境矩阵（D-004）、账号权限 oracle、evidence schema dry-run、CI 首跑 green 全部有证据；无开放 required。见 [03-audit.md](03-audit.md)。
+- **D-002 冻结为 accepted**：四阶段 R6 计划正式成为执行计划；阶段 2 可开始。
+- **F-008-001 关闭（fixed）**：A-001 的必改项满足；响应节已落盘。
+- 阶段 1 冻结完成；阶段 2 集成验收执行未开始。Root `progress: 5/6`、VP-001 `active` 不变。
+
 ## 待办（计划 · 非完成事实）
 
-1. 阶段 1 计划审视（A-002）：核对验收矩阵、环境矩阵、账号权限 oracle 与 evidence schema 候选；D-002 由 proposed 冻结为 accepted；开放 required finding = 0。
-2. 用户确认阶段 1 冻结后进入阶段 2：按冻结合同运行集成验收、按 evidence index 持久化机器可读证据、显式记录失败/排除/平台缺口。
-3. 推送远端触发 GitHub Actions 首跑，复核 Linux/CI 等价与浏览器 E2E 在 CI 上的结果；若失败，按执行事实记录而非用本地 pass 掩盖。
-4. 完成 R6 close-out 审计后，再由用户决定 Root R6 / `progress` / status；VP 关门另走 `/vision`。
+1. 阶段 2 执行：按 evidence index 运行 Web、API、协议回归与账号权限集成检查，持久化机器可读结果，显式记录失败/排除/平台缺口。
+2. 阶段 2 → 3 门禁审视通过后汇编 VP 证据（三条退出判据各指向 Q2 工作区证据）。
+3. 完成 R6 close-out 审计后，再由用户决定 Root R6 / `progress` / status；VP 关门另走 `/vision`。
 
 ## 进度评估
 
-阶段 1 的验收矩阵（C-001～C-008）、环境矩阵（D-004）、账号权限 oracle 与 evidence schema 已升级为**冻结候选**：本地双服务实测、schema dry-run（5 artifact SHA-256 可重算）与浏览器 E2E 已通过。阶段 1 **尚未正式冻结**（计划审视 A-002 未做、D-002 仍 proposed），阶段 2 未开放；GitHub Actions 首跑未发生。没有 R6 验收完成事实，Root `progress` 仍 `5/6`。
+阶段 1 已冻结（A-002 pass、D-002 accepted、F-008-001 fixed）：验收矩阵、环境矩阵、账号权限 oracle、evidence schema 与 CI 首跑均 verified。阶段 2 集成验收执行尚未开始；Root `progress` 仍 `5/6`，没有 R6 验收完成事实。
