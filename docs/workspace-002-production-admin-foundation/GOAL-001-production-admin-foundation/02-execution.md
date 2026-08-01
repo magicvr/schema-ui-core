@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-01
 parent: null
-version: 0.1.1
+version: 0.1.3
 ---
 
 # 执行记录 · GOAL-001
@@ -25,3 +25,23 @@ version: 0.1.1
 - VP-002 继承的 Q2 基线路径存在；`docs/architecture/overview.md` 与 `skills/core/docs/architecture/overview.md` SHA-256 一致。
 - `git diff --check` 通过（仅输出 Git 对工作区换行符的 CRLF 提示，无 whitespace error）。
 - `python skills/tests/test_skills_orchestrator.py` 运行 41 项，38 项通过；3 项失败均指向本次开区前已存在且不在本目标变更范围内的缺件：旧工作区 Claude runtime 证据、遗留 `skills/templates/goal-folder` 第三副本、缺失 `stage_skills_mirrors.py`。本次未擅自修复这些既有基线问题。
+
+## 2026-08-01 · I-001 差量矩阵与 R1 方案边界（路径 A）
+
+- 用户确认 `/govern` 主建议 **A**：仅文档关闭 `I-001`，不创建子目标、不改产品代码。
+- 只读对照 `I-PROTO-001 v0.1.3` 与当前 `apps/web`、`apps/api`、fixture pin；落盘附件 `attachments/I-001-implementation-gap-matrix.md`（v0.1.0）。
+- 记录决策 **D-004**：采用矩阵作为 R1 方案边界输入；`I-001` → `verified`。
+- 矩阵核心事实：库级 Renderer/fixture/manifest 能力大量已有；产品默认页面仍走 `EXAMPLE_PAGES`，`schemaUrl` 未驱动加载与 `RenderPage`——R1 主差量在主路径产品化。
+- Root 路线图检查点仍为 `0/5`（R1 未实施完成）；`status` 保持 `active`。
+- **计划（非事实）**：下一拍可按矩阵 §4 候选创建 R1 子目标并开工实施。
+
+## 2026-08-01 · 创建 R1 三子目标（D-005）
+
+- 用户确认：`/govern 按 D-004 创建 R1 子目标（加载+主路径+代表性 Node 页）`。
+- 记录 **D-005**；在 canonical 根平铺创建：
+  - `GOAL-002-r1-schema-load-validate`（0/4，active）
+  - `GOAL-003-r1-default-render-path`（0/4，active；硬依赖 002）
+  - `GOAL-004-r1-representative-node-pages`（0/5，active；完整证明依赖 002+003）
+- 各目标五件套与 `attachments/` 已齐；`goal-tree.md` 已同步。
+- Root 纲领检查点仍为 **0/5**（R1 未实施完成）；本回合无产品代码变更。
+- **计划（非事实）**：下一拍优先推进 GOAL-002 实施（Schema 加载器 + 校验 + 错误面）。
