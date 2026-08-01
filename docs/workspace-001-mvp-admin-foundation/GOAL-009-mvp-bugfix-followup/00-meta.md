@@ -1,11 +1,11 @@
 ---
 id: GOAL-009-mvp-bugfix-followup
 title: MVP 代码审视 bug 修正
-status: active
+status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.3.0
 progress: 5/5
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -43,7 +43,7 @@ serves_summary: 修正 VP-001 交付后代码审视发现的真实 bug 与集成
 ## 派生进度展示
 
 显式检查点 = 上方 5 条 required 成功标准（等权）。  
-当前 **5/5** → frontmatter `progress: 5/5`。progress 不放行、不推导 `done`（阶段/关门审计与 recommended 裁决仍在）。
+当前 **5/5** → frontmatter `progress: 5/5`。目标已关门（2026-08-01，A-002 independent `pass` + 用户授权）；progress 仅派生展示，不单独推导 `done`。
 
 ## 高层路线图（小目标 · 可直接执行）
 
@@ -54,7 +54,7 @@ serves_summary: 修正 VP-001 交付后代码审视发现的真实 bug 与集成
 | 3 | 修 F-009-002（list-edit context + 权限演示） | **完成**（fixed，拒绝路径组件测） |
 | 4 | 修 F-009-003 / F-009-004 | **完成**（fixed，各有测试） |
 | 5 | 修 F-009-005（README）；处理 006/007 或 residual | **完成**：README fixed；006/007 经用户裁决纳入并 fixed |
-| 6 | 回归 `go test` / `npm test` / 必要手测 + 阶段或关门审计 | **部分**：回归已绿（go 全绿 / web 398 / build 通过）；阶段/关门审计未做 |
+| 6 | 回归 `go test` / `npm test` / 必要手测 + 阶段或关门审计 | **完成**：回归绿（go 全绿 / web 398 / build 通过）；关门审计 A-002（independent）`pass`；2026-08-01 用户授权关门 → `done` |
 
 ## 信息就绪与未知项（P-005）
 
@@ -71,4 +71,5 @@ serves_summary: 修正 VP-001 交付后代码审视发现的真实 bug 与集成
 
 - 立项：2026-08-01；用户要求在工作区 1 以 GOAL-001 子目标承接 bug 修正，审视内容作独立附件。
 - 正式意见入口：本目标 `03-audit.md` A-001（`source: independent`）→ 附件长文。
-- Root 纲领 R1–R6 与 `progress: 6/6` **不**因本目标改写；本目标自有 `5/5` required 检查点（fixed），关门审计未做。
+- Root 纲领 R1–R6 与 `progress: 6/6` **不**因本目标改写；本目标自有 `5/5` required 检查点。
+- **关门（2026-08-01）**：A-001 七条 findings 全部 `fixed`；A-002 independent 关门复审 `pass`（0 required）；I-009-001/002 resolved；用户书面授权（P-004）→ `status: done`。不重开 VP-001 / Root `done`。

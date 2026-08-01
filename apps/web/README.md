@@ -50,6 +50,7 @@ direct React example surfaces.
 - 会话为静态开发会话（`/api/accounts/me`），无真实登录 / 令牌 / IAM。
 - 权限求值引擎（D-PERM）提供**渲染层**门禁（按钮禁用、导航隐藏）；后端
   `/api/records` 写路由（PATCH/DELETE）挂 fail-closed 鉴权（需 admin 会话），GET 只读开放。
+- **范围说明**：后端写路由 gate 绑定**进程内会话提供者**（默认 `StaticDevSession` 恒含 admin），**非**请求头身份——HTTP 客户端无凭证仍可写；真实身份鉴权需生产化。
 
 ## 测试
 
