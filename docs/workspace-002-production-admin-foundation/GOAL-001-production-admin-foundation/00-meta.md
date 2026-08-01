@@ -5,8 +5,8 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.6
-progress: 1/5
+version: 0.1.7
+progress: 2/5
 plan_refs:
   - VP-002-production-admin-foundation
 primary_plan: VP-002-production-admin-foundation
@@ -45,13 +45,13 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 
 - [x] **R1 · 协议实施边界与 Schema Renderer 产品化**：核对冻结覆盖映射，把 Renderer 接入默认页面路径，并验证关键失败行为。  
   阶段内子目标（D-005）：`GOAL-002-r1-schema-load-validate`（done）· `GOAL-003-r1-default-render-path`（done）· `GOAL-004-r1-representative-node-pages`（done）。证据：I-001 覆盖矩阵 verified（D-004）+ Renderer 默认 `schemaUrl` 主路径 + 2026-08-02 Web 425/425、Go test/vet 全绿与 fail-closed 断言（各子目标关门审计）。
-- [ ] **R2 · 真实认证与请求级身份**：交付登录、登出、会话恢复、受保护路由和 API 身份传递。  
-  阶段子目标：`GOAL-005-r2-auth-session`（active；`I-002` verified，D-007 冻结短 JWT Access + Opaque Refresh + SQLite 方案）。
+- [x] **R2 · 真实认证与请求级身份**：交付登录、登出、会话恢复、受保护路由和 API 身份传递。  
+  阶段子目标：`GOAL-005-r2-auth-session`（**done**，2026-08-02；`I-002` verified + D-007 方案）。证据：登录/登出/刷新/撤销与请求级身份中间件 + SQLite 存储 + 前端认证闭环（441 单测、`go test ./...` 全绿）；close-out 审计 A-001（independent，F-001 → fixed）+ A-002（self，pass）；browser E2E 在 Linux CI 通过（run #30711903555，`1 passed`，含匿名 401 断言）。
 - [ ] **R3 · 持久化身份、角色与最小权限模型**：交付用户/角色/菜单持久化、种子数据与后端授权最小闭环。
 - [ ] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
 - [ ] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。
 
-当前派生进度为 `1/5`（R1 已勾选，2026-08-02）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。R1 子目标 progress 不替代本 Root 检查点。
+当前派生进度为 `2/5`（R1、R2 已勾选，2026-08-02）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。R1/R2 子目标 progress 不替代本 Root 检查点。
 
 ## 信息需求与阶段门禁
 

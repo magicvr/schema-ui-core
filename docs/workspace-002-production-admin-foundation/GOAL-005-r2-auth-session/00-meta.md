@@ -1,11 +1,11 @@
 ---
 id: GOAL-005-r2-auth-session
 title: R2 · 真实认证与请求级身份
-status: active
+status: done
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 progress: 6/6
 ---
 
@@ -28,7 +28,7 @@ progress: 6/6
 
 ## 派生进度
 
-`progress: 6/6` 由上方 6 条成功标准等权派生（后端 1–4 + 前端 5–6 均完成，2026-08-02）。**尚未关门**：需 close-out 审计 + 用户确认后才置 `done`；**不**放行 Root R2 检查点（R2 勾选需本目标关门审计）。
+`progress: 6/6` 由上方 6 条成功标准等权派生（后端 1–4 + 前端 5–6 均完成，2026-08-02）。**已关门**（2026-08-02）：A-001 independent（conditional，F-001 → fixed）+ A-002 self（pass）关门审计后置 `done`；Root R2 纲领检查点已勾选（Root progress 1/5 → 2/5）。
 
 ## 信息需求
 

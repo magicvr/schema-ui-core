@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 执行记录 · GOAL-005
@@ -61,6 +61,13 @@ version: 0.5.0
   - `web (Linux, Node 22)` → **success**；`npm test` **441 passed**、`npm run build` 通过
   - `api (Linux, Go 1.26)` → **success**；`go test ./...` 通过（含 401/403 证据测试）
 - **结果**：M14 的 browser E2E 在 Linux CI 可复现通过；匿名 401 证据进入 browser E2E，非 admin 403 证据由 API 自动化测试承担并指向具体测试。F-001 满足 `fixed` 关闭条件；GOAL-005 进入 close-out 复审（`/govern` 汇总，是否自审与置 `done` 由用户裁决）。
+
+## 2026-08-02 · 关门：A-002 self 审计 pass + 置 done（用户确认）
+
+- 用户裁决：需要一次 self 关门审计（A-002）；确认关门置 `done` 并勾选 Root R2 检查点。
+- **A-002（self，close-out）**：核对成功标准 6/6 证据、I-005 信息门禁（required 全 verified）、F-001 fixed 闭合证据（CI run #30711903555 + 401/403 测试路径）、范围边界（未越界实施 R3；D-002 XSS 残余已书面接受）与文档一致性 → **verdict: pass，无新 findings**。
+- **关门动作**：`GOAL-005` `00-meta.md` → `status: done`（progress 6/6 保留）；`goal-tree.md` 树 + 状态表同步；Root `00-meta.md` R2 检查点勾选、progress `1/5 → 2/5`。
+- **下一纲领阶段**：R3（`I-003` 持久化身份模型信息门禁待收集，R3 立项前复核）。
 
 ## 计划（非事实）
 

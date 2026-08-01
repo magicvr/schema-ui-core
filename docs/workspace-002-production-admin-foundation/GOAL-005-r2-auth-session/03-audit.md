@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-005
@@ -14,6 +14,7 @@ version: 0.3.0
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-02 | close-out | conditional | F-001 **fixed**（2026-08-02 编排器响应，证据见下） |
+| A-002 | self | 2026-08-02 | close-out | pass | 无开放 required；建议置 `done` |
 
 ## 当前审计边界
 
@@ -87,3 +88,26 @@ version: 0.3.0
   4. **本地平台受限记录**：本机 Windows `127.0.0.1:5173` EACCES 依旧；以临时端口 `9999` 复跑脚本 `1 passed` 后还原，未进入提交；Linux CI 为权威可复现证据。
 - **闭合**：`F-001` → **`fixed`**（可核对：CI run 结论 + 日志 `1 passed (31.8s)` + `shell.spec.ts` 断言源码 + `records_test.go` 403 测试）。
 - **仍开放**：无。GOAL-005 满足 close-out 条件，进入关门复审（是否自审、置 `done` 与勾选 Root R2 检查点由用户裁决）。
+
+## A-002 · R2 真实认证与请求级身份关门自审（2026-08-02）
+
+- **source**：self
+- **类型** / **scope**：close-out；GOAL-005 成功标准、I-005 信息门禁、A-001 F-001 闭合证据、范围边界与可复现验证
+- **verdict**：pass
+
+### 核对（证据均可在 00-meta / 01-decision / 02-execution 内指回）
+
+1. **成功标准 6/6**：登录/登出（`handler/auth.go` + 端点测试）、刷新/撤销（`internal/auth` Refresh + 单测）、请求级身份中间件（`Middleware` + records write gate 401/403）、SQLite 存储与依赖（`internal/store` + `go.mod`）、前端认证闭环（`LoginPage` / `AuthProvider` / `authFetch` / `tokens.ts`）、dev 兜底 env 化（`AUTH_DEV_SESSION_ENABLED` 默认 false）——均有实现与测试证据。
+2. **信息门禁**：`I-005-001/002/003`（required）verified（D-004/D-002/D-003）；`I-005-004/005`（non-blocking）verified（D-005/D-006）；无到期开放 required。
+3. **开放必改**：无。A-001 F-001 已按 `fixed` 闭合（CI run [#30711903555](https://github.com/magicvr/schema-ui-core/actions/runs/30711903555)：browser E2E `1 passed`、web 441 passed + build、api `go test ./...` 全绿；403 由 `records_test.go::TestRecordsWriteDeniedWithoutAdminRole` 承担）。
+4. **范围边界**：未把 R3 持久化身份模型记为 R2 已完成；D-002 refresh localStorage XSS 残余为用户书面接受并记录缓解边界（短 access + 服务端撤销 + HTTPS）。
+5. **可复现性**：Linux CI 三 job 全绿为权威证据；本机平台限制（Windows 5173 EACCES）已留痕且不影响 CI 可复现主张。
+6. **文档一致性**：五件套与 goal-tree 将在本轮关门动作中同步（GOAL-005 → done；Root R2 勾选）。
+
+### Findings
+
+- 无新增 findings。
+
+### 结论
+
+- **pass**：R2 实现、信息门禁、必改项闭合与 CI 可复现证据齐备；建议 `/govern` 按用户确认置 `GOAL-005` 为 `done` 并勾选 Root R2 纲领检查点。
