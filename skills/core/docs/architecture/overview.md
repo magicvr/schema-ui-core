@@ -2,9 +2,9 @@
 title: 架构概览
 status: active
 created: 2026-07-18
-updated: 2026-07-31
+updated: 2026-08-01
 parent: null
-version: 0.8.1
+version: 0.8.2
 ---
 
 # 架构概览
@@ -65,11 +65,12 @@ version: 0.8.1
 
 ## 当前阶段（现时）
 
-- **真相源**：显式工作区 `docs/workspace-001-mvp-admin-foundation/`；目标状态以该区的 `goal-tree.md` 与各目标五件套为准。
+- **真相源**：现有两个显式工作区分别维护自己的 canonical 目标树：`docs/workspace-001-mvp-admin-foundation/` 与 `docs/workspace-002-production-admin-foundation/`；目标状态以各区 `goal-tree.md` 与五件套为准，禁止跨区混合。
 - **原则**：[principles.md](principles.md) P-001～**P-006**（含 finding 三路径闭合、P-004.1～4.4、单愿景级联）；工作区/资料/愿景见 [workspace-protocol.md](workspace-protocol.md) 与 [../vision/alignment.md](../vision/alignment.md)。
 - **愿景**：[charter.md](../vision/charter.md) **`schema-ui-core-admin-foundation@0.1.0`**，且当前仅有一个 active Charter。
-- **组合编排**：VP-001 **closed**（lead: workspace-001-mvp-admin-foundation）；VP-002 **planned**（尚未绑定工作区）。当前没有可作为治理事实的 VP-003 记录。
-- **workspace-001**：状态 **active**，角色 **primary**，Root `GOAL-001-mvp-admin-foundation` **done**，`primary_plan` = `VP-001-mvp-admin-foundation`。VP-002 如需实施，须另经 `/vision` 绑定决定及 `/govern` 建区记录。
+- **组合编排**：VP-001 **closed**（lead: workspace-001-mvp-admin-foundation）；VP-002 **active**（lead: workspace-002-production-admin-foundation）。当前没有可作为治理事实的 VP-003 记录。
+- **workspace-001**：状态 **active**，角色 **primary**，Root `GOAL-001-mvp-admin-foundation` **done**，`primary_plan` = `VP-001-mvp-admin-foundation`；继续保留协议验证历史。
+- **workspace-002**：状态 **active**，角色 **delivery**，Root `GOAL-001-production-admin-foundation` **active / 0/5**，`primary_plan` = `VP-002-production-admin-foundation`；按 Renderer、认证、持久化权限、CRUD、工程化与关门五阶段推进。
 
 本页是架构概览，不是愿景或目标状态的第二真相源；当前 Charter、VP 与工作区绑定以 `docs/vision/`、工作区 `workspace.md` 和 `goal-tree.md` 为准。
 

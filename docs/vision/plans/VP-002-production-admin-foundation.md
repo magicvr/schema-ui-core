@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-002-production-admin-foundation
 title: 生产级可用 Admin 基架
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.1.0
-lead_workspace:
+lead_workspace: workspace-002-production-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.1.1
+version: 0.2.0
 parent: null
 ---
 
@@ -173,7 +173,19 @@ VP-002 只有在以下方向级标准全部满足时，才可提出关闭：
 
 - 继续使用唯一现行 Charter：`schema-ui-core-admin-foundation@0.1.0`。
 - VP-001 与 GOAL-001 保持历史关闭状态。
-- 本 VP 初始状态为 `planned`，暂不绑定工作区。
-- 后续建立实现工作区时，按 P-006 进行结构选型；基于旧 Root 已 `done` 且旧 VP 已 `closed`，建议优先评估新工作区与新 Root，以避免改写协议验证基线。
-- 实现层建立后，再由 `/govern` 建立工作区路线图和 Goal 五件套。
-- 当前 `docs/vision/README.md` 曾将 VP-001 标为 `active`，本次写入同步修正为 `closed`。
+- 本 VP 于 2026-08-01 从 `planned` 激活为 `active`，并绑定 `workspace-002-production-admin-foundation` 为当前唯一 lead workspace。
+- 新工作区角色为 `delivery`；仓库级 `primary_workspace` 仍为 `workspace-001-mvp-admin-foundation`，不改写 Charter 或历史交付树。
+- 实现层由 `/govern` 维护 Root 路线图、阶段信息门禁、Goal 五件套与审计证据；VP 不维护 progress。
+- 跨工作区只通过 Q2 路径引用冻结基线，不建立跨工作区 `parent`。
+
+## 工作区绑定
+
+| workspace | root_goal | role | 绑定日期 | 说明 |
+|-----------|-----------|------|----------|------|
+| `workspace-002-production-admin-foundation` | `GOAL-001-production-admin-foundation` | `delivery` / lead | 2026-08-01 | 用户确认新工作区与 Root 命名；以独立实现树承接本 VP |
+
+## 规划修订短史
+
+| 日期 | 版本 | 变更 |
+|------|------|------|
+| 2026-08-01 | `0.2.0` | 经用户确认完成结构选型：VP 从 `planned` 激活为 `active`，绑定新 delivery 工作区与 Root；不改变 Charter primary workspace。 |
