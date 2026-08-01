@@ -15,12 +15,13 @@ type healthResponse struct {
 	Commit    string    `json:"commit,omitempty"`
 }
 
-// Register mounts R1 routes, the R4 account session route, and the R5
-// D-DATA list/detail example API.
+// Register mounts R1 routes, the R4 account session route, the R5
+// D-DATA list/detail example API, and the R1 schema document endpoint.
 func Register(mux *http.ServeMux) {
 	mux.Handle("GET /healthz", healthz())
 	accountsHandler(mux)
 	recordsHandler(mux)
+	schemasHandler(mux)
 }
 
 func healthz() http.Handler {

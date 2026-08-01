@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "pageId": "catalog",
+    "title": "Catalog",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": ["app.manifest", "app.navigation"]
+  },
+  "body": {
+    "type": "table",
+    "props": {
+      "columns": [
+        { "field": "id", "label": "ID" },
+        { "field": "name", "label": "Name" },
+        { "field": "status", "label": "Status" }
+      ],
+      "dataSource": "/api/records"
+    }
+  }
+}
