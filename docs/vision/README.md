@@ -36,7 +36,8 @@ version: 0.3.0
 | 文件 | 状态 / 说明 |
 |------|-------------|
 | [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.1.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
-| [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **active** · lead: workspace-001-mvp-admin-foundation |
+| [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **closed** · lead: workspace-001-mvp-admin-foundation |
+| [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **planned** · 暂未绑定工作区 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
 | [reviews.md](reviews.md) | Vision Review 台账（`VRev-*`） |
