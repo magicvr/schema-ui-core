@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-009
@@ -39,11 +39,18 @@ version: 0.2.0
 - 更新两 README 鉴权边界（写路由已鉴权；上限说明）。
 - 回归证据：`go test ./...` 全绿（含 4 项新测试）；web vitest **398/398** 不变。
 
+### 2026-08-01 · 关门（A-002 pass + 用户授权）
+
+- 独立交叉审计 **A-002**（`/audit`，`source: independent`，close-out）`verdict: pass`：复核 A-001 七条 `fixed` 证据 + 成功标准 5/5 + I-009 resolved；复跑 `go test ./...` + 聚焦 vitest（7/7 pass）；open required = 0；给出 2 条 recommended（F-A002-001 鉴权措辞、F-A002-002 台账卫生）。
+- 用户 P-004 裁决：不补 self 关门审，接受 A-002；关闭前修复两条 recommended。
+- 修复 F-A002-001：`apps/api/README.md` / `apps/web/README.md` 鉴权边界各加「gate 绑定进程内会话提供者、非请求头身份、默认 admin 会话下无凭证仍可写」说明。
+- 修复 F-A002-002：01-decision 文首 I-009 对齐 resolved；A-001「编排提示」加历史基线说明；附件顶加「实施后状态以 03-audit 为准」注。
+- 用户授权关门 → GOAL-009 `status: done`；同步 goal-tree；不改 Root/VP。
+
 ## 待办
 
-1. 阶段/关门审计（self 或 `/audit`），A-001 响应的 7 条 fixed 复核
-2. （可选）浏览器手测确认 shell 与 list-edit 页面表现
+- 无（目标已 `done`）。浏览器手测保持 optional，未纳入必做。
 
 ## 进度评估
 
-**5/5** required 检查点完成（F-009-001～005 已修 + 测试绿）；F-009-006/007 经用户裁决纳入并实施（写路由鉴权 + body/pageSize 上限）；阶段/关门审计待做，**未**标记 `done`。
+**5/5** required 检查点完成；A-001 七条 findings + A-002 两条 recommended 全部 `fixed`；A-002 关门复审 `pass`；用户书面授权 → **`status: done`**（2026-08-01）。

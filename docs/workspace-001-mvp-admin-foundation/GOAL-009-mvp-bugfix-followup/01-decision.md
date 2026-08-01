@@ -5,14 +5,14 @@ status: active
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
 updated: 2026-08-01
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-009
 
 ## 信息需求与阶段门禁
 
-与 [00-meta.md](00-meta.md) 同表：`I-009-001` / `I-009-002`（recommended 是否升格必做）仍 open，不阻断 required 五项的实施启动。
+与 [00-meta.md](00-meta.md) 同表：`I-009-001` / `I-009-002`（recommended 是否升格必做）已 **resolved**——2026-08-01 用户书面裁决「都纳入实施」（见下方 D-004），F-009-006/007 已实施并 `fixed`。
 
 ## D-001 · 立项为 Root 关门后的修正跟随子目标
 
@@ -77,3 +77,22 @@ version: 0.2.0
 - **只做一条**：用户选择两条都做，避免留半截鉴权/上限。
 
 **执行证据**：`records.go` `writeGate()`（401/403）+ `MaxBytesReader` 4 KiB + `pageSize ≤ 100`；`TestRecordsWriteRequiresSession`、`TestRecordsWriteDeniedWithoutAdminRole`、`TestRecordsUpdateBodyTooLarge`、`TestRecordsListPageSizeCap`。
+
+## D-005 · 关门授权（2026-08-01）
+
+**决定**：
+
+用户 P-004 裁决：**不补 self 关门审**，接受 A-002（independent 关门复审，`verdict: pass`）作为关门审计依据；关闭前修复 A-002 两条 recommended（F-A002-001 README 措辞、F-A002-002 台账卫生）；随后授权 **GOAL-009 → `status: done`**。
+
+**为什么**：
+
+- A-002 已独立复核 A-001 七条 `fixed` 证据并复跑 `go test ./...` + 聚焦 vitest（7/7 pass）；open required = 0。
+- 两条 recommended 为低成本文档修订，关闭前修复使关门干净，避免把 hygiene 债带到后续。
+- 关门审计要求（self 或 independent）由 A-002 满足；补 self 审无额外价值。
+
+**未选方案**：
+
+- **补 self 关门审后再关**：用户选择不需，A-002 独立 pass 已足够。
+- **对 002 作 accepted-residual**：改动极小，直接修复优于留残余。
+
+**关门范围**：不改 Root `GOAL-001` `done` / 纲领 `6/6` / VP-001 `closed`；浏览器手测保持 optional。

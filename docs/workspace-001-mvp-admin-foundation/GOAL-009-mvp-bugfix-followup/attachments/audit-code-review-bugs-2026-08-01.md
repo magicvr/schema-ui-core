@@ -15,6 +15,7 @@ scope: apps/api + apps/web 实现 vs VP-001 意图；真实 bug / 集成失真 /
 
 > **性质**：独立代码审视长文（`source: independent`）。  
 > **正式台账索引**：本目标 [03-audit.md](../03-audit.md) **A-001**。  
+> **实施后状态**：本附件 Findings 为 A-001 **时点基线**快照；F-009-001～007 实施后的闭合状态以 [03-audit.md](../03-audit.md) 闭合留痕与 **A-002** 关门复审为准（勿以附件 `状态: open` 误判未修）。  
 > **范围**：对照 [VP-001](../../../../vision/plans/VP-001-mvp-admin-foundation.md) 已声明 MVP 边界与冻结表 I-PROTO-001 v0.1.3；**不是**完整协议宿主或生产 IAM 验收。  
 > **验证基线（审视时）**：`go test ./...` 通过；Web Vitest **395/395** 通过。
 

@@ -46,7 +46,7 @@ go run ./cmd/server
 
 - `/api/accounts/me` 返回**静态开发会话**（`account.StaticDevSession`，roles: admin+editor）；nil 会话提供者按 fail-closed 返回 `401 UNAUTHENTICATED`。
 - **`/api/records` 写路由（PATCH/DELETE）fail-closed 鉴权**：需要有效会话且会话须含 `admin` 角色（`account.Allow`）；无会话 → `401 UNAUTHENTICATED`，非 admin → `403 FORBIDDEN`。GET 只读路由保持开放。
-- 会话仍为**静态开发会话**（无真实登录 / 令牌 / IAM）；生产化时需真实身份与令牌校验。
+- **范围说明**：该 gate 绑定**进程内注入的会话提供者**（生产接线为 `StaticDevSession`，恒含 admin），**非**按 HTTP 请求凭证/令牌鉴权——匿名 HTTP 客户端在默认进程配置下仍可 PATCH/DELETE 成功。这是 MVP 静态会话的边界，不是网络侧身份鉴权；生产化需真实登录/令牌。
 - **请求上限（F-009-007）**：PATCH body ≤ 4 KiB（`MaxBytesReader`）；`pageSize` ≤ 100，超限返回 `400 INVALID_PAGE_SIZE`。
 
 ## 测试

@@ -4,7 +4,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-01
 parent: null
-version: 0.33.0
+version: 0.34.0
 workspace_id: workspace-001-mvp-admin-foundation
 ---
 
@@ -26,7 +26,7 @@ GOAL-001-mvp-admin-foundation  [done]  MVP Admin 基架  progress=6/6
 ├── GOAL-006-r4-account-permission       [done]  R4 · 核心账号与权限
 ├── GOAL-007-r5-examples-contract-verification [done]  R5 · 纳入域范例与契约验证
 ├── GOAL-008-r6-integration-acceptance-vp-evidence [done] R6 · 集成验收与 VP 证据
-└── GOAL-009-mvp-bugfix-followup       [active] MVP 代码审视 bug 修正  progress=5/5
+└── GOAL-009-mvp-bugfix-followup       [done]   MVP 代码审视 bug 修正  progress=5/5
 ```
 
 ## 状态表
@@ -41,12 +41,12 @@ GOAL-001-mvp-admin-foundation  [done]  MVP Admin 基架  progress=6/6
 | GOAL-006-r4-account-permission | R4 · 核心账号与权限 | GOAL-001-mvp-admin-foundation | done | — | 2026-07-31 |
 | GOAL-007-r5-examples-contract-verification | R5 · 纳入域范例与契约验证 | GOAL-001-mvp-admin-foundation | done | — | 2026-08-01 |
 | GOAL-008-r6-integration-acceptance-vp-evidence | R6 · 集成验收与 VP 证据 | GOAL-001-mvp-admin-foundation | done | — | 2026-08-01 |
-| GOAL-009-mvp-bugfix-followup | MVP 代码审视 bug 修正 | GOAL-001-mvp-admin-foundation | active | 5/5 | 2026-08-01 |
+| GOAL-009-mvp-bugfix-followup | MVP 代码审视 bug 修正 | GOAL-001-mvp-admin-foundation | done | 5/5 | 2026-08-01 |
 
 ## 说明
 
 - **Root 已关门（2026-08-01）**：`progress: 6/6` = 纲领路线图 R1–R6 全部完成（等权派生）；Root `status: done`（用户 `/govern` 授权，Root D-016）。VP-001 已 `closed`（`/vision`）；Root `done` 不等于完整协议支持。
-- **GOAL-009（2026-08-01）**：Root 关门后的修正跟随子目标 `GOAL-009-mvp-bugfix-followup` → **`active`**（`progress: 5/5`）。A-001 的 7 条 findings 全部 `fixed`：required F-009-001～005（API `updatedAt` / list-edit 真实 context + 权限表达式 / account 失败可观察 / sessionProvider nil fail-closed / README）+ 用户裁决纳入的 recommended F-009-006/007（写路由 fail-closed 鉴权、body/pageSize 上限）；回归 `go test` 全绿、web **398/398**、`tsc -b`/`npm run build` 通过；长文 [audit-code-review-bugs-2026-08-01.md](GOAL-009-mvp-bugfix-followup/attachments/audit-code-review-bugs-2026-08-01.md)。**阶段/关门审计未做，未标 `done`**。不改 Root 纲领 6/6，不重开 VP 范围。
+- **GOAL-009（2026-08-01）**：Root 关门后的修正跟随子目标 → **`done`**（`progress: 5/5`）。A-001 七条 findings 全部 `fixed`；A-002 independent 关门复审 `pass`（0 required）；I-009-001/002 resolved；用户 P-004 授权关门（D-005）。回归 `go test` 全绿、web **398/398**、`tsc -b`/`npm run build` 通过。不改 Root 纲领 6/6，不重开 VP 范围。
 - R6：GOAL-008-r6-integration-acceptance-vp-evidence → **`done`**（2026-08-01）。A-005 self + A-006 independent close-out 均 pass、开放 required=0；五项 `I-008` required 均 verified；用户 `/govern` 响应 A-006 并授权关门（GOAL-008 D-006 / Root D-016）；goal-tree 同步。
 - R5：GOAL-007-r5-examples-contract-verification → **`done`**（2026-08-01）。A-008 self pass + A-009 independent pass；`I-PROTO-003` verified；用户 `/govern` 响应 A-009 授权关门（D-012 / Root D-014）；`progress` **4/6 → 5/6**。
 - 层级只由各目标 `00-meta.md` 的 `parent` 表达；本文件为区内索引，不是第二套状态源。
