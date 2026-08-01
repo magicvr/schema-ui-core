@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-01
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-003
@@ -14,6 +14,7 @@ version: 0.3.0
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-01 | 立项内容、P-005 信息门禁、依赖与工作区对齐 | pass | 已出具；无开放 required finding |
+| A-002 | self | 2026-08-01 | 目标定义（D-003 修订后）复审 · 成功标准 2/4 迁移语义、信息门禁、依赖与代码就绪 | pass | 已出具；无开放 required；与 A-001 无冲突 |
 
 ## A-001 · 默认 Renderer 主路径立项独立审计（2026-08-01）
 
@@ -91,9 +92,60 @@ version: 0.3.0
 
 **仍开放项**：`I-003-002`（required，列表页验收前）；A-001 无 open required finding。
 
+## A-002 · 目标定义复审 · D-003 修订后（2026-08-01）
+
+- **source**：self
+- **auditor**：Claude Code · `/govern`（P-004.3.1 补审）
+- **类型 / scope**：goal-definition（stage）；复核 D-003 修订后的四项成功标准、`I-003-001` / `I-003-002` 信息门禁、GOAL-002 依赖与代码就绪，确认修订后定义足以进入默认分支切换实施
+- **verdict**：pass
+
+### 触发与范围
+
+- 由 P-004.3.1 触发：A-001（independent）发布于 D-003 之前；D-003 将成功标准 2/4 由「手写示例仅作为显式兼容/演示路径」修订为「迁移为 Schema；应用内不再存在手写示例作为独立页面路径」。本 self 审计覆盖**修订后**定义，与 A-001 汇总后统一响应。
+- 当前工作区 `workspace-002-production-admin-foundation`；canonical root 与 Root `GOAL-001-production-admin-foundation` 绑定一致；`parent` / goal-tree / workspace.md 核对无冲突。
+- `shared_materials_catalog: none`；未把共享资料作为事实或关闭证据。
+- 仅审目标定义与实施就绪；不审未发生的默认分支切换事实，也不审 GOAL-004 的 5 份迁移文档（该目标自行审计）。
+
+### 成果（有证据）
+
+- **成功标准 2 的迁移语义可验证**：D-003 明确 5 个 `EXAMPLE_PAGES` 语义改写为 Schema 文档、经 `page.route → schemaUrl → loadPageDocument → RenderPage` 渲染；`App.tsx` 移除 `EXAMPLE_PAGES[pageId]` 默认查找，registry 不再被渲染路径引用；`I-004-001`（GOAL-004）已改为「改写现有示例语义为 Schema」。判定不是断言「已迁移」，而是**可核对的目标态**。
+- **成功标准 4 的 fail-closed 语义可验证**：`PageSchemaError`（5 code）已由 GOAL-002 交付；404 / 非法 Schema / pageId 不符均有统一可观察错误与定向测试。默认分支测试用注入式 `fetcher` 断言「示例路由渲染 Schema 页且不出现手写内容」「`EXAMPLE_PAGES` 不再参与渲染路径」「缺失/非法 → 统一错误面」。
+- **依赖就绪**：GOAL-002 已 `done`（A-001 independent + A-002 self 关门审计 pass，无开放 required）；`apps/web/src/protocol/load-page.ts` 与 `apps/web/src/renderer/render.tsx` 均在，schemaUrl 链组件齐备。
+- **代码现状定位准确**：`apps/web/src/app/App.tsx` 的 `PageSurface` 当前仍以 `EXAMPLE_PAGES[route.page.pageId]` 为默认分支（L216-219），非示例页展示 "renderer remains a later protocol boundary" 占位（L231-233）——即本目标的实施切换目标，未提前写为已达成。
+
+### 对照成功标准（修订后）
+
+| 标准 | 状态 | 证据 |
+|------|------|------|
+| 1 · 默认走 Schema 加载 → 校验 → RenderPage | 已定义，待实施 | `App.tsx` 当前默认分支 = `EXAMPLE_PAGES`；`loadPageDocument` + `RenderPage` 已存在 |
+| 2 · 5 个手写示例迁移为 Schema，应用内不再有手写示例独立页面路径 | 已定义（D-003），落地分工 003+004 | D-003；`I-004-001`（GOAL-004 改写语义）；registry 移除属本目标 |
+| 3 · 非示例页不再展示 "renderer remains a later protocol boundary" 占位 | 已定义，待实施 | `App.tsx` L231-233 占位 = 移除目标 |
+| 4 · 自动化测试：默认路径渲染 + fail-closed 统一错误面 | 已定义，待实施 | `load-page.test.ts` 已覆盖加载器；App 级默认路径测试待注入 fixture |
+
+### Findings
+
+- **F-001 · `I-003-002`（required）保持 open，门禁 = 列表页验收前**（与 A-001 G-002 一致）
+  - 严重度：med；建议：required 信息项（非新 finding）
+  - 表节点数据注入在 `RenderPage` 中仍由示例页面拥有（`tableRenderer` prop）；默认主路径如何提供表格数据需与 GOAL-004 页面资产及 `I-004-002`（non-blocking，可复用 `/api/records`）复核。该门禁**不阻断**本轮默认分支切换实施，但阻断列表页验收。
+  - 状态：open（维持，列表页验收前闭合）
+
+### 必改项汇总
+
+- 无开放 required finding。
+- `I-003-001` closed（证据 D-003）；`I-003-002` open（required，列表页验收前）——均与 A-001 G-001/G-002 一致，无新必改。
+
+### 与 A-001 的关系
+
+- A-001（independent，pass）审的是 D-003 之前定义；本意见审修订后定义，二者结论同向、无 verdict 冲突、无必改项相反，**不构成 P-004 冲突**，合并响应即可。
+
+### 结论 + 建议下一步
+
+- 修订后定义满足 P-002 可审视、可验证要求；依赖就绪，默认分支切换实施可开始。
+- 建议编排器：合并 A-001 + 本意见作为同一门禁放行依据；随后进入默认分支切换实施（改 `App.tsx` schemaUrl 链、移除占位、统一错误面、注入 `fetcher` 自动化测试），执行事实走 `03`。
+
 ## 当前审计边界
 
-- A-001 为立项独立审计，结论为 pass；尚无实施事实可供阶段/关门审计。
+- 已有 A-001（independent，立项）与 A-002（self，D-003 修订后定义复审）；两意见无冲突，verdict 均为 pass。
 - `I-003-001` 已 closed（2026-08-01，D-003 迁移为 Schema）；`I-003-002` 仍为 open required，阻断列表页验收前的数据注入门禁。
-- 成功标准 2/4 已于 2026-08-01 按迁移语义修订（D-003）；进入默认分支切换实施前，按 P-004.3.1 询问是否补 self 审计覆盖修订后定义。
-- 后续 self / independent 意见从 `A-002` 起共用序列。
+- 成功标准 2/4 已于 2026-08-01 按迁移语义修订（D-003），本意见已覆盖修订后定义；P-004.3.1 门禁已闭合。
+- 默认分支切换已实施（2026-08-01）：成功标准 1/3/4 勾选、`progress` 3/4，测试 407/407 + 构建通过（见 `02-execution`）；标准 2 待 GOAL-004 落地 5 份迁移文档。后续阶段/关门审计从 `A-003` 起共用序列。

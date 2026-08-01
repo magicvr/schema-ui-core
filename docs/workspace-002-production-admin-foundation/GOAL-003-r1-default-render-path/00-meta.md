@@ -5,8 +5,8 @@ status: active
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
-progress: 0/4
+version: 0.3.0
+progress: 3/4
 ---
 
 # GOAL-003 · R1 · 默认 Renderer 主路径与示例降级
@@ -19,14 +19,14 @@ progress: 0/4
 
 ## 成功标准
 
-- [ ] 匹配 manifest 路由后，**默认**走 Schema 加载 → 校验 → `RenderPage`（不再以 `EXAMPLE_PAGES` 为默认分支）
+- [x] 匹配 manifest 路由后，**默认**走 Schema 加载 → 校验 → `RenderPage`（不再以 `EXAMPLE_PAGES` 为默认分支）
 - [ ] 既有 5 个手写示例**迁移为 Schema 文档**，经默认 Schema 主路径渲染；应用内不再存在手写示例作为独立页面路径（D-003）
-- [ ] 非示例页不再展示「renderer remains a later protocol boundary」类占位作为主交付面
-- [ ] 有自动化测试：默认路径渲染 Schema 页（含迁移后示例页）；缺失/非法 Schema 时统一错误面可预期（fail-closed）
+- [x] 非示例页不再展示「renderer remains a later protocol boundary」类占位作为主交付面
+- [x] 有自动化测试：默认路径渲染 Schema 页（含迁移后示例页）；缺失/非法 Schema 时统一错误面可预期（fail-closed）
 
 ## 派生进度
 
-`progress: 0/4` 由上方 4 条成功标准等权派生。
+`progress: 3/4` 由上方 4 条成功标准等权派生；标准 2 待 GOAL-004 落地 5 份迁移 Schema 文档并经默认主路径渲染后闭合（本目标已移除手写默认分支）。
 
 ## 信息需求
 

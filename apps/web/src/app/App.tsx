@@ -19,15 +19,18 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
-import { EXAMPLE_PAGES } from "@/app/examples/registry";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   type AppManifest,
   type NavigationContext,
+  type PageEntry,
   matchRoute,
   resolveInitialRoute,
 } from "@/protocol/app-manifest";
+import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
+import type { RenderPageDocument } from "@/renderer/render";
+import { RenderPage } from "@/renderer/render.tsx";
 
 const iconRegistry: Record<string, LucideIcon> = {
   activity: Activity,
@@ -52,6 +55,8 @@ export interface AppProps {
   navigationContext?: NavigationContext;
   /** Set when the boot /me session failed; surfaces a non-blocking notice. */
   accountError?: unknown;
+  /** Injectable fetch for page-schema documents (defaults to `globalThis.fetch`). */
+  schemaFetcher?: typeof fetch;
 }
 
 function currentLocationPath() {
@@ -173,18 +178,118 @@ function flattenNavigation(items: ProjectedItem[]): ProjectedItem[] {
   return items.flatMap((item) => (item.type === "group" ? item.items : [item]));
 }
 
+type SchemaSurfaceState =
+  | { status: "loading" }
+  | { status: "error"; error: PageSchemaError }
+  | { status: "ready"; document: unknown };
+
+/** Unified, fail-closed surface for a failed page-schema load or validation. */
+function PageSchemaErrorSurface({ error }: { error: PageSchemaError }) {
+  return (
+    <section role="alert" className="space-y-6" aria-labelledby="schema-error-title">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Page schema error
+        </p>
+        <h1 id="schema-error-title" className="text-3xl font-semibold tracking-tight">
+          {error.code}
+        </h1>
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{error.message}</p>
+        <p className="font-mono text-xs text-muted-foreground">{error.url}</p>
+      </div>
+      {error.issues !== undefined && error.issues.length > 0 ? (
+        <ul className="space-y-1 text-sm text-destructive">
+          {error.issues.map((issue, index) => (
+            <li key={index}>
+              <code className="font-mono">{issue.path}</code>: {issue.message}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * Default page surface: the schema-driven path
+ * `page.route → page.schemaUrl → loadPageDocument → RenderPage` (GOAL-003).
+ * The hand-written EXAMPLE_PAGES are no longer part of the render path (D-003).
+ */
+function SchemaPageSurface({
+  page,
+  params,
+  context,
+  fetcher,
+}: {
+  page: PageEntry;
+  params: Record<string, string>;
+  context: NavigationContext;
+  fetcher?: typeof fetch;
+}) {
+  const [state, setState] = useState<SchemaSurfaceState>({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    setState({ status: "loading" });
+    loadPageDocument(page, params, { fetcher })
+      .then((document) => {
+        if (!cancelled) {
+          setState({ status: "ready", document });
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setState({
+          status: "error",
+          error:
+            error instanceof PageSchemaError
+              ? error
+              : new PageSchemaError(
+                  "PAGE_LOAD_FAILED",
+                  page.schemaUrl,
+                  error instanceof Error ? error.message : "Failed to load the page schema.",
+                ),
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, params, fetcher]);
+
+  if (state.status === "loading") {
+    return (
+      <p role="status" className="text-sm text-muted-foreground">
+        Loading page schema…
+      </p>
+    );
+  }
+  if (state.status === "error") {
+    return <PageSchemaErrorSurface error={state.error} />;
+  }
+  return (
+    <RenderPage
+      document={state.document as RenderPageDocument}
+      context={context as unknown as Record<string, unknown>}
+    />
+  );
+}
+
 function PageSurface({
   manifest,
   path,
   onNavigate,
   navigationContext,
+  schemaFetcher,
 }: {
   manifest: AppManifest;
   path: string;
   onNavigate: (href: string) => void;
   navigationContext: NavigationContext;
+  schemaFetcher?: typeof fetch;
 }) {
-  const route = matchRoute(manifest.pages, path);
+  const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
   if (route === undefined) {
     return (
@@ -213,10 +318,6 @@ function PageSurface({
   }
 
   const pageTitle = route.page.title ?? route.page.titleKey ?? route.page.pageId;
-  const ExamplePage = EXAMPLE_PAGES[route.page.pageId];
-  if (ExamplePage !== undefined) {
-    return <ExamplePage context={navigationContext} />;
-  }
   return (
     <section className="space-y-8" aria-labelledby="page-title">
       <div className="flex flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
@@ -227,58 +328,28 @@ function PageSurface({
           <h1 id="page-title" className="text-3xl font-semibold tracking-tight">
             {pageTitle}
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            This surface is selected from the application manifest. The page renderer remains a
-            later protocol boundary.
-          </p>
         </div>
         <div className="border border-border bg-card px-4 py-3 text-right text-xs text-muted-foreground">
           <p className="font-medium text-foreground">{route.page.pageId}</p>
           <p className="mt-1 font-mono">{route.page.route}</p>
         </div>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="border border-border bg-card p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Route status
-          </p>
-          <p className="mt-3 text-2xl font-semibold">Matched</p>
-          <p className="mt-1 text-sm text-muted-foreground">D4a template resolution</p>
-        </div>
-        <div className="border border-border bg-card p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Protocol
-          </p>
-          <p className="mt-3 text-2xl font-semibold">{manifest.protocolVersion}</p>
-          <p className="mt-1 text-sm text-muted-foreground">App manifest contract</p>
-        </div>
-        <div className="border border-border bg-card p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Navigation
-          </p>
-          <p className="mt-3 text-2xl font-semibold">{manifest.pages.length}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Registered pages</p>
-        </div>
-      </div>
-
-      <div className="border border-dashed border-border bg-background p-6">
-        <div className="flex items-start gap-3">
-          <Activity aria-hidden="true" className="mt-0.5 size-5 text-muted-foreground" />
-          <div>
-            <h2 className="font-medium">Manifest-driven shell is ready</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Navigation, route matching, default landing, and fallback behavior are active. A
-              later renderer can own the page schema at <code className="font-mono">{route.page.schemaUrl}</code>.
-            </p>
-          </div>
-        </div>
-      </div>
+      <SchemaPageSurface
+        page={route.page}
+        params={route.params}
+        context={navigationContext}
+        fetcher={schemaFetcher}
+      />
     </section>
   );
 }
 
-export function App({ manifest, navigationContext = {}, accountError }: AppProps) {
+export function App({
+  manifest,
+  navigationContext = {},
+  accountError,
+  schemaFetcher,
+}: AppProps) {
   const [path, setPath] = useState(() => {
     const requested = currentLocationPath();
     const initial = resolveInitialRoute(manifest, requested);
@@ -391,6 +462,7 @@ export function App({ manifest, navigationContext = {}, accountError }: AppProps
             path={path}
             onNavigate={onNavigate}
             navigationContext={navigationContext}
+            schemaFetcher={schemaFetcher}
           />
         </main>
       </div>

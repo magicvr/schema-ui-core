@@ -7,40 +7,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { App } from "@/app/App";
 import { validateAppManifest } from "@/protocol/app-manifest";
 
-const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
-
-beforeEach(() => {
-  Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
-    configurable: true,
-    value: true,
-  });
-  // jsdom cannot resolve relative URLs through fetch; stub the records API
-  // used by the R5 example pages (one row so the Edit/Delete gates render).
-  globalThis.fetch = (async (input: RequestInfo | URL, _init?: RequestInit) => {
-    const url = String(input);
-    if (url.startsWith("/api/records/")) {
-      // PATCH / DELETE detail routes are not exercised by these surface tests.
-      return new Response(null, { status: 204 });
-    }
-    return new Response(
-      JSON.stringify({
-        items: [
-          {
-            id: "rec-1",
-            name: "Acme Console",
-            status: "active",
-            owner: "alice",
-            updatedAt: "2026-07-31T00:00:00Z",
-          },
-        ],
-        total: 1,
-        page: 1,
-        pageSize: 10,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
-  }) as typeof fetch;
-});
+// D-003 (GOAL-003): the 5 hand-written EXAMPLE_PAGES are migrated to Schema
+// documents that render through the default path
+// (`page.route → page.schemaUrl → loadPageDocument → RenderPage`). These tests
+// inject schema fixtures via App's schemaFetcher and assert:
+//   (a) example routes render Schema content, not the hand-written surfaces;
+//   (b) the hand-written EXAMPLE_PAGES are no longer part of the render path;
+//   (c) a missing / invalid schema fails closed with the unified error surface.
 
 function exampleManifest() {
   return validateAppManifest({
@@ -87,14 +60,68 @@ function exampleManifest() {
   });
 }
 
-async function renderApp(path: string): Promise<HTMLDivElement> {
+// Structurally valid page document (meta + section + text), mirroring the
+// shape the pinned page/node schemas accept.
+function schemaDocument(pageId: string, title: string, text: string) {
+  return {
+    meta: {
+      pageId,
+      title,
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+    },
+    body: {
+      type: "section",
+      children: [{ type: "text", props: { text } }],
+    },
+  };
+}
+
+// Fetcher keyed by resolved schemaUrl pathname; a missing key 404s so the
+// loader maps it to PAGE_NOT_FOUND (fail-closed), exactly like the API does.
+function schemaFetcher(documents: Record<string, unknown>) {
+  return (async (input: RequestInfo | URL) => {
+    const pathname = new URL(String(input), "http://test.local").pathname;
+    const document = documents[pathname];
+    if (document === undefined) {
+      return new Response(JSON.stringify({ error: "SCHEMA_NOT_FOUND" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify(document), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as typeof fetch;
+}
+
+const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
+
+beforeEach(() => {
+  Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
+    configurable: true,
+    value: true,
+  });
+});
+
+async function renderApp(
+  path: string,
+  documents: Record<string, unknown>,
+): Promise<HTMLDivElement> {
   window.history.replaceState({}, "", path);
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   activeRoots.push({ root, container });
   await act(async () => {
-    root.render(<App manifest={exampleManifest()} navigationContext={{}} />);
+    root.render(
+      <App
+        manifest={exampleManifest()}
+        navigationContext={{}}
+        schemaFetcher={schemaFetcher(documents)}
+      />,
+    );
   });
   return container;
 }
@@ -107,42 +134,42 @@ afterEach(async () => {
   window.history.replaceState({}, "", "/");
 });
 
-describe("R5 example pages in the shell", () => {
-  it("renders the data-table example surface on its route", async () => {
-    const container = await renderApp("/data-table");
+describe("schema-driven default path (GOAL-003)", () => {
+  it("renders a migrated example route from its Schema document", async () => {
+    const container = await renderApp("/data-table", {
+      "/schema/data-table": schemaDocument("data-table", "Data table", "Schema-driven records"),
+    });
     expect(container.querySelector("h1")?.textContent).toContain("Data table");
+    expect(container.textContent).toContain("Schema-driven records");
   });
 
-  it("renders the search-form-table example surface on its route", async () => {
-    const container = await renderApp("/search-form-table");
-    expect(container.querySelector("h1")?.textContent).toContain("Search + table");
+  it("does not render the hand-written example surface on its route", async () => {
+    const container = await renderApp("/form-with-reactions", {
+      "/schema/form-with-reactions": schemaDocument(
+        "form-with-reactions",
+        "Form with reactions",
+        "Schema-driven reactive form",
+      ),
+    });
+    // The hand-written surface markers (Context snapshot / Name (input)) are gone.
+    expect(container.textContent).toContain("Schema-driven reactive form");
+    expect(container.textContent).not.toContain("Context snapshot");
+    expect(container.textContent).not.toContain("evaluateExpression");
   });
 
-  it("renders the list-edit-lifecycle example surface with Edit/Delete gates", async () => {
-    const container = await renderApp("/list-edit-lifecycle");
-    expect(container.querySelector("h1")?.textContent).toContain("List + edit lifecycle");
-    // Row action buttons are present (permission gate passes for the dev admin).
-    expect(container.textContent).toContain("Edit");
-    expect(container.textContent).toContain("Delete");
+  it("fails closed with the unified error when the schema document is missing", async () => {
+    const container = await renderApp("/search-form-table", {});
+    expect(container.textContent).toContain("PAGE_NOT_FOUND");
+    expect(container.textContent).toContain("/schema/search-form-table");
   });
 
-  it("renders the form-controls example surface with the whitelist gate", async () => {
-    const container = await renderApp("/form-controls");
-    expect(container.querySelector("h1")?.textContent).toContain("Form controls");
-    // The capability gate passes for the 2.7 + extended/advanced meta.
-    expect(container.textContent).toContain("Capability gate");
-  });
-
-  it("renders the form-with-reactions example surface with the context toggles", async () => {
-    const container = await renderApp("/form-with-reactions");
-    expect(container.querySelector("h1")?.textContent).toContain("Form with reactions");
-    // The reaction page exposes the $context snapshot and renders form controls.
-    expect(container.textContent).toContain("Context snapshot");
-    expect(container.textContent).toContain("Name (input)");
-  });
-
-  it("keeps the manifest fallback for non-example pages", async () => {
-    const container = await renderApp("/overview");
-    expect(container.querySelector("h1")?.textContent).toContain("Overview");
+  it("fails closed with the unified error for an invalid schema document", async () => {
+    const container = await renderApp("/form-controls", {
+      "/schema/form-controls": {
+        meta: { pageId: "form-controls", title: "Form controls" },
+        body: { type: "section" },
+      },
+    });
+    expect(container.textContent).toContain("PAGE_SCHEMA_INVALID");
   });
 });

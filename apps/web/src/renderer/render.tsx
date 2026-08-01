@@ -397,7 +397,9 @@ function dispatchParsedNode({
     case "table":
       return (
         tableRenderer?.(node) ?? (
-          <p className="text-sm text-muted-foreground">table nodes are wired by the example page</p>
+          <p className="text-sm text-muted-foreground">
+            table data injection is pending the R1 list-data contract
+          </p>
         )
       );
   }
