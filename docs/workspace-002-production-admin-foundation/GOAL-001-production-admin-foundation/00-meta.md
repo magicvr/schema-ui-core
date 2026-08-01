@@ -5,7 +5,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.4
+version: 0.1.6
 progress: 1/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -45,7 +45,8 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 
 - [x] **R1 · 协议实施边界与 Schema Renderer 产品化**：核对冻结覆盖映射，把 Renderer 接入默认页面路径，并验证关键失败行为。  
   阶段内子目标（D-005）：`GOAL-002-r1-schema-load-validate`（done）· `GOAL-003-r1-default-render-path`（done）· `GOAL-004-r1-representative-node-pages`（done）。证据：I-001 覆盖矩阵 verified（D-004）+ Renderer 默认 `schemaUrl` 主路径 + 2026-08-02 Web 425/425、Go test/vet 全绿与 fail-closed 断言（各子目标关门审计）。
-- [ ] **R2 · 真实认证与请求级身份**：交付登录、登出、会话恢复、受保护路由和 API 身份传递。
+- [ ] **R2 · 真实认证与请求级身份**：交付登录、登出、会话恢复、受保护路由和 API 身份传递。  
+  阶段子目标：`GOAL-005-r2-auth-session`（active；`I-002` verified，D-007 冻结短 JWT Access + Opaque Refresh + SQLite 方案）。
 - [ ] **R3 · 持久化身份、角色与最小权限模型**：交付用户/角色/菜单持久化、种子数据与后端授权最小闭环。
 - [ ] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
 - [ ] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。
@@ -57,7 +58,7 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 | ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
 | `I-001` | 冻结协议到当前代码、fixture 与 Renderer 运行路径的实施差量是什么？ | required | R1 方案冻结与实施 | R1 方案冻结前 | 以 `I-PROTO-001 v0.1.3` 逐项建立实现与验证矩阵 | **verified** | 已关闭（D-004） | [I-001-implementation-gap-matrix.md](attachments/I-001-implementation-gap-matrix.md)；D-004 采用为 R1 方案边界；**不**勾选 R1 完成 |
-| `I-002` | 认证/会话机制、凭据边界与安全配置采用什么最小方案？ | required | R2 方案冻结与实施 | R2 方案冻结前 | 调查当前栈、部署约束与威胁边界，形成认证生命周期、请求身份、配置边界与验收矩阵后记录方案取舍 | collecting | 不延期；R2 方案冻结前复核 | D-006 已建立收集边界；尚未选择实现方案或完成验证 |
+| `I-002` | 认证/会话机制、凭据边界与安全配置采用什么最小方案？ | required | R2 方案冻结与实施 | R2 方案冻结前 | 调查当前栈、部署约束与威胁边界，形成认证生命周期、请求身份、配置边界与验收矩阵后记录方案取舍 | **verified** | 已关闭（D-007） | D-007（2026-08-02）裁决：短 JWT Access + Opaque Refresh + SQLite 存储 + 接受 JWT 库；现状与三候选方案、M1–M14 验收矩阵见 [I-002-auth-collection.md](attachments/I-002-auth-collection.md)；**不**冻结 R2 实施细节（TTL / env / 前端存储 / CORS / 表结构在 R2 子目标定稿） |
 | `I-003` | 数据存储、迁移、种子和用户—角色—菜单关系的最小模型是什么？ | required | R3 方案冻结与实施 | R3 方案冻结前 | 形成数据模型、迁移和恢复验证计划 | open | 不延期；R3 立项前复核 | 待收集 |
 | `I-004` | 哪个代表性实体及 API/错误语义能够完整证明 Schema CRUD 闭环？ | required | R4 方案冻结与验收 | R4 方案冻结前 | 选择实体并固定 CRUD、校验、权限与异常验收矩阵 | open | 不延期；R4 立项前复核 | 待收集 |
 | `I-005` | 目标部署基线、15 分钟 fork 计时口径与可复现实验环境是什么？ | required | R5 方案冻结与关门 | R5 方案冻结前 | 固定环境、命令、容器/部署边界和独立复现实验方法 | open | 不延期；R5 立项前复核 | 待收集 |

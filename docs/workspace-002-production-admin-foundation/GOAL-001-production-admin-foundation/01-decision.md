@@ -2,9 +2,9 @@
 title: 决策 · 生产级可用 Admin 基架
 status: active
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 parent: null
-version: 0.1.2
+version: 0.1.3
 ---
 
 # 决策 · GOAL-001
@@ -90,3 +90,27 @@ version: 0.1.2
 - **立即选定 cookie、JWT 或第三方身份提供者**：当前缺少部署、凭据边界和现有栈约束的已验证输入，会把假设写成决策。
 - **以 R1 的静态开发会话作为生产默认**：违反 VP-002 对真实认证和请求级身份的成功边界。
 - **接受 `I-002` residual 后直接实施**：用户未作书面 residual 接受，且该未知直接影响 R2 的方案与安全边界。
+
+## D-007 · R2 认证方案：短 JWT Access + Opaque Refresh + SQLite（C+B 混合）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. R2 认证采用 **短时效 JWT Access Token（`Authorization: Bearer`）+ Opaque Refresh Token** 混合方案（附件 §5 方案 C+B）。
+  2. 会话/凭据存储引入 **SQLite**（先支持 sqlite）：刷新令牌哈希存储、可撤销；登录凭据落 SQLite。
+  3. **接受引入 JWT 库**：Go 侧后端依赖从当前零第三方依赖扩展为含 JWT 库 + SQLite 驱动（具体库选型与版本在 R2 实施时定稿并留痕）。
+- **理由**：用户裁决候选方案与开放前提。短 JWT access 提供无状态、可水平扩展的请求身份载体；opaque refresh 服务端可撤销并支持过期/登出语义，弥补纯 JWT 撤销难；SQLite 满足 MVP 轻量持久化，且 R3 身份模型可在此之上平滑扩展；Bearer 方案不耦合同源 cookie，部署形态灵活。
+- **边界**：
+  - 访问令牌为短时效 JWT；刷新令牌为不透明随机串、哈希存储于 SQLite，登出/刷新时撤销。
+  - 静态开发会话（`StaticDevSession`）仅保留为显式本地 dev 兜底，生产默认不启用（验收 M9）。
+  - 本决策只冻结**机制 / 存储 / 依赖**；具体参数（access/refresh TTL、env 配置键、前端令牌存储策略、CORS 与同源/跨源托管、SQLite 表结构、种子用户/凭据边界、密码哈希）在 R2 子目标方案/计划中定稿并留痕，**不在此静默假设**。
+  - **与 R3 边界**：SQLite 用户/凭据在 R2 为满足真实登录的最小种子形态；用户—角色—菜单持久化与权限模型属 R3（`I-003`），本决策不实施 R3。
+- **影响**：`I-002` → `verified`（方案已裁决；证据 = 本决策 + [I-002-auth-collection.md](attachments/I-002-auth-collection.md) §5/§6）。R2「方案冻结与实施」信息门禁解除，可进入 R2 子目标立项。
+- **后续**：冻结 R2 方案边界 → 创建 R2 子目标（登录/登出/会话恢复/过期/撤销/请求身份中间件 + `401`/`403` + dev 兜底开关）→ 实施时定稿 TTL / env / 前端存储 / CORS / 表结构并留痕。
+
+### 未选方案
+
+- **方案 A · HttpOnly 会话 Cookie（同源）**：需同源托管 + CSRF 防护，与当前独立 SPA/API 进程形态耦合；本轮不选。
+- **纯 Opaque Bearer（B 不含 JWT）**：撤销直接，但缺可扩展的 access 令牌形态；用户选择 JWT 承载请求身份。
+- **纯签名 JWT（C 不含 opaque refresh）**：撤销难，与「短 access + 可撤销会话」目标冲突。
+- **保持 Go 零依赖 / 进程内会话**：无法满足 SQLite 持久化与刷新令牌撤销；用户明确接受 JWT 库与 DB。
