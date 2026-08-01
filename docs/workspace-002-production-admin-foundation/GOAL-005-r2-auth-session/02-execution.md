@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-005
@@ -38,6 +38,19 @@ version: 0.3.0
 - **E2E 边界**：`apps/web/e2e/shell.spec.ts` 已改写为真实认证链（login → /me → records），但**本机未能执行**：Windows 本机 `127.0.0.1:5173` 被禁止绑定（EACCES；8080/9999 可绑定，非代码问题）；CI `browser-e2e`（Linux）将覆盖。
 - **未做**：前端登录页 / 会话恢复 / 令牌存储定稿后的实现（成功标准 5）；CORS 最小假设（`I-005-004` non-blocking，仍 open）；R3 身份模型（不实施）。
 - **计划（非事实）**：下一拍实现前端认证闭环（登录页、refresh 续期、401 转登、localStorage 存储）并收口 CORS / R3 边界。
+
+## 2026-08-02 · 前端认证闭环实施（成功标准 5–6，I-005-004/005 收口）
+
+- **令牌存储（D-002）**：新增 `apps/web/src/account/tokens.ts` — access 仅内存，refresh 存 localStorage（`schema-ui.refreshToken`），`clearTokens`/`hasSession`。
+- **认证客户端**：新增 `apps/web/src/account/auth-client.ts` — `login`/`logout`/`restoreSession`/`fetchMe` 与 **`authFetch`**（自动挂 `Authorization: Bearer`；401 时静默 refresh 一次并重试；refresh 失败 → 清会话并通知 auth-lost，UI 回登录页）。`AuthError` 稳定错误码（`INVALID_CREDENTIALS` 等）。
+- **状态管理**：新增 `apps/web/src/account/AuthContext.tsx` — `AuthProvider`（启动 `restoreSession` 恢复、`login`/`logout` 切换状态、监听 auth-lost）+ `useAuth`。
+- **登录页**：新增 `apps/web/src/app/LoginPage.tsx` — 未认证时整屏登录表单（用户名/密码、提交中禁用、错误显示）。
+- **接线**：`main.tsx` 改为 `AuthProvider` + `AuthGate`（loading → 启动屏；unauthenticated → LoginPage；authenticated → App，`navigationContext.user` 取真实身份、`recordsFetcher={authFetch}`）；`App.tsx` 新增 `onLogout`/`currentUser` 与 Sign out 按钮。
+- **收口**：记录 **D-005**（`I-005-004` → verified：R2 同源最小假设，不引入 CORS 头，跨源属 R5）、**D-006**（`I-005-005` → verified：`account.User` 形状为 `$context.user`/`/me` 契约，R3 同形状支撑）。
+- **测试**：新增 `tokens.test.ts`（access 内存 / refresh localStorage / 清除）、`auth-client.test.ts`（login 成败、Bearer 注入、401 刷新重试、refresh 失败通知 auth-lost、restore、logout）、`LoginPage.test.tsx`（渲染/提交/错误/禁用）。
+- **验证**：web `npm test` **441/441**（新增 16 项）、`npm run build`（tsc + vite）通过；api `go test` 不受影响。
+- **E2E**：`apps/web/e2e/shell.spec.ts` 改写为登录门禁流（未认证 → 登录页 → admin/admin 登录 → shell → 独立 API 认证链断言）；**本机仍受 `127.0.0.1:5173` 绑定被禁限制未能执行**，CI `browser-e2e`（Linux）覆盖。
+- **未做**：GOAL-005 尚未 close-out（需审计 + 用户确认置 `done`）；Root R2 检查点未勾选；R3 不实施。
 
 ## 计划（非事实）
 

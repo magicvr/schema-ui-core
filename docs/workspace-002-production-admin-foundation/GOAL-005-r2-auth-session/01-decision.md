@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策 · GOAL-005
@@ -61,3 +61,19 @@ version: 0.2.0
   - `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD` **不落仓库**；`.env.example` 仅放占位说明。
 - **理由**：用户裁决 profile；短 access + 可撤销 refresh 匹配 D-007；静态会话默认关闭满足验收 M9。
 - **关联信息项**：`I-005-001` → `verified`（证据 = 本决策）。
+
+## D-005 · R2 CORS / 同源最小假设（I-005-004 收口）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：R2 采用**同源**最小假设——前端与 API 同源部署（dev 经 Vite `/api` 代理；Bearer 令牌无 cookie 域耦合），因此 **R2 不引入 CORS 响应头**。跨源托管与完整 CORS 配置属 R5 部署基线（Root `I-005`），若届时前后端不同源再引入 `Access-Control-*`。
+- **理由**：当前 Vite dev 代理使 `/api` 同源；D-007 选定的 Bearer 方案不依赖 cookie 域，无预检/凭据耦合。
+- **关联信息项**：`I-005-004` → `verified`（证据 = 本决策）。
+
+## D-006 · R2 认证产物与 R3 身份模型边界（I-005-005 收口）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：R2 身份对象 `account.User {id, name, roles}` 是 `$context.user` 与 `/api/accounts/me` 的**契约形状**；R3 用规范化用户—角色—菜单持久化支撑**同一形状**，必须保持该响应契约不变。R2 `users.roles` JSON 列是占位，R3 以关系表替换。
+- **理由**：前端 D-PERM 求值与导航投影按 `$context.user.roles` 求值；保持形状避免 R3 破坏渲染契约。
+- **关联信息项**：`I-005-005` → `verified`（证据 = 本决策）。

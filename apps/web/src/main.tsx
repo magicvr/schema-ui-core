@@ -1,10 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { loadAccountContext } from "@/account/context";
+import { AuthProvider, useAuth } from "@/account/AuthContext";
+import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
+import { LoginPage } from "@/app/LoginPage";
 import { ManifestFailure } from "@/app/ManifestFailure";
-import { loadAppManifest } from "@/protocol/app-manifest";
+import { loadAppManifest, type AppManifest } from "@/protocol/app-manifest";
 import "./index.css";
 
 function applyStoredTheme() {
@@ -15,6 +17,40 @@ function applyStoredTheme() {
   }
 }
 
+function BootScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+      Checking session…
+    </div>
+  );
+}
+
+/** Renders the login page when unauthenticated, the shell when authenticated. */
+function AuthGate({ manifest }: { manifest: AppManifest }) {
+  const { status, user, session, login, logout, authFetch } = useAuth();
+
+  if (status === "loading") {
+    return <BootScreen />;
+  }
+  if (status === "unauthenticated") {
+    return <LoginPage onLogin={login} />;
+  }
+
+  const context: NavigationContext = {
+    user: user === null ? undefined : (user as unknown as Record<string, unknown>),
+    features: session?.features,
+  };
+  return (
+    <App
+      manifest={manifest}
+      navigationContext={context}
+      recordsFetcher={authFetch}
+      onLogout={logout}
+      currentUser={user}
+    />
+  );
+}
+
 const root = document.getElementById("root");
 if (!root) {
   throw new Error("root element not found");
@@ -23,21 +59,12 @@ if (!root) {
 applyStoredTheme();
 
 loadAppManifest()
-  .then(async (manifest) => {
-    // R4: attach the account $context snapshot before first render so the
-    // shell's navigation permission checks evaluate against real identity.
-    // A failed load is not fatal: surface it as a banner instead of dropping it.
-    const { context, error: accountError } = await loadAccountContext();
-    if (accountError !== null) {
-      console.error("[account] failed to load session snapshot:", accountError);
-    }
+  .then((manifest) => {
     createRoot(root).render(
       <StrictMode>
-        <App
-          manifest={manifest}
-          navigationContext={context}
-          accountError={accountError ?? undefined}
-        />
+        <AuthProvider>
+          <AuthGate manifest={manifest} />
+        </AuthProvider>
       </StrictMode>,
     );
   })

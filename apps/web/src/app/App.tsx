@@ -60,6 +60,10 @@ export interface AppProps {
   schemaFetcher?: typeof fetch;
   /** Injectable fetch for table data sources such as `/api/records` (R1 · GOAL-004). */
   recordsFetcher?: typeof fetch;
+  /** Authenticated user rendered in the header; present → show a sign-out button. */
+  currentUser?: { id: string; name?: string } | null;
+  /** Revokes the session (AuthProvider flips to the login page). */
+  onLogout?: () => void;
 }
 
 function currentLocationPath() {
@@ -359,6 +363,8 @@ export function App({
   accountError,
   schemaFetcher,
   recordsFetcher,
+  currentUser,
+  onLogout,
 }: AppProps) {
   const [path, setPath] = useState(() => {
     const requested = currentLocationPath();
@@ -436,6 +442,17 @@ export function App({
 
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
             <ThemeToggle />
+            {currentUser !== undefined && currentUser !== null ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden text-xs text-muted-foreground sm:inline">
+                  {currentUser.name ?? currentUser.id}
+                </span>
+                <Button type="button" variant="outline" size="sm" onClick={onLogout}>
+                  <LogOut aria-hidden="true" className="size-4" />
+                  Sign out
+                </Button>
+              </div>
+            ) : null}
             {projection.user.length > 0 ? (
               <nav className="hidden items-center gap-1 lg:flex" aria-label="User navigation">
                 <NavigationItems items={projection.user} onNavigate={onNavigate} horizontal />

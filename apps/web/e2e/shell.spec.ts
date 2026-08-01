@@ -1,16 +1,23 @@
 import { expect, test } from "@playwright/test";
 
-// R6 browser E2E (I-008-005 forward path) updated for R2 real auth (GOAL-005):
-// boots the Go API + Vite dev server via playwright webServer; verifies the
-// shell renders from the real manifest, then walks the real auth chain
-// (login -> /me -> records) through the Web /api proxy in a real browser.
-//
-// The Go API seeds the dev admin (admin / admin) when APP_ENV defaults to
-// development, so no test-only env is needed.
+// R6 browser E2E (I-008-005 forward path) updated for the R2 auth closed loop
+// (GOAL-005): boots the Go API + Vite dev server via playwright webServer;
+// verifies that an unauthenticated visit shows the login page, that signing in
+// with the dev seed (admin / admin) renders the shell, and that the real auth
+// chain (login -> /me -> records) works through the Web /api proxy.
 
-test("shell renders and the real auth chain works through the proxy", async ({ page, request }) => {
-  // Home redirect resolves from manifest.homePageRef.
+test("login gates the shell and the real auth chain works through the proxy", async ({ page, request }) => {
+  // Unauthenticated visit → login page, not the shell.
   await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+
+  // Sign in with the dev seed.
+  await page.getByLabel("Username").fill("admin");
+  await page.getByLabel("Password").fill("admin");
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  // Shell renders and redirects home -> overview.
   await expect(page).toHaveURL(/\/overview$/);
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await expect(page.getByText("Schema UI Core")).toBeVisible();
@@ -21,14 +28,11 @@ test("shell renders and the real auth chain works through the proxy", async ({ p
   await expect(page.getByRole("link", { name: "Data table" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
 
-  // No manifest failure surface.
+  // No manifest failure surface, and the sign-out control is present.
   await expect(page.getByText("MANIFEST_LOAD_FAILED")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 
-  // The boot /me without a token is now 401 (no dev-session fallback), so the
-  // shell surfaces the non-blocking account banner instead of a session.
-  await expect(page.getByText("Account session failed to load")).toBeVisible();
-
-  // Real auth chain through the Web /api proxy -> Go API.
+  // Real auth chain through the Web /api proxy -> Go API (independent context).
   const login = await request.post("/api/auth/login", {
     data: { username: "admin", password: "admin" },
   });
