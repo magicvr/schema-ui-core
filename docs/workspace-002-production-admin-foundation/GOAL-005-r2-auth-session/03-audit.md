@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计台账 · GOAL-005
@@ -13,12 +13,12 @@ version: 0.2.0
 
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
-| A-001 | independent | 2026-08-02 | close-out | conditional | F-001 required 开放 |
+| A-001 | independent | 2026-08-02 | close-out | conditional | F-001 **fixed**（2026-08-02 编排器响应，证据见下） |
 
 ## 当前审计边界
 
-- 已记录独立 close-out 审计 A-001；目标的 status/progress 与关门响应仍由 `/govern` 维护。
-- required finding 只能按 `fixed`、`accepted-residual` 或 `user-overruled` 合法闭合。
+- 已记录独立 close-out 审计 A-001 及其编排器响应；目标的 status/progress 与关门仍由 `/govern` 维护（用户确认后置 `done`）。
+- required finding 只能按 `fixed`、`accepted-residual` 或 `user-overruled` 合法闭合；`F-001` 已按 `fixed` 闭合（2026-08-02）。
 
 ## A-001 · R2 真实认证与请求级身份关门审计（2026-08-02）
 
@@ -72,3 +72,18 @@ version: 0.2.0
 ### 声明
 
 本意见不修改 status/progress；响应由 `/govern` 处理。
+
+## 响应 · A-001 / F-001（2026-08-02 · /govern）
+
+- **source**：orchestrator（编排器响应；**不**冒充 `source: independent`）
+- **用户裁决**：选择 `fixed` 路径（在 Linux CI 跑通 browser E2E 并补充 401/403 证据后复审关门），不接受本机平台 `accepted-residual`。
+- **证据**：
+  1. **browser E2E 增强**：`apps/web/e2e/shell.spec.ts` 追加匿名 `401` 断言（`GET /api/accounts/me` → `401 UNAUTHENTICATED`；匿名 `PATCH /api/records/rec-1` → `401`）与 admin 写门禁 `200` 对照（提交 `32d8486`）。
+  2. **Linux CI 通过**：push `dev` 触发 run [#30711903555](https://github.com/magicvr/schema-ui-core/actions/runs/30711903555)（2026-08-01T18:09Z = 本地 2026-08-02）：
+     - `browser E2E (Linux, Node 22)` → **success**；Playwright `1 passed (31.8s)`（`e2e/shell.spec.ts:9:1`，含新增 401/200 断言）
+     - `web (Linux, Node 22)` → **success**（`npm test` 441 passed、`npm run build`）
+     - `api (Linux, Go 1.26)` → **success**（`go test ./...` 全绿）
+  3. **非 admin 403 证据**（由 API 自动化测试承担，分配决策 D-007）：`apps/api/internal/handler/records_test.go::TestRecordsWriteDeniedWithoutAdminRole`（editor 角色 PATCH/DELETE → `403 FORBIDDEN`）与 `TestRecordsWriteRequiresAuth`（匿名写 → `401`）、`account_test.go`（`/me` 匿名 → `401`）。
+  4. **本地平台受限记录**：本机 Windows `127.0.0.1:5173` EACCES 依旧；以临时端口 `9999` 复跑脚本 `1 passed` 后还原，未进入提交；Linux CI 为权威可复现证据。
+- **闭合**：`F-001` → **`fixed`**（可核对：CI run 结论 + 日志 `1 passed (31.8s)` + `shell.spec.ts` 断言源码 + `records_test.go` 403 测试）。
+- **仍开放**：无。GOAL-005 满足 close-out 条件，进入关门复审（是否自审、置 `done` 与勾选 Root R2 检查点由用户裁决）。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策 · GOAL-005
@@ -77,3 +77,15 @@ version: 0.3.0
 - **决定**：R2 身份对象 `account.User {id, name, roles}` 是 `$context.user` 与 `/api/accounts/me` 的**契约形状**；R3 用规范化用户—角色—菜单持久化支撑**同一形状**，必须保持该响应契约不变。R2 `users.roles` JSON 列是占位，R3 以关系表替换。
 - **理由**：前端 D-PERM 求值与导航投影按 `$context.user.roles` 求值；保持形状避免 R3 破坏渲染契约。
 - **关联信息项**：`I-005-005` → `verified`（证据 = 本决策）。
+
+## D-007 · F-001 证据分配：browser E2E 承担匿名 401，非 admin 403 由 API 自动化测试承担（A-001 响应）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. 按 A-001 F-001 关闭条件的「或」分支，将匿名 `401` 证据加入 browser E2E（`apps/web/e2e/shell.spec.ts`：`/me` 与 records 写路由匿名访问 → `401 UNAUTHENTICATED`，附 admin `200` 对照）。
+  2. 非 admin `403` 由已通过的 API 自动化测试承担：`records_test.go::TestRecordsWriteDeniedWithoutAdminRole`（editor 角色 PATCH/DELETE → `403 FORBIDDEN`）与 `TestRecordsWriteRequiresAuth`（匿名写 → `401`）、`account_test.go`（`/me` 匿名 → `401`）。E2E 不补 403 的原因：真实 API 无注册端点、种子仅有 admin（无 editor 角色用户），浏览器层角色拒绝与匿名拒绝走同一中间件路径，角色判定差异已由 API 测试钉死。
+  3. 本机 Windows `5173` 绑定限制不进入提交（不改产品端口）；Linux CI 是 F-001 的权威可复现证据。
+- **理由**：A-001 建议「把匿名 401 与非 admin 403 加入该 E2E 或明确由已通过的 API 自动化测试承担并在关门响应中指向证据」；两条证据路径均落地，并以 Linux CI 通过结果背书。
+- **未选方案**：E2E 内直接向 SQLite 注入 editor 用户测 403（破坏封装、依赖 Node sqlite/bcrypt，脆弱）；接受本机平台 `accepted-residual`（用户指令选择 fixed 路径，故不采用）。
+- **关联**：A-001 F-001 → `fixed`（证据 = 本次 CI run #30711903555 + 上述测试路径）。

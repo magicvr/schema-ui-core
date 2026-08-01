@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-005
@@ -51,6 +51,16 @@ version: 0.4.0
 - **验证**：web `npm test` **441/441**（新增 16 项）、`npm run build`（tsc + vite）通过；api `go test` 不受影响。
 - **E2E**：`apps/web/e2e/shell.spec.ts` 改写为登录门禁流（未认证 → 登录页 → admin/admin 登录 → shell → 独立 API 认证链断言）；**本机仍受 `127.0.0.1:5173` 绑定被禁限制未能执行**，CI `browser-e2e`（Linux）覆盖。
 - **未做**：GOAL-005 尚未 close-out（需审计 + 用户确认置 `done`）；Root R2 检查点未勾选；R3 不实施。
+
+## 2026-08-02 · F-001 响应：E2E 增强与 Linux CI browser E2E 通过（A-001 证据）
+
+- **E2E 增强（401 证据入脚本）**：`apps/web/e2e/shell.spec.ts` 在既有登录门禁流后追加匿名 `401` 断言（无 Bearer 访问 `/api/accounts/me` → `401 UNAUTHENTICATED`；匿名 `PATCH /api/records/rec-1` → `401`）与 admin 写门禁 `200` 对照，证明 401 为门禁拒绝而非路由缺失。非 admin `403` 由 API 自动化测试承担（`apps/api/internal/handler/records_test.go::TestRecordsWriteDeniedWithoutAdminRole`：editor 角色 PATCH/DELETE → `403 FORBIDDEN`；`TestRecordsWriteRequiresAuth`：匿名写 → `401`；`account_test.go`：`/me` 匿名 → `401`）。证据分配决策见 D-007。
+- **本地验证（平台受限绕行）**：本机 Windows `127.0.0.1:5173` 绑定仍被禁（EACCES，同 A-001 记录）；以临时端口 `9999` 复跑 `npx playwright test` → **1 passed (12.2s)**，验证脚本逻辑后还原配置（端口改动未进入提交）。
+- **Linux CI 通过（F-001 核心证据）**：提交 `32d8486`（E2E 增强）推送 `dev` 后触发 [r6-basic-matrix run #30711903555](https://github.com/magicvr/schema-ui-core/actions/runs/30711903555)（2026-08-01T18:09Z = 本地 2026-08-02）：
+  - `browser E2E (Linux, Node 22)` → **success**；Playwright `1 passed (31.8s)`（`e2e/shell.spec.ts:9:1`，含新增 401/200 断言）
+  - `web (Linux, Node 22)` → **success**；`npm test` **441 passed**、`npm run build` 通过
+  - `api (Linux, Go 1.26)` → **success**；`go test ./...` 通过（含 401/403 证据测试）
+- **结果**：M14 的 browser E2E 在 Linux CI 可复现通过；匿名 401 证据进入 browser E2E，非 admin 403 证据由 API 自动化测试承担并指向具体测试。F-001 满足 `fixed` 关闭条件；GOAL-005 进入 close-out 复审（`/govern` 汇总，是否自审与置 `done` 由用户裁决）。
 
 ## 计划（非事实）
 
