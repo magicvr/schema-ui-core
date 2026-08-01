@@ -5,7 +5,7 @@ doc_type: info-gap-matrix
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.1.1
 related_info: I-001
 related_decision: D-004
 coverage_baseline: I-PROTO-001 v0.1.3
@@ -38,6 +38,8 @@ inventory_pin: ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b
 4. **未知节点 / 无效 Schema / 运行时错误**：确定性拒绝与统一错误面（库内已有部分 fail-closed；缺产品级串联）。  
 5. **代表性页面**：至少一组列表、详情/record、表单、组合页以 **Node 树** 交付；新增页优先改 Schema。  
 6. **示例降级**：手写 React 示例保留为兼容/演示，不得再作为「新增业务页」默认方式。
+
+> **2026-08-01 细化（GOAL-003 D-003）**：经用户裁决，降级机制定为**迁移为 Schema**——5 个手写示例语义改写为 Schema 文档，经默认主路径（route → schemaUrl → 加载+校验 → RenderPage）渲染，应用内不再保留手写页面路径；本文档「保留为兼容/演示」的表述被该决策细化取代。I-001 差量结论仍成立：示例不得作为「Schema 驱动完成」的默认主路径证明。
 
 ### 明确非 R1（本矩阵标注 defer）
 
@@ -109,7 +111,7 @@ inventory_pin: ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b
 |--------|------|----------------------|
 | 结构 schema（node/page/…） | 测试内 Ajv | 加载管线强制；失败可见 |
 | 行为 fixture | stage3 + upstream tests | 保持 pin；不宣称全协议 |
-| 手写示例页 | 5 个 EXAMPLE_PAGES | 可保留；**不得**作为默认主路径证明「Schema 驱动完成」 |
+| 手写示例页 | 5 个 EXAMPLE_PAGES | 迁移为 Schema（2026-08-01 · GOAL-003 D-003）；**不得**作为默认主路径证明「Schema 驱动完成」 |
 | E2E / 集成 | 现有 shell / example 测试 | 增加「schemaUrl → 渲染」路径测试 |
 | 后端 records / me | 静态会话 + 进程内 records | R1 可继续用；不伪装生产身份 |
 

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-01
 parent: null
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策 · GOAL-003
@@ -23,3 +23,22 @@ version: 0.1.0
 - **状态**：accepted
 - **决定**：切换默认分支前，GOAL-002 须至少提供可测的加载 + 校验 + 错误面；允许并行准备代码，但合并默认切换的验收门禁绑定 002。
 - **理由**：无加载器的默认 `RenderPage` 会制造空壳主路径。
+
+## D-003 · 示例兼容策略 = 迁移为 Schema（关闭 I-003-001）
+
+- **日期**：2026-08-01
+- **状态**：accepted
+- **决定**：既有 5 个 `EXAMPLE_PAGES` 的保留策略定为**迁移为 Schema**（非双分支、非仅测试保留）：
+  1. 5 份手写示例的页面语义改写为 Schema 文档，经默认主路径（`page.route` → `page.schemaUrl` → `loadPageDocument` → `RenderPage`）渲染；
+  2. 应用内**不再存在**手写示例作为独立页面路径：`App.tsx` 移除 `EXAMPLE_PAGES[pageId]` 默认查找，registry 不再被渲染路径引用；
+  3. **可测试的显式入口 = schemaUrl 驱动链**：每个迁移示例页的显式入口是其 manifest 路由 + `GET /api/schema/<pageId>` 端点。自动化测试以该链断言：(a) 示例路由默认渲染 Schema 页且**不出现**手写内容；(b) `EXAMPLE_PAGES` 不再参与渲染路径；(c) 404 / 非法 Schema → 统一 `PageSchemaError` 面（fail-closed，非示例、非旧占位）。
+- **理由**：用户明确选择迁移（否决双分支与仅测试）。迁移比「保留兼容分支」更彻底地落实「示例非默认」：示例内容也改为 Schema 资产，新增业务页的唯一方式即改 Schema，与 VP-002「改 Schema 而非手写 React 成为主路径」主张一致。
+- **未选方案**：
+  - **双分支（`?example=<pageId>` 兼容入口）**：保留手写示例为显式演示路径；用户否决——仍保留第二套页面实现，与「Schema 为唯一新增页方式」不完全一致。
+  - **仅测试保留**：从 App 移除示例仅作测试 fixture；用户否决——示例内容不再可演示，且与 GOAL-004「改写示例语义」的资产化方向不衔接。
+- **落地分工**：5 份迁移 schema 文档作为页面资产由 **GOAL-004** 作者（其 meta 已允许并行起草 Node JSON；`I-004-001` 相应改为「改写现有示例语义为 Schema」）。GOAL-003 负责移除手写默认分支，并以注入 fixture 完成默认路径测试（`loadPageDocument` 的 `fetcher` 可注入，无需 API 先行）。
+- **手写源文件处置**：自 `App.tsx` 渲染路径移除；源文件在 GOAL-004 文档落地前暂留为测试/参考引用，落地后清理（2026-08-01 用户确认）。
+- **白名单边界**：迁移只能在 `I-PROTO-001 v0.1.3` §5 白名单 + R1 能力（form / table / actionButton / `$context` reactions）内表达；list-edit 完整 CRUD 生命周期等超出部分**不**在 R1 复刻（属 R4 Out），不在本决策承诺范围内。
+- **成功标准修订**：标准 2 由「手写示例仅作为显式兼容/演示路径」改为「既有 5 个手写示例迁移为 Schema 文档，经默认 Schema 主路径渲染；应用内不再存在手写示例作为独立页面路径」；标准 4 由「示例兼容路径（若保留）行为可预期」改为「缺失/非法 Schema 时统一错误面可预期（fail-closed）」。仍 4 条等权，`progress` 维持 `0/4`。
+- **关联信息项**：`I-003-001` → **closed**（证据 = 本决策 D-003）。
+- **后续**：进入默认分支切换实施前，按 P-004.3.1 询问是否补 self 审计；GOAL-004 并行作者迁移文档。

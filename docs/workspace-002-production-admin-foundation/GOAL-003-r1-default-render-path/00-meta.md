@@ -5,7 +5,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-01
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.2.0
 progress: 0/4
 ---
 
@@ -13,16 +13,16 @@ progress: 0/4
 
 ## 概述
 
-将 Admin 匹配路由后的**默认页面能力**切换为 Schema 驱动的 `RenderPage`（或等价宿主），并把手写 `EXAMPLE_PAGES` 降为兼容/演示路径。依赖 GOAL-002 的加载与校验管线；代表性 Node 页内容与回归证据由 GOAL-004 补齐。
+将 Admin 匹配路由后的**默认页面能力**切换为 Schema 驱动的 `RenderPage`（或等价宿主），并把 5 个手写 `EXAMPLE_PAGES` 迁移为 Schema 文档（`I-003-001` 已定策略：迁移，见 D-003）。依赖 GOAL-002 的加载与校验管线；代表性 Node 页内容与回归证据由 GOAL-004 补齐。
 
 依据 Root **D-004** / **D-005**。
 
 ## 成功标准
 
 - [ ] 匹配 manifest 路由后，**默认**走 Schema 加载 → 校验 → `RenderPage`（不再以 `EXAMPLE_PAGES` 为默认分支）
-- [ ] 手写示例仅作为显式兼容/演示路径（文档或代码注释标明非默认新增业务页方式）
+- [ ] 既有 5 个手写示例**迁移为 Schema 文档**，经默认 Schema 主路径渲染；应用内不再存在手写示例作为独立页面路径（D-003）
 - [ ] 非示例页不再展示「renderer remains a later protocol boundary」类占位作为主交付面
-- [ ] 有自动化测试：默认路径渲染 Schema 页；示例兼容路径（若保留）行为可预期
+- [ ] 有自动化测试：默认路径渲染 Schema 页（含迁移后示例页）；缺失/非法 Schema 时统一错误面可预期（fail-closed）
 
 ## 派生进度
 
@@ -32,7 +32,7 @@ progress: 0/4
 
 | ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
-| `I-003-001` | 既有 5 个 EXAMPLE_PAGES 在默认切换后如何保留（双分支 / 仅测试 / 迁移为 Schema）？ | required | 降级策略 | 实施切换前 | 对照 registry 与产品演示需求；记决策 | open | 不延期 | 待定；倾向保留兼容入口 |
+| `I-003-001` | 既有 5 个 EXAMPLE_PAGES 在默认切换后如何保留（双分支 / 仅测试 / 迁移为 Schema）？ | required | 降级策略 | 实施切换前 | 对照 registry 与产品演示需求；记决策 | closed | 不延期 | **迁移为 Schema**（D-003）：语义改写为 Schema 文档经默认主路径渲染；显式入口 = schemaUrl 链（route → schemaUrl → 加载+校验 → RenderPage）；5 份文档由 GOAL-004 落地 |
 | `I-003-002` | table 数据注入（现由示例拥有）在默认路径如何挂接？ | required | 列表页可渲染 | 默认路径验收前 | 与 GOAL-002/004 对齐；可先静态/既有 records API | open | 与 004 联调复核 | 见 I-001 矩阵 D-DATA 部分 |
 
 ## 依赖与边界
