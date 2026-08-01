@@ -7,39 +7,23 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 )
 
-func recordsMux() *http.ServeMux {
-	mux := http.NewServeMux()
-	recordsHandler(mux)
-	return mux
-}
-
-func recordsMuxWith(session func() (account.Session, bool)) *http.ServeMux {
-	mux := http.NewServeMux()
-	h := &recordHandler{records: staticRecords(), sessionProvider: session}
-	h.routes(mux)
-	return mux
-}
-
-func getJSON(t *testing.T, mux *http.ServeMux, path string) (int, map[string]any) {
+// recordsMux returns a fully wired mux for public (read) records routes.
+func recordsMux(t *testing.T) *http.ServeMux {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodGet, path, nil)
-	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
-	var body map[string]any
-	if rr.Body.Len() > 0 {
-		if err := json.NewDecoder(rr.Body).Decode(&body); err != nil {
-			t.Fatalf("decode %q: %v", rr.Body.String(), err)
-		}
-	}
-	return rr.Code, body
+	return newAuthTestEnv(t).mux
+}
+
+// adminToken logs in as the seeded admin and returns the access token.
+func adminToken(t *testing.T, env *authTestEnv) string {
+	t.Helper()
+	return env.login(t, testSeedUsername, testSeedPassword)
 }
 
 func TestRecordsListDefault(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records")
+	mux := recordsMux(t)
+	code, body := getJSON(t, mux, "/api/records")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -67,7 +51,8 @@ func TestRecordsListDefault(t *testing.T) {
 }
 
 func TestRecordsListSearch(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records?q=alice")
+	mux := recordsMux(t)
+	code, body := getJSON(t, mux, "/api/records?q=alice")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -84,7 +69,8 @@ func TestRecordsListSearch(t *testing.T) {
 }
 
 func TestRecordsListSortDesc(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records?sort=updatedAt&order=desc")
+	mux := recordsMux(t)
+	code, body := getJSON(t, mux, "/api/records?sort=updatedAt&order=desc")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -99,7 +85,8 @@ func TestRecordsListSortDesc(t *testing.T) {
 }
 
 func TestRecordsListPagination(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records?page=2&pageSize=3")
+	mux := recordsMux(t)
+	code, body := getJSON(t, mux, "/api/records?page=2&pageSize=3")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -120,13 +107,14 @@ func TestRecordsListPagination(t *testing.T) {
 }
 
 func TestRecordsListInvalidParamsFailClosed(t *testing.T) {
+	mux := recordsMux(t)
 	for _, path := range []string{
 		"/api/records?sort=unknown",
 		"/api/records?order=up",
 		"/api/records?page=0",
 		"/api/records?pageSize=abc",
 	} {
-		code, body := getJSON(t, recordsMux(), path)
+		code, body := getJSON(t, mux, path)
 		if code != http.StatusBadRequest {
 			t.Fatalf("%s: status = %d, want %d", path, code, http.StatusBadRequest)
 		}
@@ -137,7 +125,8 @@ func TestRecordsListInvalidParamsFailClosed(t *testing.T) {
 }
 
 func TestRecordsListPageSizeCap(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records?pageSize=1000")
+	mux := recordsMux(t)
+	code, body := getJSON(t, mux, "/api/records?pageSize=1000")
 	if code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", code, http.StatusBadRequest)
 	}
@@ -146,9 +135,9 @@ func TestRecordsListPageSizeCap(t *testing.T) {
 	}
 }
 
-func TestRecordsWriteRequiresSession(t *testing.T) {
-	mux := recordsMuxWith(nil)
-	code, body := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3", `{"name":"x"}`)
+func TestRecordsWriteRequiresAuth(t *testing.T) {
+	env := newAuthTestEnv(t)
+	code, body := sendJSON(t, env.mux, http.MethodPatch, "/api/records/rec-3", `{"name":"x"}`)
 	if code != http.StatusUnauthorized {
 		t.Fatalf("PATCH status = %d, want %d", code, http.StatusUnauthorized)
 	}
@@ -157,21 +146,25 @@ func TestRecordsWriteRequiresSession(t *testing.T) {
 	}
 	req := httptest.NewRequest(http.MethodDelete, "/api/records/rec-3", nil)
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("DELETE status = %d, want %d", rr.Code, http.StatusUnauthorized)
 	}
 }
 
 func TestRecordsWriteDeniedWithoutAdminRole(t *testing.T) {
-	mux := recordsMuxWith(func() (account.Session, bool) {
-		return account.Session{User: account.User{Roles: []string{"editor"}}}, true
-	})
+	env := newAuthTestEnv(t)
+	env.addUser(t, "editor", "pw", []string{"editor"})
+	token := env.login(t, "editor", "pw")
 	for _, method := range []string{http.MethodPatch, http.MethodDelete} {
-		code, body := sendJSON(t, mux, method, "/api/records/rec-3", `{"name":"x"}`)
-		if code != http.StatusForbidden {
-			t.Fatalf("%s status = %d, want %d", method, code, http.StatusForbidden)
+		req := bearer(t, token, method, "/api/records/rec-3", `{"name":"x"}`)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusForbidden {
+			t.Fatalf("%s status = %d, want %d", method, rr.Code, http.StatusForbidden)
 		}
+		var body map[string]any
+		_ = jsonDecode(rr, &body)
 		if body["error"] != "FORBIDDEN" {
 			t.Fatalf("%s error = %v, want FORBIDDEN", method, body["error"])
 		}
@@ -179,18 +172,19 @@ func TestRecordsWriteDeniedWithoutAdminRole(t *testing.T) {
 }
 
 func TestRecordsUpdateBodyTooLarge(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
 	huge := `{"name":"` + strings.Repeat("x", maxRecordBodyBytes) + `"}`
-	code, body := sendJSON(t, recordsMux(), http.MethodPatch, "/api/records/rec-3", huge)
-	if code != http.StatusBadRequest {
-		t.Fatalf("status = %d, want %d", code, http.StatusBadRequest)
-	}
-	if _, ok := body["error"]; !ok {
-		t.Fatalf("error code missing in %v", body)
+	req := bearer(t, token, http.MethodPatch, "/api/records/rec-3", huge)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
 	}
 }
 
 func TestRecordsDetail(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records/rec-3")
+	code, body := getJSON(t, recordsMux(t), "/api/records/rec-3")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -200,7 +194,7 @@ func TestRecordsDetail(t *testing.T) {
 }
 
 func TestRecordsDetailNotFound(t *testing.T) {
-	code, body := getJSON(t, recordsMux(), "/api/records/rec-999")
+	code, body := getJSON(t, recordsMux(t), "/api/records/rec-999")
 	if code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", code, http.StatusNotFound)
 	}
@@ -209,45 +203,32 @@ func TestRecordsDetailNotFound(t *testing.T) {
 	}
 }
 
-func sendJSON(t *testing.T, mux *http.ServeMux, method, path, body string) (int, map[string]any) {
-	t.Helper()
-	var reader *strings.Reader
-	if body == "" {
-		reader = strings.NewReader("")
-	} else {
-		reader = strings.NewReader(body)
-	}
-	req := httptest.NewRequest(method, path, reader)
-	req.Header.Set("Content-Type", "application/json")
-	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
-	var out map[string]any
-	if rr.Body.Len() > 0 && rr.Header().Get("Content-Type") != "" {
-		_ = json.NewDecoder(rr.Body).Decode(&out)
-	}
-	return rr.Code, out
-}
-
 func TestRecordsUpdate(t *testing.T) {
-	mux := recordsMux()
-	code, body := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3",
-		`{"name":"Hooli Rebrand","status":"archived"}`)
-	if code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", code, http.StatusOK)
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPatch, "/api/records/rec-3", `{"name":"Hooli Rebrand","status":"archived"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d: %s", rr.Code, http.StatusOK, rr.Body.String())
 	}
+	var body map[string]any
+	_ = jsonDecode(rr, &body)
 	if body["name"] != "Hooli Rebrand" || body["status"] != "archived" {
 		t.Fatalf("updated = %v, want name=Hooli Rebrand status=archived", body)
 	}
 	// Persisted: a subsequent GET reflects the patch.
-	_, detail := getJSON(t, mux, "/api/records/rec-3")
+	_, detail := getJSON(t, env.mux, "/api/records/rec-3")
 	if detail["name"] != "Hooli Rebrand" {
 		t.Fatalf("detail name = %v, want Hooli Rebrand", detail["name"])
 	}
 }
 
 func TestRecordsUpdateRefreshesUpdatedAt(t *testing.T) {
-	mux := recordsMux()
-	_, before := getJSON(t, mux, "/api/records/rec-3")
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	_, before := getJSON(t, env.mux, "/api/records/rec-3")
 	beforeValue, ok := before["updatedAt"].(string)
 	if !ok {
 		t.Fatalf("updatedAt = %v, want string", before["updatedAt"])
@@ -257,11 +238,14 @@ func TestRecordsUpdateRefreshesUpdatedAt(t *testing.T) {
 		t.Fatalf("parse before updatedAt %q: %v", beforeValue, err)
 	}
 
-	code, body := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3",
-		`{"name":"Refreshed"}`)
-	if code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", code, http.StatusOK)
+	req := bearer(t, token, http.MethodPatch, "/api/records/rec-3", `{"name":"Refreshed"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
 	}
+	var body map[string]any
+	_ = jsonDecode(rr, &body)
 	afterValue, ok := body["updatedAt"].(string)
 	if !ok {
 		t.Fatalf("updatedAt = %v, want string", body["updatedAt"])
@@ -276,57 +260,72 @@ func TestRecordsUpdateRefreshesUpdatedAt(t *testing.T) {
 }
 
 func TestRecordsUpdateInvalidFailClosed(t *testing.T) {
-	mux := recordsMux()
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
 	for _, body := range []string{
 		`{"name":""}`,
 		`{"status":""}`,
 		`not json`,
 	} {
-		code, out := sendJSON(t, mux, http.MethodPatch, "/api/records/rec-3", body)
-		if code != http.StatusBadRequest {
-			t.Fatalf("%s: status = %d, want %d", body, code, http.StatusBadRequest)
-		}
-		if _, ok := out["error"]; !ok {
-			t.Fatalf("%s: error code missing in %v", body, out)
+		req := bearer(t, token, http.MethodPatch, "/api/records/rec-3", body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("%s: status = %d, want %d", body, rr.Code, http.StatusBadRequest)
 		}
 	}
 }
 
 func TestRecordsUpdateNotFound(t *testing.T) {
-	code, body := sendJSON(t, recordsMux(), http.MethodPatch, "/api/records/rec-999",
-		`{"name":"x"}`)
-	if code != http.StatusNotFound {
-		t.Fatalf("status = %d, want %d", code, http.StatusNotFound)
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPatch, "/api/records/rec-999", `{"name":"x"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNotFound)
 	}
+	var body map[string]any
+	_ = jsonDecode(rr, &body)
 	if body["error"] != "RECORD_NOT_FOUND" {
 		t.Fatalf("error = %v, want RECORD_NOT_FOUND", body["error"])
 	}
 }
 
 func TestRecordsDelete(t *testing.T) {
-	mux := recordsMux()
-	req := httptest.NewRequest(http.MethodDelete, "/api/records/rec-3", nil)
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodDelete, "/api/records/rec-3", "")
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNoContent)
 	}
 	// Removed from the list and detail now 404s.
-	_, list := getJSON(t, mux, "/api/records")
+	_, list := getJSON(t, env.mux, "/api/records")
 	if list["total"] != float64(7) {
 		t.Fatalf("total = %v, want 7 after delete", list["total"])
 	}
-	code, _ := getJSON(t, mux, "/api/records/rec-3")
+	code, _ := getJSON(t, env.mux, "/api/records/rec-3")
 	if code != http.StatusNotFound {
 		t.Fatalf("detail status = %d, want %d after delete", code, http.StatusNotFound)
 	}
 }
 
 func TestRecordsDeleteNotFound(t *testing.T) {
-	req := httptest.NewRequest(http.MethodDelete, "/api/records/rec-999", nil)
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodDelete, "/api/records/rec-999", "")
 	rr := httptest.NewRecorder()
-	recordsMux().ServeHTTP(rr, req)
+	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNotFound)
 	}
+}
+
+func jsonDecode(rr *httptest.ResponseRecorder, out *map[string]any) error {
+	if rr.Body.Len() == 0 {
+		return nil
+	}
+	return json.NewDecoder(rr.Body).Decode(out)
 }

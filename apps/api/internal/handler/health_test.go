@@ -8,8 +8,7 @@ import (
 )
 
 func TestHealthz(t *testing.T) {
-	mux := http.NewServeMux()
-	Register(mux)
+	mux := newAuthTestEnv(t).mux
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rr := httptest.NewRecorder()

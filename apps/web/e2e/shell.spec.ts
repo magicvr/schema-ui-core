@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-// R6 minimal browser E2E (I-008-005 / I-008-003 forward path).
-// Boots the Go API and Vite dev server via playwright webServer; verifies the
-// shell renders from the real manifest and that the account context flows
-// through the Web /api proxy to the Go API (dev session) in a real browser.
+// R6 browser E2E (I-008-005 forward path) updated for R2 real auth (GOAL-005):
+// boots the Go API + Vite dev server via playwright webServer; verifies the
+// shell renders from the real manifest, then walks the real auth chain
+// (login -> /me -> records) through the Web /api proxy in a real browser.
+//
+// The Go API seeds the dev admin (admin / admin) when APP_ENV defaults to
+// development, so no test-only env is needed.
 
-test("shell renders from the real manifest and proxy serves the dev session", async ({ page }) => {
+test("shell renders and the real auth chain works through the proxy", async ({ page, request }) => {
   // Home redirect resolves from manifest.homePageRef.
   await page.goto("/");
   await expect(page).toHaveURL(/\/overview$/);
@@ -21,15 +24,32 @@ test("shell renders from the real manifest and proxy serves the dev session", as
   // No manifest failure surface.
   await expect(page.getByText("MANIFEST_LOAD_FAILED")).toHaveCount(0);
 
-  // Cross-layer forward path: account context via Web /api proxy -> Go API.
-  const res = await page.request.get("/api/accounts/me");
-  expect(res.status()).toBe(200);
-  const session = await res.json();
-  expect(session.user.id).toBe("dev-001");
-  expect(session.user.roles).toEqual(expect.arrayContaining(["admin", "editor"]));
+  // The boot /me without a token is now 401 (no dev-session fallback), so the
+  // shell surfaces the non-blocking account banner instead of a session.
+  await expect(page.getByText("Account session failed to load")).toBeVisible();
 
-  // Records example API reachable through the same proxy (D-DATA forward path).
-  const records = await page.request.get("/api/records");
+  // Real auth chain through the Web /api proxy -> Go API.
+  const login = await request.post("/api/auth/login", {
+    data: { username: "admin", password: "admin" },
+  });
+  expect(login.status()).toBe(200);
+  const tokens = await login.json();
+  expect(tokens.accessToken).toBeTruthy();
+  expect(tokens.refreshToken).toBeTruthy();
+  expect(tokens.user.id).toBe("user-admin");
+
+  const headers = { Authorization: `Bearer ${tokens.accessToken}` };
+
+  // Request-level identity: /me resolves to the seeded admin, not a static dev
+  // session.
+  const me = await request.get("/api/accounts/me", { headers });
+  expect(me.status()).toBe(200);
+  const session = await me.json();
+  expect(session.user.id).toBe("user-admin");
+  expect(session.user.roles).toEqual(expect.arrayContaining(["admin"]));
+
+  // Records read route remains reachable through the same proxy.
+  const records = await request.get("/api/records", { headers });
   expect(records.status()).toBe(200);
   const list = await records.json();
   expect(list.items.length).toBeGreaterThan(0);

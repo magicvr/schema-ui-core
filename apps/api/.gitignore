@@ -9,3 +9,6 @@ coverage.out
 .env
 .env.*
 !.env.example
+
+# Local SQLite runtime data (default DB_PATH=./data/schema-ui.db)
+/data/

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-005
@@ -25,6 +25,19 @@ version: 0.2.0
 - `I-005-001` / `I-005-002` / `I-005-003` → **verified**（已关闭）；GOAL-005 方案冻结完成，可进入后端认证端点实施。
 - **未做**：尚无产品代码变更；前端登录页与令牌存储定稿后的实现、后端实施均未开始。
 - **计划（非事实）**：进入后端认证端点实施（login/refresh/logout、请求级身份中间件、SQLite 存储、`/api/accounts/me` 与 records gate 改走请求身份）。
+
+## 2026-08-02 · 后端认证端点实施（成功标准 1–4）
+
+- **依赖（D-003）**：`go.mod` 引入 `github.com/golang-jwt/jwt/v5 v5.3.1`、`modernc.org/sqlite v1.55.0`（纯 Go 无 CGO）、`golang.org/x/crypto v0.54.0`。
+- **配置（D-004）**：`internal/config` 新增 `AUTH_JWT_SECRET` / `AUTH_ACCESS_TTL` / `AUTH_REFRESH_TTL` / `DB_PATH` / `ADMIN_INITIAL_PASSWORD` / `AUTH_DEV_SESSION_ENABLED`；`.env.example` 同步；生产缺 secret / 种子密码 fail-closed，dev 使用文档化默认。
+- **存储（D-003）**：新建 `internal/store`（modernc sqlite）：`users` + `refresh_tokens` 表（幂等建表），admin 种子（roles `admin`/`editor`），refresh token 以 SHA-256 哈希存储，支持撤销。
+- **认证核心**：新建 `internal/auth`：JWT 签发/校验（HMAC-SHA256，`sub`=user id）、opaque refresh 生成/哈希、bcrypt 校验、请求身份上下文；`Middleware` 解析 `Authorization: Bearer`，失败 fail-closed 401；`AUTH_DEV_SESSION_ENABLED` 显式启用时以 `StaticDevSession` 兜底（M9）。
+- **端点与路由改造**：`POST /api/auth/login|refresh|logout`（login 失败 401、缺字段 400；refresh 轮换并撤销旧 token；logout 幂等）；`GET /api/accounts/me` 与 records 写路由改走请求身份中间件（无/无效 token 401，非 admin 403）；records GET 只读保持公开（本阶段边界）。
+- **测试**：新增 `internal/store`（种子幂等、token 生命周期）、`internal/auth`（login 成功/失败/枚举防护、refresh 轮换/撤销/过期、logout、JWT 过期/密钥错）、`internal/handler`（端点与 401/403、`/me`、dev-session 兜底）测试；`account_test` / `records_test` / `health_test` 改写为真实认证接线。
+- **验证**：`go build` / `go vet` / `go test ./...` 全绿；`gofmt` 干净；web `npm test` 425/425、`npm run build` 通过；**真实服务器 smoke**（dev 种子 admin/admin）验证 login → `/me`(Bearer) → 无 token 401 → refresh 轮换 + 旧 token 撤销 → logout 撤销 → 写路由 admin 200 / 无 token 401。
+- **E2E 边界**：`apps/web/e2e/shell.spec.ts` 已改写为真实认证链（login → /me → records），但**本机未能执行**：Windows 本机 `127.0.0.1:5173` 被禁止绑定（EACCES；8080/9999 可绑定，非代码问题）；CI `browser-e2e`（Linux）将覆盖。
+- **未做**：前端登录页 / 会话恢复 / 令牌存储定稿后的实现（成功标准 5）；CORS 最小假设（`I-005-004` non-blocking，仍 open）；R3 身份模型（不实施）。
+- **计划（非事实）**：下一拍实现前端认证闭环（登录页、refresh 续期、401 转登、localStorage 存储）并收口 CORS / R3 边界。
 
 ## 计划（非事实）
 

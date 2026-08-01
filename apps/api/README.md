@@ -1,6 +1,6 @@
 # apps/api · schema-ui-core API 骨架
 
-MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与记录示例域）。**演示 API：无生产鉴权，见下方「鉴权边界」。**
+MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与记录示例域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite。
 
 ## 要求
 
@@ -10,11 +10,13 @@ MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与�
 ## 布局
 
 ```text
-cmd/server/          # 进程入口
-internal/config/     # 环境配置
+cmd/server/          # 进程入口（配置解析、store 打开、认证接线）
+internal/config/     # 环境配置（含 R2 认证配置键）
 internal/server/     # http.Server 包装
-internal/handler/    # HTTP 路由（healthz / accounts / records）
+internal/handler/    # HTTP 路由（healthz / auth / accounts / records / schema）
+internal/auth/       # R2 认证核心：JWT、refresh 轮换、bcrypt、请求身份中间件
 internal/account/    # 会话模型与权限求值库（D-004 / D-PERM）
+internal/store/      # SQLite 认证存储（users + refresh_tokens，GOAL-005 D-003）
 pkg/version/         # 构建版本变量
 ```
 
@@ -29,25 +31,45 @@ make run
 go run ./cmd/server
 ```
 
-默认监听 `:8080`（`HTTP_ADDR`）。
+默认监听 `:8080`（`HTTP_ADDR`）。首次启动在 `DB_PATH`（默认 `./data/schema-ui.db`）建表并种子 admin：
+- dev 缺省 `ADMIN_INITIAL_PASSWORD=admin`；生产必须显式设置。
+- 生产缺少 `AUTH_JWT_SECRET` → 启动失败（fail-closed）；dev 使用开发密钥并打警告。
+
+## 配置键（R2 · GOAL-005 D-004）
+
+| 键 | 默认 | 说明 |
+|----|------|------|
+| `AUTH_JWT_SECRET` | dev 开发密钥 | access token 签发密钥；生产必填，缺失 fail-closed |
+| `AUTH_ACCESS_TTL` | `15m` | access token 时效 |
+| `AUTH_REFRESH_TTL` | `720h` (30d) | refresh token 时效 |
+| `DB_PATH` | `./data/schema-ui.db` | SQLite 路径 |
+| `ADMIN_INITIAL_PASSWORD` | dev `admin` | 首次种子 admin 密码；生产必填 |
+| `AUTH_DEV_SESSION_ENABLED` | `false` | 显式本地开发静态会话兜底；**生产禁止启用** |
 
 ## 端点
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/healthz` | 探活 |
-| GET | `/api/accounts/me` | R4 会话快照（静态开发会话 `dev-001`，`roles: [admin, editor]`） |
-| GET | `/api/records` | R5 D-DATA 列表：`q` / `sort`（name·status·owner·updatedAt）/ `order` / `page` / `pageSize` |
-| GET | `/api/records/{id}` | R5 D-DATA 详情 |
-| PATCH | `/api/records/{id}` | R5 D-ACT 编辑（name/status/owner；成功刷新 `updatedAt`；需 admin 会话） |
-| DELETE | `/api/records/{id}` | R5 D-ACT 删除（需 admin 会话） |
+| 方法 | 路径 | 鉴权 | 说明 |
+|------|------|------|------|
+| GET | `/healthz` | 公开 | 探活 |
+| POST | `/api/auth/login` | 公开 | 校验用户名/密码，签发 access + refresh |
+| POST | `/api/auth/refresh` | 公开（需有效 refresh） | 轮换 refresh，签发新 access + refresh |
+| POST | `/api/auth/logout` | 公开 | 撤销 refresh（幂等） |
+| GET | `/api/accounts/me` | **Bearer** | 返回请求身份的会话快照 `{ user, features }` |
+| GET | `/api/records` | 公开（只读） | R5 D-DATA 列表：`q` / `sort` / `order` / `page` / `pageSize` |
+| GET | `/api/records/{id}` | 公开（只读） | R5 D-DATA 详情 |
+| PATCH | `/api/records/{id}` | **Bearer + admin** | R5 D-ACT 编辑（name/status/owner；需 admin 角色） |
+| DELETE | `/api/records/{id}` | **Bearer + admin** | R5 D-ACT 删除（需 admin 角色） |
+| GET | `/api/schema/{pageId}` | 公开（只读） | 页面 Schema 文档 |
 
-## 鉴权边界（MVP 声明，非生产）
+## 鉴权边界（R2 · 真实认证）
 
-- `/api/accounts/me` 返回**静态开发会话**（`account.StaticDevSession`，roles: admin+editor）；nil 会话提供者按 fail-closed 返回 `401 UNAUTHENTICATED`。
-- **`/api/records` 写路由（PATCH/DELETE）fail-closed 鉴权**：需要有效会话且会话须含 `admin` 角色（`account.Allow`）；无会话 → `401 UNAUTHENTICATED`，非 admin → `403 FORBIDDEN`。GET 只读路由保持开放。
-- **范围说明**：该 gate 绑定**进程内注入的会话提供者**（生产接线为 `StaticDevSession`，恒含 admin），**非**按 HTTP 请求凭证/令牌鉴权——匿名 HTTP 客户端在默认进程配置下仍可 PATCH/DELETE 成功。这是 MVP 静态会话的边界，不是网络侧身份鉴权；生产化需真实登录/令牌。
-- **请求上限（F-009-007）**：PATCH body ≤ 4 KiB（`MaxBytesReader`）；`pageSize` ≤ 100，超限返回 `400 INVALID_PAGE_SIZE`。
+- **请求级身份**：受保护路由经 `Authorization: Bearer <access>` 由中间件解析身份；不再依赖进程注入的 `StaticDevSession`。
+  - 无 / 无效 / 过期 access → `401 UNAUTHENTICATED`；无 admin 角色写路由 → `403 FORBIDDEN`（D-PERM `Allow`）。
+- **Access**：短时效 JWT（`AUTH_ACCESS_TTL`，默认 15m），负载为 `sub`（用户 id）。
+- **Refresh**：opaque 随机串，**SHA-256 哈希存 SQLite**；登出/刷新即撤销（轮换）；过期/撤销 → `401`。
+- **静态开发会话**：仅 `AUTH_DEV_SESSION_ENABLED=true` 时作为显式本地兜底（替换 401）；生产默认关闭（M9）。
+- **凭据**：bcrypt（cost 10）哈希存储；密码/密钥不落仓库；生产 `AUTH_JWT_SECRET` 缺失 fail-closed。
+- **请求上限（F-009-007）**：auth/records 写 body ≤ 4 KiB（`MaxBytesReader`）；`pageSize` ≤ 100。
 
 ## 测试
 
@@ -57,8 +79,9 @@ make test
 go test ./...
 ```
 
-## 非目标（MVP）
+覆盖：auth 生命周期（登录/刷新轮换/登出/过期/撤销）、请求身份 401/403、store（种子幂等、token 生命周期）、records/schema 原行为。
 
-- 订单 / 钱包 / 通知等业务 API
-- 真实 login/logout/token/IAM（R4 可选，非当前必做）
-- 完整协议兼容主张（见仓库愿景与 Root 信息门禁）
+## 非目标（R2）
+
+- 用户/角色/菜单持久化与权限模型（R3 · `I-003`）——R2 仅最小种子用户与 roles JSON。
+- 完整 IAM（SSO / SCIM / 复杂策略）；`D-UPLOAD`；完整协议兼容主张（见仓库愿景与 Root 信息门禁）。

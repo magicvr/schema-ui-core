@@ -1,10 +1,11 @@
 package account
 
-// Session is the minimal R4 account session. The MVP uses a static/injected
-// session (D-004): no credential database, no token issuance.
+// Session is the R4 account session. With real auth (R2) the User is resolved
+// from the request identity; Features is always emitted so the renderer's
+// $context.fallback treats absence as "no flags" rather than "unknown".
 type Session struct {
 	User     User            `json:"user"`
-	Features map[string]bool `json:"features,omitempty"`
+	Features map[string]bool `json:"features"`
 }
 
 // User is the $context.user snapshot consumed by the renderer.

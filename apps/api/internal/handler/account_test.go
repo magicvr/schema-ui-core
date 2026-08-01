@@ -9,76 +9,78 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 )
 
-func TestAccountsMe(t *testing.T) {
-	mux := http.NewServeMux()
-	Register(mux)
+// TestAccountsMeRequiresAuth asserts the request-level identity gate: without an
+// access token the /me endpoint fails closed with 401 (M8).
+func TestAccountsMeRequiresAuth(t *testing.T) {
+	env := newAuthTestEnv(t)
+	code, body := getJSON(t, env.mux, "/api/accounts/me")
+	if code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", code, http.StatusUnauthorized)
+	}
+	if body["error"] != "UNAUTHENTICATED" {
+		t.Fatalf("error = %v, want UNAUTHENTICATED", body["error"])
+	}
+}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/accounts/me", nil)
+// TestAccountsMeInvalidTokenFailsClosed covers a malformed/foreign Bearer token.
+func TestAccountsMeInvalidTokenFailsClosed(t *testing.T) {
+	env := newAuthTestEnv(t)
+	req := bearer(t, "not-a-real-token", http.MethodGet, "/api/accounts/me", "")
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+	}
+	if got := rr.Body.String(); !containsString(got, "UNAUTHENTICATED") {
+		t.Fatalf("body = %q, want UNAUTHENTICATED error", got)
+	}
+}
 
+// TestAccountsMeReturnsIdentity asserts a valid access token resolves to the
+// seeded admin identity via GET /api/accounts/me (M8 / M10).
+func TestAccountsMeReturnsIdentity(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := env.login(t, testSeedUsername, testSeedPassword)
+
+	req := bearer(t, token, http.MethodGet, "/api/accounts/me", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+		t.Fatalf("status = %d, want %d: %s", rr.Code, http.StatusOK, rr.Body.String())
 	}
 
-	var body map[string]any
-	if err := json.NewDecoder(rr.Body).Decode(&body); err != nil {
+	var session account.Session
+	if err := json.NewDecoder(rr.Body).Decode(&session); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	user, ok := body["user"].(map[string]any)
-	if !ok {
-		t.Fatalf("user = %v, want object", body["user"])
+	if session.User.ID != "user-admin" {
+		t.Fatalf("user.id = %v, want user-admin", session.User.ID)
 	}
+	if !containsRoles(session.User.Roles, "admin") {
+		t.Fatalf("roles = %v, want to contain admin", session.User.Roles)
+	}
+	if session.Features == nil {
+		t.Fatalf("features missing from %v", session)
+	}
+}
+
+// TestAccountsMeDevSessionFallback asserts the explicit opt-in local-development
+// fallback substitutes StaticDevSession when enabled (M9 opt-in side).
+func TestAccountsMeDevSessionFallback(t *testing.T) {
+	env := newDevSessionTestEnv(t)
+	code, body := getJSON(t, env.mux, "/api/accounts/me")
+	if code != http.StatusOK {
+		t.Fatalf("status = %d, want %d (dev fallback)", code, http.StatusOK)
+	}
+	user, _ := body["user"].(map[string]any)
 	if user["id"] != "dev-001" {
 		t.Fatalf("user.id = %v, want dev-001", user["id"])
 	}
-	if _, ok := body["features"]; !ok {
-		t.Fatalf("features missing from %v", body)
-	}
 }
 
-func TestAccountsMeNoSessionFailsClosed(t *testing.T) {
-	mux := http.NewServeMux()
-	h := &accountHandler{
-		sessionProvider: func() (account.Session, bool) {
-			return account.Session{}, false
-		},
-	}
-	mux.Handle("GET /api/accounts/me", h.me())
-
-	req := httptest.NewRequest(http.MethodGet, "/api/accounts/me", nil)
-	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
-	}
-	if got := rr.Body.String(); got != "" && !containsString(got, "UNAUTHENTICATED") {
-		t.Fatalf("body = %q, want UNAUTHENTICATED error", got)
-	}
-}
-
-func TestAccountsMeNilProviderFailsClosed(t *testing.T) {
-	mux := http.NewServeMux()
-	// Nil sessionProvider must not panic and must fail closed.
-	h := &accountHandler{}
-	mux.Handle("GET /api/accounts/me", h.me())
-
-	req := httptest.NewRequest(http.MethodGet, "/api/accounts/me", nil)
-	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
-	}
-	if got := rr.Body.String(); got != "" && !containsString(got, "UNAUTHENTICATED") {
-		t.Fatalf("body = %q, want UNAUTHENTICATED error", got)
-	}
-}
-
-func containsString(haystack, needle string) bool {
-	for i := 0; i+len(needle) <= len(haystack); i++ {
-		if haystack[i:i+len(needle)] == needle {
+func containsRoles(roles []string, want string) bool {
+	for _, r := range roles {
+		if r == want {
 			return true
 		}
 	}

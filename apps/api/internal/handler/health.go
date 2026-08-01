@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -15,12 +16,15 @@ type healthResponse struct {
 	Commit    string    `json:"commit,omitempty"`
 }
 
-// Register mounts R1 routes, the R4 account session route, the R5
-// D-DATA list/detail example API, and the R1 schema document endpoint.
-func Register(mux *http.ServeMux) {
+// Register mounts the health endpoint, the R2 auth endpoints, the R4 account
+// session route, the R5 D-DATA list/detail example API, and the R1 schema
+// document endpoint. Protected routes are wrapped in the request-identity
+// middleware.
+func Register(mux *http.ServeMux, a *auth.Authenticator) {
 	mux.Handle("GET /healthz", healthz())
-	accountsHandler(mux)
-	recordsHandler(mux)
+	authsHandler(mux, a)
+	accountsHandler(mux, a)
+	recordsHandler(mux, a)
 	schemasHandler(mux)
 }
 

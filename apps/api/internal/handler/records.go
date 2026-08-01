@@ -2,6 +2,7 @@ package handler
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
 	"net/http"
 	"slices"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
 
 // Limits for the R5 D-DATA API (F-009-007): write bodies and page size are
@@ -41,12 +43,12 @@ type recordList struct {
 
 // recordHandler serves the R5 D-DATA list/detail example API (static data) and
 // the R5 D-ACT edit lifecycle (PATCH/DELETE). State is guarded by a mutex; the
-// MVP has no DB, so mutations live in the process. Write routes gate through a
-// fail-closed session check (F-009-006).
+// MVP has no DB for records, so mutations live in the process. Write routes
+// gate through the R2 request-identity middleware (F-009-006): 401 unauthenticated,
+// 403 non-admin.
 type recordHandler struct {
-	mu              sync.RWMutex
-	records         []record
-	sessionProvider func() (account.Session, bool)
+	mu      sync.RWMutex
+	records []record
 }
 
 // recordPatch is the PATCH body: pointer fields so absent keys are untouched.
@@ -80,37 +82,33 @@ func staticRecords() []record {
 	return records
 }
 
-func recordsHandler(mux *http.ServeMux) {
-	h := &recordHandler{records: staticRecords(), sessionProvider: sessionProvider}
-	h.routes(mux)
+func recordsHandler(mux *http.ServeMux, a *auth.Authenticator) {
+	h := &recordHandler{records: staticRecords()}
+	h.routes(mux, a)
 }
 
-func (h *recordHandler) routes(mux *http.ServeMux) {
+func (h *recordHandler) routes(mux *http.ServeMux, a *auth.Authenticator) {
 	mux.Handle("GET /api/records", h.list())
 	mux.Handle("GET /api/records/{id}", h.detail())
-	mux.Handle("PATCH /api/records/{id}", h.update())
-	mux.Handle("DELETE /api/records/{id}", h.delete())
+	mux.Handle("PATCH /api/records/{id}", a.Middleware(h.update()))
+	mux.Handle("DELETE /api/records/{id}", a.Middleware(h.delete()))
 }
 
 // writeGate enforces fail-closed authorization on record write routes
-// (F-009-006): a valid session is required and the caller must hold the admin
-// role. On denial it writes the error response and returns ok=false.
-func (h *recordHandler) writeGate(w http.ResponseWriter) (account.Session, bool) {
-	provider := h.sessionProvider
-	if provider == nil {
-		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
-		return account.Session{}, false
-	}
-	session, ok := provider()
+// (F-009-006): the request identity is resolved from the Bearer access token
+// and the caller must hold the admin role. On denial it writes the error
+// response and returns ok=false.
+func writeGate(w http.ResponseWriter, ctx context.Context) (account.User, bool) {
+	user, ok := auth.IdentityFrom(ctx)
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
-		return account.Session{}, false
+		return account.User{}, false
 	}
-	if !account.Allow(`$context.user.roles contains "admin"`, session.User, session.Features) {
+	if !account.Allow(`$context.user.roles contains "admin"`, user, nil) {
 		writeError(w, http.StatusForbidden, "FORBIDDEN", "admin role required")
-		return account.Session{}, false
+		return account.User{}, false
 	}
-	return session, true
+	return user, true
 }
 
 // list serves GET /api/records with q / sort / order / page / pageSize params.
@@ -207,7 +205,7 @@ func (h *recordHandler) detail() http.Handler {
 // update serves PATCH /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) update() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := h.writeGate(w); !ok {
+		if _, ok := writeGate(w, r.Context()); !ok {
 			return
 		}
 		id := r.PathValue("id")
@@ -250,7 +248,7 @@ func (h *recordHandler) update() http.Handler {
 // delete serves DELETE /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) delete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := h.writeGate(w); !ok {
+		if _, ok := writeGate(w, r.Context()); !ok {
 			return
 		}
 		id := r.PathValue("id")

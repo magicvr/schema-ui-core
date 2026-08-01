@@ -5,8 +5,8 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
-progress: 0/6
+version: 0.3.0
+progress: 4/6
 ---
 
 # GOAL-005 · R2 · 真实认证与请求级身份
@@ -19,16 +19,16 @@ progress: 0/6
 
 ## 成功标准
 
-- [ ] 登录与登出：`POST /api/auth/login` 校验 SQLite 种子凭据（失败 → `401`，成功 → 返回短 JWT access + opaque refresh）；`POST /api/auth/logout` 撤销 refresh token，登出后请求失效
-- [ ] 会话刷新与过期：`POST /api/auth/refresh` 用有效 refresh token 换新 access；refresh 过期 / 已撤销 → `401`；access 短时效，过期后凭 refresh 续期（M5/M6）
-- [ ] 请求级身份中间件：业务路由经 `Authorization: Bearer` 解析请求身份；无 / 无效 / 过期 access → `401`；无权限 → `403`（复用 D-PERM `Allow`）；**不再**以 `StaticDevSession` 进程注入身份（M8/M10）
-- [ ] SQLite 存储与依赖：刷新令牌（哈希）与最小种子用户/凭据落 SQLite（先支持 sqlite）；`go.mod` 引入 JWT 库与 SQLite 驱动并记录选型（M12）
-- [ ] 前端认证闭环：登录页、登出、会话恢复（refresh 自动续期 access）、`401` → 重登 / `403` 处理；前端令牌存储策略定稿并留痕（M4/M11）
-- [ ] 静态开发会话仅 dev 兜底：`StaticDevSession` 为显式 opt-in，生产配置默认不启用；安全配置（JWT secret / TTL / DB path / CORS）经 env 注入、不落仓库（M9/M13）
+- [x] 登录与登出：`POST /api/auth/login` 校验 SQLite 种子凭据（失败 → `401`，成功 → 返回短 JWT access + opaque refresh）；`POST /api/auth/logout` 撤销 refresh token，登出后请求失效 — `internal/handler/auth.go` + 端点测试（2026-08-02）
+- [x] 会话刷新与过期：`POST /api/auth/refresh` 用有效 refresh token 换新 access；refresh 过期 / 已撤销 → `401`；access 短时效，过期后凭 refresh 续期（M5/M6） — `internal/auth` `Refresh` + 单测（2026-08-02）
+- [x] 请求级身份中间件：业务路由经 `Authorization: Bearer` 解析请求身份；无 / 无效 / 过期 access → `401`；无权限 → `403`（复用 D-PERM `Allow`）；**不再**以 `StaticDevSession` 进程注入身份（M8/M10） — `internal/auth` `Middleware`、records write gate（2026-08-02）
+- [x] SQLite 存储与依赖：刷新令牌（哈希）与最小种子用户/凭据落 SQLite（先支持 sqlite）；`go.mod` 引入 JWT 库与 SQLite 驱动并记录选型（M12） — `internal/store` + `go.mod`（2026-08-02）
+- [ ] 前端认证闭环：登录页、登出、会话恢复（refresh 自动续期 access）、`401` → 重登 / `403` 处理；前端令牌存储策略定稿并留痕（M4/M11） — 待前端实施（D-002 存储策略已定）
+- [ ] 静态开发会话仅 dev 兜底 + 安全配置 env 化（M9/M13）：后端 gate 与 env 注入已完成；**CORS 最小假设（`I-005-004`）仍 open**，随前端/验收收口
 
 ## 派生进度
 
-`progress: 0/6` 由上方 6 条成功标准等权派生；**不**放行 Root R2 检查点（R2 勾选需本目标关门审计且 `I-002` 已 verified）。
+`progress: 4/6` 由上方 6 条成功标准等权派生（后端核心 1–4 已完成）；**不**放行 Root R2 检查点（R2 勾选需本目标关门审计且前端 5–6 收口）。
 
 ## 信息需求
 
