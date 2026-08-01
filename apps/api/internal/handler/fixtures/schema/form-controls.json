@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "pageId": "form-controls",
+    "title": "Form controls",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended"]
+  },
+  "body": {
+    "type": "section",
+    "props": { "title": "Form controls" },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Whitelisted form controls (D-FORM) rendered through the schema-driven form node."
+        }
+      },
+      {
+        "type": "form",
+        "id": "controls-form",
+        "props": {
+          "fields": [
+            { "id": "name", "label": "Name (input)", "type": "input" },
+            {
+              "id": "kind",
+              "label": "Kind (select)",
+              "type": "select",
+              "options": [
+                { "value": "standard", "label": "Standard" },
+                { "value": "priority", "label": "Priority" }
+              ]
+            },
+            { "id": "approval", "label": "Approval (switch)", "type": "switch" },
+            { "id": "auditNote", "label": "Audit note (textarea)", "type": "textarea" },
+            {
+              "id": "scope",
+              "label": "Scope (radio)",
+              "type": "radio",
+              "options": [
+                { "value": "internal", "label": "Internal" },
+                { "value": "external", "label": "External" }
+              ]
+            }
+          ],
+          "submitLabel": "Submit"
+        }
+      }
+    ]
+  }
+}

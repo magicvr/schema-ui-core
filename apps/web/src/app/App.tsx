@@ -31,6 +31,7 @@ import {
 import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
 import type { RenderPageDocument } from "@/renderer/render";
 import { RenderPage } from "@/renderer/render.tsx";
+import { SchemaTable } from "@/renderer/schema-table.tsx";
 
 const iconRegistry: Record<string, LucideIcon> = {
   activity: Activity,
@@ -57,6 +58,8 @@ export interface AppProps {
   accountError?: unknown;
   /** Injectable fetch for page-schema documents (defaults to `globalThis.fetch`). */
   schemaFetcher?: typeof fetch;
+  /** Injectable fetch for table data sources such as `/api/records` (R1 · GOAL-004). */
+  recordsFetcher?: typeof fetch;
 }
 
 function currentLocationPath() {
@@ -220,11 +223,13 @@ function SchemaPageSurface({
   params,
   context,
   fetcher,
+  recordsFetcher,
 }: {
   page: PageEntry;
   params: Record<string, string>;
   context: NavigationContext;
   fetcher?: typeof fetch;
+  recordsFetcher?: typeof fetch;
 }) {
   const [state, setState] = useState<SchemaSurfaceState>({ status: "loading" });
 
@@ -272,6 +277,7 @@ function SchemaPageSurface({
     <RenderPage
       document={state.document as RenderPageDocument}
       context={context as unknown as Record<string, unknown>}
+      tableRenderer={(node) => <SchemaTable node={node} fetcher={recordsFetcher} />}
     />
   );
 }
@@ -282,12 +288,14 @@ function PageSurface({
   onNavigate,
   navigationContext,
   schemaFetcher,
+  recordsFetcher,
 }: {
   manifest: AppManifest;
   path: string;
   onNavigate: (href: string) => void;
   navigationContext: NavigationContext;
   schemaFetcher?: typeof fetch;
+  recordsFetcher?: typeof fetch;
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
@@ -339,6 +347,7 @@ function PageSurface({
         params={route.params}
         context={navigationContext}
         fetcher={schemaFetcher}
+        recordsFetcher={recordsFetcher}
       />
     </section>
   );
@@ -349,6 +358,7 @@ export function App({
   navigationContext = {},
   accountError,
   schemaFetcher,
+  recordsFetcher,
 }: AppProps) {
   const [path, setPath] = useState(() => {
     const requested = currentLocationPath();
@@ -463,6 +473,7 @@ export function App({
             onNavigate={onNavigate}
             navigationContext={navigationContext}
             schemaFetcher={schemaFetcher}
+            recordsFetcher={recordsFetcher}
           />
         </main>
       </div>

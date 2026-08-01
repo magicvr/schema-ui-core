@@ -73,6 +73,35 @@ func TestSchemaEndpoint(t *testing.T) {
 		}
 	})
 
+	t.Run("serves the R1 representative page set (GOAL-004)", func(t *testing.T) {
+		// The 5 hand-written examples are migrated to Schema documents that the
+		// manifest already routes to (D-003); these must be embedded and served.
+		representative := []string{
+			"data-table",
+			"search-form-table",
+			"form-controls",
+			"form-with-reactions",
+			"list-edit-lifecycle",
+		}
+		documents := staticSchemaDocuments()
+		for _, pageID := range representative {
+			raw, ok := documents[pageID]
+			if !ok {
+				t.Fatalf("%s: representative page fixture is missing", pageID)
+			}
+			var doc pageDocument
+			if err := json.Unmarshal(raw, &doc); err != nil {
+				t.Fatalf("%s: fixture is not valid JSON: %v", pageID, err)
+			}
+			if doc.Meta.PageID != pageID {
+				t.Fatalf("%s: meta.pageId = %q, want %q", pageID, doc.Meta.PageID, pageID)
+			}
+			if doc.Body["type"] == "" {
+				t.Fatalf("%s: body.type is missing", pageID)
+			}
+		}
+	})
+
 	t.Run("unknown pageId returns 404 SCHEMA_NOT_FOUND", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/schema/does-not-exist", nil)
 		rec := httptest.NewRecorder()

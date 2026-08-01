@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "pageId": "form-with-reactions",
+    "title": "Form with reactions",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended"]
+  },
+  "body": {
+    "type": "section",
+    "props": { "title": "Form with reactions" },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "D-EXPR reactions reuse the frozen $context expression engine to flip field visibility / disabled state."
+        }
+      },
+      {
+        "type": "form",
+        "id": "reactive-form",
+        "props": {
+          "fields": [
+            { "id": "name", "label": "Name (input)", "type": "input" },
+            {
+              "id": "kind",
+              "label": "Kind (select)",
+              "type": "select",
+              "options": [
+                { "value": "standard", "label": "Standard" },
+                { "value": "priority", "label": "Priority" }
+              ]
+            },
+            { "id": "approval", "label": "Approval (switch)", "type": "switch" },
+            { "id": "auditNote", "label": "Audit note (textarea)", "type": "textarea" }
+          ],
+          "reactions": [
+            {
+              "id": "admin-approval",
+              "when": "$context.user.roles contains \"admin\"",
+              "apply": [{ "fieldId": "approval", "visible": true }]
+            },
+            {
+              "id": "viewer-approval",
+              "when": "$context.user.roles contains \"viewer\"",
+              "apply": [{ "fieldId": "approval", "visible": false }]
+            },
+            {
+              "id": "audit-lock",
+              "when": "$context.features.audit != true",
+              "apply": [{ "fieldId": "auditNote", "disabled": true }]
+            }
+          ],
+          "submitLabel": "Submit"
+        }
+      }
+    ]
+  }
+}

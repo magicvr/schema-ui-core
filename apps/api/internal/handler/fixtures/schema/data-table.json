@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "pageId": "data-table",
+    "title": "Data table",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": ["app.manifest", "app.navigation", "table.sort"]
+  },
+  "body": {
+    "type": "section",
+    "props": { "title": "Data table" },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Sortable records from the Go list API (/api/records). This page exercises D-DATA list/detail and D-TABLE sort declarations."
+        }
+      },
+      {
+        "type": "table",
+        "id": "records-table",
+        "props": {
+          "columns": [
+            { "field": "id", "label": "ID" },
+            { "field": "name", "label": "Name", "sortable": true },
+            { "field": "status", "label": "Status", "sortable": true },
+            { "field": "owner", "label": "Owner", "sortable": true },
+            { "field": "updatedAt", "label": "Updated", "sortable": true }
+          ],
+          "dataSource": "/api/records"
+        }
+      }
+    ]
+  }
+}

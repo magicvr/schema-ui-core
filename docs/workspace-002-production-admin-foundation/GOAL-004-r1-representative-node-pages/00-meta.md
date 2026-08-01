@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r1-representative-node-pages
 title: R1 · 代表性 Node 页面与回归证据
-status: active
+status: done
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
-progress: 0/5
+version: 0.4.1
+progress: 5/5
 ---
 
 # GOAL-004 · R1 · 代表性 Node 页面与回归证据
@@ -19,22 +19,22 @@ progress: 0/5
 
 ## 成功标准
 
-- [ ] 至少 **1** 个列表向 Node 页面（table 或 search+table 结构）可经 schemaUrl 主路径渲染
-- [ ] 至少 **1** 个表单向 Node 页面（含白名单控件；可选 `$context` reaction）可经主路径渲染
-- [ ] 至少 **1** 个组合或详情向页面（section/grid/tabs + recordView/text 等）可经主路径渲染
-- [ ] 未知节点类型或非法页面在代表性路径上 fail-closed 且错误可观察
-- [ ] 有自动化测试或等价可重复脚本覆盖上述成功/失败路径中的关键断言
+- [x] 至少 **1** 个列表向 Node 页面（table 或 search+table 结构）可经 schemaUrl 主路径渲染 —— `data-table` / `search-form-table`（默认表格注入经 `/api/records`，`SchemaTable`）
+- [x] 至少 **1** 个表单向 Node 页面（含白名单控件；可选 `$context` reaction）可经主路径渲染 —— `form-controls` / `form-with-reactions`
+- [x] 至少 **1** 个组合或详情向页面（section/grid/tabs + recordView/text 等）可经主路径渲染 —— `list-edit-lifecycle`（tabs + section + recordView + text + form）
+- [x] 未知节点类型或非法页面在代表性路径上 fail-closed 且错误可观察 —— `RENDER_UNKNOWN_NODE_TYPE` / `PAGE_SCHEMA_INVALID` 均有代表性断言
+- [x] 有自动化测试或等价可重复脚本覆盖上述成功/失败路径中的关键断言 —— web `schema-table.test.tsx`（6）、`representative-pages.test.tsx`（7）、`representative-pages.integration.test.tsx`（7）+ Go `schema_test.go` 代表性集合子测
 
 ## 派生进度
 
-`progress: 0/5` 由上方 5 条成功标准等权派生。
+`progress: 5/5` 由上方 5 条成功标准等权派生；证据见 `02-execution` 与 2026-08-01 实施事实。
 
 ## 信息需求
 
 | ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
-| `I-004-001` | 代表性页面是否改写现有 5 个示例语义，还是新增独立 schema 资源？ | required | 页面资产布局 | 实施开始前 | 对照 EXAMPLE_PAGES 与演示需要；记决策 | open | 不延期 | **改写现有示例语义为 Schema**（GOAL-003 D-003 已定迁移策略：迁移为 Schema，5 份文档由本目标作为页面资产落地；倾向=改写而非新增） |
-| `I-004-002` | 列表数据是否继续用 `/api/records` 演示 API？ | non-blocking | 列表可观察 | 列表页验收前 | 复用既有 records 路径即可 | open | 可与实施并行 | I-001 允许 R1 reuse |
+| `I-004-001` | 代表性页面是否改写现有 5 个示例语义，还是新增独立 schema 资源？ | required | 页面资产布局 | 实施开始前 | 对照 EXAMPLE_PAGES 与演示需要；记决策 | closed | 不延期 | **改写现有示例语义为 Schema**（GOAL-003 D-003 已定迁移策略：迁移为 Schema，5 份文档由本目标作为页面资产落地；本轮 D-003 落定资产列表） |
+| `I-004-002` | 列表数据是否继续用 `/api/records` 演示 API？ | non-blocking | 列表可观察 | 列表页验收前 | 复用既有 records 路径即可 | closed | 可与实施并行 | D-004：R1 列表数据 reuse `GET /api/records`；默认表格注入读取 table 节点 columns/dataSource |
 
 ## 依赖与边界
 

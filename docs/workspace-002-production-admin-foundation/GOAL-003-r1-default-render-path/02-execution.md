@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-01
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-003
@@ -39,3 +39,20 @@ version: 0.3.0
 - **成功标准对照**：1 / 3 / 4 已勾选（meta `progress` 0/4 → 3/4）；标准 2 的 5 份迁移 Schema 文档由 GOAL-004 作为页面资产落地后闭合。
 - **`I-003-002`**（required · 列表页数据注入）保持 **open**；列表页验收前与 GOAL-004 / `I-004-002` 复核。
 - **手写示例源文件处置**：`registry.tsx` + 5 个示例组件**暂留**为参考（D-003），GOAL-004 文档落地后清理；本目标已不再引用渲染路径。
+
+## 2026-08-01 · GOAL-004 落地后联动：标准 2 闭合 + 数据注入关闭 + 源文件清理
+
+- GOAL-004 于同日落地 5 份迁移 Schema 文档（`data-table` / `search-form-table` / `form-controls` / `form-with-reactions` / `list-edit-lifecycle`），经默认主路径渲染；本目标标准 2 满足。
+- **`I-003-002` → closed**（证据 = GOAL-004 D-004 + `SchemaTable` 默认注入；`App.tsx` `SchemaPageSurface` 已接入 `tableRenderer`，reuse `GET /api/records`）。
+- **手写示例源文件清理（D-003）**：删除 `apps/web/src/app/examples/` 整目录（`registry.tsx` + 5 个示例组件 + `list-edit-lifecycle.test.tsx`）；`row-action` 逻辑仍由 `apps/web/src/renderer/row-action.test.ts` 独立覆盖。
+- `render.tsx` 占位文案与注释更新为 R1 数据契约已接线（`SchemaTable`）。
+- **成功标准对照**：标准 2 勾选；`progress` `3/4` → `4/4`（meta 已同步）。
+- **验证**：`npm test` 427/427；`npm run build`；`go test ./...` + `go vet ./...` 全绿（同 GOAL-004 验证轮）。
+- **仍开放**：`status` 仍 `active`（`progress` 4/4）；本目标已满足关门条件，**未做阶段/关门审计**，待用户 `/govern` 决定是否补自审并置 `done`。
+
+## 2026-08-01 · 关门自审 A-003
+
+- 用户 `/govern` 指定 self 关门审计。
+- 复核证据（全绿）：`npm test` **425/425**；`npm run build`；`go test ./...` + `go vet ./...` 干净。
+- 追加 `03-audit.md` **A-003**（source=self，close-out，verdict=pass）：四项成功标准全部有证据；F-001（`list-edit-lifecycle.test.tsx` 删除后 D-ACT 应用级集成断言转移至 `row-action.test.ts`）为 recommended/low open，不阻断关门。合并 A-001（independent）+ A-002（self）。
+- 关门条件已满足，`status` 仍 `active`（`progress` 4/4 不变）；**待用户确认**后置 `done` 并同步 goal-tree。

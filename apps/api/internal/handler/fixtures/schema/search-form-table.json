@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "pageId": "search-form-table",
+    "title": "Search + table",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended", "table.sort"]
+  },
+  "body": {
+    "type": "section",
+    "props": { "title": "Search + table" },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "A search form filters the record list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R1 renders the search-form structure and the record table; form-to-query binding is out of scope."
+        }
+      },
+      {
+        "type": "form",
+        "id": "search-form",
+        "props": {
+          "fields": [{ "id": "q", "label": "Search records", "type": "input" }],
+          "submitLabel": "Search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "search-results",
+        "props": {
+          "columns": [
+            { "field": "id", "label": "ID" },
+            { "field": "name", "label": "Name", "sortable": true },
+            { "field": "status", "label": "Status", "sortable": true },
+            { "field": "owner", "label": "Owner", "sortable": true },
+            { "field": "updatedAt", "label": "Updated", "sortable": true }
+          ],
+          "dataSource": "/api/records"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "pageId": "list-edit-lifecycle",
+    "title": "List + edit lifecycle",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended", "record.view.load"]
+  },
+  "body": {
+    "type": "tabs",
+    "id": "record-lifecycle",
+    "props": { "label": "Record lifecycle" },
+    "children": [
+      {
+        "type": "section",
+        "props": { "label": "Detail" },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "text": "A composite/detail page composed from section/tabs, recordView and form nodes (D-COMP)."
+            }
+          },
+          {
+            "type": "recordView",
+            "id": "record-detail",
+            "props": {
+              "record": {
+                "id": "rec-1",
+                "name": "Acme Console",
+                "status": "active",
+                "owner": "alice",
+                "updatedAt": "2026-07-31T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "section",
+        "props": { "label": "Edit" },
+        "children": [
+          {
+            "type": "form",
+            "id": "edit-form",
+            "props": {
+              "fields": [
+                { "id": "name", "label": "Name", "type": "input" },
+                {
+                  "id": "status",
+                  "label": "Status",
+                  "type": "select",
+                  "options": [
+                    { "value": "active", "label": "Active" },
+                    { "value": "pending", "label": "Pending" },
+                    { "value": "archived", "label": "Archived" }
+                  ]
+                },
+                { "id": "owner", "label": "Owner", "type": "input" }
+              ],
+              "submitLabel": "Save"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

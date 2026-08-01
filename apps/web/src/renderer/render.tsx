@@ -29,8 +29,9 @@ import {
  * Scope: the frozen §5 node whitelist — layout (grid/section/tabs),
  * data/action (text/table/recordView/actionButton) and form. The form control
  * whitelist itself is enforced by D-FORM (isWhitelistedFormControl /
- * checkFormCapabilities) via gateRenderFormFields. Table data wiring stays
- * with the example page.
+ * checkFormCapabilities) via gateRenderFormFields. The default app path wires
+ * a schema-driven table surface (SchemaTable, GOAL-004) as `tableRenderer`;
+ * a table node dispatched without one fails closed with an observable note.
  */
 
 export interface RendererComponentProps {
@@ -398,7 +399,7 @@ function dispatchParsedNode({
       return (
         tableRenderer?.(node) ?? (
           <p className="text-sm text-muted-foreground">
-            table data injection is pending the R1 list-data contract
+            table node rendered without a tableRenderer (the app wires SchemaTable)
           </p>
         )
       );
