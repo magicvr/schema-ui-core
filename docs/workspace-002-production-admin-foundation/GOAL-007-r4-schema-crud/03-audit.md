@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.21.0
+version: 0.23.0
 ---
 
 # 审计台账 · GOAL-007
@@ -26,11 +26,12 @@ version: 0.21.0
 | A-011 | independent | 2026-08-02 | finding-closure · A-010 F-008 关闭证据（L2 `updatedAt` 跨进程 detail 断言 + 执行事实同步） | pass | responded：A-013（self close-out）采纳 pass |
 | A-012 | independent | 2026-08-02 | finding-closure · 编排器对 A-010 F-008 的修正复核 | pass | responded：F-008 `fixed` 可维持（A-013 self close-out 采纳 pass） |
 | A-013 | self | 2026-08-02 | close-out · GOAL-007 S1～S6 整体 + 关门条件（含 S6/L2 self 覆盖） | pass | —；本目标已按此置 `done`，Root R4 已勾选 |
+| A-014 | independent | 2026-08-02 | finding-closure · A-010 R-003/R-004 关闭证据（README 端点表 R4 + 真实浏览器 Schema CRUD E2E） | pass | responded：R-003/R-004 `fixed` 关闭复核成立；无开放 required |
 
 ## 当前审计边界
 
 - 信息门禁：`I-007-001`/`I-007-002` verified；**`I-007-003` 台账 verified（v0.2.2）**；**`I-007-004` verified（D-007 + [I-007-004-restart-e2e-protocol.md](attachments/I-007-004-restart-e2e-protocol.md)）**。A-005/A-006/A-007 的 F-002～F-007 全部闭合；S4/S5 由 A-008（independent）+ A-009（self）复核 `pass`；S6 已实施（L1 HTTP 层 + L2 进程级重启持久化，02-execution）。
-- **A-001～A-013 响应**见索引与响应节；`I-007-001`～`I-007-004` 仍全部 verified。**A-010 F-008 → `fixed`（2026-08-02，A-011/A-012 独立复核 pass）**：L2 已按 I-007-004 §3.6/§4 对新建记录与 `rec-1` 分别 GET detail 并断言 `updatedAt` 与 Phase 1 POST/PATCH 响应毫秒精确一致。**A-013（self · close-out）`pass`（2026-08-02）**：成功标准 S1～S6 全 6/6、四项 required 信息门禁 verified、无开放 required；**GOAL-007 已置 `done`，Root R4 已勾选（Root `3/5 → 4/5`）**，目标关门。**A-010 R-003/R-004 → `fixed`（2026-08-02 关门后补充）**：README 端点表阶段标注统一 R4；真实浏览器 `list-edit-lifecycle` CRUD E2E + 登录后 `/me` features 修复；本机 `WEB_PORT=9999` E2E **2 passed**。当前 scope **无开放 required / recommended**。后续意见从 `A-014` 起。
+- **A-001～A-014**：`I-007-001`～`I-007-004` 仍全部 verified。**A-010 F-008 → `fixed`（A-011/A-012 复核 pass）**。**A-013（self · close-out）`pass`**：GOAL-007 已 `done`，Root R4 已勾选（Root `4/5`）。**A-014（independent · finding-closure · pass）**：独立复核确认 A-010 **R-003/R-004 → `fixed` 可维持**——README 端点表阶段标注均为 R4；`schema-crud.spec.ts` 真实浏览器 create/edit/delete+confirm 旅程成立；`login()` 经 `fetchMe()` 解析 features；独立复跑 vitest auth-client **9/9** + Playwright `WEB_PORT=9999` E2E **2 passed（6.2s）**。**已响应（/govern · 2026-08-02）**：采纳 `pass`，R-003/R-004 关闭复核成立；范围外 `records.go` L20/L290/L324 陈旧 R5/D-ACT 注释列为可选卫生项（不阻断、不升级）；P-004 §3.1——本 scope 为已关门 recommended 的 finding-closure 复核，无新放行/关门/推进门禁，不强制补 self。当前 scope **无开放 required / recommended**。后续意见从 `A-015` 起。
 
 ## A-001 · S1/S2 契约冻结独立审计（2026-08-02）
 
@@ -1100,3 +1101,77 @@ version: 0.21.0
 ### 声明
 
 本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、finding 状态与阶段推进由 `/govern` 处理。
+
+## A-014 · A-010 R-003/R-004 关闭证据独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot（Grok 4.5）
+- **类型 / scope**：finding-closure；仅复核 [A-010](#a-010--r4-整体完成主张与关门前证据独立审计2026-08-02) 的 **R-003**（API README 端点表阶段标注）与 **R-004**（真实浏览器 Schema CRUD 生命周期 E2E）关闭证据是否充分、可重复核对、名实相符。**不**复判 S1～S6、不重开 F-008、不改 GOAL-007 `done` / Root R4、不审 R5。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；`primary_plan: VP-002-production-admin-foundation`。
+- 共享资料：`shared_materials_catalog: none`；本意见未把共享资料作为事实或关闭证据。
+- 已审阅：A-010 正文与「响应 · A-010 R-003 / R-004」节；02-execution「响应 A-010 R-003 / R-004」节；00-meta / goal-tree 状态边界（GOAL-007 `done`、Root `4/5`）；`apps/api/README.md`；`apps/web/e2e/schema-crud.spec.ts`、`e2e/shell.spec.ts`；`apps/web/playwright.config.ts`；`apps/web/src/account/auth-client.ts` + `auth-client.test.ts`；`apps/web/README.md`（`WEB_PORT` 说明）；manifest `menu_list_edit_lifecycle` / `list-edit-lifecycle` 投影。
+- 独立复跑（2026-08-02，本机 Windows，`apps/web`）：
+  - `npm test -- src/account/auth-client.test.ts` → **9/9** 通过（含 `login stores the token pair and resolves features via /me`）。
+  - `$env:WEB_PORT='9999'; npm run test:e2e` → **2 passed（6.2s）**：`list-edit-lifecycle drives real create / edit / delete against Go SQLite` + `login gates the shell and the real auth chain works through the proxy`。
+
+### 成果（有证据）
+
+| A-010 关闭主张 | 复核结果与证据 |
+|----------------|----------------|
+| **R-003** · README 端点表阶段标注统一为 R4 | **成立**：`apps/api/README.md` 端点表中 GET list、POST、GET detail、PATCH、DELETE 说明列均为 **R4**；正文「记录数据源（R4 · GOAL-007）」与之一致。仓库内 `apps/api/README.md` **无**残留「R5 D-DATA / D-ACT」端点表标注。原 A-010 证据路径可核对。 |
+| **R-004** · 真实浏览器 `list-edit-lifecycle` CRUD 旅程 | **成立**：`apps/web/e2e/schema-crud.spec.ts` 覆盖 admin 登录 → 侧栏「List + edit」→ New record / Create record → 行 Edit / Save changes → 行 Delete + Confirm（文案 `Delete this record?`）→ 断言 `Record created/updated/deleted` 与行存在性；经 Playwright `webServer` 启动真实 `go run ./cmd/server`（临时 `DB_PATH`）+ Vite，非内存 API 模拟器。 |
+| **R-004 附带** · `login()` 后 features 投影 | **成立**：`auth-client.ts` `login()` 在存 token 后 `return await fetchMe()`，与 `restoreSession` 对齐；失败兜底 `features: {}` 有注释说明。单测断言第二请求为 `/api/accounts/me` 且 features 含 `menu_list_edit_lifecycle: true`。E2E 断言登录后「List + edit」链接可见，间接证明投影路径。 |
+| **R-004 可重复性** · Playwright 配置与 Windows 端口 | **成立**：`playwright.config.ts` 支持 `WEB_PORT`（默认 5173）、每轮 `mkdtemp` 临时 SQLite、`workers: 1`、`reuseExistingServer: false`；web README 记录 Windows `WEB_PORT=9999` 绕行。本轮独立复跑与 02-execution 声称一致（2 passed）。 |
+| 状态边界未越权 | **成立**：关闭声明仅闭合 recommended；GOAL-007 保持 `done / 6/6`；Root 保持 `4/5`；未重开 F-008 或 Root R4。 |
+
+### 对照成功标准（本 scope）
+
+| 项 | 结论 |
+|----|------|
+| A-010 R-003 建议逐项落实 | **达成**（README 端点表阶段标注） |
+| A-010 R-004 建议逐项落实 | **达成**（真实浏览器 CRUD 旅程 + features 登录修复 + 可重复 E2E 配置） |
+| 关闭证据可独立复跑 | **达成**（本轮 vitest 9/9 + Playwright 2 passed） |
+| 执行/台账与代码一致 | **达成**（02-execution、A-010 响应节、索引与代码/测试一致） |
+
+### Findings
+
+- **无新 required**。
+- **无新 recommended**（本 finding-closure scope）。
+- **范围外注记（不重开 R-003）**：`apps/api/internal/handler/records.go` 源码注释仍含历史「R5 D-DATA」「D-ACT」字样（约 L20/L290/L324）。A-010 R-003 原证据与建议仅针对 **README 端点表**，该表已统一为 R4；源码注释陈旧不构成 R-003 关闭失败，亦不升级为 required。若后续做文档卫生清理可由 `/govern` 可选处理，不阻断本意见。
+
+### 必改项汇总
+
+- **无开放 required**（本 scope）。A-010 R-003 / R-004 的 `fixed` 关闭证据充分且可独立复核，**可维持闭合**。
+
+### 与既有意见的异同
+
+- 相对 A-010（independent · conditional · 开 R-003/R-004 recommended）：**关闭成立**——README 端点表与真实浏览器 CRUD E2E 均已按建议补齐；本意见不重开 F-008（已由 A-011/A-012 复核 pass）。
+- 相对 A-013（self · close-out）：同意当时将 R-003/R-004 记为非阻断 recommended、关门后补记 fixed 的路径；本意见补上 independent finding-closure 复核，确认补记非空泛。
+- 相对 A-008/A-009（S4/S5 T-UI 内存模拟器）：同意 T-UI 不能替代浏览器→Go/SQLite 旅程；R-004 现已补上该缺口。
+- 无与既有 self/independent 意见在 verdict 或 required 上冲突。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：A-010 R-003（README 端点表 R4）与 R-004（真实浏览器 Schema CRUD E2E + login features）关闭证据逐项落实、可独立复跑、非空泛；scope 内无开放 required。R-003/R-004 可按 `fixed` 维持闭合。
+- 建议 `/govern`：
+  1. 记录对本意见的响应（采纳 pass，确认 R-003/R-004 关闭复核成立）。
+  2. **不必**改 GOAL-007 `status`/`progress` 或 Root R4（目标已 `done`，本 scope 无新必改）。
+  3. 可选：清理 `records.go` 中历史 R5/D-ACT 注释（范围外卫生项）。
+  4. 主路径继续 Root **R5**（`I-005`/`I-006` 信息门禁 → 立项），与本 finding-closure 无耦合。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-014（/govern · 2026-08-02）
+
+- **verdict 采纳**：`pass` 成立——A-014 独立复核确认 A-010 **R-003/R-004** 的 `fixed` 关闭证据（`apps/api/README.md` 端点表阶段标注统一 R4 + `apps/web/e2e/schema-crud.spec.ts` 真实浏览器 create/edit/delete+confirm 旅程 + `auth-client.ts` `login()` 经 `fetchMe()` 解析 features + Playwright 可重复配置）逐项落实、可独立复跑（vitest **9/9** + `WEB_PORT=9999` E2E **2 passed（6.2s）**）、非空泛；scope 内无开放 required、无新 recommended。
+- **R-003 / R-004 关闭确认**：维持 `fixed`（A-014 独立 finding-closure 补上该 scope 的 independent 复核；关闭声明未越权重开 F-008 或 Root R4）。
+- **范围外卫生项（recommended · 非阻断）**：`apps/api/internal/handler/records.go` L20/L290/L324 仍含历史「R5 D-DATA」「D-ACT」注释。A-014 判其**范围外、可选**；本响应不升级、不阻断。列为可选清理项，待 R5 工程化轮次或文档卫生整理时处理，不改动本目标关闭状态。
+- **P-004 §3.1 处置**：A-014 为 `source: independent` 且该 scope（A-010 R-003/R-004 finding-closure）无覆盖同 scope 的 `source: self` 审计。但 GOAL-007 已于 A-013 close-out 后置 `done`，R-003/R-004 是关门后的 recommended 补记；本轮仅**记录对已关门项的关闭复核响应**，不构成「放行下一阶段 / 关门 / 仅用独立意见推进」的新门禁——故不强制补 self，亦不自动放行任何新阶段。用户可随时要求补 self 复核，不阻断本响应。
+- **状态边界**：GOAL-007 保持 `done / 6/6`；Root 保持 `4/5`；A-010 scope 无开放 required/recommended。
+- **证据路径**：本响应节；A-014 本意见（复核表与复跑）；`apps/api/README.md`；`apps/web/e2e/schema-crud.spec.ts` + `shell.spec.ts`；`apps/web/src/account/auth-client.ts` + `auth-client.test.ts`；`apps/web/playwright.config.ts`；02-execution 2026-08-02「响应 A-010 R-003 / R-004」节。

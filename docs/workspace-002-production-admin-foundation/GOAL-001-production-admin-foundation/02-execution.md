@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.11
+version: 0.1.13
 ---
 
 # 执行记录 · GOAL-001
@@ -134,3 +134,22 @@ version: 0.1.11
 - 子目标记录 D-002/D-003，落盘 API/错误契约与 SQLite 迁移计划附件；`I-007-001`/`I-007-002` → verified；GOAL-007 进度 `0/6 → 2/6`（S1/S2）。
 - **未做**：未改产品代码；Root R4 未勾选，Root 保持 `active / 3/5`；`I-007-003`/`I-007-004` 仍 open。
 - **计划（非事实）**：下一拍在 GOAL-007 实施 S3 持久化 CRUD API，或先收集 `I-007-003`（若优先 Schema 绑定）。
+
+## 2026-08-02 · 响应 A-014 + R5 I-005/I-006 收集启动（D-012）
+
+- 用户通过 `/govern` 明确要求：响应 `GOAL-007` A-014；推进 Root 下一主路径 R5（先收集 I-005 / 复核 I-006，再立项）。
+- **A-014 响应**：`GOAL-007-r4-schema-crud/03-audit.md` 追加响应节——采纳 `pass`，A-010 R-003/R-004 `fixed` 关闭复核成立（README 端点表 R4 + `schema-crud.spec.ts` 真实浏览器 CRUD E2E + `login()` features 投影）；范围外 `records.go` L20/L290/L324 陈旧 R5/D-ACT 注释列为可选卫生项（不阻断、不升级）；P-004 §3.1——本 scope 为已关门 recommended 的 finding-closure 复核，无新放行/关门/推进门禁，不强制补 self。GOAL-007 保持 `done / 6/6`，Root 保持 `4/5`。
+- **R5 门禁扫描**：Charter `schema-ui-core-admin-foundation@0.1.0`、VP-002 active、delivery workspace 与 Root 绑定一致；Vision Review 无开放 required；`I-005`（required · R5 方案冻结前）到期、`I-006`（non-blocking · R5 范围取舍）待复核；Root R5 scope 无开放审计 finding。
+- **I-005 收集**：只读核对 `apps/api`（config/.env.example/Makefile/healthz/main.go/gitignore）、`apps/web`（package.json/README/vite.config）、`.github/workflows/r6-basic-matrix.yml`、根 README 与仓库全局探测，落盘 `attachments/I-005-engineering-fork-collection.md`（v0.1.0）。关键事实：**全仓无 Dockerfile / docker-compose / 容器路径，无生产静态托管与 `/api` 反代文档，无 15 分钟 fork 计时口径与可复现实验方法**；CI 仅测试/构建/E2E 无部署；运行时 DB 已 gitignore。附件给出候选部署基线 A/B/C（建议 A：文档双进程 + 可选 Docker Compose 一键启动）、15 分钟计时口径、复现方法（文档步骤 + smoke 清单 + 独立复现记录）。
+- **I-006 复核**：现状无 operation/audit log（仅 `slog` 服务日志）；VP-002 列为加分项非硬关门条件；附件 §5 给方案甲（R5 可选加分 checkpoint，SQLite `operation_log`）/ 乙（本波次排除），建议甲。
+- 记录决策 **D-012**：`I-005` → `collecting`（required，仍阻断 R5 方案冻结/立项）；`I-006` → `collecting`（non-blocking，复核中）；Root `00-meta` 信息表与 R5 路线图注记已同步。
+- **未做**：未创建 R5 子目标；未修改任何产品代码；未运行应用/测试（本轮仅静态核对）；未勾选 R5 检查点；Root 保持 `active / 4/5`。
+- **计划（非事实）**：由用户裁决附件 §6 四类边界（部署基线 / 15 分钟口径 / 复现方法 / I-006 取舍）后，记录 R5 方案决策、判断 `I-005` 是否可置 `verified`，再立项 R5 子目标 `GOAL-008-…`。
+
+## 2026-08-02 · R5 方案边界冻结（D-013）+ 立项 GOAL-008
+
+- 用户按 P-004 书面裁决 [I-005-engineering-fork-collection.md](attachments/I-005-engineering-fork-collection.md) §6 四类边界（全部采纳推荐）：**部署基线 A**（文档双进程 + 可选 Docker Compose 一键启动）、**建议计时口径**（终点=登录+后台首页可交互、不含依赖下载、≥1 次独立复现）、**建议复现方法**（文档步骤 + smoke 清单 + 独立复现记录，R5 落地 `scripts/smoke.sh`）、**I-006 方案甲**（最小操作日志为 R5 可选加分 checkpoint）。
+- 记录决策 **D-013**：冻结 R5 方案边界；`I-005` → `verified`、`I-006` → `closed`；附件更新至 v0.2.0；Root `00-meta` 信息表与 R5 路线图注记已同步。
+- **立项 `GOAL-008-r5-engineering-fork`**（active / 0/5）：S1～S5 五个核心检查点（环境/配置基线、容器一键启动、fork 文档与 15 分钟体验、可复现 smoke 验收、阶段审计与 Root 关门条件评估）；S6（最小操作日志）为可选加分不进进度分母；登记 `I-008-001/002/003` 实施前 required；五件套与 `goal-tree.md` 已同步。
+- **未做**：未修改任何产品代码、配置、文档、容器或脚本；未勾选 R5 检查点；Root 保持 `active / 4/5`。
+- **计划（非事实）**：下一拍在 `GOAL-008` 收集并冻结 `I-008-001`（环境/配置/容器契约），再判断 S1/S2 实施边界。
