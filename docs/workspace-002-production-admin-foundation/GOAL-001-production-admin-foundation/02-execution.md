@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.10
+version: 0.1.11
 ---
 
 # 执行记录 · GOAL-001
@@ -127,3 +127,10 @@ version: 0.1.10
 - 登记四项 required 信息门禁：`I-007-001`（API/错误）、`I-007-002`（SQLite/迁移/seed/并发）、`I-007-003`（Schema action/状态/权限）、`I-007-004`（重启/端到端验收协议）；当前均为 `open`。
 - **未做**：未修改产品代码、数据库、API、Schema fixture 或 Web 行为；未新增精确 error `code`；未执行 R4 产品测试；Root R4 未勾选，Root 保持 `active / 3/5`。
 - **计划（非事实）**：先在 GOAL-007 收集并冻结 `I-007-001/002`，再判断首个实现检查点。
+
+## 2026-08-02 · GOAL-007 冻结 I-007-001/002（S1/S2）
+
+- 用户通过 `/govern` 要求在 `workspace-002` · `GOAL-007` 先收集 `I-007-001` 与 `I-007-002`。
+- 子目标记录 D-002/D-003，落盘 API/错误契约与 SQLite 迁移计划附件；`I-007-001`/`I-007-002` → verified；GOAL-007 进度 `0/6 → 2/6`（S1/S2）。
+- **未做**：未改产品代码；Root R4 未勾选，Root 保持 `active / 3/5`；`I-007-003`/`I-007-004` 仍 open。
+- **计划（非事实）**：下一拍在 GOAL-007 实施 S3 持久化 CRUD API，或先收集 `I-007-003`（若优先 Schema 绑定）。
