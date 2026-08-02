@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.29.0
+version: 0.31.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -37,7 +37,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
 | `GOAL-005-r2-auth-session` | R2 · 真实认证与请求级身份 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-006-r3-persistent-rbac-menu` | R3 · 持久化 RBAC、菜单投影与版本迁移 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
-| `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `active` | `2/5` | 2026-08-02 |
+| `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `active` | `2/5` | 2026-08-03 |
 
 > Root `4/5` 由五个等权纲领检查点派生（R1、R2、R3、R4 已勾选；R5 待办）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 6/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1 已实现（D-004：migration runner + `schema_migrations` + `0001/0002` 迁移链 + pre-v0002 恢复快照）；S2 已实现（D-005：阶段 B 终态规范化权威读 + 双写 + 集合核对，A-002 F-004 required → fixed、A-003 独立复核 pass）；S3 已实现（D-006：`seedRBAC` 增量幂等种子接线到 Open，A-004 self 阶段审计 pass）；S4 已实现（D-007：records 读写经身份携带的 permission key 门禁，匿名 401 / 缺权限 403）；S5 已实现（D-008：`/me.features` 从持久化菜单 grants 投影 + 真实 manifest `visibleWhen`）；**S6 已实现（2026-08-02：恢复/重启/回归证据——`TestRestartPersistence`、`TestRestorePreV0002Snapshot`、E2E 重启冒烟、全仓 API/Web 回归；A-001 F-001/F-002 与 A-004 F-101 已闭合为 fixed）**。**A-005 F-005 已闭合为 fixed（2026-08-02：API README 端点表与鉴权边界同步 R3 权限键语义，API 回归通过；意见台账开放 0）**。**`GOAL-006` 已置 `done`（2026-08-02：A-006 independent 复核 F-005 关闭 `pass`；A-001～A-006 全部 responded，无开放 required；`I-006-001/002` verified；close-out 用户裁决不补 self 自审）。Root R3 检查点已勾选（Root `2/5 → 3/5`）**。六项检查点已全勾选（`6/6`）。
 
@@ -74,3 +74,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
 > **GOAL-008 A-004/A-005 已响应、A-006 self 已补（2026-08-03）**：A-004（independent · execution-facts · pass）采纳——R-001 handled（由 F-002 修复承载）、R-002 fixed（根 README `.env` 注记）。A-005（independent · execution-facts · fail）F-002/F-003 均 **fixed**——F-002：`config.ValidateProd()` 生产运行时守卫（非 development + `AUTH_DEV_SESSION_ENABLED=true` → 启动报错退出）+ `config_test.go` 4 用例回归 + 运行时复验（production+flag → exit 1、development+flag → 正常启动），`go test ./...` 全绿；F-003：`00-meta` frontmatter `progress: 0/5 → 2/5` 与 goal-tree 一致。**A-006（self · execution-facts · pass）** 补齐 S1/S2 scope 自审（P-004 §3.1）。`GOAL-008` 保持 `active / 2/5`；`I-008-002`/`I-008-003` 仍 open（阻断 S3/S4、S6 若实施）；Root R5 未勾选，Root `4/5`。建议对 F-002/F-003 关闭证据做 `/audit` finding-closure 复审。
 
 > **GOAL-008 A-007 已响应（2026-08-03）**：A-007（independent · finding-closure · pass）独立复核 F-002/F-003 关闭证据（代码、回归、运行时与进度投影），两项 `fixed` 维持闭合，本 scope 无开放 required；响应采纳 `pass`（同 scope 已有 A-006 self 覆盖，P-004 §3.1 无需再补自审）。`GOAL-008` 保持 `active / 2/5`；`I-008-002`/`I-008-003` 仍 open required（阻断 S3/S4、S6 若实施）；Root R5 未勾选，Root `4/5`。下一拍收集并冻结 `I-008-002` 后再进入 S3/S4。
+
+> **GOAL-008 I-008-002 已冻结（2026-08-03）**：D-004 采纳 [I-008-002-fork-reproduction-protocol.md](GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0；该信息项为 **verified**，解除 S3/S4 的方案冻结/实施前信息门禁。协议只冻结计时、独立复现和 smoke 判据，不是 S3/S4 实施或验收事实：QUICKSTART/README、`scripts/smoke.sh`、独立复现记录、运行/CI 证据和 S3/S4 勾选仍待完成。`I-008-003` 仍 open（仅当 S6 实施）；`GOAL-008 active / 2/5`、Root R5 `4/5` 均不变。
+
+> **GOAL-008 A-008 已响应、A-009 self 已补（2026-08-03）**：A-008（independent · design-plan · conditional）采纳——**F-004 → fixed**（D-005 + [I-008-002 协议 v0.1.1](GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md)：S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`，非 disposable exit 0 不得单独作为「种子可重复」关闭证据；保持普通开发库禁 destructive reset）；**R-008-001～004 absorbed**（默认 URL 按路径区分、终点 4 = `list-edit-lifecycle`、SM-005 判据 `id="root"`、不安全 destructive → exit 2）。**A-009（self · design-plan 复核 · pass）** 补齐 A-008 同 scope 自审（P-004 §3.1 用户裁决「补 self」）。`I-008-002` 维持 verified（v0.1.1 权威）；`GOAL-008` 保持 `active / 2/5`；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root `4/5`。下一拍实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现）与 S4（`scripts/smoke.sh` + disposable SM-006 证据）。

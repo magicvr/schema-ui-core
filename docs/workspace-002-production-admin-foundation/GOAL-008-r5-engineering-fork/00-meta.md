@@ -5,7 +5,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.5
+version: 0.1.7
 progress: 2/5
 ---
 
@@ -27,14 +27,14 @@ progress: 2/5
 
 ## 派生进度
 
-`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-02**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；**S1/S2 已实施（进度 `0/5 → 2/5`）**——env 清单 + health/启动验证 + dev/prod 区分文档 + Dockerfile × 2 + compose.yaml + nginx 反代 + CI `container-smoke`，契约 C-001～C-007 本机验证通过；`I-008-002`/`I-008-003` 仍 open（分别阻断 S3/S4、S6 若实施）。
+`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-03**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；`I-008-002` 已 verified（D-004 + [复现与 smoke 协议 v0.1.1](attachments/I-008-002-fork-reproduction-protocol.md)，D-005/A-008 响应后权威版本 v0.1.1），解除 S3/S4 的方案冻结/实施前信息门禁；**S1/S2 已实施（进度 `0/5 → 2/5`）**——env 清单 + health/启动验证 + dev/prod 区分文档 + Dockerfile × 2 + compose.yaml + nginx 反代 + CI `container-smoke`，契约 C-001～C-007 本机验证通过。S3/S4 仍未实施；`I-008-003` 仍 open（S6 若实施时阻断）。
 
 ## 信息需求
 
 | ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
 | `I-008-001` | 环境/配置与容器部署的精确契约是什么？（env 键全集与 dev/prod 行为、health/启动验证口径、compose 服务/镜像/DB volume/探针/`/api` 反代形状） | required | S1/S2 实施与验收 | S1 首个文档/配置变更前 | 对照 Root D-013 方案边界 A（Compose = 必须交付的第二启动路径）与现有 `config.go`/`healthz`/web 构建，按 A-001 R-002 最低清单形成版本化工程化契约与验收清单，记录决策 | **verified** | 已关闭（D-003） | [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0：env 键全集与 dev/prod、health/启动验证、Compose/镜像/DB volume/探针、SPA fallback 与 `/api` 反代、依赖/超时/失败行为、CI 入口 + 验收清单 C-001～C-007；**不**勾选 S1/S2 |
-| `I-008-002` | 15 分钟计时复现协议与 smoke 验收判据是什么？（终点定义、独立复现记录字段、smoke 检查项与通过条件） | required | S3/S4 实施与验收 | 首个 fork 文档/smoke 变更前 | 将 D-013 建议口径**按 A-001 R-002 最低清单**（工具/平台基线、依赖缓存前提、计时起止、失败/重试规则、证据字段、`scripts/smoke.sh` 机器可判定退出码）固化为可执行协议与脚本判据，记录决策 | open | R5 方案边界已冻结（D-013）；实施前复核 | 待收集 |
+| `I-008-002` | 15 分钟计时复现协议与 smoke 验收判据是什么？（终点定义、独立复现记录字段、smoke 检查项与通过条件） | required | S3/S4 实施与验收 | 首个 fork 文档/smoke 变更前 | 将 D-013 建议口径**按 A-001 R-002 最低清单**（工具/平台基线、依赖缓存前提、计时起止、失败/重试规则、证据字段、`scripts/smoke.sh` 机器可判定退出码）固化为可执行协议与脚本判据，记录决策 | **verified** | 已关闭（D-004）；v0.1.1（D-005 · A-008 响应）；S3/S4 首次实现前按 v0.1.1 复核 | [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.1：计时、独立复现字段、SM-001～SM-006（S4 强制 ≥1 次 disposable 通过）、输入/退出码与安全 reset 边界；**不**勾选 S3/S4 |
 | `I-008-003` | 最小操作日志（若实施）的事件与存储契约是什么？（事件类型、`operation_log` 表结构/迁移、查询/清理边界） | required（仅当 S6 实施） | S6 实施与验收 | 首个 operation_log 变更前 | 若用户决定在 R5 实施 S6，先冻结事件/存储契约；若不实施则记录为后续加分项 | open | 以用户对 S6 的决定为准 | 待用户决定 S6 后处理 |
 
 ## 依赖与边界

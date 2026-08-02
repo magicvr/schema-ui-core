@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.11.0
+version: 0.13.0
 ---
 
 # 审计台账 · GOAL-008
@@ -20,17 +20,172 @@ version: 0.11.0
 | A-005 | independent | 2026-08-03 | execution-facts · S1/S2 实施复核（C-001～C-007） | fail | responded：F-002 **fixed**（config.ValidateProd 生产守卫 + 回归 + 运行时反例复验）；F-003 **fixed**（00-meta 进度投影同步） |
 | A-006 | self | 2026-08-03 | execution-facts 复核 · S1/S2 实施 + A-004/A-005 响应证据（含 F-002/F-003 fixed） | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1） |
 | A-007 | independent | 2026-08-03 | finding-closure · F-002/F-003 关闭证据复审 | pass | responded：pass 采纳；F-002/F-003 `fixed` 维持闭合；本 scope 无开放 required |
+| A-008 | independent | 2026-08-03 | design-plan · I-008-002 fork 复现与 smoke 协议 v0.1.0 合理性 | conditional | responded：F-004 **fixed**（协议 v0.1.1：S4 强制 disposable SM-006 证据）；R-008-001～004 absorbed |
+| A-009 | self | 2026-08-03 | design-plan 复核 · I-008-002 协议 v0.1.1 修订与 F-004 关闭证据 | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1 用户裁决「补 self」） |
 
 ## 当前审计边界
 
 - 本目标于 2026-08-02 立项，`active / 2/5`。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**；R-001/R-002 handled；R-003 handled（投影清理）。**A-003（self · goal-definition + design-plan 复核 · pass）**：立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立（P-004 §3.1）。**S1/S2 已实施（2026-08-02）**：env 清单 + health/启动验证 + dev/prod 区分文档 + Dockerfile × 2 + compose.yaml + nginx 反代 + CI `container-smoke`；契约 C-001～C-007 本机验证通过（`docker compose up` → healthz/登录/`/me`/SPA fallback/重启与 down-up DB 持久化）。**建议对 S1/S2 做一次实施向审计（self 或 `/audit`）**。
-- 信息门禁：**`I-008-001` 已 verified（D-003 + [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0）**；`I-008-002` / `I-008-003` 仍 `open`（required，分别阻断 S3/S4、S6 若实施）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
+- 信息门禁：**`I-008-001` 已 verified（D-003 + [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0）**；**`I-008-002` 已 verified（D-004 + [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0）**，解除 S3/S4 的协议层信息门禁但不构成实施或验收；`I-008-003` 仍 `open`（required，仅当 S6 实施时阻断）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
 - **A-004（independent · execution-facts · S1/S2 实施向审计 · pass）**：S1/S2 实施主张与仓库事实一致且可复现——C-001/C-002 静态与代码核对通过、C-003/C-005/C-006 本机 Docker 复跑通过、C-004 镜像构建成功、C-007 CI job 结构与本地 smoke 通过；无开放 required；`0/5 → 2/5` 勾选有据。
 - **A-005（independent · execution-facts · S1/S2 实施复核 · fail）**：独立重跑 C-002～C-007 均通过，但 C-001/§5 “生产禁止启用 `AUTH_DEV_SESSION_ENABLED`”与实现不符：生产进程可由该 flag 启动并对未认证请求注入静态高权限开发身份（F-002）。同时 `00-meta.md` 仍写 `progress: 0/5`，而勾选成功标准和 `goal-tree.md` 均为 `2/5`（F-003）。这与 A-004 将同一安全事实列为非阻断 R-001 的分类存在相关分歧；不得跳过 P-004 裁决。
 - **A-006（self · execution-facts 复核 · pass）**：补 S1/S2 实施 scope 的 `source: self` 覆盖（P-004 §3.1 用户裁决「需要补 self」）。**A-004/A-005 统一响应（2026-08-03）**：分类分歧按用户裁决采用 **F-002 `required/high`** 口径——F-002 → **fixed**（`config.ValidateProd()` 生产守卫：非 `development` + `AUTH_DEV_SESSION_ENABLED=true` → 启动报错退出；`config_test.go` 4 用例回归；运行时复验 `production + flag=true` → exit 1、`development + flag=true` → 正常启动；`go build`/`go vet`/`go test ./...` 全绿）；F-003 → **fixed**（`00-meta` frontmatter `progress: 0/5 → 2/5`，与正文/goal-tree 一致）；A-004 R-001 → handled（由 F-002 修复承载同一建议）、R-002 → fixed（根 README 补 `.env` 免重复 export 注记）。S1 的 C-001「生产禁止启用 dev session」现由运行时硬门禁成立；C-002～C-007 维持 pass。**建议对 F-002/F-003 关闭证据做一次 finding-closure 复审（`/audit`）**。
 - **A-007（independent · finding-closure · pass）**：独立复核 F-002/F-003 的代码、回归、运行时与进度投影证据，确认两项 `fixed` 关闭成立；`I-008-002`/`I-008-003` 及 Root R5 门禁不在本次复审中改变。
-- **A-007 响应（/govern · 2026-08-03）**：采纳 `pass`——F-002/F-003 `fixed` 维持闭合；同 scope（F-002/F-003 关闭证据）已有 A-006（self）覆盖，P-004 §3.1 无需再补自审；本 scope 无开放 required。`I-008-002` 仍为 S3/S4 前置 required 门禁，下一拍收集并冻结后再进入 S3/S4。
-- 后续意见从 A-008 起。
+- **A-007 响应（/govern · 2026-08-03）**：采纳 `pass`——F-002/F-003 `fixed` 维持闭合；同 scope（F-002/F-003 关闭证据）已有 A-006（self）覆盖，P-004 §3.1 无需再补自审；本 scope 无开放 required。当时 `I-008-002` 仍为 S3/S4 前置 required 门禁。
+- **D-004 冻结后的当前边界（/govern · 2026-08-03）**：`I-008-002` 已由 [复现与 smoke 协议 v0.1.0](attachments/I-008-002-fork-reproduction-protocol.md) 置为 `verified`，其协议层信息门禁解除；协议没有形成新的审计 verdict，也没有改变 A-001～A-007 的历史结论。S3/S4 的文档、脚本、独立复现与运行/CI 证据仍未发生，检查点维持 `2/5`；`I-008-003` 仍在 S6 实施时适用。
+- **A-008（independent · design-plan · conditional · 2026-08-03）**：独立审计 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0 合理性。协议主体与 Root D-013 / A-001 R-002 / 仓库事实对齐，且未把协议冻结合并成 S3/S4 已完成；但 **F-004 required/medium 开放**——S4「种子可重复」未强制至少一次 disposable SM-006 通过证据，默认非 disposable 路径可在未验证种子幂等时 exit 0。R-008-001～R-008-004 为 recommended。本意见**不**改 `I-008-002` verified 状态、不改 progress、不实施 S3/S4。
+- **A-009（self · design-plan 复核 · pass）**：按 P-004 §3.1 用户裁决「补 self」补齐 A-008 同 scope 的 `source: self` 覆盖——复核 [I-008-002 协议 v0.1.1](attachments/I-008-002-fork-reproduction-protocol.md) 修订（F-004 fixed + 吸收 R-008-001～004）关闭证据成立；`I-008-002` 维持 `verified`（v0.1.1 权威）。
+- **A-008 响应（/govern · 2026-08-03）**：采纳 `conditional`；**F-004 → fixed**（D-005 + 协议 v0.1.1：S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`，非 disposable exit 0 不得单独作为「种子可重复」关闭证据；不安全 destructive → exit 2）；**R-008-001～004 absorbed**（默认 URL 按路径区分、终点 4 = `list-edit-lifecycle`、SM-005 判据 `id="root"`、退出码 2/6 分离）。`I-008-002` 维持 `verified`（v0.1.1）；S3/S4 实施仍未发生，检查点维持 `2/5`；Root R5 未勾选（`4/5`）。
+- 后续意见从 A-010 起。
+
+## A-008 · I-008-002 fork 复现与 smoke 协议合理性独立审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：GitHub Copilot（Grok 4.5）
+- **类型 / scope**：design-plan；审计 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0 是否足以合理回答 `I-008-002`（15 分钟计时复现协议 + smoke 验收判据），对照 Root D-013、I-005、A-001 R-002 最低清单、GOAL-008 S3/S4 成功标准、I-008-001 契约边界与当前仓库事实。不审计尚未发生的 S3/S4 实施、独立复现实测、CI run 或 Root R5 关门；不复判 S1/S2 或 F-002/F-003。
+- **verdict**：conditional
+
+### 范围与区间
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；`shared_materials_catalog: none`（未把共享资料或其他工作区内容当事实）。
+- 已审阅：本目标 `00-meta`（S3/S4、`I-008-002`）、`01-decision` D-004、`02-execution`「冻结 I-008-002」、本文件 A-001～A-007；协议附件 v0.1.0；Root D-013 与 I-005 §3/§4；I-008-001 §2/§8（计时/smoke 归属边界）；`compose.yaml` 端口、`apps/web` 5173/`WEB_PORT`、`app-manifest.json`（`homePageRef: overview`、page title `List + edit lifecycle`）、`seed_records.go`（8 条、`rec-1`/`Acme Console`）、records list `total`/`pageSize` cap、login/`/me` 字段、`index.html` `#root`；仓库 HEAD `5e27019482eb8d0695c402b784860233bbc90c39` 与协议 `frozen_revision` 一致；工作树含协议与 GOAL-008 文档未提交变更；`scripts/smoke.sh` **不存在**（与协议「未实施」声明一致）。
+- 本轮为协议/设计合理性静态审计；**未运行**应用、Docker、计时复现或未来 smoke 脚本；不把静态核对写成 S3/S4 通过。
+
+### 成果（有证据）
+
+| 审计项 | 结论与证据 |
+|--------|------------|
+| 信息问题覆盖（A-001 R-002） | **总体满足**：协议冻结工具/平台基线（§2.1）、依赖缓存前提与排除项（§3.1）、计时起止与四终点（§3.2）、失败/重试与独立性（§3.3）、独立复现最小字段（§4）、SM-001～SM-006 + 输入/退出码（§5）。 |
+| 与 Root D-013 方向对齐 | **总体对齐**：终点含登录 + 可交互列表；不含依赖下载；≥1 次独立复现；smoke 清单形状 `/healthz → login → /me → 代表页 → 种子可重复`；`scripts/smoke.sh` 位置与机器可判定退出码明确。 |
+| 事实/门禁边界 | **成立**：§1/§6 明确本协议不是 S3/S4 实施或验收证据；D-004/`02-execution`/`00-meta` 同步「verified 只解除信息门禁」；未发现把协议冻结合并为检查点勾选。 |
+| 双路径与 Compose 义务 | **成立**：§2.2 保留 `local-dual-process` 与 `compose`；S3 最少一条合格独立复现、未测路径不得宣称达标——不削弱 S2 Compose 必须交付。 |
+| 安全与 disposable 边界 | **方向正确**：禁止输出 token/password/secret；缺工具/密码 fail-closed；普通开发库禁止 reset；CI 应用隔离 project/volume。 |
+| 与仓库静态事实一致性 | **多数可核对**：默认种子 8/`rec-1`/`Acme Console` 与 `seed_records.go` 一致；page title `List + edit lifecycle` 与 manifest 一致；`accessToken`、`/healthz` `status:ok`、`/api/records?pageSize=100` 与 handler 形状一致；Compose web `8081:80` 与协议 compose 默认期望一致；freeze revision 与当前 HEAD 一致；smoke 脚本尚不存在。 |
+| S3 浏览器 vs S4 HTTP 分层 | **合理**：终点 4 要求真实浏览器列表加载；SM-005 仅 HTTP 200 + SPA root，并写明浏览器可交互归 S3——避免把 curl 冒充 UI 验收。 |
+
+### 对照成功标准 / 信息项 / 上游口径
+
+| 项 | 审计结论 |
+|----|----------|
+| `I-008-002` 问题「协议与判据是什么」 | **有条件可回答**：主体判据可实施、可核对；但 S4「种子可重复」的**验收强制力**不足（见 F-004）。 |
+| S3（fork 文档 + ≤15 分钟 + 独立复现） | 计时、字段、独立性、四终点总体可指导实施；路径默认 URL 与「后台首页」操作化需文档消歧（R-008-001/002）。 |
+| S4（`scripts/smoke.sh` + 本地/CI 全绿） | SM-001～SM-005 + 退出码可用于脚本骨架；**SM-006 未成为 S4 绿的硬条件**，与成功标准字面「种子可重复」及 D-013 smoke 清单不完全同构（F-004）。 |
+| I-008-001 边界 | **未混叠**：协议不重开容器/env 契约；health/登录终态与 I-008-001 §2 启动验证口径衔接。 |
+| 状态主张 | 协议与 D-004 **未**主张 S3/S4 已完成；本意见不改变 `active / 2/5` 或 Root `4/5`。 |
+
+### Findings
+
+#### F-004 · S4 验收未强制至少一次 disposable SM-006（种子可重复）通过
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：`I-008-002` 作为 S4 验收判据的完整性；S4 实施与勾选；Root D-013 smoke 清单中的「种子可重复」。
+- **证据**：
+  1. GOAL-008 S4 与 Root D-013 均要求 smoke 覆盖「种子可重复」。
+  2. 协议 §5.2 将 SM-006 标为「仅 disposable 模式」；§5.3 退出码 `0` =「SM-001～SM-005 通过，**且要求的** disposable SM-006 也通过」——未要求 disposable 时，SM-006 可整段跳过仍 exit 0。
+  3. §5.1 仅写「CI **应**使用隔离 Compose project/volume」，未把「S4 验收证据必须包含一次 SM-006=PASS 的 disposable/隔离运行」写成硬判据。
+- **风险**：实现者可交付默认非破坏 smoke、本地/CI 全绿并勾选 S4，却从未验证空库种子数量/幂等/不重复播种；与 D-013 与 S4 字面成功标准漂移。
+- **要求（建议修复路径）**：由 `/govern` 修订协议（建议 v0.1.1）并留痕，至少明确其一并写进验收：
+  1. **S4 验收必须**包含 ≥1 次 disposable/隔离运行且 `SM-006=PASS`（推荐：CI `container-smoke` 或等价 job 默认 disposable）；且/或
+  2. 非 disposable 默认路径的 exit 0 **不得单独**作为 S4「种子可重复」关闭证据。
+  - 保持「拒绝对普通开发库 destructive reset」的安全边界。
+  - 本 finding **不**要求已存在的脚本（当前无 `scripts/smoke.sh`）；闭合证据 = 协议修订 + D-004 补记/新决策，而非运行结果。
+
+#### R-008-001 · 默认 `WEB_BASE_URL=http://localhost:8081` 未按路径区分
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：协议 §3.2 写当前默认期望 API `:8080`、Web `:8081`；`compose.yaml` web 映射 `8081:80` 成立，但 `local-dual-process` 默认 Vite 为 `5173`（`WEB_PORT` 可覆盖，见 `apps/web/README.md` / `vite.config.ts`）。协议虽要求记录实际 URL，仍给出无条件 8081 期望。
+- **影响**：不推翻双路径设计；但 QUICKSTART/复现记录易误用 compose 端口跑双进程路径，造成假失败或文档歧义。
+- **建议**：按 `path` 给出默认期望表（compose → 8081；local-dual-process → `http://localhost:${WEB_PORT:-5173}`），并重申不得以默认覆盖实测端口。
+
+#### R-008-002 · 「后台首页可交互」操作化为 `/list-edit-lifecycle` 未显式对齐 manifest 首页
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：Root D-013 / S3 用语为「后台首页可交互（列表加载）」；manifest `homePageRef` 为 `overview`，而协议终点 4 / SM-005 固定 `/list-edit-lifecycle`（title `List + edit lifecycle` + `Acme Console`）。该操作化**强于**仅打开 overview，且与 I-005「至少一个可交互代表页」一致，但是否等于「首页」未在协议中写明。
+- **影响**：不构成终点过弱；但 S3 文档若只引导到 overview，会与协议终点 4 不一致。
+- **建议**：在协议 §3.2 增加一句：D-013「后台首页可交互（列表加载）」在本目标操作化为 R4 代表页 `list-edit-lifecycle`（非 `overview`），QUICKSTART 必须覆盖该路由。
+
+#### R-008-003 · SM-005「含 SPA root」机器判据偏虚
+
+- **级别 / 严重度**：recommended / low
+- **证据**：§5.2 SM-005 仅写「HTTP 200 且含 SPA root」；`apps/web/index.html` 实际标记为 `<div id="root"></div>`。生产 nginx 构建产物仍应保留该挂载点，但协议未钉死可 grep 的稳定子串。
+- **建议**：将通过条件写为响应体包含 `id="root"`（或等价稳定标记），避免实现时主观解释「SPA root」。
+
+#### R-008-004 · 退出码 6 混用「不安全 destructive」与「种子断言失败」
+
+- **级别 / 严重度**：recommended / low
+- **证据**：§5.3 退出码 `2` = 参数/工具/安全前提不满足；`6` = 种子重复性失败，**或**请求了不安全的 destructive 模式。不安全模式更接近安全前提（应偏 `2`），与 SM-006 数据断言失败同码会降低 CI 分类信号。
+- **建议**：不安全 destructive → `2`；SM-006 断言失败单独 `6`。
+
+### 必改项汇总
+
+- **F-004（required / medium）· 开放**：修订 I-008-002 协议，使 S4 验收**强制**至少一次 disposable/隔离路径下 SM-006 通过；在此之前，不得把「仅 SM-001～SM-005 全绿」当作 S4「种子可重复」已满足。
+- F-004 **不**否定协议其余计时/复现字段的可用性；**不**自动重开 S1/S2；**不**由本 independent 意见改写 `I-008-002` 的 verified 机读状态（是否补丁后维持 verified 或短暂回退 collecting 由 `/govern` + 用户裁决）。
+- R-008-001～R-008-004 为 recommended，建议同版协议补丁一并处理，非本意见放行阻断项。
+
+### 与既有意见的异同
+
+- 同意 A-001 R-002：关闭 `I-008-002` 前必须把高层方向落成可执行契约；本意见确认 v0.1.0 **大部分**做到了，并指出 S4 种子项仍有强制力缺口。
+- 同意 D-004 / A-007 边界：协议 verified ≠ S3/S4 实施完成；本意见不把协议审计扩成执行事实通过。
+- 与 A-004/A-005/A-006/A-007 无同 scope 冲突（那些是 S1/S2 或 F-002/F-003）；F-002/F-003 保持已闭合，不在本 scope 重开。
+- 无 self 同 scope 意见；按 P-004 §3.1，未来若以本意见推进协议修订或 S3/S4，应询问是否补 self。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **conditional**：I-008-002 v0.1.0 **总体合理**——覆盖 R-002 最低清单、对齐 D-013、安全 disposable 边界清晰、未伪造 S3/S4 完成；但因 **F-004**，不能把现行协议无条件当作完整的 S4 验收契约。
+- 建议 `/govern`：
+  1. 响应 A-008：展示 F-004；建议 `fixed` = 协议 v0.1.1（强制 S4 disposable SM-006 证据）+ 可选吸收 R-008-001～004；
+  2. 询问是否补同 scope self；
+  3. 补丁合并前，S3 文档/计时可按现协议推进草稿，但 **S4 脚本验收判据应以补丁后文本为准**；
+  4. 勿勾选 S3/S4，勿改 Root R5。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、`I-008-002` 状态或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## A-009 · I-008-002 协议 v0.1.1 修订与 F-004 关闭 self 复核（2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：design-plan 复核；按用户 P-004 §3.1 裁决「补 self」补齐 A-008（independent）同 scope 的 `source: self` 覆盖——复核 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) **v0.1.1** 修订（F-004 fixed + 吸收 R-008-001～004）及其关闭证据；不审 S3/S4 实施、独立复现实测或 Root R5 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 一致；Root `GOAL-001-production-admin-foundation`；`shared_materials_catalog: none`。
+- 已复核：协议附件 v0.1.1（§3.2 默认 URL 表、终点 4 操作化、§5.1 disposable 强制、§5.2 SM-005/SM-006、§5.3 退出码、§7 修订记录）；D-005；A-008 F-004 要求与 R-008-001～004；Root D-013 与 I-005 §3/§4；A-001 R-002 最低清单；I-008-001 §2/§8 边界。
+- 本 self 为静态核对；**未运行**应用、Docker、脚本或计时复现；不把协议修订写成 S3/S4 实施或验收。
+
+### Findings
+
+- **F-004（required/medium）→ `fixed`**：协议 v0.1.1 §5.1 明确「S4 验收必须包含至少一次 disposable/隔离运行且 `SM-006=PASS`；非 disposable 默认路径的 exit 0 不得单独作为 S4「种子可重复」关闭证据」；§5.2 SM-006 标为「disposable 模式 · S4 必检」；§5.3 退出码 `0` =「SM-001～SM-005 通过，且 SM-006（disposable）通过——S4 完整绿」；安全边界「拒绝对普通开发库 destructive reset」保留（不安全 destructive → exit 2）。与 A-008 要求同构，`fixed` 成立。
+- **R-008-001 → absorbed**：§3.2 默认期望按路径区分（compose → API `:8080`/Web `:8081`；local-dual-process → API `:8080`/Web `${WEB_PORT:-5173}`），并重申不得以默认覆盖实测端口。
+- **R-008-002 → absorbed**：§3.2 增加操作化说明——D-013「后台首页可交互（列表加载）」= R4 代表页 `list-edit-lifecycle`（非 manifest `homePageRef: overview`），QUICKSTART/README 必须覆盖该路由。
+- **R-008-003 → absorbed**：§5.2 SM-005 通过条件写为「响应体含 `id="root"`（或等价稳定 SPA 挂载标记）」。
+- **R-008-004 → absorbed**：§5.3 退出码 `2` 并入「不安全 destructive 模式」；`6` 仅指 SM-006 种子断言失败。
+- **一致性**：v0.1.1 与 Root D-013、A-001 R-002 最低清单、I-008-001 边界及仓库静态事实（`id="root"`、Vite 5173/`WEB_PORT`、compose 8081、manifest overview）一致；未把协议修订扩写为 S3/S4 完成。
+
+### 对照成功标准与信息门禁
+
+- `I-008-002` 问题「协议与判据是什么」：**可回答**——v0.1.1 使 S4「种子可重复」具备硬性验收强制力。
+- S3/S4：计时、字段、独立性、四终点、SM-001～SM-006 与退出码总体可指导实施；实施与独立复现实测仍未发生。
+- `I-008-002` 维持 `verified`（v0.1.1 权威）；`I-008-003` 仍 open（仅当 S6）。本 self 不改动任何 status/progress。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## 统一响应 · A-008（2026-08-03）
+
+按 P-004 §3.1 用户裁决「补 self」先行 A-009 自审，再统一响应 A-008。
+
+- **verdict 采纳**：`conditional` 成立——I-008-002 协议 v0.1.0 总体合理（覆盖 A-001 R-002 最低清单、对齐 D-013、安全 disposable 边界清晰、未伪造 S3/S4 完成），但 F-004 使 v0.1.0 不足以单独作为完整 S4 验收契约。
+- **F-004（required/medium）→ fixed**：协议补丁 **v0.1.1**（D-005）——S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`；非 disposable 默认路径 exit 0 不得单独作为 S4「种子可重复」关闭证据；保持「拒绝对普通开发库 destructive reset」安全边界（不安全 destructive → exit 2）。`I-008-002` 维持 `verified`，权威版本 v0.1.1。
+- **R-008-001～004 → absorbed**：同版 v0.1.1 一并处理——默认 URL 按路径区分（compose 8081 / 双进程 `${WEB_PORT:-5173}`）；终点 4 操作化对齐 `list-edit-lifecycle`（非 overview）；SM-005 判据钉死 `id="root"`；退出码 2/6 语义分离。
+- **P-004 §3.1 处置（用户裁决）**：A-008 为 `source: independent` 且协议设计 scope 无 self 审计；用户裁决「**补 self**」——已落盘 **A-009（self · design-plan 复核 · pass）** 作为同 scope self 覆盖（复核 v0.1.1 补丁与 F-004 关闭证据）。
+- **仍开放**：S3/S4 实施与验收仍未发生（检查点维持 `2/5`）；`I-008-003` open（仅当 S6 实施）；Root R5 未勾选（Root `4/5`）。
+- **下一步**：实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录，终点 4 = `list-edit-lifecycle` 列表加载）与 S4（`scripts/smoke.sh` + 本地/CI 全绿，含 ≥1 次 disposable `SM-006=PASS` 证据）；S4 完成后建议实施向审计（self 或 `/audit`）。
+- **证据路径**：本响应节；`01-decision` D-005；协议附件 v0.1.1（§3.2/§5.1/§5.2/§5.3/§7）；本文件 A-008/A-009；`00-meta` 信息表 `I-008-002`；`02-execution` 2026-08-03「响应 A-008」节。
 
 ## A-001 · GOAL-008 立项信息与 I-005 工程化 / fork 报告独立审计（2026-08-02）
 

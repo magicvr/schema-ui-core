@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.6
+version: 0.1.8
 ---
 
 # 执行记录 · GOAL-008
@@ -78,3 +78,25 @@ version: 0.1.6
 - **P-004 §3.1 处置**：同 scope（F-002/F-003 关闭证据）已有 **A-006（self）** 覆盖，无需再补自审；本 scope 无冲突、无 veto 触发。
 - **未做**：未冻结 `I-008-002`；未实施 S3/S4；未勾选检查点（保持 `2/5`）；Root R5 未勾选，Root 保持 `active / 4/5`。
 - **计划（非事实）**：下一拍收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据，按 A-001 R-002 最低清单），再实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；建议对 `I-008-002` 冻结做一次方案冻结审计（self 或 `/audit`）。
+
+## 2026-08-03 · 冻结 I-008-002 计时复现与 smoke 验收协议
+
+- 新增 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0，记录 D-013/A-001 R-002 所要求的工具/平台基线、依赖缓存前提、计时起止、失败/重试、独立复现字段、SM-001～SM-006、脚本输入/退出码和 disposable seed-reset 边界。
+- 记录冻结时事实：repository revision 为 `5e27019482eb8d0695c402b784860233bbc90c39`，工作树 clean；Windows 11 x64、Go `1.26.0`、Node `22.17.0`、npm `10.9.2`、Docker `29.6.2`、Compose `v5.3.1` 和 curl `8.21.0`。WSL `bash` 启动失败，故未运行未来的 smoke 脚本；协议要求 S4 改在 Linux CI 或已验证可用的 Git Bash/WSL 执行。
+- 记录 **D-004**：`I-008-002` → **`verified`**，解除 S3/S4 的方案冻结/实施前信息门禁。该状态只表示协议问题已得到可核对答案，不表示 S3/S4 已实施、`scripts/smoke.sh` 已存在、已通过 CI，或已完成 ≥1 次独立复现。
+- **未做**：未改 QUICKSTART/README；未新建 `scripts/smoke.sh`；未执行 Docker/应用 smoke、浏览器验收或 15 分钟计时；S3/S4 未勾选，目标保持 `active / 2/5`，Root R5 保持 `4/5`。
+- **计划（非事实）**：按 v0.1.0 实施 S3 的 fork 文档与独立复现记录，再实施 S4 脚本及本地/CI 证据；完成后做阶段审计。
+
+## 2026-08-03 · 响应 A-008 + self A-009（协议 v0.1.1 · F-004 fixed）
+
+- **A-008（independent · design-plan · conditional）响应**：采纳 `conditional`。**F-004 → fixed**、**R-008-001～004 absorbed**（详见下）。
+- **self 审计（A-009 · design-plan 复核 · pass）**：按 P-004 §3.1 用户裁决「补 self」补齐 A-008 同 scope 的 `source: self` 覆盖（A-003 self 仅覆盖立项/方案边界），复核协议 v0.1.1 补丁与 F-004 关闭证据成立。
+- **协议 v0.1.1 修订（D-005）**：
+  - **F-004 fixed**：§5.1「S4 验收必须包含至少一次 disposable/隔离运行且 `SM-006=PASS`；非 disposable 默认路径的 exit 0 不得单独作为 S4「种子可重复」关闭证据」；§5.2 SM-006 标为「disposable 模式 · S4 必检」；§5.3 退出码 `0` =「SM-001～SM-005 通过，且 SM-006（disposable）通过——S4 完整绿」；保持「拒绝对普通开发库 destructive reset」安全边界（不安全 destructive → exit 2）。
+  - **R-008-001**：§3.2 默认 URL 按路径区分（compose → API `:8080`/Web `:8081`；local-dual-process → API `:8080`/Web `${WEB_PORT:-5173}`）。
+  - **R-008-002**：§3.2 操作化说明——D-013「后台首页可交互（列表加载）」= R4 代表页 `list-edit-lifecycle`（非 `overview`），QUICKSTART 必须覆盖该路由。
+  - **R-008-003**：§5.2 SM-005 通过条件写为「响应体含 `id="root"`（或等价稳定标记）」。
+  - **R-008-004**：§5.3 退出码 `2` 并入「不安全 destructive 模式」；`6` 仅指 SM-006 断言失败。
+- **`I-008-002` 维持 verified（v0.1.1 权威）**；协议 frontmatter `related_decisions: D-004, D-005` + §7 修订记录。
+- **未做**：未实施 S3/S4；未勾选检查点（保持 `2/5`）；Root R5 未勾选，Root 保持 `active / 4/5`。
+- **计划（非事实）**：实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录，终点 4 = `list-edit-lifecycle` 列表加载）与 S4（`scripts/smoke.sh` + 本地/CI 全绿，含 ≥1 次 disposable `SM-006=PASS` 证据）；S4 完成后建议一次实施向审计。

@@ -2,9 +2,9 @@
 title: 决策 · R5 · 工程化、fork 体验与集成关门
 status: active
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.2
+version: 0.1.4
 ---
 
 # 决策 · GOAL-008
@@ -55,3 +55,41 @@ version: 0.1.2
 
 - **在实施期临场决定容器/反代细节**：违反「先冻结再编码」；契约 C-001～C-007 为 S1/S2 验收判据。
 - **把 15 分钟计时与 smoke 退出码纳入本契约**：属 `I-008-002` scope，避免契约混叠。
+
+## D-004 · 冻结 I-008-002 计时复现与 smoke 验收协议
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：采纳 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md)（v0.1.0，冻结参照 revision `5e27019482eb8d0695c402b784860233bbc90c39`）作为 S3/S4 的计时复现与 smoke 验收协议；`I-008-002` → **`verified`**。协议固定两条复现路径、依赖缓存排除与计时起止、四个 ≤15 分钟终点、独立复现记录字段、SM-001～SM-006、`scripts/smoke.sh` 最小输入、退出码和 disposable seed-reset 安全边界。
+- **依据**：Root D-013 已由用户书面采纳终点=登录成功+后台首页可交互（列表加载）、不含依赖下载、≥1 次独立复现及「文档步骤 + smoke 清单 + 独立复现记录」方法；A-001 R-002 要求在关闭本项前固化工具/平台、缓存、计时、失败/重试、证据字段和机器可判定退出码。本轮实测了冻结时的工具版本与 repository ref；没有把这些静态事实写成 S3/S4 验收。
+- **边界**：
+  - 本决定只解除 S3/S4 的方案冻结/实施前**信息**门禁；不实施 QUICKSTART/README、`scripts/smoke.sh`，不产生独立复现、CI run 或实际 smoke 通过结论。
+  - 当前 Windows 记录主机没有可用的 WSL `bash`，协议因此要求 S4 在 Linux CI 或已验证可用的 Git Bash/WSL 中执行；该环境探测不是脚本失败或通过证据。
+  - `I-008-003` 保持 open（仅在用户决定实施 S6 时阻断）；S1/S2、GOAL-008 `active / 2/5`、Root R5 `4/5` 不变。
+- **影响**：`I-008-002` → verified；S3/S4 可开始实施并应严格对照 v0.1.0。首次 S3 独立复现仍须满足 `<=900` 秒和四个终点，首次 S4 实现必须输出稳定检查项及退出码；完成这些实施事实后才可勾选相应成功标准。
+- **后续**：实施 S3（fork 文档 + 独立复现记录）和 S4（`scripts/smoke.sh` + 本地/CI 运行证据），随后以阶段审计核对协议、实现与证据的一致性。
+
+### 未选方案
+
+- **把 Root D-013 的高层建议直接当成 S3/S4 已完成**：其只固定方向，未冻结本目标所需的工具基线、失败规则、记录字段与退出码，也不构成实施或验收事实。
+- **在没有可用 bash 的当前 Windows 主机上把不存在的脚本记为已验证**：当前只记录环境事实；脚本实施后必须在实际可用的 POSIX shell/CI 上执行。
+- **把独立复现、脚本实现与协议冻结合并为同一次结论**：会把未发生的 S3/S4 工作伪装成已完成，违反信息门禁与事实记录边界。
+
+## D-005 · 响应 A-008：修订 I-008-002 协议至 v0.1.1（F-004 fixed）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：采纳 A-008（independent · design-plan · conditional）`conditional`。**F-004（required/medium）→ `fixed`**——[I-008-002 协议](attachments/I-008-002-fork-reproduction-protocol.md) 补丁至 **v0.1.1**：S4 验收**强制** ≥1 次 disposable/隔离运行且 `SM-006=PASS`；非 disposable 默认路径的 exit 0 不得单独作为 S4「种子可重复」关闭证据；保持「拒绝对普通开发库 destructive reset」安全边界（不安全 destructive → exit 2）。**同时吸收 R-008-001～004**（recommended，同版补丁一并处理）。
+- **依据**：A-008 F-004 required——协议 v0.1.0 将 SM-006 标为「仅 disposable 模式」，未强制时可在从未验证种子幂等/不重复播种的情况下 SM-001～SM-005 全绿并 exit 0，与 S4 成功标准字面「种子可重复」及 Root D-013 smoke 清单漂移。R-008-001～004 为 recommended：默认 URL 未按路径区分（R-008-001）、「后台首页」操作化未对齐 manifest（R-008-002）、SM-005「SPA root」判据偏虚（R-008-003）、退出码 6 混用不安全 destructive 与种子断言失败（R-008-004）。
+- **边界**：
+  - 本决定只修订协议判据，**不**实施 S3/S4、不勾选检查点、不产生独立复现或脚本运行证据。
+  - `I-008-002` 维持 `verified`（权威版本 v0.1.1）；不重开 S1/S2，不改 `I-008-001`。
+  - `I-008-003` 保持 open（仅当 S6 实施时阻断）。
+- **影响**：S4 实施与勾选必须以 v0.1.1 判据为准；CI `container-smoke` 或等价 job 需覆盖至少一次 disposable `SM-006=PASS`；QUICKSTART 必须覆盖 `list-edit-lifecycle` 路由（终点 4）。
+- **后续**：实施 S3（fork 文档 + ≥1 次独立复现记录）与 S4（`scripts/smoke.sh` + 本地/CI 全绿 + disposable SM-006 证据）；S4 完成后建议实施向审计（self 或 `/audit`）。
+
+### 未选方案
+
+- **仅把 SM-006 当可选、仍允许非 disposable exit 0 作为 S4 种子关闭证据**：与 A-008 F-004 要求及 S4/D-013 字面「种子可重复」冲突。
+- **暂缓协议修订而直接实施 S4**：会把未冻结的验收判据带入实施，违反「先冻结再编码」。
+- **将 `I-008-002` 短暂回退 collecting**：协议主体与计时/复现字段在 v0.1.0 已可核对且未被证伪；补丁强化 S4 强制力即可维持 verified（A-008 亦未要求回退）。
