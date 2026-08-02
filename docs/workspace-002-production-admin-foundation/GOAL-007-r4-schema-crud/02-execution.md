@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.5.0
+version: 0.8.0
 ---
 
 # 执行记录 · GOAL-007
@@ -63,8 +63,41 @@ version: 0.5.0
 - 信息台账：`I-007-003` → `verified`；**首个 Schema 写交互代码变更已放行**（S4/S5 实施输入就绪）。
 - **未做（本轮）**：未写 Schema 写交互代码（S4/S5 尚未实施）；`I-007-004` 仍 open（S6）；Root R4 未勾选。
 
+## 2026-08-02 · 响应 A-004 与 A-005，修订 I-007-003 至 v0.2.0
+
+- 用户通过 `/govern` 明确要求：响应 A-004 和 A-005。
+- **响应 A-004（independent · pass · S3 复核 + A-003 R-001/R-002 关闭证据）**：采纳 pass；独立复核证实——Root 台账同步为 `3/6`/S3 已实施且 Root R4 仍 `[ ]`；`UpdateRecord` 三字段 trim + store/handler 回归均在。scope 内无开放 required/recommended；R-001/R-002 继续作为已闭合 recommended 保留。
+- **响应 A-005（independent · conditional · I-007-003 契约合理性）**：三处 required 均按 **fixed** 闭合——修订 [I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md) 至 **v0.2.0** 并在 01-decision 加 **D-005 补记**：
+  - **F-002**：冻结唯一页面结构「table + toolbar `create` → modal `create-form`（`submitAction: createRecord` → POST）+ row `edit` → modal `edit-form`（`submitAction: updateRecord` → PATCH，选中行预填）+ row `delete` → `deleteRecord`（DELETE + 确认）」；禁止单 form `submitAction` 双 HTTP 语义。
+  - **F-003**：冻结 `records.write` → table 祖先 `permissionCascade.keys: [edit,delete]` + `permissions.edit/delete: "$context.user.permissions contains \"records.write\""`；modal form 各自声明 `permissions.edit`（modal content 为新 permission 根）；禁止仅 `permissionIntent` 无表达式。
+  - **F-004**：新增 §9 最小冻结实现规格——顶层 `actions`（createRecord/updateRecord/deleteRecord + `$row.id` 经 `requestMapping.path`）、`meta.requiredCapabilities` 最小集、`table.props.actions/toolbar` 形状、search 归属 `search-form-table`。
+  - **R-001**（Renderer 文件白名单 → §9.5 冻结）与 **R-002**（recordView/预填用选中行拷贝 → §2.1/§9.6 冻结）一并 handled。
+- `I-007-003` 保持 `verified`（v0.2.0）；**S4/S5 实施放行维持，可无歧义开工**。D-005 已加补记；03-audit 索引/边界更新；后续意见从 A-006 起。
+- **未做（本轮）**：未写 Schema 写交互代码（S4/S5 尚未实施）；`I-007-004` 仍 open（S6）；Root R4 未勾选。
+
+## 2026-08-02 · 响应 A-006，修订 I-007-003 §9 至 v0.2.1
+
+- 用户通过 `/govern` 明确要求：响应 A-006——修订 I-007-003 §9（v0.2.1）闭合 F-005/F-006。
+- **响应 A-006（independent · conditional · v0.2.0 修订复核）**：采纳 conditional。F-002/F-003 维持 fixed（A-006 复核关闭成立）；F-004 残余按 A-006 收窄由 F-005/F-006 承接。修订 [I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md) 至 **v0.2.1** 并在 01-decision 加 **D-005 v0.2.1 补记**：
+  - **F-005**：`updateRecord`（form submit）PATCH `{id}` 槽不适用 row 专属 `requestMapping`/`$row`（核对 `request-construction.ts`：`buildFormAction` 仅组 body、不做 path 槽绑定；`buildRowAction` 才处理 `requestMapping`）。新增 **§9.1a** 冻结「form submit 行上下文槽绑定」——default form submit 且 `action.url` 含 `{id}` 槽时，从打开 modal 时捕获的选中行解析；为 `formAction` 的有界扩展，落入 §9.5 白名单并补测试（T-UI-05）。
+  - **F-006**：§9.1–§9.2 改写对齐 `action.schema`/registry（核对 `OutcomeBehavior.behavior`、RequestAction 无 `confirm`、registry `actionRef`）——顶层 **5 个 action**（`createRecord`/`updateRecord`/`deleteRecord` RequestAction + `openCreate`/`openEdit` ModalAction）；`onSuccess` 用 **`behavior`**（enum，无 `type`）；挂载字段用 **`actionRef`**（无 `action` 键、无 `modal:` 前缀）；`confirm` 文案移到 **rowAction** 项；delete 的 `requestMapping.path.id: "$row.id"` 留在 rowAction。
+  - **R-001**：§9.5 白名单扩展允许一次性新增 `apps/web/src/renderer/modal*.tsx` / `confirm*.tsx`（T-UI-10 说明）。
+  - **R-002**：D-005 v0.2.1 补记显式取代主列表点 1–2 旧表述，声明以 I-007-003 v0.2.1 §2.1/§9 为权威。
+- `I-007-003` 保持 `verified`（v0.2.1）；**S4 fixture/actions 接线可无歧义开工**。03-audit 索引/边界/版本更新；后续意见从 A-007 起。
+- **未做（本轮）**：未写 Schema 写交互代码（S4/S5 尚未实施）；`I-007-004` 仍 open（S6）；Root R4 未勾选。
+
+## 2026-08-02 · 响应 A-007，修订 I-007-003 §9.2 至 v0.2.2
+
+- 用户通过 `/govern` 明确要求：响应 A-007——I-007-003 §9.2 `confirm` 改为 string（v0.2.2）闭合 F-007。
+- **响应 A-007（independent · conditional · v0.2.1 修订复核）**：采纳 conditional。F-005 与 F-006 主体维持 fixed（A-007 复核关闭成立）；修订 [I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md) 至 **v0.2.2** 并在 01-decision 加 **D-005 v0.2.2 补记**：
+  - **F-007**：§9.2 delete 的 `confirm` 由 `{ text: "Delete this record?" }` 改为 **`confirm: "Delete this record?"`**（string，与 registry `table.props.actions[].confirm: "type":"string"` 一致；挂载点仍在 rowAction 不变）。一行修补。
+  - **R-001**：§9.5 白名单补入 `apps/web/src/protocol/conformance/request-construction.ts`（仅当槽绑定/rowAction 构造需在构造层实现时，改则补测试）与 `renderer/row-action.ts`。
+  - **R-002**：§9.1 注明 create/edit/delete 的 `behavior: "reload"` 隐含关闭 modal 并清空选中态。
+- `I-007-003` 保持 `verified`（v0.2.2）；**§9 字面形状已对齐 `action.schema`/registry，S4 代表页 fixture 可按 v0.2.2 编写**。03-audit 索引/边界/版本更新；后续意见从 A-008 起。
+- **未做（本轮）**：未写 Schema 写交互代码（S4/S5 尚未实施）；`I-007-004` 仍 open（S6）；Root R4 未勾选。
+
 ## 下一步计划（非事实）
 
-1. 实施 S4/S5：按 D-005 / I-007-003 演进 `list-edit-lifecycle` fixture 为代表性 CRUD 页（table actions/toolbar + form `submitAction` + 搜索绑定）；渲染层一次性补齐 actions/toolbar/form-submit/成功·错误·确认反馈；records client 新增 `createRecord`（POST）；T-UI-01～10 与权限负向闭环（匿名 401、缺权限 403、后端授权不被前端隐藏替代）。
+1. 实施 S4/S5：按 D-005 / I-007-003 **v0.2.2** 演进 `list-edit-lifecycle` fixture（table + `actionRef`→`openCreate`/`openEdit` modal + 行 delete `requestMapping`/`confirm` string + `records.write` 权限表达式 + `onSuccess.behavior: "reload"`（隐含关 modal）），渲染层一次性补齐 actions/toolbar/modal/form-submit（含 §9.1a `{id}` 槽绑定）/反馈；records client 新增 `createRecord`（POST）；`search-form-table` 做 form-to-query 绑定；T-UI-01～10 与权限负向闭环。
 2. 在 S6 验收前关闭 `I-007-004`（重启保持与端到端验收协议），再补 create/update/delete→重启→list/detail 的机器可重复证据与 API/Web 回归。
 3. 可选：S3/S4 阶段审计（self 或 `/audit`），为 S6 关门审计积累证据。

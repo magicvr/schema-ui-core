@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.6.0
 ---
 
 # 决策 · GOAL-007
@@ -109,3 +109,9 @@ version: 0.4.0
 - **拆分为 list / create / edit 三个页面**：增加导航与跨页状态传递复杂度，与单一代表菜单（`list-edit-lifecycle`）不对齐；单页生命周期更贴近 D-010「一个代表实体完整闭环」。
 - **在 Renderer 主路径硬编码 records 特定逻辑**（如组件内写死 POST/PATCH/DELETE 调用）：违反 S4「新增/调整代表页面不修改 Renderer 主路径代码」；改为 fixture 驱动的通用 action 绑定。
 - **用 status 枚举白名单约束 API**：违反 I-007-001 冻结（status 非枚举）；UI select 选项仅作提示，非服务端约束。
+
+> **补记（2026-08-02 · 响应 A-005 F-002/F-003/F-004）**：本决策与其附件升级为 **I-007-003 v0.2.0**，闭合三处 required 缺口——① **F-002**：页面结构冻结为「一个 table + modal `create-form`（`submitAction: createRecord` → POST）+ modal `edit-form`（`submitAction: updateRecord` → PATCH，选中行预填）+ 行 `delete`（`actions.row.request` → DELETE + 确认）」；**禁止**单 form 的 `submitAction` 同时表达 POST 与 PATCH。② **F-003**：写权限冻结唯一写法——`records.write` → table 祖先 `permissionCascade.keys: [edit,delete]` + `permissions.edit/delete: "$context.user.permissions contains \"records.write\""`；两个 modal form 各自（modal content 为新 permission 根）声明 `permissions.edit` 表达式；**禁止仅 `permissionIntent` 无表达式**。③ **F-004**：新增 §9 最小冻结实现规格（顶层 actions `createRecord`/`updateRecord`/`deleteRecord`、`$row.id` 经 `requestMapping.path`、`meta.requiredCapabilities` 最小集 `[app.manifest, app.navigation, permissions.inheritance, actions.row.request, actions.page.trigger, table.sort]`、search 归属 `search-form-table`）。另处理 R-001（Renderer 文件白名单）与 R-002（recordView/预填用选中行拷贝，不引入独立 GET/`recordSource`）。`I-007-003` 保持 `verified`（信息已收集，规格歧义已消除），S4/S5 实施放行维持。
+
+> **补记（2026-08-02 · 响应 A-006 F-005/F-006）**：本决策与其附件升级为 **I-007-003 v0.2.1**，闭合两处 required 协议缺口——① **F-005**：`updateRecord`（form submit）的 PATCH `{id}` 槽不适用 row 专属 `requestMapping`/`$row`（`buildFormAction` 不解析）；冻结 §9.1a「**form submit 行上下文槽绑定**」：执行 default form submit 且 `action.url` 含 `{id}` 时，从打开 modal 时捕获的选中行解析该槽——为 `formAction` 的**有界扩展**，落入 §9.5 白名单并补测试。② **F-006**：§9.1–§9.2 改写为对齐 `action.schema`/registry——顶层 **5 个 action**（`createRecord`/`updateRecord`/`deleteRecord` RequestAction + `openCreate`/`openEdit` ModalAction）；`onSuccess` 用 **`behavior`**（非 `type`）；挂载字段用 **`actionRef`**（非 `action`/`modal:` 前缀）；`confirm` 文案移到 **rowAction** 项；delete 的 `requestMapping.path.id: "$row.id"` 留在 rowAction。另按 A-006 R-001 扩展 §9.5 白名单允许一次性新增 modal/confirm 渲染文件；**本补记同时取代 D-005 主列表点 1–2 中「搜索绑定纳入 list-edit」「单 form create|edit 模式」等旧表述**（搜索归 `search-form-table`；create/edit 为两个独立 modal form）——以 I-007-003 v0.2.1 §2.1/§9 为权威。`I-007-003` 保持 `verified`（v0.2.1），S4/S5 实施放行维持。
+
+> **补记（2026-08-02 · 响应 A-007 F-007）**：本决策与其附件升级为 **I-007-003 v0.2.2**——§9.2 delete 的 `confirm` 由 `{ text }` 对象改为 **string**（`confirm: "Delete this record?"`，与 registry `table.props.actions[].confirm: string` 一致，一行修补）；§9.5 白名单补入 `request-construction.ts` / `row-action.ts`（A-007 R-001）；§9.1 注明 `reload` 隐含关闭 modal（A-007 R-002）。`I-007-003` 保持 `verified`（v0.2.2），S4 fixture 可按 v0.2.2 字面编写。

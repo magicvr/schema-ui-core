@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.15.0
+version: 0.18.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -42,3 +42,9 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (3/5)
 > Root D-010 已关闭 `I-004` 的方向/立项目门禁；D-011 已创建 `GOAL-007-r4-schema-crud`。2026-08-02：GOAL-007 D-002/D-003 已关闭 `I-007-001`/`I-007-002`（verified），勾选 S1/S2，进度 `0/6 → 2/6`；证据见目标附件 API 契约与 SQLite 迁移计划。**A-001 F-001 已闭合为 fixed（2026-08-02：D-004 统一 `updatedAt` 毫秒精度与「严格晚于」断言，附件更新 v0.2.0，A-002 self 复核 pass），S3 持久化 API 实施已放行但尚未实施**；`I-007-003`/`I-007-004` 仍为 open required（阻断 Schema 写交互与 S6 验收）；Root R4 仍未勾选，Root 保持 `3/5`。**S3 已实施（2026-08-02：0003 records_persist（updated_at Unix 毫秒）+ 快照通用化 pre-v0003 + records repository + seedRecords 空表种子 + handler 重写走 SQLite，新增 POST 201/INVALID_CREATE_*；staticRecords 与进程切片移除；T-API-08～13 与 T-DB-01～09（含毫秒钳制/往返）全绿，API `go test ./...` 与 web vitest 443/443 通过；API README 同步 R4）。成功标准 S3 勾选，进度 `2/6 → 3/6`**。
 
 > **A-003 已响应、I-007-003 已冻结（2026-08-02）**：A-003（independent · pass）响应节已写入——A-002 R-001（毫秒钳制/往返）→ 已落实；A-003 R-001（Root 台账同步）→ fixed（Root 00-meta 纲领 R4 已同步 `3/6`、S3 已实施，Root 保持 `3/5`）；A-003 R-002（PATCH trim 一致性）→ fixed（`UpdateRecord` 入库 trim + store/handler 回归）。**`I-007-003` → verified（D-005 冻结 `list-edit-lifecycle` 代表页 + table actions/toolbar + form `submitAction` + 字段/交互/权限矩阵 + T-UI-01～10），首个 Schema 写交互代码变更已放行**。`I-007-004` 仍 open required（S6）；Root R4 未勾选。S3 阶段 self 审计按用户裁决留待 S4/S5 放行或关门前。
+
+> **A-004/A-005 已响应、I-007-003 升级 v0.2.0（2026-08-02）**：A-004（independent · pass）复核 S3 + A-003 R-001/R-002 关闭证据成立；A-005（independent · conditional）三处 required 均 `fixed`——I-007-003 **v0.2.0** + D-005 补记闭合 F-002（唯一结构：table + modal create-form + modal edit-form + 行 delete）、F-003（`records.write` → `permissions.edit/delete` 表达式 + cascade，禁止 intent 单独）、F-004（§9 最小 actions/capabilities/`$row`/search 归属），R-001/R-002 handled。**`I-007-003` 保持 verified（v0.2.0），S4/S5 实施放行维持，可无歧义开工**。当前 scope 无开放 required；`I-007-004` 仍 open（S6）；Root R4 未勾选。后续意见从 A-006 起。
+
+> **A-006 已响应、I-007-003 升级 v0.2.1（2026-08-02）**：A-006（independent · conditional）复核 v0.2.0 修订——F-002/F-003 维持 fixed；F-004 残余由 F-005/F-006 承接并随本轮闭合——I-007-003 **v0.2.1** + D-005 v0.2.1 补记闭合 **F-005**（§9.1a 冻结 form submit 的 `{id}` 槽绑定：从打开 modal 时捕获的行上下文解析，`formAction` 有界扩展落入 §9.5 白名单并补测试）与 **F-006**（§9 对齐 `action.schema`/registry：顶层 5 action（3×RequestAction + 2×ModalAction）、`onSuccess.behavior`、挂载字段 `actionRef`、`confirm` 移到 rowAction、delete `requestMapping.path.id` 留 rowAction）；R-001（§9.5 允许新增 modal/confirm 文件）与 R-002（D-005 旧表述取代）handled。**`I-007-003` 保持 verified（v0.2.1），S4 fixture/actions 接线可无歧义开工**。当前 scope 无开放 required；`I-007-004` 仍 open（S6）；Root R4 未勾选。后续意见从 A-007 起。
+
+> **A-007 已响应、I-007-003 升级 v0.2.2（2026-08-02）**：A-007（independent · conditional）复核 v0.2.1——F-005/F-006 主体维持 fixed；F-006 残余 **F-007**（§9.2 `confirm` 写成对象、registry 要求 **string**）随本轮闭合——I-007-003 **v0.2.2** + D-005 v0.2.2 补记将 §9.2 改为 **`confirm: "Delete this record?"`**（string，一行修补）；R-001（§9.5 补入 `request-construction.ts`/`row-action.ts`）与 R-002（§9.1 注明 `reload` 隐含关 modal）handled。**`I-007-003` 保持 verified（v0.2.2），§9 字面形状已对齐 `action.schema`/registry，S4 代表页 fixture 可按 v0.2.2 编写**。当前 scope 无开放 required；`I-007-004` 仍 open（S6）；Root R4 未勾选。后续意见从 A-008 起。

@@ -5,7 +5,7 @@ doc_type: info-collection
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-007-r4-schema-crud
-version: 0.1.0
+version: 0.2.2
 related_info: I-007-003
 related_decision: D-005
 ---
@@ -14,6 +14,9 @@ related_decision: D-005
 
 > **结论**：本附件与 D-005 关闭 `I-007-003`，并完成 S4/S5 的交互契约冻结。以下页面绑定、字段映射、交互状态与权限矩阵是 S4/S5 实施输入，**不是**已交付的 Schema 写交互代码或页面事实。
 > **扫描日期**：2026-08-02。工作区 `shared_materials_catalog: none`；事实来自本仓库 Web Renderer、permission/action 引擎、records client、schema fixtures 与既有测试。
+> **修订（v0.2.0 · 响应 A-005）**：闭合 F-002/F-003/F-004（required）并处理 R-001/R-002——§2 冻结**唯一**页面结构（modal `create-form` + modal `edit-form` + 行 `delete`，各自独立 action/submitAction）；§5 冻结 `records.write` → `permissions.edit/delete` 的**唯一**表达式写法与 cascade 挂载点，禁止「仅 `permissionIntent` 无表达式」；新增 §9 最小冻结实现规格（顶层 actions、capabilities、`$row` 绑定、search 归属、预填来源、Renderer 文件白名单）。修订决策见 D-005 补记。
+> **修订（v0.2.1 · 响应 A-006）**：闭合 F-005/F-006（required）——§9.1 改写为对齐 `action.schema` 的 **5 个顶层 action**（3×RequestAction + 2×ModalAction），`onSuccess` 用 **`behavior`**、挂载字段用 **`actionRef`**、confirm 移到 **rowAction** 项、delete 的 `requestMapping.path.id` 留在 rowAction；新增 §9.1a 冻结 **form submit 的 `{id}` 槽绑定**（从打开 modal 时捕获的行上下文解析，`formAction` 的有界扩展，落入 §9.5 白名单并补测试）；§9.5 白名单扩展允许一次性新增 modal/confirm 渲染文件（R-001）。修订决策见 D-005 v0.2.1 补记。
+> **修订（v0.2.2 · 响应 A-007）**：闭合 F-007（required）——§9.2 delete 的 `confirm` 由 `{ text }` 对象改为 **string**（`confirm: "Delete this record?"`，与 registry `table.props.actions[].confirm: string` 一致）；§9.5 白名单补入 `request-construction.ts` / `row-action.ts`（R-001）；§9.1 注明 `reload` 隐含关闭 modal（R-002）。修订决策见 D-005 v0.2.2 补记。
 
 ## 1. 当前可继承基线（现状证据）
 
@@ -33,19 +36,23 @@ related_decision: D-005
 
 ## 2. 代表页面与 Node/action 绑定（冻结）
 
-**页面**：`list-edit-lifecycle`（fixture `list-edit-lifecycle.json`）为唯一代表性 CRUD 生命周期页；与 R3 种子菜单 `list-edit-lifecycle`（feature `menu_list_edit_lifecycle`，admin 可见）对齐。
+**页面**：`list-edit-lifecycle`（fixture `list-edit-lifecycle.json`）为唯一代表性 CRUD 生命周期页；与 R3 种子菜单 `list-edit-lifecycle`（feature `menu_list_edit_lifecycle`，admin 可见）对齐。**搜索不并入本页**：form-to-query 绑定归 `search-form-table` 页（见 §9），避免本页出现第二套查询入口。
 
-| 节点 / 属性 | 绑定 | API |
-|------------|------|-----|
-| `table`（`props.dataSource`） | 记录列表 | `GET /api/records`（q/sort/order/page/pageSize） |
-| `table.props.actions` rowAction `edit`（`permissionIntent: edit`） | 打开编辑 form 并预填该行字段 | 预填来自行数据；提交见下 |
-| `table.props.actions` rowAction `delete`（`permissionIntent: delete`） | 确认框（`confirm`）→ 删除 → 行移除 | `DELETE /api/records/{id}` |
-| `table.props.toolbar` toolbarTrigger `create`（`permissionIntent: edit`） | 打开新建 form（空表单） | 提交见下 |
-| `form` `submitAction`（formSubmit） | create 模式 → 新建；edit 模式 → 更新；成功/失败反馈 + 列表刷新 | `POST /api/records` / `PATCH /api/records/{id}` |
-| 搜索 `form`（`search-form-table` 模式） | 提交 → table `q` 绑定 | `GET /api/records?q=…` |
-| `recordView` | 详情展示（只读） | `GET /api/records/{id}` |
+### 2.1 唯一页面结构（A-005 F-002 闭合）
 
-**一次性渲染补齐（S4 实施范围，非每页）**：渲染 table `props.actions`/`props.toolbar`；绑定 form `submitAction` → 对应 POST/PATCH；成功/错误/确认反馈。此后「新增或调整代表页面」仅改 fixture，**不修改 Renderer 主路径代码**（S4 成功标准）。
+本页 body 由**一个 table** + **两个 modal（各含一个 default form）** + **行删除确认**组成。每个写操作有**独立** action / `submitAction`，**禁止**用单个 form 的 `submitAction` 同时表达 POST 与 PATCH：
+
+| 结构 | 载体 | action / submitAction | HTTP |
+|------|------|----------------------|------|
+| 列表 | `table`（`props.dataSource: "/api/records"`，列 name/status/owner/updatedAt + 操作列） | 无 | `GET /api/records` |
+| 新建 | toolbar `create`（toolbarTrigger，`permissionIntent: edit`）→ **modal `create-form`**（default form，空表单） | `submitAction: "createRecord"` | `POST /api/records` |
+| 编辑 | rowAction `edit`（`permissionIntent: edit`）→ **modal `edit-form`**（default form，按选中行**预填**） | `submitAction: "updateRecord"` | `PATCH /api/records/{id}` |
+| 删除 | rowAction `delete`（`permissionIntent: delete`）→ 确认 → 请求 | `deleteRecord`（`actions.row.request`） | `DELETE /api/records/{id}` |
+| 详情 | `recordView`（渲染**选中行拷贝**，只读） | 无 | 不发起 GET |
+
+**预填来源（A-005 R-002 闭合）**：create-form 为空；edit-form 与 recordView 均使用**列表中已加载的选中行拷贝**（单一数据源 = 列表），**不**使用 `form.recordSource` / 独立 GET；因此 `form.record.load` / `record.view.load` **不在**所需 capabilities 内。列表刷新后清空选中态。
+
+**一次性渲染补齐（S4 实施范围，非每页）**：渲染 table `props.actions`/`props.toolbar`、modal 内容与确认；绑定 form `submitAction` → 对应顶层 action；成功/错误/确认反馈；行选中传递。此后「新增或调整代表页面」仅改 fixture，**不修改 Renderer 主路径代码**（S4 成功标准）。允许改动的文件白名单见 §9（R-001）。
 
 ## 3. 字段映射（冻结）
 
@@ -92,9 +99,33 @@ related_decision: D-005
 | editor / viewer（records.read） | 可见（只读） | affordance 隐藏或禁用 | 直接调用 API 仍 403（T-API-09） |
 | anonymous | 无会话 → LoginPage | 无会话 | 直接 API 401（T-API-08） |
 
-**表达式门控（冻结 `$context` 语法）**：
-- 写 affordance（create/edit/delete）：`visibleWhen: "$context.user.permissions contains \"records.write\""`，或经 `permissionIntent: edit`/`delete` + `permissions`（复用 `permissions.inheritance` 引擎）。
-- 读 affordance（页面/列表/详情）：`"$context.user.permissions contains \"records.read\""`。
+**表达式门控（冻结 `$context` 语法 · A-005 F-003 闭合）**：
+
+- **唯一推荐写法**：写权限统一挂在 **table 祖先**（行/toolbar action 的 mount 点）**一次**，行/toolbar 仅标 `permissionIntent`；**禁止「仅 `permissionIntent` 无表达式」**（intent 不是 API 权限键，无表达式时有效权限默认为 true）。
+
+  ```jsonc
+  // table 节点（mount 点）：records.write → DSL edit/delete 一次声明，行/toolbar 经 cascade 继承
+  "permissionCascade": { "keys": ["edit", "delete"] },
+  "permissions": {
+    "edit":   "$context.user.permissions contains \"records.write\"",
+    "delete": "$context.user.permissions contains \"records.write\""
+  }
+  // rowAction edit → { "key": "edit", "permissionIntent": "edit" }
+  // rowAction delete → { "key": "delete", "permissionIntent": "delete" }
+  // toolbar create → { "key": "create", "permissionIntent": "edit" }
+  ```
+
+- **两个 modal form 各自声明**：modal content 是**新 permission 根**（`collectTargets` newRoot），不继承页面 body 的 cascade——`create-form` / `edit-form` 均须自身携带写表达式：
+
+  ```jsonc
+  // form 节点（modal content 内）
+  "permissionCascade": { "keys": ["edit"] },
+  "permissions": { "edit": "$context.user.permissions contains \"records.write\"" },
+  "props": { "submitAction": "createRecord" /* 或 "updateRecord" */ }
+  ```
+
+  formSubmit target（`isDefaultForm && typeof submitAction === "string"`）为隐式 edit 意图，经该表达式求值；`records.write` → DSL `edit`/`delete` 键，API 无独立 delete 权限键（delete 与 edit 同用 `records.write`）。
+- 读 affordance：页面访问由菜单 feature（`menu_list_edit_lifecycle`）+ 后端 401/403 把关；如需页级只读门禁，可在 body 顶层 section 加 `permissions.view: "$context.user.permissions contains \"records.read\""`（可选，不改变后端权威）。
 - 菜单：`$context.features.menu_list_edit_lifecycle`（已实现，不变）。
 - 使用 permission 字段的页面 `meta.requiredCapabilities` 必须含 `permissions.inheritance`；协议版本 ≥ 2.3（`permissions.ts` 冻结门禁）。
 
@@ -104,14 +135,14 @@ related_decision: D-005
 |----|------|
 | T-UI-01 | 代表页列表从 `/api/records` 加载：loading → ready；空表 → "No records match." |
 | T-UI-02 | 列排序头切换 sort/order；分页计数正确显示 |
-| T-UI-03 | 搜索 form 提交 → 列表按 `q` 过滤 |
-| T-UI-04 | 新建 form（name/status/owner）→ POST → 201；成功后列表含新行；空白字段 → `INVALID_CREATE_FIELD` 表单错误 |
-| T-UI-05 | 编辑 form 预填行数据 → PATCH → 200；该行 name/status/owner 更新且 `updatedAt` 刷新 |
-| T-UI-06 | 删除行 → 确认框 → 确认 → DELETE 204 → 行移除；取消 → 无请求 |
+| T-UI-03 | `search-form-table` 页：搜索 form 提交 → 列表按 `q` 过滤（form-to-query 绑定） |
+| T-UI-04 | `list-edit-lifecycle` 新建 form（modal create-form，name/status/owner）→ POST → 201；成功后列表含新行；空白字段 → `INVALID_CREATE_FIELD` 表单错误 |
+| T-UI-05 | `list-edit-lifecycle` 编辑 form（modal edit-form，选中行预填）→ PATCH → 200；该行 name/status/owner 更新且 `updatedAt` 刷新 |
+| T-UI-06 | `list-edit-lifecycle` 删除行 → 确认框 → 确认 → DELETE 204 → 行移除；取消 → 无请求 |
 | T-UI-07 | API 错误 envelope 正确呈现（`INVALID_CREATE_FIELD` / `RECORD_NOT_FOUND` / `FORBIDDEN`） |
-| T-UI-08 | admin 可见全部 affordance；viewer/editor 只读（隐藏/禁用写 affordance）；匿名重定向登录 |
+| T-UI-08 | admin 可见全部 affordance；viewer/editor 只读（隐藏/禁用写 affordance，`records.write` 表达式求值为 false）；匿名重定向登录 |
 | T-UI-09 | 后端权威不被前端隐藏替代：即便隐藏，直接 POST/PATCH/DELETE 由 API 403/401 拦截（API 侧 T-API-08/09 已承担；UI 断言呈现一致） |
-| T-UI-10 | 新增/调整代表页面不修改 Renderer 主路径代码（页面变更仅触 fixture；用文件 diff 断言） |
+| T-UI-10 | 新增/调整代表页面不修改 Renderer 主路径代码——页级变更仅允许触碰 §9.5 白名单外的 fixtures；用文件 diff 断言 |
 
 ## 7. 与 I-007-001/002 的接口
 
@@ -127,4 +158,63 @@ related_decision: D-005
 - `apps/web/src/protocol/app-manifest.ts`、`load-page.ts`
 - `apps/api/internal/handler/fixtures/schema/{list-edit-lifecycle,search-form-table,catalog,form-with-reactions}.json`
 - `apps/api/internal/handler/records.go`、`account.go`；`apps/api/internal/account/session.go`
+- `docs/schemas/{action.schema.json,component-registry.json}`；`apps/web/src/protocol/conformance/request-construction.ts`（`$row.*` / `requestMapping`）
 - I-007-001（v0.2.0）、I-007-002（v0.2.0）、D-005
+
+## 9. 最小冻结实现规格（v0.2.0 补 · A-005 F-004 闭合 + R-001/R-002）
+
+### 9.1 顶层 `actions`（`page.actions`，对齐 `action.schema.json`）
+
+**5 个顶层 action**：3 个 RequestAction + 2 个 ModalAction（v0.2.1 · A-006 F-006 闭合）。
+
+| id | 类型 | 形状 |
+|----|------|------|
+| `createRecord` | RequestAction | `method: POST`，`url: "/api/records"`，`bodyMapping: { name: "name", status: "status", owner: "owner" }`，`onSuccess: { behavior: "reload" }` |
+| `updateRecord` | RequestAction | `method: PATCH`，`url: "/api/records/{id}"`，`bodyMapping` 同 create；`onSuccess: { behavior: "reload" }`；**`{id}` 槽由 §9.1a 规则绑定**，**不得**写 `requestMapping`/`$row`（form submit 不解析它们） |
+| `deleteRecord` | RequestAction | `method: DELETE`，`url: "/api/records/{id}"`，`onSuccess: { behavior: "reload" }`；**无** `confirm`、**无** `requestMapping`（两者都在 rowAction 项上，见 §9.2） |
+| `openCreate` | ModalAction | `type: "modal"`，`content`: default form（create-form，空表单，`submitAction: "createRecord"`） |
+| `openEdit` | ModalAction | `type: "modal"`，`content`: default form（edit-form，选中行预填，`submitAction: "updateRecord"`） |
+
+- `onSuccess` 用 **`behavior`**（enum: `toast` \| `navigate` \| `reload` \| `closeModal`；`OutcomeBehavior` `additionalProperties: false`），**无 `type` 字段**。
+- **create/edit/delete 均 `behavior: "reload"`**：S4 实现注记——**`reload` 隐含关闭当前 modal 并清空选中态**（A-007 R-002），避免 SPA 列表局部刷新后 modal 残留；`closeModal`/`toast` 不单独使用。
+- 两 modal 的 form 字段均为 name/status/owner（见 §3）；status 为 select（active/pending/archived 仅 UI 提示）。
+
+### 9.1a form submit 的 `{id}` 槽绑定（A-006 F-005 闭合 · 有界扩展）
+
+`buildFormAction`（`request-construction.ts`）对 form 提交**不做** path 槽 / `$row` 绑定：url 按字面 + baseURL 组合，body 仅来自 formValues/bodyMapping。为支持 edit 提交 `PATCH /api/records/{id}`，冻结规则：
+
+- 当 Renderer 执行 **default form submit** 且 `action.url` 含 `{id}`（或通用 `{slot}`）槽时，从**打开该 modal 时捕获的行上下文**（选中行拷贝）解析该槽，生成最终 url（`PATCH /api/records/rec-1`）。
+- 这是对 `formAction` 执行器的**有界扩展**：必须落在 §9.5 白名单文件（`render.tsx` / `request-construction.ts` 等），并补「行上下文槽绑定」单测（T-UI-05 覆盖 `{id}` 解析）。
+- **禁止**把 row 专属 `requestMapping`/`$row.*` 写在仅 form 提交的 action 上而不说明执行器（本页 `$row.id` 仅用于 rowAction delete，见 §9.2）。
+
+### 9.2 行级 / 工具栏 / modal 绑定（registry 字段 `actionRef`）
+
+- `table.props.toolbar`：`create` 项 → `actionRef: "openCreate"`，`permissionIntent: "edit"`，label `New record`。
+- `table.props.actions`：
+  - `edit` 项 → `actionRef: "openEdit"`，`permissionIntent: "edit"`，label `Edit`。
+  - `delete` 项 → `actionRef: "deleteRecord"`，`permissionIntent: "delete"`，label `Delete`，**`requestMapping: { path: { id: "$row.id" } }`**（`$row.*` 属 rowAction，由 `buildRowAction` 处理），**`confirm: "Delete this record?"`**（registry `confirm` 为 **string**（v0.2.2 · A-007 F-007）；确认文案在 rowAction 项，与 `executeAction` confirm 序列一致）。
+- **字段名**：registry 用 **`actionRef`**（toolbar/actions 的挂载字段），**无** `action` 键、**无** `modal:` 前缀；modal 由顶层 ModalAction（`openCreate`/`openEdit`）承载，toolbar/row 经 `actionRef` 引用。
+- 行级 `$row.*` 仅经 rowAction 的 `requestMapping.path`（本页只用 `$row.id`）；列表行数据即 `$row` 源。
+
+### 9.3 `meta.requiredCapabilities` 最小集
+
+`["app.manifest", "app.navigation", "permissions.inheritance", "actions.row.request", "actions.page.trigger", "table.sort"]`
+（排序列需要 `table.sort`；**不需要** `form.record.load` / `record.view.load` / `form.controls.extended`——input/select 为基础控件，预填为行拷贝）。
+
+### 9.4 search 归属（F-004 闭合）
+
+form-to-query 绑定（`mode: "search"` + `targetTable`）**只**做进 `search-form-table` 页（T-UI-03 挂该页）；`list-edit-lifecycle` 为生命周期页，**不**含搜索 form。
+
+### 9.5 Renderer 文件白名单（T-UI-10 边界 · A-005 R-001 / A-006 R-001 / A-007 R-001）
+
+「一次性渲染补齐」允许改动的路径：
+- `apps/web/src/renderer/{render.tsx, schema-table.tsx, render.ts, records.ts, use-records.ts, form-controls.tsx, row-action.ts}`
+- `apps/web/src/components/data-table.tsx`
+- `apps/web/src/protocol/conformance/request-construction.ts`（**仅当** §9.1a 槽绑定 / rowAction 构造需在构造层实现时；若改须补 conformance/单测）
+- **允许一次性新增** modal 宿主 / 确认对话框等渲染文件：`apps/web/src/renderer/modal*.tsx`、`apps/web/src/renderer/confirm*.tsx`（或等价命名）；新增文件须在 T-UI-10 说明用途，作为「一次性补齐」的一部分（A-006 R-001）。
+
+**此后**「新增/调整代表页面」只允许改 `apps/api/internal/handler/fixtures/schema/*.json`（及配套 web 测试 fixtures）；T-UI-10 断言页级变更不触碰白名单外的 src 文件。
+
+### 9.6 详情数据源（A-005 R-002 闭合）
+
+`recordView` 与 edit-form 预填均渲染**选中行拷贝**（列表单一数据源）；不做独立 GET、不用 `recordSource`。列表 reload 后清空选中态。
