@@ -1,0 +1,35 @@
+# Build context hygiene for the repo-root web image build (GOAL-008 S2).
+# The web build context is the repo root so it can reach docs/schemas (Vite
+# @schemas alias -> ../../docs/schemas). Exclude everything the image build does
+# not need; docs/schemas is re-included below.
+
+# VCS
+.git
+
+# Node / frontend
+**/node_modules
+**/dist
+**/.vite
+**/test-results
+**/playwright-report
+**/coverage
+**/*.tsbuildinfo
+
+# Go build artifacts
+apps/api/bin
+apps/api/data
+
+# Env / secrets (keep *.env.example)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Runtime DB artifacts
+*.db
+*.sqlite
+
+# Governance / skills context not needed for the image build
+skills
+docs/*
+!docs/schemas

@@ -5,7 +5,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.3
+version: 0.1.4
 progress: 0/5
 ---
 
@@ -17,8 +17,8 @@ progress: 0/5
 
 ## 成功标准
 
-- [ ] **S1 · 环境与配置基线**：补齐环境变量清单（dev/prod、fail-closed 键、TTL、种子密码策略）、健康检查与启动验证说明（`/healthz` + Web 侧启动验证）、dev/prod 区分文档及工程化 README 段。
-- [ ] **S2 · 容器与一键启动**：交付 Docker Compose（**R5 必须交付和验收的第二启动路径**，非可选加分项；fork 使用者可选择本地双进程或 Compose）——api 多阶段镜像 + web 静态构建（nginx/Caddy 服务 `dist/` 并把 `/api` 反代到 api service）+ DB volume + 探针；`docker compose up` 后 healthz + 登录 + 代表页可用。
+- [x] **S1 · 环境与配置基线**：补齐环境变量清单（dev/prod、fail-closed 键、TTL、种子密码策略）、健康检查与启动验证说明（`/healthz` + Web 侧启动验证）、dev/prod 区分文档及工程化 README 段。（2026-08-02 已实施：`apps/api/.env.example` dev/prod 注解；`apps/api/README.md`「开发 vs 生产」+「启动与健康验证」；`apps/web/README.md` 生产/compose 注记；根 `README.md`「工程化与一键启动」；对照契约 C-001/C-002 验证通过）
+- [x] **S2 · 容器与一键启动**：交付 Docker Compose（**R5 必须交付和验收的第二启动路径**，非可选加分项；fork 使用者可选择本地双进程或 Compose）——api 多阶段镜像 + web 静态构建（nginx 服务 `dist/` 并把 `/api` 反代到 api service）+ DB volume + 探针；`docker compose up` 后 healthz + 登录 + 代表页可用。（2026-08-02 已实施：`apps/api/Dockerfile` + `apps/web/Dockerfile`（BuildKit cache mount）+ 根 `compose.yaml` + `apps/web/nginx.conf`（SPA fallback + `/api` 反代）+ `.dockerignore` + CI `container-smoke` job；对照契约 C-003～C-007 验证通过——本机 Docker 29/Compose v5 `docker compose up` 后 `/healthz` 200、web 200、登录 admin、`/me`、nginx 代理 + `/list-edit-lifecycle` fallback、api restart 与 down/up 后 DB volume 保持）
 - [ ] **S3 · fork 文档与 15 分钟体验**：交付 QUICKSTART/README fork 上手文档；≥1 次独立复现记录（日期/仓库 ref/版本/耗时），终点 = 登录成功 + 后台首页可交互（列表加载），耗时 ≤15 分钟（不含依赖下载）。
 - [ ] **S4 · 可复现验收**：交付 `scripts/smoke.sh`（`/healthz` → login → `/api/accounts/me` → 代表页 → 种子可重复），本地与 CI smoke 全绿。
 - [ ] **S5 · 阶段审计与 Root 关门条件评估**：对 R5 工程化交付做阶段审计（self + 视需要 independent），评估并记录 Root R5 勾选条件与 Root / VP-002 关门证据口径。
@@ -27,7 +27,7 @@ progress: 0/5
 
 ## 派生进度
 
-`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-02**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0），S1/S2 可进入实施准备；`I-008-002`/`I-008-003` 仍 open（分别阻断 S3/S4、S6 若实施）。
+`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-02**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；**S1/S2 已实施（进度 `0/5 → 2/5`）**——env 清单 + health/启动验证 + dev/prod 区分文档 + Dockerfile × 2 + compose.yaml + nginx 反代 + CI `container-smoke`，契约 C-001～C-007 本机验证通过；`I-008-002`/`I-008-003` 仍 open（分别阻断 S3/S4、S6 若实施）。
 
 ## 信息需求
 

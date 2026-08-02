@@ -1,0 +1,10 @@
+# Build context hygiene for apps/api (GOAL-008 S2).
+bin/
+data/
+*.db
+*.sqlite
+*.exe
+.env
+.env.*
+!.env.example
+Dockerfile

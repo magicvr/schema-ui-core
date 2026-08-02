@@ -56,3 +56,71 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+
+  container-smoke:
+    name: container smoke (docker compose · R5 S2)
+    runs-on: ubuntu-latest
+    env:
+      AUTH_JWT_SECRET: ci-test-secret
+      ADMIN_INITIAL_PASSWORD: ci-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - name: Build images
+        run: docker compose build
+      - name: Start services
+        run: docker compose up -d
+      - name: Wait for api + web ready
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1 \
+               && curl -fsS http://127.0.0.1:8081/ >/dev/null 2>&1; then
+              echo "compose services ready"; exit 0
+            fi
+            sleep 3
+          done
+          echo "compose services failed to become ready"; exit 1
+      - name: Login + session smoke (via nginx /api proxy)
+        run: |
+          TOKEN=$(curl -fsS -X POST http://127.0.0.1:8081/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"ci-admin"}' \
+            | python3 -c 'import sys,json;print(json.load(sys.stdin)["accessToken"])')
+          test -n "$TOKEN"
+          curl -fsS http://127.0.0.1:8081/api/accounts/me -H "Authorization: Bearer $TOKEN" \
+            | python3 -c 'import sys,json;assert "user" in json.load(sys.stdin)'
+          echo "login + /me via proxy OK"
+      - name: Web SPA + route fallback check
+        run: |
+          curl -fsS http://127.0.0.1:8081/ | grep -q 'id="root"'
+          curl -fsS http://127.0.0.1:8081/list-edit-lifecycle | grep -q 'id="root"'
+          echo "SPA + route fallback OK"
+      - name: Persistence across api restart (C-006)
+        run: |
+          TOKEN=$(curl -fsS -X POST http://127.0.0.1:8081/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"ci-admin"}' \
+            | python3 -c 'import sys,json;print(json.load(sys.stdin)["accessToken"])')
+          NEWID=$(curl -fsS -X POST http://127.0.0.1:8081/api/records \
+            -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            -d '{"name":"ci-persist","status":"active","owner":"ci"}' \
+            | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
+          test -n "$NEWID"
+          docker compose restart api
+          for i in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1 && break; sleep 2
+          done
+          curl -fsS "http://127.0.0.1:8081/api/records/$NEWID" -H "Authorization: Bearer $TOKEN" \
+            | python3 -c 'import sys,json;d=json.load(sys.stdin);assert d["id"]=="'"$NEWID"'"'
+          echo "record persisted across api container restart OK"
+      - name: Teardown
+        if: always()
+        run: docker compose down -v
+

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.16
+version: 0.1.17
 ---
 
 # 执行记录 · GOAL-001
@@ -174,3 +174,12 @@ version: 0.1.16
 - **`I-008-001` → verified（D-003 + [I-008-001-engineering-contract.md](../GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md) v1.0.0）**：冻结 env 键全集与 dev/prod、health/启动验证、Compose 服务/镜像/DB volume/探针、SPA fallback 与 `/api` 反代、依赖/超时/失败行为、CI 入口与验收清单 C-001～C-007（S1/S2 方案冻结门禁解除）。
 - **未做**：未实施 S1/S2；未运行应用/测试/Docker；未勾选检查点；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
 - **计划（非事实）**：实施 S1（env 清单 + health/启动验证 + dev/prod 区分，对照 C-001/C-002）→ S2（Dockerfile × 2 + compose.yaml + nginx 反代 + CI smoke 入口，对照 C-003～C-007）；`I-008-002` 仍阻断 S3/S4。
+
+## 2026-08-02 · GOAL-008 实施 S1 + S2（`0/5 → 2/5`）
+
+- `GOAL-008` 实施 **S1（环境/配置基线）** 与 **S2（容器与一键启动）**，契约 **C-001～C-007 全部验证通过**：
+  - S1：`apps/api/.env.example` dev/prod 注解；`apps/api/README.md`「开发 vs 生产」+「启动与健康验证」；`apps/web/README.md` 生产注记；根 `README.md`「工程化与一键启动」。
+  - S2：`apps/api/Dockerfile` + `apps/web/Dockerfile`（BuildKit cache mount）+ 根 `compose.yaml`（api/web、`db-data` 卷、`/healthz`/静态页探针、`${AUTH_JWT_SECRET:?}` fail-closed）+ `apps/web/nginx.conf`（SPA fallback + `/api` 反代）+ `.dockerignore` + CI `container-smoke` job。
+  - 验证：本机 Docker 29 / Compose v5 `docker compose up` → api healthy、web 200、`/healthz` 200、登录 admin、`/me`、nginx 代理登录 + `/me`、`/list-edit-lifecycle` fallback、api restart 与 down/up 后 DB volume 保持；API `go build/vet/test` 全绿。
+- `GOAL-008` 进度 `0/5 → 2/5`（S1/S2 勾选）；`I-008-002`/`I-008-003` 仍 open（阻断 S3/S4、S6 若实施）；Root R5 检查点**不**据此勾选，Root 保持 `active / 4/5`。
+- **建议**：对 S1/S2 做一次实施向审计（self 或 `/audit`）；下一主路径收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据）→ 实施 S3/S4。

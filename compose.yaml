@@ -1,0 +1,58 @@
+# GOAL-008 S2 / I-008-001 §3 — second startup path (Docker Compose one-click).
+# Fork users may choose local two-process or this Compose path.
+#
+# Secrets are required and fail closed (compose interpolation aborts when unset).
+# Provide them in a repo-root .env (gitignored) or export in the shell:
+#   AUTH_JWT_SECRET=<strong random string>
+#   ADMIN_INITIAL_PASSWORD=<initial admin password>
+#
+# Non-goal: full production ops / CI-CD pipeline, TLS termination, multi-instance
+# scaling (see I-008-001 §8).
+name: schema-ui-core
+
+services:
+  api:
+    build:
+      context: ./apps/api
+    image: schema-ui-core-api:local
+    environment:
+      APP_ENV: production
+      DB_PATH: /app/data/schema-ui.db
+      LOG_LEVEL: info
+      # Fail closed: compose aborts if these are unset.
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required (fail-closed)}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD is required (fail-closed)}
+      AUTH_DEV_SESSION_ENABLED: "false"
+    volumes:
+      - db-data:/app/data
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: on-failure
+
+  web:
+    build:
+      # Repo-root context so the build can reach docs/schemas (Vite @schemas alias).
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: schema-ui-core-web:local
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: on-failure
+
+volumes:
+  db-data:

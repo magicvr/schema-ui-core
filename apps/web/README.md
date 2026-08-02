@@ -25,6 +25,12 @@ npm run test:e2e  # Playwright Chromium (starts Go API + Vite; default :5173)
 npm run build   # tsc -b && vite build
 ```
 
+### 生产（compose / nginx · GOAL-008 S2 / I-008-001）
+
+- 生产形态由仓库根 `compose.yaml` 提供第二启动路径：`apps/web/Dockerfile` 多阶段构建（`node:22` → `nginx:alpine`），`nginx.conf` 服务 `dist/` 并做 SPA fallback + `/api` 反代到 `api` 服务；同源免 CORS。
+- SPA 使用相对路径 `/api/*`（`auth-client.ts`），故生产**必须**同源反代（`location /api → proxy_pass http://api:8080`），无需 `VITE_` API base。
+- 完整契约见 GOAL-008 `attachments/I-008-001-engineering-contract.md`。
+
 ## Shell & session (R3/R4)
 
 - The shell fetches the pinned app manifest from

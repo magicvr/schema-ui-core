@@ -52,6 +52,28 @@ npm run dev
 
 详见 [apps/web/README.md](apps/web/README.md)。
 
+## 工程化与一键启动（R5 · GOAL-008）
+
+> 生产级工程化交付（环境/配置、容器一键启动、健康检查、dev/prod 区分）随 R5 推进。契约见
+> `docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md`。
+
+### Docker Compose 一键启动（第二启动路径）
+
+```bash
+# 需先提供生产必填密钥（fail-closed）；可写入仓库根 .env（gitignored）或 export
+AUTH_JWT_SECRET=<强随机串>
+ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
+
+docker compose up --build
+#  API: http://localhost:8080  (GET /healthz 探活)
+#  Web: http://localhost:8081  (nginx 服务 SPA + /api 反代；同源免 CORS)
+#  登录种子 admin → 后台首页
+```
+
+- 本地开发仍为默认双进程路径（见上文 API / Web 段）；fork 使用者可选本地双进程或 Compose。
+- `docker compose down` / 重启后 SQLite 数据由命名卷 `db-data` 保持。
+- 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
+
 ## 状态说明
 
 - R2 MVP 协议覆盖子集已按 Root `I-PROTO-001` v0.1.3 冻结；这不是「支持全部协议功能」或 R3-R5 已实现的声明。

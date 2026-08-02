@@ -46,6 +46,39 @@ go run ./cmd/server
 | `ADMIN_INITIAL_PASSWORD` | dev `admin` | 首次种子 admin 密码；生产必填 |
 | `AUTH_DEV_SESSION_ENABLED` | `false` | 显式本地开发静态会话兜底；**生产禁止启用** |
 
+### 开发 vs 生产（GOAL-008 S1 / I-008-001）
+
+| 维度 | 开发（`APP_ENV=development`） | 生产（`APP_ENV=production` / compose） |
+|------|-------------------------------|-----------------------------------------|
+| `AUTH_JWT_SECRET` | 未设则用内建 dev 密钥并打警告 | **必填，缺失 fail-closed** |
+| `ADMIN_INITIAL_PASSWORD` | 未设则兜底 `admin` | **必填，缺失 fail-closed** |
+| `AUTH_DEV_SESSION_ENABLED` | 显式 opt-in 可选 | **必须 `false`** |
+| `DB_PATH` | `./data/schema-ui.db` | compose 挂载 `/app/data/schema-ui.db`（命名卷） |
+| 启动形态 | 本地双进程（api + web） | `docker compose up`（第二启动路径；fork 用户二者可选） |
+
+完整契约见 GOAL-008 `attachments/I-008-001-engineering-contract.md`。
+
+### 启动与健康验证（C-002）
+
+```bash
+# 1) 启动 API（compose 或本地）
+docker compose up -d api   # 或：make run / go run ./cmd/server
+# 2) 探活
+curl -fsS http://localhost:8080/healthz
+# -> {"status":"ok","timestamp":"...","version":"...","commit":"..."}
+# 3) 登录种子 admin（首次启动按 ADMIN_INITIAL_PASSWORD 种子）
+curl -fsS -X POST http://localhost:8080/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"<ADMIN_INITIAL_PASSWORD>"}'
+# -> {"accessToken":"...","refreshToken":"..."}
+# 4) 会话
+TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization: Bearer $TOKEN"
+# -> {"user":{...},"features":{...}}
+```
+
+- `GET /healthz` 公开返回 `200 {"status":"ok",...}`，作为容器探针与启动验证判据。
+- API 优雅停机：`SIGINT`/`SIGTERM` → 10s 宽限内 `Shutdown`。
+
 ## 端点
 
 | 方法 | 路径 | 鉴权 | 说明 |

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计台账 · GOAL-008
@@ -19,7 +19,7 @@ version: 0.5.0
 
 ## 当前审计边界
 
-- 本目标于 2026-08-02 立项，`active / 0/5`；尚未实施。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**（D-002 + D-001 边界修订 + 00-meta S2 + Root/I-005 投影对齐）；R-001/R-002 handled；R-003 handled（投影清理）。**A-003（self · goal-definition + design-plan 复核 · pass）**：立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立，补同 scope `source: self` 覆盖（P-004 §3.1）。
+- 本目标于 2026-08-02 立项，`active / 2/5`。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**；R-001/R-002 handled；R-003 handled（投影清理）。**A-003（self · goal-definition + design-plan 复核 · pass）**：立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立（P-004 §3.1）。**S1/S2 已实施（2026-08-02）**：env 清单 + health/启动验证 + dev/prod 区分文档 + Dockerfile × 2 + compose.yaml + nginx 反代 + CI `container-smoke`；契约 C-001～C-007 本机验证通过（`docker compose up` → healthz/登录/`/me`/SPA fallback/重启与 down-up DB 持久化）。**建议对 S1/S2 做一次实施向审计（self 或 `/audit`）**。
 - 信息门禁：**`I-008-001` 已 verified（D-003 + [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0）**；`I-008-002` / `I-008-003` 仍 `open`（required，分别阻断 S3/S4、S6 若实施）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
 - 后续意见从 A-004 起。
 

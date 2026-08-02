@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.3
+version: 0.1.4
 ---
 
 # 执行记录 · GOAL-008
@@ -40,3 +40,20 @@ version: 0.1.3
   - 记录 **D-003**：`I-008-001` → **`verified`**（S1/S2 方案冻结门禁解除）。
 - **未做**：未实施 S1（env 文档）或 S2（Dockerfile/compose）；未运行应用/测试/Docker；未勾选检查点；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 0/5`。
 - **计划（非事实）**：实施 S1（env 清单 + health/启动验证说明 + dev/prod 区分文档，对照 C-001/C-002）；随后实施 S2（Dockerfile × 2 + compose.yaml + nginx 反代 + CI smoke 入口，对照 C-003～C-007）；S2 完成后建议一次实施向审计。
+
+## 2026-08-02 · 实施 S1 + S2（契约 C-001～C-007 验证通过）
+
+- **S1 · 环境与配置基线（对照 C-001/C-002）**：
+  - `apps/api/.env.example` 重写为 dev/prod 注解参考（全键与 `config.go` 一致；dev 默认 vs production fail-closed/必填）。
+  - `apps/api/README.md` 新增「开发 vs 生产」表与「启动与健康验证」（`/healthz` 200 + 登录 + `/me` 判据）；`apps/web/README.md` 新增生产/compose 注记（相对 `/api`、同源反代）；根 `README.md` 新增「工程化与一键启动」节（Compose 第二启动路径、fail-closed 密钥）。
+  - 验证：API `go build`/`go vet`/`go test ./...` 全绿（S1 未改 Go 源码）；`/healthz` 200 `{"status":"ok"}`（本机与容器内）。
+- **S2 · 容器与一键启动（对照 C-003～C-007）**：
+  - `apps/api/Dockerfile`（golang:1.26-alpine 多阶段 → alpine 运行镜像；`modernc.org/sqlite` 纯 Go → `CGO_ENABLED=0`；BuildKit cache mount + `go mod download` 重试；非 root `app` 用户；`DB_PATH=/app/data`）。
+  - `apps/web/Dockerfile`（node:22 → nginx:1.27-alpine；**build context = 仓库根**，因 Vite/tsc `@schemas` 别名解析 `../../docs/schemas` 在 `apps/web` 上下文外；`COPY docs/schemas /docs/schemas`）；`apps/web/nginx.conf`（SPA `try_files` fallback + `location /api → proxy_pass http://api:8080` 同源反代）。
+  - 根 `compose.yaml`（`name: schema-ui-core`；`api` 服务 + `web` 服务 `depends_on api healthy`；`db-data` 命名卷挂 `/app/data`；`/healthz` 与静态页 200 探针；`${AUTH_JWT_SECRET:?}`/`${ADMIN_INITIAL_PASSWORD:?}` fail-closed 插值）。
+  - `.dockerignore`（根，服务 web 仓库根 context）+ `apps/api/.dockerignore`。
+  - `.github/workflows/r6-basic-matrix.yml` 新增 `container-smoke` job（build → up → 等待 ready → 经 nginx `/api` 登录 + `/me` + SPA/route fallback + 记录跨 `api` 重启持久化 → teardown）。
+  - **验证（本机 Docker 29.6 / Compose v5.3.1）**：`docker compose build` 两镜像成功（api 23.7MB）；`up -d` 后 api healthy、web 200；`/healthz` 200；登录 admin → `/me`；nginx 代理 `/api` 登录 + `/me` OK；`/list-edit-lifecycle` 刷新 fallback → index；`docker compose restart api` 后记录 `rec-9a440d7950daf745` 保持；`down`→`up` 后同一记录保持（DB volume 持久化）。**C-001～C-007 全部通过**。
+- **实施细节留痕**：web 镜像构建曾因 `@schemas` 别名上下文外而失败 → 改为仓库根 context + `COPY docs/schemas`；`COPY nginx.conf` 路径按仓库根 context 修正；`go mod download` 遇 proxy.golang.org 瞬断 → BuildKit cache mount + 重试。
+- **未做**：未实施 S3（fork 文档 + 15 分钟计时复现）、S4（`scripts/smoke.sh` 正式化）；`I-008-002`/`I-008-003` 仍 open；Root R5 未勾选，Root 保持 `active / 4/5`。
+- **计划（非事实）**：下一拍收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据），再实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；S2 已完成，建议一次实施向审计（self 或 `/audit`）。
