@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计台账 · GOAL-008
@@ -15,12 +15,13 @@ version: 0.4.0
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-02 | goal-definition + design-plan · GOAL-008 立项信息与 Root I-005/D-013 合理性 | conditional | responded：F-001 **fixed**（D-002 + D-001 修订 + S2 对齐）；R-001/R-002 handled |
 | A-002 | independent | 2026-08-02 | finding-closure · A-001 F-001 与 R-001/R-002 响应证据 | pass | responded：F-001 `fixed` 关闭成立；R-001/R-002 handled；R-003 handled（投影清理） |
+| A-003 | self | 2026-08-02 | goal-definition + design-plan 复核 · GOAL-008 立项与 I-005/D-013 方案边界 + A-001/A-002 响应证据 | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1） |
 
 ## 当前审计边界
 
-- 本目标于 2026-08-02 立项，`active / 0/5`；尚未实施。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**（D-002 + D-001 边界修订 + 00-meta S2 + Root/I-005 投影对齐）；R-001/R-002 handled。**R-003 已 handled**（2026-08-02 响应：GOAL-008 概述 / Root 进度说明 / I-005 §2 末句三处投影清理）。
-- 信息门禁：`I-008-001` / `I-008-002` / `I-008-003` 当前 `open`（required，分别阻断 S1/S2、S3/S4、S6 若实施）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
-- 后续意见从 A-003 起。
+- 本目标于 2026-08-02 立项，`active / 0/5`；尚未实施。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**（D-002 + D-001 边界修订 + 00-meta S2 + Root/I-005 投影对齐）；R-001/R-002 handled；R-003 handled（投影清理）。**A-003（self · goal-definition + design-plan 复核 · pass）**：立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立，补同 scope `source: self` 覆盖（P-004 §3.1）。
+- 信息门禁：**`I-008-001` 已 verified（D-003 + [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0）**；`I-008-002` / `I-008-003` 仍 `open`（required，分别阻断 S3/S4、S6 若实施）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
+- 后续意见从 A-004 起。
 
 ## A-001 · GOAL-008 立项信息与 I-005 工程化 / fork 报告独立审计（2026-08-02）
 
@@ -180,3 +181,60 @@ version: 0.4.0
 - **P-004 §3.1 处置**：A-002 亦为 `source: independent`，本 scope 仍无 `source: self` 审计。本轮仅记录 finding-closure 采纳与 R-003 投影处理，**不**放行下一阶段。**未来冻结 `I-008-001`（方案冻结门禁）或进入 S1/S2 实施前**，按 P-004 §3.1 询问用户是否补同 scope self 审计。
 - **仍开放**：`I-008-001` / `I-008-002` / `I-008-003`（required · 阻断 S1/S2、S3/S4、S6 若实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 0/5`。
 - **证据路径**：本响应节；GOAL-008 `00-meta`（概述、S2、信息表）；Root `00-meta`（进度说明、I-005 行）；I-005 附件 v0.2.2 §2；02-execution 2026-08-02「响应 A-002」节。
+
+## A-003 · GOAL-008 立项与 R5 方案边界 self 复核（2026-08-02）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：goal-definition + design-plan 复核；对 GOAL-008 立项信息与 Root **I-005 / D-012 / D-013** 方案边界，以及 **A-001 F-001 / R-001/R-002** 与 **A-002 R-003** 的响应闭合证据做 self 复核（P-004 §3.1 · 用户裁决「进行自审计」；同 scope 现有 A-001/A-002 independent，本自审补 `source: self` 覆盖）。不审计尚未发生的 R5 实施或关门，不复判 R1～R4。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；workspace/Root 绑定 `VP-002-production-admin-foundation`（`vision_role: delivery`、`primary_plan` 合法），`vision_ref` 匹配 Charter `schema-ui-core-admin-foundation@0.1.0`；`shared_materials_catalog: none`。
+- 已复核：本目标五件套与 `01-decision` D-001/D-002、`00-meta` 成功标准/信息表；Root `00-meta`、`01-decision` D-012/D-013、I-005 附件 v0.2.2；A-001/A-002 与各自响应；工作区 `goal-tree.md`；代码 `apps/api/internal/config/config.go`、`.env.example`、`handler/health.go`、`apps/web/vite.config.ts`、`apps/web/README.md`、`.github/workflows/r6-basic-matrix.yml`。
+- 本自审为文档/静态核对；**未运行**应用、测试、Docker、Compose、CI smoke 或 15 分钟计时；不把静态核对扩写成运行时通过结论。
+
+### 成果（有证据）
+
+| 审计项 | self 复核结论与证据 |
+|--------|---------------------|
+| 立项与边界 | **通过**：S1～S5 承接 VP-002 #6/#7（环境配置、Docker、≤15 分钟 fork、smoke、阶段审计），S6 操作日志维持非阻断加分；`progress: 0/5` 与零实施一致（`02-execution` 明记未改产品代码）。 |
+| I-005 / D-013 方案边界 | **通过**：部署基线 A（Compose 必须交付、fork 用户可选）、建议计时口径、复现方法、I-006 方案甲均有用户书面裁决留痕（D-013）；I-005 附件 v0.2.2 与 Root `00-meta` 同向。 |
+| F-001 `fixed` | **成立**：D-002 + D-001 边界修订 + `00-meta` S2 对齐——Compose 为 R5 必须交付和验收的第二启动路径（S2 核心检查点、计入进度分母），非可选加分项；完整生产拓扑/CI-CD 仍非目标。与 A-001/A-002 独立复核一致。 |
+| R-001/R-002/R-003 handled | **成立**：I-005 附件 v0.2.2 时态清理（§2～§6「D-013 前历史候选 · 已裁决」、`related_decisions`）；`I-008-001/002` 信息表含 A-001 R-002 最低收集清单；GOAL-008 概述 / Root 进度说明 / I-005 §2 末句三处投影消歧已落实。 |
+| 信息门禁边界 | **成立**：`I-008-001/002/003` 仍 open required，未被静默放行；Root `I-005: verified` 只解除立项/方案方向门禁，不充当 Docker、smoke、CI 或 ≤15 分钟体验已实现的证据。 |
+| 状态与进度边界 | **成立**：GOAL-008 `active / 0/5`，Root `active / 4/5`；S1～S5、Root R5 均未勾选；A-001/A-002 响应只闭合 finding/处理建议，未越权放行实施或验收。 |
+
+### 对照成功标准与信息门禁
+
+| 项 | self 复核结论 |
+|----|---------------|
+| 立项意图、父级与最小可验证方向 | **满足**，可继续信息收集。 |
+| 高层检查点与派生进度 | **满足**，S1～S5 可枚举且 `0/5` 可确定计算。 |
+| `I-008-001` / `I-008-002` | **正确保持 open required**（自审时）；本轮随 D-003 冻结 `I-008-001`，`I-008-002` 继续阻断 S3/S4。 |
+| `I-008-003` | **边界合理**：仅在用户决定实施 S6 时阻断 S6。 |
+| 进入 I-008-001 方案冻结 | **可进入**：本 self 复核 + A-001/A-002（independent）同向；方案冻结本身由 D-003 决策记录，不由本自审代替。 |
+
+### Findings
+
+- **无新 required**。
+- **注记（recommended · 非阻断）**：D-003 冻结 `I-008-001` 后，S1/S2 实施的精确 nginx.conf / Dockerfile / 镜像 tag 属实施细节，由实施留痕；建议 S2 完成后做一次实施向审计（self 或 `/audit`），并在 S3/S4 前关闭 `I-008-002`。
+
+### 必改项汇总
+
+- **无开放 required**（本 scope）。
+
+### 与既有意见的异同
+
+- 相对 A-001/A-002（independent）：结论一致——立项、S1～S5、`I-008-001/002/003` 分层门禁与 I-005 主要工程事实总体合理；F-001 `fixed`、R-001/R-002/R-003 handled 闭合证据经本自审复核成立。本自审补齐同 scope 的 `source: self` 覆盖，满足 P-004 §3.1。
+- 无 self/independent verdict 或 required finding 冲突。
+
+### 结论 + 建议下一步
+
+- **pass**：GOAL-008 立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立；当前 scope 无开放 required，可进入 `I-008-001` 方案冻结与 S1/S2 实施边界判断。
+- 建议 `/govern`：记录 D-003 冻结 `I-008-001`（`verified`）；进入 S1 实施（环境/配置基线文档）前保持 `I-008-002` 对 S3/S4 的阻断；S2 完成后建议一次实施向审计。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应、方案冻结与阶段推进由 `/govern` 处理。

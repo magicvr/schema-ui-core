@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.25.0
+version: 0.26.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -66,3 +66,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
 > **GOAL-008 A-001 已响应（2026-08-02）**：A-001（independent · conditional）F-001 → **fixed**——GOAL-008 D-002 + D-001 修订 + S2 对齐：**Docker Compose 为 R5 必须交付和验收的第二启动路径**（S2 核心检查点、计入进度分母，非 S6 式可选加分项）；fork 用户可选本地双进程或 Compose；完整生产拓扑/CI-CD 仍非目标。R-001 → handled（I-005 附件 v0.2.1 时态清理）；R-002 → handled（`I-008-001/002` 信息表补最低收集清单）。`GOAL-008` 保持 `active / 0/5`；`I-008-001/002/003` 仍 open；Root `4/5`。
 
 > **GOAL-008 A-002 已响应（2026-08-02）**：A-002（independent · finding-closure · pass）确认 F-001 `fixed` 关闭成立、R-001/R-002 handled；R-003 → handled（GOAL-008 概述 / Root 进度说明「R5 已立项待实施」/ I-005 附件 v0.2.2 §2 三处投影清理）。`GOAL-008` 保持 `active / 0/5`；`I-008-001/002/003` 仍 open；Root `4/5`。
+
+> **GOAL-008 self 审计 + I-008-001 冻结（2026-08-02）**：A-003（self · pass）补齐立项与方案边界同 scope 自审（P-004 §3.1 闭环）。**`I-008-001` → verified（D-003 + [契约 v1.0.0](GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md)）**——S1/S2 方案冻结门禁解除。`I-008-002`/`I-008-003` 仍 open（阻断 S3/S4、S6 若实施）；`GOAL-008` 保持 `active / 0/5`；Root `4/5`。

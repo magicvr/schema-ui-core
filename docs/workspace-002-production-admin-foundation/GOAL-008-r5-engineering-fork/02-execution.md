@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.2
+version: 0.1.3
 ---
 
 # 执行记录 · GOAL-008
@@ -29,3 +29,14 @@ version: 0.1.2
 - **R-003 → handled（投影/历史短句消歧）**：① `GOAL-008 00-meta` 概述改为「文档双进程为默认；Docker Compose 为 R5 必须交付的第二启动路径，fork 使用者可选」；② Root `00-meta` 进度说明由「R5 待立项」改为「R5 已立项 `GOAL-008-r5-engineering-fork`，待实施」；③ I-005 附件 v0.2.2 §2 末句改为过去时，明确精确镜像/Compose 契约由 `I-008-001` 冻结。
 - **未做**：未冻结 `I-008-001`；未放行 S1/S2；未勾选检查点；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 0/5`。
 - **计划（非事实）**：冻结 `I-008-001` 前按 P-004 §3.1 询问用户是否补 self 审计；随后收集并冻结 `I-008-001`。
+
+## 2026-08-02 · self 审计（A-003）+ 冻结 I-008-001（D-003）
+
+- **用户裁决**：补同 scope `source: self` 审计并继续推进下一步（P-004 §3.1 闭环）。
+- **A-003（self · goal-definition + design-plan 复核）**：落盘 `03-audit.md`——复核 GOAL-008 立项、I-005/D-013 方案边界与 A-001/A-002 响应闭合证据，`verdict: pass`；无开放 required；确认可进入 `I-008-001` 方案冻结。
+- **I-008-001 收集与冻结**：
+  - 静态核对 `apps/api/internal/config/config.go`、`.env.example`、`handler/health.go`、`apps/web/vite.config.ts`、`auth-client.ts`（相对 `/api` 路径）、`.github/workflows/r6-basic-matrix.yml`；落盘 [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md)（v1.0.0）。
+  - 契约冻结：env 键全集与 dev/prod 行为（含 fail-closed、DB_PATH 容器挂载 `/app/data`）、health/启动验证（`/healthz` + Web 静态页 + 登录终态）、Compose 服务（`api` 多阶段镜像 + `web` node→nginx，`compose.yaml` 于仓库根，DB 命名卷）、SPA fallback 与 `/api` 反代（nginx `try_files` + `proxy_pass http://api:8080`，同源免 CORS）、依赖/超时/失败行为（`depends_on service_healthy`、优雅停机、502、DB 持久化）、CI 容器/smoke 入口、验收清单 C-001～C-007。
+  - 记录 **D-003**：`I-008-001` → **`verified`**（S1/S2 方案冻结门禁解除）。
+- **未做**：未实施 S1（env 文档）或 S2（Dockerfile/compose）；未运行应用/测试/Docker；未勾选检查点；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 0/5`。
+- **计划（非事实）**：实施 S1（env 清单 + health/启动验证说明 + dev/prod 区分文档，对照 C-001/C-002）；随后实施 S2（Dockerfile × 2 + compose.yaml + nginx 反代 + CI smoke 入口，对照 C-003～C-007）；S2 完成后建议一次实施向审计。

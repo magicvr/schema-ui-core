@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.1
+version: 0.1.2
 ---
 
 # 决策 · GOAL-008
@@ -37,3 +37,21 @@ version: 0.1.1
 - **影响**：`I-008-001` 的 Compose/容器契约按「必须交付的第二启动路径」冻结；S2 不可被当作可选而跳过；Root D-013「部署基线 A」与 VP-002 #7 对齐边界一致。`I-005` verified 状态不重开（本澄清只在子目标层消除交付义务歧义）。
 - **未选方案**：把 Compose 正式降为加分项并同步 S2、进度分母、Root D-013 与 VP-002——用户未作此裁决，且会留下 VP #7 未交付；故维持核心交付路径。
 - **后续**：S2 实施与验收时以本决定为准；`I-008-001` 冻结 Compose 契约时引用本决策。
+
+## D-003 · 冻结 I-008-001 环境/配置与容器部署契约
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：采纳 [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md)（v1.0.0）作为 S1/S2 的**环境/配置与容器部署契约**；`I-008-001` → **`verified`**，解除 S1（环境/配置基线）与 S2（容器一键启动）的方案冻结/立项目门禁。契约冻结内容：env 键全集与 dev/prod 行为（§1）、health/启动验证（§2）、Compose 服务/镜像/DB volume/探针（§3）、SPA fallback 与 `/api` 反代（§4）、依赖/超时/失败行为（§5）、CI 入口（§6）与验收清单 C-001～C-007（§7）。
+- **依据**：Root D-013 部署基线 A（Compose 必须交付、fork 用户可选）；A-001 R-002 最低清单（production env/secrets、DB volume、SPA fallback 与 `/api` 反代、API/Web readiness、服务依赖/超时/失败行为、CI 入口）；GOAL-008 A-003（self · pass）确认立项与方案边界后可进入本方案冻结门禁。
+- **边界**：
+  - 契约冻结的是**形状与判据**，不替代 S1/S2 实现（Dockerfile/compose.yaml/README/nginx.conf 属实施，由实施留痕）。
+  - 完整生产运维 / CI-CD 部署流水线、TLS、多实例仍为非目标。
+  - `I-008-002`（计时复现协议 + smoke 判据）保持 `open required`，继续阻断 S3/S4。
+- **影响**：`I-008-001` → verified；S1 环境/配置基线可进入实施准备；S2 容器一键启动可进入实施准备（均仍需在实施时留痕并对照验收清单）。Root R5 检查点**不**据此勾选；GOAL-008 `active / 0/5` 不变。
+- **后续**：实施 S1（env 清单 + health/启动验证说明 + dev/prod 区分文档）；再实施 S2（Dockerfile × 2 + compose.yaml + nginx 反代 + CI smoke 入口）；S2 完成后建议一次实施向审计。
+
+### 未选方案
+
+- **在实施期临场决定容器/反代细节**：违反「先冻结再编码」；契约 C-001～C-007 为 S1/S2 验收判据。
+- **把 15 分钟计时与 smoke 退出码纳入本契约**：属 `I-008-002` scope，避免契约混叠。

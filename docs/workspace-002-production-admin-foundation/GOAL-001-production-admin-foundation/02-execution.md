@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.15
+version: 0.1.16
 ---
 
 # 执行记录 · GOAL-001
@@ -167,3 +167,10 @@ version: 0.1.15
 - **响应**：采纳 `pass`；R-003 → handled——`GOAL-008 00-meta` 概述、Root `00-meta` 进度说明（「R5 待立项」→「R5 已立项待实施」）、I-005 附件 v0.2.2 §2 末句三处清理。
 - **未做**：未冻结 `I-008-001`；未放行 S1/S2；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
 - **计划（非事实）**：冻结 `I-008-001` 前按 P-004 §3.1 询问是否补 self 审计。
+
+## 2026-08-02 · GOAL-008 self 审计（A-003）+ 冻结 I-008-001（D-003）
+
+- `GOAL-008` 按用户裁决补同 scope **self 审计（A-003 · pass）**：立项、I-005/D-013 方案边界与 A-001/A-002 响应闭合证据经 `/govern`（self）复核成立；P-004 §3.1 同 scope self 覆盖闭环。
+- **`I-008-001` → verified（D-003 + [I-008-001-engineering-contract.md](../GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md) v1.0.0）**：冻结 env 键全集与 dev/prod、health/启动验证、Compose 服务/镜像/DB volume/探针、SPA fallback 与 `/api` 反代、依赖/超时/失败行为、CI 入口与验收清单 C-001～C-007（S1/S2 方案冻结门禁解除）。
+- **未做**：未实施 S1/S2；未运行应用/测试/Docker；未勾选检查点；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
+- **计划（非事实）**：实施 S1（env 清单 + health/启动验证 + dev/prod 区分，对照 C-001/C-002）→ S2（Dockerfile × 2 + compose.yaml + nginx 反代 + CI smoke 入口，对照 C-003～C-007）；`I-008-002` 仍阻断 S3/S4。
