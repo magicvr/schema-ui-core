@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.8.2
+version: 0.8.3
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -21,7 +21,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (2/5)
 ├── GOAL-003-r1-default-render-path [done] R1 · 默认 Renderer 主路径与示例降级 (4/4)
 ├── GOAL-004-r1-representative-node-pages [done] R1 · 代表性 Node 页面与回归证据 (5/5)
 ├── GOAL-005-r2-auth-session [done] R2 · 真实认证与请求级身份 (6/6)
-└── GOAL-006-r3-persistent-rbac-menu [active] R3 · 持久化 RBAC、菜单投影与版本迁移 (1/6)
+└── GOAL-006-r3-persistent-rbac-menu [active] R3 · 持久化 RBAC、菜单投影与版本迁移 (2/6)
 ```
 
 ## 状态表
@@ -33,6 +33,6 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (2/5)
 | `GOAL-003-r1-default-render-path` | R1 · 默认 Renderer 主路径与示例降级 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-02 |
 | `GOAL-004-r1-representative-node-pages` | R1 · 代表性 Node 页面与回归证据 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-02 |
 | `GOAL-005-r2-auth-session` | R2 · 真实认证与请求级身份 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
-| `GOAL-006-r3-persistent-rbac-menu` | R3 · 持久化 RBAC、菜单投影与版本迁移 | `GOAL-001-production-admin-foundation` | `active` | `1/6` | 2026-08-02 |
+| `GOAL-006-r3-persistent-rbac-menu` | R3 · 持久化 RBAC、菜单投影与版本迁移 | `GOAL-001-production-admin-foundation` | `active` | `2/6` | 2026-08-02 |
 
-> Root `2/5` 由五个等权纲领检查点派生（R1、R2 已勾选）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 1/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1 已实现（D-004：migration runner + `schema_migrations` + `0001/0002` 迁移链 + pre-v0002 恢复快照；store 12 个迁移/恢复用例与全仓 API 回归通过，`I-006-001` 未重开）；S2～S6 尚未实现或审计，Root 仍为 `active / 2/5`。
+> Root `2/5` 由五个等权纲领检查点派生（R1、R2 已勾选）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 2/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1 已实现（D-004：migration runner + `schema_migrations` + `0001/0002` 迁移链 + pre-v0002 恢复快照；store 12 个迁移/恢复用例与全仓 API 回归通过，`I-006-001` 未重开）；S2 已实现（D-005：阶段 B 终态规范化权威读 + 双写 + 集合核对，`normalize_test.go` 5 用例，F-002 S2 部分闭合；A-001 independent pass 已响应，F-003 fixed、F-001 与 F-002 矩阵部分 deferred 至 S6）；S3～S6 尚未实现或审计，Root 仍为 `active / 2/5`。

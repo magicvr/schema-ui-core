@@ -490,6 +490,40 @@ func migrate0002(tx *sql.Tx) error {
 // digits, underscore or hyphen.
 var roleKeyRe = regexp.MustCompile(`^[a-z][a-z0-9_-]*$`)
 
+// ensureRole idempotently creates the derived role row for a stable role key
+// (system=0 until the S3 seed upgrades known roles). It is shared by 0002
+// backfill, CreateUser and seedAdmin so the user_roles FK never dangles.
+func ensureRole(tx *sql.Tx, key string, now int64) error {
+	if _, err := tx.Exec(
+		`INSERT INTO roles (id, key, name, system, created_at, updated_at)
+		 VALUES (?, ?, ?, 0, ?, ?)
+		 ON CONFLICT(id) DO NOTHING`,
+		"role-"+key, key, key, now, now,
+	); err != nil {
+		return fmt.Errorf("ensure role %s: %w", key, err)
+	}
+	return nil
+}
+
+// linkUserRole idempotently links a user to a role, creating the role row first.
+// It is used by 0002 backfill, CreateUser and seedAdmin (阶段 A/B double-write).
+func linkUserRole(tx *sql.Tx, userID, key string, now int64) error {
+	if !roleKeyRe.MatchString(key) {
+		return fmt.Errorf("invalid role key %q", key)
+	}
+	if err := ensureRole(tx, key, now); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(
+		`INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)
+		 ON CONFLICT(user_id, role_id) DO NOTHING`,
+		userID, "role-"+key,
+	); err != nil {
+		return fmt.Errorf("link user %s role %s: %w", userID, key, err)
+	}
+	return nil
+}
+
 func backfillRoles(tx *sql.Tx) error {
 	rows, err := tx.Query(`SELECT id, roles FROM users`)
 	if err != nil {
@@ -515,19 +549,8 @@ func backfillRoles(tx *sql.Tx) error {
 				continue // dedupe within a user's roles list
 			}
 			seen[key] = true
-			roleID := "role-" + key
-			if _, err := tx.Exec(
-				`INSERT INTO roles (id, key, name, system, created_at, updated_at)
-				 VALUES (?, ?, ?, 0, ?, ?)
-				 ON CONFLICT(id) DO NOTHING`,
-				roleID, key, key, now, now); err != nil {
-				return fmt.Errorf("backfill user %s role %s: %w", id, key, err)
-			}
-			if _, err := tx.Exec(
-				`INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)
-				 ON CONFLICT(user_id, role_id) DO NOTHING`,
-				id, roleID); err != nil {
-				return fmt.Errorf("backfill user %s role %s relation: %w", id, key, err)
+			if err := linkUserRole(tx, id, key, now); err != nil {
+				return fmt.Errorf("backfill user %s: %w", id, err)
 			}
 		}
 	}

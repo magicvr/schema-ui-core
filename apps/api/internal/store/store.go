@@ -86,61 +86,173 @@ func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 // Close releases the underlying database handle.
 func (s *Store) Close() error { return s.db.Close() }
 
-// SeedAdmin inserts the bootstrap admin user when no users exist. It is
-// idempotent: once any user exists, it is a no-op.
+// seedAdmin ensures the bootstrap admin user (with roles admin + editor) and its
+// normalized role relations exist. It is idempotent: it never overwrites the
+// password or other user fields of an existing admin, and the double-write
+// closes the S1 fresh-DB intermediate state where 0002's backfill ran before the
+// seed user was inserted (GOAL-006 D-004).
 func (s *Store) seedAdmin(username, passwordHash string) error {
-	var count int
-	if err := s.db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
-		return fmt.Errorf("count users: %w", err)
-	}
-	if count > 0 {
-		return nil
-	}
-	now := time.Now().UTC()
-	roles, err := json.Marshal([]string{"admin", "editor"})
+	tx, err := s.db.Begin()
 	if err != nil {
-		return fmt.Errorf("marshal seed roles: %w", err)
+		return fmt.Errorf("begin seed admin: %w", err)
 	}
-	_, err = s.db.Exec(
-		`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		"user-admin", username, "Admin", string(roles), passwordHash, now.Unix(), now.Unix(),
-	)
-	if err != nil {
-		return fmt.Errorf("seed admin: %w", err)
+	defer tx.Rollback()
+	now := time.Now().UTC().Unix()
+
+	var id string
+	err = tx.QueryRow(`SELECT id FROM users WHERE username = ?`, username).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		roles, err := json.Marshal([]string{"admin", "editor"})
+		if err != nil {
+			return fmt.Errorf("marshal seed roles: %w", err)
+		}
+		if _, err := tx.Exec(
+			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			"user-admin", username, "Admin", string(roles), passwordHash, now, now,
+		); err != nil {
+			return fmt.Errorf("seed admin: %w", err)
+		}
+		id = "user-admin"
+	} else if err != nil {
+		return fmt.Errorf("lookup seed admin: %w", err)
+	}
+
+	for _, key := range []string{"admin", "editor"} {
+		if err := linkUserRole(tx, id, key, now); err != nil {
+			return fmt.Errorf("seed admin role %s: %w", key, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit seed admin: %w", err)
 	}
 	return nil
 }
 
-// CreateUser inserts a new user.
+// CreateUser inserts a new user. Since GOAL-006 阶段 B the legacy roles JSON and
+// the normalized user_roles relation are written together in one transaction so
+// the double-read compare in UserByID/UserByUsername never observes a drift.
+// Roles are deduped before the JSON is stored so the two sources stay set-equal.
 func (s *Store) CreateUser(u User) error {
-	roles, err := json.Marshal(u.Roles)
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin create user: %w", err)
+	}
+	defer tx.Rollback()
+	now := time.Now().UTC().Unix()
+
+	roles := dedupeKeys(u.Roles)
+	rolesJSON, err := json.Marshal(roles)
 	if err != nil {
 		return fmt.Errorf("marshal roles: %w", err)
 	}
-	_, err = s.db.Exec(
+	if _, err := tx.Exec(
 		`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.Username, u.Name, string(roles), u.PasswordHash, u.CreatedAt.Unix(), u.UpdatedAt.Unix(),
-	)
-	if err != nil {
+		u.ID, u.Username, u.Name, string(rolesJSON), u.PasswordHash, u.CreatedAt.Unix(), u.UpdatedAt.Unix(),
+	); err != nil {
 		return fmt.Errorf("insert user: %w", err)
+	}
+	for _, key := range roles {
+		if err := linkUserRole(tx, u.ID, key, now); err != nil {
+			return fmt.Errorf("create user %s role %s: %w", u.ID, key, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit create user: %w", err)
 	}
 	return nil
 }
 
 // UserByUsername fetches a user by unique username.
 func (s *Store) UserByUsername(username string) (*User, error) {
-	return s.scanUser(s.db.QueryRow(
+	return s.userWithRoles(s.db.QueryRow(
 		`SELECT id, username, name, roles, password_hash, created_at, updated_at
 		 FROM users WHERE username = ?`, username))
 }
 
 // UserByID fetches a user by primary key.
 func (s *Store) UserByID(id string) (*User, error) {
-	return s.scanUser(s.db.QueryRow(
+	return s.userWithRoles(s.db.QueryRow(
 		`SELECT id, username, name, roles, password_hash, created_at, updated_at
 		 FROM users WHERE id = ?`, id))
+}
+
+// userWithRoles reads the persisted row and reconciles the two role sources
+// (GOAL-006 阶段 B): the legacy roles JSON must be set-equal to the normalized
+// user_roles relation, otherwise a diagnostic error is returned instead of a
+// silently inconsistent identity. On agreement the normalized roles (ordered by
+// role key ascending) are the authoritative read value. The users.roles column
+// is retained until an explicit later migration removes it.
+func (s *Store) userWithRoles(row *sql.Row) (*User, error) {
+	u, err := s.scanUser(row)
+	if err != nil {
+		return nil, err
+	}
+	norm, err := s.rolesForUser(u.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !setEqual(u.Roles, norm) {
+		return nil, fmt.Errorf("store: user %s role mismatch: legacy %v normalized %v", u.ID, u.Roles, norm)
+	}
+	u.Roles = norm
+	return u, nil
+}
+
+// rolesForUser returns a user's normalized roles ordered by role key ascending.
+func (s *Store) rolesForUser(userID string) ([]string, error) {
+	rows, err := s.db.Query(
+		`SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+		 WHERE ur.user_id = ? ORDER BY r.key`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query normalized roles: %w", err)
+	}
+	defer rows.Close()
+	var keys []string
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			return nil, fmt.Errorf("scan normalized role: %w", err)
+		}
+		keys = append(keys, k)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("query normalized roles: %w", err)
+	}
+	return keys, nil
+}
+
+// setEqual reports whether a and b hold the same multiset of strings.
+func setEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]int, len(a))
+	for _, v := range a {
+		m[v]++
+	}
+	for _, v := range b {
+		m[v]--
+		if m[v] < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// dedupeKeys returns keys with duplicates removed, preserving first-occurrence
+// order.
+func dedupeKeys(keys []string) []string {
+	seen := make(map[string]bool, len(keys))
+	out := make([]string, 0, len(keys))
+	for _, k := range keys {
+		if !seen[k] {
+			seen[k] = true
+			out = append(out, k)
+		}
+	}
+	return out
 }
 
 func (s *Store) scanUser(row *sql.Row) (*User, error) {

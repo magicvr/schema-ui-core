@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-006
@@ -13,7 +13,7 @@ version: 0.2.0
 
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
-| A-001 | independent | 2026-08-02 | S1 execution-facts + 目标定义/信息门禁 | pass | open（无 required finding；recommended 待 `/govern` 择要响应） |
+| A-001 | independent | 2026-08-02 | S1 execution-facts + 目标定义/信息门禁 | pass | responded（recommended：F-001/F-002 deferred → S2/S6，F-003 fixed） |
 
 ## 当前审计边界
 
@@ -111,3 +111,30 @@ version: 0.2.0
 
 本意见 `source: independent`，**不修改**目标 `status` / 检查点 / 派生 `progress` / 方案正文 / `goal-tree`。  
 响应、finding 闭合与阶段推进由用户通过 **`/govern`** 处理。
+
+---
+
+## 响应 A-001（2026-08-02 · /govern）
+
+- **模式**：response
+- **响应意见**：A-001（independent · verdict `pass` · 无 required）
+- **裁决**：采纳 `pass` 结论与证据认定；三项 recommended 按用户裁决处置如下。
+
+### 关闭证据表
+
+| Finding | 状态 | 处置 / 证据路径 |
+|---------|------|-----------------|
+| F-001 · recommended · 低 | **deferred**（open 跟踪） | 用户裁决延期至 **S6（或下一次迁移相关改动）** 前补 ledger=`(1,3)` 缺中间版本用例，增强 `validateApplied` 该分支的回归保护；不阻断 S1 事实认定与 S2 实施。 |
+| F-002 · recommended · 低 | **deferred**（open 跟踪；S2 部分已闭合） | 用户裁决延期：**S2** 已补齐 `user_roles` FK / RESTRICT / CASCADE 正反断言（`TestUserRolesFKAndCascade`，`normalize_test.go`）；完整 V-MIG-04 的 unique / CASCADE\|RESTRICT / 反向索引矩阵仍在 **S6** 回归闭合。不把「DDL 已写出」当作已验证行为。 |
+| F-003 · recommended · 低 | **fixed** | `02-execution.md` S1 节表述已由「路径经驱动绑定，不经 shell」修正为「驱动内 SQL 字面量转义（单引号转义），不经 shell」；实现（`snapshotPreV0002`）与行文一致。 |
+
+### 仍开放项
+
+- F-001 保持 open 跟踪至 **S6（或下一次迁移相关改动）**。
+- F-002 的 **S2 部分已闭合**（`user_roles` FK / RESTRICT / CASCADE 断言，`TestUserRolesFKAndCascade`）；完整 V-MIG-04 矩阵仍 open 至 **S6**。
+- 均为 `recommended`，不构成 required 门禁，不阻断推进。
+- 无 high / required 开放项。
+
+### 冲突裁决
+
+- 无冲突：本目标此前无正式意见，A-001 为唯一 independent 条目；无同范围相反 verdict。

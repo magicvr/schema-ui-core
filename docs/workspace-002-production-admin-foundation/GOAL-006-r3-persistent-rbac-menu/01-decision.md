@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策 · GOAL-006
@@ -78,3 +78,14 @@ version: 0.3.0
   3. 全新库在 `seedAdmin` 之前完成 0002 回填，`user_roles` 为空属预期中间态，由 S2 双写与 S3 增量种子闭合。
 - **理由**：成功标准 S1 的"升级前可恢复数据库副本"需要一个真实的数据变换迁移来产生与验证快照；D-002 §2.5 将快照固定命名为 `pre-v0002`，因此 0002 必须已在迁移链内。`0002` 只在 0001 之后运行，不影响空库 bootstrap；0002 不涉及任何对外读路径，未抢先占用 S2 的范围。
 - **未选方案**：**S1 只交付 runner + 0001，0002 推迟到 S2**——pre-v0002 快照将无可验证的迁移目标，S1 的可恢复起点标准无法在代码层面达成。
+
+## D-005 · S2 直接交付阶段 B 终态（规范化权威读 + 双写 + 集合核对）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. S2 不单独落「阶段 A」代码态，直接实现阶段 B 终态：`UserByID/UserByUsername` 以规范化关系为权威读值并按 role key 升序输出；legacy JSON 与规范化关系做集合比对，不一致返回可诊断错误。
+  2. `CreateUser` 与 `seedAdmin` 在单事务内双写 legacy JSON 与 `user_roles`；输入 roles 先去重，保证两源集合一致；派生 `role-<key>`（system=0）按需幂等创建，供 0002 回填 / CreateUser / seedAdmin 共用。
+  3. `user_roles` FK / RESTRICT / CASCADE 断言随 S2 落测试（F-002 的 S2 部分闭合）；完整 V-MIG-04 unique / CASCADE|RESTRICT / 反向索引矩阵仍留 S6。
+- **理由**：用户确认「直接交付 B 终态」。阶段 A 的双写+核对行为在 B 态下仍然生效（集合比对常开，分歧即报错），无需维护瞬态代码态与第二次回归；双写保证读路径永不观察到漂移。seedAdmin 双写同时闭合 D-004 承认的全新库 `user_roles` 空中间态。
+- **未选方案**：**先 A 后 B 两步落码**——同一检查点内多一次改动与回归，且阶段 A 的 legacy 权威读只服务过渡，不构成交付价值。

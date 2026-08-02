@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-006
@@ -39,8 +39,20 @@ version: 0.3.0
 - **migration runner（`migrate.go` 新增）**：编译期迁移清单 `0001 r2_baseline` / `0002 rbac_expand`；`schema_migrations` 台账（单调整数 version、唯一 name、64 位 SHA-256 checksum、Unix 秒 applied_at）。启动时按连续前缀校验：未知版本、缺失中间版本、name 不匹配、checksum 漂移均 fail closed。每个迁移在单事务内完成 DDL + 数据变换 + 台账插入，任一步失败整体回滚。
 - **0001 baseline**：空库在一个 bootstrap 事务内创建 `users`/`refresh_tokens`/`idx_refresh_tokens_user_id` + 台账并登记；既有无台账 R2 库先经 `sqlite_master`/`table_info`/`foreign_key_list`/`index_list` 指纹核对再建台账登记，部分结构/缺列/未知结构回滚且不留下空台账。
 - **0002 rbac_expand**：单事务创建 `roles`/`user_roles`/`permissions`/`role_permissions`/`menu_items`/`role_menu_items` 及反向索引；按 `^[a-z][a-z0-9_-]*$` 校验并回填每个 `users.roles`（派生 id `role-<key>`、用户内去重）；非数组、非法 key 或约束冲突使 0002 整体回滚（0001 已提交不受影响）。
-- **pre-v0002 恢复快照**：对非空文件库，在应用 0002 前用 `VACUUM INTO` 产生 `<db>.pre-v0002-<UTC>.sqlite`（路径经驱动绑定，不经 shell），并对快照做 `integrity_check=ok`；迁移后主库另跑 `integrity_check=ok` 与 `foreign_key_check` 无违规行。
+- **pre-v0002 恢复快照**：对非空文件库，在应用 0002 前用 `VACUUM INTO` 产生 `<db>.pre-v0002-<UTC>.sqlite`（驱动内 SQL 字面量转义——单引号转义、不经 shell），并对快照做 `integrity_check=ok`；迁移后主库另跑 `integrity_check=ok` 与 `foreign_key_check` 无违规行。
 - **store.go 收敛**：移除旧的 `CREATE TABLE IF NOT EXISTS` `schema` 常量与 `migrate()`；`Store` 新增 `path` 字段；`Open` 签名与 `seedAdmin` 行为不变（启动调用与错误返回契约保持）。
 - **证据**：`go test ./internal/store/ -count=1` 12 个用例全过（`TestMigrateFreshDB`、`TestMigrateExistingR2DB`〔含 pre-v0002 快照可新路径打开、原 users/refresh 查询复现〕、`TestMigrateExistingR2DedupeRoles`、`TestMigrateFailClosed{UnknownVersion,MissingIntermediate,ChecksumDrift,PartialBaseline,InvalidRoles}`、`TestForeignKeyEnabled`）；`go test ./...` 全仓 API 通过；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：全新临时库启动后台账 {1,2}、9 张用户表、admin 种子存在、`integrity_check=ok`、`/healthz` 正常。
 - **边界**：0002 的 DDL/回填作为 S1 迁移链交付（pre-v0002 快照依赖其存在，D-002 §2.5）；S2 保留阶段 A/B 读路径切换（规范化双写、集合比对、权威读）——本轮未实现。全新库的 `user_roles` 在 seedAdmin 前回填为空属中间态，由 S2 双写与 S3 种子闭合。
 - **检查点**：S1 成功标准已勾选；派生进度 `0/6 → 1/6`。S2～S6 尚未实现或审计，`status` 保持 `active`。
+
+## 2026-08-02 · S2 规范化 RBAC 两阶段兼容实施
+
+响应 A-001 后按用户确认「直接交付 B 终态」实施 S2（D-002.5 阶段 A/B；I-006-001 §5、§7 V-MIG-05）。改动见 `apps/api/internal/store/`。
+
+- **读路径（阶段 B 终态）**：`UserByID/UserByUsername` 经 `userWithRoles` 读取——取 legacy JSON 与 join `user_roles`+`roles` 的规范化角色做集合比对，不一致返回可诊断错误（双读核对，fail loudly）；一致时以规范化关系为权威读值、按 role key 升序输出。`account.User {id,name,roles}` 形状、`refresh_tokens.user_id`、JWT subject 与密码字段均不变；旧 `users.roles` 列保留（删除属后续显式迁移）。
+- **写路径（阶段 A/B 双写）**：`CreateUser` 单事务写 legacy JSON 与 `user_roles`（输入 roles 先去重，保证两源集合一致）；`seedAdmin` 幂等确保 admin+editor 关系，闭合 D-004 点出的 S1 全新库 `user_roles` 空中间态，且不覆盖已有密码。
+- **派生 role 自建**：新增 `ensureRole`/`linkUserRole` 共享助手，按需幂等创建 `role-<key>`（system=0），供 0002 回填、CreateUser、seedAdmin 共用，避免 S3 种子前 `user_roles` FK 悬空；0002 `backfillRoles` 重构复用该助手。
+- **F-002（S2 部分）闭合**：`TestUserRolesFKAndCascade` 断言 `user_roles` FK（未知 role 拒绝）、RESTRICT（在用 role 删除拒绝）、CASCADE（删用户级联清理）；完整 V-MIG-04 unique/CASCADE|RESTRICT/反向索引矩阵仍留 S6。
+- **证据**：新增 `normalize_test.go` 5 用例（`TestCreateUserDoubleWritesRoles`、`TestNormalizedReadSortedByKey`、`TestReadDetectsRoleMismatch`、`TestSeedAdminDoubleWrites`、`TestUserRolesFKAndCascade`）全过；`go test ./...` 全仓 API 通过（auth/account/handler R2 契约保持）；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：全新库 `admin/admin` 登录成功，`user.roles=["admin","editor"]` 来自规范化源（升序），seed `user_roles=2 roles=2`（gap 闭合），`integrity_check=ok`。
+- **边界**：S2 只切读路径与双写；权限/菜单 grant 与稳定角色升级（system=1）属 S3 增量种子，本轮未实现。
+- **检查点**：S2 成功标准已勾选；派生进度 `1/6 → 2/6`。S3～S6 尚未实现或审计，`status` 保持 `active`。
