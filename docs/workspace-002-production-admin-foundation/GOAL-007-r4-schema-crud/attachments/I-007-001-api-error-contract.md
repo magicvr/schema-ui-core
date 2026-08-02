@@ -5,7 +5,7 @@ doc_type: info-collection
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-007-r4-schema-crud
-version: 0.1.0
+version: 0.2.0
 related_info: I-007-001
 related_decision: D-002
 ---
@@ -14,6 +14,7 @@ related_decision: D-002
 
 > **结论**：本附件与 D-002 关闭 `I-007-001`，并完成成功标准 **S1**（契约冻结）。以下字段、端点、HTTP status、稳定 `code` 与正反矩阵是 R4 实施输入，**不是**已交付的 create/SQLite 产品事实。
 > **扫描日期**：2026-08-02。工作区 `shared_materials_catalog: none`；事实来自本仓库代码、测试与 Root [I-004-schema-crud-collection.md](../../GOAL-001-production-admin-foundation/attachments/I-004-schema-crud-collection.md)。
+> **修订（v0.2.0 · 响应 A-001 F-001）**：`updatedAt` 精度由 RFC3339 秒级统一为**含毫秒**；「严格晚于」断言保留并以单调钳制保证确定性。修订决策见 D-004。
 
 ## 1. 当前可继承基线
 
@@ -39,7 +40,7 @@ related_decision: D-002
 | `name` | string | 客户端 create 必填；patch 可选 | trim 后非空 |
 | `status` | string | 客户端 create 必填；patch 可选 | trim 后非空；**不做枚举白名单**（与现 PATCH 一致；种子值可为 `active`/`archived`/`pending`） |
 | `owner` | string | 客户端 create 必填；patch 可选 | trim 后非空 |
-| `updatedAt` | string（RFC3339） | **仅服务端** | UTC；create 时写入；每次成功 update 刷新为 `time.Now().UTC()`；客户端不得写入 |
+| `updatedAt` | string（RFC3339 **含毫秒**） | **仅服务端** | UTC；create 时写入；每次成功 update 刷新为 `time.Now().UTC()`；客户端不得写入。格式固定 `2006-01-02T15:04:05.000Z07:00`（如 `2026-08-02T03:04:05.123Z`）。**精度**：Unix 毫秒级（DB 存储），同一毫秒内连续更新由单调钳制保证严格递增（见 §3.1） |
 
 ### ID 生成（create）
 
@@ -69,7 +70,7 @@ PATCH 细节（冻结）：
 1. 缺省键 = 不修改该字段；显式 `null` 按 JSON decode 为 Go `nil` 指针 → 不修改（与现 `*string` 语义一致）。
 2. 提供的字符串经 trim 后为空 → `INVALID_PATCH_FIELD`，message 形如 `name must not be empty`。
 3. 未知 JSON 键：当前 decoder 默认忽略；R4 **保持忽略**，不引入 `DisallowUnknownFields`（避免破坏既有客户端）。
-4. 成功后 `updatedAt` 必须严格晚于更新前值（测试已覆盖）。
+4. 成功后 `updatedAt` 必须**严格晚于**更新前值，且随后 GET 一致。**确定性保证**（毫秒精度）：写入时若该行新时间戳 ≤ 前一 `updated_at`，则钳制为 `prev + 1ms`（单调钳制，仅同一毫秒内快速连续更新触发）；禁止人为跳秒/跳毫秒，也不退回 Unix 秒。测试无需 sleep 即可稳定断言严格递增。
 
 ### 3.2 新增 create
 
@@ -136,7 +137,7 @@ Envelope（全 API 一致）：
 | T-API-02 | `q` / `sort` / `order` / `page` 行为 | 已有 | 保持 |
 | T-API-03 | 非法 sort/order/page/pageSize → 400 + 对应 code | 已有 | 保持 |
 | T-API-04 | detail 命中 / `RECORD_NOT_FOUND` | 已有 | 保持 |
-| T-API-05 | PATCH 成功、刷新 `updatedAt`、后续 GET 一致 | 已有 | 持久化后跨进程仍一致（S6） |
+| T-API-05 | PATCH 成功、`updatedAt` **严格晚于**前值（毫秒精度、单调钳制）、后续 GET 一致 | 已有 | 持久化后跨进程仍一致（S6） |
 | T-API-06 | PATCH 空字段 / 非法 JSON / 过大 body → 400 | 已有 | 保持 |
 | T-API-07 | DELETE 204，随后 list 减少且 detail 404 | 已有 | 持久化后保持 |
 | T-API-08 | 匿名 PATCH/DELETE/POST → 401 `UNAUTHENTICATED` | 写已有；POST 待加 | 必测 |
@@ -151,7 +152,7 @@ Envelope（全 API 一致）：
 ## 6. 与 I-007-002 的接口
 
 - Handler 不再持有进程内 `[]record` 作为生产路径；读写经 store repository（见 I-007-002）。
-- JSON `updatedAt` 仍为 RFC3339；DB 列可为 Unix 秒，映射层负责转换。
+- JSON `updatedAt` 为 RFC3339 **含毫秒**；DB 列 Unix 毫秒，映射层负责转换（见 I-007-002 v0.2.0）。
 - 生产默认路径必须在进程重启后仍能通过 T-API-05/07/10；证明方式由 I-007-004 冻结。
 
 ## 7. 证据索引

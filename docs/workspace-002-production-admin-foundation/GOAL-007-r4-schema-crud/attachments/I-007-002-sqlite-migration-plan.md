@@ -5,7 +5,7 @@ doc_type: info-collection
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-007-r4-schema-crud
-version: 0.1.0
+version: 0.2.0
 related_info: I-007-002
 related_decision: D-003
 ---
@@ -14,6 +14,7 @@ related_decision: D-003
 
 > **结论**：本附件与 D-003 关闭 `I-007-002`，并完成成功标准 **S2**（结构/迁移/种子冻结）。以下 DDL、迁移版本、seed 与恢复矩阵是 S3 持久化实施输入，**不是**已执行的数据库或代码事实。
 > **扫描日期**：2026-08-02。继承 R3 迁移 runner 不变量（GOAL-006 D-002 / `apps/api/internal/store/migrate.go`）。
+> **修订（v0.2.0 · 响应 A-001 F-001）**：`updated_at` 存储精度由 Unix **秒** 提升为 Unix **毫秒**；seed 时间戳同步为毫秒。修订决策见 D-004。
 
 ## 1. 当前兼容基线（必须保持）
 
@@ -51,7 +52,7 @@ CREATE INDEX idx_records_owner ON records(owner);
 |----|------|----------|
 | `id` | TEXT PK | JSON `id` |
 | `name` / `status` / `owner` | TEXT NOT NULL + trim 非空 CHECK | 同名 JSON 字段；应用层仍做 trim/校验（与 CHECK 双保险） |
-| `updated_at` | INTEGER Unix **秒** UTC | JSON `updatedAt` RFC3339（`time.Unix(sec,0).UTC().Format(time.RFC3339)`） |
+| `updated_at` | INTEGER Unix **毫秒** UTC | JSON `updatedAt` RFC3339 **含毫秒**（`time.UnixMilli(ms).UTC().Format("2006-01-02T15:04:05.000Z07:00")`） |
 
 ### 约束与删除语义
 
@@ -94,7 +95,7 @@ CREATE INDEX idx_records_owner ON records(owner);
 |----|------|
 | 触发 | `Open(..., seedAdmin=true)` 且 migrate 成功后；建议顺序：`seedAdmin` → `seedRBAC` → **`seedRecords`** |
 | 策略 | **仅当 `records` 表行数为 0** 时插入 8 条演示数据；行数 >0 则整段跳过 |
-| 数据 | 与现 `staticRecords()` 对齐：`rec-1`…`rec-8`，相同 name/status/owner，`updated_at` 对应 `2026-07-31T00:00:00Z` 起每条 +11h 的 Unix 秒 |
+| 数据 | 与现 `staticRecords()` 对齐：`rec-1`…`rec-8`，相同 name/status/owner，`updated_at` 对应 `2026-07-31T00:00:00Z` 起每条 +11h 的 Unix **毫秒** |
 | 幂等 | 空表→插入一次；非空（含用户 create/delete 后）→不改写、不补删 |
 | 事务 | 单事务插入 8 行；失败回滚 |
 | `seedAdmin=false` | 不 seed records（与现「仅迁移」测试语义一致） |
@@ -117,6 +118,8 @@ CREATE INDEX idx_records_owner ON records(owner);
 | 并发 | DB 单写者；**last-write-wins**；不引入 version 列；进程内 mutex 可删 |
 | 错误映射 | store not-found → handler 404 `RECORD_NOT_FOUND`；校验错误在 handler 层先于 store |
 | 生产默认 | 唯一数据源 = SQLite；**禁止**生产配置静默回落 `staticRecords` 切片 |
+
+> **时间戳写路径（v0.2.0 · D-004）**：create/update 写入 `time.Now().UTC()` 的 Unix 毫秒值；若该行新值 ≤ 前一 `updated_at`，先钳制为 `prev + 1`（毫秒）再写，保证 API 层「严格晚于」断言可稳定成立；禁止人为跳秒。
 
 ## 6. 失败恢复与退出静态路径
 

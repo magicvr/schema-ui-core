@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策 · GOAL-007
@@ -40,6 +40,8 @@ version: 0.2.0
 - **理由**：对照现 handler/测试与 Root I-004 M-R4-01～06/08 可完整继承读改删与权限基线；唯一结构性缺口是 create，其 code 与 PATCH 分离可避免前端/测试歧义。不在契约层发明唯一约束或枚举，以免超出当前产品语义。
 - **信息门禁**：`I-007-001` → `verified`；证据 [I-007-001-api-error-contract.md](attachments/I-007-001-api-error-contract.md)。本决策完成 **S1** 契约冻结，并放行 S3 中受 API/错误契约约束的代码变更；不构成 S3 已实现，也不关闭 `I-007-003`/`I-007-004`。
 
+> **修订（2026-08-02 · 响应 A-001 F-001）**：`updatedAt` 时间语义精度由 RFC3339 秒级统一为**含毫秒**（固定 3 位小数）；「严格晚于」断言保留。详见 D-004 与 I-007-001 v0.2.0。
+
 ### 未选方案
 
 - **create 复用 `INVALID_PATCH_BODY/FIELD`**：混淆操作语义，矩阵与前端映射更难维护。
@@ -53,12 +55,14 @@ version: 0.2.0
 - **状态**：accepted
 - **决定**：
   1. 在既有迁移链追加 **`0003` / `records_persist` / transformID `0003:records-persist:v1`**；只创建 `records` 表与 `name`/`updated_at`/`owner` 索引，**不**改写 0001/0002 的 SQL 或 checksum 输入。
-  2. DDL：`id TEXT PK`，`name`/`status`/`owner` TEXT NOT NULL（trim 非空 CHECK），`updated_at INTEGER` Unix 秒；无 FK、无 name 唯一、无 soft-delete。API RFC3339 ↔ DB Unix 秒在 repository 映射。
+  2. DDL：`id TEXT PK`，`name`/`status`/`owner` TEXT NOT NULL（trim 非空 CHECK），`updated_at INTEGER` Unix 毫秒；无 FK、无 name 唯一、无 soft-delete。API RFC3339 含毫秒 ↔ DB Unix 毫秒在 repository 映射。
   3. 迁移 up 只建空表；业务种子走 **`seedRecords`**：在 `seedAdmin=true` 路径于 `seedRBAC` 之后执行；**仅当表行数为 0** 时插入与现 `staticRecords()` 对齐的 8 行（`rec-1`…`rec-8`）；非空则整段跳过，避免撤销用户删除或覆盖变更。
   4. 生产默认唯一数据源为 SQLite repository；废除进程内切片作为生产路径。写并发 = SQLite 单写者 + last-write-wins。Open 签名保持不变。
   5. 非空文件库在应用 pending（含 0003）前必须有一致性快照 + `integrity_check`；checksum 漂移与迁移事务失败 fail closed。T-DB-01～09 为 S3/S6 最低持久化断言。
 - **理由**：复用 R3 runner/ledger/seed 模式可将 records 持久化纳入同一启动路径与恢复口径；空表才 seed 才能同时满足「新库有演示数据」与「删除/更新重启保持」。
 - **信息门禁**：`I-007-002` → `verified`；证据 [I-007-002-sqlite-migration-plan.md](attachments/I-007-002-sqlite-migration-plan.md)。本决策完成 **S2** 结构冻结，并放行 S3 持久化代码变更；不构成 repository 已实现或 S6 重启证据，也不关闭 `I-007-003`/`I-007-004`。
+
+> **修订（2026-08-02 · 响应 A-001 F-001）**：`updated_at` 由 Unix 秒改为 Unix **毫秒**（INTEGER，UTC）；DDL 列语义、seed 数据与 repository 映射见 I-007-002 v0.2.0 与 D-004。
 
 ### 未选方案
 
@@ -66,3 +70,22 @@ version: 0.2.0
 - **按 id 永续 ensure 种子行**：用户 DELETE 后重启会插回，破坏删除持久化与 D-010 重启保持。
 - **保留 handler 进程切片作为生产回落**：无法证明 SQLite 默认路径，且双源状态不一致。
 - **改写 0001/0002 塞入 records**：破坏已部署库 checksum 与 R3 证据链。
+
+## D-004 · 统一 `updatedAt` 精度与断言（响应 A-001 F-001）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. `updated_at` 存储精度由 Unix **秒** 提升为 Unix **毫秒**（INTEGER，UTC）；API `updatedAt` 返回 RFC3339 **含毫秒**（固定 3 位小数，格式 `2006-01-02T15:04:05.000Z07:00`，如 `2026-08-02T03:04:05.123Z`）。
+  2. 保留「每次成功 update 后 `updatedAt` **严格晚于**更新前值」的断言（I-007-001 §3.1 与 T-API-05 语义不变）；create 与每次成功 update 仍写入 `time.Now().UTC()`。
+  3. 严格递增的实现确定性：写入时若该行新时间戳 ≤ 其前一 `updated_at`，则钳制为 `prev + 1ms`（**单调钳制**，仅在同一毫秒内的快速连续更新时触发）；**禁止**整秒/整毫秒跳变，也不退回 Unix 秒。该钳制使读回时间戳仍为本次变更的单调时间，测试无需 sleep 即可稳定断言严格递增。
+  4. seed 数据 `updated_at` 改为与现 `staticRecords()` 对齐的 Unix 毫秒（`2026-07-31T00:00:00Z` 起每条 +11h）。
+  5. 修订范围：D-002（API 时间语义）、D-003（DDL 列精度）与两份 I-007 附件同步更新；`idx_records_updated_at` 索引与 `updatedAt` 排序语义不变。
+- **理由**：响应 A-001 F-001（independent）。`updatedAt` 严格递增是既有 API 契约（`records_test.go` `.After()`）的既定语义，秒级存储使其在同一秒内不可满足；统一到毫秒级使「每次 update 写入 `time.Now().UTC()`」与「严格晚于」同时成立，并保留客户端可检测的同秒变更。生产级基架下秒级 `updatedAt` 过粗。
+- **信息门禁**：`I-007-001`/`I-007-002` 附件更新为 v0.2.0 并继续 `verified`；A-001 F-001 按 `fixed` 闭合（见 03-audit 响应节与 A-002 self 复核）；**S3 实施放行**。
+
+### 未选方案
+
+- **保留秒级 + 断言放宽为非递减**：弱化既有「严格晚于」契约，客户端无法区分同一秒内变更；与 VP-002 生产级语义不符。
+- **人为加整秒/整毫秒跳变**：脱离 `time.Now().UTC()`，A-001 F-001 明确指出不可取。
+- **微秒精度**：与毫秒在本语义等价，但毫秒更贴近常见前端展示粒度且格式确定；微秒可后续按需升级，不在本决策冻结。
