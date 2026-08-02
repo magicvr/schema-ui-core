@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 决策 · GOAL-006
@@ -111,3 +111,14 @@ version: 0.6.0
   3. `StaticDevSession` 对齐 admin 种子权限（records.read + records.write），保持 dev 回退在 S4 门禁下一致。
 - **理由**：D-001 冻结 permission key 与持久化 role-permission 关系判断；身份快照携带权限使 handler gate 无需直接依赖 store/authorizer 接线；读取纳入门禁满足 S4「匿名读写 401」。`PermissionsForUser` 与 S3 种子 grants 同源，viewer 只读、editor 只读、admin 读写自然成立。
 - **未选方案**：**handler 传 store/authorizer 在 gate 内解析**——需为每个受保护 handler 接线依赖；**只对写做 permission gate**——不满足「匿名读 401」的成功标准。
+
+## D-008 · S5 features 投影承载于 /me.features，manifest 加 visibleWhen
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. features 布尔投影由 `GET /api/accounts/me` 的 `features` 字段承载（即 `me.features`，I-006-002 §2 / V-MENU-02），从 `store.FeaturesForUser`（全部登记且 enabled 的菜单 feature key，多角色 OR，未持有为 false）解析；`me` 改为 `meHandler(a)`，dev session 回退解析 `StaticDevSession().Features`。
+  2. 真实 manifest 的 `list-edit-lifecycle`（sidebar → Examples）增加 `visibleWhen: {"when": "$context.features.menu_list_edit_lifecycle == true"}`；页面/route/schema/group 结构保持静态。
+  3. `upstream-fixtures.test.ts` 的 `STATIC_MANIFEST_SHA256` 随新 manifest 更新为 S5 状态。
+- **理由**：Web `loadAccountContext` 从 `/api/accounts/me` 读取 `features` 映射，矩阵以 `/me.features.menu_list_edit_lifecycle` 为投影字段；features 不在登录响应，而在会话恢复路径（`/me`）。投影含全量 key（false 显式），满足「对所有已登记菜单 key 输出布尔值」。
+- **未选方案**：**单独 `/api/accounts/me.features` 路由**——矩阵 V-MENU-02 只要求 `/me` 的 features 字段，独立路由与 Web 读取路径重复；**features 放登录响应**——登录已返回 user，会话恢复由 `/me` 承担。

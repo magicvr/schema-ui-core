@@ -94,7 +94,10 @@
           {
             "pageRef": "list-edit-lifecycle",
             "label": "List + edit",
-            "icon": "pen"
+            "icon": "pen",
+            "visibleWhen": {
+              "when": "$context.features.menu_list_edit_lifecycle == true"
+            }
           },
           {
             "pageRef": "form-controls",

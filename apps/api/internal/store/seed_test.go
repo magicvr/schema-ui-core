@@ -216,3 +216,46 @@ func TestPermissionsForUser(t *testing.T) {
 		t.Fatalf("custom perms = %v, want empty (no grants)", customPerms)
 	}
 }
+
+// V-MENU-01 · FeaturesForUser projects every registered menu feature key: true
+// only when any of the user's roles holds the grant (multi-role OR).
+func TestFeaturesForUser(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "feat.db"), "admin", "hash", true)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer st.Close()
+
+	assert := func(userID string, want bool, label string) {
+		t.Helper()
+		feat, err := st.FeaturesForUser(userID)
+		if err != nil {
+			t.Fatalf("%s features: %v", label, err)
+		}
+		if v, ok := feat["menu_list_edit_lifecycle"]; !ok {
+			t.Fatalf("%s: menu_list_edit_lifecycle missing from %v", label, feat)
+		} else if v != want {
+			t.Fatalf("%s: menu_list_edit_lifecycle = %v, want %v", label, v, want)
+		}
+	}
+
+	assert("user-admin", true, "admin")
+	now := time.Now().UTC()
+	mkUser := func(id, username string, roles []string) {
+		t.Helper()
+		if err := st.CreateUser(User{
+			ID: id, Username: username, Name: username,
+			Roles: roles, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+		}); err != nil {
+			t.Fatalf("create %s: %v", username, err)
+		}
+	}
+	mkUser("u-v", "viewer", []string{"viewer"})
+	mkUser("u-e", "editor", []string{"editor"})
+	mkUser("u-av", "adminviewer", []string{"admin", "viewer"})
+	mkUser("u-0", "norole", nil)
+	assert("u-v", false, "viewer")
+	assert("u-e", false, "editor")
+	assert("u-av", true, "admin+viewer (OR)")
+	assert("u-0", false, "no-role")
+}

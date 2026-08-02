@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 执行记录 · GOAL-006
@@ -86,3 +86,14 @@ A-004 自审（S1/S2 事实 + F-004 闭合 + S3 门禁）`pass` 后，按用户�
 - **验证**：handler 新增 `TestRecordsReadRequiresAuth`（匿名读 401）、`TestRecordsViewerCanReadNotWrite`（viewer 读 200 / 写 403）、`TestRecordsReadDeniedWithoutPermission`（无授权角色读 403）；store 新增 `TestPermissionsForUser`（admin→read+write、viewer→read、无 grant 角色→空）；既有 records 读用例改为 admin 认证读取。`go test ./...` 全仓 API 通过；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：匿名 GET `/api/records` → 401，admin GET/PATCH → 200，login `user.permissions=["records.read","records.write"]`。
 - **边界**：S4 只实现后端读写授权；`features` 菜单投影与 `/api/accounts/me.features` 属 S5；完整恢复/重启/回归证据属 S6。
 - **检查点**：S4 成功标准已勾选；派生进度 `3/6 → 4/6`。S5～S6 尚未实现或审计，`status` 保持 `active`。
+
+## 2026-08-02 · S5 features 菜单投影实施
+
+按用户指令实施 S5（D-003 / I-006-002 矩阵，V-MENU-01～08）。改动见 `apps/api/internal/` 与 `apps/web/`。
+
+- **后端投影**：`store.FeaturesForUser` 对全部登记且 `enabled=1` 的 `menu_items.feature_key` 输出布尔投影（多角色 OR；未持有 grant 的 key 显式 false，key 不含点号）；`auth.Features`（dev session 回退解析 `StaticDevSession().Features`，真实身份走 store）；`StaticDevSession().Features` 增加 `menu_list_edit_lifecycle: true` 对齐 admin grant；`me` 改为 `meHandler(a)`，`/api/accounts/me` 返回完整 `account.Session{user, features}`（`me.features` 字段即 S5 投影，I-006-002 §2 / V-MENU-02）。
+- **真实 manifest**：`apps/web/public/.well-known/schema-ui/app-manifest.json` 的 `list-edit-lifecycle`（sidebar → Examples）增加 `visibleWhen: {"when": "$context.features.menu_list_edit_lifecycle == true"}`；页面/route/schemaUrl/label/icon/group 结构保持静态；`upstream-fixtures.test.ts` 的 `STATIC_MANIFEST_SHA256` 随新 manifest 更新。
+- **验证矩阵**：V-MENU-01 `TestFeaturesForUser`（admin true / viewer false / editor false / admin+viewer OR true / 无角色 false）；V-MENU-02 handler（admin `/me` features true、viewer false、匿名 `401`、dev session true）；V-MENU-03 checked-in manifest 经 `loadAppManifest` 校验并解析；V-MENU-04/05/06 `navigation.test.ts`（admin 显示 `List + edit`、viewer/editor 隐藏、Examples group 不误删、缺失/false/错类型 fail-closed、declaration order 不变）；V-MENU-07 records 401/403/200 矩阵由既有 S4 测试保持；V-MENU-08 全仓 web 443 测试 + `tsc -b` + `vite build` 通过、全仓 API `go test ./...` + `go vet` + `gofmt -l` 干净。
+- **真实服务冒烟**：匿名 `GET /api/accounts/me` → `401`；admin → `features.menu_list_edit_lifecycle: true`。
+- **边界**：S5 只做投影与 manifest gate；前端隐藏不构成安全边界（深链不授权，records API 独立 gate）。完整恢复/重启/回归证据属 S6。
+- **检查点**：S5 成功标准已勾选；派生进度 `4/6 → 5/6`。S6 尚未实现或审计，`status` 保持 `active`。

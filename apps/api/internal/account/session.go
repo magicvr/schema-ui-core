@@ -33,7 +33,8 @@ func StaticDevSession() Session {
 			Permissions: []string{"records.read", "records.write"},
 		},
 		Features: map[string]bool{
-			"beta": true,
+			"beta":                     true,
+			"menu_list_edit_lifecycle": true, // admin grant parity under S5
 		},
 	}
 }

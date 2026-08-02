@@ -217,6 +217,16 @@ func (a *Authenticator) accountFromUser(u *store.User) (account.User, error) {
 	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms}, nil
 }
 
+// Features returns the boolean menu projection for an authenticated identity
+// (GOAL-006 S5). The explicit dev-session fallback resolves to its own static
+// features for parity; real identities resolve from the persisted menu grants.
+func (a *Authenticator) Features(user account.User) (map[string]bool, error) {
+	if a.devSession && user.ID == account.StaticDevSession().User.ID {
+		return account.StaticDevSession().Features, nil
+	}
+	return a.store.FeaturesForUser(user.ID)
+}
+
 // --- request-level identity ---
 
 type ctxKey struct{}

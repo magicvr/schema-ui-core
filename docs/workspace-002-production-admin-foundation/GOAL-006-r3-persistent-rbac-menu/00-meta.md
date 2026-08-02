@@ -5,8 +5,8 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.6.0
-progress: 4/6
+version: 0.7.0
+progress: 5/6
 ---
 
 # GOAL-006 · R3 · 持久化 RBAC、菜单投影与版本迁移
@@ -21,12 +21,12 @@ progress: 4/6
 - [x] **S2 · 规范化 RBAC 与两步兼容**：建立角色/权限/用户关联/菜单 grant 表，回填并双读核对 `users.roles`；切换规范化读写后仍保持 R2 身份与 refresh 契约，旧列不在本步删除。
 - [x] **S3 · 增量幂等种子**：按稳定 key ensure admin、viewer、`records.read`、`records.write`、代表性菜单项及 grants；重复启动无重复关系，不因已有任意用户而跳过关系修复。
 - [x] **S4 · 后端读写授权**：records 读写均经认证和 permission gate；admin 可读写，viewer 可读不可写，匿名读写 `401`，已认证缺权限 `403`。
-- [ ] **S5 · features 菜单投影**：`/api/accounts/me.features` 从持久化菜单 grants 生成布尔投影；真实 manifest 至少一个条目使用 `visibleWhen`，验证 admin/viewer 可见性与空组剪枝。
+- [x] **S5 · features 菜单投影**：`/api/accounts/me.features` 从持久化菜单 grants 生成布尔投影；真实 manifest 至少一个条目使用 `visibleWhen`，验证 admin/viewer 可见性与空组剪枝。
 - [ ] **S6 · 恢复、重启与回归证据**：验证迁移前副本恢复、迁移后 `PRAGMA integrity_check`、身份/授权/菜单/refresh 关键查询、服务重启持久化，以及 API/Web 既有测试、构建与 vet 回归。
 
 ## 派生进度
 
-`progress: 4/6` 由上方六个顺序检查点等权派生。检查点只在实现事实与对应验证齐备后勾选；不得用计划、局部测试或百分比替代门禁和审计。
+`progress: 5/6` 由上方六个顺序检查点等权派生。检查点只在实现事实与对应验证齐备后勾选；不得用计划、局部测试或百分比替代门禁和审计。
 
 ## 信息需求
 

@@ -262,6 +262,39 @@ func (s *Store) PermissionsForUser(userID string) ([]string, error) {
 	return keys, nil
 }
 
+// FeaturesForUser returns the boolean menu projection for a user (GOAL-006 S5 /
+// I-006-002 §3): every registered, enabled menu feature key is present — true
+// when any of the user's roles holds the grant, false otherwise (multi-role
+// OR). The projection is a flat map; feature keys never contain dots.
+func (s *Store) FeaturesForUser(userID string) (map[string]bool, error) {
+	rows, err := s.db.Query(
+		`SELECT m.feature_key, EXISTS(
+			SELECT 1 FROM user_roles ur
+			JOIN role_menu_items rmi ON rmi.role_id = ur.role_id
+			WHERE ur.user_id = ? AND rmi.menu_item_id = m.id
+		 )
+		 FROM menu_items m
+		 WHERE m.enabled = 1
+		 ORDER BY m.feature_key`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query features: %w", err)
+	}
+	defer rows.Close()
+	features := make(map[string]bool)
+	for rows.Next() {
+		var key string
+		var granted bool
+		if err := rows.Scan(&key, &granted); err != nil {
+			return nil, fmt.Errorf("scan feature: %w", err)
+		}
+		features[key] = granted
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("query features: %w", err)
+	}
+	return features, nil
+}
+
 // sameRoleSet reports whether a and b hold the same set of role keys, ignoring
 // order and duplicates (set semantics per I-006-001 §5). A duplicate role key
 // in the legacy JSON is treated as the same role as the deduped relation.

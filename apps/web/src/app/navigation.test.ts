@@ -1,7 +1,12 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { projectNavigation } from "@/app/navigation";
-import { type AppManifest, validateAppManifest } from "@/protocol/app-manifest";
+import {
+  type AppManifest,
+  loadAppManifest,
+  validateAppManifest,
+} from "@/protocol/app-manifest";
 
 function testManifest(): AppManifest {
   return validateAppManifest({
@@ -89,5 +94,53 @@ describe("navigation projection", () => {
     });
     expect(urlResult.user[0]).toMatchObject({ active: true });
     expect(urlResult.user[1]).toMatchObject({ active: false });
+  });
+});
+
+// GOAL-006 S5 · the real checked-in manifest gates list-edit-lifecycle on
+// $context.features.menu_list_edit_lifecycle (V-MENU-03/04/05/06).
+const checkedInManifestBytes = readFileSync(
+  new URL("../../public/.well-known/schema-ui/app-manifest.json", import.meta.url),
+);
+
+describe("GOAL-006 S5 · list-edit-lifecycle menu projection", () => {
+  async function realManifest(): Promise<AppManifest> {
+    return loadAppManifest({
+      fetcher: async () => new Response(checkedInManifestBytes, { status: 200 }),
+    });
+  }
+
+  async function examplesLabels(features: Record<string, boolean>): Promise<string[]> {
+    const manifest = await realManifest();
+    const sidebar = projectNavigation(manifest, "/", { user: { roles: [] }, features }).sidebar;
+    const group = sidebar.find((item) => item.type === "group" && item.label === "Examples");
+    return group?.type === "group" ? group.items.map((child) => child.label) : [];
+  }
+
+  it("shows List + edit for admin and hides it for viewer, keeping the group (V-MENU-04/06)", async () => {
+    expect(await examplesLabels({ menu_list_edit_lifecycle: true })).toEqual([
+      "Data table",
+      "Search + table",
+      "List + edit",
+      "Form controls",
+      "Form with reactions",
+    ]);
+    // viewer: the child is hidden, declaration order and other children remain
+    // (the Examples group is not pruned).
+    expect(await examplesLabels({ menu_list_edit_lifecycle: false })).toEqual([
+      "Data table",
+      "Search + table",
+      "Form controls",
+      "Form with reactions",
+    ]);
+  });
+
+  it("fails closed when the feature is missing or falsy (V-MENU-05)", async () => {
+    expect(await examplesLabels({})).not.toContain("List + edit");
+    expect(await examplesLabels({ menu_list_edit_lifecycle: false })).not.toContain("List + edit");
+    // wrong type also denies: the renderer never surfaces the child.
+    expect(await examplesLabels({ menu_list_edit_lifecycle: "yes" as unknown as boolean })).not.toContain(
+      "List + edit",
+    );
   });
 });
