@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.13.0
+version: 0.14.0
 ---
 
 # 审计台账 · GOAL-008
@@ -22,6 +22,7 @@ version: 0.13.0
 | A-007 | independent | 2026-08-03 | finding-closure · F-002/F-003 关闭证据复审 | pass | responded：pass 采纳；F-002/F-003 `fixed` 维持闭合；本 scope 无开放 required |
 | A-008 | independent | 2026-08-03 | design-plan · I-008-002 fork 复现与 smoke 协议 v0.1.0 合理性 | conditional | responded：F-004 **fixed**（协议 v0.1.1：S4 强制 disposable SM-006 证据）；R-008-001～004 absorbed |
 | A-009 | self | 2026-08-03 | design-plan 复核 · I-008-002 协议 v0.1.1 修订与 F-004 关闭证据 | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1 用户裁决「补 self」） |
+| A-010 | self | 2026-08-03 | execution-facts · S3/S4 实施（QUICKSTART + 独立复现 + smoke.sh + CI 接入） | pass | —；S3/S4 实施向自审（P-002 阶段审计） |
 
 ## 当前审计边界
 
@@ -662,3 +663,52 @@ version: 0.13.0
 - **仍开放**：`I-008-002`（required · 阻断 S3/S4）；`I-008-003`（required · 仅当 S6 实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 2/5`。
 - **下一步**：收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据），随后实施 S3（fork 文档 + 独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；建议对 `I-008-002` 冻结做一次方案冻结审计（self 或 `/audit`）。
 - **证据路径**：本响应节；`03-audit.md` A-005/A-006/A-007；`02-execution` 2026-08-03「响应 A-007」节。
+
+## A-010 · S3/S4 实施向自审（execution-facts · 2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：execution-facts；审计 GOAL-008 **S3**（QUICKSTART fork 文档 + 独立复现记录）与 **S4**（`scripts/smoke.sh` + 本地/CI smoke + disposable `SM-006` 证据）的实施事实，对照 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) **v0.1.1**（§2.2 路径、§3 计时、§4 复现字段、§5 smoke 契约）与成功标准 S3/S4 字面；不审 S5、S6、`I-008-003` 或 Root R5/VP-002 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 一致；Root `GOAL-001-production-admin-foundation`；`shared_materials_catalog: none`。`goal-tree` 与 `00-meta` 同步后一致：GOAL-008 `active / 4/5`。
+- 已复核：根 `QUICKSTART.md`；[R5-S3-REPRO-001](attachments/R5-S3-REPRO-001.md)（含 attempt/source/path/platform/cache precondition/timing/checks/secrets/result 全字段）；[r5-repro-endpoint4.mjs](attachments/r5-repro-endpoint4.mjs) 与截图 [r5-repro-endpoint4.png](attachments/r5-repro-endpoint4.png)；`scripts/smoke.sh`；[r5-smoke-disposable-local.txt](attachments/r5-smoke-disposable-local.txt)；`.github/workflows/r6-basic-matrix.yml` `container-smoke` 修改；`00-meta` S3/S4 行与信息表 `I-008-002`；`01-decision` D-006；I-008-002 协议 v0.1.1；Root D-013 与 I-005 §3/§4。
+- 验证方式：实施时**真实运行**——`docker compose down -v` 后全新 `up -d`（compose 路径）；四终点实测（healthz 200/`status:ok`、login 200 + accessToken 176 字符、`/me` 200 + user + features、Playwright Chromium 浏览器打开 `/list-edit-lifecycle` 标题 + cell `Acme Console`）；`bash scripts/smoke.sh --disposable` → SM-001～006 全 PASS、EXIT=0；非 disposable 默认路径 SM-001～005 PASS + SM-006 SKIP；`go test ./... -count=1`（apps/api）全绿、web `vitest run` 458/458；workflow YAML 解析通过。
+
+### 成果（有证据）
+
+| 审计项 | self 结论与证据 |
+|--------|-----------------|
+| QUICKSTART 覆盖（S3 文档） | **成立**：前置/双路径/四终点/命令行+完整 smoke/接业务齐备；终点 4 明确操作化为 `list-edit-lifecycle`（非 `overview`），对齐 I-008-002 §3.2 R-008-002。 |
+| 独立复现记录（S3 证据） | **成立**：[R5-S3-REPRO-001](attachments/R5-S3-REPRO-001.md) 含协议 §4 最小字段；`compose` 路径；`same-operator-clean-session`（先 `down -v` 清卷、全新 `up -d`，未复用服务/DB）；四终点全 PASS；单次计时 `34.5s ≤ 900s`；浏览器终点由真实 Chromium 驱动（截图+脚本留痕）。 |
+| `scripts/smoke.sh` 契约（S4） | **成立**：SM-001～SM-006 形状、退出码 `0/2/3/4/5/6/70`、`--disposable` 开关、不输出 secret、无开关不 reset，均对齐协议 §5.1/§5.2/§5.3；SM-006 经 `SMOKE_RESTART_CMD` 重启后二次断言「数量不变、同一记录仍在、不重复播种」。 |
+| disposable SM-006 强制证据 | **成立**：本地 Git Bash + Docker 运行 `--disposable` → **SM-006=PASS**（[log](attachments/r5-smoke-disposable-local.txt)）；CI `container-smoke` 以 `--disposable` 调用（runner 每次隔离 project/volume，满足「CI 默认 disposable」）。非 disposable exit 0 未单独用作「种子可重复」关闭证据。 |
+| 状态/进度边界 | **成立**：S3/S4 勾选（`2/5 → 4/5`）与已核实实施事实相符；`I-008-002` 维持 verified（v0.1.1）；`I-008-003` 仍 open（仅 S6）；Root R5 未勾选（`4/5`）；S5 待实施。本 self 不改动任何状态。 |
+
+### Findings
+
+- **无新 required**。
+- **注记（recommended · 非阻断）**：本自审为 `same-operator-clean-session` 复现（协议 §3.3 允许）；建议未来由用户侧或独立执行者做一次真正隔离（不同 shell/checkout）的复现交叉核验；CI `container-smoke` 的 `--disposable` 证据需一次 GitHub Actions 运行记录留痕（当前仅本机 log）。
+
+### 对照成功标准与信息门禁
+
+| 项 | self 结论 |
+|----|-----------|
+| S3 成功标准 | **满足**：QUICKSTART 交付 + ≥1 次独立复现记录，终点 4 登录 + 后台可交互（列表加载），34.5s ≤ 15 分钟。 |
+| S4 成功标准 | **满足**：`scripts/smoke.sh` 交付（healthz→login→`/me`→代表页→种子可重复），本地 smoke 全绿（SM-001～006）+ CI 接入。 |
+| `I-008-002` | verified 维持；实施对照 v0.1.1 判据成立，未把协议修订混为实施证据。 |
+| 关门边界 | S5 未实施；Root R5 与 VP-002 关门不因 S3/S4 自动达成。 |
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-010（/govern · 2026-08-03）
+
+- **verdict 采纳**：`pass` 成立——S3/S4 实施主张与仓库事实一致且可复现（QUICKSTART + 独立复现 34.5s + smoke.sh SM-001～006 + 本地 disposable SM-006=PASS + CI 接入）；无开放 required。
+- **注记处置**：same-operator 复现边界已在记录声明；建议在 S5 阶段或用户侧做一次真正隔离复现交叉核验；CI 运行记录留待 `container-smoke` 首次 GitHub Actions run 后补记。
+- **仍开放**：S5（阶段审计 + Root R5 勾选/关门条件评估）待实施；`I-008-003` open（仅 S6）；Root R5 未勾选（Root 保持 `4/5`）。
+- **下一步**：实施 S5——对 R5 工程化交付做阶段审计（self + 视需要 independent），评估并记录 Root R5 勾选与 Root / VP-002 关门证据口径；建议对 S3/S4 关闭证据做一次 `/audit` finding-closure 复审。
+- **证据路径**：本响应节；`02-execution` 2026-08-03「实施 S3 + S4」节；`01-decision` D-006；`00-meta` S3/S4 行 + `I-008-002`；QUICKSTART.md；`scripts/smoke.sh`；附件 R5-S3-REPRO-001 / r5-repro-endpoint4.* / r5-smoke-disposable-local.txt。

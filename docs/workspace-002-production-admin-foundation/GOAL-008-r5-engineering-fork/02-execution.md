@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.8
+version: 0.1.9
 ---
 
 # 执行记录 · GOAL-008
@@ -100,3 +100,18 @@ version: 0.1.8
 - **`I-008-002` 维持 verified（v0.1.1 权威）**；协议 frontmatter `related_decisions: D-004, D-005` + §7 修订记录。
 - **未做**：未实施 S3/S4；未勾选检查点（保持 `2/5`）；Root R5 未勾选，Root 保持 `active / 4/5`。
 - **计划（非事实）**：实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录，终点 4 = `list-edit-lifecycle` 列表加载）与 S4（`scripts/smoke.sh` + 本地/CI 全绿，含 ≥1 次 disposable `SM-006=PASS` 证据）；S4 完成后建议一次实施向审计。
+
+## 2026-08-03 · 实施 S3 + S4（D-006）
+
+- **S3 · fork 文档与 15 分钟体验**：
+  - 根 [QUICKSTART.md](../../../../QUICKSTART.md) 交付：前置（Go/Node/Docker、依赖缓存不计时）、获取与准备（clone/checkout/`.env`）、双启动路径（A `docker compose` / B 本地双进程）、验收四终点（healthz → login → `/me` → 浏览器 `list-edit-lifecycle` 列表加载 `Acme Console`）、命令行与完整 smoke 用法、接业务指引。终点 4 操作化对齐 I-008-002 §3.2（`list-edit-lifecycle`，非 `overview`）。
+  - **独立复现记录 [R5-S3-REPRO-001](attachments/R5-S3-REPRO-001.md)**（协议 §4 全字段）：`compose` 路径，`same-operator-clean-session`，先 `docker compose down -v` 清卷再全新 `up -d`；四终点全 PASS，单次计时 **34.5s ≤ 900s**（`03:04:45.596Z` 起点 → `03:05:20.141Z` 终点 4）。浏览器终点由 Playwright Chromium 驱动（[r5-repro-endpoint4.mjs](attachments/r5-repro-endpoint4.mjs)），标题 `List + edit lifecycle` + cell `Acme Console` 可见，截图 [r5-repro-endpoint4.png](attachments/r5-repro-endpoint4.png)。
+- **S4 · 可复现验收（`scripts/smoke.sh`）**：
+  - 新建 [scripts/smoke.sh](../../../../scripts/smoke.sh)（bash）：SM-001 参数/工具 → SM-002 readiness（30s）→ SM-003 代理登录 → SM-004 `/me` → SM-005 代表页 `id="root"` → SM-006 种子重复性（仅 `--disposable`，从空 DB 断言 `SMOKE_EXPECTED_SEED_TOTAL`（默认 8）条且含 `SMOKE_RECORD_ID`（默认 `rec-1`）/`Acme Console`，经 `SMOKE_RESTART_CMD` 重启后再次断言不重复播种）；退出码 `0/2/3/4/5/6/70`；不输出 token/password/secret；无 `--disposable` 不得执行种子 reset。
+  - **本机验证（Git Bash + Docker，disposable）**：`bash scripts/smoke.sh --disposable` → `SM-001~006 全 PASS`，`EXIT=0`；log 见 [r5-smoke-disposable-local.txt](attachments/r5-smoke-disposable-local.txt)。非 disposable 默认路径亦验证（SM-001～005 PASS，SM-006 SKIP）。
+  - **CI 接入**：`.github/workflows/r6-basic-matrix.yml` `container-smoke` 新增「Run S4 smoke (SM-001~006, disposable)」step：`SMOKE_USERNAME=admin SMOKE_PASSWORD=ci-admin SMOKE_RECORD_ID=rec-1 SMOKE_EXPECTED_SEED_TOTAL=8 bash scripts/smoke.sh --disposable`（runner 每次为隔离 project/volume → 满足「CI 默认 disposable」）；原 C-006 持久化 step 保留。
+  - 说明：CI step 依赖 runner 上 job 级 `AUTH_JWT_SECRET`/`ADMIN_INITIAL_PASSWORD` 满足 compose fail-closed 插值；本地需在调用 shell 导出密钥。
+- **回归**：`go test ./... -count=1`（apps/api）全绿；web `vitest run` **458/458**、`tsc`/build 未受影响（本轮未改产品代码）；workflow YAML 解析通过。
+- **未做**：未实施 S5（阶段审计与 Root R5 勾选评估）；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root 保持 `active / 4/5`。
+- **已做**：S3/S4 检查点勾选（`2/5 → 4/5`），同步 `00-meta`、`01-decision` D-006、`03-audit`。
+- **计划（非事实）**：实施 S5（对 R5 工程化交付做阶段审计 self + 视需要 independent，评估并记录 Root R5 勾选与 Root / VP-002 关门证据口径）；建议对 S3/S4 实施证据做一次实施向审计（self 或 `/audit`）。

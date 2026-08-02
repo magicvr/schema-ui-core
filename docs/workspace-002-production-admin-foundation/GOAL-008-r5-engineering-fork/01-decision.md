@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.4
+version: 0.1.5
 ---
 
 # 决策 · GOAL-008
@@ -93,3 +93,24 @@ version: 0.1.4
 - **仅把 SM-006 当可选、仍允许非 disposable exit 0 作为 S4 种子关闭证据**：与 A-008 F-004 要求及 S4/D-013 字面「种子可重复」冲突。
 - **暂缓协议修订而直接实施 S4**：会把未冻结的验收判据带入实施，违反「先冻结再编码」。
 - **将 `I-008-002` 短暂回退 collecting**：协议主体与计时/复现字段在 v0.1.0 已可核对且未被证伪；补丁强化 S4 强制力即可维持 verified（A-008 亦未要求回退）。
+
+## D-006 · 实施 S3 fork 文档与 S4 smoke 脚本
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：按 [I-008-002 协议 v0.1.1](attachments/I-008-002-fork-reproduction-protocol.md) 实施 **S3**（fork 文档 + ≥1 次独立复现记录）与 **S4**（`scripts/smoke.sh` + 本地/CI smoke 全绿，含 ≥1 次 disposable `SM-006=PASS` 证据）。
+  - **S3 交付**：根 `QUICKSTART.md` fork 上手段（前置/双启动路径/四终点/命令行与完整 smoke 用法/接业务指引）；独立复现记录 [R5-S3-REPRO-001](attachments/R5-S3-REPRO-001.md)（compose 路径，四终点全 PASS，`34.5s ≤ 900s`）。
+  - **S4 交付**：`scripts/smoke.sh` 实现 SM-001～SM-006 + 退出码 `0/2/3/4/5/6/70` + `--disposable` 安全开关（无该开关不得执行种子 reset；不输出 token/password/secret）；本地 Git Bash + Docker disposable 运行 **SM-006=PASS**（log `r5-smoke-disposable-local.txt`）；CI `.github/workflows/r6-basic-matrix.yml` `container-smoke` 接入 `bash scripts/smoke.sh --disposable`（GitHub Actions 每次 runner 为隔离 project/volume，满足「CI 默认 disposable」）。
+- **依据**：I-008-002 verified（v0.1.1）已解除 S3/S4 信息门禁；Root D-013 终点与 smoke 清单；A-008 F-004（S4 强制 disposable SM-006）；GOAL-008 成功标准 S3/S4。Git Bash（本机 `C:\Program Files\Git\bin\bash.exe`）可用，补足 D-004 记录的 WSL bash 不可用约束。
+- **边界**：
+  - 完整生产运维 / CI-CD 部署流水线仍非目标；S4 不替代 S3 的浏览器可交互验证（SM-005 仅 HTTP + SPA root，浏览器终点由 S3 独立复现承担）。
+  - 复现记录为 `same-operator-clean-session`（协议 §3.3 允许同操作者，须声明独立性）；后续可邀请独立 `/audit` 或用户侧复现交叉核验。
+  - `I-008-003`（S6 操作日志）保持 open；S5 仍待实施。
+- **影响**：S3/S4 检查点勾选（`2/5 → 4/5`）；S5（阶段审计与 Root R5 勾选/关门条件评估）为最后一个核心检查点；Root R5 检查点仍待 GOAL-008 完成证据后勾选。
+- **后续**：S3/S4 实施完成后做一次实施向审计（self 或 `/audit`），再实施 S5。
+
+### 未选方案
+
+- **只做文档、不落地脚本与独立复现**：会留下 S4「种子可重复」无机器判定证据，违反 I-008-002 §5 与 S4 成功标准字面。
+- **在不可用的 WSL bash 上伪造脚本运行结果**：D-004 已记录 WSL bash 失败；改用已验证可用的 Git Bash，不把未运行当已通过。
+- **把 S3 复现记录写成非独立（复用既有服务/DB）**：协议 §3.3 要求隔离 shell/checkout/DB；本轮先 `down -v` 清卷、全新 `up -d`，并声明 `same-operator-clean-session`。
