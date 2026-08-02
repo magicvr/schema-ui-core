@@ -132,6 +132,22 @@ func getJSON(t *testing.T, mux *http.ServeMux, path string) (int, map[string]any
 	return rr.Code, body
 }
 
+// getRecords fetches a records path as the seeded admin (GOAL-006 S4: reads are
+// authenticated and permission-gated, so a Bearer token is required).
+func getRecords(t *testing.T, env *authTestEnv, path string) (int, map[string]any) {
+	t.Helper()
+	req := bearer(t, adminToken(t, env), http.MethodGet, path, "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	var body map[string]any
+	if rr.Body.Len() > 0 {
+		if err := json.NewDecoder(rr.Body).Decode(&body); err != nil {
+			t.Fatalf("decode %q: %v", rr.Body.String(), err)
+		}
+	}
+	return rr.Code, body
+}
+
 func sendJSON(t *testing.T, mux *http.ServeMux, method, path, body string) (int, map[string]any) {
 	t.Helper()
 	var reader *strings.Reader

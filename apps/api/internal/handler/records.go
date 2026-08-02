@@ -43,9 +43,10 @@ type recordList struct {
 
 // recordHandler serves the R5 D-DATA list/detail example API (static data) and
 // the R5 D-ACT edit lifecycle (PATCH/DELETE). State is guarded by a mutex; the
-// MVP has no DB for records, so mutations live in the process. Write routes
-// gate through the R2 request-identity middleware (F-009-006): 401 unauthenticated,
-// 403 non-admin.
+// MVP has no DB for records, so mutations live in the process. All routes go
+// through the request-identity middleware (GOAL-006 S4) and a permission gate:
+// reads require `records.read`, writes require `records.write`. Anonymous → 401,
+// authenticated without the permission → 403.
 type recordHandler struct {
 	mu      sync.RWMutex
 	records []record
@@ -88,24 +89,24 @@ func recordsHandler(mux *http.ServeMux, a *auth.Authenticator) {
 }
 
 func (h *recordHandler) routes(mux *http.ServeMux, a *auth.Authenticator) {
-	mux.Handle("GET /api/records", h.list())
-	mux.Handle("GET /api/records/{id}", h.detail())
+	mux.Handle("GET /api/records", a.Middleware(h.list()))
+	mux.Handle("GET /api/records/{id}", a.Middleware(h.detail()))
 	mux.Handle("PATCH /api/records/{id}", a.Middleware(h.update()))
 	mux.Handle("DELETE /api/records/{id}", a.Middleware(h.delete()))
 }
 
-// writeGate enforces fail-closed authorization on record write routes
-// (F-009-006): the request identity is resolved from the Bearer access token
-// and the caller must hold the admin role. On denial it writes the error
-// response and returns ok=false.
-func writeGate(w http.ResponseWriter, ctx context.Context) (account.User, bool) {
+// requirePermission enforces fail-closed authorization (GOAL-006 S4): the
+// request identity must be present and hold the given permission key, resolved
+// from the persisted role-permission relations at identity load. Anonymous →
+// 401; authenticated without the permission → 403.
+func requirePermission(w http.ResponseWriter, ctx context.Context, permission string) (account.User, bool) {
 	user, ok := auth.IdentityFrom(ctx)
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 		return account.User{}, false
 	}
-	if !account.Allow(`$context.user.roles contains "admin"`, user, nil) {
-		writeError(w, http.StatusForbidden, "FORBIDDEN", "admin role required")
+	if !slices.Contains(user.Permissions, permission) {
+		writeError(w, http.StatusForbidden, "FORBIDDEN", "permission required: "+permission)
 		return account.User{}, false
 	}
 	return user, true
@@ -114,6 +115,9 @@ func writeGate(w http.ResponseWriter, ctx context.Context) (account.User, bool) 
 // list serves GET /api/records with q / sort / order / page / pageSize params.
 func (h *recordHandler) list() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r.Context(), "records.read"); !ok {
+			return
+		}
 		query := r.URL.Query()
 
 		sortField := query.Get("sort")
@@ -190,6 +194,9 @@ func (h *recordHandler) list() http.Handler {
 // detail serves GET /api/records/{id}.
 func (h *recordHandler) detail() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r.Context(), "records.read"); !ok {
+			return
+		}
 		id := r.PathValue("id")
 		h.mu.RLock()
 		rec, ok := findRecord(h.records, id)
@@ -205,7 +212,7 @@ func (h *recordHandler) detail() http.Handler {
 // update serves PATCH /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) update() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := writeGate(w, r.Context()); !ok {
+		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
 			return
 		}
 		id := r.PathValue("id")
@@ -248,7 +255,7 @@ func (h *recordHandler) update() http.Handler {
 // delete serves DELETE /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) delete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := writeGate(w, r.Context()); !ok {
+		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
 			return
 		}
 		id := r.PathValue("id")

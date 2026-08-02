@@ -9,12 +9,6 @@ import (
 	"time"
 )
 
-// recordsMux returns a fully wired mux for public (read) records routes.
-func recordsMux(t *testing.T) *http.ServeMux {
-	t.Helper()
-	return newAuthTestEnv(t).mux
-}
-
 // adminToken logs in as the seeded admin and returns the access token.
 func adminToken(t *testing.T, env *authTestEnv) string {
 	t.Helper()
@@ -22,8 +16,8 @@ func adminToken(t *testing.T, env *authTestEnv) string {
 }
 
 func TestRecordsListDefault(t *testing.T) {
-	mux := recordsMux(t)
-	code, body := getJSON(t, mux, "/api/records")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -51,8 +45,8 @@ func TestRecordsListDefault(t *testing.T) {
 }
 
 func TestRecordsListSearch(t *testing.T) {
-	mux := recordsMux(t)
-	code, body := getJSON(t, mux, "/api/records?q=alice")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records?q=alice")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -69,8 +63,8 @@ func TestRecordsListSearch(t *testing.T) {
 }
 
 func TestRecordsListSortDesc(t *testing.T) {
-	mux := recordsMux(t)
-	code, body := getJSON(t, mux, "/api/records?sort=updatedAt&order=desc")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records?sort=updatedAt&order=desc")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -85,8 +79,8 @@ func TestRecordsListSortDesc(t *testing.T) {
 }
 
 func TestRecordsListPagination(t *testing.T) {
-	mux := recordsMux(t)
-	code, body := getJSON(t, mux, "/api/records?page=2&pageSize=3")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records?page=2&pageSize=3")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -107,14 +101,14 @@ func TestRecordsListPagination(t *testing.T) {
 }
 
 func TestRecordsListInvalidParamsFailClosed(t *testing.T) {
-	mux := recordsMux(t)
+	env := newAuthTestEnv(t)
 	for _, path := range []string{
 		"/api/records?sort=unknown",
 		"/api/records?order=up",
 		"/api/records?page=0",
 		"/api/records?pageSize=abc",
 	} {
-		code, body := getJSON(t, mux, path)
+		code, body := getRecords(t, env, path)
 		if code != http.StatusBadRequest {
 			t.Fatalf("%s: status = %d, want %d", path, code, http.StatusBadRequest)
 		}
@@ -125,8 +119,8 @@ func TestRecordsListInvalidParamsFailClosed(t *testing.T) {
 }
 
 func TestRecordsListPageSizeCap(t *testing.T) {
-	mux := recordsMux(t)
-	code, body := getJSON(t, mux, "/api/records?pageSize=1000")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records?pageSize=1000")
 	if code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", code, http.StatusBadRequest)
 	}
@@ -184,7 +178,8 @@ func TestRecordsUpdateBodyTooLarge(t *testing.T) {
 }
 
 func TestRecordsDetail(t *testing.T) {
-	code, body := getJSON(t, recordsMux(t), "/api/records/rec-3")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records/rec-3")
 	if code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", code, http.StatusOK)
 	}
@@ -194,7 +189,8 @@ func TestRecordsDetail(t *testing.T) {
 }
 
 func TestRecordsDetailNotFound(t *testing.T) {
-	code, body := getJSON(t, recordsMux(t), "/api/records/rec-999")
+	env := newAuthTestEnv(t)
+	code, body := getRecords(t, env, "/api/records/rec-999")
 	if code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", code, http.StatusNotFound)
 	}
@@ -218,7 +214,7 @@ func TestRecordsUpdate(t *testing.T) {
 		t.Fatalf("updated = %v, want name=Hooli Rebrand status=archived", body)
 	}
 	// Persisted: a subsequent GET reflects the patch.
-	_, detail := getJSON(t, env.mux, "/api/records/rec-3")
+	_, detail := getRecords(t, env, "/api/records/rec-3")
 	if detail["name"] != "Hooli Rebrand" {
 		t.Fatalf("detail name = %v, want Hooli Rebrand", detail["name"])
 	}
@@ -228,7 +224,7 @@ func TestRecordsUpdateRefreshesUpdatedAt(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)
 
-	_, before := getJSON(t, env.mux, "/api/records/rec-3")
+	_, before := getRecords(t, env, "/api/records/rec-3")
 	beforeValue, ok := before["updatedAt"].(string)
 	if !ok {
 		t.Fatalf("updatedAt = %v, want string", before["updatedAt"])
@@ -302,11 +298,11 @@ func TestRecordsDelete(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNoContent)
 	}
 	// Removed from the list and detail now 404s.
-	_, list := getJSON(t, env.mux, "/api/records")
+	_, list := getRecords(t, env, "/api/records")
 	if list["total"] != float64(7) {
 		t.Fatalf("total = %v, want 7 after delete", list["total"])
 	}
-	code, _ := getJSON(t, env.mux, "/api/records/rec-3")
+	code, _ := getRecords(t, env, "/api/records/rec-3")
 	if code != http.StatusNotFound {
 		t.Fatalf("detail status = %d, want %d after delete", code, http.StatusNotFound)
 	}
@@ -320,6 +316,62 @@ func TestRecordsDeleteNotFound(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNotFound)
+	}
+}
+
+// GOAL-006 S4 · anonymous read is 401 (reads are now gated too).
+func TestRecordsReadRequiresAuth(t *testing.T) {
+	env := newAuthTestEnv(t)
+	for _, path := range []string{"/api/records", "/api/records/rec-3"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("GET %s status = %d, want 401", path, rr.Code)
+		}
+	}
+}
+
+// GOAL-006 S4 · viewer can read (records.read) but cannot write (no
+// records.write): the gate checks persisted permission keys, not roles.
+func TestRecordsViewerCanReadNotWrite(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.addUser(t, "viewer", "pw", []string{"viewer"})
+	token := env.login(t, "viewer", "pw")
+
+	req := bearer(t, token, http.MethodGet, "/api/records", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("GET status = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	for _, method := range []string{http.MethodPatch, http.MethodDelete} {
+		req := bearer(t, token, method, "/api/records/rec-3", `{"name":"x"}`)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusForbidden {
+			t.Fatalf("%s status = %d, want 403", method, rr.Code)
+		}
+		var body map[string]any
+		_ = jsonDecode(rr, &body)
+		if body["error"] != "FORBIDDEN" {
+			t.Fatalf("%s error = %v, want FORBIDDEN", method, body["error"])
+		}
+	}
+}
+
+// GOAL-006 S4 · an authenticated user whose roles grant no permission is denied
+// on read (records.read missing).
+func TestRecordsReadDeniedWithoutPermission(t *testing.T) {
+	env := newAuthTestEnv(t)
+	// A derived role with no grants: carries no permissions.
+	env.addUser(t, "auditor", "pw", []string{"custom"})
+	token := env.login(t, "auditor", "pw")
+	req := bearer(t, token, http.MethodGet, "/api/records", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("GET status = %d, want 403 (no records.read)", rr.Code)
 	}
 }
 

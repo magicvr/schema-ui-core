@@ -130,7 +130,11 @@ func (a *Authenticator) issue(u *store.User, now time.Time) (string, string, acc
 	if err := a.store.CreateRefreshToken(rt); err != nil {
 		return "", "", account.User{}, err
 	}
-	return access, raw, accountFromUser(u), nil
+	acct, err := a.accountFromUser(u)
+	if err != nil {
+		return "", "", account.User{}, err
+	}
+	return access, raw, acct, nil
 }
 
 // SignAccessToken mints a short-lived HMAC-SHA256 access token whose subject is
@@ -203,8 +207,14 @@ func newID() string {
 	return hex.EncodeToString(b)
 }
 
-func accountFromUser(u *store.User) account.User {
-	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles}
+// accountFromUser builds the identity snapshot, resolving the user's persisted
+// permission keys (GOAL-006 S4: records gates check keys, not role strings).
+func (a *Authenticator) accountFromUser(u *store.User) (account.User, error) {
+	perms, err := a.store.PermissionsForUser(u.ID)
+	if err != nil {
+		return account.User{}, fmt.Errorf("resolve permissions for %s: %w", u.ID, err)
+	}
+	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms}, nil
 }
 
 // --- request-level identity ---
@@ -265,7 +275,16 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "unknown access token subject")
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), accountFromUser(u))))
+		acct, err := a.accountFromUser(u)
+		if err != nil {
+			if a.devSession {
+				a.injectDevSession(w, r, next)
+				return
+			}
+			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), acct)))
 	})
 }
 

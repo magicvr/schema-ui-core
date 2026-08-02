@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 执行记录 · GOAL-006
@@ -76,3 +76,13 @@ A-004 自审（S1/S2 事实 + F-004 闭合 + S3 门禁）`pass` 后，按用户�
 - **验证**：`TestSeedRBACEntitiesAndGrants`（实体存在、system=1、admin 2 项 permission + 1 菜单、editor/viewer 仅 read、records.write 仅 admin）；`TestSeedRBACIncrementalWithExistingUsers`（先 `seedAdmin=false` 建既有用户 → 重开 `seedAdmin=true` 关系补齐、非种子用户字段不变、三次启动无重复）。`go test ./...` 全仓 API 通过；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：全新库 `admin/admin` 登录成功，`roles(system=1)=3`、`permissions=2`、`menu_items=1`、`role_permissions=4`、`role_menu_items=1`、`integrity_check=ok`。
 - **边界**：S3 只建稳定种子关系；后端读写授权 gate（permission 判断）属 S4，本轮未实现；menu 投影与 `/api/accounts/me.features` 属 S5。
 - **检查点**：S3 成功标准已勾选；派生进度 `2/6 → 3/6`。S4～S6 尚未实现或审计，`status` 保持 `active`。
+
+## 2026-08-02 · S4 后端读写授权实施
+
+按用户指令实施 S4（D-001：permission key `records.read`/`records.write`、持久化 role-permission 关系判断，不再按角色字符串）。改动见 `apps/api/internal/`（store / account / auth / handler）。
+
+- **权限解析**：`store.PermissionsForUser` 从 `user_roles → role_permissions → permissions` join 解析用户权限 key（按 key 升序）；`account.User` 新增 `Permissions []string`；`auth.accountFromUser` 在登录 / 刷新 / Bearer 中间件加载身份时解析权限写入快照；`StaticDevSession` 对齐 admin 种子权限（records.read+write）保持 dev 回退一致。
+- **records 全路由门禁**：`GET /api/records` 与 `GET /api/records/{id}` 也走 `a.Middleware` + `requirePermission("records.read")`；`PATCH`/`DELETE` 走 `requirePermission("records.write")`。匿名 → `401 UNAUTHENTICATED`，已认证缺权限 → `403 FORBIDDEN`。废弃按 `admin` 角色字符串判断的 `writeGate`。
+- **验证**：handler 新增 `TestRecordsReadRequiresAuth`（匿名读 401）、`TestRecordsViewerCanReadNotWrite`（viewer 读 200 / 写 403）、`TestRecordsReadDeniedWithoutPermission`（无授权角色读 403）；store 新增 `TestPermissionsForUser`（admin→read+write、viewer→read、无 grant 角色→空）；既有 records 读用例改为 admin 认证读取。`go test ./...` 全仓 API 通过；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：匿名 GET `/api/records` → 401，admin GET/PATCH → 200，login `user.permissions=["records.read","records.write"]`。
+- **边界**：S4 只实现后端读写授权；`features` 菜单投影与 `/api/accounts/me.features` 属 S5；完整恢复/重启/回归证据属 S6。
+- **检查点**：S4 成功标准已勾选；派生进度 `3/6 → 4/6`。S5～S6 尚未实现或审计，`status` 保持 `active`。

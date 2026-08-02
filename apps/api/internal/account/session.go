@@ -13,6 +13,9 @@ type User struct {
 	ID    string   `json:"id"`
 	Name  string   `json:"name"`
 	Roles []string `json:"roles"`
+	// Permissions are the persisted role-permission keys resolved at identity
+	// load time (GOAL-006 S4): business gates check keys, not role strings.
+	Permissions []string `json:"permissions,omitempty"`
 }
 
 // StaticDevSession returns the development bootstrap session. Fail-closed:
@@ -26,6 +29,8 @@ func StaticDevSession() Session {
 			// editor + admin unlock every permission-inheritance fixture
 			// scenario used by the R4 conformance tests.
 			Roles: []string{"admin", "editor"},
+			// Consistent with the admin seed's grants under the S4 gate.
+			Permissions: []string{"records.read", "records.write"},
 		},
 		Features: map[string]bool{
 			"beta": true,

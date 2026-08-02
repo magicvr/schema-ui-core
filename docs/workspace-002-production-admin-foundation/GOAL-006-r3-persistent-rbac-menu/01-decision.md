@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 决策 · GOAL-006
@@ -100,3 +100,14 @@ version: 0.5.0
   3. `Open(seedAdmin=false)` 的既有语义（仅迁移、不 seed）保持不变。
 - **理由**：用户确认接线方案。稳定种子是系统不变量（S4 授权 gate 依赖），随启动自愈最符合 D-002.6「启动时增量 seed」；保持既有 `seedAdmin` 旗标语义，测试与调用方无需改变。
 - **未选方案**：**`seedRBAC` 作为独立公开方法由调用方显式调用**——更灵活但需每个消费方自行接线，容易漏掉而留下未种子状态。
+
+## D-007 · S4 后端授权采用身份携带的权限 key 门禁
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. 身份快照 `account.User` 增加 `Permissions []string`，由 `auth` 在登录 / 刷新 / Bearer 中间件加载身份时通过 `store.PermissionsForUser`（`user_roles → role_permissions → permissions` join）解析；records gate 检查权限 key，不再按 `admin` 角色字符串判断。
+  2. records 读（GET list/detail）也纳入认证 + permission gate（`records.read`）；写（PATCH/DELETE）要求 `records.write`。匿名 → `401`，已认证缺权限 → `403`。
+  3. `StaticDevSession` 对齐 admin 种子权限（records.read + records.write），保持 dev 回退在 S4 门禁下一致。
+- **理由**：D-001 冻结 permission key 与持久化 role-permission 关系判断；身份快照携带权限使 handler gate 无需直接依赖 store/authorizer 接线；读取纳入门禁满足 S4「匿名读写 401」。`PermissionsForUser` 与 S3 种子 grants 同源，viewer 只读、editor 只读、admin 读写自然成立。
+- **未选方案**：**handler 传 store/authorizer 在 gate 内解析**——需为每个受保护 handler 接线依赖；**只对写做 permission gate**——不满足「匿名读 401」的成功标准。

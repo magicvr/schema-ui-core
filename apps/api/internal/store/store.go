@@ -234,6 +234,34 @@ func (s *Store) rolesForUser(userID string) ([]string, error) {
 	return keys, nil
 }
 
+// PermissionsForUser returns the permission keys granted to a user through
+// their normalized role-permission relations (GOAL-006 S4 gate source), ordered
+// by key ascending. Unknown users yield an empty list.
+func (s *Store) PermissionsForUser(userID string) ([]string, error) {
+	rows, err := s.db.Query(
+		`SELECT DISTINCT p.key
+		 FROM user_roles ur
+		 JOIN role_permissions rp ON rp.role_id = ur.role_id
+		 JOIN permissions p ON p.id = rp.permission_id
+		 WHERE ur.user_id = ? ORDER BY p.key`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query permissions: %w", err)
+	}
+	defer rows.Close()
+	var keys []string
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			return nil, fmt.Errorf("scan permission: %w", err)
+		}
+		keys = append(keys, k)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("query permissions: %w", err)
+	}
+	return keys, nil
+}
+
 // sameRoleSet reports whether a and b hold the same set of role keys, ignoring
 // order and duplicates (set semantics per I-006-001 §5). A duplicate role key
 // in the legacy JSON is treated as the same role as the deduped relation.

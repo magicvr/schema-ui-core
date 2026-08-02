@@ -169,3 +169,50 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		t.Fatalf("after 3rd open seed user_roles = %d, want 2", n)
 	}
 }
+
+// S4 gate source · PermissionsForUser resolves a user's permission keys from
+// the seeded role-permission relations.
+func TestPermissionsForUser(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "perms.db"), "admin", "hash", true)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer st.Close()
+
+	adminPerms, err := st.PermissionsForUser("user-admin")
+	if err != nil {
+		t.Fatalf("admin permissions: %v", err)
+	}
+	if want := []string{"records.read", "records.write"}; !reflect.DeepEqual(adminPerms, want) {
+		t.Fatalf("admin perms = %v, want %v", adminPerms, want)
+	}
+
+	now := time.Now().UTC()
+	if err := st.CreateUser(User{
+		ID: "u2", Username: "viewer", Name: "Viewer",
+		Roles: []string{"viewer"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("create viewer: %v", err)
+	}
+	viewerPerms, err := st.PermissionsForUser("u2")
+	if err != nil {
+		t.Fatalf("viewer permissions: %v", err)
+	}
+	if want := []string{"records.read"}; !reflect.DeepEqual(viewerPerms, want) {
+		t.Fatalf("viewer perms = %v, want %v", viewerPerms, want)
+	}
+
+	if err := st.CreateUser(User{
+		ID: "u3", Username: "auditor", Name: "Auditor",
+		Roles: []string{"custom"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("create custom: %v", err)
+	}
+	customPerms, err := st.PermissionsForUser("u3")
+	if err != nil {
+		t.Fatalf("custom permissions: %v", err)
+	}
+	if len(customPerms) != 0 {
+		t.Fatalf("custom perms = %v, want empty (no grants)", customPerms)
+	}
+}
