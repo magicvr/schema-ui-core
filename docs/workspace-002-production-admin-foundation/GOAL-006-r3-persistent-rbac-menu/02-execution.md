@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 执行记录 · GOAL-006
@@ -97,3 +97,17 @@ A-004 自审（S1/S2 事实 + F-004 闭合 + S3 门禁）`pass` 后，按用户�
 - **真实服务冒烟**：匿名 `GET /api/accounts/me` → `401`；admin → `features.menu_list_edit_lifecycle: true`。
 - **边界**：S5 只做投影与 manifest gate；前端隐藏不构成安全边界（深链不授权，records API 独立 gate）。完整恢复/重启/回归证据属 S6。
 - **检查点**：S5 成功标准已勾选；派生进度 `4/6 → 5/6`。S6 尚未实现或审计，`status` 保持 `active`。
+
+## 2026-08-02 · S6 恢复、重启与回归证据实施
+
+按用户指令实施 S6（D-009 / I-006-001 §7 恢复口径；V-MIG/V-REC/V-MENU/V-REG 全矩阵证据）。改动见 `apps/api/internal/store/`。
+
+- **新增证据测试**：
+  - `TestRestartPersistence`（`restart_test.go`）：服务重启后迁移台账不重跑（ledger 仍 {1,2}）、种子不重复（user_roles 仍 2）、身份/refresh/权限/菜单投影全保持、seed 不覆盖密码。
+  - `TestRestorePreV0002Snapshot`（`restart_test.go`）：pre-v0002 快照复制到新路径后重新 `Open`（重跑迁移）可恢复原始身份（roles/password）、refresh token、RBAC 权限与菜单投影，且 `verifyIntegrity` 通过。
+  - `TestMigrateFailClosedMissingMiddle`（`migrate_test.go`，**A-001 F-001 闭合**）：构造 ledger={1,3} 真中间缺号，命中 `validateApplied` 的 `a.version != applied[i-1].version+1` 分支。
+  - `TestRBACConstraintsAndIndexes`（`migrate_test.go`，**A-001 F-002 闭合**）：完整 V-MIG-04——三个反向索引存在、roles.key / permissions.key / menu_items.page_ref / feature_key / user_roles PK 唯一、roles.system / menu_items.enabled CHECK、role 删除 CASCADE grants、在用 permission / menu 删除 RESTRICT。
+- **回归证据**：全仓 API `go test ./... -count=1` 全绿（store/handler/auth/account）、`go vet ./...` 干净、`gofmt -l` 无输出；Web `vitest run` 443 用例全绿、`npm run build`（tsc + vite）通过。
+- **E2E 重启冒烟**：boot1 `admin/admin` 登录 + `/me` features `{menu_list_edit_lifecycle: true}` → 重启服务（同库）→ boot2 登录 OK（permissions `[records.read, records.write]`）→ 用 **boot1 的 refresh token** 调 refresh 成功（跨重启持久化，身份链完整）。
+- **F-001/F-002 闭合**：S6 延期目标达成，A-001 的两项 recommended 均转为 `fixed`（A-004 F-101 跟踪项一并闭合）。
+- **检查点**：S6 成功标准已勾选；派生进度 `5/6 → 6/6`。`status` 保持 `active`——关门需 close-out 审计（self 或 `/audit`）与用户确认后置 `done`，并勾选 Root R3 检查点。

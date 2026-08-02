@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.9.0
+version: 0.10.0
 ---
 
 # 审计台账 · GOAL-006
@@ -13,10 +13,10 @@ version: 0.9.0
 
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
-| A-001 | independent | 2026-08-02 | S1 execution-facts + 目标定义/信息门禁 | pass | responded（recommended：F-001/F-002 deferred → S2/S6，F-003 fixed） |
+| A-001 | independent | 2026-08-02 | S1 execution-facts + 目标定义/信息门禁 | pass | responded（F-001/F-002 → fixed，F-003 fixed） |
 | A-002 | independent | 2026-08-02 | S2 execution-facts + R2 兼容性 + A-001 finding closure review | conditional | responded（F-004 required → fixed；复审建议：/audit 复核或 self 阶段审计） |
 | A-003 | independent | 2026-08-02 | finding-closure：F-004 | pass | responded（F-004 fixed 关闭证据独立复核通过） |
-| A-004 | self | 2026-08-02 | S1/S2 事实 + F-004 闭合 + S3 门禁（stage 自审） | pass | responded（S3 门禁就绪；F-101 recommended 跟踪 → S6） |
+| A-004 | self | 2026-08-02 | S1/S2 事实 + F-004 闭合 + S3 门禁（stage 自审） | pass | responded（S3 门禁就绪；F-101 已随 F-001/F-002 S6 闭合） |
 
 ## 当前审计边界
 
@@ -24,6 +24,7 @@ version: 0.9.0
 - A-002 覆盖：**S2**（规范化权威读、双写、集合核对与 R2 身份/refresh 兼容）执行事实，以及 A-001 中 F-001/F-002/F-003 的响应状态；不审 S3～S6 或 Root R3 阶段关门。
 - A-002 的 F-004（required）已由 `/govern` 响应为 **fixed**（集合语义比较 + 迁移后读取/认证回归）；A-002 verdict 仍为 `conditional`，其 required 门禁已合法闭合。
 - A-003 独立复核 F-004 关闭证据：`sameRoleSet` 的集合语义、迁移后双 lookup、Login/Refresh 回归均已在当前工作树复核通过；本条不扩展至 S3～S6。
+- **S6 闭合（2026-08-02）**：A-001 的 F-001（`TestMigrateFailClosedMissingMiddle` 真中间缺号）与 F-002（`TestRBACConstraintsAndIndexes` 完整 V-MIG-04 矩阵）已在 S6 回归中闭合为 `fixed`；A-004 的 F-101 跟踪项一并闭合。当前无开放 required 或 recommended 项。
 - `I-006-001/002` 保持 `verified`；当前无到期未关的 required 信息项。
 - 审计意见不直接修改 `status` / `progress`；响应和推进由 `/govern` 与用户裁决维护。
 
@@ -129,15 +130,14 @@ version: 0.9.0
 
 | Finding | 状态 | 处置 / 证据路径 |
 |---------|------|-----------------|
-| F-001 · recommended · 低 | **deferred**（open 跟踪） | 用户裁决延期至 **S6（或下一次迁移相关改动）** 前补 ledger=`(1,3)` 缺中间版本用例，增强 `validateApplied` 该分支的回归保护；不阻断 S1 事实认定与 S2 实施。 |
-| F-002 · recommended · 低 | **deferred**（open 跟踪；S2 部分已闭合） | 用户裁决延期：**S2** 已补齐 `user_roles` FK / RESTRICT / CASCADE 正反断言（`TestUserRolesFKAndCascade`，`normalize_test.go`）；完整 V-MIG-04 的 unique / CASCADE\|RESTRICT / 反向索引矩阵仍在 **S6** 回归闭合。不把「DDL 已写出」当作已验证行为。 |
+| F-001 · recommended · 低 | **fixed**（S6 闭合） | S6 已补 `TestMigrateFailClosedMissingMiddle`（`migrate_test.go`）：构造 ledger=`{1,3}` 真中间缺号，命中 `validateApplied` 的 `a.version != applied[i-1].version+1` 分支。 |
+| F-002 · recommended · 低 | **fixed**（S6 闭合） | S6 已补 `TestRBACConstraintsAndIndexes`（`migrate_test.go`）：完整 V-MIG-04——反向索引存在、unique（roles.key / permissions.key / menu_items.page_ref / feature_key / user_roles PK）、CHECK（system/enabled ∈ 0,1）、CASCADE（删 role 级联 grants）与 RESTRICT（在用 permission/menu 删除拒绝）；S2 的 `user_roles` FK 断言继续生效。 |
 | F-003 · recommended · 低 | **fixed** | `02-execution.md` S1 节表述已由「路径经驱动绑定，不经 shell」修正为「驱动内 SQL 字面量转义（单引号转义），不经 shell」；实现（`snapshotPreV0002`）与行文一致。 |
 
 ### 仍开放项
 
-- F-001 保持 open 跟踪至 **S6（或下一次迁移相关改动）**。
-- F-002 的 **S2 部分已闭合**（`user_roles` FK / RESTRICT / CASCADE 断言，`TestUserRolesFKAndCascade`）；完整 V-MIG-04 矩阵仍 open 至 **S6**。
-- 均为 `recommended`，不构成 required 门禁，不阻断推进。
+- F-001、F-002 已于 **S6 闭合**（fixed，证据见上表）；不再开放跟踪。
+- 无 open recommended / required 项。
 - 无 high / required 开放项。
 
 ### 冲突裁决

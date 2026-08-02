@@ -310,6 +310,34 @@ func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 	}
 }
 
+// A-001 F-001 (S6 闭合) · a true middle gap — ledger {1,3} with 2 absent — is
+// detected by the `a.version != applied[i-1].version+1` branch (the existing
+// MissingIntermediate test only exercises the "ledger does not start at 1" path).
+func TestMigrateFailClosedMissingMiddle(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "middlegap.db")
+	st, err := Open(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	st.Close()
+
+	db := rawOpen(t, path)
+	if _, err := db.Exec(`DELETE FROM schema_migrations WHERE version = 2`); err != nil {
+		t.Fatalf("delete version 2: %v", err)
+	}
+	if _, err := db.Exec(
+		`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (3, 'future', ?, 1)`,
+		strings.Repeat("0", 64),
+	); err != nil {
+		t.Fatalf("inject version 3: %v", err)
+	}
+	db.Close()
+
+	if _, err := Open(path, "admin", "hash", false); err == nil {
+		t.Fatal("expected fail closed for ledger {1,3} with a missing middle version")
+	}
+}
+
 // V-MIG-03 · a ledger checksum that no longer matches the code fails closed.
 func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "drift.db")
@@ -404,5 +432,83 @@ func TestForeignKeyEnabled(t *testing.T) {
 	)
 	if err == nil {
 		t.Fatal("expected FK violation for refresh token referencing missing user")
+	}
+}
+
+// A-001 F-002 (S6 闭合) · the full V-MIG-04 matrix: reverse indexes, unique and
+// CHECK constraints, and CASCADE|RESTRICT delete semantics across the RBAC tables
+// are asserted on the store connection (not just declared in DDL).
+func TestRBACConstraintsAndIndexes(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "rbac-mig.db"), "admin", "hash", true)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer st.Close()
+
+	// Reverse indexes exist.
+	for _, idx := range []string{
+		"idx_user_roles_role_id", "idx_role_permissions_permission_id", "idx_role_menu_items_menu_item_id",
+	} {
+		var n int
+		if err := st.db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?`, idx).Scan(&n); err != nil || n != 1 {
+			t.Fatalf("index %s = %d, err %v, want 1", idx, n, err)
+		}
+	}
+
+	// Unique: roles.key, permissions.key, menu_items.page_ref / feature_key.
+	if _, err := st.db.Exec(
+		`INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES ('role-x', 'admin', 'X', 0, 1, 1)`,
+	); err == nil {
+		t.Fatal("expected unique violation for duplicate roles.key")
+	}
+	if _, err := st.db.Exec(
+		`INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('p-x', 'records.read', '', 1, 1)`,
+	); err == nil {
+		t.Fatal("expected unique violation for duplicate permissions.key")
+	}
+	if _, err := st.db.Exec(
+		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-x', 'list-edit-lifecycle', 'fx_x', 0, 1, 1, 1)`,
+	); err == nil {
+		t.Fatal("expected unique violation for duplicate menu_items.page_ref")
+	}
+	if _, err := st.db.Exec(
+		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-y', 'other-page', 'menu_list_edit_lifecycle', 0, 1, 1, 1)`,
+	); err == nil {
+		t.Fatal("expected unique violation for duplicate menu_items.feature_key")
+	}
+	// Primary keys: duplicate user_roles link is rejected.
+	if _, err := st.db.Exec(
+		`INSERT INTO user_roles (user_id, role_id) VALUES ('user-admin', 'role-admin')`,
+	); err == nil {
+		t.Fatal("expected PK violation for duplicate user_roles")
+	}
+
+	// CHECK: roles.system and menu_items.enabled are 0/1.
+	if _, err := st.db.Exec(
+		`INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES ('role-y', 'y', 'Y', 2, 1, 1)`,
+	); err == nil {
+		t.Fatal("expected CHECK violation for roles.system = 2")
+	}
+	if _, err := st.db.Exec(
+		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-z', 'z-page', 'fz_z', 0, 2, 1, 1)`,
+	); err == nil {
+		t.Fatal("expected CHECK violation for menu_items.enabled = 2")
+	}
+
+	// CASCADE: deleting a role (no user relations) cascades its permission grants.
+	if _, err := st.db.Exec(`DELETE FROM roles WHERE id = 'role-viewer'`); err != nil {
+		t.Fatalf("delete viewer role: %v", err)
+	}
+	var rp int
+	if err := st.db.QueryRow(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-viewer'`).Scan(&rp); err != nil || rp != 0 {
+		t.Fatalf("role_viewer grants after cascade = %d, err %v, want 0", rp, err)
+	}
+
+	// RESTRICT: deleting a permission / menu item still granted fails.
+	if _, err := st.db.Exec(`DELETE FROM permissions WHERE id = 'perm-records-read'`); err == nil {
+		t.Fatal("expected RESTRICT deleting an in-use permission")
+	}
+	if _, err := st.db.Exec(`DELETE FROM menu_items WHERE id = 'menu-list-edit-lifecycle'`); err == nil {
+		t.Fatal("expected RESTRICT deleting an in-use menu item")
 	}
 }
