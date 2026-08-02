@@ -46,34 +46,15 @@ var (
 // Store wraps the SQLite auth store. Concurrency is guarded by a single
 // connection (modernc/sqlite is a single-writer backend).
 type Store struct {
-	db *sql.DB
+	db   *sql.DB
+	path string // file path used for pre-upgrade recovery snapshots
 }
 
-const schema = `
-CREATE TABLE IF NOT EXISTS users (
-  id            TEXT PRIMARY KEY,
-  username      TEXT NOT NULL UNIQUE,
-  name          TEXT NOT NULL,
-  roles         TEXT NOT NULL, -- JSON array; R3 normalizes
-  password_hash TEXT NOT NULL,
-  created_at    INTEGER NOT NULL,
-  updated_at    INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-  id         TEXT PRIMARY KEY,
-  user_id    TEXT NOT NULL REFERENCES users(id),
-  token_hash TEXT NOT NULL UNIQUE,
-  expires_at INTEGER NOT NULL,
-  revoked_at INTEGER,
-  created_at INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
-`
-
-// Open opens (creating if needed) the SQLite DB at path, applies the idempotent
-// schema, and — when seedAdmin is true and the users table is empty — seeds the
-// admin user with the given bcrypt password hash. The caller is responsible for
-// enforcing a non-empty seed password in production (fail-closed on startup).
+// Open opens (creating if needed) the SQLite DB at path, applies versioned
+// migrations (see migrate.go), and — when seedAdmin is true and the users table
+// is empty — seeds the admin user with the given bcrypt password hash. The
+// caller is responsible for enforcing a non-empty seed password in production
+// (fail-closed on startup).
 func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -88,7 +69,7 @@ func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 	// and mirrors the R1 in-process single-writer posture.
 	db.SetMaxOpenConns(1)
 
-	s := &Store{db: db}
+	s := &Store{db: db, path: path}
 	if err := s.migrate(); err != nil {
 		db.Close()
 		return nil, err
@@ -104,13 +85,6 @@ func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 
 // Close releases the underlying database handle.
 func (s *Store) Close() error { return s.db.Close() }
-
-func (s *Store) migrate() error {
-	if _, err := s.db.Exec(schema); err != nil {
-		return fmt.Errorf("apply schema: %w", err)
-	}
-	return nil
-}
 
 // SeedAdmin inserts the bootstrap admin user when no users exist. It is
 // idempotent: once any user exists, it is a no-op.

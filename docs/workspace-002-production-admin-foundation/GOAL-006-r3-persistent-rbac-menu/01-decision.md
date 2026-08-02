@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策 · GOAL-006
@@ -67,3 +67,14 @@ version: 0.2.0
 - **对 `catalog` 做 admin-only gate**：会让 viewer 拥有 `records.read` 却失去明确读入口。
 - **选择 `settings` 或 `activity`**：manifest 有引用但当前后端没有对应 checked-in schema fixture，不能作为首个端到端证据。
 - **选择 `overview`**：它是 `homePageRef`；首个 gate 会引入根路由/首页可达性问题。
+
+## D-004 · S1 交付包含 0002 迁移链；S2 独有交付为读路径切换
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. S1 的交付物包括迁移 runner、`schema_migrations`、`0001 r2_baseline`、`0002 rbac_expand`（DDL + 角色回填）以及 pre-v0002 恢复快照与验证。
+  2. S2 的独有交付物是阶段 A/B 读路径切换：`CreateUser` 规范化双写、`UserByID/UserByUsername` 集合比对与规范化权威读、按 role key 升序输出；旧 JSON 列保留至后续显式迁移。
+  3. 全新库在 `seedAdmin` 之前完成 0002 回填，`user_roles` 为空属预期中间态，由 S2 双写与 S3 增量种子闭合。
+- **理由**：成功标准 S1 的"升级前可恢复数据库副本"需要一个真实的数据变换迁移来产生与验证快照；D-002 §2.5 将快照固定命名为 `pre-v0002`，因此 0002 必须已在迁移链内。`0002` 只在 0001 之后运行，不影响空库 bootstrap；0002 不涉及任何对外读路径，未抢先占用 S2 的范围。
+- **未选方案**：**S1 只交付 runner + 0001，0002 推迟到 S2**——pre-v0002 快照将无可验证的迁移目标，S1 的可恢复起点标准无法在代码层面达成。

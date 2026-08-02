@@ -5,7 +5,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.9
+version: 0.2.0
 progress: 2/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -48,7 +48,7 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 - [x] **R2 · 真实认证与请求级身份**：交付登录、登出、会话恢复、受保护路由和 API 身份传递。  
   阶段子目标：`GOAL-005-r2-auth-session`（**done**，2026-08-02；`I-002` verified + D-007 方案）。证据：登录/登出/刷新/撤销与请求级身份中间件 + SQLite 存储 + 前端认证闭环（441 单测、`go test ./...` 全绿）；close-out 审计 A-001（independent，F-001 → fixed）+ A-002（self，pass）；browser E2E 在 Linux CI 通过（run #30711903555，`1 passed`，含匿名 401 断言）。
 - [ ] **R3 · 持久化身份、角色与最小权限模型**：交付用户/角色/菜单持久化、种子数据与后端授权最小闭环。
-  阶段子目标：`GOAL-006-r3-persistent-rbac-menu`（active，0/6；D-009 冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径）。
+  阶段子目标：`GOAL-006-r3-persistent-rbac-menu`（active，1/6；D-009 冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；D-004 界定 S1 交付迁移链 + pre-v0002 快照）。
 - [ ] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
 - [ ] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。
 
