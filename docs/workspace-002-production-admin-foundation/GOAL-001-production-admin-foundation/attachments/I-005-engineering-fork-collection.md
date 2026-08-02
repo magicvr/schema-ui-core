@@ -5,7 +5,7 @@ doc_type: info-collection
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.2.1
+version: 0.2.2
 related_info: I-005
 related_info_b: I-006
 related_decisions: D-012, D-013
@@ -79,7 +79,7 @@ related_decisions: D-012, D-013
 | **B · 仅文档化本地双进程（无容器）** | R5 只补齐文档、健康检查说明与复现清单；Docker 记为 R5 非目标或后续加分项 | 部分满足 #6；不满足 #7 的 Docker 一键启动（VP-002 明列为可交付项） | 低 |
 | **C · API 直接托管 web 静态产物（单进程）** | 扩展 api 提供静态文件 + SPA fallback + `/api`（同源单端口） | 满足 #6/#7 的「单进程」形态，省反代 | 中高：需改 api 静态服务与 SPA fallback，改动产品主路径 |
 
-> 建议：**A**。B 会把 VP-002 #7 的 Docker 一键启动直接留在 R5 未交付；C 需要改动 api 主路径（与「Schema Renderer 主路径不改写」目标交叉）。A 保留现有本地路径、新增容器路径，最贴近 VP-002 成功边界。**F-001 澄清（2026-08-02）**：本候选「可选」指 **fork 使用者可选择本地双进程或 Compose 两条启动路径**；Compose 本身是 R5 **必须交付和验收**的第二启动路径，不是「可选加分项」（详见 GOAL-008 `01-decision` D-002 / 03-audit A-001 响应）。最终形态、镜像方案与是否纳入 R5 由用户裁决。
+> 建议：**A**。B 会把 VP-002 #7 的 Docker 一键启动直接留在 R5 未交付；C 需要改动 api 主路径（与「Schema Renderer 主路径不改写」目标交叉）。A 保留现有本地路径、新增容器路径，最贴近 VP-002 成功边界。**F-001 澄清（2026-08-02）**：本候选「可选」指 **fork 使用者可选择本地双进程或 Compose 两条启动路径**；Compose 本身是 R5 **必须交付和验收**的第二启动路径，不是「可选加分项」（详见 GOAL-008 `01-decision` D-002 / 03-audit A-001 响应）。最终形态与镜像方案已由 D-013（部署基线 A）决定；精确镜像 / Compose 契约由 `I-008-001` 在 GOAL-008 冻结。
 
 ## 3. 15 分钟 fork 计时口径（D-013 前历史候选 · 已采纳建议口径）
 

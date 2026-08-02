@@ -5,7 +5,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.1
+version: 0.1.2
 progress: 0/5
 ---
 
@@ -13,7 +13,7 @@ progress: 0/5
 
 ## 概述
 
-承接 Root **D-012 / D-013**（Root `I-005` = verified、`I-006` = closed）：按部署基线 **A**（文档双进程为默认 + 可选 Docker Compose 一键启动）、建议 15 分钟 fork 计时口径与复现方法，补齐环境/配置/文档、容器一键启动、fork 上手体验复现与可重复 smoke 验收，并为 Root R5 检查点勾选与关门提供阶段证据。最小操作日志为**可选加分项**（D-013 方案甲），不阻断核心验收。
+承接 Root **D-012 / D-013**（Root `I-005` = verified、`I-006` = closed）：按部署基线 **A**（文档双进程为默认；**Docker Compose 为 R5 必须交付的第二启动路径**，fork 使用者可选本地双进程或 Compose）、建议 15 分钟 fork 计时口径与复现方法，补齐环境/配置/文档、容器一键启动、fork 上手体验复现与可重复 smoke 验收，并为 Root R5 检查点勾选与关门提供阶段证据。最小操作日志为**可选加分项**（D-013 方案甲），不阻断核心验收。
 
 ## 成功标准
 

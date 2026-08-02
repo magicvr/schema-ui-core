@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.14
+version: 0.1.15
 ---
 
 # 执行记录 · GOAL-001
@@ -158,5 +158,12 @@ version: 0.1.14
 
 - `GOAL-008` 收到 **A-001（independent · conditional）**：确认立项与 I-005 分层门禁总体合理，开 **F-001 required**（D-001 将 Compose 写成「可选加分路径」与 S2 核心交付冲突）+ R-001（I-005 附件时态）/ R-002（I-008-001/002 最低收集清单）。
 - **响应**：F-001 → fixed（GOAL-008 D-002 + D-001 修订 + S2 对齐：Compose 为 R5 必须交付和验收的第二启动路径，fork 用户可选本地双进程或 Compose，完整生产拓扑/CI-CD 仍非目标）；R-001 → handled（I-005 附件 v0.2.1 时态清理 + `related_decisions`）；R-002 → handled（`I-008-001/002` 信息表补入最低收集清单）。
+- **未做**：未冻结 `I-008-001`；未放行 S1/S2；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
+- **计划（非事实）**：冻结 `I-008-001` 前按 P-004 §3.1 询问是否补 self 审计。
+
+## 2026-08-02 · GOAL-008 响应 A-002（pass 采纳 · R-003 handled）
+
+- `GOAL-008` 收到 **A-002（independent · finding-closure · pass）**：独立复核确认 A-001 F-001 `fixed` 关闭成立、R-001/R-002 handled；无新 required；开 **R-003**（recommended · 三处投影/历史短句消歧）。
+- **响应**：采纳 `pass`；R-003 → handled——`GOAL-008 00-meta` 概述、Root `00-meta` 进度说明（「R5 待立项」→「R5 已立项待实施」）、I-005 附件 v0.2.2 §2 末句三处清理。
 - **未做**：未冻结 `I-008-001`；未放行 S1/S2；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
 - **计划（非事实）**：冻结 `I-008-001` 前按 P-004 §3.1 询问是否补 self 审计。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-008
@@ -14,12 +14,13 @@ version: 0.3.0
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-02 | goal-definition + design-plan · GOAL-008 立项信息与 Root I-005/D-013 合理性 | conditional | responded：F-001 **fixed**（D-002 + D-001 修订 + S2 对齐）；R-001/R-002 handled |
+| A-002 | independent | 2026-08-02 | finding-closure · A-001 F-001 与 R-001/R-002 响应证据 | pass | responded：F-001 `fixed` 关闭成立；R-001/R-002 handled；R-003 handled（投影清理） |
 
 ## 当前审计边界
 
-- 本目标于 2026-08-02 立项，`active / 0/5`；尚未实施。A-001（independent · conditional）确认立项与 I-005 分层门禁总体合理；**F-001 已按 fixed 闭合**（2026-08-02 响应：D-002 + D-001 边界修订 + 00-meta S2 对齐，明确 Compose 为 R5 必须交付和验收的第二启动路径）。
+- 本目标于 2026-08-02 立项，`active / 0/5`；尚未实施。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**（D-002 + D-001 边界修订 + 00-meta S2 + Root/I-005 投影对齐）；R-001/R-002 handled。**R-003 已 handled**（2026-08-02 响应：GOAL-008 概述 / Root 进度说明 / I-005 §2 末句三处投影清理）。
 - 信息门禁：`I-008-001` / `I-008-002` / `I-008-003` 当前 `open`（required，分别阻断 S1/S2、S3/S4、S6 若实施）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
-- 后续意见从 A-002 起。
+- 后续意见从 A-003 起。
 
 ## A-001 · GOAL-008 立项信息与 I-005 工程化 / fork 报告独立审计（2026-08-02）
 
@@ -110,3 +111,72 @@ version: 0.3.0
 - **P-004 §3.1 处置**：A-001 为 `source: independent` 且本 scope 无 `source: self` 审计。本轮**不**放行下一阶段（`I-008-001` 仍 open），仅闭合 F-001 并处理 recommended——属整改闭环，不触发「仅用独立意见推进」门禁。**未来冻结 `I-008-001`（方案冻结门禁）或进入 S1/S2 实施前**，按 P-004 §3.1 询问用户是否补同 scope self 审计（A-001 亦建议如此）。
 - **仍开放**：`I-008-001` / `I-008-002` / `I-008-003`（required · 阻断 S1/S2、S3/S4、S6 若实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 0/5`。
 - **证据路径**：本响应节；GOAL-008 `01-decision` D-002/D-001；`00-meta`（S2、信息表）；I-005 附件 v0.2.1；02-execution 2026-08-02「响应 A-001」节。
+
+## A-002 · A-001 F-001 与 R-001/R-002 响应证据独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure；仅复核 A-001 **F-001**（Compose 交付义务）、**R-001**（I-005 时态与决策关联）、**R-002**（`I-008-001/002` 最低收集清单）的响应证据。不审计 Compose/smoke 实施，不冻结信息项，不放行 S1～S4，不评估 R5 / Root 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；Root 与 GOAL-008 `parent`、VP-002 / Charter 绑定未改变；`shared_materials_catalog: none`。
+- 修订证据：提交 `f12973f6ae52e4f059c0153dda16e12e79448445`；复核时工作树 clean。已核对该提交差异、GOAL-008 `00-meta` / `01-decision` / `02-execution` / A-001 响应、Root `00-meta` / `02-execution`、I-005 v0.2.1 与 `goal-tree.md`。
+- 本轮只核对文档修正与状态边界；未运行应用、测试、Docker、Compose、CI smoke 或 15 分钟计时，且没有把 finding closure 扩写成实现验收。
+
+### 成果（有证据）
+
+| A-001 项目 | 复核结果与证据 |
+|------------|----------------|
+| **F-001 required** · Compose 交付义务冲突 | **`fixed` 成立**：D-002 明确 Compose 是 R5 必须交付和验收的第二启动路径、对应 S2 且进入 `0/5` 分母；D-001 边界与 S2 已同步；fork 使用者可在双进程与 Compose 间选择，完整生产拓扑 / CI-CD 仍为非目标。VP-002 #7、Root I-005 投影与 I-005 v0.2.1 均同向。 |
+| **R-001 recommended** · I-005 时态与关联 | **handled**：附件升级 v0.2.1，frontmatter 关联 D-012/D-013；§2～§4 标为 D-013 前历史候选，§6 明确已裁决并移除 `collecting` / “再判断 verified”的当前状态主张。候选比较被保留，没有改写历史。 |
+| **R-002 recommended** · 信息收集最低清单 | **handled**：`I-008-001` 已纳入 production env/secrets、DB volume、SPA fallback/反代、readiness、依赖/超时/失败行为与 CI 入口；`I-008-002` 已纳入工具/平台、缓存、计时边界、失败/重试、证据字段与 smoke 退出码。两项仍为 `open required`，没有被文字补充冒充为 verified。 |
+| 状态与进度边界 | **保持**：GOAL-008 `active / 0/5`，Root `active / 4/5`；S1～S5、Root R5 均未勾选，`I-008-001/002/003` 仍 open。A-001 响应只闭合 finding/处理建议，没有越过实施或验收门禁。 |
+
+### Findings
+
+- **无新 required**。
+
+#### R-003 · 三处当前投影/历史短句仍可进一步消歧
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：
+  1. GOAL-008 `00-meta` 概述仍写“文档双进程为默认 + **可选 Docker Compose**”，没有像同文件 S2 那样点明“使用者可选、交付必需”；
+  2. Root `00-meta` 当前进度说明仍写“R5 待立项”，但上一行与 goal-tree 已记 GOAL-008 立项；
+  3. I-005 v0.2.1 §2 已标为历史候选且已说明 F-001，但段末仍以当前时态写“最终形态、镜像方案与是否纳入 R5 由用户裁决”，其中“是否纳入 R5”已由 D-013/D-002 决定。
+- **影响**：D-002、S2、Root I-005 行与 §6 已足以确定当前权威口径，因此这些短句不推翻 F-001 `fixed`，也不重开 Root I-005；但全文检索或只读概述时仍可能误报“Compose 可跳过”或“R5 尚未立项”。
+- **建议**：由 `/govern` 做一次窄幅投影清理：概述改为“Compose 必须交付、fork 使用者可选”；Root 改为“R5 已立项、待实施”；I-005 历史段末改为过去时，并明确精确镜像/Compose 契约仍由 `I-008-001` 冻结。
+
+### 必改项汇总
+
+- **无开放 required**（本 finding-closure scope）。A-001 F-001 的 `fixed` 关闭证据充分，可维持闭合。
+- R-003 为 recommended，不阻断 GOAL-008 信息收集、`I-008-001/002` 后续方案冻结或目标状态；是否修正由 `/govern` 记录响应。
+
+### 与既有意见的异同
+
+- 同意 A-001 的 `conditional` 原判断，并确认其 required F-001 已按推荐路径修正；本意见不改写 A-001 历史 verdict。
+- 同意 A-001 对 I-005“方向裁决 ≠ 实施/验收”的边界；I-005 `verified` 不关闭 `I-008-001/002`。
+- 无 self / independent verdict 或 required finding 冲突；R-003 是关闭复核中新识别的非阻断投影卫生项。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：F-001 `fixed` 关闭成立，R-001/R-002 handled；本 scope 无开放 required。GOAL-008 可继续 `I-008-001/002` 信息收集，但仍不得把当前文档修正当作 S1～S4 实施或验收完成。
+- 建议 `/govern` 记录采纳 A-002 `pass`，可选处理 R-003；在冻结 `I-008-001` 或进入 S1/S2 实施前，继续按 P-004 §4.1 询问用户是否补同 scope self 审计。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-002（/govern · 2026-08-02）
+
+- **verdict 采纳**：`pass` 成立——A-002 独立复核确认 A-001 **F-001 的 `fixed` 关闭成立**（D-002 + D-001 边界修订 + `00-meta` S2 + Root/I-005 投影对齐）；R-001/R-002 handled；本 scope 无开放 required、无新 required finding。
+- **F-001 关闭复核确认**：Compose 为 R5 必须交付和验收的第二启动路径、对应 S2 且计入进度分母；D-001/S2/Root I-005/I-005 v0.2.1 同向；`fixed` 维持闭合。
+- **R-003 → handled（投影/历史短句消歧）**：
+  1. `GOAL-008 00-meta` 概述改为「文档双进程为默认；**Docker Compose 为 R5 必须交付的第二启动路径**，fork 使用者可选本地双进程或 Compose」；
+  2. Root `00-meta` 进度说明由「R5 待立项」改为「R5 已立项 `GOAL-008-r5-engineering-fork`，待实施」；
+  3. I-005 附件 v0.2.2 §2 末句改为过去时「最终形态与镜像方案已由 D-013（部署基线 A）决定；精确镜像 / Compose 契约由 `I-008-001` 在 GOAL-008 冻结」。
+  - 均为文档投影清理；不改写历史候选、不重开 Root `I-005`。
+- **P-004 §3.1 处置**：A-002 亦为 `source: independent`，本 scope 仍无 `source: self` 审计。本轮仅记录 finding-closure 采纳与 R-003 投影处理，**不**放行下一阶段。**未来冻结 `I-008-001`（方案冻结门禁）或进入 S1/S2 实施前**，按 P-004 §3.1 询问用户是否补同 scope self 审计。
+- **仍开放**：`I-008-001` / `I-008-002` / `I-008-003`（required · 阻断 S1/S2、S3/S4、S6 若实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 0/5`。
+- **证据路径**：本响应节；GOAL-008 `00-meta`（概述、S2、信息表）；Root `00-meta`（进度说明、I-005 行）；I-005 附件 v0.2.2 §2；02-execution 2026-08-02「响应 A-002」节。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.24.0
+version: 0.25.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -64,3 +64,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
 > **A-014 已响应、R5 已立项（2026-08-02）**：A-014（independent · finding-closure · pass）复核确认 A-010 R-003/R-004 `fixed` 关闭成立（README 端点表 R4 + 真实浏览器 CRUD E2E + login features；vitest 9/9 + Playwright 2 passed）；GOAL-007 保持 `done / 6/6`，Root `4/5`。**Root R5 信息门禁已关**：`I-005` → verified、`I-006` → closed（Root D-012/D-013：部署基线 A + 建议 15 分钟口径/复现方法 + 操作日志方案甲）；**`GOAL-008-r5-engineering-fork` 已立项（active / 0/5）**，登记 `I-008-001/002/003` 实施前 required。Root R5 检查点仍未勾选（待 GOAL-008 完成证据）。
 
 > **GOAL-008 A-001 已响应（2026-08-02）**：A-001（independent · conditional）F-001 → **fixed**——GOAL-008 D-002 + D-001 修订 + S2 对齐：**Docker Compose 为 R5 必须交付和验收的第二启动路径**（S2 核心检查点、计入进度分母，非 S6 式可选加分项）；fork 用户可选本地双进程或 Compose；完整生产拓扑/CI-CD 仍非目标。R-001 → handled（I-005 附件 v0.2.1 时态清理）；R-002 → handled（`I-008-001/002` 信息表补最低收集清单）。`GOAL-008` 保持 `active / 0/5`；`I-008-001/002/003` 仍 open；Root `4/5`。
+
+> **GOAL-008 A-002 已响应（2026-08-02）**：A-002（independent · finding-closure · pass）确认 F-001 `fixed` 关闭成立、R-001/R-002 handled；R-003 → handled（GOAL-008 概述 / Root 进度说明「R5 已立项待实施」/ I-005 附件 v0.2.2 §2 三处投影清理）。`GOAL-008` 保持 `active / 0/5`；`I-008-001/002/003` 仍 open；Root `4/5`。
