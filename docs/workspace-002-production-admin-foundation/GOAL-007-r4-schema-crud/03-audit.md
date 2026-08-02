@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.20.0
+version: 0.21.0
 ---
 
 # 审计台账 · GOAL-007
@@ -22,7 +22,7 @@ version: 0.20.0
 | A-007 | independent | 2026-08-02 | finding-closure · I-007-003 v0.2.1 修订复核（A-006 关闭证据） | conditional | responded：F-007 **fixed**（I-007-003 v0.2.2 + D-005 补记）；F-005/F-006 维持 fixed；R-001/R-002 handled |
 | A-008 | independent | 2026-08-02 | execution-facts · S4/S5 Schema CRUD 主路径与权限负向闭环 | pass | 无新 finding；S4/S5 完成证据可重复核对；`I-007-004` 仍 open，仅阻断 S6 |
 | A-009 | self | 2026-08-02 | execution-facts · S4/S5 完成主张 self 复核（对照 I-007-003 v0.2.2 / D-005 / D-006） | pass | — |
-| A-010 | independent | 2026-08-02 | close-out · S1～S6 整体完成主张与关门前证据 | conditional | **F-008 → fixed**（2026-08-02：L2 detail `updatedAt` 跨进程断言 + focused/全仓复跑；A-011 复核 pass）；R-003/R-004 recommended（非阻断） |
+| A-010 | independent | 2026-08-02 | close-out · S1～S6 整体完成主张与关门前证据 | conditional | **F-008 → fixed**（A-011/A-012 复核 pass）；**R-003/R-004 → fixed**（2026-08-02 关门后补充） |
 | A-011 | independent | 2026-08-02 | finding-closure · A-010 F-008 关闭证据（L2 `updatedAt` 跨进程 detail 断言 + 执行事实同步） | pass | responded：A-013（self close-out）采纳 pass |
 | A-012 | independent | 2026-08-02 | finding-closure · 编排器对 A-010 F-008 的修正复核 | pass | responded：F-008 `fixed` 可维持（A-013 self close-out 采纳 pass） |
 | A-013 | self | 2026-08-02 | close-out · GOAL-007 S1～S6 整体 + 关门条件（含 S6/L2 self 覆盖） | pass | —；本目标已按此置 `done`，Root R4 已勾选 |
@@ -30,7 +30,7 @@ version: 0.20.0
 ## 当前审计边界
 
 - 信息门禁：`I-007-001`/`I-007-002` verified；**`I-007-003` 台账 verified（v0.2.2）**；**`I-007-004` verified（D-007 + [I-007-004-restart-e2e-protocol.md](attachments/I-007-004-restart-e2e-protocol.md)）**。A-005/A-006/A-007 的 F-002～F-007 全部闭合；S4/S5 由 A-008（independent）+ A-009（self）复核 `pass`；S6 已实施（L1 HTTP 层 + L2 进程级重启持久化，02-execution）。
-- **A-001～A-013 响应**见索引与响应节；`I-007-001`～`I-007-004` 仍全部 verified。**A-010 F-008 → `fixed`（2026-08-02，A-011/A-012 独立复核 pass）**：L2 已按 I-007-004 §3.6/§4 对新建记录与 `rec-1` 分别 GET detail 并断言 `updatedAt` 与 Phase 1 POST/PATCH 响应毫秒精确一致（`apps/api/cmd/server/server_restart_test.go`；本轮 focused L2 PASS 5.82s、L1 PASS 1.28s、`go vet ./cmd/server/` 通过）。F-008 关闭证据经两次独立 finding-closure 复核确认可维持 `fixed`。**A-013（self · close-out）`pass`（2026-08-02）**：成功标准 S1～S6 全 6/6、四项 required 信息门禁 verified、无开放 required；**GOAL-007 已置 `done`，Root R4 已勾选（Root `3/5 → 4/5`）**，目标关门。后续意见从 `A-014` 起。
+- **A-001～A-013 响应**见索引与响应节；`I-007-001`～`I-007-004` 仍全部 verified。**A-010 F-008 → `fixed`（2026-08-02，A-011/A-012 独立复核 pass）**：L2 已按 I-007-004 §3.6/§4 对新建记录与 `rec-1` 分别 GET detail 并断言 `updatedAt` 与 Phase 1 POST/PATCH 响应毫秒精确一致。**A-013（self · close-out）`pass`（2026-08-02）**：成功标准 S1～S6 全 6/6、四项 required 信息门禁 verified、无开放 required；**GOAL-007 已置 `done`，Root R4 已勾选（Root `3/5 → 4/5`）**，目标关门。**A-010 R-003/R-004 → `fixed`（2026-08-02 关门后补充）**：README 端点表阶段标注统一 R4；真实浏览器 `list-edit-lifecycle` CRUD E2E + 登录后 `/me` features 修复；本机 `WEB_PORT=9999` E2E **2 passed**。当前 scope **无开放 required / recommended**。后续意见从 `A-014` 起。
 
 ## A-001 · S1/S2 契约冻结独立审计（2026-08-02）
 
@@ -900,10 +900,21 @@ version: 0.20.0
   - 修正 `apps/api/cmd/server/server_restart_test.go`：`httpPatch` 返回 200 响应体、`httpCreate` 返回完整响应；Phase 1 记录 create `createdAt` 与 PATCH `rec-1` 的 `patchedAt`（毫秒 RFC3339）；Phase 2 新增 `GET /api/records/{createdID}`（字段 + `updatedAt == createdAt`）与 `GET /api/records/rec-1`（`name == "Acme Rebrand"` + `updatedAt == patchedAt`），对齐 I-007-004 §3.6/§4。
   - **执行事实同步**：02-execution 记录此前「L2 … list/detail 断言同 L1」表述偏满（原仅以 list 检查 rec-1 名称、只 GET 新建记录 detail）；本轮补上 rec-1 `updatedAt` 跨进程断言并注明修正。
   - **复跑证据**：`go vet ./cmd/server/` 干净；focused `go test ./cmd/server -run '^TestServerProcessRestartPersistsRecords$' -count=1` **PASS（4.32s）**；`go test ./... -count=1`（apps/api）全绿（cmd/server、handler、store、auth、account）。
-- **R-003 / R-004 → 保持 recommended 非阻断**：R-003（API README 端点表阶段标注 R5→R4）可在同轮或后续快速处理；R-004（真实浏览器 CRUD E2E）按 A-010 判定不阻断 F-008 修复后的关门。二者不阻塞本 finding 闭合。
-- **关闭范围**：本响应只闭合 F-008。`GOAL-007` 仍 `active / 6/6`，**未置 `done`**；Root R4 未勾选（Root 保持 `3/5`）。`done` / Root R4 仍需 finding-closure 复核通过 + 用户按 P-004 裁决是否补 close-out self 审计（S6/L2 scope 尚无 self 覆盖；A-009 self 仅覆盖 S4/S5）。
+- **R-003 / R-004（初响应）→ 保持 recommended 非阻断**：当时仅闭合 F-008；R-003/R-004 留待关门补充（见下方补记）。
+- **关闭范围（F-008 拍）**：本响应只闭合 F-008。`GOAL-007` 当时仍 `active / 6/6`，**未置 `done`**；Root R4 未勾选（Root 保持 `3/5`）。
 - **证据路径**：本响应节；`apps/api/cmd/server/server_restart_test.go`（`httpCreate`/`httpPatch`/Phase 2 detail 断言）；focused L2 与全仓 `go test ./...` 复跑输出；02-execution 2026-08-02「响应 A-010」节；I-007-004 §3.6/§4。
-- **下一步建议**：运行 `/audit` 对 F-008 关闭证据做 finding-closure 复核；复核通过后再议关门（close-out self 审计裁决 + `done` + Root R4 勾选）。
+
+### 响应 · A-010 R-003 / R-004（/govern · 2026-08-02 · 关门后补充）
+
+- **范围**：仅闭合 A-010 的 recommended 项 R-003、R-004；不重开 F-008；不改变 GOAL-007 `done` / Root R4。
+- **R-003 → fixed（API README 端点表阶段标注）**：`apps/api/README.md` 端点表 GET list/detail 与 PATCH/DELETE 由「R5 D-DATA / D-ACT」统一为 **R4**，与 POST 及正文「记录数据源（R4）」一致。
+- **R-004 → fixed（真实浏览器 Schema CRUD E2E）**：
+  - 新增 `apps/web/e2e/schema-crud.spec.ts`：admin 登录 → 侧栏「List + edit」→ create / edit / delete+confirm 全旅程，断言成功反馈与行存在性。
+  - **附带修复（登录 features）**：`auth-client.ts` `login()` 在存 token 后调用 `fetchMe()` 解析 `features`（原先硬编码 `{}`，导致 `menu_list_edit_lifecycle` 登录后不投影）；与 `restoreSession` 对齐。`auth-client.test.ts` 覆盖。
+  - Playwright：`WEB_PORT` 可覆盖、每轮临时 `DB_PATH`、串行 worker、不复用外部 server；web README 记录 Windows `WEB_PORT=9999` 绕行。
+  - **复跑**：`vitest` auth-client **9/9**；`$env:WEB_PORT='9999'; npm run test:e2e` → **2 passed（5.7s）**（schema-crud + shell）。
+- **证据路径**：本响应节；`apps/api/README.md`；`apps/web/e2e/schema-crud.spec.ts`；`apps/web/src/account/auth-client.ts`；`playwright.config.ts`；02-execution 2026-08-02「响应 A-010 R-003 / R-004」节。
+- **仍开放**：无（A-010 scope 内 F-008 + R-003 + R-004 均已闭合）。
 
 ## A-011 · F-008 关闭证据独立复核（2026-08-02）
 
@@ -1053,14 +1064,14 @@ version: 0.20.0
 | **S5 · 交互状态与权限负向闭环** | `records.write` → `permissions.edit/delete` 表达式禁用 viewer/editor 写 affordance；confirm 序列；统一 envelope；T-UI-06～09；A-008/A-009 pass。 |
 | **S6 · 重启、迁移与端到端回归** | I-007-004 verified（D-007 协议）；L1 `TestRecordsSurviveRestart`（同文件 store close/reopen，`updatedAt` 毫秒一致）+ L2 `TestServerProcessRestartPersistsRecords`（真实子进程终止→同 `DB_PATH` 重启，rec-1/`{newID}` detail `updatedAt` 毫秒精确跨进程断言，A-010 F-008 → fixed）；`go test ./...` 全绿 + web 458/458。 |
 | **信息门禁** | `I-007-001/002/003/004` 全部 `verified`；无到期 required、无合规 residual 需要。 |
-| **意见闭合** | F-001～F-008 全部 `fixed`（A-001/A-005/A-006/A-007/A-010 响应 + A-002/A-011/A-012 复核 pass）；无开放 required。R-001～R-004 为 recommended/handled，不阻断关门。 |
+| **意见闭合** | F-001～F-008 全部 `fixed`（A-001/A-005/A-006/A-007/A-010 响应 + A-002/A-011/A-012 复核 pass）；无开放 required。R-001～R-002 为 recommended/handled；**R-003/R-004 于关门后补记 fixed**（不阻断本 close-out）。 |
 | **状态边界** | 六项成功标准全勾选（`6/6`）；关门后置 `done` 并勾选 Root R4 属本自审建议范围，不覆盖 R5 或 VP-002 关门。 |
 
 ### 对照成功标准 / 关门条件
 
 | 关门条件 | 状态 | 证据 |
 |----------|------|------|
-| 相关意见无未合法闭合的 required | **满足** | F-001～F-008 均 fixed；A-011/A-012 finding-closure pass；R-003/R-004 为非阻断 recommended |
+| 相关意见无未合法闭合的 required | **满足** | F-001～F-008 均 fixed；A-011/A-012 finding-closure pass；R-003/R-004 当时为非阻断 recommended（关门后已 fixed，见 A-010 补记） |
 | 相关信息项无未处理的关门 required | **满足** | `I-007-001`～`I-007-004` verified；无到期 deferred required |
 | 至少一次阶段/关门向审计（self 或 independent） | **满足** | A-001～A-012（self 2 + independent 10）+ 本 A-013 self close-out |
 | 成功标准对照可核对 | **满足** | 上表逐项（S1～S6 全 6/6 + 复跑证据） |
@@ -1069,7 +1080,7 @@ version: 0.20.0
 ### Findings
 
 - **无新 required**。
-- **recommended（非阻断）**：R-003（`apps/api/README.md` 端点表阶段标注统一为 R4）与 R-004（真实浏览器 `list-edit-lifecycle` CRUD E2E）作为关门补充或后续处理；不改变本自审 `pass` 结论。
+- **recommended（非阻断，本 close-out 当时）**：R-003 / R-004 作为关门补充；**随后已由 `/govern` 补记 fixed**（见 A-010 R-003/R-004 响应节）。不改变本自审 `pass` 结论。
 
 ### 必改项汇总
 
@@ -1084,7 +1095,7 @@ version: 0.20.0
 ### 结论 + 建议下一步
 
 - **pass**：GOAL-007 六项成功标准全部达成、四项 required 信息门禁 verified、无开放 required finding；具备关门条件。建议编排器：置 `GOAL-007` `done`，勾选 Root R4（Root `3/5 → 4/5`），并同步 goal-tree / Root 00-meta / 02-execution。
-- R-003/R-004 可在关门后作为可选补充处理。
+- R-003/R-004 已在关门后由 `/govern` 按 fixed 路径闭合（见 A-010 补记与 02-execution）。
 
 ### 声明
 

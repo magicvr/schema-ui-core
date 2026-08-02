@@ -13,7 +13,10 @@ export default defineConfig({
   },
   server: {
     host: "127.0.0.1",
-    port: 5173,
+    // Default stays 5173 (CI/Linux). WEB_PORT lets Windows hosts outside the
+    // Hyper-V excluded range (e.g. 9999) run Playwright without forking config.
+    port: Number(process.env.WEB_PORT || 5173),
+    strictPort: true,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8080",

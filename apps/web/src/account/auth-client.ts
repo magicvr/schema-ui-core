@@ -152,7 +152,16 @@ export async function login(username: string, password: string): Promise<AuthSes
   }
   setAccessToken(body.accessToken);
   setRefreshToken(body.refreshToken);
-  return { user: body.user, features: {} };
+  // Login token response carries user identity only; menu/feature projection
+  // lives on GET /me (GOAL-006 S5). Resolve features the same way restoreSession
+  // does so post-login navigation matches a restored session.
+  try {
+    return await fetchMe();
+  } catch {
+    // Tokens are already stored; fall back to the login user snapshot with an
+    // empty feature map rather than failing the whole login.
+    return { user: body.user, features: {} };
+  }
 }
 
 /** Revokes the refresh token (best-effort, idempotent) and clears local state. */

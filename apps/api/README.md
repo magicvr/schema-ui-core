@@ -55,11 +55,11 @@ go run ./cmd/server
 | POST | `/api/auth/refresh` | 公开（需有效 refresh） | 轮换 refresh，签发新 access + refresh |
 | POST | `/api/auth/logout` | 公开 | 撤销 refresh（幂等） |
 | GET | `/api/accounts/me` | **Bearer** | 返回请求身份的会话快照 `{ user, features }` |
-| GET | `/api/records` | **Bearer + records.read** | R5 D-DATA 列表：`q` / `sort` / `order` / `page` / `pageSize`（需 `records.read` 权限） |
+| GET | `/api/records` | **Bearer + records.read** | R4 列表：`q` / `sort` / `order` / `page` / `pageSize`（需 `records.read` 权限） |
 | POST | `/api/records` | **Bearer + records.write** | R4 新建（body `name`/`status`/`owner` 必填）→ 201 + 完整 record；`INVALID_CREATE_*` 400 |
-| GET | `/api/records/{id}` | **Bearer + records.read** | R5 D-DATA 详情（需 `records.read` 权限） |
-| PATCH | `/api/records/{id}` | **Bearer + records.write** | R5 D-ACT 编辑（name/status/owner；需 `records.write` 权限） |
-| DELETE | `/api/records/{id}` | **Bearer + records.write** | R5 D-ACT 删除（需 `records.write` 权限） |
+| GET | `/api/records/{id}` | **Bearer + records.read** | R4 详情（需 `records.read` 权限） |
+| PATCH | `/api/records/{id}` | **Bearer + records.write** | R4 编辑（name/status/owner；需 `records.write` 权限） |
+| DELETE | `/api/records/{id}` | **Bearer + records.write** | R4 删除（需 `records.write` 权限） |
 | GET | `/api/schema/{pageId}` | 公开（只读） | 页面 Schema 文档 |
 
 ## 鉴权边界（R3 · 真实认证 + 权限键）

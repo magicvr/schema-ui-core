@@ -15,8 +15,13 @@ session + permission-engine gating, and R5 example pages.
 npm install
 npm run dev
 # http://localhost:5173  (Vite proxies /api to :8080)
+# If 5173 is blocked (Windows Hyper-V excluded range), override:
+#   $env:WEB_PORT=9999; npm run dev
 
 npm test        # vitest run (458 tests)
+npm run test:e2e  # Playwright Chromium (starts Go API + Vite; default :5173)
+# Windows local workaround when 5173 is blocked:
+#   $env:WEB_PORT=9999; npm run test:e2e
 npm run build   # tsc -b && vite build
 ```
 

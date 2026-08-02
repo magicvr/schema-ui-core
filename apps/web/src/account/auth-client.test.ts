@@ -42,12 +42,22 @@ describe("auth-client", () => {
     setAuthLostListener(null);
   });
 
-  it("login stores the token pair and returns the session", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ accessToken: "a1", refreshToken: "r1", ...SESSION }));
+  it("login stores the token pair and resolves features via /me", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ accessToken: "a1", refreshToken: "r1", ...SESSION }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          user: SESSION.user,
+          features: { menu_list_edit_lifecycle: true },
+        }),
+      );
     const session = await login("admin", "admin");
     expect(session.user.id).toBe("user-admin");
+    expect(session.features).toEqual({ menu_list_edit_lifecycle: true });
     expect(requireAuthorization(fetchMock.mock.calls[0][1])).toBeNull(); // login is not authed
     expect(requireBody(fetchMock.mock.calls[0][1])).toEqual({ username: "admin", password: "admin" });
+    expect(String(fetchMock.mock.calls[1][0])).toContain("/api/accounts/me");
+    expect(requireAuthorization(fetchMock.mock.calls[1][1])).toBe("Bearer a1");
   });
 
   it("login maps a 401 to INVALID_CREDENTIALS", async () => {

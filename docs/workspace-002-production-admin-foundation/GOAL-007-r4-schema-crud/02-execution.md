@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.12.0
+version: 0.13.0
 ---
 
 # 执行记录 · GOAL-007
@@ -148,8 +148,21 @@ version: 0.12.0
 - **关门（GOAL-007 → `done`）**：置 00-meta `status: done`；Root R4 检查点勾选（Root `3/5 → 4/5`）；同步 goal-tree（GOAL-007 状态列 + 台账）与 Root 00-meta 纲领 R4。R5 与 VP-002 保持 open，不受本轮关门影响。
 - **未做（本轮）**：R-003（API README 端点表阶段标注）与 R-004（真实浏览器 CRUD E2E）作为 recommended 非阻断留待后续；Root R5 未立项。
 
+## 2026-08-02 · 响应 A-010 R-003 / R-004（关门后 recommended 补充）
+
+- 用户通过 `/govern` 明确要求：处理 A-010 **R-003**（API README 端点表阶段标注）与 **R-004**（真实浏览器 CRUD E2E）。GOAL-007 已 `done`，本轮为非阻断 recommended 补充，不改 `status`/`progress`、不重开 Root R4。
+- **R-003 → fixed**：`apps/api/README.md` 端点表将 GET list/detail 与 PATCH/DELETE 的陈旧「R5 D-DATA / D-ACT」标注统一为 **R4**（与 POST 及正文 R4 数据源描述一致）。
+- **R-004 → fixed**（真实浏览器 Schema CRUD 生命周期）：
+  - 新增 `apps/web/e2e/schema-crud.spec.ts`：登录 admin → 菜单「List + edit」→ `list-edit-lifecycle` create（New record / Create record）→ 行 Edit / Save changes → 行 Delete + Confirm；断言 `Record created/updated/deleted` 与行存在性。
+  - 发现并修复登录后菜单投影缺口：`apps/web/src/account/auth-client.ts` 的 `login()` 原先返回 `features: {}`（从未拉 `/me`），导致 `menu_list_edit_lifecycle` 在登录后为假、侧栏缺「List + edit」；现登录成功后与 `restoreSession` 一致调用 `fetchMe()`。单测 `auth-client.test.ts` 同步。
+  - Playwright 可重复性：`playwright.config.ts` 支持 `WEB_PORT` 覆盖（默认仍 5173）；每轮临时 `DB_PATH` 隔离种子；`workers: 1`、`reuseExistingServer: false`。`apps/web/README.md` 记录 Windows Hyper-V 排除段下 `WEB_PORT=9999` 绕行。
+- **复跑证据（2026-08-02，本机 Windows）**：
+  - `npx vitest run src/account/auth-client.test.ts` → **9/9** 通过。
+  - `$env:WEB_PORT='9999'; npm run test:e2e`（apps/web）→ **2 passed（5.7s）**（`schema-crud.spec.ts` + `shell.spec.ts`）。默认 5173 仍被本机排除段 EACCES（与 GOAL-005 记录一致）；CI Linux `browser-e2e` 继续用默认 5173。
+- **台账**：03-audit A-010 响应节补记 R-003/R-004 → fixed；目标保持 `done / 6/6`；Root 保持 `4/5`。
+
 ## 下一步计划（非事实）
 
-1. **R4 已关门**：GOAL-007 `done`，Root R4 已勾选（Root `4/5`）。Root 下一主路径为 **R5 · 工程化、fork 体验与集成关门**（需先收集 `I-005`（部署基线/15 分钟 fork 计时口径）并复核 `I-006`（最小操作日志取舍），再立项 R5 子目标）。
-2. 可选补充：R-003（`apps/api/README.md` 端点表阶段标注统一为 R4）；R-004（真实浏览器 `list-edit-lifecycle` CRUD E2E）。
+1. **R4 已关门且 recommended 补充已闭合**：GOAL-007 `done`，Root R4 已勾选（Root `4/5`），A-010 R-003/R-004 已 fixed。
+2. Root 下一主路径为 **R5 · 工程化、fork 体验与集成关门**（需先收集 `I-005`（部署基线/15 分钟 fork 计时口径）并复核 `I-006`（最小操作日志取舍），再立项 R5 子目标）。
 3. R5（容器/生产运维）与 fork 关门属后续目标，不在本目标范围。
