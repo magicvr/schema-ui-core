@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.9.0
+version: 0.12.0
 ---
 
 # 执行记录 · GOAL-006
@@ -111,3 +111,30 @@ A-004 自审（S1/S2 事实 + F-004 闭合 + S3 门禁）`pass` 后，按用户�
 - **E2E 重启冒烟**：boot1 `admin/admin` 登录 + `/me` features `{menu_list_edit_lifecycle: true}` → 重启服务（同库）→ boot2 登录 OK（permissions `[records.read, records.write]`）→ 用 **boot1 的 refresh token** 调 refresh 成功（跨重启持久化，身份链完整）。
 - **F-001/F-002 闭合**：S6 延期目标达成，A-001 的两项 recommended 均转为 `fixed`（A-004 F-101 跟踪项一并闭合）。
 - **检查点**：S6 成功标准已勾选；派生进度 `5/6 → 6/6`。`status` 保持 `active`——关门需 close-out 审计（self 或 `/audit`）与用户确认后置 `done`，并勾选 Root R3 检查点。
+
+## 2026-08-02 · A-005 F-005 fixed：API README 同步 R3 权限键授权语义 + API 回归
+
+响应 A-005（independent close-out · `conditional` · F-005 required），按用户裁决 **fixed**。改动见 `apps/api/README.md`。
+
+- **根因**：API 运行文档仍按 R2 语义描述 records 路由——`GET /api/records` 与 `GET /api/records/{id}` 标为「公开（只读）」，`PATCH`/`DELETE` 标为「Bearer + admin」，鉴权边界写「无 admin 角色写路由 → 403」，与 R3 已实现的 `records.read` / `records.write` 权限键授权冲突，fork 使用者会误判所需凭据。
+- **修正**：端点表 records 四行改为读=`Bearer + records.read`、写=`Bearer + records.write`（说明列标明所需权限键）；「鉴权边界」节改为 R3 语义——匿名 → `401 UNAUTHENTICATED`、已认证缺权限 → `403 FORBIDDEN`，并新增记录权限映射（种子 admin read+write、editor/viewer 仅 read）；「测试覆盖」行由「records/schema 原行为」改为「records 读/写权限门禁、schema 文档读取」；引言与「非目标」节同步为当前 R3 边界（移除已由 R3 落地的 R2 历史非目标表述）。
+- **验证**：`go test ./... -count=1`（apps/api）全绿（account/auth/handler/store）；`go vet ./...` 干净；`gofmt -l .` 无输出。README 为纯文档变更，无代码/行为改动。
+- **检查点**：F-005 为 close-out 门禁 required 修正，不构成新检查点；派生进度保持 `6/6`，`status` 保持 `active`。
+
+## 2026-08-02 · close-out：响应 A-006 + 置 done
+
+按用户指令完成 GOAL-006 关门（P-004 §3.1 用户裁决：不补做 self close-out 审计，基于现有独立意见直接关门）。`03-audit.md` 追加「响应 A-006」。
+
+- **响应 A-006**（independent finding-closure · `F-005` · `pass`）：F-005 的 `fixed` 关闭证据（README R3 权限键语义、`records.go` `requirePermission` 实现、`records_test.go` 17/17）经独立复核确认；A-005 的 `conditional` 历史 close-out verdict 不改写，其 required finding 已合法闭合。A-001～A-006 全部 responded，无开放 required。
+- **关门检查**：相关 required finding 全部按 P-003 合法闭合（F-004/F-005 required → fixed + 独立复核；F-001/F-002/F-003/F-101 recommended → fixed）；`I-006-001/002` `verified`，无到期关门 required 信息项；成功标准 S1～S6 全勾选；存在阶段/关门审计（A-004 self + A-005 independent close-out + A-006 independent 复核）。
+- **本轮验证**：`go test ./... -count=1`（apps/api）全绿；`go vet ./...` 干净；`gofmt -l .` 无输出。
+- **检查点**：GOAL-006 `status: active → done`；同步 `goal-tree.md`（树 + 表）；Root R3 检查点勾选，Root 派生进度 `2/5 → 3/5`（`GOAL-001` meta 同步）。
+
+## 2026-08-02 · A-007 响应：post-close-out 复核通过 + F-006 fixed
+
+响应 A-007（independent post-close-out 复核 · `pass` · F-006 recommended）。改动见 `apps/api/README.md` 与 `03-audit.md`。
+
+- **A-007 结论**：GOAL-006 的 `done` / `6/6` / Root R3 勾选在 2026-08-02 工作树有可重复证据；A-001～A-006 历史 verdict 不改写；无开放 required；仅新增 F-006 recommended。
+- **F-006 fixed**：`apps/api/README.md` 布局节 `internal/store/` 注释由 R2 窄范围「SQLite 认证存储（users + refresh_tokens，GOAL-005 D-003）」改为「SQLite 认证 + R3 RBAC / 迁移存储（users、refresh_tokens、schema_migrations、roles/…）」，反映 `migrate.go` / `seed.go` 的 `schema_migrations` 与 RBAC 表族；纯文档改动，无代码/行为影响。
+- **`03-audit.md`**：A-007 索引 `open → responded`；边界节新增响应留痕；文末追加「响应 A-007」节（F-006 → fixed；`done` / Root R3 维持不变）。
+- **检查点**：A-007 为已 `done` 目标的 post-close-out 复核，不构成新检查点；`progress` 保持 `6/6`，`status` 保持 `done`；Root 保持 `3/5`。

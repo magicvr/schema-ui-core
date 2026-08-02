@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.10.0
+version: 0.15.0
 ---
 
 # 审计台账 · GOAL-006
@@ -17,6 +17,9 @@ version: 0.10.0
 | A-002 | independent | 2026-08-02 | S2 execution-facts + R2 兼容性 + A-001 finding closure review | conditional | responded（F-004 required → fixed；复审建议：/audit 复核或 self 阶段审计） |
 | A-003 | independent | 2026-08-02 | finding-closure：F-004 | pass | responded（F-004 fixed 关闭证据独立复核通过） |
 | A-004 | self | 2026-08-02 | S1/S2 事实 + F-004 闭合 + S3 门禁（stage 自审） | pass | responded（S3 门禁就绪；F-101 已随 F-001/F-002 S6 闭合） |
+| A-005 | independent | 2026-08-02 | R3 close-out：S1～S6 执行事实、信息门禁、回归与交付文档 | conditional | responded（F-005 required → fixed） |
+| A-006 | independent | 2026-08-02 | finding-closure：F-005 | pass | responded（F-005 fixed 关闭证据独立复核通过；GOAL-006 已置 `done`） |
+| A-007 | independent | 2026-08-02 | post-close-out 复核：done 主张、S1～S6、finding 台账、回归 | pass | responded（F-006 fixed；GOAL-006 `done` 维持） |
 
 ## 当前审计边界
 
@@ -25,6 +28,10 @@ version: 0.10.0
 - A-002 的 F-004（required）已由 `/govern` 响应为 **fixed**（集合语义比较 + 迁移后读取/认证回归）；A-002 verdict 仍为 `conditional`，其 required 门禁已合法闭合。
 - A-003 独立复核 F-004 关闭证据：`sameRoleSet` 的集合语义、迁移后双 lookup、Login/Refresh 回归均已在当前工作树复核通过；本条不扩展至 S3～S6。
 - **S6 闭合（2026-08-02）**：A-001 的 F-001（`TestMigrateFailClosedMissingMiddle` 真中间缺号）与 F-002（`TestRBACConstraintsAndIndexes` 完整 V-MIG-04 矩阵）已在 S6 回归中闭合为 `fixed`；A-004 的 F-101 跟踪项一并闭合。当前无开放 required 或 recommended 项。
+- **A-005 响应（2026-08-02）**：F-005（required · API 运行文档仍为 R2 授权语义）已按用户裁决 **fixed**——`apps/api/README.md` 端点表与鉴权边界同步至 R3 权限键语义（读=`Bearer + records.read`、写=`Bearer + records.write`、匿名 `401`、已认证缺权限 `403`），API 回归 `go test ./... -count=1` / `go vet ./...` / `gofmt -l .` 通过。当前无开放 required 或 recommended 项。
+- **A-006 响应与关门（2026-08-02）**：A-006（independent finding-closure · `F-005` · `pass`）已响应——README 端点表、`records.go` `requirePermission` 实现与 `records_test.go` 17/17 独立复跑一致，`F-005 → fixed` 关闭证据经独立复核确认，close-out required 门禁合法闭合。用户裁决（P-004 §3.1）不补做 self close-out 审计；GOAL-006 已置 `done`，Root R3 检查点勾选（Root `2/5 → 3/5`）。
+- **A-007（2026-08-02，open）**：对已 `done` 目标做 post-close-out 独立复核（S1～S6、finding 台账、信息门禁、API/Web 回归、交付文档与 `done` 主张一致性）；verdict **`pass`**；新增 F-006 recommended（README 布局注释仍写 R2 窄范围）。**不改** `status`/`progress`/Root 检查点。
+- **A-007 响应（2026-08-02）**：采纳 `pass`；F-006（recommended）按用户裁决 **fixed**——`apps/api/README.md` 布局节 `internal/store/` 注释同步为「SQLite 认证 + R3 RBAC / 迁移存储（users、refresh_tokens、schema_migrations、roles/…）」，与同文件已正确的端点/鉴权 R3 描述一致；纯文档改动，无代码/行为影响。GOAL-006 `done` 与 Root R3 勾选维持不变，不因本 pass 改动。
 - `I-006-001/002` 保持 `verified`；当前无到期未关的 required 信息项。
 - 审计意见不直接修改 `status` / `progress`；响应和推进由 `/govern` 与用户裁决维护。
 
@@ -383,3 +390,293 @@ version: 0.10.0
 - **结论**：S1 与 S2 检查点主张有可重复证据支撑；F-004 已由 `fixed` + independent 复核合法闭合；无未闭合 required finding 或 required 信息项。S3 门禁就绪，可推进 **S3（增量幂等种子）**。
 - **建议**：在用户已确认的 seed 接线方案（Open 内 seedAdmin=true 时运行 `seedRBAC`）下实施 S3；S3 完成后按需再审计。
 - **限制**：本 `pass` 不构成 S3～S6 或 Root R3 关门通过。
+
+---
+
+## A-005 · R3 关门交叉审计（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot · `/audit`
+- **类型**：close-out
+- **scope**：`workspace-002-production-admin-foundation` / `GOAL-006-r3-persistent-rbac-menu` · S1～S6 成功标准、`I-006-001/002`、既有 A-001～A-004 finding 闭合、API/Web 回归与当前交付文档；不审 Root R3 检查点或 VP-002 关门
+- **verdict**：**conditional**
+- **工作区**：`workspace-002-production-admin-foundation`；`root_goal=GOAL-001-production-admin-foundation`；`canonical_scope` 匹配；`shared_materials_catalog: none`，本审未使用共享资料作为事实或关闭证据
+
+### 范围与区间
+
+| 项 | 结论 |
+|----|------|
+| 对齐链 | Charter `schema-ui-core-admin-foundation@0.1.0`、VP-002、工作区/Root `plan_refs` 与 `primary_plan` 可解析；目标 parent 在当前工作区指向 Root |
+| 信息门禁 | `I-006-001/002` 均为 `verified`，附件、D-002/D-003 与实施证据可互指；无到期开放 required 信息项 |
+| 历史 finding | A-001 F-001/F-002/F-003、A-002 F-004、A-004 F-101 均记录为 `fixed`；本轮可复核 S6 迁移、恢复和约束证据 |
+| 本轮验证 | `go test ./internal/store -run 'Test(RestartPersistence|RestorePreV0002Snapshot|MigrateFailClosedMissingMiddle|RBACConstraintsAndIndexes)$' -count=1`、`go test ./... -count=1`、`go vet ./...`、`gofmt -l .`（`apps/api`）均通过；`npm run test`（443 passed）与 `npm run build`（`apps/web`）均通过 |
+
+### 成果（有证据）
+
+1. **迁移与恢复（S1/S2/S6）**：`schema_migrations` 连续前缀、名称与 checksum 漂移 fail-closed；`0001/0002` 事务应用；历史 R2 数据迁移前生成 pre-v0002 快照。规范化关系为权威读值，并以集合语义核对 legacy JSON。`TestMigrateFailClosedMissingMiddle`、`TestRBACConstraintsAndIndexes`、`TestRestorePreV0002Snapshot` 及认证回归提供可复跑证据。
+2. **持久化授权（S3/S4）**：`seedRBAC` 增量确保角色、permission、菜单与 grants；`PermissionsForUser` 从规范化关联解析；records 全部读写路径执行 request identity + `records.read` / `records.write` 门禁。`TestRestartPersistence` 覆盖同库重新 Open 后的台账、种子、身份、refresh、permission 与 feature 保持。
+3. **菜单投影（S5）**：`FeaturesForUser` 为全部启用菜单 key 输出显式布尔投影，`/api/accounts/me` 返回该投影，真实 manifest 以 `visibleWhen` gate `list-edit-lifecycle`。Web 导航测试验证 admin 可见、viewer/editor 隐藏及异常值 fail-closed。
+4. **API/Web 回归**：本轮 API 全量测试、vet、格式检查，以及 Web 443 项测试和生产构建均通过；相关源文件无诊断错误。
+
+### 对照成功标准
+
+| 成功标准 | 判定 | 证据 |
+|----------|------|------|
+| S1 迁移与可恢复起点 | 满足 | `migrate.go`、迁移 fail-closed / 约束 / 快照恢复测试 |
+| S2 规范化 RBAC 与两步兼容 | 满足 | `store.go`、双写 / 集合核对 / 迁移后 Login + Refresh 回归 |
+| S3 增量幂等种子 | 满足 | `seed.go`、`seed_test.go`、`TestRestartPersistence` |
+| S4 后端读写授权 | 满足 | `records.go` permission gate、handler/store 全量测试 |
+| S5 features 菜单投影 | 满足 | `FeaturesForUser`、`meHandler`、真实 manifest、Web navigation tests |
+| S6 恢复、重启与回归 | 满足（实现与自动化） | `restart_test.go`、API/Web 本轮全量验证；交付文档缺口见 F-005 |
+
+### Findings
+
+#### F-005 · required · 中
+
+- **主题**：API 运行文档仍以 R2 的公开 records 读取与按 `admin` 角色写入门禁描述端点，和 R3 已实现的认证 + permission-key 行为冲突。
+- **证据**：`apps/api/README.md` 的端点表将 `GET /api/records` 和 `GET /api/records/{id}` 标为「公开（只读）」，将 PATCH/DELETE 标为「Bearer + admin」；「鉴权边界」仍写「无 admin 角色写路由 → 403」。当前 `apps/api/internal/handler/records.go` 对两个 GET 强制 `records.read`，对 PATCH/DELETE 强制 `records.write`，匿名为 `401`、已认证缺 permission 为 `403`。
+- **影响**：fork 使用者会依照过期文档误判 records 路由所需凭据，违反 VP-002 的可直接接业务和清晰运行说明方向；R3 不应在对外运行契约仍矛盾时关门。
+- **影响门禁**：GOAL-006 close-out / `status: done`。
+- **建议修正**：通过 `/govern` 将端点表与鉴权说明更新为 R3 语义（读=`Bearer + records.read`，写=`Bearer + records.write`；匿名 `401`、已认证缺权限 `403`），并将 Records 行为的 R2/GOAL-005 表述改为当前 R3 边界；完成后运行相关 API 回归，记录 `F-005 → fixed`。
+
+### 必改项汇总
+
+- **required / 必改**：F-005。修正并留下复核证据前，不得将 `GOAL-006-r3-persistent-rbac-menu` 标为 `done`，也不得依据本意见勾选 Root R3 关门检查点。
+- **recommended**：无新增项。
+
+### 与既有意见的异同
+
+- A-001～A-004 覆盖 S1/S2 及其 finding 闭合；本条首次覆盖 S3～S6 与 R3 close-out，未推翻既有结论。
+- F-005 是当前交付文档与实现不一致的新 required finding。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **结论**：R3 的数据迁移、恢复、持久化关系、permission gate、菜单投影和 API/Web 自动化回归均有可重复验证证据，且信息门禁与既有 findings 已闭合。由于 API README 仍发布与实际授权行为相反的 R2 契约，本审 verdict 为 `conditional`，R3 不能无条件关门。
+- **建议 `/govern`**：响应 A-005 的 F-005，优先选择 `fixed`：修正文档、运行聚焦 API 回归，并在响应节登记证据。修复后可请求 `/audit workspace-002 GOAL-006 F-005` 做关闭复核；随后由用户确认是否将目标置 `done` 并更新 Root R3 检查点。
+
+### 声明
+
+本意见 `source: independent`，**不修改**目标 `status` / 检查点 / 派生 `progress` / 方案正文 / `goal-tree`。响应、finding 闭合与后续推进由用户通过 **`/govern`** 处理。
+
+---
+
+## 响应 A-005（2026-08-02 · /govern）
+
+- **模式**：response
+- **响应意见**：A-005（independent close-out · verdict `conditional` · required F-005）
+- **裁决**：按用户裁决选择 **fixed** 闭合 F-005——同步 `apps/api/README.md` 至 R3 权限键授权语义，并运行 API 回归。
+
+### 关闭证据表
+
+| Finding | 状态 | 处置 / 证据路径 |
+|---------|------|-----------------|
+| F-005 · required · 中 | **fixed** | `apps/api/README.md`：端点表 records 四行改为读=`Bearer + records.read`、写=`Bearer + records.write`（说明列标明所需权限键）；「鉴权边界」节改为 R3 语义（匿名 `401 UNAUTHENTICATED`、已认证缺权限 `403 FORBIDDEN`）并新增记录权限映射（种子 admin read+write、editor/viewer 仅 read）；「测试覆盖」行由「records/schema 原行为」改为「records 读/写权限门禁、schema 文档读取」；引言与「非目标」节同步为当前 R3 边界。回归：`go test ./... -count=1`（apps/api，account/auth/handler/store 全绿）、`go vet ./...` 干净、`gofmt -l .` 无输出。纯文档变更，无代码/行为改动。 |
+
+### 仍开放项
+
+- F-005 已按 `fixed` 合法闭合；GOAL-006 close-out 的 required 门禁解除。
+- 无 open recommended / required 项。
+
+### 冲突裁决
+
+- 无冲突：A-005 为覆盖 S1～S6 的首条 close-out 独立意见，与 A-001～A-004 同向，无同范围相反 verdict；F-005 修正为交付文档同步，未改变 D-001～D-009 方案正文，不构成决策冲突。
+
+### 复审建议
+
+- A-005 建议修复后请求 `/audit workspace-002 GOAL-006 F-005` 做关闭复核；修复证据已登记，可由 `/audit` 复核，或由 `/govern` 在关门流程前视需要补一次 `self` close-out 审计。
+
+---
+
+## A-006 · F-005 关闭证据独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot · `/audit`
+- **类型**：finding-closure
+- **scope**：`workspace-002-production-admin-foundation` / `GOAL-006-r3-persistent-rbac-menu` · 仅复核 A-005 的 `F-005`（required，中）关闭证据；不重审 S1～S6 实现事实、不改写 A-005 的历史 `conditional` verdict，亦不审 Root R3 关门
+- **verdict**：**pass**
+- **工作区**：`workspace-002-production-admin-foundation`；`root_goal=GOAL-001-production-admin-foundation`；`canonical_scope` 匹配；`shared_materials_catalog: none`，未将共享资料作为关闭证据
+
+### 范围与区间
+
+| 项 | 结论 |
+|----|------|
+| 关闭路径 | A-005 响应已记录用户选择 `fixed`；本复核只判断 README 文档修正和记录路由授权证据是否真实、充分、可重复核对 |
+| F-005 原主张 | API README 不得继续将 records 读取描述为公开、将写入描述为 `admin` 角色门禁；应与 R3 的 permission-key 授权一致 |
+| 信息门禁 | `I-006-001/002` 均为 `verified`；本 scope 未发现新的 required 信息项、残余风险或审计结论冲突 |
+| 审计范围 | `apps/api/README.md`、`apps/api/internal/handler/records.go` 及 records 授权测试；不将 `progress: 6/6` 当作 finding 关闭依据 |
+
+### 成果（有证据）
+
+1. **运行文档已同步**：README 端点表将 records list/detail 标为 `Bearer + records.read`，PATCH/DELETE 标为 `Bearer + records.write`；鉴权边界明确匿名或无效身份为 `401 UNAUTHENTICATED`、已认证但缺权限为 `403 FORBIDDEN`，并说明 admin 读写、editor/viewer 仅读。
+2. **实现与文档一致**：`records.go` 将四个 records 路由置于认证中间件之下；list/detail 调用 `requirePermission(..., "records.read")`，update/delete 调用 `requirePermission(..., "records.write")`。缺少身份或权限分别输出 `401` 与 `403`，未再按 `admin` 角色字符串作为 records 门禁。
+3. **聚焦独立验证**：本轮运行 `records_test.go`，17/17 通过；涵盖匿名读取 `401`、viewer 读取成功而写入 `403`、无授权身份读取 `403` 及具备权限后的 records 行为。
+4. **记录一致性**：A-005 响应与 `02-execution.md` 指向相同的 README 修正和 API 回归；本复核未发现对 R3 授权边界的相反声明。
+
+### 对照关闭条件（F-005）
+
+| 条件 | 判定 | 证据 |
+|------|------|------|
+| README 消除过期公开读 / admin 写描述 | 满足 | `apps/api/README.md` 端点表与鉴权边界 |
+| 文档正确表达 permission-key 边界 | 满足 | `records.read` / `records.write`、401 / 403 与种子角色映射 |
+| 实现实际强制相同边界 | 满足 | `records.go` routes、`requirePermission`、四个 handler |
+| 授权行为具备可重复验证 | 满足 | 本轮 `records_test.go` 17/17 通过 |
+
+### Findings
+
+- 本 scope 内无开放 finding。
+- F-005 的 `fixed` 路径满足 P-003 的「可核对修正 + 文档与行为测试证据」要求；A-005 的 `conditional` 是历史 close-out verdict，本复核仅确认其 required finding 已合法闭合。
+
+### 必改项汇总
+
+- **required / 必改**：无（F-005 已由 `fixed` 合法闭合，并经本条 independent 复核确认）。
+- **recommended**：无新增项。
+
+### 与既有意见的异同
+
+- A-006 与 A-005 同向：A-005 提出的文档—实现一致性缺口已由当前 README、handler 和授权测试兑现。
+- 本条不构成 GOAL-006 `done`、Root R3 检查点或 S1～S6 全量关门结论；这些生命周期动作仍由 `/govern` 与用户确认处理。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **结论**：F-005 的运行文档、R3 permission-key 实现与聚焦授权回归一致，关闭证据充分；本 scope verdict 为 `pass`，无开放 required finding。
+- **建议 `/govern`**：响应 A-006，记录 F-005 的 independent 复核通过；随后汇总 close-out 相关意见、确认无开放 required 和无冲突后，由用户决定是否将 `GOAL-006-r3-persistent-rbac-menu` 置为 `done`，并同步 Root R3 检查点与 `goal-tree.md`。
+
+### 声明
+
+本意见 `source: independent`，**不修改**目标 `status` / 检查点 / 派生 `progress` / 方案正文 / `goal-tree`。响应、关门与后续推进由用户通过 **`/govern`** 处理。
+
+---
+
+## 响应 A-006（2026-08-02 · /govern）
+
+- **模式**：response
+- **响应意见**：A-006（independent · finding-closure `F-005` · verdict `pass`）
+- **裁决**：采纳 A-006 `pass` 与证据认定——F-005 的 `fixed` 关闭证据（README 端点表与鉴权边界同步 R3 权限键语义、`records.go` 四个路由经认证中间件 + `requirePermission("records.read"/"records.write")`、`records_test.go` 17/17 独立复跑）经 independent 复核确认；A-005 的 `conditional` 为历史 close-out verdict，其 required finding 已合法闭合，不改写历史结论。
+
+### 关闭证据表
+
+| Finding | 状态 | 处置 / 证据路径 |
+|---------|------|-----------------|
+| F-005 · required · 中 | **verified**（fixed → 独立复核确认） | A-006 `pass`：`apps/api/README.md` 端点表读=`Bearer + records.read`、写=`Bearer + records.write`；鉴权边界匿名 `401 UNAUTHENTICATED`、已认证缺权限 `403 FORBIDDEN`；`apps/api/internal/handler/records.go` 四个 records 路由在认证中间件下调用 `requirePermission("records.read" / "records.write")`；`records_test.go` 17/17 通过（匿名读 401、viewer 读 200/写 403、缺权限读 403、有权限 records 行为）。 |
+
+### 仍开放项
+
+- F-005 已合法闭合（`fixed` + A-006 independent 复核 `verified`）；GOAL-006 close-out 的 required 门禁无剩余。
+- 无 open recommended / required 项；A-001～A-006 全部 responded。
+
+### 冲突裁决
+
+- A-006 与 A-005 同向（文档—实现一致性缺口已由 README、handler 与授权测试兑现）；A-001～A-005 均无同范围相反 verdict，无决策冲突。
+
+### 关门结论
+
+- 全部相关 required finding 已按 P-003 三路径合法闭合：F-004 / F-005（required）→ `fixed` + independent 复核 `verified`；F-001 / F-002 / F-003 / F-101（recommended）→ `fixed`（S6 与行文修正）。
+- 信息门禁：`I-006-001/002` 均 `verified`，无到期关门 required 信息项。
+- 审计覆盖：A-004 `self` 阶段审计 + A-005 `independent` close-out + A-006 `independent` finding 复核，满足「至少一次阶段/关门向审计」。
+- 成功标准：S1～S6 六项检查点全勾选且证据可核对（迁移/恢复、规范化 RBAC、增量种子、records 读写门禁、`me.features` 投影、重启持久化与回归）。
+- 本轮验证（2026-08-02 工作树）：`go test ./... -count=1`（apps/api）全绿；`go vet ./...` 干净；`gofmt -l .` 无输出。
+- 用户裁决（P-004 §3.1）：不补做 self close-out 审计，基于现有独立意见直接关门。
+- **结果**：`GOAL-006-r3-persistent-rbac-menu` → **`done`**（由 `/govern` 与用户确认维护；勾选 Root R3 检查点，Root `2/5 → 3/5`），并同步 `goal-tree.md` 与各 meta。
+
+---
+
+## A-007 · post-close-out 独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot（Grok 4.5）· `/audit`
+- **类型**：close-out（post-done 复核）
+- **scope**：`workspace-002-production-admin-foundation` / `GOAL-006-r3-persistent-rbac-menu` · 已 `done` 主张与 S1～S6 成功标准、`I-006-001/002`、A-001～A-006 finding 闭合台账、API/Web 回归与当前交付文档一致性；**不审** Root R4/R5、VP-002 关门，**不改写**历史 A-001～A-006 verdict
+- **verdict**：**pass**
+- **工作区**：`workspace-002-production-admin-foundation`；`root_goal=GOAL-001-production-admin-foundation`；`canonical_scope` 匹配；`shared_materials_catalog: none`（本审未将共享资料作证据）；未读取其他工作区上下文
+
+### 范围与区间
+
+| 项 | 结论 |
+|----|------|
+| 对齐链 | Charter `schema-ui-core-admin-foundation@0.1.0`、VP-002、工作区 `plan_refs`/`primary_plan`、Root `GOAL-001` R3 勾选与 `progress: 3/5` 可互指；目标 `parent` 指向本区 Root |
+| 信息门禁 | `I-006-001/002` 均为 `verified`；附件 I-006-001/002 与 D-002/D-003 可互指；无到期开放 required |
+| 历史 finding | F-001～F-005、F-101 台账均记为 `fixed`（required 项另经 independent 复核）；本轮可复跑迁移/恢复/授权/菜单证据 |
+| 目标态 | `00-meta` / `goal-tree`：`status: done`，`progress: 6/6`，S1～S6 全勾选；本意见**不**修改上述字段 |
+| 本轮验证（2026-08-02） | `apps/api`：`go test ./... -count=1` 全绿；`go vet ./...` 干净；`gofmt -l .` 无输出；聚焦 `TestMigrateFailClosedMissingMiddle` / `TestRBACConstraintsAndIndexes` / `TestRestartPersistence` / `TestRestorePreV0002Snapshot` / `TestPermissionsForUser` / `TestFeaturesForUser` 与 handler records/me 相关套件均 PASS。`apps/web`：`vitest run` **443/443** passed；checked-in manifest SHA-256 = `STATIC_MANIFEST_SHA256` = `2b3757b585b822bbae0a9a5025f0f1a54a96caddf07014c1a07d78d93077eb07` |
+
+### 成果（有证据）
+
+1. **S1/S2/S6 迁移与恢复**：`schema_migrations` + 编译期 `0001/0002`、顺序/缺号/checksum fail-closed、pre-v0002 快照与 `TestRestorePreV0002Snapshot`、规范化权威读 + `sameRoleSet` 集合语义、`TestRestartPersistence` 同库重开后台账/种子/身份/refresh/权限/菜单保持。
+2. **S3/S4 持久化授权**：`seedRBAC` 在 `Open(seedAdmin=true)` 后增量 ensure 角色/权限/菜单/grants；`PermissionsForUser` join 解析；records 四路由均经认证中间件 + `requirePermission("records.read"|"records.write")`；匿名 401 / 缺权限 403。
+3. **S5 菜单投影**：`FeaturesForUser` 对启用菜单 key 输出显式布尔；`/api/accounts/me` 返回 `{user, features}`；真实 manifest `list-edit-lifecycle` 使用 `visibleWhen` + `menu_list_edit_lifecycle`；Web navigation 测试覆盖 admin 可见 / viewer·editor 隐藏 / fail-closed；manifest 哈希与 fixture 常量一致。
+4. **Finding 台账**：F-004（集合语义）与 F-005（README 权限键）均有 `fixed` + independent 复核（A-003/A-006）；F-001/F-002/F-003/F-101 已 fixed；无未合法闭合 required。
+5. **关门流程留痕**：A-004 self 阶段 + A-005 independent close-out + A-006 finding-closure；用户 P-004 §3.1 书面裁决不补 self close-out 已记入响应 A-006；`done` 与 Root R3 勾选由 `/govern` 维护，与当前证据一致。
+6. **交付文档主契约**：`apps/api/README.md` 端点表与「鉴权边界」节已按 R3 描述 `records.read` / `records.write` 与 401/403（F-005 关闭态在本轮仍成立）。
+
+### 对照成功标准
+
+| 成功标准 | 判定 | 证据 |
+|----------|------|------|
+| S1 迁移与可恢复起点 | 满足 | `migrate.go`、fail-closed / 约束 / 恢复测试本轮 PASS |
+| S2 规范化 RBAC 与两步兼容 | 满足 | `userWithRoles` + `sameRoleSet`；迁移后 Login/Refresh 回归在全仓 API 套件中保持 |
+| S3 增量幂等种子 | 满足 | `seed.go`、`seed_test.go`、重启持久化 |
+| S4 后端读写授权 | 满足 | `records.go` + handler 聚焦/全量测试 |
+| S5 features 菜单投影 | 满足 | `FeaturesForUser`、`meHandler`、manifest + Web 443 |
+| S6 恢复、重启与回归 | 满足 | `restart_test.go` + API/Web 本轮全量验证 |
+| `done` 主张与 finding/信息门禁 | 满足 | 无开放 required；I-006 verified；历史 close-out 响应完整 |
+
+### Findings
+
+#### F-006 · recommended · 低
+
+- **主题**：API README「布局」节仍将 `internal/store/` 注释为「SQLite 认证存储（users + refresh_tokens，GOAL-005 D-003）」，未反映 R3 已落地的 `schema_migrations` 与 RBAC 表族；与同文件已正确的端点/鉴权 R3 描述略不一致。
+- **证据**：`apps/api/README.md` 布局列表约 L19；对比 `migrate.go` / `seed.go` 已含 `roles`/`permissions`/`menu_items` 等。
+- **影响**：不否定 S1～S6 完成主张，也不否定 F-005 已修正的运行契约；fork 阅读布局注释时可能低估 store 职责范围。
+- **影响门禁**：无（recommended；不阻断 `done` 维持或 Root R3）。
+- **建议**：`/govern` 响应时可将该行改为「认证 + R3 RBAC / 迁移存储（users、refresh_tokens、schema_migrations、roles/…）」或等价表述；非必须回滚 `done`。
+
+### 必改项汇总
+
+- **required / 必改**：无
+- **recommended**：F-006（文档布局注释收窄；不阻断已 `done` 状态）
+
+### 与既有意见的异同
+
+- 与 A-005/A-006 同向：R3 实现与主运行契约（端点表/鉴权边界）一致，F-005 关闭态仍成立。
+- 不改写 A-005 历史 `conditional` 或 A-001～A-004 结论；本条是 post-close-out 复核，确认 `done` 主张在当前工作树仍有可重复证据。
+- F-006 为新 recommended，范围窄于 F-005（布局注释 vs 端点授权契约）。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **结论**：在声明 scope 内，GOAL-006 的 `done` / `6/6` / Root R3 勾选与实现、测试、信息门禁及 required finding 闭合证据一致；本审 verdict 为 **`pass`**。无开放 required；仅有文档布局注释级 recommended（F-006）。
+- **建议 `/govern`**：
+  1. 响应 A-007（采纳 `pass`；F-006 可 fixed 小改 README 布局注释，或明确延期/接受）。
+  2. **不要**因本 pass 自动改动已 `done` 的 status/progress，也**不要**回滚 Root R3。
+  3. 工作区下一实现焦点按 Root 路线图为 **R4**（须先关闭 Root `I-004`）；结构/立项决策走 `/govern`（或必要时 `/vision`）。
+
+### 声明
+
+本意见 `source: independent`，**不修改**目标 `status` / 检查点 / 派生 `progress` / 方案正文 / `goal-tree`。  
+响应、finding 闭合与后续推进由用户通过 **`/govern`** 处理。
+
+---
+
+## 响应 A-007（2026-08-02 · /govern）
+
+- **模式**：response
+- **响应意见**：A-007（independent · post-close-out 复核 · verdict `pass`）
+- **裁决**：采纳 A-007 `pass` 与证据认定——GOAL-006 的 `done` / `6/6` / Root R3 勾选在 2026-08-02 工作树有可重复证据（迁移/恢复、规范化 RBAC、增量种子、records 读写门禁、`me.features` 投影、重启持久化、API/Web 回归、manifest 哈希）；A-001～A-006 历史 verdict 不改写；`done` 与 Root R3 维持不变。F-006（recommended）按用户裁决 **fixed**。
+
+### 关闭证据表
+
+| Finding | 状态 | 处置 / 证据路径 |
+|---------|------|-----------------|
+| F-006 · recommended · 低 | **fixed** | `apps/api/README.md` 布局节 `internal/store/` 注释由「SQLite 认证存储（users + refresh_tokens，GOAL-005 D-003）」改为「SQLite 认证 + R3 RBAC / 迁移存储（users、refresh_tokens、schema_migrations、roles/…）」，反映 `migrate.go` / `seed.go` 已落地的 `schema_migrations` 与 RBAC 表族；与同文件已正确的端点/鉴权 R3 描述对齐。纯文档改动，无代码/行为影响。 |
+
+### 仍开放项
+
+- F-006 已按 `fixed` 合法闭合；无 open recommended / required 项。
+- A-001～A-007 全部 responded；GOAL-006 `done` / `6/6` / Root R3 勾选维持不变（本响应**不**改动 `status` / `progress` / Root 检查点，符合 A-007 scope 边界）。
+
+### 冲突裁决
+
+- A-007 与 A-005/A-006 同向（R3 实现与主运行契约一致，F-005 关闭态仍成立）；无同范围相反 verdict，无决策冲突。
+
+### 结论
+
+- 已 `done` 主张经 post-close-out 独立复核确认；F-006 文档注释缺口已闭合。GOAL-006 保持 `done`，Root 保持 `3/5`（R1/R2/R3 勾选）。

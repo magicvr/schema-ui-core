@@ -1,11 +1,11 @@
 ---
 id: GOAL-006-r3-persistent-rbac-menu
 title: R3 · 持久化 RBAC、菜单投影与版本迁移
-status: active
+status: done
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.8.0
+version: 0.9.0
 progress: 6/6
 ---
 
@@ -26,7 +26,7 @@ progress: 6/6
 
 ## 派生进度
 
-`progress: 6/6` 由上方六个顺序检查点等权派生。检查点只在实现事实与对应验证齐备后勾选；不得用计划、局部测试或百分比替代门禁和审计。六项检查点均已勾选，但 `status` 仍为 `active`：`done` 需 close-out 审计（self 或 `/audit`）与用户确认，并据此勾选 Root R3 检查点。
+`progress: 6/6` 由上方六个顺序检查点等权派生。检查点只在实现事实与对应验证齐备后勾选；不得用计划、局部测试或百分比替代门禁和审计。**2026-08-02 已关门（`status: done`）**：close-out 流程经 A-005（independent close-out，F-005 required → fixed）+ A-006（independent finding-closure，`F-005` 复核 `pass`）+ A-004（self 阶段审计）支撑，无开放 required finding 或 required 信息项；用户按 P-004 §3.1 裁决不补做 self close-out 审计，直接关门。Root R3 检查点据此勾选（Root `2/5 → 3/5`）。
 
 ## 信息需求
 
