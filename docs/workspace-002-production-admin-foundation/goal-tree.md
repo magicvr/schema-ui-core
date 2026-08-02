@@ -2,9 +2,9 @@
 title: workspace-002-production-admin-foundation · 目标树
 status: active
 created: 2026-08-01
-updated: 2026-08-02
+updated: 2026-08-03
 parent: null
-version: 0.27.0
+version: 0.28.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -70,3 +70,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
 > **GOAL-008 self 审计 + I-008-001 冻结（2026-08-02）**：A-003（self · pass）补齐立项与方案边界同 scope 自审（P-004 §3.1 闭环）。**`I-008-001` → verified（D-003 + [契约 v1.0.0](GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md)）**——S1/S2 方案冻结门禁解除。`I-008-002`/`I-008-003` 仍 open（阻断 S3/S4、S6 若实施）；`GOAL-008` 保持 `active / 0/5`；Root `4/5`。
 
 > **GOAL-008 S1/S2 已实施（2026-08-02）**：`I-008-001` verified 后实施 S1（env 清单 + health/启动验证 + dev/prod 区分文档）与 S2（`apps/api/Dockerfile` + `apps/web/Dockerfile` + 根 `compose.yaml` + `nginx.conf` `/api` 反代 + CI `container-smoke`）；契约 **C-001～C-007 本机验证通过**（`docker compose up` → healthz/登录/`/me`/SPA fallback/重启与 down-up DB 持久化）。`GOAL-008` 进度 `0/5 → 2/5`；`I-008-002`/`I-008-003` 仍 open；Root R5 未勾选，Root `4/5`。
+
+> **GOAL-008 A-004/A-005 已响应、A-006 self 已补（2026-08-03）**：A-004（independent · execution-facts · pass）采纳——R-001 handled（由 F-002 修复承载）、R-002 fixed（根 README `.env` 注记）。A-005（independent · execution-facts · fail）F-002/F-003 均 **fixed**——F-002：`config.ValidateProd()` 生产运行时守卫（非 development + `AUTH_DEV_SESSION_ENABLED=true` → 启动报错退出）+ `config_test.go` 4 用例回归 + 运行时复验（production+flag → exit 1、development+flag → 正常启动），`go test ./...` 全绿；F-003：`00-meta` frontmatter `progress: 0/5 → 2/5` 与 goal-tree 一致。**A-006（self · execution-facts · pass）** 补齐 S1/S2 scope 自审（P-004 §3.1）。`GOAL-008` 保持 `active / 2/5`；`I-008-002`/`I-008-003` 仍 open（阻断 S3/S4、S6 若实施）；Root R5 未勾选，Root `4/5`。建议对 F-002/F-003 关闭证据做 `/audit` finding-closure 复审。

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -47,6 +48,18 @@ func Load() *Config {
 	}
 }
 
+// ValidateProd fails startup for non-development environments when the static
+// development session fallback is enabled (GOAL-008 A-005 F-002). The dev
+// session substitutes a high-privilege static identity for unauthenticated
+// requests, so it may only ever run in local development; any other APP_ENV
+// with AUTH_DEV_SESSION_ENABLED=true is a hard startup error, not a warning.
+func (c *Config) ValidateProd() error {
+	if c.AppEnv != "development" && c.AuthDevSessionEnabled {
+		return fmt.Errorf("AUTH_DEV_SESSION_ENABLED must be false when APP_ENV=%q", c.AppEnv)
+	}
+	return nil
+}
+
 // LogLevel maps LOG_LEVEL to slog.
 func (c *Config) LogLevel() slog.Level {
 	switch strings.ToLower(c.LogLevelName) {
@@ -60,7 +73,6 @@ func (c *Config) LogLevel() slog.Level {
 		return slog.LevelInfo
 	}
 }
-
 func envOr(key, fallback string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v

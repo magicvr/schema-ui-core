@@ -2,9 +2,9 @@
 title: 执行记录 · R5 · 工程化、fork 体验与集成关门
 status: active
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.4
+version: 0.1.5
 ---
 
 # 执行记录 · GOAL-008
@@ -57,3 +57,17 @@ version: 0.1.4
 - **实施细节留痕**：web 镜像构建曾因 `@schemas` 别名上下文外而失败 → 改为仓库根 context + `COPY docs/schemas`；`COPY nginx.conf` 路径按仓库根 context 修正；`go mod download` 遇 proxy.golang.org 瞬断 → BuildKit cache mount + 重试。
 - **未做**：未实施 S3（fork 文档 + 15 分钟计时复现）、S4（`scripts/smoke.sh` 正式化）；`I-008-002`/`I-008-003` 仍 open；Root R5 未勾选，Root 保持 `active / 4/5`。
 - **计划（非事实）**：下一拍收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据），再实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；S2 已完成，建议一次实施向审计（self 或 `/audit`）。
+
+## 2026-08-03 · 响应 A-004/A-005 + self 审计（F-002/F-003 fixed）
+
+- **A-004（independent · execution-facts · pass）响应**：采纳 `pass`；R-001 → handled（与 A-005 F-002 同事实的分歧按用户裁决采用 `required/high` 口径，由 F-002 修复承载）；R-002 → fixed（根 README「Docker Compose 一键启动」段补 `.env` 免重复 export 注记）。
+- **A-005（independent · execution-facts · fail）响应**：采纳 `fail`；**F-002 → fixed**、**F-003 → fixed**（详见下）。
+- **self 审计（A-006 · execution-facts · pass）**：按 P-004 §3.1 用户裁决「需要补 self」补齐 S1/S2 实施 scope 的 `source: self` 覆盖（A-003 self 仅覆盖立项/方案边界）。
+- **F-002 修复（生产运行时守卫，required/high）**：
+  - `apps/api/internal/config/config.go` 新增 `ValidateProd()`：`AppEnv != "development" && AuthDevSessionEnabled` → 返回 `AUTH_DEV_SESSION_ENABLED must be false when APP_ENV=...` 启动错误；`cmd/server/main.go` 于 `config.Load()` 后立即校验，错误 → `logger.Error` + `os.Exit(1)`。
+  - 新增 `apps/api/internal/config/config_test.go`：4 用例（development 允许 / production+flag fail-closed / production 无 flag 通过 / staging fail-closed）。
+  - 运行时复验：`APP_ENV=production AUTH_DEV_SESSION_ENABLED=true` → `startup failed`（exit 1）；`APP_ENV=development AUTH_DEV_SESSION_ENABLED=true` → 正常启动（`dev_session: true`）。契约 §1/§5「生产禁止启用」现由硬门禁成立。
+- **F-003 修复（进度投影同步，required/medium）**：`00-meta.md` frontmatter `progress: 0/5 → 2/5`，与勾选成功标准、派生进度段、`goal-tree.md`（`active / 2/5`）一致；复核无其它残留 `0/5`。
+- **验证**：`go build` / `go vet` / `go test ./...`（apps/api）全绿（config 包 4 新增用例通过）；compose 与 api 镜像显式 `AUTH_DEV_SESSION_ENABLED=false`，守卫不影响第二启动路径。
+- **未做**：未实施 S3/S4；`I-008-002`/`I-008-003` 仍 open required（阻断 S3/S4、S6 若实施）；未勾选新检查点（保持 `2/5`）；Root R5 未勾选，Root 保持 `active / 4/5`。
+- **计划（非事实）**：建议对 F-002/F-003 关闭证据做一次 `/audit` finding-closure 复审；下一拍收集并冻结 `I-008-002`（计时复现协议 + smoke 判据），再实施 S3/S4。

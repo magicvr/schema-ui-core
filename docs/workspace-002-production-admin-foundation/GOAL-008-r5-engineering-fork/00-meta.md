@@ -3,10 +3,10 @@ id: GOAL-008-r5-engineering-fork
 title: R5 · 工程化、fork 体验与集成关门
 status: active
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.4
-progress: 0/5
+version: 0.1.5
+progress: 2/5
 ---
 
 # GOAL-008 · R5 · 工程化、fork 体验与集成关门

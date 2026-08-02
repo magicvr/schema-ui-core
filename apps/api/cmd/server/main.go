@@ -28,6 +28,14 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
+	// Hard production guard (GOAL-008 A-005 F-002): the static dev session
+	// fallback is only legal in local development. Error level always surfaces,
+	// so this stays visible regardless of LOG_LEVEL.
+	if err := cfg.ValidateProd(); err != nil {
+		logger.Error("startup failed", "err", err)
+		os.Exit(1)
+	}
+
 	secret, err := resolveJWTSecret(cfg, logger)
 	if err != nil {
 		logger.Error("startup failed", "err", err)

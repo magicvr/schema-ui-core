@@ -72,6 +72,7 @@ docker compose up --build
 
 - 本地开发仍为默认双进程路径（见上文 API / Web 段）；fork 使用者可选本地双进程或 Compose。
 - `docker compose down` / 重启后 SQLite 数据由命名卷 `db-data` 保持。
+- 将密钥写入仓库根 `.env`（gitignored）可避免新 shell 里 `docker compose config` / `down` 因 fail-closed 插值重复 export。
 - 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
 
 ## 状态说明
