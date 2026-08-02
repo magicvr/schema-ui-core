@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.6.0
 ---
 
 # 审计台账 · GOAL-006
@@ -14,11 +14,13 @@ version: 0.4.0
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-02 | S1 execution-facts + 目标定义/信息门禁 | pass | responded（recommended：F-001/F-002 deferred → S2/S6，F-003 fixed） |
+| A-002 | independent | 2026-08-02 | S2 execution-facts + R2 兼容性 + A-001 finding closure review | conditional | responded（F-004 required → fixed；复审建议：/audit 复核或 self 阶段审计） |
 
 ## 当前审计边界
 
 - A-001 覆盖：目标定义与 D-001～D-004、`I-006-001/002` 门禁状态，以及 **S1**（版本迁移与可恢复起点）执行事实对照。
-- **不**覆盖 S2～S6 实现或 Root R3 阶段关门；S2～S6 仍未勾选，本意见不构成其放行。
+- A-002 覆盖：**S2**（规范化权威读、双写、集合核对与 R2 身份/refresh 兼容）执行事实，以及 A-001 中 F-001/F-002/F-003 的响应状态；不审 S3～S6 或 Root R3 阶段关门。
+- A-002 的 F-004（required）已由 `/govern` 响应为 **fixed**（集合语义比较 + 迁移后读取/认证回归）；A-002 verdict 仍为 `conditional`，其 required 门禁已合法闭合。
 - `I-006-001/002` 保持 `verified`；当前无到期未关的 required 信息项。
 - 审计意见不直接修改 `status` / `progress`；响应和推进由 `/govern` 与用户裁决维护。
 
@@ -138,3 +140,99 @@ version: 0.4.0
 ### 冲突裁决
 
 - 无冲突：本目标此前无正式意见，A-001 为唯一 independent 条目；无同范围相反 verdict。
+
+---
+
+## A-002 · S2 执行事实与 R2 兼容性交叉审计（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot · `/audit`
+- **类型**：execution-facts（主）+ finding-closure（辅）
+- **scope**：`workspace-002-production-admin-foundation` / `GOAL-006-r3-persistent-rbac-menu` · S2 检查点主张、D-005、`I-006-001` 的两步读写要求、R2 身份/refresh 兼容，以及 A-001 的 F-001/F-002/F-003 响应；不审 S3～S6、权限/菜单产品行为或 Root R3 关门
+- **verdict**：**conditional**
+- **工作区**：`workspace-002-production-admin-foundation`；`root_goal=GOAL-001-production-admin-foundation`；`canonical_scope` 匹配；`shared_materials_catalog: none`（本审未将共享资料作证据）
+
+### 范围与区间
+
+| 项 | 结论 |
+|----|------|
+| 工作区与愿景绑定 | 显式工作区、Root、`VP-002-production-admin-foundation` 与 Charter 引用链可解析；目标 `parent` 指向本区 Root |
+| 信息门禁 | `I-006-001` 为 `verified`，是 S2 实施输入；未发现影响 S2 的到期 required 信息项 |
+| S2 成功标准 | 规范化 RBAC 两步兼容：双写、双读核对、规范化权威读，且保持 R2 身份与 refresh 契约 |
+| 代码证据根 | `apps/api/internal/store/store.go`、`migrate.go`、`normalize_test.go`、`migrate_test.go`；认证调用链为 `apps/api/internal/auth/auth.go` |
+| 本轮验证 | 2026-08-02 独立运行：`go test ./internal/store -count=1`、`go test ./... -count=1` 与 `go vet ./...`（工作目录 `apps/api`）均通过 |
+
+### 成果（有证据）
+
+1. **阶段 B 读路径**：`UserByID` 与 `UserByUsername` 均经 `userWithRoles` 读取 legacy JSON 与规范化关联；一致时采用 join 关系按 `roles.key` 升序的输出，分歧返回可诊断错误。
+2. **事务双写**：`CreateUser` 在同一事务写入 `users.roles` 和 `user_roles`；输入角色先去重。`seedAdmin` 对新建或既有 admin 确保 `admin` / `editor` 关联而不覆盖密码。
+3. **失配与约束证据**：`TestReadDetectsRoleMismatch` 覆盖两种 lookup 的 fail-closed 行为；`TestUserRolesFKAndCascade` 覆盖 `user_roles` 的未知 role FK 拒绝、在用 role RESTRICT 与删用户 CASCADE，满足 A-001 F-002 约定的 S2 部分闭合。
+4. **R2 主链回归**：认证的 Login、Refresh、JWT middleware 都由 `UserByUsername` / `UserByID` 取得身份；本轮全仓 API 测试通过，现有种子和新建用户的身份、refresh 生命周期未见回归。
+5. **A-001 跟踪项**：F-003 的执行记录措辞已与实际 SQL 字面量转义实现对齐；F-001 仍按用户记录延期至 S6（或下一次迁移相关改动），F-002 完整约束/反向索引矩阵仍延期至 S6，均保持 recommended，不构成当前 required 门禁。
+
+### 对照成功标准（S2）
+
+| 标准要素 | 判定 | 证据 |
+|----------|------|------|
+| 规范化关系与回填 | 满足 | `0002` 建立关系表；`backfillRoles` 从 R2 JSON 建立 role / user-role 关系 |
+| 规范化权威读、确定排序 | 满足 | `rolesForUser` 按 key 排序；`TestNormalizedReadSortedByKey` |
+| CreateUser / seedAdmin 双写 | 满足 | `CreateUser` / `seedAdmin`；`TestCreateUserDoubleWritesRoles`、`TestSeedAdminDoubleWrites` |
+| 两源分歧 fail-closed | 满足 | `userWithRoles`；`TestReadDetectsRoleMismatch` |
+| R2 身份与 refresh 兼容 | **不满足** | F-004：重复角色的既有 R2 数据被迁移去重后会被比较器拒绝 |
+
+### Findings
+
+#### F-004 · required · 中
+
+- **主题**：历史 R2 `roles` JSON 含重复值时，迁移去重与 S2 读取比较的语义不一致，造成已迁移用户无法加载身份。
+- **证据**：`backfillRoles` 在 `migrate.go` 中明确对同一用户 role key 去重；`TestMigrateExistingR2DedupeRoles` 以 `["admin","admin","editor"]` 验证该迁移结果。随后 `store.go` 的 `setEqual` 以 slice 长度和计数比较多重集合，而非 D-005 / `I-006-001` 所要求的集合比较。因此该 fixture 升级后 legacy 为三项、规范化关系为两项，`UserByID` / `UserByUsername` 返回 role mismatch。
+- **影响**：认证 Login 依赖 `UserByUsername`；Refresh 和 Bearer middleware 依赖 `UserByID`。受影响的合法历史用户会在迁移成功后无法登录、刷新或通过请求身份加载，违反 S2 的 R2 身份/refresh 兼容主张；现有去重测试仅断言关系计数，未覆盖升级后的读路径。
+- **影响门禁**：S2 事实无条件认定与进入 S3。
+- **建议修正**：令两源比较遵循已冻结的集合语义（例如比较前分别去重），或在受控迁移中同步规范化旧 JSON；补充“重复 legacy roles → Open → UserByID / UserByUsername 可读且角色按 key 排序”的迁移回归，并至少覆盖 Login 或 Refresh 其中一条受影响调用链。
+
+### 必改项汇总
+
+- **required / 必改**：F-004。修复并留下可复核测试证据前，不得把 S2 作为无条件通过，也不得推进 S3；若拟接受残余或驳回，须由用户按 P-003 / P-004 书面裁决并留痕。
+- **recommended**：F-001（S6 或下次迁移改动前补真正中间缺号 ledger 用例）与 F-002 的完整 V-MIG-04 矩阵仍按 A-001 响应跟踪；F-003 已 fixed。
+
+### 与既有意见的异同
+
+- A-001 的 `pass` 仅覆盖 S1，且明确不审 S2；本条不与 A-001 冲突。
+- A-001 F-002 的 S2 部分关闭证据有效，但它只涉及 `user_roles` FK / RESTRICT / CASCADE，不能覆盖 F-004 的读路径兼容问题。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **结论**：S2 的主要实现路径、约束子集和既有回归具备证据，但一个由现有迁移测试明确承认的历史数据形态会破坏身份兼容，因此 verdict 为 `conditional`，不能无条件认可 S2 完成主张。
+- **建议 `/govern`**：先响应 F-004。建议选择 `fixed`：修正集合比较或受控数据规范化，增加迁移后读路径与认证链回归，再请求复审；在此之前不要推进 S3。若不修复而要继续，需用户书面选择 `accepted-residual` 或 `user-overruled`，并记录影响用户范围、期限、缓解和复审触发。
+
+### 声明
+
+本意见 `source: independent`，**不修改**目标 `status` / 检查点 / 派生 `progress` / 方案正文 / `goal-tree`。响应、finding 闭合与阶段推进由用户通过 **`/govern`** 处理。
+
+---
+
+## 响应 A-002（2026-08-02 · /govern）
+
+- **模式**：response
+- **响应意见**：A-002（independent · verdict `conditional` · required F-004）
+- **裁决**：按用户裁决选择 **fixed** 闭合 F-004——修正读路径集合比较语义，并补充迁移后读取与认证回归测试。
+
+### 关闭证据表
+
+| Finding | 状态 | 处置 / 证据路径 |
+|---------|------|-----------------|
+| F-004 · required · 中 | **fixed** | `store.go` `userWithRoles` 的两源比较由多重集合（长度+计数）改为 `sameRoleSet` **集合语义**（忽略顺序与重复），对齐 I-006-001 §5 / D-005 已冻结语义；历史 R2 重复 role key 经 0002 回填去重后不再被误判为分歧。证据：① `TestMigrateExistingR2DuplicateRolesReadable`（`migrate_test.go`）：`["admin","admin","editor"]` → Open → `UserByID` / `UserByUsername` 可读且返回去重升序 `["admin","editor"]`；② `TestLoginAndRefreshAfterMigrateDuplicateRoles`（`auth_test.go`）：迁移后 `Login`（走 `UserByUsername`）与 `Refresh`（走 `UserByID`）均成功，access subject=`u-alice`。`go test ./...`、`go vet ./...`、`gofmt -l` 全绿。 |
+
+### 仍开放项
+
+- F-004 已按 `fixed` 合法闭合；S2 无条件事实认定与进入 S3 的 required 门禁解除。
+- F-001 保持 open 跟踪至 **S6（或下一次迁移相关改动）**；F-002 的完整 V-MIG-04 矩阵保持 open 至 **S6**（S2 部分已闭合）。均为 `recommended`。
+- 无未合法闭合的 required 开放项。
+
+### 冲突裁决
+
+- A-001（pass，仅覆盖 S1）与 A-002（conditional，覆盖 S2）无同范围相反 verdict；A-002 明确不推翻 A-001 的 S1 结论。F-004 修复未改变 D-002/D-005 的方案正文，不构成决策冲突。
+
+### 复审建议
+
+- A-002 建议「修复后请求复审」：可由 `/audit` 复核 F-004 关闭证据，或由 `/govern` 在推进 S3 前视需要补一次 `self` 阶段审计（GOAL-006 目前无 self 意见）。

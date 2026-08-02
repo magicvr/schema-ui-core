@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -232,6 +233,37 @@ func TestMigrateExistingR2DedupeRoles(t *testing.T) {
 	st.db.QueryRow(`SELECT COUNT(*) FROM user_roles`).Scan(&urCount)
 	if roleCount != 2 || urCount != 2 {
 		t.Fatalf("after dedupe roles=%d user_roles=%d, want 2/2", roleCount, urCount)
+	}
+}
+
+// A-002 F-004 · an existing R2 user whose legacy roles JSON contains duplicates
+// is readable after migration: 0002 backfill dedupes the relations and the read
+// comparator follows set semantics (I-006-001 §5), so UserByID / UserByUsername
+// succeed and return the deduped roles sorted by key.
+func TestMigrateExistingR2DuplicateRolesReadable(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "legacy-dup-read.db")
+	createR2FixtureRoles(t, path, `["admin","admin","editor"]`)
+
+	st, err := Open(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer st.Close()
+
+	want := []string{"admin", "editor"}
+	u, err := st.UserByID("user-admin")
+	if err != nil {
+		t.Fatalf("UserByID after migration: %v", err)
+	}
+	if !reflect.DeepEqual(u.Roles, want) {
+		t.Fatalf("UserByID roles = %v, want %v (deduped, sorted by key)", u.Roles, want)
+	}
+	u2, err := st.UserByUsername("admin")
+	if err != nil {
+		t.Fatalf("UserByUsername after migration: %v", err)
+	}
+	if !reflect.DeepEqual(u2.Roles, want) {
+		t.Fatalf("UserByUsername roles = %v, want %v (deduped, sorted by key)", u2.Roles, want)
 	}
 }
 

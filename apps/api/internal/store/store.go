@@ -184,6 +184,11 @@ func (s *Store) UserByID(id string) (*User, error) {
 // silently inconsistent identity. On agreement the normalized roles (ordered by
 // role key ascending) are the authoritative read value. The users.roles column
 // is retained until an explicit later migration removes it.
+//
+// Comparison follows the frozen set semantics (I-006-001 §5, A-002 F-004):
+// duplicates in the legacy JSON are historical artifacts that 0002's backfill
+// dedupes in the relations, so the two sources are compared as sets. A genuine
+// set difference still fails closed.
 func (s *Store) userWithRoles(row *sql.Row) (*User, error) {
 	u, err := s.scanUser(row)
 	if err != nil {
@@ -193,7 +198,7 @@ func (s *Store) userWithRoles(row *sql.Row) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !setEqual(u.Roles, norm) {
+	if !sameRoleSet(u.Roles, norm) {
 		return nil, fmt.Errorf("store: user %s role mismatch: legacy %v normalized %v", u.ID, u.Roles, norm)
 	}
 	u.Roles = norm
@@ -223,18 +228,23 @@ func (s *Store) rolesForUser(userID string) ([]string, error) {
 	return keys, nil
 }
 
-// setEqual reports whether a and b hold the same multiset of strings.
-func setEqual(a, b []string) bool {
-	if len(a) != len(b) {
+// sameRoleSet reports whether a and b hold the same set of role keys, ignoring
+// order and duplicates (set semantics per I-006-001 §5). A duplicate role key
+// in the legacy JSON is treated as the same role as the deduped relation.
+func sameRoleSet(a, b []string) bool {
+	as := make(map[string]bool, len(a))
+	for _, v := range a {
+		as[v] = true
+	}
+	bs := make(map[string]bool, len(b))
+	for _, v := range b {
+		bs[v] = true
+	}
+	if len(as) != len(bs) {
 		return false
 	}
-	m := make(map[string]int, len(a))
-	for _, v := range a {
-		m[v]++
-	}
-	for _, v := range b {
-		m[v]--
-		if m[v] < 0 {
+	for v := range as {
+		if !bs[v] {
 			return false
 		}
 	}

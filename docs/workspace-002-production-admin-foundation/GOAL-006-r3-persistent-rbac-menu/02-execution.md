@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-006
@@ -56,3 +56,13 @@ version: 0.4.0
 - **证据**：新增 `normalize_test.go` 5 用例（`TestCreateUserDoubleWritesRoles`、`TestNormalizedReadSortedByKey`、`TestReadDetectsRoleMismatch`、`TestSeedAdminDoubleWrites`、`TestUserRolesFKAndCascade`）全过；`go test ./...` 全仓 API 通过（auth/account/handler R2 契约保持）；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：全新库 `admin/admin` 登录成功，`user.roles=["admin","editor"]` 来自规范化源（升序），seed `user_roles=2 roles=2`（gap 闭合），`integrity_check=ok`。
 - **边界**：S2 只切读路径与双写；权限/菜单 grant 与稳定角色升级（system=1）属 S3 增量种子，本轮未实现。
 - **检查点**：S2 成功标准已勾选；派生进度 `1/6 → 2/6`。S3～S6 尚未实现或审计，`status` 保持 `active`。
+
+## 2026-08-02 · A-002 F-004 fixed：读路径集合比较修正 + 迁移后读取/认证回归
+
+响应 A-002（independent · `conditional` · F-004 required），按用户裁决 **fixed**。改动见 `apps/api/internal/store/` 与 `apps/api/internal/auth/`。
+
+- **根因**：0002 `backfillRoles` 对同一用户 role key 去重，但 `store.go` 的 `userWithRoles` 比较按多重集合（长度+计数），导致历史 R2 `roles` JSON 含重复值（如 `["admin","admin","editor"]`）的已迁移用户两源长度不一致而被误判为分歧，`UserByID` / `UserByUsername` 无法加载身份。
+- **修正**：`userWithRoles` 改用 `sameRoleSet` **集合语义**比较（忽略顺序与重复），对齐 I-006-001 §5 / D-005 已冻结语义；返回仍以规范化关系为权威、按 role key 升序。真正的集合分歧仍 fail closed。
+- **回归证据**：`TestMigrateExistingR2DuplicateRolesReadable`（`migrate_test.go`：重复 legacy roles → Open → `UserByID`/`UserByUsername` 可读且返回 `["admin","editor"]`）；`TestLoginAndRefreshAfterMigrateDuplicateRoles`（`auth_test.go`：迁移后 `Login` 走 `UserByUsername`、`Refresh` 走 `UserByID` 均成功，access subject=`u-alice`）。
+- **验证**：`go test ./...`（apps/api）全绿、`go vet ./...` 干净、`gofmt -l` 无输出。
+- **检查点**：F-004 为 S2 内 required 修正，不构成新检查点；派生进度保持 `2/6`，`status` 保持 `active`。

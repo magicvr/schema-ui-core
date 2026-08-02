@@ -1,10 +1,14 @@
 package auth
 
 import (
+	"database/sql"
 	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
+
+	_ "modernc.org/sqlite"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -154,5 +158,91 @@ func TestOpaqueTokenHashStable(t *testing.T) {
 	}
 	if got := HashToken(raw); got != hash {
 		t.Fatalf("HashToken(raw) = %q, want %q", got, hash)
+	}
+}
+
+// buildLegacyR2DB creates a pre-migration R2 database (users + refresh_tokens,
+// no schema_migrations) so store.Open has to run the 0001 fingerprint + 0002
+// backfill path. users holds [id, username, name, rolesJSON, passwordHash].
+func buildLegacyR2DB(t *testing.T, path string, users [][]string) {
+	t.Helper()
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatalf("open legacy db: %v", err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+	ddl := []string{
+		`CREATE TABLE users (
+  id            TEXT PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL,
+  roles         TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL
+)`,
+		`CREATE TABLE refresh_tokens (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at INTEGER NOT NULL,
+  revoked_at INTEGER,
+  created_at INTEGER NOT NULL
+)`,
+		`CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id)`,
+	}
+	for _, s := range ddl {
+		if _, err := db.Exec(s); err != nil {
+			t.Fatalf("legacy ddl: %v", err)
+		}
+	}
+	now := time.Now().UTC().Unix()
+	for _, u := range users {
+		if _, err := db.Exec(
+			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
+			 VALUES (?,?,?,?,?,?,?)`,
+			u[0], u[1], u[2], u[3], u[4], now, now,
+		); err != nil {
+			t.Fatalf("legacy insert %s: %v", u[0], err)
+		}
+	}
+}
+
+// A-002 F-004 · a legacy R2 user whose roles JSON contains duplicates survives
+// migration and can authenticate: 0002 dedupes the relations and the read
+// comparator follows set semantics. Login exercises UserByUsername and Refresh
+// exercises UserByID on the migrated user.
+func TestLoginAndRefreshAfterMigrateDuplicateRoles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "legacy-dup.db")
+	hash, err := HashPassword("pw", 4)
+	if err != nil {
+		t.Fatalf("hash: %v", err)
+	}
+	buildLegacyR2DB(t, path, [][]string{{"u-alice", "alice", "Alice", `["admin","admin","editor"]`, hash}})
+
+	st, err := store.Open(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatalf("open migrated store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	a := New([]byte("secret"), 15*time.Minute, testRefreshTTL, st, false)
+
+	access, refresh, user, err := a.Login("alice", "pw", now())
+	if err != nil {
+		t.Fatalf("Login after migration with duplicate legacy roles: %v", err)
+	}
+	if want := []string{"admin", "editor"}; !reflect.DeepEqual(user.Roles, want) {
+		t.Fatalf("roles = %v, want %v (deduped, sorted by key)", user.Roles, want)
+	}
+	sub, err := ParseAccessToken([]byte("secret"), access)
+	if err != nil {
+		t.Fatalf("ParseAccessToken: %v", err)
+	}
+	if sub != "u-alice" {
+		t.Fatalf("subject = %q, want u-alice", sub)
+	}
+	if _, _, _, err := a.Refresh(refresh, now().Add(time.Minute)); err != nil {
+		t.Fatalf("Refresh after migration: %v", err)
 	}
 }
