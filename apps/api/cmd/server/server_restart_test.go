@@ -20,6 +20,8 @@ import (
 // S6 · 进程级重启持久化（L2，I-007-004 / D-007）：真实 `cmd/server` OS 子进程
 // 以同一 `DB_PATH` 终止→重启，全 HTTP CRUD → 重启 → list/detail 符合预期。
 // 补齐 A-003/A-004 标记的「store close/reopen 单测 ≠ 进程级重启」缺口。
+// A-010 F-008 补充：Phase 2 对新建记录与 rec-1 分别 GET detail，断言 `updatedAt`
+// 与 Phase 1 的 POST/PATCH 响应毫秒精确一致（跨进程持久化往返）。
 //
 // 数据库隔离：每轮全新临时 DB_PATH + 空闲端口；测试结束 Kill+Wait 不留进程，
 // 临时库与 pre-v0003 快照随 t.TempDir() 清理。迁移/seed 重跑、失败路径与
@@ -49,8 +51,16 @@ func TestServerProcessRestartPersistsRecords(t *testing.T) {
 	srv1, log1 := startServer(t, bin, dbPath, port1)
 	waitHealth(t, port1, 20*time.Second)
 	token := httpLogin(t, port1, "admin", "admin")
-	createdID := httpCreate(t, port1, token)
-	httpPatch(t, port1, token, "rec-1", "Acme Rebrand")
+	createdID, created := httpCreate(t, port1, token)
+	createdAt, _ := created["updatedAt"].(string)
+	if createdAt == "" {
+		t.Fatalf("created record updatedAt missing")
+	}
+	patched := httpPatch(t, port1, token, "rec-1", "Acme Rebrand")
+	patchedAt, _ := patched["updatedAt"].(string)
+	if patchedAt == "" {
+		t.Fatalf("patched rec-1 updatedAt missing")
+	}
 	httpDelete(t, port1, token, "rec-2")
 	killServer(t, srv1, log1)
 
@@ -85,9 +95,29 @@ func TestServerProcessRestartPersistsRecords(t *testing.T) {
 		t.Fatalf("total after restart = %v, want 8 (no re-seed)", total)
 	}
 
-	_, detail := httpDoJSON(t, port2, http.MethodGet, "/api/records/"+createdID, "", token2)
-	if detail["name"] != "Persisted Co" || detail["status"] != "active" || detail["owner"] != "zoe" {
-		t.Fatalf("created detail after restart = %v", detail)
+	// detail after restart: created record fields + updatedAt and rec-1 name +
+	// updatedAt match the Phase 1 create/PATCH responses ms-exactly (I-007-004
+	// §3.6 / §4, A-010 F-008).
+	code, createdDetail := httpDoJSON(t, port2, http.MethodGet, "/api/records/"+createdID, "", token2)
+	if code != http.StatusOK {
+		t.Fatalf("created detail status = %d, want 200", code)
+	}
+	if createdDetail["name"] != "Persisted Co" || createdDetail["status"] != "active" || createdDetail["owner"] != "zoe" {
+		t.Fatalf("created detail after restart = %v", createdDetail)
+	}
+	if createdDetail["updatedAt"] != createdAt {
+		t.Fatalf("created updatedAt after restart = %v, want %v (persisted ms)", createdDetail["updatedAt"], createdAt)
+	}
+
+	code, rec1Detail := httpDoJSON(t, port2, http.MethodGet, "/api/records/rec-1", "", token2)
+	if code != http.StatusOK {
+		t.Fatalf("rec-1 detail status = %d, want 200", code)
+	}
+	if rec1Detail["name"] != "Acme Rebrand" {
+		t.Fatalf("rec-1 detail name after restart = %v", rec1Detail)
+	}
+	if rec1Detail["updatedAt"] != patchedAt {
+		t.Fatalf("rec-1 updatedAt after restart = %v, want %v (persisted ms)", rec1Detail["updatedAt"], patchedAt)
 	}
 }
 
@@ -171,7 +201,7 @@ func httpLogin(t *testing.T, port, username, password string) string {
 	return tok
 }
 
-func httpCreate(t *testing.T, port, token string) string {
+func httpCreate(t *testing.T, port, token string) (string, map[string]any) {
 	t.Helper()
 	code, out := httpDoJSON(t, port, http.MethodPost, "/api/records", `{"name":"Persisted Co","status":"active","owner":"zoe"}`, token)
 	if code != http.StatusCreated {
@@ -181,15 +211,19 @@ func httpCreate(t *testing.T, port, token string) string {
 	if id == "" {
 		t.Fatalf("create id missing in %v", out)
 	}
-	return id
+	return id, out
 }
 
-func httpPatch(t *testing.T, port, token, id, name string) {
+// httpPatch issues a PATCH and returns the 200 response body so the caller can
+// capture the refreshed `updatedAt` for the cross-process detail assertion
+// (A-010 F-008).
+func httpPatch(t *testing.T, port, token, id, name string) map[string]any {
 	t.Helper()
-	code, _ := httpDoJSON(t, port, http.MethodPatch, "/api/records/"+id, fmt.Sprintf(`{"name":%q}`, name), token)
+	code, out := httpDoJSON(t, port, http.MethodPatch, "/api/records/"+id, fmt.Sprintf(`{"name":%q}`, name), token)
 	if code != http.StatusOK {
 		t.Fatalf("patch %s status = %d, want 200", id, code)
 	}
+	return out
 }
 
 func httpDelete(t *testing.T, port, token, id string) {

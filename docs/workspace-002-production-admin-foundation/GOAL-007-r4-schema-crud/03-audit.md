@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.15.0
+version: 0.20.0
 ---
 
 # 审计台账 · GOAL-007
@@ -22,11 +22,15 @@ version: 0.15.0
 | A-007 | independent | 2026-08-02 | finding-closure · I-007-003 v0.2.1 修订复核（A-006 关闭证据） | conditional | responded：F-007 **fixed**（I-007-003 v0.2.2 + D-005 补记）；F-005/F-006 维持 fixed；R-001/R-002 handled |
 | A-008 | independent | 2026-08-02 | execution-facts · S4/S5 Schema CRUD 主路径与权限负向闭环 | pass | 无新 finding；S4/S5 完成证据可重复核对；`I-007-004` 仍 open，仅阻断 S6 |
 | A-009 | self | 2026-08-02 | execution-facts · S4/S5 完成主张 self 复核（对照 I-007-003 v0.2.2 / D-005 / D-006） | pass | — |
+| A-010 | independent | 2026-08-02 | close-out · S1～S6 整体完成主张与关门前证据 | conditional | **F-008 → fixed**（2026-08-02：L2 detail `updatedAt` 跨进程断言 + focused/全仓复跑；A-011 复核 pass）；R-003/R-004 recommended（非阻断） |
+| A-011 | independent | 2026-08-02 | finding-closure · A-010 F-008 关闭证据（L2 `updatedAt` 跨进程 detail 断言 + 执行事实同步） | pass | responded：A-013（self close-out）采纳 pass |
+| A-012 | independent | 2026-08-02 | finding-closure · 编排器对 A-010 F-008 的修正复核 | pass | responded：F-008 `fixed` 可维持（A-013 self close-out 采纳 pass） |
+| A-013 | self | 2026-08-02 | close-out · GOAL-007 S1～S6 整体 + 关门条件（含 S6/L2 self 覆盖） | pass | —；本目标已按此置 `done`，Root R4 已勾选 |
 
 ## 当前审计边界
 
 - 信息门禁：`I-007-001`/`I-007-002` verified；**`I-007-003` 台账 verified（v0.2.2）**；**`I-007-004` verified（D-007 + [I-007-004-restart-e2e-protocol.md](attachments/I-007-004-restart-e2e-protocol.md)）**。A-005/A-006/A-007 的 F-002～F-007 全部闭合；S4/S5 由 A-008（independent）+ A-009（self）复核 `pass`；S6 已实施（L1 HTTP 层 + L2 进程级重启持久化，02-execution）。
-- **A-001～A-009** 历史响应见索引；**当前无开放 required、无开放 required 信息门禁**。本目标六项成功标准全部达成但仍 `active`（关门待关门审计 + 用户裁决 + Root R4）；后续意见从 `A-010` 起。
+- **A-001～A-013 响应**见索引与响应节；`I-007-001`～`I-007-004` 仍全部 verified。**A-010 F-008 → `fixed`（2026-08-02，A-011/A-012 独立复核 pass）**：L2 已按 I-007-004 §3.6/§4 对新建记录与 `rec-1` 分别 GET detail 并断言 `updatedAt` 与 Phase 1 POST/PATCH 响应毫秒精确一致（`apps/api/cmd/server/server_restart_test.go`；本轮 focused L2 PASS 5.82s、L1 PASS 1.28s、`go vet ./cmd/server/` 通过）。F-008 关闭证据经两次独立 finding-closure 复核确认可维持 `fixed`。**A-013（self · close-out）`pass`（2026-08-02）**：成功标准 S1～S6 全 6/6、四项 required 信息门禁 verified、无开放 required；**GOAL-007 已置 `done`，Root R4 已勾选（Root `3/5 → 4/5`）**，目标关门。后续意见从 `A-014` 起。
 
 ## A-001 · S1/S2 契约冻结独立审计（2026-08-02）
 
@@ -802,3 +806,286 @@ version: 0.15.0
 - **P-004 §3.1 处置（用户裁决）**：A-008 为 `source: independent` 且 S4/S5 scope 尚无 self 审计；用户本轮裁决「**先补 S4/S5 self 审计**」——已落盘 **A-009（self · pass）** 作为该 scope 的 self 覆盖，随后统一响应 A-008。self 审计留待放行或关门前的既有裁决由此闭环。
 - **仍开放（非本意见 required）**：`I-007-004`（S6 验收，本轮将收集关闭）；Root R4 未勾选；本目标仍未到关门。
 - **证据路径**：本响应节；A-009（self）；02-execution「实施 S4/S5」节；`schema-crud.test.tsx`（T-UI-01～10）；`list-edit-lifecycle.json` / `search-form-table.json`；`render.tsx` / `schema-table.tsx` / `records.ts` / `modal.tsx` / `confirm.tsx` / `data-table.tsx`。
+
+## A-010 · R4 整体完成主张与关门前证据独立审计（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot
+- **类型 / scope**：close-out；复核 S1～S6 的整体完成主张、`I-007-001`～`I-007-004` required 信息门禁、既有 A-001～A-009 finding 响应，以及将 GOAL-007 置 `done` 与勾选 Root R4 前的可重复证据。不审 R5 工程化/容器/fork 体验。
+- **verdict**：conditional
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`，Root 为 `GOAL-001-production-admin-foundation`，与本目标 `parent` 一致。
+- 愿景链：workspace 的 `plan_refs` / `primary_plan` 均为 `VP-002-production-admin-foundation`；其 `vision_ref` 与 active Charter `schema-ui-core-admin-foundation@0.1.0` 一致。
+- 共享资料：`shared_materials_catalog: none`；本意见未把共享资料当作事实或 finding 关闭依据。
+- 已审阅：本目标五件套、I-007-001～004、A-001～A-009 与各响应；`records_restart_test.go`（L1）、`server_restart_test.go`（L2）、store records/迁移/seed 回归、Schema CRUD fixture/Renderer 测试、API README 与 browser E2E。
+- 独立复跑（2026-08-02）：`go test ./internal/handler -run '^TestRecordsSurviveRestart$' -count=1` 通过；`go test ./cmd/server -run '^TestServerProcessRestartPersistsRecords$' -count=1` 通过；`npm test -- src/renderer/schema-crud.test.tsx` 通过（15 项，T-UI-01～10）。
+
+### 成果（有证据）
+
+| 主张 | 复核结果与证据 |
+|------|----------------|
+| S1/S2 契约、DDL、迁移与 seed | 成立：D-002～D-004 与 I-007-001/002 保持 verified；0003 records、毫秒 `updated_at`、空表才 seed、checksum 漂移 fail-closed 均有 store/handler 覆盖。 |
+| S3 SQLite CRUD API | 成立：records repository、POST/list/detail/PATCH/DELETE、`records.read`/`records.write` 与统一 envelope 已由 A-003/A-004 复核；未见回退到进程内 records。 |
+| S4/S5 Schema CRUD 与权限负向 | 成立：A-008 independent 与 A-009 self 均为 pass；本轮 T-UI-01～10 聚焦复跑 15 项通过。 |
+| S6 L1 重启证据 | 成立：`TestRecordsSurviveRestart` 在同一临时 SQLite 文件上完成 HTTP create/update/delete、close/reopen、list/detail，且核对 `rec-1.updatedAt` 与 Phase 1 PATCH 响应一致；本轮复跑通过。 |
+| S6 L2 真实进程重启 | 部分成立：`TestServerProcessRestartPersistsRecords` 构建真实 `cmd/server` 子进程，以同一临时 `DB_PATH` 重启，确认 create 存在、update 名称保持、delete 不复活、总数为 8；本轮复跑通过。但缺少 I-007-004 要求的 update 时间戳跨进程 detail 精确核对，见 F-008。 |
+| 目标/Root 状态边界 | 成立：GOAL-007 与工作区 goal-tree 均保持 `active / 6/6`，Root R4 未勾选、Root progress 保持 `3/5`；尚未越权关门。 |
+
+### 对照成功标准
+
+| 标准 | 结论 | 说明 |
+|------|------|------|
+| S1～S5 | 达成 | 既有 independent/self 审计与本轮聚焦复跑可相互核对。 |
+| S6 | 证据不足以无条件关门 | L1 满足固定序列；L2 已证明核心跨进程 create/update/delete 持久化，但遗漏 `updatedAt` 的跨进程 detail 精确断言。 |
+| 目标关门 / Root R4 | 不可放行 | F-008 为 open required；P-003 禁止在未合法闭合前置 `done` 或勾选对应 Root 检查点。 |
+
+### Findings
+
+#### F-008 · L2 进程级重启未核对 PATCH 的 `updatedAt` 毫秒精确持久化
+
+- **级别**：required
+- **严重度**：medium
+- **影响门禁**：GOAL-007 关门、Root R4 勾选
+- **关联信息项**：`I-007-004`；D-007；S6
+- **状态**：open
+- **证据**：I-007-004 §3 要求 Phase 1 记录 PATCH 响应 `updatedAt`，Phase 2 对新记录与 `rec-1` 分别 GET detail 并断言字段与 `updatedAt` 毫秒精确一致。L2 `server_restart_test.go` 的 `httpPatch` 不返回响应，Phase 2 仅以 list 检查 `rec-1` 名称，并只 GET 新建记录详情；因此执行记录中「L2 ... list/detail 断言同 L1」的范围偏满。L1 已覆盖该时间戳断言，但不能替代跨进程路径。
+- **必改**：由 `/govern` 修正 L2：保留 PATCH 响应中的 `updatedAt`，重启后 GET `/api/records/rec-1`，断言更新字段及 `updatedAt` 与 Phase 1 毫秒字符串完全一致；同步修正执行事实，再以 focused L2 测试和本审计 finding-closure 复核关闭。不得仅以本轮 L2 测试通过视作该缺口已消失。
+
+#### R-003 · API README 的 records 端点仍标为 R5
+
+- **级别**：recommended
+- **严重度**：low
+- **状态**：open
+- **证据**：`apps/api/README.md` 端点表将 GET list/detail 与 PATCH/DELETE 标为「R5 D-DATA / D-ACT」，而其余 README 文本和 GOAL-007 S3 已将这些接口作为 R4 SQLite CRUD 的已交付范围。
+- **建议**：在响应 F-008 时将端点表阶段标注统一为 R4，或去掉陈旧阶段前缀。
+
+#### R-004 · 浏览器 E2E 尚未覆盖真实 Schema CRUD 生命周期
+
+- **级别**：recommended
+- **严重度**：low
+- **状态**：open
+- **证据**：`apps/web/e2e/shell.spec.ts` 覆盖登录、records GET、匿名 PATCH 401 与 admin PATCH 200；未驱动 `list-edit-lifecycle` 的 create/edit/delete/confirm。T-UI-01～10 使用内存 API 模拟器，能证明 Renderer 行为但不证明浏览器到真实 Go/SQLite 的完整生命周期。
+- **建议**：作为关门补充，为 `list-edit-lifecycle` 增加真实浏览器 CRUD 旅程。I-007-004 将 `npm run test:e2e` 列为可选回归，因此该项不阻断 F-008 修复后的关门。
+
+### 必改项汇总
+
+| ID | 级别 | 未闭合前的约束 |
+|----|------|----------------|
+| **F-008** | required | 不得将 GOAL-007 置 `done`，不得勾选 Root R4；需补齐 L2 `updatedAt` 跨进程 detail 断言并经 `/govern` 留痕关闭。 |
+
+- recommended：R-003（README 阶段标签）、R-004（真实浏览器 CRUD E2E）。
+
+### 与既有意见的异同
+
+- 相对 A-008/A-009：同意 S4/S5 已具备 independent + self 的 pass 证据；本意见不重开其 findings。
+- 相对 A-003/A-004：同意 SQLite CRUD、迁移、seed 与 store/handler 回归均已落实；F-008 仅收紧 S6 的 L2 跨进程时间戳证据。
+- 相对执行记录：认可 L2 子进程重启、create/update/delete 与非空 seed 不复活均有可重复证据；不同意将其概括为「detail 断言同 L1」，直至补齐 `rec-1` 的时间戳 detail 断言。
+- 与既有意见无 verdict 冲突；本意见首次对整体 close-out 开出 required finding。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **conditional**：S1～S5 与 S6 的 L1 证据充分；L2 真实进程重启也已证明主要持久化行为，但 F-008 使 S6 的固定验收协议尚未完整兑现。因此当前不能关门。
+- 建议 `/govern`：修正 F-008 的 L2 测试和执行事实，复跑聚焦 L2 与必要回归后记录 `fixed`，再由用户按 P-004 决定是否补 close-out self 审计，并处理 `done` / Root R4 勾选。R-003/R-004 可在同轮处理或作为非阻断后续项。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、finding 关闭与阶段推进由 `/govern` 处理。
+
+### 响应 · A-010（/govern · 2026-08-02）
+
+- **verdict 采纳**：`conditional` 成立——S1～S5 与 S6 L1 证据充分，L2 真实进程重启已证明主要持久化行为，但 F-008 使 S6 固定验收协议未完整兑现。本轮以 **fixed** 路径补齐，未走 overruled/residual（未触发 P-004 §3.3；用户明确指示修复 F-008 并请求 finding-closure 复核）。
+- **F-008 → fixed（L2 `updatedAt` 跨进程 detail 断言）**：
+  - 修正 `apps/api/cmd/server/server_restart_test.go`：`httpPatch` 返回 200 响应体、`httpCreate` 返回完整响应；Phase 1 记录 create `createdAt` 与 PATCH `rec-1` 的 `patchedAt`（毫秒 RFC3339）；Phase 2 新增 `GET /api/records/{createdID}`（字段 + `updatedAt == createdAt`）与 `GET /api/records/rec-1`（`name == "Acme Rebrand"` + `updatedAt == patchedAt`），对齐 I-007-004 §3.6/§4。
+  - **执行事实同步**：02-execution 记录此前「L2 … list/detail 断言同 L1」表述偏满（原仅以 list 检查 rec-1 名称、只 GET 新建记录 detail）；本轮补上 rec-1 `updatedAt` 跨进程断言并注明修正。
+  - **复跑证据**：`go vet ./cmd/server/` 干净；focused `go test ./cmd/server -run '^TestServerProcessRestartPersistsRecords$' -count=1` **PASS（4.32s）**；`go test ./... -count=1`（apps/api）全绿（cmd/server、handler、store、auth、account）。
+- **R-003 / R-004 → 保持 recommended 非阻断**：R-003（API README 端点表阶段标注 R5→R4）可在同轮或后续快速处理；R-004（真实浏览器 CRUD E2E）按 A-010 判定不阻断 F-008 修复后的关门。二者不阻塞本 finding 闭合。
+- **关闭范围**：本响应只闭合 F-008。`GOAL-007` 仍 `active / 6/6`，**未置 `done`**；Root R4 未勾选（Root 保持 `3/5`）。`done` / Root R4 仍需 finding-closure 复核通过 + 用户按 P-004 裁决是否补 close-out self 审计（S6/L2 scope 尚无 self 覆盖；A-009 self 仅覆盖 S4/S5）。
+- **证据路径**：本响应节；`apps/api/cmd/server/server_restart_test.go`（`httpCreate`/`httpPatch`/Phase 2 detail 断言）；focused L2 与全仓 `go test ./...` 复跑输出；02-execution 2026-08-02「响应 A-010」节；I-007-004 §3.6/§4。
+- **下一步建议**：运行 `/audit` 对 F-008 关闭证据做 finding-closure 复核；复核通过后再议关门（close-out self 审计裁决 + `done` + Root R4 勾选）。
+
+## A-011 · F-008 关闭证据独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：Claude Code（`/audit` 独立审计入口）
+- **类型 / scope**：finding-closure；复核 [A-010](attachments/) 的 **F-008** 关闭证据——L2 进程级重启是否按 I-007-004 §3.6/§4 保留 PATCH `updatedAt` 并跨进程 GET detail 断言毫秒精确一致，以及 02-execution / 03-audit / goal-tree 的执行事实同步是否名实相符。**不**复判 S1～S5、不重开 A-001～A-010 其余 findings、不判定目标 `done` / Root R4。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；`vision_role: delivery`、`primary_plan: VP-002-production-admin-foundation`、`shared_materials_catalog: none`（本意见未把共享资料当作事实或关闭证据）。
+- 已审阅：A-010 正文与 A-010 响应节、02-execution「响应 A-010」节、00-meta S6 行、goal-tree 台账、`apps/api/cmd/server/server_restart_test.go`、L1 `internal/handler/records_restart_test.go`、I-007-004 §3.6/§4。
+- 独立复跑（2026-08-02，本审计入口）：`go test ./cmd/server -run '^TestServerProcessRestartPersistsRecords$' -count=1` **PASS（4.32s）**；`go test ./internal/handler -run '^TestRecordsSurviveRestart$' -count=1` **PASS（0.13s）**；`go test ./... -count=1`（apps/api）全绿。
+
+### 成果（有证据）
+
+| A-010 F-008 必改项 | 复核结果与证据 |
+|-------------------|----------------|
+| 保留 PATCH 响应中的 `updatedAt` | **成立**：`httpPatch` 现返回 200 响应体（`server_restart_test.go`）；Phase 1 断言 `patchedAt` 非空。 |
+| 重启后 GET `/api/records/rec-1`，断言更新字段 | **成立**：Phase 2 `GET /api/records/rec-1` → 200，断言 `name == "Acme Rebrand"`。 |
+| 断言 `updatedAt` 与 Phase 1 毫秒字符串完全一致 | **成立**：`rec1Detail["updatedAt"] != patchedAt` 以**字符串精确相等**断言；PATCH 与 detail 均经同一 `updatedAt.MarshalJSON`（固定 3 位毫秒 RFC3339）序列化，跨进程往返必须字节一致。 |
+| 对齐 I-007-004 §3.6/§4 对 `{newID}` 与 `rec-1` 双 detail 的要求 | **成立且略超最低要求**：Phase 2 同时新增 `GET /api/records/{createdID}` 断言字段 + `updatedAt == createdAt`，与 §3.6「`{newID}` 与 `rec-1` → 断言 detail 字段与 `updatedAt` 毫秒精确一致」逐字对应。 |
+| 断言非空泛（若持久化失败必失败） | **成立**：未持久化时 rec-1 detail 的 `updatedAt` 将是 seed 值（`2026-07-31T…`）而非 `patchedAt`（`2026-08-02T…`），或 `{createdID}` detail 返回 404（`code != 200`），两处均 fail。 |
+| 同步修正执行事实 | **成立**：02-execution 新增「响应 A-010」节，显式修正此前「L2 … list/detail 断言同 L1」表述偏满；03-audit A-010 响应节、00-meta S6 行与 goal-tree 台账均一致记录 F-008 `fixed`，未越权宣称 `done`/Root R4。 |
+| 独立复跑可重复 | **成立**：focused L2（4.32s）与 L1（0.13s）独立复跑 PASS；全仓 `go test ./...` 全绿。 |
+
+### 对照成功标准（本 scope）
+
+| 项 | 结论 |
+|----|------|
+| A-010 F-008 必改逐项落实 | **达成**（上表） |
+| 关闭声明名实相符 | **成立**：L2 现与 L1 一致地对 rec-1 做 `updatedAt` 毫秒精确 detail 断言；「list/detail 断言同 L1」表述经修正后成立。 |
+| 未越权关门 | **成立**：`GOAL-007` 仍 `active / 6/6`、未 `done`；Root R4 未勾选（Root 保持 `3/5`）；响应节明确「只闭合 F-008」。 |
+
+### Findings
+
+- **无新 required**。
+- **无新 recommended**（本 finding-closure scope；A-010 的 R-003/R-004 仍为非阻断 recommended）。
+
+### 必改项汇总
+
+- **无开放 required**（本 scope）。A-010 F-008 的 `fixed` 关闭证据充分且可独立复核，可维持闭合。
+
+### 与既有意见的异同
+
+- 相对 A-010（independent · conditional · 开 F-008）：**关闭成立**——L2 已补齐 PATCH `updatedAt` 跨进程 detail 断言并同步执行事实；本意见不重开 A-010 的 R-003/R-004（recommended 非阻断，仍可在关门补充中处理）。
+- 相对执行记录：认可 L2 子进程重启、create/update/delete、非空 seed 不复活与本次新增的 rec-1/`{newID}` `updatedAt` 毫秒精确 detail 断言均有可重复证据。
+- 关门视角注记（非本 scope finding）：S6/L2 整体尚无 `source: self` 覆盖（A-009 self 仅覆盖 S4/S5）。是否补 close-out self 审计属 P-004 §3.1 在关门拍的用户裁决项，不阻断 F-008 闭合。
+- 无与既有 self/independent 意见在 verdict 或 required 上冲突。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：A-010 F-008 的关闭证据——L2 `updatedAt` 跨进程毫秒精确 detail 断言 + 执行事实同步——逐项落实、可独立复跑、非空泛；scope 内无开放 required。F-008 可按 `fixed` 维持闭合。
+- 建议 `/govern`：
+  1. 记录对本意见的响应（采纳 pass，确认 F-008 关闭复核成立）。
+  2. 关门路径：按 P-004 §3.1 先裁决是否补 close-out self 审计（S6/L2 scope 尚无 self 覆盖），再处理 `done` 与 Root R4 勾选（Root `3/5 → 4/5`）。
+  3. 可选：同轮处理 R-003（`apps/api/README.md` 端点表阶段标注统一为 R4）与 R-004（真实浏览器 CRUD E2E）作为关门补充。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、finding 状态与阶段推进由 `/govern` 处理。
+
+### 响应 · A-011（/govern · 2026-08-02）
+
+- **verdict 采纳**：`pass` 成立——A-011 独立复核确认 A-010 F-008 的关闭证据（L2 `updatedAt` 跨进程毫秒精确 detail 断言 + 执行事实同步）逐项落实、可独立复跑、非空泛；scope 内无开放 required。
+- **F-008 关闭确认**：F-008 按 `fixed` 保持闭合（A-011 + A-012 双 independent finding-closure pass）。
+- **P-004 §3.1 处置（用户裁决）**：关门拍用户裁决「补 close-out self 审计」→ **A-013（self · close-out）** 补齐 S6/L2 与整体 close-out 的 `source: self` 覆盖。
+- **证据路径**：本响应节；A-011（independent）；A-013（self close-out）；02-execution 2026-08-02「关门」节。
+
+## A-012 · 编排器对 A-010 F-008 修正的独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot
+- **类型 / scope**：finding-closure；仅复核编排器对 A-010 F-008 的修正是否满足 I-007-004 §3/§4 的 L2 跨进程持久化断言，及相关执行事实是否同步。既有 A-011 结论仅作台账背景，不作为本意见的证据替代；不复判 S1～S5，不改变 `done` 或 Root R4。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`，Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；共享资料目录为 `none`。
+- 信息门禁：`I-007-004` 为 required 且 `verified`；F-008 的关闭只可由可重复的 L2 证据支持。
+- 已审阅：A-010 与其响应、02-execution「响应 A-010」节、I-007-004 §3/§4、`apps/api/cmd/server/server_restart_test.go`、配套 L1 `internal/handler/records_restart_test.go`。
+- 独立复跑（2026-08-02）：`go test ./cmd/server -run '^TestServerProcessRestartPersistsRecords$' -count=1` 通过（5.82s）；`go test ./internal/handler -run '^TestRecordsSurviveRestart$' -count=1` 通过（1.28s）；`go vet ./cmd/server/` 通过。
+
+### 成果（有证据）
+
+| F-008 修正要求 | 复核结果 |
+|----------------|----------|
+| 保存 create/PATCH 的 Phase 1 `updatedAt` | 成立：L2 的 `httpCreate` 返回完整响应，`httpPatch` 返回 PATCH 200 响应；测试拒绝空的 `createdAt` / `patchedAt`。 |
+| 重启后复核新记录详情 | 成立：Phase 2 GET `/api/records/{createdID}`，核对字段与 `updatedAt == createdAt`。 |
+| 重启后复核更新记录详情 | 成立：Phase 2 GET `/api/records/rec-1`，核对名称为 `Acme Rebrand` 且 `updatedAt == patchedAt`。 |
+| 毫秒精确跨进程往返 | 成立：两处均以 API 返回的 RFC3339 字符串直接相等比较；测试在真实 `cmd/server` 子进程终止并以同一临时 `DB_PATH` 重启后通过。 |
+| 执行事实同步 | 成立：02-execution 明确更正此前 L2 的 detail 断言范围，并记录新增双 detail 与时间戳断言。 |
+
+### Findings
+
+- **无新 required**。
+- A-010 的 R-003（README 阶段标签）与 R-004（真实浏览器 CRUD E2E）仍为 recommended，且不在本 finding-closure scope 内。
+
+### 必改项汇总
+
+- **F-008 已按 `fixed` 合法闭合，关闭证据充分，可维持。**本 scope 无开放 required。
+
+### 与既有意见的异同
+
+- 与 A-010 的修正方向一致：L2 现在实际覆盖 I-007-004 要求的 `rec-1` 与新建记录双 detail、毫秒精确持久化往返。
+- 与 A-011 的 `pass` 无冲突；本意见独立复跑 L1/L2 并直接核对实现，不以其结论替代证据。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：A-010 F-008 的修正和执行事实同步均可重复核对，`fixed` 状态成立。
+- 建议 `/govern`：先按 P-004 §3.1 询问用户是否补 close-out self 审计（S6/L2 尚无 self 覆盖），再处理 GOAL-007 `done` 与 Root R4 勾选；R-003/R-004 可作为非阻断补充处理。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、finding 状态与阶段推进由 `/govern` 处理。
+
+### 响应 · A-012（/govern · 2026-08-02）
+
+- **verdict 采纳**：`pass` 成立——A-012 独立复核确认 A-010 F-008 的修正（L2 `updatedAt` 跨进程 detail 断言）与执行事实同步可重复核对，`fixed` 状态可维持；scope 内无开放 required、无新 recommended。
+- **F-008 关闭复核确认**：A-011（independent）+ A-012（independent）两轮 finding-closure 独立复核均 `pass`；F-008 继续按 `fixed` 保持闭合。
+- **P-004 §3.1 处置（用户裁决）**：A-011/A-012 均为 independent；用户本轮裁决「**补 close-out self 审计**」→ 已落盘 **A-013（self · close-out）** 作为 GOAL-007 关门与 S6/L2 scope 的 self 覆盖，随后统一响应 A-011/A-012。
+- **仍开放（非本意见 required）**：R-003（README 端点表阶段标注）、R-004（真实浏览器 CRUD E2E）为 recommended 非阻断，留待关门补充或后续处理。
+- **证据路径**：本响应节；A-012（independent）本意见；A-013（self close-out）；02-execution 2026-08-02「关门」节。
+
+## A-013 · GOAL-007 关门 self 审计（2026-08-02）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：close-out；对 GOAL-007（R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环）S1～S6 整体完成主张与关门条件做 **self 复核**——成功标准逐项对照、`I-007-001`～`I-007-004` required 信息门禁、A-001～A-012 意见闭合，以及将本目标置 `done` 并勾选 Root R4 的依据。本自审同时为 S6/L2 scope 补上 `source: self` 覆盖（P-004 §3.1 · 用户裁决「补 close-out self 审计」；既有 A-009 self 仅覆盖 S4/S5）。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；`vision_role: delivery`、`primary_plan: VP-002-production-admin-foundation`（vision_ref 与 active Charter `schema-ui-core-admin-foundation@0.1.0` 一致）；`shared_materials_catalog: none`（本自审未把共享资料作为事实或 finding 关闭证据）。
+- 愿景审查：`docs/vision/reviews.md` VRev-003/VRev-004 均 `pass`、**0 open required**；勾选 Root R4 不关闭 VP-002（R5 仍属 Root 纲领），不触发 Vision Review。
+- 已复核：目标五件套、I-007-001～004（v0.2.0 / v0.2.2 等）、D-002～D-007、A-001～A-012 及各自响应、Root `GOAL-001` 00-meta 纲领 R4、工作区 goal-tree；代码 `apps/api`（store 迁移/records repository/seed/handler、L1/L2 重启测试）、`apps/web`（renderer/Schema CRUD fixture、T-UI-01～10）。
+- 复跑证据（2026-08-02）：`go test ./... -count=1`（apps/api）全绿；web `npm test`（vitest）**458/458** 全绿（23 文件，含 schema-crud.test.tsx T-UI-01～10）；`go vet ./cmd/server/` 干净。
+
+### 成果（有证据）
+
+| 成功标准 | self 复核证据 |
+|----------|--------------|
+| **S1 · 精确 CRUD 与错误契约冻结** | D-002 + I-007-001 v0.2.0（毫秒 `updatedAt`、POST 201、`INVALID_CREATE_*`、T-API-01～13）；A-001 F-001 → fixed、A-002 self pass。 |
+| **S2 · SQLite 结构、迁移与种子冻结** | D-003 + I-007-002 v0.2.0（`0003 records_persist`、空表 seed、T-DB-01～09）；D-004 统一 Unix 毫秒；A-001/A-002 复核 pass。 |
+| **S3 · 持久化 CRUD API** | 0003 迁移 + repository + seedRecords + handler SQLite 路径；POST/list/detail/PATCH/DELETE；T-API-08～13/T-DB-01～09；A-003/A-004（independent）复核 pass；A-003 R-001/R-002 fixed。 |
+| **S4 · Schema 驱动读写主路径** | I-007-003 v0.2.2 冻结唯一结构/权限/actions/`{id}` 槽绑定；`list-edit-lifecycle`/`search-form-table` fixture + Renderer 一次性补齐；T-UI-01～05、10；A-008（independent）+ A-009（self）pass。 |
+| **S5 · 交互状态与权限负向闭环** | `records.write` → `permissions.edit/delete` 表达式禁用 viewer/editor 写 affordance；confirm 序列；统一 envelope；T-UI-06～09；A-008/A-009 pass。 |
+| **S6 · 重启、迁移与端到端回归** | I-007-004 verified（D-007 协议）；L1 `TestRecordsSurviveRestart`（同文件 store close/reopen，`updatedAt` 毫秒一致）+ L2 `TestServerProcessRestartPersistsRecords`（真实子进程终止→同 `DB_PATH` 重启，rec-1/`{newID}` detail `updatedAt` 毫秒精确跨进程断言，A-010 F-008 → fixed）；`go test ./...` 全绿 + web 458/458。 |
+| **信息门禁** | `I-007-001/002/003/004` 全部 `verified`；无到期 required、无合规 residual 需要。 |
+| **意见闭合** | F-001～F-008 全部 `fixed`（A-001/A-005/A-006/A-007/A-010 响应 + A-002/A-011/A-012 复核 pass）；无开放 required。R-001～R-004 为 recommended/handled，不阻断关门。 |
+| **状态边界** | 六项成功标准全勾选（`6/6`）；关门后置 `done` 并勾选 Root R4 属本自审建议范围，不覆盖 R5 或 VP-002 关门。 |
+
+### 对照成功标准 / 关门条件
+
+| 关门条件 | 状态 | 证据 |
+|----------|------|------|
+| 相关意见无未合法闭合的 required | **满足** | F-001～F-008 均 fixed；A-011/A-012 finding-closure pass；R-003/R-004 为非阻断 recommended |
+| 相关信息项无未处理的关门 required | **满足** | `I-007-001`～`I-007-004` verified；无到期 deferred required |
+| 至少一次阶段/关门向审计（self 或 independent） | **满足** | A-001～A-012（self 2 + independent 10）+ 本 A-013 self close-out |
+| 成功标准对照可核对 | **满足** | 上表逐项（S1～S6 全 6/6 + 复跑证据） |
+| 关门不越界（仅勾选 Root R4，不覆盖 R5/VP-002） | **满足** | 仅勾选 R4（Root `3/5 → 4/5`）；R5 与 VP-002 保持 open |
+
+### Findings
+
+- **无新 required**。
+- **recommended（非阻断）**：R-003（`apps/api/README.md` 端点表阶段标注统一为 R4）与 R-004（真实浏览器 `list-edit-lifecycle` CRUD E2E）作为关门补充或后续处理；不改变本自审 `pass` 结论。
+
+### 必改项汇总
+
+- **无开放 required**（scope 内）。GOAL-007 具备置 `done` 与勾选 Root R4 的关门条件。
+
+### 与既有意见的异同
+
+- 相对 A-008/A-009（S4/S5 scope）：结论一致；本自审将 S6/L2 与整体 close-out 纳入 self 覆盖。
+- 相对 A-010/A-011/A-012（close-out / F-008 finding-closure）：F-008 `fixed` 维持；本自审不重开任何已闭合 finding。
+- 无与既有 self/independent 意见在 verdict 或 required 上冲突。
+
+### 结论 + 建议下一步
+
+- **pass**：GOAL-007 六项成功标准全部达成、四项 required 信息门禁 verified、无开放 required finding；具备关门条件。建议编排器：置 `GOAL-007` `done`，勾选 Root R4（Root `3/5 → 4/5`），并同步 goal-tree / Root 00-meta / 02-execution。
+- R-003/R-004 可在关门后作为可选补充处理。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、finding 状态与阶段推进由 `/govern` 处理。

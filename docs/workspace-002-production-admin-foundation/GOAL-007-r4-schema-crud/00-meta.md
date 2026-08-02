@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-r4-schema-crud
 title: R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环
-status: active
+status: done
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.9.0
+version: 0.11.0
 progress: 6/6
 ---
 
@@ -22,11 +22,11 @@ progress: 6/6
 - [x] **S3 · 持久化 CRUD API**：实现 POST/list/search/detail/PATCH/DELETE 的 SQLite repository 路径；生产默认不再依赖进程内 records，认证、`records.read` / `records.write` 与统一错误 envelope 保持一致。（2026-08-02 已实现：0003 + repository + seedRecords + handler 重写；T-API-08～13 / T-DB-01～09 全绿，见 02-execution）
 - [x] **S4 · Schema 驱动读写主路径**：由 Schema 页面完成列表、搜索、详情、新建、编辑与删除；新增或调整代表页面不修改 Renderer 主路径代码。（2026-08-02 已实现：`list-edit-lifecycle` 演进为 table + toolbar/rowActions + 双 modal form + 行 delete 确认 + recordView 选中行 + 顶层 5 actions；`search-form-table` 纳入 search form-to-query 绑定；渲染层一次性补齐 actions/toolbar/modal/form-submit/反馈；T-UI-01～05、T-UI-10 全绿）
 - [x] **S5 · 交互状态与权限负向闭环**：验证字段校验、加载/空态、成功反馈、删除确认、统一错误展示，以及匿名 `401`、已认证缺权限 `403` 和后端授权不被前端隐藏替代。（2026-08-02 已实现：`records.write` → `permissions.edit/delete` 表达式禁用 viewer/editor 写 affordance；`executeAction` confirm 序列；统一 envelope `role=alert` 呈现；T-UI-06～09 全绿）
-- [x] **S6 · 重启、迁移与端到端回归**：自动证明 create/update/delete 后服务重启，list/detail 结果符合持久化预期；覆盖 migration/seed 重复执行、关键失败路径及 API/Web 回归。（2026-08-02 已实现：I-007-004 verified（D-007 协议）+ L1 HTTP 层重启 `TestRecordsSurviveRestart` + **L2 进程级重启** `TestServerProcessRestartPersistsRecords`；`go test ./...` 全绿 + web vitest 458/458；见 02-execution）
+- [x] **S6 · 重启、迁移与端到端回归**：自动证明 create/update/delete 后服务重启，list/detail 结果符合持久化预期；覆盖 migration/seed 重复执行、关键失败路径及 API/Web 回归。（2026-08-02 已实现：I-007-004 verified（D-007 协议）+ L1 HTTP 层重启 `TestRecordsSurviveRestart` + **L2 进程级重启** `TestServerProcessRestartPersistsRecords`；`go test ./...` 全绿 + web vitest 458/458；见 02-execution。**A-010 F-008 fixed（2026-08-02）**：L2 已补对新建记录与 `rec-1` 的 `updatedAt` 毫秒精确跨进程 detail 断言（I-007-004 §3.6/§4））
 
 ## 派生进度
 
-`progress: 6/6` 由上方六个顺序检查点等权派生（S1～S6 全部勾选）。S1/S2 为契约冻结入口；S3 已实现 SQLite 持久化 CRUD；S4/S5 已实现 Schema 驱动读写主路径与权限负向闭环（02-execution 2026-08-02，T-UI-01～10 全绿）；**S6 已实现**（02-execution 2026-08-02：`I-007-004` verified（D-007 协议），L1 HTTP 层 + L2 进程级重启持久化证据，`go test ./...` 全绿 + web vitest 458/458）。六项信息门禁 `I-007-001/002/003/004` 全部 verified。**本目标仍为 `active`**：全部成功标准已达成但**尚未关门**——`done` 需先做关门审计（self 或 `/audit`）+ 用户裁决 + Root R4 勾选。检查点不替代审计 finding 或关门结论。
+`progress: 6/6` 由上方六个顺序检查点等权派生（S1～S6 全部勾选）。S1/S2 为契约冻结入口；S3 已实现 SQLite 持久化 CRUD；S4/S5 已实现 Schema 驱动读写主路径与权限负向闭环（02-execution 2026-08-02，T-UI-01～10 全绿）；**S6 已实现**（02-execution 2026-08-02：`I-007-004` verified（D-007 协议），L1 HTTP 层 + L2 进程级重启持久化证据，`go test ./...` 全绿 + web vitest 458/458）。六项信息门禁 `I-007-001/002/003/004` 全部 verified。**本目标已置 `done`（2026-08-02 关门）**：A-013（self · close-out）`pass`——成功标准全 `6/6`、无开放 required finding、无到期 required 信息门禁；A-011/A-012（independent · finding-closure）确认 F-008 `fixed`；**Root R4 已勾选（Root `3/5 → 4/5`）**。检查点不替代审计 finding 或关门结论。
 
 ## 信息需求
 

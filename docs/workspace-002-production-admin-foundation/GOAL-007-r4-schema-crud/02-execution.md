@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.10.0
+version: 0.12.0
 ---
 
 # 执行记录 · GOAL-007
@@ -127,8 +127,29 @@ version: 0.10.0
 - **成功标准 S6 勾选**：create/update/delete→重启→list/detail 的机器可重复证据已产出（L1+L2）；迁移/seed 重跑（ledger `{1,2,3}` 不重跑、空表才 seed、非空不复活）与关键失败路径（checksum 漂移、快照恢复、401/403）由既有 store/handler/browser 测试覆盖；API 回归 `go test ./...`、Web 回归 vitest 458/458。派生进度 `5/6` → **`6/6`**。
 - **未做（本轮）**：本目标仍为 `active`，**未置 `done`**（关门需先做关门审计 self 或 `/audit` + 用户裁决 + Root R4 勾选）；Root R4 未勾选（Root 保持 `3/5`）；`npm run test:e2e`（playwright，需真实服务）本轮未跑，属可选回归。
 
+## 2026-08-02 · 响应 A-010 · 修正 L2 updatedAt 跨进程 detail 断言（F-008 → fixed）
+
+- 用户通过 `/govern` 明确要求：响应 A-010（independent · conditional · close-out）——修复 F-008 的 L2 `updatedAt` 跨进程 detail 断言并复跑；同步修正执行事实，随后请求 finding-closure 复核。
+- **修正 `apps/api/cmd/server/server_restart_test.go`（L2，I-007-004 §3.6/§4）**：
+  - `httpPatch` 改为返回 200 响应体；`httpCreate` 返回完整响应（含 `updatedAt`）；文件顶部注释补充 A-010 F-008 说明。
+  - Phase 1：记录 create 响应 `createdAt` 与 PATCH `rec-1` 响应 `patchedAt`（毫秒 RFC3339）。
+  - Phase 2：新增 `GET /api/records/{createdID}` 断言字段 + `updatedAt == createdAt`；新增 `GET /api/records/rec-1` 断言 `name == "Acme Rebrand"` 且 `updatedAt == patchedAt`（毫秒精确一致，跨进程持久化往返）。
+- **执行事实修正**：此前「L2 … list/detail 断言同 L1」的表述偏满（A-010 指出）——L2 原仅以 list 检查 rec-1 名称、只 GET 新建记录 detail，未核对 rec-1 PATCH 的 `updatedAt` 跨进程往返。本轮补齐该断言后，该表述成立且与 L1 一致。
+- **复跑**：`go vet ./cmd/server/` 干净；focused `go test ./cmd/server -run '^TestServerProcessRestartPersistsRecords$' -count=1` **PASS（4.32s）**；`go test ./... -count=1`（apps/api）全绿（cmd/server、handler、store、auth、account）。
+- **F-008 → `fixed`**（03-audit A-010 响应节，2026-08-02）：L2 现按 I-007-004 §3.6/§4 对新建记录与 `rec-1` 均做 detail 断言且 `updatedAt` 毫秒精确一致；关闭证据已请求 finding-closure 复核（`/audit`）。
+- **仍开放（非本意见 required）**：R-003（API README 端点表阶段标注，recommended）、R-004（真实浏览器 CRUD E2E，recommended，A-010 判定非阻断）。本目标仍 `active / 6/6`，**未置 `done`**；Root R4 未勾选（Root 保持 `3/5`）。后续意见从 A-011 起。
+
+## 2026-08-02 · 响应 A-011/A-012 + close-out self 审计 A-013 + GOAL-007 关门
+
+- 用户通过 `/govern` 明确要求：响应 A-012（及 A-011）；补 close-out self 审计；随后处理 GOAL-007 关门与 Root R4 勾选。
+- **P-004 §3.1（用户裁决）**：A-011/A-012 均为 independent；用户裁决「**补 close-out self 审计**」→ 已写 **A-013（self · close-out · pass）**，为 GOAL-007 整体与 S6/L2 scope 补齐 `source: self` 覆盖（既有 A-009 self 仅覆盖 S4/S5）。
+- **响应 A-011 / A-012（independent · finding-closure · pass）**：两轮独立复核均确认 A-010 F-008 的关闭证据充分可核对；**F-008 维持 `fixed`**；R-003/R-004 保持 recommended 非阻断。
+- **A-013 close-out self 审计**：逐项核对成功标准 S1～S6（全 `6/6`）、四项 required 信息门禁 `I-007-001/002/003/004` verified、F-001～F-008 全部 fixed、无开放 required；复跑 `go test ./...`（apps/api）全绿 + web `npm test`（vitest）**458/458** 全绿；**verdict = pass**，确认具备关门条件。
+- **关门（GOAL-007 → `done`）**：置 00-meta `status: done`；Root R4 检查点勾选（Root `3/5 → 4/5`）；同步 goal-tree（GOAL-007 状态列 + 台账）与 Root 00-meta 纲领 R4。R5 与 VP-002 保持 open，不受本轮关门影响。
+- **未做（本轮）**：R-003（API README 端点表阶段标注）与 R-004（真实浏览器 CRUD E2E）作为 recommended 非阻断留待后续；Root R5 未立项。
+
 ## 下一步计划（非事实）
 
-1. **目标关门路径**：对 S6/整体做一次关门审计（建议 `/audit` 独立或 self；A-008/A-009 已为 S4/S5 提供 self+independent 覆盖），核验成功标准对照与无开放 required/到期信息门禁后，再置 `GOAL-007` `done` 并勾选 Root R4（Root `3/5 → 4/5`）。
-2. 可选：`npm run test:e2e`（browser E2E）作为关门补充证据。
+1. **R4 已关门**：GOAL-007 `done`，Root R4 已勾选（Root `4/5`）。Root 下一主路径为 **R5 · 工程化、fork 体验与集成关门**（需先收集 `I-005`（部署基线/15 分钟 fork 计时口径）并复核 `I-006`（最小操作日志取舍），再立项 R5 子目标）。
+2. 可选补充：R-003（`apps/api/README.md` 端点表阶段标注统一为 R4）；R-004（真实浏览器 `list-edit-lifecycle` CRUD E2E）。
 3. R5（容器/生产运维）与 fork 关门属后续目标，不在本目标范围。

@@ -5,8 +5,8 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.2.13
-progress: 3/5
+version: 0.2.14
+progress: 4/5
 plan_refs:
   - VP-002-production-admin-foundation
 primary_plan: VP-002-production-admin-foundation
@@ -49,11 +49,11 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
   阶段子目标：`GOAL-005-r2-auth-session`（**done**，2026-08-02；`I-002` verified + D-007 方案）。证据：登录/登出/刷新/撤销与请求级身份中间件 + SQLite 存储 + 前端认证闭环（441 单测、`go test ./...` 全绿）；close-out 审计 A-001（independent，F-001 → fixed）+ A-002（self，pass）；browser E2E 在 Linux CI 通过（run #30711903555，`1 passed`，含匿名 401 断言）。
 - [x] **R3 · 持久化身份、角色与最小权限模型**：交付用户/角色/菜单持久化、种子数据与后端授权最小闭环。  
   阶段子目标：`GOAL-006-r3-persistent-rbac-menu`（**done**，2026-08-02；D-009 冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；D-004 S1 迁移链 + pre-v0002 快照；D-005 S2 阶段 B 终态；D-006 S3 增量幂等种子；D-007 S4 permission key 读写门禁；D-008 S5 `me.features` 投影 + manifest `visibleWhen`；S6 恢复/重启/回归证据齐备）。证据：`schema_migrations` + `0001/0002` 事务化迁移 + pre-v0002 恢复快照、规范化 RBAC 双写/集合核对、`seedRBAC` 增量幂等种子、records `records.read`/`records.write` 门禁、`me.features` 菜单投影 + 真实 manifest `visibleWhen`、`TestRestartPersistence`/`TestRestorePreV0002Snapshot` 与 API/Web 全量回归；close-out 审计 A-005（independent，F-005 → fixed）+ A-006（independent，F-005 关闭复核 pass）+ A-004（self 阶段审计）；无开放 required finding 或 required 信息项。
-- [ ] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
-  阶段子目标：`GOAL-007-r4-schema-crud`（**active / 6/6**，2026-08-02；D-010/D-011 立项；D-002/D-003 冻结 API/错误与 SQLite 迁移计划，`I-007-001`/`I-007-002` verified，S1/S2 勾选；**S3 已实施**——0003 + repository + seedRecords + handler 走 SQLite、POST 新增，T-API/T-DB 全绿，S3 勾选；**S4/S5 已实施**——`list-edit-lifecycle` 代表页 + 渲染层一次性补齐 + `createRecord` + search form-to-query，T-UI-01～10 全绿，S4/S5 勾选；**S6 已实施**——`I-007-004` verified（D-007 协议），L1 HTTP 层 + L2 进程级重启持久化证据，`go test ./...` 全绿 + web vitest 458/458，S6 勾选）。`I-007-001/002/003/004` 全部 verified；六项成功标准达成但目标仍 `active`（关门待关门审计 + 用户裁决）；Root R4 未勾选。
+- [x] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
+  阶段子目标：`GOAL-007-r4-schema-crud`（**done**，2026-08-02；D-010/D-011 立项；D-002/D-003 冻结 API/错误与 SQLite 迁移计划，`I-007-001`/`I-007-002` verified，S1/S2 勾选；**S3 已实施**——0003 + repository + seedRecords + handler 走 SQLite、POST 新增，T-API/T-DB 全绿，S3 勾选；**S4/S5 已实施**——`list-edit-lifecycle` 代表页 + 渲染层一次性补齐 + `createRecord` + search form-to-query，T-UI-01～10 全绿，S4/S5 勾选；**S6 已实施**——`I-007-004` verified（D-007 协议），L1 HTTP 层 + L2 进程级重启持久化证据（A-010 F-008 → fixed，rec-1/`{newID}` detail `updatedAt` 毫秒精确跨进程断言），`go test ./...` 全绿 + web vitest 458/458，S6 勾选）。`I-007-001/002/003/004` 全部 verified；A-011/A-012（independent · finding-closure）确认 F-008 `fixed`，A-013（self · close-out）`pass`；**GOAL-007 已置 `done`**。**Root R4 检查点已勾选**（Root `3/5 → 4/5`）。
 - [ ] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。
 
-当前派生进度为 `3/5`（R1、R2、R3 已勾选，2026-08-02）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。R1～R3 子目标 progress 不替代本 Root 检查点。
+当前派生进度为 `4/5`（R1、R2、R3、R4 已勾选，2026-08-02；R5 待立项）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。R1～R4 子目标 progress 不替代本 Root 检查点。
 
 ## 信息需求与阶段门禁
 
