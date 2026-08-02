@@ -9,15 +9,25 @@ import {
   type RecordsQuery,
 } from "@/renderer/records";
 import type { RenderTableNode } from "@/renderer/render";
+import { useSchemaCrud } from "@/renderer/render.tsx";
 
 /**
- * Default schema-driven table surface (R1 · GOAL-004 / D-004).
+ * Default schema-driven table surface (R1 · GOAL-004 / D-004) + S4 CRUD wiring.
  *
  * Renders a whitelisted table node's `props.columns` over its `props.dataSource`
  * (reuse of the demo `GET /api/records` D-DATA contract). Provides loading /
  * error / empty states and column sort, mirroring the hand-written example's
  * surface without owning data logic. Fails closed when the node declares no
  * columns or no data source.
+ *
+ * S4 (GOAL-007 · I-007-003 v0.2.2 §9): when rendered inside a `RenderPage`
+ * (which always wraps content in the SchemaCrudProvider), the table surfaces
+ * `props.toolbar` (create trigger) and `props.actions` (row edit/delete),
+ * participates in row selection for the page's recordView / edit-form prefill,
+ * reads its query from the shared per-table query state (so the search-form
+ * binding and the post-write reload both reach it), and registers its injected
+ * fetcher so modal form submits / row actions use the same transport. All of
+ * this is fixture-driven: no record-specific logic lives here.
  */
 
 export interface SchemaTableProps {
@@ -30,6 +40,17 @@ export interface SchemaTableColumnSpec {
   field: string;
   label?: string;
   sortable?: boolean;
+}
+
+type JsonRecord = Record<string, unknown>;
+
+function stringOf(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+/** Spreads a typed row into a plain object the generic action executor accepts. */
+function rowAsRecord(row: RecordItem): JsonRecord {
+  return { ...row };
 }
 
 function isColumnSpec(value: unknown): value is SchemaTableColumnSpec {
@@ -60,7 +81,30 @@ export function schemaTableDataSource(node: RenderTableNode): string {
 export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const columns = schemaTableColumns(node);
   const dataSource = schemaTableDataSource(node);
-  const [query, setQuery] = useState<RecordsQuery>({ page: 1, pageSize: 10 });
+  const crud = useSchemaCrud();
+  const tableId = node.id ?? "default";
+  const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
+  const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
+
+  // Register the injected transport with the page's Schema CRUD provider so
+  // modal form submits and row actions share the same fetcher (S4).
+  useEffect(() => {
+    if (crud !== null && fetcher !== undefined) {
+      crud.registerFetcher(fetcher);
+    }
+  }, [crud, fetcher]);
+
+  const providerQuery = crud?.tableQuery(tableId);
+  const [localQuery, setLocalQuery] = useState<RecordsQuery>({ page: 1, pageSize: 10 });
+  const query = providerQuery ?? localQuery;
+  const setQuery = (next: RecordsQuery) => {
+    if (crud !== null) {
+      crud.setTableQuery(tableId, next);
+    } else {
+      setLocalQuery(next);
+    }
+  };
+
   const [list, setList] = useState<RecordList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +129,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, query]);
+  }, [fetcher, dataSource, query, crud?.reloadToken]);
 
   if (columns.length === 0) {
     return (
@@ -104,20 +148,74 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     setQuery({ ...query, sort: next.field, order: next.order, page: 1 });
   };
 
-  const dataColumns: DataTableColumn<RecordItem>[] = columns.map((column) => ({
-    key: column.field,
-    label: column.label ?? column.field,
-    sortable: column.sortable === true,
-  }));
+  const onRowClick = (row: RecordItem) => {
+    crud?.selectRow(rowAsRecord(row));
+  };
+
+  const dataColumns: DataTableColumn<RecordItem>[] = [
+    ...columns.map((column) => ({
+      key: column.field,
+      label: column.label ?? column.field,
+      sortable: column.sortable === true,
+    })),
+    ...(rowActions.length > 0
+      ? [
+          {
+            key: "actions",
+            label: "",
+            render: (row: RecordItem) => (
+              <div className="flex justify-end gap-2">
+                {rowActions.map((action) => {
+                  const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
+                  const permitted = crud?.effectivePermission(key) ?? true;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={!permitted}
+                      onClick={() => crud?.invokeAction(action, rowAsRecord(row))}
+                      className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    >
+                      {stringOf(action.label) ?? key}
+                    </button>
+                  );
+                })}
+              </div>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-2">
+      {toolbar.length > 0 ? (
+        <div className="flex items-center justify-end">
+          {toolbar.map((trigger) => {
+            const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
+            const permitted = crud?.effectivePermission(key) ?? true;
+            return (
+              <button
+                key={key}
+                type="button"
+                disabled={!permitted}
+                onClick={() => crud?.invokeAction(trigger, null)}
+                className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {stringOf(trigger.label) ?? key}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
       <DataTable
         columns={dataColumns}
         rows={list?.items ?? []}
         rowKey={(row) => row.id}
         sort={sort}
         onSortChange={onSortChange}
+        onRowClick={crud !== null ? onRowClick : undefined}
+        selectedKey={crud?.selectedRow?.id as string | undefined}
         loading={loading}
         error={error}
         emptyMessage="No records match."

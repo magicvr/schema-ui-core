@@ -59,6 +59,11 @@ export interface RenderFormNode {
     fields: Array<Record<string, unknown>>;
     reactions?: unknown;
     submitLabel?: string;
+    /** Default-mode submit: the top-level action id to run on submit (S4). */
+    submitAction?: string;
+    /** Search-mode form: binds its fields to the target table's query (S4). */
+    mode?: "default" | "search";
+    targetTable?: string;
   };
   children?: RenderNode[];
 }
@@ -99,6 +104,7 @@ export interface RenderTableNode {
   props: {
     columns?: Array<Record<string, unknown>>;
     actions?: Array<Record<string, unknown>>;
+    toolbar?: Array<Record<string, unknown>>;
     dataSource?: string;
   };
   children?: RenderNode[];
@@ -219,6 +225,13 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
         ...(value.props.submitLabel === undefined
           ? {}
           : { submitLabel: value.props.submitLabel }),
+        ...(typeof value.props.submitAction === "string"
+          ? { submitAction: value.props.submitAction }
+          : {}),
+        ...(value.props.mode === "search" ? { mode: "search" as const } : {}),
+        ...(typeof value.props.targetTable === "string"
+          ? { targetTable: value.props.targetTable }
+          : {}),
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderFormNode;

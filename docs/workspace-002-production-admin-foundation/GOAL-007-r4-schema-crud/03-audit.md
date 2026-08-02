@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.13.0
+version: 0.15.0
 ---
 
 # 审计台账 · GOAL-007
@@ -20,11 +20,13 @@ version: 0.13.0
 | A-005 | independent | 2026-08-02 | design-plan · I-007-003 / D-005 Schema CRUD 交互契约合理性 | conditional | responded：F-002/F-003/F-004 **fixed**（I-007-003 v0.2.0 + D-005 补记）；R-001/R-002 handled |
 | A-006 | independent | 2026-08-02 | finding-closure · I-007-003 v0.2.0 修订复核（A-005 关闭证据） | conditional | responded：F-005/F-006 **fixed**（I-007-003 v0.2.1 + D-005 补记）；F-002/F-003 维持 fixed；R-001/R-002 handled |
 | A-007 | independent | 2026-08-02 | finding-closure · I-007-003 v0.2.1 修订复核（A-006 关闭证据） | conditional | responded：F-007 **fixed**（I-007-003 v0.2.2 + D-005 补记）；F-005/F-006 维持 fixed；R-001/R-002 handled |
+| A-008 | independent | 2026-08-02 | execution-facts · S4/S5 Schema CRUD 主路径与权限负向闭环 | pass | 无新 finding；S4/S5 完成证据可重复核对；`I-007-004` 仍 open，仅阻断 S6 |
+| A-009 | self | 2026-08-02 | execution-facts · S4/S5 完成主张 self 复核（对照 I-007-003 v0.2.2 / D-005 / D-006） | pass | — |
 
 ## 当前审计边界
 
-- 信息门禁：`I-007-001`/`I-007-002` verified；**`I-007-003` 台账 verified（v0.2.2）**。A-007 F-007（§9.2 `confirm` 改 **string**）已 `fixed`；A-005/A-006/A-007 的 F-002～F-007 全部闭合，**§9 字面形状已对齐 `action.schema`/registry**，S4 代表页 fixture 可按 v0.2.2 编写。`I-007-004` 仍 open（S6）。
-- **A-001～A-007** 历史响应见索引；后续意见从 `A-008` 起。
+- 信息门禁：`I-007-001`/`I-007-002` verified；**`I-007-003` 台账 verified（v0.2.2）**；**`I-007-004` verified（D-007 + [I-007-004-restart-e2e-protocol.md](attachments/I-007-004-restart-e2e-protocol.md)）**。A-005/A-006/A-007 的 F-002～F-007 全部闭合；S4/S5 由 A-008（independent）+ A-009（self）复核 `pass`；S6 已实施（L1 HTTP 层 + L2 进程级重启持久化，02-execution）。
+- **A-001～A-009** 历史响应见索引；**当前无开放 required、无开放 required 信息门禁**。本目标六项成功标准全部达成但仍 `active`（关门待关门审计 + 用户裁决 + Root R4）；后续意见从 `A-010` 起。
 
 ## A-001 · S1/S2 契约冻结独立审计（2026-08-02）
 
@@ -675,3 +677,128 @@ version: 0.13.0
 - **P-004 §3.1 处置（用户裁决延续）**：A-007 为 independent；用户明确指示「响应 A-007：I-007-003 §9.2 confirm 改为 string（v0.2.2）闭合 F-007」，本轮不补 self 复核，留待 S4/S5 放行或关门前选择。
 - **仍开放**：`I-007-004`（S6）；Root R4 未勾选。
 - **证据路径**：[I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md) v0.2.2（§9.2/§9.5/§9.1）；D-005 v0.2.2 补记；`docs/schemas/component-registry.json`（`confirm: {type: string}`）；02-execution 2026-08-02「响应 A-007」节。
+
+## A-008 · S4/S5 Schema CRUD 主路径与权限负向闭环独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot
+- **类型 / scope**：execution-facts；仅复核 S4（Schema 驱动读写主路径）与 S5（交互状态、权限负向闭环）的完成主张是否符合 I-007-003 v0.2.2 / D-005 / D-006。不审 S6 重启与端到端验收，不据此关门目标。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 为 `docs/workspace-002-production-admin-foundation/`，Root 为 `GOAL-001-production-admin-foundation`，与本目标 `parent` 一致。
+- 共享资料：`shared_materials_catalog: none`；本意见未把共享资料作为事实或 finding 关闭依据。
+- 信息门禁：`I-007-003` 为 `verified`（I-007-003 v0.2.2）；`I-007-004` 为 open required，最晚需要阶段为 S6，故不阻断本次 S4/S5 scope，但继续阻断 S6 验收与目标关门。
+- 已审阅：本目标五件套、A-001～A-007 及响应、I-007-003 v0.2.2、`list-edit-lifecycle.json`、`search-form-table.json`、`render.tsx`、`schema-table.tsx`、`permissions.ts`、`records.ts`、`modal.tsx`、`confirm.tsx`、`data-table.tsx` 与 `schema-crud.test.tsx`。
+- 独立复跑（2026-08-02）：在 `apps/web` 执行 `npm run test -- src/renderer/schema-crud.test.tsx`，Vitest 通过 **1** 个文件、**15** 项断言（T-UI-01～T-UI-10）。
+
+### 成果（有证据）
+
+| 主张 | 复核结果与证据 |
+|------|----------------|
+| 代表页结构符合 v0.2.2 | `list-edit-lifecycle.json` 包含一个 records table、工具栏 `openCreate`、行 `openEdit` / `deleteRecord`、两个 modal default form 与 `recordView`；5 个顶层 action 的类型、`actionRef`、`onSuccess.behavior`、`$row.id` requestMapping、string confirm 均与 I-007-003 §9 一致。 |
+| S4 写交互由 Schema 绑定 | `render.tsx` 的通用执行器解析 page actions；form submit 仅用 `submitAction`，`{id}` 从打开 modal 时捕获的行上下文有界替换；`schema-table.tsx` 通用渲染 toolbar/row actions；未发现 page action id 被硬编码到渲染源码。T-UI-04/05/06 分别验证 POST 201、PATCH 行预填与 `{id}`、确认后 DELETE 204。 |
+| 搜索与读状态闭环 | `search-form-table.json` 以 `mode: search` / `targetTable` 绑定；T-UI-01/02/03 覆盖列表/空态、排序查询和 form-to-query 过滤。 |
+| 反馈与错误 envelope | `records.ts` 将非 OK 响应解析为冻结的 `{error,message}`，`render.tsx` 渲染反馈；T-UI-04/07 覆盖 `INVALID_CREATE_FIELD`、`FORBIDDEN` 与 `RECORD_NOT_FOUND`。 |
+| S5 权限负向闭环 | fixture 在 table 上声明 `records.write` 到 edit/delete cascade，两个 modal form 为独立 permission root 并各自声明 edit 表达式；`permissions.ts` 对 row、toolbar、form submit 求有效权限；T-UI-08 验证 admin 可写、viewer 只读禁用，T-UI-09 验证直接写请求仍获 403。 |
+| 页级 fixture 驱动边界 | D-006 固定的 T-UI-10 判据成立：`createRecord`、`updateRecord`、`deleteRecord`、`openCreate`、`openEdit` 仅出现在 schema fixture，不在页面渲染源码；`records.ts` / `use-records.ts` 作为通用传输层按既定豁免处理。 |
+
+### 对照成功标准
+
+| 标准 | 结论 | 说明 |
+|------|------|------|
+| **S4 · Schema 驱动读写主路径** | **达成（本 scope）** | fixture 驱动列表、搜索、详情、新建、编辑与删除；一次性 Renderer 补齐的通用边界受 T-UI-10 判据保护。 |
+| **S5 · 交互状态与权限负向闭环** | **达成（本 scope）** | 校验、加载/空态、反馈、确认、统一错误与前端只读呈现有可重复 UI 证据；API 401/403 的权威边界继续由既有 T-API-08/09 承担。 |
+| S6 · 重启、迁移与端到端回归 | **未判定** | `I-007-004` 未关闭；本审计不把 S4/S5 单元验收误作重启/E2E 证据。 |
+
+### Findings
+
+- 无新 required。
+- 无新 recommended。
+
+### 必改项汇总
+
+- 本 scope 无开放 required。A-005～A-007 的 F-002～F-007 已有 `/govern` 的 `fixed` 响应，本轮实现与复跑未见其回退。
+- `I-007-004` 不是本次 finding；它仍是 S6 验收和目标关门的 required 信息门禁。
+
+### 与既有意见的异同
+
+- 相对 A-005～A-007：实现已按 v0.2.2 的唯一结构、权限表达式、form `{id}` 槽绑定和 string confirm 落地；未重开 F-002～F-007。
+- 相对 A-003/A-004：本意见不重审 S3 SQLite CRUD，只消费其已冻结的 API/错误/权限契约作为 S4/S5 UI 交互输入。
+- 无与既有 self 或 independent 意见在当前 scope 的 verdict 或 required finding 上冲突。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：S4/S5 的完成主张、I-007-003 v0.2.2、fixture/Renderer 实现和可重复 UI 验收相互一致；无开放 required 阻断 S4/S5。
+- 由 `/govern` 记录并响应本意见。下一主路径是先收集并关闭 `I-007-004`，再实施 S6 的 create/update/delete 后重启、迁移/seed 重跑、失败路径和 API/Web 回归证据；在该信息门禁关闭和 S6 验收前，不得将本目标或 Root R4 关门。
+- P-004：本次为 independent 审计且本阶段仍无 self 审计；若推进 S6 或进入关门路径，编排器须询问用户是否需要补 self 审计，不得自动跳过或强制。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、信息项关闭和阶段推进由 `/govern` 处理。
+
+## A-009 · S4/S5 完成主张 self 复核（2026-08-02）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：execution-facts；对 S4（Schema 驱动读写主路径）与 S5（交互状态、权限负向闭环）的完成主张做 **self 复核**（P-004 §3.1 · 用户裁决「先补 S4/S5 self 审计」），对照 I-007-003 **v0.2.2** / D-005 / D-006。不审 S6 重启与端到端验收，不据此关门目标。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 为 `docs/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致。
+- 共享资料：`shared_materials_catalog: none`；本自审未把共享资料作为事实或 finding 关闭依据。
+- 已复核：I-007-003 v0.2.2（§2.1/§5/§6/§9）、D-005（含 v0.2.2 补记）、D-006、`list-edit-lifecycle.json`、`search-form-table.json`、`render.tsx`、`schema-table.tsx`、`permissions.ts`、`records.ts`、`modal.tsx`、`confirm.tsx`、`data-table.tsx` 与 `schema-crud.test.tsx` / `representative-pages*.test.tsx`；并对照 A-008（independent）证据链。
+- 复跑证据（2026-08-02）：`apps/web` vitest 聚焦 `schema-crud.test.tsx`（15 项断言，T-UI-01～10）+ `representative-pages.test.tsx` + `representative-pages.integration.test.tsx` **29 项全绿**；`apps/api` `go test ./...` 全绿；渲染源码 grep 无 record action id 硬编码。
+
+### 成果（有证据）
+
+| 主张 | self 复核证据 |
+|------|--------------|
+| 代表页结构符合 v0.2.2 | `list-edit-lifecycle.json`：`records-table` 声明 `permissionCascade.keys [edit,delete]` + `permissions.edit/delete`（`records.write` 表达式），toolbar `create`→`openCreate`、rowActions `edit`→`openEdit` / `delete`→`deleteRecord`（`requestMapping.path.id:"$row.id"` + `confirm:"Delete this record?"` string）；`record-detail` recordView；顶层 5 action（3×Request + 2×Modal，`onSuccess.behavior:"reload"`，两 modal 各含 default form + 自身 `permissionCascade`/`permissions.edit` + `submitAction`）。grep 确认 5 个 action id、confirm string、requestMapping 均在 fixture。 |
+| S4 写交互由 Schema 绑定、Renderer 通用 | `render.tsx` 通用执行器解析 `page.actions`；`{id}` 槽在 `constructRequest` 后由打开 modal 时捕获的行上下文有界替换（§9.1a，落 `render.tsx`）；`schema-table.tsx` 通用渲染 toolbar/rowActions；**渲染源码 grep 无 `createRecord`/`updateRecord`/`deleteRecord`/`openCreate`/`openEdit`**（records.ts 通用传输豁免，D-006）。T-UI-04/05/06 验证 POST 201、PATCH 预填 + `{id}`、确认后 DELETE 204 / 取消无请求。 |
+| 搜索与读状态 | `search-form-table.json` `mode:"search"` + `targetTable:"search-results"`；T-UI-03 验证 form-to-query 过滤（`q=acme`），T-UI-01/02 覆盖列表/空态与排序。 |
+| 反馈与错误 envelope | `records.ts` 将非 OK 响应解析为冻结 `{error,message}` → `render.tsx` 反馈区/表单错误；T-UI-04/07 覆盖 `INVALID_CREATE_FIELD`/`FORBIDDEN`/`RECORD_NOT_FOUND`。 |
+| S5 权限负向闭环 | table 祖先 cascade + 两 modal form 各自 permission root；`permissions.ts` 对 row/toolbar/formSubmit 求有效权限；T-UI-08 admin 启用 / viewer 禁用，T-UI-09 直接写请求仍 403。 |
+| 页级 fixture 驱动边界 | T-UI-10 判据成立（D-006）：action id 仅出现在 fixture，不在渲染源码。 |
+
+### 对照成功标准
+
+| 标准 | 结论 | 说明 |
+|------|------|------|
+| **S4 · Schema 驱动读写主路径** | **达成（本 scope）** | fixture 驱动列表、搜索、详情、新建、编辑与删除；Renderer 通用性受 T-UI-10 判据保护。 |
+| **S5 · 交互状态与权限负向闭环** | **达成（本 scope）** | 校验、加载/空态、反馈、确认、统一错误与前端只读呈现有可重复 UI 证据；API 401/403 权威边界由 T-API-08/09 承担。 |
+| S6 · 重启、迁移与端到端回归 | **未判定** | `I-007-004` 未关闭；本自审不把 S4/S5 单元验收误作重启/E2E 证据。 |
+
+### Findings
+
+- 无新 required。
+- 无新 recommended（self 复核未发现 A-008 未覆盖的缺口；`I-007-004` 属 S6 门禁，非本 scope finding）。
+
+### 必改项汇总
+
+- 本 scope 无开放 required。A-005～A-007 的 F-002～F-007 已有 `/govern` 的 `fixed` 响应，self 复核与复跑未见回退。
+- `I-007-004` 不是本次 finding；它仍是 S6 验收和目标关门的 required 信息门禁。
+
+### 与既有意见的异同
+
+- 相对 A-008（independent · pass）：self 复核结论一致；A-009 补齐该 scope 缺的 `source: self` 覆盖（既有 A-002 self 仅覆盖 S1/S2），满足 P-004 §3.1。
+- 相对 A-005～A-007：实现已按 v0.2.2 的唯一结构、权限表达式、form `{id}` 槽绑定和 string confirm 落地；未重开 F-002～F-007。
+- 无与既有 self 或 independent 意见在当前 scope 的 verdict 或 required finding 上冲突。
+
+### 结论 + 建议下一步
+
+- **pass**：S4/S5 完成主张与 I-007-003 v0.2.2、fixture/Renderer 实现和可重复 UI 验收相互一致；无开放 required 阻断 S4/S5。self 复核为后续「放行 S4/S5」或目标关门提供了所缺的 self 审计证据。
+- 建议 `/govern`：统一响应 A-008（采纳 pass，以 A-009 作为 S4/S5 scope 的 self 覆盖）；下一主路径为**收集并关闭 `I-007-004`**（冻结 S6 重启/E2E 验收协议），再实施 S6（create/update/delete→重启→list/detail 机器可重复证据、迁移/seed 重跑、失败路径与 API/Web 回归）。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；响应、信息项关闭和阶段推进由 `/govern` 处理。
+
+### 响应 · A-008（/govern · 2026-08-02）
+
+- **verdict 采纳**：`pass` 成立——A-008 独立复核证实 S4/S5 完成主张与 I-007-003 v0.2.2、fixture/Renderer 实现和 T-UI 验收一致；scope 内无开放 required、无新 recommended。
+- **P-004 §3.1 处置（用户裁决）**：A-008 为 `source: independent` 且 S4/S5 scope 尚无 self 审计；用户本轮裁决「**先补 S4/S5 self 审计**」——已落盘 **A-009（self · pass）** 作为该 scope 的 self 覆盖，随后统一响应 A-008。self 审计留待放行或关门前的既有裁决由此闭环。
+- **仍开放（非本意见 required）**：`I-007-004`（S6 验收，本轮将收集关闭）；Root R4 未勾选；本目标仍未到关门。
+- **证据路径**：本响应节；A-009（self）；02-execution「实施 S4/S5」节；`schema-crud.test.tsx`（T-UI-01～10）；`list-edit-lifecycle.json` / `search-form-table.json`；`render.tsx` / `schema-table.tsx` / `records.ts` / `modal.tsx` / `confirm.tsx` / `data-table.tsx`。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.8.0
+version: 0.10.0
 ---
 
 # 执行记录 · GOAL-007
@@ -96,8 +96,39 @@ version: 0.8.0
 - `I-007-003` 保持 `verified`（v0.2.2）；**§9 字面形状已对齐 `action.schema`/registry，S4 代表页 fixture 可按 v0.2.2 编写**。03-audit 索引/边界/版本更新；后续意见从 A-008 起。
 - **未做（本轮）**：未写 Schema 写交互代码（S4/S5 尚未实施）；`I-007-004` 仍 open（S6）；Root R4 未勾选。
 
+## 2026-08-02 · 实施 S4/S5 Schema 驱动读写主路径与权限负向闭环
+
+- 用户通过 `/govern` 明确要求实施 S4/S5。信息门禁 `I-007-003` 已 verified（v0.2.2），首个 Schema 写交互代码变更放行维持；本轮无开放 required，无到期 required 信息门禁（`I-007-004` 仅约束 S6）。P-004 无新增裁决点（self 审计按既有用户裁决留待 S4/S5 放行或关门前）。
+- **代表页 fixture 演进（v0.2.2 结构）**：`apps/api/internal/handler/fixtures/schema/list-edit-lifecycle.json` 改写为 I-007-003 §2.1/§9 唯一结构——`section + table`（`records-table`：`permissionCascade.keys [edit,delete]` + `permissions.edit/delete = $context.user.permissions contains "records.write"`、`props.toolbar` `create`→`openCreate`、`props.actions` `edit`→`openEdit` / `delete`→`deleteRecord`（`requestMapping.path.id: "$row.id"` + `confirm: "Delete this record?"`））+ `recordView`（`record-detail`，选中行拷贝）+ 顶层 **5 actions**（`createRecord`/`updateRecord`/`deleteRecord` RequestAction + `openCreate`/`openEdit` ModalAction，`onSuccess.behavior: "reload"`，两 modal 各含 default form：`create-form`/`edit-form` 各自 `submitAction` + `permissionCascade.keys [edit]` + `permissions.edit`）；`meta.requiredCapabilities` 更新为 §9.3 最小集（`permissions.inheritance`、`actions.row.request`、`actions.page.trigger`、`table.sort` 等），去掉 `record.view.load`/`form.controls.extended`。页面结构从「tabs+静态 recordView+无绑定 form」改为「table + toolbar/rowActions + 双 modal + 行删除确认」。
+- **search 绑定 fixture**：`search-form-table.json` 的 search form 加 `mode: "search"` + `targetTable: "search-results"`（T-UI-03 form-to-query 归属该页，§9.4）。
+- **records 客户端**：`renderer/records.ts` 新增 `createRecord`（POST，解析 201）；统一非 OK 响应解析为 `RecordApiError`（携带冻结 envelope `{error,message}` 的 `code`/`status`），`fetchRecords`/`updateRecord`/`deleteRecord` 共享 `readRecordApiError`；消息保留 `HTTP {status}` 子串，既有客户端测试保持绿。
+- **renderer 一次性补齐（§9.5 白名单内）**：
+  - `render.ts`：`RenderFormNode.props` 增加 `submitAction`/`mode`/`targetTable` 并透传解析；`RenderTableNode.props` 类型化 `actions`/`toolbar`。
+  - `render.tsx`：新增 `SchemaCrudProvider` + `useSchemaCrud` 上下文——选中行（喂 recordView + edit-form 预填）、按 table id 的查询态（search form-to-query + post-write reload 共用）、`reloadToken`、`activeModal`、`pendingConfirm`、`feedback`、fetcher 注册、通用动作执行器（经冻结 `executeAction` 门禁 + `constructRequest` 构造，§9.1a `{id}` 槽从打开 modal 时捕获的行上下文解析——**有界扩展落在 `render.tsx` 内、不改 conformance 包**）。`FormView` 增加 default-mode submit（create POST / edit PATCH，§3 提交前 trim）与 search-mode 提交；`RecordView` 无静态 record 时渲染选中行拷贝；surface 渲染反馈区 + modal + confirm。`render.test.tsx` 等既有表单/反应测试保持绿（无 submitAction 的表单不渲染提交按钮）。
+  - `components/data-table.tsx`：行点击选中 + `selectedKey` 高亮（`onRowClick`/`aria-selected`）。
+  - `renderer/schema-table.tsx`：渲染 `props.toolbar`（create）与 `props.actions`（edit/delete）按钮，`effectivePermission` 驱动禁用（viewer/editor 只读）；行选中传递；查询挂 provider（无 provider 时回落本地）；把注入 fetcher 注册给 provider（保持首个注入值，避免测试内联 fetcher 身份变化导致重渲染循环）。
+  - **新增文件**（§9.5 允许的一次性补齐）：`renderer/modal.tsx`（modal 宿主）、`renderer/confirm.tsx`（确认对话框）。
+- **测试**：
+  - 新增 `renderer/schema-crud.test.tsx`：T-UI-01（列表加载/空态）、T-UI-02（列排序 sort/order 刷新）、T-UI-03（search form-to-query 过滤）、T-UI-04（create POST 201 + 新行出现 + 空字段 INVALID_CREATE_FIELD）、T-UI-05（edit PATCH 预填 + `updatedAt` 刷新）、T-UI-06（delete 确认 → DELETE 204 / 取消无请求）、T-UI-07（统一 envelope 呈现 FORBIDDEN / RECORD_NOT_FOUND）、T-UI-08（admin 全启用 / viewer 只读禁用）、T-UI-09（后端权威不被前端隐藏替代）、T-UI-10（页级变更仅 fixture——record 动作 id 只在 fixture、不在 renderer 源码）。测试用 I-007-001 契约的 in-memory records API 仿真（GET/POST/PATCH/DELETE + envelope）。
+  - 更新 `renderer/representative-pages.test.tsx` 与 `app/representative-pages.integration.test.tsx` 的 list-edit-lifecycle 断言为新的 table+toolbar+rowActions+recordView 结构（admin 上下文）。
+  - 结果：`tsc -b` 干净；web `vitest run` **458/458** 全绿（23 文件）；`vite build` 成功；`go test ./...`（apps/api）全绿（fixture embed 正常）。
+- **成功标准 S4、S5 勾选**：Schema 页面完成列表/搜索/详情/新建/编辑/删除，新增代表页仅改 fixture 不碰 Renderer 主路径（T-UI-10）；字段校验、加载/空态、成功反馈、删除确认、统一错误与权限负向（viewer/editor 禁用、后端 403 权威）闭环（T-UI-01～09）。派生进度 `3/6` → **`5/6`**。
+- **未做（本轮）**：未实施 S6（`I-007-004` 仍 open，需 create/update/delete→重启→list/detail 机器可重复证据）；未勾选 Root R4（Root 保持 `3/5`）；未跑 playwright E2E（需真实服务）；未写正式审计（S4/S5 阶段审计留待放行或关门前选择 self 或 `/audit`）。
+
+## 2026-08-02 · 响应 A-008 + self A-009 + 收集 I-007-004 + 实施 S6
+
+- 用户通过 `/govern` 明确要求：`workspace-002` · `GOAL-007` 响应 A-008，并收集 I-007-004 后实施 S6。
+- **P-004 §3.1（用户裁决）**：A-008 为 `source: independent` 且 S4/S5 scope 尚无 self 审计；用户裁决「**先补 S4/S5 self 审计**」。已写 **A-009（self · pass）**（复跑 schema-crud + representative-pages 29 项全绿、`go test ./...` 全绿、渲染源码 grep 无 action id 硬编码），随后**统一响应 A-008**（采纳 pass，A-009 作为 S4/S5 scope 的 self 覆盖）。
+- **收集并冻结 I-007-004（S6 验收协议）**：落盘 [I-007-004-restart-e2e-protocol.md](attachments/I-007-004-restart-e2e-protocol.md) 并记录决策 **D-007**——「服务重启」分 **L1 HTTP 层**（同文件 store 关闭→重开，全 HTTP CRUD→list/detail）与 **L2 进程级**（真实 `cmd/server` 子进程终止→同 `DB_PATH` 重启）两层；每轮全新临时 DB（`t.TempDir()`）+ 空闲端口隔离；固定操作序列（admin 登录→POST create→PATCH rec-1→DELETE rec-2→重启→login→list/detail）；断言 create 新行存在、rec-1 已更新（含 `updatedAt` 毫秒精确一致）、rec-2 不复活、`total=8`（非空表 seedRecords 不复活）；迁移/seed 重跑与失败路径沿用既有 store/handler/browser E2E 覆盖；`go test ./...` / `npm test` / `npm run test:e2e` 为回归命令。`I-007-004` → **verified**。
+- **实施 S6（L1 + L2）**：
+  - **L1 · HTTP 层重启**：`apps/api/internal/handler/records_restart_test.go` `TestRecordsSurviveRestart`——临时 SQLite 文件上完整 handler/auth 栈，admin 登录→POST create（201，记录 id）→PATCH rec-1（200，记录 `updatedAt`）→DELETE rec-2（204）→`store.Close()`→以**同一路径**重开（不同 seed hash，不覆盖 admin 密码）→重新登录→list 断言新行存在 / rec-1 名称已更新 / rec-2 不复活 / `total=8`；detail 断言字段与 `updatedAt` 毫秒持久化一致。
+  - **L2 · 进程级重启**：`apps/api/cmd/server/server_restart_test.go` `TestServerProcessRestartPersistsRecords`——`go build ./cmd/server` 生成真实二进制，以显式 env（`DB_PATH` 临时路径、`HTTP_ADDR` 空闲端口、`ADMIN_INITIAL_PASSWORD=admin`、`AUTH_JWT_SECRET=test-secret`、`AUTH_DEV_SESSION_ENABLED=false`、`APP_ENV=development`）启动 Phase 1 进程→登录→POST/PATCH/DELETE→`Process.Kill()` 终止→以**同一 `DB_PATH`** 启动 Phase 2 进程→登录→list/detail 断言同 L1。测试结束 Kill+Wait 不留进程，临时库随 `t.TempDir()` 清理。
+  - **验证结果**：`go vet ./...` 干净；`go test ./... -count=1`（apps/api）**全绿**（含 L1 0.13s、L2 4.38s）；web `vitest run` **458/458** 全绿（本轮无 web 变更）。
+- **成功标准 S6 勾选**：create/update/delete→重启→list/detail 的机器可重复证据已产出（L1+L2）；迁移/seed 重跑（ledger `{1,2,3}` 不重跑、空表才 seed、非空不复活）与关键失败路径（checksum 漂移、快照恢复、401/403）由既有 store/handler/browser 测试覆盖；API 回归 `go test ./...`、Web 回归 vitest 458/458。派生进度 `5/6` → **`6/6`**。
+- **未做（本轮）**：本目标仍为 `active`，**未置 `done`**（关门需先做关门审计 self 或 `/audit` + 用户裁决 + Root R4 勾选）；Root R4 未勾选（Root 保持 `3/5`）；`npm run test:e2e`（playwright，需真实服务）本轮未跑，属可选回归。
+
 ## 下一步计划（非事实）
 
-1. 实施 S4/S5：按 D-005 / I-007-003 **v0.2.2** 演进 `list-edit-lifecycle` fixture（table + `actionRef`→`openCreate`/`openEdit` modal + 行 delete `requestMapping`/`confirm` string + `records.write` 权限表达式 + `onSuccess.behavior: "reload"`（隐含关 modal）），渲染层一次性补齐 actions/toolbar/modal/form-submit（含 §9.1a `{id}` 槽绑定）/反馈；records client 新增 `createRecord`（POST）；`search-form-table` 做 form-to-query 绑定；T-UI-01～10 与权限负向闭环。
-2. 在 S6 验收前关闭 `I-007-004`（重启保持与端到端验收协议），再补 create/update/delete→重启→list/detail 的机器可重复证据与 API/Web 回归。
-3. 可选：S3/S4 阶段审计（self 或 `/audit`），为 S6 关门审计积累证据。
+1. **目标关门路径**：对 S6/整体做一次关门审计（建议 `/audit` 独立或 self；A-008/A-009 已为 S4/S5 提供 self+independent 覆盖），核验成功标准对照与无开放 required/到期信息门禁后，再置 `GOAL-007` `done` 并勾选 Root R4（Root `3/5 → 4/5`）。
+2. 可选：`npm run test:e2e`（browser E2E）作为关门补充证据。
+3. R5（容器/生产运维）与 fork 关门属后续目标，不在本目标范围。

@@ -16,7 +16,7 @@ npm install
 npm run dev
 # http://localhost:5173  (Vite proxies /api to :8080)
 
-npm test        # vitest run (398 tests)
+npm test        # vitest run (458 tests)
 npm run build   # tsc -b && vite build
 ```
 
@@ -31,26 +31,32 @@ npm run build   # tsc -b && vite build
   load fails, the shell renders a non-blocking notice instead of silently
   dropping the error (fail-closed: navigation and actions stay restrictive).
 
-## Example pages (R5)
+## Example pages (schema-driven, R1/R4)
 
-Registered in `src/app/examples/registry.tsx` and rendered by manifest route:
+Pages are Schema documents embedded by the Go API (`GET /api/schema/{pageId}`)
+and rendered through the schema-driven default path
+(`manifest route → loadPageDocument → RenderPage`). New/adjusted pages only
+edit `apps/api/internal/handler/fixtures/schema/*.json` — the Renderer main path
+stays generic (T-UI-10).
 
-- `data-table` — list surface
-- `search-form-table` — search + table
-- `list-edit-lifecycle` — row actions gate through the D-PERM engine against
-  the boot session; Edit/Delete are disabled for non-admin `$context`
+- `data-table` — list surface over `/api/records`
+- `search-form-table` — search form bound to its target table query (R4)
+- `list-edit-lifecycle` — R4 representative CRUD page: create/edit/delete via
+  Schema actions (`actionRef` → modal forms + row DELETE with confirm); write
+  affordances gate through the D-PERM engine against the boot session
+  (`records.write` → edit/delete), so they are disabled for read-only `$context`
 - `form-controls` — whitelisted form controls
 - `form-with-reactions` — reactions + context snapshot
 
-The schema-driven page Renderer remains a later protocol boundary; these are
-direct React example surfaces.
+## 鉴权边界
 
-## 鉴权边界（MVP 声明，非生产）
-
-- 会话为静态开发会话（`/api/accounts/me`），无真实登录 / 令牌 / IAM。
-- 权限求值引擎（D-PERM）提供**渲染层**门禁（按钮禁用、导航隐藏）；后端
-  `/api/records` 写路由（PATCH/DELETE）挂 fail-closed 鉴权（需 admin 会话），GET 只读开放。
-- **范围说明**：后端写路由 gate 绑定**进程内会话提供者**（默认 `StaticDevSession` 恒含 admin），**非**请求头身份——HTTP 客户端无凭证仍可写；真实身份鉴权需生产化。
+- 会话为真实登录会话/Token（GOAL-005 R2），请求级身份中间件按会话权限求值；
+  `/api/accounts/me` 返回 `{ user: { id, roles, permissions }, features }` 作为
+  `$context` 快照。
+- `/api/records` 读路由要求 `records.read`、写路由（POST/PATCH/DELETE）要求
+  `records.write`；匿名 `401 UNAUTHENTICATED`、缺权限 `403 FORBIDDEN`（I-007-001）。
+- 权限求值引擎（D-PERM）提供**渲染层**门禁（按钮禁用/隐藏）；**后端为权威**——
+  前端隐藏不是安全边界，直接写请求仍由 API 403/401 拦截（T-UI-08/09）。
 
 ## 测试
 

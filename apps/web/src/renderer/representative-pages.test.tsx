@@ -175,22 +175,29 @@ describe("migrated representative pages (GOAL-004)", () => {
     expect((auditNote as HTMLTextAreaElement | undefined)?.disabled).toBe(true);
   });
 
-  it("renders the composite/detail page (tabs + recordView + form)", async () => {
+  it("renders the CRUD lifecycle page (table + toolbar + row actions + recordView)", async () => {
+    const admin = {
+      user: { id: "u1", roles: ["admin"], permissions: ["records.read", "records.write"] },
+    };
     const container = await renderDocument(
       fixtureDocument("list-edit-lifecycle") as RenderPageDocument,
-      {},
+      admin,
     );
-    expect(container.textContent).toContain("Detail");
+    // S4 structure (I-007-003 §2.1): a table surface with a create toolbar
+    // trigger, row edit/delete actions, and a selected-row recordView.
+    expect(container.textContent).toContain("New record");
     expect(container.textContent).toContain("Edit");
+    expect(container.textContent).toContain("Delete");
     expect(container.textContent).toContain("Acme Console");
-    // The Detail tab is active by default; switch to Edit to reveal the form.
-    const editTab = Array.from(container.querySelectorAll('[role="tab"]')).find(
-      (tab) => tab.textContent === "Edit",
+    // recordView renders the selected-row copy once a row is selected.
+    expect(container.textContent).toContain("Select a record to view details.");
+    const editRow = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Edit",
     );
-    expect(editTab).not.toBeUndefined();
-    await act(async () => (editTab as HTMLElement).click());
-    expect(container.textContent).toContain("Status");
-    expect(container.textContent).toContain("Name");
+    expect(editRow).not.toBeUndefined();
+    await act(async () => (editRow as HTMLButtonElement).click());
+    expect(container.textContent).toContain("Save changes");
+    expect(container.textContent).toContain("Acme Console");
   });
 
   it("fails closed on an unknown node type on a representative path", async () => {

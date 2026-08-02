@@ -12,7 +12,7 @@
       {
         "type": "text",
         "props": {
-          "text": "A search form filters the record list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R1 renders the search-form structure and the record table; form-to-query binding is out of scope."
+          "text": "A search form filters the record list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R4 binds the search form to the target table query (form-to-query, mode: search + targetTable)."
         }
       },
       {
@@ -20,6 +20,8 @@
         "id": "search-form",
         "props": {
           "fields": [{ "id": "q", "label": "Search records", "type": "input" }],
+          "mode": "search",
+          "targetTable": "search-results",
           "submitLabel": "Search"
         }
       },

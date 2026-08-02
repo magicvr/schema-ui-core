@@ -26,6 +26,10 @@ export interface DataTableProps<T> {
   error?: string | null;
   emptyMessage?: string;
   caption?: string;
+  /** Invoked when a data row is clicked (row selection, S4 · GOAL-007). */
+  onRowClick?: (row: T) => void;
+  /** Row key of the currently selected row (highlight), S4 · GOAL-007. */
+  selectedKey?: string;
 }
 
 function cellContent<T>(
@@ -52,6 +56,8 @@ export function DataTable<T>({
   error = null,
   emptyMessage = "No rows.",
   caption,
+  onRowClick,
+  selectedKey,
 }: DataTableProps<T>) {
   const toggleSort = (column: DataTableColumn<T>) => {
     if (!column.sortable || onSortChange === undefined) {
@@ -128,15 +134,30 @@ export function DataTable<T>({
               </td>
             </tr>
           ) : (
-            rows.map((row) => (
-              <tr key={rowKey(row)} className="border-b border-border last:border-b-0">
-                {columns.map((column) => (
-                  <td key={column.key} className="px-4 py-3 align-middle">
-                    {cellContent(column, row)}
-                  </td>
-                ))}
-              </tr>
-            ))
+            rows.map((row) => {
+              const key = rowKey(row);
+              const selected = selectedKey !== undefined && selectedKey === key;
+              return (
+                <tr
+                  key={key}
+                  onClick={onRowClick === undefined ? undefined : () => onRowClick(row)}
+                  aria-selected={onRowClick === undefined ? undefined : selected}
+                  className={cn(
+                    "border-b border-border last:border-b-0",
+                    onRowClick === undefined
+                      ? ""
+                      : "cursor-pointer transition-colors hover:bg-accent",
+                    selected ? "bg-accent/60" : "",
+                  )}
+                >
+                  {columns.map((column) => (
+                    <td key={column.key} className="px-4 py-3 align-middle">
+                      {cellContent(column, row)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

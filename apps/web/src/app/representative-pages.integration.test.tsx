@@ -173,20 +173,19 @@ describe("representative pages through the real manifest (GOAL-004)", () => {
     expect(container.textContent).toContain("Kind (select)");
   });
 
-  it("renders the composite/detail page (tabs + recordView + form)", async () => {
-    const container = await renderApp("/list-edit-lifecycle", {}, realFixtures());
+  it("renders the CRUD lifecycle page (table + toolbar + row actions + recordView)", async () => {
+    const admin = {
+      user: { id: "u1", roles: ["admin"], permissions: ["records.read", "records.write"] },
+    };
+    const container = await renderApp("/list-edit-lifecycle", admin, realFixtures());
     expect(container.querySelector("h1")?.textContent).toContain("List + edit lifecycle");
-    expect(container.textContent).toContain("Detail");
+    // S4 surface: create toolbar trigger, row edit/delete actions, recordView.
+    expect(container.textContent).toContain("New record");
     expect(container.textContent).toContain("Edit");
+    expect(container.textContent).toContain("Delete");
     expect(container.textContent).toContain("Acme Console");
-    // The Detail tab is active by default; switch to Edit to reveal the form.
-    const editTab = Array.from(container.querySelectorAll('[role="tab"]')).find(
-      (tab) => tab.textContent === "Edit",
-    );
-    expect(editTab).not.toBeUndefined();
-    await act(async () => (editTab as HTMLElement).click());
-    expect(container.textContent).toContain("Status");
-    expect(container.textContent).toContain("Name");
+    expect(container.textContent).toContain("Northwind Sales");
+    expect(container.textContent).toContain("Select a record to view details.");
   });
 
   it("applies $context reactions on the migrated reactive form", async () => {

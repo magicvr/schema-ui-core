@@ -26,6 +26,31 @@ export interface RecordsQuery {
   pageSize?: number;
 }
 
+/** A records API failure carrying the frozen envelope `{error, message}`. */
+export class RecordApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = "RecordApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export interface RecordCreateBody {
+  name: string;
+  status: string;
+  owner: string;
+}
+
+export interface RecordPatch {
+  name?: string;
+  status?: string;
+  owner?: string;
+}
+
 type JsonRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -48,6 +73,47 @@ function requireNumber(value: unknown, label: string): number {
     return fail(label, "expected a finite number");
   }
   return value;
+}
+
+function parseRecordItem(value: unknown, label: string): RecordItem {
+  if (!isRecord(value)) {
+    return fail(label, "expected an object");
+  }
+  return {
+    id: requireString(value.id, `${label}.id`),
+    name: requireString(value.name, `${label}.name`),
+    status: requireString(value.status, `${label}.status`),
+    owner: requireString(value.owner, `${label}.owner`),
+    updatedAt: requireString(value.updatedAt, `${label}.updatedAt`),
+  };
+}
+
+/** Reads the frozen error envelope from a non-OK response, defaulting safely. */
+async function readEnvelope(response: Response): Promise<{ code: string; message: string }> {
+  try {
+    const value: unknown = await response.json();
+    if (isRecord(value)) {
+      return {
+        code: typeof value.error === "string" && value.error !== "" ? value.error : "UNKNOWN",
+        message: typeof value.message === "string" ? value.message : "",
+      };
+    }
+  } catch {
+    // non-JSON body
+  }
+  return { code: "UNKNOWN", message: "" };
+}
+
+/** Reads the frozen error envelope from a non-OK response into a RecordApiError. */
+export async function readRecordApiError(response: Response, label: string): Promise<RecordApiError> {
+  const envelope = await readEnvelope(response);
+  const suffix =
+    envelope.message === "" ? "" : envelope.message.startsWith(":") ? envelope.message : `: ${envelope.message}`;
+  return new RecordApiError(
+    response.status,
+    envelope.code,
+    `${label} failed: HTTP ${response.status}${suffix}`,
+  );
 }
 
 /** Serializes a RecordsQuery into a URL query string (query-serialization). */
@@ -80,23 +146,12 @@ export function parseRecordList(value: unknown): RecordList {
   if (!Array.isArray(items)) {
     return fail("parseRecordList", "expected items array");
   }
-  const parsed = items.map((item, index) => {
-    if (!isRecord(item)) {
-      return fail("parseRecordList", `items[${index}] expected an object`);
-    }
-    return {
-      id: requireString(item.id, `items[${index}].id`),
-      name: requireString(item.name, `items[${index}].name`),
-      status: requireString(item.status, `items[${index}].status`),
-      owner: requireString(item.owner, `items[${index}].owner`),
-      updatedAt: requireString(item.updatedAt, `items[${index}].updatedAt`),
-    };
-  });
+  const parsed = items.map((item, index) => parseRecordItem(item, `parseRecordList.items[${index}]`));
   return {
     items: parsed,
-    total: requireNumber(value.total, "total"),
-    page: requireNumber(value.page, "page"),
-    pageSize: requireNumber(value.pageSize, "pageSize"),
+    total: requireNumber(value.total, "parseRecordList.total"),
+    page: requireNumber(value.page, "parseRecordList.page"),
+    pageSize: requireNumber(value.pageSize, "parseRecordList.pageSize"),
   };
 }
 
@@ -110,15 +165,26 @@ export async function fetchRecords(
   const url = queryString === "" ? baseURL : `${baseURL}?${queryString}`;
   const response = await fetcher(url);
   if (!response.ok) {
-    throw new Error(`records fetch failed: HTTP ${response.status}`);
+    throw await readRecordApiError(response, "records fetch");
   }
   return parseRecordList(await response.json());
 }
 
-export interface RecordPatch {
-  name?: string;
-  status?: string;
-  owner?: string;
+/** Creates a record via POST /api/records (records.write); returns the 201 record. */
+export async function createRecord(
+  fetcher: typeof fetch,
+  baseURL: string,
+  body: RecordCreateBody,
+): Promise<RecordItem> {
+  const response = await fetcher(baseURL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await readRecordApiError(response, "record create");
+  }
+  return parseRecordItem(await response.json(), "createRecord");
 }
 
 export async function updateRecord(
@@ -133,19 +199,9 @@ export async function updateRecord(
     body: JSON.stringify(patch),
   });
   if (!response.ok) {
-    throw new Error(`record update failed: HTTP ${response.status}`);
+    throw await readRecordApiError(response, "record update");
   }
-  const value: unknown = await response.json();
-  if (!isRecord(value)) {
-    return fail("updateRecord", "expected an object response");
-  }
-  return {
-    id: requireString(value.id, "id"),
-    name: requireString(value.name, "name"),
-    status: requireString(value.status, "status"),
-    owner: requireString(value.owner, "owner"),
-    updatedAt: requireString(value.updatedAt, "updatedAt"),
-  };
+  return parseRecordItem(await response.json(), "updateRecord");
 }
 
 export async function deleteRecord(
@@ -157,6 +213,6 @@ export async function deleteRecord(
     method: "DELETE",
   });
   if (!response.ok && response.status !== 204) {
-    throw new Error(`record delete failed: HTTP ${response.status}`);
+    throw await readRecordApiError(response, "record delete");
   }
 }

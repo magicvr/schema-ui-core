@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.18.0
+version: 0.20.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -22,7 +22,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (3/5)
 ├── GOAL-004-r1-representative-node-pages [done] R1 · 代表性 Node 页面与回归证据 (5/5)
 ├── GOAL-005-r2-auth-session [done] R2 · 真实认证与请求级身份 (6/6)
 ├── GOAL-006-r3-persistent-rbac-menu [done] R3 · 持久化 RBAC、菜单投影与版本迁移 (6/6)
-└── GOAL-007-r4-schema-crud [active] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (3/6)
+└── GOAL-007-r4-schema-crud [active] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (6/6)
 ```
 
 ## 状态表
@@ -35,7 +35,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (3/5)
 | `GOAL-004-r1-representative-node-pages` | R1 · 代表性 Node 页面与回归证据 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-02 |
 | `GOAL-005-r2-auth-session` | R2 · 真实认证与请求级身份 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-006-r3-persistent-rbac-menu` | R3 · 持久化 RBAC、菜单投影与版本迁移 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
-| `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `active` | `3/6` | 2026-08-02 |
+| `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `active` | `6/6` | 2026-08-02 |
 
 > Root `3/5` 由五个等权纲领检查点派生（R1、R2、R3 已勾选）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 6/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1 已实现（D-004：migration runner + `schema_migrations` + `0001/0002` 迁移链 + pre-v0002 恢复快照）；S2 已实现（D-005：阶段 B 终态规范化权威读 + 双写 + 集合核对，A-002 F-004 required → fixed、A-003 独立复核 pass）；S3 已实现（D-006：`seedRBAC` 增量幂等种子接线到 Open，A-004 self 阶段审计 pass）；S4 已实现（D-007：records 读写经身份携带的 permission key 门禁，匿名 401 / 缺权限 403）；S5 已实现（D-008：`/me.features` 从持久化菜单 grants 投影 + 真实 manifest `visibleWhen`）；**S6 已实现（2026-08-02：恢复/重启/回归证据——`TestRestartPersistence`、`TestRestorePreV0002Snapshot`、E2E 重启冒烟、全仓 API/Web 回归；A-001 F-001/F-002 与 A-004 F-101 已闭合为 fixed）**。**A-005 F-005 已闭合为 fixed（2026-08-02：API README 端点表与鉴权边界同步 R3 权限键语义，API 回归通过；意见台账开放 0）**。**`GOAL-006` 已置 `done`（2026-08-02：A-006 independent 复核 F-005 关闭 `pass`；A-001～A-006 全部 responded，无开放 required；`I-006-001/002` verified；close-out 用户裁决不补 self 自审）。Root R3 检查点已勾选（Root `2/5 → 3/5`）**。六项检查点已全勾选（`6/6`）。
 
@@ -48,3 +48,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (3/5)
 > **A-006 已响应、I-007-003 升级 v0.2.1（2026-08-02）**：A-006（independent · conditional）复核 v0.2.0 修订——F-002/F-003 维持 fixed；F-004 残余由 F-005/F-006 承接并随本轮闭合——I-007-003 **v0.2.1** + D-005 v0.2.1 补记闭合 **F-005**（§9.1a 冻结 form submit 的 `{id}` 槽绑定：从打开 modal 时捕获的行上下文解析，`formAction` 有界扩展落入 §9.5 白名单并补测试）与 **F-006**（§9 对齐 `action.schema`/registry：顶层 5 action（3×RequestAction + 2×ModalAction）、`onSuccess.behavior`、挂载字段 `actionRef`、`confirm` 移到 rowAction、delete `requestMapping.path.id` 留 rowAction）；R-001（§9.5 允许新增 modal/confirm 文件）与 R-002（D-005 旧表述取代）handled。**`I-007-003` 保持 verified（v0.2.1），S4 fixture/actions 接线可无歧义开工**。当前 scope 无开放 required；`I-007-004` 仍 open（S6）；Root R4 未勾选。后续意见从 A-007 起。
 
 > **A-007 已响应、I-007-003 升级 v0.2.2（2026-08-02）**：A-007（independent · conditional）复核 v0.2.1——F-005/F-006 主体维持 fixed；F-006 残余 **F-007**（§9.2 `confirm` 写成对象、registry 要求 **string**）随本轮闭合——I-007-003 **v0.2.2** + D-005 v0.2.2 补记将 §9.2 改为 **`confirm: "Delete this record?"`**（string，一行修补）；R-001（§9.5 补入 `request-construction.ts`/`row-action.ts`）与 R-002（§9.1 注明 `reload` 隐含关 modal）handled。**`I-007-003` 保持 verified（v0.2.2），§9 字面形状已对齐 `action.schema`/registry，S4 代表页 fixture 可按 v0.2.2 编写**。当前 scope 无开放 required；`I-007-004` 仍 open（S6）；Root R4 未勾选。后续意见从 A-008 起。
+
+> **S4/S5 已实施（2026-08-02）**：`list-edit-lifecycle` 演进为 v0.2.2 结构（table + toolbar/rowActions + 双 modal form + 行 delete 确认 + recordView 选中行 + 顶层 5 actions）；`search-form-table` 纳入 search form-to-query；渲染层一次性补齐（`render.tsx` SchemaCrudProvider、`schema-table.tsx` toolbar/actions/选中、`data-table.tsx` 行选中、新 `modal.tsx`/`confirm.tsx`、`records.ts` `createRecord` + envelope）；D-006 固定实现落点（`{id}` 槽绑定落 `render.tsx`、T-UI-10 判据、fetcher 首值保持、只读=禁用）。T-UI-01～10 全绿；web `vitest run` **458/458**、`tsc -b` 干净、`vite build` 成功、`go test ./...`（apps/api）全绿。**S4/S5 勾选，GOAL-007 进度 `3/6 → 5/6`**；`I-007-003` 保持 verified（v0.2.2）；`I-007-004` 仍 open（S6）；Root R4 未勾选（Root 保持 `3/5`）。无自审（沿用用户裁决，留待放行或关门前）。后续意见从 A-008 起。
+
+> **A-008/A-009 已响应、S6 已实施（2026-08-02）**：A-008（independent · pass）S4/S5 execution-facts 复核；用户按 P-004 §3.1 裁决「先补 self 审计」→ **A-009（self · pass）** 补齐 S4/S5 scope 的 self 覆盖并统一响应 A-008。**`I-007-004` → verified**（D-007 + [I-007-004-restart-e2e-protocol.md](GOAL-007-r4-schema-crud/attachments/I-007-004-restart-e2e-protocol.md)：L1 HTTP 层 + **L2 进程级**重启协议）。**S6 已实施**——L1 `handler/records_restart_test.go` `TestRecordsSurviveRestart`（同文件 store 关闭→重开，全 HTTP CRUD→list/detail）+ **L2 `cmd/server/server_restart_test.go` `TestServerProcessRestartPersistsRecords`（真实子进程终止→同 `DB_PATH` 重启）**；`go vet` 干净、`go test ./... -count=1` 全绿（L1 0.13s、L2 4.38s）、web vitest 458/458。**S6 勾选，GOAL-007 进度 `5/6 → 6/6`，六项成功标准全部达成**；`I-007-001/002/003/004` 全 verified。**本目标仍 `active`（未 `done`）**：关门需先做关门审计（self 或 `/audit`）+ 用户裁决 + Root R4 勾选。Root R4 未勾选（Root 保持 `3/5`）。后续意见从 A-010 起。

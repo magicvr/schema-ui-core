@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.6.0
+version: 0.8.0
 ---
 
 # 决策 · GOAL-007
@@ -115,3 +115,37 @@ version: 0.6.0
 > **补记（2026-08-02 · 响应 A-006 F-005/F-006）**：本决策与其附件升级为 **I-007-003 v0.2.1**，闭合两处 required 协议缺口——① **F-005**：`updateRecord`（form submit）的 PATCH `{id}` 槽不适用 row 专属 `requestMapping`/`$row`（`buildFormAction` 不解析）；冻结 §9.1a「**form submit 行上下文槽绑定**」：执行 default form submit 且 `action.url` 含 `{id}` 时，从打开 modal 时捕获的选中行解析该槽——为 `formAction` 的**有界扩展**，落入 §9.5 白名单并补测试。② **F-006**：§9.1–§9.2 改写为对齐 `action.schema`/registry——顶层 **5 个 action**（`createRecord`/`updateRecord`/`deleteRecord` RequestAction + `openCreate`/`openEdit` ModalAction）；`onSuccess` 用 **`behavior`**（非 `type`）；挂载字段用 **`actionRef`**（非 `action`/`modal:` 前缀）；`confirm` 文案移到 **rowAction** 项；delete 的 `requestMapping.path.id: "$row.id"` 留在 rowAction。另按 A-006 R-001 扩展 §9.5 白名单允许一次性新增 modal/confirm 渲染文件；**本补记同时取代 D-005 主列表点 1–2 中「搜索绑定纳入 list-edit」「单 form create|edit 模式」等旧表述**（搜索归 `search-form-table`；create/edit 为两个独立 modal form）——以 I-007-003 v0.2.1 §2.1/§9 为权威。`I-007-003` 保持 `verified`（v0.2.1），S4/S5 实施放行维持。
 
 > **补记（2026-08-02 · 响应 A-007 F-007）**：本决策与其附件升级为 **I-007-003 v0.2.2**——§9.2 delete 的 `confirm` 由 `{ text }` 对象改为 **string**（`confirm: "Delete this record?"`，与 registry `table.props.actions[].confirm: string` 一致，一行修补）；§9.5 白名单补入 `request-construction.ts` / `row-action.ts`（A-007 R-001）；§9.1 注明 `reload` 隐含关闭 modal（A-007 R-002）。`I-007-003` 保持 `verified`（v0.2.2），S4 fixture 可按 v0.2.2 字面编写。
+
+## D-006 · 实施 S4/S5 的实现落点选择（2026-08-02）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**（按 D-005 / I-007-003 v0.2.2 实施，明确实现落点）：
+  1. **`{id}` 槽绑定落在 `render.tsx`**：§9.1a 的 form submit 行上下文槽绑定（`PATCH /api/records/{id}`）在 `render.tsx` 的动作执行器于 `constructRequest` 之后做 url 替换实现，**不改 `request-construction.ts`**。§9.5 白名单对二者均允许，但保持 conformance 包字节不变可避免触碰冻结构造器证据；`render.tsx` 补 T-UI-05 覆盖 `{id}` 解析。
+  2. **T-UI-10 断言方法**：以「record 动作 id（`createRecord`/`updateRecord`/`deleteRecord`/`openCreate`/`openEdit`）只出现在 `fixtures/schema/*.json`，不出现在 `apps/web/src` 页面渲染源码」为「页级变更仅改 fixture」的机器可判据；通用 records 传输客户端（`records.ts`/`use-records.ts`）的函数名合法回显 record 动词，**不**纳入该扫描（它们是任何页面可复用的传输层，不是页级接线）。
+  3. **fetcher 注册语义**：`SchemaCrudProvider.registerFetcher` 保持**首个注入的传输**；测试内联 `recordsFetcher()` 每渲染产生新函数，比较引用并维持旧值可避免重渲染/内存循环，生产环境 fetcher 本就稳定。
+  4. **只读呈现**：viewer/editor 的写 affordance 采用**禁用**（S5「隐藏或禁用」之一），读表面不受影响；后端 403 权威由 Go T-API-08/09 承担，UI 一致呈现。
+  5. **本轮不写 self 审计**：沿用既有用户裁决（A-003/A-004 响应节），S4/S5 阶段审计留待放行或关门前选择（self 或 `/audit`）。
+- **理由**：冻结契约已消除实施歧义（F-002～F-007 全 closed），实现只需在 §9.5 白名单内落地一个通用执行器并让 fixture 驱动全部页面行为；D-006 把三个「可由实现临场决定」的点显式固定，避免 T-UI-10 diff 争议与 conformance 证据回退。
+- **信息门禁**：`I-007-003` 保持 `verified`（v0.2.2），S4/S5 实施放行执行完毕；`I-007-004` 仍 open（S6）。成功标准 **S4、S5 勾选**，派生进度 `3/6 → 5/6`。**不**构成 S6 已实现或 Root R4 已勾选。
+
+## D-007 · 冻结 S6 重启/端到端验收协议（I-007-004）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**（承接 A-008/A-009 建议，先收集关闭 `I-007-004` 再实施 S6）：
+  1. **「服务重启」分两层验收**：**L1 HTTP 层重启**——同一 SQLite 文件上完整 handler/auth 栈 store 关闭→重开，全 HTTP CRUD→重启→list/detail（`handler/records_restart_test.go`）；**L2 进程级重启**——真实 `cmd/server` OS 子进程终止→以同一 `DB_PATH` 重启（`cmd/server/server_restart_test.go`），补齐 A-003/A-004 标记的「非进程级」缺口。
+  2. **DB 隔离**：每轮全新临时 `DB_PATH`（`t.TempDir()`），绝不复用默认 `./data/schema-ui.db`；进程级测试以空闲端口 + 显式 env（`ADMIN_INITIAL_PASSWORD`/`AUTH_JWT_SECRET`/`AUTH_DEV_SESSION_ENABLED=false`/`APP_ENV=development`）固定运行环境。
+  3. **固定操作序列与断言**：admin 登录 → POST create（记录 id）→ PATCH rec-1（记录 `updatedAt`）→ DELETE rec-2 → 重启 → 重新登录 → list 断言新行存在/rec-1 已更新/rec-2 不复活、`total=8`（8 seed − 1 delete + 1 create，证明非空表 seedRecords 不复活）；detail 断言字段与 `updatedAt` **毫秒精确一致**。
+  4. **迁移/seed 重跑**：ledger 仍 `{1,2,3}`、seed 不重复由既有 store 级 `TestRestartPersistence`/`TestRecordsSeedIdempotentAcrossOpens` 承担；HTTP 层以总数不变 + 已删行不复活补足 records 侧。
+  5. **失败路径**：checksum 漂移 fail closed、非空库升级前快照恢复、401/403 门禁沿用既有 T-DB-04/`TestRestorePreV0002Snapshot`/T-API-08/09/browser E2E。
+  6. **清理**：`t.TempDir()` 自动清理临时 DB 与 `pre-v0003-*.sqlite`；进程测试 Kill+Wait 不留孤儿进程。
+  7. **回归命令**：`go test ./...`（apps/api，含 L1/L2）、`npm test`（web vitest）、`npm run test:e2e`（可选）。
+- **理由**：S6 验收必须由机器可重复证据支撑，不能以单次手工冒烟替代（00-meta I-007-004 原表述）。把「服务重启」显式拆为 HTTP 层 + 进程级两层，既保证 CI 内稳定快速回归，又提供 A-003/A-004 所要求的真实进程重启证据；其余失败路径与 seed/迁移重跑复用既有已验证覆盖，避免重复造轮。
+- **信息门禁**：`I-007-004` → **verified**；证据 [I-007-004-restart-e2e-protocol.md](attachments/I-007-004-restart-e2e-protocol.md)。本决策完成 S6 验收协议冻结并放行 S6 实施；**不**构成 S6 已实现或 Root R4 已勾选。
+
+### 未选方案
+
+- **只做进程级重启、不补 HTTP 层测试**：进程级测试较慢且依赖端口/构建，作为唯一回归证据会增加 CI 抖动；HTTP 层快速测试提供同一边界（SQLite 文件）的稳定回归。
+- **复用默认 DB 路径做「重启」**：状态在运行间残留，无法隔离、不可重复；违反「每轮全新临时库」。
+- **接受单次手工冒烟为 S6 证据**：违反 00-meta I-007-004 的「必须产出机器可重复证据」。

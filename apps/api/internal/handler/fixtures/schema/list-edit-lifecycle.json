@@ -3,64 +3,146 @@
     "pageId": "list-edit-lifecycle",
     "title": "List + edit lifecycle",
     "protocolVersion": "2.7",
-    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended", "record.view.load"]
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort"
+    ]
+  },
+  "actions": {
+    "createRecord": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/records",
+      "bodyMapping": { "name": "name", "status": "status", "owner": "owner" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "updateRecord": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/records/{id}",
+      "bodyMapping": { "name": "name", "status": "status", "owner": "owner" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "deleteRecord": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/records/{id}",
+      "onSuccess": { "behavior": "reload" }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"records.write\""
+        },
+        "props": {
+          "fields": [
+            { "id": "name", "label": "Name", "type": "input" },
+            {
+              "id": "status",
+              "label": "Status",
+              "type": "select",
+              "options": [
+                { "value": "active", "label": "Active" },
+                { "value": "pending", "label": "Pending" },
+                { "value": "archived", "label": "Archived" }
+              ]
+            },
+            { "id": "owner", "label": "Owner", "type": "input" }
+          ],
+          "submitAction": "createRecord",
+          "submitLabel": "Create record"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"records.write\""
+        },
+        "props": {
+          "fields": [
+            { "id": "name", "label": "Name", "type": "input" },
+            {
+              "id": "status",
+              "label": "Status",
+              "type": "select",
+              "options": [
+                { "value": "active", "label": "Active" },
+                { "value": "pending", "label": "Pending" },
+                { "value": "archived", "label": "Archived" }
+              ]
+            },
+            { "id": "owner", "label": "Owner", "type": "input" }
+          ],
+          "submitAction": "updateRecord",
+          "submitLabel": "Save changes"
+        }
+      }
+    }
   },
   "body": {
-    "type": "tabs",
-    "id": "record-lifecycle",
-    "props": { "label": "Record lifecycle" },
+    "type": "section",
+    "id": "records",
     "children": [
       {
-        "type": "section",
-        "props": { "label": "Detail" },
-        "children": [
-          {
-            "type": "text",
-            "props": {
-              "text": "A composite/detail page composed from section/tabs, recordView and form nodes (D-COMP)."
+        "type": "table",
+        "id": "records-table",
+        "permissionCascade": { "keys": ["edit", "delete"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"records.write\"",
+          "delete": "$context.user.permissions contains \"records.write\""
+        },
+        "props": {
+          "columns": [
+            { "field": "id", "label": "ID" },
+            { "field": "name", "label": "Name", "sortable": true },
+            { "field": "status", "label": "Status", "sortable": true },
+            { "field": "owner", "label": "Owner", "sortable": true },
+            { "field": "updatedAt", "label": "Updated", "sortable": true }
+          ],
+          "dataSource": "/api/records",
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New record",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit"
             }
-          },
-          {
-            "type": "recordView",
-            "id": "record-detail",
-            "props": {
-              "record": {
-                "id": "rec-1",
-                "name": "Acme Console",
-                "status": "active",
-                "owner": "alice",
-                "updatedAt": "2026-07-31T00:00:00Z"
-              }
+          ],
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteRecord",
+              "permissionIntent": "delete",
+              "requestMapping": { "path": { "id": "$row.id" } },
+              "confirm": "Delete this record?"
             }
-          }
-        ]
+          ]
+        }
       },
       {
-        "type": "section",
-        "props": { "label": "Edit" },
-        "children": [
-          {
-            "type": "form",
-            "id": "edit-form",
-            "props": {
-              "fields": [
-                { "id": "name", "label": "Name", "type": "input" },
-                {
-                  "id": "status",
-                  "label": "Status",
-                  "type": "select",
-                  "options": [
-                    { "value": "active", "label": "Active" },
-                    { "value": "pending", "label": "Pending" },
-                    { "value": "archived", "label": "Archived" }
-                  ]
-                },
-                { "id": "owner", "label": "Owner", "type": "input" }
-              ],
-              "submitLabel": "Save"
-            }
-          }
-        ]
+        "type": "recordView",
+        "id": "record-detail",
+        "props": {}
       }
     ]
   }
