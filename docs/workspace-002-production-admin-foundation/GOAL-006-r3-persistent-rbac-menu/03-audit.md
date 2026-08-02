@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.6.0
+version: 0.9.0
 ---
 
 # 审计台账 · GOAL-006
@@ -15,12 +15,15 @@ version: 0.6.0
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-02 | S1 execution-facts + 目标定义/信息门禁 | pass | responded（recommended：F-001/F-002 deferred → S2/S6，F-003 fixed） |
 | A-002 | independent | 2026-08-02 | S2 execution-facts + R2 兼容性 + A-001 finding closure review | conditional | responded（F-004 required → fixed；复审建议：/audit 复核或 self 阶段审计） |
+| A-003 | independent | 2026-08-02 | finding-closure：F-004 | pass | responded（F-004 fixed 关闭证据独立复核通过） |
+| A-004 | self | 2026-08-02 | S1/S2 事实 + F-004 闭合 + S3 门禁（stage 自审） | pass | responded（S3 门禁就绪；F-101 recommended 跟踪 → S6） |
 
 ## 当前审计边界
 
 - A-001 覆盖：目标定义与 D-001～D-004、`I-006-001/002` 门禁状态，以及 **S1**（版本迁移与可恢复起点）执行事实对照。
 - A-002 覆盖：**S2**（规范化权威读、双写、集合核对与 R2 身份/refresh 兼容）执行事实，以及 A-001 中 F-001/F-002/F-003 的响应状态；不审 S3～S6 或 Root R3 阶段关门。
 - A-002 的 F-004（required）已由 `/govern` 响应为 **fixed**（集合语义比较 + 迁移后读取/认证回归）；A-002 verdict 仍为 `conditional`，其 required 门禁已合法闭合。
+- A-003 独立复核 F-004 关闭证据：`sameRoleSet` 的集合语义、迁移后双 lookup、Login/Refresh 回归均已在当前工作树复核通过；本条不扩展至 S3～S6。
 - `I-006-001/002` 保持 `verified`；当前无到期未关的 required 信息项。
 - 审计意见不直接修改 `status` / `progress`；响应和推进由 `/govern` 与用户裁决维护。
 
@@ -236,3 +239,147 @@ version: 0.6.0
 ### 复审建议
 
 - A-002 建议「修复后请求复审」：可由 `/audit` 复核 F-004 关闭证据，或由 `/govern` 在推进 S3 前视需要补一次 `self` 阶段审计（GOAL-006 目前无 self 意见）。
+
+---
+
+## A-003 · F-004 关闭证据独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：GitHub Copilot · `/audit`
+- **类型**：finding-closure
+- **scope**：`workspace-002-production-admin-foundation` / `GOAL-006-r3-persistent-rbac-menu` · 仅复核 A-002 的 `F-004`（required，中）关闭证据；不审 S3～S6、其他 recommended finding 或 Root R3 关门
+- **verdict**：**pass**
+- **工作区**：`workspace-002-production-admin-foundation`；`root_goal=GOAL-001-production-admin-foundation`；`canonical_scope` 匹配；`shared_materials_catalog: none`（本审未将共享资料作证据）
+
+### 范围与区间
+
+| 项 | 结论 |
+|----|------|
+| 关闭路径 | 用户已在 A-002 响应中选择 `fixed`，并记录了修正、测试和验证命令；本复核仅判断这些证据是否真实、充分、可重复 |
+| F-004 原主张 | 历史 R2 重复角色经 0002 去重后，S2 读路径不得误判角色分歧并阻断身份加载 |
+| 信息门禁 | `I-006-001` 仍为 `verified`；本复核没有发现新的 required 信息项或 residual 裁决需求 |
+| 审计范围 | 仅涉及 `store.go`、`migrate_test.go`、`auth_test.go` 与对应执行记录；不将 `progress: 2/6` 当作关闭依据 |
+
+### 成果（有证据）
+
+1. **根因修正已存在**：`userWithRoles` 现在调用 `sameRoleSet`；该函数以 map 比较角色集合，忽略 legacy JSON 中的重复值和顺序，同时仍能识别真实集合差异。规范化关联仍作为权威输出，并由 SQL 按 role key 升序返回。
+2. **迁移后双 lookup 覆盖**：`TestMigrateExistingR2DuplicateRolesReadable` 构造 `roles=["admin","admin","editor"]` 的既有 R2 数据，执行 `Open` 后同时验证 `UserByID` 和 `UserByUsername` 成功，并返回去重且升序的 `["admin","editor"]`。
+3. **认证链覆盖**：`TestLoginAndRefreshAfterMigrateDuplicateRoles` 使用迁移后的重复角色用户验证 Login（`UserByUsername`）与 Refresh（`UserByID`），并核对 access token subject 为迁移用户 id。
+4. **独立复跑结果**：聚焦 store 测试、聚焦 auth 测试、`go test ./... -count=1`、`go vet ./...` 和 `gofmt -l ./internal/store ./internal/auth` 均通过；格式检查输出 `gofmt clean`。
+5. **记录一致性**：`02-execution.md` 与 A-002 响应均指向同一 `sameRoleSet` 修正和两条新增回归；`00-meta` 与 `goal-tree` 保持 `active / 2/6`，未以修复 finding 伪造新的检查点完成。
+
+### 对照关闭条件（F-004）
+
+| 条件 | 判定 | 证据 |
+|------|------|------|
+| 修正与 finding 根因对应 | 满足 | `userWithRoles` 改用 `sameRoleSet` 集合语义 |
+| 重复 legacy roles 迁移后可读 | 满足 | `TestMigrateExistingR2DuplicateRolesReadable` |
+| Login / Refresh 受影响调用链恢复 | 满足 | `TestLoginAndRefreshAfterMigrateDuplicateRoles` |
+| 真实集合差异仍 fail closed | 满足 | 既有 `TestReadDetectsRoleMismatch` 保留并通过 |
+| 证据可重复核对 | 满足 | 本轮聚焦测试、全仓测试、vet、gofmt 均通过 |
+
+### Findings
+
+- 本 scope 内无开放 finding。
+- F-004 的 `fixed` 关闭路径满足 P-003 的「可核对修正 + 产物/测试证据」要求；A-002 的 `conditional` 历史 verdict 不被改写，本复核只确认其 required finding 已合法闭合。
+
+### 必改项汇总
+
+- **required / 必改**：无（F-004 已由 `fixed` 合法闭合）。
+- F-001 与 F-002 完整矩阵仍按 A-001 响应延期至 S6，超出本次复核 scope，未据此改变其状态。
+
+### 与既有意见的异同
+
+- A-003 与 A-002 同向：A-002 提出的 F-004 修复建议已由当前代码和测试证据兑现。
+- A-003 不构成 S2 全量关门审计，也不对 S3～S6 作 pass 判断；S2 后续推进仍须由 `/govern` 汇总相关意见。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **结论**：F-004 的集合语义修正、迁移后双 lookup、Login/Refresh 回归和独立复跑证据均充分，`F-004 → fixed` 可被独立复核确认；本 scope verdict 为 `pass`。
+- **建议 `/govern`**：记录 A-003 对 F-004 的独立复核通过，并基于当前无开放 required finding 的事实评估是否推进 S3；不得将本条 pass 解读为 S3～S6 或 Root R3 关门通过。
+
+### 声明
+
+本意见 `source: independent`，**不修改**目标 `status` / 检查点 / 派生 `progress` / 方案正文 / `goal-tree`。响应、后续推进与关门由用户通过 **`/govern`** 处理。
+
+---
+
+## 响应 A-003（2026-08-02 · /govern）
+
+- **模式**：response
+- **响应意见**：A-003（independent · finding-closure `F-004` · verdict `pass`）
+- **裁决**：采纳 A-003 `pass` 与证据认定——F-004 的 `fixed` 关闭证据（`sameRoleSet` 集合语义、迁移后双 lookup、Login/Refresh 回归、独立复跑）经 independent 复核确认，required 门禁解除。
+
+### 关闭证据表
+
+| Finding | 状态 | 处置 / 证据路径 |
+|---------|------|-----------------|
+| F-004 · required · 中 | **verified**（fixed → 独立复核确认） | A-003 `pass`：`store.go` `sameRoleSet` 集合语义 + `TestMigrateExistingR2DuplicateRolesReadable`（迁移后 `UserByID`/`UserByUsername`）+ `TestLoginAndRefreshAfterMigrateDuplicateRoles`（Login/Refresh 调用链）+ 聚焦/全仓测试、vet、gofmt 独立复跑通过。 |
+
+### 仍开放项
+
+- F-004 已合法闭合（`fixed` + independent 复核 `verified`）；S2 的 required 门禁无剩余。
+- F-001 保持 open 跟踪至 **S6（或下一次迁移相关改动）**；F-002 完整 V-MIG-04 矩阵保持 open 至 **S6**（S2 部分已闭合）。均为 `recommended`，不阻断 S3。
+- 无未合法闭合的 required 开放项。
+
+### 冲突裁决
+
+- A-003 与 A-002 同向（F-004 修复建议已兑现）；A-001 pass 仅覆盖 S1，与 A-002/A-003 无同范围相反 verdict。不构成冲突。
+
+### 推进评估（S3）
+
+- 当前无开放 required finding、无到期 required 信息项（`I-006-001/002` verified）、无意见冲突；S2 required 门禁已解除，具备推进 S3 的门禁条件。
+- 按 P-004 §3.1：GOAL-006 目前仅有 independent 意见（A-001/A-002/A-003），无 `self` 意见；是否在 S3 前补一次自审由用户裁决（见下方问题）。
+- A-003 `pass` 仅确认 F-004 关闭，**不**构成 S3～S6 或 Root R3 关门通过。
+
+---
+
+## A-004 · S1/S2 事实与 S3 门禁自审（2026-08-02）
+
+- **source**：self
+- **auditor**：Claude Code `/govern` · `04` 自审
+- **类型**：execution-facts（主）+ finding-closure（辅）
+- **mode**：stage（推进 S3 前阶段检查，P-004 §3.1 用户裁决先补自审）
+- **scope**：`workspace-002-production-admin-foundation` / `GOAL-006-r3-persistent-rbac-menu` · S1 与 S2 检查点主张、A-001/A-002/A-003 意见与 F-004 关闭证据、S3 门禁就绪；不审 S3～S6 实现或 Root R3 关门
+- **verdict**：**pass**
+- **工作区**：`workspace-002-production-admin-foundation`；`root_goal=GOAL-001-production-admin-foundation`；`canonical_scope` 匹配；`shared_materials_catalog: none`
+
+### 范围与区间
+
+| 项 | 结论 |
+|----|------|
+| 意见台账 | A-001 pass（S1）、A-002 conditional（S2；F-004 required → fixed）、A-003 pass（F-004 独立复核）；全部已 responded |
+| 开放必改 | 无（F-004 已 `fixed` + A-003 独立 `verified`；F-001/F-002 recommended → S6） |
+| 信息门禁 | `I-006-001/002` verified；无到期开放 required |
+| S3 门禁 | S1/S2 无未合法闭合 required；无 required 信息项；无意见冲突 |
+
+### 成果（有证据）
+
+1. **S1**：`schema_migrations` 台账 + 编译期 `0001/0002` 迁移链 + 顺序/缺号/未知版本/checksum 漂移 fail-closed + 单事务回滚 + pre-v0002 `VACUUM INTO` 快照与恢复验证（`migrate.go`、`migrate_test.go`，A-001 pass 复核）。
+2. **S2**：阶段 B 终态——`userWithRoles` 双源集合核对 + 规范化权威读（`sameRoleSet`、按 key 升序）、`CreateUser`/`seedAdmin` 事务双写、派生 role 自建；`normalize_test.go` 5 用例覆盖双写/排序/分歧报错/seed 双写/FK-CASCADE（A-002 复核 + F-004 修正）。
+3. **F-004 闭合**：`sameRoleSet` 集合语义修正 + `TestMigrateExistingR2DuplicateRolesReadable` + `TestLoginAndRefreshAfterMigrateDuplicateRoles`；A-003 independent 复核 `pass`。
+4. **R2 契约保持**：auth Login/Refresh/JWT middleware、handler、account 全仓 API 回归通过；对外 `account.User {id,name,roles}` 形状不变。
+5. **本轮独立复跑（2026-08-02）**：`go test ./... -count=1`（apps/api）全绿；`go vet ./...` 干净；`gofmt -l` 无输出。
+
+### 对照成功标准
+
+| 阶段 | 标准 | 判定 | 证据 |
+|------|------|------|------|
+| S1 | 台账 + 顺序/校验和 + 事务化 fail-closed + 可恢复副本 | 满足 | migrate_test.go 9 用例 + A-001 pass |
+| S2 | 规范化关系 + 双写/双读核对 + 规范化权威读 + R2 契约 | 满足 | normalize_test.go 5 用例 + A-002/A-003 + F-004 fixed |
+
+### Findings
+
+- **F-101 · recommended · 低（自审新增，跟踪）**：F-001 与 F-002 完整 V-MIG-04 矩阵仍按既有响应延期至 S6；本轮自审确认不构成 S3 阻断，但建议在 S6 关门回归前闭合。
+- 无 required / 必改项。
+
+### 必改项汇总
+
+- **required / 必改**：无。
+- **recommended**：F-001、F-002（→ S6）、F-101（跟踪）。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **结论**：S1 与 S2 检查点主张有可重复证据支撑；F-004 已由 `fixed` + independent 复核合法闭合；无未闭合 required finding 或 required 信息项。S3 门禁就绪，可推进 **S3（增量幂等种子）**。
+- **建议**：在用户已确认的 seed 接线方案（Open 内 seedAdmin=true 时运行 `seedRBAC`）下实施 S3；S3 完成后按需再审计。
+- **限制**：本 `pass` 不构成 S3～S6 或 Root R3 关门通过。

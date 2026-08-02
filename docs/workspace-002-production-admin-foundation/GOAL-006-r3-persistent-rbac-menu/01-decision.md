@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 决策 · GOAL-006
@@ -89,3 +89,14 @@ version: 0.4.0
   3. `user_roles` FK / RESTRICT / CASCADE 断言随 S2 落测试（F-002 的 S2 部分闭合）；完整 V-MIG-04 unique / CASCADE|RESTRICT / 反向索引矩阵仍留 S6。
 - **理由**：用户确认「直接交付 B 终态」。阶段 A 的双写+核对行为在 B 态下仍然生效（集合比对常开，分歧即报错），无需维护瞬态代码态与第二次回归；双写保证读路径永不观察到漂移。seedAdmin 双写同时闭合 D-004 承认的全新库 `user_roles` 空中间态。
 - **未选方案**：**先 A 后 B 两步落码**——同一检查点内多一次改动与回归，且阶段 A 的 legacy 权威读只服务过渡，不构成交付价值。
+
+## D-006 · S3 稳定种子接线到 Open（seedAdmin=true 时运行）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. 新增 `seedRBAC` 方法，幂等 ensure 稳定 roles（admin/editor/viewer，system=1）、permissions（records.read/records.write）、代表性菜单项（list-edit-lifecycle）与 grants（admin→读写+菜单；editor/viewer→仅读）。
+  2. `seedRBAC` 在 `Open` 内、`migrate()` + `seedAdmin()` 之后、当 `seedAdmin=true` 时调用；生产 `main.go` 恒为 true，服务启动自愈。任意既有用户不使关系 seed 整体跳过；重复启动无重复；不覆盖非种子用户字段；editor 不升级为写。
+  3. `Open(seedAdmin=false)` 的既有语义（仅迁移、不 seed）保持不变。
+- **理由**：用户确认接线方案。稳定种子是系统不变量（S4 授权 gate 依赖），随启动自愈最符合 D-002.6「启动时增量 seed」；保持既有 `seedAdmin` 旗标语义，测试与调用方无需改变。
+- **未选方案**：**`seedRBAC` 作为独立公开方法由调用方显式调用**——更灵活但需每个消费方自行接线，容易漏掉而留下未种子状态。

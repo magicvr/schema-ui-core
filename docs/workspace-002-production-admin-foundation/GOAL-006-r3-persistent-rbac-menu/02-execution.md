@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 执行记录 · GOAL-006
@@ -66,3 +66,13 @@ version: 0.5.0
 - **回归证据**：`TestMigrateExistingR2DuplicateRolesReadable`（`migrate_test.go`：重复 legacy roles → Open → `UserByID`/`UserByUsername` 可读且返回 `["admin","editor"]`）；`TestLoginAndRefreshAfterMigrateDuplicateRoles`（`auth_test.go`：迁移后 `Login` 走 `UserByUsername`、`Refresh` 走 `UserByID` 均成功，access subject=`u-alice`）。
 - **验证**：`go test ./...`（apps/api）全绿、`go vet ./...` 干净、`gofmt -l` 无输出。
 - **检查点**：F-004 为 S2 内 required 修正，不构成新检查点；派生进度保持 `2/6`，`status` 保持 `active`。
+
+## 2026-08-02 · S3 增量幂等种子实施
+
+A-004 自审（S1/S2 事实 + F-004 闭合 + S3 门禁）`pass` 后，按用户确认的接线方案实施 S3（D-002.6 / I-006-001 §6，V-SEED-01）。改动见 `apps/api/internal/store/`。
+
+- **`seed.go` 新增 `seedRBAC`**：幂等 ensure 稳定实体与关系——roles `admin`/`editor`/`viewer`（升级 `system=1`，upsert name/system）、permissions `records.read`/`records.write`（`perm-records-read`/`perm-records-write`）、菜单项 `list-edit-lifecycle`（`menu-list-edit-lifecycle` / `menu_list_edit_lifecycle`）、grants（admin → read+write+menu；editor、viewer → 仅 read）。
+- **Open 接线**：`seedAdmin=true` 时在 `migrate()` + `seedAdmin()` 之后运行 `seedRBAC()`（D-006，用户确认）。生产 `main.go` 恒为 true，服务启动自愈；`Open(seedAdmin=false)` 既有语义不变。任意既有用户不使关系 seed 整体跳过；重复启动无重复；不覆盖非种子用户字段；editor 不升级为写。
+- **验证**：`TestSeedRBACEntitiesAndGrants`（实体存在、system=1、admin 2 项 permission + 1 菜单、editor/viewer 仅 read、records.write 仅 admin）；`TestSeedRBACIncrementalWithExistingUsers`（先 `seedAdmin=false` 建既有用户 → 重开 `seedAdmin=true` 关系补齐、非种子用户字段不变、三次启动无重复）。`go test ./...` 全仓 API 通过；`go vet ./...` 与 `gofmt -l` 干净。真实服务冒烟：全新库 `admin/admin` 登录成功，`roles(system=1)=3`、`permissions=2`、`menu_items=1`、`role_permissions=4`、`role_menu_items=1`、`integrity_check=ok`。
+- **边界**：S3 只建稳定种子关系；后端读写授权 gate（permission 判断）属 S4，本轮未实现；menu 投影与 `/api/accounts/me.features` 属 S5。
+- **检查点**：S3 成功标准已勾选；派生进度 `2/6 → 3/6`。S4～S6 尚未实现或审计，`status` 保持 `active`。

@@ -79,6 +79,12 @@ func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 			db.Close()
 			return nil, err
 		}
+		// Incremental R3 seed: stable roles/permissions/menu/grants (S3). Runs
+		// whenever seeding is enabled so existing users never skip relation repair.
+		if err := s.seedRBAC(); err != nil {
+			db.Close()
+			return nil, err
+		}
 	}
 	return s, nil
 }
