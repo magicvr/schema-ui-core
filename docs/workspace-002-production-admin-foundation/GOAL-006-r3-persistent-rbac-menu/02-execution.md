@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-006
@@ -17,8 +17,17 @@ version: 0.1.0
 - 登记 `I-006-001/002` 两个 required 实施细化项；当前均为 `collecting`，尚未到期但会阻断各自列明的实现门禁。
 - **未做**：没有产品代码、数据库、API、Web manifest 或测试行为变更；当前进度为 `0/6`。
 
-## 待办（计划，不是事实）
+## 立项时计划（历史；当时不是事实）
 
 1. 形成版本化 DDL、约束、迁移编号与 seed key 计划，关闭 `I-006-001`。
 2. 选择首个真实 `page_ref` / `feature_key` 及 admin/viewer 矩阵，关闭 `I-006-002`。
 3. 按 S1 → S6 顺序实施并在每个检查点记录可复现证据。
+
+## 2026-08-02 · 关闭实施前信息门禁（D-002 / D-003）
+
+- 按用户“继续下一步”指令，只读核对当前 `store.Open → migrate → seedAdmin`、`users` / `refresh_tokens` schema、auth/store 兼容签名、records 401/403 路径、真实 manifest、表达式求值、`Session.Features` 与现有测试。
+- 落盘 [I-006-001-schema-migration-plan.md](attachments/I-006-001-schema-migration-plan.md)，记录 `0001`/`0002`、精确 DDL/FK/delete/索引、备份恢复、两步读路径切换、稳定 seed 及验证矩阵；记录 D-002，`I-006-001` → `verified`。
+- 落盘 [I-006-002-menu-projection-matrix.md](attachments/I-006-002-menu-projection-matrix.md)，记录真实 `list-edit-lifecycle` / `menu_list_edit_lifecycle` 选择、admin/viewer/editor 投影与 API/Web 测试矩阵；记录 D-003，`I-006-002` → `verified`。
+- 当前 GOAL-006 无开放 required 信息项，也无正式审计意见或 required finding；S1～S6 均未实施，`status` 保持 `active`，派生进度保持 `0/6`。
+- **未做**：未修改 API/Web/manifest、未创建数据库表或备份、未执行迁移与应用测试；附件中的 SQL、函数和测试名均为已冻结的实施计划，不是已发生事实。
+- **计划（非事实）**：下一步从 S1 开始实现版本迁移 runner 与可恢复起点；S1 事实和验证齐备前不勾选检查点。

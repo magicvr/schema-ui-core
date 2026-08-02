@@ -5,7 +5,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.2.0
 progress: 0/6
 ---
 
@@ -32,8 +32,8 @@ progress: 0/6
 
 | ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
-| `I-006-001` | 精确 DDL、迁移版本/校验和、FK/unique/delete 语义及稳定 seed keys 是什么？ | required | S1/S2/S3 实施 | 首个代码变更前 | 对照现有 store 与 D-009，形成版本化 schema/seed 计划并记录子目标决策 | collecting | 不延期；实施前关闭 | 待形成 D-002；模型方向已由 Root D-009 冻结 |
-| `I-006-002` | 首个受控真实 `page_ref`、显式 `feature_key` 与 admin/viewer grant 矩阵是什么？ | required | S5 实施与验收 | Web 投影实现前 | 对照真实 manifest 与导航测试，选择最小代表项并记录正反矩阵 | collecting | 不延期；S5 前关闭 | 待形成 D-003；传输形态 `features` 已由 Root D-009 冻结 |
+| `I-006-001` | 精确 DDL、迁移版本/校验和、FK/unique/delete 语义及稳定 seed keys 是什么？ | required | S1/S2/S3 实施 | 首个代码变更前 | 对照现有 store 与 D-009，形成版本化 schema/seed 计划并记录子目标决策 | **verified** | 已关闭（D-002） | [I-006-001-schema-migration-plan.md](attachments/I-006-001-schema-migration-plan.md)：`0001` 基线登记 + `0002` RBAC 扩展、DDL/FK/delete、双读切换、seed 与恢复/测试矩阵 |
+| `I-006-002` | 首个受控真实 `page_ref`、显式 `feature_key` 与 admin/viewer grant 矩阵是什么？ | required | S5 实施与验收 | Web 投影实现前 | 对照真实 manifest 与导航测试，选择最小代表项并记录正反矩阵 | **verified** | 已关闭（D-003） | [I-006-002-menu-projection-matrix.md](attachments/I-006-002-menu-projection-matrix.md)：`list-edit-lifecycle` / `menu_list_edit_lifecycle`；admin=true，viewer/editor=false |
 
 ## 依赖与边界
 

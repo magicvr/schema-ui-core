@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策 · GOAL-006
@@ -26,3 +26,44 @@ version: 0.1.0
 
 - **按 migration / authorization / menu 拆成三个并列目标**：强耦合中间态难以独立验收，且容易让菜单投影先于真实授权或迁移契约落地。
 - **先写代码、再补 DDL/feature key 决策**：会把约束、迁移顺序和真实菜单项选择变成隐式事实，违反 P-005。
+
+## D-002 · 冻结版本迁移、规范化 DDL 与增量种子计划
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. `schema_migrations` 使用单调整数 `version`、唯一 `name`、64 位 SHA-256 `checksum` 与 Unix 秒 `applied_at`；已应用的未知版本、缺号或校验和漂移一律 fail closed。
+  2. `0001_r2_baseline` 负责空库创建现有 `users` / `refresh_tokens`，或对无版本台账的既有 R2 库执行结构指纹核对后登记；任何部分结构或不兼容列/索引不静默接管。
+  3. `0002_rbac_expand` 在单事务内创建 `roles`、`user_roles`、`permissions`、`role_permissions`、`menu_items`、`role_menu_items`，校验并回填 `users.roles`，再记录迁移版本；精确 DDL、FK/delete 语义与反向索引见 [I-006-001-schema-migration-plan.md](attachments/I-006-001-schema-migration-plan.md)。
+  4. 每个连接显式启用并断言 `PRAGMA foreign_keys=ON`。既有文件库应用首个未执行迁移前，以 SQLite 一致性快照产生带目标版本和 UTC 时间的备份；快照与迁移后主库都必须通过 `integrity_check`，主库另跑 `foreign_key_check`。
+  5. 两步兼容期：阶段 A 继续以旧 JSON 为对外读值，同时规范化双写并按角色集合比对；阶段 B 以规范化关系为权威读值、按 role key 排序输出，同时继续双写和比对。旧列删除只允许后续显式迁移，本目标不执行。
+  6. 稳定 seed 角色为 `admin`、`editor`、`viewer`；permission 为 `records.read`、`records.write`。admin 获读写，viewer 获读，editor 为 R2 兼容仅获读；admin 种子用户保留 `admin` + `editor` 角色。任意既有用户不得使关系 seed 整体跳过。
+- **理由**：该计划在不破坏 R2 身份/refresh 契约的前提下提供可诊断升级、可回退快照和稳定授权关系；`editor` 只读避免因角色名称推断而扩大原有写权限。
+- **信息门禁**：`I-006-001` → `verified`；证据为附件中的当前代码事实、精确结构、迁移状态机、seed 清单与测试矩阵。本决策只放行 S1/S2/S3 实施，不构成检查点完成。
+
+### 未选方案
+
+- **继续启动时执行一段 `CREATE TABLE IF NOT EXISTS`**：无法区分历史版本、校验漂移或部分升级。
+- **在 `0002` 同时删除 `users.roles`**：破坏 D-009 的核对和恢复窗口。
+- **把 editor 自动升级为写权限**：现有写门禁只认 admin；该变化会扩大权限且没有用户裁决。
+- **仅复制数据库主文件作为备份**：可能遗漏 SQLite 日志状态；采用 SQLite 自身的一致性快照机制。
+
+## D-003 · 首个真实菜单 gate 采用 list-edit-lifecycle
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. 首个持久化菜单项固定为 `page_ref: list-edit-lifecycle`、`feature_key: menu_list_edit_lifecycle`、`id: menu-list-edit-lifecycle`；feature key 只用下划线，不使用点号。
+  2. 真实 manifest 的该导航子项增加 `visibleWhen.when: "$context.features.menu_list_edit_lifecycle == true"`；页面、路由、标签与导航结构仍由静态 manifest 决定。
+  3. `/api/accounts/me.features` 对已登记菜单 key 输出完整布尔投影：admin 为 `true`；viewer/editor 为 `false`。匿名请求仍由认证边界返回 `401`，不生成导航上下文。
+  4. `catalog` 保持未加菜单 gate，使 viewer 的 `records.read` 有对应读入口；`list-edit-lifecycle` 含编辑表单且依赖 records 写链，admin-only 投影与 `records.write` 边界一致。
+  5. 菜单隐藏只控制导航投影；直接深链不是安全边界，records API 仍独立执行 `records.read` / `records.write`。
+- **理由**：`Session.Features` 是 flat `map[string]bool`，而表达式中的点号表示嵌套对象，因此下划线 key 可避免序列化后无法命中；选择真实且已存在 fixture 的编辑生命周期页，同时不剥夺 viewer 的只读入口。
+- **信息门禁**：`I-006-002` → `verified`；证据与正反矩阵见 [I-006-002-menu-projection-matrix.md](attachments/I-006-002-menu-projection-matrix.md)。本决策只放行 S5 实施，不构成菜单投影已实现。
+
+### 未选方案
+
+- **`admin.catalog` 等带点号 key**：flat Go map 与 Web 点路径求值语义不一致。
+- **对 `catalog` 做 admin-only gate**：会让 viewer 拥有 `records.read` 却失去明确读入口。
+- **选择 `settings` 或 `activity`**：manifest 有引用但当前后端没有对应 checked-in schema fixture，不能作为首个端到端证据。
+- **选择 `overview`**：它是 `homePageRef`；首个 gate 会引入根路由/首页可达性问题。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.8.0
+version: 0.8.1
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -35,4 +35,4 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (2/5)
 | `GOAL-005-r2-auth-session` | R2 · 真实认证与请求级身份 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-006-r3-persistent-rbac-menu` | R3 · 持久化 RBAC、菜单投影与版本迁移 | `GOAL-001-production-admin-foundation` | `active` | `0/6` | 2026-08-02 |
 
-> Root `2/5` 由五个等权纲领检查点派生（R1、R2 已勾选）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 0/6`。R3 尚未实现或审计，Root 仍为 `active / 2/5`。
+> Root `2/5` 由五个等权纲领检查点派生（R1、R2 已勾选）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 0/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1～S6 尚未实现或审计，Root 仍为 `active / 2/5`。
