@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.3
+version: 0.1.5
 ---
 
 # 决策 · GOAL-001
@@ -114,3 +114,42 @@ version: 0.1.3
 - **纯 Opaque Bearer（B 不含 JWT）**：撤销直接，但缺可扩展的 access 令牌形态；用户选择 JWT 承载请求身份。
 - **纯签名 JWT（C 不含 opaque refresh）**：撤销难，与「短 access + 可撤销会话」目标冲突。
 - **保持 Go 零依赖 / 进程内会话**：无法满足 SQLite 持久化与刷新令牌撤销；用户明确接受 JWT 库与 DB。
+
+## D-008 · R3 持久化权限模型的信息收集边界
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. 将 `I-003` 从 `open` 置为 `collecting`；先收集 R2 SQLite 占位模型、迁移/种子机制、用户—角色—菜单关系、后端授权点、前端导航投影与恢复验证事实。
+  2. 以附件 [I-003-persistence-permission-collection.md](attachments/I-003-persistence-permission-collection.md) 作为本轮收集产物；其中方案 A/B/C、迁移计划与 M-R3-01～12 均为**候选**，不构成模型选定或方案冻结。
+  3. 保持 R2 D-006 的兼容边界：规范化持久化必须继续输出 `account.User {id,name,roles}`，不得破坏 `/api/accounts/me`、`$context.user`、JWT subject 或 refresh-token 用户关系。
+  4. 本轮不创建 R3 子目标、不修改产品代码、不勾选 R3 路线图检查点；`I-003` 在用户完成模型、菜单投影、迁移兼容期、读授权与恢复证据裁决前继续阻断 R3 方案冻结与实施。
+- **理由**：R3 的 required 信息门禁已到达最晚阶段。当前实现只有 `users.roles` JSON 占位、启动时幂等建表和整体跳过式 admin seed；权限在后端固定角色检查与前端展示门控之间分裂，真实 manifest 无权限菜单项。直接立项会把数据关系、迁移和安全边界假设写成实施承诺。
+- **未选方案**：
+  - **直接沿用 `users.roles` JSON 开工**：无法交付规范化角色/菜单关系，也没有版本迁移与恢复证据。
+  - **立即选定通用策略表达式模型**：复杂度超过最小权限闭环，且用户尚未裁决。
+  - **把前端菜单隐藏当作授权完成**：不构成后端安全边界，不能替代 `401` / `403` 负向证据。
+- **影响**：`I-003` → `collecting`；Root 仍为 `active / 2/5`；R3 仍未立项、未放行。
+- **后续**：用户裁决候选方案与五个边界问题后，记录 R3 方案决策并判断 `I-003` 是否可转 `verified`；之后才冻结成功标准并决定子目标拆分。
+
+## D-009 · R3 采用规范化 RBAC、features 菜单投影与两步迁移
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **用户裁决**：确认推荐方案 B、`features` 菜单投影、两步迁移、读写权限边界及 R3 恢复证据口径。
+- **决定**：
+  1. **数据模型**采用方案 B：在现有 `users` / `refresh_tokens` 上增加 `roles`、`user_roles`、`permissions`、`role_permissions`、`menu_items`、`role_menu_items` 与 `schema_migrations`；API 授权依赖稳定 permission key，而不是硬编码角色名。
+  2. **菜单投影**保留静态 App manifest 作为页面、路由、标签和导航结构来源；数据库保存 `page_ref`、显式且唯一的 `feature_key` 与角色 grant。`/api/accounts/me` 保持 `user.id/name/roles` 形状不变，通过现有 `features: Record<string,bool>` 投影菜单可见性；真实 manifest 使用 `$context.features.<feature_key>` 的 `visibleWhen`，前端隐藏不替代 API 授权。
+  3. **迁移采用两步兼容期**：第一步建立版本表和规范化关系、回填 `users.roles` JSON，并在旧/新读结果间执行一致性核对；第二步切换规范化读写路径。旧 `users.roles` 在验证完成前保留，删除/停用必须是后续显式迁移，不与切换合并为不可逆动作。
+  4. **读写权限边界**统一保护 records 路由：稳定 key 为 `records.read` 与 `records.write`；基础 viewer 角色仅获读权限，admin 获读写权限。匿名读写返回 `401`，已认证但缺相应 permission 返回 `403`。
+  5. **R3 恢复证据**至少自动覆盖迁移前数据库副本、该副本的恢复、迁移后 `PRAGMA integrity_check`，以及用户身份、角色/权限、菜单 grant 与 refresh 关系的关键查询；完整生产备份运维流程仍归 R5。
+  6. R3 建立一个端到端子目标 `GOAL-006-r3-persistent-rbac-menu`，用顺序检查点承载 migration → RBAC → seed → 读写授权 → `features` 菜单投影 → 恢复/回归，避免把强耦合闭环机械拆成多个目标。
+- **信息门禁**：`I-003` → `verified`。证据为本决策及 [I-003-persistence-permission-collection.md](attachments/I-003-persistence-permission-collection.md) 的当前事实、候选比较与 M-R3-01～12；这只关闭 R3 方案冻结/立项目门禁，不构成实现或验收事实。
+- **边界**：不引入通用策略表达式/IAM；不实施 R4 CRUD 扩域；不以菜单隐藏代替后端授权；不勾选 Root R3，Root 保持 `active / 2/5`。
+
+### 未选方案
+
+- **方案 A · 角色 + 菜单、API 继续硬编码角色**：安全语义与角色名耦合，不能形成稳定 permission 边界。
+- **方案 C · 通用持久化策略表达式**：版本、校验、审计和运行时复杂度超过 R3 最小闭环。
+- **一次迁移同时删除 `users.roles`**：压缩了核对与恢复窗口，失败时放大不可逆风险。
+- **只保护写路由或只做前端菜单隐藏**：无法证明管理数据读边界与后端真实授权闭环。

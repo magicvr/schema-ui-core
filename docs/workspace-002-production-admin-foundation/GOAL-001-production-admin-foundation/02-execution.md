@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.5
+version: 0.1.7
 ---
 
 # 执行记录 · GOAL-001
@@ -71,3 +71,26 @@ version: 0.1.5
 - 记录决策 **D-007**：冻结 R2 认证**机制 / 存储 / 依赖**；`I-002` → `verified`（已关闭），R2「方案冻结与实施」信息门禁解除。
 - **明确未做**：未冻结 R2 实施细节（TTL / env 键 / 前端令牌存储 / CORS 与同源托管 / SQLite 表结构 / 种子凭据 / 密码哈希），这些在 R2 子目标方案中定稿并留痕；未创建 R2 子目标；未实施 R3 身份模型（`I-003` 仍 open）。
 - **计划（非事实）**：下一步创建 R2 子目标（登录/登出/会话恢复/过期/撤销/请求身份中间件 + `401`/`403` + dev 兜底开关），并在其方案中定稿具体安全配置参数。
+
+## 2026-08-02 · R3 I-003 信息收集启动（D-008）
+
+- 用户通过 `/govern` 明确要求推进本工作区 Root 的 R3 阶段。
+- 完成愿景与工作区门禁扫描：Charter `schema-ui-core-admin-foundation@0.1.0`、VP-002、delivery workspace、Root 与 `goal-tree.md` 投影一致；Vision Review 无开放 required；Root R3 scope 无开放审计 finding，也未触发 P-004.1。
+- 只读对照 `apps/api`、`apps/web` 与 R2 治理记录，落盘 `attachments/I-003-persistence-permission-collection.md`（v0.1.0），记录：
+  1. 当前 SQLite 仅有 `users` + `refresh_tokens`，`users.roles` 是 R3 规范化占位；
+  2. 当前迁移只有启动时 `CREATE TABLE IF NOT EXISTS`，没有版本迁移或历史数据升级；
+  3. 当前 admin seed 在任意用户存在时整体跳过，缺少按稳定角色/权限/菜单 key 的增量幂等；
+  4. 后端 records 写路由已有匿名 `401`、非 admin `403` 与 admin 正向链；前端菜单为静态 manifest 展示投影，真实 manifest 尚无权限门控项；
+  5. 形成三类候选模型、迁移/种子草案与 M-R3-01～12 验证矩阵，等待用户裁决。
+- 记录决策 **D-008**；`I-003` 从 `open` 转为 `collecting`，仍为 `required`，继续阻断 R3 方案冻结与实施。
+- **未做**：未选定数据模型或菜单投影；未创建 R3 子目标；未修改产品代码；未运行应用测试；Root 保持 `active / 2/5`。
+- **计划（非事实）**：由用户裁决方案 B（推荐）与菜单投影、两步迁移、读授权范围和恢复证据强度；裁决落盘后再判断 `I-003` 是否可置 `verified`。
+
+## 2026-08-02 · R3 方案裁决与端到端子目标立项（D-009）
+
+- 用户书面确认方案 B、`features` 菜单投影、两步迁移、读写权限边界与 R3 恢复证据口径。
+- 记录决策 **D-009**；`I-003` 从 `collecting` 转为 `verified`，R3 方案冻结与子目标立项目门禁解除。
+- 在 canonical 根平铺创建 `GOAL-006-r3-persistent-rbac-menu`，设为 `active / 0/6`；目标内路线图依次覆盖版本迁移、规范化 RBAC、增量种子、读写授权、`features` 菜单投影和恢复/回归。
+- `GOAL-006` 登记两个实施前 required 信息项：精确 DDL/迁移版本与约束/seed key（`I-006-001`），首个真实 `page_ref`/`feature_key` 映射（`I-006-002`）。它们不否定 D-009 已冻结的模型方向，但会在各自最晚阶段前阻断对应实现。
+- **未做**：本次未修改产品代码、未执行迁移、未写入 RBAC 数据、未改变 API 或 Web 行为；Root R3 未完成，Root 保持 `active / 2/5`。
+- **计划（非事实）**：先在 `GOAL-006` 内关闭 `I-006-001/002` 并记录实施决策，再开始迁移与授权代码。
