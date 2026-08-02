@@ -56,7 +56,7 @@ func main() {
 	)
 
 	mux := http.NewServeMux()
-	handler.Register(mux, authenticator)
+	handler.Register(mux, authenticator, st)
 
 	srv := server.New(cfg, mux, logger)
 

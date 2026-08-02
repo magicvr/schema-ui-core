@@ -2,12 +2,20 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
+
+// msRFC3339 matches the frozen fixed-3-digit-millisecond updatedAt shape
+// (GOAL-007 D-004): 2006-01-02T15:04:05.123Z.
+var msRFC3339 = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$`)
 
 // adminToken logs in as the seeded admin and returns the access token.
 func adminToken(t *testing.T, env *authTestEnv) string {
@@ -144,23 +152,35 @@ func TestRecordsWriteRequiresAuth(t *testing.T) {
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("DELETE status = %d, want %d", rr.Code, http.StatusUnauthorized)
 	}
+	// T-API-08 · anonymous POST is 401 too.
+	req = httptest.NewRequest(http.MethodPost, "/api/records", strings.NewReader(`{"name":"x","status":"a","owner":"b"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("POST status = %d, want %d", rr.Code, http.StatusUnauthorized)
+	}
 }
 
 func TestRecordsWriteDeniedWithoutAdminRole(t *testing.T) {
 	env := newAuthTestEnv(t)
 	env.addUser(t, "editor", "pw", []string{"editor"})
 	token := env.login(t, "editor", "pw")
-	for _, method := range []string{http.MethodPatch, http.MethodDelete} {
-		req := bearer(t, token, method, "/api/records/rec-3", `{"name":"x"}`)
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodPatch, "/api/records/rec-3"},
+		{http.MethodDelete, "/api/records/rec-3"},
+		{http.MethodPost, "/api/records"},
+	} {
+		req := bearer(t, token, tc.method, tc.path, `{"name":"x"}`)
 		rr := httptest.NewRecorder()
 		env.mux.ServeHTTP(rr, req)
 		if rr.Code != http.StatusForbidden {
-			t.Fatalf("%s status = %d, want %d", method, rr.Code, http.StatusForbidden)
+			t.Fatalf("%s status = %d, want %d", tc.method, rr.Code, http.StatusForbidden)
 		}
 		var body map[string]any
 		_ = jsonDecode(rr, &body)
 		if body["error"] != "FORBIDDEN" {
-			t.Fatalf("%s error = %v, want FORBIDDEN", method, body["error"])
+			t.Fatalf("%s error = %v, want FORBIDDEN", tc.method, body["error"])
 		}
 	}
 }
@@ -345,17 +365,21 @@ func TestRecordsViewerCanReadNotWrite(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatalf("GET status = %d, want 200: %s", rr.Code, rr.Body.String())
 	}
-	for _, method := range []string{http.MethodPatch, http.MethodDelete} {
-		req := bearer(t, token, method, "/api/records/rec-3", `{"name":"x"}`)
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodPatch, "/api/records/rec-3"},
+		{http.MethodDelete, "/api/records/rec-3"},
+		{http.MethodPost, "/api/records"},
+	} {
+		req := bearer(t, token, tc.method, tc.path, `{"name":"x"}`)
 		rr := httptest.NewRecorder()
 		env.mux.ServeHTTP(rr, req)
 		if rr.Code != http.StatusForbidden {
-			t.Fatalf("%s status = %d, want 403", method, rr.Code)
+			t.Fatalf("%s status = %d, want 403", tc.method, rr.Code)
 		}
 		var body map[string]any
 		_ = jsonDecode(rr, &body)
 		if body["error"] != "FORBIDDEN" {
-			t.Fatalf("%s error = %v, want FORBIDDEN", method, body["error"])
+			t.Fatalf("%s error = %v, want FORBIDDEN", tc.method, body["error"])
 		}
 	}
 }
@@ -372,6 +396,197 @@ func TestRecordsReadDeniedWithoutPermission(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("GET status = %d, want 403 (no records.read)", rr.Code)
+	}
+}
+
+// T-API-10 · POST with a valid body returns 201 + the full record (server id and
+// updatedAt), and the create is visible through list/detail.
+func TestRecordsCreate(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPost, "/api/records", `{"name":"Zephyr Labs","status":"active","owner":"nadia"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201: %s", rr.Code, rr.Body.String())
+	}
+	var rec map[string]any
+	if err := jsonDecode(rr, &rec); err != nil {
+		t.Fatalf("decode create: %v", err)
+	}
+	id, _ := rec["id"].(string)
+	if !strings.HasPrefix(id, "rec-") || len(id) != len("rec-")+16 {
+		t.Fatalf("id = %q, want rec- + 16 hex chars", id)
+	}
+	if rec["name"] != "Zephyr Labs" || rec["status"] != "active" || rec["owner"] != "nadia" {
+		t.Fatalf("created = %v, want name/status/owner set", rec)
+	}
+	ua, _ := rec["updatedAt"].(string)
+	if !msRFC3339.MatchString(ua) {
+		t.Fatalf("created updatedAt %q, want fixed-3-ms RFC3339", ua)
+	}
+	// The new record is served by detail and counted by list.
+	code, detail := getRecords(t, env, "/api/records/"+id)
+	if code != http.StatusOK || detail["name"] != "Zephyr Labs" {
+		t.Fatalf("detail = %d %v, want 200 Zephyr Labs", code, detail)
+	}
+	_, list := getRecords(t, env, "/api/records")
+	if list["total"] != float64(9) {
+		t.Fatalf("total = %v, want 9 after create", list["total"])
+	}
+}
+
+// T-API-11 · POST with missing, blank or non-string required fields → 400
+// INVALID_CREATE_FIELD (per-field message names the field).
+func TestRecordsCreateInvalidField(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	for label, body := range map[string]string{
+		"missing-name":     `{"status":"active","owner":"a"}`,
+		"blank-name":       `{"name":"   ","status":"active","owner":"a"}`,
+		"missing-status":   `{"name":"x","owner":"a"}`,
+		"blank-status":     `{"name":"x","status":"","owner":"a"}`,
+		"missing-owner":    `{"name":"x","status":"active"}`,
+		"blank-owner":      `{"name":"x","status":"active","owner":" "}`,
+		"non-string-name":  `{"name":123,"status":"active","owner":"a"}`,
+		"null-name":        `{"name":null,"status":"active","owner":"a"}`,
+	} {
+		req := bearer(t, token, http.MethodPost, "/api/records", body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("%s: status = %d, want 400", label, rr.Code)
+		}
+		var out map[string]any
+		_ = jsonDecode(rr, &out)
+		if out["error"] != "INVALID_CREATE_FIELD" {
+			t.Fatalf("%s: error = %v, want INVALID_CREATE_FIELD", label, out["error"])
+		}
+	}
+}
+
+// T-API-12 · POST with non-JSON, truncated or oversized bodies → 400
+// INVALID_CREATE_BODY.
+func TestRecordsCreateInvalidBody(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	for label, body := range map[string]string{
+		"not-json":  `not json`,
+		"array":     `[1,2,3]`,
+		"truncated": `{"name":"x"`,
+		"oversized": `{"name":"` + strings.Repeat("x", maxRecordBodyBytes) + `","status":"a","owner":"b"}`,
+	} {
+		req := bearer(t, token, http.MethodPost, "/api/records", body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("%s: status = %d, want 400", label, rr.Code)
+		}
+		var out map[string]any
+		_ = jsonDecode(rr, &out)
+		if out["error"] != "INVALID_CREATE_BODY" {
+			t.Fatalf("%s: error = %v, want INVALID_CREATE_BODY", label, out["error"])
+		}
+	}
+}
+
+// T-API-13 · admin (records.read + records.write) walks the whole lifecycle:
+// create → list → detail → patch → delete → 404.
+func TestRecordsAdminLifecycle(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	req := bearer(t, token, http.MethodPost, "/api/records", `{"name":"Lifecycle Co","status":"pending","owner":"omar"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, want 201", rr.Code)
+	}
+	var created map[string]any
+	_ = jsonDecode(rr, &created)
+	id, _ := created["id"].(string)
+
+	if code, list := getRecords(t, env, "/api/records?q=lifecycle"); code != http.StatusOK || list["total"] != float64(1) {
+		t.Fatalf("search = %d total=%v, want 200/1", code, list["total"])
+	}
+	req = bearer(t, token, http.MethodPatch, "/api/records/"+id, `{"name":"Lifecycle Rebranded"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("patch status = %d, want 200", rr.Code)
+	}
+	req = bearer(t, token, http.MethodDelete, "/api/records/"+id, "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("delete status = %d, want 204", rr.Code)
+	}
+	if code, _ := getRecords(t, env, "/api/records/"+id); code != http.StatusNotFound {
+		t.Fatalf("detail after delete = %d, want 404", code)
+	}
+}
+
+// T-API-05 (R-001) · consecutive updates strictly increase updatedAt without
+// sleeps: millisecond precision plus the monotonic clamp make the assertion
+// deterministic even for same-millisecond back-to-back writes.
+func TestRecordsUpdateStrictlyIncreasesAcrossRapidPatches(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	var prev time.Time
+	for i := 0; i < 4; i++ {
+		req := bearer(t, token, http.MethodPatch, "/api/records/rec-3", fmt.Sprintf(`{"name":"Patch %d"}`, i))
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("patch %d status = %d, want 200: %s", i, rr.Code, rr.Body.String())
+		}
+		var body map[string]any
+		_ = jsonDecode(rr, &body)
+		ua, _ := body["updatedAt"].(string)
+		if !msRFC3339.MatchString(ua) {
+			t.Fatalf("patch %d updatedAt %q, want fixed-3-ms RFC3339", i, ua)
+		}
+		now, err := time.Parse(time.RFC3339, ua)
+		if err != nil {
+			t.Fatalf("parse patch %d updatedAt %q: %v", i, ua, err)
+		}
+		if !prev.IsZero() && !now.After(prev) {
+			t.Fatalf("patch %d updatedAt %v not strictly after %v", i, now, prev)
+		}
+		prev = now
+	}
+}
+
+// T-DB-09 · the handler is backed by SQLite: a record written directly through
+// the store is served by the HTTP handler — there is no in-process slice
+// fallback in the production path.
+func TestRecordsHandlerReadsFromStore(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	if _, err := env.st.CreateRecord(store.Record{
+		ID: "rec-direct", Name: "Direct Write", Status: "active", Owner: "zed",
+		UpdatedAt: time.Date(2026, 8, 2, 12, 0, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("store create: %v", err)
+	}
+	code, detail := getRecords(t, env, "/api/records/rec-direct")
+	if code != http.StatusOK || detail["name"] != "Direct Write" {
+		t.Fatalf("handler detail = %d %v, want 200 Direct Write", code, detail)
+	}
+	// And a record the handler created is present in the store's table (round
+	// trip through the shared SQLite database, not a per-handler copy).
+	req := bearer(t, token, http.MethodPost, "/api/records", `{"name":"Via Handler","status":"active","owner":"yara"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create via handler = %d, want 201", rr.Code)
+	}
+	var created map[string]any
+	_ = jsonDecode(rr, &created)
+	id, _ := created["id"].(string)
+	got, err := env.st.GetRecord(id)
+	if err != nil || got.Name != "Via Handler" {
+		t.Fatalf("store read of handler create = %v (err %v), want Via Handler", got, err)
 	}
 }
 

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-007
@@ -19,7 +19,7 @@ version: 0.3.0
 ## 当前审计边界
 
 - 信息门禁（非 audit finding）：`I-007-001`/`I-007-002` 已由 D-002/D-003 `verified`（附件 v0.2.0）并完成 S1/S2 契约冻结；`I-007-003`/`I-007-004` 仍为开放 required，分别阻断 Schema 写交互（S4/S5）与 S6 验收。
-- **A-001 F-001 已按 `fixed` 合法闭合（2026-08-02：D-004 + I-007-001/002 v0.2.0 + A-002 self 复核 pass）；S3 实施已放行**。
+- **A-001 F-001 已按 `fixed` 合法闭合（2026-08-02：D-004 + I-007-001/002 v0.2.0 + A-002 self 复核 pass）；S3 已实施（2026-08-02）**：0003 + repository + seedRecords + handler 走 SQLite、POST 新增；T-API-08～13 / T-DB-01～09 全绿，成功标准 S3 勾选，进度 `3/6`。本轮未写正式审计（S3 阶段审计可在下一拍选 self 或 `/audit`）。
 - 后续每条正式意见从 `A-003` 起按共同序列追加，并包含 `source`、日期、scope 与 `verdict`；required finding 只能按 `fixed`、`accepted-residual` 或 `user-overruled` 合法闭合。
 
 ## A-001 · S1/S2 契约冻结独立审计（2026-08-02）

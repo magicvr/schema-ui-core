@@ -1,18 +1,20 @@
 package handler
 
 import (
-	"cmp"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 // Limits for the R5 D-DATA API (F-009-007): write bodies and page size are
@@ -20,17 +22,32 @@ import (
 const (
 	maxRecordBodyBytes = 4 << 10
 	maxPageSize        = 100
+	// recordIDRetries bounds PK-collision retries before INTERNAL when the
+	// crypto/rand id collides (I-007-001 §2); with 64 random bits this never
+	// triggers in practice.
+	recordIDRetries = 3
 )
 
-// record is the R5 D-DATA example domain entity (de-business-ified static dev
-// data). The MVP freeze does not vendor an upstream dataset; this is the local
-// static-data support path for the search-form-table / data-table examples.
+// record is the R4 records API entity. UpdatedAt serializes with fixed
+// millisecond precision (GOAL-007 D-004).
 type record struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Status    string    `json:"status"`
 	Owner     string    `json:"owner"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	UpdatedAt updatedAt `json:"updatedAt"`
+}
+
+// updatedAt is a UTC timestamp that JSON-marshals as RFC3339 with fixed 3-digit
+// milliseconds ("2006-01-02T15:04:05.000Z07:00", D-004 / I-007-001 v0.2.0). Go's
+// default time.Time encoding trims trailing zeros, which would break the frozen
+// "含毫秒" shape.
+type updatedAt struct {
+	time.Time
+}
+
+func (u updatedAt) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + u.Time.UTC().Format("2006-01-02T15:04:05.000Z07:00") + `"`), nil
 }
 
 // recordList is the list response envelope consumed by the Web data table.
@@ -41,15 +58,14 @@ type recordList struct {
 	PageSize int      `json:"pageSize"`
 }
 
-// recordHandler serves the R5 D-DATA list/detail example API (static data) and
-// the R5 D-ACT edit lifecycle (PATCH/DELETE). State is guarded by a mutex; the
-// MVP has no DB for records, so mutations live in the process. All routes go
-// through the request-identity middleware (GOAL-006 S4) and a permission gate:
-// reads require `records.read`, writes require `records.write`. Anonymous → 401,
-// authenticated without the permission → 403.
+// recordHandler serves the R4 records CRUD API backed by the SQLite repository
+// (GOAL-007 S3). All routes go through the request-identity middleware
+// (GOAL-006 S4) and a permission gate: reads require `records.read`, writes
+// require `records.write`. Anonymous → 401, authenticated without the
+// permission → 403. There is no in-process slice fallback (I-007-002 §5 /
+// T-DB-09).
 type recordHandler struct {
-	mu      sync.RWMutex
-	records []record
+	st *store.Store
 }
 
 // recordPatch is the PATCH body: pointer fields so absent keys are untouched.
@@ -61,35 +77,14 @@ type recordPatch struct {
 
 var recordSortFields = []string{"name", "status", "owner", "updatedAt"}
 
-// staticRecords is a stable, ordered dev dataset (no DB in the MVP).
-func staticRecords() []record {
-	base := time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC)
-	names := []string{
-		"Acme Console", "Northwind Sales", "Hooli Connect", "Umbrella Ops",
-		"Initech Reports", "Stark Access", "Wayne Fleet", "Globex Admin",
-	}
-	statuses := []string{"active", "archived", "pending"}
-	owners := []string{"alice", "bob", "carol"}
-	records := make([]record, 0, len(names))
-	for i, name := range names {
-		records = append(records, record{
-			ID:        "rec-" + strconv.Itoa(i+1),
-			Name:      name,
-			Status:    statuses[i%len(statuses)],
-			Owner:     owners[i%len(owners)],
-			UpdatedAt: base.Add(time.Duration(i*11) * time.Hour),
-		})
-	}
-	return records
-}
-
-func recordsHandler(mux *http.ServeMux, a *auth.Authenticator) {
-	h := &recordHandler{records: staticRecords()}
+func recordsHandler(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
+	h := &recordHandler{st: st}
 	h.routes(mux, a)
 }
 
 func (h *recordHandler) routes(mux *http.ServeMux, a *auth.Authenticator) {
 	mux.Handle("GET /api/records", a.Middleware(h.list()))
+	mux.Handle("POST /api/records", a.Middleware(h.create()))
 	mux.Handle("GET /api/records/{id}", a.Middleware(h.detail()))
 	mux.Handle("PATCH /api/records/{id}", a.Middleware(h.update()))
 	mux.Handle("DELETE /api/records/{id}", a.Middleware(h.delete()))
@@ -152,43 +147,125 @@ func (h *recordHandler) list() http.Handler {
 		}
 
 		q := strings.ToLower(strings.TrimSpace(query.Get("q")))
-		h.mu.RLock()
-		all := h.records
-		items := make([]record, 0, len(all))
-		for _, rec := range all {
-			if q == "" || matches(rec, q) {
-				items = append(items, rec)
-			}
-		}
-		h.mu.RUnlock()
-		slices.SortFunc(items, func(a, b record) int {
-			var byField int
-			switch sortField {
-			case "status":
-				byField = cmp.Compare(a.Status, b.Status)
-			case "owner":
-				byField = cmp.Compare(a.Owner, b.Owner)
-			case "updatedAt":
-				byField = a.UpdatedAt.Compare(b.UpdatedAt)
-			default:
-				byField = cmp.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name))
-			}
-			if order == "desc" {
-				return -byField
-			}
-			return byField
+		items, total, err := h.st.ListRecords(store.RecordFilter{
+			Q: q, Sort: sortField, Order: order, Page: page, PageSize: pageSize,
 		})
-
-		total := len(items)
-		start := min((page-1)*pageSize, total)
-		end := min(start+pageSize, total)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not list records")
+			return
+		}
+		out := make([]record, 0, len(items))
+		for _, it := range items {
+			out = append(out, toRecord(it))
+		}
 		writeJSON(w, http.StatusOK, recordList{
-			Items:    items[start:end],
+			Items:    out,
 			Total:    total,
 			Page:     page,
 			PageSize: pageSize,
 		})
 	})
+}
+
+// create serves POST /api/records (records.write): 201 + the full record with a
+// server-generated id and updatedAt (I-007-001 §3.2).
+func (h *recordHandler) create() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxRecordBodyBytes)
+		name, status, owner, err := decodeCreateBody(r)
+		if err != nil {
+			var fe createFieldError
+			if errors.As(err, &fe) {
+				writeError(w, http.StatusBadRequest, "INVALID_CREATE_FIELD", fe.Error())
+				return
+			}
+			writeError(w, http.StatusBadRequest, "INVALID_CREATE_BODY", "body must be JSON")
+			return
+		}
+
+		var rec *store.Record
+		for attempt := 0; attempt < recordIDRetries; attempt++ {
+			id, err := newRecordID()
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "INTERNAL", "could not generate record id")
+				return
+			}
+			rec, err = h.st.CreateRecord(store.Record{
+				ID: id, Name: name, Status: status, Owner: owner, UpdatedAt: time.Now().UTC(),
+			})
+			if err == nil {
+				break
+			}
+			if !errors.Is(err, store.ErrRecordExists) {
+				writeError(w, http.StatusInternalServerError, "INTERNAL", "could not create record")
+				return
+			}
+		}
+		if rec == nil {
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not create record")
+			return
+		}
+		writeJSON(w, http.StatusCreated, toRecord(*rec))
+	})
+}
+
+// createFieldError reports which create field failed and why; the handler maps
+// it to INVALID_CREATE_FIELD (I-007-001 §3.2).
+type createFieldError struct {
+	field  string
+	reason string
+}
+
+func (e createFieldError) Error() string { return e.field + " must " + e.reason }
+
+// decodeCreateBody parses the POST /api/records body. A body that is not a JSON
+// object (or is truncated/oversized) returns a plain error → INVALID_CREATE_BODY;
+// a missing, non-string or blank-trimmed field returns createFieldError →
+// INVALID_CREATE_FIELD. Unknown keys are ignored (same posture as PATCH).
+func decodeCreateBody(r *http.Request) (name, status, owner string, err error) {
+	var raw map[string]json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		return "", "", "", err
+	}
+	if name, err = createStringField(raw, "name"); err != nil {
+		return "", "", "", err
+	}
+	if status, err = createStringField(raw, "status"); err != nil {
+		return "", "", "", err
+	}
+	if owner, err = createStringField(raw, "owner"); err != nil {
+		return "", "", "", err
+	}
+	return name, status, owner, nil
+}
+
+func createStringField(raw map[string]json.RawMessage, key string) (string, error) {
+	val, ok := raw[key]
+	if !ok {
+		return "", createFieldError{key, "not be empty"}
+	}
+	var s string
+	if err := json.Unmarshal(val, &s); err != nil {
+		return "", createFieldError{key, "be a string"}
+	}
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", createFieldError{key, "not be empty"}
+	}
+	return s, nil
+}
+
+// newRecordID returns "rec-" + 16 lowercase hex chars (8 bytes of crypto/rand),
+// the frozen create id format (I-007-001 §2).
+func newRecordID() (string, error) {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", err
+	}
+	return "rec-" + hex.EncodeToString(b[:]), nil
 }
 
 // detail serves GET /api/records/{id}.
@@ -197,15 +274,16 @@ func (h *recordHandler) detail() http.Handler {
 		if _, ok := requirePermission(w, r.Context(), "records.read"); !ok {
 			return
 		}
-		id := r.PathValue("id")
-		h.mu.RLock()
-		rec, ok := findRecord(h.records, id)
-		h.mu.RUnlock()
-		if !ok {
+		rec, err := h.st.GetRecord(r.PathValue("id"))
+		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
 			return
 		}
-		writeJSON(w, http.StatusOK, rec)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not load record")
+			return
+		}
+		writeJSON(w, http.StatusOK, toRecord(*rec))
 	})
 }
 
@@ -228,27 +306,18 @@ func (h *recordHandler) update() http.Handler {
 			return
 		}
 
-		h.mu.Lock()
-		idx := slices.IndexFunc(h.records, func(rec record) bool { return rec.ID == id })
-		if idx < 0 {
-			h.mu.Unlock()
+		rec, err := h.st.UpdateRecord(id, store.RecordPatch{
+			Name: patch.Name, Status: patch.Status, Owner: patch.Owner,
+		}, time.Now().UTC())
+		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
 			return
 		}
-		rec := h.records[idx]
-		if patch.Name != nil {
-			rec.Name = *patch.Name
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not update record")
+			return
 		}
-		if patch.Status != nil {
-			rec.Status = *patch.Status
-		}
-		if patch.Owner != nil {
-			rec.Owner = *patch.Owner
-		}
-		rec.UpdatedAt = time.Now().UTC()
-		h.records[idx] = rec
-		h.mu.Unlock()
-		writeJSON(w, http.StatusOK, rec)
+		writeJSON(w, http.StatusOK, toRecord(*rec))
 	})
 }
 
@@ -258,26 +327,28 @@ func (h *recordHandler) delete() http.Handler {
 		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
 			return
 		}
-		id := r.PathValue("id")
-		h.mu.Lock()
-		idx := slices.IndexFunc(h.records, func(rec record) bool { return rec.ID == id })
-		if idx < 0 {
-			h.mu.Unlock()
-			writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
+		if err := h.st.DeleteRecord(r.PathValue("id")); err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not delete record")
 			return
 		}
-		h.records = slices.Delete(h.records, idx, idx+1)
-		h.mu.Unlock()
 		w.WriteHeader(http.StatusNoContent)
 	})
 }
 
-func findRecord(records []record, id string) (record, bool) {
-	idx := slices.IndexFunc(records, func(rec record) bool { return rec.ID == id })
-	if idx < 0 {
-		return record{}, false
+// toRecord maps a persisted record to the API entity (UpdatedAt carries the
+// fixed-millisecond JSON marshaller).
+func toRecord(r store.Record) record {
+	return record{
+		ID:        r.ID,
+		Name:      r.Name,
+		Status:    r.Status,
+		Owner:     r.Owner,
+		UpdatedAt: updatedAt{r.UpdatedAt},
 	}
-	return records[idx], true
 }
 
 // validatePatch rejects empty trimmed strings for the mutable fields.
@@ -292,12 +363,6 @@ func validatePatch(patch recordPatch) string {
 		return "owner must not be empty"
 	}
 	return ""
-}
-
-func matches(rec record, q string) bool {
-	return strings.Contains(strings.ToLower(rec.Name), q) ||
-		strings.Contains(strings.ToLower(rec.Status), q) ||
-		strings.Contains(strings.ToLower(rec.Owner), q)
 }
 
 func intParam(raw string, fallback int) (int, bool) {

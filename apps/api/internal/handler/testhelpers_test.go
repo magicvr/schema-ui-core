@@ -56,7 +56,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	t.Cleanup(func() { _ = st.Close() })
 	a := auth.New([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, st, devSession)
 	mux := http.NewServeMux()
-	Register(mux, a)
+	Register(mux, a, st)
 	return &authTestEnv{mux: mux, a: a, st: st}
 }
 

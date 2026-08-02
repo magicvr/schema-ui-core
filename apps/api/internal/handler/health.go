@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -17,14 +18,15 @@ type healthResponse struct {
 }
 
 // Register mounts the health endpoint, the R2 auth endpoints, the R4 account
-// session route, the R5 D-DATA list/detail example API, and the R1 schema
+// session route, the R4 records CRUD API (SQLite-backed), and the R1 schema
 // document endpoint. Protected routes are wrapped in the request-identity
-// middleware.
-func Register(mux *http.ServeMux, a *auth.Authenticator) {
+// middleware. The store is injected so the records handler reads and writes the
+// same SQLite database that backs identity (GOAL-007 S3).
+func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	mux.Handle("GET /healthz", healthz())
 	authsHandler(mux, a)
 	accountsHandler(mux, a)
-	recordsHandler(mux, a)
+	recordsHandler(mux, a, st)
 	schemasHandler(mux)
 }
 

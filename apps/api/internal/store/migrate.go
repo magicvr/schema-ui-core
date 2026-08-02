@@ -10,7 +10,8 @@
 //   - Each migration runs in its own transaction (DDL + data transform + the
 //     ledger insert all commit or roll back together).
 //   - A non-empty file database is snapshotted (VACUUM INTO) before the first
-//     data-mutating migration (0002) so an upgrade has a recoverable pre-state.
+//     data-mutating migration so an upgrade has a recoverable pre-state; the
+//     snapshot is named after the first pending version (pre-v0002 / pre-v0003).
 package store
 
 import (
@@ -70,6 +71,13 @@ var compiledMigrations = []migration{
 		transformID: "0002:rbac-expand:v1",
 		stmts:       rbacExpandDDL,
 		up:          migrate0002,
+	},
+	{
+		version:     3,
+		name:        "records_persist",
+		transformID: "0003:records-persist:v1",
+		stmts:       recordsPersistDDL,
+		up:          migrate0003,
 	},
 }
 
@@ -146,6 +154,34 @@ var rbacExpandDDL = []string{
 	`CREATE INDEX idx_role_menu_items_menu_item_id ON role_menu_items(menu_item_id)`,
 }
 
+// recordsPersistDDL is the canonical R4 records schema created by 0003
+// (GOAL-007 D-003 / I-007-002 §2). updated_at is Unix milliseconds (D-004); the
+// trim-non-empty CHECKs are a DB backstop on top of handler-level validation.
+var recordsPersistDDL = []string{
+	`CREATE TABLE records (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL CHECK (length(trim(name)) > 0),
+  status     TEXT NOT NULL CHECK (length(trim(status)) > 0),
+  owner      TEXT NOT NULL CHECK (length(trim(owner)) > 0),
+  updated_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_records_name ON records(name)`,
+	`CREATE INDEX idx_records_updated_at ON records(updated_at)`,
+	`CREATE INDEX idx_records_owner ON records(owner)`,
+}
+
+// migrate0003 creates the records table and its indexes. Business seed rows are
+// intentionally NOT inserted here: seeds live in seedRecords so user deletes and
+// re-starts never resurrect or overwrite rows (D-003 §3).
+func migrate0003(tx *sql.Tx) error {
+	for _, stmt := range recordsPersistDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create records: %w", err)
+		}
+	}
+	return nil
+}
+
 // migrate applies pending migrations. It is called by Open and must remain the
 // only entry point into schema management so the ledger stays authoritative.
 func (s *Store) migrate() error {
@@ -177,10 +213,12 @@ func (s *Store) migrate() error {
 	}
 
 	pending := pendingMigrations(applied)
-	// Before the first data-mutating migration (0002) on a non-empty file
-	// database, take a recoverable snapshot so an upgrade can be rolled back.
+	// Before the first data-mutating migration on a non-empty file database, take
+	// a recoverable snapshot so an upgrade can be rolled back. Generalized (R4)
+	// to name the snapshot after the first pending version: an existing R2 ledger
+	// upgrading to 0003 produces <db>.pre-v0003-<UTC>.sqlite (I-007-002 §3.2).
 	if len(pending) > 0 && pending[0].version >= 2 {
-		if err := s.snapshotPreV0002(); err != nil {
+		if err := s.snapshotBeforePending(pending[0].version); err != nil {
 			return err
 		}
 	}
@@ -574,31 +612,66 @@ func (s *Store) assertForeignKeysOn() error {
 	return nil
 }
 
-// snapshotPreV0002 produces a recoverable copy of a non-empty file database
-// right before the first data-mutating migration (0002) is applied, using
-// SQLite's VACUUM INTO consistency snapshot. The path is passed as a bound
-// SQL string literal (quotes escaped), never through a shell.
-func (s *Store) snapshotPreV0002() error {
+// snapshotBeforePending produces a recoverable copy of a non-empty file database
+// right before the first pending migration (version >= 2) is applied, using
+// SQLite's VACUUM INTO consistency snapshot. The path is passed as a bound SQL
+// string literal (quotes escaped), never through a shell.
+func (s *Store) snapshotBeforePending(firstPendingVersion int) error {
 	if s.path == "" || s.path == ":memory:" {
 		return nil
 	}
-	var data bool
-	if err := s.db.QueryRow(
-		`SELECT (SELECT COUNT(*) FROM users) + (SELECT COUNT(*) FROM refresh_tokens) > 0`,
-	).Scan(&data); err != nil {
-		return fmt.Errorf("pre-v0002 snapshot: count data: %w", err)
+	hasData, err := s.dbHasRows()
+	if err != nil {
+		return err
 	}
-	if !data {
+	if !hasData {
 		return nil // nothing to recover yet
 	}
-	target := fmt.Sprintf("%s.pre-v0002-%s.sqlite", s.path, time.Now().UTC().Format("20060102T150405Z"))
+	target := fmt.Sprintf("%s.pre-v%04d-%s.sqlite", s.path, firstPendingVersion, time.Now().UTC().Format("20060102T150405Z"))
 	if _, err := s.db.Exec("VACUUM INTO '" + strings.ReplaceAll(target, "'", "''") + "'"); err != nil {
-		return fmt.Errorf("pre-v0002 snapshot to %s: %w", target, err)
+		return fmt.Errorf("pre-v%04d snapshot to %s: %w", firstPendingVersion, target, err)
 	}
 	if err := checkIntegrityFile(target); err != nil {
-		return fmt.Errorf("pre-v0002 snapshot %s invalid: %w", target, err)
+		return fmt.Errorf("pre-v%04d snapshot %s invalid: %w", firstPendingVersion, target, err)
 	}
 	return nil
+}
+
+// dbHasRows reports whether any application table has at least one row. It is
+// used to decide whether a pre-upgrade snapshot is worth taking: a database with
+// no data has nothing to recover, and a fresh DB must not leave stray snapshots.
+// Table names are collected (and the first query's rows closed) before counting,
+// because the store holds a single connection and a nested query would deadlock.
+func (s *Store) dbHasRows() (bool, error) {
+	rows, err := s.db.Query(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != 'schema_migrations'`)
+	if err != nil {
+		return false, fmt.Errorf("snapshot: list tables: %w", err)
+	}
+	var tables []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			rows.Close()
+			return false, fmt.Errorf("snapshot: scan table: %w", err)
+		}
+		tables = append(tables, name)
+	}
+	if err := rows.Close(); err != nil {
+		return false, fmt.Errorf("snapshot: list tables: %w", err)
+	}
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("snapshot: list tables: %w", err)
+	}
+	for _, name := range tables {
+		var n int
+		if err := s.db.QueryRow(`SELECT COUNT(*) FROM "` + strings.ReplaceAll(name, `"`, `""`) + `"`).Scan(&n); err != nil {
+			return false, fmt.Errorf("snapshot: count %s: %w", name, err)
+		}
+		if n > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // checkIntegrityFile opens a database file and verifies its integrity.
