@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.13
+version: 0.1.14
 ---
 
 # 执行记录 · GOAL-001
@@ -153,3 +153,10 @@ version: 0.1.13
 - **立项 `GOAL-008-r5-engineering-fork`**（active / 0/5）：S1～S5 五个核心检查点（环境/配置基线、容器一键启动、fork 文档与 15 分钟体验、可复现 smoke 验收、阶段审计与 Root 关门条件评估）；S6（最小操作日志）为可选加分不进进度分母；登记 `I-008-001/002/003` 实施前 required；五件套与 `goal-tree.md` 已同步。
 - **未做**：未修改任何产品代码、配置、文档、容器或脚本；未勾选 R5 检查点；Root 保持 `active / 4/5`。
 - **计划（非事实）**：下一拍在 `GOAL-008` 收集并冻结 `I-008-001`（环境/配置/容器契约），再判断 S1/S2 实施边界。
+
+## 2026-08-02 · GOAL-008 响应 A-001（F-001 fixed · R-001/R-002 handled）
+
+- `GOAL-008` 收到 **A-001（independent · conditional）**：确认立项与 I-005 分层门禁总体合理，开 **F-001 required**（D-001 将 Compose 写成「可选加分路径」与 S2 核心交付冲突）+ R-001（I-005 附件时态）/ R-002（I-008-001/002 最低收集清单）。
+- **响应**：F-001 → fixed（GOAL-008 D-002 + D-001 修订 + S2 对齐：Compose 为 R5 必须交付和验收的第二启动路径，fork 用户可选本地双进程或 Compose，完整生产拓扑/CI-CD 仍非目标）；R-001 → handled（I-005 附件 v0.2.1 时态清理 + `related_decisions`）；R-002 → handled（`I-008-001/002` 信息表补入最低收集清单）。
+- **未做**：未冻结 `I-008-001`；未放行 S1/S2；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
+- **计划（非事实）**：冻结 `I-008-001` 前按 P-004 §3.1 询问是否补 self 审计。
