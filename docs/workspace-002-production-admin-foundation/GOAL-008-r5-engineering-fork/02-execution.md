@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.5
+version: 0.1.6
 ---
 
 # 执行记录 · GOAL-008
@@ -71,3 +71,10 @@ version: 0.1.5
 - **验证**：`go build` / `go vet` / `go test ./...`（apps/api）全绿（config 包 4 新增用例通过）；compose 与 api 镜像显式 `AUTH_DEV_SESSION_ENABLED=false`，守卫不影响第二启动路径。
 - **未做**：未实施 S3/S4；`I-008-002`/`I-008-003` 仍 open required（阻断 S3/S4、S6 若实施）；未勾选新检查点（保持 `2/5`）；Root R5 未勾选，Root 保持 `active / 4/5`。
 - **计划（非事实）**：建议对 F-002/F-003 关闭证据做一次 `/audit` finding-closure 复审；下一拍收集并冻结 `I-008-002`（计时复现协议 + smoke 判据），再实施 S3/S4。
+
+## 2026-08-03 · 响应 A-007（finding-closure · pass）
+
+- **A-007（independent · finding-closure · pass）响应**：采纳 `pass`——独立复核确认 **F-002**（生产环境开发会话硬门禁 `Config.ValidateProd()`）与 **F-003**（`00-meta` progress `2/5` 投影）的 `fixed` 关闭证据成立，两项维持闭合；本 scope 无开放 required、无新 required/recommended finding。
+- **P-004 §3.1 处置**：同 scope（F-002/F-003 关闭证据）已有 **A-006（self）** 覆盖，无需再补自审；本 scope 无冲突、无 veto 触发。
+- **未做**：未冻结 `I-008-002`；未实施 S3/S4；未勾选检查点（保持 `2/5`）；Root R5 未勾选，Root 保持 `active / 4/5`。
+- **计划（非事实）**：下一拍收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据，按 A-001 R-002 最低清单），再实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；建议对 `I-008-002` 冻结做一次方案冻结审计（self 或 `/audit`）。

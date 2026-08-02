@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.9.0
+version: 0.11.0
 ---
 
 # 审计台账 · GOAL-008
@@ -19,6 +19,7 @@ version: 0.9.0
 | A-004 | independent | 2026-08-02 | execution-facts · S1/S2 实施向审计（C-001～C-007） | pass | responded：pass 采纳；R-001 handled（由 F-002 修复承载）；R-002 fixed（README `.env` 注记） |
 | A-005 | independent | 2026-08-03 | execution-facts · S1/S2 实施复核（C-001～C-007） | fail | responded：F-002 **fixed**（config.ValidateProd 生产守卫 + 回归 + 运行时反例复验）；F-003 **fixed**（00-meta 进度投影同步） |
 | A-006 | self | 2026-08-03 | execution-facts 复核 · S1/S2 实施 + A-004/A-005 响应证据（含 F-002/F-003 fixed） | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1） |
+| A-007 | independent | 2026-08-03 | finding-closure · F-002/F-003 关闭证据复审 | pass | responded：pass 采纳；F-002/F-003 `fixed` 维持闭合；本 scope 无开放 required |
 
 ## 当前审计边界
 
@@ -27,7 +28,9 @@ version: 0.9.0
 - **A-004（independent · execution-facts · S1/S2 实施向审计 · pass）**：S1/S2 实施主张与仓库事实一致且可复现——C-001/C-002 静态与代码核对通过、C-003/C-005/C-006 本机 Docker 复跑通过、C-004 镜像构建成功、C-007 CI job 结构与本地 smoke 通过；无开放 required；`0/5 → 2/5` 勾选有据。
 - **A-005（independent · execution-facts · S1/S2 实施复核 · fail）**：独立重跑 C-002～C-007 均通过，但 C-001/§5 “生产禁止启用 `AUTH_DEV_SESSION_ENABLED`”与实现不符：生产进程可由该 flag 启动并对未认证请求注入静态高权限开发身份（F-002）。同时 `00-meta.md` 仍写 `progress: 0/5`，而勾选成功标准和 `goal-tree.md` 均为 `2/5`（F-003）。这与 A-004 将同一安全事实列为非阻断 R-001 的分类存在相关分歧；不得跳过 P-004 裁决。
 - **A-006（self · execution-facts 复核 · pass）**：补 S1/S2 实施 scope 的 `source: self` 覆盖（P-004 §3.1 用户裁决「需要补 self」）。**A-004/A-005 统一响应（2026-08-03）**：分类分歧按用户裁决采用 **F-002 `required/high`** 口径——F-002 → **fixed**（`config.ValidateProd()` 生产守卫：非 `development` + `AUTH_DEV_SESSION_ENABLED=true` → 启动报错退出；`config_test.go` 4 用例回归；运行时复验 `production + flag=true` → exit 1、`development + flag=true` → 正常启动；`go build`/`go vet`/`go test ./...` 全绿）；F-003 → **fixed**（`00-meta` frontmatter `progress: 0/5 → 2/5`，与正文/goal-tree 一致）；A-004 R-001 → handled（由 F-002 修复承载同一建议）、R-002 → fixed（根 README 补 `.env` 免重复 export 注记）。S1 的 C-001「生产禁止启用 dev session」现由运行时硬门禁成立；C-002～C-007 维持 pass。**建议对 F-002/F-003 关闭证据做一次 finding-closure 复审（`/audit`）**。
-- 后续意见从 A-007 起。
+- **A-007（independent · finding-closure · pass）**：独立复核 F-002/F-003 的代码、回归、运行时与进度投影证据，确认两项 `fixed` 关闭成立；`I-008-002`/`I-008-003` 及 Root R5 门禁不在本次复审中改变。
+- **A-007 响应（/govern · 2026-08-03）**：采纳 `pass`——F-002/F-003 `fixed` 维持闭合；同 scope（F-002/F-003 关闭证据）已有 A-006（self）覆盖，P-004 §3.1 无需再补自审；本 scope 无开放 required。`I-008-002` 仍为 S3/S4 前置 required 门禁，下一拍收集并冻结后再进入 S3/S4。
+- 后续意见从 A-008 起。
 
 ## A-001 · GOAL-008 立项信息与 I-005 工程化 / fork 报告独立审计（2026-08-02）
 
@@ -450,3 +453,57 @@ version: 0.9.0
 - F-002/F-003 关闭证据路径：代码 + 回归测试 + 运行时复验（`02-execution` 同步留痕）；**建议做一次 `/audit` finding-closure 复审**确认关闭成立。
 - `I-008-002`（计时复现协议 + smoke 判据）仍 open required，为进入 S3/S4 的前置门禁；下一拍收集并冻结后再实施 S3/S4。
 - 本目标维持 `active / 2/5`；Root R5 未勾选（Root `4/5`）。
+
+## A-007 · F-002/F-003 关闭证据独立复审（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure；仅复审 A-005 的 **F-002**（生产环境开发会话硬门禁）与 **F-003**（GOAL-008 派生进度投影）`fixed` 关闭证据。不审 S3～S6、`I-008-002/003`、Root R5 或 VP-002 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspace-002-production-admin-foundation/`；目标 `parent`、workspace Root 和 `goal-tree.md` 的当前投影一致；`shared_materials_catalog: none`，未使用共享资料作为关闭依据。
+- 已核对：本目标 `00-meta.md`、`01-decision.md`、`02-execution.md`、本台账 A-004～A-006 与统一响应、`I-008-001-engineering-contract.md` §1/§5/C-001；当前 `goal-tree.md`；`apps/api/internal/config/config.go`、`config_test.go`、`cmd/server/main.go` 与根 `compose.yaml`。
+- 独立验证：在 `apps/api` 运行 `go test ./...`、`go vet ./...`、`go build ./...` 均通过；`TestValidateProd` 的 development / production / staging 四个分支通过；以 `APP_ENV=production AUTH_DEV_SESSION_ENABLED=true go run ./cmd/server` 复验，进程输出 `startup failed` 并以预期 exit 1 拒绝启动。
+- 本复审不把 F-002/F-003 的关闭扩写为 S3/S4 已实施、`I-008-002/003` 已关闭、Root R5 已勾选或目标可关门。
+
+### 成果（有证据）
+
+| Finding | 独立复核结果与证据 |
+|---------|--------------------|
+| **F-002 required/high** · 生产环境未硬拒绝开发会话 | **`fixed` 成立**：契约要求生产禁止 `AUTH_DEV_SESSION_ENABLED`；`Config.ValidateProd()` 对所有非 `development` 环境的该 flag 返回启动错误，`main.go` 在加载配置后、创建认证器前执行该校验并 `os.Exit(1)`。4 个回归用例覆盖 development 允许、production flag=true 拒绝、production flag=false 允许与 staging 拒绝；实际 production 反例亦得到预期拒绝。Compose 仍显式设置该 flag 为 `false`。 |
+| **F-003 required/medium** · 派生进度投影不一致 | **`fixed` 成立**：`00-meta.md` frontmatter 为 `progress: 2/5`；S1/S2 是五个核心检查点中仅有的两项已勾选；派生进度段同样为 `2/5`；`goal-tree.md` 的 ASCII 树与状态表均投影 `active / 2/5`。检索到的 `0/5` 均为立项或修复前的历史时间线，不与当前投影冲突。 |
+
+### Findings
+
+- **无新 required 或 recommended finding**。
+
+### 必改项汇总
+
+- 本 finding-closure scope 无开放 required；F-002/F-003 可维持 `fixed`。
+- `I-008-002` 仍为 S3/S4 的 open required 门禁，`I-008-003` 仍在 S6 实施时适用；它们不因本意见而关闭或降级。
+
+### 与既有意见的异同
+
+- A-005 的 `fail` 记录修复前的运行时反例与投影不一致，保留为历史事实；统一响应提供 `fixed` 路径，A-006 提供同 scope self 覆盖。
+- 本意见独立复跑代码与测试证据后确认关闭成立，不以 A-006 的 self 结论代替交叉复审，也不改写 A-004/A-005 的历史 verdict。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：F-002/F-003 的关闭证据充分且可重复核对，两项可维持 `fixed`；本 scope 无开放 required。
+- 建议 `/govern` 记录 A-007 的 `pass`，随后仍按现有信息门禁收集并冻结 `I-008-002` 后再进入 S3/S4；本意见不授权任何状态、进度或 Root R5 变更。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-007（/govern · 2026-08-03）
+
+- **verdict 采纳**：`pass` 成立——A-007（independent · finding-closure）独立复核 F-002/F-003 关闭证据（代码、回归、运行时与进度投影），确认两项 `fixed` 维持闭合，本 scope 无开放 required、无新 required/recommended finding。
+- **F-002（required/high · 生产环境开发会话硬门禁）关闭复核确认**：`Config.ValidateProd()` 对所有非 `development` 环境的 `AUTH_DEV_SESSION_ENABLED=true` 返回启动错误，`main.go` 于 `config.Load()` 后校验并 `os.Exit(1)`；4 回归用例覆盖 development/production/staging 分支，production 反例复验拒绝启动；Compose 与 api 镜像显式 `false`。`fixed` 维持闭合。
+- **F-003（required/medium · 派生进度投影）关闭复核确认**：`00-meta` frontmatter `progress: 2/5` 与成功标准勾选、派生进度段、`goal-tree.md`（`active / 2/5`）一致，检索无当前投影残留。`fixed` 维持闭合。
+- **P-004 §3.1 处置**：A-007 为 `source: independent`；同 scope（F-002/F-003 fixed 关闭证据）已有 **A-006（self · execution-facts 复核）** 覆盖，无需再补自审。本 scope 无意见冲突、无 required finding，不触发 §3.2/§3.3。
+- **仍开放**：`I-008-002`（required · 阻断 S3/S4）；`I-008-003`（required · 仅当 S6 实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 2/5`。
+- **下一步**：收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据），随后实施 S3（fork 文档 + 独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；建议对 `I-008-002` 冻结做一次方案冻结审计（self 或 `/audit`）。
+- **证据路径**：本响应节；`03-audit.md` A-005/A-006/A-007；`02-execution` 2026-08-03「响应 A-007」节。
