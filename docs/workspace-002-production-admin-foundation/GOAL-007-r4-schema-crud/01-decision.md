@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策 · GOAL-007
@@ -89,3 +89,23 @@ version: 0.3.0
 - **保留秒级 + 断言放宽为非递减**：弱化既有「严格晚于」契约，客户端无法区分同一秒内变更；与 VP-002 生产级语义不符。
 - **人为加整秒/整毫秒跳变**：脱离 `time.Now().UTC()`，A-001 F-001 明确指出不可取。
 - **微秒精度**：与毫秒在本语义等价，但毫秒更贴近常见前端展示粒度且格式确定；微秒可后续按需升级，不在本决策冻结。
+
+## D-005 · 冻结 Schema CRUD 读写交互契约（I-007-003）
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **决定**：
+  1. **代表页面**：`list-edit-lifecycle` 作为唯一代表性 CRUD 生命周期页（承接 D-010 的 records 代表实体与 R3 种子菜单 `list-edit-lifecycle`）。其 fixture 演进为「列表 table（含行操作 `edit`/`delete` 与工具栏 `create`）+ 新建/编辑 form（`submitAction`）+ 详情 recordView + 搜索绑定」；行为全部由 fixture 数据驱动，**不修改 Renderer 主路径代码**（S4 成功标准）。
+  2. **Node/action 绑定**：`table.props.actions`（rowAction `edit`/`delete`，`permissionIntent` edit/delete）→ PATCH / DELETE；`table.props.toolbar`（toolbarTrigger `create`，`permissionIntent` edit）→ 打开新建 form → POST；`form` `submitAction`（formSubmit；create 模式 POST `/api/records`，edit 模式 PATCH `/api/records/{id}`）；搜索 form → table `q` 绑定（把 `search-form-table` 现行「form-to-query 绑定 out of scope」纳入 S4）。渲染层**一次性**补齐「table actions/toolbar 渲染 + form submit 绑定 + 成功/错误/确认反馈」；此后新页面仅改 fixture，不改 Renderer 主路径。
+  3. **字段映射**：`id`/`updatedAt` 仅服务端、只读展示；`name`/`status`/`owner` 可编辑 string。控件：`name`→input、`owner`→input、`status`→select（options active/pending/archived **仅 UI 提示**，API 不做枚举白名单，与 I-007-001 一致）。create body `{ name, status, owner }` 全必填；PATCH body 仅 present 键；wire kind 全 string。
+  4. **交互状态**：加载（DataTable `loading` + 提交中禁用提交）；空态（"No records match."）；成功（create/edit/delete 后刷新列表 + 页级/行级成功提示）；错误（统一 envelope `{error,message}` → `role=alert` 页级提示，稳定 code 映射见附件 §4）；删除确认（复用冻结 `executeAction` `confirm=true` → 未确认即 `CONFIRM_CANCELLED`）。
+  5. **权限矩阵**：后端为权威（`records.read` 门禁 GET，`records.write` 门禁 POST/PATCH/DELETE；匿名 401 / 缺权限 403）；**前端隐藏不是安全边界**（S5：后端 403 不被前端隐藏替代）。admin 全量 CRUD；editor/viewer 只读（写 affordance 隐藏/禁用，直接调用仍 403）；匿名 → LoginPage。表达式门禁用冻结语法：`$context.user.permissions contains "records.write"`（写）、`"records.read"`（读）、`$context.features.menu_list_edit_lifecycle`（菜单）。使用 permission 字段的页面 `meta.requiredCapabilities` 须含 `permissions.inheritance`；复用冻结 executeAction 序列（visible → permission → disabled → confirm）与 target kinds（rowAction/toolbarTrigger/formSubmit/actionButton）。
+  6. **测试矩阵**：T-UI-01～10（附件 §6）为 S4/S5 验收最低断言；API 负向已由 T-API-08/09 承担，UI 只负责正确呈现。
+- **理由**：前端已具备冻结的 Renderer node whitelist、$context 表达式/反应引擎与 `permissions.inheritance` 执行引擎（rowAction/toolbarTrigger/formSubmit/actionButton 目标已建模），缺的是「页面文档把 records 写路径绑定到这些原语」以及「一次性渲染补齐」。把代表页面固定为 `list-edit-lifecycle` 可让 fixture 演进与既有种子菜单/导航投影对齐，避免新增页面破坏已冻结的导航与菜单证据。
+- **信息门禁**：`I-007-003` → `verified`；证据 [I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md)。本决策完成 S4/S5 交互契约冻结并**放行首个 Schema 写交互代码变更**；**不构成 S4/S5 已实现**，不关闭 `I-007-004`，不勾选 Root R4。
+
+### 未选方案
+
+- **拆分为 list / create / edit 三个页面**：增加导航与跨页状态传递复杂度，与单一代表菜单（`list-edit-lifecycle`）不对齐；单页生命周期更贴近 D-010「一个代表实体完整闭环」。
+- **在 Renderer 主路径硬编码 records 特定逻辑**（如组件内写死 POST/PATCH/DELETE 调用）：违反 S4「新增/调整代表页面不修改 Renderer 主路径代码」；改为 fixture 驱动的通用 action 绑定。
+- **用 status 枚举白名单约束 API**：违反 I-007-001 冻结（status 非枚举）；UI select 选项仅作提示，非服务端约束。

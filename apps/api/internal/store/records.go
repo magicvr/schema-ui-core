@@ -134,9 +134,10 @@ func (s *Store) CreateRecord(r Record) (*Record, error) {
 // UpdateRecord applies a PATCH to an existing record and refreshes updated_at to
 // now, clamped so the returned timestamp is strictly later than the previous
 // value (D-004 / I-007-001 §3.1): if now is not greater than the stored
-// updated_at, it is pinned to prev+1ms. Concurrency is last-write-wins with the
-// single-writer connection serializing read-modify-write. Returns ErrNotFound
-// when the id does not exist.
+// updated_at, it is pinned to prev+1ms. Provided field values are trimmed before
+// storage so the persisted shape matches create (A-003 R-002). Concurrency is
+// last-write-wins with the single-writer connection serializing read-modify-write.
+// Returns ErrNotFound when the id does not exist.
 func (s *Store) UpdateRecord(id string, patch RecordPatch, now time.Time) (*Record, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -156,13 +157,13 @@ func (s *Store) UpdateRecord(id string, patch RecordPatch, now time.Time) (*Reco
 		return nil, fmt.Errorf("get record for update: %w", err)
 	}
 	if patch.Name != nil {
-		cur.Name = *patch.Name
+		cur.Name = strings.TrimSpace(*patch.Name)
 	}
 	if patch.Status != nil {
-		cur.Status = *patch.Status
+		cur.Status = strings.TrimSpace(*patch.Status)
 	}
 	if patch.Owner != nil {
-		cur.Owner = *patch.Owner
+		cur.Owner = strings.TrimSpace(*patch.Owner)
 	}
 
 	newMillis := now.UnixMilli()

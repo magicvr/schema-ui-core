@@ -27,6 +27,36 @@ func mustCreate(t *testing.T, st *Store, r Record) *Record {
 	return got
 }
 
+// A-003 R-002 · UpdateRecord trims provided field values so the persisted shape
+// matches create (no leading/trailing whitespace).
+func TestUpdateRecordTrimsPatchValues(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "patch-trim.db"), "admin", "hash", true)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer st.Close()
+
+	name := "  Padded Name  "
+	owner := "\tcarol  "
+	got, err := st.UpdateRecord("rec-1", RecordPatch{Name: &name, Owner: &owner}, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("UpdateRecord: %v", err)
+	}
+	if got.Name != "Padded Name" {
+		t.Fatalf("trimmed name = %q, want Padded Name", got.Name)
+	}
+	if got.Owner != "carol" {
+		t.Fatalf("trimmed owner = %q, want carol", got.Owner)
+	}
+	reloaded, err := st.GetRecord("rec-1")
+	if err != nil {
+		t.Fatalf("GetRecord: %v", err)
+	}
+	if reloaded.Name != "Padded Name" || reloaded.Owner != "carol" {
+		t.Fatalf("persisted = %+v, want trimmed Padded Name / carol", reloaded)
+	}
+}
+
 // T-DB-01 · fresh empty DB: ledger {1,2,3} and the records table exist
 // (covered structurally in TestMigrateFreshDB; this asserts the records table is
 // empty before seeding).

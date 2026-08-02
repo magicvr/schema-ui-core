@@ -590,6 +590,24 @@ func TestRecordsHandlerReadsFromStore(t *testing.T) {
 	}
 }
 
+// A-003 R-002 · PATCH stores trimmed field values (consistent with create):
+// leading/trailing whitespace on an accepted value is normalized.
+func TestRecordsUpdateTrimsValues(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPatch, "/api/records/rec-3", `{"name":"  Hooli Rebrand  ","owner":" carol "}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	var body map[string]any
+	_ = jsonDecode(rr, &body)
+	if body["name"] != "Hooli Rebrand" || body["owner"] != "carol" {
+		t.Fatalf("updated = %v, want trimmed Hooli Rebrand / carol", body)
+	}
+}
+
 func jsonDecode(rr *httptest.ResponseRecorder, out *map[string]any) error {
 	if rr.Body.Len() == 0 {
 		return nil

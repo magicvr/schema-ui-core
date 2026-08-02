@@ -5,7 +5,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 progress: 3/6
 ---
 
@@ -26,7 +26,7 @@ progress: 3/6
 
 ## 派生进度
 
-`progress: 3/6` 由上方六个顺序检查点等权派生（S1/S2/S3 已勾选）。S1/S2 为契约冻结入口；S3 已实现 SQLite 持久化 CRUD（02-execution 2026-08-02，T-API/T-DB 全绿）。S4/S5 仍依赖 `I-007-003`，S6 依赖 `I-007-004` 与可重复证据。检查点不替代审计 finding 或关门结论。
+`progress: 3/6` 由上方六个顺序检查点等权派生（S1/S2/S3 已勾选）。S1/S2 为契约冻结入口；S3 已实现 SQLite 持久化 CRUD（02-execution 2026-08-02，T-API/T-DB 全绿）。**S4/S5 信息门禁已满足**（`I-007-003` verified，D-005 冻结 `list-edit-lifecycle` 代表页与字段/交互/权限矩阵 + T-UI-01～10），首个 Schema 写交互代码变更已放行；S4/S5 实施与验收仍待执行。S6 仍依赖 `I-007-004` 与可重复证据。检查点不替代审计 finding 或关门结论。
 
 ## 信息需求
 
@@ -34,7 +34,7 @@ progress: 3/6
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
 | `I-007-001` | records 的精确字段/ID/时间戳、create/update/delete 请求响应、HTTP status、稳定 error `code`、校验与冲突语义是什么？ | required | S1 完成；S3 API 首个受影响代码变更 | S3 实施前 | 对照现有 handler/error envelope 与 I-004 M-R4-01～06/08，形成版本化 API/错误契约和正反测试矩阵，记录决策 | **verified** | 已关闭（D-002） | [I-007-001-api-error-contract.md](attachments/I-007-001-api-error-contract.md)：继承 list/detail/PATCH/DELETE；POST 201 + `INVALID_CREATE_*`；T-API-01～13 |
 | `I-007-002` | records 的 SQLite DDL、迁移版本/校验和、索引/约束、seed、事务/并发与失败恢复契约是什么？ | required | S2 完成；S3 持久化首个代码变更 | S3 实施前 | 对照现有 migration runner、seed 与 records 访问模式，形成 schema/migration/seed/repository 计划及恢复测试矩阵，记录决策 | **verified** | 已关闭（D-003） | [I-007-002-sqlite-migration-plan.md](attachments/I-007-002-sqlite-migration-plan.md)：`0003 records_persist`、空表 seed、repository/LWW、T-DB-01～09 |
-| `I-007-003` | Schema CRUD 的页面/Node/action 绑定、字段映射、成功/加载/空态/错误/确认交互和权限矩阵是什么？ | required | S4/S5 实施与验收 | 首个 Schema 写交互代码变更前 | 对照真实 fixtures、Renderer action/form/table 能力与 records API，冻结页面绑定及 admin/viewer/匿名正反矩阵，记录决策 | open | 不延期；S4 前复核 | 待收集；前端隐藏不得替代后端 `records.read` / `records.write` |
+| `I-007-003` | Schema CRUD 的页面/Node/action 绑定、字段映射、成功/加载/空态/错误/确认交互和权限矩阵是什么？ | required | S4/S5 实施与验收 | 首个 Schema 写交互代码变更前 | 对照真实 fixtures、Renderer action/form/table 能力与 records API，冻结页面绑定及 admin/viewer/匿名正反矩阵，记录决策 | **verified** | 已关闭（D-005） | [I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md)：`list-edit-lifecycle` 代表页 + table actions/toolbar + form `submitAction` 绑定 + 字段/交互/权限矩阵 + T-UI-01～10；**放行首个 Schema 写交互代码变更** |
 | `I-007-004` | 重启保持与端到端验收如何隔离数据库、固定操作序列、断言持久化结果并清理测试状态？ | required | S6 验收执行与目标关门 | S6 验收前 | 形成 create/update/delete→重启→list/detail 的可重复协议，含 migration/seed 重跑、权限负向、失败路径和 API/Web 回归命令 | open | 不延期；S6 前复核 | 待收集；必须产出机器可重复证据，不以单次手工冒烟替代 |
 
 ## 依赖与边界

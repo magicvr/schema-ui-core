@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-02
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-007
@@ -55,8 +55,16 @@ version: 0.4.0
 - **成功标准 S3 勾选**：POST/list/search/detail/PATCH/DELETE 的 SQLite repository 路径已实现；生产默认不再依赖进程内 records；认证、`records.read` / `records.write` 与统一错误 envelope 保持一致。派生进度 `2/6` → **`3/6`**。
 - **未做（本轮）**：未修改 Schema 写交互代码（S4/S5 待 `I-007-003` 关闭）；未跑进程重启 E2E 与 S6 验收（待 `I-007-004`）；未写正式审计（S3 阶段审计可下一拍选择 self 或 `/audit`）。
 
+## 2026-08-02 · 响应 A-003 并冻结 I-007-003
+
+- 用户通过 `/govern` 明确要求：响应 A-003（pass）、同步 Root 台账 R-001、收集并冻结 I-007-003。
+- **响应 A-003（independent · pass）**：在 03-audit 写入响应节——采纳 pass（scope 内无开放 required）；**A-002 R-001 → 已落实**（`TestUpdateRecordMonotonicClamp`/`TestRecordMillisecondRoundTrip`/`TestRecordsUpdateStrictlyIncreasesAcrossRapidPatches` 已在 S3 落地）；**A-003 R-001 → fixed**（Root `GOAL-001` 00-meta 纲领 R4 同步为 `active / 3/6`、S3 已实施；仍不勾选 Root R4）；**A-003 R-002 → fixed**（`store.UpdateRecord` 对 PATCH 提供字段做 `strings.TrimSpace` 入库，与 create 一致；新增 store/handler 回归 `TestUpdateRecordTrimsPatchValues` / `TestRecordsUpdateTrimsValues`，`go test ./...` 全绿）。P-004 §3.1 处置：用户明确指示「响应 A-003（pass）」并推进 I-007-003，本轮不补 S3 self 审计，留待 S4/S5 放行或关门前选择（self 或 `/audit`）。
+- **收集并冻结 I-007-003（S4/S5 交互契约）**：只读扫描 `apps/web/src/renderer/*`（node whitelist、SchemaTable/FormControls、reactions、permissions/executeAction、row-action、records client）、`components/data-table.tsx`、`app/{App,navigation}.ts`、`protocol/app-manifest.ts` 与 `fixtures/schema/*.json`，以及 S3 后的 records API 与 `me` 会话形状。落盘 [I-007-003-schema-crud-interaction.md](attachments/I-007-003-schema-crud-interaction.md)：代表页 `list-edit-lifecycle`（table actions/toolbar + form `submitAction` + 搜索绑定）+ 字段映射（name/status/owner 可编辑，id/updatedAt 只读）+ 交互状态（成功/加载/空态/错误/确认）+ 权限矩阵（admin/viewer/anonymous，`$context.user.permissions contains "records.write"` 表达式门控，后端 403 权威）+ T-UI-01～10。记录决策 **D-005**。
+- 信息台账：`I-007-003` → `verified`；**首个 Schema 写交互代码变更已放行**（S4/S5 实施输入就绪）。
+- **未做（本轮）**：未写 Schema 写交互代码（S4/S5 尚未实施）；`I-007-004` 仍 open（S6）；Root R4 未勾选。
+
 ## 下一步计划（非事实）
 
-1. 在首个 Schema 写交互变更前关闭 `I-007-003`（Schema CRUD 页面/Node/action 绑定、字段映射、成功/加载/空态/错误/确认交互与 admin/viewer/匿名权限矩阵），再实施 S4/S5 页面读写与权限负向闭环。
+1. 实施 S4/S5：按 D-005 / I-007-003 演进 `list-edit-lifecycle` fixture 为代表性 CRUD 页（table actions/toolbar + form `submitAction` + 搜索绑定）；渲染层一次性补齐 actions/toolbar/form-submit/成功·错误·确认反馈；records client 新增 `createRecord`（POST）；T-UI-01～10 与权限负向闭环（匿名 401、缺权限 403、后端授权不被前端隐藏替代）。
 2. 在 S6 验收前关闭 `I-007-004`（重启保持与端到端验收协议），再补 create/update/delete→重启→list/detail 的机器可重复证据与 API/Web 回归。
-3. 可选：对 S3 做一次阶段审计（self 或 `/audit` 独立），为 S6 关门审计积累证据。
+3. 可选：S3/S4 阶段审计（self 或 `/audit`），为 S6 关门审计积累证据。

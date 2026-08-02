@@ -5,7 +5,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.2.10
+version: 0.2.11
 progress: 3/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -50,7 +50,7 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 - [x] **R3 · 持久化身份、角色与最小权限模型**：交付用户/角色/菜单持久化、种子数据与后端授权最小闭环。  
   阶段子目标：`GOAL-006-r3-persistent-rbac-menu`（**done**，2026-08-02；D-009 冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；D-004 S1 迁移链 + pre-v0002 快照；D-005 S2 阶段 B 终态；D-006 S3 增量幂等种子；D-007 S4 permission key 读写门禁；D-008 S5 `me.features` 投影 + manifest `visibleWhen`；S6 恢复/重启/回归证据齐备）。证据：`schema_migrations` + `0001/0002` 事务化迁移 + pre-v0002 恢复快照、规范化 RBAC 双写/集合核对、`seedRBAC` 增量幂等种子、records `records.read`/`records.write` 门禁、`me.features` 菜单投影 + 真实 manifest `visibleWhen`、`TestRestartPersistence`/`TestRestorePreV0002Snapshot` 与 API/Web 全量回归；close-out 审计 A-005（independent，F-005 → fixed）+ A-006（independent，F-005 关闭复核 pass）+ A-004（self 阶段审计）；无开放 required finding 或 required 信息项。
 - [ ] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
-  阶段子目标：`GOAL-007-r4-schema-crud`（**active / 2/6**，2026-08-02；D-010/D-011 立项；子目标 D-002/D-003 已冻结 API/错误与 SQLite 迁移计划，`I-007-001`/`I-007-002` verified，S1/S2 勾选）。`I-007-003`/`I-007-004` 仍 open（阻断 Schema 写交互与 S6）；S3 契约已放行但尚未实施；Root R4 未勾选。
+  阶段子目标：`GOAL-007-r4-schema-crud`（**active / 3/6**，2026-08-02；D-010/D-011 立项；D-002/D-003 冻结 API/错误与 SQLite 迁移计划，`I-007-001`/`I-007-002` verified，S1/S2 勾选；**S3 已实施**——0003 + repository + seedRecords + handler 走 SQLite、POST 新增，T-API/T-DB 全绿，S3 勾选）。**`I-007-003` 已 verified（D-005 冻结 `list-edit-lifecycle` 代表页与字段/交互/权限矩阵，S4/S5 实施放行）**；`I-007-004` 仍 open（阻断 S6）；Root R4 未勾选。
 - [ ] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。
 
 当前派生进度为 `3/5`（R1、R2、R3 已勾选，2026-08-02）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。R1～R3 子目标 progress 不替代本 Root 检查点。
