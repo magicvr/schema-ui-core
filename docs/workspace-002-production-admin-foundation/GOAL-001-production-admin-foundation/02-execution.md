@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.7
+version: 0.1.10
 ---
 
 # 执行记录 · GOAL-001
@@ -94,3 +94,36 @@ version: 0.1.7
 - `GOAL-006` 登记两个实施前 required 信息项：精确 DDL/迁移版本与约束/seed key（`I-006-001`），首个真实 `page_ref`/`feature_key` 映射（`I-006-002`）。它们不否定 D-009 已冻结的模型方向，但会在各自最晚阶段前阻断对应实现。
 - **未做**：本次未修改产品代码、未执行迁移、未写入 RBAC 数据、未改变 API 或 Web 行为；Root R3 未完成，Root 保持 `active / 2/5`。
 - **计划（非事实）**：先在 `GOAL-006` 内关闭 `I-006-001/002` 并记录实施决策，再开始迁移与授权代码。
+
+## 2026-08-02 · R4 I-004 代表实体信息收集
+
+- 用户通过 `/govern` 明确要求推进本工作区 Root 的 R4，并先收集 `I-004`。
+- 完成愿景、工作区与门禁扫描：Charter `schema-ui-core-admin-foundation@0.1.0`、VP-002、delivery workspace、Root 与 `goal-tree.md` 投影一致；Vision Review 无开放 required；Root 的既有 A-001 只覆盖 R1，R4/I-004 scope 当前无正式意见、无开放 required finding，也未触发 P-004.1。
+- 只读对照 `apps/api`、`apps/web` 与现有 Schema fixtures，落盘 `attachments/I-004-schema-crud-collection.md`（v0.1.0）：
+  1. `records` 是唯一同时具备 list/search/detail/PATCH/DELETE、Schema table/fixtures、loading/empty/error、`records.read`/`records.write` 与 401/403 测试的现成业务候选；
+  2. records 当前是八条进程内静态数据，缺 POST、SQLite 持久化与重启保持；
+  3. `list-edit-lifecycle` 的详情数据仍内联在 fixture，form 未绑定真实 PATCH，未发现 Schema 驱动的 create/delete 写动作；
+  4. users/RBAC 已具持久化与重启证据，但对外只有 `/api/accounts/me`，没有完整 CRUD API/Schema 页面；
+  5. 形成 M-R4-01～M-R4-11 最低验收矩阵及三项待用户裁决点。
+- 本轮验证通过：`apps/api` 下 `go test ./internal/handler -run Records -count=1`；`apps/web` 下三个相关 Vitest 文件共 `20/20` tests。
+- `I-004` 从 `open` 转为 `collecting`，仍为 `required`；在用户确认代表实体及持久化/错误语义边界前，继续阻断 R4 方案冻结、R4 子目标立项与验收。
+- **未做**：未选择或冻结代表实体；未创建 R4 子目标；未修改产品代码；未新增 API/error code；Root 保持 `active / 3/5`，`goal-tree.md` 无 status/progress/parent 变化。
+- **计划（非事实）**：由用户裁决是否采用 `records`，以及是否将 SQLite 持久化与重启保持设为 R4 required；裁决后再记录方案决定并判断 `I-004` 是否可置 `verified`。
+
+## 2026-08-02 · R4 I-004 方向裁决（D-010）
+
+- 用户书面裁决：R4 采用 `records`；必须迁入 SQLite 并验证 create/update/delete 后重启、list/detail 结果保持；沿用统一错误 envelope，精确 `code` 在 R4 子目标方案中冻结。
+- 记录决策 **D-010**，同步更新 `attachments/I-004-schema-crud-collection.md`（v0.2.0）与 Root 信息台账。
+- `I-004` 从 `collecting` 转为 `verified`：只关闭 Root 层“代表实体、持久化方向、错误 envelope 与最低验收方向”的信息缺口，解除 R4 子目标立项目门禁。
+- 详细方案与验收**没有放行**：未来 R4 子目标必须登记实施前 required 信息项，至少覆盖精确字段/ID/时间戳、create 请求响应、HTTP/error code、SQLite DDL/migration/seed、并发冲突、Schema 写动作、权限负向路径和重启回归；这些信息关闭前不得实施受影响范围或验收 R4。
+- **未做**：未创建 R4 子目标；未修改产品代码；未新增 API/error code；未实施 SQLite records；未执行 R4 验收。Root 保持 `active / 3/5`，`goal-tree.md` 无 status/progress/parent 变化。
+- **计划（非事实）**：下一拍按 D-010 创建 R4 子目标并建立可枚举路线图与实施前 required 信息项；先冻结精确契约，再进入实现。
+
+## 2026-08-02 · 创建 R4 端到端子目标（D-011）
+
+- 用户通过 `/govern` 明确要求按 D-010 创建 R4 子目标并登记实施前 required 信息项。
+- 记录决策 **D-011**；在 canonical 根平铺创建 `GOAL-007-r4-schema-crud`，设为 `active / 0/6`，五件套与 `attachments/` 齐全。
+- GOAL-007 以六个顺序检查点覆盖精确契约、SQLite 迁移/seed、持久化 CRUD API、Schema 读写、状态/权限负向和重启回归。
+- 登记四项 required 信息门禁：`I-007-001`（API/错误）、`I-007-002`（SQLite/迁移/seed/并发）、`I-007-003`（Schema action/状态/权限）、`I-007-004`（重启/端到端验收协议）；当前均为 `open`。
+- **未做**：未修改产品代码、数据库、API、Schema fixture 或 Web 行为；未新增精确 error `code`；未执行 R4 产品测试；Root R4 未勾选，Root 保持 `active / 3/5`。
+- **计划（非事实）**：先在 GOAL-007 收集并冻结 `I-007-001/002`，再判断首个实现检查点。

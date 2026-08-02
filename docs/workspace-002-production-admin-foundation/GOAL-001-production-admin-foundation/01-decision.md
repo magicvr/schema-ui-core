@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-02
 parent: null
-version: 0.1.5
+version: 0.1.7
 ---
 
 # 决策 · GOAL-001
@@ -153,3 +153,43 @@ version: 0.1.5
 - **方案 C · 通用持久化策略表达式**：版本、校验、审计和运行时复杂度超过 R3 最小闭环。
 - **一次迁移同时删除 `users.roles`**：压缩了核对与恢复窗口，失败时放大不可逆风险。
 - **只保护写路由或只做前端菜单隐藏**：无法证明管理数据读边界与后端真实授权闭环。
+
+## D-010 · R4 采用 records、SQLite 持久化与统一错误 envelope
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **用户裁决**：采用 `records` 作为 R4 代表实体；R4 必须使用 SQLite 持久化并验证重启保持；沿用统一错误 envelope，精确 `code` 在 R4 子目标方案中冻结。
+- **决定**：
+  1. **代表实体**采用现有 `records`，继承 `id`、`name`、`status`、`owner`、`updatedAt` 候选字段与现有 list/search/detail/PATCH/DELETE、`records.read` / `records.write` 基线；R4 必须补齐 create 与 Schema 驱动的真实详情、编辑、删除闭环。
+  2. **持久化**必须把 records 从进程内静态切片迁入 SQLite，并纳入版本迁移、可重复 seed、读写一致性与失败诊断；不得把现有静态数据路径保留为生产默认实现。
+  3. **重启保持**是 R4 required 验收：至少自动证明 create/update/delete 后重启，list/detail 结果与持久化预期一致；同时覆盖 migration/seed 重复执行与关键失败路径。
+  4. **错误契约**沿用现有统一 envelope（HTTP status + 稳定 `code` + message）；保留已实现且适用的 `UNAUTHENTICATED`、`FORBIDDEN`、列表参数错误、`RECORD_NOT_FOUND`、PATCH body/field 错误语义。
+  5. **精确实施契约下沉**：create、字段校验、持久化/并发冲突及 Schema action 失败的 HTTP status、精确 `code`、请求/响应字段映射，必须在 R4 子目标方案中作为实施前 required 信息项登记、冻结并以测试验证；本 Root 决策不臆造未实现 code。
+- **理由**：I-004 收集显示 `records` 是唯一已有 API、Schema fixture、loading/empty/error、权限与集中回归基线的业务候选，差量小于 users/RBAC 或新建业务域；SQLite 与重启保持直接对应 VP-002 的生产级与数据重启预期；沿用统一 envelope 可保持现有 API 错误边界，同时避免 Root 层过早冻结未设计的精确 code。
+- **信息门禁**：`I-004` → `verified`。证据为本决策及 [I-004-schema-crud-collection.md](attachments/I-004-schema-crud-collection.md) 的现状、候选比较与 M-R4-01～11；只解除 Root 的 R4 方向冻结与子目标立项目门禁，不构成 R4 详细方案、实现或验收事实。
+- **后续**：下一拍按 P-001 创建 R4 子目标；创建时必须登记上述实施前 required 信息项并建立可枚举路线图，在精确契约冻结前不得实施受影响的 create/persistence/Schema write 范围。
+- **边界**：不扩展为 users/RBAC 管理后台或新业务域；不扩大 `I-PROTO-001 v0.1.3`；不把前端权限隐藏当后端授权；不勾选 Root R4，Root 保持 `active / 3/5`。
+
+### 未选方案
+
+- **采用 users/RBAC 作为代表实体**：虽已有持久化与重启证据，但没有完整 CRUD API 或 Schema CRUD 页面，会把身份域管理范围引入 R4。
+- **新建另一业务实体**：会重复建立 records 已有的 API、Schema、权限和测试基线，缺少额外产品价值证据。
+- **保留进程内 records 作为 R4 终态**：无法证明生产持久化和重启保持，与用户裁决及 VP-002 验收边界冲突。
+- **在 Root 直接枚举未实现 error code**：会把尚未设计和验证的精确语义写成事实；应由 R4 子目标方案在实施前冻结。
+
+## D-011 · 建立一个 R4 端到端子目标并下沉 required 信息门禁
+
+- **日期**：2026-08-02
+- **状态**：accepted
+- **用户指令**：按 D-010 创建 R4 子目标并登记实施前 required 信息项。
+- **决定**：
+  1. 在本工作区创建 `GOAL-007-r4-schema-crud`，以六个顺序检查点承载精确契约、SQLite 结构/迁移/seed、持久化 CRUD API、Schema 读写主路径、交互/权限负向和重启回归。
+  2. 不为每个未知机械创建信息目标；在 GOAL-007 内登记四项 required：`I-007-001`（API/错误）、`I-007-002`（SQLite/迁移/seed/并发）、`I-007-003`（Schema action/状态/权限）、`I-007-004`（重启与端到端验收协议）。
+  3. 四项均须在各自首个受影响实施或验收动作前由证据关闭；当前只允许收集和方案冻结，不放行受影响产品代码。
+- **理由**：D-010 已验证 Root 层方向，足以立项；精确契约仍是子目标实施门禁。单一端到端目标保留业务生命周期的完整验收边界，required 信息项则防止强耦合范围被隐式实现决定。
+- **影响**：R4 子目标立项完成，但 Root R4 检查点仍未完成；Root 保持 `active / 3/5`，不产生实现或验收主张。
+
+### 未选方案
+
+- **把四项信息分别建成四个目标**：当前收集工作没有独立交付价值，且会把同一 CRUD 生命周期机械切碎。
+- **立项后立即实施**：四项 required 尚未关闭，会越过 D-010 明示的实施前门禁。
