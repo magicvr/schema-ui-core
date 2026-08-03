@@ -5,7 +5,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-001-production-admin-foundation
-version: 0.6.0
+version: 0.7.0
 progress: 3/5
 ---
 
@@ -25,7 +25,7 @@ progress: 3/5
 - [ ] **S4 · 语义化双实体验证**：子目标 `GOAL-011-s4-semantic-admin-resources` 完成；`users` 替换 records 默认代表实体、`roles` 作为第二个语义资源，二者在后端资源注册完成后仅通过修改前端 Schema 接入列表/CRUD 页面（不修改 Renderer 主路径）；records 从当前产品默认运行面按版本化兼容策略退场。
 - [ ] **S5 · 回归、审计与关闭**：全量回归（api + web + build）+ 阶段/关门审计；Root A-002 F-002-001 关闭证据经 `/audit` finding-closure（或 self + 独立复核）确认后按 `fixed` 闭合。
 
-阶段子目标：`GOAL-011-s4-semantic-admin-resources`（active / 5/5；A-012 required findings 仍 open，当前 fail-closed）承载 S4 的语义资源、records 退场与双实体验证；其原 S1～S5 检查点事实只用于评估本目标 S4，不自动勾选本目标 S4 或关闭 Root finding。
+阶段子目标：`GOAL-011-s4-semantic-admin-resources`（done / 5/5；A-012 F-001～F-005 经 A-013/D-007 fixed，F-006 recommended/open/non-blocking）承载 S4 的语义资源、records 退场与双实体验证；子目标完成事实只用于评估本目标 S4，不自动勾选本目标 S4、推进本目标 progress 或关闭 Root finding。
 
 ## 派生进度
 

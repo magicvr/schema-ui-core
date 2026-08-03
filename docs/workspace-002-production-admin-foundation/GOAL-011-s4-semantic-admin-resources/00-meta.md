@@ -1,11 +1,11 @@
 ---
 id: GOAL-011-s4-semantic-admin-resources
 title: S4 · 语义化 Admin 资源替换与双实体验证
-status: active
+status: done
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.10.0
+version: 0.11.0
 progress: 5/5
 ---
 
@@ -19,7 +19,7 @@ progress: 5/5
 
 ## 路线图 / 成功标准
 
-五个检查点默认等权、原则上串行（P-001）。原 S1～S5 实施事实均已完成；A-012 新增 required finding 后，本目标按 P-003 fail closed 恢复为 **`active / 5/5`**，等待整改与复审：
+五个检查点默认等权、原则上串行（P-001）。原 S1～S5 实施事实均已完成；A-012 新增 required finding 后，本目标曾按 P-003 fail closed 恢复为 `active / 5/5`。D-006 选择五项全部走 fixed，候选提交 `fb5cd06` 完成整改与验收，A-013（independent · finding-closure · pass）逐项确认 F-001～F-005 fixed、无新增 required；D-007 据此恢复 **`done / 5/5`**：
 
 - [x] **S1 · 语义资源与退场契约冻结**：关闭 `I-011-001`/`I-011-002`，冻结 users/roles 的最小领域边界、安全不变量，以及 records API/表/权限/菜单/操作日志/测试的版本化退场与既有数据库迁移策略。
 - [x] **S2 · users/roles 后端资源闭环**：在通用资源工厂之上实现 users 与 roles 的持久化 list/search/detail/create/update/delete、字段校验、敏感字段隔离、关系/系统角色保护、稳定错误 envelope 与 401/403 负向路径。
@@ -31,11 +31,11 @@ progress: 5/5
 
 `progress` 由 S1～S5 五个检查点等权派生；当前为 `5/5`。检查点不替代审计、信息门禁或关门结论。
 
-## A-012 关门门禁
+## A-012 finding closure
 
-A-012（independent · fail）新增 F-001～F-005 五条 required finding，当前均为 `open`；F-006 为 `recommended / open`。用户已在 D-006 书面裁决五项全部走 `fixed`，并为 F-003 选择补齐角色授权/grant 管理路径。候选实现与本地回归收据已记录在 `02-execution`，但限定范围 finding-closure 独立复审尚未落盘，因此五项仍不得标记 `fixed`，目标仍不得恢复 `done`。
+A-012（independent · fail）新增的 F-001～F-005 五条 required finding 已按 D-006 / I-011-004 v0.1.0 完成实现与验证，并由 A-013（independent · pass）逐项确认 **fixed**；当前无开放 required。F-006 保持 `recommended / open / non-blocking`，不因关门被静默关闭。
 
-`progress: 5/5` 仅表示原五个显式检查点已完成，不表示 A-012 finding 已闭合。D-006 已确定闭合路径为 `fixed`；当前实现证据是待复审候选，F-001～F-005 在独立复审前仍保持 `open`。
+`progress: 5/5` 仍只由原五个显式检查点派生；finding closure 另由候选提交 `fb5cd06`、执行收据、A-013 与 D-007 建立，不由 progress 推导。远端 GitHub-hosted Actions 尚未触发；本目标只主张已记录的本地 Windows/Go/Node/Chromium/Linux-container 证据，不冒充远端 CI acceptance。
 
 ## 信息需求与阶段门禁
 
@@ -46,7 +46,7 @@ A-012（independent · fail）新增 F-001～F-005 五条 required finding，当
 | `I-011-003` | 双资源验收如何证明“前端 Schema-only 接入”以及 fresh fork/升级/重启/401/403 的完整边界？ | required | S4 集成验收与 S5 关门 | S4 首个验收实现前 | 冻结 users/roles 两套验收矩阵、Renderer diff 边界、数据库升级夹具与 E2E/restart 协议 | **verified** | 不延期；D-004 已冻结，S4 执行时按矩阵复核 | [I-011-003-acceptance-matrix.md](attachments/I-011-003-acceptance-matrix.md) **v0.2.0** + D-004；A-007 F-001～F-003 均 `fixed`，基线提交、双资源页面级证据与后端完整断言已补齐 |
 | `I-011-004` | A-012 F-003 的产品边界如何裁决：保留 seed-only 最小 IAM 并移除/隐藏无有效 grant 语义的 roles 管理面，还是补齐用户角色分配、可验证 grant 来源与 roles 管理流程？ | required | A-012 整改方案冻结与重新关门 | F-003 首个产品代码变更前；最晚重新关门前 | 用户按 P-004 选择边界；冻结授权委派、密码、grant、records 洁净度与最后管理员原子性的版本化整改契约/验收矩阵 | **verified** | 不延期；D-006 已冻结；实施与复审按契约逐项核对 | [I-011-004-a012-remediation-contract.md](attachments/I-011-004-a012-remediation-contract.md) **v0.1.0** + D-006；用户选择补齐角色授权/grant 管理路径，F-001～F-005 全部走 fixed |
 
-`I-011-001`～`I-011-003` 维持 `verified`，对应的历史 S1～S5 事实不回退。`I-011-004` 已由 D-006 置为 `verified`，只解除整改方案选择门禁；F-001～F-005 的实现、验证与复审门禁仍保持开放，也不回退原五项检查点进度。
+`I-011-001`～`I-011-004` 均维持 `verified`。I-011-004 的信息状态只表示整改边界已冻结；F-001～F-005 的实现与独立 closure 另由 `fb5cd06`、A-013 和 D-007 证明。当前无到期 required 信息项或开放 required finding；历史 S1～S5 事实不回退。
 
 ## 依赖与边界
 

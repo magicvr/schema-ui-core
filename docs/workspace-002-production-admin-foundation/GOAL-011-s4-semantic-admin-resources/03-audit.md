@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.12.0
+version: 0.13.0
 ---
 
 # 审计台账 · GOAL-011
@@ -24,7 +24,7 @@ version: 0.12.0
 | A-009 | self | 2026-08-03 | S4 双语义实体 Schema 接入验证（I-011-003 v0.2.0；S4 验收收据） | pass | 无 required；2 条 recommended |
 | A-010 | self | 2026-08-03 | S5 关门审计（GOAL-011 全目标 close-out） | pass | 无 required；F-001（grok 服务取消）为可复核待办 |
 | A-011 | independent | 2026-08-04 | S5 关门独立交叉审计（grok build 文本意见代贴） | conditional | 2 required（F-001/F-002）已 fixed；3 recommended handled（见响应节） |
-| A-012 | independent | 2026-08-04 | S5 关门独立代码审计（VP-002 users/roles 生产可用性 + records 残留） | fail | 5 required open；1 recommended open；D-005 已响应但未闭合 |
+| A-012 | independent | 2026-08-04 | S5 关门独立代码审计（VP-002 users/roles 生产可用性 + records 残留） | fail | 5 required 经 A-013/D-007 fixed；F-006 recommended open/non-blocking |
 | A-013 | independent | 2026-08-04 | A-012 F-001～F-005 finding-closure 复审（I-011-004 v0.1.0；`fb5cd06`） | pass | 5 条 required 均确认 fixed；无新增 required；F-006 不在 scope |
 
 ## 当前审计边界
@@ -34,7 +34,7 @@ version: 0.12.0
 - A-003 / A-004 对 S2 同向 **pass**；A-005 / A-006 对 S3 同向 **pass**；本 scope 无开放 required；recommended 见 A-003/A-004 响应节、A-005 F-001～F-003 与 A-006 F-001～F-004（随 S4/S5 或文档清理落实）。
 - A-007 的 F-001～F-003 经用户裁决全部 `fixed`（见响应节），`I-011-003` 信息门禁已解除；该响应不是同范围自审，也不构成 S4 阶段通过或 progress 推进。
 - A-009 对 S4 给出 **pass**（验收收据 + Renderer 零 diff + 全维度证据）；S4 无开放 required，可进入 S5。三个 required 信息项（I-011-001/002/003）均已 verified。
-- A-012 在既有文档/契约闭合之外进行代码与流水线复核，发现 5 条新的 required。用户经 D-006 书面选择五项均走 `fixed`，并为 F-003 选择补齐角色授权/grant 管理路径；候选提交 `fb5cd06` 完成实施与本地验收。A-013 finding-closure 已逐项确认 F-001～F-005 为 `fixed`、无新增 required；F-006 保持 recommended/non-blocking。独立意见不修改状态，GOAL-011 仍待 `/govern` 汇总响应与关门投影。
+- A-012 在既有文档/契约闭合之外进行代码与流水线复核，发现 5 条新的 required。用户经 D-006 书面选择五项均走 `fixed`，并为 F-003 选择补齐角色授权/grant 管理路径；候选提交 `fb5cd06` 完成实施与本地验收。A-013 finding-closure 已逐项确认 F-001～F-005 为 `fixed`、无新增 required；D-007 采纳该意见并恢复 GOAL-011 `done / 5/5`。F-006 保持 recommended/open/non-blocking；GOAL-010、Root、VP-002 状态/进度不变。
 - GOAL-010 与 Root A-002 的既有独立意见不复制到本台账。
 
 ## A-001 · S1 契约冻结自审（2026-08-03）
@@ -1078,3 +1078,30 @@ A-012 的 `fail` 仍是发现当时的历史意见；本次独立复审确认其
 ### 声明
 
 本意见只写 GOAL-011 `03-audit.md`，未修改 `00-meta.md`、`01-decision.md`、`02-execution.md`、goal-tree、契约、产品代码或任何 Goal status/progress。
+
+## 响应 A-013（self · 编排响应 · 2026-08-04 · GOAL-011 D-007）
+
+- **响应性质**：这是 `/govern` 对 A-013 的意见采纳、A-012 finding closure 汇总与状态投影，不是新增 self audit，不产生新的 A 编号或 verdict。
+- **采纳结论**：A-013（independent · pass）限定复审 A-012 F-001～F-005，逐项确认 `fixed` 且无新增 required；D-007 采纳该结论。
+
+### 关闭状态表
+
+| Finding | 级别 | 最终状态 | 关闭依据 |
+|---------|------|----------|----------|
+| A-012 F-001 · 角色委派越权 | high · required | **fixed** | `roles.assign` + admin 委派保护 + actor 权限子集；API/Web 正负向回归；A-013 逐项确认 |
+| A-012 F-002 · 密码与会话生命周期 | high · required | **fixed** | password control/raw bytes/8～72-byte 校验 + 改密事务内撤销 refresh + access-token TTL 边界回归；A-013 逐项确认 |
+| A-012 F-003 · users/roles 授权语义 | medium · required | **fixed** | 用户角色分配、custom role permission/menu grants、有效投影、system/in-use 行禁用与真实浏览器路径；A-013 逐项确认 |
+| A-012 F-004 · records 活动面残留 | high · required | **fixed** | users CI/smoke/persistence、资源中性 Web transport、scoped residue gate、build/Compose/smoke 收据；A-013 逐项确认 |
+| A-012 F-005 · 最后管理员事务竞态 | medium · required | **fixed** | DeleteUser 单事务读取/判断/删除/RowsAffected + 双 admin 并发回归；A-013 逐项确认 |
+| A-012 F-006 · legacy roles JSON 双写 | low · recommended | **open · non-blocking** | 不在 A-013 required closure scope；保留为后续迁移/运行手册建议 |
+
+### 趋同与投影
+
+- A-010（self · pass）、A-011（independent · conditional，经既有 required fixed 后趋同）、A-012（independent · fail）现经 D-006 选择、`fb5cd06` 实施、A-013 pass 与 D-007 响应，在 required 层面趋同；当前无开放 required finding。
+- GOAL-011 从 `active / 5/5` 恢复为 **`done / 5/5`**。这由 finding closure 与关门响应成立，不由 progress 自动推导。
+- GitHub-hosted Actions 尚未运行，未被写成远端 CI acceptance；本地 Linux Compose/Chromium/Go/Node 证据边界保持可追溯。
+- GOAL-010 仍为 `active / 3/5`，S4/S5 不自动勾选；Root A-002 F-002-001、Root 与 VP-002 状态/进度均不在本响应关闭。
+
+### 响应结论
+
+A-012 F-001～F-005 已按用户指定的 `fixed` 路径合法闭合，A-013 限定复审门禁已通过；GOAL-011 具备并执行重新关门。F-006 保持 recommended/open/non-blocking，不阻断本次 close-out。

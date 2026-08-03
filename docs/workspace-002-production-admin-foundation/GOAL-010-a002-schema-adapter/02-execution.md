@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-010
@@ -74,3 +74,9 @@ version: 0.4.0
 - GOAL-011 已记录原 S1～S5 检查点 `5/5`，但 A-012（independent · fail）新增 F-001～F-005 required/open，F-006 recommended/open；`/govern` 已将其状态恢复为 `active`，并登记 `I-011-004` 等待 F-003 产品边界裁决。
 - 本交接只同步当前子目标状态，不把子目标 `5/5` 当作父级 S4 通过证据；GOAL-010 维持 `active / 3/5`，S4/S5 不勾选，Root A-002 F-002-001 不变。此前 S1～S4 交接段保留为当时事实。
 - **计划（非事实）**：待用户裁决、整改实施、回归收据和限定范围 finding-closure 复审完成后，再按 D-004 重新评估 GOAL-010 S4 验收门。
+
+## 2026-08-04 · GOAL-011 A-013 closure 交接（子目标关门，父级状态不变）
+
+- GOAL-011 已按 D-006 / I-011-004 v0.1.0 完成 A-012 F-001～F-005 整改；候选提交 `fb5cd06` 与完整本地回归/Compose 收据已落盘，A-013（independent · finding-closure · pass）逐项确认五项 `fixed`、无新增 required，D-007 据此恢复子目标 `done / 5/5`。
+- A-012 F-006 保持 `recommended / open / non-blocking`；GitHub-hosted Actions 未运行，子目标没有把本地 Linux Compose 收据写成远端 CI acceptance。
+- 本交接只同步子目标当前关闭事实。GOAL-010 仍为 **`active / 3/5`**，S4/S5 均不勾选；Root A-002 F-002-001、Root 与 VP-002 状态不变。是否采纳子目标证据勾选本目标 S4，须由 GOAL-010 后续 `/govern` 独立评估。

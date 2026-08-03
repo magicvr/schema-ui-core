@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-011
@@ -189,3 +189,10 @@ version: 0.3.0
 
 - **未冒充的证据**：尚未触发 GitHub-hosted Linux Actions；本地 Compose 使用 Linux images，但不等于远端 CI acceptance。
 - **门禁状态**：上述证据将作为限定 `/audit` 的候选输入。A-012 F-001～F-005 继续 `open`，GOAL-011 继续 `active / 5/5`，直至独立复审逐项确认且无新增 required。
+
+## 2026-08-04 · A-013 finding-closure 响应与重新关门（D-007）
+
+- `/audit` 已对候选提交 `fb5cd067156a39f0d879760961db2bac0d4266d0` 完成限定 finding-closure，形成 **A-013（independent · pass）**：A-012 F-001～F-005 逐项确认 `fixed`，无新增 required；F-006 明确保留为 recommended/open/non-blocking。
+- D-007 采纳 A-013。五项关闭证据由候选实现、本文件验证矩阵与 A-013 独立核对共同组成；A-012 原始 fail/open、D-005 恢复门禁、D-006 选择 fixed 路径均作为历史事实保留，不倒写。
+- **证据边界**：远端 GitHub-hosted Actions 未运行；本轮仅主张已记录的本地 Windows/Go/Node/Chromium/Linux-container 证据。该边界已在候选收据和 A-013 中分别声明。
+- **治理投影**：GOAL-011 当前无开放 required finding或到期 required 信息项，恢复为 **`done / 5/5`**；同步 `00-meta`、`03-audit` 与 `goal-tree.md`。GOAL-010 仅追加子目标关闭交接，仍保持 `active / 3/5` 且 S4/S5 不勾选；Root A-002 F-002-001、Root 与 VP-002 状态不变。

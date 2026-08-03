@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策 · GOAL-011
@@ -120,3 +120,19 @@ version: 0.3.0
 - **未选方案**：seed-only 并移除 roles 管理面（用户明确未选）；对任一 finding 采用 residual/overruled（用户明确选择 fixed）；把 grant 路径扩大为完整 IAM（超出本目标，仍为非目标）。
 - **信息门禁**：`I-011-004` verified；F-001～F-005 实施/回归/复审门禁仍 open。GOAL-011 保持 `active / 5/5`，GOAL-010、Root 与 VP-002 状态不变。
 - **后续**：按 I-011-004 v0.1.0 实施 API/store/Schema/Renderer/CI 修复，形成 API/Web/build/E2E/并发与静态洁净度收据；随后请求只覆盖 A-012 F-001～F-005 的 `/audit` finding-closure 复审。
+
+## D-007 · 响应 A-013：确认 A-012 五项 fixed 并恢复关门
+
+- **日期**：2026-08-04
+- **状态**：accepted
+- **输入**：候选提交 `fb5cd067156a39f0d879760961db2bac0d4266d0` 已按 D-006 / I-011-004 v0.1.0 实施 A-012 F-001～F-005；A-013（independent · finding-closure · pass）限定复审五项，逐项确认 `fixed`，无新增 required。
+- **决定**：
+  1. 采纳 A-013 `pass`。A-012 F-001～F-005 由 `open` 按合法路径闭合为 **`fixed`**；A-012 原始 `fail` 保留为发现当时的历史意见，不改写。
+  2. F-006（legacy roles JSON 双写）继续为 `recommended / open / non-blocking`；不把可选后续卫生项提升为关门阻断，也不静默写成已处理。
+  3. GOAL-011 当前无开放 required finding、无到期 required 信息项；原 S1～S5 均已完成，故从 `active / 5/5` 恢复为 **`done / 5/5`**。
+  4. 同步 goal-tree 的树与状态表，并向 GOAL-010 追加新的子目标交接事实。GOAL-010 仍为 `active / 3/5`，S4/S5 不因子目标关门自动勾选；Root A-002 F-002-001、Root 与 VP-002 状态均不在本决策关闭。
+- **fixed 关闭证据**：实现提交 `fb5cd06`；`02-execution.md` 的 API/Web/build/E2E/并发/scoped residue/Linux Compose/disposable smoke/重启持久化矩阵；A-013 对权限委派、密码/refresh、grant 管理、records 活动面及最后管理员事务的逐项独立核对。
+- **证据边界**：GitHub-hosted Actions 尚未触发，不能写成远端 CI 已通过；I-011-004 要求不可用环境证据单列，并未把 hosted run 设为本次 finding fixed 的额外门禁。
+- **理由**：用户已明确选择五项 fixed，实施与本地验收可核对，限定独立复审无新增 required；P-003 的 finding closure 与重新关门条件均已满足，没有 residual/overruled 或继续 fail-closed 的依据。
+- **影响**：GOAL-011 `active → done`，progress 保持 `5/5`；F-001～F-005 fixed，F-006 recommended/open/non-blocking；父级及愿景层状态/进度不变。
+- **后续**：由 GOAL-010 的 `/govern` 流程独立评估其 S4 验收门与 S5 close-out，不以本次子目标关门替代父级审计或 Root finding closure。
