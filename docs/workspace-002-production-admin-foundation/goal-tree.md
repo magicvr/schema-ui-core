@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.47.0
+version: 0.48.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -25,7 +25,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-007-r4-schema-crud [done] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (6/6)
 ├── GOAL-008-r5-engineering-fork [done] R5 · 工程化、fork 体验与集成关门 (5/5)
 ├── GOAL-009-a002-auth-form-fixes [done] A-002 · 缺陷修复（表单提交门禁与认证失效）(4/4)
-└── GOAL-010-a002-schema-adapter [active] A-002 · Schema 驱动通用数据适配层 (0/5)
+└── GOAL-010-a002-schema-adapter [active] A-002 · Schema 驱动通用数据适配层 (1/5)
 ```
 
 ## 状态表
@@ -41,7 +41,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 | `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-03 |
 | `GOAL-009-a002-auth-form-fixes` | A-002 · 缺陷修复（表单提交门禁与认证失效） | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-03 |
-| `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `active` | `0/5` | 2026-08-03 |
+| `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `active` | `1/5` | 2026-08-03 |
 
 > **A-002 已响应、GOAL-009/010 已立项（2026-08-03）**：Root 收到 A-002（independent · fail · apps/api + apps/web product-fit）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）+ recommended F-002-004~006。用户按 P-004 裁决（Root D-014）：三条 required 走 `fixed`——F-002-002/003 → **`GOAL-009-a002-auth-form-fixes`（active 0/4，S1～S4）**；F-002-001 通用适配层改造 → **`GOAL-010-a002-schema-adapter`（active 0/5，S1～S5 + 实施前 required `I-010-001`/`I-010-002`）**；recommended → GOAL-009 可选加分；A-002 同 scope self 审计延后至修复后随关门补。Root A-002 F-002-001~003 保持 open；**Root 关门与 VP-002 关门在 required 全部合法闭合前保持阻断**；Root 保持 `active / 5/5`。
 
@@ -74,6 +74,8 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-009 A-002 已响应、F-001 已闭合（2026-08-03）**：A-002（independent · close-out · conditional）复核 S1～S3 成立、F-002-002/003 关闭证据充分；**F-001（required / medium）→ fixed**——Root 03-audit 正式意见索引已同步（F-002-002/003 `fixed`、F-002-001 `open`、recommended 非阻断），索引 ↔ 关闭证据表 ↔ 本树注记三处一致；**R-001（recommended / low）→ handled**（HEAD `5e08489` + 9 个未提交修改；不冒充 clean revision/CI，Root/VP-002 关门前须 commit）。GOAL-009 维持 **`done / 4/4`**（A-001 self pass 与 A-002 conditional 经 F-001 闭合后趋同，本 scope 无开放 required）。Root F-002-001 仍 open（GOAL-010 实施中）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
 
 > **GOAL-009 S5 已实施（2026-08-03 · 可选加分，用户裁决纳入）**：F-002-004（`LoginPage` seed 文案 `import.meta.env.DEV` 门控，dev 显/prod 隐 + 2 测试）、F-002-005（`config.ValidateProd` 非 development 强制 JWT secret ≥32 字符 + 字母数字混合，4 反例测试）、F-002-006（`store.Ping` + `GET /readyz` readiness（liveness + SQLite 检查，故障 503）+ compose healthcheck 切 `/readyz` + README 端点表，2 故障注入测试）。证据：web `vitest run` **466/466**、`tsc -b`/`vite build` 干净；api `go test ./...` 全绿 + `go vet` 干净。**S5 不进进度分母——GOAL-009 保持 `done / 4/4`**；Root A-002 recommended F-002-004~006 已实施（非 required 闭合）。F-002-001 仍 open（GOAL-010 实施中）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
+
+> **GOAL-010 S1 已实施（2026-08-03）**：**S1（资源契约与方案冻结）**——D-002 + [I-010-001 契约 v0.1.0](GOAL-010-a002-schema-adapter/attachments/I-010-001-schema-resource-contract.md)：`dataSource` 保持协议相对 URL（缺省 fail-closed）；统一 list envelope `{items,total,page,pageSize}` 跨资源、解除 `RecordItem` 五字段白名单；行键 `rowKey`；Go 资源注册表 + 通用 handler 工厂，records 注册 `/api/records` **零对外 API 变更**；错误 envelope 不新增字段；迁移策略一次泛化、无双轨。**`I-010-001`/`I-010-002` → verified（D-002）**，S1 方案冻结门禁解除，S2 实施放行。**S1 勾选，GOAL-010 进度 `0/5 → 1/5`**；S2（后端通用 CRUD + records 实例化）待实施；Root A-002 F-002-001 仍 `open`；Root 保持 `active / 5/5`，Root 与 VP-002 关门在 A-002 required 全部闭合前保持阻断。
 
 > **GOAL-009 A-003 已响应、R-002 已闭合（2026-08-03）**：A-003（independent · S5 事实复核 · pass）确认 F-002-004~006 实施成立；**R-002（recommended / low）→ fixed**——[I-008-001 工程契约](GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md) **v1.0.0 → v1.0.1**：§2/§3 探针语义同步 A-002 F-002-006（`/healthz` = liveness 不访问 DB；`/readyz` = readiness，SQLite `SELECT 1`，故障 503；Compose `service_healthy` 用 `/readyz`），C-001～C-007 保持 S1/S2 历史验收事实，新增 §8a 修订记录；GOAL-008 `00-meta` 信息表 `I-008-001` 行同步 v1.0.1（维持 `verified`）。GOAL-009 保持 **`done / 4/4`**、本 scope 无开放意见。Root F-002-001 仍 open（GOAL-010 实施中）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
 

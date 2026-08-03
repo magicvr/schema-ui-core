@@ -23,3 +23,23 @@ version: 0.1.0
 - **信息门禁**：`I-010-001` / `I-010-002` 为实施前 required，登记于 `00-meta`；在各自最晚阶段前由证据关闭，不得以本决策代替契约冻结。
 - **影响**：Root A-002 F-002-001 保持 `open`，直至本目标 S1～S5 完成并有 `/audit` 关闭证据后按 `fixed` 闭合。
 - **后续**：先收集并冻结 `I-010-001`（资源契约）与 `I-010-002`（迁移策略），再按路线图 S1 → S5 推进。
+
+## D-002 · 冻结通用资源契约（S1 · 关闭 I-010-001 / I-010-002）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**（P-004）：用户指令「实施 GOAL-010 S1」= 授权方案冻结；契约关键取舍随本决策留痕，后续如需修订走契约版本化（v0.1.x），不静默改写。
+- **决定**：采纳 [I-010-001 通用资源契约 v0.1.0](attachments/I-010-001-schema-resource-contract.md)：
+  1. **资源标识**：`dataSource` 保持协议相对 URL（写端点由 action 显式声明，不引入资源名映射层）；缺省 fail-closed（不再回落 `/api/records`）。
+  2. **字段模型/envelope**：统一 list envelope `{items,total,page,pageSize}` 跨资源冻结；`items` 为任意对象（解除五字段白名单）；行键 `rowKey`（默认 `id`）；`columns[].field` 仅为展示/排序目标。
+  3. **后端注册形态**：Go 资源注册表（id/path/listable/sortFields/qSearch/entity 接口/create·patch 字段/权限键派生）+ 通用 handler 工厂；records 注册到 `/api/records`，权限键 `records.read/write`，**对外 HTTP 契约与 I-007-001 逐项一致（零 API 变更）**。
+  4. **错误 envelope**：`{error,message}` 跨资源冻结，不新增字段；通用错误码全资源共享；NOT_FOUND = `{ID}_NOT_FOUND`（records 保持 `RECORD_NOT_FOUND`）。
+  5. **迁移策略（I-010-002）**：后端 records handler 收敛为注册实例（零对外变更）；前端 `RecordItem`/`RecordList` 固定解析一次性迁移为通用解析（`schema-table` 不再依赖固定形状、删除 URL 回落）；现有 fixture/emulator/测试形状保持；不做新旧双轨并行。
+- **理由**：与 D-001「通用适配层改造」路径一致；records 兼容路径保住既有验收证据（T-API-01～13、schema-crud.test.tsx）不被破坏，同时解除前端固定解析（A-002 证伪点）。
+- **未选方案**：
+  - **dataSource 改为资源名 + 前端注册表解析**：引入前端第二套资源映射，与后端注册表双真相；URL 形态现状零成本继承。
+  - **后端暴露 `/api/resources/{resource}` 统一前缀并迁移 `/api/records`**：破坏既有路径/fixture/测试，迁移面大且无收益（路径本身就是资源标识）。
+  - **items 仍强制五字段白名单**：等于维持 A-002 证伪点，不达目的。
+- **信息门禁**：`I-010-001` → **verified**（本契约 v0.1.0）；`I-010-002` → **verified**（§6 迁移策略随本决策冻结，最晚阶段 S3 提前关闭）。S1 方案冻结门禁解除，S2 实施可放行。
+- **影响**：Root A-002 F-002-001 仍 `open`（S1～S5 完成并审计后闭合）；不修改任何产品代码（S1 为文档冻结）。
+- **后续**：S2 后端通用资源 CRUD（注册表 + records 实例化）→ S3 前端泛化 → S4 新实体 `catalog` 验证 → S5 关门。

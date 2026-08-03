@@ -1,0 +1,98 @@
+---
+title: I-010-001 · Schema 驱动通用资源契约
+status: active
+doc_type: contract
+created: 2026-08-03
+updated: 2026-08-03
+parent: GOAL-010-a002-schema-adapter
+version: 0.1.0
+related_info: I-010-001, I-010-002
+related_decision: D-002
+---
+
+# I-010-001 · Schema 驱动通用资源契约（冻结）
+
+> **性质**：回答「通用资源契约的精确形状是什么」——把 A-002 F-002-001 的关闭路径（表格/表单 transport、字段模型与 response mapping 提升为 Schema 驱动的通用适配层，records 降为注册实例）固化为可实施、可验收的版本化契约。冻结后 `I-010-001` 由 GOAL-010 **D-002** 置为 `verified`，解除 S1 方案冻结与 S2 实施门禁；§6 迁移策略随本契约冻结 `I-010-002`（最晚需要阶段 S3 首个前端变更前，提前关闭）。
+> **不是**：S2～S5 的实施成品（handler/前端代码、新 fixture、回归证据属实施）；也不扩大 `I-PROTO-001 v0.1.3` 协议覆盖。
+> **依据**：Root A-002 F-002-001 原文与建议关闭路径；GOAL-010 D-001 用户裁决（通用适配层改造，不降级 VP-002 主张）；[I-007-001 记录 API 契约](../../GOAL-007-r4-schema-crud/attachments/I-007-001-api-error-contract.md) v0.2.0（records 权威契约）；[I-007-003 v0.2.2](../../GOAL-007-r4-schema-crud/attachments/I-007-003-schema-crud-interaction.md) §9（action/form 写路径）；当前 `schema-table.tsx` / `records.ts` / `records.go` / `fixtures/schema/*.json` 静态核对。
+
+## 1. 目的与范围
+
+- 目标：**新增业务页面只修改 Schema（fixture JSON），不修改前端 Renderer 主路径**（VP-002 成功标准 1/4/6）。
+- 范围：表格 list transport、表单/action 写 transport 的 response mapping、后端资源 CRUD 注册形态、错误 envelope 扩展边界。
+- 保持冻结（不重开）：I-007-001 的 records 五字段形状、`{items,total,page,pageSize}` envelope、`{error,message}` envelope、`records.read`/`records.write` 权限键、毫秒 `updatedAt`；I-007-003 §9 的 action 声明（submitAction/rowAction/`{id}` 槽绑定/confirm）。
+
+## 2. 资源标识（dataSource）
+
+- **契约**：`table.props.dataSource` 为**协议相对 URL 字符串**（如 `/api/records`、`/api/catalog`），即该资源的 list 端点；禁止改写为资源名/映射键。
+- **理由**：现状四个 fixture 均为 URL 形态；前端 transport 以 URL 直接 GET list；写端点由页面 action（`submitAction` / rowAction 的 `url`）显式声明（I-007-003 §9 已冻结），不引入第二套资源名解析层（避免双真相）。
+- 默认：`dataSource` 缺省时表节点**不渲染数据**（fail-closed，`No data source` 提示），不再静默回落 `/api/records`。
+
+## 3. 列表 envelope 与字段模型
+
+- **统一列表 envelope（跨资源冻结）**：`{ "items": [...], "total": number, "page": number, "pageSize": number }`。
+  - `items`：任意 JSON 对象数组；**不再**要求固定 `id/name/status/owner/updatedAt` 五字段白名单（解除 `RecordItem` 强制解析）。
+  - `total`/`page`/`pageSize`：数值，语义同 I-007-001（`pageSize` 上限 100 属后端资源契约，见 §4）。
+- **行键**：`table.props.rowKey`（string，默认 `"id"`）声明行唯一键，供表格 `rowKey` 与 recordView/预填选中；行对象整体透传给 action 构造器（`$row.*` 解析已有）。
+- **列模型**：沿用 `columns[].field/label/sortable`（现状）；`field` 仅声明展示与排序目标，不构成服务端字段白名单。`recordView` 直接用行对象条目渲染（现状）。
+- **搜索**：搜索表单 `q` 绑定 table query（现状）；后端资源声明是否支持 `q`（§4），前端不假设字段。
+
+## 4. 后端通用资源 CRUD 注册形态
+
+- **资源定义（注册表条目）**，Go 侧 `Resource` 结构：
+  | 字段 | 说明 |
+  |------|------|
+  | `id` | 小写资源 id（`records`、`catalog`…） |
+  | `path` | 挂载路径（records = `/api/records`） |
+  | `listable` | 是否暴露 list；`sortFields` 白名单（空 = 不可排序）、`qSearch` 布尔（是否支持 `q`） |
+  | `entity` | 通用 store 接口：`List(filter) / Get(id) / Create(body) / Update(id, body) / Delete(id)`（或等价泛型仓库签名） |
+  | `createFields` / `patchFields` | 必填 / 可编辑字段声明（trim 非空校验规则由实现复用） |
+  | `permissionRead` / `permissionWrite` | 权限键：默认派生 `{id}.read` / `{id}.write`；records 显式保持 `records.read` / `records.write` |
+- **通用 handler 工厂**：由资源定义生成 list/create/detail/update/delete 五路由，挂 `{path}` 与 `{path}/{id}`；统一 `requirePermission`、body 上限（4 KiB 保持）、`{error,message}` 写错误、`INTERNAL` 兜底。
+- **records 注册实例**：`records` 注册到 `/api/records`，`sortFields = [name,status,owner,updatedAt]`、`qSearch = true`、create/patch 字段 `name/status/owner`、权限键 `records.read/write`——**对外 HTTP 契约与 I-007-001 逐项一致（零 API 变更）**；实现从手写 handler 收敛为注册条目 + 通用工厂（内部行为不变）。
+- **新资源（S4 验证实体，示例 `catalog`）**：注册新条目 + 迁移/种子 + 权限键 `catalog.read`/`catalog.write` 注入种子 grants；fixture 的 `dataSource` 指向其路径。
+
+## 5. 错误 envelope 与错误码
+
+- **Envelope 冻结（全资源）**：`{ "error": "<STABLE_CODE>", "message": "<text>" }`；**不新增字段**。
+- **通用错误码（全资源共享）**：`UNAUTHENTICATED`(401)、`FORBIDDEN`(403)、`INVALID_SORT_FIELD`/`INVALID_SORT_ORDER`/`INVALID_PAGE`/`INVALID_PAGE_SIZE`(400)、`INVALID_CREATE_BODY`/`INVALID_CREATE_FIELD`(400)、`INVALID_PATCH_BODY`/`INVALID_PATCH_FIELD`(400)、`INTERNAL`(500)。
+- **资源特定**：NOT_FOUND 码 = `{ID}_NOT_FOUND`（records 保持 `RECORD_NOT_FOUND` 兼容；新资源如 `CATALOG_NOT_FOUND`）。前端 `readRecordApiError` 已按 envelope 泛读，无需改动。
+- **不引入**：`409`/业务唯一冲突、枚举校验码（与 I-007-001 一致）；resources 元数据发现端点（如 `/api/resources` 列表）为非目标（注册表是代码级，不暴露）。
+
+## 6. 迁移与兼容策略（I-010-002）
+
+- **后端**：records handler 收敛为注册实例；路由、权限键、envelope、错误码、毫秒 `updatedAt`、body 上限全部保持——**对外零 API 变更**；回归由现有 records_test / T-API-01～13 承担。
+- **前端**：`records.ts` 的 `RecordItem`/`RecordList` 固定解析迁移为通用 `ResourceItem = JsonRecord` + 统一 list 解析（envelope 不变）；`schema-table` 不再调用 `fetchRecords` 固定形状；`DEFAULT_RECORDS_URL` 回落逻辑删除（缺 `dataSource` fail-closed）。`readRecordApiError`/envelope 泛读保留。
+- **fixture / 测试**：现有 fixture `dataSource: "/api/records"` 全部保持有效；`schema-crud.test.tsx` emulator 形状（`{items,total,page,pageSize}` + `{error,message}`）不变；`records.test.ts` 迁为通用解析用例。
+- **双轨边界**：不提供「旧固定解析」并行层——一次性迁移 + 全量回归（S3）；迁移期间不新增业务 fixture。
+- **权限**：新资源必须在其门禁范围内完成种子 grants 注入与匿名 401 / 缺权限 403 测试（S4 必测）。
+
+## 7. 路线图范围映射
+
+| 检查点 | 本契约对应 |
+|--------|-----------|
+| S2 后端通用资源 CRUD | §4 注册表 + 通用工厂；records 实例化 |
+| S3 前端通用适配层 | §2/§3/§5/§6 前端泛化 |
+| S4 新实体验证 | §4 新资源条目 + fixture 接入 |
+| S5 回归、审计与关闭 | §6 兼容口径 + Root A-002 F-002-001 关闭证据 |
+
+## 8. 非目标
+
+- 协议层动态资源发现（`/api/resources` 元数据端点）、通用「任意表任意字段」泛 CRUD（无 schema 声明的自由写）——**不做**；资源必须显式注册。
+- 扩大 `I-PROTO-001 v0.1.3` 覆盖；批量 action/上传；乐观锁/软删除；多租户。
+- 不改变 I-007-003 §9 action 语义（`submitAction`/rowAction/`{id}` 槽绑定/confirm）。
+
+## 9. 证据索引
+
+- `apps/web/src/renderer/schema-table.tsx`（`schemaTableDataSource` 回落逻辑、`fetchRecords` 调用点——S3 改造对象）
+- `apps/web/src/renderer/records.ts`（`RecordItem`/`RecordList`/`parseRecordList`——S3 泛化对象）
+- `apps/api/internal/handler/records.go`（硬编码路由/实体——S2 收敛对象）
+- `apps/api/internal/handler/fixtures/schema/{list-edit-lifecycle,search-form-table,catalog,data-table}.json`（`dataSource` 现状）
+- [I-007-001 v0.2.0](../../GOAL-007-r4-schema-crud/attachments/I-007-001-api-error-contract.md)（records 权威契约；本契约 §4/§5 的兼容基线）
+- [I-007-003 v0.2.2](../../GOAL-007-r4-schema-crud/attachments/I-007-003-schema-crud-interaction.md) §9（action/写路径冻结）
+
+## 10. 修订记录
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| 0.1.0 | 2026-08-03 | 冻结（GOAL-010 D-002；关闭 `I-010-001`；§6 迁移策略一并冻结 `I-010-002`） |
