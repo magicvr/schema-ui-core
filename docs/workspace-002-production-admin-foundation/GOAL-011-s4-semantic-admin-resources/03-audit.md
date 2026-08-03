@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 审计台账 · GOAL-011
@@ -25,6 +25,7 @@ version: 0.11.0
 | A-010 | self | 2026-08-03 | S5 关门审计（GOAL-011 全目标 close-out） | pass | 无 required；F-001（grok 服务取消）为可复核待办 |
 | A-011 | independent | 2026-08-04 | S5 关门独立交叉审计（grok build 文本意见代贴） | conditional | 2 required（F-001/F-002）已 fixed；3 recommended handled（见响应节） |
 | A-012 | independent | 2026-08-04 | S5 关门独立代码审计（VP-002 users/roles 生产可用性 + records 残留） | fail | 5 required open；1 recommended open；D-005 已响应但未闭合 |
+| A-013 | independent | 2026-08-04 | A-012 F-001～F-005 finding-closure 复审（I-011-004 v0.1.0；`fb5cd06`） | pass | 5 条 required 均确认 fixed；无新增 required；F-006 不在 scope |
 
 ## 当前审计边界
 
@@ -33,7 +34,7 @@ version: 0.11.0
 - A-003 / A-004 对 S2 同向 **pass**；A-005 / A-006 对 S3 同向 **pass**；本 scope 无开放 required；recommended 见 A-003/A-004 响应节、A-005 F-001～F-003 与 A-006 F-001～F-004（随 S4/S5 或文档清理落实）。
 - A-007 的 F-001～F-003 经用户裁决全部 `fixed`（见响应节），`I-011-003` 信息门禁已解除；该响应不是同范围自审，也不构成 S4 阶段通过或 progress 推进。
 - A-009 对 S4 给出 **pass**（验收收据 + Renderer 零 diff + 全维度证据）；S4 无开放 required，可进入 S5。三个 required 信息项（I-011-001/002/003）均已 verified。
-- A-012 在既有文档/契约闭合之外进行代码与流水线复核，发现 5 条新的 required：用户写权限可越权分配 admin、改密不撤销 refresh 且密码输入不安全、users/roles Schema 不能完成实际角色语义、活动 CI 仍依赖退役 records、删除用户的最后管理员检查存在事务竞态。D-005 已完成第一轮 `/govern` 响应：五项仍 open、未选择 residual/overruled，GOAL-011 已 fail closed 恢复为 `active / 5/5`；A-010/A-011 与 A-012 的 close-out 冲突仍待用户裁决。
+- A-012 在既有文档/契约闭合之外进行代码与流水线复核，发现 5 条新的 required。用户经 D-006 书面选择五项均走 `fixed`，并为 F-003 选择补齐角色授权/grant 管理路径；候选提交 `fb5cd06` 完成实施与本地验收。A-013 finding-closure 已逐项确认 F-001～F-005 为 `fixed`、无新增 required；F-006 保持 recommended/non-blocking。独立意见不修改状态，GOAL-011 仍待 `/govern` 汇总响应与关门投影。
 - GOAL-010 与 Root A-002 的既有独立意见不复制到本台账。
 
 ## A-001 · S1 契约冻结自审（2026-08-03）
@@ -1038,3 +1039,42 @@ A-012 已被 `/govern` 正式认账并进入 fail-closed 整改门禁，但 **F-
 ### 下一步
 
 按 I-011-004 v0.1.0 逐块实施 F-001～F-005并记录验证收据；完成后请求仅覆盖 A-012 F-001～F-005 的 `/audit` finding-closure 复审。复审结论落盘前仍 fail closed。
+
+## A-013 · A-012 F-001～F-005 finding-closure 独立复审（2026-08-04）
+
+- **source**：independent
+- **auditor**：Codex（`/audit` finding-closure）
+- **类型 / scope**：finding-closure · 仅复审 A-012 F-001～F-005；依据 I-011-004 v0.1.0 与候选提交 `fb5cd067156a39f0d879760961db2bac0d4266d0`
+- **verdict**：pass
+
+### 范围与证据边界
+
+本意见先核对 workspace-002 的 Root/canonical/VP 绑定与 `shared_materials_catalog: none`，再复核 GOAL-011 五件套、A-012、D-006、I-011-004 和候选提交。复审严格限于五条 required 的 closure；A-012 F-006 明确不在 scope。
+
+候选提交为干净、可解析的 `fb5cd06`（36 files changed）。独立复审重跑 `go test ./...`、`go vet ./...` 与 Web `npm test -- --run`，结果分别为全包通过、无 vet 输出、23 files / 491 tests passed。`02-execution.md` 同一候选收据另记录 `npm run build`、Playwright 2/2、Linux Compose 空卷构建/健康启动、disposable smoke SM-001～SM-006 和 API 重启持久化均通过。本意见核对这些收据，但没有把它们写成 GitHub-hosted Actions 运行：远端 CI 尚未触发，故不主张 hosted CI acceptance；I-011-004 §7 要求不可用环境证据单列，并未把远端 run 设为本次 fixed 的额外门禁。
+
+### Finding closure
+
+| A-012 finding | 复审状态 | 独立核对证据 |
+|---------------|----------|--------------|
+| **F-001 · 角色委派越权** | **fixed** | `apps/api/internal/handler/users.go:101,150,233-253`：create/update 角色路径统一进入 `authorizeRoleAssignment`，要求 `roles.assign`、限制 admin 委派并校验目标有效权限为 actor 权限子集；`TestUsersRoleAssignmentAuthorization` 与 Web `users.write`-only 负向用例通过 |
+| **F-002 · 密码与会话生命周期** | **fixed** | `users.go:44,213-229`：password 走 raw string，校验 string、非全空白和 8～72 UTF-8 bytes，统一 `INVALID_PASSWORD`；`store/users.go:270-279`：改密事务内撤销全部 refresh tokens；`TestUsersPasswordPolicyPreservesBytesAndRevokesRefresh` 覆盖原字节登录、refresh 撤销与既有 access-token TTL 边界 |
+| **F-003 · 角色授权/grant 管理路径** | **fixed** | `handler/roles.go:48-59,88-151` 与 `store/roles.go:236-418`：custom role permissions/menuItems 校验、事务集合替换、有效投影及 assignedUsers/editable/deletable；Users 资料/角色/密码动作分离，Schema 行条件缺失或畸形时 fail closed；`TestRolesGrantLifecycleAndEffectiveProjection` 与浏览器 grant→分配→重新登录投影路径通过 |
+| **F-004 · records 活动面残留** | **fixed** | `.github/workflows/r6-basic-matrix.yml:37-49,107-128`：新增 scoped residue gate，smoke/persistence 改为真实 users seed 与 `/api/users`；`scripts/smoke.sh:34-35,189-231` 同步；Web transport 重命名为 `resource.ts`，scoped gate 无活动残留，build/Compose/smoke 收据通过；历史迁移、operation-log 值和协议 fixture 仍合法保留 |
+| **F-005 · 最后管理员事务竞态** | **fixed** | `store/users.go:303-365`：目标读取、self/admin 判断、admin 计数、refresh-token 删除、user 删除、RowsAffected 与 commit 全在同一事务；`TestDeleteUserSerializesLastAdminCheck` 断言双 admin 并发删除恰好一成一败且最终保留一名 admin，原 last-admin 回归继续通过 |
+
+### Findings
+
+无新增 required finding。A-012 F-006（legacy roles JSON 双写）保持 **recommended / open / non-blocking**，未被本复审扩入 required closure，也不因本次 pass 被静默关闭。
+
+### 与 A-012 的关系
+
+A-012 的 `fail` 仍是发现当时的历史意见；本次独立复审确认其 F-001～F-005 已按 D-006/I-011-004 的唯一选定路径完成可核对修正，可重核为 `fixed`。因此 A-012 与既有 close-out 意见在 required 层面已具备趋同条件。是否恢复 GOAL-011 `done / 5/5`、如何更新 goal-tree 及父级交接，仍归 `/govern` 响应，不由本意见直接投影。
+
+### 结论
+
+**pass**。A-012 F-001～F-005 均确认 `fixed`，无新增 required；限定 finding-closure 门禁已满足。远端 GitHub-hosted CI 未运行是明确证据边界，不被写成已通过，也不推翻同一候选提交上的代码、测试和本地 Linux Compose 收据。
+
+### 声明
+
+本意见只写 GOAL-011 `03-audit.md`，未修改 `00-meta.md`、`01-decision.md`、`02-execution.md`、goal-tree、契约、产品代码或任何 Goal status/progress。
