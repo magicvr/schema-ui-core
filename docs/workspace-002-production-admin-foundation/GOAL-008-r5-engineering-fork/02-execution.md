@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.10
+version: 0.1.11
 ---
 
 # 执行记录 · GOAL-008
@@ -127,3 +127,13 @@ version: 0.1.10
 - **CI run 证据**：推送 commit `a086872` 触发 `r6-basic-matrix` run（初始 run 成功，见 `03-audit` A-011 响应节最终证据）。
 - **未做**：未实施 S5；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 4/5`（S3/S4 检查点不因整改回退，验收有效性以 F-005～F-009 关闭证据为条件）。
 - **计划（非事实）**：落盘 A-011 响应节（含 F-009 最终 CI run 证据）；建议对 F-005～F-009 关闭证据做一次 `/audit` finding-closure 复审，再进入 S5。
+
+## 2026-08-03 · 响应 A-012（F-005 fixed：无项目编译缓存重做 S3 计时复现；R-012 handled）
+
+- **A-012（independent · finding-closure · fail）响应**：采纳 `fail` 中 **F-005（required/high）** 与 **R-012（recommended/low）**；F-006～F-009 关闭证据维持（A-012 确认）。用户书面指示按 **fixed** 路径重做，完成后请求仅针对 F-005 的关闭复审。落盘 `01-decision` **D-008**。
+- **禁用/隔离项目编译缓存（预 T0，排除项内）**：`docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f`（清理 21.52GB BuildKit 结果缓存；基础镜像保持本地）。`docker compose up` 无 `--no-cache` 直传，故采用协议可陈述、可复核的 rmi + prune 做法。
+- **重做 S3 计时复现 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)**：clean worktree（`git worktree add --detach` 于 `1961e5a`，预 T0 `git status --short` 为空）；计时起点 = `.env` 写入 + `docker compose up -d --build`（协议 §3.2，`.env` 写入在计时内）；**四终点全 PASS，64.833s ≤ 900s**（T0 `02:09:49.734Z` / monotonic `403981233142700` → T4 `02:10:54.565Z` / `404046066135300`）；BuildKit 归档输出（[r5-repro-003-run.txt](attachments/r5-repro-003-run.txt)）中 **`go build`（#29，DONE 12.8s）与 `npm run build`（#38，DONE 6.1s，真实 vite 构建输出）均实际执行，全程仅 1 条平凡 `CACHED`（`WORKDIR` 层）**——直接回应 A-012「编译层不得 CACHED」；截图 [r5-repro-003-endpoint4.png](attachments/r5-repro-003-endpoint4.png)（sha256 `89171fb1…809f8`，写于 worktree 外 gitignored 目录后归档）。
+- **R-012 → handled**：预 T0 与运行后 `git status --short` 分别留痕（均空）；单调计时原始读数逐终点落盘（node `process.hrtime.bigint()` ns）；截图产物 hash 与路径记录。
+- **失败/重试留痕（协议 §3.3，run log 内全记录）**：attempt #1——驱动脚本 PowerShell NativeCommandError（stderr 管道）中断，未测终点，复位后重试；attempt #2——T1/T4 窗口内 PASS 但 T2/T3 因 PowerShell 5.1 向 `curl.exe` 传内联 `-d` JSON 引号被吞、登录体未送达而失败（`login_http_ok=0`、`/me` UNAUTHENTICATED），对同一已构建栈以 `--data @file` 修正调用复验 `token_len=176` + `/me` 完整响应，按 §3.3 记为失败并复位重试；attempt #3——正式尝试单次通过。
+- **未做**：未改协议 v0.1.2 正文、未改 `scripts/smoke.sh`、未改产品代码、未重开 F-006～F-009；未实施 S5；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 4/5`。
+- **计划（非事实）**：同步 goal-tree；请求 `/audit` 仅针对 **F-005** 的 finding-closure 关闭复审；复审 pass 前不得推进 S5、勾选 Root R5 或关门。

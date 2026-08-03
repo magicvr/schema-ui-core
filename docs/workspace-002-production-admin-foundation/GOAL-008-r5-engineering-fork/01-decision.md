@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.6
+version: 0.1.7
 ---
 
 # 决策 · GOAL-008
@@ -138,3 +138,25 @@ version: 0.1.6
 - **F-005～F-009 走 accepted-residual / user-overruled**：用户书面裁决选择 fixed；计时/安全/CI 证据缺口属可修复项，无残余价值。
 - **仅修订协议不重写脚本**：退出码与隔离守卫不落实现，机器可判定性无法成立。
 - **保留任意 `SMOKE_RESTART_CMD` 仅加文档警告**：无法机器校验隔离，违反协议 fail-closed 安全边界。
+
+## D-008 · 响应 A-012：F-005 fixed——无项目编译缓存重做 S3 计时复现（R-012 handled）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：采纳 A-012（independent · finding-closure · fail）对 **F-005（required/high）** 的关闭证据要求，按 `fixed` 路径重做一次**禁用/隔离项目编译缓存**的 S3 计时复现：
+  - 预 T0（排除项内）执行 `docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f`，**整体禁用 BuildKit 结果缓存**；基础镜像保持本地（镜像拉取排除项）。
+  - 新记录 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)：clean worktree（`1961e5a`，detached clean）+ **预 T0 `git status --short` 空** + 四终点全 PASS + **`64.833s ≤ 900s`（单调原始读数 403981233142700→404046066135300）**；BuildKit 归档输出中 **`go build`（12.8s）与 `npm run build`（6.1s）均实际执行、全程仅 1 条平凡 `CACHED`**——不再存在 A-012 所指的「编译层 CACHED」。
+  - **R-012（recommended/low）→ handled**：预 T0 `git status --short` 与运行后状态分别留存；截图写于 worktree 外（`apps/web/test-results/`，gitignored）再归档并记录 sha256；单调计时工具原始读数（node `process.hrtime.bigint()` ns）逐终点落盘。
+- **依据**：A-012 F-005（required/high：`13.5s` 不能证明 build-included，须隔离/禁用编译缓存重做）与 R-012；I-008-002 协议 v0.1.2 §3.1（项目自身编译不得预先完成）/§3.2（`.env` 写入在计时内）/§3.3（失败留痕）。用户书面指示「按 fixed 重做一次禁用/隔离项目编译缓存的 S3 计时复现，再请求仅针对 F-005 的关闭复审」。
+- **边界**：
+  - 仅重做 S3 计时复现证据与关闭留痕；不重开 F-006～F-009（A-012 已确认其关闭证据可维持）；不改协议 v0.1.2 正文、不改 `scripts/`、不改产品代码。
+  - `I-008-002` 维持 `verified`（v0.1.2）；S3/S4 检查点维持勾选（`4/5`）；**未**推进 S5、未勾选 Root R5、未关门。
+- **影响**：`R5-S3-REPRO-002` 被取代为历史记录（A-012 判定其编译层 `CACHED` 证据不足）；`R5-S3-REPRO-003` 成为 F-005 的 S3 计时证据。run log 内含按 §3.3 留痕的两次失败尝试（attempt #1 驱动脚本 stderr 中断；attempt #2 PowerShell→curl `-d` 引号被吞、登录体未送达——均为 runner 工具链故障，非被测栈故障，修正后 attempt #3 通过）。
+- **后续**：落盘 A-012 响应节（03-audit）并同步 goal-tree；请求 `/audit` 仅针对 **F-005** 的 finding-closure 关闭复审；复审 pass 前不得推进 S5、勾选 Root R5 或关门。
+
+### 未选方案
+
+- **F-005 走 accepted-residual / user-overruled**：A-012 指明证据缺口属可修复项，且用户书面指示走 fixed；无残余价值。
+- **仅在 REPRO-002 上补注、不重跑**：无法提供「编译层非 CACHED」的可核对新证据，不满足 F-005 字面要求。
+- **用 `docker compose up --build` 加临时 BuildKit 环境变量绕过**：`docker compose up` 不支持 `--no-cache` 直传，且依赖未经协议冻结的私有机制；采用 `docker rmi` + `docker builder prune -a` 的协议可陈述、可复核做法。
+- **修改 Dockerfile 强制 `--no-cache`**：改变产品实现为证据服务，且影响 CI 构建行为，超出 fixed 最小范围。

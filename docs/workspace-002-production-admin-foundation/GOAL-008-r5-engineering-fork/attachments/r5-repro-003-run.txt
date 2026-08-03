@@ -1,0 +1,704 @@
+﻿=== R5-S3-REPRO-003 runner (official timed attempt) ===
+ref: 1961e5ae7e122d6263846f0ff673fbca074eb03f
+worktree: C:\Users\magicvr\AppData\Local\Temp\opencode\r5-repro-003 (detached clean checkout)
+pre-T0 git status --short: []
+pre docker ps: []
+pre volumes: [39c6eae25e3a92ce813be103718301d3be391e716ae6dfda2f05ccda5926f535
+b3ad90968004d2a10c81d3580fceac0d21c4c77cfe4e251c234c9ce9a6676f7e]
+T0=2026-08-03T02:03:50.406Z monotonic_raw=403621906018400 event= .env 鍐欏叆 + docker compose up -d --build (BuildKit result cache disabled pre-T0: docker rmi + docker builder prune -a; base images local => image fetch excluded per protocol s3.1; project compile layers execute fresh; dependency steps may re-execute inside window - conservative)
+prepared repo-root .env (gitignored, secret source: local .env, values not logged)
+--- docker compose up -d --build output (BuildKit, full) ---
+=== R5-S3-REPRO-003 runner (official timed attempt, retry #2) ===
+failed attempt #1 (recorded per protocol s3.3): runner script aborted at first docker call
+  (PowerShell NativeCommandError from docker stderr pipeline swallowed BuildKit output and stopped script
+  before endpoints; docker compose up -d --build had actually completed and containers became healthy).
+  Environment NOT modified by the fix: full teardown (down -v) + docker rmi + docker builder prune -a
+  executed before retry so the project compile executes fresh inside the new timed window.
+ref: 1961e5ae7e122d6263846f0ff673fbca074eb03f
+worktree: C:\Users\magicvr\AppData\Local\Temp\opencode\r5-repro-003 (detached clean checkout)
+pre-T0 git status --short: []
+pre docker ps: []
+pre volumes: [39c6eae25e3a92ce813be103718301d3be391e716ae6dfda2f05ccda5926f535
+b3ad90968004d2a10c81d3580fceac0d21c4c77cfe4e251c234c9ce9a6676f7e]
+T0=2026-08-03T02:06:06.665Z monotonic_raw=403758165422700 event= .env 鍐欏叆 + docker compose up -d --build (BuildKit result cache disabled pre-T0: docker rmi + docker builder prune -a; base images local => image fetch excluded per protocol s3.1; project compile layers execute fresh; dependency steps may re-execute inside window - conservative)
+prepared repo-root .env (gitignored, secret source: local .env, values not logged)
+--- docker compose up -d --build output (BuildKit, full) ---
+ Image schema-ui-core-api:local Building 
+ Image schema-ui-core-web:local Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.12kB 0.0s done
+#1 DONE 0.0s
+
+#2 [web internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.23kB done
+#2 DONE 0.1s
+
+#3 [api internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.59kB done
+#3 DONE 0.1s
+
+#4 [api] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#4 DONE 3.3s
+
+#5 [web] docker-image://docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89
+#5 resolve docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 0.0s done
+#5 sha256:1a998cca4d41cfecafb1989342c5e7378bc992589af7d47510c4b854bebfc7d7 1.33kB / 1.33kB done
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0B / 14.36MB 0.1s
+#5 sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 9.08kB / 9.08kB done
+#5 sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd 1.13kB / 1.13kB done
+#5 sha256:1a998cca4d41cfecafb1989342c5e7378bc992589af7d47510c4b854bebfc7d7 1.33kB / 1.33kB done
+#5 sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 9.08kB / 9.08kB done
+#5 sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd 1.13kB / 1.13kB done
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 1.05MB / 14.36MB 1.5s
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 2.10MB / 14.36MB 1.7s
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 4.19MB / 14.36MB 1.9s
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 6.29MB / 14.36MB 2.0s
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 8.39MB / 14.36MB 2.2s
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 11.53MB / 14.36MB 2.4s
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 13.63MB / 14.36MB 2.5s
+#5 extracting sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7
+#5 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 14.36MB / 14.36MB 2.6s done
+#5 extracting sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0.1s done
+#5 DONE 2.9s
+
+#6 [api internal] load metadata for docker.io/library/golang:1.26-alpine
+#6 DONE 0.0s
+
+#7 [web internal] load metadata for docker.io/library/node:22
+#7 ...
+
+#8 [api internal] load metadata for docker.io/library/alpine:3.20
+#8 DONE 3.3s
+
+#9 [api internal] load .dockerignore
+#9 transferring context: 172B done
+#9 DONE 0.1s
+
+#7 [web internal] load metadata for docker.io/library/node:22
+#7 DONE 3.3s
+
+#10 [web internal] load metadata for docker.io/library/nginx:1.27-alpine
+#10 DONE 3.4s
+
+#11 [api build 1/6] FROM docker.io/library/golang:1.26-alpine
+#11 DONE 0.0s
+
+#12 [api stage-1 1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#12 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.1s done
+#12 ...
+
+#13 [web internal] load .dockerignore
+#13 transferring context: 742B done
+#13 DONE 0.1s
+
+#14 [api internal] load build context
+#14 transferring context: 257.89kB 0.0s done
+#14 DONE 0.2s
+
+#12 [api stage-1 1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#12 sha256:c64c687cbea9300178b30c95835354e34c4e4febc4badfe27102879de0483b5e 1.02kB / 1.02kB done
+#12 sha256:bf8527eb54c3680e728d5b4b383a8ba730d72dae7236fbc8dff97ed6b224a731 612B / 612B done
+#12 sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 9.23kB / 9.23kB done
+#12 DONE 0.2s
+
+#15 [api build 2/6] WORKDIR /src
+#15 CACHED
+
+#16 [web internal] load build context
+#16 DONE 0.0s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 resolve docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed 0.1s done
+#17 ...
+
+#18 [api build 3/6] COPY go.mod go.sum ./
+#18 DONE 0.2s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 sha256:b6ca9eabea5fc816699178b5dd4842270e1c42f90739afc93bbcfdf91a13512e 2.49kB / 2.49kB done
+#17 sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed 5.15kB / 5.15kB done
+#17 sha256:9aa184189f478192a37d9f5e318aef6bb25690db294b0857c3ea798d76b1bbc7 6.77kB / 6.77kB done
+#17 ...
+
+#16 [web internal] load build context
+#16 transferring context: 943.43kB 0.1s done
+#16 DONE 0.3s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 0B / 58.55MB 0.3s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 0B / 211.63MB 0.3s
+#17 sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 0B / 3.32kB 0.3s
+#17 ...
+
+#19 [api stage-1 2/4] RUN addgroup -S app     && adduser -S -G app app     && mkdir -p /app/data     && chown -R app:app /app
+#19 DONE 0.6s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 ...
+
+#20 [api stage-1 3/4] WORKDIR /app
+#20 DONE 0.2s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 ...
+
+#21 [web stage-1 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+#21 resolve docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 0.2s done
+#21 sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 10.33kB / 10.33kB done
+#21 sha256:6769dc3a703c719c1d2756bda113659be28ae16cf0da58dd5fd823d6b9a050ea 10.79kB / 10.79kB done
+#21 sha256:62223d644fa234c3a1cc785ee14242ec47a77364226f1c811d2f669f96dc2ac8 2.50kB / 2.50kB done
+#21 DONE 0.9s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 ...
+
+#22 [web stage-1 2/3] COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+#22 DONE 0.1s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 3.32kB / 3.32kB 1.9s done
+#17 sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 0B / 1.25MB 1.9s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 13.63MB / 211.63MB 2.6s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 3.15MB / 58.55MB 3.2s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 27.26MB / 211.63MB 3.4s
+#17 sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 1.05MB / 1.25MB 3.4s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 8.39MB / 58.55MB 3.6s
+#17 sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 1.25MB / 1.25MB 3.5s done
+#17 sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae 0B / 448B 3.6s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 11.53MB / 58.55MB 3.8s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 14.68MB / 58.55MB 4.0s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 38.80MB / 211.63MB 4.0s
+#17 sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae 448B / 448B 4.0s done
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 17.83MB / 58.55MB 4.2s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 22.02MB / 58.55MB 4.4s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 26.21MB / 58.55MB 4.6s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 29.36MB / 58.55MB 4.8s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 32.51MB / 58.55MB 5.0s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 51.38MB / 211.63MB 5.0s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 35.65MB / 58.55MB 5.3s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 39.85MB / 58.55MB 5.6s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 42.99MB / 58.55MB 5.9s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 62.91MB / 211.63MB 6.1s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 46.14MB / 58.55MB 6.3s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 50.33MB / 58.55MB 6.8s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 54.53MB / 58.55MB 7.3s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 74.45MB / 211.63MB 7.5s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 58.55MB / 58.55MB 7.8s
+#17 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 58.55MB / 58.55MB 7.9s done
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 88.08MB / 211.63MB 8.8s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 99.61MB / 211.63MB 9.9s
+#17 ...
+
+#23 [api build 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download || go mod download
+#23 ...
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 111.15MB / 211.63MB 10.8s
+#17 ...
+
+#23 [api build 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download || go mod download
+#23 DONE 11.7s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 122.68MB / 211.63MB 11.5s
+#17 ...
+
+#24 [api build 5/6] COPY . .
+#24 DONE 0.1s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 137.36MB / 211.63MB 12.4s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 149.95MB / 211.63MB 13.1s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 163.58MB / 211.63MB 14.0s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 175.11MB / 211.63MB 14.5s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 187.70MB / 211.63MB 15.0s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 203.42MB / 211.63MB 16.1s
+#17 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 211.63MB / 211.63MB 16.8s done
+#17 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43
+#17 ...
+
+#25 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+#25 ...
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 5.0s
+#17 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 6.2s done
+#17 extracting sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 done
+#17 extracting sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6
+#17 ...
+
+#25 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+#25 DONE 13.3s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 ...
+
+#26 [api stage-1 4/4] COPY --from=build /out/schema-ui-core-api /app/schema-ui-core-api
+#26 DONE 0.1s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 extracting sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 2.1s done
+#17 ...
+
+#27 [api] exporting to image
+#27 exporting layers 0.1s done
+#27 writing image sha256:c4cd547b7c106659645ecd717f26bbe0e35604aaae0a04d6b31132a8820fe7ab done
+#27 naming to docker.io/library/schema-ui-core-api:local 0.0s done
+#27 DONE 0.2s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 extracting sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369
+#17 extracting sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 0.1s done
+#17 ...
+
+#28 [api] resolving provenance for metadata file
+#28 DONE 0.0s
+
+#17 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#17 extracting sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae done
+#17 DONE 26.3s
+
+#29 [web build 2/7] WORKDIR /app
+#29 DONE 0.1s
+
+#30 [web build 3/7] COPY apps/web/package.json apps/web/package-lock.json ./
+#30 DONE 0.1s
+
+#31 [web build 4/7] RUN --mount=type=cache,target=/root/.npm npm ci
+#31 2.212 npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+#31 7.268 
+#31 7.268 added 194 packages, and audited 195 packages in 7s
+#31 7.268 
+#31 7.268 40 packages are looking for funding
+#31 7.268   run `npm fund` for details
+#31 7.269 
+#31 7.269 found 0 vulnerabilities
+#31 7.270 npm notice
+#31 7.270 npm notice New major version of npm available! 10.9.8 -> 12.0.2
+#31 7.270 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#31 7.270 npm notice To update run: npm install -g npm@12.0.2
+#31 7.270 npm notice
+#31 DONE 7.7s
+
+#32 [web build 5/7] COPY apps/web .
+#32 DONE 0.1s
+
+#33 [web build 6/7] COPY docs/schemas /docs/schemas
+#33 DONE 0.1s
+
+#34 [web build 7/7] RUN --mount=type=cache,target=/root/.npm npm run build
+#34 0.438 
+#34 0.438 > schema-ui-core-web@0.1.0 build
+#34 0.438 > tsc -b && vite build
+#34 0.438 
+#34 3.344 vite v6.4.3 building for production...
+#34 3.402 transforming...
+#34 5.445 ✓ 1814 modules transformed.
+#34 5.637 rendering chunks...
+#34 5.646 computing gzip size...
+#34 5.659 dist/index.html                   0.42 kB │ gzip:   0.28 kB
+#34 5.659 dist/assets/index-Cgp8Vrw1.css   21.84 kB │ gzip:   4.83 kB
+#34 5.659 dist/assets/index-D616rCCj.js   455.61 kB │ gzip: 140.61 kB
+#34 5.660 ✓ built in 2.29s
+#34 DONE 5.7s
+
+#35 [web stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html
+#35 DONE 0.1s
+
+#36 [web] exporting to image
+#36 exporting layers 0.1s done
+#36 writing image sha256:d07eb26212085a8be355eb692faa798541e4671b32058b99cede285468ab7512 done
+#36 naming to docker.io/library/schema-ui-core-web:local 0.0s done
+#36 DONE 0.1s
+
+#37 [web] resolving provenance for metadata file
+#37 DONE 0.0s
+ Image schema-ui-core-api:local Built 
+ Image schema-ui-core-web:local Built 
+ Network schema-ui-core_default Creating 
+ Network schema-ui-core_default Created 
+ Volume schema-ui-core_db-data Creating 
+ Volume schema-ui-core_db-data Created 
+ Container schema-ui-core-api-1 Creating 
+ Container schema-ui-core-api-1 Created 
+ Container schema-ui-core-web-1 Creating 
+ Container schema-ui-core-web-1 Created 
+ Container schema-ui-core-api-1 Starting 
+ Container schema-ui-core-api-1 Started 
+ Container schema-ui-core-api-1 Waiting 
+ Container schema-ui-core-api-1 Healthy 
+ Container schema-ui-core-web-1 Starting 
+ Container schema-ui-core-web-1 Started 
+compose_up_exit=0
+T1=2026-08-03T02:07:04.301Z monotonic_raw=403815800573900 healthz_body={"status":"ok","timestamp":"2026-08-03T02:07:04.256476557Z","version":"0.1.0","commit":"unknown"}
+T2=2026-08-03T02:07:04.379Z monotonic_raw=403815879308100 login_http_ok=0 token_len=0 (body redacted)
+T3=2026-08-03T02:07:04.514Z monotonic_raw=403816015867600 me_raw={"error":"UNAUTHENTICATED","message":"no access token"}
+T4=2026-08-03T02:07:07.253Z monotonic_raw=403818754259400 endpoint4_rc=0 endpoint4_out=ENDPOINT4=PASS title=list-edit-lifecycle cell=Acme Console
+worktree git status after run (before teardown): []
+screenshot: C:\Users\magicvr\Documents\Code\schema-ui-core\apps\web\test-results\r5-repro-endpoint4.png sha256=89171fb1e43393d7714001dae30aa8732cd5514af85b23c03969d242289809f8 (copied out of worktree for archival)
+ Container schema-ui-core-web-1 Stopping 
+ Container schema-ui-core-web-1 Stopped 
+ Container schema-ui-core-web-1 Removing 
+ Container schema-ui-core-web-1 Removed 
+ Container schema-ui-core-api-1 Stopping 
+ Container schema-ui-core-api-1 Stopped 
+ Container schema-ui-core-api-1 Removing 
+ Container schema-ui-core-api-1 Removed 
+ Volume schema-ui-core_db-data Removing 
+ Network schema-ui-core_default Removing 
+ Volume schema-ui-core_db-data Removed 
+ Network schema-ui-core_default Removed 
+compose_down_v_exit=0
+worktree git status after teardown: []
+RESULT=PASS (timing computed from monotonic raw readings)
+=== R5-S3-REPRO-003 runner (official timed attempt, retry #3) ===
+failed attempt #1 (recorded per protocol s3.3): runner script aborted at first docker call
+  (PowerShell NativeCommandError from docker stderr pipeline swallowed BuildKit output and stopped script
+  before endpoints; docker compose up -d --build had actually completed and containers became healthy).
+  Environment NOT modified by the fix: full teardown (down -v) + docker rmi + docker builder prune -a
+  executed before retry so the project compile executes fresh inside the new timed window.
+failed attempt #2 (recorded per protocol s3.3): timed endpoints T1/T4 PASS in-window (browser login +
+  list load), but T2/T3 curl rows failed: PowerShell 5.1 native arg passing mangled the inline -d JSON
+  (login body never delivered -> login_http_ok=0, /me UNAUTHENTICATED). Runner tooling artifact, not a
+  product failure: post-hoc re-verification with --data @file against the SAME built stack returned
+  token_len=176 and full /me user+features. Per s3.3 endpoints must pass in-window, so this attempt is
+  recorded as failed and a fresh timed attempt follows.
+  Environment: full teardown (down -v) + docker rmi + docker builder prune -a before this retry.
+ref: 1961e5ae7e122d6263846f0ff673fbca074eb03f
+worktree: C:\Users\magicvr\AppData\Local\Temp\opencode\r5-repro-003 (detached clean checkout)
+pre-T0 git status --short: []
+pre docker ps: []
+pre volumes: [39c6eae25e3a92ce813be103718301d3be391e716ae6dfda2f05ccda5926f535
+b3ad90968004d2a10c81d3580fceac0d21c4c77cfe4e251c234c9ce9a6676f7e]
+T0=2026-08-03T02:09:49.734Z monotonic_raw=403981233142700 event= .env 鍐欏叆 + docker compose up -d --build (BuildKit result cache disabled pre-T0: docker rmi + docker builder prune -a; base images local => image fetch excluded per protocol s3.1; project compile layers execute fresh; dependency steps may re-execute inside window - conservative)
+prepared repo-root .env (gitignored, secret source: local .env, values not logged)
+--- docker compose up -d --build output (BuildKit, full) ---
+ Image schema-ui-core-api:local Building 
+ Image schema-ui-core-web:local Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.12kB 0.0s done
+#1 DONE 0.0s
+
+#2 [api internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.59kB done
+#2 DONE 0.1s
+
+#3 [web internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.23kB done
+#3 DONE 0.1s
+
+#4 [auth] docker/dockerfile:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [web] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#5 DONE 5.0s
+
+#6 [web] docker-image://docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89
+#6 resolve docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 0.0s done
+#6 sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 9.08kB / 9.08kB done
+#6 sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd 1.13kB / 1.13kB done
+#6 sha256:1a998cca4d41cfecafb1989342c5e7378bc992589af7d47510c4b854bebfc7d7 1.33kB / 1.33kB done
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0B / 14.36MB 0.1s
+#6 sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 9.08kB / 9.08kB done
+#6 sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd 1.13kB / 1.13kB done
+#6 sha256:1a998cca4d41cfecafb1989342c5e7378bc992589af7d47510c4b854bebfc7d7 1.33kB / 1.33kB done
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 1.05MB / 14.36MB 1.4s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 2.10MB / 14.36MB 1.6s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 3.15MB / 14.36MB 1.8s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 4.19MB / 14.36MB 1.9s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 7.34MB / 14.36MB 2.1s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 10.49MB / 14.36MB 2.3s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 13.63MB / 14.36MB 2.5s
+#6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 14.36MB / 14.36MB 2.6s done
+#6 extracting sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0.1s
+#6 extracting sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0.1s done
+#6 DONE 2.8s
+
+#7 [api internal] load metadata for docker.io/library/alpine:3.20
+#7 ...
+
+#8 [api internal] load metadata for docker.io/library/golang:1.26-alpine
+#8 DONE 0.0s
+
+#9 [auth] library/alpine:pull token for registry-1.docker.io
+#9 DONE 0.0s
+
+#10 [auth] library/node:pull token for registry-1.docker.io
+#10 DONE 0.0s
+
+#11 [auth] library/nginx:pull token for registry-1.docker.io
+#11 DONE 0.0s
+
+#12 [web internal] load metadata for docker.io/library/node:22
+#12 ...
+
+#7 [api internal] load metadata for docker.io/library/alpine:3.20
+#7 DONE 3.5s
+
+#13 [api internal] load .dockerignore
+#13 transferring context: 172B done
+#13 DONE 0.1s
+
+#12 [web internal] load metadata for docker.io/library/node:22
+#12 DONE 3.6s
+
+#14 [web internal] load metadata for docker.io/library/nginx:1.27-alpine
+#14 DONE 3.6s
+
+#15 [api build 1/6] FROM docker.io/library/golang:1.26-alpine
+#15 DONE 0.0s
+
+#16 [api stage-1 1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#16 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.1s done
+#16 sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 9.23kB / 9.23kB done
+#16 sha256:c64c687cbea9300178b30c95835354e34c4e4febc4badfe27102879de0483b5e 1.02kB / 1.02kB done
+#16 sha256:bf8527eb54c3680e728d5b4b383a8ba730d72dae7236fbc8dff97ed6b224a731 612B / 612B done
+#16 DONE 0.2s
+
+#17 [web internal] load .dockerignore
+#17 transferring context: 742B done
+#17 DONE 0.1s
+
+#18 [api internal] load build context
+#18 transferring context: 257.89kB 0.1s done
+#18 DONE 0.2s
+
+#19 [web internal] load build context
+#19 DONE 0.0s
+
+#20 [api build 2/6] WORKDIR /src
+#20 CACHED
+
+#21 [web stage-1 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+#21 resolve docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 0.1s done
+#21 ...
+
+#22 [api build 3/6] COPY go.mod go.sum ./
+#22 DONE 0.2s
+
+#21 [web stage-1 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+#21 sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 10.33kB / 10.33kB done
+#21 sha256:6769dc3a703c719c1d2756bda113659be28ae16cf0da58dd5fd823d6b9a050ea 10.79kB / 10.79kB done
+#21 sha256:62223d644fa234c3a1cc785ee14242ec47a77364226f1c811d2f669f96dc2ac8 2.50kB / 2.50kB done
+#21 ...
+
+#19 [web internal] load build context
+#19 transferring context: 943.43kB 0.2s done
+#19 DONE 0.3s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 resolve docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed 0.2s done
+#23 sha256:b6ca9eabea5fc816699178b5dd4842270e1c42f90739afc93bbcfdf91a13512e 2.49kB / 2.49kB done
+#23 sha256:9aa184189f478192a37d9f5e318aef6bb25690db294b0857c3ea798d76b1bbc7 6.77kB / 6.77kB done
+#23 sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed 5.15kB / 5.15kB done
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 0B / 58.55MB 0.3s
+#23 sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 0B / 3.32kB 0.3s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 0B / 211.63MB 0.3s
+#23 ...
+
+#24 [api stage-1 2/4] RUN addgroup -S app     && adduser -S -G app app     && mkdir -p /app/data     && chown -R app:app /app
+#24 DONE 0.7s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 ...
+
+#25 [api stage-1 3/4] WORKDIR /app
+#25 DONE 0.2s
+
+#21 [web stage-1 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+#21 DONE 0.9s
+
+#26 [web stage-1 2/3] COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+#26 DONE 0.1s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 3.15MB / 58.55MB 1.9s
+#23 sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 3.32kB / 3.32kB 1.9s done
+#23 sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 0B / 1.25MB 1.9s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 6.29MB / 58.55MB 2.2s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 10.49MB / 58.55MB 2.4s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 14.68MB / 58.55MB 2.7s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 20.97MB / 58.55MB 3.0s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 24.12MB / 58.55MB 3.2s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 29.36MB / 58.55MB 3.5s
+#23 sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 1.25MB / 1.25MB 3.6s done
+#23 sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae 0B / 448B 3.6s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 33.55MB / 58.55MB 3.9s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 11.53MB / 211.63MB 4.0s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 36.70MB / 58.55MB 4.2s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 40.89MB / 58.55MB 4.4s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 45.09MB / 58.55MB 4.7s
+#23 sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae 448B / 448B 4.6s done
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 49.28MB / 58.55MB 5.0s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 53.48MB / 58.55MB 5.2s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 25.17MB / 211.63MB 5.2s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 57.67MB / 58.55MB 5.7s
+#23 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 58.55MB / 58.55MB 6.1s done
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 38.80MB / 211.63MB 6.5s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 52.43MB / 211.63MB 7.3s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 65.01MB / 211.63MB 8.0s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 76.55MB / 211.63MB 8.7s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 88.08MB / 211.63MB 9.6s
+#23 ...
+
+#27 [api build 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download || go mod download
+#27 ...
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 99.61MB / 211.63MB 10.4s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 112.20MB / 211.63MB 11.2s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 123.73MB / 211.63MB 12.0s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 136.31MB / 211.63MB 12.7s
+#23 ...
+
+#27 [api build 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download || go mod download
+#27 DONE 12.9s
+
+#28 [api build 5/6] COPY . .
+#28 DONE 0.1s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 147.85MB / 211.63MB 13.7s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 159.38MB / 211.63MB 14.4s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 170.92MB / 211.63MB 15.1s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 182.45MB / 211.63MB 15.7s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 196.08MB / 211.63MB 16.5s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 207.62MB / 211.63MB 17.2s
+#23 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 211.63MB / 211.63MB 17.6s done
+#23 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43
+#23 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 5.1s
+#23 ...
+
+#29 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+#29 ...
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 6.4s done
+#23 extracting sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 done
+#23 extracting sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6
+#23 ...
+
+#29 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+#29 DONE 12.8s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 ...
+
+#30 [api stage-1 4/4] COPY --from=build /out/schema-ui-core-api /app/schema-ui-core-api
+#30 DONE 0.1s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 ...
+
+#31 [api] exporting to image
+#31 exporting layers 0.1s done
+#31 writing image sha256:2bd3989e0a723ed40f38898bfda6c8cde1acdb028c972d1778f2a8157734174c done
+#31 naming to docker.io/library/schema-ui-core-api:local 0.0s done
+#31 DONE 0.2s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 ...
+
+#32 [api] resolving provenance for metadata file
+#32 DONE 0.0s
+
+#23 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#23 extracting sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 2.2s done
+#23 extracting sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369
+#23 extracting sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 0.0s done
+#23 extracting sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae done
+#23 DONE 27.4s
+
+#33 [web build 2/7] WORKDIR /app
+#33 DONE 0.1s
+
+#34 [web build 3/7] COPY apps/web/package.json apps/web/package-lock.json ./
+#34 DONE 0.1s
+
+#35 [web build 4/7] RUN --mount=type=cache,target=/root/.npm npm ci
+#35 2.199 npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+#35 7.491 
+#35 7.491 added 194 packages, and audited 195 packages in 7s
+#35 7.491 
+#35 7.491 40 packages are looking for funding
+#35 7.491   run `npm fund` for details
+#35 7.492 
+#35 7.492 found 0 vulnerabilities
+#35 7.493 npm notice
+#35 7.493 npm notice New major version of npm available! 10.9.8 -> 12.0.2
+#35 7.493 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#35 7.493 npm notice To update run: npm install -g npm@12.0.2
+#35 7.493 npm notice
+#35 DONE 7.7s
+
+#36 [web build 5/7] COPY apps/web .
+#36 DONE 0.1s
+
+#37 [web build 6/7] COPY docs/schemas /docs/schemas
+#37 DONE 0.1s
+
+#38 [web build 7/7] RUN --mount=type=cache,target=/root/.npm npm run build
+#38 0.440 
+#38 0.440 > schema-ui-core-web@0.1.0 build
+#38 0.440 > tsc -b && vite build
+#38 0.440 
+#38 3.732 vite v6.4.3 building for production...
+#38 3.792 transforming...
+#38 5.838 ✓ 1814 modules transformed.
+#38 6.028 rendering chunks...
+#38 6.036 computing gzip size...
+#38 6.049 dist/index.html                   0.42 kB │ gzip:   0.28 kB
+#38 6.049 dist/assets/index-Cgp8Vrw1.css   21.84 kB │ gzip:   4.83 kB
+#38 6.050 dist/assets/index-D616rCCj.js   455.61 kB │ gzip: 140.61 kB
+#38 6.050 ✓ built in 2.29s
+#38 DONE 6.1s
+
+#39 [web stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html
+#39 DONE 0.1s
+
+#40 [web] exporting to image
+#40 exporting layers 0.1s done
+#40 writing image sha256:8d8e288f417d9dd5f17eb449c1e9662ea5ec3593c8147a5c0e7b3b4efa1180ef done
+#40 naming to docker.io/library/schema-ui-core-web:local 0.0s done
+#40 DONE 0.1s
+
+#41 [web] resolving provenance for metadata file
+#41 DONE 0.0s
+ Image schema-ui-core-api:local Built 
+ Image schema-ui-core-web:local Built 
+ Network schema-ui-core_default Creating 
+ Network schema-ui-core_default Created 
+ Volume schema-ui-core_db-data Creating 
+ Volume schema-ui-core_db-data Created 
+ Container schema-ui-core-api-1 Creating 
+ Container schema-ui-core-api-1 Created 
+ Container schema-ui-core-web-1 Creating 
+ Container schema-ui-core-web-1 Created 
+ Container schema-ui-core-api-1 Starting 
+ Container schema-ui-core-api-1 Started 
+ Container schema-ui-core-api-1 Waiting 
+ Container schema-ui-core-api-1 Healthy 
+ Container schema-ui-core-web-1 Starting 
+ Container schema-ui-core-web-1 Started 
+compose_up_exit=0
+T1=2026-08-03T02:10:51.279Z monotonic_raw=404042779240500 healthz_body={"status":"ok","timestamp":"2026-08-03T02:10:51.226377318Z","version":"0.1.0","commit":"unknown"}
+T2=2026-08-03T02:10:51.482Z monotonic_raw=404042981760800 login_http_ok=1 token_len=176 (body redacted)
+T3=2026-08-03T02:10:51.627Z monotonic_raw=404043127422900 me_raw={"user":{"id":"user-admin","name":"Admin","roles":["admin","editor"],"permissions":["records.read","records.write"]},"features":{"menu_list_edit_lifecycle":true}}
+T4=2026-08-03T02:10:54.565Z monotonic_raw=404046066135300 endpoint4_rc=0 endpoint4_out=ENDPOINT4=PASS title=list-edit-lifecycle cell=Acme Console
+worktree git status after run (before teardown): []
+screenshot: C:\Users\magicvr\Documents\Code\schema-ui-core\apps\web\test-results\r5-repro-endpoint4.png sha256=89171fb1e43393d7714001dae30aa8732cd5514af85b23c03969d242289809f8 (copied out of worktree for archival)
+ Container schema-ui-core-web-1 Stopping 
+ Container schema-ui-core-web-1 Stopped 
+ Container schema-ui-core-web-1 Removing 
+ Container schema-ui-core-web-1 Removed 
+ Container schema-ui-core-api-1 Stopping 
+ Container schema-ui-core-api-1 Stopped 
+ Container schema-ui-core-api-1 Removing 
+ Container schema-ui-core-api-1 Removed 
+ Volume schema-ui-core_db-data Removing 
+ Network schema-ui-core_default Removing 
+ Volume schema-ui-core_db-data Removed 
+ Network schema-ui-core_default Removed 
+compose_down_v_exit=0
+worktree git status after teardown: []
+RESULT=PASS (timing computed from monotonic raw readings)

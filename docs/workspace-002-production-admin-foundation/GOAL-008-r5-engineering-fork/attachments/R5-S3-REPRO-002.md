@@ -15,6 +15,8 @@ supersedes: R5-S3-REPRO-001
 
 # S3 · 独立复现记录 R5-S3-REPRO-002（clean-ref · 响应 A-011 F-005/F-006）
 
+> **取代注记（2026-08-03 · 响应 A-012 F-005）**：本记录不再作为 F-005 的 S3 计时证据。A-012（independent · finding-closure · fail）判定：本记录的 BuildKit 归档输出中 API `go build` 与 Web `npm run build` 均为 `CACHED`，未能证明项目编译在计时内实际执行，违反协议 §3.1「不得把项目自身的编译预先完成」。F-005 证据由 [R5-S3-REPRO-003](R5-S3-REPRO-003.md)（禁用 BuildKit 结果缓存、编译层实际执行、64.8s ≤ 900s）取代；本记录保留为历史。R-012 的 clean-source 叙述与 T4 后产物可追溯性修正已在 REPRO-003 落实（预 T0 `git status --short`、单调原始读数、产物 sha256、截图在 worktree 外归档）。
+
 ## attempt
 
 | 字段 | 值 |
