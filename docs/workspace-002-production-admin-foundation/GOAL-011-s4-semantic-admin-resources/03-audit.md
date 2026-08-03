@@ -2,9 +2,9 @@
 title: 审计台账 · 语义化 Admin 资源替换与双实体验证
 status: active
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.9.0
+version: 0.11.0
 ---
 
 # 审计台账 · GOAL-011
@@ -24,6 +24,7 @@ version: 0.9.0
 | A-009 | self | 2026-08-03 | S4 双语义实体 Schema 接入验证（I-011-003 v0.2.0；S4 验收收据） | pass | 无 required；2 条 recommended |
 | A-010 | self | 2026-08-03 | S5 关门审计（GOAL-011 全目标 close-out） | pass | 无 required；F-001（grok 服务取消）为可复核待办 |
 | A-011 | independent | 2026-08-04 | S5 关门独立交叉审计（grok build 文本意见代贴） | conditional | 2 required（F-001/F-002）已 fixed；3 recommended handled（见响应节） |
+| A-012 | independent | 2026-08-04 | S5 关门独立代码审计（VP-002 users/roles 生产可用性 + records 残留） | fail | 5 required open；1 recommended open；D-005 已响应但未闭合 |
 
 ## 当前审计边界
 
@@ -32,6 +33,7 @@ version: 0.9.0
 - A-003 / A-004 对 S2 同向 **pass**；A-005 / A-006 对 S3 同向 **pass**；本 scope 无开放 required；recommended 见 A-003/A-004 响应节、A-005 F-001～F-003 与 A-006 F-001～F-004（随 S4/S5 或文档清理落实）。
 - A-007 的 F-001～F-003 经用户裁决全部 `fixed`（见响应节），`I-011-003` 信息门禁已解除；该响应不是同范围自审，也不构成 S4 阶段通过或 progress 推进。
 - A-009 对 S4 给出 **pass**（验收收据 + Renderer 零 diff + 全维度证据）；S4 无开放 required，可进入 S5。三个 required 信息项（I-011-001/002/003）均已 verified。
+- A-012 在既有文档/契约闭合之外进行代码与流水线复核，发现 5 条新的 required：用户写权限可越权分配 admin、改密不撤销 refresh 且密码输入不安全、users/roles Schema 不能完成实际角色语义、活动 CI 仍依赖退役 records、删除用户的最后管理员检查存在事务竞态。D-005 已完成第一轮 `/govern` 响应：五项仍 open、未选择 residual/overruled，GOAL-011 已 fail closed 恢复为 `active / 5/5`；A-010/A-011 与 A-012 的 close-out 冲突仍待用户裁决。
 - GOAL-010 与 Root A-002 的既有独立意见不复制到本台账。
 
 ## A-001 · S1 契约冻结自审（2026-08-03）
@@ -910,3 +912,117 @@ A-011（independent · conditional）F-001/F-002（required）经 `fixed` 闭合
 ### 趋同说明
 
 A-010（self · pass）与 A-011（independent · conditional）经 F-001/F-002 修复后趋同：S5 无开放 required，可置 `done`。GOAL-011 置 `done / 5/5`，GOAL-010 据此可评估其 S4 勾选与 S5 关门；Root A-002 F-002-001 仍 open（GOAL-010 S5 关闭证据链）。
+
+## A-012 · GOAL-011 S5 关门独立代码审计（2026-08-04）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：close-out · 代码与流水线专项复核（VP-002 持久化 users/roles、真实鉴权/会话生命周期、Schema 管理面、records 退场洁净度）
+- **verdict**：fail
+
+### 范围与方法
+
+本意见复核当前 HEAD 1d86081 所代表的 GOAL-011 关门状态，先核对 workspace-002 的 workspace binding、VP-002/Charter 对齐、GOAL-011 五件套、I-011-001/002/003 和 A-001～A-011，再抽查实现与活动 CI。当前目标文档与 goal-tree 已写为 done / 5/5，工作区绑定有效，shared materials 为 none；这些状态本意见不修改。
+
+本次关注点是用户明确要求的“作为 VP-002 预期的生产可用 users/roles 设计和实现”以及 records 历史代码是否仍污染运行面。VP-002 允许初期不提供完整可视化 IAM，但要求持久化用户/角色/权限或菜单关系、可用超级管理员/基础角色、真实请求鉴权和可支撑业务使用的接口或种子机制；本意见没有把“完整 IAM”偷换成 GOAL-011 的必做范围，而是检查当前已暴露的管理接口和 Schema 是否自洽、安全、可用。
+
+### 已核对的正向事实
+
+- API 使用真实 JWT/opaque refresh、请求级身份和持久化 role-permission/menu 投影；匿名和 viewer 的 401/403 基线仍通过。
+- users/roles 资源的敏感字段隔离、角色存在性校验、system role 与 in-use 保护、seed 幂等和历史迁移测试均存在。
+- go test ./... -count=1、go vet ./...、npm test（23 files / 485 tests）、npm run build 均通过。
+- 浏览器 E2E 在本机默认 5173 受 listen EACCES 阻断；按仓库配置改用 WEB_PORT=9999 后 users CRUD 与 auth shell 两项均为 2/2 通过。现有 E2E 没有 roles 浏览器管理路径。
+
+这些正向事实不能抵销下列会影响生产授权、凭据生命周期、关门 CI 和 records 退场洁净度的开放 required findings。
+
+### Findings
+
+- **F-001 · users.write 可越权授予 admin（severity: high；建议: required；status: open）**
+  - **描述**：users 资源的所有写操作只经过 users.write 一把门；create/patch 的 roles 字段允许写入任意已存在 role key。UpdateUser 只检查 self demote 和最后管理员，不检查操作者是否拥有角色管理权限、目标角色的有效权限是否超过操作者，也不区分“编辑用户资料”和“分配角色”。
+  - **证据**：apps/api/internal/handler/users.go:28-40,88-105,112-132；apps/api/internal/store/users.go:220-247；通用工厂写门 apps/api/internal/handler/resources.go:385-430。权限投影实际来自 normalized role_permissions（apps/api/internal/store/store.go:253-278）。
+  - **独立复现**：在隔离 production 配置中创建 user-manager 角色，只给它 users.write（不含 roles.write），以该身份创建 roles: ["admin"] 的用户；请求返回 201，新用户以单字符密码即可登录并获得 admin 权限。该场景使用 VP-002 明确允许的 seed/持久化 grant 机制，不是伪造 Bearer token。
+  - **影响**：任何被委派为用户管理员的角色都能建立超级管理员，形成稳定的权限提升路径；roles.write 看似独立但实际上不能保护角色分配。
+  - **建议闭合**：拆出独立的 role-assignment 权限并在服务端校验；至少要求 actor 拥有 roles.write/受保护的 admin 能力，并禁止授予 actor 无权委派的有效权限集合。为“仅 users.write、无 roles.write”的身份补 create/patch 负向测试，覆盖不能创建/提升 admin。
+
+- **F-002 · 密码与会话生命周期不满足生产安全基线（severity: high；建议: required；status: open）**
+  - **描述**：users Schema 将密码字段声明为普通 input（apps/api/internal/handler/fixtures/schema/users.json:46-52），Renderer 的 input 分支渲染为 type="text"（apps/web/src/renderer/form-controls.tsx:283-303），输入密码在 UI 中明文可见。后端通用字符串解码会对密码 TrimSpace（apps/api/internal/handler/resources.go:303-322,346-370），并只要求非空，因此单字符密码被接受。PATCH 改写 bcrypt hash 后没有撤销该用户既有 refresh tokens（apps/api/internal/handler/users.go:118-124、apps/api/internal/store/users.go:253-269；token 清理只出现在删除路径 291-327）。
+  - **独立复现**：单字符 m 创建的用户登录成功；管理员改密后，用改密前取得的 refresh token 调用 /api/auth/refresh 仍返回新的 access/refresh pair。
+  - **影响**：管理页面暴露凭据；泄露的长期 refresh token 在改密后继续可用，无法把“改密”作为实际会话失效边界。VP-002 的真实认证标准明确包含 token 生命周期、失效与错误处理；本 finding 不要求一次性引入完整密码策略，但要求最小长度/边界、保留密码字节语义和可验证的会话撤销规则。
+  - **建议闭合**：使用 password control；密码字段不得走通用 trim；服务端设置明确的最小长度与长度上限并补负向测试；密码变更在同一事务撤销该用户所有 refresh tokens，并为 access-token 的剩余 TTL 或版本号语义写明边界和回归测试。
+
+- **F-003 · users/roles Schema 暴露的是不完整且误导性的角色管理（severity: medium；建议: required；status: open）**
+  - **描述**：Users 页面 create body 只映射 username/name/password，edit 只映射 name，因而不能从 Schema 页面分配已有角色或完成密码变更（apps/api/internal/handler/fixtures/schema/users.json:15-73）。Roles 页面只能创建/改名/删除 key/name（apps/api/internal/handler/fixtures/schema/roles.json:15-71）；自定义角色按实现永远没有 grants（apps/api/internal/store/roles.go:1-5），所以新建角色对任何授权都没有实际语义。系统角色的 edit/delete 行按钮也未按 system 行字段禁用：表格对每行无条件渲染 action（apps/web/src/renderer/schema-table.tsx:244-266），点击只会得到 409，而契约已明确指出前端可据 system 禁用（I-011-001 §3.0）。
+  - **边界判断**：I-011-001 §3.4 将完整 grant CRUD 列为非目标，VP-002 也允许用 seed-only 最小 IAM；问题不是强行要求完整 IAM，而是当前产品同时展示“可管理 roles”的页面，却不能把用户加入可用角色、不能表达自定义角色权限、还对不可变系统角色展示必失败操作。若坚持 seed-only，应收窄产品声明并隐藏/移除 inert custom-role 管理面；若保留该管理面，则必须补齐角色分配与有效 grant/菜单来源。
+  - **影响**：业务管理员无法通过实际页面完成最基本的用户授权配置；新增角色只是标签，且角色列表的系统行操作不具备可用 UX。现有 2/2 浏览器 E2E 只覆盖 users CRUD，不覆盖 roles 管理。
+  - **建议闭合**：选择并记录上述两条产品边界之一；推荐实现 users 角色分配、system/in-use 行级禁用和至少一个可验证的自定义角色授权/种子路径，并补真实浏览器 roles 流程及“无 grant 角色不能写入”的 API/UI 断言。
+
+- **F-004 · 活动 CI 与运行时代码仍依赖已退役 records（severity: high；建议: required；status: open）**
+  - **描述**：r6-basic-matrix.yml 仍在 dev/main push 和 PR 上运行；container smoke 传入已废弃的 SMOKE_RECORD_ID，并要求 seed total=8（.github/workflows/r6-basic-matrix.yml:91-96），而 scripts/smoke.sh:20-35 的文档写默认 1、实现却仍默认 8。fresh seed 只插入一个 admin 用户（apps/api/internal/store/store.go:124-138，RBAC seed 不新增用户）。更直接地，workflow 的 persistence step POST/GET /api/records（.github/workflows/r6-basic-matrix.yml:98-115），而当前注册表只挂 /api/users 和 /api/roles（apps/api/internal/handler/health.go:21-34）；隔离 API 复现该 POST 为 404。
+  - **运行时代码残留**：apps/web/src/renderer/records.ts 仍是被生产组件导入的模块，导出 fetchRecords、buildRecordsQuery、parseRecordList、readRecordApiError、RecordApiError 等历史命名（records.ts:5-12,28-50,99-176），schema-table.tsx 与 render.tsx 继续依赖它。API 工厂和 auth/store 注释仍把 records 当作首个/门禁语义；apps/api/internal/store/operations.go:14-32 还保留只供历史测试使用的 EventRecord 常量。它们不是可运行的 records 资源，却构成用户要求清除的无实际语义历史污染。
+  - **合法保留边界**：migrate.go 的 0003/0005/0006 迁移、operation_log 的历史 CHECK 值、迁移/升级测试和明确标注的历史文档可保留，用于既有数据库升级与审计链；不能据此保留活动 CI、生产模块名或默认运行依赖。
+  - **影响**：活动流水线在当前代码上必然访问不存在的 endpoint/错误种子基线，不能作为 GOAL-011 或 VP-002 的生产交付证据；records 语义残留还会继续诱发错误接入和后续维护误判。
+  - **建议闭合**：把 persistence smoke 改为 users/roles 的真实重启断言，修正 seed total/废弃环境变量；将通用 Web transport 重命名为 resource 语义并更新所有 imports/tests；移除无运行用途的 EventRecord 常量和过时注释。增加 scoped grep/CI check，明确只允许迁移历史、历史测试与已标注 fixture 命中 records。
+
+- **F-005 · 删除用户的最后管理员不具备完整事务原子性（severity: medium；建议: required；status: open）**
+  - **描述**：DeleteUser 先在事务外调用 GetUser（apps/api/internal/store/users.go:291-302），随后才 Begin，并在事务内依据事务外读取的 cur.Roles 决定是否执行最后管理员计数（users.go:304-317）。单连接只串行 SQL，不会把这两个高层操作合并为一个不可插入的临界区。
+  - **可复核交错**：目标用户初始为非 admin；删除路径读完后，另一写请求把目标提升为 admin，再把原 admin 降级；删除事务使用旧的非-admin 快照而跳过计数，最终可留下零个 admin 用户。这与契约 I-011-001 §2.4/§7 所要求的“在 store 事务内判定”不一致。
+  - **影响**：并发管理请求下失去最后管理员保护，锁死后续管理面；现有串行测试不能发现该竞态。
+  - **建议闭合**：把目标读取、自身检查、admin 计数和 DELETE 放入同一事务/锁定语义，检查受影响行数，并加入可控并发回归测试。
+
+- **F-006 · legacy roles JSON 双写继续扩大数据一致性面（severity: low；建议: recommended；status: open）**
+  - **描述**：users.roles JSON 与 normalized user_roles 同时写入并在每次读取时比较（apps/api/internal/store/store.go:203-227、apps/api/internal/store/users.go:258-284）。这是历史迁移兼容策略，不是本次 close-out 的单独阻断项，但它让角色语义拥有两个持久化写入面，且任何外部修复都可能触发 fail-closed mismatch。
+  - **建议**：在后续迁移中明确唯一权威来源并淘汰 legacy 列，或把双写/校验边界和修复工具作为正式运行手册与回归契约。
+
+### 必改项汇总
+
+| Finding | 严重度 | 状态 | 关门影响 |
+|---------|--------|------|----------|
+| **F-001** | high · required | open | 用户写权限可创建超级管理员，阻断生产授权模型 |
+| **F-002** | high · required | open | 密码可见、弱校验，改密后 refresh 仍有效，阻断凭据生命周期 |
+| **F-003** | medium · required | open | Schema 管理面不能完成实际角色语义，阻断“可支撑业务使用” |
+| **F-004** | high · required | open | 活动 CI/运行时代码仍依赖 records，阻断退场洁净度与交付证据 |
+| **F-005** | medium · required | open | 最后管理员保护存在竞态，阻断账户安全不变量 |
+
+### 与既有意见的关系
+
+A-010/A-011 主要复核 S5 文档事实链、历史 required closure 和既有回归收据；本意见新增了代码级授权组合、凭据生命周期、Schema 语义和活动 CI 的专项范围，且实际复现了既有测试未覆盖的路径。因此本意见不是把 A-011 已 fixed 的文档 finding 重新打开，而是对同一 close-out 的新增 independent evidence。按 P-003，新的 required finding 在合法 fixed、accepted-residual 或 user-overruled 之前仍阻断无条件关门。
+
+### 结论 + 建议给编排器/用户的下一步
+
+**verdict: fail**。当前 GOAL-011 虽在目标树中为 done / 5/5，但不满足用户要求的生产级 users/roles 设计复核，也不能证明 records 已从活动交付面洁净退场。建议 /govern 逐项响应 A-012 F-001～F-005，优先走 fixed：先修复授权边界、凭据/会话撤销、Schema 角色语义、CI/records 残留和最后管理员事务；完成后再进行一次限定范围独立复审。对于 F-003，如用户选择继续保持 seed-only 最小 IAM，必须在治理记录中明确收窄产品声明并移除误导性的 inert 管理面，不能把当前页面直接当作生产可用角色管理。
+
+本意见不修改 00-meta、01-decision、02-execution、goal-tree、代码或任何 Goal status/progress；状态推进、finding 响应和是否接受残余风险归 /govern 按 P-004/P-005 裁决。
+
+## 响应 A-012（self · 编排响应 · 2026-08-04 · GOAL-011 D-005）
+
+- **响应性质**：这是 `/govern` 对 A-012 的第一轮意见汇总、门禁恢复与待裁决登记，不是新增 self audit，不产生新的 A 编号或 verdict。
+- **工作区边界**：`workspace-002-production-admin-foundation` / Root `GOAL-001-production-admin-foundation` / canonical scope 已校验；primary plan 为 active VP-002；`shared_materials_catalog: none`，本响应未使用共享资料。
+- **冲突**：A-010（self · pass）与 A-011（independent · conditional，经 F-001/F-002 fixed 后趋同）支持原 close-out；A-012（independent · fail）对同一 close-out 新开五条 required。按 P-004.2，未裁决前不取乐观侧、不维持无条件关门。
+
+### 响应状态表
+
+| Finding | 级别 | 本轮状态 | 响应与证据边界 |
+|---------|------|----------|----------------|
+| A-012 F-001 · users.write 可越权授予 admin | high · required | **open** | 静态抽查确认 `usersResource` 只要求 `users.write`，roles 值只做存在性校验；尚无权限委派修复或负向回归 |
+| A-012 F-002 · 密码与会话生命周期 | high · required | **open** | 静态抽查确认普通 input、通用 trim 与改密不撤销 refresh；尚无密码控件/长度边界/同事务撤销或 access-token 边界收据 |
+| A-012 F-003 · users/roles 管理语义不完整 | medium · required | **open · 待 I-011-004 裁决** | 两条合法产品路径尚未选择：seed-only + 移除/隐藏 inert 管理面；或补齐角色分配、grant 来源与 roles 流程 |
+| A-012 F-004 · 活动 CI/生产专名仍依赖 records | high · required | **open** | 静态抽查确认 workflow `/api/records`、废弃 env/seed total 与生产 transport 专名；尚无 CI/grep/重启收据 |
+| A-012 F-005 · 最后管理员删除竞态 | medium · required | **open** | 静态抽查确认 `GetUser` 在事务外；尚无事务内读取/删除修复或可控并发回归 |
+| A-012 F-006 · legacy roles JSON 双写 | low · recommended | **open · non-blocking** | 后续迁移/运维契约建议；不得与 F-001～F-005 混成同一关门阻断 |
+
+### 冲突裁决与状态投影
+
+- 用户本轮明确要求“响应 A-012”，但尚未书面选择 `fixed`、`accepted-residual` 或 `user-overruled`。因此本响应只记录真实的 open 状态，不把沉默解释为 residual/overruled。
+- 编排器建议：F-001、F-002、F-004、F-005 走 `fixed`；F-003 先完成 `I-011-004` 产品边界裁决，再按所选边界走 `fixed`。不建议对 high security/CI findings 采用 residual。
+- 因五条 required 均未合法闭合，GOAL-011 从 `done` 恢复为 `active`。原 S1～S5 检查点事实保留，派生 progress 仍为 `5/5`；该数字不构成关门放行。
+- GOAL-010 保持 `active / 3/5`，Root 与 VP-002 保持 active；本响应不关闭父级/Root finding，也不创建跨区或愿景层状态。
+
+### 仍开放项与下一步
+
+1. 用户裁决 A-010/A-011 与 A-012 的 close-out 冲突：推荐采纳 A-012 的五条 required 并全部走 `fixed`。
+2. 用户裁决 `I-011-004`：推荐补齐用户角色分配、可验证 grant/seed 来源、system/in-use 行级禁用与 roles 浏览器路径；备选为明确保留 seed-only 并移除/隐藏无授权语义的 custom-role 管理面。
+3. 裁决落盘后，先冻结整改契约/验收矩阵，再实施并记录 API/Web/CI/E2E 事实；最后请求仅覆盖 A-012 F-001～F-005 的 `/audit` finding-closure 复审。
+
+### 响应结论
+
+A-012 已被 `/govern` 正式认账并进入 fail-closed 整改门禁，但 **F-001～F-005 仍全部 open**，A-010/A-011 与 A-012 尚未趋同。当前不具备重新关门条件。

@@ -2,9 +2,9 @@
 title: 执行记录 · 语义化 Admin 资源替换与双实体验证
 status: active
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-011
@@ -139,3 +139,17 @@ version: 0.2.0
 - **grok build 关门独立审计**：重试成功，产出 **A-011**（independent · conditional，文本态意见已代贴入 03-audit）——F-001（S5 执行事实未入 02-execution）、F-002（关门文档真相不一致）required → 本 S5 事实节 + meta/审计边界对齐后 `fixed`；F-003～F-005 recommended 随关闭或 handled。
 - **父级交接**：GOAL-010 `02-execution` 已落「GOAL-011 S4 证据交接」节（users/roles 替换、Renderer 零修改、records 退场、双资源验收收据）。
 - **治理投影**：S5 关门审计通过（A-010 + A-011 经 F-001/F-002 修复后趋同），**GOAL-011 置 `done`，progress `4/5 → 5/5`**；同步 `00-meta`（S5 勾选、status done、version 0.7.0）与 `goal-tree.md`（5/5 + done + 注记）；GOAL-010 据此可评估其 S4 勾选与 S5 关门；Root A-002 F-002-001 仍 open（GOAL-010 S5 关闭证据链）。
+
+## 2026-08-04 · A-012 编排响应与关门门禁恢复（D-005）
+
+- 核对 active Charter `schema-ui-core-admin-foundation@0.1.0`、VP-002 `active`、workspace-002 `delivery` / `primary_plan` / Root / canonical 绑定；`shared_materials_catalog: none`，本轮未使用共享资料，愿景与工作区链不构成响应阻断。
+- 汇总同一 close-out scope：A-010（self · pass）、A-011（independent · conditional，经 required fixed 后趋同）与 A-012（independent · fail）。A-012 新增 F-001～F-005 五条 required，当前均无合法闭合记录；P-004 冲突保持未决。
+- 本轮静态抽查确认 A-012 的主要代码/流水线落点仍存在：
+  - F-001：users 写门仅 `users.write`，create/patch 可携带任意已存在 role key，未校验 actor 的可委派权限；
+  - F-002：users fixture 密码字段仍为普通 `input`；通用字符串解码 trim 密码；改密事务未撤销 refresh token；
+  - F-003：users Schema 未提供角色分配/改密，roles Schema 只管理 key/name；自定义 role 无 grant 管理路径，system 行仍渲染必失败动作；
+  - F-004：活动 CI 仍调用 `/api/records` 并传 `SMOKE_RECORD_ID`/seed total 8；`smoke.sh` 注释默认 1、实现默认 8；通用 Web transport 与生产 imports 仍使用 records 专名；
+  - F-005：`DeleteUser` 在事务外读取用户/角色，随后才开启最后管理员检查与删除事务。
+- 新增 D-005 与 `I-011-004`；A-012 F-001～F-005 保持 `open`，F-006 保持 recommended。未修改 API/Web/CI/smoke 产品代码，未运行新的回归或复现命令，也未把 A-012 已有测试收据当作本轮修复证据。
+- **治理投影**：GOAL-011 `done → active`；原 S1～S5 检查点仍全部完成，派生 `progress` 保持 `5/5`。同步 `00-meta`、`03-audit` 响应节与 `goal-tree.md`；GOAL-010、Root、VP-002 状态/进度不变。
+- **计划（非事实）**：用户先裁决五项 finding 的闭合路径及 `I-011-004` 产品边界；推荐 F-001/F-002/F-004/F-005 走 fixed，F-003 选择明确边界后 fixed。实施完成后补 API/Web/CI/E2E 收据并请求限定范围独立复审。

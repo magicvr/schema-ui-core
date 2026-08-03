@@ -2,9 +2,9 @@
 title: 决策 · 语义化 Admin 资源替换与双实体验证
 status: active
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策 · GOAL-011
@@ -83,3 +83,24 @@ version: 0.2.0
 - **未选方案**：补同范围自审（用户明确跳过）；收窄为单资源/代表性路径（不足以支持 GOAL-011 双实体成功标准）；accepted-residual / user-overruled（没有必要保留已可直接修复的缺口）。
 - **影响**：A-007 F-001～F-003 均 `fixed`，`I-011-003` 信息门禁解除；GOAL-011 仍为 `active / 3/5`，S4/S5 均未勾选；GOAL-010、Root A-002 F-002-001 与 VP-002 状态均不变。本次未触发 status/progress/parent 变更，`goal-tree.md` 无需状态投影更新。
 - **后续**：按 I-011-003 v0.2.0 执行 S4 完整验收并形成收据；阶段审视通过且无开放 required 后，才可勾选 S4 并同步 goal-tree。
+
+## D-005 · 响应 A-012：恢复关门门禁并保留五项必改为 open
+
+- **日期**：2026-08-04
+- **状态**：accepted
+- **用户指令边界**：用户明确调用 `/govern` 响应 A-012；该指令授权本轮完成意见汇总、fail-closed 状态恢复和待裁决信息登记，但没有选择 `fixed` / `accepted-residual` / `user-overruled`，也没有授权把尚未实施的修复写成既成事实。
+- **冲突**：A-010（self · pass）与经修复后趋同的 A-011（independent · conditional）支持原 close-out；A-012（independent · fail）在同一关门范围新增五条 required。按 P-004，该冲突在用户选择闭合路径前保持未决，不取乐观侧。
+- **决定**：
+  1. 采纳 A-012 为正式相关意见，并将 F-001～F-005 全部保留为 `required / open`；F-006 保留 `recommended / open`。本轮不声明任何 finding 已闭合。
+  2. 因开放 required 与 `status: done` 不相容，将 GOAL-011 从 `done` 恢复为 `active`；原 S1～S5 五个检查点仍为已发生事实，故派生 `progress` 保持 `5/5`。状态恢复不是进度回退，也不是 finding closure。
+  3. 新增 `I-011-004`（required）：裁决 F-003 的产品边界——保留 seed-only 并移除/隐藏无有效授权语义的管理面，或补齐角色分配、grant 来源与 roles 管理流程。该信息项阻断 F-003 整改方案冻结与重新关门。
+  4. F-001、F-002、F-004、F-005 的推荐主路径为 `fixed`；静态复核已确认其实现/流水线落点，但实际修复、测试和独立复审尚未发生，不在本决策中冒充完成。
+  5. A-010/A-011 原文和原 S1～S5 执行收据保留为历史；A-012 响应只追加新状态，不重写旧 verdict 或关闭记录。
+- **理由**：安全授权、凭据生命周期、活动 CI 和最后管理员原子性均影响 VP-002 的生产边界，不能以既有绿测或 `5/5` 覆盖；F-003 同时触及既有“完整 IAM 非目标”边界，必须先由用户明确选定产品口径。
+- **未选方案**：
+  - **维持 `done / 5/5` 等以后再处理**：违反开放 required 关门门禁。
+  - **直接将五项写为 fixed**：当前没有修复代码、回归收据或 finding-closure 复审。
+  - **静默把 F-003 视为完整 IAM 范围内/范围外**：两种路径都会代替用户做 P-004 裁决。
+  - **立即新建 GOAL-012**：finding 仍权威落在 GOAL-011；在用户确认整改结构前，新目标不能替代本目标的响应与关门阻断。
+- **影响**：GOAL-011 → `active / 5/5`；GOAL-010 保持 `active / 3/5`；Root 与 VP-002 均保持 active，既有 Root finding 不在本轮关闭。`goal-tree.md` 同步状态与本响应注记。
+- **后续**：用户确认 A-012 的闭合路径，并对 `I-011-004` 二选一；若选择推荐路径，则先冻结整改契约/测试矩阵，再实施 F-001～F-005，随后请求限定 scope 的 `/audit` finding-closure 复审。F-006 单独保持 recommended，不得因可选卫生项阻断必改整改。

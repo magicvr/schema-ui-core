@@ -2,9 +2,9 @@
 title: 执行记录 · Schema 驱动通用数据适配层
 status: active
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-04
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-010
@@ -68,3 +68,9 @@ version: 0.3.0
   - fresh fork / 既有库升级 / 进程级重启 / 401-403 双资源验收：I-011-003 v0.2.0 全维度 + S4 验收收据（见 GOAL-011 02-execution）。
 - 完整证据见 [GOAL-011 五件套与附件](../GOAL-011-s4-semantic-admin-resources/)；GOAL-011 S5（回归审计与关门）完成后可勾选本目标 S4。
 - **计划（非事实）**：GOAL-011 完成后评估本目标 S4 勾选与 S5 关门；Root A-002 F-002-001 关闭证据链仍待 GOAL-010 S5。
+
+## 2026-08-04 · GOAL-011 A-012 响应交接（父级验收门保持未放行）
+
+- GOAL-011 已记录原 S1～S5 检查点 `5/5`，但 A-012（independent · fail）新增 F-001～F-005 required/open，F-006 recommended/open；`/govern` 已将其状态恢复为 `active`，并登记 `I-011-004` 等待 F-003 产品边界裁决。
+- 本交接只同步当前子目标状态，不把子目标 `5/5` 当作父级 S4 通过证据；GOAL-010 维持 `active / 3/5`，S4/S5 不勾选，Root A-002 F-002-001 不变。此前 S1～S4 交接段保留为当时事实。
+- **计划（非事实）**：待用户裁决、整改实施、回归收据和限定范围 finding-closure 复审完成后，再按 D-004 重新评估 GOAL-010 S4 验收门。
