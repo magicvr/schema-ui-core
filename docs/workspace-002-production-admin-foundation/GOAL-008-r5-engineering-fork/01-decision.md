@@ -145,7 +145,7 @@ version: 0.1.7
 - **状态**：accepted
 - **决定**：采纳 A-012（independent · finding-closure · fail）对 **F-005（required/high）** 的关闭证据要求，按 `fixed` 路径重做一次**禁用/隔离项目编译缓存**的 S3 计时复现：
   - 预 T0（排除项内）执行 `docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f`，**整体禁用 BuildKit 结果缓存**；基础镜像保持本地（镜像拉取排除项）。
-  - 新记录 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)：clean worktree（`1961e5a`，detached clean）+ **预 T0 `git status --short` 空** + 四终点全 PASS + **`64.833s ≤ 900s`（单调原始读数 403981233142700→404046066135300）**；BuildKit 归档输出中 **`go build`（12.8s）与 `npm run build`（6.1s）均实际执行、全程仅 1 条平凡 `CACHED`**——不再存在 A-012 所指的「编译层 CACHED」。
+  - 新记录 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)：clean worktree（`1961e5a`，detached clean）+ **预 T0 `git status --short` 空** + 四终点全 PASS + **`64.833s ≤ 900s`（单调原始读数 403981233142700→404046066135300）**；BuildKit 归档输出中 **`go build`（12.8s）与 `npm run build`（6.1s）均实际执行，正式 retry #3 的项目编译层均非 `CACHED`**——不再存在 A-012 所指的「编译层 CACHED」（响应 A-013 R-013 表述收窄）。
   - **R-012（recommended/low）→ handled**：预 T0 `git status --short` 与运行后状态分别留存；截图写于 worktree 外（`apps/web/test-results/`，gitignored）再归档并记录 sha256；单调计时工具原始读数（node `process.hrtime.bigint()` ns）逐终点落盘。
 - **依据**：A-012 F-005（required/high：`13.5s` 不能证明 build-included，须隔离/禁用编译缓存重做）与 R-012；I-008-002 协议 v0.1.2 §3.1（项目自身编译不得预先完成）/§3.2（`.env` 写入在计时内）/§3.3（失败留痕）。用户书面指示「按 fixed 重做一次禁用/隔离项目编译缓存的 S3 计时复现，再请求仅针对 F-005 的关闭复审」。
 - **边界**：

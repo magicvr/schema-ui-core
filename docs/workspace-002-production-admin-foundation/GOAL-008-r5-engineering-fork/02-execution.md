@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.11
+version: 0.1.13
 ---
 
 # 执行记录 · GOAL-008
@@ -132,8 +132,23 @@ version: 0.1.11
 
 - **A-012（independent · finding-closure · fail）响应**：采纳 `fail` 中 **F-005（required/high）** 与 **R-012（recommended/low）**；F-006～F-009 关闭证据维持（A-012 确认）。用户书面指示按 **fixed** 路径重做，完成后请求仅针对 F-005 的关闭复审。落盘 `01-decision` **D-008**。
 - **禁用/隔离项目编译缓存（预 T0，排除项内）**：`docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f`（清理 21.52GB BuildKit 结果缓存；基础镜像保持本地）。`docker compose up` 无 `--no-cache` 直传，故采用协议可陈述、可复核的 rmi + prune 做法。
-- **重做 S3 计时复现 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)**：clean worktree（`git worktree add --detach` 于 `1961e5a`，预 T0 `git status --short` 为空）；计时起点 = `.env` 写入 + `docker compose up -d --build`（协议 §3.2，`.env` 写入在计时内）；**四终点全 PASS，64.833s ≤ 900s**（T0 `02:09:49.734Z` / monotonic `403981233142700` → T4 `02:10:54.565Z` / `404046066135300`）；BuildKit 归档输出（[r5-repro-003-run.txt](attachments/r5-repro-003-run.txt)）中 **`go build`（#29，DONE 12.8s）与 `npm run build`（#38，DONE 6.1s，真实 vite 构建输出）均实际执行，全程仅 1 条平凡 `CACHED`（`WORKDIR` 层）**——直接回应 A-012「编译层不得 CACHED」；截图 [r5-repro-003-endpoint4.png](attachments/r5-repro-003-endpoint4.png)（sha256 `89171fb1…809f8`，写于 worktree 外 gitignored 目录后归档）。
+- **重做 S3 计时复现 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)**：clean worktree（`git worktree add --detach` 于 `1961e5a`，预 T0 `git status --short` 为空）；计时起点 = `.env` 写入 + `docker compose up -d --build`（协议 §3.2，`.env` 写入在计时内）；**四终点全 PASS，64.833s ≤ 900s**（T0 `02:09:49.734Z` / monotonic `403981233142700` → T4 `02:10:54.565Z` / `404046066135300`）；BuildKit 归档输出（[r5-repro-003-run.txt](attachments/r5-repro-003-run.txt)）中 **`go build`（#29，DONE 12.8s）与 `npm run build`（#38，DONE 6.1s，真实 vite 构建输出）均实际执行，正式 retry #3 的项目编译层均非 `CACHED`（该次仅一条非编译 `WORKDIR` 缓存）**——直接回应 A-012「编译层不得 CACHED」（响应 A-013 R-013 表述收窄）；截图 [r5-repro-003-endpoint4.png](attachments/r5-repro-003-endpoint4.png)（sha256 `89171fb1…809f8`，写于 worktree 外 gitignored 目录后归档）。
 - **R-012 → handled**：预 T0 与运行后 `git status --short` 分别留痕（均空）；单调计时原始读数逐终点落盘（node `process.hrtime.bigint()` ns）；截图产物 hash 与路径记录。
 - **失败/重试留痕（协议 §3.3，run log 内全记录）**：attempt #1——驱动脚本 PowerShell NativeCommandError（stderr 管道）中断，未测终点，复位后重试；attempt #2——T1/T4 窗口内 PASS 但 T2/T3 因 PowerShell 5.1 向 `curl.exe` 传内联 `-d` JSON 引号被吞、登录体未送达而失败（`login_http_ok=0`、`/me` UNAUTHENTICATED），对同一已构建栈以 `--data @file` 修正调用复验 `token_len=176` + `/me` 完整响应，按 §3.3 记为失败并复位重试；attempt #3——正式尝试单次通过。
 - **未做**：未改协议 v0.1.2 正文、未改 `scripts/smoke.sh`、未改产品代码、未重开 F-006～F-009；未实施 S5；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 4/5`。
 - **计划（非事实）**：同步 goal-tree；请求 `/audit` 仅针对 **F-005** 的 finding-closure 关闭复审；复审 pass 前不得推进 S5、勾选 Root R5 或关门。
+
+## 2026-08-03 · 响应 A-013（F-005～F-009 维持闭合 · R-013 handled）
+
+- **A-013（independent · finding-closure · pass）响应**：用户书面指示「复审通过，响应审计意见 A-013」。**verdict 采纳 `pass`**——A-013 独立二次复审确认 F-005 的 REPRO-003 关闭证据（clean checkout、预 T0 `git status --short` 空、单调原始读数、正式 retry #3 实际 `go build` 12.8s / `npm run build` 6.1s 非 `CACHED` 输出、64.833s ≤ 900s）补足 A-012 唯一 required/high 缺口；F-006～F-009 维持成立；**F-005～F-009 全部 `fixed` 闭合，本 scope 无开放 required**。A-011 关闭主张经 A-012（重做 F-005 证据）+ A-013（pass）完整闭环。
+- **R-013（recommended/low · 缓存计数表述收窄）→ handled**：REPRO-003、A-012 响应节、D-008、02-execution、goal-tree 的「全程仅 1 条 `CACHED`」表述统一修正为「正式 retry #3 的项目编译层均非 `CACHED`，且该次仅一条非编译 `WORKDIR` 缓存」，与完整归档（含 retry #2 同类缓存）一致。
+- **未做**：未推进 S5、未勾选 Root R5、未关门；`I-008-002` 维持 `verified`（v0.1.2）；`I-008-003` 仍 open（S6 若实施）；本目标保持 `active / 4/5`；Root 保持 `active / 4/5`。
+- **计划（非事实）**：进入 S5（阶段审计与 Root R5 勾选评估）前，按 P-004 §3.1 询问用户是否补 self finding-closure 审计（F-005～F-009 关闭证据 scope 现无 `source: self` 覆盖）。
+
+## 2026-08-03 · 补 self 审计（A-014）+ 实施 S5（A-015 阶段审计 · 4/5 → 5/5）
+
+- **P-004 §3.1 用户裁决**：「补一次 self 审计，没有阻断项的话，推进 S5」。A-013 响应后本 scope 无开放 required、无冲突 → **A-014（self · finding-closure · F-005～F-009 · pass）** 落盘：self 复核 REPRO-003 正式 retry #3（pre-T0 `git status --short` 空、`go build` #29 DONE 12.8s / `npm run build` #38 DONE 6.1s 均非 `CACHED`、64.833s ≤ 900s、四终点 PASS、截图 sha256）、smoke.sh（非 disposable `PARTIAL` + exit 8；disposable 强制确认 + 隔离身份 + `check_isolation()` 机器校验 project/卷 + 去 eval 固定重启）、workflow 显式 `ci-container-smoke` project、CI run 30776646293 归档（SM-006=PASS + `SMOKE RESULT: PASS` + `down -v`）、本地四路径守卫日志——全部成立，与 A-013 同向无冲突，**无开放 required**。
+- **实施 S5（阶段审计与 Root 关门条件评估）= A-015（self · stage-audit · pass）**：S1（C-001/C-002）、S2（C-003～C-007）、S3（QUICKSTART + REPRO-003 64.833s）、S4（smoke.sh + 本地四路径 + CI run 30776646293）逐项核对成立；意见台账 A-001～A-014 全部 responded/自审、F-001～F-009 全部 `fixed` 闭合、R-001～R-013 全部 handled/非阻断；信息门禁 `I-008-001/002` verified、`I-008-003` 仅 S6 适用（S6 可选不进分母）；**Root R5 勾选条件口径已记录**（S1～S5 全勾选 + 无开放 required + 至少一次关门向审计；Root R5 勾选、Root close-out 与 VP-002 关门须用户确认）。
+- **检查点**：S5 勾选（`4/5 → 5/5`），同步 `00-meta`、`03-audit`、goal-tree；Root R5 检查点**未**勾选（Root 保持 `active / 4/5`）；本目标保持 `active / 5/5`（**未 `done`**——关门待 close-out 审计 + 用户裁决 + Root R5 勾选）。
+- **未做**：未勾选 Root R5、未关门、未实施 S6（可选加分）；`I-008-003` 仍 open（S6 若实施）；未改协议/脚本/产品代码。
+- **计划（非事实）**：由用户确认：① 是否勾选 Root R5 检查点；② 是否对 GOAL-008 做 close-out 关门审计（self 或 `/audit`）以进入 Root/VP-002 关门流程；③ S6（可选加分）是否纳入。

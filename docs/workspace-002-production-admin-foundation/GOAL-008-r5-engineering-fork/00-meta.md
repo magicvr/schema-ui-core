@@ -5,8 +5,8 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
-progress: 4/5
+version: 0.3.0
+progress: 5/5
 ---
 
 # GOAL-008 · R5 · 工程化、fork 体验与集成关门
@@ -21,13 +21,13 @@ progress: 4/5
 - [x] **S2 · 容器与一键启动**：交付 Docker Compose（**R5 必须交付和验收的第二启动路径**，非可选加分项；fork 使用者可选择本地双进程或 Compose）——api 多阶段镜像 + web 静态构建（nginx 服务 `dist/` 并把 `/api` 反代到 api service）+ DB volume + 探针；`docker compose up` 后 healthz + 登录 + 代表页可用。（2026-08-02 已实施：`apps/api/Dockerfile` + `apps/web/Dockerfile`（BuildKit cache mount）+ 根 `compose.yaml` + `apps/web/nginx.conf`（SPA fallback + `/api` 反代）+ `.dockerignore` + CI `container-smoke` job；对照契约 C-003～C-007 验证通过——本机 Docker 29/Compose v5 `docker compose up` 后 `/healthz` 200、web 200、登录 admin、`/me`、nginx 代理 + `/list-edit-lifecycle` fallback、api restart 与 down/up 后 DB volume 保持）
 - [x] **S3 · fork 文档与 15 分钟体验**：交付 QUICKSTART/README fork 上手文档；≥1 次独立复现记录（日期/仓库 ref/版本/耗时），终点 = 登录成功 + 后台首页可交互（列表加载），耗时 ≤15 分钟（不含依赖下载）。（2026-08-03 已实施：根 `QUICKSTART.md` fork 上手段（双路径 + 终点 4 = `list-edit-lifecycle` + smoke 用法）；**clean-ref 独立复现记录 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)**（compose 路径，四终点全 PASS，**64.833s ≤ 900s**，run log + 截图附件，**预 T0 禁用 BuildKit 结果缓存、`go build`/`npm run build` 编译层均实际执行非 `CACHED`**——响应 A-012 F-005；取代 `R5-S3-REPRO-002`（BuildKit 编译层 `CACHED`，保留历史）与 `R5-S3-REPRO-001`（build 排除、字段不足，保留历史；响应 A-011 F-005/F-006））
 - [x] **S4 · 可复现验收**：交付 `scripts/smoke.sh`（`/healthz` → login → `/api/accounts/me` → 代表页 → 种子可重复），本地与 CI smoke 全绿。（2026-08-03 已实施：`scripts/smoke.sh` SM-001～SM-006 + 退出码 0/2/3/4/5/6/8/70 + `--disposable` 隔离守卫（`SMOKE_ISOLATION_ID` + `SMOKE_DISPOSABLE_CONFIRM=yes` 机器校验，不满足 exit 2；非 disposable 部分绿 exit 8；重启后 readiness 重判）；本地四路径验证（部分绿 8 / fail-closed 2 / 完整绿 0）**SM-006=PASS**（log `r5-smoke-disposable-local-v0.1.2.txt`）；CI `container-smoke` 显式隔离 project `-p ci-container-smoke` 接入 `--disposable`，并有对应成功 run 证据（响应 A-011 F-007/F-008/F-009））
-- [ ] **S5 · 阶段审计与 Root 关门条件评估**：对 R5 工程化交付做阶段审计（self + 视需要 independent），评估并记录 Root R5 勾选条件与 Root / VP-002 关门证据口径。
+- [x] **S5 · 阶段审计与 Root 关门条件评估**：对 R5 工程化交付做阶段审计（self + 视需要 independent），评估并记录 Root R5 勾选条件与 Root / VP-002 关门证据口径。（2026-08-03 已实施：**A-014（self · finding-closure · pass）** 按 P-004 §3.1 用户裁决补 F-005～F-009 关闭证据 self 覆盖；**A-015（self · stage-audit · pass）** 阶段审计——S1～S5 证据链成立、无开放 required、无意见冲突；**Root R5 勾选条件口径已记录**（S1～S5 全勾选 + 无开放 required + 关门向审计；Root R5 勾选与 Root/VP-002 关门须用户确认）；`I-008-001/002` verified、`I-008-003` 仅 S6 适用）
 
 > 可选加分 **S6 · 最小操作日志**（D-013 方案甲，**非成功标准、不进进度分母**）：若用户决定在本目标内实施，则交付 SQLite `operation_log`（迁移 + repository），覆盖 records 写（create/update/delete）与 auth 关键事件（登录/登出/刷新），并补测试；若不实施，则在本目标 `01-decision` 记录「不纳入本波次」及其理由，作为后续加分项，**不阻断**本目标或 Root R5 关门。
 
 ## 派生进度
 
-`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-03**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；`I-008-002` 已 verified（D-004 + [复现与 smoke 协议 v0.1.2](attachments/I-008-002-fork-reproduction-protocol.md)，D-005/A-008 与 D-007/A-011 响应后权威版本 v0.1.2），解除 S3/S4 的方案冻结/实施前信息门禁；S1/S2 已实施（`0/5 → 2/5`）；**S3/S4 已实施（2026-08-03，`2/5 → 4/5`）**——QUICKSTART fork 文档 + **clean-ref 独立复现记录 `R5-S3-REPRO-003`（预 T0 禁用 BuildKit 结果缓存，`go build`/`npm run build` 编译层实际执行非 CACHED，64.833s ≤ 900s；响应 A-012 F-005）** + `scripts/smoke.sh`（SM-001～006 + 隔离守卫 + 部分绿 exit 8）+ 本地 disposable `SM-006=PASS` 证据（`r5-smoke-disposable-local-v0.1.2.txt`）+ CI `container-smoke` 显式隔离 project 与成功 run 证据（响应 A-011 F-005～F-009 fixed，其中 F-005 证据经 A-012 重做后由 REPRO-003 承担）。`I-008-003` 仍 open（S6 若实施时阻断）；S5（阶段审计与 Root R5 勾选评估）待实施。
+`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-03**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；`I-008-002` 已 verified（D-004 + [复现与 smoke 协议 v0.1.2](attachments/I-008-002-fork-reproduction-protocol.md)，D-005/A-008 与 D-007/A-011 响应后权威版本 v0.1.2），解除 S3/S4 的方案冻结/实施前信息门禁；S1/S2 已实施（`0/5 → 2/5`）；**S3/S4 已实施（2026-08-03，`2/5 → 4/5`）**——QUICKSTART fork 文档 + **clean-ref 独立复现记录 `R5-S3-REPRO-003`（预 T0 禁用 BuildKit 结果缓存，`go build`/`npm run build` 编译层实际执行非 CACHED，64.833s ≤ 900s；响应 A-012 F-005）** + `scripts/smoke.sh`（SM-001～006 + 隔离守卫 + 部分绿 exit 8）+ 本地 disposable `SM-006=PASS` 证据（`r5-smoke-disposable-local-v0.1.2.txt`）+ CI `container-smoke` 显式隔离 project 与成功 run 证据。**A-011 F-005～F-009 关闭闭环完成（2026-08-03）**：A-012（independent · fail）重做 F-005 证据 → REPRO-003；**A-013（independent · finding-closure · pass）二次复审确认 F-005～F-009 `fixed` 全部成立、无开放 required**（R-013 handled：CACHED 计数表述收窄至正式 retry #3）；**A-014（self · finding-closure · pass）** 按 P-004 §3.1 补 self 覆盖；**S5 已实施（2026-08-03，`4/5 → 5/5`）**——A-015（self · stage-audit · pass）阶段审计与 Root R5 勾选条件评估。`I-008-003` 仍 open（S6 若实施时阻断）；**本目标五项核心成功标准全部达成（5/5），仍未 `done`**——关门需 close-out 审计 + 用户裁决 + Root R5 勾选（Root 层）。
 
 ## 信息需求
 

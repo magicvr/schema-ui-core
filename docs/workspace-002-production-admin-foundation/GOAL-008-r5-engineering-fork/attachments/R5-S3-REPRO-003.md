@@ -54,7 +54,7 @@ supersedes: R5-S3-REPRO-002
 
 ## cache precondition（响应 A-012 F-005：禁用/隔离项目编译缓存）
 
-- **BuildKit 结果缓存已整体禁用（A-012 F-005 核心措施）**：正式计时前执行 `docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f`（run log 中 BuildKit 输出可核对：`go build` 与 `npm run build` 均以 `RUN` 步骤实际执行并各自 `DONE 12.8s` / `DONE 6.1s`，**全程仅 1 条平凡 `CACHED`（`WORKDIR` 层）**——不再存在 A-012 所指的「项目编译层 `CACHED`」）。
+- **BuildKit 结果缓存已整体禁用（A-012 F-005 核心措施）**：正式计时前执行 `docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f`（run log 中 BuildKit 输出可核对：`go build` 与 `npm run build` 均以 `RUN` 步骤实际执行并各自 `DONE 12.8s` / `DONE 6.1s`；**正式 retry #3 的项目编译层均非 `CACHED`，且该次仅有一条非编译 `WORKDIR` 缓存**——不再存在 A-012 所指的「项目编译层 `CACHED`」。注：完整归档还包含 retry #2 的同类 `WORKDIR` 缓存，均不涉及编译层；响应 A-013 R-013 表述收窄）。
 - **保留的排除项（协议 §3.1 允许）**：工具已安装；基础镜像（`golang:1.26-alpine`/`node:22`/`nginx:1.27-alpine`/`alpine:3.20`）已在本地（镜像拉取/层获取排除）；Go 模块与 npm 依赖经 Dockerfile 内 `--mount=type=cache` 缓存挂载复用（语言依赖缓存排除）。注：因结果缓存整体禁用，`go mod download` 与 `npm ci` 亦在窗口内重新执行（run log 可见 `#23 DONE 11.7s`、`#35 DONE 7.7s`）——这是**保守**口径（依赖步骤本可排除却计入计时），不影响达标结论。
 - **计入计时**：`.env` 写入、项目自身编译（`go build` / `npm run build` 在 T0 后**实际执行**，非 CACHED）、配置、服务启动、数据库迁移、种子初始化、登录与页面加载全部在计时起点后执行。
 
