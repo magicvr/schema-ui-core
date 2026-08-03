@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.9
+version: 0.1.10
 ---
 
 # 执行记录 · GOAL-008
@@ -115,3 +115,15 @@ version: 0.1.9
 - **未做**：未实施 S5（阶段审计与 Root R5 勾选评估）；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root 保持 `active / 4/5`。
 - **已做**：S3/S4 检查点勾选（`2/5 → 4/5`），同步 `00-meta`、`01-decision` D-006、`03-audit`。
 - **计划（非事实）**：实施 S5（对 R5 工程化交付做阶段审计 self + 视需要 independent，评估并记录 Root R5 勾选与 Root / VP-002 关门证据口径）；建议对 S3/S4 实施证据做一次实施向审计（self 或 `/audit`）。
+
+## 2026-08-03 · 响应 A-011（F-005～F-009 fixed 路径整改）
+
+- **P-004 §3.2 裁决**：A-010（self · pass）与 A-011（independent · fail）同 scope（execution-facts · S3/S4）verdict 冲突；用户书面裁决「按 **fixed** 路径整改 F-005～F-009」并确认「提交并推送 dev」。落盘 `01-decision` **D-007**。
+- **协议 v0.1.2（D-007）**：[I-008-002 协议](attachments/I-008-002-fork-reproduction-protocol.md) 补丁——§5.3 新增部分绿退出码 `8`（非 disposable 不得 exit 0）；§5.1 冻结 disposable 隔离守卫（强制 `SMOKE_ISOLATION_ID` + `SMOKE_DISPOSABLE_CONFIRM=yes`、机器校验 project/卷绑定、禁止外部注入重启命令）；§5.2 SM-006 重启由脚本以隔离 project 执行 + readiness 重判。
+- **F-007 修复（required/medium）**：`scripts/smoke.sh` 非 disposable 分支不再 `exit 0`——SM-001～005 通过但 SM-006 未运行时输出 `SMOKE RESULT: PARTIAL` 并 `exit 8`（部分绿，不是 S4 完整绿）；CI 只以 `--disposable` 完整绿（exit 0）作为 S4 证据。
+- **F-008 修复（required/high）**：`scripts/smoke.sh` 重写隔离守卫——disposable 必须 `SMOKE_DISPOSABLE_CONFIRM=yes` 且 `SMOKE_ISOLATION_ID` 非空；`check_isolation()` 机器校验 `docker compose -p <id> ps -q api` 非空且 `docker inspect` 挂载含 `<id>_db-data`（或等价绑定），不满足 → `SM-001=FAIL` + exit 2；**删除 `SMOKE_RESTART_CMD` 任意 `eval`**，SM-006 重启改为脚本直接执行 `docker compose -p <id> restart api`；重启后 readiness 重新判定（失败 exit 3，吸收 R-011）。CI `container-smoke` 改用显式隔离 project `-p ci-container-smoke`（job env `SMOKE_ISOLATION_ID=ci-container-smoke`，smoke step 注入 `SMOKE_DISPOSABLE_CONFIRM=yes`），teardown 用同 project `down -v`。
+- **本地守卫验证（四路径，log `r5-smoke-disposable-local-v0.1.2.txt`）**：① 非 disposable → SM-006 SKIP + `PARTIAL` + **exit 8**；② disposable 缺 `SMOKE_ISOLATION_ID` → `SM-001=FAIL` + **exit 2**；③ disposable 指定不存在 project → `SM-001=FAIL` + **exit 2**；④ disposable 隔离 project（`ci-smoke-local-verify` 全新卷）→ SM-001～006 全 PASS + `SMOKE RESULT: PASS` + **exit 0**（含 `isolation: project=ci-smoke-local-verify` 留痕）。
+- **F-005/F-006 修复（required/high + required/medium）**：干净 worktree（`git worktree add` 于 commit `a086872`，detached clean）执行 **clean-ref 计时复现** [R5-S3-REPRO-002](attachments/R5-S3-REPRO-002.md)——计时起点 = `.env` 写入 + `docker compose up -d --build`（build/配置/迁移/种子/登录/页面加载全部计入，仅镜像层获取按 §3.1 排除）；四终点全 PASS，**13.5s ≤ 900s**（T0 `01:15:05.557Z` → T4 `01:15:19.092Z`）；记录按协议 §4 全字段落盘（clean ref、逐项 checks、smoke 输出引用、result 日志/截图路径、失败/重试记录）；完整命令与 BuildKit 输出见 [r5-repro-002-run.txt](attachments/r5-repro-002-run.txt)，截图 [r5-repro-002-endpoint4.png](attachments/r5-repro-002-endpoint4.png)。`R5-S3-REPRO-001` 加取代注记（历史保留）。
+- **CI run 证据**：推送 commit `a086872` 触发 `r6-basic-matrix` run（初始 run 成功，见 `03-audit` A-011 响应节最终证据）。
+- **未做**：未实施 S5；`I-008-003` 仍 open（S6 若实施）；Root R5 未勾选，Root 保持 `active / 4/5`；本目标保持 `active / 4/5`（S3/S4 检查点不因整改回退，验收有效性以 F-005～F-009 关闭证据为条件）。
+- **计划（非事实）**：落盘 A-011 响应节（含 F-009 最终 CI run 证据）；建议对 F-005～F-009 关闭证据做一次 `/audit` finding-closure 复审，再进入 S5。

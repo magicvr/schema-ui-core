@@ -1,0 +1,193 @@
+=== S4 smoke 本地验证（2026-08-03 · smoke.sh v0.1.2 守卫；协议 I-008-002 v0.1.2 §5）===
+ref: a08687209b9b8a82c8e7d2d183a124ac50bfcf3e
+
+[1] non-disposable（期望 exit 8 部分绿，F-007 修复验证）
+SM-001=PASS
+SM-002=PASS
+SM-003=PASS
+SM-004=PASS
+SM-005=PASS
+SM-006=SKIP（非 disposable；S4 完整绿需 --disposable 且 SM-006=PASS）
+SMOKE RESULT: PARTIAL (SM-001~005; SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)
+exit=8
+
+[2] disposable 缺 SMOKE_ISOLATION_ID（期望 exit 2 fail-closed，F-008）
+SM-001=FAIL
+  detail: disposable 模式缺少 SMOKE_ISOLATION_ID（隔离 compose project）;
+exit=2
+
+[3] disposable 指定不存在 project（期望 exit 2 fail-closed，F-008）
+SM-001=FAIL
+  detail: disposable 需要运行中的隔离 compose project「no-such-project」（docker compose -p no-such-project ps 无 api 容器）
+exit=2
+
+[4] disposable 隔离 project 完整绿（期望 exit 0 + SM-006=PASS，S4 证据）
+  隔离身份: ci-smoke-local-verify（docker compose -p ci-smoke-local-verify up -d --build，全新卷）
+ Image schema-ui-core-web:local Building 
+ Image schema-ui-core-api:local Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.09kB done
+#1 DONE 0.0s
+
+#2 [api internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.55kB done
+#2 DONE 0.0s
+
+#3 [web internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.21kB done
+#3 DONE 0.0s
+
+#4 [auth] docker/dockerfile:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [web] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#5 DONE 2.5s
+
+#6 [api] docker-image://docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89
+#6 CACHED
+
+#7 [web internal] load metadata for docker.io/library/node:22
+#7 ...
+
+#8 [api internal] load metadata for docker.io/library/golang:1.26-alpine
+#8 DONE 0.0s
+
+#9 [auth] library/nginx:pull token for registry-1.docker.io
+#9 DONE 0.0s
+
+#10 [auth] library/node:pull token for registry-1.docker.io
+#10 DONE 0.0s
+
+#11 [auth] library/alpine:pull token for registry-1.docker.io
+#11 DONE 0.0s
+
+#12 [api internal] load metadata for docker.io/library/alpine:3.20
+#12 DONE 1.5s
+
+#13 [web internal] load metadata for docker.io/library/nginx:1.27-alpine
+#13 DONE 1.6s
+
+#7 [web internal] load metadata for docker.io/library/node:22
+#7 DONE 1.6s
+
+#14 [api internal] load .dockerignore
+#14 transferring context: 160B done
+#14 DONE 0.0s
+
+#15 [api stage-1 1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#15 DONE 0.0s
+
+#16 [api build 1/6] FROM docker.io/library/golang:1.26-alpine
+#16 DONE 0.0s
+
+#17 [web internal] load .dockerignore
+#17 transferring context: 707B done
+#17 DONE 0.0s
+
+#18 [api internal] load build context
+#18 transferring context: 2.78kB done
+#18 DONE 0.0s
+
+#19 [api build 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download || go mod download
+#19 CACHED
+
+#20 [api build 2/6] WORKDIR /src
+#20 CACHED
+
+#21 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+#21 CACHED
+
+#22 [api build 5/6] COPY . .
+#22 CACHED
+
+#23 [api stage-1 2/4] RUN addgroup -S app     && adduser -S -G app app     && mkdir -p /app/data     && chown -R app:app /app
+#23 CACHED
+
+#24 [api build 3/6] COPY go.mod go.sum ./
+#24 CACHED
+
+#25 [api stage-1 3/4] WORKDIR /app
+#25 CACHED
+
+#26 [api stage-1 4/4] COPY --from=build /out/schema-ui-core-api /app/schema-ui-core-api
+#26 CACHED
+
+#27 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+#27 DONE 0.0s
+
+#28 [web stage-1 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+#28 DONE 0.0s
+
+#29 [api] exporting to image
+#29 exporting layers done
+#29 writing image sha256:86e9261d5279b6d40d82a2bdff4c85afdb625d02d325795813aa9a77e18214c3 done
+#29 naming to docker.io/library/schema-ui-core-api:local done
+#29 DONE 0.0s
+
+#30 [web internal] load build context
+#30 transferring context: 7.07kB 0.1s done
+#30 DONE 0.1s
+
+#31 [web stage-1 2/3] COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+#31 CACHED
+
+#32 [web build 3/7] COPY apps/web/package.json apps/web/package-lock.json ./
+#32 CACHED
+
+#33 [web build 5/7] COPY apps/web .
+#33 CACHED
+
+#34 [web build 2/7] WORKDIR /app
+#34 CACHED
+
+#35 [web build 4/7] RUN --mount=type=cache,target=/root/.npm npm ci
+#35 CACHED
+
+#36 [web build 6/7] COPY docs/schemas /docs/schemas
+#36 CACHED
+
+#37 [web build 7/7] RUN --mount=type=cache,target=/root/.npm npm run build
+#37 CACHED
+
+#38 [web stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html
+#38 CACHED
+
+#39 [web] exporting to image
+#39 exporting layers done
+#39 writing image sha256:3cbb0dcb4b94b4db070669d762459fcd76404a6d0650bb487e5cebd1b078fdb3 0.0s done
+#39 naming to docker.io/library/schema-ui-core-web:local 0.0s done
+#39 DONE 0.0s
+
+#40 [api] resolving provenance for metadata file
+#40 DONE 0.0s
+
+#41 [web] resolving provenance for metadata file
+#41 DONE 0.0s
+ Image schema-ui-core-api:local Built 
+ Image schema-ui-core-web:local Built 
+ Network ci-smoke-local-verify_default Creating 
+ Network ci-smoke-local-verify_default Created 
+ Volume ci-smoke-local-verify_db-data Creating 
+ Volume ci-smoke-local-verify_db-data Created 
+ Container ci-smoke-local-verify-api-1 Creating 
+ Container ci-smoke-local-verify-api-1 Created 
+ Container ci-smoke-local-verify-web-1 Creating 
+ Container ci-smoke-local-verify-web-1 Created 
+ Container ci-smoke-local-verify-api-1 Starting 
+ Container ci-smoke-local-verify-api-1 Started 
+ Container ci-smoke-local-verify-api-1 Waiting 
+ Container ci-smoke-local-verify-api-1 Healthy 
+ Container ci-smoke-local-verify-web-1 Starting 
+ Container ci-smoke-local-verify-web-1 Started 
+  up_exit=0
+ci-smoke-local-verify-api-1 Up 6 seconds (healthy)
+ci-smoke-local-verify-web-1 Up Less than a second (health: starting)
+isolation: project=ci-smoke-local-verify container=c53cb1a5042f59d2007cf22ca10ffe6114a45c41da2badc9bcd779d0d4e79146
+SM-001=PASS
+SM-002=PASS
+SM-003=PASS
+SM-004=PASS
+SM-005=PASS
+SM-006=PASS
+SMOKE RESULT: PASS (SM-001~005 + SM-006)
+  smoke_exit=0
