@@ -10,7 +10,13 @@ import {
   restoreSession,
   setAuthLostListener,
 } from "@/account/auth-client";
-import { clearTokens, setAccessToken, setRefreshToken } from "@/account/tokens";
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+} from "@/account/tokens";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -112,6 +118,47 @@ describe("auth-client", () => {
     const res = await authFetch("/api/records");
     expect(res.status).toBe(401);
     expect(lost).toHaveBeenCalledTimes(1);
+  });
+
+  it("authFetch clears the session and notifies auth loss when the retry is still 401", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+    const lost = vi.fn();
+    setAuthLostListener(lost);
+
+    // Original request 401 → refresh succeeds with a rotated pair → the retried
+    // request is still 401: the fresh token was rejected, so the session is gone.
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ accessToken: "access-2", refreshToken: "refresh-2" }))
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401));
+
+    const res = await authFetch("/api/records");
+    expect(res.status).toBe(401);
+    expect(lost).toHaveBeenCalledTimes(1);
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
+  it("login rolls back the stored tokens and rejects when /me fails", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ accessToken: "a1", refreshToken: "r1", ...SESSION }))
+      .mockResolvedValueOnce(jsonResponse({ error: "INTERNAL" }, 500));
+
+    await expect(login("admin", "admin")).rejects.toMatchObject({ code: "ME_FAILED" });
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
+  it("login rejects when /me 401s and the refresh also fails, without keeping tokens", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ accessToken: "a1", refreshToken: "r1", ...SESSION }))
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
+
+    await expect(login("admin", "admin")).rejects.toMatchObject({ code: "ME_FAILED" });
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
   });
 
   it("restoreSession rotates a stored refresh and returns the session", async () => {

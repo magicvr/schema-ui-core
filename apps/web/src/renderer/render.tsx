@@ -62,6 +62,10 @@ import {
  * checkFormCapabilities) via gateRenderFormFields. The default app path wires
  * a schema-driven table surface (SchemaTable, GOAL-004) as `tableRenderer`;
  * a table node dispatched without one fails closed with an observable note.
+ *
+ * A-002 F-002-002 (GOAL-009 S1): form submission is blocked while any
+ * gate/reaction error is present — the submit button is disabled and
+ * handleSubmit re-rejects before any request can be constructed.
  */
 
 export interface RendererComponentProps {
@@ -530,6 +534,7 @@ function FormView({
   const isSearch = node.props.mode === "search";
   const submitAction = node.props.submitAction;
   const canSubmit = isSearch || typeof submitAction === "string";
+  const hasBlockingErrors = gate.errors.length > 0 || reaction.errors.length > 0;
 
   const visibleFields = gate.fields.filter(
     (raw) => reaction.state[raw.id]?.visible !== false,
@@ -539,6 +544,9 @@ function FormView({
 
   const handleSubmit = async () => {
     if (crud === null) {
+      return;
+    }
+    if (hasBlockingErrors) {
       return;
     }
     if (isSearch) {
@@ -594,7 +602,7 @@ function FormView({
       {canSubmit ? (
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || hasBlockingErrors}
           className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {submitting ? "Submitting…" : (node.props.submitLabel ?? (isSearch ? "Search" : "Submit"))}

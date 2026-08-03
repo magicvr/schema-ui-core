@@ -3,6 +3,12 @@
  * auth-aware fetch wrapper that attaches the Bearer access token and transparently
  * refreshes once on 401. On refresh failure the session is cleared and the
  * registered auth-lost listener fires so the UI can return to the login page.
+ *
+ * A-002 F-002-003 (GOAL-009 S2): a retry that is still 401 after a successful
+ * refresh also clears the session and fires auth-lost (a fresh token that is
+ * still rejected means the session itself is gone). A `/me` failure during
+ * login rolls the stored tokens back and fails the login instead of silently
+ * degrading to an empty-feature authenticated session.
  */
 import {
   clearTokens,
@@ -112,7 +118,8 @@ function isAuthEndpoint(input: RequestInfo | URL): boolean {
 /**
  * Auth-aware fetch: attaches the Bearer access token, and on a 401 (not an auth
  * endpoint) attempts one silent refresh then retries once. If the refresh fails,
- * clears the session and notifies the auth-lost listener (UI → login page).
+ * or the retry is still 401 after a successful refresh, the session is cleared
+ * and the auth-lost listener fires (UI → login page).
  */
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let response = await fetch(input, withAuth(init));
@@ -120,6 +127,10 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
     const refreshed = await refreshAccess();
     if (refreshed) {
       response = await fetch(input, withAuth(init));
+      if (response.status === 401) {
+        clearTokens();
+        onAuthLost?.();
+      }
     } else {
       clearTokens();
       onAuthLost?.();
@@ -154,13 +165,13 @@ export async function login(username: string, password: string): Promise<AuthSes
   setRefreshToken(body.refreshToken);
   // Login token response carries user identity only; menu/feature projection
   // lives on GET /me (GOAL-006 S5). Resolve features the same way restoreSession
-  // does so post-login navigation matches a restored session.
+  // does so post-login navigation matches a restored session. A /me failure
+  // rolls the tokens back and fails the login rather than silently degrading.
   try {
     return await fetchMe();
-  } catch {
-    // Tokens are already stored; fall back to the login user snapshot with an
-    // empty feature map rather than failing the whole login.
-    return { user: body.user, features: {} };
+  } catch (error) {
+    clearTokens();
+    throw error;
   }
 }
 

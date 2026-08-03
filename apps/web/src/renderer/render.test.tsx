@@ -2,10 +2,10 @@
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RenderPage } from "@/renderer/render.tsx";
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderMeta, RenderPageDocument } from "@/renderer/render";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
@@ -53,6 +53,50 @@ function reactionFormDocument(reactions: unknown[]): RenderPageDocument {
       },
     },
   };
+}
+
+// GOAL-009 S1 (A-002 F-002-002): a default-mode form with a real submitAction,
+// so gate/reaction errors must block the outgoing request, not just be shown.
+function submitFormDocument(
+  fields: unknown,
+  reactions: unknown[],
+  meta: RenderMeta = {
+    protocolVersion: "2.7",
+    requiredCapabilities: ["app.manifest", "form.controls.extended"],
+  },
+): RenderPageDocument {
+  return {
+    meta,
+    actions: {
+      submit: { type: "request", method: "POST", url: "/api/records" },
+    },
+    body: {
+      type: "form",
+      id: "gated-submit-form",
+      props: {
+        fields,
+        reactions,
+        submitAction: "submit",
+        submitLabel: "Submit record",
+      },
+    },
+  } as RenderPageDocument;
+}
+
+function submitButton(container: HTMLElement): HTMLButtonElement {
+  return Array.from(container.querySelectorAll("button")).find(
+    (button) => button.textContent?.trim() === "Submit record",
+  ) as HTMLButtonElement;
+}
+
+async function withFetchSpy(run: (fetchSpy: ReturnType<typeof vi.fn>) => Promise<void>) {
+  const fetchSpy = vi.fn(async () => new Response("{}", { status: 200 }));
+  vi.stubGlobal("fetch", fetchSpy);
+  try {
+    await run(fetchSpy);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 }
 
 describe("RenderPage form node with reactions", () => {
@@ -175,5 +219,68 @@ describe("RenderPage form node with reactions", () => {
     expect(container.textContent).toContain("rec-1");
     expect(container.textContent).toContain("Approve");
     expect(container.textContent).toContain("tab one");
+  });
+});
+
+describe("RenderPage form submit gate (GOAL-009 S1 · F-002-002)", () => {
+  it("disables submit and sends no request while a field gate error is shown", async () => {
+    await withFetchSpy(async (fetchSpy) => {
+      // textarea requires 2.6 + form.controls.extended; the meta declares neither.
+      const pageDoc = submitFormDocument(
+        [{ id: "notes", label: "Notes", type: "textarea" }],
+        [],
+        { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      );
+      const container = await renderDocument(pageDoc, {});
+      expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+        "FORM_CAPABILITY_REQUIRED",
+      );
+      const button = submitButton(container);
+      expect(button.disabled).toBe(true);
+      await act(async () => button.click());
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it("disables submit and sends no request while a reaction error is shown", async () => {
+    await withFetchSpy(async (fetchSpy) => {
+      // $deps.* is outside the frozen reaction grammar → REACTION_EXPRESSION_INVALID.
+      const pageDoc = submitFormDocument(
+        [{ id: "name", label: "Name", type: "input" }],
+        [
+          {
+            id: "bad",
+            when: "$deps.admin == true",
+            apply: [{ fieldId: "name", visible: true }],
+          },
+        ],
+      );
+      const container = await renderDocument(pageDoc, {});
+      expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+        "REACTION_EXPRESSION_INVALID",
+      );
+      const button = submitButton(container);
+      expect(button.disabled).toBe(true);
+      await act(async () => button.click());
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it("still submits when the form is valid (positive control)", async () => {
+    await withFetchSpy(async (fetchSpy) => {
+      const pageDoc = submitFormDocument(
+        [{ id: "name", label: "Name", type: "input" }],
+        [],
+      );
+      const container = await renderDocument(pageDoc, {});
+      const button = submitButton(container);
+      expect(button.disabled).toBe(false);
+      await act(async () => button.click());
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/records",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
   });
 });

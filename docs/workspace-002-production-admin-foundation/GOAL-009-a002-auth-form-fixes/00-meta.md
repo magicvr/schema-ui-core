@@ -1,12 +1,12 @@
 ---
 id: GOAL-009-a002-auth-form-fixes
 title: A-002 · 缺陷修复（表单提交门禁与认证失效）
-status: active
+status: done
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
-progress: 0/4
+version: 0.5.0
+progress: 4/4
 ---
 
 # GOAL-009 · A-002 · 缺陷修复（表单提交门禁与认证失效）
@@ -17,10 +17,10 @@ progress: 0/4
 
 ## 成功标准
 
-- [ ] **S1 · 表单校验错误阻断提交（F-002-002）**：`apps/web/src/renderer/render.tsx` 在 `gate.errors` / `reaction.errors` 非空时禁用提交按钮，`handleSubmit` 开头拒绝提交；新增「错误显示后请求未发出」回归测试。
-- [ ] **S2 · 认证失效状态清理（F-002-003）**：`apps/web/src/account/auth-client.ts` refresh 重试仍 401 时 `clearTokens()` 并触发 `onAuthLost`；login 后 `/me` 失败回滚已存 token 并以登录失败呈现；补二次 401 与 `/me` 失败测试。
-- [ ] **S3 · 回归与构建证据**：web `vitest run` 全绿（含新增用例）、`tsc -b` 与生产构建干净；`apps/api` `go test ./...` 全绿（若涉及）。
-- [ ] **S4 · 关门审计与 Root finding 关闭**：阶段/关门审计（self + 视需要 `/audit` finding-closure）复核 F-002-002/003 关闭证据，Root 03-audit 对应 finding 按 `fixed` 合法闭合。
+- [x] **S1 · 表单校验错误阻断提交（F-002-002）**：`apps/web/src/renderer/render.tsx` 在 `gate.errors` / `reaction.errors` 非空时禁用提交按钮，`handleSubmit` 开头拒绝提交；新增「错误显示后请求未发出」回归测试。
+- [x] **S2 · 认证失效状态清理（F-002-003）**：`apps/web/src/account/auth-client.ts` refresh 重试仍 401 时 `clearTokens()` 并触发 `onAuthLost`；login 后 `/me` 失败回滚已存 token 并以登录失败呈现；补二次 401 与 `/me` 失败测试。
+- [x] **S3 · 回归与构建证据**：web `vitest run` 全绿（含新增用例）、`tsc -b` 与生产构建干净；`apps/api` `go test ./...` 全绿（若涉及）。
+- [x] **S4 · 关门审计与 Root finding 关闭**：阶段/关门审计（self + 视需要 `/audit` finding-closure）复核 F-002-002/003 关闭证据，Root 03-audit 对应 finding 按 `fixed` 合法闭合。
 
 > 可选加分 **S5 · recommended 顺带（F-002-004~006，不进进度分母）**：登录页 seed 文案按环境门控（F-002-004）；生产 JWT secret 最小长度/熵校验（F-002-005）；`/healthz` 增加轻量 SQLite/迁移检查或区分 liveness/readiness（F-002-006）。是否纳入由用户决定。
 
