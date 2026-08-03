@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.5
+version: 0.1.6
 ---
 
 # 决策 · GOAL-008
@@ -114,3 +114,27 @@ version: 0.1.5
 - **只做文档、不落地脚本与独立复现**：会留下 S4「种子可重复」无机器判定证据，违反 I-008-002 §5 与 S4 成功标准字面。
 - **在不可用的 WSL bash 上伪造脚本运行结果**：D-004 已记录 WSL bash 失败；改用已验证可用的 Git Bash，不把未运行当已通过。
 - **把 S3 复现记录写成非独立（复用既有服务/DB）**：协议 §3.3 要求隔离 shell/checkout/DB；本轮先 `down -v` 清卷、全新 `up -d`，并声明 `same-operator-clean-session`。
+
+## D-007 · 响应 A-011：F-005～F-009 fixed 路径整改（协议 v0.1.2 + 重写 smoke 守卫）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：采纳 A-011（independent · execution-facts · fail）`fail` 与用户 P-004 §3.2 裁决「**fixed 路径整改 F-005～F-009**」（未选 residual/overruled）。整改内容：
+  - **F-005（required/high）→ fixed**：重新生成 clean-ref 独立复现记录 [R5-S3-REPRO-002](attachments/R5-S3-REPRO-002.md)——计时起点为 `docker compose up -d --build`，项目 build/配置/迁移/种子/登录/页面加载均计入计时（仅依赖下载与镜像层获取按协议 §3.1 排除），`≤900s`。
+  - **F-006（required/medium）→ fixed**：R5-S3-REPRO-002 按协议 §4 全字段落盘——clean ref（干净 worktree，无未提交 diff）、checks 逐项含 smoke 输出、result 含命令/日志输出路径与失败/重试记录。
+  - **F-007（required/medium）→ fixed**：[I-008-002 协议](attachments/I-008-002-fork-reproduction-protocol.md) 补丁 **v0.1.2**——新增部分绿退出码 `8`；非 disposable 路径**不得**以 `0` 退出（SM-006 未运行时输出非完整绿摘要 + exit 8），CI 不得把部分绿当 S4 完整绿。
+  - **F-008（required/high）→ fixed**：协议 v0.1.2 §5.1 冻结 **disposable 隔离守卫**——强制 `SMOKE_ISOLATION_ID` + `SMOKE_DISPOSABLE_CONFIRM=yes`；脚本机器校验运行 project 与 `<id>_db-data` 卷绑定（`docker compose -p <id> ps -q api` + `docker inspect` 挂载检查），不满足 → exit 2；**删除 `SMOKE_RESTART_CMD` 任意 `eval`**，重启由脚本以校验过的隔离 project 直接执行；CI 改用显式隔离 project `-p ci-container-smoke` 并把隔离身份写入 job/step 环境与日志。`scripts/smoke.sh` 同步重写（含 R-011：重启后 readiness 重判 → exit 3）。
+  - **F-009（required/medium）→ fixed**：对修复后的当前 revision 触发并保留 `container-smoke` 成功 run 证据（run URL、head SHA、SM-001～006 输出、teardown 结果）。
+- **依据**：A-011 F-005～F-009（全部 required）证据与要求；I-008-002 协议 v0.1.1 §3/§4/§5；A-010（self · pass）主体事实（浏览器/本地 disposable）经 A-011 点验成立但证据边界不足。P-004 §3.2：同 scope verdict 冲突由用户书面裁决走 fixed。
+- **边界**：
+  - 本决定只整改 S3/S4 实施与验收证据，不重开 S1/S2、不关闭 `I-008-001`、不勾选 S5、不改 Root R5。
+  - `I-008-002` 维持 `verified`，权威版本升至 **v0.1.2**（D-007）。
+  - S3/S4 检查点保持勾选（`4/5`），其验收有效性以 F-005～F-009 关闭证据为条件。
+- **影响**：`scripts/smoke.sh` 退出码语义变更（非 disposable 不再 exit 0）；CI `container-smoke` 使用隔离 project；QUICKSTART smoke 用法更新；R5-S3-REPRO-001 被 R5-S3-REPRO-002 取代为 S3 达标证据（历史保留）。
+- **后续**：完成复现记录与 CI run 证据后落盘 A-011 响应节；建议对 F-005～F-009 关闭证据做一次 `/audit` finding-closure 复审，再进入 S5。
+
+### 未选方案
+
+- **F-005～F-009 走 accepted-residual / user-overruled**：用户书面裁决选择 fixed；计时/安全/CI 证据缺口属可修复项，无残余价值。
+- **仅修订协议不重写脚本**：退出码与隔离守卫不落实现，机器可判定性无法成立。
+- **保留任意 `SMOKE_RESTART_CMD` 仅加文档警告**：无法机器校验隔离，违反协议 fail-closed 安全边界。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.14.0
+version: 0.15.0
 ---
 
 # 审计台账 · GOAL-008
@@ -23,6 +23,7 @@ version: 0.14.0
 | A-008 | independent | 2026-08-03 | design-plan · I-008-002 fork 复现与 smoke 协议 v0.1.0 合理性 | conditional | responded：F-004 **fixed**（协议 v0.1.1：S4 强制 disposable SM-006 证据）；R-008-001～004 absorbed |
 | A-009 | self | 2026-08-03 | design-plan 复核 · I-008-002 协议 v0.1.1 修订与 F-004 关闭证据 | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1 用户裁决「补 self」） |
 | A-010 | self | 2026-08-03 | execution-facts · S3/S4 实施（QUICKSTART + 独立复现 + smoke.sh + CI 接入） | pass | —；S3/S4 实施向自审（P-002 阶段审计） |
+| A-011 | independent | 2026-08-03 | execution-facts · S3/S4 实施与协议/运行证据交叉复核 | fail | open：F-005～F-009 required；与 A-010 同 scope verdict 冲突，待 `/govern` 按 P-004 处理 |
 
 ## 当前审计边界
 
@@ -712,3 +713,108 @@ version: 0.14.0
 - **仍开放**：S5（阶段审计 + Root R5 勾选/关门条件评估）待实施；`I-008-003` open（仅 S6）；Root R5 未勾选（Root 保持 `4/5`）。
 - **下一步**：实施 S5——对 R5 工程化交付做阶段审计（self + 视需要 independent），评估并记录 Root R5 勾选与 Root / VP-002 关门证据口径；建议对 S3/S4 关闭证据做一次 `/audit` finding-closure 复审。
 - **证据路径**：本响应节；`02-execution` 2026-08-03「实施 S3 + S4」节；`01-decision` D-006；`00-meta` S3/S4 行 + `I-008-002`；QUICKSTART.md；`scripts/smoke.sh`；附件 R5-S3-REPRO-001 / r5-repro-endpoint4.* / r5-smoke-disposable-local.txt。
+
+## A-011 · S3/S4 实施与协议/运行证据独立交叉审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：execution-facts；交叉复核 GOAL-008 S3（QUICKSTART、R5-S3-REPRO-001、浏览器终点证据）与 S4（`scripts/smoke.sh`、本地 disposable 运行、CI 接入与当前 revision 运行证据），对照 `I-008-002` v0.1.1 §§3～6；不审 S5、S6 或 Root R5 关门。
+- **verdict**：fail
+
+### 范围与区间
+
+- 工作区页眉：`workspace_id: workspace-002-production-admin-foundation`；canonical scope：`docs/workspace-002-production-admin-foundation/`；Root：`GOAL-001-production-admin-foundation`；目标：`GOAL-008-r5-engineering-fork`；`shared_materials_catalog: none`。本意见未读取或比较其他工作区。
+- 已核对：本目标五件套与 `goal-tree.md`、`I-008-002` v0.1.1、`QUICKSTART.md`、`R5-S3-REPRO-001.md`、`r5-repro-endpoint4.mjs`/截图、`scripts/smoke.sh`、`.github/workflows/r6-basic-matrix.yml`、本地 smoke log、Root D-013/I-005 边界。
+- 本轮独立运行：使用显式 Compose 项目 `audit-goal008-s34` 与新命名卷执行 `docker compose -p audit-goal008-s34 up -d --build`；Git Bash 执行 `bash scripts/smoke.sh --disposable`，SM-001～SM-006 全部 `PASS`、退出码 `0`；随后 `docker compose -p audit-goal008-s34 down -v --remove-orphans` 清理成功。该运行证明脚本在操作者已提供隔离环境时可执行，不证明脚本自身强制隔离，也不替代 CI 运行证据。
+- 当前 `HEAD` 为 `f2f1acbbc126648c8f218145ec6df0ae027e06e8`；`gh run list --workflow r6-basic-matrix.yml` 最新成功运行 `30750997885` 的 `headSha` 为 `7a6eb5e6b48fd96cc2c8503c45ff2dbdefb76bf8`，早于 S4 脚本接入提交；该 run 的 jobs 没有 `container-smoke`。
+
+### 成果（有证据）
+
+| 审计项 | 独立结论 |
+|--------|----------|
+| S3 文档路径与终点 | **部分通过**：QUICKSTART 覆盖 Compose/双进程两路径；协议终点 4、QUICKSTART 与 Playwright 脚本均指向 `list-edit-lifecycle`、标题和 `Acme Console`。复现记录时间算术自洽（`03:04:45.596Z` 到 `03:05:20.141Z`，约 `34.545s`），但计时边界与记录字段存在 required 缺口（F-005/F-006）。 |
+| 浏览器证据 | **通过**：`r5-repro-endpoint4.mjs` 使用真实 Chromium 登录、导航并断言标题/单元格；截图显示 `List + edit lifecycle`、`Acme Console` 与列表内容。 |
+| S4 disposable 路径 | **运行通过但证据有界**：本轮显式隔离项目的 `SM-001`～`SM-006` 全 PASS；协议要求的隔离前提并未由脚本机器校验（F-008）。 |
+| secret 输出边界 | **通过**：脚本将 token 保存在变量并抑制响应输出，未发现输出 password/JWT secret 的路径。 |
+| 当前 CI 证据 | **不足**：工作流有 `--disposable` wiring，但最新成功 run 早于当前 S4 revision 且无 `container-smoke` job（F-009）。 |
+
+### 对照成功标准与信息门禁
+
+- **S3**：QUICKSTART 与真实浏览器终点内容成立；但 `R5-S3-REPRO-001` 将已构建镜像作为前置并只计 `up` 后耗时，违反协议“项目构建计入计时”的冻结口径，且未满足完整 source/checks/result 记录字段，不能无条件证明 `<=15` 分钟（F-005/F-006）。
+- **S4**：本轮隔离运行的 disposable SM-006 通过；但是非 disposable 分支仍以 `SM-006=SKIP` 输出 `SMOKE RESULT: PASS` 并退出 0，和 v0.1.1 §5.3 的完整绿退出码定义不一致（F-007）；`--disposable`/`eval` 不验证隔离或普通开发库安全边界（F-008）；当前 revision 没有对应 CI run（F-009）。
+- **`I-008-002`**：协议文件本身仍为 `verified`，本意见不改其状态；本意见判定的是实施/验收证据未满足协议，不把协议冻结当作 S3/S4 通过。
+- **状态边界**：不修改目标 `status: active`、`progress: 4/5`、S3/S4 勾选、Root R5 或 `goal-tree.md`。
+
+### Findings
+
+#### F-005 · S3 计时记录排除了协议要求计入的项目构建
+
+- **级别 / 严重度**：required / high
+- **状态**：open
+- **关联门禁**：S3 `<=900s` 体验验收与 `I-008-002` §3.1/§3.2。
+- **证据**：协议要求项目自身编译、配置、启动、迁移、种子和登录不得预先完成，且“其余按文档完成环境配置、构建和启动的耗时计入”（`I-008-002-fork-reproduction-protocol.md:53-66`）。记录却写明 Compose 镜像已在先前 S2/本次 smoke 构建中完成，本轮 `up -d` 复用缓存且未重新 build（`R5-S3-REPRO-001.md:55-58`）；QUICKSTART 的 Compose 首条启动命令是 `docker compose up -d --build`（`QUICKSTART.md:32-39`）。
+- **风险**：`34.5s <= 900s` 只证明预构建镜像后的启动/页面时间，不能证明按 fork 文档从依赖就绪到构建、启动、登录和页面加载的完整体验时限。
+- **要求**：重新生成一份 clean-ref 记录，依赖下载/镜像 pull 可排除，但项目 build、配置、迁移、种子、登录和页面加载必须从计时起点开始；或由 `/govern` 按 P-004 留痕有界 residual（不等同于 verified）。
+
+#### F-006 · S3 复现记录未满足协议规定的可核验字段
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：S3 独立复现证据完整性与 `I-008-002` §4。
+- **证据**：协议要求 source 列出未提交 diff 摘要/哈希、checks 逐项包含 smoke 输出、result 提供失败原因/重试编号/日志、截图和命令输出路径（`I-008-002-fork-reproduction-protocol.md:93-104`）。记录只写了 3 个未提交新增但没有 diff hash（`R5-S3-REPRO-001.md:29-32`），checks 只有四个终点、没有 smoke 输出或“不适用”声明（`:72-79`），result 只有截图/脚本路径，没有命令输出或运行日志路径（`:85-89`）；“脚本已提交工作树”与同段“3 个未提交新增”也有语义歧义（`:22-31`）。
+- **风险**：第三方无法从该记录重建确切 ref/diff、核对命令输出或区分未运行项，独立复现不能作为完整可追溯记录。
+- **要求**：补齐 clean ref、工作树和 diff hash、完整命令/日志输出路径、smoke 各项（或明确标注 S4 不适用）及失败/重试记录；保持 secret 脱敏。
+
+#### F-007 · 非 disposable smoke 仍报告 `PASS`/exit 0，违反 v0.1.1 退出码契约
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：S4 机器可判定验收与 `I-008-002` §5.1/§5.3。
+- **证据**：协议定义 exit `0` 为 SM-001～SM-005 通过且 disposable SM-006 通过，并明确非 disposable exit 0 不得单独关闭种子可重复性（`I-008-002-fork-reproduction-protocol.md:112,123,129-139`）。脚本非 disposable 分支输出 `SM-006=SKIP`、`SMOKE RESULT: PASS`，随后无条件 `exit 0`（`scripts/smoke.sh:190-199`）。
+- **风险**：调用方只看退出码或 `PASS` 摘要时，会把只完成 SM-001～SM-005 的部分检查误判成 S4 完整绿。
+- **要求**：使非 disposable 路径与 v0.1.1 的完整绿语义一致（例如返回明确的 partial/non-success 结果并让 CI 不把它当完整绿），同时保留默认路径的非破坏性检查。
+
+#### F-008 · `--disposable` 没有机器可判定的隔离与 destructive 安全守卫
+
+- **级别 / 严重度**：required / high
+- **状态**：open
+- **关联门禁**：S4 disposable/隔离证据与 `I-008-002` §5.1/§5.2。
+- **证据**：协议要求 disposable 运行只能在隔离环境验证空库种子，必须拒绝普通开发库 reset，CI 使用隔离 Compose project/volume 或等价临时 DB（`I-008-002-fork-reproduction-protocol.md:110-112,123,127-132`）。脚本只把 `--disposable` 映射为布尔开关（`scripts/smoke.sh:20-32,40`），接受任意 `SMOKE_RESTART_CMD` 并用 `eval` 执行（`:31,170-173`），不验证 Compose project、volume、DB_PATH、临时数据库或 disposable 标记；CI 也用默认 `docker compose up -d`，没有显式隔离 project/volume（`.github/workflows/r6-basic-matrix.yml:76-95`）。本轮能通过显式 `-p audit-goal008-s34` 新卷运行，证明的是外部隔离前提有效，不是脚本具备安全守卫。
+- **风险**：操作者可在普通开发数据库上带 `--disposable` 并注入 destructive restart 命令，或在非隔离 CI 上把种子断言当作 S4 证据；这违反协议的 fail-closed 安全边界。
+- **要求**：限制 restart/reset 命令并校验隔离项目、临时卷/DB 或等价标记；不满足时返回安全前提失败（exit 2），并在 CI/日志中记录隔离身份。
+
+#### F-009 · 当前 S4 revision 没有对应的 CI smoke 运行证据
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：S4 “本地与 CI smoke 全绿”成功标准与协议 §6 的运行/CI 证据要求。
+- **证据**：当前 `HEAD` 为 `f2f1acbbc126648c8f218145ec6df0ae027e06e8`；`gh run list --workflow r6-basic-matrix.yml` 最新成功 run `30750997885` 的 `headSha` 为 `7a6eb5e6b48fd96cc2c8503c45ff2dbdefb76bf8`，早于 S4 smoke 接入提交，`gh run view` jobs 仅有 browser E2E、api、web，没有 `container-smoke`。仓库工作流 wiring 存在（`.github/workflows/r6-basic-matrix.yml:76-95`），但 wiring 不是 CI smoke 全绿的运行事实；已提交的本地 log 只有 SM-001～SM-006 输出，没有 run/ref/provenance（`attachments/r5-smoke-disposable-local.txt:1-8`）。
+- **风险**：无法证明当前 revision 的 CI runner 真的执行了 disposable SM-006、退出码传播和 teardown；S4 的 CI 部分仍是计划/接线证据而非验收事实。
+- **要求**：对当前 revision 触发并保留 `container-smoke` 成功 run/job URL、head SHA、SM-001～SM-006 输出和 teardown 结果；若 CI 无法运行，按 `/govern` 记录有界 residual，不得写成“CI 全绿”。
+
+### 推荐项（非阻断）
+
+- **R-011 · 重启后的 readiness 未重新判定**：脚本复用初始 `ready=1`，重启循环结束后不检查 readiness 结果（`scripts/smoke.sh:174-178`）；建议重置并在失败时返回协议定义的 readiness 失败码，避免把后续登录失败误归类为其它检查项。
+
+### 必改项汇总
+
+- **F-005 required/high**：S3 计时须纳入项目 build。
+- **F-006 required/medium**：补齐 S3 记录的 diff hash、命令/日志输出、smoke 字段和 result 追溯。
+- **F-007 required/medium**：修正非 disposable `PASS`/exit 0 与 v0.1.1 退出码语义的冲突。
+- **F-008 required/high**：实现 disposable/隔离与 destructive 安全的机器守卫，并在 CI/记录中固定隔离身份。
+- **F-009 required/medium**：补当前 revision 的 CI `container-smoke` 运行证据。
+
+### 与既有意见的异同
+
+- A-010 是同一 S3/S4 execution-facts scope 的 `self · pass`，本 A-011 的 `fail` 与其在“可无条件判定 S3/S4 通过”上构成 P-004 §4.2 的 verdict/门禁冲突；A-010 中的浏览器与本地 disposable 主体事实经本轮点验/复跑基本成立，但本意见识别了其未覆盖的计时、字段、退出码、安全和 CI 证据缺口。
+- A-008/A-009 仅审 `I-008-002` design-plan/finding-closure，不与本 execution-facts scope 冲突；`I-008-002` 的 verified 机读状态不因本意见自动改写。
+- 本意见不否定 S3 浏览器脚本/截图或本轮显式隔离 disposable 运行；它们不足以单独闭合上述 required findings。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **fail**：S3 浏览器终点和本轮显式隔离的 S4 disposable smoke 可复现，但当前记录和实现不满足完整的协议/验收边界；F-005～F-009 均为未闭合 required。不能仅凭 A-010 self `pass` 将 S3/S4 作为无条件验收完成。
+- 建议使用 `/govern`：展示 A-010/A-011 冲突并按 P-004 等用户裁决；建议优先修复 F-005/F-007/F-008，刷新 S3 record 与当前 revision CI 证据，再做同 scope self/independent finding-closure 复审。未完成前不要推进 S5、勾选 Root R5 或关门。
+
+### 声明
+
+本意见仅追加 `source: independent` 审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、信息项状态或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。

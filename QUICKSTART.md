@@ -77,11 +77,20 @@ curl -fsS http://localhost:8081/api/accounts/me -H "Authorization: Bearer $TOKEN
 ### 完整 smoke（S4 机器可判定）
 
 ```bash
-# 对已启动实例做非破坏性检查（SM-001～005）
+# 对已启动实例做非破坏性部分检查（SM-001～005）
+# 注意：SM-006 未运行 → 退出码 8（部分绿），**不是** S4 完整绿
 SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> bash scripts/smoke.sh
-# 含种子可重复性（SM-006，disposable/隔离环境）
-SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> bash scripts/smoke.sh --disposable
+
+# S4 完整绿（含 SM-006 种子可重复性）——必须运行在显式隔离环境：
+#   1) 用独立 compose project 启动（不得指向普通开发库）：
+#      docker compose -p ci-smoke-local down -v && docker compose -p ci-smoke-local up -d
+#   2) 提供隔离身份 + 书面确认标记（脚本机器校验 project/卷绑定，不满足 → exit 2）
+SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> \
+SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
+bash scripts/smoke.sh --disposable
 ```
+
+> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
 
 ## 4. 下一步：接业务
 

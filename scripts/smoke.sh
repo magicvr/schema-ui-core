@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 #
-# scripts/smoke.sh · S4 可复现 smoke 验收（GOAL-008 / I-008-002 v0.1.1 §5）
+# scripts/smoke.sh · S4 可复现 smoke 验收（GOAL-008 / I-008-002 v0.1.2 §5）
 #
-# 机器可判定的非破坏性冒烟：SM-001 参数/工具 → SM-002 API readiness →
+# 机器可判定的非破坏性冒烟：SM-001 参数/工具/安全前提 → SM-002 API readiness →
 # SM-003 代理登录 → SM-004 当前身份 → SM-005 代表页路由。
-# 仅在显式 --disposable 下执行 SM-006（种子可重复性，要求隔离/临时 DB）。
+# 仅在显式 --disposable 下执行 SM-006（种子可重复性，要求隔离 Compose project/volume）。
 #
-# 退出码：0=全绿（含 disposable 的 SM-006）｜2=参数/工具/安全前提不满足或
-# 不安全 destructive｜3=readiness 30s 超时｜4=登录/身份失败｜5=路由/数据失败
-# ｜6=SM-006 种子断言失败｜70=未分类内部错误。
+# 退出码：0=完整绿（SM-001～005 且 disposable SM-006 通过）｜2=参数、工具或安全
+# 前提不满足（含不安全 destructive/隔离校验失败）｜3=readiness 30s 超时｜
+# 4=登录/身份失败｜5=路由/数据失败｜6=SM-006 种子断言失败｜
+# 8=部分绿（非 disposable，SM-006 未运行——不是 S4 完整绿，不得作为种子可重复证据）｜
+# 70=未分类内部错误。
 #
 # 输入（env）：
 #   API_BASE_URL         默认 http://localhost:8080
@@ -17,8 +19,11 @@
 #   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
 #   SMOKE_RECORD_ID      默认 rec-1
 #   SMOKE_EXPECTED_SEED_TOTAL  默认 8
-#   SMOKE_RESTART_CMD    仅 disposable 需要，默认 "docker compose restart api"
-# 安全：脚本不输出 token/password/secret；无 --disposable 时不得执行种子 reset。
+#   SMOKE_ISOLATION_ID   仅 --disposable 必填：隔离 Compose project 名（机器校验
+#                        运行中 project 与 db-data 卷均绑定该身份；不得指向默认开发库）
+#   SMOKE_DISPOSABLE_CONFIRM   仅 --disposable 必填：必须为 yes（书面确认 disposable 语义）
+# 安全：脚本不输出 token/password/secret；无 --disposable 不得执行种子 reset；
+#       --disposable 时重启由脚本以显式隔离 project 执行（拒绝外部注入命令）。
 
 set -u
 
@@ -28,11 +33,12 @@ SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
 SMOKE_RECORD_ID="${SMOKE_RECORD_ID:-rec-1}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-8}"
-SMOKE_RESTART_CMD="${SMOKE_RESTART_CMD:-docker compose restart api}"
+SMOKE_ISOLATION_ID="${SMOKE_ISOLATION_ID:-}"
+SMOKE_DISPOSABLE_CONFIRM="${SMOKE_DISPOSABLE_CONFIRM:-}"
 DISPOSABLE=0
 
 usage() {
-  sed -n '2,30p' "$0"
+  sed -n '2,32p' "$0"
   exit 2
 }
 
@@ -57,8 +63,32 @@ fail_check() {
   exit "$code"
 }
 
+# F-008：disposable 必须机器可判定地运行在显式隔离的 Compose project/volume 上；
+# 不满足任何安全前提一律按协议退出码 2（安全前提失败），且绝不 reset 普通开发库。
+check_isolation() {
+  local api_cid mount_info
+  if ! command -v docker >/dev/null 2>&1; then
+    printf 'SM-001=FAIL\n  detail: disposable 模式缺少工具 docker\n'
+    return 1
+  fi
+  api_cid="$(docker compose -p "${SMOKE_ISOLATION_ID}" ps -q api 2>/dev/null | head -n1)"
+  if [ -z "$api_cid" ]; then
+    printf 'SM-001=FAIL\n  detail: disposable 需要运行中的隔离 compose project「%s」（docker compose -p %s ps 无 api 容器）\n' "$SMOKE_ISOLATION_ID" "$SMOKE_ISOLATION_ID"
+    return 1
+  fi
+  mount_info="$(docker inspect -f '{{range .Mounts}}{{.Type}}|{{.Name}}|{{.Source}}{{end}}' "$api_cid" 2>/dev/null || true)"
+  case "$mount_info" in
+    *"${SMOKE_ISOLATION_ID}_db-data"*|*"|bind|"*"${SMOKE_ISOLATION_ID}"*)
+      printf 'isolation: project=%s container=%s\n' "$SMOKE_ISOLATION_ID" "$api_cid"
+      return 0 ;;
+    *)
+      printf 'SM-001=FAIL\n  detail: api 容器卷未绑定隔离 project「%s」的 db-data 卷（mounts=%s）\n' "$SMOKE_ISOLATION_ID" "$mount_info"
+      return 1 ;;
+  esac
+}
+
 # ---------------------------------------------------------------------------
-# SM-001 · 参数与工具
+# SM-001 · 参数、工具与安全前提
 # ---------------------------------------------------------------------------
 SM001=""
 if [ -z "${SMOKE_PASSWORD}" ]; then SM001="缺少 SMOKE_PASSWORD（禁止猜测默认 secret）"; fi
@@ -66,9 +96,17 @@ for tool in bash curl node; do
   command -v "$tool" >/dev/null 2>&1 || SM001="${SM001}缺少工具 ${tool};"
 done
 if [ -z "$API_BASE_URL" ] || [ -z "$WEB_BASE_URL" ]; then SM001="${SM001}缺少 API_BASE_URL/WEB_BASE_URL;"; fi
-if [ "$DISPOSABLE" = "1" ] && [ -z "$SMOKE_RESTART_CMD" ]; then SM001="${SM001}disposable 模式缺少 SMOKE_RESTART_CMD;"; fi
+if [ "$DISPOSABLE" = "1" ] && [ "$SMOKE_DISPOSABLE_CONFIRM" != "yes" ]; then
+  SM001="${SM001}disposable 模式缺少 SMOKE_DISPOSABLE_CONFIRM=yes（书面确认 disposable 语义）;"
+fi
+if [ "$DISPOSABLE" = "1" ] && [ -z "$SMOKE_ISOLATION_ID" ]; then
+  SM001="${SM001}disposable 模式缺少 SMOKE_ISOLATION_ID（隔离 compose project）;"
+fi
 if [ -n "$SM001" ]; then
   printf 'SM-001=FAIL\n  detail: %s\n' "$SM001"
+  exit 2
+fi
+if [ "$DISPOSABLE" = "1" ] && ! check_isolation; then
   exit 2
 fi
 smoke_line "001" "PASS"
@@ -166,16 +204,22 @@ if [ "$DISPOSABLE" = "1" ]; then
   # 首次断言：空库种子后 total == 期望且含 rec-1 / Acme Console
   check_seed "$SMOKE_EXPECTED_SEED_TOTAL" "首次种子断言失败"
 
-  # 重启 API 后再次断言：数量不变、同一记录仍在、不重复播种
-  if ! (eval "$SMOKE_RESTART_CMD" >/dev/null 2>&1); then
-    printf 'SM-006=FAIL\n  detail: SMOKE_RESTART_CMD 执行失败\n'
+  # 重启由脚本以显式隔离 project 执行（F-008：拒绝外部注入任意命令）
+  if ! docker compose -p "${SMOKE_ISOLATION_ID}" restart api >/dev/null 2>&1; then
+    printf 'SM-006=FAIL\n  detail: docker compose -p %s restart api 执行失败\n' "$SMOKE_ISOLATION_ID"
     exit 70
   fi
+  # R-011：重启后必须重新判定 readiness，失败按退出码 3，不沿用初始 ready
+  ready=0
   for _ in $(seq 1 30); do
     body="$(curl -fsS --max-time 3 "${API_BASE_URL}/healthz" 2>/dev/null || true)"
     if [ -n "$body" ] && [ "$(json_field "$body" status)" = "ok" ]; then ready=1; break; fi
     sleep 1
   done
+  if [ "$ready" != "1" ]; then
+    printf 'SM-006=FAIL\n  detail: 重启后 /healthz 未在 30s 内恢复 status=ok（%s）\n' "$API_BASE_URL"
+    exit 3
+  fi
   login_body="$(curl -fsS --max-time 5 -X POST "${WEB_BASE_URL}/api/auth/login" \
     -H 'Content-Type: application/json' \
     -d "{\"username\":\"${SMOKE_USERNAME}\",\"password\":\"${SMOKE_PASSWORD}\"}" 2>/dev/null || true)"
@@ -193,7 +237,8 @@ fi
 
 if [ "$DISPOSABLE" = "1" ]; then
   printf 'SMOKE RESULT: PASS (SM-001~005 + SM-006)\n'
+  exit 0
 else
-  printf 'SMOKE RESULT: PASS (SM-001~005; SM-006 skipped non-disposable)\n'
+  printf 'SMOKE RESULT: PARTIAL (SM-001~005; SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
+  exit 8
 fi
-exit 0

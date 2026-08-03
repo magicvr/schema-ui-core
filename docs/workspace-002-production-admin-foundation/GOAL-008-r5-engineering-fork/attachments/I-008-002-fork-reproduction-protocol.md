@@ -5,9 +5,9 @@ doc_type: information-contract
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-008-r5-engineering-fork
-version: 0.1.1
+version: 0.1.2
 related_info: I-008-002
-related_decisions: D-004, D-005
+related_decisions: D-004, D-005, D-007
 frozen_revision: 5e27019482eb8d0695c402b784860233bbc90c39
 ---
 
@@ -111,6 +111,13 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 
 脚本不得输出 access token、password、JWT secret 或 `.env` 内容。若要验证空数据库的种子重复性，只能在明确标记为 disposable 的环境中运行；实现必须拒绝对普通开发数据库执行 reset。**S4 验收必须包含至少一次 disposable/隔离运行且 `SM-006=PASS`**；CI 必须使用隔离的 Compose project/volume 或等价临时 DB，并默认以 disposable 模式运行（或等价 job 覆盖该次证据）。非 disposable 默认路径的 exit 0 不得单独作为 S4「种子可重复」关闭证据。
 
+**disposable 隔离守卫（v0.1.2 · 响应 A-011 F-008）**：`--disposable` 运行必须机器可判定地满足全部安全前提，否则按退出码 `2` 失败（安全前提不满足），且绝不 reset 普通开发库：
+
+- 必须显式提供隔离身份 `SMOKE_ISOLATION_ID`（隔离 Compose project 名或等价隔离身份）与书面确认标记 `SMOKE_DISPOSABLE_CONFIRM=yes`；缺失任一 → exit 2。
+- 实现必须校验运行中的服务确属该隔离身份（如 `docker compose -p <id> ps -q api` 非空）且数据卷/DB 绑定该身份（如 `<id>_db-data` 命名卷或含该身份的等价临时 DB），不满足 → exit 2；校验通过后在输出中固定隔离身份（非 secret）。
+- **禁止**接受外部注入的重启/reset 命令（如任意 `eval` 的 `SMOKE_RESTART_CMD`）；种子重复性所需的重启由实现以校验过的隔离身份自行执行。
+- CI 必须使用显式隔离 Compose project/volume（如 `-p ci-<job>` 覆盖默认 project），并把隔离身份写入 job/step 环境与日志留痕。
+
 ### 5.2 机器可判定检查项
 
 | ID | 检查 | 通过条件 |
@@ -120,7 +127,7 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 | SM-003 | 代理登录 | `${WEB_BASE_URL}/api/auth/login` 返回 HTTP 200 和非空 `accessToken`。 |
 | SM-004 | 当前身份 | Bearer 调用 `${WEB_BASE_URL}/api/accounts/me` 返回 HTTP 200，含 user 与 features。 |
 | SM-005 | 代表页路由 | `${WEB_BASE_URL}/list-edit-lifecycle` 返回 HTTP 200 且响应体含 `id="root"`（或等价稳定 SPA 挂载标记）；S3 独立复现记录另行完成真实浏览器可交互/列表加载验证。 |
-| SM-006 | 种子重复性（disposable 模式 · S4 必检） | 从空 DB 启动后，认证的 `GET ${WEB_BASE_URL}/api/records?pageSize=100` 返回 `SMOKE_EXPECTED_SEED_TOTAL` 条种子记录并含 `${SMOKE_RECORD_ID}`（默认 `rec-1`）/ `Acme Console`；重启 API 后再次断言数量和同一记录不变，不产生重复种子。**S4 验收必须至少一次以 disposable/隔离运行且 `SM-006=PASS`；无该次证据不得把 S4「种子可重复」判为满足。** |
+| SM-006 | 种子重复性（disposable 模式 · S4 必检） | 从空 DB 启动后，认证的 `GET ${WEB_BASE_URL}/api/records?pageSize=100` 返回 `SMOKE_EXPECTED_SEED_TOTAL` 条种子记录并含 `${SMOKE_RECORD_ID}`（默认 `rec-1`）/ `Acme Console`；重启 API 后再次断言数量和同一记录不变，不产生重复种子。**重启由脚本以校验过的隔离 project 执行（v0.1.2，拒绝外部注入命令）**；重启后必须重新判定 readiness，失败按退出码 3。**S4 验收必须至少一次以 disposable/隔离运行且 `SM-006=PASS`；无该次证据不得把 S4「种子可重复」判为满足。** |
 
 ### 5.3 输入与退出码
 
@@ -129,12 +136,15 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 | 退出码 | 含义 |
 |--------|------|
 | `0` | SM-001～SM-005 通过，且 SM-006（disposable）通过——S4 完整绿。 |
-| `2` | 参数、工具或安全前提不满足；请求了不安全的 destructive 模式。 |
-| `3` | readiness 在 30 秒内未达到。 |
+| `2` | 参数、工具或安全前提不满足；请求了不安全的 destructive 模式；disposable 隔离守卫（v0.1.2）校验失败。 |
+| `3` | readiness 在 30 秒内未达到（含 SM-006 重启后的 readiness 重判，v0.1.2）。 |
 | `4` | 登录或身份检查失败。 |
 | `5` | 代表页路由或数据检查失败。 |
 | `6` | 种子重复性（SM-006）断言失败。 |
+| `8` | **部分绿（v0.1.2）**：非 disposable 默认路径下 SM-001～SM-005 通过、SM-006 未运行；**不是 S4 完整绿**，调用方不得把它当作「种子可重复」或 S4 验收通过的证据。 |
 | `70` | 未分类的脚本内部错误；实现必须输出失败检查项和脱敏诊断。 |
+
+非 disposable 默认路径**永远不得**以 `0` 退出（v0.1.2 · 响应 A-011 F-007）：SM-001～SM-005 通过且 SM-006 未运行时必须返回部分绿（`8`）并输出非完整绿摘要，避免只读退出码/摘要的调用方误判 S4 完成。
 
 脚本输出应以稳定的 `SM-00N=PASS|FAIL` 形式逐项报告，方便 CI 归档；非零退出不得被 CI 忽略。
 
@@ -148,3 +158,4 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 |------|------|------|
 | v0.1.0 | 2026-08-03 | 初始冻结（D-004）。 |
 | v0.1.1 | 2026-08-03 | 响应 A-008（independent · design-plan · conditional）：**F-004 → fixed**——S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`，非 disposable exit 0 不得单独作为「种子可重复」关闭证据（§5.1/§5.2/§5.3）；吸收 **R-008-001**（默认 URL 按路径区分）、**R-008-002**（终点 4 操作化对齐 `list-edit-lifecycle`）、**R-008-003**（SM-005 判据钉死 `id="root"`）、**R-008-004**（不安全 destructive → 退出码 2，SM-006 失败单独 6）。D-005。 |
+| v0.1.2 | 2026-08-03 | 响应 A-011（independent · execution-facts · fail）：**F-007 → fixed**——新增部分绿退出码 `8`（§5.3），非 disposable 路径不得以 `0` 退出，输出非完整绿摘要；**F-008 → fixed**——disposable 隔离守卫（§5.1）：强制 `SMOKE_ISOLATION_ID` + `SMOKE_DISPOSABLE_CONFIRM=yes`，机器校验运行 project 与 `<id>_db-data` 卷绑定，禁止外部注入重启命令（去 `eval`，重启由脚本以隔离 project 执行），不满足 → exit 2；CI 使用显式隔离 project 并把隔离身份写入环境与日志（§5.1）；SM-006 重启后 readiness 重判 → exit 3（§5.2）。D-007。 |
