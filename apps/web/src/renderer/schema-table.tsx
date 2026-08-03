@@ -1,24 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 import {
-  DEFAULT_RECORDS_URL,
   fetchRecords,
-  type RecordList,
-  type RecordItem,
+  isValidDataSource,
   type RecordsQuery,
+  type ResourceItem,
+  type ResourceList,
 } from "@/renderer/records";
 import type { RenderTableNode } from "@/renderer/render";
 import { useSchemaCrud } from "@/renderer/render.tsx";
 
 /**
- * Default schema-driven table surface (R1 · GOAL-004 / D-004) + S4 CRUD wiring.
+ * Default schema-driven table surface (R1 · GOAL-004 / D-004) + S4 CRUD wiring
+ * + A-002 generic adapter (GOAL-010 S3).
  *
- * Renders a whitelisted table node's `props.columns` over its `props.dataSource`
- * (reuse of the demo `GET /api/records` D-DATA contract). Provides loading /
- * error / empty states and column sort, mirroring the hand-written example's
- * surface without owning data logic. Fails closed when the node declares no
- * columns or no data source.
+ * Renders a whitelisted table node's `props.columns` over its `props.dataSource`.
+ * Fails closed when the node declares no columns, no (valid) data source, or a
+ * response that violates the frozen rowKey invariant (F-001 / F-002).
+ *
+ * F-001 (I-010-001 v0.2.0 §2): `dataSource` must be a single-slash same-origin
+ * path; invalid/absent sources render an observable fail-closed state and never
+ * reach the (auth) fetcher.
+ *
+ * F-002 (I-010-001 v0.2.0 §3): `props.rowKey` (default `"id"`) is the direct
+ * field name of each row's unique, non-empty scalar key (string / finite
+ * number). A missing / empty / non-scalar / duplicate key stops rendering the
+ * table data and forbids row actions and selection.
  *
  * S4 (GOAL-007 · I-007-003 v0.2.2 §9): when rendered inside a `RenderPage`
  * (which always wraps content in the SchemaCrudProvider), the table surfaces
@@ -42,14 +50,12 @@ export interface SchemaTableColumnSpec {
   sortable?: boolean;
 }
 
-type JsonRecord = Record<string, unknown>;
-
 function stringOf(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
 /** Spreads a typed row into a plain object the generic action executor accepts. */
-function rowAsRecord(row: RecordItem): JsonRecord {
+function rowAsRecord(row: ResourceItem): Record<string, unknown> {
   return { ...row };
 }
 
@@ -71,16 +77,58 @@ export function schemaTableColumns(node: RenderTableNode): SchemaTableColumnSpec
     : [];
 }
 
-/** Resolves the table node's data source URL, defaulting to the demo API. */
-export function schemaTableDataSource(node: RenderTableNode): string {
-  return typeof node.props?.dataSource === "string" && node.props.dataSource !== ""
-    ? node.props.dataSource
-    : DEFAULT_RECORDS_URL;
+/**
+ * Resolves the table node's list endpoint (F-001). Returns null when absent or
+ * not a single-slash same-origin path; the table then fails closed and never
+ * fetches (the `/api/records` fallback was removed in GOAL-010 S3).
+ */
+export function schemaTableDataSource(node: RenderTableNode): string | null {
+  const raw = node.props?.dataSource;
+  return typeof raw === "string" && isValidDataSource(raw) ? raw : null;
+}
+
+/** F-002: the direct field name used as each row's unique key (default "id"). */
+export function schemaTableRowKey(node: RenderTableNode): string {
+  const raw = node.props?.rowKey;
+  return typeof raw === "string" && raw !== "" ? raw : "id";
+}
+
+/** F-002: a row key must be a non-empty string or a finite number (JSON scalar). */
+function scalarRowKey(value: unknown): string | null {
+  if (typeof value === "string" && value !== "") {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return null;
+}
+
+type RowKeyCheck = { ok: true } | { ok: false; message: string };
+
+/** F-002: every row must carry a non-empty, unique, scalar key in `field`. */
+function checkRowKeys(items: ResourceItem[], field: string): RowKeyCheck {
+  const seen = new Set<string>();
+  for (const [index, row] of items.entries()) {
+    const key = scalarRowKey(row[field]);
+    if (key === null) {
+      return {
+        ok: false,
+        message: `row ${index} has no valid "${field}" key (expected a non-empty string or finite number)`,
+      };
+    }
+    if (seen.has(key)) {
+      return { ok: false, message: `duplicate row key "${key}" for "${field}"` };
+    }
+    seen.add(key);
+  }
+  return { ok: true };
 }
 
 export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const columns = schemaTableColumns(node);
   const dataSource = schemaTableDataSource(node);
+  const rowKeyField = schemaTableRowKey(node);
   const crud = useSchemaCrud();
   const tableId = node.id ?? "default";
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
@@ -105,11 +153,18 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     }
   };
 
-  const [list, setList] = useState<RecordList | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [list, setList] = useState<ResourceList | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // F-001: absent/invalid dataSource fails closed — never fetch.
+    if (dataSource === null) {
+      setList(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -131,10 +186,32 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     };
   }, [fetcher, dataSource, query, crud?.reloadToken]);
 
+  // F-002: validate row keys on every fetched page; invalid → fail closed.
+  const keyCheck = useMemo(
+    () => (list === null ? null : checkRowKeys(list.items, rowKeyField)),
+    [list, rowKeyField],
+  );
+
   if (columns.length === 0) {
     return (
       <p role="alert" className="text-sm text-destructive">
         table node requires a columns array
+      </p>
+    );
+  }
+
+  if (dataSource === null) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        table node requires a valid dataSource (single-slash same-origin path)
+      </p>
+    );
+  }
+
+  if (keyCheck !== null && !keyCheck.ok) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {keyCheck.message}
       </p>
     );
   }
@@ -148,11 +225,17 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     setQuery({ ...query, sort: next.field, order: next.order, page: 1 });
   };
 
-  const onRowClick = (row: RecordItem) => {
+  const onRowClick = (row: ResourceItem) => {
     crud?.selectRow(rowAsRecord(row));
   };
 
-  const dataColumns: DataTableColumn<RecordItem>[] = [
+  const selectedRow = crud?.selectedRow;
+  const selectedKey =
+    selectedRow === null || selectedRow === undefined
+      ? undefined
+      : (scalarRowKey(selectedRow[rowKeyField]) ?? undefined);
+
+  const dataColumns: DataTableColumn<ResourceItem>[] = [
     ...columns.map((column) => ({
       key: column.field,
       label: column.label ?? column.field,
@@ -163,7 +246,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
           {
             key: "actions",
             label: "",
-            render: (row: RecordItem) => (
+            render: (row: ResourceItem) => (
               <div className="flex justify-end gap-2">
                 {rowActions.map((action) => {
                   const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
@@ -211,11 +294,11 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       <DataTable
         columns={dataColumns}
         rows={list?.items ?? []}
-        rowKey={(row) => row.id}
+        rowKey={(row) => String(row[rowKeyField])}
         sort={sort}
         onSortChange={onSortChange}
         onRowClick={crud !== null ? onRowClick : undefined}
-        selectedKey={crud?.selectedRow?.id as string | undefined}
+        selectedKey={selectedKey}
         loading={loading}
         error={error}
         emptyMessage="No records match."

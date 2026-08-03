@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-010
@@ -24,3 +24,16 @@ version: 0.1.0
 - **`I-010-001` → verified、`I-010-002` → verified**（D-002 冻结；I-010-002 提前于最晚阶段 S3 关闭）；S1 方案冻结门禁解除。
 - 未修改任何产品代码（S1 为文档冻结）。
 - **计划（非事实）**：S2 后端通用资源 CRUD（注册表 + records 实例化，保持 T-API-01～13 全绿）。
+
+## 2026-08-03 · A-001 F-001/F-002 响应 + S3 已实施（契约 v0.2.0 + 前端泛化）
+
+- 用户指令「响应 F-001/F-002，走 fixed：补充契约语义和 S3 正反测试」；P-004 §3.1 裁决不补 self 审计。**D-003** 决策；[I-010-001 契约 **v0.2.0**](attachments/I-010-001-schema-resource-contract.md) 修订（§2 dataSource 执行规则、§3 rowKey 不变量）。
+- **S3 · 前端通用适配层**实施：
+  - `records.ts`：去除 `RecordItem` 五字段白名单 → 泛化 `ResourceItem`/`ResourceList` + 统一 envelope 解析；新增 `isValidDataSource`/`DATASOURCE_URL_PATTERN`（F-001）；`fetchRecords` 调用（认证）fetcher 前校验 dataSource；`DEFAULT_RECORDS_URL` 删除。
+  - `schema-table.tsx`：`schemaTableDataSource` 对缺失/非法 dataSource 返回 `null`（fail-closed，不请求不渲染）；新增 `schemaTableRowKey`/`scalarRowKey`/`checkRowKeys`（F-002：非空唯一标量，无效响应停止渲染 + 禁行 action）；React key/选中态改用 rowKey 字段；`render.ts` `RenderTableNode.props` 增加 `rowKey`。
+  - `use-records.ts`：移除 `DEFAULT_RECORDS_URL` 依赖。
+- **测试（正反）**：`records.test.ts`（22，`isValidDataSource` 正反例 + 非法 dataSource 不触 fetch + 任意对象行）；`schema-table.test.tsx`（14，非 id `sku` 正例 + 缺失/重复/错误类型反例 + 缺 dataSource 不 fetch）；`representative-pages.integration.test.tsx` 错误文案 `records fetch failed` → `resource fetch failed`。
+- **证据**：全量 `vitest run` **481/481** + `tsc -b` + `vite build` 干净。
+- **F-001/F-002 → fixed 闭合**（见 [03-audit A-001 响应节](03-audit.md#a-001-响应--f-001--f-002-按-fixed-闭合2026-08-03)）；`I-010-001`/`I-010-002` 维持 `verified`。
+- **S3 勾选，GOAL-010 `1/5 → 2/5`**（串行偏差留痕：S3 为纯前端、不依赖 S2，因 F-001/F-002 关闭证据在 S3 而先于 S2）。
+- **计划（非事实）**：S2 后端通用资源 CRUD（注册表 + records 实例化，保持 T-API-01～13 全绿）→ S4 新实体 `catalog` 验证 → S5 回归/关门。S3 关闭证据可先请求窄 scope `/audit` finding-closure 复核。

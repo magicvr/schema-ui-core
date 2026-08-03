@@ -1,22 +1,34 @@
 import type { SortOrder } from "@/components/data-table";
 
-export const DEFAULT_RECORDS_URL = "/api/records";
 export const DEFAULT_PAGE_SIZE = 10;
 
-export interface RecordItem {
-  id: string;
-  name: string;
-  status: string;
-  owner: string;
-  updatedAt: string;
+/**
+ * Frozen list-endpoint rule (I-010-001 v0.2.0 · A-001 F-001): `table.props.dataSource`
+ * must be a single-slash same-origin absolute path — starts with one `/`, no `//`
+ * (no protocol-relative host), no scheme, no whitespace, backslash, `?` or `#`.
+ * Query strings are appended by `buildRecordsQuery`, never authored in dataSource;
+ * fragments are never allowed. Validated before any (auth) fetch is attempted.
+ * Mirrors `DataRef.url`'s `^/(?!/)[^\s\\]*$` but additionally rejects `?`/`#`.
+ */
+export const DATASOURCE_URL_PATTERN = /^\/(?!\/)[^\s\\?#]*$/;
+
+/** A schema-driven resource row: any plain JSON object (no field whitelist). */
+export interface ResourceItem {
+  [key: string]: unknown;
 }
 
-export interface RecordList {
-  items: RecordItem[];
+/** Unified list envelope frozen across resources: `{items,total,page,pageSize}`. */
+export interface ResourceList {
+  items: ResourceItem[];
   total: number;
   page: number;
   pageSize: number;
 }
+
+/** Deprecated record-specific alias of ResourceItem (GOAL-010 S3 genericization). */
+export type RecordItem = ResourceItem;
+/** Deprecated record-specific alias of ResourceList (GOAL-010 S3 genericization). */
+export type RecordList = ResourceList;
 
 export interface RecordsQuery {
   q?: string;
@@ -26,7 +38,7 @@ export interface RecordsQuery {
   pageSize?: number;
 }
 
-/** A records API failure carrying the frozen envelope `{error, message}`. */
+/** A resource API failure carrying the frozen envelope `{error, message}`. */
 export class RecordApiError extends Error {
   readonly code: string;
   readonly status: number;
@@ -39,17 +51,8 @@ export class RecordApiError extends Error {
   }
 }
 
-export interface RecordCreateBody {
-  name: string;
-  status: string;
-  owner: string;
-}
-
-export interface RecordPatch {
-  name?: string;
-  status?: string;
-  owner?: string;
-}
+export type RecordCreateBody = ResourceItem;
+export type RecordPatch = Partial<ResourceItem>;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -61,13 +64,6 @@ function fail(label: string, detail: string): never {
   throw new Error(`${label}: ${detail}`);
 }
 
-function requireString(value: unknown, label: string): string {
-  if (typeof value !== "string") {
-    return fail(label, "expected a string");
-  }
-  return value;
-}
-
 function requireNumber(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return fail(label, "expected a finite number");
@@ -75,17 +71,17 @@ function requireNumber(value: unknown, label: string): number {
   return value;
 }
 
-function parseRecordItem(value: unknown, label: string): RecordItem {
+/** F-001: single executable rule for a table list endpoint (fail-closed on any violation). */
+export function isValidDataSource(url: string): boolean {
+  return typeof url === "string" && url !== "" && DATASOURCE_URL_PATTERN.test(url);
+}
+
+/** Parses one resource row: any plain JSON object (no per-field whitelist). */
+function parseResourceItem(value: unknown, label: string): ResourceItem {
   if (!isRecord(value)) {
     return fail(label, "expected an object");
   }
-  return {
-    id: requireString(value.id, `${label}.id`),
-    name: requireString(value.name, `${label}.name`),
-    status: requireString(value.status, `${label}.status`),
-    owner: requireString(value.owner, `${label}.owner`),
-    updatedAt: requireString(value.updatedAt, `${label}.updatedAt`),
-  };
+  return value;
 }
 
 /** Reads the frozen error envelope from a non-OK response, defaulting safely. */
@@ -137,8 +133,12 @@ export function buildRecordsQuery(query: RecordsQuery): string {
   return params.toString();
 }
 
-/** Maps an unknown list payload to RecordList, fail-closed on shape drift. */
-export function parseRecordList(value: unknown): RecordList {
+/**
+ * Maps an unknown list payload to the unified ResourceList envelope, fail-closed
+ * on shape drift. Items are arbitrary JSON objects (F-002 rowKey is enforced at
+ * the table surface, not here).
+ */
+export function parseRecordList(value: unknown): ResourceList {
   if (!isRecord(value)) {
     return fail("parseRecordList", "expected an object");
   }
@@ -146,7 +146,7 @@ export function parseRecordList(value: unknown): RecordList {
   if (!Array.isArray(items)) {
     return fail("parseRecordList", "expected items array");
   }
-  const parsed = items.map((item, index) => parseRecordItem(item, `parseRecordList.items[${index}]`));
+  const parsed = items.map((item, index) => parseResourceItem(item, `parseRecordList.items[${index}]`));
   return {
     items: parsed,
     total: requireNumber(value.total, "parseRecordList.total"),
@@ -155,36 +155,43 @@ export function parseRecordList(value: unknown): RecordList {
   };
 }
 
-/** Fetches a page of records from the Go list API (request-construction). */
+/** Fetches a page of a schema-driven resource list (request-construction). */
 export async function fetchRecords(
   fetcher: typeof fetch,
   baseURL: string,
   query: RecordsQuery,
-): Promise<RecordList> {
+): Promise<ResourceList> {
+  // F-001: validate BEFORE touching the (auth) fetcher so an invalid dataSource
+  // never reaches Bearer-attaching transport.
+  if (!isValidDataSource(baseURL)) {
+    throw new Error(
+      `invalid dataSource "${baseURL}": expected a single-slash same-origin path (no //, scheme, whitespace, backslash, ? or #)`,
+    );
+  }
   const queryString = buildRecordsQuery(query);
   const url = queryString === "" ? baseURL : `${baseURL}?${queryString}`;
   const response = await fetcher(url);
   if (!response.ok) {
-    throw await readRecordApiError(response, "records fetch");
+    throw await readRecordApiError(response, "resource fetch");
   }
   return parseRecordList(await response.json());
 }
 
-/** Creates a record via POST /api/records (records.write); returns the 201 record. */
+/** Creates a resource row via POST (records.write); returns the 201 row. */
 export async function createRecord(
   fetcher: typeof fetch,
   baseURL: string,
   body: RecordCreateBody,
-): Promise<RecordItem> {
+): Promise<ResourceItem> {
   const response = await fetcher(baseURL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw await readRecordApiError(response, "record create");
+    throw await readRecordApiError(response, "resource create");
   }
-  return parseRecordItem(await response.json(), "createRecord");
+  return parseResourceItem(await response.json(), "createRecord");
 }
 
 export async function updateRecord(
@@ -192,16 +199,16 @@ export async function updateRecord(
   baseURL: string,
   id: string,
   patch: RecordPatch,
-): Promise<RecordItem> {
+): Promise<ResourceItem> {
   const response = await fetcher(`${baseURL}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
   if (!response.ok) {
-    throw await readRecordApiError(response, "record update");
+    throw await readRecordApiError(response, "resource update");
   }
-  return parseRecordItem(await response.json(), "updateRecord");
+  return parseResourceItem(await response.json(), "updateRecord");
 }
 
 export async function deleteRecord(
@@ -213,6 +220,6 @@ export async function deleteRecord(
     method: "DELETE",
   });
   if (!response.ok && response.status !== 204) {
-    throw await readRecordApiError(response, "record delete");
+    throw await readRecordApiError(response, "resource delete");
   }
 }

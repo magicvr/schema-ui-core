@@ -2,13 +2,14 @@
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RenderTableNode } from "@/renderer/render";
 import {
   SchemaTable,
   schemaTableColumns,
   schemaTableDataSource,
+  schemaTableRowKey,
 } from "@/renderer/schema-table";
 
 const RECORDS = {
@@ -50,6 +51,15 @@ function recordsFetcher(status = 200) {
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   }) as typeof fetch;
+}
+
+/** A fetcher that returns arbitrary resource rows from a fixed envelope. */
+function itemsFetcher(items: Array<Record<string, unknown>>) {
+  return (async () =>
+    new Response(
+      JSON.stringify({ items, total: items.length, page: 1, pageSize: 10 }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
 }
 
 function tableNode(props: Record<string, unknown>): RenderTableNode {
@@ -98,9 +108,14 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect(schemaTableDataSource(node)).toBe("/api/records");
   });
 
-  it("defaults the data source to the demo records API", () => {
+  it("fails closed (null) when the table node has no data source (no /api/records fallback)", () => {
     const node = tableNode({ columns: COLUMNS });
-    expect(schemaTableDataSource(node)).toBe("/api/records");
+    expect(schemaTableDataSource(node)).toBeNull();
+  });
+
+  it("fails closed (null) on a non-single-slash data source (F-001)", () => {
+    const node = tableNode({ columns: COLUMNS, dataSource: "//evil.example/x" });
+    expect(schemaTableDataSource(node)).toBeNull();
   });
 
   it("renders records from the injected data source", async () => {
@@ -120,12 +135,21 @@ describe("SchemaTable (R1 list-data injection)", () => {
     );
   });
 
+  it("fails closed without fetching when the data source is missing (F-001)", async () => {
+    const fetcher = vi.fn(recordsFetcher());
+    const container = await renderTable(tableNode({ columns: COLUMNS }), fetcher);
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "valid dataSource",
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("surfaces a fail-closed error when the data source request fails", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/records" }),
       recordsFetcher(500),
     );
-    expect(container.textContent).toContain("records fetch failed");
+    expect(container.textContent).toContain("resource fetch failed");
   });
 
   it("toggles column sort and marks the active column", async () => {
@@ -141,5 +165,84 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect((nameHeader as HTMLButtonElement).getAttribute("aria-sort")).toBe(
       "ascending",
     );
+  });
+});
+
+describe("SchemaTable rowKey (F-002 · I-010-001 v0.2.0 §3)", () => {
+  it("defaults the row key field to id", () => {
+    expect(schemaTableRowKey(tableNode({}))).toBe("id");
+  });
+
+  it("reads a non-id rowKey from the table node props", () => {
+    expect(schemaTableRowKey(tableNode({ rowKey: "sku" }))).toBe("sku");
+  });
+
+  it("renders a new entity with a non-id row key (positive)", async () => {
+    const node = tableNode({
+      columns: [{ field: "title", label: "Title" }],
+      dataSource: "/api/catalog",
+      rowKey: "sku",
+    });
+    const container = await renderTable(
+      node,
+      itemsFetcher([
+        { sku: "S-1", title: "Widget", price: 19 },
+        { sku: "S-2", title: "Gadget", price: 29 },
+      ]),
+    );
+    expect(container.textContent).toContain("Widget");
+    expect(container.textContent).toContain("Gadget");
+    expect(container.textContent).toContain("2 records · page 1 of 1");
+  });
+
+  it("fails closed on a missing row key", async () => {
+    const node = tableNode({
+      columns: [{ field: "title", label: "Title" }],
+      dataSource: "/api/catalog",
+      rowKey: "sku",
+    });
+    const container = await renderTable(
+      node,
+      itemsFetcher([{ title: "Widget" }, { sku: "S-2", title: "Gadget" }]),
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'no valid "sku" key',
+    );
+    expect(container.querySelectorAll("tbody tr").length).toBe(0);
+  });
+
+  it("fails closed on duplicate row keys", async () => {
+    const node = tableNode({
+      columns: [{ field: "title", label: "Title" }],
+      dataSource: "/api/catalog",
+      rowKey: "sku",
+    });
+    const container = await renderTable(
+      node,
+      itemsFetcher([
+        { sku: "S-1", title: "Widget" },
+        { sku: "S-1", title: "Gadget" },
+      ]),
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'duplicate row key "S-1"',
+    );
+    expect(container.querySelectorAll("tbody tr").length).toBe(0);
+  });
+
+  it("fails closed on a non-scalar row key (wrong type)", async () => {
+    const node = tableNode({
+      columns: [{ field: "title", label: "Title" }],
+      dataSource: "/api/catalog",
+      rowKey: "sku",
+    });
+    const container = await renderTable(
+      node,
+      itemsFetcher([{ sku: {}, title: "Widget" }]),
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'no valid "sku" key',
+    );
+    expect(container.querySelectorAll("tbody tr").length).toBe(0);
   });
 });

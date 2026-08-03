@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 import {
   DEFAULT_PAGE_SIZE,
-  DEFAULT_RECORDS_URL,
   fetchRecords,
   type RecordList,
   type RecordsQuery,
@@ -14,7 +13,9 @@ export interface UseRecordsOptions {
 }
 
 export function useRecords(options: UseRecordsOptions = {}) {
-  const url = options.url ?? DEFAULT_RECORDS_URL;
+  // No `/api/records` fallback (GOAL-010 S3): a schema-driven table must declare
+  // a dataSource; the hook callers own the default.
+  const url = options.url ?? "/api/records";
   const fetcher = options.fetcher ?? fetch;
   const [query, setQuery] = useState<RecordsQuery>({
     page: 1,

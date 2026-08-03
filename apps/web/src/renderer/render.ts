@@ -106,6 +106,8 @@ export interface RenderTableNode {
     actions?: Array<Record<string, unknown>>;
     toolbar?: Array<Record<string, unknown>>;
     dataSource?: string;
+    /** Direct field name of each row's unique key (F-002 · I-010-001 v0.2.0 §3; default "id"). */
+    rowKey?: string;
   };
   children?: RenderNode[];
 }

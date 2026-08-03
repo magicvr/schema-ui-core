@@ -4,6 +4,7 @@ import {
   buildRecordsQuery,
   deleteRecord,
   fetchRecords,
+  isValidDataSource,
   parseRecordList,
   updateRecord,
   type RecordList,
@@ -33,6 +34,37 @@ describe("buildRecordsQuery (query-serialization)", () => {
   });
 });
 
+describe("isValidDataSource (F-001 · I-010-001 v0.2.0 §2)", () => {
+  it("accepts single-slash same-origin paths", () => {
+    expect(isValidDataSource("/api/records")).toBe(true);
+    expect(isValidDataSource("/api/catalog")).toBe(true);
+    expect(isValidDataSource("/")).toBe(true);
+  });
+
+  it("rejects protocol-relative and absolute URLs", () => {
+    expect(isValidDataSource("//evil.example/api/records")).toBe(false);
+    expect(isValidDataSource("http://evil.example/api/records")).toBe(false);
+    expect(isValidDataSource("https://evil.example/api/records")).toBe(false);
+    expect(isValidDataSource("javascript:alert(1)")).toBe(false);
+  });
+
+  it("rejects relative (non-rooted) paths", () => {
+    expect(isValidDataSource("api/records")).toBe(false);
+    expect(isValidDataSource("records")).toBe(false);
+  });
+
+  it("rejects whitespace, backslash, query and fragment", () => {
+    expect(isValidDataSource("/api/rec ords")).toBe(false);
+    expect(isValidDataSource("/api\\records")).toBe(false);
+    expect(isValidDataSource("/api/records?q=x")).toBe(false);
+    expect(isValidDataSource("/api/records#frag")).toBe(false);
+  });
+
+  it("rejects empty and non-string input", () => {
+    expect(isValidDataSource("")).toBe(false);
+  });
+});
+
 describe("parseRecordList (response-mapping)", () => {
   it("maps an envelope", () => {
     const value = {
@@ -54,14 +86,25 @@ describe("parseRecordList (response-mapping)", () => {
     expect(list.total).toBe(1);
   });
 
+  it("accepts arbitrary object rows (no five-field whitelist)", () => {
+    const value = {
+      items: [{ sku: "S-1", title: "Widget", price: 19 }],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+    };
+    const list = parseRecordList(value);
+    expect(list.items[0]).toEqual({ sku: "S-1", title: "Widget", price: 19 });
+  });
+
   it("fails closed on a missing items array", () => {
     expect(() => parseRecordList({ total: 1, page: 1, pageSize: 10 })).toThrow();
   });
 
-  it("fails closed on a non-string field", () => {
+  it("fails closed on a non-object item", () => {
     expect(() =>
       parseRecordList({
-        items: [{ id: 1, name: "x", status: "active", owner: "a", updatedAt: "t" }],
+        items: [null],
         total: 1,
         page: 1,
         pageSize: 10,
@@ -110,6 +153,23 @@ describe("fetchRecords (request-construction)", () => {
     await expect(
       fetchRecords(fetcher as unknown as typeof fetch, "/api/records", {}),
     ).rejects.toThrow("HTTP 500");
+  });
+
+  it("rejects an invalid dataSource before touching the fetcher (F-001)", async () => {
+    const fetcher = vi.fn(async () => new Response("{}", { status: 200 }));
+    for (const bad of [
+      "//evil.example/api/records",
+      "http://evil.example/api/records",
+      "api/records",
+      "/api/rec ords",
+      "/api/records?q=x",
+      "",
+    ]) {
+      await expect(
+        fetchRecords(fetcher as unknown as typeof fetch, bad, {}),
+      ).rejects.toThrow(/invalid dataSource/);
+    }
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
 

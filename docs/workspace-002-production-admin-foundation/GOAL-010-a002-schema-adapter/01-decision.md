@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策 · GOAL-010
@@ -43,3 +43,20 @@ version: 0.1.0
 - **信息门禁**：`I-010-001` → **verified**（本契约 v0.1.0）；`I-010-002` → **verified**（§6 迁移策略随本决策冻结，最晚阶段 S3 提前关闭）。S1 方案冻结门禁解除，S2 实施可放行。
 - **影响**：Root A-002 F-002-001 仍 `open`（S1～S5 完成并审计后闭合）；不修改任何产品代码（S1 为文档冻结）。
 - **后续**：S2 后端通用资源 CRUD（注册表 + records 实例化）→ S3 前端泛化 → S4 新实体 `catalog` 验证 → S5 关门。
+
+## D-003 · 响应 A-001 F-001/F-002：契约升版 v0.2.0 + S3 正反测试（fixed）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**（P-004）：用户指令「响应 F-001/F-002，走 fixed：补充契约语义和 S3 正反测试」；P-004 §3.1 裁决**不补 self 审计**（L0 下 `fixed` 不强制自审/独立复审）。
+- **决定**：采纳 [I-010-001 契约 **v0.2.0**](attachments/I-010-001-schema-resource-contract.md) 修订并实施 S3——
+  1. **F-001（§2 执行规则）**：`dataSource` 必须匹配 `^/(?!\/)[^\s\\?#]*$`（单斜杠同源绝对路径，禁 `//`/scheme/空白/反斜杠/`?`/`#`）；`records.ts` 新增 `isValidDataSource`，`fetchRecords` 在调用（认证）fetcher **前**校验；`schema-table.tsx` `schemaTableDataSource` 对缺失/非法返回 `null` → fail-closed（不请求、不渲染、可观察错误）；删除 `DEFAULT_RECORDS_URL` 回落。
+  2. **F-002（§3 行键不变量）**：`rowKey` 为直接字段名（默认 `id`）；每行非空且唯一 string/finite-number 标量；无效响应（缺失/空/非标量/重复）停止渲染数据、禁止行 action 与选中，渲染可观察错误。`schema-table.tsx` `schemaTableRowKey`/`scalarRowKey`/`checkRowKeys` 实施；`RenderTableNode.props` 增加 `rowKey`。
+  3. **泛化**：`records.ts` 去除 `RecordItem` 五字段白名单（`ResourceItem`/`ResourceList` + 统一 envelope 解析）；`readRecordApiError`/`buildRecordsQuery`/`create·update·deleteRecord` 保留（泛化 body）。
+- **fixed 关闭证据**：契约 §2/§3（v0.2.0）+ 本决策 + S3 正反测试——`records.test.ts`（22 用例，含 `isValidDataSource` 正反例与 `fetchRecords` 非法 dataSource 不触 fetch）、`schema-table.test.tsx`（14 用例，含非 id `sku` 正例与缺失/重复/错误类型反例）+ 全量 `vitest run` **481/481** + `tsc -b`/`vite build` 干净。F-001/F-002 按 `fixed` 闭合（见 03-audit 响应节）。
+- **未选方案**：
+  - **契约仅补文档、S3 实施另轮**：F-001/F-002 必改要求 S3 正反测试作为关闭证据，仅文档不构成 `fixed`。
+  - **同轮实施 S2 后端**：用户裁决本轮范围为「契约 + S3」（S2 下一轮）。
+- **信息门禁**：`I-010-001` 维持 `verified`（v0.2.0 为响应修订，不改变冻结结论）；`I-010-002` 维持 `verified`。
+- **影响**：**S3 检查点达成，GOAL-010 `1/5 → 2/5`**（串行偏差留痕：S3 为纯前端、不依赖 S2，因 F-001/F-002 关闭证据在 S3 而先于 S2 实施；S2 下一轮）；Root A-002 F-002-001 仍 `open`（待 S2～S5 完成 + S4 新实体验证 + 关门审计后闭合）。
+- **后续**：S2 后端通用资源 CRUD；S3 关闭证据可请求窄 scope `/audit` finding-closure 复核后再推进 S2 实施门禁。

@@ -83,7 +83,9 @@ function createRecordsApi(
       let items = [...store];
       const q = url.searchParams.get("q");
       if (q !== null && q !== "") {
-        items = items.filter((record) => record.name.toLowerCase().includes(q.toLowerCase()));
+        items = items.filter((record) =>
+          String(record.name ?? "").toLowerCase().includes(q.toLowerCase()),
+        );
       }
       const sort = url.searchParams.get("sort");
       const order = url.searchParams.get("order");

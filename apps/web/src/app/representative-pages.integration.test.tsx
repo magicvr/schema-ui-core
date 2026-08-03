@@ -215,6 +215,6 @@ describe("representative pages through the real manifest (GOAL-004)", () => {
 
   it("fails closed when the records data source is unreachable on a list page", async () => {
     const container = await renderApp("/data-table", {}, realFixtures(), 500);
-    expect(container.textContent).toContain("records fetch failed");
+    expect(container.textContent).toContain("resource fetch failed");
   });
 });
