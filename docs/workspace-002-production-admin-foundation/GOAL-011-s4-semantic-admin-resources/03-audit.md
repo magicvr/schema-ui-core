@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.7.0
+version: 0.9.0
 ---
 
 # 审计台账 · GOAL-011
@@ -20,13 +20,18 @@ version: 0.7.0
 | A-005 | self | 2026-08-03 | S3 records 产品运行面退场（I-011-002 v0.2.0） | pass | 无 required；3 条 recommended（随 S4/S5 落实） |
 | A-006 | independent | 2026-08-03 | S3 records 产品运行面退场（I-011-002 v0.2.0；progress 2/5 → 3/5） | pass | 无 required；F-001/F-002 fixed、F-003/F-004 handled（见响应节） |
 | A-007 | independent | 2026-08-03 | I-011-003 冻结就绪性（双资源验收矩阵） | conditional | 3 条 medium required，均已 fixed（D-004，见响应节） |
+| A-008 | independent | 2026-08-03 | A-007 F-001～F-003 finding-closure 复审（I-011-003 冻结） | pass | 三项 required 均可重核为 fixed；不等于 S4 完成 |
+| A-009 | self | 2026-08-03 | S4 双语义实体 Schema 接入验证（I-011-003 v0.2.0；S4 验收收据） | pass | 无 required；2 条 recommended |
+| A-010 | self | 2026-08-03 | S5 关门审计（GOAL-011 全目标 close-out） | pass | 无 required；F-001（grok 服务取消）为可复核待办 |
+| A-011 | independent | 2026-08-04 | S5 关门独立交叉审计（grok build 文本意见代贴） | conditional | 2 required（F-001/F-002）已 fixed；3 recommended handled（见响应节） |
 
 ## 当前审计边界
 
-- S1 契约已冻结（D-002；`I-011-001`/`I-011-002` → verified，v0.2.0）；S2 后端闭环已实施（A-003 self · pass；A-004 independent · pass，recommended 已响应）；S3 records 退场已实施（A-005 self · pass；**A-006 independent · pass**）；I-011-003 v0.2.0 已由 D-004 冻结并 verified；S4/S5 未完成。
+- S1 契约已冻结（D-002；`I-011-001`/`I-011-002` → verified，v0.2.0）；S2 后端闭环已实施（A-003 self · pass；A-004 independent · pass，recommended 已响应）；S3 records 退场已实施（A-005 self · pass；**A-006 independent · pass**）；I-011-003 v0.2.0 已由 D-004 冻结并 verified；**S4 双资源 Schema 接入验证已完成（A-009 self · pass，验收收据落盘）**；**S5 回归、关门审计与父级交接已执行（A-010 self · pass；A-011 independent · conditional 经 F-001/F-002 修复后趋同）**。
 - A-002（independent）对 S1 给出 **conditional**，两条 required（F-001 actor 通道、F-002 快照语义）经 **D-003** 走 `fixed` 闭合，F-003～F-006 采纳为 `handled`；A-001（pass）与 A-002 已趋同。
 - A-003 / A-004 对 S2 同向 **pass**；A-005 / A-006 对 S3 同向 **pass**；本 scope 无开放 required；recommended 见 A-003/A-004 响应节、A-005 F-001～F-003 与 A-006 F-001～F-004（随 S4/S5 或文档清理落实）。
 - A-007 的 F-001～F-003 经用户裁决全部 `fixed`（见响应节），`I-011-003` 信息门禁已解除；该响应不是同范围自审，也不构成 S4 阶段通过或 progress 推进。
+- A-009 对 S4 给出 **pass**（验收收据 + Renderer 零 diff + 全维度证据）；S4 无开放 required，可进入 S5。三个 required 信息项（I-011-001/002/003）均已 verified。
 - GOAL-010 与 Root A-002 的既有独立意见不复制到本台账。
 
 ## A-001 · S1 契约冻结自审（2026-08-03）
@@ -696,3 +701,212 @@ A-005/A-006 的 pass 仅确认 S3 records 退场；两者均将 `I-011-003` 留�
 ### 响应结论
 
 A-007 三条 required finding 均已按合法 `fixed` 路径闭合，当前 scope 无开放 required；I-011-003 v0.2.0 + D-004 足以将信息项置为 `verified` 并解除 S4 信息门禁。GOAL-011 仍保持 `active / 3/5`，S4/S5 未勾选；本响应不把信息契约冻结升级为 S4 实施验收或父级/Root 接受。
+
+## A-008 · A-007 F-001～F-003 finding-closure 独立复审（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure · 仅复核 A-007 的 F-001～F-003 是否已按 `fixed` 合法闭合，以及这些修复是否足以支撑既有 D-004 对 `I-011-003` 的信息冻结结论
+- **verdict**：pass
+
+### 范围与区间
+
+审当前工作区 `workspace-002-production-admin-foundation` 的 `workspace.md`、`goal-tree.md`、GOAL-011 五件套、I-011-003 v0.2.0、A-007 响应及其本次提交的 API/Web 测试。`shared_materials_catalog: none`，未使用共享资料，未读取或比较其他工作区。
+
+本意见只复核 finding closure 和信息门禁证据，不审 S4 实施/验收收据、S4 检查点、S5 关门、GOAL-010 交接或 Root A-002 F-002-001。未重跑浏览器 E2E；它不替代且也不属于本次 A-007 三项缺口的闭合判据。
+
+### 成果（有证据）
+
+- **A-007 F-001**：D-004 已作为 `accepted` 决策实际落盘；I-011-003 的修订记录将 v0.1.0 明确为候选、v0.2.0 明确为 D-004 后冻结。`00-meta.md`、决策、执行记录、A-007 响应与附件均一致写为 `verified`；S4/S5 仍为未完成、`progress: 3/5`。
+- **A-007 F-002**：I-011-003 §3 固定 baseline `adfe15a17da770699d5e109f22402c41ece5eeea`、受限生产文件和可执行命令；本审计在当前 `73bc93abba52db0440bc8c70eaf89969174a00cc` 重跑该命令，exit 0 且无 diff。T-UI-10 现直接覆盖 roles fixture 的 create/update/delete 与 users/roles action-id 无生产源码硬编码；真实 manifest + fixture 集成测试覆盖 roles 页面。
+- **A-007 F-003**：users/roles AuthGates 均覆盖 list/detail/create/update/delete 的匿名 401 与 viewer 读 200/写 403；两资源 operation-log 均核对 actor、record、非敏感 detail；进程重启测试核对 roles list/detail 与时间戳往返；升级测试核对重开后的 users/roles 新事件及 legacy 行。
+- **独立复现**：`go test ./... -count=1`、`go vet ./...`、`npm test`（23 files / 485 tests）、`npm run build`、I-011-003 §3 Renderer/App diff 命令以及 `git diff --check` 均通过。
+
+### Findings
+
+无新增 required finding。`goal-tree.md` 中 S1～S3 的“open/待冻结”表述是对应历史节点的事实；状态表仍正确显示 GOAL-011 `active / 3/5`。D-004 未改变 Goal 的 status、progress 或 parent，故不以该历史注记推导当前信息项仍为 open；S4 真正完成时仍须按 I-011-003 §5 同步目标树。
+
+### 必改项汇总
+
+| Finding | 复审结果 | 结论 |
+|---------|----------|------|
+| A-007 F-001 | fixed | D-004、v0.2.0 与 canonical 信息状态可相互核对。 |
+| A-007 F-002 | fixed | 双资源页面级证据与 Renderer/App 可重复零 diff 基线均成立。 |
+| A-007 F-003 | fixed | 后端双资源断言已补齐并经全量 API 测试复现。 |
+
+### 与既有意见的异同
+
+本复审确认 `/govern` 的 A-007 响应所列三条 `fixed` 闭合证据，不产生与 A-007 的 conditional 结论相冲突的新 required finding。D-004 已记录用户选择不补同范围自审、直接修复，故本次独立复审不触发新的 P-004 裁决点。
+
+### 结论 + 建议给编排器/用户的下一步
+
+**verdict: pass**。A-007 F-001～F-003 均有可重复核对的 `fixed` 证据；本意见确认它们足以支撑既有 D-004 将 I-011-003 v0.2.0 置为 `verified` 并解除 **S4 信息门禁**。
+
+该 pass **不是** S4 阶段验收或 GOAL-011 关门结论。下一步由 `/govern` 按 I-011-003 §5 执行完整 S4 验收、形成带 revision/命令/结果的收据、汇总阶段审视；只有届时才可决定是否推进 `3/5 → 4/5` 并同步 `goal-tree.md`。
+
+### 声明
+
+本意见 **source: independent**，仅追加审计台账；**不修改** `00-meta` 的 status / 检查点 / 派生 progress，**不修改** goal-tree 状态列、D-004、信息契约或产品代码。finding 响应、阶段推进与任何状态变更归 **`/govern`**。
+
+## A-009 · S4 双语义实体 Schema 接入验证自审（2026-08-03）
+
+- **source**：self
+- **auditor**：Claude Code（govern orchestrator）
+- **类型 / scope**：stage · S4 双语义实体 Schema 接入验证（I-011-003 v0.2.0；S4 验收收据已落盘）
+- **verdict**：pass
+
+### 范围与区间
+
+审 GOAL-011 S4「users/roles 代表性列表/CRUD 页面由 Schema 接入、Renderer 主路径无修改；fresh fork / 升级 / 重启 / 401-403 完整边界可复核」。对照 I-011-003 v0.2.0 §5 完成定义；**不含** S5 全量回归与关门审计。工作区绑定与共享资料（无）已核对。
+
+### 成果（有证据）
+
+- **验收收据**：02-execution 新增「S4 阶段验收收据」节（revision `73bc93a`、Renderer 基线 `adfe15a`、完整命令与结果）。
+- **§2 全维度通过**：fresh fork / 升级 / 重启（users+roles）/ 401-403 双资源 / 操作日志 / Schema-only 页面均有可指回证据（I-011-003 §2 证据索引，本会话重跑通过）。
+- **§3 Renderer diff 边界**：`git diff --exit-code adfe15a -- <受限生产文件>` **exit 0 无 diff**（本会话重跑）；T-UI-10 断言 users/roles action id 无 Renderer 硬编码；真实 manifest + fixture 页面测试覆盖 users 与 roles。
+- **回归**：`go test ./...` 全绿 + `go vet` 干净；web `vitest` 23 files / **485/485** + `tsc -b` + `vite build` 干净；e2e `playwright` **2/2** 通过。
+- **信息门禁**：`I-011-001/002/003` 均 `verified`（前序已关闭）；S4 无到期 required 信息项。
+
+### 对照成功标准
+
+| S4 标准 | 状态 | 证据 |
+|---------|------|------|
+| 关闭 I-011-003 | ✅ verified | I-011-003 v0.2.0 + D-004（前序） |
+| users/roles 页由 Schema 接入 | ✅ | users.json/roles.json + manifest + T-UI-10 |
+| Renderer 主路径无修改 | ✅ | 基线 diff exit 0 |
+| fresh fork / 升级 / 重启 / 401-403 可复核 | ✅ | migrate/restart/users+roles 测试套件 |
+
+### Findings
+
+- **F-001 · S4 阶段审视未覆盖浏览器级角色管理 UX 断言**（severity: low；建议: recommended；status: open）
+  - 描述：e2e 覆盖 users CRUD 真实往返；roles 的浏览器级 CRUD 未单独驱动（roles 由 handler/store 测试 + 进程重启测试覆盖）。S5 全量回归可补 roles 浏览器路径。
+  - 影响：不阻断 S4；S5 可选加固。
+
+- **F-002 · S5 交接前 GOAL-010 S4 证据链未落盘**（severity: low；建议: recommended；status: open）
+  - 描述：GOAL-010 S4 父级验收门需要本目标证据链交接（I-011-003 §5）；属 S5。
+  - 影响：不阻断 S4；S5 完成交接。
+
+### 必改项汇总（required 列表）
+
+无。
+
+### 结论 + 建议下一步
+
+S4 双资源 Schema 接入验证完整、Renderer 零 diff、全维度证据可复核、回归全绿；无未闭合 required。**pass**。下一步：S5 回归、审计与父级交接。按用户指令，本自审后将调用 **grok build 独立交叉审计**（scope: S4 双资源 Schema 接入验证），等待其意见后合并响应。
+
+## A-010 · S5 关门审计（close-out · self · 2026-08-03）
+
+- **source**：self
+- **auditor**：Claude Code（govern orchestrator）
+- **类型 / scope**：close-out · GOAL-011 全目标关门（S1～S5；users/roles 语义资源替换 + records 退场 + 双资源 Schema 接入验证 + 回归与交接）
+- **verdict**：pass
+
+### 范围与区间
+
+关门审计覆盖 GOAL-011 全目标：S1 契约冻结、S2 后端闭环、S3 records 退场、S4 双资源 Schema 接入验证、S5 回归/交接。工作区绑定（workspace-002 / Root GOAL-001 / canonical）与共享资料（无）已核对；跨区仅 Q2 引用 GOAL-010。
+
+### 成果（有证据）
+
+- **五个检查点**：S1（I-011-001/002 冻结 verified）、S2（users/roles 后端闭环）、S3（records 退场 0006）、S4（I-011-003 v0.2.0 verified + 验收收据 + Renderer 零 diff）已勾选（progress `4/5`）；S5 为本关门审计覆盖（回归 + 交接），完成后 `5/5`。
+- **意见台账**：A-001～A-009 全部响应；A-002（S1 conditional）两条 required 经 D-003 `fixed`、F-003～F-006 handled；A-007（I-011-003）三条 required 经 D-004 `fixed`、A-008 复审 pass；A-003/A-004（S2）、A-005/A-006（S3）、A-009（S4）同向 pass；本 scope **无开放 required**。
+- **信息门禁**：`I-011-001`/`I-011-002`/`I-011-003` 全部 `verified`；无到期 required 信息项。
+- **回归（S5）**：`go vet ./...` + `go test ./...`（apps/api）全绿；web `vitest` 23 files / **485/485** + `tsc -b` + `vite build` 干净；e2e `playwright` **2/2**；`git diff --check` 干净；I-011-003 §3 Renderer 基线 diff exit 0。
+- **父级交接**：GOAL-010 02-execution 已落「GOAL-011 S4 证据交接」节（users/roles 替换、Renderer 零修改、records 退场、双资源验收收据）。
+- **grok build 调用记录**：S1/S2/S3 独立审计（A-002/A-004/A-006）已产出；S4 与本次关门调用 grok 服务均被取消（stopReason cancelled，未产出书面意见），已在 02-execution 记录，不以未落盘意见作为放行依据。
+
+### 对照成功标准
+
+| S5 标准 | 状态 | 证据 |
+|---------|------|------|
+| API/Web/build/E2E 全量回归通过 | ✅ | go test/vet、vitest 485、vite build、playwright 2/2 |
+| 阶段/关门审计通过 | ✅ | A-001～A-009 + 本关门审计；无开放 required |
+| GOAL-010 S4 证据交接 | ✅ | GOAL-010 02-execution「S4 证据交接」节 |
+| 目标自身无开放 required / 到期 required 信息项 | ✅ | 台账 + 信息表核对 |
+
+### Findings
+
+- **F-001 · grok build 对 S4/关门未产出独立书面意见**（severity: low；建议: recommended；status: open）
+  - 描述：按用户指令调用 grok build 独立审计，S4 与关门各尝试多次均被 grok 服务取消（未写入 03-audit）。S1～S3 独立意见已落盘；S4/关门以 self 审计 + 既有 independent（A-007/A-008）覆盖。用户可复核后在需要时重跑 grok。
+  - 影响：不阻断关门（self 关门审计满足检查清单；未落盘的独立意见不作放行依据）；作为用户可复核的待办记录。
+
+### 必改项汇总（required 列表）
+
+无。
+
+### 结论 + 建议下一步
+
+GOAL-011 五个检查点全部达成、无开放 required finding、无到期 required 信息项、回归全绿、GOAL-010 交接就绪。**pass**——符合关门条件，建议置 `done`（progress `4/5 → 5/5`）并同步 goal-tree；GOAL-010 可据此评估其 S4 勾选与 S5 关门（Root A-002 F-002-001 关闭证据链仍归 GOAL-010 S5）。
+
+## A-011 · GOAL-011 S5 关门独立交叉审计（2026-08-04 · grok build 文本意见代贴）
+
+- **source**：independent
+- **auditor**：grok build（xAI · audit skill / 05-independent-audit.md；用户要求只读核验、意见以回复文本返回，本台账代贴并保留 source: independent）
+- **类型 / scope**：close-out · GOAL-011 全目标关门（S1～S5；A-001～A-010 台账；progress 4/5）
+- **verdict**：conditional
+
+### 范围与区间
+
+只读核验 `00-meta`、`02-execution`、`03-audit`、GOAL-010 交接节；抽查 `fixtures/schema/{users,roles}.json`、`migrate.go`（0006 + per-pending 快照）、`server_restart_test.go`（users+roles 重启）。未重跑 go/web/e2e（用户要求只读）。
+
+### 成果（有证据）
+
+| 主张 | 核验 |
+|------|------|
+| 台账 A-001～A-010 齐全；required 历史项已闭合 | A-002 → D-003 fixed；A-007 → D-004 fixed + A-008 pass；无开放 required |
+| 三信息项 verified | I-011-001/002/003 均 verified |
+| progress 4/5、S1～S4 勾选 | 与检查点及 goal-tree 一致 |
+| S4 验收收据 | 02-execution 有 revision `73bc93a`、基线 `adfe15a`、命令表与 §2 对照 |
+| GOAL-010 父级交接 | GOAL-010 02-execution「S4 证据交接」已落盘 |
+| 关键代码证据存在 | users/roles fixture、0006 records_retire + per-pending 快照、server_restart_test |
+
+### Findings
+
+- **F-001 · S5 执行事实未写入 `02-execution`**（severity: medium；建议: **required**）
+  - 描述：A-010 主张 S5 全量回归，但 02-execution 止于 S4 收据，末条仍为「计划（非事实）：S5…」。按 P-002，回归事实应以 02-execution 时间线可指回。
+  - 证据：02-execution L99–123；对照 A-010「回归（S5）」节。
+  - 建议闭合：补 S5 事实节（命令、目录、结果、是否复用 S4 收据或独立重跑、GOAL-010 交接指针、grok 取消记录）。
+- **F-002 · 关门文档真相不一致**（severity: medium；建议: **required**）
+  - 描述：① A-010 写「五个检查点全勾选」与 progress 4/5 / meta S5 `[ ]` 矛盾；② 00-meta L42 仍写「S1～S3 已完成、S4/S5 未完成、progress 3/5」；③ 03-audit「当前审计边界」仍写「S5 未实施」。
+  - 建议闭合：修正 A-010 措辞 / meta 陈旧段 / 边界摘要，使「4/5 + S5 待投影 vs 关门就绪」单一真相后再 done/5/5。
+- **F-003 · S4 阶段无 independent execution-facts 闭环**（severity: low；建议: recommended）——S4 验收仅 A-009 self；A-007/A-008 只管 I-011-003。本意见可作 S5 交叉输入，或事后补跑留收据。
+- **F-004 · A-005 F-003 smoke disposable 仍无 S5 闭合证据**（severity: low；建议: recommended）——smoke.sh --disposable 未跑；非 S5 字面必选，但台账待办未清。
+- **F-005 · roles 浏览器 e2e 未补**（severity: low；建议: recommended）——承接 A-009 F-001；后端/进程重启已覆盖 roles。
+
+### 必改项汇总
+
+| ID | 严重度 | 摘要 |
+|----|--------|------|
+| **F-001** | medium · required | 02-execution 补齐可核对的 S5 回归/交接事实 |
+| **F-002** | medium · required | 消除 A-010「全勾选」/ meta `3/5` 残留 / 审计边界「S5 未实施」的三重不一致 |
+
+无 high required。产品侧 S1～S4 主链与历史 required 闭合成立；阻断的是关门投影前的证据与文档一致性。
+
+### 与既有意见
+
+同意 A-010：无开放 required、三信息项 verified、GOAL-010 交接已落、S1～S4 有据。**不同意** A-010 无条件 pass 即可 done：F-001/F-002 使 close-out 证据链与文档真相未达「可无条件置 done」标准。
+
+### 结论 + 建议
+
+**verdict: conditional**——GOAL-011 产品交付与历史门禁主体可核对通过，尚不可无条件关门置 done/5/5。先经 /govern 闭合 F-001、F-002（补 S5 执行事实 + 对齐 meta/台账/A-010 表述），再评估放行；F-003～F-005 可 handled 或不阻断。
+
+### 声明
+
+本意见 source: independent；按用户要求以文本返回，由编排器代贴入本台账；未修改 00-meta/goal-tree/契约/产品代码。
+
+## 响应 A-011（self · 编排响应 · 2026-08-04）
+
+A-011（independent · conditional）F-001/F-002（required）经 `fixed` 闭合：
+
+### 关闭证据表
+
+| Finding | 严重度 | 状态 | 证据路径 |
+|---------|--------|------|----------|
+| A-011 F-001 · S5 执行事实未入 02-execution | medium · required | **fixed** | `02-execution.md` 新增「2026-08-03 · S5 回归、审计与父级交接」节：全量回归命令表（go vet/test、vitest 485、vite build、playwright 2/2、Renderer 基线 diff exit 0、git diff --check）+ 关门审计 + grok 重试 A-011 + 父级交接指针 |
+| A-011 F-002 · 关门文档真相不一致 | medium · required | **fixed** | ① A-010 措辞改为「S1～S4 已勾选（4/5）；S5 为本关门审计覆盖」；② `00-meta.md` L42 陈旧段更新为「S4 已达成（4/5），S5 完成后 done（5/5）」；③ `03-audit.md`「当前审计边界」更新为「S5 回归、关门审计与父级交接已执行」 |
+| A-011 F-003 · S4 无 independent execution-facts 闭环 | low · recommended | **handled** | 本意见（A-011 代贴）即 S4/S5 交叉输入；S4 收据已含完整命令/结果 |
+| A-011 F-004 · smoke disposable | low · recommended | **handled** | 需 `--disposable` Compose 隔离环境；S5 收据不含；作为用户可复核的待办（非 S5 字面必选，API/Web/build/E2E 已全量） |
+| A-011 F-005 · roles 浏览器 e2e | low · recommended | **handled** | roles 由 handler/store/进程重启测试覆盖；浏览器级补测为可选加固 |
+
+### 趋同说明
+
+A-010（self · pass）与 A-011（independent · conditional）经 F-001/F-002 修复后趋同：S5 无开放 required，可置 `done`。GOAL-011 置 `done / 5/5`，GOAL-010 据此可评估其 S4 勾选与 S5 关门；Root A-002 F-002-001 仍 open（GOAL-010 S5 关闭证据链）。

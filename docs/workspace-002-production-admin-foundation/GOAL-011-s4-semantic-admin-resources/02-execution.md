@@ -95,3 +95,47 @@ version: 0.2.0
   - Renderer/App 基线：I-011-003 §3 的 `git diff --exit-code adfe15a... -- <受限生产文件>` → exit 0、无输出。
 - **治理投影**：A-007 F-001～F-003 均 `fixed`；I-011-003 v0.2.0 + D-004 → `verified`，只解除信息门禁。GOAL-011 保持 `active / 3/5`，S4/S5 未勾选，goal-tree 状态与进度不变。
 - **计划（非事实）**：另行执行 S4 冻结矩阵，形成包含完整命令、revision 与结果的阶段验收收据；经阶段审视后再决定是否把 progress 推进至 `4/5`。
+
+## 2026-08-03 · S4 阶段验收收据（I-011-003 v0.2.0 §5）
+
+- **验收 revision**：`73bc93abba52db0440bc8c70eaf89969174a00cc`（GOAL-011 归档提交）；Renderer/App 基线 `adfe15a17da770699d5e109f22402c41ece5eeea`（I-011-003 §3）。
+- **命令与结果**：
+  | 命令 | 结果 |
+  |------|------|
+  | `git diff --exit-code adfe15a… -- apps/web/src/renderer/{render.ts,render.tsx,schema-table.tsx,modal.tsx,confirm.tsx,form-controls.ts,form-controls.tsx,row-action.ts,records.ts,reactions.ts,permissions.ts} apps/web/src/app/App.tsx` | **exit 0**，无 diff（Renderer/App 主路径自基线零修改） |
+  | `go vet ./...`（apps/api） | 干净 |
+  | `go test ./... -count=1`（apps/api） | 全包通过（cmd/server / account / auth / config / handler / store） |
+  | `npx vitest run`（apps/web） | **23 files / 485 tests passed** |
+  | `npx tsc -b`（apps/web） | 干净 |
+  | `npx vite build`（apps/web） | 生产构建成功 |
+  | `WEB_PORT=9999 npx playwright test`（apps/web/e2e） | **2/2 通过**（users CRUD 真实 Go/SQLite 往返 + shell/auth 链） |
+- **§2 验收维度对照**（全部通过，证据指针见 I-011-003 §2）：
+  - fresh fork：`TestMigrateFreshDB`（无 records 表 + users.create 事件可写）✅
+  - 既有库升级：`TestMigrateExistingV3ToV4`（pre-v0005/pre-v0006 + records 表消失）、`TestMigrate0005PreservesOperationLogRows`（legacy 行保留 + users/roles 新事件重开持久化）✅
+  - 重启持久化：`TestServerProcessRestartPersistsUsers`（users create/patch/delete + roles create；重启后双资源 list/detail 与毫秒时间戳往返）✅
+  - 401/403 双资源：`TestUsersAuthGates`/`TestRolesAuthGates`（五路由匿名 401、viewer 读 200/写 403）✅
+  - 操作日志：`TestUsersOperationLogEvents`/`TestRolesOperationLogEvents`（actor id/name、record id、非敏感 detail、delete nil detail）✅
+  - Schema-only 页面：T-UI-10（users/roles action id 无 Renderer 硬编码）+ `representative-pages.integration.test.tsx`（真实 manifest + users/roles fixture 页面渲染）✅
+- **§3 Renderer diff 边界**：S4 基线命令 exit 0（上表首行）；S4 未修改任何受限生产文件。
+- **S4 阶段审视**：I-011-003 全部验收维度在验收 revision 通过；A-001～A-008 已响应，本 scope 无开放 required；S4 检查点达成。
+- **治理投影**：**S4 勾选，GOAL-011 `3/5 → 4/5`**；同步修订 `00-meta`（S4 勾选、version 0.6.0）与 `goal-tree.md`（4/5 + 注记）；Root A-002 F-002-001 仍 open（S5 交接后闭合）。
+- **grok build S4 独立审计调用记录（未完成）**：按用户指令，A-009 自审后调用 grok build 独立审计（scope: S4 双资源 Schema 接入验证）。**grok 服务端 5 次会话均被取消**（`stopReason: cancelled`，最短 2 轮即中断，未产出书面 A-010 意见）。S4 阶段审视暂以 A-009（self · pass）为主，叠加既有独立意见 A-007（conditional → fixed）/A-008（independent · pass，I-011-003 finding-closure）；grok 对 S4 的独立审计**留待 S5 关门时重试**，如仍不可用则作为用户可复核的待办记录（不以未落盘的独立意见作为放行依据）。
+- **计划（非事实）**：S5 回归、审计与父级交接（全量回归 + 关门审计 + grok build 重试 + GOAL-010 S4 证据交接）。
+
+## 2026-08-03 · S5 回归、审计与父级交接
+
+- **全量回归（S5 事实，独立于 S4 收据重跑）**：
+  | 命令 | 结果 |
+  |------|------|
+  | `git diff --check`（仓库根） | 干净（仅 LF→CRLF 提示） |
+  | `go vet ./...`（apps/api） | 干净 |
+  | `go test ./... -count=1`（apps/api，180s） | 全包通过（cmd/server / account / auth / config / handler / store） |
+  | `npx vitest run`（apps/web） | **23 files / 485 tests passed** |
+  | `npx tsc -b`（apps/web） | 干净 |
+  | `npx vite build`（apps/web） | 生产构建成功 |
+  | `WEB_PORT=9999 npx playwright test`（apps/web/e2e） | **2/2 通过** |
+  | I-011-003 §3 Renderer 基线 `git diff --exit-code adfe15a… -- <受限生产文件>` | **exit 0** |
+- **关门审计（self）**：A-010（close-out · self · pass）——五个检查点全部达成、无开放 required finding、无到期 required 信息项、GOAL-010 交接就绪；F-001（grok S4/关门取消）为可复核待办。
+- **grok build 关门独立审计**：重试成功，产出 **A-011**（independent · conditional，文本态意见已代贴入 03-audit）——F-001（S5 执行事实未入 02-execution）、F-002（关门文档真相不一致）required → 本 S5 事实节 + meta/审计边界对齐后 `fixed`；F-003～F-005 recommended 随关闭或 handled。
+- **父级交接**：GOAL-010 `02-execution` 已落「GOAL-011 S4 证据交接」节（users/roles 替换、Renderer 零修改、records 退场、双资源验收收据）。
+- **治理投影**：S5 关门审计通过（A-010 + A-011 经 F-001/F-002 修复后趋同），**GOAL-011 置 `done`，progress `4/5 → 5/5`**；同步 `00-meta`（S5 勾选、status done、version 0.7.0）与 `goal-tree.md`（5/5 + done + 注记）；GOAL-010 据此可评估其 S4 勾选与 S5 关门；Root A-002 F-002-001 仍 open（GOAL-010 S5 关闭证据链）。

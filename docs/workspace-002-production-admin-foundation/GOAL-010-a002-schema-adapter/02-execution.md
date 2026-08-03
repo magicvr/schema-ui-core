@@ -57,3 +57,14 @@ version: 0.3.0
 - 本目标 S4 文案已改为父级验收门，依赖 GOAL-011 完成证据；`progress` 保持 `3/5`，S4/S5 均未勾选。
 - 未修改产品代码；records 仍在当前运行面；users/roles CRUD 尚未实施；Root A-002 F-002-001 继续 open。
 - **计划（非事实）**：下一拍在 GOAL-011 收集并冻结 `I-011-001`/`I-011-002`，未冻结前不实施受影响范围。
+
+## 2026-08-03 · GOAL-011 S4 证据交接（父级验收门就绪）
+
+- GOAL-011 已完成 S1～S4（progress 4/5）：users/roles 后端闭环（S2）、records 产品运行面退场（S3，0006）、双语义实体 Schema 接入验证（S4，I-011-003 v0.2.0 冻结并 verified）。
+- **本目标 S4 父级验收门证据链就绪**：
+  - users 替换 records 默认代表实体、roles 作为第二语义资源：`apps/api/internal/handler/{users.go, roles.go}` + fixture `users.json`/`roles.json` + manifest users/roles 页。
+  - 仅通过前端 Schema 接入列表/CRUD 页面、Renderer 主路径无修改：I-011-003 §3 基线 `adfe15a` 零 diff（`git diff --exit-code` exit 0）+ T-UI-10。
+  - records 已从产品默认运行面按版本化策略退场：migration `0006 records_retire`（DROP TABLE + 清理权限/菜单行）+ per-pending 快照；产品代码 grep 无 `api/records` 等残留。
+  - fresh fork / 既有库升级 / 进程级重启 / 401-403 双资源验收：I-011-003 v0.2.0 全维度 + S4 验收收据（见 GOAL-011 02-execution）。
+- 完整证据见 [GOAL-011 五件套与附件](../GOAL-011-s4-semantic-admin-resources/)；GOAL-011 S5（回归审计与关门）完成后可勾选本目标 S4。
+- **计划（非事实）**：GOAL-011 完成后评估本目标 S4 勾选与 S5 关门；Root A-002 F-002-001 关闭证据链仍待 GOAL-010 S5。
