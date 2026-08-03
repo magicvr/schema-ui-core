@@ -89,7 +89,8 @@ related_decision: D-002, D-003
 
 - `apps/web/src/renderer/schema-table.tsx`（`schemaTableDataSource` F-001 校验、`schemaTableRowKey`/`checkRowKeys` F-002——S3 改造对象）
 - `apps/web/src/renderer/records.ts`（`isValidDataSource`/`DATASOURCE_URL_PATTERN`、`parseRecordList`/`ResourceItem` 泛化——S3 改造对象）
-- `apps/api/internal/handler/records.go`（硬编码路由/实体——S2 收敛对象）
+- `apps/api/internal/handler/resources.go`（`Resource` 注册表 + `ResourceEntity` 接口 + `registerResource` 通用工厂——S2 落地对象）
+- `apps/api/internal/handler/records.go`（records 注册实例 `recordsResource` + `recordsEntity` 适配器——S2 收敛对象；`resources_test.go` genericity 测试）
 - `apps/api/internal/handler/fixtures/schema/{list-edit-lifecycle,search-form-table,catalog,data-table}.json`（`dataSource` 现状）
 - [I-007-001 v0.2.0](../../GOAL-007-r4-schema-crud/attachments/I-007-001-api-error-contract.md)（records 权威契约；本契约 §4/§5 的兼容基线）
 - [I-007-003 v0.2.2](../../GOAL-007-r4-schema-crud/attachments/I-007-003-schema-crud-interaction.md) §9（action/写路径冻结）

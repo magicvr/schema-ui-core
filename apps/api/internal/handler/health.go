@@ -19,16 +19,17 @@ type healthResponse struct {
 }
 
 // Register mounts the health endpoints, the R2 auth endpoints, the R4 account
-// session route, the R4 records CRUD API (SQLite-backed), and the R1 schema
-// document endpoint. Protected routes are wrapped in the request-identity
-// middleware. The store is injected so the records handler reads and writes the
-// same SQLite database that backs identity (GOAL-007 S3).
+// session route, the schema-driven resource CRUD API (SQLite-backed; records is
+// the first registered resource), and the R1 schema document endpoint. Protected
+// routes are wrapped in the request-identity middleware. The store is injected
+// so the resource handlers read and write the same SQLite database that backs
+// identity (GOAL-007 S3).
 func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st))
 	authsHandler(mux, a, st)
 	accountsHandler(mux, a)
-	recordsHandler(mux, a, st)
+	registerResource(mux, a, recordsResource(st))
 	schemasHandler(mux)
 }
 

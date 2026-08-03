@@ -5,8 +5,8 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
-progress: 2/5
+version: 0.4.0
+progress: 3/5
 ---
 
 # GOAL-010 · A-002 · Schema 驱动通用数据适配层
@@ -17,10 +17,10 @@ progress: 2/5
 
 ## 路线图 / 成功标准
 
-五个检查点默认等权、原则上串行（P-001；Root D-014 用户裁决走通用适配层改造，不降级 VP-002 主张）。**串行偏差留痕（2026-08-03）**：S3 为纯前端、不依赖 S2，因 A-001 F-001/F-002 的关闭证据在 S3（dataSource/rowKey 正反测试）而先于 S2 实施；S2 下一轮，S3 之后串行顺序恢复。
+五个检查点默认等权、原则上串行（P-001；Root D-014 用户裁决走通用适配层改造，不降级 VP-002 主张）。**串行偏差留痕（2026-08-03）**：S3 为纯前端、不依赖 S2，因 A-001 F-001/F-002 的关闭证据在 S3（dataSource/rowKey 正反测试）而先于 S2 实施；**S2 已于同日补做，串行顺序已恢复（S1/S2/S3 全勾选）**。
 
 - [x] **S1 · 资源契约与方案冻结**：定义 Schema 驱动的通用资源契约——`dataSource` 资源标识、字段模型、response mapping、后端通用 CRUD 端点/注册形态与错误 envelope 扩展边界；冻结方案（决策 + 附件契约，解除 `I-010-001` 门禁）。
-- [ ] **S2 · 后端通用资源 CRUD**：按资源契约提供通用 CRUD 入口（records 作为已注册资源），保持 `records.read` / `records.write` 权限键与现有错误 envelope；`go test ./...` 全绿。
+- [x] **S2 · 后端通用资源 CRUD**：按资源契约提供通用 CRUD 入口（records 作为已注册资源），保持 `records.read` / `records.write` 权限键与现有错误 envelope；`go test ./...` 全绿。
 - [x] **S3 · 前端通用适配层**：`schema-table` / 表单 transport 与 response mapping 通用化，去除 `RecordItem` / `RecordList` 固定解析（records 降为泛化实例）；web `vitest run` 全绿 + `tsc -b` / 生产构建干净。
 - [ ] **S4 · 新实体验证**：至少一个新增业务实体（新 fixture 资源）仅通过修改 Schema 接入（不修改 Renderer 主路径），完成代表性列表/CRUD 页面闭环。
 - [ ] **S5 · 回归、审计与关闭**：全量回归（api + web + build）+ 阶段/关门审计；Root A-002 F-002-001 关闭证据经 `/audit` finding-closure（或 self + 独立复核）确认后按 `fixed` 闭合。

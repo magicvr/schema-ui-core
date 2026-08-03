@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.48.0
+version: 0.49.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -25,7 +25,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-007-r4-schema-crud [done] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (6/6)
 ├── GOAL-008-r5-engineering-fork [done] R5 · 工程化、fork 体验与集成关门 (5/5)
 ├── GOAL-009-a002-auth-form-fixes [done] A-002 · 缺陷修复（表单提交门禁与认证失效）(4/4)
-└── GOAL-010-a002-schema-adapter [active] A-002 · Schema 驱动通用数据适配层 (2/5)
+└── GOAL-010-a002-schema-adapter [active] A-002 · Schema 驱动通用数据适配层 (3/5)
 ```
 
 ## 状态表
@@ -41,7 +41,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 | `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-03 |
 | `GOAL-009-a002-auth-form-fixes` | A-002 · 缺陷修复（表单提交门禁与认证失效） | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-03 |
-| `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `active` | `2/5` | 2026-08-03 |
+| `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `active` | `3/5` | 2026-08-03 |
 
 > **A-002 已响应、GOAL-009/010 已立项（2026-08-03）**：Root 收到 A-002（independent · fail · apps/api + apps/web product-fit）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）+ recommended F-002-004~006。用户按 P-004 裁决（Root D-014）：三条 required 走 `fixed`——F-002-002/003 → **`GOAL-009-a002-auth-form-fixes`（active 0/4，S1～S4）**；F-002-001 通用适配层改造 → **`GOAL-010-a002-schema-adapter`（active 0/5，S1～S5 + 实施前 required `I-010-001`/`I-010-002`）**；recommended → GOAL-009 可选加分；A-002 同 scope self 审计延后至修复后随关门补。Root A-002 F-002-001~003 保持 open；**Root 关门与 VP-002 关门在 required 全部合法闭合前保持阻断**；Root 保持 `active / 5/5`。
 
@@ -112,3 +112,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-008 已关门、Root R5 已勾选（2026-08-03）**：用户裁决「补自审，没问题则合并响应交叉审计，开始关门」。**A-017（independent · finding-closure · pass）**：F-010 `fixed` 维持闭合（`eb6ff19` clean revision 上独立复核）；R-015 recommended 非阻断。**A-018（self · close-out · pass）**：按 P-004 §3.1 补齐 S6 scope self 覆盖——S1～S6 全部成立、F-001～F-010 全部 fixed、`I-008-001/002/003` verified、无开放 required。**合并响应 + 关门**：采纳 A-017/A-018；**R-015 → handled**（auth detail JSON 精确断言 + 轮换后首次 logout 覆盖，全绿）；**GOAL-008 已置 `done`**；**Root R5 检查点已勾选（Root `4/5 → 5/5`）**。Root close-out 关门审计与 VP-002 关门为独立用户裁决。
 
 > **GOAL-010 A-001 已响应、F-001/F-002 已闭合、S3 已实施（2026-08-03）**：A-001（independent · conditional）两条 required **F-001**（dataSource 同源路径/认证边界）与 **F-002**（rowKey 行键不变量）按用户裁决走 **fixed**（D-003，不补 self）：契约 **I-010-001 v0.2.0** 冻结 dataSource 单斜杠同源执行规则（`^/(?!\/)[^\s\\?#]*$`，认证 fetch 前校验）与 rowKey 非空唯一标量不变量（无效响应停止渲染 + 禁行 action）。**S3 前端适配层已实施**——`records.ts` 泛化（去 `RecordItem` 五字段白名单、`isValidDataSource`、`DEFAULT_RECORDS_URL` 回落删除）、`schema-table.tsx` dataSource/rowKey 校验、`render.ts` `rowKey` 字段；正反测试（`records.test.ts` 22、`schema-table.test.tsx` 14）全绿，全量 `vitest run` **481/481** + `tsc -b` + `vite build` 干净。**F-001/F-002 → fixed 闭合**（03-audit 响应节）；`I-010-001`/`I-010-002` 维持 verified；**S3 勾选，GOAL-010 `1/5 → 2/5`**（串行偏差留痕：S3 纯前端、不依赖 S2，因关闭证据在 S3 而先于 S2）。Root A-002 F-002-001 仍 `open`（待 S2～S5 + S4 新实体验证）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
+
+> **GOAL-010 S2 已实施（2026-08-03）**：**后端通用资源 CRUD**——`resources.go` 通用资源注册表 + handler 工厂（`Resource`/`ResourceEntity`/`registerResource`，统一 requirePermission/4 KiB/`{error,message}`/`INTERNAL`/NOT_FOUND = `{ID}_NOT_FOUND`）；`records.go` 收敛为注册实例（`recordsResource` + `recordsEntity` 适配器，`RECORD_NOT_FOUND` 显式、固定毫秒 `updatedAt`、`records.create/update/delete` 操作日志、`rec-<hex>` id）；`health.go` 挂 `registerResource`。**零对外 API 变更**——全部既有 records 测试（T-API-01～13、401/403、updatedAt 毫秒/单调递增、重启持久化、操作日志）全绿；新增 `resources_test.go` genericity 测试（内存 `catalog` 资源无手写 handler 走通五路由 + 共享门禁 + 默认权限键派生 `widget.read` 403）。证据：`go test ./...` 全绿 + `go vet` 干净。**S2 勾选，GOAL-010 `2/5 → 3/5`**（串行恢复：S1/S2/S3 全勾选）。Root A-002 F-002-001 仍 `open`（待 S4 新实体验证 + S5 关门审计）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。

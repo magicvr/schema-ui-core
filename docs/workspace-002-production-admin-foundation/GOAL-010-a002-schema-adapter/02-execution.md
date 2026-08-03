@@ -37,3 +37,14 @@ version: 0.2.0
 - **F-001/F-002 → fixed 闭合**（见 [03-audit A-001 响应节](03-audit.md#a-001-响应--f-001--f-002-按-fixed-闭合2026-08-03)）；`I-010-001`/`I-010-002` 维持 `verified`。
 - **S3 勾选，GOAL-010 `1/5 → 2/5`**（串行偏差留痕：S3 为纯前端、不依赖 S2，因 F-001/F-002 关闭证据在 S3 而先于 S2）。
 - **计划（非事实）**：S2 后端通用资源 CRUD（注册表 + records 实例化，保持 T-API-01～13 全绿）→ S4 新实体 `catalog` 验证 → S5 回归/关门。S3 关闭证据可先请求窄 scope `/audit` finding-closure 复核。
+
+## 2026-08-03 · S2 已实施（后端通用资源 CRUD）
+
+- **`resources.go`**（通用资源注册表 + handler 工厂，I-010-001 §4）：`Resource` 描述符（id/path/listable/sortFields/qSearch/entity/create·patch 字段/权限键默认派生 `{id}.read`/`{id}.write`/NotFoundCode/NewID/OnWrite）+ `ResourceEntity` 接口（List/Get/Create/Update/Delete，行 = JSON map）+ `registerResource` 挂 list/create/detail/update/delete 五路由，统一 `requirePermission`（401/403）、4 KiB body 上限、`{error,message}` 写错误、`INTERNAL` 兜底、NOT_FOUND = `{ID}_NOT_FOUND`（records 显式 `RECORD_NOT_FOUND`）。
+- **`records.go` 收敛为注册实例**：`recordsResource(st)` + `recordsEntity` 适配器——`recordToMap` 保持固定毫秒 `updatedAt`、`recordsOnWrite` 保持 `records.create/update/delete` 操作日志、`newRecordID` 保持 `rec-<hex>`；删除手写 `recordHandler`/`recordPatch`/`decodeCreateBody`/`validatePatch` 等。
+- **`health.go`** Register 改为 `registerResource(mux, a, recordsResource(st))`。
+- **零对外 API 变更**：全部现有 records 测试（T-API-01～13、权限 401/403、updatedAt 毫秒/单调递增、重启持久化、操作日志）保持全绿。
+- **新增 genericity 测试 `resources_test.go`**：内存 `memEntity` 上注册合成 `catalog` 资源（不同 path/字段/sort 白名单/id 格式，**无手写 handler**）走通 list/create/detail/update/delete + 共享门禁（INVALID_SORT_FIELD / INVALID_CREATE_FIELD / INVALID_PATCH_FIELD / INVALID_CREATE_BODY / 权限 403）+ 默认权限键派生（无显式键 → `widget.read` 未授权 403）。
+- **证据**：`go test ./...` 全绿（handler 7.2s 含新测试）+ `go vet` 干净；`gofmt` 仅 `internal/config/config_test.go` 为既有格式问题（非本轮改动）。
+- **S2 勾选，GOAL-010 `2/5 → 3/5`**（串行恢复：S1/S2/S3 全勾选）。Root A-002 F-002-001 仍 `open`。
+- **计划（非事实）**：S4 新实体验证（`catalog` fixture 仅改 Schema 接入，需 DB 迁移/种子 grants 注入/匿名 401·缺权限 403）→ S5 回归、审计与关闭。
