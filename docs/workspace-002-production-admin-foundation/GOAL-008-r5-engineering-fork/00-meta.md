@@ -1,11 +1,11 @@
 ---
 id: GOAL-008-r5-engineering-fork
 title: R5 · 工程化、fork 体验与集成关门
-status: active
+status: done
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.4.0
+version: 0.5.0
 progress: 5/5
 ---
 
@@ -27,7 +27,7 @@ progress: 5/5
 
 ## 派生进度
 
-`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-03**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；`I-008-002` 已 verified（D-004 + [复现与 smoke 协议 v0.1.2](attachments/I-008-002-fork-reproduction-protocol.md)，D-005/A-008 与 D-007/A-011 响应后权威版本 v0.1.2），解除 S3/S4 的方案冻结/实施前信息门禁；S1/S2 已实施（`0/5 → 2/5`）；**S3/S4 已实施（2026-08-03，`2/5 → 4/5`）**——QUICKSTART fork 文档 + **clean-ref 独立复现记录 `R5-S3-REPRO-003`（预 T0 禁用 BuildKit 结果缓存，`go build`/`npm run build` 编译层实际执行非 CACHED，64.833s ≤ 900s；响应 A-012 F-005）** + `scripts/smoke.sh`（SM-001～006 + 隔离守卫 + 部分绿 exit 8）+ 本地 disposable `SM-006=PASS` 证据（`r5-smoke-disposable-local-v0.1.2.txt`）+ CI `container-smoke` 显式隔离 project 与成功 run 证据。**A-011 F-005～F-009 关闭闭环完成（2026-08-03）**：A-012（independent · fail）重做 F-005 证据 → REPRO-003；**A-013（independent · finding-closure · pass）二次复审确认 F-005～F-009 `fixed` 全部成立、无开放 required**（R-013 handled：CACHED 计数表述收窄至正式 retry #3）；**A-014（self · finding-closure · pass）** 按 P-004 §3.1 补 self 覆盖；**S5 已实施（2026-08-03，`4/5 → 5/5`）**——A-015（self · stage-audit · pass）阶段审计与 Root R5 勾选条件评估。**S6 已实施（2026-08-03，可选加分不进分母）**——`I-008-003` verified（D-009 + [契约 v1.0.0](attachments/I-008-003-operation-log-contract.md)），迁移 0004 `operation_log` + repository + handler 接线 + 测试全绿。**本目标五项核心成功标准全部达成（5/5），仍未 `done`**——关门需 close-out 审计 + 用户裁决 + Root R5 勾选（Root 层）。
+`progress` 由上方 S1～S5 五个核心检查点等权派生（`0/5` 起）。S6 为可选加分，不进入进度分母；是否实施由用户书面决定（见 `01-decision`）。检查点不替代审计 finding 或关门结论。**2026-08-03**：`I-008-001` 已 verified（D-003 + 契约附件 v1.0.0）；`I-008-002` 已 verified（D-004 + [复现与 smoke 协议 v0.1.2](attachments/I-008-002-fork-reproduction-protocol.md)，D-005/A-008 与 D-007/A-011 响应后权威版本 v0.1.2），解除 S3/S4 的方案冻结/实施前信息门禁；S1/S2 已实施（`0/5 → 2/5`）；**S3/S4 已实施（2026-08-03，`2/5 → 4/5`）**——QUICKSTART fork 文档 + **clean-ref 独立复现记录 `R5-S3-REPRO-003`（预 T0 禁用 BuildKit 结果缓存，`go build`/`npm run build` 编译层实际执行非 CACHED，64.833s ≤ 900s；响应 A-012 F-005）** + `scripts/smoke.sh`（SM-001～006 + 隔离守卫 + 部分绿 exit 8）+ 本地 disposable `SM-006=PASS` 证据（`r5-smoke-disposable-local-v0.1.2.txt`）+ CI `container-smoke` 显式隔离 project 与成功 run 证据。**A-011 F-005～F-009 关闭闭环完成（2026-08-03）**：A-012（independent · fail）重做 F-005 证据 → REPRO-003；**A-013（independent · finding-closure · pass）二次复审确认 F-005～F-009 `fixed` 全部成立、无开放 required**（R-013 handled：CACHED 计数表述收窄至正式 retry #3）；**A-014（self · finding-closure · pass）** 按 P-004 §3.1 补 self 覆盖；**S5 已实施（2026-08-03，`4/5 → 5/5`）**——A-015（self · stage-audit · pass）阶段审计与 Root R5 勾选条件评估。**S6 已实施（2026-08-03，可选加分不进分母）**——`I-008-003` verified（D-009 + [契约 v1.0.0](attachments/I-008-003-operation-log-contract.md)），迁移 0004 `operation_log` + repository + handler 接线 + 测试全绿；A-016（independent close-out · conditional）F-010（auth username detail）→ fixed（D-010）、R-014 handled；A-017（independent finding-closure · pass）确认闭合、R-015 → handled（测试加固）。**本目标已置 `done`（2026-08-03 关门）**：A-018（self · close-out · pass）——S1～S6 全部成立、F-001～F-010 全部 fixed、`I-008-001/002/003` verified、无开放 required；用户确认后置 `done`；**Root R5 检查点已勾选（Root `4/5 → 5/5`）**。
 
 ## 信息需求
 

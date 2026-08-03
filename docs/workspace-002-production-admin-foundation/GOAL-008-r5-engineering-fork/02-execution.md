@@ -1,10 +1,10 @@
 ---
 title: 执行记录 · R5 · 工程化、fork 体验与集成关门
-status: active
+status: done
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.15
+version: 0.1.16
 ---
 
 # 执行记录 · GOAL-008
@@ -173,3 +173,13 @@ version: 0.1.15
 - **R-014 → handled**：S6 变更当前为未提交工作树（HEAD `851f9b6…`，15 files +284/−57），本地执行收据（apps/api 全绿 + web 458/458 + build 通过）记录为当前树候选事实，**不冒充** CI/容器验收；容器级证据待用户确认提交后补版本化 CI 或 disposable smoke。
 - **未做**：未置 GOAL-008 `done`、未勾选 Root R5、未关门；`I-008-003` 维持 `verified`（契约 v1.0.0 未改）；本目标保持 `active / 5/5`；Root 保持 `active / 4/5`。
 - **计划（非事实）**：按 P-004 §3.1 询问用户是否补覆盖 S6 的 self close-out 审计；随后由用户确认推进 GOAL-008 关门与 Root R5 勾选。
+
+## 2026-08-03 · 合并响应 A-017/A-018 + GOAL-008 关门（done） + Root R5 勾选
+
+- **用户裁决**：「补充自设计（补自审），没问题的话，合并响应交叉审计，开始关门」。
+- **A-017（independent · finding-closure · pass）响应**：F-010 `fixed` 维持闭合——clean revision `eb6ff19` 上独立复核三条 auth 成功路径均满足 `I-008-003` §3 冻结 username detail；R-014 维持 handled（revision 收据固定 `eb6ff19`，不冒充 CI/容器验收）；R-015（recommended/low）非阻断。
+- **A-018（self · close-out · S1～S6 · pass）**：按 P-004 §3.1 补齐 S6 scope 的 `source: self` 覆盖——S1～S5 核心（5/5）+ S6 加分全部成立；F-001～F-010 全部 `fixed`、R-001～R-015 全部 handled/非阻断；`I-008-001/002/003` 全部 `verified`；关门向审计齐备（A-013/A-014/A-015/A-016/A-017/A-018）；**关门条件满足**。
+- **R-015 → handled**：`operations_test.go` `TestOperationLogAuthEvents` 提升为 JSON 解码精确断言（detail 仅 `username` 单字段、无 token/password/secret）并覆盖**轮换后有效 refresh token 的首次 logout**；`go test ./...`（apps/api）全绿 + `go vet` 干净 + `gofmt -l` 无输出 + web vitest 458/458。
+- **关门（用户确认）**：GOAL-008 已置 `done`（`00-meta` status、`03-audit`、goal-tree 同步）；**Root R5 检查点已勾选**（Root `00-meta` R5 行 + `progress 4/5 → 5/5`）。
+- **未做**：Root close-out 关门审计与 VP-002 关门为独立用户裁决（Root / 愿景层），未自动推进。
+- **计划（非事实）**：由用户裁决 Root close-out 关门审计与 VP-002 关门（`/vision` 或 `/audit`）。

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.38.0
+version: 0.39.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -16,30 +16,30 @@ workspace_id: workspace-002-production-admin-foundation
 - primary plan：`VP-002-production-admin-foundation`
 
 ```text
-GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
+GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-002-r1-schema-load-validate [done] R1 · Schema 加载、校验与统一错误面 (4/4)
 ├── GOAL-003-r1-default-render-path [done] R1 · 默认 Renderer 主路径与示例降级 (4/4)
 ├── GOAL-004-r1-representative-node-pages [done] R1 · 代表性 Node 页面与回归证据 (5/5)
 ├── GOAL-005-r2-auth-session [done] R2 · 真实认证与请求级身份 (6/6)
 ├── GOAL-006-r3-persistent-rbac-menu [done] R3 · 持久化 RBAC、菜单投影与版本迁移 (6/6)
 ├── GOAL-007-r4-schema-crud [done] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (6/6)
-└── GOAL-008-r5-engineering-fork [active] R5 · 工程化、fork 体验与集成关门 (5/5)
+└── GOAL-008-r5-engineering-fork [done] R5 · 工程化、fork 体验与集成关门 (5/5)
 ```
 
 ## 状态表
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `active` | `4/5` | 2026-08-02 |
+| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `active` | `5/5` | 2026-08-03 |
 | `GOAL-002-r1-schema-load-validate` | R1 · Schema 加载、校验与统一错误面 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-01 |
 | `GOAL-003-r1-default-render-path` | R1 · 默认 Renderer 主路径与示例降级 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-02 |
 | `GOAL-004-r1-representative-node-pages` | R1 · 代表性 Node 页面与回归证据 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-02 |
 | `GOAL-005-r2-auth-session` | R2 · 真实认证与请求级身份 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-006-r3-persistent-rbac-menu` | R3 · 持久化 RBAC、菜单投影与版本迁移 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
-| `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `active` | `5/5` | 2026-08-03 |
+| `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-03 |
 
-> Root `4/5` 由五个等权纲领检查点派生（R1、R2、R3、R4 已勾选；R5 待办）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 6/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1 已实现（D-004：migration runner + `schema_migrations` + `0001/0002` 迁移链 + pre-v0002 恢复快照）；S2 已实现（D-005：阶段 B 终态规范化权威读 + 双写 + 集合核对，A-002 F-004 required → fixed、A-003 独立复核 pass）；S3 已实现（D-006：`seedRBAC` 增量幂等种子接线到 Open，A-004 self 阶段审计 pass）；S4 已实现（D-007：records 读写经身份携带的 permission key 门禁，匿名 401 / 缺权限 403）；S5 已实现（D-008：`/me.features` 从持久化菜单 grants 投影 + 真实 manifest `visibleWhen`）；**S6 已实现（2026-08-02：恢复/重启/回归证据——`TestRestartPersistence`、`TestRestorePreV0002Snapshot`、E2E 重启冒烟、全仓 API/Web 回归；A-001 F-001/F-002 与 A-004 F-101 已闭合为 fixed）**。**A-005 F-005 已闭合为 fixed（2026-08-02：API README 端点表与鉴权边界同步 R3 权限键语义，API 回归通过；意见台账开放 0）**。**`GOAL-006` 已置 `done`（2026-08-02：A-006 independent 复核 F-005 关闭 `pass`；A-001～A-006 全部 responded，无开放 required；`I-006-001/002` verified；close-out 用户裁决不补 self 自审）。Root R3 检查点已勾选（Root `2/5 → 3/5`）**。六项检查点已全勾选（`6/6`）。
+> Root `5/5` 由五个等权纲领检查点派生（R1、R2、R3、R4 于 2026-08-02 勾选；**R5 于 2026-08-03 勾选**）。子目标 progress 仅反映各自成功标准，不替代 Root 检查点。依赖：003 硬依赖 002；004 完整主路径证明依赖 002+003。`GOAL-002` 已于 2026-08-01 `done`（A-001 independent + A-002 self 关门审计；无开放 required）。`GOAL-003` 已置 `done`（2026-08-02：A-001/A-002/A-003/A-004 全 pass，无开放 required；`I-003-001/002` closed；F-001 recommended open → R4 follow-up）。`GOAL-004` 已置 `done`（2026-08-02：A-001 self + A-002 independent 关门审计全 pass，无开放 required；`I-004-001/002` closed；F-001 → fixed，F-002 recommended open → R4 follow-up）。R1 三个子目标（002/003/004）全部 `done`，Root R1 检查点已勾选（I-001 覆盖矩阵 verified + Renderer 默认主路径 + 425/425 回归与 fail-closed 证据）。`GOAL-005` 已置 `done`（2026-08-02：A-001 independent close-out `conditional`，F-001 → **fixed**（Linux CI run #30711903555 browser E2E `1 passed` + 匿名 401 断言 + 403 由 records_test 承担）；A-002 self close-out `pass`；`I-005-001/002/003/004/005` verified，无开放 required；D-002～D-007）；**Root R2 检查点已勾选**（Root progress 1/5 → 2/5）。Root D-009 已关闭 `I-003`（`verified`）并冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；`GOAL-006` 已立项为 `active / 6/6`，其 `I-006-001/002` 已由 D-002/D-003 与附件验证关闭，当前无开放 required 信息门禁。S1 已实现（D-004：migration runner + `schema_migrations` + `0001/0002` 迁移链 + pre-v0002 恢复快照）；S2 已实现（D-005：阶段 B 终态规范化权威读 + 双写 + 集合核对，A-002 F-004 required → fixed、A-003 独立复核 pass）；S3 已实现（D-006：`seedRBAC` 增量幂等种子接线到 Open，A-004 self 阶段审计 pass）；S4 已实现（D-007：records 读写经身份携带的 permission key 门禁，匿名 401 / 缺权限 403）；S5 已实现（D-008：`/me.features` 从持久化菜单 grants 投影 + 真实 manifest `visibleWhen`）；**S6 已实现（2026-08-02：恢复/重启/回归证据——`TestRestartPersistence`、`TestRestorePreV0002Snapshot`、E2E 重启冒烟、全仓 API/Web 回归；A-001 F-001/F-002 与 A-004 F-101 已闭合为 fixed）**。**A-005 F-005 已闭合为 fixed（2026-08-02：API README 端点表与鉴权边界同步 R3 权限键语义，API 回归通过；意见台账开放 0）**。**`GOAL-006` 已置 `done`（2026-08-02：A-006 independent 复核 F-005 关闭 `pass`；A-001～A-006 全部 responded，无开放 required；`I-006-001/002` verified；close-out 用户裁决不补 self 自审）。Root R3 检查点已勾选（Root `2/5 → 3/5`）**。六项检查点已全勾选（`6/6`）。
 
 > Root D-010 已关闭 `I-004` 的方向/立项目门禁；D-011 已创建 `GOAL-007-r4-schema-crud`。2026-08-02：GOAL-007 D-002/D-003 已关闭 `I-007-001`/`I-007-002`（verified），勾选 S1/S2，进度 `0/6 → 2/6`；证据见目标附件 API 契约与 SQLite 迁移计划。**A-001 F-001 已闭合为 fixed（2026-08-02：D-004 统一 `updatedAt` 毫秒精度与「严格晚于」断言，附件更新 v0.2.0，A-002 self 复核 pass），S3 持久化 API 实施已放行但尚未实施**；`I-007-003`/`I-007-004` 仍为 open required（阻断 Schema 写交互与 S6 验收）；Root R4 仍未勾选，Root 保持 `3/5`。**S3 已实施（2026-08-02：0003 records_persist（updated_at Unix 毫秒）+ 快照通用化 pre-v0003 + records repository + seedRecords 空表种子 + handler 重写走 SQLite，新增 POST 201/INVALID_CREATE_*；staticRecords 与进程切片移除；T-API-08～13 与 T-DB-01～09（含毫秒钳制/往返）全绿，API `go test ./...` 与 web vitest 443/443 通过；API README 同步 R4）。成功标准 S3 勾选，进度 `2/6 → 3/6`**。
 
@@ -92,3 +92,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (4/5)
 > **GOAL-008 S6 已实施（2026-08-03 · 可选加分）**：用户书面裁决「推进 S6」。**`I-008-003` → verified**（D-009 + [I-008-003-operation-log-contract.md](GOAL-008-r5-engineering-fork/attachments/I-008-003-operation-log-contract.md) **v1.0.0**——事件 6 个、0004 `operation_log` 迁移、repository 边界、best-effort 失败语义；HTTP 查询/清理为非目标）。实施：迁移 **0004 `operation_log`**（event CHECK、actor/record_id/detail、created_at Unix ms）+ `store/operations.go`（RecordOperation/ListOperations）+ handler 接线（records create/update/delete + auth login/logout/refresh，成功写响应前记录；`auth.Logout` 返回 userID 供 logout actor）+ 测试（store/handler 六事件、CHECK 约束、0004 升级 `pre-v0004` 快照、失败不记日志；迁移断言 `{1,2,3}→{1,2,3,4}`）；`go test ./...` 全绿 + `go vet`/`gofmt` 干净 + web vitest 458/458。**S6 不进 progress 分母（GOAL-008 保持 `active / 5/5`）**；Root R5 未勾选（Root `4/5`）；Root R5 勾选与 GOAL-008 close-out 关门待用户确认。
 
 > **GOAL-008 A-016 已响应（2026-08-03）**：A-016（independent · close-out · conditional）——S1～S5 核心关门证据在其历史 clean ref（`1961e5a`）/ CI ref（`df913a5`）边界内成立；但 **F-010 required/medium**：logout 成功路径以空 actorName/detail 写入 operation_log，违反契约 §3 auth 事件 `detail={"username":...}`（refresh 亦误用 `user.Name`），测试仅断言 login；R-014 recommended（S6 未提交 revision 收据）。响应（D-010，用户裁决走 fixed）：**F-010 → fixed**——`handler/auth.go` 新增 `authEvent()`：logout/refresh 经 `store.UserByID` 解析真实 username 写入 `{"username":"admin"}` + actorName；login 保持 `creds.Username`；`operations_test.go` 对 login/refresh/logout **三类**统一断言 `"username":"admin"`；`go test ./...` 全绿 + vet/gofmt 干净。**R-014 → handled**——未提交 revision 收据（HEAD `851f9b6`，15 files +284/−57）+ 本地执行收据记录，不冒充 CI/容器验收。`I-008-003` 维持 verified；GOAL-008 保持 `active / 5/5`；**未 `done`**、Root R5 未勾选（Root `4/5`）——推进关门流程前按 P-004 §3.1 询问用户是否补覆盖 S6 的 self close-out 审计。
+
+> **GOAL-008 已关门、Root R5 已勾选（2026-08-03）**：用户裁决「补自审，没问题则合并响应交叉审计，开始关门」。**A-017（independent · finding-closure · pass）**：F-010 `fixed` 维持闭合（`eb6ff19` clean revision 上独立复核）；R-015 recommended 非阻断。**A-018（self · close-out · pass）**：按 P-004 §3.1 补齐 S6 scope self 覆盖——S1～S6 全部成立、F-001～F-010 全部 fixed、`I-008-001/002/003` verified、无开放 required。**合并响应 + 关门**：采纳 A-017/A-018；**R-015 → handled**（auth detail JSON 精确断言 + 轮换后首次 logout 覆盖，全绿）；**GOAL-008 已置 `done`**；**Root R5 检查点已勾选（Root `4/5 → 5/5`）**。Root close-out 关门审计与 VP-002 关门为独立用户裁决。

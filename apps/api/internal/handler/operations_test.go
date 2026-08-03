@@ -100,16 +100,22 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		t.Fatalf("refreshToken missing")
 	}
 
-	// refresh (public route)
-	code, _ = sendJSON(t, env.mux, http.MethodPost, "/api/auth/refresh",
+	// refresh (public route): rotation issues a new refresh token, the old one
+	// is revoked. Logout below uses the ROTATED token so the auth.logout row
+	// records a first (non-idempotent) logout path (R-015).
+	code, out = sendJSON(t, env.mux, http.MethodPost, "/api/auth/refresh",
 		`{"refreshToken":`+quote(refresh)+`}`)
 	if code != http.StatusOK {
 		t.Fatalf("refresh status = %d, want 200", code)
 	}
+	rotated, _ := out["refreshToken"].(string)
+	if rotated == "" || rotated == refresh {
+		t.Fatalf("rotated refreshToken missing or unchanged")
+	}
 
-	// logout (public route)
+	// logout (public route) with the rotated, still-valid token.
 	code, _ = sendJSON(t, env.mux, http.MethodPost, "/api/auth/logout",
-		`{"refreshToken":`+quote(refresh)+`}`)
+		`{"refreshToken":`+quote(rotated)+`}`)
 	if code != http.StatusNoContent {
 		t.Fatalf("logout status = %d, want 204", code)
 	}
@@ -136,9 +142,23 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		if op.ActorID != "user-admin" {
 			t.Fatalf("authOps[%d].actor_id = %q, want user-admin", i, op.ActorID)
 		}
-		// I-008-003 §3: every auth event carries the frozen username detail.
-		if op.Detail == nil || !strings.Contains(*op.Detail, `"username":"admin"`) {
-			t.Fatalf("authOps[%d].detail = %v, want username summary", i, op.Detail)
+		// I-008-003 §3: every auth event carries the frozen username detail —
+		// exact JSON shape, username only, no sensitive fields (R-015).
+		if op.Detail == nil {
+			t.Fatalf("authOps[%d].detail = nil, want username summary", i)
+		}
+		var d struct {
+			Username string `json:"username"`
+		}
+		if err := json.Unmarshal([]byte(*op.Detail), &d); err != nil {
+			t.Fatalf("authOps[%d].detail %q not JSON: %v", i, *op.Detail, err)
+		}
+		if d.Username != "admin" {
+			t.Fatalf("authOps[%d].detail.username = %q, want admin", i, d.Username)
+		}
+		var extra map[string]any
+		if err := json.Unmarshal([]byte(*op.Detail), &extra); err == nil && len(extra) != 1 {
+			t.Fatalf("authOps[%d].detail = %v, want exactly {username} (no token/password/secret)", i, extra)
 		}
 	}
 }
