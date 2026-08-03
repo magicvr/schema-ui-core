@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.49.0
+version: 0.50.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -26,6 +26,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-008-r5-engineering-fork [done] R5 · 工程化、fork 体验与集成关门 (5/5)
 ├── GOAL-009-a002-auth-form-fixes [done] A-002 · 缺陷修复（表单提交门禁与认证失效）(4/4)
 └── GOAL-010-a002-schema-adapter [active] A-002 · Schema 驱动通用数据适配层 (3/5)
+    └── GOAL-011-s4-semantic-admin-resources [active] S4 · 语义化 Admin 资源替换与双实体验证 (0/5)
 ```
 
 ## 状态表
@@ -42,6 +43,9 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 | `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-03 |
 | `GOAL-009-a002-auth-form-fixes` | A-002 · 缺陷修复（表单提交门禁与认证失效） | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-03 |
 | `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `active` | `3/5` | 2026-08-03 |
+| `GOAL-011-s4-semantic-admin-resources` | S4 · 语义化 Admin 资源替换与双实体验证 | `GOAL-010-a002-schema-adapter` | `active` | `0/5` | 2026-08-03 |
+
+> **GOAL-011 已立项（2026-08-03）**：用户确认将 GOAL-010 S4 从无普遍语义的 `catalog`/records 示例终态调整为 `users + roles` 双语义资源，并新建 `GOAL-011-s4-semantic-admin-resources`（parent = GOAL-010，active / 0/5）承载 users 替换 records、roles 新增、records 版本化退场与双资源 Schema 验证。`I-011-001/002/003` 均为 open required，当前只放行 S1 信息收集；未修改产品代码，GOAL-010 保持 `active / 3/5`，Root A-002 F-002-001 继续 open，Root/VP-002 关门继续阻断。
 
 > **A-002 已响应、GOAL-009/010 已立项（2026-08-03）**：Root 收到 A-002（independent · fail · apps/api + apps/web product-fit）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）+ recommended F-002-004~006。用户按 P-004 裁决（Root D-014）：三条 required 走 `fixed`——F-002-002/003 → **`GOAL-009-a002-auth-form-fixes`（active 0/4，S1～S4）**；F-002-001 通用适配层改造 → **`GOAL-010-a002-schema-adapter`（active 0/5，S1～S5 + 实施前 required `I-010-001`/`I-010-002`）**；recommended → GOAL-009 可选加分；A-002 同 scope self 审计延后至修复后随关门补。Root A-002 F-002-001~003 保持 open；**Root 关门与 VP-002 关门在 required 全部合法闭合前保持阻断**；Root 保持 `active / 5/5`。
 

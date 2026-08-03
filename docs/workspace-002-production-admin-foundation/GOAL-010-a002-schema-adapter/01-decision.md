@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策 · GOAL-010
@@ -60,3 +60,22 @@ version: 0.2.0
 - **信息门禁**：`I-010-001` 维持 `verified`（v0.2.0 为响应修订，不改变冻结结论）；`I-010-002` 维持 `verified`。
 - **影响**：**S3 检查点达成，GOAL-010 `1/5 → 2/5`**（串行偏差留痕：S3 为纯前端、不依赖 S2，因 F-001/F-002 关闭证据在 S3 而先于 S2 实施；S2 下一轮）；Root A-002 F-002-001 仍 `open`（待 S2～S5 完成 + S4 新实体验证 + 关门审计后闭合）。
 - **后续**：S2 后端通用资源 CRUD；S3 关闭证据可请求窄 scope `/audit` finding-closure 复核后再推进 S2 实施门禁。
+
+## D-004 · S4 拆出语义资源子目标并采用 users + roles
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**：确认新建目标承接 S4；将 `records` 替换为对绝大多数系统具有实际语义的设计，并把 S4 的“新增”改为第二种同样具有实际语义的资源。用户同意采用推荐的 `users + roles` 组合。
+- **决定**：
+  1. 新建 `GOAL-011-s4-semantic-admin-resources`，`parent: GOAL-010-a002-schema-adapter`；以 users 替换 records 默认代表实体，以 roles 作为新增的第二资源。
+  2. 本目标 S4 改为父级验收门：GOAL-011 完成、records 按版本化策略从当前产品默认运行面退场、users/roles 均完成 Schema 驱动列表/CRUD 闭环且 Renderer 主路径无修改后，才可勾选。
+  3. “只修改 Schema 接入”限定为后端资源已经显式注册后的前端页面接入；后端持久化、权限与领域规则不由 Schema 自动生成。
+  4. D-002/I-010-001 的 records 零 API 变更保持为 S1～S3 的历史事实；S4 终态由 GOAL-011 的新契约和迁移策略承接，不静默改写既有迁移或历史治理记录。
+- **理由**：records 已从演示基线扩张到迁移、种子、权限、菜单、操作日志、fixture 与回归主线；彻底替换并新增第二个真实资源跨越多个门禁域，不能诚实压缩为本目标一个实现检查点。users/roles 已属于现有真实认证与 RBAC 数据域，对 fork 项目有直接价值，并保持在 VP-002 的最小权限边界内。
+- **未选方案**：
+  - **仅修改 S4 文案并直接开工**：缺少领域安全、迁移和双资源验收的信息门禁。
+  - **继续 records + catalog**：保留并增加无普遍语义的示例域，未解决 fork 代码污染。
+  - **roles + menu_items**：风险较低，但账户管理价值与认证链闭环弱于 users + roles。
+- **信息门禁**：GOAL-011 登记 `I-011-001`/`I-011-002`/`I-011-003` required，初始均 open；只允许 S1 收集，未放行产品实现。
+- **影响**：GOAL-010 保持 `active / 3/5`，S4/S5 未勾选；Root A-002 F-002-001 继续 open，Root/VP-002 关门继续阻断。
+- **后续**：由 GOAL-011 先冻结 users/roles 领域契约与 records 退场策略，再按其路线图实施；完成后回到本目标评估 S4。

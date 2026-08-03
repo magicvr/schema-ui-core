@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-010
@@ -48,3 +48,12 @@ version: 0.2.0
 - **证据**：`go test ./...` 全绿（handler 7.2s 含新测试）+ `go vet` 干净；`gofmt` 仅 `internal/config/config_test.go` 为既有格式问题（非本轮改动）。
 - **S2 勾选，GOAL-010 `2/5 → 3/5`**（串行恢复：S1/S2/S3 全勾选）。Root A-002 F-002-001 仍 `open`。
 - **计划（非事实）**：S4 新实体验证（`catalog` fixture 仅改 Schema 接入，需 DB 迁移/种子 grants 注入/匿名 401·缺权限 403）→ S5 回归、审计与关闭。
+
+## 2026-08-03 · S4 语义资源子目标已立项
+
+- 用户确认 D-004：S4 不再以 `catalog` 等无普遍语义 fixture 作为终态验证；采用 `users + roles`，并将完整替换/新增工作拆入子目标 `GOAL-011-s4-semantic-admin-resources`。
+- 已创建 GOAL-011 五件套与 `attachments/`，设定 `parent: GOAL-010-a002-schema-adapter`、五个等权检查点和三个开放 required 信息项 `I-011-001`/`I-011-002`/`I-011-003`。
+- `I-010-001` 附件升至 v0.2.1 交接附注：S1～S3 技术契约不变；`catalog` 只保留为 genericity 历史示例，S4 产品终态由 GOAL-011 承接。
+- 本目标 S4 文案已改为父级验收门，依赖 GOAL-011 完成证据；`progress` 保持 `3/5`，S4/S5 均未勾选。
+- 未修改产品代码；records 仍在当前运行面；users/roles CRUD 尚未实施；Root A-002 F-002-001 继续 open。
+- **计划（非事实）**：下一拍在 GOAL-011 收集并冻结 `I-011-001`/`I-011-002`，未冻结前不实施受影响范围。

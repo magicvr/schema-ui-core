@@ -5,15 +5,16 @@ doc_type: contract
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.2.0
+version: 0.2.1
 related_info: I-010-001, I-010-002
-related_decision: D-002, D-003
+related_decision: D-002, D-003, D-004
 ---
 
 # I-010-001 · Schema 驱动通用资源契约（冻结）
 
 > **性质**：回答「通用资源契约的精确形状是什么」——把 A-002 F-002-001 的关闭路径（表格/表单 transport、字段模型与 response mapping 提升为 Schema 驱动的通用适配层，records 降为注册实例）固化为可实施、可验收的版本化契约。冻结后 `I-010-001` 由 GOAL-010 **D-002** 置为 `verified`，解除 S1 方案冻结与 S2 实施门禁；§6 迁移策略随本契约冻结 `I-010-002`（最晚需要阶段 S3 首个前端变更前，提前关闭）。
 > **v0.2.0（2026-08-03 · A-001 F-001/F-002 响应，GOAL-010 D-003）**：冻结 `dataSource` 单斜杠同源执行规则（§2，认证 fetch 前校验 + 反例）与 `rowKey` 行键不变量（§3，非空唯一标量、无效响应停止渲染并禁行 action）；S3 前端适配层 + 正反测试关闭 F-001/F-002。`I-010-001` 维持 `verified`（修订不改变冻结结论）。
+> **v0.2.1（2026-08-03 · S4 交接附注，GOAL-010 D-004）**：v0.2.0 的通用 transport、注册表、envelope、dataSource/rowKey 与 S1～S3 实施事实保持不变；§4 的 `catalog` 仅保留为 S2 genericity 测试历史示例，不再定义 S4 产品终态。S4 改由 `GOAL-011-s4-semantic-admin-resources` 冻结并交付 `users + roles`、records 退场与双资源产品证据。
 > **不是**：S2～S5 的实施成品（handler/前端代码、新 fixture、回归证据属实施）；也不扩大 `I-PROTO-001 v0.1.3` 协议覆盖。
 > **依据**：Root A-002 F-002-001 原文与建议关闭路径；GOAL-010 D-001 用户裁决（通用适配层改造，不降级 VP-002 主张）；[I-007-001 记录 API 契约](../../GOAL-007-r4-schema-crud/attachments/I-007-001-api-error-contract.md) v0.2.0（records 权威契约）；[I-007-003 v0.2.2](../../GOAL-007-r4-schema-crud/attachments/I-007-003-schema-crud-interaction.md) §9（action/form 写路径）；当前 `schema-table.tsx` / `records.ts` / `records.go` / `fixtures/schema/*.json` 静态核对。
 
@@ -53,7 +54,7 @@ related_decision: D-002, D-003
   | `permissionRead` / `permissionWrite` | 权限键：默认派生 `{id}.read` / `{id}.write`；records 显式保持 `records.read` / `records.write` |
 - **通用 handler 工厂**：由资源定义生成 list/create/detail/update/delete 五路由，挂 `{path}` 与 `{path}/{id}`；统一 `requirePermission`、body 上限（4 KiB 保持）、`{error,message}` 写错误、`INTERNAL` 兜底。
 - **records 注册实例**：`records` 注册到 `/api/records`，`sortFields = [name,status,owner,updatedAt]`、`qSearch = true`、create/patch 字段 `name/status/owner`、权限键 `records.read/write`——**对外 HTTP 契约与 I-007-001 逐项一致（零 API 变更）**；实现从手写 handler 收敛为注册条目 + 通用工厂（内部行为不变）。
-- **新资源（S4 验证实体，示例 `catalog`）**：注册新条目 + 迁移/种子 + 权限键 `catalog.read`/`catalog.write` 注入种子 grants；fixture 的 `dataSource` 指向其路径。
+- **新资源（原 S4 示例 `catalog`）**：注册新条目 + 迁移/种子 + 权限键 `catalog.read`/`catalog.write` 注入种子 grants；fixture 的 `dataSource` 指向其路径。**D-004 / v0.2.1 交接**：该例只保留为通用工厂 genericity 说明，不作为 S4 产品验收目标；当前 S4 由 GOAL-011 的 `users + roles` 版本化领域契约承接。
 
 ## 5. 错误 envelope 与错误码
 
@@ -76,7 +77,7 @@ related_decision: D-002, D-003
 |--------|-----------|
 | S2 后端通用资源 CRUD | §4 注册表 + 通用工厂；records 实例化 |
 | S3 前端通用适配层 | §2/§3/§5/§6 前端泛化 |
-| S4 新实体验证 | §4 新资源条目 + fixture 接入 |
+| S4 语义化双实体验证 | GOAL-011：`users + roles` 领域契约、records 退场、双资源 Schema 接入；本契约 §4 只提供通用注册基础 |
 | S5 回归、审计与关闭 | §6 兼容口径 + Root A-002 F-002-001 关闭证据 |
 
 ## 8. 非目标
@@ -101,3 +102,4 @@ related_decision: D-002, D-003
 |------|------|------|
 | 0.1.0 | 2026-08-03 | 冻结（GOAL-010 D-002；关闭 `I-010-001`；§6 迁移策略一并冻结 `I-010-002`） |
 | 0.2.0 | 2026-08-03 | A-001 F-001/F-002 响应（GOAL-010 D-003）：§2 冻结 `dataSource` 单斜杠同源执行规则（认证 fetch 前校验 + 反例）；§3 冻结 `rowKey` 行键不变量（非空唯一标量、无效响应停止渲染并禁行 action）；S3 前端适配层实施 + 正反测试按 `fixed` 关闭 F-001/F-002 |
+| 0.2.1 | 2026-08-03 | GOAL-010 D-004 S4 交接附注：不改变 S1～S3 技术契约；`catalog` 降为 genericity 历史示例，S4 终态改由 GOAL-011 的 `users + roles`、records 退场与双资源证据承接 |
