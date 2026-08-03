@@ -17,16 +17,15 @@ import (
 	"time"
 )
 
-// S6 · 进程级重启持久化（L2，I-007-004 / D-007）：真实 `cmd/server` OS 子进程
-// 以同一 `DB_PATH` 终止→重启，全 HTTP CRUD → 重启 → list/detail 符合预期。
-// 补齐 A-003/A-004 标记的「store close/reopen 单测 ≠ 进程级重启」缺口。
-// A-010 F-008 补充：Phase 2 对新建记录与 rec-1 分别 GET detail，断言 `updatedAt`
-// 与 Phase 1 的 POST/PATCH 响应毫秒精确一致（跨进程持久化往返）。
+// S6 · 进程级重启持久化（L2，I-007-004 / D-007；GOAL-011 S3 改指 users 资源）：
+// 真实 `cmd/server` OS 子进程以同一 `DB_PATH` 终止→重启，全 HTTP CRUD → 重启 →
+// list/detail 符合预期。records 已由 0006 退场，本测试以 users 资源承载
+// 跨进程持久化往返。
 //
 // 数据库隔离：每轮全新临时 DB_PATH + 空闲端口；测试结束 Kill+Wait 不留进程，
-// 临时库与 pre-v0003 快照随 t.TempDir() 清理。迁移/seed 重跑、失败路径与
+// 临时库与 pre-v0006 快照随 t.TempDir() 清理。迁移/seed 重跑、失败路径与
 // 401/403 门禁由 store/handler 既有测试与 browser E2E 承担（I-007-004 §5/§6）。
-func TestServerProcessRestartPersistsRecords(t *testing.T) {
+func TestServerProcessRestartPersistsUsers(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
@@ -47,21 +46,28 @@ func TestServerProcessRestartPersistsRecords(t *testing.T) {
 	port1 := freePort(t)
 	port2 := freePort(t)
 
-	// Phase 1: first process (fresh DB seeds admin + 8 records).
+	// Phase 1: first process (fresh DB seeds admin).
 	srv1, log1 := startServer(t, bin, dbPath, port1)
 	waitHealth(t, port1, 20*time.Second)
 	token := httpLogin(t, port1, "admin", "admin")
-	createdID, created := httpCreate(t, port1, token)
+	createdID, created := httpCreateUser(t, port1, token)
 	createdAt, _ := created["updatedAt"].(string)
 	if createdAt == "" {
-		t.Fatalf("created record updatedAt missing")
+		t.Fatalf("created user updatedAt missing")
 	}
-	patched := httpPatch(t, port1, token, "rec-1", "Acme Rebrand")
+	// a second user to delete (self/last-admin protections make user-admin undeletable).
+	deleteID, _ := httpCreateUser2(t, port1, token)
+	patched := httpPatch(t, port1, token, createdID, "Persisted Rebrand")
 	patchedAt, _ := patched["updatedAt"].(string)
 	if patchedAt == "" {
-		t.Fatalf("patched rec-1 updatedAt missing")
+		t.Fatalf("patched createdID updatedAt missing")
 	}
-	httpDelete(t, port1, token, "rec-2")
+	httpDelete(t, port1, token, deleteID)
+	// a created role (survives restart too, GOAL-011 S4 roles restart path).
+	code, roleOut := httpDoJSON(t, port1, http.MethodPost, "/api/roles", `{"key":"ops","name":"Operator"}`, token)
+	if code != http.StatusCreated {
+		t.Fatalf("create role status = %d, want 201: %v", code, roleOut)
+	}
 	killServer(t, srv1, log1)
 
 	// Phase 2: restart the same binary against the same DB.
@@ -70,7 +76,7 @@ func TestServerProcessRestartPersistsRecords(t *testing.T) {
 	waitHealth(t, port2, 20*time.Second)
 	token2 := httpLogin(t, port2, "admin", "admin")
 
-	code, body := httpDoJSON(t, port2, http.MethodGet, "/api/records?pageSize=100", "", token2)
+	code, body := httpDoJSON(t, port2, http.MethodGet, "/api/users?pageSize=100", "", token2)
 	if code != http.StatusOK {
 		t.Fatalf("list after restart status = %d, want 200", code)
 	}
@@ -83,41 +89,38 @@ func TestServerProcessRestartPersistsRecords(t *testing.T) {
 		present[id] = name
 	}
 	if _, ok := present[createdID]; !ok {
-		t.Fatalf("created record %s missing after process restart; list=%v", createdID, present)
+		t.Fatalf("created user %s missing after process restart; list=%v", createdID, present)
 	}
-	if present["rec-1"] != "Acme Rebrand" {
-		t.Fatalf("rec-1 name after restart = %q, want Acme Rebrand", present["rec-1"])
+	if present[createdID] != "Persisted Rebrand" {
+		t.Fatalf("created user name after restart = %q, want Persisted Rebrand", present[createdID])
 	}
-	if _, ok := present["rec-2"]; ok {
-		t.Fatalf("deleted rec-2 resurrected after process restart")
+	if _, ok := present[deleteID]; ok {
+		t.Fatalf("deleted user %s resurrected after process restart", deleteID)
 	}
-	if total, _ := body["total"].(float64); total != 8 {
-		t.Fatalf("total after restart = %v, want 8 (no re-seed)", total)
+	if total, _ := body["total"].(float64); total != 2 {
+		t.Fatalf("total after restart = %v, want 2 (admin + created; no re-seed)", total)
 	}
 
-	// detail after restart: created record fields + updatedAt and rec-1 name +
-	// updatedAt match the Phase 1 create/PATCH responses ms-exactly (I-007-004
-	// §3.6 / §4, A-010 F-008).
-	code, createdDetail := httpDoJSON(t, port2, http.MethodGet, "/api/records/"+createdID, "", token2)
+	// The created role survives the process restart as well (roles restart path).
+	code, roleDetail := httpDoJSON(t, port2, http.MethodGet, "/api/roles/role-ops", "", token2)
+	if code != http.StatusOK {
+		t.Fatalf("role detail after restart status = %d, want 200", code)
+	}
+	if roleDetail["key"] != "ops" || roleDetail["name"] != "Operator" || roleDetail["system"] != false {
+		t.Fatalf("role detail after restart = %v", roleDetail)
+	}
+
+	// detail after restart: created user fields + updatedAt match Phase 1
+	// create/patch responses ms-exactly (cross-process persistence round-trip).
+	code, createdDetail := httpDoJSON(t, port2, http.MethodGet, "/api/users/"+createdID, "", token2)
 	if code != http.StatusOK {
 		t.Fatalf("created detail status = %d, want 200", code)
 	}
-	if createdDetail["name"] != "Persisted Co" || createdDetail["status"] != "active" || createdDetail["owner"] != "zoe" {
+	if createdDetail["username"] != "persist" || createdDetail["name"] != "Persisted Rebrand" {
 		t.Fatalf("created detail after restart = %v", createdDetail)
 	}
-	if createdDetail["updatedAt"] != createdAt {
-		t.Fatalf("created updatedAt after restart = %v, want %v (persisted ms)", createdDetail["updatedAt"], createdAt)
-	}
-
-	code, rec1Detail := httpDoJSON(t, port2, http.MethodGet, "/api/records/rec-1", "", token2)
-	if code != http.StatusOK {
-		t.Fatalf("rec-1 detail status = %d, want 200", code)
-	}
-	if rec1Detail["name"] != "Acme Rebrand" {
-		t.Fatalf("rec-1 detail name after restart = %v", rec1Detail)
-	}
-	if rec1Detail["updatedAt"] != patchedAt {
-		t.Fatalf("rec-1 updatedAt after restart = %v, want %v (persisted ms)", rec1Detail["updatedAt"], patchedAt)
+	if createdDetail["updatedAt"] != patchedAt {
+		t.Fatalf("created updatedAt after restart = %v, want %v (persisted ms)", createdDetail["updatedAt"], patchedAt)
 	}
 }
 
@@ -201,9 +204,9 @@ func httpLogin(t *testing.T, port, username, password string) string {
 	return tok
 }
 
-func httpCreate(t *testing.T, port, token string) (string, map[string]any) {
+func httpCreateUser(t *testing.T, port, token string) (string, map[string]any) {
 	t.Helper()
-	code, out := httpDoJSON(t, port, http.MethodPost, "/api/records", `{"name":"Persisted Co","status":"active","owner":"zoe"}`, token)
+	code, out := httpDoJSON(t, port, http.MethodPost, "/api/users", `{"username":"persist","name":"Persisted Co","password":"pw12345"}`, token)
 	if code != http.StatusCreated {
 		t.Fatalf("create status = %d, want 201", code)
 	}
@@ -214,12 +217,26 @@ func httpCreate(t *testing.T, port, token string) (string, map[string]any) {
 	return id, out
 }
 
+// httpCreateUser2 creates a disposable second user for the delete-persistence
+// assertion (user-admin is self/last-admin protected).
+func httpCreateUser2(t *testing.T, port, token string) (string, map[string]any) {
+	t.Helper()
+	code, out := httpDoJSON(t, port, http.MethodPost, "/api/users", `{"username":"doomed","name":"Doomed","password":"pw12345"}`, token)
+	if code != http.StatusCreated {
+		t.Fatalf("create2 status = %d, want 201", code)
+	}
+	id, _ := out["id"].(string)
+	if id == "" {
+		t.Fatalf("create2 id missing in %v", out)
+	}
+	return id, out
+}
+
 // httpPatch issues a PATCH and returns the 200 response body so the caller can
-// capture the refreshed `updatedAt` for the cross-process detail assertion
-// (A-010 F-008).
+// capture the refreshed `updatedAt` for the cross-process detail assertion.
 func httpPatch(t *testing.T, port, token, id, name string) map[string]any {
 	t.Helper()
-	code, out := httpDoJSON(t, port, http.MethodPatch, "/api/records/"+id, fmt.Sprintf(`{"name":%q}`, name), token)
+	code, out := httpDoJSON(t, port, http.MethodPatch, "/api/users/"+id, fmt.Sprintf(`{"name":%q}`, name), token)
 	if code != http.StatusOK {
 		t.Fatalf("patch %s status = %d, want 200", id, code)
 	}
@@ -228,7 +245,7 @@ func httpPatch(t *testing.T, port, token, id, name string) map[string]any {
 
 func httpDelete(t *testing.T, port, token, id string) {
 	t.Helper()
-	code, _ := httpDoJSON(t, port, http.MethodDelete, "/api/records/"+id, "", token)
+	code, _ := httpDoJSON(t, port, http.MethodDelete, "/api/users/"+id, "", token)
 	if code != http.StatusNoContent {
 		t.Fatalf("delete %s status = %d, want 204", id, code)
 	}

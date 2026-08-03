@@ -24,7 +24,7 @@ test("login gates the shell and the real auth chain works through the proxy", as
 
   // Manifest-driven navigation slots render (top / sidebar / user).
   await expect(page.getByRole("link", { name: "Overview" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Catalog" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Data table" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
 
@@ -52,37 +52,37 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(session.user.id).toBe("user-admin");
   expect(session.user.roles).toEqual(expect.arrayContaining(["admin"]));
 
-  // Records read route remains reachable through the same proxy.
-  const records = await request.get("/api/records", { headers });
-  expect(records.status()).toBe(200);
-  const list = await records.json();
+  // Users read route remains reachable through the same proxy (GOAL-011).
+  const users = await request.get("/api/users", { headers });
+  expect(users.status()).toBe(200);
+  const list = await users.json();
   expect(list.items.length).toBeGreaterThan(0);
 
   // F-001 evidence: anonymous 401 fails closed through the Web /api proxy
   // (M8/M10). The request-level identity middleware must reject a missing
-  // Bearer token on both the /me route and the records write routes.
+  // Bearer token on both the /me route and the users write routes.
   const anonMe = await request.get("/api/accounts/me");
   expect(anonMe.status()).toBe(401);
   expect((await anonMe.json()).error).toBe("UNAUTHENTICATED");
 
-  const anonPatch = await request.patch("/api/records/rec-1", {
-    data: { name: "Acme Console" },
+  const anonPatch = await request.patch("/api/users/user-admin", {
+    data: { name: "Admin" },
   });
   expect(anonPatch.status()).toBe(401);
 
   // Control: the same write route passes once the seeded admin's access token
   // is attached, so the 401 above is a gate denial, not a missing route.
-  const adminPatch = await request.patch("/api/records/rec-1", {
+  const adminPatch = await request.patch("/api/users/user-admin", {
     headers,
-    data: { name: "Acme Console" },
+    data: { name: "Admin" },
   });
   expect(adminPatch.status()).toBe(200);
 
-  // Non-admin 403 is covered by API automation (records write gate):
-  // apps/api/internal/handler/records_test.go::TestRecordsWriteDeniedWithoutAdminRole
-  // exercises PATCH/DELETE with an editor-role token -> 403 FORBIDDEN. The
-  // browser E2E exercises the same middleware path through the proxy (401
-  // above); role denial is pure API logic already pinned by that test.
+  // Non-admin 403 is covered by API automation (users write gate):
+  // apps/api/internal/handler/users_test.go::TestUsersAuthGates exercises POST
+  // with a viewer token -> 403 FORBIDDEN. The browser E2E exercises the same
+  // middleware path through the proxy (401 above); role denial is pure API logic
+  // already pinned by that test.
 
   await page.screenshot({ path: "test-results/r6-overview.png", fullPage: true });
 });

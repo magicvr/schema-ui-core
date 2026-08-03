@@ -44,7 +44,7 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
     <App
       manifest={manifest}
       navigationContext={context}
-      recordsFetcher={authFetch}
+      resourceFetcher={authFetch}
       onLogout={logout}
       currentUser={user}
     />

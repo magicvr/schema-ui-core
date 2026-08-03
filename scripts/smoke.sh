@@ -17,8 +17,8 @@
 #   WEB_BASE_URL         默认 http://localhost:8081
 #   SMOKE_USERNAME       默认 admin
 #   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
-#   SMOKE_RECORD_ID      默认 rec-1
-#   SMOKE_EXPECTED_SEED_TOTAL  默认 8
+#   SMOKE_SEED_ID         默认 user-admin
+#   SMOKE_EXPECTED_SEED_TOTAL  默认 1
 #   SMOKE_ISOLATION_ID   仅 --disposable 必填：隔离 Compose project 名（机器校验
 #                        运行中 project 与 db-data 卷均绑定该身份；不得指向默认开发库）
 #   SMOKE_DISPOSABLE_CONFIRM   仅 --disposable 必填：必须为 yes（书面确认 disposable 语义）
@@ -31,7 +31,7 @@ API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:8081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
-SMOKE_RECORD_ID="${SMOKE_RECORD_ID:-rec-1}"
+SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-8}"
 SMOKE_ISOLATION_ID="${SMOKE_ISOLATION_ID:-}"
 SMOKE_DISPOSABLE_CONFIRM="${SMOKE_DISPOSABLE_CONFIRM:-}"
@@ -171,11 +171,11 @@ fi
 # ---------------------------------------------------------------------------
 # SM-005 · 代表页路由（SPA root 挂载标记）
 # ---------------------------------------------------------------------------
-spa="$(curl -fsS --max-time 5 "${WEB_BASE_URL}/list-edit-lifecycle" 2>/dev/null || true)"
+spa="$(curl -fsS --max-time 5 "${WEB_BASE_URL}/users" 2>/dev/null || true)"
 if [ -n "$spa" ] && printf '%s' "$spa" | grep -q 'id="root"'; then
   smoke_line "005" "PASS"
 else
-  printf 'SM-005=FAIL\n  detail: %s 未返回含 id="root" 的 SPA 文档\n' "${WEB_BASE_URL}/list-edit-lifecycle"
+  printf 'SM-005=FAIL\n  detail: %s 未返回含 id="root" 的 SPA 文档\n' "${WEB_BASE_URL}/users"
   exit 5
 fi
 
@@ -186,22 +186,22 @@ if [ "$DISPOSABLE" = "1" ]; then
   check_seed() {
     local expect="$1" detail="$2"
     local list total has_record
-    list="$(curl -fsS --max-time 5 "${WEB_BASE_URL}/api/records?pageSize=100" -H "Authorization: Bearer ${ACCESS_TOKEN}" 2>/dev/null || true)"
+    list="$(curl -fsS --max-time 5 "${WEB_BASE_URL}/api/users?pageSize=100" -H "Authorization: Bearer ${ACCESS_TOKEN}" 2>/dev/null || true)"
     if [ -z "$list" ]; then
       printf 'SM-006=FAIL\n  detail: %s\n' "$detail（列表请求失败）"
       exit 6
     fi
     total="$(json_field "$list" total || true)"
     has_record=0
-    printf '%s' "$list" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const items=o.items||[];const hit=items.some(r=>r.id===process.argv[1]||r.name==="Acme Console");process.exit(hit?0:1)}catch(e){process.exit(2)}})' "$SMOKE_RECORD_ID"
+    printf '%s' "$list" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const items=o.items||[];const hit=items.some(r=>r.id===process.argv[1]||r.username==="admin");process.exit(hit?0:1)}catch(e){process.exit(2)}})' "$SMOKE_SEED_ID"
     [ "$?" = "0" ] && has_record=1
     if [ "$total" != "$expect" ] || [ "$has_record" != "1" ]; then
-      printf 'SM-006=FAIL\n  detail: %s（期望 total=%s 且含 %s/Acme Console，实际 total=%s）\n' "$detail" "$expect" "$SMOKE_RECORD_ID" "$total"
+      printf 'SM-006=FAIL\n  detail: %s（期望 total=%s 且含 %s/admin，实际 total=%s）\n' "$detail" "$expect" "$SMOKE_SEED_ID" "$total"
       exit 6
     fi
   }
 
-  # 首次断言：空库种子后 total == 期望且含 rec-1 / Acme Console
+  # 首次断言：空库种子后 total == 期望且含 user-admin / admin
   check_seed "$SMOKE_EXPECTED_SEED_TOTAL" "首次种子断言失败"
 
   # 重启由脚本以显式隔离 project 执行（F-008：拒绝外部注入任意命令）

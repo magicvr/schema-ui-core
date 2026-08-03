@@ -100,15 +100,15 @@ afterEach(async () => {
 
 describe("SchemaTable (R1 list-data injection)", () => {
   it("reads column specs and the data source from the table node props", () => {
-    const node = tableNode({ columns: COLUMNS, dataSource: "/api/records" });
+    const node = tableNode({ columns: COLUMNS, dataSource: "/api/users" });
     expect(schemaTableColumns(node).map((column) => column.field)).toEqual([
       "name",
       "status",
     ]);
-    expect(schemaTableDataSource(node)).toBe("/api/records");
+    expect(schemaTableDataSource(node)).toBe("/api/users");
   });
 
-  it("fails closed (null) when the table node has no data source (no /api/records fallback)", () => {
+  it("fails closed (null) when the table node has no data source (no /api/users fallback)", () => {
     const node = tableNode({ columns: COLUMNS });
     expect(schemaTableDataSource(node)).toBeNull();
   });
@@ -120,12 +120,12 @@ describe("SchemaTable (R1 list-data injection)", () => {
 
   it("renders records from the injected data source", async () => {
     const container = await renderTable(
-      tableNode({ columns: COLUMNS, dataSource: "/api/records" }),
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       recordsFetcher(),
     );
     expect(container.textContent).toContain("Acme Console");
     expect(container.textContent).toContain("Northwind Sales");
-    expect(container.textContent).toContain("2 records · page 1 of 1");
+    expect(container.textContent).toContain("2 items · page 1 of 1");
   });
 
   it("fails closed when the table node declares no columns", async () => {
@@ -146,7 +146,7 @@ describe("SchemaTable (R1 list-data injection)", () => {
 
   it("surfaces a fail-closed error when the data source request fails", async () => {
     const container = await renderTable(
-      tableNode({ columns: COLUMNS, dataSource: "/api/records" }),
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       recordsFetcher(500),
     );
     expect(container.textContent).toContain("resource fetch failed");
@@ -154,7 +154,7 @@ describe("SchemaTable (R1 list-data injection)", () => {
 
   it("toggles column sort and marks the active column", async () => {
     const container = await renderTable(
-      tableNode({ columns: COLUMNS, dataSource: "/api/records" }),
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       recordsFetcher(),
     );
     const nameHeader = Array.from(container.querySelectorAll("th button")).find((button) =>
@@ -192,7 +192,7 @@ describe("SchemaTable rowKey (F-002 · I-010-001 v0.2.0 §3)", () => {
     );
     expect(container.textContent).toContain("Widget");
     expect(container.textContent).toContain("Gadget");
-    expect(container.textContent).toContain("2 records · page 1 of 1");
+    expect(container.textContent).toContain("2 items · page 1 of 1");
   });
 
   it("fails closed on a missing row key", async () => {

@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "pageId": "users",
+    "title": "Users",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort"
+    ]
+  },
+  "actions": {
+    "createUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users",
+      "bodyMapping": { "username": "username", "name": "name", "password": "password" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "updateUser": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/users/{id}",
+      "bodyMapping": { "name": "name" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "deleteUser": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/users/{id}",
+      "onSuccess": { "behavior": "reload" }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-user-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.write\""
+        },
+        "props": {
+          "fields": [
+            { "id": "username", "label": "Username", "type": "input" },
+            { "id": "name", "label": "Name", "type": "input" },
+            { "id": "password", "label": "Password", "type": "input" }
+          ],
+          "submitAction": "createUser",
+          "submitLabel": "Create user"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-user-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.write\""
+        },
+        "props": {
+          "fields": [
+            { "id": "name", "label": "Name", "type": "input" }
+          ],
+          "submitAction": "updateUser",
+          "submitLabel": "Save changes"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "users",
+    "children": [
+      {
+        "type": "table",
+        "id": "users-table",
+        "permissionCascade": { "keys": ["edit", "delete"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.write\"",
+          "delete": "$context.user.permissions contains \"users.write\""
+        },
+        "props": {
+          "columns": [
+            { "field": "id", "label": "ID" },
+            { "field": "username", "label": "Username", "sortable": true },
+            { "field": "name", "label": "Name", "sortable": true },
+            { "field": "roles", "label": "Roles" },
+            { "field": "updatedAt", "label": "Updated", "sortable": true }
+          ],
+          "dataSource": "/api/users",
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New user",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit"
+            }
+          ],
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteUser",
+              "permissionIntent": "delete",
+              "requestMapping": { "path": { "id": "$row.id" } },
+              "confirm": "Delete this user?"
+            }
+          ]
+        }
+      },
+      {
+        "type": "recordView",
+        "id": "user-detail",
+        "props": {}
+      }
+    ]
+  }
+}

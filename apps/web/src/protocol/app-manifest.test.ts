@@ -260,14 +260,14 @@ describe("manifest loading and expression boundaries", () => {
     expect(loaded.app.homePageRef).toBe("overview");
     expect(loaded.pages.map((page) => page.pageId)).toEqual([
       "overview",
-      "catalog",
       "activity",
       "data-table",
       "search-form-table",
-      "list-edit-lifecycle",
       "form-controls",
       "form-with-reactions",
       "settings",
+      "users",
+      "roles",
     ]);
   });
 

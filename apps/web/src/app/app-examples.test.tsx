@@ -30,10 +30,10 @@ function exampleManifest() {
         route: "/search-form-table",
       },
       {
-        pageId: "list-edit-lifecycle",
-        title: "List + edit lifecycle",
-        schemaUrl: "/schema/list-edit-lifecycle",
-        route: "/list-edit-lifecycle",
+        pageId: "users",
+        title: "Users lifecycle",
+        schemaUrl: "/schema/users",
+        route: "/users",
       },
       {
         pageId: "form-controls",
@@ -52,7 +52,7 @@ function exampleManifest() {
       sidebar: [
         { pageRef: "data-table", label: "Data table" },
         { pageRef: "search-form-table", label: "Search + table" },
-        { pageRef: "list-edit-lifecycle", label: "List + edit" },
+        { pageRef: "users", label: "Users" },
         { pageRef: "form-controls", label: "Form controls" },
         { pageRef: "form-with-reactions", label: "Form with reactions" },
       ],
@@ -137,10 +137,10 @@ afterEach(async () => {
 describe("schema-driven default path (GOAL-003)", () => {
   it("renders a migrated example route from its Schema document", async () => {
     const container = await renderApp("/data-table", {
-      "/schema/data-table": schemaDocument("data-table", "Data table", "Schema-driven records"),
+      "/schema/data-table": schemaDocument("data-table", "Data table", "Schema-driven items"),
     });
     expect(container.querySelector("h1")?.textContent).toContain("Data table");
-    expect(container.textContent).toContain("Schema-driven records");
+    expect(container.textContent).toContain("Schema-driven items");
   });
 
   it("does not render the hand-written example surface on its route", async () => {

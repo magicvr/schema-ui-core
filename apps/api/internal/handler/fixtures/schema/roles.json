@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "pageId": "roles",
+    "title": "Roles",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort"
+    ]
+  },
+  "actions": {
+    "createRole": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/roles",
+      "bodyMapping": { "key": "key", "name": "name" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "updateRole": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/roles/{id}",
+      "bodyMapping": { "name": "name" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "deleteRole": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/roles/{id}",
+      "onSuccess": { "behavior": "reload" }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-role-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"roles.write\""
+        },
+        "props": {
+          "fields": [
+            { "id": "key", "label": "Key", "type": "input" },
+            { "id": "name", "label": "Name", "type": "input" }
+          ],
+          "submitAction": "createRole",
+          "submitLabel": "Create role"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-role-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"roles.write\""
+        },
+        "props": {
+          "fields": [
+            { "id": "name", "label": "Name", "type": "input" }
+          ],
+          "submitAction": "updateRole",
+          "submitLabel": "Save changes"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "roles",
+    "children": [
+      {
+        "type": "table",
+        "id": "roles-table",
+        "permissionCascade": { "keys": ["edit", "delete"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"roles.write\"",
+          "delete": "$context.user.permissions contains \"roles.write\""
+        },
+        "props": {
+          "columns": [
+            { "field": "id", "label": "ID" },
+            { "field": "key", "label": "Key", "sortable": true },
+            { "field": "name", "label": "Name", "sortable": true },
+            { "field": "system", "label": "System" },
+            { "field": "updatedAt", "label": "Updated", "sortable": true }
+          ],
+          "dataSource": "/api/roles",
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New role",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit"
+            }
+          ],
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteRole",
+              "permissionIntent": "delete",
+              "requestMapping": { "path": { "id": "$row.id" } },
+              "confirm": "Delete this role?"
+            }
+          ]
+        }
+      },
+      {
+        "type": "recordView",
+        "id": "role-detail",
+        "props": {}
+      }
+    ]
+  }
+}

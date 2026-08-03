@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计台账 · GOAL-011
@@ -15,15 +15,17 @@ version: 0.4.0
 |------|--------|------|-------|---------|------|
 | A-001 | self | 2026-08-03 | S1 契约冻结（D-002 · I-011-001/002） | pass | 无 required；3 条 recommended |
 | A-002 | independent | 2026-08-03 | S1 契约冻结（D-002 · I-011-001/002） | conditional | 2 required + 4 recommended，均已响应（D-003，见响应节） |
-| A-003 | self | 2026-08-03 | S2 后端 users/roles 闭环（I-011-001 v0.2.0） | pass | 无 required；3 条 recommended |
+| A-003 | self | 2026-08-03 | S2 后端 users/roles 闭环（I-011-001 v0.2.0） | pass | 无 required；3 条 recommended（随 S3/S4 落实） |
 | A-004 | independent | 2026-08-03 | S2 后端 users/roles 闭环（I-011-001 v0.2.0；progress 1/5 → 2/5） | pass | 无 required；F-001～F-003 fixed、F-004 handled（见响应节） |
+| A-005 | self | 2026-08-03 | S3 records 产品运行面退场（I-011-002 v0.2.0） | pass | 无 required；3 条 recommended（随 S4/S5 落实） |
+| A-006 | independent | 2026-08-03 | S3 records 产品运行面退场（I-011-002 v0.2.0；progress 2/5 → 3/5） | pass | 无 required；F-001/F-002 fixed、F-003/F-004 handled（见响应节） |
 
 ## 当前审计边界
 
-- S1 契约已冻结（D-002；`I-011-001`/`I-011-002` → verified，v0.2.0）；S2 后端闭环已实施（A-003 self · pass；A-004 independent · pass，recommended 已响应）；S3～S5 未实施。
+- S1 契约已冻结（D-002；`I-011-001`/`I-011-002` → verified，v0.2.0）；S2 后端闭环已实施（A-003 self · pass；A-004 independent · pass，recommended 已响应）；S3 records 退场已实施（A-005 self · pass；**A-006 independent · pass**）；S4/S5 未实施。
 - A-002（independent）对 S1 给出 **conditional**，两条 required（F-001 actor 通道、F-002 快照语义）经 **D-003** 走 `fixed` 闭合，F-003～F-006 采纳为 `handled`；A-001（pass）与 A-002 已趋同。
-- A-003 / A-004 对 S2 同向 **pass**；本 scope 无开放 required；A-004 F-001～F-003 已 fixed、F-004 handled（见「响应 A-003 + A-004」节）；A-003 F-001（快照）/F-002（重启搜索排序）/F-003（password 长度）随 S3/S4 落实。
-- `I-011-003` 仍 open required（最晚 S4）；到达最晚阶段前未 `verified` 或合规 `accepted-residual` 时阻断对应门禁。
+- A-003 / A-004 对 S2 同向 **pass**；A-005 / A-006 对 S3 同向 **pass**；本 scope 无开放 required；recommended 见 A-003/A-004 响应节、A-005 F-001～F-003 与 A-006 F-001～F-004（随 S4/S5 或文档清理落实）。
+- `I-011-003` 仍 open required（最晚 S4，已到期待冻结）；到达最晚阶段前未 `verified` 或合规 `accepted-residual` 时阻断对应门禁。
 - GOAL-010 与 Root A-002 的既有独立意见不复制到本台账。
 
 ## A-001 · S1 契约冻结自审（2026-08-03）
@@ -412,3 +414,198 @@ S2 同向 pass（A-003 self / A-004 independent），无 verdict 冲突、无 re
 ### 结论
 
 S2 无开放 required；A-003/A-004 趋同为 **pass**，可放行 S3。下一步：S3 records 产品运行面退场（0006 DROP TABLE + 每待应用迁移前快照 + 权限/菜单/fixture/前端/测试退场），优先落实 A-004 F-001 的 0005 行保留回归与 A-003 F-001 的 per-pending 快照。
+
+## A-005 · S3 records 产品运行面退场自审（2026-08-03）
+
+- **source**：self
+- **auditor**：Claude Code（govern orchestrator）
+- **类型 / scope**：stage · S3 records 产品运行面退场（I-011-002 v0.2.0；S3 检查点达成）
+- **verdict**：pass
+
+### 范围与区间
+
+审 GOAL-011 S3「移除 records API 注册、Schema fixture、菜单/权限、种子、操作日志耦合、前端 records 专名与当前测试依赖；保留不可改写历史治理事实与迁移链证据」。对照 I-011-002 v0.2.0 验收口径；**不含** S4 双资源 Schema 接入验证（I-011-003 open）与 S5 关门。工作区绑定与共享资料（无）已核对。
+
+### 成果（有证据）
+
+- **迁移 0006**：`DROP TABLE records` + 清理 records 权限/菜单行（先 join 后父行，FK 安全）+ checksum 冻结；**per-pending 快照**落地（`migrate()` 每待应用数据变更迁移前快照，0005+0006 同批时 `pre-v0006` 存在——`TestMigrateExistingV3ToV4` 断言 pre-v0005/pre-v0006）。
+- **后端退场**：`/api/records` 路由移除；`handler/records.go`、`store/records.go`、`seed_records.go` 删除；`seed.go` 去 records 权限/菜单/grants；`StaticDevSession` 去 records 键；共享辅助（`jsonQuote`/`newOperationID`/`ErrRecordExists`）迁至通用位置。
+- **fixture/manifest**：`users.json`/`roles.json` CRUD 页新增（I-011-002 §3.3）；records/catalog 页与 `menu_list_edit_lifecycle` 移除；`data-table`/`search-form-table` 改指 `/api/users`/`/api/roles`；users/roles 页接入 manifest（`menu_users`/`menu_roles`）。
+- **前端专名退场**：`RecordItem`/`RecordList` 别名删除、`RecordsQuery`→`ResourceQuery`；`use-records.ts` 删除；`recordsFetcher`→`resourceFetcher`；`schema-table` footer/empty/caption 与 `render` 成功 toast 去 records 化。
+- **测试/文档退场改指**：records 测试删除或改指 users/roles；进程级重启测试改指 users；QUICKSTART/smoke.sh/playwright 更新。
+- **验收口径**：fresh install 无 `records` 表（`TestMigrateFreshDB`）；产品代码 grep 无 `api/records`/`records.read`/`records.write`/`menu_list_edit_lifecycle`/`list-edit-lifecycle` 残留（仅 0006 清理语句与历史注释）；users/roles 操作日志生效。
+- **回归**：`go test ./...` 全绿 + `go vet` 干净；web `vitest` 481/481 + `tsc -b` + `vite build` 干净；e2e `playwright` 2/2（users CRUD 真实 Go/SQLite 往返 + shell/auth 链）。
+- **未越权**：历史 GOAL-004/007/010 文档、I-007-001 契约、0001～0004 迁移 checksum 均未改写；records 退场走新迁移 + 代码演进（I-011-002 硬约束满足）。
+
+### 对照成功标准
+
+| S3 标准 | 状态 | 证据 |
+|---------|------|------|
+| 移除 records API 注册 / 种子 / 权限菜单 / 操作日志耦合 | ✅ | health.go/seed.go/operations.go 无 records 写路径；0006 清理 |
+| 移除 records Schema fixture / 前端专名 / 测试依赖 | ✅ | fixture 删 records 页、前端去 records 化、测试改指 |
+| 保留历史治理事实与迁移链证据 | ✅ | 0001～0004 checksum 未变；历史文档保留 |
+| 既有库升级（0004→0006）可追溯 + 数据处置快照 | ✅ | TestMigrateExistingV3ToV4 pre-v0006 断言 + recordsRetire 迁移 |
+| 验收口径（fresh 无 records 表 / grep 无残留 / 操作日志 users/roles） | ✅ | TestMigrateFreshDB + grep + 操作日志测试 |
+
+### Findings
+
+- **F-001 · S4 验收矩阵（I-011-003）待 S4 冻结**（severity: low；建议: recommended；status: open；关联 I-011-003）
+  - 描述：S3 已移除 records 并接入 users/roles 页；但「双资源 Schema-only 接入 + fresh/upgrade/restart/401-403 完整边界」的正式验收矩阵（I-011-003）与 Renderer diff 证据属 S4。S3 完成定义已由 §5 口径覆盖。
+  - 影响：不阻断 S3；S4 首步冻结 I-011-003 并产出双资源证据。
+
+- **F-002 · 进程级重启持久化已改指 users 但 I-011-003 矩阵未列**（severity: low；建议: recommended；status: open）
+  - 描述：`cmd/server` 重启测试已改指 users（create/patch/delete + 重启），但 formal 双资源（users+roles）重启矩阵列于 S4。
+  - 影响：不阻断；S4 补 roles 重启路径。
+
+- **F-003 · smoke.sh SM-006 未在本会话执行（需 --disposable compose）**（severity: low；建议: recommended；status: open）
+  - 描述：smoke.sh 已改指 users/roles（`/users`、`/api/users`、`user-admin` 种子断言），但 SM-006 种子可重复性需 `--disposable` Compose 隔离环境，本会话未运行；`bash -n` 语法校验通过。
+  - 影响：不阻断 S3；S5 全量回归可跑 smoke（含 disposable 环境）。
+
+### 必改项汇总（required 列表）
+
+无。
+
+### 结论 + 建议下一步
+
+S3 records 退场完整、验收口径达成、回归全绿、未改写历史事实；无未闭合 required。**pass**。下一步：S4 双语义实体 Schema 接入验证（冻结 I-011-003 验收矩阵 + fresh/upgrade/restart/401-403 双资源证据 + Renderer diff 边界）。按用户指令，本自审后将调用 **grok build 独立交叉审计**（scope: S3 records 退场），等待其意见后合并响应。
+
+## 响应 A-005 + A-006（self · 编排响应 · 2026-08-03）
+
+S3 同向 pass（A-005 self / A-006 independent），无 verdict 冲突、无 required；recommended 按实施成本即时落实。
+
+### 关闭证据表
+
+| Finding | 严重度 | 状态 | 证据路径 |
+|---------|--------|------|----------|
+| A-006 F-001 · apps/api/README + apps/web/README 仍写 records 为现行 API | low · recommended | **fixed** | `apps/api/README.md`（端点表/鉴权边界/测试覆盖改指 users/roles + records 退场注记）、`apps/web/README.md`（页面/鉴权改指 users/roles） |
+| A-006 F-002 · web 单测仍用 `/api/records` 路径字符串 | low · recommended | **fixed** | `records.test.ts`/`schema-table.test.tsx`/`render.test.tsx` 示例 URL 改指 `/api/users`（`rec-3`→`usr-3`）；产品代码 grep 现已无 `api/records`（测试文件亦无残留） |
+| A-006 F-003 · 承接 A-005（I-011-003 / roles 重启 / smoke disposable） | low · recommended | **handled** | A-005 F-001（I-011-003）随 S4 冻结；F-002（roles 重启）随 S4 补；F-003（smoke SM-006）S5 全量回归跑 disposable compose |
+| A-006 F-004 · grok 会话 Playwright EACCES :5173 未重跑 | low · recommended | **handled** | 本会话已以 `WEB_PORT=9999` 重跑 `playwright test` **2/2 通过**（users CRUD 真实往返 + shell/auth 链） |
+| A-005 F-001/F-002/F-003 | low · recommended | open | 随 S4（I-011-003 矩阵 + roles 重启）与 S5（smoke disposable）落实 |
+
+### 结论
+
+S3 无开放 required；A-005/A-006 趋同为 **pass**，可放行 S4。下一步：S4 双语义实体 Schema 接入验证——冻结 **I-011-003** 验收矩阵（fresh fork / 既有库升级 0004→0006 / 重启持久化 / 401-403 双资源 + Renderer diff 边界），产出 users/roles 双资源产品证据并关闭 I-011-003。
+
+## A-006 · S3 records 产品运行面退场独立交叉审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：grok build
+- **类型 / scope**：execution-facts · S3 records 产品运行面退场（GOAL-011 S3；I-011-002 v0.2.0；S3 检查点达成；progress 2/5 → 3/5）
+- **verdict**：pass
+
+### 范围与区间
+
+审 GOAL-011 S3「按冻结策略移除当前产品默认运行面中的 records API 注册、Schema fixture、菜单/权限、种子、操作日志耦合、前端 records 专名与当前测试依赖；保留不可改写的历史治理事实与迁移链证据」是否与 I-011-002 v0.2.0 **真实落地**（非仅声明）。关注点：
+
+1. migration `0006 records_retire`（DROP TABLE + 权限/菜单清理）与 **per-pending 快照**（0005+0006 同批时 `pre-v0006` 必存在）是否真实落地，且不改写 0001～0004 checksum/历史文档；
+2. records API/种子/权限/菜单/fixture/前端专名/测试是否从产品运行面完整退场；
+3. users/roles fixture 与 manifest 接入是否正确（I-011-002 §3.3）；
+4. S3 验收口径（fresh 无 records 表、grep 无 `api/records` 等残留、操作日志 users/roles 生效）；
+5. 回归证据充分性（go test / vet / web vitest / tsc / vite build / e2e playwright）。
+
+**不含** S4 双资源 Schema 接入正式验收矩阵 / `I-011-003`（open，最晚 S4，已到期待冻结）与 S5 关门。
+
+工作区：`workspace-002-production-admin-foundation` / Root `GOAL-001-production-admin-foundation` / `canonical_scope` 已校验；`shared_materials_catalog: none`，未将共享资料当作关闭证据。未读取或比较其他工作区。
+
+**只读核验**：GOAL-011 五件套与附件（I-011-001/002 v0.2.0）；`migrate.go`（0006 + per-pending 快照循环）；`seed.go` / `store.go`；`handler/{health,resources,users,roles}.go`；`account/session.go`；fixtures `users.json`/`roles.json`/`data-table.json`/`search-form-table.json`；`app-manifest.json`；`renderer/{records.ts,schema-table.tsx,render.tsx}`、`App.tsx`；相关 store/handler/cmd 测试；`QUICKSTART.md`、`scripts/smoke.sh`。本机重跑：`go test ./...`（apps/api）全绿 + `go vet ./...` 干净；web `vitest run` **481/481** + `tsc -b` + `vite build` 干净。e2e Playwright 本机启动失败（`listen EACCES 127.0.0.1:5173`，环境端口权限，非产品断言失败）——见 F-004。
+
+### 成果（有证据）
+
+| 主张 | 证据 | 核验结论 |
+|------|------|----------|
+| **① 0006 `records_retire`** | `compiledMigrations` 追加 version=6、name=`records_retire`、transformID=`0006:records-retire:v1`；`recordsRetireDDL`：`DROP TABLE IF EXISTS records` + 先删 join（`role_permissions`/`role_menu_items`）再删父行（`permissions`/`menu_items`，FK 安全、幂等） | **成立** |
+| **① per-pending 快照**（A-002 F-002 / I-011-002 §2.3 v0.2.0） | `migrate()` 对每个 pending 且 version≥2 在 `applyMigration` **前**调用 `snapshotBeforePending`；注释明确 0005+0006 同批 → `pre-v0005`+`pre-v0006` | **成立**（相对 first-pending-only 已改正） |
+| **① pre-v0006 回归** | `TestMigrateExistingV3ToV4`：v3 基线 Open 升级后断言 `pre-v0004`/`pre-v0005`/`pre-v0006` 各 1 个 + applied 含 0006 `records_retire` + records 表不存在 | **成立** |
+| **① 0001～0004 账本未改写** | 0001～0004 的 `transformID`/`stmts` 仍为历史职责（0003 仍 CREATE records、0004 仍含 records.* CHECK）；退场仅靠 **0006 新迁移**；`migrationChecksum` 机制未改 | **源码级成立**（未改历史迁移字面） |
+| **② API 注册退场** | `health.go` 仅 `registerResource(users/roles)`；`handler/records.go` / `store/records.go` / `store/seed_records.go` **文件不存在** | **成立** |
+| **② 种子 / StaticDev** | `seed.go` 仅 users/roles 四权限 + 两菜单 + grants（admin 4rw+menus、editor/viewer ro）；无 records 权限/菜单；`StaticDevSession` 同步 `users.*`/`roles.*` + `menu_users`/`menu_roles` | **成立** |
+| **② fixture / manifest** | 删除 `list-edit-lifecycle.json`/`catalog.json`；新增 `users.json`/`roles.json`（dataSource `/api/users`/`/api/roles`，permissions 键 users/roles.write）；`data-table`→users、`search-form-table`→roles 且文案已去 `api/records`；manifest 含 users/roles 页 + sidebar `visibleWhen` `menu_users`/`menu_roles`，无 list-edit-lifecycle/catalog | **成立**（§3.3） |
+| **② 前端专名** | `RecordItem`/`RecordList` 别名已删 → `ResourceItem`/`ResourceList`；`RecordsQuery`→`ResourceQuery`；`use-records.ts` 不存在；`App.tsx` prop `resourceFetcher`；toast `Item *`；schema-table empty/caption 去 records 化 | **成立**（`fetchRecords`/`records.ts` 文件名按契约保留为通用 transport） |
+| **② 测试改指** | `cmd/server` 进程级重启改 users；`seed_test` 权限集仅 users/roles；records handler/store 测试文件已删；web schema-crud/e2e 驱动 users 页 | **运行面成立** |
+| **③ 操作日志 users/roles** | `EventUser*`/`EventRole*` 常量 + `usersOnWrite`/`rolesOnWrite`；`TestMigrateFreshDB` 写 `users.create`；handler users/roles 操作日志测试 | **成立**（0005 生效；records.* 保留历史合法值、无运行时写路径） |
+| **④ fresh 无 records 表** | `TestMigrateFreshDB` 断言 applied=[1..6] 且 `records` 表不存在 | **成立** |
+| **④ grep 运行面残留** | `apps/api` `*.go`：仅 `migrate.go` 0006 清理 SQL 含 `menu-list-edit-lifecycle` + 历史注释；无运行时 `api/records` 路由。fixtures/manifest/seed 无 `api/records`/`records.read`/`records.write`/`list-edit-lifecycle` | **运行面成立**；测试字符串/README 见 F-001/F-002 |
+| **⑤ 本机回归** | `go test ./...` 全绿 + `go vet` 干净；`vitest` 481/481 + `tsc -b` + `vite build` 干净 | **成立**（与 02-execution 同向） |
+| **⑤ e2e** | 规格已改指 users CRUD 真实往返；本机 Playwright webServer `EACCES :5173` 未完成重跑 | **代码改指成立**；独立重跑收据见 F-004 |
+| **文档 S3 对象** | `QUICKSTART.md` 已写 records 0006 退场 + 终点 `/users`；`smoke.sh` SM-005→`/users`、SM-006→`/api/users` | **成立** |
+| **未越权** | 本意见不修改 status/progress/契约/产品代码；历史 GOAL 文档与 0001～0004 未改写 | **成立** |
+
+### 对照成功标准
+
+| S3 标准（00-meta / I-011-002 §5） | 本意见 | 说明 |
+|----------------------------------|--------|------|
+| 移除 records API 注册 / 种子 / 权限菜单 / 操作日志耦合 | ✅ | health/seed/StaticDev 干净；无 records 写 OnWrite |
+| 移除 records Schema fixture / 前端专名 / 测试依赖 | ✅ | fixture 删 records 页；专名泛化；测试改指 |
+| 保留历史治理事实与迁移链证据 | ✅ | 0001～0004 transformID/stmts 保留；0006 新迁移 |
+| 既有库升级 + per-pending 快照（含 pre-v0006） | ✅ | 实现 + `TestMigrateExistingV3ToV4` |
+| fresh 无 records 表 | ✅ | `TestMigrateFreshDB` |
+| grep 产品运行面无关键残留 | ✅（有条件） | 运行面/fixture 干净；单测 URL 字符串与 README 见 recommended |
+| 操作日志 users/roles | ✅ | 常量 + OnWrite + 测试 |
+| 回归 go/web/build | ✅ | 本机重跑通过 |
+| e2e playwright | 有条件 | 规格正确；本独立会话未能重跑通过（环境） |
+
+### Findings
+
+- **F-001 · 产品面 README 仍将 records 描述为现行 API**（severity: low；建议: **recommended**；status: open）
+  - 描述：`apps/api/README.md` 端点表与权限说明仍列出 `/api/records` + `records.read`/`records.write` 与 `seedRecords`；`apps/web/README.md` 仍写 `data-table` 走 `/api/records`、`list-edit-lifecycle` 与 records 权限键。契约 §3.7 仅强制更新 `QUICKSTART.md`（已更新），故**不升 required**；但对 fork 用户构成「产品运行面已退场、文档仍宣称在线」的双真相。
+  - 证据：`apps/api/README.md` L3/L93–105；`apps/web/README.md` L53–68；对照 `health.go` 已无 records 注册。
+  - 影响：不阻断 S3 代码验收；建议 S4/S5 或即时将 README 改指 users/roles，并标注 records 为历史/已退场。
+  - 建议闭合：同步两份 README 端点/示例页表 → fixed。
+
+- **F-002 · 前端单测仍大量使用 `/api/records` 作为路径字符串；A-005「grep 无残留」表述过宽**（severity: low；建议: **recommended**；status: open）
+  - 描述：运行面/fixture/manifest 已无 `api/records`。但 `apps/web/src` 内 `records.test.ts`、`schema-table.test.tsx`、`render.test.tsx`、`stage3-fixtures.test.ts` 等仍以 `/api/records` 作通用 transport/dataSource 用例。`records.ts` 注释仍含 `(records.write)`。这些**不构成运行时耦合**（无真实路由、无权限键），故不升 required；A-005「仅 0006 清理语句与历史注释」未覆盖上述单测字符串，证据表述宜收窄。
+  - 证据：`apps/web/src/renderer/records.test.ts` 等多处 `"/api/records"`；对照 I-011-002 §5 grep 句。
+  - 影响：recommended 精度项；S4 可顺手改为 `/api/users` 或中性 `/api/example`。
+  - 建议闭合：单测改指 + 收窄执行/自审 grep 口径 → fixed。
+
+- **F-003 · 承接 A-005 recommended（I-011-003 / roles 重启 / smoke disposable）**（severity: low；建议: **recommended**；status: open；关联 I-011-003）
+  - 描述：独立复核同意 A-005 **F-001**（S4 验收矩阵 I-011-003 待冻结）、**F-002**（进程级重启已改指 users，formal 双资源含 roles 属 S4）、**F-003**（`smoke.sh` 已改指 users，SM-006 disposable 本会话未跑）。不阻断 S3。
+  - 证据：A-005 Findings；`cmd/server/server_restart_test.go` 标题/路径 users；`scripts/smoke.sh` SM-005/006。
+  - 影响：随 S4/S5 落实。
+
+- **F-004 · 本独立会话未能重跑 Playwright e2e（环境 EACCES）**（severity: low；建议: **recommended**；status: open）
+  - 描述：本机 `npx playwright test` 因 webServer `listen EACCES: permission denied 127.0.0.1:5173` 未能启动，**不是**断言失败。规格 `e2e/schema-crud.spec.ts` 已驱动 `/users` 真实 create/edit/delete。A-005 主张 2/2 作为执行方历史收据保留；本意见**不**将其当作本会话可重复关闭证据。
+  - 证据：本会话 Playwright 启动错误；`apps/web/e2e/schema-crud.spec.ts` L19–70。
+  - 影响：不否定规格改指；S5 全量回归或修复端口后重跑可闭合本 finding。
+  - 建议闭合：可复现的 e2e 2/2 收据 → fixed。
+
+### 必改项汇总
+
+| ID | 严重度 | 摘要 | 建议闭合路径 |
+|----|--------|------|--------------|
+| （无） | — | 本 scope **无 required / high** | — |
+
+无 high/medium required。F-001～F-004 均为 recommended，不单独阻断 S3 放行或 S4 信息收集开工（`I-011-003` 仍 open 且最晚 S4，属独立信息门禁）。
+
+### 与既有意见的异同
+
+| 项 | A-005（self · pass） | A-006（independent · pass） |
+|----|----------------------|------------------------------|
+| 0006 + per-pending 快照 + pre-v0006 测试 | 通过 | **同意**（代码 + 测试复核） |
+| 0001～0004 未改写 | 通过 | **同意**（transformID/stmts 源码核对） |
+| API/种子/fixture/manifest 退场与 users/roles 接入 | 通过 | **同意** |
+| 前端专名 / resourceFetcher | 通过 | **同意**（transport 文件名按契约保留） |
+| fresh 无 records + 操作日志 users/roles | 通过 | **同意** |
+| go/web 回归 | 通过 | **同意**（本机重跑） |
+| grep 无残留 | 「仅 0006 + 历史注释」 | **收窄**：运行面成立；单测 URL 与 README 另列 F-001/F-002 |
+| e2e 2/2 | 主张通过 | 规格同意；**本会话未重跑** → F-004 |
+| A-005 F-001～F-003 recommended | open | **同意维持**（并入 F-003） |
+| verdict | pass | **同向 pass**（无 verdict 冲突） |
+
+同 scope 下 self 与 independent **verdict 一致（pass）**，无 P-004 §3.2 冲突；差异为 residual 文档/测试字符串精度与 e2e 独立重跑收据。
+
+### 结论 + 建议给编排器/用户的下一步
+
+**verdict: pass**——S3 records 产品运行面退场在 I-011-002 v0.2.0 下**真实落地**：0006 DROP + 权限/菜单清理、per-pending 快照（含 0005+0006 同批 `pre-v0006`）、0001～0004 账本保护、API/种子/fixture/manifest/前端专名/主测试路径退场、users/roles 页接入、操作日志与本机 API/Web 回归均可核对。无未闭合 required finding；无到期阻断 S3 的 required 信息项（`I-011-003` 最晚 S4，阻断的是 S4 验收而非 S3 完成定义）。
+
+**建议下一步（/govern）**：
+
+1. 汇总 A-005 + A-006（同向 pass）；可选将 F-001/F-002 即时修 README + 单测路径字符串，或标 open recommended 随 S4/S5。
+2. **放行 S4 准备**：先冻结 `I-011-003`（双资源 Schema-only + fresh/upgrade/restart/401-403 矩阵 + Renderer diff），再实施/验收；勿以 S3 progress 数字代替 I-011-003 门禁。
+3. S5 前补 e2e 可复现收据（F-004）与可选 smoke disposable（A-005 F-003）。
+4. 不修改本意见中的 status/progress；阶段推进与 finding 响应归编排器。
+
+### 声明
+
+本意见 **source: independent**，仅追加审计台账；**不修改** `00-meta` 的 status / 检查点 / 派生 progress，**不修改** goal-tree 状态列，**不修改**契约正文或产品代码。响应、finding 闭合与阶段推进归 **`/govern`**。

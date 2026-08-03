@@ -42,6 +42,10 @@ type RefreshToken struct {
 var (
 	ErrNotFound       = errors.New("store: not found")
 	ErrAlreadyRevoked = errors.New("store: refresh token already revoked")
+	// ErrRecordExists is returned by a create when the generated id already
+	// exists — an astronomically rare PK collision the generic factory retries
+	// before giving up with INTERNAL (I-007-001 §2, I-011-001 §7).
+	ErrRecordExists = errors.New("store: id already exists")
 )
 
 // Store wraps the SQLite auth store. Concurrency is guarded by a single

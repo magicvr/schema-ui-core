@@ -21,7 +21,7 @@ import {
 } from "@/renderer/permissions";
 import {
   readRecordApiError,
-  type RecordsQuery,
+  type ResourceQuery,
 } from "@/renderer/records";
 import {
   gateRenderFormFields,
@@ -115,8 +115,8 @@ export type ActionResult = { ok: true } | { ok: false; code: string; message: st
 export interface SchemaCrudValue {
   selectedRow: Record<string, unknown> | null;
   selectRow: (row: Record<string, unknown> | null) => void;
-  tableQuery: (id: string) => RecordsQuery | undefined;
-  setTableQuery: (id: string, query: RecordsQuery) => void;
+  tableQuery: (id: string) => ResourceQuery | undefined;
+  setTableQuery: (id: string, query: ResourceQuery) => void;
   reloadToken: number;
   reloadList: () => void;
   activeModal: { actionRef: string; row: Record<string, unknown> | null; title: string } | null;
@@ -170,11 +170,11 @@ function actionOf(document: RenderPageDocument, actionRef: string): JsonRecord |
 function successMessageFor(method: unknown): string {
   switch (method) {
     case "POST":
-      return "Record created";
+      return "Item created";
     case "PATCH":
-      return "Record updated";
+      return "Item updated";
     case "DELETE":
-      return "Record deleted";
+      return "Item deleted";
     default:
       return "Action completed";
   }
@@ -276,7 +276,7 @@ function SchemaCrudProvider({
   children: ReactNode;
 }) {
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
-  const [queries, setQueries] = useState<Record<string, RecordsQuery>>({});
+  const [queries, setQueries] = useState<Record<string, ResourceQuery>>({});
   const [reloadToken, setReloadToken] = useState(0);
   const [activeModal, setActiveModal] = useState<{
     actionRef: string;
@@ -309,7 +309,7 @@ function SchemaCrudProvider({
   }, []);
 
   const tableQuery = useCallback((id: string) => queries[id], [queries]);
-  const setTableQuery = useCallback((id: string, query: RecordsQuery) => {
+  const setTableQuery = useCallback((id: string, query: ResourceQuery) => {
     setQueries((prev) => ({ ...prev, [id]: query }));
   }, []);
   const reloadList = useCallback(() => setReloadToken((token) => token + 1), []);

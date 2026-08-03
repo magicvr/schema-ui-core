@@ -67,6 +67,23 @@ func createR2FixtureRoles(t *testing.T, path, rolesJSON string) {
 	}
 }
 
+// upgradeR2ToV2 applies migrations 1 and 2 only to an R2 fixture, producing the
+// exact {1,2} ledger state that existed before R4 — the upgrade-test input.
+func upgradeR2ToV2(t *testing.T, path string) {
+	t.Helper()
+	db := rawOpen(t, path)
+	s := &Store{db: db, path: path}
+	for _, v := range []int{1, 2} {
+		if err := s.applyMigration(compiledMigrations[v-1]); err != nil {
+			db.Close()
+			t.Fatalf("apply 000%d: %v", v, err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func rawOpen(t *testing.T, path string) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", path)
@@ -97,17 +114,29 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 5 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5]", applied)
+	if len(applied) != 6 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 {
+		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
 		"roles", "user_roles", "permissions", "role_permissions", "menu_items", "role_menu_items",
-		"records", "operation_log",
+		"operation_log",
 	} {
 		if !tableExistsDB(t, st.db, tbl) {
 			t.Fatalf("table %s missing after fresh migration", tbl)
 		}
+	}
+	// 0006 records_retire drops the records table on a fresh install too
+	// (GOAL-011 S3 · I-011-002 §5).
+	if tableExistsDB(t, st.db, "records") {
+		t.Fatal("records table must not exist after fresh migration (0006)")
+	}
+	// The expanded operation_log CHECK accepts a users.* event.
+	if err := st.RecordOperation(Operation{
+		ID: "op-fresh", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
+		CreatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("users.create on fresh operation_log: %v", err)
 	}
 	// A fresh empty DB has nothing to recover: no snapshot should exist.
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -138,7 +167,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 5 {
+	if len(applied2) != 6 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -458,17 +487,17 @@ func TestRBACConstraintsAndIndexes(t *testing.T) {
 		t.Fatal("expected unique violation for duplicate roles.key")
 	}
 	if _, err := st.db.Exec(
-		`INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('p-x', 'records.read', '', 1, 1)`,
+		`INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('p-x', 'users.read', '', 1, 1)`,
 	); err == nil {
 		t.Fatal("expected unique violation for duplicate permissions.key")
 	}
 	if _, err := st.db.Exec(
-		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-x', 'list-edit-lifecycle', 'fx_x', 0, 1, 1, 1)`,
+		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-x', 'users', 'fx_x', 0, 1, 1, 1)`,
 	); err == nil {
 		t.Fatal("expected unique violation for duplicate menu_items.page_ref")
 	}
 	if _, err := st.db.Exec(
-		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-y', 'other-page', 'menu_list_edit_lifecycle', 0, 1, 1, 1)`,
+		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at) VALUES ('m-y', 'other-page', 'menu_users', 0, 1, 1, 1)`,
 	); err == nil {
 		t.Fatal("expected unique violation for duplicate menu_items.feature_key")
 	}
@@ -501,10 +530,10 @@ func TestRBACConstraintsAndIndexes(t *testing.T) {
 	}
 
 	// RESTRICT: deleting a permission / menu item still granted fails.
-	if _, err := st.db.Exec(`DELETE FROM permissions WHERE id = 'perm-records-read'`); err == nil {
+	if _, err := st.db.Exec(`DELETE FROM permissions WHERE id = 'perm-users-read'`); err == nil {
 		t.Fatal("expected RESTRICT deleting an in-use permission")
 	}
-	if _, err := st.db.Exec(`DELETE FROM menu_items WHERE id = 'menu-list-edit-lifecycle'`); err == nil {
+	if _, err := st.db.Exec(`DELETE FROM menu_items WHERE id = 'menu-users'`); err == nil {
 		t.Fatal("expected RESTRICT deleting an in-use menu item")
 	}
 }

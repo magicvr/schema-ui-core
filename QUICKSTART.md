@@ -25,7 +25,7 @@ cp apps/api/.env.example apps/api/.env   # 或按需写入仓库根 .env（gitig
 ```
 
 - 开发（`APP_ENV=development`）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。
-- 首次启动自动建表并种子 `admin` 用户与 8 条演示 records。
+- 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
 ## 2. 启动（两条路径选一）
 
@@ -59,7 +59,7 @@ cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
 | 1 | `GET ${API_BASE_URL}/healthz` | HTTP 200，JSON `status: "ok"` |
 | 2 | `POST ${WEB_BASE_URL}/api/auth/login`（admin / `ADMIN_INITIAL_PASSWORD`） | HTTP 200，响应含非空 `accessToken` |
 | 3 | 携带 token `GET ${WEB_BASE_URL}/api/accounts/me` | HTTP 200，含 `user` 与 `features` |
-| 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/list-edit-lifecycle` | 页面标题 `List + edit lifecycle`，列表已加载 `Acme Console`（种子记录） |
+| 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD） |
 
 > **默认 base URL**：Compose → API `http://localhost:8080`、Web `http://localhost:8081`；本地双进程 → API `:8080`、Web `http://localhost:${WEB_PORT:-5173}`。以实际端口为准，不得用默认值覆盖实测端口。
 

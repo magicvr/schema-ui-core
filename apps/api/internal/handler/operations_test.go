@@ -10,80 +10,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
-// R5 S6 (I-008-003 §6) · records write endpoints append operation-log rows with
-// the correct event, actor and record id.
-func TestOperationLogRecordsWrites(t *testing.T) {
-	env := newAuthTestEnv(t)
-
-	// create
-	body := `{"name":"OpLog Co","status":"active","owner":"alice"}`
-	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/records", body)
-	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusCreated {
-		t.Fatalf("create status = %d, want 201: %v", rr.Code, rr.Body.String())
-	}
-	var created map[string]any
-	if err := json.NewDecoder(rr.Body).Decode(&created); err != nil {
-		t.Fatalf("decode create: %v", err)
-	}
-	recID, _ := created["id"].(string)
-	if recID == "" {
-		t.Fatalf("create id missing in %v", created)
-	}
-
-	// update
-	patch := `{"status":"archived"}`
-	req = bearer(t, adminToken(t, env), http.MethodPatch, "/api/records/"+recID, patch)
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Fatalf("update status = %d, want 200", rr.Code)
-	}
-
-	// delete
-	req = bearer(t, adminToken(t, env), http.MethodDelete, "/api/records/"+recID, "")
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("delete status = %d, want 204", rr.Code)
-	}
-
-	ops, err := env.st.ListOperations(10)
-	if err != nil {
-		t.Fatalf("ListOperations: %v", err)
-	}
-	var recordOps []store.Operation
-	for _, op := range ops {
-		if strings.HasPrefix(op.Event, "records.") {
-			recordOps = append(recordOps, op)
-		}
-	}
-	want := []string{store.EventRecordDelete, store.EventRecordUpdate, store.EventRecordCreate}
-	if len(recordOps) != len(want) {
-		t.Fatalf("record ops = %d, want %d (create/update/delete)", len(recordOps), len(want))
-	}
-	for i, ev := range want {
-		op := recordOps[i] // newest first: delete, update, create
-		if op.Event != ev {
-			t.Fatalf("recordOps[%d].event = %q, want %q", i, op.Event, ev)
-		}
-		if op.ActorID != "user-admin" {
-			t.Fatalf("recordOps[%d].actor_id = %q, want user-admin", i, op.ActorID)
-		}
-		if op.ActorName != "Admin" {
-			t.Fatalf("recordOps[%d].actor_name = %q, want Admin", i, op.ActorName)
-		}
-		if op.RecordID == nil || *op.RecordID != recID {
-			t.Fatalf("recordOps[%d].record_id = %v, want %s", i, op.RecordID, recID)
-		}
-	}
-	// create detail carries the record name summary (no secrets).
-	createOp := recordOps[2]
-	if createOp.Detail == nil || !strings.Contains(*createOp.Detail, "OpLog Co") {
-		t.Fatalf("create detail = %v, want name summary", createOp.Detail)
-	}
-}
+// users/roles write operation-log events are covered by TestUsersOperationLogEvents
+// and TestRolesOperationLogEvents (GOAL-011 S2). records.* events are historical
+// only after 0006 retirement (GOAL-011 S3) — no records API remains to write them.
 
 // R5 S6 (I-008-003 §6) · auth login/logout/refresh append operation-log rows.
 func TestOperationLogAuthEvents(t *testing.T) {
@@ -167,8 +96,8 @@ func TestOperationLogAuthEvents(t *testing.T) {
 func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 	env := newAuthTestEnv(t)
 
-	// Invalid create body → 400, no log row.
-	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/records", `{"name":""}`)
+	// Invalid create body → 400, no log row (GOAL-011: users resource).
+	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/users", `{"name":"NoPass"}`)
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusBadRequest {
@@ -176,8 +105,8 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 	}
 
 	// Anonymous write → 401, no log row.
-	req = httptest.NewRequest(http.MethodPost, "/api/records",
-		strings.NewReader(`{"name":"X","status":"a","owner":"b"}`))
+	req = httptest.NewRequest(http.MethodPost, "/api/users",
+		strings.NewReader(`{"username":"x","name":"X","password":"y12345"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
@@ -189,13 +118,13 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}
-	var recordOps []store.Operation
+	var userOps []store.Operation
 	for _, op := range ops {
-		if strings.HasPrefix(op.Event, "records.") {
-			recordOps = append(recordOps, op)
+		if strings.HasPrefix(op.Event, "users.") {
+			userOps = append(userOps, op)
 		}
 	}
-	if len(recordOps) != 0 {
-		t.Fatalf("record ops after failed writes = %d, want 0", len(recordOps))
+	if len(userOps) != 0 {
+		t.Fatalf("user ops after failed writes = %d, want 0", len(userOps))
 	}
 }

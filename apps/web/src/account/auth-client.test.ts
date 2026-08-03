@@ -54,12 +54,12 @@ describe("auth-client", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           user: SESSION.user,
-          features: { menu_list_edit_lifecycle: true },
+          features: { menu_users: true },
         }),
       );
     const session = await login("admin", "admin");
     expect(session.user.id).toBe("user-admin");
-    expect(session.features).toEqual({ menu_list_edit_lifecycle: true });
+    expect(session.features).toEqual({ menu_users: true });
     expect(requireAuthorization(fetchMock.mock.calls[0][1])).toBeNull(); // login is not authed
     expect(requireBody(fetchMock.mock.calls[0][1])).toEqual({ username: "admin", password: "admin" });
     expect(String(fetchMock.mock.calls[1][0])).toContain("/api/accounts/me");
@@ -74,7 +74,7 @@ describe("auth-client", () => {
   it("authFetch attaches the Bearer access token", async () => {
     setAccessToken("access-1");
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
-    await authFetch("/api/records");
+    await authFetch("/api/users");
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     expect((init.headers as Headers).get("Authorization")).toBe("Bearer access-1");
   });
@@ -97,7 +97,7 @@ describe("auth-client", () => {
       })
       .mockResolvedValueOnce(jsonResponse({ ok: true }));
 
-    const res = await authFetch("/api/records");
+    const res = await authFetch("/api/users");
     expect(res.ok).toBe(true);
     expect(lost).not.toHaveBeenCalled();
     // Refresh stored the rotated pair.
@@ -115,7 +115,7 @@ describe("auth-client", () => {
       .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
       .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
 
-    const res = await authFetch("/api/records");
+    const res = await authFetch("/api/users");
     expect(res.status).toBe(401);
     expect(lost).toHaveBeenCalledTimes(1);
   });
@@ -133,7 +133,7 @@ describe("auth-client", () => {
       .mockResolvedValueOnce(jsonResponse({ accessToken: "access-2", refreshToken: "refresh-2" }))
       .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401));
 
-    const res = await authFetch("/api/records");
+    const res = await authFetch("/api/users");
     expect(res.status).toBe(401);
     expect(lost).toHaveBeenCalledTimes(1);
     expect(getAccessToken()).toBeNull();

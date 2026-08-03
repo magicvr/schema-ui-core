@@ -61,3 +61,15 @@ version: 0.1.0
 - 未触发 P-004 裁决（A-003/A-004 verdict 一致 pass，无冲突）。S2 无开放 required，可放行 S3。
 - 同步修订 `03-audit` 响应节与索引、`goal-tree.md` 注记。
 - **计划（非事实）**：S3 records 产品运行面退场。
+
+## 2026-08-03 · S3 records 产品运行面退场（I-011-002 v0.2.0）
+
+- **migration 0006 `records_retire`**：`DROP TABLE records` + 清理 records 权限/菜单行（`perm-records-*`、`menu-list-edit-lifecycle` 及 grants，先删 join 再删父行 FK 安全）；`transformID 0006:records-retire:v1` 冻结 checksum。**per-pending 快照**（A-002 F-002 / A-003 F-001）：`migrate()` 对每个待应用数据变更迁移（≥2）前各快照一次，0005+0006 同批时 `pre-v0005` 与 `pre-v0006` 均存在（`TestMigrateExistingV3ToV4` 断言 pre-v0006）。
+- **后端退场**：`health.go` 移除 records 注册（改 users/roles）；删除 `handler/records.go`、`store/records.go`、`store/seed_records.go`；`seed.go` 移除 records 权限/菜单/grants（users/roles 保留）；`store.go` 移除 seedRecords 调用；`account.StaticDevSession` 移除 records 键；`jsonQuote`/`newOperationID`/`ErrRecordExists` 迁至共享位置。
+- **fixture/manifest**：新增 `users.json`/`roles.json`（两语义资源 CRUD 页，I-011-002 §3.3）；删除 `list-edit-lifecycle.json`/`catalog.json`；`data-table.json`/`search-form-table.json` 改指 `/api/users`/`/api/roles` 并更新文案；manifest 移除 records/catalog 页 + `menu_list_edit_lifecycle`，新增 users/roles 页（`menu_users`/`menu_roles` visibleWhen）。
+- **前端 records 专名退场**：`records.ts` 移除 `RecordItem`/`RecordList` 别名、`RecordsQuery`→`ResourceQuery`（`fetchRecords` 通用 transport 保留）；删除 `use-records.ts`；`App.tsx`/`main.tsx` `recordsFetcher`→`resourceFetcher`；`schema-table.tsx` footer "records"→"items"、empty/caption 文案去 records；`render.tsx` 成功 toast "Record *"→"Item *"。
+- **测试退场/改指**：删 records handler/store/restart 测试；`cmd/server` 进程级重启测试改指 users（create/patch/delete + 重启持久化）；`resources_test`/`operations_test`/`seed_test`/`migrate_test`/`restart_test` 更新（6 迁移账本、无 records 表、users/roles 种子计数、`menu_users` 投影）；web `schema-crud.test.tsx`/`representative-pages*.test`/`navigation.test`/`app-manifest.test`/`upstream-fixtures.test`/e2e `schema-crud.spec`/`shell.spec` 改指 users/roles；QUICKSTART/smoke.sh/playwright.config 更新。
+- **验收口径达成**：fresh install 无 `records` 表（`TestMigrateFreshDB`）；升级路径 pre-v0006 快照存在；产品代码 grep 无 `api/records`/`records.read`/`records.write`/`menu_list_edit_lifecycle`/`list-edit-lifecycle` 残留（仅 0006 清理语句与历史注释）；users/roles 操作日志事件生效。
+- **证据**：`go test ./...` 全绿 + `go vet ./...` 干净；web `vitest run` 481/481 + `tsc -b` + `vite build` 干净；e2e `playwright test` 2/2 通过（users CRUD 真实 Go/SQLite 往返 + shell/auth 链）。
+- **S3 检查点达成，progress `2/5 → 3/5`**；records 已从产品默认运行面退场；Root A-002 F-002-001 仍 open。
+- **计划（非事实）**：S4 双语义实体 Schema 接入验证（I-011-003 冻结 + fresh/upgrade/restart/401-403 矩阵 + Renderer diff 证据）→ S5 回归审计关门。

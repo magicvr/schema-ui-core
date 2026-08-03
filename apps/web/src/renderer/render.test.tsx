@@ -68,7 +68,7 @@ function submitFormDocument(
   return {
     meta,
     actions: {
-      submit: { type: "request", method: "POST", url: "/api/records" },
+      submit: { type: "request", method: "POST", url: "/api/users" },
     },
     body: {
       type: "form",
@@ -278,7 +278,7 @@ describe("RenderPage form submit gate (GOAL-009 S1 · F-002-002)", () => {
       await act(async () => button.click());
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       expect(fetchSpy).toHaveBeenCalledWith(
-        "/api/records",
+        "/api/users",
         expect.objectContaining({ method: "POST" }),
       );
     });

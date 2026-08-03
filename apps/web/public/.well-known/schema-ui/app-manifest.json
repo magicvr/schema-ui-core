@@ -49,6 +49,18 @@
       "title": "Settings",
       "schemaUrl": "/api/schema/settings",
       "route": "/settings"
+    },
+    {
+      "pageId": "users",
+      "title": "Users",
+      "schemaUrl": "/api/schema/users",
+      "route": "/users"
+    },
+    {
+      "pageId": "roles",
+      "title": "Roles",
+      "schemaUrl": "/api/schema/roles",
+      "route": "/roles"
     }
   ],
   "navigation": {
@@ -83,6 +95,28 @@
             "pageRef": "form-with-reactions",
             "label": "Form with reactions",
             "icon": "reaction"
+          }
+        ]
+      },
+      {
+        "label": "Admin",
+        "icon": "folder",
+        "items": [
+          {
+            "pageRef": "users",
+            "label": "Users",
+            "icon": "user",
+            "visibleWhen": {
+              "when": "$context.features.menu_users == true"
+            }
+          },
+          {
+            "pageRef": "roles",
+            "label": "Roles",
+            "icon": "user",
+            "visibleWhen": {
+              "when": "$context.features.menu_roles == true"
+            }
           }
         ]
       },

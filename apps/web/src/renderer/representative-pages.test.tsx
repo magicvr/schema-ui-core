@@ -33,7 +33,8 @@ const MIGRATED_PAGE_IDS = [
   "search-form-table",
   "form-controls",
   "form-with-reactions",
-  "list-edit-lifecycle",
+  "users",
+  "roles",
 ];
 
 function fixtureDocument(pageId: string): unknown {
@@ -50,14 +51,14 @@ function fixtureFetcher(pageId: string): typeof fetch {
     })) as typeof fetch;
 }
 
-const RECORDS = {
+const USERS = {
   items: [
     {
-      id: "rec-1",
-      name: "Acme Console",
-      status: "active",
-      owner: "alice",
-      updatedAt: "2026-07-31T00:00:00Z",
+      id: "usr-1",
+      username: "alice",
+      name: "Alice",
+      roles: ["admin"],
+      updatedAt: "2026-08-03T00:00:00.000Z",
     },
   ],
   total: 1,
@@ -65,9 +66,9 @@ const RECORDS = {
   pageSize: 10,
 };
 
-function recordsFetcher(): typeof fetch {
+function resourceFetcher(): typeof fetch {
   return (async () =>
-    new Response(JSON.stringify(RECORDS), {
+    new Response(JSON.stringify(USERS), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })) as typeof fetch;
@@ -95,7 +96,7 @@ async function renderDocument(
       <RenderPage
         document={pageDoc}
         context={context}
-        tableRenderer={(node) => <SchemaTable node={node} fetcher={recordsFetcher()} />}
+        tableRenderer={(node) => <SchemaTable node={node} fetcher={resourceFetcher()} />}
       />,
     );
   });
@@ -133,7 +134,7 @@ describe("migrated representative pages (GOAL-004)", () => {
       fixtureDocument("data-table") as RenderPageDocument,
       {},
     );
-    expect(container.textContent).toContain("Acme Console");
+    expect(container.textContent).toContain("alice");
     expect(container.textContent).toContain("Name");
   });
 
@@ -142,8 +143,8 @@ describe("migrated representative pages (GOAL-004)", () => {
       fixtureDocument("search-form-table") as RenderPageDocument,
       {},
     );
-    expect(container.textContent).toContain("Search records");
-    expect(container.textContent).toContain("Acme Console");
+    expect(container.textContent).toContain("Search roles");
+    expect(container.textContent).toContain("Alice");
   });
 
   it("renders the form-controls page with whitelisted controls", async () => {
@@ -177,18 +178,18 @@ describe("migrated representative pages (GOAL-004)", () => {
 
   it("renders the CRUD lifecycle page (table + toolbar + row actions + recordView)", async () => {
     const admin = {
-      user: { id: "u1", roles: ["admin"], permissions: ["records.read", "records.write"] },
+      user: { id: "u1", roles: ["admin"], permissions: ["users.read", "users.write"] },
     };
     const container = await renderDocument(
-      fixtureDocument("list-edit-lifecycle") as RenderPageDocument,
+      fixtureDocument("users") as RenderPageDocument,
       admin,
     );
     // S4 structure (I-007-003 §2.1): a table surface with a create toolbar
     // trigger, row edit/delete actions, and a selected-row recordView.
-    expect(container.textContent).toContain("New record");
+    expect(container.textContent).toContain("New user");
     expect(container.textContent).toContain("Edit");
     expect(container.textContent).toContain("Delete");
-    expect(container.textContent).toContain("Acme Console");
+    expect(container.textContent).toContain("alice");
     // recordView renders the selected-row copy once a row is selected.
     expect(container.textContent).toContain("Select a record to view details.");
     const editRow = Array.from(container.querySelectorAll("button")).find(
@@ -197,7 +198,7 @@ describe("migrated representative pages (GOAL-004)", () => {
     expect(editRow).not.toBeUndefined();
     await act(async () => (editRow as HTMLButtonElement).click());
     expect(container.textContent).toContain("Save changes");
-    expect(container.textContent).toContain("Acme Console");
+    expect(container.textContent).toContain("alice");
   });
 
   it("fails closed on an unknown node type on a representative path", async () => {

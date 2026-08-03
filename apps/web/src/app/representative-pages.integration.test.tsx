@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 //
-// Full-path integration evidence for the R1 representative pages (GOAL-004):
+// Full-path integration evidence for the R1 representative pages (GOAL-004;
+// GOAL-011 S3 repoints the injected resource surface from records to users/roles):
 // uses the real app manifest (`apps/web/public/.well-known/schema-ui/`) and the
 // real Go-embedded page fixtures (`apps/api/internal/handler/fixtures/schema/`)
-// through the App's schema-driven default path, with the records API surface
+// through the App's schema-driven default path, with the users/roles API surface
 // injected. Asserts "改 Schema 即可出现页面" holds on the main path and that
 // unknown / illegal inputs fail closed with observable errors.
 
@@ -29,29 +30,51 @@ const FIXTURE_DIR = resolve(
 
 const MIGRATED_PAGE_IDS = [
   "overview",
-  "catalog",
   "data-table",
   "search-form-table",
-  "list-edit-lifecycle",
   "form-controls",
   "form-with-reactions",
+  "users",
+  "roles",
 ];
 
-const RECORDS = {
+const USERS = {
   items: [
     {
-      id: "rec-1",
-      name: "Acme Console",
-      status: "active",
-      owner: "alice",
-      updatedAt: "2026-07-31T00:00:00Z",
+      id: "usr-1",
+      username: "alice",
+      name: "Alice",
+      roles: ["admin"],
+      updatedAt: "2026-08-03T00:00:00.000Z",
     },
     {
-      id: "rec-2",
-      name: "Northwind Sales",
-      status: "pending",
-      owner: "bob",
-      updatedAt: "2026-07-31T11:00:00Z",
+      id: "usr-2",
+      username: "bob",
+      name: "Bob",
+      roles: ["editor"],
+      updatedAt: "2026-08-03T11:00:00.000Z",
+    },
+  ],
+  total: 2,
+  page: 1,
+  pageSize: 10,
+};
+
+const ROLES = {
+  items: [
+    {
+      id: "role-admin",
+      key: "admin",
+      name: "admin",
+      system: true,
+      updatedAt: "2026-08-03T00:00:00.000Z",
+    },
+    {
+      id: "role-viewer",
+      key: "viewer",
+      name: "viewer",
+      system: true,
+      updatedAt: "2026-08-03T11:00:00.000Z",
     },
   ],
   total: 2,
@@ -69,10 +92,10 @@ function manifest(): AppManifest {
   );
 }
 
-/** Serves /api/schema/* from the real fixtures and /api/records from the demo envelope. */
+/** Serves /api/schema/* from the real fixtures and /api/users + /api/roles from demo envelopes. */
 function combinedFetcher(
   fixtures: Record<string, unknown>,
-  recordsStatus = 200,
+  usersStatus = 200,
 ): typeof fetch {
   return (async (input: RequestInfo | URL) => {
     const pathname = new URL(String(input), "http://test.local").pathname;
@@ -87,11 +110,17 @@ function combinedFetcher(
         headers: { "Content-Type": "application/json" },
       });
     }
-    if (pathname.startsWith("/api/records")) {
-      if (recordsStatus !== 200) {
-        return new Response(JSON.stringify({ error: "records down" }), { status: recordsStatus });
+    if (pathname.startsWith("/api/users")) {
+      if (usersStatus !== 200) {
+        return new Response(JSON.stringify({ error: "users down" }), { status: usersStatus });
       }
-      return new Response(JSON.stringify(RECORDS), {
+      return new Response(JSON.stringify(USERS), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (pathname.startsWith("/api/roles")) {
+      return new Response(JSON.stringify(ROLES), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -113,10 +142,10 @@ async function renderApp(
   path: string,
   context: Record<string, unknown>,
   fixtures: Record<string, unknown>,
-  recordsStatus = 200,
+  usersStatus = 200,
 ): Promise<HTMLDivElement> {
   window.history.replaceState({}, "", path);
-  const fetcher = combinedFetcher(fixtures, recordsStatus);
+  const fetcher = combinedFetcher(fixtures, usersStatus);
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -127,7 +156,7 @@ async function renderApp(
         manifest={manifest()}
         navigationContext={context}
         schemaFetcher={fetcher}
-        recordsFetcher={fetcher}
+        resourceFetcher={fetcher}
       />,
     );
   });
@@ -151,19 +180,19 @@ afterEach(async () => {
 });
 
 describe("representative pages through the real manifest (GOAL-004)", () => {
-  it("renders a migrated list page with records via the default path", async () => {
+  it("renders a migrated list page with users via the default path", async () => {
     const container = await renderApp("/data-table", {}, realFixtures());
     expect(container.querySelector("h1")?.textContent).toContain("Data table");
-    expect(container.textContent).toContain("Acme Console");
-    expect(container.textContent).toContain("Northwind Sales");
-    expect(container.textContent).toContain("2 records · page 1 of 1");
+    expect(container.textContent).toContain("alice");
+    expect(container.textContent).toContain("bob");
+    expect(container.textContent).toContain("2 items · page 1 of 1");
   });
 
   it("renders the search + table page structure", async () => {
     const container = await renderApp("/search-form-table", {}, realFixtures());
     expect(container.querySelector("h1")?.textContent).toContain("Search + table");
-    expect(container.textContent).toContain("Search records");
-    expect(container.textContent).toContain("Acme Console");
+    expect(container.textContent).toContain("Search roles");
+    expect(container.textContent).toContain("admin");
   });
 
   it("renders a migrated form page", async () => {
@@ -175,16 +204,16 @@ describe("representative pages through the real manifest (GOAL-004)", () => {
 
   it("renders the CRUD lifecycle page (table + toolbar + row actions + recordView)", async () => {
     const admin = {
-      user: { id: "u1", roles: ["admin"], permissions: ["records.read", "records.write"] },
+      user: { id: "u1", roles: ["admin"], permissions: ["users.read", "users.write"] },
     };
-    const container = await renderApp("/list-edit-lifecycle", admin, realFixtures());
-    expect(container.querySelector("h1")?.textContent).toContain("List + edit lifecycle");
+    const container = await renderApp("/users", admin, realFixtures());
+    expect(container.querySelector("h1")?.textContent).toContain("Users");
     // S4 surface: create toolbar trigger, row edit/delete actions, recordView.
-    expect(container.textContent).toContain("New record");
+    expect(container.textContent).toContain("New user");
     expect(container.textContent).toContain("Edit");
     expect(container.textContent).toContain("Delete");
-    expect(container.textContent).toContain("Acme Console");
-    expect(container.textContent).toContain("Northwind Sales");
+    expect(container.textContent).toContain("alice");
+    expect(container.textContent).toContain("bob");
     expect(container.textContent).toContain("Select a record to view details.");
   });
 
@@ -213,7 +242,7 @@ describe("representative pages through the real manifest (GOAL-004)", () => {
     );
   });
 
-  it("fails closed when the records data source is unreachable on a list page", async () => {
+  it("fails closed when the users data source is unreachable on a list page", async () => {
     const container = await renderApp("/data-table", {}, realFixtures(), 500);
     expect(container.textContent).toContain("resource fetch failed");
   });

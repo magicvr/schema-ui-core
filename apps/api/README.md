@@ -1,6 +1,6 @@
 # apps/api · schema-ui-core API 骨架
 
-MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与记录示例域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite；**R3 起持久化 RBAC（GOAL-006）**：records 路由按 `records.read` / `records.write` 权限键授权，`/api/accounts/me` 返回持久化菜单投影；**R4 起 records 数据源为 SQLite（GOAL-007）**：`0003 records_persist` 迁移 + `seedRecords` 空表种子，`POST` 新增，进程内切片不再作为生产路径。
+MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与语义资源域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite；**R3 起持久化 RBAC（GOAL-006）**：资源路由按 `users.read`/`users.write`、`roles.read`/`roles.write` 权限键授权，`/api/accounts/me` 返回持久化菜单投影；**GOAL-011 起 users/roles 为语义资源（records 已按 0006 退场）**：`/api/users`、`/api/roles` 走通用资源工厂 CRUD，敏感字段隔离与 self/last-admin/system 角色保护由 store 领域层承载。
 
 ## 要求
 
@@ -13,7 +13,7 @@ MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与�
 cmd/server/          # 进程入口（配置解析、store 打开、认证接线）
 internal/config/     # 环境配置（含 R2 认证配置键）
 internal/server/     # http.Server 包装
-internal/handler/    # HTTP 路由（healthz / auth / accounts / records / schema）
+internal/handler/    # HTTP 路由（healthz / auth / accounts / users / roles / schema）
 internal/auth/       # R2 认证核心：JWT、refresh 轮换、bcrypt、请求身份中间件
 internal/account/    # 会话模型与权限求值库（D-004 / D-PERM）
 internal/store/      # SQLite 认证 + R3 RBAC / 迁移存储（users、refresh_tokens、schema_migrations、roles/…）
@@ -90,24 +90,29 @@ TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization:
 | POST | `/api/auth/refresh` | 公开（需有效 refresh） | 轮换 refresh，签发新 access + refresh |
 | POST | `/api/auth/logout` | 公开 | 撤销 refresh（幂等） |
 | GET | `/api/accounts/me` | **Bearer** | 返回请求身份的会话快照 `{ user, features }` |
-| GET | `/api/records` | **Bearer + records.read** | R4 列表：`q` / `sort` / `order` / `page` / `pageSize`（需 `records.read` 权限） |
-| POST | `/api/records` | **Bearer + records.write** | R4 新建（body `name`/`status`/`owner` 必填）→ 201 + 完整 record；`INVALID_CREATE_*` 400 |
-| GET | `/api/records/{id}` | **Bearer + records.read** | R4 详情（需 `records.read` 权限） |
-| PATCH | `/api/records/{id}` | **Bearer + records.write** | R4 编辑（name/status/owner；需 `records.write` 权限） |
-| DELETE | `/api/records/{id}` | **Bearer + records.write** | R4 删除（需 `records.write` 权限） |
+| GET | `/api/users` | **Bearer + users.read** | 用户列表：`q` / `sort` / `order` / `page` / `pageSize` |
+| POST | `/api/users` | **Bearer + users.write** | 新建用户（`username`/`name`/`password` 必填；`roles` 可选数组）→ 201；`INVALID_CREATE_*` 400 / `USERNAME_TAKEN` 409 |
+| GET | `/api/users/{id}` | **Bearer + users.read** | 用户详情（永不返回 `password_hash`） |
+| PATCH | `/api/users/{id}` | **Bearer + users.write** | 编辑（`name`/`password`/`roles`）；self/last-admin 保护 409 |
+| DELETE | `/api/users/{id}` | **Bearer + users.write** | 删除用户（self → 409；原子撤销 refresh token） |
+| GET | `/api/roles` | **Bearer + roles.read** | 角色列表 |
+| POST | `/api/roles` | **Bearer + roles.write** | 新建角色（`key`/`name`；key 格式校验）；`ROLE_KEY_TAKEN` 409 |
+| GET | `/api/roles/{id}` | **Bearer + roles.read** | 角色详情（`system` 布尔） |
+| PATCH | `/api/roles/{id}` | **Bearer + roles.write** | 编辑 `name`（key 不可变；system 角色 409） |
+| DELETE | `/api/roles/{id}` | **Bearer + roles.write** | 删除角色（system / 被用户使用 → 409） |
 | GET | `/api/schema/{pageId}` | 公开（只读） | 页面 Schema 文档 |
 
 ## 鉴权边界（R3 · 真实认证 + 权限键）
 
 - **请求级身份**：受保护路由经 `Authorization: Bearer <access>` 由中间件解析身份；不再依赖进程注入的 `StaticDevSession`。
   - 无 / 无效 / 过期 access → `401 UNAUTHENTICATED`；已认证但缺少所需权限键 → `403 FORBIDDEN`。
-- **记录权限（R3 · GOAL-006）**：`GET /api/records` 与 `GET /api/records/{id}` 门禁 `records.read`；`POST` / `PATCH` / `DELETE`（含 `/api/records/{id}`）门禁 `records.write`。种子 admin 持 read + write，editor / viewer 仅 read。
-- **记录数据源（R4 · GOAL-007）**：`records` 存于 SQLite（`0003 records_persist`，`updated_at` Unix 毫秒，API 序列化为 RFC3339 含毫秒）；首次 `seedAdmin=true` 且表为空时 `seedRecords` 插入 8 条演示数据，非空则跳过。写并发为单写者 last-write-wins，同一毫秒内连续 update 由单调钳制保证 `updatedAt` 严格递增。
+- **资源权限（GOAL-011）**：users/roles 五路由经通用工厂 `requirePermission` 门禁 `users.read`/`users.write`、`roles.read`/`roles.write`。种子 admin 持 read + write，editor / viewer 仅 read。
+- **语义资源（GOAL-011 S2/S3）**：`/api/users`、`/api/roles` 走通用资源工厂（`resources.go`）；users 敏感字段隔离（`password_hash` 永不出响应）、角色分配双写（legacy JSON + `user_roles`，不隐式建角色）、self/last-admin 保护；roles system 角色（种子 admin/editor/viewer）不可改删、in-use 保护。records 已由 `0006 records_retire` 从产品运行面退场（历史契约见 GOAL-007 I-007-001）。
 - **Access**：短时效 JWT（`AUTH_ACCESS_TTL`，默认 15m），负载为 `sub`（用户 id）。
 - **Refresh**：opaque 随机串，**SHA-256 哈希存 SQLite**；登出/刷新即撤销（轮换）；过期/撤销 → `401`。
 - **静态开发会话**：仅 `AUTH_DEV_SESSION_ENABLED=true` 时作为显式本地兜底（替换 401）；生产默认关闭（M9）。
 - **凭据**：bcrypt（cost 10）哈希存储；密码/密钥不落仓库；生产 `AUTH_JWT_SECRET` 缺失 fail-closed。
-- **请求上限（F-009-007）**：auth/records 写 body ≤ 4 KiB（`MaxBytesReader`）；`pageSize` ≤ 100。
+- **请求上限（F-009-007）**：资源写 body ≤ 4 KiB（`MaxBytesReader`）；`pageSize` ≤ 100。
 
 ## 测试
 
@@ -117,7 +122,7 @@ make test
 go test ./...
 ```
 
-覆盖：auth 生命周期（登录/刷新轮换/登出/过期/撤销）、请求身份 401/403、store（种子幂等、token 生命周期、0003 迁移与 records 持久化/毫秒往返）、records 读/写权限门禁与 create/list/detail/PATCH/DELETE、schema 文档读取。
+覆盖：auth 生命周期（登录/刷新轮换/登出/过期/撤销）、请求身份 401/403、store（种子幂等、token 生命周期、迁移链 0001～0006 与 users/roles 持久化/毫秒往返）、users/roles 读/写权限门禁与 create/list/detail/PATCH/DELETE + 领域保护（self/last-admin/system/in-use）、schema 文档读取。
 
 ## 非目标（当前 R4 边界）
 

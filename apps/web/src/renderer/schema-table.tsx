@@ -4,7 +4,7 @@ import { DataTable, type DataTableColumn, type SortState } from "@/components/da
 import {
   fetchRecords,
   isValidDataSource,
-  type RecordsQuery,
+  type ResourceQuery,
   type ResourceItem,
   type ResourceList,
 } from "@/renderer/records";
@@ -80,7 +80,7 @@ export function schemaTableColumns(node: RenderTableNode): SchemaTableColumnSpec
 /**
  * Resolves the table node's list endpoint (F-001). Returns null when absent or
  * not a single-slash same-origin path; the table then fails closed and never
- * fetches (the `/api/records` fallback was removed in GOAL-010 S3).
+ * fetches (the records fallback was removed in GOAL-010 S3).
  */
 export function schemaTableDataSource(node: RenderTableNode): string | null {
   const raw = node.props?.dataSource;
@@ -143,9 +143,9 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   }, [crud, fetcher]);
 
   const providerQuery = crud?.tableQuery(tableId);
-  const [localQuery, setLocalQuery] = useState<RecordsQuery>({ page: 1, pageSize: 10 });
+  const [localQuery, setLocalQuery] = useState<ResourceQuery>({ page: 1, pageSize: 10 });
   const query = providerQuery ?? localQuery;
-  const setQuery = (next: RecordsQuery) => {
+  const setQuery = (next: ResourceQuery) => {
     if (crud !== null) {
       crud.setTableQuery(tableId, next);
     } else {
@@ -301,12 +301,12 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         selectedKey={selectedKey}
         loading={loading}
         error={error}
-        emptyMessage="No records match."
-        caption="Schema-driven records"
+        emptyMessage="No items match."
+        caption="Schema-driven items"
       />
       {list !== null ? (
         <p className="text-xs text-muted-foreground">
-          {list.total} record{list.total === 1 ? "" : "s"} · page {list.page} of{" "}
+          {list.total} item{list.total === 1 ? "" : "s"} · page {list.page} of{" "}
           {Math.max(1, Math.ceil(list.total / list.pageSize))}
         </p>
       ) : null}

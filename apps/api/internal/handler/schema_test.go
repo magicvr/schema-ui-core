@@ -81,7 +81,8 @@ func TestSchemaEndpoint(t *testing.T) {
 			"search-form-table",
 			"form-controls",
 			"form-with-reactions",
-			"list-edit-lifecycle",
+			"users",
+			"roles",
 		}
 		documents := staticSchemaDocuments()
 		for _, pageID := range representative {

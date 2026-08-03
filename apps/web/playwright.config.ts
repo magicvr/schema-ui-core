@@ -13,8 +13,8 @@ import { defineConfig } from "@playwright/test";
 // 5173 falls in a Hyper-V excluded range, set WEB_PORT=9999 (or any free port)
 // for local runs without changing the committed default.
 //
-// Each Playwright run gets a fresh SQLite file so seedRBAC / seedRecords are
-// deterministic and parallel browser specs do not fight a developer DB.
+// Each Playwright run gets a fresh SQLite file so seedRBAC is deterministic and
+// parallel browser specs do not fight a developer DB (records retired by 0006).
 const webPort = Number(process.env.WEB_PORT || 5173);
 const webOrigin = `http://127.0.0.1:${webPort}`;
 const e2eDbPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-")), "e2e.db");
@@ -38,7 +38,7 @@ export default defineConfig({
       cwd: "../api",
       url: "http://127.0.0.1:8080/healthz",
       // Never reuse: a leftover developer server may point at a non-seeded DB
-      // without menu_list_edit_lifecycle grants.
+      // without menu_users grants.
       reuseExistingServer: false,
       timeout: 60_000,
       env: {

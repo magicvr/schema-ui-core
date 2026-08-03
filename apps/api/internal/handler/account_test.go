@@ -62,9 +62,9 @@ func TestAccountsMeReturnsIdentity(t *testing.T) {
 	if session.Features == nil {
 		t.Fatalf("features missing from %v", session)
 	}
-	// GOAL-006 S5 · the seeded admin holds the list-edit-lifecycle menu grant.
-	if got := session.Features["menu_list_edit_lifecycle"]; !got {
-		t.Fatalf("admin menu_list_edit_lifecycle = %v, want true", got)
+	// GOAL-006 S5 · the seeded admin holds the users menu grant.
+	if got := session.Features["menu_users"]; !got {
+		t.Fatalf("admin menu_users = %v, want true", got)
 	}
 }
 
@@ -85,8 +85,8 @@ func TestAccountsMeFeaturesViewer(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&session); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if got := session.Features["menu_list_edit_lifecycle"]; got {
-		t.Fatalf("viewer menu_list_edit_lifecycle = %v, want false", got)
+	if got := session.Features["menu_users"]; got {
+		t.Fatalf("viewer menu_users = %v, want false", got)
 	}
 }
 
@@ -104,8 +104,8 @@ func TestAccountsMeDevSessionFallback(t *testing.T) {
 	}
 	// S5 parity: the dev session carries the admin menu grant feature.
 	features, _ := body["features"].(map[string]any)
-	if got := features["menu_list_edit_lifecycle"]; got != true {
-		t.Fatalf("dev features.menu_list_edit_lifecycle = %v, want true", got)
+	if got := features["menu_users"]; got != true {
+		t.Fatalf("dev features.menu_users = %v, want true", got)
 	}
 	// GOAL-011 (A-004 F-003): the dev session mirrors the admin users/roles
 	// permissions and menus so the fallback never silently drops the gates.

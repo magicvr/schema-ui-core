@@ -91,8 +91,9 @@ func catalogResource(entity ResourceEntity) Resource {
 		Entity:          entity,
 		CreateFields:    []string{"sku", "title"},
 		PatchFields:     []string{"title"},
-		PermissionRead:  "records.read",
-		PermissionWrite: "records.write",
+		// GOAL-011 S3: reuse the users grants (records.read/write retired by 0006).
+		PermissionRead:  "users.read",
+		PermissionWrite: "users.write",
 		NewID: func() (string, error) {
 			next++
 			return fmt.Sprintf("cat-%d", next), nil
@@ -231,7 +232,7 @@ func TestResourceFactorySharedGates(t *testing.T) {
 		t.Fatalf("q on a non-search resource status = %d, want 200", rr.Code)
 	}
 
-	// permission gate: viewer (records.read, no records.write) lists but not writes.
+	// permission gate: viewer (users.read, no users.write) lists but not writes.
 	env.addUser(t, "viewer2", "pw", []string{"viewer"})
 	vToken := env.login(t, "viewer2", "pw")
 	req = bearer(t, vToken, http.MethodGet, "/api/catalog", "")
@@ -263,7 +264,7 @@ func TestResourceFactoryDefaultPermissionDerivation(t *testing.T) {
 	})
 	token := adminToken(t, env)
 
-	// admin holds records.read/write, not the derived widget.read → 403.
+	// admin holds users.read/write, not the derived widget.read → 403.
 	req := bearer(t, token, http.MethodGet, "/api/widget", "")
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)

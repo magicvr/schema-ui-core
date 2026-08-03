@@ -132,9 +132,15 @@ func getJSON(t *testing.T, mux *http.ServeMux, path string) (int, map[string]any
 	return rr.Code, body
 }
 
-// getRecords fetches a records path as the seeded admin (GOAL-006 S4: reads are
-// authenticated and permission-gated, so a Bearer token is required).
-func getRecords(t *testing.T, env *authTestEnv, path string) (int, map[string]any) {
+// adminToken logs in as the seeded admin and returns the Bearer access token.
+func adminToken(t *testing.T, env *authTestEnv) string {
+	t.Helper()
+	return env.login(t, testSeedUsername, testSeedPassword)
+}
+
+// getResource fetches a resource path as the seeded admin (GOAL-006 S4: reads
+// are authenticated and permission-gated, so a Bearer token is required).
+func getResource(t *testing.T, env *authTestEnv, path string) (int, map[string]any) {
 	t.Helper()
 	req := bearer(t, adminToken(t, env), http.MethodGet, path, "")
 	rr := httptest.NewRecorder()

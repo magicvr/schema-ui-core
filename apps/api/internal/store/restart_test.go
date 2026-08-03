@@ -45,8 +45,8 @@ func TestRestartPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 5 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 {
-		t.Fatalf("applied after restart = %+v, want {1,2,3,4,5} (no re-migration)", applied)
+	if len(applied) != 6 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 {
+		t.Fatalf("applied after restart = %+v, want {1,2,3,4,5,6} (no re-migration)", applied)
 	}
 	var ur int
 	if err := st2.db.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`).Scan(&ur); err != nil || ur != 2 {
@@ -73,21 +73,21 @@ func TestRestartPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(perms, "records.read") || slices.Contains(perms, "records.write") {
+	if !slices.Contains(perms, "users.read") || slices.Contains(perms, "users.write") {
 		t.Fatalf("viewer permissions after restart = %v", perms)
 	}
 	feat, err := st2.FeaturesForUser("u1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if feat["menu_list_edit_lifecycle"] {
+	if feat["menu_users"] {
 		t.Fatalf("viewer menu feature after restart = true, want false")
 	}
 	admFeat, err := st2.FeaturesForUser("user-admin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !admFeat["menu_list_edit_lifecycle"] {
+	if !admFeat["menu_users"] {
 		t.Fatalf("admin menu feature lost after restart")
 	}
 	// The seed must not overwrite the admin password.
@@ -153,14 +153,14 @@ func TestRestorePreV0002Snapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(perms, "records.read") || !slices.Contains(perms, "records.write") {
+	if !slices.Contains(perms, "users.read") || !slices.Contains(perms, "users.write") {
 		t.Fatalf("restored permissions = %v", perms)
 	}
 	feat, err := r.FeaturesForUser("user-admin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !feat["menu_list_edit_lifecycle"] {
+	if !feat["menu_users"] {
 		t.Fatalf("restored menu feature missing")
 	}
 	if err := r.verifyIntegrity(); err != nil {

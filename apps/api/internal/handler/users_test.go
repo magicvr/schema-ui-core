@@ -11,21 +11,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
-// getResource fetches a resource path as the seeded admin.
-func getResource(t *testing.T, env *authTestEnv, path string) (int, map[string]any) {
-	t.Helper()
-	req := bearer(t, adminToken(t, env), http.MethodGet, path, "")
-	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	var body map[string]any
-	if rr.Body.Len() > 0 {
-		if err := json.NewDecoder(rr.Body).Decode(&body); err != nil {
-			t.Fatalf("decode %q: %v", rr.Body.String(), err)
-		}
-	}
-	return rr.Code, body
-}
-
 // GOAL-011 S2 · users list/detail expose the seeded admin without password_hash.
 func TestUsersListAndDetail(t *testing.T) {
 	env := newAuthTestEnv(t)

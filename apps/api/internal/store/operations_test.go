@@ -114,15 +114,25 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 	if err != nil || len(snaps) != 1 {
 		t.Fatalf("pre-v0004 snapshots = %v (err %v), want exactly 1", snaps, err)
 	}
+	// Per-pending snapshot (I-011-002 v0.2.0 · A-002 F-002): a v3→full upgrade
+	// also produces pre-v0005 and pre-v0006 (records data-recovery backstop).
+	for _, want := range []string{"pre-v0005", "pre-v0006"} {
+		if snaps, _ := filepath.Glob(path + "." + want + "-*.sqlite"); len(snaps) != 1 {
+			t.Fatalf("%s snapshots = %v, want exactly 1", want, snaps)
+		}
+	}
 	applied, err := st.appliedMigrations()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 5 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" {
-		t.Fatalf("applied = %+v, want 5 = operation_log + operation_log_expand", applied)
+	if len(applied) != 6 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" || applied[5].version != 6 || applied[5].name != "records_retire" {
+		t.Fatalf("applied = %+v, want 6 = operation_log + operation_log_expand + records_retire", applied)
 	}
 	if !tableExistsDB(t, st.db, "operation_log") {
 		t.Fatal("operation_log table missing after 0004")
+	}
+	if tableExistsDB(t, st.db, "records") {
+		t.Fatal("records table must be dropped by 0006")
 	}
 }
 

@@ -4,14 +4,17 @@
 // mount the same five routes (list / create / detail / update / delete) without
 // a hand-written handler. The factory owns the shared concerns — permission
 // gate, body-size bound, page/sort/q validation, the frozen {error,message}
-// write envelope and INTERNAL fallback. records is the first registered
-// instance and its HTTP contract is preserved exactly (I-007-001).
+// write envelope and INTERNAL fallback. users/roles are the GOAL-011 semantic
+// resource instances (records retired by GOAL-011 S3 / 0006).
 package handler
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
@@ -69,6 +72,24 @@ type DomainError struct {
 
 func (e *DomainError) Error() string { return e.Code + ": " + e.Message }
 
+// jsonQuote returns s as a JSON string literal (used for operation log detail
+// summaries; never used for secrets, which are excluded by I-008-003 §3).
+func jsonQuote(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
+// newOperationID returns a random 128-bit hex id for operation log rows.
+func newOperationID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// crypto/rand failure is effectively fatal; fall back to a timestamp id
+		// so logging never wedges a successful request (best-effort contract).
+		return fmt.Sprintf("op-%d", time.Now().UnixNano())
+	}
+	return "op-" + hex.EncodeToString(b[:])
+}
+
 // writeKind identifies a successful write so a resource can attach side effects
 // (e.g. operation-log rows) uniformly.
 type writeKind int
@@ -83,7 +104,7 @@ const (
 // handler factory (I-010-001 §4). records is the first registered instance.
 type Resource struct {
 	ID              string         // resource id, e.g. "records"
-	Path            string         // mount path, e.g. "/api/records"
+	Path            string         // mount path, e.g. "/api/users"
 	Listable        bool           // expose GET {path} (list)
 	SortFields      []string       // whitelist; empty = not sortable
 	QSearch         bool           // list supports the q search param

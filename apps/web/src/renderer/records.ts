@@ -25,12 +25,8 @@ export interface ResourceList {
   pageSize: number;
 }
 
-/** Deprecated record-specific alias of ResourceItem (GOAL-010 S3 genericization). */
-export type RecordItem = ResourceItem;
-/** Deprecated record-specific alias of ResourceList (GOAL-010 S3 genericization). */
-export type RecordList = ResourceList;
-
-export interface RecordsQuery {
+/** A resource list query (GOAL-011 S3: RecordsQuery genericized). */
+export interface ResourceQuery {
   q?: string;
   sort?: string;
   order?: SortOrder;
@@ -112,8 +108,8 @@ export async function readRecordApiError(response: Response, label: string): Pro
   );
 }
 
-/** Serializes a RecordsQuery into a URL query string (query-serialization). */
-export function buildRecordsQuery(query: RecordsQuery): string {
+/** Serializes a ResourceQuery into a URL query string (query-serialization). */
+export function buildRecordsQuery(query: ResourceQuery): string {
   const params = new URLSearchParams();
   if (query.q !== undefined && query.q.trim() !== "") {
     params.set("q", query.q.trim());
@@ -159,7 +155,7 @@ export function parseRecordList(value: unknown): ResourceList {
 export async function fetchRecords(
   fetcher: typeof fetch,
   baseURL: string,
-  query: RecordsQuery,
+  query: ResourceQuery,
 ): Promise<ResourceList> {
   // F-001: validate BEFORE touching the (auth) fetcher so an invalid dataSource
   // never reaches Bearer-attaching transport.

@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 //
-// T-UI-01..10 acceptance evidence for GOAL-007 S4/S5 (I-007-003 v0.2.2 §6):
-// the `list-edit-lifecycle` representative page drives list/search/detail/
-// create/edit/delete through Schema nodes against an emulated records API, and
-// the permission / error / confirm matrix holds. The renderer under test is
-// the frozen §5 main path; every page behaviour below comes from the real
-// fixture, not from source code.
+// T-UI-01..10 acceptance evidence for GOAL-007 S4/S5 (I-007-003 v0.2.2 §6;
+// GOAL-011 S3 repoints the CRUD driver from records to the users resource):
+// the `users` representative page drives list/search/detail/create/edit/delete
+// through Schema nodes against an emulated users API, and the permission /
+// error / confirm matrix holds. The renderer under test is the frozen §5 main
+// path; every page behaviour below comes from the real fixture, not from source.
 //
-// The API emulator mirrors the frozen I-007-001 contract (GET list envelope,
+// The API emulator mirrors the frozen resource contract (GET list envelope,
 // POST 201 / INVALID_CREATE_*, PATCH 200, DELETE 204, unified {error,message},
-// records.read / records.write). Backend authority itself is proven by the Go
-// T-API-08/09 suite; here we assert the UI renders consistently with it.
+// users.read / users.write). Backend authority itself is proven by the Go
+// users/roles suite; here we assert the UI renders consistently with it.
 
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -23,7 +23,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { RenderPageDocument } from "@/renderer/render";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
-import type { RecordItem } from "@/renderer/records";
+import type { ResourceItem } from "@/renderer/records";
 
 const FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -35,7 +35,7 @@ function fixtureDocument(pageId: string): unknown {
   return JSON.parse(readFileSync(resolve(FIXTURE_DIR, `${pageId}.json`), "utf8"));
 }
 
-// --- Records API emulator (I-007-001 contract) ---
+// --- Users API emulator (resource contract) ---
 
 interface ApiCall {
   method: string;
@@ -50,11 +50,12 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function createRecordsApi(
-  initial: RecordItem[],
+function createUsersApi(
+  initial: ResourceItem[],
+  resourcePath = "/api/users",
   options: { denyWrites?: boolean; failPatch?: boolean } = {},
-): { fetcher: typeof fetch; store: RecordItem[]; calls: ApiCall[] } {
-  const store: RecordItem[] = initial.map((record) => ({ ...record }));
+): { fetcher: typeof fetch; store: ResourceItem[]; calls: ApiCall[] } {
+  const store: ResourceItem[] = initial.map((user) => ({ ...user }));
   const calls: ApiCall[] = [];
   let tick = 0;
   const now = (): string => {
@@ -62,7 +63,7 @@ function createRecordsApi(
     return `2026-08-02T10:00:00.${String(tick).padStart(3, "0")}Z`;
   };
   const deny = (): Response =>
-    json({ error: "FORBIDDEN", message: "permission required: records.write" }, 403);
+    json({ error: "FORBIDDEN", message: "permission required: users.write" }, 403);
 
   const fetcher: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const raw = String(input);
@@ -73,7 +74,7 @@ function createRecordsApi(
       url: raw,
       body: init?.body !== undefined ? JSON.parse(String(init.body)) : undefined,
     });
-    const match = /^\/api\/records(?:\/([^/]+))?$/.exec(url.pathname);
+    const match = new RegExp(`^${resourcePath}(?:/([^/]+))?$`).exec(url.pathname);
     if (!match) {
       return json({ error: "NOT_FOUND", message: "no such route" }, 404);
     }
@@ -83,16 +84,18 @@ function createRecordsApi(
       let items = [...store];
       const q = url.searchParams.get("q");
       if (q !== null && q !== "") {
-        items = items.filter((record) =>
-          String(record.name ?? "").toLowerCase().includes(q.toLowerCase()),
+        items = items.filter((user) =>
+          String(user.key ?? user.username ?? user.name ?? "")
+            .toLowerCase()
+            .includes(q.toLowerCase()),
         );
       }
       const sort = url.searchParams.get("sort");
       const order = url.searchParams.get("order");
       if (sort !== null) {
         items.sort((a, b) => {
-          const left = String(a[sort as keyof RecordItem] ?? "");
-          const right = String(b[sort as keyof RecordItem] ?? "");
+          const left = String(a[sort as keyof ResourceItem] ?? "");
+          const right = String(b[sort as keyof ResourceItem] ?? "");
           const cmp = left.localeCompare(right);
           return order === "desc" ? -cmp : cmp;
         });
@@ -111,26 +114,26 @@ function createRecordsApi(
         return deny();
       }
       const body = init?.body !== undefined ? JSON.parse(String(init.body)) : {};
-      for (const field of ["name", "status", "owner"]) {
+      for (const field of ["username", "name", "password"]) {
         const value = typeof body[field] === "string" ? String(body[field]).trim() : "";
         if (value === "") {
           return json({ error: "INVALID_CREATE_FIELD", message: `${field} is required` }, 400);
         }
       }
-      const record: RecordItem = {
-        id: `rec-new-${store.length + 1}`,
+      const user: ResourceItem = {
+        id: `usr-new-${store.length + 1}`,
+        username: String(body.username).trim(),
         name: String(body.name).trim(),
-        status: String(body.status).trim(),
-        owner: String(body.owner).trim(),
+        roles: [],
         updatedAt: now(),
       };
-      store.unshift(record);
-      return json(record, 201);
+      store.unshift(user);
+      return json(user, 201);
     }
     if (id !== undefined && (method === "PATCH" || method === "DELETE")) {
-      const index = store.findIndex((record) => record.id === id);
+      const index = store.findIndex((user) => user.id === id);
       if (index < 0) {
-        return json({ error: "RECORD_NOT_FOUND", message: "no record with that id" }, 404);
+        return json({ error: "USER_NOT_FOUND", message: "no user with that id" }, 404);
       }
       if (method === "DELETE") {
         if (options.denyWrites) {
@@ -146,15 +149,13 @@ function createRecordsApi(
         return json({ error: "INVALID_PATCH_FIELD", message: "name is required" }, 400);
       }
       const body = init?.body !== undefined ? JSON.parse(String(init.body)) : {};
-      const patch: Partial<RecordItem> = {};
-      for (const field of ["name", "status", "owner"]) {
-        if (body[field] !== undefined) {
-          const value = String(body[field]).trim();
-          if (value === "") {
-            return json({ error: "INVALID_PATCH_FIELD", message: `${field} is required` }, 400);
-          }
-          patch[field as "name" | "status" | "owner"] = value;
+      const patch: Partial<ResourceItem> = {};
+      if (body.name !== undefined) {
+        const value = String(body.name).trim();
+        if (value === "") {
+          return json({ error: "INVALID_PATCH_FIELD", message: "name is required" }, 400);
         }
+        patch.name = value;
       }
       const updated = { ...store[index], ...patch, updatedAt: now() };
       store[index] = updated;
@@ -169,26 +170,43 @@ function createRecordsApi(
 // --- Render harness ---
 
 const ADMIN = {
-  user: { id: "u1", roles: ["admin"], permissions: ["records.read", "records.write"] },
+  user: { id: "u1", roles: ["admin"], permissions: ["users.read", "users.write"] },
 };
 const VIEWER = {
-  user: { id: "u2", roles: ["viewer"], permissions: ["records.read"] },
+  user: { id: "u2", roles: ["viewer"], permissions: ["users.read"] },
 };
 
-const RECORDS: RecordItem[] = [
+const USERS: ResourceItem[] = [
   {
-    id: "rec-1",
-    name: "Acme Console",
-    status: "active",
-    owner: "alice",
-    updatedAt: "2026-07-31T00:00:00.000Z",
+    id: "usr-1",
+    username: "alice",
+    name: "Alice",
+    roles: ["admin"],
+    updatedAt: "2026-08-03T00:00:00.000Z",
   },
   {
-    id: "rec-2",
-    name: "Northwind Sales",
-    status: "pending",
-    owner: "bob",
-    updatedAt: "2026-07-31T11:00:00.000Z",
+    id: "usr-2",
+    username: "bob",
+    name: "Bob",
+    roles: ["editor"],
+    updatedAt: "2026-08-03T11:00:00.000Z",
+  },
+];
+
+const ROLES: ResourceItem[] = [
+  {
+    id: "role-admin",
+    key: "admin",
+    name: "admin",
+    system: true,
+    updatedAt: "2026-08-03T00:00:00.000Z",
+  },
+  {
+    id: "role-viewer",
+    key: "viewer",
+    name: "viewer",
+    system: true,
+    updatedAt: "2026-08-03T11:00:00.000Z",
   },
 ];
 
@@ -253,25 +271,25 @@ function fieldInput(container: HTMLElement, id: string): HTMLInputElement | null
 // --- T-UI tests ---
 
 describe("T-UI-01 · list loads and empty state", () => {
-  it("loads the representative list from /api/records and shows the record count", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
-    expect(container.textContent).toContain("Acme Console");
-    expect(container.textContent).toContain("Northwind Sales");
-    expect(container.textContent).toContain("2 records · page 1 of 1");
+  it("loads the representative list from /api/users and shows the item count", async () => {
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+    expect(container.textContent).toContain("alice");
+    expect(container.textContent).toContain("bob");
+    expect(container.textContent).toContain("2 items · page 1 of 1");
   });
 
   it("shows the empty message when the data source has no rows", async () => {
-    const api = createRecordsApi([]);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
-    expect(container.textContent).toContain("No records match.");
+    const api = createUsersApi([]);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+    expect(container.textContent).toContain("No items match.");
   });
 });
 
 describe("T-UI-02 · sort and pagination", () => {
   it("toggles a column sort header and refetches with sort/order", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
     const nameHeader = Array.from(container.querySelectorAll("th button")).find((button) =>
       button.textContent?.includes("Name"),
     );
@@ -287,109 +305,109 @@ describe("T-UI-02 · sort and pagination", () => {
 
 describe("T-UI-03 · search form-to-query binding (search-form-table)", () => {
   it("binds the search form to the target table query", async () => {
-    const api = createRecordsApi(RECORDS);
+    const api = createUsersApi(ROLES, "/api/roles");
     const container = await renderCrud(fixtureDocument("search-form-table"), ADMIN, api.fetcher);
     const input = fieldInput(container, "q");
     expect(input).not.toBeNull();
-    await act(async () => setFieldValue(input as HTMLInputElement, "acme"));
+    await act(async () => setFieldValue(input as HTMLInputElement, "adm"));
     const searchButton = buttonByText(container, "Search");
     await act(async () => (searchButton as HTMLButtonElement).click());
-    expect(api.calls.some((call) => call.url.includes("q=acme"))).toBe(true);
-    expect(container.textContent).toContain("Acme Console");
-    expect(container.textContent).not.toContain("Northwind Sales");
-    expect(container.textContent).toContain("1 record · page 1 of 1");
+    expect(api.calls.some((call) => call.url.includes("q=adm"))).toBe(true);
+    expect(container.textContent).toContain("admin");
+    expect(container.textContent).not.toContain("viewer");
+    expect(container.textContent).toContain("1 item · page 1 of 1");
   });
 });
 
 describe("T-UI-04 · create form (POST → 201)", () => {
-  it("creates a record and shows it in the refreshed list", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
-    await act(async () => (buttonByText(container, "New record") as HTMLButtonElement).click());
-    await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Globex Corp"));
-    await act(async () => setFieldValue(fieldInput(container, "status") as HTMLInputElement, "active"));
-    await act(async () => setFieldValue(fieldInput(container, "owner") as HTMLInputElement, "carol"));
-    await act(async () => (buttonByText(container, "Create record") as HTMLButtonElement).click());
-    expect(api.calls.some((call) => call.method === "POST" && call.url === "/api/records")).toBe(true);
-    expect(container.textContent).toContain("Record created");
-    expect(container.textContent).toContain("Globex Corp");
+  it("creates a user and shows it in the refreshed list", async () => {
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+    await act(async () => (buttonByText(container, "New user") as HTMLButtonElement).click());
+    await act(async () => setFieldValue(fieldInput(container, "username") as HTMLInputElement, "carol"));
+    await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Carol"));
+    await act(async () => setFieldValue(fieldInput(container, "password") as HTMLInputElement, "pw12345"));
+    await act(async () => (buttonByText(container, "Create user") as HTMLButtonElement).click());
+    expect(api.calls.some((call) => call.method === "POST" && call.url === "/api/users")).toBe(true);
+    expect(container.textContent).toContain("Item created");
+    expect(container.textContent).toContain("Carol");
   });
 
   it("surfaces a blank-field INVALID_CREATE_FIELD form error", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
-    await act(async () => (buttonByText(container, "New record") as HTMLButtonElement).click());
-    await act(async () => (buttonByText(container, "Create record") as HTMLButtonElement).click());
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+    await act(async () => (buttonByText(container, "New user") as HTMLButtonElement).click());
+    await act(async () => (buttonByText(container, "Create user") as HTMLButtonElement).click());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("INVALID_CREATE_FIELD");
   });
 });
 
 describe("T-UI-05 · edit form (PATCH → 200, prefilled from the row)", () => {
   it("prefills the edit form, patches the row, and refreshes updatedAt", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
     await act(async () => (buttonByText(container, "Edit") as HTMLButtonElement).click());
     const nameInput = fieldInput(container, "name") as HTMLInputElement;
-    expect(nameInput.value).toBe("Acme Console");
-    await act(async () => setFieldValue(nameInput, "Acme Rebrand"));
+    expect(nameInput.value).toBe("Alice");
+    await act(async () => setFieldValue(nameInput, "Alice Rebrand"));
     await act(async () => (buttonByText(container, "Save changes") as HTMLButtonElement).click());
     const patchCall = api.calls.find((call) => call.method === "PATCH");
-    expect(patchCall?.url).toBe("/api/records/rec-1");
-    expect(container.textContent).toContain("Record updated");
-    expect(container.textContent).toContain("Acme Rebrand");
-    expect(api.store.find((record) => record.id === "rec-1")?.name).toBe("Acme Rebrand");
+    expect(patchCall?.url).toBe("/api/users/usr-1");
+    expect(container.textContent).toContain("Item updated");
+    expect(container.textContent).toContain("Alice Rebrand");
+    expect(api.store.find((user) => user.id === "usr-1")?.name).toBe("Alice Rebrand");
   });
 });
 
 describe("T-UI-06 · delete with confirmation", () => {
   it("confirms then deletes the row (DELETE 204) and removes it from the list", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
     await act(async () => (buttonByText(container, "Delete") as HTMLButtonElement).click());
-    expect(container.textContent).toContain("Delete this record?");
+    expect(container.textContent).toContain("Delete this user?");
     await act(async () => (buttonByText(container, "Confirm") as HTMLButtonElement).click());
-    expect(api.calls.some((call) => call.method === "DELETE" && call.url === "/api/records/rec-1")).toBe(true);
-    expect(container.textContent).toContain("Record deleted");
-    expect(container.textContent).not.toContain("Acme Console");
+    expect(api.calls.some((call) => call.method === "DELETE" && call.url === "/api/users/usr-1")).toBe(true);
+    expect(container.textContent).toContain("Item deleted");
+    expect(container.textContent).not.toContain("alice");
   });
 
   it("cancelling issues no request", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
     await act(async () => (buttonByText(container, "Delete") as HTMLButtonElement).click());
     await act(async () => (buttonByText(container, "Cancel") as HTMLButtonElement).click());
     expect(api.calls.some((call) => call.method === "DELETE")).toBe(false);
-    expect(container.textContent).toContain("Acme Console");
+    expect(container.textContent).toContain("alice");
   });
 });
 
 describe("T-UI-07 · error envelope rendering", () => {
   it("renders a FORBIDDEN envelope when the backend denies a write", async () => {
-    const api = createRecordsApi(RECORDS, { denyWrites: true });
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
-    await act(async () => (buttonByText(container, "New record") as HTMLButtonElement).click());
-    await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Blocked"));
-    await act(async () => setFieldValue(fieldInput(container, "status") as HTMLInputElement, "active"));
-    await act(async () => setFieldValue(fieldInput(container, "owner") as HTMLInputElement, "dan"));
-    await act(async () => (buttonByText(container, "Create record") as HTMLButtonElement).click());
+    const api = createUsersApi(USERS, "/api/users", { denyWrites: true });
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+    await act(async () => (buttonByText(container, "New user") as HTMLButtonElement).click());
+    await act(async () => setFieldValue(fieldInput(container, "username") as HTMLInputElement, "dave"));
+    await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Dave"));
+    await act(async () => setFieldValue(fieldInput(container, "password") as HTMLInputElement, "pw12345"));
+    await act(async () => (buttonByText(container, "Create user") as HTMLButtonElement).click());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("FORBIDDEN");
   });
 
-  it("renders a RECORD_NOT_FOUND envelope on a stale edit", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
+  it("renders a USER_NOT_FOUND envelope on a stale edit", async () => {
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
     await act(async () => (buttonByText(container, "Edit") as HTMLButtonElement).click());
     api.store.length = 0; // emulate a concurrent delete
     await act(async () => (buttonByText(container, "Save changes") as HTMLButtonElement).click());
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain("RECORD_NOT_FOUND");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("USER_NOT_FOUND");
   });
 });
 
 describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
   it("admin sees enabled write affordances", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), ADMIN, api.fetcher);
-    for (const label of ["New record", "Edit", "Delete"]) {
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+    for (const label of ["New user", "Edit", "Delete"]) {
       const button = buttonByText(container, label) as HTMLButtonElement;
       expect(button, `${label} present`).not.toBeUndefined();
       expect(button.disabled, `${label} enabled for admin`).toBe(false);
@@ -397,30 +415,30 @@ describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
   });
 
   it("viewer/editor is read-only: write affordances are disabled", async () => {
-    const api = createRecordsApi(RECORDS);
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), VIEWER, api.fetcher);
-    for (const label of ["New record", "Edit", "Delete"]) {
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), VIEWER, api.fetcher);
+    for (const label of ["New user", "Edit", "Delete"]) {
       const button = buttonByText(container, label) as HTMLButtonElement;
       expect(button, `${label} present`).not.toBeUndefined();
       expect(button.disabled, `${label} disabled for viewer`).toBe(true);
     }
-    // The read surface still works (records.read is held).
-    expect(container.textContent).toContain("Acme Console");
+    // The read surface still works (users.read is held).
+    expect(container.textContent).toContain("alice");
   });
 });
 
 describe("T-UI-09 · backend authority is not replaced by frontend hiding", () => {
   it("the API denies a write even when the frontend hides the affordance", async () => {
-    const viewerApi = createRecordsApi(RECORDS, { denyWrites: true });
-    const container = await renderCrud(fixtureDocument("list-edit-lifecycle"), VIEWER, viewerApi.fetcher);
+    const viewerApi = createUsersApi(USERS, "/api/users", { denyWrites: true });
+    const container = await renderCrud(fixtureDocument("users"), VIEWER, viewerApi.fetcher);
     // Frontend hides/disables the affordance for the viewer…
     const editButton = buttonByText(container, "Edit") as HTMLButtonElement;
     expect(editButton.disabled).toBe(true);
     // …and a direct write the UI never issues is still blocked by the backend.
-    const response = await viewerApi.fetcher("/api/records", {
+    const response = await viewerApi.fetcher("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "X", status: "active", owner: "x" }),
+      body: JSON.stringify({ username: "x", name: "X", password: "y12345" }),
     });
     expect(response.status).toBe(403);
     const envelope = (await response.json()) as { error: string };
@@ -429,24 +447,21 @@ describe("T-UI-09 · backend authority is not replaced by frontend hiding", () =
 });
 
 describe("T-UI-10 · page changes are fixture-only (renderer stays generic)", () => {
-  it("the record CRUD action ids exist only in the fixture, never in renderer source", async () => {
-    const fixtureText = readFileSync(resolve(FIXTURE_DIR, "list-edit-lifecycle.json"), "utf8");
-    const actionIds = ["createRecord", "updateRecord", "deleteRecord", "openCreate", "openEdit"];
+  it("the user CRUD action ids exist only in the fixture, never in renderer source", async () => {
+    const fixtureText = readFileSync(resolve(FIXTURE_DIR, "users.json"), "utf8");
+    const actionIds = ["createUser", "updateUser", "deleteUser", "openCreate", "openEdit"];
     for (const id of actionIds) {
       expect(fixtureText, `${id} declared by the fixture`).toContain(id);
     }
-    // The records client (records.ts / use-records.ts) is the generic reusable
-    // transport for any page, so its function names legitimately echo the
-    // record verbs; the page-*rendering* source must not hardcode them.
+    // The resource client (records.ts) is the generic reusable transport for any
+    // page, so its function names legitimately echo the resource verbs; the
+    // page-*rendering* source must not hardcode them.
     const srcFiles = readDirRecursive(WEB_SRC_DIR)
       .filter(
         (file) =>
           (file.endsWith(".ts") || file.endsWith(".tsx")) && !file.includes(".test."),
       )
-      .filter(
-        (file) =>
-          !file.endsWith("records.ts") && !file.endsWith("use-records.ts"),
-      );
+      .filter((file) => !file.endsWith("records.ts"));
     for (const file of srcFiles) {
       const content = readFileSync(file, "utf8");
       for (const id of actionIds) {

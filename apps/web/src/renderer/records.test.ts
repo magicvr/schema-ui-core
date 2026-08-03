@@ -7,7 +7,7 @@ import {
   isValidDataSource,
   parseRecordList,
   updateRecord,
-  type RecordList,
+  type ResourceList,
 } from "@/renderer/records";
 
 describe("buildRecordsQuery (query-serialization)", () => {
@@ -36,28 +36,28 @@ describe("buildRecordsQuery (query-serialization)", () => {
 
 describe("isValidDataSource (F-001 · I-010-001 v0.2.0 §2)", () => {
   it("accepts single-slash same-origin paths", () => {
-    expect(isValidDataSource("/api/records")).toBe(true);
+    expect(isValidDataSource("/api/users")).toBe(true);
     expect(isValidDataSource("/api/catalog")).toBe(true);
     expect(isValidDataSource("/")).toBe(true);
   });
 
   it("rejects protocol-relative and absolute URLs", () => {
-    expect(isValidDataSource("//evil.example/api/records")).toBe(false);
-    expect(isValidDataSource("http://evil.example/api/records")).toBe(false);
-    expect(isValidDataSource("https://evil.example/api/records")).toBe(false);
+    expect(isValidDataSource("//evil.example/api/users")).toBe(false);
+    expect(isValidDataSource("http://evil.example/api/users")).toBe(false);
+    expect(isValidDataSource("https://evil.example/api/users")).toBe(false);
     expect(isValidDataSource("javascript:alert(1)")).toBe(false);
   });
 
   it("rejects relative (non-rooted) paths", () => {
-    expect(isValidDataSource("api/records")).toBe(false);
+    expect(isValidDataSource("api/users")).toBe(false);
     expect(isValidDataSource("records")).toBe(false);
   });
 
   it("rejects whitespace, backslash, query and fragment", () => {
     expect(isValidDataSource("/api/rec ords")).toBe(false);
     expect(isValidDataSource("/api\\records")).toBe(false);
-    expect(isValidDataSource("/api/records?q=x")).toBe(false);
-    expect(isValidDataSource("/api/records#frag")).toBe(false);
+    expect(isValidDataSource("/api/users?q=x")).toBe(false);
+    expect(isValidDataSource("/api/users#frag")).toBe(false);
   });
 
   it("rejects empty and non-string input", () => {
@@ -139,30 +139,30 @@ describe("fetchRecords (request-construction)", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     });
-    const list: RecordList = await fetchRecords(
+    const list: ResourceList = await fetchRecords(
       fetcher as unknown as typeof fetch,
-      "/api/records",
+      "/api/users",
       { q: "acme" },
     );
-    expect(fetcher).toHaveBeenCalledWith("/api/records?q=acme");
+    expect(fetcher).toHaveBeenCalledWith("/api/users?q=acme");
     expect(list.total).toBe(1);
   });
 
   it("throws on a non-OK response", async () => {
     const fetcher = vi.fn(async () => new Response("nope", { status: 500 }));
     await expect(
-      fetchRecords(fetcher as unknown as typeof fetch, "/api/records", {}),
+      fetchRecords(fetcher as unknown as typeof fetch, "/api/users", {}),
     ).rejects.toThrow("HTTP 500");
   });
 
   it("rejects an invalid dataSource before touching the fetcher (F-001)", async () => {
     const fetcher = vi.fn(async () => new Response("{}", { status: 200 }));
     for (const bad of [
-      "//evil.example/api/records",
-      "http://evil.example/api/records",
-      "api/records",
+      "//evil.example/api/users",
+      "http://evil.example/api/users",
+      "api/users",
       "/api/rec ords",
-      "/api/records?q=x",
+      "/api/users?q=x",
       "",
     ]) {
       await expect(
@@ -176,11 +176,11 @@ describe("fetchRecords (request-construction)", () => {
 describe("updateRecord (PATCH)", () => {
   it("sends a PATCH and maps the response", async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toBe("/api/records/rec-3");
+      expect(String(input)).toBe("/api/users/usr-3");
       expect(init?.method).toBe("PATCH");
       return new Response(
         JSON.stringify({
-          id: "rec-3",
+          id: "usr-3",
           name: "Hooli Rebrand",
           status: "archived",
           owner: "carol",
@@ -191,8 +191,8 @@ describe("updateRecord (PATCH)", () => {
     });
     const updated = await updateRecord(
       fetcher as unknown as typeof fetch,
-      "/api/records",
-      "rec-3",
+      "/api/users",
+      "usr-3",
       { name: "Hooli Rebrand", status: "archived" },
     );
     expect(updated.name).toBe("Hooli Rebrand");
@@ -202,7 +202,7 @@ describe("updateRecord (PATCH)", () => {
   it("throws on a non-OK response", async () => {
     const fetcher = vi.fn(async () => new Response("bad", { status: 400 }));
     await expect(
-      updateRecord(fetcher as unknown as typeof fetch, "/api/records", "rec-3", { name: "" }),
+      updateRecord(fetcher as unknown as typeof fetch, "/api/users", "usr-3", { name: "" }),
     ).rejects.toThrow("HTTP 400");
   });
 });
@@ -210,19 +210,19 @@ describe("updateRecord (PATCH)", () => {
 describe("deleteRecord (DELETE)", () => {
   it("sends a DELETE and resolves on 204", async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toBe("/api/records/rec-3");
+      expect(String(input)).toBe("/api/users/usr-3");
       expect(init?.method).toBe("DELETE");
       return new Response(null, { status: 204 });
     });
     await expect(
-      deleteRecord(fetcher as unknown as typeof fetch, "/api/records", "rec-3"),
+      deleteRecord(fetcher as unknown as typeof fetch, "/api/users", "usr-3"),
     ).resolves.toBeUndefined();
   });
 
   it("throws on a non-OK response", async () => {
     const fetcher = vi.fn(async () => new Response("bad", { status: 404 }));
     await expect(
-      deleteRecord(fetcher as unknown as typeof fetch, "/api/records", "rec-999"),
+      deleteRecord(fetcher as unknown as typeof fetch, "/api/users", "usr-999"),
     ).rejects.toThrow("HTTP 404");
   });
 });
