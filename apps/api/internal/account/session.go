@@ -33,7 +33,7 @@ func StaticDevSession() Session {
 			// GOAL-011 users/roles keys (records retired by 0006, GOAL-011 S3).
 			Permissions: []string{
 				"users.read", "users.write",
-				"roles.read", "roles.write",
+				"roles.read", "roles.write", "roles.assign",
 			},
 		},
 		Features: map[string]bool{

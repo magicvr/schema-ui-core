@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const legacyRecordCreateEvent = "records.create"
+
 // R5 S6 (I-008-003) · RecordOperation appends rows; ListOperations returns the
 // most recent N ordered by created_at DESC, id DESC; limit <= 0 is empty.
 func TestOperationLogAppendAndList(t *testing.T) {
@@ -23,7 +25,7 @@ func TestOperationLogAppendAndList(t *testing.T) {
 	rid := "rec-9"
 	detail := `{"name":"Acme Console"}`
 	ops := []Operation{
-		{ID: "op-1", Event: EventRecordCreate, ActorID: "user-admin", ActorName: "Admin", RecordID: &rid, Detail: &detail, CreatedAt: base},
+		{ID: "op-1", Event: legacyRecordCreateEvent, ActorID: "user-admin", ActorName: "Admin", RecordID: &rid, Detail: &detail, CreatedAt: base},
 		{ID: "op-2", Event: EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(time.Second)},
 		{ID: "op-3", Event: EventAuthLogout, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(2 * time.Second)},
 	}
@@ -44,7 +46,7 @@ func TestOperationLogAppendAndList(t *testing.T) {
 	if got[0].ID != "op-3" || got[1].ID != "op-2" || got[2].ID != "op-1" {
 		t.Fatalf("order = %v, want [op-3 op-2 op-1]", []string{got[0].ID, got[1].ID, got[2].ID})
 	}
-	if got[2].Event != EventRecordCreate || got[2].ActorName != "Admin" {
+	if got[2].Event != legacyRecordCreateEvent || got[2].ActorName != "Admin" {
 		t.Fatalf("op-1 = %+v", got[2])
 	}
 	if got[2].RecordID == nil || *got[2].RecordID != "rec-9" {
@@ -158,7 +160,7 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 		createdAt                                       int64
 	}
 	legacy := []legacyRow{
-		{"op-old-1", EventRecordCreate, "user-admin", "Admin", "rec-9", `{"name":"Acme"}`, 1700000000000},
+		{"op-old-1", legacyRecordCreateEvent, "user-admin", "Admin", "rec-9", `{"name":"Acme"}`, 1700000000000},
 		{"op-old-2", EventAuthLogin, "user-admin", "Admin", "", `{"username":"admin"}`, 1700000001000},
 	}
 	for _, r := range legacy {
@@ -196,7 +198,7 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	if got[0].ID != "op-old-2" || got[0].Event != EventAuthLogin || got[0].ActorName != "Admin" {
 		t.Fatalf("op-old-2 = %+v", got[0])
 	}
-	if got[1].ID != "op-old-1" || got[1].Event != EventRecordCreate || got[1].RecordID == nil || *got[1].RecordID != "rec-9" {
+	if got[1].ID != "op-old-1" || got[1].Event != legacyRecordCreateEvent || got[1].RecordID == nil || *got[1].RecordID != "rec-9" {
 		t.Fatalf("op-old-1 = %+v", got[1])
 	}
 	userRecordID := "user-auditor"

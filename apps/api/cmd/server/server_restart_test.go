@@ -239,7 +239,7 @@ func httpLogin(t *testing.T, port, username, password string) string {
 
 func httpCreateUser(t *testing.T, port, token string) (string, map[string]any) {
 	t.Helper()
-	code, out := httpDoJSON(t, port, http.MethodPost, "/api/users", `{"username":"persist","name":"Persisted Co","password":"pw12345"}`, token)
+	code, out := httpDoJSON(t, port, http.MethodPost, "/api/users", `{"username":"persist","name":"Persisted Co","password":"pw123456"}`, token)
 	if code != http.StatusCreated {
 		t.Fatalf("create status = %d, want 201", code)
 	}
@@ -254,7 +254,7 @@ func httpCreateUser(t *testing.T, port, token string) (string, map[string]any) {
 // assertion (user-admin is self/last-admin protected).
 func httpCreateUser2(t *testing.T, port, token string) (string, map[string]any) {
 	t.Helper()
-	code, out := httpDoJSON(t, port, http.MethodPost, "/api/users", `{"username":"doomed","name":"Doomed","password":"pw12345"}`, token)
+	code, out := httpDoJSON(t, port, http.MethodPost, "/api/users", `{"username":"doomed","name":"Doomed","password":"pw123456"}`, token)
 	if code != http.StatusCreated {
 		t.Fatalf("create2 status = %d, want 201", code)
 	}

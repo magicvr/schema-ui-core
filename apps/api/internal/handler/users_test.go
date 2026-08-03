@@ -2,12 +2,14 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -122,13 +124,13 @@ func TestUsersCreateValidation(t *testing.T) {
 		return rr.Code, out
 	}
 
-	if code, out := send(`{"name":"NoPass","roles":[]}`); code != http.StatusBadRequest || out["error"] != "INVALID_CREATE_FIELD" {
-		t.Fatalf("missing password = %d %v, want 400 INVALID_CREATE_FIELD", code, out)
+	if code, out := send(`{"username":"nopass","name":"NoPass","roles":[]}`); code != http.StatusBadRequest || out["error"] != "INVALID_PASSWORD" {
+		t.Fatalf("missing password = %d %v, want 400 INVALID_PASSWORD", code, out)
 	}
-	if code, out := send(`{"username":"u","name":"U","password":"x","roles":"admin"}`); code != http.StatusBadRequest || out["error"] != "INVALID_ROLE_REF" {
+	if code, out := send(`{"username":"u","name":"U","password":"password","roles":42}`); code != http.StatusBadRequest || out["error"] != "INVALID_ROLE_REF" {
 		t.Fatalf("roles not array = %d %v, want 400 INVALID_ROLE_REF", code, out)
 	}
-	if code, out := send(`{"username":"u","name":"U","password":"x","roles":["ghost"]}`); code != http.StatusBadRequest || out["error"] != "INVALID_ROLE_REF" {
+	if code, out := send(`{"username":"u","name":"U","password":"password","roles":["ghost"]}`); code != http.StatusBadRequest || out["error"] != "INVALID_ROLE_REF" {
 		t.Fatalf("unknown role = %d %v, want 400 INVALID_ROLE_REF", code, out)
 	}
 }
@@ -138,7 +140,7 @@ func TestUsersCreateDuplicateUsername(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)
 	req := bearer(t, token, http.MethodPost, "/api/users",
-		`{"username":"admin","name":"Dup","password":"x12345"}`)
+		`{"username":"admin","name":"Dup","password":"x1234567"}`)
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusConflict {
@@ -211,7 +213,7 @@ func TestUsersAuthGates(t *testing.T) {
 	}{
 		{http.MethodGet, "/api/users", "", true},
 		{http.MethodGet, "/api/users/user-admin", "", true},
-		{http.MethodPost, "/api/users", `{"username":"x","name":"X","password":"y12345"}`, false},
+		{http.MethodPost, "/api/users", `{"username":"x","name":"X","password":"y123456"}`, false},
 		{http.MethodPatch, "/api/users/user-admin", `{"name":"Root"}`, false},
 		{http.MethodDelete, "/api/users/user-admin", "", false},
 	}
@@ -263,6 +265,146 @@ func TestUsersPasswordWriteOnly(t *testing.T) {
 	}
 }
 
+func TestUsersRoleAssignmentAuthorization(t *testing.T) {
+	env := newAuthTestEnv(t)
+	now := time.Now().UTC()
+	if _, err := env.st.CreateRoleWithGrants(
+		"manager", "User manager",
+		[]string{"roles.assign", "roles.read", "users.read", "users.write"}, nil, now,
+	); err != nil {
+		t.Fatalf("create manager role: %v", err)
+	}
+	if _, err := env.st.CreateRoleWithGrants(
+		"writer", "Role writer", []string{"roles.write", "users.read"}, nil, now,
+	); err != nil {
+		t.Fatalf("create writer role: %v", err)
+	}
+	if _, err := env.st.CreateRoleWithGrants(
+		"users-writer", "Users writer", []string{"users.read", "users.write"}, nil, now,
+	); err != nil {
+		t.Fatalf("create users-writer role: %v", err)
+	}
+	env.addUser(t, "manager", "manager-password", []string{"manager"})
+	env.addUser(t, "writer", "writer-password", []string{"users-writer"})
+
+	managerToken := env.login(t, "manager", "manager-password")
+	req := bearer(t, managerToken, http.MethodPost, "/api/users",
+		`{"username":"delegate","name":"Delegate","password":"delegate-password","roles":["viewer"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("delegated subset create = %d, want 201: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	id, _ := created["id"].(string)
+
+	req = bearer(t, managerToken, http.MethodPatch, "/api/users/"+id, `{"roles":["writer"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	var out map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if rr.Code != http.StatusForbidden || out["error"] != "ROLE_ASSIGNMENT_FORBIDDEN" {
+		t.Fatalf("permission superset assignment = %d %v, want 403 ROLE_ASSIGNMENT_FORBIDDEN", rr.Code, out)
+	}
+
+	req = bearer(t, managerToken, http.MethodPatch, "/api/users/"+id, `{"roles":["admin"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if rr.Code != http.StatusForbidden || out["error"] != "ROLE_ASSIGNMENT_FORBIDDEN" {
+		t.Fatalf("non-admin admin assignment = %d %v, want 403 ROLE_ASSIGNMENT_FORBIDDEN", rr.Code, out)
+	}
+
+	writerToken := env.login(t, "writer", "writer-password")
+	req = bearer(t, writerToken, http.MethodPatch, "/api/users/"+id, `{"roles":["viewer"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if rr.Code != http.StatusForbidden || out["error"] != "ROLE_ASSIGNMENT_FORBIDDEN" {
+		t.Fatalf("users.write-only assignment = %d %v, want 403 ROLE_ASSIGNMENT_FORBIDDEN", rr.Code, out)
+	}
+}
+
+func TestUsersPasswordPolicyPreservesBytesAndRevokesRefresh(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	postBody := func(body string) (int, map[string]any) {
+		req := bearer(t, token, http.MethodPost, "/api/users", body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		var out map[string]any
+		_ = json.NewDecoder(rr.Body).Decode(&out)
+		return rr.Code, out
+	}
+	post := func(password string) (int, map[string]any) {
+		return postBody(`{"username":"password-user","name":"Password User","password":` + quote(password) + `}`)
+	}
+	for _, invalid := range []string{"short7", "        ", strings.Repeat("x", 73)} {
+		if code, out := post(invalid); code != http.StatusBadRequest || out["error"] != "INVALID_PASSWORD" {
+			t.Fatalf("invalid password len=%d = %d %v, want 400 INVALID_PASSWORD", len([]byte(invalid)), code, out)
+		}
+	}
+	for _, body := range []string{
+		`{"username":"password-user","name":"Password User"}`,
+		`{"username":"password-user","name":"Password User","password":null}`,
+		`{"username":"password-user","name":"Password User","password":12345678}`,
+	} {
+		if code, out := postBody(body); code != http.StatusBadRequest || out["error"] != "INVALID_PASSWORD" {
+			t.Fatalf("non-string or missing password = %d %v, want 400 INVALID_PASSWORD", code, out)
+		}
+	}
+
+	password := "  exact-password  "
+	code, created := post(password)
+	if code != http.StatusCreated {
+		t.Fatalf("create exact password = %d %v, want 201", code, created)
+	}
+	if _, _, _, err := env.a.Login("password-user", password, time.Now().UTC()); err != nil {
+		t.Fatalf("login with exact password: %v", err)
+	}
+	if _, _, _, err := env.a.Login("password-user", strings.TrimSpace(password), time.Now().UTC()); !errors.Is(err, auth.ErrInvalidCredentials) {
+		t.Fatalf("trimmed password login err = %v, want ErrInvalidCredentials", err)
+	}
+
+	now := time.Now().UTC()
+	access, refresh, _, err := env.a.Login("password-user", password, now)
+	if err != nil {
+		t.Fatalf("login before rotation: %v", err)
+	}
+	id, _ := created["id"].(string)
+	req := bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"password":12345678}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	var invalidPatch map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&invalidPatch)
+	if rr.Code != http.StatusBadRequest || invalidPatch["error"] != "INVALID_PASSWORD" {
+		t.Fatalf("non-string password patch = %d %v, want 400 INVALID_PASSWORD", rr.Code, invalidPatch)
+	}
+	newPassword := "  replacement-password  "
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"password":`+quote(newPassword)+`}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("password patch = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	if _, _, _, err := env.a.Refresh(refresh, now.Add(time.Minute)); !errors.Is(err, auth.ErrTokenRevoked) {
+		t.Fatalf("old refresh after password change = %v, want ErrTokenRevoked", err)
+	}
+	req = bearer(t, access, http.MethodGet, "/api/accounts/me", "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("existing access token before TTL expiry = %d, want 200", rr.Code)
+	}
+	if _, _, _, err := env.a.Login("password-user", password, now.Add(time.Minute)); !errors.Is(err, auth.ErrInvalidCredentials) {
+		t.Fatalf("old password login err = %v, want ErrInvalidCredentials", err)
+	}
+	if _, _, _, err := env.a.Login("password-user", newPassword, now.Add(time.Minute)); err != nil {
+		t.Fatalf("new password login: %v", err)
+	}
+}
+
 // GOAL-011 S2 · users write endpoints append users.* operation-log events with
 // the actor and a username detail (never a secret).
 func TestUsersOperationLogEvents(t *testing.T) {
@@ -270,7 +412,7 @@ func TestUsersOperationLogEvents(t *testing.T) {
 	token := adminToken(t, env)
 
 	req := bearer(t, token, http.MethodPost, "/api/users",
-		`{"username":"opuser","name":"Op User","password":"pw12345","roles":[]}`)
+		`{"username":"opuser","name":"Op User","password":"pw123456","roles":[]}`)
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusCreated {

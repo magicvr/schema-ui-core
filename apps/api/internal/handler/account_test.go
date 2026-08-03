@@ -116,7 +116,7 @@ func TestAccountsMeDevSessionFallback(t *testing.T) {
 			permSet[s] = true
 		}
 	}
-	for _, want := range []string{"users.read", "users.write", "roles.read", "roles.write"} {
+	for _, want := range []string{"users.read", "users.write", "roles.read", "roles.write", "roles.assign"} {
 		if !permSet[want] {
 			t.Fatalf("dev permissions missing %s in %v", want, perms)
 		}

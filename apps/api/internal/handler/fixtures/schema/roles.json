@@ -9,7 +9,8 @@
       "permissions.inheritance",
       "actions.row.request",
       "actions.page.trigger",
-      "table.sort"
+      "table.sort",
+      "form.controls.advanced"
     ]
   },
   "actions": {
@@ -17,14 +18,14 @@
       "type": "request",
       "method": "POST",
       "url": "/api/roles",
-      "bodyMapping": { "key": "key", "name": "name" },
+      "bodyMapping": { "key": "key", "name": "name", "permissions": "permissions", "menuItems": "menuItems" },
       "onSuccess": { "behavior": "reload" }
     },
     "updateRole": {
       "type": "request",
       "method": "PATCH",
       "url": "/api/roles/{id}",
-      "bodyMapping": { "name": "name" },
+      "bodyMapping": { "name": "name", "permissions": "permissions", "menuItems": "menuItems" },
       "onSuccess": { "behavior": "reload" }
     },
     "deleteRole": {
@@ -39,13 +40,32 @@
         "type": "form",
         "id": "create-role-form",
         "permissionCascade": { "keys": ["edit"] },
-        "permissions": {
-          "edit": "$context.user.permissions contains \"roles.write\""
-        },
+        "permissions": { "edit": "$context.user.roles contains \"admin\"" },
         "props": {
           "fields": [
             { "id": "key", "label": "Key", "type": "input" },
-            { "id": "name", "label": "Name", "type": "input" }
+            { "id": "name", "label": "Name", "type": "input" },
+            {
+              "id": "permissions",
+              "label": "Permissions",
+              "type": "checkboxGroup",
+              "options": [
+                { "value": "users.read", "label": "Read users" },
+                { "value": "users.write", "label": "Write users" },
+                { "value": "roles.read", "label": "Read roles" },
+                { "value": "roles.write", "label": "Write roles" },
+                { "value": "roles.assign", "label": "Assign roles" }
+              ]
+            },
+            {
+              "id": "menuItems",
+              "label": "Menu access",
+              "type": "checkboxGroup",
+              "options": [
+                { "value": "menu-users", "label": "Users" },
+                { "value": "menu-roles", "label": "Roles" }
+              ]
+            }
           ],
           "submitAction": "createRole",
           "submitLabel": "Create role"
@@ -58,12 +78,31 @@
         "type": "form",
         "id": "edit-role-form",
         "permissionCascade": { "keys": ["edit"] },
-        "permissions": {
-          "edit": "$context.user.permissions contains \"roles.write\""
-        },
+        "permissions": { "edit": "$context.user.roles contains \"admin\"" },
         "props": {
           "fields": [
-            { "id": "name", "label": "Name", "type": "input" }
+            { "id": "name", "label": "Name", "type": "input" },
+            {
+              "id": "permissions",
+              "label": "Permissions",
+              "type": "checkboxGroup",
+              "options": [
+                { "value": "users.read", "label": "Read users" },
+                { "value": "users.write", "label": "Write users" },
+                { "value": "roles.read", "label": "Read roles" },
+                { "value": "roles.write", "label": "Write roles" },
+                { "value": "roles.assign", "label": "Assign roles" }
+              ]
+            },
+            {
+              "id": "menuItems",
+              "label": "Menu access",
+              "type": "checkboxGroup",
+              "options": [
+                { "value": "menu-users", "label": "Users" },
+                { "value": "menu-roles", "label": "Roles" }
+              ]
+            }
           ],
           "submitAction": "updateRole",
           "submitLabel": "Save changes"
@@ -80,7 +119,7 @@
         "id": "roles-table",
         "permissionCascade": { "keys": ["edit", "delete"] },
         "permissions": {
-          "edit": "$context.user.permissions contains \"roles.write\"",
+          "edit": "$context.user.roles contains \"admin\"",
           "delete": "$context.user.permissions contains \"roles.write\""
         },
         "props": {
@@ -88,41 +127,37 @@
             { "field": "id", "label": "ID" },
             { "field": "key", "label": "Key", "sortable": true },
             { "field": "name", "label": "Name", "sortable": true },
+            { "field": "permissions", "label": "Permissions" },
+            { "field": "menuItems", "label": "Menus" },
+            { "field": "assignedUsers", "label": "Users" },
             { "field": "system", "label": "System" },
             { "field": "updatedAt", "label": "Updated", "sortable": true }
           ],
           "dataSource": "/api/roles",
           "toolbar": [
-            {
-              "key": "create",
-              "label": "New role",
-              "actionRef": "openCreate",
-              "permissionIntent": "edit"
-            }
+            { "key": "create", "label": "New role", "actionRef": "openCreate", "permissionIntent": "edit" }
           ],
           "actions": [
             {
               "key": "edit",
               "label": "Edit",
               "actionRef": "openEdit",
-              "permissionIntent": "edit"
+              "permissionIntent": "edit",
+              "disabledWhen": { "field": "editable", "equals": false }
             },
             {
               "key": "delete",
               "label": "Delete",
               "actionRef": "deleteRole",
               "permissionIntent": "delete",
+              "disabledWhen": { "field": "deletable", "equals": false },
               "requestMapping": { "path": { "id": "$row.id" } },
               "confirm": "Delete this role?"
             }
           ]
         }
       },
-      {
-        "type": "recordView",
-        "id": "role-detail",
-        "props": {}
-      }
+      { "type": "recordView", "id": "role-detail", "props": {} }
     ]
   }
 }

@@ -153,3 +153,39 @@ version: 0.3.0
 - 新增 D-005 与 `I-011-004`；A-012 F-001～F-005 保持 `open`，F-006 保持 recommended。未修改 API/Web/CI/smoke 产品代码，未运行新的回归或复现命令，也未把 A-012 已有测试收据当作本轮修复证据。
 - **治理投影**：GOAL-011 `done → active`；原 S1～S5 检查点仍全部完成，派生 `progress` 保持 `5/5`。同步 `00-meta`、`03-audit` 响应节与 `goal-tree.md`；GOAL-010、Root、VP-002 状态/进度不变。
 - **计划（非事实）**：用户先裁决五项 finding 的闭合路径及 `I-011-004` 产品边界；推荐 F-001/F-002/F-004/F-005 走 fixed，F-003 选择明确边界后 fixed。实施完成后补 API/Web/CI/E2E 收据并请求限定范围独立复审。
+
+## 2026-08-04 · A-012 整改路径冻结（D-006 / I-011-004）
+
+- 用户书面裁决 F-001、F-002、F-004、F-005 按建议走 `fixed`，F-003 选择补齐角色授权/grant 管理路径并同样走 `fixed`；未接受 residual，也未驳回 finding。
+- 新增并冻结 `attachments/I-011-004-a012-remediation-contract.md` v0.1.0，覆盖角色委派、密码/refresh token、grant 管理、records 活动面洁净度和最后管理员事务原子性五个实施与验收块。
+- `I-011-004` 由 `open` 置为 `verified`，仅表示产品边界与整改契约已明确；本节尚未记录任何产品代码、回归或 finding-closure 事实。
+- GOAL-011 保持 `active / 5/5`；F-001～F-005 均继续 `open`，等待实现、验证和限定范围独立复审。
+
+## 2026-08-04 · A-012 F-001～F-005 候选 fixed 实现与本地验收收据
+
+- **证据边界**：以下为本轮工作树候选实现及其本地 Windows/Go/Node/Chromium/Linux-container 验证事实，不是 GitHub-hosted CI 运行结果，也不自行构成 independent finding closure。
+- **F-001 · 角色委派**：新增并为 admin seed/dev session 配置 `roles.assign`；users create/patch 的角色写入校验该权限、admin 专属委派和目标角色有效权限子集。Users Schema 将角色管理拆为独立动作，`users.write`-only UI 与 API 负向路径均有回归。
+- **F-002 · 密码/会话**：使用 password control；Renderer 与通用资源 transport 保留密码字符串原字节，API 对缺失/非字符串、8～72 UTF-8 bytes 与全空白统一返回 `INVALID_PASSWORD`；改密与 refresh-token 全量撤销处于同一事务，测试明确保留旧 access token 至既有 TTL 的边界。
+- **F-003 · grant 闭环**：roles create/update 在同一事务集合替换 `role_permissions`/`role_menu_items`，校验 catalog 引用与 admin/权限子集边界；响应增加 grants、assignedUsers、editable/deletable。Users 的资料/角色/密码三条路径分离；roles Schema 提供 grant 控件，system/in-use 与缺失行字段均通过通用结构化条件 fail closed；真实浏览器覆盖 grant→分配→重新登录后的 permission/menu 投影与撤销。
+- **F-004 · records 活动面**：Web transport 由 `records.ts`/Records 符号重命名为资源中性 `resource.ts`/Resource；活动 CI、smoke 与持久化改用 users，seed 默认改为 1，并新增 scoped 静态门禁。容器复现同时发现原 CI 测试 JWT secret 不满足 production 32 字符下限，已修正后从空卷重跑通过；历史 migration、operation-log 值与协议 fixture 保持原样。
+- **F-005 · 最后管理员**：DeleteUser 的目标存在性、角色判定、admin 计数、refresh-token 清理、用户删除及 RowsAffected 断言全部进入同一事务；双 admin 并发删除回归断言恰好一个成功、一个 `ErrLastAdmin`，最终保留一个 admin。
+
+### 验证矩阵
+
+| 命令 / 场景 | 当前候选结果 |
+|-------------|--------------|
+| `go vet ./...`（`apps/api`） | 通过，无输出 |
+| `go test ./... -count=1`（`apps/api`） | 全包通过（cmd/server、account、auth、config、handler、store） |
+| `npm test`（`apps/web`） | **23 files / 491 tests passed** |
+| `npm run build`（`apps/web`） | `tsc -b` + Vite production build 通过 |
+| `WEB_PORT=9999 npx playwright test`（`apps/web`） | **2/2 passed**；真实 Go/SQLite users+roles 授权管理与 shell/auth 链通过 |
+| Git Bash `bash -n scripts/smoke.sh` | 通过 |
+| scoped active-residue gate（workflow/scripts/Web production/API handler） | `/api/records`、`SMOKE_RECORD_ID`、`renderer/records`、`records.ts` **无命中**；历史测试/迁移边界未扫描 |
+| `docker compose -p goal011-a012 build` + 空卷 `up` | API/Web Linux 镜像重新构建并健康启动 |
+| `scripts/smoke.sh --disposable`（隔离 project） | **SM-001～SM-006 全部 PASS** |
+| users 持久化跨 API container restart | 创建后重启 API，再以原 access token读取同一 user id 成功 |
+| `docker compose -p goal011-a012 down -v` | 隔离 containers/network/`goal011-a012_db-data` 已清理 |
+| `git diff --check` | 干净（仅 Windows LF→CRLF 提示） |
+
+- **未冒充的证据**：尚未触发 GitHub-hosted Linux Actions；本地 Compose 使用 Linux images，但不等于远端 CI acceptance。
+- **门禁状态**：上述证据将作为限定 `/audit` 的候选输入。A-012 F-001～F-005 继续 `open`，GOAL-011 继续 `active / 5/5`，直至独立复审逐项确认且无新增 required。

@@ -53,7 +53,7 @@ func TestSeedRBACEntitiesAndGrants(t *testing.T) {
 	if err := prows.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"roles.read", "roles.write", "users.read", "users.write"}; !reflect.DeepEqual(perms, want) {
+	if want := []string{"roles.assign", "roles.read", "roles.write", "users.read", "users.write"}; !reflect.DeepEqual(perms, want) {
 		t.Fatalf("permissions = %v, want %v", perms, want)
 	}
 
@@ -72,15 +72,15 @@ func TestSeedRBACEntitiesAndGrants(t *testing.T) {
 		}
 		return n
 	}
-	if n := count(`SELECT COUNT(*) FROM role_permissions`); n != 8 {
-		t.Fatalf("role_permissions = %d, want 8 (admin 4, editor 2, viewer 2)", n)
+	if n := count(`SELECT COUNT(*) FROM role_permissions`); n != 9 {
+		t.Fatalf("role_permissions = %d, want 9 (admin 5, editor 2, viewer 2)", n)
 	}
 	if n := count(`SELECT COUNT(*) FROM role_menu_items`); n != 2 {
 		t.Fatalf("role_menu_items = %d, want 2 (admin -> users + roles)", n)
 	}
 	// admin read+write (users/roles), editor/viewer read-only.
-	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-admin'`); n != 4 {
-		t.Fatalf("admin grants = %d, want 4", n)
+	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-admin'`); n != 5 {
+		t.Fatalf("admin grants = %d, want 5", n)
 	}
 	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-editor'`); n != 2 {
 		t.Fatalf("editor grants = %d, want 2", n)
@@ -128,8 +128,8 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		}
 		return n
 	}
-	if n := count(st2, `SELECT COUNT(*) FROM role_permissions`); n != 8 {
-		t.Fatalf("role_permissions = %d, want 8", n)
+	if n := count(st2, `SELECT COUNT(*) FROM role_permissions`); n != 9 {
+		t.Fatalf("role_permissions = %d, want 9", n)
 	}
 	if n := count(st2, `SELECT COUNT(*) FROM role_menu_items`); n != 2 {
 		t.Fatalf("role_menu_items = %d, want 2", n)
@@ -159,8 +159,8 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		t.Fatalf("third open: %v", err)
 	}
 	defer st3.Close()
-	if n := count(st3, `SELECT COUNT(*) FROM role_permissions`); n != 8 {
-		t.Fatalf("after 3rd open role_permissions = %d, want 8 (idempotent)", n)
+	if n := count(st3, `SELECT COUNT(*) FROM role_permissions`); n != 9 {
+		t.Fatalf("after 3rd open role_permissions = %d, want 9 (idempotent)", n)
 	}
 	if n := count(st3, `SELECT COUNT(*) FROM role_menu_items`); n != 2 {
 		t.Fatalf("after 3rd open role_menu_items = %d, want 2 (idempotent)", n)
@@ -183,7 +183,7 @@ func TestPermissionsForUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("admin permissions: %v", err)
 	}
-	if want := []string{"roles.read", "roles.write", "users.read", "users.write"}; !reflect.DeepEqual(adminPerms, want) {
+	if want := []string{"roles.assign", "roles.read", "roles.write", "users.read", "users.write"}; !reflect.DeepEqual(adminPerms, want) {
 		t.Fatalf("admin perms = %v, want %v", adminPerms, want)
 	}
 

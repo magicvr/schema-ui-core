@@ -6,7 +6,7 @@ export const DEFAULT_PAGE_SIZE = 10;
  * Frozen list-endpoint rule (I-010-001 v0.2.0 · A-001 F-001): `table.props.dataSource`
  * must be a single-slash same-origin absolute path — starts with one `/`, no `//`
  * (no protocol-relative host), no scheme, no whitespace, backslash, `?` or `#`.
- * Query strings are appended by `buildRecordsQuery`, never authored in dataSource;
+ * Query strings are appended by `buildResourceQuery`, never authored in dataSource;
  * fragments are never allowed. Validated before any (auth) fetch is attempted.
  * Mirrors `DataRef.url`'s `^/(?!/)[^\s\\]*$` but additionally rejects `?`/`#`.
  */
@@ -25,7 +25,7 @@ export interface ResourceList {
   pageSize: number;
 }
 
-/** A resource list query (GOAL-011 S3: RecordsQuery genericized). */
+/** A generic resource list query. */
 export interface ResourceQuery {
   q?: string;
   sort?: string;
@@ -35,20 +35,20 @@ export interface ResourceQuery {
 }
 
 /** A resource API failure carrying the frozen envelope `{error, message}`. */
-export class RecordApiError extends Error {
+export class ResourceApiError extends Error {
   readonly code: string;
   readonly status: number;
 
   constructor(status: number, code: string, message: string) {
     super(message);
-    this.name = "RecordApiError";
+    this.name = "ResourceApiError";
     this.status = status;
     this.code = code;
   }
 }
 
-export type RecordCreateBody = ResourceItem;
-export type RecordPatch = Partial<ResourceItem>;
+export type ResourceCreateBody = ResourceItem;
+export type ResourcePatch = Partial<ResourceItem>;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -96,12 +96,12 @@ async function readEnvelope(response: Response): Promise<{ code: string; message
   return { code: "UNKNOWN", message: "" };
 }
 
-/** Reads the frozen error envelope from a non-OK response into a RecordApiError. */
-export async function readRecordApiError(response: Response, label: string): Promise<RecordApiError> {
+/** Reads the frozen error envelope from a non-OK response. */
+export async function readResourceApiError(response: Response, label: string): Promise<ResourceApiError> {
   const envelope = await readEnvelope(response);
   const suffix =
     envelope.message === "" ? "" : envelope.message.startsWith(":") ? envelope.message : `: ${envelope.message}`;
-  return new RecordApiError(
+  return new ResourceApiError(
     response.status,
     envelope.code,
     `${label} failed: HTTP ${response.status}${suffix}`,
@@ -109,7 +109,7 @@ export async function readRecordApiError(response: Response, label: string): Pro
 }
 
 /** Serializes a ResourceQuery into a URL query string (query-serialization). */
-export function buildRecordsQuery(query: ResourceQuery): string {
+export function buildResourceQuery(query: ResourceQuery): string {
   const params = new URLSearchParams();
   if (query.q !== undefined && query.q.trim() !== "") {
     params.set("q", query.q.trim());
@@ -134,25 +134,25 @@ export function buildRecordsQuery(query: ResourceQuery): string {
  * on shape drift. Items are arbitrary JSON objects (F-002 rowKey is enforced at
  * the table surface, not here).
  */
-export function parseRecordList(value: unknown): ResourceList {
+export function parseResourceList(value: unknown): ResourceList {
   if (!isRecord(value)) {
-    return fail("parseRecordList", "expected an object");
+    return fail("parseResourceList", "expected an object");
   }
   const items = value.items;
   if (!Array.isArray(items)) {
-    return fail("parseRecordList", "expected items array");
+    return fail("parseResourceList", "expected items array");
   }
-  const parsed = items.map((item, index) => parseResourceItem(item, `parseRecordList.items[${index}]`));
+  const parsed = items.map((item, index) => parseResourceItem(item, `parseResourceList.items[${index}]`));
   return {
     items: parsed,
-    total: requireNumber(value.total, "parseRecordList.total"),
-    page: requireNumber(value.page, "parseRecordList.page"),
-    pageSize: requireNumber(value.pageSize, "parseRecordList.pageSize"),
+    total: requireNumber(value.total, "parseResourceList.total"),
+    page: requireNumber(value.page, "parseResourceList.page"),
+    pageSize: requireNumber(value.pageSize, "parseResourceList.pageSize"),
   };
 }
 
 /** Fetches a page of a schema-driven resource list (request-construction). */
-export async function fetchRecords(
+export async function fetchResourceList(
   fetcher: typeof fetch,
   baseURL: string,
   query: ResourceQuery,
@@ -164,20 +164,20 @@ export async function fetchRecords(
       `invalid dataSource "${baseURL}": expected a single-slash same-origin path (no //, scheme, whitespace, backslash, ? or #)`,
     );
   }
-  const queryString = buildRecordsQuery(query);
+  const queryString = buildResourceQuery(query);
   const url = queryString === "" ? baseURL : `${baseURL}?${queryString}`;
   const response = await fetcher(url);
   if (!response.ok) {
-    throw await readRecordApiError(response, "resource fetch");
+    throw await readResourceApiError(response, "resource fetch");
   }
-  return parseRecordList(await response.json());
+  return parseResourceList(await response.json());
 }
 
-/** Creates a resource row via POST (records.write); returns the 201 row. */
-export async function createRecord(
+/** Creates a resource row via POST; returns the 201 row. */
+export async function createResource(
   fetcher: typeof fetch,
   baseURL: string,
-  body: RecordCreateBody,
+  body: ResourceCreateBody,
 ): Promise<ResourceItem> {
   const response = await fetcher(baseURL, {
     method: "POST",
@@ -185,16 +185,16 @@ export async function createRecord(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw await readRecordApiError(response, "resource create");
+    throw await readResourceApiError(response, "resource create");
   }
-  return parseResourceItem(await response.json(), "createRecord");
+  return parseResourceItem(await response.json(), "createResource");
 }
 
-export async function updateRecord(
+export async function updateResource(
   fetcher: typeof fetch,
   baseURL: string,
   id: string,
-  patch: RecordPatch,
+  patch: ResourcePatch,
 ): Promise<ResourceItem> {
   const response = await fetcher(`${baseURL}/${encodeURIComponent(id)}`, {
     method: "PATCH",
@@ -202,12 +202,12 @@ export async function updateRecord(
     body: JSON.stringify(patch),
   });
   if (!response.ok) {
-    throw await readRecordApiError(response, "resource update");
+    throw await readResourceApiError(response, "resource update");
   }
-  return parseResourceItem(await response.json(), "updateRecord");
+  return parseResourceItem(await response.json(), "updateResource");
 }
 
-export async function deleteRecord(
+export async function deleteResource(
   fetcher: typeof fetch,
   baseURL: string,
   id: string,
@@ -216,6 +216,6 @@ export async function deleteRecord(
     method: "DELETE",
   });
   if (!response.ok && response.status !== 204) {
-    throw await readRecordApiError(response, "resource delete");
+    throw await readResourceApiError(response, "resource delete");
   }
 }

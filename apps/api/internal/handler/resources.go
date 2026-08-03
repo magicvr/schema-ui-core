@@ -5,7 +5,7 @@
 // a hand-written handler. The factory owns the shared concerns — permission
 // gate, body-size bound, page/sort/q validation, the frozen {error,message}
 // write envelope and INTERNAL fallback. users/roles are the GOAL-011 semantic
-// resource instances (records retired by GOAL-011 S3 / 0006).
+// resource instances.
 package handler
 
 import (
@@ -27,12 +27,11 @@ import (
 )
 
 // Body and page-size bounds shared by every registered resource (I-010-001 §4);
-// they match the records limits frozen in I-007-001 §2.
+// they preserve the limits frozen in I-007-001 §2.
 const (
 	maxResourceBodyBytes = 4 << 10
 	maxPageSize          = 100
-	// resourceIDRetries bounds PK-collision retries before INTERNAL (records uses
-	// a crypto/rand id; with 64 random bits this never triggers in practice).
+	// resourceIDRetries bounds PK-collision retries before INTERNAL.
 	resourceIDRetries = 3
 )
 
@@ -101,30 +100,32 @@ const (
 )
 
 // Resource describes a schema-driven CRUD resource registered with the generic
-// handler factory (I-010-001 §4). records is the first registered instance.
+// handler factory (I-010-001 §4). users and roles are registered instances.
 type Resource struct {
-	ID              string         // resource id, e.g. "records"
-	Path            string         // mount path, e.g. "/api/users"
-	Listable        bool           // expose GET {path} (list)
-	SortFields      []string       // whitelist; empty = not sortable
-	QSearch         bool           // list supports the q search param
-	Entity          ResourceEntity // store adapter
-	CreateFields    []string       // required non-empty create fields (strings)
-	PatchFields     []string       // editable patch fields (absent keys untouched)
+	ID           string         // resource id, e.g. "users"
+	Path         string         // mount path, e.g. "/api/users"
+	Listable     bool           // expose GET {path} (list)
+	SortFields   []string       // whitelist; empty = not sortable
+	QSearch      bool           // list supports the q search param
+	Entity       ResourceEntity // store adapter
+	CreateFields []string       // required non-empty create fields (trimmed strings)
+	PatchFields  []string       // editable patch fields (trimmed strings)
+	// RawStringFields are required on create and optional on patch. String values
+	// are passed through byte-for-byte after JSON decoding so secret material is
+	// never silently normalized. The entity owns type and policy validation.
+	RawStringFields []string
 	// JSONFields are additional fields accepted as arbitrary JSON values (not
 	// forced to strings). When present in a create/patch body the raw JSON value
 	// is decoded and passed through to the entity; absent means untouched (patch)
 	// or entity default (create). The entity owns shape validation (I-011-001
 	// §7.1). users uses ["roles"].
-	JSONFields []string
-	PermissionRead  string         // defaults to "{id}.read"
-	PermissionWrite string         // defaults to "{id}.write"
+	JSONFields      []string
+	PermissionRead  string // defaults to "{id}.read"
+	PermissionWrite string // defaults to "{id}.write"
 	// NotFoundCode is the 404 error code, defaulting to "{ID}_NOT_FOUND".
-	// records keeps the legacy "RECORD_NOT_FOUND" explicitly (I-010-001 §5).
 	NotFoundCode string
 	NewID        func() (string, error)
-	// OnWrite, when set, runs after a successful create/update/delete (records
-	// appends operation-log rows). Best-effort by contract.
+	// OnWrite, when set, runs after a successful create/update/delete.
 	OnWrite func(ctx context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time)
 }
 
@@ -300,12 +301,12 @@ func (e createFieldError) Error() string { return e.field + " must " + e.reason 
 // INVALID_CREATE_FIELD. jsonFields (I-011-001 §7.1) are additionally decoded as
 // arbitrary JSON values when present and passed through for the entity to
 // validate. Unknown keys are ignored (same posture as PATCH).
-func decodeResourceCreate(r *http.Request, fields, jsonFields []string) (map[string]any, error) {
+func decodeResourceCreate(r *http.Request, fields, rawStringFields, jsonFields []string) (map[string]any, error) {
 	var raw map[string]json.RawMessage
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		return nil, err
 	}
-	body := make(map[string]any, len(fields)+len(jsonFields))
+	body := make(map[string]any, len(fields)+len(rawStringFields)+len(jsonFields))
 	for _, key := range fields {
 		val, ok := raw[key]
 		if !ok {
@@ -320,6 +321,18 @@ func decodeResourceCreate(r *http.Request, fields, jsonFields []string) (map[str
 			return nil, createFieldError{key, "not be empty"}
 		}
 		body[key] = s
+	}
+	for _, key := range rawStringFields {
+		val, ok := raw[key]
+		if !ok {
+			body[key] = nil
+			continue
+		}
+		var value any
+		if err := json.Unmarshal(val, &value); err != nil {
+			return nil, err
+		}
+		body[key] = value
 	}
 	for _, key := range jsonFields {
 		val, ok := raw[key]
@@ -347,12 +360,12 @@ func (e patchFieldError) Error() string { return e.field + " must not be empty" 
 // field must be a non-empty string (a non-string or blank value fails closed —
 // INVALID_PATCH_BODY / INVALID_PATCH_FIELD respectively). jsonFields are decoded
 // as arbitrary JSON values when present (absent = untouched). Unknown keys ignored.
-func decodeResourcePatch(r *http.Request, fields, jsonFields []string) (map[string]any, error) {
+func decodeResourcePatch(r *http.Request, fields, rawStringFields, jsonFields []string) (map[string]any, error) {
 	var raw map[string]json.RawMessage
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		return nil, err
 	}
-	body := make(map[string]any, len(fields)+len(jsonFields))
+	body := make(map[string]any, len(fields)+len(rawStringFields)+len(jsonFields))
 	for _, key := range fields {
 		val, ok := raw[key]
 		if !ok {
@@ -367,6 +380,17 @@ func decodeResourcePatch(r *http.Request, fields, jsonFields []string) (map[stri
 			return nil, patchFieldError{key}
 		}
 		body[key] = s
+	}
+	for _, key := range rawStringFields {
+		val, ok := raw[key]
+		if !ok {
+			continue
+		}
+		var value any
+		if err := json.Unmarshal(val, &value); err != nil {
+			return nil, err
+		}
+		body[key] = value
 	}
 	for _, key := range jsonFields {
 		val, ok := raw[key]
@@ -391,7 +415,7 @@ func (h *resourceHandler) create() http.Handler {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
-		body, err := decodeResourceCreate(r, h.res.CreateFields, h.res.JSONFields)
+		body, err := decodeResourceCreate(r, h.res.CreateFields, h.res.RawStringFields, h.res.JSONFields)
 		if err != nil {
 			var fe createFieldError
 			if errors.As(err, &fe) {
@@ -454,7 +478,7 @@ func (h *resourceHandler) update() http.Handler {
 		}
 		id := r.PathValue("id")
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
-		body, err := decodeResourcePatch(r, h.res.PatchFields, h.res.JSONFields)
+		body, err := decodeResourcePatch(r, h.res.PatchFields, h.res.RawStringFields, h.res.JSONFields)
 		if err != nil {
 			var pe patchFieldError
 			if errors.As(err, &pe) {

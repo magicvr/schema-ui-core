@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -104,7 +105,7 @@ func TestRolesWriteLifecycleAndProtection(t *testing.T) {
 
 	// assign a user to ops then delete → 409 ROLE_IN_USE
 	req = bearer(t, token, http.MethodPost, "/api/users",
-		`{"username":"opsuser","name":"Ops User","password":"pw12345","roles":["ops"]}`)
+		`{"username":"opsuser","name":"Ops User","password":"pw123456","roles":["ops"]}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusCreated {
@@ -147,6 +148,90 @@ func TestRolesDeleteFreeRole(t *testing.T) {
 	code, _ := getResource(t, env, "/api/roles/role-temporary")
 	if code != http.StatusNotFound {
 		t.Fatalf("detail after delete = %d, want 404", code)
+	}
+}
+
+func TestRolesGrantLifecycleAndEffectiveProjection(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPost, "/api/roles",
+		`{"key":"support","name":"Support","permissions":["users.read"],"menuItems":["menu-users"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create role with grants = %d, want 201: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	if created["editable"] != true || created["deletable"] != true || created["assignedUsers"] != float64(0) {
+		t.Fatalf("created management flags = %v", created)
+	}
+	if _, err := env.st.CreateRoleWithGrants(
+		"role-manager", "Role Manager", []string{"roles.read", "roles.write"}, nil, time.Now().UTC(),
+	); err != nil {
+		t.Fatalf("create non-admin role manager: %v", err)
+	}
+	env.addUser(t, "role-manager", "role-manager-password", []string{"role-manager"})
+	managerToken := env.login(t, "role-manager", "role-manager-password")
+	req = bearer(t, managerToken, http.MethodPatch, "/api/roles/role-support", `{"permissions":["roles.read"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	var forbidden map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&forbidden)
+	if rr.Code != http.StatusForbidden || forbidden["error"] != "ROLE_GRANT_FORBIDDEN" {
+		t.Fatalf("non-admin grant update = %d %v, want 403 ROLE_GRANT_FORBIDDEN", rr.Code, forbidden)
+	}
+
+	req = bearer(t, token, http.MethodPost, "/api/users",
+		`{"username":"support-user","name":"Support User","password":"support-password","roles":["support"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create support user = %d: %s", rr.Code, rr.Body.String())
+	}
+	_, _, accountUser, err := env.a.Login("support-user", "support-password", time.Now().UTC())
+	if err != nil {
+		t.Fatalf("support login: %v", err)
+	}
+	if !containsRoles(accountUser.Permissions, "users.read") {
+		t.Fatalf("support permissions = %v, want users.read", accountUser.Permissions)
+	}
+	features, err := env.a.Features(accountUser)
+	if err != nil || !features["menu_users"] {
+		t.Fatalf("support features = %v err=%v, want menu_users", features, err)
+	}
+
+	code, detail := getResource(t, env, "/api/roles/role-support")
+	if code != http.StatusOK || detail["assignedUsers"] != float64(1) || detail["deletable"] != false {
+		t.Fatalf("assigned role detail = %d %v", code, detail)
+	}
+
+	req = bearer(t, token, http.MethodPatch, "/api/roles/role-support",
+		`{"permissions":["roles.read"],"menuItems":[]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("replace grants = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	_, _, accountUser, err = env.a.Login("support-user", "support-password", time.Now().UTC())
+	if err != nil {
+		t.Fatalf("support relogin: %v", err)
+	}
+	if !containsRoles(accountUser.Permissions, "roles.read") || containsRoles(accountUser.Permissions, "users.read") {
+		t.Fatalf("replaced permissions = %v, want roles.read only", accountUser.Permissions)
+	}
+	features, err = env.a.Features(accountUser)
+	if err != nil || features["menu_users"] {
+		t.Fatalf("features after menu grant removal = %v err=%v", features, err)
+	}
+
+	req = bearer(t, token, http.MethodPatch, "/api/roles/role-support", `{"permissions":["ghost.permission"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	var out map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if rr.Code != http.StatusBadRequest || out["error"] != "INVALID_PERMISSION_REF" {
+		t.Fatalf("invalid permission = %d %v, want 400 INVALID_PERMISSION_REF", rr.Code, out)
 	}
 }
 

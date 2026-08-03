@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +26,11 @@ import (
 // (matches the server bootstrap cost, I-011-001 §2.2).
 const passwordHashCost = 10
 
+const (
+	minPasswordBytes = 8
+	maxPasswordBytes = 72
+)
+
 func usersResource(st *store.Store) Resource {
 	return Resource{
 		ID:              "users",
@@ -33,8 +39,9 @@ func usersResource(st *store.Store) Resource {
 		SortFields:      []string{"username", "name", "updatedAt"},
 		QSearch:         true,
 		Entity:          &usersEntity{st: st},
-		CreateFields:    []string{"username", "name", "password"},
-		PatchFields:     []string{"name", "password"},
+		CreateFields:    []string{"username", "name"},
+		PatchFields:     []string{"name"},
+		RawStringFields: []string{"password"},
 		JSONFields:      []string{"roles"},
 		PermissionRead:  "users.read",
 		PermissionWrite: "users.write",
@@ -85,12 +92,21 @@ func (e *usersEntity) Get(id string) (map[string]any, error) {
 	return userToMap(*u), nil
 }
 
-func (e *usersEntity) Create(body map[string]any, id string, now time.Time, _ account.User) (map[string]any, error) {
+func (e *usersEntity) Create(body map[string]any, id string, now time.Time, actor account.User) (map[string]any, error) {
 	roles, err := rolesFromBody(body)
 	if err != nil {
 		return nil, err
 	}
-	hash, err := auth.HashPassword(stringField(body, "password"), passwordHashCost)
+	if len(roles) > 0 {
+		if err := e.authorizeRoleAssignment(actor, roles); err != nil {
+			return nil, err
+		}
+	}
+	password, err := managedPasswordFromBody(body)
+	if err != nil {
+		return nil, err
+	}
+	hash, err := auth.HashPassword(password, passwordHashCost)
 	if err != nil {
 		return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
 	}
@@ -116,7 +132,11 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 		patch.Name = &v
 	}
 	if _, ok := body["password"]; ok {
-		hash, err := auth.HashPassword(stringField(body, "password"), passwordHashCost)
+		password, err := managedPasswordFromBody(body)
+		if err != nil {
+			return nil, err
+		}
+		hash, err := auth.HashPassword(password, passwordHashCost)
 		if err != nil {
 			return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
 		}
@@ -125,6 +145,9 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 	if v, ok := body["roles"]; ok {
 		roles, err := parseRolesValue(v)
 		if err != nil {
+			return nil, err
+		}
+		if err := e.authorizeRoleAssignment(user, roles); err != nil {
 			return nil, err
 		}
 		patch.Roles = &roles
@@ -157,6 +180,21 @@ func parseRolesValue(v any) ([]string, error) {
 	if v == nil {
 		return nil, nil
 	}
+	if raw, ok := v.(string); ok {
+		if strings.TrimSpace(raw) == "" {
+			return []string{}, nil
+		}
+		parts := strings.Split(raw, ",")
+		roles := make([]string, 0, len(parts))
+		for _, part := range parts {
+			key := strings.TrimSpace(part)
+			if key == "" {
+				return nil, &DomainError{Status: 400, Code: "INVALID_ROLE_REF", Message: "roles must be comma-separated non-empty keys"}
+			}
+			roles = append(roles, key)
+		}
+		return roles, nil
+	}
 	arr, ok := v.([]any)
 	if !ok {
 		return nil, &DomainError{Status: 400, Code: "INVALID_ROLE_REF", Message: "roles must be an array of strings"}
@@ -170,6 +208,48 @@ func parseRolesValue(v any) ([]string, error) {
 		roles = append(roles, strings.TrimSpace(s))
 	}
 	return roles, nil
+}
+
+func managedPasswordFromBody(body map[string]any) (string, error) {
+	password, ok := body["password"].(string)
+	if !ok {
+		return "", invalidManagedPassword()
+	}
+	length := len([]byte(password))
+	if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(password) == "" {
+		return "", invalidManagedPassword()
+	}
+	return password, nil
+}
+
+func invalidManagedPassword() error {
+	return &DomainError{
+		Status:  400,
+		Code:    "INVALID_PASSWORD",
+		Message: "password must be a string with non-whitespace characters and 8 to 72 bytes",
+	}
+}
+
+func (e *usersEntity) authorizeRoleAssignment(actor account.User, roles []string) error {
+	forbidden := func(message string) error {
+		return &DomainError{Status: 403, Code: "ROLE_ASSIGNMENT_FORBIDDEN", Message: message}
+	}
+	if !slices.Contains(actor.Permissions, "roles.assign") {
+		return forbidden("permission required: roles.assign")
+	}
+	if slices.Contains(roles, "admin") && !slices.Contains(actor.Roles, "admin") {
+		return forbidden("only an admin may assign the admin role")
+	}
+	targetPermissions, err := e.st.PermissionsForRoles(roles)
+	if err != nil {
+		return mapUserStoreError(err)
+	}
+	for _, permission := range targetPermissions {
+		if !slices.Contains(actor.Permissions, permission) {
+			return forbidden("cannot assign a role with permissions the actor does not hold")
+		}
+	}
+	return nil
 }
 
 // mapUserStoreError maps users-store domain sentinels to the frozen

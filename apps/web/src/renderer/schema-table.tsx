@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 import {
-  fetchRecords,
+  fetchResourceList,
   isValidDataSource,
   type ResourceQuery,
   type ResourceItem,
   type ResourceList,
-} from "@/renderer/records";
+} from "@/renderer/resource";
 import type { RenderTableNode } from "@/renderer/render";
 import { useSchemaCrud } from "@/renderer/render.tsx";
 
@@ -40,7 +40,7 @@ import { useSchemaCrud } from "@/renderer/render.tsx";
 
 export interface SchemaTableProps {
   node: RenderTableNode;
-  /** Injectable fetch (defaults to `globalThis.fetch`); tests inject records). */
+  /** Injectable fetch (defaults to `globalThis.fetch`). */
   fetcher?: typeof fetch;
 }
 
@@ -57,6 +57,28 @@ function stringOf(value: unknown): string {
 /** Spreads a typed row into a plain object the generic action executor accepts. */
 function rowAsRecord(row: ResourceItem): Record<string, unknown> {
   return { ...row };
+}
+
+/** Structured row predicate used by Schema actions; malformed predicates fail closed. */
+export function rowActionDisabled(action: unknown, row: ResourceItem): boolean {
+  if (typeof action !== "object" || action === null || Array.isArray(action)) {
+    return true;
+  }
+  const condition = (action as Record<string, unknown>).disabledWhen;
+  if (condition === undefined) {
+    return false;
+  }
+  if (typeof condition !== "object" || condition === null || Array.isArray(condition)) {
+    return true;
+  }
+  const field = (condition as Record<string, unknown>).field;
+  if (typeof field !== "string" || field === "" || !("equals" in condition)) {
+    return true;
+  }
+  if (!(field in row)) {
+    return true;
+  }
+  return row[field] === (condition as Record<string, unknown>).equals;
 }
 
 function isColumnSpec(value: unknown): value is SchemaTableColumnSpec {
@@ -80,7 +102,7 @@ export function schemaTableColumns(node: RenderTableNode): SchemaTableColumnSpec
 /**
  * Resolves the table node's list endpoint (F-001). Returns null when absent or
  * not a single-slash same-origin path; the table then fails closed and never
- * fetches (the records fallback was removed in GOAL-010 S3).
+ * fetches (the fixture fallback was removed in GOAL-010 S3).
  */
 export function schemaTableDataSource(node: RenderTableNode): string | null {
   const raw = node.props?.dataSource;
@@ -168,7 +190,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchRecords(fetcher ?? fetch, dataSource, query)
+    fetchResourceList(fetcher ?? fetch, dataSource, query)
       .then((next) => {
         if (!cancelled) {
           setList(next);
@@ -251,11 +273,12 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 {rowActions.map((action) => {
                   const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
                   const permitted = crud?.effectivePermission(key) ?? true;
+                  const disabled = !permitted || rowActionDisabled(action, row);
                   return (
                     <button
                       key={key}
                       type="button"
-                      disabled={!permitted}
+                      disabled={disabled}
                       onClick={() => crud?.invokeAction(action, rowAsRecord(row))}
                       className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     >

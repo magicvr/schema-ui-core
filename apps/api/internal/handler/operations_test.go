@@ -106,7 +106,7 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 
 	// Anonymous write → 401, no log row.
 	req = httptest.NewRequest(http.MethodPost, "/api/users",
-		strings.NewReader(`{"username":"x","name":"X","password":"y12345"}`))
+		strings.NewReader(`{"username":"x","name":"X","password":"y123456"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)

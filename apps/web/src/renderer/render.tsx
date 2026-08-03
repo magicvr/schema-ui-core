@@ -13,16 +13,16 @@ import type { NavigationContext } from "@/protocol/app-manifest";
 import { constructRequest } from "@/protocol/conformance/request-construction";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
-import type { FormControlField } from "@/renderer/form-controls";
+import { coerceFieldValue, type FormControlField } from "@/renderer/form-controls";
 import { ModalHost } from "@/renderer/modal";
 import {
   executeAction,
   evaluatePermissionTargets,
 } from "@/renderer/permissions";
 import {
-  readRecordApiError,
+  readResourceApiError,
   type ResourceQuery,
-} from "@/renderer/records";
+} from "@/renderer/resource";
 import {
   gateRenderFormFields,
   parseRenderNode,
@@ -260,7 +260,7 @@ async function runRequest(
     ...(body === undefined ? {} : { body }),
   });
   if (!response.ok) {
-    const apiError = await readRecordApiError(response, actionRef);
+    const apiError = await readResourceApiError(response, actionRef);
     return { ok: false, code: apiError.code, message: apiError.message };
   }
   return { ok: true };
@@ -400,10 +400,18 @@ function SchemaCrudProvider({
       if (typeof submitAction !== "string") {
         return { ok: false, code: "NO_SUBMIT_ACTION", message: "form has no submitAction" };
       }
-      // I-007-003 §3: trim string fields before submission.
+      const rawStringFields = new Set(
+        form.props.fields
+          .filter((field) => isRecord(field) && field.type === "password")
+          .map((field) => (isRecord(field) && typeof field.id === "string" ? field.id : ""))
+          .filter((field) => field !== ""),
+      );
+      // Text fields keep the historical trim rule; secret controls preserve
+      // the exact string so the browser and API hash the same password bytes.
       const prepared: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(values)) {
-        prepared[key] = typeof value === "string" ? value.trim() : value;
+        prepared[key] =
+          typeof value === "string" && !rawStringFields.has(key) ? value.trim() : value;
       }
       const gateTargetId = `${form.id ?? "unnamed"}:submit`;
       const result = await runRequestCallback(submitAction, {
@@ -523,7 +531,7 @@ function FormView({
       if (modalRow !== null && modalRow[raw.id] !== undefined) {
         initial[raw.id] = modalRow[raw.id];
       } else {
-        initial[raw.id] = "";
+        initial[raw.id] = coerceFieldValue(raw as unknown as FormControlField, undefined);
       }
     }
     return initial;

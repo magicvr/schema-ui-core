@@ -7,10 +7,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RenderTableNode } from "@/renderer/render";
 import {
   SchemaTable,
+  rowActionDisabled,
   schemaTableColumns,
   schemaTableDataSource,
   schemaTableRowKey,
 } from "@/renderer/schema-table";
+
+describe("rowActionDisabled", () => {
+  it("evaluates a structured row field equality condition", () => {
+    const action = { disabledWhen: { field: "editable", equals: false } };
+    expect(rowActionDisabled(action, { id: "role-admin", editable: false })).toBe(true);
+    expect(rowActionDisabled(action, { id: "role-ops", editable: true })).toBe(false);
+  });
+
+  it("fails closed on malformed conditions", () => {
+    expect(rowActionDisabled({ disabledWhen: "editable" }, { id: "role-admin" })).toBe(true);
+    expect(rowActionDisabled({ disabledWhen: { field: "" } }, { id: "role-admin" })).toBe(true);
+    expect(
+      rowActionDisabled({ disabledWhen: { field: "editable", equals: false } }, { id: "role-admin" }),
+    ).toBe(true);
+  });
+});
 
 const RECORDS = {
   items: [

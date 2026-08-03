@@ -7,6 +7,7 @@ import (
 	"errors"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -109,5 +110,55 @@ func TestUsersCreateManagementRolesRoundTrip(t *testing.T) {
 	}
 	if want := []string{"viewer"}; !reflect.DeepEqual(got.Roles, want) {
 		t.Fatalf("roles after update = %v, want %v", got.Roles, want)
+	}
+}
+
+func TestDeleteUserSerializesLastAdminCheck(t *testing.T) {
+	st := openSeedStore(t)
+	now := time.Now().UTC()
+	if _, err := st.CreateUserManagement(User{
+		ID: "user-admin2", Username: "admin2", Name: "Admin 2",
+		Roles: []string{"admin"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("create second admin: %v", err)
+	}
+
+	start := make(chan struct{})
+	errs := make(chan error, 2)
+	var wg sync.WaitGroup
+	for _, id := range []string{"user-admin", "user-admin2"} {
+		wg.Add(1)
+		go func(userID string) {
+			defer wg.Done()
+			<-start
+			errs <- st.DeleteUser(userID, "external-actor")
+		}(id)
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+
+	var succeeded, blocked int
+	for err := range errs {
+		switch {
+		case err == nil:
+			succeeded++
+		case errors.Is(err, ErrLastAdmin):
+			blocked++
+		default:
+			t.Fatalf("concurrent delete err = %v", err)
+		}
+	}
+	if succeeded != 1 || blocked != 1 {
+		t.Fatalf("concurrent deletes succeeded=%d blocked=%d, want 1/1", succeeded, blocked)
+	}
+	var admins int
+	if err := st.db.QueryRow(
+		`SELECT COUNT(*) FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE r.key = 'admin'`,
+	).Scan(&admins); err != nil {
+		t.Fatalf("count admins: %v", err)
+	}
+	if admins != 1 {
+		t.Fatalf("admins after concurrent delete = %d, want 1", admins)
 	}
 }

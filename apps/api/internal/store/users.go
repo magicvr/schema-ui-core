@@ -270,6 +270,14 @@ func (s *Store) UpdateUser(id string, patch UserPatch, actorID string, now time.
 	); err != nil {
 		return nil, fmt.Errorf("update user: %w", err)
 	}
+	if patch.PasswordHash != nil {
+		if _, err := tx.Exec(
+			`UPDATE refresh_tokens SET revoked_at = COALESCE(revoked_at, ?) WHERE user_id = ?`,
+			now.Unix(), id,
+		); err != nil {
+			return nil, fmt.Errorf("revoke refresh tokens after password change: %w", err)
+		}
+	}
 	// Rewrite the user_roles relation to match the new role set (double-write).
 	if _, err := tx.Exec(`DELETE FROM user_roles WHERE user_id = ?`, id); err != nil {
 		return nil, fmt.Errorf("clear user roles: %w", err)
@@ -293,20 +301,34 @@ func (s *Store) UpdateUser(id string, patch UserPatch, actorID string, now time.
 // self-protection (ErrSelfOperation) and last-admin protection (ErrLastAdmin).
 // Returns ErrNotFound when the user does not exist.
 func (s *Store) DeleteUser(id, actorID string) error {
-	cur, err := s.GetUser(id)
-	if err != nil {
-		return err
-	}
-	if id == actorID {
-		return ErrSelfOperation
-	}
-
 	tx, err := s.db.Begin()
 	if err != nil {
 		return fmt.Errorf("begin delete user: %w", err)
 	}
 	defer tx.Rollback()
-	if slices.Contains(cur.Roles, "admin") {
+
+	var exists int
+	if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)`, id).Scan(&exists); err != nil {
+		return fmt.Errorf("check delete user: %w", err)
+	}
+	if exists == 0 {
+		return ErrNotFound
+	}
+	if id == actorID {
+		return ErrSelfOperation
+	}
+
+	var isAdmin int
+	if err := tx.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1 FROM user_roles ur
+			JOIN roles r ON r.id = ur.role_id
+			WHERE ur.user_id = ? AND r.key = 'admin'
+		)`, id,
+	).Scan(&isAdmin); err != nil {
+		return fmt.Errorf("check delete user admin role: %w", err)
+	}
+	if isAdmin == 1 {
 		other, err := countAdminUsersExcluding(tx, id)
 		if err != nil {
 			return err
@@ -318,8 +340,16 @@ func (s *Store) DeleteUser(id, actorID string) error {
 	if _, err := tx.Exec(`DELETE FROM refresh_tokens WHERE user_id = ?`, id); err != nil {
 		return fmt.Errorf("revoke user tokens: %w", err)
 	}
-	if _, err := tx.Exec(`DELETE FROM users WHERE id = ?`, id); err != nil {
+	result, err := tx.Exec(`DELETE FROM users WHERE id = ?`, id)
+	if err != nil {
 		return fmt.Errorf("delete user: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read delete user affected rows: %w", err)
+	}
+	if affected != 1 {
+		return ErrNotFound
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit delete user: %w", err)

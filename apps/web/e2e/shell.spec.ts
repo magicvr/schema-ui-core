@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // (GOAL-005): boots the Go API + Vite dev server via playwright webServer;
 // verifies that an unauthenticated visit shows the login page, that signing in
 // with the dev seed (admin / admin) renders the shell, and that the real auth
-// chain (login -> /me -> records) works through the Web /api proxy.
+// chain (login -> /me -> users) works through the Web /api proxy.
 
 test("login gates the shell and the real auth chain works through the proxy", async ({ page, request }) => {
   // Unauthenticated visit → login page, not the shell.

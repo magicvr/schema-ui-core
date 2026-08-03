@@ -4,6 +4,7 @@ package store
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -67,5 +68,39 @@ func TestRolesStoreSystemAndInUseProtection(t *testing.T) {
 	}
 	if _, err := st.GetRole("role-ops"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("get deleted role err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestRoleGrantLifecycle(t *testing.T) {
+	st := openSeedStore(t)
+	now := time.Now().UTC()
+	r, err := st.CreateRoleWithGrants(
+		"support", "Support", []string{"users.read"}, []string{"menu-users"}, now,
+	)
+	if err != nil {
+		t.Fatalf("create with grants: %v", err)
+	}
+	if !reflect.DeepEqual(r.Permissions, []string{"users.read"}) || !reflect.DeepEqual(r.MenuItems, []string{"menu-users"}) {
+		t.Fatalf("created grants = permissions %v menus %v", r.Permissions, r.MenuItems)
+	}
+	permissions := []string{"roles.read"}
+	menus := []string{}
+	r, err = st.UpdateRoleWithGrants("role-support", RolePatch{Permissions: &permissions, MenuItems: &menus}, now)
+	if err != nil {
+		t.Fatalf("update grants: %v", err)
+	}
+	if !reflect.DeepEqual(r.Permissions, []string{"roles.read"}) || len(r.MenuItems) != 0 {
+		t.Fatalf("updated grants = permissions %v menus %v", r.Permissions, r.MenuItems)
+	}
+	invalid := []string{"ghost.permission"}
+	if _, err := st.UpdateRoleWithGrants("role-support", RolePatch{Permissions: &invalid}, now); !errors.Is(err, ErrInvalidPermission) {
+		t.Fatalf("invalid permission err = %v, want ErrInvalidPermission", err)
+	}
+	invalidMenu := []string{"menu-ghost"}
+	if _, err := st.UpdateRoleWithGrants("role-support", RolePatch{MenuItems: &invalidMenu}, now); !errors.Is(err, ErrInvalidMenuItem) {
+		t.Fatalf("invalid menu err = %v, want ErrInvalidMenuItem", err)
+	}
+	if _, err := st.UpdateRoleWithGrants("role-admin", RolePatch{Permissions: &permissions}, now); !errors.Is(err, ErrRoleSystem) {
+		t.Fatalf("system grant update err = %v, want ErrRoleSystem", err)
 	}
 }

@@ -1,5 +1,5 @@
 // Operation log repository (GOAL-008 R5 S6 optional bonus checkpoint,
-// I-008-003): an append-only SQLite log covering records writes and auth key
+// I-008-003): an append-only SQLite log covering resource writes and auth key
 // events. Writes are best-effort at the handler layer — a logging failure must
 // never turn a successful business operation into a failure — so the store
 // method only reports the error and the handler records it to the service log.
@@ -14,23 +14,20 @@ import (
 // OperationEvent enumerates the frozen operation log event set (I-008-003 §2;
 // users/roles events added by GOAL-011 0005, I-011-001 §5).
 const (
-	EventRecordCreate = "records.create"
-	EventRecordUpdate = "records.update"
-	EventRecordDelete = "records.delete"
-	EventAuthLogin    = "auth.login"
-	EventAuthLogout   = "auth.logout"
-	EventAuthRefresh  = "auth.refresh"
-	EventUserCreate   = "users.create"
-	EventUserUpdate   = "users.update"
-	EventUserDelete   = "users.delete"
-	EventRoleCreate   = "roles.create"
-	EventRoleUpdate   = "roles.update"
-	EventRoleDelete   = "roles.delete"
+	EventAuthLogin   = "auth.login"
+	EventAuthLogout  = "auth.logout"
+	EventAuthRefresh = "auth.refresh"
+	EventUserCreate  = "users.create"
+	EventUserUpdate  = "users.update"
+	EventUserDelete  = "users.delete"
+	EventRoleCreate  = "roles.create"
+	EventRoleUpdate  = "roles.update"
+	EventRoleDelete  = "roles.delete"
 )
 
-// Operation is one append-only operation log row. RecordID is set for records
-// events and nil for auth events; Detail is an optional JSON summary (record
-// name / username), never a token or secret (I-008-003 §3).
+// Operation is one append-only operation log row. RecordID is the historical
+// target-id field for resource events and nil for auth events; Detail is an
+// optional JSON summary, never a token or secret (I-008-003 §3).
 type Operation struct {
 	ID        string
 	Event     string

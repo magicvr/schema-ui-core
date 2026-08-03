@@ -5,7 +5,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-010-a002-schema-adapter
-version: 0.8.0
+version: 0.10.0
 progress: 5/5
 ---
 
@@ -33,9 +33,9 @@ progress: 5/5
 
 ## A-012 关门门禁
 
-A-012（independent · fail）新增 F-001～F-005 五条 required finding，当前均为 `open`；F-006 为 `recommended / open`。A-010/A-011 所记录的既有 S1～S5 实施与回归事实保留，不重写历史，但 A-012 与既有 close-out 结论的冲突尚未按 P-004 完成用户裁决，因此不得维持无条件 `done`。
+A-012（independent · fail）新增 F-001～F-005 五条 required finding，当前均为 `open`；F-006 为 `recommended / open`。用户已在 D-006 书面裁决五项全部走 `fixed`，并为 F-003 选择补齐角色授权/grant 管理路径。候选实现与本地回归收据已记录在 `02-execution`，但限定范围 finding-closure 独立复审尚未落盘，因此五项仍不得标记 `fixed`，目标仍不得恢复 `done`。
 
-`progress: 5/5` 仅表示原五个显式检查点已完成，不表示 A-012 finding 已闭合。D-005 只记录本轮响应边界与 fail-closed 状态恢复；没有把任何 finding 写成 `fixed`、`accepted-residual` 或 `user-overruled`。
+`progress: 5/5` 仅表示原五个显式检查点已完成，不表示 A-012 finding 已闭合。D-006 已确定闭合路径为 `fixed`；当前实现证据是待复审候选，F-001～F-005 在独立复审前仍保持 `open`。
 
 ## 信息需求与阶段门禁
 
@@ -44,9 +44,9 @@ A-012（independent · fail）新增 F-001～F-005 五条 required finding，当
 | `I-011-001` | users/roles 的精确资源契约与最小 IAM 边界是什么？包括公开字段、密码/令牌隔离、角色分配、self/最后管理员保护、system role 与 grant 约束。 | required | S1 方案冻结与 S2 实施 | S2 首个产品代码变更前 | 核对现有 auth/RBAC 表、store、权限投影与通用 Resource 接口，形成版本化领域契约并提交用户裁决 | **verified** | 不延期；S1 已冻结 | [I-011-001-users-roles-contract.md](attachments/I-011-001-users-roles-contract.md) **v0.2.0** + GOAL-011 D-002/D-003（用户裁决：通用工厂+最小契约扩展、操作日志纳入；A-002 F-001/F-003/F-004 fixed） |
 | `I-011-002` | records 如何从当前产品基线退场，同时保持既有迁移/checksum、已有数据库、数据处置、API/权限/菜单/operation log 与历史文档可追溯？ | required | S1 方案冻结与 S3 退场实施 | S3 首个删除、重命名或迁移变更前 | 建立 fresh install 与 in-place upgrade 两条迁移矩阵，逐项盘点运行时代码、迁移、种子、文档与测试 | **verified** | 不延期；S1 已冻结 | [I-011-002-records-retirement.md](attachments/I-011-002-records-retirement.md) **v0.2.0** + GOAL-011 D-002/D-003（用户裁决：硬退场 DROP TABLE；A-002 F-002 快照语义 fixed） |
 | `I-011-003` | 双资源验收如何证明“前端 Schema-only 接入”以及 fresh fork/升级/重启/401/403 的完整边界？ | required | S4 集成验收与 S5 关门 | S4 首个验收实现前 | 冻结 users/roles 两套验收矩阵、Renderer diff 边界、数据库升级夹具与 E2E/restart 协议 | **verified** | 不延期；D-004 已冻结，S4 执行时按矩阵复核 | [I-011-003-acceptance-matrix.md](attachments/I-011-003-acceptance-matrix.md) **v0.2.0** + D-004；A-007 F-001～F-003 均 `fixed`，基线提交、双资源页面级证据与后端完整断言已补齐 |
-| `I-011-004` | A-012 F-003 的产品边界如何裁决：保留 seed-only 最小 IAM 并移除/隐藏无有效 grant 语义的 roles 管理面，还是补齐用户角色分配、可验证 grant 来源与 roles 管理流程？ | required | A-012 整改方案冻结与重新关门 | F-003 首个产品代码变更前；最晚重新关门前 | 用户按 P-004 选择边界；随后修订 I-011-001/I-011-003 或新增版本化整改契约与验收矩阵 | **open** | 不延期；责任人：用户裁决 + `/govern` 落盘；触发：下一次 A-012 整改实施 | A-012 F-003 + D-005；本轮尚无 fixed/residual/overruled 决策 |
+| `I-011-004` | A-012 F-003 的产品边界如何裁决：保留 seed-only 最小 IAM 并移除/隐藏无有效 grant 语义的 roles 管理面，还是补齐用户角色分配、可验证 grant 来源与 roles 管理流程？ | required | A-012 整改方案冻结与重新关门 | F-003 首个产品代码变更前；最晚重新关门前 | 用户按 P-004 选择边界；冻结授权委派、密码、grant、records 洁净度与最后管理员原子性的版本化整改契约/验收矩阵 | **verified** | 不延期；D-006 已冻结；实施与复审按契约逐项核对 | [I-011-004-a012-remediation-contract.md](attachments/I-011-004-a012-remediation-contract.md) **v0.1.0** + D-006；用户选择补齐角色授权/grant 管理路径，F-001～F-005 全部走 fixed |
 
-`I-011-001`～`I-011-003` 维持 `verified`，对应的历史 S1～S5 事实不回退。`I-011-004` 为 A-012 后新增的 required 产品边界信息项，阻断 F-003 整改方案冻结与本目标重新关门；它不把既有信息项改写为未验证，也不回退原五项检查点进度。
+`I-011-001`～`I-011-003` 维持 `verified`，对应的历史 S1～S5 事实不回退。`I-011-004` 已由 D-006 置为 `verified`，只解除整改方案选择门禁；F-001～F-005 的实现、验证与复审门禁仍保持开放，也不回退原五项检查点进度。
 
 ## 依赖与边界
 

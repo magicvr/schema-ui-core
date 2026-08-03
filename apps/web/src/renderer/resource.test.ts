@@ -1,36 +1,36 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  buildRecordsQuery,
-  deleteRecord,
-  fetchRecords,
+  buildResourceQuery,
+  deleteResource,
+  fetchResourceList,
   isValidDataSource,
-  parseRecordList,
-  updateRecord,
+  parseResourceList,
+  updateResource,
   type ResourceList,
-} from "@/renderer/records";
+} from "@/renderer/resource";
 
-describe("buildRecordsQuery (query-serialization)", () => {
+describe("buildResourceQuery (query-serialization)", () => {
   it("omits empty query", () => {
-    expect(buildRecordsQuery({})).toBe("");
+    expect(buildResourceQuery({})).toBe("");
   });
 
   it("serializes search and sort/order", () => {
-    expect(buildRecordsQuery({ q: "alice", sort: "name", order: "asc" })).toBe(
+    expect(buildResourceQuery({ q: "alice", sort: "name", order: "asc" })).toBe(
       "q=alice&sort=name&order=asc",
     );
   });
 
   it("omits default page and pageSize", () => {
-    expect(buildRecordsQuery({ page: 1, pageSize: 10 })).toBe("");
+    expect(buildResourceQuery({ page: 1, pageSize: 10 })).toBe("");
   });
 
   it("serializes non-default pagination", () => {
-    expect(buildRecordsQuery({ page: 2, pageSize: 25 })).toBe("page=2&pageSize=25");
+    expect(buildResourceQuery({ page: 2, pageSize: 25 })).toBe("page=2&pageSize=25");
   });
 
   it("trims blank search", () => {
-    expect(buildRecordsQuery({ q: "   " })).toBe("");
+    expect(buildResourceQuery({ q: "   " })).toBe("");
   });
 });
 
@@ -65,7 +65,7 @@ describe("isValidDataSource (F-001 · I-010-001 v0.2.0 §2)", () => {
   });
 });
 
-describe("parseRecordList (response-mapping)", () => {
+describe("parseResourceList (response-mapping)", () => {
   it("maps an envelope", () => {
     const value = {
       items: [
@@ -81,7 +81,7 @@ describe("parseRecordList (response-mapping)", () => {
       page: 1,
       pageSize: 10,
     };
-    const list = parseRecordList(value);
+    const list = parseResourceList(value);
     expect(list.items[0].id).toBe("rec-1");
     expect(list.total).toBe(1);
   });
@@ -93,17 +93,17 @@ describe("parseRecordList (response-mapping)", () => {
       page: 1,
       pageSize: 10,
     };
-    const list = parseRecordList(value);
+    const list = parseResourceList(value);
     expect(list.items[0]).toEqual({ sku: "S-1", title: "Widget", price: 19 });
   });
 
   it("fails closed on a missing items array", () => {
-    expect(() => parseRecordList({ total: 1, page: 1, pageSize: 10 })).toThrow();
+    expect(() => parseResourceList({ total: 1, page: 1, pageSize: 10 })).toThrow();
   });
 
   it("fails closed on a non-object item", () => {
     expect(() =>
-      parseRecordList({
+      parseResourceList({
         items: [null],
         total: 1,
         page: 1,
@@ -113,12 +113,12 @@ describe("parseRecordList (response-mapping)", () => {
   });
 
   it("fails closed on a non-object payload", () => {
-    expect(() => parseRecordList(null)).toThrow();
-    expect(() => parseRecordList([])).toThrow();
+    expect(() => parseResourceList(null)).toThrow();
+    expect(() => parseResourceList([])).toThrow();
   });
 });
 
-describe("fetchRecords (request-construction)", () => {
+describe("fetchResourceList (request-construction)", () => {
   it("builds the URL and maps the response", async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL) => {
       return new Response(
@@ -139,7 +139,7 @@ describe("fetchRecords (request-construction)", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     });
-    const list: ResourceList = await fetchRecords(
+    const list: ResourceList = await fetchResourceList(
       fetcher as unknown as typeof fetch,
       "/api/users",
       { q: "acme" },
@@ -151,7 +151,7 @@ describe("fetchRecords (request-construction)", () => {
   it("throws on a non-OK response", async () => {
     const fetcher = vi.fn(async () => new Response("nope", { status: 500 }));
     await expect(
-      fetchRecords(fetcher as unknown as typeof fetch, "/api/users", {}),
+      fetchResourceList(fetcher as unknown as typeof fetch, "/api/users", {}),
     ).rejects.toThrow("HTTP 500");
   });
 
@@ -166,14 +166,14 @@ describe("fetchRecords (request-construction)", () => {
       "",
     ]) {
       await expect(
-        fetchRecords(fetcher as unknown as typeof fetch, bad, {}),
+        fetchResourceList(fetcher as unknown as typeof fetch, bad, {}),
       ).rejects.toThrow(/invalid dataSource/);
     }
     expect(fetcher).not.toHaveBeenCalled();
   });
 });
 
-describe("updateRecord (PATCH)", () => {
+describe("updateResource (PATCH)", () => {
   it("sends a PATCH and maps the response", async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       expect(String(input)).toBe("/api/users/usr-3");
@@ -189,7 +189,7 @@ describe("updateRecord (PATCH)", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     });
-    const updated = await updateRecord(
+    const updated = await updateResource(
       fetcher as unknown as typeof fetch,
       "/api/users",
       "usr-3",
@@ -202,12 +202,12 @@ describe("updateRecord (PATCH)", () => {
   it("throws on a non-OK response", async () => {
     const fetcher = vi.fn(async () => new Response("bad", { status: 400 }));
     await expect(
-      updateRecord(fetcher as unknown as typeof fetch, "/api/users", "usr-3", { name: "" }),
+      updateResource(fetcher as unknown as typeof fetch, "/api/users", "usr-3", { name: "" }),
     ).rejects.toThrow("HTTP 400");
   });
 });
 
-describe("deleteRecord (DELETE)", () => {
+describe("deleteResource (DELETE)", () => {
   it("sends a DELETE and resolves on 204", async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       expect(String(input)).toBe("/api/users/usr-3");
@@ -215,14 +215,14 @@ describe("deleteRecord (DELETE)", () => {
       return new Response(null, { status: 204 });
     });
     await expect(
-      deleteRecord(fetcher as unknown as typeof fetch, "/api/users", "usr-3"),
+      deleteResource(fetcher as unknown as typeof fetch, "/api/users", "usr-3"),
     ).resolves.toBeUndefined();
   });
 
   it("throws on a non-OK response", async () => {
     const fetcher = vi.fn(async () => new Response("bad", { status: 404 }));
     await expect(
-      deleteRecord(fetcher as unknown as typeof fetch, "/api/users", "usr-999"),
+      deleteResource(fetcher as unknown as typeof fetch, "/api/users", "usr-999"),
     ).rejects.toThrow("HTTP 404");
   });
 });

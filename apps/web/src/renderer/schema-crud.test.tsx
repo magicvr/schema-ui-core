@@ -23,7 +23,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { RenderPageDocument } from "@/renderer/render";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
-import type { ResourceItem } from "@/renderer/records";
+import type { ResourceItem } from "@/renderer/resource";
 
 const FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -124,7 +124,12 @@ function createUsersApi(
         id: `usr-new-${store.length + 1}`,
         username: String(body.username).trim(),
         name: String(body.name).trim(),
-        roles: [],
+        roles:
+          typeof body.roles === "string"
+            ? body.roles.split(",").map((role: string) => role.trim()).filter(Boolean)
+            : Array.isArray(body.roles)
+              ? body.roles
+              : [],
         updatedAt: now(),
       };
       store.unshift(user);
@@ -157,6 +162,12 @@ function createUsersApi(
         }
         patch.name = value;
       }
+	  if (body.roles !== undefined) {
+		patch.roles =
+		  typeof body.roles === "string"
+			? body.roles.split(",").map((role: string) => role.trim()).filter(Boolean)
+			: body.roles;
+	  }
       const updated = { ...store[index], ...patch, updatedAt: now() };
       store[index] = updated;
       return json(updated);
@@ -199,6 +210,11 @@ function createRolesApi(
         key: String(body?.key).trim(),
         name: String(body?.name).trim(),
         system: false,
+		permissions: Array.isArray(body?.permissions) ? body.permissions : [],
+		menuItems: Array.isArray(body?.menuItems) ? body.menuItems : [],
+		assignedUsers: 0,
+		editable: true,
+		deletable: true,
         updatedAt: now(),
       };
       store.unshift(role);
@@ -215,7 +231,9 @@ function createRolesApi(
       }
       const updated = {
         ...store[index],
-        name: String(body?.name).trim(),
+		name: body?.name === undefined ? store[index]?.name : String(body.name).trim(),
+		permissions: Array.isArray(body?.permissions) ? body.permissions : store[index]?.permissions,
+		menuItems: Array.isArray(body?.menuItems) ? body.menuItems : store[index]?.menuItems,
         updatedAt: now(),
       };
       store[index] = updated;
@@ -230,13 +248,31 @@ function createRolesApi(
 // --- Render harness ---
 
 const ADMIN = {
-  user: { id: "u1", roles: ["admin"], permissions: ["users.read", "users.write"] },
+  user: {
+    id: "u1",
+    roles: ["admin"],
+    permissions: ["users.read", "users.write", "roles.assign"],
+  },
 };
 const VIEWER = {
   user: { id: "u2", roles: ["viewer"], permissions: ["users.read"] },
 };
+const USER_WRITER = {
+  user: { id: "u4", roles: ["editor"], permissions: ["users.read", "users.write"] },
+};
 const ROLE_ADMIN = {
-  user: { id: "u1", roles: ["admin"], permissions: ["roles.read", "roles.write"] },
+  user: {
+    id: "u1",
+    roles: ["admin"],
+    permissions: ["roles.read", "roles.write", "roles.assign", "users.read", "users.write"],
+  },
+};
+const ROLE_WRITER = {
+  user: {
+    id: "u3",
+    roles: ["role-manager"],
+    permissions: ["roles.read", "roles.write"],
+  },
 };
 
 const USERS: ResourceItem[] = [
@@ -262,6 +298,11 @@ const ROLES: ResourceItem[] = [
     key: "admin",
     name: "admin",
     system: true,
+	permissions: ["roles.assign", "roles.read", "roles.write", "users.read", "users.write"],
+	menuItems: ["menu-users", "menu-roles"],
+	assignedUsers: 1,
+	editable: false,
+	deletable: false,
     updatedAt: "2026-08-03T00:00:00.000Z",
   },
   {
@@ -269,6 +310,11 @@ const ROLES: ResourceItem[] = [
     key: "viewer",
     name: "viewer",
     system: true,
+	permissions: ["roles.read", "users.read"],
+	menuItems: [],
+	assignedUsers: 0,
+	editable: false,
+	deletable: false,
     updatedAt: "2026-08-03T11:00:00.000Z",
   },
 ];
@@ -331,6 +377,13 @@ function fieldInput(container: HTMLElement, id: string): HTMLInputElement | null
   return container.querySelector<HTMLInputElement>(`#field-${id}`);
 }
 
+function checkboxByLabel(container: HTMLElement, label: string): HTMLInputElement | null {
+  const owner = Array.from(container.querySelectorAll("label")).find(
+    (candidate) => candidate.textContent?.trim() === label,
+  );
+  return owner?.querySelector<HTMLInputElement>('input[type="checkbox"]') ?? null;
+}
+
 // --- T-UI tests ---
 
 describe("T-UI-01 · list loads and empty state", () => {
@@ -389,7 +442,7 @@ describe("T-UI-04 · create form (POST → 201)", () => {
     await act(async () => (buttonByText(container, "New user") as HTMLButtonElement).click());
     await act(async () => setFieldValue(fieldInput(container, "username") as HTMLInputElement, "carol"));
     await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Carol"));
-    await act(async () => setFieldValue(fieldInput(container, "password") as HTMLInputElement, "pw12345"));
+    await act(async () => setFieldValue(fieldInput(container, "password") as HTMLInputElement, "pw123456"));
     await act(async () => (buttonByText(container, "Create user") as HTMLButtonElement).click());
     expect(api.calls.some((call) => call.method === "POST" && call.url === "/api/users")).toBe(true);
     expect(container.textContent).toContain("Item created");
@@ -451,7 +504,7 @@ describe("T-UI-07 · error envelope rendering", () => {
     await act(async () => (buttonByText(container, "New user") as HTMLButtonElement).click());
     await act(async () => setFieldValue(fieldInput(container, "username") as HTMLInputElement, "dave"));
     await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Dave"));
-    await act(async () => setFieldValue(fieldInput(container, "password") as HTMLInputElement, "pw12345"));
+    await act(async () => setFieldValue(fieldInput(container, "password") as HTMLInputElement, "pw123456"));
     await act(async () => (buttonByText(container, "Create user") as HTMLButtonElement).click());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("FORBIDDEN");
   });
@@ -470,7 +523,7 @@ describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
   it("admin sees enabled write affordances", async () => {
     const api = createUsersApi(USERS);
     const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
-    for (const label of ["New user", "Edit", "Delete"]) {
+    for (const label of ["New user", "Edit", "Roles", "Password", "Delete"]) {
       const button = buttonByText(container, label) as HTMLButtonElement;
       expect(button, `${label} present`).not.toBeUndefined();
       expect(button.disabled, `${label} enabled for admin`).toBe(false);
@@ -480,13 +533,22 @@ describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
   it("viewer/editor is read-only: write affordances are disabled", async () => {
     const api = createUsersApi(USERS);
     const container = await renderCrud(fixtureDocument("users"), VIEWER, api.fetcher);
-    for (const label of ["New user", "Edit", "Delete"]) {
+    for (const label of ["New user", "Edit", "Roles", "Password", "Delete"]) {
       const button = buttonByText(container, label) as HTMLButtonElement;
       expect(button, `${label} present`).not.toBeUndefined();
       expect(button.disabled, `${label} disabled for viewer`).toBe(true);
     }
     // The read surface still works (users.read is held).
     expect(container.textContent).toContain("alice");
+  });
+
+  it("users.write without roles.assign cannot open the role assignment path", async () => {
+    const api = createUsersApi(USERS);
+    const container = await renderCrud(fixtureDocument("users"), USER_WRITER, api.fetcher);
+    expect((buttonByText(container, "New user") as HTMLButtonElement).disabled).toBe(false);
+    expect((buttonByText(container, "Edit") as HTMLButtonElement).disabled).toBe(false);
+    expect((buttonByText(container, "Roles") as HTMLButtonElement).disabled).toBe(true);
+    expect((buttonByText(container, "Password") as HTMLButtonElement).disabled).toBe(false);
   });
 });
 
@@ -516,11 +578,18 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
     await act(async () => (buttonByText(container, "New role") as HTMLButtonElement).click());
     await act(async () => setFieldValue(fieldInput(container, "key") as HTMLInputElement, "auditor"));
     await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Auditor"));
+    await act(async () => (checkboxByLabel(container, "Read users") as HTMLInputElement).click());
+    await act(async () => (checkboxByLabel(container, "Users") as HTMLInputElement).click());
     await act(async () => (buttonByText(container, "Create role") as HTMLButtonElement).click());
     expect(api.calls.find((call) => call.method === "POST")).toEqual({
       method: "POST",
       url: "/api/roles",
-      body: { key: "auditor", name: "Auditor" },
+      body: {
+        key: "auditor",
+        name: "Auditor",
+        permissions: ["users.read"],
+        menuItems: ["menu-users"],
+      },
     });
     expect(container.textContent).toContain("Item created");
     expect(api.store[0]?.id).toBe("role-auditor");
@@ -528,25 +597,49 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
 
   it("drives roles update from the real fixture", async () => {
     const api = createRolesApi([
-      { id: "role-ops", key: "ops", name: "Operator", system: false, updatedAt: "2026-08-03T00:00:00.000Z" },
+	  {
+		id: "role-ops",
+		key: "ops",
+		name: "Operator",
+		system: false,
+		permissions: ["users.read"],
+		menuItems: ["menu-users"],
+		assignedUsers: 0,
+		editable: true,
+		deletable: true,
+		updatedAt: "2026-08-03T00:00:00.000Z",
+	  },
     ]);
     const container = await renderCrud(fixtureDocument("roles"), ROLE_ADMIN, api.fetcher);
     await act(async () => (buttonByText(container, "Edit") as HTMLButtonElement).click());
     const nameInput = fieldInput(container, "name") as HTMLInputElement;
     expect(nameInput.value).toBe("Operator");
     await act(async () => setFieldValue(nameInput, "Operations"));
+	await act(async () => (checkboxByLabel(container, "Read users") as HTMLInputElement).click());
+	await act(async () => (checkboxByLabel(container, "Read roles") as HTMLInputElement).click());
     await act(async () => (buttonByText(container, "Save changes") as HTMLButtonElement).click());
     expect(api.calls.find((call) => call.method === "PATCH")).toEqual({
       method: "PATCH",
       url: "/api/roles/role-ops",
-      body: { name: "Operations" },
+      body: { name: "Operations", permissions: ["roles.read"], menuItems: ["menu-users"] },
     });
     expect(container.textContent).toContain("Item updated");
   });
 
   it("drives roles delete from the real fixture", async () => {
     const api = createRolesApi([
-      { id: "role-ops", key: "ops", name: "Operator", system: false, updatedAt: "2026-08-03T00:00:00.000Z" },
+	  {
+		id: "role-ops",
+		key: "ops",
+		name: "Operator",
+		system: false,
+		permissions: [],
+		menuItems: [],
+		assignedUsers: 0,
+		editable: true,
+		deletable: true,
+		updatedAt: "2026-08-03T00:00:00.000Z",
+	  },
     ]);
     const container = await renderCrud(fixtureDocument("roles"), ROLE_ADMIN, api.fetcher);
     await act(async () => (buttonByText(container, "Delete") as HTMLButtonElement).click());
@@ -556,6 +649,62 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
     expect(api.store).toHaveLength(0);
   });
 
+  it("disables system-role and in-use delete actions from structured row flags", async () => {
+	const api = createRolesApi(ROLES);
+	const container = await renderCrud(fixtureDocument("roles"), ROLE_ADMIN, api.fetcher);
+	const edits = Array.from(container.querySelectorAll("button")).filter(
+	  (button) => button.textContent?.trim() === "Edit",
+	);
+	const deletes = Array.from(container.querySelectorAll("button")).filter(
+	  (button) => button.textContent?.trim() === "Delete",
+	);
+	expect(edits).toHaveLength(2);
+	expect(deletes).toHaveLength(2);
+	expect(edits.every((button) => button.disabled)).toBe(true);
+	expect(deletes.every((button) => button.disabled)).toBe(true);
+  });
+
+  it("disables grant create and edit paths for non-admin role writers", async () => {
+	const api = createRolesApi([
+	  {
+		id: "role-ops",
+		key: "ops",
+		name: "Operator",
+		system: false,
+		permissions: ["roles.read"],
+		menuItems: [],
+		assignedUsers: 0,
+		editable: true,
+		deletable: true,
+		updatedAt: "2026-08-03T00:00:00.000Z",
+	  },
+	]);
+	const container = await renderCrud(fixtureDocument("roles"), ROLE_WRITER, api.fetcher);
+	expect((buttonByText(container, "New role") as HTMLButtonElement).disabled).toBe(true);
+	expect((buttonByText(container, "Edit") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("drives user role assignment and password change from distinct real fixture actions", async () => {
+	const api = createUsersApi(USERS);
+	const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
+	await act(async () => (buttonByText(container, "Roles") as HTMLButtonElement).click());
+	const roles = container.querySelector<HTMLTextAreaElement>("#field-roles");
+	expect(roles?.value).toBe("admin");
+	await act(async () => setFieldValue(roles as HTMLTextAreaElement, "viewer, editor"));
+	await act(async () => (buttonByText(container, "Save roles") as HTMLButtonElement).click());
+	expect(api.calls.find((call) => call.method === "PATCH")?.body).toEqual({
+	  roles: "viewer, editor",
+	});
+
+	await act(async () => (buttonByText(container, "Password") as HTMLButtonElement).click());
+	const password = fieldInput(container, "password") as HTMLInputElement;
+	expect(password.type).toBe("password");
+	await act(async () => setFieldValue(password, "  exact-password  "));
+	await act(async () => (buttonByText(container, "Change password") as HTMLButtonElement).click());
+	const patchCalls = api.calls.filter((call) => call.method === "PATCH");
+	expect(patchCalls.at(-1)?.body).toEqual({ password: "  exact-password  " });
+  });
+
   it("the user and role CRUD action ids exist only in fixtures, never in renderer source", async () => {
     const fixtureTexts = ["users", "roles"].map((id) =>
       readFileSync(resolve(FIXTURE_DIR, `${id}.json`), "utf8"),
@@ -563,25 +712,25 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
     const actionIds = [
       "createUser",
       "updateUser",
+	  "updateUserRoles",
+	  "changeUserPassword",
       "deleteUser",
       "createRole",
       "updateRole",
       "deleteRole",
       "openCreate",
       "openEdit",
+	  "openRoles",
+	  "openPassword",
     ];
     for (const id of actionIds) {
       expect(fixtureTexts.some((fixtureText) => fixtureText.includes(id)), `${id} declared by a fixture`).toBe(true);
     }
-    // The resource client (records.ts) is the generic reusable transport for any
-    // page, so its function names legitimately echo the resource verbs; the
-    // page-*rendering* source must not hardcode them.
     const srcFiles = readDirRecursive(WEB_SRC_DIR)
       .filter(
         (file) =>
           (file.endsWith(".ts") || file.endsWith(".tsx")) && !file.includes(".test."),
-      )
-      .filter((file) => !file.endsWith("records.ts"));
+      );
     for (const file of srcFiles) {
       const content = readFileSync(file, "utf8");
       for (const id of actionIds) {

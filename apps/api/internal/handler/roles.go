@@ -2,14 +2,16 @@
 // I-011-001 §3): mounted at /api/roles with roles.read / roles.write,
 // ROLE_NOT_FOUND, create/patch fields key/name, and operation-log events. The
 // entity maps the system/in-use/invalid-key store sentinels to the frozen
-// resource-specific error codes. Grants (role_permissions/role_menu_items) are
-// NOT managed by this resource (I-011-001 §3.4).
+// resource-specific error codes. User-created role grants are managed through
+// the same resource as the bounded I-011-004 §4 extension.
 package handler
 
 import (
 	"context"
 	"errors"
 	"log/slog"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -26,6 +28,7 @@ func rolesResource(st *store.Store) Resource {
 		Entity:          &rolesEntity{st: st},
 		CreateFields:    []string{"key", "name"},
 		PatchFields:     []string{"name"},
+		JSONFields:      []string{"permissions", "menuItems"},
 		PermissionRead:  "roles.read",
 		PermissionWrite: "roles.write",
 		NotFoundCode:    "ROLE_NOT_FOUND",
@@ -45,12 +48,17 @@ type rolesEntity struct {
 // boolean; timestamps use the frozen 3-digit-millisecond shape (I-011-001 §3.0).
 func roleToMap(r store.Role) map[string]any {
 	return map[string]any{
-		"id":        r.ID,
-		"key":       r.Key,
-		"name":      r.Name,
-		"system":    r.System,
-		"createdAt": r.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt": r.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"id":            r.ID,
+		"key":           r.Key,
+		"name":          r.Name,
+		"system":        r.System,
+		"permissions":   r.Permissions,
+		"menuItems":     r.MenuItems,
+		"assignedUsers": r.AssignedUsers,
+		"editable":      !r.System,
+		"deletable":     !r.System && r.AssignedUsers == 0,
+		"createdAt":     r.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt":     r.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 }
 
@@ -76,16 +84,79 @@ func (e *rolesEntity) Get(id string) (map[string]any, error) {
 	return roleToMap(*r), nil
 }
 
-func (e *rolesEntity) Create(body map[string]any, _ string, now time.Time, _ account.User) (map[string]any, error) {
-	r, err := e.st.CreateRole(stringField(body, "key"), stringField(body, "name"), now)
+func (e *rolesEntity) Create(body map[string]any, _ string, now time.Time, actor account.User) (map[string]any, error) {
+	permissions, err := stringArrayFromBody(body, "permissions", "INVALID_PERMISSION_REF")
+	if err != nil {
+		return nil, err
+	}
+	menuItems, err := stringArrayFromBody(body, "menuItems", "INVALID_MENU_ITEM_REF")
+	if err != nil {
+		return nil, err
+	}
+	if _, hasPermissions := body["permissions"]; hasPermissions {
+		if !slices.Contains(actor.Roles, "admin") {
+			return nil, grantForbidden("only an admin may manage role grants")
+		}
+		if err := e.st.ValidatePermissionKeys(permissions); err != nil {
+			return nil, mapRoleStoreError(err)
+		}
+		if err := authorizeGrantChange(actor, permissions); err != nil {
+			return nil, err
+		}
+	}
+	if _, hasMenus := body["menuItems"]; hasMenus {
+		if !slices.Contains(actor.Roles, "admin") {
+			return nil, grantForbidden("only an admin may manage role menu grants")
+		}
+		if err := e.st.ValidateMenuItemIDs(menuItems); err != nil {
+			return nil, mapRoleStoreError(err)
+		}
+	}
+	r, err := e.st.CreateRoleWithGrants(
+		stringField(body, "key"), stringField(body, "name"), permissions, menuItems, now,
+	)
 	if err != nil {
 		return nil, mapRoleStoreError(err)
 	}
 	return roleToMap(*r), nil
 }
 
-func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, _ account.User) (map[string]any, error) {
-	r, err := e.st.UpdateRole(id, stringField(body, "name"), now)
+func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, actor account.User) (map[string]any, error) {
+	patch := store.RolePatch{}
+	if _, ok := body["name"]; ok {
+		name := stringField(body, "name")
+		patch.Name = &name
+	}
+	if _, ok := body["permissions"]; ok {
+		permissions, err := stringArrayFromBody(body, "permissions", "INVALID_PERMISSION_REF")
+		if err != nil {
+			return nil, err
+		}
+		if !slices.Contains(actor.Roles, "admin") {
+			return nil, grantForbidden("only an admin may manage role grants")
+		}
+		if err := e.st.ValidatePermissionKeys(permissions); err != nil {
+			return nil, mapRoleStoreError(err)
+		}
+		if err := authorizeGrantChange(actor, permissions); err != nil {
+			return nil, err
+		}
+		patch.Permissions = &permissions
+	}
+	if _, ok := body["menuItems"]; ok {
+		menuItems, err := stringArrayFromBody(body, "menuItems", "INVALID_MENU_ITEM_REF")
+		if err != nil {
+			return nil, err
+		}
+		if !slices.Contains(actor.Roles, "admin") {
+			return nil, grantForbidden("only an admin may manage role menu grants")
+		}
+		if err := e.st.ValidateMenuItemIDs(menuItems); err != nil {
+			return nil, mapRoleStoreError(err)
+		}
+		patch.MenuItems = &menuItems
+	}
+	r, err := e.st.UpdateRoleWithGrants(id, patch, now)
 	if err != nil {
 		return nil, mapRoleStoreError(err)
 	}
@@ -94,6 +165,43 @@ func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, _ ac
 
 func (e *rolesEntity) Delete(id string, _ account.User) error {
 	return mapRoleStoreError(e.st.DeleteRole(id))
+}
+
+func stringArrayFromBody(body map[string]any, field, code string) ([]string, error) {
+	v, ok := body[field]
+	if !ok || v == nil {
+		return []string{}, nil
+	}
+	arr, ok := v.([]any)
+	if !ok {
+		return nil, &DomainError{Status: 400, Code: code, Message: field + " must be an array of strings"}
+	}
+	values := make([]string, 0, len(arr))
+	for _, item := range arr {
+		value, ok := item.(string)
+		value = strings.TrimSpace(value)
+		if !ok || value == "" {
+			return nil, &DomainError{Status: 400, Code: code, Message: field + " must contain non-empty strings"}
+		}
+		values = append(values, value)
+	}
+	return values, nil
+}
+
+func grantForbidden(message string) error {
+	return &DomainError{Status: 403, Code: "ROLE_GRANT_FORBIDDEN", Message: message}
+}
+
+func authorizeGrantChange(actor account.User, permissions []string) error {
+	if !slices.Contains(actor.Roles, "admin") {
+		return grantForbidden("only an admin may manage role grants")
+	}
+	for _, permission := range permissions {
+		if !slices.Contains(actor.Permissions, permission) {
+			return grantForbidden("cannot grant a permission the actor does not hold")
+		}
+	}
+	return nil
 }
 
 // mapRoleStoreError maps roles-store domain sentinels to the frozen
@@ -108,6 +216,10 @@ func mapRoleStoreError(err error) error {
 		return &DomainError{Status: 409, Code: "ROLE_SYSTEM", Message: "system roles cannot be modified"}
 	case errors.Is(err, store.ErrInvalidKey):
 		return &DomainError{Status: 400, Code: "INVALID_ROLE_KEY", Message: "invalid role key format"}
+	case errors.Is(err, store.ErrInvalidPermission):
+		return &DomainError{Status: 400, Code: "INVALID_PERMISSION_REF", Message: "permissions contain an unknown key"}
+	case errors.Is(err, store.ErrInvalidMenuItem):
+		return &DomainError{Status: 400, Code: "INVALID_MENU_ITEM_REF", Message: "menuItems contain an unknown id"}
 	default:
 		return err
 	}

@@ -1026,3 +1026,15 @@ A-010/A-011 主要复核 S5 文档事实链、历史 required closure 和既有�
 ### 响应结论
 
 A-012 已被 `/govern` 正式认账并进入 fail-closed 整改门禁，但 **F-001～F-005 仍全部 open**，A-010/A-011 与 A-012 尚未趋同。当前不具备重新关门条件。
+
+## 响应 A-012（self · 编排响应 · 2026-08-04 · GOAL-011 D-006）
+
+- **响应性质**：这是用户完成 P-004 裁决后的第二轮 `/govern` 响应，不是新增 self audit，不产生新的 A 编号或 verdict。
+- **用户裁决**：F-001、F-002、F-004、F-005 按建议走 `fixed`；F-003 选择补齐角色授权/grant 管理路径并走 `fixed`。五项均未选择 residual/overruled。
+- **契约冻结**：[I-011-004-a012-remediation-contract.md](attachments/I-011-004-a012-remediation-contract.md) v0.1.0 已由 D-006 冻结；`I-011-004` 置为 `verified`，解除 F-003 产品边界选择门禁。
+- **状态边界**：闭合路径已确定不等于 finding 已闭合。F-001～F-005 仍为 `required / open`，直到相应代码/Schema/CI 修复、回归证据与限定范围独立 finding-closure 复审齐备；F-006 继续 `recommended / open / non-blocking`。
+- **治理投影**：GOAL-011 维持 `active / 5/5`；GOAL-010、Root、VP-002 均不变。本响应不恢复 `done`，不关闭父级 finding。
+
+### 下一步
+
+按 I-011-004 v0.1.0 逐块实施 F-001～F-005并记录验证收据；完成后请求仅覆盖 A-012 F-001～F-005 的 `/audit` finding-closure 复审。复审结论落盘前仍 fail closed。

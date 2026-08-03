@@ -104,3 +104,19 @@ version: 0.3.0
   - **立即新建 GOAL-012**：finding 仍权威落在 GOAL-011；在用户确认整改结构前，新目标不能替代本目标的响应与关门阻断。
 - **影响**：GOAL-011 → `active / 5/5`；GOAL-010 保持 `active / 3/5`；Root 与 VP-002 均保持 active，既有 Root finding 不在本轮关闭。`goal-tree.md` 同步状态与本响应注记。
 - **后续**：用户确认 A-012 的闭合路径，并对 `I-011-004` 二选一；若选择推荐路径，则先冻结整改契约/测试矩阵，再实施 F-001～F-005，随后请求限定 scope 的 `/audit` finding-closure 复审。F-006 单独保持 recommended，不得因可选卫生项阻断必改整改。
+
+## D-006 · 裁决 A-012 全部 fixed，并选择完整角色授权/grant 管理路径
+
+- **日期**：2026-08-04
+- **状态**：accepted
+- **用户书面裁决**（P-004.2 / P-004.3 / P-005）：A-012 F-001、F-002、F-004、F-005 按编排器建议走 `fixed`；F-003 选择“**补齐角色授权/grant 管理路径**”，同样走 `fixed`。未选择 `accepted-residual` 或 `user-overruled`。
+- **决定**：
+  1. F-001～F-005 的合法闭合路径统一确定为 `fixed`；路径选择已完成，但在实现、回归与限定范围独立复审完成前，五项状态仍为 `open`，不得提前写成已闭合。
+  2. 冻结 [I-011-004-a012-remediation-contract.md](attachments/I-011-004-a012-remediation-contract.md) **v0.1.0**：以 `roles.assign`、操作者权限子集与 admin 保护形成角色委派边界；以密码专用控件/原字节传输、8～72 bytes、改密同事务撤销 refresh token 形成凭据边界；为自定义角色补齐 permission/menu grants 的可验证 CRUD 与有效权限投影；清理活动 CI/生产 transport 的 records 残留；把最后管理员检查与删除放入同一事务并验证受影响行数。
+  3. `I-011-004` → **verified**，只解除 F-003 产品边界与整改方案冻结门禁。I-011-001 v0.2.0 中“grant 管理界面非目标/自定义角色无 grants”的历史冻结条款，在 A-012 整改范围内由 I-011-004 v0.1.0 限定取代；仍不扩展为完整 IAM、SSO/SCIM、复杂策略编排或多租户。
+  4. 前端可为这次修复增加通用、结构化能力（密码字段不 trim、基于行布尔字段禁用动作），并把 `records.ts` 通用 transport 改为资源中性命名；这些是 A-012 修复，不再受 I-011-003 v0.2.0 的历史 S4 零 Renderer diff 断言约束。历史 S4 收据保持不改写。
+  5. F-006 保持 `recommended / open / non-blocking`，不与五项 required 的实施和复审捆绑。
+- **理由**：五项均有明确代码、Schema 或活动流水线落点；其中 F-001/F-002/F-005 是生产安全不变量，F-004 是交付证据真实性，F-003 则决定 users/roles 是否形成可实际使用的授权闭环。直接修复比接受残余风险更符合 VP-002 的生产 Admin 边界。
+- **未选方案**：seed-only 并移除 roles 管理面（用户明确未选）；对任一 finding 采用 residual/overruled（用户明确选择 fixed）；把 grant 路径扩大为完整 IAM（超出本目标，仍为非目标）。
+- **信息门禁**：`I-011-004` verified；F-001～F-005 实施/回归/复审门禁仍 open。GOAL-011 保持 `active / 5/5`，GOAL-010、Root 与 VP-002 状态不变。
+- **后续**：按 I-011-004 v0.1.0 实施 API/store/Schema/Renderer/CI 修复，形成 API/Web/build/E2E/并发与静态洁净度收据；随后请求只覆盖 A-012 F-001～F-005 的 `/audit` finding-closure 复审。

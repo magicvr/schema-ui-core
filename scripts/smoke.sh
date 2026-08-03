@@ -32,7 +32,7 @@ WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:8081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
-SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-8}"
+SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-1}"
 SMOKE_ISOLATION_ID="${SMOKE_ISOLATION_ID:-}"
 SMOKE_DISPOSABLE_CONFIRM="${SMOKE_DISPOSABLE_CONFIRM:-}"
 DISPOSABLE=0
@@ -185,17 +185,17 @@ fi
 if [ "$DISPOSABLE" = "1" ]; then
   check_seed() {
     local expect="$1" detail="$2"
-    local list total has_record
+    local list total has_user
     list="$(curl -fsS --max-time 5 "${WEB_BASE_URL}/api/users?pageSize=100" -H "Authorization: Bearer ${ACCESS_TOKEN}" 2>/dev/null || true)"
     if [ -z "$list" ]; then
       printf 'SM-006=FAIL\n  detail: %s\n' "$detail（列表请求失败）"
       exit 6
     fi
     total="$(json_field "$list" total || true)"
-    has_record=0
+    has_user=0
     printf '%s' "$list" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const items=o.items||[];const hit=items.some(r=>r.id===process.argv[1]||r.username==="admin");process.exit(hit?0:1)}catch(e){process.exit(2)}})' "$SMOKE_SEED_ID"
-    [ "$?" = "0" ] && has_record=1
-    if [ "$total" != "$expect" ] || [ "$has_record" != "1" ]; then
+    [ "$?" = "0" ] && has_user=1
+    if [ "$total" != "$expect" ] || [ "$has_user" != "1" ]; then
       printf 'SM-006=FAIL\n  detail: %s（期望 total=%s 且含 %s/admin，实际 total=%s）\n' "$detail" "$expect" "$SMOKE_SEED_ID" "$total"
       exit 6
     fi
@@ -228,7 +228,7 @@ if [ "$DISPOSABLE" = "1" ]; then
     printf 'SM-006=FAIL\n  detail: 重启后重新登录失败\n'
     exit 4
   fi
-  check_seed "$SMOKE_EXPECTED_SEED_TOTAL" "重启后种子断言失败（重复播种或记录丢失）"
+  check_seed "$SMOKE_EXPECTED_SEED_TOTAL" "重启后种子断言失败（重复播种或用户丢失）"
 
   smoke_line "006" "PASS"
 else

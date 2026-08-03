@@ -14,7 +14,7 @@ import { defineConfig } from "@playwright/test";
 // for local runs without changing the committed default.
 //
 // Each Playwright run gets a fresh SQLite file so seedRBAC is deterministic and
-// parallel browser specs do not fight a developer DB (records retired by 0006).
+// parallel browser specs do not fight a developer DB.
 const webPort = Number(process.env.WEB_PORT || 5173);
 const webOrigin = `http://127.0.0.1:${webPort}`;
 const e2eDbPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-")), "e2e.db");

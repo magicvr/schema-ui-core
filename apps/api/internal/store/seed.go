@@ -46,6 +46,7 @@ func (s *Store) seedRBAC() error {
 		{"perm-users-write", "users.write", "users write gate"},
 		{"perm-roles-read", "roles.read", "roles GET gate"},
 		{"perm-roles-write", "roles.write", "roles write gate"},
+		{"perm-roles-assign", "roles.assign", "user role assignment gate"},
 	} {
 		if _, err := tx.Exec(
 			`INSERT INTO permissions (id, key, description, created_at, updated_at)
@@ -74,7 +75,7 @@ func (s *Store) seedRBAC() error {
 
 	// Grants: admin read+write (+menus), editor read, viewer read (read-only).
 	// GOAL-011: admin holds users/roles read+write + both menus; editor/viewer read.
-	for _, p := range []string{"perm-users-read", "perm-users-write", "perm-roles-read", "perm-roles-write"} {
+	for _, p := range []string{"perm-users-read", "perm-users-write", "perm-roles-read", "perm-roles-write", "perm-roles-assign"} {
 		if err := linkPermission(tx, "admin", p); err != nil {
 			return err
 		}
