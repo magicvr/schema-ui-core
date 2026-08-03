@@ -5,6 +5,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -98,6 +99,17 @@ func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 
 // Close releases the underlying database handle.
 func (s *Store) Close() error { return s.db.Close() }
+
+// Ping verifies the SQLite connection with a trivial read. Used by the
+// readiness probe (A-002 F-002-006) so a dead or unmigrated database flips
+// the container health gate instead of reporting healthy.
+func (s *Store) Ping(ctx context.Context) error {
+	var one int
+	if err := s.db.QueryRowContext(ctx, "SELECT 1").Scan(&one); err != nil {
+		return fmt.Errorf("sqlite ping: %w", err)
+	}
+	return nil
+}
 
 // seedAdmin ensures the bootstrap admin user (with roles admin + editor) and its
 // normalized role relations exist. It is idempotent: it never overwrites the

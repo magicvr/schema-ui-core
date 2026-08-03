@@ -52,3 +52,13 @@ version: 0.1.0
 - **A-002**（`$audit` · close-out · conditional）确认 S1～S3 成立、F-002-002/003 代码关闭证据充分；开 **F-001（required / medium）**——Root A-002 正式意见索引仍写「F-002-001~003 仍 open」，与关闭证据表矛盾；**R-001（recommended / low）**——补可复现 revision 身份。
 - **响应（用户裁决走 fixed）**：Root `03-audit.md` 正式意见索引 A-002 行已同步为单义现状（F-002-002/003 `fixed`、F-002-001 `open`、recommended 非阻断）；**F-001 → `fixed`**（索引 ↔ 关闭证据表 ↔ goal-tree 注记三处一致）。**R-001 → handled**（HEAD `5e08489` + 9 个未提交修改已记录；不冒充 clean revision/CI；Root/VP-002 关门前须先 commit）。
 - A-002 与 A-001（self · pass）在 S4 结论上趋同，**GOAL-009 维持 `done / 4/4`**；本目标 scope 无开放 required。Root F-002-001 仍 open（GOAL-010 载体），Root 与 VP-002 关门继续阻断。
+
+## 2026-08-03 · S5 已实施（可选加分 · F-002-004~006，不进进度分母）
+
+用户书面裁决「实施 GOAL-009 S5」→ 三项 recommended 全部纳入：
+
+- **F-002-004（登录页 seed 文案环境门控）**：`apps/web/src/app/LoginPage.tsx` 以 `import.meta.env.DEV` 门控——仅 development 构建显示 `Local development seed: admin / admin`，生产构建隐藏；测试 2 条（dev 显示 / prod 隐藏，`LoginPage.test.tsx` 5/5）。
+- **F-002-005（生产 JWT secret 最小长度/熵校验）**：`apps/api/internal/config/config.go` `ValidateProd` 在非 development 强制 `AUTH_JWT_SECRET` ≥ 32 字符且同时含字母与数字（`minJWTSecretLen` + `containsLettersAndDigits`）；development 保留低门槛；`config_test.go` 新增反例 4 条（短 secret、全字母、全数字 → 报错；development 低门槛 → 通过）。
+- **F-002-006（liveness/readiness 区分）**：`apps/api/internal/store/store.go` 新增 `Ping(ctx)`（`SELECT 1`）；`handler/health.go` 新增 `GET /readyz`（readiness：liveness + SQLite 检查，失败 → `503 {"status":"unavailable"}`）；`/healthz` 保持纯 liveness；`compose.yaml` api `healthcheck` 切至 `/readyz`（`service_healthy` 判据）；`health_test.go` 新增 2 条（就绪 200 / 关闭 store 故障注入 → 503）；`apps/api/README.md` 端点表补 `/readyz` 行并注明语义。
+- 证据：web `vitest run` **466/466**（464 + LoginPage 2 新增）、`tsc -b` + `vite build` 干净；`apps/api` `go test ./... -count=1` 全绿 + `go vet ./...` 干净（新增 config/health/store 用例）。
+- S5 不进进度分母：GOAL-009 保持 `done / 4/4`。Root A-002 关闭证据表 recommended 行更新为已实施（2026-08-03）；F-002-001 仍 open。

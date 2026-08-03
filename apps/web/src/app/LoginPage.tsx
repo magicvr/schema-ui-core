@@ -8,12 +8,16 @@ import { Button } from "@/components/ui/button";
  * R2 login surface (GOAL-005): shown when the session is unauthenticated. On a
  * successful submit the AuthProvider flips to authenticated and the shell
  * renders. Fail-closed: any non-success surfaces a stable error message.
+ *
+ * A-002 F-002-004 (GOAL-009 S5): the local seed credential hint only renders in
+ * development builds; production must not advertise `admin / admin`.
  */
 export function LoginPage({ onLogin }: { onLogin: (username: string, password: string) => Promise<void> }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const showSeedHint = import.meta.env.DEV;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -91,9 +95,11 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
             {submitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Local development seed: <code className="font-mono">admin / admin</code>
-        </p>
+        {showSeedHint ? (
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Local development seed: <code className="font-mono">admin / admin</code>
+          </p>
+        ) : null}
       </div>
     </div>
   );

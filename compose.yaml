@@ -28,7 +28,9 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      # Readiness probe (A-002 F-002-006): liveness + SQLite ping, so a dead or
+      # unmigrated database flips the gate instead of reporting healthy.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/readyz"]
       interval: 5s
       timeout: 3s
       retries: 12

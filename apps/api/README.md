@@ -76,14 +76,16 @@ TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization:
 # -> {"user":{...},"features":{...}}
 ```
 
-- `GET /healthz` 公开返回 `200 {"status":"ok",...}`，作为容器探针与启动验证判据。
+- `GET /healthz` 公开返回 `200 {"status":"ok",...}`，作为 liveness 探活与启动验证判据（不访问数据库）。
+- `GET /readyz` 公开返回 `200 {"status":"ok",...}`，为 readiness 就绪探针：在 liveness 之上执行轻量 SQLite `SELECT 1`，数据库不可读时返回 `503 {"status":"unavailable",...}`（A-002 F-002-006）；Compose 以它作为 `service_healthy`。
 - API 优雅停机：`SIGINT`/`SIGTERM` → 10s 宽限内 `Shutdown`。
 
 ## 端点
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
-| GET | `/healthz` | 公开 | 探活 |
+| GET | `/healthz` | 公开 | 探活（liveness） |
+| GET | `/readyz` | 公开 | 就绪（readiness，含 SQLite 检查；容器探针） |
 | POST | `/api/auth/login` | 公开 | 校验用户名/密码，签发 access + refresh |
 | POST | `/api/auth/refresh` | 公开（需有效 refresh） | 轮换 refresh，签发新 access + refresh |
 | POST | `/api/auth/logout` | 公开 | 撤销 refresh（幂等） |

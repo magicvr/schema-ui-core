@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.45.0
+version: 0.46.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -72,6 +72,8 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-009 已关门、Root F-002-002/003 已闭合（2026-08-03）**：**A-001（self · close-out · pass）** 复核 S1～S4 证据链（门禁/清理代码 + 6 条新增回归 + 464/464 + build + go test/vet 基线）成立，无本区开放 required。**GOAL-009 已置 `done`（4/4）**；Root 03-audit A-002 关闭证据表 **F-002-002/003 → `fixed`**（证据 GOAL-009 S1/S2 + A-001）。**F-002-001 仍 open**（GOAL-010 实施中）——Root 关门与 VP-002 关门在 A-002 全部 required 合法闭合前继续阻断；Root 保持 `active / 5/5`。独立 `/audit` finding-closure 复审为可选加固（未执行，self 关门审计已满足检查清单）。
 
 > **GOAL-009 A-002 已响应、F-001 已闭合（2026-08-03）**：A-002（independent · close-out · conditional）复核 S1～S3 成立、F-002-002/003 关闭证据充分；**F-001（required / medium）→ fixed**——Root 03-audit 正式意见索引已同步（F-002-002/003 `fixed`、F-002-001 `open`、recommended 非阻断），索引 ↔ 关闭证据表 ↔ 本树注记三处一致；**R-001（recommended / low）→ handled**（HEAD `5e08489` + 9 个未提交修改；不冒充 clean revision/CI，Root/VP-002 关门前须 commit）。GOAL-009 维持 **`done / 4/4`**（A-001 self pass 与 A-002 conditional 经 F-001 闭合后趋同，本 scope 无开放 required）。Root F-002-001 仍 open（GOAL-010 实施中）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
+
+> **GOAL-009 S5 已实施（2026-08-03 · 可选加分，用户裁决纳入）**：F-002-004（`LoginPage` seed 文案 `import.meta.env.DEV` 门控，dev 显/prod 隐 + 2 测试）、F-002-005（`config.ValidateProd` 非 development 强制 JWT secret ≥32 字符 + 字母数字混合，4 反例测试）、F-002-006（`store.Ping` + `GET /readyz` readiness（liveness + SQLite 检查，故障 503）+ compose healthcheck 切 `/readyz` + README 端点表，2 故障注入测试）。证据：web `vitest run` **466/466**、`tsc -b`/`vite build` 干净；api `go test ./...` 全绿 + `go vet` 干净。**S5 不进进度分母——GOAL-009 保持 `done / 4/4`**；Root A-002 recommended F-002-004~006 已实施（非 required 闭合）。F-002-001 仍 open（GOAL-010 实施中）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
 
 > **GOAL-008 A-001 已响应（2026-08-02）**：A-001（independent · conditional）F-001 → **fixed**——GOAL-008 D-002 + D-001 修订 + S2 对齐：**Docker Compose 为 R5 必须交付和验收的第二启动路径**（S2 核心检查点、计入进度分母，非 S6 式可选加分项）；fork 用户可选本地双进程或 Compose；完整生产拓扑/CI-CD 仍非目标。R-001 → handled（I-005 附件 v0.2.1 时态清理）；R-002 → handled（`I-008-001/002` 信息表补最低收集清单）。`GOAL-008` 保持 `active / 0/5`；`I-008-001/002/003` 仍 open；Root `4/5`。
 

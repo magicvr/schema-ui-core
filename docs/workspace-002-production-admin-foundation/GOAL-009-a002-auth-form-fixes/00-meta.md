@@ -5,7 +5,7 @@ status: done
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.5.0
+version: 0.6.0
 progress: 4/4
 ---
 
@@ -22,7 +22,7 @@ progress: 4/4
 - [x] **S3 · 回归与构建证据**：web `vitest run` 全绿（含新增用例）、`tsc -b` 与生产构建干净；`apps/api` `go test ./...` 全绿（若涉及）。
 - [x] **S4 · 关门审计与 Root finding 关闭**：阶段/关门审计（self + 视需要 `/audit` finding-closure）复核 F-002-002/003 关闭证据，Root 03-audit 对应 finding 按 `fixed` 合法闭合。
 
-> 可选加分 **S5 · recommended 顺带（F-002-004~006，不进进度分母）**：登录页 seed 文案按环境门控（F-002-004）；生产 JWT secret 最小长度/熵校验（F-002-005）；`/healthz` 增加轻量 SQLite/迁移检查或区分 liveness/readiness（F-002-006）。是否纳入由用户决定。
+> 可选加分 **S5 · recommended 顺带（F-002-004~006，不进进度分母）**：登录页 seed 文案按环境门控（F-002-004）；生产 JWT secret 最小长度/熵校验（F-002-005）；`/healthz` 增加轻量 SQLite/迁移检查或区分 liveness/readiness（F-002-006）。是否纳入由用户决定。**2026-08-03 用户裁决纳入并已实施（三项全部完成，见 02-execution；目标保持 `done / 4/4`，S5 不进进度分母）**。
 
 ## 派生进度
 

@@ -3,8 +3,9 @@ package config
 import "testing"
 
 // TestValidateProd covers the production guard added in response to GOAL-008
-// A-005 F-002: the static dev session fallback is a local-development-only
-// feature and must fail startup in any non-development environment.
+// A-005 F-002 (dev-session fallback) and A-002 F-002-005 (JWT secret minimum
+// length/entropy): both are local-development-only or non-negotiable settings
+// that must fail startup in any non-development environment.
 func TestValidateProd(t *testing.T) {
 	t.Run("development may enable dev session", func(t *testing.T) {
 		c := &Config{AppEnv: "development", AuthDevSessionEnabled: true}
@@ -21,7 +22,7 @@ func TestValidateProd(t *testing.T) {
 	})
 
 	t.Run("production without dev session passes", func(t *testing.T) {
-		c := &Config{AppEnv: "production", AuthDevSessionEnabled: false}
+		c := &Config{AppEnv: "production", AuthDevSessionEnabled: false, AuthJWTSecret: strongSecret}
 		if err := c.ValidateProd(); err != nil {
 			t.Fatalf("production without dev session should pass, got: %v", err)
 		}
@@ -33,4 +34,43 @@ func TestValidateProd(t *testing.T) {
 			t.Fatal("staging + dev session must be a startup error")
 		}
 	})
+
+	t.Run("production with a short JWT secret fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "production", AuthDevSessionEnabled: false, AuthJWTSecret: "short-secret"}
+		if err := c.ValidateProd(); err == nil {
+			t.Fatal("production with a short AUTH_JWT_SECRET must be a startup error")
+		}
+	})
+
+	t.Run("production with an all-letter JWT secret fails closed", func(t *testing.T) {
+		c := &Config{
+			AppEnv:               "production",
+			AuthDevSessionEnabled: false,
+			AuthJWTSecret:         "abcdefghijklmnopqrstuvwxyzabcdefghij",
+		}
+		if err := c.ValidateProd(); err == nil {
+			t.Fatal("production with an all-letter AUTH_JWT_SECRET must be a startup error")
+		}
+	})
+
+	t.Run("production with an all-digit JWT secret fails closed", func(t *testing.T) {
+		c := &Config{
+			AppEnv:               "production",
+			AuthDevSessionEnabled: false,
+			AuthJWTSecret:         "12345678901234567890123456789012",
+		}
+		if err := c.ValidateProd(); err == nil {
+			t.Fatal("production with an all-digit AUTH_JWT_SECRET must be a startup error")
+		}
+	})
+
+	t.Run("development keeps the low JWT secret bar", func(t *testing.T) {
+		c := &Config{AppEnv: "development", AuthJWTSecret: "dev"}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("development should keep the low bar, got: %v", err)
+		}
+	})
 }
+
+// strongSecret satisfies the production AUTH_JWT_SECRET rule (≥32 chars, mixed).
+const strongSecret = "a9k2m4n6p8q0r2s4t6u8v0w2x4y6z8a9b1c3d5"

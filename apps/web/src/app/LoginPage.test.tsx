@@ -86,4 +86,29 @@ describe("LoginPage", () => {
     fill(container, "#password", "admin");
     expect(button?.disabled).toBe(false);
   });
+
+  it("shows the local seed hint in development builds (F-002-004)", async () => {
+    const env = import.meta.env as { DEV: boolean };
+    const dev = env.DEV;
+    env.DEV = true;
+    try {
+      const container = await renderLogin(vi.fn());
+      expect(container.textContent).toContain("admin / admin");
+    } finally {
+      env.DEV = dev;
+    }
+  });
+
+  it("hides the local seed hint in production builds (F-002-004)", async () => {
+    const env = import.meta.env as { DEV: boolean };
+    const dev = env.DEV;
+    env.DEV = false;
+    try {
+      const container = await renderLogin(vi.fn());
+      expect(container.textContent).not.toContain("admin / admin");
+      expect(container.textContent).not.toContain("Local development seed");
+    } finally {
+      env.DEV = dev;
+    }
+  });
 });

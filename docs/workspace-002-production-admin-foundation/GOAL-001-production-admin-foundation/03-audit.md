@@ -140,7 +140,7 @@ version: 0.3.1
 | F-002-001（Renderer 硬编码 records 实体） | open（`fixed` 路径已定，载体 GOAL-010） | [GOAL-010-a002-schema-adapter](../GOAL-010-a002-schema-adapter/00-meta.md) S1～S5；实施前 required `I-010-001`/`I-010-002` |
 | F-002-002（表单校验错误不阻断提交） | **fixed（2026-08-03）** | [GOAL-009 S1](../GOAL-009-a002-auth-form-fixes/02-execution.md)（`render.tsx` 门禁 + 3 回归）+ [A-001 self close-out](../GOAL-009-a002-auth-form-fixes/03-audit.md)（pass） |
 | F-002-003（认证失效状态不清理） | **fixed（2026-08-03）** | [GOAL-009 S2](../GOAL-009-a002-auth-form-fixes/02-execution.md)（`auth-client.ts` 清理 + 3 回归）+ [A-001 self close-out](../GOAL-009-a002-auth-form-fixes/03-audit.md)（pass） |
-| F-002-004~006（recommended） | open（非阻断；GOAL-009 可选加分 S5） | 待用户决定是否纳入 |
+| F-002-004~006（recommended） | **已实施（2026-08-03 · GOAL-009 S5 加分，非 required 闭合）** | [GOAL-009 S5](../GOAL-009-a002-auth-form-fixes/02-execution.md)：seed 文案环境门控、生产 JWT secret 校验、`/readyz` readiness |
 
 ### 仍开放项
 

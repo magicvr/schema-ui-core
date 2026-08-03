@@ -53,11 +53,54 @@ func Load() *Config {
 // session substitutes a high-privilege static identity for unauthenticated
 // requests, so it may only ever run in local development; any other APP_ENV
 // with AUTH_DEV_SESSION_ENABLED=true is a hard startup error, not a warning.
+//
+// A-002 F-002-005 (GOAL-009 S5): non-development environments additionally
+// require a JWT signing secret with a minimum length and both letters and
+// digits, so a short or guessable HS256 key cannot silently start production.
+// Development keeps the explicit low bar (documented insecure dev key).
 func (c *Config) ValidateProd() error {
-	if c.AppEnv != "development" && c.AuthDevSessionEnabled {
+	if c.AppEnv == "development" {
+		return nil
+	}
+	if c.AuthDevSessionEnabled {
 		return fmt.Errorf("AUTH_DEV_SESSION_ENABLED must be false when APP_ENV=%q", c.AppEnv)
 	}
+	if len(c.AuthJWTSecret) < minJWTSecretLen {
+		return fmt.Errorf(
+			"AUTH_JWT_SECRET must be at least %d characters when APP_ENV=%q",
+			minJWTSecretLen, c.AppEnv,
+		)
+	}
+	if !containsLettersAndDigits(c.AuthJWTSecret) {
+		return fmt.Errorf(
+			"AUTH_JWT_SECRET must contain both letters and digits when APP_ENV=%q",
+			c.AppEnv,
+		)
+	}
 	return nil
+}
+
+// minJWTSecretLen is the minimum HS256 signing-key length enforced outside
+// development (A-002 F-002-005).
+const minJWTSecretLen = 32
+
+// containsLettersAndDigits rejects all-digit / all-letter / single-class keys
+// (weak entropy) while keeping the rule simple and checkable.
+func containsLettersAndDigits(s string) bool {
+	hasLetter := false
+	hasDigit := false
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+			hasLetter = true
+		}
+		if r >= '0' && r <= '9' {
+			hasDigit = true
+		}
+		if hasLetter && hasDigit {
+			return true
+		}
+	}
+	return false
 }
 
 // LogLevel maps LOG_LEVEL to slog.
