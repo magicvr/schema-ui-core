@@ -3,24 +3,28 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 // authHandler serves the R2 auth endpoints (GOAL-005): login, refresh and
 // logout. Login/refresh are public; the access/refresh pair returned is consumed
-// by the Web client (access in memory, refresh in localStorage, D-002).
+// by the Web client (access in memory, refresh in localStorage, D-002). The
+// store is used for the R5 S6 operation log (auth events).
 type authHandler struct {
 	a   *auth.Authenticator
+	st  *store.Store
 	now func() time.Time
 }
 
-func authsHandler(mux *http.ServeMux, a *auth.Authenticator) {
-	h := &authHandler{a: a, now: time.Now}
+func authsHandler(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
+	h := &authHandler{a: a, st: st, now: time.Now}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
 	mux.HandleFunc("POST /api/auth/logout", h.logout())
@@ -63,6 +67,7 @@ func (h *authHandler) login() http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
 		}
+		h.logOperation(store.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -85,11 +90,13 @@ func (h *authHandler) refresh() http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
 			return
 		}
+		h.authEvent(store.EventAuthRefresh, user.ID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
 
-// logout revokes the presented refresh token (idempotent).
+// logout revokes the presented refresh token (idempotent) and records the
+// auth.logout operation for the token's owner (I-008-003 §2/§5).
 func (h *authHandler) logout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body tokenRequest
@@ -98,10 +105,48 @@ func (h *authHandler) logout() http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
 			return
 		}
-		if err := h.a.Logout(body.RefreshToken, h.now().UTC()); err != nil {
+		userID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
+		if err != nil {
 			writeError(w, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
 			return
 		}
+		if userID != "" {
+			h.authEvent(store.EventAuthLogout, userID)
+		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// authEvent records an auth operation-log event with the frozen username detail
+// (I-008-003 §3: detail = {"username":"<用户名>"}). The account snapshot from
+// auth does not carry the login username, so it is resolved from the store;
+// best-effort: an unresolvable actor still logs with the actor id and a
+// service-log error, never blocking the business response (§5).
+func (h *authHandler) authEvent(event, userID string) {
+	u, err := h.st.UserByID(userID)
+	if err != nil {
+		slog.Error("operation log auth event: resolve user", "event", event, "user_id", userID, "err", err)
+		h.logOperation(event, userID, "", "")
+		return
+	}
+	h.logOperation(event, u.ID, u.Name, `{"username":`+jsonQuote(u.Username)+`}`)
+}
+
+// logOperation appends one operation-log row (R5 S6 optional bonus checkpoint,
+// I-008-003 §5). Best-effort: a logging failure is logged to the service log
+// and never changes the business response.
+func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
+	op := store.Operation{
+		ID:        newOperationID(),
+		Event:     event,
+		ActorID:   actorID,
+		ActorName: actorName,
+		CreatedAt: time.Now().UTC(),
+	}
+	if detail != "" {
+		op.Detail = &detail
+	}
+	if err := h.st.RecordOperation(op); err != nil {
+		slog.Error("operation log write failed", "event", event, "err", err)
 	}
 }

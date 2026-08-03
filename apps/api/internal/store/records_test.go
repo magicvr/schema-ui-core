@@ -320,13 +320,13 @@ func TestMigrateExistingV2ToV3(t *testing.T) {
 		t.Fatal("pre-v0003 snapshot must not already contain the records table")
 	}
 
-	// T-DB-02 · ledger is {1,2,3}; existing identity and RBAC data unchanged.
+	// T-DB-02 · ledger is {1,2,3,4}; existing identity and RBAC data unchanged.
 	applied, err := st.appliedMigrations()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 3 || applied[2].version != 3 || applied[2].name != "records_persist" {
-		t.Fatalf("applied = %+v, want 3 = records_persist", applied)
+	if len(applied) != 4 || applied[2].version != 3 || applied[2].name != "records_persist" || applied[3].version != 4 || applied[3].name != "operation_log" {
+		t.Fatalf("applied = %+v, want 4 = records_persist + operation_log", applied)
 	}
 	u, err := st.UserByUsername("admin")
 	if err != nil {

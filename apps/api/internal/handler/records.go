@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strconv"
@@ -23,7 +25,7 @@ const (
 	maxRecordBodyBytes = 4 << 10
 	maxPageSize        = 100
 	// recordIDRetries bounds PK-collision retries before INTERNAL when the
-	// crypto/rand id collides (I-007-001 §2); with 64 random bits this never
+	// crypto/rand id collides (I-007-001 搂2); with 64 random bits this never
 	// triggers in practice.
 	recordIDRetries = 3
 )
@@ -41,7 +43,7 @@ type record struct {
 // updatedAt is a UTC timestamp that JSON-marshals as RFC3339 with fixed 3-digit
 // milliseconds ("2006-01-02T15:04:05.000Z07:00", D-004 / I-007-001 v0.2.0). Go's
 // default time.Time encoding trims trailing zeros, which would break the frozen
-// "含毫秒" shape.
+// "鍚绉? shape.
 type updatedAt struct {
 	time.Time
 }
@@ -61,8 +63,8 @@ type recordList struct {
 // recordHandler serves the R4 records CRUD API backed by the SQLite repository
 // (GOAL-007 S3). All routes go through the request-identity middleware
 // (GOAL-006 S4) and a permission gate: reads require `records.read`, writes
-// require `records.write`. Anonymous → 401, authenticated without the
-// permission → 403. There is no in-process slice fallback (I-007-002 §5 /
+// require `records.write`. Anonymous 鈫?401, authenticated without the
+// permission 鈫?403. There is no in-process slice fallback (I-007-002 搂5 /
 // T-DB-09).
 type recordHandler struct {
 	st *store.Store
@@ -92,8 +94,7 @@ func (h *recordHandler) routes(mux *http.ServeMux, a *auth.Authenticator) {
 
 // requirePermission enforces fail-closed authorization (GOAL-006 S4): the
 // request identity must be present and hold the given permission key, resolved
-// from the persisted role-permission relations at identity load. Anonymous →
-// 401; authenticated without the permission → 403.
+// from the persisted role-permission relations at identity load. Anonymous 鈫?// 401; authenticated without the permission 鈫?403.
 func requirePermission(w http.ResponseWriter, ctx context.Context, permission string) (account.User, bool) {
 	user, ok := auth.IdentityFrom(ctx)
 	if !ok {
@@ -168,10 +169,11 @@ func (h *recordHandler) list() http.Handler {
 }
 
 // create serves POST /api/records (records.write): 201 + the full record with a
-// server-generated id and updatedAt (I-007-001 §3.2).
+// server-generated id and updatedAt (I-007-001 搂3.2).
 func (h *recordHandler) create() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
+		user, ok := requirePermission(w, r.Context(), "records.write")
+		if !ok {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxRecordBodyBytes)
@@ -208,12 +210,13 @@ func (h *recordHandler) create() http.Handler {
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not create record")
 			return
 		}
+		h.logOperation(store.EventRecordCreate, user, &rec.ID, `{"name":`+jsonQuote(rec.Name)+`}`, rec.UpdatedAt)
 		writeJSON(w, http.StatusCreated, toRecord(*rec))
 	})
 }
 
 // createFieldError reports which create field failed and why; the handler maps
-// it to INVALID_CREATE_FIELD (I-007-001 §3.2).
+// it to INVALID_CREATE_FIELD (I-007-001 搂3.2).
 type createFieldError struct {
 	field  string
 	reason string
@@ -222,9 +225,8 @@ type createFieldError struct {
 func (e createFieldError) Error() string { return e.field + " must " + e.reason }
 
 // decodeCreateBody parses the POST /api/records body. A body that is not a JSON
-// object (or is truncated/oversized) returns a plain error → INVALID_CREATE_BODY;
-// a missing, non-string or blank-trimmed field returns createFieldError →
-// INVALID_CREATE_FIELD. Unknown keys are ignored (same posture as PATCH).
+// object (or is truncated/oversized) returns a plain error 鈫?INVALID_CREATE_BODY;
+// a missing, non-string or blank-trimmed field returns createFieldError 鈫?// INVALID_CREATE_FIELD. Unknown keys are ignored (same posture as PATCH).
 func decodeCreateBody(r *http.Request) (name, status, owner string, err error) {
 	var raw map[string]json.RawMessage
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
@@ -259,7 +261,7 @@ func createStringField(raw map[string]json.RawMessage, key string) (string, erro
 }
 
 // newRecordID returns "rec-" + 16 lowercase hex chars (8 bytes of crypto/rand),
-// the frozen create id format (I-007-001 §2).
+// the frozen create id format (I-007-001 搂2).
 func newRecordID() (string, error) {
 	var b [8]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -290,7 +292,8 @@ func (h *recordHandler) detail() http.Handler {
 // update serves PATCH /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) update() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
+		user, ok := requirePermission(w, r.Context(), "records.write")
+		if !ok {
 			return
 		}
 		id := r.PathValue("id")
@@ -317,6 +320,7 @@ func (h *recordHandler) update() http.Handler {
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not update record")
 			return
 		}
+		h.logOperation(store.EventRecordUpdate, user, &rec.ID, `{"name":`+jsonQuote(rec.Name)+`}`, rec.UpdatedAt)
 		writeJSON(w, http.StatusOK, toRecord(*rec))
 	})
 }
@@ -324,10 +328,12 @@ func (h *recordHandler) update() http.Handler {
 // delete serves DELETE /api/records/{id} for the D-ACT edit lifecycle.
 func (h *recordHandler) delete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), "records.write"); !ok {
+		user, ok := requirePermission(w, r.Context(), "records.write")
+		if !ok {
 			return
 		}
-		if err := h.st.DeleteRecord(r.PathValue("id")); err != nil {
+		id := r.PathValue("id")
+		if err := h.st.DeleteRecord(id); err != nil {
 			if errors.Is(err, store.ErrNotFound) {
 				writeError(w, http.StatusNotFound, "RECORD_NOT_FOUND", "no record with that id")
 				return
@@ -335,6 +341,7 @@ func (h *recordHandler) delete() http.Handler {
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not delete record")
 			return
 		}
+		h.logOperation(store.EventRecordDelete, user, &id, "", time.Now().UTC())
 		w.WriteHeader(http.StatusNoContent)
 	})
 }
@@ -349,6 +356,46 @@ func toRecord(r store.Record) record {
 		Owner:     r.Owner,
 		UpdatedAt: updatedAt{r.UpdatedAt},
 	}
+}
+
+// logOperation appends one operation-log row (R5 S6 optional bonus checkpoint,
+// I-008-003 搂5). It is best-effort: a logging failure is recorded to the
+// service log and never turns a successful business operation into a failure.
+func (h *recordHandler) logOperation(event string, user account.User, recordID *string, detail string, at time.Time) {
+	op := store.Operation{
+		ID:        newOperationID(),
+		Event:     event,
+		ActorID:   user.ID,
+		ActorName: user.Name,
+		CreatedAt: at,
+	}
+	if recordID != nil {
+		op.RecordID = recordID
+	}
+	if detail != "" {
+		op.Detail = &detail
+	}
+	if err := h.st.RecordOperation(op); err != nil {
+		slog.Error("operation log write failed", "event", event, "err", err)
+	}
+}
+
+// newOperationID returns a random 128-bit hex id for operation log rows.
+func newOperationID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// crypto/rand failure is effectively fatal; fall back to a timestamp id
+		// so logging never wedges a successful request (best-effort contract).
+		return fmt.Sprintf("op-%d", time.Now().UnixNano())
+	}
+	return "op-" + hex.EncodeToString(b[:])
+}
+
+// jsonQuote returns s as a JSON string literal (used for operation log detail
+// summaries; never used for secrets, which are excluded by I-008-003 §3).
+func jsonQuote(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 // validatePatch rejects empty trimmed strings for the mutable fields.

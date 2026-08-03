@@ -442,14 +442,14 @@ func TestRecordsCreateInvalidField(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)
 	for label, body := range map[string]string{
-		"missing-name":     `{"status":"active","owner":"a"}`,
-		"blank-name":       `{"name":"   ","status":"active","owner":"a"}`,
-		"missing-status":   `{"name":"x","owner":"a"}`,
-		"blank-status":     `{"name":"x","status":"","owner":"a"}`,
-		"missing-owner":    `{"name":"x","status":"active"}`,
-		"blank-owner":      `{"name":"x","status":"active","owner":" "}`,
-		"non-string-name":  `{"name":123,"status":"active","owner":"a"}`,
-		"null-name":        `{"name":null,"status":"active","owner":"a"}`,
+		"missing-name":    `{"status":"active","owner":"a"}`,
+		"blank-name":      `{"name":"   ","status":"active","owner":"a"}`,
+		"missing-status":  `{"name":"x","owner":"a"}`,
+		"blank-status":    `{"name":"x","status":"","owner":"a"}`,
+		"missing-owner":   `{"name":"x","status":"active"}`,
+		"blank-owner":     `{"name":"x","status":"active","owner":" "}`,
+		"non-string-name": `{"name":123,"status":"active","owner":"a"}`,
+		"null-name":       `{"name":null,"status":"active","owner":"a"}`,
 	} {
 		req := bearer(t, token, http.MethodPost, "/api/records", body)
 		rr := httptest.NewRecorder()

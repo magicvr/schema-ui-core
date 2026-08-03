@@ -24,7 +24,7 @@ type healthResponse struct {
 // same SQLite database that backs identity (GOAL-007 S3).
 func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	mux.Handle("GET /healthz", healthz())
-	authsHandler(mux, a)
+	authsHandler(mux, a, st)
 	accountsHandler(mux, a)
 	recordsHandler(mux, a, st)
 	schemasHandler(mux)

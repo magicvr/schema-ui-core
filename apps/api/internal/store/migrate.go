@@ -79,6 +79,13 @@ var compiledMigrations = []migration{
 		stmts:       recordsPersistDDL,
 		up:          migrate0003,
 	},
+	{
+		version:     4,
+		name:        "operation_log",
+		transformID: "0004:operation-log:v1",
+		stmts:       operationLogDDL,
+		up:          migrate0004,
+	},
 }
 
 // r2BaselineDDL is the canonical R2 schema (users + refresh_tokens). It is
@@ -177,6 +184,33 @@ func migrate0003(tx *sql.Tx) error {
 	for _, stmt := range recordsPersistDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("create records: %w", err)
+		}
+	}
+	return nil
+}
+
+// operationLogDDL is the canonical R5 S6 append-only operation log schema
+// (I-008-003 §3). The event CHECK enumerates the frozen event set; created_at is
+// Unix milliseconds matching the records updated_at precision (D-004).
+var operationLogDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
+// migrate0004 creates the operation log table and its index (R5 S6 optional
+// bonus checkpoint, I-008-003).
+func migrate0004(tx *sql.Tx) error {
+	for _, stmt := range operationLogDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create operation_log: %w", err)
 		}
 	}
 	return nil

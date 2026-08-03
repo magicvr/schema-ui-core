@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.7
+version: 0.1.9
 ---
 
 # 决策 · GOAL-008
@@ -160,3 +160,39 @@ version: 0.1.7
 - **仅在 REPRO-002 上补注、不重跑**：无法提供「编译层非 CACHED」的可核对新证据，不满足 F-005 字面要求。
 - **用 `docker compose up --build` 加临时 BuildKit 环境变量绕过**：`docker compose up` 不支持 `--no-cache` 直传，且依赖未经协议冻结的私有机制；采用 `docker rmi` + `docker builder prune -a` 的协议可陈述、可复核做法。
 - **修改 Dockerfile 强制 `--no-cache`**：改变产品实现为证据服务，且影响 CI 构建行为，超出 fixed 最小范围。
+
+## D-009 · 冻结 I-008-003（operation_log 契约）并实施 S6（可选加分）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：用户书面指示「推进 S6」。按 Root D-013 方案甲实施 R5 可选加分 S6「最小操作日志」：
+  - **`I-008-003` → verified**：冻结 [I-008-003-operation-log-contract.md](attachments/I-008-003-operation-log-contract.md) **v1.0.0**——事件类型 6 个（`records.create/update/delete`、`auth.login/logout/refresh`，仅成功操作记日志）；表结构与迁移 **0004 `operation_log`**（event CHECK 枚举、actor_id/actor_name、record_id、detail JSON 摘要、created_at Unix 毫秒）；repository 边界（`RecordOperation` 追加 + `ListOperations(limit)` 最近 N 条，**不提供**删除/清理/轮转与 HTTP 查询端点——非目标）；接线点与失败语义（**best-effort**：日志写入失败以服务日志留痕、不阻断业务成功响应）。
+  - **实施 S6**：迁移 0004 + `store/operations.go`（RecordOperation/ListOperations/事件常量）+ `handler` 接线（records create/update/delete、auth login/logout/refresh 成功写响应前记录）+ `auth.Authenticator.Logout` 返回 userID（供 logout 事件 actor）+ 测试（store 追加/排序/CHECK 约束/0004 升级快照；handler 六事件接线与失败不记日志）。
+- **依据**：Root D-013 方案甲（S6 可选加分、不进进度分母、不阻断核心验收）；用户书面裁决推进 S6；`I-008-003` 为仅当 S6 实施时的 required 信息项。
+- **边界**：S6 不进 `progress` 分母（`5/5` 不变）；不新增 HTTP 端点/UI/清理策略；不影响 S1～S5 检查点与 Root R5 勾选条件；不改变既有业务语义（失败写不记日志、日志失败不回滚业务）。
+- **影响**：`operation_log` 表随 0004 进入迁移链（既有库升级走 `pre-v0004` 快照）；API 回归 `go test ./...` 全绿 + web vitest 458/458。
+- **后续**：落盘 02-execution/00-meta/goal-tree；S6 勾选为实施完成标注（非成功标准检查点）；Root R5 勾选与关门仍按用户确认推进。
+
+### 未选方案
+
+- **S6 不实施**：用户已书面裁决推进；方案乙（本波次排除）不再适用。
+- **失败记日志采用 fail-closed**：会让审计日志故障导致业务 500，违反加分项「不引入新失败面」的边界；契约 §5 明确 best-effort。
+- **提供日志 HTTP 查询/清理端点**：超出 D-013 方案甲最小范围（仅迁移 + repository + 接线），列为非目标。
+
+## D-010 · 响应 A-016：F-010 fixed（auth 事件 username detail 对齐契约）+ R-014 handled
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **决定**：采纳 A-016（independent · close-out · conditional）的 **F-010（required/medium）**，按用户书面指示走 **fixed** 路径（未选 residual/overruled）：
+  - `apps/api/internal/handler/auth.go` 新增 `authEvent(event, userID)`：logout 与 refresh 成功路径经 `store.UserByID` 解析**真实登录用户名**，按契约 §3 写入 `detail = {"username":"<用户名>"}`（种子 admin → `{"username":"admin"}`）与 actorName；login 保持 `creds.Username`（本就是真实 username）。此前 refresh 误用 `user.Name`（显示名）作 username 一并修正。actor 不可解析时仍记录 actor_id + 服务日志错误（best-effort §5 不变）。
+  - `operations_test.go`：对 **login/refresh/logout 三类 auth 事件**统一断言 `detail` 含 `"username":"admin"`（A-016 指出此前仅 login 有断言）。
+  - **R-014（recommended/medium）→ handled**：S6 变更当前为未提交工作树（HEAD `851f9b6…`，15 files，+284/−57），本地执行收据（apps/api `go test ./...` 全绿、`go vet` 干净、web vitest 458/458、`npm run build` 通过）记录为当前树候选事实，不冒充 CI/容器验收；容器级证据待用户确认提交后按需补充版本化 CI 或 disposable smoke。
+- **依据**：A-016 F-010 证据（logout 空 detail、测试仅断言 login、与 I-008-003 §3 冲突）与 R-014；用户书面指示「走修复或用户书面 residual/overruled」→ 选择 fixed。
+- **边界**：只修正 auth 事件 detail 语义与测试；不改契约 v1.0.0 正文、不改 records 事件、不改 best-effort 失败语义；S6 不进 `progress` 分母（`5/5` 不变）。
+- **影响**：`I-008-003` 维持 `verified`，S6 实现与冻结契约对齐；`go test ./...`（apps/api）全绿。
+- **后续**：落盘响应节与 goal-tree；按 P-004 §3.1 询问用户是否补覆盖 S6 的 self close-out 审计后再推进 GOAL-008 关门；Root R5 勾选与 Root / VP-002 关门仍为独立用户裁决。
+
+### 未选方案
+
+- **F-010 走 accepted-residual / user-overruled**：用户书面指示优先修复；该偏差为明确可实现修正（logout 已知 userID，经 store 解析 username 即可），无残余价值。
+- **修改契约 §3 放宽 auth detail 要求**：契约刚冻结（v1.0.0），放宽会削弱审计可追溯性，且与 D-009 未选方案一致——契约依实现倒改。

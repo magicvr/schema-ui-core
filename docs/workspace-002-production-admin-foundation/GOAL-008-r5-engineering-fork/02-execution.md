@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.1.13
+version: 0.1.15
 ---
 
 # 执行记录 · GOAL-008
@@ -152,3 +152,24 @@ version: 0.1.13
 - **检查点**：S5 勾选（`4/5 → 5/5`），同步 `00-meta`、`03-audit`、goal-tree；Root R5 检查点**未**勾选（Root 保持 `active / 4/5`）；本目标保持 `active / 5/5`（**未 `done`**——关门待 close-out 审计 + 用户裁决 + Root R5 勾选）。
 - **未做**：未勾选 Root R5、未关门、未实施 S6（可选加分）；`I-008-003` 仍 open（S6 若实施）；未改协议/脚本/产品代码。
 - **计划（非事实）**：由用户确认：① 是否勾选 Root R5 检查点；② 是否对 GOAL-008 做 close-out 关门审计（self 或 `/audit`）以进入 Root/VP-002 关门流程；③ S6（可选加分）是否纳入。
+
+## 2026-08-03 · 实施 S6（可选加分 · 最小操作日志 · D-009 + I-008-003 v1.0.0）
+
+- **用户裁决**：「推进 S6」。**`I-008-003` → verified**（D-009 + [I-008-003-operation-log-contract.md](attachments/I-008-003-operation-log-contract.md) v1.0.0——事件 6 个、0004 `operation_log` 迁移、repository 边界、接线与 best-effort 失败语义；HTTP 查询/清理/轮转为非目标）。
+- **迁移 0004 `operation_log`**（`apps/api/internal/store/migrate.go`）：`operation_log(id, event CHECK 枚举, actor_id, actor_name, record_id, detail, created_at Unix ms)` + `idx_operation_log_created_at DESC`；既有库升级走 `pre-v0004` 快照（迁移运行器自动）。
+- **repository**（`store/operations.go`）：`RecordOperation`（追加）+ `ListOperations(limit)`（created_at DESC, id DESC；limit ≤ 0 空）；事件常量 `records.create/update/delete`、`auth.login/logout/refresh`。
+- **handler 接线**：
+  - `records.go`：create/update/delete 成功写响应前记录（actor 取自 `requirePermission` 的 `account.User`；detail = `{"name":...}` 摘要）；`logOperation` best-effort（失败 → slog.Error，不阻断业务）。
+  - `auth.go`：login/refresh 成功记录（detail = `{"username":...}`）；logout 记录（`auth.Authenticator.Logout` 改为返回被撤销 token 的 userID，I-008-003 §5）；`authsHandler` 注入 store。
+- **测试**（全绿）：store `operations_test.go`（追加/排序/limit/CHECK 拒绝未知事件/0004 升级 `pre-v0004` 快照与台账）；handler `operations_test.go`（records 三写事件 + auth 三事件接线与 actor/record_id/detail、失败写不记日志）；迁移版本断言同步 `{1,2,3}→{1,2,3,4}`（migrate/restart/records_test）；`go test ./...`（apps/api）全绿、`go vet` 干净、`gofmt -l` 无输出、web vitest 458/458。
+- **未做**：S6 不进 `progress` 分母（`5/5` 不变）；未新增 HTTP 端点/UI/清理策略；未勾选 Root R5、未关门；`I-008-003` 关闭后无其余信息门禁。
+- **计划（非事实）**：S6 实施完成标注（00-meta）；Root R5 勾选与 GOAL-008 close-out 关门仍待用户确认。
+
+## 2026-08-03 · 响应 A-016（F-010 fixed · R-014 handled）
+
+- **A-016（independent · close-out · conditional）响应**：用户书面指示「响应 A-016 / F-010，走修复」（P-004 §3.3，未选 residual/overruled）。落盘 `01-decision` **D-010**。
+- **F-010 修复（required/medium · auth logout 未记录冻结 username detail）**：`handler/auth.go` 新增 `authEvent(event, userID)`——logout 与 refresh 成功路径经 `store.UserByID` 解析**真实登录用户名**，按 [I-008-003 §3](attachments/I-008-003-operation-log-contract.md) 写入 `detail={"username":"admin"}` 与 actorName；login 保持 `creds.Username`；refresh 此前误用 `user.Name` 一并修正；actor 不可解析时仍记 actor_id + slog.Error（best-effort §5 不变）。
+- **测试补齐**：`operations_test.go` 对 **login/refresh/logout 三类**统一断言 `"username":"admin"`（A-016 指出此前仅 login 断言 detail）；`go test ./...`（apps/api）全绿、`go vet` 干净、`gofmt -l` 无输出、web vitest 458/458 保持。
+- **R-014 → handled**：S6 变更当前为未提交工作树（HEAD `851f9b6…`，15 files +284/−57），本地执行收据（apps/api 全绿 + web 458/458 + build 通过）记录为当前树候选事实，**不冒充** CI/容器验收；容器级证据待用户确认提交后补版本化 CI 或 disposable smoke。
+- **未做**：未置 GOAL-008 `done`、未勾选 Root R5、未关门；`I-008-003` 维持 `verified`（契约 v1.0.0 未改）；本目标保持 `active / 5/5`；Root 保持 `active / 4/5`。
+- **计划（非事实）**：按 P-004 §3.1 询问用户是否补覆盖 S6 的 self close-out 审计；随后由用户确认推进 GOAL-008 关门与 Root R5 勾选。

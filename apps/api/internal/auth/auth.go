@@ -93,20 +93,22 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	return a.issue(u, now)
 }
 
-// Logout revokes the presented refresh token. It is idempotent: unknown or
-// already-revoked tokens are treated as success so a logout cannot be replayed.
-func (a *Authenticator) Logout(rawRefresh string, now time.Time) error {
+// Logout revokes the presented refresh token and returns the revoked token's
+// user id (for the operation log, I-008-003 §5). It is idempotent: unknown or
+// already-revoked tokens are treated as success (user id empty) so a logout
+// cannot be replayed.
+func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error) {
 	rt, err := a.store.RefreshTokenByHash(HashToken(rawRefresh))
 	if errors.Is(err, store.ErrNotFound) {
-		return nil
+		return "", nil
 	}
 	if err != nil {
-		return err
+		return "", err
 	}
 	if rt.RevokedAt != nil {
-		return nil
+		return rt.UserID, nil
 	}
-	return a.store.RevokeRefreshToken(rt.ID, now)
+	return rt.UserID, a.store.RevokeRefreshToken(rt.ID, now)
 }
 
 // issue creates a fresh access/refresh pair for an authenticated user and

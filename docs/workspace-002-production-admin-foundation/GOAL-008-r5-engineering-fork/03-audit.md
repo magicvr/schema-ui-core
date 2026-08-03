@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-03
 parent: GOAL-001-production-admin-foundation
-version: 0.21.0
+version: 0.22.0
 ---
 
 # 审计台账 · GOAL-008
@@ -28,6 +28,7 @@ version: 0.21.0
 | A-013 | independent | 2026-08-03 | finding-closure · A-011 F-005～F-009 关闭证据二次复审 | pass | responded：pass 采纳；F-005～F-009 `fixed` 均维持闭合；R-013 handled（CACHED 计数表述收窄至正式 retry #3） |
 | A-014 | self | 2026-08-03 | finding-closure · F-005～F-009 关闭证据 self 复核（P-004 §3.1 用户裁决补 self） | pass | —；F-005～F-009 `fixed` 全部成立；无开放 required；与 A-013 同向无冲突 |
 | A-015 | self | 2026-08-03 | stage-audit · S1～S5 阶段审计与 Root R5 勾选条件评估（S5 检查点交付） | pass | —；S1～S5 证据链成立；S5 检查点可勾选（`4/5 → 5/5`）；Root R5 勾选条件口径已记录 |
+| A-016 | independent | 2026-08-03 | close-out · S1～S5 关门证据与当前 D-009 / I-008-003 S6 实现 | conditional | responded：F-010 **fixed**（auth logout/refresh 经 `authEvent` 写入冻结 username detail + 三类事件测试断言）；R-014 handled（S6 未提交 revision 收据与本地测试记录） |
 
 ## 当前审计边界
 
@@ -49,7 +50,9 @@ version: 0.21.0
 - **A-013 响应（/govern · 2026-08-03）**：采纳 `pass`——**F-005～F-009 `fixed` 关闭证据全部成立**（A-012 的唯一 required/high 缺口由 REPRO-003 补足，A-013 独立二次复审确认），本 scope **无开放 required**；**R-013 → handled**——CACHED 计数表述收窄为「正式 retry #3 的项目编译层均非 `CACHED`，且该次仅一条非编译 `WORKDIR` 缓存」（REPRO-003/A-012 响应/D-008/02-execution/goal-tree 同步修正）。`I-008-002` 维持 `verified`（v0.1.2）；S3/S4 检查点维持勾选（`4/5`）；`I-008-003` 仍 open（仅 S6）；Root R5 未勾选（`4/5`）；**S5 待实施**。A-011 F-005～F-009 关闭闭环完成（A-012 重做 + A-013 确认）；进入 S5 前按 P-004 §3.1 询问用户是否补 self 审计。
 - **A-014（self · finding-closure · pass，2026-08-03）**：按 P-004 §3.1 用户裁决「补一次 self 审计」补齐 F-005～F-009 关闭证据 scope 的 `source: self` 覆盖——self 复核 REPRO-003 正式 retry #3（pre-T0 clean、`go build` 12.8s / `npm run build` 6.1s 非 CACHED、64.833s ≤ 900s、四终点 PASS）、smoke.sh（exit 8/隔离守卫/去 eval 重启）、workflow 显式 `ci-container-smoke` project 与 CI run 30776646293 归档、本地四路径守卫日志，全部成立；与 A-013 同向无冲突。**无开放 required**。
 - **A-015（self · stage-audit · pass，2026-08-03）= S5 检查点交付**：R5 阶段审计——S1（C-001/C-002）、S2（C-003～C-007）、S3（QUICKSTART + REPRO-003 64.833s）、S4（smoke.sh + 本地四路径 + CI run 30776646293）全部成立；意见台账 A-001～A-014 全部 responded/自审、F-001～F-009 全部 fixed 闭合、无开放 required；信息门禁 `I-008-001/002` verified、`I-008-003` 仅 S6 适用；**Root R5 勾选条件口径已记录**（S1～S5 全勾选 + 无开放 required + 关门向审计；Root R5 勾选与 Root/VP-002 关门须用户确认）。**S5 检查点已勾选（GOAL-008 `4/5 → 5/5`）**。
-- 后续意见从 A-016 起。
+- **A-016（independent · close-out · conditional）**：核对 S1～S5 核心成功标准（历史 clean ref `1961e5a` / CI ref `df913a5` 边界内成立）与 D-009 后当前 S6 实现。**F-010 required/medium 开放**——契约 §3 冻结 auth 事件 `detail={"username":...}`，但 logout 成功路径以空 actorName/detail 写入（refresh 亦误用 `user.Name`），`operations_test.go` 只断言 login；故「六事件 + actor/record_id/detail」完成主张不能完整支撑，不得据此将 GOAL-008 置 `done`。**R-014 recommended**：S6 变更未提交（HEAD `851f9b6`），本地测试通过不得冒充 CI/容器验收。
+- **A-016 响应（/govern · 2026-08-03）**：**F-010 → fixed**（D-010）——`handler/auth.go` 新增 `authEvent()`：logout/refresh 经 `store.UserByID` 解析真实用户名，写入 `detail={"username":"admin"}` 与 actorName；login 保持 `creds.Username`；不可解析时仍记 actor_id + 服务日志错误（best-effort §5 不变）；`operations_test.go` 对 **login/refresh/logout 三类**统一断言 `"username":"admin"`；`go test ./...` 全绿 + `go vet`/`gofmt` 干净。**R-014 → handled**——未提交 revision 收据（HEAD `851f9b6`，15 files +284/−57）与本地执行收据记录；容器级证据待用户确认提交后补。`I-008-003` 维持 `verified`；GOAL-008 保持 `active / 5/5`；**未 `done`**、Root R5 未勾选——推进整个目标关门流程前按 P-004 §3.1 询问用户是否补覆盖 S6 的 self close-out 审计。
+- 后续意见从 A-017 起。
 
 ## A-008 · I-008-002 fork 复现与 smoke 协议合理性独立审计（2026-08-03）
 
@@ -1101,3 +1104,85 @@ A-010 的浏览器终点与本地 disposable 主体事实经 A-011 点验基本�
 ### 声明
 
 本意见为 `source: self` 阶段审计记录，不修改目标 `status`、派生 `progress`、Root R5 状态或 `goal-tree.md`；勾选与状态变更由 `/govern` + 用户确认处理。
+
+## A-016 · GOAL-008 关门独立审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（`$audit`）
+- **类型 / scope**：close-out；核对 `GOAL-008-r5-engineering-fork` 的 S1～S5 核心成功标准、相关 A-001～A-015 / I-008-001～003 门禁，以及 D-009 后当前工作树中的 S6 最小操作日志实现。Root R5、GOAL status/progress 和 goal-tree 不在本意见中变更。
+- **verdict**：conditional
+
+### 范围与依据
+
+- 显式工作区为 `workspace-002-production-admin-foundation`：`workspace.md` 绑定 Root `GOAL-001-production-admin-foundation`、`primary_plan: VP-002-production-admin-foundation`、canonical 范围一致，`shared_materials_catalog: none`。目标当前记录为 `active / 5/5`，Root 保持 `active / 4/5`；这些都是现状，不由本审计放行或改写。
+- S1～S5 的可归因运行证据分别固定在 clean ref `1961e5ae7e122d6263846f0ff673fbca074eb03f`（REPRO-003）和 CI ref `df913a59cc3678720fb7a9c010296de90beb7e2a`（run `30776646293`）。本审计将其作为历史、来源可追溯的核心证据，不把它们表述为当前未提交 S6 工作树的 CI 或容器复跑。
+- 本轮对当前工作树（HEAD `851f9b6221471372bd2a5256e5e973ea91f2df6f`，含未提交 S6 代码/测试/契约候选）独立执行：`apps/api` 的 `go test ./...`、`go vet ./...`、`go build ./...` 均通过；`apps/web` 的 `npm test` 为 23 files / 458 tests 通过，`npm run build` 通过。该本地结果是当前树的候选执行事实，不替代 CI、容器或发布验收。
+
+### 对照核心成功标准
+
+| 成功标准 | 独立结论 | 可核对证据 |
+|----------|----------|------------|
+| S1 · 环境与配置 | 成立 | `config.ValidateProd()` 拒绝非 development 环境的 `AUTH_DEV_SESSION_ENABLED=true`；Compose 固定 production / false 并要求两个 secret；当前 API 回归通过。 |
+| S2 · Compose 第二启动路径 | 成立（历史证据边界内） | `compose.yaml`、双 Dockerfile、healthcheck、web 等待 API healthy、`container-smoke` 历史 CI 归档。 |
+| S3 · fork 15 分钟体验 | 成立（历史证据边界内） | `R5-S3-REPRO-003` 记录 clean ref、非 CACHED 的 `go build` / `npm run build` 和 64.833s 四终点通过。 |
+| S4 · 可复现验收 | 成立（历史证据边界内） | `scripts/smoke.sh` 的 disposable 隔离守卫、SM-001～006、非 disposable exit 8，本地 disposable 归档和 CI run `30776646293`。 |
+| S5 · 阶段审计 | 成立（仅 S1～S5） | A-014 / A-015 与 A-013 的同向闭环；A-015 明确排除 S6，不能代替本次 S6 核对。 |
+
+### 信息门禁与当前 S6 范围
+
+- `I-008-001`、`I-008-002` 的 verified 证据与本 scope 无矛盾。
+- `I-008-003` 在 D-009 后被当前目标记录为 verified，且 S6 已被用户选择实施。它因此是本次已声明 S6 范围内的 required 信息/契约门禁；本意见不改写其状态，但 F-010 使该 verified 主张暂不能作为无条件关门依据。
+- A-015 中的 `I-008-003 open` 是其 S1～S5 / 不审 S6 的历史范围描述，不与 D-009 后的时序性状态变化静默互相覆盖。
+
+### Findings
+
+#### F-010 · S6 的 auth logout 未记录冻结的 username detail
+
+- **级别**：required / medium
+- **影响门禁**：`I-008-003` S6 实施与其在 GOAL-008 当前范围内的关门接受；不追溯重开 S1～S5 核心成功标准或 Root R5。
+- **证据**：`I-008-003-operation-log-contract.md` §3 冻结 auth 事件的 `detail` 为 `{"username":"<用户名>"}`。当前 `apps/api/internal/handler/auth.go` 的 logout 成功路径以空 `actorName`、空 `detail` 调用 `logOperation`，因此写入 NULL detail；`operations_test.go` 只断言 login detail，未断言 refresh/logout 的 detail。
+- **偏差**：D-009 / 02-execution 对 S6 的「六事件 + actor/record_id/detail」完成主张，不能由当前实现与测试完整支撑。
+- **关闭路径**：修正三类 auth 成功事件的冻结 detail 语义（至少 logout 必须写入 username 摘要），补齐 login / refresh / logout 的明确断言，重新执行 API 回归并请求 finding-closure 复审；若不按 fixed 路径处理，必须由 `/govern` 按 P-004 / P-003 取得并记录用户对该 required finding 的明确 residual 或 overruled 决策。
+
+#### R-014 · 为当前 S6 候选固定可复核版本与执行收据
+
+- **级别**：recommended / medium（非 S1～S5 或 Root R5 阻断项）
+- **证据**：REPRO-003 与 CI 归档分别固定在 `1961e5a` / `df913a5`；当前 HEAD 为 `851f9b6`，且 S6 路径仍未提交。当前本地测试通过，但不应被叙述成对应 revision 的 CI 或 Compose 验收。
+- **建议**：在后续 `/govern` 响应中，为保留的 S6 变更固定 revision / diff identity 与测试收据；若需要把 S6 纳入容器级主张，再补相应的版本化 CI 或 disposable smoke 证据。
+
+### 必改项汇总
+
+- **开放 required**：F-010。故本意见不能给出无条件关门建议。
+- **recommended**：R-014；不单独阻断 S1～S5 或 Root R5。
+
+### 与既有意见的异同
+
+- 与 A-013 / A-014 / A-015 对 S1～S5 的 pass 结论不冲突：本意见认可其历史证据边界，也不把本地回归冒充为 CI 或重新判定 Root R5。
+- 本意见因 D-009 后 S6 已进入当前目标记录而扩展到 A-015 明确未审的范围，首次发现 F-010；A-015 的旧 `I-008-003 open` 叙述按其时间与 scope 保留。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **conditional**：S1～S5 的核心关门证据在其已记录的 clean revision / CI 边界内成立；但当前目标同时宣称 S6 已实施、`I-008-003` 已 verified，而 F-010 尚未闭合。因此不得据此将 GOAL-008 置为 `done`，也不得把 S6 作为已验收事实。
+- 建议 `/govern` 先响应 F-010。由于 A-015 不覆盖 S6，若要在修正后推进整个目标的关门流程，编排器还必须按 P-004 §4.1 询问用户是否需要一次同 scope 的 self close-out 审计；不得自动跳过或强制补做。Root R5 勾选与 Root / VP-002 关门仍是独立的用户裁决和治理动作。
+
+### 声明
+
+本意见仅新增 `source: independent` 审计结论，不修改目标 `status`、检查点、派生 `progress`、信息项状态、方案正文或 `goal-tree.md`；finding 响应与任何生命周期变更由 `/govern` 处理。
+
+## 响应 · A-016（/govern · 2026-08-03 · F-010 fixed、R-014 handled）
+
+按 P-004 §3.3：A-016（independent · close-out · conditional）的 F-010 为单条 required finding，用户书面指示「走修复」（未选 residual/overruled）。落盘于 `01-decision` **D-010**、`02-execution` 2026-08-03「响应 A-016」节。
+
+### Findings 响应
+
+- **F-010（required/medium · S6 的 auth logout 未记录冻结的 username detail）→ fixed**：
+  - `apps/api/internal/handler/auth.go`：logout 成功路径不再以空 actorName/detail 记录，改经 `authEvent()` 用 `store.UserByID` 解析**真实登录用户名**，写入契约 §3 冻结的 `detail = {"username":"<用户名>"}`（`user-admin` → `{"username":"admin"}`）与 actorName；refresh 路径同样统一走 `authEvent()`（此前 refresh 也误用 `user.Name` 作 username，一并修正）；login 保持 `creds.Username`。不可解析 actor 时仍记录 actor_id + 服务日志错误（best-effort §5 不变）。
+  - 测试：`operations_test.go` 对 **login/refresh/logout 三类 auth 事件**统一断言 `detail` 含 `"username":"admin"`（此前仅 login）；`go test ./...`（apps/api）全绿、`go vet` 干净、`gofmt -l` 无输出。
+- **R-014（recommended/medium · 为当前 S6 候选固定可复核版本与执行收据）→ handled**：S6 变更当前为**未提交工作树**（HEAD `851f9b6221471372bd2a5256e5e973ea91f2df6f`；15 files，+284/−57），本地执行收据为 `go test ./...`（apps/api 全绿）、`go vet ./...`、web vitest 458/458、`npm run build` 通过——按 A-016 口径只作当前树候选事实，**不冒充** CI/容器验收；如需把 S6 纳入容器级主张，将补版本化 CI 或 disposable smoke 证据（由用户确认后提交触发）。
+
+### 状态与门禁边界
+
+- `I-008-003` 维持 `verified`（契约 v1.0.0）；F-010 修复后 S6 实现与冻结契约对齐，其关门接受主张可复核。
+- S1～S5 核心成功标准维持成立（历史证据边界内，A-016 认可）；S6 为可选加分、不进 `progress` 分母（GOAL-008 保持 `active / 5/5`）。
+- **未**将 GOAL-008 置 `done`、未勾选 Root R5、未关门——A-016 为 close-out conditional，F-010 已按 fixed 闭合，但 P-004 §3.1：A-015（self）明确排除 S6，修正后推进整个目标关门流程前须询问用户是否补一次覆盖 S6 的 self close-out 审计；Root R5 勾选与 Root / VP-002 关门仍为独立用户裁决。
+- **证据路径**：本响应节；`01-decision` D-010；`02-execution` 2026-08-03「响应 A-016」节；`apps/api/internal/handler/auth.go`（`authEvent`）+ `operations_test.go`（三类 auth detail 断言）；`I-008-003-operation-log-contract.md` §3/§5；A-016（independent）本意见。
