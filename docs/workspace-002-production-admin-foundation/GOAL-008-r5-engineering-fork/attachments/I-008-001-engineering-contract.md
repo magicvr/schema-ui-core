@@ -3,9 +3,9 @@ title: I-008-001 · 环境/配置与容器部署契约
 status: active
 doc_type: contract
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-03
 parent: GOAL-008-r5-engineering-fork
-version: 1.0.0
+version: 1.0.1
 related_info: I-008-001
 related_decisions: D-003
 ---
@@ -40,20 +40,21 @@ related_decisions: D-003
 
 | 项 | 契约 |
 |----|------|
-| API readiness | `GET /healthz` → `200` + `{"status":"ok",...}`；作为 API 存活/就绪探针 |
-| Web readiness | 静态服务返回 `index.html`（SPA fallback）；`/api` 经反代可达 `api` 的 `/healthz` |
-| Compose healthcheck | `api`：`wget -qO- http://127.0.0.1:8080/healthz`（或容器内 `curl`）；`web`：`wget -qO- http://127.0.0.1/` 200 |
-| 启动验证口径 | 本地双进程与 `docker compose up` 两条路径，均以「`/healthz` ok + 登录种子 admin + 后台首页可交互」为终态（S3 计时终点，见 `I-008-002`） |
+| API liveness | `GET /healthz` → `200` + `{"status":"ok",...}`；进程存活探针，**不访问数据库** |
+| API readiness | `GET /readyz` → `200` + `{"status":"ok",...}`；在 liveness 之上执行轻量 SQLite `SELECT 1`，数据库不可读时 `503 {"status":"unavailable",...}`（A-002 F-002-006 / GOAL-009 S5） |
+| Web readiness | 静态服务返回 `index.html`（SPA fallback）；`/api` 经反代可达 `api` 的 `/readyz` |
+| Compose healthcheck | `api`：`wget -qO- http://127.0.0.1:8080/readyz`（或容器内 `curl`）作为 `service_healthy` 就绪判据；`web`：`wget -qO- http://127.0.0.1/` 200 |
+| 启动验证口径 | 本地双进程与 `docker compose up` 两条路径，均以「`/healthz` ok + 登录种子 admin + 后台首页可交互」为终态（S3 计时终点，见 `I-008-002`；smoke 判据沿用 `/healthz` liveness） |
 
 ## 3. 容器 / Compose 契约（部署基线 A）
 
 | 项 | 契约 |
 |----|------|
 | 清单位置 | 仓库根 `compose.yaml`；服务名 `api`、`web` |
-| `api` 服务 | 构建 `apps/api/Dockerfile`（**多阶段**：`golang:1.26` 构建 → 精简运行镜像）；暴露 `8080`；`DB_PATH` 指向 `/app/data/schema-ui.db`；secret 经 `.env` / compose env（`AUTH_JWT_SECRET`、`ADMIN_INITIAL_PASSWORD` 生产必填）；healthcheck `/healthz`；`restart: on-failure` |
+| `api` 服务 | 构建 `apps/api/Dockerfile`（**多阶段**：`golang:1.26` 构建 → 精简运行镜像）；暴露 `8080`；`DB_PATH` 指向 `/app/data/schema-ui.db`；secret 经 `.env` / compose env（`AUTH_JWT_SECRET`、`ADMIN_INITIAL_PASSWORD` 生产必填）；healthcheck `/readyz`；`restart: on-failure` |
 | `web` 服务 | 构建 `apps/web/Dockerfile`（**多阶段**：`node:22` `npm ci` + `npm run build` → `nginx:alpine` 服务 `dist/`）；暴露 `80`；healthcheck 静态页 200；`depends_on: api: condition: service_healthy` |
 | DB volume | 命名卷（如 `db-data`）挂载到 `api` 的 `/app/data`；`docker compose down`/重启后数据保持 |
-| 探针 | 复用 `/healthz`（api）与静态页 200（web），见 §2 |
+| 探针 | `/healthz`（api liveness）、`/readyz`（api readiness，Compose `service_healthy`）与静态页 200（web），见 §2 |
 
 ## 4. Web SPA fallback 与 `/api` 反代（nginx）
 
@@ -82,7 +83,7 @@ related_decisions: D-003
 | # | 检查项 | 对应契约 |
 |---|--------|----------|
 | C-001 | `.env.example` 与 config.go 键一致；dev/prod 行为注释齐全 | §1 |
-| C-002 | `GET /healthz` 200 + `{"status":"ok"}`（本地与容器内均可） | §2 |
+| C-002 | `GET /healthz`（liveness）200 + `{"status":"ok"}`（本地与容器内均可） | §2 |
 | C-003 | `docker compose up` 后 api healthy、web 200，登录种子 admin 成功 | §2/§3 |
 | C-004 | `apps/api/Dockerfile`、`apps/web/Dockerfile`、根 `compose.yaml` 存在且与 §3 一致 | §3 |
 | C-005 | nginx 配置含 SPA fallback + `/api` 反代；`docker compose up` 后直接刷新 `/list-edit-lifecycle` 可回退 | §4 |
@@ -94,6 +95,13 @@ related_decisions: D-003
 - 完整生产运维 / CI-CD 部署流水线、TLS 终止、多实例水平扩展、对象存储、监控告警：**非目标**（维持 Root D-013 边界）。
 - 精确 nginx.conf 内容、镜像 tag、资源限制：属 S2 实施细节，由实施留痕，不在此枚举。
 - 15 分钟计时与 smoke.sh 退出码判据：由 `I-008-002` 冻结，不在本契约重复。
+
+## 8a. 修订记录
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| 1.0.0 | 2026-08-02 | 冻结（GOAL-008 D-003；S1/S2 方案门禁解除；C-001～C-007 随 S1/S2 验收） |
+| 1.0.1 | 2026-08-03 | 响应 GOAL-009 A-003 R-002：探针语义同步 A-002 F-002-006 / GOAL-009 S5——§2/§3 明确 `/healthz` = liveness（不访问 DB）、`/readyz` = readiness（liveness + SQLite `SELECT 1`，故障 503），Compose `service_healthy` 用 `/readyz`。C-001～C-007 为 S1/S2 历史验收事实（当时仅 `/healthz` liveness），不因本次语义同步重写；`/readyz` 由 GOAL-009 S5 引入并经 `health_test.go` 正常/故障注入覆盖。`I-008-001` 维持 `verified`（语义同步不改变信息结论）。 |
 
 ## 9. 证据索引
 

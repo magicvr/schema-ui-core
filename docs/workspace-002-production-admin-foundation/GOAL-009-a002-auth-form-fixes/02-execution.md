@@ -62,3 +62,9 @@ version: 0.1.0
 - **F-002-006（liveness/readiness 区分）**：`apps/api/internal/store/store.go` 新增 `Ping(ctx)`（`SELECT 1`）；`handler/health.go` 新增 `GET /readyz`（readiness：liveness + SQLite 检查，失败 → `503 {"status":"unavailable"}`）；`/healthz` 保持纯 liveness；`compose.yaml` api `healthcheck` 切至 `/readyz`（`service_healthy` 判据）；`health_test.go` 新增 2 条（就绪 200 / 关闭 store 故障注入 → 503）；`apps/api/README.md` 端点表补 `/readyz` 行并注明语义。
 - 证据：web `vitest run` **466/466**（464 + LoginPage 2 新增）、`tsc -b` + `vite build` 干净；`apps/api` `go test ./... -count=1` 全绿 + `go vet ./...` 干净（新增 config/health/store 用例）。
 - S5 不进进度分母：GOAL-009 保持 `done / 4/4`。Root A-002 关闭证据表 recommended 行更新为已实施（2026-08-03）；F-002-001 仍 open。
+
+## 2026-08-03 · 响应 A-003（independent · S5 事实复核 · pass）
+
+- **A-003**（`$audit` · execution-facts · pass）独立复核 S5 三项实施事实成立（含生产构建产物无 seed 文案、production+短 secret 启动 exit 1、`/readyz` 故障注入 503）；开 **R-002（recommended / low）**——[I-008-001 工程契约](GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md) §3 仍写 API healthcheck `/healthz`，未同步 S5 的 readiness 语义。
+- **响应（用户裁决走 fixed）**：I-008-001 契约 **v1.0.0 → v1.0.1**——§2 拆分 API liveness（`/healthz`）与 readiness（`/readyz`，SQLite `SELECT 1`，故障 503）；§3 healthcheck/探针行同步 `/readyz`（Compose `service_healthy`）；C-001～C-007 保持 S1/S2 历史验收事实（不重写）；新增 §8a 修订记录。**R-002 → `fixed`**；GOAL-008 `00-meta` 信息表 `I-008-001` 行同步 v1.0.1（维持 `verified`）。
+- GOAL-009 保持 `done / 4/4`；本 scope 无开放意见。Root F-002-001 仍 open（GOAL-010 载体），Root 与 VP-002 关门继续阻断。
