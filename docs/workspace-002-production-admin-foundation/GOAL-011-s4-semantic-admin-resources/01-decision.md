@@ -32,3 +32,37 @@ version: 0.1.0
 - **信息门禁**：`I-011-001`、`I-011-002`、`I-011-003` 均为 required，初始 `open`；当前只放行 S1 信息收集，不放行 S2～S4 产品实施或验收。
 - **影响**：本目标 `active / 0/5`；GOAL-010 保持 `active / 3/5`、S4 未勾选；Root A-002 F-002-001 继续 `open`，Root/VP-002 关门继续阻断。
 - **后续**：先收集并提交 `I-011-001`/`I-011-002` 的方案裁决，冻结 S1 后再进入任何 users/roles 或 records 退场代码变更。
+
+## D-002 · 冻结 S1：users/roles 领域契约与 records 退场策略
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**（P-004.4）：用户于契约冻结裁决点逐项确认三项关键取舍（均采纳编排器推荐）：
+  1. **通用工厂 + 最小契约扩展**：users/roles 均走通用资源工厂五路由；扩展 `Resource.JSONFields`（任意 JSON 值字段透传，承载 users.roles）与 `DomainError{Status,Code,Message}`（实体返回领域错误，工厂逐字映射）；对 I-010-001 §5「不引入 409」做限定范围偏离（仅账号域 409，envelope 形状不变）。
+  2. **操作日志纳入**：migration `0005` 重建 `operation_log` event CHECK，新增 `users.*`/`roles.*` 事件（保留 `records.*`/`auth.*` 历史合法值）；users/roles 写路径挂 `OnWrite`。
+  3. **records 硬退场 DROP TABLE**：migration `0006` `DROP TABLE records` + 清理 records 权限/菜单行；既有库升级自动 `pre-v0006` 快照兜底，records 数据随表删除（可由快照恢复）。
+- **决定**：采纳两份版本化契约冻结 S1——
+  1. [I-011-001-users-roles-contract.md](attachments/I-011-001-users-roles-contract.md) **v0.1.0**：users/roles 资源契约（公开字段、敏感字段隔离、角色分配、self/最后管理员保护、system role 保护、grant 约束、权限键/菜单/操作日志、错误码）、最小 IAM 边界、通用工厂最小扩展。
+  2. [I-011-002-records-retirement.md](attachments/I-011-002-records-retirement.md) **v0.1.0**：records 足迹盘点、fresh install 与 in-place upgrade 迁移矩阵（0005/0006）、硬退场数据处置、代码/种子/fixture/前端退场动作、S3 验收口径。
+- **理由**：三裁决点均为「先例契约改写/数据处置/范围取舍」，须用户书面确认而非编排器静默推断；采纳推荐路径保持 S2「通用工厂之上」、审计链一致与 fork 基线干净。
+- **未选方案**：users 自定义 handler（不改工厂契约但 S2 主张打折、双套门禁逻辑）；操作日志不纳入（省 0005 但账号变更无审计留痕）；软退场保留死表（fork 基线不干净、数据处置不明）。
+- **信息门禁**：`I-011-001` → **verified**（契约 v0.1.0 + 本决策）；`I-011-002` → **verified**（契约 v0.1.0 + 本决策）。S1 方案冻结门禁解除，S2 实施与 S3 退场可放行。`I-011-003` 保持 `open`（最晚 S4 前）。
+- **影响**：**S1 检查点达成，GOAL-011 `0/5 → 1/5`**；GOAL-010 保持 `active / 3/5`；Root A-002 F-002-001 仍 `open`，Root/VP-002 关门继续阻断。未修改任何产品代码（S1 为文档冻结）。
+- **后续**：S2 后端 users/roles 资源闭环（通用工厂扩展 + store 领域方法 + 双资源 CRUD + 401/403）→ S3 records 退场 → S4 双资源 Schema 接入 → S5 回归审计关门。
+
+## D-003 · 响应 A-002：契约修订至 v0.2.0（fixed 闭合 F-001/F-002 + 采纳 F-003~F-006）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**（P-004 §3.2）：A-001（self · pass）与 A-002（independent · conditional）同 scope verdict 冲突；用户裁决闭合路径「**全部 fixed**」——修订两契约 + 采纳 recommended，不补 residual/overruled。
+- **决定**：
+  1. **I-011-001 v0.1.0 → v0.2.0**：§7 补 `ResourceEntity` Create/Update/Delete 的 `account.User` actor 通道（F-001，SELF_OPERATION/LAST_ADMIN 可诚实实现）+ DomainError 检查先于 ErrNotFound/INTERNAL（F-006）；§2.3 禁 API 路径复用 `linkUserRole`→`ensureRole` 隐式建角色（F-004）；§3.0 冻结 roles 公开响应形状 `system:boolean` + 毫秒时间戳（F-003）。
+  2. **I-011-002 v0.1.0 → v0.2.0**：§2.1/§2.3 快照语义改为「每个待应用数据变更迁移前快照」（至少 0006 前强制），0005+0006 同批时 `pre-v0006` 必然存在（F-002）；§5 验收句对齐。
+  3. **GOAL-010 D-005 / I-010-001 v0.2.2**：父契约 §5 追加账号域 409 限定扩展注记（F-005，消除跨目标双真相）。
+  4. A-001 F-001（password 长度）与 F-002（fixture 文案）维持 recommended，随 S2/S3 落实（F-006 承接）。
+- **fixed 关闭证据**：两契约 v0.2.0 + 本决策 + GOAL-010 D-005/I-010-001 v0.2.2；A-001/A-002 差异经此趋同（见 03-audit 响应节）。
+- **理由**：F-001/F-002 均为真实可核对缺口（工厂无 actor 通道则 self 保护不可诚实实现；快照机制与验收字面不一致），修文档成本低、无 residual 必要；recommended 采纳后 S2/S4 金标准更明确。
+- **未选方案**：residual（缺口小、应修）；overruled（拒绝合理必改项无依据）；仅闭 required 延后 recommended（用户裁决全部采纳，提高 S2 可实施性）。
+- **信息门禁**：`I-011-001`/`I-011-002` 维持 `verified`（v0.2.0 为响应修订，不改变冻结结论）；`I-011-003` 保持 open。
+- **影响**：GOAL-011 保持 `active / 1/5`，S1 契约以 v0.2.0 为准；A-002 conditional 经 F-001/F-002 闭合后与 A-001 pass 趋同；S2 实施门禁保持解除；Root A-002 F-002-001 仍 open。
+- **后续**：进入 S2 后端 users/roles 资源闭环（按 v0.2.0 契约落地工厂扩展 + store 领域方法 + 双资源 CRUD + 401/403）。

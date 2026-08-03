@@ -17,3 +17,47 @@ version: 0.1.0
 - 同步修订 GOAL-010 S4 为本目标交付后的父级验收门，并更新当前工作区 `goal-tree.md` 的树与状态表。
 - 未修改 API/Web/迁移/fixture 等产品代码；未移除 records；未实现 users/roles CRUD；未关闭 Root A-002 F-002-001。
 - **计划（非事实）**：先收集 `I-011-001`/`I-011-002` 并形成版本化契约候选，经用户裁决冻结 S1 后再进入实现。
+
+## 2026-08-03 · S1 契约冻结（D-002）
+
+- 完成 `I-011-001`/`I-011-002` 信息收集：静态核对 auth/RBAC 表结构（users/roles/user_roles/permissions/menu/operation_log）、通用工厂 `resources.go`、身份投影 `account.User`、`userWithRoles` 双写、records 足迹（API/迁移/种子/权限/菜单/操作日志/fixture/前端/测试/数据文件）。
+- **用户裁决（P-004）三项关键取舍（均采纳推荐）**：
+  1. 通用工厂 + 最小契约扩展（`Resource.JSONFields` + `DomainError` 409 映射）——users/roles 均走工厂五路由；
+  2. 操作日志纳入（migration `0005` 扩展 operation_log event CHECK，新增 users/roles 事件，保留 records/auth 历史值）；
+  3. records 硬退场 DROP TABLE（migration `0006` 删表 + 清理权限/菜单行，既有库自动 `pre-v0006` 快照兜底）。
+- 落盘两份冻结契约：`attachments/I-011-001-users-roles-contract.md` v0.1.0、`attachments/I-011-002-records-retirement.md` v0.1.0。
+- `I-011-001`/`I-011-002` → **verified**（契约 + D-002）；`I-011-003` 保持 open（最晚 S4）。
+- **S1 检查点达成，progress `0/5 → 1/5`**；未修改任何产品代码。
+- 同步修订 `00-meta`（S1 勾选、信息表状态、版本 v0.2.0）、`01-decision`（D-002）、当前工作区 `goal-tree.md`（GOAL-011 `1/5`）。
+- **计划（非事实）**：S2 后端 users/roles 资源闭环 → S3 records 退场 → S4 双资源 Schema 接入 → S5 回归审计关门；关键节点自审后调用 grok build 独立审计。
+
+## 2026-08-03 · S1 交叉审计 + 合并响应（A-001 → A-002 → D-003）
+
+- **S1 自审（A-001 · self · pass）**：契约完整、可实施、与既有事实一致；无 required；F-001～F-003 recommended（password 长度、fixture 文案、DomainError 优先级）。
+- **grok build 独立审计（A-002 · independent · conditional）**：S1 主体成立；**F-001（required/med）** 工厂扩展未规定 actor 通道，SELF_OPERATION 不可在通用五路由内诚实实现；**F-002（required/med）** `migrate.go` 仅 first-pending 快照一次，0005+0006 同批时 `pre-v0006` 验收字面失败；F-003～F-006 recommended（roles 响应形状、`linkUserRole` 隐式建角色、父契约 409 双真相、承接 A-001 low）。
+- **用户裁决（P-004 §3.2）**：A-001 pass 与 A-002 conditional 同 scope 冲突 → 裁决「**全部 fixed**」。
+- **响应落盘（D-003）**：I-011-001 → **v0.2.0**（§7 actor 通道 + DomainError 优先级、§2.3 禁 ensureRole 隐式建角色、§3.0 roles 响应形状）；I-011-002 → **v0.2.0**（§2.3 每待应用数据变更迁移前快照、§5 验收对齐）；GOAL-010 **D-005** + I-010-001 **v0.2.2**（§5 账号域 409 注记）。
+- `I-011-001`/`I-011-002` 维持 `verified`（v0.2.0 响应修订）；`I-011-003` 保持 open。S1 无开放 required，A-001/A-002 趋同；S2 实施门禁保持解除。
+- 同步修订 `00-meta` v0.2.1、`01-decision` D-003、`03-audit` 响应节、`goal-tree.md` 注记。
+- **计划（非事实）**：S2 按 I-011-001 v0.2.0 实施通用工厂扩展 + users/roles 后端闭环。
+
+## 2026-08-03 · S2 后端 users/roles 资源闭环（I-011-001 v0.2.0）
+
+- **通用工厂扩展**（`resources.go`）：`ResourceEntity.Create/Update/Delete` 增传 `account.User`（A-002 F-001 actor 通道）；`Resource.JSONFields`（users.roles 原始 JSON 透传，decode create/patch 支持）；`DomainError{Status,Code,Message}` + `writeEntityError` 统一映射（先 DomainError → 再 ErrNotFound → 最后 INTERNAL，A-002 F-006/A-001 F-003）；records 实体签名补齐并忽略 actor（零对外行为变化）。
+- **store 领域方法**：`store/users.go`（ListUsers/GetUser/CreateUserManagement/UpdateUser/DeleteUser + `reconcileRoles` 双写集合一致性 + self/last-admin 保护 + refresh_tokens 级联清理 + **不隐式建角色** A-002 F-004）；`store/roles.go`（ListRoles/GetRole/CreateRole/UpdateRole/DeleteRole + system/in-use/invalid-key 保护）。
+- **migration 0005** `operation_log_expand`：重建 operation_log event CHECK，新增 `users.*`/`roles.*` 事件，保留 `records.*`/`auth.*` 历史值；SQLite 表内重建 + 行迁移 + 索引；`transformID 0005:operation-log-expand:v1` 冻结 checksum。
+- **种子**（`seed.go`）：新增 `users.read/write`、`roles.read/write` 权限、`menu_users`/`menu_roles` 菜单；admin 四权限 + 两菜单，editor/viewer 只读（users.read/roles.read）；records 种子保持（S3 退场）。
+- **注册**：`health.go` 注册 `/api/users`、`/api/roles`；`account.StaticDevSession` 同步 users/roles 权限与菜单。
+- **测试**：新增 `handler/users_test.go`（list/detail/CRUD、password_hash 隔离、重复 username 409、self 保护、401/403、password 仅写可登录、users.* 操作日志）、`handler/roles_test.go`（list/detail、创建/更新/删除、invalid-key/duplicate/system/in-use 保护、401/403、roles.* 操作日志）、`store/users_test.go`（last-admin、role 校验、无隐式角色、双写往返）、`store/roles_test.go`（create 校验、system/in-use 保护）；既有迁移账本/种子测试更新至 0005 + users/roles 种子。
+- **证据**：`go test ./...` 全绿（126 顶层测试函数；`-v` RUN 计 151 含子测试）+ `go vet ./...` 干净；web `vitest run` 481/481 + `tsc -b` 干净（后端变更未破坏前端）。
+- 修复实现中发现的问题：单连接嵌套查询死锁（ListUsers 先收行再 reconcile）、`updated_at` INTEGER 扫描 time.Time 类型错误（UpdateUser）。
+- **S2 检查点达成，progress `1/5 → 2/5`**；records 仍注册（S3 退场）；Root A-002 F-002-001 仍 open。
+- **计划（非事实）**：S3 records 退场（0006 DROP TABLE + 清理权限/菜单 + 每待应用版本前快照 F-002 落地 + API/种子/fixture/前端/测试退场）。
+
+## 2026-08-03 · S2 交叉审计 + 合并响应（A-003 → A-004 → 响应节）
+
+- **S2 自审（A-003 · self · pass）**：工厂扩展、领域不变量、错误码、401/403、0005 迁移、回归证据均对齐契约；无 required；F-001～F-003 recommended（per-pending 快照随 S3、重启/搜索/排序随 S4、password 长度非目标）。
+- **grok build 独立审计（A-004 · independent · pass）**：与 A-003 同向，无 required；F-001（0005 行保留缺专用升级回归）、F-002（LAST_ADMIN 缺 HTTP 层断言）、F-003（StaticDevSession 投影缺回归断言）→ **fixed**（新增 `TestMigrate0005PreservesOperationLogRows`、`TestUsersLastAdminHTTP`、`TestAccountsMeDevSessionFallback` 增补）；F-004（承接 A-003 + 测试计数口径）→ **handled**（计数口径修正为 126 顶层 / 151 RUN）。
+- 未触发 P-004 裁决（A-003/A-004 verdict 一致 pass，无冲突）。S2 无开放 required，可放行 S3。
+- 同步修订 `03-audit` 响应节与索引、`goal-tree.md` 注记。
+- **计划（非事实）**：S3 records 产品运行面退场。

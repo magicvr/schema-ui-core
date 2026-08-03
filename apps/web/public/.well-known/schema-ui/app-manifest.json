@@ -15,12 +15,6 @@
       "route": "/overview"
     },
     {
-      "pageId": "catalog",
-      "title": "Catalog",
-      "schemaUrl": "/api/schema/catalog",
-      "route": "/catalog"
-    },
-    {
       "pageId": "activity",
       "title": "Activity",
       "schemaUrl": "/api/schema/activity",
@@ -37,12 +31,6 @@
       "title": "Search + table",
       "schemaUrl": "/api/schema/search-form-table",
       "route": "/search-form-table"
-    },
-    {
-      "pageId": "list-edit-lifecycle",
-      "title": "List + edit lifecycle",
-      "schemaUrl": "/api/schema/list-edit-lifecycle",
-      "route": "/list-edit-lifecycle"
     },
     {
       "pageId": "form-controls",
@@ -73,11 +61,6 @@
     ],
     "sidebar": [
       {
-        "pageRef": "catalog",
-        "label": "Catalog",
-        "icon": "boxes"
-      },
-      {
         "label": "Examples",
         "icon": "folder",
         "items": [
@@ -90,14 +73,6 @@
             "pageRef": "search-form-table",
             "label": "Search + table",
             "icon": "search"
-          },
-          {
-            "pageRef": "list-edit-lifecycle",
-            "label": "List + edit",
-            "icon": "pen",
-            "visibleWhen": {
-              "when": "$context.features.menu_list_edit_lifecycle == true"
-            }
           },
           {
             "pageRef": "form-controls",

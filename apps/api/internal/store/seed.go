@@ -36,46 +36,59 @@ func (s *Store) seedRBAC() error {
 		}
 	}
 
-	// Stable permissions (records GET / PATCH+DELETE gates).
-	if _, err := tx.Exec(
-		`INSERT INTO permissions (id, key, description, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET description = excluded.description, updated_at = excluded.updated_at`,
-		"perm-records-read", "records.read", "records GET gate", now, now,
-	); err != nil {
-		return fmt.Errorf("seed permission records.read: %w", err)
+	// GOAL-011 (I-011-001 §4): users/roles permissions + menus. records
+	// permissions/menu were removed by 0006 records_retire (GOAL-011 S3); the
+	// seed no longer creates them for fresh installs.
+	for _, p := range []struct {
+		id, key, desc string
+	}{
+		{"perm-users-read", "users.read", "users GET gate"},
+		{"perm-users-write", "users.write", "users write gate"},
+		{"perm-roles-read", "roles.read", "roles GET gate"},
+		{"perm-roles-write", "roles.write", "roles write gate"},
+	} {
+		if _, err := tx.Exec(
+			`INSERT INTO permissions (id, key, description, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?)
+			 ON CONFLICT(id) DO UPDATE SET description = excluded.description, updated_at = excluded.updated_at`,
+			p.id, p.key, p.desc, now, now,
+		); err != nil {
+			return fmt.Errorf("seed permission %s: %w", p.key, err)
+		}
 	}
-	if _, err := tx.Exec(
-		`INSERT INTO permissions (id, key, description, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET description = excluded.description, updated_at = excluded.updated_at`,
-		"perm-records-write", "records.write", "records PATCH/DELETE gate", now, now,
-	); err != nil {
-		return fmt.Errorf("seed permission records.write: %w", err)
+	for _, m := range []struct {
+		id, pageRef, featureKey string
+	}{
+		{"menu-users", "users", "menu_users"},
+		{"menu-roles", "roles", "menu_roles"},
+	} {
+		if _, err := tx.Exec(
+			`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at)
+			 VALUES (?, ?, ?, 0, 1, ?, ?)
+			 ON CONFLICT(id) DO UPDATE SET page_ref = excluded.page_ref, feature_key = excluded.feature_key, enabled = 1, updated_at = excluded.updated_at`,
+			m.id, m.pageRef, m.featureKey, now, now,
+		); err != nil {
+			return fmt.Errorf("seed menu item %s: %w", m.id, err)
+		}
 	}
 
-	// Representative menu item (D-003): list-edit-lifecycle, admin-only grant.
-	if _, err := tx.Exec(
-		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at)
-		 VALUES (?, ?, ?, 0, 1, ?, ?)
-		 ON CONFLICT(id) DO UPDATE SET page_ref = excluded.page_ref, feature_key = excluded.feature_key, enabled = 1, updated_at = excluded.updated_at`,
-		"menu-list-edit-lifecycle", "list-edit-lifecycle", "menu_list_edit_lifecycle", now, now,
-	); err != nil {
-		return fmt.Errorf("seed menu item: %w", err)
+	// Grants: admin read+write (+menus), editor read, viewer read (read-only).
+	// GOAL-011: admin holds users/roles read+write + both menus; editor/viewer read.
+	for _, p := range []string{"perm-users-read", "perm-users-write", "perm-roles-read", "perm-roles-write"} {
+		if err := linkPermission(tx, "admin", p); err != nil {
+			return err
+		}
 	}
-
-	// Grants: admin read+write (+menu), editor read, viewer read (read-only).
-	if err := linkPermission(tx, "admin", "perm-records-read"); err != nil {
-		return err
-	}
-	if err := linkPermission(tx, "admin", "perm-records-write"); err != nil {
-		return err
-	}
-	if err := linkMenu(tx, "admin", "menu-list-edit-lifecycle"); err != nil {
-		return err
+	for _, m := range []string{"menu-users", "menu-roles"} {
+		if err := linkMenu(tx, "admin", m); err != nil {
+			return err
+		}
 	}
 	for _, key := range []string{"editor", "viewer"} {
-		if err := linkPermission(tx, key, "perm-records-read"); err != nil {
+		if err := linkPermission(tx, key, "perm-users-read"); err != nil {
+			return err
+		}
+		if err := linkPermission(tx, key, "perm-roles-read"); err != nil {
 			return err
 		}
 	}

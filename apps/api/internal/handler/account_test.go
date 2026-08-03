@@ -107,6 +107,25 @@ func TestAccountsMeDevSessionFallback(t *testing.T) {
 	if got := features["menu_list_edit_lifecycle"]; got != true {
 		t.Fatalf("dev features.menu_list_edit_lifecycle = %v, want true", got)
 	}
+	// GOAL-011 (A-004 F-003): the dev session mirrors the admin users/roles
+	// permissions and menus so the fallback never silently drops the gates.
+	perms, _ := user["permissions"].([]any)
+	permSet := map[string]bool{}
+	for _, p := range perms {
+		if s, ok := p.(string); ok {
+			permSet[s] = true
+		}
+	}
+	for _, want := range []string{"users.read", "users.write", "roles.read", "roles.write"} {
+		if !permSet[want] {
+			t.Fatalf("dev permissions missing %s in %v", want, perms)
+		}
+	}
+	for _, want := range []string{"menu_users", "menu_roles"} {
+		if got := features[want]; got != true {
+			t.Fatalf("dev features.%s = %v, want true", want, got)
+		}
+	}
 }
 
 func containsRoles(roles []string, want string) bool {

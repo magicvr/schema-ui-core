@@ -79,3 +79,13 @@ version: 0.3.0
 - **信息门禁**：GOAL-011 登记 `I-011-001`/`I-011-002`/`I-011-003` required，初始均 open；只允许 S1 收集，未放行产品实现。
 - **影响**：GOAL-010 保持 `active / 3/5`，S4/S5 未勾选；Root A-002 F-002-001 继续 open，Root/VP-002 关门继续阻断。
 - **后续**：由 GOAL-011 先冻结 users/roles 领域契约与 records 退场策略，再按其路线图实施；完成后回到本目标评估 S4。
+
+## D-005 · 父契约注记：账号域 409 由 GOAL-011 限定扩展（响应 GOAL-011 A-002 F-005）
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**（P-004）：GOAL-011 A-002（independent · conditional）闭合路径裁决「全部 fixed」，其中 F-005（recommended）要求本父契约对 §5「不引入 409」追加指向子契约的注记，消除跨目标双真相。
+- **决定**：将 [I-010-001 通用资源契约](attachments/I-010-001-schema-resource-contract.md) 由 **v0.2.1 → v0.2.2**，仅在 §5 追加一句注记——「账号/权限域（users/roles）的 409 业务冲突码由 `GOAL-011-s4-semantic-admin-resources` 的 [I-011-001 领域契约](../GOAL-011-s4-semantic-admin-resources/attachments/I-011-001-users-roles-contract.md) §6 做限定扩展；envelope 形状不变，records 零 API 变更历史不受影响」。
+- **理由**：I-010-001 v0.2.1 §5 仍写「不引入 409/业务唯一冲突」，实施者若只读父契约会与子契约冲突；追加注记不改 S1～S3 的 records 零对外变更事实与任何 checksum/迁移，纯文档注解。
+- **影响**：GOAL-010 保持 `active / 3/5`；`I-010-001`/`I-010-002` 维持 `verified`（注记不改变冻结结论）；Root A-002 F-002-001 仍 open。
+- **后续**：GOAL-011 按 D-003 修订后契约进入 S2。

@@ -118,10 +118,82 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 4 || applied[3].version != 4 || applied[3].name != "operation_log" {
-		t.Fatalf("applied = %+v, want 4 = operation_log", applied)
+	if len(applied) != 5 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" {
+		t.Fatalf("applied = %+v, want 5 = operation_log + operation_log_expand", applied)
 	}
 	if !tableExistsDB(t, st.db, "operation_log") {
 		t.Fatal("operation_log table missing after 0004")
+	}
+}
+
+// GOAL-011 0005 (A-004 F-001) · a DB at 0004 with existing operation_log rows
+// upgrades to 0005 preserving every row (id/event/actor/record_id/detail/
+// created_at), and the expanded CHECK then accepts a users.* event.
+func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "v4-oplog.db")
+	createR2Fixture(t, path)
+	upgradeR2ToV2(t, path)
+	db := rawOpen(t, path)
+	s := &Store{db: db, path: path}
+	for _, v := range []int{3, 4} { // 0003 records_persist + 0004 operation_log
+		if err := s.applyMigration(compiledMigrations[v-1]); err != nil {
+			db.Close()
+			t.Fatalf("apply 000%d: %v", v, err)
+		}
+	}
+	// Write two legacy operation-log rows under the 0004 CHECK.
+	type legacyRow struct {
+		id, event, actorID, actorName, recordID, detail string
+		createdAt                                       int64
+	}
+	legacy := []legacyRow{
+		{"op-old-1", EventRecordCreate, "user-admin", "Admin", "rec-9", `{"name":"Acme"}`, 1700000000000},
+		{"op-old-2", EventAuthLogin, "user-admin", "Admin", "", `{"username":"admin"}`, 1700000001000},
+	}
+	for _, r := range legacy {
+		var recordID, detail any
+		if r.recordID != "" {
+			recordID = r.recordID
+		}
+		if r.detail != "" {
+			detail = r.detail
+		}
+		if _, err := db.Exec(
+			`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			r.id, r.event, r.actorID, r.actorName, recordID, detail, r.createdAt,
+		); err != nil {
+			db.Close()
+			t.Fatalf("insert legacy op row: %v", err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Open(path, "admin", "hash", false) // applies 0005
+	if err != nil {
+		t.Fatalf("upgrade v4→v5: %v", err)
+	}
+	defer st.Close()
+
+	got, err := st.ListOperations(10)
+	if err != nil {
+		t.Fatalf("ListOperations: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("rows after 0005 = %d, want 2 preserved", len(got))
+	}
+	if got[0].ID != "op-old-2" || got[0].Event != EventAuthLogin || got[0].ActorName != "Admin" {
+		t.Fatalf("op-old-2 = %+v", got[0])
+	}
+	if got[1].ID != "op-old-1" || got[1].Event != EventRecordCreate || got[1].RecordID == nil || *got[1].RecordID != "rec-9" {
+		t.Fatalf("op-old-1 = %+v", got[1])
+	}
+	// The expanded CHECK accepts a users.* event on the migrated table.
+	if err := st.RecordOperation(Operation{
+		ID: "op-new", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
+		CreatedAt: time.UnixMilli(1700000002000).UTC(),
+	}); err != nil {
+		t.Fatalf("users.create after 0005: %v", err)
 	}
 }

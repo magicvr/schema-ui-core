@@ -29,12 +29,17 @@ func StaticDevSession() Session {
 			// editor + admin unlock every permission-inheritance fixture
 			// scenario used by the R4 conformance tests.
 			Roles: []string{"admin", "editor"},
-			// Consistent with the admin seed's grants under the S4 gate.
-			Permissions: []string{"records.read", "records.write"},
+			// Consistent with the admin seed's grants under the S4 gate: the
+			// GOAL-011 users/roles keys (records retired by 0006, GOAL-011 S3).
+			Permissions: []string{
+				"users.read", "users.write",
+				"roles.read", "roles.write",
+			},
 		},
 		Features: map[string]bool{
-			"beta":                     true,
-			"menu_list_edit_lifecycle": true, // admin grant parity under S5
+			"beta":       true,
+			"menu_users": true, // GOAL-011 users page grant parity
+			"menu_roles": true, // GOAL-011 roles page grant parity
 		},
 	}
 }

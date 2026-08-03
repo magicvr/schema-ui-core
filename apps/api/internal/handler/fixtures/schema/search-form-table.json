@@ -12,14 +12,14 @@
       {
         "type": "text",
         "props": {
-          "text": "A search form filters the record list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R4 binds the search form to the target table query (form-to-query, mode: search + targetTable)."
+          "text": "A search form filters the role list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R4 binds the search form to the target table query (form-to-query, mode: search + targetTable)."
         }
       },
       {
         "type": "form",
         "id": "search-form",
         "props": {
-          "fields": [{ "id": "q", "label": "Search records", "type": "input" }],
+          "fields": [{ "id": "q", "label": "Search roles", "type": "input" }],
           "mode": "search",
           "targetTable": "search-results",
           "submitLabel": "Search"
@@ -31,12 +31,11 @@
         "props": {
           "columns": [
             { "field": "id", "label": "ID" },
+            { "field": "key", "label": "Key", "sortable": true },
             { "field": "name", "label": "Name", "sortable": true },
-            { "field": "status", "label": "Status", "sortable": true },
-            { "field": "owner", "label": "Owner", "sortable": true },
             { "field": "updatedAt", "label": "Updated", "sortable": true }
           ],
-          "dataSource": "/api/records"
+          "dataSource": "/api/roles"
         }
       }
     ]

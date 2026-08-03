@@ -86,13 +86,6 @@ func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 			db.Close()
 			return nil, err
 		}
-		// R4 seed: representative records on an empty table only (S3). Runs after
-		// RBAC so the demo dataset exists on a fresh seed path without ever
-		// overwriting user rows or resurrecting deleted ones on restart.
-		if err := s.seedRecords(); err != nil {
-			db.Close()
-			return nil, err
-		}
 	}
 	return s, nil
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -45,7 +46,7 @@ func (e *memEntity) Get(id string) (map[string]any, error) {
 	return row, nil
 }
 
-func (e *memEntity) Create(body map[string]any, id string, now time.Time) (map[string]any, error) {
+func (e *memEntity) Create(body map[string]any, id string, now time.Time, _ account.User) (map[string]any, error) {
 	row := map[string]any{
 		"id":        id,
 		"sku":       stringField(body, "sku"),
@@ -56,7 +57,7 @@ func (e *memEntity) Create(body map[string]any, id string, now time.Time) (map[s
 	return row, nil
 }
 
-func (e *memEntity) Update(id string, body map[string]any, now time.Time) (map[string]any, error) {
+func (e *memEntity) Update(id string, body map[string]any, now time.Time, _ account.User) (map[string]any, error) {
 	row, ok := e.rows[id]
 	if !ok {
 		return nil, store.ErrNotFound
@@ -68,7 +69,7 @@ func (e *memEntity) Update(id string, body map[string]any, now time.Time) (map[s
 	return row, nil
 }
 
-func (e *memEntity) Delete(id string) error {
+func (e *memEntity) Delete(id string, _ account.User) error {
 	if _, ok := e.rows[id]; !ok {
 		return store.ErrNotFound
 	}

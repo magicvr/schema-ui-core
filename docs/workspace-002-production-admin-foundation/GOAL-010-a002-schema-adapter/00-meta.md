@@ -35,7 +35,7 @@ progress: 3/5
 
 | ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
 |----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
-| `I-010-001` | 通用资源契约的精确形状（字段模型、response mapping、端点注册形态、错误 envelope 扩展边界） | required | S1 方案冻结与 S2 实施 | S2 首个实施变更前 | 对照现有 records 契约与 A-002 建议关闭路径，形成版本化适配层契约附件，提交用户裁决 | **verified** | 已关闭（D-002）；v0.2.0 为 A-001 F-001/F-002 响应修订（D-003）；v0.2.1 为 D-004 S4 交接附注，均维持 verified | [I-010-001-schema-resource-contract.md](attachments/I-010-001-schema-resource-contract.md) v0.2.1：S1～S3 技术契约不变；`catalog` 降为 genericity 历史示例，S4 产品终态交由 GOAL-011 `users + roles` 与 records 退场契约承接 |
+| `I-010-001` | 通用资源契约的精确形状（字段模型、response mapping、端点注册形态、错误 envelope 扩展边界） | required | S1 方案冻结与 S2 实施 | S2 首个实施变更前 | 对照现有 records 契约与 A-002 建议关闭路径，形成版本化适配层契约附件，提交用户裁决 | **verified** | 已关闭（D-002）；v0.2.0 为 A-001 F-001/F-002 响应修订（D-003）；v0.2.1 为 D-004 S4 交接附注；v0.2.2 为 D-005（响应 GOAL-011 A-002 F-005）账号域 409 限定扩展注记，均维持 verified | [I-010-001-schema-resource-contract.md](attachments/I-010-001-schema-resource-contract.md) v0.2.2：S1～S3 技术契约不变；`catalog` 降为 genericity 历史示例，S4 产品终态交由 GOAL-011 `users + roles` 与 records 退场契约承接；§5 账号域 409 由 I-011-001 限定扩展 |
 | `I-010-002` | 向后兼容与迁移策略（现有 records fixture/API/权限键在通用化后的迁移或双轨形态） | required | S2/S3 实施 | S3 首个前端变更前 | 评估 records 注册为实例的迁移边界与回归影响，记录决策 | **verified** | 已关闭（D-002，提前于最晚阶段） | 契约 §6：后端零对外变更收敛；前端一次性泛化（无双轨）；fixture/emulator/测试形状保持 |
 
 > 未关闭的 required 信息项不得实施受影响范围；允许先进行收集与方案冻结（Root P-005）。

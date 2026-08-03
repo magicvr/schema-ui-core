@@ -12,21 +12,20 @@
       {
         "type": "text",
         "props": {
-          "text": "Sortable records from the Go list API (/api/records). This page exercises D-DATA list/detail and D-TABLE sort declarations."
+          "text": "Sortable users from the Go list API (/api/users). This page exercises D-DATA list/detail and D-TABLE sort declarations."
         }
       },
       {
         "type": "table",
-        "id": "records-table",
+        "id": "users-table",
         "props": {
           "columns": [
             { "field": "id", "label": "ID" },
+            { "field": "username", "label": "Username", "sortable": true },
             { "field": "name", "label": "Name", "sortable": true },
-            { "field": "status", "label": "Status", "sortable": true },
-            { "field": "owner", "label": "Owner", "sortable": true },
             { "field": "updatedAt", "label": "Updated", "sortable": true }
           ],
-          "dataSource": "/api/records"
+          "dataSource": "/api/users"
         }
       }
     ]

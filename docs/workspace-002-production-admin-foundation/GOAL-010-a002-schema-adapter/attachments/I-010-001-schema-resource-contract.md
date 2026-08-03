@@ -5,9 +5,9 @@ doc_type: contract
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.2.1
+version: 0.2.2
 related_info: I-010-001, I-010-002
-related_decision: D-002, D-003, D-004
+related_decision: D-002, D-003, D-004, D-005
 ---
 
 # I-010-001 · Schema 驱动通用资源契约（冻结）
@@ -62,6 +62,7 @@ related_decision: D-002, D-003, D-004
 - **通用错误码（全资源共享）**：`UNAUTHENTICATED`(401)、`FORBIDDEN`(403)、`INVALID_SORT_FIELD`/`INVALID_SORT_ORDER`/`INVALID_PAGE`/`INVALID_PAGE_SIZE`(400)、`INVALID_CREATE_BODY`/`INVALID_CREATE_FIELD`(400)、`INVALID_PATCH_BODY`/`INVALID_PATCH_FIELD`(400)、`INTERNAL`(500)。
 - **资源特定**：NOT_FOUND 码 = `{ID}_NOT_FOUND`（records 保持 `RECORD_NOT_FOUND` 兼容；新资源如 `CATALOG_NOT_FOUND`）。前端 `readRecordApiError` 已按 envelope 泛读，无需改动。
 - **不引入**：`409`/业务唯一冲突、枚举校验码（与 I-007-001 一致）；resources 元数据发现端点（如 `/api/resources` 列表）为非目标（注册表是代码级，不暴露）。
+- **v0.2.2 · GOAL-010 D-005（响应 GOAL-011 A-002 F-005）注记**：账号/权限域（users/roles）的 409 业务冲突码由 `GOAL-011-s4-semantic-admin-resources` 的 [I-011-001 领域契约](../../../GOAL-011-s4-semantic-admin-resources/attachments/I-011-001-users-roles-contract.md) §6 做限定扩展（envelope 形状不变，仅账号域）；records 零 API 变更历史事实不受影响。S1～S3 通用契约语义不变。
 
 ## 6. 迁移与兼容策略（I-010-002）
 
@@ -103,3 +104,4 @@ related_decision: D-002, D-003, D-004
 | 0.1.0 | 2026-08-03 | 冻结（GOAL-010 D-002；关闭 `I-010-001`；§6 迁移策略一并冻结 `I-010-002`） |
 | 0.2.0 | 2026-08-03 | A-001 F-001/F-002 响应（GOAL-010 D-003）：§2 冻结 `dataSource` 单斜杠同源执行规则（认证 fetch 前校验 + 反例）；§3 冻结 `rowKey` 行键不变量（非空唯一标量、无效响应停止渲染并禁行 action）；S3 前端适配层实施 + 正反测试按 `fixed` 关闭 F-001/F-002 |
 | 0.2.1 | 2026-08-03 | GOAL-010 D-004 S4 交接附注：不改变 S1～S3 技术契约；`catalog` 降为 genericity 历史示例，S4 终态改由 GOAL-011 的 `users + roles`、records 退场与双资源证据承接 |
+| 0.2.2 | 2026-08-03 | GOAL-010 D-005（响应 GOAL-011 A-002 F-005）：§5 追加账号域 409 限定扩展注记；纯文档注解，不改 S1～S3 契约/checksum/历史事实，`I-010-001`/`I-010-002` 维持 `verified` |

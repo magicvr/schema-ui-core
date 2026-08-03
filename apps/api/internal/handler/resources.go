@@ -45,14 +45,29 @@ type resourceFilter struct {
 
 // ResourceEntity is the store boundary the generic factory drives. Rows are
 // plain JSON maps; the concrete entity adapter owns store-specific shaping
-// (id format, timestamp serialization, column mapping).
+// (id format, timestamp serialization, column mapping). Create/Update/Delete
+// receive the request actor so a resource can enforce actor-dependent domain
+// invariants (e.g. users self/last-admin protection, I-011-001 §7.2).
 type ResourceEntity interface {
 	List(filter resourceFilter) ([]map[string]any, int, error)
 	Get(id string) (map[string]any, error)
-	Create(body map[string]any, id string, now time.Time) (map[string]any, error)
-	Update(id string, body map[string]any, now time.Time) (map[string]any, error)
-	Delete(id string) error
+	Create(body map[string]any, id string, now time.Time, user account.User) (map[string]any, error)
+	Update(id string, body map[string]any, now time.Time, user account.User) (map[string]any, error)
+	Delete(id string, user account.User) error
 }
+
+// DomainError is a typed domain error an entity may return from List/Get/
+// Create/Update/Delete. The factory maps it verbatim (status + {error,message})
+// BEFORE the generic ErrNotFound/INTERNAL fallbacks (I-011-001 §7.3). It is how
+// a resource surfaces domain rejections (USERNAME_TAKEN, LAST_ADMIN, ROLE_IN_USE,
+// …) with a precise status/code instead of degrading to INTERNAL.
+type DomainError struct {
+	Status  int
+	Code    string
+	Message string
+}
+
+func (e *DomainError) Error() string { return e.Code + ": " + e.Message }
 
 // writeKind identifies a successful write so a resource can attach side effects
 // (e.g. operation-log rows) uniformly.
@@ -73,8 +88,14 @@ type Resource struct {
 	SortFields      []string       // whitelist; empty = not sortable
 	QSearch         bool           // list supports the q search param
 	Entity          ResourceEntity // store adapter
-	CreateFields    []string       // required non-empty create fields
+	CreateFields    []string       // required non-empty create fields (strings)
 	PatchFields     []string       // editable patch fields (absent keys untouched)
+	// JSONFields are additional fields accepted as arbitrary JSON values (not
+	// forced to strings). When present in a create/patch body the raw JSON value
+	// is decoded and passed through to the entity; absent means untouched (patch)
+	// or entity default (create). The entity owns shape validation (I-011-001
+	// §7.1). users uses ["roles"].
+	JSONFields []string
 	PermissionRead  string         // defaults to "{id}.read"
 	PermissionWrite string         // defaults to "{id}.write"
 	// NotFoundCode is the 404 error code, defaulting to "{ID}_NOT_FOUND".
@@ -152,6 +173,27 @@ func notFoundCode(res Resource) string {
 		return res.NotFoundCode
 	}
 	return strings.ToUpper(res.ID) + "_NOT_FOUND"
+}
+
+// writeEntityError maps an entity error to the wire in the frozen priority order
+// (I-011-001 §7.3): DomainError verbatim, store.ErrNotFound → 404 with the
+// resource's NOT_FOUND code, else INTERNAL. Returns true when a response was
+// written (err != nil).
+func writeEntityError(w http.ResponseWriter, res Resource, err error, action string) bool {
+	if err == nil {
+		return false
+	}
+	var de *DomainError
+	if errors.As(err, &de) {
+		writeError(w, de.Status, de.Code, de.Message)
+		return true
+	}
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, notFoundCode(res), "no "+res.ID+" with that id")
+		return true
+	}
+	writeError(w, http.StatusInternalServerError, "INTERNAL", "could not "+action+" "+res.ID)
+	return true
 }
 
 func stringField(m map[string]any, key string) string {
@@ -234,13 +276,15 @@ func (e createFieldError) Error() string { return e.field + " must " + e.reason 
 // decodeResourceCreate parses a POST body. A body that is not a JSON object (or
 // is truncated/oversized) returns a plain error → INVALID_CREATE_BODY; a missing,
 // non-string or blank-trimmed required field returns createFieldError →
-// INVALID_CREATE_FIELD. Unknown keys are ignored (same posture as PATCH).
-func decodeResourceCreate(r *http.Request, fields []string) (map[string]any, error) {
+// INVALID_CREATE_FIELD. jsonFields (I-011-001 §7.1) are additionally decoded as
+// arbitrary JSON values when present and passed through for the entity to
+// validate. Unknown keys are ignored (same posture as PATCH).
+func decodeResourceCreate(r *http.Request, fields, jsonFields []string) (map[string]any, error) {
 	var raw map[string]json.RawMessage
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		return nil, err
 	}
-	body := make(map[string]any, len(fields))
+	body := make(map[string]any, len(fields)+len(jsonFields))
 	for _, key := range fields {
 		val, ok := raw[key]
 		if !ok {
@@ -256,6 +300,17 @@ func decodeResourceCreate(r *http.Request, fields []string) (map[string]any, err
 		}
 		body[key] = s
 	}
+	for _, key := range jsonFields {
+		val, ok := raw[key]
+		if !ok {
+			continue // optional JSON field: entity default
+		}
+		var v any
+		if err := json.Unmarshal(val, &v); err != nil {
+			return nil, err
+		}
+		body[key] = v
+	}
 	return body, nil
 }
 
@@ -269,13 +324,14 @@ func (e patchFieldError) Error() string { return e.field + " must not be empty" 
 
 // decodeResourcePatch parses a PATCH body. Absent keys are untouched; a provided
 // field must be a non-empty string (a non-string or blank value fails closed —
-// INVALID_PATCH_BODY / INVALID_PATCH_FIELD respectively). Unknown keys ignored.
-func decodeResourcePatch(r *http.Request, fields []string) (map[string]any, error) {
+// INVALID_PATCH_BODY / INVALID_PATCH_FIELD respectively). jsonFields are decoded
+// as arbitrary JSON values when present (absent = untouched). Unknown keys ignored.
+func decodeResourcePatch(r *http.Request, fields, jsonFields []string) (map[string]any, error) {
 	var raw map[string]json.RawMessage
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		return nil, err
 	}
-	body := make(map[string]any, len(fields))
+	body := make(map[string]any, len(fields)+len(jsonFields))
 	for _, key := range fields {
 		val, ok := raw[key]
 		if !ok {
@@ -291,6 +347,17 @@ func decodeResourcePatch(r *http.Request, fields []string) (map[string]any, erro
 		}
 		body[key] = s
 	}
+	for _, key := range jsonFields {
+		val, ok := raw[key]
+		if !ok {
+			continue // optional JSON field: untouched
+		}
+		var v any
+		if err := json.Unmarshal(val, &v); err != nil {
+			return nil, err
+		}
+		body[key] = v
+	}
 	return body, nil
 }
 
@@ -303,7 +370,7 @@ func (h *resourceHandler) create() http.Handler {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
-		body, err := decodeResourceCreate(r, h.res.CreateFields)
+		body, err := decodeResourceCreate(r, h.res.CreateFields, h.res.JSONFields)
 		if err != nil {
 			var fe createFieldError
 			if errors.As(err, &fe) {
@@ -322,14 +389,15 @@ func (h *resourceHandler) create() http.Handler {
 				writeError(w, http.StatusInternalServerError, "INTERNAL", "could not generate "+h.res.ID+" id")
 				return
 			}
-			row, err = h.res.Entity.Create(body, id, now)
+			row, err = h.res.Entity.Create(body, id, now, user)
 			if err == nil {
 				break
 			}
-			if !errors.Is(err, store.ErrRecordExists) {
-				writeError(w, http.StatusInternalServerError, "INTERNAL", "could not create "+h.res.ID)
-				return
+			if errors.Is(err, store.ErrRecordExists) {
+				continue // PK collision: retry with a fresh id
 			}
+			writeEntityError(w, h.res, err, "create")
+			return
 		}
 		if row == nil {
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not create "+h.res.ID)
@@ -349,12 +417,7 @@ func (h *resourceHandler) detail() http.Handler {
 			return
 		}
 		row, err := h.res.Entity.Get(r.PathValue("id"))
-		if errors.Is(err, store.ErrNotFound) {
-			writeError(w, http.StatusNotFound, h.notFound, "no "+h.res.ID+" with that id")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not load "+h.res.ID)
+		if writeEntityError(w, h.res, err, "load") {
 			return
 		}
 		writeJSON(w, http.StatusOK, row)
@@ -370,7 +433,7 @@ func (h *resourceHandler) update() http.Handler {
 		}
 		id := r.PathValue("id")
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
-		body, err := decodeResourcePatch(r, h.res.PatchFields)
+		body, err := decodeResourcePatch(r, h.res.PatchFields, h.res.JSONFields)
 		if err != nil {
 			var pe patchFieldError
 			if errors.As(err, &pe) {
@@ -381,13 +444,8 @@ func (h *resourceHandler) update() http.Handler {
 			return
 		}
 		now := time.Now().UTC()
-		row, err := h.res.Entity.Update(id, body, now)
-		if errors.Is(err, store.ErrNotFound) {
-			writeError(w, http.StatusNotFound, h.notFound, "no "+h.res.ID+" with that id")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not update "+h.res.ID)
+		row, err := h.res.Entity.Update(id, body, now, user)
+		if writeEntityError(w, h.res, err, "update") {
 			return
 		}
 		if h.res.OnWrite != nil {
@@ -405,12 +463,8 @@ func (h *resourceHandler) delete() http.Handler {
 			return
 		}
 		id := r.PathValue("id")
-		if err := h.res.Entity.Delete(id); err != nil {
-			if errors.Is(err, store.ErrNotFound) {
-				writeError(w, http.StatusNotFound, h.notFound, "no "+h.res.ID+" with that id")
-				return
-			}
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not delete "+h.res.ID)
+		if err := h.res.Entity.Delete(id, user); err != nil {
+			writeEntityError(w, h.res, err, "delete")
 			return
 		}
 		if h.res.OnWrite != nil {

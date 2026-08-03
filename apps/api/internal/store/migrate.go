@@ -86,6 +86,20 @@ var compiledMigrations = []migration{
 		stmts:       operationLogDDL,
 		up:          migrate0004,
 	},
+	{
+		version:     5,
+		name:        "operation_log_expand",
+		transformID: "0005:operation-log-expand:v1",
+		stmts:       operationLogExpandDDL,
+		up:          migrate0005,
+	},
+	{
+		version:     6,
+		name:        "records_retire",
+		transformID: "0006:records-retire:v1",
+		stmts:       recordsRetireDDL,
+		up:          migrate0006,
+	},
 }
 
 // r2BaselineDDL is the canonical R2 schema (users + refresh_tokens). It is
@@ -216,6 +230,73 @@ func migrate0004(tx *sql.Tx) error {
 	return nil
 }
 
+// operationLogExpandDDL is the canonical 0005 operation_log definition
+// (GOAL-011 S2 · I-011-001 §5): the event CHECK is expanded with the users/roles
+// write events while records.* and auth.* stay valid for historical rows. SQLite
+// cannot ALTER a CHECK constraint, so migrate0005 rebuilds the table in place.
+var operationLogExpandDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
+// migrate0005 rebuilds operation_log with the expanded event CHECK, preserving
+// existing rows and the created_at index. All steps run in one transaction so a
+// failure rolls the rebuild back (fail closed).
+func migrate0005(tx *sql.Tx) error {
+	if _, err := tx.Exec(`ALTER TABLE operation_log RENAME TO operation_log_old`); err != nil {
+		return fmt.Errorf("rename operation_log: %w", err)
+	}
+	if _, err := tx.Exec(operationLogExpandDDL[0]); err != nil {
+		return fmt.Errorf("create operation_log expanded: %w", err)
+	}
+	if _, err := tx.Exec(
+		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
+		 SELECT id, event, actor_id, actor_name, record_id, detail, created_at FROM operation_log_old`,
+	); err != nil {
+		return fmt.Errorf("migrate operation_log rows: %w", err)
+	}
+	if _, err := tx.Exec(`DROP TABLE operation_log_old`); err != nil {
+		return fmt.Errorf("drop operation_log_old: %w", err)
+	}
+	if _, err := tx.Exec(operationLogExpandDDL[1]); err != nil {
+		return fmt.Errorf("create operation_log index: %w", err)
+	}
+	return nil
+}
+
+// recordsRetireDDL is the canonical 0006 records retirement (GOAL-011 S3 ·
+// I-011-002 §2.1): drop the records table and prune the records permission/menu
+// rows and their grants. The join rows are deleted before their parents (FK
+// RESTRICT). records.* operation-log events stay valid for historical rows.
+var recordsRetireDDL = []string{
+	`DROP TABLE IF EXISTS records`,
+	`DELETE FROM role_permissions WHERE permission_id IN ('perm-records-read','perm-records-write')`,
+	`DELETE FROM role_menu_items WHERE menu_item_id = 'menu-list-edit-lifecycle'`,
+	`DELETE FROM permissions WHERE id IN ('perm-records-read','perm-records-write')`,
+	`DELETE FROM menu_items WHERE id = 'menu-list-edit-lifecycle'`,
+}
+
+// migrate0006 retires records from the product surface: the table is dropped and
+// the records permission/menu rows cleaned (idempotent deletes). The pre-v0006
+// snapshot taken by the runner before this migration is the data-recovery
+// backstop (I-011-002 §2.4).
+func migrate0006(tx *sql.Tx) error {
+	for _, stmt := range recordsRetireDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("records retire: %w", err)
+		}
+	}
+	return nil
+}
+
 // migrate applies pending migrations. It is called by Open and must remain the
 // only entry point into schema management so the ledger stays authoritative.
 func (s *Store) migrate() error {
@@ -247,16 +328,17 @@ func (s *Store) migrate() error {
 	}
 
 	pending := pendingMigrations(applied)
-	// Before the first data-mutating migration on a non-empty file database, take
-	// a recoverable snapshot so an upgrade can be rolled back. Generalized (R4)
-	// to name the snapshot after the first pending version: an existing R2 ledger
-	// upgrading to 0003 produces <db>.pre-v0003-<UTC>.sqlite (I-007-002 §3.2).
-	if len(pending) > 0 && pending[0].version >= 2 {
-		if err := s.snapshotBeforePending(pending[0].version); err != nil {
-			return err
-		}
-	}
+	// Snapshot before EVERY pending data-mutating migration (version >= 2) so
+	// each step has a recoverable pre-state (I-011-002 §2.3 v0.2.0, A-002 F-002).
+	// With 0005+0006 both pending, both pre-v0005 and pre-v0006 exist — pre-v0006
+	// (post-0005, records table still present) is the records data-recovery
+	// backstop. A fresh DB (no rows) produces no snapshot.
 	for _, m := range pending {
+		if m.version >= 2 {
+			if err := s.snapshotBeforePending(m.version); err != nil {
+				return err
+			}
+		}
 		if err := s.applyMigration(m); err != nil {
 			return err
 		}
