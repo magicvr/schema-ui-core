@@ -19,8 +19,8 @@ import (
 
 // S6 · 进程级重启持久化（L2，I-007-004 / D-007；GOAL-011 S3 改指 users 资源）：
 // 真实 `cmd/server` OS 子进程以同一 `DB_PATH` 终止→重启，全 HTTP CRUD → 重启 →
-// list/detail 符合预期。records 已由 0006 退场，本测试以 users 资源承载
-// 跨进程持久化往返。
+// users/roles list/detail 符合预期。records 已由 0006 退场，本测试以双资源
+// 承载跨进程持久化往返。
 //
 // 数据库隔离：每轮全新临时 DB_PATH + 空闲端口；测试结束 Kill+Wait 不留进程，
 // 临时库与 pre-v0006 快照随 t.TempDir() 清理。迁移/seed 重跑、失败路径与
@@ -68,6 +68,17 @@ func TestServerProcessRestartPersistsUsers(t *testing.T) {
 	if code != http.StatusCreated {
 		t.Fatalf("create role status = %d, want 201: %v", code, roleOut)
 	}
+	roleID, _ := roleOut["id"].(string)
+	roleCreatedAt, _ := roleOut["createdAt"].(string)
+	roleUpdatedAt, _ := roleOut["updatedAt"].(string)
+	if roleID == "" || roleCreatedAt == "" || roleUpdatedAt == "" {
+		t.Fatalf("created role missing persisted identity/timestamps: %v", roleOut)
+	}
+	for field, value := range map[string]string{"createdAt": roleCreatedAt, "updatedAt": roleUpdatedAt} {
+		if _, err := time.Parse("2006-01-02T15:04:05.000Z", value); err != nil {
+			t.Fatalf("created role %s = %q, want millisecond UTC timestamp: %v", field, value, err)
+		}
+	}
 	killServer(t, srv1, log1)
 
 	// Phase 2: restart the same binary against the same DB.
@@ -101,13 +112,35 @@ func TestServerProcessRestartPersistsUsers(t *testing.T) {
 		t.Fatalf("total after restart = %v, want 2 (admin + created; no re-seed)", total)
 	}
 
-	// The created role survives the process restart as well (roles restart path).
-	code, roleDetail := httpDoJSON(t, port2, http.MethodGet, "/api/roles/role-ops", "", token2)
+	code, roleList := httpDoJSON(t, port2, http.MethodGet, "/api/roles?pageSize=100", "", token2)
+	if code != http.StatusOK {
+		t.Fatalf("role list after restart status = %d, want 200", code)
+	}
+	roleItems := roleList["items"].([]any)
+	var listedRole map[string]any
+	for _, raw := range roleItems {
+		item := raw.(map[string]any)
+		if item["id"] == roleID {
+			listedRole = item
+			break
+		}
+	}
+	if listedRole == nil {
+		t.Fatalf("created role %s missing after process restart; list=%v", roleID, roleItems)
+	}
+	if listedRole["createdAt"] != roleCreatedAt || listedRole["updatedAt"] != roleUpdatedAt {
+		t.Fatalf("role list timestamps after restart = %v, want createdAt=%s updatedAt=%s", listedRole, roleCreatedAt, roleUpdatedAt)
+	}
+
+	code, roleDetail := httpDoJSON(t, port2, http.MethodGet, "/api/roles/"+roleID, "", token2)
 	if code != http.StatusOK {
 		t.Fatalf("role detail after restart status = %d, want 200", code)
 	}
 	if roleDetail["key"] != "ops" || roleDetail["name"] != "Operator" || roleDetail["system"] != false {
 		t.Fatalf("role detail after restart = %v", roleDetail)
+	}
+	if roleDetail["id"] != roleID || roleDetail["createdAt"] != roleCreatedAt || roleDetail["updatedAt"] != roleUpdatedAt {
+		t.Fatalf("role detail identity/timestamps after restart = %v, want id=%s createdAt=%s updatedAt=%s", roleDetail, roleID, roleCreatedAt, roleUpdatedAt)
 	}
 
 	// detail after restart: created user fields + updatedAt match Phase 1

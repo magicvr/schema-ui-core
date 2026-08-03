@@ -150,30 +150,49 @@ func TestRolesDeleteFreeRole(t *testing.T) {
 	}
 }
 
-// GOAL-011 S2 · anonymous 401; viewer reads roles but cannot write (403).
+// GOAL-011 S4 · every roles route is authenticated; viewer can read list/detail
+// but every write route is forbidden.
 func TestRolesAuthGates(t *testing.T) {
 	env := newAuthTestEnv(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/roles", nil)
-	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusUnauthorized {
-		t.Fatalf("anonymous status = %d, want 401", rr.Code)
+	routes := []struct {
+		method string
+		path   string
+		body   string
+		read   bool
+	}{
+		{http.MethodGet, "/api/roles", "", true},
+		{http.MethodGet, "/api/roles/role-admin", "", true},
+		{http.MethodPost, "/api/roles", `{"key":"x","name":"X"}`, false},
+		{http.MethodPatch, "/api/roles/role-admin", `{"name":"Root"}`, false},
+		{http.MethodDelete, "/api/roles/role-admin", "", false},
+	}
+	for _, tc := range routes {
+		code, out := sendJSON(t, env.mux, tc.method, tc.path, tc.body)
+		if code != http.StatusUnauthorized || out["error"] != "UNAUTHENTICATED" {
+			t.Fatalf("anonymous %s %s = %d %v, want 401 UNAUTHENTICATED", tc.method, tc.path, code, out)
+		}
 	}
 
 	env.addUser(t, "viewer3", "pw", []string{"viewer"})
 	vToken := env.login(t, "viewer3", "pw")
-	req = bearer(t, vToken, http.MethodGet, "/api/roles", "")
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Fatalf("viewer list status = %d, want 200", rr.Code)
-	}
-	req = bearer(t, vToken, http.MethodPost, "/api/roles", `{"key":"x","name":"X"}`)
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusForbidden {
-		t.Fatalf("viewer write status = %d, want 403", rr.Code)
+	for _, tc := range routes {
+		req := bearer(t, vToken, tc.method, tc.path, tc.body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		want := http.StatusForbidden
+		if tc.read {
+			want = http.StatusOK
+		}
+		if rr.Code != want {
+			t.Fatalf("viewer %s %s = %d, want %d: %s", tc.method, tc.path, rr.Code, want, rr.Body.String())
+		}
+		if !tc.read {
+			var out map[string]any
+			_ = json.NewDecoder(rr.Body).Decode(&out)
+			if out["error"] != "FORBIDDEN" {
+				t.Fatalf("viewer %s %s error = %v, want FORBIDDEN", tc.method, tc.path, out["error"])
+			}
+		}
 	}
 }
 
@@ -218,6 +237,24 @@ func TestRolesOperationLogEvents(t *testing.T) {
 	for i, ev := range want {
 		if roleOps[i].Event != ev {
 			t.Fatalf("roleOps[%d].event = %q, want %q", i, roleOps[i].Event, ev)
+		}
+	}
+	for i, op := range roleOps {
+		if op.ActorID != "user-admin" || op.ActorName != "Admin" {
+			t.Fatalf("roleOps[%d].actor = %q/%q, want user-admin/Admin", i, op.ActorID, op.ActorName)
+		}
+		if op.RecordID == nil || *op.RecordID != "role-oprole" {
+			t.Fatalf("roleOps[%d].record_id = %v, want role-oprole", i, op.RecordID)
+		}
+		if op.Detail != nil && strings.Contains(*op.Detail, "password") {
+			t.Fatalf("detail leaked a secret: %v", *op.Detail)
+		}
+		if op.Event == store.EventRoleDelete {
+			if op.Detail != nil {
+				t.Fatalf("delete detail = %q, want nil", *op.Detail)
+			}
+		} else if op.Detail == nil || *op.Detail != `{"key":"oprole"}` {
+			t.Fatalf("%s detail = %v, want key-only JSON", op.Event, op.Detail)
 		}
 	}
 }

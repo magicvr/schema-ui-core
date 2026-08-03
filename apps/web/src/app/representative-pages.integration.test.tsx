@@ -217,6 +217,20 @@ describe("representative pages through the real manifest (GOAL-004)", () => {
     expect(container.textContent).toContain("Select a record to view details.");
   });
 
+  it("renders the roles CRUD page from the real manifest and fixture", async () => {
+    const admin = {
+      user: { id: "u1", roles: ["admin"], permissions: ["roles.read", "roles.write"] },
+    };
+    const container = await renderApp("/roles", admin, realFixtures());
+    expect(container.querySelector("h1")?.textContent).toContain("Roles");
+    expect(container.textContent).toContain("New role");
+    expect(container.textContent).toContain("Edit");
+    expect(container.textContent).toContain("Delete");
+    expect(container.textContent).toContain("admin");
+    expect(container.textContent).toContain("viewer");
+    expect(container.textContent).toContain("Select a record to view details.");
+  });
+
   it("applies $context reactions on the migrated reactive form", async () => {
     const admin = await renderApp("/form-with-reactions", { user: { roles: ["admin"] } }, realFixtures());
     expect(admin.textContent).toContain("Approval (switch)");

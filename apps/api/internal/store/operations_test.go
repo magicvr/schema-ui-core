@@ -137,8 +137,9 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 }
 
 // GOAL-011 0005 (A-004 F-001) · a DB at 0004 with existing operation_log rows
-// upgrades to 0005 preserving every row (id/event/actor/record_id/detail/
-// created_at), and the expanded CHECK then accepts a users.* event.
+// upgrades through current migrations preserving every row (id/event/actor/
+// record_id/detail/created_at), and the expanded CHECK accepts users.* and
+// roles.* events that remain durable after reopen.
 func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "v4-oplog.db")
 	createR2Fixture(t, path)
@@ -180,11 +181,10 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	st, err := Open(path, "admin", "hash", false) // applies 0005
+	st, err := Open(path, "admin", "hash", false) // applies 0005 and 0006
 	if err != nil {
-		t.Fatalf("upgrade v4→v5: %v", err)
+		t.Fatalf("upgrade v4 through current migrations: %v", err)
 	}
-	defer st.Close()
 
 	got, err := st.ListOperations(10)
 	if err != nil {
@@ -199,11 +199,46 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	if got[1].ID != "op-old-1" || got[1].Event != EventRecordCreate || got[1].RecordID == nil || *got[1].RecordID != "rec-9" {
 		t.Fatalf("op-old-1 = %+v", got[1])
 	}
-	// The expanded CHECK accepts a users.* event on the migrated table.
+	userRecordID := "user-auditor"
+	userDetail := `{"username":"auditor"}`
 	if err := st.RecordOperation(Operation{
-		ID: "op-new", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
+		ID: "op-new-user", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
+		RecordID: &userRecordID, Detail: &userDetail,
 		CreatedAt: time.UnixMilli(1700000002000).UTC(),
 	}); err != nil {
 		t.Fatalf("users.create after 0005: %v", err)
+	}
+	roleRecordID := "role-auditor"
+	roleDetail := `{"key":"auditor"}`
+	if err := st.RecordOperation(Operation{
+		ID: "op-new-role", Event: EventRoleCreate, ActorID: "user-admin", ActorName: "Admin",
+		RecordID: &roleRecordID, Detail: &roleDetail,
+		CreatedAt: time.UnixMilli(1700000003000).UTC(),
+	}); err != nil {
+		t.Fatalf("roles.create after 0005: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatalf("close migrated store: %v", err)
+	}
+	st, err = Open(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatalf("reopen migrated store: %v", err)
+	}
+	defer st.Close()
+	got, err = st.ListOperations(10)
+	if err != nil {
+		t.Fatalf("ListOperations after reopen: %v", err)
+	}
+	if len(got) != 4 {
+		t.Fatalf("rows after reopen = %d, want 4 (2 legacy + users + roles)", len(got))
+	}
+	if got[0].ID != "op-new-role" || got[0].Event != EventRoleCreate || got[0].RecordID == nil || *got[0].RecordID != roleRecordID || got[0].Detail == nil || *got[0].Detail != roleDetail {
+		t.Fatalf("roles event after reopen = %+v", got[0])
+	}
+	if got[1].ID != "op-new-user" || got[1].Event != EventUserCreate || got[1].RecordID == nil || *got[1].RecordID != userRecordID || got[1].Detail == nil || *got[1].Detail != userDetail {
+		t.Fatalf("users event after reopen = %+v", got[1])
+	}
+	if got[2].ID != "op-old-2" || got[3].ID != "op-old-1" {
+		t.Fatalf("legacy event order after reopen = [%s %s], want [op-old-2 op-old-1]", got[2].ID, got[3].ID)
 	}
 }

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策 · GOAL-011
@@ -66,3 +66,20 @@ version: 0.1.0
 - **信息门禁**：`I-011-001`/`I-011-002` 维持 `verified`（v0.2.0 为响应修订，不改变冻结结论）；`I-011-003` 保持 open。
 - **影响**：GOAL-011 保持 `active / 1/5`，S1 契约以 v0.2.0 为准；A-002 conditional 经 F-001/F-002 闭合后与 A-001 pass 趋同；S2 实施门禁保持解除；Root A-002 F-002-001 仍 open。
 - **后续**：进入 S2 后端 users/roles 资源闭环（按 v0.2.0 契约落地工厂扩展 + store 领域方法 + 双资源 CRUD + 401/403）。
+
+## D-004 · 响应 A-007：fixed 闭合三项必改并冻结 I-011-003 v0.2.0
+
+- **日期**：2026-08-03
+- **状态**：accepted
+- **用户裁决**（P-004.1 / P-004 §3.2）：A-007 为同范围唯一正式意见，且存在三条 required finding。用户明确裁决“**不用补自审计，直接 fix**”：跳过同范围自审，不采用 residual 或 overruled，F-001～F-003 全部走 `fixed`。
+- **决定**：
+  1. 将 [I-011-003-acceptance-matrix.md](attachments/I-011-003-acceptance-matrix.md) 从 A-007 审计时的候选 v0.1.0 修订并冻结为 **v0.2.0**；只有本决策落盘后，附件才使用“冻结”与 `verified` 的既成事实表述（F-001）。
+  2. 冻结 Renderer/App 基线为提交 `adfe15a17da770699d5e109f22402c41ece5eeea`，并在契约 §3 固定受限生产文件清单和可执行 `git diff --exit-code` 命令；测试文件不属于受限生产路径，但不能替代零 diff 证明。
+  3. Web 补齐 roles 真实 fixture 的 create/update/delete action 断言、users/roles action id 无 Renderer 硬编码断言，以及真实 manifest + roles fixture 的页面级渲染断言（F-002）。
+  4. API 补齐 users/roles 五路由匿名 401 与 viewer 读 200/写 403、双资源 operation-log actor/record/detail、roles 进程重启 list/detail/毫秒时间戳往返，以及升级库重开后 users/roles 事件持久化断言（F-003）。
+  5. `I-011-003` → **verified**，解除 S4 集成验收的信息门禁；S4 仍须按冻结矩阵形成独立验收收据并通过阶段审视，不能由信息项关闭自动推导完成。
+- **fixed 关闭证据**：I-011-003 v0.2.0；`schema-crud.test.tsx` T-UI-10；`representative-pages.integration.test.tsx` roles 页面断言；`users_test.go` / `roles_test.go`；`server_restart_test.go`；`operations_test.go`；本机 `go test ./...`、Web 485/485、Web build 与 Renderer 基线 diff 均通过（详见 `02-execution.md` 和 A-007 响应节）。
+- **理由**：三项 finding 均指向可核对的契约真实性或证据缺口，修复成本可控，且直接影响 `I-011-003` 的核心主张；没有接受残余或驳回意见的合理依据。
+- **未选方案**：补同范围自审（用户明确跳过）；收窄为单资源/代表性路径（不足以支持 GOAL-011 双实体成功标准）；accepted-residual / user-overruled（没有必要保留已可直接修复的缺口）。
+- **影响**：A-007 F-001～F-003 均 `fixed`，`I-011-003` 信息门禁解除；GOAL-011 仍为 `active / 3/5`，S4/S5 均未勾选；GOAL-010、Root A-002 F-002-001 与 VP-002 状态均不变。本次未触发 status/progress/parent 变更，`goal-tree.md` 无需状态投影更新。
+- **后续**：按 I-011-003 v0.2.0 执行 S4 完整验收并形成收据；阶段审视通过且无开放 required 后，才可勾选 S4 并同步 goal-tree。

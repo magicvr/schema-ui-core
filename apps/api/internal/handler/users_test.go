@@ -199,36 +199,49 @@ func TestUsersLastAdminHTTP(t *testing.T) {
 	}
 }
 
-// GOAL-011 S2 · anonymous 401; viewer can read users but not write (403).
+// GOAL-011 S4 · every users route is authenticated; viewer can read list/detail
+// but every write route is forbidden.
 func TestUsersAuthGates(t *testing.T) {
 	env := newAuthTestEnv(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
-	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusUnauthorized {
-		t.Fatalf("anonymous status = %d, want 401", rr.Code)
+	routes := []struct {
+		method string
+		path   string
+		body   string
+		read   bool
+	}{
+		{http.MethodGet, "/api/users", "", true},
+		{http.MethodGet, "/api/users/user-admin", "", true},
+		{http.MethodPost, "/api/users", `{"username":"x","name":"X","password":"y12345"}`, false},
+		{http.MethodPatch, "/api/users/user-admin", `{"name":"Root"}`, false},
+		{http.MethodDelete, "/api/users/user-admin", "", false},
 	}
-	var out map[string]any
-	_ = json.NewDecoder(rr.Body).Decode(&out)
-	if out["error"] != "UNAUTHENTICATED" {
-		t.Fatalf("anonymous error = %v, want UNAUTHENTICATED", out["error"])
+	for _, tc := range routes {
+		code, out := sendJSON(t, env.mux, tc.method, tc.path, tc.body)
+		if code != http.StatusUnauthorized || out["error"] != "UNAUTHENTICATED" {
+			t.Fatalf("anonymous %s %s = %d %v, want 401 UNAUTHENTICATED", tc.method, tc.path, code, out)
+		}
 	}
 
-	// viewer: users.read granted by seed → list ok, write 403
 	env.addUser(t, "viewer2", "pw", []string{"viewer"})
 	vToken := env.login(t, "viewer2", "pw")
-	req = bearer(t, vToken, http.MethodGet, "/api/users", "")
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Fatalf("viewer list status = %d, want 200", rr.Code)
-	}
-	req = bearer(t, vToken, http.MethodPost, "/api/users", `{"username":"x","name":"X","password":"y12345"}`)
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusForbidden {
-		t.Fatalf("viewer write status = %d, want 403", rr.Code)
+	for _, tc := range routes {
+		req := bearer(t, vToken, tc.method, tc.path, tc.body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		want := http.StatusForbidden
+		if tc.read {
+			want = http.StatusOK
+		}
+		if rr.Code != want {
+			t.Fatalf("viewer %s %s = %d, want %d: %s", tc.method, tc.path, rr.Code, want, rr.Body.String())
+		}
+		if !tc.read {
+			var out map[string]any
+			_ = json.NewDecoder(rr.Body).Decode(&out)
+			if out["error"] != "FORBIDDEN" {
+				t.Fatalf("viewer %s %s error = %v, want FORBIDDEN", tc.method, tc.path, out["error"])
+			}
+		}
 	}
 }
 
@@ -300,12 +313,25 @@ func TestUsersOperationLogEvents(t *testing.T) {
 			t.Fatalf("userOps[%d].event = %q, want %q", i, userOps[i].Event, ev)
 		}
 	}
-	for _, op := range userOps {
+	for i, op := range userOps {
 		if op.ActorID != "user-admin" {
 			t.Fatalf("actor = %q, want user-admin", op.ActorID)
 		}
+		if op.ActorName != "Admin" {
+			t.Fatalf("actor_name = %q, want Admin", op.ActorName)
+		}
+		if op.RecordID == nil || *op.RecordID != id {
+			t.Fatalf("userOps[%d].record_id = %v, want %s", i, op.RecordID, id)
+		}
 		if op.Detail != nil && strings.Contains(*op.Detail, "password") {
 			t.Fatalf("detail leaked a secret: %v", *op.Detail)
+		}
+		if op.Event == store.EventUserDelete {
+			if op.Detail != nil {
+				t.Fatalf("delete detail = %q, want nil", *op.Detail)
+			}
+		} else if op.Detail == nil || *op.Detail != `{"username":"opuser"}` {
+			t.Fatalf("%s detail = %v, want username-only JSON", op.Event, op.Detail)
 		}
 	}
 }

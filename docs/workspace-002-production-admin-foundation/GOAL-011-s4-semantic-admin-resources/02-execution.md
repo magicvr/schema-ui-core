@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-011
@@ -73,3 +73,25 @@ version: 0.1.0
 - **证据**：`go test ./...` 全绿 + `go vet ./...` 干净；web `vitest run` 481/481 + `tsc -b` + `vite build` 干净；e2e `playwright test` 2/2 通过（users CRUD 真实 Go/SQLite 往返 + shell/auth 链）。
 - **S3 检查点达成，progress `2/5 → 3/5`**；records 已从产品默认运行面退场；Root A-002 F-002-001 仍 open。
 - **计划（非事实）**：S4 双语义实体 Schema 接入验证（I-011-003 冻结 + fresh/upgrade/restart/401-403 矩阵 + Renderer diff 证据）→ S5 回归审计关门。
+
+## 2026-08-03 · A-007 必改修复与 I-011-003 冻结（D-004）
+
+- **用户裁决**：不补同范围自审，A-007 F-001～F-003 全部直接 `fixed`；未选择 residual 或 overruled。
+- **F-001 · 契约真实性**：将 A-007 审计时的候选矩阵 v0.1.0 修订为 v0.2.0，并在 D-004 实际落盘后冻结；`00-meta.md` 的 `I-011-003` 同步由 `open` 改为 `verified`。
+- **F-002 · 双资源 Schema-only**：
+  - `apps/web/src/renderer/schema-crud.test.tsx` 的 T-UI-10 增加 roles 真实 fixture 驱动的 create/update/delete 请求与 body/path 断言，并将 action-id 无硬编码检查扩展到 users + roles。
+  - `apps/web/src/app/representative-pages.integration.test.tsx` 增加真实 manifest + roles fixture 的页面级渲染断言（toolbar、row actions、rows、recordView）。
+  - Renderer/App 生产路径基线冻结为 `adfe15a17da770699d5e109f22402c41ece5eeea`；按 I-011-003 §3 的精确命令检查为零 diff。
+- **F-003 · 后端完整边界**：
+  - `TestUsersAuthGates` / `TestRolesAuthGates` 覆盖各自 list/detail/create/update/delete：匿名均为 401 `UNAUTHENTICATED`，viewer 读为 200、写为 403 `FORBIDDEN`。
+  - `TestUsersOperationLogEvents` / `TestRolesOperationLogEvents` 增加 actor id/name、record id、create/update 非敏感 detail 与 delete nil detail 断言。
+  - `TestServerProcessRestartPersistsUsers` 增加 roles create 响应时间戳格式、重启后 list/detail 身份及毫秒时间戳精确往返。
+  - `TestMigrate0005PreservesOperationLogRows` 增加升级表上的 `roles.create`，关闭/重开后同时核对 users/roles 新事件及两条 legacy 事件。
+- **验证事实**：
+  - 定向 Web：`npm test -- --run src/renderer/schema-crud.test.tsx src/app/representative-pages.integration.test.tsx` → 2 files / **26 tests passed**。
+  - 定向 API：`go test ./internal/handler ./internal/store` → 两包通过。
+  - 完整 API：`go test ./...` → 全包通过，含 `cmd/server` 进程级重启测试。
+  - 完整 Web：`npm test` → **23 files / 485 tests passed**；`npm run build` → `tsc -b` + Vite production build 通过。
+  - Renderer/App 基线：I-011-003 §3 的 `git diff --exit-code adfe15a... -- <受限生产文件>` → exit 0、无输出。
+- **治理投影**：A-007 F-001～F-003 均 `fixed`；I-011-003 v0.2.0 + D-004 → `verified`，只解除信息门禁。GOAL-011 保持 `active / 3/5`，S4/S5 未勾选，goal-tree 状态与进度不变。
+- **计划（非事实）**：另行执行 S4 冻结矩阵，形成包含完整命令、revision 与结果的阶段验收收据；经阶段审视后再决定是否把 progress 推进至 `4/5`。

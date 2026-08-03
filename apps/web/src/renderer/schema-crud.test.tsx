@@ -167,6 +167,66 @@ function createUsersApi(
   return { fetcher, store, calls };
 }
 
+function createRolesApi(
+  initial: ResourceItem[],
+): { fetcher: typeof fetch; store: ResourceItem[]; calls: ApiCall[] } {
+  const store = initial.map((role) => ({ ...role }));
+  const calls: ApiCall[] = [];
+  let tick = 0;
+  const now = (): string => {
+    tick += 1;
+    return `2026-08-03T12:00:00.${String(tick).padStart(3, "0")}Z`;
+  };
+
+  const fetcher: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const raw = String(input);
+    const url = new URL(raw, "http://test.local");
+    const method = (init?.method ?? "GET").toUpperCase();
+    const body = init?.body !== undefined ? JSON.parse(String(init.body)) : undefined;
+    calls.push({ method, url: raw, body });
+    const match = /^\/api\/roles(?:\/([^/]+))?$/.exec(url.pathname);
+    if (!match) {
+      return json({ error: "NOT_FOUND", message: "no such route" }, 404);
+    }
+    const id = match[1];
+
+    if (method === "GET" && id === undefined) {
+      return json({ items: [...store], total: store.length, page: 1, pageSize: 10 });
+    }
+    if (method === "POST" && id === undefined) {
+      const role: ResourceItem = {
+        id: `role-${String(body?.key).trim()}`,
+        key: String(body?.key).trim(),
+        name: String(body?.name).trim(),
+        system: false,
+        updatedAt: now(),
+      };
+      store.unshift(role);
+      return json(role, 201);
+    }
+    if (id !== undefined && (method === "PATCH" || method === "DELETE")) {
+      const index = store.findIndex((role) => role.id === id);
+      if (index < 0) {
+        return json({ error: "ROLE_NOT_FOUND", message: "no role with that id" }, 404);
+      }
+      if (method === "DELETE") {
+        store.splice(index, 1);
+        return new Response(null, { status: 204 });
+      }
+      const updated = {
+        ...store[index],
+        name: String(body?.name).trim(),
+        updatedAt: now(),
+      };
+      store[index] = updated;
+      return json(updated);
+    }
+    return json({ error: "NOT_FOUND", message: "no such route" }, 404);
+  }) as typeof fetch;
+
+  return { fetcher, store, calls };
+}
+
 // --- Render harness ---
 
 const ADMIN = {
@@ -174,6 +234,9 @@ const ADMIN = {
 };
 const VIEWER = {
   user: { id: "u2", roles: ["viewer"], permissions: ["users.read"] },
+};
+const ROLE_ADMIN = {
+  user: { id: "u1", roles: ["admin"], permissions: ["roles.read", "roles.write"] },
 };
 
 const USERS: ResourceItem[] = [
@@ -446,12 +509,69 @@ describe("T-UI-09 · backend authority is not replaced by frontend hiding", () =
   });
 });
 
-describe("T-UI-10 · page changes are fixture-only (renderer stays generic)", () => {
-  it("the user CRUD action ids exist only in the fixture, never in renderer source", async () => {
-    const fixtureText = readFileSync(resolve(FIXTURE_DIR, "users.json"), "utf8");
-    const actionIds = ["createUser", "updateUser", "deleteUser", "openCreate", "openEdit"];
+describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
+  it("drives roles create from the real fixture", async () => {
+    const api = createRolesApi(ROLES);
+    const container = await renderCrud(fixtureDocument("roles"), ROLE_ADMIN, api.fetcher);
+    await act(async () => (buttonByText(container, "New role") as HTMLButtonElement).click());
+    await act(async () => setFieldValue(fieldInput(container, "key") as HTMLInputElement, "auditor"));
+    await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Auditor"));
+    await act(async () => (buttonByText(container, "Create role") as HTMLButtonElement).click());
+    expect(api.calls.find((call) => call.method === "POST")).toEqual({
+      method: "POST",
+      url: "/api/roles",
+      body: { key: "auditor", name: "Auditor" },
+    });
+    expect(container.textContent).toContain("Item created");
+    expect(api.store[0]?.id).toBe("role-auditor");
+  });
+
+  it("drives roles update from the real fixture", async () => {
+    const api = createRolesApi([
+      { id: "role-ops", key: "ops", name: "Operator", system: false, updatedAt: "2026-08-03T00:00:00.000Z" },
+    ]);
+    const container = await renderCrud(fixtureDocument("roles"), ROLE_ADMIN, api.fetcher);
+    await act(async () => (buttonByText(container, "Edit") as HTMLButtonElement).click());
+    const nameInput = fieldInput(container, "name") as HTMLInputElement;
+    expect(nameInput.value).toBe("Operator");
+    await act(async () => setFieldValue(nameInput, "Operations"));
+    await act(async () => (buttonByText(container, "Save changes") as HTMLButtonElement).click());
+    expect(api.calls.find((call) => call.method === "PATCH")).toEqual({
+      method: "PATCH",
+      url: "/api/roles/role-ops",
+      body: { name: "Operations" },
+    });
+    expect(container.textContent).toContain("Item updated");
+  });
+
+  it("drives roles delete from the real fixture", async () => {
+    const api = createRolesApi([
+      { id: "role-ops", key: "ops", name: "Operator", system: false, updatedAt: "2026-08-03T00:00:00.000Z" },
+    ]);
+    const container = await renderCrud(fixtureDocument("roles"), ROLE_ADMIN, api.fetcher);
+    await act(async () => (buttonByText(container, "Delete") as HTMLButtonElement).click());
+    expect(container.textContent).toContain("Delete this role?");
+    await act(async () => (buttonByText(container, "Confirm") as HTMLButtonElement).click());
+    expect(api.calls.some((call) => call.method === "DELETE" && call.url === "/api/roles/role-ops")).toBe(true);
+    expect(api.store).toHaveLength(0);
+  });
+
+  it("the user and role CRUD action ids exist only in fixtures, never in renderer source", async () => {
+    const fixtureTexts = ["users", "roles"].map((id) =>
+      readFileSync(resolve(FIXTURE_DIR, `${id}.json`), "utf8"),
+    );
+    const actionIds = [
+      "createUser",
+      "updateUser",
+      "deleteUser",
+      "createRole",
+      "updateRole",
+      "deleteRole",
+      "openCreate",
+      "openEdit",
+    ];
     for (const id of actionIds) {
-      expect(fixtureText, `${id} declared by the fixture`).toContain(id);
+      expect(fixtureTexts.some((fixtureText) => fixtureText.includes(id)), `${id} declared by a fixture`).toBe(true);
     }
     // The resource client (records.ts) is the generic reusable transport for any
     // page, so its function names legitimately echo the resource verbs; the

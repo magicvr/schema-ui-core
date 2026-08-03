@@ -4,7 +4,7 @@ status: active
 created: 2026-08-03
 updated: 2026-08-03
 parent: GOAL-010-a002-schema-adapter
-version: 0.5.0
+version: 0.7.0
 ---
 
 # 审计台账 · GOAL-011
@@ -19,13 +19,14 @@ version: 0.5.0
 | A-004 | independent | 2026-08-03 | S2 后端 users/roles 闭环（I-011-001 v0.2.0；progress 1/5 → 2/5） | pass | 无 required；F-001～F-003 fixed、F-004 handled（见响应节） |
 | A-005 | self | 2026-08-03 | S3 records 产品运行面退场（I-011-002 v0.2.0） | pass | 无 required；3 条 recommended（随 S4/S5 落实） |
 | A-006 | independent | 2026-08-03 | S3 records 产品运行面退场（I-011-002 v0.2.0；progress 2/5 → 3/5） | pass | 无 required；F-001/F-002 fixed、F-003/F-004 handled（见响应节） |
+| A-007 | independent | 2026-08-03 | I-011-003 冻结就绪性（双资源验收矩阵） | conditional | 3 条 medium required，均已 fixed（D-004，见响应节） |
 
 ## 当前审计边界
 
-- S1 契约已冻结（D-002；`I-011-001`/`I-011-002` → verified，v0.2.0）；S2 后端闭环已实施（A-003 self · pass；A-004 independent · pass，recommended 已响应）；S3 records 退场已实施（A-005 self · pass；**A-006 independent · pass**）；S4/S5 未实施。
+- S1 契约已冻结（D-002；`I-011-001`/`I-011-002` → verified，v0.2.0）；S2 后端闭环已实施（A-003 self · pass；A-004 independent · pass，recommended 已响应）；S3 records 退场已实施（A-005 self · pass；**A-006 independent · pass**）；I-011-003 v0.2.0 已由 D-004 冻结并 verified；S4/S5 未完成。
 - A-002（independent）对 S1 给出 **conditional**，两条 required（F-001 actor 通道、F-002 快照语义）经 **D-003** 走 `fixed` 闭合，F-003～F-006 采纳为 `handled`；A-001（pass）与 A-002 已趋同。
 - A-003 / A-004 对 S2 同向 **pass**；A-005 / A-006 对 S3 同向 **pass**；本 scope 无开放 required；recommended 见 A-003/A-004 响应节、A-005 F-001～F-003 与 A-006 F-001～F-004（随 S4/S5 或文档清理落实）。
-- `I-011-003` 仍 open required（最晚 S4，已到期待冻结）；到达最晚阶段前未 `verified` 或合规 `accepted-residual` 时阻断对应门禁。
+- A-007 的 F-001～F-003 经用户裁决全部 `fixed`（见响应节），`I-011-003` 信息门禁已解除；该响应不是同范围自审，也不构成 S4 阶段通过或 progress 推进。
 - GOAL-010 与 Root A-002 的既有独立意见不复制到本台账。
 
 ## A-001 · S1 契约冻结自审（2026-08-03）
@@ -609,3 +610,89 @@ S3 无开放 required；A-005/A-006 趋同为 **pass**，可放行 S4。下一�
 ### 声明
 
 本意见 **source: independent**，仅追加审计台账；**不修改** `00-meta` 的 status / 检查点 / 派生 progress，**不修改** goal-tree 状态列，**不修改**契约正文或产品代码。响应、finding 闭合与阶段推进归 **`/govern`**。
+## A-007 · I-011-003 冻结就绪性独立交叉审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：design-plan · `I-011-003` 双语义资源 Schema 接入验收矩阵是否足以冻结，并放行 S4 集成验收与 S5 关门所需的信息门禁
+- **verdict**：conditional
+
+### 范围与区间
+
+审当前工作区 `workspace-002-production-admin-foundation` 的 GOAL-011：`workspace.md`、`goal-tree.md`、目标五件套、[I-011-003 候选矩阵](attachments/I-011-003-acceptance-matrix.md) v0.1.0，以及其列出的 API/Web 测试和当前 Git 证据。`shared_materials_catalog: none`，未把共享资料作为证据，未读取或比较其他工作区。
+
+本审计判断的是**信息冻结就绪性**，不是 S4 已实施、S4 检查点已勾选、GOAL-010 S4 已交接，亦不是 Root A-002 F-002-001 的关闭复核。
+
+### 成果（有证据）
+
+- S1/S2/S3 已有同向审计结论：A-003/A-004 对 S2 为 pass，A-005/A-006 对 S3 为 pass；本目标没有承接到 S4 的开放 required finding。
+- 候选矩阵正确覆盖了应回答的主要域：fresh DB、0004 态升级、进程级重启、401/403、操作日志，以及 Renderer 主路径边界。
+- 本审计重跑候选矩阵所列的 API 目标测试：`go test ./internal/store ./internal/handler ./cmd/server -run 'TestMigrateFreshDB|TestMigrateExistingV3ToV4|TestMigrate0005PreservesOperationLogRows|TestUsersListAndDetail|TestUsersCreateUpdateDeleteLifecycle|TestUsersAuthGates|TestUsersOperationLogEvents|TestRolesListAndDetail|TestRolesWriteLifecycleAndProtection|TestRolesAuthGates|TestRolesOperationLogEvents|TestServerProcessRestartPersistsUsers' -count=1`，三个包均通过。
+- 本审计重跑 Web 相关证据：`npm test -- src/renderer/schema-crud.test.tsx src/renderer/representative-pages.test.tsx src/app/representative-pages.integration.test.tsx src/app/navigation.test.ts src/protocol/app-manifest.test.ts`，5 个文件、47 项均通过。
+- 复核时当前提交为 `adfe15a17da770699d5e109f22402c41ece5eeea`；仅候选矩阵为未跟踪文件，受限路径没有已跟踪产品代码 diff。此事实可作为后续冻结时选择基线的输入，但候选矩阵尚未固定它。
+
+### Findings
+
+- **F-001 · 候选契约将未发生的冻结写成既成事实**（severity: medium；建议: **required**；status: open；关联 `I-011-003`）
+  - 描述：[I-011-003 候选矩阵](attachments/I-011-003-acceptance-matrix.md) v0.1.0 已填写 `related_decision: D-004`、标题“冻结”、正文“由 D-004 置为 verified”及修订记录“关闭 I-011-003”。但当前 `00-meta.md` 仍将该项列为 **open**，`01-decision.md` 只存在 D-001～D-003，尚无 D-004。候选与 canonical 状态相反，违反 P-005 对未知/待裁决不得伪装为既成事实的要求。
+  - 证据：候选矩阵 frontmatter/§7；[00-meta.md](00-meta.md) 信息表 `I-011-003`；[01-decision.md](01-decision.md) D-001～D-003。
+  - 影响：不能把候选附件本身视为冻结或门禁解除依据。
+  - 建议闭合：在 D-004 获 `/govern` 正式采纳前，将附件明确标为 candidate/draft，并把 `D-004`、`verified`、`关闭`改为条件性措辞；采纳后再由编排器一次性写 D-004、信息表状态/证据、执行记录与 goal-tree 投影。
+
+- **F-002 · 双资源 Schema-only 证明没有可重复基线，且 roles 缺少页面级证据**（severity: medium；建议: **required**；status: open；关联 `I-011-003`）
+  - 描述：候选 §3 要求 S4 的 Renderer/App diff 为空，并以 T-UI-10 和 representative-pages 作为证明；但未冻结可比较的 Git revision 或命令。现有 T-UI-10 只检查 `createUser`/`updateUser`/`deleteUser` 等 users action id；representative 页面测试把 roles 纳入结构加载循环，却只直接渲染 users CRUD 页面；浏览器 e2e 同样只走 users。因而不能证明 roles 也以 Schema-only 方式完成页面 CRUD，亦不能在 S4 后可重复地证明 Renderer 未改。
+  - 证据：候选矩阵 §3；`apps/web/src/renderer/schema-crud.test.tsx` T-UI-10；`apps/web/src/renderer/representative-pages.test.tsx`；`apps/web/src/app/representative-pages.integration.test.tsx`；`apps/web/e2e/schema-crud.spec.ts`。
+  - 影响：直接触及 I-011-003 的“双资源”和“Renderer 主路径无修改”核心主张，不能只用 users 证据替代。
+  - 建议闭合：冻结时记录明确 baseline revision（本审计复核的 `adfe15a17da770699d5e109f22402c41ece5eeea` 可供用户采纳）及受限路径的可执行 diff 命令；在 S4 矩阵中增加 roles 的真实 manifest/fixture 页面渲染与 CRUD action 断言，并把 roles action id 的无硬编码检查纳入 T-UI-10 或新的具名测试。尚未存在的测试应写为 S4 必交付证据，不得标为“已实施”。
+
+- **F-003 · 后端“完整双资源边界”行的文字超过现有断言**（severity: medium；建议: **required**；status: open；关联 `I-011-003`）
+  - 描述：候选矩阵把现有测试表述为“双资源进程重启 list/detail + 毫秒往返”、“双资源五路由 401/403”及“双资源操作日志 actor + 非敏感 detail”。实际进程级测试对 roles 只做 create 后重启 detail，不做 roles list 或时间戳往返；两份 AuthGates 只覆盖匿名 list 与 viewer POST；roles 操作日志测试只断言事件序列，不断言 actor/detail；0004→0006 升级夹具只在迁移后的表上显式写入 `users.create`，没有 roles 事件的升级后断言。
+  - 证据：候选矩阵 §2；`apps/api/cmd/server/server_restart_test.go`；`apps/api/internal/handler/{users_test.go,roles_test.go}`；`apps/api/internal/store/operations_test.go`。
+  - 影响：已通过的测试支持 S2/S3 和部分 S4 输入，但不足以按候选的“完整边界”文字关闭此 required 信息项。
+  - 建议闭合：二选一并在矩阵中固定：收窄验收口径为已证实的代表性读/写路径；或增加具名 S4 断言，覆盖 roles restart 的 list/detail 与毫秒时间戳、两资源五路由的 401/403 策略（可说明工厂共享门禁的推导）、两资源日志 actor/detail，以及升级库上的 `roles.*` 写入。后者更符合 GOAL-011 S4 的双实体成功标准。
+
+### 必改项汇总
+
+| ID | 严重度 | 摘要 | 影响门禁 |
+|----|--------|------|----------|
+| **F-001** | medium · required | 候选把 D-004/verified 写成既成事实 | `I-011-003` 冻结 |
+| **F-002** | medium · required | roles 页面级 Schema-only 与 Renderer diff 基线不充分 | S4 集成验收 |
+| **F-003** | medium · required | 后端验收矩阵超过其当前测试断言 | S4 集成验收 / S5 关门 |
+
+### 与既有意见的异同
+
+A-005/A-006 的 pass 仅确认 S3 records 退场；两者均将 `I-011-003` 留作 S4 的独立 required 信息门禁。A-007 不否定 S2/S3 事实或其 pass 结论，而是复核候选矩阵能否将该门禁从 open 合法转为 verified。
+
+### 结论 + 建议给编排器/用户的下一步
+
+**verdict: conditional**。`I-011-003` **尚不能冻结**：候选覆盖方向正确且列出的当前测试通过，但三项 required 缺口使其既不能诚实声称 D-004 已发生，也不能把单资源/部分路径证据升级为“双资源完整边界”。
+
+先通过 `/govern` 修订候选以关闭 F-001～F-003；修订后的信息契约可作为 D-004 的候选输入。D-004、`I-011-003 → verified`、S4 放行及所有目标树投影仍由 `/govern` 和用户决定，本独立意见不作这些变更。
+
+### 声明
+
+本意见 **source: independent**，仅追加审计台账；**不修改** `00-meta` 的 status / 检查点 / 派生 progress，**不修改** goal-tree 状态列，**不修改**候选契约或产品代码。响应、finding 闭合与阶段推进归 **`/govern`**。
+
+## 响应 A-007（self · 编排响应 · 2026-08-03 · GOAL-011 D-004）
+
+- **响应性质**：这是 `/govern` 对既有独立意见的 finding closure 记录，不是新增的同范围 self audit，不产生新的 A 编号或 verdict。
+- **用户裁决（P-004.1 / P-004 §3.2）**：用户明确选择“**不用补自审计，直接 fix**”。因此跳过同范围自审，F-001～F-003 全部按 `fixed` 闭合；没有 `accepted-residual` 或 `user-overruled`。
+
+| finding | 闭合 | 可核对证据 |
+|---------|------|------------|
+| **A-007 F-001** | **fixed** | I-011-003 v0.1.0 在修订记录中明确为未冻结候选；D-004 实际落盘后，v0.2.0 才使用“冻结”与 `verified` 表述。`00-meta.md`、D-004、契约 frontmatter/正文状态一致。 |
+| **A-007 F-002** | **fixed** | I-011-003 §3 固定 baseline `adfe15a17da770699d5e109f22402c41ece5eeea`、受限生产文件和可执行 diff 命令，当前 exit 0；`schema-crud.test.tsx` T-UI-10 增加 roles 真实 fixture 的 create/update/delete 与双资源 action-id 反证；`representative-pages.integration.test.tsx` 增加真实 manifest + roles fixture 页面断言。 |
+| **A-007 F-003** | **fixed** | users/roles AuthGates 各覆盖五路由匿名 401 与 viewer 读 200/写 403；两资源 operation-log 测试核对 actor/record/detail；server restart 核对 roles list/detail 与毫秒时间戳往返；0005 升级测试核对重开后的 users/roles 新事件及 legacy 行。 |
+
+### 验证收据
+
+- `go test ./internal/handler ./internal/store`：通过。
+- `go test ./...`：全包通过，含 `apps/api/cmd/server` 进程级重启测试。
+- `npm test -- --run src/renderer/schema-crud.test.tsx src/app/representative-pages.integration.test.tsx`：2 files / 26 tests passed。
+- `npm test`：23 files / 485 tests passed。
+- `npm run build`：`tsc -b` + Vite production build 通过。
+- I-011-003 §3 Renderer/App baseline command：exit 0、无 diff。
+
+### 响应结论
+
+A-007 三条 required finding 均已按合法 `fixed` 路径闭合，当前 scope 无开放 required；I-011-003 v0.2.0 + D-004 足以将信息项置为 `verified` 并解除 S4 信息门禁。GOAL-011 仍保持 `active / 3/5`，S4/S5 未勾选；本响应不把信息契约冻结升级为 S4 实施验收或父级/Root 接受。
