@@ -1,0 +1,639 @@
+﻿2026-08-03T01:20:46.7093302Z Current runner version: '2.336.0'
+2026-08-03T01:20:46.7118667Z ##[group]Runner Image Provisioner
+2026-08-03T01:20:46.7119537Z Hosted Compute Agent
+2026-08-03T01:20:46.7120211Z Version: 20260707.563
+2026-08-03T01:20:46.7120848Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-08-03T01:20:46.7121621Z Build Date: 2026-07-07T19:33:50Z
+2026-08-03T01:20:46.7122371Z Worker ID: {530e6334-a7bb-4970-b663-48886c859eef}
+2026-08-03T01:20:46.7123088Z Azure Region: westus3
+2026-08-03T01:20:46.7123686Z ##[endgroup]
+2026-08-03T01:20:46.7125139Z ##[group]Operating System
+2026-08-03T01:20:46.7125860Z Ubuntu
+2026-08-03T01:20:46.7126454Z 24.04.4
+2026-08-03T01:20:46.7127182Z LTS
+2026-08-03T01:20:46.7127700Z ##[endgroup]
+2026-08-03T01:20:46.7128326Z ##[group]Runner Image
+2026-08-03T01:20:46.7128929Z Image: ubuntu-24.04
+2026-08-03T01:20:46.7129559Z Version: 20260720.247.2
+2026-08-03T01:20:46.7130831Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260720.247/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-03T01:20:46.7132389Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260720.247
+2026-08-03T01:20:46.7133373Z ##[endgroup]
+2026-08-03T01:20:46.7134942Z ##[group]GITHUB_TOKEN Permissions
+2026-08-03T01:20:46.7137293Z Contents: read
+2026-08-03T01:20:46.7137972Z Metadata: read
+2026-08-03T01:20:46.7138558Z Packages: read
+2026-08-03T01:20:46.7139142Z ##[endgroup]
+2026-08-03T01:20:46.7141298Z Secret source: Actions
+2026-08-03T01:20:46.7142345Z Prepare workflow directory
+2026-08-03T01:20:46.7603764Z Prepare all required actions
+2026-08-03T01:20:46.7651514Z Getting action download info
+2026-08-03T01:20:47.0626484Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-03T01:20:47.8227809Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-08-03T01:20:47.9554048Z Download action repository 'actions/setup-go@v5' (SHA:40f1582b2485089dde7abd97c1529aa768e1baff)
+2026-08-03T01:20:48.8061705Z Complete job name: container smoke (docker compose · R5 S2/S4)
+2026-08-03T01:20:48.9006470Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T01:20:48.9018193Z ##[group]Run actions/checkout@v4
+2026-08-03T01:20:48.9019723Z with:
+2026-08-03T01:20:48.9020610Z   repository: magicvr/schema-ui-core
+2026-08-03T01:20:48.9030636Z   token: ***
+2026-08-03T01:20:48.9031501Z   ssh-strict: true
+2026-08-03T01:20:48.9032374Z   ssh-user: git
+2026-08-03T01:20:48.9033266Z   persist-credentials: true
+2026-08-03T01:20:48.9034245Z   clean: true
+2026-08-03T01:20:48.9035130Z   sparse-checkout-cone-mode: true
+2026-08-03T01:20:48.9036193Z   fetch-depth: 1
+2026-08-03T01:20:48.9037192Z   fetch-tags: false
+2026-08-03T01:20:48.9038105Z   show-progress: true
+2026-08-03T01:20:48.9039051Z   lfs: false
+2026-08-03T01:20:48.9039919Z   submodules: false
+2026-08-03T01:20:48.9040827Z   set-safe-directory: true
+2026-08-03T01:20:48.9041847Z   allow-unsafe-pr-checkout: false
+2026-08-03T01:20:48.9043195Z env:
+2026-08-03T01:20:48.9044038Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:20:48.9045125Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:20:48.9046236Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:20:48.9047510Z ##[endgroup]
+2026-08-03T01:20:49.0061028Z Syncing repository: magicvr/schema-ui-core
+2026-08-03T01:20:49.0064223Z ##[group]Getting Git version info
+2026-08-03T01:20:49.0065945Z Working directory is '/home/runner/work/schema-ui-core/schema-ui-core'
+2026-08-03T01:20:49.0068809Z [command]/usr/bin/git version
+2026-08-03T01:20:49.0124102Z git version 2.54.0
+2026-08-03T01:20:49.0178134Z ##[endgroup]
+2026-08-03T01:20:49.0192448Z Temporarily overriding HOME='/home/runner/work/_temp/413f3717-4402-4f88-aa86-6874fe48b72d' before making global git config changes
+2026-08-03T01:20:49.0196722Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-03T01:20:49.0200552Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/schema-ui-core/schema-ui-core
+2026-08-03T01:20:49.0269125Z Deleting the contents of '/home/runner/work/schema-ui-core/schema-ui-core'
+2026-08-03T01:20:49.0273244Z ##[group]Initializing the repository
+2026-08-03T01:20:49.0277857Z [command]/usr/bin/git init /home/runner/work/schema-ui-core/schema-ui-core
+2026-08-03T01:20:49.0378215Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-03T01:20:49.0380759Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-03T01:20:49.0383064Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-03T01:20:49.0386025Z hint: call:
+2026-08-03T01:20:49.0388329Z hint:
+2026-08-03T01:20:49.0390682Z hint: 	git config --global init.defaultBranch <name>
+2026-08-03T01:20:49.0393441Z hint:
+2026-08-03T01:20:49.0395855Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-03T01:20:49.0400129Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-03T01:20:49.0403215Z hint:
+2026-08-03T01:20:49.0405264Z hint: 	git branch -m <name>
+2026-08-03T01:20:49.0406613Z hint:
+2026-08-03T01:20:49.0408573Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-03T01:20:49.0410873Z Initialized empty Git repository in /home/runner/work/schema-ui-core/schema-ui-core/.git/
+2026-08-03T01:20:49.0415552Z [command]/usr/bin/git remote add origin https://github.com/magicvr/schema-ui-core
+2026-08-03T01:20:49.0447908Z ##[endgroup]
+2026-08-03T01:20:49.0450752Z ##[group]Disabling automatic garbage collection
+2026-08-03T01:20:49.0453262Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-03T01:20:49.0481886Z ##[endgroup]
+2026-08-03T01:20:49.0484380Z ##[group]Setting up auth
+2026-08-03T01:20:49.0489221Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-03T01:20:49.0525779Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-03T01:20:49.0888343Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-03T01:20:49.0921632Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-03T01:20:49.1139416Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-03T01:20:49.1169599Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-03T01:20:49.1384828Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-03T01:20:49.1425209Z ##[endgroup]
+2026-08-03T01:20:49.1427760Z ##[group]Fetching the repository
+2026-08-03T01:20:49.1431553Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +df913a59cc3678720fb7a9c010296de90beb7e2a:refs/remotes/origin/dev
+2026-08-03T01:20:50.3920056Z From https://github.com/magicvr/schema-ui-core
+2026-08-03T01:20:50.3920943Z  * [new ref]         df913a59cc3678720fb7a9c010296de90beb7e2a -> origin/dev
+2026-08-03T01:20:50.3986359Z ##[endgroup]
+2026-08-03T01:20:50.3987391Z ##[group]Determining the checkout info
+2026-08-03T01:20:50.3989745Z ##[endgroup]
+2026-08-03T01:20:50.3995640Z [command]/usr/bin/git sparse-checkout disable
+2026-08-03T01:20:50.4041773Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-03T01:20:50.4070617Z ##[group]Checking out the ref
+2026-08-03T01:20:50.4075393Z [command]/usr/bin/git checkout --progress --force -B dev refs/remotes/origin/dev
+2026-08-03T01:20:50.4479814Z Switched to a new branch 'dev'
+2026-08-03T01:20:50.4481549Z branch 'dev' set up to track 'origin/dev'.
+2026-08-03T01:20:50.4489464Z ##[endgroup]
+2026-08-03T01:20:50.4533932Z [command]/usr/bin/git log -1 --format=%H
+2026-08-03T01:20:50.4558688Z df913a59cc3678720fb7a9c010296de90beb7e2a
+2026-08-03T01:20:50.4812138Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T01:20:50.4813867Z ##[group]Run actions/setup-node@v4
+2026-08-03T01:20:50.4814130Z with:
+2026-08-03T01:20:50.4814322Z   node-version: 22
+2026-08-03T01:20:50.4814525Z   cache: npm
+2026-08-03T01:20:50.4814781Z   cache-dependency-path: apps/web/package-lock.json
+2026-08-03T01:20:50.4815109Z   always-auth: false
+2026-08-03T01:20:50.4815325Z   check-latest: false
+2026-08-03T01:20:50.4818025Z   token: ***
+2026-08-03T01:20:50.4818233Z env:
+2026-08-03T01:20:50.4818430Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:20:50.4818709Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:20:50.4886644Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:20:50.4887189Z ##[endgroup]
+2026-08-03T01:20:50.6439614Z Found in cache @ /opt/hostedtoolcache/node/22.23.1/x64
+2026-08-03T01:20:50.6443596Z (node:2222) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T01:20:50.6444530Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T01:20:50.6447663Z ##[group]Environment details
+2026-08-03T01:20:53.8653532Z node: v22.23.1
+2026-08-03T01:20:53.8654211Z npm: 10.9.8
+2026-08-03T01:20:53.8654766Z yarn: 1.22.22
+2026-08-03T01:20:53.8656010Z ##[endgroup]
+2026-08-03T01:20:53.8708406Z [command]/opt/hostedtoolcache/node/22.23.1/x64/bin/npm config get cache
+2026-08-03T01:20:54.1276259Z /home/runner/.npm
+2026-08-03T01:20:54.3699842Z Cache hit for: node-cache-Linux-x64-npm-77164c048bd4fbb17d82e95198f684fb6a9aeba619aeb49c7fefad021293b3a5
+2026-08-03T01:20:54.3803863Z (node:2222) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T01:20:55.6252369Z Received 25165824 of 38178962 (65.9%), 24.0 MBs/sec
+2026-08-03T01:20:55.8116329Z Received 38178962 of 38178962 (100.0%), 30.7 MBs/sec
+2026-08-03T01:20:55.8117466Z Cache Size: ~36 MB (38178962 B)
+2026-08-03T01:20:55.8156098Z [command]/usr/bin/tar -xf /home/runner/work/_temp/114e3ec3-db86-4204-83ff-a282692e4855/cache.tzst -P -C /home/runner/work/schema-ui-core/schema-ui-core --use-compress-program unzstd
+2026-08-03T01:20:55.9682809Z Cache restored successfully
+2026-08-03T01:20:55.9705094Z Cache restored from key: node-cache-Linux-x64-npm-77164c048bd4fbb17d82e95198f684fb6a9aeba619aeb49c7fefad021293b3a5
+2026-08-03T01:20:55.9878972Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T01:20:55.9880257Z ##[group]Run actions/setup-go@v5
+2026-08-03T01:20:55.9880508Z with:
+2026-08-03T01:20:55.9880715Z   go-version: 1.26
+2026-08-03T01:20:55.9880928Z   check-latest: false
+2026-08-03T01:20:55.9883593Z   token: ***
+2026-08-03T01:20:55.9883789Z   cache: true
+2026-08-03T01:20:55.9883981Z env:
+2026-08-03T01:20:55.9884170Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:20:55.9884434Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:20:55.9884717Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:20:55.9884997Z ##[endgroup]
+2026-08-03T01:20:56.1185015Z Setup go version spec 1.26
+2026-08-03T01:20:56.1422604Z Found in cache @ /opt/hostedtoolcache/go/1.26.5/x64
+2026-08-03T01:20:56.1424977Z (node:2301) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T01:20:56.1426470Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T01:20:56.1429758Z Added go to the path
+2026-08-03T01:20:56.1434178Z Successfully set up Go version 1.26
+2026-08-03T01:20:56.6901994Z [command]/opt/hostedtoolcache/go/1.26.5/x64/bin/go env GOMODCACHE
+2026-08-03T01:20:56.6934208Z [command]/opt/hostedtoolcache/go/1.26.5/x64/bin/go env GOCACHE
+2026-08-03T01:20:56.6989936Z /home/runner/go/pkg/mod
+2026-08-03T01:20:56.7005121Z /home/runner/.cache/go-build
+2026-08-03T01:20:56.7042246Z ##[warning]Restore cache failed: Dependencies file is not found in /home/runner/work/schema-ui-core/schema-ui-core. Supported file pattern: go.sum
+2026-08-03T01:20:56.7054409Z go version go1.26.5 linux/amd64
+2026-08-03T01:20:56.7054610Z 
+2026-08-03T01:20:56.7054882Z ##[group]go env
+2026-08-03T01:20:57.3777417Z AR='ar'
+2026-08-03T01:20:57.3777849Z CC='gcc'
+2026-08-03T01:20:57.3778244Z CGO_CFLAGS='-O2 -g'
+2026-08-03T01:20:57.3778626Z CGO_CPPFLAGS=''
+2026-08-03T01:20:57.3779018Z CGO_CXXFLAGS='-O2 -g'
+2026-08-03T01:20:57.3779408Z CGO_ENABLED='1'
+2026-08-03T01:20:57.3779767Z CGO_FFLAGS='-O2 -g'
+2026-08-03T01:20:57.3780147Z CGO_LDFLAGS='-O2 -g'
+2026-08-03T01:20:57.3780495Z CXX='g++'
+2026-08-03T01:20:57.3780914Z GCCGO='gccgo'
+2026-08-03T01:20:57.3781299Z GO111MODULE=''
+2026-08-03T01:20:57.3781690Z GOAMD64='v1'
+2026-08-03T01:20:57.3782135Z GOARCH='amd64'
+2026-08-03T01:20:57.3782501Z GOAUTH='netrc'
+2026-08-03T01:20:57.3782905Z GOBIN=''
+2026-08-03T01:20:57.3783373Z GOCACHE='/home/runner/.cache/go-build'
+2026-08-03T01:20:57.3783832Z GOCACHEPROG=''
+2026-08-03T01:20:57.3784149Z GODEBUG=''
+2026-08-03T01:20:57.3784652Z GOENV='/home/runner/.config/go/env'
+2026-08-03T01:20:57.3785162Z GOEXE=''
+2026-08-03T01:20:57.3785488Z GOEXPERIMENT=''
+2026-08-03T01:20:57.3785835Z GOFIPS140='off'
+2026-08-03T01:20:57.3786162Z GOFLAGS=''
+2026-08-03T01:20:57.3788025Z GOGCCFLAGS='-fPIC -m64 -pthread -Wl,--no-gc-sections -fmessage-length=0 -ffile-prefix-map=/tmp/go-build3839741259=/tmp/go-build -gno-record-gcc-switches'
+2026-08-03T01:20:57.3789448Z GOHOSTARCH='amd64'
+2026-08-03T01:20:57.3789867Z GOHOSTOS='linux'
+2026-08-03T01:20:57.3790264Z GOINSECURE=''
+2026-08-03T01:20:57.3790710Z GOMOD='/dev/null'
+2026-08-03T01:20:57.3791260Z GOMODCACHE='/home/runner/go/pkg/mod'
+2026-08-03T01:20:57.3791814Z GONOPROXY=''
+2026-08-03T01:20:57.3792210Z GONOSUMDB=''
+2026-08-03T01:20:57.3792549Z GOOS='linux'
+2026-08-03T01:20:57.3792918Z GOPATH='/home/runner/go'
+2026-08-03T01:20:57.3793332Z GOPRIVATE=''
+2026-08-03T01:20:57.3793887Z GOPROXY='https://proxy.golang.org,direct'
+2026-08-03T01:20:57.3794580Z GOROOT='/opt/hostedtoolcache/go/1.26.5/x64'
+2026-08-03T01:20:57.3795138Z GOSUMDB='sum.golang.org'
+2026-08-03T01:20:57.3795655Z GOTELEMETRY='local'
+2026-08-03T01:20:57.3796388Z GOTELEMETRYDIR='/home/runner/.config/go/telemetry'
+2026-08-03T01:20:57.3797484Z GOTMPDIR=''
+2026-08-03T01:20:57.3798389Z GOTOOLCHAIN='auto'
+2026-08-03T01:20:57.3799204Z GOTOOLDIR='/opt/hostedtoolcache/go/1.26.5/x64/pkg/tool/linux_amd64'
+2026-08-03T01:20:57.3799897Z GOVCS=''
+2026-08-03T01:20:57.3800318Z GOVERSION='go1.26.5'
+2026-08-03T01:20:57.3800730Z GOWORK=''
+2026-08-03T01:20:57.3801161Z PKG_CONFIG='pkg-config'
+2026-08-03T01:20:57.3801454Z 
+2026-08-03T01:20:57.3801971Z ##[endgroup]
+2026-08-03T01:20:57.3925255Z ##[group]Run docker compose -p ci-container-smoke build
+2026-08-03T01:20:57.3925719Z [36;1mdocker compose -p ci-container-smoke build[0m
+2026-08-03T01:20:57.4061564Z shell: /usr/bin/bash -e {0}
+2026-08-03T01:20:57.4061839Z env:
+2026-08-03T01:20:57.4062046Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:20:57.4062328Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:20:57.4062609Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:20:57.4062892Z ##[endgroup]
+2026-08-03T01:21:02.2807703Z #1 [internal] load local bake definitions
+2026-08-03T01:21:02.4318391Z #1 reading from stdin 742B done
+2026-08-03T01:21:02.4319053Z #1 DONE 0.0s
+2026-08-03T01:21:02.6546749Z 
+2026-08-03T01:21:02.6547922Z #2 [web internal] load build definition from Dockerfile
+2026-08-03T01:21:02.6548826Z #2 transferring dockerfile: 1.21kB 0.0s done
+2026-08-03T01:21:02.6549322Z #2 DONE 0.1s
+2026-08-03T01:21:02.6549515Z 
+2026-08-03T01:21:02.6549889Z #3 [api internal] load build definition from Dockerfile
+2026-08-03T01:21:02.6550641Z #3 transferring dockerfile: 1.55kB 0.0s done
+2026-08-03T01:21:02.6551100Z #3 DONE 0.1s
+2026-08-03T01:21:02.6551277Z 
+2026-08-03T01:21:02.6551867Z #4 [web] resolve image config for docker-image://docker.io/docker/dockerfile:1
+2026-08-03T01:21:02.8438163Z #4 ...
+2026-08-03T01:21:02.8438455Z 
+2026-08-03T01:21:02.8439080Z #5 [auth] docker/dockerfile:pull token for registry-1.docker.io
+2026-08-03T01:21:02.8439598Z #5 DONE 0.0s
+2026-08-03T01:21:02.9940869Z 
+2026-08-03T01:21:02.9941593Z #4 [web] resolve image config for docker-image://docker.io/docker/dockerfile:1
+2026-08-03T01:21:03.4145559Z #4 DONE 0.8s
+2026-08-03T01:21:03.4145833Z 
+2026-08-03T01:21:03.4147247Z #6 [web] docker-image://docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89
+2026-08-03T01:21:03.4148701Z #6 resolve docker.io/docker/dockerfile:1@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 done
+2026-08-03T01:21:03.4149804Z #6 sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 9.08kB / 9.08kB done
+2026-08-03T01:21:03.4150770Z #6 sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd 1.13kB / 1.13kB done
+2026-08-03T01:21:03.5280322Z #6 sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89 9.08kB / 9.08kB done
+2026-08-03T01:21:03.5281183Z #6 sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd 1.13kB / 1.13kB done
+2026-08-03T01:21:03.5281976Z #6 sha256:1a998cca4d41cfecafb1989342c5e7378bc992589af7d47510c4b854bebfc7d7 1.33kB / 1.33kB done
+2026-08-03T01:21:03.5282814Z #6 sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 14.36MB / 14.36MB 0.1s done
+2026-08-03T01:21:03.5283629Z #6 extracting sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0.1s
+2026-08-03T01:21:03.6385030Z #6 extracting sha256:50ba52cd6a2c01eaf1a9efbedc7c75b5da5e3965c1586001c722980487a73fd7 0.1s done
+2026-08-03T01:21:03.6386044Z #6 DONE 0.3s
+2026-08-03T01:21:03.6386439Z 
+2026-08-03T01:21:03.6387287Z #7 [api internal] load metadata for docker.io/library/golang:1.26-alpine
+2026-08-03T01:21:03.9788119Z #7 ...
+2026-08-03T01:21:03.9788385Z 
+2026-08-03T01:21:03.9788884Z #8 [auth] library/golang:pull token for registry-1.docker.io
+2026-08-03T01:21:03.9789621Z #8 DONE 0.0s
+2026-08-03T01:21:03.9789763Z 
+2026-08-03T01:21:03.9790063Z #9 [auth] library/node:pull token for registry-1.docker.io
+2026-08-03T01:21:03.9790462Z #9 DONE 0.0s
+2026-08-03T01:21:03.9790599Z 
+2026-08-03T01:21:03.9790885Z #10 [auth] library/nginx:pull token for registry-1.docker.io
+2026-08-03T01:21:03.9791286Z #10 DONE 0.0s
+2026-08-03T01:21:03.9791453Z 
+2026-08-03T01:21:03.9791743Z #11 [auth] library/alpine:pull token for registry-1.docker.io
+2026-08-03T01:21:03.9792145Z #11 DONE 0.0s
+2026-08-03T01:21:04.1290530Z 
+2026-08-03T01:21:04.1291722Z #12 [web internal] load metadata for docker.io/library/node:22
+2026-08-03T01:21:04.5804606Z #12 ...
+2026-08-03T01:21:04.5805185Z 
+2026-08-03T01:21:04.5806432Z #7 [api internal] load metadata for docker.io/library/golang:1.26-alpine
+2026-08-03T01:21:04.5807279Z #7 DONE 0.9s
+2026-08-03T01:21:04.6985725Z 
+2026-08-03T01:21:04.6987277Z #13 [web internal] load metadata for docker.io/library/nginx:1.27-alpine
+2026-08-03T01:21:04.6988648Z #13 DONE 1.0s
+2026-08-03T01:21:04.6989486Z 
+2026-08-03T01:21:04.6990212Z #14 [api internal] load metadata for docker.io/library/alpine:3.20
+2026-08-03T01:21:04.6991493Z #14 DONE 1.0s
+2026-08-03T01:21:04.6991985Z 
+2026-08-03T01:21:04.6992662Z #12 [web internal] load metadata for docker.io/library/node:22
+2026-08-03T01:21:04.6993574Z #12 DONE 1.0s
+2026-08-03T01:21:04.6994072Z 
+2026-08-03T01:21:04.6995017Z #15 [api internal] load .dockerignore
+2026-08-03T01:21:04.6995906Z #15 transferring context: 160B done
+2026-08-03T01:21:04.6996635Z #15 DONE 0.0s
+2026-08-03T01:21:04.6997319Z 
+2026-08-03T01:21:04.6997788Z #16 [web internal] load .dockerignore
+2026-08-03T01:21:04.6998641Z #16 transferring context: 707B done
+2026-08-03T01:21:04.6999368Z #16 DONE 0.0s
+2026-08-03T01:21:04.8108246Z 
+2026-08-03T01:21:04.8108836Z #17 [web internal] load build context
+2026-08-03T01:21:04.8109562Z #17 transferring context: 912.79kB 0.0s done
+2026-08-03T01:21:04.8109943Z #17 DONE 0.0s
+2026-08-03T01:21:04.8110073Z 
+2026-08-03T01:21:04.8110247Z #18 [api internal] load build context
+2026-08-03T01:21:04.8110625Z #18 transferring context: 250.56kB 0.0s done
+2026-08-03T01:21:04.8110920Z #18 DONE 0.0s
+2026-08-03T01:21:04.8111032Z 
+2026-08-03T01:21:04.8111663Z #19 [web stage-1 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+2026-08-03T01:21:04.8112727Z #19 resolve docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 done
+2026-08-03T01:21:04.8113618Z #19 sha256:6769dc3a703c719c1d2756bda113659be28ae16cf0da58dd5fd823d6b9a050ea 10.79kB / 10.79kB done
+2026-08-03T01:21:04.8114413Z #19 sha256:f18232174bc91741fdf3da96d85011092101a032a93a388b79e99e69c2d5c870 3.15MB / 3.64MB 0.1s
+2026-08-03T01:21:04.8115156Z #19 sha256:61ca4f733c802afd9e05a32f0de0361b6d713b8b53292dc15fb093229f648674 0B / 1.79MB 0.1s
+2026-08-03T01:21:04.8115873Z #19 sha256:b464cfdf2a6319875aeb27359ec549790ce14d8214fcb16ef915e4530e5ed235 0B / 629B 0.1s
+2026-08-03T01:21:04.8116624Z #19 sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 10.33kB / 10.33kB done
+2026-08-03T01:21:04.8117710Z #19 sha256:62223d644fa234c3a1cc785ee14242ec47a77364226f1c811d2f669f96dc2ac8 2.50kB / 2.50kB done
+2026-08-03T01:21:04.9278747Z #19 sha256:f18232174bc91741fdf3da96d85011092101a032a93a388b79e99e69c2d5c870 3.64MB / 3.64MB 0.1s done
+2026-08-03T01:21:04.9280425Z #19 sha256:61ca4f733c802afd9e05a32f0de0361b6d713b8b53292dc15fb093229f648674 1.79MB / 1.79MB 0.1s done
+2026-08-03T01:21:04.9281877Z #19 extracting sha256:f18232174bc91741fdf3da96d85011092101a032a93a388b79e99e69c2d5c870 0.1s done
+2026-08-03T01:21:04.9283253Z #19 sha256:d7e5070240863957ebb0b5a44a5729963c3462666baa2947d00628cb5f2d5773 0B / 955B 0.2s
+2026-08-03T01:21:04.9284168Z #19 sha256:81bd8ed7ec6789b0cb7f1b47ee731c522f6dba83201ec73cd6bca1350f582948 0B / 402B 0.2s
+2026-08-03T01:21:04.9285226Z #19 extracting sha256:61ca4f733c802afd9e05a32f0de0361b6d713b8b53292dc15fb093229f648674
+2026-08-03T01:21:05.1103082Z #19 sha256:b464cfdf2a6319875aeb27359ec549790ce14d8214fcb16ef915e4530e5ed235 629B / 629B 0.2s done
+2026-08-03T01:21:05.1104602Z #19 sha256:d7e5070240863957ebb0b5a44a5729963c3462666baa2947d00628cb5f2d5773 955B / 955B 0.2s done
+2026-08-03T01:21:05.1106057Z #19 sha256:81bd8ed7ec6789b0cb7f1b47ee731c522f6dba83201ec73cd6bca1350f582948 402B / 402B 0.2s done
+2026-08-03T01:21:05.1107905Z #19 extracting sha256:61ca4f733c802afd9e05a32f0de0361b6d713b8b53292dc15fb093229f648674 0.0s done
+2026-08-03T01:21:05.1109419Z #19 sha256:197eb75867ef4fcecd4724f17b0972ab0489436860a594a9445f8eaff8155053 1.21kB / 1.21kB 0.3s done
+2026-08-03T01:21:05.1110893Z #19 sha256:34a64644b756511a2e217f0508e11d1a572085d66cd6dc9a555a082ad49a3102 1.40kB / 1.40kB 0.3s done
+2026-08-03T01:21:05.1112691Z #19 sha256:39c2ddfd6010082a4a646e7ca44e95aca9bf3eaebc00f17f7ccc2954004f2a7d 15.52MB / 15.52MB 0.3s done
+2026-08-03T01:21:05.2145018Z #19 extracting sha256:b464cfdf2a6319875aeb27359ec549790ce14d8214fcb16ef915e4530e5ed235 done
+2026-08-03T01:21:05.2147759Z #19 extracting sha256:d7e5070240863957ebb0b5a44a5729963c3462666baa2947d00628cb5f2d5773 done
+2026-08-03T01:21:05.2149495Z #19 extracting sha256:81bd8ed7ec6789b0cb7f1b47ee731c522f6dba83201ec73cd6bca1350f582948 done
+2026-08-03T01:21:05.2151128Z #19 extracting sha256:197eb75867ef4fcecd4724f17b0972ab0489436860a594a9445f8eaff8155053 done
+2026-08-03T01:21:05.3156725Z #19 extracting sha256:34a64644b756511a2e217f0508e11d1a572085d66cd6dc9a555a082ad49a3102 done
+2026-08-03T01:21:05.3159175Z #19 extracting sha256:39c2ddfd6010082a4a646e7ca44e95aca9bf3eaebc00f17f7ccc2954004f2a7d
+2026-08-03T01:21:06.4197385Z #19 extracting sha256:39c2ddfd6010082a4a646e7ca44e95aca9bf3eaebc00f17f7ccc2954004f2a7d 1.0s done
+2026-08-03T01:21:06.5350496Z #19 DONE 1.8s
+2026-08-03T01:21:06.5351125Z 
+2026-08-03T01:21:06.5352496Z #20 [api stage-1 1/4] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+2026-08-03T01:21:06.5356494Z #20 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.0s done
+2026-08-03T01:21:06.5360832Z #20 sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 9.23kB / 9.23kB done
+2026-08-03T01:21:06.5363076Z #20 sha256:c64c687cbea9300178b30c95835354e34c4e4febc4badfe27102879de0483b5e 1.02kB / 1.02kB done
+2026-08-03T01:21:06.5364779Z #20 sha256:bf8527eb54c3680e728d5b4b383a8ba730d72dae7236fbc8dff97ed6b224a731 612B / 612B done
+2026-08-03T01:21:06.5366580Z #20 sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 3.63MB / 3.63MB 1.4s done
+2026-08-03T01:21:06.5369077Z #20 extracting sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 0.1s done
+2026-08-03T01:21:06.5370213Z #20 DONE 1.8s
+2026-08-03T01:21:06.5371017Z 
+2026-08-03T01:21:06.5372371Z #21 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+2026-08-03T01:21:06.5374977Z #21 resolve docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed 0.0s done
+2026-08-03T01:21:06.5377398Z #21 sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed 5.15kB / 5.15kB done
+2026-08-03T01:21:06.5379181Z #21 sha256:9aa184189f478192a37d9f5e318aef6bb25690db294b0857c3ea798d76b1bbc7 6.77kB / 6.77kB done
+2026-08-03T01:21:06.5380990Z #21 sha256:b6ca9eabea5fc816699178b5dd4842270e1c42f90739afc93bbcfdf91a13512e 2.49kB / 2.49kB done
+2026-08-03T01:21:06.5382746Z #21 sha256:c4013e1e38341061b49f51c4b44f2e534c25135d7ed5b75af8b2094766bb5519 48.50MB / 48.50MB 0.5s done
+2026-08-03T01:21:06.5384400Z #21 sha256:bd0ec93c9c52acfa7f522ce201898ba8ebdf67a6d01c6a4ea70e8d413dbc534a 24.04MB / 24.04MB 0.5s done
+2026-08-03T01:21:06.5386045Z #21 sha256:2dd2dd4f152bd44fe5b02de3e47483f6cdf32bf3d7ea1c7cc70d57b075f2eebd 64.41MB / 64.41MB 0.6s done
+2026-08-03T01:21:06.5387971Z #21 sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 211.63MB / 211.63MB 1.4s done
+2026-08-03T01:21:06.5389745Z #21 extracting sha256:c4013e1e38341061b49f51c4b44f2e534c25135d7ed5b75af8b2094766bb5519 1.1s
+2026-08-03T01:21:06.5390604Z #21 sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 58.55MB / 58.55MB 0.9s done
+2026-08-03T01:21:06.5391692Z #21 sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 3.32kB / 3.32kB 0.5s done
+2026-08-03T01:21:06.5392721Z #21 sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 1.25MB / 1.25MB 0.7s done
+2026-08-03T01:21:06.5393811Z #21 sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae 448B / 448B 0.8s done
+2026-08-03T01:21:06.6445152Z #21 ...
+2026-08-03T01:21:06.6446221Z 
+2026-08-03T01:21:06.6447461Z #22 [web stage-1 2/3] COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+2026-08-03T01:21:06.6448056Z #22 DONE 0.0s
+2026-08-03T01:21:06.7448005Z 
+2026-08-03T01:21:06.7449166Z #23 [api stage-1 2/4] RUN addgroup -S app     && adduser -S -G app app     && mkdir -p /app/data     && chown -R app:app /app
+2026-08-03T01:21:06.7450246Z #23 DONE 0.2s
+2026-08-03T01:21:06.7450776Z 
+2026-08-03T01:21:06.7451054Z #24 [api stage-1 3/4] WORKDIR /app
+2026-08-03T01:21:06.7451502Z #24 DONE 0.0s
+2026-08-03T01:21:06.7451708Z 
+2026-08-03T01:21:06.7452669Z #21 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+2026-08-03T01:21:08.1554898Z #21 extracting sha256:c4013e1e38341061b49f51c4b44f2e534c25135d7ed5b75af8b2094766bb5519 2.8s done
+2026-08-03T01:21:08.3530926Z #21 extracting sha256:bd0ec93c9c52acfa7f522ce201898ba8ebdf67a6d01c6a4ea70e8d413dbc534a 0.1s
+2026-08-03T01:21:08.9004564Z #21 extracting sha256:bd0ec93c9c52acfa7f522ce201898ba8ebdf67a6d01c6a4ea70e8d413dbc534a 0.6s done
+2026-08-03T01:21:09.3504001Z #21 extracting sha256:2dd2dd4f152bd44fe5b02de3e47483f6cdf32bf3d7ea1c7cc70d57b075f2eebd
+2026-08-03T01:21:12.2034662Z #21 extracting sha256:2dd2dd4f152bd44fe5b02de3e47483f6cdf32bf3d7ea1c7cc70d57b075f2eebd 2.7s done
+2026-08-03T01:21:12.2038001Z #21 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43
+2026-08-03T01:21:13.1582743Z #21 ...
+2026-08-03T01:21:13.1583254Z 
+2026-08-03T01:21:13.1585044Z #25 [api build 1/6] FROM docker.io/library/golang:1.26-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2
+2026-08-03T01:21:13.1587855Z #25 resolve docker.io/library/golang:1.26-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 0.0s done
+2026-08-03T01:21:13.1588847Z #25 sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 10.29kB / 10.29kB done
+2026-08-03T01:21:13.1589636Z #25 sha256:111d79159b2326f7e80c4a4706e1ba166acb0e2611df853955f3621828cd49e8 1.92kB / 1.92kB done
+2026-08-03T01:21:13.1590392Z #25 sha256:7849a63a4b6c8ad0698b3bfc67b07165835208d8d82ec5766dfc9be5d56ceeab 2.19kB / 2.19kB done
+2026-08-03T01:21:13.1593023Z #25 sha256:6563b0ba6ce9e242d9162b6aee6a1a9aa1a38b009348c1fcb7beee0b41ee523d 245.07kB / 245.07kB 0.9s done
+2026-08-03T01:21:13.1593885Z #25 extracting sha256:6563b0ba6ce9e242d9162b6aee6a1a9aa1a38b009348c1fcb7beee0b41ee523d 0.1s done
+2026-08-03T01:21:13.1594658Z #25 sha256:56bd32640bdfb6a9d786910d18868a249777b8689c6ef795f41a3c46968dd508 127B / 127B 1.0s done
+2026-08-03T01:21:13.1595470Z #25 sha256:cea3d467f844b8e6fffc2d7793807a1ec9e3a0582655418c1c17013372a3a910 67.29MB / 67.29MB 1.4s done
+2026-08-03T01:21:13.1596273Z #25 sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B 1.2s done
+2026-08-03T01:21:13.1597478Z #25 extracting sha256:cea3d467f844b8e6fffc2d7793807a1ec9e3a0582655418c1c17013372a3a910 6.2s done
+2026-08-03T01:21:13.1599099Z #25 extracting sha256:56bd32640bdfb6a9d786910d18868a249777b8689c6ef795f41a3c46968dd508 done
+2026-08-03T01:21:13.1600491Z #25 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+2026-08-03T01:21:13.1601362Z #25 DONE 8.4s
+2026-08-03T01:21:13.1601580Z 
+2026-08-03T01:21:13.1601852Z #26 [api build 2/6] WORKDIR /src
+2026-08-03T01:21:13.1602311Z #26 DONE 0.0s
+2026-08-03T01:21:13.1602536Z 
+2026-08-03T01:21:13.1602846Z #27 [api build 3/6] COPY go.mod go.sum ./
+2026-08-03T01:21:13.1603342Z #27 DONE 0.0s
+2026-08-03T01:21:13.1603555Z 
+2026-08-03T01:21:13.1604537Z #21 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+2026-08-03T01:21:13.1605548Z #21 ...
+2026-08-03T01:21:13.1605748Z 
+2026-08-03T01:21:13.1606444Z #28 [api build 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download || go mod download
+2026-08-03T01:21:17.8596071Z #28 DONE 4.7s
+2026-08-03T01:21:17.8597409Z 
+2026-08-03T01:21:17.8597740Z #29 [api build 5/6] COPY . .
+2026-08-03T01:21:17.8603216Z #29 DONE 0.0s
+2026-08-03T01:21:17.8603655Z 
+2026-08-03T01:21:17.8604882Z #21 [web build 1/7] FROM docker.io/library/node:22@sha256:7725a5c2c83eed1d36258c66efae14b1ceccd021db9ed1d9559d3335ed3d68ed
+2026-08-03T01:21:17.8606567Z #21 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 5.5s
+2026-08-03T01:21:20.1445550Z #21 extracting sha256:34e7f1cb7a296e8a2f35401d96a0c2fc030894e200451ae74437bdb7a4b2cb43 7.9s done
+2026-08-03T01:21:20.3110317Z #21 extracting sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005
+2026-08-03T01:21:20.4471593Z #21 extracting sha256:c487d6e7caa31520f7530ddf717e824ecf802151b78712c54612ec5402d5e005 done
+2026-08-03T01:21:20.4473479Z #21 extracting sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 0.1s
+2026-08-03T01:21:23.3736089Z #21 extracting sha256:ec53e715ea4791de3645aba5786d7b46ebe512362daeb8bd3afc4fc002f060b6 2.9s done
+2026-08-03T01:21:23.6899781Z #21 extracting sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369
+2026-08-03T01:21:23.8010775Z #21 extracting sha256:b5082ce0961af6f15767721d723303701761431930a2da23a39a0d2b0463a369 0.0s done
+2026-08-03T01:21:23.8015514Z #21 extracting sha256:160cb63e6a29e9ea69f120ba2b1c3fb11ef3ccf67b606b67b8cebba705550eae done
+2026-08-03T01:21:23.8018155Z #21 DONE 19.1s
+2026-08-03T01:21:23.8018417Z 
+2026-08-03T01:21:23.8021951Z #30 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+2026-08-03T01:21:23.9798029Z #30 ...
+2026-08-03T01:21:23.9798679Z 
+2026-08-03T01:21:23.9799138Z #31 [web build 2/7] WORKDIR /app
+2026-08-03T01:21:23.9799641Z #31 DONE 0.0s
+2026-08-03T01:21:23.9799846Z 
+2026-08-03T01:21:23.9800405Z #32 [web build 3/7] COPY apps/web/package.json apps/web/package-lock.json ./
+2026-08-03T01:21:23.9801090Z #32 DONE 0.0s
+2026-08-03T01:21:23.9801316Z 
+2026-08-03T01:21:23.9801835Z #33 [web build 4/7] RUN --mount=type=cache,target=/root/.npm npm ci
+2026-08-03T01:21:25.7908932Z #33 1.959 npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+2026-08-03T01:21:31.9796731Z #33 8.150 
+2026-08-03T01:21:31.9797484Z #33 8.150 added 194 packages, and audited 195 packages in 8s
+2026-08-03T01:21:32.1650693Z #33 8.155 npm notice
+2026-08-03T01:21:32.1669817Z #33 8.155 npm notice New major version of npm available! 10.9.8 -> 12.0.2
+2026-08-03T01:21:32.1672358Z #33 8.155 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+2026-08-03T01:21:32.1678183Z #33 8.155 npm notice To update run: npm install -g npm@12.0.2
+2026-08-03T01:21:32.1679424Z #33 8.155 npm notice
+2026-08-03T01:21:32.1680833Z #33 8.184 
+2026-08-03T01:21:32.1681380Z #33 8.184 40 packages are looking for funding
+2026-08-03T01:21:32.1682046Z #33 8.184   run `npm fund` for details
+2026-08-03T01:21:32.1682505Z #33 8.184 
+2026-08-03T01:21:32.1682953Z #33 8.184 found 0 vulnerabilities
+2026-08-03T01:21:32.2102070Z #33 DONE 8.4s
+2026-08-03T01:21:32.2104327Z 
+2026-08-03T01:21:32.2111192Z #30 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+2026-08-03T01:21:32.3648189Z #30 ...
+2026-08-03T01:21:32.3649492Z 
+2026-08-03T01:21:32.3650570Z #34 [web build 5/7] COPY apps/web .
+2026-08-03T01:21:32.6272837Z #34 DONE 0.4s
+2026-08-03T01:21:32.6274670Z 
+2026-08-03T01:21:32.6279162Z #30 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+2026-08-03T01:21:32.7950314Z #30 ...
+2026-08-03T01:21:32.7951644Z 
+2026-08-03T01:21:32.7952342Z #35 [web build 6/7] COPY docs/schemas /docs/schemas
+2026-08-03T01:21:32.7953074Z #35 DONE 0.0s
+2026-08-03T01:21:32.7953488Z 
+2026-08-03T01:21:32.7954252Z #36 [web build 7/7] RUN --mount=type=cache,target=/root/.npm npm run build
+2026-08-03T01:21:33.1262131Z #36 0.482 
+2026-08-03T01:21:33.1263462Z #36 0.482 > schema-ui-core-web@0.1.0 build
+2026-08-03T01:21:33.1264370Z #36 0.482 > tsc -b && vite build
+2026-08-03T01:21:33.1265439Z #36 0.482 
+2026-08-03T01:21:41.6066011Z #36 8.962 vite v6.4.3 building for production...
+2026-08-03T01:21:41.8435414Z #36 9.049 transforming...
+2026-08-03T01:21:45.1410645Z #36 12.50 ✓ 1814 modules transformed.
+2026-08-03T01:21:45.4458073Z #36 12.80 rendering chunks...
+2026-08-03T01:21:45.6044713Z #36 12.81 computing gzip size...
+2026-08-03T01:21:45.6055288Z #36 12.83 dist/index.html                   0.41 kB │ gzip:   0.27 kB
+2026-08-03T01:21:45.6057129Z #36 12.83 dist/assets/index-Cgp8Vrw1.css   21.84 kB │ gzip:   4.83 kB
+2026-08-03T01:21:45.6058483Z #36 12.83 dist/assets/index-D616rCCj.js   455.61 kB │ gzip: 140.61 kB
+2026-08-03T01:21:45.6059549Z #36 12.83 ✓ built in 3.83s
+2026-08-03T01:21:45.6060243Z #36 DONE 13.0s
+2026-08-03T01:21:45.6090724Z 
+2026-08-03T01:21:45.6096404Z #30 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+2026-08-03T01:21:45.7890333Z #30 ...
+2026-08-03T01:21:45.7890669Z 
+2026-08-03T01:21:45.7891675Z #37 [web stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html
+2026-08-03T01:21:45.9609784Z #37 DONE 0.0s
+2026-08-03T01:21:45.9610068Z 
+2026-08-03T01:21:45.9610250Z #38 [web] exporting to image
+2026-08-03T01:21:45.9610617Z #38 exporting layers
+2026-08-03T01:21:46.0076430Z #38 exporting layers 0.2s done
+2026-08-03T01:21:46.1849383Z #38 writing image sha256:bbe0857490a49a4839c23f76318a6c22864a97a321d09d70a1224d5f26b823ed done
+2026-08-03T01:21:46.1850611Z #38 naming to docker.io/library/schema-ui-core-web:local done
+2026-08-03T01:21:46.1851239Z #38 DONE 0.2s
+2026-08-03T01:21:46.1851455Z 
+2026-08-03T01:21:46.1851815Z #39 [web] resolving provenance for metadata file
+2026-08-03T01:21:46.1852360Z #39 DONE 0.0s
+2026-08-03T01:21:46.1852596Z 
+2026-08-03T01:21:46.1855864Z #30 [api build 6/6] RUN --mount=type=cache,target=/go/pkg/mod     CGO_ENABLED=0 go build -trimpath     -ldflags "-X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Version=0.1.0               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.Commit=unknown               -X github.com/magicvr/schema-ui-core/apps/api/pkg/version.BuiltAt=unknown"     -o /out/schema-ui-core-api ./cmd/server
+2026-08-03T01:21:50.7283407Z #30 DONE 32.9s
+2026-08-03T01:21:50.9255411Z 
+2026-08-03T01:21:50.9256209Z #40 [api stage-1 4/4] COPY --from=build /out/schema-ui-core-api /app/schema-ui-core-api
+2026-08-03T01:21:50.9257027Z #40 DONE 0.0s
+2026-08-03T01:21:50.9257199Z 
+2026-08-03T01:21:50.9257368Z #41 [api] exporting to image
+2026-08-03T01:21:51.0103666Z #41 exporting layers 0.2s done
+2026-08-03T01:21:51.0447351Z #41 writing image sha256:24de96e5be75d118f6f61f9de49f24e4b0fc5732e37a412f2914488bb4df6c14 done
+2026-08-03T01:21:51.0448565Z #41 naming to docker.io/library/schema-ui-core-api:local done
+2026-08-03T01:21:51.0449273Z #41 DONE 0.2s
+2026-08-03T01:21:51.0449486Z 
+2026-08-03T01:21:51.0449805Z #42 [api] resolving provenance for metadata file
+2026-08-03T01:21:51.0450179Z #42 DONE 0.0s
+2026-08-03T01:21:51.0450698Z  api  Built
+2026-08-03T01:21:51.0451028Z  web  Built
+2026-08-03T01:21:51.0525373Z ##[group]Run docker compose -p ci-container-smoke up -d
+2026-08-03T01:21:51.0525838Z [36;1mdocker compose -p ci-container-smoke up -d[0m
+2026-08-03T01:21:51.0571199Z shell: /usr/bin/bash -e {0}
+2026-08-03T01:21:51.0571456Z env:
+2026-08-03T01:21:51.0571664Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:21:51.0571940Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:21:51.0572217Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:21:51.0572486Z ##[endgroup]
+2026-08-03T01:21:51.1517101Z  Network ci-container-smoke_default  Creating
+2026-08-03T01:21:51.1860168Z  Network ci-container-smoke_default  Created
+2026-08-03T01:21:51.1914030Z  Volume "ci-container-smoke_db-data"  Creating
+2026-08-03T01:21:51.1928420Z  Volume "ci-container-smoke_db-data"  Created
+2026-08-03T01:21:51.1933681Z  Container ci-container-smoke-api-1  Creating
+2026-08-03T01:21:51.2140615Z  Container ci-container-smoke-api-1  Created
+2026-08-03T01:21:51.2141404Z  Container ci-container-smoke-web-1  Creating
+2026-08-03T01:21:51.2249680Z  Container ci-container-smoke-web-1  Created
+2026-08-03T01:21:51.2258221Z  Container ci-container-smoke-api-1  Starting
+2026-08-03T01:21:51.5068907Z  Container ci-container-smoke-api-1  Started
+2026-08-03T01:21:51.5069592Z  Container ci-container-smoke-api-1  Waiting
+2026-08-03T01:21:57.0080906Z  Container ci-container-smoke-api-1  Healthy
+2026-08-03T01:21:57.0081795Z  Container ci-container-smoke-web-1  Starting
+2026-08-03T01:21:57.1271946Z  Container ci-container-smoke-web-1  Started
+2026-08-03T01:21:57.1361439Z ##[group]Run for i in $(seq 1 40); do
+2026-08-03T01:21:57.1362017Z [36;1mfor i in $(seq 1 40); do[0m
+2026-08-03T01:21:57.1362675Z [36;1m  if curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1 \[0m
+2026-08-03T01:21:57.1363520Z [36;1m     && curl -fsS http://127.0.0.1:8081/ >/dev/null 2>&1; then[0m
+2026-08-03T01:21:57.1364202Z [36;1m    echo "compose services ready"; exit 0[0m
+2026-08-03T01:21:57.1364704Z [36;1m  fi[0m
+2026-08-03T01:21:57.1365045Z [36;1m  sleep 3[0m
+2026-08-03T01:21:57.1365404Z [36;1mdone[0m
+2026-08-03T01:21:57.1365902Z [36;1mecho "compose services failed to become ready"; exit 1[0m
+2026-08-03T01:21:57.1435711Z shell: /usr/bin/bash -e {0}
+2026-08-03T01:21:57.1436131Z env:
+2026-08-03T01:21:57.1436477Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:21:57.1437251Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:21:57.1437792Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:21:57.1438277Z ##[endgroup]
+2026-08-03T01:21:57.1731643Z compose services ready
+2026-08-03T01:21:57.1759497Z ##[group]Run SMOKE_USERNAME=admin SMOKE_PASSWORD=ci-admin \
+2026-08-03T01:21:57.1759953Z [36;1mSMOKE_USERNAME=admin SMOKE_PASSWORD=ci-admin \[0m
+2026-08-03T01:21:57.1760344Z [36;1mSMOKE_RECORD_ID=rec-1 SMOKE_EXPECTED_SEED_TOTAL=8 \[0m
+2026-08-03T01:21:57.1760686Z [36;1mSMOKE_DISPOSABLE_CONFIRM=yes \[0m
+2026-08-03T01:21:57.1760988Z [36;1mbash scripts/smoke.sh --disposable[0m
+2026-08-03T01:21:57.1806095Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-03T01:21:57.1806444Z env:
+2026-08-03T01:21:57.1806650Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:21:57.1807247Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:21:57.1807547Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:21:57.1807818Z ##[endgroup]
+2026-08-03T01:21:57.2777729Z isolation: project=ci-container-smoke container=a5f66f59d35e29d0e6224d4f38cab3c3f35cc7f4f3f70ded56573699336470c1
+2026-08-03T01:21:57.2778508Z SM-001=PASS
+2026-08-03T01:21:57.3274749Z SM-002=PASS
+2026-08-03T01:21:57.4320140Z SM-003=PASS
+2026-08-03T01:21:57.5063588Z SM-004=PASS
+2026-08-03T01:21:57.5159118Z SM-005=PASS
+2026-08-03T01:21:59.1131849Z SM-006=PASS
+2026-08-03T01:21:59.1132342Z SMOKE RESULT: PASS (SM-001~005 + SM-006)
+2026-08-03T01:21:59.1167502Z ##[group]Run TOKEN=$(curl -fsS -X POST http://127.0.0.1:8081/api/auth/login \
+2026-08-03T01:21:59.1168115Z [36;1mTOKEN=$(curl -fsS -X POST http://127.0.0.1:8081/api/auth/login \[0m
+2026-08-03T01:21:59.1168539Z [36;1m  -H 'Content-Type: application/json' \[0m
+2026-08-03T01:21:59.1168899Z [36;1m  -d '{"username":"admin","password":"ci-admin"}' \[0m
+2026-08-03T01:21:59.1169343Z [36;1m  | python3 -c 'import sys,json;print(json.load(sys.stdin)["accessToken"])')[0m
+2026-08-03T01:21:59.1169845Z [36;1mNEWID=$(curl -fsS -X POST http://127.0.0.1:8081/api/records \[0m
+2026-08-03T01:21:59.1170623Z [36;1m  -H "Authorization: ***" -H 'Content-Type: application/json' \[0m
+2026-08-03T01:21:59.1171089Z [36;1m  -d '{"name":"ci-persist","status":"active","owner":"ci"}' \[0m
+2026-08-03T01:21:59.1171564Z [36;1m  | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')[0m
+2026-08-03T01:21:59.1171950Z [36;1mtest -n "$NEWID"[0m
+2026-08-03T01:21:59.1172286Z [36;1mdocker compose -p ci-container-smoke restart api[0m
+2026-08-03T01:21:59.1172983Z [36;1mfor i in $(seq 1 40); do[0m
+2026-08-03T01:21:59.1173367Z [36;1m  curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1 && break; sleep 2[0m
+2026-08-03T01:21:59.1173758Z [36;1mdone[0m
+2026-08-03T01:21:59.1174177Z [36;1mcurl -fsS "http://127.0.0.1:8081/api/records/$NEWID" -H "Authorization: ***" \[0m
+2026-08-03T01:21:59.1174747Z [36;1m  | python3 -c 'import sys,json;d=json.load(sys.stdin);assert d["id"]=="'"$NEWID"'"'[0m
+2026-08-03T01:21:59.1175273Z [36;1mecho "record persisted across api container restart OK"[0m
+2026-08-03T01:21:59.1219135Z shell: /usr/bin/bash -e {0}
+2026-08-03T01:21:59.1219401Z env:
+2026-08-03T01:21:59.1219607Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:21:59.1219883Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:21:59.1220165Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:21:59.1220440Z ##[endgroup]
+2026-08-03T01:21:59.2977587Z  Container ci-container-smoke-api-1  Restarting
+2026-08-03T01:21:59.5173794Z  Container ci-container-smoke-api-1  Started
+2026-08-03T01:22:01.5603587Z record persisted across api container restart OK
+2026-08-03T01:22:01.5636224Z ##[group]Run docker compose -p ci-container-smoke down -v
+2026-08-03T01:22:01.5636674Z [36;1mdocker compose -p ci-container-smoke down -v[0m
+2026-08-03T01:22:01.5680230Z shell: /usr/bin/bash -e {0}
+2026-08-03T01:22:01.5680480Z env:
+2026-08-03T01:22:01.5680680Z   AUTH_JWT_SECRET: ci-test-secret
+2026-08-03T01:22:01.5680954Z   ADMIN_INITIAL_PASSWORD: ci-admin
+2026-08-03T01:22:01.5681235Z   SMOKE_ISOLATION_ID: ci-container-smoke
+2026-08-03T01:22:01.5681499Z ##[endgroup]
+2026-08-03T01:22:01.6323168Z  Container ci-container-smoke-web-1  Stopping
+2026-08-03T01:22:01.7443332Z  Container ci-container-smoke-web-1  Stopped
+2026-08-03T01:22:01.7445270Z  Container ci-container-smoke-web-1  Removing
+2026-08-03T01:22:01.7503157Z  Container ci-container-smoke-web-1  Removed
+2026-08-03T01:22:01.7504374Z  Container ci-container-smoke-api-1  Stopping
+2026-08-03T01:22:01.8502294Z  Container ci-container-smoke-api-1  Stopped
+2026-08-03T01:22:01.8503351Z  Container ci-container-smoke-api-1  Removing
+2026-08-03T01:22:01.8546560Z  Container ci-container-smoke-api-1  Removed
+2026-08-03T01:22:01.8557059Z  Network ci-container-smoke_default  Removing
+2026-08-03T01:22:01.8563160Z  Volume ci-container-smoke_db-data  Removing
+2026-08-03T01:22:01.8578530Z  Volume ci-container-smoke_db-data  Removed
+2026-08-03T01:22:01.9346334Z  Network ci-container-smoke_default  Removed
+2026-08-03T01:22:01.9458553Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T01:22:01.9459816Z Post job cleanup.
+2026-08-03T01:22:02.0689769Z (node:5811) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T01:22:02.0690990Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T01:22:02.0759675Z [command]/opt/hostedtoolcache/go/1.26.5/x64/bin/go env GOMODCACHE
+2026-08-03T01:22:02.0802267Z [command]/opt/hostedtoolcache/go/1.26.5/x64/bin/go env GOCACHE
+2026-08-03T01:22:02.0829155Z /home/runner/go/pkg/mod
+2026-08-03T01:22:02.0849310Z /home/runner/.cache/go-build
+2026-08-03T01:22:02.0856389Z [warning]Cache folder path is retrieved but doesn't exist on disk: /home/runner/go/pkg/mod
+2026-08-03T01:22:02.0857611Z Primary key was not generated. Please check the log messages above for more errors or information
+2026-08-03T01:22:02.0968063Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T01:22:02.0969507Z Post job cleanup.
+2026-08-03T01:22:02.2257877Z (node:5833) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T01:22:02.2259145Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T01:22:02.2262769Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-77164c048bd4fbb17d82e95198f684fb6a9aeba619aeb49c7fefad021293b3a5, not saving cache.
+2026-08-03T01:22:02.2388538Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T01:22:02.2389775Z Post job cleanup.
+2026-08-03T01:22:02.3239194Z [command]/usr/bin/git version
+2026-08-03T01:22:02.3275891Z git version 2.54.0
+2026-08-03T01:22:02.3313715Z Temporarily overriding HOME='/home/runner/work/_temp/d0ce6bf0-46a0-4ebe-97f2-2f01e99b23bd' before making global git config changes
+2026-08-03T01:22:02.3314733Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-03T01:22:02.3319303Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/schema-ui-core/schema-ui-core
+2026-08-03T01:22:02.3357235Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-03T01:22:02.3392052Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-03T01:22:02.3619067Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-03T01:22:02.3645122Z http.https://github.com/.extraheader
+2026-08-03T01:22:02.3658796Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-08-03T01:22:02.3691647Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-03T01:22:02.3911441Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-03T01:22:02.3942207Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-03T01:22:02.4301818Z Cleaning up orphan processes
+2026-08-03T01:22:02.5434125Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-go@v5, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
