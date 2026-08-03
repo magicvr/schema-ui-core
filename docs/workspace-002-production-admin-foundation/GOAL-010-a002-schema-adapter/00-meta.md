@@ -1,12 +1,12 @@
 ---
 id: GOAL-010-a002-schema-adapter
 title: A-002 · Schema 驱动通用数据适配层
-status: active
+status: done
 created: 2026-08-03
 updated: 2026-08-04
 parent: GOAL-001-production-admin-foundation
-version: 0.7.0
-progress: 3/5
+version: 0.9.0
+progress: 5/5
 ---
 
 # GOAL-010 · A-002 · Schema 驱动通用数据适配层
@@ -22,8 +22,8 @@ progress: 3/5
 - [x] **S1 · 资源契约与方案冻结**：定义 Schema 驱动的通用资源契约——`dataSource` 资源标识、字段模型、response mapping、后端通用 CRUD 端点/注册形态与错误 envelope 扩展边界；冻结方案（决策 + 附件契约，解除 `I-010-001` 门禁）。
 - [x] **S2 · 后端通用资源 CRUD**：按资源契约提供通用 CRUD 入口（records 作为已注册资源），保持 `records.read` / `records.write` 权限键与现有错误 envelope；`go test ./...` 全绿。
 - [x] **S3 · 前端通用适配层**：`schema-table` / 表单 transport 与 response mapping 通用化，去除 `RecordItem` / `RecordList` 固定解析（records 降为泛化实例）；web `vitest run` 全绿 + `tsc -b` / 生产构建干净。
-- [ ] **S4 · 语义化双实体验证**：子目标 `GOAL-011-s4-semantic-admin-resources` 完成；`users` 替换 records 默认代表实体、`roles` 作为第二个语义资源，二者在后端资源注册完成后仅通过修改前端 Schema 接入列表/CRUD 页面（不修改 Renderer 主路径）；records 从当前产品默认运行面按版本化兼容策略退场。
-- [ ] **S5 · 回归、审计与关闭**：全量回归（api + web + build）+ 阶段/关门审计；Root A-002 F-002-001 关闭证据经 `/audit` finding-closure（或 self + 独立复核）确认后按 `fixed` 闭合。
+- [x] **S4 · 语义化双实体验证**：子目标 `GOAL-011-s4-semantic-admin-resources` 完成（done / 5/5，A-013 复审）；`users` 替换 records 默认代表实体、`roles` 作为第二个语义资源，二者在后端资源注册完成后仅通过修改前端 Schema 接入列表/CRUD 页面（不修改 Renderer 主路径）；records 从当前产品默认运行面按版本化兼容策略退场（2026-08-04 父级验收门评估勾选，见 02-execution）。
+- [x] **S5 · 回归、审计与关闭**：全量回归（api + web + build）+ 阶段/关门审计；Root A-002 F-002-001 关闭证据经 `/audit` finding-closure（或 self + 独立复核）确认后按 `fixed` 闭合。（2026-08-04：全量回归四类证据齐备 + **A-002 self 关门审计 pass**；Root 03-audit 关闭证据表 F-002-001 → `fixed`。）
 
 阶段子目标：`GOAL-011-s4-semantic-admin-resources`（done / 5/5；A-012 F-001～F-005 经 A-013/D-007 fixed，F-006 recommended/open/non-blocking）承载 S4 的语义资源、records 退场与双实体验证；子目标完成事实只用于评估本目标 S4，不自动勾选本目标 S4、推进本目标 progress 或关闭 Root finding。
 

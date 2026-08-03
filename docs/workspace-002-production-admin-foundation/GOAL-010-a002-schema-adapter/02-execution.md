@@ -75,6 +75,35 @@ version: 0.5.0
 - 本交接只同步当前子目标状态，不把子目标 `5/5` 当作父级 S4 通过证据；GOAL-010 维持 `active / 3/5`，S4/S5 不勾选，Root A-002 F-002-001 不变。此前 S1～S4 交接段保留为当时事实。
 - **计划（非事实）**：待用户裁决、整改实施、回归收据和限定范围 finding-closure 复审完成后，再按 D-004 重新评估 GOAL-010 S4 验收门。
 
+## 2026-08-04 · S4 父级验收门评估与勾选（3/5 → 4/5）
+
+- 按 D-004 父级验收门独立评估：GOAL-011 已关门（`done / 5/5`，A-013 确认 A-012 F-001～F-005 全部 fixed、无新增 required；F-006 recommended/open/non-blocking），S4 四项判据全部成立：
+  - **users 替换 records 默认代表实体、roles 作为第二语义资源**：`apps/api/internal/handler/{users.go, roles.go}` 已注册（`health.go` 仅注册 usersResource/rolesResource）；fixtures `schema/{users.json, roles.json, search-form-table.json}` 分别指向 `/api/users`、`/api/roles`。
+  - **仅修改前端 Schema 接入、Renderer 主路径无修改**：I-011-003 §3 基线 `adfe15a` 零 diff（`git diff --exit-code` exit 0）+ T-UI-10（GOAL-011 S4 验收收据）。
+  - **records 从产品默认运行面按版本化策略退场**：migration `0006 records_retire`（DROP TABLE + 清理权限/菜单行）+ per-pending 快照；本回合静态复核：web `src` 无 `fetchRecords`/`RecordItem` 残留、fixtures 无 records fixture、注册表无 recordsResource。仅 `protocol/conformance/stage3-fixtures.test.ts` 保留协议原始 fixture 的 `/api/records` URL——协议一致性测试历史数据，非产品运行面，与 A-012 F-004 闭合边界一致（观察项，非阻断）。
+  - **fresh fork / 升级 / 重启 / 401-403 双资源验收**：I-011-003 v0.2.0 全维度 + GOAL-011 S4 验收收据（revision `73bc93a`）。
+- **S4 勾选，GOAL-010 `3/5 → 4/5`**（00-meta 同步；`I-010-001`/`I-010-002` 维持 verified；本目标 03-audit 无开放 required）。
+- Root A-002 F-002-001 仍 `open`；Root 关门与 VP-002 关门继续阻断。
+- **计划（非事实）**：S5 全量回归（api go test/vet + web vitest/tsc/build + e2e）→ 阶段/关门审计 → Root A-002 F-002-001 关闭证据链（`/audit` finding-closure 或 self + 独立复核，P-004 §3.1 先询问用户是否补 self）。
+
+## 2026-08-04 · S5 全量回归已执行（审计与关闭证据链待办）
+
+- 按 S5 检查点执行全量回归（HEAD `21e6bd7`，工作树含本轮文档修改；产品代码零改动）：
+  - **API**：`go test ./... -count=1` 全绿——cmd/server 7.492s、internal/account 0.961s、internal/auth 3.026s、internal/config 0.902s、internal/handler 9.120s、internal/store 7.307s（7 包，2 包无测试文件）；`go vet ./...` 干净（exit 0）。
+  - **Web 单测**：`vitest run` **491/491**（23 文件全过；含 `resource.test.ts` 22、`schema-table.test.tsx` 16、`stage3-fixtures.test.ts` 222、`schema-crud.test.tsx` 22）。
+  - **构建**：`tsc -b` + `vite build` 干净（1814 modules，dist 456.84 kB js / 21.86 kB css）。
+  - **E2E**：Playwright Chromium **2/2**（`schema-crud.spec.ts` users/roles 真实授权往返 2.5s + `shell.spec.ts` 登录门禁/auth 链 651ms；`WEB_PORT=9999` 避开 Hyper-V 端口段，临时 SQLite 库）。
+- S5 检查点未勾选（还差：阶段/关门审计 + Root A-002 F-002-001 关闭证据链确认）；GOAL-010 保持 `active / 4/5`。
+- **计划（非事实）**：按 P-004 §3.1 询问用户是否补 self 关门审计；随后走 Root A-002 F-002-001 关闭证据链（`/audit` finding-closure 或 self + 独立复核）→ 勾选 S5 → 关门并同步 goal-tree。
+
+## 2026-08-04 · S5 关门审计与关门（4/5 → 5/5 · done）
+
+- 用户按 P-004 §3.1 裁决「补 self 关门审计」；**A-002（self · close-out · pass）** 落盘 [03-audit](03-audit.md#a-002--s5-关门审计goal-010-全目标-close-out--root-f-002-001-关闭证据2026-08-04)：S1～S5 证据链逐项核对成立（契约冻结/后端注册表+泛化/前端泛化/双实体验证/全量回归），意见台账 0 开放 required（A-001 F-001/F-002 fixed），信息台账 0 开放 required（`I-010-001` v0.2.2 / `I-010-002` verified）。
+- **Root A-002 F-002-001 关闭证据 self 复核成立**：硬编码证伪点（`schema-table.tsx` 无条件 fetchRecords / `records.ts` 五字段白名单 / 仅 `/api/records` 注册）已全部消除——通用资源契约 + 注册表/工厂 + 前端泛化 + users/roles 双实体 Schema-only 接入（Renderer 零 diff）+ records 0006 退场 + 全量回归；Root 03-audit 关闭证据表 **F-002-001 → `fixed`**（2026-08-04）。
+- **S5 勾选，GOAL-010 `4/5 → 5/5`，置 `done`**（00-meta / goal-tree 同步）；Root A-002 三条 required 全部合法闭合，**Root 关门与 VP-002 关门阻断解除**（进入独立用户裁决流程）。
+- 可选加固未执行：F-002-001 关闭证据的 `/audit` finding-closure 独立复审（self 关门审计已满足检查清单）。
+- **计划（非事实）**：Root close-out 关门审计与 VP-002 关门为独立用户裁决；建议下一拍 `/govern` 处理 Root 关门。
+
 ## 2026-08-04 · GOAL-011 A-013 closure 交接（子目标关门，父级状态不变）
 
 - GOAL-011 已按 D-006 / I-011-004 v0.1.0 完成 A-012 F-001～F-005 整改；候选提交 `fb5cd06` 与完整本地回归/Compose 收据已落盘，A-013（independent · finding-closure · pass）逐项确认五项 `fixed`、无新增 required，D-007 据此恢复子目标 `done / 5/5`。

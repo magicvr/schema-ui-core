@@ -3,9 +3,9 @@ id: GOAL-001-production-admin-foundation
 title: 生产级可用 Admin 基架
 status: active
 created: 2026-08-01
-updated: 2026-08-03
+updated: 2026-08-04
 parent: null
-version: 0.4.0
+version: 0.5.0
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -56,6 +56,8 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 当前派生进度为 `5/5`（R1、R2、R3、R4 于 2026-08-02 勾选；**R5 于 2026-08-03 勾选**——`GOAL-008-r5-engineering-fork` 置 `done`，A-016/A-017/A-018 关门闭环）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。子目标 progress 不替代本 Root 检查点。Root close-out 关门审计与 VP-002 关门为独立用户裁决。
 
 > **2026-08-03 · A-002 响应波次（不改变 5/5 派生）**：Root 收到 A-002（independent · fail）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）。用户按 P-004 裁决全部走 `fixed`（D-014）：F-002-002/003 → `GOAL-009-a002-auth-form-fixes`；F-002-001 通用适配层改造 → `GOAL-010-a002-schema-adapter`（P-001 路线图 + `I-010-001/002`）。**Root 关门与 VP-002 关门在 A-002 required 全部合法闭合前保持阻断**。
+
+> **2026-08-04 · A-002 F-002-001 已闭合、关门阻断解除**：`GOAL-010-a002-schema-adapter` 已置 `done / 5/5`（S5 全量回归齐备：go test 7 包全绿 + vet、vitest 491/491、tsc/build、e2e 2/2；self close-out A-002 pass）；Root 03-audit 关闭证据表 **F-002-001 → `fixed`**（2026-08-04）。**A-002 三条 required 全部合法闭合，Root 关门与 VP-002 关门阻断解除**；Root close-out 关门审计与 VP-002 关门为独立用户裁决（下一拍 `/govern` 处理）。F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固。
 
 ## 信息需求与阶段门禁
 

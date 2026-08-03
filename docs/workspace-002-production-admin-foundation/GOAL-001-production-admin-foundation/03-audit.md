@@ -2,9 +2,9 @@
 title: 审计台账 · 生产级可用 Admin 基架
 status: active
 created: 2026-08-01
-updated: 2026-08-03
+updated: 2026-08-04
 parent: null
-version: 0.3.1
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-001
@@ -14,7 +14,7 @@ version: 0.3.1
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | self | 2026-08-02 | R1 · 协议实施边界与 Schema Renderer 产品化 | pass | 已出具；无开放 R1 required finding |
-| A-002 | independent | 2026-08-03 | apps/api + apps/web · VP-002 功能实现与产品意图交叉审计 | fail | 已响应（2026-08-03）；F-002-002/003 **fixed**；F-002-001 仍 open（载体 GOAL-010）；F-002-004~006 recommended 非阻断 |
+| A-002 | independent | 2026-08-03 | apps/api + apps/web · VP-002 功能实现与产品意图交叉审计 | fail | 已响应（2026-08-03）；**F-002-001/002/003 全部 `fixed`**（F-002-001 于 2026-08-04 经 GOAL-010 关闭）；F-002-004~006 recommended 非阻断 |
 
 ## A-001 · Root R1 阶段自审（2026-08-02）
 
@@ -137,19 +137,19 @@ version: 0.3.1
 
 | finding | 状态 | 证据路径 |
 |---------|------|----------|
-| F-002-001（Renderer 硬编码 records 实体） | open（`fixed` 路径已定，载体 GOAL-010） | [GOAL-010-a002-schema-adapter](../GOAL-010-a002-schema-adapter/00-meta.md) S1～S5；实施前 required `I-010-001`/`I-010-002` |
+| F-002-001（Renderer 硬编码 records 实体） | **fixed（2026-08-04）** | [GOAL-010-a002-schema-adapter](../GOAL-010-a002-schema-adapter/00-meta.md) S1～S5（`done / 5/5`）：通用资源契约 + 后端注册表/工厂 + 前端泛化 + users/roles 双实体 Schema-only 接入（Renderer 零 diff）+ records 0006 退场 + S5 全量回归（go test 7 包全绿 + vet、vitest 491/491、tsc/build、e2e 2/2）+ [GOAL-010 A-002 self close-out](../GOAL-010-a002-schema-adapter/03-audit.md#a-002--s5-关门审计goal-010-全目标-close-out--root-f-002-001-关闭证据2026-08-04)（pass） |
 | F-002-002（表单校验错误不阻断提交） | **fixed（2026-08-03）** | [GOAL-009 S1](../GOAL-009-a002-auth-form-fixes/02-execution.md)（`render.tsx` 门禁 + 3 回归）+ [A-001 self close-out](../GOAL-009-a002-auth-form-fixes/03-audit.md)（pass） |
 | F-002-003（认证失效状态不清理） | **fixed（2026-08-03）** | [GOAL-009 S2](../GOAL-009-a002-auth-form-fixes/02-execution.md)（`auth-client.ts` 清理 + 3 回归）+ [A-001 self close-out](../GOAL-009-a002-auth-form-fixes/03-audit.md)（pass） |
 | F-002-004~006（recommended） | **已实施（2026-08-03 · GOAL-009 S5 加分，非 required 闭合）** | [GOAL-009 S5](../GOAL-009-a002-auth-form-fixes/02-execution.md)：seed 文案环境门控、生产 JWT secret 校验、`/readyz` readiness |
 
 ### 仍开放项
 
-- F-002-001 仍 open（GOAL-010 实施中）；**Root 关门与 VP-002 关门继续阻断**（P-003），直至 A-002 全部 required 合法闭合。
-- F-002-004~006（recommended）非阻断。
-- Root `status: active`、派生进度 `5/5` 不变；不因本轮响应放行 Root close-out 或 VP-002 关门。
+- ~~F-002-001 仍 open~~：已按 `fixed` 合法闭合（2026-08-04，GOAL-010 `done / 5/5` + self close-out A-002 pass，见关闭证据表）。**A-002 三条 required 全部合法闭合**，Root 关门与 VP-002 关门阻断解除（进入独立用户裁决流程）。
+- F-002-004~006（recommended）非阻断；F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固（未执行）。
+- Root `status: active`、派生进度 `5/5` 不变。
 
 ### 后续
 
 - F-002-002/003 已于 2026-08-03 按 `fixed` 合法闭合（GOAL-009 S1/S2 + A-001 self close-out）。
-- F-002-001 待 GOAL-010 实施完成后闭合；F-002-002/003 关闭证据如需独立加固，可补 `/audit` finding-closure 复审（非阻断）。
-- A-002 全部 required 合法闭合后，才可进入 Root close-out 与 VP-002 关门流程（独立用户裁决）。
+- F-002-001 已于 2026-08-04 按 `fixed` 合法闭合（GOAL-010 S1～S5 + A-002 self close-out，见关闭证据表）。
+- A-002 全部 required 已合法闭合；Root close-out 关门审计与 VP-002 关门为独立用户裁决。

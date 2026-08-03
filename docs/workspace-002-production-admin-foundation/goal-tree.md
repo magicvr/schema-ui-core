@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.57.0
+version: 0.59.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -25,7 +25,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-007-r4-schema-crud [done] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (6/6)
 ├── GOAL-008-r5-engineering-fork [done] R5 · 工程化、fork 体验与集成关门 (5/5)
 ├── GOAL-009-a002-auth-form-fixes [done] A-002 · 缺陷修复（表单提交门禁与认证失效）(4/4)
-└── GOAL-010-a002-schema-adapter [active] A-002 · Schema 驱动通用数据适配层 (3/5)
+└── GOAL-010-a002-schema-adapter [done] A-002 · Schema 驱动通用数据适配层 (5/5)
     └── GOAL-011-s4-semantic-admin-resources [done] S4 · 语义化 Admin 资源替换与双实体验证 (5/5)
 ```
 
@@ -42,7 +42,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 | `GOAL-007-r4-schema-crud` | R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 | `GOAL-001-production-admin-foundation` | `done` | `6/6` | 2026-08-02 |
 | `GOAL-008-r5-engineering-fork` | R5 · 工程化、fork 体验与集成关门 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-03 |
 | `GOAL-009-a002-auth-form-fixes` | A-002 · 缺陷修复（表单提交门禁与认证失效） | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-03 |
-| `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `active` | `3/5` | 2026-08-03 |
+| `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-04 |
 | `GOAL-011-s4-semantic-admin-resources` | S4 · 语义化 Admin 资源替换与双实体验证 | `GOAL-010-a002-schema-adapter` | `done` | `5/5` | 2026-08-04 |
 
 > **GOAL-011 S1 已冻结、D-002 已落盘（2026-08-03）**：用户裁决三项关键取舍（均采纳推荐）——①通用工厂 + 最小契约扩展（`Resource.JSONFields` + `DomainError` 409 映射，users/roles 均走工厂五路由）；②操作日志纳入（migration `0005` 扩展 operation_log event CHECK，新增 users/roles 事件，保留 records/auth 历史值）；③records 硬退场 DROP TABLE（migration `0006` 删表 + 清理权限/菜单行，既有库自动 `pre-v0006` 快照兜底）。落盘 [I-011-001 领域契约](GOAL-011-s4-semantic-admin-resources/attachments/I-011-001-users-roles-contract.md) v0.1.0 与 [I-011-002 退场契约](GOAL-011-s4-semantic-admin-resources/attachments/I-011-002-records-retirement.md) v0.1.0；`I-011-001`/`I-011-002` → **verified**，`I-011-003` 保持 open（最晚 S4）。**S1 勾选，GOAL-011 `0/5 → 1/5`**；未修改产品代码；S2（users/roles 后端闭环）与 S3（records 退场）实施门禁解除；GOAL-010 保持 `active / 3/5`；Root A-002 F-002-001 仍 `open`，Root/VP-002 关门继续阻断。
@@ -126,3 +126,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-010 A-001 已响应、F-001/F-002 已闭合、S3 已实施（2026-08-03）**：A-001（independent · conditional）两条 required **F-001**（dataSource 同源路径/认证边界）与 **F-002**（rowKey 行键不变量）按用户裁决走 **fixed**（D-003，不补 self）：契约 **I-010-001 v0.2.0** 冻结 dataSource 单斜杠同源执行规则（`^/(?!\/)[^\s\\?#]*$`，认证 fetch 前校验）与 rowKey 非空唯一标量不变量（无效响应停止渲染 + 禁行 action）。**S3 前端适配层已实施**——`records.ts` 泛化（去 `RecordItem` 五字段白名单、`isValidDataSource`、`DEFAULT_RECORDS_URL` 回落删除）、`schema-table.tsx` dataSource/rowKey 校验、`render.ts` `rowKey` 字段；正反测试（`records.test.ts` 22、`schema-table.test.tsx` 14）全绿，全量 `vitest run` **481/481** + `tsc -b` + `vite build` 干净。**F-001/F-002 → fixed 闭合**（03-audit 响应节）；`I-010-001`/`I-010-002` 维持 verified；**S3 勾选，GOAL-010 `1/5 → 2/5`**（串行偏差留痕：S3 纯前端、不依赖 S2，因关闭证据在 S3 而先于 S2）。Root A-002 F-002-001 仍 `open`（待 S2～S5 + S4 新实体验证）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
 
 > **GOAL-010 S2 已实施（2026-08-03）**：**后端通用资源 CRUD**——`resources.go` 通用资源注册表 + handler 工厂（`Resource`/`ResourceEntity`/`registerResource`，统一 requirePermission/4 KiB/`{error,message}`/`INTERNAL`/NOT_FOUND = `{ID}_NOT_FOUND`）；`records.go` 收敛为注册实例（`recordsResource` + `recordsEntity` 适配器，`RECORD_NOT_FOUND` 显式、固定毫秒 `updatedAt`、`records.create/update/delete` 操作日志、`rec-<hex>` id）；`health.go` 挂 `registerResource`。**零对外 API 变更**——全部既有 records 测试（T-API-01～13、401/403、updatedAt 毫秒/单调递增、重启持久化、操作日志）全绿；新增 `resources_test.go` genericity 测试（内存 `catalog` 资源无手写 handler 走通五路由 + 共享门禁 + 默认权限键派生 `widget.read` 403）。证据：`go test ./...` 全绿 + `go vet` 干净。**S2 勾选，GOAL-010 `2/5 → 3/5`**（串行恢复：S1/S2/S3 全勾选）。Root A-002 F-002-001 仍 `open`（待 S4 新实体验证 + S5 关门审计）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
+
+> **GOAL-010 S4 父级验收门已勾选（2026-08-04）**：按 D-004 独立评估 GOAL-011 关门证据（`done / 5/5`，A-013 复审 A-012 F-001～F-005 全 fixed）——users/roles 后端闭环、records 0006 退场、Renderer 基线 `adfe15a` 零 diff、fresh fork/升级/重启/401-403 验收齐备；本回合静态复核一致（`health.go` 仅注册 users/roles、fixtures 无 records、web src 无 `fetchRecords`/`RecordItem`；`protocol/conformance/stage3-fixtures.test.ts` 的 `/api/records` 为协议一致性测试历史数据，非产品运行面）。**S4 勾选，GOAL-010 `3/5 → 4/5`**；`I-010-001`/`I-010-002` 维持 verified；GOAL-010 03-audit 无开放 required。Root A-002 F-002-001 仍 `open`（待 S5 回归、审计与关闭证据链）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
+
+> **GOAL-010 已关门、Root A-002 F-002-001 已闭合（2026-08-04）**：S5 全量回归齐备（`go test ./... -count=1` 全绿 7 包 + `go vet` 干净；`vitest run` **491/491**；`tsc -b` + `vite build` 干净；Playwright e2e **2/2**，HEAD `21e6bd7`）；用户按 P-004 §3.1 裁决补 self 关门审计 → **A-002（self · close-out · pass）**：S1～S5 证据链、意见台账（A-001 F-001/F-002 fixed）、信息台账（I-010-001/002 verified）全部核对成立。**S5 勾选，GOAL-010 `4/5 → 5/5`，置 `done`**；**Root 03-audit 关闭证据表 F-002-001 → `fixed`**（Root A-002 三条 required 全部合法闭合，Root 关门与 VP-002 关门阻断解除，进入独立用户裁决）。F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固（未执行）。

@@ -2,9 +2,9 @@
 title: 审计台账 · Schema 驱动通用数据适配层
 status: active
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-04
 parent: GOAL-001-production-admin-foundation
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-010
@@ -14,6 +14,7 @@ version: 0.3.0
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | independent | 2026-08-03 | S1 资源契约与 `I-010-001` 信息门禁 | conditional | **F-001 / F-002 → `fixed`**（契约 v0.2.0 + S3 正反测试，见 A-001 响应节）；不改变 status/progress |
+| A-002 | self | 2026-08-04 | S5 关门审计（GOAL-010 全目标 close-out + Root A-002 F-002-001 关闭证据） | pass | 无开放 required；S1～S5 证据链成立；F-002-001 关闭证据 self 复核成立 |
 
 > 本目标为 A-002 响应载体；Root 层面的 A-002 意见与响应记录见 [Root 03-audit](../GOAL-001-production-admin-foundation/03-audit.md)。
 
@@ -85,3 +86,60 @@ version: 0.3.0
 - **证据**：契约 v0.2.0（§2/§3/§10）；GOAL-010 [D-003](01-decision.md)；`apps/web/src/renderer/records.ts`、`schema-table.tsx`、`render.ts`（`rowKey` 字段）；`records.test.ts`（22）、`schema-table.test.tsx`（14）；全量 `vitest run` **481/481** + `tsc -b` + `vite build` 干净。
 - **状态**：**F-001、F-002 均按 `fixed` 合法闭合**（P-003 三路径）；同 scope 无冲突意见；`I-010-001`/`I-010-002` 维持 `verified`。S3 检查点达成（GOAL-010 `1/5 → 2/5`，串行偏差留痕：S3 纯前端、不依赖 S2）。
 - **可选加固**：S3 关闭证据可请求一次窄 scope `/audit` finding-closure 复核，再推进 S2 实施门禁；Root A-002 F-002-001 仍 `open`，不因此闭合而关闭。
+
+## A-002 · S5 关门审计（GOAL-010 全目标 close-out + Root F-002-001 关闭证据）（2026-08-04）
+
+- **source**：self
+- **auditor**：Grok Build · `/govern`（编排器）
+- **类型 / scope**：close-out；GOAL-010 全目标（S1～S5 成功标准、`I-010-001`/`I-010-002` 信息门禁、03-audit 意见台账）与 Root A-002 F-002-001 关闭证据链。
+- **verdict**：**pass**
+
+### 范围与区间
+
+- 工作区 `workspace-002-production-admin-foundation`；`workspace.md` Root/canonical/`plan_refs`/`primary_plan` 与本目标 `parent` 一致；`shared_materials_catalog: none`，未使用共享资料作为事实或关闭证据。
+- 用户按 P-004 §3.1 裁决「补 self 关门审计」（Root A-002 同 scope self 审计按 D-014 延后至修复完成后随关门补；本目标 A-001 当时裁决不补自审，本次 close-out 一并覆盖 S1～S5）。
+- 本意见为 self 侧记录；不冒充 independent。Root A-002 的独立关闭证据复核（`/audit` finding-closure）为可选加固，未执行。
+
+### 成果（有证据）
+
+| 检查项 | 判断 | 证据 |
+|--------|------|------|
+| S1 · 资源契约与方案冻结 | ✅ 达成 | D-002 + [I-010-001 v0.2.2](attachments/I-010-001-schema-resource-contract.md)（dataSource 执行规则/rowKey 不变量/envelope/注册形态/错误码；v0.2.0～v0.2.2 为响应修订）；`I-010-001`/`I-010-002` → verified；S1 为文档冻结（零产品代码变更） |
+| S2 · 后端通用资源 CRUD | ✅ 达成 | `resources.go` 注册表 + handler 工厂 + `records.go` 收敛为注册实例；零对外 API 变更（T-API-01～13 等既有测试全绿）；`resources_test.go` genericity 测试（合成 `catalog` 无手写 handler 走通五路由 + 共享门禁 + 权限键派生）；2026-08-03 `go test ./...` + vet 干净 |
+| S3 · 前端通用适配层 | ✅ 达成 | `records.ts` 泛化（`ResourceItem`/`ResourceList`、`isValidDataSource`）、`schema-table.tsx` rowKey 校验/fail-closed、`render.ts` `rowKey` 字段；正反测试 22+14；A-001 F-001/F-002 → fixed |
+| S4 · 语义化双实体验证（父级验收门） | ✅ 达成 | GOAL-011 `done / 5/5`（A-013 复审 A-012 F-001～F-005 全 fixed）；users/roles 仅 Schema 接入 + Renderer 基线 `adfe15a` 零 diff；records 0006 退场；fresh fork/升级/重启/401-403 验收收据；2026-08-04 父级评估勾选（`3/5 → 4/5`） |
+| S5 · 回归、审计与关闭 | ✅ 回归齐备 | 2026-08-04 全量回归（HEAD `21e6bd7`）：`go test ./... -count=1` 全绿（7 包）+ `go vet` 干净；`vitest run` **491/491**（23 文件）；`tsc -b` + `vite build` 干净；Playwright e2e **2/2** |
+| 意见台账 | ✅ 无开放 required | A-001（independent · conditional）F-001/F-002 已按 `fixed` 合法闭合；同 scope 无冲突意见 |
+| 信息台账 | ✅ 无开放 required | `I-010-001`（v0.2.2）/`I-010-002` 均 `verified`；无到期 required 信息项 |
+
+### 对照成功标准
+
+| S5 标准 | 状态 | 证据 |
+|---------|------|------|
+| 全量回归（api + web + build） | ✅ | 上述回归四类证据 |
+| 阶段/关门审计 | ✅ | 本 A-002（self · close-out）；历史 A-001（independent）已响应 |
+| Root A-002 F-002-001 关闭证据确认后按 `fixed` 闭合 | ✅ self 复核成立 | 见下节 |
+
+### Root A-002 F-002-001 关闭证据 self 复核
+
+- **原主张**：`schema-table.tsx` 无条件调用 `fetchRecords`、`records.ts` 固定五字段白名单、`health.go` 仅注册 `/api/records`——不满足 VP-002 成功标准 1/4/6「通过修改 Schema 新增业务页面，无需修改前端 Renderer 主路径」。
+- **关闭证据链**：① 通用资源契约冻结（dataSource/rowKey/envelope/错误面，S1）；② 后端注册表 + 通用工厂，users/roles 显式注册（S2 + GOAL-011 S2）；③ 前端一次性泛化，去除 `RecordItem` 五字段白名单与 URL 回落（S3）；④ 双语义实体验证：users/roles 仅改 Schema 接入列表/CRUD 页面、Renderer 主路径零 diff（S4 + GOAL-011）；⑤ records 产品运行面退场（0006）；⑥ 本回合静态复核：web `src` 无 `fetchRecords`/`RecordItem`、fixtures 无 records、注册表仅 users/roles（`protocol/conformance/stage3-fixtures.test.ts` 的 `/api/records` 为协议一致性测试历史数据，非产品运行面）；⑦ 全量回归全绿。
+- **判断**：F-002-001 的证伪点（Renderer/transport 硬编码 records 实体）已消除；VP-002 成功标准 1/4/6 的通用接入路径由 users/roles 双实体证明。**self 复核成立，可提交 `fixed` 闭合**（独立 `/audit` finding-closure 为可选加固）。
+
+### Findings
+
+- 无开放 required finding。
+- **F-001（观察项，非阻断）**：`protocol/conformance/stage3-fixtures.test.ts` 保留协议原始 fixture 的 `/api/records` URL——属协议一致性测试历史数据（stage3 夹具源自 `schema-ui-docs` 行为契约），不是产品运行面残留；与 GOAL-011 A-012 F-004 闭合边界一致，无需处理。
+
+### 必改项汇总
+
+- 无。
+
+### 结论 + 建议下一步
+
+- **pass**：S1～S5 全部成功标准达成，意见台账与信息台账均无开放 required；Root A-002 F-002-001 关闭证据 self 复核成立。
+- 建议编排器：勾选 S5（GOAL-010 `4/5 → 5/5`）、置 `done`；在 Root 03-audit 关闭证据表按 `fixed` 闭合 F-002-001 并同步 goal-tree；Root close-out 关门审计与 VP-002 关门为独立用户裁决。可选加固：对 F-002-001 关闭证据做一次 `/audit` finding-closure 独立复审。
+
+### 声明
+
+本意见为 self 关门审计，仅记录审计判断；status/progress 调整由编排器在用户已确认的关门流程中执行。
