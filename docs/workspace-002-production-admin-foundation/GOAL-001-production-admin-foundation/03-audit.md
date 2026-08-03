@@ -2,9 +2,9 @@
 title: 审计台账 · 生产级可用 Admin 基架
 status: active
 created: 2026-08-01
-updated: 2026-08-02
+updated: 2026-08-03
 parent: null
-version: 0.1.1
+version: 0.3.0
 ---
 
 # 审计台账 · GOAL-001
@@ -14,6 +14,7 @@ version: 0.1.1
 | 编号 | source | 日期 | scope | verdict | 状态 |
 |------|--------|------|-------|---------|------|
 | A-001 | self | 2026-08-02 | R1 · 协议实施边界与 Schema Renderer 产品化 | pass | 已出具；无开放 R1 required finding |
+| A-002 | independent | 2026-08-03 | apps/api + apps/web · VP-002 功能实现与产品意图交叉审计 | fail | 已响应（2026-08-03）；F-002-001~003 仍 open（载体 GOAL-009/GOAL-010）；F-002-004~006 recommended 待决 |
 
 ## A-001 · Root R1 阶段自审（2026-08-02）
 
@@ -65,4 +66,88 @@ version: 0.1.1
 
 - A-001（self）覆盖 R1 阶段退出证据，verdict = pass；无开放 R1 required finding。
 - VP-002 的 Vision Review 只覆盖愿景与组合边界，不替代本 Root 的 Goal Audit。
-- 后续 self / independent 意见从 `A-002` 起共用序列，required finding 只能按 `fixed`、`accepted-residual` 或 `user-overruled` 合法闭合。
+- 后续 self / independent 意见从 `A-003` 起共用序列，required finding 只能按 `fixed`、`accepted-residual` 或 `user-overruled` 合法闭合。
+
+## A-002 · apps/api + apps/web VP-002 独立功能审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（独立功能审计；未调用 `audit` skill）
+- **类型 / scope**：execution-facts + product-fit；核对 `apps/api`、`apps/web` 当前代码相对 VP-002 产品级成功标准（完整 Schema Renderer、真实认证、最小权限、Schema CRUD、工程化交付）的实现事实、跨层链路和缺陷。不修改目标状态、进度、方案正文或其他目标台账。
+- **verdict**：**fail**。当前实现可证明“认证 + 持久化 RBAC 种子/records 代表性 CRUD + 容器/浏览器基线”这一交付切片，但不能证明 VP-002 所要求的可直接接业务的通用 Schema Admin 基架；同时存在会绕过前端门禁或错误保持认证状态的功能缺陷。
+
+### 已确认符合的范围
+
+- `apps/api` 已提供真实登录、refresh 轮换、登出、请求级身份与 `401/403` 权限门禁；生产 `AUTH_DEV_SESSION_ENABLED=true` 会被启动守卫拒绝。
+- SQLite 迁移/种子已创建用户、角色、权限、菜单及关系表，records API 具备持久化 list/search/detail/create/update/delete 闭环；Schema fixture 能被 API 只读加载。当前没有用户/角色/权限/菜单管理 API，这在 VP-002 允许“初期只靠种子机制”的范围内不单独判为 required，但限制了后续业务运营能力。
+- `apps/web` 默认入口将 `authFetch` 注入 Schema 页面和 records transport；`npm test -- --run` 为 23 个文件 / 458 个测试通过，`npm run build` 通过；Chromium E2E 2/2 通过（真实登录/反向代理与 SQLite records CRUD）。这些证据不扩展为通用业务实体或 VP 关门证据。
+
+### Required findings
+
+#### F-002-001 · Schema Renderer/CRUD 仍硬编码单一 records 实体（required / high）
+
+- `apps/web/src/renderer/schema-table.tsx:81-132` 无论 `dataSource` 值为何都调用 `fetchRecords`；`apps/web/src/renderer/records.ts:6-19,78-88,140-155` 强制 `id/name/status/owner/updatedAt` 和固定分页形状。`apps/api/internal/handler/health.go:25-30` 仅注册 `/api/records` CRUD 与只读 `/api/schema/{pageId}`，没有按 Schema/资源注册的通用 CRUD 或 Schema 持久化入口。
+- 影响：当前 fixture 的 `list-edit-lifecycle` 代表页可运行，但通过修改 Schema 无法在不改 Renderer 主路径的前提下接入任意业务实体；自定义表格数据会因固定 RecordList/RecordItem 解析失败。这不满足 VP-002 §产品级成功标准 1、4、6 及阶段 3 的业务接入意图。
+- **建议关闭路径**：将表格/表单 transport、字段模型和 response mapping 提升为 Schema 驱动的通用适配层，并为业务资源提供明确后端契约；或在 VP/Root 明确把本阶段降级为单一代表性 records 示例并重新获得用户裁决。当前不能将现状宣称为完整生产级基架。
+
+#### F-002-002 · 表单 Schema/reaction 错误只展示、不阻断提交（required / high）
+
+- `apps/web/src/renderer/render.tsx:509-510` 计算 `gate.errors`，`540-557` 的 `handleSubmit` 不检查该错误或 `reaction.errors`，`565-587` 仅渲染提示；`594-600` 的提交按钮只由 `submitting` 控制。
+- 影响：无效/不兼容的表单字段或 reaction 仍可触发 POST/PATCH，违反 VP-002 阶段 3 的输入校验与“无效 Schema 确定性拒绝”边界。
+- **建议关闭路径**：任何 gate/reaction 错误时禁用提交并在 handler 层再次拒绝；增加“错误显示后请求未发出”的回归测试。
+
+#### F-002-003 · refresh 重试仍返回 401 时认证状态不丢失（required / medium）
+
+- `apps/web/src/account/auth-client.ts:117-128` 在首次 401 后 refresh 成功只重试一次；重试仍为 401 时不 `clearTokens()`，也不触发 `onAuthLost`。`152-164` 中 `login` 的 `/me` 失败被吞掉并返回带 token 的登录快照与空 `features`，`AuthContext` 随即进入 `authenticated`。
+- 影响：撤销/过期或 `/me` 故障可能留下“已登录但所有请求持续失败”的状态，不能可靠满足 VP-002 真实认证失效与错误处理标准（§2、阶段 2）。
+- **建议关闭路径**：二次 401 必须清理 token 并通知 auth-lost；login 后 `/me` 失败应回滚 token 并以登录失败呈现，而不是静默认证降级；补充二次 401 和 `/me` 失败测试。
+
+### Recommended findings
+
+#### F-002-004 · 生产登录页无条件展示 `admin / admin`（recommended / medium）
+
+- `apps/web/src/app/LoginPage.tsx:94-96` 固定渲染 `Local development seed: admin / admin`，无环境开关；Compose 生产路径要求外部 `ADMIN_INITIAL_PASSWORD`，实际密码不必为 `admin`。
+- 影响：生产用户会得到错误凭据提示并形成默认密码/开发会话仍可用的错误安全信号，违反 VP-002 对生产身份边界与可配置启动的要求。
+- **建议关闭路径**：仅在显式 development 配置下显示本地 seed 提示；生产构建隐藏该文案，文档改为读取部署时配置的管理员密码。
+
+#### F-002-005 · 生产 JWT secret 仅做非空校验（recommended / medium）
+
+- `apps/api/cmd/server/main.go:101-110` 的 `resolveJWTSecret` 在非 development 只判断 `AUTH_JWT_SECRET != ""`；`apps/api/internal/config/config.go:51-60` 未施加长度/熵/格式门禁。
+- 影响：生产可用极短、可猜 secret 启动，HS256 会话安全性完全依赖部署者自律，不符合 VP-002 “可替换认证实现与安全配置”的 production-grade 边界。
+- **建议关闭路径**：在 production/staging 对 secret 施加可核对的最小长度/熵规则并增加反例测试；开发环境可保留显式低门槛。
+
+#### F-002-006 · `/healthz` 被 Compose 当作 readiness，但不检查 SQLite（recommended / medium）
+
+- `apps/api/internal/handler/health.go:33-40` 始终返回 200，不访问 Store；`compose.yaml:30-35` 以该端点作为 `service_healthy` 条件。
+- 影响：进程存活但数据库损坏、只读或迁移后不可用时，Compose 仍会启动 Web 并报告 API healthy；这是运行诊断语义不准确，当前不否定已有启动/smoke 证据。
+- **建议**：区分 liveness/readiness，或让 readiness 执行轻量 SQLite 查询/迁移状态检查并补故障注入测试。
+
+### 证据与边界
+
+- 本轮重跑：`apps/api` `go test ./... -count=1`、`go vet ./...`；`apps/web` `npm test -- --run`（23 files / 458 tests）、`npm run build`；`WEB_PORT=9999 npm run test:e2e`（Chromium 2 passed）。
+- 未执行 Docker Compose 故障注入、生产部署平台验证或完整 fork 计时；因此未把本地测试扩写为生产发布验收。
+- 本意见仅追加独立审计记录，不修改 Root `status: active`、`progress: 5/5`、`goal-tree.md`、VP 状态或其他目标；required finding 的响应与是否关闭/重定义范围由 `/govern`/用户裁决处理。
+
+## A-002 响应（编排器 · 2026-08-03）
+
+- **响应编号**：A-002（independent · fail · apps/api + apps/web product-fit）
+- **响应来源**：`/govern` 编排器（self 侧记录，非独立审）
+- **用户裁决**（P-004，决策 [D-014](01-decision.md)）：三条 required 全部走 `fixed` 关闭路径；F-002-001 → 通用适配层改造（`GOAL-010-a002-schema-adapter`）；F-002-002/003 → 缺陷修复（`GOAL-009-a002-auth-form-fixes`）；recommended F-002-004~006 → GOAL-009 可选加分（是否实施待用户决定）；A-002 同 scope self 审计延后至修复完成后随关门补（P-004 §3.1）。
+
+### 关闭证据表
+
+| finding | 状态 | 证据路径 |
+|---------|------|----------|
+| F-002-001（Renderer 硬编码 records 实体） | open（`fixed` 路径已定，载体 GOAL-010） | [GOAL-010-a002-schema-adapter](../GOAL-010-a002-schema-adapter/00-meta.md) S1～S5；实施前 required `I-010-001`/`I-010-002` |
+| F-002-002（表单校验错误不阻断提交） | open（`fixed` 路径已定，载体 GOAL-009） | [GOAL-009-a002-auth-form-fixes](../GOAL-009-a002-auth-form-fixes/00-meta.md) S1 |
+| F-002-003（认证失效状态不清理） | open（`fixed` 路径已定，载体 GOAL-009） | [GOAL-009-a002-auth-form-fixes](../GOAL-009-a002-auth-form-fixes/00-meta.md) S2 |
+| F-002-004~006（recommended） | open（非阻断；GOAL-009 可选加分 S5） | 待用户决定是否纳入 |
+
+### 仍开放项
+
+- F-002-001~003 在载体目标中实施中；未按三路径合法闭合前，**Root 关门与 VP-002 关门保持阻断**（P-003）。
+- Root `status: active`、派生进度 `5/5` 不变；不因本响应放行任何阶段或关门。
+- 冲突裁决：无冲突意见（A-001 self 仅覆盖 R1，与 A-002 scope 不同）；P-004 §3.1 自审裁决已留痕（延后补，不自动跳过）。
+
+### 后续
+
+- 载体目标完成 → 请求 `/audit` finding-closure 复审关闭证据 → 全部 required 合法闭合后，才可进入 Root close-out 与 VP-002 关门流程（独立用户裁决）。

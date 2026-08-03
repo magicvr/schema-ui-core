@@ -2,9 +2,9 @@
 title: 执行记录 · 生产级可用 Admin 基架
 status: active
 created: 2026-08-01
-updated: 2026-08-02
+updated: 2026-08-03
 parent: null
-version: 0.1.17
+version: 0.1.18
 ---
 
 # 执行记录 · GOAL-001
@@ -174,6 +174,15 @@ version: 0.1.17
 - **`I-008-001` → verified（D-003 + [I-008-001-engineering-contract.md](../GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md) v1.0.0）**：冻结 env 键全集与 dev/prod、health/启动验证、Compose 服务/镜像/DB volume/探针、SPA fallback 与 `/api` 反代、依赖/超时/失败行为、CI 入口与验收清单 C-001～C-007（S1/S2 方案冻结门禁解除）。
 - **未做**：未实施 S1/S2；未运行应用/测试/Docker；未勾选检查点；Root R5 未勾选，Root 保持 `active / 4/5`；`GOAL-008` 保持 `active / 0/5`。
 - **计划（非事实）**：实施 S1（env 清单 + health/启动验证 + dev/prod 区分，对照 C-001/C-002）→ S2（Dockerfile × 2 + compose.yaml + nginx 反代 + CI smoke 入口，对照 C-003～C-007）；`I-008-002` 仍阻断 S3/S4。
+
+## 2026-08-03 · 响应 A-002（新建 GOAL-009 / GOAL-010）
+
+- 收到 **A-002（independent · fail · apps/api + apps/web product-fit）**：三条 required（F-002-001 Renderer 硬编码 records 实体；F-002-002 表单校验错误不阻断提交；F-002-003 认证失效状态不清理）+ 三条 recommended（F-002-004~006）。代码核对确认三条 required 证据成立。
+- 用户按 P-004 裁决（**D-014**）：三条 required 走 `fixed`；F-002-002/003 → 新建 `GOAL-009-a002-auth-form-fixes`（active 0/4）；F-002-001 通用适配层 → 新建 `GOAL-010-a002-schema-adapter`（active 0/5，P-001 路线图 + 实施前 required `I-010-001`/`I-010-002`）；recommended → GOAL-009 可选加分；A-002 同 scope self 审计延后至修复后随关门补。
+- `03-audit.md` 追加 A-002 响应节（关闭证据表 + 仍开放项）；`goal-tree.md` 已同步。
+- Root A-002 F-002-001~003 保持 `open`；Root `status: active`、派生进度 `5/5` 不变；Root 关门与 VP-002 关门继续被 A-002 开放 required 阻断。
+- **未做**：未修改任何产品代码。
+- **计划（非事实）**：优先实施 GOAL-009 S1/S2（表单门禁 + 认证失效清理）；GOAL-010 收集冻结 `I-010-001`/`I-010-002` 后进入 S1 方案冻结；完成后 `/audit` finding-closure 复审，再进 Root close-out。
 
 ## 2026-08-02 · GOAL-008 实施 S1 + S2（`0/5 → 2/5`）
 

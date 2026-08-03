@@ -5,7 +5,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-03
 parent: null
-version: 0.3.0
+version: 0.4.0
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -54,6 +54,8 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 - [x] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。（2026-08-02：`I-005` verified、`I-006` closed（D-013，部署基线 A + 建议口径 + 复现方法）；`GOAL-008-r5-engineering-fork` 已立项，S1/S2 已实施 `2/5`——env 清单/health/dev-prod 文档 + Dockerfile × 2/compose/nginx 反代/CI smoke，契约 C-001～C-007 验证通过。**2026-08-03：`GOAL-008` 已 `5/5` 并 `done`**——S3（QUICKSTART + REPRO-003 无编译缓存复现 64.833s ≤ 900s）、S4（smoke.sh + 隔离守卫 + CI run 30776646293）、S5（A-014 self finding-closure + A-015 self stage-audit）、S6 加分（operation_log，`I-008-003` verified + F-010 fixed）；关门审计 A-016（independent · conditional → F-010 fixed）+ A-017（independent · finding-closure · pass）+ A-018（self · close-out · pass）。**Root R5 检查点已勾选（Root `4/5 → 5/5`，用户确认）**；Root close-out 关门审计与 VP-002 关门为独立用户裁决。）
 
 当前派生进度为 `5/5`（R1、R2、R3、R4 于 2026-08-02 勾选；**R5 于 2026-08-03 勾选**——`GOAL-008-r5-engineering-fork` 置 `done`，A-016/A-017/A-018 关门闭环）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。子目标 progress 不替代本 Root 检查点。Root close-out 关门审计与 VP-002 关门为独立用户裁决。
+
+> **2026-08-03 · A-002 响应波次（不改变 5/5 派生）**：Root 收到 A-002（independent · fail）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）。用户按 P-004 裁决全部走 `fixed`（D-014）：F-002-002/003 → `GOAL-009-a002-auth-form-fixes`；F-002-001 通用适配层改造 → `GOAL-010-a002-schema-adapter`（P-001 路线图 + `I-010-001/002`）。**Root 关门与 VP-002 关门在 A-002 required 全部合法闭合前保持阻断**。
 
 ## 信息需求与阶段门禁
 
