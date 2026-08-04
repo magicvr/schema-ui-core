@@ -15,6 +15,7 @@ version: 0.1.0
 | 编号 | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-05 | 建立 R4 子目标与初始信息边界 | recorded | [02-execution/E-001-r4-stage-opened.md](02-execution/E-001-r4-stage-opened.md) |
+| E-002 | 2026-08-05 | R4 C1 能力盘点与边界核验 | recorded | [02-execution/E-002-r4-c1-capability-inventory.md](02-execution/E-002-r4-c1-capability-inventory.md) |
 
 ## 当前事实边界
 
@@ -24,3 +25,6 @@ version: 0.1.0
   是 R4 待迁移事实，不是已完成证据。
 - Records 当前不存在可用 CRUD handler；`0006 records_retire` 的历史保留边界
   已登记为 required information conflict。
+- C1 能力与边界事实盘点已落盘至
+  `attachments/r4-c1-capability-inventory.md`；该记录仍不关闭 R4-I001～I004，
+  因为 provider contract、Records 范围和 operationlog 行为/retention 尚未冻结。
