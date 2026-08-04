@@ -6,7 +6,7 @@ status: recorded
 parent: null
 created: 2026-08-04
 updated: 2026-08-04
-version: 0.1.0
+version: 0.1.1
 ---
 
 # E-001 · 建立工作区与 Root 初始台账
@@ -28,6 +28,12 @@ version: 0.1.0
 | Root、路线图与信息门禁 | [00-meta.md](../00-meta.md) |
 | 目标树投影 | [goal-tree.md](../../goal-tree.md) |
 | 建区决策 | [D-001](../01-decision/D-001-workspace-root-establishment.md) |
+
+### Git checkpoint
+
+- commit: `6ce5f79` (`docs(govern): establish VP-003 workspace`)
+- scope: Vision Review 响应、VP-003 激活/绑定、`workspace-003`、Root 五件套与 A-001 self 审视。
+- 验证：`git diff --cached --check` 通过；新工作区本地 Markdown 链接与结构/对齐检查通过；`python skills/tests/test_skills_orchestrator.py` 为 42/42 通过。
 
 ### 下一步（计划）
 
