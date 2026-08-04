@@ -87,7 +87,7 @@ test("users and roles drive real authorization management against Go SQLite", as
 	const managedRow = page.getByRole("row").filter({ hasText: createdUsername });
 	await managedRow.getByRole("button", { name: "Roles" }).click();
 	const rolesDialog = page.getByRole("dialog", { name: "Roles" });
-	await rolesDialog.getByLabel("Role keys (comma-separated)").fill(roleKey);
+	await rolesDialog.getByLabel(/^Role keys \(comma-separated/).fill(roleKey);
 	await rolesDialog.getByRole("button", { name: "Save roles" }).click();
 	await expect(rolesDialog).toBeHidden();
 
