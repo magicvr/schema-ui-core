@@ -21,6 +21,7 @@ version: 0.1.0
 | E-005 | 2026-08-05 | R4 C1 inventory 扩展与 finding 响应 | recorded | [02-execution/E-005-r4-c1-inventory-expanded.md](02-execution/E-005-r4-c1-inventory-expanded.md) |
 | E-006 | 2026-08-05 | R4 C1 inventory response checkpoint | recorded | [02-execution/E-006-r4-c1-inventory-checkpoint.md](02-execution/E-006-r4-c1-inventory-checkpoint.md) |
 | E-007 | 2026-08-05 | R4 C1 待裁决方案材料 | recorded | [02-execution/E-007-r4-c1-options-prepared.md](02-execution/E-007-r4-c1-options-prepared.md) |
+| E-008 | 2026-08-05 | R4 C1 方案材料 checkpoint | recorded | [02-execution/E-008-r4-c1-options-checkpoint.md](02-execution/E-008-r4-c1-options-checkpoint.md) |
 
 ## 当前事实边界
 
