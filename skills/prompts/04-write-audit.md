@@ -2,9 +2,9 @@
 title: 提示词 · 写审计意见 / 阶段复盘
 status: active
 created: 2026-07-18
-updated: 2026-07-20
+updated: 2026-08-04
 parent: null
-version: 0.6.0
+version: 0.7.0
 role: primitive
 ---
 
@@ -20,7 +20,7 @@ role: primitive
 2. **编排响应记录**（对已有审计意见的响应节；仍为 self 侧记录，勿标 independent）
 3. 结构与独立审计对齐，便于意见台账汇总
 
-落盘：**被审目标** `03-audit.md`（P-003）；长文可 `attachments/` + 索引节。
+落盘：**被审目标** `03-audit.md` 索引 + `03-audit/A-NNN-<slug>.md`（P-003）；超长证据可 `attachments/` + A 条目链接。
 
 ---
 
@@ -31,7 +31,7 @@ role: primitive
 你是本项目的目标治理协作者。遵守 `AGENTS.md` 和/或 `.github/copilot-instructions.md`（含 §6b / P-002～P-005）。
 
 # 任务
-在指定目标的 `03-audit.md` **追加**一条编号审计意见（保留历史）。基于 meta / decision / execution **已有事实**；禁止编造成果。
+在指定目标的 `03-audit/` **创建**一条编号审计意见并更新 `03-audit.md` 索引（保留历史）。基于 meta / decision / execution **已有事实**；禁止编造成果。
 
 # 用户输入（缺项先确认）
 - 目标 ID / 路径：
@@ -54,9 +54,9 @@ role: primitive
 # 步骤
 
 1. 通读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、`00-meta`、`01-decision`（含信息需求与残余风险）、`02-execution`、现有 `03-audit`。workspace Root Goal/canonical 范围不匹配时，把它作为 scope 的阻断缺口，不得审计或放行其他工作区的内容；没有显式工作区根时只审 legacy 隐式单工作区。
-2. 新编号 = 文件中已有最大 `A-NNN` + 1（自审与独立审**共用**序列）。
+2. 新编号 = 索引、目录文件名与 legacy inline 中已有最大 `A-NNN` + 1（自审与独立审**共用**序列）。
 3. 对照成功标准、scope 与相关 I-00N：已达成 / 部分 / 未开始 / 证据不足；核对 `required`/`non-blocking`、最晚需要阶段、状态、延期复核与证据。若 scope 使用共享资料引用，核对 `workspace_id`、`material_id`、`source`、`version` 和有效 `sha256`；引用不完整/不匹配只能作为缺口，不能被当成事实或关闭证据。
-4. 追加一节，**最小头字段强制**：
+4. 创建 `03-audit/A-NNN-<slug>.md` 并在索引新增一行；entry **最小头字段强制**：
 
    ## A-NNN · <标题>（YYYY-MM-DD）
    - **source**：self | independent
@@ -87,7 +87,7 @@ role: primitive
    - 仍开放项
    - 冲突裁决（若有）指向 decision 编号
 
-6. 刷新 `updated`。
+6. 刷新 entry 与索引的 `updated`。
 7. 立刻跟进可记入 execution（标为计划）；正式取舍写入 decision。
 8. **仅当用户确认且模式允许时**调整 status 或检查点；检查点变化后按 P-001 重算派生 progress，并同步 meta 与 goal-tree。任何百分比都不得作为 finding 闭合、阶段放行或关门依据。
    - independent 代贴或纯审计意见：**禁止**擅自改 status、检查点或派生 progress。
@@ -107,7 +107,7 @@ role: primitive
 - [ ] required 与 recommended 可区分  
 - [ ] 相关 I-00N、最晚阶段、证据与残余风险接受已核对
 - [ ] 未越权改 status（除非用户确认）  
-- [ ] 长文若用附件，03-audit 有索引节 + 链接  
+- [ ] 03-audit 索引链接到 A entry；长文若用附件，A entry 仍有摘要/findings + 链接
 ```
 
 ---

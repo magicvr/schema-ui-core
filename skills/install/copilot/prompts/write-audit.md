@@ -3,9 +3,9 @@ title: /write-audit · 写阶段性复盘（Copilot wrapper · advanced primitiv
 description: 原语入口。默认请用 /govern。按 04-write-audit 写复盘。
 status: active
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-08-04
 parent: null
-version: 0.3.0
+version: 0.4.0
 slash: /write-audit
 role: advanced
 ---
@@ -36,7 +36,7 @@ role: advanced
    - `01-decision.md`（关键取舍 `D-NNN`）
    - I-00N 信息项的级别、最晚需要阶段、证据、延期复核和 residual 接受
    - `02-execution.md`（时间线事实与日期范围）
-   - 现有 `03-audit.md`（已有 `A-NNN`，下一条 +1；勿覆盖历史）
+   - 现有 `03-audit.md` 索引、`03-audit/A-*` 与 legacy inline（下一条取三者最大编号 +1；勿覆盖历史）
 3. 解析用户在 `/write-audit` 后附带的区间、类型、已知问题等。
 4. **尝试推断**：
 
@@ -99,7 +99,7 @@ role: advanced
 
 1. **锚定事实**：成果须能指向文件路径、决策编号 `D-NNN` 或 execution 时间线条目。
 2. **对照成功标准**：逐条判定已达成 / 部分 / 未开始 / 证据不足；禁止无证据勾完成。
-3. **追加不覆盖**：在 `03-audit.md` 新增 `A-NNN` 章节，保留历史复盘。
+3. **追加不覆盖**：创建 `03-audit/A-NNN-<slug>.md` 并更新 `03-audit.md` 索引，保留历史复盘。
 4. **同步 meta + goal-tree**：结论导致 status / progress 变化时，更新 `00-meta.md` 并**必须**同步 `<workspace-root>/goal-tree.md`。
 5. **重大取舍进 decision**：正式取舍写入 `01-decision.md`，不要只留在 audit。
 6. **可跟进到 execution**：改进措施若立刻执行，可在 `02-execution.md` 记「复盘 A-NNN 后的跟进计划」（计划项）。

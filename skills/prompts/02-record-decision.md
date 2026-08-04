@@ -2,9 +2,9 @@
 title: 提示词 · 记录决策
 status: active
 created: 2026-07-18
-updated: 2026-07-20
+updated: 2026-08-04
 parent: null
-version: 0.5.0
+version: 0.6.0
 role: primitive
 ---
 
@@ -15,7 +15,7 @@ role: primitive
 **角色**：文档原语，供 [00-govern-orchestrator.md](00-govern-orchestrator.md) 调用；也可高级直调。默认用户路径请用编排器。
 
 解决「做了取舍却没写清楚、或写了一堆空话」的问题。  
-引导 AI 在目标的 `01-decision.md` 中追加结构化决策条目：决定了什么、为什么、未选方案是什么。
+引导 AI 在目标的 `01-decision/D-NNN-<slug>.md` 中创建结构化决策条目并更新索引：决定了什么、为什么、未选方案是什么。
 
 ---
 
@@ -26,7 +26,7 @@ role: primitive
 你是本项目的目标治理协作者。遵守 `AGENTS.md` 和/或 `.github/copilot-instructions.md`。P-001 与 P-005 以 AGENTS 为准。
 
 # 任务
-为指定目标在 `01-decision.md` 追加真实决策：写清「决定了什么」与「为什么」。
+为指定目标在 `01-decision/` 创建真实决策并更新 `01-decision.md` 索引：写清「决定了什么」与「为什么」。
 
 # 用户输入（缺项先确认）
 - 目标 ID / 路径：
@@ -42,14 +42,14 @@ role: primitive
 - 今日日期：【YYYY-MM-DD】
 
 # 步骤
-1. 读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、其 `goal-tree.md`、`00-meta.md` 与现有 `01-decision.md`。若 workspace Root Goal/canonical 范围与目标不匹配，停止受影响决策，先记录或请求修复上下文；没有显式工作区根时只处理 legacy 隐式单工作区。
-2. 追加条目（D-001 起递增）：
+1. 读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、其 `goal-tree.md`、`00-meta.md`、`01-decision.md` 索引、`01-decision/D-*` 与 legacy inline。若 workspace Root Goal/canonical 范围与目标不匹配，停止受影响决策，先记录或请求修复上下文；没有显式工作区根时只处理 legacy 隐式单工作区。
+2. 扫描索引/目录/legacy 的最大编号，创建 `01-decision/D-NNN-<slug>.md` 并更新索引：
 
    ### D-NNN · <决策标题>
    - **日期** / **状态**（accepted | proposed | superseded）
    - **决定** / **理由** / **未选方案** / **影响** / **后续**
 
-3. 刷新 `updated`；小改可保持 version。
+3. 刷新 entry 与索引的 `updated`；小改可保持 version。
 4. 若使用共享资料引用，先核对 `workspace_id` 匹配、资料目录不是 `none`、`material_id`/`source`/`version`/有效 `sha256` 齐全。任何缺失或不匹配的引用不得作为事实、证据、跨工作区上下文或 finding 关闭依据；资料内容仍须按来源与用户确认规则标为候选。
 4b. 决策正文若提及**他区**目标：落盘用 **Q2** canonical 路径；对用户说明用 **Q3** 标签。区内目标与 `parent` 仍用短 id；禁止把工作区号写进 goal 文件夹名。
 5. 若决策改变范围、成功标准、路线图或信息门禁：同步 `00-meta` / 信息需求表，并在 `02-execution` 记一句「记录决策 D-NNN：…」。`deferred` 必须写清理由、责任人和复核触发；残余风险接受必须写清范围、期限、缓解/监控与复审触发，且不得把状态改写为 `verified`。

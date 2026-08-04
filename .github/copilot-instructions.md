@@ -2,9 +2,9 @@
 title: GitHub Copilot 指令 · 目标治理
 status: active
 created: 2026-07-18
-updated: 2026-07-29
+updated: 2026-08-04
 parent: null
-version: 0.10.2
+version: 0.11.0
 ---
 
 # AGENTS.md
@@ -49,10 +49,14 @@ docs/workspace-001-example/GOAL-NNN-short-slug/
 ├── 01-decision.md
 ├── 02-execution.md
 ├── 03-audit.md
+├── 01-decision/       # D-NNN-<slug>.md，平铺
+├── 02-execution/      # E-NNN-<slug>.md，平铺
+├── 03-audit/          # A-NNN-<slug>.md，平铺
 └── attachments/          # 可为空，目录必须存在
 ```
 
 - 不得省略任一文件或目录。
+- 新目标从第一条记录起使用上述 ledger 目录；三个 `.md` 文件保留 frontmatter 与索引。legacy inline 继续可读；达到 32 KiB / 800 行 / 12 条任一阈值后，下一次追加必须改走目录。
 - 若项目提供独立核心模板层，优先从 `{{CORE_TEMPLATES_DIR}}/goal-folder/` 复制；否则从 `{{GOAL_FOLDER_TEMPLATE}}` 复制（常见：`<skills-pkg>/templates/goal-folder/`；包目录名可能不是 `skills`）。
 
 ## 4. Frontmatter 最低要求
@@ -116,6 +120,8 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 - 目标态：设立 → 信息发现与就绪判断（P-005）→ **（若尚不可直接执行）高层路线图（P-001）** → 审视目标 → 方案/计划 → 审视方案 → 实施并记**事实** → 审视事实（可整改环）→ 关门审计后结项。
 - 小目标可合并审视步骤、可跳过路线图槽位；不得省略可验证事实与关门前结论。
 - 实施事实 ≠ 实施流水账；审计须能指回证据。
+- 长流程默认在方案冻结、独立验证切片、required finding 闭合、关门前验证后创建 Git checkpoint；只暂存显式 owned paths，禁止 `git add -A`。用户可在任务开始时禁用；验证失败、路径含既有用户改动或 commit 失败时 fail closed。
+- 普通消费仓不承担 producer 的 compatibility matrix / runtime evidence / release evidence 门禁；默认消费安装只携带 consumer contract + schema。producer 发布门禁仍在生产仓 fail closed。
 
 ### P-003 · 交叉审计与意见响应
 
@@ -125,14 +131,25 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 - **Finding 合法闭合**（三路径，全文见 principles）：`fixed`（可核对修正）｜`accepted-residual`（用户书面接受残余，含范围与复审触发）｜`user-overruled`（用户书面驳回/降级，**单条意见亦可**）。口头不算。
 - 默认主入口仍为编排器；交叉审计为专用入口（如 `/audit`），非四填表并列主路径。
 
+#### 审计模式（实施前按风险确定）
+
+| 模式 | 适用 scope | 最低要求 |
+|------|------------|----------|
+| `none` | 低风险、可逆、无门禁语义变化的局部维护 | 无阶段意见；后继/关门审计兜底 |
+| `self` | 常规、边界清楚、可逆的非平凡实施 | 覆盖 scope 的 self |
+| `independent` | security/data/migration/production/release/compatibility 高影响门禁 | 至少一个会话指定 provider 的 independent |
+| `cross` | 元规则/协议、不可逆/跨边界、证据矛盾或用户要求多工具 | self + 至少一个指定 provider 的 independent |
+
+规则能唯一判定时不询问。只有 independent/cross 已确定但会话无 provider，或模式歧义会实质改变门禁成本时才询问；provider 失败不得静默降级或由编排器冒充 independent。
+
 #### 审计意见落盘（强制）
 
 | 项 | 约定 |
 |----|------|
-| **权威位置** | 被审目标的 `03-audit.md`（唯一正式台账） |
+| **权威位置** | 被审目标的 `03-audit.md` 索引 + `03-audit/A-NNN-*.md`（共同构成唯一正式台账） |
 | **编号** | `A-001` 起递增，自审与独立审**共用**序列 |
 | **条目头** | 至少：`source`（`self` \| `independent`）、日期、scope、`verdict`（pass \| conditional \| fail） |
-| **长文** | 可放 `attachments/audit-A-00N-….md`，但 `03-audit` **必须**有对应编号节（摘要 + verdict + 链接） |
+| **长文** | 证据可放 `attachments/audit-A-00N-….md`，但 `03-audit/A-00N-*.md` **必须**保留摘要 + verdict + findings + 链接，索引文件登记该 A 条目 |
 | **禁止** | 仅聊天未写入；仅附件无 `03-audit` 节；用全局目录替代目标下 `03-audit` |
 | **写入** | 交叉工具直接追加，或代贴并保留 `source: independent` |
 
@@ -149,12 +166,12 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 
 | 情形 | 行为 |
 |------|------|
-| 已有独立审计、尚无自审计 | **询问**用户是否还要自审；不自动跳过、不未问即强制 |
+| 审计模式 / provider 无法唯一确定 | 按风险选择 `none` / `self` / `independent` / `cross`；仅 independent/cross 已确定但无 provider，或风险分级实质歧义时询问 |
 | 多条意见在结论/必改项上冲突 | 展示冲突 + **给建议** + **等用户决策**并留痕；未决不放行/不关门 |
 | 单条（或无冲突）required finding 要否决/residual | 停止放行；说明风险；等用户选 fixed / residual / overruled 并留痕（P-003） |
 | 信息 residual、有界实验、信息冲突 | 按 P-005 字段要求问用户并留痕；不得静默推断 |
 
-**延后**：自动判定「可否跳过自审」的复杂机制（版本指纹、覆盖度算法等）。
+已有 independent 而无 self 不再单独触发询问：`independent` 不固定要求 self，`cross` 必须有 self。required finding、冲突、residual / overruled 与信息冲突仍必须由用户裁决。
 
 ### P-005 · 信息就绪与未知项门禁
 
@@ -287,7 +304,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 - 决策、执行、审计只记录真实内容。
 - 不静默自动裁决 P-004 情形（含 4.1～4.4）；独立审计默认不直接改目标状态。
 - 不得以“以后再说”绕过 required 信息门禁；残余风险只有用户书面接受并留痕后才可解除其明确范围内的门禁。
-- 正式审计意见必须落在被审目标 `03-audit.md`（可链附件）；未落盘意见不作为放行依据。
+- 正式审计意见必须落在被审目标 `03-audit/A-NNN-*.md` 并更新 `03-audit.md` 索引；未落盘意见不作为放行依据。
 - 未合法闭合的 required/必改 findings 存在时，禁止推进对应门禁或 `status: done`（闭合仅限 fixed / accepted-residual / user-overruled）。
 - 无显式工作区时禁止把任意路径当作隐式工作区根；仅 legacy `docs/goals/` 或空治理 scaffold。
 - **完整安装必有唯一 active Charter + alignment**；缺则仅引导补齐。
@@ -297,7 +314,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 
 - [ ] 编号未冲突；`id` = 文件夹名；未复用 cancelled 号作新含义
 - [ ] `parent` 为完整父 id 或 `null`
-- [ ] 五件套齐全（若新建）
+- [ ] 五件套 + 三个 ledger 目录齐全（若新建）
 - [ ] 大目标路线图已写/更新（若适用）
 - [ ] 工作区：显式已校验，或 legacy `docs/goals/`，或已识别为空治理；共享资料引用未被当成跨工作区状态或未确认事实
 - [ ] 已识别的未知项已登记；本次要推进的阶段没有开放 required 信息门禁，或残余风险已获用户书面接受
@@ -317,7 +334,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 | 复制模板后改真实 id | 例如勿留 GOAL-042 |
 | 按 prompts 文件定位包目录 | 包名可以是 `skills` 或其他 |
 | 独立审只出意见；编排器响应 | P-003 |
-| 审计意见写入被审目标 `03-audit.md`（A-00N + source） | P-003 落盘 |
+| 审计意见写入 `03-audit/A-00N-*.md` 并更新索引（A-00N + source） | P-003 落盘 |
 | finding：fixed / residual / overruled | P-003 闭合 |
 | 冲突 / 是否自审 / residual → 问用户 + 建议 | P-004 |
 | 无显式区 → 仅 legacy `docs/goals/` 或 scaffold | 工作区协议 |

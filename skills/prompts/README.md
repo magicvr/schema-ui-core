@@ -34,7 +34,7 @@ Goal 交叉意见由 `/audit` 写入；独立 Vision Review 由 `/vision-audit` 
 
 | 文件 | 角色 | 用途 |
 |------|------|------|
-| [01-create-new-goal.md](01-create-new-goal.md) | primitive | 创建新目标（五件套 + goal-tree） |
+| [01-create-new-goal.md](01-create-new-goal.md) | primitive | 创建新目标（五件套 + ledger 目录 + goal-tree） |
 | [02-record-decision.md](02-record-decision.md) | primitive | 记录决策 |
 | [03-update-execution.md](03-update-execution.md) | primitive | 更新执行时间线与进度 |
 | [04-write-audit.md](04-write-audit.md) | primitive | 自审 / 阶段复盘 / 响应记录（结构化意见） |

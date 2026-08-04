@@ -561,6 +561,10 @@ $PromptsSrc = Join-Path $PackageRoot 'prompts'
 # GOAL-022: package template truth is core/docs/templates (not skills/templates hand mirror)
 $TemplatesSrc = Join-Path $PackageRoot 'core\docs\templates'
 $ContractsSrc = Join-Path $PackageRoot 'contracts'
+$ConsumerContractNames = @(
+    'skills-consumer-contract.json',
+    'skills-consumer-contract.schema.json'
+)
 $CoreDocsSrc = Join-Path $PackageRoot 'core\docs'
 
 if (-not (Test-Path -LiteralPath $PromptsSrc -PathType Container)) {
@@ -703,7 +707,16 @@ if ($installExtras) {
     }
     Copy-DirMerge -Source $PromptsSrc -Destination (Join-Path $SkillsDirResolved 'prompts') -Label 'prompts'
     Copy-DirMerge -Source $TemplatesSrc -Destination (Join-Path $SkillsDirResolved 'templates') -Label 'templates'
-    Copy-DirMerge -Source $ContractsSrc -Destination (Join-Path $SkillsDirResolved 'contracts') -Label 'contracts'
+    $consumerContractsDest = Join-Path $SkillsDirResolved 'contracts'
+    if (-not (Test-Path -LiteralPath $consumerContractsDest)) {
+        New-Item -ItemType Directory -Path $consumerContractsDest -Force | Out-Null
+    }
+    foreach ($contractName in $ConsumerContractNames) {
+        Copy-RuleFile `
+            -Source (Join-Path $ContractsSrc $contractName) `
+            -Destination (Join-Path $consumerContractsDest $contractName)
+    }
+    Write-Host 'Consumer contract profile: contract + schema only; producer runtime evidence remains release-owned.'
 }
 
 # GOAL-019 D-003/D-004: core methodology is co-required with any host or workspace init

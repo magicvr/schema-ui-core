@@ -2,9 +2,9 @@
 title: 架构概览
 status: active
 created: 2026-07-18
-updated: 2026-08-01
+updated: 2026-07-31
 parent: null
-version: 0.8.2
+version: 0.8.1
 ---
 
 # 架构概览
@@ -65,14 +65,14 @@ version: 0.8.2
 
 ## 当前阶段（现时）
 
-- **真相源**：现有两个显式工作区分别维护自己的 canonical 目标树：`docs/workspace-001-mvp-admin-foundation/` 与 `docs/workspace-002-production-admin-foundation/`；目标状态以各区 `goal-tree.md` 与五件套为准，禁止跨区混合。
+- **真相源**：显式工作区 `docs/workspace-001-goal-governance/`（GOAL-011 已完成自 `docs/goals/` 迁移）；legacy 隐式单工作区仅兼容外部旧仓。
 - **原则**：[principles.md](principles.md) P-001～**P-006**（含 finding 三路径闭合、P-004.1～4.4、单愿景级联）；工作区/资料/愿景见 [workspace-protocol.md](workspace-protocol.md) 与 [../vision/alignment.md](../vision/alignment.md)。
-- **愿景**：[charter.md](../vision/charter.md) **`schema-ui-core-admin-foundation@0.1.0`**，且当前仅有一个 active Charter。
-- **组合编排**：VP-001 **closed**（lead: workspace-001-mvp-admin-foundation）；VP-002 **active**（lead: workspace-002-production-admin-foundation）。当前没有可作为治理事实的 VP-003 记录。
-- **workspace-001**：状态 **active**，角色 **primary**，Root `GOAL-001-mvp-admin-foundation` **done**，`primary_plan` = `VP-001-mvp-admin-foundation`；继续保留协议验证历史。
-- **workspace-002**：状态 **active**，角色 **delivery**，Root `GOAL-001-production-admin-foundation` **active / 0/5**，`primary_plan` = `VP-002-production-admin-foundation`；按 Renderer、认证、持久化权限、CRUD、工程化与关门五阶段推进。
+- **愿景**：[charter.md](../vision/charter.md) **`vision-goal-governance@0.2.0`**。组合编排：VP-001 **closed**（奠基）· VP-002 **active**（反馈演进，待 workspace-002）· VP-003 **planned**（人类 UI）。
+- **Skills**：现行主消费适配器；演进挂 **VP-002**（真实项目反馈）。
+- **Web**：冻结参考（`web/`）；产品波 **VP-003**；R-009-X 仍 accepted。
+- **workspace-001**：Root `GOAL-001-main-vision` **有界 done**；区 **archived**。演进须新开 **workspace-002** 挂 VP-002。
 
-本页是架构概览，不是愿景或目标状态的第二真相源；当前 Charter、VP 与工作区绑定以 `docs/vision/`、工作区 `workspace.md` 和 `goal-tree.md` 为准。
+细节以工作区 `goal-tree.md` 与各目标五件套为准；本页若与之冲突，以工作区记录为准。
 
 ## 演进方向（未实现或 residual，仅规划）
 

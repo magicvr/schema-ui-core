@@ -144,6 +144,34 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         ):
             self.assertIn(marker, text)
 
+    def test_govern_ergonomics_contract_is_shipped(self) -> None:
+        orchestrator = (PROMPTS / "00-govern-orchestrator.md").read_text(encoding="utf-8")
+        principles = CORE_PRINCIPLES.read_text(encoding="utf-8")
+        commit_prompt = (
+            SKILLS_ROOT.parent / ".github" / "prompts" / "commit.prompt.md"
+        ).read_text(encoding="utf-8")
+        for marker in ("`none`", "`self`", "`independent`", "`cross`", "Git checkpoint"):
+            self.assertIn(marker, orchestrator)
+            self.assertIn(marker, principles)
+        self.assertIn("禁止 `git add -A`", orchestrator)
+        self.assertIn("普通消费仓", orchestrator)
+        self.assertIn("不要求 compatibility matrix / runtime evidence", orchestrator)
+        self.assertNotIn("必须询问用户：是否还需要做一次自审计", orchestrator)
+        self.assertIn("git add -- <owned paths>", commit_prompt)
+        self.assertNotIn("允许自动运行 `git add -A`", commit_prompt)
+        for name in ("01-decision", "02-execution", "03-audit"):
+            self.assertTrue((SKILLS_TEMPLATES / name / ".gitkeep").is_file())
+        for name in ("decision.md", "execution.md", "audit.md"):
+            self.assertTrue((SKILLS_TEMPLATES.parent / "ledger-entry" / name).is_file())
+        decision_entry = (SKILLS_TEMPLATES.parent / "ledger-entry" / "decision.md").read_text(
+            encoding="utf-8"
+        )
+        execution_entry = (SKILLS_TEMPLATES.parent / "ledger-entry" / "execution.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("## D-NNN", decision_entry)
+        self.assertIn("## YYYY-MM-DD", execution_entry)
+
     def test_primitives_exist_and_marked(self) -> None:
         for fname in (
             "01-create-new-goal.md",
@@ -298,6 +326,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 "contractFormat",
                 "contractFormatVersion",
                 "canonical",
+                "evidenceBoundary",
                 "protocol",
                 "supportBaseline",
                 "templateSet",
@@ -321,6 +350,23 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
             },
         )
 
+        evidence_boundary = payload["evidenceBoundary"]
+        self.assertEqual(
+            evidence_boundary,
+            {
+                "defaultProfile": "consumer",
+                "consumerRequired": [
+                    "skills-consumer-contract.json",
+                    "skills-consumer-contract.schema.json",
+                ],
+                "producerOnly": [
+                    "skills-consumer-compatibility-matrix.json",
+                    "skills-consumer-compatibility-matrix.schema.json",
+                    "runtime-evidence.schema.json",
+                ],
+            },
+        )
+
         protocol = payload["protocol"]
         self.assertIsInstance(protocol, dict)
         assert isinstance(protocol, dict)
@@ -338,6 +384,11 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                     "01-decision.md",
                     "02-execution.md",
                     "03-audit.md",
+                ],
+                "goalLedgerDirectories": [
+                    "01-decision",
+                    "02-execution",
+                    "03-audit",
                 ],
                 "requiredFrontmatter": [
                     "status",
@@ -461,6 +512,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 "contractFormat",
                 "contractFormatVersion",
                 "canonical",
+                "evidenceBoundary",
                 "protocol",
                 "supportBaseline",
                 "templateSet",
@@ -517,7 +569,8 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
     def test_d003_declares_baseline_and_tiered_adapter_scope(self) -> None:
         """D-003 keeps commitment separate from version-fixed runtime evidence."""
         manifest = self._load_json(CORE_CONTRACTS / "skills-consumer-contract.json")
-        self.assertEqual(manifest["contractFormatVersion"], "0.2.1")
+        self.assertEqual(manifest["contractFormatVersion"], "0.3.0")
+        self.assertEqual(manifest["evidenceBoundary"]["defaultProfile"], "consumer")
         self.assertEqual(
             manifest["supportBaseline"],
             {
@@ -569,7 +622,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         self.assertEqual(runtime_schema["$id"], RUNTIME_EVIDENCE_SCHEMA_ID)
         self.assertEqual(matrix["schemaId"], MATRIX_SCHEMA_ID)
         self.assertEqual(matrix["format"], "goal-governance.skills-consumer-compatibility-matrix")
-        self.assertEqual(matrix["candidateRevision"], "v0.11.0")
+        self.assertEqual(matrix["candidateRevision"], "v0.12.1")
         self.assertEqual(matrix["canonicalContractPath"], "docs/contracts/skills-consumer-contract.json")
         self.assertEqual(matrix["protocol"]["current"], manifest["protocol"]["version"])
         self.assertIsNone(matrix["protocol"]["previous"])
@@ -605,11 +658,11 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
             },
         )
         self.assertEqual(consumers["claude-code-cli"]["host"]["version"], "2.1.220")
-        self.assertEqual(consumers["grok-build-cli"]["host"]["version"], "0.2.114")
+        self.assertEqual(consumers["grok-build-cli"]["host"]["version"], "0.2.118")
         self.assertEqual(consumers["github-copilot-cli"]["host"]["version"], "1.0.75")
         self.assertEqual(consumers["github-copilot-cli"]["host"]["product"], "GitHub Copilot CLI")
         adapters_by_id = {adapter["id"]: adapter for adapter in manifest["adapters"]}
-        # Claude + Grok + Copilot: all four entrypoints runtime-verified 2026-07-30
+        # Claude + Grok + Copilot: all four entrypoints runtime-verified 2026-08-04
         for consumer_id in (
             "claude-code-cli",
             "grok-build-cli",
@@ -628,21 +681,21 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 self.assertTrue(entrypoints[name]["evidence"])
                 for path in entrypoints[name]["evidence"]:
                     self.assertTrue((SKILLS_ROOT.parent / path).is_file(), msg=path)
-                    self.assertIn("2026-07-30", path)
+                    self.assertIn("2026-08-04", path)
             vision = entrypoints["vision"]
             self.assertEqual(vision["status"], "runtime-verified")
             self.assertTrue(vision["evidence"])
             for path in vision["evidence"]:
                 self.assertTrue((SKILLS_ROOT.parent / path).is_file(), msg=path)
                 self.assertIn("vision", path)
-                self.assertIn("2026-07-30", path)
+                self.assertIn("2026-08-04", path)
             vision_audit = entrypoints["vision-audit"]
             self.assertEqual(vision_audit["status"], "runtime-verified")
             self.assertTrue(vision_audit["evidence"])
             for path in vision_audit["evidence"]:
                 self.assertTrue((SKILLS_ROOT.parent / path).is_file(), msg=path)
                 self.assertIn("vision-audit", path)
-                self.assertIn("2026-07-30", path)
+                self.assertIn("2026-08-04", path)
         web = consumers["web-readonly-parser"]
         self.assertEqual(web["kind"], "goal-document-parser")
         self.assertEqual(web["supportCommitment"], "not-applicable")
@@ -861,7 +914,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 f"core goal-folder hash drift: {name}",
             )
         templates_readme = (core / "templates" / "README.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.6.0", templates_readme)
+        self.assertIn("version: 0.7.0", templates_readme)
         self.assertIn("progress", templates_readme)
         self.assertIn("不放行阶段", templates_readme)
         self.assertIn("同一阶段内", templates_readme)
@@ -1297,6 +1350,8 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         self.assertIn("05-independent-audit", text)
         self.assertRegex(text, r"independent|交叉")
         self.assertRegex(text, r"status|progress")
+        self.assertIn("03-audit/A-NNN-<slug>.md", text)
+        self.assertIn("更新 `03-audit.md` 索引", text)
 
     def test_claude_audit_skill_source(self) -> None:
         self._assert_audit_skill(CLAUDE_AUDIT_SKILL, "Claude Code")
@@ -1314,6 +1369,8 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         self.assertIn("/audit", text)
         self.assertIn("05-independent-audit", text)
         self.assertRegex(text, r"independent|交叉")
+        self.assertIn("03-audit/A-NNN-<slug>.md", text)
+        self.assertIn("更新 `03-audit.md` 索引", text)
 
     def test_vision_prompt_and_skills_exist(self) -> None:
         path = PROMPTS / "06-vision-orchestrator.md"
@@ -1405,6 +1462,18 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="gg-skills-install-") as tmp:
             target = Path(tmp)
             skills_dest = target / "skills"
+            contracts_dest = skills_dest / "contracts"
+            contracts_dest.mkdir(parents=True)
+            stale_producer_payloads = {
+                name: f"consumer-owned-stale-{name}\n".encode("utf-8")
+                for name in (
+                    "skills-consumer-compatibility-matrix.schema.json",
+                    "skills-consumer-compatibility-matrix.json",
+                    "runtime-evidence.schema.json",
+                )
+            }
+            for name, payload in stale_producer_payloads.items():
+                (contracts_dest / name).write_bytes(payload)
             cmd = [
                 pwsh,
                 "-NoProfile",
@@ -1459,9 +1528,6 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 skills_dest / "prompts" / "07-independent-vision-review.md",
                 skills_dest / "contracts" / "skills-consumer-contract.schema.json",
                 skills_dest / "contracts" / "skills-consumer-contract.json",
-                skills_dest / "contracts" / "skills-consumer-compatibility-matrix.schema.json",
-                skills_dest / "contracts" / "skills-consumer-compatibility-matrix.json",
-                skills_dest / "contracts" / "runtime-evidence.schema.json",
             ]
             missing = [str(p) for p in required if not p.is_file()]
             self.assertEqual(missing, [], msg=f"missing install outputs: {missing}")
@@ -1491,14 +1557,17 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
             for name in (
                 "skills-consumer-contract.schema.json",
                 "skills-consumer-contract.json",
-                "skills-consumer-compatibility-matrix.schema.json",
-                "skills-consumer-compatibility-matrix.json",
-                "runtime-evidence.schema.json",
             ):
                 self.assertEqual(
                     (skills_dest / "contracts" / name).read_bytes(),
                     (SKILLS_CONTRACTS / name).read_bytes(),
                     msg=f"installed contract drift: {name}",
+                )
+            for producer_only, payload in stale_producer_payloads.items():
+                self.assertEqual(
+                    (skills_dest / "contracts" / producer_only).read_bytes(),
+                    payload,
+                    msg=f"consumer install mutated producer-only evidence: {producer_only}",
                 )
 
     @unittest.skipUnless(sys.platform.startswith("win"), "advanced install smoke is Windows-first")

@@ -9,6 +9,7 @@
     "contractFormat",
     "contractFormatVersion",
     "canonical",
+    "evidenceBoundary",
     "protocol",
     "supportBaseline",
     "templateSet",
@@ -41,6 +42,39 @@
         }
       }
     },
+    "evidenceBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["defaultProfile", "consumerRequired", "producerOnly"],
+      "properties": {
+        "defaultProfile": {
+          "const": "consumer"
+        },
+        "consumerRequired": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "skills-consumer-contract.json",
+              "skills-consumer-contract.schema.json"
+            ]
+          }
+        },
+        "producerOnly": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "skills-consumer-compatibility-matrix.json",
+              "skills-consumer-compatibility-matrix.schema.json",
+              "runtime-evidence.schema.json"
+            ]
+          }
+        }
+      }
+    },
     "protocol": {
       "type": "object",
       "additionalProperties": false,
@@ -57,6 +91,7 @@
           "additionalProperties": false,
           "required": [
             "goalTemplateFiles",
+            "goalLedgerDirectories",
             "requiredFrontmatter",
             "hostEntrypoints"
           ],
@@ -67,6 +102,14 @@
               "minItems": 4,
               "items": {
                 "type": "string"
+              }
+            },
+            "goalLedgerDirectories": {
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 3,
+              "items": {
+                "enum": ["01-decision", "02-execution", "03-audit"]
               }
             },
             "requiredFrontmatter": {

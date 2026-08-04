@@ -17,6 +17,11 @@
         "02-execution.md",
         "03-audit.md"
       ],
+      "goalLedgerDirectories": [
+        "01-decision",
+        "02-execution",
+        "03-audit"
+      ],
       "requiredFrontmatter": [
         "status",
         "created",

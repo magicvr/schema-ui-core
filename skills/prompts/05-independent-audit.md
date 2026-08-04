@@ -2,9 +2,9 @@
 title: 提示词 · 独立交叉审计
 status: active
 created: 2026-07-18
-updated: 2026-07-20
+updated: 2026-08-04
 parent: null
-version: 0.4.0
+version: 0.5.0
 role: independent-audit
 ---
 
@@ -18,7 +18,7 @@ role: independent-audit
 **硬约束**
 
 - `source` **必须**为 `independent`
-- **默认只写审计意见**到被审目标 `03-audit.md`（可 + attachments）
+- **默认只写审计意见**到被审目标 `03-audit/A-NNN-<slug>.md` 并更新索引（超长证据可 + attachments）
 - **禁止**修改目标 `status` / 检查点 / 派生 `progress` / 方案正文 / goal-tree 状态列；任何百分比都不能作为 finding 闭合或放行依据
   （除非用户在本轮**明确书面授权**「边审边改」——默认拒绝）
 - 结束后提示：可用 `/govern` 响应意见、关闭 finding、推进阶段
@@ -37,7 +37,7 @@ role: independent-audit
 你出意见；用户通过 `/govern` 响应与改状态。
 
 遵守 `AGENTS.md` §6b 与（若存在）`docs/architecture/principles.md` 的 P-002～P-005。
-落盘：被审目标 `03-audit.md`；编号与自审共用 A-00N 序列。
+落盘：被审目标 `03-audit.md` 索引 + `03-audit/A-NNN-<slug>.md`；编号与自审共用 A-00N 序列。
 
 # 任务
 
@@ -57,10 +57,10 @@ role: independent-audit
 
 # 步骤
 
-1. **只读**扫描：先读当前 `docs/workspace-<NNN>-<slug>/workspace.md` 与 `goal-tree.md`，核对 workspace Root Goal/canonical 范围；再定位目标并通读其 `00-meta`、`01-decision`（含信息需求）、`02-execution`、`03-audit`；按 scope 打开 principles / AGENTS / workspace protocol / 代码或附件等**相关**文件。没有显式工作区根时只审 legacy 隐式单工作区；不得读取或比较其他工作区内容。
-2. 新编号 = `03-audit` 中最大 A-NNN + 1。
+1. **只读**扫描：先读当前 `docs/workspace-<NNN>-<slug>/workspace.md` 与 `goal-tree.md`，核对 workspace Root Goal/canonical 范围；再定位目标并通读其 meta、三个索引 + ledger 目录与 legacy inline；按 scope 打开 principles / AGENTS / workspace protocol / 代码或附件等**相关**文件。没有显式工作区根时只审 legacy 隐式单工作区；不得读取或比较其他工作区内容。
+2. 新编号 = `03-audit.md` 索引、`03-audit/A-*` 与 legacy inline 中最大 A-NNN + 1。
 3. 按 scope 逐项核对；若涉及 P-005，核对 I-00N 的 `required`/`non-blocking`、最晚需要阶段、状态、延期复核、证据、残余风险接受与受影响门禁；若涉及共享资料，核对 `workspace_id`、`material_id`、`source`、`version` 和有效 `sha256`。工作区绑定或资料引用不合格时，作为可证实的范围缺口；每条 finding 必须有证据路径。
-4. 追加 `03-audit.md` 一节：
+4. 创建 `03-audit/A-NNN-<slug>.md`，并在 `03-audit.md` 索引新增链接：
 
    ## A-NNN · <标题>（YYYY-MM-DD）
    - **source**：independent
@@ -79,8 +79,8 @@ role: independent-audit
    ### 声明
    本意见不修改 status/progress；响应由 /govern 处理。
 
-5. 若全文很长：摘要 + verdict + findings 列表写在 `03-audit`；全文写入 `attachments/audit-A-NNN-independent.md` 并链接。
-6. 刷新该 `03-audit.md` 的 `updated`（仅审计文档元数据）。
+5. 若单条超过 32 KiB：摘要 + verdict + findings 保留在 A entry；证据长文写入 `attachments/audit-A-NNN-independent.md` 并链接。
+6. 刷新 A entry 与 `03-audit.md` 索引的 `updated`（仅审计 ledger 元数据）。
 7. **不要**改 `00-meta` 的 status、检查点或派生 progress，**不要**改 goal-tree 状态；不得用 progress 证明完成或关闭 finding。
 8. 回复用户：verdict 一句话、必改项列表、已写入路径、建议「用 /govern 响应」。
 

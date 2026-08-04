@@ -2,9 +2,9 @@
 title: 提示词 · 更新执行进度
 status: active
 created: 2026-07-18
-updated: 2026-07-20
+updated: 2026-08-04
 parent: null
-version: 0.5.0
+version: 0.6.0
 role: primitive
 ---
 
@@ -15,7 +15,7 @@ role: primitive
 **角色**：文档原语，供 [00-govern-orchestrator.md](00-govern-orchestrator.md) 调用；也可高级直调。默认用户路径请用编排器。
 
 解决「做了工作却不写、或写成虚假 100%」的问题。  
-引导 AI 在 `02-execution.md` 按时间线追加**事实**，并在确有进展时同步 meta / goal-tree 的进度。
+引导 AI 在 `02-execution/E-NNN-<slug>.md` 追加一条独立**事实**并更新索引；legacy inline 只读兼容。确有检查点变化时同步 meta / goal-tree 的进度。
 
 ---
 
@@ -26,7 +26,7 @@ role: primitive
 你是本项目的目标治理协作者。遵守 `AGENTS.md` 和/或 `.github/copilot-instructions.md`，包括 P-005 的信息就绪与未知项门禁。
 
 # 任务
-在 `02-execution.md` 按时间线追加**已发生事实**；完成检查点时更新其标记并确定性重算派生 progress，status 仅按治理事实更新；同步 goal-tree。
+在 `02-execution/` 创建下一条 `E-NNN-<slug>.md` **已发生事实**并更新 `02-execution.md` 索引；完成检查点时更新其标记并确定性重算派生 progress，status 仅按治理事实更新；同步 goal-tree。
 
 # 用户输入（缺项先确认）
 - 目标 ID / 路径：
@@ -42,8 +42,8 @@ role: primitive
 - status：【保持 / draft|active|blocked|done|cancelled】
 
 # 步骤
-1. 读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、`00-meta.md`（含信息需求）、`01-decision.md`、`02-execution.md`、`goal-tree.md`。若 workspace Root Goal/canonical 范围与目标不匹配，停止受影响写入；没有显式工作区根时只处理 legacy 隐式单工作区。
-2. 在时间线追加：
+1. 读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、`00-meta.md`（含信息需求）、decision/execution 索引与 ledger 目录、`goal-tree.md`。若 workspace Root Goal/canonical 范围与目标不匹配，停止受影响写入；没有显式工作区根时只处理 legacy 隐式单工作区。
+2. 扫描索引、目录与 legacy inline 的已有编号，创建下一条 `02-execution/E-NNN-<slug>.md`，并把链接写入索引。条目正文至少含：
 
    ### YYYY-MM-DD · <短标题>
    - 事实（做了什么、改了哪些路径）
@@ -54,7 +54,7 @@ role: primitive
 4. 涉及共享资料时，先核对引用的 `workspace_id`、`material_id`、`source`、`version` 与有效 `sha256`；缺失或不匹配时记录拒绝/阻断事实，不能把资料内容写成 confirmed 事实、证据或跨工作区上下文。固定引用只说明来源，事实准入仍须用户显式确认。
 4b. 时间线若提及**他区**目标或产物：落盘用 **Q2** 路径；对话用 **Q3**。本区目标用短 id；禁止改 goal id 形状。
 5. 涉及 I-00N 时：记录实际收集/验证动作与证据路径；新发现的未知追加到信息表，并写明 `required`/`non-blocking`、影响门禁和最晚需要阶段。`deferred` 要保留理由、责任人与复核触发；没有证据时不得把状态改为 `verified`。
-6. 刷新 `updated`。
+6. 刷新 entry 与索引的 `updated`。
 7. 检查点或 status 变化时：先按 P-001 确定性重算派生 progress（无来源则省略/—），再同步 meta 与 goal-tree（树 + 表）；关门前确认没有未处理的 required finding / 信息项。`progress=100%` 不自动推导 `done`。
 8. 完成某条成功标准时：勾选 meta 并在 execution 点明。
 9. 决策论证写入 `01-decision`；execution 保持时间线事实。

@@ -2,9 +2,9 @@
 title: 提示词 · 创建新目标
 status: active
 created: 2026-07-18
-updated: 2026-07-24
+updated: 2026-08-04
 parent: null
-version: 0.6.0
+version: 0.7.0
 role: primitive
 ---
 
@@ -15,7 +15,7 @@ role: primitive
 供 [00-govern-orchestrator.md](00-govern-orchestrator.md) 在用户确认「需要新建目标」后调用；也可高级直调。  
 日常默认路径请用编排器。
 
-交付物：正确编号的目标文件夹 + 完整五件套 + 已同步的 `goal-tree.md`。  
+交付物：正确编号的目标文件夹 + 完整五件套 + 三个平铺 ledger 目录 + 已同步的 `goal-tree.md`。
 若尚无显式工作区（S0），须**先** scaffold 工作区再创建 Root（见步骤 0）。
 
 ---
@@ -30,7 +30,7 @@ P-001 与 P-005 以 AGENTS 为准；**全文**见 `docs/architecture/principles.
 
 # 任务
 
-按已确认信息创建一个新目标：五件套齐全，goal-tree 已更新。  
+按已确认信息创建一个新目标：五件套与三个 ledger 目录齐全，goal-tree 已更新。
 创建 Root 且尚无工作区时：先 scaffold 工作区骨架。
 
 # 用户输入（缺项先问清再写）
@@ -63,7 +63,7 @@ P-001 与 P-005 以 AGENTS 为准；**全文**见 `docs/architecture/principles.
 2. 新编号 = 当前工作区最大编号 + 1（三位）。Root 固定 GOAL-001。**禁止**把工作区编号嵌进 goal id。  
 3. 创建 `<workspace-root>/GOAL-NNN-<slug>/`（平铺）。`parent` 与同区链接用短 id；若正文需提及他区目标，落盘用 **Q2** 路径（`docs/workspace-…/GOAL-…/`），对话说明用 **Q3**（`[workspace_id] GOAL-…`）。  
 
-4. 一次写入五件套：`00-meta` / `01-decision` / `02-execution` / `03-audit` / `attachments/`。  
+4. 一次写入五件套：`00-meta` / `01-decision` / `02-execution` / `03-audit` / `attachments/`；同时创建 `01-decision/`、`02-execution/`、`03-audit/`。索引 `.md` 不承载新目标的完整 D/E/A 正文。
 5. 模板源：优先 `docs/templates/goal-folder/`；否则 `<SKILLS_PKG>/core/docs/templates/goal-folder/`（GOAL-022：包内唯一分发源）。  
 6. Frontmatter：status, created, updated, parent, version；meta 另含 id、title。`progress` 可选：仅当已写显式可枚举检查点时按 P-001 确定性派生；否则省略/显示 `—`，禁止手填百分比。Root 的 slug = 用户确认名。
 7. 正文：meta 概述/成功标准/路线图/信息概览；decision 取舍与信息项；execution 仅事实；audit 可写尚未到复盘节点。  
@@ -74,7 +74,7 @@ P-001 与 P-005 以 AGENTS 为准；**全文**见 `docs/architecture/principles.
 
 - [ ] 编号无冲突；id = 文件夹名；未嵌工作区号  
 
-- [ ] 五件套齐全；parent 为完整 id 或 null  
+- [ ] 五件套与三个 ledger 目录齐全；parent 为完整 id 或 null
 - [ ] goal-tree 树与表已更新  
 - [ ] 显式工作区：workspace.md 存在且 Root/canonical 一致；新目标未越界  
 - [ ] 未在未确认 slug 时静默命名工作区或 Root  

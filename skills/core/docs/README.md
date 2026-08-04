@@ -2,9 +2,9 @@
 title: 文档体系说明（消费方精简入口）
 status: active
 created: 2026-07-18
-updated: 2026-07-30
+updated: 2026-08-04
 parent: null
-version: 0.11.0
+version: 0.12.0
 ---
 
 # docs/ · 文档体系（消费方）

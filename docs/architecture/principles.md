@@ -2,9 +2,9 @@
 title: 治理原则
 status: active
 created: 2026-07-18
-updated: 2026-07-30
+updated: 2026-08-04
 parent: null
-version: 0.10.1
+version: 0.11.0
 ---
 
 # 治理原则
@@ -107,6 +107,37 @@ version: 0.10.1
 - 实施事实审视不通过 → 提出整改方案与计划 →（宜再审视）→ 整改实施 → 再审视事实，直至可接受再进入关门路径。
 - **实施事实 ≠ 实施记录**：审计应核对可验证证据（产物路径、可勾选成功标准等），而非仅流水账修辞。
 
+### 可扩展目标台账（append-only ledger）
+
+`01-decision`、`02-execution`、`03-audit` 是允许持续追加独立记录的多记录台账。新目标从第一条记录起采用“稳定索引文件 + 同名平铺目录”：
+
+| 台账 | 索引 | 条目目录与文件名 |
+|------|------|------------------|
+| 决策 | `01-decision.md` | `01-decision/D-NNN-<slug>.md` |
+| 执行 | `02-execution.md` | `02-execution/E-NNN-<slug>.md` |
+| 审计 | `03-audit.md` | `03-audit/A-NNN-<slug>.md` |
+
+- 索引文件保留必需 frontmatter、信息表、摘要与条目链接；目录只允许单层平铺，编号在本目标、对应台账内单调不复用。
+- `00-meta.md` 不是多记录台账，仍为单文件。
+- legacy inline 正文继续有效。兼容 reader 应合并索引内 legacy 记录与目录条目；切换时可保留既有 inline 历史为只读，只把新记录写入目录，不要求一次性重写历史。
+- legacy 索引达到 **32 KiB、800 行、12 条独立记录任一条件**，下一次追加必须切换到目录。单条记录超过 32 KiB 时，证据长文放 `attachments/`，台账条目保留摘要、finding/结论与链接。
+- 迁移不得重编号或改变历史语义；先 dry-run / 兼容读取验证，再在 Git checkpoint 内应用。
+
+### 长流程 Git checkpoint
+
+长治理运行默认在以下边界创建可回溯提交：信息/方案冻结后、每个可独立验证的实现切片后、required finding 合法闭合后、关门前最终验证后。小型原子变更可只做最终提交；用户可在任务开始时显式禁用自动 checkpoint。
+
+1. 每次只暂存当前动作明确拥有的 paths，禁止以 `git add -A` 代替 ownership 判断。
+2. owned path 含任务开始前的用户改动、或与无关改动不可分离时，停止自动提交并报告；不得覆盖、回退或夹带。
+3. 相关验证失败、无实际 diff、commit 失败、非 Git 仓库时不宣称 checkpoint 成功，也不借提交 hash 放行治理门禁。
+4. 成功后把 commit hash、scope 和验证写入 execution ledger。checkpoint 是恢复点，不是审计、实现或发布通过证据。
+
+### producer / consumer 证据职责
+
+- 普通消费仓只要求消费契约、其 schema、工作区事实与本项目门禁证据；**不**要求生成或删除 Skills producer 的 compatibility matrix、host runtime evidence、release evidence。
+- adapter runtime、compatibility matrix 与 release evidence 是 producer / release profile 的门禁，仍须在生产仓 fail closed；消费边界不得削弱它们。
+- 默认安装 profile 必须用机读 allowlist 分离两类资产。消费仓只有在明确承担 adapter/release 开发时才显式进入 producer profile；不得把安装目录里偶然存在的 producer 文件解释成目标门禁。
+
 **价值**：降低设立时目标偏移、方案不可行、虚标进度与草率关门。
 
 **延后（非本原则强制）**：完整自动状态机、硬编码全部门禁枚举——由 Skills 提示词逐步落地，见 GOAL-005。
@@ -122,11 +153,25 @@ version: 0.10.1
 3. **多意见并存**：允许同时存在多条审计意见；编排器维护开放意见集合（**必改项未合法闭合前不得假装放行或关门**），而不是只认最近一条。该门禁**不依赖**是否存在意见冲突：只要有未闭合 required/必改项，即阻断对应推进。
 4. **独立复审**：修正后可再次请求交叉审计；响应闭环仍归编排器。
 
+### 审计启动策略（风险分级）
+
+编排器在实施前按 scope 记录风险因子、模式和会话级 independent provider 集。能由下表唯一判定时不询问用户：
+
+| 模式 | 适用范围 | 该 scope 的最低意见要求 |
+|------|----------|--------------------------|
+| `none` | 低风险、可逆、无门禁语义变化的局部维护；由后续阶段或关门审计兜底 | 无阶段意见；仍需事实与验证 |
+| `self` | 常规、边界清楚、可逆的非平凡实施或阶段验收 | 一条覆盖 scope 的 self |
+| `independent` | 高影响且验收标准明确的 security / data / migration / production / release / compatibility 门禁 | 至少一个用户指定或会话已指定 provider 的 independent；self 不固定前置 |
+| `cross` | 元规则/治理协议、不可逆或跨边界变更、证据矛盾，或用户要求多工具 | self + 至少一个指定 provider 的 independent；多 provider 分别编号落盘 |
+
+- 只有已判定 `independent` / `cross` 且会话没有 provider 时，才在实施前请用户指定一个或多个工具。provider 失败、超时、不可用或没有可核对输出时，不得由编排器冒充 independent；对应门禁保持未满足。
+- required finding、意见冲突、residual / overruled、信息冲突仍按 P-004 请求用户裁决；风险分级只消除无责任含义的重复询问。
+
 ### 意见状态（最小约定）
 
 | 概念 | 最小判定 |
 |------|----------|
-| **相关意见** | 同一目标 `03-audit.md` 中，按下方**最小充分条件**判定 scope 覆盖当前焦点的编号条目 |
+| **相关意见** | 同一目标 `03-audit.md` 索引及 `03-audit/A-NNN-*.md` 中，按下方**最小充分条件**判定 scope 覆盖当前焦点的编号条目 |
 | **开放必改** | 标为 required/必改，且尚未按下列任一路径**合法闭合**的 finding |
 | **已闭合（合法）** | 见下表三路径之一；口头声称不算 |
 | **冲突** | 见 P-004（及 4.2 最小充分条件） |
@@ -164,14 +209,14 @@ required / 必改 finding 只有下列路径可解除对应门禁（与 P-005 �
 
 | 规则 | 约定 |
 |------|------|
-| **权威落点** | 被审计目标的 `<workspace-root>/GOAL-…/03-audit.md`（**唯一**正式意见台账） |
-| **编号** | 与自审共用序列：`A-001`、`A-002`…（按该文件内已有最大编号 +1） |
+| **权威落点** | 被审计目标的 `03-audit.md` **索引 + `03-audit/` 平铺条目目录**（共同构成唯一正式意见台账） |
+| **编号** | 与自审共用序列：`A-001`、`A-002`…（扫描索引与目录已有最大编号 +1） |
 | **条目头（最小）** | `source: self \| independent`、日期、scope（审什么）、`verdict`（pass / conditional / fail）；建议含 auditor（工具/模型） |
-| **正文** | 短报告直接写在该节；须含 findings 与（若 fail/conditional）必改/建议项 |
-| **长文** | 全文可放同目标 `attachments/`（如 `attachments/audit-A-00N-independent.md`），但 **`03-audit.md` 必须有对应编号节**：摘要 + verdict + findings 要点 + **附件链接** |
-| **禁止** | 仅聊天输出未落盘；仅有附件无 `03-audit` 索引节；另建全局审计库替代目标下 `03-audit`（当前阶段） |
-| **写入方** | 交叉工具可直接追加 `03-audit`；或输出 Markdown 后由人/本侧代贴——仍标 `source: independent` |
-| **编排器认账** | 推进/放行时扫描该目标 `03-audit.md` 中带编号的条目（含链接的附件详情）与响应/决策中的闭合留痕 |
+| **正文** | 一条意见一个 `03-audit/A-NNN-<slug>.md`；须含 findings 与（若 fail/conditional）必改/建议项；索引文件登记链接 |
+| **长文** | 单条超过 32 KiB 时可把证据长文放 `attachments/`，但 A 文件仍须有摘要 + verdict + findings 要点 + **附件链接** |
+| **禁止** | 仅聊天输出未落盘；仅有附件无 A 条目与索引；嵌套审计目录；另建全局审计库替代目标下 ledger |
+| **写入方** | 交叉工具可直接创建 A 文件并更新索引；或输出 Markdown 后由人/本侧代贴——仍标 `source: independent` |
+| **编排器认账** | 推进/放行时扫描索引、目录 A 条目（含链接附件）与响应/决策中的闭合留痕；legacy inline 同样读取 |
 
 **来源标注**：`source: self | independent` 为强制最小字段。更细结构（findings ID 等）由审计原语细化。
 
@@ -203,15 +248,17 @@ required / 必改 finding 只有下列路径可解除对应门禁（与 P-005 �
 
 **原则**：下列情形**不得**由编排器静默自动裁决；须向用户说明事实、**给出建议**，并等待确认；用户决策宜留痕（`01-decision` 或审计响应记录）。
 
-### 4.1 有独立审计、尚无自审计
+### 4.1 审计模式或 provider 无法唯一确定
 
-当推进或过门禁时发现**已有独立审计意见、尚无自审计**时：
+已有 independent 而无 self **不再自动触发逐次询问**；是否需要 self 由 P-003 风险模式决定：`independent` 不固定要求 self，`cross` 必须有 self。
 
-- **询问用户**是否还需要做一次自审计；
-- **不**自动跳过自审，也**不**在未询问时强制自审；
-- 用户选择后：需要则先自审再统一响应；不需要则基于现有意见（含独立审）进入响应/评估。
+只有下列信息无法从用户本轮指令、目标风险和会话上下文唯一确定时才询问：
 
-**延后**：基于对象版本指纹、覆盖度等的**自动**判定「可否跳过自审」——明确不在当前强制范围。
+- `independent` / `cross` 已被判定，但用户未指定且会话没有可用 independent provider；
+- 风险因子使两个模式均合理，选择会实质改变门禁成本或保证等级；
+- 用户指定的 provider 不可用，且改用其他 provider 会改变其明确意图。
+
+询问时展示模式、理由与建议；不得因为缺 provider 静默降级到 `self` / `none`，也不得因为已有 independent 机械追加 self。
 
 ### 4.2 多条审计意见冲突
 

@@ -38,6 +38,10 @@ progress: 50%
 
 - [GOAL-040-docs-quality](../GOAL-040-docs-quality/00-meta.md)（示例：子目标指向父目标 ID；Root 则写 `null`）
 
+## 台账布局
+
+新目标为三个可追加台账创建同名平铺目录：`01-decision/`、`02-execution/`、`03-audit/`。索引文件保留 frontmatter、摘要和条目索引；独立记录使用 `D-NNN-*`、`E-NNN-*`、`A-NNN-*` 文件。legacy 目标仍可由 reader 读取单文件正文，迁移规则见 `docs/architecture/principles.md`。
+
 ## 备注
 
 > 本文件为**模板示例**。复制到真实项目后，请改 `id` / `title` / `parent` / 日期，并删掉与本目标无关的占位说明。

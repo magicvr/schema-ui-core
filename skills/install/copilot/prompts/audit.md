@@ -1,11 +1,11 @@
 ---
 title: /audit · 独立交叉审计（Copilot wrapper）
-description: 在编排流程外对指定 Goal 做交叉审计；只写 Goal 03-audit.md 的独立意见，不改 status。响应请用 /govern。
+description: 在编排流程外对指定 Goal 做交叉审计；只写 Goal 审计索引与 A 条目的独立意见，不改 status。响应请用 /govern。
 status: active
 created: 2026-07-18
-updated: 2026-07-20
+updated: 2026-08-04
 parent: null
-version: 0.3.0
+version: 0.4.0
 slash: /audit
 role: independent-audit
 ---
@@ -30,7 +30,7 @@ role: independent-audit
 
 ## 行为要点
 
-- 写入被审目标 `03-audit.md`（A-00N）；长文可 attachments + 索引。若 scope 涉及阶段推进或关门，核对 I-00N 的最晚阶段、证据与残余风险接受；有 `docs/workspace-<NNN>-<slug>/workspace.md` 时同时核对 Root Goal/canonical 范围与共享资料固定引用。
+- 创建被审目标 `03-audit/A-NNN-<slug>.md` 并更新 `03-audit.md` 索引；长证据可放 attachments 并由 A 条目链接。若 scope 涉及阶段推进或关门，核对 I-00N 的最晚阶段、证据与残余风险接受；有 `docs/workspace-<NNN>-<slug>/workspace.md` 时同时核对 Root Goal/canonical 范围与共享资料固定引用。
 - 独立 Vision Review 请用 **`/vision-audit`**；`/audit` 不写 `docs/vision/reviews.md`。
 - 不读取或比较其他工作区上下文；无 context 时只审当前仓库隐式单工作区。
 - 结束后请用户用 **`/govern`** 响应。  

@@ -1,42 +1,23 @@
-﻿---
-id: GOAL-042-optimize-readme
+---
+id: GOAL-NNN-short-slug
 doc: execution
 status: active
-parent: GOAL-040-docs-quality
-created: 2026-03-01
-updated: 2026-07-19
-version: 0.2.0
+parent: GOAL-001-root-slug
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+version: 0.1.0
 ---
 
-# 执行记录 · GOAL-042
+# 执行记录 · GOAL-NNN
 
-## 时间线
+## 执行索引
 
-> 涉及 P-005 信息项时，记录本次收集/验证的实际动作、I-00N、级别、证据路径，以及新发现的未知。计划中的收集动作必须明确标为计划，不能把 `open`、`deferred` 或 `accepted-residual` 写成已验证事实。
+| E-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| E-001 | YYYY-MM-DD | `<事实标题>` | recorded | `02-execution/E-001-<slug>.md` |
 
-### 2026-03-01 · 目标立项
+## 事实边界
 
-- 从模板复制本目标五件套，设定 `parent: GOAL-040-docs-quality`。
-- 在决策中确认 README 定位：入口信息 + 链到 docs（见 [01-decision.md](01-decision.md) D-001）。
-- 同步更新当前工作区 `goal-tree.md` 登记本目标。
+> 只写已经发生且有证据的事实。每个独立时间线条目放在 `02-execution/E-NNN-<slug>.md`；计划、未知和建议分别留在决策或审计记录。不能把 `open`、`deferred` 或 `accepted-residual` 写成已验证事实。checkpoint commit hash 与覆盖路径在对应 E 条目中登记。
 
-### 2026-03-05 · 重写根 README 骨架
-
-- 按 D-001 重写根 `README.md`：简介、快速开始、目录树、文档链接四段。
-- 删除原 README 中与 `docs/architecture/` 重复的架构长文（约 80 行），改为链接。
-- 按 D-002 将快速开始收敛为 3 条命令；Windows / macOS 差异用一行注释标明。
-
-### 2026-03-12 · 自测快速开始
-
-- 在干净目录按 README 执行：venv 创建、依赖安装、服务启动均成功。
-- 发现一处过期路径：`docs/setup.md` 已不存在，改为链到 `docs/README.md`（已改）。
-- 尚未请协作者做首次启动确认；与 `docs/README.md` 的交叉链接仍待逐条核对。
-
-## 待办
-
-1. 核对根 README 与 `docs/README.md` 全部交叉链接
-2. 请一名协作者按 README 完成首次启动并记录结果
-
-## 进度评估
-
-**约 60%**：结构与快速开始已落地并自测通过；交叉链接核对与协作者验证未完成。
+> legacy inline 的 `### YYYY-MM-DD` 时间线仍可保留并被读取；新事实从目录写入。编号在本目标内单调不复用。

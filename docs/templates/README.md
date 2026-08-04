@@ -2,9 +2,9 @@
 title: 核心目标文档模板
 status: active
 created: 2026-07-19
-updated: 2026-07-28
+updated: 2026-08-04
 parent: null
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 核心目标文档模板
@@ -16,10 +16,12 @@ version: 0.6.0
 `goal-folder/` 包含一个目标的完整五件套：
 
 - `00-meta.md`：目标元信息、成功标准、父子关系与按需的信息就绪概览
-- `01-decision.md`：决定、理由、未选方案与信息需求/阶段门禁
-- `02-execution.md`：按时间线记录可核对事实及信息收集/验证证据
-- `03-audit.md`：阶段复盘、信息就绪核对与 `self` / `independent` 审计意见
+- `01-decision.md` + `01-decision/D-NNN-<slug>.md`：稳定索引 + 平铺决策条目
+- `02-execution.md` + `02-execution/E-NNN-<slug>.md`：稳定索引 + 平铺事实条目
+- `03-audit.md` + `03-audit/A-NNN-<slug>.md`：稳定索引 + `self` / `independent` 审计意见
 - `attachments/`：可选证据附件目录
+
+`ledger-entry/` 提供 D/E/A 单条记录模板。新目标从第一条记录起使用目录；legacy inline 继续兼容读取。legacy 索引达到 32 KiB、800 行或 12 条记录任一阈值后，新追加必须改走目录。
 
 `workspace-context.md` 是显式工作区上下文模板。将其复制为 `docs/workspace-<NNN>-<slug>/workspace.md`，绑定一个 Root Goal、该工作区根 canonical 范围、**必填**愿景 `plan_refs`/`primary_plan` 与共享资料固定引用；它不替代目标五件套或保存目标状态。
 
@@ -41,4 +43,4 @@ version: 0.6.0
 
 ## 版本与同步
 
-模板变更应同时更新本文件的 `updated` / `version`，并用仓库测试核对 `docs/templates/goal-folder/` 的四个 Markdown 文件以及 `workspace-context.md` 与 Skills 镜像一致。
+模板变更应同时更新本文件的 `updated` / `version`，并用仓库测试核对 `docs/templates/goal-folder/`、`ledger-entry/` 以及 `workspace-context.md` 与 Skills 镜像一致。

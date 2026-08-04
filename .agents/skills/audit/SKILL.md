@@ -29,7 +29,7 @@ metadata:
 
 ## 行为要点
 
-- 意见写入被审目标 `03-audit.md`（A-00N 共用序列）；长文可 `attachments/` + 索引节。  
+- 意见写入被审目标 `03-audit/A-NNN-<slug>.md`，并更新 `03-audit.md` 索引（A-00N 共用序列）；长证据可 `attachments/` + A 条目链接。
 - 独立 Vision Review 必须改用 `$vision-audit` / `/vision-audit`；本入口不写 `docs/vision/reviews.md`。
 - 若 scope 涉及规划、实施、验收或关门，核对相关 I-00N 的最晚阶段、证据与残余风险接受；有 `docs/workspace-<NNN>-<slug>/workspace.md` 时同时核对 Root Goal/canonical 范围与共享资料固定引用。
 - 不读取或比较其他工作区上下文；无 context 时只审当前仓库隐式单工作区。

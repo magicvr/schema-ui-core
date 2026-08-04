@@ -4,54 +4,59 @@ status: active
 created: 2026-07-18
 updated: 2026-07-31
 parent: null
-version: 0.7.0
+version: 0.6.3
 ---
 
 # 目录布局
 
-> **应用 monorepo**（`apps/web`、`apps/api`、包管理、运行契约）以 [monorepo-layout.md](monorepo-layout.md) 为准。  
-> 本文件描述 **治理 + 分发** 目录与工作区约束；二者并存于本仓库根。
-
 ```text
-schema-ui-core/                 # 本仓（Admin 基架 + 治理 dogfood）
-├── AGENTS.md                   # AI 助手强制规则
-├── README.md                   # 项目入口（含运行契约链）
-├── apps/                       # 应用代码（见 monorepo-layout.md）
-│   ├── api/                    # Go API · GOAL-003
-│   └── web/                    # React Web · GOAL-004
+goal-governance/
+├── AGENTS.md                 # AI 助手强制规则
+├── README.md                 # 项目入口说明
 ├── docs/
-│   ├── README.md               # 文档体系规范
-│   ├── vision/                 # 仓库级愿景体系（非 goal-tree）
+│   ├── README.md             # 文档体系规范
+│   ├── vision/               # 仓库级愿景体系（非 goal-tree）
 │   │   ├── README.md
-│   │   ├── charter.md          # 现行愿景（不可 done）
-│   │   ├── roadmap.md          # VP 索引
-│   │   ├── plans/VP-*.md       # 愿景规划（可关门）
+│   │   ├── charter.md        # 现行愿景（不可 done）
+│   │   ├── roadmap.md        # VP 索引
+│   │   ├── plans/VP-*.md     # 愿景规划（可关门）
 │   │   ├── revisions.md
 │   │   ├── workspaces.md
 │   │   ├── alignment.md
 │   │   └── consumer-checklist.md
-│   ├── workspace-001-…/        # 显式工作区根（本仓：mvp-admin-foundation）
-│   │   ├── workspace.md        # Root/范围/资料/规划对齐
-│   │   ├── goal-tree.md        # 本工作区目标树与状态总览
-│   │   └── GOAL-00N-…/         # 目标（平铺，无嵌套）
-│   ├── shared-materials/       # 工作区外的资料候选库存（可选）
+│   ├── workspace-001-example/ # 显式工作区根
+│   │   ├── workspace.md       # Root/范围/资料/规划对齐
+│   │   ├── goal-tree.md       # 本工作区目标树与状态总览
+│   │   ├── GOAL-001-.../      # 目标（平铺，无嵌套）
+│   │   └── GOAL-00N-.../
+│   ├── shared-materials/      # 工作区外的资料候选库存
 │   ├── templates/
-│   │   ├── README.md
-│   │   ├── goal-folder/
-│   │   ├── vision/
+│   │   ├── README.md            # 核心模板层说明
+│   │   ├── goal-folder/         # canonical 五件套模板
+│   │   ├── vision/              # Charter / VP 冷启动模板
+│   │   └── workspace-context.md # workspace-<NNN>-<slug>/workspace.md 模板
+│   ├── contracts/               # canonical 机读协议/模板版本与兼容声明
+│   │   ├── skills-consumer-contract.schema.json
+│   │   └── skills-consumer-contract.json
+│   ├── architecture/
+│   │   ├── overview.md
+│   │   ├── principles.md     # 治理原则（元规则）
+│   │   ├── workspace-protocol.md
+│   │   ├── tech-stack.md
+│   │   └── directory-layout.md
+│   └── _index/               # 预留
+├── skills/                    # AI/Agent 消费适配器与分发包
+│   ├── prompts/
+│   ├── templates/             # docs/templates 的同步镜像
 │   │   └── workspace-context.md
-│   ├── contracts/              # canonical 机读契约
-│   └── architecture/
-│       ├── overview.md
-│       ├── principles.md       # 治理原则（元规则）
-│       ├── workspace-protocol.md
-│       ├── monorepo-layout.md  # 应用 monorepo 约定（R1）
-│       └── directory-layout.md # 本文件
-└── skills/                     # AI/Agent 消费适配器与分发包
-    ├── prompts/
-    ├── core/docs/              # docs 白名单 stage 镜像
-    ├── contracts/              # docs/contracts 镜像
-    └── install.*
+│   ├── contracts/             # docs/contracts 的同步镜像
+│   └── install.*
+└── web/
+    ├── main.py
+    ├── requirements.txt
+    ├── README.md
+    ├── static/
+    └── templates/
 ```
 
 ## 约束

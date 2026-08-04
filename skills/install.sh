@@ -530,6 +530,10 @@ PROMPTS_SRC="$PACKAGE_ROOT/prompts"
 TEMPLATES_SRC="$PACKAGE_ROOT/core/docs/templates"
 CONTRACTS_SRC="$PACKAGE_ROOT/contracts"
 CORE_DOCS_SRC="$PACKAGE_ROOT/core/docs"
+CONSUMER_CONTRACT_NAMES=(
+  skills-consumer-contract.json
+  skills-consumer-contract.schema.json
+)
 
 [[ -d "$PROMPTS_SRC" ]] || die "Missing package directory: $PROMPTS_SRC"
 [[ -d "$TEMPLATES_SRC" ]] || die "Missing package directory: $TEMPLATES_SRC (GOAL-022 core templates)"
@@ -622,7 +626,11 @@ if [[ "$INSTALL_EXTRAS" -eq 1 ]]; then
   mkdir -p "$SKILLS_DIR"
   copy_dir_merge "$PROMPTS_SRC" "$SKILLS_DIR/prompts" "prompts"
   copy_dir_merge "$TEMPLATES_SRC" "$SKILLS_DIR/templates" "templates"
-  copy_dir_merge "$CONTRACTS_SRC" "$SKILLS_DIR/contracts" "contracts"
+  mkdir -p "$SKILLS_DIR/contracts"
+  for contract_name in "${CONSUMER_CONTRACT_NAMES[@]}"; do
+    copy_file "$CONTRACTS_SRC/$contract_name" "$SKILLS_DIR/contracts/$contract_name"
+  done
+  echo "Consumer contract profile: contract + schema only; producer runtime evidence remains release-owned."
 fi
 
 # GOAL-019 D-003/D-004: core methodology is co-required with any host or workspace init

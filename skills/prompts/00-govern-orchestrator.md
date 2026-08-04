@@ -2,9 +2,9 @@
 title: 提示词 · 目标治理编排器（主入口）
 status: active
 created: 2026-07-18
-updated: 2026-07-28
+updated: 2026-08-04
 parent: null
-version: 0.10.0
+version: 0.11.0
 role: primary
 ---
 
@@ -118,15 +118,15 @@ Skills 包的**默认用户路径**。协助用户完成带质量意识的闭环
 3. 定位当前工作区 `workspace.md`，校验工作区 ID、Root Goal、canonical 范围、共享资料引用与**必填**愿景 plan 字段；多个工作区而用户未指定焦点时 fail closed。
 4. 检查当前工作区根与其中的 `goal-tree.md`；仅在没有显式工作区根时检查 legacy `docs/goals/`。
 5. 若有 goal-tree：读取 id、title、parent、status、progress，并核对显式工作区的 Root Goal 绑定与 Root `plan_refs`/`primary_plan`；若 progress 无显式检查点来源或与重算结果不一致，列为维护缺口，不把它用于阶段判断。
-6. 按需打开未关门目标的 `00-meta`、`01-decision`（含信息需求）、近期 `02-execution` / **`03-audit`（全部 A-00N）**。
-7. 若焦点是消费适配器或发布一致性，检查包内 `contracts/skills-consumer-contract.json` 是否存在。
+6. 按需打开未关门目标的 `00-meta`，以及三个稳定索引 + 平铺 ledger：`01-decision.md`/`01-decision/D-*`、`02-execution.md`/`02-execution/E-*`、`03-audit.md`/`03-audit/A-*`。legacy inline 与目录条目合并扫描。
+7. 若焦点是普通消费仓，只检查 consumer contract + schema，不要求 compatibility matrix / runtime evidence / release evidence；只有明确的 adapter 或发行生产 scope 才进入 producer profile 门禁。
 8. 记录仓库**观察信号**（结论以前表默认策略 + 用户确认为准）。
 9. 吸收用户本轮意图（总目的、焦点 ID、想关门、要响应某次审计等）。
 10. Charter `strategic` 后未 re-align：对受影响范围 **宽阻断**（禁新建子目标/放行/关门/非引导开区）。
 
 ## 1b. 意见台账（焦点目标）
 
-对当前焦点目标（或多个候选），从 `03-audit.md` 建立**相关意见**摘要：
+对当前焦点目标（或多个候选），从 `03-audit.md` 索引、`03-audit/A-NNN-*.md` 与 legacy inline 建立**相关意见**摘要：
 
 | 概念 | 最小判定 |
 |------|----------|
@@ -136,7 +136,7 @@ Skills 包的**默认用户路径**。协助用户完成带质量意识的闭环
 | **冲突** | 同范围下 verdict 相反，或对同一必改项一要一否 |
 
 汇报中简短列出：相关 A-00N 列表、`source`、`verdict`、开放 required 条数。  
-**仅聊天未写入 `03-audit` 的意见不作为放行依据**（P-003 落盘）。
+**仅聊天、仅附件、或未进 A 条目/索引的意见不作为放行依据**（P-003 落盘）。
 
 ## 1c. 信息就绪台账（焦点目标）
 
@@ -168,13 +168,21 @@ S4 可与 S2 叠加：有未关闭 required finding 或到期 required 信息项
 
 在提议「放行下一阶段 / 关门 / 仅用独立意见推进」之前检查：
 
-### 3.1 有独立审计、尚无自审计
+### 3.1 审计模式与 independent provider
 
-若相关意见中存在 `source: independent`，且**没有**覆盖同 scope 的 `source: self` 审计（响应记录 A-00N 不算自审）：
+实施前按 scope 风险确定并记录：
 
-- **必须询问用户**：是否还需要做一次自审计？
-- **不**自动跳过，也**不**未问即强制自审。
-- 用户选「需要」→ 先走 **04**（self）再统一响应；选「不需要」→ 基于现有意见继续。
+| 模式 | 触发 | 最低要求 |
+|------|------|----------|
+| `none` | 低风险、可逆、无门禁语义变化的局部维护 | 无阶段意见；后继/关门审计兜底 |
+| `self` | 常规、边界清楚、可逆的非平凡实施 | 04 self |
+| `independent` | security/data/migration/production/release/compatibility 高影响门禁 | 至少一个会话 provider 的 05 independent；self 非固定前置 |
+| `cross` | 元规则/协议、不可逆/跨边界、证据矛盾，或用户要求多工具 | 04 self + 每个指定 provider 的 05 independent |
+
+- 用户可在本轮或会话开始时指定一个或多个 independent provider；保留顺序/并行结果与各自 auditor。
+- 只有 independent/cross 已确定而无 provider，或风险因子使模式有实质歧义时才询问；开始实施前完成该判断。
+- provider 不可用、失败、超时或无可核对输出时，门禁保持未满足；不得静默降级或由编排器冒充 independent。
+- 已有 independent 而无 self 不再机械询问：`independent` 可直接响应，`cross` 必须补 self。
 
 ### 3.2 多条意见冲突
 
@@ -214,6 +222,14 @@ S4 可与 S2 叠加：有未关闭 required finding 或到期 required 信息项
 2. 有到期 required 信息项时，停止自动放行，建议先用 `02` 设定澄清/实验决策、用 `03` 记录收集事实，或按 P-001 创建独立信息目标；
 3. 证据冲突、是否以有界实验收集信息、或是否接受残余风险时，说明影响并按 P-004.4 等待用户裁决；有界实验只允许其明确收集范围，I-00N 保持 `collecting`；
 4. 不因“以后再收集”自动创建两个子目标。先判断该工作是否有独立范围、依赖、证据或并行价值。
+
+### 3.6 Git checkpoint（长流程默认 auto）
+
+1. 任务开始记录 baseline `git status` 与本次 owned paths；用户可显式 `checkpoint_mode: disabled`。
+2. 在信息/方案冻结、独立验证的实现切片、required finding 闭合、关门前最终验证后提交。
+3. 只 `git add -- <owned paths>`，禁止 `git add -A`。owned path 含任务开始前改动或与无关改动不可分离时停止自动提交并报告。
+4. 验证失败、无 diff、非 Git 仓库或 commit 失败时不宣称 checkpoint；不得用 commit hash 替代审计/验收。
+5. 成功后把 hash、scope、验证写入 `02-execution` 的 E 条目；继续长流程，不为每个 checkpoint 反复请求用户确认。
 
 ## 4. 汇报（再动手）
 
@@ -280,7 +296,7 @@ S4 可与 S2 叠加：有未关闭 required finding 或到期 required 信息项
    - `blocked` → 先澄清阻塞
     - 用户要关门 → 先跑意见与信息台账 + 关门条件检查，再 **04** close-out
 4. 说明焦点 ID、动作、文档依据。
-5. 确认后调用对应原语；保证五件套与 goal-tree 一致。
+5. 确认后调用对应原语；保证五件套、三个 ledger 目录与 goal-tree 一致。
 6. 收尾：说明已做改动与建议的下一句输入。
 
 ### S3 · 维护
@@ -334,7 +350,7 @@ S4 可与 S2 叠加：有未关闭 required finding 或到期 required 信息项
 - 缺 active Charter = 不完整安装（仅引导补齐）。有 vision 时 `vision_role` 非 `primary`/`delivery`、缺 plan 对齐或 VP/`vision_ref` 不合法必须 fail closed；不得把 vision 当 progress 权威。
 - 单愿景；禁止跨区 parent；strategic 未 re-align 宽阻断；Vision Review required 未闭合可阻断开区/VP 关门/方向已稳宣称。  
 - Root 编号保持 `GOAL-001`；新编号 = 当前最大 + 1；不复用 cancelled 号作新含义；不把工作区号嵌进 goal id。跨区：文档 Q2 / 对话 Q3 / 机器 Q1。  
-- 新建目标一次建齐五件套；有变更则更新 goal-tree（树 + 表）。  
+- 新建目标一次建齐五件套 + 三个 ledger 目录；有变更则更新 goal-tree（树 + 表）。
 - 只记录真实决策、执行与审计；编造进度视为失败。  
 - 独立审计默认不改 status/progress；响应与状态变更走本编排器 + 用户确认。  
 - 不静默自动裁决 P-004（含 4.1～4.4）；不自动跳过自审；不把沉默当 residual/overruled。  
