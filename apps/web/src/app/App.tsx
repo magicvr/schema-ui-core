@@ -18,6 +18,13 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  applyDocumentBranding,
+  BRANDING_CHANGED_EVENT,
+  DEFAULT_SITE_TITLE,
+  fetchBranding,
+  type Branding,
+} from "@/app/branding";
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -64,6 +71,8 @@ export interface AppProps {
   currentUser?: { id: string; name?: string } | null;
   /** Revokes the session (AuthProvider flips to the login page). */
   onLogout?: () => void;
+  /** Optional branding override (tests); defaults to live GET /api/branding. */
+  branding?: Branding;
 }
 
 function currentLocationPath() {
@@ -365,6 +374,7 @@ export function App({
   resourceFetcher,
   currentUser,
   onLogout,
+  branding: brandingProp,
 }: AppProps) {
   const [path, setPath] = useState(() => {
     const requested = currentLocationPath();
@@ -374,6 +384,32 @@ export function App({
     }
     return initial?.path ?? requested;
   });
+  const [branding, setBranding] = useState<Branding>(
+    () => brandingProp ?? { siteTitle: DEFAULT_SITE_TITLE, logoUrl: "" },
+  );
+
+  useEffect(() => {
+    if (brandingProp !== undefined) {
+      setBranding(brandingProp);
+      applyDocumentBranding(brandingProp);
+      return;
+    }
+    let cancelled = false;
+    const load = () => {
+      void fetchBranding().then((next) => {
+        if (!cancelled) {
+          setBranding(next);
+          applyDocumentBranding(next);
+        }
+      });
+    };
+    load();
+    window.addEventListener(BRANDING_CHANGED_EVENT, load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(BRANDING_CHANGED_EVENT, load);
+    };
+  }, [brandingProp]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -400,7 +436,8 @@ export function App({
     () => projectNavigation(manifest, path, navigationContext),
     [manifest, navigationContext, path],
   );
-  const appName = manifest.app.name ?? manifest.app.nameKey ?? manifest.app.appId;
+  const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
+  const showLogo = branding.logoUrl !== "";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -427,9 +464,13 @@ export function App({
               }
             }}
           >
-            <div className="flex size-9 shrink-0 items-center justify-center bg-primary text-primary-foreground">
-              <PanelLeft aria-hidden="true" className="size-4" />
-            </div>
+            {showLogo ? (
+              <img
+                src={branding.logoUrl}
+                alt=""
+                className="size-9 shrink-0 object-contain"
+              />
+            ) : null}
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{appName}</p>
               <p className="truncate text-xs text-muted-foreground">Admin console</p>

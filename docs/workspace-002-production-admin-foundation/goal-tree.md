@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.61.0
+version: 0.64.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -16,7 +16,7 @@ workspace_id: workspace-002-production-admin-foundation
 - primary plan：`VP-002-production-admin-foundation`
 
 ```text
-GOAL-001-production-admin-foundation [done] 生产级可用 Admin 基架 (5/5)
+GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-002-r1-schema-load-validate [done] R1 · Schema 加载、校验与统一错误面 (4/4)
 ├── GOAL-003-r1-default-render-path [done] R1 · 默认 Renderer 主路径与示例降级 (4/4)
 ├── GOAL-004-r1-representative-node-pages [done] R1 · 代表性 Node 页面与回归证据 (5/5)
@@ -25,15 +25,17 @@ GOAL-001-production-admin-foundation [done] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-007-r4-schema-crud [done] R4 · Schema 驱动 CRUD 与 SQLite 持久化闭环 (6/6)
 ├── GOAL-008-r5-engineering-fork [done] R5 · 工程化、fork 体验与集成关门 (5/5)
 ├── GOAL-009-a002-auth-form-fixes [done] A-002 · 缺陷修复（表单提交门禁与认证失效）(4/4)
-└── GOAL-010-a002-schema-adapter [done] A-002 · Schema 驱动通用数据适配层 (5/5)
-    └── GOAL-011-s4-semantic-admin-resources [done] S4 · 语义化 Admin 资源替换与双实体验证 (5/5)
+├── GOAL-010-a002-schema-adapter [done] A-002 · Schema 驱动通用数据适配层 (5/5)
+│   └── GOAL-011-s4-semantic-admin-resources [done] S4 · 语义化 Admin 资源替换与双实体验证 (5/5)
+├── GOAL-012-a005-shell-nav-fixtures [done] A-005 · Shell 导航与 Schema fixture 洁净度 (4/4)
+└── GOAL-013-settings-activity-branding [done] Settings 品牌与 Activity 操作日志只读面 (4/4)
 ```
 
 ## 状态表
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `done` | `5/5` | 2026-08-04 |
+| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `active` | `5/5` | 2026-08-04 |
 | `GOAL-002-r1-schema-load-validate` | R1 · Schema 加载、校验与统一错误面 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-01 |
 | `GOAL-003-r1-default-render-path` | R1 · 默认 Renderer 主路径与示例降级 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-02 |
 | `GOAL-004-r1-representative-node-pages` | R1 · 代表性 Node 页面与回归证据 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-02 |
@@ -44,6 +46,8 @@ GOAL-001-production-admin-foundation [done] 生产级可用 Admin 基架 (5/5)
 | `GOAL-009-a002-auth-form-fixes` | A-002 · 缺陷修复（表单提交门禁与认证失效） | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-03 |
 | `GOAL-010-a002-schema-adapter` | A-002 · Schema 驱动通用数据适配层 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-04 |
 | `GOAL-011-s4-semantic-admin-resources` | S4 · 语义化 Admin 资源替换与双实体验证 | `GOAL-010-a002-schema-adapter` | `done` | `5/5` | 2026-08-04 |
+| `GOAL-012-a005-shell-nav-fixtures` | A-005 · Shell 导航与 Schema fixture 洁净度 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-04 |
+| `GOAL-013-settings-activity-branding` | Settings 品牌与 Activity 操作日志只读面 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-04 |
 
 > **GOAL-011 S1 已冻结、D-002 已落盘（2026-08-03）**：用户裁决三项关键取舍（均采纳推荐）——①通用工厂 + 最小契约扩展（`Resource.JSONFields` + `DomainError` 409 映射，users/roles 均走工厂五路由）；②操作日志纳入（migration `0005` 扩展 operation_log event CHECK，新增 users/roles 事件，保留 records/auth 历史值）；③records 硬退场 DROP TABLE（migration `0006` 删表 + 清理权限/菜单行，既有库自动 `pre-v0006` 快照兜底）。落盘 [I-011-001 领域契约](GOAL-011-s4-semantic-admin-resources/attachments/I-011-001-users-roles-contract.md) v0.1.0 与 [I-011-002 退场契约](GOAL-011-s4-semantic-admin-resources/attachments/I-011-002-records-retirement.md) v0.1.0；`I-011-001`/`I-011-002` → **verified**，`I-011-003` 保持 open（最晚 S4）。**S1 勾选，GOAL-011 `0/5 → 1/5`**；未修改产品代码；S2（users/roles 后端闭环）与 S3（records 退场）实施门禁解除；GOAL-010 保持 `active / 3/5`；Root A-002 F-002-001 仍 `open`，Root/VP-002 关门继续阻断。
 > **GOAL-011 S1 交叉审计已响应（2026-08-03 · D-003）**：A-001（self · pass）后调用 **grok build** 独立审计给出 A-002（independent · conditional）——F-001（required/med · 工厂缺 actor 通道，SELF_OPERATION 不可诚实实现）、F-002（required/med · 快照仅 first-pending，0005+0006 同批时 `pre-v0006` 验收字面失败）+ F-003～F-006 recommended。用户按 P-004 裁决「全部 fixed」：**I-011-001 → v0.2.0**（§7 actor 通道 + DomainError 优先级、§2.3 禁 ensureRole 隐式建角色、§3.0 roles 响应形状）、**I-011-002 → v0.2.0**（§2.3 每待应用数据变更迁移前快照、§5 验收对齐）、GOAL-010 **D-005** + I-010-001 **v0.2.2**（§5 账号域 409 注记）。S1 无开放 required，A-001/A-002 趋同；`I-011-001`/`I-011-002` 维持 verified；GOAL-011 保持 `active / 1/5`，S2 按 v0.2.0 契约实施。
@@ -134,3 +138,9 @@ GOAL-001-production-admin-foundation [done] 生产级可用 Admin 基架 (5/5)
 > **Root A-003 已响应、进入 close-out 裁决（2026-08-04）**：A-003（independent · finding-closure · pass）独立复核 F-002-001 `fixed` 关闭证据充分、可重复核对，无新增 required；用户裁决**采纳 `pass`、维持 F-002-001 `fixed`**。响应落盘 Root 03-audit（A-003 响应节）：**R-001 → handled**（`stage3-fixtures.test.ts` 的 `/api/records` 为协议一致性测试历史数据，非产品运行面）；**R-002 → handled**（HEAD `a14ba36` revision 身份固定，工作树仅 `03-audit.md` 未提交）。A-002 三条 required 全部合法闭合确认；Root 关门门禁全部解除（无开放 required、`I-001`～`I-006` verified/closed、五个纲领检查点 `5/5`、Charter/VP-002/workspace 对齐链一致、Vision Review 0 open required）——**Root close-out 关门审计与 VP-002 关门为独立用户裁决**；按 P-004 §3.1 待用户决定是否补 Root self 关门审计。Root 保持 `active / 5/5`。
 
 > **Root 已关门（2026-08-04 · A-004）**：用户指令补 Root self 关门审计并通过后置 `done`。**A-004（self · close-out · pass）**——R1～R5 与 GOAL-002～011 证据链、A-002 F-002-001/002/003 全部 `fixed`、I-001～I-006 verified/closed、无开放 required；本轮回归 go test/vet 全绿、vitest **491/491**、`tsc -b` 干净。**Root `active → done`，progress 保持 `5/5`**。VP-002 关门为独立 `/vision` 流程，本树不自动放行。
+
+> **A-005 独立审计 · Root 回退 · GOAL-012 立项（2026-08-04）**：A-005（independent · fail · apps/api+web · VP-002 产品意图复审，无 skill）**F-001 required**——default Shell 导航 `activity`/`settings` 无 embed fixture，点击必 `SCHEMA_NOT_FOUND`。用户指令：阻断问题 → 新设子目标 + 回退 Root 关门。**Root `done → active`，progress 保持 `5/5`**；**`GOAL-012-a005-shell-nav-fixtures` 立项 active `0/4`**（S1 消死链 · S2 一致性测试 · S3 回归 · S4 关门）；F-001 保持 open 直至 GOAL-012 关闭证据。R-001～R-003 recommended 非阻断（fork 文档路径 / AuthUser 类型 / 改密 access TTL）。Root/VP-002 重新关门须先闭合 F-001。
+
+> **GOAL-012 已关门、Root A-005 F-001 已闭合（2026-08-04）**：D-002 移除占位（manifest 仅 7 pageId 对齐 embed）；S2 `schema_test` manifest↔fixture 门禁；S3 api/web 全绿；S5 QUICKSTART 路径修正；A-001 self close-out pass。**GOAL-012 `done / 4/4`**；Root F-001 → **fixed**；Root 保持 `active / 5/5`（重新关门为独立用户裁决）。
+
+> **GOAL-013 已交付并关门（2026-08-04）**：用户否决「删 Settings/Activity 需求」→ 实装站点品牌（`site_settings` + `/api/branding` + Settings Schema）与操作日志只读面（`/api/operations` + Activity Schema）；导航恢复 Settings/Activity（feature 门控）。**GOAL-013 `done / 4/4`**；Root 仍 `active / 5/5`。

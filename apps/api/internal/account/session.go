@@ -34,12 +34,16 @@ func StaticDevSession() Session {
 			Permissions: []string{
 				"users.read", "users.write",
 				"roles.read", "roles.write", "roles.assign",
+				"settings.read", "settings.write",
+				"operations.read",
 			},
 		},
 		Features: map[string]bool{
-			"beta":       true,
-			"menu_users": true, // GOAL-011 users page grant parity
-			"menu_roles": true, // GOAL-011 roles page grant parity
+			"beta":          true,
+			"menu_users":    true, // GOAL-011 users page grant parity
+			"menu_roles":    true, // GOAL-011 roles page grant parity
+			"menu_settings": true, // GOAL-013 site branding
+			"menu_activity": true, // GOAL-013 operation log
 		},
 	}
 }

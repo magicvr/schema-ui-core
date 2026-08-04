@@ -31,6 +31,8 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	accountsHandler(mux, a)
 	registerResource(mux, a, usersResource(st))
 	registerResource(mux, a, rolesResource(st))
+	registerOperations(mux, a, st)
+	settingsHandler(mux, a, st)
 	schemasHandler(mux)
 }
 

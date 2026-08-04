@@ -100,6 +100,13 @@ var compiledMigrations = []migration{
 		stmts:       recordsRetireDDL,
 		up:          migrate0006,
 	},
+	{
+		version:     7,
+		name:        "site_settings",
+		transformID: "0007:site-settings:v1",
+		stmts:       siteSettingsDDL,
+		up:          migrate0007,
+	},
 }
 
 // r2BaselineDDL is the canonical R2 schema (users + refresh_tokens). It is
@@ -293,6 +300,38 @@ func migrate0006(tx *sql.Tx) error {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("records retire: %w", err)
 		}
+	}
+	return nil
+}
+
+// DefaultSiteTitle is the frozen default branding title (matches the checked-in
+// app-manifest app.name). site_title is required non-empty on write.
+const DefaultSiteTitle = "Schema UI Core"
+
+// siteSettingsDDL is the singleton branding table (GOAL-013): site title +
+// optional logo URL text (upload plugin not in scope).
+var siteSettingsDDL = []string{
+	`CREATE TABLE site_settings (
+  id         TEXT PRIMARY KEY CHECK (id = 'default'),
+  site_title TEXT NOT NULL,
+  logo_url   TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL
+)`,
+}
+
+// migrate0007 creates site_settings and seeds the default singleton row.
+func migrate0007(tx *sql.Tx) error {
+	for _, stmt := range siteSettingsDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create site_settings: %w", err)
+		}
+	}
+	now := time.Now().UTC().Unix()
+	if _, err := tx.Exec(
+		`INSERT INTO site_settings (id, site_title, logo_url, updated_at) VALUES ('default', ?, '', ?)`,
+		DefaultSiteTitle, now,
+	); err != nil {
+		return fmt.Errorf("seed site_settings: %w", err)
 	}
 	return nil
 }

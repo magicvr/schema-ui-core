@@ -1,0 +1,144 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestBrandingPublicAndSettingsPatch(t *testing.T) {
+	env := newAuthTestEnv(t)
+
+	// Public branding without auth.
+	req := httptest.NewRequest(http.MethodGet, "/api/branding", nil)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("branding status = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	var branding map[string]any
+	if err := json.NewDecoder(rr.Body).Decode(&branding); err != nil {
+		t.Fatalf("branding json: %v", err)
+	}
+	if branding["siteTitle"] != "Schema UI Core" {
+		t.Fatalf("default siteTitle = %v", branding["siteTitle"])
+	}
+	if branding["logoUrl"] != "" {
+		t.Fatalf("default logoUrl = %v, want empty", branding["logoUrl"])
+	}
+
+	token := env.login(t, testSeedUsername, testSeedPassword)
+
+	// List requires settings.read
+	req = bearer(t, token, http.MethodGet, "/api/settings", "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("settings list status = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// Empty title rejected
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"siteTitle":"   "}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("empty title status = %d, want 400: %s", rr.Code, rr.Body.String())
+	}
+
+	// Valid patch
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default",
+		`{"siteTitle":"Acme Admin","logoUrl":"https://example.com/logo.png"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var row map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&row)
+	if row["siteTitle"] != "Acme Admin" || row["logoUrl"] != "https://example.com/logo.png" {
+		t.Fatalf("patched row = %v", row)
+	}
+
+	// Branding reflects update
+	req = httptest.NewRequest(http.MethodGet, "/api/branding", nil)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	_ = json.NewDecoder(rr.Body).Decode(&branding)
+	if branding["siteTitle"] != "Acme Admin" {
+		t.Fatalf("branding after patch = %v", branding)
+	}
+
+	// Clear logo
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"logoUrl":""}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("clear logo status = %d: %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestOperationsListAndDetailReadOnly(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := env.login(t, testSeedUsername, testSeedPassword)
+
+	// Login already wrote auth.login operation
+	req := bearer(t, token, http.MethodGet, "/api/operations?pageSize=20", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("operations list status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var list map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&list)
+	items, _ := list["items"].([]any)
+	if len(items) == 0 {
+		t.Fatal("expected at least one operation from login")
+	}
+	first, _ := items[0].(map[string]any)
+	id, _ := first["id"].(string)
+	if id == "" {
+		t.Fatalf("first op missing id: %v", first)
+	}
+
+	req = bearer(t, token, http.MethodGet, "/api/operations/"+id, "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("detail status = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// Write routes must not be mounted
+	req = bearer(t, token, http.MethodPost, "/api/operations", `{}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code == http.StatusOK || rr.Code == http.StatusCreated {
+		t.Fatalf("POST operations should not succeed, status = %d", rr.Code)
+	}
+
+	req = bearer(t, token, http.MethodDelete, "/api/operations/"+id, "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code == http.StatusNoContent || rr.Code == http.StatusOK {
+		t.Fatalf("DELETE operations should not succeed, status = %d", rr.Code)
+	}
+}
+
+func TestSettingsWriteRequiresPermission(t *testing.T) {
+	env := newAuthTestEnv(t)
+	// editor seed has no settings.write
+	env.addUser(t, "ed", "editor-pass-1", []string{"editor"})
+	// need password set - check addUser
+	tok := loginAs(t, env, "ed", "editor-pass-1")
+	req := bearer(t, tok, http.MethodPatch, "/api/settings/default", `{"siteTitle":"Nope"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("editor patch status = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+}
+
+func loginAs(t *testing.T, env *authTestEnv, username, password string) string {
+	t.Helper()
+	return env.login(t, username, password)
+}

@@ -47,6 +47,9 @@ func (s *Store) seedRBAC() error {
 		{"perm-roles-read", "roles.read", "roles GET gate"},
 		{"perm-roles-write", "roles.write", "roles write gate"},
 		{"perm-roles-assign", "roles.assign", "user role assignment gate"},
+		{"perm-settings-read", "settings.read", "site settings GET gate"},
+		{"perm-settings-write", "settings.write", "site settings PATCH gate"},
+		{"perm-operations-read", "operations.read", "operation log / activity GET gate"},
 	} {
 		if _, err := tx.Exec(
 			`INSERT INTO permissions (id, key, description, created_at, updated_at)
@@ -62,6 +65,8 @@ func (s *Store) seedRBAC() error {
 	}{
 		{"menu-users", "users", "menu_users"},
 		{"menu-roles", "roles", "menu_roles"},
+		{"menu-settings", "settings", "menu_settings"},
+		{"menu-activity", "activity", "menu_activity"},
 	} {
 		if _, err := tx.Exec(
 			`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at)
@@ -74,13 +79,19 @@ func (s *Store) seedRBAC() error {
 	}
 
 	// Grants: admin read+write (+menus), editor read, viewer read (read-only).
-	// GOAL-011: admin holds users/roles read+write + both menus; editor/viewer read.
-	for _, p := range []string{"perm-users-read", "perm-users-write", "perm-roles-read", "perm-roles-write", "perm-roles-assign"} {
+	// GOAL-011/013: admin holds users/roles/settings/operations + menus;
+	// editor gets operations + activity menu; viewer stays read-only users/roles.
+	for _, p := range []string{
+		"perm-users-read", "perm-users-write",
+		"perm-roles-read", "perm-roles-write", "perm-roles-assign",
+		"perm-settings-read", "perm-settings-write",
+		"perm-operations-read",
+	} {
 		if err := linkPermission(tx, "admin", p); err != nil {
 			return err
 		}
 	}
-	for _, m := range []string{"menu-users", "menu-roles"} {
+	for _, m := range []string{"menu-users", "menu-roles", "menu-settings", "menu-activity"} {
 		if err := linkMenu(tx, "admin", m); err != nil {
 			return err
 		}
@@ -92,6 +103,12 @@ func (s *Store) seedRBAC() error {
 		if err := linkPermission(tx, key, "perm-roles-read"); err != nil {
 			return err
 		}
+	}
+	if err := linkPermission(tx, "editor", "perm-operations-read"); err != nil {
+		return err
+	}
+	if err := linkMenu(tx, "editor", "menu-activity"); err != nil {
+		return err
 	}
 
 	return tx.Commit()

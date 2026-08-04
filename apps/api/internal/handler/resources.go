@@ -99,12 +99,19 @@ const (
 	writeDelete
 )
 
+// errReadOnlyResource is returned by entity write methods on read-only resources
+// (e.g. operations activity log). The factory never mounts write routes when
+// Resource.ReadOnly is true, so this is a defensive fallback.
+var errReadOnlyResource = errors.New("resource is read-only")
+
 // Resource describes a schema-driven CRUD resource registered with the generic
 // handler factory (I-010-001 §4). users and roles are registered instances.
 type Resource struct {
 	ID           string         // resource id, e.g. "users"
 	Path         string         // mount path, e.g. "/api/users"
 	Listable     bool           // expose GET {path} (list)
+	// ReadOnly skips POST/PATCH/DELETE mounts (activity/operations).
+	ReadOnly     bool
 	SortFields   []string       // whitelist; empty = not sortable
 	QSearch      bool           // list supports the q search param
 	Entity       ResourceEntity // store adapter
@@ -167,10 +174,12 @@ func registerResource(mux *http.ServeMux, a *auth.Authenticator, res Resource) {
 	if res.Listable {
 		mux.Handle("GET "+res.Path, a.Middleware(h.list()))
 	}
-	mux.Handle("POST "+res.Path, a.Middleware(h.create()))
 	mux.Handle("GET "+res.Path+"/{id}", a.Middleware(h.detail()))
-	mux.Handle("PATCH "+res.Path+"/{id}", a.Middleware(h.update()))
-	mux.Handle("DELETE "+res.Path+"/{id}", a.Middleware(h.delete()))
+	if !res.ReadOnly {
+		mux.Handle("POST "+res.Path, a.Middleware(h.create()))
+		mux.Handle("PATCH "+res.Path+"/{id}", a.Middleware(h.update()))
+		mux.Handle("DELETE "+res.Path+"/{id}", a.Middleware(h.delete()))
+	}
 }
 
 // requirePermission enforces fail-closed authorization (GOAL-006 S4): the
@@ -249,7 +258,12 @@ func (h *resourceHandler) list() http.Handler {
 		}
 		order := query.Get("order")
 		if order == "" {
-			order = "asc"
+			// Activity/operation logs (ReadOnly) default to newest-first.
+			if h.res.ReadOnly {
+				order = "desc"
+			} else {
+				order = "asc"
+			}
 		}
 		if order != "asc" && order != "desc" {
 			writeError(w, http.StatusBadRequest, "INVALID_SORT_ORDER", "order must be asc or desc")

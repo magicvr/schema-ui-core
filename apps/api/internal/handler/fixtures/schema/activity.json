@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "pageId": "activity",
+    "title": "Activity",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "table.sort",
+      "form.controls.extended"
+    ]
+  },
+  "actions": {
+    "openDetail": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "operation-detail-form",
+        "permissions": { "edit": "false" },
+        "props": {
+          "fields": [
+            { "id": "id", "label": "ID", "type": "input" },
+            { "id": "event", "label": "Event", "type": "input" },
+            { "id": "actorName", "label": "Actor", "type": "input" },
+            { "id": "actorId", "label": "Actor ID", "type": "input" },
+            { "id": "recordId", "label": "Record ID", "type": "input" },
+            { "id": "detail", "label": "Detail", "type": "textarea" },
+            { "id": "createdAt", "label": "Created", "type": "input" }
+          ],
+          "submitLabel": "Close"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "activity",
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Read-only operation log (auth and resource writes). Select a row for detail; no create/edit/delete."
+        }
+      },
+      {
+        "type": "form",
+        "id": "ops-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "operations-table",
+          "fields": [{ "id": "q", "label": "Search", "type": "input" }],
+          "submitLabel": "Search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "operations-table",
+        "permissions": {
+          "edit": "$context.user.permissions contains \"operations.read\""
+        },
+        "props": {
+          "columns": [
+            { "field": "createdAt", "label": "When", "sortable": true },
+            { "field": "event", "label": "Event", "sortable": true },
+            { "field": "actorName", "label": "Actor", "sortable": true },
+            { "field": "recordId", "label": "Record" },
+            { "field": "detail", "label": "Detail" }
+          ],
+          "dataSource": "/api/operations",
+          "actions": [
+            {
+              "key": "view",
+              "label": "View",
+              "actionRef": "openDetail",
+              "permissionIntent": "edit"
+            }
+          ]
+        }
+      },
+      { "type": "recordView", "id": "operation-detail", "props": {} }
+    ]
+  }
+}

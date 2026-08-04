@@ -54,7 +54,10 @@
                 { "value": "users.write", "label": "Write users" },
                 { "value": "roles.read", "label": "Read roles" },
                 { "value": "roles.write", "label": "Write roles" },
-                { "value": "roles.assign", "label": "Assign roles" }
+                { "value": "roles.assign", "label": "Assign roles" },
+                { "value": "settings.read", "label": "Read settings" },
+                { "value": "settings.write", "label": "Write settings" },
+                { "value": "operations.read", "label": "Read activity log" }
               ]
             },
             {
@@ -63,7 +66,9 @@
               "type": "checkboxGroup",
               "options": [
                 { "value": "menu-users", "label": "Users" },
-                { "value": "menu-roles", "label": "Roles" }
+                { "value": "menu-roles", "label": "Roles" },
+                { "value": "menu-settings", "label": "Settings" },
+                { "value": "menu-activity", "label": "Activity" }
               ]
             }
           ],
@@ -91,7 +96,10 @@
                 { "value": "users.write", "label": "Write users" },
                 { "value": "roles.read", "label": "Read roles" },
                 { "value": "roles.write", "label": "Write roles" },
-                { "value": "roles.assign", "label": "Assign roles" }
+                { "value": "roles.assign", "label": "Assign roles" },
+                { "value": "settings.read", "label": "Read settings" },
+                { "value": "settings.write", "label": "Write settings" },
+                { "value": "operations.read", "label": "Read activity log" }
               ]
             },
             {
@@ -100,7 +108,9 @@
               "type": "checkboxGroup",
               "options": [
                 { "value": "menu-users", "label": "Users" },
-                { "value": "menu-roles", "label": "Roles" }
+                { "value": "menu-roles", "label": "Roles" },
+                { "value": "menu-settings", "label": "Settings" },
+                { "value": "menu-activity", "label": "Activity" }
               ]
             }
           ],

@@ -15,12 +15,6 @@
       "route": "/overview"
     },
     {
-      "pageId": "activity",
-      "title": "Activity",
-      "schemaUrl": "/api/schema/activity",
-      "route": "/activity"
-    },
-    {
       "pageId": "data-table",
       "title": "Data table",
       "schemaUrl": "/api/schema/data-table",
@@ -45,12 +39,6 @@
       "route": "/form-with-reactions"
     },
     {
-      "pageId": "settings",
-      "title": "Settings",
-      "schemaUrl": "/api/schema/settings",
-      "route": "/settings"
-    },
-    {
       "pageId": "users",
       "title": "Users",
       "schemaUrl": "/api/schema/users",
@@ -61,6 +49,18 @@
       "title": "Roles",
       "schemaUrl": "/api/schema/roles",
       "route": "/roles"
+    },
+    {
+      "pageId": "settings",
+      "title": "Settings",
+      "schemaUrl": "/api/schema/settings",
+      "route": "/settings"
+    },
+    {
+      "pageId": "activity",
+      "title": "Activity",
+      "schemaUrl": "/api/schema/activity",
+      "route": "/activity"
     }
   ],
   "navigation": {
@@ -117,17 +117,14 @@
             "visibleWhen": {
               "when": "$context.features.menu_roles == true"
             }
-          }
-        ]
-      },
-      {
-        "label": "Workspace",
-        "icon": "folder",
-        "items": [
+          },
           {
             "pageRef": "activity",
             "label": "Activity",
-            "icon": "activity"
+            "icon": "activity",
+            "visibleWhen": {
+              "when": "$context.features.menu_activity == true"
+            }
           }
         ]
       }
@@ -136,7 +133,10 @@
       {
         "pageRef": "settings",
         "label": "Settings",
-        "icon": "settings"
+        "icon": "settings",
+        "visibleWhen": {
+          "when": "$context.features.menu_settings == true"
+        }
       }
     ]
   }

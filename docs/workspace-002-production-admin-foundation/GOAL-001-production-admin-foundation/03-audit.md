@@ -1,10 +1,10 @@
 ---
 title: 审计台账 · 生产级可用 Admin 基架
-status: done
+status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 审计台账 · GOAL-001
@@ -16,7 +16,8 @@ version: 0.7.0
 | A-001 | self | 2026-08-02 | R1 · 协议实施边界与 Schema Renderer 产品化 | pass | 已出具；无开放 R1 required finding |
 | A-002 | independent | 2026-08-03 | apps/api + apps/web · VP-002 功能实现与产品意图交叉审计 | fail | 已响应（2026-08-03）；**F-002-001/002/003 全部 `fixed`**（F-002-001 于 2026-08-04 经 GOAL-010 关闭）；F-002-004~006 recommended 非阻断 |
 | A-003 | independent | 2026-08-04 | finding-closure · Root A-002 F-002-001 | pass | 已响应（2026-08-04）：采纳 pass；F-002-001 `fixed` 维持；R-001/R-002 handled |
-| A-004 | self | 2026-08-04 | Root close-out · 全目标关门审计 | pass | 已出具；无开放 required；用户裁决通过后置 `done` |
+| A-004 | self | 2026-08-04 | Root close-out · 全目标关门审计 | pass | 已出具；其后 A-005 新 required 使 Root 回退 `active` |
+| A-005 | independent | 2026-08-04 | apps/api + apps/web · VP-002 产品意图独立复审（无 skill） | fail | 已响应：F-001 → **fixed**（GOAL-012）；R-001～R-003 recommended 非阻断 |
 
 ## A-001 · Root R1 阶段自审（2026-08-02）
 
@@ -343,3 +344,91 @@ Root 当时 `status: active`、派生进度 `5/5`；`goal-tree.md` 与 `00-meta.
 - Root 五个纲领检查点 `5/5` 全勾选；子目标 GOAL-002～011 全部 `done`；A-002 三条 required 合法闭合；信息门禁无到期开放 required；愿景/工作区绑定一致；本轮 API/Web 回归通过。
 - **verdict = pass**。按用户本轮指令（补 Root self 关门审计，通过后置 `done`）：**Root 置 `status: done`**，派生进度保持 `5/5`；同步 `goal-tree.md` / `00-meta` / `02-execution`。
 - **VP-002 关门**不由本 Goal 审计自动放行，建议下一拍 `/vision` 在工作区证据链上评估 VP-002 是否可关闭。
+
+## A-005 · apps/api + apps/web · VP-002 产品意图独立复审（2026-08-04）
+
+- **source**：independent
+- **auditor**：Grok Build（完全独立代码审计；**未**调用 audit/govern skill 出意见）
+- **类型 / scope**：product-fit + execution-facts；核对 `apps/api`、`apps/web` 当前代码相对 [VP-002](../../../vision/plans/VP-002-production-admin-foundation.md) 七条产品级成功标准与「最终判断标准」（改 Schema 接业务、不重写 Renderer 主路径）。不修改业务代码；意见落盘后由 `/govern` 响应。
+- **verdict**：**fail**（1 required open）。核心 Admin 能力（Schema 主路径、真实认证、持久化 RBAC、users/roles Schema CRUD、种子、工程化）经静态抽查 + 全量回归（`go test ./...` 全绿；web vitest **491/491**）**未发现目标级漂移**；但默认 Shell **仍存在产品面阻断死链**，不满足「可直接使用的生产级 Admin 基架」洁净交付。
+
+### 范围与方法
+
+- 工作区：`workspace-002-production-admin-foundation`；Root 当时为 `done / 5/5`；primary plan = VP-002。
+- 对照权威：VP-002 意图与产品级成功标准 1～7；非目标（完整 IAM、全量协议等）不抬高验收。
+- 方法：只读核对 api/web 关键路径（auth、resources 工厂、users/roles、seed、schema embed、App 主路径、users/roles fixtures、manifest）；本机复跑 `go test ./...` 与 `vitest run`；**未**重跑 Compose/Playwright 本轮。
+
+### 对照 VP-002 七条（摘要）
+
+| # | 标准 | 结论 | 证据要点 |
+|---|------|------|----------|
+| 1 | Schema Renderer 主路径 | **满足** | `App.tsx` → `loadPageDocument` → `RenderPage`；通用 `resource.ts` + `schema-table.tsx`；无 `fetchRecords`/`RecordItem` 产品路径 |
+| 2 | 真实认证 | **满足** | JWT access + opaque refresh + 中间件；dev session 仅 opt-in；`ValidateProd` 拦生产 dev-session 与弱 JWT secret |
+| 3 | 持久化身份/最小权限 | **满足** | SQLite users/roles/permissions/menus；种子 admin/editor/viewer；后端 `requirePermission`；角色委派与 grant 子集约束 |
+| 4 | Schema 驱动 CRUD | **满足** | `users.json`/`roles.json` 完整 list/create/edit/delete + 权限/密码表单；e2e 覆盖 users+roles 管理链（既有） |
+| 5 | 可重复种子 | **满足** | `seedRBAC` 幂等；admin 种子 |
+| 6 | Fork 接业务 | **部分** | 登录与 Schema 页路径可用；**default Shell 死链**阻断「完整可用后台」观感；新增页真实落点为 embed fixture（见 R-001） |
+| 7 | 工程化 | **满足** | healthz/readyz、compose、CI smoke、Dockerfile；活动面无 `/api/records` 产品残留（CI 门禁） |
+
+### Findings
+
+#### F-001 · required · medium — default Shell 导航死链（manifest 有 page、fixture 无文档）
+
+- **severity**：`apps/web/public/.well-known/schema-ui/app-manifest.json` 声明并导航到 `activity`、`settings`；`apps/api/internal/handler/schema.go` 仅 `//go:embed fixtures/schema/*.json` 服务现有 7 份文档（overview/data-table/search-form-table/form-controls/form-with-reactions/users/roles）。**无** `activity.json` / `settings.json`。
+- **复现**：登录后点击 sidebar「Activity」或 user 区「Settings」→ `GET /api/schema/activity|settings` → `404 SCHEMA_NOT_FOUND`（fail-closed 正确，但导航不应广告必失败页）。
+- **影响门禁**：VP-002 成功标准 1/6 的「可用 Admin 页面 / fork 后进入系统使用后台」产品洁净度；Root 重新关门与 VP-002 关闭证据诚实性。
+- **建议关闭路径**：从 manifest pages+navigation **移除**占位入口（推荐），或补 **最小** Schema 文档使路由可渲染；并加 **manifest pageId ⊆ embed fixtures** 回归测试。
+
+#### R-001 · recommended · low — fork 文档「新增页面」路径错误
+
+- **描述**：根 `QUICKSTART.md` §4 写「在 `docs/schemas` 添加页面 Schema」；`docs/schemas/` 实为上游 **协议 JSON Schema**（node/page/action…），不是页面文档。权威落点为 `apps/api/internal/handler/fixtures/schema/*.json` + 重建 API（`apps/web/README.md` 已正确）。
+- **影响**：fork 用户按 QUICKSTART 无法完成 VP「改 Schema 新增页」路径。
+- **边界**：本 finding 非 apps 运行时阻断；作 GOAL-012 可选 S5。
+
+#### R-002 · recommended · low — AuthUser 类型省略 permissions
+
+- **描述**：`apps/web/src/account/auth-client.ts` `AuthUser` 仅 `id/name/roles`；运行时 JSON 仍含 `permissions` 且 `$context` 表达式依赖它。类型/文档漂移，运行未破。
+- **建议**：扩展 `AuthUser` 与测试断言，避免后续重构剥掉 permissions。
+
+#### R-003 · recommended · low — 改密只撤销 refresh，不吊销 access JWT
+
+- **描述**：`UpdateUser` 在密码变更时撤销 refresh；access 在 `AUTH_ACCESS_TTL`（默认 15m）内仍有效。属常见短 access 模型；若要更严会话边界，需 access 黑名单或极短 TTL。
+- **级别**：recommended（非 VP 硬缺口）。
+
+### 必改项汇总
+
+| ID | 级别 | 状态 | 载体 |
+|----|------|------|------|
+| F-001 | required | **open** | `GOAL-012-a005-shell-nav-fixtures` |
+| R-001～R-003 | recommended | open / non-blocking | GOAL-012 S5 或后续 |
+
+### 关闭证据表（A-005）
+
+| Finding | 关闭路径 | 状态 | 证据 |
+|---------|----------|------|------|
+| F-001 | fixed（待实施） | **open** | — |
+| R-001 | optional | open | — |
+| R-002 | optional | open | — |
+| R-003 | residual-acceptable by design | open | 短 access TTL |
+
+### 结论
+
+- **无**「用 records 演示冒充生产 Admin」类目标漂移（records 已 0006 退场；users/roles 语义资源在位）。
+- **有**偷工减料式产品洁净度缺口：Shell 遗留死链未在 Root 关门前清零。
+- **verdict = fail**；Root 不得维持 `done` 直至 F-001 合法闭合。
+
+---
+
+## A-005 编排响应（2026-08-04 · `/govern`）
+
+- **用户指令**：阻断问题 → 工作区 2 新设子目标修正 + 回退 Root 关门。
+- **裁决**：F-001 走 `fixed`；立项 `GOAL-012-a005-shell-nav-fixtures`（parent Root）；**Root `done → active`**，progress 保持 `5/5`。
+- **本响应不**将 F-001 标为 fixed（待 GOAL-012 实施与关门证据）。
+- **同步**：`goal-tree.md`、Root `00-meta`/`03-audit`、GOAL-012 五件套。
+
+### A-005 关闭响应（2026-08-04 · GOAL-012 完成）
+
+- **F-001 → fixed**：checked-in `app-manifest.json` 已移除 `activity`/`settings` 及 Workspace/Settings 导航；manifest 仅保留 7 个与 embed fixture 对齐的 pageId。`schema_test` 新增「manifest pageIds all have embed fixtures」门禁。证据：GOAL-012 02-execution S1～S3；A-001 self close-out pass。
+- **R-001 → fixed（可选）**：`QUICKSTART.md` §4 已改为 `fixtures/schema` + rebuild API + manifest（GOAL-012 S5）。
+- **R-002 / R-003**：保持 recommended open/non-blocking（AuthUser 类型；改密 access TTL 设计）。
+- **治理投影**：GOAL-012 `done / 4/4`；Root 保持 `active / 5/5`（重新关门须用户独立裁决）；A-005 无开放 required。

@@ -35,6 +35,8 @@ const MIGRATED_PAGE_IDS = [
   "form-with-reactions",
   "users",
   "roles",
+  "settings",
+  "activity",
 ];
 
 function fixtureDocument(pageId: string): unknown {

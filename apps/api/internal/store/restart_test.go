@@ -45,7 +45,7 @@ func TestRestartPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 6 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 {
+	if len(applied) != 7 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 {
 		t.Fatalf("applied after restart = %+v, want {1,2,3,4,5,6} (no re-migration)", applied)
 	}
 	var ur int

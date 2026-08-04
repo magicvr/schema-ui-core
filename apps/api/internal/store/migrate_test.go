@@ -114,13 +114,13 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 6 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6]", applied)
+	if len(applied) != 7 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 {
+		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
 		"roles", "user_roles", "permissions", "role_permissions", "menu_items", "role_menu_items",
-		"operation_log",
+		"operation_log", "site_settings",
 	} {
 		if !tableExistsDB(t, st.db, tbl) {
 			t.Fatalf("table %s missing after fresh migration", tbl)
@@ -167,7 +167,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 6 {
+	if len(applied2) != 7 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {

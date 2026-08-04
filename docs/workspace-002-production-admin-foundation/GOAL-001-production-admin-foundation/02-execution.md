@@ -1,6 +1,6 @@
 ---
 title: 执行记录 · 生产级可用 Admin 基架
-status: done
+status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
@@ -210,3 +210,17 @@ version: 0.1.20
 - **本轮回归收据**（HEAD `a14ba36` 基线 + 本轮文档写入）：`apps/api` `go vet ./...` exit 0；`go test ./... -count=1` 有测试包全绿；`apps/web` vitest **491/491** + `tsc -b` 干净；产品面 `/api/records` 仅协议 conformance 历史数据。
 - **状态变更**：**Root `status: active → done`**，派生进度保持 `5/5`；`00-meta` / `03-audit` / `goal-tree.md` 已同步。
 - **未做**：未执行 VP-002 关门（独立 `/vision`）；未改产品代码；未重跑 Docker Compose / Playwright 全路径（引用子目标既有证据）；不主张 GitHub-hosted Actions 本快照已绿。
+
+### 2026-08-04 · A-005 响应与 GOAL-012 立项
+
+- 独立代码审计 A-005 落盘（Root 03-audit）；F-001 required open。
+- Root 状态 `done → active`；派生进度保持 `5/5`。
+- 新建 `GOAL-012-a005-shell-nav-fixtures`（active `0/4`），parent = Root。
+- 同步 `goal-tree.md` 树与状态表。
+- 未修改 apps 产品代码（本轮仅治理写入）。
+
+### 2026-08-04 · GOAL-012 完成与 A-005 F-001 闭合
+
+- GOAL-012 S1～S5 实施完成并 self close-out pass；`done / 4/4`。
+- Root A-005 F-001 → fixed；无开放 required finding。
+- Root 保持 active / 5/5；未自动重新关门。

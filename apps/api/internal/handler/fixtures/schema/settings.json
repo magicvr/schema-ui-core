@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "pageId": "settings",
+    "title": "Settings",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended"
+    ]
+  },
+  "actions": {
+    "updateSettings": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/settings/{id}",
+      "bodyMapping": { "siteTitle": "siteTitle", "logoUrl": "logoUrl" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-settings-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": { "edit": "$context.user.permissions contains \"settings.write\"" },
+        "props": {
+          "fields": [
+            { "id": "siteTitle", "label": "Site title", "type": "input" },
+            {
+              "id": "logoUrl",
+              "label": "Logo URL (empty = hide logo)",
+              "type": "textarea"
+            }
+          ],
+          "submitAction": "updateSettings",
+          "submitLabel": "Save settings"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "settings",
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Site branding used in the admin shell, login page, and browser tab title. Logo is a URL (upload not available); leave empty to hide the logo."
+        }
+      },
+      {
+        "type": "table",
+        "id": "settings-table",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"settings.write\""
+        },
+        "props": {
+          "columns": [
+            { "field": "siteTitle", "label": "Site title" },
+            { "field": "logoUrl", "label": "Logo URL" },
+            { "field": "updatedAt", "label": "Updated", "sortable": true }
+          ],
+          "dataSource": "/api/settings",
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit"
+            }
+          ]
+        }
+      },
+      { "type": "recordView", "id": "settings-detail", "props": {} }
+    ]
+  }
+}

@@ -127,8 +127,8 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 6 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" || applied[5].version != 6 || applied[5].name != "records_retire" {
-		t.Fatalf("applied = %+v, want 6 = operation_log + operation_log_expand + records_retire", applied)
+	if len(applied) != 7 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" || applied[5].version != 6 || applied[5].name != "records_retire" || applied[6].version != 7 || applied[6].name != "site_settings" {
+		t.Fatalf("applied = %+v, want 7 ending in site_settings", applied)
 	}
 	if !tableExistsDB(t, st.db, "operation_log") {
 		t.Fatal("operation_log table missing after 0004")

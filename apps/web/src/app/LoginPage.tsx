@@ -1,6 +1,13 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { AuthError } from "@/account/auth-client";
+import {
+  applyDocumentBranding,
+  BRANDING_CHANGED_EVENT,
+  DEFAULT_SITE_TITLE,
+  fetchBranding,
+  type Branding,
+} from "@/app/branding";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
@@ -11,13 +18,37 @@ import { Button } from "@/components/ui/button";
  *
  * A-002 F-002-004 (GOAL-009 S5): the local seed credential hint only renders in
  * development builds; production must not advertise `admin / admin`.
+ *
+ * GOAL-013: shows site title + optional logo from public GET /api/branding.
  */
 export function LoginPage({ onLogin }: { onLogin: (username: string, password: string) => Promise<void> }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [branding, setBranding] = useState<Branding>({
+    siteTitle: DEFAULT_SITE_TITLE,
+    logoUrl: "",
+  });
   const showSeedHint = import.meta.env.DEV;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      void fetchBranding().then((next) => {
+        if (!cancelled) {
+          setBranding(next);
+          applyDocumentBranding(next);
+        }
+      });
+    };
+    load();
+    window.addEventListener(BRANDING_CHANGED_EVENT, load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(BRANDING_CHANGED_EVENT, load);
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -35,13 +66,21 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
     }
   }
 
+  const showLogo = branding.logoUrl !== "";
+  const siteTitle = branding.siteTitle || DEFAULT_SITE_TITLE;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <div className="flex min-w-0 w-full max-w-sm flex-col">
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            schema-ui-core
-          </p>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {showLogo ? (
+              <img src={branding.logoUrl} alt="" className="size-8 shrink-0 object-contain" />
+            ) : null}
+            <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {siteTitle}
+            </p>
+          </div>
           <ThemeToggle />
         </div>
         <form
@@ -51,7 +90,7 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
         >
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-            <p className="text-sm text-muted-foreground">Admin console</p>
+            <p className="text-sm text-muted-foreground">{siteTitle}</p>
           </div>
 
           <div className="space-y-2">

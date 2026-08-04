@@ -94,6 +94,9 @@ bash scripts/smoke.sh --disposable
 
 ## 4. 下一步：接业务
 
-- 新增业务页面：在 `docs/schemas` 添加页面 Schema，并在 Web `app-manifest.json` 挂载路由——**无需修改 Renderer 主路径**。
+- 新增业务页面（**无需修改 Renderer 主路径**）：
+  1. 在 `apps/api/internal/handler/fixtures/schema/<pageId>.json` 添加页面 Schema 文档（Go `//go:embed`，**需重建/重启 API** 后生效）；
+  2. 在 Web `apps/web/public/.well-known/schema-ui/app-manifest.json` 登记 `pages[]` 与 `navigation`（`schemaUrl` 约定为 `/api/schema/<pageId>`）。
+  - 注意：`docs/schemas/` 是上游 **协议 JSON Schema**（node/page/action…），**不是**业务页面文档目录。
 - 权限：编辑持久化 RBAC 种子（角色/权限键），见 `apps/api/internal/store` 种子与迁移。
 - 参考：[README.md](README.md) 工程化段；`apps/api/README.md` / `apps/web/README.md` 端点与配置表。

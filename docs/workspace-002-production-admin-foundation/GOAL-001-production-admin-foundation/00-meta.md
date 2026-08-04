@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-production-admin-foundation
 title: 生产级可用 Admin 基架
-status: done
+status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.7.0
+version: 0.8.0
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -62,6 +62,10 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 > **2026-08-04 · Root A-003 已响应、进入 close-out 裁决**：A-003（independent · finding-closure · pass）独立复核 F-002-001 `fixed` 关闭证据充分（索引/关闭表/载体三处一致），用户裁决**采纳 `pass`、维持 F-002-001 `fixed`**；R-001/R-002 → handled（Root 03-audit A-003 响应节）。A-002 三条 required 全部合法闭合确认，Root 关门门禁全部解除；**Root close-out 关门审计与 VP-002 关门为独立用户裁决**（P-004 §3.1：是否补 Root self 关门审计待用户裁决）。Root 保持 `active`、派生进度 `5/5`。
 
 > **2026-08-04 · Root self close-out 通过并关门**：用户指令「补 Root self 关门审计，通过后置 done」。**A-004（self · close-out · pass）**——五个纲领 `5/5`、子目标 GOAL-002～011 全部 `done`、A-002 三条 required 全部 `fixed`、I-001～I-006 verified/closed、无开放 required finding；本轮回归 `go test ./...` 全绿 + `go vet`、vitest **491/491**、`tsc -b` 干净。**Root 置 `status: done`**，派生进度保持 `5/5`。VP-002 关门为独立 `/vision` 流程，不由本 Goal 自动放行。
+
+> **2026-08-04 · A-005 独立代码审计 · 回退关门**：A-005（independent · fail · apps/api + apps/web · VP-002 产品意图复审）发现 **F-001 required**（default Shell 导航 `activity`/`settings` 无 embed fixture → 必 `SCHEMA_NOT_FOUND`）。按用户指令与 P-003 fail closed：**Root `done → active`**，派生进度保持 `5/5`；新设修复子目标 `GOAL-012-a005-shell-nav-fixtures`（active `0/4`）。Root/VP-002 重新关门须先闭合 F-001。
+
+> **2026-08-04 · GOAL-012 已关门、A-005 F-001 已闭合**：`GOAL-012` 置 `done / 4/4`（S1 移除占位导航 · S2 manifest↔fixture 测试 · S3 回归全绿 · S4 self close-out pass；S5 QUICKSTART 路径修正加分）。Root 03-audit **F-001 → `fixed`**。A-005 无开放 required；**Root 保持 `active / 5/5`**——重新关门为独立用户裁决（可 `/govern` 补 self close-out 或直接裁决）。
 
 ## 信息需求与阶段门禁
 

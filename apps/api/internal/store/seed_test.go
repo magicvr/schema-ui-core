@@ -53,7 +53,12 @@ func TestSeedRBACEntitiesAndGrants(t *testing.T) {
 	if err := prows.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"roles.assign", "roles.read", "roles.write", "users.read", "users.write"}; !reflect.DeepEqual(perms, want) {
+	if want := []string{
+		"operations.read",
+		"roles.assign", "roles.read", "roles.write",
+		"settings.read", "settings.write",
+		"users.read", "users.write",
+	}; !reflect.DeepEqual(perms, want) {
 		t.Fatalf("permissions = %v, want %v", perms, want)
 	}
 
@@ -72,18 +77,19 @@ func TestSeedRBACEntitiesAndGrants(t *testing.T) {
 		}
 		return n
 	}
-	if n := count(`SELECT COUNT(*) FROM role_permissions`); n != 9 {
-		t.Fatalf("role_permissions = %d, want 9 (admin 5, editor 2, viewer 2)", n)
+	// admin 8 + editor 3 + viewer 2 = 13 (GOAL-013 adds settings/operations).
+	if n := count(`SELECT COUNT(*) FROM role_permissions`); n != 13 {
+		t.Fatalf("role_permissions = %d, want 13 (admin 8, editor 3, viewer 2)", n)
 	}
-	if n := count(`SELECT COUNT(*) FROM role_menu_items`); n != 2 {
-		t.Fatalf("role_menu_items = %d, want 2 (admin -> users + roles)", n)
+	if n := count(`SELECT COUNT(*) FROM role_menu_items`); n != 5 {
+		t.Fatalf("role_menu_items = %d, want 5 (admin 4 + editor activity)", n)
 	}
-	// admin read+write (users/roles), editor/viewer read-only.
-	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-admin'`); n != 5 {
-		t.Fatalf("admin grants = %d, want 5", n)
+	// admin: users/roles/settings/operations; editor: users/roles read + operations; viewer: users/roles read.
+	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-admin'`); n != 8 {
+		t.Fatalf("admin grants = %d, want 8", n)
 	}
-	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-editor'`); n != 2 {
-		t.Fatalf("editor grants = %d, want 2", n)
+	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-editor'`); n != 3 {
+		t.Fatalf("editor grants = %d, want 3", n)
 	}
 	if n := count(`SELECT COUNT(*) FROM role_permissions WHERE role_id = 'role-viewer'`); n != 2 {
 		t.Fatalf("viewer grants = %d, want 2", n)
@@ -128,11 +134,11 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		}
 		return n
 	}
-	if n := count(st2, `SELECT COUNT(*) FROM role_permissions`); n != 9 {
-		t.Fatalf("role_permissions = %d, want 9", n)
+	if n := count(st2, `SELECT COUNT(*) FROM role_permissions`); n != 13 {
+		t.Fatalf("role_permissions = %d, want 13", n)
 	}
-	if n := count(st2, `SELECT COUNT(*) FROM role_menu_items`); n != 2 {
-		t.Fatalf("role_menu_items = %d, want 2", n)
+	if n := count(st2, `SELECT COUNT(*) FROM role_menu_items`); n != 5 {
+		t.Fatalf("role_menu_items = %d, want 5", n)
 	}
 	// Non-seed user untouched.
 	u, err := st2.UserByID("u1")
@@ -159,11 +165,11 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		t.Fatalf("third open: %v", err)
 	}
 	defer st3.Close()
-	if n := count(st3, `SELECT COUNT(*) FROM role_permissions`); n != 9 {
-		t.Fatalf("after 3rd open role_permissions = %d, want 9 (idempotent)", n)
+	if n := count(st3, `SELECT COUNT(*) FROM role_permissions`); n != 13 {
+		t.Fatalf("after 3rd open role_permissions = %d, want 13 (idempotent)", n)
 	}
-	if n := count(st3, `SELECT COUNT(*) FROM role_menu_items`); n != 2 {
-		t.Fatalf("after 3rd open role_menu_items = %d, want 2 (idempotent)", n)
+	if n := count(st3, `SELECT COUNT(*) FROM role_menu_items`); n != 5 {
+		t.Fatalf("after 3rd open role_menu_items = %d, want 5 (idempotent)", n)
 	}
 	if n := count(st3, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`); n != 2 {
 		t.Fatalf("after 3rd open seed user_roles = %d, want 2", n)
@@ -183,7 +189,12 @@ func TestPermissionsForUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("admin permissions: %v", err)
 	}
-	if want := []string{"roles.assign", "roles.read", "roles.write", "users.read", "users.write"}; !reflect.DeepEqual(adminPerms, want) {
+	if want := []string{
+		"operations.read",
+		"roles.assign", "roles.read", "roles.write",
+		"settings.read", "settings.write",
+		"users.read", "users.write",
+	}; !reflect.DeepEqual(adminPerms, want) {
 		t.Fatalf("admin perms = %v, want %v", adminPerms, want)
 	}
 

@@ -263,6 +263,10 @@ async function runRequest(
     const apiError = await readResourceApiError(response, actionRef);
     return { ok: false, code: apiError.code, message: apiError.message };
   }
+  // GOAL-013: settings PATCH refreshes shell title/logo without a full reload.
+  if (typeof url === "string" && url.includes("/api/settings") && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("schema-ui:branding-changed"));
+  }
   return { ok: true };
 }
 

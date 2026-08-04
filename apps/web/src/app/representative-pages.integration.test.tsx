@@ -36,6 +36,8 @@ const MIGRATED_PAGE_IDS = [
   "form-with-reactions",
   "users",
   "roles",
+  "settings",
+  "activity",
 ];
 
 const USERS = {
@@ -134,6 +136,49 @@ function combinedFetcher(
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+    }
+    if (pathname.startsWith("/api/settings") || pathname === "/api/branding") {
+      return new Response(
+        JSON.stringify(
+          pathname === "/api/branding"
+            ? { siteTitle: "Schema UI Core", logoUrl: "" }
+            : {
+                items: [
+                  {
+                    id: "default",
+                    siteTitle: "Schema UI Core",
+                    logoUrl: "",
+                    updatedAt: "2026-08-04T00:00:00.000Z",
+                  },
+                ],
+                total: 1,
+                page: 1,
+                pageSize: 10,
+              },
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    if (pathname.startsWith("/api/operations")) {
+      return new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: "op-1",
+              event: "auth.login",
+              actorId: "user-admin",
+              actorName: "Admin",
+              recordId: "",
+              detail: "{}",
+              createdAt: "2026-08-04T00:00:00.000Z",
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 10,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
     }
     return new Response("not found", { status: 404 });
   }) as typeof fetch;
