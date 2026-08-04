@@ -27,3 +27,4 @@ version: 0.8.0
 | D-007 | 2026-08-05 | R2 stage close-out and Root progress response | accepted | [01-decision/D-007-r2-stage-closeout.md](01-decision/D-007-r2-stage-closeout.md) |
 | D-008 | 2026-08-05 | 建立 R3 有界试点子目标与 I-006 先行门禁 | accepted | [01-decision/D-008-r3-stage-subgoal.md](01-decision/D-008-r3-stage-subgoal.md) |
 | D-009 | 2026-08-05 | R3 close-out、I-006 响应与 R4 阶段入口 | accepted | [01-decision/D-009-r3-closeout-r4-gate.md](01-decision/D-009-r3-closeout-r4-gate.md) |
+| D-010 | 2026-08-05 | 建立 R4 全量一方模块迁移子目标与 C1 信息门禁 | accepted | [01-decision/D-010-r4-stage-subgoal.md](01-decision/D-010-r4-stage-subgoal.md) |

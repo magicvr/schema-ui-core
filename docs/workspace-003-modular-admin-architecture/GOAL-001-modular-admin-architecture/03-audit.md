@@ -33,6 +33,7 @@ version: 0.7.0
 | A-006 | 2026-08-05 | self | R2 stage close-out after GOAL-003 child closure | pass | 0 | [03-audit/A-006-r2-stage-closeout.md](03-audit/A-006-r2-stage-closeout.md) |
 | A-007 | 2026-08-05 | self | R3 stage initialization and I-006 information gate | conditional | 1 (I-006) | [03-audit/A-007-r3-stage-initialization.md](03-audit/A-007-r3-stage-initialization.md) |
 | A-008 | 2026-08-05 | self | R3 stage close-out, I-006 response, and R4 entry gate | pass | 0 | [03-audit/A-008-r3-closeout-response.md](03-audit/A-008-r3-closeout-response.md) |
+| A-009 | 2026-08-05 | self | R4 stage establishment and C1 information gates | conditional | 4 | [03-audit/A-009-r4-stage-initialization.md](03-audit/A-009-r4-stage-initialization.md) |
 
 ## 结论状态
 
@@ -44,3 +45,4 @@ version: 0.7.0
 - **A-006**：Root R2 stage close-out self audit `pass`；确认 GOAL-003 `done 5/5`、I-004/I-005 verified、Root progress `2/6`，并保留 I-006 open。
 - **A-007**：R3 initialization self audit `conditional`；其历史结论由 GOAL-004 A-004/E-005 的后续证据响应，不改写原文。
 - **A-008**：Root R3 close-out self audit `pass`；I-006 verified，GOAL-004 `done 4/4`，Root progress 推进为 `3/6`，允许建立 R4 子目标但不关闭 Root/VP-003。
+- **A-009**：R4 initialization self audit `conditional`；GOAL-005 已建立并登记能力清单、provider contract、Records/Schema CRUD 冲突和 operationlog 边界；C1 required information 未闭合，Root progress 保持 `3/6`，不得进入 C2。
