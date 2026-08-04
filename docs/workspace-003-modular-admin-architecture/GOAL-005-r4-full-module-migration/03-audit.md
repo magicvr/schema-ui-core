@@ -28,6 +28,8 @@ version: 0.1.0
 | A-001 | 2026-08-05 | self | R4 建立、范围和信息门禁起点评估 | conditional | 4 | [03-audit/A-001-r4-stage-readiness.md](03-audit/A-001-r4-stage-readiness.md) |
 | A-002 | 2026-08-05 | independent | R4 C1 能力盘点、provider、operationlog 与 Records 冲突 | conditional | 4 | [03-audit/A-002-grok-r4-c1-readiness.md](03-audit/A-002-grok-r4-c1-readiness.md) |
 | A-003 | 2026-08-05 | independent | R4 C1 Provider/Registrar 与 operationlog 方案材料 | conditional | 6 | [03-audit/A-003-grok-r4-c1-options.md](03-audit/A-003-grok-r4-c1-options.md) |
+| A-004 | 2026-08-05 | independent | R4 C1 冻结包候选对 A-003 的响应 | conditional | 4 | [03-audit/A-004-grok-r4-c1-freeze-package.md](03-audit/A-004-grok-r4-c1-freeze-package.md) |
+| A-005 | 2026-08-05 | independent | R4 C1 冻结包修订复审 | conditional | 2 | [03-audit/A-005-grok-r4-c1-freeze-package-rereview.md](03-audit/A-005-grok-r4-c1-freeze-package-rereview.md) |
 
 ## 当前结论
 
@@ -37,6 +39,11 @@ R4 已合法建立并承接 Root R4，但仍停留在 C1 信息收集。D-002/E-
 仍有 6 项 required finding。R4-I002 provider contract、R4-I003 Records/Schema
 CRUD 语义冲突和 R4-I004 operationlog 行为/retention 仍未关闭。在用户裁决/决策
 记录、方案修订和 required evidence 形成前，不得开工 C2，也不得推进 Root progress。
+E-010 的冻结包草案已经提出候选响应，但不构成 finding closure 或用户决策。
+A-004 在草案修订前识别出 4 项 open required residual；修订后的响应仍需
+independent re-review，不能回写 A-004 或提前关闭其 finding。
+A-005 确认修订已达到候选材料级别，但 R4-I002/I003/I004 仍因 D-003 与 residual
+未完成而保持 collecting；该意见也不构成 finding closure。
 
 ## 已响应 finding
 

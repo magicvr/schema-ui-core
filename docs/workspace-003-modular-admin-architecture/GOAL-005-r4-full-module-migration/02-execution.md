@@ -23,6 +23,9 @@ version: 0.1.0
 | E-007 | 2026-08-05 | R4 C1 待裁决方案材料 | recorded | [02-execution/E-007-r4-c1-options-prepared.md](02-execution/E-007-r4-c1-options-prepared.md) |
 | E-008 | 2026-08-05 | R4 C1 方案材料 checkpoint | recorded | [02-execution/E-008-r4-c1-options-checkpoint.md](02-execution/E-008-r4-c1-options-checkpoint.md) |
 | E-009 | 2026-08-05 | R4 C1 方案材料 Grok 独立审计 | recorded | [02-execution/E-009-r4-c1-options-grok-audit.md](02-execution/E-009-r4-c1-options-grok-audit.md) |
+| E-010 | 2026-08-05 | R4 C1 冻结包草案 | recorded | [02-execution/E-010-r4-c1-freeze-package-draft.md](02-execution/E-010-r4-c1-freeze-package-draft.md) |
+| E-011 | 2026-08-05 | R4 C1 冻结包复审响应 | recorded | [02-execution/E-011-r4-c1-freeze-package-response.md](02-execution/E-011-r4-c1-freeze-package-response.md) |
+| E-012 | 2026-08-05 | R4 C1 冻结包修订复审 | recorded | [02-execution/E-012-r4-c1-freeze-package-rereview.md](02-execution/E-012-r4-c1-freeze-package-rereview.md) |
 
 ## 当前事实边界
 
@@ -41,3 +44,9 @@ version: 0.1.0
   proposal，不是 accepted decision。
 - A-003 对上述方案材料给出 `conditional` 独立意见，新增 6 项 open required
   findings；在用户裁决、方案补全和复审前，C1/C2 与 Root progress 均保持不变。
+- E-010 的冻结包草案是对 A-003 的候选响应材料，不是 D-003；Provider、Records 和
+  operationlog 的最终取舍仍是 pending_user。
+- A-004 复审后已修订冻结包的 Persistence collection path 和 typed contract，另补充
+  双 Profile、Hooks、owner matrix 与兼容清单；这些修订等待下一轮 independent review。
+- A-005 确认上述修订达到 C1 候选材料级别，但 Option A residual 和 P-004 决策仍开放，
+  因此不能关闭 C1 或进入 C2。
