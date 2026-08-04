@@ -20,6 +20,7 @@ version: 0.1.0
 | E-004 | 2026-08-05 | R4 C1 独立审计 checkpoint | recorded | [02-execution/E-004-r4-c1-audit-checkpoint.md](02-execution/E-004-r4-c1-audit-checkpoint.md) |
 | E-005 | 2026-08-05 | R4 C1 inventory 扩展与 finding 响应 | recorded | [02-execution/E-005-r4-c1-inventory-expanded.md](02-execution/E-005-r4-c1-inventory-expanded.md) |
 | E-006 | 2026-08-05 | R4 C1 inventory response checkpoint | recorded | [02-execution/E-006-r4-c1-inventory-checkpoint.md](02-execution/E-006-r4-c1-inventory-checkpoint.md) |
+| E-007 | 2026-08-05 | R4 C1 待裁决方案材料 | recorded | [02-execution/E-007-r4-c1-options-prepared.md](02-execution/E-007-r4-c1-options-prepared.md) |
 
 ## 当前事实边界
 
@@ -33,3 +34,6 @@ version: 0.1.0
   `attachments/r4-c1-capability-inventory.md`；D-002/E-005 已响应 inventory
   finding，R4-I001 为 verified。provider contract、Records 范围和 operationlog
   行为/retention 尚未冻结，R4-I002～I004 仍阻断 C1/C2。
+- Provider 与 operationlog 的候选方案已记录在
+  `attachments/r4-c1-provider-operationlog-options.md`；该材料是 pending_user
+  proposal，不是 accepted decision。
