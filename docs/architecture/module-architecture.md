@@ -5,7 +5,7 @@ status: active
 created: 2026-08-04
 updated: 2026-08-04
 parent: null
-version: 1.0.0
+version: 1.0.1
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 serves: VP-003-modular-admin-architecture
 ---
@@ -34,19 +34,34 @@ serves: VP-003-modular-admin-architecture
 
 ## 2. 模块契约
 
-每个模块必须声明稳定且不可复用的 `id`、版本、内核 API 兼容范围，以及带兼容版本约束的显式依赖。下列能力按需实现，未实现即表示模块不贡献该能力：
+每个模块必须声明稳定且不可复用的 `id`、版本、内核 API 兼容范围，以及带兼容版本约束的显式依赖（`DependsOn`；无依赖可为空列表，但必须声明）。
 
-| 能力 | 贡献内容 |
-|------|----------|
-| HTTP | 路由、处理器、中间件挂点 |
-| Schema | 页面、资源描述、数据源与动作 |
-| Authorization | 权限键与后端授权规则 |
-| Navigation | 导航节点与可见性表达式 |
-| Manifest | App Manifest 片段与前端运行时配置 |
-| Persistence | 迁移与系统数据 reconciliation |
-| Configuration | 带命名空间、默认值和验证规则的配置 |
-| Lifecycle | 启动、就绪、停止钩子 |
-| Observability | 健康、指标、日志与审计事件贡献 |
+### 2.1 一方标准 Admin 功能模块的核心贡献（必须）
+
+下列六项对应 `MODULE-ARCHITECTURE-DRAFT` D-3 的**必须**贡献点。一方**标准 Admin 功能模块**（提供可装配业务能力的 users / roles / settings / activity / records 等）在迁入统一契约时**必须**实现，不得以「能力可选」为由永久缺省：
+
+| 能力 | 贡献内容 | 级别 |
+|------|----------|------|
+| HTTP | 路由、处理器、中间件挂点 | **必须** |
+| Schema | 页面、资源描述、数据源与动作 | **必须** |
+| Authorization | 权限键与后端授权规则 | **必须** |
+| Navigation | 导航节点与可见性表达式 | **必须** |
+| Manifest | App Manifest 片段与前端运行时配置 | **必须** |
+| Persistence | 迁移与系统数据 reconciliation | **必须** |
+
+横切基础设施模块（如始终启用的 `operationlog`）若不暴露标准管理 UI，可经显式架构说明豁免 Schema/Navigation/Manifest 中不适用项，但不得借此让标准 Admin 功能模块缺省上述六项。
+
+### 2.2 按需能力（可选）
+
+下列能力**按需**实现；未实现即表示本模块不贡献该能力。**「按需」仅适用于本节，不得覆盖 §2.1 核心六项：**
+
+| 能力 | 贡献内容 | 级别 |
+|------|----------|------|
+| Configuration | 带命名空间、默认值和验证规则的配置 | 可选 |
+| Lifecycle | 启动、就绪、停止钩子 | 可选（有副作用或外部依赖时强烈建议） |
+| Observability | 健康、指标、日志与审计事件贡献 | 可选（有独立运行特征时强烈建议） |
+
+`DependsOn`、配置定义与种子/系统数据（draft 的可选三项）分别落在模块描述的依赖字段、Configuration 能力与 Persistence 的 reconcile/bootstrap 路径中；无配置或无种子时可为空，但依赖与冲突仍 fail closed。
 
 注册与启动必须确定性、可重复并 fail closed：未知模块、重复 ID、缺失/循环依赖、未启用的依赖、重复路由、页面、导航键、权限键或配置命名空间，均阻止启动并给出可定位错误。依赖不会被静默自动启用。
 
@@ -98,6 +113,13 @@ serves: VP-003-modular-admin-architecture
 
 ## 8. 迁移与退出边界
 
-实施路线可以先用 `activity` 与 `settings` 验证切口，但**试点不是终态，也不能替代 VP-003 的退出标准**。终态必须将现有一方 Admin 能力迁入统一契约，并删除中央模块清单、静态生产 Manifest、Shell 特例和其他已经被新架构替代的装配路径。
+实施路线可以先用 `activity`（及 `operationlog` 拆分）与 `settings` 验证切口，但**试点不是终态，也不能替代 VP-003 的退出标准**。终态必须将现有一方 Admin 能力迁入统一契约，并删除中央模块清单、静态生产 Manifest、Shell 特例和其他已经被新架构替代的装配路径。
+
+R3 有界试点的**通过门闩**（继承 draft §4.5 / §5，细节以 [VP-003](../vision/plans/VP-003-modular-admin-architecture.md) 路线图为准）至少包括：
+
+1. 试点模块按 §2 完整迁入（含核心六项及声明的依赖/配置/种子路径）；
+2. 切除四个旧架构病灶：中心化业务 Register、全局 Schema fixtures 对试点的占用、生产静态 Manifest 依赖、Host/Shell 对试点的硬编码特例；
+3. 验证 V-1 启停、V-2 禁用不可见、V-3 同一前端 build 零 diff、V-4 Schema 驱动渲染；
+4. 未通过则先加固 Kernel，**不得**以「模块已写出」放行全量存量迁移（R4）。
 
 本决策不包含：运行时插件市场、第三方不受信任模块加载、跨进程微服务拆分、全量上游协议扩张、业务领域模块本身。上述能力需要新的愿景或明确兼容决策。

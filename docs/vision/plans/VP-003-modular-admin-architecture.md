@@ -6,7 +6,7 @@ status: planned
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 created: 2026-08-04
 updated: 2026-08-04
-version: 0.1.0
+version: 0.1.1
 parent: null
 ---
 
@@ -28,7 +28,7 @@ parent: null
    MVP、完整 Admin 与 custom fork 起点由同一代码主线、同一模块契约和版本化 Profile 表达；不存在需要长期回灌的平行 MVP/Admin 代码线。Profile 解析、覆盖优先级、依赖闭包和 fail-closed 错误可验证。
 
 2. **薄内核、组合根与模块能力契约完成**
-   内核不导入业务模块；组合根静态汇集候选模块并通过 Uber Fx 管理依赖与生命周期；模块公共 API 不依赖 Fx 类型。现有一方 Admin 能力均迁入统一的模块描述与可选能力契约，不再依赖中央业务注册表接入。
+   内核不导入业务模块；组合根静态汇集候选模块并通过 Uber Fx 管理依赖与生命周期；模块公共 API 不依赖 Fx 类型。现有一方 Admin 能力均迁入统一的模块描述与能力契约，不再依赖中央业务注册表接入。一方**标准 Admin 功能模块**必须具备核心六项贡献（HTTP、Schema、Authorization、Navigation、Manifest、Persistence）；Configuration / Lifecycle / Observability 及空依赖/配置/种子声明为按需，**「按需」不得覆盖核心六项**（权威见 [module-architecture.md](../../architecture/module-architecture.md) §2）。
 
 3. **数据生命周期保持可升级、可恢复**
    全局迁移台账、顺序、checksum、事务、升级前快照与恢复边界保持成立；所有已编译一方模块迁移独立于启用状态执行，退役模块仍保留历史迁移 tombstone，未知已应用迁移 fail closed。fresh bootstrap 与 versioned system-data reconcile 分离，既有实例可补齐系统数据且不覆盖用户拥有字段。
@@ -51,12 +51,50 @@ parent: null
 
 | 阶段 | 目的 | 阶段产物 / 门禁 | 与终态关系 |
 |------|------|-----------------|------------|
-| R1 | 契约与迁移基线冻结 | 盘点当前中央注册点、模块边界、迁移/seed 所有权、Profile 矩阵；冻结模块 API、capability 协商、迁移 tombstone、错误分类、现有兼容基线和回滚策略 | 只冻结实施边界，不算架构完成 |
+| R1 | 契约与迁移基线冻结 | 盘点当前中央注册点、模块边界、迁移/seed 所有权、Profile 矩阵；冻结模块 API（含核心六项 / 按需能力口径）、capability 协商、迁移 tombstone、错误分类、现有兼容基线和回滚策略 | 只冻结实施边界，不算架构完成 |
 | R2 | 内核与组合根基础 | 建立薄内核、框架无关模块契约、Fx 组合根、确定性图校验、全局迁移收集、Manifest 聚合骨架与 `/.well-known` 代理 | 提供可迁移平台，不关闭 VP |
-| R3 | 有界试点 | 迁移 `operationlog`/`activity` 拆分与 `settings`；覆盖启停、依赖、冲突、配置事件、同一 build 双 Profile 和既有实例升级 | 验证切口；通过仅允许继续扩迁 |
+| R3 | 有界试点 | 见下方 **R3 通过门闩**（继承 draft §4.5/§5）；通过仅允许进入 R4，不关闭本 VP | 验证切口与 Kernel 手术；**非**终态 |
 | R4 | 全量一方模块迁移 | 将 users、roles、records/Schema CRUD 及其他现有 Admin 能力迁入统一能力契约；清除模块对 Shell/中央注册表的特例依赖 | 达到功能覆盖面，但仍需退出旧路径与运维验收 |
 | R5 | Profile、数据与运维收敛 | 完成 `mvp`/`admin`/custom 配置、fresh/reconcile、readyz/诊断、Vite/Nginx/Docker、升级恢复和 fork 文档 | 形成可发布候选，不自动等于 VP 关闭 |
 | R6 | 旧路径移除与终态验收 | 删除双轨兼容和静态生产兜底；运行完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收与 close-out 审计 | 七条退出判据全部取证后方可提议关门 |
+
+### R3 通过门闩（有界试点 · 继承 draft）
+
+R3 的目标是用 `operationlog`/`activity` 拆分与 `settings` 做手术刀，**证明 Kernel 切口正确**，不是「写出新模块就过关」。下列门闩全部满足后才可进入 R4；任一未满足则先加固 Kernel / 试点范围，**禁止盲目全量存量迁移**。
+
+**A. 试点模块交付（5 项）**
+
+1. `activity`（及拆分后的 `operationlog`）与 `settings` 按统一模块契约完整实现（标准 Admin 功能面满足核心六项；横切 `operationlog` 按架构说明豁免不适用 UI 项）。
+2. **拆除**中心化 Register / 中央业务挂载中对试点模块的硬编码，改为模块自注册。
+3. **将**试点 Schema 从全局 fixtures 迁入模块包，并由 Kernel 按模块加载。
+4. **实现**后端 Manifest 聚合 API；试点页面/菜单经聚合暴露；前端至少完成对接联调（开发期双轨须有期限与告警，不得作为生产静默兜底）。
+5. **排查并抽象** Host/Shell 对试点的硬编码特例（含 Settings 私有通知等），改为通用配置/事件贡献。
+
+**B. 四个旧架构病灶（试点范围内必须切除）**
+
+| 病灶 | R3 必须完成的动作 |
+|------|-------------------|
+| 中心化巨型业务 Register | 试点模块自注册；Register 中无试点硬编码挂载 |
+| 全局 Schema fixtures | 试点 Schema 归属模块内；内核支持按模块加载 |
+| 静态前端/生产 Manifest | 聚合 API 可用；试点片段注入；前端可消费聚合结果 |
+| Host 层业务特例 | 试点相关特例删除或泛化为通用 hook |
+
+**C. 验证项 V-1～V-4（必须全部通过）**
+
+| 编号 | 验证项 | 验收标准 |
+|------|--------|----------|
+| V-1 | 模块注册与启动 | `enabled` 含试点模块时路由可访问、菜单出现 |
+| V-2 | 模块禁用 | 从 `enabled` 移除并重启后，业务路由不可用、菜单消失；禁用≠删表 |
+| V-3 | 前端零改动 | 同一前端 build 对接含/不含试点模块的后端，页面集随 Manifest 变化，前端代码无 diff |
+| V-4 | Schema 贡献 | 试点列表/详情等标准页由后端 schema 驱动，Renderer 通用渲染 |
+
+另须覆盖：依赖/冲突 fail-closed、配置变更事件（Settings）、同一 build 下至少 `mvp`/`admin` Profile 差异、既有实例升级路径上的系统数据 reconcile 不覆盖用户字段。
+
+**D. 决策门（draft §5.3）**
+
+- 上述 A+B+C 全部通过 → 允许启动 R4 存量迁移计划。
+- 卡在 Kernel 改造（尤其病灶 2/3 或 Manifest 聚合）→ 先加固 Kernel 再继续，**不得**用「模块代码已存在」放行 R4。
+- R3 通过**仍不得**关闭本 VP；终态仍以七条退出判据与 R6 为准。
 
 ## 已接受的架构决策
 
@@ -64,10 +102,11 @@ parent: null
 |------|------|
 | DI | 采用 Uber Fx；Google Wire 因已归档/不再维护且不直接解决运行时选择而不采用 |
 | 选择模型 | 静态编译候选模块 + 启动时 Profile；不做运行时插件或热插拔 |
-| API 边界 | 模块契约框架无关，能力可选，依赖显式，冲突与缺依赖 fail closed |
+| API 边界 | 模块契约框架无关；一方标准 Admin 功能模块**核心六项必须**；Configuration/Lifecycle/Observability 按需；依赖显式；冲突与缺依赖 fail closed |
 | 数据 | 全局迁移台账覆盖全部已编译一方模块；启用状态不决定迁移；bootstrap 与 reconcile 分离 |
 | Activity | operationlog 始终启用；Activity 是可选查询/UI；Settings 同批验证通用 host hook |
 | Manifest | 后端聚合、公共无秘密的 `/.well-known` 入口；生产不静默使用静态兜底 |
+| 试点 | R3 必须完成 draft 病灶切除 + 5 交付 + V-1～V-4；失败则加固 Kernel，不盲目 R4；试点不是 VP 退出边界 |
 | 演进 | 以单主线和 Profile 替代双线长期维护；历史 VP/工作区保持关闭事实，不伪造分支删除 |
 
 ## 信息门禁提示
@@ -100,3 +139,4 @@ VP 允许在 `planned` 状态携带实施未知，但未来激活/开区后至�
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-08-04 | `0.1.0` | 用户确认战略方向与全部工程建议；明确 VP 表达完整最终意图，Activity/Settings 等试点只进入迭代路线图，不构成妥协版退出边界。 |
+| 2026-08-04 | `0.1.1` | `/vision` 响应 VRev-007：`F-V010` 核心六项必须 vs 按需能力口径；`F-V011` R3 继承 draft 病灶切除 + 5 交付 + V-1～V-4 门闩。未改 `planned`、未激活、未绑工作区。 |
