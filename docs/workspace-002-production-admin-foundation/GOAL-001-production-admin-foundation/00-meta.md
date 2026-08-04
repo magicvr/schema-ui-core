@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-production-admin-foundation
 title: 生产级可用 Admin 基架
-status: active
+status: done
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.9.0
+version: 1.0.0
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -68,6 +68,8 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 > **2026-08-04 · GOAL-012 已关门、A-005 F-001 已闭合**：`GOAL-012` 置 `done / 4/4`（S1 移除占位导航 · S2 manifest↔fixture 测试 · S3 回归全绿 · S4 self close-out pass；S5 QUICKSTART 路径修正加分）。Root 03-audit **F-001 → `fixed`**。A-005 无开放 required；**Root 保持 `active / 5/5`**——重新关门为独立用户裁决（可 `/govern` 补 self close-out 或直接裁决）。
 
 > **2026-08-04 · A-006 落盘并响应 recommended**：A-006（independent · pass）无 required；R-001～R-004 已 fixed、R-005 residual-by-design handled；回归 go test 全绿 + vitest **492/492**。Root 保持 `active / 5/5`；重新关门与 VP-002 关门仍为独立用户裁决。
+
+> **2026-08-04 · Root self close-out（A-007）通过并再关门**：用户指令「补 Root self close-out，通过后置 done」。**A-007（self · close-out · pass）**——R1～R5 `5/5`、GOAL-002～013 全部 `done`、A-002/A-005 required 均 `fixed`、A-006 recommended 已闭合/residual、I-001～I-006 verified/closed、Vision Review 0 open required；本轮回归 go vet/test 全绿、vitest **492/492**、`tsc -b` 干净、manifest↔fixture 9/9。**Root `active → done`**，progress 保持 `5/5`。VP-002 关门为独立 `/vision` 流程。
 
 ## 信息需求与阶段门禁
 

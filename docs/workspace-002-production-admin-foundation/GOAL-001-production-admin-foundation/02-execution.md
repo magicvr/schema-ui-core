@@ -238,3 +238,12 @@ version: 0.1.20
   5. **R-005**：无代码变更；审计响应节 residual 留痕。
 - **回归收据**：`apps/api` `go test ./... -count=1` 全绿；`apps/web` vitest **492/492** + `tsc -b` 干净。
 - **状态**：Root 保持 `active / 5/5`；A-006 无开放 required；未自动 Root/VP-002 关门。
+
+## 2026-08-04 · Root self close-out（A-007 pass）并置 `done`
+
+- 用户指令：`/govern 补 Root self close-out，通过后置 done`（明确 self 关门审计 + 通过后置 done）。
+- **关门门禁复核**：A-002 三条 required 全部 `fixed`；A-005 F-001 `fixed`；A-006 无 required 且 recommended 已 fixed/residual；I-001～I-006 verified/closed；纲领 `5/5`；子目标 GOAL-002～013 全部 `done`；Charter@0.1.0 ↔ VP-002 ↔ workspace-002 delivery 对齐；Vision Review 0 open required。
+- **A-007（self · close-out · pass）** 落盘 `03-audit.md`：覆盖 A-005/A-006 后的全树状态；无新增 required/recommended finding。
+- **本轮回归收据**（HEAD `afc3cd4` + A-006 工作树产品修正）：`go vet ./...` exit 0；`go test ./... -count=1` 全绿；vitest **492/492**；`tsc -b` 干净；manifest 9 pageId ⊆ embed fixtures；产品面 records 残留 0。
+- **状态变更**：**Root `status: active → done`**，派生进度保持 `5/5`；`00-meta` / `03-audit` / `goal-tree.md` 已同步。
+- **未做**：未执行 VP-002 关门（独立 `/vision`）；未重跑 Compose / Playwright 全路径；不主张 GitHub-hosted Actions 本快照已绿。

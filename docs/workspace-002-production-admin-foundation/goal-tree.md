@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.65.0
+version: 0.66.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -16,7 +16,7 @@ workspace_id: workspace-002-production-admin-foundation
 - primary plan：`VP-002-production-admin-foundation`
 
 ```text
-GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
+GOAL-001-production-admin-foundation [done] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-002-r1-schema-load-validate [done] R1 · Schema 加载、校验与统一错误面 (4/4)
 ├── GOAL-003-r1-default-render-path [done] R1 · 默认 Renderer 主路径与示例降级 (4/4)
 ├── GOAL-004-r1-representative-node-pages [done] R1 · 代表性 Node 页面与回归证据 (5/5)
@@ -35,7 +35,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `active` | `5/5` | 2026-08-04 |
+| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `done` | `5/5` | 2026-08-04 |
 | `GOAL-002-r1-schema-load-validate` | R1 · Schema 加载、校验与统一错误面 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-01 |
 | `GOAL-003-r1-default-render-path` | R1 · 默认 Renderer 主路径与示例降级 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-02 |
 | `GOAL-004-r1-representative-node-pages` | R1 · 代表性 Node 页面与回归证据 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-02 |
@@ -146,3 +146,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-013 已交付并关门（2026-08-04）**：用户否决「删 Settings/Activity 需求」→ 实装站点品牌（`site_settings` + `/api/branding` + Settings Schema）与操作日志只读面（`/api/operations` + Activity Schema）；导航恢复 Settings/Activity（feature 门控）。**GOAL-013 `done / 4/4`**；Root 仍 `active / 5/5`。
 
 > **A-006 已响应（2026-08-04 · `/govern`）**：independent · pass 落盘 Root 03-audit；无 required。**R-001～R-004 → fixed**（AuthUser.permissions、branding 副作用迁 host 层、settings.update 操作日志 + migration 0008、roles 表单 coerce/标签）；**R-005 → residual-by-design / handled**（短 access TTL）。回归：`go test ./...` 全绿；vitest **492/492** + `tsc -b`。Root 保持 `active / 5/5`；Root/VP-002 关门仍为独立用户裁决。
+
+> **Root 已再关门（2026-08-04 · A-007）**：用户指令补 Root self close-out 并通过后置 `done`。**A-007（self · close-out · pass）**——R1～R5 与 GOAL-002～013 证据链、A-002/A-005 required 全部 `fixed`、A-006 recommended 已闭合/residual、I-001～I-006 verified/closed、无开放 required；本轮回归 go vet/test 全绿、vitest **492/492**、`tsc -b` 干净。**Root `active → done`，progress 保持 `5/5`**。VP-002 关门为独立 `/vision` 流程，本树不自动放行。

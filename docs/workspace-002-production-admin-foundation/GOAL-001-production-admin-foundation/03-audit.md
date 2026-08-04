@@ -1,10 +1,10 @@
 ---
 title: 审计台账 · 生产级可用 Admin 基架
-status: active
+status: done
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.9.0
+version: 1.0.0
 ---
 
 # 审计台账 · GOAL-001
@@ -19,6 +19,7 @@ version: 0.9.0
 | A-004 | self | 2026-08-04 | Root close-out · 全目标关门审计 | pass | 已出具；其后 A-005 新 required 使 Root 回退 `active` |
 | A-005 | independent | 2026-08-04 | apps/api + apps/web · VP-002 产品意图独立复审（无 skill） | fail | 已响应：F-001 → **fixed**（GOAL-012）；R-001～R-003 recommended 非阻断 |
 | A-006 | independent | 2026-08-04 | apps/api + apps/web · VP-002 产品意图再审（无 skill） | pass | 已响应：R-001～R-004 → **fixed**；R-005 → residual-by-design / handled；无 required |
+| A-007 | self | 2026-08-04 | Root close-out · 全目标再关门审计（A-005/A-006 后） | pass | 已出具；无开放 required；Root `active → done` |
 
 ## A-001 · Root R1 阶段自审（2026-08-02）
 
@@ -524,3 +525,57 @@ Root 当时 `status: active`、派生进度 `5/5`；`goal-tree.md` 与 `00-meta.
 
 - 本响应写入 Root `03-audit` / `02-execution` / `goal-tree` 注记
 - A-006 无开放 required；recommended 已闭合或 residual 留痕
+
+---
+
+## A-007 · Root close-out · 全目标再关门审计（2026-08-04）
+
+- **source**：self
+- **auditor**：Grok Build · `/govern`
+- **类型 / scope**：close-out；Root 全目标成功边界、五个纲领检查点 R1～R5、子目标 GOAL-002～013 交付链、意见台账（A-001～A-006）、信息台账（I-001～I-006）、A-005/A-006 整改闭合与本轮回归收据。不审 VP-002 关门（独立 `/vision` 流程）。
+- **verdict**：**pass**
+- **用户指令**：`/govern 补 Root self close-out，通过后置 done`（明确 self 关门审计 + 通过后置 done）。
+
+### 范围与工作区
+
+- 工作区：`workspace-002-production-admin-foundation`；`workspace.md` 的 `root_goal`、`canonical_scope`、`vision_role: delivery`、`primary_plan: VP-002-production-admin-foundation` 与 Root `plan_refs`/`primary_plan` 一致；`shared_materials_catalog: none`，未使用共享资料作为事实或关闭证据。
+- 愿景链：Charter `schema-ui-core-admin-foundation@0.1.0` active；VP-002 `vision_ref` 精确匹配；Vision Review **0 open required**（仅 recommended `F-V003` 仍 open，不阻断本 Goal 关门）。
+- 身份：committed HEAD `afc3cd4` + 工作树含 A-006 产品修正与本 close-out 文档（未要求 clean tree 才可关门；产品语义以本轮回归为准）。
+
+### 关门门禁核对
+
+| 门禁 | 状态 | 证据 |
+|------|------|------|
+| 纲领检查点 R1～R5 | **5/5 全勾选** | Root `00-meta` 路线图；载体 GOAL-002～008 `done` |
+| 子目标树 | **GOAL-002～013 全部 `done`** | `goal-tree.md` |
+| 开放 required finding | **0** | A-002 F-002-001/002/003 `fixed`；A-005 F-001 `fixed`（GOAL-012）；A-006 无 required；R-001～R-004 fixed、R-005 residual handled |
+| 信息台账 I-001～I-006 | **verified / closed** | Root `00-meta` 信息表 |
+| 成功边界 | **可核对** | Schema 主路径、真认证、RBAC 种子、users/roles Schema CRUD、工程化 fork 路径、settings/activity 洁净导航 |
+| Charter / VP / workspace 对齐 | **一致** | 见上愿景链 |
+| Vision Review required | **0 open** | `docs/vision/reviews.md` |
+| strategic 宽阻断 | **无** | — |
+
+### 本轮回归与静态抽查
+
+| 检查 | 结果 |
+|------|------|
+| `apps/api` `go vet ./...` | exit 0 |
+| `apps/api` `go test ./... -count=1` | 全绿（handler/store/auth/cmd/server 等） |
+| `apps/web` `vitest run` | **492/492** |
+| `apps/web` `tsc -b` | 干净 |
+| manifest pageId ⊆ embed fixtures | 9/9，无死链 |
+| 产品面 records 残留 | 0（协议 stage3 历史数据除外） |
+| A-006 关闭证据静态复核 | AuthUser.permissions、host branding fetcher、0008 `settings.update`、render 无 `/api/settings` 硬编码 |
+
+**未重跑**：Docker Compose 全路径、Playwright e2e（引用 GOAL-011/012/013 既有 e2e 与本轮 API/Web 单元回归）；不主张 GitHub-hosted Actions 本快照已绿。
+
+### Findings
+
+- **无**新增 required / recommended finding。
+- A-004 曾 pass 后因 A-005 required 回退；本 close-out 覆盖 A-005/A-006 闭合后的全树状态，可独立作为再关门依据。
+
+### 结论
+
+- **verdict = pass**。Root 成功边界、纲领 5/5、子目标全 done、意见/信息台账无开放 required，本轮回归成立。
+- 按用户指令：**Root `status: active → done`**，派生进度保持 `5/5`。
+- **VP-002 关门不由本 Goal 审计自动放行**；建议下一拍 `/vision` 在工作区证据链上评估 VP-002 是否可关闭。
