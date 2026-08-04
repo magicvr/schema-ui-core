@@ -16,6 +16,8 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-05 | 建立 R4 子目标与初始信息边界 | recorded | [02-execution/E-001-r4-stage-opened.md](02-execution/E-001-r4-stage-opened.md) |
 | E-002 | 2026-08-05 | R4 C1 能力盘点与边界核验 | recorded | [02-execution/E-002-r4-c1-capability-inventory.md](02-execution/E-002-r4-c1-capability-inventory.md) |
+| E-003 | 2026-08-05 | R4 C1 Grok 独立审计 | recorded | [02-execution/E-003-r4-c1-grok-audit.md](02-execution/E-003-r4-c1-grok-audit.md) |
+| E-004 | 2026-08-05 | R4 C1 独立审计 checkpoint | recorded | [02-execution/E-004-r4-c1-audit-checkpoint.md](02-execution/E-004-r4-c1-audit-checkpoint.md) |
 
 ## 当前事实边界
 
