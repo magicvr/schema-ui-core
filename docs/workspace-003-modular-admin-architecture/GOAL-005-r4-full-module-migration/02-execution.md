@@ -22,6 +22,7 @@ version: 0.1.0
 | E-006 | 2026-08-05 | R4 C1 inventory response checkpoint | recorded | [02-execution/E-006-r4-c1-inventory-checkpoint.md](02-execution/E-006-r4-c1-inventory-checkpoint.md) |
 | E-007 | 2026-08-05 | R4 C1 待裁决方案材料 | recorded | [02-execution/E-007-r4-c1-options-prepared.md](02-execution/E-007-r4-c1-options-prepared.md) |
 | E-008 | 2026-08-05 | R4 C1 方案材料 checkpoint | recorded | [02-execution/E-008-r4-c1-options-checkpoint.md](02-execution/E-008-r4-c1-options-checkpoint.md) |
+| E-009 | 2026-08-05 | R4 C1 方案材料 Grok 独立审计 | recorded | [02-execution/E-009-r4-c1-options-grok-audit.md](02-execution/E-009-r4-c1-options-grok-audit.md) |
 
 ## 当前事实边界
 
@@ -38,3 +39,5 @@ version: 0.1.0
 - Provider 与 operationlog 的候选方案已记录在
   `attachments/r4-c1-provider-operationlog-options.md`；该材料是 pending_user
   proposal，不是 accepted decision。
+- A-003 对上述方案材料给出 `conditional` 独立意见，新增 6 项 open required
+  findings；在用户裁决、方案补全和复审前，C1/C2 与 Root progress 均保持不变。
