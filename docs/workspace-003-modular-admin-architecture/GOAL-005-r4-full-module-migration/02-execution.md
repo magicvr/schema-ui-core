@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-05 | R4 C1 Grok 独立审计 | recorded | [02-execution/E-003-r4-c1-grok-audit.md](02-execution/E-003-r4-c1-grok-audit.md) |
 | E-004 | 2026-08-05 | R4 C1 独立审计 checkpoint | recorded | [02-execution/E-004-r4-c1-audit-checkpoint.md](02-execution/E-004-r4-c1-audit-checkpoint.md) |
 | E-005 | 2026-08-05 | R4 C1 inventory 扩展与 finding 响应 | recorded | [02-execution/E-005-r4-c1-inventory-expanded.md](02-execution/E-005-r4-c1-inventory-expanded.md) |
+| E-006 | 2026-08-05 | R4 C1 inventory response checkpoint | recorded | [02-execution/E-006-r4-c1-inventory-checkpoint.md](02-execution/E-006-r4-c1-inventory-checkpoint.md) |
 
 ## 当前事实边界
 
