@@ -20,6 +20,9 @@ func TestManifestIsPublicStableAndSupportsETag(t *testing.T) {
 	if first.Header().Get("ETag") == "" || first.Header().Get("Content-Type") == "" {
 		t.Fatalf("headers = %v", first.Header())
 	}
+	if got := first.Header().Get("X-Schema-UI-Manifest-Source"); got != "api" {
+		t.Fatalf("manifest source = %q, want api", got)
+	}
 
 	second := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil)

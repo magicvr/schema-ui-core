@@ -47,7 +47,8 @@ npm run build   # tsc -b && vite build
 Pages are Schema documents embedded by the Go API (`GET /api/schema/{pageId}`)
 and rendered through the schema-driven default path
 (`manifest route → loadPageDocument → RenderPage`). New/adjusted pages only
-edit `apps/api/internal/handler/fixtures/schema/*.json` — the Renderer main path
+edit a core schema fixture under `apps/api/internal/handler/fixtures/schema/` or
+the owning module schema package — the Renderer main path
 stays generic (T-UI-10).
 
 - `data-table` — list surface over `/api/users`

@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 //
 // Cross-boundary regression for the R1 representative pages (GOAL-004):
-// reads the actual Go-embedded page fixtures from
-// `apps/api/internal/handler/fixtures/schema/`, validates them through the
+// reads the actual Go-embedded core and module-owned page fixtures, validates them through the
 // browser loader (`validatePageDocument` / `loadPageDocument`), and renders
 // them via `RenderPage`. This closes the GOAL-002 F-001/F-002 follow-up
 // ("actual endpoint fixture through the loader") and proves the migrated
@@ -27,6 +26,16 @@ const FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../api/internal/handler/fixtures/schema",
 );
+const MODULE_FIXTURE_DIRS: Record<string, string> = {
+  settings: resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/settings/schema",
+  ),
+  activity: resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/activity/schema",
+  ),
+};
 
 const MIGRATED_PAGE_IDS = [
   "data-table",
@@ -40,7 +49,8 @@ const MIGRATED_PAGE_IDS = [
 ];
 
 function fixtureDocument(pageId: string): unknown {
-  return JSON.parse(readFileSync(resolve(FIXTURE_DIR, `${pageId}.json`), "utf8"));
+  const directory = MODULE_FIXTURE_DIRS[pageId] ?? FIXTURE_DIR;
+  return JSON.parse(readFileSync(resolve(directory, `${pageId}.json`), "utf8"));
 }
 
 /** Fetcher that serves the real fixture document for a schemaUrl pathname. */

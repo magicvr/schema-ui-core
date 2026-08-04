@@ -86,7 +86,13 @@ func (e *operationsEntity) Delete(string, account.User) error {
 }
 
 // registerOperations mounts the read-only operations resource. Kept as a thin
-// wrapper so health.Register stays explicit about product surfaces.
+// wrapper so the Activity module can own its registration boundary.
 func registerOperations(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	registerResource(mux, a, operationsResource(st))
+}
+
+// RegisterActivity exposes the Activity module registration adapter to the
+// composition root. Operation-log writes remain available without this route.
+func RegisterActivity(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
+	registerOperations(mux, a, st)
 }

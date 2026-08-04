@@ -56,6 +56,9 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatalf("patch status = %d: %s", rr.Code, rr.Body.String())
 	}
+	if got := rr.Header().Get("X-Schema-UI-Config-Changed"); got != "settings.branding" {
+		t.Fatalf("config change namespace = %q, want settings.branding", got)
+	}
 	var row map[string]any
 	_ = json.NewDecoder(rr.Body).Decode(&row)
 	if row["siteTitle"] != "Acme Admin" || row["logoUrl"] != "https://example.com/logo.png" {

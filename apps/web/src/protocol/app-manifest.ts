@@ -1,5 +1,6 @@
 export const DEFAULT_MANIFEST_PATH = "/.well-known/schema-ui/app-manifest.json";
 export const APP_MANIFEST_PROTOCOL_VERSION = "2.7" as const;
+export const MANIFEST_SOURCE_HEADER = "X-Schema-UI-Manifest-Source";
 export const APP_MANIFEST_SOURCE =
   "https://github.com/magicvr/schema-ui-docs/tree/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b";
 
@@ -821,6 +822,15 @@ export async function loadAppManifest(options: {
         "MANIFEST_LOAD_FAILED",
         url,
         `Manifest request failed with HTTP ${response.status}.`,
+      );
+    }
+    if (
+      import.meta.env.DEV &&
+      response.url !== "" &&
+      response.headers.get(MANIFEST_SOURCE_HEADER) !== "api"
+    ) {
+      console.warn(
+        `[schema-ui] development manifest fixture served at ${url}; API projection was not used.`,
       );
     }
     const payload: unknown = await response.json();

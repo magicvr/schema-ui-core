@@ -20,9 +20,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   applyDocumentBranding,
-  BRANDING_CHANGED_EVENT,
   DEFAULT_SITE_TITLE,
   fetchBranding,
+  subscribeToBrandingChanges,
   type Branding,
 } from "@/app/branding";
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
@@ -404,10 +404,10 @@ export function App({
       });
     };
     load();
-    window.addEventListener(BRANDING_CHANGED_EVENT, load);
+    const unsubscribe = subscribeToBrandingChanges(load);
     return () => {
       cancelled = true;
-      window.removeEventListener(BRANDING_CHANGED_EVENT, load);
+      unsubscribe();
     };
   }, [brandingProp]);
 

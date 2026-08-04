@@ -13,6 +13,12 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
+// RegisterSettings exposes the Settings module registration adapter to the
+// composition root. The module package owns when this contribution is added.
+func RegisterSettings(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
+	settingsHandler(mux, a, st)
+}
+
 func settingsHandler(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	// Public branding for login shell and document title (no secrets).
 	mux.HandleFunc("GET /api/branding", brandingGET(st))
@@ -26,6 +32,8 @@ type brandingResponse struct {
 	SiteTitle string `json:"siteTitle"`
 	LogoURL   string `json:"logoUrl"`
 }
+
+const configChangedHeader = "X-Schema-UI-Config-Changed"
 
 func brandingGET(st *store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
@@ -147,6 +155,7 @@ func settingsPatch(st *store.Store) http.Handler {
 		if err := st.RecordOperation(op); err != nil {
 			slog.Error("operation log write failed", "event", store.EventSettingsUpdate, "err", err)
 		}
+		w.Header().Set(configChangedHeader, "settings.branding")
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
 }

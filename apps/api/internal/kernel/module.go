@@ -234,6 +234,18 @@ type Plan struct {
 	Capabilities []Capability
 }
 
+// HasModule reports whether a module was selected in this resolved plan.
+// Runtime registration must consume this plan rather than re-resolving a
+// profile, so all protocol surfaces share one enablement decision.
+func (p Plan) HasModule(id string) bool {
+	for _, module := range p.Modules {
+		if module.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (p Plan) IDs() []string {
 	ids := make([]string, 0, len(p.Modules))
 	for _, module := range p.Modules {

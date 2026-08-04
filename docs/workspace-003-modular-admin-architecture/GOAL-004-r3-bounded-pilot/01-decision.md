@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-bounded-pilot
 doc: decision
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-004
@@ -22,6 +22,7 @@ Root I-006 仍由 Root `00-meta.md` 维护；本子目标只承接三项收集�
 | D-001 | 2026-08-05 | 建立 R3 有界试点与四项检查点 | accepted | [01-decision/D-001-r3-stage-scope.md](01-decision/D-001-r3-stage-scope.md) |
 | D-002 | 2026-08-05 | R3 I-006 信息收集计划 | accepted | [01-decision/D-002-r3-i006-collection-plan.md](01-decision/D-002-r3-i006-collection-plan.md) |
 | D-003 | 2026-08-05 | I-006 静态入口、兼容和回滚边界（C1 草案） | accepted-for-audit | [01-decision/D-003-r3-i006-boundary.md](01-decision/D-003-r3-i006-boundary.md) |
+| D-004 | 2026-08-05 | F-IND-005 证据时序与严格门禁响应 | accepted | [01-decision/D-004-r3-gate-timing-response.md](01-decision/D-004-r3-gate-timing-response.md) |
 
 ## 当前约束
 
@@ -31,4 +32,4 @@ Root I-006 仍由 Root `00-meta.md` 维护；本子目标只承接三项收集�
 - 生产 Manifest 只能走 API 聚合端点；Web 静态文件即使保留为开发/测试输入，
   也不得成为生产静默兜底。
 - C1 的兼容窗口、告警、移除触发和回滚策略在独立审计及演练证据前不得标记
-  为 `verified`。
+  为 `verified`；A-004 已基于 E-004～E-006 和 A-003 响应完成核验。

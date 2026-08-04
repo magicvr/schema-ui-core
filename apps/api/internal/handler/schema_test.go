@@ -24,7 +24,7 @@ type pageDocument struct {
 
 func TestSchemaEndpoint(t *testing.T) {
 	mux := http.NewServeMux()
-	schemasHandler(mux)
+	schemasHandler(mux, testAdminPlan(t))
 
 	t.Run("serves a seeded page document", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil)
@@ -144,7 +144,7 @@ func TestSchemaEndpoint(t *testing.T) {
 		documents := staticSchemaDocuments()
 		for _, pageID := range pageIDs {
 			if _, ok := documents[pageID]; !ok {
-				t.Fatalf("manifest pageId %q has no embed fixture under fixtures/schema/", pageID)
+				t.Fatalf("manifest pageId %q has no embedded schema document", pageID)
 			}
 			req := httptest.NewRequest(http.MethodGet, "/api/schema/"+pageID, nil)
 			rec := httptest.NewRecorder()

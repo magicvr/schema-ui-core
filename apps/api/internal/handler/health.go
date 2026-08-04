@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
@@ -18,22 +19,23 @@ type healthResponse struct {
 	Commit    string    `json:"commit,omitempty"`
 }
 
-// Register mounts the health endpoints, the R2 auth endpoints, the R4 account
-// session route, the schema-driven resource CRUD API (SQLite-backed; users/roles
-// are the GOAL-011 semantic resources), and the R1 schema document endpoint.
-// Protected routes are wrapped in the request-identity middleware. The store is
-// injected so the resource handlers read and write the same SQLite database that
-// backs identity (GOAL-007 S3).
-func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
+// Register mounts core routes and the selected module contributions. The
+// composition root passes the already-resolved plan so HTTP and Schema
+// surfaces cannot silently diverge from the published Manifest.
+func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st))
-	authsHandler(mux, a, st)
-	accountsHandler(mux, a)
-	registerResource(mux, a, usersResource(st))
-	registerResource(mux, a, rolesResource(st))
-	registerOperations(mux, a, st)
-	settingsHandler(mux, a, st)
-	schemasHandler(mux)
+	if plan.HasModule("core.auth-session") {
+		authsHandler(mux, a, st)
+		accountsHandler(mux, a)
+	}
+	if plan.HasModule("admin.users") {
+		registerResource(mux, a, usersResource(st))
+	}
+	if plan.HasModule("admin.roles") {
+		registerResource(mux, a, rolesResource(st))
+	}
+	schemasHandler(mux, plan)
 }
 
 // healthz is the liveness probe: the process is up and serving. It never

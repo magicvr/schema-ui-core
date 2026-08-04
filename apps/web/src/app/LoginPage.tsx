@@ -3,9 +3,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { AuthError } from "@/account/auth-client";
 import {
   applyDocumentBranding,
-  BRANDING_CHANGED_EVENT,
   DEFAULT_SITE_TITLE,
   fetchBranding,
+  subscribeToBrandingChanges,
   type Branding,
 } from "@/app/branding";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -43,10 +43,10 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
       });
     };
     load();
-    window.addEventListener(BRANDING_CHANGED_EVENT, load);
+    const unsubscribe = subscribeToBrandingChanges(load);
     return () => {
       cancelled = true;
-      window.removeEventListener(BRANDING_CHANGED_EVENT, load);
+      unsubscribe();
     };
   }, []);
 

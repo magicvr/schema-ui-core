@@ -32,6 +32,7 @@ func RegisterManifest(mux *http.ServeMux, supplied ...[]byte) error {
 	mux.Handle("GET /.well-known/schema-ui/app-manifest.json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("X-Schema-UI-Manifest-Source", "api")
 		w.Header().Set("ETag", etag)
 		if r.Header.Get("If-None-Match") == etag {
 			w.WriteHeader(http.StatusNotModified)

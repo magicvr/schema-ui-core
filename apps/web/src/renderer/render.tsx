@@ -54,7 +54,8 @@ import {
  * a generic action executor that gates through the frozen `executeAction`
  * engine and constructs requests with the pinned conformance constructor
  * (`request-construction.ts`). Every page-level behaviour stays fixture-driven;
- * after this completion only `fixtures/schema/*.json` changes for new pages.
+ * after this completion page behavior remains schema-owned; core fixtures and
+ * module-owned schema packages can add pages without Renderer changes.
  *
  * Scope: the frozen §5 node whitelist — layout (grid/section/tabs),
  * data/action (text/table/recordView/actionButton) and form. The form control

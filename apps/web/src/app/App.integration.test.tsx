@@ -5,6 +5,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { App } from "@/app/App";
+import {
+  CONFIG_CHANGED_HEADER,
+  createConfigAwareFetcher,
+  SETTINGS_BRANDING_NAMESPACE,
+} from "@/app/config-events";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   ManifestError,
@@ -211,6 +216,53 @@ describe("App shell integration", () => {
       healthyRoot.render(<App manifest={testManifest()} navigationContext={{}} />);
     });
     expect(healthy.textContent).not.toContain("Account session failed to load");
+  });
+
+  it("reloads branding when a generic resource response carries a config-change header", async () => {
+    const originalFetch = globalThis.fetch;
+    let siteTitle = "Before change";
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/branding") {
+        return new Response(JSON.stringify({ siteTitle, logoUrl: "" }), { status: 200 });
+      }
+      return new Response("not found", { status: 404 });
+    }) as typeof fetch;
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    const resourceFetcher = createConfigAwareFetcher(async () =>
+      new Response("{}", {
+        status: 200,
+        headers: { [CONFIG_CHANGED_HEADER]: SETTINGS_BRANDING_NAMESPACE },
+      }),
+    );
+
+    try {
+      await act(async () => {
+        root.render(
+          <App
+            manifest={testManifest()}
+            navigationContext={{}}
+            schemaFetcher={schemaFetcher(DEFAULT_DOCUMENTS)}
+            resourceFetcher={resourceFetcher}
+          />,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(container.textContent).toContain("Before change");
+
+      siteTitle = "After change";
+      await act(async () => {
+        await resourceFetcher("/api/settings", { method: "PATCH" });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(container.textContent).toContain("After change");
+      expect(document.title).toBe("After change");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("fails closed with the unified schema error when the page document is missing", async () => {

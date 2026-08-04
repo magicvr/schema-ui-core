@@ -3,7 +3,8 @@
 // Full-path integration evidence for the R1 representative pages (GOAL-004;
 // GOAL-011 S3 repoints the injected resource surface from records to users/roles):
 // uses the real app manifest (`apps/web/public/.well-known/schema-ui/`) and the
-// real Go-embedded page fixtures (`apps/api/internal/handler/fixtures/schema/`)
+// real Go-embedded page fixtures (core fixtures plus module-owned Settings and
+// Activity schemas)
 // through the App's schema-driven default path, with the users/roles API surface
 // injected. Asserts "改 Schema 即可出现页面" holds on the main path and that
 // unknown / illegal inputs fail closed with observable errors.
@@ -27,6 +28,16 @@ const FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../api/internal/handler/fixtures/schema",
 );
+const MODULE_FIXTURE_DIRS: Record<string, string> = {
+  settings: resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/settings/schema",
+  ),
+  activity: resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/activity/schema",
+  ),
+};
 
 const MIGRATED_PAGE_IDS = [
   "overview",
@@ -95,7 +106,8 @@ const ROLES = {
 };
 
 function fixtureDocument(pageId: string): unknown {
-  return JSON.parse(readFileSync(resolve(FIXTURE_DIR, `${pageId}.json`), "utf8"));
+  const directory = MODULE_FIXTURE_DIRS[pageId] ?? FIXTURE_DIR;
+  return JSON.parse(readFileSync(resolve(directory, `${pageId}.json`), "utf8"));
 }
 
 function manifest(): AppManifest {

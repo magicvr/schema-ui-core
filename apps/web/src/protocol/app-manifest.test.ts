@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   APP_MANIFEST_PROTOCOL_VERSION,
@@ -269,6 +269,24 @@ describe("manifest loading and expression boundaries", () => {
       "settings",
       "activity",
     ]);
+  });
+
+  it("warns when a real development response lacks the API source marker", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await loadAppManifest({
+      fetcher: async () =>
+        ({
+          ok: true,
+          status: 200,
+          url: "http://127.0.0.1:5173/.well-known/schema-ui/app-manifest.json",
+          headers: new Headers(),
+          json: async () => manifest(),
+        }) as Response,
+    });
+    expect(warning).toHaveBeenCalledWith(
+      expect.stringContaining("/.well-known/schema-ui/app-manifest.json"),
+    );
+    warning.mockRestore();
   });
 
   it("fails closed when the manifest endpoint fails", async () => {

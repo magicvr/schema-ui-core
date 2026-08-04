@@ -4,13 +4,15 @@ import (
 	"embed"
 	"net/http"
 	"strings"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
+	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
 )
 
-// Page schema documents backing GET /api/schema/{pageId}. The app manifest
-// declares each page's schemaUrl as /api/schema/<pageId>; these fixtures make
-// that contract real so the Web loader has a runtime source. GOAL-002 seeds a
-// minimal subset (overview/catalog); the representative page set is authored
-// under GOAL-004.
+// Core page schema documents backing GET /api/schema/{pageId}. Module-owned
+// Settings and Activity documents are merged from their package-local embed
+// sources below; the app manifest declares the same schemaUrl contract.
 //
 //go:embed fixtures/schema/*.json
 var schemaPageFixtures embed.FS
@@ -21,8 +23,8 @@ type schemaHandler struct {
 	documents map[string][]byte // pageId -> raw JSON document
 }
 
-func schemasHandler(mux *http.ServeMux) {
-	h := &schemaHandler{documents: staticSchemaDocuments()}
+func schemasHandler(mux *http.ServeMux, plan kernel.Plan) {
+	h := &schemaHandler{documents: schemaDocumentsForPlan(plan)}
 	mux.Handle("GET /api/schema/{pageId}", h.schema())
 }
 
@@ -48,6 +50,28 @@ func staticSchemaDocuments() map[string][]byte {
 			panic(err)
 		}
 		documents[pageID] = raw
+	}
+	for pageID, raw := range settingsschema.SchemaDocuments() {
+		documents[pageID] = raw
+	}
+	for pageID, raw := range activityschema.SchemaDocuments() {
+		documents[pageID] = raw
+	}
+	return documents
+}
+
+func schemaDocumentsForPlan(plan kernel.Plan) map[string][]byte {
+	documents := staticSchemaDocuments()
+	owners := map[string]string{
+		"users":    "admin.users",
+		"roles":    "admin.roles",
+		"settings": "admin.settings",
+		"activity": "admin.activity",
+	}
+	for pageID, moduleID := range owners {
+		if !plan.HasModule(moduleID) {
+			delete(documents, pageID)
+		}
 	}
 	return documents
 }

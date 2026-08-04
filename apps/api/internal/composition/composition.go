@@ -15,6 +15,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
+	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
+	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -86,8 +88,14 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, st *store.Store) *au
 
 func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
-	handler.Register(mux, a, st)
-	if hasModule(plan, "core.manifest-route") {
+	handler.Register(mux, a, st, plan)
+	if plan.HasModule("admin.settings") {
+		settingsmodule.Register(mux, a, st)
+	}
+	if plan.HasModule("admin.activity") {
+		activitymodule.Register(mux, a, st)
+	}
+	if plan.HasModule("core.manifest-route") {
 		data, err := manifest.ForModules(plan.IDs())
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
@@ -150,15 +158,6 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 			return errors.Join(shutdownErr, runtimeErr, closeErr)
 		},
 	})
-}
-
-func hasModule(plan kernel.Plan, id string) bool {
-	for _, module := range plan.Modules {
-		if module.ID == id {
-			return true
-		}
-	}
-	return false
 }
 
 func withLifecycleHooks(plan kernel.Plan, st *store.Store, logger *slog.Logger, listenerReady func() bool) kernel.Plan {

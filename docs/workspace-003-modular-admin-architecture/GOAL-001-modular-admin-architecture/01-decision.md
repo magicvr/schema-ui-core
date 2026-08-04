@@ -5,14 +5,14 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-05
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 决策记录 · GOAL-001
 
 ## 信息需求与阶段门禁
 
-信息台账权威位于 [00-meta.md](00-meta.md#信息需求与阶段门禁)。R1 完成后 `I-001`、`I-002`、`I-003`、`I-007` 已按 GOAL-002 C1-C4 evidence、D-003～D-005、Grok A-004 independent 与 A-005 response 标为 `verified`；R2 响应后 `I-004`、`I-005` 已由 GOAL-003 C1/C4 evidence、A-002 self、A-003 Grok re-audit 和本次 Root response 标为 `verified`；`I-006` 仍为 open required，阻断 R3/R6 旧路径边界。I-007 的「默认不扩大 I-PROTO-001 v0.1.3」约束继续有效。
+信息台账权威位于 [00-meta.md](00-meta.md#信息需求与阶段门禁)。R1 完成后 `I-001`、`I-002`、`I-003`、`I-007` 已按 GOAL-002 C1-C4 evidence、D-003～D-005、Grok A-004 independent 与 A-005 response 标为 `verified`；R2 响应后 `I-004`、`I-005` 已由 GOAL-003 C1/C4 evidence、A-002 self、A-003 Grok re-audit 和本次 Root response 标为 `verified`；R3 完成后 `I-006` 已由 GOAL-004 A-004、E-005 和 D-004 标为 `verified`，但 R6 仍需重新核对最终旧路径移除边界。I-007 的「默认不扩大 I-PROTO-001 v0.1.3」约束继续有效。
 
 ## 决策索引
 
@@ -26,3 +26,4 @@ version: 0.7.0
 | D-006 | 2026-08-05 | R2 I-004/I-005 evidence response | accepted | [01-decision/D-006-r2-information-response.md](01-decision/D-006-r2-information-response.md) |
 | D-007 | 2026-08-05 | R2 stage close-out and Root progress response | accepted | [01-decision/D-007-r2-stage-closeout.md](01-decision/D-007-r2-stage-closeout.md) |
 | D-008 | 2026-08-05 | 建立 R3 有界试点子目标与 I-006 先行门禁 | accepted | [01-decision/D-008-r3-stage-subgoal.md](01-decision/D-008-r3-stage-subgoal.md) |
+| D-009 | 2026-08-05 | R3 close-out、I-006 响应与 R4 阶段入口 | accepted | [01-decision/D-009-r3-closeout-r4-gate.md](01-decision/D-009-r3-closeout-r4-gate.md) |

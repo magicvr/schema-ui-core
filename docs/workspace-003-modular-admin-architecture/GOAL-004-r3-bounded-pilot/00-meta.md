@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-bounded-pilot
 title: R3 · 有界试点
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
-version: 0.2.0
-progress: 0/4
+version: 0.3.0
+progress: 4/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -32,28 +32,30 @@ R1/R2 的已冻结契约；R3 通过只允许进入 R4，不关闭 VP-003。
 
 ## 成功标准
 
-- [ ] **C1 / I-006**：盘点并核验静态 Manifest、Shell、中心注册、模块
+- [x] **C1 / I-006**：盘点并核验静态 Manifest、Shell、中心注册、模块
   禁用、兼容/告警、移除和回滚边界，然后才冻结 R3 实施方案。
-- [ ] **C2 / A+B 实施**：按统一模块契约实现 operationlog、Activity、Settings
+- [x] **C2 / A+B 实施**：按统一模块契约实现 operationlog、Activity、Settings
   的有界切片，移除试点范围内四类旧架构病灶。
-- [ ] **C3 / V-1～V-4 验证**：在同一 Web 构建下验证双 Profile 的启停、
+- [x] **C3 / V-1～V-4 验证**：在同一 Web 构建下验证双 Profile 的启停、
   Manifest/Schema/通用渲染、冲突 fail-closed、Settings 事件和数据保留。
-- [ ] **C4 / D 门**：完成 A/B/C 全部证据、自审、Grok 独立审计及 required
+- [x] **C4 / D 门**：完成 A/B/C 全部证据、自审、Grok 独立审计及 required
   finding 合法闭合，并记录是否允许进入 R4。
 
-四个检查点等权；初始为 `progress: 0/4`。完成本子目标只表示 R3 子目标
+四个检查点等权；当前为 `progress: 4/4`。完成本子目标只表示 R3 子目标
 关闭，不代表 VP-003 退出或 Root 关闭。
 
 ## 信息门禁：Root I-006
 
 | 编号 | 级别 | 必须回答的问题 | 影响 | 最晚阶段 | 收集动作 | 状态 | 证据/延期 |
 |------|------|----------------|------|----------|----------|------|-----------|
-| R3-I006-01 | required | 哪些静态 Manifest、Shell、中心注册和 Schema fixture 必须移除，哪些需暂保留 | R3 方案冻结、B 门 | C1 关闭前 | 源码扫描、构建/代理核对、路由清单 | collecting | `attachments/r3-c1-i006-boundary.md`；尚待独立核验 |
-| R3-I006-02 | required | 开发兼容窗口、告警行为和移除完成触发条件是什么 | R3 方案冻结、R6 移除 | C1 关闭前 | 决策记录、告警测试和同构建证据 | collecting | 当前没有既有告警运行证据 |
-| R3-I006-03 | required | 模块禁用或静态/Shell 清理失败时何时回滚、如何保留数据并复核 | R3 方案冻结、R6 回滚 | C1 关闭前 | 失败演练、数据保留检查、恢复后验证 | collecting | 当前没有 R3 演练证据 |
+| R3-I006-01 | required | 哪些静态 Manifest、Shell、中心注册和 Schema fixture 必须移除，哪些需暂保留 | R3 方案冻结、B 门 | C1 关闭前 | 源码扫描、构建/代理核对、路由清单 | verified | `attachments/r3-c2-c3-v1-v4-evidence.md`；A-004 fixed response |
+| R3-I006-02 | required | 开发兼容窗口、告警行为和移除完成触发条件是什么 | R3 方案冻结、R6 移除 | C1 关闭前 | 决策记录、告警测试和同构建证据 | verified | `attachments/r3-c2-c3-v1-v4-evidence.md`；A-004 fixed response |
+| R3-I006-03 | required | 模块禁用或静态/Shell 清理失败时何时回滚、如何保留数据并复核 | R3 方案冻结、R6 回滚 | C1 关闭前 | 失败演练、数据保留检查、恢复后验证 | verified | `attachments/r3-c2-c3-v1-v4-evidence.md`；A-004 fixed response |
 
-上述三项细化 Root I-006，但不替换 Root 的 canonical 状态。C1 审计通过前，
-不得把本子目标标为完成，也不得冻结 R4 迁移方案。
+上述三项细化 Root I-006，但不替换 Root 的 canonical 状态。C1 审计通过前不得
+把本子目标标为完成，也不得冻结 R4 迁移方案；A-004 记录了 C1/C2/C3 证据完成
+后的 C4 close-out。R3 关闭只允许 Root 进入 R4 阶段评估，不代表 VP-003 或
+Root 关闭。
 
 ## 阶段计划
 

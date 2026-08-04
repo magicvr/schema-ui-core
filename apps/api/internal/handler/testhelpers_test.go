@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -29,15 +30,15 @@ const (
 	testJWTSecret    = "test-secret"
 )
 
-// newAuthTestEnv seeds the admin user and mounts all routes (no dev-session
-// fallback).
+// newAuthTestEnv seeds the admin user and mounts the complete Admin plan (no
+// dev-session fallback).
 func newAuthTestEnv(t *testing.T) *authTestEnv {
 	t.Helper()
 	return newAuthTestEnvWith(t, false)
 }
 
-// newDevSessionTestEnv mounts all routes with the explicit dev-session fallback
-// enabled (acceptance M9: production must not enable this).
+// newDevSessionTestEnv mounts the complete Admin plan with the explicit
+// dev-session fallback enabled (acceptance M9: production must not enable this).
 func newDevSessionTestEnv(t *testing.T) *authTestEnv {
 	t.Helper()
 	return newAuthTestEnvWith(t, true)
@@ -56,8 +57,27 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	t.Cleanup(func() { _ = st.Close() })
 	a := auth.New([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, st, devSession)
 	mux := http.NewServeMux()
-	Register(mux, a, st)
+	Register(mux, a, st, testAdminPlan(t))
+	RegisterSettings(mux, a, st)
+	RegisterActivity(mux, a, st)
 	return &authTestEnv{mux: mux, a: a, st: st}
+}
+
+func testAdminPlan(t *testing.T) kernel.Plan {
+	t.Helper()
+	resolution, err := kernel.ResolveProfile("admin", nil)
+	if err != nil {
+		t.Fatalf("resolve admin profile: %v", err)
+	}
+	registry, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatalf("build module registry: %v", err)
+	}
+	plan, err := registry.Resolve(resolution.Modules)
+	if err != nil {
+		t.Fatalf("resolve admin module plan: %v", err)
+	}
+	return plan
 }
 
 // login performs POST /api/auth/login and returns the access token.

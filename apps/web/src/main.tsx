@@ -2,9 +2,9 @@ import { StrictMode, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 
 import { AuthProvider, useAuth } from "@/account/AuthContext";
+import { createConfigAwareFetcher } from "@/app/config-events";
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
-import { notifyBrandingChanged } from "@/app/branding";
 import { LoginPage } from "@/app/LoginPage";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import { loadAppManifest, type AppManifest } from "@/protocol/app-manifest";
@@ -27,28 +27,12 @@ function BootScreen() {
 }
 
 /**
- * Host-layer side effects after successful resource writes (A-006 R-002).
- * Keeps product endpoints (settings branding) out of the generic Renderer.
+ * Host-layer configuration side effects after successful resource writes
+ * (A-006 R-002). Modules identify changed namespaces through a response
+ * header; the generic Renderer remains unaware of product-specific behavior.
  */
 function useResourceFetcher(authFetch: typeof fetch): typeof fetch {
-  return useCallback(
-    async (input: RequestInfo | URL, init?: RequestInit) => {
-      const response = await authFetch(input, init);
-      if (response.ok) {
-        try {
-          const path = new URL(String(input), window.location.origin).pathname;
-          const method = (init?.method ?? "GET").toUpperCase();
-          if (method === "PATCH" && path.startsWith("/api/settings")) {
-            notifyBrandingChanged();
-          }
-        } catch {
-          // Malformed URL: ignore side-effect; response still returned.
-        }
-      }
-      return response;
-    },
-    [authFetch],
-  );
+  return useCallback(createConfigAwareFetcher(authFetch), [authFetch]);
 }
 
 /** Renders the login page when unauthenticated, the shell when authenticated. */

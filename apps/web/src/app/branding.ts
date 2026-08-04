@@ -1,7 +1,13 @@
 /**
- * Site branding (GOAL-013): loads public GET /api/branding for shell title + logo.
- * Empty logoUrl means hide logo in UI; document title always uses siteTitle.
+ * Site branding (GOAL-013): loads the Settings contribution's public branding
+ * projection for shell title + logo. Empty logoUrl means hide logo in UI;
+ * document title always uses siteTitle.
  */
+
+import {
+  SETTINGS_BRANDING_NAMESPACE,
+  subscribeToConfigChanges,
+} from "@/app/config-events";
 
 export const DEFAULT_SITE_TITLE = "Schema UI Core";
 
@@ -10,12 +16,8 @@ export interface Branding {
   logoUrl: string;
 }
 
-export const BRANDING_CHANGED_EVENT = "schema-ui:branding-changed";
-
-export function notifyBrandingChanged(): void {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(BRANDING_CHANGED_EVENT));
-  }
+export function subscribeToBrandingChanges(listener: () => void): () => void {
+  return subscribeToConfigChanges(SETTINGS_BRANDING_NAMESPACE, listener);
 }
 
 export async function fetchBranding(fetcher: typeof fetch = fetch): Promise<Branding> {
