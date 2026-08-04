@@ -26,6 +26,7 @@ version: 0.1.0
 | E-010 | 2026-08-05 | R4 C1 冻结包草案 | recorded | [02-execution/E-010-r4-c1-freeze-package-draft.md](02-execution/E-010-r4-c1-freeze-package-draft.md) |
 | E-011 | 2026-08-05 | R4 C1 冻结包复审响应 | recorded | [02-execution/E-011-r4-c1-freeze-package-response.md](02-execution/E-011-r4-c1-freeze-package-response.md) |
 | E-012 | 2026-08-05 | R4 C1 冻结包修订复审 | recorded | [02-execution/E-012-r4-c1-freeze-package-rereview.md](02-execution/E-012-r4-c1-freeze-package-rereview.md) |
+| E-013 | 2026-08-05 | 建立 GOAL-006 R4-C1 冻结裁决子目标 | recorded | [02-execution/E-013-r4-c1-child-goal-opened.md](02-execution/E-013-r4-c1-child-goal-opened.md) |
 
 ## 当前事实边界
 
@@ -50,3 +51,5 @@ version: 0.1.0
   双 Profile、Hooks、owner matrix 与兼容清单；这些修订等待下一轮 independent review。
 - A-005 确认上述修订达到 C1 候选材料级别，但 Option A residual 和 P-004 决策仍开放，
   因此不能关闭 C1 或进入 C2。
+- 已建立 GOAL-006 作为 R4-C1 子目标，承接 Provider、Records 和 operationlog 的
+  P-004 裁决、最终复审和 C1 close-out；GOAL-005 status/progress 保持不变。
