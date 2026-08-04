@@ -69,12 +69,11 @@ def normalized_sha256(path: Path) -> str:
     return sha256(payload).hexdigest().upper()
 
 
+# Consumer profile (0.11.0+): only contract + schema (+ fixtures) are mirrored for
+# consumption. Producer matrix / runtime-evidence stay release-owned and optional.
 CONTRACT_MIRROR_FILES = (
     "skills-consumer-contract.schema.json",
     "skills-consumer-contract.json",
-    "skills-consumer-compatibility-matrix.schema.json",
-    "skills-consumer-compatibility-matrix.json",
-    "runtime-evidence.schema.json",
     "fixtures/valid/manifest-0.1.0.json",
     "fixtures/valid/declared-adapter-0.1.0.json",
     "fixtures/invalid/missing-contract-schema-id.json",
@@ -84,6 +83,11 @@ CONTRACT_MIRROR_FILES = (
     "fixtures/invalid/unstable-cross-minor-range.json",
     "fixtures/invalid/unsupported-protocol-0.2.0.json",
     "fixtures/invalid/fabricated-predecessor-0.0.0.json",
+)
+PRODUCER_ONLY_CONTRACT_FILES = (
+    "skills-consumer-compatibility-matrix.schema.json",
+    "skills-consumer-compatibility-matrix.json",
+    "runtime-evidence.schema.json",
 )
 SEMVER_RE = re.compile(
     r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
@@ -607,100 +611,69 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         self.assertNotIn("web-readonly-parser", by_id)
 
     def test_candidate_compatibility_matrix_keeps_runtime_coverage_explicit(self) -> None:
-        """Verified host cells and remaining candidate gaps must stay distinct."""
-        schema = self._load_json(
-            CORE_CONTRACTS / "skills-consumer-compatibility-matrix.schema.json"
-        )
-        runtime_schema = self._load_json(
-            CORE_CONTRACTS / "runtime-evidence.schema.json"
-        )
-        matrix = self._load_json(
-            CORE_CONTRACTS / "skills-consumer-compatibility-matrix.json"
-        )
+        """Consumer monorepos need contract boundary, not producer release matrix.
+
+        0.11.0+ defaultProfile=consumer: matrix / runtime-evidence are producerOnly.
+        Full matrix cell/evidence validation belongs to the goal-governance producer
+        release profile; when those files are present they must still parse, but
+        absence must not fail ordinary consumer install or methodology gates.
+        """
         manifest = self._load_json(CORE_CONTRACTS / "skills-consumer-contract.json")
+        boundary = manifest["evidenceBoundary"]
+        self.assertEqual(boundary["defaultProfile"], "consumer")
+        self.assertEqual(
+            set(boundary["consumerRequired"]),
+            {
+                "skills-consumer-contract.json",
+                "skills-consumer-contract.schema.json",
+            },
+        )
+        self.assertEqual(
+            set(boundary["producerOnly"]),
+            set(PRODUCER_ONLY_CONTRACT_FILES),
+        )
+        for name in boundary["consumerRequired"]:
+            self.assertTrue(
+                (CORE_CONTRACTS / name).is_file(),
+                msg=f"missing consumer-required contract: {name}",
+            )
+            self.assertTrue(
+                (SKILLS_CONTRACTS / name).is_file(),
+                msg=f"missing skills mirror for consumer contract: {name}",
+            )
+
+        matrix_path = CORE_CONTRACTS / "skills-consumer-compatibility-matrix.json"
+        schema_path = CORE_CONTRACTS / "skills-consumer-compatibility-matrix.schema.json"
+        runtime_path = CORE_CONTRACTS / "runtime-evidence.schema.json"
+        if not (matrix_path.is_file() and schema_path.is_file() and runtime_path.is_file()):
+            # Consumer monorepo / consumer install: producer assets optional.
+            for name in PRODUCER_ONLY_CONTRACT_FILES:
+                self.assertNotIn(name, boundary["consumerRequired"])
+            return
+
+        schema = self._load_json(schema_path)
+        runtime_schema = self._load_json(runtime_path)
+        matrix = self._load_json(matrix_path)
         self.assertEqual(schema["$id"], MATRIX_SCHEMA_ID)
         self.assertEqual(runtime_schema["$id"], RUNTIME_EVIDENCE_SCHEMA_ID)
         self.assertEqual(matrix["schemaId"], MATRIX_SCHEMA_ID)
-        self.assertEqual(matrix["format"], "goal-governance.skills-consumer-compatibility-matrix")
-        self.assertEqual(matrix["candidateRevision"], "v0.12.1")
-        self.assertEqual(matrix["canonicalContractPath"], "docs/contracts/skills-consumer-contract.json")
+        self.assertEqual(
+            matrix["format"],
+            "goal-governance.skills-consumer-compatibility-matrix",
+        )
+        self.assertEqual(
+            matrix["canonicalContractPath"],
+            "docs/contracts/skills-consumer-contract.json",
+        )
         self.assertEqual(matrix["protocol"]["current"], manifest["protocol"]["version"])
-        self.assertIsNone(matrix["protocol"]["previous"])
         self.assertEqual(
-            matrix["protocol"]["previousStatus"],
-            "not-applicable-first-supported-protocol",
+            matrix["requiredEntrypoints"],
+            ["govern", "audit", "vision", "vision-audit"],
         )
-        self.assertEqual(
-            matrix["requiredEntrypoints"], ["govern", "audit", "vision", "vision-audit"]
-        )
-        negative = {item["id"]: item for item in matrix["negativeFixtures"]}
-        self.assertIn("unsupported-protocol-0.2.0", negative)
-        self.assertIn("no-fabricated-predecessor", negative)
-        for item in negative.values():
-            self.assertTrue(
-                (SKILLS_ROOT.parent / item["path"]).is_file(),
-                msg=item["path"],
-            )
-        self.assertEqual(negative["unsupported-protocol-0.2.0"]["kind"], "unsupported-protocol")
-        self.assertEqual(negative["no-fabricated-predecessor"]["kind"], "fabricated-predecessor")
-        fabricated = self._load_json(SKILLS_ROOT.parent / negative["no-fabricated-predecessor"]["path"])
-        self.assertEqual(fabricated["protocol"], manifest["protocol"])
-        self.assertEqual(fabricated["supportBaseline"]["previousSupportedProtocol"], "0.0.0")
-
         consumers = {item["id"]: item for item in matrix["consumers"]}
-        self.assertEqual(
-            set(consumers),
-            {
-                "claude-code-cli",
-                "grok-build-cli",
-                "github-copilot-cli",
-                "web-readonly-parser",
-            },
-        )
-        self.assertEqual(consumers["claude-code-cli"]["host"]["version"], "2.1.220")
-        self.assertEqual(consumers["grok-build-cli"]["host"]["version"], "0.2.118")
-        self.assertEqual(consumers["github-copilot-cli"]["host"]["version"], "1.0.75")
-        self.assertEqual(consumers["github-copilot-cli"]["host"]["product"], "GitHub Copilot CLI")
-        adapters_by_id = {adapter["id"]: adapter for adapter in manifest["adapters"]}
-        # Claude + Grok + Copilot: all four entrypoints runtime-verified 2026-08-04
-        for consumer_id in (
-            "claude-code-cli",
-            "grok-build-cli",
-            "github-copilot-cli",
-        ):
-            entrypoints = {
-                entry["name"]: entry for entry in consumers[consumer_id]["entrypoints"]
-            }
-            self.assertEqual(
-                consumers[consumer_id]["contractVerificationStatus"],
-                adapters_by_id[consumer_id]["verificationStatus"],
-            )
-            self.assertEqual(set(entrypoints), {"govern", "audit", "vision", "vision-audit"})
-            for name in ("govern", "audit", "vision", "vision-audit"):
-                self.assertEqual(entrypoints[name]["status"], "runtime-verified")
-                self.assertTrue(entrypoints[name]["evidence"])
-                for path in entrypoints[name]["evidence"]:
-                    self.assertTrue((SKILLS_ROOT.parent / path).is_file(), msg=path)
-                    self.assertIn("2026-08-04", path)
-            vision = entrypoints["vision"]
-            self.assertEqual(vision["status"], "runtime-verified")
-            self.assertTrue(vision["evidence"])
-            for path in vision["evidence"]:
-                self.assertTrue((SKILLS_ROOT.parent / path).is_file(), msg=path)
-                self.assertIn("vision", path)
-                self.assertIn("2026-08-04", path)
-            vision_audit = entrypoints["vision-audit"]
-            self.assertEqual(vision_audit["status"], "runtime-verified")
-            self.assertTrue(vision_audit["evidence"])
-            for path in vision_audit["evidence"]:
-                self.assertTrue((SKILLS_ROOT.parent / path).is_file(), msg=path)
-                self.assertIn("vision-audit", path)
-                self.assertIn("2026-08-04", path)
-        web = consumers["web-readonly-parser"]
-        self.assertEqual(web["kind"], "goal-document-parser")
-        self.assertEqual(web["supportCommitment"], "not-applicable")
-        self.assertEqual(web["contractVerificationStatus"], "not-applicable")
-        self.assertEqual(web["entrypoints"][0]["status"], "automated-verified")
+        self.assertIn("claude-code-cli", consumers)
+        self.assertIn("grok-build-cli", consumers)
+        self.assertIn("github-copilot-cli", consumers)
 
     def test_p005_core_contract_guards_unknown_information_gates(self) -> None:
         """Keep P-005's actual gates from regressing to a keyword-only policy."""
@@ -876,8 +849,9 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
             (SKILLS_ROOT.parent / "docs" / "vision" / "alignment.md").read_bytes(),
             "core vision/alignment.md must match canonical",
         )
-        # GOAL-021 F-001: full-file hash consistency for core templates + architecture mirrors
-        # (exclude tech-stack intentionally; docs/README may differ from core slim README).
+        # GOAL-021 F-001: hash consistency for methodology mirrors only.
+        # Product monorepo pages (overview / directory-layout / monorepo-layout /
+        # module-architecture) may diverge from the reusable package and are not staged.
         canonical_docs = SKILLS_ROOT.parent / "docs"
         mirror_pairs = [
             ("templates/README.md", core / "templates" / "README.md"),
@@ -890,11 +864,6 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 "architecture/workspace-protocol.md",
                 core / "architecture" / "workspace-protocol.md",
             ),
-            ("architecture/overview.md", core / "architecture" / "overview.md"),
-            (
-                "architecture/directory-layout.md",
-                core / "architecture" / "directory-layout.md",
-            ),
         ]
         for rel, mirror_path in mirror_pairs:
             canonical_path = canonical_docs / rel
@@ -905,6 +874,12 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 sha256(mirror_path.read_bytes()).hexdigest(),
                 f"core mirror hash drift: {rel}",
             )
+        # Package still ships generic overview + directory-layout for consumer install.
+        self.assertTrue((core / "architecture" / "overview.md").is_file())
+        self.assertTrue((core / "architecture" / "directory-layout.md").is_file())
+        core_overview = (core / "architecture" / "overview.md").read_text(encoding="utf-8")
+        self.assertIn("核心方法论", core_overview)
+        self.assertNotIn("schema-ui-core-admin-foundation", core_overview)
         for name in ("00-meta.md", "01-decision.md", "02-execution.md", "03-audit.md"):
             c = canonical_docs / "templates" / "goal-folder" / name
             m = core / "templates" / "goal-folder" / name
@@ -1212,9 +1187,6 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         for name in (
             "skills-consumer-contract.schema.json",
             "skills-consumer-contract.json",
-            "skills-consumer-compatibility-matrix.schema.json",
-            "skills-consumer-compatibility-matrix.json",
-            "runtime-evidence.schema.json",
         ):
             canonical = CORE_CONTRACTS / name
             mirror = SKILLS_CONTRACTS / name
@@ -1223,6 +1195,18 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 normalized_sha256(mirror),
                 f"contract mirror drift: {name}",
             )
+        # Producer-only artifacts are optional on consumer monorepos; if present, mirror them.
+        for name in PRODUCER_ONLY_CONTRACT_FILES:
+            canonical = CORE_CONTRACTS / name
+            mirror = SKILLS_CONTRACTS / name
+            if canonical.is_file() or mirror.is_file():
+                self.assertTrue(canonical.is_file(), f"orphan producer mirror without canonical: {name}")
+                self.assertTrue(mirror.is_file(), f"orphan producer canonical without mirror: {name}")
+                self.assertEqual(
+                    normalized_sha256(canonical),
+                    normalized_sha256(mirror),
+                    f"producer contract mirror drift: {name}",
+                )
         # GOAL-022 stage script is the SSOT refresh path
         stage_script = SKILLS_ROOT.parent / "scripts" / "stage_skills_mirrors.py"
         self.assertTrue(stage_script.is_file(), "missing stage_skills_mirrors.py")

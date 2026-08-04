@@ -23,7 +23,7 @@ Skills 是核心方法论的 **AI 消费适配器**。**核心方法论与 Skill
 | **`v0.9.0`** / **`v0.9.1`** / **`v0.9.2`** / **`v0.10.0`** / **`v0.11.0`** | 已发布 annotated tag / Release 基线。 |
 | **`v0.12.1`（发布候选）** | 发布身份已冻结；待 merged `main` 上的 annotated tag、strict evidence、Actions 与 Environment `release` 完成后，才可称为正式资产。事务 updater、consumer-only contract profile 与四入口 × 三宿主 runtime evidence 已进入候选范围。**不**宣称 Codex 矩阵 `committed` / `runtime-verified`。 |
 
-Claude Code / Grok Build / Copilot CLI 为 `committed` + `runtime-verified`；Web parser 为 `automated-verified`。权威字段见 [`docs/contracts/skills-consumer-contract.json`](../docs/contracts/skills-consumer-contract.json) 与 [`docs/contracts/skills-consumer-compatibility-matrix.json`](../docs/contracts/skills-consumer-compatibility-matrix.json)。
+Claude Code / Grok Build / Copilot CLI 为 `committed` + `runtime-verified`；Web parser 为 `automated-verified`。消费仓权威字段见 [`docs/contracts/skills-consumer-contract.json`](../docs/contracts/skills-consumer-contract.json)（`evidenceBoundary.defaultProfile=consumer`）。compatibility matrix / runtime evidence 属 **producerOnly**，仅生成仓发行门禁需要，**不是**本消费 monorepo 的完整安装 MUST。
 
 ## 产品模型（必读）
 
