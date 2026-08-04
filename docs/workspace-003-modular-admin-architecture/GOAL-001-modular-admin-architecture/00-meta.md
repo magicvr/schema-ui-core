@@ -1,0 +1,69 @@
+---
+id: GOAL-001-modular-admin-architecture
+title: 单主线模块化 Admin 架构
+status: active
+parent: null
+created: 2026-08-04
+updated: 2026-08-04
+version: 0.1.0
+progress: 0/6
+plan_refs:
+  - VP-003-modular-admin-architecture
+primary_plan: VP-003-modular-admin-architecture
+serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为由薄内核、静态组合根、模块契约和启动时 Profile 驱动的模块化单体。
+---
+
+# GOAL-001 · 单主线模块化 Admin 架构
+
+## 概述
+
+本 Root 承接 [VP-003 · 单主线模块化 Admin 架构](../../vision/plans/VP-003-modular-admin-architecture.md)。本次仅建立独立的 delivery 工作区、路线图和信息门禁，作为模块化架构实施的可追溯范围；不把建区、文档或试点计划写成 R1-R6 的实现完成证据。
+
+## 愿景对齐
+
+| 字段 | 值 |
+|------|----|
+| `plan_refs` | `VP-003-modular-admin-architecture` |
+| `primary_plan` | `VP-003-modular-admin-architecture` |
+| Charter | `schema-ui-core-admin-foundation@0.2.0` |
+| 工作区角色 | `delivery` |
+
+方向、退出判据与非目标以 VP-003 和 [module-architecture.md](../../architecture/module-architecture.md) 为权威。本 Root 仅保留服务该意图所需的简短边界与路线图。
+
+## 成功边界
+
+- [ ] R1 在完整模块/中央注册/迁移所有权清单基础上冻结可实施的模块、迁移、错误和回滚边界。
+- [ ] 薄内核、框架无关模块契约、Fx 组合根与确定性后端聚合成为迁移能力的唯一平台路径。
+- [ ] 试点通过 R3 门闩后，现有一方 Admin 能力迁入统一模块契约，并退出已替代的中央装配路径。
+- [ ] `mvp`、`admin` 与 custom Profile，数据升级/恢复、健康诊断、Docker/代理与 fork 路径具有可核对证据。
+- [ ] VP-003 七条方向级退出判据均具备本工作区实施证据、验证结果和关门审计，且无开放 required 信息项或必改 finding。
+
+## 纲领路线图
+
+六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。当前仅完成工作区/Root 建立，R1-R6 均未开始，因此派生进度为 `0/6`。
+
+| 阶段 | 名称 | 状态 | 说明 |
+|------|------|------|------|
+| R1 | 契约与迁移基线冻结 | 未开始 | 盘点中央注册点、模块边界、迁移/seed 所有权与 Profile 矩阵；冻结模块 API、迁移 tombstone、错误分类、兼容基线和回滚策略。 |
+| R2 | 内核与组合根基础 | 未开始 | 建立薄内核、框架无关模块契约、Fx 组合根、确定性图校验、迁移收集和 Manifest 聚合骨架。 |
+| R3 | 有界试点 | 未开始 | 用 operationlog/activity 与 settings 验证 Kernel 切口、四个病灶切除和 V-1～V-4；通过才可进入 R4。 |
+| R4 | 全量一方模块迁移 | 未开始 | 将 users、roles、Schema CRUD 及其他现有 Admin 能力迁入统一能力契约，移除 Shell/中央注册表特例。 |
+| R5 | Profile、数据与运维收敛 | 未开始 | 完成 Profile、fresh/reconcile、readyz/诊断、代理/容器、升级恢复与 fork 文档。 |
+| R6 | 旧路径移除与终态验收 | 未开始 | 删除双轨与静态生产兜底，完成完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收和关门审计。 |
+
+## 信息需求与阶段门禁
+
+开放信息项不阻断本 Root 的建立；它们分别阻断列明的后续阶段，且不得在没有证据或用户书面 residual 的情况下被写成 `verified`。
+
+| ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
+|----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
+| I-001 | required | 当前中央注册点、模块候选、能力归属与跨模块依赖的完整清单是什么？ | R1 方案冻结与实施 | R1 方案冻结前 | 对 API、Web、Shell、路由、导航和现有注册路径做可追溯盘点，并形成模块清单。 | open | 不延期；R1 方案冻结前复核 | VP-003 信息门禁提示；待收集。 |
+| I-002 | required | 既有 `0001` 起迁移链与 seed 如何映射到全局模块所有权，升级/恢复夹具覆盖什么？ | R1 迁移策略冻结与 R2 实施 | R1 方案冻结前 | 核对迁移台账、checksum、快照/恢复、tombstone 与系统数据 reconcile 的现状和目标边界。 | open | 不延期；R1 方案冻结前复核 | VP-003 信息门禁提示；待收集。 |
+| I-003 | required | Fx、模块 API、Go 兼容范围和启动/就绪/停止/失败清理的错误语义如何固定？ | R1 契约冻结与 R2 实施 | R1 方案冻结前 | 固定候选版本、模块 API 边界和生命周期/错误分类，并记录取舍。 | open | 不延期；R1 方案冻结前复核 | VP-003 信息门禁提示；待收集。 |
+| I-004 | required | `mvp`、`admin` Profile 的精确模块集合与配置覆盖顺序是什么？ | R2 Profile 方案冻结与实施 | R2 方案冻结前 | 建立可核对的 Profile 矩阵、依赖闭包和配置优先级案例。 | open | 不延期；R2 方案冻结前复核 | VP-003 信息门禁提示；待收集。 |
+| I-005 | required | Manifest 聚合的冲突规则、缓存、登录前加载与前端权限投影边界是什么？ | R2 聚合 API 方案冻结与 R3 联调 | R2 方案冻结前 | 定义输入、排序/冲突、缓存与无秘密发布契约，并以正反例验证。 | open | 不延期；R2 方案冻结前复核 | VP-003 信息门禁提示；待收集。 |
+| I-006 | required | 静态 Manifest 和 Shell 特例的删除清单、迁移期限与回滚触发条件是什么？ | R3 试点门闩与 R6 旧路径移除 | R3 方案冻结前 | 盘点双轨入口与 Shell 特例，确定有期限的开发期兼容、告警和回滚条件。 | open | 不延期；R3 方案冻结前复核 | VP-003 信息门禁提示；待收集。 |
+
+## 台账布局
+
+本 Root 使用平铺 `01-decision/`、`02-execution/`、`03-audit/` 目录承载独立记录；索引文件只维护摘要与链接。当前没有共享资料引用。

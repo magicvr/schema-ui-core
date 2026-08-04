@@ -5,7 +5,7 @@ status: active
 created: 2026-08-04
 updated: 2026-08-04
 parent: null
-version: 1.0.1
+version: 1.0.2
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 serves: VP-003-modular-admin-architecture
 ---
@@ -16,7 +16,9 @@ serves: VP-003-modular-admin-architecture
 
 `schema-ui-core` 的目标架构是**单一代码主线上的模块化单体**。同一份可执行产物静态包含受支持的一方模块候选集，由启动时 Profile 和 `modules.enabled` 选择启用集合；MVP、完整 Admin 与后续 fork 起点是同一架构的不同配置，不再维护两套长期演进代码线。
 
-本文件固化 [VP-003](../vision/plans/VP-003-modular-admin-architecture.md) 的终态架构边界。根目录 `MODULE-ARCHITECTURE-DRAFT.md` 是评议输入，不是现行架构权威。
+本文件固化 [VP-003](../vision/plans/VP-003-modular-admin-architecture.md) 的终态架构边界。
+
+> **历史评议输入**：`MODULE-ARCHITECTURE-DRAFT.md` 已在定稿时从当前工作树移除。其只读、可复核来源固定为 Git `72017c86313c75edfe04c71ec7266767509388bb:MODULE-ARCHITECTURE-DRAFT.md`（blob `e6473129ac52f7ae67284e356e3c4ddd47a217e6`）；下文的“历史评议输入”均指该版本。它不是现行架构权威。
 
 ## 1. 内核、组合根与 DI
 
@@ -38,7 +40,7 @@ serves: VP-003-modular-admin-architecture
 
 ### 2.1 一方标准 Admin 功能模块的核心贡献（必须）
 
-下列六项对应 `MODULE-ARCHITECTURE-DRAFT` D-3 的**必须**贡献点。一方**标准 Admin 功能模块**（提供可装配业务能力的 users / roles / settings / activity / records 等）在迁入统一契约时**必须**实现，不得以「能力可选」为由永久缺省：
+下列六项对应固定历史评议输入 D-3 的**必须**贡献点。一方**标准 Admin 功能模块**（提供可装配业务能力的 users / roles / settings / activity / records 等）在迁入统一契约时**必须**实现，不得以「能力可选」为由永久缺省：
 
 | 能力 | 贡献内容 | 级别 |
 |------|----------|------|
@@ -61,7 +63,7 @@ serves: VP-003-modular-admin-architecture
 | Lifecycle | 启动、就绪、停止钩子 | 可选（有副作用或外部依赖时强烈建议） |
 | Observability | 健康、指标、日志与审计事件贡献 | 可选（有独立运行特征时强烈建议） |
 
-`DependsOn`、配置定义与种子/系统数据（draft 的可选三项）分别落在模块描述的依赖字段、Configuration 能力与 Persistence 的 reconcile/bootstrap 路径中；无配置或无种子时可为空，但依赖与冲突仍 fail closed。
+`DependsOn`、配置定义与种子/系统数据（历史评议输入的可选三项）分别落在模块描述的依赖字段、Configuration 能力与 Persistence 的 reconcile/bootstrap 路径中；无配置或无种子时可为空，但依赖与冲突仍 fail closed。
 
 注册与启动必须确定性、可重复并 fail closed：未知模块、重复 ID、缺失/循环依赖、未启用的依赖、重复路由、页面、导航键、权限键或配置命名空间，均阻止启动并给出可定位错误。依赖不会被静默自动启用。
 
@@ -115,11 +117,11 @@ serves: VP-003-modular-admin-architecture
 
 实施路线可以先用 `activity`（及 `operationlog` 拆分）与 `settings` 验证切口，但**试点不是终态，也不能替代 VP-003 的退出标准**。终态必须将现有一方 Admin 能力迁入统一契约，并删除中央模块清单、静态生产 Manifest、Shell 特例和其他已经被新架构替代的装配路径。
 
-R3 有界试点的**通过门闩**（继承 draft §4.5 / §5，细节以 [VP-003](../vision/plans/VP-003-modular-admin-architecture.md) 路线图为准）至少包括：
+R3 有界试点的**通过门闩**（继承固定历史评议输入 §4.5 / §5，细节以 [VP-003](../vision/plans/VP-003-modular-admin-architecture.md) 路线图为准）至少包括：
 
 1. 试点模块按 §2 完整迁入（含核心六项及声明的依赖/配置/种子路径）；
 2. 切除四个旧架构病灶：中心化业务 Register、全局 Schema fixtures 对试点的占用、生产静态 Manifest 依赖、Host/Shell 对试点的硬编码特例；
 3. 验证 V-1 启停、V-2 禁用不可见、V-3 同一前端 build 零 diff、V-4 Schema 驱动渲染；
 4. 未通过则先加固 Kernel，**不得**以「模块已写出」放行全量存量迁移（R4）。
 
-本决策不包含：运行时插件市场、第三方不受信任模块加载、跨进程微服务拆分、全量上游协议扩张、业务领域模块本身。上述能力需要新的愿景或明确兼容决策。
+本决策不包含：运行时插件市场、第三方不受信任模块加载、跨进程微服务拆分、全量上游协议扩张、业务领域模块本身。协议范围以 [VP-003 的继承协议基线](../vision/plans/VP-003-modular-admin-architecture.md) 为准；扩大范围须先有新的决策、递增覆盖版本与验证。上述能力需要新的愿景或明确兼容决策。

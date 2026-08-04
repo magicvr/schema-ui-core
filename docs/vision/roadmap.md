@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-04
 parent: null
-version: 0.7.0
+version: 0.7.1
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -18,7 +18,7 @@ version: 0.7.0
 |------|----|------|------|------|
 | 1 | [VP-001-mvp-admin-foundation](plans/VP-001-mvp-admin-foundation.md) | 初始化 React + Go Admin MVP，覆盖固定协议来源、核心账号权限与协议范例验证。 | 无 | **closed**（2026-08-01；lead: workspace-001-mvp-admin-foundation；三条退出判据经 R6 工作区 Q2 证据满足，用户确认关门） |
 | 2 | [VP-002-production-admin-foundation](plans/VP-002-production-admin-foundation.md) | 在 I-PROTO-001 冻结子集之上，交付可直接 fork 使用的生产级 Schema 驱动 Admin 基架：Renderer、真实认证、持久化权限、CRUD 与工程化启动。 | 继承 VP-001 协议验证基线 | **closed**（2026-08-04；lead: workspace-002-production-admin-foundation；七条产品级成功标准经工作区 Q2 证据满足——Root `GOAL-001` `done / 5/5`（A-007 self close-out `pass`）、GOAL-002～013 全部 `done`、Root 03-audit 开放 required=0——用户确认关门） |
-| 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 将生产级 Admin 基架收敛为单主线模块化单体：薄内核、框架无关模块契约、Fx 组合根、Profile、后端聚合 Manifest 与完整数据/运维闭环。 | 继承 VP-002 产品基线；strategic re-align 已由 VRev-006 核对 | **planned**（2026-08-04；尚未绑定 workspace；Activity/Settings 试点仅为路线图中间门，不是 VP 退出边界） |
+| 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 将生产级 Admin 基架收敛为单主线模块化单体：薄内核、框架无关模块契约、Fx 组合根、Profile、后端聚合 Manifest 与完整数据/运维闭环。 | 继承 VP-002 产品基线；strategic re-align 已由 VRev-006 核对 | **active**（2026-08-04；lead: workspace-003-modular-admin-architecture；Activity/Settings 试点仅为路线图中间门，不是 VP 退出边界） |
 
 ## 已确认但尚未纳入新 VP 的后续方向
 

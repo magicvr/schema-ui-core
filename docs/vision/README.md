@@ -4,7 +4,7 @@ status: active
 created: 2026-07-29
 updated: 2026-08-04
 parent: null
-version: 0.6.0
+version: 0.6.1
 ---
 
 # docs/vision · 愿景层
@@ -38,16 +38,17 @@ version: 0.6.0
 | [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.2.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
 | [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **closed** · lead: workspace-001-mvp-admin-foundation |
 | [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **closed**（2026-08-04）· lead: workspace-002-production-admin-foundation |
-| [plans/VP-003-modular-admin-architecture.md](plans/VP-003-modular-admin-architecture.md) | **planned** · 下一个明确 VP；完整单主线模块化终态，尚未绑定 workspace |
+| [plans/VP-003-modular-admin-architecture.md](plans/VP-003-modular-admin-architecture.md) | **active** · lead: workspace-003-modular-admin-architecture；完整单主线模块化终态，建区不等于实现完成 |
 | [../architecture/module-architecture.md](../architecture/module-architecture.md) | VP-003 终态架构权威（Fx、Profile、Manifest、数据与生命周期边界） |
 | [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
 | [reviews.md](reviews.md) | Vision Review 台账（`VRev-*`） |
-| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 1 delivery；VP-003 planned/unbound） |
+| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 2 delivery；VP-003 已绑定 lead） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议实施清单（`F-V001` 证据） |
 | [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | 实现层 primary 工作区 · Root `GOAL-001-mvp-admin-foundation` |
 | [../workspace-002-production-admin-foundation/](../workspace-002-production-admin-foundation/) | 实现层 delivery 工作区 · Root `GOAL-001-production-admin-foundation` · VP-002 lead |
+| [../workspace-003-modular-admin-architecture/](../workspace-003-modular-admin-architecture/) | 实现层 delivery 工作区 · Root `GOAL-001-modular-admin-architecture` · VP-003 lead |
 
 模板（冷启动复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`。
 

@@ -2,11 +2,12 @@
 doc_type: vision-plan
 id: VP-003-modular-admin-architecture
 title: 单主线模块化 Admin 架构
-status: planned
+status: active
+lead_workspace: workspace-003-modular-admin-architecture
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 created: 2026-08-04
 updated: 2026-08-04
-version: 0.1.1
+version: 0.1.3
 parent: null
 ---
 
@@ -19,6 +20,18 @@ parent: null
 本 VP 表达完整终态，不是 Activity/Settings 试点的“妥协版本”。试点只是在迭代路线图中验证模块切口、失败语义和迁移方式；即使试点通过，也不得据此关闭本 VP。
 
 架构权威见 [单主线模块化 Admin 架构](../../architecture/module-architecture.md)。
+
+## 继承的协议基线（I-PROTO-001 v0.1.3）
+
+VP-003 继承工作区 `workspace-001-mvp-admin-foundation` 中由 Root 决策 `D-009` 正式冻结的 `I-PROTO-001` 覆盖基线 `v0.1.3`。权威记录为 [I-PROTO-001 覆盖表](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)，其来源固定为 `schema-ui-docs v2.7.0` pinned commit `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b`；对应 Root 决策见 [GOAL-001 `01-decision.md`](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/01-decision.md)。该基线是架构迁移的范围约束，不是 VP-003 的实现或验收证据。
+
+| disposition | domain_id | VP-003 继承范围 |
+|---|---|---|
+| `include` | `D-NODE`, `D-EXPR`, `D-DATA`, `D-PERM`, `D-APP`, `D-VER`, `D-VAL` | 仅覆盖 v0.1.3 表中已列的语义、结构与验证入口 |
+| `include-partial` | `D-COMP`, `D-ACT`, `D-TABLE`, `D-FORM` | 保留已冻结的白名单、非批量 action/request、基础表格交互与表单边界；不扩展为完整 registry 或批量语义 |
+| `exclude` | `D-UPLOAD` | 上传 UI、端点及 `uploads` fixtures 整域不在本 VP 范围 |
+
+任何新增 domain、扩大 `include-partial` 子集、改变 `D-UPLOAD` 排除或引入新的上游协议版本，都必须追加新的决策、递增覆盖表版本，并在受影响的 `/govern` 信息门禁前完成验证；不得静默改写 `v0.1.3`。
 
 ## 方向级退出判据
 
@@ -53,12 +66,12 @@ parent: null
 |------|------|-----------------|------------|
 | R1 | 契约与迁移基线冻结 | 盘点当前中央注册点、模块边界、迁移/seed 所有权、Profile 矩阵；冻结模块 API（含核心六项 / 按需能力口径）、capability 协商、迁移 tombstone、错误分类、现有兼容基线和回滚策略 | 只冻结实施边界，不算架构完成 |
 | R2 | 内核与组合根基础 | 建立薄内核、框架无关模块契约、Fx 组合根、确定性图校验、全局迁移收集、Manifest 聚合骨架与 `/.well-known` 代理 | 提供可迁移平台，不关闭 VP |
-| R3 | 有界试点 | 见下方 **R3 通过门闩**（继承 draft §4.5/§5）；通过仅允许进入 R4，不关闭本 VP | 验证切口与 Kernel 手术；**非**终态 |
+| R3 | 有界试点 | 见下方 **R3 通过门闩**（继承固定历史评议输入 §4.5/§5）；通过仅允许进入 R4，不关闭本 VP | 验证切口与 Kernel 手术；**非**终态 |
 | R4 | 全量一方模块迁移 | 将 users、roles、records/Schema CRUD 及其他现有 Admin 能力迁入统一能力契约；清除模块对 Shell/中央注册表的特例依赖 | 达到功能覆盖面，但仍需退出旧路径与运维验收 |
 | R5 | Profile、数据与运维收敛 | 完成 `mvp`/`admin`/custom 配置、fresh/reconcile、readyz/诊断、Vite/Nginx/Docker、升级恢复和 fork 文档 | 形成可发布候选，不自动等于 VP 关闭 |
 | R6 | 旧路径移除与终态验收 | 删除双轨兼容和静态生产兜底；运行完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收与 close-out 审计 | 七条退出判据全部取证后方可提议关门 |
 
-### R3 通过门闩（有界试点 · 继承 draft）
+### R3 通过门闩（有界试点 · 继承固定历史评议输入）
 
 R3 的目标是用 `operationlog`/`activity` 拆分与 `settings` 做手术刀，**证明 Kernel 切口正确**，不是「写出新模块就过关」。下列门闩全部满足后才可进入 R4；任一未满足则先加固 Kernel / 试点范围，**禁止盲目全量存量迁移**。
 
@@ -90,7 +103,7 @@ R3 的目标是用 `operationlog`/`activity` 拆分与 `settings` 做手术刀�
 
 另须覆盖：依赖/冲突 fail-closed、配置变更事件（Settings）、同一 build 下至少 `mvp`/`admin` Profile 差异、既有实例升级路径上的系统数据 reconcile 不覆盖用户字段。
 
-**D. 决策门（draft §5.3）**
+**D. 决策门（固定历史评议输入 §5.3）**
 
 - 上述 A+B+C 全部通过 → 允许启动 R4 存量迁移计划。
 - 卡在 Kernel 改造（尤其病灶 2/3 或 Manifest 聚合）→ 先加固 Kernel 再继续，**不得**用「模块代码已存在」放行 R4。
@@ -124,12 +137,12 @@ VP 允许在 `planned` 状态携带实施未知，但未来激活/开区后至�
 
 ## 工作区绑定
 
-当前为 `planned`，尚未绑定 lead workspace。按照愿景对齐规则，planned VP 可以有零个工作区；激活与结构选型由后续 `/vision` 决策，工作区/Root 与实施记录由 `/govern` 建立。
+用户已于 2026-08-04 确认将本 VP 激活，并建立唯一 lead / delivery 工作区 [workspace-003-modular-admin-architecture](../../workspace-003-modular-admin-architecture/workspace.md)。其 Root 为 [GOAL-001-modular-admin-architecture](../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/00-meta.md)，`primary_plan` 与 `plan_refs` 均为本 VP。该绑定建立实现层治理范围，不构成 R1 或任何架构实现完成证据。
 
 ## Non-goals
 
 - 不建设运行时插件市场、`.so` 加载、远程模块下载或运行中热启停。
-- 不在本 VP 中扩张 `schema-ui-docs v2.7.0` 的冻结协议范围。
+- 不在本 VP 中扩张上述 `I-PROTO-001 v0.1.3` 的冻结协议范围。
 - 不交付订单、钱包、类目、通知等具体业务领域模块。
 - 不以微服务拆分替代模块化单体，也不在本项目内重写上游 Schema 语义。
 - 不把试点、能启动、局部模块化或文档完成当作终态实现证据。
@@ -140,3 +153,5 @@ VP 允许在 `planned` 状态携带实施未知，但未来激活/开区后至�
 |------|------|------|
 | 2026-08-04 | `0.1.0` | 用户确认战略方向与全部工程建议；明确 VP 表达完整最终意图，Activity/Settings 等试点只进入迭代路线图，不构成妥协版退出边界。 |
 | 2026-08-04 | `0.1.1` | `/vision` 响应 VRev-007：`F-V010` 核心六项必须 vs 按需能力口径；`F-V011` R3 继承 draft 病灶切除 + 5 交付 + V-1～V-4 门闩。未改 `planned`、未激活、未绑工作区。 |
+| 2026-08-04 | `0.1.2` | `/vision` 响应 VRev-008：固定 `I-PROTO-001 v0.1.3` / `D-009` 的继承范围，并将现行 R3 对评议稿的引用改为固定历史评议输入。未改 `planned`、未激活、未绑工作区。 |
+| 2026-08-04 | `0.1.3` | 用户确认激活并绑定唯一 lead / delivery 工作区 `workspace-003-modular-admin-architecture`；`/govern` 建立对应 Root。未将建区写成任何 R1-R6 的实现完成。 |
