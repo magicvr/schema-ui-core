@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-production-admin-foundation
 title: 生产级可用 Admin 基架
-status: active
+status: done
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.5.0
+version: 0.7.0
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -53,11 +53,15 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
   阶段子目标：`GOAL-007-r4-schema-crud`（**done**，2026-08-02；D-010/D-011 立项；D-002/D-003 冻结 API/错误与 SQLite 迁移计划，`I-007-001`/`I-007-002` verified，S1/S2 勾选；**S3 已实施**——0003 + repository + seedRecords + handler 走 SQLite、POST 新增，T-API/T-DB 全绿，S3 勾选；**S4/S5 已实施**——`list-edit-lifecycle` 代表页 + 渲染层一次性补齐 + `createRecord` + search form-to-query，T-UI-01～10 全绿，S4/S5 勾选；**S6 已实施**——`I-007-004` verified（D-007 协议），L1 HTTP 层 + L2 进程级重启持久化证据（A-010 F-008 → fixed，rec-1/`{newID}` detail `updatedAt` 毫秒精确跨进程断言），`go test ./...` 全绿 + web vitest 458/458，S6 勾选）。`I-007-001/002/003/004` 全部 verified；A-011/A-012（independent · finding-closure）确认 F-008 `fixed`，A-013（self · close-out）`pass`；**GOAL-007 已置 `done`**。**Root R4 检查点已勾选**（Root `3/5 → 4/5`）。
 - [x] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。（2026-08-02：`I-005` verified、`I-006` closed（D-013，部署基线 A + 建议口径 + 复现方法）；`GOAL-008-r5-engineering-fork` 已立项，S1/S2 已实施 `2/5`——env 清单/health/dev-prod 文档 + Dockerfile × 2/compose/nginx 反代/CI smoke，契约 C-001～C-007 验证通过。**2026-08-03：`GOAL-008` 已 `5/5` 并 `done`**——S3（QUICKSTART + REPRO-003 无编译缓存复现 64.833s ≤ 900s）、S4（smoke.sh + 隔离守卫 + CI run 30776646293）、S5（A-014 self finding-closure + A-015 self stage-audit）、S6 加分（operation_log，`I-008-003` verified + F-010 fixed）；关门审计 A-016（independent · conditional → F-010 fixed）+ A-017（independent · finding-closure · pass）+ A-018（self · close-out · pass）。**Root R5 检查点已勾选（Root `4/5 → 5/5`，用户确认）**；Root close-out 关门审计与 VP-002 关门为独立用户裁决。）
 
-当前派生进度为 `5/5`（R1、R2、R3、R4 于 2026-08-02 勾选；**R5 于 2026-08-03 勾选**——`GOAL-008-r5-engineering-fork` 置 `done`，A-016/A-017/A-018 关门闭环）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。子目标 progress 不替代本 Root 检查点。Root close-out 关门审计与 VP-002 关门为独立用户裁决。
+当前派生进度为 `5/5`（R1、R2、R3、R4 于 2026-08-02 勾选；**R5 于 2026-08-03 勾选**——`GOAL-008-r5-engineering-fork` 置 `done`，A-016/A-017/A-018 关门闭环）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。子目标 progress 不替代本 Root 检查点。**Root 已于 2026-08-04 经 A-004 self close-out `pass` 置 `done`**；VP-002 关门为独立 `/vision` 用户裁决。
 
 > **2026-08-03 · A-002 响应波次（不改变 5/5 派生）**：Root 收到 A-002（independent · fail）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）。用户按 P-004 裁决全部走 `fixed`（D-014）：F-002-002/003 → `GOAL-009-a002-auth-form-fixes`；F-002-001 通用适配层改造 → `GOAL-010-a002-schema-adapter`（P-001 路线图 + `I-010-001/002`）。**Root 关门与 VP-002 关门在 A-002 required 全部合法闭合前保持阻断**。
 
 > **2026-08-04 · A-002 F-002-001 已闭合、关门阻断解除**：`GOAL-010-a002-schema-adapter` 已置 `done / 5/5`（S5 全量回归齐备：go test 7 包全绿 + vet、vitest 491/491、tsc/build、e2e 2/2；self close-out A-002 pass）；Root 03-audit 关闭证据表 **F-002-001 → `fixed`**（2026-08-04）。**A-002 三条 required 全部合法闭合，Root 关门与 VP-002 关门阻断解除**；Root close-out 关门审计与 VP-002 关门为独立用户裁决（下一拍 `/govern` 处理）。F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固。
+
+> **2026-08-04 · Root A-003 已响应、进入 close-out 裁决**：A-003（independent · finding-closure · pass）独立复核 F-002-001 `fixed` 关闭证据充分（索引/关闭表/载体三处一致），用户裁决**采纳 `pass`、维持 F-002-001 `fixed`**；R-001/R-002 → handled（Root 03-audit A-003 响应节）。A-002 三条 required 全部合法闭合确认，Root 关门门禁全部解除；**Root close-out 关门审计与 VP-002 关门为独立用户裁决**（P-004 §3.1：是否补 Root self 关门审计待用户裁决）。Root 保持 `active`、派生进度 `5/5`。
+
+> **2026-08-04 · Root self close-out 通过并关门**：用户指令「补 Root self 关门审计，通过后置 done」。**A-004（self · close-out · pass）**——五个纲领 `5/5`、子目标 GOAL-002～011 全部 `done`、A-002 三条 required 全部 `fixed`、I-001～I-006 verified/closed、无开放 required finding；本轮回归 `go test ./...` 全绿 + `go vet`、vitest **491/491**、`tsc -b` 干净。**Root 置 `status: done`**，派生进度保持 `5/5`。VP-002 关门为独立 `/vision` 流程，不由本 Goal 自动放行。
 
 ## 信息需求与阶段门禁
 

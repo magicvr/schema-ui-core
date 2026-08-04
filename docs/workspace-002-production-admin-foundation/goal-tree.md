@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.59.0
+version: 0.61.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -16,7 +16,7 @@ workspace_id: workspace-002-production-admin-foundation
 - primary plan：`VP-002-production-admin-foundation`
 
 ```text
-GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
+GOAL-001-production-admin-foundation [done] 生产级可用 Admin 基架 (5/5)
 ├── GOAL-002-r1-schema-load-validate [done] R1 · Schema 加载、校验与统一错误面 (4/4)
 ├── GOAL-003-r1-default-render-path [done] R1 · 默认 Renderer 主路径与示例降级 (4/4)
 ├── GOAL-004-r1-representative-node-pages [done] R1 · 代表性 Node 页面与回归证据 (5/5)
@@ -33,7 +33,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `active` | `5/5` | 2026-08-03 |
+| `GOAL-001-production-admin-foundation` | 生产级可用 Admin 基架 | `null` | `done` | `5/5` | 2026-08-04 |
 | `GOAL-002-r1-schema-load-validate` | R1 · Schema 加载、校验与统一错误面 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-01 |
 | `GOAL-003-r1-default-render-path` | R1 · 默认 Renderer 主路径与示例降级 | `GOAL-001-production-admin-foundation` | `done` | `4/4` | 2026-08-02 |
 | `GOAL-004-r1-representative-node-pages` | R1 · 代表性 Node 页面与回归证据 | `GOAL-001-production-admin-foundation` | `done` | `5/5` | 2026-08-02 |
@@ -130,3 +130,7 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-010 S4 父级验收门已勾选（2026-08-04）**：按 D-004 独立评估 GOAL-011 关门证据（`done / 5/5`，A-013 复审 A-012 F-001～F-005 全 fixed）——users/roles 后端闭环、records 0006 退场、Renderer 基线 `adfe15a` 零 diff、fresh fork/升级/重启/401-403 验收齐备；本回合静态复核一致（`health.go` 仅注册 users/roles、fixtures 无 records、web src 无 `fetchRecords`/`RecordItem`；`protocol/conformance/stage3-fixtures.test.ts` 的 `/api/records` 为协议一致性测试历史数据，非产品运行面）。**S4 勾选，GOAL-010 `3/5 → 4/5`**；`I-010-001`/`I-010-002` 维持 verified；GOAL-010 03-audit 无开放 required。Root A-002 F-002-001 仍 `open`（待 S5 回归、审计与关闭证据链）——Root 关门与 VP-002 关门继续阻断；Root 保持 `active / 5/5`。
 
 > **GOAL-010 已关门、Root A-002 F-002-001 已闭合（2026-08-04）**：S5 全量回归齐备（`go test ./... -count=1` 全绿 7 包 + `go vet` 干净；`vitest run` **491/491**；`tsc -b` + `vite build` 干净；Playwright e2e **2/2**，HEAD `21e6bd7`）；用户按 P-004 §3.1 裁决补 self 关门审计 → **A-002（self · close-out · pass）**：S1～S5 证据链、意见台账（A-001 F-001/F-002 fixed）、信息台账（I-010-001/002 verified）全部核对成立。**S5 勾选，GOAL-010 `4/5 → 5/5`，置 `done`**；**Root 03-audit 关闭证据表 F-002-001 → `fixed`**（Root A-002 三条 required 全部合法闭合，Root 关门与 VP-002 关门阻断解除，进入独立用户裁决）。F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固（未执行）。
+
+> **Root A-003 已响应、进入 close-out 裁决（2026-08-04）**：A-003（independent · finding-closure · pass）独立复核 F-002-001 `fixed` 关闭证据充分、可重复核对，无新增 required；用户裁决**采纳 `pass`、维持 F-002-001 `fixed`**。响应落盘 Root 03-audit（A-003 响应节）：**R-001 → handled**（`stage3-fixtures.test.ts` 的 `/api/records` 为协议一致性测试历史数据，非产品运行面）；**R-002 → handled**（HEAD `a14ba36` revision 身份固定，工作树仅 `03-audit.md` 未提交）。A-002 三条 required 全部合法闭合确认；Root 关门门禁全部解除（无开放 required、`I-001`～`I-006` verified/closed、五个纲领检查点 `5/5`、Charter/VP-002/workspace 对齐链一致、Vision Review 0 open required）——**Root close-out 关门审计与 VP-002 关门为独立用户裁决**；按 P-004 §3.1 待用户决定是否补 Root self 关门审计。Root 保持 `active / 5/5`。
+
+> **Root 已关门（2026-08-04 · A-004）**：用户指令补 Root self 关门审计并通过后置 `done`。**A-004（self · close-out · pass）**——R1～R5 与 GOAL-002～011 证据链、A-002 F-002-001/002/003 全部 `fixed`、I-001～I-006 verified/closed、无开放 required；本轮回归 go test/vet 全绿、vitest **491/491**、`tsc -b` 干净。**Root `active → done`，progress 保持 `5/5`**。VP-002 关门为独立 `/vision` 流程，本树不自动放行。

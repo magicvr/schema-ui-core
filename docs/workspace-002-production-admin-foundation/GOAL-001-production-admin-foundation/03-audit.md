@@ -1,10 +1,10 @@
 ---
 title: 审计台账 · 生产级可用 Admin 基架
-status: active
+status: done
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.4.0
+version: 0.7.0
 ---
 
 # 审计台账 · GOAL-001
@@ -15,6 +15,8 @@ version: 0.4.0
 |------|--------|------|-------|---------|------|
 | A-001 | self | 2026-08-02 | R1 · 协议实施边界与 Schema Renderer 产品化 | pass | 已出具；无开放 R1 required finding |
 | A-002 | independent | 2026-08-03 | apps/api + apps/web · VP-002 功能实现与产品意图交叉审计 | fail | 已响应（2026-08-03）；**F-002-001/002/003 全部 `fixed`**（F-002-001 于 2026-08-04 经 GOAL-010 关闭）；F-002-004~006 recommended 非阻断 |
+| A-003 | independent | 2026-08-04 | finding-closure · Root A-002 F-002-001 | pass | 已响应（2026-08-04）：采纳 pass；F-002-001 `fixed` 维持；R-001/R-002 handled |
+| A-004 | self | 2026-08-04 | Root close-out · 全目标关门审计 | pass | 已出具；无开放 required；用户裁决通过后置 `done` |
 
 ## A-001 · Root R1 阶段自审（2026-08-02）
 
@@ -145,7 +147,7 @@ version: 0.4.0
 ### 仍开放项
 
 - ~~F-002-001 仍 open~~：已按 `fixed` 合法闭合（2026-08-04，GOAL-010 `done / 5/5` + self close-out A-002 pass，见关闭证据表）。**A-002 三条 required 全部合法闭合**，Root 关门与 VP-002 关门阻断解除（进入独立用户裁决流程）。
-- F-002-004~006（recommended）非阻断；F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固（未执行）。
+- F-002-004~006（recommended）非阻断；F-002-001 关闭证据的 `/audit` finding-closure 独立复审见 **A-003（independent · pass，2026-08-04）**——`fixed` 维持，无新增 required。
 - Root `status: active`、派生进度 `5/5` 不变。
 
 ### 后续
@@ -153,3 +155,191 @@ version: 0.4.0
 - F-002-002/003 已于 2026-08-03 按 `fixed` 合法闭合（GOAL-009 S1/S2 + A-001 self close-out）。
 - F-002-001 已于 2026-08-04 按 `fixed` 合法闭合（GOAL-010 S1～S5 + A-002 self close-out，见关闭证据表）。
 - A-002 全部 required 已合法闭合；Root close-out 关门审计与 VP-002 关门为独立用户裁决。
+
+## A-003 · finding-closure · Root A-002 F-002-001（2026-08-04）
+
+- **source**：independent
+- **auditor**：Grok Build · `/audit`
+- **类型 / scope**：finding-closure；仅复核 Root A-002 **F-002-001**（Schema Renderer/CRUD 硬编码单一 records 实体，required / high）的 `fixed` 关闭证据是否充分、可重复核对。不审 F-002-002/003（已由 GOAL-009 闭合）、recommended F-002-004~006、Root close-out 关门、VP-002 关门，也不复判 GOAL-010 全目标五件套是否可另开新 finding。
+- **verdict**：**pass**
+
+### 范围与区间
+
+- 工作区：`workspace-002-production-admin-foundation`；`workspace.md` 的 Root（`GOAL-001-production-admin-foundation`）、canonical root、`primary_plan: VP-002-production-admin-foundation` 一致；`shared_materials_catalog: none`，未使用共享资料作为事实或关闭证据。
+- 已读：本文件 A-002 原文与关闭证据表、[GOAL-010](../GOAL-010-a002-schema-adapter/) 五件套（含 A-002 self close-out）、GOAL-011 作为 S4 双实体载体的既有关闭事实；代码与测试静态/运行核对见下。
+- **证据边界（本轮独立）**：HEAD `a14ba36`，工作树 clean；本轮重跑 `apps/api` `go test ./internal/handler/ -count=1` + `go vet ./...`（exit 0），以及 web 聚焦 `vitest run` 于 `resource.test.ts` + `schema-table.test.tsx` + `schema-crud.test.tsx`（**60/60**）。未在本轮重跑全量 vitest/e2e/Docker Compose；全量四类回归以 GOAL-010 S5 执行记录为既有证据引用，不扩写为本轮独立全量验收。
+
+### 成果（有证据）
+
+对照 F-002-001 原文三项证伪点与建议关闭路径：
+
+| 原主张 / 证伪点 | 本轮核对 | 证据 |
+|-----------------|----------|------|
+| `schema-table.tsx` 无论 `dataSource` 均调用 `fetchRecords` | **已消除** | 现用 `schemaTableDataSource` + `isValidDataSource` 解析端点；合法时 `fetchResourceList(...)`；非法/缺失 fail-closed 不请求（`apps/web/src/renderer/schema-table.tsx`） |
+| `records.ts` 强制 `id/name/status/owner/updatedAt` 与固定分页形状 | **已消除** | `records.ts` **已删除**；`resource.ts` 提供 `ResourceItem`/`ResourceList` + 统一 envelope `{items,total,page,pageSize}`，items 为任意 JSON 对象；`rowKey` 不变量在 table 层强制（`resource.ts` / `schema-table.tsx`） |
+| `health.go` 仅注册 `/api/records`，无通用 CRUD | **已消除** | `Register` 仅 `registerResource(... usersResource / rolesResource)`；通用工厂在 `resources.go`；`records.go` **已删除**（`health.go` L32–33） |
+| 建议路径：Schema 驱动通用适配层 + 后端资源契约；records 降为实例后产品面可退场 | **已落实** | 契约 I-010-001（GOAL-010 S1）；工厂 + users/roles 注册（GOAL-010 S2 + GOAL-011）；前端泛化（S3）；users/roles Schema-only 接入 + records `0006 records_retire`（S4/GOAL-011）；self close-out A-002 + 本意见 |
+| 产品 fixture 仍绑 records | **已消除** | fixtures：`users.json`/`roles.json`/`data-table.json`/`search-form-table.json` 的 `dataSource`/`url` 指向 `/api/users` 或 `/api/roles`；产品 `apps/web/src` 无 `fetchRecords`/`RecordItem`/`/api/records` |
+| 台账单义性（索引 ↔ 关闭表 ↔ 载体状态） | **一致** | 本文件索引 A-002 行、关闭证据表、仍开放项/后续均写 F-002-001 **`fixed`（2026-08-04）**；GOAL-010 `done / 5/5`；与 GOAL-009 曾出现的「索引仍 open / 表已 fixed」类矛盾不同 |
+
+### 对照关闭判据（F-002-001）
+
+| 判据 | 判断 | 说明 |
+|------|------|------|
+| 硬编码 records 传输/字段模型已去除 | ✅ | 见上表三项证伪点 |
+| 存在可重复使用的通用适配层 + 后端注册契约 | ✅ | `resource.ts` + `resources.go` + I-010-001 |
+| 至少一个非 records 业务资源仅靠 Schema 接入可证明 | ✅ | users + roles 双资源；fixture 与 e2e（GOAL-010 S5 既有）面向 users/roles |
+| 关闭路径与用户裁决（D-014 通用适配层，不降级 VP）一致 | ✅ | 未采用「降级为单一 records 示例」路径 |
+| `fixed` 声明与证据路径可指回 | ✅ | 关闭证据表 → GOAL-010 S1～S5 + GOAL-010 A-002 self；本轮代码/测试可独立复核核心链 |
+| 信息门禁（载体 GOAL-010） | ✅ 不阻断本 scope | `I-010-001`/`I-010-002` 均为 verified（载体台账）；本 finding-closure 不重开信息项 |
+
+### Findings
+
+- **无开放 required finding。**
+- **R-001（recommended / low · 观察项，非阻断）**：`apps/web/src/protocol/conformance/stage3-fixtures.test.ts` 仍含协议历史 fixture 的 `/api/records` URL。属协议一致性测试数据，非产品运行面注册/路由/fixture；与 GOAL-010 A-002 / GOAL-011 既有观察边界一致，**不否定** F-002-001 的产品面闭合。
+- **R-002（recommended / low · 观察项，非阻断）**：GOAL-010 S5 执行记录引用的 HEAD 为 `21e6bd7`；本轮核对时 HEAD 为 clean `a14ba36`。关闭证据链的**产品语义**在本快照仍成立；进入 Root/VP-002 关门前建议编排器在 close-out 收据中固定当前 revision 身份（不要求为此重开 F-002-001）。
+
+### 必改项汇总
+
+- 无。F-002-001 的 `fixed` 闭合**维持**；本意见不新增 required，不要求回退关闭状态。
+
+### 与既有意见的异同
+
+- 与 **GOAL-010 A-002（self · close-out · pass）** 一致：三项证伪点已消除，通用适配层 + 双实体 + records 退场构成充分关闭证据。
+- 与 **Root A-002 响应关闭证据表** 一致：F-002-001 标为 `fixed（2026-08-04）` 有独立代码与聚焦测试支撑，非仅文档宣称。
+- 与 **GOAL-009 A-002 finding-closure（conditional）** 的差异：彼时问题在 Root 索引与关闭表单义性；本轮 F-002-001 索引/关闭表/载体状态三处一致，故本 scope 可 **pass**。
+- 本意见**不**把 F-002-001 闭合扩写为 Root 已可关门或 VP-002 已可关门；那是独立 close-out / Vision 流程。
+
+### 结论 + 建议给编排器 / 用户的下一步
+
+- **pass**：F-002-001 关闭证据充分、可重复核对；维持 `fixed` 合法闭合。A-002 三条 required 在独立复审下仍全部成立为已闭合（本 scope 仅复审 F-002-001；002/003 不在本轮重审）。
+- 建议 `/govern`：采纳本意见（索引已含 A-003；无需改 F-002-001 状态）；可选处理 R-001/R-002 为 handled/留痕；进入 **Root close-out 关门审计** 与/或 **VP-002 关门** 的用户裁决（二者均为独立流程，不由本 finding-closure 自动放行）。
+
+### 声明
+
+本意见仅追加独立审计记录（`source: independent`），**不**修改目标 `status` / 检查点 / 派生 `progress`、关闭证据表结论、`goal-tree.md` 或 VP 状态；响应与后续推进由 `/govern` 处理。
+
+## A-003 响应（编排器 · 2026-08-04）
+
+- **响应编号**：A-003（independent · finding-closure · pass）
+- **响应来源**：`/govern` 编排器（self 侧记录，非独立审）
+- **用户裁决**（P-004）：**采纳 `pass`**；F-002-001 的 `fixed` 合法闭合**维持**（不重开、不改状态）；按 A-003 建议进入 **Root close-out 关门审计**与 **VP-002 关门**的用户裁决流程——本响应只采纳意见并维持已闭合状态，不自动放行关门。
+- **冲突检查**：A-003（independent · pass）与 GOAL-010 A-002（self · close-out · pass）同向一致，无 verdict / 必改项冲突（P-004 §3.2 不触发）。本 finding-closure scope 的 self 覆盖已由载体 GOAL-010 A-002 承担；Root 全范围 close-out 的 self 覆盖按 P-004 §3.1 在关门裁决中询问，不在此静默跳过。
+
+### 响应内容
+
+1. **采纳 A-003 verdict = `pass`**：F-002-001 关闭证据充分、可重复核对。编排器静态复核与 A-003 一致——`schema-table.tsx` 现按 `dataSource` 解析端点并 fail-closed；`records.ts` 已删除（`resource.ts` 统一 envelope + `rowKey` 不变量）；`health.go` 仅注册 users/roles 通用资源；产品 fixtures 指向 `/api/users` / `/api/roles`；`apps/web/src` 无 `fetchRecords`/`RecordItem`/`/api/records` 残留。
+2. **F-002-001 维持 `fixed`（2026-08-04）**：正式意见索引 ↔ 关闭证据表 ↔ 载体状态（GOAL-010 `done / 5/5`）三处一致；不重开。
+3. **R-001 → handled**：`apps/web/src/protocol/conformance/stage3-fixtures.test.ts` 的 `/api/records` URL 属协议一致性测试的历史数据，非产品运行面注册/路由/fixture；与 GOAL-010 A-002 / GOAL-011 既有观察边界一致，不否定 F-002-001 产品面闭合；不升级为 required。
+4. **R-002 → handled**：revision 身份固定——本轮响应时 HEAD `a14ba36`（与 A-003 陈述一致），工作树仅本 `03-audit.md`（A-003 意见 + 本响应）未提交；Root close-out 收据将以最终 committed revision 固定并回填本节，不要求为此重开 F-002-001。
+
+### 关闭证据表
+
+| finding | 状态 | 证据路径 |
+|---------|------|----------|
+| F-002-001（Renderer 硬编码 records 实体） | **fixed 维持（2026-08-04）** | A-003（independent · pass）独立复核 + GOAL-010 A-002（self · close-out · pass）；关闭证据表 → GOAL-010 S1～S5 + GOAL-011 双实体载体；HEAD `a14ba36` 聚焦核对（api handler 60/60、go vet exit 0，见 A-003） |
+| A-003 R-001（协议 fixture 残留 records URL） | **handled** | `stage3-fixtures.test.ts` 为协议一致性测试历史数据；与 GOAL-010 A-002 / GOAL-011 既有观察边界一致 |
+| A-003 R-002（关闭证据 revision 身份） | **handled** | HEAD `a14ba36` + 工作树仅 `03-audit.md` 未提交；close-out 收据固定 committed revision |
+
+### 仍开放项
+
+- **无开放 required finding**。A-002 三条 required（F-002-001/002/003）全部合法闭合（`fixed`）；recommended F-002-004~006 已实施（非 required 闭合）。
+- R-001/R-002 已 handled；无其他 open recommended 阻断项。
+- **Root close-out 关门审计与 VP-002 关门为独立用户裁决**：Root 全范围尚无 self close-out 审计，是否补自审待用户按 P-004 §3.1 裁决（本响应不代答）。
+
+### 状态
+
+Root 当时 `status: active`、派生进度 `5/5`；`goal-tree.md` 与 `00-meta.md` 已于 2026-08-04 同步本响应与 close-out 裁决入口。后续见 **A-004** self close-out。
+
+## A-004 · Root close-out 关门审计（2026-08-04）
+
+- **source**：self
+- **auditor**：Grok Build · `/govern`
+- **类型 / scope**：close-out；Root 全目标成功边界、五个纲领检查点 R1～R5、子目标交付链、意见台账（A-001～A-003）、信息台账（I-001～I-006）、A-002 整改闭合与当前 revision 回归收据。不审 VP-002 关门（独立 `/vision` 流程）。
+- **verdict**：**pass**
+- **audit_type**：close-out
+
+### 范围与区间
+
+- 工作区：`workspace-002-production-admin-foundation`；`workspace.md` 的 `root_goal`、`canonical_scope`、`vision_role: delivery`、`primary_plan: VP-002-production-admin-foundation` 与 Root `plan_refs`/`primary_plan` 一致；`shared_materials_catalog: none`，未使用共享资料作为事实或关闭证据。
+- 愿景链：Charter `schema-ui-core-admin-foundation@0.1.0` active；VP-002 `vision_ref` 精确匹配；Vision Review **0 open required**（仅 recommended `F-V003` 仍 open，不阻断本 Goal 关门）。
+- 证据边界：子目标关门审计与既有独立意见为历史证据；本轮 close-out **现时回归**见下「本轮回归收据」。产品面静态抽查：`health.go` 仅注册 users/roles；`apps/web/src` 除协议一致性测试外无 `fetchRecords`/`RecordItem`/`/api/records` 产品残留。
+
+### 成果（有证据）
+
+| 纲领阶段 | 状态 | 主要载体 / 证据 |
+|----------|------|-----------------|
+| R1 · Schema Renderer 产品化 | 通过 | GOAL-002/003/004 `done`；A-001 self R1 pass；I-001 verified |
+| R2 · 真实认证与请求级身份 | 通过 | GOAL-005 `done`；I-002 verified；browser E2E / CI 既有证据 |
+| R3 · 持久化 RBAC 与菜单投影 | 通过 | GOAL-006 `done`；I-003 verified；迁移/种子/permission/features |
+| R4 · Schema 驱动 CRUD 闭环 | 通过 | GOAL-007 `done`（历史 records 代表实体）→ GOAL-010/011 演进为 users/roles 通用资源；I-004 verified |
+| R5 · 工程化与 fork 体验 | 通过 | GOAL-008 `done`；I-005 verified、I-006 closed（操作日志加分已实施）；REPRO-003 / smoke / compose |
+| A-002 整改波次 | 通过 | GOAL-009 `done`（F-002-002/003 + recommended 004～006）；GOAL-010 `done` + GOAL-011 `done`（F-002-001）；A-003 independent finding-closure pass |
+
+子目标树：GOAL-002～GOAL-011 **全部 `done`**；无未关门子目标阻断 Root。
+
+### 对照成功边界
+
+| 成功边界（00-meta） | 状态 | 证据摘要 |
+|--------------------|------|----------|
+| Schema Renderer 默认页面能力 + 结构/运行时/失败路径 | 通过 | R1 三子目标 + 默认 `schemaUrl` 主路径 + 回归 |
+| 真实认证链路（登录/登出/会话/请求身份） | 通过 | GOAL-005；JWT+refresh；F-002-003 清理路径 GOAL-009 |
+| 用户/角色/菜单持久化 + 后端授权 | 通过 | GOAL-006 RBAC；GOAL-011 users/roles API + 授权 |
+| 至少一个实体 Schema 驱动 CRUD 闭环 | 通过 | 现时 users/roles Schema-only；通用工厂 + 前端适配层（GOAL-010/011） |
+| 种子/环境/健康/容器/fork ≤15 分钟可复现 | 通过 | GOAL-008 S1～S5；QUICKSTART + REPRO-003 + smoke.sh + compose |
+| 阶段事实与审计；关门前无开放 required 信息项/必改 finding | 通过 | 见意见/信息台账；本意见确认 |
+
+### 意见台账（相关 · 关门 scope）
+
+| 意见 | source | verdict | 与关门关系 |
+|------|--------|---------|------------|
+| A-001 | self | pass | R1 阶段退出；无开放 R1 required |
+| A-002 | independent | fail → 已响应 | F-002-001/002/003 **全部 `fixed`**；004～006 recommended 已实施非阻断 |
+| A-003 | independent | pass | F-002-001 关闭证据独立复核；R-001/R-002 handled |
+| A-004 | self | pass | 本 close-out |
+
+- **开放 required finding：0**
+- **冲突：无**（A-003 与 GOAL-010 self close-out 同向；A-002 失败结论已由 fixed 整改吸收）
+
+### 信息台账（关门 scope）
+
+| ID | 级别 | 状态 | 说明 |
+|----|------|------|------|
+| I-001 | required | **verified** | R1 方案边界 |
+| I-002 | required | **verified** | R2 认证方案 |
+| I-003 | required | **verified** | R3 持久化/权限模型 |
+| I-004 | required | **verified** | R4 代表实体方向 |
+| I-005 | required | **verified** | R5 工程/fork 边界 |
+| I-006 | non-blocking | **closed** | 操作日志可选加分（GOAL-008 S6 已实施） |
+
+- **到期开放 required 信息项：0**
+- 无 `accepted-residual` 依赖；无信息冲突阻断关门。
+
+### 本轮回归收据（2026-08-04 · close-out 现时）
+
+| 检查 | 结果 |
+|------|------|
+| 基线 revision | HEAD `a14ba36`（工作树含本 close-out 文档变更，未声称 clean tree CI） |
+| `apps/api` `go vet ./...` | exit 0 |
+| `apps/api` `go test ./... -count=1` | 7 有测试包全绿（cmd/server、account、auth、config、handler、store 等） |
+| `apps/web` `vitest run` | **23 files / 491 tests** 全绿 |
+| `apps/web` `tsc -b` | 干净 |
+| 产品面 `/api/records` 残留 | 仅 `protocol/conformance/stage3-fixtures.test.ts` 历史协议数据（A-003 R-001 handled 边界） |
+| 后端资源注册 | `registerResource(... usersResource / rolesResource)` only |
+
+未在本轮重跑 Docker Compose 全路径或 Playwright E2E；工程/浏览器证据以 GOAL-008/009/010/011 既有关门与 S5 记录为引用，不扩写为「本轮独立容器验收」。不主张 GitHub-hosted Actions 本快照已绿。
+
+### Findings
+
+- **无开放 required finding。**
+- **无新增 recommended finding。** 既有 A-003 R-001/R-002 已 handled，不重开。
+
+### 必改项汇总
+
+- 无。
+
+### 结论 + 建议下一步
+
+- Root 五个纲领检查点 `5/5` 全勾选；子目标 GOAL-002～011 全部 `done`；A-002 三条 required 合法闭合；信息门禁无到期开放 required；愿景/工作区绑定一致；本轮 API/Web 回归通过。
+- **verdict = pass**。按用户本轮指令（补 Root self 关门审计，通过后置 `done`）：**Root 置 `status: done`**，派生进度保持 `5/5`；同步 `goal-tree.md` / `00-meta` / `02-execution`。
+- **VP-002 关门**不由本 Goal 审计自动放行，建议下一拍 `/vision` 在工作区证据链上评估 VP-002 是否可关闭。

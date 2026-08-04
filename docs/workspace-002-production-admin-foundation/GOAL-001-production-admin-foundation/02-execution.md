@@ -1,10 +1,10 @@
 ---
 title: 执行记录 · 生产级可用 Admin 基架
-status: active
+status: done
 created: 2026-08-01
-updated: 2026-08-03
+updated: 2026-08-04
 parent: null
-version: 0.1.18
+version: 0.1.20
 ---
 
 # 执行记录 · GOAL-001
@@ -192,3 +192,21 @@ version: 0.1.18
   - 验证：本机 Docker 29 / Compose v5 `docker compose up` → api healthy、web 200、`/healthz` 200、登录 admin、`/me`、nginx 代理登录 + `/me`、`/list-edit-lifecycle` fallback、api restart 与 down/up 后 DB volume 保持；API `go build/vet/test` 全绿。
 - `GOAL-008` 进度 `0/5 → 2/5`（S1/S2 勾选）；`I-008-002`/`I-008-003` 仍 open（阻断 S3/S4、S6 若实施）；Root R5 检查点**不**据此勾选，Root 保持 `active / 4/5`。
 - **建议**：对 S1/S2 做一次实施向审计（self 或 `/audit`）；下一主路径收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据）→ 实施 S3/S4。
+
+## 2026-08-04 · 响应 Root A-003（采纳 pass · F-002-001 fixed 维持）+ 进入 Root close-out 裁决
+
+- Root 收到 **A-003（independent · finding-closure · pass，2026-08-04）**：独立复核 A-002 F-002-001 `fixed` 关闭证据充分、可重复核对，无新增 required；R-001/R-002 为 recommended/low 观察项（protocol fixture 历史 records URL、关闭证据 revision 身份）。
+- 用户指令：响应 A-003——采纳 `pass`，维持 F-002-001 `fixed`；进入 Root close-out 关门裁决。
+- **响应落盘**（`03-audit.md` A-003 响应节）：采纳 pass；F-002-001 `fixed`（2026-08-04）维持——索引 ↔ 关闭证据表 ↔ 载体 GOAL-010 `done / 5/5` 三处一致；**R-001 → handled**（`stage3-fixtures.test.ts` 的 `/api/records` 为协议一致性测试历史数据，非产品运行面，与 GOAL-010 A-002 / GOAL-011 既有边界一致）；**R-002 → handled**（HEAD `a14ba36` 与 A-003 陈述一致，工作树仅 `03-audit.md` 未提交；close-out 收据固定 committed revision）。无冲突（A-003 与 GOAL-010 A-002 self 同向一致）。
+- **关门门禁核对**：A-002 三条 required 全部合法闭合（F-002-001/002/003 均 `fixed`）；无开放 required finding；`I-001`～`I-006` 全部 verified/closed；五个纲领检查点 `5/5` 全勾选；Charter `schema-ui-core-admin-foundation@0.1.0` ↔ VP-002 `vision_ref` ↔ workspace-002 delivery 绑定一致；Vision Review 0 open required；无 strategic 宽阻断。
+- **未做**：未置 Root `status: done`（关门须用户裁决；按 P-004 §3.1 待用户决定是否补 Root self 关门审计）；未执行 VP-002 关门（独立 `/vision` 流程）；未改产品代码。
+- **计划（非事实）**：用户裁决是否补 Root self 关门审计 → 执行 close-out（04）→ 用户确认后置 `done` 并同步 goal-tree → VP-002 关门走 `/vision`。
+
+## 2026-08-04 · Root self close-out（A-004 pass）并置 `done`
+
+- 用户指令：`/govern 补 Root self 关门审计，通过后置 done`（明确写入与关门意图，P-004 §3.1 已裁决为需要 self close-out）。
+- **关门门禁复核**（与 A-003 响应后一致并现时确认）：A-002 三条 required 全部 `fixed`；无开放 required finding；`I-001`～`I-006` verified/closed；纲领检查点 `5/5`；子目标 GOAL-002～011 全部 `done`；Charter@0.1.0 ↔ VP-002 ↔ workspace-002 delivery 对齐；Vision Review 0 open required。
+- **A-004（self · close-out · pass）** 落盘 `03-audit.md`：对照成功边界、意见/信息台账、R1～R5 载体与 A-002 整改链；无新增 required/recommended finding。
+- **本轮回归收据**（HEAD `a14ba36` 基线 + 本轮文档写入）：`apps/api` `go vet ./...` exit 0；`go test ./... -count=1` 有测试包全绿；`apps/web` vitest **491/491** + `tsc -b` 干净；产品面 `/api/records` 仅协议 conformance 历史数据。
+- **状态变更**：**Root `status: active → done`**，派生进度保持 `5/5`；`00-meta` / `03-audit` / `goal-tree.md` 已同步。
+- **未做**：未执行 VP-002 关门（独立 `/vision`）；未改产品代码；未重跑 Docker Compose / Playwright 全路径（引用子目标既有证据）；不主张 GitHub-hosted Actions 本快照已绿。
