@@ -44,6 +44,8 @@ A-004 在草案修订前识别出 4 项 open required residual；修订后的响
 independent re-review，不能回写 A-004 或提前关闭其 finding。
 A-005 确认修订已达到候选材料级别，但 R4-I002/I003/I004 仍因 D-003 与 residual
 未完成而保持 collecting；该意见也不构成 finding closure。
+GOAL-006 的 A-002 independent audit 进一步确认 C1 子目标结构合法并与 A-001 同向，
+但三项 P-004 门禁仍 open required；该意见不推进 GOAL-005 或 Root。
 
 ## 已响应 finding
 

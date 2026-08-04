@@ -23,9 +23,12 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-05 | self | 子目标建立、继承证据和 C1 信息门禁 | conditional | 3 | [03-audit/A-001-r4-c1-child-readiness.md](03-audit/A-001-r4-c1-child-readiness.md) |
+| A-002 | 2026-08-05 | independent | 子目标治理结构、继承证据和 P-004 readiness | conditional | 3 | [03-audit/A-002-grok-r4-c1-child-governance.md](03-audit/A-002-grok-r4-c1-child-governance.md) |
 
 ## 结论状态
 
 GOAL-006 已合法建立，但 C1-I001/C1-I002/C1-I003 仍 collecting。父目标 A-005 的
 independent opinion 只能作为 inherited candidate evidence；在 D-003、residual
 接受和最终独立复审前，本目标不能 done，GOAL-005 不能进入 C2。
+Grok A-002 与 A-001 同向确认：GOAL-006 建档和继承 evidence 合法，但 C1-I001 至
+C1-I003 仍是 open required；这些门禁不阻断继续收集裁决，只阻断 C1 close 和 C2。

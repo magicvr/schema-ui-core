@@ -54,6 +54,17 @@ serves_summary: 承接 R4-C1 的候选冻结包，取得 Provider 精确契约�
 | C1-I002 | required | Records 是 historical-only 还是恢复产品 CRUD？ | C1 close、GOAL-005 C4 | C1.2 | 用户书面选择；若恢复则登记新 migration 范围 | collecting | 父目标 R4-I003、`0006 records_retire`、A-002/A-003 |
 | C1-I003 | required | operationlog 选择 A/B/C；若 A，residual owner、范围和复核触发/日期是什么？ | C1 close、GOAL-005 C3/C5 | C1.2 | 用户书面选择并形成 accepted-residual 或实现 evidence | collecting | 父目标 R4-I004、A-005 FP-003 |
 
+## 父子 finding lineage
+
+| Child information | Parent information | Relevant opinions/findings | Current disposition |
+|-------------------|-------------------|---------------------------|---------------------|
+| C1-I001 Provider | R4-I002 | A-003 `F-IND-R4-OPT-001/002/005/006`；A-004 `FP-001/002`；A-005 candidate-addressed | 候选包已响应，正式 closure 仍待 D-003、实现 evidence 和最终复审 |
+| C1-I002 Records | R4-I003 | A-002 `F-GROK-R4-004`；A-003 `F-IND-R4-OPT-010` | 信息冲突 open，必须用户选择 historical-only 或 restore CRUD |
+| C1-I003 operationlog | R4-I004 | A-003 `F-IND-R4-OPT-004`；A-005 `FP-003` | Option A/B/C 和 residual open，不能由推荐文字关闭 |
+
+该矩阵只建立 parent finding 到 child gate 的追踪，不改变任何 parent finding 的
+`open`、`candidate-addressed` 或信息项 `collecting` 状态。
+
 ## 阶段路线图
 
 1. 继承并核对父目标 C1 候选包和 A-005 independent evidence（已完成）。
