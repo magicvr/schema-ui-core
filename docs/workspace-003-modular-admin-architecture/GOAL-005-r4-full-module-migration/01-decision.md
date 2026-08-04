@@ -22,11 +22,14 @@ canonical 决策记录关闭，不得用本地代码现状静默代替 VP 意图
 | 编号 | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-05 | 建立 R4 范围、五项检查点与信息门禁 | accepted | [01-decision/D-001-r4-stage-scope.md](01-decision/D-001-r4-stage-scope.md) |
+| D-002 | 2026-08-05 | 响应 C1 能力盘点 finding | accepted | [01-decision/D-002-r4-c1-inventory-response.md](01-decision/D-002-r4-c1-inventory-response.md) |
 
 ## 当前约束
 
 - R4 必须迁移标准 Admin 模块的六项能力；metadata 声明不能替代真实 provider
   注册、Schema ownership、授权和持久化证据。
+- C1 能力盘点已由 D-002/E-005 完成事实响应；该响应不等于 provider contract
+  已冻结，也不等于业务模块已迁移。
 - Users/Roles 的现有行为和协议是兼容基线；任何 operationlog 一致性变化需
   新决策和对应测试。
 - Records 当前由 `0006 records_retire` 退役，VP-003 又将 `records/Schema CRUD`

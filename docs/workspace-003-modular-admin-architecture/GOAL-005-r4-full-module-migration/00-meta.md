@@ -54,7 +54,7 @@ R4 迁移完成。R4 的最终目标是统一模块契约下的完整一方 Admi
 
 | 编号 | 级别 | 必须回答的问题 | 影响 | 最晚阶段 | 收集动作 | 状态 | 证据/延期 |
 |------|------|----------------|------|----------|----------|------|-----------|
-| R4-I001 | required | 当前一方 Admin 能力、中央注册点和模块所有权的完整清单是什么？ | C1 范围冻结、C3/C4 实施 | C1 关闭前 | 扫描 API/Web/Schema/Navigation/迁移/测试并建立映射 | collecting | `attachments/r4-initial-boundary-scan.md`；待 C1 核验 |
+| R4-I001 | required | 当前一方 Admin 能力、中央注册点和模块所有权的完整清单是什么？ | C1 范围冻结、C3/C4 实施 | C1 关闭前 | 扫描 API/Web/Schema/Navigation/迁移/测试并建立映射 | verified | `attachments/r4-c1-capability-inventory.md`；D-002/E-005；A-002 F-GROK-R4-001 fixed |
 | R4-I002 | required | 现有 Kernel contribution metadata 如何扩展为可验证的 HTTP/Schema/Authorization/Navigation/Manifest/Persistence provider？ | C2 方案冻结、所有迁移 | C1 关闭前 | 对照 module-architecture、现有 Plan/Registry 和 provider 依赖，形成决策与冲突测试计划 | collecting | 当前只有 Routes/Pages/Navigation/Permissions/ConfigNamespaces；见附件 |
 | R4-I003 | required | VP-003 的 `records/Schema CRUD` 是恢复 Records 产品 CRUD，还是只迁移当前仍存在的 Schema-driven Admin 能力并保留 Records 历史事件？ | C1 范围冻结、C4 实施、R4 验收 | C1 关闭前 | 核对 `0006 records_retire`、现有 handler/fixtures/协议；需要用户裁决或明确 canonical 决策 | collecting | **存在信息冲突；不得静默推断** |
 | R4-I004 | required | Users/Roles 业务写入与 operationlog 的一致性、失败语义和 retention 边界是否保持当前契约？ | C3 行为验收、C5 数据门禁 | C1 关闭前 | 核对 Store/handler/tests，并记录保留或变更决策 | collecting | 当前写日志失败不回滚业务成功；是否变更待裁决 |

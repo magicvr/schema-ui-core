@@ -14,7 +14,7 @@ version: 0.1.0
 
 | 项目 | 状态 | 说明 |
 |------|------|------|
-| R4-I001 | collecting | 已有 API/Web/Schema/迁移扫描，待 C1 完整映射与核验 |
+| R4-I001 | verified | C1 freeze-grade inventory 已由 D-002/E-005 落盘并响应 A-001/A-002 的 inventory finding |
 | R4-I002 | collecting | provider contract gap 已识别，待决策与最小冲突验证 |
 | R4-I003 | collecting | VP-003 `records/Schema CRUD` 与 `0006 records_retire` 冲突，必须裁决 |
 | R4-I004 | collecting | operationlog 写入失败语义和 retention 边界待 C1 冻结 |
@@ -30,9 +30,15 @@ version: 0.1.0
 
 ## 当前结论
 
-R4 已合法建立并承接 Root R4，但仍停留在 C1 信息收集。A-001 self 与 A-002
-independent 同向确认四项 required information/findings 尚未关闭：能力盘点仍需
-补齐 freeze-grade matrix，provider contract 尚未冻结，operationlog 行为与
-retention 尚未决策，且 R4-I003 的 Records/Schema CRUD 语义冲突不能由现有代码
-事实自动关闭。在用户裁决/决策记录和 required evidence 形成前，不得开工 C2，
+R4 已合法建立并承接 Root R4，但仍停留在 C1 信息收集。D-002/E-005 以 `fixed`
+响应了 inventory finding，R4-I001 已 verified；R4-I002 provider contract、
+R4-I003 Records/Schema CRUD 语义冲突和 R4-I004 operationlog 行为/retention
+仍未关闭。在用户裁决/决策记录和 required evidence 形成前，不得开工 C2，
 也不得推进 Root progress。
+
+## 已响应 finding
+
+- `F-R4-004`（self A-001）→ `fixed`，见 D-002/E-005 和 C1 inventory。
+- `F-GROK-R4-001`（independent A-002）→ `fixed`，见 D-002/E-005 和 C1 inventory。
+- `F-R4-001` / `F-R4-002` / `F-R4-003` 与 `F-GROK-R4-002` / `003` / `004` 仍为
+  open required；未用 inventory 响应越过它们。
