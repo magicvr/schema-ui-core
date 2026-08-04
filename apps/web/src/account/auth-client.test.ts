@@ -30,7 +30,12 @@ function emptyResponse(status = 204): Response {
 }
 
 const SESSION = {
-  user: { id: "user-admin", name: "Admin", roles: ["admin", "editor"] },
+  user: {
+    id: "user-admin",
+    name: "Admin",
+    roles: ["admin", "editor"],
+    permissions: ["users.read", "users.write", "settings.write"],
+  },
   features: {},
 };
 
@@ -59,11 +64,30 @@ describe("auth-client", () => {
       );
     const session = await login("admin", "admin");
     expect(session.user.id).toBe("user-admin");
+    expect(session.user.permissions).toEqual(["users.read", "users.write", "settings.write"]);
     expect(session.features).toEqual({ menu_users: true });
     expect(requireAuthorization(fetchMock.mock.calls[0][1])).toBeNull(); // login is not authed
     expect(requireBody(fetchMock.mock.calls[0][1])).toEqual({ username: "admin", password: "admin" });
     expect(String(fetchMock.mock.calls[1][0])).toContain("/api/accounts/me");
     expect(requireAuthorization(fetchMock.mock.calls[1][1])).toBe("Bearer a1");
+  });
+
+  it("fetchMe keeps permissions from /me for $context expressions (A-006 R-001)", async () => {
+    setAccessToken("a1");
+    setRefreshToken("r1");
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        user: {
+          id: "user-admin",
+          name: "Admin",
+          roles: ["admin"],
+          permissions: ["users.read", "roles.assign"],
+        },
+        features: { menu_users: true },
+      }),
+    );
+    const session = await fetchMe();
+    expect(session.user.permissions).toEqual(["users.read", "roles.assign"]);
   });
 
   it("login maps a 401 to INVALID_CREDENTIALS", async () => {

@@ -22,6 +22,14 @@ export interface AuthUser {
   id: string;
   name: string;
   roles: string[];
+  /**
+   * Permission keys resolved from persisted RBAC at identity load (`/me`).
+   * Required by Schema expressions (`$context.user.permissions contains "…"`).
+   * Optional on the type only because login token payloads may omit it until
+   * `/me` completes; the session returned by login/restore always carries it
+   * when the API provides it.
+   */
+  permissions?: string[];
 }
 
 export interface AuthSession {
@@ -206,15 +214,39 @@ export async function restoreSession(): Promise<AuthSession | null> {
   return session;
 }
 
+/** Normalizes a /me user snapshot so permissions are always an array when present. */
+function parseAuthUser(raw: unknown): AuthUser | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const record = raw as Record<string, unknown>;
+  if (typeof record.id !== "string" || record.id === "") {
+    return null;
+  }
+  const roles = Array.isArray(record.roles)
+    ? record.roles.filter((entry): entry is string => typeof entry === "string")
+    : [];
+  const permissions = Array.isArray(record.permissions)
+    ? record.permissions.filter((entry): entry is string => typeof entry === "string")
+    : undefined;
+  return {
+    id: record.id,
+    name: typeof record.name === "string" ? record.name : "",
+    roles,
+    ...(permissions === undefined ? {} : { permissions }),
+  };
+}
+
 /** Fetches the current session from /me using the active access token. */
 export async function fetchMe(): Promise<AuthSession> {
   const response = await authFetch(ME_URL);
   if (!response.ok) {
     throw new AuthError("ME_FAILED", `session fetch failed: HTTP ${response.status}`);
   }
-  const body = (await response.json()) as { user?: AuthUser; features?: Record<string, boolean> };
-  if (!body.user) {
+  const body = (await response.json()) as { user?: unknown; features?: Record<string, boolean> };
+  const user = parseAuthUser(body.user);
+  if (user === null) {
     throw new AuthError("ME_MALFORMED", "session response was malformed");
   }
-  return { user: body.user, features: body.features ?? {} };
+  return { user, features: body.features ?? {} };
 }

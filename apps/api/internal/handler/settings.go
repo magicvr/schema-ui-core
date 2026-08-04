@@ -5,6 +5,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -86,7 +87,8 @@ func settingsDetail(st *store.Store) http.Handler {
 
 func settingsPatch(st *store.Store) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), "settings.write"); !ok {
+		user, ok := requirePermission(w, r.Context(), "settings.write")
+		if !ok {
 			return
 		}
 		id := r.PathValue("id")
@@ -116,7 +118,8 @@ func settingsPatch(st *store.Store) http.Handler {
 		if body.LogoURL != nil {
 			logo = *body.LogoURL
 		}
-		updated, err := st.UpdateSiteSettings(title, logo, time.Now().UTC())
+		now := time.Now().UTC()
+		updated, err := st.UpdateSiteSettings(title, logo, now)
 		if errors.Is(err, store.ErrInvalidSiteTitle) {
 			writeError(w, http.StatusBadRequest, "INVALID_SITE_TITLE", "siteTitle must not be empty")
 			return
@@ -128,6 +131,21 @@ func settingsPatch(st *store.Store) http.Handler {
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not update settings")
 			return
+		}
+		// Best-effort operation log (A-006 R-003); never fails the write.
+		recordID := "default"
+		detail := `{"siteTitle":` + jsonQuote(updated.SiteTitle) + `}`
+		op := store.Operation{
+			ID:        newOperationID(),
+			Event:     store.EventSettingsUpdate,
+			ActorID:   user.ID,
+			ActorName: user.Name,
+			RecordID:  &recordID,
+			Detail:    &detail,
+			CreatedAt: now,
+		}
+		if err := st.RecordOperation(op); err != nil {
+			slog.Error("operation log write failed", "event", store.EventSettingsUpdate, "err", err)
 		}
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})

@@ -5,7 +5,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.8.0
+version: 0.9.0
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -66,6 +66,8 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 > **2026-08-04 · A-005 独立代码审计 · 回退关门**：A-005（independent · fail · apps/api + apps/web · VP-002 产品意图复审）发现 **F-001 required**（default Shell 导航 `activity`/`settings` 无 embed fixture → 必 `SCHEMA_NOT_FOUND`）。按用户指令与 P-003 fail closed：**Root `done → active`**，派生进度保持 `5/5`；新设修复子目标 `GOAL-012-a005-shell-nav-fixtures`（active `0/4`）。Root/VP-002 重新关门须先闭合 F-001。
 
 > **2026-08-04 · GOAL-012 已关门、A-005 F-001 已闭合**：`GOAL-012` 置 `done / 4/4`（S1 移除占位导航 · S2 manifest↔fixture 测试 · S3 回归全绿 · S4 self close-out pass；S5 QUICKSTART 路径修正加分）。Root 03-audit **F-001 → `fixed`**。A-005 无开放 required；**Root 保持 `active / 5/5`**——重新关门为独立用户裁决（可 `/govern` 补 self close-out 或直接裁决）。
+
+> **2026-08-04 · A-006 落盘并响应 recommended**：A-006（independent · pass）无 required；R-001～R-004 已 fixed、R-005 residual-by-design handled；回归 go test 全绿 + vitest **492/492**。Root 保持 `active / 5/5`；重新关门与 VP-002 关门仍为独立用户裁决。
 
 ## 信息需求与阶段门禁
 

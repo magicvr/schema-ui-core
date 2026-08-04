@@ -122,8 +122,17 @@ function coerceToKind(kind: WireKind, value: unknown): unknown {
     case "string-array":
       return Array.isArray(value)
         ? value.filter((entry): entry is string => typeof entry === "string")
-        : [];
+        : typeof value === "string" && value.trim() !== ""
+          ? value.split(",").map((part) => part.trim()).filter((part) => part !== "")
+          : [];
     case "string":
+      // Resource rows often store multi-value fields as string[] (e.g. roles).
+      // Textareas and free-text inputs expect a single wire string.
+      if (Array.isArray(value)) {
+        return value
+          .filter((entry): entry is string => typeof entry === "string")
+          .join(", ");
+      }
       return value === undefined || value === null ? "" : String(value);
   }
 }

@@ -114,8 +114,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 7 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7]", applied)
+	if len(applied) != 8 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 {
+		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -131,12 +131,18 @@ func TestMigrateFreshDB(t *testing.T) {
 	if tableExistsDB(t, st.db, "records") {
 		t.Fatal("records table must not exist after fresh migration (0006)")
 	}
-	// The expanded operation_log CHECK accepts a users.* event.
+	// The expanded operation_log CHECK accepts users.* and settings.update (0008).
 	if err := st.RecordOperation(Operation{
 		ID: "op-fresh", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
 		t.Fatalf("users.create on fresh operation_log: %v", err)
+	}
+	if err := st.RecordOperation(Operation{
+		ID: "op-settings", Event: EventSettingsUpdate, ActorID: "user-admin", ActorName: "Admin",
+		CreatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("settings.update on fresh operation_log: %v", err)
 	}
 	// A fresh empty DB has nothing to recover: no snapshot should exist.
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -167,7 +173,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 7 {
+	if len(applied2) != 8 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {

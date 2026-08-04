@@ -16,15 +16,16 @@ import (
 // OperationEvent enumerates the frozen operation log event set (I-008-003 §2;
 // users/roles events added by GOAL-011 0005, I-011-001 §5).
 const (
-	EventAuthLogin   = "auth.login"
-	EventAuthLogout  = "auth.logout"
-	EventAuthRefresh = "auth.refresh"
-	EventUserCreate  = "users.create"
-	EventUserUpdate  = "users.update"
-	EventUserDelete  = "users.delete"
-	EventRoleCreate  = "roles.create"
-	EventRoleUpdate  = "roles.update"
-	EventRoleDelete  = "roles.delete"
+	EventAuthLogin      = "auth.login"
+	EventAuthLogout     = "auth.logout"
+	EventAuthRefresh    = "auth.refresh"
+	EventUserCreate     = "users.create"
+	EventUserUpdate     = "users.update"
+	EventUserDelete     = "users.delete"
+	EventRoleCreate     = "roles.create"
+	EventRoleUpdate     = "roles.update"
+	EventRoleDelete     = "roles.delete"
+	EventSettingsUpdate = "settings.update" // GOAL-013 branding · A-006 R-003
 )
 
 // Operation is one append-only operation log row. RecordID is the historical

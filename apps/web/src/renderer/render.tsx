@@ -263,10 +263,8 @@ async function runRequest(
     const apiError = await readResourceApiError(response, actionRef);
     return { ok: false, code: apiError.code, message: apiError.message };
   }
-  // GOAL-013: settings PATCH refreshes shell title/logo without a full reload.
-  if (typeof url === "string" && url.includes("/api/settings") && typeof window !== "undefined") {
-    window.dispatchEvent(new Event("schema-ui:branding-changed"));
-  }
+  // Branding refresh after settings PATCH lives in the App/host layer (A-006 R-002),
+  // not in this generic request executor — keep Renderer free of product endpoints.
   return { ok: true };
 }
 
@@ -532,11 +530,11 @@ function FormView({
       if (!isRecord(raw) || typeof raw.id !== "string") {
         continue;
       }
-      if (modalRow !== null && modalRow[raw.id] !== undefined) {
-        initial[raw.id] = modalRow[raw.id];
-      } else {
-        initial[raw.id] = coerceFieldValue(raw as unknown as FormControlField, undefined);
-      }
+      // Always coerce through the field wire kind so row arrays (e.g. roles[])
+      // become textarea strings or checkboxGroup string[] as appropriate (A-006 R-004).
+      const fromRow =
+        modalRow !== null && modalRow[raw.id] !== undefined ? modalRow[raw.id] : undefined;
+      initial[raw.id] = coerceFieldValue(raw as unknown as FormControlField, fromRow);
     }
     return initial;
   });

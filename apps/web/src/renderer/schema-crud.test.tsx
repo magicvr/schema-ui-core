@@ -689,6 +689,7 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
 	const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
 	await act(async () => (buttonByText(container, "Roles") as HTMLButtonElement).click());
 	const roles = container.querySelector<HTMLTextAreaElement>("#field-roles");
+	// A-006 R-004: row roles[] coerces to a comma-separated textarea wire string.
 	expect(roles?.value).toBe("admin");
 	await act(async () => setFieldValue(roles as HTMLTextAreaElement, "viewer, editor"));
 	await act(async () => (buttonByText(container, "Save roles") as HTMLButtonElement).click());

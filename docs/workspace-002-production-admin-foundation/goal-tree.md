@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.64.0
+version: 0.65.0
 workspace_id: workspace-002-production-admin-foundation
 ---
 
@@ -144,3 +144,5 @@ GOAL-001-production-admin-foundation [active] 生产级可用 Admin 基架 (5/5)
 > **GOAL-012 已关门、Root A-005 F-001 已闭合（2026-08-04）**：D-002 移除占位（manifest 仅 7 pageId 对齐 embed）；S2 `schema_test` manifest↔fixture 门禁；S3 api/web 全绿；S5 QUICKSTART 路径修正；A-001 self close-out pass。**GOAL-012 `done / 4/4`**；Root F-001 → **fixed**；Root 保持 `active / 5/5`（重新关门为独立用户裁决）。
 
 > **GOAL-013 已交付并关门（2026-08-04）**：用户否决「删 Settings/Activity 需求」→ 实装站点品牌（`site_settings` + `/api/branding` + Settings Schema）与操作日志只读面（`/api/operations` + Activity Schema）；导航恢复 Settings/Activity（feature 门控）。**GOAL-013 `done / 4/4`**；Root 仍 `active / 5/5`。
+
+> **A-006 已响应（2026-08-04 · `/govern`）**：independent · pass 落盘 Root 03-audit；无 required。**R-001～R-004 → fixed**（AuthUser.permissions、branding 副作用迁 host 层、settings.update 操作日志 + migration 0008、roles 表单 coerce/标签）；**R-005 → residual-by-design / handled**（短 access TTL）。回归：`go test ./...` 全绿；vitest **492/492** + `tsc -b`。Root 保持 `active / 5/5`；Root/VP-002 关门仍为独立用户裁决。

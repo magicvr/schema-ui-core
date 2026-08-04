@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 func TestBrandingPublicAndSettingsPatch(t *testing.T) {
@@ -75,6 +77,30 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("clear logo status = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// A-006 R-003: settings PATCH appends settings.update to the operation log.
+	ops, total, err := env.st.ListOperationsFiltered(store.OperationFilter{
+		Q: "settings.update", Sort: "createdAt", Order: "desc", Page: 1, PageSize: 20,
+	})
+	if err != nil {
+		t.Fatalf("list operations: %v", err)
+	}
+	if total < 1 {
+		t.Fatal("expected at least one settings.update operation after patch")
+	}
+	found := false
+	for _, op := range ops {
+		if op.Event == store.EventSettingsUpdate {
+			found = true
+			if op.RecordID == nil || *op.RecordID != "default" {
+				t.Fatalf("settings.update record_id = %v, want default", op.RecordID)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("settings.update not found in operations: %+v", ops)
 	}
 }
 

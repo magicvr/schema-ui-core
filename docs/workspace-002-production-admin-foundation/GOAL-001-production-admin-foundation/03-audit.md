@@ -4,7 +4,7 @@ status: active
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 审计台账 · GOAL-001
@@ -18,6 +18,7 @@ version: 0.8.0
 | A-003 | independent | 2026-08-04 | finding-closure · Root A-002 F-002-001 | pass | 已响应（2026-08-04）：采纳 pass；F-002-001 `fixed` 维持；R-001/R-002 handled |
 | A-004 | self | 2026-08-04 | Root close-out · 全目标关门审计 | pass | 已出具；其后 A-005 新 required 使 Root 回退 `active` |
 | A-005 | independent | 2026-08-04 | apps/api + apps/web · VP-002 产品意图独立复审（无 skill） | fail | 已响应：F-001 → **fixed**（GOAL-012）；R-001～R-003 recommended 非阻断 |
+| A-006 | independent | 2026-08-04 | apps/api + apps/web · VP-002 产品意图再审（无 skill） | pass | 已响应：R-001～R-004 → **fixed**；R-005 → residual-by-design / handled；无 required |
 
 ## A-001 · Root R1 阶段自审（2026-08-02）
 
@@ -432,3 +433,94 @@ Root 当时 `status: active`、派生进度 `5/5`；`goal-tree.md` 与 `00-meta.
 - **R-001 → fixed（可选）**：`QUICKSTART.md` §4 已改为 `fixtures/schema` + rebuild API + manifest（GOAL-012 S5）。
 - **R-002 / R-003**：保持 recommended open/non-blocking（AuthUser 类型；改密 access TTL 设计）。
 - **治理投影**：GOAL-012 `done / 4/4`；Root 保持 `active / 5/5`（重新关门须用户独立裁决）；A-005 无开放 required。
+
+---
+
+## A-006 · apps/api + apps/web · VP-002 产品意图再审（2026-08-04）
+
+- **source**：independent
+- **auditor**：Grok Build（完全独立代码审计；**未**调用 audit skill 出意见）
+- **类型 / scope**：product-fit + execution-facts；核对 `apps/api`、`apps/web` 相对 [VP-002](../../../vision/plans/VP-002-production-admin-foundation.md) 七条产品级成功标准与「最终判断标准」（改 Schema 接业务、不重写 Renderer 主路径）；评估是否存在目标漂移或偷工减料。
+- **verdict**：**pass**。无 required finding；5 条 recommended（R-001～R-005）非阻断。
+
+### 范围与方法
+
+- 工作区：`workspace-002-production-admin-foundation`；Root `active / 5/5`；primary plan = VP-002。
+- 方法：只读核对 auth、resources 工厂、users/roles、seed、schema embed、App 主路径、manifest↔fixture、settings/activity；本机复跑 `go test ./...` 全绿 + `vitest` **491/491**（审计当时）。
+- 对照权威：VP-002 意图与成功标准 1～7；non-goals 不抬高验收。
+
+### 对照 VP-002 七条（摘要）
+
+| # | 标准 | 结论 | 证据要点 |
+|---|------|------|----------|
+| 1 | Schema Renderer 主路径 | **满足** | `App.tsx` → `loadPageDocument` → `RenderPage`；通用 `resource.ts` + `schema-table.tsx`；无 records 产品路径 |
+| 2 | 真实认证 | **满足** | JWT + opaque refresh；dev session opt-in；`ValidateProd`；auth-lost 清会话 |
+| 3 | 持久化身份/最小权限 | **满足** | SQLite RBAC + 幂等种子；`requirePermission`；角色委派/grant |
+| 4 | Schema 驱动 CRUD | **满足** | users/roles Schema 闭环 + e2e 源码覆盖 |
+| 5 | 可重复种子 | **满足** | `seedRBAC` 幂等；生产 `ADMIN_INITIAL_PASSWORD` |
+| 6 | Fork 接业务 | **满足** | QUICKSTART → fixtures/schema；manifest 9 pageId 与 embed 1:1（含 settings/activity） |
+| 7 | 工程化 | **满足** | healthz/readyz、compose、Docker、smoke 路径 |
+
+### Findings（审计时）
+
+#### Required
+
+**无。**
+
+#### R-001 · recommended · low — `AuthUser` 类型省略 `permissions`
+
+- **位置**：`apps/web/src/account/auth-client.ts`
+- **影响**：类型/文档漂移；运行时 `/me` JSON 仍含 `permissions`，表达式可工作。
+
+#### R-002 · recommended · low — Renderer 主路径含 settings 域名副作用
+
+- **位置**：`apps/web/src/renderer/render.tsx` `runRequest` 内硬编码 `/api/settings` → branding 事件
+- **影响**：轻微污染 Renderer 纯度。
+
+#### R-003 · recommended · low — Settings 写不进 operation_log
+
+- **影响**：Activity 页看不到品牌变更；操作日志为 VP 加分项。
+
+#### R-004 · recommended · low — 用户角色授予 UX 偏「能用即可」
+
+- **事实**：roles 行值为 `string[]`，textarea 预填未走 wire coerce；标签未提示系统/自定义角色。
+- **边界**：完整 IAM 为 non-goal；自定义角色仍须自由文本。
+
+#### R-005 · recommended · low — 改密只撤销 refresh，不吊销 access JWT
+
+- **事实**：短 access TTL 模型（默认 15m）；与历史 A-005 R-003 同向。
+
+### 结论（审计时）
+
+- **无**目标漂移；**无**阻断级偷工减料。
+- **verdict = pass**；不阻断 Root/VP-002 关门门禁（关门仍为独立用户裁决）。
+
+---
+
+## A-006 编排响应（2026-08-04 · `/govern`）
+
+- **用户指令**：在工作区 2 Root 落盘审计意见，并响应非阻断问题（修正）。
+- **P-004**：无 required / 无冲突；独立意见已有，用户明确要求响应与修正，不强制另开 self 审计。
+- **裁决**：R-001～R-004 走 **fixed**；R-005 走 **residual-by-design / handled**（短 access 模型，不引入 access 黑名单）。
+
+### 关闭证据表（A-006）
+
+| Finding | 关闭路径 | 状态 | 证据 |
+|---------|----------|------|------|
+| R-001 | fixed | **fixed** | `AuthUser.permissions?` + `parseAuthUser`；`auth-client.test.ts` 断言 `/me` 保留 permissions |
+| R-002 | fixed | **fixed** | `render.tsx` 移除 settings 硬编码；`main.tsx` `useResourceFetcher` 在成功 PATCH `/api/settings` 后 `notifyBrandingChanged()` |
+| R-003 | fixed | **fixed** | migration `0008 operation_log_settings` + `EventSettingsUpdate`；`settingsPatch` best-effort 写操作日志；`settings_test` 断言 |
+| R-004 | fixed | **fixed** | 表单初值统一 `coerceFieldValue`；`coerceToKind` 将 `string[]`→textarea 逗号串；fixture 标签说明系统/自定义角色 |
+| R-005 | residual-by-design | **handled** | 用户书面采纳短 access TTL 模型；不作为本波次代码变更 |
+
+### 回归收据（响应实施后）
+
+- `apps/api` `go test ./... -count=1` 全绿；`go vet` 路径随测试包覆盖
+- `apps/web` `vitest run` **492/492**；`tsc -b` 干净
+- Root 保持 `active / 5/5`；无开放 required finding
+- **未做**：未自动 Root/VP-002 关门；未重跑 Compose / Playwright 全路径
+
+### 治理投影
+
+- 本响应写入 Root `03-audit` / `02-execution` / `goal-tree` 注记
+- A-006 无开放 required；recommended 已闭合或 residual 留痕

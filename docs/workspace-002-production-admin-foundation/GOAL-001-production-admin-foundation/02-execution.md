@@ -224,3 +224,17 @@ version: 0.1.20
 - GOAL-012 S1～S5 实施完成并 self close-out pass；`done / 4/4`。
 - Root A-005 F-001 → fixed；无开放 required finding。
 - Root 保持 active / 5/5；未自动重新关门。
+
+## 2026-08-04 · A-006 落盘与 recommended 修正（`/govern`）
+
+- **扫描**：workspace-002 delivery / Root `active / 5/5` / primary_plan VP-002；Charter@0.1.0 对齐；无开放 required finding（A-005 F-001 已 fixed）；I-001～I-006 verified/closed。
+- **落盘**：Root `03-audit` **A-006**（independent · pass · VP-002 产品意图再审）——无 required；R-001～R-005 recommended。
+- **响应裁决**：R-001～R-004 → `fixed`；R-005 → residual-by-design / handled（短 access TTL，不引入 access 黑名单）。
+- **产品代码修正**（事实）：
+  1. **R-001**：`AuthUser.permissions?` + `parseAuthUser`；`fetchMe` 规范化 permissions；新增 vitest 断言。
+  2. **R-002**：`render.tsx` 移除 `/api/settings` 域名副作用；`main.tsx` host 层 `useResourceFetcher` 在 PATCH settings 成功后 `notifyBrandingChanged()`。
+  3. **R-003**：migration **0008** `operation_log_settings` 扩展 CHECK 接受 `settings.update`；`settingsPatch` best-effort `RecordOperation`；handler 测试断言操作日志。
+  4. **R-004**：表单 modal 初值统一 `coerceFieldValue`；`coerceToKind` 将 `string[]` 合成为 textarea 逗号串；users fixture 角色字段标签说明系统/自定义键。
+  5. **R-005**：无代码变更；审计响应节 residual 留痕。
+- **回归收据**：`apps/api` `go test ./... -count=1` 全绿；`apps/web` vitest **492/492** + `tsc -b` 干净。
+- **状态**：Root 保持 `active / 5/5`；A-006 无开放 required；未自动 Root/VP-002 关门。

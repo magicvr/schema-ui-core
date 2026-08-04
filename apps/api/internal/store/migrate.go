@@ -107,6 +107,13 @@ var compiledMigrations = []migration{
 		stmts:       siteSettingsDDL,
 		up:          migrate0007,
 	},
+	{
+		version:     8,
+		name:        "operation_log_settings",
+		transformID: "0008:operation-log-settings:v1",
+		stmts:       operationLogSettingsDDL,
+		up:          migrate0008,
+	},
 }
 
 // r2BaselineDDL is the canonical R2 schema (users + refresh_tokens). It is
@@ -332,6 +339,45 @@ func migrate0007(tx *sql.Tx) error {
 		DefaultSiteTitle, now,
 	); err != nil {
 		return fmt.Errorf("seed site_settings: %w", err)
+	}
+	return nil
+}
+
+// operationLogSettingsDDL expands operation_log CHECK with settings.update
+// (A-006 R-003). Historical records.* / users.* / roles.* / auth.* stay valid.
+// SQLite cannot ALTER CHECK, so migrate0008 rebuilds the table in place.
+var operationLogSettingsDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
+// migrate0008 rebuilds operation_log to accept settings.update while preserving rows.
+func migrate0008(tx *sql.Tx) error {
+	if _, err := tx.Exec(`ALTER TABLE operation_log RENAME TO operation_log_old`); err != nil {
+		return fmt.Errorf("rename operation_log: %w", err)
+	}
+	if _, err := tx.Exec(operationLogSettingsDDL[0]); err != nil {
+		return fmt.Errorf("create operation_log settings-expanded: %w", err)
+	}
+	if _, err := tx.Exec(
+		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
+		 SELECT id, event, actor_id, actor_name, record_id, detail, created_at FROM operation_log_old`,
+	); err != nil {
+		return fmt.Errorf("migrate operation_log rows: %w", err)
+	}
+	if _, err := tx.Exec(`DROP TABLE operation_log_old`); err != nil {
+		return fmt.Errorf("drop operation_log_old: %w", err)
+	}
+	if _, err := tx.Exec(operationLogSettingsDDL[1]); err != nil {
+		return fmt.Errorf("create operation_log index: %w", err)
 	}
 	return nil
 }

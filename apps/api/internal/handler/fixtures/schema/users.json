@@ -89,7 +89,11 @@
         "permissionCascade": { "keys": ["edit"] },
         "permissions": { "edit": "$context.user.permissions contains \"roles.assign\"" },
         "props": {
-          "fields": [{ "id": "roles", "label": "Role keys (comma-separated)", "type": "textarea" }],
+          "fields": [{
+            "id": "roles",
+            "label": "Role keys (comma-separated; system: admin, editor, viewer; custom keys allowed)",
+            "type": "textarea"
+          }],
           "submitAction": "updateUserRoles",
           "submitLabel": "Save roles"
         }
