@@ -30,9 +30,21 @@ interface FixtureSuite {
 }
 
 const CASES_SHA256 = "ac124fa1d831d0aa2544b7544b1e177c3498c8c3b36ee4d535e8c3f2f5b8849e";
-const casesBytes = readFileSync(new URL("../../../../docs/workspace-001-mvp-admin-foundation/GOAL-006-r4-account-permission/attachments/dperm/cases.json", import.meta.url));
+const casesBytes = canonicalArtifactBytes(
+  readFileSync(
+    new URL(
+      "../../../../docs/workspace-001-mvp-admin-foundation/GOAL-006-r4-account-permission/attachments/dperm/cases.json",
+      import.meta.url,
+    ),
+  ),
+);
 
 const { createHash } = await import("node:crypto");
+
+function canonicalArtifactBytes(bytes: Buffer): Buffer {
+  // Governance hashes describe the recorded LF bytes; Git may check them out as CRLF.
+  return Buffer.from(bytes.toString("utf8").replace(/\r\n/g, "\n"), "utf8");
+}
 
 describe("pinned permissions-inheritance fixture integrity", () => {
   it("matches the SHA-256 recorded in GOAL-006 D-004", () => {

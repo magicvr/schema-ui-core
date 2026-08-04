@@ -1,0 +1,143 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "homePageRef": "overview",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "overview",
+      "title": "Overview",
+      "schemaUrl": "/api/schema/overview",
+      "route": "/overview"
+    },
+    {
+      "pageId": "data-table",
+      "title": "Data table",
+      "schemaUrl": "/api/schema/data-table",
+      "route": "/data-table"
+    },
+    {
+      "pageId": "search-form-table",
+      "title": "Search + table",
+      "schemaUrl": "/api/schema/search-form-table",
+      "route": "/search-form-table"
+    },
+    {
+      "pageId": "form-controls",
+      "title": "Form controls",
+      "schemaUrl": "/api/schema/form-controls",
+      "route": "/form-controls"
+    },
+    {
+      "pageId": "form-with-reactions",
+      "title": "Form with reactions",
+      "schemaUrl": "/api/schema/form-with-reactions",
+      "route": "/form-with-reactions"
+    },
+    {
+      "pageId": "users",
+      "title": "Users",
+      "schemaUrl": "/api/schema/users",
+      "route": "/users"
+    },
+    {
+      "pageId": "roles",
+      "title": "Roles",
+      "schemaUrl": "/api/schema/roles",
+      "route": "/roles"
+    },
+    {
+      "pageId": "settings",
+      "title": "Settings",
+      "schemaUrl": "/api/schema/settings",
+      "route": "/settings"
+    },
+    {
+      "pageId": "activity",
+      "title": "Activity",
+      "schemaUrl": "/api/schema/activity",
+      "route": "/activity"
+    }
+  ],
+  "navigation": {
+    "top": [
+      {
+        "pageRef": "overview",
+        "label": "Overview",
+        "icon": "dashboard"
+      }
+    ],
+    "sidebar": [
+      {
+        "label": "Examples",
+        "icon": "folder",
+        "items": [
+          {
+            "pageRef": "data-table",
+            "label": "Data table",
+            "icon": "table"
+          },
+          {
+            "pageRef": "search-form-table",
+            "label": "Search + table",
+            "icon": "search"
+          },
+          {
+            "pageRef": "form-controls",
+            "label": "Form controls",
+            "icon": "form"
+          },
+          {
+            "pageRef": "form-with-reactions",
+            "label": "Form with reactions",
+            "icon": "reaction"
+          }
+        ]
+      },
+      {
+        "label": "Admin",
+        "icon": "folder",
+        "items": [
+          {
+            "pageRef": "users",
+            "label": "Users",
+            "icon": "user",
+            "visibleWhen": {
+              "when": "$context.features.menu_users == true"
+            }
+          },
+          {
+            "pageRef": "roles",
+            "label": "Roles",
+            "icon": "user",
+            "visibleWhen": {
+              "when": "$context.features.menu_roles == true"
+            }
+          },
+          {
+            "pageRef": "activity",
+            "label": "Activity",
+            "icon": "activity",
+            "visibleWhen": {
+              "when": "$context.features.menu_activity == true"
+            }
+          }
+        ]
+      }
+    ],
+    "user": [
+      {
+        "pageRef": "settings",
+        "label": "Settings",
+        "icon": "settings",
+        "visibleWhen": {
+          "when": "$context.features.menu_settings == true"
+        }
+      }
+    ]
+  }
+}

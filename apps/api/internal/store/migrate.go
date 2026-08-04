@@ -24,6 +24,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	migrationcontract "github.com/magicvr/schema-ui-core/apps/api/internal/migration"
 )
 
 // schemaMigrationsDDL is the migration ledger. checksum is the SHA-256 (lower
@@ -456,23 +458,17 @@ func (s *Store) applyMigration(m migration) error {
 
 // validateCompiled checks the compiled migration list invariants.
 func validateCompiled() error {
-	if compiledMigrations[0].version != 1 {
-		return fmt.Errorf("migrations must start at version 1, have %d", compiledMigrations[0].version)
-	}
-	names := map[string]int{}
-	prev := 0
+	entries := make([]migrationcontract.Entry, 0, len(compiledMigrations))
 	for _, m := range compiledMigrations {
-		if m.version <= prev {
-			return fmt.Errorf("migrations must be strictly ascending, saw %d after %d", m.version, prev)
-		}
-		if p, ok := names[m.name]; ok {
-			return fmt.Errorf("migration name %q reused at versions %d and %d", m.name, p, m.version)
-		}
-		if len(migrationChecksum(m)) != 64 {
-			return fmt.Errorf("migration %d checksum length %d, want 64", m.version, len(migrationChecksum(m)))
-		}
-		names[m.name] = m.version
-		prev = m.version
+		entries = append(entries, migrationcontract.Entry{
+			Version:  m.version,
+			Name:     m.name,
+			ModuleID: "core.persistence",
+			Checksum: migrationChecksum(m),
+		})
+	}
+	if _, err := migrationcontract.Collect(entries); err != nil {
+		return fmt.Errorf("store: compiled migration contract: %w", err)
 	}
 	return nil
 }

@@ -18,6 +18,10 @@ export default defineConfig({
     port: Number(process.env.WEB_PORT || 5173),
     strictPort: true,
     proxy: {
+      "/.well-known/schema-ui/app-manifest.json": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://127.0.0.1:8080",
         changeOrigin: true,

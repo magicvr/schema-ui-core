@@ -2,6 +2,41 @@ package config
 
 import "testing"
 
+func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
+	t.Run("default mvp profile", func(t *testing.T) {
+		t.Setenv("APP_PROFILE", "")
+		t.Setenv("APP_MODULES_ENABLED", "")
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileName != "mvp" || cfg.ProfileSource != "profile.default" || len(cfg.ModulesEnabled) == 0 {
+			t.Fatalf("unexpected profile config: %+v", cfg)
+		}
+	})
+
+	t.Run("explicit modules override profile defaults", func(t *testing.T) {
+		t.Setenv("APP_PROFILE", "admin")
+		t.Setenv("APP_MODULES_ENABLED", "core.server-registration")
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.enabled" || len(cfg.ModulesEnabled) != 1 || cfg.ModulesEnabled[0] != "core.server-registration" {
+			t.Fatalf("unexpected explicit module config: %+v", cfg)
+		}
+	})
+
+	t.Run("custom profile requires explicit modules", func(t *testing.T) {
+		t.Setenv("APP_PROFILE", "custom")
+		t.Setenv("APP_MODULES_ENABLED", "")
+		cfg := Load()
+		if cfg.ProfileError == nil {
+			t.Fatal("custom profile without modules must fail closed")
+		}
+	})
+}
+
 // TestValidateProd covers the production guard added in response to GOAL-008
 // A-005 F-002 (dev-session fallback) and A-002 F-002-005 (JWT secret minimum
 // length/entropy): both are local-development-only or non-negotiable settings
@@ -44,7 +79,7 @@ func TestValidateProd(t *testing.T) {
 
 	t.Run("production with an all-letter JWT secret fails closed", func(t *testing.T) {
 		c := &Config{
-			AppEnv:               "production",
+			AppEnv:                "production",
 			AuthDevSessionEnabled: false,
 			AuthJWTSecret:         "abcdefghijklmnopqrstuvwxyzabcdefghij",
 		}
@@ -55,7 +90,7 @@ func TestValidateProd(t *testing.T) {
 
 	t.Run("production with an all-digit JWT secret fails closed", func(t *testing.T) {
 		c := &Config{
-			AppEnv:               "production",
+			AppEnv:                "production",
 			AuthDevSessionEnabled: false,
 			AuthJWTSecret:         "12345678901234567890123456789012",
 		}

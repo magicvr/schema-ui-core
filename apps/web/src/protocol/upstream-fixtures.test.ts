@@ -60,11 +60,16 @@ const STATIC_MANIFEST_SHA256 =
   "8d90160418ef68f10164a460bd7eede215cb292f8c1a9264912500b9e51c637c";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
-  const bytes = readFileSync(new URL(relativePath, import.meta.url));
+  const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));
   return {
     bytes,
     value: JSON.parse(bytes.toString("utf8")) as T,
   };
+}
+
+function canonicalArtifactBytes(bytes: Buffer): Buffer {
+  // Provenance hashes describe the upstream LF bytes; Git may check them out as CRLF.
+  return Buffer.from(bytes.toString("utf8").replace(/\r\n/g, "\n"), "utf8");
 }
 
 const schemaArtifact = readJson<JsonObject>(

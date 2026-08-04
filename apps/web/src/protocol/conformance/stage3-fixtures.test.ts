@@ -65,7 +65,12 @@ function readJsonFile<T>(path: string): { bytes: Buffer; value: T } {
 }
 
 function sha256(bytes: Buffer): string {
-  return createHash("sha256").update(bytes).digest("hex");
+  return createHash("sha256").update(canonicalArtifactBytes(bytes)).digest("hex");
+}
+
+function canonicalArtifactBytes(bytes: Buffer): Buffer {
+  // Provenance hashes describe the upstream LF bytes; Git may check them out as CRLF.
+  return Buffer.from(bytes.toString("utf8").replace(/\r\n/g, "\n"), "utf8");
 }
 
 function loadSuite(name: string): { bytes: Buffer; value: FixtureSuite } {

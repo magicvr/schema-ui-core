@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 // Config is the R2 runtime configuration: HTTP + logging, plus the auth
@@ -26,11 +28,17 @@ type Config struct {
 	DBPath                string
 	AdminInitialPassword  string
 	AuthDevSessionEnabled bool
+
+	ProfileName       string
+	ModulesEnabled    []string
+	ProfileSource     string
+	ProfilePrecedence []string
+	ProfileError      error
 }
 
 // Load reads configuration from the environment with safe local defaults.
 func Load() *Config {
-	return &Config{
+	cfg := &Config{
 		AppName:      envOr("APP_NAME", "schema-ui-core-api"),
 		AppEnv:       envOr("APP_ENV", "development"),
 		HTTPAddr:     envOr("HTTP_ADDR", ":8080"),
@@ -45,7 +53,24 @@ func Load() *Config {
 		DBPath:                envOr("DB_PATH", "./data/schema-ui.db"),
 		AdminInitialPassword:  envOr("ADMIN_INITIAL_PASSWORD", ""),
 		AuthDevSessionEnabled: boolEnv("AUTH_DEV_SESSION_ENABLED", false),
+		ProfileName:           envOr("APP_PROFILE", string(kernel.ProfileMVP)),
 	}
+
+	explicitModules, err := kernel.ParseModuleList(os.Getenv("APP_MODULES_ENABLED"))
+	if err != nil {
+		cfg.ProfileError = err
+		return cfg
+	}
+	resolved, err := kernel.ResolveProfile(cfg.ProfileName, explicitModules)
+	if err != nil {
+		cfg.ProfileError = err
+		return cfg
+	}
+	cfg.ProfileName = string(resolved.Name)
+	cfg.ModulesEnabled = append([]string(nil), resolved.Modules...)
+	cfg.ProfileSource = resolved.Source
+	cfg.ProfilePrecedence = append([]string(nil), resolved.Precedence...)
+	return cfg
 }
 
 // ValidateProd fails startup for non-development environments when the static
@@ -59,6 +84,9 @@ func Load() *Config {
 // digits, so a short or guessable HS256 key cannot silently start production.
 // Development keeps the explicit low bar (documented insecure dev key).
 func (c *Config) ValidateProd() error {
+	if c.ProfileError != nil {
+		return fmt.Errorf("invalid module profile: %w", c.ProfileError)
+	}
 	if c.AppEnv == "development" {
 		return nil
 	}

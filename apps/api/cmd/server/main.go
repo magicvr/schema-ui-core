@@ -4,18 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/composition"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
-	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
 const bcryptCost = 10
@@ -48,39 +44,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	st, err := store.Open(cfg.DBPath, "admin", seedHash, true)
+	app, err := composition.NewApp(cfg, secret, seedHash, logger)
 	if err != nil {
-		logger.Error("open auth store", "err", err)
+		logger.Error("build composition root", "err", err)
 		os.Exit(1)
 	}
-	defer st.Close()
-
-	authenticator := auth.New(
-		[]byte(secret),
-		cfg.AuthAccessTTL,
-		cfg.AuthRefreshTTL,
-		st,
-		cfg.AuthDevSessionEnabled,
-	)
-
-	mux := http.NewServeMux()
-	handler.Register(mux, authenticator, st)
-
-	srv := server.New(cfg, mux, logger)
-
-	go func() {
-		logger.Info("server starting",
-			"addr", cfg.HTTPAddr,
-			"version", version.Version,
-			"commit", version.Commit,
-			"env", cfg.AppEnv,
-			"dev_session", cfg.AuthDevSessionEnabled,
-		)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("server failed", "err", err)
-			os.Exit(1)
-		}
-	}()
+	startCtx, startCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	if err := app.Start(startCtx); err != nil {
+		startCancel()
+		logger.Error("startup failed", "err", err)
+		os.Exit(1)
+	}
+	startCancel()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -89,7 +64,7 @@ func main() {
 	logger.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
+	if err := app.Stop(shutdownCtx); err != nil {
 		logger.Error("shutdown", "err", err)
 		os.Exit(1)
 	}
