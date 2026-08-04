@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-01
+updated: 2026-08-04
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 工作区贡献图
@@ -20,4 +20,5 @@ version: 0.3.0
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。
+- **VP-002 已于 2026-08-04 经 `/vision` 用户确认关门（`closed`）**：workspace-002 与 Root `GOAL-001-production-admin-foundation`（`done / 5/5`）的历史绑定保留，默认不接新区（reopen 须用户确认）。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。

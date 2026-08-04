@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-002-production-admin-foundation
 title: 生产级可用 Admin 基架
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-002-production-admin-foundation
 created: 2026-08-01
-updated: 2026-08-01
-version: 0.2.0
+updated: 2026-08-04
+version: 0.3.0
 parent: null
 ---
 
@@ -184,8 +184,17 @@ VP-002 只有在以下方向级标准全部满足时，才可提出关闭：
 |-----------|-----------|------|----------|------|
 | `workspace-002-production-admin-foundation` | `GOAL-001-production-admin-foundation` | `delivery` / lead | 2026-08-01 | 用户确认新工作区与 Root 命名；以独立实现树承接本 VP |
 
+## 关门记录
+
+仅在 `closed` 或 `abandoned` 时填写。
+
+| date | outcome | summary | evidence_links | residuals |
+|------|---------|---------|----------------|-----------|
+| 2026-08-04 | **closed** | 七条方向级产品成功标准均以 lead 工作区 Q2 证据满足：① Schema Renderer 主路径（`GOAL-002/003/004` done：加载/校验/统一错误面 + 默认渲染路径 + 代表性 Node 页面）；② 真实认证（`GOAL-005` done：登录/登出/刷新/撤销 + 请求级身份中间件 + 401/403 断言）；③ 持久化身份与最小权限（`GOAL-006` done：迁移链 + 增量幂等种子 + permission key 后端门禁 + `me.features` 投影）；④ Schema 驱动 CRUD 闭环（`GOAL-007` done：`list-edit-lifecycle` + SQLite 持久化 + L1/L2 重启证据）；⑤ 可重复种子数据（`GOAL-006` S3 + 复现协议）；⑥ fork 后直接接业务（`GOAL-008` done：QUICKSTART + 无编译缓存复现 64.833s ≤ 900s + `smoke.sh` + CI）；⑦ 基础工程化（`GOAL-008` done：env 清单/健康检查/Docker Compose/dev-prod 区分）。后续加固目标 `GOAL-009/010/011/012/013` 全部 done（A-002/A-005 required 全 fixed、语义化 users/roles 双实体接入、Shell 导航 fixture 洁净、Settings/Activity 品牌与操作日志只读面）。Root `GOAL-001` `done / 5/5`（A-004 关门 → A-005 回退 → `GOAL-012` 闭合 F-001 → A-007 self close-out `pass` 再关门）；Root 03-audit **开放 required=0**（A-002/A-005 全部 `fixed`，A-006 `pass`，A-007 self `pass`）。Vision Review **0 open required**（VRev-001～004）。用户指令确认关门。 | [Root GOAL-001 00-meta](../../workspace-002-production-admin-foundation/GOAL-001-production-admin-foundation/00-meta.md)；[goal-tree](../../workspace-002-production-admin-foundation/goal-tree.md)；[Root 03-audit](../../workspace-002-production-admin-foundation/GOAL-001-production-admin-foundation/03-audit.md)；[GOAL-005 00-meta](../../workspace-002-production-admin-foundation/GOAL-005-r2-auth-session/00-meta.md)；[GOAL-006 00-meta](../../workspace-002-production-admin-foundation/GOAL-006-r3-persistent-rbac-menu/00-meta.md)；[GOAL-007 00-meta](../../workspace-002-production-admin-foundation/GOAL-007-r4-schema-crud/00-meta.md)；[GOAL-008 00-meta](../../workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/00-meta.md)；[GOAL-011 00-meta](../../workspace-002-production-admin-foundation/GOAL-011-s4-semantic-admin-resources/00-meta.md) | 有界 closed（非阻断，点名区/目标）：vision 层 `F-V003`（recommended open——双线分支维护契约，按 VRev-003/004 约定推迟至后续双线 VP 建立前落盘）；`GOAL-011` `F-006`（recommended open / non-blocking）；Root A-006 `R-005` residual-by-design（短 access TTL，已 handled）；本 VP 非目标（业务模块、全量协议覆盖、IAM/SSO/SCIM、多租户、复杂工作流）保持排除，不构成残余。 |
+
 ## 规划修订短史
 
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-08-01 | `0.2.0` | 经用户确认完成结构选型：VP 从 `planned` 激活为 `active`，绑定新 delivery 工作区与 Root；不改变 Charter primary workspace。 |
+| 2026-08-04 | `0.3.0` | `/vision`：七条方向级产品成功标准经 lead 工作区 Q2 证据满足（Root `GOAL-001` `done / 5/5` + `GOAL-002`～`GOAL-013` 全部 `done`，Root 03-audit 开放 required=0，A-007 self close-out `pass`；Vision Review 0 open required），用户指令关门 → `status` `active` → `closed`；关门记录 + roadmap/workspaces/README 同步。 |

@@ -2,9 +2,9 @@
 title: docs/vision · 规则面与本仓实例索引
 status: active
 created: 2026-07-29
-updated: 2026-08-01
+updated: 2026-08-04
 parent: null
-version: 0.4.0
+version: 0.5.1
 ---
 
 # docs/vision · 愿景层
@@ -37,7 +37,8 @@ version: 0.4.0
 |------|-------------|
 | [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.1.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
 | [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **closed** · lead: workspace-001-mvp-admin-foundation |
-| [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **active** · lead: workspace-002-production-admin-foundation |
+| [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **closed**（2026-08-04）· lead: workspace-002-production-admin-foundation |
+| [dual-track-contract.md](dual-track-contract.md) | 双线分支维护契约（`F-V003` → `fixed`；方向 3 VP 前置约束） |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
 | [reviews.md](reviews.md) | Vision Review 台账（`VRev-*`） |
