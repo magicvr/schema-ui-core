@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-04
 parent: null
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 工作区贡献图
@@ -21,4 +21,6 @@ version: 0.4.0
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。
 - **VP-002 已于 2026-08-04 经 `/vision` 用户确认关门（`closed`）**：workspace-002 与 Root `GOAL-001-production-admin-foundation`（`done / 5/5`）的历史绑定保留，默认不接新区（reopen 须用户确认）。
+- 2026-08-04 strategic re-align 后，两个工作区及其已完成 Root 均精确对齐 Charter `@0.2.0`，但不改变 VP/Goal 的历史状态、progress 或证据。
+- `VP-003-modular-admin-architecture` 当前为 `planned` 且**零工作区绑定**；这对 planned VP 合法。未来激活/绑定由 `/vision` 决策，建区与 Root 由 `/govern` 执行。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。

@@ -5,7 +5,7 @@ status: done
 created: 2026-08-01
 updated: 2026-08-04
 parent: null
-version: 1.0.0
+version: 1.0.1
 progress: 5/5
 plan_refs:
   - VP-002-production-admin-foundation
@@ -25,10 +25,10 @@ serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为�
 |------|----|
 | `plan_refs` | `VP-002-production-admin-foundation` |
 | `primary_plan` | `VP-002-production-admin-foundation` |
-| Charter | `schema-ui-core-admin-foundation@0.1.0` |
+| Charter | `schema-ui-core-admin-foundation@0.2.0` |
 | 工作区角色 | `delivery` |
 
-继承范围以 VP-002 引用的 `I-PROTO-001 v0.1.3` 为准。冻结基线是实施输入，不是本目标的实施完成证据。
+继承范围以 VP-002 引用的 `I-PROTO-001 v0.1.3` 为准。冻结基线是实施输入，不是本目标的实施完成证据。2026-08-04 仅精确 re-align Charter；本 Root 保持 `done / 5/5`，planned VP-003 不自动挂接本区。
 
 ## 成功边界
 

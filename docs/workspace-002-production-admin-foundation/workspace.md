@@ -10,8 +10,8 @@ plan_refs:
   - VP-002-production-admin-foundation
 primary_plan: VP-002-production-admin-foundation
 created: 2026-08-01
-updated: 2026-08-01
-version: 0.1.0
+updated: 2026-08-04
+version: 0.1.1
 parent: null
 ---
 
@@ -27,7 +27,9 @@ parent: null
 | primary plan | `VP-002-production-admin-foundation` |
 | 共享资料目录 | `none` |
 
-本工作区承接 [VP-002 · 生产级可用 Admin 基架](../vision/plans/VP-002-production-admin-foundation.md)，是该 VP 当前唯一 lead workspace。仓库级 `primary_workspace` 仍为 `workspace-001-mvp-admin-foundation`；本工作区不会重开已关闭的 VP-001 或已完成的旧 Root。
+本工作区承接 [VP-002 · 生产级可用 Admin 基架](../vision/plans/VP-002-production-admin-foundation.md)，是该 VP 唯一历史 lead workspace。仓库级 `primary_workspace` 仍为 `workspace-001-mvp-admin-foundation`；本工作区不会重开已关闭的 VP-001 或已完成的旧 Root。
+
+现行 Charter 为 `schema-ui-core-admin-foundation@0.2.0`。VP-002 在 `@0.1.0` 下关闭，2026-08-04 仅做精确 re-align；planned VP-003 尚未绑定工作区，本区不自动承接其实施。
 
 ## 规范范围
 

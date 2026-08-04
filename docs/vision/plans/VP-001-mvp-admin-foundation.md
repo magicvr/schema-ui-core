@@ -3,11 +3,12 @@ doc_type: vision-plan
 id: VP-001-mvp-admin-foundation
 title: MVP Admin 基架
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.1.0
+vision_ref: schema-ui-core-admin-foundation@0.2.0
+closed_under_vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-08-01
-version: 0.3.0
+updated: 2026-08-04
+version: 0.3.1
 parent: null
 ---
 
@@ -61,3 +62,4 @@ parent: null
 | 2026-07-31 | `/govern` 开区：绑定 `workspace-001-mvp-admin-foundation`；`status` `planned` → `active`；`lead_workspace` 已填。 |
 | 2026-07-31 | `/govern`：Root D-009 按 v0.1.3 正式冻结 R2 覆盖基线；未改变本 VP 的 `active` 状态或 R3-R5 实施门禁。 |
 | 2026-08-01 | `/vision`：三条方向级退出判据经工作区 Q2 证据满足（GOAL-008/GOAL-001 均 `done`，A-005 + A-006 close-out 双 pass），用户确认关门 → `status` `active` → `closed`；关门记录 + roadmap 已同步。 |
+| 2026-08-04 | `/vision` strategic re-align：机读 `vision_ref` 更新为 Charter `@0.2.0`，并以 `closed_under_vision_ref` 保留本 VP 在 `@0.1.0` 下关门的事实；不重开 VP、不改写退出证据。新的单主线模块化方向由 VP-003 承接。 |

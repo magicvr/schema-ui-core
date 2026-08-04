@@ -4,8 +4,8 @@ title: MVP 代码审视 bug 修正
 status: done
 parent: GOAL-001-mvp-admin-foundation
 created: 2026-08-01
-updated: 2026-08-01
-version: 0.3.0
+updated: 2026-08-04
+version: 0.3.1
 progress: 5/5
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -24,11 +24,13 @@ serves_summary: 修正 VP-001 交付后代码审视发现的真实 bug 与集成
 
 | 字段 | 值 |
 |------|-----|
-| Charter | `schema-ui-core-admin-foundation@0.1.0` |
+| Charter | `schema-ui-core-admin-foundation@0.2.0` |
 | `plan_refs` | `VP-001-mvp-admin-foundation` |
 | `primary_plan` | `VP-001-mvp-admin-foundation` |
 | 工作区 | `workspace-001-mvp-admin-foundation` |
 | 与 Root | 父目标 `GOAL-001-mvp-admin-foundation`（Root 保持 `done`；本子目标为关门后修正跟随） |
+
+2026-08-04 仅精确 re-align Charter 引用；本目标保持 `done / 5/5`，历史实施与审计事实不变。
 
 ## 成功标准（可验证）
 

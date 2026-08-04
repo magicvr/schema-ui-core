@@ -4,8 +4,8 @@ title: MVP Admin 基架
 status: done
 parent: null
 created: 2026-07-31
-updated: 2026-08-01
-version: 0.18.1
+updated: 2026-08-04
+version: 0.18.2
 progress: 6/6
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
@@ -24,13 +24,13 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 | 字段 | 值 |
 |------|-----|
-| Charter | `schema-ui-core-admin-foundation@0.1.0` |
+| Charter | `schema-ui-core-admin-foundation@0.2.0` |
 | `plan_refs` | `VP-001-mvp-admin-foundation` |
 | `primary_plan` | `VP-001-mvp-admin-foundation` |
 | `serves_summary` | 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-docs@v2.7.0 为协议边界 |
 | 工作区 | `workspace-001-mvp-admin-foundation`（`vision_role: primary`） |
 
-不在此扩写第二套愿景边界；协议清单权威见 [protocol-inventory-v2.7.0.md](../../vision/protocol-inventory-v2.7.0.md)。
+不在此扩写第二套愿景边界；协议清单权威见 [protocol-inventory-v2.7.0.md](../../vision/protocol-inventory-v2.7.0.md)。本行于 2026-08-04 仅精确 re-align Charter；Root 仍为 `done / 6/6`，未重开、未改写历史证据。
 
 ## 成功标准（方向级 · 可验证）
 
@@ -57,7 +57,7 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 
 ## 派生进度展示
 
-纲领检查点 **6/6** 完成（R1–R6）→ frontmatter `progress: 6/6`（goal-tree 同步），Root `status: done`（2026-08-01，用户 `/govern` 授权，Root D-016）。VP-001 保持 `active`；R6 `pass`/Root `done` **不等于** VP 已关门或完整协议支持，VP 关门另走 `/vision`。
+纲领检查点 **6/6** 完成（R1–R6）→ frontmatter `progress: 6/6`（goal-tree 同步），Root `status: done`（2026-08-01，用户 `/govern` 授权，Root D-016）。VP-001 随后已由 `/vision` 关闭；R6 `pass`/Root `done` 本身**不等于** VP 关门或完整协议支持。
 
 ## 信息就绪与未知项（P-005）
 
@@ -77,8 +77,8 @@ serves_summary: 交付 VP-001 可 fork 的 React+Go Admin MVP，以 schema-ui-do
 ## 备注
 
 - 开区日期：2026-07-31。
-- Charter H-001：清单提取 verified；覆盖子集冻结仍 open（本目标 `I-PROTO-001`）。
-- recommended 愿景项 `F-V003`（双线分支契约）不在本 Root 门禁内；后续双线 VP 前由 `/vision` 处理。
+- Charter H-001：清单提取与覆盖子集冻结均 verified（本目标 `I-PROTO-001`）。
+- `F-V003` 已由 VRev-005 闭合；其双线契约在 Charter `@0.2.0` 下转为历史。未来模块化改造归 VP-003，不在本 Root 门禁内。
 - R1 子目标（2026-07-31）：`GOAL-002-r1-repo-layout-conventions`、`GOAL-003-r1-api-go-scaffold`、`GOAL-004-r1-web-react-scaffold`。
 - R1 独立复核：Root A-001 pass；编排响应 A-002 + D-006（2026-07-31）。R2 覆盖基线随后由 D-009 冻结；本事实不放行 R3-R5 实施。
 - R4 规划（2026-07-31）：GOAL-005 A-007 independent 关门复审 `pass`、A-008 响应其 recommended 后，立项 `GOAL-006-r4-account-permission`（`active`）。`I-006-001` 在 R4 方案冻结前验证；`I-PROTO-002` 保持 open 作为 R4 **实施**门禁。A-007 F-002（schema 等价性校验）已登记为关闭 `I-PROTO-004` 时的跟进项。

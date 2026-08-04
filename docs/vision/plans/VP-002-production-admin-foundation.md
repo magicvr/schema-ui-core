@@ -3,11 +3,12 @@ doc_type: vision-plan
 id: VP-002-production-admin-foundation
 title: 生产级可用 Admin 基架
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.1.0
+vision_ref: schema-ui-core-admin-foundation@0.2.0
+closed_under_vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-002-production-admin-foundation
 created: 2026-08-01
 updated: 2026-08-04
-version: 0.3.0
+version: 0.3.1
 parent: null
 ---
 
@@ -17,7 +18,7 @@ parent: null
 
 本 VP 继续以 `I-PROTO-001` 已冻结的协议子集为基础。阶段 1 的 Schema Renderer 必须完整支持该子集内的核心能力，包括 Node、基础 Form/Table、Reactions、Permissions、App Manifest 等。任何超出该子集的扩展，必须通过新的决策明确声明、版本化并验证。
 
-在现有 Charter `schema-ui-core-admin-foundation@0.1.0` 下，将已完成的协议验证型 MVP 基线升级为中小型业务项目可以直接 fork、启动并接入业务的生产级 Admin 基架。
+本 VP 在 Charter `schema-ui-core-admin-foundation@0.1.0` 下完成并关闭，将协议验证型 MVP 基线升级为中小型业务项目可以直接 fork、启动并接入业务的生产级 Admin 基架。2026-08-04 仅将机读对齐链 re-align 到现行 `@0.2.0`；不重开本 VP，也不改写其历史退出边界。
 
 本 VP 的最终判断标准不是治理记录是否闭环，而是：
 
@@ -85,7 +86,9 @@ VP-002 只有在以下方向级标准全部满足时，才可提出关闭：
 
 方向级验收证据应落在绑定工作区的 Goal 与审计记录中，不在 VP 中维护 progress 百分比。
 
-## 双线演进策略
+## 历史双线演进策略（关闭时语境）
+
+以下内容保留 VP-002 在 `@0.1.0` 下规划和验收时的语境。它不再定义后续架构：Charter `@0.2.0` 已以单主线 + Profile 替代长期双线意图，未来方向由 [VP-003](VP-003-modular-admin-architecture.md) 与 [module-architecture.md](../../architecture/module-architecture.md) 约束。
 
 ### A. 最小可扩展 MVP 基线
 
@@ -171,7 +174,7 @@ VP-002 只有在以下方向级标准全部满足时，才可提出关闭：
 
 ## 治理与落盘边界
 
-- 继续使用唯一现行 Charter：`schema-ui-core-admin-foundation@0.1.0`。
+- 唯一现行 Charter 已 re-align 为 `schema-ui-core-admin-foundation@0.2.0`；本 VP 的历史关门版本由 `closed_under_vision_ref` 保留。
 - VP-001 与 GOAL-001 保持历史关闭状态。
 - 本 VP 于 2026-08-01 从 `planned` 激活为 `active`，并绑定 `workspace-002-production-admin-foundation` 为当前唯一 lead workspace。
 - 新工作区角色为 `delivery`；仓库级 `primary_workspace` 仍为 `workspace-001-mvp-admin-foundation`，不改写 Charter 或历史交付树。
@@ -198,3 +201,4 @@ VP-002 只有在以下方向级标准全部满足时，才可提出关闭：
 |------|------|------|
 | 2026-08-01 | `0.2.0` | 经用户确认完成结构选型：VP 从 `planned` 激活为 `active`，绑定新 delivery 工作区与 Root；不改变 Charter primary workspace。 |
 | 2026-08-04 | `0.3.0` | `/vision`：七条方向级产品成功标准经 lead 工作区 Q2 证据满足（Root `GOAL-001` `done / 5/5` + `GOAL-002`～`GOAL-013` 全部 `done`，Root 03-audit 开放 required=0，A-007 self close-out `pass`；Vision Review 0 open required），用户指令关门 → `status` `active` → `closed`；关门记录 + roadmap/workspaces/README 同步。 |
+| 2026-08-04 | `0.3.1` | `/vision` strategic re-align：机读 `vision_ref` 更新为 Charter `@0.2.0`，以 `closed_under_vision_ref` 保留 `@0.1.0` 关门语境；历史双线章节不再约束未来，后续由 VP-003 的单主线模块化终态承接。未重开 VP、未改关门证据。 |

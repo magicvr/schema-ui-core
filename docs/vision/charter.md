@@ -3,11 +3,11 @@ doc_type: vision-charter
 vision_id: schema-ui-core-admin-foundation
 title: Schema UI Core 中型项目 Admin 基架
 status: active
-version: 0.1.0
-effective_date: 2026-07-31
+version: 0.2.0
+effective_date: 2026-08-04
 primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-04
 parent: null
 ---
 
@@ -15,7 +15,7 @@ parent: null
 
 ## 目的陈述
 
-以 `magicvr/schema-ui-docs` 所定义的前后端协议为兼容边界，构建一个面向中型项目、可被后续项目 fork 的基础 Admin 框架：前端采用 React，后端采用 Go，并让协议驱动的页面、数据与交互能力有可运行、可验证的实现路径。
+以 `magicvr/schema-ui-docs` 所定义的前后端协议为兼容边界，构建一个面向中型项目、可被后续项目 fork 的基础 Admin 框架：前端采用 React，后端采用 Go，并让协议驱动的页面、数据与交互能力有可运行、可验证的实现路径。基架最终以单一代码主线、薄内核和可组合模块承载不同 fork 起点，避免用长期平行代码线交换短期裁剪便利。
 
 ## 协议来源
 
@@ -26,7 +26,7 @@ parent: null
 | pinned commit | `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` |
 | manifest | https://raw.githubusercontent.com/magicvr/schema-ui-docs/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b/protocol-manifest.json |
 
-该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。MVP 覆盖子集冻结与实现核验仍由工作区内 **`/govern`** 推进。
+该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。MVP 覆盖子集已在 workspace-001 冻结；任何覆盖扩张与实现核验仍由对应工作区内 **`/govern`** 推进。
 
 ## 方向级成功边界
 
@@ -35,22 +35,24 @@ parent: null
 1. 提供可 fork 的 React 前端与 Go 后端 Admin 基架，并对 `schema-ui-docs` `v2.7.0` 的协议能力形成可验证的兼容实现与示例路径。
 2. MVP 覆盖最核心的账号与权限能力；每一纳入范围的协议功能均有范例页面和对应的验证路径。
 3. 前端经产品化后可被 fork 项目直接使用，采用 Tailwind CSS 与 shadcn/ui 风格组件，支持浅色和深色模式，并以 Linear 与 Vercel Dashboard 的克制、工作导向体验为参考。
-4. 维护可供不同起点 fork 的两条演进线：最小可扩展的 MVP 基架，以及逐步覆盖常见 Admin 领域能力的完整实现线。
+4. 以单一代码主线、薄内核、框架无关模块契约和启动时 Profile 提供不同 fork 起点；MVP 与完整 Admin 是同一架构的配置形态，不维护长期平行演进代码线。
+5. 后端聚合已启用模块的 Manifest、Schema、导航、权限与数据生命周期贡献；同一前端 build 能随 Profile 组合标准模块，增减模块不要求修改 Renderer 或 Shell 的中央注册路径。
 
 ## 非目标
 
 本 Charter 不要求、也不把下列事项写成愿景成功条件：
 
-- 不建设特定业务领域的终端产品；钱包、订单、类目、通知等属于后续扩展实现线的候选能力。
+- 不建设特定业务领域的终端产品；钱包、订单、类目、通知等属于后续 VP 的候选能力。
 - 不在本项目内重新定义或替代 `schema-ui-docs` 的协议语义；协议变更应回到上游契约或形成明确的兼容决策。
-- MVP 不承诺完整业务模块目录，只覆盖协议示例、基础 Admin 外壳，以及核心账号与权限能力。
+- 不建设运行时插件市场、远程模块下载、`.so` 加载或运行中热插拔；Profile 只在已编译候选集中选择模块。
+- 不承诺 Profile 从二进制中物理移除未启用模块；需要物理裁剪时由 fork 或独立构建目标负责。
 
 ## 原则摘要
 
 - 协议优先：固定上游版本并以可复核的协议清单约束前后端实现，避免用本地假设替代契约。
 - 可 fork 优先：把通用、可扩展的基架与特定业务模块分开，降低后继项目的二次开发成本。
 - 范例即验证：协议支持不能只停留在声明，每个纳入能力都应有可观察的示例与测试路径。
-- 分支语义清晰：MVP 线保持最小可扩展性，完整实现线承载可复用的常见 Admin 能力；二者的兼容与维护策略必须可说明。
+- 单主线模块化：薄内核不依赖业务模块，组合根静态汇集候选模块，Profile 只决定启动时启用集合；模块边界、依赖、数据与失败语义必须可验证。
 - 操作原则以 [docs/architecture/principles.md](../architecture/principles.md) P-001 至 P-006 为准。
 
 ## 战略假设与未知
@@ -62,7 +64,8 @@ parent: null
 ## 与工作区 / VP 的关系
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
-- 首个意图已落盘为 [VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md)，其 `vision_ref` 精确引用本版本。
+- 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md) 与 [VP-002](plans/VP-002-production-admin-foundation.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。
+- 下一个明确意图为 [VP-003 · 单主线模块化 Admin 架构](plans/VP-003-modular-admin-architecture.md)；其完整终态由 [module-architecture.md](../architecture/module-architecture.md) 固化，试点只属于 VP 路线图。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）。
 
 ## 现行版本
@@ -70,8 +73,8 @@ parent: null
 | 项 | 值 |
 |----|----|
 | `vision_id` | `schema-ui-core-admin-foundation` |
-| 版本 | `0.1.0` |
+| 版本 | `0.2.0` |
 | 状态 | `active` |
-| 引用格式 | `schema-ui-core-admin-foundation@0.1.0` |
+| 引用格式 | `schema-ui-core-admin-foundation@0.2.0` |
 
 修订史见 [revisions.md](revisions.md)，愿景审视台账见 [reviews.md](reviews.md)。

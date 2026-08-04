@@ -8,14 +8,17 @@ source_commit: ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b
 artifact_version: 2.7.0
 protocol_version: "2.7"
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-04
 parent: null
-version: 0.1.0
-vision_ref: schema-ui-core-admin-foundation@0.1.0
+version: 0.1.1
+vision_ref: schema-ui-core-admin-foundation@0.2.0
+source_vision_ref: schema-ui-core-admin-foundation@0.1.0
 serves: VP-001-mvp-admin-foundation
 ---
 
 # 协议实施清单 · schema-ui-docs@v2.7.0
+
+本清单在 Charter `@0.1.0` 下提取，2026-08-04 仅将现行机读引用 re-align 到 `@0.2.0`。外部 pin、清单内容和既有 `I-PROTO-001 v0.1.3` 覆盖证据均未改变。
 
 > **用途**：闭合 `F-V001` 所需的**本地可复核**协议能力与结构/行为契约清单，并给出 React / Go / 范例 / 验证路径映射。  
 > **不是**：MVP 覆盖子集的冻结声明，也不是“已实现协议兼容”的证据。  
@@ -182,11 +185,11 @@ Manifest 点名的样例 YAML：`order-list-batch`、`order-detail-lifecycle`、
 |----|------|
 | 外部固定源 | 已 pin（Charter / VP 已记录） |
 | 完整实施清单 | **本文件**（F-V001 闭合证据） |
-| MVP 协议覆盖子集冻结 | **未做**；须开区后 `/govern` 决策 + 信息项门禁 |
+| MVP 协议覆盖子集冻结 | **已完成**；workspace-001 Root D-009 冻结 `I-PROTO-001 v0.1.3`，不等于全量协议支持 |
 | “支持全部协议功能”主张 | **禁止**，直至覆盖子集冻结且实现证据闭合 |
-| H-001 | 清单已提取 → 见 Charter；覆盖冻结仍依赖本清单 + 后续决策 |
+| H-001 | 清单已提取；覆盖子集已由 workspace-001 Root D-009 冻结为 `I-PROTO-001 v0.1.3` |
 
-## 5. 开区后建议的信息项（有界 · 交 `/govern`）
+## 5. 历史开区信息项建议（已交 `/govern`）
 
 下列不是愿景 finding，仅作实现层登记模板：
 

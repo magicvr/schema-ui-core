@@ -4,7 +4,7 @@ status: active
 created: 2026-07-29
 updated: 2026-08-04
 parent: null
-version: 0.5.1
+version: 0.6.0
 ---
 
 # docs/vision · 愿景层
@@ -35,14 +35,16 @@ version: 0.5.1
 
 | 文件 | 状态 / 说明 |
 |------|-------------|
-| [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.1.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
+| [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.2.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
 | [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **closed** · lead: workspace-001-mvp-admin-foundation |
 | [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **closed**（2026-08-04）· lead: workspace-002-production-admin-foundation |
-| [dual-track-contract.md](dual-track-contract.md) | 双线分支维护契约（`F-V003` → `fixed`；方向 3 VP 前置约束） |
+| [plans/VP-003-modular-admin-architecture.md](plans/VP-003-modular-admin-architecture.md) | **planned** · 下一个明确 VP；完整单主线模块化终态，尚未绑定 workspace |
+| [../architecture/module-architecture.md](../architecture/module-architecture.md) | VP-003 终态架构权威（Fx、Profile、Manifest、数据与生命周期边界） |
+| [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
 | [reviews.md](reviews.md) | Vision Review 台账（`VRev-*`） |
-| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 1 delivery） |
+| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 1 delivery；VP-003 planned/unbound） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议实施清单（`F-V001` 证据） |
 | [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | 实现层 primary 工作区 · Root `GOAL-001-mvp-admin-foundation` |
 | [../workspace-002-production-admin-foundation/](../workspace-002-production-admin-foundation/) | 实现层 delivery 工作区 · Root `GOAL-001-production-admin-foundation` · VP-002 lead |

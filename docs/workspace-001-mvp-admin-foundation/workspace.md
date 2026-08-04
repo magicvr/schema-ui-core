@@ -9,8 +9,8 @@ vision_role: primary
 plan_refs: VP-001-mvp-admin-foundation
 primary_plan: VP-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-07-31
-version: 0.1.1
+updated: 2026-08-04
+version: 0.1.2
 ---
 
 # 工作区上下文 · MVP Admin 基架
@@ -28,7 +28,7 @@ version: 0.1.1
 
 ## 愿景对齐
 
-完整治理下仓库必有唯一 [docs/vision/](../vision/) Charter（`schema-ui-core-admin-foundation@0.1.0`）。本工作区通过必填的 `plan_refs` 与 `primary_plan` 对齐 VP-001；VP 再对齐 Charter。细则见 [vision/alignment.md](../vision/alignment.md) 与 P-006。
+完整治理下仓库必有唯一 [docs/vision/](../vision/) Charter（`schema-ui-core-admin-foundation@0.2.0`）。本工作区通过必填的 `plan_refs` 与 `primary_plan` 对齐 VP-001；VP 再对齐 Charter。VP-001 在 `@0.1.0` 下关闭，2026-08-04 只做精确 re-align，不重开本工作区或 Root。细则见 [vision/alignment.md](../vision/alignment.md) 与 P-006。
 
 **不要**在本文件维护 progress% 或把愿景目录当作第二套目标树。
 
@@ -48,3 +48,4 @@ MVP 纲领阶段写在 Root Goal 路线图中；纲领阶段通常串行，同�
 
 - 开区：`/govern` · 2026-07-31；用户确认 slug、`vision_role: primary`、`primary_plan=VP-001-mvp-admin-foundation`。
 - 协议覆盖子集已按 Root D-009 正式冻结：`I-PROTO-001` = `verified`，基线见 `GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md` v0.1.3。该事实不等同于完整协议支持或 R3-R5 实现完成。
+- 2026-08-04 strategic re-align：未来单主线模块化改造由 planned VP-003 承接；本区仍只服务 VP-001，不追加 `plan_refs`，不改变任何 Goal status/progress。

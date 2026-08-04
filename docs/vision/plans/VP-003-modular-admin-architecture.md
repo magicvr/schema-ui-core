@@ -1,0 +1,102 @@
+---
+doc_type: vision-plan
+id: VP-003-modular-admin-architecture
+title: 单主线模块化 Admin 架构
+status: planned
+vision_ref: schema-ui-core-admin-foundation@0.2.0
+created: 2026-08-04
+updated: 2026-08-04
+version: 0.1.0
+parent: null
+---
+
+# VP-003 · 单主线模块化 Admin 架构
+
+## 最终意图
+
+把当前生产级 Admin 基架改造成**单一代码主线上的模块化单体**：薄内核提供稳定平台契约，组合根静态接入一方模块，Uber Fx 只负责装配与生命周期；启动时 Profile 选择已编译模块集合，后端聚合 Manifest、Schema、导航、权限、迁移和系统数据贡献，同一前端 build 可承接不同 fork 起点。
+
+本 VP 表达完整终态，不是 Activity/Settings 试点的“妥协版本”。试点只是在迭代路线图中验证模块切口、失败语义和迁移方式；即使试点通过，也不得据此关闭本 VP。
+
+架构权威见 [单主线模块化 Admin 架构](../../architecture/module-architecture.md)。
+
+## 方向级退出判据
+
+只有下列终态全部具备工作区 Q2 实施证据、验证结果与关门审计时，本 VP 才可提议 `closed`：
+
+1. **单主线与 Profile 成立**
+   MVP、完整 Admin 与 custom fork 起点由同一代码主线、同一模块契约和版本化 Profile 表达；不存在需要长期回灌的平行 MVP/Admin 代码线。Profile 解析、覆盖优先级、依赖闭包和 fail-closed 错误可验证。
+
+2. **薄内核、组合根与模块能力契约完成**
+   内核不导入业务模块；组合根静态汇集候选模块并通过 Uber Fx 管理依赖与生命周期；模块公共 API 不依赖 Fx 类型。现有一方 Admin 能力均迁入统一的模块描述与可选能力契约，不再依赖中央业务注册表接入。
+
+3. **数据生命周期保持可升级、可恢复**
+   全局迁移台账、顺序、checksum、事务、升级前快照与恢复边界保持成立；所有已编译一方模块迁移独立于启用状态执行，退役模块仍保留历史迁移 tombstone，未知已应用迁移 fail closed。fresh bootstrap 与 versioned system-data reconcile 分离，既有实例可补齐系统数据且不覆盖用户拥有字段。
+
+4. **后端聚合运行时契约成为唯一生产路径**
+   已启用模块的 Manifest、Schema、导航、权限和配置由后端确定性聚合、冲突校验并从 `/.well-known/schema-ui/app-manifest.json` 发布；端点登录前可读但不泄露秘密，Vite/Nginx 精确代理，协议/模块 API/前端 capability 不兼容时 fail closed，同一前端 build 在至少 `mvp` 与 `admin` Profile 下工作。生产静态 Manifest 兜底已移除。
+
+5. **安全、横切能力与生命周期边界成立**
+   认证和后端授权仍是最终权限边界；`operationlog` 始终记录关键写操作，`activity` 仅作为可选读取/UI 模块；Settings 不再依赖 Shell 私有通知。模块启动、就绪、停止、失败清理、健康诊断、日志与指标均有明确 `module_id` 语义。
+
+6. **现有能力完成迁移且旧装配路径退出**
+   当前用户、角色、记录/Schema CRUD、Settings、Activity 等一方能力在新架构上保持既有行为和协议边界；旧中央路由/页面/导航注册、静态生产 Manifest、Shell 特例与已被替代的 host glue 被删除，而非无限期双轨兼容。
+
+7. **可 fork、可运维、可回归**
+   快速启动、Docker/生产代理、升级与恢复文档反映新架构；CI/本地矩阵覆盖模块契约、冲突失败、双 Profile、数据升级、认证授权、Activity 禁用场景和容器启动。新项目能通过选择 Profile、配置和模块贡献接入业务，不修改前端 Renderer/Shell 主路径。
+
+## 迭代路线图
+
+下列阶段是抵达终态的建议顺序，不缩减上述退出判据。具体工作区 Root 可在 `/govern` 中细化信息门禁、阶段检查点和子目标。
+
+| 阶段 | 目的 | 阶段产物 / 门禁 | 与终态关系 |
+|------|------|-----------------|------------|
+| R1 | 契约与迁移基线冻结 | 盘点当前中央注册点、模块边界、迁移/seed 所有权、Profile 矩阵；冻结模块 API、capability 协商、迁移 tombstone、错误分类、现有兼容基线和回滚策略 | 只冻结实施边界，不算架构完成 |
+| R2 | 内核与组合根基础 | 建立薄内核、框架无关模块契约、Fx 组合根、确定性图校验、全局迁移收集、Manifest 聚合骨架与 `/.well-known` 代理 | 提供可迁移平台，不关闭 VP |
+| R3 | 有界试点 | 迁移 `operationlog`/`activity` 拆分与 `settings`；覆盖启停、依赖、冲突、配置事件、同一 build 双 Profile 和既有实例升级 | 验证切口；通过仅允许继续扩迁 |
+| R4 | 全量一方模块迁移 | 将 users、roles、records/Schema CRUD 及其他现有 Admin 能力迁入统一能力契约；清除模块对 Shell/中央注册表的特例依赖 | 达到功能覆盖面，但仍需退出旧路径与运维验收 |
+| R5 | Profile、数据与运维收敛 | 完成 `mvp`/`admin`/custom 配置、fresh/reconcile、readyz/诊断、Vite/Nginx/Docker、升级恢复和 fork 文档 | 形成可发布候选，不自动等于 VP 关闭 |
+| R6 | 旧路径移除与终态验收 | 删除双轨兼容和静态生产兜底；运行完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收与 close-out 审计 | 七条退出判据全部取证后方可提议关门 |
+
+## 已接受的架构决策
+
+| 主题 | 决策 |
+|------|------|
+| DI | 采用 Uber Fx；Google Wire 因已归档/不再维护且不直接解决运行时选择而不采用 |
+| 选择模型 | 静态编译候选模块 + 启动时 Profile；不做运行时插件或热插拔 |
+| API 边界 | 模块契约框架无关，能力可选，依赖显式，冲突与缺依赖 fail closed |
+| 数据 | 全局迁移台账覆盖全部已编译一方模块；启用状态不决定迁移；bootstrap 与 reconcile 分离 |
+| Activity | operationlog 始终启用；Activity 是可选查询/UI；Settings 同批验证通用 host hook |
+| Manifest | 后端聚合、公共无秘密的 `/.well-known` 入口；生产不静默使用静态兜底 |
+| 演进 | 以单主线和 Profile 替代双线长期维护；历史 VP/工作区保持关闭事实，不伪造分支删除 |
+
+## 信息门禁提示
+
+VP 允许在 `planned` 状态携带实施未知，但未来激活/开区后至少应在对应门禁前登记并核验：
+
+- 当前所有中央注册点、模块候选与跨模块依赖的完整清单；
+- 既有 `0001` 起迁移链如何映射到全局模块所有权，以及升级/恢复夹具；
+- Fx 和模块 API 的固定版本、Go 兼容范围及生命周期错误语义；
+- `mvp`/`admin` Profile 的精确模块集合与配置覆盖顺序；
+- Manifest 聚合的冲突规则、缓存、登录前加载与前端权限投影；
+- 静态 Manifest 和 Shell 特例的删除清单、迁移期限与回滚触发条件。
+
+这些信息项用于实施治理，不改变本 VP 的最终意图，也不能作为无限期保留双轨的理由。
+
+## 工作区绑定
+
+当前为 `planned`，尚未绑定 lead workspace。按照愿景对齐规则，planned VP 可以有零个工作区；激活与结构选型由后续 `/vision` 决策，工作区/Root 与实施记录由 `/govern` 建立。
+
+## Non-goals
+
+- 不建设运行时插件市场、`.so` 加载、远程模块下载或运行中热启停。
+- 不在本 VP 中扩张 `schema-ui-docs v2.7.0` 的冻结协议范围。
+- 不交付订单、钱包、类目、通知等具体业务领域模块。
+- 不以微服务拆分替代模块化单体，也不在本项目内重写上游 Schema 语义。
+- 不把试点、能启动、局部模块化或文档完成当作终态实现证据。
+
+## 规划修订短史
+
+| 日期 | 版本 | 变更 |
+|------|------|------|
+| 2026-08-04 | `0.1.0` | 用户确认战略方向与全部工程建议；明确 VP 表达完整最终意图，Activity/Settings 等试点只进入迭代路线图，不构成妥协版退出边界。 |
