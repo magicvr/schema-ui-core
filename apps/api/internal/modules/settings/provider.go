@@ -10,10 +10,11 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/manifest"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
-const ModuleID = "admin.settings"
+const ModuleID = migration.ModuleID
 
 // Provider implements kernel.Provider for admin.settings.
 type Provider struct {
@@ -46,7 +47,7 @@ func (p *Provider) Descriptor() kernel.Module {
 }
 
 func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
-	return nil, nil
+	return migration.Descriptors(), nil
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {

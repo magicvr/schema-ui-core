@@ -18,6 +18,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func TestResolvePlanUsesConfiguredProfileAndRejectsMissingDependencies(t *testing.T) {
@@ -48,7 +49,7 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(":memory:", "admin", "hash", false)
+	st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +126,7 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			st, err := store.Open(":memory:", "admin", "hash", false)
+			st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -179,7 +180,7 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	path := filepath.Join(dir, "r3-recovery.db")
 	snapshotPath := filepath.Join(dir, "pre-r3-snapshot.db")
 	restoredPath := filepath.Join(dir, "r3-restored.db")
-	st, err := store.Open(path, "admin", "hash", true)
+	st, err := testsupport.OpenStore(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +217,7 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 
 	// Simulate a failed optional-module rollout by changing the live copy after
 	// the snapshot. The restored path must retain the known-good fields instead.
-	st, err = store.Open(path, "admin", "different-seed", true)
+	st, err = testsupport.OpenStore(path, "admin", "different-seed", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +233,7 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 
 	// Start the recovered database with the MVP plan. Settings and Activity
 	// surfaces are disabled, but their persisted data and operation log remain.
-	st, err = store.Open(restoredPath, "admin", "different-seed", true)
+	st, err = testsupport.OpenStore(restoredPath, "admin", "different-seed", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +402,7 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(":memory:", "admin", "hash", false)
+	st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
 	if err != nil {
 		t.Fatal(err)
 	}

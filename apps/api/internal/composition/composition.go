@@ -17,6 +17,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
+	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
 	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
@@ -88,14 +89,10 @@ func (g *readinessGate) Ready() bool { return g.ready.Load() }
 func (g *readinessGate) setReady()   { g.ready.Store(true) }
 
 func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, error) {
-	// R6 C6.2 slice 2: composition collects the compiled-global migration
-	// catalog via kernel.CollectPersistence and passes it to the store, which
-	// validates it matches the authoritative ledger. The historical 0001-0008
-	// set is registered with module ownership via store.MigrationCatalog
-	// (slice 1); core/auth/admin module providers return their own migrations
-	// in later slices.
-	providers := []kernel.Provider{storePersistenceProvider{}}
-	catalog, err := kernel.CollectPersistence(providers)
+	// Persistence is compiled-global rather than profile-gated. The static
+	// registry collects module-owned descriptors before store startup; store
+	// only validates and executes the resulting catalog.
+	catalog, err := compiledmodules.PersistenceCatalog()
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.persistence", Detail: fmt.Sprintf("collect persistence: %v", err)}
 	}
@@ -105,19 +102,6 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	}
 	return st, nil
 }
-
-// storePersistenceProvider exposes the store's historical 0001-0008 catalog as
-// a kernel.Provider so composition collects it through CollectPersistence
-// (R6 C6.2). The catalog entries carry their real module ownership.
-type storePersistenceProvider struct{}
-
-func (storePersistenceProvider) Descriptor() kernel.Module {
-	return kernel.Module{ID: "core.persistence", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0"}
-}
-func (storePersistenceProvider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
-	return store.MigrationCatalog(), nil
-}
-func (storePersistenceProvider) Register(context.Context, kernel.Registrar) error { return nil }
 
 func newAuthenticator(cfg *config.Config, secret jwtSecret, st *store.Store) *auth.Authenticator {
 	return auth.New([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, st, cfg.AuthDevSessionEnabled)

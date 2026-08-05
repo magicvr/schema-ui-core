@@ -1,9 +1,33 @@
 package kernel
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"sort"
 	"strings"
 )
+
+// MigrationChecksum is the canonical ledger checksum for a migration: SHA-256
+// (lower hex) of the normalized canonical SQL plus the data-transformer id
+// (R6 C6.2 slice 3: module migration packages compute the same checksum the
+// store ledger records).
+func MigrationChecksum(stmts []string, transformID string) string {
+	input := normalizeSQL(strings.Join(stmts, "\n")) + "\n" + transformID
+	sum := sha256.Sum256([]byte(input))
+	return hex.EncodeToString(sum[:])
+}
+
+func normalizeSQL(s string) string {
+	lines := strings.Split(s, "\n")
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			out = append(out, line)
+		}
+	}
+	return strings.Join(out, "\n")
+}
 
 // This file implements the compiled-global Persistence catalog frozen in
 // GOAL-005/attachments/r4-c1-freeze-package-draft.md §4. The only collection

@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	settingsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 )
 
 // SiteSettings is the persisted branding singleton.
@@ -32,7 +34,7 @@ func (s *Store) GetSiteSettings() (*SiteSettings, error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		return &SiteSettings{
 			ID:        "default",
-			SiteTitle: DefaultSiteTitle,
+			SiteTitle: settingsmigration.DefaultSiteTitle,
 			LogoURL:   "",
 			UpdatedAt: time.Unix(0, 0).UTC(),
 		}, nil

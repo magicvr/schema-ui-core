@@ -15,6 +15,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
@@ -23,7 +24,7 @@ func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
 	if err != nil {
 		t.Fatalf("hash seed password: %v", err)
 	}
-	st, err := store.Open(filepath.Join(t.TempDir(), "test.db"), "admin", hash, true)
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "test.db"), "admin", hash, true)
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}

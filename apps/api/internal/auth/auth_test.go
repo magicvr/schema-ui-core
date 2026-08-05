@@ -10,7 +10,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func newTestAuth(t *testing.T, devSession bool) *Authenticator {
@@ -19,7 +19,7 @@ func newTestAuth(t *testing.T, devSession bool) *Authenticator {
 	if err != nil {
 		t.Fatalf("hash: %v", err)
 	}
-	st, err := store.Open(filepath.Join(t.TempDir(), "test.db"), "admin", hash, true)
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "test.db"), "admin", hash, true)
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestOpaqueTokenHashStable(t *testing.T) {
 }
 
 // buildLegacyR2DB creates a pre-migration R2 database (users + refresh_tokens,
-// no schema_migrations) so store.Open has to run the 0001 fingerprint + 0002
+// no schema_migrations) so the compiled-catalog store open has to run the 0001 fingerprint + 0002
 // backfill path. users holds [id, username, name, rolesJSON, passwordHash].
 func buildLegacyR2DB(t *testing.T, path string, users [][]string) {
 	t.Helper()
@@ -223,7 +223,7 @@ func TestLoginAndRefreshAfterMigrateDuplicateRoles(t *testing.T) {
 	}
 	buildLegacyR2DB(t, path, [][]string{{"u-alice", "alice", "Alice", `["admin","admin","editor"]`, hash}})
 
-	st, err := store.Open(path, "admin", "hash", false)
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open migrated store: %v", err)
 	}

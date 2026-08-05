@@ -12,6 +12,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 // authTestEnv wires a full handler mux backed by a temp SQLite store and an
@@ -50,7 +51,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	if err != nil {
 		t.Fatalf("hash seed password: %v", err)
 	}
-	st, err := store.Open(filepath.Join(t.TempDir(), "test.db"), testSeedUsername, hash, true)
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "test.db"), testSeedUsername, hash, true)
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}

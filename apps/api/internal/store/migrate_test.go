@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -547,70 +546,78 @@ func TestRBACConstraintsAndIndexes(t *testing.T) {
 	}
 }
 
-// R6 C6.2 transitional slice 1: MigrationCatalog must expose the same
-// version/name/checksum set as the store's own ledger, with correct module
-// ownership, and pass kernel.CollectPersistence (contiguous, unique, validated).
-func TestMigrationCatalogMatchesLedgerWithOwnership(t *testing.T) {
+// R6 C6.2 slice 3: the compiled registry is the sole migration authority and
+// carries the frozen 0001-0008 owner mapping into the platform runner.
+func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 	catalog := MigrationCatalog()
-	if len(catalog) != len(compiledMigrations) {
-		t.Fatalf("catalog len = %d, want %d", len(catalog), len(compiledMigrations))
+	want := []struct {
+		moduleID string
+		name     string
+		checksum string
+	}{
+		{"core.auth-session", "r2_baseline", "bde1a83172d99932e5a90b6653808c8c6c510bbc8be32fdb52da9686428f6ff4"},
+		{"core.auth-session", "rbac_expand", "1a7f630d1916e69aa2901f30d30d7d0b58ad9e96879740e7836af4ca07acc4ee"},
+		{"core.persistence", "records_persist", "b195f6c68fac904d7958e4b17add1f64e6c1a696cd9d9382681fa0f06d30af7d"},
+		{"core.operationlog", "operation_log", "53fd75b5b827a9a02648b7fee3c6d4c3e0c8972bca8ecb7adac8519cd8d4cf72"},
+		{"core.operationlog", "operation_log_expand", "73369d73a15d915e3338bfaa0ba1d7d8f5bf0e838493ac42fe295c1db8c02f02"},
+		{"core.persistence", "records_retire", "175ac09f0c67658161a6852d2779781f59985488aa75308f3fa419a06c5f926b"},
+		{"admin.settings", "site_settings", "6ffb1d0d978d7475ebd807f4dc1aab609d255186ddefa08e28a5398d265b7dfa"},
+		{"core.operationlog", "operation_log_settings", "ec3635f99db24907eb4a371ebd8c8f328c80a69e07715b866e1bca319f518d6c"},
 	}
-	owned := map[int]string{}
-	for _, m := range compiledMigrations {
-		owned[m.version] = m.moduleID
+	if len(catalog) != len(want) {
+		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))
 	}
-	for i, mc := range catalog {
-		sm := compiledMigrations[i]
-		if mc.Version != sm.version || mc.Name != sm.name {
-			t.Fatalf("catalog[%d] = %d %s, want %d %s", i, mc.Version, mc.Name, sm.version, sm.name)
+	for index, migration := range catalog {
+		if migration.Version != index+1 {
+			t.Fatalf("catalog[%d].Version = %d, want %d", index, migration.Version, index+1)
 		}
-		if mc.Checksum != migrationChecksum(sm) {
-			t.Fatalf("catalog[%d] %s checksum mismatch", i, mc.Name)
+		expected := want[index]
+		if migration.ModuleID != expected.moduleID || migration.Name != expected.name || migration.Key != expected.name {
+			t.Fatalf("catalog[%d] identity = {%q %q %q}, want {%q %q %q}", index,
+				migration.ModuleID, migration.Key, migration.Name, expected.moduleID, expected.name, expected.name)
 		}
-		if mc.ModuleID != owned[mc.Version] {
-			t.Fatalf("catalog[%d] %s module %q, want %q", i, mc.Name, mc.ModuleID, owned[mc.Version])
+		if migration.Checksum != expected.checksum {
+			t.Fatalf("catalog[%d] %s checksum = %s, want frozen %s", index, migration.Name, migration.Checksum, expected.checksum)
 		}
-		if mc.Apply == nil {
-			t.Fatalf("catalog[%d] %s has nil Apply", i, mc.Name)
+		if migration.Tombstone || migration.Apply == nil {
+			t.Fatalf("catalog[%d] %s must preserve its frozen executable Apply", index, migration.Name)
 		}
-	}
-	// kernel.CollectPersistence validates uniqueness/contiguity/checksum/tombstone.
-	collected, err := kernel.CollectPersistence([]kernel.Provider{catalogProvider{desc: kernel.Module{ID: "core.persistence", Version: "2.0.0"}, catalog: catalog}})
-	if err != nil {
-		t.Fatalf("CollectPersistence: %v", err)
-	}
-	if len(collected) != len(catalog) {
-		t.Fatalf("collected len = %d, want %d", len(collected), len(catalog))
 	}
 }
 
-type catalogProvider struct {
-	desc    kernel.Module
-	catalog []kernel.MigrationContribution
-}
-
-func (p catalogProvider) Descriptor() kernel.Module { return p.desc }
-func (p catalogProvider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
-	return p.catalog, nil
-}
-func (p catalogProvider) Register(context.Context, kernel.Registrar) error { return nil }
-
-// R6 C6.2 slice 2: OpenWithCatalog must fail closed when the supplied catalog
-// diverges from the authoritative ledger (wrong checksum / missing entry).
-func TestOpenWithCatalogRejectsDivergentCatalog(t *testing.T) {
+func TestOpenWithCatalogRejectsInvalidAndAppliedDrift(t *testing.T) {
 	catalog := MigrationCatalog()
 	if len(catalog) == 0 {
 		t.Fatal("empty catalog")
 	}
-	bad := append([]kernel.MigrationContribution(nil), catalog...)
-	bad[0].Checksum = "0" + bad[0].Checksum[1:]
-	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "bad.db"), "admin", "hash", false, bad); err == nil {
-		t.Fatal("divergent catalog must fail closed")
+	invalid := append([]kernel.MigrationContribution(nil), catalog...)
+	invalid[0].Checksum = "bad"
+	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "bad.db"), "admin", "hash", false, invalid); err == nil {
+		t.Fatal("invalid checksum must fail closed")
 	}
-	// Correct catalog opens.
-	st, err := OpenWithCatalog(filepath.Join(t.TempDir(), "ok.db"), "admin", "hash", false, catalog)
+	missing := append([]kernel.MigrationContribution(nil), catalog[:3]...)
+	missing = append(missing, catalog[4:]...)
+	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "gap.db"), "admin", "hash", false, missing); err == nil {
+		t.Fatal("catalog version gap must fail closed")
+	}
+
+	path := filepath.Join(t.TempDir(), "ok.db")
+	st, err := OpenWithCatalog(path, "admin", "hash", false, catalog)
 	if err != nil {
 		t.Fatalf("correct catalog open: %v", err)
 	}
 	_ = st.Close()
+
+	drifted := append([]kernel.MigrationContribution(nil), catalog...)
+	drifted[0].Checksum = "0" + drifted[0].Checksum[1:]
+	if _, err := OpenWithCatalog(path, "admin", "hash", false, drifted); err == nil {
+		t.Fatal("applied checksum drift must fail closed")
+	}
+
+	renamed := append([]kernel.MigrationContribution(nil), catalog...)
+	renamed[0].Key = "r2_baseline_renamed"
+	renamed[0].Name = renamed[0].Key
+	if _, err := OpenWithCatalog(path, "admin", "hash", false, renamed); err == nil || !strings.Contains(err.Error(), "name") {
+		t.Fatalf("applied name drift error = %v, want fail-closed name mismatch", err)
+	}
 }

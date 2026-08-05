@@ -60,43 +60,18 @@ type Store struct {
 	operationLogErr error
 }
 
-// Open opens (creating if needed) the SQLite DB at path, applies versioned
-// migrations (see migrate.go), and — when seedAdmin is true and the users table
-// is empty — seeds the admin user with the given bcrypt password hash. The
-// caller is responsible for enforcing a non-empty seed password in production
-// (fail-closed on startup).
-func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
-	return open(path, adminUsername, adminPasswordHash, seedAdmin)
-}
-
-// OpenWithCatalog is Open but the caller (composition) supplies the compiled
-// migration catalog collected from module providers (R6 C6.2 slice 2). The
-// store validates the supplied catalog EXACTLY matches its authoritative
-// ledger set (versions/names/checksums/module ownership) and fails closed on
-// mismatch. This wires the CollectPersistence → store flow without yet moving
-// the migration Apply/DDL out of the store (slice 3).
+// OpenWithCatalog opens the SQLite DB and applies the compiled-global catalog
+// supplied by the composition root. Module packages own every descriptor and
+// Apply function; store only validates and runs the catalog.
 func OpenWithCatalog(path, adminUsername, adminPasswordHash string, seedAdmin bool, catalog []kernel.MigrationContribution) (*Store, error) {
-	if err := validateCatalogMatchesLedger(catalog); err != nil {
+	normalized, err := normalizeCatalog(catalog)
+	if err != nil {
 		return nil, err
 	}
-	return open(path, adminUsername, adminPasswordHash, seedAdmin)
+	return open(path, adminUsername, adminPasswordHash, seedAdmin, normalized)
 }
 
-func validateCatalogMatchesLedger(catalog []kernel.MigrationContribution) error {
-	expected := MigrationCatalog()
-	if len(catalog) != len(expected) {
-		return fmt.Errorf("store: migration catalog len %d != ledger len %d", len(catalog), len(expected))
-	}
-	for i, mc := range catalog {
-		exp := expected[i]
-		if mc.Version != exp.Version || mc.Name != exp.Name || mc.Checksum != exp.Checksum || mc.ModuleID != exp.ModuleID {
-			return fmt.Errorf("store: catalog[%d] %s (%s) does not match ledger %s (%s)", i, mc.Name, mc.ModuleID, exp.Name, exp.ModuleID)
-		}
-	}
-	return nil
-}
-
-func open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
+func open(path, adminUsername, adminPasswordHash string, seedAdmin bool, catalog []kernel.MigrationContribution) (*Store, error) {
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("create db dir: %w", err)
@@ -111,7 +86,7 @@ func open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store
 	db.SetMaxOpenConns(1)
 
 	s := &Store{db: db, path: path}
-	if err := s.migrate(); err != nil {
+	if err := s.migrate(catalog); err != nil {
 		db.Close()
 		return nil, err
 	}
