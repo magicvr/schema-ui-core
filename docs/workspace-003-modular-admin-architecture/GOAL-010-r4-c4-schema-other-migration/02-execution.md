@@ -16,6 +16,7 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-05 | 建立 R4-C4 Schema 与其他能力迁移子目标 | recorded | [02-execution/E-001-r4-c4-child-opened.md](02-execution/E-001-r4-c4-child-opened.md) |
 | E-002 | 2026-08-05 | R4-C4 settings/activity 迁移与门禁实施 | recorded | [02-execution/E-002-r4-c4-implementation.md](02-execution/E-002-r4-c4-implementation.md) |
+| E-003 | 2026-08-05 | R4-C4 Schema 与其他能力迁移子目标关门 | recorded | [02-execution/E-003-r4-c4-child-closeout.md](02-execution/E-003-r4-c4-child-closeout.md) |
 
 ## 事实边界
 

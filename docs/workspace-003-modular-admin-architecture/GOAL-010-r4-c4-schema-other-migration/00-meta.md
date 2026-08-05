@@ -1,7 +1,7 @@
 ---
 id: GOAL-010-r4-c4-schema-other-migration
 title: R4-C4 · Schema 与其他能力迁移
-status: active
+status: done
 parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
 updated: 2026-08-05
@@ -46,8 +46,9 @@ ledger drift/unknown）。
   改为由 provider/schema 贡献驱动（解决 F-IND-C33-001 residual）；settings/activity
   与 users/roles 一致。
 - [x] **C4.4 / C3 遗留门禁 + 关门**：Manifest secrecy 扫描、Ready 失败反向清理、
-  PolicyID/Visibility/JSON 校验器、ledger drift/unknown 运行时 fail-closed；
-  Records historical-only 保持；self + Grok independent 无开放 required finding。
+  PolicyID/Visibility/JSON 校验器、Records historical-only 保持（按 D-002 收窄；
+  ledger drift/unknown 运行时 fail-closed 移交 C5 数据门禁）；self + Grok
+  independent 无开放 required finding。
 
 四个检查点等权；`progress: 4/4`（C4.1-C4.4 完成）。ledger drift/unknown 运行时
 fail-closed 属 store/migration 路径改造，登记 C5 residual。完成本子目标只表示 C4

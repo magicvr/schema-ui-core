@@ -24,6 +24,7 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-05 | 建立 R4-C4 Schema 与其他能力迁移子目标 | accepted | [01-decision/D-001-r4-c4-stage-scope.md](01-decision/D-001-r4-c4-stage-scope.md) |
+| D-002 | 2026-08-05 | C4.4 成功标准收窄与 ledger 门禁移交 C5 | accepted | [01-decision/D-002-r4-c4-criteria-scope.md](01-decision/D-002-r4-c4-criteria-scope.md) |
 
 ## 当前约束
 

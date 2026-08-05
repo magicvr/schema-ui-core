@@ -6,7 +6,7 @@ parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.1
-progress: 3/5
+progress: 4/5
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -41,15 +41,15 @@ R4 迁移完成。R4 的最终目标是统一模块契约下的完整一方 Admi
   Navigation、Manifest 和 Persistence；冲突保持 fail closed。
 - [x] **C3 / Users 与 Roles 迁移**：旧中心注册/Schema 所有权清除，保留现有
   CRUD、授权、角色分配、最后管理员保护、密码和 operationlog 行为。
-- [ ] **C4 / Schema 与其他能力迁移**：严格按 C1 冻结的范围执行；Records
+- [x] **C4 / Schema 与其他能力迁移**：严格按 C1 冻结的范围执行；Records
   保持 historical-only，不恢复不存在的 CRUD 代码或产品面。
 - [ ] **C5 / 验收与关门**：同一 Web 构建双 Profile、API/Schema/Manifest/授权/
   持久化和行为矩阵通过；self + Grok independent 审计无开放 required finding，
   并形成进入 R5 的结论。
 
-五个检查点等权；当前为 `progress: 3/5`（C1 由 GOAL-006/007 承接，C2 由 GOAL-008
-承接，C3 由 GOAL-009 承接并以 done 收束）。完成本子目标只表示 R4 关闭，不代表 Root、
-VP-003、R5 或 R6 关闭。
+五个检查点等权；当前为 `progress: 4/5`（C1 由 GOAL-006/007 承接，C2 由 GOAL-008
+承接，C3 由 GOAL-009 承接，C4 由 GOAL-010 承接并以 done 收束）。完成本子目标只表示
+R4 关闭，不代表 Root、VP-003、R5 或 R6 关闭。
 
 ## 信息门禁
 
