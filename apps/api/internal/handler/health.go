@@ -23,10 +23,10 @@ type healthResponse struct {
 // composition root passes the already-resolved plan so HTTP and Schema
 // surfaces cannot silently diverge from the published Manifest.
 //
-// R4 C3.3: admin.users/admin.roles HTTP routes are mounted by the composition
-// root from their kernel.Provider surfaces (MountProviderRoutes /
-// RegisterContributions), not by this central Register. This function keeps
-// core auth/accounts/health/schema registration only.
+// R4 C3.3 / R6 C6.1: admin.users/admin.roles HTTP routes are mounted by the
+// composition root from their kernel.Provider surfaces (RegisterContributions),
+// not by this central Register. This function keeps core auth/accounts/health
+// registration only.
 func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
 	RegisterWithReadiness(mux, a, st, plan, nil)
 }
@@ -41,25 +41,6 @@ func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.
 	if plan.HasModule("core.auth-session") {
 		authsHandler(mux, a, st)
 		accountsHandler(mux, a)
-	}
-}
-
-// MountProviderRoutes mounts the admin.users/admin.roles HTTP routes generated
-// by the generic resource factory for enabled modules. TEST-ONLY: the handler
-// test environment uses it to mirror the production surface; the composition
-// root MUST consume kernel.RegisterContributions (provider finalize) instead,
-// never this function. Keeping it here avoids duplicating the route factory in
-// the test package while production has a single mounting chain.
-func MountProviderRoutes(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
-	if plan.HasModule("admin.users") {
-		for _, route := range resourceRoutes(a, usersResource(st), "admin.users") {
-			mux.Handle(route.Method+" "+route.Pattern, route.Handler)
-		}
-	}
-	if plan.HasModule("admin.roles") {
-		for _, route := range resourceRoutes(a, rolesResource(st), "admin.roles") {
-			mux.Handle(route.Method+" "+route.Pattern, route.Handler)
-		}
 	}
 }
 

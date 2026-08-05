@@ -3,11 +3,9 @@
 package handler
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -85,17 +83,10 @@ func (e *operationsEntity) Delete(string, account.User) error {
 	return errReadOnlyResource
 }
 
-// registerOperations mounts the read-only operations resource. Kept as a thin
-// wrapper so the Activity module can own its registration boundary.
-func registerOperations(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
-	registerResource(mux, a, operationsResource(st))
-}
-
-// RegisterActivity exposes the Activity module registration adapter to the
-// composition root. Operation-log writes remain available without this route.
-func RegisterActivity(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
-	registerOperations(mux, a, st)
-}
+// RegisterActivity is removed in R6 C6.1: the Activity module mounts its
+// read-only operations surface via the module provider (ResourceRoutes +
+// kernel.RegisterContributions); the handler test environment mounts
+// ResourceRoutes directly. Operation-log writes remain owned by core.operationlog.
 
 // OperationsResource exposes the read-only operations resource descriptor to
 // module providers (R4 C4.2).

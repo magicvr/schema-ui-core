@@ -59,11 +59,20 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mux := http.NewServeMux()
 	plan := testAdminPlan(t)
 	Register(mux, a, st, plan)
-	RegisterSettings(mux, a, st)
-	RegisterActivity(mux, a, st)
-	// R4 C3.3: users/roles HTTP routes now mount via the provider surface
-	// (same resource factory), matching composition.
-	MountProviderRoutes(mux, a, st, plan)
+	// R6 C6.1: test env mounts the same resource-factory routes the module
+	// providers register (behavior-identical to the production finalize path);
+	// dead handler adapters MountProviderRoutes/RegisterSettings/RegisterActivity
+	// are removed. Full RegisterContributions contract is covered by kernel and
+	// composition tests.
+	mountRoutes := func(routes []kernel.RouteContribution) {
+		for _, r := range routes {
+			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
+		}
+	}
+	mountRoutes(SettingsRoutes(a, st, "admin.settings"))
+	mountRoutes(ResourceRoutes(a, operationsResource(st), "admin.activity"))
+	mountRoutes(resourceRoutes(a, usersResource(st), "admin.users"))
+	mountRoutes(resourceRoutes(a, rolesResource(st), "admin.roles"))
 	// R5 C5.1: schema pages register separately; test path uses the module
 	// contributor table (nil override).
 	RegisterSchemas(mux, plan, nil)

@@ -14,11 +14,10 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
-// RegisterSettings exposes the Settings module registration adapter to the
-// composition root. The module package owns when this contribution is added.
-func RegisterSettings(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
-	settingsHandler(mux, a, st)
-}
+// RegisterSettings is removed in R6 C6.1: the Settings module mounts its HTTP
+// surface via the module provider (SettingsRoutes + kernel.RegisterContributions);
+// the handler test environment mounts SettingsRoutes directly. No central
+// adapter remains.
 
 // SettingsRoutes returns the Settings module HTTP route contributions (public
 // branding + authenticated settings list/detail/patch). R4 C4.1: module
@@ -32,14 +31,6 @@ func SettingsRoutes(a *auth.Authenticator, st *store.Store, moduleID string) []k
 	}
 }
 
-func settingsHandler(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
-	// Public branding for login shell and document title (no secrets).
-	mux.HandleFunc("GET /api/branding", brandingGET(st))
-	// Schema table list envelope (one row) — requires settings.read.
-	mux.Handle("GET /api/settings", a.Middleware(settingsList(st)))
-	mux.Handle("GET /api/settings/{id}", a.Middleware(settingsDetail(st)))
-	mux.Handle("PATCH /api/settings/{id}", a.Middleware(settingsPatch(st)))
-}
 
 type brandingResponse struct {
 	SiteTitle string `json:"siteTitle"`
