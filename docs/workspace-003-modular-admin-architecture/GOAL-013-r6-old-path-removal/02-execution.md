@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 执行记录 · GOAL-013
@@ -30,6 +30,7 @@ version: 0.11.0
 | E-014 | 2026-08-06 | R6 C6.3 cross 响应与门禁闭合 | recorded | [02-execution/E-014-r6-c63-gate-closure.md](02-execution/E-014-r6-c63-gate-closure.md) |
 | E-015 | 2026-08-06 | R6 C6.4 验收矩阵冻结与回归基线 | recorded | [02-execution/E-015-r6-c64-acceptance-freeze.md](02-execution/E-015-r6-c64-acceptance-freeze.md) |
 | E-016 | 2026-08-06 | R6 C6.4 静态 Manifest 与测试 fixture 迁移 checkpoint | recorded | [02-execution/E-016-r6-c64-static-manifest-fixture-checkpoint.md](02-execution/E-016-r6-c64-static-manifest-fixture-checkpoint.md) |
+| E-017 | 2026-08-06 | R6 C6.4 双 Profile 验收接线 checkpoint | recorded | [02-execution/E-017-r6-c64-profile-acceptance-checkpoint.md](02-execution/E-017-r6-c64-profile-acceptance-checkpoint.md) |
 
 ## 事实边界
 
@@ -45,5 +46,7 @@ version: 0.11.0
   R1-R5 已关门（Root 5/6）。D-004 已冻结 C6.4 八组验收矩阵；E-016 / `99784bc`
   已移除生产静态 Manifest、把 Admin Manifest 迁入 test-only fixture，并将 Web Schema
   测试改读 owner module，Web 回归恢复为 `495/495`。README/QUICKSTART、Compose、CI
-  双 Profile 与后续容器/fork 证据仍待完成，故 R6-I004 保持 collecting。
+  双 Profile、browser E2E 与 profile-aware smoke 已由 E-017 / `88a3840` 完成接线并通过
+  本地基础回归；完整升级/恢复、双 Profile 容器、custom/fail-closed 与 clean-fork
+  终态证据仍待执行，故 R6-I004 保持 collecting。
 - R6 完成不代表 Root/VP 自动关门（需 exit #1-#7 逐条取证 + 关门审计）。
