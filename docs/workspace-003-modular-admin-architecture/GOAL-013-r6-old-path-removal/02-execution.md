@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.10.0
+version: 0.11.0
 ---
 
 # 执行记录 · GOAL-013
@@ -29,6 +29,7 @@ version: 0.10.0
 | E-013 | 2026-08-06 | R6 C6.3 双 Profile 生命周期矩阵 | recorded | [02-execution/E-013-r6-c63-lifecycle-matrix.md](02-execution/E-013-r6-c63-lifecycle-matrix.md) |
 | E-014 | 2026-08-06 | R6 C6.3 cross 响应与门禁闭合 | recorded | [02-execution/E-014-r6-c63-gate-closure.md](02-execution/E-014-r6-c63-gate-closure.md) |
 | E-015 | 2026-08-06 | R6 C6.4 验收矩阵冻结与回归基线 | recorded | [02-execution/E-015-r6-c64-acceptance-freeze.md](02-execution/E-015-r6-c64-acceptance-freeze.md) |
+| E-016 | 2026-08-06 | R6 C6.4 静态 Manifest 与测试 fixture 迁移 checkpoint | recorded | [02-execution/E-016-r6-c64-static-manifest-fixture-checkpoint.md](02-execution/E-016-r6-c64-static-manifest-fixture-checkpoint.md) |
 
 ## 事实边界
 
@@ -41,7 +42,8 @@ version: 0.10.0
   A-010 F-001/F-002/F-005。D-003 的 Schema bytes、Configuration、Policy 与 lifecycle
   四个实现切片均已完成；A-009 self、A-010 Grok independent 与 A-011 response 后，
   R6-I003 verified、C6.3 完成、GOAL-013 为 `3/4`，Root A-010 F-003b 经 A-017 fixed。
-  R1-R5 已关门（Root 5/6）。D-004 已冻结 C6.4 八组验收矩阵；当前 Web 基线为
-  `481/495`，14 个旧 handler fixture 路径失败属于 required 修复，故 R6-I004 保持
-  collecting。
+  R1-R5 已关门（Root 5/6）。D-004 已冻结 C6.4 八组验收矩阵；E-016 / `99784bc`
+  已移除生产静态 Manifest、把 Admin Manifest 迁入 test-only fixture，并将 Web Schema
+  测试改读 owner module，Web 回归恢复为 `495/495`。README/QUICKSTART、Compose、CI
+  双 Profile 与后续容器/fork 证据仍待完成，故 R6-I004 保持 collecting。
 - R6 完成不代表 Root/VP 自动关门（需 exit #1-#7 逐条取证 + 关门审计）。
