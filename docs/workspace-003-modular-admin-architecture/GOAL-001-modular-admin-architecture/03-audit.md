@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.14.0
+version: 0.15.0
 ---
 
 # 审计 · GOAL-001
@@ -46,6 +46,7 @@ version: 0.14.0
 | A-016 | 2026-08-06 | self | R6 C6.2 响应 A-010 F-001/F-002/F-005 与继承债 | conditional | 1（继承 F-003b） | [03-audit/A-016-r6-c62-a010-response.md](03-audit/A-016-r6-c62-a010-response.md) |
 | A-017 | 2026-08-06 | self | R6 C6.3 响应 A-010 F-003b 与继承债 | conditional | 0（实现债；C6.4 终态证据待） | [03-audit/A-017-r6-c63-a010-response.md](03-audit/A-017-r6-c63-a010-response.md) |
 | A-018 | 2026-08-06 | self | Root close-out：R1～R6、I-001～I-007、全部 finding、VP exit #1～#7 | pass | 0（self scope；independent 待审） | [03-audit/A-018-root-closeout-self.md](03-audit/A-018-root-closeout-self.md) |
+| A-019 | 2026-08-06 | independent | Root close-out：R1～R6、I-001～I-007、A-001～A-018、GOAL-013 C6.4、VP exit #1～#7、status/progress 分离 | pass | 0 required；1 recommended（F-019-001） | [03-audit/A-019-root-closeout-independent.md](03-audit/A-019-root-closeout-independent.md) |
 
 ## 结论状态
 
@@ -75,3 +76,9 @@ version: 0.14.0
   合法路径，VP exit #1～#7 由 GOAL-013 终态 evidence 与 A-012/A-013/A-014 支撑。
   R4-I004 继续保留用户接受的有界 residual，不伪装 retention 已定义。Root 仍为
   `active / 6/6`，等待 Grok independent 与 `/govern` 响应。
+- **A-019**：Root independent close-out `pass`（2026-08-06，Grok Build / grok-4.5 /
+  high），**required 0**、**recommended 1**（F-019-001：R4-I004 的 R5 复核留痕偏薄，
+  residual 本身仍合法、未扩张）。同意 A-018：workspace/VP/Charter 绑定、R1～R6 证据链、
+  I-001～I-007、历史 finding 闭合、GOAL-013 对 exit #1～#7、本地≠Hosted CI、
+  Root `active/6/6` 与 VP `active` 分离均成立；A-018 无实质过满或当前态矛盾。本意见
+  不改 status/progress；响应与是否 Root done 归 `/govern`；VP closed 归 `/vision`。
