@@ -32,6 +32,7 @@ GOAL-001-modular-admin-architecture [active] (4/6)
     ├── GOAL-009-r4-c3-users-roles-migration [done] (4/4) · R4-C3 Users 与 Roles 迁移
     ├── GOAL-010-r4-c4-schema-other-migration [done] (4/4) · R4-C4 Schema 与其他能力迁移
     └── GOAL-011-r4-c5-acceptance [done] (4/4) · R4-C5 验收与关门
+GOAL-012-r5-profile-ops-convergence [active] (0/4) · R5 Profile 运维与数据收敛
 ```
 
 ## 状态表
@@ -49,6 +50,7 @@ GOAL-001-modular-admin-architecture [active] (4/6)
 | GOAL-009-r4-c3-users-roles-migration | R4-C3 Users 与 Roles 迁移 | `GOAL-005-r4-full-module-migration` | done | `4/4` | 2026-08-05 |
 | GOAL-010-r4-c4-schema-other-migration | R4-C4 Schema 与其他能力迁移 | `GOAL-005-r4-full-module-migration` | done | `4/4` | 2026-08-05 |
 | GOAL-011-r4-c5-acceptance | R4-C5 验收与关门 | `GOAL-005-r4-full-module-migration` | done | `4/4` | 2026-08-05 |
+| GOAL-012-r5-profile-ops-convergence | R5 Profile 运维与数据收敛 | `GOAL-001-modular-admin-architecture` | active | `0/4` | 2026-08-05 |
 
 ## 维护说明
 
@@ -56,5 +58,5 @@ GOAL-001-modular-admin-architecture [active] (4/6)
 - 新子目标必须平铺在本目录，`parent` 使用本区完整 Goal ID；跨工作区提及使用 Q2 canonical 路径。
 - Root 自身 required 信息项当前无；I-006 已经 GOAL-004 A-004/E-005/D-004 响应标为 verified，但 R6 仍需重新核对最终旧路径移除边界。R4 子目标 GOAL-005 的 Provider、Records 和 operationlog 裁决已落盘，R4-I002/R4-I003 已 verified，R4-I004 以 accepted-residual 记录；GOAL-006 至 GOAL-010（C1-C4）均 `done 4/4`（Grok 复审通过或 required 闭合）；GOAL-011（C5 验收）`active 0/4`。I-004/I-005 已经 Root D-006/E-006/A-005 与 GOAL-003 A-003/A-004 evidence response 标为 verified。I-001/I-002/I-003/I-007 已在 R1 close-out 证据链中 verified，后续实现仍受阶段审计约束。
 - A-002 F-001～F-006 已于 2026-08-04 经 A-003 / D-002 全部 `fixed`；不改变本树 progress 或 status。
-- R1 已由 `GOAL-002-r1-contract-migration-baseline` 承接并以 `done` 收束；R2 已由 `GOAL-003-r2-kernel-composition-root` 承接并以 `done 5/5` 收束；R3 已由 `GOAL-004-r3-bounded-pilot` 承接并以 `done 4/4` 收束，Root close-out 已将进度推进至 `3/6`。R4 已由 `GOAL-005-r4-full-module-migration` 承接并 `done 5/5` 收束（C1-C5 分别由 `GOAL-006`..`GOAL-011` 承接，均 `done 4/4`；Grok A-003 确认 R4 可关门、具备进入 R5 条件）。R4-I001/I002/I003 `verified`、R4-I004 `accepted-residual`。R5 承接 residual 清单（Schema 贡献驱动、中心适配器删除、PolicyID/Visibility 深化、readyz 真实、双 Profile Start/Ready 矩阵、Configuration 运行时迁移）。R1-R4 完成只推进 Root 至 `4/6`，不得推导 Root done 或 VP-003 closed。
+- R1 已由 `GOAL-002-r1-contract-migration-baseline` 承接并以 `done` 收束；R2 已由 `GOAL-003-r2-kernel-composition-root` 承接并以 `done 5/5` 收束；R3 已由 `GOAL-004-r3-bounded-pilot` 承接并以 `done 4/4` 收束；R4 已由 `GOAL-005-r4-full-module-migration` 承接并 `done 5/5` 收束（C1-C5 由 `GOAL-006`..`GOAL-011` 承接，Grok A-003 确认可关门）。Root 派生进度 `4/6`。R5 现由 `GOAL-012-r5-profile-ops-convergence`（`active 0/4`）承接，含 R4 residual 清单（Schema 贡献驱动、中心适配器删除、校验器深化、readyz 真实、双 Profile Start/Ready 矩阵、Configuration 运行时迁移）。R1-R4 完成不推导 Root done 或 VP-003 closed。
 - 2026-08-05 已将重复的仓库根 `GOAL-004-r3-bounded-pilot/` 资料合并至本区 canonical 目标目录，并移除根目录副本；目标状态与进度保持不变。
