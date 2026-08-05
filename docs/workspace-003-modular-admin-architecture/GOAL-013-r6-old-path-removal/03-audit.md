@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计 · GOAL-013
@@ -30,6 +30,7 @@ version: 0.4.0
 | A-003 | 2026-08-05 | self | 响应 A-002（F-C62-001/002/003；切片 3 边界） | conditional | 0（新增；F-C62-004 继承） | [03-audit/A-003-r6-c62-audit-response.md](03-audit/A-003-r6-c62-audit-response.md) |
 | A-004 | 2026-08-05 | self | C6.2 切片 3 · 0001-0008 Apply/DDL 物理迁出 | pass | 0（本 scope；F-C62-004 继承） | [03-audit/A-004-c62-migration-ownership.md](03-audit/A-004-c62-migration-ownership.md) |
 | A-005 | 2026-08-06 | self | C6.2 切片 4 · fresh bootstrap + contribution-driven system-data reconcile | pass | 0（本 scope；F-C62-004 收窄至 F-001） | [03-audit/A-005-c62-system-data-reconcile.md](03-audit/A-005-c62-system-data-reconcile.md) |
+| A-006 | 2026-08-06 | self | C6.2 最后 repository ownership + Root A-010 F-001 关闭证据 | pass | 0（实现；independent 门禁待审） | [03-audit/A-006-c62-repository-ownership.md](03-audit/A-006-c62-repository-ownership.md) |
 
 ## 结论状态
 
@@ -44,6 +45,9 @@ descriptor/DDL/Apply，compiled catalog 成为生产唯一迁移源，store 收�
 且冻结 identity/checksum 与升级恢复矩阵通过。**A-005（self）确认 F-005 fixed**：fresh
 bootstrap 与 finalized Authorization/Navigation contribution 驱动的 versioned reconcile
 已分离，0009 ledger、Profile 降级、用户字段保护、漂移/回滚与 readiness 回归通过，旧中心
-seed 已删除。F-C62-004 收窄至 Root A-010 F-001：领域仓储仍须迁出 `internal/store`；
-**不得**勾选 C6.2、闭合 Root A-010 或宣称 VP 退出。R6 完成不代表 Root/VP 自动关门。
+seed 已删除。**A-006（self）确认 repository ownership 实现通过**：auth-session、
+operationlog、settings owner repositories 已接入生产，store 已收窄为平台 runner/ledger，
+旧领域实现与 test ownership 删除；Root A-010 F-001 具备 self fixed 证据。C6.2 的 cross
+门禁仍等待 Grok independent opinion，**独立意见落盘并响应前不得勾选 C6.2或宣称 VP
+退出**。R6 完成不代表 Root/VP 自动关门。
 响应归 `/govern`。

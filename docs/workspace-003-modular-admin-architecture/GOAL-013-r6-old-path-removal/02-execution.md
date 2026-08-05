@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-013
@@ -22,6 +22,7 @@ version: 0.4.0
 | E-006 | 2026-08-05 | R6 C6.2 Apply/DDL 物理迁出（切片 3） | recorded | [02-execution/E-006-r6-c62-migration-ownership.md](02-execution/E-006-r6-c62-migration-ownership.md) |
 | E-007 | 2026-08-06 | R6 C6.2 contribution-driven system-data reconcile（切片 4） | recorded | [02-execution/E-007-r6-c62-system-data-reconcile.md](02-execution/E-007-r6-c62-system-data-reconcile.md) |
 | E-008 | 2026-08-06 | R6 C6.2 auth-session/RBAC repository 迁出（切片 5） | recorded | [02-execution/E-008-r6-c62-authsession-repository.md](02-execution/E-008-r6-c62-authsession-repository.md) |
+| E-009 | 2026-08-06 | R6 C6.2 repository ownership 迁出完成 | recorded | [02-execution/E-009-r6-c62-repository-ownership.md](02-execution/E-009-r6-c62-repository-ownership.md) |
 
 ## 事实边界
 
@@ -29,6 +30,7 @@ version: 0.4.0
   `GOAL-001-modular-admin-architecture`，五件套和三个 ledger 目录齐全。
 - 承接 R5 residual / Root A-010 债；R6-I001/I002 verified，R6-I003/I004
   collecting。C6.2 的 migration ownership、contribution-driven reconcile 与
-  auth-session/RBAC production repository 接线已完成；settings/operationlog 迁出和旧
-  store 领域实现删除尚未完成，因此 A-010 F-001 仍开放。R1-R5 已关门（Root 5/6）。
+  auth-session/RBAC、settings、operationlog repository ownership 与 production 接线已完成，
+  旧 store 领域实现已删除；A-010 F-001 具备 self fixed 证据，C6.2 仍等待 Grok independent
+  audit 后方可放行。R1-R5 已关门（Root 5/6）。
 - R6 完成不代表 Root/VP 自动关门（需 exit #1-#7 逐条取证 + 关门审计）。
