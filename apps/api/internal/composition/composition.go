@@ -17,6 +17,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
 	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
@@ -96,9 +97,15 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.persistence", Detail: fmt.Sprintf("collect persistence: %v", err)}
 	}
-	st, err := store.OpenWithCatalog(cfg.DBPath, "admin", string(seedHash), true, catalog)
+	st, err := store.OpenWithCatalog(cfg.DBPath, catalog)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
+	}
+	if st.WasFresh() {
+		if err := authsessiondata.Bootstrap(context.Background(), st, "admin", string(seedHash)); err != nil {
+			_ = st.Close()
+			return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("bootstrap auth data: %v", err)}
+		}
 	}
 	return st, nil
 }
@@ -130,6 +137,11 @@ func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *read
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "", Detail: fmt.Sprintf("register contributions: %v", err)}
 	}
+	if err := authsessiondata.Reconcile(context.Background(), st, set.Permissions, set.Navigation); err != nil {
+		_ = st.Close()
+		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("reconcile system data: %v", err)}
+	}
+	st.MarkSystemDataReady()
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
@@ -234,6 +246,9 @@ func withLifecycleHooks(plan kernel.Plan, st *store.Store, logger *slog.Logger, 
 				if moduleID == "core.auth-session" {
 					if err := st.Ping(ctx); err != nil {
 						return &kernel.Error{Code: kernel.CodeLifecycleReadyFailed, ModuleID: moduleID, Detail: fmt.Sprintf("store readiness failed: %v", err)}
+					}
+					if err := st.SystemDataReady(); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleReadyFailed, ModuleID: moduleID, Detail: fmt.Sprintf("system-data readiness failed: %v", err)}
 					}
 				}
 				return nil

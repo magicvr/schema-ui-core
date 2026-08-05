@@ -87,6 +87,26 @@ var rbacExpandDDL = []string{
 	`CREATE INDEX idx_role_menu_items_menu_item_id ON role_menu_items(menu_item_id)`,
 }
 
+var systemDataReconcileDDL = []string{
+	`CREATE TABLE system_data_reconcile (
+  module_id        TEXT NOT NULL,
+  kind             TEXT NOT NULL CHECK (kind IN ('base','authorization','navigation')),
+  contribution_key TEXT NOT NULL,
+  version          INTEGER NOT NULL CHECK (version > 0),
+  checksum         TEXT NOT NULL CHECK (length(checksum) = 64),
+  applied_at       INTEGER NOT NULL,
+  PRIMARY KEY (module_id, kind, contribution_key)
+)`,
+	`CREATE TABLE system_data_grants (
+  module_id        TEXT NOT NULL,
+  kind             TEXT NOT NULL CHECK (kind IN ('authorization','navigation')),
+  contribution_key TEXT NOT NULL,
+  role_key         TEXT NOT NULL,
+  target_id        TEXT NOT NULL,
+  PRIMARY KEY (module_id, kind, contribution_key, role_key, target_id)
+)`,
+}
+
 // Descriptors returns the immutable 0001-0002 auth/session migration history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -103,6 +123,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "rbac_expand",
 			Checksum:             kernel.MigrationChecksum(rbacExpandDDL, "0002:rbac-expand:v1"),
 			Apply:                migrateRBAC,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "system_data_reconcile"},
+			Version:              9,
+			Name:                 "system_data_reconcile",
+			Checksum:             kernel.MigrationChecksum(systemDataReconcileDDL, "0009:system-data-reconcile:v1"),
+			Apply:                migrateSystemDataReconcile,
 		},
 	}
 }
@@ -134,6 +161,15 @@ func migrateRBAC(tx *sql.Tx) error {
 		}
 	}
 	return backfillRoles(tx)
+}
+
+func migrateSystemDataReconcile(tx *sql.Tx) error {
+	for _, stmt := range systemDataReconcileDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create system-data reconcile tables: %w", err)
+		}
+	}
+	return nil
 }
 
 func isEmptyDatabase(tx *sql.Tx) (bool, error) {

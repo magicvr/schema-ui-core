@@ -50,17 +50,24 @@ type PermissionContribution struct {
 	Action            string
 	PolicyID          string
 	SecretSensitivity string
+	// SystemDataVersion identifies the versioned persistence contract for this
+	// permission's system-data reconcile entry.
+	SystemDataVersion int
 }
 
 // NavigationContribution registers one navigation node (freeze package §2.2).
 type NavigationContribution struct {
 	ContributionIdentity
 	NodeID     string
+	PageID     string
 	Parent     string
 	Order      int
 	Label      string
 	Visibility string
 	Permission string
+	// SystemDataVersion identifies the versioned persistence contract for this
+	// navigation node's system-data reconcile entry.
+	SystemDataVersion int
 }
 
 // FragmentContribution registers one Manifest fragment (freeze package §2.2).
@@ -156,10 +163,11 @@ func validatePermission(moduleID string, p PermissionContribution) error {
 	if strings.TrimSpace(p.Resource) == "" || strings.TrimSpace(p.Action) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires resource and action", p.Permission)
 	}
-	// PolicyID, when set, must be a stable non-empty identifier (freeze §2.2:
-	// PolicyID requires a validator; no arbitrary whitespace-surrounded strings).
-	if p.PolicyID != "" && strings.TrimSpace(p.PolicyID) != p.PolicyID {
-		return kernelError(CodeModuleInvalid, moduleID, "permission %q policy id %q must be trimmed", p.Permission, p.PolicyID)
+	if strings.TrimSpace(p.PolicyID) == "" || strings.TrimSpace(p.PolicyID) != p.PolicyID {
+		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires a trimmed policy id", p.Permission)
+	}
+	if p.SystemDataVersion <= 0 {
+		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires a positive system-data version", p.Permission)
 	}
 	return nil
 }
@@ -171,9 +179,14 @@ func validateNavigation(moduleID string, n NavigationContribution) error {
 	if strings.TrimSpace(n.Label) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a label", n.NodeID)
 	}
-	// Visibility, when set, must be a non-empty expression (freeze §2.2).
-	if n.Visibility != "" && strings.TrimSpace(n.Visibility) != n.Visibility {
-		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q visibility must be trimmed", n.NodeID)
+	if strings.TrimSpace(n.PageID) == "" || strings.TrimSpace(n.PageID) != n.PageID {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a trimmed page id", n.NodeID)
+	}
+	if strings.TrimSpace(n.Visibility) == "" || strings.TrimSpace(n.Visibility) != n.Visibility {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a trimmed visibility expression", n.NodeID)
+	}
+	if n.SystemDataVersion <= 0 {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a positive system-data version", n.NodeID)
 	}
 	return nil
 }

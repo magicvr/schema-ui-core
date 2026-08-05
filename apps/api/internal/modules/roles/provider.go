@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -69,9 +70,9 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		return err
 	}
 	for _, permission := range []kernel.PermissionContribution{
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles.read"}, Permission: "roles.read", Resource: "roles", Action: "read"},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles.write"}, Permission: "roles.write", Resource: "roles", Action: "write"},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles.assign"}, Permission: "roles.assign", Resource: "roles", Action: "assign"},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles.read"}, Permission: "roles.read", Resource: "roles", Action: "read", PolicyID: authsessiondata.PolicyAdminEditorViewer, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles.write"}, Permission: "roles.write", Resource: "roles", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles.assign"}, Permission: "roles.assign", Resource: "roles", Action: "assign", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	} {
 		if err := reg.Authorization(permission); err != nil {
 			return err
@@ -80,10 +81,12 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	if err := reg.Navigation(kernel.NavigationContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_roles"},
 		NodeID:               "menu_roles",
+		PageID:               "roles",
 		Order:                2,
 		Label:                "Roles",
-		Visibility:           "roles.read",
+		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "roles.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
 	}

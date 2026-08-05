@@ -9,6 +9,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
@@ -67,8 +68,8 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		return err
 	}
 	for _, permission := range []kernel.PermissionContribution{
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings.read"}, Permission: "settings.read", Resource: "settings", Action: "read"},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings.write"}, Permission: "settings.write", Resource: "settings", Action: "write"},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings.read"}, Permission: "settings.read", Resource: "settings", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings.write"}, Permission: "settings.write", Resource: "settings", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	} {
 		if err := reg.Authorization(permission); err != nil {
 			return err
@@ -77,10 +78,12 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	if err := reg.Navigation(kernel.NavigationContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_settings"},
 		NodeID:               "menu_settings",
+		PageID:               "settings",
 		Order:                1,
 		Label:                "Settings",
-		Visibility:           "settings.read",
+		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "settings.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
 	}

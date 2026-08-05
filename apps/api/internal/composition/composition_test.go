@@ -2,6 +2,7 @@ package composition
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -20,6 +21,17 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
+
+func compositionCount(t *testing.T, st *store.Store, query string, args ...any) int {
+	t.Helper()
+	var count int
+	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
+		return tx.QueryRow(query, args...).Scan(&count)
+	}); err != nil {
+		t.Fatalf("query %q: %v", query, err)
+	}
+	return count
+}
 
 func TestResolvePlanUsesConfiguredProfileAndRejectsMissingDependencies(t *testing.T) {
 	admin := config.Load()
@@ -172,6 +184,83 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 				t.Fatalf("optional manifest pages = settings:%v activity:%v, want settings:%v activity:%v", pageIDs["settings"], pageIDs["activity"], tc.wantSettingsPage, tc.wantActivityPage)
 			}
 		})
+	}
+}
+
+func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
+	tests := []struct {
+		profile         string
+		wantPermissions int
+		wantNavigation  int
+	}{
+		{profile: "mvp", wantPermissions: 5, wantNavigation: 2},
+		{profile: "admin", wantPermissions: 8, wantNavigation: 4},
+	}
+	for _, tt := range tests {
+		t.Run(tt.profile, func(t *testing.T) {
+			plan, err := ResolvePlan(&config.Config{ProfileName: tt.profile})
+			if err != nil {
+				t.Fatal(err)
+			}
+			st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer st.Close()
+			a := auth.New([]byte("test-secret"), 0, 0, st, false)
+			if _, err := newMux(a, st, plan, &readinessGate{}); err != nil {
+				t.Fatal(err)
+			}
+			if got := compositionCount(t, st, `SELECT COUNT(*) FROM permissions`); got != tt.wantPermissions {
+				t.Fatalf("permissions = %d, want %d", got, tt.wantPermissions)
+			}
+			if got := compositionCount(t, st, `SELECT COUNT(*) FROM menu_items`); got != tt.wantNavigation {
+				t.Fatalf("navigation = %d, want %d", got, tt.wantNavigation)
+			}
+			if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_reconcile`); got != 1+tt.wantPermissions+tt.wantNavigation {
+				t.Fatalf("system-data ledger = %d, want %d", got, 1+tt.wantPermissions+tt.wantNavigation)
+			}
+			if err := st.SystemDataReady(); err != nil {
+				t.Fatalf("system-data readiness: %v", err)
+			}
+		})
+	}
+}
+
+func TestSystemDataReconcilePreservesDisabledProfileData(t *testing.T) {
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "profile-downgrade.db"), "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+
+	adminPlan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := newMux(a, st, adminPlan, &readinessGate{}); err != nil {
+		t.Fatal(err)
+	}
+	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := newMux(a, st, mvpPlan, &readinessGate{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM permissions WHERE key IN ('settings.read', 'settings.write', 'operations.read')`); got != 3 {
+		t.Fatalf("disabled-profile permissions retained = %d, want 3", got)
+	}
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM menu_items WHERE feature_key IN ('menu_settings', 'menu_activity')`); got != 2 {
+		t.Fatalf("disabled-profile navigation retained = %d, want 2", got)
+	}
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_reconcile WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 5 {
+		t.Fatalf("disabled-profile ledger retained = %d, want 5", got)
+	}
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_grants WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 7 {
+		t.Fatalf("disabled-profile managed grants retained = %d, want 7", got)
 	}
 }
 

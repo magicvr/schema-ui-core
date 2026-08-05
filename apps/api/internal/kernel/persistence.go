@@ -44,7 +44,7 @@ func normalizeSQL(s string) string {
 //   - the result is deterministically ordered by version.
 //
 // Any violation fails closed; nothing is returned on error. Existing hardcoded
-// store migrations (0001..0008) are current history, not the R4 terminal
+// store migrations (0001..0009) are current history, not the R4 terminal
 // contract; module-owned migrations append global versions after them.
 func CollectPersistence(providers []Provider) ([]MigrationContribution, error) {
 	var catalog []MigrationContribution

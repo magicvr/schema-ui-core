@@ -105,7 +105,8 @@ func tableExistsDB(t *testing.T, db *sql.DB, name string) bool {
 	return n == 1
 }
 
-// V-MIG-01 · fresh empty DB applies 0001+0002+0003+0004 once; reopening is a no-op.
+// V-MIG-01 · fresh empty DB applies the compiled 0001-0009 history once;
+// reopening is a no-op.
 func TestMigrateFreshDB(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "fresh.db")
 	st, err := Open(path, "admin", "hash", true)
@@ -116,13 +117,13 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 8 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8]", applied)
+	if len(applied) != 9 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 {
+		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8 9]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
 		"roles", "user_roles", "permissions", "role_permissions", "menu_items", "role_menu_items",
-		"operation_log", "site_settings",
+		"operation_log", "site_settings", "system_data_reconcile", "system_data_grants",
 	} {
 		if !tableExistsDB(t, st.db, tbl) {
 			t.Fatalf("table %s missing after fresh migration", tbl)
@@ -175,7 +176,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 8 {
+	if len(applied2) != 9 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -563,6 +564,7 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"core.persistence", "records_retire", "175ac09f0c67658161a6852d2779781f59985488aa75308f3fa419a06c5f926b"},
 		{"admin.settings", "site_settings", "6ffb1d0d978d7475ebd807f4dc1aab609d255186ddefa08e28a5398d265b7dfa"},
 		{"core.operationlog", "operation_log_settings", "ec3635f99db24907eb4a371ebd8c8f328c80a69e07715b866e1bca319f518d6c"},
+		{"core.auth-session", "system_data_reconcile", "3e1c1e6d95c1f94c38a17ead999ee2cda685ec1e78d2148b4d12111d1eca74b6"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))
@@ -592,17 +594,17 @@ func TestOpenWithCatalogRejectsInvalidAndAppliedDrift(t *testing.T) {
 	}
 	invalid := append([]kernel.MigrationContribution(nil), catalog...)
 	invalid[0].Checksum = "bad"
-	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "bad.db"), "admin", "hash", false, invalid); err == nil {
+	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "bad.db"), invalid); err == nil {
 		t.Fatal("invalid checksum must fail closed")
 	}
 	missing := append([]kernel.MigrationContribution(nil), catalog[:3]...)
 	missing = append(missing, catalog[4:]...)
-	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "gap.db"), "admin", "hash", false, missing); err == nil {
+	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "gap.db"), missing); err == nil {
 		t.Fatal("catalog version gap must fail closed")
 	}
 
 	path := filepath.Join(t.TempDir(), "ok.db")
-	st, err := OpenWithCatalog(path, "admin", "hash", false, catalog)
+	st, err := OpenWithCatalog(path, catalog)
 	if err != nil {
 		t.Fatalf("correct catalog open: %v", err)
 	}
@@ -610,14 +612,14 @@ func TestOpenWithCatalogRejectsInvalidAndAppliedDrift(t *testing.T) {
 
 	drifted := append([]kernel.MigrationContribution(nil), catalog...)
 	drifted[0].Checksum = "0" + drifted[0].Checksum[1:]
-	if _, err := OpenWithCatalog(path, "admin", "hash", false, drifted); err == nil {
+	if _, err := OpenWithCatalog(path, drifted); err == nil {
 		t.Fatal("applied checksum drift must fail closed")
 	}
 
 	renamed := append([]kernel.MigrationContribution(nil), catalog...)
 	renamed[0].Key = "r2_baseline_renamed"
 	renamed[0].Name = renamed[0].Key
-	if _, err := OpenWithCatalog(path, "admin", "hash", false, renamed); err == nil || !strings.Contains(err.Error(), "name") {
+	if _, err := OpenWithCatalog(path, renamed); err == nil || !strings.Contains(err.Error(), "name") {
 		t.Fatalf("applied name drift error = %v, want fail-closed name mismatch", err)
 	}
 }

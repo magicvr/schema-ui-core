@@ -122,7 +122,8 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Reopen with seeding enabled: relations are still repaired.
+	// Reopen with seeding enabled: finalized system-data contributions repair
+	// system relations, but fresh bootstrap does not create a second admin.
 	st2, err := Open(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("reopen with seed: %v", err)
@@ -151,9 +152,9 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 	if want := []string{"viewer"}; !reflect.DeepEqual(u.Roles, want) {
 		t.Fatalf("non-seed user roles = %v, want %v", u.Roles, want)
 	}
-	// Seed admin relations intact.
-	if n := count(st2, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`); n != 2 {
-		t.Fatalf("seed user_roles = %d, want 2", n)
+	// The existing non-fresh database is not bootstrapped a second time.
+	if n := count(st2, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`); n != 0 {
+		t.Fatalf("unexpected fresh-bootstrap user_roles on existing DB = %d", n)
 	}
 
 	// A third open must not duplicate any relation.
@@ -171,8 +172,8 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 	if n := count(st3, `SELECT COUNT(*) FROM role_menu_items`); n != 5 {
 		t.Fatalf("after 3rd open role_menu_items = %d, want 5 (idempotent)", n)
 	}
-	if n := count(st3, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`); n != 2 {
-		t.Fatalf("after 3rd open seed user_roles = %d, want 2", n)
+	if n := count(st3, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`); n != 0 {
+		t.Fatalf("after 3rd open unexpected bootstrap user_roles = %d", n)
 	}
 }
 

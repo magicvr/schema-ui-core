@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/manifest"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -66,17 +67,19 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}
 	if err := reg.Authorization(kernel.PermissionContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operations.read"},
-		Permission:           "operations.read", Resource: "operations", Action: "read",
+		Permission:           "operations.read", Resource: "operations", Action: "read", PolicyID: authsessiondata.PolicyAdminEditor, SystemDataVersion: authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
 	}
 	if err := reg.Navigation(kernel.NavigationContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_activity"},
 		NodeID:               "menu_activity",
+		PageID:               "activity",
 		Order:                2,
 		Label:                "Activity",
-		Visibility:           "operations.read",
+		Visibility:           authsessiondata.PolicyAdminEditor,
 		Permission:           "operations.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -53,8 +54,10 @@ var (
 // Store wraps the SQLite auth store. Concurrency is guarded by a single
 // connection (modernc/sqlite is a single-writer backend).
 type Store struct {
-	db   *sql.DB
-	path string // file path used for pre-upgrade recovery snapshots
+	db              *sql.DB
+	path            string // file path used for pre-upgrade recovery snapshots
+	fresh           bool   // true only when the database had no user tables before migration
+	systemDataReady atomic.Bool
 	// operationLogErr is a failure-injection seam (R4 C3.4 / FR-005): when
 	// non-nil, RecordOperation returns it to prove the best-effort contract.
 	operationLogErr error
@@ -63,15 +66,15 @@ type Store struct {
 // OpenWithCatalog opens the SQLite DB and applies the compiled-global catalog
 // supplied by the composition root. Module packages own every descriptor and
 // Apply function; store only validates and runs the catalog.
-func OpenWithCatalog(path, adminUsername, adminPasswordHash string, seedAdmin bool, catalog []kernel.MigrationContribution) (*Store, error) {
+func OpenWithCatalog(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 	normalized, err := normalizeCatalog(catalog)
 	if err != nil {
 		return nil, err
 	}
-	return open(path, adminUsername, adminPasswordHash, seedAdmin, normalized)
+	return open(path, normalized)
 }
 
-func open(path, adminUsername, adminPasswordHash string, seedAdmin bool, catalog []kernel.MigrationContribution) (*Store, error) {
+func open(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("create db dir: %w", err)
@@ -85,24 +88,61 @@ func open(path, adminUsername, adminPasswordHash string, seedAdmin bool, catalog
 	// and mirrors the R1 in-process single-writer posture.
 	db.SetMaxOpenConns(1)
 
-	s := &Store{db: db, path: path}
+	fresh, err := databaseIsEmpty(db)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	s := &Store{db: db, path: path, fresh: fresh}
 	if err := s.migrate(catalog); err != nil {
 		db.Close()
 		return nil, err
 	}
-	if seedAdmin {
-		if err := s.seedAdmin(adminUsername, adminPasswordHash); err != nil {
-			db.Close()
-			return nil, err
-		}
-		// Incremental R3 seed: stable roles/permissions/menu/grants (S3). Runs
-		// whenever seeding is enabled so existing users never skip relation repair.
-		if err := s.seedRBAC(); err != nil {
-			db.Close()
-			return nil, err
-		}
-	}
 	return s, nil
+}
+
+// WasFresh reports whether the database was empty before migration. Fresh
+// bootstrap belongs to the owning auth/session module and is intentionally
+// separate from every-startup system-data reconciliation.
+func (s *Store) WasFresh() bool { return s.fresh }
+
+// WithTx exposes the platform transaction boundary to module-owned repository
+// code without exposing the database handle or moving transaction ownership
+// into the composition root.
+func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarkSystemDataReady records successful post-finalize reconciliation for the
+// lifecycle readiness gate.
+func (s *Store) MarkSystemDataReady() { s.systemDataReady.Store(true) }
+
+// SystemDataReady returns an error until the finalized contribution set has
+// been reconciled successfully.
+func (s *Store) SystemDataReady() error {
+	if !s.systemDataReady.Load() {
+		return errors.New("store: system-data reconciliation is not ready")
+	}
+	return nil
+}
+
+func databaseIsEmpty(db *sql.DB) (bool, error) {
+	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).Scan(&count); err != nil {
+		return false, fmt.Errorf("check fresh database: %w", err)
+	}
+	return count == 0, nil
 }
 
 // Close releases the underlying database handle.
@@ -115,49 +155,6 @@ func (s *Store) Ping(ctx context.Context) error {
 	var one int
 	if err := s.db.QueryRowContext(ctx, "SELECT 1").Scan(&one); err != nil {
 		return fmt.Errorf("sqlite ping: %w", err)
-	}
-	return nil
-}
-
-// seedAdmin ensures the bootstrap admin user (with roles admin + editor) and its
-// normalized role relations exist. It is idempotent: it never overwrites the
-// password or other user fields of an existing admin, and the double-write
-// closes the S1 fresh-DB intermediate state where 0002's backfill ran before the
-// seed user was inserted (GOAL-006 D-004).
-func (s *Store) seedAdmin(username, passwordHash string) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("begin seed admin: %w", err)
-	}
-	defer tx.Rollback()
-	now := time.Now().UTC().Unix()
-
-	var id string
-	err = tx.QueryRow(`SELECT id FROM users WHERE username = ?`, username).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		roles, err := json.Marshal([]string{"admin", "editor"})
-		if err != nil {
-			return fmt.Errorf("marshal seed roles: %w", err)
-		}
-		if _, err := tx.Exec(
-			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			"user-admin", username, "Admin", string(roles), passwordHash, now, now,
-		); err != nil {
-			return fmt.Errorf("seed admin: %w", err)
-		}
-		id = "user-admin"
-	} else if err != nil {
-		return fmt.Errorf("lookup seed admin: %w", err)
-	}
-
-	for _, key := range []string{"admin", "editor"} {
-		if err := linkUserRole(tx, id, key, now); err != nil {
-			return fmt.Errorf("seed admin role %s: %w", key, err)
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit seed admin: %w", err)
 	}
 	return nil
 }

@@ -105,12 +105,14 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 		if err := r.Authorization(PermissionContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: base.Contributions.Permissions[0]},
 			Permission:           base.Contributions.Permissions[0], Resource: "sample", Action: "read",
+			PolicyID: "system.admin", SystemDataVersion: 1,
 		}); err != nil {
 			return err
 		}
 		if err := r.Navigation(NavigationContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: base.Contributions.Navigation[0]},
-			NodeID: base.Contributions.Navigation[0], Order: 1, Label: "Sample", Permission: base.Contributions.Permissions[0],
+			NodeID:               base.Contributions.Navigation[0], PageID: "sample", Order: 1, Label: "Sample",
+			Visibility: "system.admin", Permission: base.Contributions.Permissions[0], SystemDataVersion: 1,
 		}); err != nil {
 			return err
 		}
@@ -124,7 +126,7 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 	provider.migrate = func() ([]MigrationContribution, error) {
 		return []MigrationContribution{{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample_migration"},
-			Version: 1, Name: "sample_migration", Checksum: "c1",
+			Version:              1, Name: "sample_migration", Checksum: "c1",
 			Apply: func(*sql.Tx) error { return nil },
 		}}, nil
 	}
@@ -237,7 +239,7 @@ func TestRegisterContributionsUndeclaredKey(t *testing.T) {
 	provider.mutate = func(r Registrar) error {
 		return r.HTTP(RouteContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "GET /api/undeclared"},
-			Method: "GET", Pattern: "/api/undeclared",
+			Method:               "GET", Pattern: "/api/undeclared",
 			Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}),
 		})
 	}
@@ -280,27 +282,27 @@ func TestRegisterContributionsNavigationDanglingPermission(t *testing.T) {
 	provider.mutate = func(r Registrar) error {
 		if err := r.HTTP(RouteContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "GET /api/sample"},
-			Method: "GET", Pattern: "/api/sample",
+			Method:               "GET", Pattern: "/api/sample",
 			Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}),
 		}); err != nil {
 			return err
 		}
 		if err := r.Schema(PageContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample"},
-			PageID: "sample", Owner: module.ID,
+			PageID:               "sample", Owner: module.ID,
 		}); err != nil {
 			return err
 		}
 		if err := r.Authorization(PermissionContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample.read"},
-			Permission: "sample.read", Resource: "sample", Action: "read",
+			Permission:           "sample.read", Resource: "sample", Action: "read", PolicyID: "system.admin", SystemDataVersion: 1,
 		}); err != nil {
 			return err
 		}
 		// navigation references a permission that is never registered
 		return r.Navigation(NavigationContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "menu_sample"},
-			NodeID: "menu_sample", Order: 1, Label: "Sample", Permission: "ghost.permission",
+			NodeID:               "menu_sample", Order: 1, Label: "Sample", Permission: "ghost.permission",
 		})
 	}
 	plan := Plan{Modules: []Module{module}, Capabilities: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityAuthorization, CapabilityNavigation, CapabilityManifest, CapabilityPersistence}}
@@ -402,33 +404,35 @@ func TestNavigationParentOrderIndependent(t *testing.T) {
 	provider.mutate = func(r Registrar) error {
 		if err := r.HTTP(RouteContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "GET /api/sample"},
-			Method: "GET", Pattern: "/api/sample",
+			Method:               "GET", Pattern: "/api/sample",
 			Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}),
 		}); err != nil {
 			return err
 		}
 		if err := r.Schema(PageContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample"},
-			PageID: "sample", Owner: module.ID,
+			PageID:               "sample", Owner: module.ID,
 		}); err != nil {
 			return err
 		}
 		if err := r.Authorization(PermissionContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample.read"},
-			Permission: "sample.read", Resource: "sample", Action: "read",
+			Permission:           "sample.read", Resource: "sample", Action: "read", PolicyID: "system.admin", SystemDataVersion: 1,
 		}); err != nil {
 			return err
 		}
 		// child registered before its parent on purpose
 		if err := r.Navigation(NavigationContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "menu_sample_child"},
-			NodeID: "menu_sample_child", Parent: "menu_sample", Order: 2, Label: "Child",
+			NodeID:               "menu_sample_child", PageID: "sample", Parent: "menu_sample", Order: 2, Label: "Child",
+			Visibility: "system.admin", SystemDataVersion: 1,
 		}); err != nil {
 			return err
 		}
 		return r.Navigation(NavigationContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "menu_sample"},
-			NodeID: "menu_sample", Order: 1, Label: "Sample",
+			NodeID:               "menu_sample", PageID: "sample", Order: 1, Label: "Sample",
+			Visibility: "system.admin", SystemDataVersion: 1,
 		})
 	}
 	plan := Plan{Modules: []Module{module}, Capabilities: sixCapabilities()}

@@ -317,6 +317,9 @@ func (s *ContributionSet) finalize(plan Plan) error {
 		nodes[n.NodeID] = n.ModuleID
 	}
 	for _, n := range s.Navigation {
+		if owner, ok := pages[n.PageID]; !ok || owner != n.ModuleID {
+			return kernelError(CodeModuleInvalid, n.ModuleID, "navigation node %q references page %q outside its module", n.NodeID, n.PageID)
+		}
 		if n.Permission != "" {
 			if _, ok := permissions[n.Permission]; !ok {
 				return kernelError(CodeModuleInvalid, n.ModuleID, "navigation node %q references undeclared permission %q", n.NodeID, n.Permission)

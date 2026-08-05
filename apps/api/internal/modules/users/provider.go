@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -69,8 +70,8 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		return err
 	}
 	for _, permission := range []kernel.PermissionContribution{
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.read"}, Permission: "users.read", Resource: "users", Action: "read"},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.write"}, Permission: "users.write", Resource: "users", Action: "write"},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.read"}, Permission: "users.read", Resource: "users", Action: "read", PolicyID: authsessiondata.PolicyAdminEditorViewer, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.write"}, Permission: "users.write", Resource: "users", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	} {
 		if err := reg.Authorization(permission); err != nil {
 			return err
@@ -79,10 +80,12 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	if err := reg.Navigation(kernel.NavigationContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_users"},
 		NodeID:               "menu_users",
+		PageID:               "users",
 		Order:                1,
 		Label:                "Users",
-		Visibility:           "users.read",
+		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "users.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
 	}
