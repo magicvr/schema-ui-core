@@ -19,6 +19,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -31,14 +32,31 @@ const (
 	maxPasswordBytes = 72
 )
 
-func usersResource(st *store.Store) Resource {
+// OperationRecorder is the temporary cross-cutting writer boundary. The C6.2
+// operationlog slice replaces its store-owned payload with the module writer.
+type OperationRecorder interface {
+	RecordOperation(store.Operation) error
+}
+
+// UsersRepository is the account-domain persistence required by the users
+// resource surface.
+type UsersRepository interface {
+	ListUsers(authsession.UserFilter) ([]authsession.User, int, error)
+	GetUser(string) (*authsession.User, error)
+	CreateUserManagement(authsession.User) (*authsession.User, error)
+	UpdateUser(string, authsession.UserPatch, string, time.Time) (*authsession.User, error)
+	DeleteUser(string, string) error
+	PermissionsForRoles([]string) ([]string, error)
+}
+
+func usersResource(repository UsersRepository, operations OperationRecorder) Resource {
 	return Resource{
 		ID:              "users",
 		Path:            "/api/users",
 		Listable:        true,
 		SortFields:      []string{"username", "name", "updatedAt"},
 		QSearch:         true,
-		Entity:          &usersEntity{st: st},
+		Entity:          &usersEntity{repository: repository},
 		CreateFields:    []string{"username", "name"},
 		PatchFields:     []string{"name"},
 		RawStringFields: []string{"password"},
@@ -47,25 +65,25 @@ func usersResource(st *store.Store) Resource {
 		PermissionWrite: "users.write",
 		NotFoundCode:    "USER_NOT_FOUND",
 		NewID:           newUserID,
-		OnWrite:         usersOnWrite(st),
+		OnWrite:         usersOnWrite(operations),
 	}
 }
 
 // UsersResource exposes the users Resource descriptor to module providers
 // (R4 C3.2).
-func UsersResource(st *store.Store) Resource {
-	return usersResource(st)
+func UsersResource(repository UsersRepository, operations OperationRecorder) Resource {
+	return usersResource(repository, operations)
 }
 
 // usersEntity adapts the users store to the generic resource boundary. Rows
 // never contain password_hash (sensitive-field isolation, I-011-001 §2.2).
 type usersEntity struct {
-	st *store.Store
+	repository UsersRepository
 }
 
 // userToMap maps a persisted user to the API row. password_hash is intentionally
 // absent; createdAt/updatedAt serialize with the frozen 3-digit-millisecond shape.
-func userToMap(u store.User) map[string]any {
+func userToMap(u authsession.User) map[string]any {
 	return map[string]any{
 		"id":        u.ID,
 		"username":  u.Username,
@@ -77,7 +95,7 @@ func userToMap(u store.User) map[string]any {
 }
 
 func (e *usersEntity) List(f resourceFilter) ([]map[string]any, int, error) {
-	items, total, err := e.st.ListUsers(store.UserFilter{
+	items, total, err := e.repository.ListUsers(authsession.UserFilter{
 		Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
 	})
 	if err != nil {
@@ -91,9 +109,9 @@ func (e *usersEntity) List(f resourceFilter) ([]map[string]any, int, error) {
 }
 
 func (e *usersEntity) Get(id string) (map[string]any, error) {
-	u, err := e.st.GetUser(id)
+	u, err := e.repository.GetUser(id)
 	if err != nil {
-		return nil, err
+		return nil, mapUserStoreError(err)
 	}
 	return userToMap(*u), nil
 }
@@ -116,7 +134,7 @@ func (e *usersEntity) Create(body map[string]any, id string, now time.Time, acto
 	if err != nil {
 		return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
 	}
-	u, err := e.st.CreateUserManagement(store.User{
+	u, err := e.repository.CreateUserManagement(authsession.User{
 		ID:           id,
 		Username:     stringField(body, "username"),
 		Name:         stringField(body, "name"),
@@ -132,7 +150,7 @@ func (e *usersEntity) Create(body map[string]any, id string, now time.Time, acto
 }
 
 func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user account.User) (map[string]any, error) {
-	patch := store.UserPatch{}
+	patch := authsession.UserPatch{}
 	if _, ok := body["name"]; ok {
 		v := stringField(body, "name")
 		patch.Name = &v
@@ -158,7 +176,7 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 		}
 		patch.Roles = &roles
 	}
-	u, err := e.st.UpdateUser(id, patch, user.ID, now)
+	u, err := e.repository.UpdateUser(id, patch, user.ID, now)
 	if err != nil {
 		return nil, mapUserStoreError(err)
 	}
@@ -166,7 +184,7 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 }
 
 func (e *usersEntity) Delete(id string, user account.User) error {
-	return mapUserStoreError(e.st.DeleteUser(id, user.ID))
+	return mapUserStoreError(e.repository.DeleteUser(id, user.ID))
 }
 
 // rolesFromBody reads the optional roles JSON field (absent → nil, meaning "no
@@ -246,7 +264,7 @@ func (e *usersEntity) authorizeRoleAssignment(actor account.User, roles []string
 	if slices.Contains(roles, "admin") && !slices.Contains(actor.Roles, "admin") {
 		return forbidden("only an admin may assign the admin role")
 	}
-	targetPermissions, err := e.st.PermissionsForRoles(roles)
+	targetPermissions, err := e.repository.PermissionsForRoles(roles)
 	if err != nil {
 		return mapUserStoreError(err)
 	}
@@ -263,13 +281,15 @@ func (e *usersEntity) authorizeRoleAssignment(actor account.User, roles []string
 // the factory's INTERNAL fallback.
 func mapUserStoreError(err error) error {
 	switch {
-	case errors.Is(err, store.ErrUsernameTaken):
+	case errors.Is(err, authsession.ErrNotFound):
+		return store.ErrNotFound
+	case errors.Is(err, authsession.ErrUsernameTaken):
 		return &DomainError{Status: 409, Code: "USERNAME_TAKEN", Message: "username already exists"}
-	case errors.Is(err, store.ErrLastAdmin):
+	case errors.Is(err, authsession.ErrLastAdmin):
 		return &DomainError{Status: 409, Code: "LAST_ADMIN", Message: "cannot remove the last admin user"}
-	case errors.Is(err, store.ErrSelfOperation):
+	case errors.Is(err, authsession.ErrSelfOperation):
 		return &DomainError{Status: 409, Code: "SELF_OPERATION", Message: "self operation is not allowed"}
-	case errors.Is(err, store.ErrInvalidRole):
+	case errors.Is(err, authsession.ErrInvalidRole):
 		return &DomainError{Status: 400, Code: "INVALID_ROLE_REF", Message: "roles contain an unknown role key"}
 	default:
 		return err
@@ -278,7 +298,7 @@ func mapUserStoreError(err error) error {
 
 // usersOnWrite appends operation-log rows for users write endpoints
 // (I-011-001 §5). Best-effort: a logging failure never fails the write.
-func usersOnWrite(st *store.Store) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
+func usersOnWrite(recorder OperationRecorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
 	return func(_ context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time) {
 		event := store.EventUserDelete
 		detail := ""
@@ -303,7 +323,7 @@ func usersOnWrite(st *store.Store) func(context.Context, account.User, writeKind
 		if detail != "" {
 			op.Detail = &detail
 		}
-		if err := st.RecordOperation(op); err != nil {
+		if err := recorder.RecordOperation(op); err != nil {
 			slog.Error("operation log write failed", "event", event, "err", err)
 		}
 	}

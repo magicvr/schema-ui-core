@@ -1,0 +1,398 @@
+package authsession
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+)
+
+// ListRoles returns the filtered RBAC role projection and total count.
+func (r *Repository) ListRoles(filter RoleFilter) ([]Role, int, error) {
+	var items []Role
+	var total int
+	err := r.withTx("list roles", func(tx *sql.Tx) error {
+		where, args := rolesWhere(filter.Q)
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM roles`+where, args...).Scan(&total); err != nil {
+			return fmt.Errorf("count roles: %w", err)
+		}
+		rows, err := tx.Query(
+			`SELECT id, key, name, system, created_at, updated_at FROM roles`+where+
+				` ORDER BY `+rolesSortSQL(filter.Sort, filter.Order)+`, id ASC`+
+				` LIMIT ? OFFSET ?`,
+			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+		)
+		if err != nil {
+			return fmt.Errorf("query roles: %w", err)
+		}
+		items = make([]Role, 0, filter.PageSize)
+		for rows.Next() {
+			var role Role
+			if err := scanRoleRow(rows, &role); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			items = append(items, role)
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("list roles rows: %w", err)
+		}
+		if err := rows.Close(); err != nil {
+			return fmt.Errorf("close roles rows: %w", err)
+		}
+		for i := range items {
+			if err := hydrateRole(tx, &items[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return items, total, err
+}
+
+// GetRole fetches one role by primary key.
+func (r *Repository) GetRole(id string) (*Role, error) {
+	var role Role
+	err := r.withTx("get role", func(tx *sql.Tx) error {
+		if err := scanRoleRow(tx.QueryRow(
+			`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
+		), &role); err != nil {
+			return err
+		}
+		return hydrateRole(tx, &role)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+// CreateRole creates a user-managed role without grants.
+func (r *Repository) CreateRole(key, name string, now time.Time) (*Role, error) {
+	return r.CreateRoleWithGrants(key, name, nil, nil, now)
+}
+
+// CreateRoleWithGrants creates a custom role and its grants atomically.
+func (r *Repository) CreateRoleWithGrants(key, name string, permissions, menuItems []string, now time.Time) (*Role, error) {
+	if !roleKeyRe.MatchString(key) {
+		return nil, ErrInvalidKey
+	}
+	err := r.withTx("create role", func(tx *sql.Tx) error {
+		var exists int
+		if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM roles WHERE key = ?)`, key).Scan(&exists); err != nil {
+			return fmt.Errorf("check role key: %w", err)
+		}
+		if exists == 1 {
+			return ErrRoleTaken
+		}
+		nowUnix := now.Unix()
+		if _, err := tx.Exec(
+			`INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)`,
+			"role-"+key, key, name, nowUnix, nowUnix,
+		); err != nil {
+			return fmt.Errorf("insert role: %w", err)
+		}
+		if err := replaceRolePermissions(tx, "role-"+key, permissions); err != nil {
+			return err
+		}
+		return replaceRoleMenuItems(tx, "role-"+key, menuItems)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.GetRole("role-" + key)
+}
+
+// UpdateRole renames a custom role.
+func (r *Repository) UpdateRole(id, name string, now time.Time) (*Role, error) {
+	return r.UpdateRoleWithGrants(id, RolePatch{Name: &name}, now)
+}
+
+// UpdateRoleWithGrants updates a custom role and optional grant sets.
+func (r *Repository) UpdateRoleWithGrants(id string, patch RolePatch, now time.Time) (*Role, error) {
+	err := r.withTx("update role", func(tx *sql.Tx) error {
+		var current Role
+		if err := scanRoleRow(tx.QueryRow(
+			`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
+		), &current); err != nil {
+			return err
+		}
+		if current.System {
+			return ErrRoleSystem
+		}
+		name := current.Name
+		if patch.Name != nil {
+			name = strings.TrimSpace(*patch.Name)
+		}
+		updatedAt := now.Unix()
+		if updatedAt <= current.UpdatedAt.Unix() {
+			updatedAt = current.UpdatedAt.Unix() + 1
+		}
+		if _, err := tx.Exec(`UPDATE roles SET name = ?, updated_at = ? WHERE id = ?`, name, updatedAt, id); err != nil {
+			return fmt.Errorf("update role: %w", err)
+		}
+		if patch.Permissions != nil {
+			if err := replaceRolePermissions(tx, id, *patch.Permissions); err != nil {
+				return err
+			}
+		}
+		if patch.MenuItems != nil {
+			if err := replaceRoleMenuItems(tx, id, *patch.MenuItems); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.GetRole(id)
+}
+
+// DeleteRole removes a custom role when it is not assigned.
+func (r *Repository) DeleteRole(id string) error {
+	return r.withTx("delete role", func(tx *sql.Tx) error {
+		var current Role
+		if err := scanRoleRow(tx.QueryRow(
+			`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
+		), &current); err != nil {
+			return err
+		}
+		if current.System {
+			return ErrRoleSystem
+		}
+		var used int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, id).Scan(&used); err != nil {
+			return fmt.Errorf("count role users: %w", err)
+		}
+		if used > 0 {
+			return ErrRoleInUse
+		}
+		if _, err := tx.Exec(`DELETE FROM roles WHERE id = ?`, id); err != nil {
+			return fmt.Errorf("delete role: %w", err)
+		}
+		return nil
+	})
+}
+
+// PermissionsForRoles returns the union of permissions for existing role keys.
+func (r *Repository) PermissionsForRoles(roleKeys []string) ([]string, error) {
+	keys := dedupeKeys(roleKeys)
+	if len(keys) == 0 {
+		return []string{}, nil
+	}
+	permissions := []string{}
+	err := r.withTx("permissions for roles", func(tx *sql.Tx) error {
+		placeholders := strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")
+		args := make([]any, len(keys))
+		for i, key := range keys {
+			args[i] = key
+		}
+		var count int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM roles WHERE key IN (`+placeholders+`)`, args...).Scan(&count); err != nil {
+			return fmt.Errorf("count assignment roles: %w", err)
+		}
+		if count != len(keys) {
+			return ErrInvalidRole
+		}
+		rows, err := tx.Query(
+			`SELECT DISTINCT p.key
+			 FROM roles r
+			 JOIN role_permissions rp ON rp.role_id = r.id
+			 JOIN permissions p ON p.id = rp.permission_id
+			 WHERE r.key IN (`+placeholders+`) ORDER BY p.key`, args...,
+		)
+		if err != nil {
+			return fmt.Errorf("query assignment role permissions: %w", err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var key string
+			if err := rows.Scan(&key); err != nil {
+				return fmt.Errorf("scan assignment role permission: %w", err)
+			}
+			permissions = append(permissions, key)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("query assignment role permissions: %w", err)
+		}
+		return nil
+	})
+	return permissions, err
+}
+
+// ValidatePermissionKeys rejects unknown permission references.
+func (r *Repository) ValidatePermissionKeys(keys []string) error {
+	return r.withTx("validate permission keys", func(tx *sql.Tx) error {
+		for _, key := range dedupeKeys(keys) {
+			var exists int
+			if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM permissions WHERE key = ?)`, key).Scan(&exists); err != nil {
+				return fmt.Errorf("validate permission %s: %w", key, err)
+			}
+			if exists == 0 {
+				return ErrInvalidPermission
+			}
+		}
+		return nil
+	})
+}
+
+// ValidateMenuItemIDs rejects unknown navigation references.
+func (r *Repository) ValidateMenuItemIDs(ids []string) error {
+	return r.withTx("validate menu item ids", func(tx *sql.Tx) error {
+		for _, id := range dedupeKeys(ids) {
+			var exists int
+			if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
+				return fmt.Errorf("validate menu item %s: %w", id, err)
+			}
+			if exists == 0 {
+				return ErrInvalidMenuItem
+			}
+		}
+		return nil
+	})
+}
+
+func hydrateRole(tx *sql.Tx, role *Role) error {
+	role.Permissions = []string{}
+	rows, err := tx.Query(
+		`SELECT p.key FROM role_permissions rp
+		 JOIN permissions p ON p.id = rp.permission_id
+		 WHERE rp.role_id = ? ORDER BY p.key`, role.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("query role permissions: %w", err)
+	}
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("scan role permission: %w", err)
+		}
+		role.Permissions = append(role.Permissions, key)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return fmt.Errorf("query role permissions rows: %w", err)
+	}
+	if err := rows.Close(); err != nil {
+		return fmt.Errorf("close role permissions rows: %w", err)
+	}
+
+	role.MenuItems = []string{}
+	rows, err = tx.Query(
+		`SELECT m.id FROM role_menu_items rmi
+		 JOIN menu_items m ON m.id = rmi.menu_item_id
+		 WHERE rmi.role_id = ? ORDER BY m.id`, role.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("query role menu items: %w", err)
+	}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("scan role menu item: %w", err)
+		}
+		role.MenuItems = append(role.MenuItems, id)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return fmt.Errorf("query role menu item rows: %w", err)
+	}
+	if err := rows.Close(); err != nil {
+		return fmt.Errorf("close role menu item rows: %w", err)
+	}
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, role.ID).Scan(&role.AssignedUsers); err != nil {
+		return fmt.Errorf("count assigned role users: %w", err)
+	}
+	return nil
+}
+
+func replaceRolePermissions(tx *sql.Tx, roleID string, keys []string) error {
+	keys = dedupeKeys(keys)
+	ids := make([]string, 0, len(keys))
+	for _, key := range keys {
+		var id string
+		err := tx.QueryRow(`SELECT id FROM permissions WHERE key = ?`, key).Scan(&id)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalidPermission
+		}
+		if err != nil {
+			return fmt.Errorf("validate permission %s: %w", key, err)
+		}
+		ids = append(ids, id)
+	}
+	if _, err := tx.Exec(`DELETE FROM role_permissions WHERE role_id = ?`, roleID); err != nil {
+		return fmt.Errorf("clear role permissions: %w", err)
+	}
+	for _, id := range ids {
+		if _, err := tx.Exec(`INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)`, roleID, id); err != nil {
+			return fmt.Errorf("grant role permission %s: %w", id, err)
+		}
+	}
+	return nil
+}
+
+func replaceRoleMenuItems(tx *sql.Tx, roleID string, ids []string) error {
+	ids = dedupeKeys(ids)
+	for _, id := range ids {
+		var exists int
+		if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
+			return fmt.Errorf("validate menu item %s: %w", id, err)
+		}
+		if exists == 0 {
+			return ErrInvalidMenuItem
+		}
+	}
+	if _, err := tx.Exec(`DELETE FROM role_menu_items WHERE role_id = ?`, roleID); err != nil {
+		return fmt.Errorf("clear role menu items: %w", err)
+	}
+	for _, id := range ids {
+		if _, err := tx.Exec(`INSERT INTO role_menu_items (role_id, menu_item_id) VALUES (?, ?)`, roleID, id); err != nil {
+			return fmt.Errorf("grant role menu item %s: %w", id, err)
+		}
+	}
+	return nil
+}
+
+func scanRoleRow(row interface{ Scan(...any) error }, role *Role) error {
+	var system int
+	var createdAt, updatedAt int64
+	err := row.Scan(&role.ID, &role.Key, &role.Name, &system, &createdAt, &updatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("scan role: %w", err)
+	}
+	role.System = system == 1
+	role.CreatedAt = time.Unix(createdAt, 0).UTC()
+	role.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+	return nil
+}
+
+func rolesWhere(query string) (string, []any) {
+	query = strings.ToLower(strings.TrimSpace(query))
+	if query == "" {
+		return "", nil
+	}
+	return ` WHERE (instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0)`, []any{query, query}
+}
+
+func rolesSortSQL(sort, order string) string {
+	column, collate := "key", " COLLATE NOCASE"
+	switch sort {
+	case "name":
+		column, collate = "name", " COLLATE NOCASE"
+	case "updatedAt":
+		column, collate = "updated_at", ""
+	}
+	direction := "ASC"
+	if order == "desc" {
+		direction = "DESC"
+	}
+	return column + collate + " " + direction
+}

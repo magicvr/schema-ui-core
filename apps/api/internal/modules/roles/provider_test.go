@@ -14,6 +14,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -52,7 +53,7 @@ func planWithRoles(t *testing.T) kernel.Plan {
 
 func TestRolesProviderRegistersSurfaces(t *testing.T) {
 	a, st := newTestEnv(t)
-	provider := New(a, st)
+	provider := New(a, authsession.NewRepository(st), st)
 	set, err := kernel.RegisterContributions(context.Background(), planWithRoles(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -92,7 +93,7 @@ func TestRolesProviderRegistersSurfaces(t *testing.T) {
 func TestRolesProviderServesAuthenticatedCRUD(t *testing.T) {
 	a, st := newTestEnv(t)
 	plan := planWithRoles(t)
-	provider := New(a, st)
+	provider := New(a, authsession.NewRepository(st), st)
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)

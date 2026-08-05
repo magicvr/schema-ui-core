@@ -17,6 +17,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
@@ -72,6 +73,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			func() kernel.Plan { return plan },
 			func() *readinessGate { return &readinessGate{} },
 			openStore,
+			newAuthSessionRepository,
 			newAuthenticator,
 			newMux,
 			newServer,
@@ -110,11 +112,15 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	return st, nil
 }
 
-func newAuthenticator(cfg *config.Config, secret jwtSecret, st *store.Store) *auth.Authenticator {
-	return auth.New([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, st, cfg.AuthDevSessionEnabled)
+func newAuthSessionRepository(st *store.Store) *authsession.Repository {
+	return authsession.NewRepository(st)
 }
 
-func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
+func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsession.Repository) *auth.Authenticator {
+	return auth.NewWithRepository([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
+}
+
+func newMux(a *auth.Authenticator, st *store.Store, repository *authsession.Repository, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	handler.RegisterWithReadiness(mux, a, st, plan, gate.Ready)
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
@@ -122,10 +128,10 @@ func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *read
 	// health/schema stay central; settings/activity migrate in C4.
 	var providers []kernel.Provider
 	if plan.HasModule("admin.users") {
-		providers = append(providers, usersmodule.New(a, st))
+		providers = append(providers, usersmodule.New(a, repository, st))
 	}
 	if plan.HasModule("admin.roles") {
-		providers = append(providers, rolesmodule.New(a, st))
+		providers = append(providers, rolesmodule.New(a, repository, st))
 	}
 	if plan.HasModule("admin.settings") {
 		providers = append(providers, settingsmodule.New(a, st))

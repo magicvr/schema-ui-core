@@ -15,17 +15,30 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
-func rolesResource(st *store.Store) Resource {
+// RolesRepository is the RBAC-domain persistence required by the roles
+// resource surface.
+type RolesRepository interface {
+	ListRoles(authsession.RoleFilter) ([]authsession.Role, int, error)
+	GetRole(string) (*authsession.Role, error)
+	CreateRoleWithGrants(string, string, []string, []string, time.Time) (*authsession.Role, error)
+	UpdateRoleWithGrants(string, authsession.RolePatch, time.Time) (*authsession.Role, error)
+	DeleteRole(string) error
+	ValidatePermissionKeys([]string) error
+	ValidateMenuItemIDs([]string) error
+}
+
+func rolesResource(repository RolesRepository, operations OperationRecorder) Resource {
 	return Resource{
 		ID:              "roles",
 		Path:            "/api/roles",
 		Listable:        true,
 		SortFields:      []string{"key", "name", "updatedAt"},
 		QSearch:         true,
-		Entity:          &rolesEntity{st: st},
+		Entity:          &rolesEntity{repository: repository},
 		CreateFields:    []string{"key", "name"},
 		PatchFields:     []string{"name"},
 		JSONFields:      []string{"permissions", "menuItems"},
@@ -35,24 +48,24 @@ func rolesResource(st *store.Store) Resource {
 		// id is derived inside the entity as "role-<key>"; the factory-generated
 		// id is ignored by rolesEntity.Create.
 		NewID:   newRoleID,
-		OnWrite: rolesOnWrite(st),
+		OnWrite: rolesOnWrite(operations),
 	}
 }
 
 // RolesResource exposes the roles Resource descriptor to module providers
 // (R4 C3.2).
-func RolesResource(st *store.Store) Resource {
-	return rolesResource(st)
+func RolesResource(repository RolesRepository, operations OperationRecorder) Resource {
+	return rolesResource(repository, operations)
 }
 
 // rolesEntity adapts the roles store to the generic resource boundary.
 type rolesEntity struct {
-	st *store.Store
+	repository RolesRepository
 }
 
 // roleToMap maps a persisted role to the API row. system is emitted as a JSON
 // boolean; timestamps use the frozen 3-digit-millisecond shape (I-011-001 §3.0).
-func roleToMap(r store.Role) map[string]any {
+func roleToMap(r authsession.Role) map[string]any {
 	return map[string]any{
 		"id":            r.ID,
 		"key":           r.Key,
@@ -69,7 +82,7 @@ func roleToMap(r store.Role) map[string]any {
 }
 
 func (e *rolesEntity) List(f resourceFilter) ([]map[string]any, int, error) {
-	items, total, err := e.st.ListRoles(store.RoleFilter{
+	items, total, err := e.repository.ListRoles(authsession.RoleFilter{
 		Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
 	})
 	if err != nil {
@@ -83,9 +96,9 @@ func (e *rolesEntity) List(f resourceFilter) ([]map[string]any, int, error) {
 }
 
 func (e *rolesEntity) Get(id string) (map[string]any, error) {
-	r, err := e.st.GetRole(id)
+	r, err := e.repository.GetRole(id)
 	if err != nil {
-		return nil, err
+		return nil, mapRoleStoreError(err)
 	}
 	return roleToMap(*r), nil
 }
@@ -103,7 +116,7 @@ func (e *rolesEntity) Create(body map[string]any, _ string, now time.Time, actor
 		if !slices.Contains(actor.Roles, "admin") {
 			return nil, grantForbidden("only an admin may manage role grants")
 		}
-		if err := e.st.ValidatePermissionKeys(permissions); err != nil {
+		if err := e.repository.ValidatePermissionKeys(permissions); err != nil {
 			return nil, mapRoleStoreError(err)
 		}
 		if err := authorizeGrantChange(actor, permissions); err != nil {
@@ -114,11 +127,11 @@ func (e *rolesEntity) Create(body map[string]any, _ string, now time.Time, actor
 		if !slices.Contains(actor.Roles, "admin") {
 			return nil, grantForbidden("only an admin may manage role menu grants")
 		}
-		if err := e.st.ValidateMenuItemIDs(menuItems); err != nil {
+		if err := e.repository.ValidateMenuItemIDs(menuItems); err != nil {
 			return nil, mapRoleStoreError(err)
 		}
 	}
-	r, err := e.st.CreateRoleWithGrants(
+	r, err := e.repository.CreateRoleWithGrants(
 		stringField(body, "key"), stringField(body, "name"), permissions, menuItems, now,
 	)
 	if err != nil {
@@ -128,7 +141,7 @@ func (e *rolesEntity) Create(body map[string]any, _ string, now time.Time, actor
 }
 
 func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, actor account.User) (map[string]any, error) {
-	patch := store.RolePatch{}
+	patch := authsession.RolePatch{}
 	if _, ok := body["name"]; ok {
 		name := stringField(body, "name")
 		patch.Name = &name
@@ -141,7 +154,7 @@ func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, acto
 		if !slices.Contains(actor.Roles, "admin") {
 			return nil, grantForbidden("only an admin may manage role grants")
 		}
-		if err := e.st.ValidatePermissionKeys(permissions); err != nil {
+		if err := e.repository.ValidatePermissionKeys(permissions); err != nil {
 			return nil, mapRoleStoreError(err)
 		}
 		if err := authorizeGrantChange(actor, permissions); err != nil {
@@ -157,12 +170,12 @@ func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, acto
 		if !slices.Contains(actor.Roles, "admin") {
 			return nil, grantForbidden("only an admin may manage role menu grants")
 		}
-		if err := e.st.ValidateMenuItemIDs(menuItems); err != nil {
+		if err := e.repository.ValidateMenuItemIDs(menuItems); err != nil {
 			return nil, mapRoleStoreError(err)
 		}
 		patch.MenuItems = &menuItems
 	}
-	r, err := e.st.UpdateRoleWithGrants(id, patch, now)
+	r, err := e.repository.UpdateRoleWithGrants(id, patch, now)
 	if err != nil {
 		return nil, mapRoleStoreError(err)
 	}
@@ -170,7 +183,7 @@ func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, acto
 }
 
 func (e *rolesEntity) Delete(id string, _ account.User) error {
-	return mapRoleStoreError(e.st.DeleteRole(id))
+	return mapRoleStoreError(e.repository.DeleteRole(id))
 }
 
 func stringArrayFromBody(body map[string]any, field, code string) ([]string, error) {
@@ -214,17 +227,19 @@ func authorizeGrantChange(actor account.User, permissions []string) error {
 // resource-specific error codes (I-011-001 §6).
 func mapRoleStoreError(err error) error {
 	switch {
-	case errors.Is(err, store.ErrRoleTaken):
+	case errors.Is(err, authsession.ErrNotFound):
+		return store.ErrNotFound
+	case errors.Is(err, authsession.ErrRoleTaken):
 		return &DomainError{Status: 409, Code: "ROLE_KEY_TAKEN", Message: "role key already exists"}
-	case errors.Is(err, store.ErrRoleInUse):
+	case errors.Is(err, authsession.ErrRoleInUse):
 		return &DomainError{Status: 409, Code: "ROLE_IN_USE", Message: "role is assigned to users"}
-	case errors.Is(err, store.ErrRoleSystem):
+	case errors.Is(err, authsession.ErrRoleSystem):
 		return &DomainError{Status: 409, Code: "ROLE_SYSTEM", Message: "system roles cannot be modified"}
-	case errors.Is(err, store.ErrInvalidKey):
+	case errors.Is(err, authsession.ErrInvalidKey):
 		return &DomainError{Status: 400, Code: "INVALID_ROLE_KEY", Message: "invalid role key format"}
-	case errors.Is(err, store.ErrInvalidPermission):
+	case errors.Is(err, authsession.ErrInvalidPermission):
 		return &DomainError{Status: 400, Code: "INVALID_PERMISSION_REF", Message: "permissions contain an unknown key"}
-	case errors.Is(err, store.ErrInvalidMenuItem):
+	case errors.Is(err, authsession.ErrInvalidMenuItem):
 		return &DomainError{Status: 400, Code: "INVALID_MENU_ITEM_REF", Message: "menuItems contain an unknown id"}
 	default:
 		return err
@@ -233,7 +248,7 @@ func mapRoleStoreError(err error) error {
 
 // rolesOnWrite appends operation-log rows for roles write endpoints
 // (I-011-001 §5). Best-effort.
-func rolesOnWrite(st *store.Store) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
+func rolesOnWrite(recorder OperationRecorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
 	return func(_ context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time) {
 		event := store.EventRoleDelete
 		detail := ""
@@ -258,7 +273,7 @@ func rolesOnWrite(st *store.Store) func(context.Context, account.User, writeKind
 		if detail != "" {
 			op.Detail = &detail
 		}
-		if err := st.RecordOperation(op); err != nil {
+		if err := recorder.RecordOperation(op); err != nil {
 			slog.Error("operation log write failed", "event", event, "err", err)
 		}
 	}

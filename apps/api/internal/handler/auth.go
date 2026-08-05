@@ -16,7 +16,8 @@ import (
 // authHandler serves the R2 auth endpoints (GOAL-005): login, refresh and
 // logout. Login/refresh are public; the access/refresh pair returned is consumed
 // by the Web client (access in memory, refresh in localStorage, D-002). The
-// store is used for the R5 S6 operation log (auth events).
+// store is used only for the R5 S6 operation log (auth events); identity data
+// is resolved through the module-owned auth-session repository.
 type authHandler struct {
 	a   *auth.Authenticator
 	st  *store.Store
@@ -123,7 +124,7 @@ func (h *authHandler) logout() http.HandlerFunc {
 // best-effort: an unresolvable actor still logs with the actor id and a
 // service-log error, never blocking the business response (§5).
 func (h *authHandler) authEvent(event, userID string) {
-	u, err := h.st.UserByID(userID)
+	u, err := h.a.UserByID(userID)
 	if err != nil {
 		slog.Error("operation log auth event: resolve user", "event", event, "user_id", userID, "err", err)
 		h.logOperation(event, userID, "", "")

@@ -18,6 +18,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -67,7 +68,7 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 	}
 	defer st.Close()
 	a := auth.New([]byte("test-secret"), 0, 0, st, false)
-	mux, err := newMux(a, st, plan, &readinessGate{})
+	mux, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +145,7 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 			}
 			defer st.Close()
 			a := auth.New([]byte("test-secret"), 0, 0, st, false)
-			mux, err := newMux(a, st, plan, &readinessGate{})
+			mux, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -208,7 +209,7 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 			}
 			defer st.Close()
 			a := auth.New([]byte("test-secret"), 0, 0, st, false)
-			if _, err := newMux(a, st, plan, &readinessGate{}); err != nil {
+			if _, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{}); err != nil {
 				t.Fatal(err)
 			}
 			if got := compositionCount(t, st, `SELECT COUNT(*) FROM permissions`); got != tt.wantPermissions {
@@ -239,14 +240,14 @@ func TestSystemDataReconcilePreservesDisabledProfileData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := newMux(a, st, adminPlan, &readinessGate{}); err != nil {
+	if _, err := newMux(a, st, authsession.NewRepository(st), adminPlan, &readinessGate{}); err != nil {
 		t.Fatal(err)
 	}
 	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := newMux(a, st, mvpPlan, &readinessGate{}); err != nil {
+	if _, err := newMux(a, st, authsession.NewRepository(st), mvpPlan, &readinessGate{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -381,7 +382,7 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	a := auth.New([]byte("test-secret"), 0, 0, st, false)
 	gate := &readinessGate{}
 	gate.setReady()
-	mux, err := newMux(a, st, plan, gate)
+	mux, err := newMux(a, st, authsession.NewRepository(st), plan, gate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +501,7 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 
 	// Gate unset → readyz unavailable even though the store pings.
 	notReady := httptest.NewRecorder()
-	mux, err := newMux(a, st, plan, &readinessGate{})
+	mux, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,7 +513,7 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 	// Gate set → readyz ok.
 	readyGate := &readinessGate{}
 	readyGate.setReady()
-	mux, err = newMux(a, st, plan, readyGate)
+	mux, err = newMux(a, st, authsession.NewRepository(st), plan, readyGate)
 	if err != nil {
 		t.Fatal(err)
 	}

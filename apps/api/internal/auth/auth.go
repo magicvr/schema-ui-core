@@ -22,7 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 )
 
 // Sentinel errors surfaced to handlers for mapping to HTTP status codes.
@@ -33,12 +33,24 @@ var (
 	ErrTokenRevoked       = errors.New("auth: token revoked")
 )
 
-// Authenticator holds the signing secret, token TTLs and the auth store.
+// Repository is the account/session persistence surface used by auth.
+type Repository interface {
+	UserByUsername(string) (*authsession.User, error)
+	UserByID(string) (*authsession.User, error)
+	CreateRefreshToken(authsession.RefreshToken) error
+	RefreshTokenByHash(string) (*authsession.RefreshToken, error)
+	RevokeRefreshToken(string, time.Time) error
+	PermissionsForUser(string) ([]string, error)
+	FeaturesForUser(string) (map[string]bool, error)
+}
+
+// Authenticator holds the signing secret, token TTLs and the auth-session
+// repository.
 type Authenticator struct {
 	secret     []byte
 	accessTTL  time.Duration
 	refreshTTL time.Duration
-	store      *store.Store
+	repository Repository
 	devSession bool // explicit opt-in: static dev session fallback (M9)
 }
 
@@ -46,16 +58,22 @@ type Authenticator struct {
 // in non-development environments (fail-closed at startup). devSession gates
 // the explicit local-development fallback to StaticDevSession; it must be false
 // in production (acceptance M9).
-func New(secret []byte, accessTTL, refreshTTL time.Duration, st *store.Store, devSession bool) *Authenticator {
-	return &Authenticator{secret: secret, accessTTL: accessTTL, refreshTTL: refreshTTL, store: st, devSession: devSession}
+func New(secret []byte, accessTTL, refreshTTL time.Duration, runner authsession.TxRunner, devSession bool) *Authenticator {
+	return NewWithRepository(secret, accessTTL, refreshTTL, authsession.NewRepository(runner), devSession)
+}
+
+// NewWithRepository builds an Authenticator over the shared module repository
+// constructed by the composition root.
+func NewWithRepository(secret []byte, accessTTL, refreshTTL time.Duration, repository Repository, devSession bool) *Authenticator {
+	return &Authenticator{secret: secret, accessTTL: accessTTL, refreshTTL: refreshTTL, repository: repository, devSession: devSession}
 }
 
 // Login verifies username/password against the store and issues a fresh
 // access/refresh token pair. Fail-closed: a missing user and a bad password
 // both yield ErrInvalidCredentials (no user enumeration).
 func (a *Authenticator) Login(username, password string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
-	u, err := a.store.UserByUsername(username)
-	if errors.Is(err, store.ErrNotFound) {
+	u, err := a.repository.UserByUsername(username)
+	if errors.Is(err, authsession.ErrNotFound) {
 		return "", "", account.User{}, ErrInvalidCredentials
 	}
 	if err != nil {
@@ -70,8 +88,8 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 // Refresh validates a raw refresh token and rotates it: the old token is
 // revoked and a new access/refresh pair is issued. Unknown tokens fail closed.
 func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, newRefresh string, user account.User, err error) {
-	rt, err := a.store.RefreshTokenByHash(HashToken(rawRefresh))
-	if errors.Is(err, store.ErrNotFound) {
+	rt, err := a.repository.RefreshTokenByHash(HashToken(rawRefresh))
+	if errors.Is(err, authsession.ErrNotFound) {
 		return "", "", account.User{}, ErrInvalidToken
 	}
 	if err != nil {
@@ -83,10 +101,10 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	if now.After(rt.ExpiresAt) {
 		return "", "", account.User{}, ErrExpiredToken
 	}
-	if err := a.store.RevokeRefreshToken(rt.ID, now); err != nil && !errors.Is(err, store.ErrAlreadyRevoked) {
+	if err := a.repository.RevokeRefreshToken(rt.ID, now); err != nil && !errors.Is(err, authsession.ErrAlreadyRevoked) {
 		return "", "", account.User{}, err
 	}
-	u, err := a.store.UserByID(rt.UserID)
+	u, err := a.repository.UserByID(rt.UserID)
 	if err != nil {
 		return "", "", account.User{}, err
 	}
@@ -98,8 +116,8 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 // already-revoked tokens are treated as success (user id empty) so a logout
 // cannot be replayed.
 func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error) {
-	rt, err := a.store.RefreshTokenByHash(HashToken(rawRefresh))
-	if errors.Is(err, store.ErrNotFound) {
+	rt, err := a.repository.RefreshTokenByHash(HashToken(rawRefresh))
+	if errors.Is(err, authsession.ErrNotFound) {
 		return "", nil
 	}
 	if err != nil {
@@ -108,12 +126,12 @@ func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error)
 	if rt.RevokedAt != nil {
 		return rt.UserID, nil
 	}
-	return rt.UserID, a.store.RevokeRefreshToken(rt.ID, now)
+	return rt.UserID, a.repository.RevokeRefreshToken(rt.ID, now)
 }
 
 // issue creates a fresh access/refresh pair for an authenticated user and
 // persists the (hashed) opaque refresh token.
-func (a *Authenticator) issue(u *store.User, now time.Time) (string, string, account.User, error) {
+func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, string, account.User, error) {
 	access, err := SignAccessToken(a.secret, u.ID, a.accessTTL, now)
 	if err != nil {
 		return "", "", account.User{}, err
@@ -122,14 +140,14 @@ func (a *Authenticator) issue(u *store.User, now time.Time) (string, string, acc
 	if err != nil {
 		return "", "", account.User{}, err
 	}
-	rt := store.RefreshToken{
+	rt := authsession.RefreshToken{
 		ID:        newID(),
 		UserID:    u.ID,
 		TokenHash: hash,
 		ExpiresAt: now.Add(a.refreshTTL),
 		CreatedAt: now,
 	}
-	if err := a.store.CreateRefreshToken(rt); err != nil {
+	if err := a.repository.CreateRefreshToken(rt); err != nil {
 		return "", "", account.User{}, err
 	}
 	acct, err := a.accountFromUser(u)
@@ -211,8 +229,8 @@ func newID() string {
 
 // accountFromUser builds the identity snapshot, resolving the user's persisted
 // permission keys (GOAL-006 S4: resource gates check keys, not role strings).
-func (a *Authenticator) accountFromUser(u *store.User) (account.User, error) {
-	perms, err := a.store.PermissionsForUser(u.ID)
+func (a *Authenticator) accountFromUser(u *authsession.User) (account.User, error) {
+	perms, err := a.repository.PermissionsForUser(u.ID)
 	if err != nil {
 		return account.User{}, fmt.Errorf("resolve permissions for %s: %w", u.ID, err)
 	}
@@ -226,7 +244,12 @@ func (a *Authenticator) Features(user account.User) (map[string]bool, error) {
 	if a.devSession && user.ID == account.StaticDevSession().User.ID {
 		return account.StaticDevSession().Features, nil
 	}
-	return a.store.FeaturesForUser(user.ID)
+	return a.repository.FeaturesForUser(user.ID)
+}
+
+// UserByID exposes the auth-session identity row to core auth-event logging.
+func (a *Authenticator) UserByID(id string) (*authsession.User, error) {
+	return a.repository.UserByID(id)
 }
 
 // --- request-level identity ---
@@ -278,7 +301,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired access token")
 			return
 		}
-		u, err := a.store.UserByID(userID)
+		u, err := a.repository.UserByID(userID)
 		if err != nil {
 			if a.devSession {
 				a.injectDevSession(w, r, next)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -57,6 +58,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	a := auth.New([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, st, devSession)
+	repository := authsession.NewRepository(st)
 	mux := http.NewServeMux()
 	plan := testAdminPlan(t)
 	Register(mux, a, st, plan)
@@ -72,8 +74,8 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	}
 	mountRoutes(SettingsRoutes(a, st, "admin.settings"))
 	mountRoutes(ResourceRoutes(a, operationsResource(st), "admin.activity"))
-	mountRoutes(resourceRoutes(a, usersResource(st), "admin.users"))
-	mountRoutes(resourceRoutes(a, rolesResource(st), "admin.roles"))
+	mountRoutes(resourceRoutes(a, usersResource(repository, st), "admin.users"))
+	mountRoutes(resourceRoutes(a, rolesResource(repository, st), "admin.roles"))
 	// R5 C5.1: schema pages register separately; test path uses the module
 	// contributor table (nil override).
 	RegisterSchemas(mux, plan, nil)

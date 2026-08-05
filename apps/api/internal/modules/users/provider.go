@@ -11,22 +11,23 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/manifest"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 const ModuleID = "admin.users"
 
 // Provider implements kernel.Provider for admin.users.
 type Provider struct {
-	a  *auth.Authenticator
-	st *store.Store
+	a          *auth.Authenticator
+	repository *authsession.Repository
+	operations handler.OperationRecorder
 }
 
 // New constructs the users provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, st *store.Store) *Provider {
-	return &Provider{a: a, st: st}
+func New(a *auth.Authenticator, repository *authsession.Repository, operations handler.OperationRecorder) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -50,11 +51,11 @@ func (p *Provider) Descriptor() kernel.Module {
 }
 
 func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
-	return nil, nil // no module-owned migrations in C3; existing ledger is store-owned
+	return nil, nil // account/RBAC migrations are owned by core.auth-session
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.ResourceRoutes(p.a, handler.UsersResource(p.st), ModuleID) {
+	for _, route := range handler.ResourceRoutes(p.a, handler.UsersResource(p.repository, p.operations), ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
