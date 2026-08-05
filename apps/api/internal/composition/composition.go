@@ -20,8 +20,10 @@ import (
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
 	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
+	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
@@ -74,6 +76,8 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			func() *readinessGate { return &readinessGate{} },
 			openStore,
 			newAuthSessionRepository,
+			newOperationLogRepository,
+			newSettingsRepository,
 			newAuthenticator,
 			newMux,
 			newServer,
@@ -116,28 +120,44 @@ func newAuthSessionRepository(st *store.Store) *authsession.Repository {
 	return authsession.NewRepository(st)
 }
 
+func newOperationLogRepository(st *store.Store) *operationlog.Repository {
+	return operationlog.NewRepository(st)
+}
+
+func newSettingsRepository(st *store.Store) *settingsrepository.Repository {
+	return settingsrepository.New(st)
+}
+
 func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsession.Repository) *auth.Authenticator {
 	return auth.NewWithRepository([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
 }
 
-func newMux(a *auth.Authenticator, st *store.Store, repository *authsession.Repository, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
+func newMux(
+	a *auth.Authenticator,
+	st *store.Store,
+	authRepository *authsession.Repository,
+	operations *operationlog.Repository,
+	settingsRepository *settingsrepository.Repository,
+	plan kernel.Plan,
+	gate *readinessGate,
+) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
-	handler.RegisterWithReadiness(mux, a, st, plan, gate.Ready)
+	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready)
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
 	var providers []kernel.Provider
 	if plan.HasModule("admin.users") {
-		providers = append(providers, usersmodule.New(a, repository, st))
+		providers = append(providers, usersmodule.New(a, authRepository, operations))
 	}
 	if plan.HasModule("admin.roles") {
-		providers = append(providers, rolesmodule.New(a, repository, st))
+		providers = append(providers, rolesmodule.New(a, authRepository, operations))
 	}
 	if plan.HasModule("admin.settings") {
-		providers = append(providers, settingsmodule.New(a, st))
+		providers = append(providers, settingsmodule.New(a, settingsRepository, operations))
 	}
 	if plan.HasModule("admin.activity") {
-		providers = append(providers, activitymodule.New(a, st))
+		providers = append(providers, activitymodule.New(a, operations))
 	}
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 )
 
 // S6 · 服务重启持久化：重新 Open 同一数据库后，迁移台账不重跑、种子不重复，
@@ -17,14 +19,15 @@ func TestRestartPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
+	repository := authsession.NewRepository(st)
 	now := time.Now().UTC()
-	if err := st.CreateUser(User{
+	if err := repository.CreateUser(authsession.User{
 		ID: "u1", Username: "alice", Name: "Alice",
 		Roles: []string{"viewer"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
 		t.Fatalf("create alice: %v", err)
 	}
-	if err := st.CreateRefreshToken(RefreshToken{
+	if err := repository.CreateRefreshToken(authsession.RefreshToken{
 		ID: "rt1", UserID: "u1", TokenHash: "hash-rt1",
 		ExpiresAt: now.Add(time.Hour), CreatedAt: now,
 	}); err != nil {
@@ -40,6 +43,7 @@ func TestRestartPersistence(t *testing.T) {
 		t.Fatalf("restart open: %v", err)
 	}
 	defer st2.Close()
+	repository2 := authsession.NewRepository(st2)
 
 	applied, err := st2.appliedMigrations()
 	if err != nil {
@@ -53,14 +57,14 @@ func TestRestartPersistence(t *testing.T) {
 		t.Fatalf("seed user_roles after restart = %d, err %v, want 2 (no duplicate seed)", ur, err)
 	}
 
-	alice, err := st2.UserByID("u1")
+	alice, err := repository2.UserByID("u1")
 	if err != nil {
 		t.Fatalf("alice after restart: %v", err)
 	}
 	if !reflect.DeepEqual(alice.Roles, []string{"viewer"}) {
 		t.Fatalf("alice roles = %v, want [viewer]", alice.Roles)
 	}
-	rt, err := st2.RefreshTokenByHash("hash-rt1")
+	rt, err := repository2.RefreshTokenByHash("hash-rt1")
 	if err != nil {
 		t.Fatalf("refresh token after restart: %v", err)
 	}
@@ -69,21 +73,21 @@ func TestRestartPersistence(t *testing.T) {
 	}
 
 	// viewer: read-only permission, no menu grant.
-	perms, err := st2.PermissionsForUser("u1")
+	perms, err := repository2.PermissionsForUser("u1")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Contains(perms, "users.read") || slices.Contains(perms, "users.write") {
 		t.Fatalf("viewer permissions after restart = %v", perms)
 	}
-	feat, err := st2.FeaturesForUser("u1")
+	feat, err := repository2.FeaturesForUser("u1")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if feat["menu_users"] {
 		t.Fatalf("viewer menu feature after restart = true, want false")
 	}
-	admFeat, err := st2.FeaturesForUser("user-admin")
+	admFeat, err := repository2.FeaturesForUser("user-admin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +95,7 @@ func TestRestartPersistence(t *testing.T) {
 		t.Fatalf("admin menu feature lost after restart")
 	}
 	// The seed must not overwrite the admin password.
-	admin, err := st2.UserByUsername("admin")
+	admin, err := repository2.UserByUsername("admin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,8 +135,9 @@ func TestRestorePreV0002Snapshot(t *testing.T) {
 		t.Fatalf("open restored: %v", err)
 	}
 	defer r.Close()
+	repository := authsession.NewRepository(r)
 
-	u, err := r.UserByUsername("admin")
+	u, err := repository.UserByUsername("admin")
 	if err != nil {
 		t.Fatalf("restored identity: %v", err)
 	}
@@ -142,21 +147,21 @@ func TestRestorePreV0002Snapshot(t *testing.T) {
 	if want := []string{"admin", "editor"}; !reflect.DeepEqual(u.Roles, want) {
 		t.Fatalf("restored roles = %v, want %v", u.Roles, want)
 	}
-	rt, err := r.RefreshTokenByHash("abc123")
+	rt, err := repository.RefreshTokenByHash("abc123")
 	if err != nil {
 		t.Fatalf("restored refresh: %v", err)
 	}
 	if rt.UserID != "user-admin" {
 		t.Fatalf("restored refresh user = %q, want user-admin", rt.UserID)
 	}
-	perms, err := r.PermissionsForUser("user-admin")
+	perms, err := repository.PermissionsForUser("user-admin")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Contains(perms, "users.read") || !slices.Contains(perms, "users.write") {
 		t.Fatalf("restored permissions = %v", perms)
 	}
-	feat, err := r.FeaturesForUser("user-admin")
+	feat, err := repository.FeaturesForUser("user-admin")
 	if err != nil {
 		t.Fatal(err)
 	}

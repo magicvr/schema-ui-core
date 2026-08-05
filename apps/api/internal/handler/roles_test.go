@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // GOAL-011 S2 · roles list/detail expose the seed system roles with system=true
@@ -166,7 +166,7 @@ func TestRolesGrantLifecycleAndEffectiveProjection(t *testing.T) {
 	if created["editable"] != true || created["deletable"] != true || created["assignedUsers"] != float64(0) {
 		t.Fatalf("created management flags = %v", created)
 	}
-	if _, err := env.st.CreateRoleWithGrants(
+	if _, err := env.authRepository.CreateRoleWithGrants(
 		"role-manager", "Role Manager", []string{"roles.read", "roles.write"}, nil, time.Now().UTC(),
 	); err != nil {
 		t.Fatalf("create non-admin role manager: %v", err)
@@ -305,17 +305,17 @@ func TestRolesOperationLogEvents(t *testing.T) {
 		t.Fatalf("delete: %d %s", rr.Code, rr.Body.String())
 	}
 
-	ops, err := env.st.ListOperations(10)
+	ops, err := env.operations.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}
-	var roleOps []store.Operation
+	var roleOps []operationlog.Operation
 	for _, op := range ops {
 		if strings.HasPrefix(op.Event, "roles.") {
 			roleOps = append(roleOps, op)
 		}
 	}
-	want := []string{store.EventRoleDelete, store.EventRoleUpdate, store.EventRoleCreate}
+	want := []string{operationlog.EventRoleDelete, operationlog.EventRoleUpdate, operationlog.EventRoleCreate}
 	if len(roleOps) != len(want) {
 		t.Fatalf("role ops = %d, want %d", len(roleOps), len(want))
 	}
@@ -334,7 +334,7 @@ func TestRolesOperationLogEvents(t *testing.T) {
 		if op.Detail != nil && strings.Contains(*op.Detail, "password") {
 			t.Fatalf("detail leaked a secret: %v", *op.Detail)
 		}
-		if op.Event == store.EventRoleDelete {
+		if op.Event == operationlog.EventRoleDelete {
 			if op.Detail != nil {
 				t.Fatalf("delete detail = %q, want nil", *op.Detail)
 			}

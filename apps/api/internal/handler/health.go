@@ -8,6 +8,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
@@ -27,19 +28,19 @@ type healthResponse struct {
 // composition root from their kernel.Provider surfaces (RegisterContributions),
 // not by this central Register. This function keeps core auth/accounts/health
 // registration only.
-func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
-	RegisterWithReadiness(mux, a, st, plan, nil)
+func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan) {
+	RegisterWithReadiness(mux, a, st, operations, plan, nil)
 }
 
 // RegisterWithReadiness is Register plus an optional module-graph readiness
 // probe (R5). ready, when non-nil, gates /readyz on Start+Ready success.
 // Schema pages are registered separately via RegisterSchemas so composition can
 // pass runtime contribution ownership (R5 C5.1).
-func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool) {
+func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready))
 	if plan.HasModule("core.auth-session") {
-		authsHandler(mux, a, st)
+		authsHandler(mux, a, operations)
 		accountsHandler(mux, a)
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/manifest"
 )
 
@@ -22,11 +23,11 @@ const ModuleID = "admin.roles"
 type Provider struct {
 	a          *auth.Authenticator
 	repository *authsession.Repository
-	operations handler.OperationRecorder
+	operations operationlog.Recorder
 }
 
 // New constructs the roles provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *authsession.Repository, operations handler.OperationRecorder) *Provider {
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder) *Provider {
 	return &Provider{a: a, repository: repository, operations: operations}
 }
 

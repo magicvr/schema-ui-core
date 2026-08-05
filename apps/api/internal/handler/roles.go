@@ -16,7 +16,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // RolesRepository is the RBAC-domain persistence required by the roles
@@ -31,7 +31,7 @@ type RolesRepository interface {
 	ValidateMenuItemIDs([]string) error
 }
 
-func rolesResource(repository RolesRepository, operations OperationRecorder) Resource {
+func rolesResource(repository RolesRepository, operations operationlog.Recorder) Resource {
 	return Resource{
 		ID:              "roles",
 		Path:            "/api/roles",
@@ -54,7 +54,7 @@ func rolesResource(repository RolesRepository, operations OperationRecorder) Res
 
 // RolesResource exposes the roles Resource descriptor to module providers
 // (R4 C3.2).
-func RolesResource(repository RolesRepository, operations OperationRecorder) Resource {
+func RolesResource(repository RolesRepository, operations operationlog.Recorder) Resource {
 	return rolesResource(repository, operations)
 }
 
@@ -228,7 +228,7 @@ func authorizeGrantChange(actor account.User, permissions []string) error {
 func mapRoleStoreError(err error) error {
 	switch {
 	case errors.Is(err, authsession.ErrNotFound):
-		return store.ErrNotFound
+		return errResourceNotFound
 	case errors.Is(err, authsession.ErrRoleTaken):
 		return &DomainError{Status: 409, Code: "ROLE_KEY_TAKEN", Message: "role key already exists"}
 	case errors.Is(err, authsession.ErrRoleInUse):
@@ -248,19 +248,19 @@ func mapRoleStoreError(err error) error {
 
 // rolesOnWrite appends operation-log rows for roles write endpoints
 // (I-011-001 §5). Best-effort.
-func rolesOnWrite(recorder OperationRecorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
+func rolesOnWrite(recorder operationlog.Recorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
 	return func(_ context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time) {
-		event := store.EventRoleDelete
+		event := operationlog.EventRoleDelete
 		detail := ""
 		switch kind {
 		case writeCreate:
-			event = store.EventRoleCreate
+			event = operationlog.EventRoleCreate
 			detail = `{"key":` + jsonQuote(stringField(row, "key")) + `}`
 		case writeUpdate:
-			event = store.EventRoleUpdate
+			event = operationlog.EventRoleUpdate
 			detail = `{"key":` + jsonQuote(stringField(row, "key")) + `}`
 		}
-		op := store.Operation{
+		op := operationlog.Operation{
 			ID:        newOperationID(),
 			Event:     event,
 			ActorID:   user.ID,
@@ -273,8 +273,10 @@ func rolesOnWrite(recorder OperationRecorder) func(context.Context, account.User
 		if detail != "" {
 			op.Detail = &detail
 		}
-		if err := recorder.RecordOperation(op); err != nil {
-			slog.Error("operation log write failed", "event", event, "err", err)
+		if recorder != nil {
+			if err := recorder.RecordOperation(op); err != nil {
+				slog.Error("operation log write failed", "event", event, "err", err)
+			}
 		}
 	}
 }

@@ -12,20 +12,20 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/manifest"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 const ModuleID = "admin.activity"
 
 // Provider implements kernel.Provider for admin.activity.
 type Provider struct {
-	a  *auth.Authenticator
-	st *store.Store
+	a          *auth.Authenticator
+	operations operationlog.Reader
 }
 
 // New constructs the activity provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, st *store.Store) *Provider {
-	return &Provider{a: a, st: st}
+func New(a *auth.Authenticator, operations operationlog.Reader) *Provider {
+	return &Provider{a: a, operations: operations}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -50,7 +50,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.ResourceRoutes(p.a, handler.OperationsResource(p.st), ModuleID) {
+	for _, route := range handler.ResourceRoutes(p.a, handler.OperationsResource(p.operations), ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 func TestBrandingPublicAndSettingsPatch(t *testing.T) {
@@ -83,7 +83,7 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	}
 
 	// A-006 R-003: settings PATCH appends settings.update to the operation log.
-	ops, total, err := env.st.ListOperationsFiltered(store.OperationFilter{
+	ops, total, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
 		Q: "settings.update", Sort: "createdAt", Order: "desc", Page: 1, PageSize: 20,
 	})
 	if err != nil {
@@ -94,7 +94,7 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	}
 	found := false
 	for _, op := range ops {
-		if op.Event == store.EventSettingsUpdate {
+		if op.Event == operationlog.EventSettingsUpdate {
 			found = true
 			if op.RecordID == nil || *op.RecordID != "default" {
 				t.Fatalf("settings.update record_id = %v, want default", op.RecordID)

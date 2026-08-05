@@ -3,13 +3,14 @@
 package handler
 
 import (
+	"errors"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
-func operationsResource(st *store.Store) Resource {
+func operationsResource(repository operationlog.Reader) Resource {
 	return Resource{
 		ID:              "operations",
 		Path:            "/api/operations",
@@ -17,7 +18,7 @@ func operationsResource(st *store.Store) Resource {
 		ReadOnly:        true,
 		SortFields:      []string{"createdAt", "event", "actorName"},
 		QSearch:         true,
-		Entity:          &operationsEntity{st: st},
+		Entity:          &operationsEntity{repository: repository},
 		PermissionRead:  "operations.read",
 		PermissionWrite: "operations.write", // unused when ReadOnly
 		NotFoundCode:    "OPERATION_NOT_FOUND",
@@ -25,10 +26,10 @@ func operationsResource(st *store.Store) Resource {
 }
 
 type operationsEntity struct {
-	st *store.Store
+	repository operationlog.Reader
 }
 
-func operationToMap(op store.Operation) map[string]any {
+func operationToMap(op operationlog.Operation) map[string]any {
 	row := map[string]any{
 		"id":        op.ID,
 		"event":     op.Event,
@@ -50,7 +51,7 @@ func operationToMap(op store.Operation) map[string]any {
 }
 
 func (e *operationsEntity) List(f resourceFilter) ([]map[string]any, int, error) {
-	items, total, err := e.st.ListOperationsFiltered(store.OperationFilter{
+	items, total, err := e.repository.ListOperationsFiltered(operationlog.OperationFilter{
 		Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
 	})
 	if err != nil {
@@ -64,8 +65,11 @@ func (e *operationsEntity) List(f resourceFilter) ([]map[string]any, int, error)
 }
 
 func (e *operationsEntity) Get(id string) (map[string]any, error) {
-	op, err := e.st.GetOperation(id)
+	op, err := e.repository.GetOperation(id)
 	if err != nil {
+		if errors.Is(err, operationlog.ErrNotFound) {
+			return nil, errResourceNotFound
+		}
 		return nil, err
 	}
 	return operationToMap(*op), nil
@@ -90,6 +94,6 @@ func (e *operationsEntity) Delete(string, account.User) error {
 
 // OperationsResource exposes the read-only operations resource descriptor to
 // module providers (R4 C4.2).
-func OperationsResource(st *store.Store) Resource {
-	return operationsResource(st)
+func OperationsResource(repository operationlog.Reader) Resource {
+	return operationsResource(repository)
 }

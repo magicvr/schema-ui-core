@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // users/roles write operation-log events are covered by TestUsersOperationLogEvents
@@ -50,17 +50,17 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		t.Fatalf("logout status = %d, want 204", code)
 	}
 
-	ops, err := env.st.ListOperations(10)
+	ops, err := env.operations.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}
-	var authOps []store.Operation
+	var authOps []operationlog.Operation
 	for _, op := range ops {
 		if strings.HasPrefix(op.Event, "auth.") {
 			authOps = append(authOps, op)
 		}
 	}
-	want := []string{store.EventAuthLogout, store.EventAuthRefresh, store.EventAuthLogin}
+	want := []string{operationlog.EventAuthLogout, operationlog.EventAuthRefresh, operationlog.EventAuthLogin}
 	if len(authOps) != len(want) {
 		t.Fatalf("auth ops = %d, want %d (login/refresh/logout)", len(authOps), len(want))
 	}
@@ -115,11 +115,11 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 		t.Fatalf("anon create status = %d, want 401", rr.Code)
 	}
 
-	ops, err := env.st.ListOperations(10)
+	ops, err := env.operations.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}
-	var userOps []store.Operation
+	var userOps []operationlog.Operation
 	for _, op := range ops {
 		if strings.HasPrefix(op.Event, "users.") {
 			userOps = append(userOps, op)
@@ -135,7 +135,7 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 // users.create / roles.create write still succeeds.
 func TestOperationLogFailurePreservesBusinessSuccess(t *testing.T) {
 	env := newAuthTestEnv(t)
-	env.st.SetOperationLogError(errors.New("forced operation log failure"))
+	env.operations.SetOperationLogError(errors.New("forced operation log failure"))
 	token := adminToken(t, env)
 
 	// users.create → 201 despite log failure.
@@ -191,7 +191,7 @@ func TestRetiredRecordsRoutesUnregistered(t *testing.T) {
 	}
 
 	// No operation-log rows may be appended by any of the above (no handlers exist).
-	ops, err := env.st.ListOperations(10)
+	ops, err := env.operations.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}

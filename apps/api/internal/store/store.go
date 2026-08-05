@@ -1,71 +1,33 @@
-// Package store provides the R2 SQLite persistence for authentication
-// (GOAL-005 D-003): a minimal users table (with roles as a JSON string until R3
-// normalizes the model) and a refresh_tokens table storing opaque refresh
-// tokens as SHA-256 hashes so a DB leak does not expose usable tokens.
+// Package store owns the SQLite platform boundary: connection lifecycle,
+// transactions, migration execution, snapshots, and readiness state. Domain
+// repositories live in their owning modules.
 package store
 
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync/atomic"
-	"time"
 
 	_ "modernc.org/sqlite"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
-// User is the persisted identity row backing account.Session.User.
-type User struct {
-	ID           string
-	Username     string
-	Name         string
-	Roles        []string // R2 minimal; R3 replaces with normalized relations
-	PasswordHash string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-// RefreshToken is a stored opaque refresh token (only its hash is kept).
-type RefreshToken struct {
-	ID        string
-	UserID    string
-	TokenHash string
-	ExpiresAt time.Time
-	RevokedAt *time.Time
-	CreatedAt time.Time
-}
-
-// Sentinels for store lookups and mutations.
-var (
-	ErrNotFound       = errors.New("store: not found")
-	ErrAlreadyRevoked = errors.New("store: refresh token already revoked")
-	// ErrRecordExists is returned by a create when the generated id already
-	// exists — an astronomically rare PK collision the generic factory retries
-	// before giving up with INTERNAL (I-007-001 §2, I-011-001 §7).
-	ErrRecordExists = errors.New("store: id already exists")
-)
-
-// Store wraps the SQLite auth store. Concurrency is guarded by a single
-// connection (modernc/sqlite is a single-writer backend).
+// Store is the SQLite platform runner. Domain code consumes its transaction
+// boundary and never receives the underlying database handle.
 type Store struct {
 	db              *sql.DB
-	path            string // file path used for pre-upgrade recovery snapshots
-	fresh           bool   // true only when the database had no user tables before migration
+	path            string
+	fresh           bool
 	systemDataReady atomic.Bool
-	// operationLogErr is a failure-injection seam (R4 C3.4 / FR-005): when
-	// non-nil, RecordOperation returns it to prove the best-effort contract.
-	operationLogErr error
 }
 
 // OpenWithCatalog opens the SQLite DB and applies the compiled-global catalog
-// supplied by the composition root. Module packages own every descriptor and
-// Apply function; store only validates and runs the catalog.
+// supplied by the composition root.
 func OpenWithCatalog(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 	normalized, err := normalizeCatalog(catalog)
 	if err != nil {
@@ -84,31 +46,25 @@ func open(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
-	// modernc/sqlite handles a single writer; one conn avoids lock contention
-	// and mirrors the R1 in-process single-writer posture.
 	db.SetMaxOpenConns(1)
 
 	fresh, err := databaseIsEmpty(db)
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, err
 	}
-	s := &Store{db: db, path: path, fresh: fresh}
-	if err := s.migrate(catalog); err != nil {
-		db.Close()
+	st := &Store{db: db, path: path, fresh: fresh}
+	if err := st.migrate(catalog); err != nil {
+		_ = db.Close()
 		return nil, err
 	}
-	return s, nil
+	return st, nil
 }
 
-// WasFresh reports whether the database was empty before migration. Fresh
-// bootstrap belongs to the owning auth/session module and is intentionally
-// separate from every-startup system-data reconciliation.
+// WasFresh reports whether the database was empty before migration.
 func (s *Store) WasFresh() bool { return s.fresh }
 
-// WithTx exposes the platform transaction boundary to module-owned repository
-// code without exposing the database handle or moving transaction ownership
-// into the composition root.
+// WithTx exposes the platform transaction boundary to module repositories.
 func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -124,12 +80,10 @@ func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	return nil
 }
 
-// MarkSystemDataReady records successful post-finalize reconciliation for the
-// lifecycle readiness gate.
+// MarkSystemDataReady records successful post-finalize reconciliation.
 func (s *Store) MarkSystemDataReady() { s.systemDataReady.Store(true) }
 
-// SystemDataReady returns an error until the finalized contribution set has
-// been reconciled successfully.
+// SystemDataReady fails until finalized contributions have been reconciled.
 func (s *Store) SystemDataReady() error {
 	if !s.systemDataReady.Load() {
 		return errors.New("store: system-data reconciliation is not ready")
@@ -148,296 +102,11 @@ func databaseIsEmpty(db *sql.DB) (bool, error) {
 // Close releases the underlying database handle.
 func (s *Store) Close() error { return s.db.Close() }
 
-// Ping verifies the SQLite connection with a trivial read. Used by the
-// readiness probe (A-002 F-002-006) so a dead or unmigrated database flips
-// the container health gate instead of reporting healthy.
+// Ping verifies the SQLite connection with a trivial read.
 func (s *Store) Ping(ctx context.Context) error {
 	var one int
 	if err := s.db.QueryRowContext(ctx, "SELECT 1").Scan(&one); err != nil {
 		return fmt.Errorf("sqlite ping: %w", err)
-	}
-	return nil
-}
-
-// CreateUser inserts a new user. Since GOAL-006 阶段 B the legacy roles JSON and
-// the normalized user_roles relation are written together in one transaction so
-// the double-read compare in UserByID/UserByUsername never observes a drift.
-// Roles are deduped before the JSON is stored so the two sources stay set-equal.
-func (s *Store) CreateUser(u User) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("begin create user: %w", err)
-	}
-	defer tx.Rollback()
-	now := time.Now().UTC().Unix()
-
-	roles := dedupeKeys(u.Roles)
-	rolesJSON, err := json.Marshal(roles)
-	if err != nil {
-		return fmt.Errorf("marshal roles: %w", err)
-	}
-	if _, err := tx.Exec(
-		`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.Username, u.Name, string(rolesJSON), u.PasswordHash, u.CreatedAt.Unix(), u.UpdatedAt.Unix(),
-	); err != nil {
-		return fmt.Errorf("insert user: %w", err)
-	}
-	for _, key := range roles {
-		if err := linkUserRole(tx, u.ID, key, now); err != nil {
-			return fmt.Errorf("create user %s role %s: %w", u.ID, key, err)
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit create user: %w", err)
-	}
-	return nil
-}
-
-// UserByUsername fetches a user by unique username.
-func (s *Store) UserByUsername(username string) (*User, error) {
-	return s.userWithRoles(s.db.QueryRow(
-		`SELECT id, username, name, roles, password_hash, created_at, updated_at
-		 FROM users WHERE username = ?`, username))
-}
-
-// UserByID fetches a user by primary key.
-func (s *Store) UserByID(id string) (*User, error) {
-	return s.userWithRoles(s.db.QueryRow(
-		`SELECT id, username, name, roles, password_hash, created_at, updated_at
-		 FROM users WHERE id = ?`, id))
-}
-
-// userWithRoles reads the persisted row and reconciles the two role sources
-// (GOAL-006 阶段 B): the legacy roles JSON must be set-equal to the normalized
-// user_roles relation, otherwise a diagnostic error is returned instead of a
-// silently inconsistent identity. On agreement the normalized roles (ordered by
-// role key ascending) are the authoritative read value. The users.roles column
-// is retained until an explicit later migration removes it.
-//
-// Comparison follows the frozen set semantics (I-006-001 §5, A-002 F-004):
-// duplicates in the legacy JSON are historical artifacts that 0002's backfill
-// dedupes in the relations, so the two sources are compared as sets. A genuine
-// set difference still fails closed.
-func (s *Store) userWithRoles(row *sql.Row) (*User, error) {
-	u, err := s.scanUser(row)
-	if err != nil {
-		return nil, err
-	}
-	norm, err := s.rolesForUser(u.ID)
-	if err != nil {
-		return nil, err
-	}
-	if !sameRoleSet(u.Roles, norm) {
-		return nil, fmt.Errorf("store: user %s role mismatch: legacy %v normalized %v", u.ID, u.Roles, norm)
-	}
-	u.Roles = norm
-	return u, nil
-}
-
-// rolesForUser returns a user's normalized roles ordered by role key ascending.
-func (s *Store) rolesForUser(userID string) ([]string, error) {
-	rows, err := s.db.Query(
-		`SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id
-		 WHERE ur.user_id = ? ORDER BY r.key`, userID)
-	if err != nil {
-		return nil, fmt.Errorf("query normalized roles: %w", err)
-	}
-	defer rows.Close()
-	var keys []string
-	for rows.Next() {
-		var k string
-		if err := rows.Scan(&k); err != nil {
-			return nil, fmt.Errorf("scan normalized role: %w", err)
-		}
-		keys = append(keys, k)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("query normalized roles: %w", err)
-	}
-	return keys, nil
-}
-
-// PermissionsForUser returns the permission keys granted to a user through
-// their normalized role-permission relations (GOAL-006 S4 gate source), ordered
-// by key ascending. Unknown users yield an empty list.
-func (s *Store) PermissionsForUser(userID string) ([]string, error) {
-	rows, err := s.db.Query(
-		`SELECT DISTINCT p.key
-		 FROM user_roles ur
-		 JOIN role_permissions rp ON rp.role_id = ur.role_id
-		 JOIN permissions p ON p.id = rp.permission_id
-		 WHERE ur.user_id = ? ORDER BY p.key`, userID)
-	if err != nil {
-		return nil, fmt.Errorf("query permissions: %w", err)
-	}
-	defer rows.Close()
-	var keys []string
-	for rows.Next() {
-		var k string
-		if err := rows.Scan(&k); err != nil {
-			return nil, fmt.Errorf("scan permission: %w", err)
-		}
-		keys = append(keys, k)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("query permissions: %w", err)
-	}
-	return keys, nil
-}
-
-// FeaturesForUser returns the boolean menu projection for a user (GOAL-006 S5 /
-// I-006-002 §3): every registered, enabled menu feature key is present — true
-// when any of the user's roles holds the grant, false otherwise (multi-role
-// OR). The projection is a flat map; feature keys never contain dots.
-func (s *Store) FeaturesForUser(userID string) (map[string]bool, error) {
-	rows, err := s.db.Query(
-		`SELECT m.feature_key, EXISTS(
-			SELECT 1 FROM user_roles ur
-			JOIN role_menu_items rmi ON rmi.role_id = ur.role_id
-			WHERE ur.user_id = ? AND rmi.menu_item_id = m.id
-		 )
-		 FROM menu_items m
-		 WHERE m.enabled = 1
-		 ORDER BY m.feature_key`, userID)
-	if err != nil {
-		return nil, fmt.Errorf("query features: %w", err)
-	}
-	defer rows.Close()
-	features := make(map[string]bool)
-	for rows.Next() {
-		var key string
-		var granted bool
-		if err := rows.Scan(&key, &granted); err != nil {
-			return nil, fmt.Errorf("scan feature: %w", err)
-		}
-		features[key] = granted
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("query features: %w", err)
-	}
-	return features, nil
-}
-
-// sameRoleSet reports whether a and b hold the same set of role keys, ignoring
-// order and duplicates (set semantics per I-006-001 §5). A duplicate role key
-// in the legacy JSON is treated as the same role as the deduped relation.
-func sameRoleSet(a, b []string) bool {
-	as := make(map[string]bool, len(a))
-	for _, v := range a {
-		as[v] = true
-	}
-	bs := make(map[string]bool, len(b))
-	for _, v := range b {
-		bs[v] = true
-	}
-	if len(as) != len(bs) {
-		return false
-	}
-	for v := range as {
-		if !bs[v] {
-			return false
-		}
-	}
-	return true
-}
-
-// dedupeKeys returns keys with duplicates removed, preserving first-occurrence
-// order.
-func dedupeKeys(keys []string) []string {
-	seen := make(map[string]bool, len(keys))
-	out := make([]string, 0, len(keys))
-	for _, k := range keys {
-		if !seen[k] {
-			seen[k] = true
-			out = append(out, k)
-		}
-	}
-	return out
-}
-
-func (s *Store) scanUser(row *sql.Row) (*User, error) {
-	var (
-		u         User
-		roles     string
-		createdAt int64
-		updatedAt int64
-	)
-	err := row.Scan(&u.ID, &u.Username, &u.Name, &roles, &u.PasswordHash, &createdAt, &updatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("scan user: %w", err)
-	}
-	if err := json.Unmarshal([]byte(roles), &u.Roles); err != nil {
-		return nil, fmt.Errorf("unmarshal roles: %w", err)
-	}
-	u.CreatedAt = time.Unix(createdAt, 0).UTC()
-	u.UpdatedAt = time.Unix(updatedAt, 0).UTC()
-	return &u, nil
-}
-
-// CreateRefreshToken persists a hashed opaque refresh token.
-func (s *Store) CreateRefreshToken(rt RefreshToken) error {
-	var revokedAt any
-	if rt.RevokedAt != nil {
-		revokedAt = rt.RevokedAt.Unix()
-	}
-	_, err := s.db.Exec(
-		`INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, revoked_at, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
-		rt.ID, rt.UserID, rt.TokenHash, rt.ExpiresAt.Unix(), revokedAt, rt.CreatedAt.Unix(),
-	)
-	if err != nil {
-		return fmt.Errorf("insert refresh token: %w", err)
-	}
-	return nil
-}
-
-// RefreshTokenByHash fetches a refresh token row by its stored hash.
-func (s *Store) RefreshTokenByHash(hash string) (*RefreshToken, error) {
-	var (
-		rt        RefreshToken
-		expiresAt int64
-		revokedAt *int64
-		createdAt int64
-	)
-	err := s.db.QueryRow(
-		`SELECT id, user_id, token_hash, expires_at, revoked_at, created_at
-		 FROM refresh_tokens WHERE token_hash = ?`, hash,
-	).Scan(&rt.ID, &rt.UserID, &rt.TokenHash, &expiresAt, &revokedAt, &createdAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("scan refresh token: %w", err)
-	}
-	rt.ExpiresAt = time.Unix(expiresAt, 0).UTC()
-	if revokedAt != nil {
-		t := time.Unix(*revokedAt, 0).UTC()
-		rt.RevokedAt = &t
-	}
-	rt.CreatedAt = time.Unix(createdAt, 0).UTC()
-	return &rt, nil
-}
-
-// RevokeRefreshToken marks a refresh token revoked. It returns ErrNotFound when
-// the token does not exist and ErrAlreadyRevoked when it was already revoked.
-func (s *Store) RevokeRefreshToken(id string, now time.Time) error {
-	var current *int64
-	err := s.db.QueryRow(`SELECT revoked_at FROM refresh_tokens WHERE id = ?`, id).Scan(&current)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("select revoked_at: %w", err)
-	}
-	if current != nil {
-		return ErrAlreadyRevoked
-	}
-	if _, err := s.db.Exec(`UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?`, now.Unix(), id); err != nil {
-		return fmt.Errorf("revoke refresh token: %w", err)
 	}
 	return nil
 }

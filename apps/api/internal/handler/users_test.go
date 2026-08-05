@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // GOAL-011 S2 · users list/detail expose the seeded admin without password_hash.
@@ -268,18 +268,18 @@ func TestUsersPasswordWriteOnly(t *testing.T) {
 func TestUsersRoleAssignmentAuthorization(t *testing.T) {
 	env := newAuthTestEnv(t)
 	now := time.Now().UTC()
-	if _, err := env.st.CreateRoleWithGrants(
+	if _, err := env.authRepository.CreateRoleWithGrants(
 		"manager", "User manager",
 		[]string{"roles.assign", "roles.read", "users.read", "users.write"}, nil, now,
 	); err != nil {
 		t.Fatalf("create manager role: %v", err)
 	}
-	if _, err := env.st.CreateRoleWithGrants(
+	if _, err := env.authRepository.CreateRoleWithGrants(
 		"writer", "Role writer", []string{"roles.write", "users.read"}, nil, now,
 	); err != nil {
 		t.Fatalf("create writer role: %v", err)
 	}
-	if _, err := env.st.CreateRoleWithGrants(
+	if _, err := env.authRepository.CreateRoleWithGrants(
 		"users-writer", "Users writer", []string{"users.read", "users.write"}, nil, now,
 	); err != nil {
 		t.Fatalf("create users-writer role: %v", err)
@@ -436,17 +436,17 @@ func TestUsersOperationLogEvents(t *testing.T) {
 		t.Fatalf("delete: %d %s", rr.Code, rr.Body.String())
 	}
 
-	ops, err := env.st.ListOperations(10)
+	ops, err := env.operations.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}
-	var userOps []store.Operation
+	var userOps []operationlog.Operation
 	for _, op := range ops {
 		if strings.HasPrefix(op.Event, "users.") {
 			userOps = append(userOps, op)
 		}
 	}
-	want := []string{store.EventUserDelete, store.EventUserUpdate, store.EventUserCreate}
+	want := []string{operationlog.EventUserDelete, operationlog.EventUserUpdate, operationlog.EventUserCreate}
 	if len(userOps) != len(want) {
 		t.Fatalf("user ops = %d, want %d", len(userOps), len(want))
 	}
@@ -468,7 +468,7 @@ func TestUsersOperationLogEvents(t *testing.T) {
 		if op.Detail != nil && strings.Contains(*op.Detail, "password") {
 			t.Fatalf("detail leaked a secret: %v", *op.Detail)
 		}
-		if op.Event == store.EventUserDelete {
+		if op.Event == operationlog.EventUserDelete {
 			if op.Detail != nil {
 				t.Fatalf("delete detail = %q, want nil", *op.Detail)
 			}

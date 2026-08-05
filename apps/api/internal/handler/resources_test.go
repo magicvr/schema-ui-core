@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 // memEntity is an in-memory ResourceEntity used to prove the generic factory
@@ -41,7 +40,7 @@ func (e *memEntity) List(_ resourceFilter) ([]map[string]any, int, error) {
 func (e *memEntity) Get(id string) (map[string]any, error) {
 	row, ok := e.rows[id]
 	if !ok {
-		return nil, store.ErrNotFound
+		return nil, errResourceNotFound
 	}
 	return row, nil
 }
@@ -60,7 +59,7 @@ func (e *memEntity) Create(body map[string]any, id string, now time.Time, _ acco
 func (e *memEntity) Update(id string, body map[string]any, now time.Time, _ account.User) (map[string]any, error) {
 	row, ok := e.rows[id]
 	if !ok {
-		return nil, store.ErrNotFound
+		return nil, errResourceNotFound
 	}
 	if v, ok := body["title"]; ok {
 		row["title"] = v
@@ -71,7 +70,7 @@ func (e *memEntity) Update(id string, body map[string]any, now time.Time, _ acco
 
 func (e *memEntity) Delete(id string, _ account.User) error {
 	if _, ok := e.rows[id]; !ok {
-		return store.ErrNotFound
+		return errResourceNotFound
 	}
 	delete(e.rows, id)
 	return nil
@@ -83,14 +82,14 @@ func (e *memEntity) Delete(id string, _ account.User) error {
 func catalogResource(entity ResourceEntity) Resource {
 	next := 0
 	return Resource{
-		ID:              "catalog",
-		Path:            "/api/catalog",
-		Listable:        true,
-		SortFields:      []string{"sku", "title"},
-		QSearch:         false,
-		Entity:          entity,
-		CreateFields:    []string{"sku", "title"},
-		PatchFields:     []string{"title"},
+		ID:           "catalog",
+		Path:         "/api/catalog",
+		Listable:     true,
+		SortFields:   []string{"sku", "title"},
+		QSearch:      false,
+		Entity:       entity,
+		CreateFields: []string{"sku", "title"},
+		PatchFields:  []string{"title"},
 		// GOAL-011 S3: reuse the users grants (legacy demo keys retired by 0006).
 		PermissionRead:  "users.read",
 		PermissionWrite: "users.write",

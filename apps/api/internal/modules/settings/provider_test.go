@@ -13,11 +13,13 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
-func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
+func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store, *settingsrepository.Repository, *operationlog.Repository) {
 	t.Helper()
 	hash, err := auth.HashPassword("test-password", 4)
 	if err != nil {
@@ -29,7 +31,7 @@ func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	a := auth.New([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, st, false)
-	return a, st
+	return a, st, settingsrepository.New(st), operationlog.NewRepository(st)
 }
 
 func planWithSettings(t *testing.T) kernel.Plan {
@@ -50,8 +52,8 @@ func planWithSettings(t *testing.T) kernel.Plan {
 }
 
 func TestSettingsProviderRegistersSurfaces(t *testing.T) {
-	a, st := newTestEnv(t)
-	set, err := kernel.RegisterContributions(context.Background(), planWithSettings(t), []kernel.Provider{New(a, st)})
+	a, _, settings, operations := newTestEnv(t)
+	set, err := kernel.RegisterContributions(context.Background(), planWithSettings(t), []kernel.Provider{New(a, settings, operations)})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
@@ -70,14 +72,14 @@ func TestSettingsProviderRegistersSurfaces(t *testing.T) {
 // TestSettingsProviderServesBrandingAndAuth verifies public branding works and
 // settings list requires auth on the provider finalize path (C4.1).
 func TestSettingsProviderServesBrandingAndAuth(t *testing.T) {
-	a, st := newTestEnv(t)
+	a, st, settings, operations := newTestEnv(t)
 	plan := planWithSettings(t)
-	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{New(a, st)})
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{New(a, settings, operations)})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.Register(mux, a, st, plan)
+	handler.Register(mux, a, st, operations, plan)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}

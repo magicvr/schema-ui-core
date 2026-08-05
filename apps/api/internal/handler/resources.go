@@ -24,7 +24,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 // Body and page-size bounds shared by every registered resource (I-010-001 §4);
@@ -103,14 +102,18 @@ const (
 // errReadOnlyResource is returned by entity write methods on read-only resources
 // (e.g. operations activity log). The factory never mounts write routes when
 // Resource.ReadOnly is true, so this is a defensive fallback.
-var errReadOnlyResource = errors.New("resource is read-only")
+var (
+	errReadOnlyResource = errors.New("resource is read-only")
+	errResourceNotFound = errors.New("resource not found")
+	errResourceExists   = errors.New("resource id already exists")
+)
 
 // Resource describes a schema-driven CRUD resource registered with the generic
 // handler factory (I-010-001 §4). users and roles are registered instances.
 type Resource struct {
-	ID           string         // resource id, e.g. "users"
-	Path         string         // mount path, e.g. "/api/users"
-	Listable     bool           // expose GET {path} (list)
+	ID       string // resource id, e.g. "users"
+	Path     string // mount path, e.g. "/api/users"
+	Listable bool   // expose GET {path} (list)
 	// ReadOnly skips POST/PATCH/DELETE mounts (activity/operations).
 	ReadOnly     bool
 	SortFields   []string       // whitelist; empty = not sortable
@@ -234,7 +237,7 @@ func notFoundCode(res Resource) string {
 }
 
 // writeEntityError maps an entity error to the wire in the frozen priority order
-// (I-011-001 §7.3): DomainError verbatim, store.ErrNotFound → 404 with the
+// (I-011-001 §7.3): DomainError verbatim, errResourceNotFound → 404 with the
 // resource's NOT_FOUND code, else INTERNAL. Returns true when a response was
 // written (err != nil).
 func writeEntityError(w http.ResponseWriter, res Resource, err error, action string) bool {
@@ -246,7 +249,7 @@ func writeEntityError(w http.ResponseWriter, res Resource, err error, action str
 		writeError(w, de.Status, de.Code, de.Message)
 		return true
 	}
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, errResourceNotFound) {
 		writeError(w, http.StatusNotFound, notFoundCode(res), "no "+res.ID+" with that id")
 		return true
 	}
@@ -479,7 +482,7 @@ func (h *resourceHandler) create() http.Handler {
 			if err == nil {
 				break
 			}
-			if errors.Is(err, store.ErrRecordExists) {
+			if errors.Is(err, errResourceExists) {
 				continue // PK collision: retry with a fresh id
 			}
 			writeEntityError(w, h.res, err, "create")

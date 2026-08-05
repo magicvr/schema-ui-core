@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // createR2Fixture builds a database shaped exactly like the pre-migration R2
@@ -113,6 +115,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
+	authRepository := authsession.NewRepository(st)
+	operationRepository := operationlog.NewRepository(st)
 	applied, err := st.appliedMigrations()
 	if err != nil {
 		t.Fatalf("applied: %v", err)
@@ -135,14 +139,14 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatal("records table must not exist after fresh migration (0006)")
 	}
 	// The expanded operation_log CHECK accepts users.* and settings.update (0008).
-	if err := st.RecordOperation(Operation{
-		ID: "op-fresh", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
+	if err := operationRepository.RecordOperation(operationlog.Operation{
+		ID: "op-fresh", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
 		t.Fatalf("users.create on fresh operation_log: %v", err)
 	}
-	if err := st.RecordOperation(Operation{
-		ID: "op-settings", Event: EventSettingsUpdate, ActorID: "user-admin", ActorName: "Admin",
+	if err := operationRepository.RecordOperation(operationlog.Operation{
+		ID: "op-settings", Event: operationlog.EventSettingsUpdate, ActorID: "user-admin", ActorName: "Admin",
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
 		t.Fatalf("settings.update on fresh operation_log: %v", err)
@@ -151,7 +155,7 @@ func TestMigrateFreshDB(t *testing.T) {
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
 		t.Fatalf("fresh DB produced snapshots %v", snaps)
 	}
-	u, err := st.UserByUsername("admin")
+	u, err := authRepository.UserByUsername("admin")
 	if err != nil {
 		t.Fatalf("seeded admin: %v", err)
 	}
@@ -168,7 +172,8 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("reopen: %v", err)
 	}
 	defer st2.Close()
-	u2, err := st2.UserByUsername("admin")
+	authRepository2 := authsession.NewRepository(st2)
+	u2, err := authRepository2.UserByUsername("admin")
 	if err != nil {
 		t.Fatalf("admin after reopen: %v", err)
 	}
@@ -195,6 +200,7 @@ func TestMigrateExistingR2DB(t *testing.T) {
 		t.Fatalf("open existing R2 DB: %v", err)
 	}
 	defer st.Close()
+	authRepository := authsession.NewRepository(st)
 
 	// V-REC-01 · the pre-v0002 snapshot is a single recoverable copy.
 	snaps, err := filepath.Glob(path + ".pre-v0002-*.sqlite")
@@ -227,7 +233,7 @@ func TestMigrateExistingR2DB(t *testing.T) {
 	if err := st.verifyIntegrity(); err != nil {
 		t.Fatalf("post-migration integrity: %v", err)
 	}
-	u, err := st.UserByID("user-admin")
+	u, err := authRepository.UserByID("user-admin")
 	if err != nil {
 		t.Fatalf("user after upgrade: %v", err)
 	}
@@ -248,7 +254,7 @@ func TestMigrateExistingR2DB(t *testing.T) {
 	if err := st.db.QueryRow(`SELECT key FROM roles WHERE id = 'role-admin'`).Scan(&key); err != nil || key != "admin" {
 		t.Fatalf("role-admin key = %q, err %v", key, err)
 	}
-	rt, err := st.RefreshTokenByHash("abc123")
+	rt, err := authRepository.RefreshTokenByHash("abc123")
 	if err != nil {
 		t.Fatalf("refresh token after upgrade: %v", err)
 	}
@@ -288,16 +294,17 @@ func TestMigrateExistingR2DuplicateRolesReadable(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	defer st.Close()
+	authRepository := authsession.NewRepository(st)
 
 	want := []string{"admin", "editor"}
-	u, err := st.UserByID("user-admin")
+	u, err := authRepository.UserByID("user-admin")
 	if err != nil {
 		t.Fatalf("UserByID after migration: %v", err)
 	}
 	if !reflect.DeepEqual(u.Roles, want) {
 		t.Fatalf("UserByID roles = %v, want %v (deduped, sorted by key)", u.Roles, want)
 	}
-	u2, err := st.UserByUsername("admin")
+	u2, err := authRepository.UserByUsername("admin")
 	if err != nil {
 		t.Fatalf("UserByUsername after migration: %v", err)
 	}

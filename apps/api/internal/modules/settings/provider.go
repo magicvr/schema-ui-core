@@ -10,22 +10,24 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 )
 
 const ModuleID = migration.ModuleID
 
 // Provider implements kernel.Provider for admin.settings.
 type Provider struct {
-	a  *auth.Authenticator
-	st *store.Store
+	a          *auth.Authenticator
+	repository *settingsrepository.Repository
+	operations operationlog.Recorder
 }
 
 // New constructs the settings provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, st *store.Store) *Provider {
-	return &Provider{a: a, st: st}
+func New(a *auth.Authenticator, repository *settingsrepository.Repository, operations operationlog.Recorder) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -52,7 +54,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.SettingsRoutes(p.a, p.st, ModuleID) {
+	for _, route := range handler.SettingsRoutes(p.a, p.repository, p.operations, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

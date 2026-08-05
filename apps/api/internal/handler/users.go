@@ -20,7 +20,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // passwordHashCost is the bcrypt cost for users resource password hashing
@@ -31,12 +31,6 @@ const (
 	minPasswordBytes = 8
 	maxPasswordBytes = 72
 )
-
-// OperationRecorder is the temporary cross-cutting writer boundary. The C6.2
-// operationlog slice replaces its store-owned payload with the module writer.
-type OperationRecorder interface {
-	RecordOperation(store.Operation) error
-}
 
 // UsersRepository is the account-domain persistence required by the users
 // resource surface.
@@ -49,7 +43,7 @@ type UsersRepository interface {
 	PermissionsForRoles([]string) ([]string, error)
 }
 
-func usersResource(repository UsersRepository, operations OperationRecorder) Resource {
+func usersResource(repository UsersRepository, operations operationlog.Recorder) Resource {
 	return Resource{
 		ID:              "users",
 		Path:            "/api/users",
@@ -71,7 +65,7 @@ func usersResource(repository UsersRepository, operations OperationRecorder) Res
 
 // UsersResource exposes the users Resource descriptor to module providers
 // (R4 C3.2).
-func UsersResource(repository UsersRepository, operations OperationRecorder) Resource {
+func UsersResource(repository UsersRepository, operations operationlog.Recorder) Resource {
 	return usersResource(repository, operations)
 }
 
@@ -282,7 +276,7 @@ func (e *usersEntity) authorizeRoleAssignment(actor account.User, roles []string
 func mapUserStoreError(err error) error {
 	switch {
 	case errors.Is(err, authsession.ErrNotFound):
-		return store.ErrNotFound
+		return errResourceNotFound
 	case errors.Is(err, authsession.ErrUsernameTaken):
 		return &DomainError{Status: 409, Code: "USERNAME_TAKEN", Message: "username already exists"}
 	case errors.Is(err, authsession.ErrLastAdmin):
@@ -298,19 +292,19 @@ func mapUserStoreError(err error) error {
 
 // usersOnWrite appends operation-log rows for users write endpoints
 // (I-011-001 §5). Best-effort: a logging failure never fails the write.
-func usersOnWrite(recorder OperationRecorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
+func usersOnWrite(recorder operationlog.Recorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
 	return func(_ context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time) {
-		event := store.EventUserDelete
+		event := operationlog.EventUserDelete
 		detail := ""
 		switch kind {
 		case writeCreate:
-			event = store.EventUserCreate
+			event = operationlog.EventUserCreate
 			detail = `{"username":` + jsonQuote(stringField(row, "username")) + `}`
 		case writeUpdate:
-			event = store.EventUserUpdate
+			event = operationlog.EventUserUpdate
 			detail = `{"username":` + jsonQuote(stringField(row, "username")) + `}`
 		}
-		op := store.Operation{
+		op := operationlog.Operation{
 			ID:        newOperationID(),
 			Event:     event,
 			ActorID:   user.ID,
@@ -323,8 +317,10 @@ func usersOnWrite(recorder OperationRecorder) func(context.Context, account.User
 		if detail != "" {
 			op.Detail = &detail
 		}
-		if err := recorder.RecordOperation(op); err != nil {
-			slog.Error("operation log write failed", "event", event, "err", err)
+		if recorder != nil {
+			if err := recorder.RecordOperation(op); err != nil {
+				slog.Error("operation log write failed", "event", event, "err", err)
+			}
 		}
 	}
 }

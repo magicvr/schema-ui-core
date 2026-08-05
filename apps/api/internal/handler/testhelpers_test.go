@@ -12,6 +12,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -20,9 +22,12 @@ import (
 // Authenticator. Tests that only exercise public routes can use env.mux
 // directly; write-route tests log in first to obtain a Bearer access token.
 type authTestEnv struct {
-	mux *http.ServeMux
-	a   *auth.Authenticator
-	st  *store.Store
+	mux            *http.ServeMux
+	a              *auth.Authenticator
+	st             *store.Store
+	authRepository *authsession.Repository
+	operations     *operationlog.Repository
+	settings       *settingsrepository.Repository
 }
 
 const (
@@ -57,11 +62,13 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	a := auth.New([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, st, devSession)
-	repository := authsession.NewRepository(st)
+	authRepository := authsession.NewRepository(st)
+	operations := operationlog.NewRepository(st)
+	settings := settingsrepository.New(st)
+	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, authRepository, devSession)
 	mux := http.NewServeMux()
 	plan := testAdminPlan(t)
-	Register(mux, a, st, plan)
+	Register(mux, a, st, operations, plan)
 	// R6 C6.1: test env mounts the same resource-factory routes the module
 	// providers register (behavior-identical to the production finalize path);
 	// dead handler adapters MountProviderRoutes/RegisterSettings/RegisterActivity
@@ -72,14 +79,19 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(SettingsRoutes(a, st, "admin.settings"))
-	mountRoutes(ResourceRoutes(a, operationsResource(st), "admin.activity"))
-	mountRoutes(resourceRoutes(a, usersResource(repository, st), "admin.users"))
-	mountRoutes(resourceRoutes(a, rolesResource(repository, st), "admin.roles"))
+	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings"))
+	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
+	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
+	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	// R5 C5.1: schema pages register separately; test path uses the module
 	// contributor table (nil override).
 	RegisterSchemas(mux, plan, nil)
-	return &authTestEnv{mux: mux, a: a, st: st}
+	return &authTestEnv{
+		mux: mux, a: a, st: st,
+		authRepository: authRepository,
+		operations:     operations,
+		settings:       settings,
+	}
 }
 
 func testAdminPlan(t *testing.T) kernel.Plan {
@@ -122,7 +134,7 @@ func (e *authTestEnv) addUser(t *testing.T, username, password string, roles []s
 		t.Fatalf("hash %s password: %v", username, err)
 	}
 	now := time.Now().UTC()
-	if err := e.st.CreateUser(store.User{
+	if err := e.authRepository.CreateUser(authsession.User{
 		ID:           "user-" + username,
 		Username:     username,
 		Name:         username,

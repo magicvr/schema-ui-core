@@ -4,87 +4,11 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 const legacyRecordCreateEvent = "records.create"
-
-// R5 S6 (I-008-003) · RecordOperation appends rows; ListOperations returns the
-// most recent N ordered by created_at DESC, id DESC; limit <= 0 is empty.
-func TestOperationLogAppendAndList(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "oplog.db"), "admin", "hash", true)
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	defer st.Close()
-
-	if got, err := st.ListOperations(10); err != nil || len(got) != 0 {
-		t.Fatalf("empty ListOperations = %v (err %v), want empty", got, err)
-	}
-
-	base := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
-	rid := "rec-9"
-	detail := `{"name":"Acme Console"}`
-	ops := []Operation{
-		{ID: "op-1", Event: legacyRecordCreateEvent, ActorID: "user-admin", ActorName: "Admin", RecordID: &rid, Detail: &detail, CreatedAt: base},
-		{ID: "op-2", Event: EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(time.Second)},
-		{ID: "op-3", Event: EventAuthLogout, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(2 * time.Second)},
-	}
-	for _, op := range ops {
-		if err := st.RecordOperation(op); err != nil {
-			t.Fatalf("RecordOperation(%s): %v", op.ID, err)
-		}
-	}
-
-	// Ordering: created_at DESC, id DESC.
-	got, err := st.ListOperations(10)
-	if err != nil {
-		t.Fatalf("ListOperations: %v", err)
-	}
-	if len(got) != 3 {
-		t.Fatalf("len = %d, want 3", len(got))
-	}
-	if got[0].ID != "op-3" || got[1].ID != "op-2" || got[2].ID != "op-1" {
-		t.Fatalf("order = %v, want [op-3 op-2 op-1]", []string{got[0].ID, got[1].ID, got[2].ID})
-	}
-	if got[2].Event != legacyRecordCreateEvent || got[2].ActorName != "Admin" {
-		t.Fatalf("op-1 = %+v", got[2])
-	}
-	if got[2].RecordID == nil || *got[2].RecordID != "rec-9" {
-		t.Fatalf("op-1 record_id = %v, want rec-9", got[2].RecordID)
-	}
-	if got[2].Detail == nil || *got[2].Detail != detail {
-		t.Fatalf("op-1 detail = %v, want %s", got[2].Detail, detail)
-	}
-	if !got[2].CreatedAt.Equal(base) {
-		t.Fatalf("op-1 created_at = %v, want %v", got[2].CreatedAt, base)
-	}
-
-	// limit truncation.
-	got2, err := st.ListOperations(2)
-	if err != nil {
-		t.Fatalf("ListOperations(2): %v", err)
-	}
-	if len(got2) != 2 || got2[0].ID != "op-3" || got2[1].ID != "op-2" {
-		t.Fatalf("ListOperations(2) = %v", got2)
-	}
-	if got3, err := st.ListOperations(0); err != nil || len(got3) != 0 {
-		t.Fatalf("ListOperations(0) = %v (err %v), want empty", got3, err)
-	}
-}
-
-// R5 S6 (I-008-003 §3) · the operation_log event CHECK rejects unknown events.
-func TestOperationLogRejectsUnknownEvent(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "oplog-check.db"), "admin", "hash", true)
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	defer st.Close()
-
-	bad := Operation{ID: "op-x", Event: "records.purge", ActorID: "user-admin", ActorName: "Admin", CreatedAt: time.Now().UTC()}
-	if err := st.RecordOperation(bad); err == nil {
-		t.Fatal("expected CHECK violation for unknown event")
-	}
-}
 
 // R5 S6 (I-008-003 §3) · an existing v3 ledger upgrades to 0004 (operation_log)
 // with a recoverable pre-v0004 snapshot when the DB has data.
@@ -161,7 +85,7 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	}
 	legacy := []legacyRow{
 		{"op-old-1", legacyRecordCreateEvent, "user-admin", "Admin", "rec-9", `{"name":"Acme"}`, 1700000000000},
-		{"op-old-2", EventAuthLogin, "user-admin", "Admin", "", `{"username":"admin"}`, 1700000001000},
+		{"op-old-2", operationlog.EventAuthLogin, "user-admin", "Admin", "", `{"username":"admin"}`, 1700000001000},
 	}
 	for _, r := range legacy {
 		var recordID, detail any
@@ -187,15 +111,16 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("upgrade v4 through current migrations: %v", err)
 	}
+	repository := operationlog.NewRepository(st)
 
-	got, err := st.ListOperations(10)
+	got, err := repository.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations: %v", err)
 	}
 	if len(got) != 2 {
 		t.Fatalf("rows after 0005 = %d, want 2 preserved", len(got))
 	}
-	if got[0].ID != "op-old-2" || got[0].Event != EventAuthLogin || got[0].ActorName != "Admin" {
+	if got[0].ID != "op-old-2" || got[0].Event != operationlog.EventAuthLogin || got[0].ActorName != "Admin" {
 		t.Fatalf("op-old-2 = %+v", got[0])
 	}
 	if got[1].ID != "op-old-1" || got[1].Event != legacyRecordCreateEvent || got[1].RecordID == nil || *got[1].RecordID != "rec-9" {
@@ -203,8 +128,8 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	}
 	userRecordID := "user-auditor"
 	userDetail := `{"username":"auditor"}`
-	if err := st.RecordOperation(Operation{
-		ID: "op-new-user", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
+	if err := repository.RecordOperation(operationlog.Operation{
+		ID: "op-new-user", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin",
 		RecordID: &userRecordID, Detail: &userDetail,
 		CreatedAt: time.UnixMilli(1700000002000).UTC(),
 	}); err != nil {
@@ -212,8 +137,8 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	}
 	roleRecordID := "role-auditor"
 	roleDetail := `{"key":"auditor"}`
-	if err := st.RecordOperation(Operation{
-		ID: "op-new-role", Event: EventRoleCreate, ActorID: "user-admin", ActorName: "Admin",
+	if err := repository.RecordOperation(operationlog.Operation{
+		ID: "op-new-role", Event: operationlog.EventRoleCreate, ActorID: "user-admin", ActorName: "Admin",
 		RecordID: &roleRecordID, Detail: &roleDetail,
 		CreatedAt: time.UnixMilli(1700000003000).UTC(),
 	}); err != nil {
@@ -227,17 +152,18 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 		t.Fatalf("reopen migrated store: %v", err)
 	}
 	defer st.Close()
-	got, err = st.ListOperations(10)
+	repository = operationlog.NewRepository(st)
+	got, err = repository.ListOperations(10)
 	if err != nil {
 		t.Fatalf("ListOperations after reopen: %v", err)
 	}
 	if len(got) != 4 {
 		t.Fatalf("rows after reopen = %d, want 4 (2 legacy + users + roles)", len(got))
 	}
-	if got[0].ID != "op-new-role" || got[0].Event != EventRoleCreate || got[0].RecordID == nil || *got[0].RecordID != roleRecordID || got[0].Detail == nil || *got[0].Detail != roleDetail {
+	if got[0].ID != "op-new-role" || got[0].Event != operationlog.EventRoleCreate || got[0].RecordID == nil || *got[0].RecordID != roleRecordID || got[0].Detail == nil || *got[0].Detail != roleDetail {
 		t.Fatalf("roles event after reopen = %+v", got[0])
 	}
-	if got[1].ID != "op-new-user" || got[1].Event != EventUserCreate || got[1].RecordID == nil || *got[1].RecordID != userRecordID || got[1].Detail == nil || *got[1].Detail != userDetail {
+	if got[1].ID != "op-new-user" || got[1].Event != operationlog.EventUserCreate || got[1].RecordID == nil || *got[1].RecordID != userRecordID || got[1].Detail == nil || *got[1].Detail != userDetail {
 		t.Fatalf("users event after reopen = %+v", got[1])
 	}
 	if got[2].ID != "op-old-2" || got[3].ID != "op-old-1" {

@@ -19,6 +19,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -32,6 +34,18 @@ func compositionCount(t *testing.T, st *store.Store, query string, args ...any) 
 		t.Fatalf("query %q: %v", query, err)
 	}
 	return count
+}
+
+func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
+	return newMux(
+		a,
+		st,
+		authsession.NewRepository(st),
+		operationlog.NewRepository(st),
+		settingsrepository.New(st),
+		plan,
+		gate,
+	)
 }
 
 func TestResolvePlanUsesConfiguredProfileAndRejectsMissingDependencies(t *testing.T) {
@@ -68,7 +82,7 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 	}
 	defer st.Close()
 	a := auth.New([]byte("test-secret"), 0, 0, st, false)
-	mux, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{})
+	mux, err := testMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +159,7 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 			}
 			defer st.Close()
 			a := auth.New([]byte("test-secret"), 0, 0, st, false)
-			mux, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{})
+			mux, err := testMux(a, st, plan, &readinessGate{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -209,7 +223,7 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 			}
 			defer st.Close()
 			a := auth.New([]byte("test-secret"), 0, 0, st, false)
-			if _, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{}); err != nil {
+			if _, err := testMux(a, st, plan, &readinessGate{}); err != nil {
 				t.Fatal(err)
 			}
 			if got := compositionCount(t, st, `SELECT COUNT(*) FROM permissions`); got != tt.wantPermissions {
@@ -240,14 +254,14 @@ func TestSystemDataReconcilePreservesDisabledProfileData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := newMux(a, st, authsession.NewRepository(st), adminPlan, &readinessGate{}); err != nil {
+	if _, err := testMux(a, st, adminPlan, &readinessGate{}); err != nil {
 		t.Fatal(err)
 	}
 	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := newMux(a, st, authsession.NewRepository(st), mvpPlan, &readinessGate{}); err != nil {
+	if _, err := testMux(a, st, mvpPlan, &readinessGate{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -275,14 +289,16 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 	updatedAt := time.Date(2026, 8, 5, 0, 0, 0, 0, time.UTC)
-	if _, err := st.UpdateSiteSettings("Recovered Admin", "/assets/logo.svg", updatedAt); err != nil {
+	settingsRepository := settingsrepository.New(st)
+	operationsRepository := operationlog.NewRepository(st)
+	if _, err := settingsRepository.UpdateSiteSettings("Recovered Admin", "/assets/logo.svg", updatedAt); err != nil {
 		t.Fatalf("update settings: %v", err)
 	}
 	recordID := "default"
 	detail := `{"siteTitle":"Recovered Admin"}`
-	if err := st.RecordOperation(store.Operation{
+	if err := operationsRepository.RecordOperation(operationlog.Operation{
 		ID:        "r3-settings-update",
-		Event:     store.EventSettingsUpdate,
+		Event:     operationlog.EventSettingsUpdate,
 		ActorID:   "user-admin",
 		ActorName: "Admin",
 		RecordID:  &recordID,
@@ -311,7 +327,8 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.UpdateSiteSettings("Corrupted Admin", "/assets/bad.svg", updatedAt.Add(time.Minute)); err != nil {
+	settingsRepository = settingsrepository.New(st)
+	if _, err := settingsRepository.UpdateSiteSettings("Corrupted Admin", "/assets/bad.svg", updatedAt.Add(time.Minute)); err != nil {
 		t.Fatalf("mutate failed rollout: %v", err)
 	}
 	if err := st.Close(); err != nil {
@@ -328,14 +345,16 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	settings, err := st.GetSiteSettings()
+	settingsRepository = settingsrepository.New(st)
+	operationsRepository = operationlog.NewRepository(st)
+	settings, err := settingsRepository.GetSiteSettings()
 	if err != nil {
 		t.Fatalf("read retained settings: %v", err)
 	}
 	if settings.SiteTitle != "Recovered Admin" || settings.LogoURL != "/assets/logo.svg" {
 		t.Fatalf("retained settings = %+v", settings)
 	}
-	operations, total, err := st.ListOperationsFiltered(store.OperationFilter{
+	operations, total, err := operationsRepository.ListOperationsFiltered(operationlog.OperationFilter{
 		Q: "settings.update", Sort: "createdAt", Order: "desc", Page: 1, PageSize: 10,
 	})
 	if err != nil {
@@ -346,9 +365,9 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	}
 	recoveryRecordID := "recovery-check"
 	recoveryDetail := `{"profile":"mvp","restored":true}`
-	if err := st.RecordOperation(store.Operation{
+	if err := operationsRepository.RecordOperation(operationlog.Operation{
 		ID:        "r3-recovery-check",
-		Event:     store.EventSettingsUpdate,
+		Event:     operationlog.EventSettingsUpdate,
 		ActorID:   "user-admin",
 		ActorName: "Admin",
 		RecordID:  &recoveryRecordID,
@@ -357,7 +376,7 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("write operation log after recovery: %v", err)
 	}
-	operations, total, err = st.ListOperationsFiltered(store.OperationFilter{
+	operations, total, err = operationsRepository.ListOperationsFiltered(operationlog.OperationFilter{
 		Q: "settings.update", Sort: "createdAt", Order: "desc", Page: 1, PageSize: 10,
 	})
 	if err != nil {
@@ -382,7 +401,7 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	a := auth.New([]byte("test-secret"), 0, 0, st, false)
 	gate := &readinessGate{}
 	gate.setReady()
-	mux, err := newMux(a, st, authsession.NewRepository(st), plan, gate)
+	mux, err := testMux(a, st, plan, gate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -501,7 +520,7 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 
 	// Gate unset → readyz unavailable even though the store pings.
 	notReady := httptest.NewRecorder()
-	mux, err := newMux(a, st, authsession.NewRepository(st), plan, &readinessGate{})
+	mux, err := testMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -513,7 +532,7 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 	// Gate set → readyz ok.
 	readyGate := &readinessGate{}
 	readyGate.setReady()
-	mux, err = newMux(a, st, authsession.NewRepository(st), plan, readyGate)
+	mux, err = testMux(a, st, plan, readyGate)
 	if err != nil {
 		t.Fatal(err)
 	}

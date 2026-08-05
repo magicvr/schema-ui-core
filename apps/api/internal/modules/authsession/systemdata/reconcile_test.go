@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -75,10 +76,11 @@ func queryInt(t *testing.T, st *store.Store, query string, args ...any) int {
 
 func TestBootstrapAndReconcileAreSeparateAndIdempotent(t *testing.T) {
 	st := openTestStore(t)
+	repository := authsession.NewRepository(st)
 	if !st.WasFresh() {
 		t.Fatal("new database must be marked fresh")
 	}
-	if _, err := st.UserByUsername("admin"); !errors.Is(err, store.ErrNotFound) {
+	if _, err := repository.UserByUsername("admin"); !errors.Is(err, authsession.ErrNotFound) {
 		t.Fatalf("migration-only open user = %v, want no bootstrap admin", err)
 	}
 	if err := Bootstrap(context.Background(), st, "admin", "hash-v1"); err != nil {
@@ -121,7 +123,7 @@ func TestBootstrapAndReconcileAreSeparateAndIdempotent(t *testing.T) {
 	if err := Bootstrap(context.Background(), st, "admin", "hash-v2"); err != nil {
 		t.Fatalf("repeat bootstrap: %v", err)
 	}
-	admin, err := st.UserByUsername("admin")
+	admin, err := repository.UserByUsername("admin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,6 +194,7 @@ func TestReconcilePreservesUserFieldsAndDisabledProfileData(t *testing.T) {
 
 func TestReconcileDetectsDriftAndAppliesVersionedGrantPolicy(t *testing.T) {
 	st := openTestStore(t)
+	repository := authsession.NewRepository(st)
 	if err := Bootstrap(context.Background(), st, "admin", "hash"); err != nil {
 		t.Fatal(err)
 	}
@@ -201,13 +204,13 @@ func TestReconcileDetectsDriftAndAppliesVersionedGrantPolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC()
-	if err := st.CreateUser(store.User{
+	if err := repository.CreateUser(authsession.User{
 		ID: "user-viewer", Username: "viewer", Name: "Viewer", Roles: []string{"viewer"},
 		PasswordHash: "hash", CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	viewerPermissions, err := st.PermissionsForUser("user-viewer")
+	viewerPermissions, err := repository.PermissionsForUser("user-viewer")
 	if err != nil || !reflect.DeepEqual(viewerPermissions, []string{"users.read"}) {
 		t.Fatalf("viewer permissions = %v, err %v", viewerPermissions, err)
 	}
@@ -224,7 +227,7 @@ func TestReconcileDetectsDriftAndAppliesVersionedGrantPolicy(t *testing.T) {
 	if err := Reconcile(context.Background(), st, []kernel.PermissionContribution{upgraded}, nil); err != nil {
 		t.Fatalf("versioned policy upgrade: %v", err)
 	}
-	viewerPermissions, err = st.PermissionsForUser("user-viewer")
+	viewerPermissions, err = repository.PermissionsForUser("user-viewer")
 	if err != nil || len(viewerPermissions) != 0 {
 		t.Fatalf("viewer permissions after policy upgrade = %v, err %v", viewerPermissions, err)
 	}

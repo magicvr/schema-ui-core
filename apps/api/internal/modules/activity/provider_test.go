@@ -13,11 +13,12 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
-func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
+func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store, *operationlog.Repository) {
 	t.Helper()
 	hash, err := auth.HashPassword("test-password", 4)
 	if err != nil {
@@ -29,7 +30,7 @@ func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	a := auth.New([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, st, false)
-	return a, st
+	return a, st, operationlog.NewRepository(st)
 }
 
 func planWithActivity(t *testing.T) kernel.Plan {
@@ -50,8 +51,8 @@ func planWithActivity(t *testing.T) kernel.Plan {
 }
 
 func TestActivityProviderRegistersSurfaces(t *testing.T) {
-	a, st := newTestEnv(t)
-	set, err := kernel.RegisterContributions(context.Background(), planWithActivity(t), []kernel.Provider{New(a, st)})
+	a, _, operations := newTestEnv(t)
+	set, err := kernel.RegisterContributions(context.Background(), planWithActivity(t), []kernel.Provider{New(a, operations)})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
@@ -74,14 +75,14 @@ func TestActivityProviderRegistersSurfaces(t *testing.T) {
 // admin and the activity surface is read-only (no write routes) on the provider
 // finalize path (C4.2).
 func TestActivityProviderServesReadOnly(t *testing.T) {
-	a, st := newTestEnv(t)
+	a, st, operations := newTestEnv(t)
 	plan := planWithActivity(t)
-	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{New(a, st)})
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{New(a, operations)})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.Register(mux, a, st, plan)
+	handler.Register(mux, a, st, operations, plan)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // authHandler serves the R2 auth endpoints (GOAL-005): login, refresh and
@@ -19,13 +19,13 @@ import (
 // store is used only for the R5 S6 operation log (auth events); identity data
 // is resolved through the module-owned auth-session repository.
 type authHandler struct {
-	a   *auth.Authenticator
-	st  *store.Store
-	now func() time.Time
+	a          *auth.Authenticator
+	operations operationlog.Recorder
+	now        func() time.Time
 }
 
-func authsHandler(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
-	h := &authHandler{a: a, st: st, now: time.Now}
+func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder) {
+	h := &authHandler{a: a, operations: operations, now: time.Now}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
 	mux.HandleFunc("POST /api/auth/logout", h.logout())
@@ -68,7 +68,7 @@ func (h *authHandler) login() http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
 		}
-		h.logOperation(store.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
+		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -91,7 +91,7 @@ func (h *authHandler) refresh() http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
 			return
 		}
-		h.authEvent(store.EventAuthRefresh, user.ID)
+		h.authEvent(operationlog.EventAuthRefresh, user.ID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -112,7 +112,7 @@ func (h *authHandler) logout() http.HandlerFunc {
 			return
 		}
 		if userID != "" {
-			h.authEvent(store.EventAuthLogout, userID)
+			h.authEvent(operationlog.EventAuthLogout, userID)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -137,7 +137,7 @@ func (h *authHandler) authEvent(event, userID string) {
 // I-008-003 §5). Best-effort: a logging failure is logged to the service log
 // and never changes the business response.
 func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
-	op := store.Operation{
+	op := operationlog.Operation{
 		ID:        newOperationID(),
 		Event:     event,
 		ActorID:   actorID,
@@ -147,7 +147,10 @@ func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
 	if detail != "" {
 		op.Detail = &detail
 	}
-	if err := h.st.RecordOperation(op); err != nil {
+	if h.operations == nil {
+		return
+	}
+	if err := h.operations.RecordOperation(op); err != nil {
 		slog.Error("operation log write failed", "event", event, "err", err)
 	}
 }

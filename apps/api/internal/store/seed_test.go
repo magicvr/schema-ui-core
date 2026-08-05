@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 )
 
 // V-SEED-01 · seeding with no prior users creates the stable roles
@@ -111,8 +113,9 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open (no seed): %v", err)
 	}
+	repository := authsession.NewRepository(st)
 	now := time.Now().UTC()
-	if err := st.CreateUser(User{
+	if err := repository.CreateUser(authsession.User{
 		ID: "u1", Username: "alice", Name: "Alice",
 		Roles: []string{"viewer"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
@@ -128,6 +131,7 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reopen with seed: %v", err)
 	}
+	repository2 := authsession.NewRepository(st2)
 	count := func(db *Store, q string) int {
 		var n int
 		if err := db.db.QueryRow(q).Scan(&n); err != nil {
@@ -142,7 +146,7 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 		t.Fatalf("role_menu_items = %d, want 5", n)
 	}
 	// Non-seed user untouched.
-	u, err := st2.UserByID("u1")
+	u, err := repository2.UserByID("u1")
 	if err != nil {
 		t.Fatalf("non-seed user: %v", err)
 	}
@@ -185,8 +189,9 @@ func TestPermissionsForUser(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	defer st.Close()
+	repository := authsession.NewRepository(st)
 
-	adminPerms, err := st.PermissionsForUser("user-admin")
+	adminPerms, err := repository.PermissionsForUser("user-admin")
 	if err != nil {
 		t.Fatalf("admin permissions: %v", err)
 	}
@@ -200,13 +205,13 @@ func TestPermissionsForUser(t *testing.T) {
 	}
 
 	now := time.Now().UTC()
-	if err := st.CreateUser(User{
+	if err := repository.CreateUser(authsession.User{
 		ID: "u2", Username: "viewer", Name: "Viewer",
 		Roles: []string{"viewer"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
 		t.Fatalf("create viewer: %v", err)
 	}
-	viewerPerms, err := st.PermissionsForUser("u2")
+	viewerPerms, err := repository.PermissionsForUser("u2")
 	if err != nil {
 		t.Fatalf("viewer permissions: %v", err)
 	}
@@ -214,13 +219,13 @@ func TestPermissionsForUser(t *testing.T) {
 		t.Fatalf("viewer perms = %v, want %v", viewerPerms, want)
 	}
 
-	if err := st.CreateUser(User{
+	if err := repository.CreateUser(authsession.User{
 		ID: "u3", Username: "auditor", Name: "Auditor",
 		Roles: []string{"custom"}, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
 	}); err != nil {
 		t.Fatalf("create custom: %v", err)
 	}
-	customPerms, err := st.PermissionsForUser("u3")
+	customPerms, err := repository.PermissionsForUser("u3")
 	if err != nil {
 		t.Fatalf("custom permissions: %v", err)
 	}
@@ -237,10 +242,11 @@ func TestFeaturesForUser(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	defer st.Close()
+	repository := authsession.NewRepository(st)
 
 	assert := func(userID string, want bool, label string) {
 		t.Helper()
-		feat, err := st.FeaturesForUser(userID)
+		feat, err := repository.FeaturesForUser(userID)
 		if err != nil {
 			t.Fatalf("%s features: %v", label, err)
 		}
@@ -255,7 +261,7 @@ func TestFeaturesForUser(t *testing.T) {
 	now := time.Now().UTC()
 	mkUser := func(id, username string, roles []string) {
 		t.Helper()
-		if err := st.CreateUser(User{
+		if err := repository.CreateUser(authsession.User{
 			ID: id, Username: username, Name: username,
 			Roles: roles, PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
 		}); err != nil {

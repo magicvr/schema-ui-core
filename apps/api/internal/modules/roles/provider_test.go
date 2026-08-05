@@ -15,11 +15,12 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
-func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
+func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store, *authsession.Repository, *operationlog.Repository) {
 	t.Helper()
 	hash, err := auth.HashPassword("test-password", 4)
 	if err != nil {
@@ -30,8 +31,9 @@ func newTestEnv(t *testing.T) (*auth.Authenticator, *store.Store) {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	a := auth.New([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, st, false)
-	return a, st
+	repository := authsession.NewRepository(st)
+	a := auth.NewWithRepository([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
+	return a, st, repository, operationlog.NewRepository(st)
 }
 
 func planWithRoles(t *testing.T) kernel.Plan {
@@ -52,8 +54,8 @@ func planWithRoles(t *testing.T) kernel.Plan {
 }
 
 func TestRolesProviderRegistersSurfaces(t *testing.T) {
-	a, st := newTestEnv(t)
-	provider := New(a, authsession.NewRepository(st), st)
+	a, _, repository, operations := newTestEnv(t)
+	provider := New(a, repository, operations)
 	set, err := kernel.RegisterContributions(context.Background(), planWithRoles(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -91,15 +93,15 @@ func TestRolesProviderRegistersSurfaces(t *testing.T) {
 // TestRolesProviderServesAuthenticatedCRUD mirrors the users cutover check: the
 // provider surface serves roles with frozen auth/permission behavior.
 func TestRolesProviderServesAuthenticatedCRUD(t *testing.T) {
-	a, st := newTestEnv(t)
+	a, st, repository, operations := newTestEnv(t)
 	plan := planWithRoles(t)
-	provider := New(a, authsession.NewRepository(st), st)
+	provider := New(a, repository, operations)
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.Register(mux, a, st, plan)
+	handler.Register(mux, a, st, operations, plan)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
