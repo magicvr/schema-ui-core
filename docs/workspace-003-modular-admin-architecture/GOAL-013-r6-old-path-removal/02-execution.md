@@ -17,6 +17,7 @@ version: 0.1.0
 | E-001 | 2026-08-05 | 建立 R6 旧路径移除与终态验收子目标 | recorded | [02-execution/E-001-r6-child-opened.md](02-execution/E-001-r6-child-opened.md) |
 | E-002 | 2026-08-05 | R6.1 旧路径与内聚债扫描 | recorded | [02-execution/E-002-r6-old-path-scan.md](02-execution/E-002-r6-old-path-scan.md) |
 | E-003 | 2026-08-05 | R6 Persistence 所有权设计冻结（R6-I002） | recorded | [02-execution/E-003-r6-persistence-design.md](02-execution/E-003-r6-persistence-design.md) |
+| E-004 | 2026-08-05 | R6 C6.1 死适配器与双轨删除 | recorded | [02-execution/E-004-r6-c61-dead-adapter-removal.md](02-execution/E-004-r6-c61-dead-adapter-removal.md) |
 
 ## 事实边界
 
