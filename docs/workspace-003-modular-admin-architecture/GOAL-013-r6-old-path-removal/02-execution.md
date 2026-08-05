@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 执行记录 · GOAL-013
@@ -24,6 +24,7 @@ version: 0.6.0
 | E-008 | 2026-08-06 | R6 C6.2 auth-session/RBAC repository 迁出（切片 5） | recorded | [02-execution/E-008-r6-c62-authsession-repository.md](02-execution/E-008-r6-c62-authsession-repository.md) |
 | E-009 | 2026-08-06 | R6 C6.2 repository ownership 迁出完成 | recorded | [02-execution/E-009-r6-c62-repository-ownership.md](02-execution/E-009-r6-c62-repository-ownership.md) |
 | E-010 | 2026-08-06 | R6 C6.3 终态契约冻结 | recorded | [02-execution/E-010-r6-c63-contract-freeze.md](02-execution/E-010-r6-c63-contract-freeze.md) |
+| E-011 | 2026-08-06 | R6 C6.3 Schema document bytes ContributionSet 发布 | recorded | [02-execution/E-011-r6-c63-schema-bytes.md](02-execution/E-011-r6-c63-schema-bytes.md) |
 
 ## 事实边界
 
