@@ -18,7 +18,7 @@ version: 0.2.0
 | R5-I004 | open / non-blocking | hosted E2E 补充 |
 | 影响本 scope 的 inherited evidence | available | R4 residual、冻结契约、R2 Profile 集、Root A-010 |
 | 到期 required 是否已 verified | yes（A-003 响应后） | F-R5-IND-001/002 已闭合；债可见 |
-| Root A-010 open required | open（可见） | F-001/F-002/F-003/F-005/F-008；R5 子集经 A-003 响应 |
+| Root A-010 open required | open（F-008/F-003a closed） | F-001/F-002/F-003b/F-005；R5 子集经 A-003 响应，GOAL-013 承接 |
 
 ## 意见台账索引
 
@@ -37,5 +37,5 @@ R5-I004 non-blocking。C5.1-C5.4 检查点勾选、`progress: 4/4`。**A-002/A-0
 （independent）`conditional`**：A-002 F-R5-IND-001/002（A-010 债登记 + Schema 贡献
 驱动）与 A-005 F-R5-CO-001/002/003（树同步、Schema 叙事收窄、文档更新）已由
 A-003/A-004 处置；F-R5-CO-004/005 跟踪 R6。Root A-010 F-001/F-002/F-005 债可见于
-R5-I001（模型 R5、迁出 R6），VP 退出 #2/#3/#5 未取证。R5 具备关门条件，进入 R6。
+R5-I001（登记 R5 / 模型与迁出 R6），VP 退出 #2/#3/#5 未取证。R5 具备关门条件，进入 R6。
 R5 不否定 R2 精确 Profile 集、不推进 Root done。响应归 `/govern`。

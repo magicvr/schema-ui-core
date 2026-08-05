@@ -107,9 +107,13 @@ audit_type: ad-hoc
 
 ### F-003 · Schema 发布仍非 ContributionSet 驱动（中心静态合并）
 
+> **状态更新（A-014/F-014-002）**：本条闭合口径已拆分——**F-003a** 门禁/owner 贡献
+> 驱动 `fixed`（`RegisterSchemas` 接受 `set.Pages`，提交 `d1c372e`）；**F-003b**
+> document 字节 ContributionSet 发布 `accepted-residual`→R6 C6.3（见 A-011/A-013）。
+
 - **严重度**：med
 - **建议**：required
-- **状态**：open（与 GOAL-011 residual / GOAL-012 E-002「Schema 完全贡献驱动」同一债，本条升级为 Root 可见 required，防止 R5 只记 recommended 而遗漏退出 #4）
+- **状态**：open（历史快照；权威闭合见 A-011 拆分与 A-013）
 - **影响门禁**：VP-003 退出 #4；R5 C5.1 residual
 - **描述**：页面 JSON 虽在模块包内，但 `handler/schema.go` 通过静态 import 各 `modules/*/schema` 合并 map，再按 plan 过滤。不是 `RegisterContributions` 产生的 Page 贡献驱动发布。禁用/冲突语义依赖中心装配而非 finalize 后的 ContributionSet。
 - **证据**：`apps/api/internal/handler/schema.go` `staticSchemaDocuments` / `schemaDocumentsForPlan`；GOAL-011 E-002 residual 行；GOAL-012 E-002

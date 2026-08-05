@@ -56,7 +56,7 @@ GOAL-013-r6-old-path-removal [active] (0/4) · R6 旧路径移除与终态验收
 
 ## 维护说明
 
-- `3/6` 由 Root `00-meta.md` 中 R1、R2、R3 已完成、R4-R6 未完成的六个等权检查点派生；它不放行 VP、推导 `done` 或替代后续 required 信息/审计门禁。`progress=6/6` 亦不得推导 Root `done` 或 VP-003 `closed`（见 Root 成功边界硬约束）。
+- `5/6` 由 Root `00-meta.md` 中 R1、R2、R3、R4、R5 已完成、R6 进行中的六个等权检查点派生；它不放行 VP、推导 `done` 或替代后续 required 信息/审计门禁。`progress=6/6` 亦不得推导 Root `done` 或 VP-003 `closed`（见 Root 成功边界硬约束）。
 - 新子目标必须平铺在本目录，`parent` 使用本区完整 Goal ID；跨工作区提及使用 Q2 canonical 路径。
 - Root 自身 required 信息项当前无；I-006 已经 GOAL-004 A-004/E-005/D-004 响应标为 verified，但 R6 仍需重新核对最终旧路径移除边界。R4 子目标 GOAL-005 的 Provider、Records 和 operationlog 裁决已落盘，R4-I002/R4-I003 已 verified，R4-I004 以 accepted-residual 记录；GOAL-006 至 GOAL-011（C1-C5）均 `done 4/4`，GOAL-012（R5）`done 4/4`。I-004/I-005 已经 Root D-006/E-006/A-005 与 GOAL-003 A-003/A-004 evidence response 标为 verified。I-001/I-002/I-003/I-007 已在 R1 close-out 证据链中 verified，后续实现仍受阶段审计约束。
 - A-002 F-001～F-006 已于 2026-08-04 经 A-003 / D-002 全部 `fixed`；不改变本树 progress 或 status。
