@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.6.0
+version: 0.7.0
 progress: 2/4
 plan_refs:
   - VP-003-modular-admin-architecture
@@ -59,7 +59,7 @@ VP-003 关门另需确认。
 |------|------|----------------|------|----------|----------|------|------|
 | R6-I001 | required | 旧装配双轨清单与删除证据？ | C6.1 | C6.1 | 全仓扫描 + 删除 | verified | E-002 清单 + E-004：MountProviderRoutes/RegisterSettings/RegisterActivity 已删 |
 | R6-I002 | required | store·Persistence 所有权模型与 CollectPersistence 接线边界？ | C6.2 | C6.2 | 设计 + 实施 | verified | D-002 + E-006～E-009 + A-004～A-008：catalog/Apply、system-data reconcile 与 owner repositories 经 self + Grok independent 验证，A-010 F-001/F-002/F-005 fixed |
-| R6-I003 | required | Schema 字节贡献发布 + 收尾项边界？ | C6.3 | C6.3 | 实施 + 测试 | collecting | D-003；E-011/`8b76ab0` 已完成 Schema bytes；Configuration/Policy/lifecycle 与 cross 审计待完成 |
+| R6-I003 | required | Schema 字节贡献发布 + 收尾项边界？ | C6.3 | C6.3 | 实施 + 测试 | collecting | D-003；E-011/`8b76ab0` Schema bytes；E-012/`2548e42` Configuration+Policy；lifecycle 与 cross 审计待完成 |
 | R6-I004 | required | VP 退出 #1-#7 逐条证据是否齐全？ | C6.4 | C6.4 | 逐条取证 + 审计 | collecting | VP-003 |
 
 ## 阶段路线图
