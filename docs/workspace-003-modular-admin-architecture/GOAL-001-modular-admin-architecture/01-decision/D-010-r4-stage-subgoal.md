@@ -8,7 +8,7 @@ status: accepted
 
 # D-010 · 建立 R4 子目标与 C1 信息门禁
 
-建立 [GOAL-005-r4-full-module-migration](../GOAL-005-r4-full-module-migration/00-meta.md)
+建立 [GOAL-005-r4-full-module-migration](../../GOAL-005-r4-full-module-migration/00-meta.md)
 承接 Root R4，Root progress 保持 `3/6`。R4 先完成 C1 范围和信息冻结，再按
 C2-C5 渐进实施；不得批量预建 R5/R6 或把 Users/Roles 当前代码当作模块迁移完成。
 

@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-modular-admin-architecture
 title: 单主线模块化 Admin 架构
-status: active
+status: done
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.11.0
+version: 0.12.0
 progress: 6/6
 plan_refs:
   - VP-003-modular-admin-architecture
@@ -17,7 +17,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 
 ## 概述
 
-本 Root 承接 [VP-003 · 单主线模块化 Admin 架构](../../vision/plans/VP-003-modular-admin-architecture.md)。本次仅建立独立的 delivery 工作区、路线图和信息门禁，作为模块化架构实施的可追溯范围；不把建区、文档或试点计划写成 R1-R6 的实现完成证据。
+本 Root 承接 [VP-003 · 单主线模块化 Admin 架构](../../vision/plans/VP-003-modular-admin-architecture.md)。R1～R6 已在本 delivery 工作区完成实施、终态取证与交叉关门审计；建区、文档或试点本身仍不构成阶段完成证据，Root 关门以 A-018/A-019/A-020 的完整证据链为准。
 
 ## 愿景对齐
 
@@ -73,7 +73,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 | R3 | 有界试点 | 已完成 | 由 [GOAL-004-r3-bounded-pilot](../GOAL-004-r3-bounded-pilot/00-meta.md) 承接并以 `done 4/4` 收束；I-006 三项 verified，A-004 close-out 以 fixed 路径响应 required findings。允许建立 R4 子目标，但不关闭 VP-003。 |
 | R4 | 全量一方模块迁移 | 已完成 | 由 [GOAL-005-r4-full-module-migration](../GOAL-005-r4-full-module-migration/00-meta.md) 承接并以 `done 5/5` 收束（C1-C5 由 GOAL-006..011 承接）；R4-I001/I002/I003 verified、R4-I004 accepted-residual；Grok A-003 确认 R4 可关门、具备进入 R5 条件；residual 清单传递 R5。 |
 | R5 | Profile、数据与运维收敛 | 已完成 | 由 [GOAL-012-r5-profile-ops-convergence](../GOAL-012-r5-profile-ops-convergence/00-meta.md) 承接并以 `done 4/4` 收束（Profile 配置收敛、readyz 真实 readiness、数据生命周期核验、fork 文档）；Grok A-005 `conditional`→A-004 处置。R5 不否定 R2 已冻结的精确 Profile 集。 |
-| R6 | 旧路径移除与终态验收 | 已完成 | [GOAL-013](../GOAL-013-r6-old-path-removal/00-meta.md) `done 4/4`；C64-V01～V08、exit #1～#7、A-012 self、A-013 Grok independent 与 A-014 response 全部闭合。Root 仍待独立 close-out。 |
+| R6 | 旧路径移除与终态验收 | 已完成 | [GOAL-013](../GOAL-013-r6-old-path-removal/00-meta.md) `done 4/4`；C64-V01～V08、exit #1～#7、A-012 self、A-013 Grok independent 与 A-014 response 全部闭合。Root A-018 self、A-019 Grok independent 与 A-020 `/govern` response 已完成关门。 |
 
 ### 阶段审计模式（预置建议）
 
@@ -106,7 +106,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 | I-003 | required | Fx、模块 API、Go 兼容范围和启动/就绪/停止/失败清理的错误语义如何固定？ | R1 契约冻结与 R2 实施 | R1 方案冻结前 | 固定候选版本、模块 API 边界和生命周期/错误分类，并记录取舍。 | verified | 2026-08-04 复核；具体 Fx 版本、Go type surface、stable error codes 和实现留给 R2 | [GOAL-002 C3](../GOAL-002-r1-contract-migration-baseline/attachments/r1-c3-lifecycle-contract.md)；D-004；Grok A-004 independent + A-005 response。R1 只冻结 Uber Fx 组合根候选、框架无关模块语义、核心六项/按需能力和 fail-closed 生命周期边界。 |
 | I-004 | required | `mvp`、`admin` Profile 的精确模块集合与配置覆盖顺序是什么？ | R2 Profile 方案冻结与实施 | R2 方案冻结前 | R2 C1 已冻结并通过正反例：`mvp` 为 core.server-registration、core.auth-session、core.manifest-route、core.navigation-capability、core.schema-render、core.operationlog、admin.users、admin.roles；`admin` 在此基础上增加 admin.settings、admin.activity；custom 必须显式提供模块。显式 `APP_MODULES_ENABLED` 覆盖编译 Profile 默认，解析来源和优先级为 compiled-profile-default → modules.enabled → environment。 | verified | 2026-08-05 复核；R3/R5 只验证运行时运维，不改写本精确集合，除非新决策 | GOAL-003 C1 `attachments/r2-c1-profile-graph-evidence.md`、D-002、A-002、A-003；Root D-006/A-005。 |
 | I-005 | required | Manifest 聚合的冲突规则、缓存、登录前加载与前端权限投影边界是什么？ | R2 聚合 API 方案冻结与 R3 联调 | R2 方案冻结前 | R2 C4 已定义并验证：Fragment 按 ModuleID 确定性排序；app/protocol/page/navigation/贡献冲突 fail closed；Profile 选择只投影启用模块；API 在登录前提供 `GET /.well-known/schema-ui/app-manifest.json` 和精确 ETag/304；Vite/Nginx 走 API，production image 删除静态 manifest，权限/可见性仍由前端运行时投影。 | verified | 2026-08-05 复核；R3 联调验证消费端，不扩大聚合冲突或登录前无秘密边界 | GOAL-003 C4 `attachments/r2-c4-aggregation-proxy-evidence.md`、C5 snapshot、D-004、A-002、A-003；Root D-006/A-005。 |
-| I-006 | required | 静态 Manifest 和 Shell 特例的删除清单、迁移期限与回滚触发条件是什么？ | R3 试点门闩与 R6 旧路径移除 | R3 方案冻结前 | 盘点双轨入口与 Shell 特例，确定有期限的开发期兼容、告警和回滚条件。 | verified | 2026-08-05 R3 C1-C4 close-out；R6 仍需重新核对最终移除范围 | [GOAL-004 A-004](../GOAL-004-r3-bounded-pilot/03-audit/A-004-r3-closeout-self.md)；E-005；D-004；`attachments/r3-c2-c3-v1-v4-evidence.md`。R3 证据不替代 R6 最终删除验收。 |
+| I-006 | required | 静态 Manifest 和 Shell 特例的删除清单、迁移期限与回滚触发条件是什么？ | R3 试点门闩与 R6 旧路径移除 | R3 方案冻结前 | 盘点双轨入口与 Shell 特例，确定有期限的开发期兼容、告警和回滚条件。 | verified | 2026-08-06 已由 R6 C64-V01～V08 与 GOAL-013 A-012/A-013/A-014 重新核对最终移除范围 | [GOAL-004 A-004](../GOAL-004-r3-bounded-pilot/03-audit/A-004-r3-closeout-self.md)；GOAL-013 D-004/E-018/A-012/A-013/A-014；Root A-018/A-019/A-020。 |
 | I-007 | required | 本 Root 是否可读并遵守 VP-003 继承的 `I-PROTO-001 v0.1.3` 范围？与 R1 迁移模块清单是否一致？扩大范围的决策门槛是否明确？ | R1 契约/范围冻结与 R4 全量迁移范围 | R1 方案冻结前 | 核对 [VP-003 继承节](../../vision/plans/VP-003-modular-admin-architecture.md#继承的协议基线i-proto-001-v013) 与 Q2 覆盖表路径；对照 I-001 模块清单；扩大 domain/改 exclude 须新决策 + 覆盖表升版（D-002 已冻结「默认不扩大」约束）。 | verified | 2026-08-04 复核；范围扩张仍须新决策、覆盖表升版和验证 | [GOAL-002 C4](../GOAL-002-r1-contract-migration-baseline/attachments/r1-c4-protocol-matrix.md)；D-005；Grok A-004 independent + A-005 response。D-EXPR/D-VER、partial boundaries、D-UPLOAD exclude 与 version gate 均保留。 |
 
 ## 台账布局
