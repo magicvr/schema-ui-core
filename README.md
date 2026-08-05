@@ -75,6 +75,25 @@ docker compose up --build
 - 将密钥写入仓库根 `.env`（gitignored）可避免新 shell 里 `docker compose config` / `down` 因 fail-closed 插值重复 export。
 - 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
 
+## 模块化 Admin 架构与 Profile（R4 起）
+
+后端以**薄内核 + 模块 Provider + 启动时 Profile** 组装（workspace-003 模块化架构）：
+
+- **模块 Provider**：一方标准 Admin 模块（`admin.users` / `admin.roles` /
+  `admin.settings` / `admin.activity`）以 `kernel.Provider` 结构化贡献 HTTP、Schema、
+  授权、Navigation、Manifest 与 compiled-global Persistence；composition 消费
+  finalize，冲突 fail-closed。
+- **Profile**：`mvp`（core 六项 + users/roles）与 `admin`（+ settings/activity）为
+  编译候选集；`MODULES_ENABLED` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，
+  无需改前端。
+- **数据**：迁移账本 `0001`-`0008` 全局唯一；fresh 与 versioned reconcile 分离；
+  operationlog best-effort；`/api/records` 已退场（`0006` historical-only）。
+- **探测**：`/healthz`（liveness）与 `/readyz`（store ping + 模块图 Start/Ready
+  readiness，R5）。
+
+fork 起点：选 Profile + `MODULES_ENABLED` + 模块贡献接入业务，不修改 Renderer/Shell
+主路径。
+
 ## 状态说明
 
 - R2 MVP 协议覆盖子集已按 Root `I-PROTO-001` v0.1.3 冻结；这不是「支持全部协议功能」或 R3-R5 已实现的声明。
