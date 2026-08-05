@@ -5,7 +5,7 @@ status: recorded
 created: 2026-08-06
 updated: 2026-08-06
 parent: GOAL-013-r6-old-path-removal
-version: 0.1.0
+version: 0.2.0
 ---
 
 # R6 C6.4 终态验收与 VP 退出证据
@@ -38,7 +38,7 @@ version: 0.1.0
 | C64-V05 | pass | clean clone 构建 API image `sha256:75b987...a013`、Web image `sha256:3b89f8...97bc`；同一对 image 在 `c64finalmvp9409` / `c64finaladmin9409` 两隔离 project 启动，两个 `scripts/smoke.sh --disposable` 均 SM-001～007 全绿，包含 `/readyz`、Manifest bytes/source、Profile routes、seed 与 API restart。 | 所有测试 project/volume 已在取证后删除；镜像 cache 保留。 |
 | C64-V06 | pass | config/kernel/composition/store 定向测试覆盖 custom + 显式模块启停、custom 缺配置、未知模块/依赖/环/冲突/capability、Kernel API 不兼容、端口占用、provider mismatch、readyz 503/200、迁移漂移。真实 `APP_PROFILE=custom` 且空 `APP_MODULES_ENABLED` 的 `go run ./cmd/server` 退出 1，并输出 `PROFILE_MODULES_REQUIRED` 与真实 env key。 | custom 成功用例由 Fx `NewApp` 启停测试证明；未声称运行时插件或热插拔。 |
 | C64-V07 | pass | 从主仓创建 `--local --no-hardlinks` clean clone，固定 `9409b71`；clone 内完成静态门禁、API full/vet/build、全新 `npm ci`、Web unit/build、双 Profile E2E、admin Compose build/start/disposable smoke；开始与结束 `git status --porcelain` 均为空，总耗时 3.56 分钟。README/QUICKSTART/app README/Compose 均使用真实 Profile/env/owner/升级恢复边界。 | 临时 clone 已送入回收站；时间口径为本机缓存已预热，不代表冷网络 SLA。 |
-| C64-V08 | pending audit | 本附件已覆盖每条 exit 的实现、动态结果、失败边界与限制；待 GOAL-013 self + Grok independent 及 `/govern` 响应。 | 未经审计响应前不更新 R6-I004、不勾 C6.4、不关门。 |
+| C64-V08 | pass | 本附件覆盖每条 exit 的实现、动态结果、失败边界与限制；A-012 self 与 A-013 Grok independent 均 `pass`、required 0，A-014 `/govern` response 已按 fixed 闭合 F-R6-001。 | R6-I004/C6.4/GOAL-013 状态只由 A-014 响应更新；不自动改变 Root 或 VP-003。 |
 
 ## 关键命令与结果
 
@@ -78,7 +78,7 @@ clean clone full reproduction                        PASS, 3.56 minutes
 ## 关门边界
 
 - 以上证明 C64-V01～V07 与 VP exit #1～#7 的本地候选证据齐全。
-- C64-V08、R6-I004 与 C6.4 仍由 GOAL-013 self + Grok independent + `/govern` 响应
-  门禁控制；本附件不自行改变任何 status/progress。
+- C64-V08 已由 A-012 self + A-013 Grok independent + A-014 `/govern` response 完成；
+  R6-I004 `verified`、C6.4 完成、GOAL-013 `done / 4/4`。
 - Root close-out 仍需另做 self + Grok independent；Root `progress: 6/6` 不自动推导
   `status: done`。VP-003 是否 `closed` 属 `/vision`，不在本次 Root 关门范围内自动执行。

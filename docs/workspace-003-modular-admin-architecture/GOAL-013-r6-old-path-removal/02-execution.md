@@ -1,11 +1,11 @@
 ---
 id: GOAL-013-r6-old-path-removal
 doc: execution
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.14.0
+version: 0.15.0
 ---
 
 # 执行记录 · GOAL-013
@@ -33,6 +33,7 @@ version: 0.14.0
 | E-017 | 2026-08-06 | R6 C6.4 双 Profile 验收接线 checkpoint | recorded | [02-execution/E-017-r6-c64-profile-acceptance-checkpoint.md](02-execution/E-017-r6-c64-profile-acceptance-checkpoint.md) |
 | E-018 | 2026-08-06 | R6 C6.4 V01-V07 终态证据包 | recorded | [02-execution/E-018-r6-c64-terminal-evidence.md](02-execution/E-018-r6-c64-terminal-evidence.md) |
 | E-019 | 2026-08-06 | R6 C6.4 self close-out | recorded | [02-execution/E-019-r6-c64-self-closeout.md](02-execution/E-019-r6-c64-self-closeout.md) |
+| E-020 | 2026-08-06 | R6 C6.4 cross 响应与子目标关门 | recorded | [02-execution/E-020-r6-c64-gate-closure.md](02-execution/E-020-r6-c64-gate-closure.md) |
 
 ## 事实边界
 
@@ -45,12 +46,14 @@ version: 0.14.0
   A-010 F-001/F-002/F-005。D-003 的 Schema bytes、Configuration、Policy 与 lifecycle
   四个实现切片均已完成；A-009 self、A-010 Grok independent 与 A-011 response 后，
   R6-I003 verified、C6.3 完成、GOAL-013 为 `3/4`，Root A-010 F-003b 经 A-017 fixed。
-  R1-R5 已关门（Root 5/6）。D-004 已冻结 C6.4 八组验收矩阵；E-016 / `99784bc`
+  在 E-018 取证时 R1-R5 已关门（Root 5/6）。D-004 已冻结 C6.4 八组验收矩阵；E-016 / `99784bc`
   已移除生产静态 Manifest、把 Admin Manifest 迁入 test-only fixture，并将 Web Schema
   测试改读 owner module，Web 回归恢复为 `495/495`。README/QUICKSTART、Compose、CI
   双 Profile、browser E2E 与 profile-aware smoke 已由 E-017 / `88a3840` 完成接线并通过
   本地基础回归；完整升级/恢复、双 Profile 容器、custom/fail-closed 与 clean-fork
   终态证据已由 E-018 / `9409b71` 完成并落盘。C64-V08 的 self + Grok independent
-  中 self 已由 A-012 `pass` 完成；Grok independent 及 `/govern` 响应仍待执行，故
-  R6-I004 保持 collecting。
-- R6 完成不代表 Root/VP 自动关门（需 exit #1-#7 逐条取证 + 关门审计）。
+  已由 A-012 self 与 A-013 Grok independent 分别 `pass`，A-014 `/govern` response
+  required=0、无冲突；F-R6-001 fixed，R6-I004 verified，C6.4 完成，GOAL-013
+  `done / 4/4`。
+- R6 完成后 Root 仅派生为 `active / 6/6`；Root close-out 仍需另做 self + Grok
+  independent 与 `/govern` 响应。VP-003 保持 `active`，不由本目标自动关门。

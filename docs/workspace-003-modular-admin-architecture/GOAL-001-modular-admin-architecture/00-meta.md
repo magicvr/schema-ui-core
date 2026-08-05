@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.10.0
-progress: 5/6
+version: 0.11.0
+progress: 6/6
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -47,7 +47,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 - [x] **R2**：薄内核、框架无关模块契约、Fx 组合根与确定性后端聚合骨架就位；`mvp`/`admin` Profile **精确模块集合与配置覆盖顺序**已按 I-004 冻结，I-005 聚合/代理边界已 verified。
 - [x] **R3**：由 GOAL-004 完成；I-006 的静态 Manifest/Shell 兼容、移除和回滚边界已验证，且 [VP-003 R3 A+B+C+D 门闩](../../vision/plans/VP-003-modular-admin-architecture.md#r3-通过门闩有界试点--继承固定历史评议输入) 已由本地证据、自审和 Grok independent opinion 响应闭合。R3 只允许进入 R4，不关闭 VP-003。
 - [x] **R4–R5**：现有一方 Admin 能力迁入统一模块契约；Profile、数据升级/恢复、健康诊断、Docker/代理与 fork 路径具有可核对证据。（证据指向 GOAL-005 `done 5/5` 与 GOAL-012 `done 4/4` close-out；R4-R5 完成不关闭 VP-003。）
-- [ ] **R6 / 关门**：旧装配路径退出；exit #1–#7 均有本区证据与审计，且无开放 required 信息项或必改 finding。
+- [x] **R6 / 关门**：旧装配路径退出；exit #1–#7 均有本区证据与审计，且无开放 required 信息项或必改 finding。**（GOAL-013 `done / 4/4`；D-004/E-018；A-012/A-013/A-014）**
 
 ### R 阶段 ↔ VP 退出判据映射
 
@@ -64,7 +64,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 
 ## 纲领路线图
 
-六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3、R4、R5 已完成并通过对应 close-out audit，Root 派生进度为 `5/6`；R6 尚未完成。Root A-010 F-001/F-002/F-005 已由 GOAL-013 C6.2 与 Root A-016 fixed，F-003b 已由 GOAL-013 C6.3 A-009/A-010/A-011 与 Root A-017 fixed。C6.4 完整终态证据仍待完成；R1-R5 与 C6.1-C6.3 证据不得被扩大解释为 R6/Root/VP 完成。
+六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1～R6 均已完成，Root 派生进度为 `6/6`。Root A-010 F-001/F-002/F-005 已由 GOAL-013 C6.2 与 Root A-016 fixed，F-003b 已由 GOAL-013 C6.3 A-009/A-010/A-011 与 Root A-017 fixed；C6.4 由 GOAL-013 A-012/A-013/A-014 完成交叉审计与响应。`6/6` 仍不得扩大解释为 Root `done` 或 VP-003 `closed`，两者各有独立关门门禁。
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
@@ -73,7 +73,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 | R3 | 有界试点 | 已完成 | 由 [GOAL-004-r3-bounded-pilot](../GOAL-004-r3-bounded-pilot/00-meta.md) 承接并以 `done 4/4` 收束；I-006 三项 verified，A-004 close-out 以 fixed 路径响应 required findings。允许建立 R4 子目标，但不关闭 VP-003。 |
 | R4 | 全量一方模块迁移 | 已完成 | 由 [GOAL-005-r4-full-module-migration](../GOAL-005-r4-full-module-migration/00-meta.md) 承接并以 `done 5/5` 收束（C1-C5 由 GOAL-006..011 承接）；R4-I001/I002/I003 verified、R4-I004 accepted-residual；Grok A-003 确认 R4 可关门、具备进入 R5 条件；residual 清单传递 R5。 |
 | R5 | Profile、数据与运维收敛 | 已完成 | 由 [GOAL-012-r5-profile-ops-convergence](../GOAL-012-r5-profile-ops-convergence/00-meta.md) 承接并以 `done 4/4` 收束（Profile 配置收敛、readyz 真实 readiness、数据生命周期核验、fork 文档）；Grok A-005 `conditional`→A-004 处置。R5 不否定 R2 已冻结的精确 Profile 集。 |
-| R6 | 旧路径移除与终态验收 | 进行中 | GOAL-013 已完成 C6.1-C6.3（`3/4`）；C6.4 尚需完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收与 exit #1–#7 逐条取证。 |
+| R6 | 旧路径移除与终态验收 | 已完成 | [GOAL-013](../GOAL-013-r6-old-path-removal/00-meta.md) `done 4/4`；C64-V01～V08、exit #1～#7、A-012 self、A-013 Grok independent 与 A-014 response 全部闭合。Root 仍待独立 close-out。 |
 
 ### 阶段审计模式（预置建议）
 

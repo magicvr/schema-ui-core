@@ -1,11 +1,11 @@
 ---
 id: GOAL-013-r6-old-path-removal
 doc: decision
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 决策记录 · GOAL-013
@@ -17,7 +17,7 @@ version: 0.5.0
 | R6-I001 | required | 旧装配双轨清单与删除证据 | C6.1 | C6.1 | 全仓扫描 + 删除 | verified | E-002/E-004：旧适配器与 test 双轨删除并完成零命中扫描 |
 | R6-I002 | required | store·Persistence 所有权模型与接线边界 | C6.2 | C6.2 | 设计 + 实施 | verified | D-002 + E-005～E-009 + A-004～A-008；Root A-010 F-001/F-002/F-005 fixed |
 | R6-I003 | required | Schema 字节贡献发布 + 收尾 | C6.3 | C6.3 | 实施 + 测试 | verified | D-003；E-011/`8b76ab0`；E-012/`2548e42`；E-013/`9896a02`；A-009/A-010/A-011 cross response |
-| R6-I004 | required | VP 退出 #1-#7 逐条证据 | C6.4 | C6.4 | 逐条取证 + 审计 | collecting | VP-003 |
+| R6-I004 | required | VP 退出 #1-#7 逐条证据 | C6.4 | C6.4 | 逐条取证 + 审计 | verified | D-004；E-018；terminal evidence；A-012/A-013/A-014 cross response |
 
 ## 决策索引
 

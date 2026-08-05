@@ -1,11 +1,11 @@
 ---
 id: GOAL-013-r6-old-path-removal
 doc: audit
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 审计 · GOAL-013
@@ -17,10 +17,10 @@ version: 0.11.0
 | R6-I001 | verified（meta） | E-002/E-004；本索引曾滞后，以 meta 为准直至编排刷新 |
 | R6-I002 | verified（设计 + 实施 + cross） | D-002、E-006～E-009、A-004～A-008；C6.2 已完成 |
 | R6-I003 | verified（implementation + cross） | D-003、E-011～E-013、A-009～A-011；C6.3 已完成 |
-| R6-I004 | collecting | C6.4 |
+| R6-I004 | verified | D-004、E-018、terminal evidence、A-012/A-013/A-014 |
 | 影响本 scope 的 inherited evidence | available | R5 residual、Root A-010 债、VP-003 |
 | A-002 C6.2 切片 1–2 | conditional | 可进切片 3；F-C62-001/003 已由 A-003 响应 |
-| 到期 required 是否已 verified | yes（C6.1～C6.3） | A-010 F-001/F-002/F-003b/F-005 fixed；R6-I004/C6.4 仍 collecting |
+| 到期 required 是否已 verified | yes（C6.1～C6.4） | A-010 F-001/F-002/F-003b/F-005 与 F-R6-001 均 fixed；R6-I004 verified |
 
 ## 意见台账索引
 
@@ -39,6 +39,7 @@ version: 0.11.0
 | A-011 | 2026-08-06 | self | 响应 A-009/A-010、闭合 F-003b 并放行 C6.3 | pass | 0 | [03-audit/A-011-c63-independent-response.md](03-audit/A-011-c63-independent-response.md) |
 | A-012 | 2026-08-06 | self | C6.4 / VP exit #1～#7 / R6-I004 self close-out | pass | 0（self scope；F-R6-001 等待 independent + response） | [03-audit/A-012-r6-c64-closeout-self.md](03-audit/A-012-r6-c64-closeout-self.md) |
 | A-013 | 2026-08-06 | independent | C6.4 / C64-V01～V08 / VP exit #1～#7 / R6-I004 / F-R6-001 close-out | pass | 0（F-R6-001 具备 fixed 条件，等 `/govern` 响应） | [03-audit/A-013-r6-c64-closeout-independent.md](03-audit/A-013-r6-c64-closeout-independent.md) |
+| A-014 | 2026-08-06 | self | 响应 A-012/A-013、闭合 F-R6-001 与 GOAL-013 close-out | pass | 0 | [03-audit/A-014-r6-c64-closeout-response.md](03-audit/A-014-r6-c64-closeout-response.md) |
 
 ## 结论状态
 
@@ -88,3 +89,8 @@ VP exit #1～#7 Q2 映射可重复核对，以及本地证据不等于 Hosted CI
 历史 C6.2/C6.3 required 均可按 fixed 追溯闭合；A-001 F-R6-001 现具备
 `/govern` 按 fixed 合法闭合的条件。本意见不修改 meta/goal-tree、不勾 C6.4、不改
 R6-I004，不放行 Root done 或 VP-003 closed。响应归 `/govern`。
+
+**A-014 已响应 A-012/A-013 并关闭 GOAL-013**：两条 close-out 意见均 `pass`、
+required 0、无冲突；A-001 F-R6-001 按 `fixed` 合法闭合，R6-I004 `verified`，
+C64-V08 与 C6.4 完成。GOAL-013 置为 `done / 4/4`，Root 仅同步为 `active / 6/6`；
+Root close-out 与 VP-003 状态均未被本响应自动改变。

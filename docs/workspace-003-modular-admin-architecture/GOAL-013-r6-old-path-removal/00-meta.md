@@ -1,12 +1,12 @@
 ---
 id: GOAL-013-r6-old-path-removal
 title: R6 · 旧路径移除与终态验收
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.8.0
-progress: 3/4
+version: 0.9.0
+progress: 4/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -47,11 +47,12 @@ VP-003 关门提供完整证据。
   发布（去掉中心静态枚举）；Configuration 运行时迁移、PolicyID/Visibility 深化、
   双 Profile Start/Ready 失败矩阵。**（E-011～E-013；A-009 self + A-010 Grok
   independent pass；A-011 响应后 R6-I003 verified、Root A-010 F-003b fixed）**
-- [ ] **C6.4 / 验收与关门**：完整回归（双 Profile/升级恢复/失败/容器/fork）+ VP 退出
-  判据 #1-#7 逐条取证 + self + Grok independent 无开放 required finding；
-  Root close-out + VP-003 关门依据。
+- [x] **C6.4 / 验收与关门**：完整回归（双 Profile/升级恢复/失败/容器/fork）+ VP 退出
+  判据 #1-#7 逐条取证 + self + Grok independent 无开放 required finding。**（D-004、
+  E-018；A-012 self + A-013 Grok independent + A-014 response；F-R6-001 fixed，
+  R6-I004 verified）**
 
-四个检查点等权；当前 `progress: 3/4`。完成本子目标表示 R6 关闭；Root close-out 与
+四个检查点等权；当前 `progress: 4/4`。本子目标已完成并关闭 R6；Root close-out 与
 VP-003 关门另需确认。
 
 ## 信息门禁
@@ -61,7 +62,7 @@ VP-003 关门另需确认。
 | R6-I001 | required | 旧装配双轨清单与删除证据？ | C6.1 | C6.1 | 全仓扫描 + 删除 | verified | E-002 清单 + E-004：MountProviderRoutes/RegisterSettings/RegisterActivity 已删 |
 | R6-I002 | required | store·Persistence 所有权模型与 CollectPersistence 接线边界？ | C6.2 | C6.2 | 设计 + 实施 | verified | D-002 + E-006～E-009 + A-004～A-008：catalog/Apply、system-data reconcile 与 owner repositories 经 self + Grok independent 验证，A-010 F-001/F-002/F-005 fixed |
 | R6-I003 | required | Schema 字节贡献发布 + 收尾项边界？ | C6.3 | C6.3 | 实施 + 测试 | verified | D-003；E-011/`8b76ab0` Schema bytes；E-012/`2548e42` Configuration+Policy；E-013/`9896a02` lifecycle；A-009 self + A-010 Grok independent + A-011 response |
-| R6-I004 | required | VP 退出 #1-#7 逐条证据是否齐全？ | C6.4 | C6.4 | 逐条取证 + 审计 | collecting | VP-003 |
+| R6-I004 | required | VP 退出 #1-#7 逐条证据是否齐全？ | C6.4 | C6.4 | 逐条取证 + 审计 | verified | D-004；E-018；terminal evidence；A-012 self + A-013 Grok independent + A-014 response |
 
 ## 阶段路线图
 

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.9.0
+version: 0.10.0
 ---
 
 # 执行记录 · GOAL-001
@@ -25,10 +25,12 @@ version: 0.9.0
 | E-009 | 2026-08-05 | R3 close-out 与 Root R4 入口评估 | recorded | [02-execution/E-009-r3-closeout-r4-gate.md](02-execution/E-009-r3-closeout-r4-gate.md) |
 | E-010 | 2026-08-05 | 建立 R4 子目标与 C1 信息冲突登记 | recorded | [02-execution/E-010-r4-stage-subgoal.md](02-execution/E-010-r4-stage-subgoal.md) |
 | E-011 | 2026-08-06 | R6 C6.2 Root finding 响应 | recorded | [02-execution/E-011-r6-c62-root-response.md](02-execution/E-011-r6-c62-root-response.md) |
+| E-012 | 2026-08-06 | R6 child close-out 与 Root 6/6 checkpoint | recorded | [02-execution/E-012-r6-stage-closeout.md](02-execution/E-012-r6-stage-closeout.md) |
 
 ## 事实边界
 
-本台账只记录已经发生的建区、设计补强与后续实施事实。R1～R5 均已由对应子目标
-关门，Root 派生 progress 为 `5/6`。R6 由 GOAL-013 承接；C6.1/C6.2 已完成，
-GOAL-013 为 `active / 2/4`。Root A-010 F-001/F-002/F-005 已由 GOAL-013 A-007/A-008
-证据链 fixed；F-003b 与最终退出证据仍开放，因此 Root status/progress 不变。
+本台账只记录已经发生的建区、设计补强与后续实施事实。R1～R6 均已由对应子目标
+关门，Root 派生 progress 为 `6/6`。R6 由 GOAL-013 `done / 4/4` 承接；C64-V01～V08
+与 VP exit #1～#7 已由 D-004/E-018/A-012/A-013/A-014 取证并响应。Root A-010
+F-001/F-002/F-003b/F-005 均 fixed，Root 当前无已知开放 required finding；Root status
+仍为 `active`，等待 Root 自身 close-out self + Grok independent 与 `/govern` 响应。

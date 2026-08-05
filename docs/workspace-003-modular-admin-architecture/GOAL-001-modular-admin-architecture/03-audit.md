@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.12.0
+version: 0.13.0
 ---
 
 # 审计 · GOAL-001
@@ -16,12 +16,12 @@ version: 0.12.0
 |--------|------|------|
 | I-001、I-002、I-003、I-007 | verified | GOAL-002 C1-C4 evidence、D-003～D-005、Grok A-004 independent 与 A-005 response 已核对；Root D-004 固定关闭措辞与边界。 |
 | I-004、I-005 | verified | GOAL-003 C1/C4 evidence、A-002 self、A-003/A-004 Grok re-audits 与 Root D-006/E-006 已核对；R2 stage close-out 已由 D-007/E-007/A-006 记录。 |
-| I-006 | verified | GOAL-004 A-004/E-005/D-004 已核对；R6 仍需重新核对最终旧路径移除边界，不能把 R3 证据扩大为 R6 通过。 |
+| I-006 | verified | GOAL-004 A-004/E-005/D-004 已核对；R6 最终旧路径移除边界已由 GOAL-013 D-004/E-018/A-012/A-013/A-014 重新核对。 |
 | A-002 required findings | closed | F-001～F-003 → `fixed`（A-003 / D-002）；F-004～F-006 同批 `fixed`。 |
 | A-010 required（VP 代码内聚） | **全部 fixed（A-016/A-017）** | F-008/F-003a、F-001/F-002/F-005 已 fixed；F-003b 经 GOAL-013 C6.3 cross + Root A-017 fixed |
 | A-012 required（R1–R5/A-010 复审） | **响应闭合；继承债 fixed** | F-012-001/002/004 accepted fixed，F-012-003 经 A-015 fixed，F-012-005 confirmed；继承 F-001/F-002/F-003b/F-005 已 fixed |
 | A-014 required（A-013/R5 复审） | **响应闭合；实现债 fixed** | F-014-001/002 fixed（A-015）；F-014-003 继承 F-003b 经 A-017 fixed，后续终态证据由 C6.4 另行验收 |
-| 到期 required 是否已 verified / residual | **C6.1-C6.3 到期项已 verified** | A-010 F-001/F-002/F-003b/F-005 fixed；C6.4 仍须完成，不得用 progress `5/6` 推导 Root done |
+| 到期 required 是否已 verified / residual | **全部 verified** | I-001～I-007 verified；A-010 F-001/F-002/F-003b/F-005 与 GOAL-013 F-R6-001 fixed；C6.4 完成。Root `6/6` 仍不得推导 done |
 | 资料引用是否固定且用户确认 | 无 | `workspace.md` 为 `shared_materials_catalog: none`。 |
 
 ## 意见台账索引
