@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
@@ -42,10 +43,11 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}",
 			},
-			Pages:       []string{"settings"},
-			Navigation:  []string{"menu_settings"},
-			Permissions: []string{"settings.read", "settings.write"},
-			Fragments:   []string{"settings"},
+			Pages:            []string{"settings"},
+			Navigation:       []string{"menu_settings"},
+			Permissions:      []string{"settings.read", "settings.write"},
+			ConfigNamespaces: []string{settingsconfiguration.Namespace},
+			Fragments:        []string{"settings"},
 		},
 	}
 }
@@ -55,7 +57,11 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.SettingsRoutes(p.a, p.repository, p.operations, ModuleID) {
+	configuration := settingsconfiguration.Contribution()
+	if err := reg.Configuration(configuration); err != nil {
+		return err
+	}
+	for _, route := range handler.SettingsRoutes(p.a, p.repository, p.operations, ModuleID, configuration.Namespace) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
@@ -91,11 +97,14 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
-	return reg.Manifest(kernel.FragmentContribution{
+	if err := reg.Manifest(kernel.FragmentContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings"},
 		FragmentID:           "settings",
 		ProtocolVersion:      "2.7",
 		RequiredCapabilities: []string{"manifest", "navigation"},
 		JSON:                 manifest.FragmentJSON,
-	})
+	}); err != nil {
+		return err
+	}
+	return nil
 }

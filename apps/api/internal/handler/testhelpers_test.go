@@ -16,6 +16,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	coreschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender/schema"
+	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
 	usersschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/schema"
@@ -84,7 +85,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings"))
+	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
 	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))

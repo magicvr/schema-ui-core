@@ -81,6 +81,15 @@ type FragmentContribution struct {
 	JSON                 []byte
 }
 
+// ConfigurationContribution registers one module-owned runtime configuration
+// namespace with deterministic defaults and executable validation.
+type ConfigurationContribution struct {
+	ContributionIdentity
+	Namespace string
+	Defaults  []byte
+	Validate  func(json.RawMessage) error
+}
+
 // MigrationContribution is a compiled-global migration descriptor collected via
 // Provider.CompiledPersistence(); it never enters the enablement-gated Registrar
 // (freeze package §4).
@@ -106,6 +115,7 @@ const (
 	KindNavigation    ContributionKind = "navigation"
 	KindManifest      ContributionKind = "manifest"
 	KindPersistence   ContributionKind = "persistence"
+	KindConfiguration ContributionKind = "configuration"
 )
 
 // keyForRoute derives the canonical contribution key for an HTTP route:
@@ -184,8 +194,8 @@ func validatePermission(moduleID string, p PermissionContribution) error {
 	if strings.TrimSpace(p.Resource) == "" || strings.TrimSpace(p.Action) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires resource and action", p.Permission)
 	}
-	if strings.TrimSpace(p.PolicyID) == "" || strings.TrimSpace(p.PolicyID) != p.PolicyID {
-		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires a trimmed policy id", p.Permission)
+	if !validDottedIdentifier(p.PolicyID) {
+		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires a valid policy reference", p.Permission)
 	}
 	if p.SystemDataVersion <= 0 {
 		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires a positive system-data version", p.Permission)
@@ -203,8 +213,8 @@ func validateNavigation(moduleID string, n NavigationContribution) error {
 	if strings.TrimSpace(n.PageID) == "" || strings.TrimSpace(n.PageID) != n.PageID {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a trimmed page id", n.NodeID)
 	}
-	if strings.TrimSpace(n.Visibility) == "" || strings.TrimSpace(n.Visibility) != n.Visibility {
-		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a trimmed visibility expression", n.NodeID)
+	if !validDottedIdentifier(n.Visibility) {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a valid visibility policy reference", n.NodeID)
 	}
 	if n.SystemDataVersion <= 0 {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a positive system-data version", n.NodeID)
@@ -230,6 +240,57 @@ func validateFragment(moduleID string, f FragmentContribution) error {
 		return kernelError(CodeModuleInvalid, moduleID, "fragment %q JSON cannot be canonically encoded: %v", f.FragmentID, err)
 	}
 	return nil
+}
+
+func validateConfiguration(moduleID string, c ConfigurationContribution) error {
+	if err := validateIdentity(moduleID, KindConfiguration, c.Key, c.Namespace); err != nil {
+		return err
+	}
+	if !validDottedIdentifier(c.Namespace) {
+		return kernelError(CodeModuleInvalid, moduleID, "configuration namespace %q is invalid", c.Namespace)
+	}
+	var defaults map[string]json.RawMessage
+	if err := json.Unmarshal(c.Defaults, &defaults); err != nil || defaults == nil {
+		return kernelError(CodeModuleInvalid, moduleID, "configuration %q defaults must be a JSON object: %v", c.Namespace, err)
+	}
+	if _, err := json.Marshal(defaults); err != nil {
+		return kernelError(CodeModuleInvalid, moduleID, "configuration %q defaults cannot be canonically encoded: %v", c.Namespace, err)
+	}
+	if c.Validate == nil {
+		return kernelError(CodeModuleInvalid, moduleID, "configuration %q requires a validator", c.Namespace)
+	}
+	if err := c.Validate(json.RawMessage(c.Defaults)); err != nil {
+		return kernelError(CodeModuleInvalid, moduleID, "configuration %q defaults fail validation: %v", c.Namespace, err)
+	}
+	return nil
+}
+
+// validDottedIdentifier accepts the version-1 policy/configuration grammar:
+// lower-case ASCII dotted segments, with non-adjacent hyphens inside a segment.
+func validDottedIdentifier(value string) bool {
+	if value == "" || strings.TrimSpace(value) != value {
+		return false
+	}
+	for _, segment := range strings.Split(value, ".") {
+		if segment == "" || segment[0] < 'a' || segment[0] > 'z' {
+			return false
+		}
+		previousHyphen := false
+		for i, char := range []byte(segment) {
+			if char == '-' {
+				if i == 0 || i == len(segment)-1 || previousHyphen {
+					return false
+				}
+				previousHyphen = true
+				continue
+			}
+			if (char < 'a' || char > 'z') && (char < '0' || char > '9') {
+				return false
+			}
+			previousHyphen = false
+		}
+	}
+	return true
 }
 
 func validateMigration(moduleID string, m MigrationContribution) error {
@@ -272,6 +333,8 @@ func contributionDeclared(module Module, kind ContributionKind, key string) (boo
 		return contains(module.Contributions.Navigation), nil
 	case KindManifest:
 		return contains(module.Contributions.Fragments), nil
+	case KindConfiguration:
+		return contains(module.Contributions.ConfigNamespaces), nil
 	default:
 		return false, fmt.Errorf("kind %s is not registrar-declared", kind)
 	}

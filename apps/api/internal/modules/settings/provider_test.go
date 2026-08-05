@@ -67,6 +67,12 @@ func TestSettingsProviderRegistersSurfaces(t *testing.T) {
 	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "settings" {
 		t.Fatalf("fragments = %+v", set.Fragments)
 	}
+	if len(set.Configurations) != 1 || set.Configurations[0].Namespace != "settings.branding" {
+		t.Fatalf("configurations = %+v", set.Configurations)
+	}
+	if err := set.Configurations[0].Validate(json.RawMessage(set.Configurations[0].Defaults)); err != nil {
+		t.Fatalf("configuration defaults: %v", err)
+	}
 }
 
 // TestSettingsProviderServesBrandingAndAuth verifies public branding works and

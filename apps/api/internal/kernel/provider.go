@@ -14,7 +14,7 @@ import (
 // Provider is a compiled one-party module surface. Descriptor() returns the
 // registration-time metadata; CompiledPersistence() returns the module's
 // compiled-global migration descriptors; Register contributes HTTP/Schema/
-// Authorization/Navigation/Manifest surfaces for an enabled Plan.
+// Authorization/Navigation/Manifest/Configuration surfaces for an enabled Plan.
 type Provider interface {
 	Descriptor() Module
 	CompiledPersistence() ([]MigrationContribution, error)
@@ -30,17 +30,19 @@ type Registrar interface {
 	Authorization(PermissionContribution) error
 	Navigation(NavigationContribution) error
 	Manifest(FragmentContribution) error
+	Configuration(ConfigurationContribution) error
 }
 
 // ContributionSet is the validated, deterministic surface set produced by
 // RegisterContributions. It is never partially published: any validation error
 // discards the whole set (freeze package §3 step 6).
 type ContributionSet struct {
-	Routes      []RouteContribution
-	Pages       []PageContribution
-	Permissions []PermissionContribution
-	Navigation  []NavigationContribution
-	Fragments   []FragmentContribution
+	Routes         []RouteContribution
+	Pages          []PageContribution
+	Permissions    []PermissionContribution
+	Navigation     []NavigationContribution
+	Fragments      []FragmentContribution
+	Configurations []ConfigurationContribution
 }
 
 // contributionConflictError is the stable fail-closed error for a duplicate
@@ -278,6 +280,21 @@ func (r *validatingRegistrar) Manifest(c FragmentContribution) error {
 	return nil
 }
 
+func (r *validatingRegistrar) Configuration(c ConfigurationContribution) error {
+	if c.ModuleID != r.module.ID {
+		return kernelError(CodeModuleInvalid, r.module.ID, "configuration contribution module id %q does not match provider", c.ModuleID)
+	}
+	if err := validateConfiguration(r.module.ID, c); err != nil {
+		return err
+	}
+	if err := r.declare(KindConfiguration, c.Key); err != nil {
+		return err
+	}
+	c.Defaults = append([]byte(nil), c.Defaults...)
+	r.set.Configurations = append(r.set.Configurations, c)
+	return nil
+}
+
 // finalize runs global conflict, reference-integrity, capability and
 // deterministic-ordering checks. Any failure discards the whole set.
 func (s *ContributionSet) finalize(plan Plan) error {
@@ -348,12 +365,18 @@ func (s *ContributionSet) finalize(plan Plan) error {
 			}
 		}
 	}
+	for _, c := range s.Configurations {
+		if err := checkUnique(KindConfiguration, c.Key, c.ModuleID); err != nil {
+			return err
+		}
+	}
 
 	sortRoutes(s.Routes)
 	sortPages(s.Pages)
 	sortPermissions(s.Permissions)
 	sortNavigation(s.Navigation)
 	sortFragments(s.Fragments)
+	sortConfigurations(s.Configurations)
 	return nil
 }
 
@@ -383,4 +406,8 @@ func sortNavigation(nodes []NavigationContribution) {
 
 func sortFragments(fragments []FragmentContribution) {
 	sort.Slice(fragments, func(i, j int) bool { return fragments[i].FragmentID < fragments[j].FragmentID })
+}
+
+func sortConfigurations(configurations []ConfigurationContribution) {
+	sort.Slice(configurations, func(i, j int) bool { return configurations[i].Namespace < configurations[j].Namespace })
 }

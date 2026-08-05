@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -49,7 +50,7 @@ func catalogModule(desc Module) *testProvider {
 	return &testProvider{desc: minimalModule(desc)}
 }
 
-// sampleModule builds a minimal one-party module declaring all five registrar
+// sampleModule builds a minimal one-party module declaring all six registrar
 // kinds plus a compiled migration. overrides merges ID / Version / Contributions
 // so tests can exercise conflicts without repeating the full fixture.
 func sampleModule(overrides Module) (Module, *testProvider) {
@@ -59,11 +60,12 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 		KernelAPIRange: ">=2.0 <3.0",
 		Provides:       []Capability{CapabilityHTTP, CapabilitySchema, CapabilityAuthorization, CapabilityNavigation, CapabilityManifest, CapabilityPersistence},
 		Contributions: ContributionKeys{
-			Routes:      []string{"GET /api/sample"},
-			Pages:       []string{"sample"},
-			Navigation:  []string{"menu_sample"},
-			Permissions: []string{"sample.read"},
-			Fragments:   []string{"sample-fragment"},
+			Routes:           []string{"GET /api/sample"},
+			Pages:            []string{"sample"},
+			Navigation:       []string{"menu_sample"},
+			Permissions:      []string{"sample.read"},
+			ConfigNamespaces: []string{"sample.runtime"},
+			Fragments:        []string{"sample-fragment"},
 		},
 	}
 	if overrides.ID != "" {
@@ -83,6 +85,9 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 	}
 	if len(overrides.Contributions.Permissions) > 0 {
 		base.Contributions.Permissions = overrides.Contributions.Permissions
+	}
+	if len(overrides.Contributions.ConfigNamespaces) > 0 {
+		base.Contributions.ConfigNamespaces = overrides.Contributions.ConfigNamespaces
 	}
 	if len(overrides.Contributions.Fragments) > 0 {
 		base.Contributions.Fragments = overrides.Contributions.Fragments
@@ -118,11 +123,19 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 		}); err != nil {
 			return err
 		}
-		return r.Manifest(FragmentContribution{
+		if err := r.Manifest(FragmentContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: base.Contributions.Fragments[0]},
 			FragmentID:           base.Contributions.Fragments[0], ProtocolVersion: "1.0",
 			RequiredCapabilities: []string{"http", "schema"},
 			JSON:                 []byte(`{"page":"sample"}`),
+		}); err != nil {
+			return err
+		}
+		return r.Configuration(ConfigurationContribution{
+			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: base.Contributions.ConfigNamespaces[0]},
+			Namespace:            base.Contributions.ConfigNamespaces[0],
+			Defaults:             []byte(`{"enabled":true}`),
+			Validate:             func(json.RawMessage) error { return nil },
 		})
 	}
 	provider.migrate = func() ([]MigrationContribution, error) {
@@ -187,6 +200,9 @@ func TestRegisterContributionsHappyPath(t *testing.T) {
 	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "sample-fragment" {
 		t.Fatalf("fragments = %+v, want sample-fragment", set.Fragments)
 	}
+	if len(set.Configurations) != 1 || set.Configurations[0].Namespace != "sample.runtime" {
+		t.Fatalf("configurations = %+v, want sample.runtime", set.Configurations)
+	}
 }
 
 func TestSchemaDocumentValidationAndCopy(t *testing.T) {
@@ -229,6 +245,103 @@ func TestSchemaDocumentValidationAndCopy(t *testing.T) {
 	document[0] = 'x'
 	if !json.Valid(set.Pages[0].Document) {
 		t.Fatal("registered document aliases provider-owned bytes")
+	}
+}
+
+func TestConfigurationValidationCopyConflictAndOrdering(t *testing.T) {
+	module := func(id, namespace string) Module {
+		return minimalModule(Module{
+			ID: id, Version: "2.0.0",
+			Contributions: ContributionKeys{ConfigNamespaces: []string{namespace}},
+		})
+	}
+	provider := func(desc Module, namespace string, defaults []byte, validate func(json.RawMessage) error) Provider {
+		return &testProvider{desc: desc, mutate: func(r Registrar) error {
+			return r.Configuration(ConfigurationContribution{
+				ContributionIdentity: ContributionIdentity{ModuleID: desc.ID, Key: namespace},
+				Namespace:            namespace, Defaults: defaults, Validate: validate,
+			})
+		}}
+	}
+
+	valid := func(json.RawMessage) error { return nil }
+	for _, tc := range []struct {
+		name      string
+		namespace string
+		defaults  []byte
+		validator func(json.RawMessage) error
+	}{
+		{"invalid namespace", "Sample.Runtime", []byte(`{}`), valid},
+		{"non-object defaults", "sample.runtime", []byte(`[]`), valid},
+		{"missing validator", "sample.runtime", []byte(`{}`), nil},
+		{"defaults rejected", "sample.runtime", []byte(`{}`), func(json.RawMessage) error { return errors.New("rejected") }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			desc := module("test.config", tc.namespace)
+			if _, err := RegisterContributions(context.Background(), Plan{Modules: []Module{desc}}, []Provider{provider(desc, tc.namespace, tc.defaults, tc.validator)}); err == nil {
+				t.Fatal("invalid configuration should fail closed")
+			}
+		})
+	}
+
+	defaults := []byte(`{"enabled":true}`)
+	a := module("test.a", "a.runtime")
+	z := module("test.z", "z.runtime")
+	set, err := RegisterContributions(context.Background(), Plan{Modules: []Module{z, a}}, []Provider{
+		provider(z, "z.runtime", []byte(`{}`), valid),
+		provider(a, "a.runtime", defaults, valid),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaults[0] = 'x'
+	if got := []string{set.Configurations[0].Namespace, set.Configurations[1].Namespace}; !reflect.DeepEqual(got, []string{"a.runtime", "z.runtime"}) {
+		t.Fatalf("configuration order = %v", got)
+	}
+	if !json.Valid(set.Configurations[0].Defaults) {
+		t.Fatal("registered configuration aliases provider-owned defaults")
+	}
+
+	dupA := module("test.dup-a", "dup.runtime")
+	dupB := module("test.dup-b", "dup.runtime")
+	_, err = RegisterContributions(context.Background(), Plan{Modules: []Module{dupA, dupB}}, []Provider{
+		provider(dupA, "dup.runtime", []byte(`{}`), valid),
+		provider(dupB, "dup.runtime", []byte(`{}`), valid),
+	})
+	var kerr *Error
+	if !errors.As(err, &kerr) || kerr.Code != CodeModuleContributionConflict {
+		t.Fatalf("duplicate configuration err = %v", err)
+	}
+}
+
+func TestPolicyReferenceGrammar(t *testing.T) {
+	for _, value := range []string{"system.admin", "system.admin-editor", "system.admin-editor-viewer", "a1.b-2"} {
+		if !validDottedIdentifier(value) {
+			t.Fatalf("valid reference rejected: %q", value)
+		}
+	}
+	for _, value := range []string{"", " system.admin", "System.admin", "system..admin", "system.-admin", "system.admin-", "system.admin--editor", "system.admin_editor", "系统.admin"} {
+		if validDottedIdentifier(value) {
+			t.Fatalf("invalid reference accepted: %q", value)
+		}
+	}
+
+	base := PermissionContribution{
+		ContributionIdentity: ContributionIdentity{ModuleID: "test.policy", Key: "sample.read"},
+		Permission:           "sample.read", Resource: "sample", Action: "read", PolicyID: "system.custom", SystemDataVersion: 1,
+	}
+	if err := validatePermission("test.policy", base); err != nil {
+		t.Fatalf("well-formed owner-specific policy rejected by kernel: %v", err)
+	}
+	base.PolicyID = "system.admin || true"
+	if err := validatePermission("test.policy", base); err == nil {
+		t.Fatal("unversioned policy expression should fail kernel grammar")
+	}
+	if err := validateNavigation("test.policy", NavigationContribution{
+		ContributionIdentity: ContributionIdentity{ModuleID: "test.policy", Key: "menu_sample"},
+		NodeID:               "menu_sample", PageID: "sample", Label: "Sample", Visibility: "system.admin && system.editor", SystemDataVersion: 1,
+	}); err == nil {
+		t.Fatal("unversioned visibility expression should fail kernel grammar")
 	}
 }
 
@@ -425,7 +538,7 @@ func TestDualProfileContractMatrix(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s RegisterContributions: %v", name, err)
 		}
-		if len(set.Routes) != 1 || len(set.Pages) != 1 || len(set.Permissions) != 1 || len(set.Navigation) != 1 || len(set.Fragments) != 1 {
+		if len(set.Routes) != 1 || len(set.Pages) != 1 || len(set.Permissions) != 1 || len(set.Navigation) != 1 || len(set.Fragments) != 1 || len(set.Configurations) != 1 {
 			t.Fatalf("%s set = %+v, want one of each surface kind", name, set)
 		}
 	}

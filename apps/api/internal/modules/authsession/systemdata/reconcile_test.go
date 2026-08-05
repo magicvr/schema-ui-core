@@ -30,6 +30,24 @@ func openTestStore(t *testing.T) *store.Store {
 	return st
 }
 
+func TestValidateInputsRejectsWellFormedUnknownPolicies(t *testing.T) {
+	permission := kernel.PermissionContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.sample", Key: "sample.read"},
+		Permission:           "sample.read", Resource: "sample", Action: "read", PolicyID: "system.custom", SystemDataVersion: 1,
+	}
+	if err := validateInputs([]kernel.PermissionContribution{permission}, nil); err == nil || !strings.Contains(err.Error(), `unknown policy "system.custom"`) {
+		t.Fatalf("permission policy err = %v", err)
+	}
+
+	navigation := kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.sample", Key: "menu_sample"},
+		NodeID:               "menu_sample", PageID: "sample", Label: "Sample", Visibility: "system.custom", SystemDataVersion: 1,
+	}
+	if err := validateInputs(nil, []kernel.NavigationContribution{navigation}); err == nil || !strings.Contains(err.Error(), `unknown visibility policy "system.custom"`) {
+		t.Fatalf("visibility policy err = %v", err)
+	}
+}
+
 func sampleSystemData() ([]kernel.PermissionContribution, []kernel.NavigationContribution) {
 	permissions := []kernel.PermissionContribution{
 		{

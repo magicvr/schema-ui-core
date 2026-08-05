@@ -28,12 +28,12 @@ type SettingsRepository interface {
 	PatchSiteSettings(*string, *string, time.Time) (*settingsrepository.SiteSettings, error)
 }
 
-func SettingsRoutes(a *auth.Authenticator, repository SettingsRepository, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func SettingsRoutes(a *auth.Authenticator, repository SettingsRepository, operations operationlog.Recorder, moduleID, configNamespace string) []kernel.RouteContribution {
 	return []kernel.RouteContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/branding")}, Method: "GET", Pattern: "/api/branding", Handler: brandingGET(repository), Public: true},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/settings")}, Method: "GET", Pattern: "/api/settings", Handler: a.Middleware(settingsList(repository))},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/settings/{id}")}, Method: "GET", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsDetail(repository))},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("PATCH", "/api/settings/{id}")}, Method: "PATCH", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsPatch(repository, operations))},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("PATCH", "/api/settings/{id}")}, Method: "PATCH", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsPatch(repository, operations, configNamespace))},
 	}
 }
 
@@ -102,7 +102,7 @@ func settingsDetail(repository SettingsRepository) http.Handler {
 	})
 }
 
-func settingsPatch(repository SettingsRepository, operations operationlog.Recorder) http.Handler {
+func settingsPatch(repository SettingsRepository, operations operationlog.Recorder, configNamespace string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r.Context(), "settings.write")
 		if !ok {
@@ -153,7 +153,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 				slog.Error("operation log write failed", "event", operationlog.EventSettingsUpdate, "err", err)
 			}
 		}
-		w.Header().Set(configChangedHeader, "settings.branding")
+		w.Header().Set(configChangedHeader, configNamespace)
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
 }
