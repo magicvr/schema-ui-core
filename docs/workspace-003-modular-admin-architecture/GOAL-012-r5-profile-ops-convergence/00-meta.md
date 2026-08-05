@@ -55,7 +55,7 @@ reconcile、双 Profile Start/Ready 矩阵登记 R5/R6 residual（E-004）。完
 
 | 编号 | 级别 | 必须回答的问题 | 影响 | 最晚阶段 | 收集动作 | 状态 | 证据 |
 |------|------|----------------|------|----------|----------|------|------|
-| R5-I001 | required | Profile 运维/配置收敛与 R4 residual 的闭合边界？ | C5.1 | C5.1 | R4 residual 清单 + 设计 | verified | E-004：Schema 贡献驱动 + 适配器删除闭合；其余登记 residual |
+| R5-I001 | required | Profile 运维/配置收敛与 R4 residual 的闭合边界？ | C5.1 | C5.1 | R4 residual 清单 + 设计 | verified | E-004：Schema 贡献驱动 + 适配器删除闭合；其余登记 residual。**含 Root A-010 债（F-R5-IND-001 响应）**：store·Persistence 所有权/CollectPersistence 接线/seed 贡献驱动已登记为 required 信息项（模型 R5、迁出 R6），VP 退出 #2/#3/#5 取证前须闭合 |
 | R5-I002 | required | fresh/reconcile/升级恢复的深度验证边界？ | C5.2 | C5.2 | store 迁移 + 演练 | verified | E-003：fresh/upgrade/recovery 测试覆盖；versioned reconcile 登记 residual |
 | R5-I003 | required | readyz 真实 readiness 的实现边界？ | C5.3 | C5.3 | 设计 + 实施 | verified | E-002：readinessGate + RegisterWithReadiness + 两态测试 |
 | R5-I004 | non-blocking | hosted E2E/容器环境作为补充证据？ | C5.4 | C5.4 | 记录环境 | open | R4-I005 |
