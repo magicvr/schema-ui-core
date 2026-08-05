@@ -39,8 +39,8 @@ VP-003 关门提供完整证据。
   MountProviderRoutes test-only、死代码、test 双轨删除；生产仅 provider finalize
   一条装配路径。
 - [ ] **C6.2 / Persistence 所有权迁出**：store 上帝对象拆分（平台 runner/ledger vs
-  模块仓储）；`CollectPersistence` 生产接线 + 0001-0008 descriptor 归属；
-  seed/RBAC reconcile 以 Authorization/system-data 贡献为源。
+  模块仓储，按 D-002 设计）；`CollectPersistence` 生产接线 + 0001-0008 descriptor
+  归属；seed/RBAC reconcile 以 Authorization/system-data 贡献为源。
 - [ ] **C6.3 / Schema 字节贡献驱动 + 收尾**：Schema document 字节由 ContributionSet
   发布（去掉中心静态枚举）；Configuration 运行时迁移、PolicyID/Visibility 深化、
   双 Profile Start/Ready 失败矩阵。
@@ -56,16 +56,17 @@ VP-003 关门另需确认。
 | 编号 | 级别 | 必须回答的问题 | 影响 | 最晚阶段 | 收集动作 | 状态 | 证据 |
 |------|------|----------------|------|----------|----------|------|------|
 | R6-I001 | required | 旧装配双轨清单与删除证据？ | C6.1 | C6.1 | 全仓扫描 + 删除 | verified | E-002：MountProviderRoutes/RegisterSettings/RegisterActivity/静态 schema 合并清单 |
-| R6-I002 | required | store·Persistence 所有权模型与 CollectPersistence 接线边界？ | C6.2 | C6.2 | 设计 + 实施 | collecting | A-010 F-001/F-002；E-002 扫描 |
+| R6-I002 | required | store·Persistence 所有权模型与 CollectPersistence 接线边界？ | C6.2 | C6.2 | 设计 + 实施 | verified | D-002 + `attachments/r6-persistence-ownership-design.md`：分层/descriptor 归属/接线顺序/seed-reconcile 冻结，可实施 |
 | R6-I003 | required | Schema 字节贡献发布 + 收尾项边界？ | C6.3 | C6.3 | 实施 + 测试 | collecting | F-R5-CO-002 |
 | R6-I004 | required | VP 退出 #1-#7 逐条证据是否齐全？ | C6.4 | C6.4 | 逐条取证 + 审计 | collecting | VP-003 |
 
 ## 阶段路线图
 
-1. 旧路径删除清单 + 执行（C6.1）。
-2. Persistence 所有权迁出 + CollectPersistence 接线（C6.2）。
-3. Schema 字节贡献发布 + 收尾（C6.3）。
-4. 完整回归 + VP 退出 #1-#7 逐条取证 + self + Grok + Root/VP 关门（C6.4）。
+1. Persistence ownership 设计冻结（D-002/E-003，R6-I002 verified）。
+2. C6.1：测试走 Provider/composition 真路径 → 删 handler 级死适配器与双轨。
+3. C6.2：按 D-002 拆 store + 接线 CollectPersistence + seed/reconcile 贡献驱动。
+4. C6.3：Schema 字节 ContributionSet 发布 + 收尾。
+5. C6.4：完整回归 + VP 退出 #1-#7 逐条取证 + self + Grok + Root/VP 关门。
 
 ## 范围与非目标
 

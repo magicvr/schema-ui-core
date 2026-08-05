@@ -24,6 +24,7 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-05 | 建立 R6 旧路径移除与终态验收子目标 | accepted | [01-decision/D-001-r6-stage-scope.md](01-decision/D-001-r6-stage-scope.md) |
+| D-002 | 2026-08-05 | R6 store/Persistence 所有权决策（分层/descriptor/接线/seed-reconcile） | accepted | [01-decision/D-002-r6-persistence-ownership.md](01-decision/D-002-r6-persistence-ownership.md) |
 
 ## 当前约束
 
