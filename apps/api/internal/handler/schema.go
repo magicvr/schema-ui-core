@@ -72,11 +72,21 @@ func staticSchemaDocuments() map[string][]byte {
 
 func schemaDocumentsForPlan(plan kernel.Plan) map[string][]byte {
 	documents := staticSchemaDocuments()
-	owners := map[string]string{
-		"users":    "admin.users",
-		"roles":    "admin.roles",
-		"settings": "admin.settings",
-		"activity": "admin.activity",
+	// R4 C4.3: page→module ownership is derived from the module schema
+	// contributors (no hardcoded owner map); plan gating stays by module.
+	owners := map[string]string{}
+	for _, contributor := range []struct {
+		moduleID string
+		pageIDs  []string
+	}{
+		{usersschema.ModuleID, usersschema.PageIDs()},
+		{rolesschema.ModuleID, rolesschema.PageIDs()},
+		{settingsschema.ModuleID, settingsschema.PageIDs()},
+		{activityschema.ModuleID, activityschema.PageIDs()},
+	} {
+		for _, pageID := range contributor.pageIDs {
+			owners[pageID] = contributor.moduleID
+		}
 	}
 	for pageID, moduleID := range owners {
 		if !plan.HasModule(moduleID) {

@@ -1,0 +1,30 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "homePageRef": "overview",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "settings",
+      "title": "Settings",
+      "schemaUrl": "/api/schema/settings",
+      "route": "/settings"
+    }
+  ],
+  "navigation": {
+    "user": [
+      {
+        "pageRef": "settings",
+        "label": "Settings",
+        "icon": "settings",
+        "visibleWhen": {
+          "when": "$context.features.menu_settings == true"
+        }
+      }
+    ]
+  }
+}

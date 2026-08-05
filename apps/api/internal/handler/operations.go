@@ -96,3 +96,9 @@ func registerOperations(mux *http.ServeMux, a *auth.Authenticator, st *store.Sto
 func RegisterActivity(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	registerOperations(mux, a, st)
 }
+
+// OperationsResource exposes the read-only operations resource descriptor to
+// module providers (R4 C4.2).
+func OperationsResource(st *store.Store) Resource {
+	return operationsResource(st)
+}

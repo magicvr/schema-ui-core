@@ -1,0 +1,30 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "homePageRef": "overview",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "activity",
+      "title": "Activity",
+      "schemaUrl": "/api/schema/activity",
+      "route": "/activity"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "activity",
+        "label": "Activity",
+        "icon": "activity",
+        "visibleWhen": {
+          "when": "$context.features.menu_activity == true"
+        }
+      }
+    ]
+  }
+}

@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -155,6 +156,11 @@ func validatePermission(moduleID string, p PermissionContribution) error {
 	if strings.TrimSpace(p.Resource) == "" || strings.TrimSpace(p.Action) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "permission %q requires resource and action", p.Permission)
 	}
+	// PolicyID, when set, must be a stable non-empty identifier (freeze §2.2:
+	// PolicyID requires a validator; no arbitrary whitespace-surrounded strings).
+	if p.PolicyID != "" && strings.TrimSpace(p.PolicyID) != p.PolicyID {
+		return kernelError(CodeModuleInvalid, moduleID, "permission %q policy id %q must be trimmed", p.Permission, p.PolicyID)
+	}
 	return nil
 }
 
@@ -165,6 +171,10 @@ func validateNavigation(moduleID string, n NavigationContribution) error {
 	if strings.TrimSpace(n.Label) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a label", n.NodeID)
 	}
+	// Visibility, when set, must be a non-empty expression (freeze §2.2).
+	if n.Visibility != "" && strings.TrimSpace(n.Visibility) != n.Visibility {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q visibility must be trimmed", n.NodeID)
+	}
 	return nil
 }
 
@@ -174,6 +184,16 @@ func validateFragment(moduleID string, f FragmentContribution) error {
 	}
 	if strings.TrimSpace(f.ProtocolVersion) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "fragment %q requires protocol version", f.FragmentID)
+	}
+	// JSON must be valid JSON and deterministically encodable (freeze §2.2).
+	// The authored file may be pretty-printed; a canonical re-encode must
+	// succeed so the published bytes are deterministic.
+	var canonical any
+	if err := json.Unmarshal(f.JSON, &canonical); err != nil {
+		return kernelError(CodeModuleInvalid, moduleID, "fragment %q JSON is not valid JSON: %v", f.FragmentID, err)
+	}
+	if _, err := json.Marshal(canonical); err != nil {
+		return kernelError(CodeModuleInvalid, moduleID, "fragment %q JSON cannot be canonically encoded: %v", f.FragmentID, err)
 	}
 	return nil
 }

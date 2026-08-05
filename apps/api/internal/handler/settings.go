@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -17,6 +18,18 @@ import (
 // composition root. The module package owns when this contribution is added.
 func RegisterSettings(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {
 	settingsHandler(mux, a, st)
+}
+
+// SettingsRoutes returns the Settings module HTTP route contributions (public
+// branding + authenticated settings list/detail/patch). R4 C4.1: module
+// providers reuse it so the provider surface matches the central adapter.
+func SettingsRoutes(a *auth.Authenticator, st *store.Store, moduleID string) []kernel.RouteContribution {
+	return []kernel.RouteContribution{
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/branding")}, Method: "GET", Pattern: "/api/branding", Handler: brandingGET(st)},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/settings")}, Method: "GET", Pattern: "/api/settings", Handler: a.Middleware(settingsList(st))},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/settings/{id}")}, Method: "GET", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsDetail(st))},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("PATCH", "/api/settings/{id}")}, Method: "PATCH", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsPatch(st))},
+	}
 }
 
 func settingsHandler(mux *http.ServeMux, a *auth.Authenticator, st *store.Store) {

@@ -2,6 +2,13 @@ package schema
 
 import "embed"
 
+// ModuleID is the owning module for the schema handler's contribution-driven
+// page gating (R4 C4.3).
+const ModuleID = "admin.settings"
+
+// PageIDs are the page identifiers this module contributes.
+func PageIDs() []string { return []string{"settings"} }
+
 //go:embed *.json
 var schemaFiles embed.FS
 

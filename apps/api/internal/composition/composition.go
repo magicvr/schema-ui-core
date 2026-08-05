@@ -101,18 +101,18 @@ func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan) (*http.Ser
 	if plan.HasModule("admin.roles") {
 		providers = append(providers, rolesmodule.New(a, st))
 	}
+	if plan.HasModule("admin.settings") {
+		providers = append(providers, settingsmodule.New(a, st))
+	}
+	if plan.HasModule("admin.activity") {
+		providers = append(providers, activitymodule.New(a, st))
+	}
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "", Detail: fmt.Sprintf("register contributions: %v", err)}
 	}
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
-	}
-	if plan.HasModule("admin.settings") {
-		settingsmodule.Register(mux, a, st)
-	}
-	if plan.HasModule("admin.activity") {
-		activitymodule.Register(mux, a, st)
 	}
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))

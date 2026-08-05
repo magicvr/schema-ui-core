@@ -133,3 +133,13 @@ func TestAggregateRejectsDuplicateModuleFragments(t *testing.T) {
 		t.Fatal("duplicate module fragments must fail closed")
 	}
 }
+
+// TestAggregateRejectsSecretKey verifies the public-Manifest secrecy rule:
+// a fragment carrying a secret-like key fails closed (R4 C4.4).
+func TestAggregateRejectsSecretKey(t *testing.T) {
+	fragment := []byte(`{"protocolVersion":"0.1.3","requiredCapabilities":[],"app":{"appId":"test"},"pages":[{"pageId":"x","meta":{"token":"s3cr3t"}}],"navigation":{"top":[],"sidebar":[],"user":[]}}`)
+	_, err := Aggregate([]Fragment{{ModuleID: "leaky", Raw: fragment}})
+	if err == nil {
+		t.Fatal("fragment with secret key must fail closed")
+	}
+}

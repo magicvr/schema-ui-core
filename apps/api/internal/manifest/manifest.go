@@ -42,10 +42,10 @@ func ForModules(moduleIDs []string) ([]byte, error) {
 	return ForModulesWithFragments(moduleIDs, nil)
 }
 
-// ForModulesWithFragments is the R4 C3.3 aggregation: baseline projection for
-// still-central modules (settings/activity) plus module-contributed manifest
-// fragments (users/roles providers). The embedded baseline no longer contains
-// the users/roles pages or their admin navigation; those arrive as fragments.
+// ForModulesWithFragments is the R4 C4 aggregation: the embedded baseline is
+// core-only, and every standard Admin module (users/roles/settings/activity)
+// contributes a manifest fragment. The function publishes the baseline as the
+// core fragment and merges the enabled provider fragments.
 func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment) ([]byte, error) {
 	enabled := make(map[string]struct{}, len(moduleIDs))
 	for _, rawID := range moduleIDs {
@@ -63,107 +63,11 @@ func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment) ([]
 	if err := json.Unmarshal(defaultManifest, &base); err != nil {
 		return nil, fmt.Errorf("manifest: parse embedded baseline: %w", err)
 	}
-	// R4 C3.3: users/roles are module-contributed fragments; settings/activity
-	// remain baseline-projected until C4 migrates them.
-	adminModules := map[string]string{
-		"settings": "admin.settings",
-		"activity": "admin.activity",
-	}
-	core := base
-	core.Pages = []json.RawMessage{}
-	core.Navigation = navigation{Top: append([]json.RawMessage(nil), base.Navigation.Top...), Sidebar: []json.RawMessage{}, User: []json.RawMessage{}}
-	modulePages := map[string]json.RawMessage{}
-	for _, page := range base.Pages {
-		var identity struct {
-			PageID string `json:"pageId"`
-		}
-		if err := json.Unmarshal(page, &identity); err != nil {
-			return nil, fmt.Errorf("manifest: parse baseline page: %w", err)
-		}
-		if moduleID, ok := adminModules[identity.PageID]; ok {
-			modulePages[moduleID] = page
-			continue
-		}
-		core.Pages = append(core.Pages, page)
-	}
-
-	moduleNavigation := map[string]navigation{}
-	for _, item := range base.Navigation.Sidebar {
-		var group struct {
-			Label string            `json:"label"`
-			Icon  string            `json:"icon"`
-			Items []json.RawMessage `json:"items"`
-		}
-		if err := json.Unmarshal(item, &group); err != nil {
-			return nil, fmt.Errorf("manifest: parse baseline sidebar: %w", err)
-		}
-		if group.Label != "Admin" || len(group.Items) == 0 {
-			core.Navigation.Sidebar = append(core.Navigation.Sidebar, item)
-			continue
-		}
-		for _, navItem := range group.Items {
-			var ref struct {
-				PageRef string `json:"pageRef"`
-			}
-			if err := json.Unmarshal(navItem, &ref); err != nil {
-				return nil, fmt.Errorf("manifest: parse baseline admin navigation: %w", err)
-			}
-			moduleID, ok := adminModules[ref.PageRef]
-			if !ok {
-				return nil, fmt.Errorf("manifest: no module owns admin page %q", ref.PageRef)
-			}
-			if _, selected := enabled[moduleID]; selected {
-				nav := moduleNavigation[moduleID]
-				nav.Sidebar = append(nav.Sidebar, navItem)
-				moduleNavigation[moduleID] = nav
-			}
-		}
-	}
-	for _, item := range base.Navigation.User {
-		var ref struct {
-			PageRef string `json:"pageRef"`
-		}
-		if err := json.Unmarshal(item, &ref); err != nil {
-			return nil, fmt.Errorf("manifest: parse baseline user navigation: %w", err)
-		}
-		moduleID, ok := adminModules[ref.PageRef]
-		if !ok {
-			return nil, fmt.Errorf("manifest: no module owns user page %q", ref.PageRef)
-		}
-		if _, selected := enabled[moduleID]; selected {
-			nav := moduleNavigation[moduleID]
-			nav.User = append(nav.User, item)
-			moduleNavigation[moduleID] = nav
-		}
-	}
-
-	coreRaw, err := json.Marshal(core)
+	coreRaw, err := json.Marshal(base)
 	if err != nil {
 		return nil, fmt.Errorf("manifest: encode core fragment: %w", err)
 	}
 	allFragments := []Fragment{{ModuleID: "core.manifest-route", Raw: coreRaw}}
-	selectedIDs := make([]string, 0, len(modulePages))
-	for moduleID := range modulePages {
-		if _, selected := enabled[moduleID]; selected {
-			selectedIDs = append(selectedIDs, moduleID)
-		}
-	}
-	sort.Strings(selectedIDs)
-	for _, moduleID := range selectedIDs {
-		page := modulePages[moduleID]
-		moduleFragment := envelope{
-			ProtocolVersion:      base.ProtocolVersion,
-			RequiredCapabilities: append([]string(nil), base.RequiredCapabilities...),
-			App:                  append(json.RawMessage(nil), base.App...),
-			Pages:                []json.RawMessage{page},
-			Navigation:           moduleNavigation[moduleID],
-		}
-		raw, err := json.Marshal(moduleFragment)
-		if err != nil {
-			return nil, fmt.Errorf("manifest: encode module fragment %s: %w", moduleID, err)
-		}
-		allFragments = append(allFragments, Fragment{ModuleID: moduleID, Raw: raw})
-	}
 	allFragments = append(allFragments, moduleFragments...)
 	return Aggregate(allFragments)
 }
@@ -197,6 +101,9 @@ func Aggregate(fragments []Fragment) ([]byte, error) {
 		var parsed envelope
 		if err := json.Unmarshal(fragment.Raw, &parsed); err != nil {
 			return nil, fmt.Errorf("manifest: parse fragment %s: %w", moduleID, err)
+		}
+		if err := rejectFragmentSecrets(moduleID, fragment.Raw); err != nil {
+			return nil, err
 		}
 		if parsed.ProtocolVersion == "" {
 			return nil, fmt.Errorf("manifest: fragment %s has no protocolVersion", moduleID)
@@ -270,6 +177,46 @@ func canonicalJSON(raw json.RawMessage) ([]byte, error) {
 		return nil, err
 	}
 	return json.Marshal(value)
+}
+
+// secretKeyNames are keys that a public, login-before Manifest must never carry
+// (freeze package §5: "public Manifest 登录前可读但不得包含 secret、token 或用户
+// 个性化信息"). Fragments containing them fail closed.
+var secretKeyNames = []string{"password", "token", "secret", "authorization", "apikey", "api_key"}
+
+// rejectFragmentSecrets recursively scans a fragment's JSON for secret-like
+// keys and rejects it, so module-authored manifest content cannot leak secrets
+// into the public document (R4 C4.4).
+func rejectFragmentSecrets(moduleID string, raw []byte) error {
+	var value any
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil // structural validation happens elsewhere
+	}
+	var walk func(any) error
+	walk = func(node any) error {
+		switch v := node.(type) {
+		case map[string]any:
+			for key, child := range v {
+				lower := strings.ToLower(strings.TrimSpace(key))
+				for _, secret := range secretKeyNames {
+					if lower == secret {
+						return fmt.Errorf("manifest: fragment %s contains secret key %q (public manifest secrecy)", moduleID, key)
+					}
+				}
+				if err := walk(child); err != nil {
+					return err
+				}
+			}
+		case []any:
+			for _, child := range v {
+				if err := walk(child); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	return walk(value)
 }
 
 func pageIdentity(raw json.RawMessage) (string, error) {
