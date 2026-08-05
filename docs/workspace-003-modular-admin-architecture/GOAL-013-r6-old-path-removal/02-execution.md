@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-05 | 建立 R6 旧路径移除与终态验收子目标 | recorded | [02-execution/E-001-r6-child-opened.md](02-execution/E-001-r6-child-opened.md) |
+| E-002 | 2026-08-05 | R6.1 旧路径与内聚债扫描 | recorded | [02-execution/E-002-r6-old-path-scan.md](02-execution/E-002-r6-old-path-scan.md) |
 
 ## 事实边界
 
