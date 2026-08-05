@@ -6,7 +6,7 @@ parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.0
-progress: 0/4
+progress: 1/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -36,7 +36,7 @@ serves_summary: 承接冻结包 §7 切换顺序，将 Users/Roles 从中心注�
 
 ## 成功标准
 
-- [ ] **C3.1 / 迁移扫描与行为矩阵**：Users/Roles 当前中心注册、Schema fixture、
+- [x] **C3.1 / 迁移扫描与行为矩阵**：Users/Roles 当前中心注册、Schema fixture、
   Manifest 投影、seed/权限与 operationlog writer 的状态盘点；固定保留行为矩阵
   （CRUD、授权、角色分配、最后管理员保护、密码、operationlog best-effort）。
 - [ ] **C3.2 / Provider 化**：`admin.users`/`admin.roles` 提供 provider（Descriptor +
@@ -48,15 +48,15 @@ serves_summary: 承接冻结包 §7 切换顺序，将 Users/Roles 从中心注�
 - [ ] **C3.4 / 验证与关门**：行为矩阵测试 + 双 Profile + 失败注入（operationlog
   append 失败不翻转业务成功）+ self + Grok independent 无开放 required finding。
 
-四个检查点等权；当前 `progress: 0/4`。完成本子目标只表示 C3 关闭，不关闭 GOAL-005、
-Root 或 VP-003，不自动放行 C4。
+四个检查点等权；当前 `progress: 1/4`（C3.1 扫描与行为矩阵完成）。完成本子目标只
+表示 C3 关闭，不关闭 GOAL-005、Root 或 VP-003，不自动放行 C4。
 
 ## 信息门禁
 
 | 编号 | 级别 | 必须回答的问题 | 影响 | 最晚阶段 | 收集动作 | 状态 | 证据 |
 |------|------|----------------|------|----------|----------|------|------|
-| C3-I001 | required | Users/Roles 当前中心注册、Schema fixture、Manifest 投影与 seed/权限 ownership 的完整状态？ | C3.1/C3.3 | C3.1 | 全仓扫描 `handler.Register`、`schema.go` owner map、`manifest.go` adminModules、`seed.go` | collecting | 待 C3.1 扫描 |
-| C3-I002 | required | C3 必须保留的行为矩阵（HTTP/Schema/授权/角色分配/最后管理员/密码/operationlog）是否枚举？ | C3.2/C3.4 | C3.1 | 对照冻结包 §7 兼容清单 + 现有测试 | collecting | 冻结包 §7；待 C3.1 枚举 |
+| C3-I001 | required | Users/Roles 当前中心注册、Schema fixture、Manifest 投影与 seed/权限 ownership 的完整状态？ | C3.1/C3.3 | C3.1 | 全仓扫描 `handler.Register`、`schema.go` owner map、`manifest.go` adminModules、`seed.go` | verified | E-002：中心 Register/Schema owner map/Manifest adminModules/资源工厂已定位 |
+| C3-I002 | required | C3 必须保留的行为矩阵（HTTP/Schema/授权/角色分配/最后管理员/密码/operationlog）是否枚举？ | C3.2/C3.4 | C3.1 | 对照冻结包 §7 兼容清单 + 现有测试 | verified | E-002 行为矩阵（冻结 §7 + 现有测试） |
 | C3-I003 | required | operationlog append 失败不翻转业务成功的 failure-injection 测试（FR-005/C13-003）是否补齐？ | C3.4 行为矩阵 | C3.4 | Users/Roles/Auth/Settings 失败注入测试 | collecting | GOAL-006 FR-005；C3.4 补测 |
 | C3-I004 | non-blocking | 运行时双 Profile 矩阵与 Manifest secrecy 是否纳入 C3 门禁？ | C3.4 证据强度 | C3.4 | GOAL-008 E-004 登记的 C3 门禁 | open | GOAL-008 E-004 |
 

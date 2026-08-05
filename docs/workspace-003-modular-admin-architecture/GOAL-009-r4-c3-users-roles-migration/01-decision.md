@@ -14,8 +14,8 @@ version: 0.1.0
 
 | 编号 | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 证据 / 决策 |
 |------|------|-----------------|----------|--------------|-----------------|------|-------------|
-| C3-I001 | required | Users/Roles 当前中心注册/Schema/Manifest/seed ownership | C3.1/C3.3 | C3.1 | 全仓扫描 | collecting | 待 C3.1 |
-| C3-I002 | required | C3 保留行为矩阵枚举 | C3.2/C3.4 | C3.1 | 冻结包 §7 + 现有测试 | collecting | 冻结包 §7 |
+| C3-I001 | required | Users/Roles 当前中心注册/Schema/Manifest/seed ownership | C3.1/C3.3 | C3.1 | 全仓扫描 | verified | E-002 |
+| C3-I002 | required | C3 保留行为矩阵枚举 | C3.2/C3.4 | C3.1 | 冻结包 §7 + 现有测试 | verified | E-002 行为矩阵 |
 | C3-I003 | required | operationlog 失败注入测试 | C3.4 | C3.4 | 失败注入测试 | collecting | GOAL-006 FR-005 |
 | C3-I004 | non-blocking | 双 Profile 矩阵 + Manifest secrecy | C3.4 | C3.4 | GOAL-008 E-004 | open | GOAL-008 E-004 |
 

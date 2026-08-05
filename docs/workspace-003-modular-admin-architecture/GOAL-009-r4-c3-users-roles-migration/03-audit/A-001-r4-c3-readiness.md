@@ -20,8 +20,8 @@ C3-I004 non-blocking。
 ## Finding
 
 - `F-C3-001`：`open`（initial）。C3.1 需完成全仓扫描并枚举行为矩阵后关闭
-  C3-I001/C3-I002；C3.4 需补 operationlog 失败注入测试关闭 C3-I003。不阻断
-  C3.1 起步。
+  C3-I001/C3-I002；C3.4 需补 operationlog 失败注入测试关闭 C3-I003。C3-I001/I002
+  已由 E-002 扫描 + 行为矩阵 `verified`（C3.1 完成）；C3-I003 待 C3.4 补测。
 
 ## Gate
 
