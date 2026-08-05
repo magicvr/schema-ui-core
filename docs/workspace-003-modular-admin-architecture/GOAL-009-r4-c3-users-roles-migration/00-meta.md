@@ -59,7 +59,7 @@ serves_summary: 承接冻结包 §7 切换顺序，将 Users/Roles 从中心注�
 |------|------|----------------|------|----------|----------|------|------|
 | C3-I001 | required | Users/Roles 当前中心注册、Schema fixture、Manifest 投影与 seed/权限 ownership 的完整状态？ | C3.1/C3.3 | C3.1 | 全仓扫描 `handler.Register`、`schema.go` owner map、`manifest.go` adminModules、`seed.go` | verified | E-002：中心 Register/Schema owner map/Manifest adminModules/资源工厂已定位 |
 | C3-I002 | required | C3 必须保留的行为矩阵（HTTP/Schema/授权/角色分配/最后管理员/密码/operationlog）是否枚举？ | C3.2/C3.4 | C3.1 | 对照冻结包 §7 兼容清单 + 现有测试 | verified | E-002 行为矩阵（冻结 §7 + 现有测试） |
-| C3-I003 | required | operationlog append 失败不翻转业务成功的 failure-injection 测试（FR-005/C13-003）是否补齐？ | C3.4 行为矩阵 | C3.4 | Users/Roles/Auth/Settings 失败注入测试 | collecting | GOAL-006 FR-005；C3.4 补测 |
+| C3-I003 | required | operationlog append 失败不翻转业务成功的 failure-injection 测试（FR-005/C13-003）是否补齐？ | C3.4 行为矩阵 | C3.4 | Users/Roles/Auth/Settings 失败注入测试 | verified | store `SetOperationLogError` seam + handler `TestOperationLogFailurePreservesBusinessSuccess` |
 | C3-I004 | non-blocking | 运行时双 Profile 矩阵与 Manifest secrecy 是否纳入 C3 门禁？ | C3.4 证据强度 | C3.4 | GOAL-008 E-004 登记的 C3 门禁 | open | GOAL-008 E-004 |
 
 ## 阶段路线图
