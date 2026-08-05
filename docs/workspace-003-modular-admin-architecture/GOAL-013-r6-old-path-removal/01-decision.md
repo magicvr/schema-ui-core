@@ -26,6 +26,7 @@ version: 0.5.0
 | D-001 | 2026-08-05 | 建立 R6 旧路径移除与终态验收子目标 | accepted | [01-decision/D-001-r6-stage-scope.md](01-decision/D-001-r6-stage-scope.md) |
 | D-002 | 2026-08-05 | R6 store/Persistence 所有权决策（分层/descriptor/接线/seed-reconcile） | accepted | [01-decision/D-002-r6-persistence-ownership.md](01-decision/D-002-r6-persistence-ownership.md) |
 | D-003 | 2026-08-06 | R6 C6.3 Contribution、校验与生命周期终态契约 | accepted | [01-decision/D-003-r6-c63-contribution-validation-lifecycle.md](01-decision/D-003-r6-c63-contribution-validation-lifecycle.md) |
+| D-004 | 2026-08-06 | R6 C6.4 终态验收与 VP 退出证据矩阵 | accepted | [01-decision/D-004-r6-c64-acceptance-matrix.md](01-decision/D-004-r6-c64-acceptance-matrix.md) |
 
 ## 当前约束
 
