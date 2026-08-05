@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 审计 · GOAL-013
@@ -16,10 +16,11 @@ version: 0.8.0
 |--------|------|------|
 | R6-I001 | verified（meta） | E-002/E-004；本索引曾滞后，以 meta 为准直至编排刷新 |
 | R6-I002 | verified（设计 + 实施 + cross） | D-002、E-006～E-009、A-004～A-008；C6.2 已完成 |
-| R6-I003 / R6-I004 | collecting | C6.3 / C6.4 |
+| R6-I003 | verified（implementation + cross） | D-003、E-011～E-013、A-009～A-011；C6.3 已完成 |
+| R6-I004 | collecting | C6.4 |
 | 影响本 scope 的 inherited evidence | available | R5 residual、Root A-010 债、VP-003 |
 | A-002 C6.2 切片 1–2 | conditional | 可进切片 3；F-C62-001/003 已由 A-003 响应 |
-| 到期 required 是否已 verified | yes（C6.1/C6.2） | F-C62-004 与 A-010 F-001/F-002/F-005 fixed；C6.3/C6.4 信息项尚未到放行点 |
+| 到期 required 是否已 verified | yes（C6.1～C6.3） | A-010 F-001/F-002/F-003b/F-005 fixed；R6-I004/C6.4 仍 collecting |
 
 ## 意见台账索引
 
@@ -35,6 +36,7 @@ version: 0.8.0
 | A-008 | 2026-08-06 | self | 响应 A-007、闭合 F-C62-004 并放行 C6.2 | pass | 0 | [03-audit/A-008-c62-independent-response.md](03-audit/A-008-c62-independent-response.md) |
 | A-009 | 2026-08-06 | self | C6.3 Schema/Configuration/Policy/Lifecycle 实施事实 | pass | 0（self scope；cross 待审） | [03-audit/A-009-c63-contribution-lifecycle-self.md](03-audit/A-009-c63-contribution-lifecycle-self.md) |
 | A-010 | 2026-08-06 | independent | C6.3 Schema/Configuration/Policy/Lifecycle + F-003b/R6-I003 | pass | 0 | [03-audit/A-010-c63-contribution-lifecycle-independent.md](03-audit/A-010-c63-contribution-lifecycle-independent.md) |
+| A-011 | 2026-08-06 | self | 响应 A-009/A-010、闭合 F-003b 并放行 C6.3 | pass | 0 | [03-audit/A-011-c63-independent-response.md](03-audit/A-011-c63-independent-response.md) |
 
 ## 结论状态
 
@@ -66,3 +68,7 @@ opinion 与 `/govern` 响应。
 **A-010（Grok independent）pass、required 0、recommended 0**：只读静态交叉核验与
 A-009 一致，无意见冲突；确认 Root A-010 F-003b 具备 fixed 闭合证据、R6-I003 可在
 `/govern` 响应后改为 `verified`。本意见不修改 meta/goal-tree，不放行 C6.4、Root 或 VP。
+
+**A-011 已响应 A-009/A-010 并放行 C6.3**：R6-I003 `verified`，Root A-010 F-003b
+经 Root A-017 按 `fixed` 合法闭合，C6.3 勾选后 GOAL-013 派生 progress 为 `3/4`。
+R6-I004/C6.4 继续 collecting；GOAL-013、Root 与 VP 均未关门。

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 审计 · GOAL-001
@@ -18,10 +18,10 @@ version: 0.11.0
 | I-004、I-005 | verified | GOAL-003 C1/C4 evidence、A-002 self、A-003/A-004 Grok re-audits 与 Root D-006/E-006 已核对；R2 stage close-out 已由 D-007/E-007/A-006 记录。 |
 | I-006 | verified | GOAL-004 A-004/E-005/D-004 已核对；R6 仍需重新核对最终旧路径移除边界，不能把 R3 证据扩大为 R6 通过。 |
 | A-002 required findings | closed | F-001～F-003 → `fixed`（A-003 / D-002）；F-004～F-006 同批 `fixed`。 |
-| A-010 open required（VP 代码内聚） | **部分闭合（A-016）** | F-008/F-003a、F-001/F-002/F-005 已 fixed；F-003b Schema 字节发布仍 open → GOAL-013 C6.3，继续阻断 VP 退出 #4 与 Root done |
-| A-012 open required（R1–R5/A-010 复审） | **响应闭合；继承债见 A-016** | F-012-001/002/004 accepted fixed，F-012-003 经 A-015 fixed，F-012-005 confirmed；继承 F-001/F-002/F-005 已 fixed，F-003b 仍 open |
-| A-014 open required（A-013/R5 复审） | **响应闭合；继承债收窄（A-016）** | F-014-001/002 fixed（A-015）；F-014-003 已收窄为 F-003b + 后续终态证据 |
-| 到期 required 是否已 verified / residual | **C6.2 到期项已 verified** | A-010 F-001/F-002/F-005 fixed；C6.3/C6.4 仍须完成，不得用 progress `5/6` 推导 Root done |
+| A-010 required（VP 代码内聚） | **全部 fixed（A-016/A-017）** | F-008/F-003a、F-001/F-002/F-005 已 fixed；F-003b 经 GOAL-013 C6.3 cross + Root A-017 fixed |
+| A-012 required（R1–R5/A-010 复审） | **响应闭合；继承债 fixed** | F-012-001/002/004 accepted fixed，F-012-003 经 A-015 fixed，F-012-005 confirmed；继承 F-001/F-002/F-003b/F-005 已 fixed |
+| A-014 required（A-013/R5 复审） | **响应闭合；实现债 fixed** | F-014-001/002 fixed（A-015）；F-014-003 继承 F-003b 经 A-017 fixed，后续终态证据由 C6.4 另行验收 |
+| 到期 required 是否已 verified / residual | **C6.1-C6.3 到期项已 verified** | A-010 F-001/F-002/F-003b/F-005 fixed；C6.4 仍须完成，不得用 progress `5/6` 推导 Root done |
 | 资料引用是否固定且用户确认 | 无 | `workspace.md` 为 `shared_materials_catalog: none`。 |
 
 ## 意见台账索引
@@ -44,6 +44,7 @@ version: 0.11.0
 | A-014 | 2026-08-05 | independent | 复审 A-013 响应闭合 + R5 关门证据 | conditional | 1 新增（F-014-001）+ 继承实现债 | [03-audit/A-014-a013-response-r5-closeout-reaudit.md](03-audit/A-014-a013-response-r5-closeout-reaudit.md) |
 | A-015 | 2026-08-05 | self | 响应 A-014（F-014-001..003） | conditional | 0（新增） | [03-audit/A-015-a014-closeout-reaudit-response.md](03-audit/A-015-a014-closeout-reaudit-response.md) |
 | A-016 | 2026-08-06 | self | R6 C6.2 响应 A-010 F-001/F-002/F-005 与继承债 | conditional | 1（继承 F-003b） | [03-audit/A-016-r6-c62-a010-response.md](03-audit/A-016-r6-c62-a010-response.md) |
+| A-017 | 2026-08-06 | self | R6 C6.3 响应 A-010 F-003b 与继承债 | conditional | 0（实现债；C6.4 终态证据待） | [03-audit/A-017-r6-c63-a010-response.md](03-audit/A-017-r6-c63-a010-response.md) |
 
 ## 结论状态
 
@@ -65,3 +66,6 @@ version: 0.11.0
 - **A-016**：响应 GOAL-013 C6.2（2026-08-06）。A-010 F-001/F-002/F-005 经
   GOAL-013 A-006 self + A-007 Grok independent + A-008 response 合法 `fixed`；
   F-014-003 继承债收窄为 F-003b 与后续终态证据。Root 保持 `active / 5/6`，不得关门。
+- **A-017**：响应 GOAL-013 C6.3（2026-08-06）。A-010 F-003b 经 GOAL-013
+  A-009 self + A-010 Grok independent + A-011 response 合法 `fixed`；A-010 的实现债
+  至此全部 fixed。C6.4 与 exit #1～#7 终态证据仍开放，Root 保持 `active / 5/6`。

@@ -5,7 +5,7 @@ canonical_scope: docs/workspace-003-modular-admin-architecture/
 status: active
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
@@ -33,14 +33,14 @@ GOAL-001-modular-admin-architecture [active] (5/6)
     ├── GOAL-010-r4-c4-schema-other-migration [done] (4/4) · R4-C4 Schema 与其他能力迁移
     └── GOAL-011-r4-c5-acceptance [done] (4/4) · R4-C5 验收与关门
 GOAL-012-r5-profile-ops-convergence [done] (4/4) · R5 Profile 运维与数据收敛
-GOAL-013-r6-old-path-removal [active] (2/4) · R6 旧路径移除与终态验收
+GOAL-013-r6-old-path-removal [active] (3/4) · R6 旧路径移除与终态验收
 ```
 
 ## 状态表
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| GOAL-001-modular-admin-architecture | 单主线模块化 Admin 架构 | `null` | active | `5/6` | 2026-08-05 |
+| GOAL-001-modular-admin-architecture | 单主线模块化 Admin 架构 | `null` | active | `5/6` | 2026-08-06 |
 | GOAL-002-r1-contract-migration-baseline | R1 契约与迁移基线冻结 | `GOAL-001-modular-admin-architecture` | done | `4/4` | 2026-08-04 |
 | GOAL-003-r2-kernel-composition-root | R2 内核与组合根基础 | `GOAL-001-modular-admin-architecture` | done | `5/5` | 2026-08-05 |
 | GOAL-004-r3-bounded-pilot | R3 bounded pilot | `GOAL-001-modular-admin-architecture` | done | `4/4` | 2026-08-05 |
@@ -52,7 +52,7 @@ GOAL-013-r6-old-path-removal [active] (2/4) · R6 旧路径移除与终态验收
 | GOAL-010-r4-c4-schema-other-migration | R4-C4 Schema 与其他能力迁移 | `GOAL-005-r4-full-module-migration` | done | `4/4` | 2026-08-05 |
 | GOAL-011-r4-c5-acceptance | R4-C5 验收与关门 | `GOAL-005-r4-full-module-migration` | done | `4/4` | 2026-08-05 |
 | GOAL-012-r5-profile-ops-convergence | R5 Profile 运维与数据收敛 | `GOAL-001-modular-admin-architecture` | done | `4/4` | 2026-08-05 |
-| GOAL-013-r6-old-path-removal | R6 旧路径移除与终态验收 | `GOAL-001-modular-admin-architecture` | active | `2/4` | 2026-08-06 |
+| GOAL-013-r6-old-path-removal | R6 旧路径移除与终态验收 | `GOAL-001-modular-admin-architecture` | active | `3/4` | 2026-08-06 |
 
 ## 维护说明
 
@@ -60,5 +60,5 @@ GOAL-013-r6-old-path-removal [active] (2/4) · R6 旧路径移除与终态验收
 - 新子目标必须平铺在本目录，`parent` 使用本区完整 Goal ID；跨工作区提及使用 Q2 canonical 路径。
 - Root 自身 required 信息项当前无；I-006 已经 GOAL-004 A-004/E-005/D-004 响应标为 verified，但 R6 仍需重新核对最终旧路径移除边界。R4 子目标 GOAL-005 的 Provider、Records 和 operationlog 裁决已落盘，R4-I002/R4-I003 已 verified，R4-I004 以 accepted-residual 记录；GOAL-006 至 GOAL-011（C1-C5）均 `done 4/4`，GOAL-012（R5）`done 4/4`。I-004/I-005 已经 Root D-006/E-006/A-005 与 GOAL-003 A-003/A-004 evidence response 标为 verified。I-001/I-002/I-003/I-007 已在 R1 close-out 证据链中 verified，后续实现仍受阶段审计约束。
 - A-002 F-001～F-006 已于 2026-08-04 经 A-003 / D-002 全部 `fixed`；不改变本树 progress 或 status。
-- R1 已由 `GOAL-002`（`done`）、R2 由 `GOAL-003`（`done 5/5`）、R3 由 `GOAL-004`（`done 4/4`）、R4 由 `GOAL-005`（`done 5/5`）、R5 由 `GOAL-012`（`done 4/4`）承接；Root 派生进度 `5/6`。R6 现由 `GOAL-013-r6-old-path-removal`（`active 2/4`）承接旧路径删除 + VP 退出 #1-#7 逐条取证。Root A-010 F-001/F-002/F-005 已由 GOAL-013 C6.2 cross 证据与 Root A-016 fixed；F-003b 和最终退出证据仍开放。R1-R5/C6.2 完成不推导 Root done 或 VP-003 closed。
+- R1 已由 `GOAL-002`（`done`）、R2 由 `GOAL-003`（`done 5/5`）、R3 由 `GOAL-004`（`done 4/4`）、R4 由 `GOAL-005`（`done 5/5`）、R5 由 `GOAL-012`（`done 4/4`）承接；Root 派生进度 `5/6`。R6 现由 `GOAL-013-r6-old-path-removal`（`active 3/4`）承接。Root A-010 F-001/F-002/F-005 已由 C6.2/A-016 fixed，F-003b 已由 C6.3 cross/A-017 fixed；C6.4 与最终 exit #1-#7 证据仍开放。R1-R5/C6.1-C6.3 完成不推导 Root done 或 VP-003 closed。
 - 2026-08-05 已将重复的仓库根 `GOAL-004-r3-bounded-pilot/` 资料合并至本区 canonical 目标目录，并移除根目录副本；目标状态与进度保持不变。

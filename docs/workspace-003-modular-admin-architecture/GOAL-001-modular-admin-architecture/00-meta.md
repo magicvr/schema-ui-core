@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.9.0
+version: 0.10.0
 progress: 5/6
 plan_refs:
   - VP-003-modular-admin-architecture
@@ -64,7 +64,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 
 ## 纲领路线图
 
-六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3、R4、R5 已完成并通过对应 close-out audit，Root 派生进度为 `5/6`；R6 尚未完成。R6 承接旧路径删除与 VP 退出判据逐条取证；Root A-010 F-001/F-002/F-005 已由 GOAL-013 C6.2 的 A-006/A-007/A-008 与 Root A-016 fixed，F-003b Schema 字节发布仍由 C6.3 承接。R1-R5 与 C6.2 证据不得被扩大解释为 R6/Root/VP 完成。
+六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3、R4、R5 已完成并通过对应 close-out audit，Root 派生进度为 `5/6`；R6 尚未完成。Root A-010 F-001/F-002/F-005 已由 GOAL-013 C6.2 与 Root A-016 fixed，F-003b 已由 GOAL-013 C6.3 A-009/A-010/A-011 与 Root A-017 fixed。C6.4 完整终态证据仍待完成；R1-R5 与 C6.1-C6.3 证据不得被扩大解释为 R6/Root/VP 完成。
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
@@ -73,7 +73,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 | R3 | 有界试点 | 已完成 | 由 [GOAL-004-r3-bounded-pilot](../GOAL-004-r3-bounded-pilot/00-meta.md) 承接并以 `done 4/4` 收束；I-006 三项 verified，A-004 close-out 以 fixed 路径响应 required findings。允许建立 R4 子目标，但不关闭 VP-003。 |
 | R4 | 全量一方模块迁移 | 已完成 | 由 [GOAL-005-r4-full-module-migration](../GOAL-005-r4-full-module-migration/00-meta.md) 承接并以 `done 5/5` 收束（C1-C5 由 GOAL-006..011 承接）；R4-I001/I002/I003 verified、R4-I004 accepted-residual；Grok A-003 确认 R4 可关门、具备进入 R5 条件；residual 清单传递 R5。 |
 | R5 | Profile、数据与运维收敛 | 已完成 | 由 [GOAL-012-r5-profile-ops-convergence](../GOAL-012-r5-profile-ops-convergence/00-meta.md) 承接并以 `done 4/4` 收束（Profile 配置收敛、readyz 真实 readiness、数据生命周期核验、fork 文档）；Grok A-005 `conditional`→A-004 处置。R5 不否定 R2 已冻结的精确 Profile 集。 |
-| R6 | 旧路径移除与终态验收 | 未开始 | 删除双轨与静态生产兜底，完成完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收；对 exit #1–#7 逐条取证后关门审计。 |
+| R6 | 旧路径移除与终态验收 | 进行中 | GOAL-013 已完成 C6.1-C6.3（`3/4`）；C6.4 尚需完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收与 exit #1–#7 逐条取证。 |
 
 ### 阶段审计模式（预置建议）
 
