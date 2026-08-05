@@ -17,6 +17,7 @@ version: 0.1.0
 | E-001 | 2026-08-05 | 建立 R4-C3 Users/Roles 迁移子目标 | recorded | [02-execution/E-001-r4-c3-child-opened.md](02-execution/E-001-r4-c3-child-opened.md) |
 | E-002 | 2026-08-05 | R4-C3 迁移扫描与行为矩阵（C3.1） | recorded | [02-execution/E-002-r4-c3-scan-behavior-matrix.md](02-execution/E-002-r4-c3-scan-behavior-matrix.md) |
 | E-003 | 2026-08-05 | R4-C3 Users/Roles provider 化（C3.2） | recorded | [02-execution/E-003-r4-c3-provider-migration.md](02-execution/E-003-r4-c3-provider-migration.md) |
+| E-004 | 2026-08-05 | R4-C3 composition 切换（C3.3 路由切片） | recorded | [02-execution/E-004-r4-c3-cutover-routes.md](02-execution/E-004-r4-c3-cutover-routes.md) |
 
 ## 事实边界
 

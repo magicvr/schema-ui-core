@@ -33,6 +33,8 @@ version: 0.1.0
 
 GOAL-009 已合法建立并承接 GOAL-008 Provider 契约与冻结包 §7。C3-I001/I002 `verified`
 （E-002）、C3-I003 collecting、C3-I004 non-blocking。C3.1/C3.2 检查点勾选、
-`progress: 2/4`。Grok A-003 `pass`（C3.2 成立，可继续 C3.3）；recommended C32-003/004
-已处置，C32-001/002 登记 C3.4/C3.3 门禁。C3.3（composition 切换 + 中心特例清除）
-待实施。C3 只迁移 admin.users/admin.roles，不推进 Root progress。
+`progress: 2/4`。Grok A-003 `pass`（C3.2 成立）；recommended C32-003/004 已处置，
+C32-001/002 登记 C3.4/C3.3 门禁。C3.3 进行中：composition 已消费 provider finalize
+挂载 users/roles 路由、中心 Register 分支已移除（E-004）；Schema owner map 与
+Manifest adminModules 的 users/roles 中心投影待清除（与 C4 settings/activity 纠缠）。
+C3 只迁移 admin.users/admin.roles，不推进 Root progress。

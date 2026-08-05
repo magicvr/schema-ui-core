@@ -22,6 +22,11 @@ type healthResponse struct {
 // Register mounts core routes and the selected module contributions. The
 // composition root passes the already-resolved plan so HTTP and Schema
 // surfaces cannot silently diverge from the published Manifest.
+//
+// R4 C3.3: admin.users/admin.roles HTTP routes are mounted by the composition
+// root from their kernel.Provider surfaces (MountProviderRoutes /
+// RegisterContributions), not by this central Register. This function keeps
+// core auth/accounts/health/schema registration only.
 func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st))
@@ -29,13 +34,24 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan k
 		authsHandler(mux, a, st)
 		accountsHandler(mux, a)
 	}
+	schemasHandler(mux, plan)
+}
+
+// MountProviderRoutes mounts the admin.users/admin.roles HTTP routes generated
+// by the generic resource factory for enabled modules. The composition root and
+// the handler test environment both use it so provider surface and central
+// surface stay identical during the R4 C3.3 cutover.
+func MountProviderRoutes(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
 	if plan.HasModule("admin.users") {
-		registerResource(mux, a, usersResource(st))
+		for _, route := range resourceRoutes(a, usersResource(st), "admin.users") {
+			mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+		}
 	}
 	if plan.HasModule("admin.roles") {
-		registerResource(mux, a, rolesResource(st))
+		for _, route := range resourceRoutes(a, rolesResource(st), "admin.roles") {
+			mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+		}
 	}
-	schemasHandler(mux, plan)
 }
 
 // healthz is the liveness probe: the process is up and serving. It never

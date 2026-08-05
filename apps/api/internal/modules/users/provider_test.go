@@ -2,10 +2,12 @@ package users
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -84,42 +86,60 @@ func TestUsersProviderRegistersSurfaces(t *testing.T) {
 	}
 }
 
-// TestUsersProviderCompatWithCentral verifies the provider-generated surface
-// routes requests identically to the current central registration (freeze §7
-// step 2 compat comparison, in-test, no production dual registration).
-func TestUsersProviderCompatWithCentral(t *testing.T) {
+// TestUsersProviderServesAuthenticatedCRUD validates the C3.3 production path:
+// the provider surface (core + provider routes, mirroring composition) serves
+// the users resource with the frozen auth/permission behavior (anonymous 401,
+// authenticated list 200, unknown detail 404). This is the in-test cutover
+// evidence replacing the removed central Register comparison.
+func TestUsersProviderServesAuthenticatedCRUD(t *testing.T) {
 	a, st := newTestEnv(t)
 	plan := planWithUsers(t)
-
-	central := http.NewServeMux()
-	handler.Register(central, a, st, plan)
-
 	provider := New(a, st)
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
-	providerMux := http.NewServeMux()
+	mux := http.NewServeMux()
+	handler.Register(mux, a, st, plan) // core auth/health/schema
 	for _, route := range set.Routes {
-		providerMux.Handle(route.Method+" "+route.Pattern, route.Handler)
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
 
-	for _, tc := range []struct {
-		method string
-		path   string
-	}{
-		{http.MethodGet, "/api/users"},
-		{http.MethodGet, "/api/users/unknown-id"},
-		{http.MethodPost, "/api/users"},
-		{http.MethodPatch, "/api/users/unknown-id"},
-		{http.MethodDelete, "/api/users/unknown-id"},
-	} {
-		rrCentral := httptest.NewRecorder()
-		central.ServeHTTP(rrCentral, httptest.NewRequest(tc.method, tc.path, nil))
-		rrProvider := httptest.NewRecorder()
-		providerMux.ServeHTTP(rrProvider, httptest.NewRequest(tc.method, tc.path, nil))
-		if rrCentral.Code != rrProvider.Code {
-			t.Fatalf("%s %s: central=%d provider=%d, want identical", tc.method, tc.path, rrCentral.Code, rrProvider.Code)
-		}
+	// Anonymous access fails closed.
+	anon := httptest.NewRecorder()
+	mux.ServeHTTP(anon, httptest.NewRequest(http.MethodGet, "/api/users", nil))
+	if anon.Code != http.StatusUnauthorized {
+		t.Fatalf("anonymous GET /api/users = %d, want 401", anon.Code)
+	}
+
+	// Admin login, then authenticated list.
+	login := httptest.NewRecorder()
+	mux.ServeHTTP(login, httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"test-password"}`)))
+	if login.Code != http.StatusOK {
+		t.Fatalf("login = %d, want 200", login.Code)
+	}
+	var body struct {
+		AccessToken string `json:"accessToken"`
+	}
+	if err := json.NewDecoder(login.Body).Decode(&body); err != nil || body.AccessToken == "" {
+		t.Fatalf("login body missing accessToken: %v", err)
+	}
+
+	list := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
+	req.Header.Set("Authorization", "Bearer "+body.AccessToken)
+	mux.ServeHTTP(list, req)
+	if list.Code != http.StatusOK {
+		t.Fatalf("authenticated GET /api/users = %d, want 200", list.Code)
+	}
+
+	// Unknown detail → 404.
+	detail := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/api/users/unknown-id", nil)
+	req.Header.Set("Authorization", "Bearer "+body.AccessToken)
+	mux.ServeHTTP(detail, req)
+	if detail.Code != http.StatusNotFound {
+		t.Fatalf("authenticated GET /api/users/unknown-id = %d, want 404", detail.Code)
 	}
 }

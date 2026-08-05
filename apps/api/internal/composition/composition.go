@@ -16,7 +16,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
+	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
 	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
+	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -89,6 +91,23 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, st *store.Store) *au
 func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	handler.Register(mux, a, st, plan)
+	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
+	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
+	// health/schema stay central; settings/activity migrate in C4.
+	var providers []kernel.Provider
+	if plan.HasModule("admin.users") {
+		providers = append(providers, usersmodule.New(a, st))
+	}
+	if plan.HasModule("admin.roles") {
+		providers = append(providers, rolesmodule.New(a, st))
+	}
+	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
+	if err != nil {
+		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "admin.users", Detail: fmt.Sprintf("register contributions: %v", err)}
+	}
+	for _, route := range set.Routes {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
 	if plan.HasModule("admin.settings") {
 		settingsmodule.Register(mux, a, st)
 	}

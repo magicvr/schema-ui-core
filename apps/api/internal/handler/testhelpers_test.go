@@ -57,9 +57,13 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	t.Cleanup(func() { _ = st.Close() })
 	a := auth.New([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, st, devSession)
 	mux := http.NewServeMux()
-	Register(mux, a, st, testAdminPlan(t))
+	plan := testAdminPlan(t)
+	Register(mux, a, st, plan)
 	RegisterSettings(mux, a, st)
 	RegisterActivity(mux, a, st)
+	// R4 C3.3: users/roles HTTP routes now mount via the provider surface
+	// (same resource factory), matching composition.
+	MountProviderRoutes(mux, a, st, plan)
 	return &authTestEnv{mux: mux, a: a, st: st}
 }
 
