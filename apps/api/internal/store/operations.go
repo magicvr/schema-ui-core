@@ -45,6 +45,9 @@ type Operation struct {
 // responsible for a unique ID. Failures are returned (not swallowed here) so
 // the handler can keep the best-effort contract explicit.
 func (s *Store) RecordOperation(op Operation) error {
+	if s.operationLogErr != nil {
+		return fmt.Errorf("record operation %s: %w", op.Event, s.operationLogErr)
+	}
 	var recordID, detail any
 	if op.RecordID != nil {
 		recordID = *op.RecordID
@@ -61,6 +64,12 @@ func (s *Store) RecordOperation(op Operation) error {
 	}
 	return nil
 }
+
+// operationLogErr is a failure-injection seam (R4 C3.4 / FR-005): when set,
+// RecordOperation returns it so tests prove the best-effort contract — a logging
+// failure must never flip a successful business write. It is nil in production.
+// SetOperationLogError forces RecordOperation to fail with err (test seam).
+func (s *Store) SetOperationLogError(err error) { s.operationLogErr = err }
 
 // OperationFilter carries list query parameters for the activity (operations)
 // read API. Sort is a whitelist column name applied in SQL.

@@ -53,6 +53,9 @@ var (
 type Store struct {
 	db   *sql.DB
 	path string // file path used for pre-upgrade recovery snapshots
+	// operationLogErr is a failure-injection seam (R4 C3.4 / FR-005): when
+	// non-nil, RecordOperation returns it to prove the best-effort contract.
+	operationLogErr error
 }
 
 // Open opens (creating if needed) the SQLite DB at path, applies versioned

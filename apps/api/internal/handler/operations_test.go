@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -126,6 +127,31 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 	}
 	if len(userOps) != 0 {
 		t.Fatalf("user ops after failed writes = %d, want 0", len(userOps))
+	}
+}
+
+// R4 C3.4 / FR-005: operationlog append failure must not flip a successful
+// business write (best-effort contract). Injecting a forced store error, a
+// users.create / roles.create write still succeeds.
+func TestOperationLogFailurePreservesBusinessSuccess(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.st.SetOperationLogError(errors.New("forced operation log failure"))
+	token := adminToken(t, env)
+
+	// users.create → 201 despite log failure.
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/users",
+		`{"username":"logfail","name":"Log Fail","password":"passw0rd-ok"}`))
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create user with log failure = %d, want 201", rr.Code)
+	}
+
+	// roles.create → 201 despite log failure.
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/roles",
+		`{"key":"auditor","name":"Auditor"}`))
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create role with log failure = %d, want 201", rr.Code)
 	}
 }
 
