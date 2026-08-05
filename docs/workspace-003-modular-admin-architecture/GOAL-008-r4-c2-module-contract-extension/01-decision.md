@@ -17,7 +17,7 @@ version: 0.1.0
 | C2-I001 | required | Provider/Registrar 精确契约与六类 Contribution 字段可实施性 | C2.1 | C2.1 | 冻结包 §2 | verified | freeze package `accepted`；D-003 |
 | C2-I002 | required | compiled-global Persistence 收集/校验/reconcile 规则 | C2.2 | C2.2 | 冻结包 §4 | verified | freeze package §4 |
 | C2-I003 | required | fail-closed 冲突/生命周期/失败清理语义 | C2.3 | C2.3 | 冻结包 §3 | verified | freeze package §3 |
-| C2-I004 | required | 当前 Kernel/Composition 与契约差距 + C2 实施证据 | C2.4 | C2.4 | C2 内核对与落证据 | collecting | 待 C2.1-C2.3 |
+| C2-I004 | required | 当前 Kernel/Composition 与契约差距 + C2 实施证据 | C2.4 | C2.4 | C2 内核对与落证据 | verified | E-002：契约层 + 测试 + vet 通过 |
 
 ## 决策索引
 

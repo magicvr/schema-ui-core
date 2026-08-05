@@ -27,12 +27,14 @@ const (
 
 // ContributionKeys are checked globally after Profile expansion. Modules do
 // not mutate a central application registry; they declare ownership here.
+// Fragments declares Manifest fragment keys (R4 C2 structured contributions).
 type ContributionKeys struct {
 	Routes           []string
 	Pages            []string
 	Navigation       []string
 	Permissions      []string
 	ConfigNamespaces []string
+	Fragments        []string
 }
 
 // Hooks are deliberately independent of Fx. The composition root may adapt
@@ -387,6 +389,11 @@ func validateContributions(modules []Module) error {
 				return err
 			}
 		}
+		for _, key := range module.Contributions.Fragments {
+			if err := add(module.ID, "fragment", key); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -400,5 +407,6 @@ func cloneModule(module Module) Module {
 	module.Contributions.Navigation = append([]string(nil), module.Contributions.Navigation...)
 	module.Contributions.Permissions = append([]string(nil), module.Contributions.Permissions...)
 	module.Contributions.ConfigNamespaces = append([]string(nil), module.Contributions.ConfigNamespaces...)
+	module.Contributions.Fragments = append([]string(nil), module.Contributions.Fragments...)
 	return module
 }

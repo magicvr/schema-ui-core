@@ -62,8 +62,10 @@ fixture）抽查为已退场，0003/0006 与历史兼容与测试命名泛化安
 **现已建立并 `done 4/4`**（Grok A-003 `pass`），两条 required 由 GOAL-007 A-004
 响应与 GOAL-005 A-008 闭合，REC-003/004/005 已处置。R4-I003 的 Records 运行面
 evidence 链完整。R4-C1 required 信息门禁（R4-I001/I002/I003 `verified`、R4-I004
-`accepted-residual`、R4-I005 non-blocking）已闭合；C2 放行由 `/govern` 在确认后
-执行。本意见不推进 GOAL-005 或 Root。
+`accepted-residual`、R4-I005 non-blocking）已闭合；C2 由 GOAL-008 `done 4/4` 收束
+（Grok A-003 `conditional`，A-004 闭合三条 required）。GOAL-005 `progress: 2/5`；
+C3（Users/Roles 迁移）未开始，C3 门禁登记于 GOAL-008 E-004。C2 放行由 `/govern`
+在确认后执行。本意见不推进 GOAL-005 或 Root。
 
 ## 已响应 finding
 

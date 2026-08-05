@@ -6,7 +6,7 @@ parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.1
-progress: 1/5
+progress: 2/5
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -37,7 +37,7 @@ R4 迁移完成。R4 的最终目标是统一模块契约下的完整一方 Admi
 - [x] **C1 / 范围与信息冻结**：完整一方能力清单、六项模块能力映射、
   contribution/provider 方案、Records/Schema CRUD 范围和 operationlog 边界
   均已由证据或用户裁决关闭 required 信息门禁。
-- [ ] **C2 / 模块契约扩展**：模块能以结构化方式贡献 HTTP、Schema、授权、
+- [x] **C2 / 模块契约扩展**：模块能以结构化方式贡献 HTTP、Schema、授权、
   Navigation、Manifest 和 Persistence；冲突保持 fail closed。
 - [ ] **C3 / Users 与 Roles 迁移**：旧中心注册/Schema 所有权清除，保留现有
   CRUD、授权、角色分配、最后管理员保护、密码和 operationlog 行为。
@@ -47,8 +47,9 @@ R4 迁移完成。R4 的最终目标是统一模块契约下的完整一方 Admi
   持久化和行为矩阵通过；self + Grok independent 审计无开放 required finding，
   并形成进入 R5 的结论。
 
-五个检查点等权；当前为 `progress: 1/5`（C1 已由 GOAL-006/007 承接并以 done 收束）。
-完成本子目标只表示 R4 关闭，不代表 Root、VP-003、R5 或 R6 关闭。
+五个检查点等权；当前为 `progress: 2/5`（C1 由 GOAL-006/007 承接并以 done 收束，
+C2 由 GOAL-008 承接并以 done 收束）。完成本子目标只表示 R4 关闭，不代表 Root、
+VP-003、R5 或 R6 关闭。
 
 ## 信息门禁
 
@@ -70,6 +71,8 @@ R4 迁移完成。R4 的最终目标是统一模块契约下的完整一方 Admi
    验证 provider contract，再迁移业务。由 [GOAL-008-r4-c2-module-contract-extension](../GOAL-008-r4-c2-module-contract-extension/00-meta.md)
    承接。
 3. C3：按模块切片迁移 Users、Roles，逐项核对现有 API/Schema/授权/持久化/日志。
+   承接冻结 §3/§4.2/§2.2 的 C3 门禁（Manifest secrecy、Ready 失败清理、PolicyID/
+   Visibility/JSON 校验器、ledger drift/unknown、真实双 Profile 矩阵）。
 4. C4：按 C1 对仍存在的 Schema-driven Admin 能力和其他能力作实施；Records
    保持 historical-only，不恢复产品 CRUD。
 5. C5：运行完整矩阵、独立审计、required finding closure，提交 R4 close-out。
