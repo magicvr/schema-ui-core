@@ -26,6 +26,7 @@ import (
 	"time"
 
 	migrationcontract "github.com/magicvr/schema-ui-core/apps/api/internal/migration"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 // schemaMigrationsDDL is the migration ledger. checksum is the SHA-256 (lower
@@ -41,6 +42,10 @@ const schemaMigrationsDDL = `CREATE TABLE schema_migrations (
 type migration struct {
 	version int
 	name    string
+	// moduleID is the owning module descriptor (R6 C6.2 ownership): 0001/0002 →
+	// core.auth-session, 0004/0005/0008 → core.operationlog, 0007 → admin.settings,
+	// 0003/0006 → core.persistence (historical records).
+	moduleID string
 	// stmts are executed in order inside up() on an empty database and are the
 	// canonical checksum input. Editing them (or bumping transformID after a
 	// data-transform change) changes the ledger checksum, so a database that
@@ -63,6 +68,7 @@ var compiledMigrations = []migration{
 	{
 		version:     1,
 		name:        "r2_baseline",
+		moduleID:  "core.auth-session",
 		transformID: "0001:r2-baseline:v1",
 		stmts:       r2BaselineDDL,
 		up:          migrate0001,
@@ -70,6 +76,7 @@ var compiledMigrations = []migration{
 	{
 		version:     2,
 		name:        "rbac_expand",
+		moduleID:  "core.auth-session",
 		transformID: "0002:rbac-expand:v1",
 		stmts:       rbacExpandDDL,
 		up:          migrate0002,
@@ -77,6 +84,7 @@ var compiledMigrations = []migration{
 	{
 		version:     3,
 		name:        "records_persist",
+		moduleID:  "core.persistence",
 		transformID: "0003:records-persist:v1",
 		stmts:       recordsPersistDDL,
 		up:          migrate0003,
@@ -84,6 +92,7 @@ var compiledMigrations = []migration{
 	{
 		version:     4,
 		name:        "operation_log",
+		moduleID:  "core.operationlog",
 		transformID: "0004:operation-log:v1",
 		stmts:       operationLogDDL,
 		up:          migrate0004,
@@ -91,6 +100,7 @@ var compiledMigrations = []migration{
 	{
 		version:     5,
 		name:        "operation_log_expand",
+		moduleID:  "core.operationlog",
 		transformID: "0005:operation-log-expand:v1",
 		stmts:       operationLogExpandDDL,
 		up:          migrate0005,
@@ -98,6 +108,7 @@ var compiledMigrations = []migration{
 	{
 		version:     6,
 		name:        "records_retire",
+		moduleID:  "core.persistence",
 		transformID: "0006:records-retire:v1",
 		stmts:       recordsRetireDDL,
 		up:          migrate0006,
@@ -105,6 +116,7 @@ var compiledMigrations = []migration{
 	{
 		version:     7,
 		name:        "site_settings",
+		moduleID:  "admin.settings",
 		transformID: "0007:site-settings:v1",
 		stmts:       siteSettingsDDL,
 		up:          migrate0007,
@@ -112,6 +124,7 @@ var compiledMigrations = []migration{
 	{
 		version:     8,
 		name:        "operation_log_settings",
+		moduleID:  "core.operationlog",
 		transformID: "0008:operation-log-settings:v1",
 		stmts:       operationLogSettingsDDL,
 		up:          migrate0008,
@@ -458,6 +471,25 @@ func (s *Store) applyMigration(m migration) error {
 	return nil
 }
 
+// MigrationCatalog returns the 0001-0008 descriptors as kernel.MigrationContribution
+// with module ownership (R6 C6.2 transitional slice 1). The Apply/DDL still live
+// in this package for now; ownership is registered so composition can collect the
+// catalog, and later the Apply/DDL migrate into module packages.
+func MigrationCatalog() []kernel.MigrationContribution {
+	catalog := make([]kernel.MigrationContribution, 0, len(compiledMigrations))
+	for _, m := range compiledMigrations {
+		m := m
+		catalog = append(catalog, kernel.MigrationContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: m.moduleID, Key: m.name},
+			Version:              m.version,
+			Name:                 m.name,
+			Checksum:             migrationChecksum(m),
+			Apply:                m.up,
+		})
+	}
+	return catalog
+}
+
 // validateCompiled checks the compiled migration list invariants.
 func validateCompiled() error {
 	entries := make([]migrationcontract.Entry, 0, len(compiledMigrations))
@@ -465,7 +497,7 @@ func validateCompiled() error {
 		entries = append(entries, migrationcontract.Entry{
 			Version:  m.version,
 			Name:     m.name,
-			ModuleID: "core.persistence",
+			ModuleID: m.moduleID,
 			Checksum: migrationChecksum(m),
 		})
 	}

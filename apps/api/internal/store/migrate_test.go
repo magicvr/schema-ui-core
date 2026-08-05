@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -8,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 // createR2Fixture builds a database shaped exactly like the pre-migration R2
@@ -543,3 +546,51 @@ func TestRBACConstraintsAndIndexes(t *testing.T) {
 		t.Fatal("expected RESTRICT deleting an in-use menu item")
 	}
 }
+
+// R6 C6.2 transitional slice 1: MigrationCatalog must expose the same
+// version/name/checksum set as the store's own ledger, with correct module
+// ownership, and pass kernel.CollectPersistence (contiguous, unique, validated).
+func TestMigrationCatalogMatchesLedgerWithOwnership(t *testing.T) {
+	catalog := MigrationCatalog()
+	if len(catalog) != len(compiledMigrations) {
+		t.Fatalf("catalog len = %d, want %d", len(catalog), len(compiledMigrations))
+	}
+	owned := map[int]string{}
+	for _, m := range compiledMigrations {
+		owned[m.version] = m.moduleID
+	}
+	for i, mc := range catalog {
+		sm := compiledMigrations[i]
+		if mc.Version != sm.version || mc.Name != sm.name {
+			t.Fatalf("catalog[%d] = %d %s, want %d %s", i, mc.Version, mc.Name, sm.version, sm.name)
+		}
+		if mc.Checksum != migrationChecksum(sm) {
+			t.Fatalf("catalog[%d] %s checksum mismatch", i, mc.Name)
+		}
+		if mc.ModuleID != owned[mc.Version] {
+			t.Fatalf("catalog[%d] %s module %q, want %q", i, mc.Name, mc.ModuleID, owned[mc.Version])
+		}
+		if mc.Apply == nil {
+			t.Fatalf("catalog[%d] %s has nil Apply", i, mc.Name)
+		}
+	}
+	// kernel.CollectPersistence validates uniqueness/contiguity/checksum/tombstone.
+	collected, err := kernel.CollectPersistence([]kernel.Provider{catalogProvider{desc: kernel.Module{ID: "core.persistence", Version: "2.0.0"}, catalog: catalog}})
+	if err != nil {
+		t.Fatalf("CollectPersistence: %v", err)
+	}
+	if len(collected) != len(catalog) {
+		t.Fatalf("collected len = %d, want %d", len(collected), len(catalog))
+	}
+}
+
+type catalogProvider struct {
+	desc    kernel.Module
+	catalog []kernel.MigrationContribution
+}
+
+func (p catalogProvider) Descriptor() kernel.Module { return p.desc }
+func (p catalogProvider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
+	return p.catalog, nil
+}
+func (p catalogProvider) Register(context.Context, kernel.Registrar) error { return nil }
