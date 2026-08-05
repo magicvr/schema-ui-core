@@ -2,12 +2,13 @@
 doc_type: vision-plan
 id: VP-003-modular-admin-architecture
 title: 单主线模块化 Admin 架构
-status: active
+status: closed
 lead_workspace: workspace-003-modular-admin-architecture
 vision_ref: schema-ui-core-admin-foundation@0.2.0
+closed_under_vision_ref: schema-ui-core-admin-foundation@0.2.0
 created: 2026-08-04
-updated: 2026-08-05
-version: 0.1.4
+updated: 2026-08-06
+version: 0.2.0
 parent: null
 ---
 
@@ -58,7 +59,7 @@ VP-003 继承工作区 `workspace-001-mvp-admin-foundation` 中由 Root 决策 `
    已启用模块的 Manifest、Schema、导航、权限和配置由后端确定性聚合、冲突校验并从 `/.well-known/schema-ui/app-manifest.json` 发布；端点登录前可读但不泄露秘密，Vite/Nginx 精确代理，协议/模块 API/前端 capability 不兼容时 fail closed，同一前端 build 在至少 `mvp` 与 `admin` Profile 下工作。生产静态 Manifest 兜底已移除。
 
 5. **安全、横切能力与生命周期边界成立**
-   认证和后端授权仍是最终权限边界；`operationlog` 始终记录关键写操作，`activity` 仅作为可选读取/UI 模块；Settings 不再依赖 Shell 私有通知。模块启动、就绪、停止、失败清理、健康诊断、日志与指标均有明确 `module_id` 语义。
+   认证和后端授权仍是最终权限边界；`operationlog` 始终记录关键写操作，`activity` 仅作为可选读取/UI 模块；Settings 不再依赖 Shell 私有通知。模块启动、就绪、停止、失败清理、健康诊断、日志与指标均有明确 `module_id` 语义（**指标属 Observability 按需能力**：当前基线不要求指标贡献契约，已交付范围为日志与健康诊断；若交付指标则须携带 `module_id`，权威见 [module-architecture.md](../../architecture/module-architecture.md) §2.2 与 workspace-003 Root D-011）。
 
 6. **现有能力完成迁移且旧装配路径退出**
    当前用户、角色、仍存在的 Schema-driven Admin、Settings、Activity 等一方能力在新架构上保持既有行为和协议边界；历史 Records 不恢复为产品能力。旧中央路由/页面/导航注册、静态生产 Manifest、Shell 特例与已被替代的 host glue 被删除，而非无限期双轨兼容。
@@ -126,6 +127,7 @@ R3 的目标是用 `operationlog`/`activity` 拆分与 `settings` 做手术刀�
 | API 边界 | 模块契约框架无关；一方标准 Admin 功能模块**核心六项必须**；Configuration/Lifecycle/Observability 按需；依赖显式；冲突与缺依赖 fail closed |
 | 数据 | 全局迁移台账覆盖全部已编译一方模块；启用状态不决定迁移；bootstrap 与 reconcile 分离 |
 | Activity | operationlog 始终启用；Activity 是可选查询/UI；Settings 同批验证通用 host hook |
+| Observability | 指标属**按需能力**：当前基线不要求指标贡献契约，已交付范围为日志（带 `module_id`）与健康诊断（healthz/readyz 模块图门控）；若交付指标则须带 `module_id`（权威：module-architecture §2.2；workspace-003 Root D-011） |
 | Manifest | 后端聚合、公共无秘密的 `/.well-known` 入口；生产不静默使用静态兜底 |
 | 试点 | R3 必须完成 draft 病灶切除 + 5 交付 + V-1～V-4；失败则加固 Kernel，不盲目 R4；试点不是 VP 退出边界 |
 | 演进 | 以单主线和 Profile 替代双线长期维护；历史 VP/工作区保持关闭事实，不伪造分支删除 |
@@ -147,6 +149,14 @@ VP 允许在 `planned` 状态携带实施未知，但未来激活/开区后至�
 
 用户已于 2026-08-04 确认将本 VP 激活，并建立唯一 lead / delivery 工作区 [workspace-003-modular-admin-architecture](../../workspace-003-modular-admin-architecture/workspace.md)。其 Root 为 [GOAL-001-modular-admin-architecture](../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/00-meta.md)，`primary_plan` 与 `plan_refs` 均为本 VP。该绑定建立实现层治理范围，不构成 R1 或任何架构实现完成证据。
 
+## 关门记录
+
+仅在 `closed` 或 `abandoned` 时填写。
+
+| date | outcome | summary | evidence_links | residuals |
+|------|---------|---------|----------------|-----------|
+| 2026-08-06 | **closed** | 七条方向级退出判据均以 lead 工作区 Q2 证据满足：① 单主线与 Profile（kernel `ResolveProfile` 优先级/依赖闭包 fail-closed，同一 `cmd/server` 双 Profile 运行，V-8/V-9）；② 薄内核、组合根与模块契约（kernel 零导入 modules、Fx 唯一组合根、核心六项强制、`RegisterContributions` 自注册，V-2）；③ 数据生命周期（全局台账/checksum/未知已应用迁移 fail-closed、升级前快照、编译全局迁移收集、`records_retire` tombstone、bootstrap/reconcile 分离，V-10/V-11）；④ 后端聚合运行时契约（确定性聚合、`/.well-known` 登录前无秘密、ETag/304、前端 `validateAppManifest` 精确匹配、生产无静态 Manifest 兜底、同一前端 build 双 Profile，V-4/V-6/V-7/V-12/V-14）；⑤ 安全、横切与生命周期（HS256 access + 旋转 refresh、operationlog 恒启用、activity 只读、Settings 通用事件、Start/Ready/Stop 带 `module_id`、healthz/readyz 门控；指标=按需已按 D-011/exit #5 澄清，V-5/V-8/V-9）；⑥ 现有能力迁移与旧路径退出（users/roles/settings/activity 为 kernel.Provider、中央业务 Register 仅剩 core、退役符号/静态 Manifest 无活动残留，V-13/V-14）；⑦ 可 fork、可运维、可回归（QUICKSTART/compose/双 Dockerfile/CI 矩阵/`scripts/smoke.sh`，V-15 系矩阵）。Root `GOAL-001` `done / 6/6`（A-018 self `pass` + A-019 Grok independent `pass` + A-020 `/govern` response；A-021 Grok independent 动态代码复审 `pass`，V-1～V-14，required 0；A-022 响应 recommended 全 `fixed`）；Root 03-audit **开放 required=0**；Vision Review **0 open required**（VRev-001～009；F-V014/F-V015 亦已 editorial `fixed`）。用户指令确认关门。 | [Root GOAL-001 00-meta](../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/00-meta.md)；[goal-tree](../../workspace-003-modular-admin-architecture/goal-tree.md)；[Root 03-audit](../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/03-audit.md)；[A-021 动态复审](../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/03-audit/A-021-vp003-apps-code-independent-reaudit.md)；[GOAL-013 00-meta](../../workspace-003-modular-admin-architecture/GOAL-013-r6-old-path-removal/00-meta.md)；[GOAL-013 终态证据 C64-V01~V08](../../workspace-003-modular-admin-architecture/GOAL-013-r6-old-path-removal/attachments/r6-c64-terminal-evidence.md)；[module-architecture.md](../../architecture/module-architecture.md) | 有界 closed（点名区/目标）：**R4-I004**（workspace-003 / GOAL-006 D-003 用户书面 `accepted-residual`：operationlog append 失败可能产生审计缺口，长期 duration/archive 未定义；scope=Users/Roles/Auth/Settings 写入与历史 events，owner=`magicvr`，review trigger=合规/运营 retention 要求、日志规模阈值、恢复演练缺口或 R5 数据生命周期决策；A-020 已字段级复核、未扩张，不视为 retention 已定义）。本 VP 非目标（运行时插件/`.so`/热插拔、I-PROTO-001 覆盖扩张、业务领域模块、微服务拆分、重写上游 Schema 语义、试点/能启动/文档完成充当终态证据）保持排除，不构成残余。 |
+
 ## Non-goals
 
 - 不建设运行时插件市场、`.so` 加载、远程模块下载或运行中热启停。
@@ -163,3 +173,6 @@ VP 允许在 `planned` 状态携带实施未知，但未来激活/开区后至�
 | 2026-08-04 | `0.1.1` | `/vision` 响应 VRev-007：`F-V010` 核心六项必须 vs 按需能力口径；`F-V011` R3 继承 draft 病灶切除 + 5 交付 + V-1～V-4 门闩。未改 `planned`、未激活、未绑工作区。 |
 | 2026-08-04 | `0.1.2` | `/vision` 响应 VRev-008：固定 `I-PROTO-001 v0.1.3` / `D-009` 的继承范围，并将现行 R3 对评议稿的引用改为固定历史评议输入。未改 `planned`、未激活、未绑工作区。 |
 | 2026-08-04 | `0.1.3` | 用户确认激活并绑定唯一 lead / delivery 工作区 `workspace-003-modular-admin-architecture`；`/govern` 建立对应 Root。未将建区写成任何 R1-R6 的实现完成。 |
+| 2026-08-05 | `0.1.4` | 用户裁决 `records` 范围修订：records 为历史范例演示的无语义实体，不恢复其 CRUD、API、种子、权限、菜单或专属前端面；`0003`/`0006` 迁移账本、历史 operation-log 事件与历史治理证据保留。承接 workspace-003 GOAL-005 D-003 与 GOAL-006 D-003。 |
+| 2026-08-06 | `0.1.5` | `/vision` 响应 VRev-009（`pass` / `editorial`）：F-V014 `fixed`（补 0.1.4 短史行）、F-V015 `fixed`（exit #5 与已接受决策写明「指标 = Observability 按需，当前无指标贡献契约」）。未改 `vision_ref`、未改 `active` 状态。 |
+| 2026-08-06 | `0.2.0` | 关门：七条方向级退出判据经 lead 工作区 Q2 证据满足（Root `GOAL-001` `done / 6/6` + A-018/A-019/A-020 关门链 + A-021/A-022 动态复审响应，Root 03-audit 开放 required=0；Vision Review 0 open required），用户指令确认关门 → `status` `active` → `closed`；关门记录 + roadmap/workspaces 同步；`closed_under_vision_ref = @0.2.0`。 |
