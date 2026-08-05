@@ -30,4 +30,5 @@ manifest/专属 hook；0003/0006 迁移账本、历史 `records.*` operation-log
 
 ## 提交
 
-本目标 close checkpoint 已 git 提交：`cf79f87cce1e84809db181378c1a15f2ac9217e2`
+本目标 close checkpoint 已 git 提交，提交标题 `docs(workspace-003): close GOAL-007
+records retirement closure`（exact hash 见 git log）。

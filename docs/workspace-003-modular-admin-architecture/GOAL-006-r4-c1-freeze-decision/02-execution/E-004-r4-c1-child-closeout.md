@@ -36,4 +36,5 @@ status: recorded
 
 ## 提交
 
-本目标 close checkpoint 已 git 提交：`8c176853d9a3e39689fb46a48e63253d692efe79`
+本目标 close checkpoint 已 git 提交，提交标题 `docs(workspace-003): close GOAL-006
+R4-C1 freeze decision`（exact hash 见 git log）。
