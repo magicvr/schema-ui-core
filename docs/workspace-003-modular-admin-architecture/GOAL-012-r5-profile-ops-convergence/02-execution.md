@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-05 | 建立 R5 Profile 运维与数据收敛子目标 | recorded | [02-execution/E-001-r5-child-opened.md](02-execution/E-001-r5-child-opened.md) |
+| E-002 | 2026-08-05 | R5 readyz 真实 readiness 与 residual 状态 | recorded | [02-execution/E-002-r5-readyz-and-residuals.md](02-execution/E-002-r5-readyz-and-residuals.md) |
 
 ## 事实边界
 
