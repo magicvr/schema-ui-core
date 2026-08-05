@@ -46,7 +46,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 - [x] **R1**：在完整模块/中央注册/迁移所有权清单与协议继承核对基础上，冻结可实施的模块、迁移、错误和回滚边界（含 Profile **候选/依赖盘点**，不含 Profile 精确集合冻结）。
 - [x] **R2**：薄内核、框架无关模块契约、Fx 组合根与确定性后端聚合骨架就位；`mvp`/`admin` Profile **精确模块集合与配置覆盖顺序**已按 I-004 冻结，I-005 聚合/代理边界已 verified。
 - [x] **R3**：由 GOAL-004 完成；I-006 的静态 Manifest/Shell 兼容、移除和回滚边界已验证，且 [VP-003 R3 A+B+C+D 门闩](../../vision/plans/VP-003-modular-admin-architecture.md#r3-通过门闩有界试点--继承固定历史评议输入) 已由本地证据、自审和 Grok independent opinion 响应闭合。R3 只允许进入 R4，不关闭 VP-003。
-- [ ] **R4–R5**：现有一方 Admin 能力迁入统一模块契约；Profile、数据升级/恢复、健康诊断、Docker/代理与 fork 路径具有可核对证据。
+- [x] **R4–R5**：现有一方 Admin 能力迁入统一模块契约；Profile、数据升级/恢复、健康诊断、Docker/代理与 fork 路径具有可核对证据。（证据指向 GOAL-005 `done 5/5` 与 GOAL-012 `done 4/4` close-out；R4-R5 完成不关闭 VP-003。）
 - [ ] **R6 / 关门**：旧装配路径退出；exit #1–#7 均有本区证据与审计，且无开放 required 信息项或必改 finding。
 
 ### R 阶段 ↔ VP 退出判据映射

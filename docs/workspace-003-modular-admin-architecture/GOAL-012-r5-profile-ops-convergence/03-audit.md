@@ -1,7 +1,7 @@
 ---
 id: GOAL-012-r5-profile-ops-convergence
 doc: audit
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
