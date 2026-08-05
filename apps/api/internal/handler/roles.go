@@ -39,6 +39,12 @@ func rolesResource(st *store.Store) Resource {
 	}
 }
 
+// RolesResource exposes the roles Resource descriptor to module providers
+// (R4 C3.2).
+func RolesResource(st *store.Store) Resource {
+	return rolesResource(st)
+}
+
 // rolesEntity adapts the roles store to the generic resource boundary.
 type rolesEntity struct {
 	st *store.Store

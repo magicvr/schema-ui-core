@@ -105,6 +105,12 @@ func keyForRoute(method, pattern string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(pattern)
 }
 
+// RouteKey is the exported form of keyForRoute so providers and tests build a
+// contribution key that matches the kernel's canonical rule.
+func RouteKey(method, pattern string) string {
+	return keyForRoute(method, pattern)
+}
+
 // validateIdentity ensures the contribution's canonical Key equals its semantic
 // field, and that the identity is complete.
 func validateIdentity(moduleID string, kind ContributionKind, key, canonical string) error {

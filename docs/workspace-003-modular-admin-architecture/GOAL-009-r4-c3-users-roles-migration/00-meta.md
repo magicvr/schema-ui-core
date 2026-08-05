@@ -6,7 +6,7 @@ parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.0
-progress: 1/4
+progress: 2/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -39,7 +39,7 @@ serves_summary: 承接冻结包 §7 切换顺序，将 Users/Roles 从中心注�
 - [x] **C3.1 / 迁移扫描与行为矩阵**：Users/Roles 当前中心注册、Schema fixture、
   Manifest 投影、seed/权限与 operationlog writer 的状态盘点；固定保留行为矩阵
   （CRUD、授权、角色分配、最后管理员保护、密码、operationlog best-effort）。
-- [ ] **C3.2 / Provider 化**：`admin.users`/`admin.roles` 提供 provider（Descriptor +
+- [x] **C3.2 / Provider 化**：`admin.users`/`admin.roles` 提供 provider（Descriptor +
   `Register` 写 HTTP/Schema/Auth/Nav/Manifest；`CompiledPersistence` 无新增迁移），
   与现有中心输出做兼容比较（测试内，不永久双注册）。
 - [ ] **C3.3 / 中心特例清除**：composition 消费 provider finalize；移除中心
@@ -48,8 +48,8 @@ serves_summary: 承接冻结包 §7 切换顺序，将 Users/Roles 从中心注�
 - [ ] **C3.4 / 验证与关门**：行为矩阵测试 + 双 Profile + 失败注入（operationlog
   append 失败不翻转业务成功）+ self + Grok independent 无开放 required finding。
 
-四个检查点等权；当前 `progress: 1/4`（C3.1 扫描与行为矩阵完成）。完成本子目标只
-表示 C3 关闭，不关闭 GOAL-005、Root 或 VP-003，不自动放行 C4。
+四个检查点等权；当前 `progress: 2/4`（C3.1 扫描 + C3.2 provider 化完成）。完成本
+子目标只表示 C3 关闭，不关闭 GOAL-005、Root 或 VP-003，不自动放行 C4。
 
 ## 信息门禁
 

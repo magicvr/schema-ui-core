@@ -51,6 +51,12 @@ func usersResource(st *store.Store) Resource {
 	}
 }
 
+// UsersResource exposes the users Resource descriptor to module providers
+// (R4 C3.2).
+func UsersResource(st *store.Store) Resource {
+	return usersResource(st)
+}
+
 // usersEntity adapts the users store to the generic resource boundary. Rows
 // never contain password_hash (sensitive-field isolation, I-011-001 §2.2).
 type usersEntity struct {

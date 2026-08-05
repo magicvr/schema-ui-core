@@ -23,6 +23,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -157,6 +158,17 @@ type resourceList struct {
 // under a resource's path, all wrapped in the request-identity middleware and a
 // permission gate. Permission keys default to "{id}.read" / "{id}.write".
 func registerResource(mux *http.ServeMux, a *auth.Authenticator, res Resource) {
+	for _, route := range resourceRoutes(a, res, "core.server-registration") {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+}
+
+// resourceRoutes returns the generic CRUD route contributions for a Resource,
+// matching exactly what registerResource mounts. moduleID is the owning provider
+// id attached to the contribution identity; providers reuse the same factory so
+// the provider-generated surface is byte-compatible with the central output
+// (freeze package §7 step 2 compat comparison).
+func resourceRoutes(a *auth.Authenticator, res Resource, moduleID string) []kernel.RouteContribution {
 	readPerm := res.PermissionRead
 	if readPerm == "" {
 		readPerm = res.ID + ".read"
@@ -171,15 +183,30 @@ func registerResource(mux *http.ServeMux, a *auth.Authenticator, res Resource) {
 		writePerm: writePerm,
 		notFound:  notFoundCode(res),
 	}
+	var routes []kernel.RouteContribution
+	add := func(method, pattern string, handler http.Handler) {
+		routes = append(routes, kernel.RouteContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey(method, pattern)},
+			Method:               method,
+			Pattern:              pattern,
+			Handler:              handler,
+		})
+	}
 	if res.Listable {
-		mux.Handle("GET "+res.Path, a.Middleware(h.list()))
+		add("GET", res.Path, a.Middleware(h.list()))
 	}
-	mux.Handle("GET "+res.Path+"/{id}", a.Middleware(h.detail()))
+	add("GET", res.Path+"/{id}", a.Middleware(h.detail()))
 	if !res.ReadOnly {
-		mux.Handle("POST "+res.Path, a.Middleware(h.create()))
-		mux.Handle("PATCH "+res.Path+"/{id}", a.Middleware(h.update()))
-		mux.Handle("DELETE "+res.Path+"/{id}", a.Middleware(h.delete()))
+		add("POST", res.Path, a.Middleware(h.create()))
+		add("PATCH", res.Path+"/{id}", a.Middleware(h.update()))
+		add("DELETE", res.Path+"/{id}", a.Middleware(h.delete()))
 	}
+	return routes
+}
+
+// ResourceRoutes exposes resourceRoutes for module providers (R4 C3.2).
+func ResourceRoutes(a *auth.Authenticator, res Resource, moduleID string) []kernel.RouteContribution {
+	return resourceRoutes(a, res, moduleID)
 }
 
 // requirePermission enforces fail-closed authorization (GOAL-006 S4): the

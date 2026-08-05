@@ -25,10 +25,12 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-05 | self | 子目标建立、继承证据与 C3 信息门禁 | conditional | 3 | [03-audit/A-001-r4-c3-readiness.md](03-audit/A-001-r4-c3-readiness.md) |
+| A-002 | 2026-08-05 | self | R4-C3 Users/Roles provider 化实施与兼容验证 | conditional | 0 | [03-audit/A-002-r4-c3-provider-review.md](03-audit/A-002-r4-c3-provider-review.md) |
 
 ## 结论状态
 
 GOAL-009 已合法建立并承接 GOAL-008 Provider 契约与冻结包 §7。C3-I001/I002 `verified`
-（E-002 扫描 + 行为矩阵）、C3-I003 collecting、C3-I004 non-blocking。C3.1 检查点
-勾选、`progress: 1/4`。C3.2（Users/Roles provider 化）待实施。C3 只迁移
+（E-002）、C3-I003 collecting、C3-I004 non-blocking。C3.1/C3.2 检查点勾选、
+`progress: 2/4`。C3.2 provider 化完成（handler 导出 + modules/users+roles Provider +
+兼容测试，全量通过）。C3.3（composition 切换 + 中心特例清除）待实施。C3 只迁移
 admin.users/admin.roles，不推进 Root progress。
