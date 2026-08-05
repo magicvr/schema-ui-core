@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 审计 · GOAL-013
@@ -33,6 +33,7 @@ version: 0.6.0
 | A-006 | 2026-08-06 | self | C6.2 最后 repository ownership + Root A-010 F-001 关闭证据 | pass | 0（实现；independent 门禁待审） | [03-audit/A-006-c62-repository-ownership.md](03-audit/A-006-c62-repository-ownership.md) |
 | A-007 | 2026-08-06 | independent | C6.2 repository ownership + Root A-010 F-001/F-002/F-005 关闭复审 | pass | 0 | [03-audit/A-007-c62-repository-ownership-independent.md](03-audit/A-007-c62-repository-ownership-independent.md) |
 | A-008 | 2026-08-06 | self | 响应 A-007、闭合 F-C62-004 并放行 C6.2 | pass | 0 | [03-audit/A-008-c62-independent-response.md](03-audit/A-008-c62-independent-response.md) |
+| A-009 | 2026-08-06 | self | C6.3 Schema/Configuration/Policy/Lifecycle 实施事实 | pass | 0（self scope；cross 待审） | [03-audit/A-009-c63-contribution-lifecycle-self.md](03-audit/A-009-c63-contribution-lifecycle-self.md) |
 
 ## 结论状态
 
@@ -54,3 +55,9 @@ operationlog、settings owner repositories 已接入生产，store 已收窄为�
 **A-008 已响应** recommended 台账项并勾选 C6.2，GOAL-013 派生 progress 为 `2/4`。
 C6.3/C6.4 仍未完成，R6 完成也不代表 Root/VP 自动关门。
 响应归 `/govern`。
+
+**A-009（self）确认 C6.3 四个实现切片在 self scope 内 pass、required 0**：Schema
+document bytes 由 finalized ContributionSet 单一路径发布，Configuration runtime 与
+PolicyID/Visibility 分层校验成立，双 Profile Runtime/Fx lifecycle 矩阵通过。A-009 不放行
+C6.3；R6-I003、Root A-010 F-003b 与 `progress: 2/4` 保持不变，等待 Grok independent
+opinion 与 `/govern` 响应。
