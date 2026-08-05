@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.10.0
+version: 0.11.0
 ---
 
 # 执行记录 · GOAL-001
@@ -26,6 +26,7 @@ version: 0.10.0
 | E-010 | 2026-08-05 | 建立 R4 子目标与 C1 信息冲突登记 | recorded | [02-execution/E-010-r4-stage-subgoal.md](02-execution/E-010-r4-stage-subgoal.md) |
 | E-011 | 2026-08-06 | R6 C6.2 Root finding 响应 | recorded | [02-execution/E-011-r6-c62-root-response.md](02-execution/E-011-r6-c62-root-response.md) |
 | E-012 | 2026-08-06 | R6 child close-out 与 Root 6/6 checkpoint | recorded | [02-execution/E-012-r6-stage-closeout.md](02-execution/E-012-r6-stage-closeout.md) |
+| E-013 | 2026-08-06 | Root self close-out | recorded | [02-execution/E-013-root-self-closeout.md](02-execution/E-013-root-self-closeout.md) |
 
 ## 事实边界
 
@@ -33,4 +34,5 @@ version: 0.10.0
 关门，Root 派生 progress 为 `6/6`。R6 由 GOAL-013 `done / 4/4` 承接；C64-V01～V08
 与 VP exit #1～#7 已由 D-004/E-018/A-012/A-013/A-014 取证并响应。Root A-010
 F-001/F-002/F-003b/F-005 均 fixed，Root 当前无已知开放 required finding；Root status
-仍为 `active`，等待 Root 自身 close-out self + Grok independent 与 `/govern` 响应。
+仍为 `active`。A-018 Root self close-out 已 `pass`、self scope required 0；等待 Grok
+independent 与 `/govern` 响应。

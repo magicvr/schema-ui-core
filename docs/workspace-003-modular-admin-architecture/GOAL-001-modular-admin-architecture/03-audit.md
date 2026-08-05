@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.13.0
+version: 0.14.0
 ---
 
 # 审计 · GOAL-001
@@ -45,6 +45,7 @@ version: 0.13.0
 | A-015 | 2026-08-05 | self | 响应 A-014（F-014-001..003） | conditional | 0（新增） | [03-audit/A-015-a014-closeout-reaudit-response.md](03-audit/A-015-a014-closeout-reaudit-response.md) |
 | A-016 | 2026-08-06 | self | R6 C6.2 响应 A-010 F-001/F-002/F-005 与继承债 | conditional | 1（继承 F-003b） | [03-audit/A-016-r6-c62-a010-response.md](03-audit/A-016-r6-c62-a010-response.md) |
 | A-017 | 2026-08-06 | self | R6 C6.3 响应 A-010 F-003b 与继承债 | conditional | 0（实现债；C6.4 终态证据待） | [03-audit/A-017-r6-c63-a010-response.md](03-audit/A-017-r6-c63-a010-response.md) |
+| A-018 | 2026-08-06 | self | Root close-out：R1～R6、I-001～I-007、全部 finding、VP exit #1～#7 | pass | 0（self scope；independent 待审） | [03-audit/A-018-root-closeout-self.md](03-audit/A-018-root-closeout-self.md) |
 
 ## 结论状态
 
@@ -69,3 +70,8 @@ version: 0.13.0
 - **A-017**：响应 GOAL-013 C6.3（2026-08-06）。A-010 F-003b 经 GOAL-013
   A-009 self + A-010 Grok independent + A-011 response 合法 `fixed`；A-010 的实现债
   至此全部 fixed。C6.4 与 exit #1～#7 终态证据仍开放，Root 保持 `active / 5/6`。
+- **A-018**：Root self close-out `pass`（2026-08-06），self scope required 0。R1～R6
+  子目标全部 done、I-001～I-007 verified、历史 required 均有 fixed/accepted-residual
+  合法路径，VP exit #1～#7 由 GOAL-013 终态 evidence 与 A-012/A-013/A-014 支撑。
+  R4-I004 继续保留用户接受的有界 residual，不伪装 retention 已定义。Root 仍为
+  `active / 6/6`，等待 Grok independent 与 `/govern` 响应。

@@ -4,15 +4,15 @@ doc: decision
 status: active
 parent: null
 created: 2026-08-04
-updated: 2026-08-05
-version: 0.8.0
+updated: 2026-08-06
+version: 0.9.0
 ---
 
 # 决策记录 · GOAL-001
 
 ## 信息需求与阶段门禁
 
-信息台账权威位于 [00-meta.md](00-meta.md#信息需求与阶段门禁)。R1 完成后 `I-001`、`I-002`、`I-003`、`I-007` 已按 GOAL-002 C1-C4 evidence、D-003～D-005、Grok A-004 independent 与 A-005 response 标为 `verified`；R2 响应后 `I-004`、`I-005` 已由 GOAL-003 C1/C4 evidence、A-002 self、A-003 Grok re-audit 和本次 Root response 标为 `verified`；R3 完成后 `I-006` 已由 GOAL-004 A-004、E-005 和 D-004 标为 `verified`，但 R6 仍需重新核对最终旧路径移除边界。I-007 的「默认不扩大 I-PROTO-001 v0.1.3」约束继续有效。
+信息台账权威位于 [00-meta.md](00-meta.md#信息需求与阶段门禁)。R1 完成后 `I-001`、`I-002`、`I-003`、`I-007` 已按 GOAL-002 C1-C4 evidence、D-003～D-005、Grok A-004 independent 与 A-005 response 标为 `verified`；R2 响应后 `I-004`、`I-005` 已由 GOAL-003 C1/C4 evidence、A-002 self、A-003 Grok re-audit 和 Root response 标为 `verified`；R3 完成后 `I-006` 已由 GOAL-004 A-004、E-005 和 D-004 标为 `verified`，其 R6 最终旧路径移除边界已由 GOAL-013 D-004/E-018/A-012/A-013/A-014 重新核对。I-007 的「默认不扩大 I-PROTO-001 v0.1.3」约束继续有效。R4-I004 维持用户 D-003 的有界 `accepted-residual`；R5 已触发复核，C3 failure-injection 与 R6 operation-log 保留证据提供缓解，但不把长期 retention policy 写成已定义。
 
 ## 决策索引
 
