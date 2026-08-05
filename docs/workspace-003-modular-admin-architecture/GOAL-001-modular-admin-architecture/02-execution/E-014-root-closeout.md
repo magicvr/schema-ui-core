@@ -8,7 +8,7 @@ status: recorded
 parent: null
 created: 2026-08-06
 updated: 2026-08-06
-version: 0.1.0
+version: 0.1.1
 ---
 
 # E-014 · Root independent response、最终验证与关门
@@ -24,6 +24,8 @@ version: 0.1.0
 - Root R1～R6、I-001～I-007、历史 required finding 与 VP exit #1～#7 的 self +
   independent + response 证据链完成；Root 状态由 `active / 6/6` 更新为
   `done / 6/6`，并同步 goal-tree。
+- Root close-out checkpoint `facd475` 已成功创建；scope 为 A-020/E-014、Root 四份
+  canonical 索引、goal-tree 与最终链接修复，验证沿用下表已通过结果。
 - 最终链接检查发现 Root D-010 的 GOAL-005 相对路径少退一层；已修正为
   `../../GOAL-005-r4-full-module-migration/00-meta.md`。加入本条终态记录后，工作区 3
   的 310 个 Markdown 文件、385 个本地链接全部可解析。
