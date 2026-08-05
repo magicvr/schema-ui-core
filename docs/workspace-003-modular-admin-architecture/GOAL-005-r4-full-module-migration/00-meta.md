@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-full-module-migration
 title: R4 · 全量一方模块迁移
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.1
-progress: 4/5
+progress: 5/5
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -43,13 +43,14 @@ R4 迁移完成。R4 的最终目标是统一模块契约下的完整一方 Admi
   CRUD、授权、角色分配、最后管理员保护、密码和 operationlog 行为。
 - [x] **C4 / Schema 与其他能力迁移**：严格按 C1 冻结的范围执行；Records
   保持 historical-only，不恢复不存在的 CRUD 代码或产品面。
-- [ ] **C5 / 验收与关门**：同一 Web 构建双 Profile、API/Schema/Manifest/授权/
+- [x] **C5 / 验收与关门**：同一 Web 构建双 Profile、API/Schema/Manifest/授权/
   持久化和行为矩阵通过；self + Grok independent 审计无开放 required finding，
   并形成进入 R5 的结论。
 
-五个检查点等权；当前为 `progress: 4/5`（C1 由 GOAL-006/007 承接，C2 由 GOAL-008
-承接，C3 由 GOAL-009 承接，C4 由 GOAL-010 承接并以 done 收束）。完成本子目标只表示
-R4 关闭，不代表 Root、VP-003、R5 或 R6 关闭。
+五个检查点等权；`progress: 5/5`（C1-C5 全部由 GOAL-006..011 承接并以 done 收束）。
+R4 关闭；residual 清单（Schema 贡献驱动、中心适配器删除、校验器深化、readyz、双
+Profile Start/Ready 矩阵、Configuration 运行时迁移）传递 R5。完成本子目标只表示 R4
+关闭，不代表 Root、VP-003、R5 或 R6 关闭。
 
 ## 信息门禁
 

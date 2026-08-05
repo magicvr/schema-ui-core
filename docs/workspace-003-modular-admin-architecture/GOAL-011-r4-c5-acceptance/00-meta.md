@@ -1,12 +1,12 @@
 ---
 id: GOAL-011-r4-c5-acceptance
 title: R4-C5 · 验收与关门
-status: active
+status: done
 parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.0
-progress: 3/4
+progress: 4/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -43,12 +43,12 @@ independent 审计后形成进入 R5 的结论。不关闭 Root/VP-003/R5/R6。
 - [x] **C5.3 / C5 收尾**：PolicyID/Visibility allowlist 深化、中心
   RegisterSettings/RegisterActivity 终态删除、Schema owner 完全 ContributionSet
   驱动、readyz 真实 readiness（或 residual）。
-- [ ] **C5.4 / 关门审计**：self + Grok independent 无开放 required finding；
+- [x] **C5.4 / 关门审计**：self + Grok independent 无开放 required finding；
   形成进入 R5 的结论，向 GOAL-005 C5 close-out 提交。
 
-四个检查点等权；当前 `progress: 3/4`（C5.1-C5.3 验证完成）。C5.3 收尾项以
-accepted-residual 或文档化登记（详见 E-002）。完成本子目标表示 R4 关闭，不关闭
-GOAL-005（done 需父级确认）、Root、VP-003、R5 或 R6。
+四个检查点等权；`progress: 4/4`（C5.1-C5.4 完成）。Grok A-003 `conditional` 确认
+**R4 可以关门**、具备进入 R5 条件；residual 清单传递 R5。完成本子目标表示 R4 关闭，
+不关闭 GOAL-005（done 需父级确认）、Root、VP-003、R5 或 R6。
 
 ## 信息门禁
 

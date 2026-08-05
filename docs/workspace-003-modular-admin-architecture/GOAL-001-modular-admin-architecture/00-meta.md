@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-04
 updated: 2026-08-05
 version: 0.8.0
-progress: 3/6
+progress: 4/6
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -64,14 +64,14 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 
 ## 纲领路线图
 
-六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3 已完成并通过对应 close-out audit，Root 派生进度为 `3/6`；R4-R6 尚未完成。R4 只能以独立子目标承接全量一方模块迁移，不得把 R3 有界试点扩大解释为 R4 完成。
+六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3、R4 已完成并通过对应 close-out audit，Root 派生进度为 `4/6`；R5-R6 尚未完成。R4 由 GOAL-005 以 `done 5/5` 收束（residual 传递 R5）。R5/R6 不得借 R4 证据直接宣称完成。
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
 | R1 | 契约与迁移基线冻结 | 已完成 | 由 [GOAL-002-r1-contract-migration-baseline](../GOAL-002-r1-contract-migration-baseline/00-meta.md) 承接；C1-C4 证据、D-003～D-005、Grok A-004 independent 与 A-005 response 已落盘；冻结模块 API、迁移 tombstone、错误分类、兼容基线和回滚策略。**Profile 精确模块集合与覆盖顺序未在本阶段冻结**（I-004 留给 R2）。协议范围默认不扩大 I-PROTO-001 v0.1.3（I-007）。 |
 | R2 | 内核与组合根基础 | 已完成 | 由 [GOAL-003-r2-kernel-composition-root](../GOAL-003-r2-kernel-composition-root/00-meta.md) 承接并以 `done 5/5` 收束；I-004/I-005 verified，Root R2 stage close-out 已落盘，Root progress 为 `2/6`。 |
 | R3 | 有界试点 | 已完成 | 由 [GOAL-004-r3-bounded-pilot](../GOAL-004-r3-bounded-pilot/00-meta.md) 承接并以 `done 4/4` 收束；I-006 三项 verified，A-004 close-out 以 fixed 路径响应 required findings。允许建立 R4 子目标，但不关闭 VP-003。 |
-| R4 | 全量一方模块迁移 | 进行中 | 由 [GOAL-005-r4-full-module-migration](../GOAL-005-r4-full-module-migration/00-meta.md) 承接；先关闭能力清单、provider contract、Records/Schema CRUD 冲突和 operationlog 边界，再进入 C2。范围受 I-PROTO-001 v0.1.3 继承约束。 |
+| R4 | 全量一方模块迁移 | 已完成 | 由 [GOAL-005-r4-full-module-migration](../GOAL-005-r4-full-module-migration/00-meta.md) 承接并以 `done 5/5` 收束（C1-C5 由 GOAL-006..011 承接）；R4-I001/I002/I003 verified、R4-I004 accepted-residual；Grok A-003 确认 R4 可关门、具备进入 R5 条件；residual 清单传递 R5。 |
 | R5 | Profile、数据与运维收敛 | 未开始 | 完成 Profile **运维/配置收敛**与文档、fresh/reconcile、readyz/诊断、代理/容器、升级恢复与 fork 文档。R5 **不**否定 R2 已冻结的精确 Profile 集，除非新决策书面改写。 |
 | R6 | 旧路径移除与终态验收 | 未开始 | 删除双轨与静态生产兜底，完成完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收；对 exit #1–#7 逐条取证后关门审计。 |
 

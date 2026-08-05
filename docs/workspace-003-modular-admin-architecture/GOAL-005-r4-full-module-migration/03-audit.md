@@ -65,10 +65,9 @@ evidence 链完整。R4-C1 required 信息门禁（R4-I001/I002/I003 `verified`�
 `accepted-residual`、R4-I005 non-blocking）已闭合；C2 由 GOAL-008 `done 4/4` 收束
 （Grok A-003 `conditional`，A-004 闭合三条 required）；C3 由 GOAL-009 `done 4/4`
 收束（Grok A-003/A-006 `pass`）；C4 由 GOAL-010 `done 4/4` 收束（Grok A-002
-`conditional`，F-IND-C4-002 经 D-002 收窄闭合）。GOAL-005 `progress: 4/5`；C5 验收
-待承接，C5 门禁（ledger drift/unknown、双 Profile 失败矩阵、校验器深化、中心适配器
-终态删除、Schema owner 完全贡献驱动）登记于 GOAL-010 E-003。C2 放行由 `/govern` 在
-确认后执行。本意见不推进 GOAL-005 或 Root。
+`conditional`，F-IND-C4-002 经 D-002 收窄闭合）；C5 由 GOAL-011 `done 4/4` 收束
+（Grok A-003 `conditional` 确认 R4 可关门、无开放 required）。**R4 已关门，
+GOAL-005 `done 5/5`**；residual 清单传递 R5。本意见不推进 GOAL-005 或 Root。
 
 ## 已响应 finding
 
