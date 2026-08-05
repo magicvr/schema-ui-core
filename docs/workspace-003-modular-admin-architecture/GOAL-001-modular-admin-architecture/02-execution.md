@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.12.0
+version: 0.12.1
 ---
 
 # 执行记录 · GOAL-001
@@ -28,6 +28,7 @@ version: 0.12.0
 | E-012 | 2026-08-06 | R6 child close-out 与 Root 6/6 checkpoint | recorded | [02-execution/E-012-r6-stage-closeout.md](02-execution/E-012-r6-stage-closeout.md) |
 | E-013 | 2026-08-06 | Root self close-out | recorded | [02-execution/E-013-root-self-closeout.md](02-execution/E-013-root-self-closeout.md) |
 | E-014 | 2026-08-06 | Root independent response、最终验证与关门 | recorded | [02-execution/E-014-root-closeout.md](02-execution/E-014-root-closeout.md) |
+| E-015 | 2026-08-06 | 响应 A-021 动态代码复审并闭合两条 recommended | recorded | [02-execution/E-015-a021-response.md](02-execution/E-015-a021-response.md) |
 
 ## 事实边界
 
@@ -36,4 +37,6 @@ version: 0.12.0
 与 VP exit #1～#7 已由 D-004/E-018/A-012/A-013/A-014 取证并响应。Root A-010
 F-001/F-002/F-003b/F-005 均 fixed，Root 当前无开放 required finding。A-018 self 与
 A-019 Grok independent 均 `pass`、required 0；A-020 `/govern` response 已处理唯一
-recommended F-019-001 并放行 Root `done / 6/6`。VP-003 保持 `active`。
+recommended F-019-001 并放行 Root `done / 6/6`。A-021 Grok independent 动态代码复审
+`pass`、required 0；A-022 `/govern` response 已 `fixed` R-021-001（删除两处空目录）
+与 R-021-002（D-011 固定「指标 = 按需」），Root 状态维持 `done / 6/6`。VP-003 保持 `active`。

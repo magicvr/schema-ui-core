@@ -5,7 +5,7 @@ canonical_scope: docs/workspace-003-modular-admin-architecture/
 status: active
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.6.0
+version: 0.6.1
 parent: null
 ---
 
@@ -57,6 +57,7 @@ GOAL-013-r6-old-path-removal [done] (4/4) · R6 旧路径移除与终态验收
 ## 维护说明
 
 - `6/6` 由 Root `00-meta.md` 中 R1～R6 六个等权检查点全部完成派生；Root `done` 由 A-018 self、A-019 Grok independent 与 A-020 `/govern` response 另行放行，不由 progress 推导，也不放行 VP-003 `closed`。
+- A-021 Grok independent 动态代码复审（VP exit #1～#7 vs apps/api·web）`pass`、required 0；A-022 `/govern` response 已 `fixed` R-021-001（删除 `apps/web` 两处空 `.well-known` 目录）与 R-021-002（D-011 固定「指标 = 按需，当前无指标贡献契约」）；Root `done / 6/6` 维持，VP-003 仍 `active`。
 - 新子目标必须平铺在本目录，`parent` 使用本区完整 Goal ID；跨工作区提及使用 Q2 canonical 路径。
 - Root 自身 required 信息项当前无；I-006 已经 GOAL-004 A-004/E-005/D-004 响应标为 verified，其 R6 最终旧路径移除边界已由 GOAL-013 A-012/A-013/A-014 重新核对。R4 子目标 GOAL-005 的 Provider、Records 和 operationlog 裁决已落盘，R4-I002/R4-I003 已 verified，R4-I004 以 accepted-residual 记录；A-020 已补足其 R5 字段级复核留痕但未扩张 residual。GOAL-006 至 GOAL-011（C1-C5）均 `done 4/4`，GOAL-012（R5）`done 4/4`。I-004/I-005 已经 Root D-006/E-006/A-005 与 GOAL-003 A-003/A-004 evidence response 标为 verified。I-001/I-002/I-003/I-007 已在 R1 close-out 证据链中 verified；Root close-out cross 已完成。
 - A-002 F-001～F-006 已于 2026-08-04 经 A-003 / D-002 全部 `fixed`；不改变本树 progress 或 status。

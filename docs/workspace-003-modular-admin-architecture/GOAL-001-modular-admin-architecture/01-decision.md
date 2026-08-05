@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.10.0
+version: 0.10.1
 ---
 
 # 决策记录 · GOAL-001
@@ -28,3 +28,4 @@ version: 0.10.0
 | D-008 | 2026-08-05 | 建立 R3 有界试点子目标与 I-006 先行门禁 | accepted | [01-decision/D-008-r3-stage-subgoal.md](01-decision/D-008-r3-stage-subgoal.md) |
 | D-009 | 2026-08-05 | R3 close-out、I-006 响应与 R4 阶段入口 | accepted | [01-decision/D-009-r3-closeout-r4-gate.md](01-decision/D-009-r3-closeout-r4-gate.md) |
 | D-010 | 2026-08-05 | 建立 R4 全量一方模块迁移子目标与 C1 信息门禁 | accepted | [01-decision/D-010-r4-stage-subgoal.md](01-decision/D-010-r4-stage-subgoal.md) |
+| D-011 | 2026-08-06 | 响应 A-021：接受动态复审 pass，R-021-001 `fixed`、R-021-002 固定「指标 = 按需」立场 | accepted | [01-decision/D-011-a021-response-metrics-position.md](01-decision/D-011-a021-response-metrics-position.md) |

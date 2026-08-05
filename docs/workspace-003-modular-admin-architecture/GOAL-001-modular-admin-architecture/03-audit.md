@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-08-04
 updated: 2026-08-06
-version: 0.16.0
+version: 0.16.2
 ---
 
 # 审计 · GOAL-001
@@ -48,6 +48,8 @@ version: 0.16.0
 | A-018 | 2026-08-06 | self | Root close-out：R1～R6、I-001～I-007、全部 finding、VP exit #1～#7 | pass | 0（self scope；independent 待审） | [03-audit/A-018-root-closeout-self.md](03-audit/A-018-root-closeout-self.md) |
 | A-019 | 2026-08-06 | independent | Root close-out：R1～R6、I-001～I-007、A-001～A-018、GOAL-013 C6.4、VP exit #1～#7、status/progress 分离 | pass | 0 required；1 recommended（F-019-001） | [03-audit/A-019-root-closeout-independent.md](03-audit/A-019-root-closeout-independent.md) |
 | A-020 | 2026-08-06 | self | 响应 A-018/A-019、处理 F-019-001 并执行 Root close-out | pass | 0 | [03-audit/A-020-root-closeout-response.md](03-audit/A-020-root-closeout-response.md) |
+| A-021 | 2026-08-06 | independent | VP-003 exit #1～#7 vs apps/api·web 代码动态复审（构建/测试/E2E 双 Profile/冒烟/fail-closed） | pass | 0 required；2 recommended（R-021-001/R-021-002） | [03-audit/A-021-vp003-apps-code-independent-reaudit.md](03-audit/A-021-vp003-apps-code-independent-reaudit.md) |
+| A-022 | 2026-08-06 | self | 响应 A-021：接受动态复审 pass，R-021-001 `fixed`（删空目录）、R-021-002 `fixed`（D-011 指标=按需留痕） | pass | 0 | [03-audit/A-022-a021-response.md](03-audit/A-022-a021-response.md) |
 
 ## 结论状态
 
@@ -88,3 +90,20 @@ version: 0.16.0
   R4-I004 仍仅沿用用户 D-003 的有界 `accepted-residual`，未定义的 retention 未被伪装
   为已解决，也没有形成新的 residual 接受。Root 关门门禁满足，状态更新为 `done / 6/6`；
   VP-003 继续保持 `active`。
+- **A-021**：independent 代码复审（2026-08-06，Grok Build / grok-4.5 / high，
+  未加载任何 skill）。对 `apps/api` + `apps/web` 工作树 HEAD `6ed8824` 做**动态**
+  核验：`go build/test/vet`、`npm build`、vitest 495/495、Playwright mvp+admin 双
+  Profile（各 2/2）、本地冒烟（双 Profile 模块路由、登录前 Manifest、ETag/304、
+  mvp→admin 同库升级、四种 fail-closed 路径、退役符号/静态 Manifest 残留扫描）。
+  exit #1～#7 逐条与代码事实对照**均 pass**；未发现目标漂移、未达标或阻断 bug。
+  required 0；recommended 2：**R-021-001**（`public/.well-known/schema-ui/` 本地空
+  目录残留，git 未跟踪，建议删除）、**R-021-002**（metrics 无基础设施，按 §2.2
+  Observability 为按需，建议在决策/VP 措辞中显式写明「指标=按需」消除 exit #5
+  歧义）。按用户裁决条件（仅漂移/未达标/阻断 bug 时回退），**未**回退 Root
+  `done / 6/6`；未改 status/progress/goal-tree；不放行 VP-003 `closed`。
+- **A-022**：`/govern` 响应（2026-08-06，用户确认「全部照做」）接受 A-021 `pass`；
+  required 0、无冲突，未回退 Root `done / 6/6`。R-021-001 `fixed`：两处本地空目录
+  （`apps/web/public/.well-known/schema-ui/`、`apps/web/dist/.well-known/schema-ui/`，
+  均 0 项、git 未跟踪）已删除。R-021-002 `fixed`（决策留痕）：Root D-011 固定
+  「指标 = 按需能力，当前无指标贡献契约；已交付范围为日志（`module_id`）+ 健康诊断」，
+  未改动 architecture/VP 原文；未来引入指标须新决策。VP-003 `closed` 仍归 `/vision`。
