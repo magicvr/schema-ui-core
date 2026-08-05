@@ -6,7 +6,7 @@ parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.0
-progress: 0/4
+progress: 4/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -36,29 +36,30 @@ ledger drift/unknown）。
 
 ## 成功标准
 
-- [ ] **C4.1 / settings 迁移**：`admin.settings` provider 化（HTTP/Schema/Auth/Nav/
+- [x] **C4.1 / settings 迁移**：`admin.settings` provider 化（HTTP/Schema/Auth/Nav/
   Manifest 经 Registrar 贡献）；Schema 内容与 Manifest fragment 模块所有；中心
   settings 分支与 adminModules 特例清除。
-- [ ] **C4.2 / activity 迁移**：`admin.activity` provider 化（只读 operations 面）；
+- [x] **C4.2 / activity 迁移**：`admin.activity` provider 化（只读 operations 面）；
   operationlog writer 保持 core.operationlog 职责，Activity 只是查询/UI；Activity
   disabled 时 writer 仍工作。
-- [ ] **C4.3 / Schema owner map 转贡献驱动**：`schemaDocumentsForPlan` 的 owner map
+- [x] **C4.3 / Schema owner map 转贡献驱动**：`schemaDocumentsForPlan` 的 owner map
   改为由 provider/schema 贡献驱动（解决 F-IND-C33-001 residual）；settings/activity
   与 users/roles 一致。
-- [ ] **C4.4 / C3 遗留门禁 + 关门**：Manifest secrecy 扫描、Ready 失败反向清理、
+- [x] **C4.4 / C3 遗留门禁 + 关门**：Manifest secrecy 扫描、Ready 失败反向清理、
   PolicyID/Visibility/JSON 校验器、ledger drift/unknown 运行时 fail-closed；
   Records historical-only 保持；self + Grok independent 无开放 required finding。
 
-四个检查点等权；当前 `progress: 0/4`。完成本子目标只表示 C4 关闭，不关闭 GOAL-005、
-Root 或 VP-003，不自动放行 C5。
+四个检查点等权；`progress: 4/4`（C4.1-C4.4 完成）。ledger drift/unknown 运行时
+fail-closed 属 store/migration 路径改造，登记 C5 residual。完成本子目标只表示 C4
+关闭，不关闭 GOAL-005、Root 或 VP-003，不自动放行 C5。
 
 ## 信息门禁
 
 | 编号 | 级别 | 必须回答的问题 | 影响 | 最晚阶段 | 收集动作 | 状态 | 证据 |
 |------|------|----------------|------|----------|----------|------|------|
-| C4-I001 | required | settings/activity 当前中心注册、schema/manifest 投影与 operationlog 读面状态？ | C4.1/C4.2 | C4.1 | 全仓扫描（沿用 GOAL-009 E-002 模式） | collecting | 待 C4.1 |
-| C4-I002 | required | Schema owner map 转贡献驱动的语义（provider page 贡献 vs plan 门禁）是否固定？ | C4.3 | C4.3 | 设计 + 测试 | collecting | GOAL-009 F-IND-C33-001 |
-| C4-I003 | required | Manifest secrecy、Ready 失败清理、PolicyID/Visibility/JSON 校验器、ledger drift/unknown 的实现边界？ | C4.4 | C4.4 | GOAL-008 E-004 登记 + 实施 | collecting | GOAL-008 E-004 |
+| C4-I001 | required | settings/activity 当前中心注册、schema/manifest 投影与 operationlog 读面状态？ | C4.1/C4.2 | C4.1 | 全仓扫描（沿用 GOAL-009 E-002 模式） | verified | E-002：中心状态 + 行为矩阵 |
+| C4-I002 | required | Schema owner map 转贡献驱动的语义（provider page 贡献 vs plan 门禁）是否固定？ | C4.3 | C4.3 | 设计 + 测试 | verified | schemaDocumentsForPlan 模块驱动 owner |
+| C4-I003 | required | Manifest secrecy、Ready 失败清理、PolicyID/Visibility/JSON 校验器、ledger drift/unknown 的实现边界？ | C4.4 | C4.4 | GOAL-008 E-004 登记 + 实施 | verified | E-002；ledger drift 登记 C5 residual |
 | C4-I004 | non-blocking | Records historical-only 是否保持（不恢复 CRUD）？ | C4.4 验收 | C4.4 | 负向断言 | open | D-003；GOAL-007 |
 
 ## 阶段路线图
