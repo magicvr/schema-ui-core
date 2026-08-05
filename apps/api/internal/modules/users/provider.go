@@ -16,15 +16,6 @@ import (
 
 const ModuleID = "admin.users"
 
-// sixCapabilities is the standard Admin functional module requirement
-// (kernel.standardAdminCapabilities is unexported; this must match it).
-func sixCapabilities() []kernel.Capability {
-	return []kernel.Capability{
-		kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityAuthorization,
-		kernel.CapabilityNavigation, kernel.CapabilityManifest, kernel.CapabilityPersistence,
-	}
-}
-
 // Provider implements kernel.Provider for admin.users.
 type Provider struct {
 	a  *auth.Authenticator
@@ -42,7 +33,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
 		DependsOn:      []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"},
-		Requires:       sixCapabilities(),
+		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/users", "GET /api/users/{id}", "POST /api/users",

@@ -16,14 +16,6 @@ import (
 
 const ModuleID = "admin.roles"
 
-// sixCapabilities matches kernel.standardAdminCapabilities.
-func sixCapabilities() []kernel.Capability {
-	return []kernel.Capability{
-		kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityAuthorization,
-		kernel.CapabilityNavigation, kernel.CapabilityManifest, kernel.CapabilityPersistence,
-	}
-}
-
 // Provider implements kernel.Provider for admin.roles.
 type Provider struct {
 	a  *auth.Authenticator
@@ -41,7 +33,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
 		DependsOn:      []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"},
-		Requires:       sixCapabilities(),
+		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles",
