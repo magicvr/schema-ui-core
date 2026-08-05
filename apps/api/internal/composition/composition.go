@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"sync/atomic"
 
 	"go.uber.org/fx"
 
@@ -67,6 +68,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			func() seedPasswordHash { return seedPasswordHash(seedHash) },
 			func() *slog.Logger { return logger },
 			func() kernel.Plan { return plan },
+			func() *readinessGate { return &readinessGate{} },
 			openStore,
 			newAuthenticator,
 			newMux,
@@ -75,6 +77,15 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 		fx.Invoke(registerLifecycle),
 	), nil
 }
+
+// readinessGate reports whether the module graph Start+Ready succeeded (R5 real
+// readiness). readyz consults it; registerLifecycle flips it after Ready.
+type readinessGate struct {
+	ready atomic.Bool
+}
+
+func (g *readinessGate) Ready() bool { return g.ready.Load() }
+func (g *readinessGate) setReady()   { g.ready.Store(true) }
 
 func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, error) {
 	st, err := store.Open(cfg.DBPath, "admin", string(seedHash), true)
@@ -88,9 +99,9 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, st *store.Store) *au
 	return auth.New([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, st, cfg.AuthDevSessionEnabled)
 }
 
-func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan) (*http.ServeMux, error) {
+func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
-	handler.Register(mux, a, st, plan)
+	handler.RegisterWithReadiness(mux, a, st, plan, gate.Ready)
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
@@ -134,7 +145,7 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, mux, logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate) {
 	var listener net.Listener
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
 	lc.Append(fx.Hook{
@@ -158,6 +169,9 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 				_ = st.Close()
 				return errors.Join(err, stopErr)
 			}
+			// R5 real readiness: only after every module Start + Ready succeeds
+			// does /readyz report ready.
+			gate.setReady()
 			logger.Info("server starting",
 				"addr", cfg.HTTPAddr,
 				"profile", cfg.ProfileName,

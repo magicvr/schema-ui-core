@@ -28,8 +28,14 @@ type healthResponse struct {
 // RegisterContributions), not by this central Register. This function keeps
 // core auth/accounts/health/schema registration only.
 func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
+	RegisterWithReadiness(mux, a, st, plan, nil)
+}
+
+// RegisterWithReadiness is Register plus an optional module-graph readiness
+// probe (R5). ready, when non-nil, gates /readyz on Start+Ready success.
+func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool) {
 	mux.Handle("GET /healthz", healthz())
-	mux.Handle("GET /readyz", readyz(st))
+	mux.Handle("GET /readyz", readyz(st, ready))
 	if plan.HasModule("core.auth-session") {
 		authsHandler(mux, a, st)
 		accountsHandler(mux, a)
@@ -71,14 +77,26 @@ func healthz() http.Handler {
 
 // readyz is the readiness probe: liveness plus a trivial SQLite read, so a
 // dead, read-only or unmigrated database flips the container health gate
-// (A-002 F-002-006; compose uses this as service_healthy).
-func readyz(st *store.Store) http.Handler {
+// (A-002 F-002-006; compose uses this as service_healthy). R5: when ready is
+// non-nil it must also report true (module graph Start+Ready succeeded),
+// otherwise the probe stays unavailable (freeze §3 — readyz is real module-graph
+// readiness, not just store ping).
+func readyz(st *store.Store, ready func() bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 		defer cancel()
 		if err := st.Ping(ctx); err != nil {
 			writeJSON(w, http.StatusServiceUnavailable, healthResponse{
 				Status:    "unavailable",
+				Timestamp: time.Now().UTC(),
+				Version:   version.Version,
+				Commit:    version.Commit,
+			})
+			return
+		}
+		if ready != nil && !ready() {
+			writeJSON(w, http.StatusServiceUnavailable, healthResponse{
+				Status:    "not-ready",
 				Timestamp: time.Now().UTC(),
 				Version:   version.Version,
 				Commit:    version.Commit,

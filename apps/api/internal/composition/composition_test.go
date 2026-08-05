@@ -54,7 +54,7 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 	}
 	defer st.Close()
 	a := auth.New([]byte("test-secret"), 0, 0, st, false)
-	mux, err := newMux(a, st, plan)
+	mux, err := newMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 			}
 			defer st.Close()
 			a := auth.New([]byte("test-secret"), 0, 0, st, false)
-			mux, err := newMux(a, st, plan)
+			mux, err := newMux(a, st, plan, &readinessGate{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -289,7 +289,9 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := auth.New([]byte("test-secret"), 0, 0, st, false)
-	mux, err := newMux(a, st, plan)
+	gate := &readinessGate{}
+	gate.setReady()
+	mux, err := newMux(a, st, plan, gate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -388,5 +390,45 @@ func TestDualProfileRegisterValidationFailClosed(t *testing.T) {
 		if _, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{bad}); err == nil {
 			t.Fatalf("%s: mismatched provider descriptor must fail closed", profile)
 		}
+	}
+}
+
+// TestReadyzGatedOnModuleReadiness verifies /readyz returns unavailable until the
+// module graph Start+Ready succeeds (R5 real readiness), not just store ping.
+func TestReadyzGatedOnModuleReadiness(t *testing.T) {
+	cfg := &config.Config{ProfileName: "admin"}
+	plan, err := ResolvePlan(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(":memory:", "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+
+	// Gate unset → readyz unavailable even though the store pings.
+	notReady := httptest.NewRecorder()
+	mux, err := newMux(a, st, plan, &readinessGate{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux.ServeHTTP(notReady, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	if notReady.Code != http.StatusServiceUnavailable {
+		t.Fatalf("readyz with unset gate = %d, want 503", notReady.Code)
+	}
+
+	// Gate set → readyz ok.
+	readyGate := &readinessGate{}
+	readyGate.setReady()
+	mux, err = newMux(a, st, plan, readyGate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ready := httptest.NewRecorder()
+	mux.ServeHTTP(ready, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	if ready.Code != http.StatusOK {
+		t.Fatalf("readyz with set gate = %d, want 200", ready.Code)
 	}
 }
