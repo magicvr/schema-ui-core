@@ -42,9 +42,19 @@ jobs:
           legacy_import='renderer/'"records"
           legacy_file='records'".ts"
           if grep -R -n -E "$legacy_api|$legacy_env|$legacy_import|$legacy_file" \
-            --exclude='*.test.ts' --exclude='*.test.tsx' \
+            --exclude='*.test.ts' --exclude='*.test.tsx' --exclude='*_test.go' \
             .github/workflows scripts apps/web/src apps/api/internal/handler; then
             echo "active records-resource residue detected"
+            exit 1
+          fi
+      - name: Reject retired assembly symbols
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          if grep -R -n -E \
+            'func[[:space:]]+(MountProviderRoutes|RegisterSettings|RegisterActivity)[[:space:]]*\(|staticSchemaDocuments|schemaDocumentsForPlan|compiledMigrations|seedRBAC' \
+            --include='*.go' --exclude='*_test.go' apps/api/internal; then
+            echo "retired assembly symbol residue detected"
             exit 1
           fi
       - name: Reject retired Schema and Manifest paths
