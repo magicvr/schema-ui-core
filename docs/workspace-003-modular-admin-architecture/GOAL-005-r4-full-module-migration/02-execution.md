@@ -28,6 +28,7 @@ version: 0.1.0
 | E-012 | 2026-08-05 | R4 C1 冻结包修订复审 | recorded | [02-execution/E-012-r4-c1-freeze-package-rereview.md](02-execution/E-012-r4-c1-freeze-package-rereview.md) |
 | E-013 | 2026-08-05 | 建立 GOAL-006 R4-C1 冻结裁决子目标 | recorded | [02-execution/E-013-r4-c1-child-goal-opened.md](02-execution/E-013-r4-c1-child-goal-opened.md) |
 | E-014 | 2026-08-05 | GOAL-006 R4-C1 子目标治理独立审计 | recorded | [02-execution/E-014-r4-c1-child-governance-audit.md](02-execution/E-014-r4-c1-child-governance-audit.md) |
+| E-015 | 2026-08-05 | GOAL-006 三项 P-004 裁决与 Records 退场 handoff | recorded | [02-execution/E-015-r4-c1-decisions-and-records-handoff.md](02-execution/E-015-r4-c1-decisions-and-records-handoff.md) |
 
 ## 当前事实边界
 
@@ -35,24 +36,25 @@ version: 0.1.0
 - 当前只完成 C1 起点扫描；没有声称 C1、C2、C3、C4 或 C5 完成。
 - Users/Roles 当前仍由中心 Handler 注册，Schema 仍有中心 fixture embed；这
   是 R4 待迁移事实，不是已完成证据。
-- Records 当前不存在可用 CRUD handler；`0006 records_retire` 的历史保留边界
-  已登记为 required information conflict。
+- Records 当前不存在可用 CRUD handler；用户已通过 D-003 确认其为 historical-only，
+  `0006 records_retire` 的历史保留边界不变。
 - C1 能力与边界事实盘点已落盘至
   `attachments/r4-c1-capability-inventory.md`；D-002/E-005 已响应 inventory
-  finding，R4-I001 为 verified。provider contract、Records 范围和 operationlog
-  行为/retention 尚未冻结，R4-I002～I004 仍阻断 C1/C2。
+  finding，R4-I001 为 verified。Provider、Records 和 operationlog 的 P-004 裁决
+  已落盘；最终 independent freeze review 仍阻断 C1/C2。
 - Provider 与 operationlog 的候选方案已记录在
-  `attachments/r4-c1-provider-operationlog-options.md`；该材料是 pending_user
-  proposal，不是 accepted decision。
+  `attachments/r4-c1-provider-operationlog-options.md`；D-003 已将 Provider 与
+  Option A + bounded residual 接受为当前决策边界。
 - A-003 对上述方案材料给出 `conditional` 独立意见，新增 6 项 open required
   findings；在用户裁决、方案补全和复审前，C1/C2 与 Root progress 均保持不变。
-- E-010 的冻结包草案是对 A-003 的候选响应材料，不是 D-003；Provider、Records 和
-  operationlog 的最终取舍仍是 pending_user。
+- E-010 的冻结包草案是对 A-003 的候选响应材料；D-003 已记录 Provider、Records
+  和 operationlog 的最终取舍，仍需最终 independent review。
 - A-004 复审后已修订冻结包的 Persistence collection path 和 typed contract，另补充
   双 Profile、Hooks、owner matrix 与兼容清单；这些修订等待下一轮 independent review。
-- A-005 确认上述修订达到 C1 候选材料级别，但 Option A residual 和 P-004 决策仍开放，
-  因此不能关闭 C1 或进入 C2。
+- A-005 确认上述修订达到 C1 候选材料级别；用户已接受 Provider、Records 和
+  Option A + bounded residual，最终 independent freeze review 仍未完成。
 - 已建立 GOAL-006 作为 R4-C1 子目标，承接 Provider、Records 和 operationlog 的
   P-004 裁决、最终复审和 C1 close-out；GOAL-005 status/progress 保持不变。
-- GOAL-006 的 A-002 independent audit 已确认子目标结构合法，但 C1-I001/I002/I003
-  仍 open required；该意见不推进 GOAL-005 C1/C2 或 Root progress。
+- GOAL-006 的 A-002 independent audit 已确认子目标结构合法；D-003 已关闭三项
+  P-004 决策轴，但最终 independent review 尚未完成，该意见不推进 GOAL-005 C1/C2
+  或 Root progress。

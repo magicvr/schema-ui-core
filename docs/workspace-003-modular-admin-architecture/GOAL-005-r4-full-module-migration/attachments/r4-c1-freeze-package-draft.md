@@ -3,16 +3,22 @@ id: r4-c1-freeze-package-draft
 doc: proposal
 goal: GOAL-005-r4-full-module-migration
 date: 2026-08-05
-status: draft
-decision_state: pending_user
+status: accepted
+decision_state: user_accepted
 source: candidate-response-to-A-003
+accepted_by: magicvr
+accepted_date: 2026-08-05
+accepted_via: D-003-r4-c1-decisions (GOAL-005 与 GOAL-006)
 ---
 
-# R4 C1 Provider 冻结包草案
+# R4 C1 Provider 冻结包（契约正文）
 
-本附件是对 A-003 六项 required finding 的候选响应，不能替代 D-003，也不改变
-`GOAL-005` 的 status、progress 或 R4-I002/R4-I003/R4-I004 状态。用户确认前，
-所有“冻结”字样均表示待接受的工程候选规则。
+本附件是 A-003 六项 required finding 的候选响应，**已由用户整包接受**，作为
+GOAL-005/GOAL-006 `D-003` 的精确契约正文。正文含 Contribution 字段、双检规则、
+注册与发布顺序、`CompiledPersistence()` 契约、compiled-global Persistence 规则、
+Authorization/seed/security owner matrix 与 operationlog Option A 边界；C2 实施
+不得在未记录的情况下改变身份、冲突键、安全语义或顺序。文件保持该路径与文件名以
+维持既有引用可追溯；`status: accepted` 为权威状态，文件名中的 draft 仅为历史遗留。
 
 ## 1. 待裁决轴
 

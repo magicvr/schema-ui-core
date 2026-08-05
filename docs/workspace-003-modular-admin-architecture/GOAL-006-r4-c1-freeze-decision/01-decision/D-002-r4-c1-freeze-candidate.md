@@ -4,10 +4,15 @@ doc: decision-entry
 goal: GOAL-006-r4-c1-freeze-decision
 source: candidate
 date: 2026-08-05
-status: proposed
+status: superseded
+superseded_by: D-003-r4-c1-decisions
 ---
 
 # D-002 · R4-C1 候选冻结包继承与待裁决轴
+
+> **状态注**：本条为候选继承记录，已被 `D-003-r4-c1-decisions` 正式裁决 `superseded`；
+> 精确契约以 D-003「Provider 精确契约（整包接受）」节与 freeze package
+> `status: accepted` 为准。
 
 ## 候选内容
 
@@ -21,3 +26,4 @@ Option A。
 
 Provider 精确契约、Records 分叉和 operationlog 选项/残余尚未得到用户书面确认，
 因此本记录不能关闭 C1-I001/C1-I002/C1-I003，也不能成为 D-003 或 C2 放行依据。
+（该未决状态已由 D-003 书面裁决消除。）
