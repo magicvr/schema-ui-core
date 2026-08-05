@@ -143,3 +143,99 @@ func TestUsersProviderServesAuthenticatedCRUD(t *testing.T) {
 		t.Fatalf("authenticated GET /api/users/unknown-id = %d, want 404", detail.Code)
 	}
 }
+
+// TestUsersProviderFullCRUD covers the C3.4 behavior matrix on the provider
+// finalize path (create → list → detail → patch → delete) with operationlog rows
+// appended, proving the production surface preserves the frozen CRUD semantics.
+func TestUsersProviderFullCRUD(t *testing.T) {
+	a, st := newTestEnv(t)
+	plan := planWithUsers(t)
+	provider := New(a, st)
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
+	if err != nil {
+		t.Fatalf("RegisterContributions: %v", err)
+	}
+	mux := http.NewServeMux()
+	handler.Register(mux, a, st, plan)
+	for _, route := range set.Routes {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+
+	login := httptest.NewRecorder()
+	mux.ServeHTTP(login, httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"test-password"}`)))
+	if login.Code != http.StatusOK {
+		t.Fatalf("login = %d, want 200", login.Code)
+	}
+	var body struct {
+		AccessToken string `json:"accessToken"`
+	}
+	if err := json.NewDecoder(login.Body).Decode(&body); err != nil || body.AccessToken == "" {
+		t.Fatalf("login body missing accessToken: %v", err)
+	}
+	authReq := func(method, path, payload string) *httptest.ResponseRecorder {
+		var req *http.Request
+		if payload != "" {
+			req = httptest.NewRequest(method, path, strings.NewReader(payload))
+		} else {
+			req = httptest.NewRequest(method, path, nil)
+		}
+		req.Header.Set("Authorization", "Bearer "+body.AccessToken)
+		rr := httptest.NewRecorder()
+		mux.ServeHTTP(rr, req)
+		return rr
+	}
+
+	// create → 201
+	created := authReq(http.MethodPost, "/api/users", `{"username":"c3crud","name":"C3 CRUD","password":"passw0rd-ok"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create = %d, want 201", created.Code)
+	}
+	var row struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(created.Body).Decode(&row); err != nil || row.ID == "" {
+		t.Fatalf("create body missing id: %v", err)
+	}
+
+	// list → 200 + contains the user
+	list := authReq(http.MethodGet, "/api/users", "")
+	if list.Code != http.StatusOK || !strings.Contains(list.Body.String(), "c3crud") {
+		t.Fatalf("list = %d, want 200 containing c3crud", list.Code)
+	}
+
+	// detail → 200
+	detail := authReq(http.MethodGet, "/api/users/"+row.ID, "")
+	if detail.Code != http.StatusOK {
+		t.Fatalf("detail = %d, want 200", detail.Code)
+	}
+
+	// patch → 200
+	patch := authReq(http.MethodPatch, "/api/users/"+row.ID, `{"name":"C3 Renamed"}`)
+	if patch.Code != http.StatusOK {
+		t.Fatalf("patch = %d, want 200", patch.Code)
+	}
+
+	// delete → 204
+	del := authReq(http.MethodDelete, "/api/users/"+row.ID, "")
+	if del.Code != http.StatusNoContent {
+		t.Fatalf("delete = %d, want 204", del.Code)
+	}
+
+	// operationlog rows appended for the successful writes.
+	ops, err := st.ListOperations(20)
+	if err != nil {
+		t.Fatalf("ListOperations: %v", err)
+	}
+	var userOps []string
+	for _, op := range ops {
+		if strings.HasPrefix(op.Event, "users.") {
+			userOps = append(userOps, op.Event)
+		}
+	}
+	for _, want := range []string{"users.create", "users.update", "users.delete"} {
+		if !slices.Contains(userOps, want) {
+			t.Fatalf("operationlog missing %q (got %v)", want, userOps)
+		}
+	}
+}

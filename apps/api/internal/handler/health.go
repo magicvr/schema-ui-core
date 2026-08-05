@@ -38,9 +38,11 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan k
 }
 
 // MountProviderRoutes mounts the admin.users/admin.roles HTTP routes generated
-// by the generic resource factory for enabled modules. The composition root and
-// the handler test environment both use it so provider surface and central
-// surface stay identical during the R4 C3.3 cutover.
+// by the generic resource factory for enabled modules. TEST-ONLY: the handler
+// test environment uses it to mirror the production surface; the composition
+// root MUST consume kernel.RegisterContributions (provider finalize) instead,
+// never this function. Keeping it here avoids duplicating the route factory in
+// the test package while production has a single mounting chain.
 func MountProviderRoutes(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan) {
 	if plan.HasModule("admin.users") {
 		for _, route := range resourceRoutes(a, usersResource(st), "admin.users") {

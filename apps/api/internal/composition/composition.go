@@ -103,7 +103,7 @@ func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan) (*http.Ser
 	}
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
 	if err != nil {
-		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "admin.users", Detail: fmt.Sprintf("register contributions: %v", err)}
+		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "", Detail: fmt.Sprintf("register contributions: %v", err)}
 	}
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)

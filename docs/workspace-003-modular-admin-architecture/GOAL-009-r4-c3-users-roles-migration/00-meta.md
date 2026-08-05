@@ -1,12 +1,12 @@
 ---
 id: GOAL-009-r4-c3-users-roles-migration
 title: R4-C3 · Users 与 Roles 迁移
-status: active
+status: done
 parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
 updated: 2026-08-05
 version: 0.1.0
-progress: 3/4
+progress: 4/4
 plan_refs:
   - VP-003-modular-admin-architecture
 primary_plan: VP-003-modular-admin-architecture
@@ -45,13 +45,13 @@ serves_summary: 承接冻结包 §7 切换顺序，将 Users/Roles 从中心注�
 - [x] **C3.3 / 中心特例清除**：composition 消费 provider finalize；移除中心
   Users/Roles 分支、Schema 内容中心 embed 与 Manifest `adminModules` 相关特例；
   无永久双路径。
-- [ ] **C3.4 / 验证与关门**：行为矩阵测试 + 双 Profile + 失败注入（operationlog
+- [x] **C3.4 / 验证与关门**：行为矩阵测试 + 双 Profile + 失败注入（operationlog
   append 失败不翻转业务成功）+ self + Grok independent 无开放 required finding。
 
-四个检查点等权；当前 `progress: 3/4`（C3.1 扫描、C3.2 provider 化、C3.3 中心特例
-清除完成）。Schema owner map 的 plan 投影辅助与 settings/activity（C4）共享，登记为
-文档化残余。完成本子目标只表示 C3 关闭，不关闭 GOAL-005、Root 或 VP-003，不自动
-放行 C4。
+四个检查点等权；`progress: 4/4`（C3.1 扫描、C3.2 provider 化、C3.3 中心特例清除、
+C3.4 验证与关门完成）。Schema owner map 的 plan 投影辅助与 settings/activity（C4）
+共享，以 accepted-residual 登记。完成本子目标只表示 C3 关闭，不关闭 GOAL-005、
+Root 或 VP-003，不自动放行 C4。
 
 ## 信息门禁
 
