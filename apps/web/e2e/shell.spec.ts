@@ -7,6 +7,29 @@ import { expect, test } from "@playwright/test";
 // chain (login -> /me -> users) works through the Web /api proxy.
 
 test("login gates the shell and the real auth chain works through the proxy", async ({ page, request }) => {
+  const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
+  const isAdminProfile = profile === "admin";
+
+  // The same browser build must consume the runtime Manifest selected by the
+  // API profile. The proxy must not silently fall back to a static Web file.
+  const manifestResponse = await request.get("/.well-known/schema-ui/app-manifest.json");
+  expect(manifestResponse.status()).toBe(200);
+  expect(manifestResponse.headers()["x-schema-ui-manifest-source"]).toBe("api");
+  const manifest = await manifestResponse.json();
+  const manifestPageIds = manifest.pages.map((page: { pageId: string }) => page.pageId);
+  expect(manifestPageIds).toEqual(expect.arrayContaining(["overview", "users", "roles"]));
+  expect(manifestPageIds.includes("settings")).toBe(isAdminProfile);
+  expect(manifestPageIds.includes("activity")).toBe(isAdminProfile);
+
+  const settingsSchema = await request.get("/api/schema/settings");
+  const activitySchema = await request.get("/api/schema/activity");
+  expect(settingsSchema.status()).toBe(isAdminProfile ? 200 : 404);
+  expect(activitySchema.status()).toBe(isAdminProfile ? 200 : 404);
+  const settingsRoute = await request.get("/api/settings");
+  const activityRoute = await request.get("/api/operations");
+  expect(settingsRoute.status()).toBe(isAdminProfile ? 401 : 404);
+  expect(activityRoute.status()).toBe(isAdminProfile ? 401 : 404);
+
   // Unauthenticated visit → login page, not the shell.
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
@@ -26,7 +49,13 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await expect(page.getByRole("link", { name: "Overview" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Data table" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+  if (isAdminProfile) {
+    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Activity" })).toBeVisible();
+  } else {
+    await expect(page.getByRole("link", { name: "Settings" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Activity" })).toHaveCount(0);
+  }
 
   // No manifest failure surface, and the sign-out control is present.
   await expect(page.getByText("MANIFEST_LOAD_FAILED")).toHaveCount(0);

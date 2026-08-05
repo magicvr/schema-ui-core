@@ -19,6 +19,7 @@
 #   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
 #   SMOKE_SEED_ID         默认 user-admin
 #   SMOKE_EXPECTED_SEED_TOTAL  默认 1
+#   SMOKE_EXPECTED_PROFILE  可选：mvp 或 admin；启用 Profile/Manifest/route 断言
 #   SMOKE_ISOLATION_ID   仅 --disposable 必填：隔离 Compose project 名（机器校验
 #                        运行中 project 与 db-data 卷均绑定该身份；不得指向默认开发库）
 #   SMOKE_DISPOSABLE_CONFIRM   仅 --disposable 必填：必须为 yes（书面确认 disposable 语义）
@@ -33,6 +34,7 @@ SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-1}"
+SMOKE_EXPECTED_PROFILE="${SMOKE_EXPECTED_PROFILE:-}"
 SMOKE_ISOLATION_ID="${SMOKE_ISOLATION_ID:-}"
 SMOKE_DISPOSABLE_CONFIRM="${SMOKE_DISPOSABLE_CONFIRM:-}"
 DISPOSABLE=0
@@ -52,6 +54,21 @@ json_field() {
   # usage: json_field <json> <key>  → writes raw value to stdout (no trailing newline)
   local json="$1" key="$2"
   node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const v=o[process.argv[1]];process.stdout.write(v===undefined||v===null?"":String(v))}catch(e){process.exit(1)}})' "$key" <<< "$json"
+}
+
+json_has_page() {
+  local json="$1" page_id="$2"
+  node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);const pages=Array.isArray(o.pages)?o.pages:[];process.exit(pages.some(p=>p&&p.pageId===process.argv[1])?0:1)}catch(e){process.exit(2)}})' "$page_id" <<< "$json"
+}
+
+header_value() {
+  local url="$1" header="$2"
+  curl -fsS --max-time 5 -D - -o /dev/null "$url" 2>/dev/null \
+    | awk -v wanted="$header" 'tolower($1)==tolower(wanted ":") { sub("\r$", "", $2); print $2; exit }'
+}
+
+http_status() {
+  curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "$1" 2>/dev/null || true
 }
 
 fail_check() {
@@ -96,6 +113,10 @@ for tool in bash curl node; do
   command -v "$tool" >/dev/null 2>&1 || SM001="${SM001}缺少工具 ${tool};"
 done
 if [ -z "$API_BASE_URL" ] || [ -z "$WEB_BASE_URL" ]; then SM001="${SM001}缺少 API_BASE_URL/WEB_BASE_URL;"; fi
+case "$SMOKE_EXPECTED_PROFILE" in
+  ""|mvp|admin) ;;
+  *) SM001="${SM001}SMOKE_EXPECTED_PROFILE 只允许 mvp 或 admin;" ;;
+esac
 if [ "$DISPOSABLE" = "1" ] && [ "$SMOKE_DISPOSABLE_CONFIRM" != "yes" ]; then
   SM001="${SM001}disposable 模式缺少 SMOKE_DISPOSABLE_CONFIRM=yes（书面确认 disposable 语义）;"
 fi
@@ -112,19 +133,21 @@ fi
 smoke_line "001" "PASS"
 
 # ---------------------------------------------------------------------------
-# SM-002 · API readiness（30s 内 /healthz 200 + status=ok）
+# SM-002 · API readiness（30s 内 /healthz 与 /readyz 均 200 + status=ok）
 # ---------------------------------------------------------------------------
 ready=0
 for _ in $(seq 1 30); do
   body="$(curl -fsS --max-time 3 "${API_BASE_URL}/healthz" 2>/dev/null || true)"
-  if [ -n "$body" ]; then
+  ready_body="$(curl -fsS --max-time 3 "${API_BASE_URL}/readyz" 2>/dev/null || true)"
+  if [ -n "$body" ] && [ -n "$ready_body" ]; then
     st="$(json_field "$body" status)"
-    if [ "$st" = "ok" ]; then ready=1; break; fi
+    ready_st="$(json_field "$ready_body" status)"
+    if [ "$st" = "ok" ] && [ "$ready_st" = "ok" ]; then ready=1; break; fi
   fi
   sleep 1
 done
 if [ "$ready" != "1" ]; then
-  printf 'SM-002=FAIL\n  detail: /healthz 未在 30s 内返回 status=ok (%s)\n' "$API_BASE_URL"
+  printf 'SM-002=FAIL\n  detail: /healthz 与 /readyz 未在 30s 内同时返回 status=ok (%s)\n' "$API_BASE_URL"
   exit 3
 fi
 smoke_line "002" "PASS"
@@ -180,6 +203,54 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# SM-007 · Profile/Manifest contract (when a profile is supplied)
+# ---------------------------------------------------------------------------
+if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
+  api_manifest="$(curl -fsS --max-time 5 "${API_BASE_URL}/.well-known/schema-ui/app-manifest.json" 2>/dev/null || true)"
+  web_manifest="$(curl -fsS --max-time 5 "${WEB_BASE_URL}/.well-known/schema-ui/app-manifest.json" 2>/dev/null || true)"
+  if [ -z "$api_manifest" ] || [ -z "$web_manifest" ]; then
+    fail_check "007" "${SMOKE_EXPECTED_PROFILE} profile 的 API/Web Manifest 读取失败" 5
+  fi
+  if [ "$api_manifest" != "$web_manifest" ]; then
+    fail_check "007" "API 与 Web 代理 Manifest bytes 不一致" 5
+  fi
+  if [ "$(header_value "${API_BASE_URL}/.well-known/schema-ui/app-manifest.json" "X-Schema-UI-Manifest-Source")" != "api" ] \
+    || [ "$(header_value "${WEB_BASE_URL}/.well-known/schema-ui/app-manifest.json" "X-Schema-UI-Manifest-Source")" != "api" ]; then
+    fail_check "007" "Manifest source header 不是 api" 5
+  fi
+  for page_id in overview users roles; do
+    if ! json_has_page "$api_manifest" "$page_id"; then
+      fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 缺少 ${page_id} 页面" 5
+    fi
+  done
+  optional_status=200
+  protected_status=401
+  if [ "$SMOKE_EXPECTED_PROFILE" = "mvp" ]; then
+    optional_status=404
+    protected_status=404
+  fi
+  for page_id in settings activity; do
+    if [ "$SMOKE_EXPECTED_PROFILE" = "admin" ]; then
+      if ! json_has_page "$api_manifest" "$page_id"; then
+        fail_check "007" "admin Manifest 缺少 ${page_id} 页面" 5
+      fi
+    elif json_has_page "$api_manifest" "$page_id"; then
+      fail_check "007" "mvp Manifest 不应包含 ${page_id} 页面" 5
+    fi
+    if [ "$(http_status "${API_BASE_URL}/api/schema/${page_id}")" != "$optional_status" ]; then
+      fail_check "007" "${page_id} Schema 状态不符合 ${SMOKE_EXPECTED_PROFILE} profile" 5
+    fi
+  done
+  if [ "$(http_status "${API_BASE_URL}/api/settings")" != "$protected_status" ] \
+    || [ "$(http_status "${API_BASE_URL}/api/operations")" != "$protected_status" ]; then
+    fail_check "007" "${SMOKE_EXPECTED_PROFILE} profile 的 settings/activity route 状态不符合预期" 5
+  fi
+  smoke_line "007" "PASS"
+else
+  printf 'SM-007=SKIP（未设置 SMOKE_EXPECTED_PROFILE；Profile 合同未运行）\n'
+fi
+
+# ---------------------------------------------------------------------------
 # SM-006 · 种子重复性（仅 disposable/隔离环境，S4 必检）
 # ---------------------------------------------------------------------------
 if [ "$DISPOSABLE" = "1" ]; then
@@ -213,11 +284,14 @@ if [ "$DISPOSABLE" = "1" ]; then
   ready=0
   for _ in $(seq 1 30); do
     body="$(curl -fsS --max-time 3 "${API_BASE_URL}/healthz" 2>/dev/null || true)"
-    if [ -n "$body" ] && [ "$(json_field "$body" status)" = "ok" ]; then ready=1; break; fi
+    ready_body="$(curl -fsS --max-time 3 "${API_BASE_URL}/readyz" 2>/dev/null || true)"
+    if [ -n "$body" ] && [ -n "$ready_body" ] \
+      && [ "$(json_field "$body" status)" = "ok" ] \
+      && [ "$(json_field "$ready_body" status)" = "ok" ]; then ready=1; break; fi
     sleep 1
   done
   if [ "$ready" != "1" ]; then
-    printf 'SM-006=FAIL\n  detail: 重启后 /healthz 未在 30s 内恢复 status=ok（%s）\n' "$API_BASE_URL"
+    printf 'SM-006=FAIL\n  detail: 重启后 /healthz 与 /readyz 未在 30s 内恢复 status=ok（%s）\n' "$API_BASE_URL"
     exit 3
   fi
   login_body="$(curl -fsS --max-time 5 -X POST "${WEB_BASE_URL}/api/auth/login" \
@@ -236,9 +310,9 @@ else
 fi
 
 if [ "$DISPOSABLE" = "1" ]; then
-  printf 'SMOKE RESULT: PASS (SM-001~005 + SM-006)\n'
+  printf 'SMOKE RESULT: PASS (SM-001~005 + optional SM-007 + SM-006)\n'
   exit 0
 else
-  printf 'SMOKE RESULT: PARTIAL (SM-001~005; SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
+  printf 'SMOKE RESULT: PARTIAL (SM-001~005 + 可选 SM-007；SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
   exit 8
 fi

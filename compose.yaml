@@ -5,6 +5,8 @@
 # Provide them in a repo-root .env (gitignored) or export in the shell:
 #   AUTH_JWT_SECRET=<strong random string>
 #   ADMIN_INITIAL_PASSWORD=<initial admin password>
+#   APP_PROFILE=mvp                 # or admin
+#   APP_MODULES_ENABLED=            # optional explicit comma-separated override
 #
 # Non-goal: full production ops / CI-CD pipeline, TLS termination, multi-instance
 # scaling (see I-008-001 §8).
@@ -17,6 +19,8 @@ services:
     image: schema-ui-core-api:local
     environment:
       APP_ENV: production
+      APP_PROFILE: ${APP_PROFILE:-mvp}
+      APP_MODULES_ENABLED: ${APP_MODULES_ENABLED:-}
       DB_PATH: /app/data/schema-ui.db
       LOG_LEVEL: info
       # Fail closed: compose aborts if these are unset.
@@ -26,7 +30,7 @@ services:
     volumes:
       - db-data:/app/data
     ports:
-      - "8080:8080"
+      - "${API_HOST_PORT:-8080}:8080"
     healthcheck:
       # Readiness probe (A-002 F-002-006): liveness + SQLite ping, so a dead or
       # unmigrated database flips the gate instead of reporting healthy.
@@ -47,7 +51,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "8081:80"
+      - "${WEB_HOST_PORT:-8081}:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 5s

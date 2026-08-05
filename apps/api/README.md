@@ -1,6 +1,6 @@
 # apps/api · schema-ui-core API 骨架
 
-MVP Admin 基架的 Go 服务（workspace-001 历史目标编号：GOAL-003 骨架 + GOAL-006/007 账号权限与语义资源域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite；**R3 起持久化 RBAC（GOAL-006）**：资源路由按 `users.read`/`users.write`、`roles.read`/`roles.write` 权限键授权，`/api/accounts/me` 返回持久化菜单投影；**GOAL-011 起 users/roles 为语义资源（records 已按 0006 退场）**：`/api/users`、`/api/roles` 走通用资源工厂 CRUD，敏感字段隔离与 self/last-admin/system 角色保护由 store 领域层承载。（注：上述 GOAL-00N 均为 workspace-001 mvp-admin-foundation 的历史目标编号，与本仓库 workspace-003 的同名编号无关。）
+MVP Admin 基架的 Go 服务（workspace-001 历史目标编号：GOAL-003 骨架 + GOAL-006/007 账号权限与语义资源域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite；**R3 起持久化 RBAC（GOAL-006）**：资源路由按 `users.read`/`users.write`、`roles.read`/`roles.write` 权限键授权，`/api/accounts/me` 返回持久化菜单投影；**GOAL-011 起 users/roles 为语义资源（records 已按 0006 退场）**：`/api/users`、`/api/roles` 由 owner module Provider 贡献，store 只负责平台迁移/执行与恢复边界。（注：上述 GOAL-00N 均为 workspace-001 mvp-admin-foundation 的历史目标编号，与本仓库 workspace-003 的同名编号无关。）
 
 ## 要求
 
@@ -11,20 +11,24 @@ MVP Admin 基架的 Go 服务（workspace-001 历史目标编号：GOAL-003 骨�
 
 ```text
 cmd/server/          # 进程入口（配置解析、store 打开、认证接线）
-internal/config/     # 环境配置（含 R2 认证配置键）
+internal/config/     # 环境配置（含 Profile/认证配置键）
 internal/server/     # http.Server 包装
-internal/handler/    # HTTP 路由（healthz / auth / accounts / users / roles / schema）
+internal/kernel/     # 框架无关模块契约、Profile 与依赖图
+internal/composition/# Fx 组合根与模块 Provider 接线
+internal/handler/    # core HTTP 路由（healthz / auth / accounts / schema / manifest）
 internal/auth/       # R2 认证核心：JWT、refresh 轮换、bcrypt、请求身份中间件
 internal/account/    # 会话模型与权限求值库（D-004 / D-PERM）
-internal/store/      # SQLite 认证 + R3 RBAC / 迁移存储（users、refresh_tokens、schema_migrations、roles/…）
+internal/store/      # SQLite 平台执行、全局迁移台账、快照与恢复边界
+internal/modules/    # users/roles/settings/activity 与 core Schema owner modules
 pkg/version/         # 构建版本变量
 ```
 
 ## 运行
 
 ```bash
-# 可选
-cp .env.example .env
+# `.env.example` 只是参考；Go API 不会自动加载 `.env`。请 export 配置，或由仓库根
+# `.env` 提供 Compose 插值。
+export APP_PROFILE=mvp  # 或 admin；custom 还需 APP_MODULES_ENABLED
 
 make run
 # 或
@@ -43,6 +47,8 @@ go run ./cmd/server
 | `AUTH_ACCESS_TTL` | `15m` | access token 时效 |
 | `AUTH_REFRESH_TTL` | `720h` (30d) | refresh token 时效 |
 | `DB_PATH` | `./data/schema-ui.db` | SQLite 路径 |
+| `APP_PROFILE` | `mvp` | `mvp`、`admin` 或 `custom`；选择已编译模块候选集 |
+| `APP_MODULES_ENABLED` | 空 | 逗号分隔显式模块列表；非空时覆盖 Profile 默认集合；custom 必填 |
 | `ADMIN_INITIAL_PASSWORD` | dev `admin` | 首次种子 admin 密码；生产必填 |
 | `AUTH_DEV_SESSION_ENABLED` | `false` | 显式本地开发静态会话兜底；**生产禁止启用** |
 
@@ -55,6 +61,10 @@ go run ./cmd/server
 | `AUTH_DEV_SESSION_ENABLED` | 显式 opt-in 可选 | **必须 `false`** |
 | `DB_PATH` | `./data/schema-ui.db` | compose 挂载 `/app/data/schema-ui.db`（命名卷） |
 | 启动形态 | 本地双进程（api + web） | `docker compose up`（第二启动路径；fork 用户二者可选） |
+
+Profile 选择只影响启动时模块集合，不改变编译产物或全局迁移台账：`mvp` 包含 users/roles，
+`admin` 另外包含 settings/activity，`custom` 必须显式提供完整依赖闭包。`APP_MODULES_ENABLED`
+的优先级高于 Profile 默认值；未知、重复或缺依赖模块会 fail-closed。
 
 完整契约见 GOAL-008 `attachments/I-008-001-engineering-contract.md`。
 
@@ -101,6 +111,9 @@ TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization:
 | PATCH | `/api/roles/{id}` | **Bearer + roles.write** | 编辑 `name`（key 不可变；system 角色 409） |
 | DELETE | `/api/roles/{id}` | **Bearer + roles.write** | 删除角色（system / 被用户使用 → 409） |
 | GET | `/api/schema/{pageId}` | 公开（只读） | 页面 Schema 文档 |
+| GET | `/.well-known/schema-ui/app-manifest.json` | 公开（只读） | API 聚合的 Profile Manifest（生产唯一来源） |
+| GET | `/api/settings`、`/api/branding` | **admin Profile** | Settings 模块路由；未启用时为 404 |
+| GET | `/api/operations` | **admin Profile** | Activity 查询路由；未启用时为 404 |
 
 ## 鉴权边界（R3 · 真实认证 + 权限键）
 
@@ -120,9 +133,18 @@ TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization:
 make test
 # 或
 go test ./...
+go vet ./...
+go build ./...
 ```
 
 覆盖：auth 生命周期（登录/刷新轮换/登出/过期/撤销）、请求身份 401/403、store（种子幂等、token 生命周期、迁移链 0001～0006 与 users/roles 持久化/毫秒往返）、users/roles 读/写权限门禁与 create/list/detail/PATCH/DELETE + 领域保护（self/last-admin/system/in-use）、schema 文档读取。
+
+### 升级与恢复
+
+非空数据库在有待执行的数据迁移时，会在 `DB_PATH` 旁创建并完整性校验
+`<db>.pre-vNNNN-<UTC>.sqlite` 快照；fresh bootstrap 不创建快照。升级前应停止写入并保留
+数据库副本。迁移失败时保留失败文件，停机后将选定快照复制回 `DB_PATH`，再使用已验证的
+旧二进制/镜像启动；不要手工编辑 `schema_migrations`。Profile 切换不删除禁用模块的表或数据。
 
 ## 非目标（当前 R4 边界）
 

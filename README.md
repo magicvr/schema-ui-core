@@ -12,7 +12,7 @@
 | [docs/architecture/monorepo-layout.md](docs/architecture/monorepo-layout.md) | **Monorepo 布局与包管理约定（R1）** |
 | [docs/architecture/directory-layout.md](docs/architecture/directory-layout.md) | 治理目录布局 |
 | [docs/vision/charter.md](docs/vision/charter.md) | 现行愿景 Charter |
-| [docs/workspace-001-mvp-admin-foundation/goal-tree.md](docs/workspace-001-mvp-admin-foundation/goal-tree.md) | 当前工作区目标树 |
+| [docs/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspace-003-modular-admin-architecture/goal-tree.md) | 当前模块化架构工作区目标树 |
 | [AGENTS.md](AGENTS.md) | AI 协作强制规则 |
 
 ## 仓库布局（摘要）
@@ -26,17 +26,20 @@ skills/    # 治理 Skills 包
 
 完整约定与边界见 [monorepo-layout.md](docs/architecture/monorepo-layout.md)。
 
-## 本地运行（骨架阶段）
+## 本地运行
 
-> 业务未实现；仅工程可启动。命令契约详情见 monorepo 约定与各 app README。
+命令契约详情见 monorepo 约定与各 app README。API 不会自动读取 `.env` 文件；本地进程
+必须通过 shell 环境传入配置，Compose 才会读取仓库根 `.env`。
 
 ### API · `apps/api`（GOAL-003）
 
 ```bash
 cd apps/api
+export APP_PROFILE=mvp       # 或 admin；custom 必须同时设置 APP_MODULES_ENABLED
 make run
 # 或：go run ./cmd/server
 # 探活：curl http://localhost:8080/healthz
+# 就绪：curl http://localhost:8080/readyz
 ```
 
 详见 [apps/api/README.md](apps/api/README.md)。
@@ -63,6 +66,8 @@ npm run dev
 # 需先提供生产必填密钥（fail-closed）；可写入仓库根 .env（gitignored）或 export
 AUTH_JWT_SECRET=<强随机串>
 ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
+APP_PROFILE=mvp                 # 或 admin
+APP_MODULES_ENABLED=            # 可选，逗号分隔的显式模块覆盖
 
 docker compose up --build
 #  API: http://localhost:8080  (GET /healthz 探活)
@@ -73,6 +78,8 @@ docker compose up --build
 - 本地开发仍为默认双进程路径（见上文 API / Web 段）；fork 使用者可选本地双进程或 Compose。
 - `docker compose down` / 重启后 SQLite 数据由命名卷 `db-data` 保持。
 - 将密钥写入仓库根 `.env`（gitignored）可避免新 shell 里 `docker compose config` / `down` 因 fail-closed 插值重复 export。
+- `APP_PROFILE` 默认为 `mvp`；选择 `admin` 会在同一 Web build 上增加 Settings/Activity。
+- `APP_MODULES_ENABLED` 非空时覆盖 Profile 默认模块集合；`custom` Profile 没有显式模块时 fail-closed。
 - 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
 
 ## 模块化 Admin 架构与 Profile（R4 起）
@@ -84,14 +91,14 @@ docker compose up --build
   授权、Navigation、Manifest 与 compiled-global Persistence；composition 消费
   finalize，冲突 fail-closed。
 - **Profile**：`mvp`（core 六项 + users/roles）与 `admin`（+ settings/activity）为
-  编译候选集；`MODULES_ENABLED` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，
+  编译候选集；`APP_MODULES_ENABLED` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，
   无需改前端。
 - **数据**：迁移账本 `0001`-`0008` 全局唯一；fresh 与 versioned reconcile 分离；
   operationlog best-effort；`/api/records` 已退场（`0006` historical-only）。
 - **探测**：`/healthz`（liveness）与 `/readyz`（store ping + 模块图 Start/Ready
   readiness，R5）。
 
-fork 起点：选 Profile + `MODULES_ENABLED` + 模块贡献接入业务，不修改 Renderer/Shell
+fork 起点：选 Profile + `APP_MODULES_ENABLED` + 模块贡献接入业务，不修改 Renderer/Shell
 主路径。
 
 ## 状态说明

@@ -9,6 +9,13 @@ import { defineConfig } from "@playwright/test";
 // Web /api proxy to the Go API). This is the minimum evidence the user chose
 // over accepting a platform residual.
 //
+// APP_PROFILE selects the API module set for this browser run. Only the
+// compiled mvp and admin profiles are supported by the browser matrix.
+const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
+if (appProfile !== "mvp" && appProfile !== "admin") {
+  throw new Error(`APP_PROFILE must be mvp or admin for browser E2E (got ${appProfile || "empty"})`);
+}
+
 // WEB_PORT defaults to 5173 (CI/Linux product port). On Windows hosts where
 // 5173 falls in a Hyper-V excluded range, set WEB_PORT=9999 (or any free port)
 // for local runs without changing the committed default.
@@ -36,13 +43,14 @@ export default defineConfig({
     {
       command: "go run ./cmd/server",
       cwd: "../api",
-      url: "http://127.0.0.1:8080/healthz",
+      url: "http://127.0.0.1:8080/readyz",
       // Never reuse: a leftover developer server may point at a non-seeded DB
       // without menu_users grants.
       reuseExistingServer: false,
       timeout: 60_000,
       env: {
         ...process.env,
+        APP_PROFILE: appProfile,
         DB_PATH: e2eDbPath,
         ADMIN_INITIAL_PASSWORD: "admin",
         APP_ENV: "development",
@@ -56,6 +64,7 @@ export default defineConfig({
       timeout: 30_000,
       env: {
         ...process.env,
+        APP_PROFILE: appProfile,
         WEB_PORT: String(webPort),
       },
     },

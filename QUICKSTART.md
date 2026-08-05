@@ -18,13 +18,20 @@ git clone <your-fork-url> && cd schema-ui-core
 git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 ```
 
-创建密钥（本地 fork 开发）：
+配置环境（本地 fork 开发）：
 
 ```bash
-cp apps/api/.env.example apps/api/.env   # 或按需写入仓库根 .env（gitignored）
+# apps/api/.env.example 只是配置参考；Go API 不会自动加载该文件。
+# Compose 才会读取仓库根 .env（gitignored）。本地进程请 export：
+export APP_PROFILE=mvp                 # 或 admin
+# custom 时还必须提供完整的显式模块列表：
+# export APP_PROFILE=custom
+# export APP_MODULES_ENABLED=core.server-registration,...
 ```
 
 - 开发（`APP_ENV=development`）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。
+- `APP_PROFILE` 只接受 `mvp`、`admin`、`custom`；`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
+- PowerShell 等价写法为 `$env:APP_PROFILE="mvp"`；每个本地 API/Web 进程都必须继承同一 Profile。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
 ## 2. 启动（两条路径选一）
@@ -35,6 +42,8 @@ cp apps/api/.env.example apps/api/.env   # 或按需写入仓库根 .env（gitig
 # 仓库根 .env（gitignored）写入，避免新 shell 重复 export：
 #   AUTH_JWT_SECRET=<强随机串>
 #   ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
+#   APP_PROFILE=mvp                 # 或 admin
+#   APP_MODULES_ENABLED=            # 可选，逗号分隔
 docker compose up -d --build
 ```
 
@@ -46,7 +55,7 @@ docker compose up -d --build
 
 ```bash
 # 终端 1 —— API
-cd apps/api && go run ./cmd/server        # 监听 :8080
+cd apps/api && APP_PROFILE=mvp go run ./cmd/server  # 监听 :8080；或改为 admin
 
 # 终端 2 —— Web
 cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
@@ -56,7 +65,7 @@ cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
 
 | 终点 | 检查 | 达标 |
 |------|------|------|
-| 1 | `GET ${API_BASE_URL}/healthz` | HTTP 200，JSON `status: "ok"` |
+| 1 | `GET ${API_BASE_URL}/healthz` 与 `/readyz` | HTTP 200，JSON `status: "ok"` |
 | 2 | `POST ${WEB_BASE_URL}/api/auth/login`（admin / `ADMIN_INITIAL_PASSWORD`） | HTTP 200，响应含非空 `accessToken` |
 | 3 | 携带 token `GET ${WEB_BASE_URL}/api/accounts/me` | HTTP 200，含 `user` 与 `features` |
 | 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD） |
@@ -79,24 +88,34 @@ curl -fsS http://localhost:8081/api/accounts/me -H "Authorization: Bearer $TOKEN
 ```bash
 # 对已启动实例做非破坏性部分检查（SM-001～005）
 # 注意：SM-006 未运行 → 退出码 8（部分绿），**不是** S4 完整绿
-SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> bash scripts/smoke.sh
+SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp bash scripts/smoke.sh
 
 # S4 完整绿（含 SM-006 种子可重复性）——必须运行在显式隔离环境：
 #   1) 用独立 compose project 启动（不得指向普通开发库）：
 #      docker compose -p ci-smoke-local down -v && docker compose -p ci-smoke-local up -d
 #   2) 提供隔离身份 + 书面确认标记（脚本机器校验 project/卷绑定，不满足 → exit 2）
-SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> \
+SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp \
 SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
 bash scripts/smoke.sh --disposable
 ```
 
 > 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
 
-## 4. 下一步：接业务
+## 4. 升级与恢复边界
+
+- API 启动时会为每个待执行的数据迁移在非空 SQLite 文件旁创建
+  `schema-ui.db.pre-vNNNN-<UTC>.sqlite` 快照，并执行完整性检查；新库不会生成快照。
+- 升级前停止 API/Compose 写入并保留数据库副本。若迁移失败，先保留失败数据库，再在
+  停机状态将选定的 `pre-vNNNN` 快照复制回 `DB_PATH`，使用已验证的旧二进制/镜像重启，
+  不手工编辑 `schema_migrations`。
+- Compose 使用命名卷 `db-data`；恢复前先 `docker compose stop api`，把快照导出/复制回
+  `/app/data/schema-ui.db`，再启动 API 并检查 `/readyz`。Profile 切换不会删除禁用模块的表或数据。
+
+## 5. 下一步：接业务
 
 - 新增业务页面（**无需修改 Renderer 主路径**）：
-  1. 在 `apps/api/internal/handler/fixtures/schema/<pageId>.json` 添加页面 Schema 文档（Go `//go:embed`，**需重建/重启 API** 后生效）；
-  2. 在 Web `apps/web/public/.well-known/schema-ui/app-manifest.json` 登记 `pages[]` 与 `navigation`（`schemaUrl` 约定为 `/api/schema/<pageId>`）。
+  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；
+  2. 在模块 Provider 的 Manifest/Navigation contribution 中登记 `pages[]` 与 `navigation`；不要在 `apps/web/public/` 放置生产 Manifest。Manifest 由 API 聚合并经 `/.well-known/schema-ui/app-manifest.json` 发布。
   - 注意：`docs/schemas/` 是上游 **协议 JSON Schema**（node/page/action…），**不是**业务页面文档目录。
-- 权限：编辑持久化 RBAC 种子（角色/权限键），见 `apps/api/internal/store` 种子与迁移。
+- 权限：通过模块的 Authorization/Persistence contribution 声明权限键与 system-data reconcile；全局迁移/快照执行仍由 `apps/api/internal/store` 负责。
 - 参考：[README.md](README.md) 工程化段；`apps/api/README.md` / `apps/web/README.md` 端点与配置表。

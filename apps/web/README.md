@@ -6,7 +6,7 @@ session + permission-engine gating, and R5 example pages.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - npm with the committed `package-lock.json`
 
 ## Run
@@ -18,10 +18,13 @@ npm run dev
 # If 5173 is blocked (Windows Hyper-V excluded range), override:
 #   $env:WEB_PORT=9999; npm run dev
 
-npm test        # vitest run (458 tests)
-npm run test:e2e  # Playwright Chromium (starts Go API + Vite; default :5173)
+npm test        # vitest run
+npm run test:e2e  # Playwright Chromium; defaults to APP_PROFILE=mvp
+# Bash: run both runtime module profiles against the same Web code
+APP_PROFILE=mvp npm run test:e2e
+APP_PROFILE=admin npm run test:e2e
 # Windows local workaround when 5173 is blocked:
-#   $env:WEB_PORT=9999; npm run test:e2e
+#   $env:WEB_PORT=9999; $env:APP_PROFILE="admin"; npm run test:e2e
 npm run build   # tsc -b && vite build
 ```
 
@@ -44,11 +47,12 @@ npm run build   # tsc -b && vite build
 
 ## Example pages (schema-driven, R1/R4)
 
-Pages are Schema documents embedded by the Go API (`GET /api/schema/{pageId}`)
+Pages are Schema documents owned by a Go module (`GET /api/schema/{pageId}`)
 and rendered through the schema-driven default path
-(`manifest route → loadPageDocument → RenderPage`). New/adjusted pages only
-edit a core schema fixture under `apps/api/internal/handler/fixtures/schema/` or
-the owning module schema package — the Renderer main path
+(`manifest route → loadPageDocument → RenderPage`). New/adjusted pages add a
+document under the owning module schema package (core examples are in
+`apps/api/internal/modules/schemarender/schema/`) and a Provider contribution;
+the Renderer main path
 stays generic (T-UI-10).
 
 - `data-table` — list surface over `/api/users`
