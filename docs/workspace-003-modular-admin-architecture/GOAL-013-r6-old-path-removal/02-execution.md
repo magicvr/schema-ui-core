@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 执行记录 · GOAL-013
@@ -23,6 +23,7 @@ version: 0.5.0
 | E-007 | 2026-08-06 | R6 C6.2 contribution-driven system-data reconcile（切片 4） | recorded | [02-execution/E-007-r6-c62-system-data-reconcile.md](02-execution/E-007-r6-c62-system-data-reconcile.md) |
 | E-008 | 2026-08-06 | R6 C6.2 auth-session/RBAC repository 迁出（切片 5） | recorded | [02-execution/E-008-r6-c62-authsession-repository.md](02-execution/E-008-r6-c62-authsession-repository.md) |
 | E-009 | 2026-08-06 | R6 C6.2 repository ownership 迁出完成 | recorded | [02-execution/E-009-r6-c62-repository-ownership.md](02-execution/E-009-r6-c62-repository-ownership.md) |
+| E-010 | 2026-08-06 | R6 C6.3 终态契约冻结 | recorded | [02-execution/E-010-r6-c63-contract-freeze.md](02-execution/E-010-r6-c63-contract-freeze.md) |
 
 ## 事实边界
 
@@ -31,6 +32,7 @@ version: 0.5.0
 - 承接 R5 residual / Root A-010 债；R6-I001/I002 verified，R6-I003/I004
   collecting。C6.2 的 migration ownership、contribution-driven reconcile 与
   auth-session/RBAC、settings、operationlog repository ownership 与 production 接线已完成，
-  旧 store 领域实现已删除；A-010 F-001 具备 self fixed 证据，C6.2 仍等待 Grok independent
-  audit 后方可放行。R1-R5 已关门（Root 5/6）。
+  旧 store 领域实现已删除；A-007 independent 与 A-008 response 已关闭 C6.2 及 Root
+  A-010 F-001/F-002/F-005。D-003 已冻结 C6.3 契约，但实现与审计尚未完成。R1-R5
+  已关门（Root 5/6）。
 - R6 完成不代表 Root/VP 自动关门（需 exit #1-#7 逐条取证 + 关门审计）。
