@@ -29,10 +29,16 @@ const FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../api/internal/handler/fixtures/schema",
 );
+// R4 C3.3: users/roles schema documents are module-owned.
+const MODULE_FIXTURE_DIRS: Record<string, string> = {
+  users: resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/internal/modules/users/schema"),
+  roles: resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/internal/modules/roles/schema"),
+};
 const WEB_SRC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 function fixtureDocument(pageId: string): unknown {
-  return JSON.parse(readFileSync(resolve(FIXTURE_DIR, `${pageId}.json`), "utf8"));
+  const directory = MODULE_FIXTURE_DIRS[pageId] ?? FIXTURE_DIR;
+  return JSON.parse(readFileSync(resolve(directory, `${pageId}.json`), "utf8"));
 }
 
 // --- Users API emulator (resource contract) ---
@@ -708,7 +714,7 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
 
   it("the user and role CRUD action ids exist only in fixtures, never in renderer source", async () => {
     const fixtureTexts = ["users", "roles"].map((id) =>
-      readFileSync(resolve(FIXTURE_DIR, `${id}.json`), "utf8"),
+      readFileSync(resolve(MODULE_FIXTURE_DIRS[id] ?? FIXTURE_DIR, `${id}.json`), "utf8"),
     );
     const actionIds = [
       "createUser",

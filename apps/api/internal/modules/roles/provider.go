@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -89,8 +90,8 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	return reg.Manifest(kernel.FragmentContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "roles"},
 		FragmentID:           "roles",
-		ProtocolVersion:      "1.0",
-		RequiredCapabilities: []string{"http", "schema"},
-		JSON:                 []byte(`{"pageId":"roles","title":"Roles"}`),
+		ProtocolVersion:      "2.7",
+		RequiredCapabilities: []string{"manifest", "navigation"},
+		JSON:                 manifest.FragmentJSON,
 	})
 }

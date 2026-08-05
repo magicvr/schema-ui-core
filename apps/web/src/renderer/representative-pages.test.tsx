@@ -35,6 +35,14 @@ const MODULE_FIXTURE_DIRS: Record<string, string> = {
     dirname(fileURLToPath(import.meta.url)),
     "../../../api/internal/modules/activity/schema",
   ),
+  users: resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/users/schema",
+  ),
+  roles: resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/roles/schema",
+  ),
 };
 
 const MIGRATED_PAGE_IDS = [

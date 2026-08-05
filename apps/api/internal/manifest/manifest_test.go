@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	rolesmanifest "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/manifest"
+	usersmanifest "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/manifest"
 )
 
 const manifestApp = `{"name":"Test","version":"1.0.0"}`
@@ -75,7 +78,9 @@ func TestDefaultManifestIsValid(t *testing.T) {
 }
 
 func TestForModulesOnlyPublishesSelectedAdminPages(t *testing.T) {
-	data, err := ForModules([]string{
+	// R4 C3.3: users/roles are module-contributed fragments; settings/activity
+	// remain baseline-projected.
+	data, err := ForModulesWithFragments([]string{
 		"core.server-registration",
 		"core.auth-session",
 		"core.manifest-route",
@@ -84,6 +89,9 @@ func TestForModulesOnlyPublishesSelectedAdminPages(t *testing.T) {
 		"core.operationlog",
 		"admin.roles",
 		"admin.users",
+	}, []Fragment{
+		{ModuleID: "admin.users", Raw: usersmanifest.FragmentJSON},
+		{ModuleID: "admin.roles", Raw: rolesmanifest.FragmentJSON},
 	})
 	if err != nil {
 		t.Fatal(err)

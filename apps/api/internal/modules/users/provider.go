@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
@@ -88,8 +89,8 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	return reg.Manifest(kernel.FragmentContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users"},
 		FragmentID:           "users",
-		ProtocolVersion:      "1.0",
-		RequiredCapabilities: []string{"http", "schema"},
-		JSON:                 []byte(`{"pageId":"users","title":"Users"}`),
+		ProtocolVersion:      "2.7",
+		RequiredCapabilities: []string{"manifest", "navigation"},
+		JSON:                 manifest.FragmentJSON,
 	})
 }

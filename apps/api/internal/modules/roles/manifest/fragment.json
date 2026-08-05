@@ -1,0 +1,30 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "homePageRef": "overview",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "roles",
+      "title": "Roles",
+      "schemaUrl": "/api/schema/roles",
+      "route": "/roles"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "roles",
+        "label": "Roles",
+        "icon": "user",
+        "visibleWhen": {
+          "when": "$context.features.menu_roles == true"
+        }
+      }
+    ]
+  }
+}

@@ -39,6 +39,14 @@ func Default() ([]byte, error) {
 // module set. The embedded file remains a source fixture; the published bytes
 // are assembled from the core fragment plus only enabled Admin fragments.
 func ForModules(moduleIDs []string) ([]byte, error) {
+	return ForModulesWithFragments(moduleIDs, nil)
+}
+
+// ForModulesWithFragments is the R4 C3.3 aggregation: baseline projection for
+// still-central modules (settings/activity) plus module-contributed manifest
+// fragments (users/roles providers). The embedded baseline no longer contains
+// the users/roles pages or their admin navigation; those arrive as fragments.
+func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment) ([]byte, error) {
 	enabled := make(map[string]struct{}, len(moduleIDs))
 	for _, rawID := range moduleIDs {
 		id := strings.TrimSpace(rawID)
@@ -55,9 +63,9 @@ func ForModules(moduleIDs []string) ([]byte, error) {
 	if err := json.Unmarshal(defaultManifest, &base); err != nil {
 		return nil, fmt.Errorf("manifest: parse embedded baseline: %w", err)
 	}
+	// R4 C3.3: users/roles are module-contributed fragments; settings/activity
+	// remain baseline-projected until C4 migrates them.
 	adminModules := map[string]string{
-		"users":    "admin.users",
-		"roles":    "admin.roles",
 		"settings": "admin.settings",
 		"activity": "admin.activity",
 	}
@@ -156,6 +164,7 @@ func ForModules(moduleIDs []string) ([]byte, error) {
 		}
 		allFragments = append(allFragments, Fragment{ModuleID: moduleID, Raw: raw})
 	}
+	allFragments = append(allFragments, moduleFragments...)
 	return Aggregate(allFragments)
 }
 

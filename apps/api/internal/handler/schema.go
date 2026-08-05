@@ -7,7 +7,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
+	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
+	usersschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/schema"
 )
 
 // Core page schema documents backing GET /api/schema/{pageId}. Module-owned
@@ -55,6 +57,14 @@ func staticSchemaDocuments() map[string][]byte {
 		documents[pageID] = raw
 	}
 	for pageID, raw := range activityschema.SchemaDocuments() {
+		documents[pageID] = raw
+	}
+	// R4 C3.3: users/roles schema documents are module-owned (content migrated
+	// out of the central fixture embed).
+	for pageID, raw := range usersschema.SchemaDocuments() {
+		documents[pageID] = raw
+	}
+	for pageID, raw := range rolesschema.SchemaDocuments() {
 		documents[pageID] = raw
 	}
 	return documents

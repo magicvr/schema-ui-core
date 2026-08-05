@@ -115,7 +115,11 @@ func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan) (*http.Ser
 		activitymodule.Register(mux, a, st)
 	}
 	if plan.HasModule("core.manifest-route") {
-		data, err := manifest.ForModules(plan.IDs())
+		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))
+		for _, fragment := range set.Fragments {
+			moduleFragments = append(moduleFragments, manifest.Fragment{ModuleID: fragment.ModuleID, Raw: fragment.JSON})
+		}
+		data, err := manifest.ForModulesWithFragments(plan.IDs(), moduleFragments)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
 		}
