@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-05 | 建立 R4-C5 验收与关门子目标 | recorded | [02-execution/E-001-r4-c5-child-opened.md](02-execution/E-001-r4-c5-child-opened.md) |
+| E-002 | 2026-08-05 | R4-C5 验收验证（C5.1-C5.3） | recorded | [02-execution/E-002-r4-c5-verification.md](02-execution/E-002-r4-c5-verification.md) |
 
 ## 事实边界
 
