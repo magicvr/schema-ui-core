@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 执行记录 · GOAL-013
@@ -26,6 +26,7 @@ version: 0.8.0
 | E-010 | 2026-08-06 | R6 C6.3 终态契约冻结 | recorded | [02-execution/E-010-r6-c63-contract-freeze.md](02-execution/E-010-r6-c63-contract-freeze.md) |
 | E-011 | 2026-08-06 | R6 C6.3 Schema document bytes ContributionSet 发布 | recorded | [02-execution/E-011-r6-c63-schema-bytes.md](02-execution/E-011-r6-c63-schema-bytes.md) |
 | E-012 | 2026-08-06 | R6 C6.3 Configuration 与 Policy 校验 | recorded | [02-execution/E-012-r6-c63-configuration-policy.md](02-execution/E-012-r6-c63-configuration-policy.md) |
+| E-013 | 2026-08-06 | R6 C6.3 双 Profile 生命周期矩阵 | recorded | [02-execution/E-013-r6-c63-lifecycle-matrix.md](02-execution/E-013-r6-c63-lifecycle-matrix.md) |
 
 ## 事实边界
 
@@ -35,6 +36,7 @@ version: 0.8.0
   collecting。C6.2 的 migration ownership、contribution-driven reconcile 与
   auth-session/RBAC、settings、operationlog repository ownership 与 production 接线已完成，
   旧 store 领域实现已删除；A-007 independent 与 A-008 response 已关闭 C6.2 及 Root
-  A-010 F-001/F-002/F-005。D-003 已冻结 C6.3 契约，但实现与审计尚未完成。R1-R5
+  A-010 F-001/F-002/F-005。D-003 的 Schema bytes、Configuration、Policy 与 lifecycle
+  四个实现切片均已完成；C6.3 cross 审计尚未完成，R6-I003 仍为 `collecting`。R1-R5
   已关门（Root 5/6）。
 - R6 完成不代表 Root/VP 自动关门（需 exit #1-#7 逐条取证 + 关门审计）。
