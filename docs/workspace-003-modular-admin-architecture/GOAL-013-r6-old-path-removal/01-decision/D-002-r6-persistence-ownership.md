@@ -29,6 +29,11 @@ status: accepted
 - 实现前先做切片：先迁 descriptor、再收窄 runner、再接线 composition、再 seed 改造。
 - **不**在 ownership 未写清前做大规模 store 搬家；不用「只删旧路径」代替 C6.2。
 - **不**据此宣称 VP 退出 #2/#3/#5 已取证；取证须实现 + 审计。
+- **切片 2/3 边界（F-C62-001）**：切片 2 = 元数据收集（composition CollectPersistence
+  → `OpenWithCatalog` 校验与 ledger 一致 fail-closed），**不**等于 catalog 驱动执行；
+  切片 3 = Apply/DDL 迁入模块 `CompiledPersistence`，store runner **只执行
+  catalog.Apply**，权威迁移源离开 `store.compiledMigrations`（无第二套 compiled
+  migrations）。
 
 ## 影响
 
