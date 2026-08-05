@@ -77,7 +77,7 @@ TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization:
 ```
 
 - `GET /healthz` 公开返回 `200 {"status":"ok",...}`，作为 liveness 探活与启动验证判据（不访问数据库）。
-- `GET /readyz` 公开返回 `200 {"status":"ok",...}`，为 readiness 就绪探针：在 liveness 之上执行轻量 SQLite `SELECT 1`，数据库不可读时返回 `503 {"status":"unavailable",...}`（A-002 F-002-006）；Compose 以它作为 `service_healthy`。
+- `GET /readyz` 公开返回 `200 {"status":"ok",...}`，为 readiness 就绪探针：在 liveness 之上执行轻量 SQLite 读，**并**仅在模块图 Start+Ready 全部成功后返回 `200`（R5 真实模块图 readiness；未就绪返回 `503 {"status":"not-ready",...}`，数据库不可读返回 `503 {"status":"unavailable",...}`）；Compose 以它作为 `service_healthy`。
 - API 优雅停机：`SIGINT`/`SIGTERM` → 10s 宽限内 `Shutdown`。
 
 ## 端点

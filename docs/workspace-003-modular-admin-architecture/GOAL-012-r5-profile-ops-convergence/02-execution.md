@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-05 | R5 readyz 真实 readiness 与 residual 状态 | recorded | [02-execution/E-002-r5-readyz-and-residuals.md](02-execution/E-002-r5-readyz-and-residuals.md) |
 | E-003 | 2026-08-05 | R5 数据生命周期核验与 fork 文档 | recorded | [02-execution/E-003-r5-data-lifecycle-and-docs.md](02-execution/E-003-r5-data-lifecycle-and-docs.md) |
 | E-004 | 2026-08-05 | R5 C5.1 residual 闭合与收尾 | recorded | [02-execution/E-004-r5-c51-residuals-and-closeout.md](02-execution/E-004-r5-c51-residuals-and-closeout.md) |
+| E-005 | 2026-08-05 | R5 Profile 运维与数据收敛子目标关门 | recorded | [02-execution/E-005-r5-child-closeout.md](02-execution/E-005-r5-child-closeout.md) |
 
 ## 事实边界
 

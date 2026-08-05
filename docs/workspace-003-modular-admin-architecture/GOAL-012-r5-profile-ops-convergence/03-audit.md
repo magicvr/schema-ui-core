@@ -27,15 +27,15 @@ version: 0.2.0
 | A-001 | 2026-08-05 | self | 子目标建立、继承证据与 R5 信息门禁 | conditional | 3 | [03-audit/A-001-r5-readiness.md](03-audit/A-001-r5-readiness.md) |
 | A-002 | 2026-08-05 | independent | VP-003 apps 内聚审计之 R5 继承（C5.1 residual / R5-I001） | conditional | 2（F-R5-IND-001/002） | [03-audit/A-002-vp003-apps-cohesion-r5-scope.md](03-audit/A-002-vp003-apps-cohesion-r5-scope.md) |
 | A-003 | 2026-08-05 | self | R5 A-010 内聚债响应（F-R5-IND-001..003） | conditional | 0 | [03-audit/A-003-r5-a010-response.md](03-audit/A-003-r5-a010-response.md) |
+| A-004 | 2026-08-05 | self | R5 关门审计响应（F-R5-CO-001..005） | conditional | 0 | [03-audit/A-004-r5-closeout-response.md](03-audit/A-004-r5-closeout-response.md) |
+| A-005 | 2026-08-05 | independent | R5 关门独立审计（C5.1-C5.4、Root A-010 债、进入 R6） | conditional | 3（F-R5-CO-001..003） | [03-audit/A-005-grok-r5-closeout-audit.md](03-audit/A-005-grok-r5-closeout-audit.md) |
 
 ## 结论状态
 
 GOAL-012 已合法建立并承接 Root R5 与 R4 residual。R5-I001/I002/I003 `verified`、
-R5-I004 non-blocking。**A-002（independent）** 将 Root A-010 的 store/Persistence/seed
-与 Schema 贡献驱动债纳入本目标 required：F-R5-IND-001（residual 台账缺口）、
-F-R5-IND-002（Schema ContributionSet）。**A-003（self）已响应**：F-R5-IND-001 以
-store·Persistence 债纳入 R5-I001 台账登记闭合（可见、R6 实现）；F-R5-IND-002 以
-`RegisterSchemas` + composition 传 `set.Pages` 贡献驱动实现闭合（提交 `d1c372e`）；
-F-R5-IND-003 部分闭合（module 级适配器已删 `5577863`）。Root A-010 债可见，VP 退出
-#2/#3/#5 取证前须闭合。C5.1 可在债可见前提下勾选。R5 不否定 R2 精确 Profile 集、
-不开启 R6、不推进 Root done。响应归 `/govern`。
+R5-I004 non-blocking。C5.1-C5.4 检查点勾选、`progress: 4/4`。**A-002/A-005
+（independent）`conditional`**：A-002 F-R5-IND-001/002（A-010 债登记 + Schema 贡献
+驱动）与 A-005 F-R5-CO-001/002/003（树同步、Schema 叙事收窄、文档更新）已由
+A-003/A-004 处置；F-R5-CO-004/005 跟踪 R6。Root A-010 F-001/F-002/F-005 债可见于
+R5-I001（模型 R5、迁出 R6），VP 退出 #2/#3/#5 未取证。R5 具备关门条件，进入 R6。
+R5 不否定 R2 精确 Profile 集、不推进 Root done。响应归 `/govern`。

@@ -1,7 +1,7 @@
 ---
 id: GOAL-012-r5-profile-ops-convergence
 title: R5 · Profile 运维与数据收敛
-status: active
+status: done
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-05
@@ -46,10 +46,10 @@ Start/Ready 矩阵、Configuration 运行时迁移）。R5 **不**否定 R2 已�
 - [x] **C5.4 / 可 fork 与文档**：Docker/生产代理、快速启动、升级恢复与 fork 文档
   反映新架构；CI/本地矩阵覆盖。
 
-四个检查点等权；`progress: 4/4`（C5.1-C5.4 完成）。C5.1 residual（Schema 贡献驱动、
-适配器删除）已闭合；Configuration 迁移、PolicyID/Visibility 深化、versioned
-reconcile、双 Profile Start/Ready 矩阵登记 R5/R6 residual（E-004）。完成本子目标
-表示 R5 关闭，不关闭 Root、VP-003、R6。
+四个检查点等权；`progress: 4/4`（C5.1-C5.4 完成）。C5.1 residual（Schema 门禁贡献
+驱动 closed；document 字节 ContributionSet 发布 → R6；适配器 module 级删除）与
+Configuration/PolicyID/versioned reconcile/双 Profile 矩阵登记 R6 residual（E-004/
+E-005）。完成本子目标表示 R5 关闭，不关闭 Root、VP-003、R6。
 
 ## 信息门禁
 
