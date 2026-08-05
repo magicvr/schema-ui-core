@@ -125,6 +125,13 @@ func newMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *read
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
+	// R5 C5.1: schema ownership is genuinely contribution-driven — derive the
+	// page→module map from the provider page contributions (not a handler table).
+	pageOwners := make(map[string]string, len(set.Pages))
+	for _, page := range set.Pages {
+		pageOwners[page.PageID] = page.Owner
+	}
+	handler.RegisterSchemas(mux, plan, pageOwners)
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))
 		for _, fragment := range set.Fragments {

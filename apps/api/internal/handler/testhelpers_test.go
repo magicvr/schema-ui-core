@@ -64,6 +64,9 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	// R4 C3.3: users/roles HTTP routes now mount via the provider surface
 	// (same resource factory), matching composition.
 	MountProviderRoutes(mux, a, st, plan)
+	// R5 C5.1: schema pages register separately; test path uses the module
+	// contributor table (nil override).
+	RegisterSchemas(mux, plan, nil)
 	return &authTestEnv{mux: mux, a: a, st: st}
 }
 

@@ -72,8 +72,23 @@ func staticSchemaDocuments() map[string][]byte {
 
 func schemaDocumentsForPlan(plan kernel.Plan) map[string][]byte {
 	documents := staticSchemaDocuments()
-	// R4 C4.3: page→module ownership is derived from the module schema
-	// contributors (no hardcoded owner map); plan gating stays by module.
+	owners := schemaOwnerMap(nil)
+	for pageID, moduleID := range owners {
+		if !plan.HasModule(moduleID) {
+			delete(documents, pageID)
+		}
+	}
+	return documents
+}
+
+// schemaOwnerMap derives page→module ownership. override, when provided (from
+// runtime ContributionSet.Pages, R5 C5.1), is authoritative; otherwise it falls
+// back to the module schema contributors. This makes the schema gate genuinely
+// contribution-driven instead of a hardcoded handler table.
+func schemaOwnerMap(override map[string]string) map[string]string {
+	if override != nil {
+		return override
+	}
 	owners := map[string]string{}
 	for _, contributor := range []struct {
 		moduleID string
@@ -88,12 +103,32 @@ func schemaDocumentsForPlan(plan kernel.Plan) map[string][]byte {
 			owners[pageID] = contributor.moduleID
 		}
 	}
-	for pageID, moduleID := range owners {
+	return owners
+}
+
+// RegisterSchemas serves GET /api/schema/{pageId} gated by owners (R5 C5.1).
+// owners is a pageID→moduleID map from runtime provider page contributions;
+// when nil the module-constant schema contributors are used (test path). A
+// document is served only when its pageId is contributed AND its owner module is
+// enabled in the plan.
+func RegisterSchemas(mux *http.ServeMux, plan kernel.Plan, owners map[string]string) {
+	documents := staticSchemaDocuments()
+	effectiveOwners := schemaOwnerMap(owners)
+	for pageID, moduleID := range effectiveOwners {
 		if !plan.HasModule(moduleID) {
 			delete(documents, pageID)
 		}
 	}
-	return documents
+	// Contribution-driven: hide any document whose pageId is not contributed by
+	// an enabled module (e.g. mvp must not serve the settings schema).
+	for pageID := range documents {
+		moduleID, owned := effectiveOwners[pageID]
+		if !owned || !plan.HasModule(moduleID) {
+			delete(documents, pageID)
+		}
+	}
+	h := &schemaHandler{documents: documents}
+	mux.Handle("GET /api/schema/{pageId}", h.schema())
 }
 
 // schema serves GET /api/schema/{pageId}: the raw page document, or 404 when

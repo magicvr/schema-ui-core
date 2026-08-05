@@ -33,6 +33,8 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan k
 
 // RegisterWithReadiness is Register plus an optional module-graph readiness
 // probe (R5). ready, when non-nil, gates /readyz on Start+Ready success.
+// Schema pages are registered separately via RegisterSchemas so composition can
+// pass runtime contribution ownership (R5 C5.1).
 func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready))
@@ -40,7 +42,6 @@ func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.
 		authsHandler(mux, a, st)
 		accountsHandler(mux, a)
 	}
-	schemasHandler(mux, plan)
 }
 
 // MountProviderRoutes mounts the admin.users/admin.roles HTTP routes generated
