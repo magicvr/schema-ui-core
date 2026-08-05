@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.10.0
+version: 0.11.0
 ---
 
 # 审计 · GOAL-013
@@ -38,6 +38,7 @@ version: 0.10.0
 | A-010 | 2026-08-06 | independent | C6.3 Schema/Configuration/Policy/Lifecycle + F-003b/R6-I003 | pass | 0 | [03-audit/A-010-c63-contribution-lifecycle-independent.md](03-audit/A-010-c63-contribution-lifecycle-independent.md) |
 | A-011 | 2026-08-06 | self | 响应 A-009/A-010、闭合 F-003b 并放行 C6.3 | pass | 0 | [03-audit/A-011-c63-independent-response.md](03-audit/A-011-c63-independent-response.md) |
 | A-012 | 2026-08-06 | self | C6.4 / VP exit #1～#7 / R6-I004 self close-out | pass | 0（self scope；F-R6-001 等待 independent + response） | [03-audit/A-012-r6-c64-closeout-self.md](03-audit/A-012-r6-c64-closeout-self.md) |
+| A-013 | 2026-08-06 | independent | C6.4 / C64-V01～V08 / VP exit #1～#7 / R6-I004 / F-R6-001 close-out | pass | 0（F-R6-001 具备 fixed 条件，等 `/govern` 响应） | [03-audit/A-013-r6-c64-closeout-independent.md](03-audit/A-013-r6-c64-closeout-independent.md) |
 
 ## 结论状态
 
@@ -79,3 +80,11 @@ R6-I004/C6.4 继续 collecting；GOAL-013、Root 与 VP 均未关门。
 #1～#7 Q2 映射成立，候选身份、失败边界和本地/Hosted CI 限制已明确。C64-V08 仅完成
 self 半边；A-001 F-R6-001、R6-I004、C6.4 与目标状态继续等待 Grok independent opinion
 及 `/govern` 响应，不因本条 self pass 自动改变。
+
+**A-013（Grok independent close-out）pass、required 0、recommended 0**：与 A-012
+无冲突。独立只读核验确认 workspace/canonical/Root 绑定、候选 SHA 与
+`99784bc`/`88a3840` 祖先链、C64-V01 生产退休符号零命中、C64-V02～V07 动态台账与
+VP exit #1～#7 Q2 映射可重复核对，以及本地证据不等于 Hosted CI/merge/deploy/release。
+历史 C6.2/C6.3 required 均可按 fixed 追溯闭合；A-001 F-R6-001 现具备
+`/govern` 按 fixed 合法闭合的条件。本意见不修改 meta/goal-tree、不勾 C6.4、不改
+R6-I004，不放行 Root done 或 VP-003 closed。响应归 `/govern`。
