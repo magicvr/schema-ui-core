@@ -594,3 +594,23 @@ func (p catalogProvider) CompiledPersistence() ([]kernel.MigrationContribution, 
 	return p.catalog, nil
 }
 func (p catalogProvider) Register(context.Context, kernel.Registrar) error { return nil }
+
+// R6 C6.2 slice 2: OpenWithCatalog must fail closed when the supplied catalog
+// diverges from the authoritative ledger (wrong checksum / missing entry).
+func TestOpenWithCatalogRejectsDivergentCatalog(t *testing.T) {
+	catalog := MigrationCatalog()
+	if len(catalog) == 0 {
+		t.Fatal("empty catalog")
+	}
+	bad := append([]kernel.MigrationContribution(nil), catalog...)
+	bad[0].Checksum = "0" + bad[0].Checksum[1:]
+	if _, err := OpenWithCatalog(filepath.Join(t.TempDir(), "bad.db"), "admin", "hash", false, bad); err == nil {
+		t.Fatal("divergent catalog must fail closed")
+	}
+	// Correct catalog opens.
+	st, err := OpenWithCatalog(filepath.Join(t.TempDir(), "ok.db"), "admin", "hash", false, catalog)
+	if err != nil {
+		t.Fatalf("correct catalog open: %v", err)
+	}
+	_ = st.Close()
+}

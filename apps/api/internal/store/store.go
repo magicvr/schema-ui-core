@@ -15,6 +15,8 @@ import (
 	"time"
 
 	_ "modernc.org/sqlite"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 // User is the persisted identity row backing account.Session.User.
@@ -64,6 +66,37 @@ type Store struct {
 // caller is responsible for enforcing a non-empty seed password in production
 // (fail-closed on startup).
 func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
+	return open(path, adminUsername, adminPasswordHash, seedAdmin)
+}
+
+// OpenWithCatalog is Open but the caller (composition) supplies the compiled
+// migration catalog collected from module providers (R6 C6.2 slice 2). The
+// store validates the supplied catalog EXACTLY matches its authoritative
+// ledger set (versions/names/checksums/module ownership) and fails closed on
+// mismatch. This wires the CollectPersistence → store flow without yet moving
+// the migration Apply/DDL out of the store (slice 3).
+func OpenWithCatalog(path, adminUsername, adminPasswordHash string, seedAdmin bool, catalog []kernel.MigrationContribution) (*Store, error) {
+	if err := validateCatalogMatchesLedger(catalog); err != nil {
+		return nil, err
+	}
+	return open(path, adminUsername, adminPasswordHash, seedAdmin)
+}
+
+func validateCatalogMatchesLedger(catalog []kernel.MigrationContribution) error {
+	expected := MigrationCatalog()
+	if len(catalog) != len(expected) {
+		return fmt.Errorf("store: migration catalog len %d != ledger len %d", len(catalog), len(expected))
+	}
+	for i, mc := range catalog {
+		exp := expected[i]
+		if mc.Version != exp.Version || mc.Name != exp.Name || mc.Checksum != exp.Checksum || mc.ModuleID != exp.ModuleID {
+			return fmt.Errorf("store: catalog[%d] %s (%s) does not match ledger %s (%s)", i, mc.Name, mc.ModuleID, exp.Name, exp.ModuleID)
+		}
+	}
+	return nil
+}
+
+func open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("create db dir: %w", err)
