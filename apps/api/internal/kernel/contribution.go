@@ -40,6 +40,7 @@ type PageContribution struct {
 	Actions    []string
 	DataSource string
 	Owner      string
+	Document   []byte
 }
 
 // PermissionContribution registers one authorization permission (freeze §2.2).
@@ -152,6 +153,26 @@ func validatePage(moduleID string, p PageContribution) error {
 	}
 	if strings.TrimSpace(p.Owner) == "" || p.Owner != moduleID {
 		return kernelError(CodeModuleInvalid, moduleID, "page %q owner must equal the contributing module", p.PageID)
+	}
+	var document map[string]json.RawMessage
+	if err := json.Unmarshal(p.Document, &document); err != nil || document == nil {
+		return kernelError(CodeModuleInvalid, moduleID, "page %q document must be a JSON object: %v", p.PageID, err)
+	}
+	metaJSON, ok := document["meta"]
+	if !ok {
+		return kernelError(CodeModuleInvalid, moduleID, "page %q document requires meta.pageId", p.PageID)
+	}
+	var meta struct {
+		PageID string `json:"pageId"`
+	}
+	if err := json.Unmarshal(metaJSON, &meta); err != nil {
+		return kernelError(CodeModuleInvalid, moduleID, "page %q document meta is invalid: %v", p.PageID, err)
+	}
+	if meta.PageID != p.PageID {
+		return kernelError(CodeModuleInvalid, moduleID, "page %q document meta.pageId %q does not match", p.PageID, meta.PageID)
+	}
+	if _, err := json.Marshal(document); err != nil {
+		return kernelError(CodeModuleInvalid, moduleID, "page %q document cannot be canonically encoded: %v", p.PageID, err)
 	}
 	return nil
 }

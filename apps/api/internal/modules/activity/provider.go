@@ -11,6 +11,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/manifest"
+	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
@@ -62,6 +63,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		Actions:              []string{"list", "detail"},
 		DataSource:           "/api/operations",
 		Owner:                ModuleID,
+		Document:             activityschema.SchemaDocuments()["activity"],
 	}); err != nil {
 		return err
 	}

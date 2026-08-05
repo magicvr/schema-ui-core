@@ -22,6 +22,7 @@ import (
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
+	schemarendermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender"
 	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
@@ -146,7 +147,7 @@ func newMux(
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
-	var providers []kernel.Provider
+	providers := []kernel.Provider{schemarendermodule.New()}
 	if plan.HasModule("admin.users") {
 		providers = append(providers, usersmodule.New(a, authRepository, operations))
 	}
@@ -171,13 +172,9 @@ func newMux(
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
-	// R5 C5.1: schema ownership is genuinely contribution-driven — derive the
-	// page→module map from the provider page contributions (not a handler table).
-	pageOwners := make(map[string]string, len(set.Pages))
-	for _, page := range set.Pages {
-		pageOwners[page.PageID] = page.Owner
-	}
-	handler.RegisterSchemas(mux, plan, pageOwners)
+	// R6 C6.3: finalized page contributions own both metadata and document bytes;
+	// the handler has no static document or owner fallback.
+	handler.RegisterSchemas(mux, set.Pages)
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))
 		for _, fragment := range set.Fragments {

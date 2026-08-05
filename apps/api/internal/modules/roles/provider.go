@@ -15,6 +15,7 @@ import (
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/manifest"
+	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 )
 
 const ModuleID = "admin.roles"
@@ -68,6 +69,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		Actions:              []string{"list", "create", "detail", "update", "delete"},
 		DataSource:           "/api/roles",
 		Owner:                ModuleID,
+		Document:             rolesschema.SchemaDocuments()["roles"],
 	}); err != nil {
 		return err
 	}

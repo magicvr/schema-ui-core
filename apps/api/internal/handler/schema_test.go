@@ -24,7 +24,12 @@ type pageDocument struct {
 
 func TestSchemaEndpoint(t *testing.T) {
 	mux := http.NewServeMux()
-	schemasHandler(mux, testAdminPlan(t))
+	pages := testSchemaContributions()
+	RegisterSchemas(mux, pages)
+	documents := make(map[string][]byte, len(pages))
+	for _, page := range pages {
+		documents[page.PageID] = page.Document
+	}
 
 	t.Run("serves a seeded page document", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil)
@@ -56,7 +61,6 @@ func TestSchemaEndpoint(t *testing.T) {
 	})
 
 	t.Run("every seeded pageId serves valid page JSON", func(t *testing.T) {
-		documents := staticSchemaDocuments()
 		if len(documents) == 0 {
 			t.Fatalf("no seeded schema documents")
 		}
@@ -90,7 +94,6 @@ func TestSchemaEndpoint(t *testing.T) {
 			"settings",
 			"activity",
 		}
-		documents := staticSchemaDocuments()
 		for _, pageID := range representative {
 			raw, ok := documents[pageID]
 			if !ok {
@@ -141,7 +144,6 @@ func TestSchemaEndpoint(t *testing.T) {
 	// advertises a SCHEMA_NOT_FOUND route.
 	t.Run("checked-in web manifest pageIds all have embed fixtures", func(t *testing.T) {
 		pageIDs := loadCheckedInManifestPageIDs(t)
-		documents := staticSchemaDocuments()
 		for _, pageID := range pageIDs {
 			if _, ok := documents[pageID]; !ok {
 				t.Fatalf("manifest pageId %q has no embedded schema document", pageID)

@@ -3,6 +3,7 @@ package kernel
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
@@ -99,6 +100,7 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 		if err := r.Schema(PageContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: base.Contributions.Pages[0]},
 			PageID:               base.Contributions.Pages[0], Owner: module.ID,
+			Document: testPageDocument(base.Contributions.Pages[0]),
 		}); err != nil {
 			return err
 		}
@@ -131,6 +133,14 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 		}}, nil
 	}
 	return module, provider
+}
+
+func testPageDocument(pageID string) []byte {
+	raw, _ := json.Marshal(map[string]any{
+		"meta": map[string]any{"pageId": pageID},
+		"body": map[string]any{"type": "section"},
+	})
+	return raw
 }
 
 func methodOfKey(key string) string {
@@ -176,6 +186,49 @@ func TestRegisterContributionsHappyPath(t *testing.T) {
 	}
 	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "sample-fragment" {
 		t.Fatalf("fragments = %+v, want sample-fragment", set.Fragments)
+	}
+}
+
+func TestSchemaDocumentValidationAndCopy(t *testing.T) {
+	module := minimalModule(Module{
+		ID: "test.schema", Version: "2.0.0",
+		Contributions: ContributionKeys{Pages: []string{"sample"}},
+	})
+	plan := Plan{Modules: []Module{module}, Capabilities: []Capability{CapabilitySchema}}
+
+	for name, document := range map[string][]byte{
+		"invalid JSON":  []byte(`{`),
+		"not an object": []byte(`[]`),
+		"missing meta":  []byte(`{"body":{}}`),
+		"wrong page id": testPageDocument("other"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			provider := &testProvider{desc: module, mutate: func(r Registrar) error {
+				return r.Schema(PageContribution{
+					ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample"},
+					PageID:               "sample", Owner: module.ID, Document: document,
+				})
+			}}
+			if _, err := RegisterContributions(context.Background(), plan, []Provider{provider}); err == nil {
+				t.Fatal("invalid page document should fail closed")
+			}
+		})
+	}
+
+	document := testPageDocument("sample")
+	provider := &testProvider{desc: module, mutate: func(r Registrar) error {
+		return r.Schema(PageContribution{
+			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample"},
+			PageID:               "sample", Owner: module.ID, Document: document,
+		})
+	}}
+	set, err := RegisterContributions(context.Background(), plan, []Provider{provider})
+	if err != nil {
+		t.Fatal(err)
+	}
+	document[0] = 'x'
+	if !json.Valid(set.Pages[0].Document) {
+		t.Fatal("registered document aliases provider-owned bytes")
 	}
 }
 
@@ -289,7 +342,7 @@ func TestRegisterContributionsNavigationDanglingPermission(t *testing.T) {
 		}
 		if err := r.Schema(PageContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample"},
-			PageID:               "sample", Owner: module.ID,
+			PageID:               "sample", Owner: module.ID, Document: testPageDocument("sample"),
 		}); err != nil {
 			return err
 		}
@@ -411,7 +464,7 @@ func TestNavigationParentOrderIndependent(t *testing.T) {
 		}
 		if err := r.Schema(PageContribution{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample"},
-			PageID:               "sample", Owner: module.ID,
+			PageID:               "sample", Owner: module.ID, Document: testPageDocument("sample"),
 		}); err != nil {
 			return err
 		}

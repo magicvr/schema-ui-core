@@ -109,6 +109,13 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 	if pageIDs["settings"] || pageIDs["activity"] {
 		t.Fatalf("disabled admin pages leaked: %v", pageIDs)
 	}
+	for pageID := range pageIDs {
+		schemaResponse := httptest.NewRecorder()
+		mux.ServeHTTP(schemaResponse, httptest.NewRequest(http.MethodGet, "/api/schema/"+pageID, nil))
+		if schemaResponse.Code != http.StatusOK {
+			t.Fatalf("manifest page %q schema status = %d, body=%s", pageID, schemaResponse.Code, schemaResponse.Body.String())
+		}
+	}
 }
 
 func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {

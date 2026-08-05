@@ -14,6 +14,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
+	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
 )
 
 const ModuleID = migration.ModuleID
@@ -66,6 +67,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		Actions:              []string{"list", "detail", "update"},
 		DataSource:           "/api/settings",
 		Owner:                ModuleID,
+		Document:             settingsschema.SchemaDocuments()["settings"],
 	}); err != nil {
 		return err
 	}

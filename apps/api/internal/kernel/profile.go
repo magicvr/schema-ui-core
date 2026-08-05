@@ -92,7 +92,7 @@ func BuiltinModules() []Module {
 	return []Module{
 		{ID: "core.server-registration", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", Provides: []Capability{CapabilityHTTP}},
 		{ID: "core.auth-session", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilityAuthorization, CapabilityPersistence}, Contributions: ContributionKeys{Routes: []string{"/api/auth"}}},
-		{ID: "core.schema-render", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilitySchema, CapabilityValidation}},
+		{ID: "core.schema-render", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilitySchema, CapabilityValidation}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions"}}},
 		{ID: "core.manifest-route", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render"}, Provides: []Capability{CapabilityManifest}, Contributions: ContributionKeys{Routes: []string{"/.well-known/schema-ui/app-manifest.json"}}},
 		{ID: "core.navigation-capability", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.manifest-route"}, Provides: []Capability{CapabilityNavigation, CapabilityExpressions}},
 		{ID: "core.operationlog", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilityOperationLog}},

@@ -11,9 +11,14 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
+	coreschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender/schema"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
+	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
+	usersschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -83,15 +88,36 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
 	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
-	// R5 C5.1: schema pages register separately; test path uses the module
-	// contributor table (nil override).
-	RegisterSchemas(mux, plan, nil)
+	RegisterSchemas(mux, testSchemaContributions())
 	return &authTestEnv{
 		mux: mux, a: a, st: st,
 		authRepository: authRepository,
 		operations:     operations,
 		settings:       settings,
 	}
+}
+
+func testSchemaContributions() []kernel.PageContribution {
+	contributors := []struct {
+		moduleID  string
+		documents map[string][]byte
+	}{
+		{coreschema.ModuleID, coreschema.SchemaDocuments()},
+		{usersschema.ModuleID, usersschema.SchemaDocuments()},
+		{rolesschema.ModuleID, rolesschema.SchemaDocuments()},
+		{settingsschema.ModuleID, settingsschema.SchemaDocuments()},
+		{activityschema.ModuleID, activityschema.SchemaDocuments()},
+	}
+	var pages []kernel.PageContribution
+	for _, contributor := range contributors {
+		for pageID, document := range contributor.documents {
+			pages = append(pages, kernel.PageContribution{
+				ContributionIdentity: kernel.ContributionIdentity{ModuleID: contributor.moduleID, Key: pageID},
+				PageID:               pageID, Owner: contributor.moduleID, Document: document,
+			})
+		}
+	}
+	return pages
 }
 
 func testAdminPlan(t *testing.T) kernel.Plan {

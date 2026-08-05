@@ -229,6 +229,9 @@ func (r *validatingRegistrar) Schema(c PageContribution) error {
 	if err := r.declare(KindSchema, c.Key); err != nil {
 		return err
 	}
+	c.Resources = append([]string(nil), c.Resources...)
+	c.Actions = append([]string(nil), c.Actions...)
+	c.Document = append([]byte(nil), c.Document...)
 	r.set.Pages = append(r.set.Pages, c)
 	return nil
 }

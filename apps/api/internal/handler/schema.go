@@ -1,23 +1,10 @@
 package handler
 
 import (
-	"embed"
 	"net/http"
-	"strings"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
-	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
-	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
-	usersschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/schema"
 )
-
-// Core page schema documents backing GET /api/schema/{pageId}. Module-owned
-// Settings and Activity documents are merged from their package-local embed
-// sources below; the app manifest declares the same schemaUrl contract.
-//
-//go:embed fixtures/schema/*.json
-var schemaPageFixtures embed.FS
 
 // schemaHandler serves page schema documents by manifest pageId. Documents are
 // read-only, so the map is built once and shared across requests.
@@ -25,107 +12,13 @@ type schemaHandler struct {
 	documents map[string][]byte // pageId -> raw JSON document
 }
 
-func schemasHandler(mux *http.ServeMux, plan kernel.Plan) {
-	h := &schemaHandler{documents: schemaDocumentsForPlan(plan)}
-	mux.Handle("GET /api/schema/{pageId}", h.schema())
-}
-
-// staticSchemaDocuments loads the embedded page fixtures into a pageId -> raw
-// JSON map. The embed set is a build-time invariant; a missing file is a
-// programming error surfaced at startup.
-func staticSchemaDocuments() map[string][]byte {
-	entries, err := schemaPageFixtures.ReadDir("fixtures/schema")
-	if err != nil {
-		panic(err)
-	}
-	documents := make(map[string][]byte, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		pageID := strings.TrimSuffix(entry.Name(), ".json")
-		if pageID == "" || pageID == entry.Name() {
-			continue
-		}
-		raw, err := schemaPageFixtures.ReadFile("fixtures/schema/" + entry.Name())
-		if err != nil {
-			panic(err)
-		}
-		documents[pageID] = raw
-	}
-	for pageID, raw := range settingsschema.SchemaDocuments() {
-		documents[pageID] = raw
-	}
-	for pageID, raw := range activityschema.SchemaDocuments() {
-		documents[pageID] = raw
-	}
-	// R4 C3.3: users/roles schema documents are module-owned (content migrated
-	// out of the central fixture embed).
-	for pageID, raw := range usersschema.SchemaDocuments() {
-		documents[pageID] = raw
-	}
-	for pageID, raw := range rolesschema.SchemaDocuments() {
-		documents[pageID] = raw
-	}
-	return documents
-}
-
-func schemaDocumentsForPlan(plan kernel.Plan) map[string][]byte {
-	documents := staticSchemaDocuments()
-	owners := schemaOwnerMap(nil)
-	for pageID, moduleID := range owners {
-		if !plan.HasModule(moduleID) {
-			delete(documents, pageID)
-		}
-	}
-	return documents
-}
-
-// schemaOwnerMap derives page→module ownership. override, when provided (from
-// runtime ContributionSet.Pages, R5 C5.1), is authoritative; otherwise it falls
-// back to the module schema contributors. This makes the schema gate genuinely
-// contribution-driven instead of a hardcoded handler table.
-func schemaOwnerMap(override map[string]string) map[string]string {
-	if override != nil {
-		return override
-	}
-	owners := map[string]string{}
-	for _, contributor := range []struct {
-		moduleID string
-		pageIDs  []string
-	}{
-		{usersschema.ModuleID, usersschema.PageIDs()},
-		{rolesschema.ModuleID, rolesschema.PageIDs()},
-		{settingsschema.ModuleID, settingsschema.PageIDs()},
-		{activityschema.ModuleID, activityschema.PageIDs()},
-	} {
-		for _, pageID := range contributor.pageIDs {
-			owners[pageID] = contributor.moduleID
-		}
-	}
-	return owners
-}
-
-// RegisterSchemas serves GET /api/schema/{pageId} gated by owners (R5 C5.1).
-// owners is a pageID→moduleID map from runtime provider page contributions;
-// when nil the module-constant schema contributors are used (test path). A
-// document is served only when its pageId is contributed AND its owner module is
-// enabled in the plan.
-func RegisterSchemas(mux *http.ServeMux, plan kernel.Plan, owners map[string]string) {
-	documents := staticSchemaDocuments()
-	effectiveOwners := schemaOwnerMap(owners)
-	for pageID, moduleID := range effectiveOwners {
-		if !plan.HasModule(moduleID) {
-			delete(documents, pageID)
-		}
-	}
-	// Contribution-driven: hide any document whose pageId is not contributed by
-	// an enabled module (e.g. mvp must not serve the settings schema).
-	for pageID := range documents {
-		moduleID, owned := effectiveOwners[pageID]
-		if !owned || !plan.HasModule(moduleID) {
-			delete(documents, pageID)
-		}
+// RegisterSchemas publishes only finalized PageContribution documents. Profile
+// filtering, owner validation, duplicate checks and JSON identity validation
+// have already completed in kernel.RegisterContributions.
+func RegisterSchemas(mux *http.ServeMux, pages []kernel.PageContribution) {
+	documents := make(map[string][]byte, len(pages))
+	for _, page := range pages {
+		documents[page.PageID] = append([]byte(nil), page.Document...)
 	}
 	h := &schemaHandler{documents: documents}
 	mux.Handle("GET /api/schema/{pageId}", h.schema())
