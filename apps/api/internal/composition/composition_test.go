@@ -444,39 +444,70 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	}
 }
 
-func TestAppStartFailsClosedWithStableLifecycleErrorWhenPortIsUnavailable(t *testing.T) {
-	blocker, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer blocker.Close()
-	cfg := &config.Config{
+func lifecycleAppConfig(t *testing.T, profile, addr string) *config.Config {
+	t.Helper()
+	return &config.Config{
 		AppName:      "test",
 		AppEnv:       "development",
-		HTTPAddr:     blocker.Addr().String(),
+		HTTPAddr:     addr,
 		DBPath:       filepath.Join(t.TempDir(), "composition.db"),
-		ProfileName:  "mvp",
+		ProfileName:  profile,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
 		IdleTimeout:  time.Second,
 	}
-	app, err := NewApp(cfg, "test-secret", "hash", slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if err != nil {
-		t.Fatal(err)
+}
+
+func TestAppStartsAndStopsDualProfiles(t *testing.T) {
+	for _, profile := range []string{"mvp", "admin"} {
+		t.Run(profile, func(t *testing.T) {
+			cfg := lifecycleAppConfig(t, profile, "127.0.0.1:0")
+			app, err := NewApp(cfg, "test-secret", "hash", slog.New(slog.NewTextHandler(io.Discard, nil)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			startCtx, startCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer startCancel()
+			if err := app.Start(startCtx); err != nil {
+				t.Fatalf("start %s profile: %v", profile, err)
+			}
+			stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer stopCancel()
+			if err := app.Stop(stopCtx); err != nil {
+				t.Fatalf("stop %s profile: %v", profile, err)
+			}
+		})
 	}
-	startCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := app.Start(startCtx); err == nil {
-		t.Fatal("occupied HTTP port must fail startup")
-	} else {
-		var kernelErr *kernel.Error
-		if !errors.As(err, &kernelErr) || kernelErr.Code != kernel.CodeLifecycleStartFailed {
-			t.Fatalf("startup error = %v, want stable lifecycle error", err)
-		}
+}
+
+func TestAppStartFailsClosedWithStableLifecycleErrorWhenPortIsUnavailable(t *testing.T) {
+	for _, profile := range []string{"mvp", "admin"} {
+		t.Run(profile, func(t *testing.T) {
+			blocker, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer blocker.Close()
+			cfg := lifecycleAppConfig(t, profile, blocker.Addr().String())
+			app, err := NewApp(cfg, "test-secret", "hash", slog.New(slog.NewTextHandler(io.Discard, nil)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			startCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := app.Start(startCtx); err == nil {
+				t.Fatal("occupied HTTP port must fail startup")
+			} else {
+				var kernelErr *kernel.Error
+				if !errors.As(err, &kernelErr) || kernelErr.Code != kernel.CodeLifecycleStartFailed {
+					t.Fatalf("startup error = %v, want stable lifecycle error", err)
+				}
+			}
+			stopCtx, stopCancel := context.WithTimeout(context.Background(), time.Second)
+			defer stopCancel()
+			_ = app.Stop(stopCtx)
+		})
 	}
-	stopCtx, stopCancel := context.WithTimeout(context.Background(), time.Second)
-	defer stopCancel()
-	_ = app.Stop(stopCtx)
 }
 
 // stubProvider is a minimal kernel.Provider used to prove register-gate

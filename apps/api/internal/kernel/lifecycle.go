@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -23,10 +24,7 @@ func (r *Runtime) Start(ctx context.Context) error {
 		if err := module.Hooks.Start(ctx); err != nil {
 			cleanupErr := r.stopModules(ctx, r.started)
 			r.started = nil
-			if cleanupErr != nil {
-				return kernelError(CodeLifecycleStartFailed, module.ID, "start failed: %v; cleanup failed: %v", err, cleanupErr)
-			}
-			return kernelError(CodeLifecycleStartFailed, module.ID, "start failed: %v", err)
+			return lifecycleFailure(CodeLifecycleStartFailed, module.ID, "start", err, cleanupErr)
 		}
 		r.started = append(r.started, module)
 	}
@@ -34,15 +32,31 @@ func (r *Runtime) Start(ctx context.Context) error {
 }
 
 func (r *Runtime) Ready(ctx context.Context) error {
-	for _, module := range r.plan.Modules {
+	for _, module := range r.started {
 		if module.Hooks.Ready == nil {
 			continue
 		}
 		if err := module.Hooks.Ready(ctx); err != nil {
-			return kernelError(CodeLifecycleReadyFailed, module.ID, "ready check failed: %v", err)
+			cleanupErr := r.stopModules(ctx, r.started)
+			r.started = nil
+			return lifecycleFailure(CodeLifecycleReadyFailed, module.ID, "ready check", err, cleanupErr)
 		}
 	}
 	return nil
+}
+
+func lifecycleFailure(fallbackCode ErrorCode, fallbackModule, phase string, err, cleanupErr error) error {
+	detail := fmt.Sprintf("%s failed: %v", phase, err)
+	result := &Error{Code: fallbackCode, ModuleID: fallbackModule, Detail: detail}
+	var structured *Error
+	if errors.As(err, &structured) {
+		copy := *structured
+		result = &copy
+	}
+	if cleanupErr != nil {
+		result.Detail += fmt.Sprintf("; cleanup failed: %v", cleanupErr)
+	}
+	return result
 }
 
 func (r *Runtime) Stop(ctx context.Context) error {

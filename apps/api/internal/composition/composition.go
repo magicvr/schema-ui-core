@@ -213,11 +213,10 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 				return err
 			}
 			if err := runtime.Ready(ctx); err != nil {
-				stopErr := runtime.Stop(ctx)
 				_ = ln.Close()
 				listener = nil
 				_ = st.Close()
-				return errors.Join(err, stopErr)
+				return err
 			}
 			// R5 real readiness: only after every module Start + Ready succeeds
 			// does /readyz report ready.
