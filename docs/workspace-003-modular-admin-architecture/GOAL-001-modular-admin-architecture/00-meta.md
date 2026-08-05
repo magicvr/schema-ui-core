@@ -4,8 +4,8 @@ title: 单主线模块化 Admin 架构
 status: active
 parent: null
 created: 2026-08-04
-updated: 2026-08-05
-version: 0.8.0
+updated: 2026-08-06
+version: 0.9.0
 progress: 5/6
 plan_refs:
   - VP-003-modular-admin-architecture
@@ -64,7 +64,7 @@ serves_summary: 将现有生产级 Admin 基架在单一代码主线内演进为
 
 ## 纲领路线图
 
-六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3、R4、R5 已完成并通过对应 close-out audit，Root 派生进度为 `5/6`；R6 尚未完成。R6 承接旧路径删除与 VP 退出判据逐条取证；Root A-010 债（store/Persistence 所有权、CollectPersistence 接线、seed 贡献驱动）在 VP 退出 #2/#3/#5 取证前须闭合。R1-R5 证据不得被扩大解释为 R6/Root/VP 完成。
+六个检查点默认等权并原则上串行；同一阶段内可在相应信息门禁已满足后创建并行子目标。R1、R2、R3、R4、R5 已完成并通过对应 close-out audit，Root 派生进度为 `5/6`；R6 尚未完成。R6 承接旧路径删除与 VP 退出判据逐条取证；Root A-010 F-001/F-002/F-005 已由 GOAL-013 C6.2 的 A-006/A-007/A-008 与 Root A-016 fixed，F-003b Schema 字节发布仍由 C6.3 承接。R1-R5 与 C6.2 证据不得被扩大解释为 R6/Root/VP 完成。
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|

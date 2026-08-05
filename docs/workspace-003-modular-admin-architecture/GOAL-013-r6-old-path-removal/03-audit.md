@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-modular-admin-architecture
 created: 2026-08-05
 updated: 2026-08-06
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计 · GOAL-013
@@ -15,11 +15,11 @@ version: 0.5.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | R6-I001 | verified（meta） | E-002/E-004；本索引曾滞后，以 meta 为准直至编排刷新 |
-| R6-I002 | verified（设计边界） | D-002 + 设计附件；A-002 确认切片 1–2 接线过渡，非 C6.2 完成 |
+| R6-I002 | verified（设计 + 实施 + cross） | D-002、E-006～E-009、A-004～A-008；C6.2 已完成 |
 | R6-I003 / R6-I004 | collecting | C6.3 / C6.4 |
 | 影响本 scope 的 inherited evidence | available | R5 residual、Root A-010 债、VP-003 |
 | A-002 C6.2 切片 1–2 | conditional | 可进切片 3；F-C62-001/003 已由 A-003 响应 |
-| 到期 required 是否已 verified | partial | C6.1 已勾选；C6.2 未完成（F-C62-004 已收窄至 A-010 F-001 repository ownership） |
+| 到期 required 是否已 verified | yes（C6.1/C6.2） | F-C62-004 与 A-010 F-001/F-002/F-005 fixed；C6.3/C6.4 信息项尚未到放行点 |
 
 ## 意见台账索引
 
@@ -31,6 +31,8 @@ version: 0.5.0
 | A-004 | 2026-08-05 | self | C6.2 切片 3 · 0001-0008 Apply/DDL 物理迁出 | pass | 0（本 scope；F-C62-004 继承） | [03-audit/A-004-c62-migration-ownership.md](03-audit/A-004-c62-migration-ownership.md) |
 | A-005 | 2026-08-06 | self | C6.2 切片 4 · fresh bootstrap + contribution-driven system-data reconcile | pass | 0（本 scope；F-C62-004 收窄至 F-001） | [03-audit/A-005-c62-system-data-reconcile.md](03-audit/A-005-c62-system-data-reconcile.md) |
 | A-006 | 2026-08-06 | self | C6.2 最后 repository ownership + Root A-010 F-001 关闭证据 | pass | 0（实现；independent 门禁待审） | [03-audit/A-006-c62-repository-ownership.md](03-audit/A-006-c62-repository-ownership.md) |
+| A-007 | 2026-08-06 | independent | C6.2 repository ownership + Root A-010 F-001/F-002/F-005 关闭复审 | pass | 0 | [03-audit/A-007-c62-repository-ownership-independent.md](03-audit/A-007-c62-repository-ownership-independent.md) |
+| A-008 | 2026-08-06 | self | 响应 A-007、闭合 F-C62-004 并放行 C6.2 | pass | 0 | [03-audit/A-008-c62-independent-response.md](03-audit/A-008-c62-independent-response.md) |
 
 ## 结论状态
 
@@ -47,7 +49,8 @@ bootstrap 与 finalized Authorization/Navigation contribution 驱动的 versione
 已分离，0009 ledger、Profile 降级、用户字段保护、漂移/回滚与 readiness 回归通过，旧中心
 seed 已删除。**A-006（self）确认 repository ownership 实现通过**：auth-session、
 operationlog、settings owner repositories 已接入生产，store 已收窄为平台 runner/ledger，
-旧领域实现与 test ownership 删除；Root A-010 F-001 具备 self fixed 证据。C6.2 的 cross
-门禁仍等待 Grok independent opinion，**独立意见落盘并响应前不得勾选 C6.2或宣称 VP
-退出**。R6 完成不代表 Root/VP 自动关门。
+旧领域实现与 test ownership 删除；Root A-010 F-001 具备 self fixed 证据。**A-007
+（Grok independent）pass、required 0**，确认 F-001/F-002/F-005 与 F-C62-004 可 fixed；
+**A-008 已响应** recommended 台账项并勾选 C6.2，GOAL-013 派生 progress 为 `2/4`。
+C6.3/C6.4 仍未完成，R6 完成也不代表 Root/VP 自动关门。
 响应归 `/govern`。
