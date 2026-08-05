@@ -41,6 +41,7 @@ VP-003 关门提供完整证据。
 - [ ] **C6.2 / Persistence 所有权迁出**：store 上帝对象拆分（平台 runner/ledger vs
   模块仓储，按 D-002 设计）；`CollectPersistence` 生产接线 + 0001-0008 descriptor
   归属；seed/RBAC reconcile 以 Authorization/system-data 贡献为源。
+  **（切片 1-2 完成：ownership 登记 + CollectPersistence 接线；切片 3 物理迁出 + F-005 seed 待续）**
 - [ ] **C6.3 / Schema 字节贡献驱动 + 收尾**：Schema document 字节由 ContributionSet
   发布（去掉中心静态枚举）；Configuration 运行时迁移、PolicyID/Visibility 深化、
   双 Profile Start/Ready 失败矩阵。

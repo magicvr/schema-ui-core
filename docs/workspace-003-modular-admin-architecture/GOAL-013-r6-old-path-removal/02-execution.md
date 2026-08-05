@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-05 | R6.1 旧路径与内聚债扫描 | recorded | [02-execution/E-002-r6-old-path-scan.md](02-execution/E-002-r6-old-path-scan.md) |
 | E-003 | 2026-08-05 | R6 Persistence 所有权设计冻结（R6-I002） | recorded | [02-execution/E-003-r6-persistence-design.md](02-execution/E-003-r6-persistence-design.md) |
 | E-004 | 2026-08-05 | R6 C6.1 死适配器与双轨删除 | recorded | [02-execution/E-004-r6-c61-dead-adapter-removal.md](02-execution/E-004-r6-c61-dead-adapter-removal.md) |
+| E-005 | 2026-08-05 | R6 C6.2 Persistence 接线（切片 1-2） | recorded | [02-execution/E-005-r6-c62-persistence-wiring.md](02-execution/E-005-r6-c62-persistence-wiring.md) |
 
 ## 事实边界
 
