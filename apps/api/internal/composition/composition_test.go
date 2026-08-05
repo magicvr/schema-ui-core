@@ -359,3 +359,34 @@ func TestAppStartFailsClosedWithStableLifecycleErrorWhenPortIsUnavailable(t *tes
 	defer stopCancel()
 	_ = app.Stop(stopCtx)
 }
+
+// stubProvider is a minimal kernel.Provider used to prove register-gate
+// fail-closed under each profile (freeze §3 dual-profile matrix).
+type stubProvider struct {
+	desc kernel.Module
+}
+
+func (p *stubProvider) Descriptor() kernel.Module { return p.desc }
+func (p *stubProvider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
+	return nil, nil
+}
+func (p *stubProvider) Register(context.Context, kernel.Registrar) error { return nil }
+
+// TestDualProfileRegisterValidationFailClosed runs the register/conflict gate
+// under both compiled profiles: a provider whose descriptor does not exactly
+// match the plan module must fail closed (no partial surface), and neither
+// profile's success is used as evidence for the other (freeze §3).
+func TestDualProfileRegisterValidationFailClosed(t *testing.T) {
+	for _, profile := range []string{"mvp", "admin"} {
+		cfg := &config.Config{ProfileName: profile}
+		plan, err := ResolvePlan(cfg)
+		if err != nil {
+			t.Fatalf("%s plan: %v", profile, err)
+		}
+		// Mismatched descriptor version → MODULE_API_MISMATCH (register gate).
+		bad := &stubProvider{desc: kernel.Module{ID: "admin.users", Version: "9.9.9", KernelAPIRange: ">=2.0 <3.0"}}
+		if _, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{bad}); err == nil {
+			t.Fatalf("%s: mismatched provider descriptor must fail closed", profile)
+		}
+	}
+}
