@@ -45,8 +45,8 @@ const pages: PageEntry[] = [
   },
 ];
 
-const checkedInManifestBytes = readFileSync(
-  new URL("../../public/.well-known/schema-ui/app-manifest.json", import.meta.url),
+const adminManifestFixtureBytes = readFileSync(
+  new URL("../test-fixtures/app-manifest.admin.json", import.meta.url),
 );
 
 function manifest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -247,12 +247,12 @@ describe("manifest loading and expression boundaries", () => {
     expect(loaded.app.appId).toBe("demo-app");
   });
 
-  it("validates the checked-in static manifest bytes through the loader", async () => {
+  it("validates the admin-profile test fixture through the loader", async () => {
     let requested: RequestInfo | URL | undefined;
     const loaded = await loadAppManifest({
       fetcher: async (input) => {
         requested = input;
-        return new Response(checkedInManifestBytes, { status: 200 });
+        return new Response(adminManifestFixtureBytes, { status: 200 });
       },
     });
     expect(requested).toBe(DEFAULT_MANIFEST_PATH);

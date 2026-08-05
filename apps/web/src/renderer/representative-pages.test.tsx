@@ -22,9 +22,9 @@ import type { RenderPageDocument } from "@/renderer/render";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 
-const FIXTURE_DIR = resolve(
+const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/handler/fixtures/schema",
+  "../../../api/internal/modules/schemarender/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(
@@ -57,7 +57,7 @@ const MIGRATED_PAGE_IDS = [
 ];
 
 function fixtureDocument(pageId: string): unknown {
-  const directory = MODULE_FIXTURE_DIRS[pageId] ?? FIXTURE_DIR;
+  const directory = MODULE_FIXTURE_DIRS[pageId] ?? CORE_FIXTURE_DIR;
   return JSON.parse(readFileSync(resolve(directory, `${pageId}.json`), "utf8"));
 }
 

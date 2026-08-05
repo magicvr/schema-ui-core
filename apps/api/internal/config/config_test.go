@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 	t.Run("default mvp profile", func(t *testing.T) {
@@ -33,6 +36,9 @@ func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 		cfg := Load()
 		if cfg.ProfileError == nil {
 			t.Fatal("custom profile without modules must fail closed")
+		}
+		if !strings.Contains(cfg.ProfileError.Error(), "APP_MODULES_ENABLED") {
+			t.Fatalf("custom profile error = %q, want actual environment key", cfg.ProfileError)
 		}
 	})
 }

@@ -2,9 +2,8 @@
 //
 // Full-path integration evidence for the R1 representative pages (GOAL-004;
 // GOAL-011 S3 repoints the injected resource surface from the legacy demo to users/roles):
-// uses the real app manifest (`apps/web/public/.well-known/schema-ui/`) and the
-// real Go-embedded page fixtures (core fixtures plus module-owned Settings and
-// Activity schemas)
+// uses an explicit admin-profile manifest test fixture and the real
+// Go-embedded, module-owned page documents
 // through the App's schema-driven default path, with the users/roles API surface
 // injected. Asserts "改 Schema 即可出现页面" holds on the main path and that
 // unknown / illegal inputs fail closed with observable errors.
@@ -22,11 +21,11 @@ import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const MANIFEST_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../public/.well-known/schema-ui/app-manifest.json",
+  "../test-fixtures/app-manifest.admin.json",
 );
-const FIXTURE_DIR = resolve(
+const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/handler/fixtures/schema",
+  "../../../api/internal/modules/schemarender/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(
@@ -114,7 +113,7 @@ const ROLES = {
 };
 
 function fixtureDocument(pageId: string): unknown {
-  const directory = MODULE_FIXTURE_DIRS[pageId] ?? FIXTURE_DIR;
+  const directory = MODULE_FIXTURE_DIRS[pageId] ?? CORE_FIXTURE_DIR;
   return JSON.parse(readFileSync(resolve(directory, `${pageId}.json`), "utf8"));
 }
 
@@ -254,7 +253,7 @@ afterEach(async () => {
   window.history.replaceState({}, "", "/");
 });
 
-describe("representative pages through the real manifest (GOAL-004)", () => {
+describe("representative pages through the admin manifest fixture (GOAL-004)", () => {
   it("renders a migrated list page with users via the default path", async () => {
     const container = await renderApp("/data-table", {}, realFixtures());
     expect(container.querySelector("h1")?.textContent).toContain("Data table");
@@ -292,7 +291,7 @@ describe("representative pages through the real manifest (GOAL-004)", () => {
     expect(container.textContent).toContain("Select a record to view details.");
   });
 
-  it("renders the roles CRUD page from the real manifest and fixture", async () => {
+  it("renders the roles CRUD page from the admin manifest fixture", async () => {
     const admin = {
       user: { id: "u1", roles: ["admin"], permissions: ["roles.read", "roles.write"] },
     };

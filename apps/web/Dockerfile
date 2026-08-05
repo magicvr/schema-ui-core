@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY apps/web .
 COPY docs/schemas /docs/schemas
 RUN --mount=type=cache,target=/root/.npm npm run build \
-    && rm -f dist/.well-known/schema-ui/app-manifest.json
+    && test ! -e dist/.well-known/schema-ui/app-manifest.json
 
 FROM nginx:1.27-alpine
 # nginx.conf serves dist/ with SPA fallback and proxies /api to the api service.

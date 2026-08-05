@@ -480,6 +480,29 @@ func TestAppStartsAndStopsDualProfiles(t *testing.T) {
 	}
 }
 
+func TestAppStartsCustomProfileWithExplicitModules(t *testing.T) {
+	admin, err := kernel.ResolveProfile("admin", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := lifecycleAppConfig(t, "custom", "127.0.0.1:0")
+	cfg.ModulesEnabled = append([]string(nil), admin.Modules...)
+	app, err := NewApp(cfg, "test-secret", "hash", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	startCtx, startCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer startCancel()
+	if err := app.Start(startCtx); err != nil {
+		t.Fatalf("start custom profile: %v", err)
+	}
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer stopCancel()
+	if err := app.Stop(stopCtx); err != nil {
+		t.Fatalf("stop custom profile: %v", err)
+	}
+}
+
 func TestAppStartFailsClosedWithStableLifecycleErrorWhenPortIsUnavailable(t *testing.T) {
 	for _, profile := range []string{"mvp", "admin"} {
 		t.Run(profile, func(t *testing.T) {

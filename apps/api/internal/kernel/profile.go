@@ -72,7 +72,7 @@ func ResolveProfile(name string, explicitModules []string) (ProfileResolution, e
 		return ProfileResolution{}, kernelError(CodeProfileUnknown, string(profileName), "profile is not compiled")
 	}
 	if profileName == ProfileCustom && len(explicitModules) == 0 {
-		return ProfileResolution{}, kernelError(CodeProfileModulesRequired, string(profileName), "custom profile requires MODULES_ENABLED")
+		return ProfileResolution{}, kernelError(CodeProfileModulesRequired, string(profileName), "custom profile requires APP_MODULES_ENABLED")
 	}
 	modules := append([]string(nil), defaults...)
 	source := "profile.default"

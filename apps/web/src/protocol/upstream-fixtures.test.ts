@@ -82,8 +82,8 @@ const appNavigationArtifact = readJson<FixtureSuite>(
   "./upstream/app-navigation.cases.json",
 );
 const provenanceArtifact = readJson<FixtureProvenance>("./upstream/provenance.json");
-const staticManifestArtifact = readJson<JsonObject>(
-  "../../public/.well-known/schema-ui/app-manifest.json",
+const adminManifestFixture = readJson<JsonObject>(
+  "../test-fixtures/app-manifest.admin.json",
 );
 
 function isRecord(value: unknown): value is JsonObject {
@@ -609,7 +609,7 @@ describe("pinned schema-ui-docs fixture artifacts", () => {
     expect(createHash("sha256").update(appNavigationArtifact.bytes).digest("hex")).toBe(
       APP_NAVIGATION_FIXTURE_SHA256,
     );
-    expect(createHash("sha256").update(staticManifestArtifact.bytes).digest("hex")).toBe(
+    expect(createHash("sha256").update(adminManifestFixture.bytes).digest("hex")).toBe(
       STATIC_MANIFEST_SHA256,
     );
     expect(schemaArtifact.value.$id).toBe(

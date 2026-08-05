@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 	"testing"
 )
 
@@ -139,68 +135,4 @@ func TestSchemaEndpoint(t *testing.T) {
 		}
 	})
 
-	// GOAL-012 / A-005 F-001: every pageId declared in the checked-in web
-	// app-manifest must have an embed fixture so default Shell navigation never
-	// advertises a SCHEMA_NOT_FOUND route.
-	t.Run("checked-in web manifest pageIds all have embed fixtures", func(t *testing.T) {
-		pageIDs := loadCheckedInManifestPageIDs(t)
-		for _, pageID := range pageIDs {
-			if _, ok := documents[pageID]; !ok {
-				t.Fatalf("manifest pageId %q has no embedded schema document", pageID)
-			}
-			req := httptest.NewRequest(http.MethodGet, "/api/schema/"+pageID, nil)
-			rec := httptest.NewRecorder()
-			mux.ServeHTTP(rec, req)
-			if rec.Code != http.StatusOK {
-				t.Fatalf("%s: status = %d, want 200 (manifest must not reference dead schema routes)", pageID, rec.Code)
-			}
-		}
-	})
-}
-
-// loadCheckedInManifestPageIDs reads the production web app-manifest and returns
-// each page.pageId. Path is resolved from this test file so the check works
-// regardless of the process working directory.
-func loadCheckedInManifestPageIDs(t *testing.T) []string {
-	t.Helper()
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
-	// apps/api/internal/handler → apps/web/public/.well-known/schema-ui/app-manifest.json
-	manifestPath := filepath.Clean(filepath.Join(filepath.Dir(file),
-		"..", "..", "..", "web", "public", ".well-known", "schema-ui", "app-manifest.json"))
-	raw, err := os.ReadFile(manifestPath)
-	if err != nil {
-		t.Fatalf("read checked-in app-manifest: %v", err)
-	}
-	var manifest struct {
-		Pages []struct {
-			PageID    string `json:"pageId"`
-			SchemaURL string `json:"schemaUrl"`
-		} `json:"pages"`
-	}
-	if err := json.Unmarshal(raw, &manifest); err != nil {
-		t.Fatalf("parse checked-in app-manifest: %v", err)
-	}
-	if len(manifest.Pages) == 0 {
-		t.Fatal("checked-in app-manifest has no pages")
-	}
-	ids := make([]string, 0, len(manifest.Pages))
-	for _, page := range manifest.Pages {
-		if page.PageID == "" {
-			t.Fatalf("manifest page missing pageId: %+v", page)
-		}
-		// Schema documents are served at /api/schema/{pageId}; enforce the
-		// production convention so schemaUrl cannot silently diverge.
-		wantURL := "/api/schema/" + page.PageID
-		if page.SchemaURL != wantURL {
-			t.Fatalf("page %q schemaUrl = %q, want %q", page.PageID, page.SchemaURL, wantURL)
-		}
-		if strings.Contains(page.PageID, "/") {
-			t.Fatalf("pageId must not contain path separators: %q", page.PageID)
-		}
-		ids = append(ids, page.PageID)
-	}
-	return ids
 }
