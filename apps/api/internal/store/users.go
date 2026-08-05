@@ -262,7 +262,7 @@ func (s *Store) UpdateUser(id string, patch UserPatch, actorID string, now time.
 	rolesJSON = string(rolesBytes)
 	updatedAt := now.Unix()
 	if updatedAt <= cur.UpdatedAt.Unix() {
-		updatedAt = cur.UpdatedAt.Unix() + 1 // monotonic clamp (records D-004 parity)
+		updatedAt = cur.UpdatedAt.Unix() + 1 // monotonic clamp (D-004 parity)
 	}
 	if _, err := tx.Exec(
 		`UPDATE users SET name = ?, roles = ?, password_hash = ?, updated_at = ? WHERE id = ?`,

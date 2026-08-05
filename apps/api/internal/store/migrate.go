@@ -191,9 +191,11 @@ var rbacExpandDDL = []string{
 	`CREATE INDEX idx_role_menu_items_menu_item_id ON role_menu_items(menu_item_id)`,
 }
 
-// recordsPersistDDL is the canonical R4 records schema created by 0003
-// (GOAL-007 D-003 / I-007-002 §2). updated_at is Unix milliseconds (D-004); the
-// trim-non-empty CHECKs are a DB backstop on top of handler-level validation.
+// recordsPersistDDL is the immutable legacy schema definition recorded by 0003
+// (legacy workspace-001 GOAL-007 D-003 / I-007-002 §2). It remains in the compiled
+// migration ledger so existing databases can validate and traverse the published
+// history; 0006 retires the table before the store reaches its current product
+// state.
 var recordsPersistDDL = []string{
 	`CREATE TABLE records (
   id         TEXT PRIMARY KEY,
@@ -207,9 +209,9 @@ var recordsPersistDDL = []string{
 	`CREATE INDEX idx_records_owner ON records(owner)`,
 }
 
-// migrate0003 creates the records table and its indexes. Business seed rows are
-// intentionally NOT inserted here: seeds live in seedRecords so user deletes and
-// re-starts never resurrect or overwrite rows (D-003 §3).
+// migrate0003 replays the immutable legacy table definition for databases that
+// are upgrading through version 3. Business seed rows are intentionally absent;
+// version 6 retires the table before current product use (D-003 §3).
 func migrate0003(tx *sql.Tx) error {
 	for _, stmt := range recordsPersistDDL {
 		if _, err := tx.Exec(stmt); err != nil {
@@ -221,7 +223,7 @@ func migrate0003(tx *sql.Tx) error {
 
 // operationLogDDL is the canonical R5 S6 append-only operation log schema
 // (I-008-003 §3). The event CHECK enumerates the frozen event set; created_at is
-// Unix milliseconds matching the records updated_at precision (D-004).
+// Unix milliseconds matching the existing timestamp precision (D-004).
 var operationLogDDL = []string{
 	`CREATE TABLE operation_log (
   id         TEXT PRIMARY KEY,

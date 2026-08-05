@@ -30,7 +30,7 @@ func StaticDevSession() Session {
 			// scenario used by the R4 conformance tests.
 			Roles: []string{"admin", "editor"},
 			// Consistent with the admin seed's grants under the S4 gate: the
-			// GOAL-011 users/roles keys (records retired by 0006, GOAL-011 S3).
+			// GOAL-011 users/roles keys and current product grants.
 			Permissions: []string{
 				"users.read", "users.write",
 				"roles.read", "roles.write", "roles.assign",

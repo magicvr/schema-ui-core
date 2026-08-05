@@ -98,7 +98,7 @@ describe("navigation projection", () => {
 });
 
 // GOAL-011 S3/S4 · the real checked-in manifest gates the users/roles pages on
-// $context.features.menu_users / menu_roles (records list-edit-lifecycle retired
+// $context.features.menu_users / menu_roles (legacy list-edit page retired
 // by 0006). V-MENU-03/04/05/06 semantics carried over to the Admin group.
 const checkedInManifestBytes = readFileSync(
   new URL("../../public/.well-known/schema-ui/app-manifest.json", import.meta.url),

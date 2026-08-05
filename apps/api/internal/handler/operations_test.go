@@ -128,3 +128,50 @@ func TestOperationLogNoRowsOnFailedWrite(t *testing.T) {
 		t.Fatalf("user ops after failed writes = %d, want 0", len(userOps))
 	}
 }
+
+// Anti-resurrection guard (REC-004): after 0006 records_retire the retired
+// /api/records product routes are NOT registered on the mux. Any HTTP method
+// against /api/records must fail closed with 404 rather than reaching a
+// handler or appending operation-log rows.
+func TestRetiredRecordsRoutesUnregistered(t *testing.T) {
+	env := newAuthTestEnv(t)
+
+	for _, method := range []string{
+		http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete,
+	} {
+		// Unauthenticated attempt.
+		req := httptest.NewRequest(method, "/api/records", strings.NewReader(`{}`))
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("%s /api/records status = %d, want 404 (route unregistered)", method, rr.Code)
+		}
+
+		// Authenticated attempt must still fail closed (no route, not 403).
+		req = bearer(t, adminToken(t, env), method, "/api/records", `{}`)
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("authed %s /api/records status = %d, want 404 (route unregistered)", method, rr.Code)
+		}
+
+		// Detail path too.
+		req = httptest.NewRequest(method, "/api/records/rec-1", strings.NewReader(`{}`))
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("%s /api/records/{id} status = %d, want 404 (route unregistered)", method, rr.Code)
+		}
+	}
+
+	// No operation-log rows may be appended by any of the above (no handlers exist).
+	ops, err := env.st.ListOperations(10)
+	if err != nil {
+		t.Fatalf("ListOperations: %v", err)
+	}
+	for _, op := range ops {
+		if strings.HasPrefix(op.Event, "records.") {
+			t.Fatalf("unexpected records.* operation-log row %q after retired-route attempts", op.Event)
+		}
+	}
+}

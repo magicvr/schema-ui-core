@@ -168,6 +168,9 @@ describe("stage 3 · structural schema validation", () => {
     expect(result.ok).toBe(false);
   });
 
+  // Protocol shape example only: /api/records is a legal action URL for schema
+  // validation — not a mounted product resource (Records was retired by
+  // migration 0006; no /api/records handler exists).
   it("accepts a minimal legal request action", () => {
     const result = validateAgainstSchema("action", {
       type: "request",

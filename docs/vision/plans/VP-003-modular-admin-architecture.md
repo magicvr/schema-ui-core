@@ -6,8 +6,8 @@ status: active
 lead_workspace: workspace-003-modular-admin-architecture
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 created: 2026-08-04
-updated: 2026-08-04
-version: 0.1.3
+updated: 2026-08-05
+version: 0.1.4
 parent: null
 ---
 
@@ -20,6 +20,14 @@ parent: null
 本 VP 表达完整终态，不是 Activity/Settings 试点的“妥协版本”。试点只是在迭代路线图中验证模块切口、失败语义和迁移方式；即使试点通过，也不得据此关闭本 VP。
 
 架构权威见 [单主线模块化 Admin 架构](../../architecture/module-architecture.md)。
+
+## 范围修订 · 2026-08-05
+
+用户已裁决：`records` 是历史范例演示的无语义实体，当前产品不恢复其 CRUD、API、
+种子、权限、菜单或专属前端面。R4 中的 `records/Schema CRUD` 统一解释为仍存在的
+Schema-driven Admin 能力；`0003`/`0006` 迁移账本、历史 operation-log 事件和历史治理
+证据继续保留，不得改写。该修订由工作区 3 的 GOAL-005 D-003、GOAL-006 D-003
+承接，作为后续 C2-C5 的范围约束。
 
 ## 继承的协议基线（I-PROTO-001 v0.1.3）
 
@@ -53,7 +61,7 @@ VP-003 继承工作区 `workspace-001-mvp-admin-foundation` 中由 Root 决策 `
    认证和后端授权仍是最终权限边界；`operationlog` 始终记录关键写操作，`activity` 仅作为可选读取/UI 模块；Settings 不再依赖 Shell 私有通知。模块启动、就绪、停止、失败清理、健康诊断、日志与指标均有明确 `module_id` 语义。
 
 6. **现有能力完成迁移且旧装配路径退出**
-   当前用户、角色、记录/Schema CRUD、Settings、Activity 等一方能力在新架构上保持既有行为和协议边界；旧中央路由/页面/导航注册、静态生产 Manifest、Shell 特例与已被替代的 host glue 被删除，而非无限期双轨兼容。
+   当前用户、角色、仍存在的 Schema-driven Admin、Settings、Activity 等一方能力在新架构上保持既有行为和协议边界；历史 Records 不恢复为产品能力。旧中央路由/页面/导航注册、静态生产 Manifest、Shell 特例与已被替代的 host glue 被删除，而非无限期双轨兼容。
 
 7. **可 fork、可运维、可回归**
    快速启动、Docker/生产代理、升级与恢复文档反映新架构；CI/本地矩阵覆盖模块契约、冲突失败、双 Profile、数据升级、认证授权、Activity 禁用场景和容器启动。新项目能通过选择 Profile、配置和模块贡献接入业务，不修改前端 Renderer/Shell 主路径。
@@ -67,7 +75,7 @@ VP-003 继承工作区 `workspace-001-mvp-admin-foundation` 中由 Root 决策 `
 | R1 | 契约与迁移基线冻结 | 盘点当前中央注册点、模块边界、迁移/seed 所有权、Profile 矩阵；冻结模块 API（含核心六项 / 按需能力口径）、capability 协商、迁移 tombstone、错误分类、现有兼容基线和回滚策略 | 只冻结实施边界，不算架构完成 |
 | R2 | 内核与组合根基础 | 建立薄内核、框架无关模块契约、Fx 组合根、确定性图校验、全局迁移收集、Manifest 聚合骨架与 `/.well-known` 代理 | 提供可迁移平台，不关闭 VP |
 | R3 | 有界试点 | 见下方 **R3 通过门闩**（继承固定历史评议输入 §4.5/§5）；通过仅允许进入 R4，不关闭本 VP | 验证切口与 Kernel 手术；**非**终态 |
-| R4 | 全量一方模块迁移 | 将 users、roles、records/Schema CRUD 及其他现有 Admin 能力迁入统一能力契约；清除模块对 Shell/中央注册表的特例依赖 | 达到功能覆盖面，但仍需退出旧路径与运维验收 |
+| R4 | 全量一方模块迁移 | 将 users、roles、仍存在的 Schema-driven Admin 能力及其他现有 Admin 能力迁入统一能力契约；Records 仅保留历史迁移/审计兼容；清除模块对 Shell/中央注册表的特例依赖 | 达到功能覆盖面，但仍需退出旧路径与运维验收 |
 | R5 | Profile、数据与运维收敛 | 完成 `mvp`/`admin`/custom 配置、fresh/reconcile、readyz/诊断、Vite/Nginx/Docker、升级恢复和 fork 文档 | 形成可发布候选，不自动等于 VP 关闭 |
 | R6 | 旧路径移除与终态验收 | 删除双轨兼容和静态生产兜底；运行完整回归、双 Profile、升级/恢复、失败路径、容器/fork 验收与 close-out 审计 | 七条退出判据全部取证后方可提议关门 |
 

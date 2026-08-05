@@ -75,7 +75,9 @@ describe("parseRenderNode", () => {
       "body",
     );
     expect(section).toMatchObject({ type: "section" });
-    const table = parseRenderNode({ type: "table", props: { dataSource: "records" } }, "body");
+    // Shape-only test: parseRenderNode normalizes regardless of dataSource
+    // validity; runtime schemaTableDataSource rejects non-rooted paths.
+    const table = parseRenderNode({ type: "table", props: { dataSource: "/api/users" } }, "body");
     expect(table).toMatchObject({ type: "table" });
   });
 });

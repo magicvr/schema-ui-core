@@ -59,9 +59,11 @@ C1.3 仍待一次有效 Grok independent 复跑确认。
 审计时 workspace-003 **不存在** `GOAL-007-r4-records-retirement-closure`
 （F-IND-R4-REC-001/002）；代码层产品面（handler/store/seed/manifest/专属 hook/
 fixture）抽查为已退场，0003/0006 与历史兼容与测试命名泛化安全。GOAL-007 五件套
-**现已建立**并挂 GOAL-005，两条 required 由 GOAL-007 关门响应闭合；本意见的代码
-结论作为该目标 evidence。不得将 GOAL-007 标 done，也不得把 handoff 视为已完成，
-直至 GOAL-007 完成 self + independent 关门审计。本意见不推进 GOAL-005 或 Root。
+**现已建立并 `done 4/4`**（Grok A-003 `pass`），两条 required 由 GOAL-007 A-004
+响应与 GOAL-005 A-008 闭合，REC-003/004/005 已处置。R4-I003 的 Records 运行面
+evidence 链完整。R4-C1 required 信息门禁（R4-I001/I002/I003 `verified`、R4-I004
+`accepted-residual`、R4-I005 non-blocking）已闭合；C2 放行由 `/govern` 在确认后
+执行。本意见不推进 GOAL-005 或 Root。
 
 ## 已响应 finding
 

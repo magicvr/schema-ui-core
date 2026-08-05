@@ -1,6 +1,6 @@
 # apps/api · schema-ui-core API 骨架
 
-MVP Admin 基架的 Go 服务（GOAL-003 骨架 + GOAL-006/007 账号权限与语义资源域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite；**R3 起持久化 RBAC（GOAL-006）**：资源路由按 `users.read`/`users.write`、`roles.read`/`roles.write` 权限键授权，`/api/accounts/me` 返回持久化菜单投影；**GOAL-011 起 users/roles 为语义资源（records 已按 0006 退场）**：`/api/users`、`/api/roles` 走通用资源工厂 CRUD，敏感字段隔离与 self/last-admin/system 角色保护由 store 领域层承载。
+MVP Admin 基架的 Go 服务（workspace-001 历史目标编号：GOAL-003 骨架 + GOAL-006/007 账号权限与语义资源域）。**R2 起提供真实认证（GOAL-005）**：短 JWT Access + Opaque Refresh + SQLite；**R3 起持久化 RBAC（GOAL-006）**：资源路由按 `users.read`/`users.write`、`roles.read`/`roles.write` 权限键授权，`/api/accounts/me` 返回持久化菜单投影；**GOAL-011 起 users/roles 为语义资源（records 已按 0006 退场）**：`/api/users`、`/api/roles` 走通用资源工厂 CRUD，敏感字段隔离与 self/last-admin/system 角色保护由 store 领域层承载。（注：上述 GOAL-00N 均为 workspace-001 mvp-admin-foundation 的历史目标编号，与本仓库 workspace-003 的同名编号无关。）
 
 ## 要求
 
@@ -107,7 +107,7 @@ TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization:
 - **请求级身份**：受保护路由经 `Authorization: Bearer <access>` 由中间件解析身份；不再依赖进程注入的 `StaticDevSession`。
   - 无 / 无效 / 过期 access → `401 UNAUTHENTICATED`；已认证但缺少所需权限键 → `403 FORBIDDEN`。
 - **资源权限（GOAL-011）**：users/roles 五路由经通用工厂 `requirePermission` 门禁 `users.read`/`users.write`、`roles.read`/`roles.write`。种子 admin 持 read + write，editor / viewer 仅 read。
-- **语义资源（GOAL-011 S2/S3）**：`/api/users`、`/api/roles` 走通用资源工厂（`resources.go`）；users 敏感字段隔离（`password_hash` 永不出响应）、角色分配双写（legacy JSON + `user_roles`，不隐式建角色）、self/last-admin 保护；roles system 角色（种子 admin/editor/viewer）不可改删、in-use 保护。records 已由 `0006 records_retire` 从产品运行面退场（历史契约见 GOAL-007 I-007-001）。
+- **语义资源（GOAL-011 S2/S3）**：`/api/users`、`/api/roles` 走通用资源工厂（`resources.go`）；users 敏感字段隔离（`password_hash` 永不出响应）、角色分配双写（legacy JSON + `user_roles`，不隐式建角色）、self/last-admin 保护；roles system 角色（种子 admin/editor/viewer）不可改删、in-use 保护。records 已由 `0006 records_retire` 从产品运行面退场，仅保留历史迁移账本与 `records.*` operation-log 兼容值（`historical 0006`，不恢复产品 CRUD）。
 - **Access**：短时效 JWT（`AUTH_ACCESS_TTL`，默认 15m），负载为 `sub`（用户 id）。
 - **Refresh**：opaque 随机串，**SHA-256 哈希存 SQLite**；登出/刷新即撤销（轮换）；过期/撤销 → `401`。
 - **静态开发会话**：仅 `AUTH_DEV_SESSION_ENABLED=true` 时作为显式本地兜底（替换 401）；生产默认关闭（M9）。

@@ -36,9 +36,9 @@ func (s *Store) seedRBAC() error {
 		}
 	}
 
-	// GOAL-011 (I-011-001 §4): users/roles permissions + menus. records
-	// permissions/menu were removed by 0006 records_retire (GOAL-011 S3); the
-	// seed no longer creates them for fresh installs.
+	// GOAL-011 (I-011-001 §4): users/roles permissions + menus. Legacy demo
+	// permissions/menu were removed by 0006 (GOAL-011 S3); the seed no longer
+	// creates them for fresh installs.
 	for _, p := range []struct {
 		id, key, desc string
 	}{

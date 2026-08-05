@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // A-010 R-004 · real browser Schema CRUD lifecycle against Go + SQLite.
-// GOAL-011 S3 repoints the driver from the retired records page to the users
+// GOAL-011 S3 repoints the driver from the retired demo page to the users
 // resource page. Boots via playwright webServer (same as shell.spec.ts): Go API
 // + Vite, then drives the users representative page through create → edit →
 // delete with confirm. T-UI-01～10 cover Renderer behavior with an in-memory

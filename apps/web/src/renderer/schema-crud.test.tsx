@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
 // T-UI-01..10 acceptance evidence for GOAL-007 S4/S5 (I-007-003 v0.2.2 §6;
-// GOAL-011 S3 repoints the CRUD driver from records to the users resource):
+// GOAL-011 S3 repoints the CRUD driver from the legacy demo to the users resource):
 // the `users` representative page drives list/search/detail/create/edit/delete
 // through Schema nodes against an emulated users API, and the permission /
 // error / confirm matrix holds. The renderer under test is the frozen §5 main

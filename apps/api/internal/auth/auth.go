@@ -210,7 +210,7 @@ func newID() string {
 }
 
 // accountFromUser builds the identity snapshot, resolving the user's persisted
-// permission keys (GOAL-006 S4: records gates check keys, not role strings).
+// permission keys (GOAL-006 S4: resource gates check keys, not role strings).
 func (a *Authenticator) accountFromUser(u *store.User) (account.User, error) {
 	perms, err := a.store.PermissionsForUser(u.ID)
 	if err != nil {

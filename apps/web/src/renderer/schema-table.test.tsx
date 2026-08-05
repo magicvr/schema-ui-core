@@ -29,7 +29,7 @@ describe("rowActionDisabled", () => {
   });
 });
 
-const RECORDS = {
+const SAMPLE_ROWS = {
   items: [
     {
       id: "rec-1",
@@ -51,20 +51,20 @@ const RECORDS = {
   pageSize: 10,
 };
 
-function recordsFetcher(status = 200) {
+function rowsFetcher(status = 200) {
   return (async (input: RequestInfo | URL) => {
     const url = new URL(String(input), "http://test.local");
     const q = url.searchParams.get("q");
     const items = q
-      ? RECORDS.items.filter((record) =>
-          record.name.toLowerCase().includes(q.toLowerCase()),
+      ? SAMPLE_ROWS.items.filter((item) =>
+          item.name.toLowerCase().includes(q.toLowerCase()),
         )
-      : RECORDS.items;
+      : SAMPLE_ROWS.items;
     if (status !== 200) {
-      return new Response(JSON.stringify({ error: "records down" }), { status });
+      return new Response(JSON.stringify({ error: "resource down" }), { status });
     }
     return new Response(
-      JSON.stringify({ ...RECORDS, items, total: items.length }),
+      JSON.stringify({ ...SAMPLE_ROWS, items, total: items.length }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   }) as typeof fetch;
@@ -80,7 +80,7 @@ function itemsFetcher(items: Array<Record<string, unknown>>) {
 }
 
 function tableNode(props: Record<string, unknown>): RenderTableNode {
-  return { type: "table", id: "records-table", props: props as RenderTableNode["props"] };
+  return { type: "table", id: "schema-table", props: props as RenderTableNode["props"] };
 }
 
 const COLUMNS = [
@@ -135,10 +135,10 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect(schemaTableDataSource(node)).toBeNull();
   });
 
-  it("renders records from the injected data source", async () => {
+  it("renders rows from the injected data source", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
-      recordsFetcher(),
+      rowsFetcher(),
     );
     expect(container.textContent).toContain("Acme Console");
     expect(container.textContent).toContain("Northwind Sales");
@@ -146,14 +146,14 @@ describe("SchemaTable (R1 list-data injection)", () => {
   });
 
   it("fails closed when the table node declares no columns", async () => {
-    const container = await renderTable(tableNode({}), recordsFetcher());
+    const container = await renderTable(tableNode({}), rowsFetcher());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "table node requires a columns array",
     );
   });
 
   it("fails closed without fetching when the data source is missing (F-001)", async () => {
-    const fetcher = vi.fn(recordsFetcher());
+    const fetcher = vi.fn(rowsFetcher());
     const container = await renderTable(tableNode({ columns: COLUMNS }), fetcher);
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "valid dataSource",
@@ -164,7 +164,7 @@ describe("SchemaTable (R1 list-data injection)", () => {
   it("surfaces a fail-closed error when the data source request fails", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
-      recordsFetcher(500),
+      rowsFetcher(500),
     );
     expect(container.textContent).toContain("resource fetch failed");
   });
@@ -172,7 +172,7 @@ describe("SchemaTable (R1 list-data injection)", () => {
   it("toggles column sort and marks the active column", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
-      recordsFetcher(),
+      rowsFetcher(),
     );
     const nameHeader = Array.from(container.querySelectorAll("th button")).find((button) =>
       button.textContent?.includes("Name"),

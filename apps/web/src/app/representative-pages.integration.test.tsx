@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
 // Full-path integration evidence for the R1 representative pages (GOAL-004;
-// GOAL-011 S3 repoints the injected resource surface from records to users/roles):
+// GOAL-011 S3 repoints the injected resource surface from the legacy demo to users/roles):
 // uses the real app manifest (`apps/web/public/.well-known/schema-ui/`) and the
 // real Go-embedded page fixtures (core fixtures plus module-owned Settings and
 // Activity schemas)

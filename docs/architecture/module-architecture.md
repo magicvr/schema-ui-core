@@ -40,7 +40,7 @@ serves: VP-003-modular-admin-architecture
 
 ### 2.1 一方标准 Admin 功能模块的核心贡献（必须）
 
-下列六项对应固定历史评议输入 D-3 的**必须**贡献点。一方**标准 Admin 功能模块**（提供可装配业务能力的 users / roles / settings / activity / records 等）在迁入统一契约时**必须**实现，不得以「能力可选」为由永久缺省：
+下列六项对应固定历史评议输入 D-3 的**必须**贡献点。一方**标准 Admin 功能模块**（提供可装配业务能力的 users / roles / settings / activity 等当前语义能力）在迁入统一契约时**必须**实现，不得以「能力可选」为由永久缺省。历史演示实体 `records` 已由 `0006 records_retire` 退场，不属于当前标准模块集合；其迁移账本与历史 operation-log 事件只作为兼容证据保留：
 
 | 能力 | 贡献内容 | 级别 |
 |------|----------|------|

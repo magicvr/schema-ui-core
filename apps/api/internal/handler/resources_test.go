@@ -91,7 +91,7 @@ func catalogResource(entity ResourceEntity) Resource {
 		Entity:          entity,
 		CreateFields:    []string{"sku", "title"},
 		PatchFields:     []string{"title"},
-		// GOAL-011 S3: reuse the users grants (records.read/write retired by 0006).
+		// GOAL-011 S3: reuse the users grants (legacy demo keys retired by 0006).
 		PermissionRead:  "users.read",
 		PermissionWrite: "users.write",
 		NewID: func() (string, error) {

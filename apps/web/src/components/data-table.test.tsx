@@ -59,7 +59,7 @@ afterEach(async () => {
 describe("DataTable", () => {
   it("renders headers and cell values", async () => {
     const container = await renderTable(
-      <DataTable columns={columns} rows={rows} rowKey={rowKey} caption="Example records" />,
+      <DataTable columns={columns} rows={rows} rowKey={rowKey} caption="Example rows" />,
     );
     expect(container.textContent).toContain("ID");
     expect(container.textContent).toContain("Name");
@@ -98,9 +98,9 @@ describe("DataTable", () => {
 
   it("shows the empty message and a loading row", async () => {
     const emptyContainer = await renderTable(
-      <DataTable columns={columns} rows={[]} rowKey={rowKey} emptyMessage="No records" />,
+      <DataTable columns={columns} rows={[]} rowKey={rowKey} emptyMessage="No rows" />,
     );
-    expect(emptyContainer.textContent).toContain("No records");
+    expect(emptyContainer.textContent).toContain("No rows");
 
     const loadingContainer = await renderTable(
       <DataTable columns={columns} rows={[]} rowKey={rowKey} loading />,
@@ -114,10 +114,10 @@ describe("DataTable", () => {
         columns={columns}
         rows={[]}
         rowKey={rowKey}
-        error="records fetch failed: HTTP 500"
+        error="resource fetch failed: HTTP 500"
       />,
     );
-    expect(container.textContent).toContain("records fetch failed: HTTP 500");
+    expect(container.textContent).toContain("resource fetch failed: HTTP 500");
   });
 
   it("renders a custom cell renderer", async () => {
