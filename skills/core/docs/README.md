@@ -2,9 +2,9 @@
 title: 文档体系说明（消费方精简入口）
 status: active
 created: 2026-07-18
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
-version: 0.12.0
+version: 0.13.0
 ---
 
 # docs/ · 文档体系（消费方）
@@ -46,7 +46,7 @@ docs/
 5. **P-001**：尚不可直接执行 → 先纲领路线图，再按阶段立项。
 6. **P-002～P-004**：阶段质量意识；独立审计出意见、编排器响应；finding 三路径闭合；P-004 问用户。
 7. **P-005**：可带未知立项；I-00N 与阶段门禁可追踪。
-8. **P-006**：**单愿景**；Charter → VP → 工作区；对齐递归；Vision Review 在 `reviews.md`。
+8. **P-006**：**单愿景**；Charter → VP → 工作区；对齐递归；Vision Review 使用 `reviews.md` 稳定索引 + `reviews/VRev-NNN-*.md` 平铺报告。
 
 全文见 [architecture/principles.md](architecture/principles.md) 与 [architecture/workspace-protocol.md](architecture/workspace-protocol.md)。
 

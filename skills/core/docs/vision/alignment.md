@@ -3,8 +3,8 @@ doc_type: vision-alignment
 title: 愿景对齐契约与门禁
 status: active
 created: 2026-07-28
-updated: 2026-07-30
-version: 0.6.1
+updated: 2026-08-06
+version: 0.7.0
 parent: null
 ---
 
@@ -43,14 +43,14 @@ parent: null
 | 方法论 | `docs/architecture/workspace-protocol.md` | **MUST** | 工作区/资料协议 |
 | 模板 | `docs/templates/goal-folder/`（五件套 + `attachments/`） | **MUST** | canonical 目标模板 |
 | 模板 | `docs/templates/workspace-context.md` | **MUST** | 工作区页模板 |
-| 模板 | `docs/templates/vision/charter.md`、`vision-plan.md` | **MUST** | 冷启动复制源 |
+| 模板 | `docs/templates/vision/charter.md`、`vision-plan.md`、`reviews-index.md`、`review.md` | **MUST** | 冷启动与 Vision Review 复制源 |
 | 契约（若分发消费适配器） | `docs/contracts/` 消费契约文件 | **MUST**（有 Skills/Web 分发时） | 纯文档-only 仓可无，但不得假装已装适配器契约 |
 | 愿景规则 | `docs/vision/alignment.md` | **MUST** | 本文件；规则权威 |
 | 愿景入口 | `docs/vision/README.md` | **MUST** | 目录地图与硬边界 |
 | 愿景实例 | `docs/vision/charter.md`（`status: active`） | **MUST** | 单愿景；缺 = 不完整 |
 | 愿景树 | `docs/vision/roadmap.md` | **MUST** | 组合编排索引（可极简，但文件必须存在） |
 | 愿景树 | `docs/vision/revisions.md` | **MUST** | Charter 修订台账（可极简） |
-| 愿景树 | `docs/vision/reviews.md` | **MUST** | Vision Review 台账（可极简；Charter 初建后宜有 VRev） |
+| 愿景树 | `docs/vision/reviews.md` | **MUST** | Vision Review 稳定索引；报告在 `reviews/VRev-NNN-*.md`（有条目时创建目录） |
 | 愿景树 | `docs/vision/workspaces.md` | **MUST** | 工作区贡献图（可极简） |
 | 愿景树 | `docs/vision/consumer-checklist.md` | **MUST** | 与本表一致的操作勾选 |
 | 意图 | 至少一个 `docs/vision/plans/VP-*.md` | **MUST**（开区前） | `vision_ref` 精确匹配 Charter |
@@ -199,7 +199,7 @@ Root `00-meta.md` 应含与 workspace 一致的 `plan_refs`、`primary_plan`，�
 
 ## 9. Vision Review
 
-权威台账：[reviews.md](reviews.md)。编号 **`VRev-00N`**（与 revisions 的 `VR-` 修订号区分）。
+权威台账：[reviews.md](reviews.md) 稳定索引 + `reviews/VRev-NNN-<slug>.md` 平铺报告目录。编号 **`VRev-00N`**（与 revisions 的 `VR-` 修订号区分）。
 
 | 项 | 约定 |
 |----|------|
@@ -208,14 +208,23 @@ Root `00-meta.md` 应含与 workspace 一致的 `plan_refs`、`primary_plan`，�
 | 默认效力 | **不**直接改 Charter/VP status |
 | required 闭合 | 与 P-003 同构：`fixed` / `accepted-residual` / `user-overruled` + 留痕 |
 | 强制时机 | Charter 初建；每次 `strategic` 后（P-006） |
-| 长文 | 可链附件；`reviews.md` 必须有编号节 |
+| 长文 | 报告保留摘要/verdict/findings；更长证据可链愿景层附件 |
 
-### 9.1 工具入口（与 Goal 台账分界）
+### 9.1 可扩展台账布局
+
+1. `reviews.md` 保留 frontmatter、使用约定、当前 `open required` 投影与条目链接，不内联新 VRev 正文。
+2. 一条正式意见一个 `reviews/VRev-NNN-<slug>.md`；目录单层平铺，文件 frontmatter 的 `id` 必须与文件名前缀一致，self / independent 共用编号序列。
+3. 索引与报告共同构成唯一正式台账；写入必须同时创建报告和更新索引。编号扫描合并 legacy inline 与目录报告后取最大值 +1。
+4. finding 响应由 `/vision` 追加在原 VRev 报告中，保留原 verdict 与 finding 原文；索引 `open required` 随合法闭合证据更新。
+5. legacy inline VRev 继续有效。兼容 reader 合并读取；达到 32 KiB、800 行、12 条记录任一阈值后，下一条必须写入目录。迁移不得重编号、改变历史语义或丢失响应。
+6. 全新安装从第一条 VRev 起使用目录报告；模板见 `docs/templates/vision/reviews-index.md` 与 `review.md`。
+
+### 9.2 工具入口（与 Goal 台账分界）
 
 | 入口 | 写什么 | 不写什么 |
 |------|--------|----------|
-| **`/vision`** | self Vision Review；finding 响应（`fixed` / residual / overruled）；Charter / VP / 组合编排 / re-align 决策 | Goal `03-audit`；不推进子目标执行 |
-| **`/vision-audit`** | independent Vision Review → 仅 `reviews.md`（`source: independent`） | 不改 Charter / VP / Goal status；不自行闭合 finding |
+| **`/vision`** | self Vision Review → VRev 报告 + 索引；在原报告追加 finding 响应；Charter / VP / 组合编排 / re-align 决策 | Goal `03-audit`；不推进子目标执行；不改写原审计结论 |
+| **`/vision-audit`** | independent Vision Review → VRev 报告 + `reviews.md` 索引（`source: independent`） | 不改 Charter / VP / Goal status；不自行闭合 finding |
 | **`/audit`** | Goal `03-audit` independent | **禁止**写入 `docs/vision/reviews.md` |
 | **`/govern`** | 实现层推进与 Goal finding 响应 | 无 Charter 时不得假装完整推进 |
 

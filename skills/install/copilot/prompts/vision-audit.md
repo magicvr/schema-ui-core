@@ -1,11 +1,11 @@
 ---
 title: /vision-audit · 独立 Vision Review（Copilot wrapper）
-description: 独立审视 Charter、VP 与对齐链；只写 reviews.md 的独立意见，不改 Charter、VP 或 Goal 状态。
+description: 独立审视 Charter、VP 与对齐链；只写 VRev 独立报告和 reviews.md 索引，不改 Charter、VP 或 Goal 状态。
 status: active
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-08-06
 parent: null
-version: 0.1.0
+version: 0.2.0
 slash: /vision-audit
 role: independent-vision-review
 ---
@@ -28,7 +28,7 @@ role: independent-vision-review
 
 ## 行为要点
 
-- 只追加 `docs/vision/reviews.md` 的 `VRev-00N` 条目。  
+- 只创建 `docs/vision/reviews/VRev-NNN-<slug>.md` 独立报告并更新 `reviews.md` 索引。
 - 不写 Goal `03-audit.md`，不修改 Charter / VP / Goal status 或 progress。  
 - required Vision finding 的响应交 **`/vision`**；实施交 **`/govern`**。
 

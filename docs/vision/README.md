@@ -2,9 +2,9 @@
 title: docs/vision · 规则面与本仓实例索引
 status: active
 created: 2026-07-29
-updated: 2026-08-04
+updated: 2026-08-07
 parent: null
-version: 0.6.1
+version: 0.7.0
 ---
 
 # docs/vision · 愿景层
@@ -29,6 +29,18 @@ version: 0.6.1
 
 原则全文：`docs/architecture/principles.md`（P-001～**P-006**）。
 
+### Vision Review 台账（v0.13+）
+
+| 路径 | 角色 |
+|------|------|
+| [reviews.md](reviews.md) | **稳定索引** + 当前 open required 投影；本仓仍含 **legacy inline** `VRev-001`～`VRev-010` 正文 |
+| [reviews/](reviews/) | 平铺正式报告 `VRev-NNN-<slug>.md`（self / independent 共用编号序列） |
+| `docs/templates/vision/reviews-index.md` | 新索引复制源 |
+| `docs/templates/vision/review.md` | 单条 VRev 报告复制源 |
+
+**阈值（任一即触发）**：legacy 索引 ≥ 32 KiB / 800 行 / 12 条 → **下一条**必须写 `reviews/` 报告并只更新索引，不得继续 inline 追加。  
+本仓 `reviews.md` 已超过 32 KiB 与 800 行阈值（约 10 条 legacy），**下一条 VRev 起必须走目录**。历史 inline 仍有效；可选迁移不改编号。
+
 ## 本仓实例索引（schema-ui-core）
 
 > 下列为本仓库**已落盘**的愿景实例，不是 core 预装模板。
@@ -43,14 +55,16 @@ version: 0.6.1
 | [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
-| [reviews.md](reviews.md) | Vision Review 台账（`VRev-*`） |
+| [reviews.md](reviews.md) | Vision Review：稳定索引 + legacy inline（`VRev-001`～`VRev-010`） |
+| [reviews/](reviews/) | 新 VRev 正式报告目录（v0.13；下一条起使用） |
 | [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 2 delivery；VP-003 已绑定 lead） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议实施清单（`F-V001` 证据） |
 | [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | 实现层 primary 工作区 · Root `GOAL-001-mvp-admin-foundation` |
 | [../workspace-002-production-admin-foundation/](../workspace-002-production-admin-foundation/) | 实现层 delivery 工作区 · Root `GOAL-001-production-admin-foundation` · VP-002 lead |
 | [../workspace-003-modular-admin-architecture/](../workspace-003-modular-admin-architecture/) | 实现层 delivery 工作区 · Root `GOAL-001-modular-admin-architecture` · VP-003 lead |
+| [../workspace-004-module-contribution-readiness/](../workspace-004-module-contribution-readiness/) | 实现层 delivery 工作区 · Root `GOAL-001-module-contribution-readiness` |
 
-模板（冷启动复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`。
+模板（冷启动 / Review 复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`、`reviews-index.md`、`review.md`。
 
 ## 完整安装
 
@@ -58,11 +72,13 @@ version: 0.6.1
 分发 Skills 时还须存在 canonical [`docs/contracts/`](../contracts/)（见 alignment MUST）。  
 当前安装状态以 [consumer-checklist.md](consumer-checklist.md) 为准，**不要**仅凭本目录有文件就宣称完整安装。
 
+Skills 消费包当前 pin：**goal-governance `v0.13.0`**（见 `skills/.goal-governance-install.json`）。
+
 ## 入口分工
 
 | 入口 | 层 | 用途 |
 |------|----|------|
 | `/vision` | 决策 | Charter / VP / Review 响应 / re-align / 结构选型 |
-| `/vision-audit` | 交叉 | 独立 Vision Review（只写 `reviews.md`） |
+| `/vision-audit` | 交叉 | 独立 Vision Review（写 `reviews/VRev-*.md` + 更新 `reviews.md` 索引） |
 | `/govern` | 实现 | 开区、Root、子目标、Goal finding 响应 |
 | `/audit` | 交叉 | Goal `03-audit` independent |

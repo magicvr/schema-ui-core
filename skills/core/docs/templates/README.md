@@ -2,9 +2,9 @@
 title: 核心目标文档模板
 status: active
 created: 2026-07-19
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 核心目标文档模板
@@ -29,6 +29,8 @@ version: 0.7.0
 
 - `charter.md`：项目唯一 Charter 最小完备骨架  
 - `vision-plan.md`：意图 VP 骨架（复制为 `docs/vision/plans/VP-NNN-slug.md`）
+- `reviews-index.md`：Vision Review 稳定索引（复制为 `docs/vision/reviews.md`）
+- `review.md`：单条 VRev 正式报告（复制为 `docs/vision/reviews/VRev-NNN-<slug>.md`）
 
 ## 使用边界
 

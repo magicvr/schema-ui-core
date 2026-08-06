@@ -2,9 +2,9 @@
 title: GitHub Copilot 指令 · 目标治理
 status: active
 created: 2026-07-18
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
-version: 0.11.0
+version: 0.12.0
 ---
 
 # AGENTS.md
@@ -202,7 +202,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 4. **对齐递归**：子目标→父目标→Root→VP→Charter（源头）。机读字段链 + 语义不与上一级边界/非目标明显冲突。
 5. **所有工作区**必须 `plan_refs` + `primary_plan`；当前规范角色仅 `primary` / `delivery`，不存在 plan opt-out。
 6. 缺 plan、VP 缺失、或 `vision_ref` 与 charter 版本不一致 → **fail closed**。
-7. `docs/vision/` **不是** goal-tree、progress% 或 Goal 审计台账；Vision Review 见 `docs/vision/reviews.md`（`VRev-00N`）。
+7. `docs/vision/` **不是** goal-tree、progress% 或 Goal 审计台账；Vision Review 由 `docs/vision/reviews.md` 稳定索引与 `docs/vision/reviews/VRev-NNN-<slug>.md` 平铺报告共同构成。legacy inline 继续可读；新条目写报告并更新索引。
 8. 细则：`docs/vision/alignment.md`；原则全文 **P-006**；协议摘要：`docs/architecture/workspace-protocol.md` §4b。
 
 ## 6e. 级联流程、结构选型与分层审视（P-006 操作摘要）

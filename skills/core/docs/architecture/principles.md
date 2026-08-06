@@ -2,9 +2,9 @@
 title: 治理原则
 status: active
 created: 2026-07-18
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 治理原则
@@ -107,20 +107,21 @@ version: 0.11.0
 - 实施事实审视不通过 → 提出整改方案与计划 →（宜再审视）→ 整改实施 → 再审视事实，直至可接受再进入关门路径。
 - **实施事实 ≠ 实施记录**：审计应核对可验证证据（产物路径、可勾选成功标准等），而非仅流水账修辞。
 
-### 可扩展目标台账（append-only ledger）
+### 可扩展治理台账（append-only ledger）
 
-`01-decision`、`02-execution`、`03-audit` 是允许持续追加独立记录的多记录台账。新目标从第一条记录起采用“稳定索引文件 + 同名平铺目录”：
+`01-decision`、`02-execution`、`03-audit` 与愿景层 Vision Review 都是允许持续追加独立记录的多记录台账。新目标从第一条记录起、全新愿景栈从第一条 VRev 起采用“稳定索引文件 + 同名平铺目录”：
 
 | 台账 | 索引 | 条目目录与文件名 |
 |------|------|------------------|
 | 决策 | `01-decision.md` | `01-decision/D-NNN-<slug>.md` |
 | 执行 | `02-execution.md` | `02-execution/E-NNN-<slug>.md` |
 | 审计 | `03-audit.md` | `03-audit/A-NNN-<slug>.md` |
+| 愿景审视 | `docs/vision/reviews.md` | `docs/vision/reviews/VRev-NNN-<slug>.md` |
 
-- 索引文件保留必需 frontmatter、信息表、摘要与条目链接；目录只允许单层平铺，编号在本目标、对应台账内单调不复用。
+- 索引文件保留必需 frontmatter、信息表、当前状态投影、摘要与条目链接；目录只允许单层平铺，编号在对应台账内单调不复用。Vision Review 的 self / independent 共用同一 `VRev-00N` 序列。
 - `00-meta.md` 不是多记录台账，仍为单文件。
-- legacy inline 正文继续有效。兼容 reader 应合并索引内 legacy 记录与目录条目；切换时可保留既有 inline 历史为只读，只把新记录写入目录，不要求一次性重写历史。
-- legacy 索引达到 **32 KiB、800 行、12 条独立记录任一条件**，下一次追加必须切换到目录。单条记录超过 32 KiB 时，证据长文放 `attachments/`，台账条目保留摘要、finding/结论与链接。
+- legacy inline 正文继续有效。兼容 reader 应合并索引内 legacy 记录与目录条目，并扫描两处最大编号；切换时可保留既有 inline 历史为只读，只把新记录写入目录，不要求一次性重写历史。
+- legacy 索引达到 **32 KiB、800 行、12 条独立记录任一条件**，下一次追加必须切换到目录。单条 Goal ledger 记录超过 32 KiB 时，证据长文放目标 `attachments/`；单条 VRev 超过 32 KiB 时，长证据放愿景层经索引的附件位置。正式条目仍保留摘要、verdict、finding/结论与链接。
 - 迁移不得重编号或改变历史语义；先 dry-run / 兼容读取验证，再在 Git checkpoint 内应用。
 
 ### 长流程 Git checkpoint
@@ -470,13 +471,14 @@ required / 必改 finding 只有下列路径可解除对应门禁（与 P-005 �
 
 | 环 | 机制 | 强制？ | 落点 |
 |----|------|--------|------|
-| Charter 初建或 `strategic` 后 | **Vision Review** | 是（可为 self） | [docs/vision/reviews.md](../vision/reviews.md)（`VRev-00N`） |
+| Charter 初建或 `strategic` 后 | **Vision Review** | 是（可为 self） | [docs/vision/reviews.md](../vision/reviews.md) 索引 + `reviews/VRev-NNN-*.md` 报告 |
 | 新 VP 立项 | 用户确认意图 | 是 | VP 文件 + 组合编排索引 |
 | 开工作区 / Root | 对齐校验 | 是 | workspace + Root meta |
 | 目标方案/事实/关门 | P-002 / P-003 | 大目标完整；小目标可合并 | 目标 `03-audit` 等 |
 | `editorial` 修订 | — | 不强制 Review | revisions |
 
 - Vision Review：**默认不改** Charter/VP 状态；建议 `class`（editorial / strategic / no-change）。**required** 意见闭合路径与 P-003 同构：`fixed` / `accepted-residual` / `user-overruled`。未合法闭合时，可阻断开区、VP 关门、宣称「方向已稳」。
+- Vision Review 报告是审计原文；`/vision` 只能追加 finding 响应，不得改写原 verdict。`reviews.md` 的 `open required` 是从报告与响应派生的当前投影；索引与报告共同构成唯一愿景审视台账。
 - **禁止**为 VP/Charter 建立 Goal 五件套或用目标 `03-audit` 替代愿景审视台账。
 - Goal 独立审计仍只出意见、不改 status（P-003）。
 
@@ -492,7 +494,7 @@ required / 必改 finding 只有下列路径可解除对应门禁（与 P-005 �
 ### 6.9 工具分工（落地节奏）
 
 - **`/vision`**：决策层——建/修 Charter、组合编排、VP、self Vision Review、re-align 引导与 VRev finding 响应（`skills/prompts/06-vision-orchestrator.md`）。
-- **`/vision-audit`**：独立 Vision Review——只追加 `docs/vision/reviews.md`（`source: independent`）；不改 Charter / VP / Goal status（`skills/prompts/07-independent-vision-review.md`）。
+- **`/vision-audit`**：独立 Vision Review——创建 `docs/vision/reviews/VRev-NNN-<slug>.md` 并更新 `reviews.md` 索引（`source: independent`）；不改 Charter / VP / Goal status（`skills/prompts/07-independent-vision-review.md`）。
 - **`/govern`**：实现层推进；发现缺 Charter、待 re-align 或结构歧义时转入 `/vision` 或 fail closed，**不得**无愿景推进。
 - **落地**：核心文档第一刀 + Skills `/vision` 第二刀（install 默认**四入口**：govern / audit / vision / vision-audit）。
 

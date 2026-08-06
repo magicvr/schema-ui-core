@@ -2,9 +2,9 @@
 title: 目录布局
 status: active
 created: 2026-07-18
-updated: 2026-07-31
+updated: 2026-08-04
 parent: null
-version: 0.6.3
+version: 0.6.4
 ---
 
 # 目录布局
@@ -51,12 +51,6 @@ goal-governance/
 │   │   └── workspace-context.md
 │   ├── contracts/             # docs/contracts 的同步镜像
 │   └── install.*
-└── web/
-    ├── main.py
-    ├── requirements.txt
-    ├── README.md
-    ├── static/
-    └── templates/
 ```
 
 ## 约束

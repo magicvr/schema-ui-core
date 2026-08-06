@@ -32,8 +32,8 @@ metadata:
 
 ## 行为要点
 
-- **单愿景**；缺 active Charter → 引导冷启动（Charter → VP），不非引导开区执行。  
-- Vision Review → `docs/vision/reviews.md`（`VRev-00N`），**不是** Goal `03-audit`。  
+- **单愿景**；缺 active Charter → 引导冷启动（Charter → VP），不非引导开区执行。
+- Vision Review → `docs/vision/reviews/VRev-NNN-<slug>.md` 报告 + `reviews.md` 索引，**不是** Goal `03-audit`。
 - 独立 Vision Review 必须改用 `$vision-audit` / `/vision-audit`；本入口负责 self Review、决策与 finding 响应。
 - 默认不静默改 Charter/VP status；strategic 须确认 + revisions + re-align。  
 - 不写 goal-tree progress；不关 Goal finding。  
