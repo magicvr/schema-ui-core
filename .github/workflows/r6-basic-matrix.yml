@@ -2,8 +2,9 @@ name: r6-basic-matrix
 
 on:
   push:
-    branches: [dev, main]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   web:
