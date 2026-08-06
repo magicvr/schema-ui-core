@@ -7,7 +7,7 @@ version: 0.2.0
 effective_date: 2026-08-04
 primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
 ---
 
@@ -64,9 +64,9 @@ parent: null
 ## 与工作区 / VP 的关系
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
-- 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md) 与 [VP-002](plans/VP-002-production-admin-foundation.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。
-- 下一个明确意图为 [VP-003 · 单主线模块化 Admin 架构](plans/VP-003-modular-admin-architecture.md)；其完整终态由 [module-architecture.md](../architecture/module-architecture.md) 固化，试点只属于 VP 路线图。
-- 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）。
+- 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
+- **当前无 active 交付 VP**。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选，建 VP 前须 `/vision` 复核是否需要 strategic 修订。
+- 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本
 

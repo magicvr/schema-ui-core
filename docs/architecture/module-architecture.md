@@ -3,9 +3,9 @@ doc_type: architecture-decision
 title: 单主线模块化 Admin 架构
 status: active
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
-version: 1.0.2
+version: 1.0.3
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 serves: VP-003-modular-admin-architecture
 ---
@@ -125,3 +125,9 @@ R3 有界试点的**通过门闩**（继承固定历史评议输入 §4.5 / §5�
 4. 未通过则先加固 Kernel，**不得**以「模块已写出」放行全量存量迁移（R4）。
 
 本决策不包含：运行时插件市场、第三方不受信任模块加载、跨进程微服务拆分、全量上游协议扩张、业务领域模块本身。协议范围以 [VP-003 的继承协议基线](../vision/plans/VP-003-modular-admin-architecture.md) 为准；扩大范围须先有新的决策、递增覆盖版本与验证。上述能力需要新的愿景或明确兼容决策。
+
+## 9. 操作 playbook（一方模块贡献）
+
+架构边界以本文 §1–§8 为权威。将边界**操作化**为「必须 / 禁止 / 归属判定」的可执行清单见：
+
+→ **[module-contribution-playbook.md](module-contribution-playbook.md)**（VP-004；产品模块贡献方法论，非治理 principles 修订）

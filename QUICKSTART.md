@@ -113,9 +113,12 @@ bash scripts/smoke.sh --disposable
 
 ## 5. 下一步：接业务
 
-- 新增业务页面（**无需修改 Renderer 主路径**）：
-  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；
+- **完整一方标准 Admin 功能模块**（必须 / 禁止 / 归属判定、组合根与 Profile、全局迁移）：见操作契约  
+  **[docs/architecture/module-contribution-playbook.md](docs/architecture/module-contribution-playbook.md)**  
+  （架构边界：[docs/architecture/module-architecture.md](docs/architecture/module-architecture.md)；概览入口：[docs/architecture/overview.md](docs/architecture/overview.md)）
+- 新增业务页面（**无需修改 Renderer 主路径**；从属于上表 MUST）：
+  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；标准 Admin 正例：`apps/api/internal/modules/users/`；
   2. 在模块 Provider 的 Manifest/Navigation contribution 中登记 `pages[]` 与 `navigation`；不要在 `apps/web/public/` 放置生产 Manifest。Manifest 由 API 聚合并经 `/.well-known/schema-ui/app-manifest.json` 发布。
   - 注意：`docs/schemas/` 是上游 **协议 JSON Schema**（node/page/action…），**不是**业务页面文档目录。
-- 权限：通过模块的 Authorization/Persistence contribution 声明权限键与 system-data reconcile；全局迁移/快照执行仍由 `apps/api/internal/store` 负责。
+- 权限：通过模块的 Authorization/Persistence contribution 声明权限键与 system-data reconcile；全局迁移/快照执行仍由 `apps/api/internal/store` 负责；模块迁移须进入全局台账（见 playbook M5）。
 - 参考：[README.md](README.md) 工程化段；`apps/api/README.md` / `apps/web/README.md` 端点与配置表。
