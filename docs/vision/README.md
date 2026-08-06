@@ -33,13 +33,12 @@ version: 0.7.0
 
 | 路径 | 角色 |
 |------|------|
-| [reviews.md](reviews.md) | **稳定索引** + 当前 open required 投影；本仓仍含 **legacy inline** `VRev-001`～`VRev-010` 正文 |
+| [reviews.md](reviews.md) | **稳定索引** + 当前 open required 投影 + 条目表 |
 | [reviews/](reviews/) | 平铺正式报告 `VRev-NNN-<slug>.md`（self / independent 共用编号序列） |
 | `docs/templates/vision/reviews-index.md` | 新索引复制源 |
 | `docs/templates/vision/review.md` | 单条 VRev 报告复制源 |
 
-**阈值（任一即触发）**：legacy 索引 ≥ 32 KiB / 800 行 / 12 条 → **下一条**必须写 `reviews/` 报告并只更新索引，不得继续 inline 追加。  
-本仓 `reviews.md` 已超过 32 KiB 与 800 行阈值（约 10 条 legacy），**下一条 VRev 起必须走目录**。历史 inline 仍有效；可选迁移不改编号。
+**2026-08-07**：`VRev-001`～`VRev-010` 已自 legacy inline **无重编号**迁移到 `reviews/`；新记录只写报告并更新索引，禁止再 inline 追加正文。
 
 ## 本仓实例索引（schema-ui-core）
 
@@ -55,8 +54,8 @@ version: 0.7.0
 | [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
-| [reviews.md](reviews.md) | Vision Review：稳定索引 + legacy inline（`VRev-001`～`VRev-010`） |
-| [reviews/](reviews/) | 新 VRev 正式报告目录（v0.13；下一条起使用） |
+| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-010`；0 open required） |
+| [reviews/](reviews/) | 正式报告目录（已迁入 VRev-001～010；新条目只写此处） |
 | [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 2 delivery；VP-003 已绑定 lead） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议实施清单（`F-V001` 证据） |
 | [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | 实现层 primary 工作区 · Root `GOAL-001-mvp-admin-foundation` |
