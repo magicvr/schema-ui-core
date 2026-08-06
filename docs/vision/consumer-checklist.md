@@ -29,8 +29,8 @@ version: 0.4.0
 | 愿景实例 | `docs/vision/charter.md` 且 `status: active` | present | [charter.md](charter.md)。 |
 | 愿景树 | `roadmap.md` | present | [roadmap.md](roadmap.md)。 |
 | 愿景树 | `revisions.md` | present | [revisions.md](revisions.md)。 |
-| 愿景树 | `reviews.md` | present | [reviews.md](reviews.md)（稳定索引 + legacy inline VRev-001～010）。 |
-| 愿景树 | `reviews/`（有条目时） | present（目录已建） | 下一条 VRev 写报告；历史仍在 reviews.md。 |
+| 愿景树 | `reviews.md` | present | [reviews.md](reviews.md) 稳定索引 v1.0.0（0 open required）。 |
+| 愿景树 | `reviews/VRev-*.md` | **present** | VRev-001～010 已迁入目录报告；新条目只写 `reviews/`。 |
 | 愿景树 | `workspaces.md` | present | [workspaces.md](workspaces.md)。 |
 | 愿景树 | `consumer-checklist.md` | present | 本文件。 |
 | 意图 | 至少一个 `plans/VP-*.md` | present | [VP-001](plans/VP-001-mvp-admin-foundation.md)。 |
@@ -57,5 +57,10 @@ version: 0.4.0
 - Skills 事务更新：`skills/update.ps1 --version 0.13.0 --force-managed`；协议仍为 `0.1.0`；状态见 `skills/.goal-governance-install.json`。
 - 保留本仓定制：`docs/architecture/directory-layout.md`、`overview.md`、`docs/vision/README.md`（实例索引 + monorepo 布局）。
 - 新增 MUST 模板 `reviews-index.md` / `review.md`；创建 `docs/vision/reviews/`。
-- **legacy 阈值已触发**（`reviews.md` ≫ 32 KiB / 800 行）：下一条 Vision Review 必须写 `reviews/VRev-NNN-*.md` 并更新索引，不得再 inline 追加。
-- 历史 VRev-001～010 仍可读；完整迁移为可选，不改编号、不改历史结论。
+
+### 2026-08-07 · Vision Review 台账迁移
+
+- 将 legacy inline `VRev-001`～`VRev-010` **无重编号**拆到 `docs/vision/reviews/VRev-NNN-<slug>.md`。
+- `reviews.md` 收敛为稳定索引 + open required 投影 + 条目表（约 4.5 KiB）。
+- 正文历史结论与 finding 原文保留；相对链接按目录深度调整；迁移说明附于各报告末尾。
+- 新 VRev 只写目录报告并更新索引。
