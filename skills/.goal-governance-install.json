@@ -1,0 +1,9 @@
+{
+  "format": "goal-governance.skills-install-state/v1",
+  "version": "0.13.0",
+  "protocol": "0.1.0",
+  "archiveSha256": "e48e1c3a9a1d78b8038ec1af7aa8323e8728f99af1ad2bc96769b76a3586077e",
+  "source": "C:\\Users\\magicvr\\AppData\\Local\\Temp\\gg-013-check\\goal-governance-skills-v0.13.0.zip",
+  "installedAt": "2026-08-06T16:56:28.444927+00:00",
+  "rollbackPath": "C:\\Users\\magicvr\\Documents\\Code\\schema-ui-core\\.goal-governance-updates\\20260806T165627Z-v0.13.0"
+}

@@ -2,7 +2,7 @@
 name: vision-audit
 description: >
   Independent Vision Review for Charter, Vision Plans, portfolio alignment, or
-  existing VRev findings. Writes only independent opinions to reviews.md;
+  existing VRev findings. Writes only independent opinions to the Vision Review report ledger;
   does not change Charter, VP, or Goal state.
 when-to-use: >
   /vision-audit, 独立愿景审视, 愿景交叉审计, 独立 Vision Review,
@@ -26,7 +26,7 @@ metadata:
 
 ## 行为要点
 
-- 只将独立意见追加到 `docs/vision/reviews.md`（`VRev-00N`）；不写 Goal `03-audit.md`。
+- 只创建 `docs/vision/reviews/VRev-NNN-<slug>.md` 独立报告并更新 `reviews.md` 索引；不写 Goal `03-audit.md`。
 - 不修改 Charter / VP / Goal status、progress、`revisions.md` 或 `goal-tree.md`。
 - required Vision finding 的响应交 `/vision`；实施工作交 `/govern`。
 

@@ -2,9 +2,9 @@
 title: Skills · 目标治理可复用包
 status: active
 created: 2026-07-18
-updated: 2026-08-04
+updated: 2026-08-06
 parent: null
-version: 1.9.1
+version: 1.10.0
 ---
 
 # Skills
@@ -21,9 +21,10 @@ Skills 是核心方法论的 **AI 消费适配器**。**核心方法论与 Skill
 | 身份 | 状态 |
 |------|------|
 | **`v0.9.0`** / **`v0.9.1`** / **`v0.9.2`** / **`v0.10.0`** / **`v0.11.0`** | 已发布 annotated tag / Release 基线。 |
-| **`v0.12.1`（发布候选）** | 发布身份已冻结；待 merged `main` 上的 annotated tag、strict evidence、Actions 与 Environment `release` 完成后，才可称为正式资产。事务 updater、consumer-only contract profile 与四入口 × 三宿主 runtime evidence 已进入候选范围。**不**宣称 Codex 矩阵 `committed` / `runtime-verified`。 |
+| **[`v0.12.1`](https://github.com/magicvr/goal-governance/releases/tag/v0.12.1)（已发布）** | annotated tag 绑定 merge commit `1c21f246377025f295363dbfb7b149b6f7e9fd9e`；strict evidence 与 gated Actions run [`30865670069`](https://github.com/magicvr/goal-governance/actions/runs/30865670069) 通过，9 项 Release 资产已完成下载后 digest/package 核验。事务 updater、consumer-only contract profile 与四入口 × 三宿主 runtime evidence 已进入正式资产。**不**宣称 Codex 矩阵 `committed` / `runtime-verified`。 |
+| **`v0.13.0`（发布候选）** | Vision Review 稳定索引 + 独立报告、legacy 兼容迁移与 2026-08-06 四入口 × 三宿主 fresh runtime evidence 已就绪；正式 commit、Actions run、资产 digest 在 gated Release 成功后追加。 |
 
-Claude Code / Grok Build / Copilot CLI 为 `committed` + `runtime-verified`；Web parser 为 `automated-verified`。消费仓权威字段见 [`docs/contracts/skills-consumer-contract.json`](../docs/contracts/skills-consumer-contract.json)（`evidenceBoundary.defaultProfile=consumer`）。compatibility matrix / runtime evidence 属 **producerOnly**，仅生成仓发行门禁需要，**不是**本消费 monorepo 的完整安装 MUST。
+当前 `Unreleased` 生产者矩阵仅保留 Claude Code / Grok Build / Copilot CLI，三者均为 `committed` + `runtime-verified`；冻结的 Web parser consumer 已退役。候选在 annotated tag 与 strict release evidence 完成前仍不构成正式 Release。权威字段见 [`docs/contracts/skills-consumer-contract.json`](../docs/contracts/skills-consumer-contract.json) 与 [`docs/contracts/skills-consumer-compatibility-matrix.json`](../docs/contracts/skills-consumer-compatibility-matrix.json)。
 
 ## 产品模型（必读）
 
@@ -33,7 +34,7 @@ Claude Code / Grok Build / Copilot CLI 为 `committed` + `runtime-verified`；We
 | **实现主入口（primary）** | 编排器：扫描 / 意见台账 / 分类 / P-004 裁决 / 确认 / 原语 | **`/govern`** |
 | **决策入口** | 愿景与组合：Charter / VP / Review / re-align / 结构选型 | **`/vision`** |
 | **Goal 交叉入口** | 独立 Goal 审计：只出意见（`source: independent`） | **`/audit`** |
-| **愿景交叉入口** | 独立 Vision Review：只写 `reviews.md`（`source: independent`） | **`/vision-audit`** |
+| **愿景交叉入口** | 独立 Vision Review：创建 VRev 报告并更新 `reviews.md` 索引（`source: independent`） | **`/vision-audit`** |
 | **原语（primitives）** | 创建目标、记决策、更执行、写审计 | 由编排器调用；Copilot advanced 可选 |
 | **规则** | AGENTS / copilot-instructions | 结构、编号、操作细则摘要 |
 
@@ -110,28 +111,28 @@ skills/
 
 ### 入口 1 · Bootstrap（推荐 · 其他项目）
 
-**当前示例 pin 最新正式 tag `v0.12.1`**（每次发版更新本节与根 README；固定 tag URL，**禁止** `main`/branch raw 作权威入口；**不是**无 pin 的 always-latest 安装）。也可 clone monorepo 用 `scripts/bootstrap/`。
+**当前示例 pin 最新正式 tag `v0.13.0`**（每次发版更新本节与根 README；固定 tag URL，**禁止** `main`/branch raw 作权威入口；**不是**无 pin 的 always-latest 安装）。也可 clone monorepo 用 `scripts/bootstrap/`。
 
 在目标项目根执行（先落盘 bootstrap，再跑；默认**不**管道直跑）：
 
 ```powershell
-Invoke-WebRequest -Uri "https://github.com/magicvr/goal-governance/releases/download/v0.12.1/install-online.ps1" `
+Invoke-WebRequest -Uri "https://github.com/magicvr/goal-governance/releases/download/v0.13.0/install-online.ps1" `
   -OutFile .\install-online.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File .\install-online.ps1 -Version 0.12.1 -Force
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install-online.ps1 -Version 0.13.0 -Force
 
 # 离线（本地 skills zip + .sha256）：
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install-online.ps1 `
-  -Version 0.12.1 -ZipPath .\goal-governance-skills-v0.12.1.zip -Force
+  -Version 0.13.0 -ZipPath .\goal-governance-skills-v0.13.0.zip -Force
 ```
 
 ```bash
 curl -fsSL -o install-online.sh \
-  "https://github.com/magicvr/goal-governance/releases/download/v0.12.1/install-online.sh"
+  "https://github.com/magicvr/goal-governance/releases/download/v0.13.0/install-online.sh"
 chmod +x install-online.sh
-bash ./install-online.sh --version 0.12.1 --force
+bash ./install-online.sh --version 0.13.0 --force
 
 # 离线：
-bash ./install-online.sh --version 0.12.1 --zip-path ./goal-governance-skills-v0.12.1.zip --force
+bash ./install-online.sh --version 0.13.0 --zip-path ./goal-governance-skills-v0.13.0.zip --force
 ```
 
 Bootstrap 会：校验 SHA-256 → 落到 `./skills` → 调用包内 install **默认 `-All` / `--all`**（四入口 + core → `docs/`）。digest 失败 **fail closed**。详见 [scripts/bootstrap/README.md](../scripts/bootstrap/README.md)。
@@ -367,7 +368,7 @@ bash ./skills/install.sh --all --skills-dir ./skills \
 4. 建立工作区（`/govern` S0 或 `--init-workspace`）并挂 `primary_plan`。  
 5. 调用 `/govern`：Root / 子目标推进。  
 6. 调用 `/audit`：目标独立审计意见（不改 status）。
-7. 调用 `/vision-audit`：独立 Vision Review（只写 `reviews.md`）。
+7. 调用 `/vision-audit`：独立 Vision Review（写 `reviews/VRev-NNN-*.md` 报告 + `reviews.md` 索引）。
 
 ## 核心约定（摘要）
 

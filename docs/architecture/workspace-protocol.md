@@ -2,9 +2,9 @@
 title: 工作区与共享资料区协议
 status: active
 created: 2026-07-20
-updated: 2026-07-30
+updated: 2026-08-06
 parent: null
-version: 0.8.1
+version: 0.9.0
 ---
 
 # 工作区与共享资料区协议
@@ -136,8 +136,8 @@ Root Goal 表达稳定目的、初始边界和高层路线图，不要求在立�
 2. 定位用户指定或已配置的工作区 `workspace.md`，校验 Root Goal、canonical scope、共享资料引用，以及**必填**的 `plan_refs` / `primary_plan` 与对应 VP 文件后，再扫描该工作区 `goal-tree.md` 与目标记录。
 3. 若仓库只有一个显式工作区，消费适配器可以使用它作为当前 scope；多个工作区而未指定焦点时必须拒绝受影响读取、写入和放行。
 4. 没有显式工作区根时，**仅当**存在 `docs/goals/` 才可作为 legacy 单工作区（且仍须按不完整/引导规则处理缺 vision）；否则 fail closed / 走空治理 scaffold（顺序：Charter → VP → 工作区）。不得自动发现、合并或把仓库根等猜测路径当作工作区。
-5. 任何创建、决策、执行、审计或提案都必须在已验证的当前工作区内。资料候选库存只补充可核对的文件摘要，不替代固定引用或事实确认。愿景目录不保存目标进度权威；Vision Review 落在 [../vision/reviews.md](../vision/reviews.md)。
-6. `/audit` 只在当前工作区目标台账追加 `source: independent` 意见；它不得凭资料目录、愿景规划或索引改变状态或关闭 finding（finding 闭合见 principles P-003 三路径，由 `/govern` 响应）。愿景层：**self Review / finding 响应**走 `/vision`；**independent Vision Review** 走 `/vision-audit`（只写 [../vision/reviews.md](../vision/reviews.md)）；**禁止** Goal `/audit` 写入 `reviews.md` 或与 Vision Review 混用台账。
+5. 任何创建、决策、执行、审计或提案都必须在已验证的当前工作区内。资料候选库存只补充可核对的文件摘要，不替代固定引用或事实确认。愿景目录不保存目标进度权威；Vision Review 落在 [../vision/reviews.md](../vision/reviews.md) 索引与 `../vision/reviews/VRev-NNN-*.md` 报告。
+6. `/audit` 只在当前工作区目标台账追加 `source: independent` 意见；它不得凭资料目录、愿景规划或索引改变状态或关闭 finding（finding 闭合见 principles P-003 三路径，由 `/govern` 响应）。愿景层：**self Review / finding 响应**走 `/vision`；**independent Vision Review** 走 `/vision-audit`（写 VRev 报告并更新 `reviews.md` 索引）；**禁止** Goal `/audit` 写入愿景审视台账或与 Vision Review 混用台账。
 7. 跨工作区目标引用必须使用 §2.6 限定形式（文档默认 **Q2** 路径；对话默认 **Q3** 标签；机器载荷可用 **Q1**）。不得仅凭裸 `GOAL-*` 跨区寻址；**禁止**跨区 `parent`。
 8. Charter `strategic` 后受影响范围未 re-align 前：**宽阻断**（禁新建子目标/放行/关门/非引导开区）。
 

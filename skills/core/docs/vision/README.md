@@ -2,9 +2,9 @@
 title: 消费方愿景规则镜像说明
 status: active
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-08-06
 parent: null
-version: 0.1.0
+version: 0.2.0
 ---
 
 # docs/vision · 消费方最小规则面
@@ -18,7 +18,7 @@ version: 0.1.0
 
 ## 不随 core 预装的实例
 
-- 现行 `charter.md`、具体 `plans/VP-*.md`、`reviews.md` 过程条目  
+- 现行 `charter.md`、具体 `plans/VP-*.md`、`reviews.md` 索引与 `reviews/VRev-NNN-*.md` 过程报告
 - monorepo dogfood 工作区绑定与 progress 叙述  
 
 冷启动时从 `docs/templates/vision/` 复制并改写 Charter / VP，再按 alignment 校验 `plan_refs` / `primary_plan`。

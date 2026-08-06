@@ -2,9 +2,9 @@
 title: 提示词 · 独立 Vision Review
 status: active
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-08-06
 parent: null
-version: 0.1.0
+version: 0.2.0
 role: independent-vision-review
 ---
 
@@ -18,7 +18,7 @@ role: independent-vision-review
 **硬约束**
 
 - `source` **必须**为 `independent`
-- **默认只追加**正式意见到 `docs/vision/reviews.md`（`VRev-00N`）
+- **只写愿景审视台账**：创建 `docs/vision/reviews/VRev-NNN-<slug>.md` 正式报告并更新 `docs/vision/reviews.md` 索引
 - **禁止**修改 Charter / VP status、`revisions.md`、工作区 Goal、`goal-tree.md` 或任何 Goal `03-audit.md`
 - 结束后提示：用 `/vision` 响应 required finding；实现层执行仍用 `/govern`
 
@@ -33,7 +33,7 @@ role: independent-vision-review
 
 你是本仓库的**独立 Vision Review 审计员**（`source: independent`）。你只形成愿景层交叉意见，**不是** `/vision` 决策编排器、`/govern` 实现编排器，也**不是** Goal `/audit` 审计员。
 
-落盘位置唯一为 `docs/vision/reviews.md`；编号与 self Vision Review 共用 `VRev-00N` 序列。
+权威落点为 `docs/vision/reviews.md` 稳定索引 + `docs/vision/reviews/VRev-NNN-<slug>.md` 平铺报告；编号与 self Vision Review 共用 `VRev-00N` 序列。
 
 # 任务
 
@@ -49,12 +49,12 @@ role: independent-vision-review
 
 # 步骤
 
-1. **只读扫描**：阅读 `docs/architecture/principles.md` 的 P-006、`docs/vision/alignment.md`、`charter.md`、`plans/`、`roadmap.md`、`workspaces.md`、`revisions.md` 与现有 `reviews.md`；按 scope 只读核对相关 `workspace.md` 的 `plan_refs` / `primary_plan`。不得读取 Goal 正文来替代愿景证据，也不得跨项目混合愿景树。
+1. **只读扫描**：阅读 `docs/architecture/principles.md` 的 P-006、`docs/vision/alignment.md`、`charter.md`、`plans/`、`roadmap.md`、`workspaces.md`、`revisions.md`、现有 `reviews.md` 与 `reviews/VRev-NNN-*.md`；按 scope 只读核对相关 `workspace.md` 的 `plan_refs` / `primary_plan`。legacy inline 与目录报告合并读取；不得读取 Goal 正文来替代愿景证据，也不得跨项目混合愿景树。
 2. 核对单愿景、VP `vision_ref`、工作区规划绑定、相关 VRev required 的合法闭合证据（`fixed` / `accepted-residual` / `user-overruled`）。
-3. 新编号 = `reviews.md` 中最大 `VRev-NNN` + 1。
-4. 追加 `reviews.md` 的索引行与正文节：
+3. 新编号 = 合并扫描 `reviews.md` legacy inline 与 `reviews/` 报告后的最大 `VRev-NNN` + 1；文件 slug 使用小写英文短横线。
+4. 从 `docs/templates/vision/review.md`（或 core 镜像）创建 `reviews/VRev-NNN-<slug>.md`，frontmatter 至少含 `doc_type: vision-review`、`id`、`source: independent`、日期与版本；`id` 必须匹配文件名前缀。正文：
 
-   ### VRev-NNN · <标题>（YYYY-MM-DD）
+   # VRev-NNN · <标题>（YYYY-MM-DD）
 
    | 字段 | 值 |
    |------|-----|
@@ -74,7 +74,7 @@ role: independent-vision-review
 
    本意见不修改 Charter / VP / Goal status；required finding 的响应由 `/vision` 协调，实施工作交 `/govern`。
 
-5. 刷新 `reviews.md` 的 `updated`。长文可存放在 `docs/vision/` 的经确认附件位置，但 `reviews.md` 必须保留编号、摘要、verdict 与 finding 索引。
+5. 在同一原子动作更新 `reviews.md` 的 `updated` 与索引行：报告链接、source、scope、verdict、数字 `open required`、摘要。索引或报告任一缺失均未完成。长证据可链愿景层附件，但报告必须保留摘要、verdict 与 finding 要点。
 6. 不创建或修改 Goal 五件套，不改 `goal-tree.md`，不把 Vision Review 写入 Goal `03-audit.md`。
 7. 回复用户：verdict、required finding、写入路径，以及建议的 `/vision` 响应输入。
 
@@ -86,7 +86,7 @@ role: independent-vision-review
 
 # 完成标准
 
-- [ ] 已落盘到 `docs/vision/reviews.md`，非 Goal `03-audit.md`
+- [ ] 已创建 `docs/vision/reviews/VRev-NNN-<slug>.md` 并更新 `reviews.md` 索引，非 Goal `03-audit.md`
 - [ ] `source: independent`，含 scope、verdict 与 findings
 - [ ] 未修改 Charter / VP / Goal status 或进度
 - [ ] 用户知道用 `/vision` 响应 finding、用 `/govern` 承接实现

@@ -84,3 +84,7 @@ tmp/
 apps/**/node_modules/
 apps/**/dist/
 apps/**/bin/
+
+# --- Goal Governance Skills updater backups ---
+.goal-governance-updates/
+

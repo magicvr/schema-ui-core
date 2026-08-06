@@ -2,9 +2,9 @@
 title: Skills · 提示词模板
 status: active
 created: 2026-07-18
-updated: 2026-07-29
+updated: 2026-08-06
 parent: null
-version: 0.5.2
+version: 0.6.0
 ---
 
 # prompts/ · 目标治理提示词
@@ -16,7 +16,7 @@ version: 0.5.2
 | [00-govern-orchestrator.md](00-govern-orchestrator.md) | **primary**（实现层） | 扫描 goal-tree 与审计意见 → 分类 → P-004 裁决 → 提议确认 → 原语 |
 | [05-independent-audit.md](05-independent-audit.md) | **independent-audit** | 交叉审计：只出意见（`source: independent`），不改状态 |
 | [06-vision-orchestrator.md](06-vision-orchestrator.md) | **vision-decision** | 愿景/组合：Charter、VP、Review、re-align、结构选型 |
-| [07-independent-vision-review.md](07-independent-vision-review.md) | **independent-vision-review** | 独立 Vision Review：只写 `reviews.md`，不改 Charter / VP / Goal 状态 |
+| [07-independent-vision-review.md](07-independent-vision-review.md) | **independent-vision-review** | 独立 Vision Review：写 VRev 报告 + `reviews.md` 索引，不改 Charter / VP / Goal 状态 |
 
 | 入口 | 宿主 |
 |------|------|

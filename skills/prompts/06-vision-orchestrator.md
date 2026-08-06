@@ -2,9 +2,9 @@
 title: 提示词 · 愿景与组合治理（决策层入口）
 status: active
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-08-06
 parent: null
-version: 0.2.0
+version: 0.3.0
 role: vision-decision
 ---
 
@@ -22,7 +22,7 @@ role: vision-decision
 | **`/vision`** | 决策 | Charter / VP / 组合编排 / Review / re-align 引导 | 不推进子目标执行、不改 goal-tree 进度、不关 Goal finding |
 | **`/govern`** | 实现 | 工作区目标推进、P-003 响应、放行/关门 | 无 Charter 时不得假装完整推进（可转本入口引导） |
 | **`/audit`** | 目标交叉审 | Goal `03-audit` independent | 不写 Vision Review 台账 |
-| **`/vision-audit`** | 愿景交叉审 | `reviews.md` independent | 不改 Charter / VP / Goal 状态；不响应 finding |
+| **`/vision-audit`** | 愿景交叉审 | VRev 独立报告 + `reviews.md` 索引 | 不改 Charter / VP / Goal 状态；不响应 finding |
 
 **硬约束（P-006 / alignment）**
 
@@ -30,7 +30,7 @@ role: vision-decision
 - **完整安装**必有 active Charter；缺则本入口主路径是**引导补齐**，不是开区执行。  
 - **冷启动串行**：Charter → 首个 VP →（再交 `/govern` 建工作区+Root）。  
 - 工作区角色仅 `primary` / `delivery`；所有工作区都必须挂 VP，无 plan opt-out。
-- Vision Review 落 `docs/vision/reviews.md`（`VRev-00N`），**不是** Goal `03-audit`。  
+- Vision Review 落 `docs/vision/reviews.md` 稳定索引 + `docs/vision/reviews/VRev-NNN-<slug>.md` 平铺报告，**不是** Goal `03-audit`。
 - 独立 Vision Review 只由 `/vision-audit` / `07-independent-vision-review.md` 写入；`/vision` 处理 self Review、决策与 finding 响应。
 - Review / independent 意见**默认不直接改** Charter/VP status；strategic 变更须用户确认 + revisions + re-align。  
 - 不把 progress% 或 Goal finding 写入 vision 目录。
@@ -74,7 +74,7 @@ role: vision-decision
 3. **Charter**：`doc_type`、`vision_id`、`version`、`status`（仅 active|superseded）、目的/边界/非目标是否最小完备。统计 active Charter 数量（必须 ≤1）。  
 4. **VP 列表**：`plans/VP-*.md` 的 id、status、`vision_ref`、lead_workspace、绑定区数。  
 5. **组合编排**：`roadmap.md` 索引是否与 plans 一致。  
-6. **Vision Review**：`reviews.md` 中开放 required（未 fixed/residual/overruled）。  
+6. **Vision Review**：合并扫描 `reviews.md` legacy inline 与 `reviews/VRev-NNN-*.md`；核对索引链接、最大编号和开放 required（未 fixed/residual/overruled）。
 7. **工作区对齐（只读）**：各 `docs/workspace-*/workspace.md` 的 `plan_refs`/`primary_plan`/`vision_role`（不混合多区目标正文）。  
 8. **re-align 债务**：Charter version 与各 VP `vision_ref` 是否一致；strategic 后未刷新的区/Root。  
 9. 吸收用户本轮意图（建愿景 / 改 Charter / 新 VP / Review / re-align / 结构选型…）。
@@ -133,11 +133,12 @@ role: vision-decision
 
 ## V3 · Vision Review
 
-1. 新编号 = reviews 中最大 VRev-NNN + 1。  
-2. 追加 `reviews.md` 索引行 + 正文节：source、date、scope、verdict、findings（required|recommended）、建议 class。  
-3. source：本入口只写 `self`；独立交叉审视必须交 `/vision-audit`，由其写入 `source: independent`。
-4. **默认不改** Charter/VP status。  
-5. required 未闭合 → 可阻断：开区建议、VP 关门、宣称「方向已稳」。
+1. 新编号 = 合并扫描 `reviews.md` legacy inline 与 `reviews/VRev-NNN-*.md` 后的最大 VRev-NNN + 1。
+2. 从 `docs/templates/vision/review.md`（或 core 镜像）创建 `reviews/VRev-NNN-<slug>.md`：frontmatter `id` 与文件名前缀一致，正文含 source、date、scope、verdict、findings（required|recommended）、建议 class 与声明。目录只允许单层平铺。
+3. 同一原子动作更新 `reviews.md` 索引：链接报告，写 source/scope/verdict、数字 `open required` 与摘要；索引和报告任一缺失均未完成。
+4. source：本入口只写 `self`；独立交叉审视必须交 `/vision-audit`，由其写入 `source: independent`。
+5. **默认不改** Charter/VP status。required 未闭合 → 可阻断：开区建议、VP 关门、宣称「方向已稳」。
+6. legacy inline 继续可读；达到 32 KiB、800 行、12 条任一阈值后，新条目必须写报告，不得继续内联。
 
 ## V4 · re-align
 
@@ -162,7 +163,7 @@ role: vision-decision
 
 ## V6 · 闭合 Review required
 
-三路径（与 P-003 同构）：`fixed` / `accepted-residual` / `user-overruled`；在 reviews 响应节或 revisions/决策中留痕。
+三路径（与 P-003 同构）：`fixed` / `accepted-residual` / `user-overruled`。响应 append-only 追加在原 `reviews/VRev-NNN-*.md`（legacy 条目则原 inline 节）中，不改写原 verdict/finding；同时刷新 `reviews.md` 的数字 `open required` 与摘要。revisions/决策可作为证据链接，但不能替代报告内响应和索引投影。
 
 # 5. 汇报结构（动手前）
 
@@ -198,5 +199,5 @@ role: vision-decision
 ## 使用注意事项
 
 - 与 `/govern` 分入口；冷启动先本文件再工作区。  
-- 独立愿景审视可另开会话，用 `/vision-audit` 写入 `source: independent` 的 `reviews.md` 条目。
+- 独立愿景审视可另开会话，用 `/vision-audit` 创建 `source: independent` 的 VRev 报告并更新 `reviews.md` 索引。
 - 实现层推进、Goal 审计响应仍归 `/govern` / `/audit`。
