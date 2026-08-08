@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-005-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
+version: 0.1.1
 parent: null
 ---
 
@@ -37,6 +37,8 @@ VP-005 的 `vision_ref` 精确匹配现行 Charter `schema-ui-core-admin-foundat
 **禁止**在 closed [workspace-003](../workspace-003-modular-admin-architecture/workspace.md) / [workspace-004](../workspace-004-module-contribution-readiness/workspace.md) / [workspace-005](../workspace-005-full-protocol-contract-v2-7-0/workspace.md) 吸收本意图。
 
 建区本身 **不**勾选任何 S1–S5 检查点，也 **不**构成 Design Token / Shell / Renderer 视觉已产品化声明。
+
+**视觉方向（D-004）**：Stitch 定稿已冻结为实施输入（I-005 closed）；仓库摘要见 Root `attachments/visual-direction-stitch-summary.md`；本地截图在 `raw/stitch-vp005-visual-refs/`（gitignore）。定稿 **不**勾选 S1–S5；开放 required finding 仍 **F-002**（S1 完成门禁）。
 
 ## 固定共享资料引用
 

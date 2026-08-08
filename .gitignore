@@ -75,6 +75,7 @@ venv/
 # --- Temp / local ---
 .tmp/
 tmp/
+raw/
 *.local
 .cache/
 *.tmp

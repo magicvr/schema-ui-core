@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.2
+version: 0.1.3
 progress: 0/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
@@ -29,6 +29,8 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 **默认不进退出分母（F-V019 路径 b）**：WCAG AA 全站、Cmd+K（可选质量 / S3 增强）。
 
+**视觉方向（D-004 accepted · 2026-08-09）**：Stitch 定稿为过程输入（本地 `raw/stitch-vp005-visual-refs/exports/stitch_schema_ui_core_admin_console/`）；仓库摘要 [attachments/visual-direction-stitch-summary.md](./attachments/visual-direction-stitch-summary.md)。**不**因定稿勾选 S1–S5；**不**把 `code.html` 当生产源。
+
 权威覆盖表（只读）：[I-PROTO-FULL-001 v1.0.0](../../workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)。
 
 ## 愿景对齐
@@ -45,9 +47,9 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 ### 阶段层（可验收 · 等权检查点 · 对应 VP-005 S1–S5）
 
-- [ ] **S1**：Token / 主题 / shadcn primitives — 语义化 Token；深/浅色可切换且关键壳层无持续 FOUC；primitives 可发现；可选对比度抽检（不默认进退出分母）。
-- [ ] **S2**：Renderer 视觉重构 — VP-005 钉死 type + 能力面接入设计系统（可观察一致性）；分母不得窄于 type 表、不得宽于 I-PROTO-FULL-001 include。
-- [ ] **S3**：Shell 与工作流交互 — 侧栏、面包屑、用户区；Dialog/Toast 一致语言；**可选** Cmd+K（默认不进退出分母）。
+- [ ] **S1**：Token / 主题 / shadcn primitives — 语义化 Token（D-002/D-003）；深/浅色可切换且关键壳层无持续 FOUC；primitives 可发现；暗色主文案对比度不低于定稿 Overview dark 可读性；可选对比度抽检（不默认进退出分母）。**F-002 闭合前不得勾选本项。**
+- [ ] **S2**：Renderer 视觉重构 — VP-005 钉死 type + 能力面接入设计系统；**呈现约束（D-004）**：桌面密表 / 移动卡片列表；`recordView` 为右栏或 Drawer（移动 Sheet）；Modal 仅短编辑与 Confirm；分母不得窄于 type 表、不得宽于 I-PROTO-FULL-001 include。
+- [ ] **S3**：Shell 与工作流交互 — 桌面侧栏+顶栏；移动汉堡+导航抽屉；用户区；Dialog/Toast 一致语言；与 D-004 壳气质对齐；**可选** Cmd+K（默认不进退出分母）。
 - [ ] **S4**：状态与反馈 — Skeleton / Empty / 错误页与表单异步反馈在主范例路径一致。
 - [ ] **S5**：视觉回归 + fork Token 示例 + 过程关门 — E2E/Smoke 不回退；fork 品牌定制最小示例；open required = 0；可向 `/vision` 提 VP-005 关门（须用户确认）。
 
@@ -55,9 +57,9 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 | 阶段 | 主要服务的 VP 退出判据 | 证据（建区后随进展回填） |
 |------|------------------------|--------------------------|
-| S1 | exit 1 Token / 主题 | 待 S1 产物 |
-| S2 | exit 2 Renderer 纳入面视觉 | 待 S2 产物 |
-| S3 | exit 3 Shell | 待 S3 产物 |
+| S1 | exit 1 Token / 主题 | 待 S1 产物；方向输入 = D-004/E-004 |
+| S2 | exit 2 Renderer 纳入面视觉 | 待 S2 产物；呈现 = D-004 |
+| S3 | exit 3 Shell | 待 S3 产物；壳 = D-004 |
 | S4 | exit 4 状态生命周期 | 待 S4 产物 |
 | S5 | exit 5–6 回归诚实 + 过程可关门 | 待审计 + 关门提案 |
 
@@ -65,22 +67,23 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
-| S1 | Token / 主题 / primitives | **未开始** | VP-005 建议阶段 S1；建区不勾选 |
-| S2 | Renderer 钉死 type 视觉重构 | **未开始** | 依赖 S1 Token 基线 |
-| S3 | Shell 与工作流 | **未开始** | Cmd+K 可选 |
+| S1 | Token / 主题 / primitives | **未开始** | D-002/D-003 已 accepted；D-004 方向已冻；可实施；未勾选 |
+| S2 | Renderer 钉死 type 视觉重构 | **未开始** | 依赖 S1；列表/详情呈现见 D-004 |
+| S3 | Shell 与工作流 | **未开始** | 壳断点见 D-004；Cmd+K 可选 |
 | S4 | 状态与反馈 | **未开始** | 主范例路径 |
 | S5 | 回归 / fork 示例 / 关门 | **未开始** | 过程 exit 6 |
 
-阶段通常串行；同一纲领阶段内允许并行子目标。建区 **不**勾选任何检查点。
+阶段通常串行；同一纲领阶段内允许并行子目标。建区与视觉定稿 **均不**勾选任何检查点。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 现行 `apps/web` Token/主题/shadcn 基线清单（可观察路径） | S1 方案冻结 | S1 前 | 盘点 CSS 变量、`components.json`、ThemeToggle、ui/* | **closed** | — | E-002 + `attachments/I-S1-001-ui-baseline-inventory.md`（2026-08-09） |
-| I-002 | required | S1 Token 语义分层与命名约定（Color/Typography/Radius/Shadow/Spacing） | S1 方案冻结；S2–S4 消费 | S1 决策时 | Root 决策落盘 | **closed** | — | D-002 **accepted**（2026-08-09 用户采纳全文） |
+| I-002 | required | S1 Token 语义分层与命名约定（Color/Typography/Radius/Shadow/Spacing） | S1 方案冻结；S2–S4 消费 | S1 决策时 | Root 决策落盘 | **closed** | — | D-002 **accepted**（2026-08-09）；D-003 修订 §3/§5 |
 | I-003 | non-blocking | 主范例页清单（S4 状态验收路径） | S4 验收 | S4 前 | 对照 schemarender 8 页 + Shell 路由 | **open** | 可继承 workspace-005 范例登记 | 默认 8 范例 + 登录/壳层 |
-| I-004 | non-blocking | 是否将对比度抽检升格为退出分母 | 仅当用户书面升格 | 任意 | P-004 用户裁决 | **open** | 默认 **否**（F-V019 路径 b） | 默认不进 exit 1 |
+| I-004 | non-blocking | 是否将对比度抽检升格为退出分母 | 仅当用户书面升格 | 任意 | P-004 用户裁决 | **open** | 默认 **否**（F-V019 路径 b） | 默认不进 exit 1；S1 仍以 dark 可读为质量下限（D-004） |
+| I-005 | required | 目标态视觉方向是否冻结（可复核参考） | S1 实施对照；S2/S3 呈现 | S1 实施前宜齐 | Stitch 定稿 + Root 决策 | **closed** | — | D-004 **accepted** + E-004 + `attachments/visual-direction-stitch-summary.md`（2026-08-09） |
 
 ## 非目标（本 Root）
 
@@ -89,7 +92,8 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 - **不**重开 VP-003 架构迁移、不恢复长期双线、不引入热插拔插件市场。
 - **不**在本项目内重新定义或替代上游协议语义。
 - **不**修订 Goal Governance 核心方法论。
-- **不**把建区或 Token 脚手架写成「Charter #3 已全部满足」。
+- **不**把建区、Token 脚手架或 **Stitch 定稿** 写成「Charter #3 已全部满足」或 S1–S5 已完成。
+- **不**将 Stitch 导出 HTML 接入生产主线。
 - 不为 VP 在 `docs/vision/` 建立 Goal 五件套或 progress% 权威。
 
 ## 派生进度展示
