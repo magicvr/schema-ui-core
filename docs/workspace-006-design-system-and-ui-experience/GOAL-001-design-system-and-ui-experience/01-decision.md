@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.2
+version: 0.1.3
 ---
 
 # 决策记录 · GOAL-001-design-system-and-ui-experience
@@ -20,6 +20,7 @@ version: 0.1.2
 | I-002 | required | Token 语义分层与命名 | S1 冻结 | S1 决策时 | Root 决策 | **closed** | — | D-002 **accepted** |
 | I-003 | non-blocking | 主范例页验收路径 | S4 | S4 前 | 对照 schemarender | **open** | 可继承 8 范例 | 默认 8 页 + 壳层 |
 | I-004 | non-blocking | 对比度是否进退出分母 | 可选 | 任意 | 用户裁决 | **open** | 默认否 | F-V019 路径 b |
+| I-005 | required | 目标态视觉方向是否冻结 | S1 对照；S2/S3 呈现 | S1 实施前宜齐 | Stitch + Root 决策 | **closed** | — | D-004 **accepted** + E-004 |
 
 ## 决策索引
 
@@ -28,3 +29,4 @@ version: 0.1.2
 | D-001 | 2026-08-09 | 开区与纲领路线图采纳 | accepted | `01-decision/D-001-workspace-open-and-roadmap.md` |
 | D-002 | 2026-08-09 | S1 Token 语义分层与命名约定 | **accepted**（§3/§5 经 D-003 修订） | `01-decision/D-002-s1-token-naming-proposal.md` |
 | D-003 | 2026-08-09 | 合并响应 A-001/A-002/A-003（Shadow 映射等） | **accepted** | `01-decision/D-003-audit-response-s1-token-mapping.md` |
+| D-004 | 2026-08-09 | 视觉方向冻结（Stitch 定稿） | **accepted** | `01-decision/D-004-visual-direction-freeze.md` |
