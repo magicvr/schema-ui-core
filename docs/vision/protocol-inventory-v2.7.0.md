@@ -192,7 +192,7 @@ Manifest 点名的样例 YAML：`order-list-batch`、`order-detail-lifecycle`、
 | 外部固定源 | 已 pin（Charter / VP 已记录） |
 | 完整实施清单 | **本文件**（F-V001 闭合证据；**全量**输入，非 MVP 上界） |
 | MVP 协议覆盖子集冻结 | **已完成（历史）**；workspace-001 Root D-009 冻结 `I-PROTO-001 v0.1.3`，**不等于**全量协议支持，也**不是** VP-006 退出上界 |
-| 整份 v2.7.0 契约收口 | **进行中（交付）**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（`active`；lead `workspace-005-full-protocol-contract-v2-7-0`）；现行覆盖权威升版后为 `I-PROTO-FULL-001`（尚未冻结） |
+| 整份 v2.7.0 契约收口 | **进行中（交付）**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（`active`；lead `workspace-005-full-protocol-contract-v2-7-0`）；现行覆盖权威 = **`I-PROTO-FULL-001`**（已冻结：`workspace-005` Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`，12/12 域、24/24 registry、16/16 行为套件 include） |
 | “支持全部协议功能”主张 | **禁止**，直至 `I-PROTO-FULL-001`（或等价）冻结且实现证据闭合 |
 | H-001 | ① 清单提取 = 本文件；② MVP 子集 = `I-PROTO-001 v0.1.3`；③ 整份契约可验证兼容 = open → VP-006 |
 

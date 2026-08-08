@@ -73,3 +73,5 @@ docs/
 3. [vision/alignment.md](vision/alignment.md)  
 4. [templates/README.md](templates/README.md)  
 5. 仓库根 `AGENTS.md`（install 安装）
+
+> 本仓库的**协议覆盖权威**（schema-ui-docs@v2.7.0 整份契约）为工作区五件套附件 `I-PROTO-FULL-001`（`docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/`）；历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线。愿景与目标状态仍以各区 `goal-tree.md` 为准。

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-08
 updated: 2026-08-08
-version: 0.1.1
+version: 0.1.2
 ---
 
 # 审计 · GOAL-001-full-protocol-contract-v2-7-0
@@ -25,6 +25,7 @@ version: 0.1.1
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-08 | independent | S1 覆盖表冻结 · I-PROTO-FULL-001 v1.0.0 + D-002 + I-001/I-002/I-PROTO-FULL-001 | conditional | **0**（F-001 fixed；F-002/F-003 勘误） | `03-audit/A-001-s1-coverage-freeze-independent.md` |
+| A-002 | 2026-08-08 | independent | S5 关门 · 整份契约实现/验证/回归/文档诚实/过程可关门（VP-006 exit 1–6） | **pass** | **0**（F-001/F-002 fixed；F-003 accepted-residual） | `03-audit/A-002-s5-closeout-independent.md` |
 
 ## A-001 摘要（2026-08-08 · independent）
 
@@ -38,6 +39,20 @@ version: 0.1.1
 | **必改项** | F-001（同步 00-meta / S1 检查点 / progress / goal-tree） |
 | **声明** | 不修改 status/progress；响应归 `/govern` |
 
+## A-002 摘要（2026-08-08 · independent · close-out）
+
+| 项 | 内容 |
+|----|------|
+| **auditor** | grok-build（grok 4.5 · high） |
+| **类型** | close-out |
+| **verdict** | **pass** |
+| **成果** | exit 1–5 满足：覆盖表 12/12 include 保持；本会话 vitest 569/569 + fixture 320/320 + go test 全绿；8 范例页登记；docs→I-PROTO-FULL-001；无未背书「已完整支持」；I-PROTO-001 未改；E-004 记录 smoke bash 限制；A-001 open required=0；F-V018 仅阻断 VP-005 |
+| **findings** | **F-001 recommended**：`02-execution.md` 索引未登记 E-004。**F-002 recommended**：审计结论/00-meta 映射证据列/goal-tree 说明滞后。**F-003 recommended**：E-004 运行时证据在 `{SCRATCH}`，仓内无永久附件 |
+| **必改项** | **无 required**；recommended 见上 |
+| **声明** | 不修改 status/progress/检查点/goal-tree/方案/代码；VP 关门须用户书面确认 |
+
 ## 结论状态
 
-S0/S1 已完成（progress 2/6）。A-001（independent，conditional）全部 findings 已闭合：**F-001 fixed**（00-meta 信息表 / S1 检查点 / progress / goal-tree 已同步）、F-002/F-003 勘误完成。**开放 required = 0**。覆盖表 v1.0.0 冻结生效（I-PROTO-FULL-001 closed），进入 S2 实施（D-002 批次 B1–B6）。
+- **A-001**（S1 independent，conditional）：findings 均已 **fixed**；开放 required = 0；覆盖表 v1.0.0 冻结生效。
+- **A-002**（S5 independent close-out，**pass**）：VP-006 exit 1–5 证据可复核；exit 6 内容条件满足；**开放 required = 0**（F-001/F-002 → fixed；F-003 → accepted-residual，SCRATCH 运行证据按验证计划约定不固化仓内）。
+- 过程态（/govern 响应后）：S0–S5 检查点全部勾选、`progress: 6/6`、Root 仍 `active`（VP-006 关门提案待用户书面确认；**禁止静默关 VP**）。

@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-08
 updated: 2026-08-08
 version: 0.1.0
-progress: 5/6
+progress: 6/6
 plan_refs:
   - VP-006-full-protocol-contract-v2-7-0
 primary_plan: VP-006-full-protocol-contract-v2-7-0
@@ -46,7 +46,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 - [x] **S2**：核心缺口实现 — 未实现 registry type / 批量 selection / upload 等按表纳入批次交付（B1–B4；320/320 fixture case 全绿）。
 - [x] **S3**：保真与 runtime — 钉死内降级控件提升到契约语义；表达式/权限边角 fail-closed（B5；白名单/门禁/空选/循环阻断测试）。
 - [x] **S4**：范例 + conformance — 每纳入域可发现范例与验证入口；exclude 面有表可查（覆盖表验证入口列已登记真实路径）。
-- [ ] **S5**：文档与关门 — 发现路径（overview/QUICKSTART）、兼容声明诚实、回归不回退、close-out 审计；开放 required = 0；可向 `/vision` 提出 VP-006 关门提案（须用户确认）。
+- [x] **S5**：文档与关门 — 发现路径（overview/QUICKSTART）、兼容声明诚实、回归不回退、close-out 审计；开放 required = 0；可向 `/vision` 提出 VP-006 关门提案（须用户确认）。
 
 ### 阶段 ↔ VP 退出判据映射
 
@@ -68,7 +68,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 | S2 | 核心缺口实现 | **已完成** | B1–B4（E-003）；320/320 fixture case 全绿；vitest 569 / go test 全绿 |
 | S3 | 保真与 runtime | **已完成** | B5 fail-closed 测试；表达式/权限/批量/上传边界（E-003） |
 | S4 | 范例 + conformance | **已完成** | 覆盖表验证入口列登记真实路径（8 范例页 + 每域验证入口） |
-| S5 | 文档与关门 | **进行中** | 依赖回归与关门审计；VP 关门提案须用户确认 |
+| S5 | 文档与关门 | **已完成** | E-004 回归+验证计划全观测；A-002 close-out independent **pass**（开放 required=0）；VP-006 关门提案待用户书面确认 |
 
 阶段通常串行；同一纲领阶段内允许并行子目标。建区 **不**勾选任何检查点。
 
@@ -94,7 +94,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 
 ## 派生进度展示
 
-`progress: 5/6` 由上方 S0～S5 六个等权检查点派生（S0–S4 已完成）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+`progress: 6/6` 由上方 S0～S5 六个等权检查点派生（全部完成）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
 
 ## 台账布局
 
