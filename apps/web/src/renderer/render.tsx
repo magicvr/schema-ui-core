@@ -769,7 +769,7 @@ function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
       className={`mb-4 rounded-md border px-3 py-2 text-sm ${
         feedback.kind === "error"
           ? "border-destructive/50 bg-destructive/10 text-destructive"
-          : "border-emerald-500/50 bg-emerald-500/10 text-emerald-700"
+          : "border-success/50 bg-success/10 text-success"
       }`}
     >
       {feedback.code !== undefined && feedback.code !== "" ? `${feedback.code}: ` : ""}

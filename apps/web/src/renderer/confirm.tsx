@@ -18,12 +18,12 @@ export function ConfirmDialog({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-overlay p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Confirm action"
     >
-      <div className="mt-24 w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-xl">
+      <div className="mt-24 w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-md">
         <p className="text-sm leading-6 text-foreground">{message}</p>
         <div className="mt-5 flex justify-end gap-2">
           <button
