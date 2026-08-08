@@ -20,7 +20,7 @@ import {
 import {
   uploadFilesWithFetch,
   type UploadActionResult,
-  type UploadFile,
+  type UploadableFile,
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
@@ -105,7 +105,7 @@ export interface RendererComponentProps {
     values: Record<string, unknown>;
     onChange: (id: string, value: unknown) => void;
     fieldDisabled?: (id: string) => boolean;
-    onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
+    onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
   }>;
 }
 
@@ -175,7 +175,7 @@ export interface SchemaCrudValue {
   /** Dispatches a batch toolbar trigger (ADR-0022): gate → confirm → request. */
   invokeBatchAction: (item: Record<string, unknown>, tableId: string) => void;
   /** Upload control transport (ADR-0012): resolves action/actionRef → validates → uploads. */
-  uploadFiles: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
+  uploadFiles: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
   /** Per-table selection state (keys + count; normalized by the table). */
   selection: (tableId: string) => TableSelection | undefined;
   setSelection: (tableId: string, keys: unknown[]) => void;
@@ -578,7 +578,7 @@ function SchemaCrudProvider({
   // ADR-0012 upload transport: resolve action (actionRef → page action, else
   // direct URL), validate + upload through the shared orchestrator.
   const uploadFiles = useCallback(
-    async (field: FormControlField, files: UploadFile[]): Promise<unknown> => {
+    async (field: FormControlField, files: UploadableFile[]): Promise<unknown> => {
       let action: UploadActionResult;
       if (typeof field.actionRef === "string" && field.actionRef !== "") {
         const referenced = actionOf(document, field.actionRef);

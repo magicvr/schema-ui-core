@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import type { UploadFile } from "@/protocol/conformance/upload-orchestration";
+import type { UploadableFile } from "@/protocol/conformance/upload-orchestration";
 import {
   coerceFieldValue,
   type FormControlField,
@@ -16,7 +16,7 @@ export interface FormControlsProps {
   fieldDisabled?: (id: string) => boolean;
   idPrefix?: string;
   /** Upload control transport (ADR-0012): validates + uploads + returns the field value. */
-  onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
+  onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
 }
 
 function optionList(field: FormControlField): Array<{ value: string; label: string }> {
@@ -405,7 +405,7 @@ function UploadField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
-  onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
+  onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
 }) {
   const [status, setStatus] = useState<{ kind: "idle" | "uploading" | "error"; message?: string }>({
     kind: "idle",
@@ -420,11 +420,12 @@ function UploadField({
     if (fileList === null || fileList.length === 0 || onUpload === undefined) {
       return;
     }
-    const files: UploadFile[] = [...fileList].map((file) => ({
+    const files: UploadableFile[] = [...fileList].map((file) => ({
       name: file.name,
       type: file.type,
       size: file.size,
       contentId: file.name,
+      blob: file,
     }));
     setStatus({ kind: "uploading" });
     try {
@@ -471,7 +472,7 @@ function FieldControl({
   onChange: (id: string, value: unknown) => void;
   disabled?: boolean;
   idPrefix?: string;
-  onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
+  onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = field.label ?? field.type;

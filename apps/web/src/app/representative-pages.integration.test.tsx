@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "@/app/App";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
@@ -333,6 +333,48 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     );
   });
 
+  it("fails closed when a batch toolbar trigger fires with an empty selection", async () => {
+    const admin = {
+      user: { id: "u1", roles: ["admin"], permissions: ["users.read", "users.write"] },
+    };
+    const fetchSpy = vi.fn();
+    const base = combinedFetcher(realFixtures());
+    const trackingFetcher: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      fetchSpy(String(input), init?.method ?? "GET");
+      return base(input, init);
+    }) as typeof fetch;
+
+    window.history.replaceState({}, "", "/admin-list-batch");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <App
+          manifest={manifest()}
+          navigationContext={admin}
+          schemaFetcher={trackingFetcher}
+          resourceFetcher={trackingFetcher}
+        />,
+      );
+    });
+
+    // requiresSelection keeps the button disabled with no rows selected; the
+    // confirm never appears and no batch request is constructed (fail-closed).
+    const batchButton = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("批量删除"),
+    )!;
+    expect(batchButton.disabled).toBe(true);
+    await act(async () => {
+      batchButton.click();
+    });
+    expect(container.textContent).not.toContain("确认删除所选用户？");
+    expect(
+      fetchSpy.mock.calls.filter(([url, method]) => url === "/api/users/batch-delete" && method === "POST"),
+    ).toHaveLength(0);
+  });
+
   it("fails closed when the users data source is unreachable on a list page", async () => {
     const container = await renderApp("/data-table", {}, realFixtures(), 500);
     expect(container.textContent).toContain("resource fetch failed");
@@ -350,13 +392,24 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     const admin = {
       user: { id: "u1", roles: ["admin"], permissions: [] },
     };
-    const uploadCalls: Array<{ url: string; method: string }> = [];
+    const uploadCalls: Array<{ url: string; method: string; body: unknown }> = [];
     const base = combinedFetcher(realFixtures());
     const trackingFetcher: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = init?.method ?? "GET";
       if (method === "POST" && url === "/api/upload") {
-        uploadCalls.push({ url, method });
+        // The real transport sends the actual file bytes in a multipart part.
+        let fileName = "";
+        if (init?.body instanceof FormData) {
+          for (const [key, value] of init.body.entries()) {
+            if (value instanceof File) {
+              // jsdom File exposes name/size; bytes are asserted end-to-end by
+              // the headless browser run against the real Go upload endpoint.
+              fileName = `${key}=${value.name}:${value.size}`;
+            }
+          }
+        }
+        uploadCalls.push({ url, method, body: fileName });
         return new Response(
           JSON.stringify({ id: "file-abc", name: "contract.pdf", size: 9, url: "/api/files/file-abc" }),
           { status: 200, headers: { "Content-Type": "application/json" } },
@@ -397,7 +450,9 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
 
     // One multipart POST against the resolved actionRef url + field value commit.
     expect(uploadCalls).toHaveLength(1);
-    expect(uploadCalls[0]).toEqual({ url: "/api/upload", method: "POST" });
+    expect(uploadCalls[0]!.url).toBe("/api/upload");
+    expect(uploadCalls[0]!.method).toBe("POST");
+    expect(uploadCalls[0]!.body).toBe("file=contract.pdf:9");
     expect(container.textContent).toContain("Value: /api/files/file-abc");
   });
 

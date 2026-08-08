@@ -23,6 +23,11 @@ export interface UploadFile {
   contentId: string;
 }
 
+/** Real-transport file: an UploadFile plus the bytes to send (browser File). */
+export interface UploadableFile extends UploadFile {
+  blob: Blob;
+}
+
 export interface UploadActionResult {
   url?: string;
   id?: string;
@@ -200,11 +205,11 @@ export function runUploadBatch(input: {
 /**
  * Real transport orchestration used by the Renderer's upload control: the
  * same constraints and request shape, executed against a live fetch with
- * multipart FormData. Any failure stops the batch (ADR-0012 D4).
+ * multipart FormData carrying the actual file bytes (ADR-0012 D4).
  */
 export async function uploadFilesWithFetch(
   action: UploadActionResult,
-  files: UploadFile[],
+  files: UploadableFile[],
   fetcher: typeof fetch,
   invocationId?: string,
 ): Promise<UploadBatchResult> {
@@ -220,12 +225,9 @@ export async function uploadFilesWithFetch(
   const values: string[] = [];
   for (let index = 0; index < requests.length; index += 1) {
     const request = requests[index]!;
+    const file = files[index]!;
     const form = new FormData();
-    const blob = new Blob([new Uint8Array(0)], { type: files[index]!.type });
-    // File name is carried by the part descriptor; the app passes a File-like
-    // whose name/size match the validated descriptor (contentId is the wire id).
-    const fileLike = new File([blob], files[index]!.name, { type: files[index]!.type });
-    form.append(request.part.name, fileLike, request.part.fileName);
+    form.append(request.part.name, file.blob, file.name);
     const response = await fetcher(request.url, {
       method: request.method,
       ...(request.headers === undefined ? {} : { headers: request.headers }),
