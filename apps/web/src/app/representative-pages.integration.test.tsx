@@ -52,6 +52,7 @@ const MIGRATED_PAGE_IDS = [
   "search-form-table",
   "form-controls",
   "form-with-reactions",
+  "form-with-upload",
   "admin-list-batch",
   "data-display",
   "users",
@@ -343,6 +344,61 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     expect(container.textContent).toContain("Total roles");
     expect(container.textContent).toContain("admin: 1");
     expect(container.querySelector("svg[role='img']")).not.toBeNull();
+  });
+
+  it("uploads through the real UploadField + actionRef (ADR-0012)", async () => {
+    const admin = {
+      user: { id: "u1", roles: ["admin"], permissions: [] },
+    };
+    const uploadCalls: Array<{ url: string; method: string }> = [];
+    const base = combinedFetcher(realFixtures());
+    const trackingFetcher: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+      if (method === "POST" && url === "/api/upload") {
+        uploadCalls.push({ url, method });
+        return new Response(
+          JSON.stringify({ id: "file-abc", name: "contract.pdf", size: 9, url: "/api/files/file-abc" }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return base(input, init);
+    }) as typeof fetch;
+
+    window.history.replaceState({}, "", "/form-with-upload");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <App
+          manifest={manifest()}
+          navigationContext={admin}
+          schemaFetcher={trackingFetcher}
+          resourceFetcher={trackingFetcher}
+        />,
+      );
+    });
+
+    expect(container.querySelector("h1")?.textContent).toContain("Form with upload");
+    const fileInput = container.querySelector("input[type='file']") as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+
+    const file = new File(["pdf-bytes"], "contract.pdf", { type: "application/pdf" });
+    Object.defineProperty(fileInput, "files", {
+      configurable: true,
+      value: [file],
+    });
+    await act(async () => {
+      fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // One multipart POST against the resolved actionRef url + field value commit.
+    expect(uploadCalls).toHaveLength(1);
+    expect(uploadCalls[0]).toEqual({ url: "/api/upload", method: "POST" });
+    expect(container.textContent).toContain("Value: /api/files/file-abc");
   });
 
   it("runs the ADR-0022 batch flow end-to-end (select → confirm → request → reload clears selection)", async () => {

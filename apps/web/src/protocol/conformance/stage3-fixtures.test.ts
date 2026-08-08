@@ -21,6 +21,7 @@ import { negotiateVersion } from "./version-negotiate";
 import { runActionOutcome } from "./actions-outcome";
 import { constructRequest } from "./request-construction";
 import { runReactionEngine } from "@/renderer/reaction-engine";
+import { runUploadBatch } from "./upload-orchestration";
 import {
   sampleWhitelistedPage,
   validateAgainstSchema,
@@ -357,6 +358,19 @@ describe("stage 3 · reactions fixtures (full $deps engine, I-PROTO-FULL-001)", 
   for (const fixtureCase of cases) {
     it(fixtureCase.id, () => {
       const result = runReactionEngine(fixtureCase.input as never);
+      expect(result).toEqual(fixtureCase.expected);
+    });
+  }
+});
+
+describe("stage 3 · uploads fixtures (I-PROTO-FULL-001 · D-UPLOAD include)", () => {
+  const suite = loadSuite("uploads");
+  const cases = suite.value.cases;
+  assertCoverage(suite.value, cases.map((c) => c.id), {}, "uploads");
+
+  for (const fixtureCase of cases) {
+    it(fixtureCase.id, () => {
+      const result = runUploadBatch(fixtureCase.input as never);
       expect(result).toEqual(fixtureCase.expected);
     });
   }

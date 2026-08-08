@@ -51,6 +51,12 @@
       "route": "/form-with-reactions"
     },
     {
+      "pageId": "form-with-upload",
+      "title": "Form with upload",
+      "schemaUrl": "/api/schema/form-with-upload",
+      "route": "/form-with-upload"
+    },
+    {
       "pageId": "users",
       "title": "Users",
       "schemaUrl": "/api/schema/users",
@@ -117,6 +123,11 @@
             "pageRef": "form-with-reactions",
             "label": "Form with reactions",
             "icon": "reaction"
+          },
+          {
+            "pageRef": "form-with-upload",
+            "label": "Form with upload",
+            "icon": "upload"
           }
         ]
       },

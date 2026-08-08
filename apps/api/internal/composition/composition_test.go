@@ -38,6 +38,7 @@ func compositionCount(t *testing.T, st *store.Store, query string, args ...any) 
 
 func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
 	return newMux(
+		&config.Config{DBPath: "test.db"},
 		a,
 		st,
 		authsession.NewRepository(st),

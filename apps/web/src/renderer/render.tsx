@@ -17,6 +17,11 @@ import {
   constructRequest,
   normalizeSelection,
 } from "@/protocol/conformance/request-construction";
+import {
+  uploadFilesWithFetch,
+  type UploadActionResult,
+  type UploadFile,
+} from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { coerceFieldValue, type FormControlField } from "@/renderer/form-controls";
@@ -100,6 +105,7 @@ export interface RendererComponentProps {
     values: Record<string, unknown>;
     onChange: (id: string, value: unknown) => void;
     fieldDisabled?: (id: string) => boolean;
+    onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
   }>;
 }
 
@@ -168,6 +174,8 @@ export interface SchemaCrudValue {
   invokeAction: (item: Record<string, unknown>, row: Record<string, unknown> | null) => void;
   /** Dispatches a batch toolbar trigger (ADR-0022): gate → confirm → request. */
   invokeBatchAction: (item: Record<string, unknown>, tableId: string) => void;
+  /** Upload control transport (ADR-0012): resolves action/actionRef → validates → uploads. */
+  uploadFiles: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
   /** Per-table selection state (keys + count; normalized by the table). */
   selection: (tableId: string) => TableSelection | undefined;
   setSelection: (tableId: string, keys: unknown[]) => void;
@@ -531,8 +539,7 @@ function SchemaCrudProvider({
   );
 
   // ADR-0022 D4: batch toolbar trigger — confirm first, then run the batch.
-  const invokeBatchAction = useCallback(
-    (item: Record<string, unknown>, tableId: string) => {
+  const invokeBatchAction = useCallback((item: Record<string, unknown>, tableId: string) => {
       const actionRef = stringOf(item.actionRef);
       const action = actionOf(document, actionRef);
       if (actionRef === "" || action === undefined) {
@@ -568,8 +575,38 @@ function SchemaCrudProvider({
     [document, context, fetcher, selection, reloadList],
   );
 
-  const resolveConfirm = useCallback(
-    async (confirmed: boolean) => {
+  // ADR-0012 upload transport: resolve action (actionRef → page action, else
+  // direct URL), validate + upload through the shared orchestrator.
+  const uploadFiles = useCallback(
+    async (field: FormControlField, files: UploadFile[]): Promise<unknown> => {
+      let action: UploadActionResult;
+      if (typeof field.actionRef === "string" && field.actionRef !== "") {
+        const referenced = actionOf(document, field.actionRef);
+        if (referenced === undefined || referenced.type !== "upload") {
+          throw new Error(`upload action "${field.actionRef}" is not a type=upload action`);
+        }
+        action = referenced as unknown as UploadActionResult;
+      } else if (typeof field.action === "string" && field.action !== "") {
+        // Direct-URL mode: constraints come from the field props (registry).
+        action = {
+          url: field.action,
+          accept: field.accept,
+          maxSize: field.maxSize,
+          multiple: field.multiple === true,
+        };
+      } else {
+        throw new Error("upload field requires action or actionRef");
+      }
+      const result = await uploadFilesWithFetch(action, files, fetcher);
+      if (!result.ok) {
+        throw new Error(`${result.code} (file ${result.fileIndex})`);
+      }
+      return result.fieldValue;
+    },
+    [document, fetcher],
+  );
+
+  const resolveConfirm = useCallback(async (confirmed: boolean) => {
       if (pendingConfirm === null) {
         return;
       }
@@ -690,6 +727,7 @@ function SchemaCrudProvider({
       runRowAction,
       invokeAction,
       invokeBatchAction,
+      uploadFiles,
       submitForm,
       searchFormSubmit,
       effectivePermission,
@@ -714,6 +752,7 @@ function SchemaCrudProvider({
       runRowAction,
       invokeAction,
       invokeBatchAction,
+      uploadFiles,
       submitForm,
       searchFormSubmit,
       effectivePermission,
@@ -864,6 +903,7 @@ function FormView({
         values={values}
         onChange={(id, value) => setValues((prev) => ({ ...prev, [id]: value }))}
         fieldDisabled={fieldDisabled}
+        onUpload={crud?.uploadFiles}
       />
       {reaction.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">

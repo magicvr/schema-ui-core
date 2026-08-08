@@ -266,6 +266,7 @@ describe("manifest loading and expression boundaries", () => {
       "search-form-table",
       "form-controls",
       "form-with-reactions",
+      "form-with-upload",
       "users",
       "roles",
       "settings",

@@ -26,14 +26,13 @@ describe("isWhitelistedFormControl", () => {
       "checkboxGroup",
       "richText",
       "password",
+      "upload",
     ]) {
       expect(isWhitelistedFormControl(type)).toBe(true);
     }
   });
 
   it("rejects non-registry types", () => {
-    // upload joins the whitelist only after the D-UPLOAD batch (B4).
-    expect(isWhitelistedFormControl("upload")).toBe(false);
     expect(isWhitelistedFormControl("chart")).toBe(false);
     expect(isWhitelistedFormControl("slider")).toBe(false);
   });
@@ -54,6 +53,8 @@ describe("wireKindOf", () => {
     expect(wireKindOf({ id: "k", type: "inputNumber" })).toBe("number");
     expect(wireKindOf({ id: "l", type: "datePicker" })).toBe("string");
     expect(wireKindOf({ id: "m", type: "dateRangePicker" })).toBe("date-range");
+    expect(wireKindOf({ id: "u", type: "upload" })).toBe("string");
+    expect(wireKindOf({ id: "u", type: "upload", multiple: true })).toBe("string-array");
   });
 });
 
@@ -168,9 +169,38 @@ describe("checkFormCapabilities", () => {
 
   it("rejects non-whitelisted types", () => {
     const errors = checkFormCapabilities(baseMeta, [
-      { id: "u", type: "upload" as FormControlField["type"] },
+      { id: "u", type: "slider" as FormControlField["type"] },
     ]);
     expect(errors.some((error) => error.code === "FORM_TYPE_NOT_WHITELISTED")).toBe(true);
+  });
+
+  it("gates upload action/actionRef per the registry oneOf", () => {
+    // Missing both action and actionRef → error.
+    const missing = checkFormCapabilities(baseMeta, [{ id: "u", type: "upload" }]);
+    expect(missing.some((error) => error.code === "UPLOAD_ACTION_REQUIRED")).toBe(true);
+    // Both declared → conflict.
+    const conflict = checkFormCapabilities(baseMeta, [
+      { id: "u", type: "upload", action: "/files", actionRef: "up" },
+    ]);
+    expect(conflict.some((error) => error.code === "UPLOAD_ACTION_CONFLICT")).toBe(true);
+    // Direct URL mode passes without a capability.
+    const direct = checkFormCapabilities(baseMeta, [
+      { id: "u", type: "upload", action: "/files", multiple: true },
+    ]);
+    expect(direct).toEqual([]);
+    // Invalid direct URL fails closed.
+    const badUrl = checkFormCapabilities(baseMeta, [
+      { id: "u", type: "upload", action: "https://cdn.example.com/files" },
+    ]);
+    expect(badUrl.some((error) => error.code === "UPLOAD_ACTION_INVALID")).toBe(true);
+    // actionRef requires actions.upload.
+    const missingCap = checkFormCapabilities(baseMeta, [{ id: "u", type: "upload", actionRef: "up" }]);
+    expect(missingCap.some((error) => error.code === "UPLOAD_CAPABILITY_REQUIRED")).toBe(true);
+    const withCap = checkFormCapabilities(
+      { protocolVersion: "2.7", requiredCapabilities: ["app.manifest", "actions.upload"] },
+      [{ id: "u", type: "upload", actionRef: "up" }],
+    );
+    expect(withCap).toEqual([]);
   });
 
   it("gates any defaultValue behind protocol 2.7 + form.controls.advanced", () => {
