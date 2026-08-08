@@ -1117,10 +1117,16 @@ function useDisplayData(
       return;
     }
     let cancelled = false;
+    // A-002 finding 3: clear any stale error before a refetch starts, and on
+    // success — otherwise a failed fetch followed by a successful reload
+    // (same dataSource, new reloadToken) keeps showing the old error because
+    // resolveAsyncDisplayState prefers `error` over `ready`.
+    setError(null);
     fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 })
       .then((next) => {
         if (!cancelled) {
           setList(next);
+          setError(null);
         }
       })
       .catch((err: unknown) => {
