@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.6
-progress: 4/5
+version: 0.1.7
+progress: 5/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
 primary_plan: VP-005-design-system-and-ui-experience
@@ -51,7 +51,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 - [x] **S2**：Renderer 视觉重构 — VP-005 钉死 type + 能力面接入设计系统；**呈现约束（D-004）**：桌面密表 / 移动卡片列表；`recordView` 为右栏或 Drawer（移动 Sheet）；Modal 仅短编辑与 Confirm；分母不得窄于 type 表、不得宽于 I-PROTO-FULL-001 include。
 - [x] **S3**：Shell 与工作流交互 — 桌面侧栏+顶栏；移动汉堡+导航抽屉；用户区；Dialog/Toast 一致语言；与 D-004 壳气质对齐；**可选** Cmd+K（默认不进退出分母）。
 - [x] **S4**：状态与反馈 — Skeleton / Empty / 错误页与表单异步反馈在主范例路径一致。statCard/chart/list-table 的 loading 态统一改用 `Skeleton` primitive（`role="status"`），共享纯函数 `resolveAsyncDisplayState` 直接单测；GOAL-004 五件套（C1–C3 全绿，A-001 self 审计 pass）。
-- [ ] **S5**：视觉回归 + fork Token 示例 + 过程关门 — E2E/Smoke 不回退；fork 品牌定制最小示例；open required = 0；可向 `/vision` 提 VP-005 关门（须用户确认）。
+- [x] **S5**：视觉回归 + fork Token 示例 + 过程关门 — fork 品牌定制最小示例（`brand.example.css` + 结构测试 + README）；vitest 616/616 全绿、build exit 0、Playwright e2e 2/2 真实通过（`schema-crud.spec.ts`/`shell.spec.ts`，非诚实退化证据）；独立交叉审计 A-002（grok build/grok-4.5/高思考强度）已落盘响应（A-003，2 条 required finding 均 fixed）；GOAL-005 五件套（C1–C2 全绿）。open required（本 Root scope）= 0；**关门本身仍待用户书面确认**，见下方"关门证据摘要"。
 
 ### 阶段 ↔ VP 退出判据映射
 
@@ -61,7 +61,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 | S2 | exit 2 Renderer 纳入面视觉 | 待 S2 产物；呈现 = D-004 |
 | S3 | exit 3 Shell | 待 S3 产物；壳 = D-004 |
 | S4 | exit 4 状态生命周期 | GOAL-004 E-001（Skeleton 统一 + async-state 纯函数 + 单测） |
-| S5 | exit 5–6 回归诚实 + 过程可关门 | 待审计 + 关门提案 |
+| S5 | exit 5–6 回归诚实 + 过程可关门 | GOAL-005 E-001/E-002；A-002（independent）+ A-003（响应，fixed）；vitest 616 + build + e2e 2/2 |
 
 ## 纲领路线图
 
@@ -71,7 +71,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 | S2 | Renderer 钉死 type 视觉重构 | **完成** | chart pie → `--chart-*` Token；overlay/shadow S1 已完成 |
 | S3 | Shell 与工作流 | **完成** | 移动汉堡+抽屉（bg-overlay/shadow-lg）；navigate 关闭；shell.test.ts 通过 |
 | S4 | 状态与反馈 | **完成** | Skeleton 统一 + 纯判定函数（GOAL-004；A-001 self pass） |
-| S5 | 回归 / fork 示例 / 关门 | **未开始** | 过程 exit 6 |
+| S5 | 回归 / fork 示例 / 关门 | **完成** | fork brand.example.css + 结构测试；vitest 616 + build + e2e 2/2；A-002 independent（conditional）→ A-003 响应（fixed）；开放 required = 0 |
 
 阶段通常串行；同一纲领阶段内允许并行子目标。建区与视觉定稿 **均不**勾选任何检查点。
 
@@ -98,7 +98,9 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 ## 派生进度展示
 
-`progress: 4/5` 由上方 S1～S5 五个等权检查点派生（S1–S4 已完成；S5 未开始）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+`progress: 5/5` 由上方 S1～S5 五个等权检查点派生（S1–S5 均已完成）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+
+**关门状态（P-004 · 待用户裁决）**：S1–S5 检查点齐备，GOAL-002~GOAL-005 四个子目标 `status: done`，`03-audit.md` 台账（Root 层）与 GOAL-004/GOAL-005 台账开放 required findings 均为 0（GOAL-005 的 A-002 independent conditional 已由 A-003 self 响应 fixed）。**Root `status` 本次不单方面置为 `done`**——按 AGENTS §6b P-004，关门须用户书面确认；本条仅记录"证据齐备，可提请关门"的事实，不代为裁决。
 
 ## 台账布局
 
