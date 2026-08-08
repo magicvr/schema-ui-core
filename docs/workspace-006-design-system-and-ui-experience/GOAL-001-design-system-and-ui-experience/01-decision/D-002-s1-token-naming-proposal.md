@@ -6,7 +6,7 @@ status: accepted
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.1
+version: 0.1.2
 ---
 
 ## D-002 · S1 Token 语义分层与命名约定
@@ -25,9 +25,9 @@ version: 0.1.1
 |---|--------|----------|
 | 1 | **权威落点** | Design Token 唯一运行时权威 = `apps/web/src/index.css`（`:root` / `.dark` + `@theme inline`）。可选短文发现入口（S1 末或 S5）：`docs/architecture/design-tokens.md`（非第二真相源）。 |
 | 2 | **Color** | **保留并文档化**现有 shadcn 语义名：`--background`、`--foreground`、`--card`、`--primary`、`--secondary`、`--muted`、`--accent`、`--border`、`--input`、`--ring` 及其 `*-foreground`。S1 实施时**增量**增加：`--destructive` / `--destructive-foreground`；展示用 `--chart-1`…`--chart-5`（供 `statCard`/`chart`）。色值继续 **oklch**。 |
-| 3 | **Typography** | 新增语义层（非再发明 utility 名）：`--font-sans`（UI 无衬线）、`--font-mono`（代码/ID）；字阶用 `@theme` 映射 `--text-xs`…`--text-lg` 或依赖 Tailwind 默认 scale 但**禁止**在 Renderer 硬编码 px。标题层级约定：Shell 用 `text-sm`/`font-medium` 基线，页面标题 `text-base`/`text-lg`（S1 写入消费表）。 |
+| 3 | **Typography** | 新增语义层：`--font-sans`、`--font-mono`。字阶 **依赖 Tailwind 默认 `text-*` scale**（S1 不重映射 `--text-xs`…）；**禁止** Renderer 硬编码 px。标题层级：Shell `text-sm`/`font-medium`，页面标题 `text-base`/`text-lg`。**收口依据**：D-003 / F-006。 |
 | 4 | **Radius** | **保留** `--radius` + 现有 `--radius-sm|md|lg`。组件默认：控件 `rounded-md`，卡片/对话框 `rounded-lg`。 |
-| 5 | **Shadow** | 新增：`--shadow-sm`、`--shadow-md`、`--shadow-lg`（CSS 变量，深色下降低不透明度）。替换散落 `shadow-xl` 为语义消费（confirm/modal 等）。 |
+| 5 | **Shadow** | 原始语义：`--elevation-sm|md|lg`（`:root`/`.dark`，深色降不透明度）；`@theme` 映射 `--shadow-*: var(--elevation-*)` 生成 `shadow-*` utility。**禁止**同名自引用。替换散落 `shadow-xl` 为语义消费。**修订依据**：D-003 / F-002（A-002/A-003）。 |
 | 6 | **Spacing** | **不**另建完整 spacing 矩阵；消费 **Tailwind 默认 spacing scale**（4px 基）。可选单一密度 token：`--density` 不强制 S1；若引入，仅文档化，默认 `comfortable`。 |
 | 7 | **命名纪律** | 公共 API = **CSS 自定义属性**（`--*`）+ Tailwind 语义 utility（`bg-primary`）。禁止在业务/Renderer 中引入 `ds.color.primary.500` 式第二命名空间，除非同时生成到 `index.css`。 |
 | 8 | **深/浅色** | 继续 **class 策略**（`html.dark`）+ `localStorage.theme`。S1 须补 `index.html` **同步**内联引导脚本（读 theme / prefers-color-scheme），目标：关键壳层无持续 FOUC。 |
@@ -58,7 +58,14 @@ version: 0.1.1
 **允许**：进入 S1 方案冻结与实施。  
 **仍禁止**：在无实施证据前勾选 S1 检查点或宣称 exit 1 已满足。
 
+### 后续修订
+
+| 日期 | 动作 |
+|------|------|
+| 2026-08-09 | D-003 合并响应 A-001/A-002/A-003：修订 §3 Typography 字阶路径、§5 Shadow elevation 双层映射；F-002 决策半程锁定，完整闭合仍待实施证据。 |
+
 ### 依赖证据
 
 - I-001 / E-002 / `attachments/I-S1-001-ui-baseline-inventory.md`
 - VP-005 exit 1、交付形态定名、F-V019 路径 b
+- D-003；A-001 / A-002 / A-003 / A-004

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.1
+version: 0.1.2
 ---
 
 # 决策记录 · GOAL-001-design-system-and-ui-experience
@@ -26,4 +26,5 @@ version: 0.1.1
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-09 | 开区与纲领路线图采纳 | accepted | `01-decision/D-001-workspace-open-and-roadmap.md` |
-| D-002 | 2026-08-09 | S1 Token 语义分层与命名约定 | **accepted** | `01-decision/D-002-s1-token-naming-proposal.md` |
+| D-002 | 2026-08-09 | S1 Token 语义分层与命名约定 | **accepted**（§3/§5 经 D-003 修订） | `01-decision/D-002-s1-token-naming-proposal.md` |
+| D-003 | 2026-08-09 | 合并响应 A-001/A-002/A-003（Shadow 映射等） | **accepted** | `01-decision/D-003-audit-response-s1-token-mapping.md` |
