@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { UploadableFile } from "@/protocol/conformance/upload-orchestration";
 import {
@@ -40,6 +43,9 @@ function displayValue(field: FormControlField, value: unknown): unknown {
   return coerceFieldValue(field, value);
 }
 
+const controlClass =
+  "h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+
 function BaseInput({
   id,
   label,
@@ -56,17 +62,18 @@ function BaseInput({
   disabled?: boolean;
 }) {
   return (
-    <label className="block space-y-1" htmlFor={id}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <input
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input
         id={id}
         type={type}
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       />
-    </label>
+    </div>
   );
 }
 
@@ -96,7 +103,7 @@ function SelectField({
       );
     };
     return (
-      <fieldset className="space-y-1">
+      <fieldset className="space-y-1.5">
         <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
         <div className="space-y-1">
           {options.map((option) => (
@@ -115,14 +122,16 @@ function SelectField({
     );
   }
   return (
-    <label className="block space-y-1" htmlFor={id}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
       <select
         id={id}
         value={value === undefined || value === null ? "" : String(value)}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        className={controlClass}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -130,7 +139,7 @@ function SelectField({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
 
@@ -151,7 +160,7 @@ function RadioField({
 }) {
   const current = value === undefined || value === null ? "" : String(value);
   return (
-    <fieldset className="space-y-1" id={id}>
+    <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="space-y-1">
         {optionList(field).map((option) => (
@@ -196,7 +205,7 @@ function CheckboxGroupField({
     );
   };
   return (
-    <fieldset className="space-y-1" id={id}>
+    <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="space-y-1">
         {optionList(field).map((option) => (
@@ -232,7 +241,7 @@ function BooleanField({
 }) {
   const checked = value === true;
   return (
-    <label className="flex items-center gap-2 text-sm" htmlFor={id}>
+    <div className="flex items-center gap-2 text-sm">
       <input
         id={id}
         type="checkbox"
@@ -240,9 +249,11 @@ function BooleanField({
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
       />
-      {label}
-      {field.type === "switch" ? <span className="text-xs text-muted-foreground">(switch)</span> : null}
-    </label>
+      <Label htmlFor={id}>{label}</Label>
+      {field.type === "switch" ? (
+        <span className="text-xs text-muted-foreground">(switch)</span>
+      ) : null}
+    </div>
   );
 }
 
@@ -262,18 +273,19 @@ function TextAreaField({
   placeholder?: string;
 }) {
   return (
-    <label className="block space-y-1" htmlFor={id}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <textarea
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Textarea
         id={id}
         value={value}
         disabled={disabled}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       />
-    </label>
+    </div>
   );
 }
 
@@ -297,9 +309,11 @@ function NumberField({
   step?: number;
 }) {
   return (
-    <label className="block space-y-1" htmlFor={id}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <input
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input
         id={id}
         type="number"
         value={Number.isFinite(value) ? value : 0}
@@ -311,9 +325,8 @@ function NumberField({
           const next = event.target.valueAsNumber;
           onChange(Number.isFinite(next) ? next : 0);
         }}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       />
-    </label>
+    </div>
   );
 }
 
@@ -335,9 +348,11 @@ function DateField({
   max?: string;
 }) {
   return (
-    <label className="block space-y-1" htmlFor={id}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <input
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input
         id={id}
         type="date"
         value={value}
@@ -345,9 +360,8 @@ function DateField({
         min={min}
         max={max}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       />
-    </label>
+    </div>
   );
 }
 
@@ -365,25 +379,23 @@ function DateRangeField({
   disabled?: boolean;
 }) {
   return (
-    <fieldset className="space-y-1" id={id}>
+    <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="flex items-center gap-2">
-        <input
+        <Input
           type="date"
           value={value.start}
           disabled={disabled}
           aria-label={`${label} start`}
           onChange={(event) => onChange({ ...value, start: event.target.value })}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
         />
         <span className="text-xs text-muted-foreground">–</span>
-        <input
+        <Input
           type="date"
           value={value.end}
           disabled={disabled}
           aria-label={`${label} end`}
           onChange={(event) => onChange({ ...value, end: event.target.value })}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
         />
       </div>
     </fieldset>
@@ -437,15 +449,16 @@ function UploadField({
     }
   };
   return (
-    <label className="block space-y-1" htmlFor={id}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <input
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input
         id={id}
         type="file"
         multiple={field.multiple === true}
         disabled={disabled || status.kind === "uploading"}
         onChange={(event) => void handleFiles(event.target.files)}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       />
       {display !== "" ? (
         <span className="text-xs text-muted-foreground">Value: {display}</span>
@@ -455,7 +468,7 @@ function UploadField({
           {status.message}
         </span>
       ) : null}
-    </label>
+    </div>
   );
 }
 
@@ -630,7 +643,10 @@ export function FormControls({
   onUpload,
 }: FormControlsProps) {
   return (
-    <div className={cn("grid gap-4", fields.length > 1 && "sm:grid-cols-2")}>
+    <div
+      data-form-controls="design-system"
+      className={cn("grid gap-4", fields.length > 1 && "sm:grid-cols-2")}
+    >
       {fields.map((field) => (
         <FieldControl
           key={field.id}

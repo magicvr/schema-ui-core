@@ -14,6 +14,7 @@ import {
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   constructRequest,
@@ -1077,23 +1078,87 @@ function TextView({ node }: { node: RenderTextNode }) {
   return <p className="text-sm text-foreground">{node.props?.text ?? ""}</p>;
 }
 
+/**
+ * recordView surface (D-004 §5 / S2):
+ * - Empty: inline placeholder
+ * - With record: desktop right Drawer + mobile full-height Sheet (not centered Modal)
+ * Static `props.record` still uses the same chrome so fixtures remain observable.
+ */
 function RecordView({ node }: { node: RenderRecordViewNode }) {
   const crud = useSchemaCrud();
   const staticRecord = node.props?.record;
-  const record = isRecord(staticRecord) ? staticRecord : (crud?.selectedRow ?? null);
+  const hasStatic = isRecord(staticRecord);
+  const record = hasStatic ? staticRecord : (crud?.selectedRow ?? null);
   const entries = isRecord(record) ? Object.entries(record) : [];
   if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">Select a record to view details.</p>;
+    return (
+      <p
+        data-record-view="empty"
+        className="text-sm text-muted-foreground"
+      >
+        Select a record to view details.
+      </p>
+    );
   }
+
+  const canClose = !hasStatic && crud !== null;
+  const onClose = () => {
+    if (canClose) {
+      crud.selectRow(null);
+    }
+  };
+
   return (
-    <dl className="space-y-1 rounded-md border border-border bg-card p-4">
-      {entries.map(([key, value]) => (
-        <div key={key} className="flex gap-4 text-sm">
-          <dt className="w-32 shrink-0 text-muted-foreground">{key}</dt>
-          <dd className="text-foreground">{String(value)}</dd>
+    <>
+      {/* Dimmer only when selection-driven (static fixtures stay non-modal). */}
+      {canClose ? (
+        <div
+          data-record-view="backdrop"
+          className="fixed inset-0 z-40 bg-overlay"
+          aria-hidden="true"
+          onClick={onClose}
+        />
+      ) : null}
+      <aside
+        data-record-view="panel"
+        data-record-view-mode={canClose ? "drawer" : "panel"}
+        role="dialog"
+        aria-modal={canClose ? true : undefined}
+        aria-label="Record details"
+        className={
+          canClose
+            ? // Desktop: right Drawer; mobile: full-height Sheet (D-004 §5)
+              "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-card shadow-lg sm:max-w-md max-sm:inset-x-0 max-sm:top-auto max-sm:h-[min(92vh,100%)] max-sm:rounded-t-xl max-sm:border-l-0 max-sm:border-t"
+            : "w-full max-w-md rounded-lg border border-border bg-card shadow-sm"
+        }
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+            Record details
+          </h2>
+          {canClose ? (
+            <button
+              type="button"
+              aria-label="Close record details"
+              onClick={onClose}
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              ×
+            </button>
+          ) : null}
         </div>
-      ))}
-    </dl>
+        <dl className="flex-1 space-y-3 overflow-y-auto p-4">
+          {entries.map(([key, value]) => (
+            <div key={key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_1fr] sm:gap-3">
+              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                {key}
+              </dt>
+              <dd className="break-words text-foreground">{String(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      </aside>
+    </>
   );
 }
 
@@ -1207,13 +1272,17 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
   const label = node.props?.label ?? valueField ?? "Value";
   const unit = node.props?.unit;
   return (
-    <div className="rounded-md border border-border bg-card p-4">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">
-        {String(formatResult.value)}
-        {unit !== undefined && unit !== "" ? <span className="ml-1 text-sm text-muted-foreground">{unit}</span> : null}
-      </p>
-    </div>
+    <Card data-display-surface="statCard" className="shadow-sm">
+      <CardContent className="p-4">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+          {String(formatResult.value)}
+          {unit !== undefined && unit !== "" ? (
+            <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
+          ) : null}
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 

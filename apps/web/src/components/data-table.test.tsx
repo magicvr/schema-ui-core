@@ -138,4 +138,25 @@ describe("DataTable", () => {
     );
     expect(container.textContent).toContain("Acme Console!");
   });
+
+  it("ships dual-end presentation: dense desktop table + mobile card list (D-004 / S2)", async () => {
+    const container = await renderTable(
+      <DataTable columns={columns} rows={rows} rowKey={rowKey} caption="Example rows" />,
+    );
+    const root = container.querySelector('[data-table-presentation="dual-end"]');
+    expect(root).not.toBeNull();
+    const desktop = container.querySelector('[data-table-presentation="desktop-table"]');
+    expect(desktop).not.toBeNull();
+    expect(desktop?.className).toMatch(/hidden/);
+    expect(desktop?.className).toMatch(/md:block/);
+    expect(desktop?.querySelector("table")).not.toBeNull();
+
+    const mobile = container.querySelector('[data-table-presentation="mobile-cards"]');
+    expect(mobile).not.toBeNull();
+    expect(mobile?.getAttribute("aria-label")).toBe("Mobile card list");
+    expect(mobile?.className).toMatch(/md:hidden/);
+    expect(mobile?.querySelectorAll("li").length).toBe(2);
+    expect(mobile?.textContent).toContain("Acme Console");
+    expect(mobile?.textContent).toContain("Northwind Sales");
+  });
 });
