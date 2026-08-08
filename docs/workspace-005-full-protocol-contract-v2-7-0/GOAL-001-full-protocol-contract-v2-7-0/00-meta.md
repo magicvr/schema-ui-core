@@ -4,8 +4,8 @@ title: schema-ui-docs@v2.7.0 整份契约可验证兼容
 status: done
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.2.0
+updated: 2026-08-09
+version: 0.2.1
 progress: 6/6
 plan_refs:
   - VP-006-full-protocol-contract-v2-7-0
@@ -46,18 +46,18 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 - [x] **S2**：核心缺口实现 — 未实现 registry type / 批量 selection / upload 等按表纳入批次交付（B1–B4；320/320 fixture case 全绿）。
 - [x] **S3**：保真与 runtime — 钉死内降级控件提升到契约语义；表达式/权限边角 fail-closed（B5；白名单/门禁/空选/循环阻断测试）。
 - [x] **S4**：范例 + conformance — 每纳入域可发现范例与验证入口；exclude 面有表可查（覆盖表验证入口列已登记真实路径）。
-- [x] **S5**：文档与关门 — 发现路径（overview/QUICKSTART）、兼容声明诚实、回归不回退、close-out 审计；开放 required = 0；可向 `/vision` 提出 VP-006 关门提案（须用户确认）。
+- [x] **S5**：文档与关门 — 发现路径（overview/QUICKSTART）、兼容声明诚实、回归不回退、close-out 审计；开放 required = 0；VP-006 已于 2026-08-08 经用户书面确认关门（E-005）。
 
 ### 阶段 ↔ VP 退出判据映射
 
-| 阶段 | 主要服务的 VP 退出判据 | 证据（激活后填写） |
-|------|------------------------|--------------------|
-| S0 | 为 exit 1–4 提供差集输入 | 待 S0 产物 |
-| S1 | exit 1 覆盖表决策 | 待 `I-PROTO-FULL-001` + D-* |
-| S2 | exit 2–3 实现纳入面 | 待实现证据 |
-| S3 | exit 2 保真 / fail-closed | 待实现证据 |
-| S4 | exit 4 范例与验证 | 待 fixture/集成登记 |
-| S5 | exit 5–6 文档诚实 + 过程可关门 | 待审计 + 关门提案 |
+| 阶段 | 主要服务的 VP 退出判据 | 证据 |
+|------|------------------------|------|
+| S0 | 为 exit 1–4 提供差集输入 | `attachments/I-S0-001-gap-analysis-v0-1-3-to-full.md`；`02-execution/E-002-s0-gap-analysis.md`；I-001 closed |
+| S1 | exit 1 覆盖表决策 | `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.0 + `01-decision/D-002-full-coverage-freeze.md`；`03-audit/A-001-*`（F-001 fixed） |
+| S2 | exit 2–3 实现纳入面 | `02-execution/E-003-s2-s3-implementation.md`（B1–B4）；registry 24 type / batch / upload 出货路径；320 fixture 分母 |
+| S3 | exit 2 保真 / fail-closed | E-003 B5；`form-controls` 门禁、reaction 循环阻断、`EMPTY_SELECTION`、上传约束；vitest 含 fail-closed 集成 |
+| S4 | exit 4 范例与验证 | 覆盖表 §1/§3 验证入口列；8 范例页 `apps/api/internal/modules/schemarender/schema/*.json`；stage3 / permissions / upstream fixtures |
+| S5 | exit 5–6 文档诚实 + 过程可关门 | `02-execution/E-004-s5-regression-verification.md`；`03-audit/A-002-*` pass（required 0）；`02-execution/E-005-vp006-closeout.md`；VP-006 `closed` + Root `done` |
 
 ## 纲领路线图
 
@@ -68,7 +68,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 | S2 | 核心缺口实现 | **已完成** | B1–B4（E-003）；320/320 fixture case 全绿；vitest 569 / go test 全绿 |
 | S3 | 保真与 runtime | **已完成** | B5 fail-closed 测试；表达式/权限/批量/上传边界（E-003） |
 | S4 | 范例 + conformance | **已完成** | 覆盖表验证入口列登记真实路径（8 范例页 + 每域验证入口） |
-| S5 | 文档与关门 | **已完成** | E-004 回归+验证计划全观测；A-002 close-out independent **pass**（开放 required=0）；VP-006 关门提案待用户书面确认 |
+| S5 | 文档与关门 | **已完成** | E-004 回归+验证计划全观测；A-002 close-out independent **pass**（开放 required=0）；E-005：用户书面确认 VP-006 `closed`；Root `done / 6/6` |
 
 阶段通常串行；同一纲领阶段内允许并行子目标。建区 **不**勾选任何检查点。
 
@@ -84,7 +84,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 
 ## 非目标（本 Root）
 
-- **不**启动或吸收 VP-005 视觉/设计系统/Shell 产品化（VP-006 closed 前硬禁止）。
+- **不**启动或吸收 VP-005 视觉/设计系统/Shell 产品化（历史门闩：VP-006 closed 前硬禁止；现 VP-006 已 closed，但 VP-005 仍受 `F-V018` 约束，解冻须另决策）。
 - **不**交付订单、钱包、类目、通知等业务领域模块。
 - **不**重开 VP-003 架构迁移、不恢复长期双线、不引入运行时插件/热插拔。
 - **不**在本项目内重新定义或替代上游协议语义。

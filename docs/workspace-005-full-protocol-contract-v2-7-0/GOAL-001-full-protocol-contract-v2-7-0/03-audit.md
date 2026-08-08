@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.2
+updated: 2026-08-09
+version: 0.1.3
 ---
 
 # 审计 · GOAL-001-full-protocol-contract-v2-7-0
@@ -55,4 +55,5 @@ version: 0.1.2
 
 - **A-001**（S1 independent，conditional）：findings 均已 **fixed**；开放 required = 0；覆盖表 v1.0.0 冻结生效。
 - **A-002**（S5 independent close-out，**pass**）：VP-006 exit 1–5 证据可复核；exit 6 内容条件满足；**开放 required = 0**（F-001/F-002 → fixed；F-003 → accepted-residual，SCRATCH 运行证据按验证计划约定不固化仓内）。
-- 过程态（/govern 响应后）：S0–S5 检查点全部勾选、`progress: 6/6`、Root 仍 `active`（VP-006 关门提案待用户书面确认；**禁止静默关 VP**）。
+- **终态（2026-08-08 用户书面确认 + E-005）**：S0–S5 全部勾选、`progress: 6/6`、Root **`done`**；VP-006 **`closed`**（v0.3.0）。A-002 recommended F-001（执行索引登记 E-004）/ F-002（过程叙述）已在关门响应中处理；F-003 维持 accepted-residual。
+- **维护回填（2026-08-09 · `/govern` · F-V026）**：同步 `00-meta` 阶段↔exit 映射证据列、本结论段与 `goal-tree` 维护说明至终态事实；**未**改写 A-001/A-002 审计原文 verdict/findings。过程可发现性 residual（VRev-014 F-V026）→ **fixed**（见 E-006）。

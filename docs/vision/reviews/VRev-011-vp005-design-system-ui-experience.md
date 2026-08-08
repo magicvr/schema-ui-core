@@ -4,8 +4,8 @@ id: VRev-011
 status: active
 source: independent
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-09
+version: 0.1.1
 parent: null
 ---
 
@@ -68,7 +68,7 @@ VP-005 作为「同愿景下新纲领波次」的结构选型**合法且合理**
 #### F-V018 · 退出判据 #2 / S2 节点范围与 I-PROTO-001 冻结白名单不对齐，且「全量」与「常用」自相矛盾
 
 - level: `required`
-- status: `open`
+- status: `fixed`（2026-08-09 `/vision`；范围权威升为 VP-006 关闭时 `I-PROTO-FULL-001`，非再钉 v0.1.3）
 - severity: high
 - impact: 激活后 Root/实施会在「只美化已实现白名单」与「补全协议未实现 UI 面」之间漂移；关门时无法客观判定 exit 2；也可能被读成授权扩张 `I-PROTO-001 v0.1.3` 的 D-COMP/D-TABLE/D-FORM partial 边界。
 - finding: |
@@ -93,7 +93,7 @@ VP-005 作为「同愿景下新纲领波次」的结构选型**合法且合理**
 #### F-V019 · 部分退出项相对 Charter #3 抬升，且缺少方向级可验证口径
 
 - level: `recommended`
-- status: `open`
+- status: `fixed`（2026-08-09 `/vision` · 路径 b）
 - severity: medium
 - impact: 把「参考 Linear/Vercel 的克制体验」抬成硬门禁后，Cmd+K / WCAG AA /「无闪烁」等可能在无测量定义时阻塞关门，或反过来被主观宣称完成。
 - finding: |
@@ -110,7 +110,7 @@ VP-005 作为「同愿景下新纲领波次」的结构选型**合法且合理**
 #### F-V020 · 缺少过程可关门 exit 与交付形态定名；Non-goals 笔误
 
 - level: `recommended`
-- status: `open`
+- status: `fixed`（2026-08-09 `/vision`）
 - severity: low
 - impact: 协作者/AI 可能误判交付仅为「改样式」而无文档/fork 示例；或关门时缺过程门闩表述；笔误降低契约清晰度。
 - finding: |
@@ -149,3 +149,10 @@ VP-005 作为「同愿景下新纲领波次」的结构选型**合法且合理**
 | date | actor | summary |
 |------|-------|---------|
 | 2026-08-08 | `/vision` · 用户书面 | **不回溯改写**本报告原 verdict/findings。用户裁决：协议目标为 `schema-ui-docs@v2.7.0` **整份契约**；新建 [VP-006](../plans/VP-006-full-protocol-contract-v2-7-0.md) 为当前组合主意图；**VP-006 closed 前禁止 VP-005 激活/视觉实施**。VP-005 → `0.2.0` 写入硬门闩并改继承 VP-006。`F-V018`/`F-V019`/`F-V020` **仍 open**（VP-005 解冻前须按全量覆盖表重写 exit 再闭合）；本追加 **不是** fixed / residual / overruled。 |
+
+### 响应（对独立意见 · VRev-011 findings 闭合 · 2026-08-09）
+
+| date | actor | summary |
+|------|-------|---------|
+| 2026-08-09 | `/vision` · 用户指令「处理 F-V018（及 F-V019/F-V020），再决定是否解冻 VP-005」 | **不回溯改写**原 verdict `conditional` 与 finding 正文。**F-V018 → `fixed`**：VP-005 → **v0.3.0** editorial——exit 2 / S2 钉死 `I-PROTO-FULL-001` 真实 registry type 表（布局/数据/表单控件）；明确 **详情=`recordView`、筛选=`table`+search 能力面**，禁止 `Detail`/`Filter` 杜撰 Node 名；禁止借视觉波次扩张覆盖 disposition；删除模糊「全量协议 Node」作为分母。范围权威 = VP-006 closed 时覆盖表（非 v0.1.3 子集）。**F-V019 → `fixed`（路径 b）**：WCAG AA 与 Cmd+K **默认不进**方向级退出分母（可选质量/S3 增强）；Charter #3 参考体验保留。**F-V020 → `fixed`**：交付形态定名表；exit 6 过程可关门；Non-goals 无「私有私有」笔误。VP-006 硬前置标为**已满足**；本 scope **0 open required、0 open recommended**。 |
+| 2026-08-09 | `/vision` · 用户选择「现在激活」 | 在 F-V018/019/020 已 fixed 前提下，VP-005 **`planned` → `active`（v0.4.0）**。同步 roadmap / Charter 关系节（VR-009 editorial）/ workspaces 注 / overview。`lead_workspace` 仍 `null`；物理 scaffold 交 **`/govern`**（建议 `workspace-006-design-system-and-ui-experience`，slug 须用户确认）。**禁止**在 closed workspace-003/004/005 吸收本意图。激活 **不**宣称视觉产品化已交付。 |
