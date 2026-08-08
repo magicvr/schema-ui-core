@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"slices"
 	"strconv"
@@ -203,6 +204,9 @@ func resourceRoutes(a *auth.Authenticator, res Resource, moduleID string) []kern
 		add("POST", res.Path, a.Middleware(h.create()))
 		add("PATCH", res.Path+"/{id}", a.Middleware(h.update()))
 		add("DELETE", res.Path+"/{id}", a.Middleware(h.delete()))
+		// ADR-0022 batch delete (I-PROTO-FULL-001 · D-ACT/D-TABLE include):
+		// one logical HTTP call for a normalized $selection.keys payload.
+		add("POST", res.Path+"/batch-delete", a.Middleware(h.batchDelete()))
 	}
 	return routes
 }
@@ -561,6 +565,88 @@ func (h *resourceHandler) delete() http.Handler {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+}
+
+// batchDelete serves POST {path}/batch-delete (ADR-0022 D5d · I-PROTO-FULL-001):
+// one logical HTTP call over a normalized selection. The body is
+// `{"ids": [scalar keys...]}` (the $selection.keys array of the page's
+// batchMapping); ids must be non-empty scalar keys, deduped, and each key is
+// deleted through the entity boundary. Whole-batch semantics: any failure
+// stops the batch and returns the entity error; success returns
+// `{"deleted": n}` so the client can reload (which clears selection).
+func (h *resourceHandler) batchDelete() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r.Context(), h.writePerm)
+		if !ok {
+			return
+		}
+		var body struct {
+			IDs []any `json:"ids"`
+		}
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxResourceBodyBytes))
+		if err := decoder.Decode(&body); err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_BODY", "expected a JSON object with an ids array")
+			return
+		}
+		if len(body.IDs) == 0 {
+			writeError(w, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one key")
+			return
+		}
+		// D3 invariants: scalar keys only, dedupe preserving order.
+		seen := make(map[string]bool, len(body.IDs))
+		ids := make([]string, 0, len(body.IDs))
+		for _, raw := range body.IDs {
+			var key string
+			switch value := raw.(type) {
+			case string:
+				if value == "" {
+					writeError(w, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be non-empty scalars")
+					return
+				}
+				key = value
+			case float64:
+				if !isFiniteNumber(value) {
+					writeError(w, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be finite scalars")
+					return
+				}
+				key = formatNumberKey(value)
+			case bool:
+				key = strconv.FormatBool(value)
+			default:
+				writeError(w, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be scalar keys")
+				return
+			}
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			ids = append(ids, key)
+		}
+		if len(ids) == 0 {
+			writeError(w, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one scalar key")
+			return
+		}
+		deleted := 0
+		for _, id := range ids {
+			if err := h.res.Entity.Delete(id, user); err != nil {
+				writeEntityError(w, h.res, err, "batch delete")
+				return
+			}
+			if h.res.OnWrite != nil {
+				h.res.OnWrite(r.Context(), user, writeDelete, id, nil, time.Now().UTC())
+			}
+			deleted++
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"deleted": deleted})
+	})
+}
+
+func isFiniteNumber(value float64) bool {
+	return !math.IsNaN(value) && !math.IsInf(value, 0)
+}
+
+func formatNumberKey(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func intParam(raw string, fallback int) (int, bool) {

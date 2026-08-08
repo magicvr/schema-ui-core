@@ -9,7 +9,6 @@ import {
 import {
   runReactionEngine,
   runReactionEngineDetailed,
-  type ReactionEngineInput,
 } from "@/renderer/reaction-engine";
 
 const deps = (values: Record<string, unknown>) => ({ deps: values, context: {} });

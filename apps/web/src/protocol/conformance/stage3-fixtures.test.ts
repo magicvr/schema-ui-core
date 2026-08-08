@@ -362,37 +362,15 @@ describe("stage 3 · reactions fixtures (full $deps engine, I-PROTO-FULL-001)", 
   }
 });
 
-describe("stage 3 · request-construction fixtures", () => {
+describe("stage 3 · request-construction fixtures (incl. batch, I-PROTO-FULL-001)", () => {
   const suite = loadSuite("request-construction");
-  const batchIds = suite.value.cases
-    .filter((c) => c.input.kind === "batchRequest")
-    .map((c) => c.id);
-  const nonBatch = suite.value.cases.filter((c) => c.input.kind !== "batchRequest");
+  const cases = suite.value.cases;
+  // Full suite executes: 64 non-batch + 11 batchRequest (ADR-0022 include).
+  assertCoverage(suite.value, cases.map((c) => c.id), {}, "request-construction");
 
-  /**
-   * Non-batch kinds execute against constructRequest adapter (A-007 F-001 fixed).
-   * batchRequest remains Q1-excluded (multi-select batch outside MVP include-partial).
-   */
-  const exclusions: Record<string, string> = {};
-  for (const id of batchIds) {
-    exclusions[id] =
-      "Excluded: batchRequest depends on D-TABLE multi-select batch (Q1=否 / include-partial D-ACT).";
-  }
-
-  assertCoverage(
-    suite.value,
-    nonBatch.map((c) => c.id),
-    exclusions,
-    "request-construction",
-  );
-
-  for (const fixtureCase of nonBatch) {
+  for (const fixtureCase of cases) {
     it(fixtureCase.id, () => {
       expect(constructRequest(fixtureCase.input)).toEqual(fixtureCase.expected);
     });
   }
-
-  it("excludes all batchRequest cases per Q1 freeze", () => {
-    expect(batchIds.length).toBeGreaterThan(0);
-  });
 });

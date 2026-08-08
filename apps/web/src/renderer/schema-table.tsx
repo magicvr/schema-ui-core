@@ -214,6 +214,20 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     [list, rowKeyField],
   );
 
+  // --- Multi-select (ADR-0022 D2, I-PROTO-FULL-001 include) ---
+  const selectionEnabled =
+    typeof node.props?.selection === "object" &&
+    node.props?.selection !== null &&
+    (node.props.selection as Record<string, unknown>).mode === "multiple";
+
+  // ADR-0022 D2: filter/page/sort changes clear the page selection.
+  useEffect(() => {
+    if (selectionEnabled && crud !== null) {
+      crud.clearSelection(tableId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.page, query.pageSize, query.sort, query.order, query.q]);
+
   if (columns.length === 0) {
     return (
       <p role="alert" className="text-sm text-destructive">
@@ -257,7 +271,96 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       ? undefined
       : (scalarRowKey(selectedRow[rowKeyField]) ?? undefined);
 
+  // --- Multi-select (ADR-0022 D2, I-PROTO-FULL-001 include) ---
+  const currentSelection = selectionEnabled ? crud?.selection(tableId) : undefined;
+  const selectedKeys = new Set(
+    (currentSelection?.keys ?? []).map((key) => `${typeof key}:${String(key)}`),
+  );
+
+  const rowKeyToken = (row: ResourceItem): string | null => {
+    const key = scalarRowKey(row[rowKeyField]);
+    return key === null ? null : `${typeof row[rowKeyField]}:${key}`;
+  };
+  const selectionTokenOf = (token: string): unknown => {
+    const colon = token.indexOf(":");
+    const kind = token.slice(0, colon);
+    const raw = token.slice(colon + 1);
+    return kind === "number" ? Number(raw) : kind === "boolean" ? raw === "true" : raw;
+  };
+
+  const toggleRowSelection = (row: ResourceItem) => {
+    const token = rowKeyToken(row);
+    if (token === null || crud === null) {
+      return;
+    }
+    const next = new Set(selectedKeys);
+    if (next.has(token)) {
+      next.delete(token);
+    } else {
+      next.add(token);
+    }
+    crud.setSelection(tableId, [...next].map(selectionTokenOf));
+  };
+
+  const allPageSelected =
+    list !== null && keyCheck !== null && keyCheck.ok && list.items.length > 0
+      ? list.items.every((row) => {
+          const token = rowKeyToken(row);
+          return token !== null && selectedKeys.has(token);
+        })
+      : false;
+  const toggleAllPage = () => {
+    if (crud === null || list === null || keyCheck === null || !keyCheck.ok) {
+      return;
+    }
+    const next = new Set(selectedKeys);
+    if (allPageSelected) {
+      for (const row of list.items) {
+        const token = rowKeyToken(row);
+        if (token !== null) {
+          next.delete(token);
+        }
+      }
+    } else {
+      for (const row of list.items) {
+        const token = rowKeyToken(row);
+        if (token !== null) {
+          next.add(token);
+        }
+      }
+    }
+    crud.setSelection(tableId, [...next].map(selectionTokenOf));
+  };
+
   const dataColumns: DataTableColumn<ResourceItem>[] = [
+    ...(selectionEnabled
+      ? [
+          {
+            key: "__selection",
+            label: (
+              <input
+                type="checkbox"
+                aria-label="Select all on this page"
+                checked={allPageSelected}
+                disabled={list === null || keyCheck === null || !keyCheck.ok}
+                onChange={toggleAllPage}
+              />
+            ),
+            render: (row: ResourceItem) => {
+              const token = rowKeyToken(row);
+              return (
+                <input
+                  type="checkbox"
+                  aria-label="Select row"
+                  checked={token !== null && selectedKeys.has(token)}
+                  disabled={token === null}
+                  onChange={() => toggleRowSelection(row)}
+                />
+              );
+            },
+          },
+        ]
+      : []),
     ...columns.map((column) => ({
       key: column.field,
       label: column.label ?? column.field,
@@ -300,12 +403,26 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
           {toolbar.map((trigger) => {
             const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
             const permitted = crud?.effectivePermission(key) ?? true;
+            const isBatch =
+              typeof trigger === "object" &&
+              trigger !== null &&
+              !Array.isArray(trigger) &&
+              ((trigger as Record<string, unknown>).batchMapping !== undefined ||
+                (trigger as Record<string, unknown>).requiresSelection === true);
+            const requiresSelection = trigger.requiresSelection === true;
+            const selectionDisabled =
+              requiresSelection && (currentSelection === undefined || currentSelection.count === 0);
+            const disabled = !permitted || selectionDisabled;
             return (
               <button
                 key={key}
                 type="button"
-                disabled={!permitted}
-                onClick={() => crud?.invokeAction(trigger, null)}
+                disabled={disabled}
+                onClick={() =>
+                  isBatch && selectionEnabled
+                    ? crud?.invokeBatchAction(trigger, tableId)
+                    : crud?.invokeAction(trigger, null)
+                }
                 className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {stringOf(trigger.label) ?? key}

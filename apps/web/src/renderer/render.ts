@@ -111,6 +111,8 @@ export interface RenderTableNode {
     dataSource?: string;
     /** Direct field name of each row's unique key (F-002 · I-010-001 v0.2.0 §3; default "id"). */
     rowKey?: string;
+    /** ADR-0022 multi-select model (registry; mode: multiple only). */
+    selection?: { mode?: string };
   };
   children?: RenderNode[];
 }
