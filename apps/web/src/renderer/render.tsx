@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ComponentType,
   type ReactNode,
@@ -28,6 +29,11 @@ import {
   type ResourceList,
   type ResourceQuery,
 } from "@/renderer/resource";
+import {
+  resolveFullFormReactions,
+  type FormControlStateMap,
+  type ReactionError,
+} from "@/renderer/reactions";
 import {
   gateRenderFormFields,
   parseRenderNode,
@@ -559,10 +565,9 @@ function FormView({
   formComponent?: RendererComponentProps["formComponent"];
 }) {
   const Component = formComponent ?? FormControls;
-  const reaction = resolveFormReactions(node, context);
-  const gate = gateRenderFormFields(metaValue, node.props.fields, "fields");
   const crud = useSchemaCrud();
   const modalRow = crud?.modalRow ?? null;
+  const gate = gateRenderFormFields(metaValue, node.props.fields, "fields");
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
     for (const raw of node.props.fields) {
@@ -577,19 +582,59 @@ function FormView({
     }
     return initial;
   });
+  // Baseline snapshot for the full $deps engine (02 §14: baseline = the
+  // field's value at first mount unless explicitly overridden).
+  const mountBaselines = useRef(values);
+  // Full engine (upstream per-field reactions) runs on every value change and
+  // converges; the frozen $context engine remains the fallback.
+  const fullReaction = useMemo(
+    () => resolveFullFormReactions(node.props.fields, values, mountBaselines.current),
+    [node.props.fields, values],
+  );
+  const reaction = fullReaction.usesFullEngine
+    ? fullReaction
+    : resolveFormReactions(node, context);
+  const reactionState: FormControlStateMap = fullReaction.usesFullEngine
+    ? fullReaction.state
+    : reaction.state;
+  const reactionErrors: ReactionError[] = fullReaction.usesFullEngine
+    ? fullReaction.errors
+    : reaction.errors;
+
+  useEffect(() => {
+    if (!fullReaction.usesFullEngine) {
+      return;
+    }
+    const entries = Object.entries(fullReaction.values);
+    if (entries.length === 0) {
+      return;
+    }
+    setValues((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const [key, value] of entries) {
+        if (!Object.is(prev[key], value)) {
+          next[key] = value;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [fullReaction]);
+
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<{ code: string; message: string } | null>(null);
 
   const isSearch = node.props.mode === "search";
   const submitAction = node.props.submitAction;
   const canSubmit = isSearch || typeof submitAction === "string";
-  const hasBlockingErrors = gate.errors.length > 0 || reaction.errors.length > 0;
+  const hasBlockingErrors = gate.errors.length > 0 || reactionErrors.length > 0;
 
   const visibleFields = gate.fields.filter(
-    (raw) => reaction.state[raw.id]?.visible !== false,
+    (raw) => reactionState[raw.id]?.visible !== false,
   );
 
-  const fieldDisabled = (id: string) => reaction.state[id]?.disabled === true;
+  const fieldDisabled = (id: string) => reactionState[id]?.disabled === true;
 
   const handleSubmit = async () => {
     if (crud === null) {

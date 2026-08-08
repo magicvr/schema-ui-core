@@ -1,4 +1,9 @@
 import { evaluateExpression, isValidExpression } from "@/protocol/app-manifest";
+import {
+  runReactionEngineDetailed,
+  type FieldReactionInput,
+  type ReactionRuleInput,
+} from "@/renderer/reaction-engine";
 
 /**
  * R5 D-EXPR reaction surface (frozen Q: reactions operate on the $context
@@ -53,8 +58,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function initialState(fieldIds: string[]): FormControlStateMap {
-  const state: FormControlStateMap = {};
+function initialState(fieldIds: string[]): FormControlStateMap {  const state: FormControlStateMap = {};
   for (const fieldId of fieldIds) {
     state[fieldId] = { visible: true, disabled: false };
   }
@@ -166,4 +170,110 @@ export function parseAndEvaluateReactions(
   }
   const evaluation = evaluateReactions(parsed, context, fieldIds);
   return { state: evaluation.state, errors: [...errors, ...evaluation.errors] };
+}
+
+// --- Full $deps reaction integration (I-PROTO-FULL-001 · D-EXPR) ---
+
+export interface FullReactionResult {
+  /** True when the form declares upstream-shaped per-field reactions ($deps). */
+  usesFullEngine: boolean;
+  /** Per-field control state after convergence (visible/disabled). */
+  state: FormControlStateMap;
+  /** Value commits to merge into the form values (last-wins, convergent). */
+  values: Record<string, unknown>;
+  errors: ReactionError[];
+}
+
+function parseRuleInput(value: unknown): ReactionRuleInput | null {
+  if (!isRecord(value) || typeof value.when !== "string") {
+    return null;
+  }
+  return {
+    when: value.when,
+    ...(isRecord(value.fulfill) ? { fulfill: value.fulfill } : {}),
+    ...(isRecord(value.otherwise) ? { otherwise: value.otherwise } : {}),
+  };
+}
+
+/**
+ * Resolves the full multi-round $deps reaction engine over a form's fields.
+ *
+ * Upstream shape (02-reaction-expression.md): each field node carries
+ * `reactions: [{ when, fulfill, otherwise }]`. Returns the convergent control
+ * state + value commits; malformed rules fail closed (reported, not applied).
+ */
+export function resolveFullFormReactions(
+  rawFields: unknown,
+  values: Record<string, unknown>,
+  baselines: Record<string, unknown>,
+): FullReactionResult {
+  const fieldInputs: FieldReactionInput[] = [];
+  const errors: ReactionError[] = [];
+  let usesFullEngine = false;
+
+  if (Array.isArray(rawFields)) {
+    for (const [index, raw] of rawFields.entries()) {
+      if (!isRecord(raw) || typeof raw.id !== "string" || !Array.isArray(raw.reactions)) {
+        continue;
+      }
+      const rules: ReactionRuleInput[] = [];
+      for (const [ruleIndex, rule] of raw.reactions.entries()) {
+        const parsed = parseRuleInput(rule);
+        if (parsed === null) {
+          errors.push({
+            code: "REACTION_APPLY_INVALID",
+            path: `fields[${index}].reactions[${ruleIndex}]`,
+            message: "reaction requires a string when",
+          });
+          continue;
+        }
+        rules.push(parsed);
+      }
+      if (rules.length > 0) {
+        usesFullEngine = true;
+        fieldInputs.push({ field: raw.id, reactions: rules });
+      }
+    }
+  }
+
+  if (!usesFullEngine) {
+    return { usesFullEngine: false, state: {}, values: {}, errors };
+  }
+
+  const detailed = runReactionEngineDetailed({
+    initialValues: values,
+    fields: fieldInputs,
+    baselines,
+  });
+  const state: FormControlStateMap = {};
+  const committed: Record<string, unknown> = {};
+  for (const [fieldName, control] of Object.entries(detailed.fieldStates)) {
+    state[fieldName] = {
+      visible: control.visible !== false,
+      disabled: control.disabled === true,
+    };
+  }
+  if (detailed.result.ok) {
+    for (const round of detailed.result.rounds) {
+      for (const commit of round.commits) {
+        committed[commit.field] = commit.value;
+      }
+    }
+    if (detailed.result.warnings.length > 0) {
+      for (const warning of detailed.result.warnings) {
+        errors.push({
+          code: "REACTION_APPLY_INVALID",
+          path: `reactions[${warning.field}]`,
+          message: `${warning.code} (${warning.count} value writes)`,
+        });
+      }
+    }
+  } else {
+    errors.push({
+      code: "REACTION_EXPRESSION_INVALID",
+      path: "reactions",
+      message: `${detailed.result.code} after ${detailed.result.roundCount} rounds (${detailed.result.dependencyFields.join(", ")})`,
+    });
+  }
+  return { usesFullEngine: true, state, values: committed, errors };
 }
