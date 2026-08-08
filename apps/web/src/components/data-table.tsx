@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { resolveAsyncDisplayState } from "@/components/ui/async-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export type SortOrder = "asc" | "desc";
@@ -116,26 +118,44 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-sm text-muted-foreground">
-                Loading…
-              </td>
-            </tr>
-          ) : error !== null ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-sm text-destructive">
-                {error}
-              </td>
-            </tr>
-          ) : rows.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-sm text-muted-foreground">
-                {emptyMessage}
-              </td>
-            </tr>
-          ) : (
-            rows.map((row) => {
+          {(() => {
+            const state = resolveAsyncDisplayState({ loading, error, isEmpty: rows.length === 0 });
+            if (state === "loading") {
+              return (
+                <tr>
+                  <td colSpan={columns.length} className="px-4 py-6">
+                    <div role="status" aria-label="Loading" className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </td>
+                </tr>
+              );
+            }
+            if (state === "error") {
+              return (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    role="alert"
+                    className="px-4 py-6 text-sm text-destructive"
+                  >
+                    {error}
+                  </td>
+                </tr>
+              );
+            }
+            if (state === "empty") {
+              return (
+                <tr>
+                  <td colSpan={columns.length} className="px-4 py-6 text-sm text-muted-foreground">
+                    {emptyMessage}
+                  </td>
+                </tr>
+              );
+            }
+            return rows.map((row) => {
               const key = rowKey(row);
               const selected = selectedKey !== undefined && selectedKey === key;
               return (
@@ -158,8 +178,8 @@ export function DataTable<T>({
                   ))}
                 </tr>
               );
-            })
-          )}
+            });
+          })()}
         </tbody>
       </table>
     </div>

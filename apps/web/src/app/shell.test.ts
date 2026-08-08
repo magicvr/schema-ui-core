@@ -18,13 +18,13 @@ describe("mobile drawer state logic", () => {
   // Model the pure state machine: open / close / close-on-navigate.
   type DrawerState = { open: boolean };
 
-  function openDrawer(state: DrawerState): DrawerState {
+  function openDrawer(_state: DrawerState): DrawerState {
     return { open: true };
   }
-  function closeDrawer(state: DrawerState): DrawerState {
+  function closeDrawer(_state: DrawerState): DrawerState {
     return { open: false };
   }
-  function navigateAndClose(state: DrawerState): DrawerState {
+  function navigateAndClose(_state: DrawerState): DrawerState {
     return { open: false };
   }
 
