@@ -383,7 +383,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                       type="button"
                       disabled={disabled}
                       onClick={() => crud?.invokeAction(action, rowAsRecord(row))}
-                      className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                      className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     >
                       {stringOf(action.label) ?? key}
                     </button>
@@ -423,7 +423,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                     ? crud?.invokeBatchAction(trigger, tableId)
                     : crud?.invokeAction(trigger, null)
                 }
-                className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {stringOf(trigger.label) ?? key}
               </button>
