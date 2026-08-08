@@ -208,6 +208,70 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
       "chart node requires chartType",
     );
   });
+
+  // S4 (GOAL-004): before the fetch settles, statCard/chart show a Skeleton
+  // `role="status"` region instead of the previous ad-hoc "Loading…" text —
+  // this asserts the real render.tsx dispatch path, not a re-implementation.
+  it("shows a Skeleton status region for statCard while its dataSource fetch is pending", async () => {
+    const pageDoc = displayDocument({
+      type: "statCard",
+      id: "revenue",
+      props: { label: "Revenue", format: "plain", valueField: "amount", dataSource: "/api/orders" },
+    });
+    let resolveFetch: (() => void) | undefined;
+    const pendingFetcher = (async () => {
+      await new Promise<void>((resolve) => {
+        resolveFetch = resolve;
+      });
+      return new Response(
+        JSON.stringify({ items: [{ id: "o1", amount: 1250 }], total: 1, page: 1, pageSize: 100 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, pendingFetcher);
+    const statusRegion = container.querySelector('[role="status"][aria-label="Loading statCard"]');
+    expect(statusRegion).not.toBeNull();
+    expect(statusRegion?.querySelector(".animate-pulse")).not.toBeNull();
+    await act(async () => {
+      resolveFetch?.();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[role="status"][aria-label="Loading statCard"]')).toBeNull();
+    expect(container.textContent).toContain("1250");
+  });
+
+  it("shows a Skeleton status region for chart while its dataSource fetch is pending", async () => {
+    const pageDoc = displayDocument({
+      type: "chart",
+      id: "orders-chart",
+      props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/orders" },
+    });
+    let resolveFetch: (() => void) | undefined;
+    const pendingFetcher = (async () => {
+      await new Promise<void>((resolve) => {
+        resolveFetch = resolve;
+      });
+      return new Response(
+        JSON.stringify({
+          items: [{ id: "o1", month: "2026-08", count: 12 }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, pendingFetcher);
+    const statusRegion = container.querySelector('[role="status"][aria-label="Loading chart"]');
+    expect(statusRegion).not.toBeNull();
+    expect(statusRegion?.querySelector(".animate-pulse")).not.toBeNull();
+    await act(async () => {
+      resolveFetch?.();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[role="status"][aria-label="Loading chart"]')).toBeNull();
+    expect(container.querySelector("svg[role='img']")).not.toBeNull();
+  });
 });
 
 function reactionFormDocument(reactions: unknown[]): RenderPageDocument {

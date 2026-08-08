@@ -13,6 +13,8 @@ import {
 
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { applyComponentFormat } from "@/protocol/conformance/component-format";
+import { resolveAsyncDisplayState } from "@/components/ui/async-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   constructRequest,
   normalizeSelection,
@@ -1151,13 +1153,20 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
-  if (error !== null) {
+  const displayState = resolveAsyncDisplayState({ loading: list === null, error });
+  if (displayState === "error") {
     return <p role="alert" className="text-sm text-destructive">statCard data failed to load: {error}</p>;
   }
-  if (list === null) {
-    return <p className="text-sm text-muted-foreground">Loading statCard…</p>;
+  if (displayState === "loading") {
+    return (
+      <div role="status" aria-label="Loading statCard" className="space-y-2 rounded-md border border-border bg-card p-4">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-7 w-24" />
+      </div>
+    );
   }
-  const first = list.items[0];
+  const readyList = list!;
+  const first = readyList.items[0];
   // Registry: valueField = "指定从 API 响应中取哪个字段作为展示值". The list
   // envelope (total/page/pageSize) is part of the response, so envelope fields
   // resolve too; row fields take precedence for display values.
@@ -1166,11 +1175,11 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       ? (first !== undefined && first[valueField] !== undefined
           ? first[valueField]
           : valueField === "total"
-            ? list.total
+            ? readyList.total
             : valueField === "page"
-              ? list.page
+              ? readyList.page
               : valueField === "pageSize"
-                ? list.pageSize
+                ? readyList.pageSize
                 : 0)
       : 0;
   // Registry statCard format enum: plain | currency | percent.
@@ -1222,13 +1231,18 @@ function ChartView({ node }: { node: RenderChartNode }) {
       </p>
     );
   }
-  if (error !== null) {
+  const chartDisplayState = resolveAsyncDisplayState({ loading: list === null, error });
+  if (chartDisplayState === "error") {
     return <p role="alert" className="text-sm text-destructive">chart data failed to load: {error}</p>;
   }
-  if (list === null) {
-    return <p className="text-sm text-muted-foreground">Loading chart…</p>;
+  if (chartDisplayState === "loading") {
+    return (
+      <div role="status" aria-label="Loading chart" className="space-y-2 rounded-md border border-border bg-card p-4">
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
   }
-  const points = list.items
+  const points = list!.items
     .map((row) => ({
       x: String(row[xField] ?? ""),
       y: typeof row[yField] === "number" ? row[yField] : Number(row[yField]),

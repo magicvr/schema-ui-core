@@ -105,7 +105,8 @@ describe("DataTable", () => {
     const loadingContainer = await renderTable(
       <DataTable columns={columns} rows={[]} rowKey={rowKey} loading />,
     );
-    expect(loadingContainer.textContent).toContain("Loading…");
+    expect(loadingContainer.querySelector('[role="status"]')).not.toBeNull();
+    expect(loadingContainer.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
   });
 
   it("renders an error row when fetch fails", async () => {
