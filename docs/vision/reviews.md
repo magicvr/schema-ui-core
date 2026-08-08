@@ -32,7 +32,7 @@ version: 1.3.5
 |---------|-------|------|------|------|
 | — | — | — | **无** | 仓库级 Vision Review open required = **0**（2026-08-09） |
 
-> Vision Review **open required = 0**。**VRev-011**：**F-V018/F-V019/F-V020 → `fixed`**（2026-08-09 `/vision`，VP-005 v0.3.0）；随后用户确认 **VP-005 → `active`（v0.4.0）**。**VP-006 已 `closed`**。组合焦点见 [roadmap.md](roadmap.md)：当前交付 **VP-005**（lead 区待 `/govern`）。
+> Vision Review **open required = 0**。**VRev-011** findings fixed；**VP-005 `active`**（v0.4.1）+ lead **`workspace-006-design-system-and-ui-experience`**（2026-08-09 `/govern` 开区，Root `0/5`）。**VP-006 已 `closed`**。组合焦点见 [roadmap.md](roadmap.md)。
 
 ## 条目索引
 

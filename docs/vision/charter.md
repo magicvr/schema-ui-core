@@ -67,7 +67,7 @@ parent: null
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前交付 VP**：[VP-005](plans/VP-005-design-system-and-ui-experience.md)（设计系统与 Schema 驱动 UI/UX）**已于 2026-08-09 用户书面确认激活（`active`，v0.4.0）**；lead 工作区待 `/govern` scaffold。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，0 exclude）。VRev-011 `F-V018`/`F-V019`/`F-V020` 已 **fixed**。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
+- **当前交付 VP**：[VP-005](plans/VP-005-design-system-and-ui-experience.md)（设计系统与 Schema 驱动 UI/UX）**`active`**（v0.4.1）；lead `workspace-006-design-system-and-ui-experience` / Root `GOAL-001-design-system-and-ui-experience`（2026-08-09 `/govern` 开区）。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，0 exclude）。VRev-011 findings 已 **fixed**。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本
