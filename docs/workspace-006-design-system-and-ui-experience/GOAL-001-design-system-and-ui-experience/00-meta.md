@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.5
-progress: 3/5
+version: 0.1.6
+progress: 4/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
 primary_plan: VP-005-design-system-and-ui-experience
@@ -50,7 +50,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 - [x] **S1**：Token / 主题 / shadcn primitives — 语义化 Token（D-002/D-003）；深/浅色可切换且关键壳层无持续 FOUC；primitives 可发现；暗色主文案对比度不低于定稿 Overview dark 可读性；可选对比度抽检（不默认进退出分母）。**F-002 已 fixed（A-005 · 2026-08-09）。**
 - [x] **S2**：Renderer 视觉重构 — VP-005 钉死 type + 能力面接入设计系统；**呈现约束（D-004）**：桌面密表 / 移动卡片列表；`recordView` 为右栏或 Drawer（移动 Sheet）；Modal 仅短编辑与 Confirm；分母不得窄于 type 表、不得宽于 I-PROTO-FULL-001 include。
 - [x] **S3**：Shell 与工作流交互 — 桌面侧栏+顶栏；移动汉堡+导航抽屉；用户区；Dialog/Toast 一致语言；与 D-004 壳气质对齐；**可选** Cmd+K（默认不进退出分母）。
-- [ ] **S4**：状态与反馈 — Skeleton / Empty / 错误页与表单异步反馈在主范例路径一致。
+- [x] **S4**：状态与反馈 — Skeleton / Empty / 错误页与表单异步反馈在主范例路径一致。statCard/chart/list-table 的 loading 态统一改用 `Skeleton` primitive（`role="status"`），共享纯函数 `resolveAsyncDisplayState` 直接单测；GOAL-004 五件套（C1–C3 全绿，A-001 self 审计 pass）。
 - [ ] **S5**：视觉回归 + fork Token 示例 + 过程关门 — E2E/Smoke 不回退；fork 品牌定制最小示例；open required = 0；可向 `/vision` 提 VP-005 关门（须用户确认）。
 
 ### 阶段 ↔ VP 退出判据映射
@@ -60,7 +60,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 | S1 | exit 1 Token / 主题 | 待 S1 产物；方向输入 = D-004/E-004 |
 | S2 | exit 2 Renderer 纳入面视觉 | 待 S2 产物；呈现 = D-004 |
 | S3 | exit 3 Shell | 待 S3 产物；壳 = D-004 |
-| S4 | exit 4 状态生命周期 | 待 S4 产物 |
+| S4 | exit 4 状态生命周期 | GOAL-004 E-001（Skeleton 统一 + async-state 纯函数 + 单测） |
 | S5 | exit 5–6 回归诚实 + 过程可关门 | 待审计 + 关门提案 |
 
 ## 纲领路线图
@@ -70,7 +70,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 | S1 | Token / 主题 / primitives | **完成** | D-002/D-003 accepted；D-004 方向冻；F-002 fixed（A-005）；C1–C6 全绿 |
 | S2 | Renderer 钉死 type 视觉重构 | **完成** | chart pie → `--chart-*` Token；overlay/shadow S1 已完成 |
 | S3 | Shell 与工作流 | **完成** | 移动汉堡+抽屉（bg-overlay/shadow-lg）；navigate 关闭；shell.test.ts 通过 |
-| S4 | 状态与反馈 | **未开始** | 主范例路径 |
+| S4 | 状态与反馈 | **完成** | Skeleton 统一 + 纯判定函数（GOAL-004；A-001 self pass） |
 | S5 | 回归 / fork 示例 / 关门 | **未开始** | 过程 exit 6 |
 
 阶段通常串行；同一纲领阶段内允许并行子目标。建区与视觉定稿 **均不**勾选任何检查点。
@@ -81,7 +81,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 现行 `apps/web` Token/主题/shadcn 基线清单（可观察路径） | S1 方案冻结 | S1 前 | 盘点 CSS 变量、`components.json`、ThemeToggle、ui/* | **closed** | — | E-002 + `attachments/I-S1-001-ui-baseline-inventory.md`（2026-08-09） |
 | I-002 | required | S1 Token 语义分层与命名约定（Color/Typography/Radius/Shadow/Spacing） | S1 方案冻结；S2–S4 消费 | S1 决策时 | Root 决策落盘 | **closed** | — | D-002 **accepted**（2026-08-09）；D-003 修订 §3/§5 |
-| I-003 | non-blocking | 主范例页清单（S4 状态验收路径） | S4 验收 | S4 前 | 对照 schemarender 8 页 + Shell 路由 | **open** | 可继承 workspace-005 范例登记 | 默认 8 范例 + 登录/壳层 |
+| I-003 | non-blocking | 主范例页清单（S4 状态验收路径） | S4 验收 | S4 前 | 对照 schemarender 8 页 + Shell 路由 | **closed** | — | S4 覆盖 statCard/chart/list-table（`render.tsx`/`data-table.tsx`）+ 默认 8 范例 + 登录/壳层（GOAL-004 E-001） |
 | I-004 | non-blocking | 是否将对比度抽检升格为退出分母 | 仅当用户书面升格 | 任意 | P-004 用户裁决 | **open** | 默认 **否**（F-V019 路径 b） | 默认不进 exit 1；S1 仍以 dark 可读为质量下限（D-004） |
 | I-005 | required | 目标态视觉方向是否冻结（可复核参考） | S1 实施对照；S2/S3 呈现 | S1 实施前宜齐 | Stitch 定稿 + Root 决策 | **closed** | — | D-004 **accepted** + E-004 + `attachments/visual-direction-stitch-summary.md`（2026-08-09） |
 
@@ -98,7 +98,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 ## 派生进度展示
 
-`progress: 0/5` 由上方 S1～S5 五个等权检查点派生。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+`progress: 4/5` 由上方 S1～S5 五个等权检查点派生（S1–S4 已完成；S5 未开始）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
 
 ## 台账布局
 
