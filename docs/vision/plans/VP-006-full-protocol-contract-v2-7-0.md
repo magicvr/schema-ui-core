@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-006-full-protocol-contract-v2-7-0
 title: schema-ui-docs@v2.7.0 整份契约可验证兼容
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
-lead_workspace: null
+lead_workspace: workspace-005-full-protocol-contract-v2-7-0
 created: 2026-08-08
 updated: 2026-08-08
-version: 0.1.1
+version: 0.2.0
 parent: null
 ---
 
@@ -123,7 +123,9 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | 当前为 `planned`；激活后由 `/govern` 开区并挂接 `lead_workspace`；**禁止**在 closed VP-003/004 工作区吸收本意图 |
+| workspace-005-full-protocol-contract-v2-7-0 | GOAL-001-full-protocol-contract-v2-7-0 | lead | 2026-08-08 | 用户确认激活后唯一 lead / delivery；`/govern` 已 scaffold；**禁止**在 closed VP-003/004 工作区吸收本意图 |
+
+用户已于 2026-08-08 确认将本 VP **激活**（`planned` → `active`），并指定唯一 lead / delivery 工作区 **`workspace-005-full-protocol-contract-v2-7-0`**（slug 按 VP-006 id 与既有 workspace-00N 惯例，用户本轮书面授权开区）。同日 `/govern` 完成物理 scaffold：Root [GOAL-001-full-protocol-contract-v2-7-0](../../workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/00-meta.md)，`primary_plan` / `plan_refs` 均为本 VP。激活与建区 **不**构成覆盖表冻结或协议全量兼容证据。
 
 ## 关门记录
 
@@ -139,3 +141,4 @@ parent: null
 |------|------|------|
 | 2026-08-08 | `0.1.0` | 用户书面裁决：目标为 `schema-ui-docs@v2.7.0` **整份契约**；创建本 VP 为当前组合主意图；**硬阻塞** VP-005 视觉实施直至本 VP closed。`planned`，未激活、未绑工作区。 |
 | 2026-08-08 | `0.1.1` | 响应 [VRev-012](../reviews/VRev-012-vp006-full-protocol-contract.md)：exit 1 收紧 disposition（默认 `include`；`include-partial` 仅保真/边角；范围收缩 → exclude 或用户 residual）；覆盖表权威落点 `I-PROTO-FULL-001`（F-V021/F-V022）。仍 `planned`，未激活、未绑工作区。 |
+| 2026-08-08 | `0.2.0` | 响应 [VRev-013](../reviews/VRev-013-vp006-post-closure-reaudit.md) pass；用户确认激活：`planned` → `active`；绑定唯一 lead / delivery `workspace-005-full-protocol-contract-v2-7-0`（Root `GOAL-001-full-protocol-contract-v2-7-0`）。物理 scaffold 交 `/govern`；未将激活写成全量兼容已交付。 |

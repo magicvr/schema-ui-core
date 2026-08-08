@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-08
 parent: null
-version: 1.2.0
+version: 1.3.1
 ---
 
 # Vision Review 台账
@@ -33,7 +33,7 @@ version: 1.2.0
 | F-V018 | required | VRev-011 · VP-005 | **open** | exit 2 范围问题仍在；2026-08-08 组合裁决：VP-005 **实施冻结**至 VP-006 closed（见 VRev-011 响应追加；**未**闭合 finding） |
 | — | recommended | VRev-011 | open ×2 | F-V019、F-V020；解冻 VP-005 前一并处理 |
 
-> VRev-001～010 与 **VRev-012** 的 required 均已合法闭合（VRev-012：`F-V021`/`F-V022`/`F-V023` → `fixed`，2026-08-08）。当前 Vision Review **1 open required**：`F-V018` 仅阻断 VP-005 方向已稳/激活。VP-006 本 scope 无 open required，仍 `planned`；激活/开区须用户确认后 `/vision` + `/govern`。组合焦点见 [roadmap.md](roadmap.md) VP-006。
+> VRev-001～010、**VRev-012**（`F-V021`～`F-V023` → `fixed`）与 **VRev-013**（pass；`F-V024` → `fixed` 2026-08-08 `/vision`）均无阻断本焦点的 required。当前 Vision Review **1 open required**：`F-V018` 仅阻断 VP-005。**VP-006 `active`**，lead `workspace-005-full-protocol-contract-v2-7-0`（2026-08-08 用户确认激活 + `/govern` 开区）。组合焦点见 [roadmap.md](roadmap.md) VP-006。
 
 ## 条目索引
 
@@ -51,6 +51,7 @@ version: 1.2.0
 | VRev-010 | 2026-08-06 | independent | VP-004 意图完备性 / 可行性 / 方法论文档交付形态 | pass | 0 | VP-004 意图/可行性/方法论形态 pass；F-V016/F-V017 fixed | [VRev-010-vp004-intent-feasibility-methodology.md](reviews/VRev-010-vp004-intent-feasibility-methodology.md) |
 | VRev-011 | 2026-08-08 | independent | VP-005 设计系统与 UI/UX · 意图合理性 / 退出边界 / I-PROTO 对齐 | conditional | 1 | 方向合理；F-V018 required open；F-V019/F-V020 recommended | [VRev-011-vp005-design-system-ui-experience.md](reviews/VRev-011-vp005-design-system-ui-experience.md) |
 | VRev-012 | 2026-08-08 | independent | VP-006 整份 v2.7.0 契约 · 意图 / 退出 #1 partial 纪律 / 组合焦点 | conditional | 0 | 方向正确；F-V021/022/023 → fixed（`/vision` editorial 0.1.1） | [VRev-012-vp006-full-protocol-contract.md](reviews/VRev-012-vp006-full-protocol-contract.md) |
+| VRev-013 | 2026-08-08 | independent | VP-006 v0.1.1 闭合后复审 · 退出纪律 / 对齐链 / 组合焦点 | pass | 0 | F-V021～023 闭合可复核；方向已稳；F-V024 → fixed（README）；VP-006 已激活 | [VRev-013-vp006-post-closure-reaudit.md](reviews/VRev-013-vp006-post-closure-reaudit.md) |
 
 ## 迁移记录
 
