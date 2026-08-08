@@ -8,20 +8,26 @@ source_commit: ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b
 artifact_version: 2.7.0
 protocol_version: "2.7"
 created: 2026-07-31
-updated: 2026-08-04
+updated: 2026-08-08
 parent: null
-version: 0.1.1
+version: 0.1.2
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 source_vision_ref: schema-ui-core-admin-foundation@0.1.0
-serves: VP-001-mvp-admin-foundation
+serves: |
+  multi: VP-001-mvp-admin-foundation (historical MVP extract consumer);
+  VP-006-full-protocol-contract-v2-7-0 (full-contract authority input)
 ---
 
 # 协议实施清单 · schema-ui-docs@v2.7.0
 
-本清单在 Charter `@0.1.0` 下提取，2026-08-04 仅将现行机读引用 re-align 到 `@0.2.0`。外部 pin、清单内容和既有 `I-PROTO-001 v0.1.3` 覆盖证据均未改变。
+本清单在 Charter `@0.1.0` 下提取，2026-08-04 仅将现行机读引用 re-align 到 `@0.2.0`。2026-08-08 补入口卫生（VRev-012 · F-V023）：明确本文件为 **全量能力清单**，服务历史 MVP 与现行整份契约收口。外部 pin 与清单主体内容未改；`I-PROTO-001 v0.1.3` 仍为只读 MVP 覆盖证据。
 
 > **用途**：闭合 `F-V001` 所需的**本地可复核**协议能力与结构/行为契约清单，并给出 React / Go / 范例 / 验证路径映射。  
+> **是**：**全量**能力 / 结构 / fixture 清单（相对上游 pin）。  
 > **不是**：MVP 覆盖子集的冻结声明，也不是“已实现协议兼容”的证据。  
+> **覆盖权威分列**：  
+> - MVP 子集冻结（历史）→ workspace-001 `I-PROTO-001 v0.1.3`（只读回归对照）。  
+> - **整份 v2.7.0 契约收口** → [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) 与激活后 `I-PROTO-FULL-001`（禁止把本清单的 `mvp_candidate` 或下表「partial」读成 VP-006 上界）。  
 > **门禁**：覆盖范围冻结与实施核验在开区后由 **`/govern`** 信息项/决策推进；本文件只提供清单与映射权威。
 
 ## 1. 固定源
@@ -176,29 +182,31 @@ Manifest 点名的样例 YAML：`order-list-batch`、`order-detail-lifecycle`、
 |----|--------------------------|
 | **React Renderer** | Node 树解析；`type` 分发；表达式与 reactions；Action 触发与 request lifecycle；capabilities 匹配；Admin 壳 + 主题（Tailwind/shadcn，浅/深色） |
 | **Go 后端** | 账号与权限；列表/详情/动作 API 符合 datasource 与 actions 契约；可选 page/manifest 托管；上传与批量等服务端语义 |
-| **范例** | 每个**纳入 MVP 的**能力域至少一条可观察页面或场景（优先复用 `05-scenarios` 与 `_samples`） |
+| **范例** | 每个**纳入覆盖表的**能力域至少一条可观察页面或场景（优先复用 `05-scenarios` 与 `_samples`）。MVP 历史子集见 `I-PROTO-001 v0.1.3`；整份契约纳入面见 VP-006 / `I-PROTO-FULL-001` |
 | **验证** | 结构：JSON Schema；行为：对应 conformance fixtures；集成：账号权限链路 e2e；不得把 excluded 的 reference runner 当作唯一门禁 |
 
-## 4. 与 VP-001 / Charter 的关系
+## 4. 与 Charter / VP 的关系
 
 | 项 | 状态 |
 |----|------|
 | 外部固定源 | 已 pin（Charter / VP 已记录） |
-| 完整实施清单 | **本文件**（F-V001 闭合证据） |
-| MVP 协议覆盖子集冻结 | **已完成**；workspace-001 Root D-009 冻结 `I-PROTO-001 v0.1.3`，不等于全量协议支持 |
-| “支持全部协议功能”主张 | **禁止**，直至覆盖子集冻结且实现证据闭合 |
-| H-001 | 清单已提取；覆盖子集已由 workspace-001 Root D-009 冻结为 `I-PROTO-001 v0.1.3` |
+| 完整实施清单 | **本文件**（F-V001 闭合证据；**全量**输入，非 MVP 上界） |
+| MVP 协议覆盖子集冻结 | **已完成（历史）**；workspace-001 Root D-009 冻结 `I-PROTO-001 v0.1.3`，**不等于**全量协议支持，也**不是** VP-006 退出上界 |
+| 整份 v2.7.0 契约收口 | **进行中（意图）**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（`planned`）；现行覆盖权威升版后为 `I-PROTO-FULL-001` |
+| “支持全部协议功能”主张 | **禁止**，直至 `I-PROTO-FULL-001`（或等价）冻结且实现证据闭合 |
+| H-001 | ① 清单提取 = 本文件；② MVP 子集 = `I-PROTO-001 v0.1.3`；③ 整份契约可验证兼容 = open → VP-006 |
 
-## 5. 历史开区信息项建议（已交 `/govern`）
+## 5. 信息项指针（历史 + 整份契约）
 
 下列不是愿景 finding，仅作实现层登记模板：
 
-| 建议 id | 问题 | 级别 | 最晚阶段 |
-|---------|------|------|----------|
-| I-PROTO-001 | 哪些 domain_id / fixture suite 纳入 VP-001 MVP？ | required | 方案冻结前 |
-| I-PROTO-002 | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | required | 实施前 |
-| I-PROTO-003 | 每条纳入能力的范例页路径与自动化/手工验证入口？ | required | 验收前 |
-| I-PROTO-004 | 是否 vendor 上游 schemas/fixtures 到本仓，或 pin 远程校验？ | non-blocking | 实施前 |
+| 建议 id | 问题 | 级别 | 最晚阶段 | 备注 |
+|---------|------|------|----------|------|
+| I-PROTO-001 | 哪些 domain_id / fixture suite 纳入 VP-001 MVP？ | required | 方案冻结前 | **历史已闭合**（v0.1.3） |
+| I-PROTO-002 | 账号权限最小 API 与 `D-PERM` 映射是否完整？ | required | 实施前 | 历史 MVP 路径 |
+| I-PROTO-003 | 每条纳入能力的范例页路径与自动化/手工验证入口？ | required | 验收前 | 随覆盖表扩大而重开于 VP-006 区 |
+| I-PROTO-004 | 是否 vendor 上游 schemas/fixtures 到本仓，或 pin 远程校验？ | non-blocking | 实施前 | 策略可继承 |
+| I-PROTO-FULL-001 | 整份 v2.7.0 契约覆盖 disposition 与冻结 | required | VP-006 S1 | 权威见 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)；**禁止**静默改写 v0.1.3 |
 
 ## 6. 变更规则
 
