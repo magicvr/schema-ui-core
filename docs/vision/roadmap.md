@@ -20,8 +20,8 @@ version: 0.12.0
 | 2 | [VP-002-production-admin-foundation](plans/VP-002-production-admin-foundation.md) | 在 I-PROTO-001 冻结子集之上，交付可直接 fork 使用的生产级 Schema 驱动 Admin 基架。 | 继承 VP-001 协议验证基线 | **closed**（2026-08-04；lead: workspace-002-production-admin-foundation） |
 | 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 单主线模块化单体：薄内核、模块契约、Fx、Profile、后端聚合 Manifest。 | 继承 VP-002；strategic re-align 见 VRev-006 | **closed**（2026-08-06；lead: workspace-003-modular-admin-architecture） |
 | 4 | [VP-004-module-contribution-readiness](plans/VP-004-module-contribution-readiness.md) | 一方模块贡献 playbook 与 Core vs 模块归属方法论。 | 继承 VP-003 | **closed**（2026-08-06；lead: workspace-004-module-contribution-readiness） |
-| 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **active**（2026-08-08；lead: workspace-005-full-protocol-contract-v2-7-0；**当前交付焦点**） |
-| 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | **硬前置：VP-006 `closed`**；另继承 VP-003/004 | **planned · 实施冻结**（2026-08-08 用户裁决：VP-006 完成前 **禁止** 激活/开区/视觉实施） |
+| 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **closed**（2026-08-08 用户书面确认；lead: workspace-005-full-protocol-contract-v2-7-0；`I-PROTO-FULL-001` 12/12 include 冻结） |
+| 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | 继承 VP-003/004 + **VP-006 已 closed 的整份协议面**；`F-V018` required 仍未闭合（VRev-011） | **planned · 实施冻结**（硬前置 VP-006 closed 已满足；**是否解冻由用户另行决策**，F-V018 未闭合前不得放行） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -35,7 +35,7 @@ version: 0.12.0
 |------|------|------------|------------------|
 | 7 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** +（若已 closed）VP-005 设计系统 | 建 VP 前须 `/vision` 复核；不得用业务模块倒逼恢复长期双线或跳过协议覆盖 |
 
-**当前交付意图**：`VP-006` **active**，lead `workspace-005-full-protocol-contract-v2-7-0`。`VP-005` 冻结至 VP-006 closed。VP-001～VP-004 均 **closed**。
+**当前交付意图**：VP-001～004、**VP-006** 均 **closed**（VP-006 2026-08-08 用户书面确认；整份 v2.7.0 契约可验证兼容交付完成，覆盖权威 `I-PROTO-FULL-001`）。`VP-005` 实施冻结：硬前置（VP-006 closed）已满足，但 `F-V018` open required 未闭合，**是否解冻由用户另行决策**。
 
 ## 单主线模块化策略
 

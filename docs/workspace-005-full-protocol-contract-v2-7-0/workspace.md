@@ -17,18 +17,18 @@ parent: null
 
 # 工作区上下文 · 整份 v2.7.0 契约可验证兼容
 
-本工作区承接 [VP-006 · schema-ui-docs@v2.7.0 整份契约可验证兼容](../vision/plans/VP-006-full-protocol-contract-v2-7-0.md) 的实现层治理。唯一目标状态只保存在本目录的 `goal-tree.md` 与平铺 Goal 五件套中；本文件不维护第二套 progress 或审计台账。
+本工作区承接 [VP-006 · schema-ui-docs@v2.7.0 整份契约可验证兼容](../vision/plans/VP-006-full-protocol-contract-v2-7-0.md) 的实现层治理（**已 closed**，2026-08-08 用户书面确认；历史绑定保留）。唯一目标状态只保存在本目录的 `goal-tree.md` 与平铺 Goal 五件套中；本文件不维护第二套 progress 或审计台账。
 
 ## 绑定
 
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-005-full-protocol-contract-v2-7-0` | 当前 delivery 工作区的稳定标识（用户 2026-08-08 经 `/vision` + `/govern` 确认开区）。 |
-| Root Goal | `GOAL-001-full-protocol-contract-v2-7-0` | 本区唯一 `parent: null` Root。 |
+| Root Goal | `GOAL-001-full-protocol-contract-v2-7-0` | 本区唯一 `parent: null` Root；**终态 `done / 6/6`**（VP-006 2026-08-08 用户书面确认关门）。 |
 | canonical 范围 | `docs/workspace-005-full-protocol-contract-v2-7-0/` | 当前工作区唯一的目标状态范围。 |
 | 共享资料目录 | `none` | 未声明固定共享资料引用；不得把候选资料作为事实或证据。 |
 | 愿景角色 | `delivery` | 不改变 Charter 的 primary 工作区 `workspace-001-mvp-admin-foundation`。 |
-| 规划对齐 | `VP-006-full-protocol-contract-v2-7-0` | `plan_refs` 与 `primary_plan` 均指向 **active** VP-006。 |
+| 规划对齐 | `VP-006-full-protocol-contract-v2-7-0` | `plan_refs` 与 `primary_plan` 均指向 **closed** VP-006（历史绑定保留）。 |
 
 ## 愿景对齐
 
