@@ -1297,7 +1297,7 @@ function ChartView({ node }: { node: RenderChartNode }) {
                   r={radius}
                   fill="none"
                   strokeWidth={28}
-                  stroke={`hsl(${(index * 137.5) % 360} 65% 55%)`}
+                  stroke={`var(--color-chart-${(index % 5) + 1})`}
                   strokeDasharray={`${dash} ${circumference - dash}`}
                   strokeDashoffset={-offset}
                 />

@@ -21,21 +21,24 @@ parent: null
 ## ASCII 树
 
 ```text
-GOAL-001-design-system-and-ui-experience [active] (1/5)
-└── GOAL-002-s1-design-tokens-and-primitives [done] (6/6)
+GOAL-001-design-system-and-ui-experience [active] (3/5)
+├── GOAL-002-s1-design-tokens-and-primitives [done] (6/6)
+└── GOAL-003-s2-s3-renderer-and-shell [done] (2/2)
 ```
 
 ## 状态表
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| GOAL-001-design-system-and-ui-experience | 现代设计系统与 Schema 驱动 UI/UX 体验产品化 | `null` | **active** | `1/5` | 2026-08-09 |
+| GOAL-001-design-system-and-ui-experience | 现代设计系统与 Schema 驱动 UI/UX 体验产品化 | `null` | **active** | `3/5` | 2026-08-09 |
 | GOAL-002-s1-design-tokens-and-primitives | S1 · Design Token / 主题 / shadcn primitives | `GOAL-001-design-system-and-ui-experience` | **done** | `6/6` | 2026-08-09 |
+| GOAL-003-s2-s3-renderer-and-shell | S2+S3 · Renderer 视觉接入 + Shell 断点升级 | `GOAL-001-design-system-and-ui-experience` | **done** | `2/2` | 2026-08-09 |
 
 ## 维护说明
 
-- `1/5` 由 Root `00-meta.md` 中 S1～S5 五个等权检查点派生（S1 已完成；S2–S5 未开始）。
+- `3/5` 由 Root `00-meta.md` 中 S1～S5 五个等权检查点派生（S1/S2/S3 已完成；S4/S5 未开始）。
 - `6/6` 由 GOAL-002 六个等权检查点派生（C1–C6，均已完成；GOAL-002 status: done）。
+- `2/2` 由 GOAL-003 两个等权检查点派生（C1 S2/C2 S3，均已完成；GOAL-003 status: done）。
 - 本区为 VP-005 唯一 lead / delivery（2026-08-09 `/govern` scaffold；slug 用户书面确认）。
 - 建区 **不**勾选检查点；**不**宣称视觉产品化已交付。
 - 视觉范围权威：VP-005 type 表 + `I-PROTO-FULL-001`（workspace-005 只读引用）；不得扩张协议 disposition。
