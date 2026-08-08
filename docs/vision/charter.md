@@ -61,13 +61,13 @@ parent: null
 
 | id | 假设 / 未知 | 影响 | 状态 |
 |----|-------------|------|------|
-| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | 历史：VP-001 MVP 计划。现：全量兼容由 VP-006 收口。 | **分列**：① 清单提取 = `verified`（[protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② MVP 子集冻结 = `verified`（[v0.1.3 覆盖表](../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）——**仅 MVP**，不主张全量；③ **整份契约可验证兼容** = `open`，交 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)。`F-V006` → `fixed`（仅闭合「清单/MVP 冻结」歧义，不闭合全量实现）。 |
+| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | 历史：VP-001 MVP 计划。现：全量兼容由 VP-006 收口。 | **分列**：① 清单提取 = `verified`（[protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② MVP 子集冻结 = `verified`（[v0.1.3 覆盖表](../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）——**仅 MVP**，不主张全量；③ **整份契约可验证兼容** = `verified`（2026-08-08 **VP-006 closed**，用户书面确认；覆盖权威 `I-PROTO-FULL-001`：12/12 域、24/24 registry type、16/16 行为套件 include，320/320 case 全绿）。`F-V006` → `fixed`（仅闭合「清单/MVP 冻结」歧义，不闭合全量实现）。 |
 
 ## 与工作区 / VP 的关系
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前 active 交付 VP**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（整份 v2.7.0 契约；lead `workspace-005-full-protocol-contract-v2-7-0`）。planned [VP-005](plans/VP-005-design-system-and-ui-experience.md)（视觉产品化）**实施冻结**至 VP-006 closed（2026-08-08 用户裁决）。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
+- **当前交付 VP**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（整份 v2.7.0 契约；lead `workspace-005-full-protocol-contract-v2-7-0`）**已于 2026-08-08 用户书面确认关门（`closed`）**；现行协议覆盖权威 = `I-PROTO-FULL-001`（12/12 include，0 exclude）。planned [VP-005](plans/VP-005-design-system-and-ui-experience.md)（视觉产品化）**实施冻结**：硬前置（VP-006 closed）已满足，但 `F-V018` open required 未闭合，是否解冻由用户另行决策（2026-08-08 用户裁决 + VRev-011）。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本

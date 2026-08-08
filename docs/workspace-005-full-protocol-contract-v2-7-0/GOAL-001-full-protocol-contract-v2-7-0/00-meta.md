@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-full-protocol-contract-v2-7-0
 title: schema-ui-docs@v2.7.0 整份契约可验证兼容
-status: active
+status: done
 parent: null
 created: 2026-08-08
 updated: 2026-08-08
-version: 0.1.0
+version: 0.2.0
 progress: 6/6
 plan_refs:
   - VP-006-full-protocol-contract-v2-7-0
