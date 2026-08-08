@@ -69,12 +69,13 @@ version: 0.10.0
 - **原则**：[principles.md](principles.md) P-001～**P-006**（含 finding 三路径闭合、P-004.1～4.4、单愿景级联）；工作区/资料/愿景见 [workspace-protocol.md](workspace-protocol.md) 与 [../vision/alignment.md](../vision/alignment.md)。
 - **愿景**：[charter.md](../vision/charter.md) **`schema-ui-core-admin-foundation@0.2.0`**，且当前仅有一个 active Charter；未来方向已从双线长期维护改为单主线模块化。
 - **组合编排**：VP-001～VP-004 均 **closed**；[VP-004](../vision/plans/VP-004-module-contribution-readiness.md) 已交付一方模块贡献 playbook 与 Core vs 模块归属法（权威文 [module-contribution-playbook.md](module-contribution-playbook.md)）。
-- **当前交付 VP**：[VP-005](../vision/plans/VP-005-design-system-and-ui-experience.md)（设计系统与 Schema 驱动 UI/UX）**已于 2026-08-09 用户书面确认激活（`active`，v0.4.0）**；lead 工作区待 `/govern`。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](../vision/plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**；workspace-005 Root attachments；历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线，只读）。VRev-011 `F-V018`/`F-V019`/`F-V020` 已 fixed。
+- **当前交付 VP**：[VP-005](../vision/plans/VP-005-design-system-and-ui-experience.md)（设计系统与 Schema 驱动 UI/UX）**`active`**（v0.4.1）；lead = `workspace-006-design-system-and-ui-experience`。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](../vision/plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**；workspace-005 Root attachments；历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线，只读）。VRev-011 findings 已 fixed。
 - **workspace-001**：状态 **active**，角色 **primary**，Root `GOAL-001-mvp-admin-foundation` **done**，`primary_plan` = `VP-001-mvp-admin-foundation`；继续保留协议验证历史。
 - **workspace-002**：状态 **active**，角色 **delivery**，Root `GOAL-001-production-admin-foundation` **done / 5/5**，`primary_plan` = `VP-002-production-admin-foundation`；保留生产级 Admin 交付历史。
 - **workspace-003**：状态 **active**，角色 **delivery**，Root `GOAL-001-modular-admin-architecture` **done / 6/6**，`primary_plan` = `VP-003-modular-admin-architecture`；保留模块化架构交付历史。
 - **workspace-004**：状态 **active**（区本身），角色 **delivery**，Root `GOAL-001-module-contribution-readiness` **done / 4/4**，`primary_plan` = `VP-004-module-contribution-readiness`（**VP closed**）；操作正文见 [module-contribution-playbook.md](module-contribution-playbook.md)。
-- **workspace-005**：状态 **active**（区本身），角色 **delivery**，Root `GOAL-001-full-protocol-contract-v2-7-0` **done / 6/6**，`primary_plan` = `VP-006-full-protocol-contract-v2-7-0`（**VP closed**，2026-08-08 用户书面确认）；整份契约实现与验证台账（覆盖表 `I-PROTO-FULL-001`）。
+- **workspace-005**：状态 **active**（区本身），角色 **delivery**，Root `GOAL-001-full-protocol-contract-v2-7-0` **done / 6/6**，`primary_plan` = `VP-006-full-protocol-contract-v2-7-0`（**VP closed**）；整份契约实现与验证台账（覆盖表 `I-PROTO-FULL-001`）。
+- **workspace-006**：状态 **active**，角色 **delivery**，Root `GOAL-001-design-system-and-ui-experience` **active / 0/5**，`primary_plan` = `VP-005-design-system-and-ui-experience`（**VP active**）；设计系统与 UI/UX 实现台账（S1–S5）。
 
 本页是架构概览，不是愿景或目标状态的第二真相源；当前 Charter、VP 与工作区绑定以 `docs/vision/`、工作区 `workspace.md` 和 `goal-tree.md` 为准。
 

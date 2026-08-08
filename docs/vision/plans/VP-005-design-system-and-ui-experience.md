@@ -4,10 +4,10 @@ id: VP-005-design-system-and-ui-experience
 title: 现代设计系统与 Schema 驱动 UI/UX 体验产品化
 status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
-lead_workspace: null
+lead_workspace: workspace-006-design-system-and-ui-experience
 created: 2026-08-08
 updated: 2026-08-09
-version: 0.4.0
+version: 0.4.1
 parent: null
 ---
 
@@ -17,11 +17,12 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-09 用户书面确认激活；**尚无** lead 工作区，须 `/govern` scaffold） |
+| status | **`active`**（2026-08-09 用户书面确认激活） |
+| **lead_workspace** | **`workspace-006-design-system-and-ui-experience`**（同日 `/govern` scaffold；slug 用户确认） |
 | **硬前置 VP-006** | **已满足**：[VP-006](VP-006-full-protocol-contract-v2-7-0.md) 于 2026-08-08 用户书面确认 **`closed`** |
 | **Vision required** | **已满足**：VRev-011 `F-V018`/`F-V019`/`F-V020` → `fixed`（v0.3.0 editorial） |
-| **实施门闩（现行）** | 已激活 → 允许 `/govern` 开 delivery 工作区并推进；**禁止**在 closed workspace-003/004/005 吸收本意图；**禁止**借本 VP 扩张 `I-PROTO-FULL-001` disposition |
-| **激活 ≠ 交付完成** | 激活与开区 **不**构成 Design Token / Shell / Renderer 视觉已产品化证据 |
+| **实施门闩（现行）** | lead 已绑 → 由 `/govern` 在本区推进；**禁止**在 closed workspace-003/004/005 吸收本意图；**禁止**借本 VP 扩张 `I-PROTO-FULL-001` disposition |
+| **激活/开区 ≠ 交付完成** | **不**构成 Design Token / Shell / Renderer 视觉已产品化证据 |
 
 历史门闩（2026-08-08）：VP-006 未 closed 前禁止视觉实施——**已因 VP-006 closed 失效**。  
 「须用户确认激活」门闩：2026-08-09 用户选择「现在激活」后**已解除**。
@@ -124,7 +125,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | **active 零区**：用户已确认激活；lead / delivery 工作区待 `/govern` scaffold（建议 slug 惯例 `workspace-006-design-system-and-ui-experience`，**须用户确认**） |
+| workspace-006-design-system-and-ui-experience | GOAL-001-design-system-and-ui-experience | lead | 2026-08-09 | 用户确认 slug；`/govern` scaffold Root + S1–S5 纲领；`vision_role: delivery` |
 
 ## 关门记录
 
@@ -142,3 +143,4 @@ parent: null
 | 2026-08-08 | `0.2.0` | 用户裁决：协议目标纠正为整份 v2.7.0 契约（VP-006）；**硬阻塞**本 VP 激活/视觉实施直至 VP-006 closed；继承与退出改为依赖 VP-006 覆盖表。 |
 | 2026-08-09 | `0.3.0` | `/vision` 响应 VRev-011：**F-V018** exit 2/S2 钉死 `I-PROTO-FULL-001` 真实 type（禁 Detail/Filter 杜撰名）；**F-V019** 选路径 b（WCAG AA / Cmd+K 默认不进退出分母）；**F-V020** 补交付形态定名 + 过程 exit 6 自洽 + Non-goals 笔误已清。VP-006 硬前置标为已满足；实施门闩改为「须用户书面确认激活」。仍 `planned`。 |
 | 2026-08-09 | `0.4.0` | 用户书面确认「现在激活」：`planned` → **`active`**；解除激活门闩。`lead_workspace` 仍 `null`；物理 scaffold 交 `/govern`（slug 须用户确认）。未宣称视觉产品化已交付。 |
+| 2026-08-09 | `0.4.1` | `/govern` 开区：用户确认 slug `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience`；`lead_workspace` 绑定；S1–S5 纲领落盘（`0/5`）。激活/开区 **不**宣称视觉已交付。 |
