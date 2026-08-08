@@ -1,7 +1,7 @@
 ---
 id: workspace-006-design-system-and-ui-experience
 title: 设计系统与 Schema 驱动 UI/UX 体验工作区
-status: active
+status: done
 root_goal: GOAL-001-design-system-and-ui-experience
 canonical_scope: docs/workspace-006-design-system-and-ui-experience/
 shared_materials_catalog: none
@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-005-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.1
+version: 0.2.0
 parent: null
 ---
 
@@ -24,7 +24,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-006-design-system-and-ui-experience` | 用户 2026-08-09 经 `/govern` **书面确认** slug。 |
-| Root Goal | `GOAL-001-design-system-and-ui-experience` | 本区唯一 `parent: null` Root；`status: active`；纲领 S1–S5（`progress: 0/5`）。 |
+| Root Goal | `GOAL-001-design-system-and-ui-experience` | 本区唯一 `parent: null` Root；`status: done`（2026-08-09 用户书面确认关门，见 D-005）；纲领 S1–S5（`progress: 5/5`）。 |
 | canonical 范围 | `docs/workspace-006-design-system-and-ui-experience/` | 当前工作区唯一的目标状态范围。 |
 | 共享资料目录 | `none` | 未声明固定共享资料引用；不得把候选资料作为事实或证据。 |
 | 愿景角色 | `delivery` | 不改变 Charter 的 primary 工作区 `workspace-001-mvp-admin-foundation`。 |
