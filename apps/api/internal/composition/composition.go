@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"path/filepath"
 	"sync/atomic"
 
 	"go.uber.org/fx"
@@ -134,6 +135,7 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsess
 }
 
 func newMux(
+	cfg *config.Config,
 	a *auth.Authenticator,
 	st *store.Store,
 	authRepository *authsession.Repository,
@@ -144,6 +146,8 @@ func newMux(
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready)
+	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2).
+	handler.RegisterUpload(mux, a, filepath.Join(filepath.Dir(cfg.DBPath), "uploads"))
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.

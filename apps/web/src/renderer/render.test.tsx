@@ -313,8 +313,7 @@ describe("RenderPage form node with reactions", () => {
   it("fails closed on an unknown node type", async () => {
     const pageDoc: RenderPageDocument = {
       meta: { protocolVersion: "2.7", requiredCapabilities: [] },
-      body: { type: "slider", id: "x", props: {} } as unknown as RenderPageDocument["body"],
-    };
+      body: { type: "slider", id: "x", props: {} } as unknown as RenderPageDocument["body"],    };
     const container = await renderDocument(pageDoc, {});
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "outside the registry renderer whitelist",
@@ -352,13 +351,30 @@ describe("RenderPage form node with reactions", () => {
         type: "form",
         id: "typed-form",
         props: {
-          fields: [{ id: "up", label: "Upload", type: "upload" }],
+          fields: [{ id: "up", label: "Upload", type: "slider" as "upload" }],
         },
       },
     };
     const container = await renderDocument(pageDoc, {});
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "FORM_TYPE_NOT_WHITELISTED",
+    );
+  });
+
+  it("gates an upload field missing action/actionRef (registry oneOf)", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest", "actions.upload"] },
+      body: {
+        type: "form",
+        id: "upload-form",
+        props: {
+          fields: [{ id: "file", label: "File", type: "upload" }],
+        },
+      },
+    };
+    const container = await renderDocument(pageDoc, {});
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "UPLOAD_ACTION_REQUIRED",
     );
   });
 

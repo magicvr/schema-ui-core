@@ -11,6 +11,7 @@ var pageIDs = []string{
 	"data-table",
 	"form-controls",
 	"form-with-reactions",
+	"form-with-upload",
 	"overview",
 	"search-form-table",
 }

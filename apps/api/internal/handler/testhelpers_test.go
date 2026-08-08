@@ -34,6 +34,7 @@ type authTestEnv struct {
 	authRepository *authsession.Repository
 	operations     *operationlog.Repository
 	settings       *settingsrepository.Repository
+	uploadDir      string
 }
 
 const (
@@ -90,11 +91,14 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
+	uploadDir := filepath.Join(t.TempDir(), "uploads")
+	RegisterUpload(mux, a, uploadDir)
 	return &authTestEnv{
 		mux: mux, a: a, st: st,
 		authRepository: authRepository,
 		operations:     operations,
 		settings:       settings,
+		uploadDir:      uploadDir,
 	}
 }
 

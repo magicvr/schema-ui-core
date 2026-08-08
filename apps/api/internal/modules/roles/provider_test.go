@@ -61,7 +61,7 @@ func TestRolesProviderRegistersSurfaces(t *testing.T) {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 
-	wantRoutes := []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}"}
+	wantRoutes := []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}", "POST /api/roles/batch-delete"}
 	if len(set.Routes) != len(wantRoutes) {
 		t.Fatalf("routes = %d, want %d", len(set.Routes), len(wantRoutes))
 	}

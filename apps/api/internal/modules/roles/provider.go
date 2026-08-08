@@ -43,6 +43,7 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles",
 				"PATCH /api/roles/{id}", "DELETE /api/roles/{id}",
+				"POST /api/roles/batch-delete",
 			},
 			Pages:       []string{"roles"},
 			Navigation:  []string{"menu_roles"},

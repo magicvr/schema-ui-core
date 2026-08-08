@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 import { cn } from "@/lib/utils";
+import type { UploadFile } from "@/protocol/conformance/upload-orchestration";
 import {
   coerceFieldValue,
   type FormControlField,
@@ -12,6 +15,8 @@ export interface FormControlsProps {
   /** Per-field disabled override (R5 renderer reaction state). */
   fieldDisabled?: (id: string) => boolean;
   idPrefix?: string;
+  /** Upload control transport (ADR-0012): validates + uploads + returns the field value. */
+  onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
 }
 
 function optionList(field: FormControlField): Array<{ value: string; label: string }> {
@@ -385,18 +390,88 @@ function DateRangeField({
   );
 }
 
+function UploadField({
+  id,
+  label,
+  field,
+  value,
+  onChange,
+  disabled,
+  onUpload,
+}: {
+  id: string;
+  label: string;
+  field: FormControlField;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  disabled?: boolean;
+  onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
+}) {
+  const [status, setStatus] = useState<{ kind: "idle" | "uploading" | "error"; message?: string }>({
+    kind: "idle",
+  });
+  const display =
+    value === undefined || value === null || value === ""
+      ? ""
+      : Array.isArray(value)
+        ? value.join(", ")
+        : String(value);
+  const handleFiles = async (fileList: FileList | null) => {
+    if (fileList === null || fileList.length === 0 || onUpload === undefined) {
+      return;
+    }
+    const files: UploadFile[] = [...fileList].map((file) => ({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      contentId: file.name,
+    }));
+    setStatus({ kind: "uploading" });
+    try {
+      const result = await onUpload(field, files);
+      setStatus({ kind: "idle" });
+      onChange(result);
+    } catch (error) {
+      setStatus({ kind: "error", message: error instanceof Error ? error.message : String(error) });
+    }
+  };
+  return (
+    <label className="block space-y-1" htmlFor={id}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <input
+        id={id}
+        type="file"
+        multiple={field.multiple === true}
+        disabled={disabled || status.kind === "uploading"}
+        onChange={(event) => void handleFiles(event.target.files)}
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+      />
+      {display !== "" ? (
+        <span className="text-xs text-muted-foreground">Value: {display}</span>
+      ) : null}
+      {status.kind === "error" ? (
+        <span role="alert" className="text-xs text-destructive">
+          {status.message}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
 function FieldControl({
   field,
   values,
   onChange,
   disabled,
   idPrefix,
+  onUpload,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
   onChange: (id: string, value: unknown) => void;
   disabled?: boolean;
   idPrefix?: string;
+  onUpload?: (field: FormControlField, files: UploadFile[]) => Promise<unknown>;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = field.label ?? field.type;
@@ -528,6 +603,18 @@ function FieldControl({
           onChange={(next) => onChange(field.id, next)}
         />
       );
+    case "upload":
+      return (
+        <UploadField
+          id={id}
+          label={label}
+          field={field}
+          value={value}
+          disabled={disabled}
+          onUpload={onUpload}
+          onChange={(next) => onChange(field.id, next)}
+        />
+      );
   }
   return null;
 }
@@ -539,6 +626,7 @@ export function FormControls({
   disabled = false,
   fieldDisabled,
   idPrefix,
+  onUpload,
 }: FormControlsProps) {
   return (
     <div className={cn("grid gap-4", fields.length > 1 && "sm:grid-cols-2")}>
@@ -550,6 +638,7 @@ export function FormControls({
           onChange={onChange}
           disabled={disabled || (fieldDisabled?.(field.id) ?? false)}
           idPrefix={idPrefix}
+          onUpload={onUpload}
         />
       ))}
     </div>

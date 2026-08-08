@@ -505,6 +505,11 @@ export function gateRenderFormFields(
       ...(typeof entry.step === "number" ? { step: entry.step } : {}),
       ...(typeof entry.precision === "number" ? { precision: entry.precision } : {}),
       ...(typeof entry.format === "string" ? { format: entry.format } : {}),
+      ...(typeof entry.action === "string" ? { action: entry.action } : {}),
+      ...(typeof entry.actionRef === "string" ? { actionRef: entry.actionRef } : {}),
+      ...(typeof entry.accept === "string" ? { accept: entry.accept } : {}),
+      ...(typeof entry.maxSize === "number" ? { maxSize: entry.maxSize } : {}),
+      ...(entry.multiple === true ? { multiple: true } : {}),
       ...(Array.isArray(entry.options)
         ? {
             options: entry.options

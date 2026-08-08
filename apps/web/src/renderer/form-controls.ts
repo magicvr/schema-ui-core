@@ -29,7 +29,8 @@ export type FormControlType =
   | "cascader"
   | "checkboxGroup"
   | "richText"
-  | "password";
+  | "password"
+  | "upload";
 
 export const FORM_CONTROLS_EXTENDED_CAPABILITY = "form.controls.extended";
 export const FORM_CONTROLS_ADVANCED_CAPABILITY = "form.controls.advanced";
@@ -41,6 +42,7 @@ const BASE_CONTROLS = new Set<FormControlType>([
   "inputNumber",
   "datePicker",
   "dateRangePicker",
+  "upload",
 ]);
 /** 2.6 controls: require protocol >= 2.6 + form.controls.extended. */
 const EXTENDED_CONTROLS = new Set<FormControlType>([
@@ -87,6 +89,14 @@ export interface FormControlField {
   precision?: number;
   /** datePicker display format (display-only; data stays ISO 8601). */
   format?: string;
+  /** upload only: direct-URL mode (registry oneOf with actionRef). */
+  action?: string;
+  /** upload only: references a top-level type=upload action (requires actions.upload). */
+  actionRef?: string;
+  /** upload constraints (direct-URL mode only; actionRef mode reads the action). */
+  accept?: string;
+  maxSize?: number;
+  multiple?: boolean;
 }
 
 export interface FormControlMeta {
@@ -126,6 +136,9 @@ export function wireKindOf(field: FormControlField): WireKind {
       return "number";
     case "dateRangePicker":
       return "date-range";
+    case "upload":
+      // 07-actions-contract.md §7.2: multiple → array, single → string.
+      return field.multiple === true ? "string-array" : "string";
     default:
       return "string";
   }
@@ -306,6 +319,39 @@ export function checkFormCapabilities(
           code: "DATE_RANGE_END_FIELD_REQUIRED",
           path: `fields[${field.id}].endField`,
           message: "dateRangePicker requires a non-empty endField",
+        });
+      }
+    }
+    if (field.type === "upload") {
+      // Registry oneOf: exactly one of action / actionRef (fail-closed).
+      const hasAction = typeof field.action === "string" && field.action !== "";
+      const hasActionRef = typeof field.actionRef === "string" && field.actionRef !== "";
+      if (!hasAction && !hasActionRef) {
+        errors.push({
+          code: "UPLOAD_ACTION_REQUIRED",
+          path: `fields[${field.id}].action`,
+          message: "upload requires exactly one of action / actionRef",
+        });
+      }
+      if (hasAction && hasActionRef) {
+        errors.push({
+          code: "UPLOAD_ACTION_CONFLICT",
+          path: `fields[${field.id}].actionRef`,
+          message: "upload must not declare both action and actionRef",
+        });
+      }
+      if (hasActionRef && !capabilities.has("actions.upload")) {
+        errors.push({
+          code: "UPLOAD_CAPABILITY_REQUIRED",
+          path: "meta.requiredCapabilities",
+          message: "upload actionRef requires actions.upload",
+        });
+      }
+      if (hasAction && !/^\/(?!\/)[^\s\\?#]*$/.test(field.action!)) {
+        errors.push({
+          code: "UPLOAD_ACTION_INVALID",
+          path: `fields[${field.id}].action`,
+          message: "upload action must be a single-slash same-origin path",
         });
       }
     }

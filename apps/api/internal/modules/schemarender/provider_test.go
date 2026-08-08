@@ -20,7 +20,7 @@ func TestProviderPublishesCoreSchemaDocuments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"admin-list-batch", "data-display", "data-table", "form-controls", "form-with-reactions", "overview", "search-form-table"}
+	want := []string{"admin-list-batch", "data-display", "data-table", "form-controls", "form-with-reactions", "form-with-upload", "overview", "search-form-table"}
 	got := make([]string, 0, len(set.Pages))
 	for _, page := range set.Pages {
 		got = append(got, page.PageID)
