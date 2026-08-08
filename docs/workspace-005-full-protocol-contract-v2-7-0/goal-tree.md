@@ -21,17 +21,17 @@ parent: null
 ## ASCII 树
 
 ```text
-GOAL-001-full-protocol-contract-v2-7-0 [active] (1/6)
+GOAL-001-full-protocol-contract-v2-7-0 [active] (2/6)
 ```
 
 ## 状态表
 
 | ID | 标题 | Parent | Status | Progress | Updated |
 |----|------|--------|--------|----------|---------|
-| GOAL-001-full-protocol-contract-v2-7-0 | schema-ui-docs@v2.7.0 整份契约可验证兼容 | `null` | active | `1/6` | 2026-08-08 |
+| GOAL-001-full-protocol-contract-v2-7-0 | schema-ui-docs@v2.7.0 整份契约可验证兼容 | `null` | active | `2/6` | 2026-08-08 |
 
 ## 维护说明
 
-- `1/6` 由 Root `00-meta.md` 中 S0～S5 六个等权检查点派生（S0 已完成；差集证据 `attachments/I-S0-001-gap-analysis-v0-1-3-to-full.md`、E-002）。
+- `2/6` 由 Root `00-meta.md` 中 S0～S5 六个等权检查点派生（S0、S1 已完成；S1 冻结 = `I-PROTO-FULL-001` v1.0.0 + D-002，独立审计 A-001 conditional → findings 已响应闭合）。
 - 主意图：VP-006 整份契约覆盖表升版、Renderer/后端对齐、范例与验证；过程台账仅在本区。
 - 覆盖表现行权威将落盘为 Root `attachments/I-PROTO-FULL-001-*.md`（S1 冻结后）；历史 `I-PROTO-001 v0.1.3` 只读。

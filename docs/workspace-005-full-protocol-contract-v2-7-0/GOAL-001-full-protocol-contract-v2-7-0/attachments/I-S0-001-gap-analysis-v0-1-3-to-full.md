@@ -107,3 +107,7 @@ related_goal_checkpoint: S0
    - **批次 4（D-UPLOAD）**：upload 控件 + `type: upload` action + `actions.upload` 门禁 + 13 case 编排 + 后端上传端点 + 范例
 3. `scenarios` 保持 support-only（范例源），不设独立自动化门禁（Q5 延续）。
 4. 回归基线：v0.1.3 主路径（64/75 request-construction + 全量其余套件 + Go 全量测试）保持全绿不回退。
+
+## 8. 勘误（A-001 F-003 响应，2026-08-08）
+
+- §2 D-UPLOAD 行「`upstream/` 无 uploads」为盘点时点事实；**S1 冻结期间**已 vendor `uploads.cases.json`（13 case，SHA `aaeb968369e145d422d163d2f086b0ed3754b4486ddb889ca30375b64c8e22e2`）与 `permissions-inheritance.cases.json`（17 case，SHA `ac124fa1…`）至 `apps/web/src/protocol/upstream/` 并更新 `provenance.json`。本附件其余盘点结论不受影响（差集判断未变）。

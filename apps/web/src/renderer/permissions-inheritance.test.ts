@@ -32,10 +32,7 @@ interface FixtureSuite {
 const CASES_SHA256 = "ac124fa1d831d0aa2544b7544b1e177c3498c8c3b36ee4d535e8c3f2f5b8849e";
 const casesBytes = canonicalArtifactBytes(
   readFileSync(
-    new URL(
-      "../../../../docs/workspace-001-mvp-admin-foundation/GOAL-006-r4-account-permission/attachments/dperm/cases.json",
-      import.meta.url,
-    ),
+    new URL("../protocol/upstream/permissions-inheritance.cases.json", import.meta.url),
   ),
 );
 
@@ -47,7 +44,7 @@ function canonicalArtifactBytes(bytes: Buffer): Buffer {
 }
 
 describe("pinned permissions-inheritance fixture integrity", () => {
-  it("matches the SHA-256 recorded in GOAL-006 D-004", () => {
+  it("matches the SHA-256 recorded in GOAL-006 D-004 and provenance.json", () => {
     expect(createHash("sha256").update(casesBytes).digest("hex")).toBe(CASES_SHA256);
   });
 });
