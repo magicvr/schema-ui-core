@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-08
 updated: 2026-08-08
 version: 0.1.0
-progress: 2/6
+progress: 5/6
 plan_refs:
   - VP-006-full-protocol-contract-v2-7-0
 primary_plan: VP-006-full-protocol-contract-v2-7-0
@@ -43,9 +43,9 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 
 - [x] **S0**：差距盘点 — 覆盖表 v0.1.3 vs inventory/registry/fixtures 差集；前端保真债 vs 未纳入 type 分列；产出可审计差集清单。
 - [x] **S1**：覆盖表升版冻结 — 落盘 `I-PROTO-FULL-001` + Root 决策；默认 `include`；`include-partial` 仅保真/边角；范围收缩 → exclude 或用户书面 residual；相对 v0.1.3 差集「转为 include 计数 / 仍 residual 清单」。独立审计 A-001（source: independent，grok build / grok 4.5 / high）→ conditional；F-001 required 已 fixed，F-002/F-003 已勘误。
-- [ ] **S2**：核心缺口实现 — 未实现 registry type / 批量 selection / upload 等按表纳入批次交付。
-- [ ] **S3**：保真与 runtime — 钉死内降级控件提升到契约语义；表达式/权限边角 fail-closed。
-- [ ] **S4**：范例 + conformance — 每纳入域可发现范例与验证入口；exclude 面有表可查。
+- [x] **S2**：核心缺口实现 — 未实现 registry type / 批量 selection / upload 等按表纳入批次交付（B1–B4；320/320 fixture case 全绿）。
+- [x] **S3**：保真与 runtime — 钉死内降级控件提升到契约语义；表达式/权限边角 fail-closed（B5；白名单/门禁/空选/循环阻断测试）。
+- [x] **S4**：范例 + conformance — 每纳入域可发现范例与验证入口；exclude 面有表可查（覆盖表验证入口列已登记真实路径）。
 - [ ] **S5**：文档与关门 — 发现路径（overview/QUICKSTART）、兼容声明诚实、回归不回退、close-out 审计；开放 required = 0；可向 `/vision` 提出 VP-006 关门提案（须用户确认）。
 
 ### 阶段 ↔ VP 退出判据映射
@@ -65,10 +65,10 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 |------|------|------|------|
 | S0 | 差距盘点 | **已完成** | 差集证据 `attachments/I-S0-001-*`；E-002；I-001 closed |
 | S1 | 覆盖表升版冻结 | **已完成** | `I-PROTO-FULL-001` v1.0.0 + D-002；独立审计 A-001 conditional → F-001 fixed / F-002·F-003 勘误；I-PROTO-FULL-001 closed |
-| S2 | 核心缺口实现 | 未开始 | 按表分批；可并行子目标 |
-| S3 | 保真与 runtime | 未开始 | 可与 S2 后期交叠，但不得用视觉债掩盖语义缺口 |
-| S4 | 范例 + conformance | 未开始 | 与 S2/S3 纳入面同步登记 |
-| S5 | 文档与关门 | 未开始 | VP 关门提案须用户确认 |
+| S2 | 核心缺口实现 | **已完成** | B1–B4（E-003）；320/320 fixture case 全绿；vitest 569 / go test 全绿 |
+| S3 | 保真与 runtime | **已完成** | B5 fail-closed 测试；表达式/权限/批量/上传边界（E-003） |
+| S4 | 范例 + conformance | **已完成** | 覆盖表验证入口列登记真实路径（8 范例页 + 每域验证入口） |
+| S5 | 文档与关门 | **进行中** | 依赖回归与关门审计；VP 关门提案须用户确认 |
 
 阶段通常串行；同一纲领阶段内允许并行子目标。建区 **不**勾选任何检查点。
 
@@ -94,7 +94,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 
 ## 派生进度展示
 
-`progress: 2/6` 由上方 S0～S5 六个等权检查点派生（S0、S1 已完成）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+`progress: 5/6` 由上方 S0～S5 六个等权检查点派生（S0–S4 已完成）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
 
 ## 台账布局
 

@@ -36,20 +36,20 @@ supersedes: I-PROTO-001 v0.1.3（仅作历史 MVP 基线，只读；不覆盖其
 
 ## 1. 能力域（domain_id）冻结范围 — 12/12 include
 
-| domain_id | 冻结 disposition | 纳入边界 | 明确排除 | 验证入口（S1 初始 / S4 登记后指向真实路径） |
+| domain_id | 冻结 disposition | 纳入边界 | 明确排除 | 验证入口（S4 登记 · 真实路径） |
 |-----------|------------------|----------|----------|----------------------------------------------|
-| D-NODE | **include** | Node/Page 树解析、递归渲染、结构契约（node/page schema） | 无（基座） | structural：`apps/web/src/protocol/conformance/schema-validate.ts`（stage3 结构测试）；范例页 `apps/api/internal/modules/schemarender/schema/*.json` |
-| D-EXPR | **include** | 全量表达式语法（`$deps`/`$self`/`$context`/`$row` 白名单 + `== != > >= < <= contains && || ! ( )` + 严格类型/码点比较）与快照多轮 reaction 引擎（fulfill/otherwise/observers/baselines/externalUpdates/loop protection/深等检测/`MULTIPLE_VALUE_WRITES`） | 无 | fixtures：`upstream/reactions.cases.json`（16 case，S2 全绿）；`apps/web/src/renderer/reactions.ts`（S2 升版）；范例 `form-with-reactions` |
-| D-COMP | **include** | registry **24/24 type** 渲染与 props 语义（布局/数据/操作/表单全类别）；`component-format` 数据类型与非强制转换 | 无（含 statCard/chart/inputNumber/datePicker/dateRangePicker/upload，S2/S3 实现） | fixtures：`component-format`（5 case）；registry 门禁 `render.ts` / `form-controls.ts`；范例 `form-controls`、`data-table` |
-| D-DATA | **include** | 列表/详情 datasource、response mapping、query 序列化（ADR-0010）、static-data、request 构造（非批量） | 无 | fixtures：`request-construction`（非 batch 64 case）、`response-mapping`（23）、`query-serialization`（16）、`static-data`（9）；Go 通用 resource CRUD `apps/api/internal/handler/resources.go` |
-| D-ACT | **include** | 页面/行级/批量 action：request/navigate/modal/upload/custom 类型、request lifecycle、OutcomeBehavior、批量 Trigger（ADR-0022 D4/D5：requiresSelection/batchMapping/EMPTY_SELECTION/reload 清选） | 无（v0.1.3 的批量排除解除） | fixtures：`actions`（11）、`request-lifecycle`（4）、`request-construction` batch 11 case（S2 全绿）；`apps/web/src/renderer/row-action.ts`；Go 行操作/批量端点 |
-| D-PERM | **include** | 账号会话最小闭环 + 权限继承 / intent（ADR-0023）→ UI 显隐禁用 + Go 鉴权模型；17/17 行为 case | 完整 IAM 产品（SSO 联邦、细粒度审计后台等，维持 v0.1.3 边界） | fixtures：`permissions-inheritance`（17 case，SHA `ac124fa1…` pin）；`apps/web/src/renderer/permissions.ts`；Go `internal/account`、`internal/auth` |
-| D-APP | **include** | App manifest 装载、导航壳、路由、真实端点（`/.well-known/schema-ui/app-manifest.json`、`/api/schema/{pageId}`） | 多租户应用市场、动态远程 manifest 编排（维持 v0.1.3 边界） | fixtures：`app-manifest`（37）、`app-navigation`（16）；`apps/web/src/protocol/app-manifest.ts`；Go `internal/handler/manifest.go`、`schema.go` |
-| D-TABLE | **include** | 排序声明、搜索表、基础列表交互 + **多选批量（ADR-0022 D2）**：selection.mode=multiple、选中键规范化（去重保序/count=keys.length）、清选时机（筛选/翻页/排序/reload）、全选本页 | 跨页全选、筛选结果全集、部分成功回填（ADR-0022 非目标） | fixtures：`table-sort`（14）、`search-table`（11，含 selection 状态机）；`apps/web/src/renderer/schema-table.tsx`（S2 加多选列）；范例 `data-table`/批量场景 |
-| D-FORM | **include** | 全部表单控件（基座 input/select/inputNumber/datePicker/dateRangePicker/form + 2.6 extended + 2.7 advanced + upload）+ `defaultValue`（ADR-0033）+ wire 规则（ADR-0028–0033）+ 校验展示 + 编辑回填（ADR-0021） | 无（v0.1.3 白名单外 4 type 纳入） | `apps/web/src/renderer/form-controls.ts`（S2 扩白名单与门禁）；`form-controls.tsx`；范例 `form-controls`（S2 扩控件面）；structural + capabilities 门禁 |
-| D-UPLOAD | **include** | 上传控件（action/actionRef 双模式）、顶层 `type: upload` action、capability `actions.upload` 门禁、客户端编排（ADR-0012：逐文件 multipart、约束前置、原子失败、url 优先取值、幂等重试）、**后端上传端点**（multipart 接收、独立校验、`{url,id,name,size}` 响应、语义错误码） | 无（v0.1.3 整域排除解除） | fixtures：`upstream/uploads.cases.json`（13 case，S2 vendor + 全绿）；上传编排模块（S2 新建）；Go 上传端点（S2 新建）；范例 `form-with-upload`（S2 新建） |
-| D-VER | **include** | `supportedCapabilities` / 版本协商（ADR-0009）、runtime defaults（ADR-0017，baseURL 等） | 多协议大版本并行矩阵（维持 v0.1.3 边界） | fixtures：`version-negotiation`（44）、`runtime-defaults`（9）；`apps/web/src/protocol/load-page.ts` |
-| D-VAL | **include** | 构建时/加载时结构校验（6 schemas，vendor + SHA pin）、registry 语义门禁 | 自研替代上游 schema 语义 | `docs/schemas/*.json`（6 个）；`runtime-schema-validate.ts`；stage3 结构测试 |
+| D-NODE | **include** | Node/Page 树解析、递归渲染、结构契约（node/page schema） | 无（基座） | structural：`apps/web/src/protocol/conformance/schema-validate.ts`（stage3 结构测试全绿）；范例页 `apps/api/internal/modules/schemarender/schema/*.json`（8 页） |
+| D-EXPR | **include** | 全量表达式语法（`$deps`/`$self`/`$context`/`$row` 白名单 + `== != > >= < <= contains && || ! ( )` + 严格类型/码点比较）与快照多轮 reaction 引擎（fulfill/otherwise/observers/baselines/externalUpdates/loop protection/深等检测/`MULTIPLE_VALUE_WRITES`） | 无 | fixtures：`upstream/reactions.cases.json` **16/16 全绿**（stage3）；引擎：`apps/web/src/renderer/reaction-engine.ts` + `reaction-expression.ts`；单元：`reaction-expression.test.ts`（14）；渲染集成：`render.tsx` FormView（值提交/显隐/阻断）；范例 `form-with-reactions` |
+| D-COMP | **include** | registry **24/24 type** 渲染与 props 语义（布局/数据/操作/表单全类别）；`component-format` 数据类型与非强制转换 | 无 | fixtures：`component-format` 5/5；registry 门禁：`render.ts`（10 节点 type）/`form-controls.ts`（13 控件 type + 门禁）；展示渲染：`render.tsx` StatCardView/ChartView + 集成测试（`render.test.tsx`）；范例 `form-controls`、`data-table`、`data-display` |
+| D-DATA | **include** | 列表/详情 datasource、response mapping、query 序列化（ADR-0010）、static-data、request 构造（非批量） | 无 | fixtures：`request-construction` 64/64 非 batch、`response-mapping` 23/23、`query-serialization` 16/16、`static-data` 9/9；Go 通用 resource CRUD `apps/api/internal/handler/resources.go`（users/roles 真实端点） |
+| D-ACT | **include** | 页面/行级/批量 action：request/navigate/modal/upload/custom 类型、request lifecycle、OutcomeBehavior、批量 Trigger（ADR-0022 D4/D5：requiresSelection/batchMapping/EMPTY_SELECTION/reload 清选） | 无（v0.1.3 的批量排除解除） | fixtures：`actions` 11/11、`request-lifecycle` 4/4、`request-construction` batch **11/11**；构造器：`request-construction.ts`（buildBatchRequest）；执行：`render.tsx` runBatchRequest/invokeBatchAction + 集成测试（批量端到端 + 空选 fail-closed）；Go `POST {path}/batch-delete`（`resources.go` + `users_batch_test.go`）；范例 `admin-list-batch` |
+| D-PERM | **include** | 账号会话最小闭环 + 权限继承 / intent（ADR-0023）→ UI 显隐禁用 + Go 鉴权模型；17/17 行为 case | 完整 IAM 产品（SSO 联邦、细粒度审计后台等，维持 v0.1.3 边界） | fixtures：`permissions-inheritance` 17/17（SHA `ac124fa1…` pin，`upstream/permissions-inheritance.cases.json`）；`apps/web/src/renderer/permissions.ts` + `permissions-inheritance.test.ts`；Go `internal/account`、`internal/auth`（真实鉴权端点） |
+| D-APP | **include** | App manifest 装载、导航壳、路由、真实端点（`/.well-known/schema-ui/app-manifest.json`、`/api/schema/{pageId}`） | 多租户应用市场、动态远程 manifest 编排（维持 v0.1.3 边界） | fixtures：`app-manifest` 37/37、`app-navigation` 16/16（`upstream-fixtures.test.ts`）；`apps/web/src/protocol/app-manifest.ts`；Go `internal/handler/manifest.go`、`schema.go`；集成：`representative-pages.integration.test.tsx` |
+| D-TABLE | **include** | 排序声明、搜索表、基础列表交互 + **多选批量（ADR-0022 D2）**：selection.mode=multiple、选中键规范化（去重保序/count=keys.length）、清选时机（筛选/翻页/排序/reload）、全选本页 | 跨页全选、筛选结果全集、部分成功回填（ADR-0022 非目标） | fixtures：`table-sort` 14/14、`search-table` 11/11（含 selection 状态机）；UI：`schema-table.tsx`（多选列/全选/清选/requiresSelection）+ `schema-table.test.tsx`；集成：批量端到端测试；范例 `data-table`、`admin-list-batch` |
+| D-FORM | **include** | 全部表单控件（基座 input/select/inputNumber/datePicker/dateRangePicker/form + 2.6 extended + 2.7 advanced + upload）+ `defaultValue`（ADR-0033）+ wire 规则（ADR-0028–0033）+ 校验展示 + 编辑回填（ADR-0021） | 无（v0.1.3 白名单外 4 type 纳入） | `apps/web/src/renderer/form-controls.ts`（13 控件 + 门禁）+ `form-controls.test.ts`（含 new gates）；`form-controls.tsx`（8 类控件渲染）；提交投影展开（dateRange/upload）；范例 `form-controls`（全控件面） |
+| D-UPLOAD | **include** | 上传控件（action/actionRef 双模式）、顶层 `type: upload` action、capability `actions.upload` 门禁、客户端编排（ADR-0012：逐文件 multipart、约束前置、原子失败、url 优先取值、幂等重试）、**后端上传端点**（multipart 接收、独立校验、`{url,id,name,size}` 响应、语义错误码） | 无（v0.1.3 整域排除解除） | fixtures：`upstream/uploads.cases.json` **13/13 全绿**；编排：`apps/web/src/protocol/conformance/upload-orchestration.ts`；控件+传输：`form-controls.tsx` UploadField + `render.tsx` uploadFiles；集成：上传端到端测试；Go `internal/handler/upload.go` + `upload_test.go`（POST /api/upload、GET /api/files/{id}）；范例 `form-with-upload` |
+| D-VER | **include** | `supportedCapabilities` / 版本协商（ADR-0009）、runtime defaults（ADR-0017，baseURL 等） | 多协议大版本并行矩阵（维持 v0.1.3 边界） | fixtures：`version-negotiation` 44/44、`runtime-defaults` 9/9；`apps/web/src/protocol/load-page.ts` + `conformance/version-negotiate.ts` |
+| D-VAL | **include** | 构建时/加载时结构校验（6 schemas，vendor + SHA pin）、registry 语义门禁 | 自研替代上游 schema 语义 | `docs/schemas/*.json`（6 个，provenance SHA pin）；`runtime-schema-validate.ts`（浏览器侧）；stage3 结构测试；加载路径 `load-page.ts`（PAGE_SCHEMA_INVALID fail-closed） |
 
 ### 1.1 汇总计数
 
@@ -74,24 +74,24 @@ supersedes: I-PROTO-001 v0.1.3（仅作历史 MVP 基线，只读；不覆盖其
 
 ## 3. Fixture 套件冻结映射 — 16/16 行为套件 include（scenarios support-only）
 
-| suite id | 冻结 disposition | 绑定 domain | 说明 |
-|----------|------------------|-------------|------|
-| actions | include | D-ACT | 11 case（传输结果与错误序） |
-| app-manifest | include | D-APP | 37 case |
-| app-navigation | include | D-APP | 16 case |
-| component-format | include | D-COMP | 5 case（数据类型/非强制转换） |
-| permissions-inheritance | include | D-PERM | 17 case（SHA pin `ac124fa1…`；S1 起 vendor 于本区 upstream） |
-| query-serialization | include | D-DATA | 16 case（ADR-0010） |
-| reactions | **include（v0.1.3 全排除解除）** | D-EXPR | 16 case（多轮 $deps 引擎；S2 全绿） |
-| request-construction | **include（batch 11 case 纳入）** | D-DATA / D-ACT | 75 case（64 非批量 + 11 batchRequest） |
-| request-lifecycle | include | D-ACT | 4 case |
-| response-mapping | include | D-DATA | 23 case |
-| runtime-defaults | include | D-VER | 9 case |
-| search-table | include | D-TABLE | 11 case（含 selection 事件状态机） |
-| static-data | include | D-DATA | 9 case |
-| table-sort | include | D-TABLE | 14 case |
-| version-negotiation | include | D-VER | 44 case |
-| uploads | **include**（S1 已 vendor + SHA pin `aaeb9683…`；S2 执行门禁） | D-UPLOAD | 13 case（ADR-0012） |
+| suite id | 冻结 disposition | 绑定 domain | 说明（S4 执行证据） |
+|----------|------------------|-------------|----------------------|
+| actions | include | D-ACT | 11/11 全绿（stage3） |
+| app-manifest | include | D-APP | 37/37 全绿（upstream-fixtures） |
+| app-navigation | include | D-APP | 16/16 全绿（upstream-fixtures） |
+| component-format | include | D-COMP | 5/5 全绿（stage3） |
+| permissions-inheritance | include | D-PERM | 17/17 全绿（`upstream/permissions-inheritance.cases.json`，SHA `ac124fa1…`；renderer 套件） |
+| query-serialization | include | D-DATA | 16/16 全绿（stage3） |
+| reactions | **include（v0.1.3 全排除解除）** | D-EXPR | **16/16 全绿**（stage3 · reaction-engine.ts） |
+| request-construction | **include（batch 11 case 纳入）** | D-DATA / D-ACT | **75/75 全绿**（stage3，含 11 batchRequest） |
+| request-lifecycle | include | D-ACT | 4/4 全绿（stage3） |
+| response-mapping | include | D-DATA | 23/23 全绿（stage3） |
+| runtime-defaults | include | D-VER | 9/9 全绿（stage3） |
+| search-table | include | D-TABLE | 11/11 全绿（stage3，含 selection 事件） |
+| static-data | include | D-DATA | 9/9 全绿（stage3） |
+| table-sort | include | D-TABLE | 14/14 全绿（stage3） |
+| version-negotiation | include | D-VER | 44/44 全绿（stage3） |
+| uploads | **include**（S1 已 vendor + SHA pin `aaeb9683…`） | D-UPLOAD | **13/13 全绿**（stage3 · upload-orchestration.ts） |
 | scenarios | support-only | 多域 | 信息性场景；范例候选源；不是独立 conformance 门禁 |
 
 > 上游 `conformance/reference-*` / `runner` 仍为 manifest **excluded** 参考实现，不得单独证明兼容。
