@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.6
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001-design-system-and-ui-experience
@@ -16,24 +16,25 @@ version: 0.1.6
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | 已登记 | 见 `00-meta`：I-001～I-005 |
-| 到期 required 是否已 verified / residual | **I-001/I-002/I-005 = closed** | **F-002** decision-locked（D-003），实施前仍阻断 S1 **完成**；D-004 不关闭 F-002 |
-| 资料引用（若有）是否固定且用户确认 | 无 shared catalog | Stitch 为本地 gitignore 路径；仓库指针 = D-004 + `attachments/visual-direction-stitch-summary.md` |
+| 影响本 scope 的 I-00N | 已登记 | I-001/I-002/I-005 closed；I-004 open non-blocking |
+| 到期 required 是否已 verified / residual | **F-VUI-001 / F-VUI-002 = open required** | A-006；阻断 S2/S3 勾选与 Root done |
+| 资料引用（若有）是否固定且用户确认 | 无 shared catalog | Stitch = 本地 gitignore + D-004 仓库指针 |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-09 | independent | S1 Token 决策(D-002) | pass | 0 | `03-audit/A-001-token-system-decision.md` |
-| A-002 | 2026-08-09 | independent | Root 整体 + Token 架构取舍 | conditional | ~~1（F-002）~~ → **0（fixed）** | `03-audit/A-002-root-and-token-architecture-audit.md` |
-| A-003 | 2026-08-09 | independent | Root + 重点：不另建第二套 Token | conditional | 0 | `03-audit/A-003-root-token-second-system-audit.md` |
-| A-004 | 2026-08-09 | self（编排响应） | 合并响应 A-001/A-002/A-003 | conditional | ~~1（F-002 decision-locked）~~ → **0（fixed）** | `03-audit/A-004-response-a001-a002-a003.md` |
-| A-005 | 2026-08-09 | self（编排响应） | F-002 实施证据核查与 fixed 闭合 | pass | 0 | `03-audit/A-005-f002-fixed-evidence.md` |
+| A-002 | 2026-08-09 | independent | Root 整体 + Token 架构取舍 | conditional | ~~F-002~~ fixed | `03-audit/A-002-root-and-token-architecture-audit.md` |
+| A-003 | 2026-08-09 | independent | Root + 不另建第二套 Token | conditional | 0 | `03-audit/A-003-root-token-second-system-audit.md` |
+| A-004 | 2026-08-09 | self（编排响应） | 合并响应 A-001/A-002/A-003 | conditional | ~~F-002~~ fixed | `03-audit/A-004-response-a001-a002-a003.md` |
+| A-005 | 2026-08-09 | self（编排响应） | F-002 实施证据与 fixed | pass | 0 | `03-audit/A-005-f002-fixed-evidence.md` |
+| A-006 | 2026-08-09 | self（关门后复审） | 视觉 fidelity + 过早 done | **fail** | **F-VUI-001、F-VUI-002**（F-VUI-003 → fixed in A-007） | `03-audit/A-006-visual-fidelity-premature-closeout.md` |
+| A-007 | 2026-08-09 | self（编排响应） | 响应 A-006 · 状态回退 | conditional | **2**（F-VUI-001/002） | `03-audit/A-007-response-a006-reopen.md` |
 
 ## 结论状态
 
-- 建区完成（E-001 / D-001）；I-001 基线盘点完成（E-002）；I-002 Token 命名 **accepted**（D-002）；**I-005 视觉方向冻结 closed**（D-004 / E-004）；**S1 已勾选**；`progress: 1/5`；Root `active`。
-- **A-004 / D-003（2026-08-09）已合并响应三审**：原则维持；recommended 入 S1 清单；F-002 映射方案已锁（`--elevation-*` → `--shadow-*`）。
-- **A-005（2026-08-09）**：F-002 实施证据充分 → **F-002 = fixed**（`--elevation-sm|md|lg` + `@theme inline` alias 无自引用；vitest 结构断言通过；build 通过；confirm/modal 消费点迁移完成）。
-- **D-004**：Stitch 定稿可作视觉输入；不构成实现完成。
-- 开放 required finding = **0**。
+- **D-005 关门已废止**（D-006）；Root / 工作区 **`active`**；`progress: 2/5`（仅 S1、S4）。
+- **开放 required findings = 2**：F-VUI-001（S2 偷换完成）、F-VUI-002（S3 分母不足）。F-VUI-003（过早 done）= **fixed**（状态回退）。F-VUI-004 = open recommended。
+- S1 Token 基建与 S4 状态面、GOAL-005 fork 示例保留为局部真实交付；**不得**据此再次宣称 S2/S3 或 Root 已完成。
+- 再次关门前提：F-VUI-001/002 合法闭合 + 用户书面确认。

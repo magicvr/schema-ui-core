@@ -1,7 +1,7 @@
 ---
 id: GOAL-003-s2-s3-renderer-and-shell
 doc: decision
-status: done
+status: active
 parent: GOAL-001-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09

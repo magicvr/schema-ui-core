@@ -37,7 +37,7 @@ progress: 2/2
 
 **独立交叉审计已完成并落盘**（`source: independent`，grok build / grok-4.5 / 高思考强度，覆盖 GOAL-004 S4 + 本目标 S5 合并 scope）：`03-audit/A-002-independent-cross-audit-s4-s5.md`，`verdict: conditional`，2 条 required finding。编排已响应（`03-audit/A-003-response-a002.md`）：2 条 required finding 均 `fixed`（本目标五件套补齐 + `00-meta.md` 改写为如实描述；`useDisplayData` 错误不自清也已在代码中修复）；3 条 non-blocking finding 中 1 条 `fixed`（补测试）、2 条 `accepted-residual`（范围明确、不阻断本阶段）。**开放 required findings（本目标 scope）= 0。**
 
-**关门提案（P-004 · 待用户裁决）**：在完成上述响应之后，Root S1–S5 五个阶段检查点均已完成（见 Root `00-meta.md` 同步更新为 `progress: 5/5`）；Root `03-audit.md` 台账开放 required findings = 0（F-002 已 fixed）。**Root `status` 是否置为 `done` 仍须用户书面确认**；本目标与本次实施不单方面代为裁决，只负责把关门所需的证据（五件套、回归、独立审计响应）备齐并如实记录。
+**Root 关门提案状态（2026-08-09 · 已失效）**：本目标 C1/C2（fork 示例 + 回归绿）仍成立，故本 GOAL 保持 `done`。但 Root 曾依 D-005 关门后，经 A-006 视觉 fidelity 复审 **fail**，**D-006 已废止 D-005**；Root 回 `active`（`2/5`），开放 **F-VUI-001 / F-VUI-002**。**禁止**再仅凭本 GOAL done 推出 Root `done`；须 S2/S3 按 D-004 交付并闭合开放 required 后，再走用户书面确认。
 
 ## 信息就绪与未知项
 
