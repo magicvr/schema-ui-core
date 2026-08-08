@@ -15,6 +15,12 @@
       "route": "/overview"
     },
     {
+      "pageId": "data-display",
+      "title": "Data display",
+      "schemaUrl": "/api/schema/data-display",
+      "route": "/data-display"
+    },
+    {
       "pageId": "data-table",
       "title": "Data table",
       "schemaUrl": "/api/schema/data-table",
@@ -56,6 +62,11 @@
             "pageRef": "data-table",
             "label": "Data table",
             "icon": "table"
+          },
+          {
+            "pageRef": "data-display",
+            "label": "Data display",
+            "icon": "chart"
           },
           {
             "pageRef": "search-form-table",

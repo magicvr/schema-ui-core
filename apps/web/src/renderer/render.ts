@@ -13,19 +13,20 @@ import {
 } from "@/renderer/reactions";
 
 /**
- * R5 D-COMP minimal page renderer (frozen §5 whitelist; resolve R4 F-002).
+ * D-COMP page renderer (frozen §5 whitelist + I-PROTO-FULL-001 full registry
+ * surface; resolve R4 F-002).
  *
  * The renderer walks a page document's node tree and dispatches whitelisted
  * node types to the components in this directory. It is deliberately minimal:
- * only the node types actually surfaced by the R5 example pages are handled,
- * and any other type fails closed instead of rendering a silent fallback.
+ * only the node types surfaced by the example pages are handled, and any
+ * other type fails closed instead of rendering a silent fallback.
  *
  * A page document looks like the example pages' `PAGE_DOCUMENT`:
  *   { meta: { protocolVersion, requiredCapabilities }, body: Node }
  *
- * Node types supported (frozen §5 whitelist):
+ * Node types supported (registry surface):
  *   - layout:  grid / section / tabs
- *   - data/action: text / table / recordView / actionButton
+ *   - data/action: text / table / recordView / actionButton / statCard / chart
  *   - form:    form → FormControls (with reactions applied to field state)
  * The form control whitelist itself is enforced by D-FORM
  * (isWhitelistedFormControl / checkFormCapabilities).
@@ -39,7 +40,9 @@ export type RenderNodeType =
   | "tabs"
   | "text"
   | "recordView"
-  | "actionButton";
+  | "actionButton"
+  | "statCard"
+  | "chart";
 
 export interface RenderMeta {
   protocolVersion: string;
@@ -133,6 +136,36 @@ export interface RenderActionButtonNode {
   children?: RenderNode[];
 }
 
+export interface RenderStatCardNode {
+  type: "statCard";
+  id?: string;
+  props?: {
+    label?: string;
+    unit?: string;
+    /** plain | currency | percent (registry enum). */
+    format?: string;
+    /** Field of the dataSource rows to display (registry, required since 0.2). */
+    valueField?: string;
+    /** Single-slash same-origin data path (same invariant as table.dataSource). */
+    dataSource?: string;
+  };
+  children?: RenderNode[];
+}
+
+export interface RenderChartNode {
+  type: "chart";
+  id?: string;
+  props?: {
+    /** line | bar | pie (registry enum, required). */
+    chartType?: string;
+    xField?: string;
+    yField?: string;
+    /** Single-slash same-origin data path (same invariant as table.dataSource). */
+    dataSource?: string;
+  };
+  children?: RenderNode[];
+}
+
 export type RenderNode =
   | RenderFormNode
   | RenderSectionNode
@@ -141,7 +174,9 @@ export type RenderNode =
   | RenderTextNode
   | RenderTableNode
   | RenderRecordViewNode
-  | RenderActionButtonNode;
+  | RenderActionButtonNode
+  | RenderStatCardNode
+  | RenderChartNode;
 
 export interface RenderPageDocument {
   meta: RenderMeta;
@@ -188,6 +223,8 @@ const WHITELISTED_NODE_TYPES = new Set<RenderNodeType>([
   "text",
   "recordView",
   "actionButton",
+  "statCard",
+  "chart",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -207,7 +244,7 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
     return {
       code: "RENDER_UNKNOWN_NODE_TYPE",
       path,
-      message: `node type "${value.type}" is outside the §5 renderer whitelist`,
+      message: `node type "${value.type}" is outside the registry renderer whitelist`,
     };
   }
   if (value.type === "form") {
@@ -283,6 +320,35 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderActionButtonNode;
+  }
+  if (value.type === "statCard") {
+    const props = isRecord(value.props) ? value.props : {};
+    return {
+      type: "statCard",
+      ...(value.id === undefined ? {} : { id: value.id }),
+      props: {
+        ...(typeof props.label === "string" ? { label: props.label } : {}),
+        ...(typeof props.unit === "string" ? { unit: props.unit } : {}),
+        ...(typeof props.format === "string" ? { format: props.format } : {}),
+        ...(typeof props.valueField === "string" ? { valueField: props.valueField } : {}),
+        ...(typeof props.dataSource === "string" ? { dataSource: props.dataSource } : {}),
+      },
+      ...(value.children === undefined ? {} : { children: value.children }),
+    } as RenderStatCardNode;
+  }
+  if (value.type === "chart") {
+    const props = isRecord(value.props) ? value.props : {};
+    return {
+      type: "chart",
+      ...(value.id === undefined ? {} : { id: value.id }),
+      props: {
+        ...(typeof props.chartType === "string" ? { chartType: props.chartType } : {}),
+        ...(typeof props.xField === "string" ? { xField: props.xField } : {}),
+        ...(typeof props.yField === "string" ? { yField: props.yField } : {}),
+        ...(typeof props.dataSource === "string" ? { dataSource: props.dataSource } : {}),
+      },
+      ...(value.children === undefined ? {} : { children: value.children }),
+    } as RenderChartNode;
   }
   return {
     type: "table",
@@ -430,6 +496,13 @@ export function gateRenderFormFields(
       type: entry.type,
       ...(typeof entry.label === "string" ? { label: entry.label } : {}),
       ...(entry.mode === "multiple" ? { mode: "multiple" } : {}),
+      ...(typeof entry.startField === "string" ? { startField: entry.startField } : {}),
+      ...(typeof entry.endField === "string" ? { endField: entry.endField } : {}),
+      ...(typeof entry.min === "number" ? { min: entry.min } : {}),
+      ...(typeof entry.max === "number" ? { max: entry.max } : {}),
+      ...(typeof entry.step === "number" ? { step: entry.step } : {}),
+      ...(typeof entry.precision === "number" ? { precision: entry.precision } : {}),
+      ...(typeof entry.format === "string" ? { format: entry.format } : {}),
       ...(Array.isArray(entry.options)
         ? {
             options: entry.options

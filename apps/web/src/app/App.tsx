@@ -291,6 +291,7 @@ function SchemaPageSurface({
       document={state.document as RenderPageDocument}
       context={context as unknown as Record<string, unknown>}
       tableRenderer={(node) => <SchemaTable node={node} fetcher={resourceFetcher} />}
+      dataFetcher={resourceFetcher}
     />
   );
 }

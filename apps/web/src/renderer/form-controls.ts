@@ -1,8 +1,11 @@
 /**
- * R5 D-FORM form control surface (frozen §5 whitelist).
+ * D-FORM form control surface (frozen §5 whitelist + I-PROTO-FULL-001 full
+ * registry surface).
  *
  * Wire rules from schema-ui-docs@2.7.0 (fixed commit ca9e5fe…):
- *  - base: input → string, select (single) → string
+ *  - base: input → string, select (single) → string, inputNumber → number,
+ *    datePicker → ISO 8601 string, dateRangePicker → {start,end} pair bound
+ *    to startField/endField (registry props; no single-field wire)
  *  - 2.6 (capability form.controls.extended): textarea → string, switch → boolean,
  *    checkbox → boolean, radio → single string, select.mode=multiple → string[]
  *  - 2.7 (capability form.controls.advanced): cascader → path string[],
@@ -16,6 +19,9 @@
 export type FormControlType =
   | "input"
   | "select"
+  | "inputNumber"
+  | "datePicker"
+  | "dateRangePicker"
   | "textarea"
   | "switch"
   | "checkbox"
@@ -28,8 +34,14 @@ export type FormControlType =
 export const FORM_CONTROLS_EXTENDED_CAPABILITY = "form.controls.extended";
 export const FORM_CONTROLS_ADVANCED_CAPABILITY = "form.controls.advanced";
 
-/** Whitelisted base controls (no capability gate). */
-const BASE_CONTROLS = new Set<FormControlType>(["input", "select"]);
+/** Whitelisted base controls (no capability gate; registry has no `since`). */
+const BASE_CONTROLS = new Set<FormControlType>([
+  "input",
+  "select",
+  "inputNumber",
+  "datePicker",
+  "dateRangePicker",
+]);
 /** 2.6 controls: require protocol >= 2.6 + form.controls.extended. */
 const EXTENDED_CONTROLS = new Set<FormControlType>([
   "textarea",
@@ -45,11 +57,16 @@ const ADVANCED_CONTROLS = new Set<FormControlType>([
   "password",
 ]);
 
-export type WireKind = "string" | "boolean" | "string-array";
+export type WireKind = "string" | "boolean" | "string-array" | "number" | "date-range";
 
 export interface FormOption {
   value: string;
   label?: string;
+}
+
+export interface DateRangeValue {
+  start: string;
+  end: string;
 }
 
 export interface FormControlField {
@@ -60,6 +77,16 @@ export interface FormControlField {
   mode?: "single" | "multiple";
   options?: FormOption[];
   defaultValue?: unknown;
+  /** dateRangePicker only: the two bound output fields (registry props). */
+  startField?: string;
+  endField?: string;
+  /** inputNumber constraints (registry props, since 0.2.1). */
+  min?: number;
+  max?: number;
+  step?: number;
+  precision?: number;
+  /** datePicker display format (display-only; data stays ISO 8601). */
+  format?: string;
 }
 
 export interface FormControlMeta {
@@ -95,6 +122,10 @@ export function wireKindOf(field: FormControlField): WireKind {
     case "cascader":
     case "checkboxGroup":
       return "string-array";
+    case "inputNumber":
+      return "number";
+    case "dateRangePicker":
+      return "date-range";
     default:
       return "string";
   }
@@ -107,7 +138,9 @@ export function coerceFieldValue(field: FormControlField, raw: unknown): unknown
     raw !== undefined &&
     raw !== null &&
     !(kind === "string" && raw === "") &&
-    !(kind === "string-array" && Array.isArray(raw) && raw.length === 0);
+    !(kind === "string-array" && Array.isArray(raw) && raw.length === 0) &&
+    !(kind === "number" && raw === "") &&
+    !(kind === "date-range" && isRecord(raw) && raw.start === "" && raw.end === "");
 
   if (!present && field.defaultValue !== undefined) {
     return coerceToKind(kind, field.defaultValue);
@@ -125,6 +158,17 @@ function coerceToKind(kind: WireKind, value: unknown): unknown {
         : typeof value === "string" && value.trim() !== ""
           ? value.split(",").map((part) => part.trim()).filter((part) => part !== "")
           : [];
+    case "number": {
+      const numeric = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(numeric) ? numeric : 0;
+    }
+    case "date-range": {
+      const record = isRecord(value) ? value : {};
+      return {
+        start: typeof record.start === "string" ? record.start : "",
+        end: typeof record.end === "string" ? record.end : "",
+      };
+    }
     case "string":
       // Resource rows often store multi-value fields as string[] (e.g. roles).
       // Textareas and free-text inputs expect a single wire string.
@@ -142,6 +186,14 @@ export function validateDefaultValue(field: FormControlField): FormControlGateEr
   if (field.defaultValue === undefined) {
     return null;
   }
+  if (field.type === "dateRangePicker") {
+    // Registry: dateRangePicker has no defaultValue prop (binds two fields).
+    return {
+      code: "DATE_RANGE_DEFAULT_VALUE_FORBIDDEN",
+      path: `fields[${field.id}].defaultValue`,
+      message: "dateRangePicker has no defaultValue prop (binds startField/endField)",
+    };
+  }
   const kind = wireKindOf(field);
   const matches =
     kind === "boolean"
@@ -149,7 +201,9 @@ export function validateDefaultValue(field: FormControlField): FormControlGateEr
       : kind === "string-array"
         ? Array.isArray(field.defaultValue) &&
           field.defaultValue.every((entry) => typeof entry === "string")
-        : typeof field.defaultValue === "string";
+        : kind === "number"
+          ? typeof field.defaultValue === "number" && Number.isFinite(field.defaultValue)
+          : typeof field.defaultValue === "string";
   if (matches) {
     return null;
   }
@@ -235,6 +289,23 @@ export function checkFormCapabilities(
           code: "FORM_CAPABILITY_REQUIRED",
           path: `fields[${field.id}].mode`,
           message: "select multiple requires form.controls.extended",
+        });
+      }
+    }
+    if (field.type === "dateRangePicker") {
+      // Registry: startField / endField are required non-empty props.
+      if (typeof field.startField !== "string" || field.startField === "") {
+        errors.push({
+          code: "DATE_RANGE_START_FIELD_REQUIRED",
+          path: `fields[${field.id}].startField`,
+          message: "dateRangePicker requires a non-empty startField",
+        });
+      }
+      if (typeof field.endField !== "string" || field.endField === "") {
+        errors.push({
+          code: "DATE_RANGE_END_FIELD_REQUIRED",
+          path: `fields[${field.id}].endField`,
+          message: "dateRangePicker requires a non-empty endField",
         });
       }
     }

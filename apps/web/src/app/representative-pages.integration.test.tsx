@@ -5,7 +5,7 @@
 // uses an explicit admin-profile manifest test fixture and the real
 // Go-embedded, module-owned page documents
 // through the App's schema-driven default path, with the users/roles API surface
-// injected. Asserts "改 Schema 即可出现页面" holds on the main path and that
+// injected. Asserts "�?Schema 即可出现页面" holds on the main path and that
 // unknown / illegal inputs fail closed with observable errors.
 
 import { readFileSync } from "node:fs";
@@ -322,11 +322,11 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
         protocolVersion: "2.7",
         requiredCapabilities: ["app.manifest"],
       },
-      body: { type: "chart", id: "x", props: {} },
+      body: { type: "slider", id: "x", props: {} },
     };
     const container = await renderApp("/search-form-table", {}, fixtures);
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
-      "outside the §5 renderer whitelist",
+      "outside the registry renderer whitelist",
     );
   });
 
@@ -335,3 +335,4 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     expect(container.textContent).toContain("resource fetch failed");
   });
 });
+

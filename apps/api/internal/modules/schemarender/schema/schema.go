@@ -6,6 +6,7 @@ import "embed"
 const ModuleID = "core.schema-render"
 
 var pageIDs = []string{
+	"data-display",
 	"data-table",
 	"form-controls",
 	"form-with-reactions",
