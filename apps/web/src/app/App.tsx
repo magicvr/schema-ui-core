@@ -7,12 +7,14 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
+  Menu,
   PanelLeft,
   Pencil,
   Search,
   Settings,
   Table2,
   UserRound,
+  X,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -49,7 +51,7 @@ const iconRegistry: Record<string, LucideIcon> = {
   help: CircleHelp,
   home: Home,
   logout: LogOut,
-  menu: PanelLeft,
+  menu: Menu,
   pen: Pencil,
   reaction: Zap,
   search: Search,
@@ -188,10 +190,6 @@ function NavigationItems({
       )}
     </div>
   );
-}
-
-function flattenNavigation(items: ProjectedItem[]): ProjectedItem[] {
-  return items.flatMap((item) => (item.type === "group" ? item.items : [item]));
 }
 
 type SchemaSurfaceState =
@@ -385,6 +383,7 @@ export function App({
     }
     return initial?.path ?? requested;
   });
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [branding, setBranding] = useState<Branding>(
     () => brandingProp ?? { siteTitle: DEFAULT_SITE_TITLE, logoUrl: "" },
   );
@@ -431,6 +430,7 @@ export function App({
     }
     window.history.pushState({}, "", href);
     setPath(currentLocationPath());
+    setMobileDrawerOpen(false);
   };
 
   const projection = useMemo(
@@ -483,6 +483,16 @@ export function App({
           </nav>
 
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
+            {/* Mobile hamburger — visible only on small screens */}
+            <button
+              type="button"
+              aria-label="Open navigation menu"
+              aria-expanded={mobileDrawerOpen}
+              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
+              onClick={() => setMobileDrawerOpen(true)}
+            >
+              <Menu aria-hidden="true" className="size-4" />
+            </button>
             <ThemeToggle />
             {currentUser !== undefined && currentUser !== null ? (
               <div className="flex items-center gap-2">
@@ -504,17 +514,44 @@ export function App({
         </div>
       </header>
 
-      <nav className="overflow-x-auto border-b border-border px-3 py-2 lg:hidden" aria-label="Workspace navigation">
-        <NavigationItems
-          items={flattenNavigation([
-            ...projection.top,
-            ...projection.sidebar,
-            ...projection.user,
-          ])}
-          onNavigate={onNavigate}
-          horizontal
-        />
-      </nav>
+      {/* Mobile navigation drawer */}
+      {mobileDrawerOpen ? (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-30 bg-overlay lg:hidden"
+            aria-hidden="true"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+          {/* Drawer panel */}
+          <nav
+            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-background shadow-lg lg:hidden"
+            aria-label="Mobile navigation"
+          >
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <span className="text-sm font-semibold">{appName}</span>
+              <button
+                type="button"
+                aria-label="Close navigation menu"
+                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={() => setMobileDrawerOpen(false)}
+              >
+                <X aria-hidden="true" className="size-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-4">
+              <NavigationItems
+                items={[
+                  ...projection.top,
+                  ...projection.sidebar,
+                  ...projection.user,
+                ]}
+                onNavigate={onNavigate}
+              />
+            </div>
+          </nav>
+        </>
+      ) : null}
 
       <div className="mx-auto flex max-w-[1440px]">
         <aside className="hidden w-64 shrink-0 border-r border-border px-3 py-6 lg:block">
