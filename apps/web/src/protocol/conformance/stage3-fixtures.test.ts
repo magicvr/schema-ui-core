@@ -20,6 +20,7 @@ import { runTableSort } from "./table-sort";
 import { negotiateVersion } from "./version-negotiate";
 import { runActionOutcome } from "./actions-outcome";
 import { constructRequest } from "./request-construction";
+import { runReactionEngine } from "@/renderer/reaction-engine";
 import {
   sampleWhitelistedPage,
   validateAgainstSchema,
@@ -346,26 +347,19 @@ describe("stage 3 · actions fixtures (non-batch transport outcomes)", () => {
   }
 });
 
-describe("stage 3 · reactions fixtures (coverage accounting)", () => {
+describe("stage 3 · reactions fixtures (full $deps engine, I-PROTO-FULL-001)", () => {
   const suite = loadSuite("reactions");
-  /**
-   * Upstream reactions suite exercises the multi-round $deps field-value reaction
-   * engine. MVP D-EXPR (GOAL-007) is intentionally limited to frozen $context
-   * expressions that toggle form field visible/disabled (see reactions.ts).
-   * All cases are excluded from host execution with explicit reasons; suite is
-   * still vendored + SHA-pinned for provenance.
-   */
-  const exclusions: Record<string, string> = Object.fromEntries(
-    suite.value.cases.map((c) => [
-      c.id,
-      "Excluded: upstream multi-round $deps field-value reaction engine is outside MVP D-EXPR ($context visible/disabled only; Q=no field-value triggers).",
-    ]),
-  );
-  assertCoverage(suite.value, [], exclusions, "reactions");
+  const cases = suite.value.cases;
+  // Full multi-round $deps reaction engine (reaction-engine.ts) executes every
+  // upstream case; no exclusions remain (I-PROTO-FULL-001 D-EXPR include).
+  assertCoverage(suite.value, cases.map((c) => c.id), {}, "reactions");
 
-  it("accounts for every upstream reactions case as out-of-MVP-subset", () => {
-    expect(Object.keys(exclusions).length).toBe(suite.value.cases.length);
-  });
+  for (const fixtureCase of cases) {
+    it(fixtureCase.id, () => {
+      const result = runReactionEngine(fixtureCase.input as never);
+      expect(result).toEqual(fixtureCase.expected);
+    });
+  }
 });
 
 describe("stage 3 · request-construction fixtures", () => {

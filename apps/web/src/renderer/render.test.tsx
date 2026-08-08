@@ -62,6 +62,77 @@ function displayDocument(body: RenderPageDocument["body"]): RenderPageDocument {
   };
 }
 
+describe("RenderPage full $deps reactions (I-PROTO-FULL-001 · D-EXPR integration)", () => {
+  it("commits fulfill values and hides a field through the multi-round engine", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: {
+        protocolVersion: "2.7",
+        requiredCapabilities: ["app.manifest", "form.controls.extended", "form.controls.advanced"],
+      },
+      body: {
+        type: "form",
+        id: "reactive-form",
+        props: {
+          fields: [
+            { id: "trigger", label: "Trigger", type: "switch" },
+            {
+              id: "status",
+              label: "Status",
+              type: "input",
+              defaultValue: "baseline",
+              reactions: [{ when: "$deps.trigger == true", fulfill: { value: "closed", disabled: true } }],
+            },
+          ],
+        },
+      },
+    };
+    const container = await renderDocument(pageDoc, {});
+    // The defaultValue initializes status; the engine then commits "closed"
+    // because trigger defaults to false… — flip the switch to drive a commit.
+    const inputs = container.querySelectorAll("input");
+    const switchInput = inputs[0]!;
+    await act(async () => {
+      switchInput.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const statusInput = container.querySelector("input[type='text']") as HTMLInputElement;
+    expect(statusInput.value).toBe("closed");
+    expect(statusInput.disabled).toBe(true);
+  });
+
+  it("reports a loop limit as a blocking reaction error", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "form",
+        id: "loop-form",
+        props: {
+          fields: [
+            {
+              id: "toggle",
+              label: "Toggle",
+              type: "input",
+              defaultValue: "a",
+              reactions: [
+                {
+                  when: "$deps.toggle == 'a'",
+                  fulfill: { value: "b" },
+                  otherwise: { value: "a" },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    };
+    const container = await renderDocument(pageDoc, {});
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.textContent).toContain("REACTION_LOOP_LIMIT");
+  });
+});
+
 describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => {
   it("renders a statCard value with a currency format from its dataSource", async () => {
     const pageDoc = displayDocument({
