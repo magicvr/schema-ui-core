@@ -259,6 +259,8 @@ describe("manifest loading and expression boundaries", () => {
     expect(loaded.app.appId).toBe("schema-ui-core");
     expect(loaded.app.homePageRef).toBe("overview");
     expect(loaded.pages.map((page) => page.pageId)).toEqual([
+      "admin-list-batch",
+      "data-display",
       "overview",
       "data-table",
       "search-form-table",
