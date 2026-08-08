@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-08 | 工作区与 Root 五件套 scaffold | recorded | `02-execution/E-001-workspace-scaffold.md` |
+| E-002 | 2026-08-08 | S0 差距盘点（I-001 闭合） | recorded | `02-execution/E-002-s0-gap-analysis.md` |
 
 ## 事实边界
 

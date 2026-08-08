@@ -17,7 +17,7 @@ version: 0.1.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-00N | 已登记 | 见 `00-meta`：I-PROTO-FULL-001、I-001～I-004 |
-| 到期 required 是否已 verified / residual | **未到期阻断 S1+** | S0 可开始收集；S1 前须闭合 I-PROTO-FULL-001 / I-001（及 I-002 若有收缩） |
+| 到期 required 是否已 verified / residual | S0 required **I-001 = closed**（E-002 + I-S0-001 附件）；S1 前须闭合 I-PROTO-FULL-001（及 I-002 若有收缩；当前 N/A） | 2026-08-08 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
