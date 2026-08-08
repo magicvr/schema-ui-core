@@ -67,7 +67,7 @@ parent: null
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前无 active 交付 VP**。组合焦点：planned [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（整份 v2.7.0 契约）应优先于 planned [VP-005](plans/VP-005-design-system-and-ui-experience.md)（视觉产品化）；**VP-006 未 closed 前禁止启动 VP-005 实施**（2026-08-08 用户裁决）。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
+- **当前 active 交付 VP**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（整份 v2.7.0 契约；lead `workspace-005-full-protocol-contract-v2-7-0`）。planned [VP-005](plans/VP-005-design-system-and-ui-experience.md)（视觉产品化）**实施冻结**至 VP-006 closed（2026-08-08 用户裁决）。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本

@@ -2,9 +2,9 @@
 title: docs/vision · 规则面与本仓实例索引
 status: active
 created: 2026-07-29
-updated: 2026-08-07
+updated: 2026-08-08
 parent: null
-version: 0.7.0
+version: 0.8.0
 ---
 
 # docs/vision · 愿景层
@@ -42,26 +42,32 @@ version: 0.7.0
 
 ## 本仓实例索引（schema-ui-core）
 
-> 下列为本仓库**已落盘**的愿景实例，不是 core 预装模板。
+> 下列为本仓库**已落盘**的愿景实例，不是 core 预装模板。  
+> **权威组合状态**以 [roadmap.md](roadmap.md) / [reviews.md](reviews.md) / 各 `plans/VP-*.md` 为准；本表为发现入口（VRev-013 · F-V024）。
 
 | 文件 | 状态 / 说明 |
 |------|-------------|
 | [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.2.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
 | [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **closed** · lead: workspace-001-mvp-admin-foundation |
-| [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **closed**（2026-08-04）· lead: workspace-002-production-admin-foundation |
-| [plans/VP-003-modular-admin-architecture.md](plans/VP-003-modular-admin-architecture.md) | **active** · lead: workspace-003-modular-admin-architecture；完整单主线模块化终态，建区不等于实现完成 |
+| [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **closed** · lead: workspace-002-production-admin-foundation |
+| [plans/VP-003-modular-admin-architecture.md](plans/VP-003-modular-admin-architecture.md) | **closed** · lead: workspace-003-modular-admin-architecture |
+| [plans/VP-004-module-contribution-readiness.md](plans/VP-004-module-contribution-readiness.md) | **closed** · lead: workspace-004-module-contribution-readiness |
+| [plans/VP-006-full-protocol-contract-v2-7-0.md](plans/VP-006-full-protocol-contract-v2-7-0.md) | **active** · **当前组合焦点** · lead: workspace-005-full-protocol-contract-v2-7-0（整份 v2.7.0 契约） |
+| [plans/VP-005-design-system-and-ui-experience.md](plans/VP-005-design-system-and-ui-experience.md) | **planned · 实施冻结** · 硬前置：VP-006 `closed` |
 | [../architecture/module-architecture.md](../architecture/module-architecture.md) | VP-003 终态架构权威（Fx、Profile、Manifest、数据与生命周期边界） |
+| [../architecture/module-contribution-playbook.md](../architecture/module-contribution-playbook.md) | VP-004 一方模块贡献 playbook |
 | [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
-| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-010`；0 open required） |
-| [reviews/](reviews/) | 正式报告目录（已迁入 VRev-001～010；新条目只写此处） |
-| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 2 delivery；VP-003 已绑定 lead） |
-| [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议实施清单（`F-V001` 证据） |
-| [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | 实现层 primary 工作区 · Root `GOAL-001-mvp-admin-foundation` |
-| [../workspace-002-production-admin-foundation/](../workspace-002-production-admin-foundation/) | 实现层 delivery 工作区 · Root `GOAL-001-production-admin-foundation` · VP-002 lead |
-| [../workspace-003-modular-admin-architecture/](../workspace-003-modular-admin-architecture/) | 实现层 delivery 工作区 · Root `GOAL-001-modular-admin-architecture` · VP-003 lead |
-| [../workspace-004-module-contribution-readiness/](../workspace-004-module-contribution-readiness/) | 实现层 delivery 工作区 · Root `GOAL-001-module-contribution-readiness` |
+| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-013`；仓库级 1 open required = `F-V018` 仅 VP-005） |
+| [reviews/](reviews/) | 正式报告目录 |
+| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 4 delivery；VP-006 lead = workspace-005） |
+| [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议全量实施清单（`F-V001` 证据；整份契约收口见 VP-006） |
+| [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | primary · Root `GOAL-001-mvp-admin-foundation` · VP-001 |
+| [../workspace-002-production-admin-foundation/](../workspace-002-production-admin-foundation/) | delivery · VP-002 lead（closed 历史绑定） |
+| [../workspace-003-modular-admin-architecture/](../workspace-003-modular-admin-architecture/) | delivery · VP-003 lead（closed 历史绑定） |
+| [../workspace-004-module-contribution-readiness/](../workspace-004-module-contribution-readiness/) | delivery · VP-004 lead（closed 历史绑定） |
+| [../workspace-005-full-protocol-contract-v2-7-0/](../workspace-005-full-protocol-contract-v2-7-0/) | delivery · **VP-006 lead**（现行） |
 
 模板（冷启动 / Review 复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`、`reviews-index.md`、`review.md`。
 
@@ -78,6 +84,6 @@ Skills 消费包当前 pin：**goal-governance `v0.13.0`**（见 `skills/.goal-g
 | 入口 | 层 | 用途 |
 |------|----|------|
 | `/vision` | 决策 | Charter / VP / Review 响应 / re-align / 结构选型 |
-| `/vision-audit` | 交叉 | 独立 Vision Review（写 `reviews/VRev-*.md` + 更新 `reviews.md` 索引） |
-| `/govern` | 实现 | 开区、Root、子目标、Goal finding 响应 |
-| `/audit` | 交叉 | Goal `03-audit` independent |
+| `/vision-audit` | 愿景交叉审 | independent VRev 报告 + 索引；不改 status |
+| `/govern` | 实现 | 工作区目标推进、审计响应、放行/关门 |
+| `/audit` | 目标交叉审 | Goal `03-audit` independent |

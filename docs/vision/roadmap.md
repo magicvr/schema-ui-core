@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-08
 parent: null
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -20,7 +20,7 @@ version: 0.11.0
 | 2 | [VP-002-production-admin-foundation](plans/VP-002-production-admin-foundation.md) | 在 I-PROTO-001 冻结子集之上，交付可直接 fork 使用的生产级 Schema 驱动 Admin 基架。 | 继承 VP-001 协议验证基线 | **closed**（2026-08-04；lead: workspace-002-production-admin-foundation） |
 | 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 单主线模块化单体：薄内核、模块契约、Fx、Profile、后端聚合 Manifest。 | 继承 VP-002；strategic re-align 见 VRev-006 | **closed**（2026-08-06；lead: workspace-003-modular-admin-architecture） |
 | 4 | [VP-004-module-contribution-readiness](plans/VP-004-module-contribution-readiness.md) | 一方模块贡献 playbook 与 Core vs 模块归属方法论。 | 继承 VP-003 | **closed**（2026-08-06；lead: workspace-004-module-contribution-readiness） |
-| 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **planned**（2026-08-08；**当前应优先激活/开区的意图**；未激活） |
+| 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **active**（2026-08-08；lead: workspace-005-full-protocol-contract-v2-7-0；**当前交付焦点**） |
 | 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | **硬前置：VP-006 `closed`**；另继承 VP-003/004 | **planned · 实施冻结**（2026-08-08 用户裁决：VP-006 完成前 **禁止** 激活/开区/视觉实施） |
 
 ## 组合门闩（用户 2026-08-08）
@@ -35,7 +35,7 @@ version: 0.11.0
 |------|------|------------|------------------|
 | 7 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** +（若已 closed）VP-005 设计系统 | 建 VP 前须 `/vision` 复核；不得用业务模块倒逼恢复长期双线或跳过协议覆盖 |
 
-**当前计划中意图**：`VP-006` 为 **下一交付焦点**（仍 `planned`，待用户确认激活与工作区 slug 后 `/govern` 开区）。`VP-005` 冻结至 VP-006 closed。VP-001～VP-004 均 **closed**。
+**当前交付意图**：`VP-006` **active**，lead `workspace-005-full-protocol-contract-v2-7-0`。`VP-005` 冻结至 VP-006 closed。VP-001～VP-004 均 **closed**。
 
 ## 单主线模块化策略
 
