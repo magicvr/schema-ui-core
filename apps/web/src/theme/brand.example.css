@@ -1,0 +1,53 @@
+/**
+ * Fork brand customization example (S5 · GOAL-005).
+ *
+ * A fork that wants its own brand color, radius, or chart palette does NOT
+ * need a second Token system or a new theme layer — it overrides the same
+ * semantic CSS custom properties that `src/index.css` already defines,
+ * *after* `index.css` is loaded, using the same `:root` / `.dark` selectors.
+ *
+ * Usage:
+ *   1. Copy this file to `src/theme/brand.css` (or any name) in the fork.
+ *   2. Adjust the OKLCH values below to the fork's brand colors.
+ *   3. Import it once, after `index.css`, e.g. in `src/main.tsx`:
+ *        import "./index.css";
+ *        import "./theme/brand.css";
+ *   4. Every component and Renderer node that already consumes
+ *      `--color-primary` / `--color-chart-*` / `--radius` picks up the new
+ *      values with zero code changes (D-002/D-003 Token consumption is
+ *      already complete across S1–S4).
+ *
+ * This file intentionally overrides only the tokens most forks customize
+ * (primary brand color, chart palette, corner radius). It does not
+ * redefine structural tokens (background/foreground/border/destructive)
+ * because most forks keep the shadcn neutral base and only swap the brand
+ * accent — but any token declared in `src/index.css` §1/§2/§3 can be
+ * overridden the same way.
+ */
+
+:root {
+  /* Brand accent — example: a violet fork instead of the neutral default. */
+  --primary: oklch(0.55 0.22 293);
+  --primary-foreground: oklch(0.985 0 0);
+
+  /* Chart palette — example: a warm-to-cool fork gradient. */
+  --chart-1: oklch(0.55 0.22 293);
+  --chart-2: oklch(0.6 0.15 250);
+  --chart-3: oklch(0.65 0.18 210);
+  --chart-4: oklch(0.7 0.16 170);
+  --chart-5: oklch(0.75 0.14 130);
+
+  /* Corner radius — example: a sharper fork aesthetic. */
+  --radius: 0.25rem;
+}
+
+.dark {
+  --primary: oklch(0.75 0.18 293);
+  --primary-foreground: oklch(0.145 0 0);
+
+  --chart-1: oklch(0.75 0.18 293);
+  --chart-2: oklch(0.72 0.14 250);
+  --chart-3: oklch(0.7 0.16 210);
+  --chart-4: oklch(0.72 0.15 170);
+  --chart-5: oklch(0.75 0.13 130);
+}

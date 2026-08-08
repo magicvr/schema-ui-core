@@ -119,6 +119,9 @@ describe("DataTable", () => {
       />,
     );
     expect(container.textContent).toContain("resource fetch failed: HTTP 500");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "resource fetch failed: HTTP 500",
+    );
   });
 
   it("renders a custom cell renderer", async () => {
