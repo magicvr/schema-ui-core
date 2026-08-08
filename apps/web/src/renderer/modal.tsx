@@ -21,12 +21,12 @@ export function ModalHost({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-overlay p-4"
       role="dialog"
       aria-modal="true"
       aria-label={title ?? "Dialog"}
     >
-      <div className="mt-10 w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-xl">
+      <div className="mt-10 w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
         <div className="mb-4 flex items-center justify-between gap-4">
           <h2 className="text-lg font-semibold text-foreground">{title ?? "Dialog"}</h2>
           <button

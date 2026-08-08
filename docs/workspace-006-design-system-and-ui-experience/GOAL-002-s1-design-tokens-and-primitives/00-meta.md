@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-s1-design-tokens-and-primitives
 title: S1 · Design Token / 主题 / shadcn primitives
-status: active
+status: done
 parent: GOAL-001-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
-progress: 0/6
+version: 0.2.0
+progress: 6/6
 ---
 
 # GOAL-002 · S1 · Design Token / 主题 / shadcn primitives
@@ -21,12 +21,12 @@ progress: 0/6
 
 ## 成功标准（可验收 · 等权检查点 · 共 6 项）
 
-- [ ] **C1**：`index.css` 按区块组织（Color / Typography / Elevation·Shadow / Radius / 引导注释），增量含 `--destructive`、`--success`、`--chart-1…5`、`--overlay`、`--font-sans`、`--font-mono`、`--elevation-sm|md|lg`（`:root`/`.dark` 双态，深色降不透明度）——无同名自引用（F-001/F-005）。
-- [ ] **C2**：**F-002 映射**：`@theme inline` 中 `--shadow-sm|md|lg: var(--elevation-*)`，`shadow-sm|md|lg` utility 可生成；深/浅色下取值符合预期；confirm/modal 至少一处从 `shadow-xl` 迁移到语义 shadow（D-003 §2 闭合条件 a–d）。
-- [ ] **C3**：**FOUC 治理**：`index.html` 同步内联引导脚本（读 `localStorage.theme` / `prefers-color-scheme`），首帧即带 `dark` class；`color-scheme` 属性随主题设置；主题应用逻辑抽成可单测纯单元（`src/theme/`）。
-- [ ] **C4**：**primitives**：shadcn 风格 `ui/*` 原语补齐（Input / Textarea / Label / Card / Badge / Skeleton 等，CVA + `cn`），全部消费语义 Token，可发现（`components.json` 保持指向 `src/index.css`）。
-- [ ] **C5**：**消费闭环（F-003）**：success 反馈迁到 `--success` Token；chart 消费 `--chart-1…5`；overlay 用语义 `--overlay`；shadow 消费语义 utility；不进 Token 的类别写边界理由。
-- [ ] **C6**：**验证**：vitest 全绿（含主题纯逻辑单测、Token 结构断言）；`npm run build` 通过；headless 启动浅/深两屏截图无持续 FOUC、壳层渲染；暗色主文案可读性不低于定稿 Overview dark 下限。
+- [x] **C1**：`index.css` 按区块组织（Color / Typography / Elevation·Shadow / Radius / 引导注释），增量含 `--destructive`、`--success`、`--chart-1…5`、`--overlay`、`--font-sans`、`--font-mono`、`--elevation-sm|md|lg`（`:root`/`.dark` 双态，深色降不透明度）——无同名自引用（F-001/F-005）。
+- [x] **C2**：**F-002 映射**：`@theme inline` 中 `--shadow-sm|md|lg: var(--elevation-*)`，`shadow-sm|md|lg` utility 可生成；深/浅色下取值符合预期；confirm/modal 至少一处从 `shadow-xl` 迁移到语义 shadow（D-003 §2 闭合条件 a–d）。
+- [x] **C3**：**FOUC 治理**：`index.html` 同步内联引导脚本（读 `localStorage.theme` / `prefers-color-scheme`），首帧即带 `dark` class；`color-scheme` 属性随主题设置；主题应用逻辑抽成可单测纯单元（`src/theme/`）。
+- [x] **C4**：**primitives**：shadcn 风格 `ui/*` 原语补齐（Input / Textarea / Label / Card / Badge / Skeleton 等，CVA + `cn`），全部消费语义 Token，可发现（`components.json` 保持指向 `src/index.css`）。
+- [x] **C5**：**消费闭环（F-003）**：success 反馈迁到 `--success` Token；chart 消费 `--chart-1…5`；overlay 用语义 `--overlay`；shadow 消费语义 utility；不进 Token 的类别写边界理由。
+- [x] **C6**：**验证**：vitest 全绿（含主题纯逻辑单测、Token 结构断言）；`npm run build` 通过；headless 启动浅/深两屏截图无持续 FOUC、壳层渲染；暗色主文案可读性不低于定稿 Overview dark 下限。
 
 ## 派生进度展示
 

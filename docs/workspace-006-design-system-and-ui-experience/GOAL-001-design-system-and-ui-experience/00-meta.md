@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.3
-progress: 0/5
+version: 0.1.4
+progress: 1/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
 primary_plan: VP-005-design-system-and-ui-experience
@@ -47,7 +47,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 ### 阶段层（可验收 · 等权检查点 · 对应 VP-005 S1–S5）
 
-- [ ] **S1**：Token / 主题 / shadcn primitives — 语义化 Token（D-002/D-003）；深/浅色可切换且关键壳层无持续 FOUC；primitives 可发现；暗色主文案对比度不低于定稿 Overview dark 可读性；可选对比度抽检（不默认进退出分母）。**F-002 闭合前不得勾选本项。**
+- [x] **S1**：Token / 主题 / shadcn primitives — 语义化 Token（D-002/D-003）；深/浅色可切换且关键壳层无持续 FOUC；primitives 可发现；暗色主文案对比度不低于定稿 Overview dark 可读性；可选对比度抽检（不默认进退出分母）。**F-002 已 fixed（A-005 · 2026-08-09）。**
 - [ ] **S2**：Renderer 视觉重构 — VP-005 钉死 type + 能力面接入设计系统；**呈现约束（D-004）**：桌面密表 / 移动卡片列表；`recordView` 为右栏或 Drawer（移动 Sheet）；Modal 仅短编辑与 Confirm；分母不得窄于 type 表、不得宽于 I-PROTO-FULL-001 include。
 - [ ] **S3**：Shell 与工作流交互 — 桌面侧栏+顶栏；移动汉堡+导航抽屉；用户区；Dialog/Toast 一致语言；与 D-004 壳气质对齐；**可选** Cmd+K（默认不进退出分母）。
 - [ ] **S4**：状态与反馈 — Skeleton / Empty / 错误页与表单异步反馈在主范例路径一致。
@@ -67,7 +67,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
-| S1 | Token / 主题 / primitives | **未开始** | D-002/D-003 已 accepted；D-004 方向已冻；可实施；未勾选 |
+| S1 | Token / 主题 / primitives | **完成** | D-002/D-003 accepted；D-004 方向冻；F-002 fixed（A-005）；C1–C6 全绿 |
 | S2 | Renderer 钉死 type 视觉重构 | **未开始** | 依赖 S1；列表/详情呈现见 D-004 |
 | S3 | Shell 与工作流 | **未开始** | 壳断点见 D-004；Cmd+K 可选 |
 | S4 | 状态与反馈 | **未开始** | 主范例路径 |

@@ -5,6 +5,7 @@ status: active
 parent: GOAL-001-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09
+
 version: 0.1.0
 ---
 
@@ -14,7 +15,7 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| — | — | （S1 实施完成后按事实追加） | — | — |
+| E-001 | 2026-08-09 | S1 实施 — Token 扩写、主题模块、primitives、消费闭环 | done | `02-execution/E-001-s1-implementation.md` |
 
 ## 事实边界
 

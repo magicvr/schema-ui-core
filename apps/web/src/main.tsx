@@ -10,12 +10,12 @@ import { ManifestFailure } from "@/app/ManifestFailure";
 import { loadAppManifest, type AppManifest } from "@/protocol/app-manifest";
 import "./index.css";
 
+// Theme bootstrap is handled by the synchronous inline script in index.html
+// (S1 · C3). The call below is kept as a safety net for module-only entry
+// points (e.g. Storybook / test harness) that do not serve index.html.
+import { initTheme } from "@/theme/theme";
 function applyStoredTheme() {
-  const stored = localStorage.getItem("theme");
-  const preferDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  if (stored === "dark" || (!stored && preferDark)) {
-    document.documentElement.classList.add("dark");
-  }
+  initTheme();
 }
 
 function BootScreen() {
