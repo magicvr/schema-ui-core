@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 title: 现代设计系统与 Schema 驱动 UI/UX 体验产品化
-status: active
+status: done
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.7
+version: 0.2.0
 progress: 5/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
@@ -100,7 +100,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 `progress: 5/5` 由上方 S1～S5 五个等权检查点派生（S1–S5 均已完成）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
 
-**关门状态（P-004 · 待用户裁决）**：S1–S5 检查点齐备，GOAL-002~GOAL-005 四个子目标 `status: done`，`03-audit.md` 台账（Root 层）与 GOAL-004/GOAL-005 台账开放 required findings 均为 0（GOAL-005 的 A-002 independent conditional 已由 A-003 self 响应 fixed）。**Root `status` 本次不单方面置为 `done`**——按 AGENTS §6b P-004，关门须用户书面确认；本条仅记录"证据齐备，可提请关门"的事实，不代为裁决。
+**关门状态（P-004 · 用户已书面确认 · 2026-08-09）**：S1–S5 检查点齐备，GOAL-002~GOAL-005 四个子目标 `status: done`，`03-audit.md` 台账（Root 层）与 GOAL-004/GOAL-005 台账开放 required findings 均为 0（GOAL-005 的 A-002 independent conditional 已由 A-003 self 响应 fixed）。用户在本次会话中就"是否将 Root 标记为 done"的问题明确选择"确认关门"，据此将 `status` 由 `active` 置为 `done`。
 
 ## 台账布局
 

@@ -30,3 +30,4 @@ version: 0.1.3
 | D-002 | 2026-08-09 | S1 Token 语义分层与命名约定 | **accepted**（§3/§5 经 D-003 修订） | `01-decision/D-002-s1-token-naming-proposal.md` |
 | D-003 | 2026-08-09 | 合并响应 A-001/A-002/A-003（Shadow 映射等） | **accepted** | `01-decision/D-003-audit-response-s1-token-mapping.md` |
 | D-004 | 2026-08-09 | 视觉方向冻结（Stitch 定稿） | **accepted** | `01-decision/D-004-visual-direction-freeze.md` |
+| D-005 | 2026-08-09 | Root 关门 — 用户书面确认 status: done | **accepted** | `01-decision/D-005-root-closeout-user-confirmed.md` |
