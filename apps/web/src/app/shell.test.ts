@@ -95,4 +95,17 @@ describe("App.tsx shell structural checks (S3)", () => {
   it("closes drawer on navigate (setMobileDrawerOpen(false) in onNavigate)", () => {
     expect(appSource).toContain("setMobileDrawerOpen(false)");
   });
+
+  it("marks shell as topbar + sidenav layout (D-004)", () => {
+    expect(appSource).toContain('data-shell="admin"');
+    expect(appSource).toContain('data-shell-layout="topbar-sidenav"');
+    expect(appSource).toContain('data-shell-region="topbar"');
+    expect(appSource).toContain('data-shell-region="sidenav"');
+  });
+
+  it("uses ~256px desktop side nav width language (w-64)", () => {
+    expect(appSource).toContain('data-shell-sidenav-width="256"');
+    expect(appSource).toMatch(/w-64/);
+    expect(appSource).toMatch(/sticky top-14/);
+  });
 });
