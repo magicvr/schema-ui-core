@@ -111,4 +111,18 @@ describe("LoginPage", () => {
       env.DEV = dev;
     }
   });
+
+  it("consumes design-system Card/Input/Label primitives (S3 / D-004 Sign in)", async () => {
+    const container = await renderLogin(vi.fn());
+    expect(container.querySelector('[data-login-surface="design-system"]')).not.toBeNull();
+    // Input primitive uses shadow-sm + transparent bg classes from components/ui/input
+    const username = container.querySelector<HTMLInputElement>("#username");
+    expect(username).not.toBeNull();
+    expect(username?.className).toMatch(/shadow-sm/);
+    const labels = container.querySelectorAll("label");
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+    // Card surface (rounded-lg border from ui/card)
+    const card = container.querySelector(".rounded-lg.border");
+    expect(card).not.toBeNull();
+  });
 });

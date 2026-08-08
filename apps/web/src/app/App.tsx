@@ -98,17 +98,18 @@ function NavigationLink({
   onNavigate: (href: string) => void;
   horizontal?: boolean;
 }) {
+  // D-004 shell language: Linear/Vercel — rounded side items, subtle active fill.
   const className = item.active
     ? horizontal
-      ? "flex min-h-10 items-center gap-2 border-b-2 border-primary bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
-      : "flex min-h-10 items-center gap-3 border-l-2 border-primary bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
+      ? "flex min-h-9 items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground"
+      : "flex min-h-9 items-center gap-3 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
     : horizontal
-      ? "flex min-h-10 items-center gap-2 border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      : "flex min-h-10 items-center gap-3 border-l-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
+      ? "flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
+      : "flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
   const content = (
     <>
       {iconFor(item.icon)}
-      <span>{item.label}</span>
+      <span className="truncate">{item.label}</span>
     </>
   );
 
@@ -441,7 +442,11 @@ export function App({
   const showLogo = branding.logoUrl !== "";
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div
+      data-shell="admin"
+      data-shell-layout="topbar-sidenav"
+      className="min-h-screen bg-background text-foreground"
+    >
       {accountError !== undefined ? (
         <div
           role="alert"
@@ -450,8 +455,12 @@ export function App({
           Account session failed to load; permissions and navigation may be incomplete.
         </div>
       ) : null}
-      <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex min-h-16 items-center gap-4 px-4 sm:px-6">
+      {/* D-004 §3: sticky top bar (desktop shell language) */}
+      <header
+        data-shell-region="topbar"
+        className="sticky top-0 z-20 border-b border-border bg-background/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/75"
+      >
+        <div className="flex min-h-14 items-center gap-4 px-4 sm:px-6">
           <a
             href={manifest.app.homePageRef ? "/" : "#main"}
             className="flex min-w-0 items-center gap-3"
@@ -469,12 +478,19 @@ export function App({
               <img
                 src={branding.logoUrl}
                 alt=""
-                className="size-9 shrink-0 object-contain"
+                className="size-8 shrink-0 object-contain"
               />
-            ) : null}
+            ) : (
+              <span
+                aria-hidden="true"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground"
+              >
+                {appName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{appName}</p>
-              <p className="truncate text-xs text-muted-foreground">Admin console</p>
+              <p className="truncate text-sm font-semibold tracking-tight">{appName}</p>
+              <p className="truncate text-[11px] text-muted-foreground">Admin console</p>
             </div>
           </a>
 
@@ -483,7 +499,7 @@ export function App({
           </nav>
 
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
-            {/* Mobile hamburger — visible only on small screens */}
+            {/* Mobile hamburger — visible only on small screens (S3 sub-capability) */}
             <button
               type="button"
               aria-label="Open navigation menu"
@@ -495,8 +511,8 @@ export function App({
             </button>
             <ThemeToggle />
             {currentUser !== undefined && currentUser !== null ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden text-xs text-muted-foreground sm:inline">
+              <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1">
+                <span className="hidden max-w-[10rem] truncate text-xs text-muted-foreground sm:inline">
                   {currentUser.name ?? currentUser.id}
                 </span>
                 <Button type="button" variant="outline" size="sm" onClick={onLogout}>
@@ -517,15 +533,13 @@ export function App({
       {/* Mobile navigation drawer */}
       {mobileDrawerOpen ? (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 z-30 bg-overlay lg:hidden"
             aria-hidden="true"
             onClick={() => setMobileDrawerOpen(false)}
           />
-          {/* Drawer panel */}
           <nav
-            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-background shadow-lg lg:hidden"
+            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border bg-card shadow-lg lg:hidden"
             aria-label="Mobile navigation"
           >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -539,7 +553,7 @@ export function App({
                 <X aria-hidden="true" className="size-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-4">
+            <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
               <NavigationItems
                 items={[
                   ...projection.top,
@@ -553,16 +567,27 @@ export function App({
         </>
       ) : null}
 
-      <div className="mx-auto flex max-w-[1440px]">
-        <aside className="hidden w-64 shrink-0 border-r border-border px-3 py-6 lg:block">
-          <div className="mb-4 flex items-center gap-2 px-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <PanelLeft aria-hidden="true" className="size-4" />
+      <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[1440px]">
+        {/* D-004 §3: desktop permanent left nav ~256px (w-64) */}
+        <aside
+          data-shell-region="sidenav"
+          data-shell-sidenav-width="256"
+          className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 px-3 py-5 lg:block"
+        >
+          <div className="mb-3 flex items-center gap-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <PanelLeft aria-hidden="true" className="size-3.5" />
             <span>Workspace</span>
           </div>
-          <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />
+          <div className="space-y-0.5">
+            <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />
+          </div>
         </aside>
 
-        <main id="main" className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+        <main
+          id="main"
+          data-shell-region="main"
+          className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+        >
           <PageSurface
             manifest={manifest}
             path={path}
