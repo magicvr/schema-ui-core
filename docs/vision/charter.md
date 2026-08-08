@@ -7,7 +7,7 @@ version: 0.2.0
 effective_date: 2026-08-04
 primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-08-06
+updated: 2026-08-08
 parent: null
 ---
 
@@ -26,7 +26,9 @@ parent: null
 | pinned commit | `ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b` |
 | manifest | https://raw.githubusercontent.com/magicvr/schema-ui-docs/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b/protocol-manifest.json |
 
-该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。MVP 覆盖子集已在 workspace-001 冻结；任何覆盖扩张与实现核验仍由对应工作区内 **`/govern`** 推进。
+该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。
+
+**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) 收口。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照，**不是**愿景终态上的「协议已完成」声明。覆盖扩张与实现核验由对应工作区 **`/govern`** 推进（当前应挂 VP-006，而非视觉 VP）。
 
 ## 方向级成功边界
 
@@ -59,13 +61,13 @@ parent: null
 
 | id | 假设 / 未知 | 影响 | 状态 |
 |----|-------------|------|------|
-| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | VP-001 的协议实现计划与“完整协议覆盖”声明 | **分列**：① 清单提取 = `verified`（已落盘 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② 覆盖子集冻结 = `verified`（Root D-009 冻结 [v0.1.3 覆盖表](../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）。它只确认 MVP 子集，**不**主张完整协议支持或实现/验收完成。`F-V006` → `fixed`。 |
+| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | 历史：VP-001 MVP 计划。现：全量兼容由 VP-006 收口。 | **分列**：① 清单提取 = `verified`（[protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② MVP 子集冻结 = `verified`（[v0.1.3 覆盖表](../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）——**仅 MVP**，不主张全量；③ **整份契约可验证兼容** = `open`，交 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)。`F-V006` → `fixed`（仅闭合「清单/MVP 冻结」歧义，不闭合全量实现）。 |
 
 ## 与工作区 / VP 的关系
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前无 active 交付 VP**。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选，建 VP 前须 `/vision` 复核是否需要 strategic 修订。
+- **当前无 active 交付 VP**。组合焦点：planned [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（整份 v2.7.0 契约）应优先于 planned [VP-005](plans/VP-005-design-system-and-ui-experience.md)（视觉产品化）；**VP-006 未 closed 前禁止启动 VP-005 实施**（2026-08-08 用户裁决）。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本

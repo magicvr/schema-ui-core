@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-06
+updated: 2026-08-08
 parent: null
-version: 0.9.0
+version: 0.11.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -16,19 +16,27 @@ version: 0.9.0
 
 | 顺序 | VP | 意图 | 前置 | 状态 |
 |------|----|------|------|------|
-| 1 | [VP-001-mvp-admin-foundation](plans/VP-001-mvp-admin-foundation.md) | 初始化 React + Go Admin MVP，覆盖固定协议来源、核心账号权限与协议范例验证。 | 无 | **closed**（2026-08-01；lead: workspace-001-mvp-admin-foundation；三条退出判据经 R6 工作区 Q2 证据满足，用户确认关门） |
-| 2 | [VP-002-production-admin-foundation](plans/VP-002-production-admin-foundation.md) | 在 I-PROTO-001 冻结子集之上，交付可直接 fork 使用的生产级 Schema 驱动 Admin 基架：Renderer、真实认证、持久化权限、CRUD 与工程化启动。 | 继承 VP-001 协议验证基线 | **closed**（2026-08-04；lead: workspace-002-production-admin-foundation；七条产品级成功标准经工作区 Q2 证据满足——Root `GOAL-001` `done / 5/5`（A-007 self close-out `pass`）、GOAL-002～013 全部 `done`、Root 03-audit 开放 required=0——用户确认关门） |
-| 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 将生产级 Admin 基架收敛为单主线模块化单体：薄内核、框架无关模块契约、Fx 组合根、Profile、后端聚合 Manifest 与完整数据/运维闭环。 | 继承 VP-002 产品基线；strategic re-align 已由 VRev-006 核对 | **closed**（2026-08-06；lead: workspace-003-modular-admin-architecture；七条方向级退出判据经工作区 Q2 证据满足——Root `GOAL-001` `done / 6/6`（A-018 self + A-019 independent + A-020 response）、A-021 独立动态代码复审 `pass`、Root 03-audit 开放 required=0、Vision Review 0 open required——用户确认关门；有界 residual R4-I004 点名 workspace-003/GOAL-006） |
-| 4 | [VP-004-module-contribution-readiness](plans/VP-004-module-contribution-readiness.md) | 在 VP-003 终态上交付一方模块贡献 playbook（必须/不必/禁止）与 Core vs 模块归属方法论，供合作者与 AI 遵循；治理过程挂本 VP，正文落 architecture。 | 继承 VP-003 / `module-architecture.md`；不重开架构迁移 | **closed**（2026-08-06；lead: `workspace-004-module-contribution-readiness`；五条方向级退出判据经工作区 Q2 证据满足——Root `GOAL-001` `done / 4/4`（A-001 self + A-002 independent + A-003 response）、playbook `docs/architecture/module-contribution-playbook.md`、overview/QUICKSTART 发现路径、Root 03-audit 开放 required=0、Vision Review 0 open required——用户确认关门） |
+| 1 | [VP-001-mvp-admin-foundation](plans/VP-001-mvp-admin-foundation.md) | 初始化 React + Go Admin MVP，覆盖固定协议来源、核心账号权限与协议范例验证。 | 无 | **closed**（2026-08-01；lead: workspace-001-mvp-admin-foundation） |
+| 2 | [VP-002-production-admin-foundation](plans/VP-002-production-admin-foundation.md) | 在 I-PROTO-001 冻结子集之上，交付可直接 fork 使用的生产级 Schema 驱动 Admin 基架。 | 继承 VP-001 协议验证基线 | **closed**（2026-08-04；lead: workspace-002-production-admin-foundation） |
+| 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 单主线模块化单体：薄内核、模块契约、Fx、Profile、后端聚合 Manifest。 | 继承 VP-002；strategic re-align 见 VRev-006 | **closed**（2026-08-06；lead: workspace-003-modular-admin-architecture） |
+| 4 | [VP-004-module-contribution-readiness](plans/VP-004-module-contribution-readiness.md) | 一方模块贡献 playbook 与 Core vs 模块归属方法论。 | 继承 VP-003 | **closed**（2026-08-06；lead: workspace-004-module-contribution-readiness） |
+| 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **planned**（2026-08-08；**当前应优先激活/开区的意图**；未激活） |
+| 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | **硬前置：VP-006 `closed`**；另继承 VP-003/004 | **planned · 实施冻结**（2026-08-08 用户裁决：VP-006 完成前 **禁止** 激活/开区/视觉实施） |
+
+## 组合门闩（用户 2026-08-08）
+
+1. **协议优先于视觉**：在 VP-006 未 `closed` 前，**不得**将 VP-005 作为 `primary_plan` 推进实现，不得启动视觉优化波次。  
+2. **MVP 子集不是终态成功条件**：`I-PROTO-001 v0.1.3` 是历史 MVP 冻结切片；整份 v2.7.0 契约由 VP-006 收口。  
+3. 已关闭 VP-001～004 的历史证据与 status **不重写**。
 
 ## 已确认但尚未纳入新 VP 的后续方向
 
 | 顺序 | 方向 | 与前序关系 | 建立 VP 前的约束 |
 |------|------|------------|------------------|
-| 5 | 订单、钱包、类目、通知等业务能力 | 以 VP-003 的单主线模块架构为默认技术承载；贡献方式默认引用 **已关闭** VP-004 交付的 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)。 | 当前 Charter 不把具体业务产品列为成功条件；建 VP 前须由 `/vision` 复核是否需要 strategic 修订，并明确独立退出判据。不得用业务模块倒逼恢复长期双线。 |
+| 7 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** +（若已 closed）VP-005 设计系统 | 建 VP 前须 `/vision` 复核；不得用业务模块倒逼恢复长期双线或跳过协议覆盖 |
 
-**当前无 active 交付 VP**。VP-001～VP-004 均 **closed**。业务能力在建立对应 `VP-00N-*.md` 前不是可引用的 `primary_plan`；新意图须经 `/vision` 落盘后再交 `/govern` 开区。
+**当前计划中意图**：`VP-006` 为 **下一交付焦点**（仍 `planned`，待用户确认激活与工作区 slug 后 `/govern` 开区）。`VP-005` 冻结至 VP-006 closed。VP-001～VP-004 均 **closed**。
 
 ## 单主线模块化策略
 
-未来 fork 起点统一由同一代码主线、模块候选集与启动时 Profile 表达，权威见 [module-architecture.md](../architecture/module-architecture.md) 和 VP-003。原 [dual-track-contract.md](dual-track-contract.md) 已转为历史记录；本次只替换未来意图，不宣称执行过不存在的 MVP/Admin 分支删除或合并。
+未来 fork 起点统一由同一代码主线、模块候选集与启动时 Profile 表达，权威见 [module-architecture.md](../architecture/module-architecture.md) 和 VP-003。原 [dual-track-contract.md](dual-track-contract.md) 已转为历史记录。
