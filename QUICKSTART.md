@@ -113,6 +113,8 @@ bash scripts/smoke.sh --disposable
 
 ## 5. 下一步：接业务
 
+> **协议覆盖权威**：本仓对 `schema-ui-docs@v2.7.0` 的整份契约覆盖由 **`I-PROTO-FULL-001`** 定义（[workspace-005 Root attachments](docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)：12/12 能力域、24/24 registry type、16/16 conformance 套件 include）。历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线（只读）。协议能力清单见 [protocol-inventory-v2.7.0.md](docs/vision/protocol-inventory-v2.7.0.md)；任何「已支持 v2.7.0」声明必须以覆盖表 + 实现证据背书。
+
 - **完整一方标准 Admin 功能模块**（必须 / 禁止 / 归属判定、组合根与 Profile、全局迁移）：见操作契约  
   **[docs/architecture/module-contribution-playbook.md](docs/architecture/module-contribution-playbook.md)**  
   （架构边界：[docs/architecture/module-architecture.md](docs/architecture/module-architecture.md)；概览入口：[docs/architecture/overview.md](docs/architecture/overview.md)）
