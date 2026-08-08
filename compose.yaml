@@ -5,7 +5,7 @@
 # Provide them in a repo-root .env (gitignored) or export in the shell:
 #   AUTH_JWT_SECRET=<strong random string>
 #   ADMIN_INITIAL_PASSWORD=<initial admin password>
-#   APP_PROFILE=mvp                 # or admin
+#   APP_PROFILE=admin               # or mvp
 #   APP_MODULES_ENABLED=            # optional explicit comma-separated override
 #
 # Non-goal: full production ops / CI-CD pipeline, TLS termination, multi-instance
@@ -19,7 +19,7 @@ services:
     image: schema-ui-core-api:local
     environment:
       APP_ENV: production
-      APP_PROFILE: ${APP_PROFILE:-mvp}
+      APP_PROFILE: ${APP_PROFILE:-admin}
       APP_MODULES_ENABLED: ${APP_MODULES_ENABLED:-}
       DB_PATH: /app/data/schema-ui.db
       LOG_LEVEL: info
