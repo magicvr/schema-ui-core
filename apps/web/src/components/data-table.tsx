@@ -11,7 +11,8 @@ export interface SortState {
 
 export interface DataTableColumn<T> {
   key: string;
-  label: string;
+  /** Cell content or header node (checkboxes render in headers for selection). */
+  label: ReactNode;
   sortable?: boolean;
   render?: (row: T) => ReactNode;
 }

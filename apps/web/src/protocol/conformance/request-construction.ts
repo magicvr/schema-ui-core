@@ -23,6 +23,8 @@ export type RequestConstructionResult =
       navigation?: { url: string };
       modalOpen?: { modalId: string };
       resolvedBase?: string;
+      /** Batch triggers: selection snapshot after a successful reload (ADR-0022 D2). */
+      selectionAfterSuccessReload?: { keys: unknown[]; count: number };
     }
   | { ok: false; code: string; path: string };
 
@@ -565,6 +567,135 @@ function buildOutcomeNavigate(input: JsonObject): RequestConstructionResult {
   };
 }
 
+// --- Batch request (ADR-0022 D3/D5 · I-PROTO-FULL-001 include) ---
+
+function isScalarSelectionKey(value: unknown): value is string | number | boolean {
+  if (typeof value === "string") {
+    return value !== "";
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+  return typeof value === "boolean";
+}
+
+/** D3 invariants: scalar keys only, dedupe preserving order, count = keys.length. */
+export function normalizeSelection(keys: unknown[]): { keys: unknown[]; count: number } {
+  const seen = new Set<string>();
+  const out: unknown[] = [];
+  for (const key of keys) {
+    if (!isScalarSelectionKey(key)) {
+      continue;
+    }
+    // Strings and numbers do not interconvert ("1" and 1 are distinct keys).
+    const token = `${typeof key}:${String(key)}`;
+    if (seen.has(token)) {
+      continue;
+    }
+    seen.add(token);
+    out.push(key);
+  }
+  return { keys: out, count: out.length };
+}
+
+function buildBatchRequest(input: JsonObject): RequestConstructionResult {
+  const confirm = checkConfirm(input);
+  if (confirm) return confirm;
+  const action = input.action as JsonObject;
+  const method = action.method as string;
+  const url = action.url as string;
+  if (method === "GET") {
+    return fail("PAGE_TRIGGER_METHOD_NOT_ALLOWED", "action.method");
+  }
+  if (typeof url !== "string" || !isProtocolRelativeUrl(url)) {
+    return fail("INVALID_PROTOCOL_URL", "action.url");
+  }
+  const batchMapping = input.batchMapping as JsonObject | undefined;
+  if (!batchMapping) {
+    return fail("EMPTY_BATCH_MAPPING", "batchMapping");
+  }
+  const selection = input.selection as JsonObject | undefined;
+  const rawKeys = Array.isArray(selection?.keys) ? (selection.keys as unknown[]) : [];
+  // D3/V274/V281: normalize before any request (ignores host-provided count).
+  const normalized = normalizeSelection(rawKeys);
+  if (normalized.count === 0) {
+    return fail("EMPTY_SELECTION", "selection");
+  }
+
+  const { path: basePath, query } = splitUrl(url);
+
+  // path: literals only; bindings must exactly match url placeholders (V267).
+  const pathMap = (batchMapping.path as JsonObject | undefined) ?? {};
+  const bindings: Record<string, string> = {};
+  for (const [key, expr] of Object.entries(pathMap)) {
+    if (typeof expr === "string" && expr.startsWith("$")) {
+      return fail("INVALID_MAPPING_VALUE", `batchMapping.path.${key}`);
+    }
+    bindings[key] = String(expr);
+  }
+  const bound = applyPathBindings(basePath, bindings, "batchMapping.path");
+  if (!bound.ok) return bound;
+
+  // query: literals or $selection.count (scalar); $selection.keys is body-only.
+  const queryMap = (batchMapping.query as JsonObject | undefined) ?? {};
+  for (const [key, expr] of Object.entries(queryMap)) {
+    if (expr === "$selection.keys") {
+      return fail("SELECTION_KEYS_BODY_ONLY", `batchMapping.query.${key}`);
+    }
+    const resolved = resolveBatchValue(expr, normalized, `batchMapping.query.${key}`, {
+      scalarOnly: true,
+    });
+    if (!resolved.ok) return resolved;
+    query.set(key, serializeQueryValue(resolved.value));
+  }
+
+  // body: flat map; values are literals, $selection.keys (array) or
+  // $selection.count (scalar).
+  let body: unknown = null;
+  const bodyMap = batchMapping.body as JsonObject | undefined;
+  if (bodyMap !== undefined) {
+    const out: JsonObject = {};
+    for (const [key, expr] of Object.entries(bodyMap)) {
+      const resolved = resolveBatchValue(expr, normalized, `batchMapping.body.${key}`, {});
+      if (!resolved.ok) return resolved;
+      out[key] = resolved.value as Json;
+    }
+    body = out;
+  }
+
+  return {
+    ok: true,
+    request: { method, url: buildUrl(bound.path, query), body },
+    selectionAfterSuccessReload: { keys: [], count: 0 },
+  };
+}
+
+function resolveBatchValue(
+  expr: unknown,
+  selection: { keys: unknown[]; count: number },
+  path: string,
+  opts: { scalarOnly?: boolean },
+):
+  | { ok: true; value: unknown }
+  | { ok: false; code: string; path: string } {
+  if (typeof expr !== "string" || !expr.includes("$")) {
+    if (expr === null) {
+      return { ok: true, value: null };
+    }
+    return { ok: true, value: expr };
+  }
+  if (expr === "$selection.keys") {
+    if (opts.scalarOnly) {
+      return { ok: false, code: "INVALID_QUERY_VALUE", path };
+    }
+    return { ok: true, value: [...selection.keys] };
+  }
+  if (expr === "$selection.count") {
+    return { ok: true, value: selection.count };
+  }
+  return { ok: false, code: "INVALID_MAPPING_VALUE", path };
+}
+
 /**
  * Run one request-construction fixture case.
  * Batch kinds return a structured error; stage3 excludes them via Q1.
@@ -591,7 +722,7 @@ export function constructRequest(input: Record<string, unknown>): RequestConstru
     case "outcomeNavigate":
       return buildOutcomeNavigate(input);
     case "batchRequest":
-      return fail("PAGE_TRIGGER_METHOD_NOT_ALLOWED", "batchRequest");
+      return buildBatchRequest(input);
     default:
       return fail("INVALID_MAPPING_VALUE", "kind");
   }

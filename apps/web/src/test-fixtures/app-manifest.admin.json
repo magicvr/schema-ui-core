@@ -9,6 +9,18 @@
   },
   "pages": [
     {
+      "pageId": "admin-list-batch",
+      "title": "List + batch",
+      "schemaUrl": "/api/schema/admin-list-batch",
+      "route": "/admin-list-batch"
+    },
+    {
+      "pageId": "data-display",
+      "title": "Data display",
+      "schemaUrl": "/api/schema/data-display",
+      "route": "/data-display"
+    },
+    {
       "pageId": "overview",
       "title": "Overview",
       "schemaUrl": "/api/schema/overview",
@@ -80,6 +92,16 @@
             "pageRef": "data-table",
             "label": "Data table",
             "icon": "table"
+          },
+          {
+            "pageRef": "admin-list-batch",
+            "label": "List + batch",
+            "icon": "batch"
+          },
+          {
+            "pageRef": "data-display",
+            "label": "Data display",
+            "icon": "chart"
           },
           {
             "pageRef": "search-form-table",

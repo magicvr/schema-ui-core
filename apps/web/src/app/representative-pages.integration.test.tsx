@@ -52,6 +52,8 @@ const MIGRATED_PAGE_IDS = [
   "search-form-table",
   "form-controls",
   "form-with-reactions",
+  "admin-list-batch",
+  "data-display",
   "users",
   "roles",
   "settings",
@@ -333,6 +335,97 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
   it("fails closed when the users data source is unreachable on a list page", async () => {
     const container = await renderApp("/data-table", {}, realFixtures(), 500);
     expect(container.textContent).toContain("resource fetch failed");
+  });
+
+  it("renders the data-display page (statCard + chart over /api/roles)", async () => {
+    const container = await renderApp("/data-display", {}, realFixtures());
+    expect(container.querySelector("h1")?.textContent).toContain("Data display");
+    expect(container.textContent).toContain("Total roles");
+    expect(container.textContent).toContain("admin: 1");
+    expect(container.querySelector("svg[role='img']")).not.toBeNull();
+  });
+
+  it("runs the ADR-0022 batch flow end-to-end (select → confirm → request → reload clears selection)", async () => {
+    const admin = {
+      user: { id: "u1", roles: ["admin"], permissions: ["users.read", "users.write"] },
+    };
+    const batchCalls: Array<{ url: string; body: unknown }> = [];
+    const base = combinedFetcher(realFixtures());
+    const trackingFetcher: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+      if (method !== "GET" && url.startsWith("/api/users/batch-delete")) {
+        batchCalls.push({
+          url,
+          body: init?.body === undefined ? null : JSON.parse(String(init.body)),
+        });
+        return new Response(JSON.stringify({ deleted: 2 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return base(input, init);
+    }) as typeof fetch;
+
+    window.history.replaceState({}, "", "/admin-list-batch");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <App
+          manifest={manifest()}
+          navigationContext={admin}
+          schemaFetcher={trackingFetcher}
+          resourceFetcher={trackingFetcher}
+        />,
+      );
+    });
+
+    expect(container.querySelector("h1")?.textContent).toContain("List + batch");
+    expect(container.textContent).toContain("批量删除");
+
+    // The batch button starts disabled (requiresSelection + empty selection).
+    const rowCheckboxes = container.querySelectorAll("input[aria-label='Select row']");
+    expect(rowCheckboxes.length).toBe(2);
+    const batchButton = () =>
+      [...container.querySelectorAll("button")].find((button) =>
+        button.textContent?.includes("批量删除"),
+      )!;
+    expect(batchButton().disabled).toBe(true);
+
+    // Select both rows → button enabled → click → confirm dialog.
+    await act(async () => {
+      (rowCheckboxes[0] as HTMLInputElement).click();
+      (rowCheckboxes[1] as HTMLInputElement).click();
+    });
+    expect(batchButton().disabled).toBe(false);
+    await act(async () => {
+      batchButton().click();
+    });
+    expect(container.textContent).toContain("确认删除所选用户？");
+    const confirmButton = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Confirm"),
+    )!;
+    await act(async () => {
+      confirmButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // One logical POST with the normalized $selection.keys body.
+    expect(batchCalls).toHaveLength(1);
+    expect(batchCalls[0]!.url).toBe("/api/users/batch-delete");
+    expect(batchCalls[0]!.body).toEqual({ ids: ["usr-1", "usr-2"] });
+
+    // Success feedback + selection cleared (reload) → button disabled again.
+    expect(container.textContent).toContain("Items deleted");
+    expect(batchButton().disabled).toBe(true);
+    expect(
+      [...container.querySelectorAll("input[aria-label='Select row']")].every(
+        (input) => (input as HTMLInputElement).checked === false,
+      ),
+    ).toBe(true);
   });
 });
 

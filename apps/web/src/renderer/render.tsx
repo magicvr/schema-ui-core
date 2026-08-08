@@ -13,7 +13,10 @@ import {
 
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { applyComponentFormat } from "@/protocol/conformance/component-format";
-import { constructRequest } from "@/protocol/conformance/request-construction";
+import {
+  constructRequest,
+  normalizeSelection,
+} from "@/protocol/conformance/request-construction";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { coerceFieldValue, type FormControlField } from "@/renderer/form-controls";
@@ -124,6 +127,16 @@ export interface SchemaCrudConfirm {
   row: Record<string, unknown>;
   requestMapping?: Record<string, unknown>;
   message: string;
+  /** Batch trigger confirm (ADR-0022 D4/D5): carries the selection snapshot. */
+  batch?: { tableId: string; selection: TableSelection };
+  /** Toolbar item batchMapping carried through confirm. */
+  batchMapping?: Record<string, unknown>;
+}
+
+/** Selection snapshot (ADR-0022 D3): ordered keys + count. */
+export interface TableSelection {
+  keys: unknown[];
+  count: number;
 }
 
 export type ActionResult = { ok: true } | { ok: false; code: string; message: string };
@@ -153,6 +166,12 @@ export interface SchemaCrudValue {
   ) => Promise<ActionResult>;
   /** Dispatches a toolbar/row action entry: modal open, confirm, or request. */
   invokeAction: (item: Record<string, unknown>, row: Record<string, unknown> | null) => void;
+  /** Dispatches a batch toolbar trigger (ADR-0022): gate → confirm → request. */
+  invokeBatchAction: (item: Record<string, unknown>, tableId: string) => void;
+  /** Per-table selection state (keys + count; normalized by the table). */
+  selection: (tableId: string) => TableSelection | undefined;
+  setSelection: (tableId: string, keys: unknown[]) => void;
+  clearSelection: (tableId: string) => void;
   /** Submits a default-mode form against its `submitAction`. */
   submitForm: (form: RenderFormNode, values: Record<string, unknown>) => Promise<ActionResult>;
   /** Binds a search-mode form's fields to its target table query. */
@@ -196,6 +215,15 @@ function successMessageFor(method: unknown): string {
     default:
       return "Action completed";
   }
+}
+
+/** Batch triggers process a selection: delete-shaped URLs get the plural message. */
+function batchSuccessMessageFor(action: JsonRecord): string {
+  const url = stringOf(action.url);
+  if (url.endsWith("/batch-delete")) {
+    return "Items deleted";
+  }
+  return successMessageFor(action.method);
 }
 
 /**
@@ -286,6 +314,79 @@ async function runRequest(
   return { ok: true };
 }
 
+/**
+ * Executes one batch toolbar trigger (ADR-0022 D5d): gate → normalize
+ * selection → construct batchRequest → fetch → reload (clears selection).
+ */
+async function runBatchRequest(
+  document: RenderPageDocument,
+  context: Record<string, unknown>,
+  fetcher: typeof fetch,
+  actionRef: string,
+  item: Record<string, unknown>,
+  selection: TableSelection,
+): Promise<ActionResult> {
+  const action = actionOf(document, actionRef);
+  if (action === undefined) {
+    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` };
+  }
+  if (action.type !== "request") {
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
+  }
+  const targetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
+  // ADR-0022 D5d: unmarked triggers do not participate in the permission
+  // cascade ("未声明 intent 的入口仍只适用本地 permissions"); only gate when
+  // the page declares a permission entry for this target.
+  const hasPermissionEntry = evaluatePermissionTargets(
+    document as unknown as JsonRecord,
+    context as NavigationContext,
+  ).some((entry) => entry.targetId === targetId);
+  if (hasPermissionEntry) {
+    const gate = executeAction(
+      document as unknown as JsonRecord,
+      {
+        targetId,
+        visible: true,
+        disabled: false,
+        requiresSelection: item.requiresSelection === true,
+      },
+      context as NavigationContext,
+    );
+    if (gate.outcome !== "EXECUTED") {
+      return {
+        ok: false,
+        code: gate.reason ?? gate.outcome,
+        message: `batch action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
+      };
+    }
+  }
+  const batchMapping = isRecord(item.batchMapping) ? item.batchMapping : undefined;
+  const constructed = constructRequest({
+    kind: "batchRequest",
+    action,
+    batchMapping,
+    selection: { keys: selection.keys, count: selection.count },
+  });
+  if (!constructed.ok) {
+    return { ok: false, code: constructed.code, message: `batch request construction failed (${constructed.path})` };
+  }
+  const request = constructed.request;
+  if (request === undefined) {
+    return { ok: false, code: "NO_REQUEST", message: "batch action produced no request" };
+  }
+  const body = request.body === null || request.body === undefined ? undefined : JSON.stringify(request.body);
+  const response = await fetcher(request.url, {
+    method: request.method,
+    headers: { "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body }),
+  });
+  if (!response.ok) {
+    const apiError = await readResourceApiError(response, actionRef);
+    return { ok: false, code: apiError.code, message: apiError.message };
+  }
+  return { ok: true };
+}
+
 function SchemaCrudProvider({
   document,
   context,
@@ -299,6 +400,7 @@ function SchemaCrudProvider({
 }) {
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
   const [queries, setQueries] = useState<Record<string, ResourceQuery>>({});
+  const [selections, setSelections] = useState<Record<string, unknown[]>>({});
   const [reloadToken, setReloadToken] = useState(0);
   const [activeModal, setActiveModal] = useState<{
     actionRef: string;
@@ -334,7 +436,34 @@ function SchemaCrudProvider({
   const setTableQuery = useCallback((id: string, query: ResourceQuery) => {
     setQueries((prev) => ({ ...prev, [id]: query }));
   }, []);
-  const reloadList = useCallback(() => setReloadToken((token) => token + 1), []);
+  const selection = useCallback(
+    (id: string): TableSelection | undefined => {
+      const keys = selections[id];
+      if (keys === undefined) {
+        return undefined;
+      }
+      return { keys, count: keys.length };
+    },
+    [selections],
+  );
+  const setSelection = useCallback((id: string, keys: unknown[]) => {
+    setSelections((prev) => ({ ...prev, [id]: normalizeSelection(keys).keys }));
+  }, []);
+  const clearSelection = useCallback((id: string) => {
+    setSelections((prev) => {
+      if (!(id in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+  // ADR-0022 D2: any data reload success clears every table selection.
+  const reloadList = useCallback(() => {
+    setSelections({});
+    setReloadToken((token) => token + 1);
+  }, []);
 
   const openModal = useCallback(
     (actionRef: string, row: Record<string, unknown> | null, title: string) => {
@@ -401,19 +530,68 @@ function SchemaCrudProvider({
     [document, runRowAction],
   );
 
+  // ADR-0022 D4: batch toolbar trigger — confirm first, then run the batch.
+  const invokeBatchAction = useCallback(
+    (item: Record<string, unknown>, tableId: string) => {
+      const actionRef = stringOf(item.actionRef);
+      const action = actionOf(document, actionRef);
+      if (actionRef === "" || action === undefined) {
+        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
+        return;
+      }
+      const current = selection(tableId);
+      if (current === undefined || current.count === 0) {
+        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first" });
+        return;
+      }
+      const confirmMessage = typeof item.confirm === "string" && item.confirm !== "" ? item.confirm : undefined;
+      if (confirmMessage !== undefined) {
+        setPendingConfirm({
+          actionRef,
+          actionKey: stringOf(item.key) !== "" ? stringOf(item.key) : actionRef,
+          row: {},
+          message: confirmMessage,
+          batch: { tableId, selection: current },
+          ...(isRecord(item.batchMapping) ? { batchMapping: item.batchMapping } : {}),
+        });
+        return;
+      }
+      void runBatchRequest(document, context, fetcher, actionRef, item, current).then((result) => {
+        if (result.ok) {
+          setFeedback({ kind: "success", message: batchSuccessMessageFor(action) });
+          reloadList();
+        } else {
+          setFeedback({ kind: "error", code: result.code, message: result.message });
+        }
+      });
+    },
+    [document, context, fetcher, selection, reloadList],
+  );
+
   const resolveConfirm = useCallback(
     async (confirmed: boolean) => {
       if (pendingConfirm === null) {
         return;
       }
-      const { actionRef, actionKey, row, requestMapping } = pendingConfirm;
+      const { actionRef, actionKey, row, requestMapping, batch } = pendingConfirm;
       setPendingConfirm(null);
       if (!confirmed) {
         return;
       }
+      if (batch !== undefined) {
+        const item = { actionRef, key: actionKey, batchMapping: pendingConfirm.batchMapping };
+        const result = await runBatchRequest(document, context, fetcher, actionRef, item, batch.selection);
+        if (result.ok) {
+          setFeedback({ kind: "success", message: batchSuccessMessageFor(actionOf(document, actionRef) ?? {}) });
+          reloadList();
+        } else {
+          setFeedback({ kind: "error", code: result.code, message: result.message });
+        }
+        return;
+      }
       await runRowAction(actionRef, { row, requestMapping, gateTargetId: actionKey, confirmed: true });
     },
-    [pendingConfirm, runRowAction],
+    [pendingConfirm, runRowAction, document, context, fetcher, reloadList],
   );
 
   const submitForm = useCallback(
@@ -494,6 +672,9 @@ function SchemaCrudProvider({
       selectRow: setSelectedRow,
       tableQuery,
       setTableQuery,
+      selection,
+      setSelection,
+      clearSelection,
       reloadToken,
       reloadList,
       activeModal,
@@ -508,6 +689,7 @@ function SchemaCrudProvider({
       fetcher,
       runRowAction,
       invokeAction,
+      invokeBatchAction,
       submitForm,
       searchFormSubmit,
       effectivePermission,
@@ -516,6 +698,9 @@ function SchemaCrudProvider({
       selectedRow,
       tableQuery,
       setTableQuery,
+      selection,
+      setSelection,
+      clearSelection,
       reloadToken,
       reloadList,
       activeModal,
@@ -528,6 +713,7 @@ function SchemaCrudProvider({
       fetcher,
       runRowAction,
       invokeAction,
+      invokeBatchAction,
       submitForm,
       searchFormSubmit,
       effectivePermission,
@@ -932,7 +1118,21 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
     return <p className="text-sm text-muted-foreground">Loading statCard…</p>;
   }
   const first = list.items[0];
-  const raw = valueField !== undefined && first !== undefined ? first[valueField] : 0;
+  // Registry: valueField = "指定从 API 响应中取哪个字段作为展示值". The list
+  // envelope (total/page/pageSize) is part of the response, so envelope fields
+  // resolve too; row fields take precedence for display values.
+  const raw =
+    valueField !== undefined
+      ? (first !== undefined && first[valueField] !== undefined
+          ? first[valueField]
+          : valueField === "total"
+            ? list.total
+            : valueField === "page"
+              ? list.page
+              : valueField === "pageSize"
+                ? list.pageSize
+                : 0)
+      : 0;
   // Registry statCard format enum: plain | currency | percent.
   if (format !== "plain" && format !== "currency" && format !== "percent") {
     return (

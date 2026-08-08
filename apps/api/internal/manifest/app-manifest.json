@@ -9,6 +9,12 @@
   },
   "pages": [
     {
+      "pageId": "admin-list-batch",
+      "title": "List + batch",
+      "schemaUrl": "/api/schema/admin-list-batch",
+      "route": "/admin-list-batch"
+    },
+    {
       "pageId": "overview",
       "title": "Overview",
       "schemaUrl": "/api/schema/overview",
@@ -62,6 +68,11 @@
             "pageRef": "data-table",
             "label": "Data table",
             "icon": "table"
+          },
+          {
+            "pageRef": "admin-list-batch",
+            "label": "List + batch",
+            "icon": "batch"
           },
           {
             "pageRef": "data-display",
