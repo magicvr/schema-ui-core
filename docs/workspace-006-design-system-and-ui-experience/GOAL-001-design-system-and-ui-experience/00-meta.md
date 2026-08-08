@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.1
+version: 0.1.2
 progress: 0/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
