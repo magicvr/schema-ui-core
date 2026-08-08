@@ -44,6 +44,10 @@
       "sha256": "0ade6ee67086848a21eb2a484e79e5f9310bc6a0b384535a46dc2633f980d980"
     },
     {
+      "path": "conformance/fixtures/permissions-inheritance/cases.json",
+      "sha256": "ac124fa1d831d0aa2544b7544b1e177c3498c8c3b36ee4d535e8c3f2f5b8849e"
+    },
+    {
       "path": "conformance/fixtures/query-serialization/cases.json",
       "sha256": "9120f76b0ca6a3d2a13a06942c975f529f7d5fd044dd6e2c614b52f3d91137c1"
     },
@@ -78,6 +82,10 @@
     {
       "path": "conformance/fixtures/table-sort/cases.json",
       "sha256": "b7b154708e94b9f3a7a4a1a554c7ed7df2414a85fde4f6ac2de5e92798c52548"
+    },
+    {
+      "path": "conformance/fixtures/uploads/cases.json",
+      "sha256": "aaeb968369e145d422d163d2f086b0ed3754b4486ddb889ca30375b64c8e22e2"
     },
     {
       "path": "conformance/fixtures/version-negotiation/cases.json",
