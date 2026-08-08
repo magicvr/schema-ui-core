@@ -2,11 +2,15 @@
 id: D-005-root-closeout-user-confirmed
 title: Root 关门 — 用户书面确认 status: done
 date: 2026-08-09
-status: accepted
+status: superseded
 parent: GOAL-001-design-system-and-ui-experience
+superseded_by: D-006-reopen-after-visual-fidelity-audit
+updated: 2026-08-09
 ---
 
 # D-005 · Root 关门决策
+
+> **已废止（2026-08-09）**：本决策的 `done` 效力由 [D-006](./D-006-reopen-after-visual-fidelity-audit.md) 废止（依据 A-006 视觉 fidelity 复审 fail + 用户书面要求回退）。下文保留为历史记录，不得再作为 Root/工作区 `done` 权威。
 
 ## 决策
 
