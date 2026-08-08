@@ -28,4 +28,21 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    host: "127.0.0.1",
+    port: Number(process.env.WEB_PORT || 5173),
+    strictPort: true,
+    // Production preview proxies the same same-origin protocol endpoints so
+    // the built SPA can be verified headlessly against the real API.
+    proxy: {
+      "/.well-known/schema-ui/app-manifest.json": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
+      "/api": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
+    },
+  },
 });
