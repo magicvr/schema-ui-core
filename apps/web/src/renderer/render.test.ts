@@ -47,17 +47,22 @@ describe("isWhitelistedNodeType", () => {
     expect(isWhitelistedNodeType("actionButton")).toBe(true);
   });
 
-  it("rejects everything outside the frozen §5 renderer whitelist", () => {
-    expect(isWhitelistedNodeType("chart")).toBe(false);
+  it("accepts the full registry display types (I-PROTO-FULL-001)", () => {
+    expect(isWhitelistedNodeType("statCard")).toBe(true);
+    expect(isWhitelistedNodeType("chart")).toBe(true);
+  });
+
+  it("rejects everything outside the registry renderer whitelist", () => {
     expect(isWhitelistedNodeType("modal")).toBe(false);
     expect(isWhitelistedNodeType("upload")).toBe(false);
+    expect(isWhitelistedNodeType("slider")).toBe(false);
   });
 });
 
 describe("parseRenderNode", () => {
   it("fails closed on non-object bodies and unknown types", () => {
     expect(parseRenderNode(null, "body")).toMatchObject({ code: "RENDER_INVALID_BODY" });
-    expect(parseRenderNode({ type: "chart" }, "body")).toMatchObject({
+    expect(parseRenderNode({ type: "slider" }, "body")).toMatchObject({
       code: "RENDER_UNKNOWN_NODE_TYPE",
     });
   });
@@ -79,6 +84,38 @@ describe("parseRenderNode", () => {
     // validity; runtime schemaTableDataSource rejects non-rooted paths.
     const table = parseRenderNode({ type: "table", props: { dataSource: "/api/users" } }, "body");
     expect(table).toMatchObject({ type: "table" });
+  });
+
+  it("normalizes statCard and chart nodes with their registry props", () => {
+    const statCard = parseRenderNode(
+      {
+        type: "statCard",
+        id: "total",
+        props: { label: "Total", format: "currency", valueField: "amount", dataSource: "/api/users" },
+      },
+      "body",
+    );
+    expect(statCard).toMatchObject({
+      type: "statCard",
+      id: "total",
+      props: { label: "Total", format: "currency", valueField: "amount", dataSource: "/api/users" },
+    });
+    const chart = parseRenderNode(
+      { type: "chart", props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/users" } },
+      "body",
+    );
+    expect(chart).toMatchObject({
+      type: "chart",
+      props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/users" },
+    });
+  });
+
+  it("drops non-registry props from statCard/chart nodes (fail-closed on shape)", () => {
+    const statCard = parseRenderNode(
+      { type: "statCard", props: { label: 42, bogus: "x", valueField: "v", dataSource: "/api/users" } },
+      "body",
+    );
+    expect(statCard).toMatchObject({ type: "statCard", props: { valueField: "v", dataSource: "/api/users" } });
   });
 });
 

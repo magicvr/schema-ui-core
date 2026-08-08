@@ -3,6 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ComponentType,
@@ -10,6 +11,7 @@ import {
 } from "react";
 
 import type { NavigationContext } from "@/protocol/app-manifest";
+import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { constructRequest } from "@/protocol/conformance/request-construction";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
@@ -20,7 +22,10 @@ import {
   evaluatePermissionTargets,
 } from "@/renderer/permissions";
 import {
+  fetchResourceList,
+  isValidDataSource,
   readResourceApiError,
+  type ResourceList,
   type ResourceQuery,
 } from "@/renderer/resource";
 import {
@@ -29,12 +34,14 @@ import {
   resolveFormReactions,
   tableActionGate,
   type RenderActionButtonNode,
+  type RenderChartNode,
   type RenderFormNode,
   type RenderGridNode,
   type RenderNode,
   type RenderPageDocument,
   type RenderRecordViewNode,
   type RenderSectionNode,
+  type RenderStatCardNode,
   type RenderTabsNode,
   type RenderTableNode,
   type RenderTextNode,
@@ -74,6 +81,8 @@ export interface RendererComponentProps {
   context: Record<string, unknown>;
   /** Renders a table node; provided by the example page that owns data. */
   tableRenderer?: (node: RenderTableNode) => ReactNode;
+  /** Renders statCard/chart nodes (supportsData display, registry); defaults to built-ins. */
+  dataRenderer?: (node: RenderStatCardNode | RenderChartNode) => ReactNode;
   /** Invoked when an actionButton node is activated. */
   onAction?: (node: RenderActionButtonNode) => void;
   /** Overrides the default FormControls component (keeps field wiring local). */
@@ -129,6 +138,8 @@ export interface SchemaCrudValue {
   resolveConfirm: (confirmed: boolean) => Promise<void>;
   feedback: SchemaCrudFeedback | null;
   registerFetcher: (fetcher: typeof fetch) => void;
+  /** The currently registered transport (globalThis.fetch until injected). */
+  fetcher: typeof fetch;
   /** Runs a request action end-to-end (gate → construct → fetch → feedback/reload). */
   runRowAction: (
     actionRef: string,
@@ -273,10 +284,12 @@ function SchemaCrudProvider({
   document,
   context,
   children,
+  initialFetcher,
 }: {
   document: RenderPageDocument;
   context: Record<string, unknown>;
   children: ReactNode;
+  initialFetcher?: typeof fetch;
 }) {
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
   const [queries, setQueries] = useState<Record<string, ResourceQuery>>({});
@@ -288,7 +301,7 @@ function SchemaCrudProvider({
   } | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<SchemaCrudConfirm | null>(null);
   const [feedback, setFeedback] = useState<SchemaCrudFeedback | null>(null);
-  const [fetcher, setFetcher] = useState<typeof fetch>(() => globalThis.fetch);
+  const [fetcher, setFetcher] = useState<typeof fetch>(() => initialFetcher ?? globalThis.fetch);
 
   const permissionTargets = useMemo(
     () => evaluatePermissionTargets(document as unknown as JsonRecord, context as NavigationContext),
@@ -416,6 +429,29 @@ function SchemaCrudProvider({
         prepared[key] =
           typeof value === "string" && !rawStringFields.has(key) ? value.trim() : value;
       }
+      // dateRangePicker binds two independent fields (registry startField /
+      // endField): expand the {start,end} pair into the two output keys and
+      // drop the range control's own id from the submit projection.
+      for (const raw of form.props.fields) {
+        if (!isRecord(raw) || raw.type !== "dateRangePicker") {
+          continue;
+        }
+        const rangeId = typeof raw.id === "string" ? raw.id : "";
+        const startField = typeof raw.startField === "string" ? raw.startField : "";
+        const endField = typeof raw.endField === "string" ? raw.endField : "";
+        if (rangeId === "" || startField === "" || endField === "") {
+          continue;
+        }
+        const pair = prepared[rangeId];
+        if (isRecord(pair)) {
+          prepared[startField] = typeof pair.start === "string" ? pair.start.trim() : "";
+          prepared[endField] = typeof pair.end === "string" ? pair.end.trim() : "";
+        } else {
+          prepared[startField] = "";
+          prepared[endField] = "";
+        }
+        delete prepared[rangeId];
+      }
       const gateTargetId = `${form.id ?? "unnamed"}:submit`;
       const result = await runRequestCallback(submitAction, {
         formValues: prepared,
@@ -463,6 +499,7 @@ function SchemaCrudProvider({
       resolveConfirm,
       feedback,
       registerFetcher,
+      fetcher,
       runRowAction,
       invokeAction,
       submitForm,
@@ -482,6 +519,7 @@ function SchemaCrudProvider({
       resolveConfirm,
       feedback,
       registerFetcher,
+      fetcher,
       runRowAction,
       invokeAction,
       submitForm,
@@ -786,6 +824,216 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
   );
 }
 
+/** Shared data fetch for statCard/chart (supportsData components, registry). */
+function useDisplayData(
+  dataSource: string | null,
+  fetcher: typeof fetch,
+): { list: ResourceList | null; error: string | null } {
+  const crud = useSchemaCrud();
+  useEffect(() => {
+    if (crud !== null && fetcher !== undefined) {
+      crud.registerFetcher(fetcher);
+    }
+  }, [crud, fetcher]);
+  const [list, setList] = useState<ResourceList | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (dataSource === null) {
+      setList(null);
+      setError(null);
+      return;
+    }
+    let cancelled = false;
+    fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 })
+      .then((next) => {
+        if (!cancelled) {
+          setList(next);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetcher, dataSource, crud?.reloadToken]);
+  return { list, error };
+}
+
+function StatCardView({ node }: { node: RenderStatCardNode }) {
+  const crud = useSchemaCrud();
+  const fetcher = crud?.fetcher ?? globalThis.fetch;
+  const valueField = node.props?.valueField;
+  const format = node.props?.format ?? "plain";
+  const dataSource =
+    typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
+      ? node.props.dataSource
+      : null;
+  const { list, error } = useDisplayData(dataSource, fetcher);
+
+  if (dataSource === null) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        statCard node requires a valid dataSource (single-slash same-origin path)
+      </p>
+    );
+  }
+  if (error !== null) {
+    return <p role="alert" className="text-sm text-destructive">statCard data failed to load: {error}</p>;
+  }
+  if (list === null) {
+    return <p className="text-sm text-muted-foreground">Loading statCard…</p>;
+  }
+  const first = list.items[0];
+  const raw = valueField !== undefined && first !== undefined ? first[valueField] : 0;
+  // Registry statCard format enum: plain | currency | percent.
+  if (format !== "plain" && format !== "currency" && format !== "percent") {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        statCard format "{format}" is outside the registry enum (plain/currency/percent)
+      </p>
+    );
+  }
+  const formatResult = format === "plain" ? { ok: true as const, value: raw } : applyComponentFormat(format, raw);
+  if (!formatResult.ok) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        statCard format "{format}" rejects the value type of field "{valueField}" ({formatResult.code})
+      </p>
+    );
+  }
+  const label = node.props?.label ?? valueField ?? "Value";
+  const unit = node.props?.unit;
+  return (
+    <div className="rounded-md border border-border bg-card p-4">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-foreground">
+        {String(formatResult.value)}
+        {unit !== undefined && unit !== "" ? <span className="ml-1 text-sm text-muted-foreground">{unit}</span> : null}
+      </p>
+    </div>
+  );
+}
+
+function ChartView({ node }: { node: RenderChartNode }) {
+  const crud = useSchemaCrud();
+  const fetcher = crud?.fetcher ?? globalThis.fetch;
+  const chartType = node.props?.chartType;
+  const xField = node.props?.xField;
+  const yField = node.props?.yField;
+  const dataSource =
+    typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
+      ? node.props.dataSource
+      : null;
+  const { list, error } = useDisplayData(dataSource, fetcher);
+
+  const missingProps = chartType === undefined || xField === undefined || yField === undefined;
+  if (dataSource === null || missingProps) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        chart node requires chartType / xField / yField and a valid dataSource
+      </p>
+    );
+  }
+  if (error !== null) {
+    return <p role="alert" className="text-sm text-destructive">chart data failed to load: {error}</p>;
+  }
+  if (list === null) {
+    return <p className="text-sm text-muted-foreground">Loading chart…</p>;
+  }
+  const points = list.items
+    .map((row) => ({
+      x: String(row[xField] ?? ""),
+      y: typeof row[yField] === "number" ? row[yField] : Number(row[yField]),
+    }))
+    .filter((point) => Number.isFinite(point.y) && point.x !== "");
+  if (points.length === 0) {
+    return <p className="text-sm text-muted-foreground">chart has no plottable data points</p>;
+  }
+  const maxY = Math.max(...points.map((point) => point.y), 1);
+  const width = 320;
+  const height = 160;
+  const pad = 8;
+  const innerW = width - pad * 2;
+  const innerH = height - pad * 2;
+  return (
+    <div className="rounded-md border border-border bg-card p-4">
+      <svg
+        role="img"
+        aria-label={`${chartType} chart (${xField} / ${yField})`}
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-40 w-full max-w-md"
+      >
+        {chartType === "line" ? (
+          <polyline
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            points={points
+              .map(
+                (point, index) =>
+                  `${pad + (index / Math.max(points.length - 1, 1)) * innerW},${pad + innerH - (point.y / maxY) * innerH}`,
+              )
+              .join(" ")}
+          />
+        ) : chartType === "bar" ? (
+          points.map((point, index) => {
+            const barWidth = innerW / points.length;
+            const barHeight = (point.y / maxY) * innerH;
+            return (
+              <rect
+                key={index}
+                x={pad + index * barWidth + barWidth * 0.2}
+                y={pad + innerH - barHeight}
+                width={barWidth * 0.6}
+                height={barHeight}
+                fill="currentColor"
+              />
+            );
+          })
+        ) : chartType === "pie" ? (
+          // Donut slices via stroke-dasharray (no trig needed; ≤4 slices fits
+          // the example data and keeps the renderer dependency-free).
+          (() => {
+            const total = points.reduce((sum, point) => sum + point.y, 0) || 1;
+            const radius = 56;
+            const circumference = 2 * Math.PI * radius;
+            let offset = 0;
+            return points.map((point, index) => {
+              const fraction = point.y / total;
+              const dash = fraction * circumference;
+              const slice = (
+                <circle
+                  key={index}
+                  cx={width / 2}
+                  cy={height / 2}
+                  r={radius}
+                  fill="none"
+                  strokeWidth={28}
+                  stroke={`hsl(${(index * 137.5) % 360} 65% 55%)`}
+                  strokeDasharray={`${dash} ${circumference - dash}`}
+                  strokeDashoffset={-offset}
+                />
+              );
+              offset += dash;
+              return slice;
+            });
+          })()
+        ) : null}
+      </svg>
+      <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        {points.map((point, index) => (
+          <li key={index}>
+            {point.x}: {point.y}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ActionButtonView({
   node,
   context,
@@ -914,6 +1162,10 @@ function dispatchParsedNode({
       return <RecordView node={node} />;
     case "actionButton":
       return <ActionButtonView node={node} context={context} onAction={onAction} />;
+    case "statCard":
+      return <StatCardView node={node} />;
+    case "chart":
+      return <ChartView node={node} />;
     case "table":
       return (
         tableRenderer?.(node) ?? (
@@ -987,11 +1239,12 @@ export function RenderPage({
   document,
   context,
   tableRenderer,
+  dataFetcher,
   onAction,
   formComponent,
-}: RendererComponentProps) {
+}: RendererComponentProps & { dataFetcher?: typeof fetch }) {
   return (
-    <SchemaCrudProvider document={document} context={context}>
+    <SchemaCrudProvider document={document} context={context} initialFetcher={dataFetcher}>
       <RenderPageSurface
         document={document}
         context={context}

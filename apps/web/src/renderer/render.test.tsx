@@ -23,16 +23,121 @@ afterEach(async () => {
   }
 });
 
-async function renderDocument(pageDoc: RenderPageDocument, context: Record<string, unknown>) {
+async function renderDocument(
+  pageDoc: RenderPageDocument,
+  context: Record<string, unknown>,
+  dataFetcher?: typeof fetch,
+) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   activeRoots.push({ root, container });
   await act(async () => {
-    root.render(<RenderPage document={pageDoc} context={context} />);
+    root.render(<RenderPage document={pageDoc} context={context} dataFetcher={dataFetcher} />);
   });
   return container;
 }
+
+/** Fixture transport returning the pinned list envelope for any dataSource. */
+function fixtureListFetcher(items: Array<Record<string, unknown>>): typeof fetch {
+  return (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.startsWith("/api/")) {
+      return new Response(JSON.stringify({ error: "NOT_FOUND", message: "not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(
+      JSON.stringify({ items, total: items.length, page: 1, pageSize: 100 }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+}
+
+function displayDocument(body: RenderPageDocument["body"]): RenderPageDocument {
+  return {
+    meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+    body,
+  };
+}
+
+describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => {
+  it("renders a statCard value with a currency format from its dataSource", async () => {
+    const pageDoc = displayDocument({
+      type: "statCard",
+      id: "revenue",
+      props: { label: "Revenue", format: "currency", valueField: "amount", dataSource: "/api/orders" },
+    });
+    const container = await renderDocument(
+      pageDoc,
+      {},
+      fixtureListFetcher([{ id: "o1", amount: 1250, month: "2026-08", count: 12 }]),
+    );
+    await act(async () => {
+      // Let the async data fetch settle.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.textContent).toContain("Revenue");
+    expect(container.textContent).toContain("1250");
+  });
+
+  it("fails closed when statCard format rejects the value type", async () => {
+    const pageDoc = displayDocument({
+      type: "statCard",
+      id: "revenue",
+      props: { label: "Revenue", format: "currency", valueField: "name", dataSource: "/api/orders" },
+    });
+    const container = await renderDocument(
+      pageDoc,
+      {},
+      fixtureListFetcher([{ id: "o1", name: "order-a", amount: 1250, month: "2026-08", count: 12 }]),
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "statCard format",
+    );
+  });
+
+  it("renders a chart from its dataSource and lists its points", async () => {
+    const pageDoc = displayDocument({
+      type: "chart",
+      id: "orders-chart",
+      props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/orders" },
+    });
+    const container = await renderDocument(
+      pageDoc,
+      {},
+      fixtureListFetcher([
+        { id: "o1", amount: 1250, month: "2026-08", count: 12 },
+        { id: "o2", amount: 800, month: "2026-09", count: 7 },
+      ]),
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector("svg[role='img']")).not.toBeNull();
+    expect(container.textContent).toContain("2026-08");
+    expect(container.textContent).toContain("12");
+  });
+
+  it("fails closed when a chart node lacks its required props", async () => {
+    const pageDoc = displayDocument({
+      type: "chart",
+      id: "bad",
+      props: { chartType: "bar", dataSource: "/api/orders" },
+    });
+    const container = await renderDocument(pageDoc, {});
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "chart node requires chartType",
+    );
+  });
+});
 
 function reactionFormDocument(reactions: unknown[]): RenderPageDocument {
   return {
@@ -137,11 +242,11 @@ describe("RenderPage form node with reactions", () => {
   it("fails closed on an unknown node type", async () => {
     const pageDoc: RenderPageDocument = {
       meta: { protocolVersion: "2.7", requiredCapabilities: [] },
-      body: { type: "chart", id: "x", props: {} } as unknown as RenderPageDocument["body"],
+      body: { type: "slider", id: "x", props: {} } as unknown as RenderPageDocument["body"],
     };
     const container = await renderDocument(pageDoc, {});
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
-      "outside the §5 renderer whitelist",
+      "outside the registry renderer whitelist",
     );
   });
 
@@ -244,7 +349,7 @@ describe("RenderPage form submit gate (GOAL-009 S1 · F-002-002)", () => {
 
   it("disables submit and sends no request while a reaction error is shown", async () => {
     await withFetchSpy(async (fetchSpy) => {
-      // $deps.* is outside the frozen reaction grammar → REACTION_EXPRESSION_INVALID.
+      // $deps.* is outside the frozen reaction grammar �?REACTION_EXPRESSION_INVALID.
       const pageDoc = submitFormDocument(
         [{ id: "name", label: "Name", type: "input" }],
         [
@@ -284,3 +389,4 @@ describe("RenderPage form submit gate (GOAL-009 S1 · F-002-002)", () => {
     });
   });
 });
+

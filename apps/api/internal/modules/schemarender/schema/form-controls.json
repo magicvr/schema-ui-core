@@ -3,7 +3,7 @@
     "pageId": "form-controls",
     "title": "Form controls",
     "protocolVersion": "2.7",
-    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended"]
+    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended", "form.controls.advanced"]
   },
   "body": {
     "type": "section",
@@ -12,7 +12,7 @@
       {
         "type": "text",
         "props": {
-          "text": "Whitelisted form controls (D-FORM) rendered through the schema-driven form node."
+          "text": "Full registry form control surface (D-FORM): base controls incl. inputNumber / datePicker / dateRangePicker, 2.6 extended and 2.7 advanced controls."
         }
       },
       {
@@ -30,6 +30,9 @@
                 { "value": "priority", "label": "Priority" }
               ]
             },
+            { "id": "quantity", "label": "Quantity (inputNumber)", "type": "inputNumber", "min": 0, "max": 100, "step": 1, "defaultValue": 1 },
+            { "id": "deliveryDate", "label": "Delivery date (datePicker)", "type": "datePicker" },
+            { "id": "window", "label": "Window (dateRangePicker)", "type": "dateRangePicker", "startField": "windowStart", "endField": "windowEnd" },
             { "id": "approval", "label": "Approval (switch)", "type": "switch" },
             { "id": "auditNote", "label": "Audit note (textarea)", "type": "textarea" },
             {
@@ -40,7 +43,8 @@
                 { "value": "internal", "label": "Internal" },
                 { "value": "external", "label": "External" }
               ]
-            }
+            },
+            { "id": "tags", "label": "Tags (checkboxGroup)", "type": "checkboxGroup", "options": [{ "value": "alpha", "label": "Alpha" }, { "value": "beta", "label": "Beta" }] }
           ],
           "submitLabel": "Submit"
         }

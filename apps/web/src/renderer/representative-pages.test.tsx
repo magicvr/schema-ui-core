@@ -229,11 +229,12 @@ describe("migrated representative pages (GOAL-004)", () => {
         protocolVersion: "2.7",
         requiredCapabilities: ["app.manifest"],
       },
-      body: { type: "chart", id: "x", props: {} },
+      body: { type: "slider", id: "x", props: {} },
     } as unknown as RenderPageDocument;
     const container = await renderDocument(pageDoc, {});
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
-      "outside the §5 renderer whitelist",
+      "outside the registry renderer whitelist",
     );
   });
 });
+

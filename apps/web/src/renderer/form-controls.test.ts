@@ -11,10 +11,13 @@ import {
 const baseMeta = { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] };
 
 describe("isWhitelistedFormControl", () => {
-  it("accepts §5 whitelist types", () => {
+  it("accepts the full registry form-control surface", () => {
     for (const type of [
       "input",
       "select",
+      "inputNumber",
+      "datePicker",
+      "dateRangePicker",
       "textarea",
       "switch",
       "checkbox",
@@ -28,7 +31,8 @@ describe("isWhitelistedFormControl", () => {
     }
   });
 
-  it("rejects non-whitelist types", () => {
+  it("rejects non-registry types", () => {
+    // upload joins the whitelist only after the D-UPLOAD batch (B4).
     expect(isWhitelistedFormControl("upload")).toBe(false);
     expect(isWhitelistedFormControl("chart")).toBe(false);
     expect(isWhitelistedFormControl("slider")).toBe(false);
@@ -47,6 +51,9 @@ describe("wireKindOf", () => {
     expect(wireKindOf({ id: "h", type: "checkboxGroup" })).toBe("string-array");
     expect(wireKindOf({ id: "i", type: "richText" })).toBe("string");
     expect(wireKindOf({ id: "j", type: "password" })).toBe("string");
+    expect(wireKindOf({ id: "k", type: "inputNumber" })).toBe("number");
+    expect(wireKindOf({ id: "l", type: "datePicker" })).toBe("string");
+    expect(wireKindOf({ id: "m", type: "dateRangePicker" })).toBe("date-range");
   });
 });
 
@@ -60,6 +67,28 @@ describe("coerceFieldValue", () => {
     expect(
       coerceFieldValue({ id: "m", type: "checkboxGroup" }, ["a", 1]),
     ).toEqual(["a"]);
+  });
+
+  it("coerces inputNumber to a finite number", () => {
+    expect(coerceFieldValue({ id: "n", type: "inputNumber" }, 42)).toBe(42);
+    expect(coerceFieldValue({ id: "n", type: "inputNumber" }, "12.5")).toBe(12.5);
+    expect(coerceFieldValue({ id: "n", type: "inputNumber" }, "not-a-number")).toBe(0);
+    expect(coerceFieldValue({ id: "n", type: "inputNumber", defaultValue: 7 }, "")).toBe(7);
+  });
+
+  it("coerces datePicker to an ISO string", () => {
+    expect(coerceFieldValue({ id: "d", type: "datePicker" }, "2026-08-08")).toBe("2026-08-08");
+    expect(coerceFieldValue({ id: "d", type: "datePicker" }, 42)).toBe("42");
+  });
+
+  it("coerces dateRangePicker to a start/end pair", () => {
+    expect(
+      coerceFieldValue({ id: "r", type: "dateRangePicker" }, { start: "2026-08-01", end: "2026-08-31" }),
+    ).toEqual({ start: "2026-08-01", end: "2026-08-31" });
+    expect(coerceFieldValue({ id: "r", type: "dateRangePicker" }, undefined)).toEqual({
+      start: "",
+      end: "",
+    });
   });
 
   it("applies defaultValue when the value is empty", () => {
@@ -171,5 +200,44 @@ describe("checkFormCapabilities", () => {
       { id: "d", type: "input", defaultValue: 42 },
     ]);
     expect(errors.some((error) => error.code === "DEFAULT_VALUE_TYPE_MISMATCH")).toBe(true);
+  });
+
+  it("validates inputNumber defaultValue against the number wire", () => {
+    const ok = checkFormCapabilities(advancedMeta, [
+      { id: "n", type: "inputNumber", defaultValue: 42 },
+    ]);
+    expect(ok).toEqual([]);
+    const mismatch = checkFormCapabilities(advancedMeta, [
+      { id: "n", type: "inputNumber", defaultValue: "42" },
+    ]);
+    expect(mismatch.some((error) => error.code === "DEFAULT_VALUE_TYPE_MISMATCH")).toBe(true);
+  });
+
+  it("gates base controls without version/capability requirements", () => {
+    const errors = checkFormCapabilities(baseMeta, [
+      { id: "n", type: "inputNumber" },
+      { id: "d", type: "datePicker" },
+      { id: "r", type: "dateRangePicker", startField: "from", endField: "to" },
+    ]);
+    expect(errors).toEqual([]);
+  });
+
+  it("requires startField/endField on dateRangePicker (fail-closed)", () => {
+    const errors = checkFormCapabilities(baseMeta, [{ id: "r", type: "dateRangePicker" }]);
+    expect(errors.some((error) => error.code === "DATE_RANGE_START_FIELD_REQUIRED")).toBe(true);
+    expect(errors.some((error) => error.code === "DATE_RANGE_END_FIELD_REQUIRED")).toBe(true);
+  });
+
+  it("forbids defaultValue on dateRangePicker (registry has no such prop)", () => {
+    const errors = checkFormCapabilities(advancedMeta, [
+      {
+        id: "r",
+        type: "dateRangePicker",
+        startField: "from",
+        endField: "to",
+        defaultValue: { start: "x", end: "y" },
+      },
+    ]);
+    expect(errors.some((error) => error.code === "DATE_RANGE_DEFAULT_VALUE_FORBIDDEN")).toBe(true);
   });
 });

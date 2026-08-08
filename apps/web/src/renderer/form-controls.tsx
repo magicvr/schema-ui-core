@@ -21,6 +21,16 @@ function optionList(field: FormControlField): Array<{ value: string; label: stri
   }));
 }
 
+function isDateRangeValue(value: unknown): value is { start: string; end: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { start?: unknown }).start === "string" &&
+    typeof (value as { end?: unknown }).end === "string"
+  );
+}
+
 function displayValue(field: FormControlField, value: unknown): unknown {
   return coerceFieldValue(field, value);
 }
@@ -262,6 +272,119 @@ function TextAreaField({
   );
 }
 
+function NumberField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  min,
+  max,
+  step,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  return (
+    <label className="block space-y-1" htmlFor={id}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <input
+        id={id}
+        type="number"
+        value={Number.isFinite(value) ? value : 0}
+        disabled={disabled}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          const next = event.target.valueAsNumber;
+          onChange(Number.isFinite(next) ? next : 0);
+        }}
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+      />
+    </label>
+  );
+}
+
+function DateField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  min,
+  max,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+}) {
+  return (
+    <label className="block space-y-1" htmlFor={id}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        disabled={disabled}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+      />
+    </label>
+  );
+}
+
+function DateRangeField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  id: string;
+  label: string;
+  value: { start: string; end: string };
+  onChange: (value: { start: string; end: string }) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <fieldset className="space-y-1" id={id}>
+      <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
+      <div className="flex items-center gap-2">
+        <input
+          type="date"
+          value={value.start}
+          disabled={disabled}
+          aria-label={`${label} start`}
+          onChange={(event) => onChange({ ...value, start: event.target.value })}
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        />
+        <span className="text-xs text-muted-foreground">–</span>
+        <input
+          type="date"
+          value={value.end}
+          disabled={disabled}
+          aria-label={`${label} end`}
+          onChange={(event) => onChange({ ...value, end: event.target.value })}
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        />
+      </div>
+    </fieldset>
+  );
+}
+
 function FieldControl({
   field,
   values,
@@ -302,6 +425,42 @@ function FieldControl({
           onChange={(next) => onChange(field.id, next)}
         />
       );
+    case "inputNumber":
+      return (
+        <NumberField
+          id={id}
+          label={label}
+          value={Number(value)}
+          disabled={disabled}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          onChange={(next) => onChange(field.id, next)}
+        />
+      );
+    case "datePicker":
+      return (
+        <DateField
+          id={id}
+          label={label}
+          value={String(value)}
+          disabled={disabled}
+          onChange={(next) => onChange(field.id, next)}
+        />
+      );
+    case "dateRangePicker": {
+      const range =
+        isDateRangeValue(value) ? value : { start: "", end: "" };
+      return (
+        <DateRangeField
+          id={id}
+          label={label}
+          value={range}
+          disabled={disabled}
+          onChange={(next) => onChange(field.id, next)}
+        />
+      );
+    }
     case "select":
       return (
         <SelectField
