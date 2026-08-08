@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-08
+updated: 2026-08-09
 parent: null
-version: 0.3.4
+version: 0.3.5
 ---
 
 # Charter 修订台账
@@ -22,3 +22,4 @@ version: 0.3.4
 | VR-006 | 2026-08-06 | editorial | VP 关系指针 | VP-004 用户确认激活；Charter 关系节改为 `active` + lead `workspace-004-module-contribution-readiness`（区待 scaffold）。不改目的/边界/非目标；`vision_id@version` 仍为 `@0.2.0`；**无** re-align。 |
 | VR-007 | 2026-08-08 | editorial | 协议目标澄清 + 组合指针 | 用户确认：目标为 `schema-ui-docs@v2.7.0` **整份契约**可验证兼容（非长期停在 MVP 子集）。Charter 协议来源/H-001/关系节澄清 `I-PROTO-001 v0.1.3` 仅为 MVP 切片；组合焦点 → planned VP-006，VP-005 实施硬冻结至 VP-006 closed。不改目的/成功边界编号/非目标正文；`vision_id@version` 仍为 `@0.2.0`；**无** strategic、**无** re-align 宽阻断。 |
 | VR-008 | 2026-08-08 | editorial | VP 关系指针 | VP-006 用户确认激活；Charter 关系节改为 active 交付 VP-006 + lead `workspace-005-full-protocol-contract-v2-7-0`；VP-005 仍实施冻结。不改目的/边界/非目标；`vision_id@version` 仍为 `@0.2.0`；**无** re-align。 |
+| VR-009 | 2026-08-09 | editorial | VP 关系指针 + 组合焦点 | VRev-011 F-V018/019/020 fixed（VP-005 v0.3.0）；用户确认激活 VP-005（v0.4.0 `active`）。Charter 关系节改为当前交付 VP-005；协议语义注 VP-006 closed。不改目的/边界/非目标；`vision_id@version` 仍为 `@0.2.0`；**无** re-align。 |

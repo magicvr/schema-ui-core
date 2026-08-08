@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-09
+version: 0.1.1
 ---
 
 # 执行记录 · GOAL-001-full-protocol-contract-v2-7-0
@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-08 | S2/S3 纳入面实现（B1–B5）+ S4 验证登记 | recorded | `02-execution/E-003-s2-s3-implementation.md` |
 | E-004 | 2026-08-08 | S5 回归、文档与验证计划执行 | recorded | `02-execution/E-004-s5-regression-verification.md` |
 | E-005 | 2026-08-08 | VP-006 关门（用户书面确认）与愿景侧同步 | recorded | `02-execution/E-005-vp006-closeout.md` |
+| E-006 | 2026-08-09 | F-V026 过程叙述回填（映射表 / 审计结论 / goal-tree） | recorded | `02-execution/E-006-fv026-process-narrative-backfill.md` |
 
 ## 事实边界
 

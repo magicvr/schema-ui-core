@@ -7,7 +7,7 @@ version: 0.2.0
 effective_date: 2026-08-04
 primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-08-08
+updated: 2026-08-09
 parent: null
 ---
 
@@ -28,7 +28,7 @@ parent: null
 
 该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。
 
-**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) 收口。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照，**不是**愿景终态上的「协议已完成」声明。覆盖扩张与实现核验由对应工作区 **`/govern`** 推进（当前应挂 VP-006，而非视觉 VP）。
+**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），已由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed** 收口（覆盖权威 `I-PROTO-FULL-001`）。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照。现行组合交付焦点为成功边界 3 的前端产品化波次 [VP-005](plans/VP-005-design-system-and-ui-experience.md)（**active**）。
 
 ## 方向级成功边界
 
@@ -67,7 +67,7 @@ parent: null
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前交付 VP**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（整份 v2.7.0 契约；lead `workspace-005-full-protocol-contract-v2-7-0`）**已于 2026-08-08 用户书面确认关门（`closed`）**；现行协议覆盖权威 = `I-PROTO-FULL-001`（12/12 include，0 exclude）。planned [VP-005](plans/VP-005-design-system-and-ui-experience.md)（视觉产品化）**实施冻结**：硬前置（VP-006 closed）已满足，但 `F-V018` open required 未闭合，是否解冻由用户另行决策（2026-08-08 用户裁决 + VRev-011）。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
+- **当前交付 VP**：[VP-005](plans/VP-005-design-system-and-ui-experience.md)（设计系统与 Schema 驱动 UI/UX）**已于 2026-08-09 用户书面确认激活（`active`，v0.4.0）**；lead 工作区待 `/govern` scaffold。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，0 exclude）。VRev-011 `F-V018`/`F-V019`/`F-V020` 已 **fixed**。订单/钱包/类目/通知等业务能力仍属后续独立 VP 候选。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本

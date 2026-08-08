@@ -4,8 +4,8 @@ root_goal: GOAL-001-full-protocol-contract-v2-7-0
 canonical_scope: docs/workspace-005-full-protocol-contract-v2-7-0/
 status: active
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-09
+version: 0.1.1
 parent: null
 ---
 
@@ -32,7 +32,8 @@ GOAL-001-full-protocol-contract-v2-7-0 [done] (6/6)
 
 ## 维护说明
 
-- `6/6` 由 Root `00-meta.md` 中 S0～S5 六个等权检查点派生（全部完成；实现与验证见 E-001～E-004；A-001/A-002 independent 审计 open required = 0）。
+- `6/6` 由 Root `00-meta.md` 中 S0～S5 六个等权检查点派生（全部完成；实现与验证见 E-001～E-005；A-001/A-002 independent 审计 open required = 0）。
 - **VP-006 已于 2026-08-08 经用户书面确认关门（`closed`）**；Root 按意图转 `done`（整份契约覆盖/实现/验证/关门证据链完整）。历史绑定保留；VP-005 实施解冻与否由用户另行决策（F-V018 仍 open required）。
-- 主意图：VP-006 整份契约覆盖表升版、Renderer/后端对齐、范例与验证；过程台账仅在本区。
-- 覆盖表现行权威将落盘为 Root `attachments/I-PROTO-FULL-001-*.md`（S1 冻结后）；历史 `I-PROTO-001 v0.1.3` 只读。
+- 主意图（历史）：VP-006 整份契约覆盖表升版、Renderer/后端对齐、范例与验证；过程台账仅在本区。
+- **覆盖表现行权威**（已冻结）：Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`（v1.0.0，D-002）；历史 `I-PROTO-001 v0.1.3` 只读基线，不作现行上界。
+- 2026-08-09：`/govern` 回填 F-V026 过程叙述（`00-meta` 映射证据列、`03-audit` 结论、本说明）；见 `02-execution/E-006-fv026-process-narrative-backfill.md`。
