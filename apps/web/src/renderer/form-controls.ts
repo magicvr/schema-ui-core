@@ -34,6 +34,8 @@ export type FormControlType =
 
 export const FORM_CONTROLS_EXTENDED_CAPABILITY = "form.controls.extended";
 export const FORM_CONTROLS_ADVANCED_CAPABILITY = "form.controls.advanced";
+/** ADR-0021: `form.props.recordSource` prefill GET (registry since 2.1). */
+export const FORM_RECORD_LOAD_CAPABILITY = "form.record.load";
 
 /** Whitelisted base controls (no capability gate; registry has no `since`). */
 const BASE_CONTROLS = new Set<FormControlType>([

@@ -6,6 +6,7 @@ import {
   parseRenderNode,
   resolveActionGate,
   resolveFormReactions,
+  resolveResponsePath,
   tableActionGate,
   type RenderFormNode,
 } from "@/renderer/render";
@@ -243,5 +244,26 @@ describe("tableActionGate", () => {
 
   it("defaults absent gates without errors", () => {
     expect(tableActionGate({}, CONTEXT)).toEqual({ visible: true, disabled: false, errors: [] });
+  });
+});
+
+describe("resolveResponsePath (form.recordSource.responseMapping · S6)", () => {
+  it("resolves a nested dot-path and an identity path", () => {
+    const record = { id: "default", customer: { name: "Acme" } };
+    expect(resolveResponsePath(record, "customer.name")).toBe("Acme");
+    expect(resolveResponsePath(record, "id")).toBe("default");
+  });
+
+  it("returns undefined for a missing segment or a non-object intermediate", () => {
+    const record = { customer: { name: "Acme" }, tags: ["a"] };
+    expect(resolveResponsePath(record, "customer.missing")).toBeUndefined();
+    expect(resolveResponsePath(record, "customer.name.deep")).toBeUndefined();
+    expect(resolveResponsePath(record, "tags.length")).toBeUndefined();
+  });
+
+  it("returns undefined for non-object inputs or an empty path", () => {
+    expect(resolveResponsePath(null, "a")).toBeUndefined();
+    expect(resolveResponsePath("x", "a")).toBeUndefined();
+    expect(resolveResponsePath({ a: 1 }, "")).toBeUndefined();
   });
 });

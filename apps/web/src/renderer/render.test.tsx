@@ -541,3 +541,227 @@ describe("RenderPage form submit gate (GOAL-009 S1 · F-002-002)", () => {
   });
 });
 
+// ── S6 · form.recordSource prefill (ADR-0021) + title + actionButton dispatch ──
+
+function recordSourceDocument(
+  overrides: {
+    meta?: RenderMeta;
+    recordSource?: Record<string, unknown>;
+    mode?: "search";
+    title?: string;
+    submitAction?: string;
+  } = {},
+): RenderPageDocument {
+  return {
+    meta: overrides.meta ?? {
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "form.record.load"],
+    },
+    actions: {
+      save: {
+        type: "request",
+        method: "PATCH",
+        url: "/api/settings/default",
+        bodyMapping: { siteTitle: "siteTitle" },
+      },
+    },
+    body: {
+      type: "form",
+      id: "settings-general",
+      props: {
+        ...(overrides.title === undefined ? {} : { title: overrides.title }),
+        fields: [
+          { id: "siteTitle", label: "Site title", type: "input" },
+          { id: "siteTimezone", label: "Timezone", type: "input" },
+        ],
+        recordSource: overrides.recordSource ?? {
+          method: "GET",
+          url: "/api/settings/default",
+          responseMapping: { siteTitle: "siteTitle", siteTimezone: "site.timezone" },
+        },
+        ...(overrides.submitAction === undefined ? {} : { submitAction: overrides.submitAction }),
+        ...(overrides.mode === undefined ? {} : { mode: "search" }),
+        ...(overrides.mode === undefined ? {} : { targetTable: "orders" }),
+        submitLabel: "Save settings",
+      },
+    },
+  } as unknown as RenderPageDocument;
+}
+
+function recordFetcher(record: unknown): typeof fetch {
+  return (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url === "/api/settings/default") {
+      return new Response(JSON.stringify(record), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response("{}", { status: 200 });
+  }) as typeof fetch;
+}
+
+describe("RenderPage form.recordSource prefill (ADR-0021 · S6)", () => {
+  it("prefills fields from the recordSource GET via responseMapping", async () => {
+    const container = await renderDocument(
+      recordSourceDocument(),
+      {},
+      recordFetcher({ siteTitle: "Acme", site: { timezone: "Asia/Shanghai" } }),
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector<HTMLInputElement>("#field-siteTitle")?.value).toBe("Acme");
+    expect(container.querySelector<HTMLInputElement>("#field-siteTimezone")?.value).toBe(
+      "Asia/Shanghai",
+    );
+  });
+
+  it("re-prefills from the fresh record after a submit reload", async () => {
+    let siteTitle = "Before";
+    const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === "PATCH" && url === "/api/settings/default") {
+        siteTitle = String((JSON.parse(String(init.body)) as { siteTitle: string }).siteTitle);
+        return new Response("{}", { status: 200 });
+      }
+      if (url === "/api/settings/default") {
+        return new Response(JSON.stringify({ siteTitle }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response("{}", { status: 200 });
+    }) as typeof fetch;
+    const container = await renderDocument(recordSourceDocument({ submitAction: "save" }), {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector<HTMLInputElement>("#field-siteTitle")?.value).toBe("Before");
+    // Edit + submit → reload bump → the form re-initializes from the updated record.
+    const input = container.querySelector<HTMLInputElement>("#field-siteTitle")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
+        input,
+        "After",
+      );
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      container.querySelector("form")?.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector<HTMLInputElement>("#field-siteTitle")?.value).toBe("After");
+  });
+
+  it("fails closed when meta lacks the form.record.load capability", async () => {
+    const container = await renderDocument(
+      recordSourceDocument({
+        meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      }),
+      {},
+      recordFetcher({ siteTitle: "Acme" }),
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.textContent).toContain("form.record.load");
+    expect(container.querySelector("form")).toBeNull();
+  });
+
+  it("rejects recordSource on search-mode forms", async () => {
+    const container = await renderDocument(recordSourceDocument({ mode: "search" }), {});
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.textContent).toContain("forbidden on search-mode forms");
+    expect(container.querySelector("form")).toBeNull();
+  });
+
+  it("renders a form title heading when title/titleKey is set", async () => {
+    const container = await renderDocument(
+      recordSourceDocument({ title: "General" }),
+      {},
+      recordFetcher({ siteTitle: "Acme" }),
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const heading = container.querySelector("h2");
+    expect(heading?.textContent).toBe("General");
+  });
+});
+
+describe("RenderPage actionButton dispatch + permission gate (S6)", () => {
+  // The actionButton sits inside a cascading section (mirrors the settings
+  // page body): actionButton permission targets resolve via cascading
+  // ancestors (ADR-0023 D4b), so the section carries the edit cascade.
+  function actionButtonDocument(permission?: { granted: boolean }): RenderPageDocument {
+    return {
+      meta: {
+        protocolVersion: "2.7",
+        requiredCapabilities: [
+          "app.manifest",
+          ...(permission === undefined ? [] : ["permissions.inheritance"]),
+        ],
+      },
+      actions: {
+        resetSettings: { type: "request", method: "POST", url: "/api/settings/default/reset" },
+      },
+      body: {
+        type: "section",
+        id: "settings",
+        ...(permission === undefined
+          ? {}
+          : {
+              permissionCascade: { keys: ["edit"] },
+              permissions: {
+                edit: '$context.user.permissions contains "settings.write"',
+              },
+            }),
+        children: [
+          {
+            type: "actionButton",
+            id: "settings-reset",
+            props: {
+              label: "Restore defaults",
+              actionId: "resetSettings",
+              ...(permission === undefined ? {} : { permissionIntent: "edit", key: "reset" }),
+              confirm: "Really reset?",
+            },
+          },
+        ],
+      },
+    } as unknown as RenderPageDocument;
+  }
+
+  it("dispatches by actionId and shows the confirm before executing", async () => {
+    const container = await renderDocument(actionButtonDocument(), {});
+    const button = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent?.includes("Restore defaults"),
+    )!;
+    await act(async () => button.click());
+    expect(container.textContent).toContain("Really reset?");
+  });
+
+  it("disables the button when its permission target is denied", async () => {
+    const container = await renderDocument(actionButtonDocument({ granted: false }), {
+      user: { permissions: ["settings.read"] },
+    });
+    const button = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent?.includes("Restore defaults"),
+    )!;
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("keeps the button enabled when the permission target is granted", async () => {
+    const container = await renderDocument(actionButtonDocument({ granted: true }), {
+      user: { permissions: ["settings.write"] },
+    });
+    const button = [...container.querySelectorAll("button")].find((b) =>
+      b.textContent?.includes("Restore defaults"),
+    )!;
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+

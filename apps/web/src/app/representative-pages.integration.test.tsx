@@ -160,6 +160,20 @@ function combinedFetcher(
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (pathname === "/api/settings/default") {
+      return new Response(
+        JSON.stringify({
+          id: "default",
+          siteTitle: "Schema UI Core",
+          logoUrl: "",
+          defaultLocale: "auto",
+          siteTimezone: "auto",
+          defaultTheme: "auto",
+          updatedAt: "2026-08-04T00:00:00.000Z",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
     if (pathname.startsWith("/api/settings") || pathname === "/api/branding") {
       return new Response(
         JSON.stringify(

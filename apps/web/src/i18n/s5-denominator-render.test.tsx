@@ -125,6 +125,23 @@ function fetcherFor(documents: Record<string, unknown>): typeof fetch {
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (pathname === "/api/settings/default") {
+      return new Response(
+        JSON.stringify({
+          id: "default",
+          siteTitle: "Schema UI Core",
+          logoUrl: "",
+          logoUrlLight: "",
+          logoUrlDark: "",
+          faviconUrl: "",
+          defaultLocale: "auto",
+          siteTimezone: "auto",
+          defaultTheme: "auto",
+          updatedAt: "2026-08-09T00:00:00.000Z",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
     if (pathname === "/api/branding") {
       return new Response(
         JSON.stringify({

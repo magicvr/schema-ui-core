@@ -27,7 +27,11 @@ import {
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
-import { coerceFieldValue, type FormControlField } from "@/renderer/form-controls";
+import {
+  FORM_RECORD_LOAD_CAPABILITY,
+  coerceFieldValue,
+  type FormControlField,
+} from "@/renderer/form-controls";
 import { ModalHost } from "@/renderer/modal";
 import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
@@ -51,6 +55,7 @@ import {
   gateRenderFormFields,
   parseRenderNode,
   resolveFormReactions,
+  resolveResponsePath,
   tableActionGate,
   type RenderActionButtonNode,
   type RenderChartNode,
@@ -532,7 +537,9 @@ function SchemaCrudProvider({
 
   const invokeAction = useCallback(
     (item: Record<string, unknown>, row: Record<string, unknown> | null) => {
-      const actionRef = stringOf(item.actionRef);
+      // actionButton nodes carry `props.actionId`; other entries use `actionRef`.
+      const actionRef =
+        stringOf(item.actionRef) !== "" ? stringOf(item.actionRef) : stringOf(item.actionId);
       const action = actionOf(document, actionRef);
       if (actionRef === "" || action === undefined) {
         setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
@@ -836,6 +843,117 @@ function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
   );
 }
 
+type RecordSourcePrefillState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "ready"; values: Record<string, unknown> };
+
+function hasRequiredCapability(metaValue: unknown, capability: string): boolean {
+  return (
+    isRecord(metaValue) &&
+    Array.isArray(metaValue.requiredCapabilities) &&
+    (metaValue.requiredCapabilities as unknown[]).includes(capability)
+  );
+}
+
+/**
+ * ADR-0021 `form.props.recordSource` prefill (S6): loads the record from a
+ * detail GET and maps it to field ids via `responseMapping` (field → dot-path).
+ * Fails closed on missing capability / invalid shape / network error — never
+ * renders an editable blank form that could overwrite the record.
+ */
+function useRecordSourcePrefill(
+  node: RenderFormNode,
+  metaValue: unknown,
+  crud: SchemaCrudValue | null,
+): RecordSourcePrefillState {
+  const recordSource = node.props.recordSource;
+  const [state, setState] = useState<RecordSourcePrefillState>({ status: "idle" });
+  useEffect(() => {
+    if (recordSource === undefined) {
+      setState({ status: "idle" });
+      return;
+    }
+    if (node.props.mode === "search") {
+      setState({ status: "error", message: "form.recordSource is forbidden on search-mode forms" });
+      return;
+    }
+    if (!hasRequiredCapability(metaValue, FORM_RECORD_LOAD_CAPABILITY)) {
+      setState({
+        status: "error",
+        message: `form.recordSource requires capability "${FORM_RECORD_LOAD_CAPABILITY}" in meta.requiredCapabilities`,
+      });
+      return;
+    }
+    const constructed = constructRequest({
+      kind: "recordSource",
+      recordSource,
+      route: { params: {}, query: {} },
+      baseURL: "",
+    });
+    if (!constructed.ok) {
+      setState({
+        status: "error",
+        message: `recordSource construction failed (${constructed.path}): ${constructed.code}`,
+      });
+      return;
+    }
+    const url = constructed.request?.url;
+    if (typeof url !== "string") {
+      setState({ status: "error", message: "recordSource produced no request URL" });
+      return;
+    }
+    let cancelled = false;
+    setState({ status: "loading" });
+    const fetcher = crud?.fetcher ?? globalThis.fetch;
+    fetcher(url)
+      .then(async (response) => {
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          const apiError = await readResourceApiError(response, "recordSource");
+          if (!cancelled) {
+            setState({ status: "error", message: `${apiError.code}: ${apiError.message}` });
+          }
+          return;
+        }
+        const record: unknown = await response.json();
+        const raw = isRecord(record) ? record : {};
+        const mapping = isRecord(recordSource.responseMapping)
+          ? recordSource.responseMapping
+          : {};
+        const values: Record<string, unknown> = {};
+        for (const [fieldId, pathExpr] of Object.entries(mapping)) {
+          if (typeof pathExpr !== "string") {
+            continue;
+          }
+          const resolved = resolveResponsePath(raw, pathExpr);
+          if (resolved !== undefined) {
+            values[fieldId] = resolved;
+          }
+        }
+        if (!cancelled) {
+          setState({ status: "ready", values });
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setState({
+          status: "error",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken]);
+  return state;
+}
+
 function FormView({
   node,
   metaValue,
@@ -846,6 +964,57 @@ function FormView({
   metaValue: unknown;
   context: Record<string, unknown>;
   formComponent?: RendererComponentProps["formComponent"];
+}) {
+  const crud = useSchemaCrud();
+  const t = useTranslate();
+  const prefill = useRecordSourcePrefill(node, metaValue, crud);
+
+  if (prefill.status === "loading") {
+    return (
+      <div
+        role="status"
+        aria-label={t("feedback.loading")}
+        className="space-y-2 rounded-md border border-border bg-card p-4"
+      >
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
+  }
+  if (prefill.status === "error") {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {prefill.message}
+      </p>
+    );
+  }
+  return (
+    <FormInner
+      // Remount on reload so recordSource forms re-initialize from the fresh
+      // record after a save / batch reload (no stale typed values).
+      key={node.props.recordSource !== undefined ? crud?.reloadToken : undefined}
+      node={node}
+      metaValue={metaValue}
+      context={context}
+      formComponent={formComponent}
+      prefillValues={prefill.status === "ready" ? prefill.values : null}
+    />
+  );
+}
+
+function FormInner({
+  node,
+  metaValue,
+  context,
+  formComponent,
+  prefillValues,
+}: {
+  node: RenderFormNode;
+  metaValue: unknown;
+  context: Record<string, unknown>;
+  formComponent?: RendererComponentProps["formComponent"];
+  prefillValues: Record<string, unknown> | null;
 }) {
   const Component = formComponent ?? FormControls;
   const crud = useSchemaCrud();
@@ -858,10 +1027,16 @@ function FormView({
       if (!isRecord(raw) || typeof raw.id !== "string") {
         continue;
       }
+      // Precedence: modal row (edit-in-modal) → recordSource prefill → empty.
       // Always coerce through the field wire kind so row arrays (e.g. roles[])
       // become textarea strings or checkboxGroup string[] as appropriate (A-006 R-004).
-      const fromRow =
+      const modalValue =
         modalRow !== null && modalRow[raw.id] !== undefined ? modalRow[raw.id] : undefined;
+      const prefillValue =
+        prefillValues !== null && prefillValues[raw.id] !== undefined
+          ? prefillValues[raw.id]
+          : undefined;
+      const fromRow = modalValue !== undefined ? modalValue : prefillValue;
       initial[raw.id] = coerceFieldValue(raw as unknown as FormControlField, fromRow);
     }
     return initial;
@@ -918,12 +1093,18 @@ function FormView({
   const submitAction = node.props.submitAction;
   const canSubmit = isSearch || typeof submitAction === "string";
   const hasBlockingErrors = gate.errors.length > 0 || reactionErrors.length > 0;
+  // Permission gate: a default-mode form with a declared submit permission is
+  // read-only when the `${formId}:submit` target is denied — the viewer sees
+  // current values but cannot save (backend `settings.write` stays the hard
+  // gate). Absent a declared target the effective permission defaults to true.
+  const canEdit = crud === null ? true : crud.effectivePermission(`${node.id ?? "unnamed"}:submit`);
 
   const visibleFields = gate.fields.filter(
     (raw) => reactionState[raw.id]?.visible !== false,
   );
 
-  const fieldDisabled = (id: string) => reactionState[id]?.disabled === true;
+  const fieldDisabled = (id: string) =>
+    reactionState[id]?.disabled === true || (!isSearch && !canEdit);
 
   const handleSubmit = async () => {
     if (crud === null) {
@@ -953,11 +1134,22 @@ function FormView({
     setSubmitting(false);
   };
 
+  const title = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "titleKey",
+    "title",
+    t,
+    "",
+  );
+
   return (
     <form className="space-y-3" onSubmit={(event) => {
       event.preventDefault();
       void handleSubmit();
     }}>
+      {title !== "" ? (
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      ) : null}
       {gate.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">
           {gate.errors.map((error, index) => (
@@ -994,7 +1186,7 @@ function FormView({
       {canSubmit ? (
         <button
           type="submit"
-          disabled={submitting || hasBlockingErrors}
+          disabled={submitting || hasBlockingErrors || (!isSearch && !canEdit)}
           className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {submitting
@@ -1516,15 +1708,26 @@ function ActionButtonView({
   onAction?: RendererComponentProps["onAction"];
 }) {
   const t = useTranslate();
+  const crud = useSchemaCrud();
   const gate = tableActionGate(node.props ?? {}, context);
   if (!gate.visible) {
     return null;
   }
+  // ADR-0023 D4b: actionButton permission-intent targets are gated by their
+  // `props.key` (fallback node id); a denied target renders the button disabled.
+  const targetId =
+    typeof node.props?.key === "string" && node.props.key !== ""
+      ? node.props.key
+      : node.id;
+  const canAct =
+    crud === null || targetId === undefined
+      ? true
+      : crud.effectivePermission(targetId);
   return (
     <div className="space-y-1">
       <button
         type="button"
-        disabled={gate.disabled}
+        disabled={gate.disabled || !canAct}
         onClick={() => onAction?.(node)}
         className="h-9 rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >

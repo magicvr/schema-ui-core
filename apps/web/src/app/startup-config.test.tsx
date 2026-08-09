@@ -117,6 +117,12 @@ function fetcherFor(): typeof fetch {
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (pathname === "/api/settings/default") {
+      return new Response(JSON.stringify(SETTINGS_ROW), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     if (pathname.startsWith("/api/settings")) {
       return new Response(JSON.stringify({ items: [SETTINGS_ROW], total: 1, page: 1, pageSize: 10 }), {
         status: 200,
@@ -342,7 +348,7 @@ describe("S3 · provider system default locale", () => {
 // ── C4/C5 · settings page four-category surface + permission gating ───────────
 
 describe("S3 · settings page four-category surface", () => {
-  it("renders the four category toolbar actions + restore defaults (zh-CN)", async () => {
+  it("renders the four category forms prefilled + restore defaults (zh-CN)", async () => {
     const container = await renderAt(
       "/settings",
       <I18nProvider stored="zh-CN" browserLanguages={["en-US"]}>
@@ -358,18 +364,26 @@ describe("S3 · settings page four-category surface", () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
     const text = container.textContent ?? "";
+    // Four category form headings (form.titleKey).
     expect(text).toContain("常规");
     expect(text).toContain("品牌");
     expect(text).toContain("本地化");
     expect(text).toContain("外观");
     expect(text).toContain("恢复默认");
-    // Current-value columns resolved via labelKey.
+    // Field labels resolved via labelKey.
     expect(text).toContain("默认语种");
     expect(text).toContain("主题");
     expect(text).toContain("时区");
+    // recordSource prefill: current values are loaded into the inline fields.
+    const titleInput = container.querySelector<HTMLInputElement>("#field-siteTitle");
+    expect(titleInput?.value).toBe("Acme Admin");
+    const localeSelect = container.querySelector<HTMLSelectElement>("#field-defaultLocale");
+    expect(localeSelect?.value).toBe("zh-CN");
+    const themeSelect = container.querySelector<HTMLSelectElement>("#field-defaultTheme");
+    expect(themeSelect?.value).toBe("dark");
   });
 
-  it("opens the General modal and saves through the real PATCH action", async () => {
+  it("edits the inline General form and saves through the real PATCH action", async () => {
     const patched: Array<{ url: string; body: unknown }> = [];
     const base = fetcherFor();
     const tracking: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -397,22 +411,26 @@ describe("S3 · settings page four-category surface", () => {
     await act(async () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
-    const generalButton = [...container.querySelectorAll("button")].find((button) =>
-      button.textContent?.includes("常规"),
-    )!;
-    await act(async () => {
-      generalButton.click();
-    });
-    const titleInput = container.querySelector<HTMLInputElement>("input[name='siteTitle'], #field-siteTitle, input");
+    const titleInput = container.querySelector<HTMLInputElement>("#field-siteTitle");
     expect(titleInput).not.toBeNull();
+    await act(async () => {
+      // React tracks controlled-input values via a value tracker; use the
+      // native prototype setter so onChange observes the new value (same
+      // pattern as schema-crud.test.tsx setFieldValue).
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
+        titleInput,
+        "Renamed",
+      );
+      titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     const form = container.querySelector("form");
     expect(form).not.toBeNull();
     await act(async () => {
       form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
     expect(patched.length).toBe(1);
-    expect(patched[0]!.url).toContain("/api/settings/");
-    expect(Object.keys(patched[0]!.body as Record<string, unknown>)).toContain("siteTitle");
+    expect(patched[0]!.url).toContain("/api/settings/default");
+    expect((patched[0]!.body as Record<string, unknown>).siteTitle).toBe("Renamed");
   });
 
   it("gates the category actions behind settings.write (no write → disabled)", async () => {
@@ -435,14 +453,17 @@ describe("S3 · settings page four-category surface", () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
     const buttons = [...container.querySelectorAll("button")].filter((button) =>
-      ["General", "Branding", "Localization", "Appearance", "Restore defaults"].some((label) =>
-        button.textContent?.includes(label),
-      ),
+      ["Save settings", "Restore defaults"].some((label) => button.textContent?.includes(label)),
     );
-    expect(buttons.length).toBeGreaterThan(0);
+    // 4 section save buttons + the Restore defaults button.
+    expect(buttons.length).toBeGreaterThanOrEqual(5);
     for (const button of buttons) {
       expect((button as HTMLButtonElement).disabled).toBe(true);
     }
+    // Read-only viewer still sees the current values, with fields disabled.
+    const titleInput = container.querySelector<HTMLInputElement>("#field-siteTitle");
+    expect(titleInput?.value).toBe("Acme Admin");
+    expect(titleInput?.disabled).toBe(true);
   });
 
   it("restore defaults runs the reset request after confirmation", async () => {

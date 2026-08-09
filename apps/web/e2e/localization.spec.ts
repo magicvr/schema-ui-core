@@ -44,20 +44,21 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
   await expect(page.getByRole("heading", { name: "总览" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
 
-  // M3 · admin settings: open General, change the site title, save, and the
-  // shell header + document title project the new value (config refresh).
+  // M3 · admin settings: edit the inline General form, save, and the shell
+  // header + document title project the new value (config refresh).
   await page.getByRole("link", { name: "设置" }).click();
   await expect(page.getByRole("heading", { name: "设置" })).toBeVisible();
-  await page.getByRole("button", { name: "常规" }).click();
-  await page.getByLabel("站点标题").fill("Acme 管理台");
-  await page.getByRole("button", { name: "保存设置" }).click();
+  const generalForm = page.locator("form").filter({ has: page.getByLabel("站点标题") });
+  await generalForm.getByLabel("站点标题").fill("Acme 管理台");
+  await generalForm.getByRole("button", { name: "保存设置" }).click();
   await expect(page.getByText("Acme 管理台").first()).toBeVisible();
   expect(await page.title()).toBe("Acme 管理台");
 
-  // The four-category surface renders (toolbar labels in zh).
-  await expect(page.getByRole("button", { name: "品牌" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "本地化" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "外观" })).toBeVisible();
+  // The four-category surface renders as form section headings (zh) with the
+  // Restore defaults action still a button.
+  await expect(page.getByRole("heading", { name: "品牌" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "本地化" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "外观" })).toBeVisible();
   await expect(page.getByRole("button", { name: "恢复默认" })).toBeVisible();
 
   await page.screenshot({ path: "test-results/s5-settings-zh.png", fullPage: true });

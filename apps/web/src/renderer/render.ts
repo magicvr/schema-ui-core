@@ -69,6 +69,17 @@ export interface RenderFormNode {
     /** Search-mode form: binds its fields to the target table's query (S4). */
     mode?: "default" | "search";
     targetTable?: string;
+    /** Section heading rendered above the fields (registry form `title`/`titleKey`). */
+    title?: string;
+    /** i18n key resolved before `title`. */
+    titleKey?: string;
+    /**
+     * ADR-0021 edit-form record GET prefill (registry since 2.1): loads current
+     * values from a detail GET and initializes the fields via `responseMapping`
+     * (field id → dot-path in the response). Requires capability
+     * `form.record.load`; search-mode forms forbid it.
+     */
+    recordSource?: Record<string, unknown>;
   };
   children?: RenderNode[];
 }
@@ -133,9 +144,19 @@ export interface RenderActionButtonNode {
   id?: string;
   props?: {
     label?: string;
+    /** i18n key resolved before `label` (S3). */
+    labelKey?: string;
     actionId?: string;
     visibleWhen?: unknown;
     disabledWhen?: unknown;
+    /** Permission-intent key (ADR-0023 D4b mount); gates the button target. */
+    permissionIntent?: string;
+    /** Target id for the permission target / action gate (falls back to node id). */
+    key?: string;
+    /** Confirm message (shown before executing the referenced action). */
+    confirm?: string;
+    /** i18n key resolved before `confirm`. */
+    confirmKey?: string;
   };
   children?: RenderNode[];
 }
@@ -254,6 +275,26 @@ export function isWhitelistedNodeType(type: string): type is RenderNodeType {
   return WHITELISTED_NODE_TYPES.has(type as RenderNodeType);
 }
 
+/**
+ * Resolves a dot-path on a record for `form.recordSource.responseMapping`
+ * (e.g. `"customer.name"` → record.customer.name). Missing segments or a
+ * non-object intermediate return `undefined` (field keeps its default/empty).
+ */
+export function resolveResponsePath(record: unknown, path: string): unknown {
+  if (!isRecord(record) || path === "") {
+    return undefined;
+  }
+  let value: unknown = record;
+  for (const segment of path.split(".")) {
+    if (isRecord(value)) {
+      value = value[segment];
+    } else {
+      return undefined;
+    }
+  }
+  return value;
+}
+
 /** Normalizes an unknown body value into a typed RenderNode, fail-closed. */
 export function parseRenderNode(value: unknown, path: string): RenderNode | RenderError {
   if (!isRecord(value) || typeof value.type !== "string") {
@@ -292,6 +333,11 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
         ...(value.props.mode === "search" ? { mode: "search" as const } : {}),
         ...(typeof value.props.targetTable === "string"
           ? { targetTable: value.props.targetTable }
+          : {}),
+        ...(typeof value.props.title === "string" ? { title: value.props.title } : {}),
+        ...(typeof value.props.titleKey === "string" ? { titleKey: value.props.titleKey } : {}),
+        ...(isRecord(value.props.recordSource)
+          ? { recordSource: value.props.recordSource }
           : {}),
       },
       ...(value.children === undefined ? {} : { children: value.children }),
@@ -336,7 +382,14 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
       ...(value.id === undefined ? {} : { id: value.id }),
       props: {
         ...(typeof props.label === "string" ? { label: props.label } : {}),
+        ...(typeof props.labelKey === "string" ? { labelKey: props.labelKey } : {}),
         ...(typeof props.actionId === "string" ? { actionId: props.actionId } : {}),
+        ...(typeof props.permissionIntent === "string"
+          ? { permissionIntent: props.permissionIntent }
+          : {}),
+        ...(typeof props.key === "string" ? { key: props.key } : {}),
+        ...(typeof props.confirm === "string" ? { confirm: props.confirm } : {}),
+        ...(typeof props.confirmKey === "string" ? { confirmKey: props.confirmKey } : {}),
         ...(props.visibleWhen === undefined ? {} : { visibleWhen: props.visibleWhen }),
         ...(props.disabledWhen === undefined ? {} : { disabledWhen: props.disabledWhen }),
       },
