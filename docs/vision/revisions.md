@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-09
 parent: null
-version: 0.3.6
+version: 0.3.7
 ---
 
 # Charter 修订台账
@@ -26,3 +26,4 @@ version: 0.3.6
 | VR-010 | 2026-08-09 | editorial | VP 关系指针 | `/govern` 开区：VP-005 `lead_workspace` = `workspace-006-design-system-and-ui-experience`（Root `GOAL-001-design-system-and-ui-experience`）。Charter 关系节同步 lead 路径。不改目的/边界/非目标；`@0.2.0`；**无** re-align。 |
 | VR-011 | 2026-08-09 | editorial | VP 关系指针 + 组合焦点 | VRev-015 `F-V027`/`F-V028` → fixed（用户书面「确认关门」）。VP-005 `active → closed`（v0.5.0，关门记录含 exit↔证据映射 + residual 点名）；Charter 关系节改为「无 active 交付 VP」。不改目的/边界/非目标；`@0.2.0`；**无** re-align。 |
 | VR-012 | 2026-08-09 | editorial | 协议来源与 VP 关系指针 | 响应 VRev-016 `F-V031`：删除协议来源段残留的“VP-005 active”旧指针，明确 VP-005 closed、当前无 active，并索引 planned VP-007 v0.1.1（0 区）。不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`）；**无** re-align。 |
+| VR-013 | 2026-08-09 | editorial | VP 关系指针 + 组合焦点 | 用户确认激活 VP-007（v0.2.0 `active`；lead delivery `workspace-007-localization-and-system-settings`，Root 待 `/govern` scaffold）；Charter 关系节改为当前交付 VP-007；roadmap / workspaces / VP-007 绑定表同步。不改目的/边界/非目标；`@0.2.0`；**无** re-align。 |

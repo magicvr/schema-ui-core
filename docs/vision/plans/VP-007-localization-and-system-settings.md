@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-007-localization-and-system-settings
 title: 多语种与系统设置产品化
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
-lead_workspace:
+lead_workspace: workspace-007-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.1
+version: 0.2.0
 parent: null
 ---
 
@@ -95,7 +95,7 @@ parent: null
 | `I-L10N-004` | 当前 `{error,message}` 错误 envelope、重复 `writeError` 与前端直显链路扩展到 locale 协商的真实成本和兼容边界是什么？ | required | 后端提示本地化实施前 | 盘点用户可见错误码及调用点；用认证/验证/设置错误验证 `Accept-Language`、`Content-Language`、key/params 与 fallback；关闭结论必须选择 exit 5 路径 (a) 实施证据或路径 (b) 用户书面 accepted-residual，禁止仅写“成本无界” | open |
 | `I-L10N-005` | 默认时区的存储、展示和服务器时间语义如何定义，避免把显示时区与持久化时间混为一谈？ | required | Localization 设置实施前 | 固定 UTC 存储、显示转换、`auto`/指定时区和无效时区失败语义 | open |
 
-这些未知不阻断 VP 以 `planned` 落盘，但在其“最晚阶段”前未关闭时必须阻断对应方案冻结或实施。任何范围收缩或 residual 必须按 P-004 由用户书面裁决。
+这些未知不阻断 VP 落盘或激活，但在其“最晚阶段”前未关闭时必须阻断对应方案冻结或实施。任何范围收缩或 residual 必须按 P-004 由用户书面裁决。
 
 ## 建议实现阶段（供后续 `/govern` 建立 Root 纲领路线图时参考）
 
@@ -135,7 +135,9 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | 当前 `planned`、0 区；激活与 delivery 工作区 slug 由后续 `/vision` 确认，物理 scaffold 交 `/govern` |
+| workspace-007-localization-and-system-settings | GOAL-001-localization-and-system-settings | lead | 2026-08-09 | 用户确认激活后唯一 lead / delivery；`/govern` scaffold Root + S0–S5 纲领；`vision_role: delivery` |
+
+用户已于 2026-08-09 确认将本 VP **激活**（`planned` → `active`），并指定唯一 lead / delivery 工作区 **`workspace-007-localization-and-system-settings`**（slug 按 VP-007 id 与既有 workspace-00N 惯例，用户本轮书面确认）。物理 scaffold（Root `GOAL-001-localization-and-system-settings`，`primary_plan` / `plan_refs` 均为本 VP）交 `/govern`。激活与建区 **不**构成任何多语种或 Settings 能力已交付。
 
 ## 关门记录
 
@@ -151,3 +153,4 @@ parent: null
 |------|---------|--------|
 | 2026-08-09 | `0.1.0` | 用户确认新建本 VP：首发 `zh-CN` / `en-US`，系统默认 `auto`；系统设置按 General / Branding / Localization / Appearance 四类；多语种覆盖双 Profile，Settings 编辑面保持 Admin 权限边界；状态 `planned`，尚未激活或绑定工作区。 |
 | 2026-08-09 | `0.1.1` | 响应 VRev-016：F-V029 → fixed，新增固定 UI + Runtime Manifest page/schema 并集 + M1～M4 的可枚举证据分母，并让 exit 6 复用同一矩阵；F-V030 → fixed，I-L10N-004 只允许服务端实施证据或用户书面 residual 两种关闭路径。保持 `planned`、0 区，未激活。 |
+| 2026-08-09 | `0.2.0` | 用户确认激活：`planned → active`；`lead_workspace` = `workspace-007-localization-and-system-settings`（唯一 lead / delivery，角色 `delivery`）；物理 scaffold 交 `/govern`。激活不构成能力已交付。 |

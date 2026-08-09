@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-09
 parent: null
-version: 0.7.0
+version: 0.7.1
 ---
 
 # 工作区贡献图
@@ -32,4 +32,5 @@ version: 0.7.0
 - **VP-006 已于 2026-08-08 经 `/vision` 用户确认激活（`active`）**：唯一 lead / delivery = `workspace-005-full-protocol-contract-v2-7-0`；Root `GOAL-001-full-protocol-contract-v2-7-0` 由 `/govern` 同日 scaffold。激活与建区 **不**等于覆盖表 `I-PROTO-FULL-001` 已冻结或全量协议已兼容。**禁止**在 closed workspace-003/004 吸收本意图。不改变 Charter `primary_workspace`。
 - **VP-006 已于 2026-08-08 经用户书面确认关门（`closed`）**：workspace-005 与 Root `GOAL-001-full-protocol-contract-v2-7-0`（`done / 6/6`）的历史绑定保留；整份 v2.7.0 契约覆盖权威 = `I-PROTO-FULL-001`（12/12 include，0 exclude），实现/验证/关门证据链见该区五件套（E-001～E-005、A-001/A-002）。
 - **VP-005 已于 2026-08-09 经 `/vision` 用户书面确认关门（`closed`）**：workspace-006 与 Root `GOAL-001-design-system-and-ui-experience`（`done / 5/5`）的历史绑定保留，默认不接新区（reopen 须用户确认）；S1–S5 交付与回归证据（vitest 616/616 + e2e 2/2）见该区五件套（D-008 / A-012 / E-010；GOAL-005 E-001/E-002）；residual：F-VUI-007/010/011 `accepted-residual`、I-004 open non-blocking。不改变 Charter `primary_workspace`。
+- **VP-007 已于 2026-08-09 经 `/vision` 用户确认激活（`active`）**：唯一 lead / delivery = `workspace-007-localization-and-system-settings`；Root `GOAL-001-localization-and-system-settings` 由 `/govern` scaffold（贡献图表格行随建区登记）。激活与建区 **不**构成多语种/Settings 能力已交付。不改变 Charter `primary_workspace`。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。

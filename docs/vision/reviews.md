@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-09
 parent: null
-version: 1.3.9
+version: 1.3.10
 ---
 
 # Vision Review 台账
@@ -32,7 +32,7 @@ version: 1.3.9
 |---------|-------|------|------|------|
 | — | — | — | **无** | 仓库级 Vision Review open required = **0**（2026-08-09；VRev-016 F-V029 fixed） |
 
-> Vision Review **open required = 0**。VRev-016 原 verdict `conditional` 保留；`F-V029` required 与 `F-V030/F-V031` recommended 均已 **fixed**（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）。**VP-007** 仍为 `planned`（0 区），未激活；当前**无 active 交付 VP**。组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。VRev-016 原 verdict `conditional` 保留；`F-V029` required 与 `F-V030/F-V031` recommended 均已 **fixed**（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）。**VP-007** 已于 2026-08-09 用户确认激活（`active` v0.2.0；lead delivery `workspace-007-localization-and-system-settings`，Root 待 `/govern` scaffold；激活不构成能力已交付）。组合焦点见 [roadmap.md](roadmap.md)。
 
 ## 条目索引
 

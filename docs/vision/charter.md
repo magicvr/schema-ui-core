@@ -28,7 +28,7 @@ parent: null
 
 该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。
 
-**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），已由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed** 收口（覆盖权威 `I-PROTO-FULL-001`）。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 已 `closed`；当前无 active 交付 VP，下一已落盘意图为 `planned` [VP-007](plans/VP-007-localization-and-system-settings.md)。
+**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），已由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed** 收口（覆盖权威 `I-PROTO-FULL-001`）。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 已 `closed`；当前交付意图为 `active` [VP-007](plans/VP-007-localization-and-system-settings.md)（2026-08-09 用户确认激活；lead delivery `workspace-007-localization-and-system-settings`；激活不构成能力已交付）。
 
 ## 方向级成功边界
 
@@ -67,8 +67,8 @@ parent: null
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前交付 VP**：**无 active**。[VP-005](plans/VP-005-design-system-and-ui-experience.md)（设计系统与 Schema 驱动 UI/UX）已 **`closed`**（2026-08-09 用户书面确认；v0.5.0；lead `workspace-006-design-system-and-ui-experience` / Root `GOAL-001-design-system-and-ui-experience` `done 5/5`）。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，0 exclude）。VRev-011/015 findings 均已 **fixed**。订单/钱包/类目/通知等业务能力属后续独立 VP 候选（建 VP 前 `/vision` 复核）。
-- **下一已落盘意图**：[VP-007](plans/VP-007-localization-and-system-settings.md) 为 `planned`（v0.1.1、0 区），不构成 active 交付或已实现事实；激活与 lead delivery 工作区仍须后续 `/vision` 用户确认。
+- **当前交付 VP**：[VP-007](plans/VP-007-localization-and-system-settings.md)（多语种与系统设置产品化）已 **`active`**（2026-08-09 用户确认激活；v0.2.0；lead delivery `workspace-007-localization-and-system-settings`，Root 由 `/govern` scaffold；激活不构成能力已交付）。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 已 **`closed`**（2026-08-09 用户书面确认；v0.5.0；lead `workspace-006-design-system-and-ui-experience` / Root `GOAL-001-design-system-and-ui-experience` `done 5/5`）。协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，0 exclude）。VRev-011/015/016 findings 均已 **fixed**。订单/钱包/类目/通知等业务能力属后续独立 VP 候选（建 VP 前 `/vision` 复核）。
+- VP-007 的 `active` 仅表示意图已激活；实现事实以工作区证据为准（信息门禁 `I-L10N-001`～`005` 与 S0 契约冻结在 `/govern` 阶段生效）。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本
