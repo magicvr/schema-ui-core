@@ -1,0 +1,129 @@
+// Package errorcatalog owns the frozen user-visible error catalog and locale
+// negotiation (VP-007 S4 · I-L10N-004 path a, user-confirmed 2026-08-09).
+//
+// Bounded server-side negotiation: cataloged codes return a localized message
+// for the request locale (zh-CN/en-US), plus a stable machine-readable
+// messageKey. Uncataloged codes (INTERNAL etc.) stay English with no key and
+// never leak diagnostics. The `error` code itself is never translated.
+package errorcatalog
+
+import (
+	"net/http"
+	"strings"
+)
+
+// Entry is one cataloged error code's localizable surface.
+type Entry struct {
+	MessageKey string
+	En         string
+	Zh         string
+}
+
+// Catalog covers every user-visible cataloged code (D-002 appendix A
+// enumeration; the handler contract test pins the full set). `INTERNAL` is
+// deliberately absent: it must never be localized or carry a messageKey.
+var Catalog = map[string]Entry{
+	"UNAUTHENTICATED": {"error.unauth", "no active session", "未登录或会话已失效"},
+	"UNAUTHORIZED":    {"error.unauthorized", "invalid username or password", "用户名或密码错误"},
+	"FORBIDDEN":       {"error.forbidden", "you do not have permission for this action", "您没有执行此操作的权限"},
+
+	"INVALID_LOGIN_BODY":     {"error.invalidLoginBody", "body must be JSON with username and password", "请求体必须是包含用户名和密码的 JSON"},
+	"LOGIN_FAILED":           {"error.loginFailed", "authentication unavailable", "认证服务暂不可用"},
+	"INVALID_REFRESH_BODY":   {"error.invalidRefreshBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
+	"REFRESH_FAILED":         {"error.refreshFailed", "refresh unavailable", "刷新服务暂不可用"},
+	"INVALID_LOGOUT_BODY":    {"error.invalidLogoutBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
+	"LOGOUT_FAILED":          {"error.logoutFailed", "logout unavailable", "退出服务暂不可用"},
+	"INVALID_PATCH_BODY":     {"error.invalidPatchBody", "body must be JSON", "请求体必须是 JSON"},
+	"SCHEMA_NOT_FOUND":       {"error.schemaNotFound", "no page document for that pageId", "该 pageId 没有对应的页面文档"},
+	"SETTINGS_NOT_FOUND":     {"error.settingsNotFound", "no settings with that id", "该 id 没有对应的设置"},
+	"INVALID_SITE_TITLE":     {"error.invalidSiteTitle", "siteTitle must not be empty", "站点标题不能为空"},
+	"INVALID_LOGO_URL":       {"error.invalidLogoUrl", "logoUrl fields must be empty, a same-origin path, or an http(s) URL", "Logo URL 必须为空、同源路径或 http(s) URL"},
+	"INVALID_DEFAULT_LOCALE": {"error.invalidDefaultLocale", "defaultLocale must be auto, zh-CN or en-US", "默认语种必须是 auto、zh-CN 或 en-US"},
+	"INVALID_DEFAULT_THEME":  {"error.invalidDefaultTheme", "defaultTheme must be auto, light or dark", "默认主题必须是 auto、light 或 dark"},
+	"INVALID_TIMEZONE":       {"error.invalidTimezone", "siteTimezone must be auto or a valid IANA timezone", "默认时区必须是 auto 或有效的 IANA 时区"},
+
+	"INVALID_SORT_FIELD":     {"error.invalidSortField", "unsupported sort field", "不支持的排序字段"},
+	"INVALID_SORT_ORDER":     {"error.invalidSortOrder", "order must be asc or desc", "排序方向必须是 asc 或 desc"},
+	"INVALID_PAGE":           {"error.invalidPage", "page must be a positive integer", "页码必须是正整数"},
+	"INVALID_PAGE_SIZE":      {"error.invalidPageSize", "pageSize must be a positive integer not exceeding 100", "每页条数必须是 1–100 的整数"},
+	"INVALID_CREATE_BODY":    {"error.invalidCreateBody", "body must be JSON", "请求体必须是 JSON"},
+	"INVALID_CREATE_FIELD":   {"error.invalidCreateField", "invalid create field", "创建字段无效"},
+	"INVALID_PATCH_FIELD":    {"error.invalidPatchField", "invalid patch field", "更新字段无效"},
+	"INVALID_BODY":           {"error.invalidBody", "expected a JSON object with an ids array", "请求体应为包含 ids 数组的 JSON 对象"},
+	"EMPTY_SELECTION":        {"error.emptySelection", "ids must contain at least one key", "至少选择一个条目"},
+	"INVALID_SELECTION_KEY":  {"error.invalidSelectionKey", "ids entries must be scalar keys", "ids 条目必须是标量键"},
+
+	"USERNAME_TAKEN":         {"error.usernameTaken", "username already exists", "用户名已存在"},
+	"ROLE_KEY_TAKEN":         {"error.roleKeyTaken", "role key already exists", "角色键已存在"},
+	"ROLE_IN_USE":            {"error.roleInUse", "role is assigned to users", "该角色仍被用户使用"},
+	"ROLE_SYSTEM":            {"error.roleSystem", "system roles cannot be modified", "系统角色不可修改"},
+	"INVALID_ROLE_KEY":       {"error.invalidRoleKey", "invalid role key format", "角色键格式无效"},
+	"INVALID_PERMISSION_REF": {"error.invalidPermissionRef", "permissions contain an unknown key", "权限包含未知键"},
+	"ROLE_GRANT_FORBIDDEN":   {"error.roleGrantForbidden", "you may not grant roles you do not hold", "不能授予您本身不持有的角色"},
+	"ROLE_NOT_FOUND":         {"error.roleNotFound", "no role with that key", "没有该键对应的角色"},
+	"USER_NOT_FOUND":         {"error.userNotFound", "no user with that id", "没有该 id 对应的用户"},
+	"CATALOG_NOT_FOUND":      {"error.catalogNotFound", "no catalog with that id", "没有该 id 对应的目录"},
+
+	"INVALID_UPLOAD":        {"error.invalidUpload", "expected a multipart file part named file", "请求应为包含名为 file 的 multipart 文件"},
+	"FILE_TOO_LARGE":        {"error.fileTooLarge", "file exceeds the size limit", "文件超过大小限制"},
+	"FILE_NOT_FOUND":        {"error.fileNotFound", "file not found", "文件不存在"},
+	"INVALID_FILE":          {"error.invalidFile", "file part is invalid", "文件内容无效"},
+	"UNSUPPORTED_FILE_TYPE": {"error.unsupportedFileType", "file type is not allowed", "不允许的文件类型"},
+	"STORAGE_UNAVAILABLE":   {"error.storageUnavailable", "storage is temporarily unavailable", "存储服务暂不可用"},
+}
+
+// SupportedLocales are the negotiation targets in preference order.
+var SupportedLocales = []string{"zh-CN", "en-US"}
+
+// NegotiateLocale picks the first supported locale from an Accept-Language
+// header value; falls back to en-US when nothing matches.
+func NegotiateLocale(header string) string {
+	if strings.TrimSpace(header) == "" {
+		return "en-US"
+	}
+	for _, part := range strings.Split(header, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		tag := part
+		if idx := strings.IndexAny(part, ";"); idx >= 0 {
+			tag = strings.TrimSpace(part[:idx])
+		}
+		lower := strings.ToLower(tag)
+		if lower == "zh-cn" || lower == "zh" {
+			return "zh-CN"
+		}
+		if lower == "en-us" || lower == "en" || strings.HasPrefix(lower, "en-") {
+			return "en-US"
+		}
+	}
+	return "en-US"
+}
+
+// Body builds the wire envelope for a code in the given locale. Returns
+// (body, contentLanguage, ok); ok=false when the code is uncataloged (the
+// caller keeps the English generic message and omits messageKey).
+func Body(code, message, locale string) (map[string]any, string, bool) {
+	entry, found := Catalog[code]
+	if !found {
+		return nil, locale, false
+	}
+	text := entry.En
+	if locale == "zh-CN" {
+		text = entry.Zh
+	}
+	return map[string]any{
+		"error":      code,
+		"message":    text,
+		"messageKey": entry.MessageKey,
+	}, locale, true
+}
+
+// Negotiate is a convenience for http handlers: header from the request.
+func Negotiate(r *http.Request) string {
+	if r == nil {
+		return "en-US"
+	}
+	return NegotiateLocale(r.Header.Get("Accept-Language"))
+}

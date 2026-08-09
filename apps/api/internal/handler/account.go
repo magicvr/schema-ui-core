@@ -21,12 +21,12 @@ func meHandler(a *auth.Authenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := auth.IdentityFrom(r.Context())
 		if !ok {
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 			return
 		}
 		features, err := a.Features(user)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not resolve features")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve features")
 			return
 		}
 		writeJSON(w, http.StatusOK, account.Session{User: user, Features: features})

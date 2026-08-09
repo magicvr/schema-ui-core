@@ -56,6 +56,22 @@ export function applyLocaleToDocument(locale: Locale): void {
   }
 }
 
+// ── active-locale registry ────────────────────────────────────────────────────
+// Module-level current locale for non-React consumers (API fetchers attach it
+// as Accept-Language so the server negotiates the same language — VP-007 S4).
+
+let activeLocale: Locale = "en-US";
+
+/** Returns the provider's currently effective locale (defaults en-US). */
+export function getActiveLocale(): Locale {
+  return activeLocale;
+}
+
+/** Internal: keeps the registry in sync with the provider's effective locale. */
+export function setActiveLocale(locale: Locale): void {
+  activeLocale = locale;
+}
+
 export interface I18nState {
   /** Effective (resolved) locale — always a supported locale. */
   locale: Locale;
@@ -144,6 +160,7 @@ export function I18nProvider({
 
   useEffect(() => {
     applyLocaleToDocument(locale);
+    setActiveLocale(locale);
   }, [locale]);
 
   const setPreference = useCallback((next: LocalePreference) => {

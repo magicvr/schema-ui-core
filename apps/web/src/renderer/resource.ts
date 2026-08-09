@@ -38,12 +38,18 @@ export interface ResourceQuery {
 export class ResourceApiError extends Error {
   readonly code: string;
   readonly status: number;
+  /** VP-007 S4: stable catalog key when the server cataloged this error. */
+  readonly messageKey?: string;
+  /** VP-007 S4: interpolation params for messageKey. */
+  readonly params?: Record<string, unknown>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, messageKey?: string, params?: Record<string, unknown>) {
     super(message);
     this.name = "ResourceApiError";
     this.status = status;
     this.code = code;
+    this.messageKey = messageKey;
+    this.params = params;
   }
 }
 
@@ -81,13 +87,17 @@ function parseResourceItem(value: unknown, label: string): ResourceItem {
 }
 
 /** Reads the frozen error envelope from a non-OK response, defaulting safely. */
-async function readEnvelope(response: Response): Promise<{ code: string; message: string }> {
+async function readEnvelope(response: Response): Promise<{ code: string; message: string; messageKey?: string; params?: Record<string, unknown> }> {
   try {
     const value: unknown = await response.json();
     if (isRecord(value)) {
       return {
         code: typeof value.error === "string" && value.error !== "" ? value.error : "UNKNOWN",
         message: typeof value.message === "string" ? value.message : "",
+        ...(typeof value.messageKey === "string" && value.messageKey !== ""
+          ? { messageKey: value.messageKey }
+          : {}),
+        ...(isRecord(value.params) ? { params: value.params } : {}),
       };
     }
   } catch {
@@ -105,6 +115,8 @@ export async function readResourceApiError(response: Response, label: string): P
     response.status,
     envelope.code,
     `${label} failed: HTTP ${response.status}${suffix}`,
+    envelope.messageKey,
+    envelope.params,
   );
 }
 

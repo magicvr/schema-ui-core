@@ -130,6 +130,10 @@ export interface SchemaCrudFeedback {
   kind: "success" | "error";
   message: string;
   code?: string;
+  /** VP-007 S4: catalog key for the frontend localization floor. */
+  messageKey?: string;
+  /** VP-007 S4: interpolation params for messageKey. */
+  params?: Record<string, unknown>;
 }
 
 export interface SchemaCrudConfirm {
@@ -150,7 +154,9 @@ export interface TableSelection {
   count: number;
 }
 
-export type ActionResult = { ok: true } | { ok: false; code: string; message: string };
+export type ActionResult =
+  | { ok: true }
+  | { ok: false; code: string; message: string; messageKey?: string; params?: Record<string, unknown> };
 
 export interface SchemaCrudValue {
   selectedRow: Record<string, unknown> | null;
@@ -322,7 +328,13 @@ async function runRequest(
   });
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
-    return { ok: false, code: apiError.code, message: apiError.message };
+    return {
+      ok: false,
+      code: apiError.code,
+      message: apiError.message,
+      ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+      ...(apiError.params === undefined ? {} : { params: apiError.params }),
+    };
   }
   // Branding refresh after settings PATCH lives in the App/host layer (A-006 R-002),
   // not in this generic request executor — keep Renderer free of product endpoints.
@@ -397,7 +409,13 @@ async function runBatchRequest(
   });
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
-    return { ok: false, code: apiError.code, message: apiError.message };
+    return {
+      ok: false,
+      code: apiError.code,
+      message: apiError.message,
+      ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+      ...(apiError.params === undefined ? {} : { params: apiError.params }),
+    };
   }
   return { ok: true };
 }
@@ -505,7 +523,7 @@ function SchemaCrudProvider({
         reloadList();
         setSelectedRow(null);
       } else {
-        setFeedback({ kind: "error", code: result.code, message: result.message });
+        setFeedback(errorFeedback(result));
       }
       return result;
     },
@@ -583,7 +601,7 @@ function SchemaCrudProvider({
           setFeedback({ kind: "success", message: batchSuccessMessageFor(action, t) });
           reloadList();
         } else {
-          setFeedback({ kind: "error", code: result.code, message: result.message });
+          setFeedback(errorFeedback(result));
         }
       });
     },
@@ -637,7 +655,7 @@ function SchemaCrudProvider({
           setFeedback({ kind: "success", message: batchSuccessMessageFor(actionOf(document, actionRef) ?? {}, t) });
           reloadList();
         } else {
-          setFeedback({ kind: "error", code: result.code, message: result.message });
+          setFeedback(errorFeedback(result));
         }
         return;
       }
@@ -777,7 +795,32 @@ function SchemaCrudProvider({
   return <SchemaCrudContext.Provider value={value}>{children}</SchemaCrudContext.Provider>;
 }
 
+function errorFeedback(result: {
+  code: string;
+  message: string;
+  messageKey?: string;
+  params?: Record<string, unknown>;
+}): SchemaCrudFeedback {
+  return {
+    kind: "error",
+    code: result.code,
+    message: result.message,
+    ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
+    ...(result.params === undefined ? {} : { params: result.params }),
+  };
+}
+
 function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
+  const t = useTranslate();
+  // VP-007 S4 frontend floor: render the catalog entry by key/params when the
+  // catalog has it (current locale → en-US); otherwise the server message.
+  let text = feedback.message;
+  if (feedback.messageKey !== undefined && feedback.messageKey !== "") {
+    const localized = t(feedback.messageKey, feedback.params as MessageParams | undefined);
+    if (localized !== feedback.messageKey) {
+      text = localized;
+    }
+  }
   return (
     <div
       role={feedback.kind === "error" ? "alert" : "status"}
@@ -788,7 +831,7 @@ function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
       }`}
     >
       {feedback.code !== undefined && feedback.code !== "" ? `${feedback.code}: ` : ""}
-      {feedback.message}
+      {text}
     </div>
   );
 }
@@ -864,7 +907,12 @@ function FormView({
   }, [fullReaction]);
 
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<{ code: string; message: string } | null>(null);
+  const [formError, setFormError] = useState<{
+    code: string;
+    message: string;
+    messageKey?: string;
+    params?: Record<string, unknown>;
+  } | null>(null);
 
   const isSearch = node.props.mode === "search";
   const submitAction = node.props.submitAction;
@@ -895,7 +943,12 @@ function FormView({
     setFormError(null);
     const result = await crud.submitForm(node, values);
     if (!result.ok) {
-      setFormError({ code: result.code, message: result.message });
+      setFormError({
+        code: result.code,
+        message: result.message,
+        ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
+        ...(result.params === undefined ? {} : { params: result.params }),
+      });
     }
     setSubmitting(false);
   };
@@ -932,7 +985,10 @@ function FormView({
       ) : null}
       {formError !== null ? (
         <p role="alert" className="text-sm text-destructive">
-          {formError.code}: {formError.message}
+          {formError.code}:{" "}
+          {formError.messageKey !== undefined && formError.messageKey !== ""
+            ? t(formError.messageKey, formError.params as MessageParams | undefined)
+            : formError.message}
         </p>
       ) : null}
       {canSubmit ? (

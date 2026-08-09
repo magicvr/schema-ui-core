@@ -52,20 +52,20 @@ func (h *authHandler) login() http.HandlerFunc {
 		var creds credentials
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_LOGIN_BODY", "body must be JSON with username and password")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGIN_BODY", "body must be JSON with username and password")
 			return
 		}
 		if strings.TrimSpace(creds.Username) == "" || creds.Password == "" {
-			writeError(w, http.StatusBadRequest, "INVALID_LOGIN_BODY", "username and password are required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGIN_BODY", "username and password are required")
 			return
 		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidCredentials) {
-			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
 		}
 		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
@@ -79,16 +79,16 @@ func (h *authHandler) refresh() http.HandlerFunc {
 		var body tokenRequest
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
 			return
 		}
 		access, refresh, user, err := h.a.Refresh(body.RefreshToken, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidToken) || errors.Is(err, auth.ErrExpiredToken) || errors.Is(err, auth.ErrTokenRevoked) {
-			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid, expired or revoked refresh token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid, expired or revoked refresh token")
 			return
 		}
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
 			return
 		}
 		h.authEvent(operationlog.EventAuthRefresh, user.ID)
@@ -103,12 +103,12 @@ func (h *authHandler) logout() http.HandlerFunc {
 		var body tokenRequest
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
 			return
 		}
 		userID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
 			return
 		}
 		if userID != "" {

@@ -22,6 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 )
 
@@ -289,7 +290,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no access token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no access token")
 			return
 		}
 		userID, err := ParseAccessToken(a.secret, raw)
@@ -298,7 +299,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired access token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired access token")
 			return
 		}
 		u, err := a.repository.UserByID(userID)
@@ -307,7 +308,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "unknown access token subject")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "unknown access token subject")
 			return
 		}
 		acct, err := a.accountFromUser(u)
@@ -316,7 +317,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), acct)))
@@ -334,4 +335,20 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": code, "message": message})
+}
+
+// writeLocalizedError writes the VP-007 S4 envelope: cataloged codes get a
+// locale-negotiated message + messageKey + Content-Language; uncataloged codes
+// stay English with no key (I-L10N-004 path a).
+func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
+	locale := errorcatalog.Negotiate(r)
+	body, contentLanguage, cataloged := errorcatalog.Body(code, message, locale)
+	if !cataloged {
+		writeError(w, status, code, message)
+		return
+	}
+	w.Header().Set("Content-Language", contentLanguage)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
 }

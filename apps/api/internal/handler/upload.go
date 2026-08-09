@@ -88,16 +88,16 @@ func (s *uploadStore) upload() http.Handler {
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 		file, header, err := r.FormFile("file")
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_UPLOAD", "expected a multipart file part named file")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_UPLOAD", "expected a multipart file part named file")
 			return
 		}
 		defer file.Close()
 		if header.Size <= 0 {
-			writeError(w, http.StatusBadRequest, "INVALID_FILE", "empty files are rejected")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_FILE", "empty files are rejected")
 			return
 		}
 		if header.Size > maxUploadBytes {
-			writeError(w, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "file exceeds the server size limit")
+			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "file exceeds the server size limit")
 			return
 		}
 		if uploadAllowedTypes != "" {
@@ -110,22 +110,22 @@ func (s *uploadStore) upload() http.Handler {
 				}
 			}
 			if !matched {
-				writeError(w, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
+				writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
 				return
 			}
 		}
 		body, err := io.ReadAll(file)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read upload")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read upload")
 			return
 		}
 		if len(body) == 0 {
-			writeError(w, http.StatusBadRequest, "INVALID_FILE", "empty files are rejected")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_FILE", "empty files are rejected")
 			return
 		}
 		id, err := s.save(header.Filename, header.Header.Get("Content-Type"), body)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store upload")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store upload")
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
@@ -143,10 +143,10 @@ func (s *uploadStore) file() http.Handler {
 		body, meta, err := s.load(id)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				writeError(w, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
+				writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
 				return
 			}
-			writeError(w, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read file")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read file")
 			return
 		}
 		contentType := meta["type"]

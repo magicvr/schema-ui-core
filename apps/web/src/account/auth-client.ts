@@ -17,6 +17,7 @@ import {
   setAccessToken,
   setRefreshToken,
 } from "@/account/tokens";
+import { getActiveLocale } from "@/i18n/runtime";
 
 export interface AuthUser {
   id: string;
@@ -65,6 +66,8 @@ export function setAuthLostListener(listener: (() => void) | null): void {
 function jsonHeaders(init?: RequestInit): Headers {
   const headers = new Headers(init?.headers);
   headers.set("Content-Type", "application/json");
+  // VP-007 S4: the server negotiates user-visible messages in the active locale.
+  headers.set("Accept-Language", getActiveLocale());
   return headers;
 }
 
@@ -112,6 +115,8 @@ function withAuth(init?: RequestInit): RequestInit {
   if (access !== null) {
     headers.set("Authorization", `Bearer ${access}`);
   }
+  // VP-007 S4: attach the active locale so the server negotiates messages.
+  headers.set("Accept-Language", getActiveLocale());
   return { ...init, headers };
 }
 

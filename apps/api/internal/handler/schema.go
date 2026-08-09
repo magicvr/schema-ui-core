@@ -31,7 +31,7 @@ func (h *schemaHandler) schema() http.Handler {
 		pageID := r.PathValue("pageId")
 		raw, ok := h.documents[pageID]
 		if !ok {
-			writeError(w, http.StatusNotFound, "SCHEMA_NOT_FOUND", "no page document for that pageId")
+			writeLocalizedError(w, r, http.StatusNotFound, "SCHEMA_NOT_FOUND", "no page document for that pageId")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

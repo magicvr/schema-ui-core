@@ -58,10 +58,10 @@ type brandingResponse struct {
 const configChangedHeader = "X-Schema-UI-Config-Changed"
 
 func brandingGET(repository SettingsRepository) http.HandlerFunc {
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		s, err := repository.GetSiteSettings()
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not load branding")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load branding")
 			return
 		}
 		writeJSON(w, http.StatusOK, brandingRow(s))
@@ -111,12 +111,12 @@ func settingsRow(s *settingsrepository.SiteSettings) map[string]any {
 
 func settingsList(repository SettingsRepository) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), "settings.read"); !ok {
+		if _, ok := requirePermission(w, r, "settings.read"); !ok {
 			return
 		}
 		s, err := repository.GetSiteSettings()
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not list settings")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list settings")
 			return
 		}
 		writeJSON(w, http.StatusOK, resourceList{
@@ -130,17 +130,17 @@ func settingsList(repository SettingsRepository) http.Handler {
 
 func settingsDetail(repository SettingsRepository) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), "settings.read"); !ok {
+		if _, ok := requirePermission(w, r, "settings.read"); !ok {
 			return
 		}
 		id := r.PathValue("id")
 		if id != "default" {
-			writeError(w, http.StatusNotFound, "SETTINGS_NOT_FOUND", "no settings with that id")
+			writeLocalizedError(w, r, http.StatusNotFound, "SETTINGS_NOT_FOUND", "no settings with that id")
 			return
 		}
 		s, err := repository.GetSiteSettings()
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not load settings")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load settings")
 			return
 		}
 		writeJSON(w, http.StatusOK, settingsRow(s))
@@ -149,13 +149,13 @@ func settingsDetail(repository SettingsRepository) http.Handler {
 
 func settingsPatch(repository SettingsRepository, operations operationlog.Recorder, configNamespace string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r.Context(), "settings.write")
+		user, ok := requirePermission(w, r, "settings.write")
 		if !ok {
 			return
 		}
 		id := r.PathValue("id")
 		if id != "default" {
-			writeError(w, http.StatusNotFound, "SETTINGS_NOT_FOUND", "no settings with that id")
+			writeLocalizedError(w, r, http.StatusNotFound, "SETTINGS_NOT_FOUND", "no settings with that id")
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
@@ -170,7 +170,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 			DefaultTheme  *string `json:"defaultTheme"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
 			return
 		}
 		now := time.Now().UTC()
@@ -179,7 +179,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 			body.DefaultLocale, body.SiteTimezone, body.DefaultTheme, now,
 		)
 		if err != nil {
-			writeSettingsError(w, err)
+			writeSettingsError(w, r, err)
 			return
 		}
 		recordSettingsOperation(operations, user, "updated", updated, now)
@@ -190,19 +190,19 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 
 func settingsReset(repository SettingsRepository, operations operationlog.Recorder, configNamespace string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r.Context(), "settings.write")
+		user, ok := requirePermission(w, r, "settings.write")
 		if !ok {
 			return
 		}
 		id := r.PathValue("id")
 		if id != "default" {
-			writeError(w, http.StatusNotFound, "SETTINGS_NOT_FOUND", "no settings with that id")
+			writeLocalizedError(w, r, http.StatusNotFound, "SETTINGS_NOT_FOUND", "no settings with that id")
 			return
 		}
 		now := time.Now().UTC()
 		updated, err := repository.ResetSiteSettings(now)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not reset settings")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not reset settings")
 			return
 		}
 		recordSettingsOperation(operations, user, "reset", updated, now)
@@ -213,20 +213,20 @@ func settingsReset(repository SettingsRepository, operations operationlog.Record
 
 // writeSettingsError maps repository validation errors onto the stable error
 // code contract (S3; codes are part of the D-002 appendix A enumeration).
-func writeSettingsError(w http.ResponseWriter, err error) {
+func writeSettingsError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, settingsrepository.ErrInvalidSiteTitle):
-		writeError(w, http.StatusBadRequest, "INVALID_SITE_TITLE", "siteTitle must not be empty")
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SITE_TITLE", "siteTitle must not be empty")
 	case errors.Is(err, settingsrepository.ErrInvalidLogoURL):
-		writeError(w, http.StatusBadRequest, "INVALID_LOGO_URL", "logoUrl fields must be empty, a same-origin path, or an http(s) URL")
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGO_URL", "logoUrl fields must be empty, a same-origin path, or an http(s) URL")
 	case errors.Is(err, settingsrepository.ErrInvalidDefaultLocale):
-		writeError(w, http.StatusBadRequest, "INVALID_DEFAULT_LOCALE", "defaultLocale must be auto, zh-CN or en-US")
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_DEFAULT_LOCALE", "defaultLocale must be auto, zh-CN or en-US")
 	case errors.Is(err, settingsrepository.ErrInvalidDefaultTheme):
-		writeError(w, http.StatusBadRequest, "INVALID_DEFAULT_THEME", "defaultTheme must be auto, light or dark")
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_DEFAULT_THEME", "defaultTheme must be auto, light or dark")
 	case errors.Is(err, settingsrepository.ErrInvalidSiteTimezone):
-		writeError(w, http.StatusBadRequest, "INVALID_TIMEZONE", "siteTimezone must be auto or a valid IANA timezone")
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_TIMEZONE", "siteTimezone must be auto or a valid IANA timezone")
 	default:
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "could not update settings")
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update settings")
 	}
 }
 

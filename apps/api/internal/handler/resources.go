@@ -220,14 +220,14 @@ func ResourceRoutes(a *auth.Authenticator, res Resource, moduleID string) []kern
 // request identity must be present and hold the given permission key, resolved
 // from the persisted role-permission relations at identity load. Anonymous → 401;
 // authenticated without the permission → 403.
-func requirePermission(w http.ResponseWriter, ctx context.Context, permission string) (account.User, bool) {
-	user, ok := auth.IdentityFrom(ctx)
+func requirePermission(w http.ResponseWriter, r *http.Request, permission string) (account.User, bool) {
+	user, ok := auth.IdentityFrom(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+		writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 		return account.User{}, false
 	}
 	if !slices.Contains(user.Permissions, permission) {
-		writeError(w, http.StatusForbidden, "FORBIDDEN", "permission required: "+permission)
+		writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "permission required: "+permission)
 		return account.User{}, false
 	}
 	return user, true
@@ -244,20 +244,20 @@ func notFoundCode(res Resource) string {
 // (I-011-001 §7.3): DomainError verbatim, errResourceNotFound → 404 with the
 // resource's NOT_FOUND code, else INTERNAL. Returns true when a response was
 // written (err != nil).
-func writeEntityError(w http.ResponseWriter, res Resource, err error, action string) bool {
+func writeEntityError(w http.ResponseWriter, r *http.Request, res Resource, err error, action string) bool {
 	if err == nil {
 		return false
 	}
 	var de *DomainError
 	if errors.As(err, &de) {
-		writeError(w, de.Status, de.Code, de.Message)
+		writeLocalizedError(w, r, de.Status, de.Code, de.Message)
 		return true
 	}
 	if errors.Is(err, errResourceNotFound) {
-		writeError(w, http.StatusNotFound, notFoundCode(res), "no "+res.ID+" with that id")
+		writeLocalizedError(w, r, http.StatusNotFound, notFoundCode(res), "no "+res.ID+" with that id")
 		return true
 	}
-	writeError(w, http.StatusInternalServerError, "INTERNAL", "could not "+action+" "+res.ID)
+	writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not "+action+" "+res.ID)
 	return true
 }
 
@@ -275,7 +275,7 @@ func stringField(m map[string]any, key string) string {
 // (q only when the resource declares QSearch).
 func (h *resourceHandler) list() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), h.readPerm); !ok {
+		if _, ok := requirePermission(w, r, h.readPerm); !ok {
 			return
 		}
 		query := r.URL.Query()
@@ -287,7 +287,7 @@ func (h *resourceHandler) list() http.Handler {
 			}
 		}
 		if !slices.Contains(h.res.SortFields, sortField) {
-			writeError(w, http.StatusBadRequest, "INVALID_SORT_FIELD", "unsupported sort field")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SORT_FIELD", "unsupported sort field")
 			return
 		}
 		order := query.Get("order")
@@ -300,21 +300,21 @@ func (h *resourceHandler) list() http.Handler {
 			}
 		}
 		if order != "asc" && order != "desc" {
-			writeError(w, http.StatusBadRequest, "INVALID_SORT_ORDER", "order must be asc or desc")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SORT_ORDER", "order must be asc or desc")
 			return
 		}
 		page, ok := intParam(query.Get("page"), 1)
 		if !ok {
-			writeError(w, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 			return
 		}
 		pageSize, ok := intParam(query.Get("pageSize"), 10)
 		if !ok {
-			writeError(w, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer")
 			return
 		}
 		if pageSize > maxPageSize {
-			writeError(w, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must not exceed 100")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must not exceed 100")
 			return
 		}
 
@@ -324,7 +324,7 @@ func (h *resourceHandler) list() http.Handler {
 		}
 		items, total, err := h.res.Entity.List(filter)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not list "+h.res.ID)
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list "+h.res.ID)
 			return
 		}
 		if items == nil {
@@ -458,7 +458,7 @@ func decodeResourcePatch(r *http.Request, fields, rawStringFields, jsonFields []
 // server-generated id (I-007-001 §3.2).
 func (h *resourceHandler) create() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r.Context(), h.writePerm)
+		user, ok := requirePermission(w, r, h.writePerm)
 		if !ok {
 			return
 		}
@@ -467,10 +467,10 @@ func (h *resourceHandler) create() http.Handler {
 		if err != nil {
 			var fe createFieldError
 			if errors.As(err, &fe) {
-				writeError(w, http.StatusBadRequest, "INVALID_CREATE_FIELD", fe.Error())
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", fe.Error())
 				return
 			}
-			writeError(w, http.StatusBadRequest, "INVALID_CREATE_BODY", "body must be JSON")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CREATE_BODY", "body must be JSON")
 			return
 		}
 
@@ -479,7 +479,7 @@ func (h *resourceHandler) create() http.Handler {
 		for attempt := 0; attempt < resourceIDRetries; attempt++ {
 			id, err := h.res.NewID()
 			if err != nil {
-				writeError(w, http.StatusInternalServerError, "INTERNAL", "could not generate "+h.res.ID+" id")
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate "+h.res.ID+" id")
 				return
 			}
 			row, err = h.res.Entity.Create(body, id, now, user)
@@ -489,11 +489,11 @@ func (h *resourceHandler) create() http.Handler {
 			if errors.Is(err, errResourceExists) {
 				continue // PK collision: retry with a fresh id
 			}
-			writeEntityError(w, h.res, err, "create")
+			writeEntityError(w, r, h.res, err, "create")
 			return
 		}
 		if row == nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "could not create "+h.res.ID)
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not create "+h.res.ID)
 			return
 		}
 		if h.res.OnWrite != nil {
@@ -506,11 +506,11 @@ func (h *resourceHandler) create() http.Handler {
 // detail serves GET {path}/{id}.
 func (h *resourceHandler) detail() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r.Context(), h.readPerm); !ok {
+		if _, ok := requirePermission(w, r, h.readPerm); !ok {
 			return
 		}
 		row, err := h.res.Entity.Get(r.PathValue("id"))
-		if writeEntityError(w, h.res, err, "load") {
+		if writeEntityError(w, r, h.res, err, "load") {
 			return
 		}
 		writeJSON(w, http.StatusOK, row)
@@ -520,7 +520,7 @@ func (h *resourceHandler) detail() http.Handler {
 // update serves PATCH {path}/{id} ({id}.write).
 func (h *resourceHandler) update() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r.Context(), h.writePerm)
+		user, ok := requirePermission(w, r, h.writePerm)
 		if !ok {
 			return
 		}
@@ -530,15 +530,15 @@ func (h *resourceHandler) update() http.Handler {
 		if err != nil {
 			var pe patchFieldError
 			if errors.As(err, &pe) {
-				writeError(w, http.StatusBadRequest, "INVALID_PATCH_FIELD", pe.Error())
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", pe.Error())
 				return
 			}
-			writeError(w, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
 			return
 		}
 		now := time.Now().UTC()
 		row, err := h.res.Entity.Update(id, body, now, user)
-		if writeEntityError(w, h.res, err, "update") {
+		if writeEntityError(w, r, h.res, err, "update") {
 			return
 		}
 		if h.res.OnWrite != nil {
@@ -551,13 +551,13 @@ func (h *resourceHandler) update() http.Handler {
 // delete serves DELETE {path}/{id} ({id}.write), returning 204.
 func (h *resourceHandler) delete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r.Context(), h.writePerm)
+		user, ok := requirePermission(w, r, h.writePerm)
 		if !ok {
 			return
 		}
 		id := r.PathValue("id")
 		if err := h.res.Entity.Delete(id, user); err != nil {
-			writeEntityError(w, h.res, err, "delete")
+			writeEntityError(w, r, h.res, err, "delete")
 			return
 		}
 		if h.res.OnWrite != nil {
@@ -576,7 +576,7 @@ func (h *resourceHandler) delete() http.Handler {
 // `{"deleted": n}` so the client can reload (which clears selection).
 func (h *resourceHandler) batchDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r.Context(), h.writePerm)
+		user, ok := requirePermission(w, r, h.writePerm)
 		if !ok {
 			return
 		}
@@ -585,11 +585,11 @@ func (h *resourceHandler) batchDelete() http.Handler {
 		}
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxResourceBodyBytes))
 		if err := decoder.Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_BODY", "expected a JSON object with an ids array")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "expected a JSON object with an ids array")
 			return
 		}
 		if len(body.IDs) == 0 {
-			writeError(w, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one key")
+			writeLocalizedError(w, r, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one key")
 			return
 		}
 		// D3 invariants: scalar keys only, dedupe preserving order.
@@ -600,20 +600,20 @@ func (h *resourceHandler) batchDelete() http.Handler {
 			switch value := raw.(type) {
 			case string:
 				if value == "" {
-					writeError(w, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be non-empty scalars")
+					writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be non-empty scalars")
 					return
 				}
 				key = value
 			case float64:
 				if !isFiniteNumber(value) {
-					writeError(w, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be finite scalars")
+					writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be finite scalars")
 					return
 				}
 				key = formatNumberKey(value)
 			case bool:
 				key = strconv.FormatBool(value)
 			default:
-				writeError(w, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be scalar keys")
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be scalar keys")
 				return
 			}
 			if seen[key] {
@@ -623,13 +623,13 @@ func (h *resourceHandler) batchDelete() http.Handler {
 			ids = append(ids, key)
 		}
 		if len(ids) == 0 {
-			writeError(w, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one scalar key")
+			writeLocalizedError(w, r, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one scalar key")
 			return
 		}
 		deleted := 0
 		for _, id := range ids {
 			if err := h.res.Entity.Delete(id, user); err != nil {
-				writeEntityError(w, h.res, err, "batch delete")
+				writeEntityError(w, r, h.res, err, "batch delete")
 				return
 			}
 			if h.res.OnWrite != nil {
