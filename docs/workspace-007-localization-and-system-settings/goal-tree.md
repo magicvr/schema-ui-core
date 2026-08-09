@@ -5,7 +5,7 @@ canonical_scope: docs/workspace-007-localization-and-system-settings/
 status: active
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
@@ -24,7 +24,8 @@ GOAL-001-localization-and-system-settings [active] (5/6)
 ├── GOAL-002-s1-locale-core [done] (6/6)
 ├── GOAL-003-s2-ui-schema-bilingual [done] (5/5)
 ├── GOAL-004-s3-settings-productization [done] (6/6)
-└── GOAL-005-s4-error-localization [done] (5/5)
+├── GOAL-005-s4-error-localization [done] (5/5)
+└── GOAL-006-s5-evidence-and-closeout [active] (2/4)
 ```
 
 ## 状态表
@@ -36,6 +37,7 @@ GOAL-001-localization-and-system-settings [active] (5/6)
 | GOAL-003-s2-ui-schema-bilingual | S2 · 固定 UI 与 Schema 分母双语化（titleKey/labelKey 真解析） | GOAL-001-localization-and-system-settings | **done** | `5/5` | 2026-08-09 |
 | GOAL-004-s3-settings-productization | S3 · 系统设置产品化（四类设置 + 公开启动配置） | GOAL-001-localization-and-system-settings | **done** | `6/6` | 2026-08-09 |
 | GOAL-005-s4-error-localization | S4 · 后端反馈本地化（稳定错误码 + 有界服务端协商） | GOAL-001-localization-and-system-settings | **done** | `5/5` | 2026-08-09 |
+| GOAL-006-s5-evidence-and-closeout | S5 · 双 Profile 验证矩阵与关门 | GOAL-001-localization-and-system-settings | **active** | `2/4` | 2026-08-09 |
 
 ## 维护说明
 
@@ -46,5 +48,5 @@ GOAL-001-localization-and-system-settings [active] (5/6)
 - **S2 已完成**（2026-08-09）：GOAL-003 done 5/5（固定 UI + 12 page/schema 并集双语化 + titleKey/labelKey 真解析 + M4）。
 - **S3 已完成**（2026-08-09）：GOAL-004 done 6/6（四类设置 + `/api/branding` 扩展 + 权限/审计/刷新闭环）。
 - **S4 已完成**（2026-08-09）：GOAL-005 done 5/5（错误码契约 + 有界服务端协商 + 前端保底；I-L10N-004 实施证据齐备）。
-- **S5** 下一阶段：双 Profile 验证矩阵、文档、独立关门审计与用户确认。
+- **S5 进行中**（2026-08-09）：GOAL-006 active 2/4（C1 矩阵 ✓、C2 真实入口 ✓；下一：C3 独立关门审计 → C4 用户确认 + Root/VP 关门）。
 - 开放 required：Goal 审计 0；Vision Review 0。

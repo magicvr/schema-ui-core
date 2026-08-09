@@ -45,7 +45,7 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 | S2 | 前端与 Schema 覆盖：固定 UI 与双 Profile Runtime Manifest page/schema 分母双语化；`titleKey`/`labelKey` 真解析 | **done**（2026-08-09，GOAL-003-s2-ui-schema-bilingual 5/5，A-001 pass） |
 | S3 | 系统设置产品化：四类设置、公开启动配置、品牌/locale/theme 生效、权限/审计/刷新闭环 | **done**（2026-08-09，GOAL-004-s3-settings-productization 6/6，A-001 pass） |
 | S4 | 后端用户可见反馈：稳定错误码 + 前端本地化保底；按 `I-L10N-004` 结论实施有界服务端 locale 协商 | **done**（2026-08-09，GOAL-005-s4-error-localization 5/5，A-001 pass；I-L10N-004 实施证据齐备） |
-| S5 | 双 Profile 验证与关门：两语种 × 两 Profile × 登录前后/权限/失败矩阵、文档、审计与 close-out | 下一阶段（未开始） |
+| S5 | 双 Profile 验证与关门：两语种 × 两 Profile × 登录前后/权限/失败矩阵、文档、审计与 close-out | **in progress**（2026-08-09，GOAL-006-s5-evidence-and-closeout） |
 
 ## 信息需求（P-005）
 

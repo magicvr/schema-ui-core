@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 2/4
 ---
 
 # GOAL-006 · S5 · 双 Profile 验证矩阵与关门
@@ -21,8 +21,8 @@ progress: 0/4
 
 ## 成功标准（可验收 · 等权检查点 · 共 4 项）
 
-- [ ] **C1**：证据矩阵完成：两语种 × 两 Profile × 匿名/认证分母，列覆盖固定 UI / 冻结 pageId-schema 并集 / M1～M4 / 权限正反例 / 缺失翻译 / 配置刷新 / 错误回退；非 N/A 单元格有证据路径，N/A 仅限 Profile 不可达并注明模块边界（落 Root `attachments/`）。
-- [ ] **C2**：真实入口启动验证：API 二进制 `go build ./cmd/server` 后启动，请求公开启动配置（`/api/branding`）断言响应体内容（locale/品牌字段）正确，同一启动重复 ≥2 次一致成功；Web `npm run build` 成功；playwright 可用则 serve + 加载断言零页面错误、`lang` 随切换生效、一次设置保存产生可见变化并截图；不可用则捕获失败输出并以静态/结构性回退为验收线。输出捕获 `{SCRATCH}`。
+- [x] **C1**：证据矩阵完成（`attachments/S5-evidence-matrix.md` + E-001）：F-V029 分母填值；非 N/A 有证据路径。
+- [x] **C2**：真实入口启动验证（E-001）：API dual-run branding body 一致；`npm run build` exit 0；playwright `localization.spec.ts` 1/1（lang + settings 投影 + 零 pageerror）。
 - [ ] **C3**：关门独立审计：S5 关门审计由 grok CLI（`-m grok-4.5 --effort high`，`/audit` 提示词）执行并落盘 `03-audit/A-NNN-*`（source: independent）；required findings 全闭合后方可放行关门。
 - [ ] **C4**：用户书面关门确认（P-004 留痕，含日期与范围）→ Root `status: done`、`progress: 6/6`；VP-007 关门记录填写（outcome/summary/evidence_links/residuals）；goal-tree 最终同步；checkpoint commit。
 
