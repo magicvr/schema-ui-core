@@ -180,9 +180,24 @@ export type RenderNode =
   | RenderStatCardNode
   | RenderChartNode;
 
+/** Page-level action table entry (registry: modal | request | navigate). */
+export interface RenderPageAction {
+  type: string;
+  /** Modal content; required when type=modal. */
+  content?: RenderNode;
+  /** Request/navigate target URL. */
+  url?: string;
+  /** HTTP method for request-shaped actions. */
+  method?: string;
+  /** Permission intent name, gated against page-level permissionCascade. */
+  permissionIntent?: string;
+}
+
 export interface RenderPageDocument {
   meta: RenderMeta;
   body: RenderNode;
+  /** Page-level action table referenced by actionRef / actionId. */
+  actions?: Record<string, RenderPageAction>;
 }
 
 export type RenderErrorCode =
