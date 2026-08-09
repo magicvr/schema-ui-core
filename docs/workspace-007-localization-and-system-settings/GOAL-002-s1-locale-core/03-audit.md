@@ -25,8 +25,9 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-09 | self | S1 实施 · C1–C6 检查点证据 | pass | 0 | `03-audit/A-001-s1-locale-core-self.md` |
 
 ## 结论状态
 
-尚未到达审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+- 最新意见：A-001（self，pass，2026-08-09）；开放 required = 0。
+- S1 检查点全部有 shipped-函数级证据；阶段放行。

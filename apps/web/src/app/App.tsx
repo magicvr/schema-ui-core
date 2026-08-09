@@ -28,6 +28,7 @@ import {
   type Branding,
 } from "@/app/branding";
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -511,6 +512,7 @@ export function App({
             >
               <Menu aria-hidden="true" className="size-4" />
             </button>
+            <LocaleSwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
             {currentUser !== undefined && currentUser !== null ? (
               <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1">

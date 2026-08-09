@@ -8,6 +8,7 @@ import {
   subscribeToBrandingChanges,
   type Branding,
 } from "@/app/branding";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,7 +97,10 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
               {siteTitle}
             </p>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <LocaleSwitcher />
+            <ThemeToggle />
+          </div>
         </div>
 
         <Card className="shadow-md">

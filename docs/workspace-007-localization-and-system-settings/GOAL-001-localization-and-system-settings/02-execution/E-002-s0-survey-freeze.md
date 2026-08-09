@@ -36,4 +36,4 @@ version: 0.1.0
 
 ## 里程碑 checkpoint
 
-- commit：`<S0 checkpoint hash 待填>`（owned paths = 本阶段全部治理文档；`git add` 仅显式路径）。
+- commit：`32fcb1e`（2026-08-09，S0 契约冻结；owned paths = 本阶段全部治理文档 + S1 子目标 scaffold，显式 `git add` 无 `-A`）。

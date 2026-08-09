@@ -1,0 +1,7 @@
+{
+  "locale.name.zh-CN": "简体中文",
+  "locale.name.en-US": "English",
+  "locale.switcher.label": "Language",
+  "locale.switcher.auto": "Auto (follow browser)",
+  "app.boot.checkingSession": "Checking session…"
+}

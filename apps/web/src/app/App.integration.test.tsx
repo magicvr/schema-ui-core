@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { App } from "@/app/App";
+import { I18nProvider } from "@/i18n/runtime";
 import {
   CONFIG_CHANGED_HEADER,
   createConfigAwareFetcher,
@@ -117,11 +118,13 @@ async function renderApp(
   activeRoots.push({ root, container });
   await act(async () => {
     root.render(
-      <App
-        manifest={testManifest()}
-        navigationContext={navigationContext}
-        schemaFetcher={schemaFetcher(documents)}
-      />,
+      <I18nProvider>
+        <App
+          manifest={testManifest()}
+          navigationContext={navigationContext}
+          schemaFetcher={schemaFetcher(documents)}
+        />
+      </I18nProvider>,
     );
   });
   return container;
@@ -197,11 +200,13 @@ describe("App shell integration", () => {
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={testManifest()}
-          navigationContext={{}}
-          accountError={new Error("account unavailable")}
-        />,
+        <I18nProvider>
+          <App
+            manifest={testManifest()}
+            navigationContext={{}}
+            accountError={new Error("account unavailable")}
+          />
+        </I18nProvider>,
       );
     });
     // Fail-closed: the shell still renders, but the failure is observable.
@@ -213,7 +218,11 @@ describe("App shell integration", () => {
     const healthyRoot = createRoot(healthy);
     activeRoots.push({ root: healthyRoot, container: healthy });
     await act(async () => {
-      healthyRoot.render(<App manifest={testManifest()} navigationContext={{}} />);
+      healthyRoot.render(
+        <I18nProvider>
+          <App manifest={testManifest()} navigationContext={{}} />
+        </I18nProvider>,
+      );
     });
     expect(healthy.textContent).not.toContain("Account session failed to load");
   });
@@ -242,12 +251,14 @@ describe("App shell integration", () => {
     try {
       await act(async () => {
         root.render(
-          <App
-            manifest={testManifest()}
-            navigationContext={{}}
-            schemaFetcher={schemaFetcher(DEFAULT_DOCUMENTS)}
-            resourceFetcher={resourceFetcher}
-          />,
+          <I18nProvider>
+            <App
+              manifest={testManifest()}
+              navigationContext={{}}
+              schemaFetcher={schemaFetcher(DEFAULT_DOCUMENTS)}
+              resourceFetcher={resourceFetcher}
+            />
+          </I18nProvider>,
         );
         await new Promise((resolve) => setTimeout(resolve, 0));
       });

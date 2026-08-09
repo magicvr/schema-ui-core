@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.2.0
-progress: 1/6
+version: 0.3.0
+progress: 2/6
 plan_refs:
   - VP-007-localization-and-system-settings
 primary_plan: VP-007-localization-and-system-settings
@@ -41,8 +41,8 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 | 阶段 | 目的 | 状态 |
 |------|------|------|
 | S0 | 差距与契约冻结：关闭 `I-L10N-001`～`005`；冻结 locale、翻译资源、公开 bootstrap、错误兼容和时区语义 | **done**（2026-08-09，D-002 + F-V029 冻结） |
-| S1 | 多语种核心：locale resolver/provider、资源装载、缺失 key/fallback、用户切换、HTML lang 与格式化 | 下一阶段（未开始） |
-| S2 | 前端与 Schema 覆盖：固定 UI 与双 Profile Runtime Manifest page/schema 分母双语化；`titleKey`/`labelKey` 真解析 | 未开始 |
+| S1 | 多语种核心：locale resolver/provider、资源装载、缺失 key/fallback、用户切换、HTML lang 与格式化 | **done**（2026-08-09，GOAL-002-s1-locale-core 6/6，A-001 pass） |
+| S2 | 前端与 Schema 覆盖：固定 UI 与双 Profile Runtime Manifest page/schema 分母双语化；`titleKey`/`labelKey` 真解析 | 下一阶段（未开始） |
 | S3 | 系统设置产品化：四类设置、公开启动配置、品牌/locale/theme 生效、权限/审计/刷新闭环 | 未开始 |
 | S4 | 后端用户可见反馈：稳定错误码 + 前端本地化保底；按 `I-L10N-004` 结论实施有界服务端 locale 协商 | 未开始 |
 | S5 | 双 Profile 验证与关门：两语种 × 两 Profile × 登录前后/权限/失败矩阵、文档、审计与 close-out | 未开始 |
@@ -61,7 +61,7 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 
 ## 派生进度
 
-`progress: 1/6`：由上方 6 个纲领阶段检查点等权派生（P-001），仅展示；不放行阶段、不关闭 finding、不推导 `done`。阶段推进与关门以实施证据、审计意见和信息门禁为准。
+`progress: 2/6`：由上方 6 个纲领阶段检查点等权派生（P-001），仅展示；不放行阶段、不关闭 finding、不推导 `done`。阶段推进与关门以实施证据、审计意见和信息门禁为准。
 
 ## 台账布局
 

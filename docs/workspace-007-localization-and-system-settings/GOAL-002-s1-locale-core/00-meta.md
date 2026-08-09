@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-s1-locale-core
 title: S1 · 多语种核心（locale 解析/资源/切换/格式化）
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 6/6
 ---
 
 # GOAL-002 · S1 · 多语种核心
@@ -19,18 +19,18 @@ progress: 0/5
 
 **范围纪律**：不实现任何页面/设置面双语化（S2/S3）；不新增账号资料字段；不引入服务端 locale 协商（S4）；不改写 `schema-ui-docs@v2.7.0` 协议语义。
 
-## 成功标准（可验收 · 等权检查点 · 共 5 项）
+## 成功标准（可验收 · 等权检查点 · 共 6 项）
 
-- [ ] **C1**：locale 解析纯单元（`zh-CN`/`en-US`/`auto` 解析、匹配、回退优先级：用户显式 → 系统默认（非 auto）→ 浏览器偏好 → `en-US` 安全回退）可单测；登录前后同一优先级一致应用。
-- [ ] **C2**：翻译资源装载：`zh-CN`/`en-US` catalog 为纯数据文件；运行时按 locale 装载；装载失败安全降级（不阻断启动）。
-- [ ] **C3**：缺失 key 可观察且安全回退：`schema-ui:missing-translation` 事件（detail 含 locale/key/path）+ 回退链（当前语种 → en-US → key 本身）；不渲染为空、不抛异常。
-- [ ] **C4**：用户切换：Shell/用户菜单语种切换器（普通用户可达、无需设置权限），localStorage 单通道持久化，登出不清除；切换立即生效并触发 `lang` 更新。
-- [ ] **C5**：HTML `lang` 与格式化：`document.documentElement.lang` 跟随有效 locale；日期/数字格式随有效 locale（`Intl.DateTimeFormat`/`NumberFormat`，无自定义格式模板）。
-- [ ] **C6**：验证：vitest 驱动真实 shipped 函数（resolver/catalog/switch/format），输出捕获到 scratch 日志；`npm run build` 通过。
+- [x] **C1**：locale 解析纯单元（`zh-CN`/`en-US`/`auto` 解析、匹配、回退优先级：用户显式 → 系统默认（非 auto）→ 浏览器偏好 → `en-US` 安全回退）可单测；登录前后同一优先级一致应用。
+- [x] **C2**：翻译资源装载：`zh-CN`/`en-US` catalog 为纯数据文件；运行时按 locale 装载；装载失败安全降级（不阻断启动）。
+- [x] **C3**：缺失 key 可观察且安全回退：`schema-ui:missing-translation` 事件（detail 含 locale/key/path）+ 回退链（当前语种 → en-US → key 本身）；不渲染为空、不抛异常。
+- [x] **C4**：用户切换：Shell/用户菜单语种切换器（普通用户可达、无需设置权限），localStorage 单通道持久化，登出不清除；切换立即生效并触发 `lang` 更新。
+- [x] **C5**：HTML `lang` 与格式化：`document.documentElement.lang` 跟随有效 locale；日期/数字格式随有效 locale（`Intl.DateTimeFormat`/`NumberFormat`，无自定义格式模板）。
+- [x] **C6**：验证：vitest 驱动真实 shipped 函数（resolver/catalog/switch/format），输出捕获到 scratch 日志；`npm run build` 通过。
 
 ## 派生进度展示
 
-`progress: X/5` 由上方 5 个等权检查点派生；仅为展示，不放行阶段、不关闭 finding。
+`progress: 6/6` 由上方 6 个等权检查点派生；仅为展示，不放行阶段、不关闭 finding。
 
 ## 信息就绪与未知项
 

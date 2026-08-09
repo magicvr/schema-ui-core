@@ -17,6 +17,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "@/app/App";
+import { I18nProvider } from "@/i18n/runtime";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const MANIFEST_PATH = resolve(
@@ -229,12 +230,14 @@ async function renderApp(
   activeRoots.push({ root, container });
   await act(async () => {
     root.render(
-      <App
-        manifest={manifest()}
-        navigationContext={context}
-        schemaFetcher={fetcher}
-        resourceFetcher={fetcher}
-      />,
+      <I18nProvider>
+        <App
+          manifest={manifest()}
+          navigationContext={context}
+          schemaFetcher={fetcher}
+          resourceFetcher={fetcher}
+        />
+      </I18nProvider>,
     );
   });
   return container;
@@ -351,12 +354,14 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={manifest()}
-          navigationContext={admin}
-          schemaFetcher={trackingFetcher}
-          resourceFetcher={trackingFetcher}
-        />,
+        <I18nProvider>
+          <App
+            manifest={manifest()}
+            navigationContext={admin}
+            schemaFetcher={trackingFetcher}
+            resourceFetcher={trackingFetcher}
+          />
+        </I18nProvider>,
       );
     });
 
@@ -425,12 +430,14 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={manifest()}
-          navigationContext={admin}
-          schemaFetcher={trackingFetcher}
-          resourceFetcher={trackingFetcher}
-        />,
+        <I18nProvider>
+          <App
+            manifest={manifest()}
+            navigationContext={admin}
+            schemaFetcher={trackingFetcher}
+            resourceFetcher={trackingFetcher}
+          />
+        </I18nProvider>,
       );
     });
 
@@ -485,12 +492,14 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={manifest()}
-          navigationContext={admin}
-          schemaFetcher={trackingFetcher}
-          resourceFetcher={trackingFetcher}
-        />,
+        <I18nProvider>
+          <App
+            manifest={manifest()}
+            navigationContext={admin}
+            schemaFetcher={trackingFetcher}
+            resourceFetcher={trackingFetcher}
+          />
+        </I18nProvider>,
       );
     });
 

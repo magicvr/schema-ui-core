@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { App } from "@/app/App";
+import { I18nProvider } from "@/i18n/runtime";
 import { validateAppManifest } from "@/protocol/app-manifest";
 
 // D-003 (GOAL-003): the 5 hand-written EXAMPLE_PAGES are migrated to Schema
@@ -116,11 +117,13 @@ async function renderApp(
   activeRoots.push({ root, container });
   await act(async () => {
     root.render(
-      <App
-        manifest={exampleManifest()}
-        navigationContext={{}}
-        schemaFetcher={schemaFetcher(documents)}
-      />,
+      <I18nProvider>
+        <App
+          manifest={exampleManifest()}
+          navigationContext={{}}
+          schemaFetcher={schemaFetcher(documents)}
+        />
+      </I18nProvider>,
     );
   });
   return container;

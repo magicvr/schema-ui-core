@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { AuthProvider, useAuth } from "@/account/AuthContext";
 import { createConfigAwareFetcher } from "@/app/config-events";
+import { I18nProvider, useI18n } from "@/i18n/runtime";
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
 import { LoginPage } from "@/app/LoginPage";
@@ -19,9 +20,10 @@ function applyStoredTheme() {
 }
 
 function BootScreen() {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
-      Checking session…
+      {t("app.boot.checkingSession")}
     </div>
   );
 }
@@ -73,16 +75,20 @@ loadAppManifest()
   .then((manifest) => {
     createRoot(root).render(
       <StrictMode>
-        <AuthProvider>
-          <AuthGate manifest={manifest} />
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <AuthGate manifest={manifest} />
+          </AuthProvider>
+        </I18nProvider>
       </StrictMode>,
     );
   })
   .catch((error: unknown) => {
     createRoot(root).render(
       <StrictMode>
-        <ManifestFailure error={error} />
+        <I18nProvider>
+          <ManifestFailure error={error} />
+        </I18nProvider>
       </StrictMode>,
     );
   });

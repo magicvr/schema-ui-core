@@ -1,0 +1,146 @@
+/**
+ * I18n React runtime (S1 · C4/C5).
+ *
+ * - Resolves the effective locale via `resolveLocale` (frozen priority).
+ * - Persists the user's explicit choice in localStorage["schema-ui:locale"]
+ *   (single channel, same pattern as the theme mechanism; login/logout never
+ *   clears it — D-002 §I-L10N-002).
+ * - Applies `document.documentElement.lang` on locale change.
+ * - Exposes `t` / `formatDate` / `formatNumber` to components.
+ */
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+
+import { createTranslator, type MessageParams } from "./catalog";
+import { formatDate as formatDateImpl, formatNumber as formatNumberImpl } from "./format";
+import {
+  defaultBrowserLanguages,
+  normalizePreference,
+  resolveLocale,
+  type Locale,
+  type LocalePreference,
+} from "./locale";
+
+export const LOCALE_STORAGE_KEY = "schema-ui:locale";
+
+export function readStoredLocale(): string | null {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+  return localStorage.getItem(LOCALE_STORAGE_KEY);
+}
+
+export function writeStoredLocale(preference: LocalePreference): void {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+  if (preference === "auto") {
+    localStorage.removeItem(LOCALE_STORAGE_KEY);
+  } else {
+    localStorage.setItem(LOCALE_STORAGE_KEY, preference);
+  }
+}
+
+/** Applies the effective locale to <html lang>. No-op outside a browser. */
+export function applyLocaleToDocument(locale: Locale): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = locale;
+  }
+}
+
+export interface I18nState {
+  /** Effective (resolved) locale — always a supported locale. */
+  locale: Locale;
+  /** User preference; "auto" defers to system/browser defaults. */
+  preference: LocalePreference;
+  /** Sets the user preference and persists it (localStorage single channel). */
+  setPreference: (preference: LocalePreference) => void;
+  /** Translate a catalog key with the effective locale. */
+  t: (key: string, params?: MessageParams) => string;
+  /** Locale-aware date formatting. */
+  formatDate: (value: Date | string | number, options?: { timeZone?: string }) => string;
+  /** Locale-aware number formatting. */
+  formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
+}
+
+const I18nContext = createContext<I18nState | null>(null);
+
+export interface I18nProviderProps {
+  children: ReactNode;
+  /** System default locale from the public bootstrap; null/"auto" = none. */
+  systemDefault?: string | null;
+  /** Test seam: explicit stored preference (defaults to localStorage). */
+  stored?: string | null;
+  /** Test seam: browser language list (defaults to navigator.languages). */
+  browserLanguages?: readonly string[];
+}
+
+export function I18nProvider({
+  children,
+  systemDefault = null,
+  stored,
+  browserLanguages,
+}: I18nProviderProps) {
+  const [preference, setPreferenceState] = useState<LocalePreference>(() => {
+    const raw = stored !== undefined ? stored : readStoredLocale();
+    return normalizePreference(raw);
+  });
+
+  const browserList = browserLanguages !== undefined ? browserLanguages : defaultBrowserLanguages();
+
+  const locale = useMemo<Locale>(
+    () =>
+      resolveLocale({
+        stored: preference === "auto" ? null : preference,
+        systemDefault,
+        browserLanguages: browserList,
+      }),
+    [preference, systemDefault, browserList],
+  );
+
+  useEffect(() => {
+    applyLocaleToDocument(locale);
+  }, [locale]);
+
+  const setPreference = useCallback((next: LocalePreference) => {
+    writeStoredLocale(next);
+    setPreferenceState(next);
+  }, []);
+
+  const t = useMemo(() => createTranslator(locale), [locale]);
+
+  const formatDate = useCallback(
+    (value: Date | string | number, options?: { timeZone?: string }) =>
+      formatDateImpl(value, locale, options ?? {}),
+    [locale],
+  );
+
+  const formatNumber = useCallback(
+    (value: number, options?: Intl.NumberFormatOptions) =>
+      formatNumberImpl(value, locale, options),
+    [locale],
+  );
+
+  const value = useMemo<I18nState>(
+    () => ({ locale, preference, setPreference, t, formatDate, formatNumber }),
+    [locale, preference, setPreference, t, formatDate, formatNumber],
+  );
+
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+export function useI18n(): I18nState {
+  const value = useContext(I18nContext);
+  if (value === null) {
+    throw new Error("useI18n must be used within an I18nProvider");
+  }
+  return value;
+}

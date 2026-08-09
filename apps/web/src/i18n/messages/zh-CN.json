@@ -1,0 +1,7 @@
+{
+  "locale.name.zh-CN": "简体中文",
+  "locale.name.en-US": "English",
+  "locale.switcher.label": "语言",
+  "locale.switcher.auto": "自动（跟随浏览器）",
+  "app.boot.checkingSession": "正在检查会话…"
+}

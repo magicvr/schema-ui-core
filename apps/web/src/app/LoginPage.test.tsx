@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthError } from "@/account/auth-client";
 import { LoginPage } from "@/app/LoginPage";
+import { I18nProvider } from "@/i18n/runtime";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
@@ -29,7 +30,11 @@ async function renderLogin(onLogin: (u: string, p: string) => Promise<void>) {
   const root = createRoot(container);
   activeRoots.push({ root, container });
   await act(async () => {
-    root.render(<LoginPage onLogin={onLogin} />);
+    root.render(
+      <I18nProvider>
+        <LoginPage onLogin={onLogin} />
+      </I18nProvider>,
+    );
   });
   return container;
 }
