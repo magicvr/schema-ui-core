@@ -22,7 +22,7 @@ version: 0.14.1
 | 4 | [VP-004-module-contribution-readiness](plans/VP-004-module-contribution-readiness.md) | 一方模块贡献 playbook 与 Core vs 模块归属方法论。 | 继承 VP-003 | **closed**（2026-08-06；lead: workspace-004-module-contribution-readiness） |
 | 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **closed**（2026-08-08 用户书面确认；lead: workspace-005-full-protocol-contract-v2-7-0；`I-PROTO-FULL-001` 12/12 include 冻结） |
 | 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | 继承 VP-003/004 + **VP-006 已 closed 的整份协议面**；VRev-011 `F-V018`/`F-V019`/`F-V020` → **fixed**（v0.3.0） | **closed**（2026-08-09 用户书面确认；v0.5.0；lead: `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience` `done 5/5`） |
-| 7 | [VP-007-localization-and-system-settings](plans/VP-007-localization-and-system-settings.md) | 建立 `zh-CN` / `en-US` 多语种运行时与 `auto` 解析，并把既有 Settings 产品化为 General / Branding / Localization / Appearance 四类系统设置。 | 继承 VP-003/004 模块边界、VP-005 设计系统与 VP-006 完整协议面；不改变双 Profile 的 Settings 可见性边界 | **active**（2026-08-09 用户确认激活；lead: `workspace-007-localization-and-system-settings`，Root 已由 `/govern` scaffold） |
+| 7 | [VP-007-localization-and-system-settings](plans/VP-007-localization-and-system-settings.md) | 建立 `zh-CN` / `en-US` 多语种运行时与 `auto` 解析，并把既有 Settings 产品化为 General / Branding / Localization / Appearance 四类系统设置。 | 继承 VP-003/004 模块边界、VP-005 设计系统与 VP-006 完整协议面；不改变双 Profile 的 Settings 可见性边界 | **closed**（2026-08-09 用户书面确认；lead: `workspace-007-localization-and-system-settings`，Root done 6/6） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -36,7 +36,7 @@ version: 0.14.1
 |------|------|------------|------------------|
 | 8 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统；可复用 VP-007 的 locale/settings 基础，但不得假装其未交付能力已经可用 | 建 VP 前须 `/vision` 复核；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或预支 VP-007 的实现事实 |
 
-**当前交付意图**：**[VP-007](plans/VP-007-localization-and-system-settings.md)** 已由用户确认激活（`active` v0.2.0；lead delivery `workspace-007-localization-and-system-settings`），Root 与 S0–S5 纲领路线图已由 `/govern` scaffold。激活**不**构成任何多语种或 Settings 新能力已交付。VP-001～006 均 **closed**（协议覆盖权威 `I-PROTO-FULL-001`）；订单/钱包/类目/通知仍是后续独立业务 VP 候选。
+**当前交付意图**：VP-001～**007** 均 **closed**。**[VP-007](plans/VP-007-localization-and-system-settings.md)** 于 2026-08-09 用户书面确认关门（Root done 6/6；S5 independent 审计闭环）。协议覆盖权威 `I-PROTO-FULL-001`；订单/钱包/类目/通知仍是后续独立业务 VP 候选。
 
 ## 单主线模块化策略
 

@@ -7,8 +7,13 @@ import { expect, test } from "@playwright/test";
 // - M3: a settings save projects to the shell header through the config
 //   refresh event.
 // - S4: the API negotiates error messages per Accept-Language (zh-CN).
+// - F-003: when APP_PROFILE=mvp, settings edit surface is absent while locale
+//   switch + branding bootstrap still work.
+
+const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
 
 test("S5 localization: zh switch, lang, error negotiation, settings projection", async ({ page, request }) => {
+  test.skip(appProfile !== "admin", "admin-only: settings edit surface requires admin profile");
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(String(error)));
 
@@ -57,5 +62,39 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
 
   await page.screenshot({ path: "test-results/s5-settings-zh.png", fullPage: true });
 
+  expect(pageErrors).toEqual([]);
+});
+
+test("S5 mvp profile: locale switch + no settings surface + branding public", async ({ page, request }) => {
+  test.skip(appProfile !== "mvp", "mvp-only boundary evidence");
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(String(error)));
+
+  // Public branding available without admin.settings module (exit 4).
+  const branding = await request.get("/api/branding");
+  expect(branding.status()).toBe(200);
+  const body = await branding.json();
+  expect(body.siteTitle).toBeTruthy();
+  expect(body.supportedLocales).toEqual(expect.arrayContaining(["zh-CN", "en-US"]));
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await page.getByLabel("Language").selectOption("zh-CN");
+  await expect(page.getByRole("heading", { name: "登录" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
+
+  await page.getByLabel("用户名").fill("admin");
+  await page.getByLabel("密码").fill("admin");
+  await page.getByRole("button", { name: "登录" }).click();
+  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page.getByRole("heading", { name: "总览" })).toBeVisible();
+
+  // Settings edit surface must not appear under mvp.
+  await expect(page.getByRole("link", { name: "设置" })).toHaveCount(0);
+  await page.goto("/settings");
+  await expect(page.getByText(/找不到|not found|Page not found|页面/i).first()).toBeVisible();
+
+  await page.screenshot({ path: "test-results/s5-mvp-overview-zh.png", fullPage: true });
   expect(pageErrors).toEqual([]);
 });

@@ -30,6 +30,9 @@ lerna-debug.log*
 # --- R6 evidence artifacts (tracked; hashes must stay recomputable) ---
 !**/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/evidence/**
 
+# --- Workspace-007 S5 launch evidence artifacts (tracked; close A-001 F-001 durable logs) ---
+!**/GOAL-006-s5-evidence-and-closeout/attachments/s5-launch/*.log
+
 # --- Node / frontend ---
 node_modules/
 dist/

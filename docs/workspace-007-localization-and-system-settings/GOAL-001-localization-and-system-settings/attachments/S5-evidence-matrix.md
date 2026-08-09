@@ -43,18 +43,18 @@
 
 | pageId | mvp 匿名 | mvp 已认证 | admin 匿名 | admin 已认证 | 证据 |
 |--------|----------|------------|------------|--------------|------|
-| overview | N/A¹ | ✓ | N/A¹ | ✓ | `schema-keys.structural.test.ts`；渲染：`ui-bilingual` / e2e 登录后「总览」 |
-| admin-list-batch | N/A¹ | ✓ | N/A¹ | ✓ | structural + `representative-pages.integration.test.tsx` |
-| data-display | N/A¹ | ✓ | N/A¹ | ✓ | `schema-keys.structural.test.ts` |
+| overview | N/A¹ | ✓ | N/A¹ | ✓ | structural + **S5** `apps/web/src/i18n/s5-denominator-render.test.tsx` titleKey；e2e overview |
+| admin-list-batch | N/A¹ | ✓ | N/A¹ | ✓ | structural + `apps/web/src/app/representative-pages.integration.test.tsx` + S5 titleKey |
+| data-display | N/A¹ | ✓ | N/A¹ | ✓ | structural + S5 s5-denominator-render titleKey zh/en |
 | data-table | N/A¹ | ✓ | N/A¹ | ✓ | 同上 |
 | search-form-table | N/A¹ | ✓ | N/A¹ | ✓ | 同上 |
 | form-controls | N/A¹ | ✓ | N/A¹ | ✓ | 同上 |
 | form-with-reactions | N/A¹ | ✓ | N/A¹ | ✓ | 同上 |
 | form-with-upload | N/A¹ | ✓ | N/A¹ | ✓ | 同上 |
-| users | N/A¹ | ✓ | N/A¹ | ✓ | `ui-bilingual.test.tsx` + `schema-crud.test.tsx` |
-| roles | N/A¹ | ✓ | N/A¹ | ✓ | `schema-keys.structural.test.ts`（44 keys） |
-| settings | N/A² | N/A² | N/A¹ | ✓ | structural + `startup-config.test.tsx` + e2e M3 |
-| activity | N/A² | N/A² | N/A¹ | ✓ | `schema-keys.structural.test.ts`（16 keys） |
+| users | N/A¹ | ✓ | N/A¹ | ✓ | `apps/web/src/i18n/ui-bilingual.test.tsx` + `apps/web/src/renderer/schema-crud.test.tsx` |
+| roles | N/A¹ | ✓ | N/A¹ | ✓ | structural + **S5** s5-denominator-render 列头/工具栏 zh+en |
+| settings | N/A² | N/A² | N/A¹ | ✓ | structural + `apps/web/src/app/startup-config.test.tsx` + e2e admin M3；mvp 反证 e2e |
+| activity | N/A² | N/A² | N/A¹ | ✓ | structural + **S5** s5-denominator-render 正文/列 zh |
 
 ¹ 匿名不可达受保护 page。  
 ² 模块边界：`admin.settings` / `admin.activity` 不在 mvp profile。
@@ -81,22 +81,23 @@
 
 | 列 | 证据 |
 |----|------|
-| M1 | `src/i18n/locale.test.ts`（优先级）；`ui-bilingual.test.tsx`（登录双语 + 错误码）；e2e M1（切换 zh、`lang`、登录成功 shell） |
-| M2 | `ui-bilingual.test.tsx`（users 写表单）；`schema-crud.test.tsx`；e2e 登录后 overview |
-| M3 | `startup-config.test.tsx`（PATCH + 刷新头 + branding 投影）；Go `handler/settings_test.go`；e2e 站点标题保存 → header/title |
-| M4 | `ui-bilingual.test.tsx` M4；`catalog.test.ts`（事件去重/回退链） |
-| 权限正反 | `startup-config.test.tsx`（write 缺失禁用保存；有权限真实 PATCH） |
-| 配置刷新 | `startup-config.test.tsx` + Go settings PATCH header `X-Schema-UI-Config-Changed`；e2e 可见投影 |
+| M1 | `apps/web/src/i18n/locale.test.ts`；`ui-bilingual.test.tsx`；e2e admin+mvp M1（切换 zh、`lang`、登录 shell） |
+| M2 | **单元写表单** `ui-bilingual` + `schema-crud`；**浏览器** e2e 登录后 overview（写表单以单元为主，F-004 已标注） |
+| M3 | `startup-config.test.tsx`；Go `handler/settings_test.go`；e2e admin 站点标题保存投影 |
+| M4 | `ui-bilingual.test.tsx` M4；`catalog.test.ts` |
+| 权限正反 | `startup-config.test.tsx` |
+| 配置刷新 | `startup-config.test.tsx` + Go PATCH header；e2e 可见投影 |
+| mvp 真实入口 | e2e mvp + dual-run mvp branding + `RegisterPublicBranding`；settings 不可达 |
 | 错误回退 | S4：`handler/localize_test.go`、`error_contract_test.go`；`src/renderer/error-localization.test.tsx`；e2e Accept-Language zh 登录失败 envelope |
 
 ## 2. 真实入口与浏览器证据（C2 交叉引用）
 
 | 项 | 路径 / 命令 |
 |----|-------------|
-| API 双启动 `/api/branding` 体一致 | scratch `s5-launch/run1.json` + `run2.json` + 比对日志 |
-| Web production build | scratch `s5-launch/web-build.log` |
-| Playwright e2e（admin） | `apps/web/e2e/localization.spec.ts`；截图 `apps/web/test-results/s5-settings-zh.png`；scratch `s5-launch/e2e-localization.log` |
-| Unit suites（矩阵引用） | scratch `s5-tests/` 摘要（按需刷新） |
+| API 双启动 `/api/branding` 体一致 | 仓库内 `GOAL-006/.../attachments/s5-launch/run{1,2}-{admin,mvp}.json` + compare |
+| Web production build | `GOAL-006/.../attachments/s5-launch/web-build.log` |
+| Playwright e2e | `apps/web/e2e/localization.spec.ts`（admin + mvp）；截图 s5-settings-zh / s5-mvp-overview-zh |
+| 分母渲染 | `apps/web/src/i18n/s5-denominator-render.test.tsx`（5/5） |
 
 ## 3. 分母完整性声明
 

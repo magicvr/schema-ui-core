@@ -2,16 +2,25 @@
 doc_type: vision-plan
 id: VP-007-localization-and-system-settings
 title: 多语种与系统设置产品化
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-007-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # VP-007 · 多语种与系统设置产品化
+
+## 状态与门闩（2026-08-09 更新 · 已关门）
+
+| 项 | 值 |
+|----|-----|
+| status | **`closed`**（2026-08-09 用户书面确认关门；GOAL-006 D-002） |
+| **lead_workspace** | **`workspace-007-localization-and-system-settings`**（Root `GOAL-001-localization-and-system-settings` `done 6/6`） |
+| **Vision required** | **0**（VRev-016 已在激活前闭合；本波次无新增 open Vision required） |
+| **关门门闩（现行）** | 已 `closed`；保留 workspace-007 历史绑定，默认不接新区；reopen 须用户确认 |
 
 ## 意图
 
@@ -141,11 +150,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-09 | **closed**（用户书面确认） | 用户目标指令「推进工作区7，直到根目标闭门」+ D-002 留痕；S0–S5 全部交付；F-V029 矩阵填值；API dual-run branding（admin+mvp）体一致；web build；playwright admin+mvp；分母运行时双语渲染测试；independent A-001 → A-002（required 0）；mvp 公开 branding 与 settings 边界修正 | `docs/workspace-007-localization-and-system-settings/goal-tree.md`（Root done 6/6；GOAL-002～006 全 done）；Root `attachments/F-V029-*.md` + `S5-evidence-matrix.md`；GOAL-006 E-001～E-003、A-001/A-002、D-002；`attachments/s5-launch/`；`apps/web/src/i18n/s5-denominator-render.test.tsx`；`apps/web/e2e/localization.spec.ts` | 无开放 required residual；M2 浏览器写表单仍以单元 `schema-crud`/`ui-bilingual` 为主证据（A-001 F-004 recommended，已矩阵标注） |
 
 ## 规划修订短史
 
@@ -154,3 +161,4 @@ parent: null
 | 2026-08-09 | `0.1.0` | 用户确认新建本 VP：首发 `zh-CN` / `en-US`，系统默认 `auto`；系统设置按 General / Branding / Localization / Appearance 四类；多语种覆盖双 Profile，Settings 编辑面保持 Admin 权限边界；状态 `planned`，尚未激活或绑定工作区。 |
 | 2026-08-09 | `0.1.1` | 响应 VRev-016：F-V029 → fixed，新增固定 UI + Runtime Manifest page/schema 并集 + M1～M4 的可枚举证据分母，并让 exit 6 复用同一矩阵；F-V030 → fixed，I-L10N-004 只允许服务端实施证据或用户书面 residual 两种关闭路径。保持 `planned`、0 区，未激活。 |
 | 2026-08-09 | `0.2.0` | 用户确认激活：`planned → active`；`lead_workspace` = `workspace-007-localization-and-system-settings`（唯一 lead / delivery，角色 `delivery`）；物理 scaffold 交 `/govern`。激活不构成能力已交付。 |
+| 2026-08-09 | `0.3.0` | 用户书面确认关门：`active → closed`；Root done 6/6 + S5 independent 审计闭环；关门记录与 roadmap/workspaces 同步。 |

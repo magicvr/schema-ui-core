@@ -136,7 +136,7 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 			profile:          "mvp",
 			settingsRoute:    http.StatusNotFound,
 			operationsRoute:  http.StatusNotFound,
-			brandingRoute:    http.StatusNotFound,
+			brandingRoute:    http.StatusOK, // public bootstrap remains available without admin.settings
 			settingsSchema:   http.StatusNotFound,
 			activitySchema:   http.StatusNotFound,
 			wantSettingsPage: false,

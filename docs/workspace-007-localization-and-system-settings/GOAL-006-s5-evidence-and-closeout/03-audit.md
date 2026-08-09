@@ -1,11 +1,11 @@
 ---
 id: GOAL-006-s5-evidence-and-closeout
 doc: audit
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
+version: 0.3.0
 ---
 
 # 审计 · GOAL-006（S5）
@@ -17,16 +17,19 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001（closed） | 实施输入齐备 |
+| 影响本 scope 的 I-00N | I-001（closed） | C1–C4 证据齐备 |
 | 到期 required 是否已 verified / residual | 已 verified | — |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
+| 本 scope 开放 required findings | **0** | A-001 F-001/F-002/F-003 经 A-002 全部 fixed |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-09 | independent | S5 关门 · C1 矩阵 + C2 真实入口 + Root exit 1–6 充分性 | **conditional** | 0（已闭合） | [A-001-s5-closeout-independent.md](03-audit/A-001-s5-closeout-independent.md) |
+| A-002 | 2026-08-09 | self | 响应 A-001 · finding 闭合 | **pass** | **0** | [A-002-response-a001-findings.md](03-audit/A-002-response-a001-findings.md) |
 
 ## 结论状态
 
-尚未到达审计节点。关门独立审计由 grok CLI 执行（source: independent）。
+- 最新意见：**A-002**（self 响应，pass，2026-08-09）；A-001 independent required findings 已全部 `fixed`。
+- 开放 required = **0**。用户书面关门确认 D-002 后 GOAL-006 / Root 可标 `done`。

@@ -41,6 +41,14 @@ func SettingsRoutes(a *auth.Authenticator, repository SettingsRepository, operat
 	}
 }
 
+// RegisterPublicBranding mounts GET /api/branding for profiles that do not load
+// admin.settings (VP-007 exit 4 / I-L10N-003: public startup config must not
+// require the settings edit module). When admin.settings is present, branding
+// is contributed by SettingsRoutes instead — do not double-register.
+func RegisterPublicBranding(mux *http.ServeMux, repository SettingsRepository) {
+	mux.Handle("GET /api/branding", brandingGET(repository))
+}
+
 // brandingResponse is the public startup configuration (I-L10N-003 compatible
 // extension of the legacy {siteTitle, logoUrl} contract; additive fields only).
 type brandingResponse struct {

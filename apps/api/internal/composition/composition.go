@@ -160,6 +160,10 @@ func newMux(
 	}
 	if plan.HasModule("admin.settings") {
 		providers = append(providers, settingsmodule.New(a, settingsRepository, operations))
+	} else {
+		// Public bootstrap must work on mvp (and any profile without the
+		// settings edit module). Edit/list/patch/reset stay admin.settings-only.
+		handler.RegisterPublicBranding(mux, settingsRepository)
 	}
 	if plan.HasModule("admin.activity") {
 		providers = append(providers, activitymodule.New(a, operations))
