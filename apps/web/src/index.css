@@ -177,3 +177,28 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+/* Schema grid: 1 col on small screens; multi-col from md (768) */
+@media (min-width: 768px) {
+  [data-grid-responsive="true"][data-schema-grid-cols="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  [data-grid-responsive="true"][data-schema-grid-cols="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  [data-grid-responsive="true"][data-schema-grid-cols="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  [data-grid-responsive="true"][data-schema-grid-cols="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  [data-grid-responsive="true"][data-schema-grid-cols="6"] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* Ensure app root fills the viewport width (fluid shell) */
+#root {
+  width: 100%;
+  min-width: 0;
+}

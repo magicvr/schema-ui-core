@@ -21,6 +21,7 @@ version: 0.1.6
 | E-005 | 2026-08-09 | 回退 Root/工作区 done 并同步 goal-tree（A-006/D-006） | recorded | `02-execution/E-005-reopen-status-rollback.md` |
 | E-006 | 2026-08-09 | S2/S3 重做完成与 closeout 提案（曾误标 done） | recorded | `02-execution/E-006-s2-s3-closeout.md` |
 | E-007 | 2026-08-09 | 回退 Root/工作区 done → closeout-ready | recorded | `02-execution/E-007-closeout-ready-rollback.md` |
+| E-008 | 2026-08-09 | 流体壳宽修复（用户驳回缺口） | recorded | `02-execution/E-008-fluid-shell-width-fix.md` |
 
 ## 事实边界
 

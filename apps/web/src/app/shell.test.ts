@@ -108,4 +108,16 @@ describe("App.tsx shell structural checks (S3)", () => {
     expect(appSource).toMatch(/w-64/);
     expect(appSource).toMatch(/sticky top-14/);
   });
+
+  it("body/main track browser width (fluid shell, no max-w island)", () => {
+    expect(appSource).toContain('data-shell-width="fluid"');
+    expect(appSource).toContain('data-shell-region="body"');
+    // Must not reintroduce max-w-[1440px] on the shell body flex
+    const bodyIdx = appSource.indexOf('data-shell-width="fluid"');
+    expect(bodyIdx).toBeGreaterThan(-1);
+    const bodySnippet = appSource.slice(bodyIdx, bodyIdx + 220);
+    expect(bodySnippet).not.toMatch(/max-w-\[1440px\]/);
+    expect(bodySnippet).toMatch(/w-full/);
+    expect(appSource).toContain("min-w-0 w-full flex-1");
+  });
 });

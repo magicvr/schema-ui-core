@@ -226,13 +226,13 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="space-y-0" data-table-presentation="dual-end">
-      {/* Desktop / tablet dense table (D-004 §4): hidden below md */}
+    <div className="w-full min-w-0 space-y-0" data-table-presentation="dual-end">
+      {/* Desktop / tablet dense table (D-004 §4): hidden below md; scrolls within viewport */}
       <div
         data-table-presentation="desktop-table"
-        className="hidden overflow-hidden rounded-md border border-border md:block"
+        className="hidden w-full min-w-0 overflow-x-auto rounded-md border border-border md:block"
       >
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full min-w-[32rem] border-collapse text-sm">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           <thead>
             <tr className="border-b border-border bg-muted/40">
