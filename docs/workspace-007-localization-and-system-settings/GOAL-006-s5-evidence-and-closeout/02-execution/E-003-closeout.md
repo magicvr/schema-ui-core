@@ -34,3 +34,7 @@ version: 0.1.0
 | 响应 A-002 | `03-audit/A-002-response-a001-findings.md` |
 | 用户确认 | `01-decision/D-002-user-closeout-confirmation.md` |
 | CLI 日志 | `{SCRATCH}/s5-independent-audit.log` |
+
+## 里程碑 checkpoint
+
+- commit：`081ef2f`（2026-08-09，S5 C3/C4 关门；owned paths = mvp 公开 branding 产品修正 + S5 渲染/边界测试 + `attachments/s5-launch/` 证据（含 .gitignore 例外）+ 全量治理/vision 同步文档，显式 `git add` 无 `-A`）。
