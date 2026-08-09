@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-09
+updated: 2026-08-10
 parent: null
-version: 0.14.1
+version: 0.14.2
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -23,6 +23,7 @@ version: 0.14.1
 | 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **closed**（2026-08-08 用户书面确认；lead: workspace-005-full-protocol-contract-v2-7-0；`I-PROTO-FULL-001` 12/12 include 冻结） |
 | 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | 继承 VP-003/004 + **VP-006 已 closed 的整份协议面**；VRev-011 `F-V018`/`F-V019`/`F-V020` → **fixed**（v0.3.0） | **closed**（2026-08-09 用户书面确认；v0.5.0；lead: `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience` `done 5/5`） |
 | 7 | [VP-007-localization-and-system-settings](plans/VP-007-localization-and-system-settings.md) | 建立 `zh-CN` / `en-US` 多语种运行时与 `auto` 解析，并把既有 Settings 产品化为 General / Branding / Localization / Appearance 四类系统设置。 | 继承 VP-003/004 模块边界、VP-005 设计系统与 VP-006 完整协议面；不改变双 Profile 的 Settings 可见性边界 | **closed**（2026-08-09 用户书面确认；lead: `workspace-007-localization-and-system-settings`，Root done 6/6） |
+| 8 | [VP-008-admin-module-readiness-and-foundation-convergence](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) | 在正式业务模块开发前，对当前代码主线执行全基架准入：现状扫描、代码/功能/治理缺口、UI 协议判断、阻断整改与 `go`/`no-go`。 | 继承 VP-003/004 模块架构与贡献契约、VP-005 设计系统、VP-006 完整协议面、VP-007 locale/settings；不重开历史 VP | **planned**（2026-08-10 用户确认落盘；0 workspace；尚未激活） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -34,9 +35,9 @@ version: 0.14.1
 
 | 顺序 | 方向 | 与前序关系 | 建立 VP 前的约束 |
 |------|------|------------|------------------|
-| 8 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统；可复用 VP-007 的 locale/settings 基础，但不得假装其未交付能力已经可用 | 建 VP 前须 `/vision` 复核；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或预支 VP-007 的实现事实 |
+| 9 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统 + VP-007 locale/settings，并消费 VP-008 的准入结论 | 建 VP 前须 `/vision` 复核；VP-008 未形成用户确认的 `go` 前不得推进实现；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或私增协议语义 |
 
-**当前交付意图**：VP-001～**007** 均 **closed**。**[VP-007](plans/VP-007-localization-and-system-settings.md)** 于 2026-08-09 用户书面确认关门（Root done 6/6；S5 independent 审计闭环）。协议覆盖权威 `I-PROTO-FULL-001`；订单/钱包/类目/通知仍是后续独立业务 VP 候选。
+**当前组合焦点**：VP-001～**007** 均 **closed**；**[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md)** 为 `planned`、0 workspace、尚未激活。当前无 active 交付 VP。协议覆盖权威 `I-PROTO-FULL-001`；订单/钱包/类目/通知仍是后续独立业务 VP 候选，并受 VP-008 `go` 门闩约束。
 
 ## 单主线模块化策略
 

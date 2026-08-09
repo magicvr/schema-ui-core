@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-09
+updated: 2026-08-10
 parent: null
-version: 1.3.10
+version: 1.3.11
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.10
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | 仓库级 Vision Review open required = **0**（2026-08-09；VRev-016 F-V029 fixed） |
+| — | — | — | **无** | 仓库级 Vision Review open required = **0**（2026-08-10 复核；VRev-016 F-V029 fixed） |
 
-> Vision Review **open required = 0**。VRev-016 原 verdict `conditional` 保留；`F-V029` required 与 `F-V030/F-V031` recommended 均已 **fixed**（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）。**VP-007** 已于 2026-08-09 用户确认激活（`active` v0.2.0；lead delivery `workspace-007-localization-and-system-settings`，Root 待 `/govern` scaffold；激活不构成能力已交付）。组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。VRev-016 原 verdict `conditional` 保留；`F-V029` required 与 `F-V030/F-V031` recommended 均已 **fixed**（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）。**VP-007** 后续已于 2026-08-09 用户书面确认 `closed`（v0.3.0；lead delivery `workspace-007-localization-and-system-settings`；Root done 6/6），当前无 active 交付 VP；planned **[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md)** 尚未激活或绑定工作区。组合焦点见 [roadmap.md](roadmap.md)。
 
 ## 条目索引
 
@@ -53,7 +53,7 @@ version: 1.3.10
 | VRev-013 | 2026-08-08 | independent | VP-006 v0.1.1 闭合后复审 · 退出纪律 / 对齐链 / 组合焦点 | pass | 0 | F-V021～023 闭合可复核；方向已稳；F-V024 → fixed（README）；VP-006 已激活 | [VRev-013-vp006-post-closure-reaudit.md](reviews/VRev-013-vp006-post-closure-reaudit.md) |
 | VRev-014 | 2026-08-09 | independent | VP-006 closed 主张复核 · 工作区治理 + 代码/验证 | pass | 0 | 关门成立；Root done/6/6；vitest 569 + go 全绿 + fixture 320；F-V025/F-V026 → fixed（`/vision`+`/govern`） | [VRev-014-vp006-closed-claim-verification.md](reviews/VRev-014-vp006-closed-claim-verification.md) |
 | VRev-015 | 2026-08-09 | independent | VP-005 关门就绪 · 区证据 / 退出判据 / Vision required / 组合索引同步 | conditional | 0 | 实质证据齐备（Root done 5/5；616 tests + e2e 2/2；open required=0）；F-V027/F-V028 → fixed（2026-08-09 `/vision` 用户书面「确认关门」，VP-005 closed v0.5.0 + 组合索引原子同步） | [VRev-015-vp005-closeout-readiness.md](reviews/VRev-015-vp005-closeout-readiness.md) |
-| VRev-016 | 2026-08-09 | independent | VP-007 多语种与系统设置 · 意图 / 退出 #2 分母 / 对齐链 | conditional | 0 | 原 verdict 保留；F-V029/030/031 → fixed（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）；VP-007 仍 planned | [VRev-016-vp007-localization-system-settings.md](reviews/VRev-016-vp007-localization-system-settings.md) |
+| VRev-016 | 2026-08-09 | independent | VP-007 多语种与系统设置 · 意图 / 退出 #2 分母 / 对齐链 | conditional | 0 | 原 verdict 保留；F-V029/030/031 → fixed（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）；审视时为 planned，后续已激活并于 2026-08-09 closed | [VRev-016-vp007-localization-system-settings.md](reviews/VRev-016-vp007-localization-system-settings.md) |
 
 ## 迁移记录
 
