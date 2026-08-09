@@ -16,6 +16,7 @@ version: 0.3.0
 |------|------|------|------|------|
 | E-001 | 2026-08-09 | S6 · 设置页表单/详情页实现（recordSource + schema + 测试） | recorded | `02-execution/E-001-settings-form-page-implementation.md` |
 | E-002 | 2026-08-09 | S6 · 响应 A-002 — F-001 修复 + F-002 accepted-residual | recorded | `02-execution/E-002-respond-a002-findings.md` |
+| E-003 | 2026-08-09 | S6 · F-002 解除 — 端口迁移 25080/25173 + e2e 双 profile 补跑通过 | recorded | `02-execution/E-003-port-migration-and-e2e-discharge.md` |
 
 ## 事实边界
 

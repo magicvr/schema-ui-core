@@ -145,3 +145,4 @@ parent: GOAL-007-s6-settings-form-page
 | date | actor | summary |
 |------|-------|---------|
 | 2026-08-09 | `/govern` | 采纳 verdict `pass`。**F-001 → `fixed`**：`useRecordSourcePrefill` 首帧 `recordSource` 存在时进入 `loading`（skeleton），消除空可编辑表单 idle 竞态；新增回归单测；vitest **728/728** + `npm run build` exit 0；证据见 E-002 / commit `ac757c5`。**F-002 → `accepted-residual`**：环境 residual（本机 8080 落入端口排除区间 8011–8110），C3 成功标准已接受单元覆盖 + 降级留痕；范围 = 仅浏览器补跑证据，复审触发 = 区间解除/换宿主后补跑 admin M3 附日志；不阻塞 C4。**C4 剩余**：用户书面确认 → `/govern` 将 GOAL-007 `done`（C4 勾选，`progress 4/4`）并恢复 Root `GOAL-001` `done`（`7/7`），同步 goal-tree / workspace.md（D-003 §4）。本响应不改原 verdict 与 finding 原文。 |
+| 2026-08-09 | `/govern`（复审触发解除） | **F-002 → `discharged`**：端口迁移 25000+（API `:25080` / web `25173`，commit `01ed50d`）使 8080 不再落入排除区间；e2e 双 profile 补跑通过（admin/mvp 各 **3 passed / 1 skipped**，含 M3 设置表单保存→投影），日志 `attachments/s6-e2e-{admin,mvp}.log`（E-003）。另修复既有 shell.spec 跨用例 DB 污染（commit `c7f63d9`）。F-002 residual 已无开放范围。 |

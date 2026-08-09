@@ -30,5 +30,5 @@ version: 0.4.0
 
 ## 结论状态
 
-- A-001（self，C1–C3）**pass**；A-002（independent，C1–C4 就绪）**pass**；开放 required = 0；recommended F-001 → **fixed**（E-002 / commit `ac757c5`）、F-002 → **accepted-residual**。
+- A-001（self，C1–C3）**pass**；A-002（independent，C1–C4 就绪）**pass**；开放 required = 0；recommended F-001 → **fixed**（E-002 / commit `ac757c5`）、F-002 → **discharged**（端口迁移 `01ed50d` + e2e 双 profile 补跑通过，E-003 / `attachments/s6-e2e-{admin,mvp}.log`）。
 - **C4 关门**：2026-08-09 用户书面确认（`D-002`）→ GOAL-007 `done` `4/4`；Root `GOAL-001` 恢复 `done`（`7/7`，GOAL-001 `D-004` 解除临时回退）。本目标全部检查点完成。
