@@ -64,6 +64,8 @@ export type WireKind = "string" | "boolean" | "string-array" | "number" | "date-
 export interface FormOption {
   value: string;
   label?: string;
+  /** S2 (VP-007): i18n key resolved before `label` (upstream registry field). */
+  labelKey?: string;
 }
 
 export interface DateRangeValue {
@@ -74,6 +76,11 @@ export interface DateRangeValue {
 export interface FormControlField {
   id: string;
   label?: string;
+  /** S2 (VP-007): i18n key resolved before `label` (missing-key observable). */
+  labelKey?: string;
+  placeholder?: string;
+  /** S2 (VP-007): i18n key resolved before `placeholder` (local doc convention). */
+  placeholderKey?: string;
   type: FormControlType;
   /** select only: single (default) or multiple. */
   mode?: "single" | "multiple";

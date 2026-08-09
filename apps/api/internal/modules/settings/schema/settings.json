@@ -18,27 +18,45 @@
       "type": "request",
       "method": "PATCH",
       "url": "/api/settings/{id}",
-      "bodyMapping": { "siteTitle": "siteTitle", "logoUrl": "logoUrl" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "siteTitle": "siteTitle",
+        "logoUrl": "logoUrl"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "openEdit": {
       "type": "modal",
       "content": {
         "type": "form",
         "id": "edit-settings-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"settings.write\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"settings.write\""
+        },
         "props": {
           "fields": [
-            { "id": "siteTitle", "label": "Site title", "type": "input" },
+            {
+              "id": "siteTitle",
+              "label": "Site title",
+              "type": "input",
+              "labelKey": "schema.settings.field.siteTitle"
+            },
             {
               "id": "logoUrl",
               "label": "Logo URL (empty = hide logo)",
-              "type": "textarea"
+              "type": "textarea",
+              "labelKey": "schema.settings.field.logoUrl"
             }
           ],
           "submitAction": "updateSettings",
-          "submitLabel": "Save settings"
+          "submitLabel": "Save settings",
+          "submitLabelKey": "schema.settings.submit.save"
         }
       }
     }
@@ -50,21 +68,39 @@
       {
         "type": "text",
         "props": {
-          "text": "Site branding used in the admin shell, login page, and browser tab title. Logo is a URL (upload not available); leave empty to hide the logo."
+          "text": "Site branding used in the admin shell, login page, and browser tab title. Logo is a URL (upload not available); leave empty to hide the logo.",
+          "textKey": "schema.settings.description"
         }
       },
       {
         "type": "table",
         "id": "settings-table",
-        "permissionCascade": { "keys": ["edit"] },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
         "permissions": {
           "edit": "$context.user.permissions contains \"settings.write\""
         },
         "props": {
           "columns": [
-            { "field": "siteTitle", "label": "Site title" },
-            { "field": "logoUrl", "label": "Logo URL" },
-            { "field": "updatedAt", "label": "Updated", "sortable": true }
+            {
+              "field": "siteTitle",
+              "label": "Site title",
+              "labelKey": "schema.settings.column.siteTitle"
+            },
+            {
+              "field": "logoUrl",
+              "label": "Logo URL",
+              "labelKey": "schema.settings.column.logoUrl"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.settings.column.updated"
+            }
           ],
           "dataSource": "/api/settings",
           "actions": [
@@ -72,12 +108,17 @@
               "key": "edit",
               "label": "Edit",
               "actionRef": "openEdit",
-              "permissionIntent": "edit"
+              "permissionIntent": "edit",
+              "labelKey": "schema.settings.action.edit"
             }
           ]
         }
       },
-      { "type": "recordView", "id": "settings-detail", "props": {} }
+      {
+        "type": "recordView",
+        "id": "settings-detail",
+        "props": {}
+      }
     ]
   }
 }

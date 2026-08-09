@@ -21,12 +21,33 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslate } from "@/i18n/runtime";
+
+/**
+ * Maps a stable auth error code to a catalog key (frontend localization
+ * floor for the login surface; the server-side catalog lands in S4).
+ */
+function loginErrorKey(code: string): string {
+  switch (code) {
+    case "LOGIN_NETWORK":
+      return "login.error.network";
+    case "INVALID_CREDENTIALS":
+      return "login.error.invalidCredentials";
+    case "LOGIN_FAILED":
+      return "login.error.failed";
+    case "LOGIN_MALFORMED":
+      return "login.error.malformed";
+    default:
+      return "login.error.generic";
+  }
+}
 
 /**
  * R2 login surface (GOAL-005) + S3 visual upgrade (workspace-006 / D-004 Sign in).
  * Uses design-system Card / Input / Label / Button primitives (not one-off inputs).
  */
 export function LoginPage({ onLogin }: { onLogin: (username: string, password: string) => Promise<void> }) {
+  const t = useTranslate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +86,8 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
     try {
       await onLogin(username, password);
     } catch (err: unknown) {
-      setError(err instanceof AuthError ? err.message : "login failed");
+      const code = err instanceof AuthError ? err.code : "LOGIN_UNKNOWN";
+      setError(t(loginErrorKey(code)));
     } finally {
       setSubmitting(false);
     }
@@ -104,32 +126,32 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
         </div>
 
         <Card className="shadow-md">
-          <form onSubmit={handleSubmit} aria-label="Sign in">
+          <form onSubmit={handleSubmit} aria-label={t("login.title")}>
             <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-2xl tracking-tight">Sign in</CardTitle>
+              <CardTitle className="text-2xl tracking-tight">{t("login.title")}</CardTitle>
               <CardDescription>{siteTitle}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("login.username")}</Label>
                 <Input
                   id="username"
                   name="username"
                   autoComplete="username"
-                  placeholder="Username"
+                  placeholder={t("login.username")}
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("login.password")}</Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="Password"
+                  placeholder={t("login.password")}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
@@ -147,7 +169,7 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
                 disabled={submitting || username === "" || password === ""}
                 className="w-full"
               >
-                {submitting ? "Signing in…" : "Sign in"}
+                {submitting ? t("login.signingIn") : t("login.signIn")}
               </Button>
             </CardFooter>
           </form>
@@ -155,7 +177,7 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
 
         {showSeedHint ? (
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Local development seed: <code className="font-mono">admin / admin</code>
+            {t("login.seedHint")} <code className="font-mono">admin / admin</code>
           </p>
         ) : null}
       </div>

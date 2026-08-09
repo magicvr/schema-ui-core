@@ -72,12 +72,12 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const appSource = readFileSync(join(__dir, "App.tsx"), "utf-8");
 
 describe("App.tsx shell structural checks (S3)", () => {
-  it("contains hamburger aria-label", () => {
-    expect(appSource).toContain("Open navigation menu");
+  it("contains hamburger aria-label (S2: localized via catalog)", () => {
+    expect(appSource).toContain('aria-label={t("shell.openMenu")}');
   });
 
-  it("contains close drawer aria-label", () => {
-    expect(appSource).toContain("Close navigation menu");
+  it("contains close drawer aria-label (S2: localized via catalog)", () => {
+    expect(appSource).toContain('aria-label={t("shell.closeMenu")}');
   });
 
   it("uses bg-overlay for mobile drawer backdrop", () => {

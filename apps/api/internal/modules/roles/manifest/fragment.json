@@ -1,6 +1,9 @@
 {
   "protocolVersion": "2.7",
-  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
@@ -12,7 +15,8 @@
       "pageId": "roles",
       "title": "Roles",
       "schemaUrl": "/api/schema/roles",
-      "route": "/roles"
+      "route": "/roles",
+      "titleKey": "manifest.title.roles"
     }
   ],
   "navigation": {
@@ -23,7 +27,8 @@
         "icon": "user",
         "visibleWhen": {
           "when": "$context.features.menu_roles == true"
-        }
+        },
+        "labelKey": "manifest.nav.roles"
       }
     ]
   }

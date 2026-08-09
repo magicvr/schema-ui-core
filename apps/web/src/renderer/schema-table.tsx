@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
+import { resolveTextProp } from "@/i18n/catalog";
+import { useTranslate } from "@/i18n/runtime";
 import {
   fetchResourceList,
   isValidDataSource,
@@ -152,6 +154,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const dataSource = schemaTableDataSource(node);
   const rowKeyField = schemaTableRowKey(node);
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const tableId = node.id ?? "default";
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
   const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
@@ -340,7 +343,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             label: (
               <input
                 type="checkbox"
-                aria-label="Select all on this page"
+                aria-label={t("feedback.selectAllOnPage")}
                 checked={allPageSelected}
                 disabled={list === null || keyCheck === null || !keyCheck.ok}
                 onChange={toggleAllPage}
@@ -351,7 +354,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               return (
                 <input
                   type="checkbox"
-                  aria-label="Select row"
+                  aria-label={t("feedback.selectRow")}
                   checked={token !== null && selectedKeys.has(token)}
                   disabled={token === null}
                   onClick={(event) => event.stopPropagation()}
@@ -364,7 +367,13 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       : []),
     ...columns.map((column) => ({
       key: column.field,
-      label: column.label ?? column.field,
+      label: resolveTextProp(
+        column as unknown as Record<string, unknown>,
+        "labelKey",
+        "label",
+        t,
+        column.field,
+      ),
       sortable: column.sortable === true,
     })),
     ...(rowActions.length > 0
@@ -393,7 +402,13 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                       }}
                       className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     >
-                      {stringOf(action.label) ?? key}
+                      {resolveTextProp(
+                        action as unknown as Record<string, unknown>,
+                        "labelKey",
+                        "label",
+                        t,
+                        key,
+                      )}
                     </button>
                   );
                 })}
@@ -433,7 +448,13 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 }
                 className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {stringOf(trigger.label) ?? key}
+                {resolveTextProp(
+                  trigger as unknown as Record<string, unknown>,
+                  "labelKey",
+                  "label",
+                  t,
+                  key,
+                )}
               </button>
             );
           })}
@@ -449,13 +470,16 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         selectedKey={selectedKey}
         loading={loading}
         error={error}
-        emptyMessage="No items match."
-        caption="Schema-driven items"
+        emptyMessage={t("feedback.noItemsMatch")}
+        caption={t("feedback.schemaDrivenItems")}
       />
       {list !== null ? (
         <p className="text-xs text-muted-foreground">
-          {list.total} item{list.total === 1 ? "" : "s"} · page {list.page} of{" "}
-          {Math.max(1, Math.ceil(list.total / list.pageSize))}
+          {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
+          {t("feedback.pageOf", {
+            page: String(list.page),
+            total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
+          })}
         </p>
       ) : null}
     </div>

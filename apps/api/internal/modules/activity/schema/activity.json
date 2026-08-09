@@ -18,18 +18,56 @@
       "content": {
         "type": "form",
         "id": "operation-detail-form",
-        "permissions": { "edit": "false" },
+        "permissions": {
+          "edit": "false"
+        },
         "props": {
           "fields": [
-            { "id": "id", "label": "ID", "type": "input" },
-            { "id": "event", "label": "Event", "type": "input" },
-            { "id": "actorName", "label": "Actor", "type": "input" },
-            { "id": "actorId", "label": "Actor ID", "type": "input" },
-            { "id": "recordId", "label": "Record ID", "type": "input" },
-            { "id": "detail", "label": "Detail", "type": "textarea" },
-            { "id": "createdAt", "label": "Created", "type": "input" }
+            {
+              "id": "id",
+              "label": "ID",
+              "type": "input",
+              "labelKey": "schema.activity.field.id"
+            },
+            {
+              "id": "event",
+              "label": "Event",
+              "type": "input",
+              "labelKey": "schema.activity.field.event"
+            },
+            {
+              "id": "actorName",
+              "label": "Actor",
+              "type": "input",
+              "labelKey": "schema.activity.field.actorName"
+            },
+            {
+              "id": "actorId",
+              "label": "Actor ID",
+              "type": "input",
+              "labelKey": "schema.activity.field.actorId"
+            },
+            {
+              "id": "recordId",
+              "label": "Record ID",
+              "type": "input",
+              "labelKey": "schema.activity.field.recordId"
+            },
+            {
+              "id": "detail",
+              "label": "Detail",
+              "type": "textarea",
+              "labelKey": "schema.activity.field.detail"
+            },
+            {
+              "id": "createdAt",
+              "label": "Created",
+              "type": "input",
+              "labelKey": "schema.activity.field.createdAt"
+            }
           ],
-          "submitLabel": "Close"
+          "submitLabel": "Close",
+          "submitLabelKey": "schema.activity.submit.close"
         }
       }
     }
@@ -41,7 +79,8 @@
       {
         "type": "text",
         "props": {
-          "text": "Read-only operation log (auth and resource writes). Select a row for detail; no create/edit/delete."
+          "text": "Read-only operation log (auth and resource writes). Select a row for detail; no create/edit/delete.",
+          "textKey": "schema.activity.text.intro"
         }
       },
       {
@@ -50,8 +89,16 @@
         "props": {
           "mode": "search",
           "targetTable": "operations-table",
-          "fields": [{ "id": "q", "label": "Search", "type": "input" }],
-          "submitLabel": "Search"
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "schema.activity.field.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "schema.activity.submit.search"
         }
       },
       {
@@ -62,11 +109,34 @@
         },
         "props": {
           "columns": [
-            { "field": "createdAt", "label": "When", "sortable": true },
-            { "field": "event", "label": "Event", "sortable": true },
-            { "field": "actorName", "label": "Actor", "sortable": true },
-            { "field": "recordId", "label": "Record" },
-            { "field": "detail", "label": "Detail" }
+            {
+              "field": "createdAt",
+              "label": "When",
+              "sortable": true,
+              "labelKey": "schema.activity.column.when"
+            },
+            {
+              "field": "event",
+              "label": "Event",
+              "sortable": true,
+              "labelKey": "schema.activity.column.event"
+            },
+            {
+              "field": "actorName",
+              "label": "Actor",
+              "sortable": true,
+              "labelKey": "schema.activity.column.actor"
+            },
+            {
+              "field": "recordId",
+              "label": "Record",
+              "labelKey": "schema.activity.column.record"
+            },
+            {
+              "field": "detail",
+              "label": "Detail",
+              "labelKey": "schema.activity.column.detail"
+            }
           ],
           "dataSource": "/api/operations",
           "actions": [
@@ -74,12 +144,17 @@
               "key": "view",
               "label": "View",
               "actionRef": "openDetail",
-              "permissionIntent": "edit"
+              "permissionIntent": "edit",
+              "labelKey": "schema.activity.action.view"
             }
           ]
         }
       },
-      { "type": "recordView", "id": "operation-detail", "props": {} }
+      {
+        "type": "recordView",
+        "id": "operation-detail",
+        "props": {}
+      }
     ]
   }
 }

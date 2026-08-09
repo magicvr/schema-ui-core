@@ -62,6 +62,8 @@ export interface RenderFormNode {
     fields: Array<Record<string, unknown>>;
     reactions?: unknown;
     submitLabel?: string;
+    /** S2 (VP-007): i18n key resolved before `submitLabel` (local doc convention). */
+    submitLabelKey?: string;
     /** Default-mode submit: the top-level action id to run on submit (S4). */
     submitAction?: string;
     /** Search-mode form: binds its fields to the target table's query (S4). */
@@ -281,6 +283,9 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
         ...(value.props.submitLabel === undefined
           ? {}
           : { submitLabel: value.props.submitLabel }),
+        ...(typeof value.props.submitLabelKey === "string"
+          ? { submitLabelKey: value.props.submitLabelKey }
+          : {}),
         ...(typeof value.props.submitAction === "string"
           ? { submitAction: value.props.submitAction }
           : {}),
@@ -512,6 +517,9 @@ export function gateRenderFormFields(
       id: entry.id,
       type: entry.type,
       ...(typeof entry.label === "string" ? { label: entry.label } : {}),
+      ...(typeof entry.labelKey === "string" ? { labelKey: entry.labelKey } : {}),
+      ...(typeof entry.placeholder === "string" ? { placeholder: entry.placeholder } : {}),
+      ...(typeof entry.placeholderKey === "string" ? { placeholderKey: entry.placeholderKey } : {}),
       ...(entry.mode === "multiple" ? { mode: "multiple" } : {}),
       ...(typeof entry.startField === "string" ? { startField: entry.startField } : {}),
       ...(typeof entry.endField === "string" ? { endField: entry.endField } : {}),
@@ -536,6 +544,7 @@ export function gateRenderFormFields(
               .map((option) => ({
                 value: option.value,
                 ...(typeof option.label === "string" ? { label: option.label } : {}),
+                ...(typeof option.labelKey === "string" ? { labelKey: option.labelKey } : {}),
               })),
           }
         : {}),

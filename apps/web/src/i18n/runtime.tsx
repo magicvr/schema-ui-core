@@ -23,12 +23,12 @@ import { createTranslator, type MessageParams } from "./catalog";
 import { formatDate as formatDateImpl, formatNumber as formatNumberImpl } from "./format";
 import {
   defaultBrowserLanguages,
+  DEFAULT_LOCALE,
   normalizePreference,
   resolveLocale,
   type Locale,
   type LocalePreference,
 } from "./locale";
-
 export const LOCALE_STORAGE_KEY = "schema-ui:locale";
 
 export function readStoredLocale(): string | null {
@@ -143,4 +143,17 @@ export function useI18n(): I18nState {
     throw new Error("useI18n must be used within an I18nProvider");
   }
   return value;
+}
+
+/**
+ * Tolerant translator hook for deep renderer internals.
+ *
+ * Returns the provider's translator, or a safe default (en-US resolution +
+ * missing-key observable fallback) when no provider is mounted. Production
+ * always mounts I18nProvider; bare component tests and pre-provider surfaces
+ * degrade to the documented safe fallback instead of throwing.
+ */
+export function useTranslate(): (key: string, params?: MessageParams) => string {
+  const value = useContext(I18nContext);
+  return useMemo(() => value?.t ?? createTranslator(DEFAULT_LOCALE), [value]);
 }

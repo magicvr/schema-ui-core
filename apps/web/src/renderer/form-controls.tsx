@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
+import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
 import type { UploadableFile } from "@/protocol/conformance/upload-orchestration";
 import {
@@ -22,10 +24,18 @@ export interface FormControlsProps {
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
 }
 
-function optionList(field: FormControlField): Array<{ value: string; label: string }> {
+type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
+
+function optionList(field: FormControlField, t: FieldTranslator): Array<{ value: string; label: string }> {
   return (field.options ?? []).map((option) => ({
     value: option.value,
-    label: option.label ?? option.value,
+    label: resolveTextProp(
+      option as unknown as Record<string, unknown>,
+      "labelKey",
+      "label",
+      t,
+      String(option.value),
+    ),
   }));
 }
 
@@ -53,6 +63,7 @@ function BaseInput({
   onChange,
   type,
   disabled,
+  placeholder,
 }: {
   id: string;
   label: string;
@@ -60,6 +71,7 @@ function BaseInput({
   onChange: (value: string) => void;
   type: "text" | "password";
   disabled?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div className="space-y-1.5">
@@ -71,6 +83,7 @@ function BaseInput({
         type={type}
         value={value}
         disabled={disabled}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
     </div>
@@ -84,6 +97,7 @@ function SelectField({
   value,
   onChange,
   disabled,
+  t,
 }: {
   id: string;
   label: string;
@@ -91,8 +105,9 @@ function SelectField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  t: FieldTranslator;
 }) {
-  const options = optionList(field);
+  const options = optionList(field, t);
   if (field.mode === "multiple") {
     const selected = Array.isArray(value) ? value.map(String) : [];
     const toggle = (option: string) => {
@@ -150,6 +165,7 @@ function RadioField({
   value,
   onChange,
   disabled,
+  t,
 }: {
   id: string;
   label: string;
@@ -157,13 +173,14 @@ function RadioField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  t: FieldTranslator;
 }) {
   const current = value === undefined || value === null ? "" : String(value);
   return (
     <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="space-y-1">
-        {optionList(field).map((option) => (
+        {optionList(field, t).map((option) => (
           <label key={option.value} className="flex items-center gap-2 text-sm">
             <input
               type="radio"
@@ -188,6 +205,7 @@ function CheckboxGroupField({
   value,
   onChange,
   disabled,
+  t,
 }: {
   id: string;
   label: string;
@@ -195,6 +213,7 @@ function CheckboxGroupField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  t: FieldTranslator;
 }) {
   const selected = Array.isArray(value) ? value.map(String) : [];
   const toggle = (option: string) => {
@@ -208,7 +227,7 @@ function CheckboxGroupField({
     <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="space-y-1">
-        {optionList(field).map((option) => (
+        {optionList(field, t).map((option) => (
           <label key={option.value} className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -240,6 +259,7 @@ function BooleanField({
   disabled?: boolean;
 }) {
   const checked = value === true;
+  const t = useTranslate();
   return (
     <div className="flex items-center gap-2 text-sm">
       <input
@@ -251,7 +271,7 @@ function BooleanField({
       />
       <Label htmlFor={id}>{label}</Label>
       {field.type === "switch" ? (
-        <span className="text-xs text-muted-foreground">(switch)</span>
+        <span className="text-xs text-muted-foreground">{t("feedback.switchMarker")}</span>
       ) : null}
     </div>
   );
@@ -479,6 +499,7 @@ function FieldControl({
   disabled,
   idPrefix,
   onUpload,
+  t,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
@@ -486,9 +507,23 @@ function FieldControl({
   disabled?: boolean;
   idPrefix?: string;
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
+  t: (key: string, params?: MessageParams, literalFallback?: string) => string;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
-  const label = field.label ?? field.type;
+  const label = resolveTextProp(
+    field as unknown as Record<string, unknown>,
+    "labelKey",
+    "label",
+    t,
+    field.type,
+  );
+  const placeholder = resolveTextProp(
+    field as unknown as Record<string, unknown>,
+    "placeholderKey",
+    "placeholder",
+    t,
+    undefined,
+  );
   const value = displayValue(field, values[field.id]);
 
   switch (field.type) {
@@ -501,6 +536,7 @@ function FieldControl({
           type="text"
           disabled={disabled}
           onChange={(next) => onChange(field.id, next)}
+          placeholder={placeholder}
         />
       );
     case "password":
@@ -512,6 +548,7 @@ function FieldControl({
           type="password"
           disabled={disabled}
           onChange={(next) => onChange(field.id, next)}
+          placeholder={placeholder}
         />
       );
     case "inputNumber":
@@ -558,6 +595,7 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          t={t}
           onChange={(next) => onChange(field.id, next)}
         />
       );
@@ -569,6 +607,7 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          t={t}
           onChange={(next) => onChange(field.id, next)}
         />
       );
@@ -581,6 +620,7 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          t={t}
           onChange={(next) => onChange(field.id, next)}
         />
       );
@@ -603,6 +643,7 @@ function FieldControl({
           label={label}
           value={String(value)}
           disabled={disabled}
+          placeholder={placeholder}
           onChange={(next) => onChange(field.id, next)}
         />
       );
@@ -613,7 +654,7 @@ function FieldControl({
           label={label}
           value={String(value)}
           disabled={disabled}
-          placeholder="Markdown"
+          placeholder={placeholder ?? "Markdown"}
           onChange={(next) => onChange(field.id, next)}
         />
       );
@@ -642,6 +683,7 @@ export function FormControls({
   idPrefix,
   onUpload,
 }: FormControlsProps) {
+  const t = useTranslate();
   return (
     <div
       data-form-controls="design-system"
@@ -656,6 +698,7 @@ export function FormControls({
           disabled={disabled || (fieldDisabled?.(field.id) ?? false)}
           idPrefix={idPrefix}
           onUpload={onUpload}
+          t={t}
         />
       ))}
     </div>

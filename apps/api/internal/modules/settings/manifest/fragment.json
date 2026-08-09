@@ -1,6 +1,9 @@
 {
   "protocolVersion": "2.7",
-  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
@@ -12,7 +15,8 @@
       "pageId": "settings",
       "title": "Settings",
       "schemaUrl": "/api/schema/settings",
-      "route": "/settings"
+      "route": "/settings",
+      "titleKey": "manifest.title.settings"
     }
   ],
   "navigation": {
@@ -23,7 +27,8 @@
         "icon": "settings",
         "visibleWhen": {
           "when": "$context.features.menu_settings == true"
-        }
+        },
+        "labelKey": "manifest.nav.settings"
       }
     ]
   }

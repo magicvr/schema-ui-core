@@ -29,6 +29,8 @@ import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { coerceFieldValue, type FormControlField } from "@/renderer/form-controls";
 import { ModalHost } from "@/renderer/modal";
+import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
+import { useTranslate } from "@/i18n/runtime";
 import {
   executeAction,
   evaluatePermissionTargets,
@@ -215,26 +217,28 @@ function actionOf(document: RenderPageDocument, actionRef: string): JsonRecord |
   return isRecord(action) ? action : undefined;
 }
 
-function successMessageFor(method: unknown): string {
+type Translator = (key: string, params?: MessageParams, literalFallback?: string) => string;
+
+function successMessageFor(method: unknown, t: Translator): string {
   switch (method) {
     case "POST":
-      return "Item created";
+      return t("feedback.itemCreated");
     case "PATCH":
-      return "Item updated";
+      return t("feedback.itemUpdated");
     case "DELETE":
-      return "Item deleted";
+      return t("feedback.itemDeleted");
     default:
-      return "Action completed";
+      return t("feedback.actionCompleted");
   }
 }
 
 /** Batch triggers process a selection: delete-shaped URLs get the plural message. */
-function batchSuccessMessageFor(action: JsonRecord): string {
+function batchSuccessMessageFor(action: JsonRecord, t: Translator): string {
   const url = stringOf(action.url);
   if (url.endsWith("/batch-delete")) {
-    return "Items deleted";
+    return t("feedback.itemsDeleted");
   }
-  return successMessageFor(action.method);
+  return successMessageFor(action.method, t);
 }
 
 /**
@@ -421,6 +425,7 @@ function SchemaCrudProvider({
   const [pendingConfirm, setPendingConfirm] = useState<SchemaCrudConfirm | null>(null);
   const [feedback, setFeedback] = useState<SchemaCrudFeedback | null>(null);
   const [fetcher, setFetcher] = useState<typeof fetch>(() => initialFetcher ?? globalThis.fetch);
+  const t = useTranslate();
 
   const permissionTargets = useMemo(
     () => evaluatePermissionTargets(document as unknown as JsonRecord, context as NavigationContext),
@@ -496,7 +501,7 @@ function SchemaCrudProvider({
     async (actionRef: string, opts: RunRequestOptions): Promise<ActionResult> => {
       const result = await runRequestCallback(actionRef, opts);
       if (result.ok) {
-        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, actionRef)?.method) });
+        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, actionRef)?.method, t) });
         reloadList();
         setSelectedRow(null);
       } else {
@@ -504,7 +509,7 @@ function SchemaCrudProvider({
       }
       return result;
     },
-    [runRequestCallback, document, reloadList],
+    [runRequestCallback, document, reloadList, t],
   );
 
   const invokeAction = useCallback(
@@ -519,13 +524,17 @@ function SchemaCrudProvider({
       // setSelectedRow here — that opens the recordView Drawer and is wrong for
       // Edit / Delete / any toolbar-row action (user gap 2026-08-09).
       if (action.type === "modal") {
-        setActiveModal({ actionRef, row, title: stringOf(item.label) ?? "Action" });
+        setActiveModal({
+          actionRef,
+          row,
+          title: resolveTextProp(item, "labelKey", "label", t, t("feedback.action")),
+        });
         return;
       }
       const gateTargetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
       const requestMapping = isRecord(item.requestMapping) ? item.requestMapping : undefined;
-      const confirmMessage = typeof item.confirm === "string" && item.confirm !== "" ? item.confirm : undefined;
-      if (confirmMessage !== undefined) {
+      const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");
+      if (confirmMessage !== "") {
         setPendingConfirm({
           actionRef,
           actionKey: gateTargetId,
@@ -557,8 +566,8 @@ function SchemaCrudProvider({
         setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first" });
         return;
       }
-      const confirmMessage = typeof item.confirm === "string" && item.confirm !== "" ? item.confirm : undefined;
-      if (confirmMessage !== undefined) {
+      const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");
+      if (confirmMessage !== "") {
         setPendingConfirm({
           actionRef,
           actionKey: stringOf(item.key) !== "" ? stringOf(item.key) : actionRef,
@@ -571,14 +580,14 @@ function SchemaCrudProvider({
       }
       void runBatchRequest(document, context, fetcher, actionRef, item, current).then((result) => {
         if (result.ok) {
-          setFeedback({ kind: "success", message: batchSuccessMessageFor(action) });
+          setFeedback({ kind: "success", message: batchSuccessMessageFor(action, t) });
           reloadList();
         } else {
           setFeedback({ kind: "error", code: result.code, message: result.message });
         }
       });
     },
-    [document, context, fetcher, selection, reloadList],
+    [document, context, fetcher, selection, reloadList, t],
   );
 
   // ADR-0012 upload transport: resolve action (actionRef → page action, else
@@ -625,7 +634,7 @@ function SchemaCrudProvider({
         const item = { actionRef, key: actionKey, batchMapping: pendingConfirm.batchMapping };
         const result = await runBatchRequest(document, context, fetcher, actionRef, item, batch.selection);
         if (result.ok) {
-          setFeedback({ kind: "success", message: batchSuccessMessageFor(actionOf(document, actionRef) ?? {}) });
+          setFeedback({ kind: "success", message: batchSuccessMessageFor(actionOf(document, actionRef) ?? {}, t) });
           reloadList();
         } else {
           setFeedback({ kind: "error", code: result.code, message: result.message });
@@ -634,7 +643,7 @@ function SchemaCrudProvider({
       }
       await runRowAction(actionRef, { row, requestMapping, gateTargetId: actionKey, confirmed: true });
     },
-    [pendingConfirm, runRowAction, document, context, fetcher, reloadList],
+    [pendingConfirm, runRowAction, document, context, fetcher, reloadList, t],
   );
 
   const submitForm = useCallback(
@@ -686,14 +695,14 @@ function SchemaCrudProvider({
         gateTargetId,
       });
       if (result.ok) {
-        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method) });
+        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method, t) });
         reloadList();
         setActiveModal(null);
         setSelectedRow(null);
       }
       return result;
     },
-    [runRequestCallback, document, activeModal, reloadList],
+    [runRequestCallback, document, activeModal, reloadList, t],
   );
 
   const searchFormSubmit = useCallback((form: RenderFormNode, values: Record<string, unknown>) => {
@@ -797,6 +806,7 @@ function FormView({
 }) {
   const Component = formComponent ?? FormControls;
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const modalRow = crud?.modalRow ?? null;
   const gate = gateRenderFormFields(metaValue, node.props.fields, "fields");
   const [values, setValues] = useState<Record<string, unknown>>(() => {
@@ -931,7 +941,15 @@ function FormView({
           disabled={submitting || hasBlockingErrors}
           className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {submitting ? "Submitting…" : (node.props.submitLabel ?? (isSearch ? "Search" : "Submit"))}
+          {submitting
+            ? t("feedback.submitting")
+            : resolveTextProp(
+                node.props as unknown as Record<string, unknown>,
+                "submitLabelKey",
+                "submitLabel",
+                t,
+                isSearch ? t("feedback.search") : t("feedback.submit"),
+              )}
         </button>
       ) : null}
     </form>
@@ -1034,6 +1052,7 @@ function TabsView({
   onAction?: RendererComponentProps["onAction"];
   formComponent?: RendererComponentProps["formComponent"];
 }) {
+  const t = useTranslate();
   const children = node.children ?? [];
   const [active, setActive] = useState(0);
   const current = children[Math.min(active, children.length - 1)];
@@ -1077,14 +1096,19 @@ function TabsView({
           formComponent,
         })
       ) : (
-        <p className="text-sm text-muted-foreground">tabs node has no children</p>
+        <p className="text-sm text-muted-foreground">{t("feedback.tabsNoChildren")}</p>
       )}
     </div>
   );
 }
 
 function TextView({ node }: { node: RenderTextNode }) {
-  return <p className="text-sm text-foreground">{node.props?.text ?? ""}</p>;
+  const t = useTranslate();
+  return (
+    <p className="text-sm text-foreground">
+      {resolveTextProp(node.props as unknown as Record<string, unknown>, "textKey", "text", t, "")}
+    </p>
+  );
 }
 
 /**
@@ -1095,6 +1119,7 @@ function TextView({ node }: { node: RenderTextNode }) {
  */
 function RecordView({ node }: { node: RenderRecordViewNode }) {
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const staticRecord = node.props?.record;
   const hasStatic = isRecord(staticRecord);
   const record = hasStatic ? staticRecord : (crud?.selectedRow ?? null);
@@ -1105,7 +1130,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
         data-record-view="empty"
         className="text-sm text-muted-foreground"
       >
-        Select a record to view details.
+        {t("feedback.selectRecordToView")}
       </p>
     );
   }
@@ -1133,7 +1158,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
         data-record-view-mode={canClose ? "drawer" : "panel"}
         role="dialog"
         aria-modal={canClose ? true : undefined}
-        aria-label="Record details"
+        aria-label={t("feedback.recordDetails")}
         className={
           canClose
             ? // Desktop (md+): right Drawer; mobile (<768, D-004): full-height Sheet
@@ -1143,12 +1168,12 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold tracking-tight text-foreground">
-            Record details
+            {t("feedback.recordDetails")}
           </h2>
           {canClose ? (
             <button
               type="button"
-              aria-label="Close record details"
+              aria-label={t("feedback.closeRecordDetails")}
               onClick={onClose}
               className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -1217,6 +1242,7 @@ function useDisplayData(
 
 function StatCardView({ node }: { node: RenderStatCardNode }) {
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const fetcher = crud?.fetcher ?? globalThis.fetch;
   const valueField = node.props?.valueField;
   const format = node.props?.format ?? "plain";
@@ -1239,7 +1265,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
   }
   if (displayState === "loading") {
     return (
-      <div role="status" aria-label="Loading statCard" className="space-y-2 rounded-md border border-border bg-card p-4">
+      <div role="status" aria-label={t("feedback.loadingStatCard")} className="space-y-2 rounded-md border border-border bg-card p-4">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-7 w-24" />
       </div>
@@ -1278,7 +1304,13 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
-  const label = node.props?.label ?? valueField ?? "Value";
+  const label = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "labelKey",
+    "label",
+    t,
+    valueField ?? t("feedback.value"),
+  );
   const unit = node.props?.unit;
   return (
     <Card data-display-surface="statCard" className="shadow-sm">
@@ -1297,6 +1329,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
 
 function ChartView({ node }: { node: RenderChartNode }) {
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const fetcher = crud?.fetcher ?? globalThis.fetch;
   const chartType = node.props?.chartType;
   const xField = node.props?.xField;
@@ -1321,7 +1354,7 @@ function ChartView({ node }: { node: RenderChartNode }) {
   }
   if (chartDisplayState === "loading") {
     return (
-      <div role="status" aria-label="Loading chart" className="space-y-2 rounded-md border border-border bg-card p-4">
+      <div role="status" aria-label={t("feedback.loadingChart")} className="space-y-2 rounded-md border border-border bg-card p-4">
         <Skeleton className="h-40 w-full" />
       </div>
     );

@@ -3,26 +3,42 @@
     "pageId": "search-form-table",
     "title": "Search + table",
     "protocolVersion": "2.7",
-    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended", "table.sort"]
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "form.controls.extended",
+      "table.sort"
+    ]
   },
   "body": {
     "type": "section",
-    "props": { "title": "Search + table" },
+    "props": {
+      "title": "Search + table"
+    },
     "children": [
       {
         "type": "text",
         "props": {
-          "text": "A search form filters the role list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R4 binds the search form to the target table query (form-to-query, mode: search + targetTable)."
+          "text": "A search form filters the role list (D-TABLE search-table); column headers declare sort (D-TABLE table-sort). R4 binds the search form to the target table query (form-to-query, mode: search + targetTable).",
+          "textKey": "schema.search-form-table.text.intro"
         }
       },
       {
         "type": "form",
         "id": "search-form",
         "props": {
-          "fields": [{ "id": "q", "label": "Search roles", "type": "input" }],
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search roles",
+              "type": "input",
+              "labelKey": "schema.search-form-table.field.searchRoles"
+            }
+          ],
           "mode": "search",
           "targetTable": "search-results",
-          "submitLabel": "Search"
+          "submitLabel": "Search",
+          "submitLabelKey": "schema.search-form-table.submit.search"
         }
       },
       {
@@ -30,10 +46,29 @@
         "id": "search-results",
         "props": {
           "columns": [
-            { "field": "id", "label": "ID" },
-            { "field": "key", "label": "Key", "sortable": true },
-            { "field": "name", "label": "Name", "sortable": true },
-            { "field": "updatedAt", "label": "Updated", "sortable": true }
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.roles.column.id"
+            },
+            {
+              "field": "key",
+              "label": "Key",
+              "sortable": true,
+              "labelKey": "schema.roles.column.key"
+            },
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.roles.column.name"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.roles.column.updated"
+            }
           ],
           "dataSource": "/api/roles"
         }

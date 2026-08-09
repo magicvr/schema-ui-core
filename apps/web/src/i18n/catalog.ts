@@ -80,12 +80,16 @@ export function resetMissingTranslationReports(): void {
 /**
  * Resolves a message key for a locale with the frozen fallback chain.
  * Never throws, never returns an empty string for a missing key.
+ *
+ * Fallback order: catalog[locale] → catalog[en-US] → `literalFallback`
+ * (protocol literal text, when supplied) → key itself.
  */
 export function translate(
   key: string,
   params?: MessageParams,
   locale: Locale = DEFAULT_LOCALE,
   path?: string,
+  literalFallback?: string,
 ): string {
   const direct = lookupTranslation(key, locale);
   if (direct !== null) {
@@ -96,14 +100,38 @@ export function translate(
     return interpolate(fallback, params);
   }
   reportMissingTranslation({ locale, key, path });
-  return key;
+  return literalFallback !== undefined && literalFallback !== "" ? literalFallback : key;
 }
 
 /** Binds a locale (+ optional context path) to a translate function. */
 export function createTranslator(
   locale: Locale,
   options?: { path?: string },
-): (key: string, params?: MessageParams) => string {
-  return (key: string, params?: MessageParams) =>
-    translate(key, params, locale, options?.path);
+): (key: string, params?: MessageParams, literalFallback?: string) => string {
+  return (key: string, params?: MessageParams, literalFallback?: string) =>
+    translate(key, params, locale, options?.path, literalFallback);
+}
+
+/**
+ * Resolves a schema/manifest text prop pair — the `*Key` field wins over the
+ * literal protocol text, and the literal text is the last fallback before the
+ * key itself (frozen chain: 当前语种 → en-US → 字面文本 → key).
+ */
+export function resolveTextProp(
+  props: Record<string, unknown> | undefined,
+  keyProp: string,
+  literalProp: string,
+  t: (key: string, params?: MessageParams, literalFallback?: string) => string,
+  fallback = "",
+): string {
+  if (props === undefined) {
+    return fallback;
+  }
+  const key = props[keyProp];
+  if (typeof key === "string" && key !== "") {
+    const literal = typeof props[literalProp] === "string" ? props[literalProp] : undefined;
+    return t(key, undefined, literal);
+  }
+  const literal = props[literalProp];
+  return typeof literal === "string" ? literal : fallback;
 }

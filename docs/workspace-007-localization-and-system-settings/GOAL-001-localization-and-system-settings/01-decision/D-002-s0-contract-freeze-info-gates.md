@@ -21,7 +21,7 @@ S0 阶段启动：基线全绿（`go test ./...` 全包通过；vitest 629/629�
 
 - **兼容盘点（事实）**：`docs/schemas/app-manifest.schema.json`（v2.7.0 vendored）已在 pages/navigation 声明 `titleKey`/`labelKey`；本地 `docs/schemas/component-registry.json`（VP-006 冻结的机器可读组件契约）已为组件声明 `labelKey`/`titleKey`/`contentKey`；上游 `node.schema.json` 的 `props` 为开放对象（仅禁 CSS 名），本地 registry 按组件枚举 props。因此 **key 字段是既有兼容面，不是私有扩展**。
 - **冻结策略**：前端翻译 catalog（`zh-CN`/`en-US` 纯数据文件）解析 `*Key` 字段；Renderer 与导航在渲染时解析；缺失 key **可观察**（`schema-ui:missing-translation` 事件 + 测试断言）且**安全回退**（当前语种 → `en-US` catalog → 字面文本 → key 本身），不渲染为空、不抛异常、不阻断操作。
-- **边界**：不引入服务端 locale overlay；不改写上游 `page.schema.json`/`node.schema.json` 语义；协议字面文本（`label`/`title`/`content` 等）保持 en-US 规范原文。S2 若需为本地 registry 新增 additive key 字段（如 `placeholderKey`/`submitLabelKey`），写入本地 `component-registry.json` 并在该阶段决策中登记为本地扩展（上游 props 开放，不冲突）。
+- **边界**：不引入服务端 locale overlay；不改写上游 `page.schema.json`/`node.schema.json` 语义；协议字面文本（`label`/`title`/`content` 等）保持 en-US 规范原文。**S2 修正（A-002 补充核对）**：`component-registry.json` 为上游 pin 制品（I-PROTO-004 sha256 校验），**不改写**；其已声明的 `labelKey`/`titleKey`/`contentKey`/`options.labelKey` 直接使用；registry 未声明的缺口字段（`submitLabelKey`/`confirmKey`/`textKey`/`placeholderKey`）作为**本地页面文档约定**在 S2 D-001 登记（上游 `props` 开放，文档级合法），Renderer 解析并遵循冻结回退链。
 
 ### I-L10N-002 · 用户语种持久化 = localStorage 单通道（用户选定）
 

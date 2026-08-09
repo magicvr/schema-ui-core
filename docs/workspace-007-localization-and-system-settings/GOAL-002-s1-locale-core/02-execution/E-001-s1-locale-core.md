@@ -36,4 +36,4 @@ version: 0.1.0
 
 ## 里程碑 checkpoint
 
-- commit：`<S1 checkpoint hash 待填>`（owned paths = `apps/web/src/i18n/**`、`src/components/locale-switcher*`、`main.tsx`、`App.tsx`、`LoginPage.tsx`、受影响的 4 个测试文件 + 本目标治理文档）。
+- commit：`10f20ab`（2026-08-09，S1；owned paths = `apps/web/src/i18n/**`、`src/components/locale-switcher*`、`main.tsx`、`App.tsx`、`LoginPage.tsx`、受影响的 4 个测试文件 + workspace-007 治理文档，显式 `git add` 无 `-A`）。

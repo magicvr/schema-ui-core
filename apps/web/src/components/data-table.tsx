@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
 
 export type SortOrder = "asc" | "desc";
@@ -85,12 +86,13 @@ function MobileCardList<T>({
   const actions = actionColumn(columns);
   const titleColumn = fields[0];
   const secondaryColumns = fields.slice(1, 3);
+  const t = useTranslate();
 
   return (
     <ul
       data-table-presentation="mobile-cards"
       className="space-y-2 md:hidden"
-      aria-label="Mobile card list"
+      aria-label={t("feedback.mobileCardList")}
     >
       {rows.map((row) => {
         const key = rowKey(row);
@@ -179,6 +181,7 @@ export function DataTable<T>({
   onRowClick,
   selectedKey,
 }: DataTableProps<T>) {
+  const t = useTranslate();
   const toggleSort = (column: DataTableColumn<T>) => {
     if (!column.sortable || onSortChange === undefined) {
       return;
@@ -200,7 +203,7 @@ export function DataTable<T>({
   if (state === "loading") {
     return (
       <div className="space-y-2" data-table-presentation="loading">
-        <div role="status" aria-label="Loading" className="space-y-2 rounded-md border border-border p-4">
+        <div role="status" aria-label={t("feedback.loading")} className="space-y-2 rounded-md border border-border p-4">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />

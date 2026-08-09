@@ -3,25 +3,40 @@
     "pageId": "admin-list-batch",
     "title": "List + batch",
     "protocolVersion": "2.7",
-    "requiredCapabilities": ["app.manifest", "app.navigation", "permissions.inheritance", "actions.page.trigger", "actions.batch.request", "table.selection"]
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "actions.batch.request",
+      "table.selection"
+    ]
   },
   "actions": {
     "deleteUsers": {
       "type": "request",
       "method": "POST",
       "url": "/api/users/batch-delete",
-      "onSuccess": { "behavior": "reload" },
-      "onError": { "behavior": "toast", "message": "批量删除失败" }
+      "onSuccess": {
+        "behavior": "reload"
+      },
+      "onError": {
+        "behavior": "toast",
+        "message": "批量删除失败"
+      }
     }
   },
   "body": {
     "type": "section",
-    "props": { "title": "List + batch" },
+    "props": {
+      "title": "List + batch"
+    },
     "children": [
       {
         "type": "text",
         "props": {
-          "text": "ADR-0022 当前页多选 + 批量 request（table.selection / actions.batch.request）。勾选行后工具栏批量按钮可用；成功 reload 并清空选中。"
+          "text": "ADR-0022 page multi-select + batch request (table.selection / actions.batch.request). Select rows to enable the toolbar batch button; success reloads and clears the selection.",
+          "textKey": "schema.admin-list-batch.text.intro"
         }
       },
       {
@@ -29,21 +44,42 @@
         "id": "users-batch-table",
         "props": {
           "rowKey": "id",
-          "selection": { "mode": "multiple" },
+          "selection": {
+            "mode": "multiple"
+          },
           "columns": [
-            { "field": "id", "label": "ID" },
-            { "field": "username", "label": "Username", "sortable": true },
-            { "field": "name", "label": "Name" }
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "field": "username",
+              "label": "Username",
+              "sortable": true,
+              "labelKey": "schema.users.column.username"
+            },
+            {
+              "field": "name",
+              "label": "Name",
+              "labelKey": "schema.users.column.name"
+            }
           ],
           "dataSource": "/api/users",
           "toolbar": [
             {
               "key": "batchDelete",
-              "label": "批量删除",
+              "label": "Batch delete",
               "actionRef": "deleteUsers",
               "requiresSelection": true,
-              "confirm": "确认删除所选用户？",
-              "batchMapping": { "body": { "ids": "$selection.keys" } }
+              "confirm": "Delete the selected users?",
+              "batchMapping": {
+                "body": {
+                  "ids": "$selection.keys"
+                }
+              },
+              "labelKey": "schema.admin-list-batch.toolbar.batchDelete",
+              "confirmKey": "schema.admin-list-batch.confirm.batchDelete"
             }
           ]
         }

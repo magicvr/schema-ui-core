@@ -367,14 +367,15 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
 
     // requiresSelection keeps the button disabled with no rows selected; the
     // confirm never appears and no batch request is constructed (fail-closed).
+    // S2: the toolbar label resolves through the en-US catalog ("Batch delete").
     const batchButton = [...container.querySelectorAll("button")].find((button) =>
-      button.textContent?.includes("批量删除"),
+      button.textContent?.includes("Batch delete"),
     )!;
     expect(batchButton.disabled).toBe(true);
     await act(async () => {
       batchButton.click();
     });
-    expect(container.textContent).not.toContain("确认删除所选用户？");
+    expect(container.textContent).not.toContain("Delete the selected users?");
     expect(
       fetchSpy.mock.calls.filter(([url, method]) => url === "/api/users/batch-delete" && method === "POST"),
     ).toHaveLength(0);
@@ -504,14 +505,15 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     });
 
     expect(container.querySelector("h1")?.textContent).toContain("List + batch");
-    expect(container.textContent).toContain("批量删除");
+    // S2: the toolbar label resolves through the en-US catalog.
+    expect(container.textContent).toContain("Batch delete");
 
     // The batch button starts disabled (requiresSelection + empty selection).
     const rowCheckboxes = container.querySelectorAll("input[aria-label='Select row']");
     expect(rowCheckboxes.length).toBe(2);
     const batchButton = () =>
       [...container.querySelectorAll("button")].find((button) =>
-        button.textContent?.includes("批量删除"),
+        button.textContent?.includes("Batch delete"),
       )!;
     expect(batchButton().disabled).toBe(true);
 
@@ -524,7 +526,7 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     await act(async () => {
       batchButton().click();
     });
-    expect(container.textContent).toContain("确认删除所选用户？");
+    expect(container.textContent).toContain("Delete the selected users?");
     const confirmButton = [...container.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("Confirm"),
     )!;

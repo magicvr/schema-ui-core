@@ -3,16 +3,24 @@
     "pageId": "form-controls",
     "title": "Form controls",
     "protocolVersion": "2.7",
-    "requiredCapabilities": ["app.manifest", "app.navigation", "form.controls.extended", "form.controls.advanced"]
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "form.controls.extended",
+      "form.controls.advanced"
+    ]
   },
   "body": {
     "type": "section",
-    "props": { "title": "Form controls" },
+    "props": {
+      "title": "Form controls"
+    },
     "children": [
       {
         "type": "text",
         "props": {
-          "text": "Full registry form control surface (D-FORM): base controls incl. inputNumber / datePicker / dateRangePicker, 2.6 extended and 2.7 advanced controls."
+          "text": "Full registry form control surface (D-FORM): base controls incl. inputNumber / datePicker / dateRangePicker, 2.6 extended and 2.7 advanced controls.",
+          "textKey": "schema.form-controls.text.intro"
         }
       },
       {
@@ -20,33 +28,105 @@
         "id": "controls-form",
         "props": {
           "fields": [
-            { "id": "name", "label": "Name (input)", "type": "input" },
+            {
+              "id": "name",
+              "label": "Name (input)",
+              "type": "input",
+              "labelKey": "schema.form-controls.field.name"
+            },
             {
               "id": "kind",
               "label": "Kind (select)",
               "type": "select",
               "options": [
-                { "value": "standard", "label": "Standard" },
-                { "value": "priority", "label": "Priority" }
-              ]
+                {
+                  "value": "standard",
+                  "label": "Standard",
+                  "labelKey": "schema.form-controls.option.standard"
+                },
+                {
+                  "value": "priority",
+                  "label": "Priority",
+                  "labelKey": "schema.form-controls.option.priority"
+                }
+              ],
+              "labelKey": "schema.form-controls.field.kind"
             },
-            { "id": "quantity", "label": "Quantity (inputNumber)", "type": "inputNumber", "min": 0, "max": 100, "step": 1, "defaultValue": 1 },
-            { "id": "deliveryDate", "label": "Delivery date (datePicker)", "type": "datePicker" },
-            { "id": "window", "label": "Window (dateRangePicker)", "type": "dateRangePicker", "startField": "windowStart", "endField": "windowEnd" },
-            { "id": "approval", "label": "Approval (switch)", "type": "switch" },
-            { "id": "auditNote", "label": "Audit note (textarea)", "type": "textarea" },
+            {
+              "id": "quantity",
+              "label": "Quantity (inputNumber)",
+              "type": "inputNumber",
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "defaultValue": 1,
+              "labelKey": "schema.form-controls.field.quantity"
+            },
+            {
+              "id": "deliveryDate",
+              "label": "Delivery date (datePicker)",
+              "type": "datePicker",
+              "labelKey": "schema.form-controls.field.deliveryDate"
+            },
+            {
+              "id": "window",
+              "label": "Window (dateRangePicker)",
+              "type": "dateRangePicker",
+              "startField": "windowStart",
+              "endField": "windowEnd",
+              "labelKey": "schema.form-controls.field.window"
+            },
+            {
+              "id": "approval",
+              "label": "Approval (switch)",
+              "type": "switch",
+              "labelKey": "schema.form-controls.field.approval"
+            },
+            {
+              "id": "auditNote",
+              "label": "Audit note (textarea)",
+              "type": "textarea",
+              "labelKey": "schema.form-controls.field.auditNote"
+            },
             {
               "id": "scope",
               "label": "Scope (radio)",
               "type": "radio",
               "options": [
-                { "value": "internal", "label": "Internal" },
-                { "value": "external", "label": "External" }
-              ]
+                {
+                  "value": "internal",
+                  "label": "Internal",
+                  "labelKey": "schema.form-controls.option.internal"
+                },
+                {
+                  "value": "external",
+                  "label": "External",
+                  "labelKey": "schema.form-controls.option.external"
+                }
+              ],
+              "labelKey": "schema.form-controls.field.scope"
             },
-            { "id": "tags", "label": "Tags (checkboxGroup)", "type": "checkboxGroup", "options": [{ "value": "alpha", "label": "Alpha" }, { "value": "beta", "label": "Beta" }] }
+            {
+              "id": "tags",
+              "label": "Tags (checkboxGroup)",
+              "type": "checkboxGroup",
+              "options": [
+                {
+                  "value": "alpha",
+                  "label": "Alpha",
+                  "labelKey": "schema.form-controls.option.alpha"
+                },
+                {
+                  "value": "beta",
+                  "label": "Beta",
+                  "labelKey": "schema.form-controls.option.beta"
+                }
+              ],
+              "labelKey": "schema.form-controls.field.tags"
+            }
           ],
-          "submitLabel": "Submit"
+          "submitLabel": "Submit",
+          "submitLabelKey": "schema.form-controls.submit.submit"
         }
       }
     ]

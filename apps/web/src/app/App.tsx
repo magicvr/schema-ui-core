@@ -31,6 +31,8 @@ import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { resolveTextProp } from "@/i18n/catalog";
+import { useTranslate } from "@/i18n/runtime";
 import {
   type AppManifest,
   type NavigationContext,
@@ -201,11 +203,12 @@ type SchemaSurfaceState =
 
 /** Unified, fail-closed surface for a failed page-schema load or validation. */
 function PageSchemaErrorSurface({ error }: { error: PageSchemaError }) {
+  const t = useTranslate();
   return (
     <section role="alert" className="space-y-6" aria-labelledby="schema-error-title">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Page schema error
+          {t("shell.pageSchemaError")}
         </p>
         <h1 id="schema-error-title" className="text-3xl font-semibold tracking-tight">
           {error.code}
@@ -245,6 +248,7 @@ function SchemaPageSurface({
   resourceFetcher?: typeof fetch;
 }) {
   const [state, setState] = useState<SchemaSurfaceState>({ status: "loading" });
+  const t = useTranslate();
 
   useEffect(() => {
     let cancelled = false;
@@ -279,7 +283,7 @@ function SchemaPageSurface({
   if (state.status === "loading") {
     return (
       <p role="status" className="text-sm text-muted-foreground">
-        Loading page schema…
+        {t("shell.loadingPageSchema")}
       </p>
     );
   }
@@ -313,18 +317,19 @@ function PageSurface({
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
+  const t = useTranslate();
   if (route === undefined) {
     return (
       <section className="max-w-2xl space-y-6" aria-labelledby="fallback-title">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Route fallback
+            {t("shell.routeFallback")}
           </p>
           <h1 id="fallback-title" className="text-3xl font-semibold tracking-tight">
-            Page not found
+            {t("shell.pageNotFound")}
           </h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            No manifest page matches <code className="font-mono">{path}</code>.
+            {t("shell.noManifestPage")} <code className="font-mono">{path}</code>.
           </p>
         </div>
         <Button
@@ -333,19 +338,21 @@ function PageSurface({
           onClick={() => onNavigate(homePage?.route ?? "/")}
         >
           <Home aria-hidden="true" className="size-4" />
-          Return to home
+          {t("shell.returnHome")}
         </Button>
       </section>
     );
   }
 
-  const pageTitle = route.page.title ?? route.page.titleKey ?? route.page.pageId;
+  const pageTitle =
+    resolveTextProp(route.page as unknown as Record<string, unknown>, "titleKey", "title", t) ??
+    route.page.pageId;
   return (
     <section className="w-full min-w-0 space-y-8" aria-labelledby="page-title">
       <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
         <div className="min-w-0 flex-1 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Admin workspace
+            {t("shell.adminWorkspace")}
           </p>
           <h1 id="page-title" className="truncate text-3xl font-semibold tracking-tight">
             {pageTitle}
@@ -388,6 +395,7 @@ export function App({
     return initial?.path ?? requested;
   });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
     () => brandingProp ?? { siteTitle: DEFAULT_SITE_TITLE, logoUrl: "" },
   );
@@ -438,8 +446,8 @@ export function App({
   };
 
   const projection = useMemo(
-    () => projectNavigation(manifest, path, navigationContext),
-    [manifest, navigationContext, path],
+    () => projectNavigation(manifest, path, navigationContext, t),
+    [manifest, navigationContext, path, t],
   );
   const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
   const showLogo = branding.logoUrl !== "";
@@ -455,7 +463,7 @@ export function App({
           role="alert"
           className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive"
         >
-          Account session failed to load; permissions and navigation may be incomplete.
+          {t("shell.accountError")}
         </div>
       ) : null}
       {/* D-004 §3: sticky top bar (desktop shell language) */}
@@ -493,7 +501,7 @@ export function App({
             )}
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold tracking-tight">{appName}</p>
-              <p className="truncate text-[11px] text-muted-foreground">Admin console</p>
+              <p className="truncate text-[11px] text-muted-foreground">{t("shell.adminConsole")}</p>
             </div>
           </a>
 
@@ -505,7 +513,7 @@ export function App({
             {/* Mobile hamburger — visible only on small screens (S3 sub-capability) */}
             <button
               type="button"
-              aria-label="Open navigation menu"
+              aria-label={t("shell.openMenu")}
               aria-expanded={mobileDrawerOpen}
               className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
               onClick={() => setMobileDrawerOpen(true)}
@@ -521,7 +529,7 @@ export function App({
                 </span>
                 <Button type="button" variant="outline" size="sm" onClick={onLogout}>
                   <LogOut aria-hidden="true" className="size-4" />
-                  Sign out
+                  {t("shell.signOut")}
                 </Button>
               </div>
             ) : null}
@@ -550,7 +558,7 @@ export function App({
               <span className="text-sm font-semibold">{appName}</span>
               <button
                 type="button"
-                aria-label="Close navigation menu"
+                aria-label={t("shell.closeMenu")}
                 className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 onClick={() => setMobileDrawerOpen(false)}
               >
@@ -589,7 +597,7 @@ export function App({
         >
           <div className="mb-3 flex items-center gap-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <PanelLeft aria-hidden="true" className="size-3.5" />
-            <span>Workspace</span>
+            <span>{t("shell.workspace")}</span>
           </div>
           <div className="space-y-0.5">
             <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />

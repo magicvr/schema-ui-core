@@ -2,6 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import enUS from "./messages/en-US.json";
+import zhCN from "./messages/zh-CN.json";
 import {
   createTranslator,
   hasTranslation,
@@ -33,6 +35,10 @@ describe("catalog integrity", () => {
   it("zh-CN catalog covers the S1 keys", () => {
     expect(hasTranslation("locale.switcher.label", "zh-CN")).toBe(true);
     expect(hasTranslation("locale.switcher.auto", "zh-CN")).toBe(true);
+  });
+
+  it("zh-CN and en-US catalogs have identical key sets (S2 maintainability)", () => {
+    expect(Object.keys(zhCN).sort()).toEqual(Object.keys(enUS).sort());
   });
 });
 
