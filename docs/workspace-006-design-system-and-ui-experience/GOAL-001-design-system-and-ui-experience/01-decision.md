@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 doc: decision
-status: active
+status: done
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.4
+version: 0.1.5
 ---
 
 # 决策记录 · GOAL-001-design-system-and-ui-experience
@@ -32,3 +32,4 @@ version: 0.1.4
 | D-004 | 2026-08-09 | 视觉方向冻结（Stitch 定稿） | **accepted** | `01-decision/D-004-visual-direction-freeze.md` |
 | D-005 | 2026-08-09 | Root 关门 — 用户书面确认 status: done | **superseded**（D-006） | `01-decision/D-005-root-closeout-user-confirmed.md` |
 | D-006 | 2026-08-09 | 废止 D-005 · 回退 Root/工作区完成状态 | **accepted** | `01-decision/D-006-reopen-after-visual-fidelity-audit.md` |
+| D-007 | 2026-08-09 | Root 再关门 — 用户目标指令书面确认 | **accepted** | `01-decision/D-007-root-closeout-user-goal-confirmation.md` |

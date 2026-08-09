@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 title: 现代设计系统与 Schema 驱动 UI/UX 体验产品化
-status: active
+status: done
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.3.0
-progress: 2/5
+version: 0.4.0
+progress: 5/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
 primary_plan: VP-005-design-system-and-ui-experience
@@ -29,9 +29,9 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 **默认不进退出分母（F-V019 路径 b）**：WCAG AA 全站、Cmd+K（可选质量 / S3 增强）。
 
-**视觉方向（D-004 accepted · 2026-08-09）**：Stitch 定稿为过程输入（本地 `raw/stitch-vp005-visual-refs/exports/stitch_schema_ui_core_admin_console/`）；仓库摘要 [attachments/visual-direction-stitch-summary.md](./attachments/visual-direction-stitch-summary.md)。**不**因定稿勾选 S1–S5；**不**把 `code.html` 当生产源。
+**视觉方向（D-004 accepted · 2026-08-09）**：Stitch 定稿为过程输入；仓库摘要 [attachments/visual-direction-stitch-summary.md](./attachments/visual-direction-stitch-summary.md)。**不**把 `code.html` 当生产源。
 
-**重开（D-006 · 2026-08-09）**：A-006 认定 S2/S3 视觉 fidelity 未达标、过早 `done`；用户书面要求回退。Root / 工作区回 `active`；开放 required = **F-VUI-001、F-VUI-002**。
+**重开与再关门**：A-006/D-006 曾废止过早 D-005。S2/S3 按 D-004 重做（GOAL-003 E-002；commits `f16dc9f` / `5716df9`）；独立审 A-008 **pass**；编排 A-009 闭合 F-VUI-001/002；用户目标指令书面确认 **D-007** → 再次 `done`。
 
 权威覆盖表（只读）：[I-PROTO-FULL-001 v1.0.0](../../workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)。
 
@@ -49,38 +49,38 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 ### 阶段层（可验收 · 等权检查点 · 对应 VP-005 S1–S5）
 
-- [x] **S1**：Token / 主题 / shadcn primitives — 语义化 Token（D-002/D-003）；深/浅色可切换且关键壳层无持续 FOUC；primitives 可发现；F-002 fixed（A-005）。**说明（A-006）**：主路径尚未广泛消费 Card/Input 等（F-VUI-004 recommended）；S1 勾选仅代表基建，不代表产品观感已对齐 Stitch。
-- [ ] **S2**：Renderer 视觉重构 — 须对照 **D-004**：桌面密表 / 移动卡片列表；`recordView` 右栏或 Drawer（移动 Sheet）；Modal 仅短编辑与 Confirm；钉死 type 面可观察视觉升级。**A-006 F-VUI-001 open**：先前「仅 chart Token」不得勾选。
-- [ ] **S3**：Shell 与工作流交互 — 须对照 **D-004** 壳气质 + 登录等；移动汉堡抽屉仅为子项，**不足**单独完成 S3。**A-006 F-VUI-002 open**。
-- [x] **S4**：状态与反馈 — Skeleton / Empty / 错误与 async 判定统一（GOAL-004）。
-- [ ] **S5**：视觉回归 + fork Token 示例 + 过程关门 — fork 示例与回归绿保留在 GOAL-005；**过程关门因 A-006 失效，本检查点取消勾选**，直至 S2/S3 诚实完成且开放 required 闭合后再议。
+- [x] **S1**：Token / 主题 / shadcn primitives — GOAL-002；F-002 fixed（A-005）；主路径消费见 S2（F-VUI-004 fixed）。
+- [x] **S2**：Renderer 视觉重构 — 桌面密表 / 移动卡片；`recordView` Drawer/Sheet；表单/展示 primitives（GOAL-003 C1；A-008 F-VUI-001 fixed）。
+- [x] **S3**：Shell 与工作流 — topbar + ~256 sidenav + 登录设计系统面（GOAL-003 C2；A-008 F-VUI-002 fixed）；移动汉堡为子能力。
+- [x] **S4**：状态与反馈 — GOAL-004。
+- [x] **S5**：视觉回归 + fork Token 示例 + 过程关门 — GOAL-005 局部保留；过程关门经 A-008/A-009 + D-007 再次成立。
 
 ### 阶段 ↔ VP 退出判据映射
 
 | 阶段 | 主要服务的 VP 退出判据 | 证据（现行） |
 |------|------------------------|--------------|
-| S1 | exit 1 Token / 主题 | GOAL-002 E-001；A-005 F-002 fixed |
-| S2 | exit 2 Renderer 纳入面视觉 | **未达标**（A-006 F-VUI-001）；GOAL-003 已重开 |
-| S3 | exit 3 Shell | **未达标**（A-006 F-VUI-002）；GOAL-003 已重开 |
-| S4 | exit 4 状态生命周期 | GOAL-004 E-001 |
-| S5 | exit 5–6 回归诚实 + 过程可关门 | GOAL-005 局部（fork/回归）有效；**Root 关门无效**（D-005 superseded / D-006） |
+| S1 | exit 1 Token / 主题 | GOAL-002；A-005 |
+| S2 | exit 2 Renderer 纳入面视觉 | GOAL-003 E-002；A-008 |
+| S3 | exit 3 Shell | GOAL-003 E-002；A-008 |
+| S4 | exit 4 状态生命周期 | GOAL-004 |
+| S5 | exit 5–6 回归诚实 + 过程可关门 | GOAL-005 + 本轮回归 + D-007 |
 
 ## 纲领路线图
 
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
-| S1 | Token / 主题 / primitives | **完成（基建）** | 勾选保留；F-VUI-004 recommended 待 S2 消费 |
-| S2 | Renderer 钉死 type 视觉重构 | **未完成 · 重开** | F-VUI-001 open |
-| S3 | Shell 与工作流 | **未完成 · 重开** | F-VUI-002 open；移动抽屉可保留为已交付子项 |
-| S4 | 状态与反馈 | **完成** | GOAL-004 done |
-| S5 | 回归 / fork / 关门 | **过程未完成** | 禁止再次 done 直至 F-VUI-001/002 闭合 + 用户确认 |
+| S1 | Token / 主题 / primitives | **完成** | 基建 + 主路径消费 |
+| S2 | Renderer 钉死 type 视觉重构 | **完成** | F-VUI-001 fixed |
+| S3 | Shell 与工作流 | **完成** | F-VUI-002 fixed |
+| S4 | 状态与反馈 | **完成** | GOAL-004 |
+| S5 | 回归 / fork / 关门 | **完成** | D-007 |
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 现行 `apps/web` Token/主题/shadcn 基线清单 | S1 方案冻结 | S1 前 | 盘点 | **closed** | — | E-002 + `attachments/I-S1-001-ui-baseline-inventory.md` |
-| I-002 | required | S1 Token 语义分层与命名 | S1 方案冻结 | S1 决策时 | Root 决策 | **closed** | — | D-002 **accepted**；D-003 |
+| I-001 | required | 现行 `apps/web` Token/主题/shadcn 基线清单 | S1 方案冻结 | S1 前 | 盘点 | **closed** | — | E-002 + inventory |
+| I-002 | required | S1 Token 语义分层与命名 | S1 方案冻结 | S1 决策时 | Root 决策 | **closed** | — | D-002/D-003 |
 | I-003 | non-blocking | 主范例页清单（S4） | S4 验收 | S4 前 | 对照范例 | **closed** | — | GOAL-004 |
 | I-004 | non-blocking | 对比度是否升格退出分母 | 可选 | 任意 | P-004 | **open** | 默认否 | F-V019 路径 b |
 | I-005 | required | 目标态视觉方向是否冻结 | S1 对照；S2/S3 呈现 | S1 实施前宜齐 | Stitch + Root 决策 | **closed** | — | D-004 + E-004 |
@@ -92,15 +92,14 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 - **不**重开 VP-003 架构迁移、不恢复长期双线、不引入热插拔插件市场。
 - **不**在本项目内重新定义或替代上游协议语义。
 - **不**修订 Goal Governance 核心方法论。
-- **不**把 Token 脚手架、Stitch 定稿或过窄自审写成「Charter #3 已全部满足」或 S2–S3 已完成。
 - **不**将 Stitch 导出 HTML 接入生产主线。
 
 ## 派生进度展示
 
-`progress: 2/5` 由上方 S1～S5 五个等权检查点派生（仅 S1、S4 勾选）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+`progress: 5/5` 由上方 S1～S5 五个等权检查点派生。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
 
-**关门状态（2026-08-09 · D-006）**：D-005 已 **superseded**。Root `status: **active**`。开放 required：**F-VUI-001、F-VUI-002**（A-006）。在其合法闭合（fixed / accepted-residual / user-overruled）并再次经用户书面确认前，**禁止** `status: done`。
+**关门状态（2026-08-09 · D-007）**：开放 required = **0**（F-VUI-001/002 fixed via A-008/A-009）。Root `status: **done**` 依用户目标指令书面确认（D-007）。F-VUI-007 = accepted-residual（非阻断）。
 
 ## 台账布局
 
-本目标使用 ledger 目录：`01-decision/`、`02-execution/`、`03-audit/`。索引文件保留 frontmatter 与条目表；独立记录使用 `D-NNN-*`、`E-NNN-*`、`A-NNN-*`。
+本目标使用 ledger 目录：`01-decision/`、`02-execution/`、`03-audit/`。

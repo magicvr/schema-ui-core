@@ -1,7 +1,7 @@
 ---
 id: workspace-006-design-system-and-ui-experience
 title: 设计系统与 Schema 驱动 UI/UX 体验工作区
-status: active
+status: done
 root_goal: GOAL-001-design-system-and-ui-experience
 canonical_scope: docs/workspace-006-design-system-and-ui-experience/
 shared_materials_catalog: none
@@ -11,20 +11,20 @@ plan_refs:
 primary_plan: VP-005-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
 # 工作区上下文 · 设计系统与 Schema 驱动 UI/UX
 
-本工作区承接 [VP-005 · 现代设计系统与 Schema 驱动 UI/UX 体验产品化](../vision/plans/VP-005-design-system-and-ui-experience.md)（**`active`**，2026-08-09 用户确认激活 + 本轮 `/govern` 开区）的实现层治理。唯一目标状态只保存在本目录的 `goal-tree.md` 与平铺 Goal 五件套中；本文件不维护第二套 progress 或审计台账。
+本工作区承接 [VP-005 · 现代设计系统与 Schema 驱动 UI/UX 体验产品化](../vision/plans/VP-005-design-system-and-ui-experience.md)（**`active`**）的实现层治理。唯一目标状态只保存在本目录的 `goal-tree.md` 与平铺 Goal 五件套中；本文件不维护第二套 progress 或审计台账。
 
 ## 绑定
 
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-006-design-system-and-ui-experience` | 用户 2026-08-09 经 `/govern` **书面确认** slug。 |
-| Root Goal | `GOAL-001-design-system-and-ui-experience` | 本区唯一 `parent: null` Root；**`status: active`**（D-006 废止过早关门；`progress: 2/5` = S1+S4）。 |
+| Root Goal | `GOAL-001-design-system-and-ui-experience` | 本区唯一 `parent: null` Root；**`status: done`**（D-007；`progress: 5/5`）。 |
 | canonical 范围 | `docs/workspace-006-design-system-and-ui-experience/` | 当前工作区唯一的目标状态范围。 |
 | 共享资料目录 | `none` | 未声明固定共享资料引用；不得把候选资料作为事实或证据。 |
 | 愿景角色 | `delivery` | 不改变 Charter 的 primary 工作区 `workspace-001-mvp-admin-foundation`。 |
@@ -32,18 +32,16 @@ parent: null
 
 ## 愿景对齐
 
-VP-005 的 `vision_ref` 精确匹配现行 Charter `schema-ui-core-admin-foundation@0.2.0`。本工作区为该 VP 的唯一 lead / delivery。视觉升级范围钉死在 [I-PROTO-FULL-001](../workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md) include 面与 VP-005 真实 type 表（VRev-011 F-V018 fixed）；**禁止**借本区扩张协议 disposition。
+VP-005 的 `vision_ref` 精确匹配现行 Charter `schema-ui-core-admin-foundation@0.2.0`。本工作区为该 VP 的唯一 lead / delivery。视觉升级范围钉死在 I-PROTO-FULL-001 include 面与 VP-005 真实 type 表；**禁止**借本区扩张协议 disposition。
 
-**禁止**在 closed [workspace-003](../workspace-003-modular-admin-architecture/workspace.md) / [workspace-004](../workspace-004-module-contribution-readiness/workspace.md) / [workspace-005](../workspace-005-full-protocol-contract-v2-7-0/workspace.md) 吸收本意图。
+**视觉方向（D-004）**：Stitch 定稿已冻结为实施输入；仓库摘要见 Root `attachments/visual-direction-stitch-summary.md`；本地截图在 `raw/stitch-vp005-visual-refs/`（gitignore）。
 
-**视觉方向（D-004）**：Stitch 定稿已冻结为实施输入（I-005 closed）；仓库摘要见 Root `attachments/visual-direction-stitch-summary.md`；本地截图在 `raw/stitch-vp005-visual-refs/`（gitignore）。
-
-**重开（D-006 / A-006 · 2026-08-09）**：用户可观察 UI 与参考脱节 → 复审 fail → 废止 D-005 `done`。开放 required：**F-VUI-001、F-VUI-002**。工作区 **`status: active`**，**不**宣称视觉产品化已交付。
+**关门（D-007 · 2026-08-09）**：S2/S3 按 D-004 诚实重做（GOAL-003 E-002）；独立审 A-008 pass；开放 required = 0；用户目标指令书面确认 Root/工作区 `done`。A-006 历史 fail 保留为过程反模式。
 
 ## 固定共享资料引用
 
-`shared_materials_catalog: none`。当前没有固定共享资料引用，也不得以其他工作区的资料或记录替代本区的事实、信息门禁或审计证据。协议 pin 与覆盖表以 Charter + inventory + I-PROTO-FULL-001 为只读权威输入。
+`shared_materials_catalog: none`。
 
 ## 串行阶段说明
 
-Root 的 S1–S5 纲领阶段原则上串行；同一阶段内可在信息门禁与计划就绪后建立并行子目标。跨区纲领阶段写在 `docs/vision/roadmap.md` 与 VP-005。当前焦点：**S2 / S3 按 D-004 诚实重做**。
+Root S1–S5 已全部完成（等权检查点 5/5）。跨区纲领阶段写在 `docs/vision/roadmap.md` 与 VP-005。
