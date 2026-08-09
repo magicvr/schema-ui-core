@@ -43,7 +43,15 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // Shell renders and redirects home -> overview.
   await expect(page).toHaveURL(/\/overview$/);
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
-  await expect(page.getByText("Schema UI Core")).toBeVisible();
+  // The shell brand renders the siteTitle from the public startup config. Read
+  // it from /api/branding rather than hardcoding the default: an earlier spec
+  // (localization M3) may have PATCHed a custom siteTitle into the shared
+  // playwright SQLite, so the header value is data-dependent, not constant.
+  const branding = await request.get("/api/branding");
+  expect(branding.status()).toBe(200);
+  const brandBody = await branding.json();
+  expect(typeof brandBody.siteTitle).toBe("string");
+  await expect(page.getByText(brandBody.siteTitle).first()).toBeVisible();
 
   // Manifest-driven navigation slots render (top / sidebar / user).
   await expect(page.getByRole("link", { name: "Overview" })).toBeVisible();
