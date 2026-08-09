@@ -30,6 +30,15 @@ closeout-ready 提案后用户**未**确认 D-008，并书面指出：除顶栏�
 | impact | 用户可观察布局与顶栏不一致 |
 | closure | fixed via E-008 code |
 
+### F-VUI-009 · 行 action（Edit 等）错误打开 recordView Drawer
+
+| 字段 | 值 |
+|------|-----|
+| level | **required**（用户列为关门缺口） |
+| status | **fixed**（E-009） |
+| evidence | `invokeAction`/`openModal` 不再 `setSelectedRow`；DataTable 忽略 action 冒泡；visual-fidelity + schema-crud 覆盖 |
+| closure | fixed via E-009 |
+
 ## 结论
 
-**verdict: conditional** 直至 E-008 回归绿后视为 F-VUI-008 fixed。Root 仍 **active / closeout-ready**；开放 required 在 F-VUI-008 fixed 后回到 0，仍须用户**显式** D-008 确认才可 done。
+**verdict: conditional** 直至缺口修复。E-008/E-009 后 F-VUI-008/009 **fixed**。Root 仍 **active / closeout-ready**；仍须用户**显式** D-008 确认才可 done。
