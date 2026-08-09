@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
-progress: 0/6
+version: 0.2.0
+progress: 1/6
 plan_refs:
   - VP-007-localization-and-system-settings
 primary_plan: VP-007-localization-and-system-settings
@@ -40,8 +40,8 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 
 | 阶段 | 目的 | 状态 |
 |------|------|------|
-| S0 | 差距与契约冻结：关闭 `I-L10N-001`～`005`；冻结 locale、翻译资源、公开 bootstrap、错误兼容和时区语义 | 下一阶段（未开始） |
-| S1 | 多语种核心：locale resolver/provider、资源装载、缺失 key/fallback、用户切换、HTML lang 与格式化 | 未开始 |
+| S0 | 差距与契约冻结：关闭 `I-L10N-001`～`005`；冻结 locale、翻译资源、公开 bootstrap、错误兼容和时区语义 | **done**（2026-08-09，D-002 + F-V029 冻结） |
+| S1 | 多语种核心：locale resolver/provider、资源装载、缺失 key/fallback、用户切换、HTML lang 与格式化 | 下一阶段（未开始） |
 | S2 | 前端与 Schema 覆盖：固定 UI 与双 Profile Runtime Manifest page/schema 分母双语化；`titleKey`/`labelKey` 真解析 | 未开始 |
 | S3 | 系统设置产品化：四类设置、公开启动配置、品牌/locale/theme 生效、权限/审计/刷新闭环 | 未开始 |
 | S4 | 后端用户可见反馈：稳定错误码 + 前端本地化保底；按 `I-L10N-004` 结论实施有界服务端 locale 协商 | 未开始 |
@@ -53,15 +53,15 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 
 | ID | 问题（摘要） | 状态 | 最晚需要阶段 |
 |----|--------------|------|--------------|
-| `I-L10N-001` | Schema 驱动页面文本如何本地化且不创建宽于/冲突于 `schema-ui-docs@v2.7.0` 的私有语义 | open · required | 多语种方案冻结前（S0） |
-| `I-L10N-002` | 用户显式语种选择持久化边界与匿名→登录合并规则 | open · required | 用户控制实施前（S1） |
-| `I-L10N-003` | 公开品牌/locale 启动配置：兼容扩展 `/api/branding` 还是新 bootstrap 契约 | open · required | Settings API 方案冻结前（S3） |
-| `I-L10N-004` | 错误 envelope 扩展到 locale 协商的真实成本与兼容边界（exit 5 二选一关闭） | open · required | 后端提示本地化实施前（S4） |
-| `I-L10N-005` | 默认时区存储/展示/服务器时间语义（UTC 存储、显示转换、失败语义） | open · required | Localization 设置实施前（S3） |
+| `I-L10N-001` | Schema 驱动页面文本如何本地化且不创建宽于/冲突于 `schema-ui-docs@v2.7.0` 的私有语义 | **verified**（前端 key 解析，D-002） | 多语种方案冻结前（S0）✓ |
+| `I-L10N-002` | 用户显式语种选择持久化边界与匿名→登录合并规则 | **verified**（localStorage 单通道，D-002） | 用户控制实施前（S1）✓ |
+| `I-L10N-003` | 公开品牌/locale 启动配置：兼容扩展 `/api/branding` 还是新 bootstrap 契约 | **verified**（兼容扩展，D-002） | Settings API 方案冻结前（S3）✓ |
+| `I-L10N-004` | 错误 envelope 扩展到 locale 协商的真实成本与兼容边界（exit 5 二选一关闭） | **verified**（路径 a 有界服务端协商，D-002） | 后端提示本地化实施前（S4）✓ |
+| `I-L10N-005` | 默认时区存储/展示/服务器时间语义（UTC 存储、显示转换、失败语义） | **verified**（UTC + 显示转换，D-002） | Localization 设置实施前（S3）✓ |
 
 ## 派生进度
 
-`progress: 0/6`：由上方 6 个纲领阶段检查点等权派生（P-001），仅展示；不放行阶段、不关闭 finding、不推导 `done`。阶段推进与关门以实施证据、审计意见和信息门禁为准。
+`progress: 1/6`：由上方 6 个纲领阶段检查点等权派生（P-001），仅展示；不放行阶段、不关闭 finding、不推导 `done`。阶段推进与关门以实施证据、审计意见和信息门禁为准。
 
 ## 台账布局
 

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001
@@ -16,16 +16,19 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | `I-L10N-001`～`005`（required / open） | 见 `01-decision.md`；S0 契约冻结前必须关闭 |
-| 到期 required 是否已 verified / residual | 未到期 | 本轮为 scaffold；S0 收尾时复核 |
+| 影响本 scope 的 I-00N | `I-L10N-001`～`005` | 台账见 `01-decision.md`；全部 `verified`（用户书面裁决，D-002）；I-L10N-004 ≠ exit 5 关闭（F-003 已标注） |
+| 到期 required 是否已 verified / residual | S0 相关：001 已到期；002～005 为提前关闭 | A-001：关闭路径总体合规 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
+| 本 scope 开放 required findings | **0** | A-001 F-001/F-002 已由 A-002 合法闭合（用户裁决 fixed） |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-09 | independent | S0 契约冻结（D-002 + F-V029 + E-002 + 索引同步） | conditional | 0（F-001/F-002 已闭合） | [A-001-s0-contract-freeze-independent.md](03-audit/A-001-s0-contract-freeze-independent.md) |
+| A-002 | 2026-08-09 | self | 编排响应 A-001 · finding 闭合 · S0 放行 | pass | 0 | [A-002-response-a001-s0-findings.md](03-audit/A-002-response-a001-s0-findings.md) |
 
 ## 结论状态
 
-尚未到达审计节点（scaffold 模式 `none`，见 `01-decision/D-001-*.md`）。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+- 最新意见：**A-002**（self 响应，2026-08-09）；A-001（independent，conditional）required findings 已全部合法闭合。
+- **开放 required = 0**；S0 检查点维持 done，`progress: 1/6`；S1 放行。
