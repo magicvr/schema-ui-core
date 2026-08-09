@@ -617,6 +617,18 @@ describe("RenderPage form.recordSource prefill (ADR-0021 · S6)", () => {
     );
   });
 
+  it("shows a loading skeleton, never a blank editable form, while the prefill GET is pending", async () => {
+    // A-002 F-001: the fetcher never settles, so the form must stay on the
+    // loading skeleton instead of mounting an empty editable form.
+    const pendingFetcher = (() => new Promise<Response>(() => undefined)) as unknown as typeof fetch;
+    const container = await renderDocument(recordSourceDocument(), {}, pendingFetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector("form")).toBeNull();
+    expect(container.querySelector('[role="status"]')).not.toBeNull();
+  });
+
   it("re-prefills from the fresh record after a submit reload", async () => {
     let siteTitle = "Before";
     const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {

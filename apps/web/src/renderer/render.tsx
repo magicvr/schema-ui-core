@@ -869,7 +869,12 @@ function useRecordSourcePrefill(
   crud: SchemaCrudValue | null,
 ): RecordSourcePrefillState {
   const recordSource = node.props.recordSource;
-  const [state, setState] = useState<RecordSourcePrefillState>({ status: "idle" });
+  // A-002 F-001: start a recordSource form in `loading` (not `idle`) so the
+  // first commit renders the skeleton, never a blank editable form that could
+  // overwrite the record while the prefill GET is pending.
+  const [state, setState] = useState<RecordSourcePrefillState>(() =>
+    recordSource !== undefined ? { status: "loading" } : { status: "idle" },
+  );
   useEffect(() => {
     if (recordSource === undefined) {
       setState({ status: "idle" });
