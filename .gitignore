@@ -33,6 +33,9 @@ lerna-debug.log*
 # --- Workspace-007 S5 launch evidence artifacts (tracked; close A-001 F-001 durable logs) ---
 !**/GOAL-006-s5-evidence-and-closeout/attachments/s5-launch/*.log
 
+# --- Workspace-007 S6 e2e evidence artifacts (tracked; F-002 discharge logs) ---
+!**/GOAL-007-s6-settings-form-page/attachments/*.log
+
 # --- Node / frontend ---
 node_modules/
 dist/
