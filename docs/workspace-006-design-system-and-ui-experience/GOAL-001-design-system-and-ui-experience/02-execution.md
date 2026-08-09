@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 doc: execution
-status: done
+status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.5
+version: 0.1.6
 ---
 
 # 执行记录 · GOAL-001-design-system-and-ui-experience
@@ -19,7 +19,8 @@ version: 0.1.5
 | E-003 | 2026-08-09 | 合并响应三审落盘（D-003 / A-004） | recorded | `02-execution/E-003-audit-response-a001-a003.md` |
 | E-004 | 2026-08-09 | Stitch 视觉参考生成与定稿评审 | recorded | `02-execution/E-004-stitch-visual-refs.md` |
 | E-005 | 2026-08-09 | 回退 Root/工作区 done 并同步 goal-tree（A-006/D-006） | recorded | `02-execution/E-005-reopen-status-rollback.md` |
-| E-006 | 2026-08-09 | S2/S3 重做完成与 Root 过程关门 | recorded | `02-execution/E-006-s2-s3-closeout.md` |
+| E-006 | 2026-08-09 | S2/S3 重做完成与 closeout 提案（曾误标 done） | recorded | `02-execution/E-006-s2-s3-closeout.md` |
+| E-007 | 2026-08-09 | 回退 Root/工作区 done → closeout-ready | recorded | `02-execution/E-007-closeout-ready-rollback.md` |
 
 ## 事实边界
 
