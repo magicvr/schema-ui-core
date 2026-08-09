@@ -1,7 +1,7 @@
 ---
 id: GOAL-002-s1-locale-core
 doc: audit
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09

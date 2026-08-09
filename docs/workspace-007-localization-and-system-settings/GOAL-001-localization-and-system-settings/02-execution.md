@@ -1,7 +1,7 @@
 ---
 id: GOAL-001-localization-and-system-settings
 doc: execution
-status: active
+status: done
 parent: null
 created: 2026-08-09
 updated: 2026-08-09

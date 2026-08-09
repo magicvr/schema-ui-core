@@ -1,7 +1,7 @@
 ---
 id: GOAL-003-s2-ui-schema-bilingual
 doc: execution
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09

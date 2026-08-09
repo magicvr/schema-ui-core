@@ -1,7 +1,7 @@
 ---
 id: GOAL-005-s4-error-localization
 doc: decision
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
