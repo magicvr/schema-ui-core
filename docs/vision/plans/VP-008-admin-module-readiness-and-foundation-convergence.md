@@ -4,7 +4,7 @@ id: VP-008-admin-module-readiness-and-foundation-convergence
 title: Admin 业务模块准入与基架收敛
 status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
-lead_workspace:
+lead_workspace: workspace-008-admin-module-readiness
 created: 2026-08-10
 updated: 2026-08-10
 version: 0.10.0
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**；2026-08-10 用户确认激活；尚未绑定工作区，按对齐契约 §5.1 进入 14 个日历日空转宽限，最迟 2026-08-24 复核 |
+| status | **`active`**；2026-08-10 用户确认激活并建立单一 lead delivery workspace `workspace-008-admin-module-readiness`；仍未产生可消费 `go` |
 | Vision required | 当前投影以 [Vision Review 台账](../reviews.md) 为唯一权威；本 VP 不独立维护计数。激活、宣称“方向已稳”或产生可消费 `go` 前，适用的 Vision required 必须合法闭合 |
-| 实现入口 | 激活与 lead delivery 工作区由后续 `/vision` 用户确认；物理 scaffold 与 Goal 推进交 `/govern` |
+| 实现入口 | lead delivery 工作区已由用户确认；物理 scaffold 与 Goal 推进由 `/govern` 承接 |
 | 业务模块门闩 | 本 VP 未形成 `go` 结论前，不启动订单、钱包、类目、通知等正式业务模块 VP 的实现 |
 
 ## 意图
@@ -226,7 +226,7 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `active`，0 区；2026-08-10 起进入 §5.1 14 日空转宽限，owner `/vision`，最迟 2026-08-24 复核。届时须挂区、回退 `planned`，或留下下一复核日 ≤14 日的书面继续空转记录；lead delivery、Root 命名与物理 scaffold 仍交后续 `/vision`/`/govern` |
+| `workspace-008-admin-module-readiness` | `GOAL-001-admin-module-readiness` | lead | 2026-08-10 | `active`，单区 lead delivery；workspace/Root 已由 `/govern` scaffold，当前无 support workspace、无可消费 `go`。 |
 
 ## 关门记录
 
@@ -250,3 +250,4 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 | 2026-08-10 | `0.8.0` | 响应 VRev-023：采纳 `conditional` / `editorial`，保留原 verdict 与 finding 原文；V-F049 → fixed，冻结愿景层方向契约与实现层 Root/Goal 台账边界；V-F050 recommended 同批 fixed，按领域局部问题与共享基架问题区分 `go` 回归治理所有者。保持 `planned`、0 区；不激活或开区。 |
 | 2026-08-10 | `0.9.0` | 响应 VRev-024 / VRev-025：采纳 `conditional` / `editorial`，保留原 verdict 与 finding 原文；V-F051 → fixed，显式采用多工作区 lead 提案、support 证据聚合、用户书面确认及缺证据即 `no-go` 规则；V-F052 → fixed，删除 VP 内独立计数并以 `reviews.md` 为唯一 Vision required 投影。保持 `planned`、0 区；不激活或开区。 |
 | 2026-08-10 | `0.10.0` | 响应 VRev-026：采纳 `pass` / `no-change`，保留原 verdict 与 finding 原文；V-F053 recommended → fixed，增加后续业务 VP residual 手递字段与 VP-008 closed 后 shared-foundation residual 的 `/vision` reopen/新准入 VP 所有者。用户随后确认激活 VP-008；状态改为 `active`，0 区进入 14 日空转宽限，未创建 workspace/Root/Goal 或产生 `go`。 |
+| 2026-08-10 | `0.11.0` | 用户确认单工作区 lead `workspace-008-admin-module-readiness`、Root `GOAL-001-admin-module-readiness` 与 GitHub Copilot `/audit` independent provider；`/govern` 完成 workspace/Root scaffold。VP-008 保持 `active`，单区已绑定但仍未产生 `go`；S0 required 信息项与运行证据继续由工作区台账承接。 |
