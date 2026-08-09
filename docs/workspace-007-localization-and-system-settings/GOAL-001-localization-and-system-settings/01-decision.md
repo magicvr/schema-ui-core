@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-localization-and-system-settings
 doc: decision
-status: done
+status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-001
@@ -28,3 +28,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | D-001 | 2026-08-09 | S0 · scaffold 工作区与 Root、纲领路线图 S0–S5、信息门禁登记 | accepted | `01-decision/D-001-scaffold-roadmap-info-gates.md` |
 | D-002 | 2026-08-09 | S0 · 差距盘点与契约冻结：关闭 I-L10N-001～005、冻结 F-V029 覆盖表 | accepted | `01-decision/D-002-s0-contract-freeze-info-gates.md` |
+| D-003 | 2026-08-09 | 暂时回退 Root 关门状态承接 S6 子目标（GOAL-007） | accepted | `01-decision/D-003-reopen-root-for-s6.md` |

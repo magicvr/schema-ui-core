@@ -11,19 +11,19 @@ plan_refs:
 primary_plan: VP-007-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # 工作区上下文 · 多语种与系统设置产品化
 
-本工作区承接 [VP-007 · 多语种与系统设置产品化](../vision/plans/VP-007-localization-and-system-settings.md) 的实现层治理（2026-08-09 用户确认激活，lead delivery = 本工作区；同日 Root 关门完成）。
+本工作区承接 [VP-007 · 多语种与系统设置产品化](../vision/plans/VP-007-localization-and-system-settings.md) 的实现层治理（2026-08-09 用户确认激活，lead delivery = 本工作区；同日 Root 关门完成，**2026-08-09 用户指令暂时回退关门承接 S6**，见 GOAL-001 `D-003`）。
 
 ## 绑定
 
 | 字段 | 当前值 |
 |------|--------|
-| Root Goal | `GOAL-001-localization-and-system-settings`（**`done` `6/6`**；S0–S5 全部完成，2026-08-09 用户书面确认） |
+| Root Goal | `GOAL-001-localization-and-system-settings`（**`active`** `6/7`；S0–S5 完成，2026-08-09 用户书面确认；S6 子目标 `GOAL-007-s6-settings-form-page` 进行中） |
 | vision_role | `delivery` |
 | primary_plan | `VP-007-localization-and-system-settings`（**closed** 同日） |
 | shared_materials_catalog | `none` |

@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-localization-and-system-settings
 title: 多语种与系统设置产品化
-status: done
+status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.7.0
-progress: 6/6
+version: 0.8.0
+progress: 6/7
 plan_refs:
   - VP-007-localization-and-system-settings
 primary_plan: VP-007-localization-and-system-settings
@@ -46,6 +46,7 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 | S3 | 系统设置产品化：四类设置、公开启动配置、品牌/locale/theme 生效、权限/审计/刷新闭环 | **done**（2026-08-09，GOAL-004-s3-settings-productization 6/6，A-001 pass） |
 | S4 | 后端用户可见反馈：稳定错误码 + 前端本地化保底；按 `I-L10N-004` 结论实施有界服务端 locale 协商 | **done**（2026-08-09，GOAL-005-s4-error-localization 5/5，A-001 pass；I-L10N-004 实施证据齐备） |
 | S5 | 双 Profile 验证与关门：两语种 × 两 Profile × 登录前后/权限/失败矩阵、文档、审计与 close-out | **done**（2026-08-09，GOAL-006 done 4/4；A-001→A-002；用户确认 D-002） |
+| S6 | 设置页表单/详情页改造：实现 `form.props.recordSource` 预填（ADR-0021）+ settings 页四类内联表单重构 | **active**（2026-08-09，GOAL-007-s6-settings-form-page 进行中；Root 用户指令暂时回退承接） |
 
 ## 信息需求（P-005）
 
@@ -61,7 +62,7 @@ serves_summary: 在 I-PROTO-FULL-001 完整协议面与 VP-005 设计系统之�
 
 ## 派生进度
 
-`progress: 6/6`：由上方 6 个纲领阶段检查点等权派生（P-001），仅展示；不放行阶段、不关闭 finding。Root `done` 依据：S0–S5 证据链 + 开放 required = 0 + 用户书面确认（GOAL-006 D-002，2026-08-09）。
+`progress: 6/7`：由上方 7 个纲领阶段检查点等权派生（P-001），仅展示；不放行阶段、不关闭 finding。S0–S5 已由 GOAL-006 D-002 用户书面确认关门（历史记录保留不重写）；**2026-08-09 用户指令暂时回退关门状态承接 S6**（`done` → `active`，`6/6` → `6/7`，见 `01-decision/D-003-reopen-root-for-s6.md`）。Root 恢复 `done` 待 GOAL-007 C4 关门。
 
 ## 台账布局
 

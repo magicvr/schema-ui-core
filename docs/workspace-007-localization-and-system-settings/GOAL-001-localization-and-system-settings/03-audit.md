@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-localization-and-system-settings
 doc: audit
-status: done
+status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计 · GOAL-001
