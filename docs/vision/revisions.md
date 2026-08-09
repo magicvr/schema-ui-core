@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 0.3.8
+version: 0.3.9
 ---
 
 # Charter 修订台账
@@ -28,3 +28,4 @@ version: 0.3.8
 | VR-012 | 2026-08-09 | editorial | 协议来源与 VP 关系指针 | 响应 VRev-016 `F-V031`：删除协议来源段残留的“VP-005 active”旧指针，明确 VP-005 closed、当前无 active，并索引 planned VP-007 v0.1.1（0 区）。不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`）；**无** re-align。 |
 | VR-013 | 2026-08-09 | editorial | VP 关系指针 + 组合焦点 | 用户确认激活 VP-007（v0.2.0 `active`；lead delivery `workspace-007-localization-and-system-settings`，Root 待 `/govern` scaffold）；Charter 关系节改为当前交付 VP-007；roadmap / workspaces / VP-007 绑定表同步。不改目的/边界/非目标；`@0.2.0`；**无** re-align。 |
 | VR-014 | 2026-08-10 | editorial | VP-007 关门投影 + VP-008 组合指针 | 修正 Charter 与 reviews 摘要残留的“VP-007 active”旧投影：VP-007 已于 2026-08-09 用户书面确认 `closed`，当前无 active 交付 VP。用户确认新建 planned `VP-008-admin-module-readiness-and-foundation-convergence`，作为正式业务模块前的全基架准入波次；未激活、未建区。不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`）；**无** strategic、**无** re-align。 |
+| VR-015 | 2026-08-10 | editorial | VRev-026 响应 + VP-008 激活指针 | 用户采纳 VRev-026 `pass`、V-F053 → `fixed`，并确认激活 VP-008。VP-008 v0.10.0 改为 `active`、0 workspace；Charter/roadmap/reviews 投影同步，空区按 §5.1 从 2026-08-10 起进入 14 日宽限，最迟 2026-08-24 复核。不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`）；**无** strategic、**无** re-align。 |

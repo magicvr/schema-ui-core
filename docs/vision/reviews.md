@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 1.3.27
+version: 1.3.29
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.27
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | V-F051 / V-F052 均已 `fixed`：VP-008 v0.9.0 显式采用多工作区 `go` 责任规则，并以本台账为唯一 Vision required 投影 |
+| — | — | — | **无** | VRev-026 对 VP-008 v0.9.0 意图清晰度复审为 `pass`；V-F053 recommended → **fixed**（VP-008 v0.10.0），无新增 required |
 
-> Vision Review **open required = 0**。VRev-025 原 verdict `conditional` 保留；V-F051 carried projection 与 V-F052 均已 `fixed`（`/vision` editorial 响应）：VP-008 已修订 v0.9.0，以本台账为唯一 Vision required 投影。VRev-024 原 verdict `conditional` 保留；V-F051 → `fixed`，VP-008 已显式采用多工作区 lead 提案、support 证据聚合、用户书面确认与 fail-closed `no-go` 规则。VRev-023 原 verdict `conditional` 保留；V-F049 → `fixed`，V-F050 recommended 同批 `fixed`（`/vision` editorial 响应），VP-008 v0.8.0 冻结愿景层方向契约与实现层 Root/Goal 台账边界，并明确 `go` 回归治理所有者。VRev-022 原 verdict `conditional` 保留；V-F048 → `fixed`（`/vision` editorial 响应）。VRev-017～VRev-021 原 verdict `conditional` 与既有 fixed 响应继续保留。当前无 active 交付 VP；VP-008 仍 `planned`、0 workspace，尚未激活或绑定工作区，也未产生可消费 `go`。组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。VRev-026（independent，`pass`）确认 VP-008 v0.9.0 方向级意图已足够清晰与自洽；V-F053 recommended → **fixed**（VP-008 v0.10.0 + 报告内 `/vision` 响应）。VP-008 已按用户确认改为 `active`，仍 0 workspace，2026-08-10 起进入 §5.1 的 14 日空转宽限，尚未产生可消费 `go`。VRev-025 原 verdict `conditional` 保留；V-F051 carried projection 与 V-F052 均已 `fixed`。VRev-024 原 verdict `conditional` 保留；V-F051 → `fixed`。VRev-017～VRev-023 原 verdict `conditional` 与既有 fixed 响应继续保留。当前无 active 交付 VP（active VP-008 尚未绑定 delivery workspace）。组合焦点见 [roadmap.md](roadmap.md)。
 
 ## 条目索引
 
@@ -63,3 +63,4 @@ version: 1.3.27
 | VRev-023 | 2026-08-10 | independent | VP-008 v0.7.0 · 意图边界 / 愿景层级卫生 / 遗漏问题 | conditional | 0 | 原 verdict 保留；V-F049 → fixed，V-F050 recommended 同批 fixed；VP-008 已修订 v0.8.0，冻结愿景/实现分层与 `go` 回归治理所有者；仍 planned、0 workspace | [VRev-023-vp008-v0-7-0-layer-boundary-review.md](reviews/VRev-023-vp008-v0-7-0-layer-boundary-review.md) |
 | VRev-024 | 2026-08-10 | independent | VP-008 v0.8.0 · 意图清晰度 / `go` 裁决责任 / 未考虑项 | conditional | 0 | 原 verdict 保留；V-F051 → fixed（VP-008 v0.9.0 + 报告内 `/vision` editorial 响应）；VP-008 仍 planned、0 workspace | [VRev-024-vp008-v0-8-0-decision-ownership-review.md](reviews/VRev-024-vp008-v0-8-0-decision-ownership-review.md) |
 | VRev-025 | 2026-08-10 | independent | VP-008 v0.8.0 · intent clarity reaudit / gate projection | conditional | 0 | 原 verdict 保留；V-F051 carried projection 与 V-F052 → fixed（VP-008 v0.9.0 + 报告内 `/vision` editorial 响应） | [VRev-025-vp008-v0-8-0-intent-clarity-reaudit.md](reviews/VRev-025-vp008-v0-8-0-intent-clarity-reaudit.md) |
+| VRev-026 | 2026-08-10 | independent | VP-008 v0.9.0 · 意图清晰度 / 残余问题 / 未考虑项 | pass | 0 | 原 verdict 保留；V-F053 recommended → fixed（VP-008 v0.10.0 + 报告内 `/vision` 响应）；VP-008 active、0 workspace，处于 14 日空转宽限 | [VRev-026-vp008-v0-9-0-intent-clarity-pass.md](reviews/VRev-026-vp008-v0-9-0-intent-clarity-pass.md) |

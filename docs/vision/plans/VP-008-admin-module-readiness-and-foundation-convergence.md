@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-008-admin-module-readiness-and-foundation-convergence
 title: Admin 业务模块准入与基架收敛
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace:
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.9.0
+version: 0.10.0
 parent: null
 ---
 
@@ -17,7 +17,7 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**；尚未激活或绑定工作区 |
+| status | **`active`**；2026-08-10 用户确认激活；尚未绑定工作区，按对齐契约 §5.1 进入 14 个日历日空转宽限，最迟 2026-08-24 复核 |
 | Vision required | 当前投影以 [Vision Review 台账](../reviews.md) 为唯一权威；本 VP 不独立维护计数。激活、宣称“方向已稳”或产生可消费 `go` 前，适用的 Vision required 必须合法闭合 |
 | 实现入口 | 激活与 lead delivery 工作区由后续 `/vision` 用户确认；物理 scaffold 与 Goal 推进交 `/govern` |
 | 业务模块门闩 | 本 VP 未形成 `go` 结论前，不启动订单、钱包、类目、通知等正式业务模块 VP 的实现 |
@@ -150,6 +150,10 @@ S0 必须冻结一份可版本化的准入分母，至少包含：
 
 若本 VP 绑定多于一个工作区，S5 `go` 与 VP 关门提案显式采用 [对齐契约](../alignment.md) 的多工作区责任规则：`lead_workspace` 必填，且只由 lead 发起可消费的 `go` / 关门提案；规范化决策记录必须指向 lead Root 的证据矩阵，并通过 Q2 路径聚合其余工作区的 support 证据。矩阵须逐区列明纳入的 exit 证据、Goal open finding、accepted residual 及未纳入项与理由，同时列出仓库级 Vision open required 投影。只有该矩阵完整、所有适用 required 均已合法闭合，并由用户书面确认后，`go` 才可消费；任一关键 support 证据不可获得、影响范围不明或 required 仍开放时均保持 `no-go`。局部 Goal 通过或单一工作区证据不得解释为整个 VP 已准入。单工作区时仍须用户书面确认；`lead_workspace` 可按对齐契约省略或等于该区。
 
+### Residual 手递与关闭后所有者
+
+任何后续业务 VP 在激活时消费本 VP 的 `go`，必须在其消费决策记录中引用适用 residual id 列表、影响的共同门禁、当前 owner、到期/触发条件和复审入口；不得只写“继承 VP-008 residual”。若 VP-008 已 `closed` 后 shared-foundation residual 触发，相关 `go` 消费立即暂停，由 `/vision` 选择 reopen VP-008 或建立新的准入 VP，并把决定、影响 scope 与复核证据链接回消费记录。
+
 S5 的用户裁决必须落盘以下最小字段：`decision`、日期、证据矩阵链接、Goal/Vision finding 闭合状态、accepted residual（如有）、受影响/解锁 scope、适用候选 commit/artifact、source identity（clean 或 patch/manifest/input digest）、`go_issued_at`、`last_freshness_review_at`、`next_freshness_review_trigger`、go 生效/失效触发，以及对 roadmap 业务门闩的生效语句。证据矩阵至少包含：`exit_id`、分母项 id、命令/手续、结果、Q2 证据路径、residual/N/A 理由。
 
 | decision | 关门与解锁语义 |
@@ -222,7 +226,7 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned`，0 区；激活、lead delivery 与 Root 命名待后续 `/vision` 用户确认，物理 scaffold 交 `/govern` |
+| — | — | lead | — | `active`，0 区；2026-08-10 起进入 §5.1 14 日空转宽限，owner `/vision`，最迟 2026-08-24 复核。届时须挂区、回退 `planned`，或留下下一复核日 ≤14 日的书面继续空转记录；lead delivery、Root 命名与物理 scaffold 仍交后续 `/vision`/`/govern` |
 
 ## 关门记录
 
@@ -245,3 +249,4 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 | 2026-08-10 | `0.7.0` | 响应 VRev-022：采纳 `conditional` / `editorial`，保留原 verdict 与 finding 原文；F-V048 → fixed，选择每个后续业务 VP 激活前的消费前 freshness review，冻结最低复核字段、S5 记录字段及失败后的暂挂/回流路径，并接入 roadmap 业务门闩。保持 `planned`、0 区；不激活或开区。 |
 | 2026-08-10 | `0.8.0` | 响应 VRev-023：采纳 `conditional` / `editorial`，保留原 verdict 与 finding 原文；V-F049 → fixed，冻结愿景层方向契约与实现层 Root/Goal 台账边界；V-F050 recommended 同批 fixed，按领域局部问题与共享基架问题区分 `go` 回归治理所有者。保持 `planned`、0 区；不激活或开区。 |
 | 2026-08-10 | `0.9.0` | 响应 VRev-024 / VRev-025：采纳 `conditional` / `editorial`，保留原 verdict 与 finding 原文；V-F051 → fixed，显式采用多工作区 lead 提案、support 证据聚合、用户书面确认及缺证据即 `no-go` 规则；V-F052 → fixed，删除 VP 内独立计数并以 `reviews.md` 为唯一 Vision required 投影。保持 `planned`、0 区；不激活或开区。 |
+| 2026-08-10 | `0.10.0` | 响应 VRev-026：采纳 `pass` / `no-change`，保留原 verdict 与 finding 原文；V-F053 recommended → fixed，增加后续业务 VP residual 手递字段与 VP-008 closed 后 shared-foundation residual 的 `/vision` reopen/新准入 VP 所有者。用户随后确认激活 VP-008；状态改为 `active`，0 区进入 14 日空转宽限，未创建 workspace/Root/Goal 或产生 `go`。 |
