@@ -41,7 +41,7 @@ func Load() *Config {
 	cfg := &Config{
 		AppName:      envOr("APP_NAME", "schema-ui-core-api"),
 		AppEnv:       envOr("APP_ENV", "development"),
-		HTTPAddr:     envOr("HTTP_ADDR", ":8080"),
+		HTTPAddr:     envOr("HTTP_ADDR", ":25080"),
 		ReadTimeout:  durationEnv("HTTP_READ_TIMEOUT", 5*time.Second),
 		WriteTimeout: durationEnv("HTTP_WRITE_TIMEOUT", 10*time.Second),
 		IdleTimeout:  durationEnv("HTTP_IDLE_TIMEOUT", 60*time.Second),

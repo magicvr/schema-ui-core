@@ -38,8 +38,8 @@ cd apps/api
 export APP_PROFILE=mvp       # 或 admin；custom 必须同时设置 APP_MODULES_ENABLED
 make run
 # 或：go run ./cmd/server
-# 探活：curl http://localhost:8080/healthz
-# 就绪：curl http://localhost:8080/readyz
+# 探活：curl http://localhost:25080/healthz
+# 就绪：curl http://localhost:25080/readyz
 ```
 
 详见 [apps/api/README.md](apps/api/README.md)。
@@ -70,8 +70,8 @@ APP_PROFILE=mvp                 # 或 admin
 APP_MODULES_ENABLED=            # 可选，逗号分隔的显式模块覆盖
 
 docker compose up --build
-#  API: http://localhost:8080  (GET /healthz 探活)
-#  Web: http://localhost:8081  (nginx 服务 SPA + /api 反代；同源免 CORS)
+#  API: http://localhost:25080  (GET /healthz 探活)
+#  Web: http://localhost:25081  (nginx 服务 SPA + /api 反代；同源免 CORS)
 #  登录种子 admin → 后台首页
 ```
 

@@ -35,7 +35,7 @@ make run
 go run ./cmd/server
 ```
 
-默认监听 `:8080`（`HTTP_ADDR`）。首次启动在 `DB_PATH`（默认 `./data/schema-ui.db`）建表并种子 admin：
+默认监听 `:25080`（`HTTP_ADDR`）。首次启动在 `DB_PATH`（默认 `./data/schema-ui.db`）建表并种子 admin：
 - dev 缺省 `ADMIN_INITIAL_PASSWORD=admin`；生产必须显式设置。
 - 生产缺少 `AUTH_JWT_SECRET` → 启动失败（fail-closed）；dev 使用开发密钥并打警告。
 
@@ -74,15 +74,15 @@ Profile 选择只影响启动时模块集合，不改变编译产物或全局迁
 # 1) 启动 API（compose 或本地）
 docker compose up -d api   # 或：make run / go run ./cmd/server
 # 2) 探活
-curl -fsS http://localhost:8080/healthz
+curl -fsS http://localhost:25080/healthz
 # -> {"status":"ok","timestamp":"...","version":"...","commit":"..."}
 # 3) 登录种子 admin（首次启动按 ADMIN_INITIAL_PASSWORD 种子）
-curl -fsS -X POST http://localhost:8080/api/auth/login \
+curl -fsS -X POST http://localhost:25080/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"<ADMIN_INITIAL_PASSWORD>"}'
 # -> {"accessToken":"...","refreshToken":"..."}
 # 4) 会话
-TOKEN=$(...); curl -fsS http://localhost:8080/api/accounts/me -H "Authorization: Bearer $TOKEN"
+TOKEN=$(...); curl -fsS http://localhost:25080/api/accounts/me -H "Authorization: Bearer $TOKEN"
 # -> {"user":{...},"features":{...}}
 ```
 

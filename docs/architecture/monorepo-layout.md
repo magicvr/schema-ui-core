@@ -56,7 +56,7 @@ GOAL-002 **不**交付可运行服务；空目录壳（若有）不改变路径�
 | Go 版本 | `go 1.26`（R1 本机实测；README 声明） |
 | 入口 | `cmd/server` |
 | 分层 | `internal/`（config / server / handler…）、`pkg/`（可复用小库） |
-| 默认端口 | `:8080`（`HTTP_ADDR`） |
+| 默认端口 | `:25080`（`HTTP_ADDR`） |
 | 探活 | `GET /healthz` |
 | 期望命令 | `make run` 或 `go run ./cmd/server`；另推荐 `make build` / `make test` |
 
@@ -86,7 +86,7 @@ cd apps/api
 # 可选：copy .env.example → .env
 make run
 # 或：go run ./cmd/server
-# 探活：curl http://localhost:8080/healthz
+# 探活：curl http://localhost:25080/healthz
 ```
 
 ### Web（GOAL-004）

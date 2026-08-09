@@ -33,5 +33,5 @@ USER app
 ENV DB_PATH=/app/data/schema-ui.db \
     APP_ENV=production \
     AUTH_DEV_SESSION_ENABLED=false
-EXPOSE 8080
+EXPOSE 25080
 ENTRYPOINT ["/app/schema-ui-core-api"]

@@ -30,11 +30,11 @@ services:
     volumes:
       - db-data:/app/data
     ports:
-      - "${API_HOST_PORT:-8080}:8080"
+      - "${API_HOST_PORT:-25080}:25080"
     healthcheck:
       # Readiness probe (A-002 F-002-006): liveness + SQLite ping, so a dead or
       # unmigrated database flips the gate instead of reporting healthy.
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/readyz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:25080/readyz"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -51,7 +51,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "${WEB_HOST_PORT:-8081}:80"
+      - "${WEB_HOST_PORT:-25081}:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 5s

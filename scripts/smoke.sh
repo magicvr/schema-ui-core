@@ -13,8 +13,8 @@
 # 70=未分类内部错误。
 #
 # 输入（env）：
-#   API_BASE_URL         默认 http://localhost:8080
-#   WEB_BASE_URL         默认 http://localhost:8081
+#   API_BASE_URL         默认 http://localhost:25080
+#   WEB_BASE_URL         默认 http://localhost:25081
 #   SMOKE_USERNAME       默认 admin
 #   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
 #   SMOKE_SEED_ID         默认 user-admin
@@ -28,8 +28,8 @@
 
 set -u
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
-WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:8081}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:25080}"
+WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:25081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"

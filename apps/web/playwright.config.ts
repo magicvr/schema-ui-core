@@ -16,13 +16,12 @@ if (appProfile !== "mvp" && appProfile !== "admin") {
   throw new Error(`APP_PROFILE must be mvp or admin for browser E2E (got ${appProfile || "empty"})`);
 }
 
-// WEB_PORT defaults to 5173 (CI/Linux product port). On Windows hosts where
-// 5173 falls in a Hyper-V excluded range, set WEB_PORT=9999 (or any free port)
-// for local runs without changing the committed default.
+// WEB_PORT defaults to 25173 (>25000) so local Windows runs stay outside the
+// Hyper-V excluded ranges; WEB_PORT still overrides when another port is needed.
 //
 // Each Playwright run gets a fresh SQLite file so seedRBAC is deterministic and
 // parallel browser specs do not fight a developer DB.
-const webPort = Number(process.env.WEB_PORT || 5173);
+const webPort = Number(process.env.WEB_PORT || 25173);
 const webOrigin = `http://127.0.0.1:${webPort}`;
 const e2eDbPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-")), "e2e.db");
 
@@ -43,7 +42,7 @@ export default defineConfig({
     {
       command: "go run ./cmd/server",
       cwd: "../api",
-      url: "http://127.0.0.1:8080/readyz",
+      url: "http://127.0.0.1:25080/readyz",
       // Never reuse: a leftover developer server may point at a non-seeded DB
       // without menu_users grants.
       reuseExistingServer: false,
