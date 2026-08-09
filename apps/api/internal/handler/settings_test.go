@@ -171,3 +171,112 @@ func loginAs(t *testing.T, env *authTestEnv, username, password string) string {
 	t.Helper()
 	return env.login(t, username, password)
 }
+
+func TestBrandingVp007StartupFieldsAndPatch(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := env.login(t, testSeedUsername, testSeedPassword)
+
+	// Patch the VP-007 fields across all four categories.
+	req := bearer(t, token, http.MethodPatch, "/api/settings/default",
+		`{"logoUrlLight":"/assets/logo-light.svg","logoUrlDark":"/assets/logo-dark.svg","faviconUrl":"/favicon.ico","defaultLocale":"zh-CN","siteTimezone":"Asia/Shanghai","defaultTheme":"dark"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("vp007 patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var row map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&row)
+	if row["defaultLocale"] != "zh-CN" || row["defaultTheme"] != "dark" || row["siteTimezone"] != "Asia/Shanghai" {
+		t.Fatalf("patched row = %v", row)
+	}
+	if row["logoUrlLight"] != "/assets/logo-light.svg" || row["logoUrlDark"] != "/assets/logo-dark.svg" || row["faviconUrl"] != "/favicon.ico" {
+		t.Fatalf("branding row = %v", row)
+	}
+
+	// Public startup configuration reflects the fields + supported locales.
+	req = httptest.NewRequest(http.MethodGet, "/api/branding", nil)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("branding status = %d", rr.Code)
+	}
+	var branding map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&branding)
+	if branding["defaultLocale"] != "zh-CN" || branding["defaultTheme"] != "dark" || branding["siteTimezone"] != "Asia/Shanghai" {
+		t.Fatalf("branding startup = %v", branding)
+	}
+	if branding["logoUrlLight"] != "/assets/logo-light.svg" || branding["logoUrlDark"] != "/assets/logo-dark.svg" || branding["faviconUrl"] != "/favicon.ico" {
+		t.Fatalf("branding assets = %v", branding)
+	}
+	locales, ok := branding["supportedLocales"].([]any)
+	if !ok || len(locales) != 2 {
+		t.Fatalf("supportedLocales = %v", branding["supportedLocales"])
+	}
+}
+
+func TestSettingsValidationAndReset(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := env.login(t, testSeedUsername, testSeedPassword)
+
+	// Invalid IANA timezone → 400 INVALID_TIMEZONE, previous value untouched.
+	req := bearer(t, token, http.MethodPatch, "/api/settings/default", `{"siteTimezone":"Foo/Bar"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("bad timezone status = %d, want 400", rr.Code)
+	}
+	var errBody map[string]string
+	_ = json.NewDecoder(rr.Body).Decode(&errBody)
+	if errBody["error"] != "INVALID_TIMEZONE" {
+		t.Fatalf("bad timezone code = %v, want INVALID_TIMEZONE", errBody["error"])
+	}
+
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"defaultLocale":"fr-FR"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest || !bodyHasCode(rr, "INVALID_DEFAULT_LOCALE") {
+		t.Fatalf("bad locale = %d %s", rr.Code, rr.Body.String())
+	}
+
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"defaultTheme":"neon"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest || !bodyHasCode(rr, "INVALID_DEFAULT_THEME") {
+		t.Fatalf("bad theme = %d %s", rr.Code, rr.Body.String())
+	}
+
+	// Reset restores defaults and fires the config-change header.
+	req = bearer(t, token, http.MethodPost, "/api/settings/default/reset", "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("reset status = %d: %s", rr.Code, rr.Body.String())
+	}
+	if got := rr.Header().Get("X-Schema-UI-Config-Changed"); got != "settings.branding" {
+		t.Fatalf("reset config namespace = %q", got)
+	}
+	var row map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&row)
+	if row["siteTitle"] != "Schema UI Core" || row["defaultLocale"] != "auto" || row["defaultTheme"] != "auto" || row["siteTimezone"] != "auto" {
+		t.Fatalf("reset row = %v", row)
+	}
+	if row["logoUrlLight"] != "" || row["logoUrlDark"] != "" || row["faviconUrl"] != "" {
+		t.Fatalf("reset assets = %v", row)
+	}
+
+	// Reset requires settings.write.
+	env.addUser(t, "ed", "editor-pass-1", []string{"editor"})
+	editorToken := env.login(t, "ed", "editor-pass-1")
+	req = bearer(t, editorToken, http.MethodPost, "/api/settings/default/reset", "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("editor reset status = %d, want 403", rr.Code)
+	}
+}
+
+func bodyHasCode(rr *httptest.ResponseRecorder, want string) bool {
+	var body map[string]string
+	_ = json.NewDecoder(rr.Body).Decode(&body)
+	return body["error"] == want
+}

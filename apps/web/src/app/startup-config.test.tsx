@@ -1,0 +1,493 @@
+// @vitest-environment jsdom
+
+/**
+ * S3 startup configuration tests (GOAL-004 · C2/C3/C5):
+ * - fetchBranding parses the VP-007 extended public startup payload.
+ * - applyDocumentBranding applies faviconUrl (fallback logoUrl) + title.
+ * - The shell applies light/dark logo variants and the system default theme
+ *   when branding loads; the login page applies the favicon + default theme.
+ * - I18nProvider resolves the system default locale from /api/branding.
+ * - Settings page renders the four-category surface with permission gating.
+ */
+
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { App } from "@/app/App";
+import { LoginPage } from "@/app/LoginPage";
+import {
+  applyDocumentBranding,
+  defaultBranding,
+  fetchBranding,
+  type Branding,
+} from "@/app/branding";
+import { I18nProvider, LOCALE_STORAGE_KEY, useI18n } from "@/i18n/runtime";
+import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
+
+const __dir = dirname(fileURLToPath(import.meta.url));
+const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin.json");
+const SETTINGS_SCHEMA_PATH = resolve(
+  __dir,
+  "../../../api/internal/modules/settings/schema/settings.json",
+);
+
+const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
+
+const STARTUP_BODY: Record<string, unknown> = {
+  siteTitle: "Acme Admin",
+  logoUrl: "/assets/logo.svg",
+  logoUrlLight: "/assets/logo-light.svg",
+  logoUrlDark: "/assets/logo-dark.svg",
+  faviconUrl: "/favicon.ico",
+  defaultLocale: "zh-CN",
+  supportedLocales: ["zh-CN", "en-US"],
+  siteTimezone: "Asia/Shanghai",
+  defaultTheme: "dark",
+};
+
+const SETTINGS_ROW: Record<string, unknown> = {
+  id: "default",
+  siteTitle: "Acme Admin",
+  logoUrl: "/assets/logo.svg",
+  logoUrlLight: "/assets/logo-light.svg",
+  logoUrlDark: "/assets/logo-dark.svg",
+  faviconUrl: "/favicon.ico",
+  defaultLocale: "zh-CN",
+  siteTimezone: "Asia/Shanghai",
+  defaultTheme: "dark",
+  updatedAt: "2026-08-09T00:00:00.000Z",
+};
+
+beforeEach(() => {
+  Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
+    configurable: true,
+    value: true,
+  });
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+  localStorage.clear();
+  document.title = "";
+  document.documentElement.lang = "";
+  document.head.querySelectorAll("link[data-schema-ui-branding]").forEach((link) => link.remove());
+  document.documentElement.classList.remove("dark");
+});
+
+afterEach(async () => {
+  for (const { root, container } of activeRoots.splice(0)) {
+    await act(async () => root.unmount());
+    container.remove();
+  }
+  localStorage.clear();
+});
+
+function adminManifest(): AppManifest {
+  return validateAppManifest(JSON.parse(readFileSync(MANIFEST_PATH, "utf8")));
+}
+
+function settingsSchemaDocument(): Record<string, unknown> {
+  return JSON.parse(readFileSync(SETTINGS_SCHEMA_PATH, "utf8"));
+}
+
+function adminContext() {
+  return {
+    user: { id: "u1", roles: ["admin"], permissions: ["settings.read", "settings.write"] },
+    features: { menu_settings: true },
+  };
+}
+
+function fetcherFor(): typeof fetch {
+  return (async (input: RequestInfo | URL) => {
+    const pathname = new URL(String(input), "http://test.local").pathname;
+    if (pathname === "/api/branding") {
+      return new Response(JSON.stringify(STARTUP_BODY), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (pathname.startsWith("/api/settings")) {
+      return new Response(JSON.stringify({ items: [SETTINGS_ROW], total: 1, page: 1, pageSize: 10 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (pathname.startsWith("/api/schema/settings")) {
+      return new Response(JSON.stringify(settingsSchemaDocument()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
+  }) as typeof fetch;
+}
+
+async function renderAt(path: string, element: React.ReactElement): Promise<HTMLDivElement> {
+  window.history.replaceState({}, "", path);
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  activeRoots.push({ root, container });
+  await act(async () => {
+    root.render(element);
+  });
+  return container;
+}
+
+// ── C2 · fetchBranding extended payload ───────────────────────────────────────
+
+describe("S3 · fetchBranding startup payload", () => {
+  it("parses the VP-007 extended fields and defaults the legacy shape", async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(STARTUP_BODY), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch;
+    const branding = await fetchBranding();
+    expect(branding.siteTitle).toBe("Acme Admin");
+    expect(branding.logoUrlLight).toBe("/assets/logo-light.svg");
+    expect(branding.logoUrlDark).toBe("/assets/logo-dark.svg");
+    expect(branding.faviconUrl).toBe("/favicon.ico");
+    expect(branding.defaultLocale).toBe("zh-CN");
+    expect(branding.supportedLocales).toEqual(["zh-CN", "en-US"]);
+    expect(branding.siteTimezone).toBe("Asia/Shanghai");
+    expect(branding.defaultTheme).toBe("dark");
+  });
+
+  it("falls back to safe defaults on failure or missing fields", async () => {
+    globalThis.fetch = (async () => new Response("boom", { status: 503 })) as typeof fetch;
+    const failed = await fetchBranding();
+    expect(failed.siteTitle).toBe("Schema UI Core");
+    expect(failed.defaultLocale).toBe("auto");
+    expect(failed.defaultTheme).toBe("auto");
+    expect(failed.supportedLocales).toEqual([]);
+
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ siteTitle: "T" }), { status: 200 })) as typeof fetch;
+    const sparse = await fetchBranding();
+    expect(sparse.defaultLocale).toBe("auto");
+    expect(sparse.siteTimezone).toBe("auto");
+  });
+
+  it("applyDocumentBranding sets the title and favicon from faviconUrl", () => {
+    const branding: Branding = { ...defaultBranding(), siteTitle: "Acme", faviconUrl: "/favicon.ico" };
+    applyDocumentBranding(branding);
+    expect(document.title).toBe("Acme");
+    const link = document.querySelector<HTMLLinkElement>("link[rel='icon'][data-schema-ui-branding]");
+    expect(link?.href).toContain("/favicon.ico");
+  });
+
+  it("applyDocumentBranding falls back to logoUrl for the favicon and clears on empty", () => {
+    applyDocumentBranding({ ...defaultBranding(), logoUrl: "/assets/logo.svg" });
+    const link = document.querySelector<HTMLLinkElement>("link[rel='icon'][data-schema-ui-branding]");
+    expect(link?.href).toContain("/assets/logo.svg");
+    applyDocumentBranding(defaultBranding());
+    expect(document.querySelector("link[rel='icon'][data-schema-ui-branding]")).toBeNull();
+  });
+});
+
+// ── C3 · projection: shell logos, favicon, system default theme/locale ────────
+
+describe("S3 · shell/login projection of startup config", () => {
+  it("applies the system default theme when the user has no explicit choice", async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(STARTUP_BODY), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch;
+    const container = await renderAt(
+      "/",
+      <I18nProvider>
+        <LoginPage onLogin={async () => undefined} />
+      </I18nProvider>,
+    );
+    // Branding fetch resolves async: defaultTheme dark must flip the root.
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.title).toBe("Acme Admin");
+    container.remove();
+  });
+
+  it("keeps the explicit user theme over the system default", async () => {
+    localStorage.setItem("theme", "light");
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(STARTUP_BODY), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch;
+    const container = await renderAt(
+      "/",
+      <I18nProvider>
+        <LoginPage onLogin={async () => undefined} />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    container.remove();
+  });
+
+  it("renders light/dark logo variants in the shell and applies the favicon", async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(STARTUP_BODY), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch;
+    const container = await renderAt(
+      "/settings",
+      <I18nProvider>
+        <App
+          manifest={adminManifest()}
+          navigationContext={adminContext()}
+          schemaFetcher={fetcherFor()}
+          resourceFetcher={fetcherFor()}
+        />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    const lightImg = container.querySelector<HTMLImageElement>("img[src='/assets/logo-light.svg']");
+    const darkImg = container.querySelector<HTMLImageElement>("img[src='/assets/logo-dark.svg']");
+    expect(lightImg).not.toBeNull();
+    expect(darkImg).not.toBeNull();
+    expect(lightImg?.className).toContain("dark:hidden");
+    expect(darkImg?.className).toContain("dark:block");
+    const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon'][data-schema-ui-branding]");
+    expect(favicon?.href).toContain("/favicon.ico");
+  });
+});
+
+// ── I18nProvider system default from /api/branding ────────────────────────────
+
+describe("S3 · provider system default locale", () => {
+  it("re-resolves the locale from the startup payload when no explicit choice", async () => {
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/branding") {
+        return new Response(JSON.stringify(STARTUP_BODY), { status: 200 });
+      }
+      return new Response("not found", { status: 404 });
+    }) as typeof fetch;
+
+    function Harness() {
+      return (
+        <I18nProvider systemDefaultUrl="/api/branding" browserLanguages={["en-US"]}>
+          <LocaleProbe />
+        </I18nProvider>
+      );
+    }
+    function LocaleProbe() {
+      const { locale, t } = useI18n();
+      return (
+        <div data-locale={locale} data-text={t("locale.switcher.label")}>
+          {locale}
+        </div>
+      );
+    }
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(<Harness />);
+    });
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    const probe = container.querySelector("[data-locale]");
+    expect(probe?.getAttribute("data-locale")).toBe("zh-CN");
+    expect(probe?.getAttribute("data-text")).toBe("语言");
+  });
+
+  it("explicit user choice still wins over the fetched system default", async () => {
+    localStorage.setItem(LOCALE_STORAGE_KEY, "en-US");
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(STARTUP_BODY), { status: 200 })) as typeof fetch;
+    function Probe() {
+      const { locale } = useI18n();
+      return <div data-locale={locale} />;
+    }
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <I18nProvider systemDefaultUrl="/api/branding" browserLanguages={["zh-CN"]}>
+          <Probe />
+        </I18nProvider>,
+      );
+    });
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    expect(container.querySelector("[data-locale]")?.getAttribute("data-locale")).toBe("en-US");
+  });
+});
+
+// ── C4/C5 · settings page four-category surface + permission gating ───────────
+
+describe("S3 · settings page four-category surface", () => {
+  it("renders the four category toolbar actions + restore defaults (zh-CN)", async () => {
+    const container = await renderAt(
+      "/settings",
+      <I18nProvider stored="zh-CN" browserLanguages={["en-US"]}>
+        <App
+          manifest={adminManifest()}
+          navigationContext={adminContext()}
+          schemaFetcher={fetcherFor()}
+          resourceFetcher={fetcherFor()}
+        />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    const text = container.textContent ?? "";
+    expect(text).toContain("常规");
+    expect(text).toContain("品牌");
+    expect(text).toContain("本地化");
+    expect(text).toContain("外观");
+    expect(text).toContain("恢复默认");
+    // Current-value columns resolved via labelKey.
+    expect(text).toContain("默认语种");
+    expect(text).toContain("主题");
+    expect(text).toContain("时区");
+  });
+
+  it("opens the General modal and saves through the real PATCH action", async () => {
+    const patched: Array<{ url: string; body: unknown }> = [];
+    const base = fetcherFor();
+    const tracking: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === "PATCH" && url.startsWith("/api/settings/")) {
+        patched.push({ url, body: JSON.parse(String(init.body)) });
+        return new Response(JSON.stringify({ ...SETTINGS_ROW, ...JSON.parse(String(init.body)) }), {
+          status: 200,
+          headers: { "X-Schema-UI-Config-Changed": "settings.branding", "Content-Type": "application/json" },
+        });
+      }
+      return base(input, init);
+    }) as typeof fetch;
+    const container = await renderAt(
+      "/settings",
+      <I18nProvider stored="zh-CN" browserLanguages={["en-US"]}>
+        <App
+          manifest={adminManifest()}
+          navigationContext={adminContext()}
+          schemaFetcher={tracking}
+          resourceFetcher={tracking}
+        />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    const generalButton = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("常规"),
+    )!;
+    await act(async () => {
+      generalButton.click();
+    });
+    const titleInput = container.querySelector<HTMLInputElement>("input[name='siteTitle'], #field-siteTitle, input");
+    expect(titleInput).not.toBeNull();
+    const form = container.querySelector("form");
+    expect(form).not.toBeNull();
+    await act(async () => {
+      form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    expect(patched.length).toBe(1);
+    expect(patched[0]!.url).toContain("/api/settings/");
+    expect(Object.keys(patched[0]!.body as Record<string, unknown>)).toContain("siteTitle");
+  });
+
+  it("gates the category actions behind settings.write (no write → disabled)", async () => {
+    const viewerContext = {
+      user: { id: "v1", roles: ["viewer"], permissions: ["settings.read"] },
+      features: { menu_settings: true },
+    };
+    const container = await renderAt(
+      "/settings",
+      <I18nProvider>
+        <App
+          manifest={adminManifest()}
+          navigationContext={viewerContext}
+          schemaFetcher={fetcherFor()}
+          resourceFetcher={fetcherFor()}
+        />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    const buttons = [...container.querySelectorAll("button")].filter((button) =>
+      ["General", "Branding", "Localization", "Appearance", "Restore defaults"].some((label) =>
+        button.textContent?.includes(label),
+      ),
+    );
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+
+  it("restore defaults runs the reset request after confirmation", async () => {
+    const resets: string[] = [];
+    const base = fetcherFor();
+    const tracking: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === "POST" && url.endsWith("/reset")) {
+        resets.push(url);
+        return new Response(JSON.stringify({ ...SETTINGS_ROW, defaultLocale: "auto" }), {
+          status: 200,
+          headers: { "X-Schema-UI-Config-Changed": "settings.branding", "Content-Type": "application/json" },
+        });
+      }
+      return base(input, init);
+    }) as typeof fetch;
+    const container = await renderAt(
+      "/settings",
+      <I18nProvider>
+        <App
+          manifest={adminManifest()}
+          navigationContext={adminContext()}
+          schemaFetcher={tracking}
+          resourceFetcher={tracking}
+        />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    const resetButton = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Restore defaults"),
+    )!;
+    await act(async () => {
+      resetButton.click();
+    });
+    expect(container.textContent).toContain("Restore all settings to their defaults?");
+    const confirmButton = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Confirm"),
+    )!;
+    await act(async () => {
+      confirmButton.click();
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    expect(resets).toHaveLength(1);
+    expect(resets[0]).toContain("/api/settings/default/reset");
+  });
+});

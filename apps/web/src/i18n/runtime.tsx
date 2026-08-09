@@ -81,6 +81,13 @@ export interface I18nProviderProps {
   stored?: string | null;
   /** Test seam: browser language list (defaults to navigator.languages). */
   browserLanguages?: readonly string[];
+  /**
+   * When set, the provider fetches this public startup endpoint once and
+   * re-resolves the system default locale from `defaultLocale` (VP-007 S3:
+   * the shell/login apply the site-wide default when the user has no
+   * explicit choice). Applies after the initial resolve.
+   */
+  systemDefaultUrl?: string;
 }
 
 export function I18nProvider({
@@ -88,22 +95,51 @@ export function I18nProvider({
   systemDefault = null,
   stored,
   browserLanguages,
+  systemDefaultUrl,
 }: I18nProviderProps) {
   const [preference, setPreferenceState] = useState<LocalePreference>(() => {
     const raw = stored !== undefined ? stored : readStoredLocale();
     return normalizePreference(raw);
   });
+  const [fetchedSystemDefault, setFetchedSystemDefault] = useState<string | null>(null);
 
   const browserList = browserLanguages !== undefined ? browserLanguages : defaultBrowserLanguages();
+
+  useEffect(() => {
+    if (systemDefaultUrl === undefined) {
+      return;
+    }
+    let cancelled = false;
+    fetch(systemDefaultUrl)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        const record = body as Record<string, unknown> | null;
+        const locale = typeof record?.defaultLocale === "string" ? record.defaultLocale : null;
+        setFetchedSystemDefault(locale === "auto" ? null : locale);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFetchedSystemDefault(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [systemDefaultUrl]);
+
+  const effectiveSystemDefault = systemDefault ?? fetchedSystemDefault;
 
   const locale = useMemo<Locale>(
     () =>
       resolveLocale({
         stored: preference === "auto" ? null : preference,
-        systemDefault,
+        systemDefault: effectiveSystemDefault,
         browserLanguages: browserList,
       }),
-    [preference, systemDefault, browserList],
+    [preference, effectiveSystemDefault, browserList],
   );
 
   useEffect(() => {

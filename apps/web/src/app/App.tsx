@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   applyDocumentBranding,
+  defaultBranding,
   DEFAULT_SITE_TITLE,
   fetchBranding,
   subscribeToBrandingChanges,
@@ -33,6 +34,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
+import { applySystemDefaultTheme } from "@/theme/theme";
 import {
   type AppManifest,
   type NavigationContext,
@@ -397,7 +399,7 @@ export function App({
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
-    () => brandingProp ?? { siteTitle: DEFAULT_SITE_TITLE, logoUrl: "" },
+    () => brandingProp ?? defaultBranding(),
   );
 
   useEffect(() => {
@@ -412,6 +414,7 @@ export function App({
         if (!cancelled) {
           setBranding(next);
           applyDocumentBranding(next);
+          applySystemDefaultTheme(next.defaultTheme);
         }
       });
     };
@@ -450,7 +453,8 @@ export function App({
     [manifest, navigationContext, path, t],
   );
   const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
-  const showLogo = branding.logoUrl !== "";
+  const showLogo =
+    branding.logoUrl !== "" || branding.logoUrlLight !== "" || branding.logoUrlDark !== "";
 
   return (
     <div
@@ -486,11 +490,26 @@ export function App({
             }}
           >
             {showLogo ? (
-              <img
-                src={branding.logoUrl}
-                alt=""
-                className="size-8 shrink-0 object-contain"
-              />
+              <>
+                {/* VP-007 S3: light/dark logo variants follow the active theme via CSS. */}
+                {branding.logoUrlLight !== "" ? (
+                  <img
+                    src={branding.logoUrlLight}
+                    alt=""
+                    className="size-8 shrink-0 object-contain dark:hidden"
+                  />
+                ) : null}
+                {branding.logoUrlDark !== "" ? (
+                  <img
+                    src={branding.logoUrlDark}
+                    alt=""
+                    className="hidden size-8 shrink-0 object-contain dark:block"
+                  />
+                ) : null}
+                {branding.logoUrlLight === "" && branding.logoUrlDark === "" ? (
+                  <img src={branding.logoUrl} alt="" className="size-8 shrink-0 object-contain" />
+                ) : null}
+              </>
             ) : (
               <span
                 aria-hidden="true"

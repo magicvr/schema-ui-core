@@ -75,7 +75,7 @@ loadAppManifest()
   .then((manifest) => {
     createRoot(root).render(
       <StrictMode>
-        <I18nProvider>
+        <I18nProvider systemDefaultUrl="/api/branding">
           <AuthProvider>
             <AuthGate manifest={manifest} />
           </AuthProvider>
@@ -86,7 +86,7 @@ loadAppManifest()
   .catch((error: unknown) => {
     createRoot(root).render(
       <StrictMode>
-        <I18nProvider>
+        <I18nProvider systemDefaultUrl="/api/branding">
           <ManifestFailure error={error} />
         </I18nProvider>
       </StrictMode>,

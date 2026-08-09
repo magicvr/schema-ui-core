@@ -28,18 +28,37 @@ func New(runner TxRunner) *Repository {
 	return &Repository{runner: runner}
 }
 
-// SiteSettings is the persisted branding singleton.
+// SiteSettings is the persisted system-settings singleton (VP-007 S3:
+// General / Branding / Localization / Appearance fields).
 type SiteSettings struct {
-	ID        string
-	SiteTitle string
-	LogoURL   string
-	UpdatedAt time.Time
+	ID            string
+	SiteTitle     string
+	LogoURL       string
+	LogoURLLight  string
+	LogoURLDark   string
+	FaviconURL    string
+	DefaultLocale string
+	SiteTimezone  string
+	DefaultTheme  string
+	UpdatedAt     time.Time
 }
 
 var (
-	ErrInvalidSiteTitle = errors.New("settings: site title must not be empty")
-	ErrInvalidLogoURL   = errors.New("settings: invalid logo url")
+	ErrInvalidSiteTitle      = errors.New("settings: site title must not be empty")
+	ErrInvalidLogoURL        = errors.New("settings: invalid logo url")
+	ErrInvalidDefaultLocale  = errors.New("settings: invalid default locale")
+	ErrInvalidDefaultTheme   = errors.New("settings: invalid default theme")
+	ErrInvalidSiteTimezone   = errors.New("settings: invalid site timezone")
 )
+
+// SupportedLocales is the frozen v1 locale set (VP-007).
+var SupportedLocales = []string{"zh-CN", "en-US"}
+
+// ValidDefaultLocales are the allowed defaultLocale values.
+var ValidDefaultLocales = []string{"", "auto", "zh-CN", "en-US"}
+
+// ValidDefaultThemes are the allowed defaultTheme values.
+var ValidDefaultThemes = []string{"", "auto", "light", "dark"}
 
 // GetSiteSettings returns the singleton or the frozen defaults when it is absent.
 func (r *Repository) GetSiteSettings() (*SiteSettings, error) {
@@ -52,19 +71,33 @@ func (r *Repository) GetSiteSettings() (*SiteSettings, error) {
 	return settings, err
 }
 
-// UpdateSiteSettings validates and updates the singleton atomically.
+// UpdateSiteSettings is the legacy two-field convenience wrapper (title + logo);
+// kept for the composition recovery tests and callers that predate VP-007.
 func (r *Repository) UpdateSiteSettings(siteTitle, logoURL string, now time.Time) (*SiteSettings, error) {
-	return r.writeSiteSettings(&siteTitle, &logoURL, now)
+	return r.writeSiteSettings(&siteTitle, &logoURL, nil, nil, nil, nil, nil, nil, now)
 }
 
 // PatchSiteSettings updates only the supplied fields in one SQL statement.
 // This prevents concurrent field-level PATCH requests from overwriting fields
-// they did not submit.
-func (r *Repository) PatchSiteSettings(siteTitle, logoURL *string, now time.Time) (*SiteSettings, error) {
-	return r.writeSiteSettings(siteTitle, logoURL, now)
+// they did not submit. Empty-string values clear a field (logo/theming);
+// validation errors reject the whole patch atomically.
+func (r *Repository) PatchSiteSettings(
+	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme *string,
+	now time.Time,
+) (*SiteSettings, error) {
+	return r.writeSiteSettings(siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, now)
 }
 
-func (r *Repository) writeSiteSettings(siteTitle, logoURL *string, now time.Time) (*SiteSettings, error) {
+// ResetSiteSettings restores every VP-007 field to its frozen default.
+func (r *Repository) ResetSiteSettings(now time.Time) (*SiteSettings, error) {
+	return r.writeSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, now, true)
+}
+
+func (r *Repository) writeSiteSettings(
+	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme *string,
+	now time.Time,
+	reset ...bool,
+) (*SiteSettings, error) {
 	title := settingsmigration.DefaultSiteTitle
 	titleSet := 0
 	if siteTitle != nil {
@@ -74,28 +107,70 @@ func (r *Repository) writeSiteSettings(siteTitle, logoURL *string, now time.Time
 		}
 		titleSet = 1
 	}
-	logo := ""
-	logoSet := 0
-	if logoURL != nil {
-		var err error
-		logo, err = normalizeLogoURL(*logoURL)
-		if err != nil {
-			return nil, err
-		}
-		logoSet = 1
+	logo, logoSet, err := normalizeOptionalLogo(logoURL)
+	if err != nil {
+		return nil, err
+	}
+	logoLight, logoLightSet, err := normalizeOptionalLogo(logoURLLight)
+	if err != nil {
+		return nil, err
+	}
+	logoDark, logoDarkSet, err := normalizeOptionalLogo(logoURLDark)
+	if err != nil {
+		return nil, err
+	}
+	favicon, faviconSet, err := normalizeOptionalLogo(faviconURL)
+	if err != nil {
+		return nil, err
+	}
+	locale, localeSet, err := optionalEnum(defaultLocale, ValidDefaultLocales, ErrInvalidDefaultLocale)
+	if err != nil {
+		return nil, err
+	}
+	theme, themeSet, err := optionalEnum(defaultTheme, ValidDefaultThemes, ErrInvalidDefaultTheme)
+	if err != nil {
+		return nil, err
+	}
+	timezone, timezoneSet, err := optionalEnum(siteTimezone, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateTimezone(timezone); err != nil {
+		return nil, err
 	}
 
+	forceReset := len(reset) > 0 && reset[0]
 	var settings *SiteSettings
-	err := r.withTx("update site settings", func(tx *sql.Tx) error {
-		if _, err := tx.Exec(
-			`INSERT INTO site_settings (id, site_title, logo_url, updated_at)
-			 VALUES ('default', ?, ?, ?)
+	err = r.withTx("update site settings", func(tx *sql.Tx) error {
+		var stmt string
+		var args []any
+		if forceReset {
+			stmt = `UPDATE site_settings SET
+			  site_title = ?, logo_url = '', logo_url_light = '', logo_url_dark = '',
+			  favicon_url = '', default_locale = 'auto', site_timezone = 'auto',
+			  default_theme = 'auto', updated_at = ? WHERE id = 'default'`
+			args = []any{settingsmigration.DefaultSiteTitle, now.Unix()}
+		} else {
+			stmt = `INSERT INTO site_settings (
+			  id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
+			  default_locale, site_timezone, default_theme, updated_at)
+			 VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			 ON CONFLICT(id) DO UPDATE SET
 			   site_title = CASE WHEN ? = 1 THEN excluded.site_title ELSE site_settings.site_title END,
 			   logo_url = CASE WHEN ? = 1 THEN excluded.logo_url ELSE site_settings.logo_url END,
-			   updated_at = excluded.updated_at`,
-			title, logo, now.Unix(), titleSet, logoSet,
-		); err != nil {
+			   logo_url_light = CASE WHEN ? = 1 THEN excluded.logo_url_light ELSE site_settings.logo_url_light END,
+			   logo_url_dark = CASE WHEN ? = 1 THEN excluded.logo_url_dark ELSE site_settings.logo_url_dark END,
+			   favicon_url = CASE WHEN ? = 1 THEN excluded.favicon_url ELSE site_settings.favicon_url END,
+			   default_locale = CASE WHEN ? = 1 THEN excluded.default_locale ELSE site_settings.default_locale END,
+			   site_timezone = CASE WHEN ? = 1 THEN excluded.site_timezone ELSE site_settings.site_timezone END,
+			   default_theme = CASE WHEN ? = 1 THEN excluded.default_theme ELSE site_settings.default_theme END,
+			   updated_at = excluded.updated_at`
+			args = []any{
+				title, logo, logoLight, logoDark, favicon, locale, timezone, theme, now.Unix(),
+				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, themeSet,
+			}
+		}
+		if _, err := tx.Exec(stmt, args...); err != nil {
 			return fmt.Errorf("upsert singleton: %w", err)
 		}
 		var err error
@@ -103,6 +178,51 @@ func (r *Repository) writeSiteSettings(siteTitle, logoURL *string, now time.Time
 		return err
 	})
 	return settings, err
+}
+
+// normalizeOptionalLogo trims + validates a logo-ish URL (empty = clear).
+func normalizeOptionalLogo(raw *string) (string, int, error) {
+	if raw == nil {
+		return "", 0, nil
+	}
+	value, err := normalizeLogoURL(*raw)
+	if err != nil {
+		return "", 0, err
+	}
+	return value, 1, nil
+}
+
+// optionalEnum validates a pointer string against the allowed set (nil set =
+// free-form like IANA timezone names) and returns (value, set, error).
+func optionalEnum(raw *string, allowed []string, invalid error) (string, int, error) {
+	if raw == nil {
+		return "", 0, nil
+	}
+	value := strings.TrimSpace(*raw)
+	if allowed != nil {
+		ok := false
+		for _, entry := range allowed {
+			if value == entry {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return "", 0, invalid
+		}
+	}
+	return value, 1, nil
+}
+
+// validateTimezone accepts empty, "auto" or a resolvable IANA timezone name.
+func validateTimezone(raw string) error {
+	if raw == "" || raw == "auto" {
+		return nil
+	}
+	if _, err := time.LoadLocation(raw); err != nil {
+		return ErrInvalidSiteTimezone
+	}
+	return nil
 }
 
 func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
@@ -119,13 +239,22 @@ func getSiteSettings(row interface{ QueryRow(string, ...any) *sql.Row }) (*SiteS
 	var settings SiteSettings
 	var updatedAt int64
 	err := row.QueryRow(
-		`SELECT id, site_title, logo_url, updated_at FROM site_settings WHERE id = 'default'`,
-	).Scan(&settings.ID, &settings.SiteTitle, &settings.LogoURL, &updatedAt)
+		`SELECT id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
+		        default_locale, site_timezone, default_theme, updated_at
+		 FROM site_settings WHERE id = 'default'`,
+	).Scan(
+		&settings.ID, &settings.SiteTitle, &settings.LogoURL, &settings.LogoURLLight,
+		&settings.LogoURLDark, &settings.FaviconURL, &settings.DefaultLocale,
+		&settings.SiteTimezone, &settings.DefaultTheme, &updatedAt,
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return &SiteSettings{
-			ID:        "default",
-			SiteTitle: settingsmigration.DefaultSiteTitle,
-			UpdatedAt: time.Unix(0, 0).UTC(),
+			ID:            "default",
+			SiteTitle:     settingsmigration.DefaultSiteTitle,
+			DefaultLocale: "auto",
+			SiteTimezone:  "auto",
+			DefaultTheme:  "auto",
+			UpdatedAt:     time.Unix(0, 0).UTC(),
 		}, nil
 	}
 	if err != nil {

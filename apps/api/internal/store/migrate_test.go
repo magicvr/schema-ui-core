@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 9 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8 9]", applied)
+	if len(applied) != 10 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 {
+		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8 9 10]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -181,7 +181,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 9 {
+	if len(applied2) != 10 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -572,6 +572,7 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"admin.settings", "site_settings", "6ffb1d0d978d7475ebd807f4dc1aab609d255186ddefa08e28a5398d265b7dfa"},
 		{"core.operationlog", "operation_log_settings", "ec3635f99db24907eb4a371ebd8c8f328c80a69e07715b866e1bca319f518d6c"},
 		{"core.auth-session", "system_data_reconcile", "3e1c1e6d95c1f94c38a17ead999ee2cda685ec1e78d2148b4d12111d1eca74b6"},
+		{"admin.settings", "site_settings_v2", "b593aa2dd003e1339710b35478c87b105e6bb1762be0b4b08f3c986a5063a047"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

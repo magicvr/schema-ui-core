@@ -69,7 +69,7 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 		t.Fatalf("settings = %+v", settings)
 	}
 	title := "Operations"
-	settings, err = repository.PatchSiteSettings(&title, nil, now.Add(time.Second))
+	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
 	if err != nil {
 		t.Fatalf("title-only patch: %v", err)
 	}
@@ -77,11 +77,86 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 		t.Fatalf("title-only patch overwrote unsubmitted logo: %+v", settings)
 	}
 	logo := "/assets/logo.svg"
-	settings, err = repository.PatchSiteSettings(nil, &logo, now.Add(2*time.Second))
+	settings, err = repository.PatchSiteSettings(nil, &logo, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
 	if err != nil {
 		t.Fatalf("logo-only patch: %v", err)
 	}
 	if settings.SiteTitle != "Operations" || settings.LogoURL != "/assets/logo.svg" {
 		t.Fatalf("logo-only patch overwrote unsubmitted title: %+v", settings)
+	}
+}
+
+func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
+	repository, _ := openSettingsRepository(t, "settings-vp007.db")
+	now := time.Now().UTC().Truncate(time.Second)
+
+	locale := "zh-CN"
+	theme := "dark"
+	timezone := "Asia/Shanghai"
+	light := "/assets/logo-light.svg"
+	dark := "/assets/logo-dark.svg"
+	favicon := "/favicon.ico"
+	settings, err := repository.PatchSiteSettings(nil, nil, &light, &dark, &favicon, &locale, &timezone, &theme, now)
+	if err != nil {
+		t.Fatalf("vp007 patch: %v", err)
+	}
+	if settings.DefaultLocale != "zh-CN" || settings.DefaultTheme != "dark" || settings.SiteTimezone != "Asia/Shanghai" {
+		t.Fatalf("localization/appearance = %+v", settings)
+	}
+	if settings.LogoURLLight != "/assets/logo-light.svg" || settings.LogoURLDark != "/assets/logo-dark.svg" || settings.FaviconURL != "/favicon.ico" {
+		t.Fatalf("branding fields = %+v", settings)
+	}
+
+	// Field-level merge: a locale-only patch must not touch theme/timezone.
+	locale = "en-US"
+	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, &locale, nil, nil, now.Add(time.Second))
+	if err != nil {
+		t.Fatalf("locale-only patch: %v", err)
+	}
+	if settings.DefaultLocale != "en-US" || settings.DefaultTheme != "dark" || settings.SiteTimezone != "Asia/Shanghai" {
+		t.Fatalf("locale-only patch overwrote unsubmitted fields: %+v", settings)
+	}
+
+	// Empty string clears a branding field.
+	empty := ""
+	settings, err = repository.PatchSiteSettings(nil, nil, &empty, nil, nil, nil, nil, nil, now.Add(2*time.Second))
+	if err != nil {
+		t.Fatalf("clear light logo: %v", err)
+	}
+	if settings.LogoURLLight != "" || settings.LogoURLDark != "/assets/logo-dark.svg" {
+		t.Fatalf("clear semantics = %+v", settings)
+	}
+
+	// Validation: enums + IANA timezone.
+	badLocale := "fr-FR"
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &badLocale, nil, nil, now); !errors.Is(err, ErrInvalidDefaultLocale) {
+		t.Fatalf("bad locale = %v, want ErrInvalidDefaultLocale", err)
+	}
+	badTheme := "neon"
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &badTheme, now); !errors.Is(err, ErrInvalidDefaultTheme) {
+		t.Fatalf("bad theme = %v, want ErrInvalidDefaultTheme", err)
+	}
+	badTimezone := "Foo/Bar"
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, &badTimezone, nil, now); !errors.Is(err, ErrInvalidSiteTimezone) {
+		t.Fatalf("bad timezone = %v, want ErrInvalidSiteTimezone", err)
+	}
+	// A rejected patch must leave the previous values untouched.
+	settings, err = repository.GetSiteSettings()
+	if err != nil {
+		t.Fatalf("re-read: %v", err)
+	}
+	if settings.DefaultLocale != "en-US" || settings.DefaultTheme != "dark" {
+		t.Fatalf("rejected patch mutated state: %+v", settings)
+	}
+
+	// Reset restores the frozen defaults.
+	settings, err = repository.ResetSiteSettings(now.Add(3 * time.Second))
+	if err != nil {
+		t.Fatalf("reset: %v", err)
+	}
+	if settings.SiteTitle != settingsmigration.DefaultSiteTitle ||
+		settings.LogoURL != "" || settings.LogoURLLight != "" || settings.LogoURLDark != "" || settings.FaviconURL != "" ||
+		settings.DefaultLocale != "auto" || settings.SiteTimezone != "auto" || settings.DefaultTheme != "auto" {
+		t.Fatalf("reset defaults = %+v", settings)
 	}
 }

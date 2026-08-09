@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { AuthError } from "@/account/auth-client";
 import {
   applyDocumentBranding,
+  defaultBranding,
   DEFAULT_SITE_TITLE,
   fetchBranding,
   subscribeToBrandingChanges,
@@ -22,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslate } from "@/i18n/runtime";
+import { applySystemDefaultTheme } from "@/theme/theme";
 
 /**
  * Maps a stable auth error code to a catalog key (frontend localization
@@ -52,10 +54,7 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [branding, setBranding] = useState<Branding>({
-    siteTitle: DEFAULT_SITE_TITLE,
-    logoUrl: "",
-  });
+  const [branding, setBranding] = useState<Branding>(() => defaultBranding());
   const showSeedHint = import.meta.env.DEV;
 
   useEffect(() => {
@@ -65,6 +64,7 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
         if (!cancelled) {
           setBranding(next);
           applyDocumentBranding(next);
+          applySystemDefaultTheme(next.defaultTheme);
         }
       });
     };

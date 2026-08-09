@@ -1459,6 +1459,7 @@ function ActionButtonView({
   context: Record<string, unknown>;
   onAction?: RendererComponentProps["onAction"];
 }) {
+  const t = useTranslate();
   const gate = tableActionGate(node.props ?? {}, context);
   if (!gate.visible) {
     return null;
@@ -1471,7 +1472,13 @@ function ActionButtonView({
         onClick={() => onAction?.(node)}
         className="h-9 rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
-        {node.props?.label ?? node.props?.actionId ?? "Action"}
+        {resolveTextProp(
+          node.props as unknown as Record<string, unknown>,
+          "labelKey",
+          "label",
+          t,
+          t("feedback.action"),
+        )}
       </button>
       {gate.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">
@@ -1601,6 +1608,12 @@ function RenderPageSurface({
   formComponent,
 }: RendererComponentProps) {
   const crud = useSchemaCrud()!;
+  // VP-007 S3: actionButton nodes are first-class page actions in the default
+  // app path — dispatch through the frozen Schema CRUD executor (gate →
+  // confirm → request) unless the host overrides onAction.
+  const resolvedOnAction = onAction ?? ((node: RenderActionButtonNode) => {
+    crud.invokeAction(node.props as unknown as Record<string, unknown>, null);
+  });
   const modalAction =
     crud.activeModal !== null ? actionOf(document, crud.activeModal.actionRef) : undefined;
   const modalContent =
@@ -1620,7 +1633,7 @@ function RenderPageSurface({
         metaValue: document.meta,
         context,
         tableRenderer,
-        onAction,
+        onAction: resolvedOnAction,
         formComponent,
       })}
       {modalContent !== undefined ? (
@@ -1635,7 +1648,7 @@ function RenderPageSurface({
             metaValue: document.meta,
             context,
             tableRenderer,
-            onAction,
+            onAction: resolvedOnAction,
             formComponent,
           })}
         </ModalHost>

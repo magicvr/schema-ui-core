@@ -50,13 +50,47 @@ func migrate0007(tx *sql.Tx) error {
 
 const transformID = "0007:site-settings:v1"
 
+// siteSettingsV2DDL extends the singleton with the VP-007 system-settings
+// fields: light/dark logo + favicon URLs, default locale, default timezone and
+// default theme. All new columns are TEXT NOT NULL DEFAULT '' so existing rows
+// migrate in place; empty strings carry "unset" semantics.
+var siteSettingsV2DDL = []string{
+	`ALTER TABLE site_settings ADD COLUMN logo_url_light TEXT NOT NULL DEFAULT ''`,
+	`ALTER TABLE site_settings ADD COLUMN logo_url_dark TEXT NOT NULL DEFAULT ''`,
+	`ALTER TABLE site_settings ADD COLUMN favicon_url TEXT NOT NULL DEFAULT ''`,
+	`ALTER TABLE site_settings ADD COLUMN default_locale TEXT NOT NULL DEFAULT ''`,
+	`ALTER TABLE site_settings ADD COLUMN site_timezone TEXT NOT NULL DEFAULT ''`,
+	`ALTER TABLE site_settings ADD COLUMN default_theme TEXT NOT NULL DEFAULT ''`,
+}
+
+const transformV2ID = "0010:site-settings:v2"
+
+// migrate0010 applies the VP-007 settings column extension.
+func migrate0010(tx *sql.Tx) error {
+	for _, stmt := range siteSettingsV2DDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("extend site_settings: %w", err)
+		}
+	}
+	return nil
+}
+
 // Descriptors returns the admin.settings migration descriptors (R6 C6.2).
 func Descriptors() []kernel.MigrationContribution {
-	return []kernel.MigrationContribution{{
-		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_settings"},
-		Version:              7,
-		Name:                 "site_settings",
-		Checksum:             kernel.MigrationChecksum(siteSettingsDDL, transformID),
-		Apply:                migrate0007,
-	}}
+	return []kernel.MigrationContribution{
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_settings"},
+			Version:              7,
+			Name:                 "site_settings",
+			Checksum:             kernel.MigrationChecksum(siteSettingsDDL, transformID),
+			Apply:                migrate0007,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_settings_v2"},
+			Version:              10,
+			Name:                 "site_settings_v2",
+			Checksum:             kernel.MigrationChecksum(siteSettingsV2DDL, transformV2ID),
+			Apply:                migrate0010,
+		},
+	}
 }

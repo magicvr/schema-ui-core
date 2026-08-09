@@ -14,7 +14,7 @@
 | U4 | 语种切换器 | 切换器标签、语种名（简体中文/English）、auto 项 | catalog keys | 同上 | S1：`components/locale-switcher.test.tsx`（双语标签、持久化）；`i18n/runtime.test.tsx` |
 | U5 | 通用反馈 | loading / empty / error / permission denied / success 文案（含 Schema 页面加载失败面、Route fallback、session 失败提示） | catalog keys | 同上 | S2：`ui-bilingual.test.tsx`（路由回退面、列表空态、分页）；`App.integration.test.tsx`；`visual-fidelity.test.tsx` |
 | U6 | 通用组件文案 | table（列头、排序、空态）、search（占位、按钮）、form（校验、必填、提交/取消）、modal（标题、确认/取消）、validation 提示 | catalog keys + schema key 解析 | 同上 | S2：`ui-bilingual.test.tsx`（列头/工具栏/提交按钮/确认框）；`schema-crud.test.tsx`；`data-table.test.tsx` |
-| U7 | Admin Settings 四类设置面 | General/Branding/Localization/Appearance 的字段标签、说明、按钮（保存/预览/恢复默认）、校验错误、成功/失败反馈。Branding 字段 = `logoUrl` + `logoUrlLight` + `logoUrlDark` + `faviconUrl`（同源路径或 HTTPS URL，不上传；浅/深色 Logo 按主题应用，favicon 缺省回退 `logoUrl`） | catalog keys + schema key 解析 | 同上 | S2：`schema-keys.structural.test.ts`（settings.json 全文本有 key + 双语 catalog）；settings 页面视觉与四类字段闭环 = **S3**（届时回填） |
+| U7 | Admin Settings 四类设置面 | General/Branding/Localization/Appearance 的字段标签、说明、按钮（保存/预览/恢复默认）、校验错误、成功/失败反馈。Branding 字段 = `logoUrl` + `logoUrlLight` + `logoUrlDark` + `faviconUrl`（同源路径或 HTTPS URL，不上传；浅/深色 Logo 按主题应用，favicon 缺省回退 `logoUrl`） | catalog keys + schema key 解析 | 同上 | S2：`schema-keys.structural.test.ts`（settings.json 全文本有 key + 双语 catalog）；S3：`app/startup-config.test.tsx`（四类工具条 zh 渲染、General 保存真实 PATCH、settings.write 缺失禁用、恢复默认确认→reset、启动配置解析/投影） |
 
 ## 2. Manifest / Schema 面（S0 冻结 pageId 并集，双 Profile Runtime Manifest）
 
@@ -43,7 +43,7 @@ Manifest 导航项（sidebar/top/user 的 label/labelKey）与页面 title/title
 |---|------|----------|----------------------|
 | M1 | 匿名启动 → `auto`/显式 locale 生效 → 登录成功或失败反馈 | locale 解析/回退优先级在匿名态生效；登录失败反馈按当前语种呈现且错误码稳定 | S2：`ui-bilingual.test.tsx`（登录面双语 + 错误码映射）；S1：`locale.test.ts`（优先级矩阵）；M1 端到端 S5 |
 | M2 | 登录 → Shell 导航 → overview/users/roles 可达读路径 → 有权限账号完成至少一次用户或角色写表单 → 验证/权限失败反馈 | 双语下写表单完整可完成；无权限/校验失败反馈本地化且不阻断 | S2：`ui-bilingual.test.tsx`（users 写表单 zh 提交按钮/字段）；`schema-crud.test.tsx`；M2 端到端 S5 |
-| M3 | （Admin）settings → 修改 General/Branding/Localization/Appearance 一项 → Shell/登录页/公开 bootstrap 对应投影可观察生效 | `/api/branding` 扩展字段生效；配置刷新事件触发重新拉取；品牌/语种/主题投影一致 | **S3**（四类设置 + `/api/branding` 扩展后回填） |
+| M3 | （Admin）settings → 修改 General/Branding/Localization/Appearance 一项 → Shell/登录页/公开 bootstrap 对应投影可观察生效 | `/api/branding` 扩展字段生效；配置刷新事件触发重新拉取；品牌/语种/主题投影一致 | S3：`app/startup-config.test.tsx`（General 保存 → 真实 PATCH + 刷新头；恢复默认 → reset 请求；系统默认主题/语种经 `/api/branding` 注入 shell/登录页；浅深 Logo + favicon 投影；显式用户选择优先）；Go handler 测试（PATCH 后 `/api/branding` 反映、reset 恢复默认）；M3 浏览器端到端 = S5 |
 | M4 | 制造缺失翻译 key → 记录 locale、key 与 UI/schema 路径 → 安全文本 fallback 且主流程仍可完成 | 缺失 key 可观察（事件/测试）且不渲染为空、不抛异常、不阻断操作 | S2：`ui-bilingual.test.tsx` M4 用例（事件 locale/key + 字面回退 + 列表/工具栏仍可用）；`catalog.test.ts`（去重/事件） |
 
 ## 4. 缺失翻译纪律

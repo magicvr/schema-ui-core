@@ -35,4 +35,4 @@ version: 0.1.0
 
 ## 里程碑 checkpoint
 
-- commit：`<S2 checkpoint hash 待填>`（owned paths = 上述全部路径 + 本目标治理文档，显式 `git add` 无 `-A`）。
+- commit：`5ea6247`（2026-08-09，S2；owned paths = 上述全部路径 + 本目标治理文档，显式 `git add` 无 `-A`）。

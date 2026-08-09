@@ -41,7 +41,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
-				"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}",
+				"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset",
 			},
 			Pages:            []string{"settings"},
 			Navigation:       []string{"menu_settings"},

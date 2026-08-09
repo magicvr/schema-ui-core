@@ -38,6 +38,32 @@ describe("resolveTheme", () => {
   });
 });
 
+// ── VP-007 S3: system default theme priority ─────────────────────────────────
+// explicit user choice → system default (non-auto) → OS preference
+
+describe("resolveTheme with system default (VP-007 S3)", () => {
+  it("explicit user choice beats the system default", () => {
+    const out = resolveTheme({ stored: "light", prefersDark: true, systemDefault: "dark" });
+    expect(out.theme).toBe("light");
+    const outDark = resolveTheme({ stored: "dark", prefersDark: false, systemDefault: "light" });
+    expect(outDark.theme).toBe("dark");
+  });
+
+  it("system default (non-auto) beats the OS preference", () => {
+    const out = resolveTheme({ stored: null, prefersDark: false, systemDefault: "dark" });
+    expect(out.theme).toBe("dark");
+    const outLight = resolveTheme({ stored: null, prefersDark: true, systemDefault: "light" });
+    expect(outLight.theme).toBe("light");
+  });
+
+  it("auto/unknown system default defers to the OS preference", () => {
+    const out = resolveTheme({ stored: null, prefersDark: true, systemDefault: "auto" });
+    expect(out.theme).toBe("dark");
+    const out2 = resolveTheme({ stored: null, prefersDark: false, systemDefault: null });
+    expect(out2.theme).toBe("light");
+  });
+});
+
 // ── applyThemeToElement ───────────────────────────────────────────────────────
 
 describe("applyThemeToElement", () => {

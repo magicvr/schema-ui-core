@@ -14,47 +14,135 @@
     ]
   },
   "actions": {
-    "updateSettings": {
+    "updateGeneral": {
       "type": "request",
       "method": "PATCH",
-      "url": "/api/settings/{id}",
-      "bodyMapping": {
-        "siteTitle": "siteTitle",
-        "logoUrl": "logoUrl"
-      },
-      "onSuccess": {
-        "behavior": "reload"
-      }
+      "url": "/api/settings/default",
+      "bodyMapping": { "siteTitle": "siteTitle" },
+      "onSuccess": { "behavior": "reload" }
     },
-    "openEdit": {
+    "updateBranding": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/settings/default",
+      "bodyMapping": {
+        "logoUrl": "logoUrl",
+        "logoUrlLight": "logoUrlLight",
+        "logoUrlDark": "logoUrlDark",
+        "faviconUrl": "faviconUrl"
+      },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "updateLocalization": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/settings/default",
+      "bodyMapping": { "defaultLocale": "defaultLocale", "siteTimezone": "siteTimezone" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "updateAppearance": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/settings/default",
+      "bodyMapping": { "defaultTheme": "defaultTheme" },
+      "onSuccess": { "behavior": "reload" }
+    },
+    "resetSettings": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/settings/default/reset",
+      "onSuccess": { "behavior": "reload" }
+    },
+    "openGeneral": {
       "type": "modal",
       "content": {
         "type": "form",
-        "id": "edit-settings-form",
-        "permissionCascade": {
-          "keys": [
-            "edit"
-          ]
-        },
-        "permissions": {
-          "edit": "$context.user.permissions contains \"settings.write\""
-        },
+        "id": "edit-general-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": { "edit": "$context.user.permissions contains \"settings.write\"" },
+        "props": {
+          "fields": [{ "id": "siteTitle", "label": "Site title", "labelKey": "schema.settings.field.siteTitle", "type": "input" }],
+          "submitAction": "updateGeneral",
+          "submitLabel": "Save settings",
+          "submitLabelKey": "schema.settings.submit.save"
+        }
+      }
+    },
+    "openBranding": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-branding-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": { "edit": "$context.user.permissions contains \"settings.write\"" },
+        "props": {
+          "fields": [
+            { "id": "logoUrl", "label": "Logo URL (empty = hide logo)", "labelKey": "schema.settings.field.logoUrl", "type": "textarea" },
+            { "id": "logoUrlLight", "label": "Logo (light theme)", "labelKey": "schema.settings.field.logoUrlLight", "type": "textarea" },
+            { "id": "logoUrlDark", "label": "Logo (dark theme)", "labelKey": "schema.settings.field.logoUrlDark", "type": "textarea" },
+            { "id": "faviconUrl", "label": "Favicon URL", "labelKey": "schema.settings.field.faviconUrl", "type": "textarea" }
+          ],
+          "submitAction": "updateBranding",
+          "submitLabel": "Save settings",
+          "submitLabelKey": "schema.settings.submit.save"
+        }
+      }
+    },
+    "openLocalization": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-localization-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": { "edit": "$context.user.permissions contains \"settings.write\"" },
         "props": {
           "fields": [
             {
-              "id": "siteTitle",
-              "label": "Site title",
-              "type": "input",
-              "labelKey": "schema.settings.field.siteTitle"
+              "id": "defaultLocale",
+              "label": "Default language",
+              "labelKey": "schema.settings.field.defaultLocale",
+              "type": "select",
+              "options": [
+                { "value": "auto", "label": "Auto (follow browser)", "labelKey": "schema.settings.option.localeAuto" },
+                { "value": "zh-CN", "label": "简体中文", "labelKey": "locale.name.zh-CN" },
+                { "value": "en-US", "label": "English", "labelKey": "locale.name.en-US" }
+              ]
             },
             {
-              "id": "logoUrl",
-              "label": "Logo URL (empty = hide logo)",
-              "type": "textarea",
-              "labelKey": "schema.settings.field.logoUrl"
+              "id": "siteTimezone",
+              "label": "Default timezone (IANA name or auto)",
+              "labelKey": "schema.settings.field.siteTimezone",
+              "type": "input"
             }
           ],
-          "submitAction": "updateSettings",
+          "submitAction": "updateLocalization",
+          "submitLabel": "Save settings",
+          "submitLabelKey": "schema.settings.submit.save"
+        }
+      }
+    },
+    "openAppearance": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-appearance-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": { "edit": "$context.user.permissions contains \"settings.write\"" },
+        "props": {
+          "fields": [
+            {
+              "id": "defaultTheme",
+              "label": "Default theme",
+              "labelKey": "schema.settings.field.defaultTheme",
+              "type": "select",
+              "options": [
+                { "value": "auto", "label": "Auto", "labelKey": "schema.settings.option.themeAuto" },
+                { "value": "light", "label": "Light", "labelKey": "schema.settings.option.themeLight" },
+                { "value": "dark", "label": "Dark", "labelKey": "schema.settings.option.themeDark" }
+              ]
+            }
+          ],
+          "submitAction": "updateAppearance",
           "submitLabel": "Save settings",
           "submitLabelKey": "schema.settings.submit.save"
         }
@@ -68,57 +156,57 @@
       {
         "type": "text",
         "props": {
-          "text": "Site branding used in the admin shell, login page, and browser tab title. Logo is a URL (upload not available); leave empty to hide the logo.",
+          "text": "Site defaults used across the admin shell, login page, and public startup configuration. Branding assets are URLs (upload not available); leave empty to hide.",
           "textKey": "schema.settings.description"
         }
       },
       {
         "type": "table",
         "id": "settings-table",
-        "permissionCascade": {
-          "keys": [
-            "edit"
-          ]
-        },
+        "permissionCascade": { "keys": ["edit"] },
         "permissions": {
           "edit": "$context.user.permissions contains \"settings.write\""
         },
         "props": {
           "columns": [
-            {
-              "field": "siteTitle",
-              "label": "Site title",
-              "labelKey": "schema.settings.column.siteTitle"
-            },
-            {
-              "field": "logoUrl",
-              "label": "Logo URL",
-              "labelKey": "schema.settings.column.logoUrl"
-            },
-            {
-              "field": "updatedAt",
-              "label": "Updated",
-              "sortable": true,
-              "labelKey": "schema.settings.column.updated"
-            }
+            { "field": "siteTitle", "label": "Site title", "labelKey": "schema.settings.column.siteTitle" },
+            { "field": "logoUrl", "label": "Logo URL", "labelKey": "schema.settings.column.logoUrl" },
+            { "field": "logoUrlLight", "label": "Logo (light)", "labelKey": "schema.settings.column.logoUrlLight" },
+            { "field": "logoUrlDark", "label": "Logo (dark)", "labelKey": "schema.settings.column.logoUrlDark" },
+            { "field": "faviconUrl", "label": "Favicon", "labelKey": "schema.settings.column.faviconUrl" },
+            { "field": "defaultLocale", "label": "Default language", "labelKey": "schema.settings.column.defaultLocale" },
+            { "field": "siteTimezone", "label": "Timezone", "labelKey": "schema.settings.column.siteTimezone" },
+            { "field": "defaultTheme", "label": "Theme", "labelKey": "schema.settings.column.defaultTheme" },
+            { "field": "updatedAt", "label": "Updated", "labelKey": "schema.settings.column.updated", "sortable": true }
           ],
           "dataSource": "/api/settings",
+          "toolbar": [
+            { "key": "general", "label": "General", "labelKey": "schema.settings.toolbar.general", "actionRef": "openGeneral", "permissionIntent": "edit" },
+            { "key": "branding", "label": "Branding", "labelKey": "schema.settings.toolbar.branding", "actionRef": "openBranding", "permissionIntent": "edit" },
+            { "key": "localization", "label": "Localization", "labelKey": "schema.settings.toolbar.localization", "actionRef": "openLocalization", "permissionIntent": "edit" },
+            { "key": "appearance", "label": "Appearance", "labelKey": "schema.settings.toolbar.appearance", "actionRef": "openAppearance", "permissionIntent": "edit" },
+            {
+              "key": "reset",
+              "label": "Restore defaults",
+              "labelKey": "schema.settings.toolbar.reset",
+              "actionRef": "resetSettings",
+              "permissionIntent": "edit",
+              "confirm": "Restore all settings to their defaults?",
+              "confirmKey": "schema.settings.confirm.reset"
+            }
+          ],
           "actions": [
             {
               "key": "edit",
               "label": "Edit",
-              "actionRef": "openEdit",
-              "permissionIntent": "edit",
-              "labelKey": "schema.settings.action.edit"
+              "labelKey": "schema.settings.action.edit",
+              "actionRef": "openGeneral",
+              "permissionIntent": "edit"
             }
           ]
         }
       },
-      {
-        "type": "recordView",
-        "id": "settings-detail",
-        "props": {}
-      }
+      { "type": "recordView", "id": "settings-detail", "props": {} }
     ]
   }
 }

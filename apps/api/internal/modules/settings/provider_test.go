@@ -57,7 +57,7 @@ func TestSettingsProviderRegistersSurfaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
-	wantRoutes := []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}"}
+	wantRoutes := []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset"}
 	if len(set.Routes) != len(wantRoutes) {
 		t.Fatalf("routes = %d, want %d", len(set.Routes), len(wantRoutes))
 	}
