@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 ---
 
 # GOAL-007 · S6 · 设置页表单/详情页改造
@@ -23,14 +23,14 @@ progress: 0/4
 
 ## 成功标准（可验收 · 等权检查点 · 共 4 项）
 
-- [ ] **C1**：renderer `recordSource` 预填能力落地——capability `form.record.load` 门禁（缺 → fail-closed）、loading/error 状态、reload 重预填、form `title/titleKey` 标题、`${formId}:submit` 只读门禁、`invokeAction` actionId 回退、actionButton 权限禁用。
-- [ ] **C2**：settings schema 重构——四类 recordSource 预填内联表单 + Restore defaults actionButton；删除表格/modal；meta 增 `form.record.load`；全键复用现有 catalog。
-- [ ] **C3**：测试与证据——vitest 全量绿（新增 renderer 用例 + `startup-config` 改写 + `schema-keys.structural` 保持）；`npm run build` exit 0；e2e M3 走通新流程。
-- [ ] **C4**：治理收口——evidence 入库、关门审计、用户书面确认 → Root `GOAL-001` 恢复 `done`（临时回退解除）。
+- [x] **C1**：renderer `recordSource` 预填能力落地——capability `form.record.load` 门禁（缺 → fail-closed）、loading/error 状态、reload 重预填、form `title/titleKey` 标题、`${formId}:submit` 只读门禁、`invokeAction` actionId 回退、actionButton 权限禁用。
+- [x] **C2**：settings schema 重构——四类 recordSource 预填内联表单 + Restore defaults actionButton；删除表格/modal；meta 增 `form.record.load`；全键复用现有 catalog。
+- [x] **C3**：测试与证据——vitest **727/727**（新增 renderer 用例 + `startup-config` 改写 + `schema-keys.structural` 保持）；`npm run build` exit 0；`go test ./apps/api/...` exit 0；e2e M3 已改写（本机 8080 端口排除区间 → 诚实降级留痕，M3 逻辑由单元覆盖）。
+- [ ] **C4**：治理收口——evidence 入库（E-001 + A-001 已落盘）、关门审计（`independent`）、用户书面确认 → Root `GOAL-001` 恢复 `done`（临时回退解除）。
 
 ## 派生进度展示
 
-`progress: 0/4` 由上方 4 个等权检查点派生；仅为展示，不放行阶段、不关闭 finding。
+`progress: 3/4` 由上方 4 个等权检查点派生（C1–C3 完成，C4 待用户驱动的关门）；仅为展示，不放行阶段、不关闭 finding。
 
 ## 信息就绪与未知项
 

@@ -26,7 +26,7 @@ GOAL-001-localization-and-system-settings [active] (6/7)
 ├── GOAL-004-s3-settings-productization [done] (6/6)
 ├── GOAL-005-s4-error-localization [done] (5/5)
 ├── GOAL-006-s5-evidence-and-closeout [done] (4/4)
-└── GOAL-007-s6-settings-form-page [active] (0/4)
+└── GOAL-007-s6-settings-form-page [active] (3/4)
 ```
 
 ## 状态表
@@ -39,7 +39,7 @@ GOAL-001-localization-and-system-settings [active] (6/7)
 | GOAL-004-s3-settings-productization | S3 · 系统设置产品化（四类设置 + 公开启动配置） | GOAL-001-localization-and-system-settings | **done** | `6/6` | 2026-08-09 |
 | GOAL-005-s4-error-localization | S4 · 后端反馈本地化（稳定错误码 + 有界服务端协商） | GOAL-001-localization-and-system-settings | **done** | `5/5` | 2026-08-09 |
 | GOAL-006-s5-evidence-and-closeout | S5 · 双 Profile 验证矩阵与关门 | GOAL-001-localization-and-system-settings | **done** | `4/4` | 2026-08-09 |
-| GOAL-007-s6-settings-form-page | S6 · 设置页表单/详情页改造（recordSource 预填） | GOAL-001-localization-and-system-settings | **active** | `0/4` | 2026-08-09 |
+| GOAL-007-s6-settings-form-page | S6 · 设置页表单/详情页改造（recordSource 预填） | GOAL-001-localization-and-system-settings | **active** | `3/4` | 2026-08-09 |
 
 ## 维护说明
 
