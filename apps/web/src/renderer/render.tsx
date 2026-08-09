@@ -1127,8 +1127,8 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
         aria-label="Record details"
         className={
           canClose
-            ? // Desktop: right Drawer; mobile: full-height Sheet (D-004 §5)
-              "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-card shadow-lg sm:max-w-md max-sm:inset-x-0 max-sm:top-auto max-sm:h-[min(92vh,100%)] max-sm:rounded-t-xl max-sm:border-l-0 max-sm:border-t"
+            ? // Desktop (md+): right Drawer; mobile (<768, D-004): full-height Sheet
+              "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-card shadow-lg max-md:inset-x-0 max-md:top-auto max-md:h-[min(92vh,100%)] max-md:rounded-t-xl max-md:border-l-0 max-md:border-t md:max-w-md"
             : "w-full max-w-md rounded-lg border border-border bg-card shadow-sm"
         }
       >

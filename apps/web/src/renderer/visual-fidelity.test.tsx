@@ -15,6 +15,7 @@ import { DataTable } from "@/components/data-table";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { RenderPage } from "@/renderer/render.tsx";
 import type { RenderPageDocument } from "@/renderer/render";
+import { SchemaTable } from "@/renderer/schema-table";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const formControlsSource = readFileSync(join(__dir, "form-controls.tsx"), "utf-8");
@@ -85,6 +86,8 @@ describe("S2 recordView Drawer/Sheet presentation", () => {
     expect(renderSource).toContain("Close record details");
     expect(renderSource).toMatch(/fixed inset-y-0 right-0/);
     expect(renderSource).toMatch(/role="dialog"/);
+    // D-004 mobile band uses md (768), not max-sm (640) alone
+    expect(renderSource).toMatch(/max-md:/);
   });
 
   it("renders static recordView with dialog panel chrome via RenderPage", async () => {
@@ -103,6 +106,95 @@ describe("S2 recordView Drawer/Sheet presentation", () => {
     expect(container.textContent).toContain("Ada");
     expect(container.textContent).toContain("active");
     // Static fixtures do not mount the selection backdrop
+    expect(container.querySelector('[data-record-view="backdrop"]')).toBeNull();
+  });
+
+  it("opens selection-driven Drawer with backdrop and closes via selectRow(null)", async () => {
+    const items = [
+      { id: "u-1", name: "Ada Lovelace", role: "admin" },
+      { id: "u-2", name: "Grace Hopper", role: "editor" },
+    ];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/items")) {
+        return new Response(
+          JSON.stringify({ items, total: items.length, page: 1, pageSize: 10 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "grid",
+        props: { columns: 1 },
+        children: [
+          {
+            type: "table",
+            id: "items",
+            props: {
+              dataSource: "/api/items",
+              rowKey: "id",
+              columns: [
+                { field: "name", label: "Name" },
+                { field: "role", label: "Role" },
+              ],
+            },
+          },
+          { type: "recordView", id: "detail", props: {} },
+        ],
+      },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <RenderPage
+          document={pageDoc}
+          context={{}}
+          dataFetcher={fetcher}
+          tableRenderer={(node) => <SchemaTable node={node} fetcher={fetcher} />}
+        />,
+      );
+    });
+    // Allow list fetch to settle
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("Ada Lovelace");
+    expect(container.querySelector('[data-record-view="panel"]')).toBeNull();
+
+    // Click a desktop table row (first data row with name)
+    const nameCells = Array.from(container.querySelectorAll("td")).filter((td) =>
+      td.textContent?.includes("Ada Lovelace"),
+    );
+    expect(nameCells.length).toBeGreaterThan(0);
+    await act(async () => {
+      nameCells[0]!.closest("tr")?.click();
+    });
+
+    const panel = container.querySelector('[data-record-view="panel"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.getAttribute("data-record-view-mode")).toBe("drawer");
+    expect(panel?.getAttribute("aria-modal")).toBe("true");
+    expect(container.querySelector('[data-record-view="backdrop"]')).not.toBeNull();
+    expect(container.textContent).toContain("admin");
+
+    const close = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Close record details"]',
+    );
+    expect(close).not.toBeNull();
+    await act(async () => {
+      close!.click();
+    });
+    expect(container.querySelector('[data-record-view="panel"]')).toBeNull();
     expect(container.querySelector('[data-record-view="backdrop"]')).toBeNull();
   });
 });
