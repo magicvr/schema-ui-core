@@ -21,7 +21,7 @@ version: 0.13.0
 | 3 | [VP-003-modular-admin-architecture](plans/VP-003-modular-admin-architecture.md) | 单主线模块化单体：薄内核、模块契约、Fx、Profile、后端聚合 Manifest。 | 继承 VP-002；strategic re-align 见 VRev-006 | **closed**（2026-08-06；lead: workspace-003-modular-admin-architecture） |
 | 4 | [VP-004-module-contribution-readiness](plans/VP-004-module-contribution-readiness.md) | 一方模块贡献 playbook 与 Core vs 模块归属方法论。 | 继承 VP-003 | **closed**（2026-08-06；lead: workspace-004-module-contribution-readiness） |
 | 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **closed**（2026-08-08 用户书面确认；lead: workspace-005-full-protocol-contract-v2-7-0；`I-PROTO-FULL-001` 12/12 include 冻结） |
-| 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | 继承 VP-003/004 + **VP-006 已 closed 的整份协议面**；VRev-011 `F-V018`/`F-V019`/`F-V020` → **fixed**（v0.3.0） | **active**（2026-08-09 激活；v0.4.1；lead: `workspace-006-design-system-and-ui-experience`） |
+| 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | 继承 VP-003/004 + **VP-006 已 closed 的整份协议面**；VRev-011 `F-V018`/`F-V019`/`F-V020` → **fixed**（v0.3.0） | **closed**（2026-08-09 用户书面确认；v0.5.0；lead: `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience` `done 5/5`） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -35,7 +35,7 @@ version: 0.13.0
 |------|------|------------|------------------|
 | 7 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** +（若已 closed）VP-005 设计系统 | 建 VP 前须 `/vision` 复核；不得用业务模块倒逼恢复长期双线或跳过协议覆盖 |
 
-**当前交付意图**：**VP-005** **`active`**（lead `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience`，S1–S5 / `0/5`）。VP-001～004、**VP-006** 均 **closed**（覆盖权威 `I-PROTO-FULL-001`）。开区 ≠ 视觉产品化已交付。
+**当前交付意图**：**无 active 交付 VP**——VP-005 已于 2026-08-09 用户书面确认 **`closed`**（v0.5.0；lead `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience` **`done 5/5`**；S1–S5 交付证据见该区五件套）。VP-001～006 均 **closed**（协议覆盖权威 `I-PROTO-FULL-001`）。下一候选：业务能力波次（订单/钱包/类目/通知），建 VP 前须 `/vision` 复核。
 
 ## 单主线模块化策略
 
