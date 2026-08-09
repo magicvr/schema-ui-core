@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 doc: execution
-status: active
+status: done
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.1.6
+version: 0.1.7
 ---
 
 # 执行记录 · GOAL-001-design-system-and-ui-experience
@@ -23,6 +23,7 @@ version: 0.1.6
 | E-007 | 2026-08-09 | 回退 Root/工作区 done → closeout-ready | recorded | `02-execution/E-007-closeout-ready-rollback.md` |
 | E-008 | 2026-08-09 | 流体壳宽修复（用户驳回缺口） | recorded | `02-execution/E-008-fluid-shell-width-fix.md` |
 | E-009 | 2026-08-09 | 行 Edit/Delete 不再打开 recordView Drawer | recorded | `02-execution/E-009-row-action-no-drawer.md` |
+| E-010 | 2026-08-09 | Root/工作区正式关门（D-008 + A-012） | recorded | `02-execution/E-010-root-closeout-d008.md` |
 
 ## 事实边界
 
