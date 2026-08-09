@@ -354,6 +354,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                   aria-label="Select row"
                   checked={token !== null && selectedKeys.has(token)}
                   disabled={token === null}
+                  onClick={(event) => event.stopPropagation()}
                   onChange={() => toggleRowSelection(row)}
                 />
               );
@@ -372,7 +373,11 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             key: "actions",
             label: "",
             render: (row: ResourceItem) => (
-              <div className="flex justify-end gap-2">
+              <div
+                className="flex justify-end gap-2"
+                data-row-click-ignore="true"
+                onClick={(event) => event.stopPropagation()}
+              >
                 {rowActions.map((action) => {
                   const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
                   const permitted = crud?.effectivePermission(key) ?? true;
@@ -382,7 +387,10 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                       key={key}
                       type="button"
                       disabled={disabled}
-                      onClick={() => crud?.invokeAction(action, rowAsRecord(row))}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        crud?.invokeAction(action, rowAsRecord(row));
+                      }}
                       className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     >
                       {stringOf(action.label) ?? key}

@@ -109,6 +109,89 @@ describe("S2 recordView Drawer/Sheet presentation", () => {
     expect(container.querySelector('[data-record-view="backdrop"]')).toBeNull();
   });
 
+  it("does not open recordView drawer when row Edit action is clicked", async () => {
+    const items = [
+      { id: "u-1", name: "Ada Lovelace", role: "admin" },
+      { id: "u-2", name: "Grace Hopper", role: "editor" },
+    ];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/items")) {
+        return new Response(
+          JSON.stringify({ items, total: items.length, page: 1, pageSize: 10 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "grid",
+        props: { columns: 1 },
+        children: [
+          {
+            type: "table",
+            id: "items",
+            props: {
+              dataSource: "/api/items",
+              rowKey: "id",
+              columns: [
+                { field: "name", label: "Name" },
+                { field: "role", label: "Role" },
+              ],
+              actions: [
+                {
+                  key: "edit",
+                  label: "Edit",
+                  actionRef: "editItem",
+                },
+              ],
+            },
+          },
+          { type: "recordView", id: "detail", props: {} },
+        ],
+      },
+      actions: {
+        editItem: {
+          type: "modal",
+          content: { type: "text", props: { text: "edit-modal-body" } },
+        },
+      },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <RenderPage
+          document={pageDoc}
+          context={{}}
+          dataFetcher={fetcher}
+          tableRenderer={(node) => <SchemaTable node={node} fetcher={fetcher} />}
+        />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const editButtons = Array.from(container.querySelectorAll("button")).filter(
+      (button) => button.textContent?.trim() === "Edit",
+    );
+    expect(editButtons.length).toBeGreaterThan(0);
+    await act(async () => {
+      editButtons[0]!.click();
+    });
+    // Must NOT open selection-driven drawer; modal path may open for edit
+    expect(container.querySelector('[data-record-view="backdrop"]')).toBeNull();
+    expect(container.querySelector('[data-record-view-mode="drawer"]')).toBeNull();
+  });
+
   it("opens selection-driven Drawer with backdrop and closes via selectRow(null)", async () => {
     const items = [
       { id: "u-1", name: "Ada Lovelace", role: "admin" },

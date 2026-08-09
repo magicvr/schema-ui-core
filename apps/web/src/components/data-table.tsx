@@ -280,7 +280,23 @@ export function DataTable<T>({
               return (
                 <tr
                   key={key}
-                  onClick={onRowClick === undefined ? undefined : () => onRowClick(row)}
+                  onClick={
+                    onRowClick === undefined
+                      ? undefined
+                      : (event) => {
+                          // Action/selection chrome must not select the row
+                          // (selecting opens recordView drawer — bad UX for Edit/Delete).
+                          const target = event.target as HTMLElement | null;
+                          if (
+                            target?.closest(
+                              "button, a, input, select, textarea, label, [data-row-click-ignore]",
+                            )
+                          ) {
+                            return;
+                          }
+                          onRowClick(row);
+                        }
+                  }
                   aria-selected={onRowClick === undefined ? undefined : selected}
                   className={cn(
                     "border-b border-border last:border-b-0",
@@ -290,11 +306,24 @@ export function DataTable<T>({
                     selected ? "bg-accent/60" : "",
                   )}
                 >
-                  {columns.map((column) => (
-                    <td key={column.key} className="px-3 py-2 align-middle text-sm">
-                      {cellContent(column, row)}
-                    </td>
-                  ))}
+                  {columns.map((column) => {
+                    const interactive =
+                      column.key === "actions" || column.key === "__selection";
+                    return (
+                      <td
+                        key={column.key}
+                        data-row-click-ignore={interactive ? "true" : undefined}
+                        className="px-3 py-2 align-middle text-sm"
+                        onClick={
+                          interactive
+                            ? (event) => event.stopPropagation()
+                            : undefined
+                        }
+                      >
+                        {cellContent(column, row)}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}

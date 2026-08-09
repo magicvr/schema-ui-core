@@ -33,12 +33,12 @@ version: 0.4.1
 | A-007 | 2026-08-09 | self（编排响应） | 响应 A-006 · 状态回退 | conditional | 曾 2 | `03-audit/A-007-response-a006-reopen.md` |
 | A-008 | 2026-08-09 | **independent** | S2/S3 视觉 fidelity 复审 | **pass** | 0 required | `03-audit/A-008-independent-visual-fidelity.md` |
 | A-009 | 2026-08-09 | self（编排响应） | 响应 A-008 · 闭合 findings + 同步勾选 | **pass** | 0 | `03-audit/A-009-response-a008-close-findings.md` |
-| A-010 | 2026-08-09 | self | 用户驳回 · 主区宽度自适应 | conditional | F-VUI-008 → **fixed**（E-008） | `03-audit/A-010-user-reject-fluid-width.md` |
+| A-010 | 2026-08-09 | self | 用户驳回 · 宽度 + 行 action Drawer | conditional | F-VUI-008/009 → **fixed** | `03-audit/A-010-user-reject-fluid-width.md` |
 
 ## 结论状态
 
 - Root **`active` · closeout-ready**（E-007；D-007 superseded）；`progress: 4/5`（S1–S4；S5 过程关门待显式确认）。
-- 开放 required findings = **0**（F-VUI-008 fixed via E-008 流体壳）。
+- 开放 required findings = **0**（F-VUI-008 fluid shell；F-VUI-009 row action 不打开 Drawer）。
 - F-VUI-005/006 fixed；F-VUI-007 = accepted-residual。
 - A-006 历史 fail 保留为反模式证据，不撤销。
 - **再次 `done` 须用户显式书面确认 → D-008**（不得再以目标意图冒充）。

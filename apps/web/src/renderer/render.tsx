@@ -478,7 +478,8 @@ function SchemaCrudProvider({
 
   const openModal = useCallback(
     (actionRef: string, row: Record<string, unknown> | null, title: string) => {
-      setSelectedRow(row);
+      // Prefill comes from activeModal.row (modalRow) — do not select the list row
+      // (selectRow drives the recordView Drawer and would open it under Edit/New).
       setActiveModal({ actionRef, row, title });
     },
     [],
@@ -514,7 +515,9 @@ function SchemaCrudProvider({
         setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
         return;
       }
-      setSelectedRow(row);
+      // Row actions carry the row in modal/confirm/request payloads. Do NOT call
+      // setSelectedRow here — that opens the recordView Drawer and is wrong for
+      // Edit / Delete / any toolbar-row action (user gap 2026-08-09).
       if (action.type === "modal") {
         setActiveModal({ actionRef, row, title: stringOf(item.label) ?? "Action" });
         return;

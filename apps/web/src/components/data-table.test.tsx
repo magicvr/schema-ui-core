@@ -139,6 +139,48 @@ describe("DataTable", () => {
     expect(container.textContent).toContain("Acme Console!");
   });
 
+  it("does not fire onRowClick when an action button is clicked", async () => {
+    const clicks: string[] = [];
+    const actionColumns: DataTableColumn<Row>[] = [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Name" },
+      {
+        key: "actions",
+        label: "",
+        render: (row) => (
+          <button type="button" data-testid={`edit-${row.id}`}>
+            Edit
+          </button>
+        ),
+      },
+    ];
+    const container = await renderTable(
+      <DataTable
+        columns={actionColumns}
+        rows={rows}
+        rowKey={rowKey}
+        onRowClick={(row) => {
+          clicks.push(row.id);
+        }}
+      />,
+    );
+    const edit = container.querySelector<HTMLButtonElement>('[data-testid="edit-rec-1"]');
+    expect(edit).not.toBeNull();
+    await act(async () => {
+      edit!.click();
+    });
+    expect(clicks).toEqual([]);
+    // Data cell still selects
+    const nameCell = Array.from(container.querySelectorAll("td")).find((td) =>
+      td.textContent?.includes("Acme Console"),
+    );
+    expect(nameCell).not.toBeUndefined();
+    await act(async () => {
+      nameCell!.click();
+    });
+    expect(clicks).toEqual(["rec-1"]);
+  });
+
   it("ships dual-end presentation: dense desktop table + mobile card list (D-004 / S2)", async () => {
     const container = await renderTable(
       <DataTable columns={columns} rows={rows} rowKey={rowKey} caption="Example rows" />,
