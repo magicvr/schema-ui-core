@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 0.14.2
+version: 0.14.4
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -35,7 +35,7 @@ version: 0.14.2
 
 | 顺序 | 方向 | 与前序关系 | 建立 VP 前的约束 |
 |------|------|------------|------------------|
-| 9 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统 + VP-007 locale/settings，并消费 VP-008 的准入结论 | 建 VP 前须 `/vision` 复核；VP-008 未形成用户确认的 `go` 前不得推进实现；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或私增协议语义 |
+| 9 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统 + VP-007 locale/settings，并消费 VP-008 的准入结论 | 建 VP 前须 `/vision` 复核；VP-008 未形成用户确认的 `go` 前不得推进实现；每个后续业务 VP 激活前必须针对拟消费候选与 scope 完成并记录 freshness review，复核失败或证据不可用时暂停 `go` 并回流 VP-008 重验证或 P-004 裁决；单领域问题留在该业务 VP 的 Root/Goal 台账，共享基架或 `go` 语义问题由 `/vision` 决定重开 VP-008 或新建准入 VP；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或私增协议语义 |
 
 **当前组合焦点**：VP-001～**007** 均 **closed**；**[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md)** 为 `planned`、0 workspace、尚未激活。当前无 active 交付 VP。协议覆盖权威 `I-PROTO-FULL-001`；订单/钱包/类目/通知仍是后续独立业务 VP 候选，并受 VP-008 `go` 门闩约束。
 
