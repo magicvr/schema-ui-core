@@ -17,13 +17,13 @@ parent: null
 
 # 工作区上下文 · 多语种与系统设置产品化
 
-本工作区承接 [VP-007 · 多语种与系统设置产品化](../vision/plans/VP-007-localization-and-system-settings.md) 的实现层治理（2026-08-09 用户确认激活，lead delivery = 本工作区；同日 Root 关门完成，**2026-08-09 用户指令暂时回退关门承接 S6**，见 GOAL-001 `D-003`）。
+本工作区承接 [VP-007 · 多语种与系统设置产品化](../vision/plans/VP-007-localization-and-system-settings.md) 的实现层治理（2026-08-09 用户确认激活，lead delivery = 本工作区；同日 Root 关门完成；**S6 增量已关门**，Root 恢复 done，见 GOAL-001 `D-004`）。
 
 ## 绑定
 
 | 字段 | 当前值 |
 |------|--------|
-| Root Goal | `GOAL-001-localization-and-system-settings`（**`active`** `6/7`；S0–S5 完成，2026-08-09 用户书面确认；S6 子目标 `GOAL-007-s6-settings-form-page` 进行中） |
+| Root Goal | `GOAL-001-localization-and-system-settings`（**`done`** `7/7`；S0–S5 完成（GOAL-006 D-002）+ S6 子目标 `GOAL-007-s6-settings-form-page` 完成（D-002）） |
 | vision_role | `delivery` |
 | primary_plan | `VP-007-localization-and-system-settings`（**closed** 同日） |
 | shared_materials_catalog | `none` |

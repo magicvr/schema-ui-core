@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-s6-settings-form-page
 doc: audit
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-007（S6）
@@ -30,6 +30,5 @@ version: 0.3.0
 
 ## 结论状态
 
-- A-001（self，C1–C3）**pass**；开放 required = 0。
-- A-002（independent，C1–C4 就绪）**pass**；开放 required = 0；recommended F-001（idle 首帧）→ **fixed**（E-002 / commit `ac757c5`）、F-002（e2e 补跑）→ **accepted-residual**（环境 residual，复审触发已登记）。
-- **C4 剩余**：用户书面确认 → `/govern` 将 GOAL-007 `done`（`4/4`）并恢复 Root `GOAL-001` `done`（`7/7`），同步 goal-tree / workspace.md（D-003 §4；本台账不代改 status）。
+- A-001（self，C1–C3）**pass**；A-002（independent，C1–C4 就绪）**pass**；开放 required = 0；recommended F-001 → **fixed**（E-002 / commit `ac757c5`）、F-002 → **accepted-residual**。
+- **C4 关门**：2026-08-09 用户书面确认（`D-002`）→ GOAL-007 `done` `4/4`；Root `GOAL-001` 恢复 `done`（`7/7`，GOAL-001 `D-004` 解除临时回退）。本目标全部检查点完成。

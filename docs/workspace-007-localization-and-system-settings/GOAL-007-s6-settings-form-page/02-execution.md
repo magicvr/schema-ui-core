@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-s6-settings-form-page
 doc: execution
-status: active
+status: done
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行记录 · GOAL-007（S6）
