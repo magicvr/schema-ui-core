@@ -340,28 +340,30 @@ function PageSurface({
 
   const pageTitle = route.page.title ?? route.page.titleKey ?? route.page.pageId;
   return (
-    <section className="space-y-8" aria-labelledby="page-title">
-      <div className="flex flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
-        <div className="space-y-2">
+    <section className="w-full min-w-0 space-y-8" aria-labelledby="page-title">
+      <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
+        <div className="min-w-0 flex-1 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Admin workspace
           </p>
-          <h1 id="page-title" className="text-3xl font-semibold tracking-tight">
+          <h1 id="page-title" className="truncate text-3xl font-semibold tracking-tight">
             {pageTitle}
           </h1>
         </div>
-        <div className="border border-border bg-card px-4 py-3 text-right text-xs text-muted-foreground">
+        <div className="shrink-0 border border-border bg-card px-4 py-3 text-right text-xs text-muted-foreground">
           <p className="font-medium text-foreground">{route.page.pageId}</p>
           <p className="mt-1 font-mono">{route.page.route}</p>
         </div>
       </div>
-      <SchemaPageSurface
-        page={route.page}
-        params={route.params}
-        context={navigationContext}
-        fetcher={schemaFetcher}
-        resourceFetcher={resourceFetcher}
-      />
+      <div className="w-full min-w-0">
+        <SchemaPageSurface
+          page={route.page}
+          params={route.params}
+          context={navigationContext}
+          fetcher={schemaFetcher}
+          resourceFetcher={resourceFetcher}
+        />
+      </div>
     </section>
   );
 }
@@ -567,7 +569,16 @@ export function App({
         </>
       ) : null}
 
-      <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[1440px]">
+      {/*
+        Fluid shell (user gap 2026-08-09): topbar is full viewport width; body must
+        also track the browser — do NOT cap sidenav+main in max-w-[1440px]/mx-auto
+        (that left a fixed content island while the header stretched).
+      */}
+      <div
+        data-shell-region="body"
+        data-shell-width="fluid"
+        className="flex w-full min-h-[calc(100vh-3.5rem)]"
+      >
         {/* D-004 §3: desktop permanent left nav ~256px (w-64) */}
         <aside
           data-shell-region="sidenav"
@@ -586,16 +597,18 @@ export function App({
         <main
           id="main"
           data-shell-region="main"
-          className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+          className="min-w-0 w-full flex-1 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
         >
-          <PageSurface
-            manifest={manifest}
-            path={path}
-            onNavigate={onNavigate}
-            navigationContext={navigationContext}
-            schemaFetcher={schemaFetcher}
-            resourceFetcher={resourceFetcher}
-          />
+          <div data-shell-region="page" className="w-full min-w-0 max-w-none">
+            <PageSurface
+              manifest={manifest}
+              path={path}
+              onNavigate={onNavigate}
+              navigationContext={navigationContext}
+              schemaFetcher={schemaFetcher}
+              resourceFetcher={resourceFetcher}
+            />
+          </div>
         </main>
       </div>
     </div>

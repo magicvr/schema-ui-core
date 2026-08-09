@@ -988,10 +988,16 @@ function GridView({
     isRecord(node.props) && typeof node.props.columns === "number"
       ? node.props.columns
       : undefined;
+  // Mobile: always single column; md+: honor schema columns (fluid via CSS + minmax(0,1fr)).
+  const desktopCols =
+    columns !== undefined && columns > 1
+      ? Math.min(Math.max(Math.floor(columns), 1), 6)
+      : undefined;
   return (
     <div
-      className="grid gap-4"
-      style={columns !== undefined ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+      className="grid w-full min-w-0 gap-4 grid-cols-1"
+      data-grid-responsive="true"
+      data-schema-grid-cols={desktopCols !== undefined ? String(desktopCols) : undefined}
     >
       {(node.children ?? []).map((child, index) => (
         <Fragment key={index}>

@@ -397,9 +397,9 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   ];
 
   return (
-    <div className="space-y-2">
+    <div className="w-full min-w-0 space-y-2">
       {toolbar.length > 0 ? (
-        <div className="flex items-center justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {toolbar.map((trigger) => {
             const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
             const permitted = crud?.effectivePermission(key) ?? true;
