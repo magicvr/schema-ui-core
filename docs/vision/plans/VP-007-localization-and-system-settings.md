@@ -135,7 +135,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-007-localization-and-system-settings | GOAL-001-localization-and-system-settings | lead | 2026-08-09 | 用户确认激活后唯一 lead / delivery；`/govern` scaffold Root + S0–S5 纲领；`vision_role: delivery` |
+| workspace-007-localization-and-system-settings | GOAL-001-localization-and-system-settings | lead | 2026-08-09 | 用户确认激活后唯一 lead / delivery；`/govern` 已 scaffold Root + S0–S5 纲领（2026-08-09）；`vision_role: delivery` |
 
 用户已于 2026-08-09 确认将本 VP **激活**（`planned` → `active`），并指定唯一 lead / delivery 工作区 **`workspace-007-localization-and-system-settings`**（slug 按 VP-007 id 与既有 workspace-00N 惯例，用户本轮书面确认）。物理 scaffold（Root `GOAL-001-localization-and-system-settings`，`primary_plan` / `plan_refs` 均为本 VP）交 `/govern`。激活与建区 **不**构成任何多语种或 Settings 能力已交付。
 
