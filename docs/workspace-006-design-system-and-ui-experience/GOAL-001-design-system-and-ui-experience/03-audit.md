@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 doc: audit
-status: done
+status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.4.0
+version: 0.4.1
 ---
 
 # 审计 · GOAL-001-design-system-and-ui-experience
@@ -36,7 +36,8 @@ version: 0.4.0
 
 ## 结论状态
 
-- Root **`done`**（D-007）；`progress: 5/5`。
+- Root **`active` · closeout-ready**（E-007；D-007 superseded）；`progress: 4/5`（S1–S4；S5 过程关门待显式确认）。
 - 开放 required findings = **0**。
 - F-VUI-005/006 fixed 于编排响应后的残差补丁；F-VUI-007 = accepted-residual。
 - A-006 历史 fail 保留为反模式证据，不撤销。
+- **再次 `done` 须用户显式书面确认 → D-008**（不得再以目标意图冒充）。

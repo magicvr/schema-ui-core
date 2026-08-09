@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-design-system-and-ui-experience
 title: 现代设计系统与 Schema 驱动 UI/UX 体验产品化
-status: done
+status: active
 parent: null
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.4.0
-progress: 5/5
+version: 0.4.1
+progress: 4/5
 plan_refs:
   - VP-005-design-system-and-ui-experience
 primary_plan: VP-005-design-system-and-ui-experience
@@ -31,7 +31,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 **视觉方向（D-004 accepted · 2026-08-09）**：Stitch 定稿为过程输入；仓库摘要 [attachments/visual-direction-stitch-summary.md](./attachments/visual-direction-stitch-summary.md)。**不**把 `code.html` 当生产源。
 
-**重开与再关门**：A-006/D-006 曾废止过早 D-005。S2/S3 按 D-004 重做（GOAL-003 E-002；commits `f16dc9f` / `5716df9`）；独立审 A-008 **pass**；编排 A-009 闭合 F-VUI-001/002；用户目标指令书面确认 **D-007** → 再次 `done`。
+**重开与 closeout-ready**：A-006/D-006 曾废止过早 D-005。S2/S3 按 D-004 重做（GOAL-003 E-002；commits `f16dc9f` / `5716df9`）；独立审 A-008 **pass**；编排 A-009 闭合 F-VUI-001/002。**D-007 已 superseded**（不得以目标意图冒充关门签字）。Root 现为 **closeout-ready**：`active`，开放 required = 0，待用户**显式**书面确认后立 D-008 再 `done`。
 
 权威覆盖表（只读）：[I-PROTO-FULL-001 v1.0.0](../../workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)。
 
@@ -53,7 +53,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 - [x] **S2**：Renderer 视觉重构 — 桌面密表 / 移动卡片；`recordView` Drawer/Sheet；表单/展示 primitives（GOAL-003 C1；A-008 F-VUI-001 fixed）。
 - [x] **S3**：Shell 与工作流 — topbar + ~256 sidenav + 登录设计系统面（GOAL-003 C2；A-008 F-VUI-002 fixed）；移动汉堡为子能力。
 - [x] **S4**：状态与反馈 — GOAL-004。
-- [x] **S5**：视觉回归 + fork Token 示例 + 过程关门 — GOAL-005 局部保留；过程关门经 A-008/A-009 + D-007 再次成立。
+- [ ] **S5**：视觉回归 + fork Token 示例 + 过程关门 — GOAL-005 局部（fork/回归）有效；**过程关门待用户显式确认（D-008）**，故本检查点暂不勾选。
 
 ### 阶段 ↔ VP 退出判据映射
 
@@ -63,7 +63,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 | S2 | exit 2 Renderer 纳入面视觉 | GOAL-003 E-002；A-008 |
 | S3 | exit 3 Shell | GOAL-003 E-002；A-008 |
 | S4 | exit 4 状态生命周期 | GOAL-004 |
-| S5 | exit 5–6 回归诚实 + 过程可关门 | GOAL-005 + 本轮回归 + D-007 |
+| S5 | exit 5–6 回归诚实 + 过程可关门 | GOAL-005 + 本轮回归绿；过程关门待 D-008 |
 
 ## 纲领路线图
 
@@ -73,7 +73,7 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 | S2 | Renderer 钉死 type 视觉重构 | **完成** | F-VUI-001 fixed |
 | S3 | Shell 与工作流 | **完成** | F-VUI-002 fixed |
 | S4 | 状态与反馈 | **完成** | GOAL-004 |
-| S5 | 回归 / fork / 关门 | **完成** | D-007 |
+| S5 | 回归 / fork / 关门 | **过程待确认** | closeout-ready；待 D-008 |
 
 ## 信息需求与阶段门禁
 
@@ -96,9 +96,9 @@ serves_summary: 在 I-PROTO-FULL-001 已 include 的契约面上交付 Design To
 
 ## 派生进度展示
 
-`progress: 5/5` 由上方 S1～S5 五个等权检查点派生。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
+`progress: 4/5` 由上方 S1～S5 五个等权检查点派生（S1–S4 勾选）。progress 仅为展示；不放行阶段、不关闭 finding、不覆盖信息门禁，也不自动推导 `status: done`。
 
-**关门状态（2026-08-09 · D-007）**：开放 required = **0**（F-VUI-001/002 fixed via A-008/A-009）。Root `status: **done**` 依用户目标指令书面确认（D-007）。F-VUI-007 = accepted-residual（非阻断）。
+**closeout-ready（2026-08-09 · E-007）**：开放 required = **0**（F-VUI-001/002 fixed via A-008/A-009）。Root `status: **active**`。D-007 **superseded**。再次 `done` 仅当用户**显式**书面确认（将落盘 D-008）。F-VUI-007 = accepted-residual（非阻断）。
 
 ## 台账布局
 

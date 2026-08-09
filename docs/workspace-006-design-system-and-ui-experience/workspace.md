@@ -1,7 +1,7 @@
 ---
 id: workspace-006-design-system-and-ui-experience
 title: 设计系统与 Schema 驱动 UI/UX 体验工作区
-status: done
+status: active
 root_goal: GOAL-001-design-system-and-ui-experience
 canonical_scope: docs/workspace-006-design-system-and-ui-experience/
 shared_materials_catalog: none
@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-005-design-system-and-ui-experience
 created: 2026-08-09
 updated: 2026-08-09
-version: 0.4.0
+version: 0.4.1
 parent: null
 ---
 
@@ -24,7 +24,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-006-design-system-and-ui-experience` | 用户 2026-08-09 经 `/govern` **书面确认** slug。 |
-| Root Goal | `GOAL-001-design-system-and-ui-experience` | 本区唯一 `parent: null` Root；**`status: done`**（D-007；`progress: 5/5`）。 |
+| Root Goal | `GOAL-001-design-system-and-ui-experience` | 本区唯一 `parent: null` Root；**`status: active` · closeout-ready**（E-007；`progress: 4/5`）。 |
 | canonical 范围 | `docs/workspace-006-design-system-and-ui-experience/` | 当前工作区唯一的目标状态范围。 |
 | 共享资料目录 | `none` | 未声明固定共享资料引用；不得把候选资料作为事实或证据。 |
 | 愿景角色 | `delivery` | 不改变 Charter 的 primary 工作区 `workspace-001-mvp-admin-foundation`。 |
@@ -36,7 +36,7 @@ VP-005 的 `vision_ref` 精确匹配现行 Charter `schema-ui-core-admin-foundat
 
 **视觉方向（D-004）**：Stitch 定稿已冻结为实施输入；仓库摘要见 Root `attachments/visual-direction-stitch-summary.md`；本地截图在 `raw/stitch-vp005-visual-refs/`（gitignore）。
 
-**关门（D-007 · 2026-08-09）**：S2/S3 按 D-004 诚实重做（GOAL-003 E-002）；独立审 A-008 pass；开放 required = 0；用户目标指令书面确认 Root/工作区 `done`。A-006 历史 fail 保留为过程反模式。
+**closeout-ready（E-007 · 2026-08-09）**：S2/S3 按 D-004 诚实重做（GOAL-003 E-002）；独立审 A-008 pass；开放 required = 0。**D-007 superseded**（不得以目标意图冒充关门签字）。工作区 **`status: active`**，待用户**显式**书面确认后 → D-008 + `done`。
 
 ## 固定共享资料引用
 
@@ -44,4 +44,4 @@ VP-005 的 `vision_ref` 精确匹配现行 Charter `schema-ui-core-admin-foundat
 
 ## 串行阶段说明
 
-Root S1–S5 已全部完成（等权检查点 5/5）。跨区纲领阶段写在 `docs/vision/roadmap.md` 与 VP-005。
+Root S1–S4 已完成；S5 过程关门检查点待用户显式确认。跨区纲领阶段写在 `docs/vision/roadmap.md` 与 VP-005。
