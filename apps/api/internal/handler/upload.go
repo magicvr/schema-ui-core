@@ -6,6 +6,9 @@
 // takes url (priority) or id as the field value. Errors use the semantic
 // codes suggested by §7.3 (FILE_TOO_LARGE / UNSUPPORTED_FILE_TYPE /
 // STORAGE_UNAVAILABLE) inside the frozen {error, message} envelope.
+//
+// GOAL-003: every stored object records the authenticated uploader as owner;
+// GET /api/files/{id} is owner-only (fail-closed when meta.owner is missing).
 package handler
 
 import (
@@ -20,6 +23,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
 
 // maxUploadBytes bounds a single multipart upload (8 MiB); the server rejects
@@ -71,7 +76,7 @@ type uploadStore struct {
 	dir string
 }
 
-func (s *uploadStore) save(name string, contentType string, body []byte) (string, error) {
+func (s *uploadStore) save(name string, contentType string, ownerID string, body []byte) (string, error) {
 	idBytes := make([]byte, 16)
 	if _, err := rand.Read(idBytes); err != nil {
 		return "", err
@@ -83,7 +88,7 @@ func (s *uploadStore) save(name string, contentType string, body []byte) (string
 	if err := os.WriteFile(filepath.Join(s.dir, id), body, 0o644); err != nil {
 		return "", err
 	}
-	meta := map[string]string{"name": name, "type": contentType}
+	meta := map[string]string{"name": name, "type": contentType, "owner": ownerID}
 	raw, err := json.Marshal(meta)
 	if err == nil {
 		_ = os.WriteFile(filepath.Join(s.dir, id+".meta.json"), raw, 0o644)
@@ -122,6 +127,12 @@ type authMiddleware interface {
 
 func (s *uploadStore) upload() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := auth.IdentityFrom(r.Context())
+		if !ok || strings.TrimSpace(user.ID) == "" {
+			// Middleware should always inject identity; fail closed if it did not.
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+			return
+		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 		file, header, err := r.FormFile("file")
 		if err != nil {
@@ -175,7 +186,7 @@ func (s *uploadStore) upload() http.Handler {
 				return
 			}
 		}
-		id, err := s.save(header.Filename, detected, body)
+		id, err := s.save(header.Filename, detected, user.ID, body)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store upload")
 			return
@@ -191,6 +202,11 @@ func (s *uploadStore) upload() http.Handler {
 
 func (s *uploadStore) file() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := auth.IdentityFrom(r.Context())
+		if !ok || strings.TrimSpace(user.ID) == "" {
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+			return
+		}
 		id := r.PathValue("id")
 		body, meta, err := s.load(id)
 		if err != nil {
@@ -199,6 +215,13 @@ func (s *uploadStore) file() http.Handler {
 				return
 			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read file")
+			return
+		}
+		// GOAL-003: owner-only download. Missing owner (legacy/corrupt meta) fails
+		// closed — never treat an unowned object as world-readable among authed users.
+		owner := strings.TrimSpace(meta["owner"])
+		if owner == "" || owner != user.ID {
+			writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "not the owner of this file")
 			return
 		}
 		contentType := meta["type"]

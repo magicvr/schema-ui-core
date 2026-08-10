@@ -1,62 +1,90 @@
 ---
 doc_type: vision-plan
 id: VP-009-production-hardening
-title: 生产加固（共享基架安全与健壮性缺陷整改）
-status: closed
+title: 生产加固（共享基架持续安全与健壮性）
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-009-production-hardening
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
-# VP-009 · 生产加固（共享基架安全与健壮性整改）
+# VP-009 · 生产加固（共享基架持续安全与健壮性）
 
 ## 意图
 
-在 VP-008 准入波次关门（2026-08-10，`go` 签发，候选 `ed99e88`）之后，对当前代码主线执行一次**共享基架安全与健壮性加固波次**：修复代码审查（2026-08-10）发现的共享基架安全/健壮性缺陷，使生产部署路径 fail-closed，并恢复 VP-008 `go` 的消费有效性。
+在 VP-008 准入与 `go` 语义之上，建立并**持续运行**共享基架（`apps/api` + `apps/web` 及共同安全边界）的**安全扫描、缺陷分流与加固程序**。
 
-本 VP 是 VP-008 §`go` 消费有效性规则的**新准入 VP** 分支：审查发现命中"影响共享基架或共同风险语义的问题"（VP-008 §173），按 roadmap 门闩第 9 条由 `/vision` 新建准入 VP；VP-008 的 `go` 在该等缺陷重验证前按规则暂挂。
+本 VP 不是「修完某一批 bug 即结束」的一次性准入补丁。实现层以有界**波次子目标**承接每次扫描/审查发现的修复；波次可关门，**本 VP 与 lead 工作区 Root 默认保持开放**，直至产品明确废弃该程序或由用户经 `/vision` 有界/完整关门。
 
-本 VP **不**重开 VP-001～008，**不**修改 Charter 的目的、成功边界或非目标（Charter `@0.2.0` 保持）。
+与 VP-008 的关系：
 
-具体缺陷清单（2026-08-10 代码审查产物）属实现层，由工作区第一个子目标承接，不写入本 VP；输入见 `raw/audit-20260810-api-web-bug-review.md`（gitignored 临时记录）。
+- 命中「影响共享基架或共同风险语义」的问题（VP-008 §`go` 消费有效性）时，由本 VP 的工作区承接修复与重验证，并可按规则**暂挂**后续业务对 `go` 的消费，直至本波证据恢复有效性。
+- **不**重开 VP-001～008 的历史 status；**不**修改 Charter `@0.2.0` 的目的、成功边界或非目标。
+- **不**承载订单/钱包/类目/通知等业务模块实现。
+
+具体 finding 清单属实现层（子目标 / 波次台账），不写入本 VP 正文；决策层只固定范围、节奏、与 `go` 的关系及退出条件。
 
 ## 方向级范围
 
 | 区域 | 方向级范围 |
 |------|------------|
-| 认证与会话安全 | 上传/下载边界的存储型 XSS 消除；refresh token 轮换原子化；生产部署 fail-closed（弱默认拒绝）；种子账户可恢复性 |
-| 异步与交互健壮性 | 前端异步错误路径全覆盖（无卡死/静默失败）；查询语义（清空可清除）；权限缺省契约一致；路由 query 贯通 |
-| 边界一致性与体验 | 用户/角色/设置各边界语义一致；迁移升级健壮性；表单与主题细节一致 |
+| 程序与节奏 | 安全审视触发（发版前、依赖/边界变更、例行扫描、incident）；finding 严重度分流；波次立项与证据落盘 |
+| 认证与会话 | 登录/刷新/吊销、dev-session 生产门禁、token 存储权衡、身份解析 fail-closed |
+| 授权与多主体 | RBAC 权限键、提权面、资源/文件所有权与 IDOR、批量写边界 |
+| 输入与存储 | 上传/下载、注入面、错误泄露、体量与超时（含 HTTP header 超时等部署向健壮性） |
+| 前端信任边界 | XSS/危险 HTML、schema 驱动请求同域约束、客户端鉴权仅为 UX 的边界意识 |
+| 与准入的接口 | 共享基架缺陷对 VP-008 `go` 消费有效性的暂挂 / 恢复规则与证据要求 |
 
-## 方向级退出判据
+## 方向级「程序成立」判据（非一次性关门清单）
 
-在同时满足下列方向时，本 VP **可以**有界或完整关门（证据必须在工作区目标内）：
+下列为**程序已成立且可运行**的方向条件（证据在 lead 工作区 Root / 波次子目标）。满足后 VP **仍可保持 `active`**；它们不是「修完即 closed」的退出表。
 
-1. 共享基架安全/健壮性缺陷（工作区第一个子目标承接的审查发现清单）全部修复并回归；新增/更新测试覆盖，Go + vitest 全绿，基线不回归。
-2. 生产部署路径 fail-closed（无公开弱默认）；认证/授权/会话边界无已知可利用缺陷。
-3. 未改变 Charter 边界；未引入超出安全加固范围的新语义。
-4. 共享基架重验证证据落盘，VP-008 `go` 消费有效性按规则恢复（或用户书面裁决继续暂挂）。
+1. lead 工作区与 Root 以**长期能力容器**语义运行：波次 = 子目标；Root 不因单波完成而默认 `done`。
+2. 存在可重复的扫描→分流→修复→回归→（如需要）`go` 重验证节奏，并在 Root 台账可追踪。
+3. 生产路径 fail-closed 基线与已知共享基架高危面有台账；开放 Critical/High 有主责波次或书面 residual。
+4. 未改变 Charter 边界；未把业务模块实现塞进本 VP。
+
+## 方向级退出判据（何时才可 `closed`）
+
+仅在下列之一成立且用户书面确认时，本 VP **可以**有界或完整关门：
+
+1. 产品明确不再需要独立的共享基架持续安全程序（例如能力并入其他 active VP 且交接证据完整）；或  
+2. 被后续 VP 显式 supersede，且 lead 工作区 `primary_plan` 已迁移；或  
+3. 用户经 `/vision` 裁决 `abandoned` / 有界关闭并接受残余风险。
+
+**单波修复完成、例行扫描暂无新 finding、或 VP-008 `go` 恢复，均不构成 VP-009 关门。**
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-009-production-hardening | GOAL-001-production-hardening | lead | — | 由 `/govern` 开区；第一个子目标 = 本批代码审查发现修正（清单见 `raw/audit-20260810-api-web-bug-review.md`） |
+| workspace-009-production-hardening | GOAL-001-production-hardening | lead | 2026-08-10 | 长期 delivery/lead；波次子目标承接扫描修复；Root 保持 `active` 程序容器 |
+
+## 波次档案（实现层摘要 · 非 VP 关门）
+
+| 波次 | 日期 | 实现层 | 摘要 |
+|------|------|--------|------|
+| W1 | 2026-08-10 | GOAL-002 done 16/16 | 代码审查 C1–C8 + D1–D8；cross 审计闭环；曾支撑 VP-008 `go` 恢复（候选见该区证据） |
+| W2 | 2026-08-10 | GOAL-003 done 4/4 | 上传 owner 绑定与下载鉴权；`ReadHeaderTimeout`；self A-001 pass |
+
+> 2026-08-10 曾将本 VP 记为 `closed`，属把「W1 有界完成」误当作「程序结束」的理解偏差；同日用户书面纠正：本 VP 与 Root 应为**长期意图与工作区**。下表「误关门」行保留为修订史，不作为现行 status。
 
 ## 关门记录
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-10 | **closed**（用户书面确认） | 共享基架安全/健壮性缺陷 16 项全部修复并回归（C1–C8 + D1–D8）；cross 审计闭环（self A-001/A-004 pass + independent A-002 conditional → F-001 fixed 经 A-003 复审 pass）；开放 required = 0；`go test ./...` 21 包全绿 + `vitest run` 739 全过；**VP-008 `go` 消费有效性恢复**（重验证证据落盘，候选 `53b9496`） | workspace-009 [goal-tree.md](../workspace-009-production-hardening/goal-tree.md)（Root `GOAL-001-production-hardening` done 2/2；GOAL-002 done 16/16）；[E-001](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/02-execution/E-001-remediation.md) + [E-002](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/02-execution/E-002-a002-response.md)；[A-001](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/03-audit/A-001-goal-002-self.md)～[A-004](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/03-audit/A-004-goal-002-closeout.md) | N-002（上传启发式完备性边界，accepted-residual，复审触发=上传策略变更）；F-006（D2 限流进程内 best-effort） |
+| 2026-08-10 | ~~closed~~ → **撤销**（用户纠正） | 误将 W1（16 项）完成记为 VP 关门；不代表持续安全程序结束 | 当时证据仍有效为 **W1 波次档案**（workspace-009 GOAL-002）；不构成本 VP 现行 `closed` | 见各波次 residual |
+| — | （现行）**active · 未关门** | 长期安全程序；以波次推进 | workspace-009 Root `active`；W1/W2 子目标 `done` | 见 Root / 子目标台账 |
 
 ## 规划修订短史
 
 | date | change |
 |------|--------|
-| 2026-08-10 | 初创（`planned`、0 区）；意图 = 共享基架安全与健壮性加固；VP-008 `go` 因共享基架缺陷按规则暂挂，本 VP 承担重验证 |
-| 2026-08-10 | 按用户指示修订：VP 仅保留安全加固意图（决策层）；具体审查发现移出 VP，由工作区第一个子目标承接（输入 `raw/audit-20260810-api-web-bug-review.md`），不写入 vision 层 |
-| 2026-08-10 | 激活（`active`）并开区；`/govern` scaffold workspace-009 + Root `GOAL-001-production-hardening` + 第一个子目标 GOAL-002 |
-| 2026-08-10 | **关门（`closed`）**：16 项修复 + cross 审计闭环 + 开放 required = 0；VP-008 `go` 恢复 |
+| 2026-08-10 | 初创（`planned`）；意图表述偏「单次加固波次」+ go 重验证 |
+| 2026-08-10 | 激活并开区 workspace-009 + Root + GOAL-002（W1） |
+| 2026-08-10 | 曾 `closed`（W1 完成后）；**理解偏差** |
+| 2026-08-10 | GOAL-003（W2）在区內完成；Root 曾随波次反复 done/active |
+| 2026-08-10 | **语义纠正（用户）**：修订为**持续安全与健壮性程序**；`status: active`；退出判据改为程序废弃/被 supersede；波次不等于 VP 关门；Root 改为长期能力容器 |

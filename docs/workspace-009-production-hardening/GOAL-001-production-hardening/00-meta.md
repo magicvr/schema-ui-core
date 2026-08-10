@@ -1,51 +1,67 @@
 ---
 id: GOAL-001-production-hardening
-title: 生产加固（共享基架安全与健壮性整改）
-status: done
+title: 生产加固（共享基架持续安全与健壮性）
+status: active
 parent: null
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.2.0
-progress: 2/2
+version: 0.5.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
-serves_summary: 修复共享基架安全与健壮性缺陷（2026-08-10 代码审查输入），恢复 VP-008 go 消费有效性
+serves_summary: 长期安全程序容器——周期扫描、波次修复、与 VP-008 go 消费有效性接口；波次=子目标，Root 不因单波完成而 done
 ---
 
-# GOAL-001 · 生产加固（共享基架安全与健壮性整改）
+# GOAL-001 · 生产加固（共享基架持续安全与健壮性）
 
 ## 概述
 
-本 Root 是 `workspace-009-production-hardening` 的唯一总目标，承接 VP-009-production-hardening（`active`）的实现层证据与治理。它修复 2026-08-10 代码审查发现的共享基架安全/健壮性缺陷（C1–C8 中高危 + D1–D8 低危，输入 `raw/audit-20260810-api-web-bug-review.md`，gitignored），并据此恢复 VP-008 `go` 的消费有效性（按 VP-008 §`go` 消费有效性规则）。
+本 Root 是 `workspace-009-production-hardening` 的唯一总目标，承接 [VP-009-production-hardening](../../vision/plans/VP-009-production-hardening.md) 的**长期实现层容器**。
 
-本 Root **不**重开 VP-001～008，**不**修改 Charter 目的/边界/非目标，**不**实现订单/钱包/类目/通知等后续业务模块。
+- **程序语义**：持续安全扫描、finding 分流、有界波次修复、回归与（必要时）VP-008 `go` 重验证。  
+- **波次语义**：每一次扫描/审查发现的修复 = **一个子目标**（可 `done`）；**Root 默认保持 `active`**，不因单波完成而关门。  
+- **历史纠正**：2026-08-10 曾将「W1 修完 16 项」或「W2 修完上传 IDOR」当作 Root/`VP` 关门，属把有界波次误认为程序结束；用户同日书面纠正为长期意图。
+
+本 Root **不**重开 VP-001～008 的历史 status，**不**修改 Charter 目的/边界/非目标，**不**实现订单/钱包/类目/通知等业务模块。
 
 ## 愿景对齐
 
 | 字段 | 值 |
 |------|-----|
 | Charter | `schema-ui-core-admin-foundation@0.2.0` |
-| `plan_refs` / `primary_plan` | `VP-009-production-hardening` |
-| 工作区 | `workspace-009-production-hardening` (`vision_role: delivery`, single lead) |
+| `plan_refs` / `primary_plan` | `VP-009-production-hardening`（`active` 长期程序） |
+| 工作区 | `workspace-009-production-hardening` (`vision_role: delivery`, VP lead) |
 | independent provider | **`grok build` · 模型 `grok-4.5` · 思考强度 high · 执行 `audit` 命令**（沿用 workspace-008 D-002） |
-| 审计模式 | `cross`：self + independent，覆盖 security/data/migration/production/release 与跨边界治理语义 |
+| 审计模式 | 波次含 security 高影响时默认 `cross`（self + independent）；低风险波次可 `self`（P-004） |
 
-provider 记录沿用 workspace-008 D-002（2026-08-10 用户目标级指令）；本条仅记录后续审计会话的指定 provider，不构成该审计已执行。
+## 成功标准（程序能力 · 非「修完即 done」）
 
-## 成功标准（纲领检查点）
+下列检查点表示**程序已成立**；全部勾选后 Root **仍保持 `active`**，等待下一波扫描或 finding。
 
-- [x] **S0 · 基线冻结**：候选 commit、审查发现清单（C1–C8 + D1–D8）、严重度与修复顺序固定；I-001 登记并 verified。（2026-08-10）
-- [x] **S1 · 审查发现修正（第一个子目标）**：全部 16 项缺陷修复并回归；Go 21 包 + vitest 739 全绿；基线不回归；审计闭环（A-001 self pass → A-002 independent conditional → A-003 复审 pass → A-004 关门 pass）；开放 required = 0。（2026-08-10，[GOAL-002](../GOAL-002-audit-findings-remediation/00-meta.md) done 16/16）
+- [x] **P1 · 程序与波次模型**：Root = 长期容器；波次 = 子目标；单波完成 ≠ Root/VP 关门。（2026-08-10 用户纠正 + D-003）
+- [x] **P2 · 与 go 的接口**：共享基架 Critical/High 可触发 VP-008 `go` 消费有效性暂挂/恢复的路径有台账约定。（见 VP-009；W1 曾完成一次恢复证据）
+- [x] **W1 · 波次档案**：2026-08-10 审查 16 项（C1–C8 + D1–D8）修复 + cross 闭环 — [GOAL-002](../GOAL-002-audit-findings-remediation/00-meta.md) `done` 16/16
+- [x] **W2 · 波次档案**：上传 owner/下载鉴权 + `ReadHeaderTimeout` — [GOAL-003](../GOAL-003-upload-ownership-hardening/00-meta.md) `done` 4/4
+- [ ] **P3 · 下一波就绪**：存在约定的触发（例行/发版前/变更后）时，可开新子目标承接扫描，无需重开 Root/VP
 
-**Root 已关门（2026-08-10）**。共享基架安全/健壮性缺陷修复完成并经 cross 审计；VP-008 `go` 消费有效性按规则恢复（见 VP-009 关门记录与 roadmap）。
+> `progress`：不使用「n/n → Root done」推导。波次完成只更新子目标与下表档案；Root `status` 仅在用户明确废弃程序或迁移 `primary_plan` 时改为 `done`/`cancelled`。
+
+## 波次台账（摘要）
+
+| 波次 | 子目标 | status | 说明 |
+|------|--------|--------|------|
+| W1 | GOAL-002-audit-findings-remediation | done | 首批审查 16 项 |
+| W2 | GOAL-003-upload-ownership-hardening | done | 上传 IDOR + ReadHeaderTimeout |
+| （下一波） | 待立项 | — | 定时/触发扫描后 `/govern` 创建 |
 
 ## 信息就绪与未知项
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 本波次修复的候选 commit/artifact 身份与基线证据是什么？ | S0 | S0 结束前 | 记录候选 `git rev-parse HEAD`、审查发现清单映射、Go/vitest 基线全绿 | open | — | 待确认 |
+| I-001 | required | 本程序是否为长期意图（非单波关门）？ | 程序定义 | 纠正当日 | 用户 2026-08-10 书面纠正 | verified | — | D-003；VP-009 v0.4.0 |
+| I-002 | non-blocking | 例行扫描的具体日历/cron | 运营节奏 | 下一波前 | 用户或 CI 约定；可先事件触发 | open | deferred：事件触发足够启动 W3；责任人=维护者；复核=首次例行扫描前 | 待确认 |
+| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1/W2 已在子目标 verified |
 
 ## 台账布局
 
-本 Root 从首条记录起使用 `01-decision/`、`02-execution/`、`03-audit/` 三个平铺 ledger 目录；索引文件与目录条目共同构成正式记录。当前仅落盘开区决策与 scaffold 事实，尚未执行阶段审计。
+本 Root 使用 `01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；索引与目录条目共同构成正式记录。

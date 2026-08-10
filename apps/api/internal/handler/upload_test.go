@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/textproto"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -209,6 +210,90 @@ func TestUploadRejectsHtmlAndForcesAttachment(t *testing.T) {
 		if resp.Code != http.StatusUnsupportedMediaType {
 			t.Fatalf("mixed-case %q status = %d, want 415", tc[0], resp.Code)
 		}
+	}
+
+	_ = os.RemoveAll(env.uploadDir)
+}
+
+// GOAL-003 · upload ownership: the uploader may download; another authenticated
+// user receives 403; legacy meta without owner fails closed.
+func TestUploadOwnerOnlyDownload(t *testing.T) {
+	env := newAuthTestEnv(t)
+	adminTok := adminToken(t, env)
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", "owned.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = part.Write([]byte("owner-only-bytes"))
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/upload", body)
+	req.Header.Set("Authorization", "Bearer "+adminTok)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	resp := httptest.NewRecorder()
+	env.mux.ServeHTTP(resp, req)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("upload status = %d: %s", resp.Code, resp.Body.String())
+	}
+	var uploaded map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &uploaded); err != nil {
+		t.Fatal(err)
+	}
+	url, _ := uploaded["url"].(string)
+	id, _ := uploaded["id"].(string)
+	if url == "" || id == "" {
+		t.Fatalf("upload response missing url/id: %v", uploaded)
+	}
+
+	// Owner can download.
+	ownReq := httptest.NewRequest(http.MethodGet, url, nil)
+	ownReq.Header.Set("Authorization", "Bearer "+adminTok)
+	ownResp := httptest.NewRecorder()
+	env.mux.ServeHTTP(ownResp, ownReq)
+	if ownResp.Code != http.StatusOK {
+		t.Fatalf("owner download status = %d: %s", ownResp.Code, ownResp.Body.String())
+	}
+	if ownResp.Body.String() != "owner-only-bytes" {
+		t.Fatalf("owner body = %q", ownResp.Body.String())
+	}
+
+	// A different authenticated user cannot download (IDOR closed).
+	env.addUser(t, "viewer-upload", "viewer-pass-1", []string{"viewer"})
+	viewerTok := env.login(t, "viewer-upload", "viewer-pass-1")
+	otherReq := httptest.NewRequest(http.MethodGet, url, nil)
+	otherReq.Header.Set("Authorization", "Bearer "+viewerTok)
+	otherResp := httptest.NewRecorder()
+	env.mux.ServeHTTP(otherResp, otherReq)
+	if otherResp.Code != http.StatusForbidden {
+		t.Fatalf("non-owner download status = %d, want 403: %s", otherResp.Code, otherResp.Body.String())
+	}
+	var apiError map[string]string
+	if err := json.Unmarshal(otherResp.Body.Bytes(), &apiError); err != nil {
+		t.Fatal(err)
+	}
+	if apiError["error"] != "FORBIDDEN" {
+		t.Fatalf("non-owner error = %q, want FORBIDDEN", apiError["error"])
+	}
+
+	// Legacy/corrupt meta without owner fails closed (403), not world-readable.
+	legacyID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	if err := os.WriteFile(filepath.Join(env.uploadDir, legacyID), []byte("legacy"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(env.uploadDir, legacyID+".meta.json"),
+		[]byte(`{"name":"legacy.txt","type":"text/plain"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	legacyReq := httptest.NewRequest(http.MethodGet, "/api/files/"+legacyID, nil)
+	legacyReq.Header.Set("Authorization", "Bearer "+adminTok)
+	legacyResp := httptest.NewRecorder()
+	env.mux.ServeHTTP(legacyResp, legacyReq)
+	if legacyResp.Code != http.StatusForbidden {
+		t.Fatalf("legacy no-owner download status = %d, want 403: %s", legacyResp.Code, legacyResp.Body.String())
 	}
 
 	_ = os.RemoveAll(env.uploadDir)
