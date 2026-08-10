@@ -20,14 +20,15 @@ version: 0.1.0
 | provider 选择 | 已确认 | D-002 记录 grok build（grok 4.5 · high）`audit`；S5 由独立会话产出证据 |
 | Vision Review required | 已闭合 | `docs/vision/reviews.md` 当前 open required = 0 |
 | S0 阶段 self 审计 | 已完成 | GOAL-002 [A-001](../GOAL-002-s0-denominator-freeze/03-audit/A-001-s0-denominator-freeze-self.md)（source: self，verdict: pass） |
+| S1 阶段 self 审计 | 已完成 | GOAL-003 [A-001](../GOAL-003-s1-current-state-scan/03-audit/A-001-s1-current-state-scan-self.md)（source: self，verdict: pass） |
 | independent cross 审计 | 待 S5 | 由 grok build 独立会话执行，产出 `03-audit/A-NNN-*.md` |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | S0 阶段审计意见见 GOAL-002 [A-001](../GOAL-002-s0-denominator-freeze/03-audit/A-001-s0-denominator-freeze-self.md)；Root 级独立意见在 S5 追加 |
+| — | — | — | — | — | — | 阶段审计意见见 GOAL-002/GOAL-003 各 A-001；Root 级独立意见在 S5 追加 |
 
 ## 结论状态
 
-S0 准入分母与门禁冻结已完成（Root [D-003](01-decision/D-003-s0-denominator-freeze.md)），S0 阶段 self 审计 `pass`。`I-READINESS-005` 的独立审计证据仍待 S5 由 grok 独立会话产出；provider 选择本身不是已完成审计证据。
+S0 准入分母与门禁冻结（Root [D-003](01-decision/D-003-s0-denominator-freeze.md)）与 S1 当前状态扫描（GOAL-003 台账 11 findings）均已完成，S0/S1 self 审计 `pass`。`I-READINESS-005` 的独立审计证据仍待 S5 由 grok 独立会话产出；provider 选择本身不是已完成审计证据。S1 required finding F-002 进入 S4 整改；F-001 major 在 S3 I-003 门禁调和。

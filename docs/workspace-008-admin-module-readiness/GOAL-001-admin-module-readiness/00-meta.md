@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-10
 updated: 2026-08-10
 version: 0.1.0
-progress: 1/6
+progress: 2/6
 plan_refs:
   - VP-008-admin-module-readiness-and-foundation-convergence
 primary_plan: VP-008-admin-module-readiness-and-foundation-convergence
@@ -34,7 +34,7 @@ provider 已按用户 2026-08-10 目标级指令确定为 **grok build（grok 4.
 ## 成功标准（S0–S5 纲领检查点）
 
 - [x] **S0 · 准入分母与门禁冻结**：闭合 VP-008 指定的 required 信息项，固定代码/环境/模块/协议/可访问性/`go` freshness 的证据边界。（2026-08-10 冻结 [D-003](01-decision/D-003-s0-denominator-freeze.md)；S0 到期 I-001/004/005/006/007/008/009 均 verified；由 [GOAL-002](../GOAL-002-s0-denominator-freeze/00-meta.md) 承接）
-- [ ] **S1 · 当前状态扫描**：按冻结分母记录代码缺陷、功能缺漏、治理漂移、测试与文档偏差。
+- [x] **S1 · 当前状态扫描**：按冻结分母记录代码缺陷、功能缺漏、治理漂移、测试与文档偏差。（2026-08-10 完成；[GOAL-003](../GOAL-003-s1-current-state-scan/00-meta.md) 台账 11 findings：F-002 required→S4、F-001 major→S3、F-003~F-009 minor、F-010/011 info）
 - [ ] **S2 · 模块契约与接入演练**：完成 M1–M6/核心贡献契约、依赖、权限、Profile 与迁移反向验证。
 - [ ] **S3 · UI 协议与共享能力判断**：将共享能力映射为 covered、host-gap、protocol-gap 或 non-goal，并记录回流决策。
 - [ ] **S4 · 阻断整改与回归**：完成 required 缺陷整改、受影响范围重跑和证据基线更新。
