@@ -38,17 +38,17 @@ progress: 0/16
 
 ## 成功标准
 
-- [ ] C1–C8 全部修复并回归（上传 MIME 服务端校验 + 下载 `Content-Disposition`/CSP；刷新轮换原子化 + in-flight 去重；`APP_ENV` fail-closed；Bootstrap 空表重试；异步 catch 全覆盖；搜索清空语义；权限缺省契约统一；路由 query 贯通）
-- [ ] D1–D8 修复或按用户 P-004 裁决（accepted-residual / 明确非目标）；D3 匿名可读属性经显式确认
-- [ ] 新增/更新回归测试覆盖每项修复；`go test ./...` + `vitest run` 全绿；基线不回归
-- [ ] 共享基架重验证证据落盘，VP-008 `go` 消费有效性按规则恢复（或用户书面裁决继续暂挂）
+- [x] C1–C8 全部修复并回归（上传 MIME 服务端校验 + 下载 `Content-Disposition`/CSP；刷新轮换原子化 + in-flight 去重；`APP_ENV` fail-closed；Bootstrap 空表重试；异步 catch 全覆盖；搜索清空语义；权限缺省契约统一；路由 query 贯通）— [E-001](02-execution/E-001-remediation.md)
+- [x] D1–D8 修复或按用户 P-004 裁决；D3 匿名可读属性经显式确认（2026-08-10 用户裁决：保持匿名，记录设计决策 + accepted-residual）— [E-001](02-execution/E-001-remediation.md)
+- [x] 新增/更新回归测试覆盖每项修复；`go test ./...`（21 包）+ `vitest run`（735）全绿；基线不回归 — [E-001](02-execution/E-001-remediation.md)
+- [ ] 共享基架重验证证据落盘，VP-008 `go` 消费有效性按规则恢复（待审计与关门）
 
 ## 信息就绪与未知项
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 16 项缺陷是否全部覆盖、修复顺序与受影响测试范围 | 实施 | 实施前 | 逐项核对清单与修复映射 | open | — | 待确认 |
-| I-002 | non-blocking | D3（schema 匿名可读）是否设计决策 | 验收 | 验收前 | 用户 P-004 确认 | open | — | 待确认 |
+| I-001 | required | 16 项缺陷是否全部覆盖、修复顺序与受影响测试范围 | 实施 | 实施前 | 逐项核对清单与修复映射 | verified | 2026-08-10 16/16 修复完成 | [E-001](02-execution/E-001-remediation.md) |
+| I-002 | non-blocking | D3（schema 匿名可读）是否设计决策 | 验收 | 验收前 | 用户 P-004 确认 | verified | 2026-08-10 用户裁决：保持匿名 + accepted-residual | E-001 修复清单 D3 行 |
 
 ## 父目标
 

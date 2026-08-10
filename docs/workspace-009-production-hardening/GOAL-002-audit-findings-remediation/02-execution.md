@@ -14,3 +14,4 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
+| E-001 | 2026-08-10 | 16 项审查发现修复与回归完成 | recorded | [E-001-remediation.md](02-execution/E-001-remediation.md) |
