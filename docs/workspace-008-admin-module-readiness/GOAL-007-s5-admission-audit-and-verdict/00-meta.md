@@ -6,7 +6,7 @@ parent: GOAL-001-admin-module-readiness
 created: 2026-08-10
 updated: 2026-08-10
 version: 0.1.0
-progress: 0/5
+progress: 3/5
 workspace_id: workspace-008-admin-module-readiness
 ---
 
@@ -22,11 +22,13 @@ workspace_id: workspace-008-admin-module-readiness
 
 ## 成功标准（显式检查点）
 
-- [ ] **S5-1 最终基线回归**：候选 commit（S4 后 `f96dd1f` 及 S5 若再改则最新）上冻结分母 V-001~V-008 全量重跑全绿；来源身份 clean 或 patch/digest 绑定。
-- [ ] **S5-2 证据矩阵**：exit_id → 分母项 → 命令/手续 → 结果 → Q2 证据路径 → residual/N/A 理由；含 S5 裁决最小字段（decision/候选/来源身份/`go_issued_at`/freshness 等）。
-- [ ] **S5-3 self + independent cross 审计**：self 审计完成；grok build 独立会话产出可核对 A-00N（`source: independent`）；finding 全部响应。
-- [ ] **S5-4 用户 `go`/`no-go` 裁决**：用户基于证据矩阵书面确认一种明确决策形状；`go` 仅当全部 required 合法闭合、证据矩阵完整、来源身份可复核。
-- [ ] **S5-5 Root 关门**：`go` 裁决落盘、VP-008 可提议 closed、Root progress → 6/6。
+- [x] **S5-1 最终基线回归**：最终候选 `ed99e88`（apps 运行面 == S4 `f96dd1f`）上冻结分母 V-001~V-008 全量重跑全绿；来源身份 clean。（2026-08-10）
+- [x] **S5-2 证据矩阵**：exit_id → 分母项 → 命令/手续 → 结果 → Q2 证据路径 → residual/N/A 理由；含 S5 裁决最小字段占位（`go_issued_at` 待用户裁决）。（2026-08-10）
+- [x] **S5-3 self + independent cross 审计**：self [A-001](03-audit/A-001-s5-admission-audit-and-verdict-self.md)（pass）+ grok build 独立 [A-002](03-audit/A-002-s5-admission-audit-independent.md)（conditional）；A-002 两条 required（F-001 勘误、F-002 抽屉断言）已合法闭合。（2026-08-10）
+- [ ] **S5-4 用户 `go`/`no-go` 裁决**：**未完成**——用户尚未书面确认决策形状；F-007 维持 deferred 需在裁决时书面确认。
+- [ ] **S5-5 Root 关门**：**未完成**——`go` 裁决落盘、VP-008 可提议 closed、Root progress → 6/6 均待 S5-4。
+
+> **当前状态：未放行**。工作区保持 `active`；`progress: 3/5` 仅反映 S5-1~S5-3 已完成，**不代表 `go` 或 Root 关门**。
 
 > 派生进度展示：由上述 5 个显式检查点等权派生。
 

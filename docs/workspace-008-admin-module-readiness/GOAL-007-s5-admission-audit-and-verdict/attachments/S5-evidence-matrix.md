@@ -1,18 +1,19 @@
 # S5 · 准入证据矩阵（VP-008 方向级退出判据）
 
-> 本文件为 GOAL-007-s5-admission-audit-and-verdict 的执行证据。候选基线：S4 提交 `f96dd1f`（clean；S5 若再改则更新）。来源身份：clean checkout（`git status --porcelain` 仅 GOAL-007 scaffold 未提交，属本 S5 工作；最终候选以 S5 完成后 commit 为准）。
+> 本文件为 GOAL-007-s5-admission-audit-and-verdict 的执行证据。**最终裁决候选基线：`ed99e88`（clean，当前 HEAD）**——apps 运行面与 S4 `f96dd1f` 一致（S5 仅新增测试 `s4-drawer-focus.test.tsx` 与文档/台账），F-001 勘误与 A-002 响应已入库。来源身份：clean checkout（`git status --porcelain` 空）。
 
 ## 0. 候选身份与 freshness 字段（VP-008 §`go` 消费有效性）
 
 | 字段 | 值 |
 |------|-----|
-| 候选 Git commit | `f96dd1f`（S4 后；S5 完成后的最终 commit 为裁决候选） |
-| 来源身份 | clean（S0-S4 各阶段 commit 已入库；S5 scaffold 待提交） |
+| 候选 Git commit | **`ed99e88`**（最终裁决候选，clean；apps 运行面 == S4 `f96dd1f`） |
+| 来源身份 | clean（S0–S4 各阶段 commit + S5 A-002 响应 + F-001 勘误均已入库；`git status --porcelain` 空） |
 | 解锁 scope | workspace-008 准入分母（S0 D-003 §1-§13）所声明的基架准入 + 后续标准业务模块的框架能力 |
-| `go_issued_at` | 用户 S5 裁决确认日 |
-| `last_freshness_review_at` | 裁决日 |
+| `go_issued_at` | **待用户 S5 书面裁决**（未签发） |
+| `last_freshness_review_at` | 未发生（无 `go` 可消费） |
 | `next_freshness_review_trigger` | 每个后续业务 VP 激活前 |
 | 失效触发 | D-003 §11 所列（源码/配置/patch、依赖锁/工具链/镜像、迁移台账/Profile/模块矩阵/容器/fork 基线、协议 pin/disposition、共同门禁语义、Charter/VP scope） |
+| 裁决状态 | **未放行**：用户 `go`/`no-go` 尚未书面裁决（S5-4/S5-5 未完成）；本工作区保持 `active`，不得静默写成正式 go 或 no-go |
 
 ## 1. 退出判据 → 证据映射
 
@@ -23,9 +24,9 @@
 | E-3 | 标准模块接入路径经现网验证 | S2 [s2_access_drill_test.go](../../../apps/api/internal/composition/s2_access_drill_test.go) + [s2-access-drill.render.test.tsx](../../../apps/web/src/app/s2-access-drill.render.test.tsx)；S1 模块检查表（4 standard-admin M1-M6 全 pass） | pass |
 | E-4 | 前后台 UI 协议决策边界冻结 | S3-protocol-judgment §2-§3（9 covered/0 protocol-gap/2 host-gap/1 non-goal）；前端宿主矩阵 | pass（host-gap F-002 fixed、F-007 deferred） |
 | E-5 | 阻断缺陷完成合法闭环 | S4 [02-execution](../GOAL-006-s4-remediation-and-regression/02-execution.md)：F-002 fixed、F-006/008/003/004/005/009 fixed、F-007 deferred；Goal/Vision open required = 0 | pass |
-| E-6 | 准入结论可审计且可复用 | 本证据矩阵 + S5 self 审计 + grok independent 审计 + 用户裁决 | 待 S5 完成 |
+| E-6 | 准入结论可审计且可复用 | 本证据矩阵 + S5 self 审计 + grok independent 审计 + 用户裁决 | **未完成**：证据矩阵/self/independent 已备，用户 `go`/`no-go` 裁决未落盘（S5-4） |
 
-## 2. 最终基线回归（S4 候选 `f96dd1f`）
+## 2. 最终基线回归（最终候选 `ed99e88`；apps 运行面 == `f96dd1f`）
 
 | 命令 | S0 实测 | S4/S5 回归 | 证据 |
 |------|---------|------------|------|
