@@ -26,10 +26,10 @@ serves_summary: 在正式业务模块开发前，对当前代码主线完成全�
 | Charter | `schema-ui-core-admin-foundation@0.2.0` |
 | `plan_refs` / `primary_plan` | `VP-008-admin-module-readiness-and-foundation-convergence` |
 | 工作区 | `workspace-008-admin-module-readiness` (`vision_role: delivery`, single lead) |
-| independent provider | `GitHub Copilot · /audit` |
+| independent provider | **`grok build` · 模型 `grok-4.5` · 思考强度 high · 执行 `audit` 命令**（D-002，2026-08-10 用户目标级指令更新；替代 D-001 记录的 GitHub Copilot `/audit`） |
 | 审计模式 | `cross`：self + independent，覆盖 compatibility/data/migration/production/release 与跨边界治理语义 |
 
-provider 已由用户确认并沿用现有 VRev-024/VRev-026 的 provider 命名；本条仅记录后续审计会话的指定 provider，不构成该审计已执行或 `go` 已产生。
+provider 已按用户 2026-08-10 目标级指令确定为 **grok build（grok 4.5 · high）执行 `audit`**（见 [D-002](01-decision/D-002-independent-audit-provider-grok-build.md)）；本条仅记录后续审计会话的指定 provider，不构成该审计已执行或 `go` 已产生。
 
 ## 成功标准（S0–S5 纲领检查点）
 
@@ -48,7 +48,7 @@ provider 已由用户确认并沿用现有 VRev-024/VRev-026 的 provider 命名
 | I-READINESS-002 | required | 模块分级、适用检查表与 Core/迁移契约是否满足 Provider M1–M6？ | S2 | S2 方案冻结前 | 建立模块注册表并逐模块演练 | open | — | 待收集 |
 | I-READINESS-003 | required | fixture/conformance 与 `I-PROTO-FULL-001` 主张是否一致？ | S3 | S3 判断前 | 复核 include/exclude disposition 与关键行为套件 | open | — | 待收集 |
 | I-READINESS-004 | required | 首个领域模块之前，哪些共享能力足以构成全基架准入分母？ | S0 | S0 结束前 | 从订单/钱包/类目/通知候选抽取共同模式并冻结列表 | open | — | 待收集 |
-| I-READINESS-005 | required | cross 审计使用哪个 independent provider，覆盖哪些 compatibility/data/migration/production/release 与跨边界 scope？ | Root S0 实施前 | S0 | 由用户指定 provider；GitHub Copilot `/audit` 已选定，后续记录 self + independent scope 与证据 | open | provider 选择已确认；审计证据待产生 | 本决策 D-001 |
+| I-READINESS-005 | required | cross 审计使用哪个 independent provider，覆盖哪些 compatibility/data/migration/production/release 与跨边界 scope？ | Root S0 实施前 | S0 | 由用户指定 provider；**2026-08-10 用户目标级指令更新为 grok build（grok 4.5、high）执行 `audit`**，后续记录 self + independent scope 与证据 | open | provider 选择已确认；审计证据待产生 | 本决策 D-002（替代 D-001 的 provider 记录） |
 | I-READINESS-006 | required | 阻断/严重度量尺、台账映射和 S1 只应用规则是否冻结？ | S0 | S0 结束前 | 记录版本、适用范围、分母与用户确认 | open | — | 待收集 |
 | I-READINESS-007 | required | S0/S4 证据基线是否绑定候选 commit、artifact、lockfile、环境与变更重跑触发？ | S0 | S0 结束前 | 冻结 baseline 字段并记录变更分类 | open | — | 待收集 |
 | I-READINESS-008 | required | 跨模块 UI 可访问性下限、断言/人工核对、N/A/延期触发与严重度映射是否冻结？ | S0 | S0 结束前 | 覆盖 Renderer/Shell、导航、表单、列表、详情、动作、反馈与语言切换 | open | — | 待收集 |

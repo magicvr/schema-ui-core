@@ -34,7 +34,7 @@ parent: null
 
 Charter 唯一来源为 `schema-ui-core-admin-foundation@0.2.0`。VP-008 已为 `active`，本区是其确认的单工作区 lead；当前仍处于实现前准备阶段，尚未产生可消费 `go`。
 
-`I-READINESS-005` 的 independent provider 已按用户确认选择为 **GitHub Copilot · `/audit`**，审计模式为 `cross`，覆盖 compatibility、data、migration、production/release 以及跨边界治理语义；后续需由该 provider 的独立会话产出可核对的 Goal 审计意见。provider 选择本身不是已完成审计证据。
+`I-READINESS-005` 的 independent provider 已按用户 2026-08-10 **目标级指令**更新为 **grok build（模型 `grok-4.5`、思考强度 high）执行 `audit` 命令**（[D-002](GOAL-001-admin-module-readiness/01-decision/D-002-independent-audit-provider-grok-build.md)，替代 D-001 的 GitHub Copilot `/audit` 记录），审计模式为 `cross`，覆盖 compatibility、data、migration、production/release 以及跨边界治理语义；后续需由该 provider 的独立会话产出可核对的 Goal 审计意见。provider 选择本身不是已完成审计证据。
 
 ## 固定共享资料引用
 

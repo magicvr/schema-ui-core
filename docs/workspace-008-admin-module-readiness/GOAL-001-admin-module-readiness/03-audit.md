@@ -10,14 +10,14 @@ version: 0.1.0
 
 # 审计 · GOAL-001
 
-本 Root 刚完成 scaffold，尚未到达阶段审计节点。Goal 审计模式已按 `cross` 记录为 self + independent；independent provider 为 `GitHub Copilot · /audit`。
+本 Root 刚完成 scaffold，尚未到达阶段审计节点。Goal 审计模式已按 `cross` 记录为 self + independent；independent provider 已按用户 2026-08-10 目标级指令更新为 **grok build（grok 4.5 · 思考强度 high · 执行 `audit`）**（[D-002](01-decision/D-002-independent-audit-provider-grok-build.md)，替代 D-001 的 GitHub Copilot `/audit` 记录）。
 
 ## 信息就绪核对（开区基线）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 `I-READINESS-*` | 已登记 | 见 [00-meta.md](00-meta.md)，I-READINESS-001～009 均为 required/open |
-| provider 选择 | 已确认 | D-001 记录 GitHub Copilot `/audit`；尚无执行输出 |
+| provider 选择 | 已确认 | D-002 记录 grok build（grok 4.5 · high）`audit`；尚无执行输出 |
 | Vision Review required | 已闭合 | `docs/vision/reviews.md` 当前 open required = 0 |
 | Goal 审计意见 | 未开始 | 正式意见应追加至 `03-audit/A-NNN-<slug>.md` |
 
