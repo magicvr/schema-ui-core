@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/textproto"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -179,6 +180,22 @@ func TestUploadRejectsHtmlAndForcesAttachment(t *testing.T) {
 	}
 	if got := fileResp.Header().Get("Content-Type"); got != "text/plain; charset=utf-8" {
 		t.Fatalf("served Content-Type = %q, want detected text/plain", got)
+	}
+
+	// A-002 F-001: SVG, XML-prefixed SVG, header-smuggled HTML, and GIF-multiplexed
+	// HTML are all rejected by the active-content marker gate even though
+	// http.DetectContentType would sniff them as text/plain / text/xml / image/gif.
+	smuggled := [][2]string{
+		{"svg-plain.txt", "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"},
+		{"svg-xml.xml", "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"},
+		{"html-padded.txt", strings.Repeat("A", 600) + "<!DOCTYPE html><script>alert(1)</script>"},
+		{"gif-html.gif", "GIF89a" + "<html><script>alert(1)</script></html>"},
+	}
+	for _, tc := range smuggled {
+		resp := uploadPart(tc[0], "text/plain", tc[1])
+		if resp.Code != http.StatusUnsupportedMediaType {
+			t.Fatalf("smuggled %q status = %d, want 415", tc[0], resp.Code)
+		}
 	}
 
 	_ = os.RemoveAll(env.uploadDir)

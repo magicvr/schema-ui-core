@@ -109,6 +109,14 @@ async function doRefresh(refresh: string): Promise<boolean> {
     return false;
   }
   if (!response.ok) {
+    // Cross-tab rotation (A-002 F-003): another tab may have just won the
+    // rotation race and written a fresh refresh token to localStorage while
+    // this request was in flight. The old token is now revoked — but the
+    // session is not lost. Retry once with the newer token before giving up.
+    const current = getRefreshToken();
+    if (current !== null && current !== refresh) {
+      return doRefresh(current);
+    }
     clearTokens();
     return false;
   }

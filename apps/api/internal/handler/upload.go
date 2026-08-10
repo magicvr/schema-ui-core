@@ -9,6 +9,7 @@
 package handler
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -41,6 +42,28 @@ var dangerousInlineTypes = map[string]bool{
 	"text/html":             true,
 	"application/xhtml+xml": true,
 	"image/svg+xml":         true,
+}
+
+// activeContentMarkers are byte sequences that indicate script-bearing or
+// SVG markup regardless of what http.DetectContentType reports (A-002 F-001):
+// DetectContentType sniffs SVG as text/plain and HTML can be smuggled past the
+// first 512 bytes or behind a GIF89a header. Any body containing these markers
+// is rejected outright — the detection layer is a hard gate, not a hint.
+var activeContentMarkers = [][]byte{
+	[]byte("<svg"),
+	[]byte("<SVG"),
+	[]byte("<script"),
+	[]byte("<SCRIPT"),
+	[]byte("<?xml"),
+}
+
+func containsActiveContent(body []byte) bool {
+	for _, marker := range activeContentMarkers {
+		if bytes.Contains(body, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 type uploadStore struct {
@@ -129,7 +152,11 @@ func (s *uploadStore) upload() http.Handler {
 		if i := strings.IndexByte(base, ';'); i >= 0 {
 			base = strings.TrimSpace(base[:i])
 		}
-		if dangerousInlineTypes[base] {
+		// A-002 F-001: DetectContentType alone misses SVG (sniffed as text/plain)
+		// and header-smuggled HTML; the active-content marker check is the hard
+		// rejection gate for script/SVG-bearing bodies regardless of the sniffed
+		// type. This is defense-in-depth on top of the download headers.
+		if dangerousInlineTypes[base] || containsActiveContent(body) {
 			writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
 			return
 		}
