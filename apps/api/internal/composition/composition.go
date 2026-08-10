@@ -144,6 +144,25 @@ func newMux(
 	plan kernel.Plan,
 	gate *readinessGate,
 ) (*http.ServeMux, error) {
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, nil)
+}
+
+// newMuxWithExtraProviders is the composition-root assembly seam used by the S2
+// access drill: it appends test-only providers (e.g. a probe module) to the
+// compiled one-party set before registration, proving that a new standard module
+// surfaces through the Provider contract without any handler/Web central business
+// registration change. Production call sites use newMux (extra == nil).
+func newMuxWithExtraProviders(
+	cfg *config.Config,
+	a *auth.Authenticator,
+	st *store.Store,
+	authRepository *authsession.Repository,
+	operations *operationlog.Repository,
+	settingsRepository *settingsrepository.Repository,
+	plan kernel.Plan,
+	gate *readinessGate,
+	extra []kernel.Provider,
+) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2).
@@ -168,6 +187,7 @@ func newMux(
 	if plan.HasModule("admin.activity") {
 		providers = append(providers, activitymodule.New(a, operations))
 	}
+	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "", Detail: fmt.Sprintf("register contributions: %v", err)}
