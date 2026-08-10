@@ -20,6 +20,7 @@ Root 的 required 信息项与阶段门禁唯一索引见 [00-meta.md](00-meta.m
 |------|------|------|------|------|
 | D-001 | 2026-08-10 | 开区绑定、Root 命名与 independent provider | accepted（provider 段由 D-002 更新） | [01-decision/D-001-workspace-s0-bindings.md](01-decision/D-001-workspace-s0-bindings.md) |
 | D-002 | 2026-08-10 | independent 交叉审计执行路径改为 grok build（grok 4.5 · high · `audit`） | accepted | [01-decision/D-002-independent-audit-provider-grok-build.md](01-decision/D-002-independent-audit-provider-grok-build.md) |
+| D-003 | 2026-08-10 | S0 准入分母与门禁冻结（候选 `852ee7e`；闭合 I-001/004/005/006/007/008/009） | accepted（冻结前需补测 V-003/V-006/V-007/V-008 或登记延后） | [01-decision/D-003-s0-denominator-freeze.md](01-decision/D-003-s0-denominator-freeze.md) |
 
 ## 记录规则
 

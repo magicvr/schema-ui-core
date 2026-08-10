@@ -12,21 +12,22 @@ version: 0.1.0
 
 本 Root 刚完成 scaffold，尚未到达阶段审计节点。Goal 审计模式已按 `cross` 记录为 self + independent；independent provider 已按用户 2026-08-10 目标级指令更新为 **grok build（grok 4.5 · 思考强度 high · 执行 `audit`）**（[D-002](01-decision/D-002-independent-audit-provider-grok-build.md)，替代 D-001 的 GitHub Copilot `/audit` 记录）。
 
-## 信息就绪核对（开区基线）
+## 信息就绪核对（S0 冻结后）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 `I-READINESS-*` | 已登记 | 见 [00-meta.md](00-meta.md)，I-READINESS-001～009 均为 required/open |
-| provider 选择 | 已确认 | D-002 记录 grok build（grok 4.5 · high）`audit`；尚无执行输出 |
+| 影响本 scope 的 `I-READINESS-*` | 已登记 | 见 [00-meta.md](00-meta.md)；S0 到期 7 项（I-001/004/005/006/007/008/009）已 verified |
+| provider 选择 | 已确认 | D-002 记录 grok build（grok 4.5 · high）`audit`；S5 由独立会话产出证据 |
 | Vision Review required | 已闭合 | `docs/vision/reviews.md` 当前 open required = 0 |
-| Goal 审计意见 | 未开始 | 正式意见应追加至 `03-audit/A-NNN-<slug>.md` |
+| S0 阶段 self 审计 | 已完成 | GOAL-002 [A-001](../GOAL-002-s0-denominator-freeze/03-audit/A-001-s0-denominator-freeze-self.md)（source: self，verdict: pass） |
+| independent cross 审计 | 待 S5 | 由 grok build 独立会话执行，产出 `03-audit/A-NNN-*.md` |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到阶段审计节点 |
+| — | — | — | — | — | — | S0 阶段审计意见见 GOAL-002 [A-001](../GOAL-002-s0-denominator-freeze/03-audit/A-001-s0-denominator-freeze-self.md)；Root 级独立意见在 S5 追加 |
 
 ## 结论状态
 
-开区事实已记录，不能作为 S0 通过、`go` 或 Root 关门依据。后续 `/audit` provider 失败、超时或无可核对输出时，independent 门禁保持未满足。
+S0 准入分母与门禁冻结已完成（Root [D-003](01-decision/D-003-s0-denominator-freeze.md)），S0 阶段 self 审计 `pass`。`I-READINESS-005` 的独立审计证据仍待 S5 由 grok 独立会话产出；provider 选择本身不是已完成审计证据。

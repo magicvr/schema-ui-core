@@ -18,19 +18,22 @@ workspace_id: workspace-008-admin-module-readiness
 ## 树
 
 ```text
-GOAL-001-admin-module-readiness [active] (0/6)
+GOAL-001-admin-module-readiness [active] (1/6)
+└── GOAL-002-s0-denominator-freeze [done]
 ```
 
-Root 已建立但尚未进入 S0 实施；子目标将在 S0 信息门禁和阶段计划明确后按阶段创建。
+Root 已完成 S0（准入分母与门禁冻结，由 GOAL-002 承接）；下一阶段为 S1 当前状态扫描（阶段子目标在开始时按 P-001 创建）。
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-admin-module-readiness | Admin 业务模块准入与基架收敛 | null | active | 0/6 | 2026-08-10 |
+| GOAL-001-admin-module-readiness | Admin 业务模块准入与基架收敛 | null | active | 1/6 | 2026-08-10 |
+| GOAL-002-s0-denominator-freeze | S0 · 准入分母与门禁冻结 | GOAL-001-admin-module-readiness | done | 5/5 | 2026-08-10 |
 
 ## 维护说明
 
-- `progress: 0/6` 仅由 Root 中显式列出的 S0–S5 六个阶段检查点派生，不放行阶段、不关闭 finding，也不代表 `go`。
+- `progress: 1/6`（Root）仅由 Root 中显式列出的 S0–S5 六个阶段检查点派生，不放行阶段、不关闭 finding，也不代表 `go`。
+- `progress: 5/5`（GOAL-002）由该子目标 `00-meta.md` 中 5 个显式 S0 检查点派生；`done` 仅表示 S0 阶段完成。
 - 层级唯一来源是目标 `00-meta.md` 的 `parent`；本文件只是区内索引。
-- 当前没有已创建的子目标；不得在 S0 信息未就绪前批量创建细粒度目标。
+- 不得在信息未就绪前批量创建更细粒度目标。
