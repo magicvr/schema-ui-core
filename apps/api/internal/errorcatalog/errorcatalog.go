@@ -77,6 +77,7 @@ var Catalog = map[string]Entry{
 	"INVALID_FILE":          {"error.invalidFile", "file part is invalid", "文件内容无效"},
 	"UNSUPPORTED_FILE_TYPE": {"error.unsupportedFileType", "file type is not allowed", "不允许的文件类型"},
 	"STORAGE_UNAVAILABLE":   {"error.storageUnavailable", "storage is temporarily unavailable", "存储服务暂不可用"},
+	"RATE_LIMITED":          {"error.rateLimited", "too many failed login attempts; try again later", "登录失败次数过多，请稍后重试"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

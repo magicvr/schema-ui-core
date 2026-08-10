@@ -1,6 +1,7 @@
 import { Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { setTheme } from "@/theme/theme";
 
 function isDark() {
   return document.documentElement.classList.contains("dark");
@@ -15,9 +16,9 @@ export function ThemeToggle() {
       aria-label="Toggle color theme"
       title="Toggle color theme"
       onClick={() => {
-        const next = !isDark();
-        document.documentElement.classList.toggle("dark", next);
-        localStorage.setItem("theme", next ? "dark" : "light");
+        // setTheme persists the choice and applies it via applyThemeToElement,
+        // which also syncs CSS color-scheme so native controls match (D8).
+        setTheme(isDark() ? "light" : "dark");
       }}
     >
       <Sun className="h-4 w-4 dark:hidden" />

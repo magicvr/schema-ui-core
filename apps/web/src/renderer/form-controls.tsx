@@ -321,8 +321,8 @@ function NumberField({
 }: {
   id: string;
   label: string;
-  value: number;
-  onChange: (value: number) => void;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
   disabled?: boolean;
   min?: number;
   max?: number;
@@ -336,14 +336,16 @@ function NumberField({
       <Input
         id={id}
         type="number"
-        value={Number.isFinite(value) ? value : 0}
+        // An empty input renders blank, not "0"; a cleared number is submitted
+        // as undefined (field omitted) so the backend default applies (D7).
+        value={Number.isFinite(value) ? value : ""}
         disabled={disabled}
         min={min}
         max={max}
         step={step}
         onChange={(event) => {
           const next = event.target.valueAsNumber;
-          onChange(Number.isFinite(next) ? next : 0);
+          onChange(Number.isFinite(next) ? next : undefined);
         }}
       />
     </div>
@@ -478,7 +480,14 @@ function UploadField({
         type="file"
         multiple={field.multiple === true}
         disabled={disabled || status.kind === "uploading"}
-        onChange={(event) => void handleFiles(event.target.files)}
+        onChange={(event) => {
+          void handleFiles(event.target.files).finally(() => {
+            // Reset the input after the upload settles so re-selecting the same
+            // file re-fires change (D7); a stale file reference would make a
+            // retry after an error silently do nothing.
+            event.target.value = "";
+          });
+        }}
       />
       {display !== "" ? (
         <span className="text-xs text-muted-foreground">Value: {display}</span>
@@ -556,7 +565,7 @@ function FieldControl({
         <NumberField
           id={id}
           label={label}
-          value={Number(value)}
+          value={typeof value === "number" ? value : undefined}
           disabled={disabled}
           min={field.min}
           max={field.max}

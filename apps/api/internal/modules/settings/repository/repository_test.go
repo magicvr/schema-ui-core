@@ -160,3 +160,32 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 		t.Fatalf("reset defaults = %+v", settings)
 	}
 }
+
+// D6 hardening: an explicit empty string for defaultLocale/defaultTheme is
+// normalized to "auto" instead of being stored as "" (which configuration.Validate
+// would reject and the GET projection would leak).
+func TestRepositoryEmptyLocaleThemeNormalizedToAuto(t *testing.T) {
+	repository, _ := openSettingsRepository(t, "settings-d6.db")
+	now := time.Now().UTC().Truncate(time.Second)
+
+	empty := ""
+	settings, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &empty, nil, &empty, now)
+	if err != nil {
+		t.Fatalf("empty locale/theme patch: %v", err)
+	}
+	if settings.DefaultLocale != "auto" {
+		t.Fatalf("DefaultLocale = %q, want auto", settings.DefaultLocale)
+	}
+	if settings.DefaultTheme != "auto" {
+		t.Fatalf("DefaultTheme = %q, want auto", settings.DefaultTheme)
+	}
+
+	// The stored row agrees with the projection.
+	reRead, err := repository.GetSiteSettings()
+	if err != nil {
+		t.Fatalf("re-read: %v", err)
+	}
+	if reRead.DefaultLocale != "auto" || reRead.DefaultTheme != "auto" {
+		t.Fatalf("stored = %+v, want locale/theme auto", reRead)
+	}
+}

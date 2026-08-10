@@ -43,6 +43,18 @@ function isProtocolRelativeUrl(url: string): boolean {
   return PROTOCOL_URL_RE.test(url);
 }
 
+// safeDecode tolerates malformed percent-encoding: decodeURIComponent throws
+// URIError on inputs like "%zz" or a trailing "%", and an uncaught throw here
+// would crash the whole action path. The raw part is passed through unchanged
+// so a later encodeRFC3986 round-trip produces a valid URL (D4).
+function safeDecode(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return part;
+  }
+}
+
 function splitUrl(url: string): { path: string; query: Map<string, string> } {
   const qIndex = url.indexOf("?");
   if (qIndex < 0) {
@@ -60,7 +72,7 @@ function splitUrl(url: string): { path: string; query: Map<string, string> } {
     const key = eq < 0 ? part : part.slice(0, eq);
     const value = eq < 0 ? "" : part.slice(eq + 1);
     // Base query values in fixtures are already literal (not double-encoded).
-    query.set(decodeURIComponent(key), decodeURIComponent(value));
+    query.set(safeDecode(key), safeDecode(value));
   }
   return { path, query };
 }

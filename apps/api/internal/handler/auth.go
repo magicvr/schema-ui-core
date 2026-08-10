@@ -19,13 +19,19 @@ import (
 // store is used only for the R5 S6 operation log (auth events); identity data
 // is resolved through the module-owned auth-session repository.
 type authHandler struct {
-	a          *auth.Authenticator
-	operations operationlog.Recorder
-	now        func() time.Time
+	a           *auth.Authenticator
+	operations  operationlog.Recorder
+	now         func() time.Time
+	rateLimiter *loginRateLimiter
 }
 
 func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder) {
-	h := &authHandler{a: a, operations: operations, now: time.Now}
+	h := &authHandler{
+		a:           a,
+		operations:  operations,
+		now:         time.Now,
+		rateLimiter: newLoginRateLimiter(15*time.Minute, 20),
+	}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
 	mux.HandleFunc("POST /api/auth/logout", h.logout())
@@ -59,8 +65,15 @@ func (h *authHandler) login() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGIN_BODY", "username and password are required")
 			return
 		}
+		if h.rateLimiter != nil && !h.rateLimiter.allow(clientIP(r), h.now().UTC()) {
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
+			return
+		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidCredentials) {
+			if h.rateLimiter != nil {
+				h.rateLimiter.record(clientIP(r), h.now().UTC())
+			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}

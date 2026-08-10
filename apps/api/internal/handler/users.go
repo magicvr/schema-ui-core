@@ -165,10 +165,14 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 		if err != nil {
 			return nil, err
 		}
-		if err := e.authorizeRoleAssignment(user, roles); err != nil {
-			return nil, err
+		if roles != nil {
+			// JSON null = "no role change" (D1): parseRolesValue(nil) → nil,
+			// distinct from an explicit empty array which clears roles.
+			if err := e.authorizeRoleAssignment(user, roles); err != nil {
+				return nil, err
+			}
+			patch.Roles = &roles
 		}
-		patch.Roles = &roles
 	}
 	u, err := e.repository.UpdateUser(id, patch, user.ID, now)
 	if err != nil {

@@ -27,6 +27,8 @@ var frozenLiteralCodes = []string{
 	"UNSUPPORTED_FILE_TYPE",
 	// S3 settings validation additions (D-002 appendix A family).
 	"INVALID_DEFAULT_LOCALE", "INVALID_DEFAULT_THEME", "INVALID_TIMEZONE",
+	// D2 login rate limiting.
+	"RATE_LIMITED",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

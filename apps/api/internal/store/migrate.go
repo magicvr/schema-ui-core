@@ -51,6 +51,10 @@ func (s *Store) migrate(catalog []kernel.MigrationContribution) error {
 		return err
 	}
 
+	// One recoverable snapshot per pending data-mutating migration (version >= 2,
+	// I-011-002 A-002 F-002): each upgrade step keeps an independent rollback
+	// point. Snapshot filenames carry millisecond precision so an immediate
+	// retry after a failed upgrade cannot collide (D5).
 	for _, migration := range pendingMigrations(applied, catalog) {
 		if migration.Version >= 2 {
 			if err := s.snapshotBeforePending(migration.Version); err != nil {
@@ -221,7 +225,9 @@ func (s *Store) assertForeignKeysOn() error {
 }
 
 // snapshotBeforePending produces a recoverable copy of a non-empty file
-// database before each pending data-mutating migration (version >= 2).
+// database before the first pending data-mutating migration of an upgrade
+// batch. The filename carries millisecond precision so an immediate retry
+// after a failed upgrade cannot collide with an existing snapshot (D5).
 func (s *Store) snapshotBeforePending(firstPendingVersion int) error {
 	if s.path == "" || s.path == ":memory:" {
 		return nil
@@ -233,7 +239,7 @@ func (s *Store) snapshotBeforePending(firstPendingVersion int) error {
 	if !hasData {
 		return nil
 	}
-	target := fmt.Sprintf("%s.pre-v%04d-%s.sqlite", s.path, firstPendingVersion, time.Now().UTC().Format("20060102T150405Z"))
+	target := fmt.Sprintf("%s.pre-v%04d-%s.sqlite", s.path, firstPendingVersion, time.Now().UTC().Format("20060102T150405.000Z"))
 	if _, err := s.db.Exec("VACUUM INTO '" + strings.ReplaceAll(target, "'", "''") + "'"); err != nil {
 		return fmt.Errorf("pre-v%04d snapshot to %s: %w", firstPendingVersion, target, err)
 	}

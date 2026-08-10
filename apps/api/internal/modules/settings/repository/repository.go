@@ -131,6 +131,15 @@ func (r *Repository) writeSiteSettings(
 	if err != nil {
 		return nil, err
 	}
+	// "" is accepted for legacy writes but is not a valid stored value: an
+	// explicit empty locale/theme means "auto" (D6). Normalizing here keeps the
+	// store, the GET projection and configuration.Validate in agreement.
+	if localeSet == 1 && locale == "" {
+		locale = "auto"
+	}
+	if themeSet == 1 && theme == "" {
+		theme = "auto"
+	}
 	timezone, timezoneSet, err := optionalEnum(siteTimezone, nil, nil)
 	if err != nil {
 		return nil, err

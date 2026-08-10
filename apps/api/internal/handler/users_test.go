@@ -111,6 +111,62 @@ func TestUsersCreateUpdateDeleteLifecycle(t *testing.T) {
 	}
 }
 
+// D1 hardening: PATCH with "roles": null means "no role change" — it must not
+// clear the user's roles (null ≠ explicit empty array).
+func TestUsersPatchRolesNullKeepsRoles(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPost, "/api/users",
+		`{"username":"alice","name":"Alice","password":"secret123","roles":["editor"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatalf("created user missing id: %v", created)
+	}
+
+	// Explicit empty array clears roles (existing contract).
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"roles":[]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("patch empty roles status = %d", rr.Code)
+	}
+	_, detail := getResource(t, env, "/api/users/"+id)
+	if got := detail["roles"]; got != nil {
+		if arr, ok := got.([]any); !ok || len(arr) != 0 {
+			t.Fatalf("roles after explicit [] = %v, want empty", got)
+		}
+	}
+
+	// Re-assign a role, then patch with roles: null → roles must be unchanged.
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"roles":["viewer"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("reassign status = %d", rr.Code)
+	}
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"roles":null,"name":"Alice N."}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("patch null roles status = %d: %s", rr.Code, rr.Body.String())
+	}
+	_, detail = getResource(t, env, "/api/users/"+id)
+	if detail["name"] != "Alice N." {
+		t.Fatalf("name = %v, want updated Alice N.", detail["name"])
+	}
+	roles, _ := detail["roles"].([]any)
+	if len(roles) != 1 || roles[0] != "viewer" {
+		t.Fatalf("roles after null patch = %v, want [viewer] (unchanged)", detail["roles"])
+	}
+}
+
 // GOAL-011 S2 · create field validation and role-ref validation.
 func TestUsersCreateValidation(t *testing.T) {
 	env := newAuthTestEnv(t)

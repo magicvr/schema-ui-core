@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 )
 
 func loginBody(t *testing.T, env *authTestEnv, username, password string) (int, map[string]any) {
@@ -192,5 +194,66 @@ func TestAuthDevSessionDoesNotBypassLoginEndpoint(t *testing.T) {
 	}
 	if body["error"] != "UNAUTHORIZED" {
 		t.Fatalf("error = %v, want UNAUTHORIZED", body["error"])
+	}
+}
+
+// D2 hardening: repeated failed logins from one client IP are rate-limited
+// (429 after the configured threshold), while the limiter is per-IP.
+func TestLoginRateLimit(t *testing.T) {
+	env := newAuthTestEnv(t)
+
+	// 20 failed attempts are allowed, the 21st is rejected with 429.
+	for range 20 {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+			strings.NewReader(`{"username":"admin","password":"wrong-password"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt status = %d, want 401", rr.Code)
+		}
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"wrong-password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("over-limit login status = %d, want 429", rr.Code)
+	}
+	var out map[string]string
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "RATE_LIMITED" {
+		t.Fatalf("over-limit code = %q, want RATE_LIMITED", out["error"])
+	}
+
+	// A correct password is still rejected under lockout (fail-closed).
+	req = httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"test-password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("correct password under lockout status = %d, want 429", rr.Code)
+	}
+}
+
+// D2: the sliding window is per-client-IP and expires.
+func TestLoginRateLimiterUnit(t *testing.T) {
+	limiter := newLoginRateLimiter(15*time.Minute, 2)
+	now := time.Now().UTC()
+	limiter.record("10.0.0.1", now)
+	if !limiter.allow("10.0.0.1", now) {
+		t.Fatal("first failure under the limit must still allow")
+	}
+	limiter.record("10.0.0.1", now)
+	if limiter.allow("10.0.0.1", now) {
+		t.Fatal("attempt with the window full must be blocked")
+	}
+	if !limiter.allow("10.0.0.2", now) {
+		t.Fatal("a different IP must not inherit another IP's failures")
+	}
+	if !limiter.allow("10.0.0.1", now.Add(16*time.Minute)) {
+		t.Fatal("attempt after the window must be allowed again")
 	}
 }

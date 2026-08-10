@@ -387,4 +387,16 @@ describe("stage 3 · request-construction fixtures (incl. batch, I-PROTO-FULL-00
       expect(constructRequest(fixtureCase.input)).toEqual(fixtureCase.expected);
     });
   }
+
+  // D4 hardening: a malformed percent-encoding in the action URL must not throw
+  // URIError — the request still constructs with the raw part passed through.
+  it("tolerates malformed percent-encoding in action URLs (D4)", () => {
+    const result = constructRequest({
+      kind: "rowAction",
+      action: { method: "DELETE", url: "/api/users/{id}?q=%zz&flag=100%" },
+      row: { id: "u1" },
+      requestMapping: { path: { id: "$row.id" } },
+    } as never);
+    expect(result.ok).toBe(true);
+  });
 });
