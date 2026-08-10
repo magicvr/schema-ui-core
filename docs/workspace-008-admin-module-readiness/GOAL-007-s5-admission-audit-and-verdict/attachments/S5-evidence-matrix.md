@@ -59,10 +59,24 @@ Goal/Vision open required 投影：**0**（S0-S4 自审 + S1/S2/S3/S4 台账无�
 | workspace-005 `I-PROTO-FULL-001` 文档「0 exclude / 37/37 / 320/320」陈旧声明 | 文档一致性命门（E-1）；实际 conformance 318+2 全绿，无功能缺口 | cross-workspace 动作：经 `/vision` 或 workspace-005 owner 正式勘误；或在 S5 由用户书面接受为 documented residual（范围=该文档声明；影响=仅文档；复审触发=下次协议 pin 变更） |
 | F-007 上传授权深度 | 非阻断（服务端认证+大小/类型约束；viewer 可上传） | deferred；owner=VP-008 lead；S5 后评估是否补权限键 |
 
-## 5. S5 待办
+## 5. S5 待办（2026-08-10 状态）
 
-- [ ] V-007/V-008 回归重跑（或标记 CI push 复核）
-- [ ] S5 self 审计（A-00N，source: self）
-- [ ] grok build independent 审计（source: independent；D-002 provider）
+- [x] V-001~V-008 回归重跑（S4/S5 全绿；见 §2）
+- [x] S5 self 审计（[A-001](../03-audit/A-001-s5-admission-audit-and-verdict-self.md)，source: self）
+- [x] grok build independent 审计（[A-002](../03-audit/A-002-s5-admission-audit-independent.md)，source: independent；D-002 provider）— verdict conditional，见 A-002 响应
 - [ ] 用户 `go`/`no-go` 裁决 + S5 最小字段落盘
-- [ ] workspace-005 勘误或 residual 处置
+- [ ] workspace-005 勘误或 residual 处置（A-002 F-001 required）
+
+## 6. A-002（independent）响应
+
+grok build 独立审计（verdict: conditional）要求闭合后方可无条件 `go`：
+
+| A-002 finding | 级别 | 响应 | 状态 |
+|---------------|------|------|------|
+| F-001 workspace-005 I-PROTO-FULL-001 陈旧声明 | required | 待用户处置：勘误（跨区）或书面 residual | open（用户侧） |
+| F-002 抽屉焦点断言缺失 | required | **fixed**：新增 `s4-drawer-focus.test.tsx`（焦点进入/Escape 关闭/焦点恢复/Tab trap，2 断言）+ 既有 `modal.test.tsx` 3 断言 | fixed |
+| F-003 矩阵 §5 待办过期 | recommended | **fixed**：本 §5 刷新 | fixed |
+| F-004 V-006~008 独立会话未重跑 | recommended | 已在 S5 本地重跑全绿（§2）；CI `r6-basic-matrix` push 时执行 | accepted（绿证已留） |
+| F-005 F-007 deferred 需书面确认 | recommended | 待用户 `go` 裁决时书面确认「维持 deferred、不升 required」 | 待用户 |
+
+> F-002 由 **fixed** 合法闭合（可核对修正）；F-001 仍需用户侧处置（勘误或 residual）方可无条件 `go`。
