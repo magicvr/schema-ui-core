@@ -2,25 +2,25 @@
 doc_type: vision-plan
 id: VP-008-admin-module-readiness-and-foundation-convergence
 title: Admin 业务模块准入与基架收敛
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-008-admin-module-readiness
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.12.0
+version: 0.13.0
 parent: null
 ---
 
 # VP-008 · Admin 业务模块准入与基架收敛
 
-## 状态与门闩
+## 状态与门闩（2026-08-10 更新 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**；2026-08-10 用户确认激活并建立单一 lead delivery workspace `workspace-008-admin-module-readiness`；仍未产生可消费 `go` |
-| Vision required | 当前投影以 [Vision Review 台账](../reviews.md) 为唯一权威；本 VP 不独立维护计数。激活、宣称“方向已稳”或产生可消费 `go` 前，适用的 Vision required 必须合法闭合 |
-| 实现入口 | lead delivery 工作区已由用户确认；物理 scaffold 与 Goal 推进由 `/govern` 承接 |
-| 业务模块门闩 | 本 VP 未形成 `go` 结论前，不启动订单、钱包、类目、通知等正式业务模块 VP 的实现 |
+| status | **`closed`**（2026-08-10 用户书面签发 `go` 并确认关门；workspace-008 GOAL-007 [D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)） |
+| lead_workspace | **`workspace-008-admin-module-readiness`**（Root `GOAL-001-admin-module-readiness` `done 6/6`，S0–S5 完成） |
+| Vision required | **0**（VRev-017～026 已在激活/`go` 前闭合；本波次无新增 open Vision required） |
+| 关门门闩（现行） | 已 `closed`；`go` 解锁后续标准业务模块实现（每个后续业务 VP 激活前须完成消费前 freshness review，见 §`go` 消费有效性）；保留 workspace-008 历史绑定，默认不接新区；shared-foundation residual 触发时由 `/vision` 决定重开本 VP 或新建准入 VP |
 
 ## 意图
 
@@ -226,15 +226,16 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| `workspace-008-admin-module-readiness` | `GOAL-001-admin-module-readiness` | lead | 2026-08-10 | `active`，单区 lead delivery；workspace/Root 已由 `/govern` scaffold，当前无 support workspace、无可消费 `go`。 |
+| `workspace-008-admin-module-readiness` | `GOAL-001-admin-module-readiness` | lead | 2026-08-10 | `closed`，单区 lead delivery；Root `GOAL-001` done 6/6（S0–S5），用户签发 `go`（D-001）并确认 VP 关门。 |
 
 ## 关门记录
 
-（`closed` 提议已由 lead workspace `go` 支持；正式 status 变更走 `/vision`。）
+（`closed` 已由 lead workspace `go` 支持；正式 status 变更走 `/vision`。）
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
 | 2026-08-10 | `go` 签发（可提议 closed） | 用户书面签发 `go`，候选 `ed99e88`（clean）；S0–S5 全部完成、open required = 0；解锁后续标准业务模块实现 | workspace-008 [GOAL-007 D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md) + [S5-evidence-matrix](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；后续业务 VP 消费时须 freshness review |
+| 2026-08-10 | **closed**（用户确认） | 用户确认关闭 VP-008；六项方向级退出判据均有工作区 Q2 证据（S0 D-003 分母 + S5 证据矩阵 E-1～E-6），Goal/Vision open required = 0；`go` 解锁后续标准业务模块，每个激活前须 freshness review | workspace-008 `goal-tree.md`（Root `GOAL-001-admin-module-readiness` done 6/6；GOAL-002～007 全 done）；GOAL-007 [D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)、[A-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/03-audit/A-001-s5-admission-audit-and-verdict-self.md)、[A-002](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/03-audit/A-002-s5-admission-audit-independent.md)、[S5-evidence-matrix](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；触发=后续协议判断/用户扩 scope，见 D-001 |
 
 ## 规划修订短史
 
@@ -252,3 +253,4 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 | 2026-08-10 | `0.10.0` | 响应 VRev-026：采纳 `pass` / `no-change`，保留原 verdict 与 finding 原文；V-F053 recommended → fixed，增加后续业务 VP residual 手递字段与 VP-008 closed 后 shared-foundation residual 的 `/vision` reopen/新准入 VP 所有者。用户随后确认激活 VP-008；状态改为 `active`，0 区进入 14 日空转宽限，未创建 workspace/Root/Goal 或产生 `go`。 |
 | 2026-08-10 | `0.11.0` | 用户确认单工作区 lead `workspace-008-admin-module-readiness`、Root `GOAL-001-admin-module-readiness` 与 GitHub Copilot `/audit` independent provider；`/govern` 完成 workspace/Root scaffold。VP-008 保持 `active`，单区已绑定但仍未产生 `go`；S0 required 信息项与运行证据继续由工作区台账承接。 |
 | 2026-08-10 | `0.12.0` | editorial 勘误投影：继承 workspace-005 `I-PROTO-FULL-001` v1.0.1 与 workspace-008 A-003 的现行分母，改为 320 total = 318 executed + 2 local adapter excluded；不改变 VP-008 意图、门闩或 `go` 状态。 |
+| 2026-08-10 | `0.13.0` | 用户确认关门：status `active → closed`；状态与门闩改为 closed 投影，关门记录追加 closed 行；保留 `go` 消费有效性规则与 F-007 deferred residual 供后续业务 VP 消费。 |

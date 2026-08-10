@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 0.7.5
+version: 0.7.6
 ---
 
 # 工作区贡献图
@@ -36,5 +36,5 @@ version: 0.7.5
 - **VP-005 已于 2026-08-09 经 `/vision` 用户书面确认关门（`closed`）**：workspace-006 与 Root `GOAL-001-design-system-and-ui-experience`（`done / 5/5`）的历史绑定保留，默认不接新区（reopen 须用户确认）；S1–S5 交付与回归证据（vitest 616/616 + e2e 2/2）见该区五件套（D-008 / A-012 / E-010；GOAL-005 E-001/E-002）；residual：F-VUI-007/010/011 `accepted-residual`、I-004 open non-blocking。不改变 Charter `primary_workspace`。
 - **VP-007 已于 2026-08-09 经 `/vision` 用户确认激活（`active`）**：唯一 lead / delivery = `workspace-007-localization-and-system-settings`；`/govern` 已于 2026-08-09 scaffold：Root `GOAL-001-localization-and-system-settings`（S0–S5 纲领路线图）。
 - **VP-007 已于 2026-08-09 经用户书面确认关门（`closed`）**：workspace-007 与 Root `GOAL-001-localization-and-system-settings`（`done / 6/6`）的历史绑定保留，默认不接新区（reopen 须用户确认）；S0–S5 证据与 independent 审计闭环见该区五件套（GOAL-006 A-001/A-002、D-002、E-001～E-003；Root `attachments/S5-evidence-matrix.md`）。不改变 Charter `primary_workspace`。
-- **VP-008 已于 2026-08-10 建立单一 lead delivery workspace**：workspace-008 与 Root `GOAL-001-admin-module-readiness` 已按用户确认 scaffold；Charter `primary_workspace` 仍为 workspace-001。该区当前仅完成开区事实，尚未产生 `go`；S0–S5 实施、Goal 审计与证据必须留在本区五件套和 ledger。
+- **VP-008 已于 2026-08-10 经用户书面确认关门（`closed`）**：workspace-008 与 Root `GOAL-001-admin-module-readiness`（`done / 6/6`，S0–S5）的历史绑定保留，默认不接新区（reopen 须用户确认）；`go` 已于 2026-08-10 签发（候选 `ed99e88`，clean；D-001），解锁后续标准业务模块实现，每个后续业务 VP 激活前须完成消费前 freshness review。关门证据链见该区五件套（GOAL-007 D-001、A-001/A-002/A-003、S5-evidence-matrix）。不改变 Charter `primary_workspace`。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。

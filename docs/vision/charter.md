@@ -28,7 +28,7 @@ parent: null
 
 该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。
 
-**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），已由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed** 收口（覆盖权威 `I-PROTO-FULL-001`）。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 与 [VP-007](plans/VP-007-localization-and-system-settings.md) 均已 `closed`；active [VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) 已绑定单一 lead delivery workspace `workspace-008-admin-module-readiness`，用于在正式业务模块开发前完成全基架准入与收敛，尚未产生可消费 `go`。
+**目标语义（2026-08-08 用户确认）**：对本 pin 的成功方向是 **`schema-ui-docs@v2.7.0` 整份契约的可验证兼容**（见成功边界 1），已由 [VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed** 收口（覆盖权威 `I-PROTO-FULL-001`）。workspace-001 冻结的 `I-PROTO-001 v0.1.3` 仅为 **MVP 阶段**覆盖切片与回归对照。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 与 [VP-007](plans/VP-007-localization-and-system-settings.md) 均已 `closed`；[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) 已于 2026-08-10 **`closed`**（候选 `ed99e88`，用户书面确认 `go`，解锁后续标准业务模块实现）。
 
 ## 方向级成功边界
 
@@ -67,8 +67,8 @@ parent: null
 
 - 本 Charter 是对齐链源头；不使用 Goal 的 `done` 状态，也不维护 progress%。
 - 已关闭的 [VP-001](plans/VP-001-mvp-admin-foundation.md)、[VP-002](plans/VP-002-production-admin-foundation.md)、[VP-003](plans/VP-003-modular-admin-architecture.md) 与 [VP-004](plans/VP-004-module-contribution-readiness.md) 保留各自交付历史，并已精确 re-align 到本版本而不重开。VP-003 终态架构由 [module-architecture.md](../architecture/module-architecture.md) 固化；一方模块贡献操作契约由 [module-contribution-playbook.md](../architecture/module-contribution-playbook.md)（VP-004）固化。
-- **当前组合焦点**：[VP-007](plans/VP-007-localization-and-system-settings.md) 已 **`closed`**（2026-08-09 用户书面确认；v0.3.0；lead `workspace-007-localization-and-system-settings` / Root `GOAL-001-localization-and-system-settings` `done 6/6`，后续 S6 增量亦已关闭）。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 已 **`closed`**；协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，320 case = 318 executed + 2 local adapter excluded）。VRev-011/015/016 findings 均已 **fixed**。当前 active 交付 VP 为 [VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md)，lead `workspace-008-admin-module-readiness` / Root `GOAL-001-admin-module-readiness`；单区已建立，仍未产生可消费 `go`。
-- VP-008 的 `active` 表示用户已确认意图进入激活阶段并完成 lead workspace 绑定；当前只完成物理 scaffold 与治理接线，不构成当前基架已通过准入。S0–S5 证据、Goal 审计和用户 `go` / `no-go` 仍由该工作区承接。
+- **当前组合焦点**：[VP-007](plans/VP-007-localization-and-system-settings.md) 已 **`closed`**（2026-08-09 用户书面确认；v0.3.0；lead `workspace-007-localization-and-system-settings` / Root `GOAL-001-localization-and-system-settings` `done 6/6`，后续 S6 增量亦已关闭）。[VP-005](plans/VP-005-design-system-and-ui-experience.md) 已 **`closed`**；协议覆盖权威 = **`I-PROTO-FULL-001`**（[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md) **closed**，2026-08-08；12/12 include，320 case = 318 executed + 2 local adapter excluded）。VRev-011/015/016 findings 均已 **fixed**。[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) 已 **`closed`**（2026-08-10 用户书面确认；候选 `ed99e88`、`go` 签发、解锁后续标准业务模块实现；lead `workspace-008-admin-module-readiness` / Root `GOAL-001-admin-module-readiness` done 6/6）。当前无 active 交付 VP；后续订单/钱包/类目/通知等业务 VP 候选激活前须完成消费前 freshness review。
+- VP-008 的 `closed` 表示全基架准入波次已按冻结分母完成并通过 `go` 裁决；它不是无期限凭证——`go` 只适用于 S5 证据矩阵指向的候选身份与解锁 scope，后续业务 VP 激活前必须完成消费前 freshness review（VP-008 §`go` 消费有效性），触发失效规则后门闩自动暂挂直至重验证。
 - 工作区与 Root 必须挂接 `plan_refs` / `primary_plan`。现行 primary 工作区：`workspace-001-mvp-admin-foundation`（Root `GOAL-001-mvp-admin-foundation`，`primary_plan` = VP-001）；已关闭 VP 的 delivery 区历史绑定保留，不改变 primary。
 
 ## 现行版本

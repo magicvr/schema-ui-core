@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 0.14.7
+version: 0.14.8
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -23,7 +23,7 @@ version: 0.14.7
 | 5 | [VP-006-full-protocol-contract-v2-7-0](plans/VP-006-full-protocol-contract-v2-7-0.md) | **`schema-ui-docs@v2.7.0` 整份契约**可验证兼容：覆盖表升版、Renderer/后端实现、范例与验证；纠正「长期停留在 MVP 子集」的组合焦点。 | 继承 VP-003/004；以 inventory + 上游 pin 为权威；`I-PROTO-001 v0.1.3` 仅作升版起点 | **closed**（2026-08-08 用户书面确认；lead: workspace-005-full-protocol-contract-v2-7-0；`I-PROTO-FULL-001` v1.0.1 = 12/12 include、318 executed + 2 local adapter excluded） |
 | 6 | [VP-005-design-system-and-ui-experience](plans/VP-005-design-system-and-ui-experience.md) | Design Token、shadcn/ui 风格、Renderer/Shell 视觉与状态工效产品化。 | 继承 VP-003/004 + **VP-006 已 closed 的整份协议面**；VRev-011 `F-V018`/`F-V019`/`F-V020` → **fixed**（v0.3.0） | **closed**（2026-08-09 用户书面确认；v0.5.0；lead: `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience` `done 5/5`） |
 | 7 | [VP-007-localization-and-system-settings](plans/VP-007-localization-and-system-settings.md) | 建立 `zh-CN` / `en-US` 多语种运行时与 `auto` 解析，并把既有 Settings 产品化为 General / Branding / Localization / Appearance 四类系统设置。 | 继承 VP-003/004 模块边界、VP-005 设计系统与 VP-006 完整协议面；不改变双 Profile 的 Settings 可见性边界 | **closed**（2026-08-09 用户书面确认；lead: `workspace-007-localization-and-system-settings`，Root done 6/6） |
-| 8 | [VP-008-admin-module-readiness-and-foundation-convergence](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) | 在正式业务模块开发前，对当前代码主线执行全基架准入：现状扫描、代码/功能/治理缺口、UI 协议判断、阻断整改与 `go`/`no-go`。 | 继承 VP-003/004 模块架构与贡献契约、VP-005 设计系统、VP-006 完整协议面、VP-007 locale/settings；不重开历史 VP | **active**（2026-08-10 用户确认；lead `workspace-008-admin-module-readiness`，单区，尚未产生 `go`） |
+| 8 | [VP-008-admin-module-readiness-and-foundation-convergence](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) | 在正式业务模块开发前，对当前代码主线执行全基架准入：现状扫描、代码/功能/治理缺口、UI 协议判断、阻断整改与 `go`/`no-go`。 | 继承 VP-003/004 模块架构与贡献契约、VP-005 设计系统、VP-006 完整协议面、VP-007 locale/settings；不重开历史 VP | **closed**（2026-08-10 用户书面确认；候选 `ed99e88` clean，S0–S5 完成、open required = 0、`go` 签发；lead: workspace-008-admin-module-readiness，Root `GOAL-001-admin-module-readiness` done 6/6） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -35,9 +35,9 @@ version: 0.14.7
 
 | 顺序 | 方向 | 与前序关系 | 建立 VP 前的约束 |
 |------|------|------------|------------------|
-| 9 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统 + VP-007 locale/settings，并消费 VP-008 的准入结论 | 建 VP 前须 `/vision` 复核；VP-008 未形成用户确认的 `go` 前不得推进实现；每个后续业务 VP 激活前必须针对拟消费候选与 scope 完成并记录 freshness review，复核失败或证据不可用时暂停 `go` 并回流 VP-008 重验证或 P-004 裁决；单领域问题留在该业务 VP 的 Root/Goal 台账，共享基架或 `go` 语义问题由 `/vision` 决定重开 VP-008 或新建准入 VP；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或私增协议语义 |
+| 9 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统 + VP-007 locale/settings，并消费 VP-008 的准入结论 | 建 VP 前须 `/vision` 复核；VP-008 已 `closed` 且 `go` 已签发（候选 `ed99e88`），后续业务 VP 可实现；每个后续业务 VP 激活前必须针对拟消费候选与 scope 完成并记录 freshness review，复核失败或证据不可用时暂停 `go` 并回流 VP-008 重验证或 P-004 裁决；单领域问题留在该业务 VP 的 Root/Goal 台账，共享基架或 `go` 语义问题由 `/vision` 决定重开 VP-008 或新建准入 VP；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或私增协议语义 |
 
-**当前组合焦点**：VP-001～**007** 均 **closed**；**[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md)** 为 `active`，已绑定单一 lead delivery workspace `workspace-008-admin-module-readiness`，尚未产生 `go`。当前 active 交付 VP 为 VP-008。协议覆盖权威 `I-PROTO-FULL-001`；订单/钱包/类目/通知仍是后续独立业务 VP 候选，并受 VP-008 `go` 门闩约束。
+**当前组合焦点**：VP-001～**008** 均 **closed**；**[VP-008](plans/VP-008-admin-module-readiness-and-foundation-convergence.md)** 已 **`closed`**（2026-08-10 用户书面确认；候选 `ed99e88`，`go` 签发，解锁后续标准业务模块实现）。协议覆盖权威 `I-PROTO-FULL-001`；订单/钱包/类目/通知仍是后续独立业务 VP 候选，每个激活前须完成并记录消费前 freshness review（VP-008 §`go` 消费有效性），并受 VP-008 `go` 失效/暂挂规则约束。当前无 active 交付 VP。
 
 ## 单主线模块化策略
 
