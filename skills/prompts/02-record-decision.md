@@ -30,7 +30,7 @@ role: primitive
 
 # 用户输入（缺项先确认）
 - 目标 ID / 路径：
-- 工作区上下文（若存在）：【当前 `docs/workspace-<NNN>-<slug>/workspace.md` 的 id / root_goal；只有 legacy `docs/goals/` 时才写“隐式单工作区”】
+- 工作区上下文（若存在）：【当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` 的 id / root_goal；只有 legacy `docs/goals/` 时才写“隐式单工作区”】
 - 决策标题：
 - 决定了什么：
 - 为什么（背景、约束、收益）：
@@ -42,7 +42,7 @@ role: primitive
 - 今日日期：【YYYY-MM-DD】
 
 # 步骤
-1. 读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、其 `goal-tree.md`、`00-meta.md`、`01-decision.md` 索引、`01-decision/D-*` 与 legacy inline。若 workspace Root Goal/canonical 范围与目标不匹配，停止受影响决策，先记录或请求修复上下文；没有显式工作区根时只处理 legacy 隐式单工作区。
+1. 读当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md`、其 `goal-tree.md`、`00-meta.md`、`01-decision.md` 索引、`01-decision/D-*` 与 legacy inline。若 workspace Root Goal/canonical 范围与目标不匹配，停止受影响决策，先记录或请求修复上下文；没有显式工作区根时只处理 legacy 隐式单工作区。
 2. 扫描索引/目录/legacy 的最大编号，创建 `01-decision/D-NNN-<slug>.md` 并更新索引：
 
    ### D-NNN · <决策标题>

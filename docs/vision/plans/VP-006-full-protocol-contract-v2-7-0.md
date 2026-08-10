@@ -44,7 +44,7 @@ parent: null
 
 | 角色 | id / 路径 | 规则 |
 |------|-----------|------|
-| **历史 MVP 基线（只读）** | `I-PROTO-001` v0.1.3 · [I-PROTO-001-coverage-draft.md](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md) | **禁止**就地改写语义或版本号冒充升版；仅作升版起点与回归对照 |
+| **历史 MVP 基线（只读）** | `I-PROTO-001` v0.1.3 · [I-PROTO-001-coverage-draft.md](../../workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md) | **禁止**就地改写语义或版本号冒充升版；仅作升版起点与回归对照 |
 | **整份契约现行权威（本 VP）** | 信息项 id：`I-PROTO-FULL-001`；文件名建议：`I-PROTO-FULL-001-coverage-v2-7-0.md` | 激活后落在 **本 VP lead 工作区** Root `attachments/`；由 Root **新决策**冻结；**新版本号**、新决策，不覆盖 v0.1.3 文件 |
 | **发现入口** | 意图期：本节 + [protocol-inventory-v2.7.0.md](../protocol-inventory-v2.7.0.md) 指针；S1 冻结后：Root 决策链 + `docs/architecture/overview.md` / QUICKSTART 可发现「现行覆盖表 = I-PROTO-FULL-001」 | 不得把 workspace-001 的 v0.1.3 继续标成「现行协议覆盖」 |
 
@@ -125,14 +125,14 @@ parent: null
 |--------------|-----------|------|--------|-------|
 | workspace-005-full-protocol-contract-v2-7-0 | GOAL-001-full-protocol-contract-v2-7-0 | lead | 2026-08-08 | 用户确认激活后唯一 lead / delivery；`/govern` 已 scaffold；**禁止**在 closed VP-003/004 工作区吸收本意图 |
 
-用户已于 2026-08-08 确认将本 VP **激活**（`planned` → `active`），并指定唯一 lead / delivery 工作区 **`workspace-005-full-protocol-contract-v2-7-0`**（slug 按 VP-006 id 与既有 workspace-00N 惯例，用户本轮书面授权开区）。同日 `/govern` 完成物理 scaffold：Root [GOAL-001-full-protocol-contract-v2-7-0](../../workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/00-meta.md)，`primary_plan` / `plan_refs` 均为本 VP。激活与建区 **不**构成覆盖表冻结或协议全量兼容证据。
+用户已于 2026-08-08 确认将本 VP **激活**（`planned` → `active`），并指定唯一 lead / delivery 工作区 **`workspace-005-full-protocol-contract-v2-7-0`**（slug 按 VP-006 id 与既有 workspace-00N 惯例，用户本轮书面授权开区）。同日 `/govern` 完成物理 scaffold：Root [GOAL-001-full-protocol-contract-v2-7-0](../../workspaces/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/00-meta.md)，`primary_plan` / `plan_refs` 均为本 VP。激活与建区 **不**构成覆盖表冻结或协议全量兼容证据。
 
 ## 关门记录
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
 | 2026-08-08 | **closed** | 用户书面确认关门（「确认关门」）。退出判据 1–6 全部闭合：覆盖表 `I-PROTO-FULL-001` v1.0.0 冻结（12/12 域、24/24 registry、16/16 行为套件 include；0 exclude）；Renderer/后端纳入面实现；8 范例页 + 320 case 全量分母；vitest 569/569 + `go test ./...` 全绿 + e2e 2/2 + 回归不回退；文档指针 = `I-PROTO-FULL-001`；S1/S5 独立审计 A-001/A-002，**开放 required = 0** | 历史关门证据保留：覆盖表 v1.0.0、`E-001～E-005`、`A-001/A-002` | 2026-08-10 执行分母勘误见下行；历史关门事实不变 |
-| 2026-08-10 | **errata** | 响应 workspace-008 F-001：覆盖权威升为 `I-PROTO-FULL-001` v1.0.1；12/12 域、24/24 registry、16/16 suite include 保持；320 case 现行执行口径为 **318 executed + 2 local adapter excluded**，两项 exclusion 原因与复审触发见 D-003 / E-007。VP-006 与 Root 终态不重开。 | `docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`; `…/01-decision/D-003-i-proto-full-errata.md`; `…/02-execution/E-007-i-proto-full-errata.md` | 域/协议范围 residual 为空；local adapter exclusion 为有界执行口径，复审触发 = 协议 pin/disposition 或错误包络变化 |
+| 2026-08-10 | **errata** | 响应 workspace-008 F-001：覆盖权威升为 `I-PROTO-FULL-001` v1.0.1；12/12 域、24/24 registry、16/16 suite include 保持；320 case 现行执行口径为 **318 executed + 2 local adapter excluded**，两项 exclusion 原因与复审触发见 D-003 / E-007。VP-006 与 Root 终态不重开。 | `docs/workspaces/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`; `…/01-decision/D-003-i-proto-full-errata.md`; `…/02-execution/E-007-i-proto-full-errata.md` | 域/协议范围 residual 为空；local adapter exclusion 为有界执行口径，复审触发 = 协议 pin/disposition 或错误包络变化 |
 
 ## 规划修订短史
 

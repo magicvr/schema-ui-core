@@ -12,15 +12,15 @@ version: 0.10.0
 
 | workspace_id | canonical_scope | root_goal | role | primary_plan | status |
 |--------------|-----------------|-----------|------|--------------|--------|
-| workspace-001-mvp-admin-foundation | docs/workspace-001-mvp-admin-foundation/ | GOAL-001-mvp-admin-foundation | primary | VP-001-mvp-admin-foundation | active |
-| workspace-002-production-admin-foundation | docs/workspace-002-production-admin-foundation/ | GOAL-001-production-admin-foundation | delivery | VP-002-production-admin-foundation | active |
-| workspace-003-modular-admin-architecture | docs/workspace-003-modular-admin-architecture/ | GOAL-001-modular-admin-architecture | delivery | VP-003-modular-admin-architecture | active |
-| workspace-004-module-contribution-readiness | docs/workspace-004-module-contribution-readiness/ | GOAL-001-module-contribution-readiness | delivery | VP-004-module-contribution-readiness | active |
-| workspace-005-full-protocol-contract-v2-7-0 | docs/workspace-005-full-protocol-contract-v2-7-0/ | GOAL-001-full-protocol-contract-v2-7-0 | delivery | VP-006-full-protocol-contract-v2-7-0 | active |
-| workspace-006-design-system-and-ui-experience | docs/workspace-006-design-system-and-ui-experience/ | GOAL-001-design-system-and-ui-experience | delivery | VP-005-design-system-and-ui-experience | active |
-| workspace-007-localization-and-system-settings | docs/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
-| workspace-008-admin-module-readiness | docs/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
-| workspace-009-production-hardening | docs/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1/W2 done；2026-08-10 语义纠正） |
+| workspace-001-mvp-admin-foundation | docs/workspaces/workspace-001-mvp-admin-foundation/ | GOAL-001-mvp-admin-foundation | primary | VP-001-mvp-admin-foundation | active |
+| workspace-002-production-admin-foundation | docs/workspaces/workspace-002-production-admin-foundation/ | GOAL-001-production-admin-foundation | delivery | VP-002-production-admin-foundation | active |
+| workspace-003-modular-admin-architecture | docs/workspaces/workspace-003-modular-admin-architecture/ | GOAL-001-modular-admin-architecture | delivery | VP-003-modular-admin-architecture | active |
+| workspace-004-module-contribution-readiness | docs/workspaces/workspace-004-module-contribution-readiness/ | GOAL-001-module-contribution-readiness | delivery | VP-004-module-contribution-readiness | active |
+| workspace-005-full-protocol-contract-v2-7-0 | docs/workspaces/workspace-005-full-protocol-contract-v2-7-0/ | GOAL-001-full-protocol-contract-v2-7-0 | delivery | VP-006-full-protocol-contract-v2-7-0 | active |
+| workspace-006-design-system-and-ui-experience | docs/workspaces/workspace-006-design-system-and-ui-experience/ | GOAL-001-design-system-and-ui-experience | delivery | VP-005-design-system-and-ui-experience | active |
+| workspace-007-localization-and-system-settings | docs/workspaces/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
+| workspace-008-admin-module-readiness | docs/workspaces/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
+| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1/W2 done；2026-08-10 语义纠正） |
 
 ## 说明
 

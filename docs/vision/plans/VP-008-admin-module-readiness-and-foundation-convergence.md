@@ -17,7 +17,7 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`closed`**（2026-08-10 用户书面签发 `go` 并确认关门；workspace-008 GOAL-007 [D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)） |
+| status | **`closed`**（2026-08-10 用户书面签发 `go` 并确认关门；workspace-008 GOAL-007 [D-001](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)） |
 | lead_workspace | **`workspace-008-admin-module-readiness`**（Root `GOAL-001-admin-module-readiness` `done 6/6`，S0–S5 完成） |
 | Vision required | **0**（VRev-017～026 已在激活/`go` 前闭合；本波次无新增 open Vision required） |
 | 关门门闩（现行） | 已 `closed`；`go` 解锁后续标准业务模块实现（每个后续业务 VP 激活前须完成消费前 freshness review，见 §`go` 消费有效性）；保留 workspace-008 历史绑定，默认不接新区；shared-foundation residual 触发时由 `/vision` 决定重开本 VP 或新建准入 VP |
@@ -234,8 +234,8 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-10 | `go` 签发（可提议 closed） | 用户书面签发 `go`，候选 `ed99e88`（clean）；S0–S5 全部完成、open required = 0；解锁后续标准业务模块实现 | workspace-008 [GOAL-007 D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md) + [S5-evidence-matrix](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；后续业务 VP 消费时须 freshness review |
-| 2026-08-10 | **closed**（用户确认） | 用户确认关闭 VP-008；六项方向级退出判据均有工作区 Q2 证据（S0 D-003 分母 + S5 证据矩阵 E-1～E-6），Goal/Vision open required = 0；`go` 解锁后续标准业务模块，每个激活前须 freshness review | workspace-008 `goal-tree.md`（Root `GOAL-001-admin-module-readiness` done 6/6；GOAL-002～007 全 done）；GOAL-007 [D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)、[A-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/03-audit/A-001-s5-admission-audit-and-verdict-self.md)、[A-002](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/03-audit/A-002-s5-admission-audit-independent.md)、[S5-evidence-matrix](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；触发=后续协议判断/用户扩 scope，见 D-001 |
+| 2026-08-10 | `go` 签发（可提议 closed） | 用户书面签发 `go`，候选 `ed99e88`（clean）；S0–S5 全部完成、open required = 0；解锁后续标准业务模块实现 | workspace-008 [GOAL-007 D-001](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md) + [S5-evidence-matrix](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；后续业务 VP 消费时须 freshness review |
+| 2026-08-10 | **closed**（用户确认） | 用户确认关闭 VP-008；六项方向级退出判据均有工作区 Q2 证据（S0 D-003 分母 + S5 证据矩阵 E-1～E-6），Goal/Vision open required = 0；`go` 解锁后续标准业务模块，每个激活前须 freshness review | workspace-008 `goal-tree.md`（Root `GOAL-001-admin-module-readiness` done 6/6；GOAL-002～007 全 done）；GOAL-007 [D-001](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)、[A-001](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/03-audit/A-001-s5-admission-audit-and-verdict-self.md)、[A-002](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/03-audit/A-002-s5-admission-audit-independent.md)、[S5-evidence-matrix](../workspaces/workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；触发=后续协议判断/用户扩 scope，见 D-001 |
 
 ## 规划修订短史
 

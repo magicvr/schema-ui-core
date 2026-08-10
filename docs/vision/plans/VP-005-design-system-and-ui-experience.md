@@ -131,7 +131,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-09 | **closed**（用户书面确认） | 用户书面「确认关门」（VRev-015 F-V027 fixed）；S1–S5 全部交付；vitest 616/616 + build exit 0 + Playwright e2e 2/2 回归全绿；独立审 A-001/A-004/A-011/A-002(S4+S5) 与编排响应闭环 | `docs/workspace-006-design-system-and-ui-experience/goal-tree.md`（Root done 5/5；GOAL-002 6/6、003 2/2、004 3/3、005 2/2）；Root D-008 / A-012 / E-010；GOAL-005 E-001/E-002（616 tests + e2e 2/2）；`reviews/VRev-015-vp005-closeout-readiness.md` | F-VUI-007/010/011 `accepted-residual`（Root 台账 A-012）；I-004 `open non-blocking`（F-V019 路径 b，WCAG AA 不进退出分母） |
+| 2026-08-09 | **closed**（用户书面确认） | 用户书面「确认关门」（VRev-015 F-V027 fixed）；S1–S5 全部交付；vitest 616/616 + build exit 0 + Playwright e2e 2/2 回归全绿；独立审 A-001/A-004/A-011/A-002(S4+S5) 与编排响应闭环 | `docs/workspaces/workspace-006-design-system-and-ui-experience/goal-tree.md`（Root done 5/5；GOAL-002 6/6、003 2/2、004 3/3、005 2/2）；Root D-008 / A-012 / E-010；GOAL-005 E-001/E-002（616 tests + e2e 2/2）；`reviews/VRev-015-vp005-closeout-readiness.md` | F-VUI-007/010/011 `accepted-residual`（Root 台账 A-012）；I-004 `open non-blocking`（F-V019 路径 b，WCAG AA 不进退出分母） |
 
 ## 规划修订短史
 

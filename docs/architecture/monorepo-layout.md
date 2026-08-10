@@ -102,7 +102,7 @@ npm run dev
 
 ## 6. 与治理目录的关系
 
-- 目标状态只在 `docs/workspace-*/`；应用代码不建立第二套 goal-tree。
+- 目标状态只在 `docs/workspaces/workspace-*/`；应用代码不建立第二套 goal-tree。
 - 改 `docs/architecture` 白名单文件后，按仓库 stage 规则同步 `skills/core` 镜像（若脚本可用）。
 
 ## 7. Git 忽略策略

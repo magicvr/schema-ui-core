@@ -1,0 +1,1300 @@
+---
+title: 审计台账 · R5 · 工程化、fork 体验与集成关门
+status: active
+created: 2026-08-02
+updated: 2026-08-03
+parent: GOAL-001-production-admin-foundation
+version: 0.24.0
+---
+
+# 审计台账 · GOAL-008
+
+## 正式意见索引
+
+| 编号 | source | 日期 | scope | verdict | 状态 |
+|------|--------|------|-------|---------|------|
+| A-001 | independent | 2026-08-02 | goal-definition + design-plan · GOAL-008 立项信息与 Root I-005/D-013 合理性 | conditional | responded：F-001 **fixed**（D-002 + D-001 修订 + S2 对齐）；R-001/R-002 handled |
+| A-002 | independent | 2026-08-02 | finding-closure · A-001 F-001 与 R-001/R-002 响应证据 | pass | responded：F-001 `fixed` 关闭成立；R-001/R-002 handled；R-003 handled（投影清理） |
+| A-003 | self | 2026-08-02 | goal-definition + design-plan 复核 · GOAL-008 立项与 I-005/D-013 方案边界 + A-001/A-002 响应证据 | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1） |
+| A-004 | independent | 2026-08-02 | execution-facts · S1/S2 实施向审计（C-001～C-007） | pass | responded：pass 采纳；R-001 handled（由 F-002 修复承载）；R-002 fixed（README `.env` 注记） |
+| A-005 | independent | 2026-08-03 | execution-facts · S1/S2 实施复核（C-001～C-007） | fail | responded：F-002 **fixed**（config.ValidateProd 生产守卫 + 回归 + 运行时反例复验）；F-003 **fixed**（00-meta 进度投影同步） |
+| A-006 | self | 2026-08-03 | execution-facts 复核 · S1/S2 实施 + A-004/A-005 响应证据（含 F-002/F-003 fixed） | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1） |
+| A-007 | independent | 2026-08-03 | finding-closure · F-002/F-003 关闭证据复审 | pass | responded：pass 采纳；F-002/F-003 `fixed` 维持闭合；本 scope 无开放 required |
+| A-008 | independent | 2026-08-03 | design-plan · I-008-002 fork 复现与 smoke 协议 v0.1.0 合理性 | conditional | responded：F-004 **fixed**（协议 v0.1.1：S4 强制 disposable SM-006 证据）；R-008-001～004 absorbed |
+| A-009 | self | 2026-08-03 | design-plan 复核 · I-008-002 协议 v0.1.1 修订与 F-004 关闭证据 | pass | —；补同 scope `source: self` 覆盖（P-004 §3.1 用户裁决「补 self」） |
+| A-010 | self | 2026-08-03 | execution-facts · S3/S4 实施（QUICKSTART + 独立复现 + smoke.sh + CI 接入） | pass | —；S3/S4 实施向自审（P-002 阶段审计） |
+| A-011 | independent | 2026-08-03 | execution-facts · S3/S4 实施与协议/运行证据交叉复核 | fail | responded：F-005～F-009 **fixed**（clean-ref 复现 13.5s 计入 build + 隔离守卫 + 部分绿 exit 8 + CI run 30776646293）；R-011 handled |
+| A-012 | independent | 2026-08-03 | finding-closure · A-011 F-005～F-009 关闭证据复审 | fail | responded：F-005 **fixed**（REPRO-003 无编译缓存复现 64.8s + BuildKit 编译层非 CACHED 证据）；F-006/F-007/F-008/F-009 维持闭合；R-012 handled |
+| A-013 | independent | 2026-08-03 | finding-closure · A-011 F-005～F-009 关闭证据二次复审 | pass | responded：pass 采纳；F-005～F-009 `fixed` 均维持闭合；R-013 handled（CACHED 计数表述收窄至正式 retry #3） |
+| A-014 | self | 2026-08-03 | finding-closure · F-005～F-009 关闭证据 self 复核（P-004 §3.1 用户裁决补 self） | pass | —；F-005～F-009 `fixed` 全部成立；无开放 required；与 A-013 同向无冲突 |
+| A-015 | self | 2026-08-03 | stage-audit · S1～S5 阶段审计与 Root R5 勾选条件评估（S5 检查点交付） | pass | —；S1～S5 证据链成立；S5 检查点可勾选（`4/5 → 5/5`）；Root R5 勾选条件口径已记录 |
+| A-016 | independent | 2026-08-03 | close-out · S1～S5 关门证据与当前 D-009 / I-008-003 S6 实现 | conditional | responded：F-010 **fixed**（auth logout/refresh 经 `authEvent` 写入冻结 username detail + 三类事件测试断言）；R-014 handled（S6 未提交 revision 收据与本地测试记录） |
+| A-017 | independent | 2026-08-03 | finding-closure · A-016 F-010 关闭证据复审 | pass | responded：pass 采纳；F-010 `fixed` 维持闭合；R-014 维持 handled；R-015 recommended（测试加固）→ handled |
+| A-018 | self | 2026-08-03 | close-out · S1～S6 关门自审（含 S6 scope · P-004 §3.1 用户裁决补 self） | pass | —；GOAL-008 关门条件满足；F-001～F-010 全部 fixed、无开放 required；`I-008-001/002/003` verified |
+| A-017 | independent | 2026-08-03 | finding-closure · A-016 F-010 修复与当前 S6 revision 收据复审 | pass | F-010 `fixed` 维持闭合；R-014 handled 经 `eb6ff19` clean revision 复核；R-015 recommended（测试断言强度） |
+
+## 当前审计边界
+
+- 本目标于 2026-08-02 立项，`active / 2/5`。A-002（independent · finding-closure · pass）确认 A-001 **F-001 的 `fixed` 关闭成立**；R-001/R-002 handled；R-003 handled（投影清理）。**A-003（self · goal-definition + design-plan 复核 · pass）**：立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立（P-004 §3.1）。**S1/S2 已实施（2026-08-02）**：env 清单 + health/启动验证 + dev/prod 区分文档 + Dockerfile × 2 + compose.yaml + nginx 反代 + CI `container-smoke`；契约 C-001～C-007 本机验证通过（`docker compose up` → healthz/登录/`/me`/SPA fallback/重启与 down-up DB 持久化）。**建议对 S1/S2 做一次实施向审计（self 或 `/audit`）**。
+- 信息门禁：**`I-008-001` 已 verified（D-003 + [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0）**；**`I-008-002` 已 verified（D-004 + [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0）**，解除 S3/S4 的协议层信息门禁但不构成实施或验收；`I-008-003` 仍 `open`（required，仅当 S6 实施时阻断）；A-001 不把 Root `I-005: verified` 当成实现或验收证据。
+- **A-004（independent · execution-facts · S1/S2 实施向审计 · pass）**：S1/S2 实施主张与仓库事实一致且可复现——C-001/C-002 静态与代码核对通过、C-003/C-005/C-006 本机 Docker 复跑通过、C-004 镜像构建成功、C-007 CI job 结构与本地 smoke 通过；无开放 required；`0/5 → 2/5` 勾选有据。
+- **A-005（independent · execution-facts · S1/S2 实施复核 · fail）**：独立重跑 C-002～C-007 均通过，但 C-001/§5 “生产禁止启用 `AUTH_DEV_SESSION_ENABLED`”与实现不符：生产进程可由该 flag 启动并对未认证请求注入静态高权限开发身份（F-002）。同时 `00-meta.md` 仍写 `progress: 0/5`，而勾选成功标准和 `goal-tree.md` 均为 `2/5`（F-003）。这与 A-004 将同一安全事实列为非阻断 R-001 的分类存在相关分歧；不得跳过 P-004 裁决。
+- **A-006（self · execution-facts 复核 · pass）**：补 S1/S2 实施 scope 的 `source: self` 覆盖（P-004 §3.1 用户裁决「需要补 self」）。**A-004/A-005 统一响应（2026-08-03）**：分类分歧按用户裁决采用 **F-002 `required/high`** 口径——F-002 → **fixed**（`config.ValidateProd()` 生产守卫：非 `development` + `AUTH_DEV_SESSION_ENABLED=true` → 启动报错退出；`config_test.go` 4 用例回归；运行时复验 `production + flag=true` → exit 1、`development + flag=true` → 正常启动；`go build`/`go vet`/`go test ./...` 全绿）；F-003 → **fixed**（`00-meta` frontmatter `progress: 0/5 → 2/5`，与正文/goal-tree 一致）；A-004 R-001 → handled（由 F-002 修复承载同一建议）、R-002 → fixed（根 README 补 `.env` 免重复 export 注记）。S1 的 C-001「生产禁止启用 dev session」现由运行时硬门禁成立；C-002～C-007 维持 pass。**建议对 F-002/F-003 关闭证据做一次 finding-closure 复审（`/audit`）**。
+- **A-007（independent · finding-closure · pass）**：独立复核 F-002/F-003 的代码、回归、运行时与进度投影证据，确认两项 `fixed` 关闭成立；`I-008-002`/`I-008-003` 及 Root R5 门禁不在本次复审中改变。
+- **A-007 响应（/govern · 2026-08-03）**：采纳 `pass`——F-002/F-003 `fixed` 维持闭合；同 scope（F-002/F-003 关闭证据）已有 A-006（self）覆盖，P-004 §3.1 无需再补自审；本 scope 无开放 required。当时 `I-008-002` 仍为 S3/S4 前置 required 门禁。
+- **D-004 冻结后的当前边界（/govern · 2026-08-03）**：`I-008-002` 已由 [复现与 smoke 协议 v0.1.0](attachments/I-008-002-fork-reproduction-protocol.md) 置为 `verified`，其协议层信息门禁解除；协议没有形成新的审计 verdict，也没有改变 A-001～A-007 的历史结论。S3/S4 的文档、脚本、独立复现与运行/CI 证据仍未发生，检查点维持 `2/5`；`I-008-003` 仍在 S6 实施时适用。
+- **A-008（independent · design-plan · conditional · 2026-08-03）**：独立审计 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0 合理性。协议主体与 Root D-013 / A-001 R-002 / 仓库事实对齐，且未把协议冻结合并成 S3/S4 已完成；但 **F-004 required/medium 开放**——S4「种子可重复」未强制至少一次 disposable SM-006 通过证据，默认非 disposable 路径可在未验证种子幂等时 exit 0。R-008-001～R-008-004 为 recommended。本意见**不**改 `I-008-002` verified 状态、不改 progress、不实施 S3/S4。
+- **A-009（self · design-plan 复核 · pass）**：按 P-004 §3.1 用户裁决「补 self」补齐 A-008 同 scope 的 `source: self` 覆盖——复核 [I-008-002 协议 v0.1.1](attachments/I-008-002-fork-reproduction-protocol.md) 修订（F-004 fixed + 吸收 R-008-001～004）关闭证据成立；`I-008-002` 维持 `verified`（v0.1.1 权威）。
+- **A-008 响应（/govern · 2026-08-03）**：采纳 `conditional`；**F-004 → fixed**（D-005 + 协议 v0.1.1：S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`，非 disposable exit 0 不得单独作为「种子可重复」关闭证据；不安全 destructive → exit 2）；**R-008-001～004 absorbed**（默认 URL 按路径区分、终点 4 = `list-edit-lifecycle`、SM-005 判据 `id="root"`、退出码 2/6 分离）。`I-008-002` 维持 `verified`（v0.1.1）；S3/S4 实施仍未发生，检查点维持 `2/5`；Root R5 未勾选（`4/5`）。
+- **A-011 响应（/govern · 2026-08-03）**：A-011（independent · execution-facts · fail）与 A-010（self · pass）同 scope verdict 冲突，P-004 §3.2 用户书面裁决走 **fixed** 路径；**F-005～F-009 全部 fixed**、**R-011 handled**（详见文末「响应 · A-011」节）——协议补丁 v0.1.2（D-007：部分绿退出码 8 + disposable 隔离守卫），`scripts/smoke.sh` 重写（去 eval、强制隔离校验、readiness 重判），CI `container-smoke` 显式隔离 project，clean-ref 复现 [R5-S3-REPRO-002](attachments/R5-S3-REPRO-002.md)（13.5s ≤ 900s），当前 revision（`df913a5`）`container-smoke` 成功 run 证据齐备。`I-008-002` 维持 `verified`（权威版本 v0.1.2）；S3/S4 检查点维持勾选（`4/5`），验收有效性以关闭证据为条件；`I-008-003` 仍 open；Root R5 未勾选（`4/5`）；S5 待实施。
+- **A-012（independent · finding-closure · fail）**：仅复审 A-011 F-005～F-009 的 `fixed` 关闭证据。F-007/F-008/F-009 的脚本、隔离和当前 revision CI 证据成立；F-006 的字段补齐总体成立。**F-005 不能维持 `fixed`**：R5-S3-REPRO-002 的计时命令虽为 `docker compose up -d --build`，但归档 BuildKit 输出显示 API `go build` 与 Web `npm run build` 均为 `CACHED`，与协议「不得把项目自身的编译预先完成」冲突；本 scope 有 required/high 开放项，S5 仍不得推进。R-012 记录 clean-source 叙述与 T4 后生成的未跟踪截图之间的非阻断可追溯性修正建议。
+- **A-012 响应（/govern · 2026-08-03）**：**F-005 → fixed**（D-008 + [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)：预 T0 `docker rmi` + `docker builder prune -a -f` 整体禁用 BuildKit 结果缓存后 clean worktree 重做计时复现——四终点全 PASS、**64.833s ≤ 900s**、BuildKit 归档显示 `go build`（12.8s）与 `npm run build`（6.1s）均实际执行非 `CACHED`、预 T0 `git status --short` 为空、单调原始读数落盘）；**R-012 → handled**（T0 前/后状态分别留存、截图 worktree 外归档 + sha256、单调原始读数）；F-006/F-007/F-008/F-009 维持闭合（A-012 确认），`R5-S3-REPRO-002` 加取代注记保留历史。`I-008-002` 维持 `verified`（v0.1.2）；S3/S4 检查点维持勾选（`4/5`）；`I-008-003` 仍 open；Root R5 未勾选（`4/5`）；S5 待实施——完成仅针对 **F-005** 的 `/audit` finding-closure 复审（pass）前不得推进 S5/关门。
+- **A-013（independent · finding-closure · pass）**：复审 A-012 响应后，F-005 的 REPRO-003 以 clean checkout、预 T0 状态、单调原始读数和正式 retry #3 的实际 `go build` / `npm run build` 非 `CACHED` 输出，补足了 A-012 的唯一 required/high 缺口；F-006～F-009 维持闭合。此 scope 无开放 required。R-013 仅建议将“全程仅 1 条 `CACHED`”明确限定到正式 retry #3 的非编译层缓存，避免与附件内 retry #2 的 `WORKDIR CACHED` 混淆。A-013 不推进 S5、Root R5 或关门；后续由 `/govern` 汇总全部相关门禁。
+- **A-013 响应（/govern · 2026-08-03）**：采纳 `pass`——**F-005～F-009 `fixed` 关闭证据全部成立**（A-012 的唯一 required/high 缺口由 REPRO-003 补足，A-013 独立二次复审确认），本 scope **无开放 required**；**R-013 → handled**——CACHED 计数表述收窄为「正式 retry #3 的项目编译层均非 `CACHED`，且该次仅一条非编译 `WORKDIR` 缓存」（REPRO-003/A-012 响应/D-008/02-execution/goal-tree 同步修正）。`I-008-002` 维持 `verified`（v0.1.2）；S3/S4 检查点维持勾选（`4/5`）；`I-008-003` 仍 open（仅 S6）；Root R5 未勾选（`4/5`）；**S5 待实施**。A-011 F-005～F-009 关闭闭环完成（A-012 重做 + A-013 确认）；进入 S5 前按 P-004 §3.1 询问用户是否补 self 审计。
+- **A-014（self · finding-closure · pass，2026-08-03）**：按 P-004 §3.1 用户裁决「补一次 self 审计」补齐 F-005～F-009 关闭证据 scope 的 `source: self` 覆盖——self 复核 REPRO-003 正式 retry #3（pre-T0 clean、`go build` 12.8s / `npm run build` 6.1s 非 CACHED、64.833s ≤ 900s、四终点 PASS）、smoke.sh（exit 8/隔离守卫/去 eval 重启）、workflow 显式 `ci-container-smoke` project 与 CI run 30776646293 归档、本地四路径守卫日志，全部成立；与 A-013 同向无冲突。**无开放 required**。
+- **A-015（self · stage-audit · pass，2026-08-03）= S5 检查点交付**：R5 阶段审计——S1（C-001/C-002）、S2（C-003～C-007）、S3（QUICKSTART + REPRO-003 64.833s）、S4（smoke.sh + 本地四路径 + CI run 30776646293）全部成立；意见台账 A-001～A-014 全部 responded/自审、F-001～F-009 全部 fixed 闭合、无开放 required；信息门禁 `I-008-001/002` verified、`I-008-003` 仅 S6 适用；**Root R5 勾选条件口径已记录**（S1～S5 全勾选 + 无开放 required + 关门向审计；Root R5 勾选与 Root/VP-002 关门须用户确认）。**S5 检查点已勾选（GOAL-008 `4/5 → 5/5`）**。
+- **A-016（independent · close-out · conditional）**：核对 S1～S5 核心成功标准（历史 clean ref `1961e5a` / CI ref `df913a5` 边界内成立）与 D-009 后当前 S6 实现。**F-010 required/medium 开放**——契约 §3 冻结 auth 事件 `detail={"username":...}`，但 logout 成功路径以空 actorName/detail 写入（refresh 亦误用 `user.Name`），`operations_test.go` 只断言 login；故「六事件 + actor/record_id/detail」完成主张不能完整支撑，不得据此将 GOAL-008 置 `done`。**R-014 recommended**：S6 变更未提交（HEAD `851f9b6`），本地测试通过不得冒充 CI/容器验收。
+- **A-016 响应（/govern · 2026-08-03）**：**F-010 → fixed**（D-010）——`handler/auth.go` 新增 `authEvent()`：logout/refresh 经 `store.UserByID` 解析真实用户名，写入 `detail={"username":"admin"}` 与 actorName；login 保持 `creds.Username`；不可解析时仍记 actor_id + 服务日志错误（best-effort §5 不变）；`operations_test.go` 对 **login/refresh/logout 三类**统一断言 `"username":"admin"`；`go test ./...` 全绿 + `go vet`/`gofmt` 干净。**R-014 → handled**——未提交 revision 收据（HEAD `851f9b6`，15 files +284/−57）与本地执行收据记录；容器级证据待用户确认提交后补。`I-008-003` 维持 `verified`；GOAL-008 保持 `active / 5/5`；**未 `done`**、Root R5 未勾选——推进整个目标关门流程前按 P-004 §3.1 询问用户是否补覆盖 S6 的 self close-out 审计。
+- **A-017（independent · finding-closure · pass）**：当前 clean revision `eb6ff19` 上独立复核 A-016 F-010。login 直接写入 `creds.Username`，refresh/logout 经 `authEvent()` 解析 `store.UserByID` 的真实 username；三者均经 `jsonQuote()` 生成冻结 JSON 摘要。`operations_test.go` 覆盖三类 auth 事件与 username detail；本轮 `go test ./...`、`go vet ./...`、`go build ./...`（apps/api）以及 web vitest 458/458、生产构建均通过；工作树 clean。**F-010 `fixed` 维持闭合**，R-014 的 revision 收据现固定为 `eb6ff19`，但不将其表述为新的 CI/容器验收。R-015 为非阻断测试强度建议；GOAL-008 仍未关门，P-004 对 S6 self close-out 审计的询问仍适用。
+- **A-018（self · close-out · pass，2026-08-03）**：按 P-004 §3.1 用户裁决「补自审」补齐 S6 scope 的 self 覆盖——S1～S5（核心 5/5）+ S6（加分）全部成立；F-001～F-010 全部 `fixed`、R-001～R-015 全部 handled/非阻断；`I-008-001/002/003` 全部 `verified`；关门向审计齐备（A-013/A-014/A-015/A-016/A-017/A-018）；**GOAL-008 关门条件满足**。
+- **合并响应 A-017 + A-018 + 关门（/govern · 2026-08-03）**：采纳 A-017（pass）与 A-018（pass）；**R-015 → handled**（`operations_test.go` auth detail JSON 精确断言 + 轮换后首次 logout 覆盖，全绿）；**GOAL-008 已置 `done`**；**Root R5 检查点已勾选（Root `4/5 → 5/5`）**。Root close-out 关门审计与 VP-002 关门为独立用户裁决。
+- 后续意见从 A-019 起。
+
+## A-008 · I-008-002 fork 复现与 smoke 协议合理性独立审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：GitHub Copilot（Grok 4.5）
+- **类型 / scope**：design-plan；审计 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.0 是否足以合理回答 `I-008-002`（15 分钟计时复现协议 + smoke 验收判据），对照 Root D-013、I-005、A-001 R-002 最低清单、GOAL-008 S3/S4 成功标准、I-008-001 契约边界与当前仓库事实。不审计尚未发生的 S3/S4 实施、独立复现实测、CI run 或 Root R5 关门；不复判 S1/S2 或 F-002/F-003。
+- **verdict**：conditional
+
+### 范围与区间
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspaces/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；`shared_materials_catalog: none`（未把共享资料或其他工作区内容当事实）。
+- 已审阅：本目标 `00-meta`（S3/S4、`I-008-002`）、`01-decision` D-004、`02-execution`「冻结 I-008-002」、本文件 A-001～A-007；协议附件 v0.1.0；Root D-013 与 I-005 §3/§4；I-008-001 §2/§8（计时/smoke 归属边界）；`compose.yaml` 端口、`apps/web` 5173/`WEB_PORT`、`app-manifest.json`（`homePageRef: overview`、page title `List + edit lifecycle`）、`seed_records.go`（8 条、`rec-1`/`Acme Console`）、records list `total`/`pageSize` cap、login/`/me` 字段、`index.html` `#root`；仓库 HEAD `5e27019482eb8d0695c402b784860233bbc90c39` 与协议 `frozen_revision` 一致；工作树含协议与 GOAL-008 文档未提交变更；`scripts/smoke.sh` **不存在**（与协议「未实施」声明一致）。
+- 本轮为协议/设计合理性静态审计；**未运行**应用、Docker、计时复现或未来 smoke 脚本；不把静态核对写成 S3/S4 通过。
+
+### 成果（有证据）
+
+| 审计项 | 结论与证据 |
+|--------|------------|
+| 信息问题覆盖（A-001 R-002） | **总体满足**：协议冻结工具/平台基线（§2.1）、依赖缓存前提与排除项（§3.1）、计时起止与四终点（§3.2）、失败/重试与独立性（§3.3）、独立复现最小字段（§4）、SM-001～SM-006 + 输入/退出码（§5）。 |
+| 与 Root D-013 方向对齐 | **总体对齐**：终点含登录 + 可交互列表；不含依赖下载；≥1 次独立复现；smoke 清单形状 `/healthz → login → /me → 代表页 → 种子可重复`；`scripts/smoke.sh` 位置与机器可判定退出码明确。 |
+| 事实/门禁边界 | **成立**：§1/§6 明确本协议不是 S3/S4 实施或验收证据；D-004/`02-execution`/`00-meta` 同步「verified 只解除信息门禁」；未发现把协议冻结合并为检查点勾选。 |
+| 双路径与 Compose 义务 | **成立**：§2.2 保留 `local-dual-process` 与 `compose`；S3 最少一条合格独立复现、未测路径不得宣称达标——不削弱 S2 Compose 必须交付。 |
+| 安全与 disposable 边界 | **方向正确**：禁止输出 token/password/secret；缺工具/密码 fail-closed；普通开发库禁止 reset；CI 应用隔离 project/volume。 |
+| 与仓库静态事实一致性 | **多数可核对**：默认种子 8/`rec-1`/`Acme Console` 与 `seed_records.go` 一致；page title `List + edit lifecycle` 与 manifest 一致；`accessToken`、`/healthz` `status:ok`、`/api/records?pageSize=100` 与 handler 形状一致；Compose web `8081:80` 与协议 compose 默认期望一致；freeze revision 与当前 HEAD 一致；smoke 脚本尚不存在。 |
+| S3 浏览器 vs S4 HTTP 分层 | **合理**：终点 4 要求真实浏览器列表加载；SM-005 仅 HTTP 200 + SPA root，并写明浏览器可交互归 S3——避免把 curl 冒充 UI 验收。 |
+
+### 对照成功标准 / 信息项 / 上游口径
+
+| 项 | 审计结论 |
+|----|----------|
+| `I-008-002` 问题「协议与判据是什么」 | **有条件可回答**：主体判据可实施、可核对；但 S4「种子可重复」的**验收强制力**不足（见 F-004）。 |
+| S3（fork 文档 + ≤15 分钟 + 独立复现） | 计时、字段、独立性、四终点总体可指导实施；路径默认 URL 与「后台首页」操作化需文档消歧（R-008-001/002）。 |
+| S4（`scripts/smoke.sh` + 本地/CI 全绿） | SM-001～SM-005 + 退出码可用于脚本骨架；**SM-006 未成为 S4 绿的硬条件**，与成功标准字面「种子可重复」及 D-013 smoke 清单不完全同构（F-004）。 |
+| I-008-001 边界 | **未混叠**：协议不重开容器/env 契约；health/登录终态与 I-008-001 §2 启动验证口径衔接。 |
+| 状态主张 | 协议与 D-004 **未**主张 S3/S4 已完成；本意见不改变 `active / 2/5` 或 Root `4/5`。 |
+
+### Findings
+
+#### F-004 · S4 验收未强制至少一次 disposable SM-006（种子可重复）通过
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：`I-008-002` 作为 S4 验收判据的完整性；S4 实施与勾选；Root D-013 smoke 清单中的「种子可重复」。
+- **证据**：
+  1. GOAL-008 S4 与 Root D-013 均要求 smoke 覆盖「种子可重复」。
+  2. 协议 §5.2 将 SM-006 标为「仅 disposable 模式」；§5.3 退出码 `0` =「SM-001～SM-005 通过，**且要求的** disposable SM-006 也通过」——未要求 disposable 时，SM-006 可整段跳过仍 exit 0。
+  3. §5.1 仅写「CI **应**使用隔离 Compose project/volume」，未把「S4 验收证据必须包含一次 SM-006=PASS 的 disposable/隔离运行」写成硬判据。
+- **风险**：实现者可交付默认非破坏 smoke、本地/CI 全绿并勾选 S4，却从未验证空库种子数量/幂等/不重复播种；与 D-013 与 S4 字面成功标准漂移。
+- **要求（建议修复路径）**：由 `/govern` 修订协议（建议 v0.1.1）并留痕，至少明确其一并写进验收：
+  1. **S4 验收必须**包含 ≥1 次 disposable/隔离运行且 `SM-006=PASS`（推荐：CI `container-smoke` 或等价 job 默认 disposable）；且/或
+  2. 非 disposable 默认路径的 exit 0 **不得单独**作为 S4「种子可重复」关闭证据。
+  - 保持「拒绝对普通开发库 destructive reset」的安全边界。
+  - 本 finding **不**要求已存在的脚本（当前无 `scripts/smoke.sh`）；闭合证据 = 协议修订 + D-004 补记/新决策，而非运行结果。
+
+#### R-008-001 · 默认 `WEB_BASE_URL=http://localhost:8081` 未按路径区分
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：协议 §3.2 写当前默认期望 API `:8080`、Web `:8081`；`compose.yaml` web 映射 `8081:80` 成立，但 `local-dual-process` 默认 Vite 为 `5173`（`WEB_PORT` 可覆盖，见 `apps/web/README.md` / `vite.config.ts`）。协议虽要求记录实际 URL，仍给出无条件 8081 期望。
+- **影响**：不推翻双路径设计；但 QUICKSTART/复现记录易误用 compose 端口跑双进程路径，造成假失败或文档歧义。
+- **建议**：按 `path` 给出默认期望表（compose → 8081；local-dual-process → `http://localhost:${WEB_PORT:-5173}`），并重申不得以默认覆盖实测端口。
+
+#### R-008-002 · 「后台首页可交互」操作化为 `/list-edit-lifecycle` 未显式对齐 manifest 首页
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：Root D-013 / S3 用语为「后台首页可交互（列表加载）」；manifest `homePageRef` 为 `overview`，而协议终点 4 / SM-005 固定 `/list-edit-lifecycle`（title `List + edit lifecycle` + `Acme Console`）。该操作化**强于**仅打开 overview，且与 I-005「至少一个可交互代表页」一致，但是否等于「首页」未在协议中写明。
+- **影响**：不构成终点过弱；但 S3 文档若只引导到 overview，会与协议终点 4 不一致。
+- **建议**：在协议 §3.2 增加一句：D-013「后台首页可交互（列表加载）」在本目标操作化为 R4 代表页 `list-edit-lifecycle`（非 `overview`），QUICKSTART 必须覆盖该路由。
+
+#### R-008-003 · SM-005「含 SPA root」机器判据偏虚
+
+- **级别 / 严重度**：recommended / low
+- **证据**：§5.2 SM-005 仅写「HTTP 200 且含 SPA root」；`apps/web/index.html` 实际标记为 `<div id="root"></div>`。生产 nginx 构建产物仍应保留该挂载点，但协议未钉死可 grep 的稳定子串。
+- **建议**：将通过条件写为响应体包含 `id="root"`（或等价稳定标记），避免实现时主观解释「SPA root」。
+
+#### R-008-004 · 退出码 6 混用「不安全 destructive」与「种子断言失败」
+
+- **级别 / 严重度**：recommended / low
+- **证据**：§5.3 退出码 `2` = 参数/工具/安全前提不满足；`6` = 种子重复性失败，**或**请求了不安全的 destructive 模式。不安全模式更接近安全前提（应偏 `2`），与 SM-006 数据断言失败同码会降低 CI 分类信号。
+- **建议**：不安全 destructive → `2`；SM-006 断言失败单独 `6`。
+
+### 必改项汇总
+
+- **F-004（required / medium）· 开放**：修订 I-008-002 协议，使 S4 验收**强制**至少一次 disposable/隔离路径下 SM-006 通过；在此之前，不得把「仅 SM-001～SM-005 全绿」当作 S4「种子可重复」已满足。
+- F-004 **不**否定协议其余计时/复现字段的可用性；**不**自动重开 S1/S2；**不**由本 independent 意见改写 `I-008-002` 的 verified 机读状态（是否补丁后维持 verified 或短暂回退 collecting 由 `/govern` + 用户裁决）。
+- R-008-001～R-008-004 为 recommended，建议同版协议补丁一并处理，非本意见放行阻断项。
+
+### 与既有意见的异同
+
+- 同意 A-001 R-002：关闭 `I-008-002` 前必须把高层方向落成可执行契约；本意见确认 v0.1.0 **大部分**做到了，并指出 S4 种子项仍有强制力缺口。
+- 同意 D-004 / A-007 边界：协议 verified ≠ S3/S4 实施完成；本意见不把协议审计扩成执行事实通过。
+- 与 A-004/A-005/A-006/A-007 无同 scope 冲突（那些是 S1/S2 或 F-002/F-003）；F-002/F-003 保持已闭合，不在本 scope 重开。
+- 无 self 同 scope 意见；按 P-004 §3.1，未来若以本意见推进协议修订或 S3/S4，应询问是否补 self。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **conditional**：I-008-002 v0.1.0 **总体合理**——覆盖 R-002 最低清单、对齐 D-013、安全 disposable 边界清晰、未伪造 S3/S4 完成；但因 **F-004**，不能把现行协议无条件当作完整的 S4 验收契约。
+- 建议 `/govern`：
+  1. 响应 A-008：展示 F-004；建议 `fixed` = 协议 v0.1.1（强制 S4 disposable SM-006 证据）+ 可选吸收 R-008-001～004；
+  2. 询问是否补同 scope self；
+  3. 补丁合并前，S3 文档/计时可按现协议推进草稿，但 **S4 脚本验收判据应以补丁后文本为准**；
+  4. 勿勾选 S3/S4，勿改 Root R5。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、`I-008-002` 状态或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## A-009 · I-008-002 协议 v0.1.1 修订与 F-004 关闭 self 复核（2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：design-plan 复核；按用户 P-004 §3.1 裁决「补 self」补齐 A-008（independent）同 scope 的 `source: self` 覆盖——复核 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) **v0.1.1** 修订（F-004 fixed + 吸收 R-008-001～004）及其关闭证据；不审 S3/S4 实施、独立复现实测或 Root R5 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 一致；Root `GOAL-001-production-admin-foundation`；`shared_materials_catalog: none`。
+- 已复核：协议附件 v0.1.1（§3.2 默认 URL 表、终点 4 操作化、§5.1 disposable 强制、§5.2 SM-005/SM-006、§5.3 退出码、§7 修订记录）；D-005；A-008 F-004 要求与 R-008-001～004；Root D-013 与 I-005 §3/§4；A-001 R-002 最低清单；I-008-001 §2/§8 边界。
+- 本 self 为静态核对；**未运行**应用、Docker、脚本或计时复现；不把协议修订写成 S3/S4 实施或验收。
+
+### Findings
+
+- **F-004（required/medium）→ `fixed`**：协议 v0.1.1 §5.1 明确「S4 验收必须包含至少一次 disposable/隔离运行且 `SM-006=PASS`；非 disposable 默认路径的 exit 0 不得单独作为 S4「种子可重复」关闭证据」；§5.2 SM-006 标为「disposable 模式 · S4 必检」；§5.3 退出码 `0` =「SM-001～SM-005 通过，且 SM-006（disposable）通过——S4 完整绿」；安全边界「拒绝对普通开发库 destructive reset」保留（不安全 destructive → exit 2）。与 A-008 要求同构，`fixed` 成立。
+- **R-008-001 → absorbed**：§3.2 默认期望按路径区分（compose → API `:8080`/Web `:8081`；local-dual-process → API `:8080`/Web `${WEB_PORT:-5173}`），并重申不得以默认覆盖实测端口。
+- **R-008-002 → absorbed**：§3.2 增加操作化说明——D-013「后台首页可交互（列表加载）」= R4 代表页 `list-edit-lifecycle`（非 manifest `homePageRef: overview`），QUICKSTART/README 必须覆盖该路由。
+- **R-008-003 → absorbed**：§5.2 SM-005 通过条件写为「响应体含 `id="root"`（或等价稳定 SPA 挂载标记）」。
+- **R-008-004 → absorbed**：§5.3 退出码 `2` 并入「不安全 destructive 模式」；`6` 仅指 SM-006 种子断言失败。
+- **一致性**：v0.1.1 与 Root D-013、A-001 R-002 最低清单、I-008-001 边界及仓库静态事实（`id="root"`、Vite 5173/`WEB_PORT`、compose 8081、manifest overview）一致；未把协议修订扩写为 S3/S4 完成。
+
+### 对照成功标准与信息门禁
+
+- `I-008-002` 问题「协议与判据是什么」：**可回答**——v0.1.1 使 S4「种子可重复」具备硬性验收强制力。
+- S3/S4：计时、字段、独立性、四终点、SM-001～SM-006 与退出码总体可指导实施；实施与独立复现实测仍未发生。
+- `I-008-002` 维持 `verified`（v0.1.1 权威）；`I-008-003` 仍 open（仅当 S6）。本 self 不改动任何 status/progress。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## 统一响应 · A-008（2026-08-03）
+
+按 P-004 §3.1 用户裁决「补 self」先行 A-009 自审，再统一响应 A-008。
+
+- **verdict 采纳**：`conditional` 成立——I-008-002 协议 v0.1.0 总体合理（覆盖 A-001 R-002 最低清单、对齐 D-013、安全 disposable 边界清晰、未伪造 S3/S4 完成），但 F-004 使 v0.1.0 不足以单独作为完整 S4 验收契约。
+- **F-004（required/medium）→ fixed**：协议补丁 **v0.1.1**（D-005）——S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`；非 disposable 默认路径 exit 0 不得单独作为 S4「种子可重复」关闭证据；保持「拒绝对普通开发库 destructive reset」安全边界（不安全 destructive → exit 2）。`I-008-002` 维持 `verified`，权威版本 v0.1.1。
+- **R-008-001～004 → absorbed**：同版 v0.1.1 一并处理——默认 URL 按路径区分（compose 8081 / 双进程 `${WEB_PORT:-5173}`）；终点 4 操作化对齐 `list-edit-lifecycle`（非 overview）；SM-005 判据钉死 `id="root"`；退出码 2/6 语义分离。
+- **P-004 §3.1 处置（用户裁决）**：A-008 为 `source: independent` 且协议设计 scope 无 self 审计；用户裁决「**补 self**」——已落盘 **A-009（self · design-plan 复核 · pass）** 作为同 scope self 覆盖（复核 v0.1.1 补丁与 F-004 关闭证据）。
+- **仍开放**：S3/S4 实施与验收仍未发生（检查点维持 `2/5`）；`I-008-003` open（仅当 S6 实施）；Root R5 未勾选（Root `4/5`）。
+- **下一步**：实施 S3（QUICKSTART/fork 文档 + ≥1 次独立复现记录，终点 4 = `list-edit-lifecycle` 列表加载）与 S4（`scripts/smoke.sh` + 本地/CI 全绿，含 ≥1 次 disposable `SM-006=PASS` 证据）；S4 完成后建议实施向审计（self 或 `/audit`）。
+- **证据路径**：本响应节；`01-decision` D-005；协议附件 v0.1.1（§3.2/§5.1/§5.2/§5.3/§7）；本文件 A-008/A-009；`00-meta` 信息表 `I-008-002`；`02-execution` 2026-08-03「响应 A-008」节。
+
+## A-001 · GOAL-008 立项信息与 I-005 工程化 / fork 报告独立审计（2026-08-02）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：goal-definition + design-plan；审计 GOAL-008 立项目的、成功标准、信息门禁与父级 Root `I-005` / D-012 / D-013 的合理性，重点核对 [I-005 工程化 / fork 信息收集报告](../GOAL-001-production-admin-foundation/attachments/I-005-engineering-fork-collection.md)。不审计尚未发生的 R5 实施或关门，不复判 R1～R4。
+- **verdict**：conditional
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspaces/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；工作区与 Root 均绑定 `VP-002-production-admin-foundation`，`vision_ref` 精确匹配现行 Charter `schema-ui-core-admin-foundation@0.1.0`。
+- 共享资料：`shared_materials_catalog: none`；I-005 与本意见均只使用当前仓库代码、README、CI 和治理记录，未把外部或其他工作区资料当成本目标事实。
+- 已审阅：本目标 `00-meta.md`、`01-decision.md`、`02-execution.md`、本文件；Root `00-meta.md`、`01-decision.md` D-012/D-013、I-005 附件；工作区页、`goal-tree.md`、VP-002、Charter、alignment、P-001～P-006 与 workspace protocol；并静态点验 API/Web 配置、README、health、CI、Docker/Compose/smoke 现状。
+- 本 scope 是立项与信息质量审计；未运行应用、测试、Docker 或 15 分钟计时。没有把静态扫描扩写成运行时通过结论。
+
+### 成果（有证据）
+
+| 审计项 | 结论与证据 |
+|--------|------------|
+| 工作区与愿景链 | **通过**：workspace / Root / VP / Charter 机读链完整；本目标 `parent` 合法，未混入其他工作区状态。 |
+| 立项目的与边界 | **总体合理**：S1～S5 承接 VP-002 #6/#7 的环境配置、Docker、≤15 分钟 fork、smoke 与阶段审计；S6 操作日志维持非阻断加分项。`progress: 0/5` 与零实施事实一致。 |
+| I-005 当前工程事实 | **核心事实成立**：本地双进程、API env/fail-closed、公开 `/healthz`、Vite dev `/api` 代理、现有 CI 与运行时 DB gitignore 均有仓库证据；当前工作树未发现 Dockerfile、Compose、生产静态托管/反代或持久化 operation log。报告也明确本轮仅静态核对、未运行应用/测试。 |
+| I-005 `verified` 的含义 | **边界合理**：D-013 的用户书面裁决足以关闭 Root 层“选哪条 R5 路线、采用什么计时与复现方向”的立项门禁；它不证明 Docker、smoke、CI 或 ≤15 分钟体验已实现。精确 env/Compose/探针/反代契约与计时/smoke 判据已由 `I-008-001/002` 继续 `open required`，未被静默放行。 |
+| 实施与审计主张 | **通过**：`02-execution` 明记未改代码/配置/文档/容器/脚本、未运行测试；S1～S5 未勾选，Root R5 未勾选。本意见不产生实施或验收事实。 |
+
+### 对照成功标准与信息门禁
+
+| 项 | 审计结论 |
+|----|----------|
+| 目标意图、父级与最小可验证方向 | **满足**，足以立项并继续信息收集。 |
+| 高层检查点与派生进度 | **满足**，S1～S5 可枚举且 `0/5` 可确定计算。 |
+| `I-008-001` / `I-008-002` | **正确保持 open required**；当前只允许收集和冻结精确契约，不得实施或验收受影响范围。 |
+| `I-008-003` | **边界合理**：仅在用户决定实施 S6 时阻断 S6，不阻断 S1～S5。 |
+| I-005 报告可追踪性 | **有条件满足**：D-013 与当前状态可定位，但附件仍混有裁决前的当前时态，见 R-001。 |
+
+### Findings
+
+#### F-001 · Docker Compose 是核心交付还是可选加分路径，现有表述互相冲突
+
+- **级别 / 严重度**：required / medium
+- **关联门禁**：`I-008-001` 方案冻结；S1/S2 实施与验收；R5 / Root 关门。
+- **证据**：VP-002 #7 把“Docker 一键启动”列入基础工程化成功标准；本目标 S2 是 S1～S5 五个核心检查点之一，要求交付 Compose，且 D-001 未选方案明确“仅做文档不落地容器与 smoke”会留下 VP #7 未交付。与此同时，D-001 边界又把“Docker 一键启动”写成“可选加分路径”；这与真正可选且不进分母的 S6 表述相同语义层级。
+- **风险**：若按“加分项”解释，S2 可被跳过却仍宣称 `5/5` / R5 完成；若按核心检查点解释，D-001 的范围边界失真。该歧义会直接污染 `I-008-001` 的契约与关门判据。
+- **要求**：由 `/govern` 在 GOAL-008 决策/审计响应中明确：建议采用“**Compose 是 R5 必须交付和验收的第二启动路径；对 fork 使用者而言可选择本地双进程或 Compose；完整生产拓扑 / CI-CD 仍为非目标**”。若用户确实要把 Compose 降为加分项，则须显式裁决并同步 S2、进度分母、Root D-013 与 VP-002 对齐边界，不能只保留现有含混措辞。
+
+#### R-001 · I-005 v0.2.0 混用裁决前与裁决后的当前时态
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：附件顶部与 §6 首段已写 D-013 完成裁决、`I-005: verified`；但 §2/§3 标题仍为“待用户裁决”，§6 随后仍写“保持 collecting”“裁决后再判断 verified”，frontmatter 仅列 `related_decision: D-012`。
+- **影响**：Root `00-meta` / D-013 的 canonical 状态本身清楚，因此本项不重开 I-005，也不阻断立项；但附件作为 I-005 证据会让读者误判当前是否仍有 Root 层未决门禁。
+- **建议**：把 §2～§4 与 §6 未决清单显式标为“D-013 前历史候选”，把过程性状态改为过去时，并在元数据/正文关联 D-013；保留候选比较，不要删除历史。
+
+#### R-002 · `I-008-001/002` 关闭时应把高层方向变成可重复执行的契约
+
+- **级别 / 严重度**：recommended / medium（现有 required 信息门禁的审计提示，不新增一扇门）
+- **证据**：当前 `/healthz` 只证明 API 进程响应；现有 Web 代理仅为 Vite dev；CI 没有 Compose/smoke job；“不含依赖下载”尚未界定镜像 pull/build、Go/npm cache、Playwright 浏览器与首次 migration/seed。
+- **建议**：`I-008-001` 至少冻结 production env/secrets、DB volume、Web SPA fallback 与 `/api` 反代、API/Web readiness、服务依赖/超时/失败行为和 CI 入口；`I-008-002` 至少冻结工具/平台基线、依赖缓存前提、计时起止、失败/重试规则、证据字段与 `scripts/smoke.sh` 的机器可判定退出码。未完成前维持现有 required 阻断。
+
+### 必改项汇总
+
+- **F-001（required / medium）**：明确 Compose 的交付义务与“可选”的对象。F-001 闭合前，不得关闭 `I-008-001`、实施/验收 S1/S2，亦不得据此勾选 R5 或关门。
+- F-001 **不阻断** GOAL-008 保持 `active / 0/5`，也不阻断围绕 `I-008-001/002` 的信息收集。
+
+### 与既有意见的异同
+
+- 本目标此前无正式 self / independent 意见，因此不存在同 scope verdict 或 required finding 冲突。
+- 同意 Root D-013：部署基线 A 与 15 分钟 / smoke 方向足以支持建立 R5 子目标；不同之处是本意见要求把 D-001 中“可选加分路径”与 S2 核心交付之间的语义冲突先闭合。
+- 同意 I-005 对“候选/决策 ≠ 实施/验收”的边界；本意见不因 R-001 的历史措辞重开 Root `I-005`。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **conditional**：GOAL-008 的立项、S1～S5 结构、`I-008-001/002/003` 分层门禁和 I-005 的主要工程事实总体合理；当前可继续信息收集，但不可无条件冻结/实施工程化方案。
+- 建议 `/govern` 先响应 A-001：修正 F-001；同步清理 I-005 的历史/当前时态（R-001）；随后以 R-002 作为 `I-008-001/002` 的最低收集清单。未来基于本 independent 意见推进门禁时，按 P-004 询问用户是否补同 scope self 审计。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-001（/govern · 2026-08-02）
+
+- **verdict 采纳**：`conditional` 成立——GOAL-008 立项、S1～S5 结构、`I-008-001/002/003` 分层门禁与 I-005 主要工程事实总体合理；F-001 使 D-001 的 Compose 交付义务表述冲突，需先闭合再冻结 `I-008-001`。本轮以 **fixed** 路径修正，未走 overruled/residual。
+- **F-001 → fixed（Compose 交付义务澄清）**：
+  - **明确口径**：**Docker Compose 是 R5 必须交付和验收的第二启动路径**（核心检查点 S2，计入 `0/5` 进度分母），**不是**像 S6 那样的可选加分项；对 fork 使用者可选择本地双进程或 Compose 两条启动路径；**完整生产拓扑 / CI-CD 部署流水线仍为非目标**。
+  - **落盘**：GOAL-008 `01-decision` 新增 **D-002**；D-001 边界原「Docker 一键启动为可选加分路径，非强制生产拓扑」修订为「不创建完整生产运维 / CI-CD 部署流水线；Compose 为 R5 必须交付和验收的第二启动路径」；`00-meta` S2 同步为「交付 Docker Compose（必须的第二启动路径）」；Root I-005 附件 v0.2.1 与 GOAL-008 `00-meta` 概述对齐。
+  - **证据路径**：本响应节；GOAL-008 `01-decision` D-002 / D-001 修订；`00-meta` S2 行；I-005 附件 v0.2.1 §2 F-001 澄清。
+- **R-001 → handled（I-005 时态清理）**：I-005 附件 v0.2.1——§2/§3/§4 标题标注「D-013 前历史候选 · 已裁决」；§5 补裁决注记；§6 移除「保持 collecting」「裁决后再判断 verified」残余过程时态，改为历史候选清单 + 已裁决结论；frontmatter `related_decision: D-012` → `related_decisions: D-012, D-013`。
+- **R-002 → handled（I-008-001/002 最低收集清单）**：GOAL-008 `00-meta` 信息表 `I-008-001`（production env/secrets、DB volume、Web SPA fallback 与 `/api` 反代、API/Web readiness、服务依赖/超时/失败行为、CI 入口）与 `I-008-002`（工具/平台基线、依赖缓存前提、计时起止、失败/重试规则、证据字段、`scripts/smoke.sh` 机器可判定退出码）已把 R-002 列为收集最低清单；后续关闭该两项时以此为准。
+- **P-004 §3.1 处置**：A-001 为 `source: independent` 且本 scope 无 `source: self` 审计。本轮**不**放行下一阶段（`I-008-001` 仍 open），仅闭合 F-001 并处理 recommended——属整改闭环，不触发「仅用独立意见推进」门禁。**未来冻结 `I-008-001`（方案冻结门禁）或进入 S1/S2 实施前**，按 P-004 §3.1 询问用户是否补同 scope self 审计（A-001 亦建议如此）。
+- **仍开放**：`I-008-001` / `I-008-002` / `I-008-003`（required · 阻断 S1/S2、S3/S4、S6 若实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 0/5`。
+- **证据路径**：本响应节；GOAL-008 `01-decision` D-002/D-001；`00-meta`（S2、信息表）；I-005 附件 v0.2.1；02-execution 2026-08-02「响应 A-001」节。
+
+## A-002 · A-001 F-001 与 R-001/R-002 响应证据独立复核（2026-08-02）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure；仅复核 A-001 **F-001**（Compose 交付义务）、**R-001**（I-005 时态与决策关联）、**R-002**（`I-008-001/002` 最低收集清单）的响应证据。不审计 Compose/smoke 实施，不冻结信息项，不放行 S1～S4，不评估 R5 / Root 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspaces/workspace-002-production-admin-foundation/`；Root 与 GOAL-008 `parent`、VP-002 / Charter 绑定未改变；`shared_materials_catalog: none`。
+- 修订证据：提交 `f12973f6ae52e4f059c0153dda16e12e79448445`；复核时工作树 clean。已核对该提交差异、GOAL-008 `00-meta` / `01-decision` / `02-execution` / A-001 响应、Root `00-meta` / `02-execution`、I-005 v0.2.1 与 `goal-tree.md`。
+- 本轮只核对文档修正与状态边界；未运行应用、测试、Docker、Compose、CI smoke 或 15 分钟计时，且没有把 finding closure 扩写成实现验收。
+
+### 成果（有证据）
+
+| A-001 项目 | 复核结果与证据 |
+|------------|----------------|
+| **F-001 required** · Compose 交付义务冲突 | **`fixed` 成立**：D-002 明确 Compose 是 R5 必须交付和验收的第二启动路径、对应 S2 且进入 `0/5` 分母；D-001 边界与 S2 已同步；fork 使用者可在双进程与 Compose 间选择，完整生产拓扑 / CI-CD 仍为非目标。VP-002 #7、Root I-005 投影与 I-005 v0.2.1 均同向。 |
+| **R-001 recommended** · I-005 时态与关联 | **handled**：附件升级 v0.2.1，frontmatter 关联 D-012/D-013；§2～§4 标为 D-013 前历史候选，§6 明确已裁决并移除 `collecting` / “再判断 verified”的当前状态主张。候选比较被保留，没有改写历史。 |
+| **R-002 recommended** · 信息收集最低清单 | **handled**：`I-008-001` 已纳入 production env/secrets、DB volume、SPA fallback/反代、readiness、依赖/超时/失败行为与 CI 入口；`I-008-002` 已纳入工具/平台、缓存、计时边界、失败/重试、证据字段与 smoke 退出码。两项仍为 `open required`，没有被文字补充冒充为 verified。 |
+| 状态与进度边界 | **保持**：GOAL-008 `active / 0/5`，Root `active / 4/5`；S1～S5、Root R5 均未勾选，`I-008-001/002/003` 仍 open。A-001 响应只闭合 finding/处理建议，没有越过实施或验收门禁。 |
+
+### Findings
+
+- **无新 required**。
+
+#### R-003 · 三处当前投影/历史短句仍可进一步消歧
+
+- **级别 / 严重度**：recommended / medium
+- **证据**：
+  1. GOAL-008 `00-meta` 概述仍写“文档双进程为默认 + **可选 Docker Compose**”，没有像同文件 S2 那样点明“使用者可选、交付必需”；
+  2. Root `00-meta` 当前进度说明仍写“R5 待立项”，但上一行与 goal-tree 已记 GOAL-008 立项；
+  3. I-005 v0.2.1 §2 已标为历史候选且已说明 F-001，但段末仍以当前时态写“最终形态、镜像方案与是否纳入 R5 由用户裁决”，其中“是否纳入 R5”已由 D-013/D-002 决定。
+- **影响**：D-002、S2、Root I-005 行与 §6 已足以确定当前权威口径，因此这些短句不推翻 F-001 `fixed`，也不重开 Root I-005；但全文检索或只读概述时仍可能误报“Compose 可跳过”或“R5 尚未立项”。
+- **建议**：由 `/govern` 做一次窄幅投影清理：概述改为“Compose 必须交付、fork 使用者可选”；Root 改为“R5 已立项、待实施”；I-005 历史段末改为过去时，并明确精确镜像/Compose 契约仍由 `I-008-001` 冻结。
+
+### 必改项汇总
+
+- **无开放 required**（本 finding-closure scope）。A-001 F-001 的 `fixed` 关闭证据充分，可维持闭合。
+- R-003 为 recommended，不阻断 GOAL-008 信息收集、`I-008-001/002` 后续方案冻结或目标状态；是否修正由 `/govern` 记录响应。
+
+### 与既有意见的异同
+
+- 同意 A-001 的 `conditional` 原判断，并确认其 required F-001 已按推荐路径修正；本意见不改写 A-001 历史 verdict。
+- 同意 A-001 对 I-005“方向裁决 ≠ 实施/验收”的边界；I-005 `verified` 不关闭 `I-008-001/002`。
+- 无 self / independent verdict 或 required finding 冲突；R-003 是关闭复核中新识别的非阻断投影卫生项。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：F-001 `fixed` 关闭成立，R-001/R-002 handled；本 scope 无开放 required。GOAL-008 可继续 `I-008-001/002` 信息收集，但仍不得把当前文档修正当作 S1～S4 实施或验收完成。
+- 建议 `/govern` 记录采纳 A-002 `pass`，可选处理 R-003；在冻结 `I-008-001` 或进入 S1/S2 实施前，继续按 P-004 §4.1 询问用户是否补同 scope self 审计。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-002（/govern · 2026-08-02）
+
+- **verdict 采纳**：`pass` 成立——A-002 独立复核确认 A-001 **F-001 的 `fixed` 关闭成立**（D-002 + D-001 边界修订 + `00-meta` S2 + Root/I-005 投影对齐）；R-001/R-002 handled；本 scope 无开放 required、无新 required finding。
+- **F-001 关闭复核确认**：Compose 为 R5 必须交付和验收的第二启动路径、对应 S2 且计入进度分母；D-001/S2/Root I-005/I-005 v0.2.1 同向；`fixed` 维持闭合。
+- **R-003 → handled（投影/历史短句消歧）**：
+  1. `GOAL-008 00-meta` 概述改为「文档双进程为默认；**Docker Compose 为 R5 必须交付的第二启动路径**，fork 使用者可选本地双进程或 Compose」；
+  2. Root `00-meta` 进度说明由「R5 待立项」改为「R5 已立项 `GOAL-008-r5-engineering-fork`，待实施」；
+  3. I-005 附件 v0.2.2 §2 末句改为过去时「最终形态与镜像方案已由 D-013（部署基线 A）决定；精确镜像 / Compose 契约由 `I-008-001` 在 GOAL-008 冻结」。
+  - 均为文档投影清理；不改写历史候选、不重开 Root `I-005`。
+- **P-004 §3.1 处置**：A-002 亦为 `source: independent`，本 scope 仍无 `source: self` 审计。本轮仅记录 finding-closure 采纳与 R-003 投影处理，**不**放行下一阶段。**未来冻结 `I-008-001`（方案冻结门禁）或进入 S1/S2 实施前**，按 P-004 §3.1 询问用户是否补同 scope self 审计。
+- **仍开放**：`I-008-001` / `I-008-002` / `I-008-003`（required · 阻断 S1/S2、S3/S4、S6 若实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 0/5`。
+- **证据路径**：本响应节；GOAL-008 `00-meta`（概述、S2、信息表）；Root `00-meta`（进度说明、I-005 行）；I-005 附件 v0.2.2 §2；02-execution 2026-08-02「响应 A-002」节。
+
+## A-003 · GOAL-008 立项与 R5 方案边界 self 复核（2026-08-02）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：goal-definition + design-plan 复核；对 GOAL-008 立项信息与 Root **I-005 / D-012 / D-013** 方案边界，以及 **A-001 F-001 / R-001/R-002** 与 **A-002 R-003** 的响应闭合证据做 self 复核（P-004 §3.1 · 用户裁决「进行自审计」；同 scope 现有 A-001/A-002 independent，本自审补 `source: self` 覆盖）。不审计尚未发生的 R5 实施或关门，不复判 R1～R4。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspaces/workspace-002-production-admin-foundation/`；Root `GOAL-001-production-admin-foundation` 与本目标 `parent` 一致；workspace/Root 绑定 `VP-002-production-admin-foundation`（`vision_role: delivery`、`primary_plan` 合法），`vision_ref` 匹配 Charter `schema-ui-core-admin-foundation@0.1.0`；`shared_materials_catalog: none`。
+- 已复核：本目标五件套与 `01-decision` D-001/D-002、`00-meta` 成功标准/信息表；Root `00-meta`、`01-decision` D-012/D-013、I-005 附件 v0.2.2；A-001/A-002 与各自响应；工作区 `goal-tree.md`；代码 `apps/api/internal/config/config.go`、`.env.example`、`handler/health.go`、`apps/web/vite.config.ts`、`apps/web/README.md`、`.github/workflows/r6-basic-matrix.yml`。
+- 本自审为文档/静态核对；**未运行**应用、测试、Docker、Compose、CI smoke 或 15 分钟计时；不把静态核对扩写成运行时通过结论。
+
+### 成果（有证据）
+
+| 审计项 | self 复核结论与证据 |
+|--------|---------------------|
+| 立项与边界 | **通过**：S1～S5 承接 VP-002 #6/#7（环境配置、Docker、≤15 分钟 fork、smoke、阶段审计），S6 操作日志维持非阻断加分；`progress: 0/5` 与零实施一致（`02-execution` 明记未改产品代码）。 |
+| I-005 / D-013 方案边界 | **通过**：部署基线 A（Compose 必须交付、fork 用户可选）、建议计时口径、复现方法、I-006 方案甲均有用户书面裁决留痕（D-013）；I-005 附件 v0.2.2 与 Root `00-meta` 同向。 |
+| F-001 `fixed` | **成立**：D-002 + D-001 边界修订 + `00-meta` S2 对齐——Compose 为 R5 必须交付和验收的第二启动路径（S2 核心检查点、计入进度分母），非可选加分项；完整生产拓扑/CI-CD 仍非目标。与 A-001/A-002 独立复核一致。 |
+| R-001/R-002/R-003 handled | **成立**：I-005 附件 v0.2.2 时态清理（§2～§6「D-013 前历史候选 · 已裁决」、`related_decisions`）；`I-008-001/002` 信息表含 A-001 R-002 最低收集清单；GOAL-008 概述 / Root 进度说明 / I-005 §2 末句三处投影消歧已落实。 |
+| 信息门禁边界 | **成立**：`I-008-001/002/003` 仍 open required，未被静默放行；Root `I-005: verified` 只解除立项/方案方向门禁，不充当 Docker、smoke、CI 或 ≤15 分钟体验已实现的证据。 |
+| 状态与进度边界 | **成立**：GOAL-008 `active / 0/5`，Root `active / 4/5`；S1～S5、Root R5 均未勾选；A-001/A-002 响应只闭合 finding/处理建议，未越权放行实施或验收。 |
+
+### 对照成功标准与信息门禁
+
+| 项 | self 复核结论 |
+|----|---------------|
+| 立项意图、父级与最小可验证方向 | **满足**，可继续信息收集。 |
+| 高层检查点与派生进度 | **满足**，S1～S5 可枚举且 `0/5` 可确定计算。 |
+| `I-008-001` / `I-008-002` | **正确保持 open required**（自审时）；本轮随 D-003 冻结 `I-008-001`，`I-008-002` 继续阻断 S3/S4。 |
+| `I-008-003` | **边界合理**：仅在用户决定实施 S6 时阻断 S6。 |
+| 进入 I-008-001 方案冻结 | **可进入**：本 self 复核 + A-001/A-002（independent）同向；方案冻结本身由 D-003 决策记录，不由本自审代替。 |
+
+### Findings
+
+- **无新 required**。
+- **注记（recommended · 非阻断）**：D-003 冻结 `I-008-001` 后，S1/S2 实施的精确 nginx.conf / Dockerfile / 镜像 tag 属实施细节，由实施留痕；建议 S2 完成后做一次实施向审计（self 或 `/audit`），并在 S3/S4 前关闭 `I-008-002`。
+
+### 必改项汇总
+
+- **无开放 required**（本 scope）。
+
+### 与既有意见的异同
+
+- 相对 A-001/A-002（independent）：结论一致——立项、S1～S5、`I-008-001/002/003` 分层门禁与 I-005 主要工程事实总体合理；F-001 `fixed`、R-001/R-002/R-003 handled 闭合证据经本自审复核成立。本自审补齐同 scope 的 `source: self` 覆盖，满足 P-004 §3.1。
+- 无 self/independent verdict 或 required finding 冲突。
+
+### 结论 + 建议下一步
+
+- **pass**：GOAL-008 立项与 I-005/D-013 方案边界、A-001/A-002 响应闭合证据经 self 复核成立；当前 scope 无开放 required，可进入 `I-008-001` 方案冻结与 S1/S2 实施边界判断。
+- 建议 `/govern`：记录 D-003 冻结 `I-008-001`（`verified`）；进入 S1 实施（环境/配置基线文档）前保持 `I-008-002` 对 S3/S4 的阻断；S2 完成后建议一次实施向审计。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应、方案冻结与阶段推进由 `/govern` 处理。
+
+## A-004 · S1/S2 实施向审计：环境/配置基线与容器一键启动（2026-08-02）
+
+- **source**：independent
+- **auditor**：Claude（Opus 4.8）
+- **类型 / scope**：execution-facts；审计 GOAL-008 **S1**（环境与配置基线，契约 **C-001/C-002**）与 **S2**（容器与一键启动，契约 **C-003～C-007**）的实施事实，对照 [I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0 验收清单；不评估 S3～S6、`I-008-002/003` 或 Root R5 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 一致；Root `GOAL-001-production-admin-foundation`；`shared_materials_catalog: none`。`goal-tree` 与 `00-meta` 一致：GOAL-008 `active / 2/5`。
+- 已审阅：本目标 `00-meta`、`01-decision`（D-001～D-003）、`02-execution`（2026-08-02「实施 S1 + S2」节）、本文件；I-008-001 契约 v1.0.0（§1～§7、C-001～C-007）；实施物 `apps/api/.env.example`、`apps/api/internal/config/config.go`、`apps/api/internal/handler/health.go`、`apps/api/cmd/server/main.go`、`apps/api/Dockerfile`、`apps/web/Dockerfile`、根 `compose.yaml`、`apps/web/nginx.conf`、根 `.dockerignore`、`apps/api/.dockerignore`、`.github/workflows/r6-basic-matrix.yml`（`container-smoke`）；`apps/api` / `apps/web` / 根 README 的 S1 文档段；`apps/api/internal/handler/auth.go`、`records.go`（核对 CI smoke 端点形状）。
+- 验证方式：静态核对契约↔实施物；本机复跑——API `go build`/`go vet`/`go test ./...` 全绿、web `npm run build`（tsc -b && vite build）成功；`docker compose config --quiet` 通过且缺 secret 时 fail-closed abort；`docker compose build` 两镜像成功（api 走 BuildKit 缓存）；`up -d` + 冒烟（healthz、nginx 反代登录、`/me`、SPA fallback、restart/down-up 持久化）；结束后 `down -v` 清理，git 工作树无新增改动。
+- 本意见是实施事实审计：本机运行仅用于核对已记录的验证主张，不替代 `I-008-002` 的 smoke 判据，也不勾选任何检查点。
+
+### 成果（有证据）
+
+| 契约项 | 审计结论与证据 |
+|--------|----------------|
+| C-001 `.env.example` 与 config.go 键一致、dev/prod 注释齐全 | **通过**：13 键（APP_NAME / APP_ENV / HTTP_ADDR / HTTP_READ/WRITE/IDLE_TIMEOUT / LOG_LEVEL / AUTH_JWT_SECRET / AUTH_ACCESS_TTL / AUTH_REFRESH_TTL / DB_PATH / ADMIN_INITIAL_PASSWORD / AUTH_DEV_SESSION_ENABLED）逐一与 `config.Load()` 键一致；dev 默认 vs production 必填/fail-closed 注释齐全；fail-closed 由 `main.go` `resolveJWTSecret`/`resolveSeedHash` 真实执行（非 development 且缺失 → 报错退出 1）。 |
+| C-002 `/healthz` 200 + `{"status":"ok"}`（本地与容器内） | **通过**：`healthz()` 返回 `200 {"status":"ok","timestamp":...,"version":...,"commit":...}`；容器内实测 `curl :8080/healthz` → `{"status":"ok","timestamp":"2026-08-02T15:55:07Z","version":"0.1.0","commit":"unknown"}`。 |
+| C-003 `docker compose up` 后 api healthy、web 200、登录种子 admin | **通过（本机复跑）**：`up -d` 后 api `Healthy`、web 200；经 nginx 反代 `POST :8081/api/auth/login` 成功（accessToken 176 字符），`GET :8081/api/accounts/me` → `user: Admin`。 |
+| C-004 Dockerfile ×2 多阶段 + 根 compose.yaml 与 §3 一致 | **通过**：api 多阶段（golang:1.26-alpine → alpine:3.20，`CGO_ENABLED=0` 静态、非 root `app` 用户、`DB_PATH=/app/data`）；web 多阶段（node:22 → nginx:1.27-alpine，仓库根 context + `COPY docs/schemas` 解决 `@schemas` 别名）；compose 服务 api/web、`db-data` 命名卷挂 `/app/data`、healthcheck 探针、`depends_on service_healthy`、`restart: on-failure`；`docker compose config` 通过，两镜像构建成功。 |
+| C-005 nginx SPA fallback + `/api` 反代；刷新 `/list-edit-lifecycle` 可回退 | **通过（本机复跑）**：`nginx.conf` `location / { try_files $uri $uri/ /index.html; }` + `location /api { proxy_pass http://api:8080; }`；实测 `:8081/` 与 `:8081/list-edit-lifecycle` 均返回含 `id="root"` 的 index，登录/`/me` 经反代成功。 |
+| C-006 重启/down-up 后 DB 数据保持 | **通过（本机复跑）**：创建 `rec-3bb6770ac47aff74` 后，`docker compose restart api` 与 `down`→`up` 两次均经反代 GET 该记录成功，`db-data` 命名卷保持数据。 |
+| C-007 CI 增加容器/smoke 入口 job | **通过**：`r6-basic-matrix.yml` 新增 `container-smoke` job（build → up → 等 ready → 经 nginx 反代 login + `/me` → SPA/route fallback → restart 持久化 → `down -v` teardown），job env 提供 fail-closed secret。CI job 尚无 GitHub Actions 运行记录（`02-execution` 如实只记「本机验证」），C-007 判据（job 存在 + 本地 smoke 通过）满足。 |
+
+**其它核验**：契约 §1 的 Web 相对路径 `/api/*`（`auth-client.ts` 硬编码 `LOGIN_URL="/api/auth/login"` 等）与 §4 同源反代一致；CI smoke 的端点形状与 handler 实测吻合（`accessToken` 字段、`POST /api/records` 校验 `name/status/owner`、detail 返回 `id`）。
+
+### 对照成功标准与信息门禁
+
+| 项 | 审计结论 |
+|----|----------|
+| S1 环境与配置基线 | **成立**：env 清单、health/启动验证、dev/prod 区分文档齐备，与 C-001/C-002 一致。 |
+| S2 容器与一键启动 | **成立**：Compose 第二启动路径交付物完整且本机可复现，C-003～C-007 全通过。 |
+| `I-008-001` 契约↔实施一致性 | **一致**：契约 §1～§7 的字面要求均落到实施物；实施细节（镜像 tag、BuildKit cache、`COPY docs/schemas`）留痕于 `02-execution`，未改动契约形状。 |
+| 状态与进度边界 | **保持**：S1/S2 勾选（`0/5 → 2/5`）与已核实实施事实相符；`I-008-002/003` 仍 open required（阻断 S3/S4、S6 若实施）；Root R5 未勾选（`4/5`）。本意见不改动任何状态。 |
+
+### Findings
+
+- **无新 required**（C-001～C-007 全部通过，实施主张可复现）。
+
+#### R-001 · 「AUTH_DEV_SESSION_ENABLED 生产禁止启用」靠部署约定而非运行时硬门禁
+
+- **级别 / 严重度**：recommended / low
+- **证据**：契约 §5 与 `.env.example`/README 写「生产禁止启用」（M9）；实际 enforce 是 compose + api Dockerfile 显式 `AUTH_DEV_SESSION_ENABLED=false`，而 `auth.New` 只按 flag 显式 opt-in，无「`APP_ENV=production` 且 flag=true → 拒绝启动」的运行时检查。
+- **影响**：不在 C-001～C-007 验收内，且 S2 交付的 compose 路径与镜像均已置 false，不构成 S1/S2 缺口；属 R2 既有边界。非 compose 直接跑生产二进制并显式开启时不会被硬拦。
+- **建议**：可于后续在 `main.go` 增加生产守卫（`AppEnv==production && AuthDevSessionEnabled` → 启动报错），或将契约措辞收敛为「所有交付的生产路径必须 false（由部署强制）」，避免被读成硬保证。
+
+#### R-002 · `docker compose down` 也受 fail-closed 插值影响（新 shell 需重复 export secret）
+
+- **级别 / 严重度**：recommended / low
+- **证据**：`${AUTH_JWT_SECRET:?}` / `${ADMIN_INITIAL_PASSWORD:?}` 对整份 compose 生效，本审计 teardown 时在未带 secret 的 shell 里 `docker compose down` 直接 abort（`required variable ... missing a value`）。
+- **影响**：README/compose 注释已说明可写入仓库根 `.env`（gitignored）或 export；但仅靠 export 的 fork 用户在新 shell `down`/`config` 会遇到 fail-closed 报错，属轻微 UX 脚枪。
+- **建议**：在根 `README.md`「Docker Compose 一键启动」段加一句「将密钥写入仓库根 `.env`（gitignored）可避免每次 `down`/`config` 重复 export」。
+
+#### 注记（非 finding）
+
+- CI `container-smoke` job 尚无 GitHub Actions 运行记录；建议在 S4 回归或 Root R5 关门证据里留一次 CI 运行记录。
+- api 镜像 `VERSION/COMMIT/BUILT_AT` 未由 compose 注入 build args → healthz 显示 `0.1.0` / `unknown`；纯装饰性，契约未要求 provenance。
+
+### 必改项汇总
+
+- **无开放 required**。S1/S2 的 C-001～C-007 已核对/复跑通过；R-001/R-002 为 recommended 非阻断，由 `/govern` 决定是否响应。
+
+### 与既有意见的异同
+
+- 同意 A-001/A-002/A-003 对「契约冻结 ≠ 实现完成」的边界：I-008-001 verified 只解除方案冻结门禁，S1/S2 是否完成以本实施向审计的 C-001～C-007 为准。
+- 本意见是 GOAL-008 首个 execution-facts 实施向意见；与既有 self/independent 无 verdict 或 required finding 冲突。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：S1/S2 的实施主张与仓库事实一致且可复现——C-001/C-002 静态与代码核对通过，C-003/C-005/C-006 本机 Docker 复跑通过，C-004 镜像构建成功，C-007 CI job 结构与本地 smoke 通过；无开放 required。`0/5 → 2/5` 的进度勾选有据。
+- 建议 `/govern` 响应采纳 A-004 `pass`（可选处理 R-001/R-002）；下一拍按 `02-execution` 计划收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据），再实施 S3（fork 文档 + 独立复现记录）与 S4（`scripts/smoke.sh` 正式化）。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## A-005 · S1/S2 实施复核：生产开发会话门禁与派生进度一致性（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：execution-facts；复核 `workspace-002-production-admin-foundation` 中 `GOAL-008-r5-engineering-fork` 的 S1（C-001/C-002）与 S2（C-003～C-007），对照 `attachments/I-008-001-engineering-contract.md` v1.0.0；不审 S3～S6、`I-008-002/003` 或 Root R5 关门。
+- **verdict**：fail
+
+### 范围与依据
+
+- workspace、Root、VP-002、Charter、alignment、principles 与 workspace protocol 链已核对；本目标五件套、`goal-tree.md` 与 `I-008-001` 均在当前 canonical root 内，`shared_materials_catalog: none`。
+- `I-008-001` 为 `verified`；`I-008-002` 仍为 open required（阻断 S3/S4），`I-008-003` 仍为 open conditional（若实施则阻断 S6）。本意见不把它们静默关闭。
+- 独立复跑：`apps/api` 的 `go test ./...` 通过；`apps/web` 的 `npm test -- --run` 通过（23 个文件、458 个测试）；唯一 Compose 项目的 `config --quiet`、镜像构建、启动和 teardown 通过。运行时依次验证 `/healthz`、Web 200、登录与 `/api/accounts/me`、SPA fallback、API 重启后的持久化、Compose down/up 后持久化，以及删除后 down/up 不复活；测试资源已清理。
+- 另以 `APP_ENV=production` 且 `AUTH_DEV_SESSION_ENABLED=true` 启动 API，未认证请求 `GET /api/accounts/me` 返回 200 和静态开发身份 `dev-001`。`internal/auth/auth.go` 的 middleware 在无效/缺失 bearer 时注入 `StaticDevSession()`，而 `internal/account/session.go` 赋予该身份 `admin/editor`、`records.read` 和 `records.write`；`main.go` 只对生产 JWT/初始密码做 fail-closed，没有禁止该 flag 的生产运行时门禁。
+
+### 成果（有证据）
+
+| 契约项 | 独立复核结论 |
+|--------|--------------|
+| C-001 `.env.example` / `config.go` / dev-prod 配置行为 | **不通过**：键清单和缺 secret fail-closed 成立，但契约 §1、§5 要求生产禁止启用 `AUTH_DEV_SESSION_ENABLED`，上述运行时反例不满足。 |
+| C-002 `/healthz` | **通过**：本机及容器内均返回 200 和 `status: ok`。 |
+| C-003 Compose 启动、健康、登录、`/me` | **通过**：独立项目启动后 API healthy、Web 200，反代登录和 `/api/accounts/me` 成功。 |
+| C-004 双 Dockerfile 与 Compose 结构 | **通过**：两镜像构建成功，服务、卷、healthcheck、依赖关系符合契约。 |
+| C-005 nginx API 反代与 SPA fallback | **通过**：根路径及 `/list-edit-lifecycle` 返回 SPA，`/api` 反代可用。 |
+| C-006 重启/down-up 持久化与删除不复活 | **通过**：创建记录跨 API 重启及 Compose down/up 保留，删除后不复活。 |
+| C-007 CI `container-smoke` 入口 | **通过**：job 与本地 smoke 路径存在并可复跑；没有把缺少远端 Actions 运行记录误记为证据。 |
+
+### 对照成功标准与信息门禁
+
+- **S1 不能无条件判定通过**：C-001 的生产安全断言被运行时反例否定；C-002 通过不抵消该门禁缺口。
+- **S2 的实现证据成立**：C-003～C-007 全部通过，且包含完整运行时序列；这不解除 `I-008-002` 对 S3/S4 的 required 阻断。
+- **派生进度不一致**：`GOAL-008-r5-engineering-fork/00-meta.md` frontmatter 仍为 `progress: 0/5`，但其中 S1/S2 已勾选、正文写 `0/5 → 2/5`，`goal-tree.md` 树和状态表均为 `2/5`。这是治理投影错误，不应由本意见直接修复或改状态。
+
+### Findings
+
+#### F-002 · 生产环境未硬拒绝开发会话（required / high）
+
+- **状态**：open；未按 `fixed`、`accepted-residual` 或 `user-overruled` 合法闭合。
+- **证据**：`I-008-001` §1、§5 明确生产禁止 `AUTH_DEV_SESSION_ENABLED=true`；实际生产配置可启动该 flag，并使未认证请求获得开发静态高权限身份。
+- **风险**：部署者或环境注入错误 flag 时，认证边界被绕过并暴露写权限，不能仅作为 Compose 默认值或文档约定处理。
+- **建议修复**：在配置加载或 server 启动处对 `APP_ENV=production && AUTH_DEV_SESSION_ENABLED=true` 明确报错退出；补生产配置回归测试，并重新执行 C-001 及相关 smoke。
+
+#### F-003 · `00-meta` 与 `goal-tree` 的进度投影不一致（required / medium）
+
+- **状态**：open；未合法闭合。
+- **证据**：`00-meta.md` frontmatter 为 `0/5`，而成功标准勾选、正文和 `goal-tree.md` 为 `2/5`；A-004 中“`goal-tree` 与 `00-meta` 一致”的事实陈述因此不成立。
+- **风险**：下游 Root gate、审计索引和用户界面可能读取不同进度，削弱治理记录的可追溯性。
+- **建议修复**：由 `/govern` 按已核实检查点同步 `00-meta` 与 `goal-tree`，然后复核所有引用；不得把同步本身当作 S1/S2 技术 finding 的关闭证据。
+
+### 必改项汇总
+
+- **F-002 required / high：开放，阻断 S1 无条件通过及相关放行。**
+- **F-003 required / medium：开放，阻断本目标进度投影的可信闭合。**
+- `I-008-002` 的既有 required 门禁仍开放，继续阻断 S3/S4。
+
+### 与既有意见的异同
+
+- A-004 对 C-002～C-007 的通过结论与本复核一致，且本意见没有删除或改写 A-004。
+- A-004 将同一 `AUTH_DEV_SESSION_ENABLED` 生产安全事实列为 `recommended / low` R-001；本意见依据契约的“生产禁止启用”硬要求及运行时反例，将其列为 `required / high` F-002。该 required 与非阻断分类构成 P-004 §4.2 的相关意见分歧，不能静默裁决。
+- A-004 关于“`goal-tree` 和 `00-meta` 一致”的陈述被 F-003 的当前文件事实否定；这不改变 A-004 记录的历史内容，只要求 `/govern` 响应时纠正投影。
+
+### 结论与建议下一步
+
+- **fail**：S2（C-003～C-007）可复现通过，但 S1 的生产开发会话门禁不成立，且进度投影不一致；因此不能把 GOAL-008 S1/S2 整体作为无条件通过。
+- `/govern` 应先展示 A-004 R-001 与本意见 F-002 的分类分歧，按 P-004 等待用户裁决；建议选择 `fixed`，修复生产硬门禁并同步 F-003，再做针对性复审。`I-008-002` 仍需独立收集并冻结后，方可进入 S3/S4。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## A-006 · S1/S2 实施复核 self：生产守卫与进度投影（2026-08-03）
+
+- **source**：self
+- **auditor**：Claude（Opus 4.8）
+- **类型 / scope**：execution-facts 复核；按用户 P-004 §3.1 裁决补齐 GOAL-008 **S1/S2 实施 scope** 的 `source: self` 覆盖（A-004/A-005 均为 independent；A-003 self 仅覆盖立项/方案边界）。复核 A-004/A-005 证据与 F-002/F-003 `fixed` 关闭证据；不审 S3～S6、`I-008-002/003` 或 Root R5 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区/Root/VP-002/Charter/alignment 链已在 A-004/A-005 核对一致（`vision_role: delivery`、`primary_plan: VP-002`、`shared_materials_catalog: none`）；本 self 复核聚焦 S1/S2 实施事实与两项 `fixed` 关闭证据。
+- 已审阅：`internal/config/config.go`（`ValidateProd`）、`internal/config/config_test.go`、`cmd/server/main.go` 接线、`compose.yaml` / `apps/api/Dockerfile` 的 `APP_ENV=production` + `AUTH_DEV_SESSION_ENABLED=false`、`00-meta.md` frontmatter、根 README「Docker Compose 一键启动」段。
+- 验证方式：`go build` / `go vet` / `go test ./...`（apps/api）全绿（config 包新增 4 用例通过）；运行时复验——`APP_ENV=production AUTH_DEV_SESSION_ENABLED=true` 启动即 `ERROR startup failed`（exit 1）；`APP_ENV=development AUTH_DEV_SESSION_ENABLED=true` 正常启动（`dev_session: true`）。
+
+### Findings
+
+- **F-002（required/high）→ `fixed`**：`config.ValidateProd()` 在非 `development` 环境且 `AUTH_DEV_SESSION_ENABLED=true` 时返回启动错误，`main.go` 于日志初始化后立即校验并 `os.Exit(1)`；回归用例覆盖 development / production / staging 分支；运行时反例（A-005 举证）复验为拒绝启动。契约 §1/§5「生产禁止启用」现由硬门禁成立，不再仅靠部署约定。
+- **F-003（required/medium）→ `fixed`**：`00-meta.md` frontmatter `progress: 0/5 → 2/5`，与成功标准勾选、派生进度段、`goal-tree.md`（`active / 2/5`）一致；未把投影同步当作 S1/S2 技术 finding 的关闭证据（F-002 关闭证据独立成立）。
+- A-004 R-001（recommended/low，与 F-002 同事实）→ handled：分类分歧按用户 P-004 §3.2 裁决采用 F-002 `required/high` 口径并修复；R-001 自身建议的「main.go 生产守卫」正是本次落地。
+- A-004 R-002（recommended/low）→ fixed：根 README 补「将密钥写入仓库根 `.env` 可避免新 shell 重复 export」注记。
+- C-002～C-007 维持 A-004/A-005 独立复跑的通过结论；本 self 不复跑 Docker 冒烟（守卫仅作用于 `flag=true` 路径，compose/镜像均显式 false，不受影响）。
+
+### 对照成功标准与信息门禁
+
+- S1（C-001/C-002）：C-001 的「生产禁止启用 dev session」已由运行时守卫成立；C-002 维持通过。S1 判定恢复为**成立**。
+- S2（C-003～C-007）：A-004/A-005 独立复跑通过，本 self 未改动 S2 实施物，维持**成立**。
+- `I-008-001` verified 维持；`I-008-002`/`I-008-003` 仍 open required（阻断 S3/S4、S6 若实施）。本 self 不改动任何状态/progress。
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## 统一响应 · A-004 / A-005（2026-08-03）
+
+按 P-004 §3.1 用户裁决「需要补 self」先行 A-006 自审，再统一响应；§3.2 分类分歧按用户裁决采用 **F-002 `required/high`** 口径并修复。
+
+### 响应 A-004（independent · execution-facts · pass）
+
+- **采纳 `pass`**：S1/S2 的 C-001～C-007 实施主张与仓库事实一致且可复现。
+- **R-001（recommended/low）→ handled**：与 A-005 F-002 同事实的分类分歧按用户裁决采用 `required/high` 口径，并由 F-002 的 `fixed` 修复承载（生产运行时守卫落地），不再单独处理。
+- **R-002（recommended/low）→ fixed**：根 README「Docker Compose 一键启动」段补注记「将密钥写入仓库根 `.env`（gitignored）可避免新 shell 里 `docker compose config`/`down` 因 fail-closed 插值重复 export」。
+- **注记**：CI `container-smoke` 尚无 GitHub Actions 运行记录，留待 S4 回归或 Root R5 关门证据（沿用 A-004 注记）。
+
+### 响应 A-005（independent · execution-facts · fail）
+
+- **采纳 `fail`**：F-002/F-003 均按 `fixed` 合法闭合。
+- **F-002（required/high）→ fixed**：
+  - 新增 `config.ValidateProd()`（`internal/config/config.go`）：`AppEnv != "development" && AuthDevSessionEnabled` → 返回启动错误；`main.go` 于 `config.Load()` 后立即校验，错误则 `logger.Error` + `os.Exit(1)`。
+  - 回归测试 `internal/config/config_test.go`：4 用例覆盖 development 允许 / production+flag fail-closed / production 无 flag 通过 / 其他非生产环境（staging）fail-closed。
+  - 运行时复验：`APP_ENV=production AUTH_DEV_SESSION_ENABLED=true` → `startup failed: AUTH_DEV_SESSION_ENABLED must be false when APP_ENV="production"`（exit 1）；`development + flag=true` → 正常启动（`dev_session: true`）。
+  - 回归：`go build` / `go vet` / `go test ./...`（apps/api）全绿；compose 与 api 镜像均显式 `AUTH_DEV_SESSION_ENABLED=false`，守卫不影响第二启动路径。
+- **F-003（required/medium）→ fixed**：`00-meta.md` frontmatter `progress: 0/5 → 2/5`，与勾选成功标准、派生进度段、`goal-tree.md` 一致；复核引用无其它残留 `0/5`。
+- **A-004「goal-tree 与 00-meta 一致」陈述**：当前文件事实已由 F-003 `fixed` 恢复为一致；不改写 A-004 历史记录。
+
+### 关闭证据与后续
+
+- F-002/F-003 关闭证据路径：代码 + 回归测试 + 运行时复验（`02-execution` 同步留痕）；**建议做一次 `/audit` finding-closure 复审**确认关闭成立。
+- `I-008-002`（计时复现协议 + smoke 判据）仍 open required，为进入 S3/S4 的前置门禁；下一拍收集并冻结后再实施 S3/S4。
+- 本目标维持 `active / 2/5`；Root R5 未勾选（Root `4/5`）。
+
+## A-007 · F-002/F-003 关闭证据独立复审（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure；仅复审 A-005 的 **F-002**（生产环境开发会话硬门禁）与 **F-003**（GOAL-008 派生进度投影）`fixed` 关闭证据。不审 S3～S6、`I-008-002/003`、Root R5 或 VP-002 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root `docs/workspaces/workspace-002-production-admin-foundation/`；目标 `parent`、workspace Root 和 `goal-tree.md` 的当前投影一致；`shared_materials_catalog: none`，未使用共享资料作为关闭依据。
+- 已核对：本目标 `00-meta.md`、`01-decision.md`、`02-execution.md`、本台账 A-004～A-006 与统一响应、`I-008-001-engineering-contract.md` §1/§5/C-001；当前 `goal-tree.md`；`apps/api/internal/config/config.go`、`config_test.go`、`cmd/server/main.go` 与根 `compose.yaml`。
+- 独立验证：在 `apps/api` 运行 `go test ./...`、`go vet ./...`、`go build ./...` 均通过；`TestValidateProd` 的 development / production / staging 四个分支通过；以 `APP_ENV=production AUTH_DEV_SESSION_ENABLED=true go run ./cmd/server` 复验，进程输出 `startup failed` 并以预期 exit 1 拒绝启动。
+- 本复审不把 F-002/F-003 的关闭扩写为 S3/S4 已实施、`I-008-002/003` 已关闭、Root R5 已勾选或目标可关门。
+
+### 成果（有证据）
+
+| Finding | 独立复核结果与证据 |
+|---------|--------------------|
+| **F-002 required/high** · 生产环境未硬拒绝开发会话 | **`fixed` 成立**：契约要求生产禁止 `AUTH_DEV_SESSION_ENABLED`；`Config.ValidateProd()` 对所有非 `development` 环境的该 flag 返回启动错误，`main.go` 在加载配置后、创建认证器前执行该校验并 `os.Exit(1)`。4 个回归用例覆盖 development 允许、production flag=true 拒绝、production flag=false 允许与 staging 拒绝；实际 production 反例亦得到预期拒绝。Compose 仍显式设置该 flag 为 `false`。 |
+| **F-003 required/medium** · 派生进度投影不一致 | **`fixed` 成立**：`00-meta.md` frontmatter 为 `progress: 2/5`；S1/S2 是五个核心检查点中仅有的两项已勾选；派生进度段同样为 `2/5`；`goal-tree.md` 的 ASCII 树与状态表均投影 `active / 2/5`。检索到的 `0/5` 均为立项或修复前的历史时间线，不与当前投影冲突。 |
+
+### Findings
+
+- **无新 required 或 recommended finding**。
+
+### 必改项汇总
+
+- 本 finding-closure scope 无开放 required；F-002/F-003 可维持 `fixed`。
+- `I-008-002` 仍为 S3/S4 的 open required 门禁，`I-008-003` 仍在 S6 实施时适用；它们不因本意见而关闭或降级。
+
+### 与既有意见的异同
+
+- A-005 的 `fail` 记录修复前的运行时反例与投影不一致，保留为历史事实；统一响应提供 `fixed` 路径，A-006 提供同 scope self 覆盖。
+- 本意见独立复跑代码与测试证据后确认关闭成立，不以 A-006 的 self 结论代替交叉复审，也不改写 A-004/A-005 的历史 verdict。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：F-002/F-003 的关闭证据充分且可重复核对，两项可维持 `fixed`；本 scope 无开放 required。
+- 建议 `/govern` 记录 A-007 的 `pass`，随后仍按现有信息门禁收集并冻结 `I-008-002` 后再进入 S3/S4；本意见不授权任何状态、进度或 Root R5 变更。
+
+### 声明
+
+本意见仅追加独立审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-007（/govern · 2026-08-03）
+
+- **verdict 采纳**：`pass` 成立——A-007（independent · finding-closure）独立复核 F-002/F-003 关闭证据（代码、回归、运行时与进度投影），确认两项 `fixed` 维持闭合，本 scope 无开放 required、无新 required/recommended finding。
+- **F-002（required/high · 生产环境开发会话硬门禁）关闭复核确认**：`Config.ValidateProd()` 对所有非 `development` 环境的 `AUTH_DEV_SESSION_ENABLED=true` 返回启动错误，`main.go` 于 `config.Load()` 后校验并 `os.Exit(1)`；4 回归用例覆盖 development/production/staging 分支，production 反例复验拒绝启动；Compose 与 api 镜像显式 `false`。`fixed` 维持闭合。
+- **F-003（required/medium · 派生进度投影）关闭复核确认**：`00-meta` frontmatter `progress: 2/5` 与成功标准勾选、派生进度段、`goal-tree.md`（`active / 2/5`）一致，检索无当前投影残留。`fixed` 维持闭合。
+- **P-004 §3.1 处置**：A-007 为 `source: independent`；同 scope（F-002/F-003 fixed 关闭证据）已有 **A-006（self · execution-facts 复核）** 覆盖，无需再补自审。本 scope 无意见冲突、无 required finding，不触发 §3.2/§3.3。
+- **仍开放**：`I-008-002`（required · 阻断 S3/S4）；`I-008-003`（required · 仅当 S6 实施）；Root R5 未勾选（Root 保持 `4/5`）；本目标 `active / 2/5`。
+- **下一步**：收集并冻结 `I-008-002`（15 分钟计时复现协议 + smoke 判据），随后实施 S3（fork 文档 + 独立复现记录）与 S4（`scripts/smoke.sh` 正式化）；建议对 `I-008-002` 冻结做一次方案冻结审计（self 或 `/audit`）。
+- **证据路径**：本响应节；`03-audit.md` A-005/A-006/A-007；`02-execution` 2026-08-03「响应 A-007」节。
+
+## A-010 · S3/S4 实施向自审（execution-facts · 2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：execution-facts；审计 GOAL-008 **S3**（QUICKSTART fork 文档 + 独立复现记录）与 **S4**（`scripts/smoke.sh` + 本地/CI smoke + disposable `SM-006` 证据）的实施事实，对照 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) **v0.1.1**（§2.2 路径、§3 计时、§4 复现字段、§5 smoke 契约）与成功标准 S3/S4 字面；不审 S5、S6、`I-008-003` 或 Root R5/VP-002 关门。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root 一致；Root `GOAL-001-production-admin-foundation`；`shared_materials_catalog: none`。`goal-tree` 与 `00-meta` 同步后一致：GOAL-008 `active / 4/5`。
+- 已复核：根 `QUICKSTART.md`；[R5-S3-REPRO-001](attachments/R5-S3-REPRO-001.md)（含 attempt/source/path/platform/cache precondition/timing/checks/secrets/result 全字段）；[r5-repro-endpoint4.mjs](attachments/r5-repro-endpoint4.mjs) 与截图 [r5-repro-endpoint4.png](attachments/r5-repro-endpoint4.png)；`scripts/smoke.sh`；[r5-smoke-disposable-local.txt](attachments/r5-smoke-disposable-local.txt)；`.github/workflows/r6-basic-matrix.yml` `container-smoke` 修改；`00-meta` S3/S4 行与信息表 `I-008-002`；`01-decision` D-006；I-008-002 协议 v0.1.1；Root D-013 与 I-005 §3/§4。
+- 验证方式：实施时**真实运行**——`docker compose down -v` 后全新 `up -d`（compose 路径）；四终点实测（healthz 200/`status:ok`、login 200 + accessToken 176 字符、`/me` 200 + user + features、Playwright Chromium 浏览器打开 `/list-edit-lifecycle` 标题 + cell `Acme Console`）；`bash scripts/smoke.sh --disposable` → SM-001～006 全 PASS、EXIT=0；非 disposable 默认路径 SM-001～005 PASS + SM-006 SKIP；`go test ./... -count=1`（apps/api）全绿、web `vitest run` 458/458；workflow YAML 解析通过。
+
+### 成果（有证据）
+
+| 审计项 | self 结论与证据 |
+|--------|-----------------|
+| QUICKSTART 覆盖（S3 文档） | **成立**：前置/双路径/四终点/命令行+完整 smoke/接业务齐备；终点 4 明确操作化为 `list-edit-lifecycle`（非 `overview`），对齐 I-008-002 §3.2 R-008-002。 |
+| 独立复现记录（S3 证据） | **成立**：[R5-S3-REPRO-001](attachments/R5-S3-REPRO-001.md) 含协议 §4 最小字段；`compose` 路径；`same-operator-clean-session`（先 `down -v` 清卷、全新 `up -d`，未复用服务/DB）；四终点全 PASS；单次计时 `34.5s ≤ 900s`；浏览器终点由真实 Chromium 驱动（截图+脚本留痕）。 |
+| `scripts/smoke.sh` 契约（S4） | **成立**：SM-001～SM-006 形状、退出码 `0/2/3/4/5/6/70`、`--disposable` 开关、不输出 secret、无开关不 reset，均对齐协议 §5.1/§5.2/§5.3；SM-006 经 `SMOKE_RESTART_CMD` 重启后二次断言「数量不变、同一记录仍在、不重复播种」。 |
+| disposable SM-006 强制证据 | **成立**：本地 Git Bash + Docker 运行 `--disposable` → **SM-006=PASS**（[log](attachments/r5-smoke-disposable-local.txt)）；CI `container-smoke` 以 `--disposable` 调用（runner 每次隔离 project/volume，满足「CI 默认 disposable」）。非 disposable exit 0 未单独用作「种子可重复」关闭证据。 |
+| 状态/进度边界 | **成立**：S3/S4 勾选（`2/5 → 4/5`）与已核实实施事实相符；`I-008-002` 维持 verified（v0.1.1）；`I-008-003` 仍 open（仅 S6）；Root R5 未勾选（`4/5`）；S5 待实施。本 self 不改动任何状态。 |
+
+### Findings
+
+- **无新 required**。
+- **注记（recommended · 非阻断）**：本自审为 `same-operator-clean-session` 复现（协议 §3.3 允许）；建议未来由用户侧或独立执行者做一次真正隔离（不同 shell/checkout）的复现交叉核验；CI `container-smoke` 的 `--disposable` 证据需一次 GitHub Actions 运行记录留痕（当前仅本机 log）。
+
+### 对照成功标准与信息门禁
+
+| 项 | self 结论 |
+|----|-----------|
+| S3 成功标准 | **满足**：QUICKSTART 交付 + ≥1 次独立复现记录，终点 4 登录 + 后台可交互（列表加载），34.5s ≤ 15 分钟。 |
+| S4 成功标准 | **满足**：`scripts/smoke.sh` 交付（healthz→login→`/me`→代表页→种子可重复），本地 smoke 全绿（SM-001～006）+ CI 接入。 |
+| `I-008-002` | verified 维持；实施对照 v0.1.1 判据成立，未把协议修订混为实施证据。 |
+| 关门边界 | S5 未实施；Root R5 与 VP-002 关门不因 S3/S4 自动达成。 |
+
+### 声明
+
+本自审仅追加审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+### 响应 · A-010（/govern · 2026-08-03）
+
+- **verdict 采纳**：`pass` 成立——S3/S4 实施主张与仓库事实一致且可复现（QUICKSTART + 独立复现 34.5s + smoke.sh SM-001～006 + 本地 disposable SM-006=PASS + CI 接入）；无开放 required。
+- **注记处置**：same-operator 复现边界已在记录声明；建议在 S5 阶段或用户侧做一次真正隔离复现交叉核验；CI 运行记录留待 `container-smoke` 首次 GitHub Actions run 后补记。
+- **仍开放**：S5（阶段审计 + Root R5 勾选/关门条件评估）待实施；`I-008-003` open（仅 S6）；Root R5 未勾选（Root 保持 `4/5`）。
+- **下一步**：实施 S5——对 R5 工程化交付做阶段审计（self + 视需要 independent），评估并记录 Root R5 勾选与 Root / VP-002 关门证据口径；建议对 S3/S4 关闭证据做一次 `/audit` finding-closure 复审。
+- **证据路径**：本响应节；`02-execution` 2026-08-03「实施 S3 + S4」节；`01-decision` D-006；`00-meta` S3/S4 行 + `I-008-002`；QUICKSTART.md；`scripts/smoke.sh`；附件 R5-S3-REPRO-001 / r5-repro-endpoint4.* / r5-smoke-disposable-local.txt。
+
+## A-011 · S3/S4 实施与协议/运行证据独立交叉审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：execution-facts；交叉复核 GOAL-008 S3（QUICKSTART、R5-S3-REPRO-001、浏览器终点证据）与 S4（`scripts/smoke.sh`、本地 disposable 运行、CI 接入与当前 revision 运行证据），对照 `I-008-002` v0.1.1 §§3～6；不审 S5、S6 或 Root R5 关门。
+- **verdict**：fail
+
+### 范围与区间
+
+- 工作区页眉：`workspace_id: workspace-002-production-admin-foundation`；canonical scope：`docs/workspaces/workspace-002-production-admin-foundation/`；Root：`GOAL-001-production-admin-foundation`；目标：`GOAL-008-r5-engineering-fork`；`shared_materials_catalog: none`。本意见未读取或比较其他工作区。
+- 已核对：本目标五件套与 `goal-tree.md`、`I-008-002` v0.1.1、`QUICKSTART.md`、`R5-S3-REPRO-001.md`、`r5-repro-endpoint4.mjs`/截图、`scripts/smoke.sh`、`.github/workflows/r6-basic-matrix.yml`、本地 smoke log、Root D-013/I-005 边界。
+- 本轮独立运行：使用显式 Compose 项目 `audit-goal008-s34` 与新命名卷执行 `docker compose -p audit-goal008-s34 up -d --build`；Git Bash 执行 `bash scripts/smoke.sh --disposable`，SM-001～SM-006 全部 `PASS`、退出码 `0`；随后 `docker compose -p audit-goal008-s34 down -v --remove-orphans` 清理成功。该运行证明脚本在操作者已提供隔离环境时可执行，不证明脚本自身强制隔离，也不替代 CI 运行证据。
+- 当前 `HEAD` 为 `f2f1acbbc126648c8f218145ec6df0ae027e06e8`；`gh run list --workflow r6-basic-matrix.yml` 最新成功运行 `30750997885` 的 `headSha` 为 `7a6eb5e6b48fd96cc2c8503c45ff2dbdefb76bf8`，早于 S4 脚本接入提交；该 run 的 jobs 没有 `container-smoke`。
+
+### 成果（有证据）
+
+| 审计项 | 独立结论 |
+|--------|----------|
+| S3 文档路径与终点 | **部分通过**：QUICKSTART 覆盖 Compose/双进程两路径；协议终点 4、QUICKSTART 与 Playwright 脚本均指向 `list-edit-lifecycle`、标题和 `Acme Console`。复现记录时间算术自洽（`03:04:45.596Z` 到 `03:05:20.141Z`，约 `34.545s`），但计时边界与记录字段存在 required 缺口（F-005/F-006）。 |
+| 浏览器证据 | **通过**：`r5-repro-endpoint4.mjs` 使用真实 Chromium 登录、导航并断言标题/单元格；截图显示 `List + edit lifecycle`、`Acme Console` 与列表内容。 |
+| S4 disposable 路径 | **运行通过但证据有界**：本轮显式隔离项目的 `SM-001`～`SM-006` 全 PASS；协议要求的隔离前提并未由脚本机器校验（F-008）。 |
+| secret 输出边界 | **通过**：脚本将 token 保存在变量并抑制响应输出，未发现输出 password/JWT secret 的路径。 |
+| 当前 CI 证据 | **不足**：工作流有 `--disposable` wiring，但最新成功 run 早于当前 S4 revision 且无 `container-smoke` job（F-009）。 |
+
+### 对照成功标准与信息门禁
+
+- **S3**：QUICKSTART 与真实浏览器终点内容成立；但 `R5-S3-REPRO-001` 将已构建镜像作为前置并只计 `up` 后耗时，违反协议“项目构建计入计时”的冻结口径，且未满足完整 source/checks/result 记录字段，不能无条件证明 `<=15` 分钟（F-005/F-006）。
+- **S4**：本轮隔离运行的 disposable SM-006 通过；但是非 disposable 分支仍以 `SM-006=SKIP` 输出 `SMOKE RESULT: PASS` 并退出 0，和 v0.1.1 §5.3 的完整绿退出码定义不一致（F-007）；`--disposable`/`eval` 不验证隔离或普通开发库安全边界（F-008）；当前 revision 没有对应 CI run（F-009）。
+- **`I-008-002`**：协议文件本身仍为 `verified`，本意见不改其状态；本意见判定的是实施/验收证据未满足协议，不把协议冻结当作 S3/S4 通过。
+- **状态边界**：不修改目标 `status: active`、`progress: 4/5`、S3/S4 勾选、Root R5 或 `goal-tree.md`。
+
+### Findings
+
+#### F-005 · S3 计时记录排除了协议要求计入的项目构建
+
+- **级别 / 严重度**：required / high
+- **状态**：open
+- **关联门禁**：S3 `<=900s` 体验验收与 `I-008-002` §3.1/§3.2。
+- **证据**：协议要求项目自身编译、配置、启动、迁移、种子和登录不得预先完成，且“其余按文档完成环境配置、构建和启动的耗时计入”（`I-008-002-fork-reproduction-protocol.md:53-66`）。记录却写明 Compose 镜像已在先前 S2/本次 smoke 构建中完成，本轮 `up -d` 复用缓存且未重新 build（`R5-S3-REPRO-001.md:55-58`）；QUICKSTART 的 Compose 首条启动命令是 `docker compose up -d --build`（`QUICKSTART.md:32-39`）。
+- **风险**：`34.5s <= 900s` 只证明预构建镜像后的启动/页面时间，不能证明按 fork 文档从依赖就绪到构建、启动、登录和页面加载的完整体验时限。
+- **要求**：重新生成一份 clean-ref 记录，依赖下载/镜像 pull 可排除，但项目 build、配置、迁移、种子、登录和页面加载必须从计时起点开始；或由 `/govern` 按 P-004 留痕有界 residual（不等同于 verified）。
+
+#### F-006 · S3 复现记录未满足协议规定的可核验字段
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：S3 独立复现证据完整性与 `I-008-002` §4。
+- **证据**：协议要求 source 列出未提交 diff 摘要/哈希、checks 逐项包含 smoke 输出、result 提供失败原因/重试编号/日志、截图和命令输出路径（`I-008-002-fork-reproduction-protocol.md:93-104`）。记录只写了 3 个未提交新增但没有 diff hash（`R5-S3-REPRO-001.md:29-32`），checks 只有四个终点、没有 smoke 输出或“不适用”声明（`:72-79`），result 只有截图/脚本路径，没有命令输出或运行日志路径（`:85-89`）；“脚本已提交工作树”与同段“3 个未提交新增”也有语义歧义（`:22-31`）。
+- **风险**：第三方无法从该记录重建确切 ref/diff、核对命令输出或区分未运行项，独立复现不能作为完整可追溯记录。
+- **要求**：补齐 clean ref、工作树和 diff hash、完整命令/日志输出路径、smoke 各项（或明确标注 S4 不适用）及失败/重试记录；保持 secret 脱敏。
+
+#### F-007 · 非 disposable smoke 仍报告 `PASS`/exit 0，违反 v0.1.1 退出码契约
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：S4 机器可判定验收与 `I-008-002` §5.1/§5.3。
+- **证据**：协议定义 exit `0` 为 SM-001～SM-005 通过且 disposable SM-006 通过，并明确非 disposable exit 0 不得单独关闭种子可重复性（`I-008-002-fork-reproduction-protocol.md:112,123,129-139`）。脚本非 disposable 分支输出 `SM-006=SKIP`、`SMOKE RESULT: PASS`，随后无条件 `exit 0`（`scripts/smoke.sh:190-199`）。
+- **风险**：调用方只看退出码或 `PASS` 摘要时，会把只完成 SM-001～SM-005 的部分检查误判成 S4 完整绿。
+- **要求**：使非 disposable 路径与 v0.1.1 的完整绿语义一致（例如返回明确的 partial/non-success 结果并让 CI 不把它当完整绿），同时保留默认路径的非破坏性检查。
+
+#### F-008 · `--disposable` 没有机器可判定的隔离与 destructive 安全守卫
+
+- **级别 / 严重度**：required / high
+- **状态**：open
+- **关联门禁**：S4 disposable/隔离证据与 `I-008-002` §5.1/§5.2。
+- **证据**：协议要求 disposable 运行只能在隔离环境验证空库种子，必须拒绝普通开发库 reset，CI 使用隔离 Compose project/volume 或等价临时 DB（`I-008-002-fork-reproduction-protocol.md:110-112,123,127-132`）。脚本只把 `--disposable` 映射为布尔开关（`scripts/smoke.sh:20-32,40`），接受任意 `SMOKE_RESTART_CMD` 并用 `eval` 执行（`:31,170-173`），不验证 Compose project、volume、DB_PATH、临时数据库或 disposable 标记；CI 也用默认 `docker compose up -d`，没有显式隔离 project/volume（`.github/workflows/r6-basic-matrix.yml:76-95`）。本轮能通过显式 `-p audit-goal008-s34` 新卷运行，证明的是外部隔离前提有效，不是脚本具备安全守卫。
+- **风险**：操作者可在普通开发数据库上带 `--disposable` 并注入 destructive restart 命令，或在非隔离 CI 上把种子断言当作 S4 证据；这违反协议的 fail-closed 安全边界。
+- **要求**：限制 restart/reset 命令并校验隔离项目、临时卷/DB 或等价标记；不满足时返回安全前提失败（exit 2），并在 CI/日志中记录隔离身份。
+
+#### F-009 · 当前 S4 revision 没有对应的 CI smoke 运行证据
+
+- **级别 / 严重度**：required / medium
+- **状态**：open
+- **关联门禁**：S4 “本地与 CI smoke 全绿”成功标准与协议 §6 的运行/CI 证据要求。
+- **证据**：当前 `HEAD` 为 `f2f1acbbc126648c8f218145ec6df0ae027e06e8`；`gh run list --workflow r6-basic-matrix.yml` 最新成功 run `30750997885` 的 `headSha` 为 `7a6eb5e6b48fd96cc2c8503c45ff2dbdefb76bf8`，早于 S4 smoke 接入提交，`gh run view` jobs 仅有 browser E2E、api、web，没有 `container-smoke`。仓库工作流 wiring 存在（`.github/workflows/r6-basic-matrix.yml:76-95`），但 wiring 不是 CI smoke 全绿的运行事实；已提交的本地 log 只有 SM-001～SM-006 输出，没有 run/ref/provenance（`attachments/r5-smoke-disposable-local.txt:1-8`）。
+- **风险**：无法证明当前 revision 的 CI runner 真的执行了 disposable SM-006、退出码传播和 teardown；S4 的 CI 部分仍是计划/接线证据而非验收事实。
+- **要求**：对当前 revision 触发并保留 `container-smoke` 成功 run/job URL、head SHA、SM-001～SM-006 输出和 teardown 结果；若 CI 无法运行，按 `/govern` 记录有界 residual，不得写成“CI 全绿”。
+
+### 推荐项（非阻断）
+
+- **R-011 · 重启后的 readiness 未重新判定**：脚本复用初始 `ready=1`，重启循环结束后不检查 readiness 结果（`scripts/smoke.sh:174-178`）；建议重置并在失败时返回协议定义的 readiness 失败码，避免把后续登录失败误归类为其它检查项。
+
+### 必改项汇总
+
+- **F-005 required/high**：S3 计时须纳入项目 build。
+- **F-006 required/medium**：补齐 S3 记录的 diff hash、命令/日志输出、smoke 字段和 result 追溯。
+- **F-007 required/medium**：修正非 disposable `PASS`/exit 0 与 v0.1.1 退出码语义的冲突。
+- **F-008 required/high**：实现 disposable/隔离与 destructive 安全的机器守卫，并在 CI/记录中固定隔离身份。
+- **F-009 required/medium**：补当前 revision 的 CI `container-smoke` 运行证据。
+
+### 与既有意见的异同
+
+- A-010 是同一 S3/S4 execution-facts scope 的 `self · pass`，本 A-011 的 `fail` 与其在“可无条件判定 S3/S4 通过”上构成 P-004 §4.2 的 verdict/门禁冲突；A-010 中的浏览器与本地 disposable 主体事实经本轮点验/复跑基本成立，但本意见识别了其未覆盖的计时、字段、退出码、安全和 CI 证据缺口。
+- A-008/A-009 仅审 `I-008-002` design-plan/finding-closure，不与本 execution-facts scope 冲突；`I-008-002` 的 verified 机读状态不因本意见自动改写。
+- 本意见不否定 S3 浏览器脚本/截图或本轮显式隔离 disposable 运行；它们不足以单独闭合上述 required findings。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **fail**：S3 浏览器终点和本轮显式隔离的 S4 disposable smoke 可复现，但当前记录和实现不满足完整的协议/验收边界；F-005～F-009 均为未闭合 required。不能仅凭 A-010 self `pass` 将 S3/S4 作为无条件验收完成。
+- 建议使用 `/govern`：展示 A-010/A-011 冲突并按 P-004 等用户裁决；建议优先修复 F-005/F-007/F-008，刷新 S3 record 与当前 revision CI 证据，再做同 scope self/independent finding-closure 复审。未完成前不要推进 S5、勾选 Root R5 或关门。
+
+### 声明
+
+本意见仅追加 `source: independent` 审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、信息项状态或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## 响应 · A-011（/govern · 2026-08-03 · F-005～F-009 fixed）
+
+按 P-004 §3.2（同 scope verdict 冲突）展示 A-010/A-011 冲突后，用户书面裁决「**按 fixed 路径整改 F-005～F-009**」并确认提交推送；不涉及 residual/overruled。落盘 `01-decision` **D-007**、协议附件 **v0.1.2**。
+
+### 冲突处置（P-004 §3.2）
+
+| 项 | A-010（self · pass） | A-011（independent · fail） |
+|----|---------------------|------------------------------|
+| scope | execution-facts · S3/S4 | execution-facts · S3/S4 |
+| 关键差异 | 复现 34.5s（build 排除）、字段自洽、SM-001～006 本地/CI 接线通过 | 计时排除 build（F-005）；记录字段与追溯不足（F-006）；非 disposable 仍 PASS/exit 0（F-007）；disposable 无机器隔离守卫、任意 `eval`（F-008）；当前 revision 无 CI run（F-009） |
+
+A-010 的浏览器终点与本地 disposable 主体事实经 A-011 点验基本成立（本响应不推翻），但不足以单独闭合 F-005～F-009；用户裁决以 fixed 补齐证据边界。
+
+### Findings 响应
+
+- **F-005（required/high · S3 计时排除 build）→ fixed**：新增 clean-ref 独立复现记录 [R5-S3-REPRO-002](attachments/R5-S3-REPRO-002.md)——干净 worktree（`git worktree add`，detached 于 `a086872`，全程 `git status` 干净）执行 `docker compose up -d --build`，计时起点 = `.env` 写入 + 第一条启动命令，**build/配置/迁移/种子/登录/页面加载全部计入**（仅镜像层获取按协议 §3.1 排除）；四终点全 PASS，**13.5s ≤ 900s**（T0 `01:15:05.557Z` → T4 `01:15:19.092Z`）。完整 BuildKit 输出与各终点响应见 [r5-repro-002-run.txt](attachments/r5-repro-002-run.txt)，截图 [r5-repro-002-endpoint4.png](attachments/r5-repro-002-endpoint4.png)。
+- **F-006（required/medium · 复现记录字段不足）→ fixed**：R5-S3-REPRO-002 按协议 §4 全字段落盘——`source` 含 commit/ref 与干净工作树（无 diff）；`checks` 逐项含 smoke 输出引用；`result` 含日志/截图路径与失败/重试记录（含一次工具链失败尝试的如实记录，§3.3）；完整命令输出随 `r5-repro-002-run.txt` 归档。
+- **F-007（required/medium · 非 disposable 误报完整绿）→ fixed**：[I-008-002 协议](attachments/I-008-002-fork-reproduction-protocol.md) **v0.1.2** §5.3 新增部分绿退出码 `8`；`scripts/smoke.sh` 非 disposable 分支输出 `SM-006=SKIP` + `SMOKE RESULT: PARTIAL` 并 **exit 8**（不再 exit 0）；本地验证 exit=8。CI 只以 `--disposable` 完整绿（exit 0）作为 S4 证据。
+- **F-008（required/high · disposable 无机器隔离守卫）→ fixed**：协议 v0.1.2 §5.1 冻结隔离守卫——disposable 强制 `SMOKE_DISPOSABLE_CONFIRM=yes` 与 `SMOKE_ISOLATION_ID`（缺失 → exit 2）；`scripts/smoke.sh` 新增 `check_isolation()`：机器校验 `docker compose -p <id> ps -q api` 非空且 `docker inspect` 挂载含 `<id>_db-data`（或等价绑定），不满足 → `SM-001=FAIL` + exit 2，校验通过输出 `isolation: project=<id> container=<cid>` 留痕；**删除 `SMOKE_RESTART_CMD` 任意 `eval`**，SM-006 重启由脚本直接执行 `docker compose -p <id> restart api`；重启后 readiness 重新判定（失败 → exit 3，吸收 **R-011 → handled**）。CI `container-smoke` 改用显式隔离 project `-p ci-container-smoke`（build/up/restart/teardown 同 project），smoke step 注入 `SMOKE_ISOLATION_ID=ci-container-smoke` + `SMOKE_DISPOSABLE_CONFIRM=yes`。本地三路径验证：缺 id → exit 2；不存在 project → exit 2；隔离 project 完整绿 → exit 0 + `SM-006=PASS`（log [r5-smoke-disposable-local-v0.1.2.txt](attachments/r5-smoke-disposable-local-v0.1.2.txt)）。
+- **F-009（required/medium · 当前 revision 无 CI run 证据）→ fixed**：当前 revision `df913a59cc3678720fb7a9c010296de90beb7e2a` 的 `r6-basic-matrix` run **30776646293** 成功（https://github.com/magicvr/schema-ui-core/actions/runs/30776646293）；`container-smoke` job（`R5 S2/S4`，conclusion success）输出 `isolation: project=ci-container-smoke` + **SM-001～006 全 PASS + `SMOKE RESULT: PASS`** + C-006 持久化通过 + teardown `docker compose -p ci-container-smoke down -v`（容器/网络/卷全部移除）；完整 job 日志归档 [r6-ci-container-smoke-30776646293.txt](attachments/r6-ci-container-smoke-30776646293.txt)。注：`df913a5` 相对 `a086872` 仅追加复现记录/台账文档，未改动 `scripts/` 与 `.github/workflows/`（`a086872` 的 run 30776267477 亦为 success）。
+
+### 状态与门禁边界
+
+- S3/S4 检查点维持勾选（`4/5`），其验收有效性以本响应关闭证据为条件；**未**推进 S5、未勾选 Root R5、未关门。
+- `I-008-002` 维持 `verified`（权威版本 **v0.1.2**）；`I-008-001` 不重开；`I-008-003` 仍 open（仅当 S6 实施）。
+- A-010（self）保持其历史 verdict 与记录，不改写；本响应不把编排响应伪装成 `source: independent`。
+- **P-004 §3.1**：同 scope 已有 A-010（self）覆盖；因 A-010 为冲突方，建议对 F-005～F-009 关闭证据做一次 `/audit` finding-closure 复审（可补 self 或 independent）后再进入 S5。
+- **证据路径**：本响应节；`01-decision` D-007；协议附件 v0.1.2（§5.1/§5.3/§7）；`scripts/smoke.sh`；`QUICKSTART.md`；`R5-S3-REPRO-002.md` + `r5-repro-002-run.txt` + `r5-repro-002-endpoint4.png` + `r5-smoke-disposable-local-v0.1.2.txt` + `r6-ci-container-smoke-30776646293.txt`；`02-execution` 2026-08-03「响应 A-011」节；`00-meta` S3/S4 行与信息表 `I-008-002`。
+
+## A-012 · A-011 F-005～F-009 关闭证据独立复审（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure；仅复审 [workspace-002-production-admin-foundation] `GOAL-008-r5-engineering-fork` 的 A-011 **F-005～F-009** `fixed` 关闭证据。核对 S3 新复现记录、S4 脚本/本地守卫记录及当前 revision CI run；不审 S5/S6、Root R5、VP-002 关门或目标状态/进度。
+- **verdict**：fail
+
+### 范围与区间
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root：`docs/workspaces/workspace-002-production-admin-foundation/`；Root：`GOAL-001-production-admin-foundation`；目标 `parent`、工作区 `root_goal` 与 `goal-tree.md` 当前投影一致。`shared_materials_catalog: none`，未使用共享资料作为关闭依据，也未读取或比较其他工作区。
+- 信息与门禁：`I-008-002` 维持 `verified`（协议 v0.1.2 只解除 S3/S4 的方案冻结/实施前信息门禁）；`I-008-003` 仍为仅 S6 适用的 open required。本意见不把已存在的协议、S3/S4 勾选或 CI wiring 当作 S5、Root R5 或关门证据。
+- 已核对：本目标五件套、A-010/A-011 与 A-011 响应、D-007；`I-008-002-fork-reproduction-protocol.md` v0.1.2；`R5-S3-REPRO-002.md`、`r5-repro-002-run.txt`、截图和本地 smoke log；`scripts/smoke.sh`、`.github/workflows/r6-basic-matrix.yml`；Git 提交链；GitHub Actions run `30776646293` 及归档日志。
+- 独立核验：当前工作树 clean；`bash -n scripts/smoke.sh` 通过。GitHub Actions API/CLI 显示 run `30776646293` 是 `dev` 的 `df913a59cc3678720fb7a9c010296de90beb7e2a`，整体与 `container smoke (docker compose · R5 S2/S4)` job 均为 `success`。当前 `HEAD` 相对该 SHA 仅新增审计/证据文档，无 `scripts/` 或 workflow 变更。
+
+### 成果（有证据）
+
+| Finding | 复审结论与证据 |
+|---------|----------------|
+| **F-005 required/high** · S3 计时须计入项目 build | **`fixed` 不成立，维持开放**：协议 §3.1 明定不得将项目自身编译预先完成。`r5-repro-002-run.txt` 的 T0 确为 `docker compose up -d --build`，但其 API `RUN ... go build` 与 Web `RUN ... npm run build` 均记录为 `CACHED`。因此计时涵盖了 BuildKit 命令调度，却没有证实本次体验实际执行项目编译；`13.5s` 不能满足该协议下的完整 build-included 证据。 |
+| **F-006 required/medium** · S3 记录字段 | **`fixed` 可维持**：R5-S3-REPRO-002 已给出 protocol、attempt、commit/ref、路径和实际 URL、平台、缓存前提、UTC 时间/相对秒、四终点与 S4 输出引用、secret 脱敏、失败/重试说明，以及 run log/截图路径。它修复了 A-011 指出的原记录缺少 diff/source、smoke 与命令输出追溯的问题。R-012 记录一项非阻断表述修正。 |
+| **F-007 required/medium** · 非 disposable 误报完整绿 | **`fixed` 成立**：`scripts/smoke.sh` 的非 disposable 分支输出 `SM-006=SKIP`、`SMOKE RESULT: PARTIAL` 并 exit `8`；本地 v0.1.2 守卫记录同样捕获 exit `8`。脚本语法独立检查通过。 |
+| **F-008 required/high** · disposable 隔离与 destructive 守卫 | **`fixed` 成立**：脚本要求 `SMOKE_DISPOSABLE_CONFIRM=yes` 和 `SMOKE_ISOLATION_ID`，以 `docker compose -p <id> ps -q api` 与容器 mount 检查 project/`db-data` 绑定，失败 exit `2`；重启由脚本固定为受校验 project 的 `restart api`，未保留任意外部命令/eval。v0.1.2 本地记录覆盖缺 ID、不存在 project 的 fail-closed 路径和隔离 project 完整绿。 |
+| **F-009 required/medium** · 当前 S4 revision CI 运行证据 | **`fixed` 成立**：GitHub Actions run `30776646293` 在 `df913a59cc3678720fb7a9c010296de90beb7e2a` 成功，`container-smoke` job 成功；归档日志显示显式 `ci-container-smoke` project/volume、SM-001～SM-006 PASS、`SMOKE RESULT: PASS`、API restart persistence 与 `down -v` teardown。其后仅有文档变更，故该 run 仍对应当前 S4 可执行实现。 |
+
+### Findings
+
+#### F-005 · S3 复现仍未证明项目 build 在计时内实际执行
+
+- **级别 / 严重度**：required / high
+- **状态**：open；A-011 响应中的 `fixed` 不能维持。
+- **关联门禁**：S3 的 `<=900s` fork 体验验收；进入 S5 前的 A-011 finding-closure。
+- **证据**：
+  1. 协议 v0.1.2 §3.1 要求项目自身的编译、配置、启动、迁移、种子与登录不得预先完成；
+  2. run log T0 虽执行 `docker compose up -d --build`，API `go build` 层为 `CACHED`，Web `npm run build` 层也为 `CACHED`；
+  3. 当前记录以该输出主张「build 计入计时」，但 BuildKit 的项目编译产物已从先前缓存取得，不能证明一次从未预完成项目构建的 fork 体验。
+- **风险**：把 warm BuildKit 编译产物的启动时间作为完整 fork build 时间，会把协议排除项从镜像/依赖获取扩大到项目编译，重新落入 F-005 所阻止的证据缺口。
+- **要求**：重新在 clean checkout 做一次 S3 计时复现。可保留依赖下载、镜像 pull 与基础镜像获取的排除项，但须隔离或禁用 API/Web 的 BuildKit 结果缓存，使 `go build` 与 `npm run build` 在 T0 后实际执行；归档完整输出并显示这些步骤非 `CACHED`。新记录应同时带预 T0 的 `git status --short` 输出、单调计时原始读数和四终点证据，之后再请求 finding-closure 复审。
+
+#### R-012 · clean-source 叙述应区分 T0 前状态与 T4 后生成的证据产物
+
+- **级别 / 严重度**：recommended / low
+- **证据**：R5-S3-REPRO-002 及其 run log 将正式尝试描述为 clean；但 run log 末行实际为 `?? r5-repro-002-endpoint4.png`，该截图在 T4 后被复制到 worktree。该事实不否定其余 F-006 字段，但「全程 status 为空」的表述不准确。
+- **建议**：下次记录分别留存 T0 前 `git status --short`、生成产物的时间/路径与必要 hash；或将临时截图写到 worktree 外再归档。也应保存单调计时工具的原始读数，而非只给人工汇总的相对秒。
+
+### 必改项汇总
+
+- **F-005 required/high：开放。** 在一次能证明 API 与 Web 项目编译实际发生在计时内的 clean-checkout 复现和后续独立复审前，不得把 S3 的 `13.5s` 作为完整 fork build 体验的已关闭证据，也不得进入 S5。
+- F-006、F-007、F-008、F-009 的本次关闭证据可维持；R-012 为 recommended，不单独阻断。
+
+### 与既有意见的异同
+
+- 与 A-011 一致：S4 的隔离、退出码和当前 revision CI 必须按运行证据核对，不能仅凭 wiring 或 self 结论放行；本复审确认 F-007～F-009 的整改已达到该要求。
+- 与 A-011 响应的 F-005 结论不同：响应把 `--build` 命令存在视为 build 计入；本复审以协议 §3.1 的「项目自身编译不得预先完成」为准，认定两个实际编译层 `CACHED` 使该闭合证据不足。
+- A-010 的 self `pass`、A-011 的历史 `fail` 与其 P-004 裁决均保留为历史事实；本意见不自行改写其 verdict 或状态。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **fail**：F-007/F-008/F-009 的 `fixed` 关闭证据充分，F-006 的原始字段缺口已补齐；但 F-005 required/high 仍未满足，故 A-011 的「F-005～F-009 全部 fixed」主张不能整体维持。
+- 建议 `/govern`：响应 A-012，按 `fixed` 路径重新生成无项目编译缓存的 S3 复现证据，并保留 T0 前 source 状态和原始计时；完成后再请求仅针对 F-005 的 `/audit` finding-closure 复审。不要推进 S5、Root R5 或关门。若考虑 residual/overruled，须按 P-003/P-004 由用户书面裁决并留痕。
+
+### 声明
+
+本意见仅追加 `source: independent` 审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、信息项状态或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## 响应 · A-012（/govern · 2026-08-03 · F-005 fixed、R-012 handled）
+
+按 P-004 §3.3/§3.4：A-012（independent · finding-closure · fail）存在开放 required（F-005），用户书面指示按 **fixed** 路径响应并请求仅针对 F-005 的关闭复审；不涉及 residual/overruled。落盘 `01-decision` **D-008**。
+
+### Findings 响应
+
+- **F-005（required/high · S3 复现仍未证明项目 build 在计时内实际执行）→ fixed**：预 T0 执行 `docker rmi schema-ui-core-api:local schema-ui-core-web:local` + `docker builder prune -a -f` **整体禁用 BuildKit 结果缓存**（基础镜像保持本地，镜像拉取排除项）；在 clean worktree（`1961e5a`，detached clean，**预 T0 `git status --short` 为空**）重做计时复现 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)：
+  - 计时起点 = `.env` 写入 + `docker compose up -d --build`（协议 §3.2，`.env` 写入在计时内）；四终点全 PASS，**64.833s ≤ 900s**（T0 monotonic `403981233142700` → T4 `404046066135300`）。
+  - BuildKit 归档（[r5-repro-003-run.txt](attachments/r5-repro-003-run.txt)）显示 **API `go build`（#29 · DONE 12.8s）与 Web `npm run build`（#38 · DONE 6.1s，真实 vite 构建输出）均在 T0 后实际执行，正式 retry #3 的项目编译层均非 `CACHED`（该次仅一条非编译 `WORKDIR` 缓存；响应 A-013 R-013 表述收窄）**——满足 A-012「隔离/禁用编译缓存、编译层非 CACHED」的关闭条件；`compose_up_exit=0`、teardown `down -v` 成功、运行后 `git status --short` 为空。
+  - 失败/重试按协议 §3.3 全留痕（attempt #1/#2 为 runner 工具链故障，attempt #3 正式通过），见记录 result 节与 run log。
+- **R-012（recommended/low · clean-source 叙述应区分 T0 前状态与 T4 后产物）→ handled**：REPRO-003 分别留存预 T0 `git status --short`（空）与运行后状态；截图写于 worktree 外（`apps/web/test-results/`，gitignored）后归档并记录 sha256（`89171fb1e43393d7714001dae30aa8732cd5514af85b23c03969d242289809f8`）；单调计时工具原始读数（ns）逐终点落盘。
+- **F-006/F-007/F-008/F-009 → 维持闭合（A-012 确认）**：本轮不改动；`R5-S3-REPRO-002` 加取代注记后保留为历史。
+
+### 状态与门禁边界
+
+- S3/S4 检查点维持勾选（`4/5`），验收有效性以本轮 F-005 关闭证据与后续独立复审为条件；**未**推进 S5、未勾选 Root R5、未关门。
+- `I-008-002` 维持 `verified`（协议 **v0.1.2**，正文未改）；`I-008-001` 不重开；`I-008-003` 仍 open（仅当 S6 实施）。
+- A-012 保持其历史 verdict（fail）与记录，不改写；本响应不把编排响应伪装成 `source: independent`。
+- **P-004 §3.1**：本 scope（F-005 关闭证据）已有 A-010（self · execution-facts · S3/S4）与 A-012（independent · finding-closure）历史覆盖；本轮为 fixed 响应执行（非放行/关门提议）。完成 F-005 关闭复审（`/audit`）且收到 pass 后，若进入 S5 或关门，按 §3.1 询问用户是否补 self。
+- **证据路径**：本响应节；`01-decision` D-008；[R5-S3-REPRO-003.md](attachments/R5-S3-REPRO-003.md) + `r5-repro-003-run.txt` + `r5-repro-003-endpoint4.png`；`R5-S3-REPRO-002` 取代注记；`02-execution` 2026-08-03「响应 A-012」节；`00-meta` S3 行与信息表 `I-008-002`。
+
+## A-013 · A-011 F-005～F-009 关闭证据独立二次复审（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（GPT-5）
+- **类型 / scope**：finding-closure；复审 [workspace-002-production-admin-foundation] `GOAL-008-r5-engineering-fork` 的 A-011 **F-005～F-009** `fixed` 关闭证据，重点核验 A-012 响应新增的 F-005 `R5-S3-REPRO-003`。同时复核 F-006～F-009 的现有关闭证据是否仍对应当前可执行实现；不审 S5/S6、Root R5、VP-002 关门或目标状态/进度。
+- **verdict**：pass
+
+### 范围与区间
+
+- 工作区：`workspace-002-production-admin-foundation`；canonical root：`docs/workspaces/workspace-002-production-admin-foundation/`；Root：`GOAL-001-production-admin-foundation`。`workspace.md` 的 `root_goal`、目标 `parent` 与 `goal-tree.md` 当前投影一致；`shared_materials_catalog: none`，未使用共享资料作为关闭依据。
+- 信息与门禁：`I-008-002` 维持 `verified`（v0.1.2）；`I-008-003` 仍为仅 S6 适用的 open required。本意见只判断 A-011 findings 的关闭证据，不把 S3/S4 勾选、协议或 CI wiring 本身当作 S5、Root R5 或关门证据。
+- 已核对：本目标五件套、A-010/A-011/A-012 及其响应、D-007/D-008；`I-008-002-fork-reproduction-protocol.md` v0.1.2；`R5-S3-REPRO-003.md`、完整 `r5-repro-003-run.txt` 与截图 hash；当前 `scripts/smoke.sh`、`.github/workflows/r6-basic-matrix.yml`、本地 v0.1.2 守卫日志、CI run `30776646293` 归档日志和 Git 提交差异。
+- 独立核验：工作树 clean；Git for Windows `bash -n scripts/smoke.sh` 通过。GitHub Actions API/CLI 显示 run `30776646293` 的 `headSha` 为 `df913a59cc3678720fb7a9c010296de90beb7e2a`，整体和 `container smoke (docker compose · R5 S2/S4)` job 均为 `success`。从该 SHA 到当前 HEAD 的 `apps/`、`scripts/`、`.github/workflows/` 与 `compose.yaml` 无差异，故 CI 运行仍对应当前 S4 可执行实现。
+
+### 成果（有证据）
+
+| Finding | 二次复审结论与证据 |
+|---------|------------------|
+| **F-005 required/high** · S3 计时须计入项目 build | **`fixed` 成立**：REPRO-003 的正式 retry #3 在 clean detached checkout 上记录预 T0 `git status --short: []`、空 `docker ps`、T0 单调读数 `403981233142700`，并以 `.env` 写入 + `docker compose up -d --build` 起算。完整 BuildKit 输出显示 API `go build` 为 `#29 ... DONE 12.8s`、Web `npm run build` 为 `#38 ... DONE 6.1s`（含 Vite 构建输出），均在 T0 后实际执行而非 `CACHED`；T1～T4 记录四终点通过，T4 单调读数 `404046066135300`，差值 **64.833s <= 900s**。正式 retry #3 唯一 `CACHED` 是 `WORKDIR /src`，不含项目编译产物。 |
+| **F-006 required/medium** · S3 记录字段 | **`fixed` 成立**：REPRO-003 提供 protocol/attempt、commit 与 clean diff、路径/平台、缓存前提、UTC 与单调原始读数、四终点、S4 关联检查、secret 脱敏、完整输出与截图路径，以及两次失败/重试的原因和正式 retry #3 结果。截图 SHA-256 与归档文件一致。 |
+| **F-007 required/medium** · 非 disposable 误报完整绿 | **`fixed` 维持成立**：当前脚本非 disposable 分支输出 `SM-006=SKIP`、`SMOKE RESULT: PARTIAL` 并 exit `8`；本地 v0.1.2 记录覆盖相同退出语义。 |
+| **F-008 required/high** · disposable 隔离与 destructive 守卫 | **`fixed` 维持成立**：当前脚本要求 `SMOKE_DISPOSABLE_CONFIRM=yes` 与 `SMOKE_ISOLATION_ID`，以 Compose project/API container/`db-data` mount 校验隔离，失败 exit `2`；SM-006 重启固定为该 project 的 `restart api`，未保留 `eval` 或任意外部命令。守卫日志覆盖缺 ID、不存在 project 的 fail-closed 路径和隔离 project 的完整绿。 |
+| **F-009 required/medium** · 当前 S4 revision CI 运行证据 | **`fixed` 维持成立**：run `30776646293` 的 `container-smoke` job 成功；实时 API/CLI 与归档日志均显示 `ci-container-smoke` project/volume、SM-001～SM-006 PASS、`SMOKE RESULT: PASS`、API restart persistence 和 `down -v` teardown。后续没有 S4 可执行实现变更。 |
+
+### 推荐项（非阻断）
+
+#### R-013 · 缓存计数应限定到正式 retry #3
+
+- **级别 / 严重度**：recommended / low
+- **证据**：REPRO-003 与 A-012 响应使用“全程仅 1 条 `CACHED`”表述，但完整归档还包含 retry #2 的 `WORKDIR /src CACHED`，正式 retry #3 也有一条同类 `WORKDIR` 缓存。两者都不是 `go build` 或 `npm run build`，不改变 F-005 的关闭结论。
+- **建议**：后续由 `/govern` 将表述收窄为“正式 retry #3 的项目编译层均非 `CACHED`，且该次仅有一条非编译 `WORKDIR` 缓存”，使正文与完整归档的重试历史完全一致。
+
+### 必改项汇总
+
+- **无开放 required。** F-005～F-009 的 `fixed` 关闭证据均成立；R-013 为非阻断可追溯性建议。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：A-012 所指出的唯一 required/high 缺口已由 REPRO-003 的实际项目编译输出、原始计时和 clean-checkout 记录补足；F-006～F-009 的既有关闭证据仍可维持。
+- 建议 `/govern` 仅将 A-013 作为本 finding-closure scope 的独立意见纳入汇总，并在决定是否进入 S5 前检查全部相关信息门禁、审计意见与 P-004 要求；R-013 可在该编排步骤按非阻断建议处理。
+
+### 声明
+
+本意见仅追加 `source: independent` 审计记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、信息项状态或 `goal-tree.md`；finding 响应与后续推进由 `/govern` 处理。
+
+## 响应 · A-013（/govern · 2026-08-03 · F-005～F-009 维持闭合、R-013 handled）
+
+按 P-004 §3.1：本 scope（A-011 F-005～F-009 关闭证据）相关意见为 A-011/A-012/A-013 全部 independent；用户书面指示「复审通过，响应审计意见 A-013」。本响应为 finding-closure 意见采纳与 recommended 处理，不构成放行/关门；进入 S5 前的自审裁决按 §3.1 在下一步单独询问。
+
+### Findings 响应
+
+- **verdict 采纳**：`pass` 成立——A-013 独立二次复审确认 F-005 的 REPRO-003 关闭证据（clean checkout、预 T0 `git status --short` 空、单调原始读数、正式 retry #3 的实际 `go build` 12.8s / `npm run build` 6.1s 非 `CACHED` 输出、64.833s ≤ 900s）补足了 A-012 的唯一 required/high 缺口；F-006～F-009 关闭证据维持成立；**本 scope 无开放 required**。
+- **F-005～F-009 → 全部维持 `fixed` 闭合**：A-011 关闭主张经 A-012（重做 F-005 证据）+ A-013（二次复审 pass）完整闭环，不再有开放 required。
+- **R-013（recommended/low · 缓存计数表述收窄）→ handled**：REPRO-003、A-012 响应节、D-008、02-execution、goal-tree 中「全程仅 1 条 `CACHED`」表述统一修正为「正式 retry #3 的项目编译层均非 `CACHED`，且该次仅一条非编译 `WORKDIR` 缓存」，与完整归档（含 retry #2 同类 `WORKDIR` 缓存）完全一致。
+
+### 状态与门禁边界
+
+- S3/S4 检查点维持勾选（`4/5`），验收有效性维持；**未**推进 S5、未勾选 Root R5、未关门。
+- `I-008-002` 维持 `verified`（协议 **v0.1.2**，正文未改）；`I-008-001` 不重开；`I-008-003` 仍 open（仅当 S6 实施）。
+- A-013 保持其历史 verdict（pass）与记录，不改写；本响应不把编排响应伪装成 `source: independent`。
+- **P-004 §3.1（下一步）**：F-005～F-009 关闭证据 scope 现无 `source: self` 覆盖（A-010 self 为 S3/S4 实施向、非 finding-closure）；进入 S5（阶段审计与 Root R5 勾选评估）前询问用户是否补 self finding-closure 审计，或按用户裁决直接推进。
+- **证据路径**：本响应节；A-013（independent）本意见；REPRO-003 + run log + 截图；D-008；02-execution 2026-08-03「响应 A-013」节；00-meta；goal-tree。
+
+## A-014 · F-005～F-009 关闭证据 self 复核（2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（AI 助手）
+- **类型 / scope**：finding-closure self 复核；覆盖 `GOAL-008-r5-engineering-fork` 的 A-011 **F-005～F-009** `fixed` 关闭证据（REPRO-003 重做后，A-012 响应与 A-013 独立二次复审的同一 scope）——按 P-004 §3.1 用户书面裁决「补一次 self 审计」补齐 `source: self` 覆盖（A-010 self 仅覆盖 S3/S4 实施向，非 finding-closure）。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区 `workspace-002-production-admin-foundation`（显式，Root `GOAL-001`，canonical 范围一致）；`shared_materials_catalog: none`，未使用共享资料作为关闭依据。
+- 已核对：A-011/A-012/A-013 及其响应；D-007/D-008；[I-008-002 协议 v0.1.2](attachments/I-008-002-fork-reproduction-protocol.md)（§3.1 编译不得预先完成、§3.2 计时、§3.3 失败留痕、§4 字段、§5 smoke 判据）；[R5-S3-REPRO-003.md](attachments/R5-S3-REPRO-003.md) 与完整 `r5-repro-003-run.txt`（含三次尝试全记录）；`r5-repro-003-endpoint4.png` sha256；`scripts/smoke.sh` 当前内容；`.github/workflows/r6-basic-matrix.yml` `container-smoke` job；`r5-smoke-disposable-local-v0.1.2.txt`；CI run `30776646293` 归档日志；`00-meta`/`02-execution`/`01-decision` 与 goal-tree 投影。
+- 独立核验（本轮实际操作）：正式 retry #3 段 pre-T0 `git status --short: []`、`docker ps` 空；`#29 [api build 6/6] ... go build` **DONE 12.8s**（非 CACHED）；`#38 [web build 7/7] ... npm run build` **DONE 6.1s**（真实 vite 输出：`vite v6.4.3`、`1814 modules transformed`、`built in 2.29s`）；该段唯一 `CACHED` 为 `#20 WORKDIR`（非编译层）；T0 `403981233142700` → T4 `404046066135300` = **64.833s ≤ 900s**；T1 healthz 200、T2 login token_len=176、T3 `/me` user+features、T4 `ENDPOINT4=PASS`；运行后与 teardown 后 `git status --short` 均空。`scripts/smoke.sh`：非 disposable 分支 `SMOKE RESULT: PARTIAL` + **exit 8**；disposable 强制 `SMOKE_DISPOSABLE_CONFIRM=yes` + `SMOKE_ISOLATION_ID`（缺失 → exit 2）；`check_isolation()` 机器校验 `docker compose -p <id> ps -q api` 与 `<id>_db-data` mount（不满足 → exit 2）；SM-006 重启固定 `docker compose -p <id> restart api`（无 eval）。workflow：`SMOKE_ISOLATION_ID: ci-container-smoke`、`-p ci-container-smoke` build/up/restart/down -v。CI 归档：`isolation: project=ci-container-smoke`、SM-006=PASS、`SMOKE RESULT: PASS`、`down -v` teardown。本地守卫日志：exit 8 / exit 2 ×2 / exit 0 + SM-006=PASS。
+
+### Findings（self 复核）
+
+| Finding | 复核结论 |
+|---------|----------|
+| **F-005 required/high** · S3 计时须计入项目 build | **fixed 成立**：REPRO-003 正式 retry #3 在 clean detached checkout 上以 `.env` 写入 + `docker compose up -d --build` 起算（§3.2，`.env` 写入在计时内），`go build` 与 `npm run build` 均实际执行非 `CACHED`，64.833s ≤ 900s。 |
+| **F-006 required/medium** · 记录字段 | **fixed 成立**：protocol/attempt/source/path/platform/cache precondition/timing（UTC + 单调原始读数）/checks/secrets/result 全字段落盘；失败/重试按 §3.3 留痕（attempt #1/#2 runner 工具链故障、attempt #3 通过）。 |
+| **F-007 required/medium** · 非 disposable 误报完整绿 | **fixed 成立**：非 disposable 分支 `PARTIAL` + exit 8；本地与脚本核对一致。 |
+| **F-008 required/high** · disposable 隔离守卫 | **fixed 成立**：强制确认标记 + 隔离身份、机器校验 project/卷、去 eval 固定重启、不满足 exit 2；CI 显式 `-p ci-container-smoke` 且留痕。 |
+| **F-009 required/medium** · 当前 revision CI 证据 | **fixed 成立**：run `30776646293`（`df913a5`）`container-smoke` job success，SM-001～006 PASS + 隔离留痕 + `down -v`；至当前 HEAD `apps/`、`scripts/`、workflow、compose 无差异（A-013 已核对）。 |
+
+### 必改项汇总
+
+- **无开放 required / recommended。** F-005～F-009 的 `fixed` 关闭证据经 self 复核成立，与 A-013（independent · pass）同向，无冲突。
+
+### 与既有意见的异同
+
+- 与 A-011（fail）及 A-012（fail · F-005 重做要求）同向闭环：self 复核确认 A-012 指出的缺口已由 REPRO-003 补足。
+- 与 A-013（independent · pass）结论一致（同向、无 verdict 冲突）；本意见为 P-004 §3.1 用户裁决补的 `source: self` 覆盖。
+
+### 结论 + 建议
+
+- **pass**：F-005～F-009 全部 `fixed` 合法闭合，无开放 required；本 scope 的 self 覆盖补齐（P-004 §3.1 闭环完成）。
+- 建议 `/govern`：本意见与 A-013 均为 pass 后，F-005～F-009 关闭证据无门禁残留；可推进 S5（阶段审计与 Root R5 勾选条件评估）。
+
+### 声明
+
+本意见为 `source: self` 复核记录，不修改目标 `status`、检查点、派生 `progress`、方案正文、信息项状态或 `goal-tree.md`；推进与状态变更由 `/govern` + 用户确认处理。
+
+## A-015 · R5 阶段审计 self（S1～S5 交付与 Root R5 勾选条件评估）（2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（AI 助手）
+- **类型 / scope**：stage-audit（P-002 阶段质量意识 · S5 检查点交付）；覆盖 `GOAL-008-r5-engineering-fork` **S1～S5 全部成功标准**的事实与证据链，评估并记录 **Root R5 检查点勾选条件**与 **Root / VP-002 关门证据口径**；不审 S6（可选加分）、不改变目标 status、不勾选 Root R5。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区 `workspace-002-production-admin-foundation`（显式）；Root `GOAL-001` 纲领 R5（I-005 verified、I-006 closed）；VP-002 active；Charter active；`shared_materials_catalog: none`。
+- 已核对：GOAL-008 五件套（00-meta 成功标准 S1～S5 + 信息表、01-decision D-001～D-008、02-execution 全时间线、03-audit A-001～A-014 及其响应）；[I-008-001-engineering-contract.md](attachments/I-008-001-engineering-contract.md) v1.0.0（C-001～C-007）；[I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) v0.1.2（SM-001～006、退出码、隔离守卫）；QUICKSTART.md；`apps/api/Dockerfile`、`apps/web/Dockerfile`、`compose.yaml`、`apps/web/nginx.conf`；`scripts/smoke.sh`；`.github/workflows/r6-basic-matrix.yml`；R5-S3-REPRO-001/002/003 与全部 run log/截图/CI 归档；goal-tree 投影；A-014 本轮 self 复核操作。
+
+### 成果（S1～S5 逐项）
+
+| 成功标准 | 结论 | 证据 |
+|----------|------|------|
+| **S1 · 环境与配置基线** | **成立** | `apps/api/.env.example` dev/prod 注解；`apps/api/README.md`「开发 vs 生产」+「启动与健康验证」；`apps/web/README.md` 生产/compose 注记；根 `README.md`「工程化与一键启动」；C-001/C-002 验证通过（A-004 independent · pass；F-002 生产守卫 → fixed，A-006/A-007 复核 pass）。 |
+| **S2 · 容器与一键启动** | **成立** | api/web Dockerfile + 根 compose.yaml + nginx `/api` 反代 + `.dockerignore` + CI `container-smoke` job；C-003～C-007 本机验证通过（healthz/登录/`/me`/SPA fallback/重启与 down-up 持久化）；A-004 pass + A-005/A-006（F-002/F-003 fixed）。 |
+| **S3 · fork 文档与 15 分钟体验** | **成立** | 根 QUICKSTART.md（双路径 + 终点 4 = `list-edit-lifecycle` + smoke 用法）；clean-ref 独立复现 [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)（预 T0 禁用 BuildKit 结果缓存，`go build`/`npm run build` 实际执行非 CACHED，**64.833s ≤ 900s**）；REPRO-001/002 保留历史（A-011/A-012/A-013/A-014 关闭闭环）。 |
+| **S4 · 可复现验收** | **成立** | `scripts/smoke.sh` SM-001～006 + 退出码 0/2/3/4/5/6/8/70 + `--disposable` 隔离守卫（F-007 exit 8、F-008 守卫、F-009 CI run 30776646293 全 PASS + 隔离留痕 + teardown）；本地四路径验证 log；A-013/A-014 复核 pass。 |
+| **S5 · 阶段审计与 Root 关门条件评估** | **本审计即 S5 交付** | A-014（self · finding-closure · pass）+ 本 A-015（self · stage-audit）；Root R5 勾选条件与关门证据口径见下节。 |
+
+### 意见台账（S1～S5 scope）
+
+- A-001～A-014 全部 responded 或自审完成；F-001～F-009（required）全部 `fixed` 合法闭合（其中 F-005 经 A-012 重做 + A-013/A-014 双 pass）；R-001～R-013（recommended）全部 handled 或非阻断；**无开放 required finding**。
+- 与既有意见无 verdict 冲突：A-010（self · pass）为实施向、A-011（independent · fail）历史裁决、A-012（fail → 响应 fixed）、A-013/A-014（pass）同向闭环。
+
+### 信息门禁
+
+- `I-008-001` verified（D-003，契约 v1.0.0）；`I-008-002` verified（D-004，协议 v0.1.2 权威，D-007/A-011 响应后）；`I-008-003` open（required，**仅当 S6 实施**——S6 为可选加分不进分母，不阻断 S5/关门）。
+- 无到期 open required 信息项影响本轮推进。
+
+### Root R5 勾选条件评估（本审计记录口径）
+
+- **Root R5 检查点勾选条件**：GOAL-008 五项核心成功标准（S1～S5）全部勾选 + 无开放 required finding / 到期 required 信息项 + 至少一次关门向审计（self 或 independent）。当前：S1～S5 已全勾选（本 A-015 后 `4/5 → 5/5`）、无开放 required、A-014（self）+ A-013（independent）覆盖关闭证据、A-015（self stage-audit）为本阶段审计——**满足勾选条件的证据口径**，但 Root R5 勾选本身须由用户确认后执行（Root 层状态变更）。
+- **Root / VP-002 关门证据口径**：Root 关门需 R1～R5 全部勾选（R5 待本目标完成后由用户确认勾选）+ Root close-out 审计；VP-002 关门需链接工作区证据（Root R5 勾选 + GOAL-008 close-out 审计 + 用户裁决），并满足 `docs/vision/reviews.md` 无阻断 required（当前 VRev 开放 required = 0）。
+
+### 必改项汇总
+
+- **无开放 required / recommended。** 本阶段审计 verdict：**pass**。
+
+### 与既有意见的异同
+
+- 与 A-004（S1/S2 · pass）、A-006（self）、A-010（self · S3/S4）、A-013（F-005～F-009 · pass）、A-014（self · finding-closure · pass）同向；A-005/A-011/A-012 的历史 `fail` 及相应 fixed 响应均保留为事实，不改写。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：S1～S5 交付事实与证据链成立，无开放 required finding、无到期 required 信息项、无意见冲突；**S5 检查点可勾选**（GOAL-008 `4/5 → 5/5`）。
+- 建议 `/govern`：勾选 S5 并同步 goal-tree；随后由用户确认：① 是否勾选 Root R5 检查点；② 是否对 GOAL-008 做 close-out 关门审计（self 或 `/audit`）以进入 Root/VP-002 关门流程；③ S6（可选加分）是否纳入。
+
+### 声明
+
+本意见为 `source: self` 阶段审计记录，不修改目标 `status`、派生 `progress`、Root R5 状态或 `goal-tree.md`；勾选与状态变更由 `/govern` + 用户确认处理。
+
+## A-016 · GOAL-008 关门独立审计（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（`$audit`）
+- **类型 / scope**：close-out；核对 `GOAL-008-r5-engineering-fork` 的 S1～S5 核心成功标准、相关 A-001～A-015 / I-008-001～003 门禁，以及 D-009 后当前工作树中的 S6 最小操作日志实现。Root R5、GOAL status/progress 和 goal-tree 不在本意见中变更。
+- **verdict**：conditional
+
+### 范围与依据
+
+- 显式工作区为 `workspace-002-production-admin-foundation`：`workspace.md` 绑定 Root `GOAL-001-production-admin-foundation`、`primary_plan: VP-002-production-admin-foundation`、canonical 范围一致，`shared_materials_catalog: none`。目标当前记录为 `active / 5/5`，Root 保持 `active / 4/5`；这些都是现状，不由本审计放行或改写。
+- S1～S5 的可归因运行证据分别固定在 clean ref `1961e5ae7e122d6263846f0ff673fbca074eb03f`（REPRO-003）和 CI ref `df913a59cc3678720fb7a9c010296de90beb7e2a`（run `30776646293`）。本审计将其作为历史、来源可追溯的核心证据，不把它们表述为当前未提交 S6 工作树的 CI 或容器复跑。
+- 本轮对当前工作树（HEAD `851f9b6221471372bd2a5256e5e973ea91f2df6f`，含未提交 S6 代码/测试/契约候选）独立执行：`apps/api` 的 `go test ./...`、`go vet ./...`、`go build ./...` 均通过；`apps/web` 的 `npm test` 为 23 files / 458 tests 通过，`npm run build` 通过。该本地结果是当前树的候选执行事实，不替代 CI、容器或发布验收。
+
+### 对照核心成功标准
+
+| 成功标准 | 独立结论 | 可核对证据 |
+|----------|----------|------------|
+| S1 · 环境与配置 | 成立 | `config.ValidateProd()` 拒绝非 development 环境的 `AUTH_DEV_SESSION_ENABLED=true`；Compose 固定 production / false 并要求两个 secret；当前 API 回归通过。 |
+| S2 · Compose 第二启动路径 | 成立（历史证据边界内） | `compose.yaml`、双 Dockerfile、healthcheck、web 等待 API healthy、`container-smoke` 历史 CI 归档。 |
+| S3 · fork 15 分钟体验 | 成立（历史证据边界内） | `R5-S3-REPRO-003` 记录 clean ref、非 CACHED 的 `go build` / `npm run build` 和 64.833s 四终点通过。 |
+| S4 · 可复现验收 | 成立（历史证据边界内） | `scripts/smoke.sh` 的 disposable 隔离守卫、SM-001～006、非 disposable exit 8，本地 disposable 归档和 CI run `30776646293`。 |
+| S5 · 阶段审计 | 成立（仅 S1～S5） | A-014 / A-015 与 A-013 的同向闭环；A-015 明确排除 S6，不能代替本次 S6 核对。 |
+
+### 信息门禁与当前 S6 范围
+
+- `I-008-001`、`I-008-002` 的 verified 证据与本 scope 无矛盾。
+- `I-008-003` 在 D-009 后被当前目标记录为 verified，且 S6 已被用户选择实施。它因此是本次已声明 S6 范围内的 required 信息/契约门禁；本意见不改写其状态，但 F-010 使该 verified 主张暂不能作为无条件关门依据。
+- A-015 中的 `I-008-003 open` 是其 S1～S5 / 不审 S6 的历史范围描述，不与 D-009 后的时序性状态变化静默互相覆盖。
+
+### Findings
+
+#### F-010 · S6 的 auth logout 未记录冻结的 username detail
+
+- **级别**：required / medium
+- **影响门禁**：`I-008-003` S6 实施与其在 GOAL-008 当前范围内的关门接受；不追溯重开 S1～S5 核心成功标准或 Root R5。
+- **证据**：`I-008-003-operation-log-contract.md` §3 冻结 auth 事件的 `detail` 为 `{"username":"<用户名>"}`。当前 `apps/api/internal/handler/auth.go` 的 logout 成功路径以空 `actorName`、空 `detail` 调用 `logOperation`，因此写入 NULL detail；`operations_test.go` 只断言 login detail，未断言 refresh/logout 的 detail。
+- **偏差**：D-009 / 02-execution 对 S6 的「六事件 + actor/record_id/detail」完成主张，不能由当前实现与测试完整支撑。
+- **关闭路径**：修正三类 auth 成功事件的冻结 detail 语义（至少 logout 必须写入 username 摘要），补齐 login / refresh / logout 的明确断言，重新执行 API 回归并请求 finding-closure 复审；若不按 fixed 路径处理，必须由 `/govern` 按 P-004 / P-003 取得并记录用户对该 required finding 的明确 residual 或 overruled 决策。
+
+#### R-014 · 为当前 S6 候选固定可复核版本与执行收据
+
+- **级别**：recommended / medium（非 S1～S5 或 Root R5 阻断项）
+- **证据**：REPRO-003 与 CI 归档分别固定在 `1961e5a` / `df913a5`；当前 HEAD 为 `851f9b6`，且 S6 路径仍未提交。当前本地测试通过，但不应被叙述成对应 revision 的 CI 或 Compose 验收。
+- **建议**：在后续 `/govern` 响应中，为保留的 S6 变更固定 revision / diff identity 与测试收据；若需要把 S6 纳入容器级主张，再补相应的版本化 CI 或 disposable smoke 证据。
+
+### 必改项汇总
+
+- **开放 required**：F-010。故本意见不能给出无条件关门建议。
+- **recommended**：R-014；不单独阻断 S1～S5 或 Root R5。
+
+### 与既有意见的异同
+
+- 与 A-013 / A-014 / A-015 对 S1～S5 的 pass 结论不冲突：本意见认可其历史证据边界，也不把本地回归冒充为 CI 或重新判定 Root R5。
+- 本意见因 D-009 后 S6 已进入当前目标记录而扩展到 A-015 明确未审的范围，首次发现 F-010；A-015 的旧 `I-008-003 open` 叙述按其时间与 scope 保留。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **conditional**：S1～S5 的核心关门证据在其已记录的 clean revision / CI 边界内成立；但当前目标同时宣称 S6 已实施、`I-008-003` 已 verified，而 F-010 尚未闭合。因此不得据此将 GOAL-008 置为 `done`，也不得把 S6 作为已验收事实。
+- 建议 `/govern` 先响应 F-010。由于 A-015 不覆盖 S6，若要在修正后推进整个目标的关门流程，编排器还必须按 P-004 §4.1 询问用户是否需要一次同 scope 的 self close-out 审计；不得自动跳过或强制补做。Root R5 勾选与 Root / VP-002 关门仍是独立的用户裁决和治理动作。
+
+### 声明
+
+本意见仅新增 `source: independent` 审计结论，不修改目标 `status`、检查点、派生 `progress`、信息项状态、方案正文或 `goal-tree.md`；finding 响应与任何生命周期变更由 `/govern` 处理。
+
+## 响应 · A-016（/govern · 2026-08-03 · F-010 fixed、R-014 handled）
+
+按 P-004 §3.3：A-016（independent · close-out · conditional）的 F-010 为单条 required finding，用户书面指示「走修复」（未选 residual/overruled）。落盘于 `01-decision` **D-010**、`02-execution` 2026-08-03「响应 A-016」节。
+
+### Findings 响应
+
+- **F-010（required/medium · S6 的 auth logout 未记录冻结的 username detail）→ fixed**：
+  - `apps/api/internal/handler/auth.go`：logout 成功路径不再以空 actorName/detail 记录，改经 `authEvent()` 用 `store.UserByID` 解析**真实登录用户名**，写入契约 §3 冻结的 `detail = {"username":"<用户名>"}`（`user-admin` → `{"username":"admin"}`）与 actorName；refresh 路径同样统一走 `authEvent()`（此前 refresh 也误用 `user.Name` 作 username，一并修正）；login 保持 `creds.Username`。不可解析 actor 时仍记录 actor_id + 服务日志错误（best-effort §5 不变）。
+  - 测试：`operations_test.go` 对 **login/refresh/logout 三类 auth 事件**统一断言 `detail` 含 `"username":"admin"`（此前仅 login）；`go test ./...`（apps/api）全绿、`go vet` 干净、`gofmt -l` 无输出。
+- **R-014（recommended/medium · 为当前 S6 候选固定可复核版本与执行收据）→ handled**：S6 变更当前为**未提交工作树**（HEAD `851f9b6221471372bd2a5256e5e973ea91f2df6f`；15 files，+284/−57），本地执行收据为 `go test ./...`（apps/api 全绿）、`go vet ./...`、web vitest 458/458、`npm run build` 通过——按 A-016 口径只作当前树候选事实，**不冒充** CI/容器验收；如需把 S6 纳入容器级主张，将补版本化 CI 或 disposable smoke 证据（由用户确认后提交触发）。
+
+### 状态与门禁边界
+
+- `I-008-003` 维持 `verified`（契约 v1.0.0）；F-010 修复后 S6 实现与冻结契约对齐，其关门接受主张可复核。
+- S1～S5 核心成功标准维持成立（历史证据边界内，A-016 认可）；S6 为可选加分、不进 `progress` 分母（GOAL-008 保持 `active / 5/5`）。
+- **未**将 GOAL-008 置 `done`、未勾选 Root R5、未关门——A-016 为 close-out conditional，F-010 已按 fixed 闭合，但 P-004 §3.1：A-015（self）明确排除 S6，修正后推进整个目标关门流程前须询问用户是否补一次覆盖 S6 的 self close-out 审计；Root R5 勾选与 Root / VP-002 关门仍为独立用户裁决。
+- **证据路径**：本响应节；`01-decision` D-010；`02-execution` 2026-08-03「响应 A-016」节；`apps/api/internal/handler/auth.go`（`authEvent`）+ `operations_test.go`（三类 auth detail 断言）；`I-008-003-operation-log-contract.md` §3/§5；A-016（independent）本意见。
+
+## A-017 · A-016 F-010 关闭证据独立复审（2026-08-03）
+
+- **source**：independent
+- **auditor**：Codex（`$audit`）
+- **类型 / scope**：finding-closure；仅复核 A-016 的 F-010 修复与 R-014 的当前 revision 收据。核对 D-010、`I-008-003` v1.0.0、当前 `eb6ff19` 提交中的 auth operation-log 代码/测试和本地回归。S1～S5 历史 CI/Compose 证据、GOAL-008 关门、Root R5 勾选及 VP-002 关门不在本意见中放行或变更。
+- **verdict**：pass
+
+### 范围与门禁
+
+- 工作区绑定保持有效：`workspace-002-production-admin-foundation` 的 canonical root、Root `GOAL-001-production-admin-foundation` 与 `primary_plan: VP-002-production-admin-foundation` 一致，且 `shared_materials_catalog: none`。
+- D-009 后用户选择实施可选 S6，`I-008-003` v1.0.0 维持 `verified`；其 §3 要求三类 auth 事件的 `detail` 为只含 username 摘要的 JSON，§5 要求成功路径在响应前 best-effort 记录。A-016 的 F-010 因此是本次唯一 required finding-closure scope。
+- A-016 响应时记录的未提交候选 `851f9b6` 是当时事实；当前 S6 已固定为 clean revision `eb6ff197012c84bb03bb0a1881e011ebbb67674b`，不倒改历史收据，也不将当前本地结果叙述为新的 CI 或容器验收。
+
+### F-010 关闭证据
+
+- **实现**：`apps/api/internal/handler/auth.go` 的 login 在成功后以 `creds.Username` 写入 auth detail；refresh 与 logout 在成功后调用 `authEvent()`，该函数经 `store.UserByID` 解析真实 username 后写入相同的 `{"username":...}` 摘要与 actorName。`jsonQuote()` 使用 `json.Marshal` 生成 JSON 字符串字面量；detail 的输入仅为 username，不接触 access/refresh token、password 或 secret。
+- **回归测试**：`apps/api/internal/handler/operations_test.go` 的 `TestOperationLogAuthEvents` 覆盖 login、refresh、logout 三类成功事件，按倒序校验事件、`actor_id=user-admin` 与每条的 `"username":"admin"` detail；原 F-010 的空 detail 不能通过该断言。`auth.Authenticator.Logout` 对已撤销 token 仍返回 owner ID，故测试中的幂等 logout 也实际经过 logout 的 auth-event 记录路径。
+- **本轮独立执行**：当前 clean revision 上，`apps/api` 的 `go test ./...`、`go vet ./...`、`go build ./...` 均通过；`gofmt -l` 对本提交 Go 文件无输出。`apps/web` 的 vitest 为 23 files / 458 tests 通过，`npm run build` 通过。`git diff --check` 与 cached diff check 均通过，工作树 clean。
+
+### Findings
+
+- **F-010（required/medium）→ fixed，维持闭合**：三条 auth 成功路径均满足 `I-008-003` §3 的冻结 username detail 语义，且有可重复的 handler 回归与完整 API 回归。当前 scope 无开放 required finding，`I-008-003` 不需要 residual 或 overruled。
+- **R-014（recommended/medium）→ handled，维持处理**：S6 的 revision identity 已由当前 clean `eb6ff19` 固定；本意见仅确认本地执行事实，不扩大为 CI/Compose 结论。
+- **R-015（recommended/low，非阻断）**：将 auth detail 测试由 `strings.Contains` 提升为 JSON 解码后精确断言字段集合与敏感字段缺席，并单独覆盖使用轮换后有效 refresh token 的首次 logout。现有实现的 `jsonQuote()` 和三类路径回归足以关闭 F-010；该建议不重开 finding、不阻断 GOAL-008 或 Root R5。
+
+### 与既有意见的关系
+
+- 本意见确认 A-016 的唯一 required 条件 F-010 已按 fixed 路径闭合，但不将 A-016 的整体 close-out verdict 自动改写为 pass：A-015 的 self 审计明确排除 S6，P-004 对是否补同 scope self close-out 审计的用户询问仍未替代。
+- S1～S5 继续仅在其 `1961e5a` / `df913a5` 历史证据边界内成立；本次 `eb6ff19` 本地回归不取代、也不否定既有 CI/Compose 证据。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass（限定 finding-closure scope）**：F-010 可维持 `fixed`，本 scope 无开放 required。R-015 仅为非阻断加固建议。
+- 若要继续 GOAL-008 的完整关门流程，`/govern` 必须先按 P-004 询问用户是否补覆盖 S6 的 self close-out 审计；本意见不将 GOAL-008 置为 `done`，也不勾选 Root R5 或推进 Root / VP-002 关门。
+
+### 声明
+
+本意见仅新增 `source: independent` 审计结论，不修改目标 `status`、检查点、派生 `progress`、信息项状态、方案正文或 `goal-tree.md`；finding 响应与生命周期变更由 `/govern` 处理。
+
+## A-018 · GOAL-008 关门 self 审计（S1～S6 · 2026-08-03）
+
+- **source**：self
+- **auditor**：/govern（AI 助手）
+- **类型 / scope**：close-out；复核 `GOAL-008-r5-engineering-fork` **S1～S6 全部成功标准**（含 S6 可选加分——按 P-004 §3.1 用户裁决「补充自设计/补自审」补齐 A-015 未覆盖的 S6 scope 的 `source: self` 覆盖）、信息门禁 `I-008-001/002/003`、意见台账 A-001～A-017 闭合、关门条件（无开放 required、成功标准可核对、关门向审计存在）。不改变 Root R5 勾选与 Root / VP-002 关门（独立用户裁决）。
+- **verdict**：pass
+
+### 范围与依据
+
+- 工作区 `workspace-002-production-admin-foundation`（显式，Root `GOAL-001`，canonical 一致）；`shared_materials_catalog: none`。
+- 已核对：GOAL-008 五件套与 goal-tree 投影；I-008-001（v1.0.0）/I-008-002（v0.1.2）/I-008-003（v1.0.0）契约与 verified 状态；D-001～D-010；A-001～A-017 及各自响应；REPRO-001/002/003 与 run log/截图/CI 归档；`scripts/smoke.sh`；workflow `container-smoke`；S6 代码（`store/operations.go`、handler `authEvent`/records 接线、迁移 0004）与测试。
+- 本轮实际操作：HEAD `eb6ff19…`（S6 clean revision）+ 未提交测试加固（R-015：auth detail JSON 精确断言 + 轮换后首次 logout 覆盖）；`go test ./...`（apps/api）全绿、`go vet` 干净、`gofmt -l` 无输出、web vitest 458/458。
+
+### 成果（S1～S6 逐项）
+
+| 成功标准 | 结论 | 证据 |
+|----------|------|------|
+| **S1 · 环境与配置基线** | **成立** | C-001/C-002 + `config.ValidateProd()` 生产守卫（A-004 pass、F-002 fixed 复核 pass）。 |
+| **S2 · 容器与一键启动** | **成立** | C-003～C-007 本机验证 + 双 Dockerfile/compose/nginx 反代 + CI `container-smoke`（A-004 pass、A-005/A-006 复核）。 |
+| **S3 · fork 文档与 15 分钟体验** | **成立** | QUICKSTART + [R5-S3-REPRO-003](attachments/R5-S3-REPRO-003.md)（clean ref `1961e5a`，编译层非 CACHED，64.833s ≤ 900s；A-012 重做 + A-013/A-014 双 pass 关闭闭环）。 |
+| **S4 · 可复现验收** | **成立** | `scripts/smoke.sh` SM-001～006 + 隔离守卫 + 部分绿 exit 8 + CI run `30776646293`（F-007/F-008/F-009 fixed + A-013/A-014 复核）。 |
+| **S5 · 阶段审计与 Root 关门条件评估** | **成立** | A-015（self · stage-audit · pass）——Root R5 勾选条件口径已记录（S1～S5 全勾选 + 无开放 required + 关门向审计）。 |
+| **S6 · 最小操作日志（可选加分）** | **成立** | `I-008-003` v1.0.0 verified（D-009）+ 实施（0004 迁移、`store/operations.go`、handler 六事件接线、best-effort）；F-010 fixed（auth username detail 对齐契约）+ A-017（independent · finding-closure · pass）+ R-015 加固测试（本轮，JSON 精确断言 + 首次 logout 覆盖）。 |
+
+### 意见台账与信息门禁（关门检查）
+
+- A-001～A-017 全部 responded 或自审完成；**F-001～F-010（required）全部 `fixed` 合法闭合**（F-005 经 A-012 重做 + A-013/A-014 双 pass；F-010 经 A-017 pass + 本轮 R-015 加固）；R-001～R-015（recommended）全部 handled 或非阻断；**无开放 required finding**。
+- `I-008-001`（v1.0.0）、`I-008-002`（v0.1.2）、`I-008-003`（v1.0.0）全部 `verified`；**无到期 open required 信息项**。
+- 成功标准 S1～S5（核心，5/5）+ S6（可选加分）全部可核对达成。
+- 关门向审计存在：A-013（independent close-out 相关）、A-016（independent close-out）、A-017（independent finding-closure）、A-014/A-015/A-018（self）。
+
+### 必改项汇总
+
+- **无开放 required / recommended。** 本 close-out self 审计 verdict：**pass**——GOAL-008 关门条件满足（可置 `done` 的证据口径；状态变更由用户确认后执行）。
+
+### 与既有意见的异同
+
+- 与 A-016（conditional · S1～S5 成立 + F-010 开放）及 A-017（pass · F-010 闭合）同向：本自审确认 F-010 修复后 S6 与契约对齐，A-016 的 conditional 条件已消解（历史 verdict 不改写）。
+- 与 A-015（self · stage-audit）互补：A-015 明确排除 S6，本意见按 P-004 §3.1 补齐 S6 scope 的 self 覆盖。
+
+### 结论 + 建议给编排器/用户的下一步
+
+- **pass**：GOAL-008 五项核心成功标准（5/5）+ S6 加分全部成立，无开放 required、无到期信息门禁、无意见冲突；关门条件满足。
+- 建议 `/govern`：合并响应 A-017/A-018 后，由用户确认将 GOAL-008 置 `done` 并同步 goal-tree；随后独立裁决 Root R5 勾选与 Root / VP-002 关门。
+
+### 声明
+
+本意见为 `source: self` 关门审计记录，不修改目标 `status`、派生 `progress`、Root R5 状态或 `goal-tree.md`；状态变更由 `/govern` + 用户确认处理。
+
+## 合并响应 · A-017 + A-018（/govern · 2026-08-03 · F-010 维持 fixed、R-014/R-015 handled、close-out pass）
+
+按 P-004 §3.1：A-016/A-017 均为 independent；用户书面裁决「补充自设计（补自审），没问题的话，合并响应交叉审计，开始关门」→ 补 **A-018（self · close-out · S1～S6 · pass）** 补齐 S6 scope 的 self 覆盖后统一响应。
+
+### Findings 响应
+
+- **A-017（independent · finding-closure · pass）采纳**：F-010 `fixed` 维持闭合（三条 auth 成功路径均满足 `I-008-003` §3 冻结 username detail，handler 回归 + API 全量回归可重复）；R-014 维持 handled（S6 已固定 clean revision `eb6ff19`，本地执行事实不冒充 CI/容器验收）。
+- **R-015（recommended/low · auth detail 测试加固）→ handled**：`operations_test.go` `TestOperationLogAuthEvents` 提升为 **JSON 解码精确断言**（`detail` 仅含 `username: "admin"` 单字段、无 token/password/secret）并**单独覆盖轮换后有效 refresh token 的首次 logout**（login → refresh 轮换 → 用轮换 token logout，非幂等路径）；`go test ./...`（apps/api）全绿 + `go vet` 干净 + `gofmt -l` 无输出 + web vitest 458/458。
+- **A-018（self · close-out · pass）采纳**：S1～S5 核心成功标准（5/5）+ S6 加分全部成立；F-001～F-010 全部 `fixed` 闭合、R-001～R-015 全部 handled/非阻断；`I-008-001/002/003` 全部 `verified`；关门向审计齐备（A-013/A-014/A-015/A-016/A-017/A-018）——**GOAL-008 关门条件满足**。
+
+### 状态与门禁边界
+
+- **GOAL-008 已置 `done`（2026-08-03，用户确认）**：`00-meta` status → `done`、`02-execution`/`03-audit`/goal-tree 同步；S6 保持可选加分标注（不进分母，随目标关闭）。
+- **Root R5 检查点已勾选（Root `4/5 → 5/5`，用户确认）**：Root `00-meta` R5 行勾选 + 派生进度同步；Root 关门证据口径见 Root `02-execution` 2026-08-03 节。
+- `I-008-001/002/003` 全部 `verified`；无开放 required、无到期信息门禁。
+- **未做**：Root close-out 关门审计与 VP-002 关门为独立用户裁决（Root / 愿景层），本响应不自动推进。
+- **证据路径**：本响应节；A-017（independent · pass）；A-018（self · close-out · pass）；`01-decision` D-010；`02-execution` 2026-08-03「响应 A-016」节与「关门」节；`00-meta`/goal-tree 状态同步。

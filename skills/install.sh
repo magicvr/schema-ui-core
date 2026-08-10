@@ -72,7 +72,7 @@ Options:
                         Opt-in only — avoids form-menu UX.
   --all                 Install Claude + Grok + Copilot + Codex + ensure prompts/, templates/ and
                         contracts/ under --skills-dir; primary entry remains /govern
-  --init-workspace      GOAL-019: create docs/workspace-NNN-SLUG/ with workspace.md +
+  --init-workspace      GOAL-019: create docs/workspaces/workspace-NNN-SLUG/ with workspace.md +
                         goal-tree.md (does NOT create GOAL-* five-pack; use /govern for Root)
   --workspace-slug S    Required with --init-workspace (lowercase hyphen slug)
   --root-slug S         Required with --init-workspace → GOAL-001-<S>
@@ -218,7 +218,7 @@ copy_dir_merge() {
 print_next_steps() {
   local step2
   if [[ "$INIT_WORKSPACE_DONE" -eq 1 ]]; then
-    step2="2. Workspace skeleton ready: docs/workspace-${WORKSPACE_NNN}-${WORKSPACE_SLUG}/
+    step2="2. Workspace skeleton ready: docs/workspaces/workspace-${WORKSPACE_NNN}-${WORKSPACE_SLUG}/
      Run /govern to create Root GOAL-001-${ROOT_SLUG} (five-pack)."
   else
     step2="2. Create workspace skeleton (pick one):
@@ -273,7 +273,7 @@ init_workspace_skeleton() {
   today="$(date +%Y-%m-%d 2>/dev/null || echo '2026-07-24')"
   local ws_id="workspace-${WORKSPACE_NNN}-${WORKSPACE_SLUG}"
   local root_id="GOAL-001-${ROOT_SLUG}"
-  local scope="docs/${ws_id}/"
+  local scope="docs/workspaces/${ws_id}/"
   local ws_dir="$TARGET_DIR/$scope"
   local ws_file="${ws_dir}workspace.md"
   local tree_file="${ws_dir}goal-tree.md"

@@ -63,11 +63,11 @@ version: 0.8.0
 | [reviews/](reviews/) | 正式报告目录 |
 | [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 4 delivery；VP-006 lead = workspace-005） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议全量实施清单（`F-V001` 证据；整份契约收口见 VP-006） |
-| [../workspace-001-mvp-admin-foundation/](../workspace-001-mvp-admin-foundation/) | primary · Root `GOAL-001-mvp-admin-foundation` · VP-001 |
-| [../workspace-002-production-admin-foundation/](../workspace-002-production-admin-foundation/) | delivery · VP-002 lead（closed 历史绑定） |
-| [../workspace-003-modular-admin-architecture/](../workspace-003-modular-admin-architecture/) | delivery · VP-003 lead（closed 历史绑定） |
-| [../workspace-004-module-contribution-readiness/](../workspace-004-module-contribution-readiness/) | delivery · VP-004 lead（closed 历史绑定） |
-| [../workspace-005-full-protocol-contract-v2-7-0/](../workspace-005-full-protocol-contract-v2-7-0/) | delivery · **VP-006 lead**（现行） |
+| [../workspace-001-mvp-admin-foundation/](../workspaces/workspace-001-mvp-admin-foundation/) | primary · Root `GOAL-001-mvp-admin-foundation` · VP-001 |
+| [../workspace-002-production-admin-foundation/](../workspaces/workspace-002-production-admin-foundation/) | delivery · VP-002 lead（closed 历史绑定） |
+| [../workspace-003-modular-admin-architecture/](../workspaces/workspace-003-modular-admin-architecture/) | delivery · VP-003 lead（closed 历史绑定） |
+| [../workspace-004-module-contribution-readiness/](../workspaces/workspace-004-module-contribution-readiness/) | delivery · VP-004 lead（closed 历史绑定） |
+| [../workspace-005-full-protocol-contract-v2-7-0/](../workspaces/workspace-005-full-protocol-contract-v2-7-0/) | delivery · **VP-006 lead**（现行） |
 
 模板（冷启动 / Review 复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`、`reviews-index.md`、`review.md`。
 

@@ -1,7 +1,7 @@
 # QUICKSTART · 15 分钟 fork 上手（R5 · GOAL-008 S3）
 
 > 面向 fork 使用者的最小上手段。目标：**按本文档从零配置并启动，≤15 分钟（不含依赖下载/镜像拉取）进入系统**——登录成功 + 后台可交互。
-> 本文件的终点与计时口径按 [I-008-002 fork 复现协议 v0.1.1](docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) 冻结；独立复现记录见 GOAL-008 `02-execution.md`。
+> 本文件的终点与计时口径按 [I-008-002 fork 复现协议 v0.1.1](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) 冻结；独立复现记录见 GOAL-008 `02-execution.md`。
 
 ## 0. 前置
 
@@ -99,7 +99,7 @@ SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
 bash scripts/smoke.sh --disposable
 ```
 
-> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
+> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
 
 ## 4. 升级与恢复边界
 
@@ -113,7 +113,7 @@ bash scripts/smoke.sh --disposable
 
 ## 5. 下一步：接业务
 
-> **协议覆盖权威**：本仓对 `schema-ui-docs@v2.7.0` 的整份契约覆盖由 **`I-PROTO-FULL-001`** 定义（[workspace-005 Root attachments](docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)：12/12 能力域、24/24 registry type、16/16 conformance 套件 include）。历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线（只读）。协议能力清单见 [protocol-inventory-v2.7.0.md](docs/vision/protocol-inventory-v2.7.0.md)；任何「已支持 v2.7.0」声明必须以覆盖表 + 实现证据背书。
+> **协议覆盖权威**：本仓对 `schema-ui-docs@v2.7.0` 的整份契约覆盖由 **`I-PROTO-FULL-001`** 定义（[workspace-005 Root attachments](docs/workspaces/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)：12/12 能力域、24/24 registry type、16/16 conformance 套件 include）。历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线（只读）。协议能力清单见 [protocol-inventory-v2.7.0.md](docs/vision/protocol-inventory-v2.7.0.md)；任何「已支持 v2.7.0」声明必须以覆盖表 + 实现证据背书。
 
 - **完整一方标准 Admin 功能模块**（必须 / 禁止 / 归属判定、组合根与 Profile、全局迁移）：见操作契约  
   **[docs/architecture/module-contribution-playbook.md](docs/architecture/module-contribution-playbook.md)**  

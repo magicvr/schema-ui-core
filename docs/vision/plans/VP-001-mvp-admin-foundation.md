@@ -29,7 +29,7 @@ parent: null
 
 上述引用固定协议来源。本地实施清单与 React/Go/范例/验证映射见 [protocol-inventory-v2.7.0.md](../protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`，2026-07-31）。
 
-**已冻结的覆盖基线**：挂接工作区的 Root D-009 已将 [I-PROTO-001 覆盖表](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md) **v0.1.3** 冻结为 MVP 子集，`I-PROTO-001=verified`。该冻结不等同于完整协议支持、R3-R5 实现/验收完成或本 VP 可关门。
+**已冻结的覆盖基线**：挂接工作区的 Root D-009 已将 [I-PROTO-001 覆盖表](../../workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md) **v0.1.3** 冻结为 MVP 子集，`I-PROTO-001=verified`。该冻结不等同于完整协议支持、R3-R5 实现/验收完成或本 VP 可关门。
 
 ## 方向级退出判据
 
@@ -51,7 +51,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-01 | **closed** | 三条方向级退出判据均以挂接工作区 Q2 证据满足：React+Go 可运行/可 fork/固定协议边界（evidence-index C-001~C-004 + CI run `30666932343`）；受控覆盖清单每项有实现/范例/验证（I-PROTO-001 v0.1.3 + I-007-001 registry + stage3 conformance）；核心账号权限前后端集成不依赖未声明业务模块（runtime-probes + account-permission-oracle P-1~P-4/D-1~D-6 + dperm 17 例）。GOAL-008 与 Root `GOAL-001` 均 `done`（A-005 self + A-006 independent close-out 双 pass，开放 required=0）。 | [vp-evidence-assembly.md](../../workspace-001-mvp-admin-foundation/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/vp-evidence-assembly.md)；[evidence-index.json](../../workspace-001-mvp-admin-foundation/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/evidence/acceptance/evidence-index.json)；[Root GOAL-001 00-meta](../../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/00-meta.md) | 有界 closed：`reactions` multi-round（16/16）、request-construction batch（11）、D-UPLOAD 整域为冻结边界排除（I-PROTO-001 v0.1.3，Root D-008/D-010）；浏览器级拒绝路径未断言（真实 manifest 无权限门控项，拒绝以 renderer/组件层 oracle 断言，C-006 exclusion）——均点名工作区 `workspace-001-mvp-admin-foundation` 与目标 GOAL-001/GOAL-008，非 required 缺口。 |
+| 2026-08-01 | **closed** | 三条方向级退出判据均以挂接工作区 Q2 证据满足：React+Go 可运行/可 fork/固定协议边界（evidence-index C-001~C-004 + CI run `30666932343`）；受控覆盖清单每项有实现/范例/验证（I-PROTO-001 v0.1.3 + I-007-001 registry + stage3 conformance）；核心账号权限前后端集成不依赖未声明业务模块（runtime-probes + account-permission-oracle P-1~P-4/D-1~D-6 + dperm 17 例）。GOAL-008 与 Root `GOAL-001` 均 `done`（A-005 self + A-006 independent close-out 双 pass，开放 required=0）。 | [vp-evidence-assembly.md](../../workspaces/workspace-001-mvp-admin-foundation/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/vp-evidence-assembly.md)；[evidence-index.json](../../workspaces/workspace-001-mvp-admin-foundation/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/evidence/acceptance/evidence-index.json)；[Root GOAL-001 00-meta](../../workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/00-meta.md) | 有界 closed：`reactions` multi-round（16/16）、request-construction batch（11）、D-UPLOAD 整域为冻结边界排除（I-PROTO-001 v0.1.3，Root D-008/D-010）；浏览器级拒绝路径未断言（真实 manifest 无权限门控项，拒绝以 renderer/组件层 oracle 断言，C-006 exclusion）——均点名工作区 `workspace-001-mvp-admin-foundation` 与目标 GOAL-001/GOAL-008，非 required 缺口。 |
 
 ## 规划修订短史
 

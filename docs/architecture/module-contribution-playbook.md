@@ -21,7 +21,7 @@ architecture_boundary: module-architecture.md
 | 架构终态（契约与边界） | [module-architecture.md](module-architecture.md) |
 | 本 playbook（操作化清单） | 本文件 |
 | 发现入口 | [overview.md](overview.md) · 根 [QUICKSTART.md](../../QUICKSTART.md) §5 |
-| 过程台账 | `docs/workspace-004-module-contribution-readiness/`（VP-004） |
+| 过程台账 | `docs/workspaces/workspace-004-module-contribution-readiness/`（VP-004） |
 
 **不是**本文件职责：Goal Governance 元规则（[principles.md](principles.md) P-001～P-006）、workspace-protocol、默认代码脚手架、`AGENTS.md`/Skills 改写。
 

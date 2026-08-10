@@ -34,8 +34,8 @@ version: 0.4.0
 | 愿景树 | `workspaces.md` | present | [workspaces.md](workspaces.md)。 |
 | 愿景树 | `consumer-checklist.md` | present | 本文件。 |
 | 意图 | 至少一个 `plans/VP-*.md` | present | [VP-001](plans/VP-001-mvp-admin-foundation.md)。 |
-| 工作区 | 显式 `workspace.md` | **present** | [workspace-001-mvp-admin-foundation/workspace.md](../workspace-001-mvp-admin-foundation/workspace.md)；`primary_plan`=VP-001；`vision_role: primary`。 |
-| 目标 | 工作区 `goal-tree.md` 与 Root 五件套 | **present** | [goal-tree.md](../workspace-001-mvp-admin-foundation/goal-tree.md)；Root `GOAL-001-mvp-admin-foundation`。 |
+| 工作区 | 显式 `workspace.md` | **present** | [workspace-001-mvp-admin-foundation/workspace.md](../workspaces/workspace-001-mvp-admin-foundation/workspace.md)；`primary_plan`=VP-001；`vision_role: primary`。 |
+| 目标 | 工作区 `goal-tree.md` 与 Root 五件套 | **present** | [goal-tree.md](../workspaces/workspace-001-mvp-admin-foundation/goal-tree.md)；Root `GOAL-001-mvp-admin-foundation`。 |
 
 ## 结论
 

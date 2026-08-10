@@ -38,11 +38,12 @@ version: 0.10.0
              │ 读写                      │ （非现行投资面）
              └────────────┬─────────────┘
                           ▼
-             ┌──────────────────────────┐
-             │ workspace-<NNN>-slug/     │  ← 运行时目标真相源
-             │ workspace.md + goal-tree │
-             │ + 平铺 GOAL-* 五件套      │
-             └──────────────────────────┘
+             ┌──────────────────────────────┐
+             │ docs/workspaces/              │
+             │   workspace-<NNN>-slug/      │  ← 运行时目标真相源
+             │   workspace.md + goal-tree  │
+             │   + 平铺 GOAL-* 五件套       │
+             └──────────────────────────────┘
 ```
 
 `workspace.md` 绑定 Root Goal、canonical 范围、共享资料目录指针与**必填** `plan_refs`/`primary_plan`；**不**保存目标生命周期状态。愿景目录 `docs/vision/` 为**单愿景**对齐链（Charter→VP→区），**不是** progress 或 Goal 审计台账（Vision Review 另见 `reviews.md`）。
@@ -51,8 +52,8 @@ version: 0.10.0
 
 | 路径 | 职责 |
 |------|------|
-| `docs/workspace-<NNN>-<slug>/` | 当前工作区的目标与过程记录（扁平） |
-| `docs/workspace-<NNN>-<slug>/workspace.md` | 显式工作区绑定与共享资料固定引用；不保存目标状态 |
+| `docs/workspaces/workspace-<NNN>-<slug>/` | 当前工作区的目标与过程记录（扁平） |
+| `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` | 显式工作区绑定与共享资料固定引用；不保存目标状态 |
 | `docs/vision/` | Charter、VP、对齐契约；非 goal-tree |
 | `docs/shared-materials/` | 工作区外的共享资料候选库存；不保存目标状态 |
 | `docs/templates/` | 核心 canonical 文档模板 |

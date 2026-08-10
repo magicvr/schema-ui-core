@@ -38,7 +38,7 @@ P-001 与 P-005 以 AGENTS 为准；**全文**见 `docs/architecture/principles.
 - 目标标题：【用户语言】
 - 英文短 slug（小写、短横线）：【如 improve-auth】；**Root 与工作区 slug 必须用户确认，禁止静默占位**
 - 父目标完整 ID：【如 GOAL-001-my-root-slug；Root 则 null】
-- 工作区：【当前 `docs/workspace-<NNN>-<slug>/workspace.md` 的 id 与路径；若尚无则先收集 workspace-slug 再 scaffold】
+- 工作区：【当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` 的 id 与路径；若尚无则先收集 workspace-slug 再 scaffold】
 - 一句话概述：
 - 初始成功标准（2～5 条可验证项；可标“暂定”）：
 - 是否需要高层路线图？【是 / 否】
@@ -51,7 +51,7 @@ P-001 与 P-005 以 AGENTS 为准；**全文**见 `docs/architecture/principles.
 
 0. **工作区骨架（仅当需要新建显式工作区 / S0）**  
    - 确认用户给出的 `workspace-slug` 与 Root slug（禁止擅自 `main-vision` 等）。  
-   - 创建 `docs/workspace-001-<workspace-slug>/`（首工作区 NNN=`001`，除非用户指定其他编号）。  
+   - 创建 `docs/workspaces/workspace-001-<workspace-slug>/`（首工作区 NNN=`001`，除非用户指定其他编号）。  
    - 从模板复制 `workspace.md`：优先 `docs/templates/workspace-context.md`，否则 `<SKILLS_PKG>/core/docs/templates/workspace-context.md`。  
    - 写入 frontmatter：`id`、`root_goal`（即将创建的 Root 完整 id）、`canonical_scope`（该工作区路径，以 `/` 结尾）、`shared_materials_catalog`（默认 `none`）、status/created/updated/version。  
    - 确保 `goal-tree.md` 存在（可先空壳，步骤 8 写满）。  
@@ -61,7 +61,7 @@ P-001 与 P-005 以 AGENTS 为准；**全文**见 `docs/architecture/principles.
    - 创建**非 Root** 子目标时：工作区必须已存在且绑定正确。  
    - 仅当用户明确维护旧仓、且无显式工作区根时，才使用 legacy `docs/goals/`。  
 2. 新编号 = 当前工作区最大编号 + 1（三位）。Root 固定 GOAL-001。**禁止**把工作区编号嵌进 goal id。  
-3. 创建 `<workspace-root>/GOAL-NNN-<slug>/`（平铺）。`parent` 与同区链接用短 id；若正文需提及他区目标，落盘用 **Q2** 路径（`docs/workspace-…/GOAL-…/`），对话说明用 **Q3**（`[workspace_id] GOAL-…`）。  
+3. 创建 `<workspace-root>/GOAL-NNN-<slug>/`（平铺）。`parent` 与同区链接用短 id；若正文需提及他区目标，落盘用 **Q2** 路径（`docs/workspaces/workspace-…/GOAL-…/`），对话说明用 **Q3**（`[workspace_id] GOAL-…`）。  
 
 4. 一次写入五件套：`00-meta` / `01-decision` / `02-execution` / `03-audit` / `attachments/`；同时创建 `01-decision/`、`02-execution/`、`03-audit/`。索引 `.md` 不承载新目标的完整 D/E/A 正文。
 5. 模板源：优先 `docs/templates/goal-folder/`；否则 `<SKILLS_PKG>/core/docs/templates/goal-folder/`（GOAL-022：包内唯一分发源）。  

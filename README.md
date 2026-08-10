@@ -12,8 +12,8 @@
 | [docs/architecture/monorepo-layout.md](docs/architecture/monorepo-layout.md) | **Monorepo 布局与包管理约定（R1）** |
 | [docs/architecture/directory-layout.md](docs/architecture/directory-layout.md) | 治理目录布局 |
 | [docs/vision/charter.md](docs/vision/charter.md) | 现行愿景 Charter |
-| [docs/workspace-008-admin-module-readiness/goal-tree.md](docs/workspace-008-admin-module-readiness/goal-tree.md) | 当前准入与基架收敛工作区（VP-008）目标树 |
-| [docs/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspace-003-modular-admin-architecture/goal-tree.md) | 模块化架构工作区目标树（历史） |
+| [docs/workspaces/workspace-008-admin-module-readiness/goal-tree.md](docs/workspaces/workspace-008-admin-module-readiness/goal-tree.md) | 当前准入与基架收敛工作区（VP-008）目标树 |
+| [docs/workspaces/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspaces/workspace-003-modular-admin-architecture/goal-tree.md) | 模块化架构工作区目标树（历史） |
 | [AGENTS.md](AGENTS.md) | AI 协作强制规则 |
 
 ## 仓库布局（摘要）
@@ -60,7 +60,7 @@ npm run dev
 ## 工程化与一键启动（R5 · GOAL-008）
 
 > 生产级工程化交付（环境/配置、容器一键启动、健康检查、dev/prod 区分）随 R5 推进。契约见
-> `docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md`。
+> `docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md`。
 
 ### Docker Compose 一键启动（第二启动路径）
 

@@ -1002,7 +1002,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
                 0,
                 msg=f"first init failed:\n{first.stdout}\n{first.stderr}",
             )
-            ws = target / "docs" / "workspace-001-refuse-demo" / "workspace.md"
+            ws = target / "docs" / "workspaces" / "workspace-001-refuse-demo" / "workspace.md"
             self.assertTrue(ws.is_file(), msg="first init did not create workspace.md")
             second = subprocess.run(
                 cmd_base,
@@ -1144,7 +1144,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         for path in core_prompts:
             text = path.read_text(encoding="utf-8")
             self.assertIn(
-                "docs/workspace-<NNN>-<slug>/workspace.md",
+                "docs/workspaces/workspace-<NNN>-<slug>/workspace.md",
                 text,
                 msg=f"missing workspace scan: {path}",
             )
@@ -1173,7 +1173,7 @@ class TestSkillsOrchestratorPackage(unittest.TestCase):
         for path in rule_surfaces:
             text = path.read_text(encoding="utf-8")
             self.assertIn(
-                "docs/workspace-<NNN>-<slug>/workspace.md",
+                "docs/workspaces/workspace-<NNN>-<slug>/workspace.md",
                 text,
                 msg=f"missing workspace rule: {path}",
             )

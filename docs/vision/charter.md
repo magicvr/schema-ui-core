@@ -61,7 +61,7 @@ parent: null
 
 | id | 假设 / 未知 | 影响 | 状态 |
 |----|-------------|------|------|
-| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | 历史：VP-001 MVP 计划。现：全量兼容由 VP-006 收口。 | **分列**：① 清单提取 = `verified`（[protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② MVP 子集冻结 = `verified`（[v0.1.3 覆盖表](../workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）——**仅 MVP**，不主张全量；③ **整份契约可验证兼容** = `verified`（2026-08-08 **VP-006 closed**，用户书面确认；覆盖权威 `I-PROTO-FULL-001` v1.0.1：12/12 域、24/24 registry type、16/16 行为套件 include，320 case = 318 executed + 2 local adapter excluded）。`F-V006` → `fixed`（仅闭合「清单/MVP 冻结」歧义，不闭合全量实现）。 |
+| H-001 | 必须从固定的 `schema-ui-docs` `v2.7.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | 历史：VP-001 MVP 计划。现：全量兼容由 VP-006 收口。 | **分列**：① 清单提取 = `verified`（[protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② MVP 子集冻结 = `verified`（[v0.1.3 覆盖表](../workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）——**仅 MVP**，不主张全量；③ **整份契约可验证兼容** = `verified`（2026-08-08 **VP-006 closed**，用户书面确认；覆盖权威 `I-PROTO-FULL-001` v1.0.1：12/12 域、24/24 registry type、16/16 行为套件 include，320 case = 318 executed + 2 local adapter excluded）。`F-V006` → `fixed`（仅闭合「清单/MVP 冻结」歧义，不闭合全量实现）。 |
 
 ## 与工作区 / VP 的关系
 

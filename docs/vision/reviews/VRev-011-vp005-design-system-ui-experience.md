@@ -79,7 +79,7 @@ VP-005 作为「同愿景下新纲领波次」的结构选型**合法且合理**
 - evidence:
   - `docs/vision/plans/VP-005-design-system-and-ui-experience.md` §方向级退出判据 2、§建议实现阶段 S2、§继承边界
   - `apps/web/src/renderer/render.test.ts`（`isWhitelistedNodeType`）
-  - `docs/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md` v0.1.3（D-COMP/D-TABLE/D-FORM include-partial）
+  - `docs/workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md` v0.1.3（D-COMP/D-TABLE/D-FORM include-partial）
   - Charter 非目标：不在本项目内重新定义上游协议语义
 - closure: |
   `/vision` **editorial**（建议激活前完成）：

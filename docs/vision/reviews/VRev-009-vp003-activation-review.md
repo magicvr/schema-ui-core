@@ -91,7 +91,7 @@ parent: null
 - evidence:
   - `docs/vision/plans/VP-003-modular-admin-architecture.md` 退出判据 5
   - `docs/architecture/module-architecture.md` §2.2
-  - `docs/workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/03-audit.md` A-021/A-022 索引结论
+  - `docs/workspaces/workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/03-audit.md` A-021/A-022 索引结论
 - closure: `/vision` editorial（可与 VP 关门提案同批）：在 exit #5 或已接受决策中写明「指标属 Observability 按需能力；当前基线不要求指标贡献契约；若交付指标则须带 `module_id`」。不得把 D-011 解读为已实现指标系统。
 - 建议 class: `editorial`
 - resolution: |

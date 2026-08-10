@@ -33,8 +33,8 @@ P-001 与 P-002～P-005（§6b）以 AGENTS 为准；**全文**以 `docs/archite
 ## 行为要点
 
 - 检查 `docs/architecture/principles.md`；缺失则报告不完整安装（勿称 architecture 可选）。  
-- S0：先 scaffold `docs/workspace-001-<用户确认 slug>/`（workspace.md + goal-tree），再创建 Root；slug 禁止静默默认。  
-- 先读 `docs/workspace-<NNN>-<slug>/workspace.md`（若有）并校验 Root Goal/canonical 范围/资料固定引用；没有显式工作区且仅有 legacy `docs/goals/` 时才走隐式单工作区。  
+- S0：先 scaffold `docs/workspaces/workspace-001-<用户确认 slug>/`（workspace.md + goal-tree），再创建 Root；slug 禁止静默默认。  
+- 先读 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md`（若有）并校验 Root Goal/canonical 范围/资料固定引用；没有显式工作区且仅有 legacy `docs/goals/` 时才走隐式单工作区。  
 - 用户确认后再调用 `<SKILLS_PKG>/prompts/01`～`04`。  
 - 不在本入口冒充 `source: independent`。  
 - 工作区绑定或共享资料引用不匹配时 fail closed。  

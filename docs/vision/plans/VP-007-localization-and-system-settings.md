@@ -152,7 +152,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-09 | **closed**（用户书面确认） | 用户目标指令「推进工作区7，直到根目标闭门」+ D-002 留痕；S0–S5 全部交付；F-V029 矩阵填值；API dual-run branding（admin+mvp）体一致；web build；playwright admin+mvp；分母运行时双语渲染测试；independent A-001 → A-002（required 0）；mvp 公开 branding 与 settings 边界修正 | `docs/workspace-007-localization-and-system-settings/goal-tree.md`（Root done 6/6；GOAL-002～006 全 done）；Root `attachments/F-V029-*.md` + `S5-evidence-matrix.md`；GOAL-006 E-001～E-003、A-001/A-002、D-002；`attachments/s5-launch/`；`apps/web/src/i18n/s5-denominator-render.test.tsx`；`apps/web/e2e/localization.spec.ts` | 无开放 required residual；M2 浏览器写表单仍以单元 `schema-crud`/`ui-bilingual` 为主证据（A-001 F-004 recommended，已矩阵标注） |
+| 2026-08-09 | **closed**（用户书面确认） | 用户目标指令「推进工作区7，直到根目标闭门」+ D-002 留痕；S0–S5 全部交付；F-V029 矩阵填值；API dual-run branding（admin+mvp）体一致；web build；playwright admin+mvp；分母运行时双语渲染测试；independent A-001 → A-002（required 0）；mvp 公开 branding 与 settings 边界修正 | `docs/workspaces/workspace-007-localization-and-system-settings/goal-tree.md`（Root done 6/6；GOAL-002～006 全 done）；Root `attachments/F-V029-*.md` + `S5-evidence-matrix.md`；GOAL-006 E-001～E-003、A-001/A-002、D-002；`attachments/s5-launch/`；`apps/web/src/i18n/s5-denominator-render.test.tsx`；`apps/web/e2e/localization.spec.ts` | 无开放 required residual；M2 浏览器写表单仍以单元 `schema-crud`/`ui-bilingual` 为主证据（A-001 F-004 recommended，已矩阵标注） |
 
 ## 规划修订短史
 

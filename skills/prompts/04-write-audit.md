@@ -35,7 +35,7 @@ role: primitive
 
 # 用户输入（缺项先确认）
 - 目标 ID / 路径：
-- 工作区上下文（若存在）：【当前 `docs/workspace-<NNN>-<slug>/workspace.md` 的 id / root_goal；只有 legacy `docs/goals/` 时才写“隐式单工作区”】
+- 工作区上下文（若存在）：【当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` 的 id / root_goal；只有 legacy `docs/goals/` 时才写“隐式单工作区”】
 - 今日日期：【YYYY-MM-DD】
 - **source**：`self`（默认）| 若用户明确要求记录独立审代贴则为 `independent`（并写 auditor）
 - **模式**：
@@ -53,7 +53,7 @@ role: primitive
 
 # 步骤
 
-1. 通读当前 `docs/workspace-<NNN>-<slug>/workspace.md`、`00-meta`、`01-decision`（含信息需求与残余风险）、`02-execution`、现有 `03-audit`。workspace Root Goal/canonical 范围不匹配时，把它作为 scope 的阻断缺口，不得审计或放行其他工作区的内容；没有显式工作区根时只审 legacy 隐式单工作区。
+1. 通读当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md`、`00-meta`、`01-decision`（含信息需求与残余风险）、`02-execution`、现有 `03-audit`。workspace Root Goal/canonical 范围不匹配时，把它作为 scope 的阻断缺口，不得审计或放行其他工作区的内容；没有显式工作区根时只审 legacy 隐式单工作区。
 2. 新编号 = 索引、目录文件名与 legacy inline 中已有最大 `A-NNN` + 1（自审与独立审**共用**序列）。
 3. 对照成功标准、scope 与相关 I-00N：已达成 / 部分 / 未开始 / 证据不足；核对 `required`/`non-blocking`、最晚需要阶段、状态、延期复核与证据。若 scope 使用共享资料引用，核对 `workspace_id`、`material_id`、`source`、`version` 和有效 `sha256`；引用不完整/不匹配只能作为缺口，不能被当成事实或关闭证据。
 4. 创建 `03-audit/A-NNN-<slug>.md` 并在索引新增一行；entry **最小头字段强制**：

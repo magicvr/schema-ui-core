@@ -61,7 +61,7 @@ parent: null
   - `docs/vision/roadmap.md`（updated 2026-08-09）
   - `docs/vision/workspaces.md`（updated 2026-08-09）
   - `docs/vision/plans/VP-005-design-system-and-ui-experience.md`（v0.4.1，关门记录空）
-  - `docs/workspace-006-design-system-and-ui-experience/{goal-tree.md, workspace.md}`（`done` / `5/5`）
+  - `docs/workspaces/workspace-006-design-system-and-ui-experience/{goal-tree.md, workspace.md}`（`done` / `5/5`）
   - `…/GOAL-001-design-system-and-ui-experience/01-decision/D-008-root-closeout-user-confirmed.md`、`03-audit/A-012-response-a011-and-closeout.md`、`02-execution/E-010-root-closeout-d008.md`
 - closure: |
   `/vision` 在 VP-005 关门动作中**原子完成**并留痕：

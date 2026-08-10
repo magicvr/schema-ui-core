@@ -32,5 +32,5 @@ description: 根据 Git 暂存区变动生成中文提交描述并提交；仅�
 
 示例输出格式（必须遵循，返回简短、关键的信息）：
 - `已检测到暂存改动，生成提交信息：feat(auth): 新增令牌校验`\n`执行 git commit 成功：提交 ID abcdef1`
-- `未检测到暂存改动，已执行 git add -- apps/api/internal/handler/records.go docs/workspace-002-.../02-execution.md，生成提交信息：fix(api): 修复记录校验`\n`执行 git commit 成功：提交 ID abcdef2`
+- `未检测到暂存改动，已执行 git add -- apps/api/internal/handler/records.go docs/workspaces/workspace-002-.../02-execution.md，生成提交信息：fix(api): 修复记录校验`\n`执行 git commit 成功：提交 ID abcdef2`
 - `无改动可提交`（当工作区和暂存区均无变动，或 owned paths 无 diff 时）

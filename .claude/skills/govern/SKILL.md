@@ -42,7 +42,7 @@ metadata:
 - 缺 `docs/architecture/principles.md` 时报告不完整安装，不得称 architecture 可选。
 - S0：slug **必须用户确认**；冷启动顺序 Charter→VP→工作区→Root。
 - 所有工作区必须挂 VP；`vision_role` 仅允许 `primary` / `delivery`。
-- 有显式工作区时校验 `docs/workspace-<NNN>-<slug>/workspace.md` 的 Root Goal/canonical；仅 legacy `docs/goals/` 时走隐式单工作区。
+- 有显式工作区时校验 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` 的 Root Goal/canonical；仅 legacy `docs/goals/` 时走隐式单工作区。
 - 进度与结论只写已发生事实。
 
 ## 完成
