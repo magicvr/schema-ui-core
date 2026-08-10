@@ -69,12 +69,24 @@ func NewWithRepository(secret []byte, accessTTL, refreshTTL time.Duration, repos
 	return &Authenticator{secret: secret, accessTTL: accessTTL, refreshTTL: refreshTTL, repository: repository, devSession: devSession}
 }
 
+// timingDummyHash is compared against when the requested user does not exist,
+// so a missing user burns the same bcrypt time as a wrong password and login
+// responses cannot be used to enumerate usernames (D2 timing side channel).
+var timingDummyHash = func() string {
+	h, err := HashPassword("dummy-timing-password", 10)
+	if err != nil {
+		panic("auth: hash timing dummy: " + err.Error())
+	}
+	return h
+}()
+
 // Login verifies username/password against the store and issues a fresh
 // access/refresh token pair. Fail-closed: a missing user and a bad password
 // both yield ErrInvalidCredentials (no user enumeration).
 func (a *Authenticator) Login(username, password string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
 	u, err := a.repository.UserByUsername(username)
 	if errors.Is(err, authsession.ErrNotFound) {
+		VerifyPassword(timingDummyHash, password)
 		return "", "", account.User{}, ErrInvalidCredentials
 	}
 	if err != nil {
