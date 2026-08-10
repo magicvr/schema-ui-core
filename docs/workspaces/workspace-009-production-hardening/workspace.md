@@ -46,7 +46,7 @@ independent provider（沿用 workspace-008 D-002）：**grok build · grok-4.5 
 |------|--------|--------|
 | W1 | GOAL-002-audit-findings-remediation | done |
 | W2 | GOAL-003-upload-ownership-hardening | done |
-| W3 | GOAL-004-w3-security-audit-remediation | active |
+| W3 | GOAL-004-w3-security-audit-remediation | done |
 
 ## 固定共享资料引用
 

@@ -69,6 +69,7 @@ var Catalog = map[string]Entry{
 	"SELF_OPERATION":         {"error.selfOperation", "self operation is not allowed", "不允许对自身账号执行该操作"},
 	"INVALID_ROLE_REF":       {"error.invalidRoleRef", "roles contain an unknown role key", "角色引用未知或无效"},
 	"ROLE_ASSIGNMENT_FORBIDDEN": {"error.roleAssignmentForbidden", "you may not assign roles you do not hold", "不能分配您本身不持有的角色"},
+	"ADMIN_ACCOUNT_FORBIDDEN":   {"error.adminAccountForbidden", "only an admin may manage admin accounts", "只有管理员可以管理管理员账号"},
 	"INVALID_MENU_ITEM_REF":  {"error.invalidMenuItemRef", "menuItems contain an unknown id", "导航引用了未知的菜单项"},
 
 	"INVALID_UPLOAD":        {"error.invalidUpload", "expected a multipart file part named file", "请求应为包含名为 file 的 multipart 文件"},

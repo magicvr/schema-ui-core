@@ -27,6 +27,7 @@ type RolesRepository interface {
 	CreateRoleWithGrants(string, string, []string, []string, time.Time) (*authsession.Role, error)
 	UpdateRoleWithGrants(string, authsession.RolePatch, time.Time) (*authsession.Role, error)
 	DeleteRole(string) error
+	DeleteRolesBatch([]string) (int, error)
 	ValidatePermissionKeys([]string) error
 	ValidateMenuItemIDs([]string) error
 }
@@ -184,6 +185,17 @@ func (e *rolesEntity) Update(id string, body map[string]any, now time.Time, acto
 
 func (e *rolesEntity) Delete(id string, _ account.User) error {
 	return mapRoleStoreError(e.repository.DeleteRole(id))
+}
+
+// DeleteBatch is the atomic whole-batch delete (ADR-0022 D5d · D-001 P0): the
+// repository commits the whole selection in one transaction, so a failure
+// (system role, in-use role, not-found) rolls every target back.
+func (e *rolesEntity) DeleteBatch(ids []string, _ account.User) (int, error) {
+	deleted, err := e.repository.DeleteRolesBatch(ids)
+	if err != nil {
+		return 0, mapRoleStoreError(err)
+	}
+	return deleted, nil
 }
 
 func stringArrayFromBody(body map[string]any, field, code string) ([]string, error) {

@@ -30,7 +30,7 @@ func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operatio
 		a:           a,
 		operations:  operations,
 		now:         time.Now,
-		rateLimiter: newLoginRateLimiter(15*time.Minute, 20),
+		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
 	}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
@@ -65,14 +65,18 @@ func (h *authHandler) login() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGIN_BODY", "username and password are required")
 			return
 		}
-		if h.rateLimiter != nil && !h.rateLimiter.allow(clientIP(r), h.now().UTC()) {
+		// D-001 P1: the bucket key is the real client IP (trusted reverse proxy
+		// X-Real-IP) plus the attempted username, so one attacker spraying many
+		// usernames cannot lock out unrelated clients behind the same proxy.
+		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
+		if h.rateLimiter != nil && !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
 			return
 		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			if h.rateLimiter != nil {
-				h.rateLimiter.record(clientIP(r), h.now().UTC())
+				h.rateLimiter.record(limiterKey, h.now().UTC())
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
@@ -80,6 +84,12 @@ func (h *authHandler) login() http.HandlerFunc {
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
+		}
+		// A successful login clears the client's failure bucket (D-001 P1): a
+		// legitimate user who mis-typed the password a few times must not be
+		// locked out by their own earlier failures.
+		if h.rateLimiter != nil {
+			h.rateLimiter.clear(limiterKey)
 		}
 		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})

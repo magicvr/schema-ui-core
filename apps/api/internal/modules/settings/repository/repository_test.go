@@ -56,7 +56,7 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 	if _, err := repository.UpdateSiteSettings("  ", "", now); !errors.Is(err, ErrInvalidSiteTitle) {
 		t.Fatalf("empty title = %v, want ErrInvalidSiteTitle", err)
 	}
-	for _, logo := range []string{"//cdn.example/logo.svg", "ftp://example.com/logo.svg", "logo.svg", "/bad path.svg"} {
+	for _, logo := range []string{"//cdn.example/logo.svg", "ftp://example.com/logo.svg", "logo.svg", "/bad path.svg", `/\evil.com/logo.svg`, `/assets\evil.png`, `\evil.com`} {
 		if _, err := repository.UpdateSiteSettings("Admin", logo, now); !errors.Is(err, ErrInvalidLogoURL) {
 			t.Fatalf("logo %q = %v, want ErrInvalidLogoURL", logo, err)
 		}

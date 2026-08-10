@@ -279,7 +279,12 @@ func normalizeLogoURL(raw string) (string, error) {
 		return "", nil
 	}
 	if strings.HasPrefix(logo, "/") {
-		if strings.HasPrefix(logo, "//") || strings.ContainsAny(logo, " \t\r\n") {
+		// D-001 P2: a backslash in a same-origin path is rejected too. Browsers
+		// treat `\` as a path separator in URL parsing, so "/\evil.com" would
+		// be parsed as the external host "evil.com" and fetch the attacker's
+		// origin; requiring a backslash-free single-slash path keeps logo/favicon
+		// strictly same-origin.
+		if strings.HasPrefix(logo, "//") || strings.ContainsAny(logo, " \t\r\n\\") {
 			return "", ErrInvalidLogoURL
 		}
 		return logo, nil

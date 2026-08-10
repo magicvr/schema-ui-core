@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-w3-security-audit-remediation
 title: W3 安全审计发现修复（api/web）
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-11
 updated: 2026-08-11
-version: 0.1.0
-progress: 0/8
+version: 0.3.0
+progress: 8/8
 ---
 
 # GOAL-004 · W3 安全审计发现修复（api/web）
@@ -19,14 +19,16 @@ progress: 0/8
 
 ## 成功标准
 
-- [ ] P0：`batch-delete` 整批原子（中途失败不部分提交）+ 回归测试
-- [ ] P0：`recordSource.url` 拒绝协议相对 `//` URL（防 Bearer 外泄）+ 回归测试
-- [ ] P1：nginx `client_max_body_size` 与 API 8MiB 对齐 + 基础安全响应头
-- [ ] P1：登录限流按真实客户端（可信反代）且成功登录清桶；削弱全局锁死
-- [ ] P1：非 admin 不得重置 admin 密码、不得 demote 其他 admin
-- [ ] P2：logo 同源路径拒反斜杠；logout 与 in-flight refresh 竞态修复
-- [ ] P2：HTTP `Serve` 失败 fail-closed 退出进程
-- [ ] 执行事实 + self 审计落盘；开放 required = 0（关门前）
+- [x] P0：`batch-delete` 整批原子（中途失败不部分提交）+ 回归测试 — [E-001](02-execution/E-001-w3-remediation.md) + [E-002](02-execution/E-002-f001-fix.md)（F-001 批级 last-admin 闭合）
+- [x] P0：`recordSource.url` 拒绝协议相对 `//` URL（防 Bearer 外泄）+ 回归测试 — [E-001](02-execution/E-001-w3-remediation.md)
+- [x] P1：nginx `client_max_body_size` 与 API 8MiB 对齐 + 基础安全响应头 — [E-001](02-execution/E-001-w3-remediation.md)
+- [x] P1：登录限流按真实客户端（可信反代）且成功登录清桶；削弱全局锁死 — [E-001](02-execution/E-001-w3-remediation.md)
+- [x] P1：非 admin 不得重置 admin 密码、不得 demote 其他 admin — [E-001](02-execution/E-001-w3-remediation.md)
+- [x] P2：logo 同源路径拒反斜杠；logout 与 in-flight refresh 竞态修复 — [E-001](02-execution/E-001-w3-remediation.md)
+- [x] P2：HTTP `Serve` 失败 fail-closed 退出进程 — [E-001](02-execution/E-001-w3-remediation.md)
+- [x] 执行事实 + self 审计落盘；开放 required = 0（关门前）— [E-001](02-execution/E-001-w3-remediation.md) + [E-002](02-execution/E-002-f001-fix.md) + [A-001](03-audit/A-001-w3-self.md) + [A-002](03-audit/A-002-w3-independent-cross.md) + [A-003](03-audit/A-003-f001-closure-recheck.md)
+
+**GOAL-004 已关门（2026-08-11）**：self A-001 pass + independent A-002（F-001）→ fixed（A-003 复核 pass）；开放 required = 0。Root 保持 active（长期程序容器，不随波次关门）。
 
 ## 范围外 / residual（本目标不实现）
 
@@ -44,7 +46,7 @@ progress: 0/8
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 审计 finding 清单与优先级 | 方案/实施 | 方案前 | 会话审计报告 | verified | — | D-001 |
 | I-002 | required | batch-delete 原子策略（单事务 vs 先校验） | 实施 | 实施前 | 读 store/entity 边界 | verified | — | D-001：单事务 DeleteMany |
-| I-003 | non-blocking | 可信反代判定（X-Real-IP） | 验收 | 验收前 | private peer + X-Real-IP | collecting | — | 实施中 |
+| I-003 | non-blocking | 可信反代判定（X-Real-IP） | 验收 | 验收前 | private peer + X-Real-IP | verified | — | E-001 |
 
 ## 父目标
 

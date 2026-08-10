@@ -107,7 +107,9 @@ func validateLogoURL(raw string) error {
 		return fmt.Errorf("must be trimmed")
 	}
 	if strings.HasPrefix(raw, "/") {
-		if strings.HasPrefix(raw, "//") || strings.ContainsAny(raw, " \t\r\n") {
+		// D-001 P2: backslash rejected in same-origin paths (browsers treat `\`
+		// as a separator, so "/\evil.com" would resolve to the external host).
+		if strings.HasPrefix(raw, "//") || strings.ContainsAny(raw, " \t\r\n\\") {
 			return fmt.Errorf("same-origin path is invalid")
 		}
 		return nil

@@ -92,20 +92,44 @@ async function refreshAccess(): Promise<boolean> {
   if (inflightRefresh !== null) {
     return inflightRefresh;
   }
-  inflightRefresh = doRefresh(refresh).finally(() => {
+  const rotation = doRefresh(refresh, refreshGeneration).finally(() => {
     inflightRefresh = null;
   });
-  return inflightRefresh;
+  inflightRefresh = rotation;
+  return rotation;
 }
 
 let inflightRefresh: Promise<boolean> | null = null;
 
-async function doRefresh(refresh: string): Promise<boolean> {
+// Monotonic session generation (D-001 P2): logout bumps it so an in-flight
+// refresh that resolves after logout cannot write a rotated token pair back
+// into a session the user just closed.
+let refreshGeneration = 0;
+
+function bumpRefreshGeneration(): void {
+  refreshGeneration += 1;
+}
+
+function isCurrentGeneration(generation: number): boolean {
+  return generation === refreshGeneration;
+}
+
+async function doRefresh(refresh: string, generation: number): Promise<boolean> {
+  if (!isCurrentGeneration(generation)) {
+    return false;
+  }
   let response: Response;
   try {
     response = await postJSON(REFRESH_URL, { refreshToken: refresh });
   } catch {
-    clearTokens();
+    if (isCurrentGeneration(generation)) {
+      clearTokens();
+    }
+    return false;
+  }
+  if (!isCurrentGeneration(generation)) {
+    // The session was closed while the rotation was in flight; never store the
+    // rotated pair, never clear tokens the caller already cleared.
     return false;
   }
   if (!response.ok) {
@@ -115,7 +139,7 @@ async function doRefresh(refresh: string): Promise<boolean> {
     // session is not lost. Retry once with the newer token before giving up.
     const current = getRefreshToken();
     if (current !== null && current !== refresh) {
-      return doRefresh(current);
+      return doRefresh(current, generation);
     }
     clearTokens();
     return false;
@@ -124,6 +148,9 @@ async function doRefresh(refresh: string): Promise<boolean> {
     accessToken?: string;
     refreshToken?: string;
   };
+  if (!isCurrentGeneration(generation)) {
+    return false;
+  }
   if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string") {
     clearTokens();
     return false;
@@ -215,6 +242,9 @@ export async function login(username: string, password: string): Promise<AuthSes
 /** Revokes the refresh token (best-effort, idempotent) and clears local state. */
 export async function logout(): Promise<void> {
   const refresh = getRefreshToken();
+  // D-001 P2: bump the generation first so an in-flight refresh can never write
+  // a rotated token pair back after logout.
+  bumpRefreshGeneration();
   if (refresh !== null) {
     try {
       await postJSON(LOGOUT_URL, { refreshToken: refresh });

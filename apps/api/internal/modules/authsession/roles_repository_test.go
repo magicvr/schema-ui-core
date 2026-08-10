@@ -7,6 +7,88 @@ import (
 	"time"
 )
 
+// D-001 P0 · batch-delete atomicity: DeleteRolesBatch commits the whole
+// selection in one transaction — a mid-batch failure (system role, in-use
+// role, not-found) rolls every earlier delete back.
+func TestRolesRepositoryBatchDeleteAtomicRollback(t *testing.T) {
+	repository, _ := openRepository(t, "roles-batch-atomic.db", true)
+	now := time.Now().UTC()
+
+	for _, key := range []string{"ops", "support", "qa"} {
+		if _, err := repository.CreateRole(key, key, now); err != nil {
+			t.Fatalf("create %s: %v", key, err)
+		}
+	}
+
+	// [ops, admin(system), support]: ops would be deleted, then the system
+	// guard fails — the whole batch must roll back.
+	if _, err := repository.DeleteRolesBatch(
+		[]string{"role-ops", "role-admin", "role-support"},
+	); !errors.Is(err, ErrRoleSystem) {
+		t.Fatalf("batch err = %v, want ErrRoleSystem", err)
+	}
+	for _, id := range []string{"role-ops", "role-support"} {
+		if _, err := repository.GetRole(id); err != nil {
+			t.Fatalf("%s rolled back but is gone: %v", id, err)
+		}
+	}
+
+	// A not-found id aborts the batch before any delete.
+	if _, err := repository.DeleteRolesBatch(
+		[]string{"role-ops", "role-ghost"},
+	); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("not-found batch err = %v, want ErrNotFound", err)
+	}
+	if _, err := repository.GetRole("role-ops"); err != nil {
+		t.Fatalf("ops rolled back but is gone: %v", err)
+	}
+
+	// An in-use role fails the batch and rolls back the earlier delete.
+	if _, err := repository.CreateUserManagement(User{
+		ID: "user-qa", Username: "qauser", Name: "QA", Roles: []string{"qa"},
+		PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("create qa user: %v", err)
+	}
+	if _, err := repository.DeleteRolesBatch(
+		[]string{"role-support", "role-qa"},
+	); !errors.Is(err, ErrRoleInUse) {
+		t.Fatalf("in-use batch err = %v, want ErrRoleInUse", err)
+	}
+	if _, err := repository.GetRole("role-support"); err != nil {
+		t.Fatalf("support rolled back but is gone: %v", err)
+	}
+
+	// All-valid batch deletes every target.
+	deleted, err := repository.DeleteRolesBatch(
+		[]string{"role-ops", "role-support"},
+	)
+	if err != nil {
+		t.Fatalf("valid batch: %v", err)
+	}
+	if deleted != 2 {
+		t.Fatalf("deleted = %d, want 2", deleted)
+	}
+	if _, err := repository.GetRole("role-ops"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("ops still present, want ErrNotFound")
+	}
+	if _, err := repository.GetRole("role-support"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("support still present, want ErrNotFound")
+	}
+
+	// Dedup: repeated ids delete once.
+	if _, err := repository.CreateRole("fin", "Fin", now); err != nil {
+		t.Fatalf("create fin: %v", err)
+	}
+	deleted, err = repository.DeleteRolesBatch([]string{"role-fin", "role-fin"})
+	if err != nil {
+		t.Fatalf("dedup batch: %v", err)
+	}
+	if deleted != 1 {
+		t.Fatalf("deleted = %d, want 1 (deduped)", deleted)
+	}
+}
+
 func TestRolesRepositoryCreateValidation(t *testing.T) {
 	repository, _ := openRepository(t, "roles-create.db", true)
 	now := time.Now().UTC()

@@ -59,6 +59,14 @@ type ResourceEntity interface {
 	Delete(id string, user account.User) error
 }
 
+// BatchDeleter is the optional atomic whole-batch delete capability (ADR-0022
+// D5d · D-001 P0). When an entity implements it, POST {path}/batch-delete
+// delegates to it instead of looping single deletes, so the selection commits
+// or rolls back as one unit. The returned count is the number of rows deleted.
+type BatchDeleter interface {
+	DeleteBatch(ids []string, user account.User) (int, error)
+}
+
 // DomainError is a typed domain error an entity may return from List/Get/
 // Create/Update/Delete. The factory maps it verbatim (status + {error,message})
 // BEFORE the generic ErrNotFound/INTERNAL fallbacks (I-011-001 §7.3). It is how
@@ -570,10 +578,12 @@ func (h *resourceHandler) delete() http.Handler {
 // batchDelete serves POST {path}/batch-delete (ADR-0022 D5d · I-PROTO-FULL-001):
 // one logical HTTP call over a normalized selection. The body is
 // `{"ids": [scalar keys...]}` (the $selection.keys array of the page's
-// batchMapping); ids must be non-empty scalar keys, deduped, and each key is
-// deleted through the entity boundary. Whole-batch semantics: any failure
-// stops the batch and returns the entity error; success returns
-// `{"deleted": n}` so the client can reload (which clears selection).
+// batchMapping); ids must be non-empty scalar keys, deduped. Whole-batch
+// semantics (D-001 P0): entities implementing BatchDeleter commit the selection
+// in a single transaction — any failure rolls the whole batch back and returns
+// the entity error; other entities fall back to sequential deletes, stopping at
+// the first failure. Success returns `{"deleted": n}` so the client can reload
+// (which clears selection).
 func (h *resourceHandler) batchDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, h.writePerm)
@@ -626,16 +636,34 @@ func (h *resourceHandler) batchDelete() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one scalar key")
 			return
 		}
+
 		deleted := 0
-		for _, id := range ids {
-			if err := h.res.Entity.Delete(id, user); err != nil {
-				writeEntityError(w, r, h.res, err, "batch delete")
+		if batch, ok := h.res.Entity.(BatchDeleter); ok {
+			var err error
+			deleted, err = batch.DeleteBatch(ids, user)
+			if writeEntityError(w, r, h.res, err, "batch delete") {
 				return
 			}
-			if h.res.OnWrite != nil {
-				h.res.OnWrite(r.Context(), user, writeDelete, id, nil, time.Now().UTC())
+		} else {
+			now := time.Now().UTC()
+			for _, id := range ids {
+				if err := h.res.Entity.Delete(id, user); err != nil {
+					writeEntityError(w, r, h.res, err, "batch delete")
+					return
+				}
+				if h.res.OnWrite != nil {
+					h.res.OnWrite(r.Context(), user, writeDelete, id, nil, now)
+				}
+				deleted++
 			}
-			deleted++
+			writeJSON(w, http.StatusOK, map[string]any{"deleted": deleted})
+			return
+		}
+		now := time.Now().UTC()
+		for _, id := range ids {
+			if h.res.OnWrite != nil {
+				h.res.OnWrite(r.Context(), user, writeDelete, id, nil, now)
+			}
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"deleted": deleted})
 	})

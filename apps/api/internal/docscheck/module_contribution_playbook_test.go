@@ -122,7 +122,7 @@ func TestPlaybookDiscoverabilityFromOverviewAndQuickstart(t *testing.T) {
 
 func TestWorkspace004RootCloseoutArtifacts(t *testing.T) {
 	root := repoRoot(t)
-	base := filepath.Join(root, "docs", "workspace-004-module-contribution-readiness", "GOAL-001-module-contribution-readiness")
+	base := filepath.Join(root, "docs", "workspaces", "workspace-004-module-contribution-readiness", "GOAL-001-module-contribution-readiness")
 	meta := read(t, filepath.Join(base, "00-meta.md"))
 	if !strings.Contains(meta, "status: done") {
 		t.Fatal("Root 00-meta status is not done")
@@ -139,7 +139,7 @@ func TestWorkspace004RootCloseoutArtifacts(t *testing.T) {
 		t.Fatal("I-001 should be verified in Root meta")
 	}
 
-	tree := read(t, filepath.Join(root, "docs", "workspace-004-module-contribution-readiness", "goal-tree.md"))
+	tree := read(t, filepath.Join(root, "docs", "workspaces", "workspace-004-module-contribution-readiness", "goal-tree.md"))
 	if !strings.Contains(tree, "done") || !strings.Contains(tree, "4/4") {
 		t.Fatal("goal-tree does not show Root done 4/4")
 	}

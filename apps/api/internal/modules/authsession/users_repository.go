@@ -259,6 +259,90 @@ func (r *Repository) DeleteUser(id, actorID string) error {
 	})
 }
 
+// DeleteUsersBatch removes accounts and their refresh tokens in one
+// transaction (ADR-0022 D5d whole-batch semantics, D-001 P0): every target runs
+// the same existence/self guards first, plus a BATCH-LEVEL last-admin guard, so
+// any failure rolls the whole batch back and nothing is partially committed.
+func (r *Repository) DeleteUsersBatch(ids []string, actorID string) (int, error) {
+	keys := dedupeKeys(ids)
+	if len(keys) == 0 {
+		return 0, nil
+	}
+	deleted := 0
+	err := r.withTx("delete managed users batch", func(tx *sql.Tx) error {
+		adminsInBatch := 0
+		for _, id := range keys {
+			var exists int
+			if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)`, id).Scan(&exists); err != nil {
+				return fmt.Errorf("check delete user %s: %w", id, err)
+			}
+			if exists == 0 {
+				return ErrNotFound
+			}
+			if id == actorID {
+				return ErrSelfOperation
+			}
+			var isAdmin int
+			if err := tx.QueryRow(
+				`SELECT EXISTS(
+					SELECT 1 FROM user_roles ur
+					JOIN roles r ON r.id = ur.role_id
+					WHERE ur.user_id = ? AND r.key = 'admin'
+				)`, id,
+			).Scan(&isAdmin); err != nil {
+				return fmt.Errorf("check delete user %s admin role: %w", id, err)
+			}
+			if isAdmin == 1 {
+				adminsInBatch++
+			}
+		}
+		// Batch-level last-admin guard (A-002 F-001): per-id counting is
+		// unsound for a batch — when every admin is in the selection, each id's
+		// "other admins still exist" check passes because the others are also
+		// still present, then the whole set is deleted, leaving zero admins.
+		// Count the admins NOT in the selection: zero means the batch would
+		// remove every admin, which must fail closed.
+		if adminsInBatch > 0 {
+			other, err := countAdminUsersExcludingBatch(tx, keys)
+			if err != nil {
+				return err
+			}
+			if other == 0 {
+				return ErrLastAdmin
+			}
+		}
+		for _, id := range keys {
+			if _, err := tx.Exec(`DELETE FROM refresh_tokens WHERE user_id = ?`, id); err != nil {
+				return fmt.Errorf("revoke user %s tokens: %w", id, err)
+			}
+			if _, err := tx.Exec(`DELETE FROM users WHERE id = ?`, id); err != nil {
+				return fmt.Errorf("delete user %s: %w", id, err)
+			}
+		}
+		deleted = len(keys)
+		return nil
+	})
+	return deleted, err
+}
+
+// countAdminUsersExcludingBatch counts admins whose id is not in the batch
+// selection. Used by the batch-level last-admin guard in DeleteUsersBatch.
+func countAdminUsersExcludingBatch(tx *sql.Tx, ids []string) (int, error) {
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	var count int
+	if err := tx.QueryRow(
+		`SELECT COUNT(*) FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+		 WHERE r.key = 'admin' AND ur.user_id NOT IN (`+placeholders+`)`, args...,
+	).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count batch admin users: %w", err)
+	}
+	return count, nil
+}
+
 func countAdminUsersExcluding(tx *sql.Tx, id string) (int, error) {
 	var count int
 	if err := tx.QueryRow(

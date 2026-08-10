@@ -177,6 +177,46 @@ func (r *Repository) DeleteRole(id string) error {
 	})
 }
 
+// DeleteRolesBatch removes custom roles in one transaction (ADR-0022 D5d
+// whole-batch semantics, D-001 P0): every target runs the same
+// existence/system/in-use guards first, so any failure rolls the whole batch
+// back and nothing is partially committed.
+func (r *Repository) DeleteRolesBatch(ids []string) (int, error) {
+	keys := dedupeKeys(ids)
+	if len(keys) == 0 {
+		return 0, nil
+	}
+	deleted := 0
+	err := r.withTx("delete roles batch", func(tx *sql.Tx) error {
+		for _, id := range keys {
+			var current Role
+			if err := scanRoleRow(tx.QueryRow(
+				`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
+			), &current); err != nil {
+				return err
+			}
+			if current.System {
+				return ErrRoleSystem
+			}
+			var used int
+			if err := tx.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, id).Scan(&used); err != nil {
+				return fmt.Errorf("count role %s users: %w", id, err)
+			}
+			if used > 0 {
+				return ErrRoleInUse
+			}
+		}
+		for _, id := range keys {
+			if _, err := tx.Exec(`DELETE FROM roles WHERE id = ?`, id); err != nil {
+				return fmt.Errorf("delete role %s: %w", id, err)
+			}
+		}
+		deleted = len(keys)
+		return nil
+	})
+	return deleted, err
+}
+
 // PermissionsForRoles returns the union of permissions for existing role keys.
 func (r *Repository) PermissionsForRoles(roleKeys []string) ([]string, error) {
 	keys := dedupeKeys(roleKeys)

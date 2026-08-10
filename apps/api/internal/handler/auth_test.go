@@ -238,22 +238,73 @@ func TestLoginRateLimit(t *testing.T) {
 	}
 }
 
-// D2: the sliding window is per-client-IP and expires.
+// D2: the sliding window is per-client-identity and expires; successful logins
+// clear the bucket (D-001 P1).
 func TestLoginRateLimiterUnit(t *testing.T) {
-	limiter := newLoginRateLimiter(15*time.Minute, 2)
+	limiter := newLoginRateLimiter(15*time.Minute, 2, 1<<16)
 	now := time.Now().UTC()
-	limiter.record("10.0.0.1", now)
-	if !limiter.allow("10.0.0.1", now) {
+	limiter.record("10.0.0.1|admin", now)
+	if !limiter.allow("10.0.0.1|admin", now) {
 		t.Fatal("first failure under the limit must still allow")
 	}
-	limiter.record("10.0.0.1", now)
-	if limiter.allow("10.0.0.1", now) {
+	limiter.record("10.0.0.1|admin", now)
+	if limiter.allow("10.0.0.1|admin", now) {
 		t.Fatal("attempt with the window full must be blocked")
 	}
-	if !limiter.allow("10.0.0.2", now) {
+	if !limiter.allow("10.0.0.2|admin", now) {
 		t.Fatal("a different IP must not inherit another IP's failures")
 	}
-	if !limiter.allow("10.0.0.1", now.Add(16*time.Minute)) {
+	if !limiter.allow("10.0.0.1|other", now) {
+		t.Fatal("a different username on the same IP must not inherit the failures")
+	}
+	if !limiter.allow("10.0.0.1|admin", now.Add(16*time.Minute)) {
 		t.Fatal("attempt after the window must be allowed again")
+	}
+
+	// A successful login clears the failure bucket (D-001 P1): the client must
+	// not be locked out by its own earlier mis-typed passwords.
+	limiter.record("10.0.0.1|admin", now)
+	limiter.record("10.0.0.1|admin", now)
+	if limiter.allow("10.0.0.1|admin", now) {
+		t.Fatal("bucket full before clear must block")
+	}
+	limiter.clear("10.0.0.1|admin")
+	if !limiter.allow("10.0.0.1|admin", now) {
+		t.Fatal("after clear the key must be allowed")
+	}
+
+	// Bounded map: spraying distinct identities evicts the oldest key instead
+	// of growing without limit (D-001 P1).
+	small := newLoginRateLimiter(15*time.Minute, 1, 3)
+	small.record("k1", now)
+	small.record("k2", now)
+	small.record("k3", now)
+	small.record("k4", now) // evicts k1 (oldest)
+	if !small.allow("k1", now) {
+		t.Fatal("evicted oldest key must be allowed again")
+	}
+	if small.allow("k4", now) {
+		t.Fatal("newest key must still hold its failure")
+	}
+}
+
+// D-001 P1: behind a trusted reverse proxy (loopback/private peer) the
+// X-Real-IP header identifies the real client; it is never trusted from an
+// untrusted peer.
+func TestLoginClientIPTrustsXRealIPOnlyFromTrustedPeer(t *testing.T) {
+	trusted := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"x"}`))
+	trusted.RemoteAddr = "127.0.0.1:5555"
+	trusted.Header.Set("X-Real-IP", "203.0.113.7")
+	if got := loginClientIP(trusted); got != "203.0.113.7" {
+		t.Fatalf("loopback peer X-Real-IP = %q, want 203.0.113.7", got)
+	}
+
+	spoofed := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"x"}`))
+	spoofed.RemoteAddr = "203.0.113.99:40000"
+	spoofed.Header.Set("X-Real-IP", "198.51.100.1")
+	if got := loginClientIP(spoofed); got != "203.0.113.99" {
+		t.Fatalf("untrusted peer X-Real-IP = %q, want direct peer 203.0.113.99", got)
 	}
 }

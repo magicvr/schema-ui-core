@@ -481,7 +481,11 @@ function buildRecordSource(input: JsonObject): RequestConstructionResult {
     return fail("EMPTY_RESPONSE_MAPPING", "recordSource.responseMapping");
   }
   const url = rs.url as string;
-  if (typeof url !== "string" || (!isProtocolRelativeUrl(url) && !url.startsWith("/"))) {
+  // D-001 P0: recordSource must be a strict relative protocol URL (single
+  // slash, no `//`), matching rowAction/upload validation. `//host` would be
+  // resolved as a protocol-relative external URL, and authFetch would attach
+  // the Bearer access token to the external request.
+  if (typeof url !== "string" || !isRelativeProtocolUrl(url)) {
     return fail("INVALID_PROTOCOL_URL", "recordSource.url");
   }
   const route = (input.route as { query?: JsonObject; params?: JsonObject }) ?? {};

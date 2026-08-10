@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-w3-security-audit-remediation
 doc: decision
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-11
 updated: 2026-08-11
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-004
@@ -16,7 +16,7 @@ version: 0.1.0
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 审计 finding 清单 | 方案 | 方案前 | 会话四路审计 | verified | — | D-001 |
 | I-002 | required | batch 原子实现面 | 实施 | 实施前 | entity/store 边界 | verified | — | D-001 |
-| I-003 | non-blocking | 反代真实 IP 规则 | 验收 | 验收前 | private peer + X-Real-IP | collecting | — | D-001 |
+| I-003 | non-blocking | 反代真实 IP 规则 | 验收 | 验收前 | private peer + X-Real-IP | verified | — | E-001：`loginClientIP` 仅可信 peer 信任 X-Real-IP + nginx 配置 + 测试 |
 
 ## 决策索引
 

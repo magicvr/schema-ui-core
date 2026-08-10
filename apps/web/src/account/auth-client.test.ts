@@ -218,6 +218,58 @@ describe("auth-client", () => {
     await logout();
     expect(requireBody(fetchMock.mock.calls[0][1])).toEqual({ refreshToken: "refresh-1" });
   });
+
+  it("logout before a 401 refresh prevents any further refresh (D-001 P2)", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(emptyResponse(204));
+
+    await logout();
+    // After logout there is no refresh token, so a later 401 must NOT hit the
+    // refresh endpoint — the session is already closed.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401));
+    const res = await authFetch("/api/users");
+    expect(res.status).toBe(401);
+    const refreshCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes("/api/auth/refresh"),
+    );
+    expect(refreshCalls).toHaveLength(0);
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
+  it("an in-flight refresh resolving after logout must not write tokens back (D-001 P2)", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+
+    // First request 401s; the refresh request is kept pending.
+    let resolveRefresh!: (response: Response) => void;
+    const pendingRefresh = new Promise<Response>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
+      .mockImplementationOnce(() => pendingRefresh);
+
+    const fetchPromise = authFetch("/api/users");
+    await vi.waitFor(() => {
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/auth/refresh"))).toBe(
+        true,
+      );
+    });
+
+    // Logout closes the session while the rotation is in flight.
+    fetchMock.mockResolvedValueOnce(emptyResponse(204));
+    await logout();
+
+    // The stale rotation resolves with a fresh pair — it must be discarded.
+    resolveRefresh(jsonResponse({ accessToken: "access-2", refreshToken: "refresh-2" }));
+    await fetchPromise;
+    await vi.waitFor(() => {
+      expect(getAccessToken()).toBeNull();
+      expect(getRefreshToken()).toBeNull();
+    });
+  });
 });
 
 function requireAuthorization(init: RequestInit | undefined): string | null {

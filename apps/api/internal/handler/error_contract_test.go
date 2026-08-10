@@ -35,12 +35,14 @@ var frozenLiteralCodes = []string{
 // users), plus the dynamic {RESOURCE}_NOT_FOUND family and the F-006 additions
 // (LAST_ADMIN / SELF_OPERATION / INVALID_ROLE_REF / ROLE_ASSIGNMENT_FORBIDDEN /
 // INVALID_MENU_ITEM_REF) emitted via DomainError in the users/roles handlers.
+// ADMIN_ACCOUNT_FORBIDDEN (D-001 P1) guards the target-side delegation
+// boundary: non-admin actors cannot reset an admin's password or demote one.
 var frozenDomainCodes = []string{
 	"USERNAME_TAKEN", "ROLE_KEY_TAKEN", "ROLE_IN_USE", "ROLE_SYSTEM",
 	"INVALID_ROLE_KEY", "INVALID_PERMISSION_REF", "ROLE_GRANT_FORBIDDEN",
 	"ROLE_NOT_FOUND", "USER_NOT_FOUND", "CATALOG_NOT_FOUND",
 	"LAST_ADMIN", "SELF_OPERATION", "INVALID_ROLE_REF", "ROLE_ASSIGNMENT_FORBIDDEN",
-	"INVALID_MENU_ITEM_REF",
+	"INVALID_MENU_ITEM_REF", "ADMIN_ACCOUNT_FORBIDDEN",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

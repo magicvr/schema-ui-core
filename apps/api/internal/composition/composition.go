@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync/atomic"
 
@@ -262,7 +263,12 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 			)
 			go func() {
 				if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					logger.Error("server failed", "err", err)
+					// D-001 P2 fail-closed: an unexpected Serve failure (e.g.
+					// listen/accept loop breaking after startup) must take the
+					// process down so the compose restart policy brings it back,
+					// instead of leaving a half-dead instance serving nothing.
+					logger.Error("server failed; exiting", "err", err)
+					os.Exit(1)
 				}
 			}()
 			return nil

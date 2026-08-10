@@ -40,6 +40,7 @@ type UsersRepository interface {
 	CreateUserManagement(authsession.User) (*authsession.User, error)
 	UpdateUser(string, authsession.UserPatch, string, time.Time) (*authsession.User, error)
 	DeleteUser(string, string) error
+	DeleteUsersBatch([]string, string) (int, error)
 	PermissionsForRoles([]string) ([]string, error)
 }
 
@@ -174,6 +175,9 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 			patch.Roles = &roles
 		}
 	}
+	if err := e.authorizeAdminTargetBoundary(id, patch, user); err != nil {
+		return nil, err
+	}
 	u, err := e.repository.UpdateUser(id, patch, user.ID, now)
 	if err != nil {
 		return nil, mapUserStoreError(err)
@@ -183,6 +187,17 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 
 func (e *usersEntity) Delete(id string, user account.User) error {
 	return mapUserStoreError(e.repository.DeleteUser(id, user.ID))
+}
+
+// DeleteBatch is the atomic whole-batch delete (ADR-0022 D5d · D-001 P0): the
+// repository commits the whole selection in one transaction, so a failure
+// (self, last-admin, not-found) rolls every target back.
+func (e *usersEntity) DeleteBatch(ids []string, user account.User) (int, error) {
+	deleted, err := e.repository.DeleteUsersBatch(ids, user.ID)
+	if err != nil {
+		return 0, mapUserStoreError(err)
+	}
+	return deleted, nil
 }
 
 // rolesFromBody reads the optional roles JSON field (absent → nil, meaning "no
@@ -252,6 +267,9 @@ func invalidManagedPassword() error {
 	}
 }
 
+// authorizeRoleAssignment enforces the assignment-side delegation boundary
+// (GOAL-011 I-011-001 §7.2): roles.assign permission, only an admin may assign
+// admin, and a role may only carry permissions the actor already holds.
 func (e *usersEntity) authorizeRoleAssignment(actor account.User, roles []string) error {
 	forbidden := func(message string) error {
 		return &DomainError{Status: 403, Code: "ROLE_ASSIGNMENT_FORBIDDEN", Message: message}
@@ -269,6 +287,35 @@ func (e *usersEntity) authorizeRoleAssignment(actor account.User, roles []string
 	for _, permission := range targetPermissions {
 		if !slices.Contains(actor.Permissions, permission) {
 			return forbidden("cannot assign a role with permissions the actor does not hold")
+		}
+	}
+	return nil
+}
+
+// authorizeAdminTargetBoundary enforces the target-side delegation boundary
+// (D-001 P1): a non-admin actor must not reset an admin's password and must not
+// remove admin from an admin's role set. This is the target-side mirror of
+// "only an admin may assign admin"; together they keep admin elevation and
+// demotion admin-only while still letting a delegated users-writer manage
+// non-admin accounts. Same-actor writes remain governed by the store's
+// SELF_OPERATION guard.
+func (e *usersEntity) authorizeAdminTargetBoundary(id string, patch authsession.UserPatch, user account.User) error {
+	if slices.Contains(user.Roles, "admin") || id == user.ID {
+		return nil
+	}
+	target, err := e.repository.GetUser(id)
+	if err != nil {
+		return mapUserStoreError(err)
+	}
+	isAdminTarget := slices.Contains(target.Roles, "admin")
+	if patch.PasswordHash != nil && isAdminTarget {
+		return &DomainError{Status: 403, Code: "ADMIN_ACCOUNT_FORBIDDEN", Message: "only an admin may reset an admin's password"}
+	}
+	if patch.Roles != nil {
+		hasAdmin := slices.Contains(*patch.Roles, "admin")
+		hadAdmin := isAdminTarget
+		if hadAdmin && !hasAdmin {
+			return &DomainError{Status: 403, Code: "ADMIN_ACCOUNT_FORBIDDEN", Message: "only an admin may demote an admin"}
 		}
 	}
 	return nil

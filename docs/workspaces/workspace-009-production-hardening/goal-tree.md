@@ -21,7 +21,7 @@ workspace_id: workspace-009-production-hardening
 GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-002-audit-findings-remediation [done] (16/16)   · W1
 ├── GOAL-003-upload-ownership-hardening [done] (4/4)     · W2
-└── GOAL-004-w3-security-audit-remediation [active] (0/8) · W3
+└── GOAL-004-w3-security-audit-remediation [done] (8/8)  · W3
 ```
 
 Root **保持 active**。W1/W2 为已关门波次档案；W3 承接 2026-08-11 api/web 全量审计修复。
@@ -33,7 +33,7 @@ Root **保持 active**。W1/W2 为已关门波次档案；W3 承接 2026-08-11 a
 | GOAL-001-production-hardening | 生产加固（共享基架持续安全与健壮性） | null | active | —（程序容器，不用 n/n→done） | 2026-08-10 |
 | GOAL-002-audit-findings-remediation | 审查发现修正（W1） | GOAL-001-production-hardening | done | 16/16 | 2026-08-10 |
 | GOAL-003-upload-ownership-hardening | 上传所有权与下载鉴权加固（W2） | GOAL-001-production-hardening | done | 4/4 | 2026-08-10 |
-| GOAL-004-w3-security-audit-remediation | W3 安全审计发现修复（api/web） | GOAL-001-production-hardening | active | 0/8 | 2026-08-11 |
+| GOAL-004-w3-security-audit-remediation | W3 安全审计发现修复（api/web） | GOAL-001-production-hardening | done | 8/8 | 2026-08-11 |
 
 ## 维护说明
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -379,6 +380,102 @@ func TestUsersRoleAssignmentAuthorization(t *testing.T) {
 	_ = json.NewDecoder(rr.Body).Decode(&out)
 	if rr.Code != http.StatusForbidden || out["error"] != "ROLE_ASSIGNMENT_FORBIDDEN" {
 		t.Fatalf("users.write-only assignment = %d %v, want 403 ROLE_ASSIGNMENT_FORBIDDEN", rr.Code, out)
+	}
+}
+
+// D-001 P1 · target-side delegation boundary: a non-admin with users.write
+// (delegated users manager) must not reset an admin's password and must not
+// demote an admin, while still being able to manage non-admin accounts.
+func TestUsersAdminTargetBoundary(t *testing.T) {
+	env := newAuthTestEnv(t)
+	now := time.Now().UTC()
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"users-manager", "Users manager",
+		[]string{"roles.assign", "roles.read", "users.read", "users.write", "operations.read"}, nil, now,
+	); err != nil {
+		t.Fatalf("create users-manager role: %v", err)
+	}
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"users-writer", "Users writer",
+		[]string{"users.read", "users.write"}, nil, now,
+	); err != nil {
+		t.Fatalf("create users-writer role: %v", err)
+	}
+	env.addUser(t, "um", "um-password", []string{"users-manager"})
+	env.addUser(t, "uw", "uw-password", []string{"users-writer"})
+	umToken := env.login(t, "um", "um-password")
+	uwToken := env.login(t, "uw", "uw-password")
+
+	// Non-admin cannot reset the admin's password (ADMIN_ACCOUNT_FORBIDDEN, not
+	// ROLE_ASSIGNMENT_FORBIDDEN — no role change is involved).
+	req := bearer(t, umToken, http.MethodPatch, "/api/users/user-admin", `{"password":"newpass123"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("reset admin password = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	var out map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "ADMIN_ACCOUNT_FORBIDDEN" {
+		t.Fatalf("error = %v, want ADMIN_ACCOUNT_FORBIDDEN", out["error"])
+	}
+
+	// A non-admin without roles.assign cannot even attempt the demote path
+	// (assignment-side check fires first, ROLE_ASSIGNMENT_FORBIDDEN).
+	req = bearer(t, uwToken, http.MethodPatch, "/api/users/user-admin", `{"roles":["editor"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("demote without roles.assign = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "ROLE_ASSIGNMENT_FORBIDDEN" {
+		t.Fatalf("demote-without-assign error = %v, want ROLE_ASSIGNMENT_FORBIDDEN", out["error"])
+	}
+
+	// A non-admin WITH roles.assign but not an admin cannot demote the admin
+	// (target-side check, ADMIN_ACCOUNT_FORBIDDEN).
+	req = bearer(t, umToken, http.MethodPatch, "/api/users/user-admin", `{"roles":["editor"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("demote admin = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "ADMIN_ACCOUNT_FORBIDDEN" {
+		t.Fatalf("demote error = %v, want ADMIN_ACCOUNT_FORBIDDEN", out["error"])
+	}
+
+	// The admin's password still works and roles are unchanged (seed = admin+editor).
+	if _, _, _, err := env.a.Login(testSeedUsername, testSeedPassword, now.Add(time.Minute)); err != nil {
+		t.Fatalf("admin login after boundary rejections: %v", err)
+	}
+	_, detail := getResource(t, env, "/api/users/user-admin")
+	roles, _ := detail["roles"].([]any)
+	if len(roles) != 2 || !slices.Contains(roles, "admin") || !slices.Contains(roles, "editor") {
+		t.Fatalf("admin roles after boundary rejections = %v, want [admin editor]", detail["roles"])
+	}
+
+	// The delegated manager can still manage a non-admin account: create one,
+	// change its password and roles.
+	req = bearer(t, umToken, http.MethodPost, "/api/users",
+		`{"username":"plain-user","name":"Plain","password":"plain-pass-1","roles":["viewer"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("delegated create = %d, want 201: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	id, _ := out["id"].(string)
+	req = bearer(t, umToken, http.MethodPatch, "/api/users/"+id,
+		`{"password":"plain-pass-2","roles":["viewer","editor"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("delegated patch non-admin = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	if _, _, _, err := env.a.Login("plain-user", "plain-pass-2", now.Add(2*time.Minute)); err != nil {
+		t.Fatalf("plain-user login with new password: %v", err)
 	}
 }
 
