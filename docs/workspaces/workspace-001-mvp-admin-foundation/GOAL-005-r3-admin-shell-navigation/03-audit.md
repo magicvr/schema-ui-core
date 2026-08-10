@@ -272,7 +272,7 @@ version: 0.9.0
 | A-001 F-001～F-003 的 `fixed` 文档证据仍在 | A-002；`00-meta` 五项最晚阶段均为「方案冻结前」；`I-005-001` 挂钩 Root `I-PROTO-004`；Root R3 文案「规划中」 | 通过（历史闭合仍有效） |
 | 工作树存在 manifest 校验/装载实现 | [app-manifest.ts](../../../../apps/web/src/protocol/app-manifest.ts)：`validateAppManifest`、`loadAppManifest`、`matchRoute`、`resolveInitialRoute`、表达式可见性；pin 注释 commit `ca9e5fe…` / protocol `2.7` | 通过（代码存在） |
 | 工作树存在导航投影与 Admin shell | [navigation.ts](../../../../apps/web/src/app/navigation.ts)；[App.tsx](../../../../apps/web/src/app/App.tsx) header/sidebar/main + fallback surface；[main.tsx](../../../../apps/web/src/main.tsx) 装载失败 fail-closed | 通过（代码存在） |
-| 默认静态 manifest 端点与样例文件 | `DEFAULT_MANIFEST_PATH = /.well-known/schema-ui/app-manifest.json`；[public/.../app-manifest.json](../../../../apps/web/public/.well-known/schema-ui/app-manifest.json) 含 4 pages + top/sidebar/user | 通过（结构自检 ok） |
+| 默认静态 manifest 端点与样例文件 | `DEFAULT_MANIFEST_PATH = /.well-known/schema-ui/app-manifest.json`；[public/.../app-manifest.json](../../../../apps/api/internal/manifest/app-manifest.json) 含 4 pages + top/sidebar/user | 通过（结构自检 ok） |
 | 单元测试与构建可复跑 | 本审在 `apps/web` 执行：`npm test` → **15/15 passed**（`app-manifest.test.ts` 12 + `navigation.test.ts` 3）；`npm run build` → **成功** | 通过（可重复命令证据；**不等于**关门） |
 | 边界文案仍排除 R4/R5 全量 | `apps/web` README / protocol README；GOAL-005 排除项 | 通过（意图边界） |
 | 实现**未**进入 git 历史提交 | `git status`：修改 `App.tsx`/`main.tsx`/`package.json` 等；untracked `navigation.ts`、`app-manifest.ts`、tests、`public/`、`vitest.config.ts` | 事实：工作树态，非已发布提交 |
@@ -598,7 +598,7 @@ A-004 是 independent，A-003 仅覆盖规划阶段，不能替代实施同 scop
 | Finding | 状态 | 证据路径 |
 |---------|------|----------|
 | A-007 F-001 | 已采纳（recommended，非门禁） | 本 `03-audit.md`「信息就绪核对」表「当前实现证据」行（绑定 A-006 审计时点 + 当前 HEAD）。 |
-| A-007 F-002 | 已登记为跟进 | 本响应节 + 父目标 `I-PROTO-004` 关闭要求（见 Root [00-meta](../../../GOAL-001-mvp-admin-foundation/00-meta.md)）。 |
+| A-007 F-002 | 已登记为跟进 | 本响应节 + 父目标 `I-PROTO-004` 关闭要求（见 Root [00-meta](../GOAL-001-mvp-admin-foundation/00-meta.md)）。 |
 
 ### 仍开放项
 

@@ -36,7 +36,7 @@ version: 1.0.0
 ## 依据
 
 - **self 审计**：[A-001](../03-audit/A-001-s5-admission-audit-and-verdict-self.md)（pass）
-- **independent 审计**：[A-002](../03-audit/A-002-s5-admission-audit-and-verdict-independent.md)（grok build · grok-4.5 · high · `audit`；verdict conditional → 两条 required 已闭合）
+- **independent 审计**：[A-002](../03-audit/A-002-s5-admission-audit-independent.md)（grok build · grok-4.5 · high · `audit`；verdict conditional → 两条 required 已闭合）
 - **最终基线**：V-001~V-008 全绿（候选 `ed99e88`）
 - **I-READINESS-005**（independent 证据）：由 A-002 闭合
 

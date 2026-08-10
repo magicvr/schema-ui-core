@@ -62,7 +62,7 @@ related_decision: D-002, D-003, D-004, D-005
 - **通用错误码（全资源共享）**：`UNAUTHENTICATED`(401)、`FORBIDDEN`(403)、`INVALID_SORT_FIELD`/`INVALID_SORT_ORDER`/`INVALID_PAGE`/`INVALID_PAGE_SIZE`(400)、`INVALID_CREATE_BODY`/`INVALID_CREATE_FIELD`(400)、`INVALID_PATCH_BODY`/`INVALID_PATCH_FIELD`(400)、`INTERNAL`(500)。
 - **资源特定**：NOT_FOUND 码 = `{ID}_NOT_FOUND`（records 保持 `RECORD_NOT_FOUND` 兼容；新资源如 `CATALOG_NOT_FOUND`）。前端 `readRecordApiError` 已按 envelope 泛读，无需改动。
 - **不引入**：`409`/业务唯一冲突、枚举校验码（与 I-007-001 一致）；resources 元数据发现端点（如 `/api/resources` 列表）为非目标（注册表是代码级，不暴露）。
-- **v0.2.2 · GOAL-010 D-005（响应 GOAL-011 A-002 F-005）注记**：账号/权限域（users/roles）的 409 业务冲突码由 `GOAL-011-s4-semantic-admin-resources` 的 [I-011-001 领域契约](../../../../GOAL-011-s4-semantic-admin-resources/attachments/I-011-001-users-roles-contract.md) §6 做限定扩展（envelope 形状不变，仅账号域）；records 零 API 变更历史事实不受影响。S1～S3 通用契约语义不变。
+- **v0.2.2 · GOAL-010 D-005（响应 GOAL-011 A-002 F-005）注记**：账号/权限域（users/roles）的 409 业务冲突码由 `GOAL-011-s4-semantic-admin-resources` 的 [I-011-001 领域契约](../../GOAL-011-s4-semantic-admin-resources/attachments/I-011-001-users-roles-contract.md) §6 做限定扩展（envelope 形状不变，仅账号域）；records 零 API 变更历史事实不受影响。S1～S3 通用契约语义不变。
 
 ## 6. 迁移与兼容策略（I-010-002）
 

@@ -9,7 +9,7 @@ track: docs/release-goals/next-admin-lifecycle.md Phase C.1 / P1 complement
 
 ## 状态
 
-**Accepted（2026-07-23）。** 本文是对 [ADR-0003](./0003-context-namespace-and-visible-when.md) 遗留问题的正式裁决，并作为 v2.3 的规范性语义来源。
+**Accepted（2026-07-23）。** 本文是对 ADR-0003（上游 ADR；本仓 dperm 附件未收录原文）遗留问题的正式裁决，并作为 v2.3 的规范性语义来源。
 
 该能力以 v2.3 的显式 opt-in 交付：
 

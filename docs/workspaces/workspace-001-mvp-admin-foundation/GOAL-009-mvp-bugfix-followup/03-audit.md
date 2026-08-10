@@ -205,8 +205,8 @@ version: 0.3.0
 
 | 主张 | 证据路径 / 命令 |
 |------|-----------------|
-| F-009-001 PATCH 刷新 `updatedAt` | [records.go](../../../../apps/api/internal/handler/records.go) `rec.UpdatedAt = time.Now().UTC()`；`TestRecordsUpdateRefreshesUpdatedAt` |
-| F-009-002 真实 context + 可失败权限 + 拒绝路径 | [list-edit-lifecycle-page.tsx](../../../../apps/web/src/app/examples/list-edit-lifecycle-page.tsx) `permissionCascade` + admin 表达式；App/registry 透传 `navigationContext`；[list-edit-lifecycle.test.tsx](../../../../apps/web/src/app/examples/list-edit-lifecycle.test.tsx) admin 启用 / viewer disabled |
+| F-009-001 PATCH 刷新 `updatedAt` | [records.go](../../../../apps/api/internal/handler/resources.go) `rec.UpdatedAt = time.Now().UTC()`；`TestRecordsUpdateRefreshesUpdatedAt` |
+| F-009-002 真实 context + 可失败权限 + 拒绝路径 | `apps/web/src/app/examples/list-edit-lifecycle-page.tsx`（历史路径；MVP 范例页已移除，继任见 `app-examples.test.tsx` / renderer）`permissionCascade` + admin 表达式；App/registry 透传 `navigationContext`；`list-edit-lifecycle.test.tsx`（历史路径；继任见 `app-examples.test.tsx`）admin 启用 / viewer disabled |
 | F-009-003 account 失败可观察 | [main.tsx](../../../../apps/web/src/main.tsx) 保留 error + `accountError`；[App.tsx](../../../../apps/web/src/app/App.tsx) `role="alert"` 横幅；`App.integration.test.tsx`；失败时 `loadAccountContext` → 空 context fail-closed |
 | F-009-004 nil provider fail-closed | [account.go](../../../../apps/api/internal/handler/account.go) 注释与 nil→401；`TestAccountsMeNilProviderFailsClosed` |
 | F-009-005 README 与现状一致 | [apps/api/README.md](../../../../apps/api/README.md)、[apps/web/README.md](../../../../apps/web/README.md) 端点 / 写路由鉴权 / 上限 / 测试命令 |

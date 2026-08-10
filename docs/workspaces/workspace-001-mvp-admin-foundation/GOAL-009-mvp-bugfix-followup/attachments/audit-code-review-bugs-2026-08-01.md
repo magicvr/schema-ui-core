@@ -44,7 +44,7 @@ scope: apps/api + apps/web 实现 vs VP-001 意图；真实 bug / 集成失真 /
 | 字段 | 值 |
 |------|-----|
 | **严重度** | med |
-| **位置** | [`apps/api/internal/handler/records.go`](../../../../../apps/api/internal/handler/records.go) `update()` |
+| **位置** | [`apps/api/internal/handler/records.go`](../../../../../apps/api/internal/handler/resources.go) `update()` |
 | **描述** | 成功 PATCH name/status/owner 后不刷新 `UpdatedAt`；`sort=updatedAt` 与“最近修改”语义错误 |
 | **关闭要求** | 更新成功时写入当前 UTC 时间（或等价单调时间）；单测断言 PATCH 后 `updatedAt` 变化 |
 | **状态** | open |
@@ -54,7 +54,7 @@ scope: apps/api + apps/web 实现 vs VP-001 意图；真实 bug / 集成失真 /
 | 字段 | 值 |
 |------|-----|
 | **严重度** | med |
-| **位置** | [`apps/web/src/app/examples/list-edit-lifecycle-page.tsx`](../../../../../apps/web/src/app/examples/list-edit-lifecycle-page.tsx) |
+| **位置** | `apps/web/src/app/examples/list-edit-lifecycle-page.tsx`（历史路径；MVP 范例页已移除，继任见 `apps/web/src/app/app-examples.test.tsx`） |
 | **描述** | (1) `context` 硬编码 `{ roles: ["admin"] }`，不用 boot 的 `/me`；(2) `PAGE_DOCUMENT` 仅有 `permissionIntent`，无 `permissions`/`permissionCascade`；(3) 引擎无 cascade/local 时 `effectivePermission` 默认 `true` → Edit/Delete 几乎总 `EXECUTED`，无法观察拒绝 |
 | **关闭要求** | 接入真实 `navigationContext`（或从 `/me` 同源 snapshot）；在 page 文档上挂可失败的权限表达式；至少一条可核对的拒绝路径（单元或组件测） |
 | **状态** | open |
@@ -94,7 +94,7 @@ scope: apps/api + apps/web 实现 vs VP-001 意图；真实 bug / 集成失真 /
 | 字段 | 值 |
 |------|-----|
 | **严重度** | med（误用时 high） |
-| **位置** | [`permission.go`](../../../../../apps/api/internal/account/permission.go) vs [`records.go`](../../../../../apps/api/internal/handler/records.go) |
+| **位置** | [`permission.go`](../../../../../apps/api/internal/account/permission.go) vs [`records.go`](../../../../../apps/api/internal/handler/resources.go) |
 | **描述** | Go 鉴权库存在但 PATCH/DELETE/GET 匿名可写；与「后端独立鉴权」叙事易混淆。VP/oracle 未强制真实 login 越权 HTTP |
 | **关闭要求（若纳入）** | 至少对写操作挂 fail-closed 检查（dev session + 表达式或角色门槛）+ 测试；或书面 residual：明确“演示 API 无路由鉴权” |
 | **状态** | open（本目标默认 **建议修**；用户可 residual） |
