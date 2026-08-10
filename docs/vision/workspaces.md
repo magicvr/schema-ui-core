@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 工作区贡献图
@@ -20,7 +20,7 @@ version: 0.8.0
 | workspace-006-design-system-and-ui-experience | docs/workspace-006-design-system-and-ui-experience/ | GOAL-001-design-system-and-ui-experience | delivery | VP-005-design-system-and-ui-experience | active |
 | workspace-007-localization-and-system-settings | docs/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
 | workspace-008-admin-module-readiness | docs/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
-| workspace-009-production-hardening | docs/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | pending（待 `/govern` 开区） |
+| workspace-009-production-hardening | docs/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root done 2/2，2026-08-10） |
 
 ## 说明
 
@@ -39,4 +39,5 @@ version: 0.8.0
 - **VP-007 已于 2026-08-09 经用户书面确认关门（`closed`）**：workspace-007 与 Root `GOAL-001-localization-and-system-settings`（`done / 6/6`）的历史绑定保留，默认不接新区（reopen 须用户确认）；S0–S5 证据与 independent 审计闭环见该区五件套（GOAL-006 A-001/A-002、D-002、E-001～E-003；Root `attachments/S5-evidence-matrix.md`）。不改变 Charter `primary_workspace`。
 - **VP-008 已于 2026-08-10 经用户书面确认关门（`closed`）**：workspace-008 与 Root `GOAL-001-admin-module-readiness`（`done / 6/6`，S0–S5）的历史绑定保留，默认不接新区（reopen 须用户确认）；`go` 已于 2026-08-10 签发（候选 `ed99e88`，clean；D-001），解锁后续标准业务模块实现，每个后续业务 VP 激活前须完成消费前 freshness review。关门证据链见该区五件套（GOAL-007 D-001、A-001/A-002/A-003、S5-evidence-matrix）。不改变 Charter `primary_workspace`。
 - **VP-009 已于 2026-08-10 落盘 `planned`（0 区）**：意图 = 共享基架安全与健壮性加固（代码审查 2026-08-10 输入；具体缺陷清单属实现层，由工作区第一个子目标承接，输入 `raw/audit-20260810-api-web-bug-review.md`，gitignored）；VP-008 `go` 因共享基架缺陷按 VP-008 §`go` 消费有效性规则**暂挂**，由本 VP 承担重验证；`lead_workspace` = `workspace-009-production-hardening`（`pending`，待 `/govern` 开区）；激活与开区后由 `/govern` 建立实现层。不改变 Charter `primary_workspace`。
+- **VP-009 已于 2026-08-10 经用户书面确认关门（`closed`）**：workspace-009 与 Root `GOAL-001-production-hardening`（`done / 2/2`，GOAL-002 16/16）的历史绑定保留，默认不接新区（reopen 须用户确认）；16 项共享基架安全/健壮性缺陷修复完成，cross 审计闭环（self A-001/A-004 + independent A-002/A-003），开放 required = 0；**VP-008 `go` 消费有效性已恢复**（候选 `53b9496`，重验证证据落盘）。不改变 Charter `primary_workspace`。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。

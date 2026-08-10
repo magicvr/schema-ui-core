@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-009-production-hardening
 title: 生产加固（共享基架安全与健壮性缺陷整改）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-009-production-hardening
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
@@ -48,11 +48,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-10 | **closed**（用户书面确认） | 共享基架安全/健壮性缺陷 16 项全部修复并回归（C1–C8 + D1–D8）；cross 审计闭环（self A-001/A-004 pass + independent A-002 conditional → F-001 fixed 经 A-003 复审 pass）；开放 required = 0；`go test ./...` 21 包全绿 + `vitest run` 739 全过；**VP-008 `go` 消费有效性恢复**（重验证证据落盘，候选 `53b9496`） | workspace-009 [goal-tree.md](../workspace-009-production-hardening/goal-tree.md)（Root `GOAL-001-production-hardening` done 2/2；GOAL-002 done 16/16）；[E-001](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/02-execution/E-001-remediation.md) + [E-002](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/02-execution/E-002-a002-response.md)；[A-001](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/03-audit/A-001-goal-002-self.md)～[A-004](../workspace-009-production-hardening/GOAL-002-audit-findings-remediation/03-audit/A-004-goal-002-closeout.md) | N-002（上传启发式完备性边界，accepted-residual，复审触发=上传策略变更）；F-006（D2 限流进程内 best-effort） |
 
 ## 规划修订短史
 
@@ -60,3 +58,5 @@ parent: null
 |------|--------|
 | 2026-08-10 | 初创（`planned`、0 区）；意图 = 共享基架安全与健壮性加固；VP-008 `go` 因共享基架缺陷按规则暂挂，本 VP 承担重验证 |
 | 2026-08-10 | 按用户指示修订：VP 仅保留安全加固意图（决策层）；具体审查发现移出 VP，由工作区第一个子目标承接（输入 `raw/audit-20260810-api-web-bug-review.md`），不写入 vision 层 |
+| 2026-08-10 | 激活（`active`）并开区；`/govern` scaffold workspace-009 + Root `GOAL-001-production-hardening` + 第一个子目标 GOAL-002 |
+| 2026-08-10 | **关门（`closed`）**：16 项修复 + cross 审计闭环 + 开放 required = 0；VP-008 `go` 恢复 |
