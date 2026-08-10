@@ -198,5 +198,18 @@ func TestUploadRejectsHtmlAndForcesAttachment(t *testing.T) {
 		}
 	}
 
+	// A-003 N-001: tag names are case-insensitive — mixed-case SVG/Script must
+	// also be rejected.
+	mixedCase := [][2]string{
+		{"svg-mixed.txt", "<Svg xmlns=\"http://www.w3.org/2000/svg\"><Script>alert(1)</Script></Svg>"},
+		{"xml-mixed.xml", "<?XML version=\"1.0\"?><Svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></Svg>"},
+	}
+	for _, tc := range mixedCase {
+		resp := uploadPart(tc[0], "text/plain", tc[1])
+		if resp.Code != http.StatusUnsupportedMediaType {
+			t.Fatalf("mixed-case %q status = %d, want 415", tc[0], resp.Code)
+		}
+	}
+
 	_ = os.RemoveAll(env.uploadDir)
 }

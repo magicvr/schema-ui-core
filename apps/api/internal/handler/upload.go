@@ -47,19 +47,20 @@ var dangerousInlineTypes = map[string]bool{
 // activeContentMarkers are byte sequences that indicate script-bearing or
 // SVG markup regardless of what http.DetectContentType reports (A-002 F-001):
 // DetectContentType sniffs SVG as text/plain and HTML can be smuggled past the
-// first 512 bytes or behind a GIF89a header. Any body containing these markers
-// is rejected outright — the detection layer is a hard gate, not a hint.
-var activeContentMarkers = [][]byte{
-	[]byte("<svg"),
-	[]byte("<SVG"),
-	[]byte("<script"),
-	[]byte("<SCRIPT"),
-	[]byte("<?xml"),
+// first 512 bytes or behind a GIF89a header. Matching is case-insensitive
+// because HTML/SVG tag names are case-insensitive (A-003 N-001).
+var activeContentMarkers = []string{
+	"<svg",
+	"<script",
+	"<?xml",
 }
 
+// containsActiveContent reports whether body contains any active-content
+// marker, case-insensitively. A hard rejection gate on top of the sniffed MIME.
 func containsActiveContent(body []byte) bool {
+	lower := bytes.ToLower(body)
 	for _, marker := range activeContentMarkers {
-		if bytes.Contains(body, marker) {
+		if bytes.Contains(lower, []byte(marker)) {
 			return true
 		}
 	}
