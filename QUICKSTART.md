@@ -47,18 +47,18 @@ export APP_PROFILE=mvp                 # 或 admin
 docker compose up -d --build
 ```
 
-- API：`http://localhost:8080`（`GET /healthz` 探活）
-- Web：`http://localhost:8081`（nginx 服务 SPA，`/api` 同源反代到 API）
+- API：`http://localhost:25080`（`GET /healthz` 探活）
+- Web：`http://localhost:25081`（nginx 服务 SPA，`/api` 同源反代到 API）
 - 停止：`docker compose down`（SQLite 数据由命名卷 `db-data` 保持）
 
 ### 路径 B · 本地双进程（开发默认）
 
 ```bash
 # 终端 1 —— API
-cd apps/api && APP_PROFILE=mvp go run ./cmd/server  # 监听 :8080；或改为 admin
+cd apps/api && APP_PROFILE=mvp go run ./cmd/server  # 监听 :25080；或改为 admin
 
 # 终端 2 —— Web
-cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
+cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-25173}
 ```
 
 ## 3. 验收四终点（≤15 分钟达标判据）
@@ -70,17 +70,17 @@ cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
 | 3 | 携带 token `GET ${WEB_BASE_URL}/api/accounts/me` | HTTP 200，含 `user` 与 `features` |
 | 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD） |
 
-> **默认 base URL**：Compose → API `http://localhost:8080`、Web `http://localhost:8081`；本地双进程 → API `:8080`、Web `http://localhost:${WEB_PORT:-5173}`。以实际端口为准，不得用默认值覆盖实测端口。
+> **默认 base URL**：Compose → API `http://localhost:25080`、Web `http://localhost:25081`；本地双进程 → API `:25080`、Web `http://localhost:${WEB_PORT:-25173}`。以实际端口为准，不得用默认值覆盖实测端口。
 
 ### 命令行冒烟（终点 1–3 快速验证）
 
 ```bash
-curl -fsS http://localhost:8080/healthz
-TOKEN=$(curl -fsS -X POST http://localhost:8081/api/auth/login \
+curl -fsS http://localhost:25080/healthz
+TOKEN=$(curl -fsS -X POST http://localhost:25081/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"<ADMIN_INITIAL_PASSWORD>"}'
   | node -e 'process.stdin.on("data",d=>process.stdout.write(JSON.parse(d).accessToken))')
-curl -fsS http://localhost:8081/api/accounts/me -H "Authorization: Bearer $TOKEN"
+curl -fsS http://localhost:25081/api/accounts/me -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 完整 smoke（S4 机器可判定）

@@ -18,7 +18,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   applyDocumentBranding,
@@ -439,6 +439,56 @@ export function App({
     return () => window.removeEventListener("popstate", handlePopState);
   }, [manifest]);
 
+  // Mobile navigation drawer focus management (S0 D-003 §8 · F-002)：抽屉打开时
+  // 焦点进入首个可聚焦元素，Tab 在抽屉内循环，Escape 关闭，关闭后焦点恢复到
+  // 触发元素。
+  const drawerNavRef = useRef<HTMLElement>(null);
+  const drawerTriggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!mobileDrawerOpen) {
+      return;
+    }
+    drawerTriggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const drawer = drawerNavRef.current;
+    const firstFocusable = drawer?.querySelector<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    (firstFocusable ?? drawer)?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setMobileDrawerOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !drawer) return;
+      const items = Array.from(
+        drawer.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !drawer.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !drawer.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      drawerTriggerRef.current?.focus();
+    };
+  }, [mobileDrawerOpen]);
+
   const onNavigate = (href: string) => {
     if (!href.startsWith("/")) {
       return;
@@ -570,6 +620,7 @@ export function App({
             onClick={() => setMobileDrawerOpen(false)}
           />
           <nav
+            ref={drawerNavRef}
             className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border bg-card shadow-lg lg:hidden"
             aria-label="Mobile navigation"
           >

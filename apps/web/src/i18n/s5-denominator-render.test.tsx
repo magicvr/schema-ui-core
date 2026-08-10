@@ -194,7 +194,7 @@ function adminContext(features: Record<string, boolean> = {}) {
         "roles.write",
         "settings.read",
         "settings.write",
-        "activity.read",
+        "operations.read",
       ],
     },
     features: {

@@ -30,11 +30,15 @@ var frozenLiteralCodes = []string{
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/
-// users), plus the dynamic {RESOURCE}_NOT_FOUND family.
+// users), plus the dynamic {RESOURCE}_NOT_FOUND family and the F-006 additions
+// (LAST_ADMIN / SELF_OPERATION / INVALID_ROLE_REF / ROLE_ASSIGNMENT_FORBIDDEN /
+// INVALID_MENU_ITEM_REF) emitted via DomainError in the users/roles handlers.
 var frozenDomainCodes = []string{
 	"USERNAME_TAKEN", "ROLE_KEY_TAKEN", "ROLE_IN_USE", "ROLE_SYSTEM",
 	"INVALID_ROLE_KEY", "INVALID_PERMISSION_REF", "ROLE_GRANT_FORBIDDEN",
 	"ROLE_NOT_FOUND", "USER_NOT_FOUND", "CATALOG_NOT_FOUND",
+	"LAST_ADMIN", "SELF_OPERATION", "INVALID_ROLE_REF", "ROLE_ASSIGNMENT_FORBIDDEN",
+	"INVALID_MENU_ITEM_REF",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

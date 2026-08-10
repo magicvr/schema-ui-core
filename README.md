@@ -12,7 +12,8 @@
 | [docs/architecture/monorepo-layout.md](docs/architecture/monorepo-layout.md) | **Monorepo 布局与包管理约定（R1）** |
 | [docs/architecture/directory-layout.md](docs/architecture/directory-layout.md) | 治理目录布局 |
 | [docs/vision/charter.md](docs/vision/charter.md) | 现行愿景 Charter |
-| [docs/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspace-003-modular-admin-architecture/goal-tree.md) | 当前模块化架构工作区目标树 |
+| [docs/workspace-008-admin-module-readiness/goal-tree.md](docs/workspace-008-admin-module-readiness/goal-tree.md) | 当前准入与基架收敛工作区（VP-008）目标树 |
+| [docs/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspace-003-modular-admin-architecture/goal-tree.md) | 模块化架构工作区目标树（历史） |
 | [AGENTS.md](AGENTS.md) | AI 协作强制规则 |
 
 ## 仓库布局（摘要）
@@ -93,7 +94,7 @@ docker compose up --build
 - **Profile**：`mvp`（core 六项 + users/roles）与 `admin`（+ settings/activity）为
   编译候选集；`APP_MODULES_ENABLED` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，
   无需改前端。
-- **数据**：迁移账本 `0001`-`0008` 全局唯一；fresh 与 versioned reconcile 分离；
+- **数据**：迁移账本 `0001`-`0010` 全局唯一；fresh 与 versioned reconcile 分离；
   operationlog best-effort；`/api/records` 已退场（`0006` historical-only）。
 - **探测**：`/healthz`（liveness）与 `/readyz`（store ping + 模块图 Start/Ready
   readiness，R5）。

@@ -64,6 +64,13 @@ var Catalog = map[string]Entry{
 	"USER_NOT_FOUND":         {"error.userNotFound", "no user with that id", "没有该 id 对应的用户"},
 	"CATALOG_NOT_FOUND":      {"error.catalogNotFound", "no catalog with that id", "没有该 id 对应的目录"},
 
+	// F-006 补齐实际发出的 domain 错误码（S1 台账）：此前缺失导致 zh-CN 下英文回退。
+	"LAST_ADMIN":             {"error.lastAdmin", "cannot remove the last admin user", "不能移除最后一个管理员"},
+	"SELF_OPERATION":         {"error.selfOperation", "self operation is not allowed", "不允许对自身账号执行该操作"},
+	"INVALID_ROLE_REF":       {"error.invalidRoleRef", "roles contain an unknown role key", "角色引用未知或无效"},
+	"ROLE_ASSIGNMENT_FORBIDDEN": {"error.roleAssignmentForbidden", "you may not assign roles you do not hold", "不能分配您本身不持有的角色"},
+	"INVALID_MENU_ITEM_REF":  {"error.invalidMenuItemRef", "menuItems contain an unknown id", "导航引用了未知的菜单项"},
+
 	"INVALID_UPLOAD":        {"error.invalidUpload", "expected a multipart file part named file", "请求应为包含名为 file 的 multipart 文件"},
 	"FILE_TOO_LARGE":        {"error.fileTooLarge", "file exceeds the size limit", "文件超过大小限制"},
 	"FILE_NOT_FOUND":        {"error.fileNotFound", "file not found", "文件不存在"},
