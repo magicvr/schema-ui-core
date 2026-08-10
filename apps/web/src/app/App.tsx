@@ -41,6 +41,7 @@ import {
   type PageEntry,
   matchRoute,
   resolveInitialRoute,
+  stripPathQuery,
 } from "@/protocol/app-manifest";
 import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
 import type { RenderPageDocument } from "@/renderer/render";
@@ -84,6 +85,16 @@ export interface AppProps {
 
 function currentLocationPath() {
   return `${window.location.pathname}${window.location.search}`;
+}
+
+// Parses the current URL's query string into a plain record; deep-linked query
+// parameters reach $context.route.query.* bindings through the render context.
+function parseLocationQuery(): Record<string, string> {
+  const search = window.location.search;
+  if (search === "") {
+    return {};
+  }
+  return Object.fromEntries(new URLSearchParams(search).entries());
 }
 
 function iconFor(name: string | undefined) {
@@ -239,12 +250,14 @@ function PageSchemaErrorSurface({ error }: { error: PageSchemaError }) {
 function SchemaPageSurface({
   page,
   params,
+  query,
   context,
   fetcher,
   resourceFetcher,
 }: {
   page: PageEntry;
   params: Record<string, string>;
+  query: Record<string, string>;
   context: NavigationContext;
   fetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
@@ -295,7 +308,12 @@ function SchemaPageSurface({
   return (
     <RenderPage
       document={state.document as RenderPageDocument}
-      context={context as unknown as Record<string, unknown>}
+      context={
+        {
+          ...(context as Record<string, unknown>),
+          route: { params, query },
+        } as Record<string, unknown>
+      }
       tableRenderer={(node) => <SchemaTable node={node} fetcher={resourceFetcher} />}
       dataFetcher={resourceFetcher}
     />
@@ -305,6 +323,7 @@ function SchemaPageSurface({
 function PageSurface({
   manifest,
   path,
+  query,
   onNavigate,
   navigationContext,
   schemaFetcher,
@@ -312,6 +331,7 @@ function PageSurface({
 }: {
   manifest: AppManifest;
   path: string;
+  query: Record<string, string>;
   onNavigate: (href: string) => void;
   navigationContext: NavigationContext;
   schemaFetcher?: typeof fetch;
@@ -369,6 +389,7 @@ function PageSurface({
         <SchemaPageSurface
           page={route.page}
           params={route.params}
+          query={query}
           context={navigationContext}
           fetcher={schemaFetcher}
           resourceFetcher={resourceFetcher}
@@ -396,6 +417,9 @@ export function App({
     }
     return initial?.path ?? requested;
   });
+  const [routeQuery, setRouteQuery] = useState<Record<string, string>>(() =>
+    parseLocationQuery(),
+  );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
@@ -434,6 +458,7 @@ export function App({
         window.history.replaceState({}, "", initial.path);
       }
       setPath(initial?.path ?? requested);
+      setRouteQuery(initial?.query ?? parseLocationQuery());
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -494,7 +519,10 @@ export function App({
       return;
     }
     window.history.pushState({}, "", href);
-    setPath(currentLocationPath());
+    // Keep the path free of the query string (matchRoute expects a clean path);
+    // the query lives in routeQuery and reaches the render context (C8).
+    setPath(stripPathQuery(currentLocationPath()));
+    setRouteQuery(parseLocationQuery());
     setMobileDrawerOpen(false);
   };
 
@@ -683,6 +711,7 @@ export function App({
             <PageSurface
               manifest={manifest}
               path={path}
+              query={routeQuery}
               onNavigate={onNavigate}
               navigationContext={navigationContext}
               schemaFetcher={schemaFetcher}

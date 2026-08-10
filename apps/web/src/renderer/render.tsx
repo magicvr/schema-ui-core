@@ -276,22 +276,31 @@ async function runRequest(
     return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
   }
   if (opts.gateTargetId !== undefined) {
-    const gate = executeAction(
+    // Absent target = no declared permission entry (engine default is allow):
+    // only gate when the page actually declares a permission for this target,
+    // matching the batch path (ADR-0022 D5d) and effectivePermission (C7).
+    const hasPermissionEntry = evaluatePermissionTargets(
       document as unknown as JsonRecord,
-      {
-        targetId: opts.gateTargetId,
-        visible: true,
-        ...(opts.confirmed !== undefined ? { confirm: true, confirmed: opts.confirmed } : {}),
-        disabled: false,
-      },
       context as NavigationContext,
-    );
-    if (gate.outcome !== "EXECUTED") {
-      return {
-        ok: false,
-        code: gate.reason ?? gate.outcome,
-        message: `action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
-      };
+    ).some((entry) => entry.targetId === opts.gateTargetId);
+    if (hasPermissionEntry) {
+      const gate = executeAction(
+        document as unknown as JsonRecord,
+        {
+          targetId: opts.gateTargetId,
+          visible: true,
+          ...(opts.confirmed !== undefined ? { confirm: true, confirmed: opts.confirmed } : {}),
+          disabled: false,
+        },
+        context as NavigationContext,
+      );
+      if (gate.outcome !== "EXECUTED") {
+        return {
+          ok: false,
+          code: gate.reason ?? gate.outcome,
+          message: `action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
+        };
+      }
     }
   }
 
@@ -326,11 +335,18 @@ async function runRequest(
   }
 
   const body = request.body === null || request.body === undefined ? undefined : JSON.stringify(request.body);
-  const response = await fetcher(url, {
-    method: request.method,
-    headers: { "Content-Type": "application/json" },
-    ...(body === undefined ? {} : { body }),
-  });
+  let response: Response;
+  try {
+    response = await fetcher(url, {
+      method: request.method,
+      headers: { "Content-Type": "application/json" },
+      ...(body === undefined ? {} : { body }),
+    });
+  } catch (error) {
+    // Network-level failure (offline, server down, CORS): surface as an action
+    // result so every caller shows feedback instead of an unhandled rejection.
+    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+  }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
     return {
@@ -344,6 +360,13 @@ async function runRequest(
   // Branding refresh after settings PATCH lives in the App/host layer (A-006 R-002),
   // not in this generic request executor — keep Renderer free of product endpoints.
   return { ok: true };
+}
+
+function requestFailedMessage(error: unknown): string {
+  if (error instanceof Error && error.message !== "") {
+    return error.message;
+  }
+  return "request failed (network error)";
 }
 
 /**
@@ -407,11 +430,16 @@ async function runBatchRequest(
     return { ok: false, code: "NO_REQUEST", message: "batch action produced no request" };
   }
   const body = request.body === null || request.body === undefined ? undefined : JSON.stringify(request.body);
-  const response = await fetcher(request.url, {
-    method: request.method,
-    headers: { "Content-Type": "application/json" },
-    ...(body === undefined ? {} : { body }),
-  });
+  let response: Response;
+  try {
+    response = await fetcher(request.url, {
+      method: request.method,
+      headers: { "Content-Type": "application/json" },
+      ...(body === undefined ? {} : { body }),
+    });
+  } catch (error) {
+    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+  }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
     return {
@@ -739,7 +767,9 @@ function SchemaCrudProvider({
     const q = typeof raw === "string" ? raw.trim() : "";
     setQueries((prev) => {
       const current = prev[targetTable] ?? { page: 1, pageSize: 10 };
-      return { ...prev, [targetTable]: { ...current, page: 1, ...(q === "" ? {} : { q }) } };
+      // Always write the (possibly empty) q so clearing the search box actually
+      // clears the filter; an empty value must overwrite the previous one (C6).
+      return { ...prev, [targetTable]: { ...current, page: 1, q } };
     });
   }, []);
 
@@ -867,6 +897,7 @@ function useRecordSourcePrefill(
   node: RenderFormNode,
   metaValue: unknown,
   crud: SchemaCrudValue | null,
+  context?: Record<string, unknown>,
 ): RecordSourcePrefillState {
   const recordSource = node.props.recordSource;
   // A-002 F-001: start a recordSource form in `loading` (not `idle`) so the
@@ -891,10 +922,15 @@ function useRecordSourcePrefill(
       });
       return;
     }
+    // Route bindings ($context.route.query/params) flow in via the render
+    // context so deep links and query strings reach recordSource mapping (C8).
+    const route = isRecord(context?.route)
+      ? (context.route as { params?: Record<string, unknown>; query?: Record<string, unknown> })
+      : undefined;
     const constructed = constructRequest({
       kind: "recordSource",
       recordSource,
-      route: { params: {}, query: {} },
+      route: route ?? { params: {}, query: {} },
       baseURL: "",
     });
     if (!constructed.ok) {
@@ -972,7 +1008,7 @@ function FormView({
 }) {
   const crud = useSchemaCrud();
   const t = useTranslate();
-  const prefill = useRecordSourcePrefill(node, metaValue, crud);
+  const prefill = useRecordSourcePrefill(node, metaValue, crud, context);
 
   if (prefill.status === "loading") {
     return (
@@ -1127,16 +1163,23 @@ function FormInner({
     }
     setSubmitting(true);
     setFormError(null);
-    const result = await crud.submitForm(node, values);
-    if (!result.ok) {
-      setFormError({
-        code: result.code,
-        message: result.message,
-        ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
-        ...(result.params === undefined ? {} : { params: result.params }),
-      });
+    try {
+      const result = await crud.submitForm(node, values);
+      if (!result.ok) {
+        setFormError({
+          code: result.code,
+          message: result.message,
+          ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
+          ...(result.params === undefined ? {} : { params: result.params }),
+        });
+      }
+    } catch (error) {
+      // Defensive: a throwing submit (unexpected fetch/transport failure) must
+      // never leave the button stuck in its disabled Submitting state (C5).
+      setFormError({ code: "REQUEST_FAILED", message: requestFailedMessage(error) });
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const title = resolveTextProp(
