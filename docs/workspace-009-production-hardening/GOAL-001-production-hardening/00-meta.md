@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-production-hardening
 title: 生产加固（共享基架安全与健壮性整改）
-status: active
+status: done
 parent: null
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.1.0
-progress: 0/2
+version: 0.2.0
+progress: 2/2
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
@@ -35,8 +35,10 @@ provider 记录沿用 workspace-008 D-002（2026-08-10 用户目标级指令）�
 
 ## 成功标准（纲领检查点）
 
-- [ ] **S0 · 基线冻结**：固定本波次候选 commit、审查发现清单（C1–C8 + D1–D8）、严重度与修复顺序；信息门禁登记。
-- [ ] **S1 · 审查发现修正（第一个子目标）**：全部 16 项缺陷修复并回归；Go + vitest 全绿；基线不回归。
+- [x] **S0 · 基线冻结**：候选 commit、审查发现清单（C1–C8 + D1–D8）、严重度与修复顺序固定；I-001 登记并 verified。（2026-08-10）
+- [x] **S1 · 审查发现修正（第一个子目标）**：全部 16 项缺陷修复并回归；Go 21 包 + vitest 739 全绿；基线不回归；审计闭环（A-001 self pass → A-002 independent conditional → A-003 复审 pass → A-004 关门 pass）；开放 required = 0。（2026-08-10，[GOAL-002](../GOAL-002-audit-findings-remediation/00-meta.md) done 16/16）
+
+**Root 已关门（2026-08-10）**。共享基架安全/健壮性缺陷修复完成并经 cross 审计；VP-008 `go` 消费有效性按规则恢复（见 VP-009 关门记录与 roadmap）。
 
 ## 信息就绪与未知项
 

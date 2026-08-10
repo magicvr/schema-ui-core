@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-audit-findings-remediation
 title: 审查发现修正（第一个子目标）
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.1.0
-progress: 0/16
+version: 0.2.0
+progress: 16/16
 ---
 
 # GOAL-002 · 审查发现修正（第一个子目标）
@@ -41,7 +41,7 @@ progress: 0/16
 - [x] C1–C8 全部修复并回归（上传 MIME 服务端校验 + 下载 `Content-Disposition`/CSP；刷新轮换原子化 + in-flight 去重；`APP_ENV` fail-closed；Bootstrap 空表重试；异步 catch 全覆盖；搜索清空语义；权限缺省契约统一；路由 query 贯通）— [E-001](02-execution/E-001-remediation.md)
 - [x] D1–D8 修复或按用户 P-004 裁决；D3 匿名可读属性经显式确认（2026-08-10 用户裁决：保持匿名，记录设计决策 + accepted-residual）— [E-001](02-execution/E-001-remediation.md)
 - [x] 新增/更新回归测试覆盖每项修复；`go test ./...`（21 包）+ `vitest run`（735）全绿；基线不回归 — [E-001](02-execution/E-001-remediation.md)
-- [ ] 共享基架重验证证据落盘，VP-008 `go` 消费有效性按规则恢复（待审计与关门）
+- [x] 共享基架重验证证据落盘，VP-008 `go` 消费有效性按规则恢复（A-001/A-002/A-003 审计闭环，F-001 closed fixed，开放 required = 0）
 
 ## 信息就绪与未知项
 

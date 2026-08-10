@@ -18,18 +18,18 @@ workspace_id: workspace-009-production-hardening
 ## 树
 
 ```text
-GOAL-001-production-hardening [active]
-└── GOAL-002-audit-findings-remediation [active]（规划中）
+GOAL-001-production-hardening [done] (2/2)
+└── GOAL-002-audit-findings-remediation [done] (16/16)
 ```
 
-**Root 已开区（2026-08-10）**。第一个子目标 = 代码审查发现修正（C1–C8 + D1–D8，输入 `raw/audit-20260810-api-web-bug-review.md`）。
+**Root 已关门（2026-08-10）**。16 项共享基架安全/健壮性缺陷修复完成，cross 审计闭环（A-001～A-004），开放 required = 0；VP-008 `go` 消费有效性恢复。
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-production-hardening | 生产加固（共享基架安全与健壮性整改） | null | active | 0/2 | 2026-08-10 |
-| GOAL-002-audit-findings-remediation | 审查发现修正（第一个子目标） | GOAL-001-production-hardening | active | 0/16 | 2026-08-10 |
+| GOAL-001-production-hardening | 生产加固（共享基架安全与健壮性整改） | null | done | 2/2 | 2026-08-10 |
+| GOAL-002-audit-findings-remediation | 审查发现修正（第一个子目标） | GOAL-001-production-hardening | done | 16/16 | 2026-08-10 |
 
 ## 维护说明
 
