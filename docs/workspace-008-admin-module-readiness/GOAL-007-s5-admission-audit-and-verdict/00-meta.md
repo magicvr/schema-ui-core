@@ -32,7 +32,7 @@ workspace_id: workspace-008-admin-module-readiness
 
 ## 信息就绪与未知项
 
-S5 到期 required 为 `I-READINESS-005`（independent 审计证据）。workspace-005 `I-PROTO-FULL-001` 勘误为 S5 前跨区待办（S3 记录）；须在 S5 处理（勘误或用户书面 residual）。F-007 deferred（owner+触发）。
+S5 到期 required 为 `I-READINESS-005`（independent 审计证据）。workspace-005 `I-PROTO-FULL-001` 勘误已由 v1.0.1 / D-003 / E-007 完成，并由本区 A-003 以 `fixed` 路径闭合；F-007 deferred（owner+触发）。
 
 ## 台账布局
 

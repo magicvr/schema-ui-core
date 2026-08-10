@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-10
 parent: null
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Charter 修订台账
@@ -30,3 +30,4 @@ version: 0.4.0
 | VR-014 | 2026-08-10 | editorial | VP-007 关门投影 + VP-008 组合指针 | 修正 Charter 与 reviews 摘要残留的“VP-007 active”旧投影：VP-007 已于 2026-08-09 用户书面确认 `closed`，当前无 active 交付 VP。用户确认新建 planned `VP-008-admin-module-readiness-and-foundation-convergence`，作为正式业务模块前的全基架准入波次；未激活、未建区。不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`）；**无** strategic、**无** re-align。 |
 | VR-015 | 2026-08-10 | editorial | VRev-026 响应 + VP-008 激活指针 | 用户采纳 VRev-026 `pass`、V-F053 → `fixed`，并确认激活 VP-008。VP-008 v0.10.0 改为 `active`、0 workspace；Charter/roadmap/reviews 投影同步，空区按 §5.1 从 2026-08-10 起进入 14 日宽限，最迟 2026-08-24 复核。不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`）；**无** strategic、**无** re-align。 |
 | VR-016 | 2026-08-10 | editorial | VP-008 lead workspace + Root scaffold | 用户确认单工作区、lead `workspace-008-admin-module-readiness`、Root `GOAL-001-admin-module-readiness` 与 independent provider `GitHub Copilot · /audit`；`/govern` 完成物理 scaffold。VP-008 保持 `active`，workspace/Root/Goal 对齐 Charter `@0.2.0`，尚未产生 `go`；不改 Charter 目的、成功边界、非目标或 `vision_id@version`，**无** strategic、**无** re-align。 |
+| VR-017 | 2026-08-10 | editorial | I-PROTO-FULL-001 执行分母勘误 | 响应 workspace-008 F-001：覆盖权威升至 v1.0.1，12/12 域、24/24 registry、16/16 suite include 不变；将 `320/320 全绿` 修正为 320 total = 318 executed + 2 local adapter excluded。同步 Charter H-001、roadmap、workspaces 与 VP-006 关门投影；不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不重开 VP-006，**无** strategic、**无** re-align。 |

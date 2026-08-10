@@ -37,3 +37,7 @@ version: 1.0.0
 
 - 无新增 `required` finding（self 侧）。
 - 前置条件（不阻断 self verdict，阻断 `go`）：① grok independent 审计须产出可核对独立意见；② workspace-005 `I-PROTO-FULL-001` 勘误或用户书面 residual 处置；③ 用户书面 `go`/`no-go` 裁决。
+
+## 勘误响应（2026-08-10）
+
+本 self 审计原始前置条件保留。其第②项已由 workspace-005 `I-PROTO-FULL-001` v1.0.1 / D-003 / E-007 完成，并由本区 A-003 以 `fixed` 路径闭合；当前仍待第①项 independent 审计与第③项用户裁决。

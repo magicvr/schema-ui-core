@@ -5,8 +5,8 @@ record_id: E-005
 status: recorded
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-10
+version: 0.1.1
 ---
 
 # E-005 · VP-006 关门（用户书面确认）与愿景侧同步
@@ -36,3 +36,7 @@ version: 0.1.0
 | 愿景同步 | `roadmap.md`、`workspaces.md`、`charter.md`（H-001 ③ verified）、`docs/architecture/overview.md` |
 | 独立审计 | `03-audit/A-001-*`（S1，conditional→fixed）、`A-002-*`（S5 close-out，pass）；开放 required = 0 |
 | 实现与验证 | E-001～E-004（覆盖表冻结、320/320 fixtures、569 vitest、go 全绿、API×2、headless） |
+
+## 2026-08-10 · 勘误注
+
+本记录的历史关门事实不变，但其中 `320/320 fixtures` 应按 D-003 / E-007 解释为 **320 total = 318 executed + 2 local adapter excluded**。该勘误不改变 12/12 域、24/24 registry type、16/16 suite include，也不重开 VP-006 或 Root 终态。

@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-008-admin-module-readiness
 created: 2026-08-10
 updated: 2026-08-10
-version: 0.10.0
+version: 0.12.0
 parent: null
 ---
 
@@ -54,7 +54,7 @@ S0 必须冻结一份可版本化的准入分母，至少包含：
 1. **代码与环境**：Git commit、Go/Node/package manager 版本、依赖锁文件、配置模板、数据库起始形态和所有验证命令。
 2. **模块集合与适用矩阵**：当前编译候选 Provider、Profile 默认启用集、依赖闭包、模块 descriptor、模块分级标签（`standard-admin` / `infra` / `core` / `other`）、适用检查表（全六项 / 豁免项 / N/A+理由）、迁移与 system-data ownership、证据路径。`other` 只能作为带 owner、理由、复核触发的临时发现标签，S2 方案冻结前必须收敛为明确归属、明确不在模块契约内，或用户书面接受 residual；不得以 `other` 代替 N/A 或免检。
 3. **运行形态**：至少覆盖 `mvp` / `admin` 两个真实 Profile；`custom` 的未知模块、缺依赖、冲突配置和失败语义进入内核测试分母。
-4. **协议面**：`I-PROTO-FULL-001` 的 12/12 domain、24/24 registry type、16/16 behavior suite、320/320 case 现行投影，以及本地主机对上游 case 的 adapter / exclude disposition。
+4. **协议面**：`I-PROTO-FULL-001` 的 12/12 domain、24/24 registry type、16/16 behavior suite、320 total = **318 executed + 2 local adapter excluded** 的现行投影，以及本地主机对上游 case 的 adapter / exclude disposition。
 5. **主流程与用例选取规则**：以 `scripts/smoke.sh` 的 SM-001～SM-005 作为 readiness、登录/身份、代表页的最低 smoke 下限；只有显式隔离的 `--disposable` 运行并通过 SM-006，才可声称种子可重复性。`mvp` / `admin` 每个实际可达 Runtime Manifest `pageId` 与 `schemaUrl` 都进入清单；每个声明 CRUD 的资源至少覆盖 list、detail、create/update、delete（若明确不支持则记录理由），每个可达写操作至少有成功、未授权/权限失败或校验失败路径。每条用例固定 `profile`、`pageId`/资源 id、`schemaUrl`、权限键、预期错误码和证据路径；未列入项只能以明确 residual 留痕，不得用单个代表页关闭 exit #2。
 6. **模块接入演练**：以 test fixture、probe module 或等价有界方式验证新增标准模块无需修改 Renderer/Shell 中央业务注册，并能通过 Profile、权限、导航、Manifest、Schema、迁移和回归门禁。
 7. **消费路径与升级边界**：至少核对 compose/容器启动与文档化 fork bootstrap 的可复跑入口；S0 至少固定一个受支持的升级来源与目标、升级前快照/恢复路径，并明确本 VP 不要求降级，除非用户另行扩 scope。fork/compose 必须指向文档化基线分支或 commit；超出该升级窗口、恢复边界或 fork 基线的兼容诉求记录为 `N/A`/residual 或回 `/vision` 扩 scope。若本 VP 明确不纳入消费路径，必须记录 `N/A` 理由、影响范围和重新纳入触发，不得用本地主线已运行替代消费路径证据。
@@ -178,7 +178,7 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 |----|-----------------|------|----------|-----------------|----------|
 | `I-READINESS-001` | 当前主线的可复跑验证分母、环境版本、Profile、数据库起始形态与关键流程究竟是什么？ | required | S0 结束前 | 从 CI、README、脚本、package/go 配置与真实运行入口抽取命令矩阵，执行首轮基线并冻结证据路径 | open |
 | `I-READINESS-002` | 当前一方模块按分级标签与适用检查表是否满足对应 Provider M1～M6、核心贡献、依赖闭包、Profile 和全局迁移台账契约？ | required | S2 方案冻结前 | 对 compiled providers 与真实模块建立 `standard-admin` / `infra` / `core` / `other` 名册；按全六项或架构豁免逐项核验，N/A 必须有理由与证据；用接入演练和冲突/失败测试验证文档未漂移 | open |
-| `I-READINESS-003` | 上游 fixture/conformance 的本地 adapter、explicit exclude 与现行 `I-PROTO-FULL-001` 主张是否一致，哪些会影响未来业务模块？ | required | S3 协议判断前 | 对 12/24/16/320 分母和本地 disposition 逐项复核，特别核对 error envelope 与多轮 `$deps` reactions | open |
+| `I-READINESS-003` | 上游 fixture/conformance 的本地 adapter、explicit exclude 与现行 `I-PROTO-FULL-001` 主张是否一致，哪些会影响未来业务模块？ | required | S3 协议判断前 | 已由 workspace-008 S0/S3 与 workspace-005 v1.0.1 / D-003 / E-007 逐项复核；两项 exclusion 为 error-envelope adapter 差异，不影响域级协议范围 | **verified** |
 | `I-READINESS-004` | 在尚未选择首个领域模块时，哪些跨模块共性能力足以构成全基架准入分母？ | required | S0 结束前 | 从订单、钱包、类目、通知候选抽取共性模式，只冻结列表/详情/写操作/状态流转/权限/审计/迁移/反馈等框架能力，不预设领域模型；领域特有项默认不进本 VP required | open |
 | `I-READINESS-005` | cross 审计使用哪个 independent provider，覆盖哪些 compatibility/data/migration/production scope？ | required | Root S0 实施前 | 激活 VP 时由用户指定会话可用 provider；记录 self + independent 的 scope 与最低证据要求 | open |
 | `I-READINESS-006` | 阻断/严重度量尺、台账映射与 S1 只应用规则是否已经冻结？ | required | S0 结束前 | 记录本节量尺版本、适用 scope、证据分母、audit scope 与用户确认；S1 起只按量尺分类，不重写定义 | open |
@@ -251,3 +251,4 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 | 2026-08-10 | `0.9.0` | 响应 VRev-024 / VRev-025：采纳 `conditional` / `editorial`，保留原 verdict 与 finding 原文；V-F051 → fixed，显式采用多工作区 lead 提案、support 证据聚合、用户书面确认及缺证据即 `no-go` 规则；V-F052 → fixed，删除 VP 内独立计数并以 `reviews.md` 为唯一 Vision required 投影。保持 `planned`、0 区；不激活或开区。 |
 | 2026-08-10 | `0.10.0` | 响应 VRev-026：采纳 `pass` / `no-change`，保留原 verdict 与 finding 原文；V-F053 recommended → fixed，增加后续业务 VP residual 手递字段与 VP-008 closed 后 shared-foundation residual 的 `/vision` reopen/新准入 VP 所有者。用户随后确认激活 VP-008；状态改为 `active`，0 区进入 14 日空转宽限，未创建 workspace/Root/Goal 或产生 `go`。 |
 | 2026-08-10 | `0.11.0` | 用户确认单工作区 lead `workspace-008-admin-module-readiness`、Root `GOAL-001-admin-module-readiness` 与 GitHub Copilot `/audit` independent provider；`/govern` 完成 workspace/Root scaffold。VP-008 保持 `active`，单区已绑定但仍未产生 `go`；S0 required 信息项与运行证据继续由工作区台账承接。 |
+| 2026-08-10 | `0.12.0` | editorial 勘误投影：继承 workspace-005 `I-PROTO-FULL-001` v1.0.1 与 workspace-008 A-003 的现行分母，改为 320 total = 318 executed + 2 local adapter excluded；不改变 VP-008 意图、门闩或 `go` 状态。 |

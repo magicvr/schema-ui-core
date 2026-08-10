@@ -12,7 +12,7 @@ version: 0.1.0
 
 ## 信息需求与阶段门禁
 
-S5 到期 required 为 Root `I-READINESS-005`（independent 审计证据）。workspace-005 `I-PROTO-FULL-001` 勘误为 S5 前跨区待办。`go` 候选与解锁 scope 按 Root [D-003 §11](../GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md) 冻结规则执行。
+S5 到期 required 为 Root `I-READINESS-005`（independent 审计证据）。workspace-005 `I-PROTO-FULL-001` 勘误已由 v1.0.1 / D-003 / E-007 完成，并由本区 A-003 以 `fixed` 路径闭合。`go` 候选与解锁 scope 按 Root [D-003 §11](../GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md) 冻结规则执行。
 
 ## 决策索引
 

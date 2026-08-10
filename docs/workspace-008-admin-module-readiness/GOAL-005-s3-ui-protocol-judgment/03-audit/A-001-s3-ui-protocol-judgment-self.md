@@ -34,4 +34,4 @@ version: 1.0.0
 ## Findings
 
 - 无 `required` finding。
-- 待办（不阻断）：workspace-005 `I-PROTO-FULL-001` 文档勘误列为跨区/愿景层动作，S5 `go` 前必须完成或由用户 P-004 书面接受 residual。
+- 待办（已闭合）：workspace-005 `I-PROTO-FULL-001` 文档勘误已由 D-003/E-007 落盘，GOAL-007 A-003 以 `fixed` 路径响应；原 A-001 verdict 与 finding 记录保留。

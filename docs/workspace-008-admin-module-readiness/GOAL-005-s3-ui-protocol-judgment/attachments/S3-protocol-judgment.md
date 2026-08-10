@@ -11,14 +11,14 @@
 | 能力域 | 12/12 | 12 域（D-NODE/D-EXPR/D-COMP/D-DATA/D-ACT/D-PERM/D-APP/D-TABLE/D-FORM/D-UPLOAD/D-VER/D-VAL） | ✅ 成立 |
 | registry type | 24/24 | `docs/schemas/component-registry.json` components = 24 | ✅ 成立 |
 | 行为套件 | 16/16 include | `apps/web/src/protocol/upstream/*.cases.json` = 16 套件 | ✅ 成立 |
-| case 总量 | 320/320 全绿（claimed） | **318 执行 + 2 排除**，全部通过 | ⚠️ 排除数声明与实现不符 |
-| exclude | 0（claimed） | **2**：`m1-missing-app-manifest-capability`、`m1-navigation-without-capability`（错误信封 `MISSING_REQUIRED_CAPABILITY` vs 上游 `CAPABILITY_REQUIRED`） | ⚠️ 不符 |
+| case 总量 | v1.0.0 claimed 320/320 全绿 | **320 total = 318 执行 + 2 排除**，执行项全部通过 | ✅ 已由 workspace-005 v1.0.1 勘误 |
+| exclude | v1.0.0 claimed 0 | **2 local adapter execution exclusions**：`m1-missing-app-manifest-capability`、`m1-navigation-without-capability`（错误信封 `MISSING_REQUIRED_CAPABILITY` vs 上游 `CAPABILITY_REQUIRED`） | ✅ 已由 workspace-005 v1.0.1 勘误 |
 
 ### 1.2 F-001 调和结论
 
 - **现行权威 disposition**：318 执行 + 2 排除，已由 S0 [D-003 §5](../GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md) 冻结，并经本 S3 实测复核（conformance 全绿）。
-- **`I-PROTO-FULL-001` 文档漂移**（workspace-005 `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`：「0 exclude / 37/37 / 320/320 全绿」）为**陈旧声明**，与实现不符。该文档属 workspace-005（closed）冻结权威且其 §7 禁止静默改写；本 workspace-008 不跨区改写，仅在此记录：**现行覆盖投影以 S0 D-003 §5 + 本 S3 判断为准**（12/12 · 24/24 · 16/16 · 318+2）。
-- **处置**：workspace-005 文档的正式勘误属跨区/愿景层动作；S5 `go` 前必须完成（可经 `/vision` 提交勘误或 workspace-005 owner 修订），否则作为已知 residual 由用户 P-004 书面接受。**不阻断 I-003 闭合**（投影级一致成立；仅 exclude 细节声明陈旧）。
+- **`I-PROTO-FULL-001` 文档漂移**已处置：workspace-005 `I-PROTO-FULL-001` v1.0.1 + D-003/E-007 正式记录 12/12 · 24/24 · 16/16 · 318+2，且明确两项 local adapter exclusion 不是域级收缩。
+- **处置结果**：I-003 → **verified**；跨区 F-001 已由 workspace-008 A-003 以 `fixed` 路径闭合，不再保留 documented residual。
 - I-003 → **verified**。
 
 ## 2. 共享能力映射（S0 D-003 §13 → schema-ui-docs@v2.7.0）
@@ -55,7 +55,7 @@
 
 - **protocol-gap**：无。框架级共性能力（S0 §13 全部 9 项）均由 `schema-ui-docs@v2.7.0` 覆盖或属 host 能力；**未发现需要上游协议变更或私有 Schema 扩展的全局缺口**。
 - **host-gap 进入 S4**：F-002（a11y 焦点管理，required）、F-007（上传授权深度，S3 判为 host-gap 需 S2/S4 评估是否补权限键）。
-- **不需回 `/vision`**：无协议变更需求；`I-PROTO-FULL-001` 勘误作为跨区/愿景层待办记录（见 §1.2），S5 前处理。
+- **不需回 `/vision`**：无协议变更需求；`I-PROTO-FULL-001` v1.0.1 勘误已由 workspace-005 D-003/E-007 与本区 A-003 完成，属于执行分母校正，不改变愿景范围。
 - **全局 protocol-gap 阻断判断**：不触发（无 protocol-gap）；`go` 候选不受协议缺口阻断。
 
 ## 5. 汇总

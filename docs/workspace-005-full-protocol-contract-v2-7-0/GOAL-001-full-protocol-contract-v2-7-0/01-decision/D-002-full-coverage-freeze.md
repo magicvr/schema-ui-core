@@ -5,8 +5,8 @@ record_id: D-002
 status: accepted
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-10
+version: 0.1.1
 ---
 
 ## D-002 · 整份契约覆盖表 I-PROTO-FULL-001 冻结（S1）
@@ -40,3 +40,7 @@ version: 0.1.0
 | 就地升版改写 I-PROTO-001 v0.1.3 | 破坏历史 MVP 冻结证据；F-V022 禁止 |
 | 部分域 include-partial 表达「暂缓」 | VP-006 exit 1 禁止用 partial 伪装整份契约；无用户 residual |
 | 整域 exclude + residual | 差集全部可纳入，无必要；增加无依据的范围收缩 |
+
+## 2026-08-10 · 勘误投影
+
+D-002 保留为 2026-08-08 的冻结历史。现行计数由 [D-003](D-003-i-proto-full-errata.md) 与 `I-PROTO-FULL-001` v1.0.1 勘误为：12/12 域、24/24 registry type、16/16 suite 仍 `include`；320 个 fixture case = **318 executed + 2 local adapter excluded**。两项执行排除不构成域级范围收缩，I-002 仍为 N/A。

@@ -6,8 +6,8 @@ status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-006-design-system-and-ui-experience
 created: 2026-08-08
-updated: 2026-08-09
-version: 0.5.0
+updated: 2026-08-10
+version: 0.5.1
 parent: null
 ---
 
@@ -47,7 +47,7 @@ parent: null
 | 来源 | 本 VP 继承 |
 |------|------------|
 | Charter `@0.2.0` | 方向级成功边界第 3 条（前端产品化：Tailwind、shadcn/ui 风格、浅/深色、Linear/Vercel **参考**）；非目标保持排除。 |
-| **VP-006 / `I-PROTO-FULL-001`** | **硬前置已 closed**。视觉升级范围 = 关闭时覆盖表 **include** 面（现行权威：workspace-005 Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.0）。**禁止**回退到仅 `I-PROTO-001 v0.1.3` 子集叙事；**禁止**借本 VP 改写覆盖 disposition 或新增 exclude。 |
+| **VP-006 / `I-PROTO-FULL-001`** | **硬前置已 closed**。视觉升级范围 = 关闭时覆盖表 **include** 面（现行权威：workspace-005 Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.1）。**禁止**回退到仅 `I-PROTO-001 v0.1.3` 子集叙事；**禁止**借本 VP 改写覆盖 disposition 或新增 exclude。 |
 | VP-003 / `module-architecture.md` | 单主线模块化、薄内核、后端聚合 Manifest 与 Profile；不破坏单主线。 |
 | VP-004 / playbook | 一方模块与 AI 操作契约；UI 扩展须符合 playbook。 |
 
@@ -143,3 +143,4 @@ parent: null
 | 2026-08-09 | `0.4.0` | 用户书面确认「现在激活」：`planned` → **`active`**；解除激活门闩。`lead_workspace` 仍 `null`；物理 scaffold 交 `/govern`（slug 须用户确认）。未宣称视觉产品化已交付。 |
 | 2026-08-09 | `0.4.1` | `/govern` 开区：用户确认 slug `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience`；`lead_workspace` 绑定；S1–S5 纲领落盘（`0/5`）。激活/开区 **不**宣称视觉已交付。 |
 | 2026-08-09 | `0.5.0` | `/vision` 响应 VRev-015：用户书面「确认关门」；`active` → **`closed`**；关门记录落盘（exit 1–6 ↔ 证据映射 + residual 点名）；roadmap / workspaces / Charter 关系节原子同步（VR-011 editorial）。`F-V027`/`F-V028` → `fixed`。 |
+| 2026-08-10 | `0.5.1` | editorial 同步 VP-006 现行覆盖权威指针至 `I-PROTO-FULL-001` v1.0.1；保留本 VP 已关门状态与原始协议范围。 |

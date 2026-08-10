@@ -28,7 +28,7 @@ version: 0.1.0
 ## S5 前置条件（`go` 前必须完成）
 
 1. grok build independent 审计产出可核对 A-00N（`source: independent`）
-2. workspace-005 `I-PROTO-FULL-001` 勘误或用户书面 residual 处置
+2. workspace-005 `I-PROTO-FULL-001` 勘误处置（已由 v1.0.1 / D-003 / E-007 与 A-003 闭合）
 3. 用户书面 `go`/`no-go` 裁决 + S5 最小字段落盘
 
 ## 记录规则

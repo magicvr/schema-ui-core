@@ -5,8 +5,8 @@ record_id: E-002
 status: recorded
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-10
+version: 0.1.1
 ---
 
 # E-002 · S0 差距盘点（I-001 闭合）
@@ -36,3 +36,7 @@ version: 0.1.0
 | vendor 套件与 pin | `apps/web/src/protocol/upstream/provenance.json`（commit `ca9e5fe…`，15 artifacts SHA） |
 | 上游拉取记录 | 本 E-002 §3 所列 6 个上游文件（pin commit 固定） |
 | I-001 状态 | `00-meta.md` 信息表 → closed（证据链本 E-002 + 附件） |
+
+## 2026-08-10 · 勘误注
+
+E-002 保留 2026-08-08 的 S0 盘点事实；后续执行阶段发现的 app-manifest adapter mismatch 由 D-003 / E-007 处理。当前权威执行口径为 320 total = **318 executed + 2 local adapter excluded**，不改变 E-002 对协议域差集可纳入的结论。

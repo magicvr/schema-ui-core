@@ -18,7 +18,7 @@
 
 | exit_id | 判据 | 证据路径（Q2） | 结论 |
 |---------|------|----------------|------|
-| E-1 | 治理与事实基线一致 | S0 [D-003](../GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md)（分母冻结）；S1 台账（11 findings，全部处置）；S3 [S3-protocol-judgment](../GOAL-005-s3-ui-protocol-judgment/attachments/S3-protocol-judgment.md)；各阶段 self 审计 A-001 | pass（workspace-005 I-PROTO-FULL-001 文档勘误为 cross-workspace 待办，见 §4 residual） |
+| E-1 | 治理与事实基线一致 | S0 [D-003](../GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md)（分母冻结）；S1 台账（11 findings，全部处置）；S3 [S3-protocol-judgment](../GOAL-005-s3-ui-protocol-judgment/attachments/S3-protocol-judgment.md)；workspace-005 D-003/E-007；A-003 | **pass**（I-PROTO-FULL-001 v1.0.1 已完成 cross-workspace 勘误，现行口径 318+2） |
 | E-2 | 当前主线健康可重复验证 | D-003 §2 V-001~V-008（S0 实测）+ S4/S5 回归重跑（见 §2） | pass |
 | E-3 | 标准模块接入路径经现网验证 | S2 [s2_access_drill_test.go](../../../apps/api/internal/composition/s2_access_drill_test.go) + [s2-access-drill.render.test.tsx](../../../apps/web/src/app/s2-access-drill.render.test.tsx)；S1 模块检查表（4 standard-admin M1-M6 全 pass） | pass |
 | E-4 | 前后台 UI 协议决策边界冻结 | S3-protocol-judgment §2-§3（9 covered/0 protocol-gap/2 host-gap/1 non-goal）；前端宿主矩阵 | pass（host-gap F-002 fixed、F-007 deferred） |
@@ -45,7 +45,7 @@
 | finding | 严重度 | 闭合路径 | 状态 |
 |---------|--------|----------|------|
 | F-002 a11y 模态/抽屉焦点 | required | fixed（modal.test.tsx 3 断言） | closed |
-| F-001 I-PROTO-FULL-001 文档矛盾 | major | S3 调和（现行权威 318+2）；workspace-005 勘误 cross-workspace | closed（workspace-008 侧）；勘误待办见 §4 |
+| F-001 I-PROTO-FULL-001 文档矛盾 | major | **fixed**：workspace-005 `I-PROTO-FULL-001` v1.0.1 + D-003/E-007；workspace-008 A-003 | **closed** |
 | F-003/F-004/F-005/F-006/F-008/F-009 | minor | fixed | closed |
 | F-007 上传授权深度 | minor | deferred（owner=VP-008 lead；触发=S5 协议判断/用户扩 scope） | deferred |
 | F-010/F-011 | info | 观察 | n/a |
@@ -56,7 +56,7 @@ Goal/Vision open required 投影：**0**（S0-S4 自审 + S1/S2/S3/S4 台账无�
 
 | 项 | 影响 | 处置 |
 |----|------|------|
-| workspace-005 `I-PROTO-FULL-001` 文档「0 exclude / 37/37 / 320/320」陈旧声明 | 文档一致性命门（E-1）；实际 conformance 318+2 全绿，无功能缺口 | cross-workspace 动作：经 `/vision` 或 workspace-005 owner 正式勘误；或在 S5 由用户书面接受为 documented residual（范围=该文档声明；影响=仅文档；复审触发=下次协议 pin 变更） |
+| workspace-005 `I-PROTO-FULL-001` 文档「0 exclude / 37/37 / 320/320」陈旧声明 | 文档一致性命门（E-1）；实际 conformance 318+2，域级协议范围无功能缺口 | **已完成 fixed**：workspace-005 v1.0.1 + D-003/E-007；两项 local adapter exclusion 的理由与复审触发已固定；不再需要 documented residual |
 | F-007 上传授权深度 | 非阻断（服务端认证+大小/类型约束；viewer 可上传） | deferred；owner=VP-008 lead；S5 后评估是否补权限键 |
 
 ## 5. S5 待办（2026-08-10 状态）
@@ -65,7 +65,7 @@ Goal/Vision open required 投影：**0**（S0-S4 自审 + S1/S2/S3/S4 台账无�
 - [x] S5 self 审计（[A-001](../03-audit/A-001-s5-admission-audit-and-verdict-self.md)，source: self）
 - [x] grok build independent 审计（[A-002](../03-audit/A-002-s5-admission-audit-independent.md)，source: independent；D-002 provider）— verdict conditional，见 A-002 响应
 - [ ] 用户 `go`/`no-go` 裁决 + S5 最小字段落盘
-- [ ] workspace-005 勘误或 residual 处置（A-002 F-001 required）
+- [x] workspace-005 勘误处置（A-002 F-001 required → fixed；A-003）
 
 ## 6. A-002（independent）响应
 
@@ -73,10 +73,10 @@ grok build 独立审计（verdict: conditional）要求闭合后方可无条件 
 
 | A-002 finding | 级别 | 响应 | 状态 |
 |---------------|------|------|------|
-| F-001 workspace-005 I-PROTO-FULL-001 陈旧声明 | required | 待用户处置：勘误（跨区）或书面 residual | open（用户侧） |
+| F-001 workspace-005 I-PROTO-FULL-001 陈旧声明 | required | **fixed**：workspace-005 v1.0.1 + D-003/E-007；A-003 响应 | fixed |
 | F-002 抽屉焦点断言缺失 | required | **fixed**：新增 `s4-drawer-focus.test.tsx`（焦点进入/Escape 关闭/焦点恢复/Tab trap，2 断言）+ 既有 `modal.test.tsx` 3 断言 | fixed |
 | F-003 矩阵 §5 待办过期 | recommended | **fixed**：本 §5 刷新 | fixed |
 | F-004 V-006~008 独立会话未重跑 | recommended | 已在 S5 本地重跑全绿（§2）；CI `r6-basic-matrix` push 时执行 | accepted（绿证已留） |
 | F-005 F-007 deferred 需书面确认 | recommended | 待用户 `go` 裁决时书面确认「维持 deferred、不升 required」 | 待用户 |
 
-> F-002 由 **fixed** 合法闭合（可核对修正）；F-001 仍需用户侧处置（勘误或 residual）方可无条件 `go`。
+> F-002 与 F-001 均已按 **fixed** 合法闭合（可核对修正）；A-002 原 `conditional` verdict 保留。用户 S5 `go` / `no-go` 裁决仍是独立门禁。

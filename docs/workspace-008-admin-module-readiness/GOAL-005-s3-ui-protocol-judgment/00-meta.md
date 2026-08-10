@@ -22,7 +22,7 @@ workspace_id: workspace-008-admin-module-readiness
 
 ## 成功标准（显式检查点）
 
-- [x] **S3-1 I-003 闭合**：fixture/conformance 本地 adapter/exclude disposition 与 `I-PROTO-FULL-001` 主张一致性核对，F-001 调和（现行权威 318+2；workspace-005 勘误列为跨区待办）。（2026-08-10）
+- [x] **S3-1 I-003 闭合**：fixture/conformance 本地 adapter/exclude disposition 与 `I-PROTO-FULL-001` 主张一致性核对，F-001 调和（现行权威 318+2；workspace-005 v1.0.1 / D-003 已完成勘误）。（2026-08-10）
 - [x] **S3-2 共享能力映射**：S0 §13 共享能力逐项映射 `schema-ui-docs@v2.7.0`，分类 covered / host-gap / protocol-gap / non-goal。（2026-08-10）
 - [x] **S3-3 前端宿主矩阵冻结**：component/action/reaction/page 能力、已实现/宿主缺口/明确非目标、证据路径与对应 Profile。（2026-08-10）
 - [x] **S3-4 回流决策记录**：无协议变更需求，不需回 `/vision`；不触发全局 protocol-gap 阻断。（2026-08-10）

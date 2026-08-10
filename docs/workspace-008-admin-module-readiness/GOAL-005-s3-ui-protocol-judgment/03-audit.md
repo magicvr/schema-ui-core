@@ -20,4 +20,4 @@ version: 0.1.0
 
 ## 结论状态
 
-S3 阶段已完成 self 审计（A-001 `pass`）；`I-READINESS-003` verified。independent cross 审计按 Root 节点在 S5 由 grok 独立会话产出。workspace-005 I-PROTO-FULL-001 勘误为 S5 前跨区待办。
+S3 阶段已完成 self 审计（A-001 `pass`）；`I-READINESS-003` verified。workspace-005 I-PROTO-FULL-001 v1.0.1 勘误已由 GOAL-007 A-003 以 `fixed` 路径闭合。independent cross 审计按 Root 节点在 S5 由 grok 独立会话产出。

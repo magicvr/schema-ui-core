@@ -4,8 +4,8 @@ title: schema-ui-docs@v2.7.0 整份契约可验证兼容
 status: done
 parent: null
 created: 2026-08-08
-updated: 2026-08-09
-version: 0.2.1
+updated: 2026-08-10
+version: 0.2.2
 progress: 6/6
 plan_refs:
   - VP-006-full-protocol-contract-v2-7-0
@@ -43,7 +43,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 
 - [x] **S0**：差距盘点 — 覆盖表 v0.1.3 vs inventory/registry/fixtures 差集；前端保真债 vs 未纳入 type 分列；产出可审计差集清单。
 - [x] **S1**：覆盖表升版冻结 — 落盘 `I-PROTO-FULL-001` + Root 决策；默认 `include`；`include-partial` 仅保真/边角；范围收缩 → exclude 或用户书面 residual；相对 v0.1.3 差集「转为 include 计数 / 仍 residual 清单」。独立审计 A-001（source: independent，grok build / grok 4.5 / high）→ conditional；F-001 required 已 fixed，F-002/F-003 已勘误。
-- [x] **S2**：核心缺口实现 — 未实现 registry type / 批量 selection / upload 等按表纳入批次交付（B1–B4；320/320 fixture case 全绿）。
+- [x] **S2**：核心缺口实现 — 未实现 registry type / 批量 selection / upload 等按表纳入批次交付（B1–B4；fixture 分母 320 = 318 executed + 2 local adapter excluded）。
 - [x] **S3**：保真与 runtime — 钉死内降级控件提升到契约语义；表达式/权限边角 fail-closed（B5；白名单/门禁/空选/循环阻断测试）。
 - [x] **S4**：范例 + conformance — 每纳入域可发现范例与验证入口；exclude 面有表可查（覆盖表验证入口列已登记真实路径）。
 - [x] **S5**：文档与关门 — 发现路径（overview/QUICKSTART）、兼容声明诚实、回归不回退、close-out 审计；开放 required = 0；VP-006 已于 2026-08-08 经用户书面确认关门（E-005）。
@@ -53,7 +53,7 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 | 阶段 | 主要服务的 VP 退出判据 | 证据 |
 |------|------------------------|------|
 | S0 | 为 exit 1–4 提供差集输入 | `attachments/I-S0-001-gap-analysis-v0-1-3-to-full.md`；`02-execution/E-002-s0-gap-analysis.md`；I-001 closed |
-| S1 | exit 1 覆盖表决策 | `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.0 + `01-decision/D-002-full-coverage-freeze.md`；`03-audit/A-001-*`（F-001 fixed） |
+| S1 | exit 1 覆盖表决策 | `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.1 + `01-decision/D-002-full-coverage-freeze.md` + D-003 勘误；`03-audit/A-001-*` / A-003 |
 | S2 | exit 2–3 实现纳入面 | `02-execution/E-003-s2-s3-implementation.md`（B1–B4）；registry 24 type / batch / upload 出货路径；320 fixture 分母 |
 | S3 | exit 2 保真 / fail-closed | E-003 B5；`form-controls` 门禁、reaction 循环阻断、`EMPTY_SELECTION`、上传约束；vitest 含 fail-closed 集成 |
 | S4 | exit 4 范例与验证 | 覆盖表 §1/§3 验证入口列；8 范例页 `apps/api/internal/modules/schemarender/schema/*.json`；stage3 / permissions / upstream fixtures |
@@ -64,8 +64,8 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 | 阶段 | 名称 | 状态 | 说明 |
 |------|------|------|------|
 | S0 | 差距盘点 | **已完成** | 差集证据 `attachments/I-S0-001-*`；E-002；I-001 closed |
-| S1 | 覆盖表升版冻结 | **已完成** | `I-PROTO-FULL-001` v1.0.0 + D-002；独立审计 A-001 conditional → F-001 fixed / F-002·F-003 勘误；I-PROTO-FULL-001 closed |
-| S2 | 核心缺口实现 | **已完成** | B1–B4（E-003）；320/320 fixture case 全绿；vitest 569 / go test 全绿 |
+| S1 | 覆盖表升版冻结 | **已完成** | `I-PROTO-FULL-001` v1.0.1 + D-002/D-003；独立审计 A-001 conditional → findings fixed；I-PROTO-FULL-001 closed |
+| S2 | 核心缺口实现 | **已完成** | B1–B4（E-003）；fixture 分母 320 = 318 executed + 2 local adapter excluded；vitest / go test 主线全绿 |
 | S3 | 保真与 runtime | **已完成** | B5 fail-closed 测试；表达式/权限/批量/上传边界（E-003） |
 | S4 | 范例 + conformance | **已完成** | 覆盖表验证入口列登记真实路径（8 范例页 + 每域验证入口） |
 | S5 | 文档与关门 | **已完成** | E-004 回归+验证计划全观测；A-002 close-out independent **pass**（开放 required=0）；E-005：用户书面确认 VP-006 `closed`；Root `done / 6/6` |
@@ -76,9 +76,9 @@ serves_summary: 对 schema-ui-docs@v2.7.0 pin 形成整份契约可验证兼容�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-PROTO-FULL-001 | required | 整份 v2.7.0 契约覆盖 disposition 与冻结（新文件 + 新版本号） | S1 冻结；S2–S5 范围分母 | S1 方案冻结前 | S0 差集 → Root 决策落盘 attachments | **closed** | — | `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`（v1.0.0）+ D-002（2026-08-08）；独立审计 A-001 复核通过（F-001 fixed） |
+| I-PROTO-FULL-001 | required | 整份 v2.7.0 契约覆盖 disposition 与冻结（新文件 + 新版本号） | S1 冻结；S2–S5 范围分母 | S1 方案冻结前 | S0 差集 → Root 决策落盘 attachments | **closed** | — | `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`（v1.0.1）+ D-002 冻结 + D-003 勘误；A-003 self 复核（2026-08-10） |
 | I-001 | required | v0.1.3 vs inventory/registry/fixtures 可审计差集 | S0 完成；S1 输入 | S0 结束前 | 盘点 inventory + 覆盖表 + 代码现状 | **closed** | — | 证据：`02-execution/E-002-s0-gap-analysis.md` + `attachments/I-S0-001-gap-analysis-v0-1-3-to-full.md`（2026-08-08） |
-| I-002 | required | 范围收缩 / exclude 是否获用户书面 residual（若有） | S1 冻结 | S1 决策时 | P-004 用户裁决 + 决策留痕 | **N/A** | 差集全部可纳入，无收缩 | S0 结论：12/12 域、24/24 registry type、16/16 行为 fixture 套件默认 include；无 exclude / 范围收缩（E-002 §4） |
+| I-002 | required | 范围收缩 / exclude 是否获用户书面 residual（若有） | S1 冻结 | S1 决策时 | P-004 用户裁决 + 决策留痕 | **N/A** | 差集全部可纳入，无域级收缩 | 12/12 域、24/24 registry type、16/16 行为 fixture 套件仍 include；2 个 local adapter execution exclusion 不改变协议承诺面（D-003） |
 | I-003 | non-blocking | 上游 schemas/fixtures 是否 vendor 到本仓 | 验证策略 | S2 前可决 | 策略决策 | **closed** | 继承历史（I-PROTO-004 = vendor） | 6 schema + 17 fixture 套件全部 vendor + SHA pin（`provenance.json`，含 uploads `aaeb9683…` / permissions-inheritance `ac124fa1…`） |
 | I-004 | non-blocking | 批次切分与并行子目标边界 | S2 立项 | S2 方案 | Root 决策 | **closed** | — | D-002 §4 批次 B1–B6 |
 

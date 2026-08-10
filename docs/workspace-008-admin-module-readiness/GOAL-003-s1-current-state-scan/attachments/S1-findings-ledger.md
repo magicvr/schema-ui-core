@@ -36,7 +36,9 @@
   - Root `D-003-s0-denominator-freeze.md:84-85` — 正确记录「318 执行 + 2 排除」
   - 计数复核：16 文件 320 cases、registry types 24、能力域 12 —— 数字本身成立，但「0 exclude / 320 全绿」声明不可按所述复现
 - **影响门禁**：协议面分母（S0 §5）；`I-PROTO-FULL-001` 是冻结覆盖权威（workspace-005，§7 不得静默改写），且被 charter.md/workspaces.md/roadmap.md 引用传播
-- **关闭路径**：**S3 I-READINESS-003 门禁**（fixture/conformance 与 I-PROTO-FULL-001 主张一致性）以正式勘误/新决策闭合，不得静默改写；S5 `go` 前必须闭合
+- **关闭路径**：**fixed**（S3 I-READINESS-003）：workspace-005 v1.0.1 + D-003/E-007；workspace-008 A-003；不得改写本 finding 原始证据段与严重度，现行投影以勘误版为准。
+
+**响应（2026-08-10）**：原 finding 的历史证据与 verdict 保留；正式勘误已落盘，开放 required = 0。
 
 ---
 

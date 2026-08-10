@@ -5,8 +5,8 @@ record_id: E-003
 status: recorded
 parent: null
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.1.0
+updated: 2026-08-10
+version: 0.1.1
 ---
 
 # E-003 · S2/S3 纳入面实现（B1–B5）+ S4 验证登记
@@ -64,3 +64,7 @@ version: 0.1.0
 | Go 批量/上传端点 | `apps/api/internal/handler/resources.go`（batchDelete）、`upload.go` |
 | 范例页 | `apps/api/internal/modules/schemarender/schema/{admin-list-batch,data-display,form-with-upload,form-controls}.json` |
 | 覆盖表登记 | `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` §1/§3 验证入口列 |
+
+## 2026-08-10 · 勘误注
+
+本记录保留 2026-08-08 当时的执行声明。D-003 / E-007 复核后，`upstream-fixtures.test.ts` 的真实口径应为 app-manifest 35 executed + 2 excluded、app-navigation 16 executed；全体行为 fixture 为 **318 executed + 2 excluded**，不是 320 个 case 全部执行。当前权威见 `I-PROTO-FULL-001` v1.0.1。

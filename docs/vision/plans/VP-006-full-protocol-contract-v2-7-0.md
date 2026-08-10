@@ -6,8 +6,8 @@ status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-005-full-protocol-contract-v2-7-0
 created: 2026-08-08
-updated: 2026-08-08
-version: 0.3.0
+updated: 2026-08-10
+version: 0.3.1
 parent: null
 ---
 
@@ -131,7 +131,8 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-08 | **closed** | 用户书面确认关门（「确认关门」）。退出判据 1–6 全部闭合：覆盖表 `I-PROTO-FULL-001` v1.0.0 冻结（12/12 域、24/24 registry、16/16 行为套件 include；0 exclude）；Renderer/后端纳入面实现（控件/展示/`$deps` 引擎/批量/上传）；8 范例页 + 320/320 conformance case 全绿；vitest 569/569 + `go test ./...` 全绿 + e2e 2/2 + 回归不回退；文档指针 = `I-PROTO-FULL-001`；S1/S5 独立审计（grok build / grok 4.5 / high）A-001 conditional→fixed、A-002 pass，**开放 required = 0**；Vision Review 无阻断（F-V018 仅阻断 VP-005） | 覆盖表 `docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`；审计 `…/03-audit/A-001-*`、`A-002-*`；执行 `…/02-execution/E-001～E-004`；验证计划观测见 E-004 | 无 exclude/partial/收缩 residual；`scripts/smoke.sh` bash 环境限制（等价断言由真实端点 + e2e 覆盖，E-004 记录）；`{SCRATCH}` 运行日志为会话证据（A-002 F-003 accepted-residual） |
+| 2026-08-08 | **closed** | 用户书面确认关门（「确认关门」）。退出判据 1–6 全部闭合：覆盖表 `I-PROTO-FULL-001` v1.0.0 冻结（12/12 域、24/24 registry、16/16 行为套件 include；0 exclude）；Renderer/后端纳入面实现；8 范例页 + 320 case 全量分母；vitest 569/569 + `go test ./...` 全绿 + e2e 2/2 + 回归不回退；文档指针 = `I-PROTO-FULL-001`；S1/S5 独立审计 A-001/A-002，**开放 required = 0** | 历史关门证据保留：覆盖表 v1.0.0、`E-001～E-005`、`A-001/A-002` | 2026-08-10 执行分母勘误见下行；历史关门事实不变 |
+| 2026-08-10 | **errata** | 响应 workspace-008 F-001：覆盖权威升为 `I-PROTO-FULL-001` v1.0.1；12/12 域、24/24 registry、16/16 suite include 保持；320 case 现行执行口径为 **318 executed + 2 local adapter excluded**，两项 exclusion 原因与复审触发见 D-003 / E-007。VP-006 与 Root 终态不重开。 | `docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`; `…/01-decision/D-003-i-proto-full-errata.md`; `…/02-execution/E-007-i-proto-full-errata.md` | 域/协议范围 residual 为空；local adapter exclusion 为有界执行口径，复审触发 = 协议 pin/disposition 或错误包络变化 |
 
 ## 规划修订短史
 
@@ -141,3 +142,4 @@ parent: null
 | 2026-08-08 | `0.1.1` | 响应 [VRev-012](../reviews/VRev-012-vp006-full-protocol-contract.md)：exit 1 收紧 disposition（默认 `include`；`include-partial` 仅保真/边角；范围收缩 → exclude 或用户 residual）；覆盖表权威落点 `I-PROTO-FULL-001`（F-V021/F-V022）。仍 `planned`，未激活、未绑工作区。 |
 | 2026-08-08 | `0.2.0` | 响应 [VRev-013](../reviews/VRev-013-vp006-post-closure-reaudit.md) pass；用户确认激活：`planned` → `active`；绑定唯一 lead / delivery `workspace-005-full-protocol-contract-v2-7-0`（Root `GOAL-001-full-protocol-contract-v2-7-0`）。物理 scaffold 交 `/govern`；未将激活写成全量兼容已交付。 |
 | 2026-08-08 | `0.3.0` | **用户书面确认关门**（「确认关门」，2026-08-08）：`active` → `closed`；关门记录见上表。整份契约覆盖与实现证据链完整；VP-005 视觉实施冻结解除条件满足（本 VP closed），但 `F-V018` 仍为 open required，VP-005 不自动放行，解冻与否由用户另行决策。 |
+| 2026-08-10 | `0.3.1` | editorial 勘误：`I-PROTO-FULL-001` 升至 v1.0.1；保留 12/12 域、24/24 registry、16/16 suite include，将执行分母修正为 318 executed + 2 local adapter excluded。VP status、退出判据和历史审计 verdict 不变。 |
