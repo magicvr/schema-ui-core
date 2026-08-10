@@ -32,7 +32,7 @@ parent: null
 
 ## 愿景对齐
 
-Charter 唯一来源为 `schema-ui-core-admin-foundation@0.2.0`。VP-008 已为 `active`，本区是其确认的单工作区 lead；S0 准入分母与门禁冻结已于 2026-08-10 完成（Root [D-003](GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md)），尚未产生可消费 `go`。
+Charter 唯一来源为 `schema-ui-core-admin-foundation@0.2.0`。VP-008 已为 `active`，本区是其确认的单工作区 lead；S0–S5 准入波次已于 2026-08-10 完成，**用户签发 `go`**（Root [D-003](GOAL-001-admin-module-readiness/01-decision/D-003-s0-denominator-freeze.md) 分母 + [GOAL-007 D-001](GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md) 裁决），解锁后续标准业务模块实现。
 
 `I-READINESS-005` 的 independent provider 已按用户 2026-08-10 **目标级指令**更新为 **grok build（模型 `grok-4.5`、思考强度 high）执行 `audit` 命令**（[D-002](GOAL-001-admin-module-readiness/01-decision/D-002-independent-audit-provider-grok-build.md)，替代 D-001 的 GitHub Copilot `/audit` 记录），审计模式为 `cross`，覆盖 compatibility、data、migration、production/release 以及跨边界治理语义；后续需由该 provider 的独立会话产出可核对的 Goal 审计意见。provider 选择本身不是已完成审计证据。
 
@@ -46,7 +46,7 @@ Charter 唯一来源为 `schema-ui-core-admin-foundation@0.2.0`。VP-008 已为 
 
 ## 串行阶段说明
 
-Root 纲领阶段按 VP-008 的 S0 → S1 → S2 → S3 → S4 → S5 串行推进；同一阶段内可按独立范围创建并行子目标。**S0 已于 2026-08-10 由 `GOAL-002-s0-denominator-freeze` 完成**（准入分母与门禁冻结；Root `00-meta.md` 显示 S0 检查点已勾选）。S5 必须完成 self + independent cross 审计、finding 响应及用户 `go` / `no-go` 决策。
+Root 纲领阶段按 VP-008 的 S0 → S1 → S2 → S3 → S4 → S5 串行推进；同一阶段内可按独立范围创建并行子目标。**S0–S5 全部完成（2026-08-10）**：S0 由 `GOAL-002`、S1 `GOAL-003`、S2 `GOAL-004`、S3 `GOAL-005`、S4 `GOAL-006`、S5 `GOAL-007` 承接；用户签发 `go`，Root 关门。后续业务 VP 激活前须完成消费前 freshness review（D-003 §11）。
 
 ## 备注
 

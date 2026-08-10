@@ -230,11 +230,11 @@ VP-008 激活并建立 lead workspace 后，每轮 S0～S5 的具体分母实例
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
+（`closed` 提议已由 lead workspace `go` 支持；正式 status 变更走 `/vision`。）
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-10 | `go` 签发（可提议 closed） | 用户书面签发 `go`，候选 `ed99e88`（clean）；S0–S5 全部完成、open required = 0；解锁后续标准业务模块实现 | workspace-008 [GOAL-007 D-001](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md) + [S5-evidence-matrix](../workspace-008-admin-module-readiness/GOAL-007-s5-admission-audit-and-verdict/attachments/S5-evidence-matrix.md) | F-007（上传授权深度）deferred，owner=VP-008 lead；后续业务 VP 消费时须 freshness review |
 
 ## 规划修订短史
 

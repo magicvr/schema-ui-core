@@ -1,13 +1,14 @@
 # S5 · 准入证据矩阵（VP-008 方向级退出判据）
 
-> 本文件为 GOAL-007-s5-admission-audit-and-verdict 的执行证据。**最终裁决候选基线：`ed99e88`（clean，当前 HEAD）**——apps 运行面与 S4 `f96dd1f` 一致（S5 仅新增测试 `s4-drawer-focus.test.tsx` 与文档/台账），F-001 勘误与 A-002 响应已入库。来源身份：clean checkout（`git status --porcelain` 空）。
+> 本文件为 GOAL-007-s5-admission-audit-and-verdict 的执行证据。**运行候选基线：`ed99e88`（clean runtime checkout）**——apps 运行面与 S4 `f96dd1f` 一致（S5 仅新增测试 `s4-drawer-focus.test.tsx` 与文档/台账），F-001 勘误与 A-002 响应已入库。此前治理记录基线为 `87429e5`（docs-only，不改变 apps 运行面）；本次准备记录需在最终裁决前形成新的 clean governance checkpoint。
 
 ## 0. 候选身份与 freshness 字段（VP-008 §`go` 消费有效性）
 
 | 字段 | 值 |
 |------|-----|
-| 候选 Git commit | **`ed99e88`**（最终裁决候选，clean；apps 运行面 == S4 `f96dd1f`） |
-| 来源身份 | clean（S0–S4 各阶段 commit + S5 A-002 响应 + F-001 勘误均已入库；`git status --porcelain` 空） |
+| 运行候选 Git commit | **`ed99e88`**（runtime candidate，clean；apps 运行面 == S4 `f96dd1f`） |
+| 治理记录基线 | `87429e5`（docs-only；不改变 apps 运行面；本次准备记录需进入新的 governance checkpoint） |
+| 来源身份 | runtime candidate 在 `ed99e88` 为 clean；治理记录单独留痕，最终裁决前不得把未提交准备记录宣称为 clean 输入 |
 | 解锁 scope | workspace-008 准入分母（S0 D-003 §1-§13）所声明的基架准入 + 后续标准业务模块的框架能力 |
 | `go_issued_at` | **待用户 S5 书面裁决**（未签发） |
 | `last_freshness_review_at` | 未发生（无 `go` 可消费） |
@@ -26,7 +27,7 @@
 | E-5 | 阻断缺陷完成合法闭环 | S4 [02-execution](../GOAL-006-s4-remediation-and-regression/02-execution.md)：F-002 fixed、F-006/008/003/004/005/009 fixed、F-007 deferred；Goal/Vision open required = 0 | pass |
 | E-6 | 准入结论可审计且可复用 | 本证据矩阵 + S5 self 审计 + grok independent 审计 + 用户裁决 | **未完成**：证据矩阵/self/independent 已备，用户 `go`/`no-go` 裁决未落盘（S5-4） |
 
-## 2. 最终基线回归（最终候选 `ed99e88`；apps 运行面 == `f96dd1f`）
+## 2. 最终基线回归（运行候选 `ed99e88`；apps 运行面 == `f96dd1f`）
 
 | 命令 | S0 实测 | S4/S5 回归 | 证据 |
 |------|---------|------------|------|

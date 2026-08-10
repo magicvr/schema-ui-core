@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-admin-module-readiness
 title: Admin 业务模块准入与基架收敛
-status: active
+status: done
 parent: null
 created: 2026-08-10
 updated: 2026-08-10
 version: 0.1.0
-progress: 5/6
+progress: 6/6
 plan_refs:
   - VP-008-admin-module-readiness-and-foundation-convergence
 primary_plan: VP-008-admin-module-readiness-and-foundation-convergence
@@ -38,7 +38,7 @@ provider 已按用户 2026-08-10 目标级指令确定为 **grok build（grok 4.
 - [x] **S2 · 模块契约与接入演练**：完成 M1–M6/核心贡献契约、依赖、权限、Profile 与迁移反向验证。（2026-08-10 完成；[GOAL-004](../GOAL-004-s2-module-contract-access-drill/00-meta.md) probe 接入演练，I-002 verified）
 - [x] **S3 · UI 协议与共享能力判断**：将共享能力映射为 covered、host-gap、protocol-gap 或 non-goal，并记录回流决策。（2026-08-10 完成；[GOAL-005](../GOAL-005-s3-ui-protocol-judgment/00-meta.md) 9 covered/0 protocol-gap/2 host-gap/1 non-goal，I-003 verified）
 - [x] **S4 · 阻断整改与回归**：完成 required 缺陷整改、受影响范围重跑和证据基线更新。（2026-08-10 完成；[GOAL-006](../GOAL-006-s4-remediation-and-regression/00-meta.md) F-002 a11y required fixed、minor 处置、冻结分母回归全绿）
-- [ ] **S5 · 准入审计与裁决**：完成证据矩阵、self + independent cross 审计、finding 响应与用户 `go` / `no-go`；仅合法 `go` 解锁后续业务 VP。（2026-08-10 已备：证据矩阵 + self A-001 pass + grok independent A-002（conditional，required 全闭合）；（GOAL-007）**用户 `go`/`no-go` 裁决待书面落盘，当前未放行**）
+- [x] **S5 · 准入审计与裁决**：完成证据矩阵、self + independent cross 审计、finding 响应与用户 `go` / `no-go`；仅合法 `go` 解锁后续业务 VP。（2026-08-10 完成：证据矩阵 + self A-001 pass + grok independent A-002（conditional，required 全闭合）；[GOAL-007](../GOAL-007-s5-admission-audit-and-verdict/00-meta.md) **用户签发 `go`**，候选 `ed99e88`，Root 关门）
 
 ## 信息就绪与未知项
 
