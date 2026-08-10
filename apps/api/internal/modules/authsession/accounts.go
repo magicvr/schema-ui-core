@@ -234,22 +234,29 @@ func (r *Repository) RefreshTokenByHash(hash string) (*RefreshToken, error) {
 	return &token, nil
 }
 
-// RevokeRefreshToken marks a refresh token revoked atomically.
+// RevokeRefreshToken marks a refresh token revoked atomically. The guarded
+// UPDATE (revoked_at IS NULL) makes concurrent revocations race-safe: exactly
+// one caller wins, every later caller gets ErrAlreadyRevoked instead of a
+// check-then-act window that would let two rotations both proceed.
 func (r *Repository) RevokeRefreshToken(id string, now time.Time) error {
 	return r.withTx("revoke refresh token", func(tx *sql.Tx) error {
-		var current *int64
-		err := tx.QueryRow(`SELECT revoked_at FROM refresh_tokens WHERE id = ?`, id).Scan(&current)
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNotFound
-		}
+		res, err := tx.Exec(`UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), id)
 		if err != nil {
-			return fmt.Errorf("select revoked_at: %w", err)
-		}
-		if current != nil {
-			return ErrAlreadyRevoked
-		}
-		if _, err := tx.Exec(`UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?`, now.Unix(), id); err != nil {
 			return fmt.Errorf("update refresh token: %w", err)
+		}
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("rows affected: %w", err)
+		}
+		if affected == 0 {
+			var exists int64
+			if err := tx.QueryRow(`SELECT COUNT(*) FROM refresh_tokens WHERE id = ?`, id).Scan(&exists); err != nil {
+				return fmt.Errorf("check refresh token: %w", err)
+			}
+			if exists == 0 {
+				return ErrNotFound
+			}
+			return ErrAlreadyRevoked
 		}
 		return nil
 	})

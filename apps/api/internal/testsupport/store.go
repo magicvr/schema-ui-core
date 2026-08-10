@@ -20,7 +20,12 @@ func OpenStore(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*
 	if err != nil || !seedAdmin {
 		return st, err
 	}
-	if st.WasFresh() {
+	needsBootstrap, err := authsessiondata.NeedsBootstrap(context.Background(), st)
+	if err != nil {
+		_ = st.Close()
+		return nil, err
+	}
+	if needsBootstrap {
 		if err := authsessiondata.Bootstrap(context.Background(), st, adminUsername, adminPasswordHash); err != nil {
 			_ = st.Close()
 			return nil, err

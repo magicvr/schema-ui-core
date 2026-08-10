@@ -15,6 +15,21 @@ type TxRunner interface {
 	WithTx(context.Context, func(*sql.Tx) error) error
 }
 
+// NeedsBootstrap reports whether no user rows exist yet — the bootstrap admin
+// is missing and must be (re)created. Used instead of a one-shot fresh-database
+// gate so a failed first bootstrap cannot permanently lock the instance with
+// zero users and no login path (C4).
+func NeedsBootstrap(ctx context.Context, runner TxRunner) (bool, error) {
+	var count int64
+	err := runner.WithTx(ctx, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count)
+	})
+	if err != nil {
+		return false, err
+	}
+	return count == 0, nil
+}
+
 // Bootstrap creates the initial administrator and base system roles for a
 // genuinely fresh database. Existing user fields are never updated.
 func Bootstrap(ctx context.Context, runner TxRunner, username, passwordHash string) error {

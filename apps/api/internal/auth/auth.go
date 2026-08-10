@@ -102,7 +102,14 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	if now.After(rt.ExpiresAt) {
 		return "", "", account.User{}, ErrExpiredToken
 	}
-	if err := a.repository.RevokeRefreshToken(rt.ID, now); err != nil && !errors.Is(err, authsession.ErrAlreadyRevoked) {
+	// Rotation is atomic: the guarded revoke is a single UPDATE that exactly one
+	// concurrent caller can win. Losing the race (already revoked) means the
+	// token was already used or revoked — fail closed instead of issuing a
+	// second live pair (double-rotation hardening).
+	if err := a.repository.RevokeRefreshToken(rt.ID, now); err != nil {
+		if errors.Is(err, authsession.ErrAlreadyRevoked) {
+			return "", "", account.User{}, ErrTokenRevoked
+		}
 		return "", "", account.User{}, err
 	}
 	u, err := a.repository.UserByID(rt.UserID)
@@ -127,7 +134,13 @@ func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error)
 	if rt.RevokedAt != nil {
 		return rt.UserID, nil
 	}
-	return rt.UserID, a.repository.RevokeRefreshToken(rt.ID, now)
+	err = a.repository.RevokeRefreshToken(rt.ID, now)
+	if err != nil && !errors.Is(err, authsession.ErrAlreadyRevoked) {
+		return rt.UserID, err
+	}
+	// ErrAlreadyRevoked under concurrency: another logout won the race, which is
+	// the same end state (token revoked) — treat as success for idempotency.
+	return rt.UserID, nil
 }
 
 // issue creates a fresh access/refresh pair for an authenticated user and

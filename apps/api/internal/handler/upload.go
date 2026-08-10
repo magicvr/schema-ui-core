@@ -27,8 +27,21 @@ import (
 const maxUploadBytes = 8 << 20
 
 // uploadAllowedTypes, when non-empty (comma-separated MIME types), makes the
-// server independently reject other types with UNSUPPORTED_FILE_TYPE.
+// server independently reject other types with UNSUPPORTED_FILE_TYPE. The
+// allow-list is checked against the server-detected content type, never the
+// client-declared header.
 var uploadAllowedTypes = strings.TrimSpace(os.Getenv("UPLOAD_ALLOWED_TYPES"))
+
+// dangerousInlineTypes are MIME types browsers may render inline as active
+// (script-bearing) content. They are rejected regardless of any allow-list:
+// serving them from the API's same origin would let any authenticated user
+// store and deliver script that runs in the context of every logged-in admin
+// (stored XSS → refresh-token theft).
+var dangerousInlineTypes = map[string]bool{
+	"text/html":             true,
+	"application/xhtml+xml": true,
+	"image/svg+xml":         true,
+}
 
 type uploadStore struct {
 	dir string
@@ -100,20 +113,6 @@ func (s *uploadStore) upload() http.Handler {
 			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "file exceeds the server size limit")
 			return
 		}
-		if uploadAllowedTypes != "" {
-			allowed := strings.Split(uploadAllowedTypes, ",")
-			matched := false
-			for _, entry := range allowed {
-				if strings.EqualFold(strings.TrimSpace(entry), header.Header.Get("Content-Type")) {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
-				return
-			}
-		}
 		body, err := io.ReadAll(file)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read upload")
@@ -123,7 +122,32 @@ func (s *uploadStore) upload() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_FILE", "empty files are rejected")
 			return
 		}
-		id, err := s.save(header.Filename, header.Header.Get("Content-Type"), body)
+		// The server sniffs the actual content type; the client-declared MIME is
+		// never trusted for storage or serving decisions (stored-XSS hardening).
+		detected := http.DetectContentType(body)
+		base := detected
+		if i := strings.IndexByte(base, ';'); i >= 0 {
+			base = strings.TrimSpace(base[:i])
+		}
+		if dangerousInlineTypes[base] {
+			writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
+			return
+		}
+		if uploadAllowedTypes != "" {
+			allowed := strings.Split(uploadAllowedTypes, ",")
+			matched := false
+			for _, entry := range allowed {
+				if strings.EqualFold(strings.TrimSpace(entry), base) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
+				return
+			}
+		}
+		id, err := s.save(header.Filename, detected, body)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store upload")
 			return
@@ -155,6 +179,12 @@ func (s *uploadStore) file() http.Handler {
 		}
 		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
+		// Force a download instead of inline rendering: even a type that slipped
+		// past detection cannot execute in the API's same-origin context. The
+		// filename is a fixed literal — the stored name is attacker-controlled
+		// and must never reach a header.
+		w.Header().Set("Content-Disposition", `attachment; filename="download"`)
+		w.Header().Set("Content-Security-Policy", "sandbox")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(body)

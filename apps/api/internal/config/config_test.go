@@ -48,6 +48,13 @@ func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 // length/entropy): both are local-development-only or non-negotiable settings
 // that must fail startup in any non-development environment.
 func TestValidateProd(t *testing.T) {
+	t.Run("unset APP_ENV fails closed (C3)", func(t *testing.T) {
+		c := &Config{AppEnv: ""}
+		if err := c.ValidateProd(); err == nil {
+			t.Fatal("unset APP_ENV must be a startup error, not a silent development fallback")
+		}
+	})
+
 	t.Run("development may enable dev session", func(t *testing.T) {
 		c := &Config{AppEnv: "development", AuthDevSessionEnabled: true}
 		if err := c.ValidateProd(); err != nil {

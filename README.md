@@ -36,6 +36,7 @@ skills/    # 治理 Skills 包
 
 ```bash
 cd apps/api
+export APP_ENV=development   # 必须显式设置；未设置时启动 fail-closed（生产无公开弱默认）
 export APP_PROFILE=mvp       # 或 admin；custom 必须同时设置 APP_MODULES_ENABLED
 make run
 # 或：go run ./cmd/server

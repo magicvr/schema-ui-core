@@ -85,6 +85,22 @@ async function refreshAccess(): Promise<boolean> {
   if (!refresh) {
     return false;
   }
+  // Concurrent 401s (parallel requests after access-token expiry) must not each
+  // rotate the same refresh token: the server revokes it on first use, so a
+  // second concurrent rotation would fail and clear a perfectly valid session.
+  // Deduplicate to a single in-flight rotation shared by all callers.
+  if (inflightRefresh !== null) {
+    return inflightRefresh;
+  }
+  inflightRefresh = doRefresh(refresh).finally(() => {
+    inflightRefresh = null;
+  });
+  return inflightRefresh;
+}
+
+let inflightRefresh: Promise<boolean> | null = null;
+
+async function doRefresh(refresh: string): Promise<boolean> {
   let response: Response;
   try {
     response = await postJSON(REFRESH_URL, { refreshToken: refresh });

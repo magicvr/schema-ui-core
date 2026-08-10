@@ -99,6 +99,43 @@ func TestRefreshUnknownToken(t *testing.T) {
 	}
 }
 
+// C2 hardening: two concurrent rotations of the same refresh token must yield
+// exactly one new session pair — the second caller loses the atomic guarded
+// revoke and fails with ErrTokenRevoked instead of issuing a second live pair.
+func TestRefreshConcurrentRotationSingleWinner(t *testing.T) {
+	a := newTestAuth(t, false)
+	_, refresh, _, err := a.Login("admin", "pw", now())
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	for range 2 {
+		go func() {
+			<-start
+			_, _, _, err := a.Refresh(refresh, now().Add(time.Minute))
+			results <- err
+		}()
+	}
+	close(start)
+	var winners, revoked int
+	for range 2 {
+		err := <-results
+		switch {
+		case err == nil:
+			winners++
+		case errors.Is(err, ErrTokenRevoked):
+			revoked++
+		default:
+			t.Fatalf("unexpected refresh error: %v", err)
+		}
+	}
+	if winners != 1 || revoked != 1 {
+		t.Fatalf("concurrent rotation: winners=%d revoked=%d, want 1/1", winners, revoked)
+	}
+}
+
 func TestRefreshExpired(t *testing.T) {
 	a := newTestAuth(t, false)
 	_, refresh, _, err := a.Login("admin", "pw", now())

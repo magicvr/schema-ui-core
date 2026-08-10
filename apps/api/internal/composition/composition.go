@@ -109,7 +109,12 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
 	}
-	if st.WasFresh() {
+	needsBootstrap, err := authsessiondata.NeedsBootstrap(context.Background(), st)
+	if err != nil {
+		_ = st.Close()
+		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("check bootstrap: %v", err)}
+	}
+	if needsBootstrap {
 		if err := authsessiondata.Bootstrap(context.Background(), st, "admin", string(seedHash)); err != nil {
 			_ = st.Close()
 			return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("bootstrap auth data: %v", err)}

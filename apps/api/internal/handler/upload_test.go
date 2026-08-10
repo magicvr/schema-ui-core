@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"os"
 	"testing"
 )
@@ -106,5 +107,79 @@ func TestUploadEndpointContract(t *testing.T) {
 	}
 
 	// Cleanup the test upload store (avoid leaking files into the repo).
+	_ = os.RemoveAll(env.uploadDir)
+}
+
+// C1 hardening: HTML-bearing content is rejected server-side (never stored),
+// and every download is forced to attachment so stored bytes can never render
+// inline in the API's same-origin context.
+func TestUploadRejectsHtmlAndForcesAttachment(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	uploadPart := func(name, declaredType, content string) *httptest.ResponseRecorder {
+		body := new(bytes.Buffer)
+		writer := multipart.NewWriter(body)
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", `form-data; name="file"; filename="`+name+`"`)
+		h.Set("Content-Type", declaredType)
+		part, err := writer.CreatePart(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = part.Write([]byte(content))
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/upload", body)
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr
+	}
+
+	// A part declared text/plain whose real content is HTML is detected as
+	// text/html and rejected — the client declaration is never trusted.
+	html := uploadPart("evil.txt", "text/plain", "<!DOCTYPE html><html><script>alert(1)</script></html>")
+	if html.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("html upload status = %d, want 415", html.Code)
+	}
+	var apiError map[string]string
+	if err := json.Unmarshal(html.Body.Bytes(), &apiError); err != nil {
+		t.Fatal(err)
+	}
+	if apiError["error"] != "UNSUPPORTED_FILE_TYPE" {
+		t.Fatalf("html upload code = %q, want UNSUPPORTED_FILE_TYPE", apiError["error"])
+	}
+
+	// A plain-text file still uploads, and its download is forced to attachment
+	// with a sandbox CSP — never inline-renderable from the same origin.
+	plain := uploadPart("notes.txt", "text/plain", "just some text")
+	if plain.Code != http.StatusOK {
+		t.Fatalf("plain upload status = %d: %s", plain.Code, plain.Body.String())
+	}
+	var uploaded map[string]any
+	if err := json.Unmarshal(plain.Body.Bytes(), &uploaded); err != nil {
+		t.Fatal(err)
+	}
+	url, _ := uploaded["url"].(string)
+	fileReq := httptest.NewRequest(http.MethodGet, url, nil)
+	fileReq.Header.Set("Authorization", "Bearer "+token)
+	fileResp := httptest.NewRecorder()
+	env.mux.ServeHTTP(fileResp, fileReq)
+	if fileResp.Code != http.StatusOK {
+		t.Fatalf("file status = %d", fileResp.Code)
+	}
+	if got := fileResp.Header().Get("Content-Disposition"); got != `attachment; filename="download"` {
+		t.Fatalf("Content-Disposition = %q, want attachment", got)
+	}
+	if got := fileResp.Header().Get("Content-Security-Policy"); got != "sandbox" {
+		t.Fatalf("Content-Security-Policy = %q, want sandbox", got)
+	}
+	if got := fileResp.Header().Get("Content-Type"); got != "text/plain; charset=utf-8" {
+		t.Fatalf("served Content-Type = %q, want detected text/plain", got)
+	}
+
 	_ = os.RemoveAll(env.uploadDir)
 }

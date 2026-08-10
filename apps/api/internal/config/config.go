@@ -40,7 +40,7 @@ type Config struct {
 func Load() *Config {
 	cfg := &Config{
 		AppName:      envOr("APP_NAME", "schema-ui-core-api"),
-		AppEnv:       envOr("APP_ENV", "development"),
+		AppEnv:       envOr("APP_ENV", ""),
 		HTTPAddr:     envOr("HTTP_ADDR", ":25080"),
 		ReadTimeout:  durationEnv("HTTP_READ_TIMEOUT", 5*time.Second),
 		WriteTimeout: durationEnv("HTTP_WRITE_TIMEOUT", 10*time.Second),
@@ -86,6 +86,9 @@ func Load() *Config {
 func (c *Config) ValidateProd() error {
 	if c.ProfileError != nil {
 		return fmt.Errorf("invalid module profile: %w", c.ProfileError)
+	}
+	if c.AppEnv == "" {
+		return fmt.Errorf("APP_ENV must be set explicitly (development for local runs, production for deployments); refusing to guess")
 	}
 	if c.AppEnv == "development" {
 		return nil
