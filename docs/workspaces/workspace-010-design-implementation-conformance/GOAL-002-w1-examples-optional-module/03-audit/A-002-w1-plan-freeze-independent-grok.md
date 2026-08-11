@@ -3,13 +3,15 @@ id: A-002-w1-plan-freeze-independent-grok
 doc: audit-entry
 goal: GOAL-002-w1-examples-optional-module
 source: independent
-status: open
+status: closed
 created: 2026-08-11
 updated: 2026-08-11
 version: 1.0.0
 ---
 
 # A-002 · W1 方案冻结独立审计（grok-build · 实施前）
+
+> **闭合**：required F-001～F-004 经 A-003 响应 → fixed（D-003）；recommended F-005/F-006/F-007 → fixed，F-008 保留 deferred（I-004）。
 
 ## 头字段
 

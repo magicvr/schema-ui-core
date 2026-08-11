@@ -34,12 +34,12 @@ progress: 0/6
 - [ ] **S2 · 可选模块形态**：存在可 `plan.HasModule` 开关的模块（命名已冻结 = **`dev.examples`**）；自有 schema + manifest fragment；组合根按启用集装配  
 - [ ] **S3 · 依赖剪枝**：`admin.*` 与 `core.manifest-route` 不再 DependsOn 演示模块；禁用演示模块时 Admin 仍可启动并发布 Manifest  
 - [ ] **S4 · Profile 默认**：生产向 `mvp`/`admin` **默认不启用**演示模块；开发/dogfood 可通过显式 modules 列表或专用 profile 启用  
-- [ ] **S5 · 产品面与 home**：禁用时 Manifest 无 Examples 组、无 8 范例 pageId（或等价集合）、schema 404；`homePageRef` 指向仍启用的可交付页（方案冻结，如 `users` 或可配置）  
+- [ ] **S5 · 产品面与 home**：禁用时 Manifest 无 Examples 组、无 8 范例 pageId、schema 404；`homePageRef` = 首个启用的 admin 功能页（无则任意首页；无页则省略）；`dev.examples` 启用时 = `overview`（D-003 §2）  
 - [ ] **S6 · 回归与 go 接口**：API/Web 相关测试与双 Profile 烟测通过；记录对 VP-008 `go` 消费有效性的影响（暂挂条件/重验证入口）；架构/playbook 若需回贴则有界更新
 
 ## 高层路线图（P-001）
 
-1. **方案冻结**：模块 id、homePageRef 策略、Profile 默认、是否保留 overview 为可选首页、测试分母调整。 **（2026-08-11 完成 · D-002）**  
+1. **方案冻结**：模块 id、homePageRef 策略、Profile 默认、是否保留 overview 为可选首页、测试分母调整。 **（2026-08-11 完成 · D-002 + 实施冻结附录 D-003，cross 审计 R1–R4 闭合）**  
 2. **拆分与迁移**：页面文档/fragment 归属；baseline 瘦身；BuiltinModules / providers / DependsOn。  
 3. **回归**：composition/manifest/profile 测试 + web 代表路径；更新 i18n 仅作非阻断清理（可 residual）。  
 4. **go 影响留痕**：矩阵变更说明 + freshness/重验证指针。  

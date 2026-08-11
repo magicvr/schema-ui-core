@@ -23,9 +23,10 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| A-001 | 2026-08-11 | self | W1 方案冻结设计审计（design-plan） | conditional | 1（F-001） | `03-audit/A-001-w1-plan-freeze-design.md` |
-| A-002 | 2026-08-11 | independent | W1 方案冻结独立审计（grok-build@grok-4.5） | conditional | 4（F-001～F-004） | `03-audit/A-002-w1-plan-freeze-independent-grok.md` |
+| A-001 | 2026-08-11 | self | W1 方案冻结设计审计（design-plan） | conditional | 0（closed via A-003） | `03-audit/A-001-w1-plan-freeze-design.md` |
+| A-002 | 2026-08-11 | independent | W1 方案冻结独立审计（grok-build@grok-4.5） | conditional | 0（closed via A-003） | `03-audit/A-002-w1-plan-freeze-independent-grok.md` |
+| A-003 | 2026-08-11 | self（响应） | cross 审计合并响应（R1–R4 闭合） | — | **0** | `03-audit/A-003-w1-audit-response.md` |
 
 ## 结论状态
 
-方案已冻结（D-002）。cross 审计完成：self A-001 + independent A-002 均 **conditional**，**无冲突**（同向收敛）。required findings 合并为：**R1 homePageRef 机制（A/B 二选一）**、**R2 home 推导算法表**、**R3 dev.examples 模块契约**、**R4 go 暂挂触发/恢复留痕**。待用户确认响应方案后写 D-003（实施冻结附录）并闭合；再进入拆分实施。
+cross 审计闭环：A-001（self）+ A-002（independent grok-build）均 `conditional`、findings 收敛无冲突；A-003 响应将 R1–R4（required）与 F-005/F-006/F-007（recommended）按 **fixed** 闭合（D-003 实施冻结附录），仅 I-004 保留 deferred。**开放 required = 0**，可进入拆分与迁移实施（roadmap 阶段 2）。首个矩阵落地 commit 时按 D-003 §5 正式记录 VP-008 `go` 暂挂。

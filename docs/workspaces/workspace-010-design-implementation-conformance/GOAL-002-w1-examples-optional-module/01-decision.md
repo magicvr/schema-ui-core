@@ -24,3 +24,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | D-001 | 2026-08-11 | W1 范围与整改方向（方案待用户钉 id/home/默认） | accepted（范围）/ 方案参数 open | `01-decision/D-001-w1-scope-and-direction.md` |
 | D-002 | 2026-08-11 | W1 方案冻结：范例面 `dev.examples` 可选模块化 | accepted | `01-decision/D-002-w1-plan-freeze.md` |
+| D-003 | 2026-08-11 | W1 实施冻结附录（home 机制 A / 算法表 / 模块契约 / go 暂挂 / 测试分母） | accepted | `01-decision/D-003-w1-implementation-freeze.md` |

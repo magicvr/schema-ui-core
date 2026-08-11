@@ -3,13 +3,15 @@ id: A-001-w1-plan-freeze-design
 doc: audit-entry
 goal: GOAL-002-w1-examples-optional-module
 source: self
-status: open
+status: closed
 created: 2026-08-11
 updated: 2026-08-11
 version: 1.0.0
 ---
 
 # A-001 · W1 方案冻结设计审计（自审 · 实施前）
+
+> **闭合**：required F-001 经 A-003 响应 → fixed（D-003）；recommended 项随 D-003 处置。
 
 ## 头字段
 
