@@ -4,7 +4,7 @@ status: active
 created: 2026-08-10
 updated: 2026-08-11
 parent: null
-version: 0.5.0
+version: 0.7.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -21,10 +21,11 @@ workspace_id: workspace-009-production-hardening
 GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-002-audit-findings-remediation [done] (16/16)   · W1
 ├── GOAL-003-upload-ownership-hardening [done] (4/4)     · W2
-└── GOAL-004-w3-security-audit-remediation [done] (8/8)  · W3
+├── GOAL-004-w3-security-audit-remediation [done] (8/8)  · W3
+└── GOAL-005-w4-security-audit-remediation [done] (8/8) · W4
 ```
 
-Root **保持 active**。W1/W2 为已关门波次档案；W3 承接 2026-08-11 api/web 全量审计修复。
+Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11 新一轮 api/web 全量审计修复（限流驱逐、上传权限门+配额、改密吊销 access token、前端异常捕获、URL 校验、启动加固、文案）。
 
 ## 状态表
 
@@ -34,6 +35,7 @@ Root **保持 active**。W1/W2 为已关门波次档案；W3 承接 2026-08-11 a
 | GOAL-002-audit-findings-remediation | 审查发现修正（W1） | GOAL-001-production-hardening | done | 16/16 | 2026-08-10 |
 | GOAL-003-upload-ownership-hardening | 上传所有权与下载鉴权加固（W2） | GOAL-001-production-hardening | done | 4/4 | 2026-08-10 |
 | GOAL-004-w3-security-audit-remediation | W3 安全审计发现修复（api/web） | GOAL-001-production-hardening | done | 8/8 | 2026-08-11 |
+| GOAL-005-w4-security-audit-remediation | W4 安全审计发现修复（api/web） | GOAL-001-production-hardening | done | 8/8 | 2026-08-11 |
 
 ## 维护说明
 

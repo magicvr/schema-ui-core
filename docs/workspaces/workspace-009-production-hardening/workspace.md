@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-009-production-hardening
 created: 2026-08-10
 updated: 2026-08-11
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
@@ -47,6 +47,7 @@ independent provider（沿用 workspace-008 D-002）：**grok build · grok-4.5 
 | W1 | GOAL-002-audit-findings-remediation | done |
 | W2 | GOAL-003-upload-ownership-hardening | done |
 | W3 | GOAL-004-w3-security-audit-remediation | done |
+| W4 | GOAL-005-w4-security-audit-remediation | done |
 
 ## 固定共享资料引用
 
