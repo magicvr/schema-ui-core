@@ -29,14 +29,14 @@ const MVP_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.mvp.json");
 const MODULES = resolve(__dir, "../../../api/internal/modules");
 
 const SCHEMA_PATHS: Record<string, string> = {
-  overview: resolve(MODULES, "schemarender/schema/overview.json"),
-  "admin-list-batch": resolve(MODULES, "schemarender/schema/admin-list-batch.json"),
-  "data-display": resolve(MODULES, "schemarender/schema/data-display.json"),
-  "data-table": resolve(MODULES, "schemarender/schema/data-table.json"),
-  "search-form-table": resolve(MODULES, "schemarender/schema/search-form-table.json"),
-  "form-controls": resolve(MODULES, "schemarender/schema/form-controls.json"),
-  "form-with-reactions": resolve(MODULES, "schemarender/schema/form-with-reactions.json"),
-  "form-with-upload": resolve(MODULES, "schemarender/schema/form-with-upload.json"),
+  overview: resolve(MODULES, "dev/examples/schema/overview.json"),
+  "admin-list-batch": resolve(MODULES, "dev/examples/schema/admin-list-batch.json"),
+  "data-display": resolve(MODULES, "dev/examples/schema/data-display.json"),
+  "data-table": resolve(MODULES, "dev/examples/schema/data-table.json"),
+  "search-form-table": resolve(MODULES, "dev/examples/schema/search-form-table.json"),
+  "form-controls": resolve(MODULES, "dev/examples/schema/form-controls.json"),
+  "form-with-reactions": resolve(MODULES, "dev/examples/schema/form-with-reactions.json"),
+  "form-with-upload": resolve(MODULES, "dev/examples/schema/form-with-upload.json"),
   users: resolve(MODULES, "users/schema/users.json"),
   roles: resolve(MODULES, "roles/schema/roles.json"),
   settings: resolve(MODULES, "settings/schema/settings.json"),

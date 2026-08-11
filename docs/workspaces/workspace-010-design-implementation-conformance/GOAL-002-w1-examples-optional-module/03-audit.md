@@ -29,4 +29,4 @@ version: 0.1.0
 
 ## 结论状态
 
-cross 审计闭环：A-001（self）+ A-002（independent grok-build）均 `conditional`、findings 收敛无冲突；A-003 响应将 R1–R4（required）与 F-005/F-006/F-007（recommended）按 **fixed** 闭合（D-003 实施冻结附录），仅 I-004 保留 deferred。**开放 required = 0**，可进入拆分与迁移实施（roadmap 阶段 2）。首个矩阵落地 commit 时按 D-003 §5 正式记录 VP-008 `go` 暂挂。
+方案冻结（D-002/D-003）→ cross 审计闭环（A-001/A-002 → A-003，required=0）→ **拆分与迁移实施完成**（E-004：go/web 全绿 + 双 Profile e2e 通过）。VP-008 `go` 消费**已暂挂**（首个矩阵落地 commit，E-004 §go），恢复证据清单已列。**待办：roadmap 阶段 5 波次审计**（self + independent；D-003 已定 cross）后进入波次关门判断。progress = 6/6（S1–S6 达成），status 保持 active。

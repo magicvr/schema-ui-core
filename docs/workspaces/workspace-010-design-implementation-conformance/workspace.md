@@ -45,7 +45,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 
 | 波次 | 子目标 | status |
 |------|--------|--------|
-| W1 | GOAL-002-w1-examples-optional-module | active |
+| W1 | GOAL-002-w1-examples-optional-module | active（实施完成 6/6；波次审计待办；VP-008 `go` 已暂挂） |
 
 ## 固定共享资料引用
 

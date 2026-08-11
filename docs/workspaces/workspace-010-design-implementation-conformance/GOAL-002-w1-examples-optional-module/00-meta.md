@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-11
 version: 0.1.0
-progress: 0/6
+progress: 6/6
 ---
 
 # GOAL-002 · W1 · 范例/演示产品面可选模块化
@@ -30,20 +30,20 @@ progress: 0/6
 
 ## 成功标准
 
-- [ ] **S1 · 能力拆分**：演示页/Examples 导航从「强制 core 能力」拆出；真 Schema 贡献协议/能力不再与 demo page 集合绑死同一不可关模块语义  
-- [ ] **S2 · 可选模块形态**：存在可 `plan.HasModule` 开关的模块（命名已冻结 = **`dev.examples`**）；自有 schema + manifest fragment；组合根按启用集装配  
-- [ ] **S3 · 依赖剪枝**：`admin.*` 与 `core.manifest-route` 不再 DependsOn 演示模块；禁用演示模块时 Admin 仍可启动并发布 Manifest  
-- [ ] **S4 · Profile 默认**：生产向 `mvp`/`admin` **默认不启用**演示模块；开发/dogfood 可通过显式 modules 列表或专用 profile 启用  
-- [ ] **S5 · 产品面与 home**：禁用时 Manifest 无 Examples 组、无 8 范例 pageId、schema 404；`homePageRef` = 首个启用的 admin 功能页（无则任意首页；无页则省略）；`dev.examples` 启用时 = `overview`（D-003 §2）  
-- [ ] **S6 · 回归与 go 接口**：API/Web 相关测试与双 Profile 烟测通过；记录对 VP-008 `go` 消费有效性的影响（暂挂条件/重验证入口）；架构/playbook 若需回贴则有界更新
+- [x] **S1 · 能力拆分**：演示页/Examples 导航从「强制 core 能力」拆出；真 Schema 贡献协议/能力不再与 demo page 集合绑死同一不可关模块语义（`dev.examples` 持有 8 页；`core.schema-render` 仅能力壳；E-004）
+- [x] **S2 · 可选模块形态**：存在可 `plan.HasModule` 开关的模块（命名已冻结 = **`dev.examples`**）；自有 schema + manifest fragment；组合根按启用集装配（`composition.go` HasModule + dev/examples 包；E-004）
+- [x] **S3 · 依赖剪枝**：`admin.*` 与 `core.manifest-route` 不再 DependsOn 演示模块；禁用演示模块时 Admin 仍可启动并发布 Manifest（`profile.go` BuiltinModules；E-004）
+- [x] **S4 · Profile 默认**：生产向 `mvp`/`admin` **默认不启用**演示模块；开发/dogfood 可通过显式 modules 列表或专用 profile 启用（`profileDefaults` 不含 `dev.examples`；E-004）
+- [x] **S5 · 产品面与 home**：禁用时 Manifest 无 Examples 组、无 8 范例 pageId、schema 404；`homePageRef` = 首个启用的 admin 功能页（无则任意首页；无页则省略）；`dev.examples` 启用时 = `overview`（`deriveHomePageRef` + `StampHomePageRef`；`TestManifestHomePageRefDerivation`；E-004）
+- [x] **S6 · 回归与 go 接口**：API/Web 相关测试与双 Profile 烟测通过（`go test` 全绿；web 746 测试；mvp/admin e2e 3+3 passed）；记录对 VP-008 `go` 消费有效性的影响（**已暂挂**，E-004 §go）；架构/playbook 核验无需回贴（E-004）
 
 ## 高层路线图（P-001）
 
 1. **方案冻结**：模块 id、homePageRef 策略、Profile 默认、是否保留 overview 为可选首页、测试分母调整。 **（2026-08-11 完成 · D-002 + 实施冻结附录 D-003，cross 审计 R1–R4 闭合）**  
-2. **拆分与迁移**：页面文档/fragment 归属；baseline 瘦身；BuiltinModules / providers / DependsOn。  
-3. **回归**：composition/manifest/profile 测试 + web 代表路径；更新 i18n 仅作非阻断清理（可 residual）。  
-4. **go 影响留痕**：矩阵变更说明 + freshness/重验证指针。  
-5. **波次审计**：self（必要）+ 若触及模块矩阵/装配语义则按风险 `cross`/`independent`（P-004）。
+2. **拆分与迁移**：页面文档/fragment 归属；baseline 瘦身；BuiltinModules / providers / DependsOn。 **（2026-08-11 完成 · E-004）**  
+3. **回归**：composition/manifest/profile 测试 + web 代表路径；更新 i18n 仅作非阻断清理（可 residual）。 **（2026-08-11 完成 · E-004：go/web 全绿 + 双 Profile e2e）**  
+4. **go 影响留痕**：矩阵变更说明 + freshness/重验证指针。 **（2026-08-11 完成 · E-004 §go 暂挂触发；恢复证据清单）**  
+5. **波次审计**：self（必要）+ 若触及模块矩阵/装配语义则按风险 `cross`/`independent`（P-004）。 **（待办 · D-003 已定 cross）**
 
 ## 信息就绪与未知项
 

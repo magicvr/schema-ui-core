@@ -27,7 +27,7 @@ import type { ResourceItem } from "@/renderer/resource";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/schemarender/schema",
+  "../../../api/internal/modules/dev/examples/schema",
 );
 // R4 C3.3: users/roles schema documents are module-owned.
 const MODULE_FIXTURE_DIRS: Record<string, string> = {

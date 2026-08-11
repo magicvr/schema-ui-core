@@ -2,14 +2,15 @@ package schemarender
 
 import (
 	"context"
-	"encoding/json"
-	"reflect"
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
-func TestProviderPublishesCoreSchemaDocuments(t *testing.T) {
+// W1 (GOAL-002 / workspace-010): core.schema-render is now a capability-only
+// shell. The 8 example page documents moved to the optional dev.examples module
+// (see dev/examples/provider_test.go). Assert it publishes no page surfaces.
+func TestProviderPublishesNoPageDocuments(t *testing.T) {
 	provider := New()
 	descriptor := provider.Descriptor()
 	plan := kernel.Plan{
@@ -20,23 +21,16 @@ func TestProviderPublishesCoreSchemaDocuments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"admin-list-batch", "data-display", "data-table", "form-controls", "form-with-reactions", "form-with-upload", "overview", "search-form-table"}
-	got := make([]string, 0, len(set.Pages))
-	for _, page := range set.Pages {
-		got = append(got, page.PageID)
-		var document struct {
-			Meta struct {
-				PageID string `json:"pageId"`
-			} `json:"meta"`
-		}
-		if err := json.Unmarshal(page.Document, &document); err != nil {
-			t.Fatalf("%s document: %v", page.PageID, err)
-		}
-		if page.Owner != ModuleID || document.Meta.PageID != page.PageID {
-			t.Fatalf("page = %+v meta.pageId=%q", page, document.Meta.PageID)
+	if len(set.Pages) != 0 {
+		t.Fatalf("core.schema-render must not own page documents after W1 split, got %d: %v", len(set.Pages), set.Pages)
+	}
+	hasSchema := false
+	for _, capability := range descriptor.Provides {
+		if capability == kernel.CapabilitySchema {
+			hasSchema = true
 		}
 	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("pages = %v, want %v", got, want)
+	if !hasSchema {
+		t.Fatal("core.schema-render must still provide the schema capability")
 	}
 }

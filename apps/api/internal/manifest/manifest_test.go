@@ -122,7 +122,7 @@ func TestForModulesOnlyPublishesSelectedAdminPages(t *testing.T) {
 			t.Fatalf("disabled page %q leaked into %s", pageID, data)
 		}
 	}
-	if len(decoded.Navigation.Sidebar) != 3 || len(decoded.Navigation.User) != 0 {
+	if len(decoded.Navigation.Sidebar) != 2 || len(decoded.Navigation.User) != 0 {
 		t.Fatalf("navigation projection = %+v", decoded.Navigation)
 	}
 }

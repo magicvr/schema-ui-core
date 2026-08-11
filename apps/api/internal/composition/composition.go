@@ -22,6 +22,7 @@ import (
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	devexamplesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
 	schemarendermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender"
@@ -176,7 +177,16 @@ func newMuxWithExtraProviders(
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
-	providers := []kernel.Provider{schemarendermodule.New()}
+	// W1 (GOAL-002 / workspace-010): core.schema-render and the optional
+	// dev.examples module are both assembled by plan enablement (D-003 §3) —
+	// production profiles default to no examples surface.
+	var providers []kernel.Provider
+	if plan.HasModule("core.schema-render") {
+		providers = append(providers, schemarendermodule.New())
+	}
+	if plan.HasModule("dev.examples") {
+		providers = append(providers, devexamplesmodule.New())
+	}
 	if plan.HasModule("admin.users") {
 		providers = append(providers, usersmodule.New(a, authRepository, operations))
 	}
@@ -218,11 +228,50 @@ func newMuxWithExtraProviders(
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
 		}
+		// W1 (GOAL-002 / workspace-010, D-003 §1/§2): homePageRef is derived from
+		// the enabled set at assembly — dev.examples enabled -> overview; else the
+		// first enabled admin functional page; else the first enabled page; else
+		// omitted — then stamped into the published app block.
+		data, err = manifest.StampHomePageRef(data, deriveHomePageRef(plan))
+		if err != nil {
+			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
+		}
 		if err := handler.RegisterManifest(mux, data); err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: fmt.Sprintf("register manifest: %v", err)}
 		}
 	}
 	return mux, nil
+}
+
+// adminFunctionalOrder is the frozen home-page priority (D-003 §2): the first
+// enabled admin.* functional module in declaration order becomes the home page.
+var adminFunctionalOrder = []string{"admin.users", "admin.roles", "admin.settings", "admin.activity"}
+
+// deriveHomePageRef implements the D-003 §2 decision table:
+//
+//	1. dev.examples enabled              -> "overview"
+//	2. else first enabled admin module   -> that module's first declared page
+//	3. else first enabled module with a page contribution -> that page
+//	4. else "" (omit homePageRef)
+func deriveHomePageRef(plan kernel.Plan) string {
+	if plan.HasModule("dev.examples") {
+		return "overview"
+	}
+	byID := make(map[string]kernel.Module, len(plan.Modules))
+	for _, m := range plan.Modules {
+		byID[m.ID] = m
+	}
+	for _, moduleID := range adminFunctionalOrder {
+		if module, ok := byID[moduleID]; ok && len(module.Contributions.Pages) > 0 {
+			return module.Contributions.Pages[0]
+		}
+	}
+	for _, module := range plan.Modules {
+		if len(module.Contributions.Pages) > 0 {
+			return module.Contributions.Pages[0]
+		}
+	}
+	return ""
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {

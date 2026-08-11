@@ -48,7 +48,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 
 | 波次 | 子目标 | status | 说明 |
 |------|--------|--------|------|
-| W1 | GOAL-002-w1-examples-optional-module | active | 范例面从伪 core 拆出为可选模块 |
+| W1 | GOAL-002-w1-examples-optional-module | active（实施完成 6/6，波次审计待办） | 范例面拆出为可选模块 `dev.examples`；**VP-008 `go` 已暂挂**（E-004 §go），恢复证据见 GOAL-002 E-004 |
 | （下一波） | 待立项 | — | 定时/触发审视后 `/govern` 创建 |
 
 ## 信息就绪与未知项

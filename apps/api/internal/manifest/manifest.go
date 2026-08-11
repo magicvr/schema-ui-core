@@ -168,6 +168,47 @@ func Aggregate(fragments []Fragment) ([]byte, error) {
 	return append(encoded, '\n'), nil
 }
 
+// StampHomePageRef sets (or removes) app.homePageRef on an already-aggregated
+// manifest document while preserving all other content. homePageRef == "" deletes
+// the field (used when the enabled set contributes no pages, satisfying the web
+// consumer rule that an empty page registry must not declare a home page).
+//
+// W1 (GOAL-002 / workspace-010): fragments no longer carry homePageRef — every
+// fragment's app block is canonically equal so Aggregate's app-identity check
+// passes regardless of the enabled set; the assembly layer derives and stamps the
+// published home page (D-003 §1, mechanism A).
+func StampHomePageRef(data []byte, homePageRef string) ([]byte, error) {
+	var doc struct {
+		ProtocolVersion      string            `json:"protocolVersion"`
+		RequiredCapabilities []string          `json:"requiredCapabilities"`
+		App                  json.RawMessage   `json:"app"`
+		Pages                []json.RawMessage `json:"pages"`
+		Navigation           json.RawMessage   `json:"navigation"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, fmt.Errorf("manifest: parse aggregated document for home page stamp: %w", err)
+	}
+	app := map[string]json.RawMessage{}
+	if err := json.Unmarshal(doc.App, &app); err != nil {
+		return nil, fmt.Errorf("manifest: parse app block for home page stamp: %w", err)
+	}
+	if homePageRef == "" {
+		delete(app, "homePageRef")
+	} else {
+		raw, err := json.Marshal(homePageRef)
+		if err != nil {
+			return nil, err
+		}
+		app["homePageRef"] = raw
+	}
+	stampedApp, err := json.Marshal(app)
+	if err != nil {
+		return nil, fmt.Errorf("manifest: encode app block with home page: %w", err)
+	}
+	doc.App = stampedApp
+	return json.MarshalIndent(doc, "", "  ")
+}
+
 func canonicalJSON(raw json.RawMessage) ([]byte, error) {
 	if len(bytes.TrimSpace(raw)) == 0 {
 		return nil, fmt.Errorf("value is required")

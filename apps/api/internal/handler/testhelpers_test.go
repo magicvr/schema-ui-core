@@ -13,9 +13,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	examplesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
-	coreschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
@@ -107,7 +107,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		moduleID  string
 		documents map[string][]byte
 	}{
-		{coreschema.ModuleID, coreschema.SchemaDocuments()},
+		{examplesschema.ModuleID, examplesschema.SchemaDocuments()},
 		{usersschema.ModuleID, usersschema.SchemaDocuments()},
 		{rolesschema.ModuleID, rolesschema.SchemaDocuments()},
 		{settingsschema.ModuleID, settingsschema.SchemaDocuments()},

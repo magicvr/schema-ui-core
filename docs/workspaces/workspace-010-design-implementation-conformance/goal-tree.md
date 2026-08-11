@@ -29,7 +29,7 @@ Root **保持 active**。W1 为首波整改，完成后不推导 Root/VP done。
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-design-implementation-conformance | 设计意图与实现符合性（持续对齐程序） | null | active | —（程序容器，不用 n/n→done） | 2026-08-11 |
-| GOAL-002-w1-examples-optional-module | W1 · 范例/演示产品面可选模块化 | GOAL-001-design-implementation-conformance | active | 0/6 | 2026-08-11 |
+| GOAL-002-w1-examples-optional-module | W1 · 范例/演示产品面可选模块化 | GOAL-001-design-implementation-conformance | active | 6/6 | 2026-08-11 |
 
 ## 维护说明
 

@@ -210,6 +210,92 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 	}
 }
 
+// TestManifestHomePageRefDerivation pins the W1 home-page derivation table
+// (D-003 §2) and the product-surface hygiene of default profiles (S4/S5):
+// mvp/admin publish no dev.examples pages and home -> the first admin page;
+// explicitly enabling dev.examples restores the overview home and examples.
+func TestManifestHomePageRefDerivation(t *testing.T) {
+	type manifestApp struct {
+		HomePageRef string `json:"homePageRef"`
+	}
+	type manifestDoc struct {
+		App   manifestApp `json:"app"`
+		Pages []struct {
+			PageID string `json:"pageId"`
+		} `json:"pages"`
+	}
+
+	fetch := func(t *testing.T, plan kernel.Plan) manifestDoc {
+		t.Helper()
+		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer st.Close()
+		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		mux, err := testMux(a, st, plan, &readinessGate{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("manifest status = %d: %s", rec.Code, rec.Body.String())
+		}
+		var doc manifestDoc
+		if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc
+	}
+
+	// Default mvp: first admin functional page (users), no examples surface.
+	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mvpDoc := fetch(t, mvpPlan)
+	if mvpDoc.App.HomePageRef != "users" {
+		t.Fatalf("mvp homePageRef = %q, want users", mvpDoc.App.HomePageRef)
+	}
+	for _, page := range mvpDoc.Pages {
+		if page.PageID == "overview" || page.PageID == "data-table" || page.PageID == "form-controls" {
+			t.Fatalf("mvp default manifest leaks example page %q (S5)", page.PageID)
+		}
+	}
+
+	// Default admin: still users (users precedes roles in declaration order).
+	adminPlan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	adminDoc := fetch(t, adminPlan)
+	if adminDoc.App.HomePageRef != "users" {
+		t.Fatalf("admin homePageRef = %q, want users", adminDoc.App.HomePageRef)
+	}
+
+	// mvp + dev.examples (dogfood): home -> overview, examples restored.
+	registry, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatal(err)
+	}
+	examplesPlan, err := registry.Resolve(append(mvpPlan.IDs(), "dev.examples"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	examplesDoc := fetch(t, examplesPlan)
+	if examplesDoc.App.HomePageRef != "overview" {
+		t.Fatalf("dev.examples enabled homePageRef = %q, want overview", examplesDoc.App.HomePageRef)
+	}
+	seen := map[string]bool{}
+	for _, page := range examplesDoc.Pages {
+		seen[page.PageID] = true
+	}
+	if !seen["overview"] || !seen["data-table"] {
+		t.Fatalf("dev.examples enabled manifest missing example pages: %v", seen)
+	}
+}
+
 func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 	tests := []struct {
 		profile         string

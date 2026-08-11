@@ -7,7 +7,6 @@
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
-    "homePageRef": "overview",
     "description": "The schema-ui-core administration workspace."
   },
   "pages": [

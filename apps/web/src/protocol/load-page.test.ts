@@ -11,7 +11,7 @@ import {
 const BASE = "https://example.test";
 
 // Structurally valid page document (mirrors the module-owned Go document
-// apps/api/internal/modules/schemarender/schema/overview.json so the loader
+// apps/api/internal/modules/dev/examples/schema/overview.json so the loader
 // test exercises the same shape the endpoint serves).
 const VALID_DOCUMENT = {
   meta: {

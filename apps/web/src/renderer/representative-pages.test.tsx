@@ -24,7 +24,7 @@ import { SchemaTable } from "@/renderer/schema-table";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/schemarender/schema",
+  "../../../api/internal/modules/dev/examples/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(

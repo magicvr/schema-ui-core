@@ -92,7 +92,7 @@ func BuiltinModules() []Module {
 	return []Module{
 		{ID: "core.server-registration", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", Provides: []Capability{CapabilityHTTP}},
 		{ID: "core.auth-session", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilityAuthorization, CapabilityPersistence}, Contributions: ContributionKeys{Routes: []string{"/api/auth"}}},
-		{ID: "core.schema-render", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilitySchema, CapabilityValidation}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions", "form-with-upload", "data-display", "admin-list-batch"}}},
+		{ID: "core.schema-render", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilitySchema, CapabilityValidation}},
 		{ID: "core.manifest-route", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render"}, Provides: []Capability{CapabilityManifest}, Contributions: ContributionKeys{Routes: []string{"/.well-known/schema-ui/app-manifest.json"}}},
 		{ID: "core.navigation-capability", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.manifest-route"}, Provides: []Capability{CapabilityNavigation, CapabilityExpressions}},
 		{ID: "core.operationlog", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Provides: []Capability{CapabilityOperationLog}},
@@ -100,6 +100,11 @@ func BuiltinModules() []Module {
 		{ID: "admin.roles", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}", "POST /api/roles/batch-delete"}, Pages: []string{"roles"}, Navigation: []string{"menu_roles"}, Permissions: []string{"roles.read", "roles.write", "roles.assign"}, Fragments: []string{"roles"}}},
 		{ID: "admin.settings", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset"}, Pages: []string{"settings"}, Navigation: []string{"menu_settings"}, Permissions: []string{"settings.read", "settings.write"}, ConfigNamespaces: []string{"settings.branding"}, Fragments: []string{"settings"}}},
 		{ID: "admin.activity", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.manifest-route", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/operations", "GET /api/operations/{id}"}, Pages: []string{"activity"}, Navigation: []string{"menu_activity"}, Permissions: []string{"operations.read"}, Fragments: []string{"activity"}}},
+		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
+		// the 8 example pages + Examples navigation as a horizontal demo surface.
+		// It is compiled but never enabled by mvp/admin defaults; enable via
+		// APP_MODULES_ENABLED or a dedicated dogfood profile (D-003 §3).
+		{ID: "dev.examples", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.schema-render", "core.navigation-capability"}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions", "form-with-upload", "data-display", "admin-list-batch"}, Fragments: []string{"examples"}}},
 	}
 }
 

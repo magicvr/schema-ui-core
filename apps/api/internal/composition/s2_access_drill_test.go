@@ -97,7 +97,6 @@ func (p *probeProvider) Register(ctx context.Context, reg kernel.Registrar) erro
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
-    "homePageRef": "overview",
     "description": "The schema-ui-core administration workspace."
   },
   "pages": [

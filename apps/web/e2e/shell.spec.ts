@@ -17,7 +17,11 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(manifestResponse.headers()["x-schema-ui-manifest-source"]).toBe("api");
   const manifest = await manifestResponse.json();
   const manifestPageIds = manifest.pages.map((page: { pageId: string }) => page.pageId);
-  expect(manifestPageIds).toEqual(expect.arrayContaining(["overview", "users", "roles"]));
+  // W1 (GOAL-002 / workspace-010): default profiles ship no dev.examples surface.
+  expect(manifestPageIds).toEqual(expect.arrayContaining(["users", "roles"]));
+  expect(manifestPageIds.includes("overview")).toBe(false);
+  expect(manifestPageIds.includes("data-table")).toBe(false);
+  expect(manifest.app.homePageRef).toBe("users");
   expect(manifestPageIds.includes("settings")).toBe(isAdminProfile);
   expect(manifestPageIds.includes("activity")).toBe(isAdminProfile);
 
@@ -40,9 +44,9 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Shell renders and redirects home -> overview.
-  await expect(page).toHaveURL(/\/overview$/);
-  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  // Shell renders and redirects home -> the first admin functional page (users).
+  await expect(page).toHaveURL(/\/users$/);
+  await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
   // The shell brand renders the siteTitle from the public startup config. Read
   // it from /api/branding rather than hardcoding the default: an earlier spec
   // (localization M3) may have PATCHed a custom siteTitle into the shared
@@ -53,10 +57,11 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(typeof brandBody.siteTitle).toBe("string");
   await expect(page.getByText(brandBody.siteTitle).first()).toBeVisible();
 
-  // Manifest-driven navigation slots render (top / sidebar / user).
-  await expect(page.getByRole("link", { name: "Overview" })).toBeVisible();
+  // Manifest-driven navigation slots render (top / sidebar / user). Default
+  // profiles expose no dev.examples navigation (S5 product-surface hygiene).
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Data table" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Overview" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Data table" })).toHaveCount(0);
   if (isAdminProfile) {
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Activity" })).toBeVisible();
@@ -121,5 +126,5 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // middleware path through the proxy (401 above); role denial is pure API logic
   // already pinned by that test.
 
-  await page.screenshot({ path: "test-results/r6-overview.png", fullPage: true });
+  await page.screenshot({ path: "test-results/r6-shell-users.png", fullPage: true });
 });

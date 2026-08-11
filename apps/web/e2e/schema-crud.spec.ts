@@ -13,7 +13,7 @@ async function signInAsAdmin(page: Page): Promise<void> {
   await page.getByLabel("Username").fill("admin");
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/users$/);
 }
 
 test("users and roles drive real authorization management against Go SQLite", async ({

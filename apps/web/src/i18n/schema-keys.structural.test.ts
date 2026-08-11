@@ -19,14 +19,14 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const MODULES = resolve(__dir, "../../../api/internal/modules");
 
 const SCHEMA_FILES = [
-  "schemarender/schema/overview.json",
-  "schemarender/schema/admin-list-batch.json",
-  "schemarender/schema/data-display.json",
-  "schemarender/schema/data-table.json",
-  "schemarender/schema/search-form-table.json",
-  "schemarender/schema/form-controls.json",
-  "schemarender/schema/form-with-reactions.json",
-  "schemarender/schema/form-with-upload.json",
+  "dev/examples/schema/overview.json",
+  "dev/examples/schema/admin-list-batch.json",
+  "dev/examples/schema/data-display.json",
+  "dev/examples/schema/data-table.json",
+  "dev/examples/schema/search-form-table.json",
+  "dev/examples/schema/form-controls.json",
+  "dev/examples/schema/form-with-reactions.json",
+  "dev/examples/schema/form-with-upload.json",
   "users/schema/users.json",
   "roles/schema/roles.json",
   "settings/schema/settings.json",

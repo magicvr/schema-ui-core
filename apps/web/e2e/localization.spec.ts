@@ -40,8 +40,8 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
   await page.getByLabel("用户名").fill("admin");
   await page.getByLabel("密码").fill("admin");
   await page.getByRole("button", { name: "登录" }).click();
-  await expect(page).toHaveURL(/\/overview$/);
-  await expect(page.getByRole("heading", { name: "总览" })).toBeVisible();
+  await expect(page).toHaveURL(/\/users$/);
+  await expect(page.getByRole("heading", { name: "用户" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
 
   // M3 · admin settings: edit the inline General form, save, and the shell
@@ -88,14 +88,14 @@ test("S5 mvp profile: locale switch + no settings surface + branding public", as
   await page.getByLabel("用户名").fill("admin");
   await page.getByLabel("密码").fill("admin");
   await page.getByRole("button", { name: "登录" }).click();
-  await expect(page).toHaveURL(/\/overview$/);
-  await expect(page.getByRole("heading", { name: "总览" })).toBeVisible();
+  await expect(page).toHaveURL(/\/users$/);
+  await expect(page.getByRole("heading", { name: "用户" })).toBeVisible();
 
   // Settings edit surface must not appear under mvp.
   await expect(page.getByRole("link", { name: "设置" })).toHaveCount(0);
   await page.goto("/settings");
   await expect(page.getByText(/找不到|not found|Page not found|页面/i).first()).toBeVisible();
 
-  await page.screenshot({ path: "test-results/s5-mvp-overview-zh.png", fullPage: true });
+  await page.screenshot({ path: "test-results/s5-mvp-users-zh.png", fullPage: true });
   expect(pageErrors).toEqual([]);
 });
