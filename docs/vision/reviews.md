@@ -32,7 +32,7 @@ version: 1.3.32
 |---------|-------|------|------|------|
 | — | — | — | **无** | VRev-026 对 VP-008 v0.9.0 意图清晰度复审为 `pass`；V-F053 recommended → **fixed**（VP-008 v0.10.0），无新增 required |
 
-> Vision Review **open required = 0**。VRev-026（independent，`pass`）确认 VP-008 v0.9.0 方向级意图已足够清晰与自洽；V-F053 recommended → **fixed**（VP-008 v0.10.0 + 报告内 `/vision` 响应）。VP-008 已按用户确认激活、绑定单一 lead delivery workspace `workspace-008-admin-module-readiness`，并于 2026-08-10 用户书面签发 `go`（候选 `ed99e88`、clean）后 **`closed`**，解锁后续标准业务模块实现。VRev-025 原 verdict `conditional` 保留；V-F051 carried projection 与 V-F052 均已 `fixed`。VRev-024 原 verdict `conditional` 保留；V-F051 → `fixed`。VRev-017～VRev-023 原 verdict `conditional` 与既有 fixed 响应继续保留。当前无 active 交付 VP，组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。VRev-026（independent，`pass`）确认 VP-008 v0.9.0 方向级意图已足够清晰与自洽；V-F053 recommended → **fixed**（VP-008 v0.10.0 + 报告内 `/vision` 响应）。VP-008 已按用户确认激活、绑定单一 lead delivery workspace `workspace-008-admin-module-readiness`，并于 2026-08-10 用户书面签发 `go`（候选 `ed99e88`、clean）后 **`closed`**，解锁后续标准业务模块实现。VRev-025 原 verdict `conditional` 保留；V-F051 carried projection 与 V-F052 均已 `fixed`。VRev-024 原 verdict `conditional` 保留；V-F051 → `fixed`。VRev-017～VRev-023 原 verdict `conditional` 与既有 fixed 响应继续保留。当前 active 交付 VP：**VP-009**（持续安全与健壮性）与 **VP-010**（设计意图—实现符合性持续对齐）；组合焦点见 [roadmap.md](roadmap.md)。
 
 ## 条目索引
 
