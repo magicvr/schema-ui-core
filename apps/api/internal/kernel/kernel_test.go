@@ -36,6 +36,41 @@ func TestBuiltinProfilesResolveDeterministically(t *testing.T) {
 	if _, err := registry.Resolve(admin.Modules); err != nil {
 		t.Fatal(err)
 	}
+
+	// W2 (GOAL-003 / workspace-010): demo = mvp capability set + dev.examples.
+	demo, err := ResolveProfile("demo", nil)
+	if err != nil {
+		t.Fatalf("resolve demo: %v", err)
+	}
+	if got, want := demo.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles", "dev.examples"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("demo modules = %v, want %v", got, want)
+	}
+	if _, err := registry.Resolve(demo.Modules); err != nil {
+		t.Fatalf("resolve demo plan: %v", err)
+	}
+}
+
+// TestDemoProfileIsNonProduction verifies demo is never used as a production
+// default and mvp/admin keep excluding dev.examples (W1 hygiene, GOAL-003 S3).
+func TestDemoProfileIsNonProduction(t *testing.T) {
+	for _, name := range []ProfileName{ProfileMVP, ProfileAdmin} {
+		resolution, err := ResolveProfile(string(name), nil)
+		if err != nil {
+			t.Fatalf("%s resolve: %v", name, err)
+		}
+		for _, id := range resolution.Modules {
+			if id == "dev.examples" {
+				t.Fatalf("%s default profile must not include dev.examples (W1 S5)", name)
+			}
+		}
+	}
+	demo, err := ResolveProfile(string(ProfileDemo), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if demo.Source != "profile.default" {
+		t.Fatalf("demo source = %q, want profile.default", demo.Source)
+	}
 }
 
 func TestProfileOverrideAndCustomRequireExplicitModules(t *testing.T) {

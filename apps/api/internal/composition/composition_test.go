@@ -354,6 +354,78 @@ func TestDeriveHomePageRefBranches(t *testing.T) {
 	}
 }
 
+// TestDemoProfileManifest pins the W2 demo Profile (GOAL-003): demo = mvp +
+// dev.examples, so the manifest exposes both the mvp pages and the examples,
+// home -> overview, while mvp/admin production defaults stay examples-free.
+func TestDemoProfileManifest(t *testing.T) {
+	plan, err := ResolvePlan(&config.Config{ProfileName: "demo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !plan.HasModule("dev.examples") || !plan.HasModule("admin.users") {
+		t.Fatalf("demo plan must include dev.examples and mvp admin modules: %v", plan.IDs())
+	}
+	st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	mux, err := testMux(a, st, plan, &readinessGate{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("manifest status = %d: %s", rec.Code, rec.Body.String())
+	}
+	var doc struct {
+		App struct {
+			HomePageRef string `json:"homePageRef"`
+		} `json:"app"`
+		Pages []struct {
+			PageID string `json:"pageId"`
+		} `json:"pages"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if doc.App.HomePageRef != "overview" {
+		t.Fatalf("demo homePageRef = %q, want overview", doc.App.HomePageRef)
+	}
+	seen := map[string]bool{}
+	for _, page := range doc.Pages {
+		seen[page.PageID] = true
+	}
+	for _, want := range []string{"users", "roles", "overview", "data-table", "form-controls"} {
+		if !seen[want] {
+			t.Fatalf("demo manifest missing page %q: %v", want, seen)
+		}
+	}
+	if seen["settings"] || seen["activity"] {
+		t.Fatalf("demo manifest leaks non-mvp pages: %v", seen)
+	}
+	// Example schema endpoint serves under demo.
+	overviewSchema := httptest.NewRecorder()
+	mux.ServeHTTP(overviewSchema, httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil))
+	if overviewSchema.Code != http.StatusOK {
+		t.Fatalf("demo /api/schema/overview status = %d, want 200", overviewSchema.Code)
+	}
+	// mvp/admin still exclude examples (S3, W1 hygiene).
+	for _, profile := range []string{"mvp", "admin"} {
+		p, err := ResolvePlan(&config.Config{ProfileName: profile})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, id := range p.IDs() {
+			if id == "dev.examples" {
+				t.Fatalf("%s default must not include dev.examples (S3)", profile)
+			}
+		}
+	}
+}
+
 func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 	tests := []struct {
 		profile         string

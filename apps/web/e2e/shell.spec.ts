@@ -9,6 +9,9 @@ import { expect, test } from "@playwright/test";
 test("login gates the shell and the real auth chain works through the proxy", async ({ page, request }) => {
   const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
   const isAdminProfile = profile === "admin";
+  // W2 (GOAL-003 / workspace-010): demo = mvp capability + dev.examples, so it
+  // exposes the example pages and homes to overview; mvp/admin stay examples-free.
+  const isDemoProfile = profile === "demo";
 
   // The same browser build must consume the runtime Manifest selected by the
   // API profile. The proxy must not silently fall back to a static Web file.
@@ -17,11 +20,11 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(manifestResponse.headers()["x-schema-ui-manifest-source"]).toBe("api");
   const manifest = await manifestResponse.json();
   const manifestPageIds = manifest.pages.map((page: { pageId: string }) => page.pageId);
-  // W1 (GOAL-002 / workspace-010): default profiles ship no dev.examples surface.
+  // W1 (GOAL-002 / workspace-010): production defaults ship no dev.examples.
   expect(manifestPageIds).toEqual(expect.arrayContaining(["users", "roles"]));
-  expect(manifestPageIds.includes("overview")).toBe(false);
-  expect(manifestPageIds.includes("data-table")).toBe(false);
-  expect(manifest.app.homePageRef).toBe("users");
+  expect(manifestPageIds.includes("overview")).toBe(isDemoProfile);
+  expect(manifestPageIds.includes("data-table")).toBe(isDemoProfile);
+  expect(manifest.app.homePageRef).toBe(isDemoProfile ? "overview" : "users");
   expect(manifestPageIds.includes("settings")).toBe(isAdminProfile);
   expect(manifestPageIds.includes("activity")).toBe(isAdminProfile);
 
@@ -44,9 +47,9 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Shell renders and redirects home -> the first admin functional page (users).
-  await expect(page).toHaveURL(/\/users$/);
-  await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
+  // Shell renders and redirects home -> manifest home (demo: overview; else users).
+  await expect(page).toHaveURL(isDemoProfile ? /\/overview$/ : /\/users$/);
+  await expect(page.getByRole("heading", { name: isDemoProfile ? "Overview" : "Users" })).toBeVisible();
   // The shell brand renders the siteTitle from the public startup config. Read
   // it from /api/branding rather than hardcoding the default: an earlier spec
   // (localization M3) may have PATCHed a custom siteTitle into the shared
@@ -57,11 +60,11 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(typeof brandBody.siteTitle).toBe("string");
   await expect(page.getByText(brandBody.siteTitle).first()).toBeVisible();
 
-  // Manifest-driven navigation slots render (top / sidebar / user). Default
-  // profiles expose no dev.examples navigation (S5 product-surface hygiene).
+  // Manifest-driven navigation slots render (top / sidebar / user). Production
+  // profiles expose no dev.examples navigation (S5 hygiene); demo does.
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Overview" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Data table" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Overview" })).toHaveCount(isDemoProfile ? 1 : 0);
+  await expect(page.getByRole("link", { name: "Data table" })).toHaveCount(isDemoProfile ? 1 : 0);
   if (isAdminProfile) {
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Activity" })).toBeVisible();

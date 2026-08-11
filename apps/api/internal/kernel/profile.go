@@ -11,6 +11,7 @@ type ProfileName string
 const (
 	ProfileMVP    ProfileName = "mvp"
 	ProfileAdmin  ProfileName = "admin"
+	ProfileDemo   ProfileName = "demo"
 	ProfileCustom ProfileName = "custom"
 )
 
@@ -43,6 +44,21 @@ var profileDefaults = map[ProfileName][]string{
 		"admin.roles",
 		"admin.settings",
 		"admin.activity",
+	},
+	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
+	// workspace-010): the full mvp capability surface plus the optional
+	// dev.examples module, so a single APP_PROFILE=demo boots the protocol
+	// examples alongside the real mvp pages. It is never a production default.
+	ProfileDemo: {
+		"core.server-registration",
+		"core.auth-session",
+		"core.manifest-route",
+		"core.navigation-capability",
+		"core.schema-render",
+		"core.operationlog",
+		"admin.users",
+		"admin.roles",
+		"dev.examples",
 	},
 }
 

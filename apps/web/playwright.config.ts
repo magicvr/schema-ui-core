@@ -9,11 +9,12 @@ import { defineConfig } from "@playwright/test";
 // Web /api proxy to the Go API). This is the minimum evidence the user chose
 // over accepting a platform residual.
 //
-// APP_PROFILE selects the API module set for this browser run. Only the
-// compiled mvp and admin profiles are supported by the browser matrix.
+// APP_PROFILE selects the API module set for this browser run. mvp/admin are
+// the production profiles; demo (W2, GOAL-003 / workspace-010) is the
+// non-production demonstration profile (mvp capability + dev.examples).
 const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
-if (appProfile !== "mvp" && appProfile !== "admin") {
-  throw new Error(`APP_PROFILE must be mvp or admin for browser E2E (got ${appProfile || "empty"})`);
+if (appProfile !== "mvp" && appProfile !== "admin" && appProfile !== "demo") {
+  throw new Error(`APP_PROFILE must be mvp, admin or demo for browser E2E (got ${appProfile || "empty"})`);
 }
 
 // WEB_PORT defaults to 25173 (>25000) so local Windows runs stay outside the

@@ -19,9 +19,10 @@ npm run dev
 # needed, e.g. $env:WEB_PORT=3000; npm run dev
 npm test        # vitest run
 npm run test:e2e  # Playwright Chromium; defaults to APP_PROFILE=mvp
-# Bash: run both runtime module profiles against the same Web code
+# Bash: run the runtime profiles against the same Web code (demo = non-production)
 APP_PROFILE=mvp npm run test:e2e
 APP_PROFILE=admin npm run test:e2e
+APP_PROFILE=demo npm run test:e2e  # W2: mvp + dev.examples demo surface
 # Default ports (API :25080 / web :25173) are above Windows Hyper-V excluded
 # ranges; override via HTTP_ADDR / WEB_PORT if a port is taken.
 npm run build   # tsc -b && vite build

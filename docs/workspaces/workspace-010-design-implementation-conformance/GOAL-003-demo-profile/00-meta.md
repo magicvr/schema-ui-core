@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-11
 version: 0.1.0
-progress: 0/6
+progress: 6/6
 ---
 
 # GOAL-003 · W2 · `demo` Profile：mvp + 范例页面
@@ -24,20 +24,20 @@ progress: 0/6
 
 ## 成功标准
 
-- [ ] **S1 · 编译 Profile**：`kernel` 新增 `ProfileDemo = "demo"` 常量与 `profileDefaults[demo]`（= mvp 集 + `dev.examples`）；`ResolveProfile("demo", nil)` 成功；`kernel_test`/`config_test` 分母更新
-- [ ] **S2 · 产品面**：`APP_PROFILE=demo` 启动展示 mvp 能力面（users/roles）+ 8 范例页 + Examples 导航；`homePageRef` = `overview`
-- [ ] **S3 · 卫生保持**：mvp/admin 默认仍**不含** `dev.examples`（不回归 W1）；`custom` 语义不变；W1 S5 卫生断言保持绿
-- [ ] **S4 · 回归与烟测**：API 测试（demo 解析 + manifest/home 断言 + mvp/admin 回归绿）+ **demo 纳入 playwright e2e**（放开 `APP_PROFILE` 白名单允许 demo，浏览器烟测展示范例页）
-- [ ] **S5 · 文档**：README/QUICKSTART 标注 `demo` 为非生产向演示 Profile（用途 + 启用方式）
-- [ ] **S6 · go 接口**：新增 Profile = 模块矩阵变更 → 按 VP-008 §`go` 消费有效性留痕（判定 mvp/admin 生产默认是否受影响，触发/恢复路径记录）
+- [x] **S1 · 编译 Profile**：`kernel` 新增 `ProfileDemo = "demo"` 常量与 `profileDefaults[demo]`（= mvp 集 + `dev.examples`）；`ResolveProfile("demo", nil)` 成功；`kernel_test`/`config_test` 分母更新（E-001）
+- [x] **S2 · 产品面**：`APP_PROFILE=demo` 启动展示 mvp 能力面（users/roles）+ 8 范例页 + Examples 导航；`homePageRef` = `overview`（`TestDemoProfileManifest` + demo e2e；E-001）
+- [x] **S3 · 卫生保持**：mvp/admin 默认仍**不含** `dev.examples`（不回归 W1）；`custom` 语义不变；W1 S5 卫生断言保持绿（`TestDemoProfileIsNonProduction`；E-001）
+- [x] **S4 · 回归与烟测**：API 测试（demo 解析 + manifest/home 断言 + mvp/admin 回归绿）+ **demo 纳入 playwright e2e**（白名单放开 `demo`；浏览器烟测展示范例页 + users CRUD）（E-001）
+- [x] **S5 · 文档**：README/QUICKSTART 标注 `demo` 为非生产向演示 Profile（用途 + 启用方式）（apps/api/README + 根 README + apps/web/README；E-001）
+- [x] **S6 · go 接口**：新增 Profile = 模块矩阵变更 → 判定留痕：**mvp/admin 生产默认未变、`demo` 非生产向 → `go` 保持有效、不触发暂挂**；业务 VP 以 demo 为候选时触发 freshness（E-001 §go）
 
 ## 高层路线图（P-001）
 
 1. **方案确认**：Profile id、e2e 白名单、文档落点。 **（2026-08-11 用户确认：`demo` / API+e2e demo / workspace-010 W2）**
-2. **实施**：`kernel` ProfileDemo + `profileDefaults[demo]`；config/解析无回归；playwright 白名单放开 `demo`；web README/QUICKSTART 标注。
-3. **回归**：API 测试（demo 解析 + manifest/home）+ mvp/admin 回归 + demo e2e 烟测。
-4. **go 影响留痕**：矩阵变更说明 + 触发/恢复判定。
-5. **波次审计**：self（必要）+ 触及 Profile 矩阵 → `cross`/`independent`（grok-build@grok-4.5，P-004 已定模式）。
+2. **实施**：`kernel` ProfileDemo + `profileDefaults[demo]`；config/解析无回归；playwright 白名单放开 `demo`；web README/QUICKSTART 标注。 **（2026-08-11 完成 · E-001）**
+3. **回归**：API 测试（demo 解析 + manifest/home）+ mvp/admin 回归 + demo e2e 烟测。 **（2026-08-11 完成 · E-001：go/web 全绿 + 三 Profile e2e）**
+4. **go 影响留痕**：矩阵变更说明 + 触发/恢复判定。 **（2026-08-11 完成 · E-001 §go：不触发暂挂）**
+5. **波次审计**：self（必要）+ 触及 Profile 矩阵 → `cross`/`independent`（grok-build@grok-4.5，P-004 已定模式）。 **（待办）**
 
 ## 信息就绪与未知项
 
