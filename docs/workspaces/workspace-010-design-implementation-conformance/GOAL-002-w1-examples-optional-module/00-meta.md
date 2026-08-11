@@ -31,7 +31,7 @@ progress: 0/6
 ## 成功标准
 
 - [ ] **S1 · 能力拆分**：演示页/Examples 导航从「强制 core 能力」拆出；真 Schema 贡献协议/能力不再与 demo page 集合绑死同一不可关模块语义  
-- [ ] **S2 · 可选模块形态**：存在可 `plan.HasModule` 开关的模块（命名在方案中冻结，如 `dev.examples` / `core.examples`）；自有 schema + manifest fragment；组合根按启用集装配  
+- [ ] **S2 · 可选模块形态**：存在可 `plan.HasModule` 开关的模块（命名已冻结 = **`dev.examples`**）；自有 schema + manifest fragment；组合根按启用集装配  
 - [ ] **S3 · 依赖剪枝**：`admin.*` 与 `core.manifest-route` 不再 DependsOn 演示模块；禁用演示模块时 Admin 仍可启动并发布 Manifest  
 - [ ] **S4 · Profile 默认**：生产向 `mvp`/`admin` **默认不启用**演示模块；开发/dogfood 可通过显式 modules 列表或专用 profile 启用  
 - [ ] **S5 · 产品面与 home**：禁用时 Manifest 无 Examples 组、无 8 范例 pageId（或等价集合）、schema 404；`homePageRef` 指向仍启用的可交付页（方案冻结，如 `users` 或可配置）  
@@ -39,7 +39,7 @@ progress: 0/6
 
 ## 高层路线图（P-001）
 
-1. **方案冻结**：模块 id、homePageRef 策略、Profile 默认、是否保留 overview 为可选首页、测试分母调整。  
+1. **方案冻结**：模块 id、homePageRef 策略、Profile 默认、是否保留 overview 为可选首页、测试分母调整。 **（2026-08-11 完成 · D-002）**  
 2. **拆分与迁移**：页面文档/fragment 归属；baseline 瘦身；BuiltinModules / providers / DependsOn。  
 3. **回归**：composition/manifest/profile 测试 + web 代表路径；更新 i18n 仅作非阻断清理（可 residual）。  
 4. **go 影响留痕**：矩阵变更说明 + freshness/重验证指针。  
@@ -49,9 +49,9 @@ progress: 0/6
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 可选模块稳定 id 与是否进入 compiled 候选默认集 | 方案冻结 | 方案 | 用户确认或方案 D 裁决 | open | — | 待确认（建议 `dev.examples`） |
-| I-002 | required | 禁用演示后 `homePageRef` 目标（users / 首个 admin 页 / 可配置） | 方案冻结 | 方案 | 用户确认 | open | — | 待确认（建议 admin 有 users 时用 `users`，mvp 同） |
-| I-003 | required | mvp/admin 是否**默认关闭**演示（强烈建议是） | 方案/Profile | 方案 | 用户确认 | open | — | 待确认（建议默认关；dogfood 显式开） |
+| I-001 | required | 可选模块稳定 id 与是否进入 compiled 候选默认集 | 方案冻结 | 方案 | 用户确认或方案 D 裁决 | verified | — | `dev.examples`；进 compiled 候选、默认 Profile 不含（用户 2026-08-11 确认；D-002） |
+| I-002 | required | 禁用演示后 `homePageRef` 目标（users / 首个 admin 页 / 可配置） | 方案冻结 | 方案 | 用户确认 | verified | — | 首个启用的 admin 功能页（用户 2026-08-11 确认；D-002） |
+| I-003 | required | mvp/admin 是否**默认关闭**演示（强烈建议是） | 方案/Profile | 方案 | 用户确认 | verified | — | 默认关；dogfood/`APP_MODULES_ENABLED` 显式开（用户 2026-08-11 确认；D-002） |
 | I-004 | non-blocking | web i18n 范例 key 是否本波删除 | 验收整洁度 | 验收 | 可 residual 留 key | open | deferred：不阻断功能；owner=本波；复核=S6 | 可接受残留死 key |
 
 ## 父目标

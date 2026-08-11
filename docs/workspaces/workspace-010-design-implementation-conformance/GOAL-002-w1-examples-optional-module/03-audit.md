@@ -14,9 +14,9 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-001 模块 id | open required | 阻断方案冻结 |
-| I-002 homePageRef | open required | 阻断方案冻结 |
-| I-003 Profile 默认 | open required | 阻断方案冻结 |
+| I-001 模块 id | verified | `dev.examples`（用户 2026-08-11 确认；D-002） |
+| I-002 homePageRef | verified | 首个启用的 admin 功能页（用户 2026-08-11 确认；D-002） |
+| I-003 Profile 默认 | verified | 默认关闭（用户 2026-08-11 确认；D-002） |
 | I-004 i18n 清理 | deferred non-blocking | 见 00-meta |
 
 ## 意见台账索引
@@ -27,4 +27,4 @@ version: 0.1.0
 
 ## 结论状态
 
-尚未实施；开放 required 信息项阻断方案冻结与编码。用户确认 I-001～I-003 后 `/govern` 推进。
+方案已冻结（D-002）。下一步：拆分与迁移实施；触及模块矩阵/Manifest 装配语义，实施前按 P-004 定审计模式与 provider。
