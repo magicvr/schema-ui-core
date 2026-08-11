@@ -1,0 +1,28 @@
+---
+id: GOAL-004-w3-schema-host-protocol-conformance
+doc: decision
+status: active
+parent: GOAL-001-design-implementation-conformance
+created: 2026-08-12
+updated: 2026-08-12
+version: 0.1.0
+---
+
+# 决策记录 · GOAL-004
+
+## 信息需求与阶段门禁
+
+| ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
+|----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
+| I-001 | required | 2.7.0 覆盖/偏离基线完整 | S2 | S2 冻结前 | upstream 与 API/Web 逐项对照 | collecting | — | `attachments/I-HOST-APP-001-protocol-gap-catalog.md` |
+| I-002 | required | 全部 Host/App 候选有明确协议处置 | S2 | S2 冻结前 | 逐项 adopt/reserve/out | open | — | 待协议方案 |
+| I-003 | required | 上游新协议已发布/固定并进入本仓 | S4 | S4 开始前 | 版本、provenance 与工件验证 | open | — | 当前实施停止线 |
+| I-004 | required | cross 审视 provider 已指定 | S2/S6 | 首次 cross 审视前 | 用户指定并落 independent A 条目 | open | — | 待指定 |
+| I-005 | required | 兼容、迁移、弃用与 fail-closed 规则 | S3/S4 | S3 固定前 | 兼容矩阵与正反 fixtures | open | — | 待协议方案 |
+| I-006 | required | `recordView` 行上下文等争议语义归属 | S2/S4 | S2 冻结前 | upstream 裁定 | open | — | 待协议方案 |
+
+## 决策索引
+
+| D-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| D-001 | 2026-08-12 | 协议优先与实现停止线 | accepted | `01-decision/D-001-protocol-first-remediation-gate.md` |

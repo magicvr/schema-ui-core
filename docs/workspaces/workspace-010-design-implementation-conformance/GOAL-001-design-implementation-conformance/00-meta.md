@@ -4,8 +4,8 @@ title: 设计意图与实现符合性（持续对齐程序）
 status: active
 parent: null
 created: 2026-08-11
-updated: 2026-08-11
-version: 0.1.0
+updated: 2026-08-12
+version: 0.2.0
 plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
@@ -39,7 +39,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 
 - [x] **P1 · 程序与波次模型**：Root = 长期容器；波次 = 子目标；单波完成 ≠ Root/VP 关门。（2026-08-11 开区）
 - [x] **P2 · 与 go 的接口**：改变 Profile/模块矩阵/Manifest 装配语义的 gap 可触发 VP-008 `go` 消费暂挂/恢复的路径有台账约定。（见 VP-010）
-- [ ] **P3 · 下一波就绪**：存在约定触发（例行/发版前/边界变更/freshness 前）时，可开新子目标承接审视，无需重开 Root/VP
+- [x] **P3 · 下一波就绪**：存在约定触发（例行/发版前/边界变更/freshness 前）时，可开新子目标承接审视，无需重开 Root/VP。（2026-08-12 · W3 已按协议边界审视触发）
 - [x] **W1 · 波次档案**：范例/演示产品面可选化 — [GOAL-002](../GOAL-002-w1-examples-optional-module/00-meta.md)（2026-08-11 **done** · 6/6 · cross 审计 A-004/A-005 → A-006 关门）
 
 > `progress`：不使用「n/n → Root done」推导。波次完成只更新子目标与下表档案。
@@ -50,6 +50,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 |------|--------|--------|------|
 | W1 | GOAL-002-w1-examples-optional-module | **done**（6/6 · 2026-08-11 关门） | 范例面拆出为可选模块 `dev.examples`；VP-008 `go` 已暂挂并在波次关门时**留痕恢复**（A-006） |
 | W2 | GOAL-003-demo-profile | **done**（6/6 · 2026-08-11 关门） | 新增 `demo` Profile = mvp + `dev.examples`；**VP-008 `go` 判定：无影响、不触发暂挂**（mvp/admin 生产默认未变、demo 非生产向；A-003 §go），生产矩阵仍以 W1 恢复 digest `4a2b8cd…` 为准 |
+| W3 | GOAL-004-w3-schema-host-protocol-conformance | **active**（1/6 · 2026-08-12 立项） | 先补 Host/App 协议，再修 API/Web 符合性问题；上游新协议到手前由 I-003 阻断正式实现 |
 
 ## 信息就绪与未知项
 
@@ -57,7 +58,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 本程序是否为长期意图（类 VP-009）？ | 程序定义 | 开区当日 | 用户 2026-08-11 书面确认 | verified | — | VP-010 v0.1.0；本 meta |
 | I-002 | non-blocking | 例行符合性回顾的具体日历 | 运营节奏 | 下一波前 | 用户或 CI 约定；可先事件/变更触发 | open | deferred：事件+发版前足够启动后续波次；责任人=维护者；复核=首次例行回顾前 | 待确认 |
-| I-003 | required（波次级） | 每一波的 gap 清单与范围 | 该波实施 | 该波实施前 | 审视报告落盘到子目标 | 按波次 | — | W1 见 GOAL-002 |
+| I-003 | required（波次级） | 每一波的 gap 清单与范围 | 该波实施 | 该波实施前 | 审视报告落盘到子目标 | 按波次 | — | W1 见 GOAL-002；W2 见 GOAL-003；W3 见 GOAL-004 `attachments/I-HOST-APP-001-protocol-gap-catalog.md` |
 
 ## 台账布局
 
