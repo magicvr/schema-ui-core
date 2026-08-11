@@ -20,10 +20,10 @@ workspace_id: workspace-010-design-implementation-conformance
 ```text
 GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-002-w1-examples-optional-module [done]       · W1 范例面可选化
-└── GOAL-003-demo-profile [active]                    · W2 demo Profile：mvp + 范例
+└── GOAL-003-demo-profile [done]                      · W2 demo Profile：mvp + 范例
 ```
 
-Root **保持 active**。W1 已关门；W2 为演示 Profile 正式化波次；不推导 Root/VP done。
+Root **保持 active**。W1/W2 已关门；不推导 Root/VP done。
 
 ## 状态表
 
@@ -31,7 +31,7 @@ Root **保持 active**。W1 已关门；W2 为演示 Profile 正式化波次；�
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-design-implementation-conformance | 设计意图与实现符合性（持续对齐程序） | null | active | —（程序容器，不用 n/n→done） | 2026-08-11 |
 | GOAL-002-w1-examples-optional-module | W1 · 范例/演示产品面可选模块化 | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-11 |
-| GOAL-003-demo-profile | W2 · `demo` Profile：mvp + 范例页面 | GOAL-001-design-implementation-conformance | active | 6/6 | 2026-08-11 |
+| GOAL-003-demo-profile | W2 · `demo` Profile：mvp + 范例页面 | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-11 |
 
 ## 维护说明
 

@@ -86,6 +86,7 @@ parent: null
 | 波次 | 日期 | 实现层 | 摘要 |
 |------|------|--------|------|
 | W1 | 2026-08-11 | GOAL-002（首波） | 范例/演示产品面从伪 core 拆出，成为可配置注销模块 `dev.examples`；生产 Profile 默认不启用；修正依赖图、Manifest baseline 与 homePageRef 装配层推导。**done（6/6 · 2026-08-11 关门，cross 审计闭环）**；VP-008 `go` 已恢复（范围=本波后矩阵） |
+| W2 | 2026-08-11 | GOAL-003 | 新增**非生产向演示 Profile `demo`** = mvp 集 + `dev.examples`；`APP_PROFILE=demo` 同一 Web build 展示范例面 + mvp 能力，home=overview。**done（6/6 · 2026-08-11 关门，cross 审计闭环）**；VP-008 `go` 判定：无影响、不触发暂挂（mvp/admin 生产默认未变） |
 
 ## 关门记录
 

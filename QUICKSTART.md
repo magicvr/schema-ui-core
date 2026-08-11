@@ -23,14 +23,14 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 ```bash
 # apps/api/.env.example 只是配置参考；Go API 不会自动加载该文件。
 # Compose 才会读取仓库根 .env（gitignored）。本地进程请 export：
-export APP_PROFILE=mvp                 # 或 admin
+export APP_PROFILE=mvp                 # 或 admin / demo（非生产向演示 Profile）
 # custom 时还必须提供完整的显式模块列表：
 # export APP_PROFILE=custom
 # export APP_MODULES_ENABLED=core.server-registration,...
 ```
 
 - 开发（`APP_ENV=development` 显式设置）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。**`APP_ENV` 必须显式设置**——未设置时启动失败（C3：不静默回退到公开开发密钥/密码）。
-- `APP_PROFILE` 只接受 `mvp`、`admin`、`custom`；`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
+- `APP_PROFILE` 接受 `mvp`、`admin`、`demo`、`custom`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`（启动即展示 8 个协议范例页 + Examples 导航，home 指向 `overview`）；生产只应使用 `mvp` / `admin`。`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
 - PowerShell 等价写法为 `$env:APP_PROFILE="mvp"`；每个本地 API/Web 进程都必须继承同一 Profile。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
@@ -42,7 +42,7 @@ export APP_PROFILE=mvp                 # 或 admin
 # 仓库根 .env（gitignored）写入，避免新 shell 重复 export：
 #   AUTH_JWT_SECRET=<强随机串>
 #   ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
-#   APP_PROFILE=mvp                 # 或 admin
+#   APP_PROFILE=mvp                 # 或 admin / demo
 #   APP_MODULES_ENABLED=            # 可选，逗号分隔
 docker compose up -d --build
 ```
@@ -55,7 +55,7 @@ docker compose up -d --build
 
 ```bash
 # 终端 1 —— API
-cd apps/api && APP_ENV=development APP_PROFILE=mvp go run ./cmd/server  # 监听 :25080；或改为 admin
+cd apps/api && APP_ENV=development APP_PROFILE=mvp go run ./cmd/server  # 监听 :25080；或改为 admin / demo
 
 # 终端 2 —— Web
 cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-25173}

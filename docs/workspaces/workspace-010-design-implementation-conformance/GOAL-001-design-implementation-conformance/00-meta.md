@@ -49,7 +49,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | 波次 | 子目标 | status | 说明 |
 |------|--------|--------|------|
 | W1 | GOAL-002-w1-examples-optional-module | **done**（6/6 · 2026-08-11 关门） | 范例面拆出为可选模块 `dev.examples`；VP-008 `go` 已暂挂并在波次关门时**留痕恢复**（A-006） |
-| W2 | GOAL-003-demo-profile | active（0/6 · 2026-08-11 立项） | 新增 `demo` Profile = mvp + `dev.examples`，演示产品面正式化 |
+| W2 | GOAL-003-demo-profile | **done**（6/6 · 2026-08-11 关门） | 新增 `demo` Profile = mvp + `dev.examples`；**VP-008 `go` 判定：无影响、不触发暂挂**（mvp/admin 生产默认未变、demo 非生产向；A-003 §go），生产矩阵仍以 W1 恢复 digest `4a2b8cd…` 为准 |
 
 ## 信息就绪与未知项
 

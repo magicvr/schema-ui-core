@@ -398,7 +398,10 @@ func TestDemoProfileManifest(t *testing.T) {
 	for _, page := range doc.Pages {
 		seen[page.PageID] = true
 	}
-	for _, want := range []string{"users", "roles", "overview", "data-table", "form-controls"} {
+	wants := []string{"users", "roles",
+		"overview", "data-table", "admin-list-batch", "data-display",
+		"search-form-table", "form-controls", "form-with-reactions", "form-with-upload"}
+	for _, want := range wants {
 		if !seen[want] {
 			t.Fatalf("demo manifest missing page %q: %v", want, seen)
 		}
