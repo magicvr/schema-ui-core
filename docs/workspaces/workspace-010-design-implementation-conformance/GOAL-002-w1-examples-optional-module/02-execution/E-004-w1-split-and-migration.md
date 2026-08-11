@@ -49,12 +49,12 @@ version: 1.0.0
 本合入为**首个改变 Profile 默认集（无）/模块矩阵（新增 `dev.examples`、`core.schema-render` 页贡献迁移）/Manifest 装配语义（homePageRef 装配层 stamp、fragment app 去 home）**的 commit → 按 VP-010 与 VP-008 §`go` 消费有效性规则，**业务对旧 `go` 的消费暂挂**，直至下列恢复证据落盘并由 `/govern` 留痕：
 
 1. 候选身份快照：profile/module 矩阵（mvp/admin 默认集；`dev.examples` 显式启用路径）。
-2. digest：本 commit hash。
+2. digest：**`4a2b8cdbaeca1fe1eea9c7fdbe5de552694a41d6`**（矩阵落地 commit；本波后续测试补强与审计见后续 commit）。
 3. 双 Profile 烟测：mvp/admin e2e 已通过（本记录）。
 4. 新增断言：禁用无 Examples 组/8 pageId/schema 404；homePageRef 推导正确；启用恢复。
 5. 台账落点：本 `02-execution/E-004` + Root 台账 + VP-010 波次档案指针。
 
-## 尚未发生
+## 尚未发生（E-004 记录时点）
 
-- W1 波次审计（roadmap 阶段 5：self + 按风险 independent/cross；D-003 已定 cross）。
+- W1 波次审计（roadmap 阶段 5：self + 按风险 independent/cross；D-003 已定 cross）。**（已由 A-004/A-005 → A-006 完成，见 E-005）**
 - 业务 VP 激活前的消费前 freshness review（VP-008 §go 消费有效性）。

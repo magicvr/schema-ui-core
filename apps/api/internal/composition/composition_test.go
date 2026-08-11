@@ -223,15 +223,18 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 		Pages []struct {
 			PageID string `json:"pageId"`
 		} `json:"pages"`
+		Navigation struct {
+			Sidebar []json.RawMessage `json:"sidebar"`
+		} `json:"navigation"`
 	}
 
-	fetch := func(t *testing.T, plan kernel.Plan) manifestDoc {
+	fetch := func(t *testing.T, plan kernel.Plan) (manifestDoc, *http.ServeMux) {
 		t.Helper()
 		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer st.Close()
+		t.Cleanup(func() { _ = st.Close() })
 		a := auth.New([]byte("test-secret"), 0, 0, st, false)
 		mux, err := testMux(a, st, plan, &readinessGate{})
 		if err != nil {
@@ -246,7 +249,7 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
 			t.Fatal(err)
 		}
-		return doc
+		return doc, mux
 	}
 
 	// Default mvp: first admin functional page (users), no examples surface.
@@ -254,7 +257,7 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mvpDoc := fetch(t, mvpPlan)
+	mvpDoc, mvpMux := fetch(t, mvpPlan)
 	if mvpDoc.App.HomePageRef != "users" {
 		t.Fatalf("mvp homePageRef = %q, want users", mvpDoc.App.HomePageRef)
 	}
@@ -263,13 +266,31 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 			t.Fatalf("mvp default manifest leaks example page %q (S5)", page.PageID)
 		}
 	}
+	// Disabled examples: example schema endpoint 404s (S5).
+	overviewSchema := httptest.NewRecorder()
+	mvpMux.ServeHTTP(overviewSchema, httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil))
+	if overviewSchema.Code != http.StatusNotFound {
+		t.Fatalf("mvp /api/schema/overview status = %d, want 404 (S5)", overviewSchema.Code)
+	}
+	// Disabled examples: no "Examples" sidebar navigation group (S5, F-003).
+	for _, raw := range mvpDoc.Navigation.Sidebar {
+		var item struct {
+			Label string `json:"label"`
+		}
+		if err := json.Unmarshal(raw, &item); err != nil {
+			t.Fatal(err)
+		}
+		if item.Label == "Examples" {
+			t.Fatalf("mvp default manifest exposes Examples navigation group (S5)")
+		}
+	}
 
 	// Default admin: still users (users precedes roles in declaration order).
 	adminPlan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	adminDoc := fetch(t, adminPlan)
+	adminDoc, _ := fetch(t, adminPlan)
 	if adminDoc.App.HomePageRef != "users" {
 		t.Fatalf("admin homePageRef = %q, want users", adminDoc.App.HomePageRef)
 	}
@@ -283,7 +304,7 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	examplesDoc := fetch(t, examplesPlan)
+	examplesDoc, examplesMux := fetch(t, examplesPlan)
 	if examplesDoc.App.HomePageRef != "overview" {
 		t.Fatalf("dev.examples enabled homePageRef = %q, want overview", examplesDoc.App.HomePageRef)
 	}
@@ -293,6 +314,43 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 	}
 	if !seen["overview"] || !seen["data-table"] {
 		t.Fatalf("dev.examples enabled manifest missing example pages: %v", seen)
+	}
+	// Enabled examples: example schema endpoint serves again.
+	overviewSchemaOn := httptest.NewRecorder()
+	examplesMux.ServeHTTP(overviewSchemaOn, httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil))
+	if overviewSchemaOn.Code != http.StatusOK {
+		t.Fatalf("dev.examples enabled /api/schema/overview status = %d, want 200", overviewSchemaOn.Code)
+	}
+}
+
+// TestDeriveHomePageRefBranches pins the remaining decision-table branches of
+// deriveHomePageRef (D-003 §2, F-002 of the independent wave audit): non-users
+// admin order, no-admin-with-page fallback, and the no-page omit case.
+func TestDeriveHomePageRefBranches(t *testing.T) {
+	mkPlan := func(modules ...kernel.Module) kernel.Plan {
+		return kernel.Plan{Modules: modules}
+	}
+	pages := func(id string, pageIDs ...string) kernel.Module {
+		return kernel.Module{ID: id, Contributions: kernel.ContributionKeys{Pages: pageIDs}}
+	}
+	cases := []struct {
+		name string
+		plan kernel.Plan
+		want string
+	}{
+		{name: "dev.examples wins", plan: mkPlan(pages("dev.examples", "overview", "data-table"), pages("admin.users", "users")), want: "overview"},
+		{name: "users precedes roles", plan: mkPlan(pages("admin.roles", "roles"), pages("admin.users", "users")), want: "users"},
+		{name: "roles only", plan: mkPlan(pages("admin.roles", "roles")), want: "roles"},
+		{name: "activity only", plan: mkPlan(pages("admin.activity", "activity")), want: "activity"},
+		{name: "no admin, page-bearing module", plan: mkPlan(pages("custom.foo", "foo")), want: "foo"},
+		{name: "no pages omits home", plan: mkPlan(pages("custom.empty")), want: ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := deriveHomePageRef(tc.plan); got != tc.want {
+				t.Fatalf("deriveHomePageRef = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 

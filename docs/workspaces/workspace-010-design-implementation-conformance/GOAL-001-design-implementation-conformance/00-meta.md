@@ -40,7 +40,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 - [x] **P1 · 程序与波次模型**：Root = 长期容器；波次 = 子目标；单波完成 ≠ Root/VP 关门。（2026-08-11 开区）
 - [x] **P2 · 与 go 的接口**：改变 Profile/模块矩阵/Manifest 装配语义的 gap 可触发 VP-008 `go` 消费暂挂/恢复的路径有台账约定。（见 VP-010）
 - [ ] **P3 · 下一波就绪**：存在约定触发（例行/发版前/边界变更/freshness 前）时，可开新子目标承接审视，无需重开 Root/VP
-- [ ] **W1 · 波次档案**：范例/演示产品面可选化 — [GOAL-002](../GOAL-002-w1-examples-optional-module/00-meta.md)
+- [x] **W1 · 波次档案**：范例/演示产品面可选化 — [GOAL-002](../GOAL-002-w1-examples-optional-module/00-meta.md)（2026-08-11 **done** · 6/6 · cross 审计 A-004/A-005 → A-006 关门）
 
 > `progress`：不使用「n/n → Root done」推导。波次完成只更新子目标与下表档案。
 
@@ -48,7 +48,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 
 | 波次 | 子目标 | status | 说明 |
 |------|--------|--------|------|
-| W1 | GOAL-002-w1-examples-optional-module | active（实施完成 6/6，波次审计待办） | 范例面拆出为可选模块 `dev.examples`；**VP-008 `go` 已暂挂**（E-004 §go），恢复证据见 GOAL-002 E-004 |
+| W1 | GOAL-002-w1-examples-optional-module | **done**（6/6 · 2026-08-11 关门） | 范例面拆出为可选模块 `dev.examples`；VP-008 `go` 已暂挂并在波次关门时**留痕恢复**（A-006） |
 | （下一波） | 待立项 | — | 定时/触发审视后 `/govern` 创建 |
 
 ## 信息就绪与未知项

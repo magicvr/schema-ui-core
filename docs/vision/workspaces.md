@@ -21,7 +21,7 @@ version: 0.11.0
 | workspace-007-localization-and-system-settings | docs/workspaces/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
 | workspace-008-admin-module-readiness | docs/workspaces/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
 | workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1/W2 done；2026-08-10 语义纠正） |
-| workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；首波 W1 = GOAL-002 范例面可选化） |
+| workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；首波 W1 = GOAL-002 范例面可选化 **done 6/6**，`go` 已恢复） |
 
 ## 说明
 
