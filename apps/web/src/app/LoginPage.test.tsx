@@ -82,6 +82,25 @@ describe("LoginPage", () => {
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
   });
 
+  // W4 P2-2: login.error.failed carries a `{status}` placeholder; the AuthError
+  // keeps the real HTTP status so it interpolates instead of rendering the
+  // literal "{status}".
+  it("interpolates the HTTP status into login.error.failed (no literal {status})", async () => {
+    const onLogin = vi
+      .fn()
+      .mockRejectedValue(new AuthError("LOGIN_FAILED", "login failed: HTTP 503", 503));
+    const container = await renderLogin(onLogin);
+
+    fill(container, "#username", "admin");
+    fill(container, "#password", "admin");
+    const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+    await act(async () => button!.click());
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("503");
+    expect(text).not.toContain("{status}");
+  });
+
   it("disables submit until both fields are filled", async () => {
     const container = await renderLogin(vi.fn());
     const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');

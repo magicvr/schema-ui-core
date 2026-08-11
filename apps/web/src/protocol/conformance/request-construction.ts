@@ -529,7 +529,10 @@ function buildPageTriggerRequest(input: JsonObject): RequestConstructionResult {
   if (method === "GET") {
     return fail("PAGE_TRIGGER_METHOD_NOT_ALLOWED", "action.method");
   }
-  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
+  // W4 P1-2: same strict relative-protocol check as every other builder
+  // (rejects `//`, backslash, whitespace — `/\\evil.com` would otherwise be
+  // parsed by the browser as the external host `//evil.com`).
+  if (!isRelativeProtocolUrl(url)) {
     return fail("INVALID_PROTOCOL_URL", "action.url");
   }
   if (extractPathParams(url).length > 0) {
@@ -546,7 +549,8 @@ function buildPageTriggerNavigate(input: JsonObject): RequestConstructionResult 
   if (confirm) return confirm;
   const action = input.action as JsonObject;
   const url = action.url as string;
-  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
+  // W4 P1-2: same strict relative-protocol check as buildPageTriggerRequest.
+  if (!isRelativeProtocolUrl(url)) {
     return fail("INVALID_PROTOCOL_URL", "action.url");
   }
   if (extractPathParams(url).length > 0) {
@@ -575,6 +579,12 @@ function buildPageTriggerModal(input: JsonObject): RequestConstructionResult {
 
 function buildOutcomeNavigate(input: JsonObject): RequestConstructionResult {
   const url = input.url as string;
+  // W4 P1-2: navigation outcomes must stay inside the app — reject absolute
+  // URLs (open-redirect surface) and protocol-relative/backslash smuggling.
+  // `input.appRouteRoot` is applied on top of a validated relative path.
+  if (!isRelativeProtocolUrl(url)) {
+    return fail("INVALID_PROTOCOL_URL", "navigation.url");
+  }
   const finalUrl = joinBase(input.appRouteRoot as string | undefined, url);
   return {
     ok: true,

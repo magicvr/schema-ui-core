@@ -50,8 +50,8 @@ func TestLoginSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseAccessToken: %v", err)
 	}
-	if sub != "user-admin" {
-		t.Fatalf("subject = %v, want user-admin", sub)
+	if sub.UserID != "user-admin" {
+		t.Fatalf("subject = %v, want user-admin", sub.UserID)
 	}
 }
 
@@ -170,7 +170,7 @@ func TestLogoutRevokes(t *testing.T) {
 
 func TestParseAccessTokenExpiredAndWrongSecret(t *testing.T) {
 	// A token minted with a negative TTL is already expired at signing.
-	expired, err := SignAccessToken([]byte("secret"), "user-admin", -time.Minute, now())
+	expired, err := SignAccessToken([]byte("secret"), "user-admin", 0, -time.Minute, now())
 	if err != nil {
 		t.Fatalf("SignAccessToken: %v", err)
 	}
@@ -178,7 +178,7 @@ func TestParseAccessTokenExpiredAndWrongSecret(t *testing.T) {
 		t.Fatalf("ParseAccessToken(expired) = nil, want error")
 	}
 	// A token signed with a different secret must be rejected.
-	other, err := SignAccessToken([]byte("other"), "user-admin", time.Minute, now())
+	other, err := SignAccessToken([]byte("other"), "user-admin", 0, time.Minute, now())
 	if err != nil {
 		t.Fatalf("SignAccessToken: %v", err)
 	}
@@ -278,8 +278,8 @@ func TestLoginAndRefreshAfterMigrateDuplicateRoles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseAccessToken: %v", err)
 	}
-	if sub != "u-alice" {
-		t.Fatalf("subject = %q, want u-alice", sub)
+	if sub.UserID != "u-alice" {
+		t.Fatalf("subject = %q, want u-alice", sub.UserID)
 	}
 	if _, _, _, err := a.Refresh(refresh, now().Add(time.Minute)); err != nil {
 		t.Fatalf("Refresh after migration: %v", err)

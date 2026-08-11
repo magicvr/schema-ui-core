@@ -107,6 +107,16 @@ var systemDataReconcileDDL = []string{
 )`,
 }
 
+// accessTokenRevocationDDL (W4 P0-3): a per-user monotonic token_version column
+// lets the server revoke already-issued access tokens immediately. Every
+// access-token JWT carries the user's token_version at issue time; the auth
+// middleware compares it to the persisted value and rejects a stale token after
+// a password change (which bumps the version). ALTER TABLE ADD COLUMN is
+// additive and idempotent within a single fresh-run migration ledger.
+var accessTokenRevocationDDL = []string{
+	`ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0`,
+}
+
 // Descriptors returns the immutable 0001-0002 auth/session migration history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -130,6 +140,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "system_data_reconcile",
 			Checksum:             kernel.MigrationChecksum(systemDataReconcileDDL, "0009:system-data-reconcile:v1"),
 			Apply:                migrateSystemDataReconcile,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "access_token_revocation"},
+			Version:              11,
+			Name:                 "access_token_revocation",
+			Checksum:             kernel.MigrationChecksum(accessTokenRevocationDDL, "0011:access-token-revocation:v1"),
+			Apply:                migrateAccessTokenRevocation,
 		},
 	}
 }
@@ -167,6 +184,15 @@ func migrateSystemDataReconcile(tx *sql.Tx) error {
 	for _, stmt := range systemDataReconcileDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("create system-data reconcile tables: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateAccessTokenRevocation(tx *sql.Tx) error {
+	for _, stmt := range accessTokenRevocationDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("add users.token_version: %w", err)
 		}
 	}
 	return nil

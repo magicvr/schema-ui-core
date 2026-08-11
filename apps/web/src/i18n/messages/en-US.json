@@ -270,5 +270,6 @@
   "error.invalidFile": "file part is invalid",
   "error.unsupportedFileType": "file type is not allowed",
   "error.storageUnavailable": "storage is temporarily unavailable",
-  "error.rateLimited": "too many failed login attempts; try again later"
+  "error.rateLimited": "too many failed login attempts; try again later",
+  "error.uploadQuotaExceeded": "upload rejected: per-user quota exceeded"
 }

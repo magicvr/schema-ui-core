@@ -25,6 +25,8 @@ var frozenLiteralCodes = []string{
 	"INVALID_UPLOAD", "LOGIN_FAILED", "LOGOUT_FAILED", "REFRESH_FAILED", "SCHEMA_NOT_FOUND",
 	"SETTINGS_NOT_FOUND", "STORAGE_UNAVAILABLE", "UNAUTHENTICATED", "UNAUTHORIZED",
 	"UNSUPPORTED_FILE_TYPE",
+	// W4 P0-2 per-user upload quota.
+	"UPLOAD_QUOTA_EXCEEDED",
 	// S3 settings validation additions (D-002 appendix A family).
 	"INVALID_DEFAULT_LOCALE", "INVALID_DEFAULT_THEME", "INVALID_TIMEZONE",
 	// D2 login rate limiting.

@@ -50,6 +50,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.settings", Key: "settings.read"}, Permission: "settings.read", Resource: "settings", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.settings", Key: "settings.write"}, Permission: "settings.write", Resource: "settings", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.activity", Key: "operations.read"}, Permission: "operations.read", Resource: "operations", Action: "read", PolicyID: authsessiondata.PolicyAdminEditor, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// W4 P0-2: files.write is a central shared-capability permission
+		// (upload endpoint is centrally registered), admin-only by default.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.server-registration", Key: "files.write"}, Permission: "files.write", Resource: "files", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},

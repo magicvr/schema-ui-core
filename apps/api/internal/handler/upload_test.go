@@ -298,3 +298,124 @@ func TestUploadOwnerOnlyDownload(t *testing.T) {
 
 	_ = os.RemoveAll(env.uploadDir)
 }
+
+// W4 P0-2: POST /api/upload requires files.write (admin-only by default). A
+// low-privilege viewer account must be rejected with 403 before any storage
+// happens, so a compromised viewer cannot fill the disk. The admin uploader
+// retains the full contract (covered by TestUploadEndpointContract).
+func TestUploadRequiresFilesWritePermission(t *testing.T) {
+	env := newAuthTestEnv(t)
+
+	// A viewer holds users.read only (no users.write/files.write) → 403.
+	env.addUser(t, "viewer2", "pw", []string{"viewer"})
+	viewerToken := env.login(t, "viewer2", "pw")
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", "attack.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = part.Write([]byte("fill-the-disk"))
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/upload", body)
+	req.Header.Set("Authorization", "Bearer "+viewerToken)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("viewer upload status = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	var apiError map[string]string
+	if err := json.Unmarshal(rr.Body.Bytes(), &apiError); err != nil {
+		t.Fatal(err)
+	}
+	if apiError["error"] != "FORBIDDEN" {
+		t.Fatalf("viewer upload error = %q, want FORBIDDEN", apiError["error"])
+	}
+	// No file may have been stored (the upload dir is only created on a
+	// successful save, so an absent dir also means zero stored files).
+	entries, err := os.ReadDir(env.uploadDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			entries = nil
+		} else {
+			t.Fatal(err)
+		}
+	}
+	if len(entries) != 0 {
+		t.Fatalf("viewer upload stored %d files, want 0", len(entries))
+	}
+
+	// The admin uploader still succeeds (files.write held by admin).
+	adminTok := adminToken(t, env)
+	body2 := new(bytes.Buffer)
+	writer2 := multipart.NewWriter(body2)
+	part2, err := writer2.CreateFormFile("file", "ok.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = part2.Write([]byte("admin-file"))
+	if err := writer2.Close(); err != nil {
+		t.Fatal(err)
+	}
+	req2 := httptest.NewRequest(http.MethodPost, "/api/upload", body2)
+	req2.Header.Set("Authorization", "Bearer "+adminTok)
+	req2.Header.Set("Content-Type", writer2.FormDataContentType())
+	rr2 := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr2, req2)
+	if rr2.Code != http.StatusOK {
+		t.Fatalf("admin upload status = %d, want 200: %s", rr2.Code, rr2.Body.String())
+	}
+	_ = os.RemoveAll(env.uploadDir)
+}
+
+// W4 P0-2: the per-user quota bounds a files.write holder's stored objects —
+// a compromised admin cannot pump the disk past the configured cap. A tiny
+// maxUserFiles makes the gate observable without thousands of uploads.
+func TestUploadPerUserQuota(t *testing.T) {
+	prevFiles := maxUserFiles
+	prevBytes := maxUserBytes
+	maxUserFiles = 2
+	maxUserBytes = 0 // disable byte quota for a focused count check
+	t.Cleanup(func() {
+		maxUserFiles = prevFiles
+		maxUserBytes = prevBytes
+	})
+
+	env := newAuthTestEnv(t)
+	tok := adminToken(t, env)
+
+	uploadOne := func() int {
+		body := new(bytes.Buffer)
+		w := multipart.NewWriter(body)
+		part, err := w.CreateFormFile("file", "q.txt")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = part.Write([]byte("quota"))
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/upload", body)
+		req.Header.Set("Authorization", "Bearer "+tok)
+		req.Header.Set("Content-Type", w.FormDataContentType())
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	if code := uploadOne(); code != http.StatusOK {
+		t.Fatalf("first upload = %d, want 200", code)
+	}
+	if code := uploadOne(); code != http.StatusOK {
+		t.Fatalf("second upload = %d, want 200", code)
+	}
+	if code := uploadOne(); code != http.StatusTooManyRequests {
+		t.Fatalf("third upload = %d, want 429 (quota)", code)
+	}
+	_ = os.RemoveAll(env.uploadDir)
+}

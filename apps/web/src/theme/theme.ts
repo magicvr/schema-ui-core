@@ -67,10 +67,25 @@ export function applyThemeToElement(
 /**
  * End-to-end theme boot: reads real browser APIs and mutates the DOM.
  * Called from the inline <script> in index.html and from main.tsx.
+ *
+ * W4 P2-1: localStorage may throw when site storage is disabled (privacy
+ * mode). main.tsx calls initTheme at module top level — an uncaught throw
+ * would abort module evaluation and the app would never mount (white screen,
+ * not even the failure surface). Guard reads/writes exactly like tokens.ts.
  */
 export function initTheme(): void {
-  const stored = localStorage.getItem("theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem("theme");
+  } catch {
+    // storage unavailable: fall through to OS preference (best-effort theme)
+  }
+  let prefersDark = false;
+  try {
+    prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch {
+    // matchMedia unavailable: default to light
+  }
   const output = resolveTheme({ stored, prefersDark });
   applyThemeToElement(document.documentElement, output);
 }
@@ -82,27 +97,43 @@ export function initTheme(): void {
  * preference. Called after branding loads on the login page and the shell.
  */
 export function applySystemDefaultTheme(systemDefault: string | null | undefined): void {
-  const stored = localStorage.getItem("theme");
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem("theme");
+  } catch {
+    // storage unavailable: treat as no explicit choice
+  }
   if (stored === "dark" || stored === "light") {
     return;
   }
   if (systemDefault !== "light" && systemDefault !== "dark") {
     return;
   }
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  let prefersDark = false;
+  try {
+    prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch {
+    // matchMedia unavailable: default to light
+  }
   const output = resolveTheme({ stored, prefersDark, systemDefault });
   applyThemeToElement(document.documentElement, output);
 }
 
 /**
  * Sets the user's preferred theme, persists it to localStorage, and applies
- * it immediately.  Pass `null` to revert to OS preference.
+ * it immediately.  Pass `null` to revert to OS preference. W4 P2-1: storage
+ * writes are best-effort — a disabled-storage environment still applies the
+ * theme for the current page.
  */
 export function setTheme(theme: Theme | null): void {
-  if (theme === null) {
-    localStorage.removeItem("theme");
-  } else {
-    localStorage.setItem("theme", theme);
+  try {
+    if (theme === null) {
+      localStorage.removeItem("theme");
+    } else {
+      localStorage.setItem("theme", theme);
+    }
+  } catch {
+    // storage unavailable: apply for this page only, nothing persists
   }
   initTheme();
 }

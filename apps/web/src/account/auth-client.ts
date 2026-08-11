@@ -41,10 +41,15 @@ export interface AuthSession {
 /** Error with a stable code so the UI can branch (e.g. INVALID_CREDENTIALS). */
 export class AuthError extends Error {
   code: string;
-  constructor(code: string, message: string) {
+  /** Optional HTTP status carried for errors that localize a {status} param. */
+  status?: number;
+  constructor(code: string, message: string, status?: number) {
     super(message);
     this.name = "AuthError";
     this.code = code;
+    if (status !== undefined) {
+      this.status = status;
+    }
   }
 }
 
@@ -215,7 +220,7 @@ export async function login(username: string, password: string): Promise<AuthSes
     throw new AuthError("INVALID_CREDENTIALS", "invalid username or password");
   }
   if (!response.ok) {
-    throw new AuthError("LOGIN_FAILED", `login failed: HTTP ${response.status}`);
+    throw new AuthError("LOGIN_FAILED", `login failed: HTTP ${response.status}`, response.status);
   }
   const body = (await response.json()) as {
     accessToken?: string;

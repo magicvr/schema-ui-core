@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   constructRequest,
   normalizeSelection,
+  type RequestConstructionResult,
 } from "@/protocol/conformance/request-construction";
 import {
   uploadFilesWithFetch,
@@ -317,7 +318,20 @@ async function runRequest(
       input.requestMapping = opts.requestMapping;
     }
   }
-  const constructed = constructRequest(input);
+  // W4 P1-1: constructRequest can throw on malformed schema values (e.g.
+  // serializeQueryValue rejects non-scalars). The UI call sites must never let
+  // that escape as an unhandled rejection / white screen — return a failed
+  // ActionResult so the caller surfaces it through the normal feedback channel.
+  let constructed: RequestConstructionResult;
+  try {
+    constructed = constructRequest(input);
+  } catch (error) {
+    return {
+      ok: false,
+      code: "REQUEST_CONSTRUCTION_FAILED",
+      message: error instanceof Error ? error.message : "request construction failed",
+    };
+  }
   if (!constructed.ok) {
     return { ok: false, code: constructed.code, message: `request construction failed (${constructed.path})` };
   }
@@ -416,12 +430,23 @@ async function runBatchRequest(
     }
   }
   const batchMapping = isRecord(item.batchMapping) ? item.batchMapping : undefined;
-  const constructed = constructRequest({
-    kind: "batchRequest",
-    action,
-    batchMapping,
-    selection: { keys: selection.keys, count: selection.count },
-  });
+  // W4 P1-1: constructRequest can throw on malformed schema values; never let
+  // that escape as an unhandled rejection — return a failed result instead.
+  let constructed: RequestConstructionResult;
+  try {
+    constructed = constructRequest({
+      kind: "batchRequest",
+      action,
+      batchMapping,
+      selection: { keys: selection.keys, count: selection.count },
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      code: "REQUEST_CONSTRUCTION_FAILED",
+      message: error instanceof Error ? error.message : "batch request construction failed",
+    };
+  }
   if (!constructed.ok) {
     return { ok: false, code: constructed.code, message: `batch request construction failed (${constructed.path})` };
   }
@@ -601,6 +626,8 @@ function SchemaCrudProvider({
         row: row ?? undefined,
         requestMapping,
         gateTargetId,
+      }).catch((error: unknown) => {
+        setFeedback(errorFeedback({ code: "ROW_ACTION_FAILED", message: String(error) }));
       });
     },
     [document, runRowAction],
@@ -631,14 +658,21 @@ function SchemaCrudProvider({
         });
         return;
       }
-      void runBatchRequest(document, context, fetcher, actionRef, item, current).then((result) => {
-        if (result.ok) {
-          setFeedback({ kind: "success", message: batchSuccessMessageFor(action, t) });
-          reloadList();
-        } else {
-          setFeedback(errorFeedback(result));
-        }
-      });
+      // W4 P1-1: runBatchRequest resolves (never rejects) for construction and
+      // network failures, but keep a catch so any unforeseen rejection still
+      // surfaces as feedback instead of an unhandled promise rejection.
+      void runBatchRequest(document, context, fetcher, actionRef, item, current)
+        .then((result) => {
+          if (result.ok) {
+            setFeedback({ kind: "success", message: batchSuccessMessageFor(action, t) });
+            reloadList();
+          } else {
+            setFeedback(errorFeedback(result));
+          }
+        })
+        .catch((error: unknown) => {
+          setFeedback(errorFeedback({ code: "BATCH_FAILED", message: String(error) }));
+        });
     },
     [document, context, fetcher, selection, reloadList, t],
   );
@@ -927,12 +961,25 @@ function useRecordSourcePrefill(
     const route = isRecord(context?.route)
       ? (context.route as { params?: Record<string, unknown>; query?: Record<string, unknown> })
       : undefined;
-    const constructed = constructRequest({
-      kind: "recordSource",
-      recordSource,
-      route: route ?? { params: {}, query: {} },
-      baseURL: "",
-    });
+    // W4 P1-1: constructRequest throws on malformed recordSource values (e.g.
+    // serializeQueryValue rejects non-scalars). This effect runs in a React
+    // useEffect — an uncaught throw would unmount the whole tree (no
+    // ErrorBoundary). Trap it into the error state instead.
+    let constructed: RequestConstructionResult;
+    try {
+      constructed = constructRequest({
+        kind: "recordSource",
+        recordSource,
+        route: route ?? { params: {}, query: {} },
+        baseURL: "",
+      });
+    } catch (error) {
+      setState({
+        status: "error",
+        message: `recordSource construction failed: ${error instanceof Error ? error.message : "unknown error"}`,
+      });
+      return;
+    }
     if (!constructed.ok) {
       setState({
         status: "error",

@@ -547,8 +547,11 @@ func TestUsersPasswordPolicyPreservesBytesAndRevokesRefresh(t *testing.T) {
 	req = bearer(t, access, http.MethodGet, "/api/accounts/me", "")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Fatalf("existing access token before TTL expiry = %d, want 200", rr.Code)
+	// W4 P0-3: a password change bumps token_version, so an access token issued
+	// at the older version is revoked immediately (previously it survived until
+	// its TTL expired).
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("existing access token after password change = %d, want 401 (revoked by token_version)", rr.Code)
 	}
 	if _, _, _, err := env.a.Login("password-user", password, now.Add(time.Minute)); !errors.Is(err, auth.ErrInvalidCredentials) {
 		t.Fatalf("old password login err = %v, want ErrInvalidCredentials", err)
@@ -628,5 +631,65 @@ func TestUsersOperationLogEvents(t *testing.T) {
 		} else if op.Detail == nil || *op.Detail != `{"username":"opuser"}` {
 			t.Fatalf("%s detail = %v, want username-only JSON", op.Event, op.Detail)
 		}
+	}
+}
+
+// W4 P0-3: changing a user's password bumps token_version, which revokes every
+// already-issued access token immediately (the auth middleware compares the
+// JWT's tv claim to the persisted value). A stolen access token signed before
+// the password change must stop working at once, not after the access TTL.
+func TestUsersPasswordChangeRevokesAccessToken(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+
+	// Create a user, log in as them → access token at token_version 0.
+	req := bearer(t, admin, http.MethodPost, "/api/users",
+		`{"username":"alice","name":"Alice","password":"old-secret","roles":["editor"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatalf("created user missing id: %v", created)
+	}
+	oldToken := env.login(t, "alice", "old-secret")
+
+	// The pre-change token works on a protected route.
+	probe := bearer(t, oldToken, http.MethodGet, "/api/users/"+id, "")
+	probeRR := httptest.NewRecorder()
+	env.mux.ServeHTTP(probeRR, probe)
+	if probeRR.Code != http.StatusOK {
+		t.Fatalf("pre-change access token status = %d, want 200", probeRR.Code)
+	}
+
+	// Admin resets alice's password (token_version bumps from 0 to 1).
+	req = bearer(t, admin, http.MethodPatch, "/api/users/"+id, `{"password":"new-secret"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("password patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// The old access token is now rejected immediately (revoked by version).
+	probe = bearer(t, oldToken, http.MethodGet, "/api/users/"+id, "")
+	probeRR = httptest.NewRecorder()
+	env.mux.ServeHTTP(probeRR, probe)
+	if probeRR.Code != http.StatusUnauthorized {
+		t.Fatalf("post-change access token status = %d, want 401 (revoked)", probeRR.Code)
+	}
+
+	// The new password works, and the old one no longer authenticates.
+	newToken := env.login(t, "alice", "new-secret")
+	if newToken == "" {
+		t.Fatal("login with new password failed")
+	}
+	oldLoginCode, _ := sendJSON(t, env.mux, http.MethodPost, "/api/auth/login",
+		`{"username":"alice","password":"old-secret"}`)
+	if oldLoginCode != http.StatusUnauthorized {
+		t.Fatalf("old password login = %d, want 401", oldLoginCode)
 	}
 }

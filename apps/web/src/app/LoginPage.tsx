@@ -87,7 +87,11 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
       await onLogin(username, password);
     } catch (err: unknown) {
       const code = err instanceof AuthError ? err.code : "LOGIN_UNKNOWN";
-      setError(t(loginErrorKey(code)));
+      // W4 P2-2: login.error.failed carries a `{status}` placeholder; the
+      // AuthError keeps the real HTTP status so it is interpolated instead of
+      // rendering the literal "{status}".
+      const params = err instanceof AuthError && err.status !== undefined ? { status: err.status } : undefined;
+      setError(t(loginErrorKey(code), params));
     } finally {
       setSubmitting(false);
     }

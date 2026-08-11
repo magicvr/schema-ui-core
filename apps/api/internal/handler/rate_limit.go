@@ -37,14 +37,19 @@ func newLoginRateLimiter(window time.Duration, max, capacity int) *loginRateLimi
 	}
 }
 
-// allow reports whether the key may attempt a login now. The call registers
-// nothing itself; the caller records a failure with record (or clears with
-// clear after a successful login).
+// allow reports whether the key may attempt a login now. It never creates a
+// new map entry (W4 P0-1): only record() registers a key, so the capacity
+// eviction in record() is actually reachable and the map stays bounded. An
+// absent key (no failures yet) is always allowed. For an existing key, stale
+// window entries are pruned in place before the limit check.
 func (l *loginRateLimiter) allow(key string, now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	cutoff := now.Add(-l.window)
-	list := l.attempts[key]
+	list, exists := l.attempts[key]
+	if !exists {
+		return true
+	}
 	kept := list[:0]
 	for _, t := range list {
 		if t.After(cutoff) {
@@ -59,17 +64,19 @@ func (l *loginRateLimiter) allow(key string, now time.Time) bool {
 	return true
 }
 
-// record registers one failed attempt for the key. Bounded: when the map
-// exceeds capacity the oldest key is evicted, so an attacker cannot exhaust
-// memory by spraying distinct client identities.
+// record registers one failed attempt for the key, creating the map entry if
+// needed. Bounded: when the map exceeds capacity the oldest key is evicted, so
+// an attacker cannot exhaust memory by spraying distinct client identities.
 func (l *loginRateLimiter) record(key string, now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if _, exists := l.attempts[key]; !exists {
 		if len(l.attempts) >= l.capacity {
-			oldest := l.order[0]
-			l.order = l.order[1:]
-			delete(l.attempts, oldest)
+			if len(l.order) > 0 {
+				oldest := l.order[0]
+				l.order = l.order[1:]
+				delete(l.attempts, oldest)
+			}
 		}
 		l.order = append(l.order, key)
 	}

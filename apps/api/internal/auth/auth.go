@@ -156,9 +156,10 @@ func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error)
 }
 
 // issue creates a fresh access/refresh pair for an authenticated user and
-// persists the (hashed) opaque refresh token.
+// persists the (hashed) opaque refresh token. The access token carries the
+// user's current token_version so a later password change revokes it.
 func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, string, account.User, error) {
-	access, err := SignAccessToken(a.secret, u.ID, a.accessTTL, now)
+	access, err := SignAccessToken(a.secret, u.ID, u.TokenVersion, a.accessTTL, now)
 	if err != nil {
 		return "", "", account.User{}, err
 	}
@@ -183,36 +184,57 @@ func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, strin
 	return access, raw, acct, nil
 }
 
+// accessClaims extends the registered claims with the user's token_version
+// (W4 P0-3). The middleware rejects a token whose version is older than the
+// persisted value, so a password change (which bumps the version) revokes
+// every already-signed access token immediately instead of leaving a
+// ~accessTTL window where a stolen token still works.
+type accessClaims struct {
+	TokenVersion int `json:"tv"`
+	jwt.RegisteredClaims
+}
+
 // SignAccessToken mints a short-lived HMAC-SHA256 access token whose subject is
-// the user id.
-func SignAccessToken(secret []byte, userID string, ttl time.Duration, now time.Time) (string, error) {
-	claims := jwt.RegisteredClaims{
-		Subject:   userID,
-		IssuedAt:  jwt.NewNumericDate(now),
-		NotBefore: jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+// the user id and which carries the user's current token_version.
+func SignAccessToken(secret []byte, userID string, tokenVersion int, ttl time.Duration, now time.Time) (string, error) {
+	claims := accessClaims{
+		TokenVersion: tokenVersion,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secret)
 }
 
-// ParseAccessToken verifies signature and expiry, returning the subject user id.
-// Fail-closed: any parse, method or expiry failure is an error.
-func ParseAccessToken(secret []byte, raw string) (string, error) {
-	token, err := jwt.ParseWithClaims(raw, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
+// ParsedAccessToken is the verified access-token identity: subject user id and
+// the token_version claim carried at issue time.
+type ParsedAccessToken struct {
+	UserID       string
+	TokenVersion int
+}
+
+// ParseAccessToken verifies signature and expiry, returning the subject user id
+// and token_version. Fail-closed: any parse, method or expiry failure is an
+// error.
+func ParseAccessToken(secret []byte, raw string) (ParsedAccessToken, error) {
+	token, err := jwt.ParseWithClaims(raw, &accessClaims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("auth: unexpected signing method %v", t.Header["alg"])
 		}
 		return secret, nil
 	}, jwt.WithExpirationRequired())
 	if err != nil {
-		return "", err
+		return ParsedAccessToken{}, err
 	}
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	claims, ok := token.Claims.(*accessClaims)
 	if !ok || !token.Valid {
-		return "", ErrInvalidToken
+		return ParsedAccessToken{}, ErrInvalidToken
 	}
-	return claims.Subject, nil
+	return ParsedAccessToken{UserID: claims.Subject, TokenVersion: claims.TokenVersion}, nil
 }
 
 // HashPassword hashes a plaintext password with bcrypt at the given cost.
@@ -318,7 +340,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no access token")
 			return
 		}
-		userID, err := ParseAccessToken(a.secret, raw)
+		parsed, err := ParseAccessToken(a.secret, raw)
 		if err != nil {
 			if a.devSession {
 				a.injectDevSession(w, r, next)
@@ -327,13 +349,24 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired access token")
 			return
 		}
-		u, err := a.repository.UserByID(userID)
+		u, err := a.repository.UserByID(parsed.UserID)
 		if err != nil {
 			if a.devSession {
 				a.injectDevSession(w, r, next)
 				return
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "unknown access token subject")
+			return
+		}
+		// W4 P0-3: a password change bumps the user's token_version; an access
+		// token signed at the older version is rejected immediately. Stale
+		// tokens and unknown subjects both fail closed as UNAUTHENTICATED.
+		if parsed.TokenVersion != u.TokenVersion {
+			if a.devSession {
+				a.injectDevSession(w, r, next)
+				return
+			}
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "access token superseded")
 			return
 		}
 		acct, err := a.accountFromUser(u)

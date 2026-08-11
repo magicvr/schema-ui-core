@@ -21,7 +21,7 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 		}
 
 		rows, err := tx.Query(
-			`SELECT id, username, name, roles, password_hash, created_at, updated_at FROM users`+where+
+			`SELECT id, username, name, roles, password_hash, token_version, created_at, updated_at FROM users`+where+
 				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, id ASC`+
 				` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
@@ -119,8 +119,8 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		var rolesJSON string
 		var createdAt, updatedAt int64
 		err := tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, created_at, updated_at FROM users WHERE id = ?`, id,
-		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &createdAt, &updatedAt)
+			`SELECT id, username, name, roles, password_hash, token_version, created_at, updated_at FROM users WHERE id = ?`, id,
+		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &createdAt, &updatedAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -178,9 +178,17 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		if nextUpdatedAt <= current.UpdatedAt.Unix() {
 			nextUpdatedAt = current.UpdatedAt.Unix() + 1
 		}
+		// W4 P0-3: a password change bumps the user's token_version so every
+		// already-issued access token (which carries the older version) is
+		// rejected by the auth middleware immediately. Atomic with the same
+		// transaction that persists the new hash and revokes refresh tokens.
+		nextTokenVersion := current.TokenVersion
+		if patch.PasswordHash != nil {
+			nextTokenVersion = current.TokenVersion + 1
+		}
 		if _, err := tx.Exec(
-			`UPDATE users SET name = ?, roles = ?, password_hash = ?, updated_at = ? WHERE id = ?`,
-			name, string(rolesBytes), passwordHash, nextUpdatedAt, id,
+			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, updated_at = ? WHERE id = ?`,
+			name, string(rolesBytes), passwordHash, nextTokenVersion, nextUpdatedAt, id,
 		); err != nil {
 			return fmt.Errorf("update user: %w", err)
 		}

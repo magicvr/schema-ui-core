@@ -34,6 +34,10 @@ type User struct {
 	Name         string
 	Roles        []string
 	PasswordHash string
+	// TokenVersion is a per-user monotonic counter (W4 P0-3): incremented on
+	// password change; the auth middleware rejects access-token JWTs issued at
+	// an older version, revoking already-signed tokens immediately.
+	TokenVersion int
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

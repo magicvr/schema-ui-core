@@ -270,5 +270,6 @@
   "error.invalidFile": "文件内容无效",
   "error.unsupportedFileType": "不允许的文件类型",
   "error.storageUnavailable": "存储服务暂不可用",
-  "error.rateLimited": "登录失败次数过多，请稍后重试"
+  "error.rateLimited": "登录失败次数过多，请稍后重试",
+  "error.uploadQuotaExceeded": "上传被拒绝：超出每用户配额"
 }

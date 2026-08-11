@@ -36,6 +36,7 @@ func StaticDevSession() Session {
 				"roles.read", "roles.write", "roles.assign",
 				"settings.read", "settings.write",
 				"operations.read",
+				"files.write", // W4 P0-2: admin-only upload gate, parity with seed
 			},
 		},
 		Features: map[string]bool{

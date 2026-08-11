@@ -84,6 +84,10 @@ function BaseInput({
         value={value}
         disabled={disabled}
         placeholder={placeholder}
+        // W4 P2-2: password fields in schema-driven forms (change/reset) must
+        // not be auto-filled from a saved login password — declare a new
+        // password context so the browser suggests a fresh one.
+        autoComplete={type === "password" ? "new-password" : undefined}
         onChange={(event) => onChange(event.target.value)}
       />
     </div>

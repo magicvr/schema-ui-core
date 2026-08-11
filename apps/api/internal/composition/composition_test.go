@@ -435,8 +435,8 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		wantPermissions int
 		wantNavigation  int
 	}{
-		{profile: "mvp", wantPermissions: 5, wantNavigation: 2},
-		{profile: "admin", wantPermissions: 8, wantNavigation: 4},
+		{profile: "mvp", wantPermissions: 6, wantNavigation: 2},
+		{profile: "admin", wantPermissions: 9, wantNavigation: 4},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
@@ -37,6 +38,32 @@ const maxUploadBytes = 8 << 20
 // allow-list is checked against the server-detected content type, never the
 // client-declared header.
 var uploadAllowedTypes = strings.TrimSpace(os.Getenv("UPLOAD_ALLOWED_TYPES"))
+
+// Per-user upload quotas (W4 P0-2): the permission gate stops a low-privilege
+// viewer from filling the disk, but a compromised files.write holder could
+// still pump 8 MiB objects indefinitely. These best-effort limits bound each
+// user's stored file count and total bytes. They are enforced by scanning the
+// upload directory's owner meta (owner-only contract already guarantees every
+// stored object records its uploader); a corrupt/unreadable meta entry counts
+// toward the total conservatively so a failed read cannot bypass the quota.
+var (
+	// maxUserFiles bounds the number of stored objects per uploader.
+	maxUserFiles = envPositiveInt("UPLOAD_MAX_FILES_PER_USER", 1000)
+	// maxUserBytes bounds the total stored bytes per uploader (default 256 MiB).
+	maxUserBytes = envPositiveInt("UPLOAD_MAX_BYTES_PER_USER", 256<<20)
+)
+
+func envPositiveInt(name string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
+}
 
 // dangerousInlineTypes are MIME types browsers may render inline as active
 // (script-bearing) content. They are rejected regardless of any allow-list:
@@ -112,11 +139,87 @@ func (s *uploadStore) load(id string) ([]byte, map[string]string, error) {
 	return body, meta, nil
 }
 
-// RegisterUpload mounts the upload/file endpoints behind the auth middleware.
+// quotaReached reports whether storing one more object (with the given size)
+// for ownerID would exceed the per-user file count or total byte quota (W4
+// P0-2). It scans the upload directory's owner meta; a corrupt or unreadable
+// meta entry still counts toward the total conservatively, so a failed read
+// cannot bypass the limit. Scanning is O(files) per upload — acceptable for an
+// admin tool where the permission gate already bounds who can upload.
+func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string, reached bool) {
+	if maxUserFiles <= 0 && maxUserBytes <= 0 {
+		return "", false // quotas disabled
+	}
+	entries, err := os.ReadDir(s.dir)
+	if err != nil {
+		// Dir absent = no stored files; a real read error fails closed (count
+		// toward quota rather than silently allowing an unbounded store).
+		if os.IsNotExist(err) {
+			return "", false
+		}
+		return "quota unavailable", true
+	}
+	files := 0
+	bytes := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(s.dir, entry.Name()))
+		if err != nil {
+			files++
+			bytes += maxUploadBytes // conservative: unreadable meta counts max
+			continue
+		}
+		meta := map[string]string{}
+		if err := json.Unmarshal(raw, &meta); err != nil {
+			files++
+			bytes += maxUploadBytes
+			continue
+		}
+		if meta["owner"] != ownerID {
+			continue
+		}
+		// The stored object is the meta name minus the ".meta.json" suffix;
+		// stat it for the real byte count so the byte quota is accurate.
+		fileSize := 1 << 20 // nominal minimum when stat fails
+		if info, err := os.Stat(filepath.Join(s.dir, strings.TrimSuffix(entry.Name(), ".meta.json"))); err == nil {
+			fileSize = int(info.Size())
+		}
+		files++
+		bytes += fileSize
+	}
+	if maxUserFiles > 0 && files+1 > maxUserFiles {
+		return "per-user file count quota exceeded", true
+	}
+	if maxUserBytes > 0 && bytes+nextSize > maxUserBytes {
+		return "per-user byte quota exceeded", true
+	}
+	return "", false
+}
+
+// RegisterUpload mounts the upload/file endpoints behind the auth middleware
+// and the files.write permission gate (W4 P0-2): any authenticated user can
+// read their own downloads (owner-only), but storing a new object requires the
+// files.write key — default-held by admin only, so a low-privilege viewer
+// account cannot fill the disk. The gate mirrors the resource-factory
+// permission model (requirePermission, fail-closed 403 for authenticated users
+// without the key).
 func RegisterUpload(mux *http.ServeMux, a authMiddleware, dir string) {
 	store := &uploadStore{dir: dir}
-	mux.Handle("POST /api/upload", a.Middleware(store.upload()))
+	mux.Handle("POST /api/upload", a.Middleware(uploadPermissionGate(store.upload())))
 	mux.Handle("GET /api/files/{id}", a.Middleware(store.file()))
+}
+
+// uploadPermissionGate wraps the upload handler with the files.write
+// permission check. It is an http.Handler so it composes with the auth
+// middleware exactly like the resource factory's permission gates.
+func uploadPermissionGate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "files.write"); !ok {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // authMiddleware is the minimal surface the upload handler needs; the concrete
@@ -185,6 +288,12 @@ func (s *uploadStore) upload() http.Handler {
 				writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
 				return
 			}
+		}
+		// W4 P0-2: per-user quota gate before storage. Combined with the
+		// files.write permission gate, a single account cannot fill the disk.
+		if reason, reached := s.quotaReached(user.ID, len(body)); reached {
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "UPLOAD_QUOTA_EXCEEDED", "upload rejected: "+reason)
+			return
 		}
 		id, err := s.save(header.Filename, detected, user.ID, body)
 		if err != nil {

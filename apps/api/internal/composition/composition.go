@@ -208,6 +208,18 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "", Detail: fmt.Sprintf("register contributions: %v", err)}
 	}
+	// W4 P0-2: upload is a centrally-registered shared-capability endpoint (no
+	// owning module provider), so its files.write permission is contributed
+	// centrally here. Default grant is admin-only (PolicyAdmin); a delegated
+	// role holding files.write can still upload (RBAC委派对称).
+	set.Permissions = append(set.Permissions, kernel.PermissionContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.server-registration", Key: "files.write"},
+		Permission:           "files.write",
+		Resource:             "files",
+		Action:               "write",
+		PolicyID:             authsessiondata.PolicyAdmin,
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	})
 	if err := authsessiondata.Reconcile(context.Background(), st, set.Permissions, set.Navigation); err != nil {
 		_ = st.Close()
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("reconcile system data: %v", err)}

@@ -288,6 +288,49 @@ func TestLoginRateLimiterUnit(t *testing.T) {
 	}
 }
 
+// W4 P0-1 regression: allow() must NOT create a map entry. The login path is
+// allow() before record(); if allow() registered the key first, record()'s
+// capacity eviction would be dead code (exists is always true) and a spray of
+// distinct usernames would grow the map without bound → OOM.
+func TestLoginRateLimiterAllowDoesNotRegisterKey(t *testing.T) {
+	limiter := newLoginRateLimiter(15*time.Minute, 1, 2)
+	now := time.Now().UTC()
+
+	// allow() on a fresh key must be allowed AND leave the map untouched.
+	if !limiter.allow("10.0.0.1|spray", now) {
+		t.Fatal("fresh key must be allowed")
+	}
+	if len(limiter.attempts) != 0 {
+		t.Fatalf("allow() must not register a key, got %d entries", len(limiter.attempts))
+	}
+	if len(limiter.order) != 0 {
+		t.Fatalf("allow() must not touch the eviction order, got %d", len(limiter.order))
+	}
+
+	// Simulate the real login path: allow() then record() for many distinct
+	// usernames. Capacity 2 means only the two newest keys survive.
+	spray := newLoginRateLimiter(15*time.Minute, 1, 2)
+	for _, user := range []string{"a", "b", "c", "d"} {
+		key := "10.0.0.1|" + user
+		if !spray.allow(key, now) {
+			t.Fatalf("fresh key %s must be allowed", user)
+		}
+		spray.record(key, now)
+	}
+	if len(spray.attempts) != 2 {
+		t.Fatalf("sprayed map must stay at capacity 2, got %d entries", len(spray.attempts))
+	}
+	if !spray.allow("10.0.0.1|a", now) {
+		t.Fatal("oldest evicted key must be allowed again")
+	}
+	if !spray.allow("10.0.0.1|b", now) {
+		t.Fatal("second-oldest evicted key must be allowed again")
+	}
+	if spray.allow("10.0.0.1|d", now) {
+		t.Fatal("newest key must still hold its failure")
+	}
+}
+
 // D-001 P1: behind a trusted reverse proxy (loopback/private peer) the
 // X-Real-IP header identifies the real client; it is never trusted from an
 // untrusted peer.

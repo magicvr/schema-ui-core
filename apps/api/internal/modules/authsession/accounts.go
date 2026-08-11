@@ -42,7 +42,7 @@ func (r *Repository) CreateUser(user User) error {
 func (r *Repository) UserByUsername(username string) (*User, error) {
 	return r.userBy("get user by username", func(tx *sql.Tx) *sql.Row {
 		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, created_at, updated_at
 			 FROM users WHERE username = ?`, username)
 	})
 }
@@ -51,7 +51,7 @@ func (r *Repository) UserByUsername(username string) (*User, error) {
 func (r *Repository) UserByID(id string) (*User, error) {
 	return r.userBy("get user by id", func(tx *sql.Tx) *sql.Row {
 		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, created_at, updated_at
 			 FROM users WHERE id = ?`, id)
 	})
 }
@@ -170,7 +170,7 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
 	var createdAt, updatedAt int64
-	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &createdAt, &updatedAt)
+	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &createdAt, &updatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
