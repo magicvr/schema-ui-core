@@ -23,8 +23,9 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 整改后补 self；矩阵变更倾向 cross（P-004） |
+| A-001 | 2026-08-11 | self | W1 方案冻结设计审计（design-plan） | conditional | 1（F-001） | `03-audit/A-001-w1-plan-freeze-design.md` |
+| A-002 | 2026-08-11 | independent | W1 方案冻结独立审计（grok-build@grok-4.5） | conditional | 4（F-001～F-004） | `03-audit/A-002-w1-plan-freeze-independent-grok.md` |
 
 ## 结论状态
 
-方案已冻结（D-002）。下一步：拆分与迁移实施；触及模块矩阵/Manifest 装配语义，实施前按 P-004 定审计模式与 provider。
+方案已冻结（D-002）。cross 审计完成：self A-001 + independent A-002 均 **conditional**，**无冲突**（同向收敛）。required findings 合并为：**R1 homePageRef 机制（A/B 二选一）**、**R2 home 推导算法表**、**R3 dev.examples 模块契约**、**R4 go 暂挂触发/恢复留痕**。待用户确认响应方案后写 D-003（实施冻结附录）并闭合；再进入拆分实施。
