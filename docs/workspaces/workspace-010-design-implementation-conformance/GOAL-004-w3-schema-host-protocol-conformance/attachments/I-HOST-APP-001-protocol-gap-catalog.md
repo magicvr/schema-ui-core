@@ -3,9 +3,9 @@ id: I-HOST-APP-001
 title: Host/App 协议缺口与业务候选目录
 status: active
 created: 2026-08-12
-updated: 2026-08-12
+updated: 2026-08-13
 parent: GOAL-004-w3-schema-host-protocol-conformance
-version: 0.1.0
+version: 0.2.0
 ---
 
 # I-HOST-APP-001 · Host/App 协议缺口与业务候选目录
@@ -27,6 +27,130 @@ version: 0.1.0
 | `explicitly-out` | 协议明确说明不负责，并指出所属层；不是静默遗漏 |
 
 优先级只表示建议进入协议设计的顺序：`P0` 为当前整改或 Host 基线所需，`P1` 为常见业务能力，`P2` 为合理扩展候选。所有 P1/P2 仍须在 S2 得到处置，但不自动要求同一版本全部成为 mandatory capability。
+
+## 1b. 上游 H0 处置同步（2026-08-13）
+
+上游 `schema-ui-docs` 仓的 [ADR-0034 D10/D6](../../../../../../schema-ui-docs/docs/decisions/0034-host-app-interoperability-boundary.md)
+（`status: proposed`，2026-08-12）已对 §3 全部 95 个候选给出逐项处置。**本目录记录的处置是上游 H0 提案阶段
+评估，不是本目录 §1 定义的 S2 出口。** 两边标签含义按 ADR-0034 D10 同步如下：
+
+| 标签 | 本目录 §1 的 S2 定义 | 上游 H0 含义（本次同步所用） | 本目录 S2 对齐动作 |
+|------|----------------------|------------------------------|--------------------|
+| `adopt-now` | 本次协议定义完整数据形状、状态/错误、安全边界、能力声明和 fixtures | 已由现有权威或 ADR-0035～0037 提案裁定；若只覆盖核心子集，行内明确残余 reserve/out | 只有对应 ADR `accepted` 且 shape/state/security/fixtures 齐备后，才能在目录中保持 `adopt-now` |
+| `reserve-extension` | 本次定义稳定 capability/extension point 与 fail-closed 行为，具体载荷后续版本补齐 | 认可独立问题域，但**不创建**空 capability/extension point | 本目录暂记“上游 deferred”；未来 ADR 给出稳定 capability/extension point 后才满足 S2 定义 |
+| `explicitly-out` | 协议明确说明不负责，并指出所属层；不是静默遗漏 | Schema-UI 核心明确不负责，并指出 Host/身份/安全/产品层 | 可直接同步为本目录 `explicitly-out` |
+
+因此：
+
+- §1c 的 `reserve-extension` 行 **一律视为“上游 deferred”**，不得写作“已保留 capability / extension point”；
+- §1c 的 `adopt-now` 行在对应 ADR（0035/0036/0037）accepted 之前，**不满足** §1 的 S2 adopt 定义；
+- §1c 的 `explicitly-out` 行可直接作为本目录处置使用；
+- 每行处置的裁定理由以上游 ADR-0034 D10 表为权威，本目录不复述全文，防止双权威漂移；
+- IMP-001～004 的提案级裁定见 ADR-0034 D6（§1c 已投影）。
+
+本同步不声称已满足 §6 的 S2 出口门禁；禁止用空 capability 或 deferred 标签让 checklist 表面闭合。
+
+## 1c. 逐项上游处置对照（ADR-0034 D10 · H0）
+
+> 处置取值与残余说明逐字对照上游 ADR-0034 D10 裁定列；ADR 仍为 `proposed`，本表随上游 accept 结果复审。
+
+| ID | 上游处置（H0） | 残余 / 对齐说明 |
+|----|----------------|-----------------|
+| AUTH-001 | `reserve-extension` | 可发现认证方式需独立 auth profile；首批不定义 provider wire |
+| AUTH-002 | `adopt-now` | ADR-0035 定义 Host 归一化 auth state 与 principal snapshot；不定义 session endpoint |
+| AUTH-003 | `explicitly-out` | token refresh/rotation/replay/clock skew 属 Host/身份平台 |
+| AUTH-004 | `explicitly-out` | login/logout/revoke command 与设备 scope 属身份服务 |
+| AUTH-005 | `adopt-now` | ADR-0036 定义 same-app return intent、固定 query allowlist、有效期与循环阻断 |
+| AUTH-006 | `reserve-extension` | MFA/step-up challenge 需独立安全 profile |
+| AUTH-007 | `reserve-extension` | OIDC/SAML redirect/callback 需独立安全 profile |
+| AUTH-008 | `reserve-extension` | 密码、邀请与账号恢复需独立身份 profile |
+| AUTH-009 | `reserve-extension` | session/device projection 与 revoke action 后续立项 |
+| AUTH-010 | `reserve-extension` | delegation/impersonation 需审计与安全 profile |
+| AUTH-011 | `explicitly-out` | Cookie/Bearer/CSRF/CORS 为部署安全 profile；页面协议继续不携带凭据 |
+| BOOT-001 | `adopt-now` | ADR-0035 定义阶段顺序、ready、取消与手动/定时重试入口 |
+| BOOT-002 | `adopt-now` | 复用 manifest discovery，ADR-0035 增加可选 bootstrap discovery |
+| BOOT-003 | `adopt-now` | 复用严格版本/capability 协商，不支持 partial support |
+| BOOT-004 | `adopt-now` | ADR-0035 定义 manifest source/raw-byte digest identity；commit/bundle provenance 留给 ADR-0037 evidence |
+| BOOT-005 | `adopt-now` | ADR-0035 定义 ETag/cache partition 与完整实例重建；**残余：runtime invalidation event 仍 `reserve-extension`** |
+| BOOT-006 | `reserve-extension` | build/environment/region identity 后续 profile；不得含 secret |
+| BOOT-007 | `adopt-now` | ADR-0035 定义 maintenance/upgrade-required/degraded 终态 |
+| BOOT-008 | `reserve-extension` | tenant/workspace preselection 与 context 轨道一并立项 |
+| BOOT-009 | `reserve-extension` | feature provenance 需独立 profile，且不得替代 permission |
+| BOOT-010 | `reserve-extension` | offline/cached-read/mutation policy 后续立项 |
+| BRAND-001 | `adopt-now` | 复用 manifest `app.name/nameKey/logo`；**残余：favicon/alt/empty 增量仍 `reserve-extension`** |
+| BRAND-002 | `adopt-now` | 复用现有 logo scheme 约束；ADR-0035/0036 对新 URL 字段补 CSP-safe 形态与失败回退；**残余：MIME/尺寸/比例仍 `reserve-extension`** |
+| BRAND-003 | `reserve-extension` | locale/theme/timezone default 归 `app.profile` 候选 |
+| BRAND-004 | `reserve-extension` | tenant branding 与 tenant context 一并立项 |
+| BRAND-005 | `reserve-extension` | typed legal/support/footer links 后续 app profile |
+| BRAND-006 | `reserve-extension` | config-change event 与 BOOT-005 invalidation 一并立项 |
+| BRAND-007 | `reserve-extension` | email/export/print channel profile 不进首批 |
+| SHELL-001 | `adopt-now` | 复用 `top/sidebar/user`；**残余：footer/custom/responsive ownership 不进入核心** |
+| SHELL-002 | `adopt-now` | 复用 `labelKey` 命中优先、字面 fallback；provider 只可生成最终 manifest |
+| SHELL-003 | `adopt-now` | 复用一层 group 与数组序；**残余：badge/live order 仍 `reserve-extension`** |
+| SHELL-004 | `adopt-now` | 复用应用内 path 与既有 `https:` asset 约束；**残余：通用 external link policy 后续立项** |
+| SHELL-005 | `adopt-now` | 复用 route/deep link/唯一匹配，ADR-0036 补 global 404；**残余：旧 URL redirect rules 仍 `reserve-extension`** |
+| SHELL-006 | `reserve-extension` | title/breadcrumb ownership 独立立项 |
+| SHELL-007 | `adopt-now` | 复用 `user` slot；**残余：profile/logout command 仍由 Host path/profile 负责** |
+| SHELL-008 | `reserve-extension` | context switcher 与 tenancy 轨道一并立项 |
+| SHELL-009 | `reserve-extension` | global search/command provider 独立立项 |
+| SHELL-010 | `reserve-extension` | dirty signal/guard 与 action lifecycle 独立立项 |
+| SHELL-011 | `reserve-extension` | update/safe reload 与 build identity 独立立项 |
+| SHELL-012 | `explicitly-out` | 不建立通用 Host extension namespace；未知核心字段继续 fail-closed |
+| PREF-001 | `reserve-extension` | locale/theme/timezone precedence 归 `app.profile` |
+| PREF-002 | `reserve-extension` | preference persistence/sync/conflict 后续 profile |
+| PREF-003 | `reserve-extension` | catalog discovery/version/fallback 后续 profile |
+| PREF-004 | `reserve-extension` | date/number/currency format source 后续 profile |
+| PREF-005 | `reserve-extension` | RTL/direction capability 后续 profile |
+| PREF-006 | `reserve-extension` | density/contrast/motion/font preference 后续 profile |
+| ERROR-001 | `adopt-now` | ADR-0036 定义 Host failure result；不替代 backend `{code,message}` |
+| ERROR-002 | `adopt-now` | ADR-0036 定义 Host-level transport/HTTP 提升矩阵；局部 409/422/其它 4xx/cancel 复用既有语义，不进入 Host result |
+| ERROR-003 | `adopt-now` | ADR-0035/0036 定义 bootstrap/protocol terminal failure |
+| ERROR-004 | `adopt-now` | ADR-0036 定义 auth/reauth/forbidden/return-intent，保持 401/403 既有顺序 |
+| ERROR-005 | `adopt-now` | ADR-0036 区分 route 404 与 resource 404 |
+| ERROR-006 | `adopt-now` | 复用现有字段错误映射；ADR-0036 只补 Host focus/announce 义务 |
+| ERROR-007 | `adopt-now` | ADR-0036 定义 retry hint/Retry-After；实际 mutation retry 复用既有 policy |
+| ERROR-008 | `adopt-now` | ADR-0036 定义 crash boundary 的安全 fallback/diagnostic/recovery |
+| ERROR-009 | `adopt-now` | ADR-0035 用 capability 收窄表达 degraded；**残余：通用 read-only 业务模式后续立项** |
+| UX-001 | `adopt-now` | 复用 toast outcome；**残余：duration/dedupe/actionable 生命周期仍 `reserve-extension`** |
+| UX-002 | `adopt-now` | 复用 modal/closeModal；**残余：drawer/stack/deep-link ownership 仍 `reserve-extension`** |
+| UX-003 | `adopt-now` | 复用 confirm；**残余：prompt/required-input 增量后续立项** |
+| UX-004 | `reserve-extension` | notification center 独立产品/协议包 |
+| UX-005 | `reserve-extension` | clipboard/share/print/export 分别按命令与敏感数据边界立项 |
+| UX-006 | `reserve-extension` | background job 状态/transport 独立立项 |
+| UX-007 | `reserve-extension` | global operation identity/cancel/blocking 独立立项 |
+| FILE-001 | `adopt-now` | 复用 ADR-0012 upload；scan/processing 不回写现有 upload 成功语义 |
+| FILE-002 | `reserve-extension` | download Action、authz、filename/range 需独立 ADR |
+| FILE-003 | `reserve-extension` | preview/media sandbox 与 fallback download 独立 profile |
+| FILE-004 | `reserve-extension` | malware scan/quarantine 状态机独立 profile |
+| FILE-005 | `reserve-extension` | resumable session/chunks/checksum 独立 profile |
+| RT-001 | `reserve-extension` | SSE/WebSocket discovery/auth/resume 独立 transport profile |
+| RT-002 | `reserve-extension` | cache/data invalidation event 与 BOOT-005/BRAND-006 一并立项 |
+| RT-003 | `reserve-extension` | optimistic concurrency/conflict 独立 data/action ADR |
+| TENANT-001 | `reserve-extension` | tenant/org discovery 与选择独立 app profile |
+| TENANT-002 | `reserve-extension` | context switch 原子 invalidation 独立 lifecycle |
+| TENANT-003 | `reserve-extension` | entitlement/license provenance 独立且不得伪装 permission |
+| TENANT-004 | `reserve-extension` | region/data residency context 独立隐私 profile |
+| OBS-001 | `adopt-now` | ADR-0036 定义可安全展示的 correlation refs；不定义日志后端 |
+| OBS-002 | `reserve-extension` | telemetry envelope/sampling/consent 独立 profile |
+| OBS-003 | `reserve-extension` | actor/resource/session audit link 独立审计 profile |
+| SEC-001 | `adopt-now` | ADR-0035/0036 约束新 URL/return intent；**残余：全局既有字段 trusted URL 统一仍 `reserve-extension`** |
+| SEC-002 | `adopt-now` | ADR-0035/0036 定义新对象 no-secret/cache partition/redaction；**残余：全局数据分类后续 profile** |
+| SEC-003 | `adopt-now` | 复用现有“UI visibility 不替代服务端授权”规则 |
+| A11Y-001 | `adopt-now` | ADR-0036 定义 Host failure landmark/focus/restore 最低义务 |
+| A11Y-002 | `adopt-now` | ADR-0036 定义 Host failure/retry live-region；通用 job/loading 另案 |
+| A11Y-003 | `reserve-extension` | 完整 menu/table/drawer keyboard contract 后续评审 |
+| A11Y-004 | `reserve-extension` | contrast/motion/direction capability 后续评审 |
+| GOV-001 | `adopt-now` | ADR-0037 定义 machine-readable capability registry/依赖与 claim support |
+| GOV-002 | `explicitly-out` | 不开放通用扩展命名空间；跨实现扩展走登记字段 + capability |
+| GOV-003 | `adopt-now` | ADR-0037 registry 定义 since/deprecated/removed 与 suite mapping；迁移按版本轨道交付 |
+| GOV-004 | `adopt-now` | ADR-0037 将 structural/semantic/behavioral suite coverage 绑定 claim |
+| GOV-005 | `adopt-now` | 协议固定对象继续封闭；业务 API 是否封闭不由 Schema-UI 反向裁定 |
+| GOV-006 | `adopt-now` | 复用 manifest `*Key` 命中优先、字面 fallback；禁止消费阶段双源覆写 |
+| GOV-007 | `adopt-now` | ADR-0037 定义 claim、suite/digest 与 evidence 制品 |
+| IMP-001 | `explicitly-out` | 当前 Settings PATCH 是消费者业务 API，不是现行协议 request object（ADR-0034 D6） |
+| IMP-002 | `adopt-now` | 按 manifest `*Key`/fallback 单一最终投影修复，不新增 provider 消费权威（ADR-0034 D6） |
+| IMP-003 | `adopt-now` | ADR-0035～0037 新对象的生产入口必须执行结构/语义验证并消费同一 fixtures（ADR-0034 D6） |
+| IMP-004 | `reserve-extension` | row selection 到 drawer/detail 的 ownership 需独立 overlay ADR（ADR-0034 D6） |
 
 ## 2. 初步分类结论
 
@@ -232,7 +356,7 @@ version: 0.1.0
 
 ## 6. S2/S3 出口门禁
 
-> 以下均为未来出口条件，不是已完成事实。截至 2026-08-12，S2/S3 均未通过，I-003/I-005 仍为 `open`，且尚未发生正式 Goal Audit。
+> 以下均为未来出口条件，不是已完成事实。截至 2026-08-13，S2/S3 均未通过，I-003/I-005 仍为 `open`，且尚未发生正式 Goal Audit。
 
 S2 方案冻结前必须满足：
 
@@ -240,6 +364,12 @@ S2 方案冻结前必须满足：
 - [ ] P0 项有 schema/状态机/能力/错误/安全/fixtures 的可核对提案；
 - [ ] IMP-001～004 已被新协议裁定为实现偏离或合法 Host extension；
 - [ ] 完成 `cross` 方案审视，required findings 已合法闭合。
+
+**H0 同步状态（2026-08-13）：** §1c 已按上游 ADR-0034 D10/D6（`proposed`）为全部 95 行同步处置列，
+第 1 项因此在 **H0 上游评估层面**具备输入；但 S2 语义要求 `adopt-now` 行具备完整 shape/state/security/
+fixtures（须待 ADR accepted 与 H2 交付），`reserve-extension` 行具备稳定 capability/extension point（当前
+一律记为“上游 deferred”），故 S2 门禁整体仍未达成，四个复选框保持未勾选。禁止以 H0 处置列或 deferred
+标签冒充 S2 出口。
 
 S3 宣称“新协议到手”前必须满足：
 
