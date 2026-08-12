@@ -15,11 +15,11 @@ version: 0.1.1
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | I-001 2.7.0 覆盖/偏离基线 | collecting | 初始目录已落附件；S2 冻结前须逐项闭环 |
-| I-002 候选处置 | collecting | 上游 H0 处置已同步（ADR-0034 D10，proposed）；S2 冻结前待 ADR accepted |
-| I-003 新协议到手 | open · **阻断 S4** | 未发布、未固定 |
+| I-002 候选处置 | verified | ADR-0034–0037 accepted（2026-08-13），D10 95/95 处置权威齐备；S2 方案级 cross 审视待执行 |
+| I-003 新协议到手 | verified | v2.8.0 发布（tag `v2.8.0` @ `593f625`）+ 本仓 `provenance-v2.8.json` 正式 pin（E-004）；停止线解除 |
 | I-004 independent provider | verified | 用户指定 `grok build`（grok 4.5，reasoning high）；self=A-001，independent=A-002 已落盘 |
-| I-005 兼容/迁移规则 | open | S3 前 required |
-| I-006 争议语义归属 | open | S2 前 required |
+| I-005 兼容/迁移规则 | collecting | 上游已交付 migration/兼容矩阵/弃用机制/fixtures；本仓 S3 台账录入收尾中 |
+| I-006 争议语义归属 | verified | 上游裁定落盘（ADR-0034 D6 IMP-004 保留独立 ADR + D7 reserve 不冒充） |
 
 ## 意见台账索引
 

@@ -50,7 +50,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 |------|--------|--------|------|
 | W1 | GOAL-002-w1-examples-optional-module | **done**（6/6 · 2026-08-11 关门） | 范例面拆出为可选模块 `dev.examples`；VP-008 `go` 已暂挂并在波次关门时**留痕恢复**（A-006） |
 | W2 | GOAL-003-demo-profile | **done**（6/6 · 2026-08-11 关门） | 新增 `demo` Profile = mvp + `dev.examples`；**VP-008 `go` 判定：无影响、不触发暂挂**（mvp/admin 生产默认未变、demo 非生产向；A-003 §go），生产矩阵仍以 W1 恢复 digest `4a2b8cd…` 为准 |
-| W3 | GOAL-004-w3-schema-host-protocol-conformance | **active**（1/6 · 2026-08-12 立项） | 先补 Host/App 协议，再修 API/Web 符合性问题；上游新协议到手前由 I-003 阻断正式实现 |
+| W3 | GOAL-004-w3-schema-host-protocol-conformance | **active**（2/6 · 2026-08-13） | 先补 Host/App 协议，再修 API/Web 符合性问题；上游 v2.8.0 已发布并固定（I-003 verified，停止线解除），进入 S2 方案审视与 S4 残余整改 |
 
 ## 信息就绪与未知项
 
