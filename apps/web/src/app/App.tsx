@@ -47,6 +47,8 @@ import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
 import type { RenderPageDocument } from "@/renderer/render";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
+import { HostFailureScreen } from "@/app/HostFailureScreen";
+import { nextFailureId, type HostFailure } from "@/host/failure";
 
 const iconRegistry: Record<string, LucideIcon> = {
   activity: Activity,
@@ -85,6 +87,19 @@ export interface AppProps {
 
 function currentLocationPath() {
   return `${window.location.pathname}${window.location.search}`;
+}
+
+/** Route-not-found failure occurrence (new ID per distinct unmatched path). */
+function routeNotFoundFailure(): HostFailure {
+  return {
+    failureVersion: "1.0",
+    failureId: nextFailureId(),
+    scope: "route",
+    kind: "not-found",
+    hostCode: "HOST_ROUTE_NOT_FOUND",
+    message: { messageKey: "hostFailure.notFound" },
+    recoveryActions: [{ type: "home" }, { type: "back" }],
+  };
 }
 
 // Parses the current URL's query string into a plain record; deep-linked query
@@ -340,29 +355,24 @@ function PageSurface({
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
   const t = useTranslate();
+  // Stable per-path failureId: redraws of the same unmatched route never
+  // re-announce; a different unmatched route is a new occurrence (D1).
+  const routeNotFound = useMemo(() => routeNotFoundFailure(), [path]);
   if (route === undefined) {
+    // Unmatched application route (no manifest page, no host-owned path) →
+    // HOST_ROUTE_NOT_FOUND global failure surface (ADR-0036 D3/D3a).
     return (
-      <section className="max-w-2xl space-y-6" aria-labelledby="fallback-title">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {t("shell.routeFallback")}
-          </p>
-          <h1 id="fallback-title" className="text-3xl font-semibold tracking-tight">
-            {t("shell.pageNotFound")}
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            {t("shell.noManifestPage")} <code className="font-mono">{path}</code>.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => onNavigate(homePage?.route ?? "/")}
-        >
-          <Home aria-hidden="true" className="size-4" />
-          {t("shell.returnHome")}
-        </Button>
-      </section>
+      <HostFailureScreen
+        bare
+        failure={routeNotFound}
+        onAction={(action) => {
+          if (action.type === "home") {
+            onNavigate(homePage?.route ?? "/");
+          } else if (action.type === "back") {
+            window.history.back();
+          }
+        }}
+      />
     );
   }
 

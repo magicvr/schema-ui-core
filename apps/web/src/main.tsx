@@ -1,14 +1,25 @@
-import { StrictMode, useCallback } from "react";
+import { Component, StrictMode, useCallback, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { AuthProvider, useAuth } from "@/account/AuthContext";
 import { createConfigAwareFetcher } from "@/app/config-events";
+import { HostFailureScreen } from "@/app/HostFailureScreen";
 import { I18nProvider, useI18n } from "@/i18n/runtime";
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
 import { LoginPage } from "@/app/LoginPage";
 import { ManifestFailure } from "@/app/ManifestFailure";
-import { loadAppManifest, type AppManifest } from "@/protocol/app-manifest";
+import {
+  loadAppManifestBytes,
+  type AppManifest,
+} from "@/protocol/app-manifest";
+import {
+  discoverBootstrapDocument,
+  type BootstrapAuth,
+  type BootstrapDiscovery,
+} from "@/host/bootstrap";
+import { bootHost, executeBootRecovery, type HostBootState } from "@/host/boot";
+import { nextFailureId, type HostFailure } from "@/host/failure";
 import "./index.css";
 
 // Theme bootstrap is handled by the synchronous inline script in index.html
@@ -64,6 +75,98 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
   );
 }
 
+/** Maps the session adapter state to the bootstrap normalized auth input (D4). */
+function bootstrapAuthFor(status: string, user: { id: string; name?: string } | null): BootstrapAuth {
+  if (status === "authenticated" && user !== null) {
+    return {
+      state: "authenticated",
+      principal: { id: user.id, name: user.name ?? "", roles: [] },
+      provenance: "host-session-adapter",
+    };
+  }
+  return { state: "anonymous" };
+}
+
+/**
+ * Host boot gate (ADR-0035 stage order): availability-gate and
+ * auth-resolution terminals render WITHOUT a manifest fetch; manifest
+ * failures keep ADR-0025 semantics (ManifestFailure).
+ */
+function HostBootGate({ discovery }: { discovery: BootstrapDiscovery }) {
+  const { status, user } = useAuth();
+  const [boot, setBoot] = useState<HostBootState | null>(null);
+  const [bootError, setBootError] = useState<unknown>(null);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    let cancelled = false;
+    const auth = bootstrapAuthFor(status, user);
+    bootHost({
+      documentResult: discovery,
+      auth,
+      manifestLoader: async () => loadAppManifestBytes(),
+    }).then(
+      (state) => {
+        if (!cancelled) setBoot(state);
+      },
+      (error: unknown) => {
+        if (!cancelled) setBootError(error);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [status, user, discovery]);
+
+  if (status === "loading" || boot === null) {
+    if (bootError !== null) {
+      return <ManifestFailure error={bootError} />;
+    }
+    return <BootScreen />;
+  }
+  if (boot.failure !== null) {
+    return <HostFailureScreen failure={boot.failure} onAction={executeBootRecovery} />;
+  }
+  if (boot.manifest === null) {
+    return <ManifestFailure error={new Error("Host boot produced no manifest.")} />;
+  }
+  return <AuthGate manifest={boot.manifest} />;
+}
+
+/** Uncaught renderer/Host exceptions become HOST_RENDER_FAILED (no auto-reload loop). */
+class RenderFailureBoundary extends Component<
+  { children: ReactNode },
+  { failure: HostFailure | null }
+> {
+  state: { failure: HostFailure | null } = { failure: null };
+
+  static getDerivedStateFromError(): { failure: HostFailure } {
+    return {
+      failure: {
+        failureVersion: "1.0",
+        failureId: nextFailureId(),
+        scope: "runtime",
+        kind: "render-failed",
+        hostCode: "HOST_RENDER_FAILED",
+        retry: { mode: "manual" },
+        message: { messageKey: "hostFailure.renderFailed" },
+        recoveryActions: [{ type: "reload" }],
+      },
+    };
+  }
+
+  componentDidCatch(error: unknown): void {
+    console.error("[schema-ui] uncaught render failure:", error);
+  }
+
+  render(): ReactNode {
+    if (this.state.failure !== null) {
+      return <HostFailureScreen failure={this.state.failure} onAction={executeBootRecovery} />;
+    }
+    return this.props.children;
+  }
+}
+
 const root = document.getElementById("root");
 if (!root) {
   throw new Error("root element not found");
@@ -71,24 +174,45 @@ if (!root) {
 
 applyStoredTheme();
 
-loadAppManifest()
-  .then((manifest) => {
+discoverBootstrapDocument()
+  .then((discovery) => {
     createRoot(root).render(
       <StrictMode>
         <I18nProvider systemDefaultUrl="/api/branding">
           <AuthProvider>
-            <AuthGate manifest={manifest} />
+            <RenderFailureBoundary>
+              <HostBootGate discovery={discovery} />
+            </RenderFailureBoundary>
           </AuthProvider>
         </I18nProvider>
       </StrictMode>,
     );
   })
   .catch((error: unknown) => {
+    // Discovery itself threw (unexpected transport class) — surface as an
+    // offline-classified bootstrap document failure.
     createRoot(root).render(
       <StrictMode>
         <I18nProvider systemDefaultUrl="/api/branding">
-          <ManifestFailure error={error} />
+          <AuthProvider>
+            <RenderFailureBoundary>
+              <HostFailureScreen
+                failure={{
+                  failureVersion: "1.0",
+                  failureId: nextFailureId(),
+                  scope: "bootstrap",
+                  kind: "offline",
+                  hostCode: "HOST_OFFLINE",
+                  retry: { mode: "manual" },
+                  message: { messageKey: "hostFailure.offline" },
+                  recoveryActions: [{ type: "retry" }],
+                }}
+                onAction={executeBootRecovery}
+              />
+            </RenderFailureBoundary>
+          </AuthProvider>
         </I18nProvider>
       </StrictMode>,
     );
+    console.error("[schema-ui] bootstrap discovery failed:", error);
   });

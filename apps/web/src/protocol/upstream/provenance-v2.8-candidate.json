@@ -1,0 +1,44 @@
+{
+  "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
+  "sourceCommit": "453008d",
+  "artifactVersion": "2.8.0-candidate",
+  "note": "Host/App 互操作候选机器契约（ADR-0034–0037 accepted，H2 落地）。此 pin 是 S4 实施证据基线，不是生产支持声明；2.8.0 正式制品发布后由 H4 变更集重新 pin 并重生成 claim。",
+  "artifacts": [
+    {
+      "path": "docs/schemas/host-bootstrap.schema.json",
+      "sha256": "e861430275c24ca5108e90ae9a15a8a6feb72f7871983ccb76fadf5384d3e55e"
+    },
+    {
+      "path": "docs/schemas/host-failure.schema.json",
+      "sha256": "1923c5710173e601fb3052c97a8ab0d1ccf88d00fb24b8b660f7979e051531be"
+    },
+    {
+      "path": "docs/schemas/host-conformance-claim.schema.json",
+      "sha256": "da6389f874787e377a80ea3f1c4364605941220b856091adade561db6877a74e"
+    },
+    {
+      "path": "docs/schemas/capability-registry.json",
+      "sha256": "2550a5d2f957c74d7fc62484c97275bbb84775e3ee9046566c8ed2c30befcf9c"
+    },
+    {
+      "path": "docs/schemas/app-manifest.schema.json",
+      "sha256": "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55"
+    },
+    {
+      "path": "conformance/fixtures/host-bootstrap/cases.json",
+      "sha256": "2ea0f81841f974596d76e041c67d83ae9544a37115d3b8fce40915e918ef03db"
+    },
+    {
+      "path": "conformance/fixtures/host-failure/cases.json",
+      "sha256": "de950c074ba150c31ec02d07c07950b5c5004a24a5cfc17024407c3d69bdd43f"
+    },
+    {
+      "path": "conformance/fixtures/host-conformance-claim/cases.json",
+      "sha256": "6d27589836ab05636c3f598fc64b376207d0b1a140ca661e089b6f4d2939400a"
+    },
+    {
+      "path": "conformance/fixtures/app-manifest/cases.json",
+      "sha256": "13744ab3b977d646c2ec5078b44b3e490a27f3f054e427ba3f94cc9405582639"
+    }
+  ]
+}

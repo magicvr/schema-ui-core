@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import {
   APP_MANIFEST_SOURCE,
-  APP_MANIFEST_PROTOCOL_VERSION,
   ManifestError,
   type NavigationContext,
   type PageEntry,
@@ -50,10 +49,13 @@ interface PinnedJson<T> {
   value: T;
 }
 
+// app-manifest schema + fixtures re-pinned 2026-08-13 to the 2.8 candidate
+// machine contracts (upstream 453008d: returnIntentQueryKeys + capability id
+// hyphen grammar). See provenance-v2.8-candidate.json.
 const APP_MANIFEST_SCHEMA_SHA256 =
-  "294eb0f391a515a123ed07ef5e19b40f1126fbe57e585ebdf639a34232a6c2e8";
+  "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55";
 const APP_MANIFEST_FIXTURE_SHA256 =
-  "8aafd684a40c4350d39ce0c94ab3c986455cb21fe0ebc37e4f3640261163405e";
+  "13744ab3b977d646c2ec5078b44b3e490a27f3f054e427ba3f94cc9405582639";
 const APP_NAVIGATION_FIXTURE_SHA256 =
   "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897";
 const STATIC_MANIFEST_SHA256 =
@@ -127,12 +129,17 @@ function errorResult(error: unknown, includeErrors = false): JsonObject {
   if (!(error instanceof ManifestError)) {
     throw error;
   }
+  const firstError = {
+    code: error.code,
+    path: error.path,
+    ...(error.detail === undefined ? {} : { detail: error.detail }),
+  };
   return includeErrors
     ? {
         ok: false,
         code: error.code,
         path: error.path,
-        errors: [{ code: error.code, path: error.path }],
+        errors: [firstError],
       }
     : { ok: false, code: error.code, path: error.path };
 }
@@ -191,9 +198,13 @@ function hostManifestValue(
         ? {}
         : { homePageRef: pageIdFromPages(pages) }),
     } satisfies JsonObject);
+  // The host supports exactly 2.7 and 2.8; older fixture inputs (2.5/2.6)
+  // are rewritten to 2.7 as before. 2.7/2.8 inputs pass through so the
+  // returnIntentQueryKeys version gate stays observable.
+  const rewriteVersion = !isBelowMinimum && rawProtocol !== "2.7" && rawProtocol !== "2.8";
   return {
     ...raw,
-    protocolVersion: isBelowMinimum ? rawProtocol : APP_MANIFEST_PROTOCOL_VERSION,
+    protocolVersion: rewriteVersion ? "2.7" : rawProtocol,
     requiredCapabilities: capabilities,
     app,
     pages,

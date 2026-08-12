@@ -1,11 +1,19 @@
 export const DEFAULT_MANIFEST_PATH = "/.well-known/schema-ui/app-manifest.json";
-export const APP_MANIFEST_PROTOCOL_VERSION = "2.7" as const;
+/**
+ * Host manifest-version support set (strict negotiation, ADR-0009): 2.7 for
+ * existing production manifests, 2.8 for Host/App interoperability manifests
+ * (returnIntentQueryKeys etc.). Kept additive — 2.7 manifests stay accepted.
+ */
+export const APP_MANIFEST_SUPPORTED_PROTOCOL_VERSIONS = ["2.7", "2.8"] as const;
+export const APP_MANIFEST_PROTOCOL_VERSION = "2.8" as const;
 export const MANIFEST_SOURCE_HEADER = "X-Schema-UI-Manifest-Source";
 export const APP_MANIFEST_SOURCE =
   "https://github.com/magicvr/schema-ui-docs/tree/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b";
 
 const APP_ID_PATTERN = /^[a-z][a-z0-9_-]*$/;
-const CAPABILITY_PATTERN = /^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)*$/;
+// v2.8: capability id segments may contain hyphens (host.failure-recovery).
+const CAPABILITY_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/;
+const RETURN_INTENT_KEY_PATTERN = /^[a-z][a-zA-Z0-9_]*$/;
 const ICON_PATTERN = /^[a-z][a-z0-9-]*$/;
 const PATH_PATTERN = /^\/(?!\/)[^\s\\]*$/;
 const TEMPLATE_NAME_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
@@ -48,18 +56,24 @@ export type ManifestErrorCode =
   | "NAV_LINK_MUTEX"
   | "NAV_GROUP_NESTED"
   | "NAV_PAGE_REF_UNKNOWN"
+  | "INVALID_RETURN_INTENT_QUERY_KEYS"
   | "FORBIDDEN_VARIABLE"
   | "SYNTAX";
 
 export class ManifestError extends Error {
   readonly code: ManifestErrorCode;
   readonly path: string;
+  /** Optional machine detail (e.g. the missing capability id). */
+  readonly detail?: string;
 
-  constructor(code: ManifestErrorCode, path: string, message: string) {
+  constructor(code: ManifestErrorCode, path: string, message: string, detail?: string) {
     super(message);
     this.name = "ManifestError";
     this.code = code;
     this.path = path;
+    if (detail !== undefined) {
+      this.detail = detail;
+    }
   }
 }
 
@@ -82,6 +96,8 @@ export interface PageEntry {
   titleKey?: string;
   schemaUrl: string;
   route: string;
+  /** v2.8+ (ADR-0036): auth-return intent allowlist extension for this page. */
+  returnIntentQueryKeys?: string[];
 }
 
 export interface VisibleWhen {
@@ -154,8 +170,9 @@ function fail(
   code: ManifestErrorCode,
   path: string,
   message: string,
+  detail?: string,
 ): never {
-  throw new ManifestError(code, path, message);
+  throw new ManifestError(code, path, message, detail);
 }
 
 function requireRecord(value: unknown, path: string): JsonRecord {
@@ -419,7 +436,11 @@ function parsePages(value: unknown): PageEntry[] {
   return entries.map((entry, index) => {
     const path = `pages[${index}]`;
     const record = requireRecord(entry, path);
-    ensureKeys(record, ["pageId", "title", "titleKey", "schemaUrl", "route"], path);
+    ensureKeys(
+      record,
+      ["pageId", "title", "titleKey", "schemaUrl", "route", "returnIntentQueryKeys"],
+      path,
+    );
     const pageId = requireString(record.pageId, `${path}.pageId`);
     if (pageIds.has(pageId)) {
       fail("INVALID_MANIFEST", `${path}.pageId`, "pageId values must be unique.");
@@ -449,12 +470,27 @@ function parsePages(value: unknown): PageEntry[] {
       fail("INVALID_MANIFEST", `${path}.route`, "Route templates must be unique.");
     }
     routes.add(route);
+    let returnIntentQueryKeys: string[] | undefined;
+    if (record.returnIntentQueryKeys !== undefined) {
+      const keys = requireArray(record.returnIntentQueryKeys, `${path}.returnIntentQueryKeys`);
+      if (keys.length === 0
+        || keys.some((key) => typeof key !== "string" || !RETURN_INTENT_KEY_PATTERN.test(key))
+        || new Set(keys).size !== keys.length) {
+        fail(
+          "INVALID_RETURN_INTENT_QUERY_KEYS",
+          `${path}.returnIntentQueryKeys`,
+          "returnIntentQueryKeys must be a non-empty unique array of lowercase query keys.",
+        );
+      }
+      returnIntentQueryKeys = keys as string[];
+    }
     return {
       pageId,
       ...(title === undefined ? {} : { title }),
       ...(titleKey === undefined ? {} : { titleKey }),
       schemaUrl,
       route,
+      ...(returnIntentQueryKeys === undefined ? {} : { returnIntentQueryKeys }),
     };
   });
 }
@@ -571,11 +607,11 @@ export function validateAppManifest(value: unknown): AppManifest {
   if (major < 2 || (major === 2 && minor < 5)) {
     fail("PROTOCOL_VERSION_TOO_LOW", "protocolVersion", "App manifest requires protocol >= 2.5.");
   }
-  if (protocolVersion !== APP_MANIFEST_PROTOCOL_VERSION) {
+  if (!APP_MANIFEST_SUPPORTED_PROTOCOL_VERSIONS.includes(protocolVersion as never)) {
     fail(
       "UNSUPPORTED_PROTOCOL_VERSION",
       "protocolVersion",
-      `This host supports ${APP_MANIFEST_PROTOCOL_VERSION}.`,
+      `This host supports ${APP_MANIFEST_SUPPORTED_PROTOCOL_VERSIONS.join(" and ")}.`,
     );
   }
 
@@ -599,6 +635,27 @@ export function validateAppManifest(value: unknown): AppManifest {
   }
 
   const pages = parsePages(record.pages);
+  // v2.8 return-intent allowlist extension gate (ADR-0036 / 09 §6): presence
+  // requires protocolVersion >= 2.8 AND host.failure-recovery capability.
+  for (const [index, page] of pages.entries()) {
+    if (page.returnIntentQueryKeys === undefined) continue;
+    if (protocolVersion !== "2.8") {
+      fail(
+        "PROTOCOL_VERSION_TOO_LOW",
+        `pages[${index}].returnIntentQueryKeys`,
+        "returnIntentQueryKeys requires manifest protocol >= 2.8.",
+      );
+    }
+    if (!requiredCapabilities.includes("host.failure-recovery")) {
+      fail(
+        "MISSING_REQUIRED_CAPABILITY",
+        `pages[${index}].returnIntentQueryKeys`,
+        "host.failure-recovery is required when returnIntentQueryKeys is present.",
+        "host.failure-recovery",
+      );
+    }
+  }
+
   const app = parseApp(record.app, pages);
   let navigation: Navigation | undefined;
   if (record.navigation !== undefined) {
@@ -810,6 +867,15 @@ export async function loadAppManifest(options: {
   url?: string;
   fetcher?: typeof fetch;
 } = {}): Promise<AppManifest> {
+  const loaded = await loadAppManifestBytes(options);
+  return loaded.manifest;
+}
+
+/** Loads the manifest with its raw 200 bytes (bootstrap integrity, ADR-0035 D6). */
+export async function loadAppManifestBytes(options: {
+  url?: string;
+  fetcher?: typeof fetch;
+} = {}): Promise<{ manifest: AppManifest; bytes: Uint8Array }> {
   const url = options.url ?? DEFAULT_MANIFEST_PATH;
   const fetcher = options.fetcher ?? globalThis.fetch;
   if (!fetcher) {
@@ -833,8 +899,10 @@ export async function loadAppManifest(options: {
         `[schema-ui] development manifest fixture served at ${url}; API projection was not used.`,
       );
     }
-    const payload: unknown = await response.json();
-    return validateAppManifest(payload);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const manifest = validateAppManifest(JSON.parse(text) as unknown);
+    return { manifest, bytes };
   } catch (error) {
     if (error instanceof ManifestError) {
       throw error;

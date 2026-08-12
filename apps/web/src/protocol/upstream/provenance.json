@@ -5,7 +5,7 @@
   "artifacts": [
     {
       "path": "docs/schemas/app-manifest.schema.json",
-      "sha256": "294eb0f391a515a123ed07ef5e19b40f1126fbe57e585ebdf639a34232a6c2e8"
+      "sha256": "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55"
     },
     {
       "path": "docs/schemas/node.schema.json",
@@ -29,7 +29,7 @@
     },
     {
       "path": "conformance/fixtures/app-manifest/cases.json",
-      "sha256": "8aafd684a40c4350d39ce0c94ab3c986455cb21fe0ebc37e4f3640261163405e"
+      "sha256": "13744ab3b977d646c2ec5078b44b3e490a27f3f054e427ba3f94cc9405582639"
     },
     {
       "path": "conformance/fixtures/app-navigation/cases.json",
@@ -91,5 +91,6 @@
       "path": "conformance/fixtures/version-negotiation/cases.json",
       "sha256": "19be6d14f2396a359c7c8e41452c865ea8b874ac4b4a64e665f2303e7d337aa7"
     }
-  ]
+  ],
+  "note": "app-manifest.schema.json 与 app-manifest/cases.json 两项已于 2026-08-13 随 2.8 候选机器契约（上游 453008d）重 pin：新增 returnIntentQueryKeys 字段与 capability ID 连字符语法；其余条目仍为 2.7.0 pin。详细 2.8 候选 pin 见 provenance-v2.8-candidate.json。"
 }

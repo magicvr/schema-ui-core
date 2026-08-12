@@ -164,11 +164,11 @@ describe("App shell integration", () => {
 
   it("renders a fail-closed fallback and returns to the manifest home route", async () => {
     const container = await renderApp("/unknown");
+    // HOST_ROUTE_NOT_FOUND global failure surface (ADR-0036 D3/D3a).
     expect(container.textContent).toContain("Page not found");
-    expect(container.textContent).toContain("/unknown");
 
     const homeButton = Array.from(container.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Return to home"),
+      button.textContent?.includes("Return home"),
     );
     expect(homeButton).not.toBeUndefined();
     await act(async () => homeButton?.click());

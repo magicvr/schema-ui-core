@@ -81,9 +81,9 @@ function expectCode(action: () => unknown, code: string) {
 }
 
 describe("app manifest validation", () => {
-  it("accepts the pinned 2.7 default manifest shape", () => {
+  it("accepts the pinned default manifest shape", () => {
     const result = validateAppManifest(manifest());
-    expect(result.protocolVersion).toBe("2.7");
+    expect(result.protocolVersion).toBe(APP_MANIFEST_PROTOCOL_VERSION);
     expect(result.pages).toHaveLength(4);
     expect(result.navigation?.sidebar).toHaveLength(1);
   });
@@ -283,7 +283,8 @@ describe("manifest loading and expression boundaries", () => {
           status: 200,
           url: "http://127.0.0.1:5173/.well-known/schema-ui/app-manifest.json",
           headers: new Headers(),
-          json: async () => manifest(),
+          arrayBuffer: async () =>
+            new TextEncoder().encode(JSON.stringify(manifest())).buffer as ArrayBuffer,
         }) as Response,
     });
     expect(warning).toHaveBeenCalledWith(
