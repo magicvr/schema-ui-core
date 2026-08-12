@@ -604,7 +604,7 @@ describe("pinned schema-ui-docs fixture artifacts", () => {
       "ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
     );
     expect(APP_MANIFEST_SOURCE).toBe(
-      "https://github.com/magicvr/schema-ui-docs/tree/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
+      "https://github.com/magicvr/schema-ui-docs/tree/593f625",
     );
     expect(provenanceArtifact.value.artifactVersion).toBe("2.7.0");
     // R3 baseline artifacts remain pinned; R5 stage 3 extends provenance with

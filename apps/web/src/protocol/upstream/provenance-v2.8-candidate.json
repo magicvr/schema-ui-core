@@ -26,15 +26,15 @@
     },
     {
       "path": "conformance/fixtures/host-bootstrap/cases.json",
-      "sha256": "2ea0f81841f974596d76e041c67d83ae9544a37115d3b8fce40915e918ef03db"
+      "sha256": "bfc71bbd27951f13a16daa2a2eca3ff7285e0c149faf7ef3476ccf2912d5528e"
     },
     {
       "path": "conformance/fixtures/host-failure/cases.json",
-      "sha256": "de950c074ba150c31ec02d07c07950b5c5004a24a5cfc17024407c3d69bdd43f"
+      "sha256": "59efc00ad9870705f1a4f91df9b03d26355eb2ad9740d881af811e35fec1d184"
     },
     {
       "path": "conformance/fixtures/host-conformance-claim/cases.json",
-      "sha256": "6d27589836ab05636c3f598fc64b376207d0b1a140ca661e089b6f4d2939400a"
+      "sha256": "e3511ecc1bc22fccbd2389c9b7411ddff1a82cc65988f2d6ce169f7db539590d"
     },
     {
       "path": "conformance/fixtures/app-manifest/cases.json",

@@ -82,22 +82,25 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
 - 真实入口正常 boot：Go API 服务真实 bootstrap document（`bootstrapVersion 1.0` +
   `manifest.sha256` 十六进制），shell 正常渲染登录门。
 
-### 7. Claim 与 evidence 绑定（候选）
+### 7. Claim 与 evidence 绑定（正式 2.8.0 pin）
 
 - `scripts/generate-claim.mjs`（`prebuild` 挂载）：`public/protocol/conformance-claim.json` +
   `conformance-local-report.json` + canonical digest 文件；
-- 绑定值：`protocolArtifact.contentSha256` = 上游 `453008d` 制品 contentDigest
-  `2d802a58…`；`conformance.fixtureSha256` = 上游 `453008d` fixture 树 digest
-  `2d1a13e1…`；`host.buildId` = `git:<HEAD>`（claim/report/evidence 三处逐字一致，
-  由 `claim-artifact.test.ts` 门禁）；
+- 绑定值（上游 tag `v2.8.0` @ `593f625`）：`protocolArtifact.contentSha256` = 正式制品
+  contentDigest `40690917…`；`conformance.fixtureSha256` = 正式 fixture 树 digest
+  `7aacf133…`；`host.buildId` = `git:<HEAD>`（claim/report/evidence 三处逐字一致，
+  由 `claim-artifact.test.ts` 门禁；每次生产修正后重生成，绑定修正所在 commit）；
+- vendored host 三 suite 的文件 digest 已按正式 release 原样重 vendor（
+  host-bootstrap `bfc71bbd…` / host-failure `59efc00a…` / host-conformance-claim
+  `e3511ecc…`，语义内容与 H2 相同，字节级 pin 对齐正式 tag）；
 - suites：app-manifest / app-navigation / host-bootstrap / host-failure /
   host-conformance-claim 全部 `pass`（CI 实际运行结果）；
 - evidence kind `local-report`，报告 bytes 以 sha256 绑定且与 `subjectBuildId` 一致。
 
 ## 已登记 residual（不得冒充生产支持）
 
-1. **候选绑定**：上游 2.8.0 正式发布（H4）后必须按新 artifact/fixture digest 重 pin 并重生成
-   claim；当前 claim 不构成生产支持声明（报告 `residuals` 已明示）。
+1. **（已关闭）候选绑定**：上游 2.8.0 正式发布后已按正式 artifact/fixture digest 重 pin 并重生成
+   claim（见 §7）；当前 claim 绑定正式 2.8.0 digest。
 2. **页面协议 2.7 mandatory behavior**：R5 已登记的 multi-round `$deps` reactions 子集未实现；
    闭环前 claim 的 `pageVersions` 条目视为候选绑定。
 3. **返回意图消费链**：`validateReturnIntent` 已实现并消费上游 fixtures；登录流程接入
@@ -107,9 +110,12 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
 5. **session adapter 终态映射**：当前会话模型只有 loading/authenticated/unauthenticated；
    bootstrap 归一化的 `reauth-required` / `locked` 输入尚无生产来源（映射层已就位），后续
    认证迭代接入。
+6. **hostOwnedPaths 封闭列表**：当前生产 shell 没有额外 Host 自有 path——未认证时登录页由
+   `AuthGate` 在 shell 外拦截（不会误产生 `HOST_ROUTE_NOT_FOUND`），认证后未命中 manifest
+   route 一律产生协议 404；显式 `hostOwnedPaths` 集合与对应 e2e 待未来出现宿主页时补。
 
 ## 下一步
 
-- 上游 H4 发布闭环后重 pin、重生成 claim 并重跑全部证据；
+- 上游后续 MINOR 发布时按同流程重 pin、重生成 claim 并重跑全部证据；
 - S2 出口门禁（I-001/I-002/I-005/I-006）与 cross 方案审视按 GOAL-004 计划继续；
 - 本仓 W3 阶段进度更新见 `02-execution.md` 执行索引与事实边界。
