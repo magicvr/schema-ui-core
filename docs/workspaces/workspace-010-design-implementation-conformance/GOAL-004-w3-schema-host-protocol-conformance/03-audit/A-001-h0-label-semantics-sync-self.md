@@ -47,4 +47,9 @@ version: 0.1.0
 ## 结论
 
 自审未发现遗留阻断项；两处措辞问题已在同一变更集内修复。同步满足上游提案 H0 门禁第 5 条
-（“不以 deferred 冒充已保留 capability”）。等待独立审计（A-002，source: independent）。
+（“不以 deferred 冒充已保留 capability”）。
+
+## 后续（2026-08-13）
+
+未决行动项已闭环：I-002/I-004 台账证据已更新；独立审计 A-002（source: independent，grok build）
+已落盘，verdict conditional、BLOCKING_COUNT=0，其 F-1/F-2（P1）已由编排器 fixed。详见 A-002。
