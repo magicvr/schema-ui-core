@@ -1,6 +1,6 @@
 {
   "reportVersion": "1.0",
-  "subjectBuildId": "git:683d82edcc79fcb64d81a191633cd264eac12115",
+  "subjectBuildId": "git:a3533332314e3c63c0d89342cc04993cc7c1050c",
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0"
@@ -39,13 +39,12 @@
   ],
   "pinnedUpstream": {
     "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
-    "sourceCommit": "453008d",
-    "artifactVersion": "2.8.0-candidate",
-    "fixtureSha256": "2d1a13e1f83d9ce718a77128e137f23c3a3df7ca29321c8b11abdb0ef386bee2",
-    "protocolContentSha256": "2d802a5886606ded7ff2b16de5ba73d9cd145d81aa6abcac18a24ae39ae3db05"
+    "sourceCommit": "593f625",
+    "artifactVersion": "2.8.0",
+    "fixtureSha256": "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2",
+    "protocolContentSha256": "40690917b7b83f54936453b5851c87320f5ed878b517eab7d1558d12fe506a31"
   },
   "residuals": [
-    "候选 claim（H3 证据绑定），不构成生产支持声明；上游 2.8.0 正式发布后按 H4 变更集重新 pin 并重生成。",
-    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 视为候选绑定。"
+    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 条目视为待闭环绑定。"
   ]
 }

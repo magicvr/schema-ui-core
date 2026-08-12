@@ -7,12 +7,9 @@
  *   conformance-claim.json          — the static claim (closed C0 shape)
  *   conformance-claim.json.sha256   — canonical digest (D1a) of the claim
  *
- * Bindings (candidate, H3): the pinned upstream machine contracts at
- * schema-ui-docs@453008d —
- *   fixtureSha256          = release-check fixture-tree digest at that commit
- *   protocolContentSha256  = protocol artifact contentDigest built at that commit
- * When the upstream H4 release lands, re-pin these constants, regenerate and
- * re-commit the claim in the same changeset.
+ * Bindings: schema-ui-protocol v2.8.0 (tag v2.8.0, commit 593f625) —
+ *   fixtureSha256          = release-check fixture-tree digest of the release
+ *   protocolContentSha256  = protocol artifact contentDigest of the release
  */
 
 import { execFileSync } from "node:child_process";
@@ -29,12 +26,12 @@ const FIXTURE_VERSION = "1.0";
 const SUITE_VERSION = "1.0";
 const ARTIFACT_VERSION = "2.8.0";
 
-// Candidate bindings — recompute at the upstream H4 re-pin.
-const UPSTREAM_SOURCE_COMMIT = "453008d";
+// Final 2.8.0 release bindings (tag v2.8.0, commit 593f625).
+const UPSTREAM_SOURCE_COMMIT = "593f625";
 const UPSTREAM_FIXTURE_SHA256 =
-  "2d1a13e1f83d9ce718a77128e137f23c3a3df7ca29321c8b11abdb0ef386bee2";
+  "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2";
 const UPSTREAM_PROTOCOL_CONTENT_SHA256 =
-  "2d802a5886606ded7ff2b16de5ba73d9cd145d81aa6abcac18a24ae39ae3db05";
+  "40690917b7b83f54936453b5851c87320f5ed878b517eab7d1558d12fe506a31";
 
 // Suites this repository runs green in CI (zero exclusions) at claim time.
 const SUITES = [
@@ -88,13 +85,12 @@ const report = {
   pinnedUpstream: {
     sourceRepo: "https://github.com/magicvr/schema-ui-docs",
     sourceCommit: UPSTREAM_SOURCE_COMMIT,
-    artifactVersion: "2.8.0-candidate",
+    artifactVersion: "2.8.0",
     fixtureSha256: UPSTREAM_FIXTURE_SHA256,
     protocolContentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
   residuals: [
-    "候选 claim（H3 证据绑定），不构成生产支持声明；上游 2.8.0 正式发布后按 H4 变更集重新 pin 并重生成。",
-    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 视为候选绑定。",
+    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 条目视为待闭环绑定。",
   ],
 };
 

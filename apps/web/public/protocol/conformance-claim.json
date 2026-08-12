@@ -3,11 +3,11 @@
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0",
-    "buildId": "git:683d82edcc79fcb64d81a191633cd264eac12115"
+    "buildId": "git:a3533332314e3c63c0d89342cc04993cc7c1050c"
   },
   "protocolArtifact": {
     "artifactVersion": "2.8.0",
-    "contentSha256": "2d802a5886606ded7ff2b16de5ba73d9cd145d81aa6abcac18a24ae39ae3db05"
+    "contentSha256": "40690917b7b83f54936453b5851c87320f5ed878b517eab7d1558d12fe506a31"
   },
   "support": {
     "pageVersions": [
@@ -27,7 +27,7 @@
   },
   "conformance": {
     "fixtureVersion": "1.0",
-    "fixtureSha256": "2d1a13e1f83d9ce718a77128e137f23c3a3df7ca29321c8b11abdb0ef386bee2",
+    "fixtureSha256": "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2",
     "suites": [
       {
         "suiteId": "app-manifest",
@@ -59,9 +59,9 @@
   "evidence": [
     {
       "kind": "local-report",
-      "subjectBuildId": "git:683d82edcc79fcb64d81a191633cd264eac12115",
+      "subjectBuildId": "git:a3533332314e3c63c0d89342cc04993cc7c1050c",
       "uri": "/protocol/conformance-local-report.json",
-      "sha256": "c96bdb1de7041ae8799a95880eeee6058aa37ad4a5d805612f4b22d78ebd6c99"
+      "sha256": "79f9050ce8285ae5da43b2cd54ac2d02fdbc04387f12042650f45b01ad3f37b5"
     }
   ]
 }

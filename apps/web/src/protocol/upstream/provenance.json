@@ -29,7 +29,7 @@
     },
     {
       "path": "conformance/fixtures/app-manifest/cases.json",
-      "sha256": "13744ab3b977d646c2ec5078b44b3e490a27f3f054e427ba3f94cc9405582639"
+      "sha256": "4ab9ec93e603dfd4b0e7a3b3c89de5e7a59d91a53a90f252bfcfa5fb3c43c347"
     },
     {
       "path": "conformance/fixtures/app-navigation/cases.json",
@@ -89,8 +89,8 @@
     },
     {
       "path": "conformance/fixtures/version-negotiation/cases.json",
-      "sha256": "19be6d14f2396a359c7c8e41452c865ea8b874ac4b4a64e665f2303e7d337aa7"
+      "sha256": "ed66a29c8f84bdea5bc93f263d73480382d16992c490da83c71c6dbd1ccb0e74"
     }
   ],
-  "note": "app-manifest.schema.json 与 app-manifest/cases.json 两项已于 2026-08-13 随 2.8 候选机器契约（上游 453008d）重 pin：新增 returnIntentQueryKeys 字段与 capability ID 连字符语法；其余条目仍为 2.7.0 pin。详细 2.8 候选 pin 见 provenance-v2.8-candidate.json。"
+  "note": "app-manifest.schema.json、app-manifest/cases.json 与 version-negotiation/cases.json 三项已于 2026-08-13 随上游 2.8.0 正式发布（tag v2.8.0，commit 593f625）重 pin：算法类 fixtures 版本线推进 至 2.8（version-negotiation 保留历史版本输入并新增 2.8/host capability 向量）。其余条目仍为 2.7.0 pin。2.8 全量 pin 见 provenance-v2.8-candidate.json（已随正式发布更新为 provenance-v2.8.0）。"
 }

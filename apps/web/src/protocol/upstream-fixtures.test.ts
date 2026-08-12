@@ -49,13 +49,13 @@ interface PinnedJson<T> {
   value: T;
 }
 
-// app-manifest schema + fixtures re-pinned 2026-08-13 to the 2.8 candidate
-// machine contracts (upstream 453008d: returnIntentQueryKeys + capability id
-// hyphen grammar). See provenance-v2.8-candidate.json.
+// app-manifest schema + fixtures re-pinned 2026-08-13 to the 2.8.0 release
+// machine contracts (upstream 2.8.0 release, 593f625: returnIntentQueryKeys +
+// capability id hyphen grammar). See provenance-v2.8-candidate.json.
 const APP_MANIFEST_SCHEMA_SHA256 =
   "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55";
 const APP_MANIFEST_FIXTURE_SHA256 =
-  "13744ab3b977d646c2ec5078b44b3e490a27f3f054e427ba3f94cc9405582639";
+  "4ab9ec93e603dfd4b0e7a3b3c89de5e7a59d91a53a90f252bfcfa5fb3c43c347";
 const APP_NAVIGATION_FIXTURE_SHA256 =
   "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897";
 const STATIC_MANIFEST_SHA256 =
