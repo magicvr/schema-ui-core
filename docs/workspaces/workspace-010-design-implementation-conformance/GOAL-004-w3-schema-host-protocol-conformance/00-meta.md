@@ -4,8 +4,8 @@ title: W3 · Schema-UI 语义对齐与 Host/App 协议增补
 status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-12
-updated: 2026-08-12
-version: 0.1.0
+updated: 2026-08-13
+version: 0.1.1
 progress: 1/6
 ---
 
@@ -44,9 +44,9 @@ progress: 1/6
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 当前实现与 2.7.0 的逐项覆盖/偏离基线是否完整 | S2 方案 | S2 冻结前 | 对照 upstream schema/registry/fixtures 与 API/Web 语义，维护附件处置列 | collecting | — | `attachments/I-HOST-APP-001-protocol-gap-catalog.md` |
-| I-002 | required | Host/App 候选哪些进入本次协议、哪些仅保留扩展点或明确排除 | S2 方案 | S2 冻结前 | 对每个候选记录 `adopt-now` / `reserve-extension` / `explicitly-out` 及理由 | open | — | 待上游协议方案 |
+| I-002 | required | Host/App 候选哪些进入本次协议、哪些仅保留扩展点或明确排除 | S2 方案 | S2 冻结前 | 对每个候选记录 `adopt-now` / `reserve-extension` / `explicitly-out` 及理由 | collecting | — | 上游 H0 处置已同步：附件 §1b/§1c/§6（ADR-0034 D10，proposed，95/95）；S2 冻结前待 ADR accepted 确认 |
 | I-003 | required | 新协议是否已完成上游合并、发布和本仓固定引用 | **S4 实施** | S4 开始前 | 核对版本/commit、provenance、schema/registry/fixtures 与 capability matrix | open | — | **未满足；当前禁止正式修复** |
-| I-004 | required | 协议/跨边界变更的 independent provider | S2 审视、S6 关门 | 首次 cross 审视前 | 用户指定 provider；self + independent 分别落 A 台账 | open | — | 审计模式确定为 `cross`，provider 待指定 |
+| I-004 | required | 协议/跨边界变更的 independent provider | S2 审视、S6 关门 | 首次 cross 审视前 | 用户指定 provider；self + independent 分别落 A 台账 | verified | — | 用户指定 `grok build`（grok 4.5，reasoning high）；self=A-001，independent=A-002 落盘 |
 | I-005 | required | 2.7.0 消费方的兼容、迁移、弃用和 fail-closed 规则 | S3/S4 | S3 固定前 | 形成版本矩阵、迁移说明、正反 fixtures | open | — | 待上游协议方案 |
 | I-006 | required | `recordView` 行上下文、抽屉/详情交互等争议语义的最终归属 | S2/S4 | S2 冻结前 | 对照现行 registry；上游明确标准能力或明确 Host extension | open | — | 待协议裁定 |
 | I-007 | non-blocking | P1/P2 业务候选的引入顺序 | 后续发布节奏 | S2 后 | 依据产品需求分批，但每项必须有协议处置 | collecting | 责任人=维护者；复核=每次协议 release proposal | 附件已给初始优先级，不等于最终承诺 |
