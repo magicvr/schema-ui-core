@@ -92,5 +92,5 @@
       "sha256": "ed66a29c8f84bdea5bc93f263d73480382d16992c490da83c71c6dbd1ccb0e74"
     }
   ],
-  "note": "app-manifest.schema.json、app-manifest/cases.json 与 version-negotiation/cases.json 三项已于 2026-08-13 随上游 2.8.0 正式发布（tag v2.8.0，commit 593f625）重 pin：算法类 fixtures 版本线推进 至 2.8（version-negotiation 保留历史版本输入并新增 2.8/host capability 向量）。其余条目仍为 2.7.0 pin。2.8 全量 pin 见 provenance-v2.8-candidate.json（已随正式发布更新为 provenance-v2.8.0）。"
+  "note": "app-manifest.schema.json、app-manifest/cases.json 与 version-negotiation/cases.json 三项已于 2026-08-13 随上游 2.8.0 正式发布（tag v2.8.0，commit 593f625）重 pin：算法类 fixtures 版本线推进 至 2.8（version-negotiation 保留历史版本输入并新增 2.8/host capability 向量）。其余条目仍为 2.7.0 pin。2.8 全量 pin 见 provenance-v2.8.json。"
 }

@@ -6,7 +6,7 @@
  * the deterministic lifecycle stages. This module is consumed by the
  * production boot path (`main.tsx`) — it is not a fixture adapter.
  *
- * Pinned upstream machine contracts: `src/protocol/upstream/provenance-v2.8-candidate.json`.
+ * Pinned upstream machine contracts: `src/protocol/upstream/provenance-v2.8.json`.
  */
 
 const CAPABILITY_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/;

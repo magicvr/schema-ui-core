@@ -51,7 +51,7 @@ interface PinnedJson<T> {
 
 // app-manifest schema + fixtures re-pinned 2026-08-13 to the 2.8.0 release
 // machine contracts (upstream 2.8.0 release, 593f625: returnIntentQueryKeys +
-// capability id hyphen grammar). See provenance-v2.8-candidate.json.
+// capability id hyphen grammar). See provenance-v2.8.json.
 const APP_MANIFEST_SCHEMA_SHA256 =
   "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55";
 const APP_MANIFEST_FIXTURE_SHA256 =

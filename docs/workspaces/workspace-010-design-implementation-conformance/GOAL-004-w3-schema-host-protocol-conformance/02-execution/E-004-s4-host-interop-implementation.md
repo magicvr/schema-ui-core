@@ -1,7 +1,7 @@
 ---
 id: E-004
 goal_id: GOAL-004-w3-schema-host-protocol-conformance
-title: S4 生产实现 — 上游 2.8 候选机器契约 pin、Host 模块与浏览器级证据
+title: S4 生产实现 — 上游 2.8 Host/App 互操作 pin、Host 模块与浏览器级证据（正式 2.8.0）
 status: recorded
 created: 2026-08-13
 updated: 2026-08-13
@@ -9,7 +9,7 @@ parent: GOAL-004-w3-schema-host-protocol-conformance
 version: 0.1.0
 ---
 
-# E-004 · S4 生产实现 — 上游 2.8 候选机器契约 pin、Host 模块与浏览器级证据
+# E-004 · S4 生产实现 — 上游 2.8 Host/App 互操作 pin、Host 模块与浏览器级证据（正式 2.8.0）
 
 ## 背景
 
@@ -22,7 +22,7 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
 
 ## 已完成事实
 
-### 1. 上游制品 pin（`provenance-v2.8-candidate.json`）
+### 1. 上游制品 pin（`provenance-v2.8.json`）
 
 - 新增 vendored 制品：`docs/schemas/{host-bootstrap,host-failure,host-conformance-claim}.schema.json`、
   `docs/schemas/capability-registry.json`、三个 2.8 候选 fixture suite、重 pin 的
