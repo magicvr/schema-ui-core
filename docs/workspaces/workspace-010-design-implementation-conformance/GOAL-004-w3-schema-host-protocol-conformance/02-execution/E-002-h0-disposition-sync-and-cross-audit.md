@@ -31,8 +31,9 @@ version: 0.1.0
 - independent 审计 A-002（2026-08-13，grok build · grok 4.5 · high）：verdict `conditional`，
   `BLOCKING_COUNT=0`；无 P0。两条 P1 已由编排器 fixed：
   - F-1：上游提案 H0 第 5 项 commit 引用改为 `c0c7bc1`（目录引入）+ `473be5f`（self 审计与台账）；
-  - F-2：I-004 证据在 A-002 落盘前误写“A-002 落盘”，已先改“待落盘”口径，A-002 落盘后更新为
-    “self=A-001（pass）；independent=A-002（conditional，BLOCKING_COUNT=0）已落盘”。
+  - F-2：`473be5f` 的 I-004 证据提前写「A-002 落盘」（当时 A-002 尚不存在）；`f8635ab` 落盘 A-002
+    并一步更正 I-004 为「self=A-001（pass）；independent=A-002（conditional，BLOCKING_COUNT=0）已落盘」
+    （复核轮 N-001 指出本段曾误述中间口径，已按 git 史实修正）。
   - F-3（P2）：提案 H0 第 4 项补充可复核路径（本仓 GOAL-004 `03-audit/A-002`）；F-4（P2）acknowledged。
 
 ## 未完成事实

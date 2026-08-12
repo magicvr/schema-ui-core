@@ -27,9 +27,12 @@ version: 0.1.1
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-13 | self | H0 标签语义同步（目录 §1b/§1c/§6 + 上游提案勾选） | pass | 无 | `03-audit/A-001-h0-label-semantics-sync-self.md` |
 | A-002 | 2026-08-13 | independent（grok build · grok 4.5 · high） | 同 A-001 + GOAL-004 台账 | conditional | 无（BLOCKING_COUNT=0；F-1/F-2 P1 已 fixed） | `03-audit/A-002-h0-label-semantics-sync-independent-grok.md` |
+| A-003 | 2026-08-13 | independent（grok build · grok 4.5 · high · 第二轮） | A-002 F-1～F-4 修复验证 + E-002/台账/提案 H0 状态 | pass | 无（BLOCKING_COUNT=0；N-001 P2 已 fixed） | `03-audit/A-003-h0-sync-fix-verification-independent-grok-round2.md` |
 
 ## 结论状态
 
-H0 标签语义同步完成 `cross` 模式双审计：A-001（self，pass）+ A-002（independent，conditional，
-BLOCKING_COUNT=0）。A-002 的 F-1/F-2（P1）已由编排器 fixed，F-3（P2）已补路径，F-4（P2）acknowledged；
-无未闭合 required finding。S2 方案冻结和 S6 关门仍需各自 scope 的后续 cross 审计。
+H0 标签语义同步完成 `cross` 模式双审计并复核闭环：A-001（self，pass）+ A-002（independent，
+conditional，BLOCKING_COUNT=0）+ A-003（independent 复核轮，pass，BLOCKING_COUNT=0）。
+A-002 的 F-1/F-2（P1）已 fixed，F-3（P2）已补路径，F-4（P2）acknowledged；A-003 的 N-001（P2）
+已按 git 史实修正执行记录。无未闭合 required finding、无阻断性意见。S2 方案冻结和 S6 关门仍需
+各自 scope 的后续 cross 审计。

@@ -106,3 +106,6 @@ H0 第 5 项与台账证据视为完全干净。
 | F-2 (P1) | fixed | 本条目（A-002）落盘后，I-004 证据更新为「provider 已指定；self=A-001；independent=A-002 已落盘（verdict conditional，BLOCKING_COUNT=0）」 |
 | F-3 (P2) | fixed | 上游提案 H0 第 4 项补充可复核路径：消费者仓 GOAL-004 `03-audit/A-002`（本轮） |
 | F-4 (P2) | acknowledged | §1c 注记维持「全文以上游 D10 为权威」，后续 accept/改判时按 D10 复审投影句 |
+
+**复核轮（A-003，2026-08-13）：** F-1～F-4 修复经独立复核验证 `fixed`，verdict `pass`、
+`BLOCKING_COUNT=0`；新发现 N-001（P2）已按 git 史实修正 E-002 叙述。详见 A-003。
