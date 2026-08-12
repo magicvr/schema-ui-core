@@ -104,6 +104,9 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
    return intent 的端到端恢复尚未上线（后续 S4 迭代）。
 4. **304/ETag 缓存复用**：生产实现采用 200-only 装载（合规路径），conditional GET 复用为
    可选优化，未实现。
+5. **session adapter 终态映射**：当前会话模型只有 loading/authenticated/unauthenticated；
+   bootstrap 归一化的 `reauth-required` / `locked` 输入尚无生产来源（映射层已就位），后续
+   认证迭代接入。
 
 ## 下一步
 

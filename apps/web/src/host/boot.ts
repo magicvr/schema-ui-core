@@ -48,7 +48,7 @@ const HOST_SUPPORT: HostSupport = {
 /** Builds the terminal HostFailure for a bootstrap evaluation result. */
 function terminalFailure(
   evaluation: BootstrapEvaluation,
-  documentMessageKey: string | undefined,
+  document: { availability?: { mode?: string; retryAfterSeconds?: number; messageKey?: string } } | null,
 ): HostFailure {
   const mapped = mapBootstrapResult({
     result: evaluation.result,
@@ -57,14 +57,28 @@ function terminalFailure(
   const scope = mapped?.scope ?? "bootstrap";
   const kind = mapped?.kind ?? "protocol-rejected";
   const hostCode = mapped?.hostCode ?? "HOST_PROTOCOL_REJECTED";
+  const availability = document?.availability;
+  // Maintenance may carry a countdown (after) — its retry always rebuilds the
+  // whole application instance; absent retryAfterSeconds means manual only.
+  const retry =
+    kind === "maintenance" && availability?.retryAfterSeconds !== undefined
+      ? { mode: "after" as const, afterSeconds: availability.retryAfterSeconds }
+      : kind === "maintenance"
+        ? { mode: "manual" as const }
+        : kind === "rate-limited" || kind === "timeout" || kind === "offline" || kind === "unavailable"
+          ? { mode: "manual" as const }
+          : kind === "forbidden" || kind === "protocol-rejected"
+            ? { mode: "none" as const }
+            : undefined;
   const failure: HostFailure = {
     failureVersion: "1.0",
     failureId: nextFailureId(),
     scope,
     kind,
     hostCode,
+    ...(retry === undefined ? {} : { retry }),
     message: {
-      messageKey: documentMessageKey ?? kindMessageKey(kind),
+      messageKey: availability?.messageKey ?? kindMessageKey(kind),
     },
     diagnostics: {
       phase: evaluation.phase,
@@ -130,7 +144,7 @@ export async function bootHost(input: HostBootInput): Promise<HostBootState> {
       effectiveCapabilities: null,
       context: null,
     };
-    return { evaluation, failure: terminalFailure(evaluation, undefined), manifest: null };
+    return { evaluation, failure: terminalFailure(evaluation, null), manifest: null };
   }
 
   const fetchStatus = documentResult.status === "ok" ? "ok" : "not-provided";
@@ -153,10 +167,9 @@ export async function bootHost(input: HostBootInput): Promise<HostBootState> {
     capabilityRegistry: registry as never,
   });
   if (preLoad.result !== "READY" && preLoad.result !== "READY_DEGRADED") {
-    const documentMessageKey = documentResult.document?.availability.messageKey;
     return {
       evaluation: preLoad,
-      failure: terminalFailure(preLoad, documentMessageKey),
+      failure: terminalFailure(preLoad, documentResult.document),
       manifest: null,
     };
   }
@@ -183,7 +196,7 @@ export async function bootHost(input: HostBootInput): Promise<HostBootState> {
         effectiveCapabilities: null,
         context: null,
       };
-      return { evaluation, failure: terminalFailure(evaluation, undefined), manifest: null };
+      return { evaluation, failure: terminalFailure(evaluation, null), manifest: null };
     }
   }
 
@@ -205,7 +218,7 @@ export async function bootHost(input: HostBootInput): Promise<HostBootState> {
   });
 
   if (evaluation.result === "MANIFEST_CAPABILITY_REJECTED") {
-    return { evaluation, failure: terminalFailure(evaluation, undefined), manifest: null };
+    return { evaluation, failure: terminalFailure(evaluation, null), manifest: null };
   }
 
   return { evaluation, failure: null, manifest: loaded.manifest };
