@@ -43,6 +43,7 @@ export type ManifestErrorCode =
   | "UNSUPPORTED_PROTOCOL_VERSION"
   | "PROTOCOL_VERSION_TOO_LOW"
   | "MISSING_REQUIRED_CAPABILITY"
+  | "CAPABILITY_REQUIRED"
   | "UNKNOWN_MANIFEST_FIELD"
   | "INVALID_MANIFEST"
   | "INVALID_PATH"
@@ -627,10 +628,14 @@ export function validateAppManifest(value: unknown): AppManifest {
     );
   }
   if (!requiredCapabilities.includes("app.manifest")) {
+    // Upstream M1 envelope: CAPABILITY_REQUIRED with the missing id as detail
+    // (reference-js/app-manifest.js). Kept aligned so the vendored upstream
+    // app-manifest suite runs with zero exclusions.
     fail(
-      "MISSING_REQUIRED_CAPABILITY",
+      "CAPABILITY_REQUIRED",
       "requiredCapabilities",
       "app.manifest is required.",
+      "app.manifest",
     );
   }
 
@@ -661,9 +666,10 @@ export function validateAppManifest(value: unknown): AppManifest {
   if (record.navigation !== undefined) {
     if (!requiredCapabilities.includes("app.navigation")) {
       fail(
-        "MISSING_REQUIRED_CAPABILITY",
+        "CAPABILITY_REQUIRED",
         "requiredCapabilities",
         "app.navigation is required when navigation is present.",
+        "app.navigation",
       );
     }
     navigation = parseNavigation(record.navigation, pages);

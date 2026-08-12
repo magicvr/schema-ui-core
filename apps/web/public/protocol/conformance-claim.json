@@ -1,0 +1,67 @@
+{
+  "claimVersion": "1.0",
+  "host": {
+    "hostId": "schema-ui-web",
+    "hostVersion": "0.1.0",
+    "buildId": "git:683d82edcc79fcb64d81a191633cd264eac12115"
+  },
+  "protocolArtifact": {
+    "artifactVersion": "2.8.0",
+    "contentSha256": "2d802a5886606ded7ff2b16de5ba73d9cd145d81aa6abcac18a24ae39ae3db05"
+  },
+  "support": {
+    "pageVersions": [
+      "2.7"
+    ],
+    "manifestVersions": [
+      "2.7",
+      "2.8"
+    ],
+    "capabilities": [
+      "app.manifest",
+      "app.navigation",
+      "host.bootstrap",
+      "host.failure-recovery",
+      "host.conformance-claim"
+    ]
+  },
+  "conformance": {
+    "fixtureVersion": "1.0",
+    "fixtureSha256": "2d1a13e1f83d9ce718a77128e137f23c3a3df7ca29321c8b11abdb0ef386bee2",
+    "suites": [
+      {
+        "suiteId": "app-manifest",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "app-navigation",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "host-bootstrap",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "host-failure",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "host-conformance-claim",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "kind": "local-report",
+      "subjectBuildId": "git:683d82edcc79fcb64d81a191633cd264eac12115",
+      "uri": "/protocol/conformance-local-report.json",
+      "sha256": "c96bdb1de7041ae8799a95880eeee6058aa37ad4a5d805612f4b22d78ebd6c99"
+    }
+  ]
+}

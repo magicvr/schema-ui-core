@@ -165,6 +165,7 @@ function pageIdFromPages(value: unknown): string | undefined {
 function hostManifestValue(
   rawValue: unknown,
   fallbackPages?: unknown,
+  injectCapabilities = false,
 ): JsonObject {
   const raw = record(rawValue, "manifest");
   const rawProtocol = typeof raw.protocolVersion === "string" ? raw.protocolVersion : "";
@@ -181,13 +182,19 @@ function hostManifestValue(
         (capability): capability is string => typeof capability === "string",
       )
     : [];
-  const capabilities = [
-    ...new Set([
-      ...rawCapabilities,
-      "app.manifest",
-      ...(navigation === undefined ? [] : ["app.navigation"]),
-    ]),
-  ];
+  // app-manifest cases pass capabilities through untouched so the upstream
+  // M1 gates (CAPABILITY_REQUIRED) stay observable. The app-navigation suite
+  // inputs are navigation fragments; only there the adapter supplies the
+  // manifest envelope capabilities.
+  const capabilities = injectCapabilities
+    ? [
+        ...new Set([
+          ...rawCapabilities,
+          "app.manifest",
+          ...(navigation === undefined ? [] : ["app.navigation"]),
+        ]),
+      ]
+    : [...new Set(rawCapabilities)];
   const pages = raw.pages ?? fallbackPages ?? [];
   const app =
     raw.app ??
@@ -227,6 +234,9 @@ function navigationManifestValue(input: JsonObject): JsonObject {
       navigation: input.navigation,
     },
     pages,
+    // Navigation suite inputs are fragments; the adapter supplies the
+    // manifest envelope capabilities (app.manifest + app.navigation).
+    true,
   );
 }
 
@@ -557,12 +567,10 @@ function runNavigationCase(fixtureCase: FixtureCase): JsonObject {
   }
 }
 
-const manifestCaseExclusions: Record<string, string> = {
-  "m1-missing-app-manifest-capability":
-    "Excluded: the upstream M1 schema fixture uses CAPABILITY_REQUIRED, while the R3 hand-written host validator exposes MISSING_REQUIRED_CAPABILITY; this schema error-envelope difference is outside the frozen R3 subset.",
-  "m1-navigation-without-capability":
-    "Excluded: the upstream M1 schema fixture uses CAPABILITY_REQUIRED, while the R3 hand-written host validator exposes MISSING_REQUIRED_CAPABILITY; this schema error-envelope difference is outside the frozen R3 subset.",
-};
+// S4 (2026-08-13): the host validator now emits the upstream M1 envelope
+// (CAPABILITY_REQUIRED + detail), so the previously excluded cases are
+// executed. The vendored app-manifest suite runs with ZERO exclusions.
+const manifestCaseExclusions: Record<string, string> = {};
 
 const manifestCases = appManifestArtifact.value.cases.filter(
   (fixtureCase) => !Object.prototype.hasOwnProperty.call(manifestCaseExclusions, fixtureCase.id),

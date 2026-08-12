@@ -1,0 +1,51 @@
+{
+  "reportVersion": "1.0",
+  "subjectBuildId": "git:683d82edcc79fcb64d81a191633cd264eac12115",
+  "host": {
+    "hostId": "schema-ui-web",
+    "hostVersion": "0.1.0"
+  },
+  "suites": [
+    {
+      "suiteId": "app-manifest",
+      "fixtures": 41,
+      "suiteVersion": "1.0",
+      "result": "pass"
+    },
+    {
+      "suiteId": "app-navigation",
+      "fixtures": 16,
+      "suiteVersion": "1.0",
+      "result": "pass"
+    },
+    {
+      "suiteId": "host-bootstrap",
+      "fixtures": 23,
+      "suiteVersion": "1.0",
+      "result": "pass"
+    },
+    {
+      "suiteId": "host-failure",
+      "fixtures": 43,
+      "suiteVersion": "1.0",
+      "result": "pass"
+    },
+    {
+      "suiteId": "host-conformance-claim",
+      "fixtures": 30,
+      "suiteVersion": "1.0",
+      "result": "pass"
+    }
+  ],
+  "pinnedUpstream": {
+    "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
+    "sourceCommit": "453008d",
+    "artifactVersion": "2.8.0-candidate",
+    "fixtureSha256": "2d1a13e1f83d9ce718a77128e137f23c3a3df7ca29321c8b11abdb0ef386bee2",
+    "protocolContentSha256": "2d802a5886606ded7ff2b16de5ba73d9cd145d81aa6abcac18a24ae39ae3db05"
+  },
+  "residuals": [
+    "候选 claim（H3 证据绑定），不构成生产支持声明；上游 2.8.0 正式发布后按 H4 变更集重新 pin 并重生成。",
+    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 视为候选绑定。"
+  ]
+}

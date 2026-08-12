@@ -251,6 +251,11 @@ func newMuxWithExtraProviders(
 		if err := handler.RegisterManifest(mux, data); err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: fmt.Sprintf("register manifest: %v", err)}
 		}
+		// Host/App 互操作（ADR-0035）：bootstrap document 与 manifest 同字节组装，
+		// 声明的 manifest.sha256 与真实响应一致。
+		if err := handler.RegisterBootstrap(mux, data); err != nil {
+			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: fmt.Sprintf("register bootstrap: %v", err)}
+		}
 	}
 	return mux, nil
 }

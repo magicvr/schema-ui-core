@@ -99,7 +99,7 @@ describe("app manifest validation", () => {
           ...manifest(),
           requiredCapabilities: ["app.manifest"],
         }),
-      "MISSING_REQUIRED_CAPABILITY",
+      "CAPABILITY_REQUIRED",
     );
   });
 

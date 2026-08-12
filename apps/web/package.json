@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "prebuild": "node scripts/generate-claim.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

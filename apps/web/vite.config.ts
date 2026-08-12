@@ -22,6 +22,10 @@ export default defineConfig({
         target: "http://127.0.0.1:25080",
         changeOrigin: true,
       },
+      "/.well-known/schema-ui/host-bootstrap.json": {
+        target: "http://127.0.0.1:25080",
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://127.0.0.1:25080",
         changeOrigin: true,
@@ -36,6 +40,10 @@ export default defineConfig({
     // the built SPA can be verified headlessly against the real API.
     proxy: {
       "/.well-known/schema-ui/app-manifest.json": {
+        target: "http://127.0.0.1:25080",
+        changeOrigin: true,
+      },
+      "/.well-known/schema-ui/host-bootstrap.json": {
         target: "http://127.0.0.1:25080",
         changeOrigin: true,
       },

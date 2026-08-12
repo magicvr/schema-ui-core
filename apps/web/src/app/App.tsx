@@ -358,6 +358,14 @@ function PageSurface({
   // Stable per-path failureId: redraws of the same unmatched route never
   // re-announce; a different unmatched route is a new occurrence (D1).
   const routeNotFound = useMemo(() => routeNotFoundFailure(), [path]);
+  // Recovery actions must land focus on the restored surface's main heading
+  // (ADR-0036 D7 rule 5).
+  const focusPageTitleOnNextRender = useRef(false);
+  useEffect(() => {
+    if (!focusPageTitleOnNextRender.current) return;
+    focusPageTitleOnNextRender.current = false;
+    document.getElementById("page-title")?.focus();
+  }, [path]);
   if (route === undefined) {
     // Unmatched application route (no manifest page, no host-owned path) →
     // HOST_ROUTE_NOT_FOUND global failure surface (ADR-0036 D3/D3a).
@@ -366,6 +374,7 @@ function PageSurface({
         bare
         failure={routeNotFound}
         onAction={(action) => {
+          focusPageTitleOnNextRender.current = true;
           if (action.type === "home") {
             onNavigate(homePage?.route ?? "/");
           } else if (action.type === "back") {
@@ -386,7 +395,7 @@ function PageSurface({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("shell.adminWorkspace")}
           </p>
-          <h1 id="page-title" className="truncate text-3xl font-semibold tracking-tight">
+          <h1 id="page-title" tabIndex={-1} className="truncate text-3xl font-semibold tracking-tight outline-none">
             {pageTitle}
           </h1>
         </div>

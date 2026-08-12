@@ -136,13 +136,20 @@ export async function bootHost(input: HostBootInput): Promise<HostBootState> {
   const fetchStatus = documentResult.status === "ok" ? "ok" : "not-provided";
 
   // Stages 2–4 with no manifest: any non-READY outcome is a pre-load terminal.
+  // The integrity stage (6) is fed a synthetic pass here — its real check runs
+  // below against the fetched manifest bytes; this evaluation only decides the
+  // pre-load gates (validation, availability, auth).
+  const declaredSha256 = documentResult.document?.manifest.sha256;
   const preLoad = evaluateBootstrap({
     document: documentResult.document,
     fetch: { status: fetchStatus },
     hostSupport: HOST_SUPPORT,
     auth,
     manifest: null,
-    integrity: null,
+    integrity:
+      declaredSha256 !== undefined
+        ? { declaredSha256, computedSha256: declaredSha256 }
+        : null,
     capabilityRegistry: registry as never,
   });
   if (preLoad.result !== "READY" && preLoad.result !== "READY_DEGRADED") {
@@ -164,7 +171,6 @@ export async function bootHost(input: HostBootInput): Promise<HostBootState> {
     throw error;
   }
 
-  const declaredSha256 = documentResult.document?.manifest.sha256;
   if (declaredSha256 !== undefined) {
     const computedSha256 = await sha256Hex(loaded.bytes);
     if (computedSha256 !== declaredSha256) {
