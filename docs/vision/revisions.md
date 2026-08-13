@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-14
 parent: null
-version: 0.4.4
+version: 0.4.5
 ---
 
 # Charter 修订台账
@@ -34,3 +34,4 @@ version: 0.4.4
 | VR-018 | 2026-08-10 | editorial | VP-008 关门投影 | 用户确认关闭 VP-008：status `active → closed`（v0.13.0）；Charter 目标语义、组合焦点与关系节、roadmap、workspaces、reviews 摘要同步为 closed 投影（`go` 候选 `ed99e88`、clean，解锁后续标准业务模块，每个激活前须 freshness review）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不重开历史 VP，**无** strategic、**无** re-align。 |
 | VR-019 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认结构选型并新建 planned `VP-011-admin-functional-modules`（标准 Admin 通用模块 + 常用业务领域分档交付；0 区）；调研回写 Root 纲领路线图而非 VP，VP 只留意图 + 三档方法论；roadmap 已落盘意图 + 后续方向同步；激活前须完成 VP-008 `go` 消费前 freshness review。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-020 | 2026-08-14 | editorial | 协议 pin bump（v2.7.0 → v2.8.0） | 用户裁决 A（editorial）：`schema-ui-docs@v2.7.0` → `v2.8.0`（additive 超集，v2.7.0 机器契约保留，新增 Host/App 互操作层）；Charter 协议来源/目标语义/成功边界 1/H-001 同步；`I-PROTO-FULL-001` v1.0.1 保留为 v2.7.0 历史分母、被 v2.8.0 覆盖；身份权威 = provenance-v2.8.json（VP-010 W3 固定）。不改 `vision_id@version`（仍 `@0.2.0`）、不重开历史 VP，**无** strategic、**无** re-align。 |
+| VR-021 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认激活 VP-011（v0.2.0 `active`，lead workspace-011-admin-functional-modules）：消费前 freshness review 第二轮 **PASS**（候选 `f14ab9d`，V-001～V-008 全绿；F-1a/b/c 由 VP-010 W6 修复；VR-020 pin bump 已对齐）；`/govern` 当日 scaffold 工作区 + Root（首阶段 = 有界调研）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

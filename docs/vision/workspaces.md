@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-11
+updated: 2026-08-14
 parent: null
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 工作区贡献图
@@ -22,9 +22,11 @@ version: 0.11.0
 | workspace-008-admin-module-readiness | docs/workspaces/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
 | workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1/W2 done；2026-08-10 语义纠正） |
 | workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；波次 W1 范例面可选化 done、W2 `demo` Profile done，`go` 均无新暂挂） |
+| workspace-011-admin-functional-modules | docs/workspaces/workspace-011-admin-functional-modules/ | GOAL-001-admin-functional-modules | lead | VP-011-admin-functional-modules | active（2026-08-14 开区；VP-011 激活 + freshness review PASS 候选 `f14ab9d`；Root 纲领路线图 R1 有界调研待开） |
 
 ## 说明
 
+- **workspace-011（2026-08-14 开区）**：VP-011（标准 Admin 功能模块分档交付）唯一 lead delivery 工作区；消费前 freshness review **PASS**（候选 `f14ab9d`；VR-020 pin bump、W5/W6 归档、F-1a/b/c fixed）；Root `GOAL-001-admin-functional-modules` 纲领路线图 R1 有界调研 → R2 一等公民 → R3 常用 → R4 增补 backlog。不改变 Charter `primary_workspace`。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

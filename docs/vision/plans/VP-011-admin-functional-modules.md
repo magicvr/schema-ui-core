@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-011-admin-functional-modules
 title: 标准 Admin 功能模块（通用模块 + 常用业务领域 · 分档交付）
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-011-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
+version: 0.2.0
 parent: null
 ---
 
@@ -58,34 +58,33 @@ parent: null
 
 > 依据 VP-008 §`go` 消费有效性：每个后续业务 VP **激活前**必须针对拟消费候选身份与解锁 scope 完成一次轻量 freshness review 并记录。本 VP 完成下列复核前**保持 `planned`，不得激活**。
 
-### 复核结果（2026-08-14 首轮 · **暂挂 pending re-verification**）
+### 复核结果（2026-08-14 第二轮 · **PASS · 可消费**）
 
 | 字段 | 结果 |
 |------|------|
 | consumer_vp | VP-011-admin-functional-modules |
-| go 候选身份 | `ed99e88`（VP-008 S5 候选，clean）——有效 commit，**但非当前 HEAD** |
-| 当前 HEAD | `ac81d44`（fix(security): W5 leftover lows after zero mid/high scan） |
-| 候选漂移 | **是**：`ed99e88` 落后 HEAD ~15 提交（含 VP-009 W1–W5 安全修复、VP-010 W1–W4 符合性整改） |
-| patch/manifest/input digest | 原候选 `ed99e88` 已非运行面；须以最新 wave-close 候选重验 |
-| 冻结命令 / 关键证据可执行性 | 未重跑（候选已漂移） |
-| 协议 pin | **漂移**：VP-010 W3 已将 `schema-ui-docs` 从 `v2.7.0`（`ca9e5fe`）升级并 pin 到 `v2.8.0`（tag `521cff8` / content `4fae4605`）；**Charter 协议来源仍写 `v2.7.0`** |
-| 外部输入 / 环境可用性 | 未验证（上游 v2.8.0 制品已 vendor/固定，见 VP-010 W3 E-005） |
-| 最新 finding + residual 投影 | VP-009 W1–W4 done、VP-010 W1–W4 done；但 HEAD 含**未归档 W5**（VP-009 安全 W5、VP-010 recordView 声明字段） |
-| 结论 | **failed → `go` 暂挂**（VP-008 §`go` 消费有效性：协议 pin 改变 + 候选漂移属失效触发） |
+| 消费候选身份 | **`f14ab9d`**（2026-08-14 checkpoint：`c8ae108` + W6 容器路径修复；clean checkout） |
+| 协议 pin | `schema-ui-docs@v2.8.0`（`521cff8`），Charter 已同步（VR-020 editorial） |
+| 冻结命令可执行性（HEAD 实测） | ✅ V-001 build / V-002 test / V-003 vet exit 0；V-004 vitest **48 文件 / 889 测试**；V-005 build + claim `git:c8ae108`；V-006 e2e mvp/admin **8+8 pass**；V-007 smoke mvp **exit 8**（预期部分绿）；V-008 disposable **exit 0 完整绿（SM-006 PASS）** |
+| 外部输入 / 环境可用性 | ✅ 容器构建（GIT_COMMIT 接线）+ nginx -t + 隔离 compose 复跑通过（W6 E-002） |
+| finding + residual 投影 | VP-009 / VP-010 波次 W5/W6 已归档关门（GOAL-006/007 done）；F-1a/b/c **fixed**；F-007 deferred 手递见下；open required = **0** |
+| 结论 | **PASS → `go` 可消费**（候选 `f14ab9d`；解锁 scope 与原 `go` 一致） |
 
-### 阻断项（激活前须先闭合）
+### residual 手递（消费时必须引用）
 
-1. **Charter / 协议来源漂移（`/vision` 层）** — ✅ **已闭合（2026-08-14 · VR-020 · editorial）**：用户裁决 A（additive pin bump）；Charter 协议来源 / 目标语义 / 成功边界 1 / H-001 已升至 `v2.8.0`（`521cff8`），`I-PROTO-FULL-001` v1.0.1 保留为 v2.7.0 历史分母、被 v2.8.0 覆盖。
-2. **消费候选重验证**：`go` 原候选 `ed99e88` 已非 HEAD；须以最新 wave-close 候选重跑冻结命令/关键证据并更新 identity+digest，或按 VP-008 失效规则回流重验证。
-3. **未归档 W5**：HEAD 含 VP-009 W5（安全遗留 low）、VP-010 W5（recordView 声明字段）未写入两区 goal-tree；须先归档并确认 `go` 判定（无影响/不暂挂）再消费。
+- **F-007（上传授权深度）**：deferred；owner=VP-008 lead；触发=后续协议判断 / 用户扩 scope（VP-008 D-001 / S5 矩阵 §3）——本 VP 消费 `go` 时登记，后续按触发条件复核。
 
-> 上述三项闭合前，本 VP **保持 `planned`，不得激活**；共享基架/`go` 语义问题由 `/vision` 决定（重开 VP-008 或新建准入 VP），不塞进本 VP。
+### 阻断项闭合状态（2026-08-14）
+
+1. ✅ **Charter / 协议来源漂移**：VR-020（editorial pin bump，v2.8.0）。
+2. ✅ **消费候选重验证**：V-001～V-008 全绿于候选 `f14ab9d`；identity+digest 更新（claim `git:c8ae108`，容器 claim `GIT_COMMIT` 接线）。
+3. ✅ **W5/W6 归档**：VP-009 W5（goal-tree + go 判定）、VP-010 W5（GOAL-006 done 4/4）、W6（GOAL-007 done 3/3，F-1a/b/c fixed）。
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-011-admin-functional-modules | GOAL-001-admin-functional-modules | lead | — | `planned`，0 区；完成 freshness review 并激活后由 `/govern` scaffold；Root 首个纲领阶段 = 有界调研（收集 + 分档） |
+| workspace-011-admin-functional-modules | GOAL-001-admin-functional-modules | lead | 2026-08-14 | **`active`**；freshness review PASS（候选 `f14ab9d`）；`/govern` 当日 scaffold；Root 首个纲领阶段 = 有界调研（收集 + 分档） |
 
 ## 关门记录
 
@@ -101,4 +100,6 @@ parent: null
 |------|--------|
 | 2026-08-14 | 初创（`planned`）：用户确认结构选型 = 新 VP-011 + 新 workspace-011；Root 首阶段 = 有界调研；调研回写 Root 纲领路线图而非 VP；VP 只留意图 + 三档方法论；范围 = 标准 Admin 通用模块 + 常用业务领域（订单/钱包为典型）一起入候选池分档 |
 | 2026-08-14 | 消费前 freshness review 首轮：**failed → `go` 暂挂**（候选 `ed99e88` 落后 HEAD `ac81d44`；协议 pin `v2.7.0`→`v2.8.0` 且 Charter 未同步；未归档 W5）；阻断项见 §消费决策记录 |
-| 2026-08-14 | 阻断项 1 闭合（VR-020 editorial pin bump）；剩余阻断项 2（候选重验证）、3（W5 归档）交 `/govern` |
+| 2026-08-14 | 阻断项 1 闭合（VR-020 editorial pin bump）；阻断项 2、3 交 `/govern` |
+| 2026-08-14 | `/govern` 完成：W5 归档（VP-009 goal-tree / VP-010 GOAL-006 done）、W6 修复 F-1a/b/c（GOAL-007 done，V-007 exit 8 + V-008 exit 0 完整绿）、checkpoint `f14ab9d` |
+| 2026-08-14 | **消费前 freshness review 第二轮：PASS → `go` 可消费**（候选 `f14ab9d`；V-001～V-008 全绿）；用户确认激活（VR-021） |
