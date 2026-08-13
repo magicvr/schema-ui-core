@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-13
 updated: 2026-08-13
-version: 0.2.0
-progress: 2/6
+version: 0.3.0
+progress: 4/6
 ---
 
 # GOAL-005 · W4 · 长内容列的列表截断与详情换行
@@ -30,8 +30,8 @@ progress: 2/6
 
 - [x] **S1 · 基线与最小复现**：核实 roles 列表长列挤出与详情换行行为；确认协议对列呈现语义的定义情况；建立受影响面清单（E-001）。
 - [x] **S2 · 方案冻结**：呈现语义处置（协议已定义→符合性修复 / 未定义→呈现自由，处置留痕）；截断+全文可发现与详情换行的实现设计、验收标准；完成方案级 self 审视（D-001 + A-001）。
-- [ ] **S3 · 实现整改**：列表长列单行截断（截断标记 + 原生 `title` 全文 affordance）；recordView 长值自动换行修正；不引入新的私有协议方言。
-- [ ] **S4 · 符合性验证**：补/跑 `apps/web` vitest 相关测试与 `build` 门禁；既有代表性页面与 conformance fixtures 回归通过（E-003）。
+- [x] **S3 · 实现整改**：列表长列单行截断（截断标记 + 原生 `title` 全文 affordance）；recordView 长值自动换行修正；不引入新的私有协议方言。（2026-08-13 · E-002）
+- [x] **S4 · 符合性验证**：补/跑 `apps/web` vitest 相关测试与 `build` 门禁；既有代表性页面与 conformance fixtures 回归通过。（2026-08-13 · E-003：48/879 通过；tsc -b 0 错误；go test 23 包 ok）
 - [ ] **S5 · 自审与 go 影响判定**：self 审计（A-002）；VP-008 `go` 消费有效性判定留痕（预期：无影响、不暂挂，理由随 S5 落盘）。
 - [ ] **S6 · 关门**：全部 required 信息项与 findings 合法闭合；完成关门 cross 审计（self + 用户指定 independent provider `grok build`）；`go` 判定复核；本目标 `status=done`。
 

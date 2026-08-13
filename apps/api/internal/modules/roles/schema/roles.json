@@ -303,12 +303,14 @@
             {
               "field": "permissions",
               "label": "Permissions",
-              "labelKey": "schema.roles.column.permissions"
+              "labelKey": "schema.roles.column.permissions",
+              "truncate": true
             },
             {
               "field": "menuItems",
               "label": "Menus",
-              "labelKey": "schema.roles.column.menus"
+              "labelKey": "schema.roles.column.menus",
+              "truncate": true
             },
             {
               "field": "assignedUsers",

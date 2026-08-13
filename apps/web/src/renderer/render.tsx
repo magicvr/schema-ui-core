@@ -1526,11 +1526,13 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
         </div>
         <dl className="flex-1 space-y-3 overflow-y-auto p-4">
           {entries.map(([key, value]) => (
-            <div key={key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_1fr] sm:gap-3">
+            <div key={key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
               <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                 {key}
               </dt>
-              <dd className="break-words text-foreground">{String(value)}</dd>
+              <dd className="break-words text-foreground">
+                {Array.isArray(value) ? value.join(", ") : String(value)}
+              </dd>
             </div>
           ))}
         </dl>

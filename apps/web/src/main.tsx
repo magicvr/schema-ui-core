@@ -18,7 +18,7 @@ import {
   type BootstrapAuth,
   type BootstrapDiscovery,
 } from "@/host/bootstrap";
-import { adapterAuthFor, bootHost, executeBootRecovery, lockedFailure, reauthFailure, type HostBootState } from "@/host/boot";
+import { adapterAuthFor, bootHost, executeBootRecovery, lockedFailure, reauthFailure, type HostBootState, type SessionAdapterState } from "@/host/boot";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 import "./index.css";
 

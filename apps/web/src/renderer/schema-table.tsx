@@ -50,6 +50,8 @@ export interface SchemaTableColumnSpec {
   field: string;
   label?: string;
   sortable?: boolean;
+  /** W4 · GOAL-005: single-line truncate + title affordance for long values. */
+  truncate?: boolean;
 }
 
 function stringOf(value: unknown): string {
@@ -375,6 +377,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         column.field,
       ),
       sortable: column.sortable === true,
+      truncate: column.truncate === true,
     })),
     ...(rowActions.length > 0
       ? [

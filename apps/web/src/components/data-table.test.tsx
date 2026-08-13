@@ -26,6 +26,23 @@ function rowKey(row: Row): string {
   return row.id;
 }
 
+interface LongRow {
+  id: string;
+  permissions: string[];
+}
+
+const longColumns: DataTableColumn<LongRow>[] = [
+  { key: "id", label: "ID" },
+  { key: "permissions", label: "Permissions", truncate: true },
+];
+
+const longRows: LongRow[] = [
+  {
+    id: "role-1",
+    permissions: ["users.read", "users.write", "roles.read", "roles.write"],
+  },
+];
+
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
 beforeEach(() => {
@@ -200,5 +217,26 @@ describe("DataTable", () => {
     expect(mobile?.querySelectorAll("li").length).toBe(2);
     expect(mobile?.textContent).toContain("Acme Console");
     expect(mobile?.textContent).toContain("Northwind Sales");
+  });
+
+  it("truncates a truncate column with a full-text title affordance (W4 · GOAL-005)", async () => {
+    const container = await renderTable(
+      <DataTable columns={longColumns} rows={longRows} rowKey={(row) => row.id} />,
+    );
+    const full = "users.read,users.write,roles.read,roles.write";
+    const cell = container.querySelector('[data-table-cell="truncated"]');
+    expect(cell).not.toBeNull();
+    expect(cell?.className).toMatch(/truncate/);
+    expect(cell?.className).toMatch(/max-w-\[16rem\]/);
+    expect(cell?.getAttribute("title")).toBe(full);
+    expect(cell?.textContent).toBe(full);
+  });
+
+  it("keeps non-truncate columns unwrapped (behavior unchanged)", async () => {
+    const container = await renderTable(
+      <DataTable columns={columns} rows={rows} rowKey={rowKey} />,
+    );
+    expect(container.querySelector('[data-table-cell="truncated"]')).toBeNull();
+    expect(container.textContent).toContain("Acme Console");
   });
 });

@@ -17,6 +17,10 @@ export interface DataTableColumn<T> {
   /** Cell content or header node (checkboxes render in headers for selection). */
   label: ReactNode;
   sortable?: boolean;
+  /** W4 · GOAL-005: render the string fallback single-line truncated with a
+   *  native `title` full-text affordance so long values do not crowd out
+   *  sibling columns. Custom `render` cells are unaffected. */
+  truncate?: boolean;
   render?: (row: T) => ReactNode;
 }
 
@@ -47,7 +51,19 @@ function cellContent<T>(
   if (value === undefined || value === null) {
     return <span className="text-muted-foreground">—</span>;
   }
-  return String(value);
+  const text = String(value);
+  if (column.truncate === true) {
+    return (
+      <span
+        className="block max-w-[16rem] truncate"
+        title={text}
+        data-table-cell="truncated"
+      >
+        {text}
+      </span>
+    );
+  }
+  return text;
 }
 
 function labelText(label: ReactNode): string {

@@ -125,6 +125,23 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect(schemaTableDataSource(node)).toBe("/api/users");
   });
 
+  it("carries the column truncate flag into the shipped table cell (W4 · GOAL-005)", async () => {
+    const truncateColumns = [
+      { field: "name", label: "Name", sortable: true },
+      { field: "permissions", label: "Permissions", truncate: true },
+    ];
+    const fetcher = itemsFetcher([
+      { id: "role-1", name: "Admin", permissions: ["users.read", "roles.write"] },
+    ]);
+    const container = await renderTable(
+      tableNode({ columns: truncateColumns, dataSource: "/api/roles" }),
+      fetcher,
+    );
+    const cell = container.querySelector('[data-table-cell="truncated"]');
+    expect(cell).not.toBeNull();
+    expect(cell?.getAttribute("title")).toBe("users.read,roles.write");
+  });
+
   it("fails closed (null) when the table node has no data source (no /api/users fallback)", () => {
     const node = tableNode({ columns: COLUMNS });
     expect(schemaTableDataSource(node)).toBeNull();

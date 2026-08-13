@@ -124,7 +124,7 @@ function kindMessageKey(kind: string): string {
 
 function recoveryActionsFor(
   kind: string,
-  evaluation: BootstrapEvaluation,
+  evaluation: Pick<BootstrapEvaluation, "fetchClassification">,
 ): HostFailure["recoveryActions"] {
   switch (kind) {
     case "maintenance":
@@ -276,15 +276,7 @@ export function reauthFailure(): HostFailure {
     hostCode,
     message: { messageKey: kindMessageKey(kind) },
     diagnostics: { phase: "auth-resolution" },
-    recoveryActions: recoveryActionsFor(kind, {
-      code: "REAUTH_REQUIRED",
-      result: "REAUTH_REQUIRED",
-      phase: "auth-resolution",
-      fetchClassification: null,
-      missingCapabilities: [],
-      effectiveCapabilities: null,
-      context: null,
-    }),
+    recoveryActions: recoveryActionsFor(kind, { fetchClassification: null }),
   };
 }
 
@@ -306,15 +298,7 @@ export function lockedFailure(): HostFailure {
     hostCode,
     message: { messageKey: kindMessageKey(kind) },
     diagnostics: { phase: "auth-resolution" },
-    recoveryActions: recoveryActionsFor(kind, {
-      code: "ACCOUNT_LOCKED",
-      result: "ACCOUNT_LOCKED",
-      phase: "auth-resolution",
-      fetchClassification: null,
-      missingCapabilities: [],
-      effectiveCapabilities: null,
-      context: null,
-    }),
+    recoveryActions: recoveryActionsFor(kind, { fetchClassification: null }),
   };
 }
 

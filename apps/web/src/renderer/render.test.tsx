@@ -478,6 +478,36 @@ describe("RenderPage form node with reactions", () => {
   });
 });
 
+describe("RenderPage recordView long-value wrapping (W4 · GOAL-005)", () => {
+  it("renders array values comma-joined and keeps the value column shrinkable", async () => {
+    const pageDoc = displayDocument({
+      type: "recordView",
+      id: "detail",
+      props: {
+        record: {
+          id: "role-1",
+          permissions: ["users.read", "users.write", "roles.read"],
+          menuItems: ["menu-users", "menu-roles"],
+        },
+      },
+    });
+    const container = await renderDocument(pageDoc, {});
+    expect(container.textContent).toContain(
+      "users.read, users.write, roles.read",
+    );
+    expect(container.textContent).toContain("menu-users, menu-roles");
+    // The value column must be shrinkable so long values wrap instead of
+    // forcing horizontal scrolling (sm:grid-cols-[8rem_minmax(0,1fr)]).
+    const row = container.querySelector(
+      '[data-record-view="panel"] .grid',
+    );
+    expect(row?.className).toMatch(/sm:grid-cols-\[8rem_minmax\(0,1fr\)\]/);
+    expect(container.querySelector('[data-record-view="panel"] dd')?.className).toMatch(
+      /break-words/,
+    );
+  });
+});
+
 describe("RenderPage form submit gate (GOAL-009 S1 · F-002-002)", () => {
   it("disables submit and sends no request while a field gate error is shown", async () => {
     await withFetchSpy(async (fetchSpy) => {
