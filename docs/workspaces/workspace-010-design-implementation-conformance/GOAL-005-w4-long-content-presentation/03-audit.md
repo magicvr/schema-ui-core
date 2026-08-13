@@ -14,16 +14,16 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-001 协议呈现语义 | open | 见 00-meta；S2 冻结前需 verified |
-| I-002 受影响面清单 | open | 见 00-meta；S3 开始前需 verified |
-| I-003 截断交互形态 | open（non-blocking） | 默认方案随 D-001 落盘 |
+| I-001 协议呈现语义 | verified | E-001 §3：协议未定义 → 呈现自由（explicitly-out） |
+| I-002 受影响面清单 | verified | E-001 §4 |
+| I-003 截断交互形态 | 已采用默认（non-blocking） | D-001 §4：单行截断 + title；复审触发留痕 |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-13 | self | S2 方案出口（D-001） | pass | 无（BLOCKING_COUNT=0；F-1/F-2 recommended 自纠随 S3/S4 闭环） | `03-audit/A-001-s2-plan-freeze-self.md` |
 
 ## 结论状态
 
-尚无审计节点。
+S2 方案冻结成立（D-001 accepted + A-001 pass）。
