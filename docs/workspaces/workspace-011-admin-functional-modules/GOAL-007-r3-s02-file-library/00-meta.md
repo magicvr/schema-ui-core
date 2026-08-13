@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL-007-r3-s02-file-library · 文件/附件库
@@ -24,7 +24,7 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：边界（引用/清理策略、配额语义）、权限键、审计设计、协议对照（上传/文件面）、Profile 归属；方案级 self 审视
+- [x] **S1 · 方案冻结**：边界（引用/清理策略、配额语义）、权限键、审计设计、协议对照（上传/文件面）、Profile 归属；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
 - [ ] **S2 · 实现**：模块 provider + 迁移 + schema 代表页 + 文件端点（列表/上传/下载/删除）+ 前端（页面/上传交互）+ 测试
 - [ ] **S3 · 验证**：单元/集成 + 代表场景实测 + 全量回归（go test / web suite / 冒烟）
 - [ ] **S4 · go 影响判定 + 自审**：go 影响判定（Profile 默认集变化触发失效检查）+ self 审计
@@ -40,9 +40,9 @@ progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 文件面协议契约（v2.8.0 upload 相关 + node.schema.json 扩展动作键）与呈现自由边界 | S1 方案 | 对照 protocol-inventory + node.schema.json | open |
-| I-002 | required | 引用/清理策略与配额语义（删除保护、孤儿清理、配额上限） | S1 方案 | 复用 VP-009 W2/W4 上传加固 + R2 通知保留策略先例 | open |
-| I-003 | required | Profile 归属：S-02 进入 admin 默认集？mvp 保持精简？ | S1 方案 | F-01 先例（Profile 内容扩展 + adminFunctionalOrder） | open |
+| I-001 | required | 文件面协议契约（v2.8.0 upload 相关 + node.schema.json 扩展动作键）与呈现自由边界 | S1 方案 | 对照 protocol-inventory + node.schema.json | **closed**（D-002 §1） |
+| I-002 | required | 引用/清理策略与配额语义（删除保护、孤儿清理、配额上限） | S1 方案 | 复用 VP-009 W2/W4 上传加固 + R2 通知保留策略先例 | **closed**（D-002 §6） |
+| I-003 | required | Profile 归属：S-02 进入 admin 默认集？mvp 保持精简？ | S1 方案 | F-01 先例（Profile 内容扩展 + adminFunctionalOrder） | **closed**（D-001 §2） |
 
 ## 父目标
 
