@@ -20,7 +20,7 @@ workspace_id: workspace-011-admin-functional-modules
 ```text
 GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分档交付）
 ├── GOAL-002-r1-bounded-research [done]       · R1 有界调研：候选池收集 + 三档分档（5/5）
-├── GOAL-003-r2-f01-dashboard [done]        · R2-F01 仪表盘/控制台（生产 home）（5/5）
+├── GOAL-003-r2-f01-dashboard [done]        · R2-F01 仪表盘/控制台（生产 home）（5/5 · 990daa8）
 ├── GOAL-004-r2-f02-data-import-export [done]    · R2-F02 数据导入/导出（共享能力）（5/5）
 ├── GOAL-005-r2-f03-account-center [done]      · R2-F03 个人中心与账户安全 + 账号启停（5/5）
 └── GOAL-006-r2-f04-notification-center [done] · R2-F04 通知中心（站内通知）（5/5）
