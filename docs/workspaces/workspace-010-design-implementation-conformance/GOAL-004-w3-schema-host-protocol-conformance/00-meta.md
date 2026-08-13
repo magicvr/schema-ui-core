@@ -26,9 +26,10 @@ progress: 2/6
 - Renderer 对未知节点 fail closed；`form`、`table`、`recordView`、`actionButton` 等已进入白名单的节点不因使用 Host adapter 而自动构成绕过。
 - 已发现的实现整改候选包括：Settings PATCH 未显式拒绝未知字段、Users 导航 `label` 在 provider 与 manifest 双重定义，以及后续语义 validator 盘点所得项目。
 - 已发现的协议缺口包括：公共 branding 启动配置、认证/会话生命周期、bootstrap 顺序、Shell 与偏好、全局错误恢复等 Host/App 契约。
-- **停止线（已解除，2026-08-13）**：上游 `schema-ui-protocol v2.8.0`（tag `v2.8.0` @ `593f625`）已发布并固定到本仓
-  （`provenance-v2.8.json`，正式 content/fixture digest 绑定；E-004）。I-003 已满足，`apps/api` / `apps/web` 的
-  正式问题修复不再被停止线阻断；S2 方案级 cross 审视与 S4–S6 残余门禁仍按各自定义执行。
+- **停止线（已解除，2026-08-13）**：上游 `schema-ui-protocol v2.8.0` 正式发布（tag `v2.8.0` @ `521cff8`，
+  身份以上游审计 0080 V379 为准；此前 pin 的 `593f625` 为 H4 预备身份）并固定到本仓
+  （`provenance-v2.8.json`，正式 content/fixture digest 绑定；E-004，身份纠偏 E-005）。I-003 已满足，
+  `apps/api` / `apps/web` 的正式问题修复不再被停止线阻断；S2 方案级 cross 审视与 S4–S6 残余门禁仍按各自定义执行。
 
 ## 成功标准与路线图（P-001）
 
@@ -47,7 +48,7 @@ progress: 2/6
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 当前实现与 2.7.0 的逐项覆盖/偏离基线是否完整 | S2 方案 | S2 冻结前 | 对照 upstream schema/registry/fixtures 与 API/Web 语义，维护附件处置列 | collecting | — | `attachments/I-HOST-APP-001-protocol-gap-catalog.md` |
 | I-002 | required | Host/App 候选哪些进入本次协议、哪些仅保留扩展点或明确排除 | S2 方案 | S2 冻结前 | 对每个候选记录 `adopt-now` / `reserve-extension` / `explicitly-out` 及理由 | verified | — | ADR-0034–0037 accepted（2026-08-13），D10 逐项处置 95/95 且 shape/state/security/fixtures 已随 2.8.0 发布齐备；本仓 S2 方案级 cross 审视仍待执行 |
-| I-003 | required | 新协议是否已完成上游合并、发布和本仓固定引用 | **S4 实施** | S4 开始前 | 核对版本/commit、provenance、schema/registry/fixtures 与 capability matrix | verified | — | 上游 v2.8.0 发布（tag `v2.8.0` @ `593f625`，content `40690917…` / fixture 树 `7aacf133…`）；本仓 `provenance-v2.8.json` 固定 + release 字节级 fixture pin（E-004） |
+| I-003 | required | 新协议是否已完成上游合并、发布和本仓固定引用 | **S4 实施** | S4 开始前 | 核对版本/commit、provenance、schema/registry/fixtures 与 capability matrix | verified | — | 上游 v2.8.0 正式发布（tag `v2.8.0` @ `521cff8`，content `4fae4605…` / artifact `6cdbffcc…` / fixture 树 `7aacf133…`；上游审计 0080 V379 权威）；本仓 `provenance-v2.8.json` 固定 + release 字节级 fixture pin（E-004；正式身份纠偏重 pin E-005） |
 | I-004 | required | 协议/跨边界变更的 independent provider | S2 审视、S6 关门 | 首次 cross 审视前 | 用户指定 provider；self + independent 分别落 A 台账 | verified | — | 用户指定 `grok build`（grok 4.5，reasoning high）；self=A-001（pass）；independent=A-002（conditional，BLOCKING_COUNT=0）已落盘 |
 | I-005 | required | 2.7.0 消费方的兼容、迁移、弃用和 fail-closed 规则 | S3/S4 | S3 固定前 | 形成版本矩阵、迁移说明、正反 fixtures | collecting | — | 上游已交付：`migrations/2.7-to-2.8.md`（双轨兼容矩阵、零动作项）、registry `deprecatedSince`/`removedIn` 弃用机制、正反 fixtures（host 99 + app-manifest 41 + version-negotiation 2.8 向量）；本仓 S3 台账录入随审计轮收尾 |
 | I-006 | required | `recordView` 行上下文、抽屉/详情交互等争议语义的最终归属 | S2/S4 | S2 冻结前 | 对照现行 registry；上游明确标准能力或明确 Host extension | verified | — | 上游已裁定：ADR-0034 D6 IMP-004（row selection → drawer/detail）保留独立 overlay ADR；`record.view.load` 复用既有；D7 明确 reserve 位置不冒充 capability |

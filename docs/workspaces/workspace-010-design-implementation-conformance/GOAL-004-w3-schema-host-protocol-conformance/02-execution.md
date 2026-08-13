@@ -18,6 +18,7 @@ version: 0.1.1
 | E-002 | 2026-08-13 | 上游 H0 处置同步与 cross 审计闭环 | recorded | `02-execution/E-002-h0-disposition-sync-and-cross-audit.md` |
 | E-003 | 2026-08-13 | 上游 H0 闭合与进入 H1 accept 设计阶段 | recorded | `02-execution/E-003-upstream-h0-closed-h1-entered.md` |
 | E-004 | 2026-08-13 | S4 生产实现 — 上游 2.8 候选机器契约 pin、Host 模块与浏览器级证据 | recorded | `02-execution/E-004-s4-host-interop-implementation.md` |
+| E-005 | 2026-08-13 | v2.8.0 正式身份纠偏 — 重 pin 521cff8 / content 4fae4605 并重生成 claim | recorded | `02-execution/E-005-formal-v2-8-0-identity-repin.md` |
 
 ## 事实边界
 
@@ -26,5 +27,8 @@ version: 0.1.1
 > 的生产代码路径（`src/host/*` + main.tsx/App shell 集成 + Go API bootstrap 端点）消费上游
 > 99 fixtures 零排除，浏览器级 focus/live-region/恢复测试全过，候选 claim 绑定 artifact digest /
 > fixture digest / build ID。页面协议 2.7 的已登记 residual 与候选绑定性质见 E-004；上游
-> 2.8.0 正式发布（H4）后重 pin 并重生成 claim。S2 出口门禁（I-001/I-002/I-005/I-006）与
-> cross 方案审视仍按计划进行。
+> 2.8.0 正式发布（H4）后重 pin 并重生成 claim。**身份纠偏（E-005，2026-08-13）**：上游
+> v2.8.1 审计 0080 V379 裁定正式 v2.8.0 = tag @ `521cff8` / content `4fae4605…`；本仓
+> 已按正式身份重 pin（commit `fd641c6`）并重生成 claim（buildId `git:fd641c6…`），vendored
+> 工件与正式 tag 字节级核验一致，无生产代码改动。S2 出口门禁（I-001/I-002/I-005/I-006）
+> 与 cross 方案审视仍按计划进行。

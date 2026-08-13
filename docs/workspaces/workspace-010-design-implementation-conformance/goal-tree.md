@@ -24,7 +24,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 └── GOAL-004-w3-schema-host-protocol-conformance [active] · W3 协议优先的 Host/App 符合性整改
 ```
 
-Root **保持 active**。W1/W2 已关门；W3 上游协议增补已完成并固定（v2.8.0，S1+S3），进入 S2 方案审视与 S4 残余整改阶段；不推导 Root/VP done。
+Root **保持 active**。W1/W2 已关门；W3 上游协议增补已完成并固定（v2.8.0 正式 tag `521cff8`，身份纠偏 E-005，S1+S3），进入 S2 方案审视与 S4 残余整改阶段；不推导 Root/VP done。
 
 ## 状态表
 

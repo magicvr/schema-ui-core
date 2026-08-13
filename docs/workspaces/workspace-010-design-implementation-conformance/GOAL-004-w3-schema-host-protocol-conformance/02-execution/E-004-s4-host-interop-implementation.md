@@ -86,10 +86,11 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
 
 - `scripts/generate-claim.mjs`（`prebuild` 挂载）：`public/protocol/conformance-claim.json` +
   `conformance-local-report.json` + canonical digest 文件；
-- 绑定值（上游 tag `v2.8.0` @ `593f625`）：`protocolArtifact.contentSha256` = 正式制品
-  contentDigest `40690917…`；`conformance.fixtureSha256` = 正式 fixture 树 digest
+- 绑定值（上游正式 tag `v2.8.0` @ `521cff8`，上游审计 0080 V379 权威）：`protocolArtifact.contentSha256` = 正式制品
+  contentDigest `4fae4605…`；`conformance.fixtureSha256` = 正式 fixture 树 digest
   `7aacf133…`；`host.buildId` = `git:<HEAD>`（claim/report/evidence 三处逐字一致，
   由 `claim-artifact.test.ts` 门禁；每次生产修正后重生成，绑定修正所在 commit）；
+  2026-08-13 身份纠偏后重生成（E-005；此前 `593f625`/`40690917…` 为 H4 预备身份）。
 - vendored host 三 suite 的文件 digest 已按正式 release 原样重 vendor（
   host-bootstrap `bfc71bbd…` / host-failure `59efc00a…` / host-conformance-claim
   `e3511ecc…`，语义内容与 H2 相同，字节级 pin 对齐正式 tag）；
@@ -101,6 +102,10 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
 
 1. **（已关闭）候选绑定**：上游 2.8.0 正式发布后已按正式 artifact/fixture digest 重 pin 并重生成
    claim（见 §7）；当前 claim 绑定正式 2.8.0 digest。
+   > **纠偏注记（E-005，2026-08-13）**：§7 原记录绑定的 `593f625` / content `40690917…`
+   > 经上游审计 0080 V379 裁定为 H4 预备身份，非正式 pin；正式 v2.8.0 = tag `521cff8` /
+   > content `4fae4605…`（fixture `7aacf133…` 不变）。已按正式身份重 pin 并重生成 claim
+   > （buildId `git:fd641c6…`），vendored 工件与正式 tag 字节级一致。
 2. **页面协议 2.7 mandatory behavior**：R5 已登记的 multi-round `$deps` reactions 子集未实现；
    闭环前 claim 的 `pageVersions` 条目视为候选绑定。
 3. **返回意图消费链**：`validateReturnIntent` 已实现并消费上游 fixtures；登录流程接入
