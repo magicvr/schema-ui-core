@@ -4,8 +4,8 @@ title: 设计意图与实现符合性（持续对齐程序）
 status: active
 parent: null
 created: 2026-08-11
-updated: 2026-08-12
-version: 0.2.0
+updated: 2026-08-13
+version: 0.3.0
 plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
@@ -51,6 +51,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | W1 | GOAL-002-w1-examples-optional-module | **done**（6/6 · 2026-08-11 关门） | 范例面拆出为可选模块 `dev.examples`；VP-008 `go` 已暂挂并在波次关门时**留痕恢复**（A-006） |
 | W2 | GOAL-003-demo-profile | **done**（6/6 · 2026-08-11 关门） | 新增 `demo` Profile = mvp + `dev.examples`；**VP-008 `go` 判定：无影响、不触发暂挂**（mvp/admin 生产默认未变、demo 非生产向；A-003 §go），生产矩阵仍以 W1 恢复 digest `4a2b8cd…` 为准 |
 | W3 | GOAL-004-w3-schema-host-protocol-conformance | **done**（6/6 · 2026-08-13 关门） | 先补 Host/App 协议，再修 API/Web 符合性问题；上游 v2.8.0 正式发布并固定（tag `521cff8`）；S2 冻结（D-002 + A-005/A-006）+ S4 整改 + S5 验证 + S6 cross 关门（A-007/A-008）；account-locked 经用户 P-004 裁决实现生产源（E-008）；go 不暂挂 |
+| W4 | GOAL-005-w4-long-content-presentation | **active**（0/6 · 2026-08-13 立项） | 长内容列（roles permissions/menuItems 为代表）列表截断 + 详情自动换行；用户点名；共享呈现层整改，go 影响 S5 判定 |
 
 ## 信息就绪与未知项
 
