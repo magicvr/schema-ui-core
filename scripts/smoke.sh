@@ -220,14 +220,14 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
   fi
   # Page sets per profile (post W1/VP-010 GOAL-002: dev.examples split out of
   # production profiles; demo re-adds the examples surface; F-03/GOAL-005 adds
-  # admin.account to mvp + admin defaults):
-  #   mvp   = users, roles, account
-  #   admin = users, roles, settings, activity, account
-  #   demo  = overview, users, roles, account (+ examples surface)
+  # admin.account; F-01/GOAL-003 adds admin.dashboard to mvp + admin defaults):
+  #   mvp   = dashboard, users, roles, account
+  #   admin = dashboard, users, roles, settings, activity, account
+  #   demo  = overview, dashboard, users, roles, account (+ examples surface)
   case "$SMOKE_EXPECTED_PROFILE" in
-    admin) required_pages="users roles settings activity account" ;;
-    demo)  required_pages="overview users roles account" ;;
-    *)     required_pages="users roles account" ;;
+    admin) required_pages="dashboard users roles settings activity account" ;;
+    demo)  required_pages="overview dashboard users roles account" ;;
+    *)     required_pages="dashboard users roles account" ;;
   esac
   for page_id in $required_pages; do
     if ! json_has_page "$api_manifest" "$page_id"; then

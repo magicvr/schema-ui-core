@@ -36,6 +36,9 @@ var profileDefaults = map[ProfileName][]string{
 		// an account-security baseline; Profile content extension, not an
 		// assembly-semantics change.
 		"admin.account",
+		// F-01 (GOAL-003 D-002 §3): production home dashboard — Profile content
+		// extension (explicit 必办-3 declaration).
+		"admin.dashboard",
 	},
 	ProfileAdmin: {
 		"core.server-registration",
@@ -52,6 +55,8 @@ var profileDefaults = map[ProfileName][]string{
 		// F-02 (GOAL-004 D-002 §6): admin.data-transfer — admin-only profile;
 		// export/import is a management-surface capability (content extension).
 		"admin.data-transfer",
+		// F-01 (GOAL-003 D-002 §3): production home dashboard.
+		"admin.dashboard",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -68,6 +73,7 @@ var profileDefaults = map[ProfileName][]string{
 		"admin.roles",
 		"dev.examples",
 		"admin.account",
+		"admin.dashboard",
 	},
 }
 
@@ -129,6 +135,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.account", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/account/profile", "PATCH /api/account/profile", "POST /api/account/password", "GET /api/account/sessions", "POST /api/account/sessions/{id}/revoke", "POST /api/users/{id}/enable", "POST /api/users/{id}/disable", "POST /api/users/{id}/unlock"}, Pages: []string{"account"}, Navigation: []string{"menu_account"}, Permissions: []string{"users.enable", "users.disable"}, Fragments: []string{"account"}}},
 		// F-02 admin.data-transfer (GOAL-004): CSV export/import shared capability.
 		{ID: "admin.data-transfer", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/export/{resource}", "POST /api/import/{resource}"}, Permissions: []string{"data.export", "data.import"}}},
+		// F-01 admin.dashboard (GOAL-003): production home dashboard (no routes).
+		{ID: "admin.dashboard", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.manifest-route"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Pages: []string{"dashboard"}, Navigation: []string{"menu_dashboard"}, Fragments: []string{"dashboard"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

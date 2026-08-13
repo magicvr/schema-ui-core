@@ -252,14 +252,15 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 		return doc, mux
 	}
 
-	// Default mvp: first admin functional page (users), no examples surface.
+	// Default mvp: F-01 dashboard is the production home (GOAL-003 D-002 §3),
+	// no examples surface.
 	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	mvpDoc, mvpMux := fetch(t, mvpPlan)
-	if mvpDoc.App.HomePageRef != "users" {
-		t.Fatalf("mvp homePageRef = %q, want users", mvpDoc.App.HomePageRef)
+	if mvpDoc.App.HomePageRef != "dashboard" {
+		t.Fatalf("mvp homePageRef = %q, want dashboard", mvpDoc.App.HomePageRef)
 	}
 	for _, page := range mvpDoc.Pages {
 		if page.PageID == "overview" || page.PageID == "data-table" || page.PageID == "form-controls" {
@@ -285,14 +286,14 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 		}
 	}
 
-	// Default admin: still users (users precedes roles in declaration order).
+	// Default admin: F-01 dashboard is the production home (GOAL-003 D-002 §3).
 	adminPlan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	adminDoc, _ := fetch(t, adminPlan)
-	if adminDoc.App.HomePageRef != "users" {
-		t.Fatalf("admin homePageRef = %q, want users", adminDoc.App.HomePageRef)
+	if adminDoc.App.HomePageRef != "dashboard" {
+		t.Fatalf("admin homePageRef = %q, want dashboard", adminDoc.App.HomePageRef)
 	}
 
 	// mvp + dev.examples (dogfood): home -> overview, examples restored.
@@ -340,6 +341,7 @@ func TestDeriveHomePageRefBranches(t *testing.T) {
 	}{
 		{name: "dev.examples wins", plan: mkPlan(pages("dev.examples", "overview", "data-table"), pages("admin.users", "users")), want: "overview"},
 		{name: "users precedes roles", plan: mkPlan(pages("admin.roles", "roles"), pages("admin.users", "users")), want: "users"},
+		{name: "dashboard precedes users (F-01 head insert)", plan: mkPlan(pages("admin.users", "users"), pages("admin.dashboard", "dashboard")), want: "dashboard"},
 		{name: "roles only", plan: mkPlan(pages("admin.roles", "roles")), want: "roles"},
 		{name: "activity only", plan: mkPlan(pages("admin.activity", "activity")), want: "activity"},
 		{name: "no admin, page-bearing module", plan: mkPlan(pages("custom.foo", "foo")), want: "foo"},
@@ -439,8 +441,10 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// (+2 permissions) and menu_account (+1 navigation) to mvp and admin.
 		// F-02 (GOAL-004): admin.data-transfer contributes data.export/data.import
 		// (+2 permissions, no navigation) to admin only.
-		{profile: "mvp", wantPermissions: 8, wantNavigation: 3},
-		{profile: "admin", wantPermissions: 13, wantNavigation: 5},
+		// F-01 (GOAL-003): admin.dashboard contributes menu_dashboard (+1
+		// navigation, no permissions) to mvp and admin.
+		{profile: "mvp", wantPermissions: 8, wantNavigation: 4},
+		{profile: "admin", wantPermissions: 13, wantNavigation: 6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

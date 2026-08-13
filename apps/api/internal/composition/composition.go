@@ -21,6 +21,7 @@ import (
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
+	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
@@ -214,6 +215,9 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("admin.data-transfer") {
 		providers = append(providers, datatransfermodule.New(a, authRepository, operations, uploadDir))
 	}
+	if plan.HasModule("admin.dashboard") {
+		providers = append(providers, dashboardmodule.New())
+	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
 	if err != nil {
@@ -276,7 +280,9 @@ func newMuxWithExtraProviders(
 // F-03 (GOAL-005 D-002 §6): admin.account appended at the tail — home stays
 // users-first; account only becomes home when every earlier admin module is
 // disabled (explicit, documented edge).
-var adminFunctionalOrder = []string{"admin.users", "admin.roles", "admin.settings", "admin.activity", "admin.account"}
+// F-01 (GOAL-003 D-002 §3): admin.dashboard inserted at the HEAD so the
+// production home becomes the dashboard (必办-3 content-extension semantics).
+var adminFunctionalOrder = []string{"admin.dashboard", "admin.users", "admin.roles", "admin.settings", "admin.activity", "admin.account"}
 
 // deriveHomePageRef implements the D-003 §2 decision table:
 //

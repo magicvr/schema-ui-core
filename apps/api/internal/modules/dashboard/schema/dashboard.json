@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "pageId": "dashboard",
+    "title": "Dashboard",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "dashboard",
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Console overview — key account and role metrics.",
+          "textKey": "schema.dashboard.text.intro"
+        }
+      },
+      {
+        "type": "grid",
+        "props": {
+          "columns": 3
+        },
+        "children": [
+          {
+            "type": "statCard",
+            "id": "total-users",
+            "props": {
+              "label": "Users",
+              "format": "plain",
+              "valueField": "total",
+              "dataSource": "/api/users",
+              "labelKey": "schema.dashboard.statCard.users"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "total-roles",
+            "props": {
+              "label": "Roles",
+              "format": "plain",
+              "valueField": "total",
+              "dataSource": "/api/roles",
+              "labelKey": "schema.dashboard.statCard.roles"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

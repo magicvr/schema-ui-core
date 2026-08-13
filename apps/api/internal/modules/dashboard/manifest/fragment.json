@@ -1,0 +1,35 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "dashboard",
+      "title": "Dashboard",
+      "schemaUrl": "/api/schema/dashboard",
+      "route": "/dashboard",
+      "titleKey": "manifest.title.dashboard"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "dashboard",
+        "label": "Dashboard",
+        "icon": "dashboard",
+        "order": 0,
+        "visibleWhen": {
+          "when": "$context.features.menu_dashboard == true"
+        },
+        "labelKey": "manifest.nav.dashboard"
+      }
+    ]
+  }
+}
