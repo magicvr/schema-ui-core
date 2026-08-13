@@ -102,6 +102,13 @@ function routeNotFoundFailure(): HostFailure {
   };
 }
 
+/**
+ * Declared host-owned paths (ADR-0036 D3a): host surfaces outside the manifest
+ * page registry. An authenticated user landing on one is taken home rather
+ * than shown HOST_ROUTE_NOT_FOUND — the path belongs to the Host, not the app.
+ */
+const HOST_OWNED_PATHS = ["/login"];
+
 // Parses the current URL's query string into a plain record; deep-linked query
 // parameters reach $context.route.query.* bindings through the render context.
 function parseLocationQuery(): Record<string, string> {
@@ -355,6 +362,15 @@ function PageSurface({
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
   const t = useTranslate();
+  const hostOwned = useMemo(() => HOST_OWNED_PATHS.includes(stripPathQuery(path)), [path]);
+  // Host-owned path under an authenticated session: return to the app surface
+  // (ADR-0036 D3a) — no route-not-found failure for paths the Host owns.
+  useEffect(() => {
+    if (hostOwned) {
+      onNavigate(homePage?.route ?? "/");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostOwned]);
   // Stable per-path failureId: redraws of the same unmatched route never
   // re-announce; a different unmatched route is a new occurrence (D1).
   const routeNotFound = useMemo(() => routeNotFoundFailure(), [path]);
@@ -367,6 +383,11 @@ function PageSurface({
     document.getElementById("page-title")?.focus();
   }, [path]);
   if (route === undefined) {
+    if (hostOwned) {
+      // Navigation back to the app is in flight (effect above); render nothing
+      // while the location resolves.
+      return null;
+    }
     // Unmatched application route (no manifest page, no host-owned path) →
     // HOST_ROUTE_NOT_FOUND global failure surface (ADR-0036 D3/D3a).
     return (

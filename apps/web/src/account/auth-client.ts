@@ -261,21 +261,32 @@ export async function logout(): Promise<void> {
   clearTokens();
 }
 
+/** Restore outcomes (ADR-0035 D4 normalized adapter input, GOAL-004 S4-2). */
+export type RestoreSessionResult =
+  | { kind: "none" }
+  | { kind: "reauth" }
+  | { kind: "session"; session: AuthSession };
+
 /**
  * Restores a session on boot: if a refresh token exists, rotate it for a fresh
- * access/refresh pair, then resolve the identity via /me. Returns null when there
- * is no session or the restore fails.
+ * access/refresh pair, then resolve the identity via /me. No refresh token →
+ * `none` (anonymous); rotation or identity resolution failure with an existing
+ * refresh token → `reauth` (the adapter reports reauth-required, ADR-0035 D4).
  */
-export async function restoreSession(): Promise<AuthSession | null> {
+export async function restoreSession(): Promise<RestoreSessionResult> {
   if (getRefreshToken() === null) {
-    return null;
+    return { kind: "none" };
   }
   const refreshed = await refreshAccess();
   if (!refreshed) {
-    return null;
+    return { kind: "reauth" };
   }
-  const session = await fetchMe();
-  return session;
+  try {
+    const session = await fetchMe();
+    return { kind: "session", session };
+  } catch {
+    return { kind: "reauth" };
+  }
 }
 
 /** Normalizes a /me user snapshot so permissions are always an array when present. */

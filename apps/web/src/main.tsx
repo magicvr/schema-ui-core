@@ -18,7 +18,7 @@ import {
   type BootstrapAuth,
   type BootstrapDiscovery,
 } from "@/host/bootstrap";
-import { bootHost, executeBootRecovery, type HostBootState } from "@/host/boot";
+import { bootHost, executeBootRecovery, reauthFailure, type HostBootState } from "@/host/boot";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 import "./index.css";
 
@@ -56,6 +56,12 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
   if (status === "loading") {
     return <BootScreen />;
   }
+  if (status === "reauth-required") {
+    // Post-boot session loss: the adapter reports reauth-required (ADR-0035
+    // D4/D7) — a terminal failure surface, not the anonymous login page.
+    // `reauth` captures the return intent before leaving for /login.
+    return <HostFailureScreen failure={reauthFailure()} onAction={executeBootRecovery} />;
+  }
   if (status === "unauthenticated") {
     return <LoginPage onLogin={login} />;
   }
@@ -76,13 +82,21 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
 }
 
 /** Maps the session adapter state to the bootstrap normalized auth input (D4). */
-function bootstrapAuthFor(status: string, user: { id: string; name?: string } | null): BootstrapAuth {
+export function bootstrapAuthFor(
+  status: string,
+  user: { id: string; name?: string } | null,
+): BootstrapAuth {
   if (status === "authenticated" && user !== null) {
     return {
       state: "authenticated",
       principal: { id: user.id, name: user.name ?? "", roles: [] },
       provenance: "host-session-adapter",
     };
+  }
+  if (status === "reauth-required") {
+    // The session adapter has a credential that no longer authenticates:
+    // reauth-required terminal — never anonymous, never a stale principal.
+    return { state: "reauth-required" };
   }
   return { state: "anonymous" };
 }

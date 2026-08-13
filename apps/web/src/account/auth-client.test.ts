@@ -191,14 +191,23 @@ describe("auth-client", () => {
       .mockResolvedValueOnce(jsonResponse({ accessToken: "access-2", refreshToken: "refresh-2" }))
       .mockResolvedValueOnce(jsonResponse(SESSION));
 
-    const session = await restoreSession();
-    expect(session?.user.id).toBe("user-admin");
+    const restored = await restoreSession();
+    expect(restored.kind).toBe("session");
+    if (restored.kind !== "session") return;
+    expect(restored.session.user.id).toBe("user-admin");
     expect(fetchMock.mock.calls[1][0]).toBe("/api/accounts/me");
   });
 
-  it("restoreSession returns null without a refresh token", async () => {
-    const session = await restoreSession();
-    expect(session).toBeNull();
+  it("restoreSession reports none without a refresh token", async () => {
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "none" });
+  });
+
+  it("restoreSession reports reauth when rotation fails with a stored token", async () => {
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
   });
 
   it("fetchMe throws ME_FAILED on a 401 when refresh also fails", async () => {

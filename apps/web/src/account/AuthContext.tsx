@@ -8,14 +8,15 @@ import {
   setAuthLostListener,
   type AuthSession,
 } from "@/account/auth-client";
+import { buildQueryString, captureReturnIntent, takeReturnIntent } from "@/host/return-intent";
 
-export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
+export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "reauth-required";
 
 export interface AuthContextValue {
   status: AuthStatus;
   session: AuthSession | null;
   user: AuthSession["user"] | null;
-  /** Authenticates and transitions to the shell. */
+  /** Authenticates, restores a captured return intent, and transitions to the shell. */
   login: (username: string, password: string) => Promise<void>;
   /** Revokes the session and transitions to the login page. */
   logout: () => Promise<void>;
@@ -32,9 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     setAuthLostListener(() => {
+      // Mid-session session loss (refresh rotation failed / revoked): the
+      // adapter reports reauth-required (ADR-0035 D4). Capture the current
+      // location first so a successful re-login can restore it (ADR-0036 D6).
       if (!cancelled) {
+        captureReturnIntent();
         setSession(null);
-        setStatus("unauthenticated");
+        setStatus("reauth-required");
       }
     });
     restoreSession()
@@ -42,9 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) {
           return;
         }
-        if (restored !== null) {
-          setSession(restored);
+        if (restored.kind === "session") {
+          setSession(restored.session);
           setStatus("authenticated");
+        } else if (restored.kind === "reauth") {
+          // A refresh token existed but the session is gone: reauth-required
+          // terminal, not anonymous (ADR-0035 D4/D7).
+          setSession(null);
+          setStatus("reauth-required");
         } else {
           setSession(null);
           setStatus("unauthenticated");
@@ -64,6 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     const next = await loginRequest(username, password);
+    // Consume a captured return intent (single-use, validated by the pinned
+    // validator) and restore the location BEFORE the shell mounts so its
+    // initial route resolution picks the restored path up.
+    const intent = takeReturnIntent();
+    if (intent !== null) {
+      const target = intent.path + buildQueryString(intent.query);
+      const current = window.location.pathname + window.location.search;
+      if (target !== current) {
+        window.history.replaceState({}, "", target);
+      }
+    }
     setSession(next);
     setStatus("authenticated");
   }, []);

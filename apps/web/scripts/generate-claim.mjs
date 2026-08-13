@@ -93,7 +93,9 @@ const report = {
     protocolContentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
   residuals: [
-    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 条目视为待闭环绑定。",
+    // GOAL-004 S4-4 纠错（2026-08-13）：页面协议 2.7 mandatory 的 multi-round
+    // $deps reactions 已于 e18edce 实现（stage3 reactions 套件零排除）；本 claim
+    // pageVersions ["2.7"] 条目不再视为候选绑定。
   ],
 };
 

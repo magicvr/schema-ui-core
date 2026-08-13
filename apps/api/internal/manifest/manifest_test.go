@@ -143,3 +143,43 @@ func TestAggregateRejectsSecretKey(t *testing.T) {
 		t.Fatal("fragment with secret key must fail closed")
 	}
 }
+
+// TestNavigationSingleProjectionWithLabelKey verifies IMP-002 (ADR-0034 D6):
+// the served manifest is the single navigation projection source, and every
+// navigation entry carries a labelKey (labelKey-hit priority, label literal
+// fallback — GOV-006). The module provider's NavigationContribution.Label is
+// RBAC-side metadata only and never leaks into the published manifest document.
+func TestNavigationSingleProjectionWithLabelKey(t *testing.T) {
+	data, err := ForModulesWithFragments([]string{"core.manifest-route", "admin.users"},
+		[]Fragment{{ModuleID: "admin.users", Raw: usersmanifest.FragmentJSON}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Navigation struct {
+			Sidebar []struct {
+				PageRef  string `json:"pageRef"`
+				Label    string `json:"label"`
+				LabelKey string `json:"labelKey"`
+			} `json:"sidebar"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if len(decoded.Navigation.Sidebar) != 1 {
+		t.Fatalf("expected 1 sidebar nav entry, got %d", len(decoded.Navigation.Sidebar))
+	}
+	entry := decoded.Navigation.Sidebar[0]
+	if entry.PageRef != "users" {
+		t.Fatalf("pageRef = %q, want users", entry.PageRef)
+	}
+	// Single projection: the manifest is the authoritative source and carries the
+	// i18n key (labelKey) with a literal fallback; no provider-side Label leaks in.
+	if entry.LabelKey != "manifest.nav.users" {
+		t.Fatalf("labelKey = %q, want manifest.nav.users", entry.LabelKey)
+	}
+	if entry.Label != "Users" {
+		t.Fatalf("label = %q, want Users", entry.Label)
+	}
+}

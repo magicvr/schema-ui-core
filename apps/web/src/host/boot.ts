@@ -20,6 +20,7 @@ import {
   type HostSupport,
 } from "@/host/bootstrap";
 import { mapBootstrapResult, nextFailureId, type HostFailure } from "@/host/failure";
+import { captureReturnIntent } from "@/host/return-intent";
 
 export interface HostBootState {
   evaluation: BootstrapEvaluation;
@@ -229,6 +230,36 @@ export function isBootTerminal(state: HostBootState): boolean {
   return state.failure !== null;
 }
 
+/**
+ * Reauth-required terminal for the post-boot session-loss path (ADR-0035 D7):
+ * the same closed failure result the boot orchestrator produces when the
+ * adapter reports reauth-required before manifest-load.
+ */
+export function reauthFailure(): HostFailure {
+  const mapped = mapBootstrapResult({ result: "REAUTH_REQUIRED", fetchClassification: null });
+  const scope = mapped?.scope ?? "auth";
+  const kind = mapped?.kind ?? "reauth-required";
+  const hostCode = mapped?.hostCode ?? "HOST_REAUTH_REQUIRED";
+  return {
+    failureVersion: "1.0",
+    failureId: nextFailureId(),
+    scope,
+    kind,
+    hostCode,
+    message: { messageKey: kindMessageKey(kind) },
+    diagnostics: { phase: "auth-resolution" },
+    recoveryActions: recoveryActionsFor(kind, {
+      code: "REAUTH_REQUIRED",
+      result: "REAUTH_REQUIRED",
+      phase: "auth-resolution",
+      fetchClassification: null,
+      missingCapabilities: [],
+      effectiveCapabilities: null,
+      context: null,
+    }),
+  };
+}
+
 /** Executes a recovery action; bootstrap retry always rebuilds the instance. */
 export function executeBootRecovery(action: { type: string; url?: string }): void {
   switch (action.type) {
@@ -237,6 +268,10 @@ export function executeBootRecovery(action: { type: string; url?: string }): voi
       window.location.reload();
       break;
     case "reauth":
+      // Recoverable auth return intent (ADR-0036 D6): capture the current
+      // in-app location before leaving for the login surface so a successful
+      // login restores it.
+      captureReturnIntent();
       window.location.href = "/login";
       break;
     case "home":
