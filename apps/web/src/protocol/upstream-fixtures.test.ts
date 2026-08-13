@@ -50,7 +50,7 @@ interface PinnedJson<T> {
 }
 
 // app-manifest schema + fixtures re-pinned 2026-08-13 to the 2.8.0 release
-// machine contracts (upstream 2.8.0 release, 593f625: returnIntentQueryKeys +
+// machine contracts (upstream 2.8.0 formal tag 521cff8: returnIntentQueryKeys +
 // capability id hyphen grammar). See provenance-v2.8.json.
 const APP_MANIFEST_SCHEMA_SHA256 =
   "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55";
@@ -604,7 +604,7 @@ describe("pinned schema-ui-docs fixture artifacts", () => {
       "ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
     );
     expect(APP_MANIFEST_SOURCE).toBe(
-      "https://github.com/magicvr/schema-ui-docs/tree/593f625",
+      "https://github.com/magicvr/schema-ui-docs/tree/521cff8",
     );
     expect(provenanceArtifact.value.artifactVersion).toBe("2.7.0");
     // R3 baseline artifacts remain pinned; R5 stage 3 extends provenance with

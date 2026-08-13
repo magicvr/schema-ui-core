@@ -21,7 +21,7 @@ import {
 /**
  * Host/App 互操作 conformance（S4 生产实现消费上游候选 fixtures，零排除）。
  *
- * 与 R3/R5 的 fixture 消费同构：上游 `schema-ui-docs@593f625`（v2.8.0 正式发布）
+ * 与 R3/R5 的 fixture 消费同构：上游 `schema-ui-docs@521cff8`（v2.8.0 正式 tag）
  * 的 host-bootstrap / host-failure / host-conformance-claim 三个 suite 直接
  * 逐字段核对本仓生产 Host 模块（`src/host/*`）。这些模块是 main.tsx /
  * App shell 的生产代码路径，不是 fixture-only adapter；任何 skip/改写期望

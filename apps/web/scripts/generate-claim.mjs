@@ -7,9 +7,11 @@
  *   conformance-claim.json          — the static claim (closed C0 shape)
  *   conformance-claim.json.sha256   — canonical digest (D1a) of the claim
  *
- * Bindings: schema-ui-protocol v2.8.0 (tag v2.8.0, commit 593f625) —
+ * Bindings: schema-ui-protocol v2.8.0 (formal tag v2.8.0, commit 521cff8) —
  *   fixtureSha256          = release-check fixture-tree digest of the release
  *   protocolContentSha256  = protocol artifact contentDigest of the release
+ * （2026-08-13 身份纠偏：此前 593f625/40690917… 为上游 H4 预备身份，见
+ *   上游审计 0080 V379；正式 tag v2.8.0 @ 521cff8，content 4fae4605…。）
  */
 
 import { execFileSync } from "node:child_process";
@@ -26,12 +28,13 @@ const FIXTURE_VERSION = "1.0";
 const SUITE_VERSION = "1.0";
 const ARTIFACT_VERSION = "2.8.0";
 
-// Final 2.8.0 release bindings (tag v2.8.0, commit 593f625).
-const UPSTREAM_SOURCE_COMMIT = "593f625";
+// Formal 2.8.0 release bindings (tag v2.8.0, commit 521cff8; upstream audit
+// 0080 V379). 593f625/40690917… was the H4 preparatory identity, not the tag.
+const UPSTREAM_SOURCE_COMMIT = "521cff8";
 const UPSTREAM_FIXTURE_SHA256 =
   "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2";
 const UPSTREAM_PROTOCOL_CONTENT_SHA256 =
-  "40690917b7b83f54936453b5851c87320f5ed878b517eab7d1558d12fe506a31";
+  "4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30";
 
 // Suites this repository runs green in CI (zero exclusions) at claim time.
 const SUITES = [

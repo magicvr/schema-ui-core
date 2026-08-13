@@ -8,7 +8,7 @@ export const APP_MANIFEST_SUPPORTED_PROTOCOL_VERSIONS = ["2.7", "2.8"] as const;
 export const APP_MANIFEST_PROTOCOL_VERSION = "2.8" as const;
 export const MANIFEST_SOURCE_HEADER = "X-Schema-UI-Manifest-Source";
 export const APP_MANIFEST_SOURCE =
-  "https://github.com/magicvr/schema-ui-docs/tree/593f625"; // v2.8.0 release commit
+  "https://github.com/magicvr/schema-ui-docs/tree/521cff8"; // v2.8.0 formal release commit
 
 const APP_ID_PATTERN = /^[a-z][a-z0-9_-]*$/;
 // v2.8: capability id segments may contain hyphens (host.failure-recovery).
