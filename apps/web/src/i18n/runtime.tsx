@@ -32,20 +32,30 @@ import {
 export const LOCALE_STORAGE_KEY = "schema-ui:locale";
 
 export function readStoredLocale(): string | null {
-  if (typeof localStorage === "undefined") {
+  try {
+    if (typeof localStorage === "undefined") {
+      return null;
+    }
+    return localStorage.getItem(LOCALE_STORAGE_KEY);
+  } catch {
+    // Privacy mode / disabled storage throws SecurityError — same posture as
+    // tokens.ts / theme.ts. Never let locale boot white-screen the tree.
     return null;
   }
-  return localStorage.getItem(LOCALE_STORAGE_KEY);
 }
 
 export function writeStoredLocale(preference: LocalePreference): void {
-  if (typeof localStorage === "undefined") {
-    return;
-  }
-  if (preference === "auto") {
-    localStorage.removeItem(LOCALE_STORAGE_KEY);
-  } else {
-    localStorage.setItem(LOCALE_STORAGE_KEY, preference);
+  try {
+    if (typeof localStorage === "undefined") {
+      return;
+    }
+    if (preference === "auto") {
+      localStorage.removeItem(LOCALE_STORAGE_KEY);
+    } else {
+      localStorage.setItem(LOCALE_STORAGE_KEY, preference);
+    }
+  } catch {
+    // Best-effort persist; the in-memory preference still applies this page.
   }
 }
 

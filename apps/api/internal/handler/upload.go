@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -123,8 +124,14 @@ func (s *uploadStore) save(name string, contentType string, ownerID string, body
 	return id, nil
 }
 
+// uploadFileIDPattern is the only shape save() ever writes (16 random bytes as
+// lowercase hex). load() must reject everything else so a crafted PathValue
+// cannot turn filepath.Join into a volume-relative path (Windows `C:name`)
+// or `..` / reserved names.
+var uploadFileIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
+
 func (s *uploadStore) load(id string) ([]byte, map[string]string, error) {
-	if id == "" || strings.ContainsAny(id, `/\`) {
+	if !uploadFileIDPattern.MatchString(id) {
 		return nil, nil, os.ErrNotExist
 	}
 	body, err := os.ReadFile(filepath.Join(s.dir, id))

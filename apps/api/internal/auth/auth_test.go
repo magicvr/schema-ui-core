@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"path/filepath"
@@ -96,6 +97,38 @@ func TestRefreshUnknownToken(t *testing.T) {
 	a := newTestAuth(t, false)
 	if _, _, _, err := a.Refresh("bogus", now()); !errors.Is(err, ErrInvalidToken) {
 		t.Fatalf("err = %v, want ErrInvalidToken", err)
+	}
+}
+
+// Refresh must not mint a new pair for a locked account even if a refresh
+// token is still live (revoke-on-lock is best-effort).
+func TestRefreshRejectsLockedAccount(t *testing.T) {
+	hash, err := HashPassword("pw", 4)
+	if err != nil {
+		t.Fatalf("hash: %v", err)
+	}
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "locked-refresh.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	a := New([]byte("secret"), 15*time.Minute, 30*24*time.Hour, st, false)
+
+	_, refresh, _, err := a.Login("admin", "pw", now())
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	lockUntil := now().Add(time.Hour).Unix()
+	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE users SET locked_until = ? WHERE username = 'admin'`, lockUntil)
+		return err
+	}); err != nil {
+		t.Fatalf("lock user: %v", err)
+	}
+
+	if _, _, _, err := a.Refresh(refresh, now()); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("refresh locked account = %v, want ErrInvalidToken", err)
 	}
 }
 

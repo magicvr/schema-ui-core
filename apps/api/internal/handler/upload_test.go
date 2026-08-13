@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -297,6 +298,33 @@ func TestUploadOwnerOnlyDownload(t *testing.T) {
 	}
 
 	_ = os.RemoveAll(env.uploadDir)
+}
+
+// GET /api/files/{id} must reject anything that is not the 32-char hex id
+// save() writes, so a PathValue like ".." or Windows "C:name" cannot escape
+// the upload directory (even though missing owner already 403s content).
+func TestUploadFileIDRejectsNonHex(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	for _, id := range []string{"C:schema-ui.db", "not-hex", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "dotdot"} {
+		req := httptest.NewRequest(http.MethodGet, "/api/files/"+id, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("GET /api/files/%q status = %d, want 404: %s", id, rr.Code, rr.Body.String())
+		}
+	}
+
+	// Drive load() directly: HTTP path cleaning would turn ".." into a redirect
+	// before the handler sees it.
+	store := &uploadStore{dir: t.TempDir()}
+	for _, id := range []string{"..", "../x", "C:schema-ui.db", ""} {
+		if _, _, err := store.load(id); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("load(%q) = %v, want ErrNotExist", id, err)
+		}
+	}
 }
 
 // W4 P0-2: POST /api/upload requires files.write (admin-only by default). A

@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  applyReturnIntentNavigation,
   buildQueryString,
   captureReturnIntent,
   returnIntentStorageKey,
@@ -95,5 +96,53 @@ describe("host return-intent lifecycle (ADR-0036 D6)", () => {
   it("builds a query string only from kept keys", () => {
     expect(buildQueryString({ tab: "history", sort: "name" })).toBe("?tab=history&sort=name");
     expect(buildQueryString({})).toBe("");
+  });
+
+  it("does not capture protocol-relative paths", () => {
+    captureReturnIntent({ path: "//evil.example/x", query: {}, nowIso: NOW, storage });
+    expect(storage.getItem(returnIntentStorageKey())).toBeNull();
+  });
+
+  it("rejects a stored protocol-relative path on consume", () => {
+    storage.setItem(
+      returnIntentStorageKey(),
+      JSON.stringify({
+        path: "//evil.example/x",
+        query: {},
+        expiresAt: "2026-08-13T10:10:00.000Z",
+        nonce: "n1",
+      }),
+    );
+    expect(takeReturnIntent({ nowIso: "2026-08-13T10:01:00.000Z", storage })).toBeNull();
+  });
+
+  it("capture / consume treat throwing storage as no intent", () => {
+    const boom = () => {
+      throw new Error("SecurityError");
+    };
+    const throwing: Storage = {
+      get length() {
+        return 0;
+      },
+      clear: boom,
+      getItem: boom,
+      key: () => null,
+      removeItem: boom,
+      setItem: boom,
+    };
+    expect(() => captureReturnIntent({ path: "/users", query: {}, nowIso: NOW, storage: throwing })).not.toThrow();
+    expect(takeReturnIntent({ nowIso: NOW, storage: throwing })).toBeNull();
+  });
+
+  it("applyReturnIntentNavigation swallows replaceState failures", () => {
+    const original = window.history.replaceState;
+    window.history.replaceState = () => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    };
+    try {
+      expect(() => applyReturnIntentNavigation("//evil.example/x")).not.toThrow();
+    } finally {
+      window.history.replaceState = original;
+    }
   });
 });

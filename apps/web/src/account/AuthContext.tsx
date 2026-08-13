@@ -10,7 +10,12 @@ import {
   type AuthSession,
 } from "@/account/auth-client";
 import type { SessionAdapterState } from "@/host/boot";
-import { buildQueryString, captureReturnIntent, takeReturnIntent } from "@/host/return-intent";
+import {
+  applyReturnIntentNavigation,
+  buildQueryString,
+  captureReturnIntent,
+  takeReturnIntent,
+} from "@/host/return-intent";
 
 export type AuthStatus = SessionAdapterState;
 
@@ -96,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const target = intent.path + buildQueryString(intent.query);
       const current = window.location.pathname + window.location.search;
       if (target !== current) {
-        window.history.replaceState({}, "", target);
+        applyReturnIntentNavigation(target);
       }
     }
     setSession(next);

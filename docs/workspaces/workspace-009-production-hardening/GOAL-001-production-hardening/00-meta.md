@@ -4,8 +4,8 @@ title: 生产加固（共享基架持续安全与健壮性）
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-10
-version: 0.5.0
+updated: 2026-08-14
+version: 0.6.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
@@ -52,7 +52,9 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 |------|--------|--------|------|
 | W1 | GOAL-002-audit-findings-remediation | done | 首批审查 16 项 |
 | W2 | GOAL-003-upload-ownership-hardening | done | 上传 IDOR + ReadHeaderTimeout |
-| （下一波） | 待立项 | — | 定时/触发扫描后 `/govern` 创建 |
+| W3 | GOAL-004-w3-security-audit-remediation | done | 2026-08-11 安全审计修复 |
+| W4 | GOAL-005-w4-security-audit-remediation | done | 2026-08-11 限流/上传/token_version/前端异常 |
+| W5 scan | — | 未开子目标 | 2026-08-14 全量审计 0 中高危；低危就地修补见 E-002 |
 
 ## 信息就绪与未知项
 
@@ -60,7 +62,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 本程序是否为长期意图（非单波关门）？ | 程序定义 | 纠正当日 | 用户 2026-08-10 书面纠正 | verified | — | D-003；VP-009 v0.4.0 |
 | I-002 | non-blocking | 例行扫描的具体日历/cron | 运营节奏 | 下一波前 | 用户或 CI 约定；可先事件触发 | open | deferred：事件触发足够启动 W3；责任人=维护者；复核=首次例行扫描前 | 待确认 |
-| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1/W2 已在子目标 verified |
+| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1–W4 在子目标 verified；W5 扫描 0 中高危，清单在 E-002 / scratch `w5-audit-2026-08-14.md` |
 
 ## 台账布局
 

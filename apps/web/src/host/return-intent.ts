@@ -41,7 +41,7 @@ function buildQueryString(query: Record<string, string>): string {
 
 /** Serializes the current location into an intent (null when nothing to restore). */
 function intentFromLocation(path: string, query: Record<string, string>, nowIso: string): ReturnIntent | null {
-  if (!path.startsWith("/") || LOGIN_PATHS.has(path)) {
+  if (!path.startsWith("/") || path.startsWith("//") || LOGIN_PATHS.has(path)) {
     return null;
   }
   const kept = Object.fromEntries(
@@ -77,7 +77,12 @@ export function captureReturnIntent(options?: {
   if (intent === null) {
     return;
   }
-  storage.setItem(STORAGE_KEY, JSON.stringify(intent));
+  try {
+    storage.setItem(STORAGE_KEY, JSON.stringify(intent));
+  } catch {
+    // sessionStorage may throw when site storage is disabled; auth-loss
+    // must still flip the UI to reauth, not abort the listener.
+  }
 }
 
 /** Reads the live query string into a plain string record. */
@@ -100,11 +105,20 @@ export function takeReturnIntent(options?: {
 }): ReturnIntentTarget | null {
   const storage = options?.storage ?? window.sessionStorage;
   const nowIso = options?.nowIso ?? new Date().toISOString();
-  const raw = storage.getItem(STORAGE_KEY);
+  let raw: string | null;
+  try {
+    raw = storage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
   if (raw === null) {
     return null;
   }
-  storage.removeItem(STORAGE_KEY);
+  try {
+    storage.removeItem(STORAGE_KEY);
+  } catch {
+    // consumed logically even if the remove fails
+  }
   let intent: unknown;
   try {
     intent = JSON.parse(raw) as unknown;
@@ -121,6 +135,19 @@ export function takeReturnIntent(options?: {
 /** Returns the storage key (test seam). */
 export function returnIntentStorageKey(): string {
   return STORAGE_KEY;
+}
+
+/**
+ * Restores a validated in-app path after login. Cross-origin or otherwise
+ * illegal targets (`//host`) make history.replaceState throw — that must
+ * not abort login after tokens are already stored.
+ */
+export function applyReturnIntentNavigation(target: string): void {
+  try {
+    window.history.replaceState({}, "", target);
+  } catch {
+    // stay on the current location; the session is still established
+  }
 }
 
 export { buildQueryString };

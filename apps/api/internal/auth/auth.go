@@ -161,6 +161,12 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	if err != nil {
 		return "", "", account.User{}, err
 	}
+	// Fail-closed if the account is locked: revoke-on-lock is best-effort, so
+	// Refresh must not mint a new pair from a leftover live refresh token.
+	// Same 401 envelope as an invalid token (no extra lock oracle on this path).
+	if u.LockedUntil > now.Unix() {
+		return "", "", account.User{}, ErrInvalidToken
+	}
 	return a.issue(u, now)
 }
 

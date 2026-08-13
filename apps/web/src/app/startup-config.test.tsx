@@ -24,6 +24,7 @@ import {
   applyDocumentBranding,
   defaultBranding,
   fetchBranding,
+  isSafeBrandingUrl,
   type Branding,
 } from "@/app/branding";
 import { I18nProvider, LOCALE_STORAGE_KEY, useI18n } from "@/i18n/runtime";
@@ -199,6 +200,35 @@ describe("S3 · fetchBranding startup payload", () => {
     const link = document.querySelector<HTMLLinkElement>("link[rel='icon'][data-schema-ui-branding]");
     expect(link?.href).toContain("/assets/logo.svg");
     applyDocumentBranding(defaultBranding());
+    expect(document.querySelector("link[rel='icon'][data-schema-ui-branding]")).toBeNull();
+  });
+
+  it("drops unsafe branding URLs instead of writing them to img/link sinks", async () => {
+    expect(isSafeBrandingUrl("/assets/logo.svg")).toBe(true);
+    expect(isSafeBrandingUrl("https://cdn.example/logo.png")).toBe(true);
+    expect(isSafeBrandingUrl("javascript:alert(1)")).toBe(false);
+    expect(isSafeBrandingUrl("//evil.example/x")).toBe(false);
+    expect(isSafeBrandingUrl("/\\evil.example/x")).toBe(false);
+    expect(isSafeBrandingUrl("data:image/svg+xml,<svg>")).toBe(false);
+
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          siteTitle: "X",
+          logoUrl: "javascript:alert(1)",
+          logoUrlLight: "//evil.example/l",
+          logoUrlDark: "/\\evil.example/d",
+          faviconUrl: "data:text/html,x",
+        }),
+        { status: 200 },
+      )) as typeof fetch;
+    const branding = await fetchBranding();
+    expect(branding.logoUrl).toBe("");
+    expect(branding.logoUrlLight).toBe("");
+    expect(branding.logoUrlDark).toBe("");
+    expect(branding.faviconUrl).toBe("");
+
+    applyDocumentBranding({ ...defaultBranding(), faviconUrl: "javascript:alert(1)" });
     expect(document.querySelector("link[rel='icon'][data-schema-ui-branding]")).toBeNull();
   });
 });

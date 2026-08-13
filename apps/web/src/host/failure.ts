@@ -268,6 +268,7 @@ export function validateReturnIntent(
   const path = intent.path;
   if (typeof path !== "string"
     || !path.startsWith("/")
+    || path.startsWith("//")
     || path.includes("#")
     || path.includes("://")
     || path.includes("\\")) {

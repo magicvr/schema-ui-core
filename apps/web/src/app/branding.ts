@@ -28,6 +28,28 @@ export function subscribeToBrandingChanges(listener: () => void): () => void {
   return subscribeToConfigChanges(SETTINGS_BRANDING_NAMESPACE, listener);
 }
 
+const SAME_ORIGIN_BRANDING_PATH = /^\/(?!\/)[^\s\\]*$/;
+
+/** Same-origin path or http(s) URL — mirrors the API normalizeLogoURL gate. */
+export function isSafeBrandingUrl(url: string): boolean {
+  if (url === "") {
+    return true;
+  }
+  if (SAME_ORIGIN_BRANDING_PATH.test(url)) {
+    return true;
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function safeBrandingUrl(url: string): string {
+  return isSafeBrandingUrl(url) ? url : "";
+}
+
 export async function fetchBranding(fetcher: typeof fetch = fetch): Promise<Branding> {
   try {
     const response = await fetcher("/api/branding");
@@ -39,10 +61,10 @@ export async function fetchBranding(fetcher: typeof fetch = fetch): Promise<Bran
       typeof body[key] === "string" ? (body[key] as string).trim() : "";
     return {
       siteTitle: str("siteTitle") !== "" ? str("siteTitle") : DEFAULT_SITE_TITLE,
-      logoUrl: str("logoUrl"),
-      logoUrlLight: str("logoUrlLight"),
-      logoUrlDark: str("logoUrlDark"),
-      faviconUrl: str("faviconUrl"),
+      logoUrl: safeBrandingUrl(str("logoUrl")),
+      logoUrlLight: safeBrandingUrl(str("logoUrlLight")),
+      logoUrlDark: safeBrandingUrl(str("logoUrlDark")),
+      faviconUrl: safeBrandingUrl(str("faviconUrl")),
       defaultLocale: str("defaultLocale") !== "" ? str("defaultLocale") : "auto",
       supportedLocales: Array.isArray(body.supportedLocales)
         ? body.supportedLocales.filter((entry): entry is string => typeof entry === "string")
@@ -79,7 +101,8 @@ export function applyDocumentBranding(branding: Branding): void {
     return;
   }
   document.title = branding.siteTitle;
-  const favicon = branding.faviconUrl !== "" ? branding.faviconUrl : branding.logoUrl;
+  const rawFavicon = branding.faviconUrl !== "" ? branding.faviconUrl : branding.logoUrl;
+  const favicon = isSafeBrandingUrl(rawFavicon) ? rawFavicon : "";
   const existing = document.querySelector<HTMLLinkElement>("link[rel='icon'][data-schema-ui-branding='1']");
   if (favicon === "") {
     existing?.remove();

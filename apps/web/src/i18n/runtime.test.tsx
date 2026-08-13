@@ -164,6 +164,31 @@ describe("storage helpers and document lang", () => {
     expect(readStoredLocale()).toBeNull();
   });
 
+  it("readStoredLocale / writeStoredLocale swallow disabled-storage throws", () => {
+    const boom = () => {
+      throw new Error("SecurityError");
+    };
+    const original = window.localStorage;
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: boom,
+        setItem: boom,
+        removeItem: boom,
+        clear: boom,
+        key: () => null,
+        length: 0,
+      },
+    });
+    try {
+      expect(readStoredLocale()).toBeNull();
+      expect(() => writeStoredLocale("zh-CN")).not.toThrow();
+      expect(() => writeStoredLocale("auto")).not.toThrow();
+    } finally {
+      Object.defineProperty(window, "localStorage", { configurable: true, value: original });
+    }
+  });
+
   it("applyLocaleToDocument sets <html lang>", () => {
     expect(document.documentElement.lang).not.toBe("zh-CN");
     applyLocaleToDocument("zh-CN");
