@@ -28,6 +28,9 @@ const (
 	EventUserUnlock            = "users.unlock"
 	EventAccountPasswordChange = "account.password-change"
 	EventAccountSessionRevoke  = "account.session-revoke"
+	// F-02 data-transfer events (GOAL-004 D-002 §3/§4).
+	EventDataExport = "data.export"
+	EventDataImport = "data.import"
 )
 
 // Operation is one append-only operation log row.

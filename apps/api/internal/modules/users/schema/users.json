@@ -93,6 +93,56 @@
         "behavior": "reload"
       }
     },
+    "uploadCsv": {
+      "type": "upload",
+      "url": "/api/upload",
+      "multiple": false
+    },
+    "exportUsers": {
+      "type": "custom",
+      "handler": "export.users"
+    },
+    "submitImport": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/import/users",
+      "bodyMapping": {
+        "fileId": "file"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openImport": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "import-users-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"data.import\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "file",
+              "label": "CSV file",
+              "type": "upload",
+              "actionRef": "uploadCsv",
+              "accept": ".csv,text/csv",
+              "labelKey": "schema.users.import.field.file"
+            }
+          ],
+          "submitAction": "submitImport",
+          "submitLabel": "Import",
+          "submitLabelKey": "schema.users.import.submit"
+        }
+      }
+    },
     "openCreate": {
       "type": "modal",
       "content": {
@@ -279,6 +329,24 @@
               "actionRef": "openCreate",
               "permissionIntent": "edit",
               "labelKey": "schema.users.toolbar.newUser"
+            },
+            {
+              "key": "export",
+              "label": "Export",
+              "actionRef": "exportUsers",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"data.export\""
+              },
+              "labelKey": "schema.users.toolbar.export"
+            },
+            {
+              "key": "import",
+              "label": "Import",
+              "actionRef": "openImport",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"data.import\""
+              },
+              "labelKey": "schema.users.toolbar.import"
             }
           ],
           "actions": [

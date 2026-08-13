@@ -391,7 +391,7 @@ func TestUsersAdminTargetBoundary(t *testing.T) {
 	now := time.Now().UTC()
 	if _, err := env.authRepository.CreateRoleWithGrants(
 		"users-manager", "Users manager",
-		[]string{"roles.assign", "roles.read", "users.read", "users.write", "operations.read"}, nil, now,
+		[]string{"roles.assign", "roles.read", "users.read", "users.write", "operations.read", "data.export"}, nil, now,
 	); err != nil {
 		t.Fatalf("create users-manager role: %v", err)
 	}

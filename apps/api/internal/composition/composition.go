@@ -20,6 +20,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
+	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
@@ -173,8 +174,11 @@ func newMuxWithExtraProviders(
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready)
-	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2).
-	handler.RegisterUpload(mux, a, filepath.Join(filepath.Dir(cfg.DBPath), "uploads"))
+	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
+	// uploads directory is shared with admin.data-transfer (F-02 import reads
+	// uploaded CSV files by id).
+	uploadDir := filepath.Join(filepath.Dir(cfg.DBPath), "uploads")
+	handler.RegisterUpload(mux, a, uploadDir)
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
@@ -206,6 +210,9 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.account") {
 		providers = append(providers, accountmodule.New(a, authRepository, operations))
+	}
+	if plan.HasModule("admin.data-transfer") {
+		providers = append(providers, datatransfermodule.New(a, authRepository, operations, uploadDir))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)

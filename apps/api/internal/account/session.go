@@ -38,6 +38,7 @@ func StaticDevSession() Session {
 				"operations.read",
 				"files.write", // W4 P0-2: admin-only upload gate, parity with seed
 				"users.enable", "users.disable", // F-03 (GOAL-005) admin-only keys
+				"data.export", "data.import", // F-02 (GOAL-004) transfer keys
 			},
 		},
 		Features: map[string]bool{

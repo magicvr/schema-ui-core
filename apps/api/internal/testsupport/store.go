@@ -56,6 +56,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// F-03 (GOAL-005): admin.account enable/disable keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.enable"}, Permission: "users.enable", Resource: "users", Action: "enable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.disable"}, Permission: "users.disable", Resource: "users", Action: "disable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// F-02 (GOAL-004): admin.data-transfer keys.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.export"}, Permission: "data.export", Resource: "data", Action: "export", PolicyID: authsessiondata.PolicyAdminEditor, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.import"}, Permission: "data.import", Resource: "data", Action: "import", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},

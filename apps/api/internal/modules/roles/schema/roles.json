@@ -49,6 +49,10 @@
         "behavior": "reload"
       }
     },
+    "exportRoles": {
+      "type": "custom",
+      "handler": "export.roles"
+    },
     "openCreate": {
       "type": "modal",
       "content": {
@@ -331,6 +335,15 @@
           ],
           "dataSource": "/api/roles",
           "toolbar": [
+            {
+              "key": "export",
+              "label": "Export",
+              "actionRef": "exportRoles",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"data.export\""
+              },
+              "labelKey": "schema.roles.toolbar.export"
+            },
             {
               "key": "create",
               "label": "New role",

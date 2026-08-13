@@ -89,6 +89,11 @@ var Catalog = map[string]Entry{
 	"INVALID_PASSWORD":      {"error.invalidPassword", "current password is incorrect or the new password is invalid", "当前密码错误或新密码无效"},
 	"INVALID_PASSWORD_BODY": {"error.invalidPasswordBody", "body must be JSON with currentPassword and newPassword", "请求体必须是包含 currentPassword 和 newPassword 的 JSON"},
 	"SESSION_NOT_FOUND":     {"error.sessionNotFound", "no session with that id", "没有该 id 对应的会话"},
+
+	// F-02 (GOAL-004 D-002 §3/§4): data-transfer codes.
+	"RESOURCE_NOT_FOUND":  {"error.resourceNotFound", "no transfer surface for that resource", "该资源没有对应的传输面"},
+	"INVALID_CSV":         {"error.invalidCsv", "could not parse CSV", "CSV 解析失败"},
+	"INVALID_IMPORT_BODY": {"error.invalidImportBody", "body must be JSON with fileId", "请求体必须是包含 fileId 的 JSON"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

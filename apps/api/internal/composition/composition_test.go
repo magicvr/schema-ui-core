@@ -437,8 +437,10 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 	}{
 		// F-03 (GOAL-005): admin.account contributes users.enable/users.disable
 		// (+2 permissions) and menu_account (+1 navigation) to mvp and admin.
+		// F-02 (GOAL-004): admin.data-transfer contributes data.export/data.import
+		// (+2 permissions, no navigation) to admin only.
 		{profile: "mvp", wantPermissions: 8, wantNavigation: 3},
-		{profile: "admin", wantPermissions: 11, wantNavigation: 5},
+		{profile: "admin", wantPermissions: 13, wantNavigation: 5},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

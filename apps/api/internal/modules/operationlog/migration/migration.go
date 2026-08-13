@@ -48,6 +48,21 @@ var operationLogSettingsDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
+// operationLogDataTransferDDL (0015 · F-02 GOAL-004 D-002 §3/§4): adds the two
+// data-transfer events to the event CHECK (rebuild like 0005/0008/0014).
+var operationLogDataTransferDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
 // operationLogAccountEventsDDL (0014 · F-03 GOAL-005 D-002 §3): adds the five
 // account-lifecycle events to the event CHECK. SQLite cannot ALTER a CHECK, so
 // the table is rebuilt like 0005/0008.
@@ -95,6 +110,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogAccountEventsDDL, "0014:operation-log-account-events:v1"),
 			Apply:                migrateOperationLogAccountEvents,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_data_transfer"},
+			Version:              15,
+			Name:                 "operation_log_data_transfer",
+			Checksum:             kernel.MigrationChecksum(operationLogDataTransferDDL, "0015:operation-log-data-transfer:v1"),
+			Apply:                migrateOperationLogDataTransfer,
+		},
 	}
 }
 
@@ -117,6 +139,10 @@ func migrateOperationLogSettings(tx *sql.Tx) error {
 
 func migrateOperationLogAccountEvents(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogAccountEventsDDL, "account-events-expanded")
+}
+
+func migrateOperationLogDataTransfer(tx *sql.Tx) error {
+	return rebuildOperationLog(tx, operationLogDataTransferDDL, "data-transfer-expanded")
 }
 
 func rebuildOperationLog(tx *sql.Tx, ddl []string, label string) error {

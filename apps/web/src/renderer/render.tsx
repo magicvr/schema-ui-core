@@ -262,6 +262,53 @@ function batchSuccessMessageFor(action: JsonRecord, t: Translator): string {
  * - `{id}` slots on a formAction URL are resolved from the captured row context
  *   (bounded extension, §9.1a); row actions resolve `$row.*` in the constructor.
  */
+
+/**
+ * F-02 (GOAL-004 D-002 §5): whitelisted custom-action handlers. Export
+ * handlers fetch the CSV with the authed transport and trigger a browser
+ * download (blob + anchor); the filename derives from the handler name.
+ */
+const CUSTOM_HANDLER_URLS: Record<string, string> = {
+  "export.users": "/api/export/users",
+  "export.roles": "/api/export/roles",
+};
+
+async function runCustomAction(
+  action: JsonRecord,
+  fetcher: typeof fetch,
+): Promise<ActionResult> {
+  const handler = stringOf(action.handler);
+  const url = CUSTOM_HANDLER_URLS[handler];
+  if (url === undefined) {
+    return { ok: false, code: "CUSTOM_HANDLER_NOT_FOUND", message: "custom handler not whitelisted: " + handler };
+  }
+  let response: Response;
+  try {
+    response = await fetcher(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+  } catch (error) {
+    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+  }
+  if (!response.ok) {
+    const apiError = await readResourceApiError(response, handler);
+    return { ok: false, code: apiError.code, message: apiError.message };
+  }
+  const blob = await response.blob();
+  triggerBlobDownload(blob, handler.split(".").pop() + ".csv");
+  return { ok: true };
+}
+
+/** Triggers a browser download from a fetched blob (F-02 local extension). */
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 async function runRequest(
   document: RenderPageDocument,
   context: Record<string, unknown>,
@@ -272,6 +319,13 @@ async function runRequest(
   const action = actionOf(document, actionRef);
   if (action === undefined) {
     return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` };
+  }
+  // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
+  // CustomAction extension point (action.schema.json): a schema action may
+  // reference a whitelisted handler name; the renderer resolves it locally.
+  // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND).
+  if (action.type === "custom") {
+    return runCustomAction(action, fetcher);
   }
   if (action.type !== "request") {
     return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
@@ -371,6 +425,8 @@ async function runRequest(
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
     };
   }
+
+
   // Branding refresh after settings PATCH lives in the App/host layer (A-006 R-002),
   // not in this generic request executor — keep Renderer free of product endpoints.
   return { ok: true };

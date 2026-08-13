@@ -91,10 +91,12 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
 	mountRoutes(AccountSelfRoutes(a, authRepository, operations, "admin.account"))
 	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account"))
+	uploadDir := filepath.Join(t.TempDir(), "uploads")
+	mountRoutes(ExportRoutes(a, authRepository, authRepository, operations, "admin.data-transfer"))
+	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
 	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
-	uploadDir := filepath.Join(t.TempDir(), "uploads")
 	RegisterUpload(mux, a, uploadDir)
 	return &authTestEnv{
 		mux: mux, a: a, st: st,

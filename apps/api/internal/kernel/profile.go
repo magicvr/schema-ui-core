@@ -49,6 +49,9 @@ var profileDefaults = map[ProfileName][]string{
 		"admin.settings",
 		"admin.activity",
 		"admin.account",
+		// F-02 (GOAL-004 D-002 §6): admin.data-transfer — admin-only profile;
+		// export/import is a management-surface capability (content extension).
+		"admin.data-transfer",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -124,6 +127,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.activity", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.manifest-route", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/operations", "GET /api/operations/{id}"}, Pages: []string{"activity"}, Navigation: []string{"menu_activity"}, Permissions: []string{"operations.read"}, Fragments: []string{"activity"}}},
 		// F-03 admin.account (GOAL-005): self-service + enable/disable/unlock.
 		{ID: "admin.account", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/account/profile", "PATCH /api/account/profile", "POST /api/account/password", "GET /api/account/sessions", "POST /api/account/sessions/{id}/revoke", "POST /api/users/{id}/enable", "POST /api/users/{id}/disable", "POST /api/users/{id}/unlock"}, Pages: []string{"account"}, Navigation: []string{"menu_account"}, Permissions: []string{"users.enable", "users.disable"}, Fragments: []string{"account"}}},
+		// F-02 admin.data-transfer (GOAL-004): CSV export/import shared capability.
+		{ID: "admin.data-transfer", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/export/{resource}", "POST /api/import/{resource}"}, Permissions: []string{"data.export", "data.import"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via
