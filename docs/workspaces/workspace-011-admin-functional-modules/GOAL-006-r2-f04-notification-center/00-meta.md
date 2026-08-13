@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.2.0
-progress: 1/5
+version: 0.3.0
+progress: 4/5
 ---
 
 # GOAL 006-r2-f04-notification-center · 通知中心（站内通知）
@@ -25,9 +25,9 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：方案冻结：必办-2（模块边界冻结文档）+ 持久化/已读模型 + 事件源（首批系统事件）；方案级 self 审视（D-002 / A-001，2026-08-14）
-- [ ] **S2 · 实现**：实现：模块 + schema + API（列表/已读/设置）+ 铃铛 UI + 测试
-- [ ] **S3 · 验证**：验证：单元/集成 + 范例页 + 全量回归
-- [ ] **S4 · go 影响判定 + 自审**：go 影响判定 + self 审计
+- [x] **S2 · 实现**：实现：模块 + schema + API（列表/已读/设置）+ 铃铛 UI + 测试（E-003 · a065288）
+- [x] **S3 · 验证**：验证：单元/集成 + 范例页 + 全量回归（E-003 · go 全绿 + web 896/896）
+- [x] **S4 · go 影响判定 + 自审**：go 影响判定 + self 审计（D-003 无影响不暂挂；A-002 pass）
 - [ ] **S5 · 关门**：关门：required 全闭合 + 关门审计 + goal-tree 同步
 
 progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
