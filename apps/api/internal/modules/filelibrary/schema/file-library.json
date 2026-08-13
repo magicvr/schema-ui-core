@@ -1,0 +1,157 @@
+{
+  "meta": {
+    "pageId": "file-library",
+    "title": "File library",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended"
+    ]
+  },
+  "actions": {
+    "uploadFile": {
+      "type": "upload",
+      "url": "/api/upload",
+      "multiple": false
+    },
+    "submitUpload": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/library/files/upload",
+      "bodyMapping": {
+        "file": "file"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openUpload": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "upload-file-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"files.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "file",
+              "label": "File",
+              "type": "upload",
+              "actionRef": "uploadFile",
+              "labelKey": "schema.fileLibrary.upload.field.file"
+            }
+          ],
+          "submitAction": "submitUpload",
+          "submitLabel": "Upload",
+          "submitLabelKey": "schema.fileLibrary.upload.submit"
+        }
+      }
+    },
+    "downloadFile": {
+      "type": "custom",
+      "handler": "library.download"
+    },
+    "deleteFile": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/library/files/{id}",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "file-library",
+    "children": [
+      {
+        "type": "table",
+        "id": "file-library-table",
+        "permissionCascade": {
+          "keys": [
+            "edit",
+            "delete"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"files.read\"",
+          "delete": "$context.user.permissions contains \"files.delete\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.fileLibrary.column.name"
+            },
+            {
+              "field": "type",
+              "label": "Type",
+              "sortable": true,
+              "labelKey": "schema.fileLibrary.column.type"
+            },
+            {
+              "field": "size",
+              "label": "Size",
+              "sortable": true,
+              "labelKey": "schema.fileLibrary.column.size"
+            },
+            {
+              "field": "owner",
+              "label": "Owner",
+              "sortable": true,
+              "labelKey": "schema.fileLibrary.column.owner"
+            },
+            {
+              "field": "created",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.fileLibrary.column.created"
+            }
+          ],
+          "dataSource": "/api/library/files",
+          "toolbar": [
+            {
+              "key": "upload",
+              "label": "Upload file",
+              "actionRef": "openUpload",
+              "permissionIntent": "edit",
+              "labelKey": "schema.fileLibrary.toolbar.upload"
+            }
+          ],
+          "actions": [
+            {
+              "key": "download",
+              "label": "Download",
+              "actionRef": "downloadFile",
+              "permissionIntent": "edit",
+              "labelKey": "schema.fileLibrary.action.download"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteFile",
+              "permissionIntent": "delete",
+              "confirm": "Delete this file?",
+              "labelKey": "schema.fileLibrary.action.delete",
+              "confirmKey": "schema.fileLibrary.confirm.delete"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

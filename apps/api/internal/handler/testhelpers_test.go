@@ -16,6 +16,7 @@ import (
 	notificationsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	examplesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples/schema"
+	filelibraryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
@@ -99,6 +100,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(NotificationRoutes(a, authRepository, "admin.notifications"))
 	mountRoutes(ExportRoutes(a, authRepository, authRepository, operations, "admin.data-transfer"))
 	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
+	mountRoutes(FileLibraryRoutes(a, uploadDir, operations, "admin.file-library"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -124,6 +126,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{rolesschema.ModuleID, rolesschema.SchemaDocuments()},
 		{settingsschema.ModuleID, settingsschema.SchemaDocuments()},
 		{activityschema.ModuleID, activityschema.SchemaDocuments()},
+		{filelibraryschema.ModuleID, filelibraryschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {

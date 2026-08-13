@@ -41,6 +41,8 @@ var frozenLiteralCodes = []string{
 	"RESOURCE_NOT_FOUND", "INVALID_CSV", "INVALID_IMPORT_BODY", "INVALID_EXPORT_LIMIT",
 	// F-04 (GOAL-006): notification codes.
 	"INVALID_SETTINGS_BODY", "NOTIFICATION_NOT_FOUND",
+	// S-02 (GOAL-007): file-library codes.
+	"INVALID_UPLOAD_BODY", "INVALID_FILE_ID",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

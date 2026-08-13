@@ -59,6 +59,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// F-02 (GOAL-004): admin.data-transfer keys.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.export"}, Permission: "data.export", Resource: "data", Action: "export", PolicyID: authsessiondata.PolicyAdminEditor, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.import"}, Permission: "data.import", Resource: "data", Action: "import", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-02 (GOAL-007): admin.file-library keys, admin-only.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.file-library", Key: "files.read"}, Permission: "files.read", Resource: "files", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.file-library", Key: "files.delete"}, Permission: "files.delete", Resource: "files", Action: "delete", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -71,6 +74,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.dashboard", Key: "menu_dashboard"}, NodeID: "menu_dashboard", PageID: "dashboard", Order: 0, Label: "Dashboard", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// F-04 (GOAL-006): notifications page for every standard role.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.notifications", Key: "menu_notifications"}, NodeID: "menu_notifications", PageID: "notifications", Order: 2, Label: "Notifications", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-02 (GOAL-007): file library page (admin-only management surface).
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.file-library", Key: "menu_files"}, NodeID: "menu_files", PageID: "file-library", Order: 3, Label: "File library", Visibility: authsessiondata.PolicyAdmin, Permission: "files.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

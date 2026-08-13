@@ -23,6 +23,7 @@ import (
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
+	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
@@ -219,6 +220,9 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.dashboard") {
 		providers = append(providers, dashboardmodule.New())
+	}
+	if plan.HasModule("admin.file-library") {
+		providers = append(providers, filelibrarymodule.New(a, operations, uploadDir))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

@@ -271,16 +271,31 @@ function batchSuccessMessageFor(action: JsonRecord, t: Translator): string {
 const CUSTOM_HANDLER_URLS: Record<string, string> = {
   "export.users": "/api/export/users",
   "export.roles": "/api/export/roles",
+  // S-02 (GOAL-007 D-002 §5): file-library row download. The {id} slot is
+  // resolved from the captured row context (bounded binding, same posture as
+  // the formAction {id} slots, I-007-003 §9.1a).
+  "library.download": "/api/library/files/{id}/download",
 };
 
 async function runCustomAction(
   action: JsonRecord,
   fetcher: typeof fetch,
+  row?: Record<string, unknown> | null,
 ): Promise<ActionResult> {
   const handler = stringOf(action.handler);
-  const url = CUSTOM_HANDLER_URLS[handler];
+  let url = CUSTOM_HANDLER_URLS[handler];
   if (url === undefined) {
     return { ok: false, code: "CUSTOM_HANDLER_NOT_FOUND", message: "custom handler not whitelisted: " + handler };
+  }
+  // Row-scoped custom handlers resolve the {id} slot from the captured row
+  // context (S-02, GOAL-007 D-002 §5). A missing row id on a templated
+  // handler fails closed.
+  const rowId = row?.id;
+  if (url.includes("{id}")) {
+    if (typeof rowId !== "string" || rowId === "") {
+      return { ok: false, code: "CUSTOM_HANDLER_MISSING_ROW_ID", message: "custom handler requires a row id: " + handler };
+    }
+    url = url.replaceAll("{id}", encodeURIComponent(rowId));
   }
   let response: Response;
   try {
@@ -293,7 +308,15 @@ async function runCustomAction(
     return { ok: false, code: apiError.code, message: apiError.message };
   }
   const blob = await response.blob();
-  triggerBlobDownload(blob, handler.split(".").pop() + ".csv");
+  // The download filename prefers the row's stored name (client-side blob
+  // download only — no header surface); the export fallback keeps the
+  // historical "<handler>.csv" shape.
+  const rowName = row?.name;
+  const filename =
+    typeof rowName === "string" && rowName.trim() !== ""
+      ? rowName.trim().replace(/[\r\n"]/g, "_")
+      : handler.split(".").pop() + ".csv";
+  triggerBlobDownload(blob, filename);
   return { ok: true };
 }
 
@@ -325,7 +348,7 @@ async function runRequest(
   // reference a whitelisted handler name; the renderer resolves it locally.
   // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND).
   if (action.type === "custom") {
-    return runCustomAction(action, fetcher);
+    return runCustomAction(action, fetcher, opts.row ?? null);
   }
   if (action.type !== "request") {
     return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };

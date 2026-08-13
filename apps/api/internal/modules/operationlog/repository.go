@@ -31,6 +31,10 @@ const (
 	// F-02 data-transfer events (GOAL-004 D-002 §3/§4).
 	EventDataExport = "data.export"
 	EventDataImport = "data.import"
+	// S-02 file-library events (GOAL-007 D-002 §4).
+	EventFileUpload   = "files.upload"
+	EventFileDownload = "files.download"
+	EventFileDelete   = "files.delete"
 )
 
 // Operation is one append-only operation log row.

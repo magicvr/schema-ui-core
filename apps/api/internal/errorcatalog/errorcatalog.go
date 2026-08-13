@@ -75,6 +75,10 @@ var Catalog = map[string]Entry{
 	"INVALID_UPLOAD":        {"error.invalidUpload", "expected a multipart file part named file", "请求应为包含名为 file 的 multipart 文件"},
 	"FILE_TOO_LARGE":        {"error.fileTooLarge", "file exceeds the size limit", "文件超过大小限制"},
 	"FILE_NOT_FOUND":        {"error.fileNotFound", "file not found", "文件不存在"},
+
+	// S-02 (GOAL-007 D-002 §4): file-library codes.
+	"INVALID_UPLOAD_BODY":   {"error.invalidUploadBody", "body must be JSON with a file field", "请求体必须是包含 file 字段的 JSON"},
+	"INVALID_FILE_ID":       {"error.invalidFileId", "invalid file id", "文件 ID 无效"},
 	"INVALID_FILE":          {"error.invalidFile", "file part is invalid", "文件内容无效"},
 	"UNSUPPORTED_FILE_TYPE": {"error.unsupportedFileType", "file type is not allowed", "不允许的文件类型"},
 	"STORAGE_UNAVAILABLE":   {"error.storageUnavailable", "storage is temporarily unavailable", "存储服务暂不可用"},

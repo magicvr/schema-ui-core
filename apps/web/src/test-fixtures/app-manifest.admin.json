@@ -115,6 +115,13 @@
       "schemaUrl": "/api/schema/notifications",
       "route": "/notifications",
       "titleKey": "manifest.title.notifications"
+    },
+    {
+      "pageId": "file-library",
+      "title": "File library",
+      "schemaUrl": "/api/schema/file-library",
+      "route": "/file-library",
+      "titleKey": "manifest.title.fileLibrary"
     }
   ],
   "navigation": {
@@ -135,6 +142,15 @@
         "visibleWhen": {
           "when": "$context.features.menu_dashboard == true"
         }
+      },
+      {
+        "pageRef": "file-library",
+        "label": "File library",
+        "icon": "folder",
+        "visibleWhen": {
+          "when": "$context.features.menu_files == true"
+        },
+        "labelKey": "manifest.nav.fileLibrary"
       },
       {
         "label": "Examples",

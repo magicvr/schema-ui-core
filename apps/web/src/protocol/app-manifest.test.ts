@@ -276,6 +276,7 @@ describe("manifest loading and expression boundaries", () => {
       "dashboard",
       "account",
       "notifications",
+      "file-library",
     ]);
   });
 

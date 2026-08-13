@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.2.0
-progress: 1/5
+version: 0.3.0
+progress: 3/5
 ---
 
 # GOAL-007-r3-s02-file-library · 文件/附件库
@@ -25,8 +25,8 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：边界（引用/清理策略、配额语义）、权限键、审计设计、协议对照（上传/文件面）、Profile 归属；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
-- [ ] **S2 · 实现**：模块 provider + 迁移 + schema 代表页 + 文件端点（列表/上传/下载/删除）+ 前端（页面/上传交互）+ 测试
-- [ ] **S3 · 验证**：单元/集成 + 代表场景实测 + 全量回归（go test / web suite / 冒烟）
+- [x] **S2 · 实现**：模块 provider + 迁移 + schema 代表页 + 文件端点（列表/上传/下载/删除）+ 前端（页面/上传交互）+ 测试（E-002）
+- [x] **S3 · 验证**：单元/集成 + 代表场景实测 + 全量回归（go test / web suite / e2e 双 profile 8/8；冒烟留 S5，E-003）
 - [ ] **S4 · go 影响判定 + 自审**：go 影响判定（Profile 默认集变化触发失效检查）+ self 审计
 - [ ] **S5 · 关门**：独立审计（security/data 门禁 → grok）+ required 闭合 + 关门审计 + goal-tree 同步
 
