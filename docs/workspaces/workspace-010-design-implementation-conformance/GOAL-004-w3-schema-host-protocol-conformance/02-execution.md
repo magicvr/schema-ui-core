@@ -27,7 +27,7 @@ version: 0.1.1
 > 上游 ADR-0034～0037 accepted 且 H2 机器契约落地（`453008d`），本仓按维护者裁定以固定
 > commit 的候选契约满足 I-003 的 S4 开始条件并完成 S4 生产实现（E-004）：三个 host capability
 > 的生产代码路径（`src/host/*` + main.tsx/App shell 集成 + Go API bootstrap 端点）消费上游
-> 99 fixtures 零排除，浏览器级 focus/live-region/恢复测试全过，候选 claim 绑定 artifact digest /
+> 96 fixtures 零排除，浏览器级 focus/live-region/恢复测试全过，候选 claim 绑定 artifact digest /
 > fixture digest / build ID。页面协议 2.7 的已登记 residual 与候选绑定性质见 E-004；上游
 > 2.8.0 正式发布（H4）后重 pin 并重生成 claim。**身份纠偏（E-005，2026-08-13）**：上游
 > v2.8.1 审计 0080 V379 裁定正式 v2.8.0 = tag @ `521cff8` / content `4fae4605…`；本仓

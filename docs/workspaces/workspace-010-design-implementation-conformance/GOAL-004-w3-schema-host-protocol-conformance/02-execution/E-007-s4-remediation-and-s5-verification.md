@@ -29,8 +29,8 @@ version: 0.1.0
 
 `node apps/web/scripts/generate-claim.mjs` → `buildId=git:5e4c3848dee57763461a9a52a511d14c57bcbb94`，
 canonical digest `sha256:60f75039b3256a970d10f45624cb523f6be0e746ce7218f58f38606a32bb4273`；
-`conformance-claim.json` residuals 现为空（`$deps` residual 随纠错关闭），`contentSha256` 仍为正式
-`4fae4605…`、`fixtureSha256` `7aacf133…`。
+`conformance-local-report.json` 的 `residuals` 现为 `[]`（`$deps` residual 随纠错关闭），claim 的
+`contentSha256` 仍为正式 `4fae4605…`、`fixtureSha256` `7aacf133…`。
 
 ### 3. S5 符合性验证证据（全绿）
 

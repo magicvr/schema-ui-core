@@ -31,6 +31,7 @@ version: 0.1.1
 | A-004 | 2026-08-13 | self（response） | I-003 证据身份纠偏（上游审计 0080 V379 外部裁定）+ E-005 动作与门禁 | pass | 无（O-001/O-002 recommended 观察项） | `03-audit/A-004-formal-identity-repin-response-self.md` |
 | A-005 | 2026-08-13 | independent（grok build · grok 4.6 · xhigh） | S2 方案出口四门禁 + I-00N 证据链 + S4 工作清单覆盖 | conditional | 无（BLOCKING_COUNT=4；F-1～F-4 P1 已 fixed） | `03-audit/A-005-s2-plan-freeze-independent-grok.md` |
 | A-006 | 2026-08-13 | self | S2 方案出口四门禁 + D-002 冻结 + A-005 findings 整改 | pass | 无（O-001/O-002/O-003 recommended 观察项） | `03-audit/A-006-s2-plan-freeze-self.md` |
+| A-007 | 2026-08-13 | self | S6 关门审计（信息项/findings/检查点/residual/go 影响/claim 一致性） | conditional | 唯一前置 = account-locked residual 用户 P-004 书面决策 | `03-audit/A-007-s6-closeout-self.md` |
 
 ## 结论状态
 

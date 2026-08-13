@@ -1,7 +1,7 @@
 ---
 id: GOAL-002-w1-examples-optional-module
 doc: execution
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-11
