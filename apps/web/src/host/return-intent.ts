@@ -58,6 +58,8 @@ function intentFromLocation(path: string, query: Record<string, string>, nowIso:
 /**
  * Captures a return intent for the current location (auth loss paths).
  * No-op when the location is the login surface itself (self-loop prevention).
+ * Defaults to the live location, INCLUDING its query string — deep-link state
+ * (tab/view/page/sort…) must survive the auth round-trip (ADR-0036 D6).
  */
 export function captureReturnIntent(options?: {
   path?: string;
@@ -69,13 +71,22 @@ export function captureReturnIntent(options?: {
   const nowIso = options?.nowIso ?? new Date().toISOString();
   const intent = intentFromLocation(
     options?.path ?? window.location.pathname,
-    options?.query ?? {},
+    options?.query ?? parseLocationQuery(),
     nowIso,
   );
   if (intent === null) {
     return;
   }
   storage.setItem(STORAGE_KEY, JSON.stringify(intent));
+}
+
+/** Reads the live query string into a plain string record. */
+function parseLocationQuery(): Record<string, string> {
+  const search = window.location.search;
+  if (search === "") {
+    return {};
+  }
+  return Object.fromEntries(new URLSearchParams(search).entries());
 }
 
 /**
