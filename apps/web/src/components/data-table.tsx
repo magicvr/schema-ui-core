@@ -332,7 +332,14 @@ export function DataTable<T>({
                       <td
                         key={column.key}
                         data-row-click-ignore={interactive ? "true" : undefined}
-                        className="px-3 py-2 align-middle text-sm"
+                        className={cn(
+                          "px-3 py-2 align-middle text-sm",
+                          // W4 · GOAL-005: table-layout auto sizes a column by
+                          // its cell max-content; the inner span's max-width
+                          // alone does not clamp the cell, so the width cap
+                          // must live on the td itself.
+                          column.truncate === true ? "max-w-[16rem]" : "",
+                        )}
                         onClick={
                           interactive
                             ? (event) => event.stopPropagation()

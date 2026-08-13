@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-w4-long-content-presentation
 title: W4 · 长内容列的列表截断与详情换行（以角色页权限/菜单为代表）
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-13
 updated: 2026-08-13
-version: 0.4.0
-progress: 5/6
+version: 0.5.0
+progress: 6/6
 ---
 
 # GOAL-005 · W4 · 长内容列的列表截断与详情换行
@@ -33,9 +33,9 @@ progress: 5/6
 - [x] **S3 · 实现整改**：列表长列单行截断（截断标记 + 原生 `title` 全文 affordance）；recordView 长值自动换行修正；不引入新的私有协议方言。（2026-08-13 · E-002）
 - [x] **S4 · 符合性验证**：补/跑 `apps/web` vitest 相关测试与 `build` 门禁；既有代表性页面与 conformance fixtures 回归通过。（2026-08-13 · E-003：48/879 通过；tsc -b 0 错误；go test 23 包 ok）
 - [x] **S5 · 自审与 go 影响判定**：self 审计（A-002）；VP-008 `go` 消费有效性判定留痕（预期：无影响、不暂挂，理由随 S5 落盘）。（2026-08-13 · A-002 pass；go 无影响不暂挂）
-- [ ] **S6 · 关门**：全部 required 信息项与 findings 合法闭合；完成关门 cross 审计（self + 用户指定 independent provider `grok build`）；`go` 判定复核；本目标 `status=done`。
+- [x] **S6 · 关门**：全部 required 信息项与 findings 合法闭合；完成关门 cross 审计（self + 用户指定 independent provider `grok build`）；`go` 判定复核；本目标 `status=done`。（2026-08-13 · A-004 self pass + A-003 independent pass BLOCKING=0；F-1/F-2/F-3 全 fixed，E-004 浏览器点验）
 
-`progress` 将由上述六个等权检查点确定性派生，不用于放行或推导 done。
+`progress: 6/6` 由上述六个等权检查点确定性派生。全部检查点完成；本目标于 2026-08-13 关门。
 
 ## 审计策略
 

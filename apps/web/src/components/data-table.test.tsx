@@ -230,6 +230,11 @@ describe("DataTable", () => {
     expect(cell?.className).toMatch(/max-w-\[16rem\]/);
     expect(cell?.getAttribute("title")).toBe(full);
     expect(cell?.textContent).toBe(full);
+    // W4 · GOAL-005 / A-003 F-3: the width cap must live on the td too —
+    // table-layout auto sizes a column by its cell max-content, so the
+    // inner span's max-width alone does not clamp the column.
+    const td = cell?.closest("td");
+    expect(td?.className).toMatch(/max-w-\[16rem\]/);
   });
 
   it("keeps non-truncate columns unwrapped (behavior unchanged)", async () => {

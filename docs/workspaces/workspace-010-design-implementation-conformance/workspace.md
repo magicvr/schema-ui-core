@@ -48,7 +48,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W1 | GOAL-002-w1-examples-optional-module | **done**（6/6 · 2026-08-11 关门；go 已恢复） |
 | W2 | GOAL-003-demo-profile | **done**（6/6 · 2026-08-11 关门；go 无影响不暂挂） |
 | W3 | GOAL-004-w3-schema-host-protocol-conformance | **done**（6/6 · 2026-08-13 关门；S6 cross 审计 A-007/A-008，BLOCKING 清零；用户 P-004 裁决 account-locked 实现生产源；go 无影响不暂挂） |
-| W4 | GOAL-005-w4-long-content-presentation | **active**（2026-08-13 立项；长内容列截断 + 详情换行，用户点名） |
+| W4 | GOAL-005-w4-long-content-presentation | **done**（6/6 · 2026-08-13 关门；S6 cross 审计 A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004 浏览器点验；go 无影响不暂挂） |
 
 ## 固定共享资料引用
 

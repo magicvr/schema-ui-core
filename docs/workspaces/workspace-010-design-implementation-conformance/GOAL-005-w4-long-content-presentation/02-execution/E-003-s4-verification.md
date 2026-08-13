@@ -35,7 +35,7 @@ version: 0.1.0
   - `recoveryActionsFor` 形参收窄为 `Pick<BootstrapEvaluation, "fetchClassification">`（函数只读该字段）；两处合成调用改为 `{ fetchClassification: null }`。
   - `main.tsx` 补 `type SessionAdapterState` 导入。
 - 行为语义零变化：`fetchClassification: null` 与 W3 字面量完全一致；`recoveryActionsFor` 只依赖 `fetchClassification`（S3 代码事实核对）。
-- 该处置**不是**对 D-001 范围的扩张，而是 S4 验证门禁（D-001 §3.3）的使能修复；E-002 已预告「W3 遗留类型门禁若拦截将最小修复并留痕」。
+- 该处置**不是**对 D-001 范围的扩张，而是 S4 验证门禁（D-001 §3.3）的使能修复；S4 发现后最小修复，本条留痕（A-003 F-2 响应：原文「E-002 已预告」不实，已按建议改正）。
 
 ## 验收标准核对（D-001 §3）
 
