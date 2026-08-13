@@ -15,3 +15,4 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-14 | 立项（R2 第一波；五件套 + 路线图） | recorded | [E-001-wave-establishment.md](02-execution/E-001-wave-establishment.md) |
+| E-002 | 2026-08-14 | S1 方案冻结（I-001/002/003 关闭；必办-5 核对） | recorded | [E-002-s1-freeze.md](02-execution/E-002-s1-freeze.md) |

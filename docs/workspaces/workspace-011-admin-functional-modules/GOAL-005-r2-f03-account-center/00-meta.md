@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL 005-r2-f03-account-center · 个人中心与账户安全 + 账号启停
@@ -24,7 +24,7 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：方案冻结：会话模型（列表/吊销粒度、token_version 联动）+ 启停状态字段与迁移设计 + 权限键；方案级 self 审视
+- [x] **S1 · 方案冻结**：方案冻结：会话模型（列表/吊销粒度、token_version 联动）+ 启停状态字段与迁移设计 + 权限键；方案级 self 审视（D-002 / A-001，2026-08-14）
 - [ ] **S2 · 实现**：实现：API（会话列表/吊销、启停、自助改密/资料）+ 页面（个人中心、用户启停操作）+ 迁移 + 测试
 - [ ] **S3 · 验证**：验证：单元/集成（会话吊销后旧 token 失效、停用后登录拒绝）+ 全量回归
 - [ ] **S4 · go 影响判定 + 自审**：go 影响判定 + self 审计
@@ -40,9 +40,9 @@ self + **independent 关门**（security/authz 高影响门禁；provider 沿用
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 会话模型：列表/吊销粒度、与 token_version 联动语义 | S1 方案 | 对照 auth 模块 session/token 机制 | open |
-| I-002 | required | 启停状态字段与迁移（enabled + 迁移版本）及权限键（users.enable/disable） | S1 方案 | 对照迁移账本 0001～0010 约定 | open |
-| I-003 | non-blocking | 停用与锁定（C-11）的交互语义（停用是否重置失败计数等） | S1 方案 | 方案冻结时定 | open |
+| I-001 | required | 会话模型：列表/吊销粒度、与 token_version 联动语义 | S1 方案 | 对照 auth 模块 session/token 机制 | **closed**（D-002 §2） |
+| I-002 | required | 启停状态字段与迁移（enabled + 迁移版本）及权限键（users.enable/disable） | S1 方案 | 对照迁移账本 0001～0010 约定 | **closed**（D-002 §1/§3） |
+| I-003 | non-blocking | 停用与锁定（C-11）的交互语义（停用是否重置失败计数等） | S1 方案 | 方案冻结时定 | **closed**（D-002 §3/§8） |
 
 ## 父目标
 
