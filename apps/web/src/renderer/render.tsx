@@ -1465,7 +1465,7 @@ function formatRecordViewValue(value: unknown): string {
     return value.join(", ");
   }
   if (value === undefined || value === null) {
-    return "";
+    return "—";
   }
   return String(value);
 }

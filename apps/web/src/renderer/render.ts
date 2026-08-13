@@ -290,10 +290,13 @@ export function parseRecordViewFields(raw: unknown): RenderRecordViewField[] {
     return [];
   }
   const fields: RenderRecordViewField[] = [];
+  const seen = new Set<string>();
   for (const item of raw) {
     if (!isRecord(item) || typeof item.key !== "string" || item.key === "") {
       continue;
     }
+    if (seen.has(item.key)) continue;
+    seen.add(item.key);
     fields.push({
       key: item.key,
       ...(typeof item.label === "string" ? { label: item.label } : {}),
@@ -405,7 +408,7 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
         ...(isRecord(props.record) ? { record: props.record } : {}),
         ...(typeof props.title === "string" ? { title: props.title } : {}),
         ...(typeof props.titleKey === "string" ? { titleKey: props.titleKey } : {}),
-        ...(fields.length > 0 ? { fields } : {}),
+        ...(fields !== undefined ? { fields } : {}),
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderRecordViewNode;
