@@ -112,7 +112,11 @@ export function NotificationBell({ fetcher, onViewAll }: NotificationBellProps) 
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        aria-label={t("shell.notifications.bell")}
+        aria-label={
+          unread !== null && unread > 0
+            ? t("shell.notifications.bell") + " (" + (unread > 99 ? "99+" : String(unread)) + ")"
+            : t("shell.notifications.bell")
+        }
         aria-expanded={open}
         className="relative inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         onClick={() => setOpen((value) => !value)}
@@ -136,7 +140,7 @@ export function NotificationBell({ fetcher, onViewAll }: NotificationBellProps) 
           <div className="max-h-80 overflow-y-auto p-1">
             {error ? (
               <p role="alert" className="px-3 py-2 text-xs text-muted-foreground">
-                {t("feedback.actionCompleted")}
+                {t("shell.notifications.unavailable")}
               </p>
             ) : items === null ? (
               <p role="status" className="px-3 py-2 text-xs text-muted-foreground">

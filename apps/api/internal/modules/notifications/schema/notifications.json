@@ -50,6 +50,12 @@
         "props": {
           "title": "Notification settings",
           "titleKey": "schema.notifications.settings.title",
+          "recordSource": {
+            "url": "/api/notifications/settings",
+            "responseMapping": {
+              "enabled": "enabled"
+            }
+          },
           "fields": [
             {
               "id": "enabled",

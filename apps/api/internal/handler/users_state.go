@@ -19,6 +19,7 @@ import (
 
 // UserStateRepository is the persistence surface for enable/disable/unlock.
 type UserStateRepository interface {
+	GetUser(string) (*authsession.User, error)
 	SetUserEnabled(string, bool, string, time.Time) (*authsession.User, error)
 	UnlockUser(string, time.Time) (*authsession.User, error)
 }
@@ -63,6 +64,14 @@ func (h *userStateHandler) toggle(permission string, enabled bool) http.Handler 
 			return
 		}
 		id := r.PathValue("id")
+		// F-002: only a real enabled→disabled transition produces the
+		// notification (re-disabling an already-disabled account is a no-op).
+		transition := false
+		if !enabled {
+			if before, err := h.repository.GetUser(id); err == nil && before.Enabled {
+				transition = true
+			}
+		}
 		u, err := h.repository.SetUserEnabled(id, enabled, user.ID, h.now().UTC())
 		if err != nil {
 			if mapped := mapUserStoreError(err); mapped != err {
@@ -80,8 +89,8 @@ func (h *userStateHandler) toggle(permission string, enabled bool) http.Handler 
 			return
 		}
 		h.record(event, user, id, u.Username)
-		// F-04 system event: the target user is notified about a disable.
-		if !enabled {
+		// F-04 system event: notify only on a real disable transition (F-002).
+		if transition {
 			NotifyAccountEvent(h.notifier, id, "account.disabled", h.now().UTC())
 		}
 		w.WriteHeader(http.StatusNoContent)
@@ -95,6 +104,12 @@ func (h *userStateHandler) unlock() http.Handler {
 			return
 		}
 		id := r.PathValue("id")
+		// F-002: only a real lock-clear produces the notification (unlocking an
+		// already-unlocked account is a no-op).
+		wasLocked := false
+		if before, err := h.repository.GetUser(id); err == nil {
+			wasLocked = before.LockedUntil > h.now().UTC().Unix() || before.FailedLoginCount > 0
+		}
 		u, err := h.repository.UnlockUser(id, h.now().UTC())
 		if err != nil {
 			if mapped := mapUserStoreError(err); mapped != err {
@@ -112,7 +127,9 @@ func (h *userStateHandler) unlock() http.Handler {
 			return
 		}
 		h.record(operationlog.EventUserUnlock, user, id, u.Username)
-		NotifyAccountEvent(h.notifier, id, "account.unlocked", h.now().UTC())
+		if wasLocked {
+			NotifyAccountEvent(h.notifier, id, "account.unlocked", h.now().UTC())
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

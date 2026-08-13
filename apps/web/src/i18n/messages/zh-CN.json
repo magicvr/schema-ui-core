@@ -159,6 +159,7 @@
   "schema.notifications.action.markRead": "标为已读",
   "shell.notifications.bell": "通知",
   "shell.notifications.viewAll": "查看全部",
+  "shell.notifications.unavailable": "通知暂时不可用。",
   "schema.roles.field.key": "键",
   "schema.roles.field.name": "名称",
   "schema.roles.field.permissions": "权限",

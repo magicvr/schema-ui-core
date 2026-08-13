@@ -159,6 +159,7 @@
   "schema.notifications.action.markRead": "Mark read",
   "shell.notifications.bell": "Notifications",
   "shell.notifications.viewAll": "View all",
+  "shell.notifications.unavailable": "Notifications are temporarily unavailable.",
   "schema.roles.field.key": "Key",
   "schema.roles.field.name": "Name",
   "schema.roles.field.permissions": "Permissions",

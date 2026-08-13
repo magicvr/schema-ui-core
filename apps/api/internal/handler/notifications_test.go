@@ -46,17 +46,30 @@ func TestNotificationDisableAndUnlockEvents(t *testing.T) {
 	env := newAuthTestEnv(t)
 	env.addUser(t, "editor1", "editor-password", []string{"editor"})
 	token := adminToken(t, env)
-	// disable → account.disabled
+	// disable → account.disabled (transition only; re-disable is a no-op)
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/users/user-editor1/disable", ""))
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("disable = %d", rr.Code)
 	}
-	// unlock → account.unlocked
-	rr2 := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr2, bearer(t, token, http.MethodPost, "/api/users/user-editor1/unlock", ""))
-	if rr2.Code != http.StatusNoContent {
-		t.Fatalf("unlock = %d", rr2.Code)
+	rrDup := httptest.NewRecorder()
+	env.mux.ServeHTTP(rrDup, bearer(t, token, http.MethodPost, "/api/users/user-editor1/disable", ""))
+	if rrDup.Code != http.StatusNoContent {
+		t.Fatalf("re-disable = %d", rrDup.Code)
+	}
+	// enable → lock via 5 failures → unlock → account.unlocked
+	rr3 := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr3, bearer(t, token, http.MethodPost, "/api/users/user-editor1/enable", ""))
+	if rr3.Code != http.StatusNoContent {
+		t.Fatalf("enable = %d", rr3.Code)
+	}
+	for i := 0; i < 5; i++ {
+		sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", `{"username":"editor1","password":"wrong-pass"}`)
+	}
+	rr4 := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr4, bearer(t, token, http.MethodPost, "/api/users/user-editor1/unlock", ""))
+	if rr4.Code != http.StatusNoContent {
+		t.Fatalf("unlock = %d", rr4.Code)
 	}
 	rows, _, err := env.authRepository.ListNotifications("user-editor1", authsession.NotificationFilter{Page: 1, PageSize: 20})
 	if err != nil {
@@ -66,8 +79,18 @@ func TestNotificationDisableAndUnlockEvents(t *testing.T) {
 	for _, n := range rows {
 		events[n.Event] = true
 	}
-	if len(events) != 2 || !events["account.unlocked"] || !events["account.disabled"] {
-		t.Fatalf("events = %v, want {account.unlocked account.disabled}", events)
+	if !events["account.unlocked"] || !events["account.disabled"] || !events["account.locked"] {
+		t.Fatalf("events = %v, want {account.unlocked account.disabled account.locked}", events)
+	}
+	// re-disable produced no duplicate (transition guard)
+	disabled := 0
+	for _, n := range rows {
+		if n.Event == "account.disabled" {
+			disabled++
+		}
+	}
+	if disabled != 1 {
+		t.Fatalf("account.disabled count = %d, want 1 (no duplicate on re-disable)", disabled)
 	}
 }
 

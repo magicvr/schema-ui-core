@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -50,6 +51,7 @@ func NotificationRoutes(a *auth.Authenticator, repository NotificationRepository
 	add("POST", "/api/notifications/{id}/read", a.Middleware(h.read()))
 	add("POST", "/api/notifications/read-all", a.Middleware(h.readAll()))
 	add("GET", "/api/notifications/unread-count", a.Middleware(h.unreadCount()))
+	add("GET", "/api/notifications/settings", a.Middleware(h.settingsGet()))
 	add("PATCH", "/api/notifications/settings", a.Middleware(h.settings()))
 	return routes
 }
@@ -165,6 +167,25 @@ func (h *notificationHandler) unreadCount() http.Handler {
 	})
 }
 
+// settingsGet returns the current switch as a form-facing string value
+// ("true"/"false") so the schema select control can prefill (F-001).
+func (h *notificationHandler) settingsGet() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := h.identity(w, r)
+		if !ok {
+			return
+		}
+		enabled, err := h.repository.NotificationsEnabledFor(user.ID)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not read notification settings")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"enabled": boolStringValue(enabled)})
+	})
+}
+
+// settings accepts the switch as a JSON bool or a "true"/"false" string (the
+// schema select control submits strings; F-001).
 func (h *notificationHandler) settings() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := h.identity(w, r)
@@ -172,19 +193,50 @@ func (h *notificationHandler) settings() http.Handler {
 			return
 		}
 		var body struct {
-			Enabled *bool `json:"enabled"`
+			Enabled json.RawMessage `json:"enabled"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Enabled == nil {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || len(body.Enabled) == 0 {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "body must be JSON with enabled")
 			return
 		}
-		if err := h.repository.SetNotificationsEnabled(user.ID, *body.Enabled, h.now().UTC()); err != nil {
+		enabled, err := parseBoolValue(body.Enabled)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "enabled must be a boolean or \"true\"/\"false\"")
+			return
+		}
+		if err := h.repository.SetNotificationsEnabled(user.ID, enabled, h.now().UTC()); err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update notification settings")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"enabled": *body.Enabled})
+		writeJSON(w, http.StatusOK, map[string]any{"enabled": boolStringValue(enabled)})
 	})
+}
+
+// boolStringValue renders the form-facing string form of the switch.
+func boolStringValue(enabled bool) string {
+	if enabled {
+		return "true"
+	}
+	return "false"
+}
+
+// parseBoolValue accepts a JSON bool or the strings "true"/"false".
+func parseBoolValue(raw json.RawMessage) (bool, error) {
+	var b bool
+	if err := json.Unmarshal(raw, &b); err == nil {
+		return b, nil
+	}
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		switch strings.ToLower(strings.TrimSpace(s)) {
+		case "true":
+			return true, nil
+		case "false":
+			return false, nil
+		}
+	}
+	return false, errors.New("invalid boolean value")
 }
 
 // --- best-effort system-event hooks ---
@@ -215,11 +267,15 @@ func NotifyAccountEvent(repository NotifyRepository, userID, event string, now t
 	}
 	id, err := newNotificationID()
 	if err != nil {
+		slog.Error("notification id generation failed", "event", event, "err", err)
 		return
 	}
-	_ = repository.CreateNotification(authsession.Notification{
+	if err := repository.CreateNotification(authsession.Notification{
 		ID: id, UserID: userID, Event: event, Title: title, Body: body,
-	}, now)
+	}, now); err != nil {
+		// F-003: best-effort failures are logged, never block the business path.
+		slog.Error("notification produce failed", "event", event, "user_id", userID, "err", err)
+	}
 }
 
 // newNotificationID returns a random 128-bit hex id for notification rows.

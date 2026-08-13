@@ -39,7 +39,7 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/notifications", "POST /api/notifications/{id}/read",
 				"POST /api/notifications/read-all", "GET /api/notifications/unread-count",
-				"PATCH /api/notifications/settings",
+				"GET /api/notifications/settings", "PATCH /api/notifications/settings",
 			},
 			Pages:      []string{"notifications"},
 			Navigation: []string{"menu_notifications"},
