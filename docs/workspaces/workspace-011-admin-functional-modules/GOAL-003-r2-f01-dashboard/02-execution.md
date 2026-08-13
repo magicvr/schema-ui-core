@@ -16,3 +16,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-14 | 立项（R2 第一波；五件套 + 路线图） | recorded | [E-001-wave-establishment.md](02-execution/E-001-wave-establishment.md) |
 | E-002 | 2026-08-14 | S1 方案冻结（I-001/002/003 关闭；必办-1/必办-3 核对） | recorded | [E-002-s1-freeze.md](02-execution/E-002-s1-freeze.md) |
+| E-003 | 2026-08-14 | S2 实现 + S3 验证（a9642f4；go/web 全绿 + 冒烟） | recorded | [E-003-s2-s3-implementation-verification.md](02-execution/E-003-s2-s3-implementation-verification.md) |
