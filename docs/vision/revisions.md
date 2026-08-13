@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-10
+updated: 2026-08-14
 parent: null
-version: 0.4.2
+version: 0.4.4
 ---
 
 # Charter 修订台账
@@ -32,3 +32,5 @@ version: 0.4.2
 | VR-016 | 2026-08-10 | editorial | VP-008 lead workspace + Root scaffold | 用户确认单工作区、lead `workspace-008-admin-module-readiness`、Root `GOAL-001-admin-module-readiness` 与 independent provider `GitHub Copilot · /audit`；`/govern` 完成物理 scaffold。VP-008 保持 `active`，workspace/Root/Goal 对齐 Charter `@0.2.0`，尚未产生 `go`；不改 Charter 目的、成功边界、非目标或 `vision_id@version`，**无** strategic、**无** re-align。 |
 | VR-017 | 2026-08-10 | editorial | I-PROTO-FULL-001 执行分母勘误 | 响应 workspace-008 F-001：覆盖权威升至 v1.0.1，12/12 域、24/24 registry、16/16 suite include 不变；将 `320/320 全绿` 修正为 320 total = 318 executed + 2 local adapter excluded。同步 Charter H-001、roadmap、workspaces 与 VP-006 关门投影；不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不重开 VP-006，**无** strategic、**无** re-align。 |
 | VR-018 | 2026-08-10 | editorial | VP-008 关门投影 | 用户确认关闭 VP-008：status `active → closed`（v0.13.0）；Charter 目标语义、组合焦点与关系节、roadmap、workspaces、reviews 摘要同步为 closed 投影（`go` 候选 `ed99e88`、clean，解锁后续标准业务模块，每个激活前须 freshness review）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不重开历史 VP，**无** strategic、**无** re-align。 |
+| VR-019 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认结构选型并新建 planned `VP-011-admin-functional-modules`（标准 Admin 通用模块 + 常用业务领域分档交付；0 区）；调研回写 Root 纲领路线图而非 VP，VP 只留意图 + 三档方法论；roadmap 已落盘意图 + 后续方向同步；激活前须完成 VP-008 `go` 消费前 freshness review。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-020 | 2026-08-14 | editorial | 协议 pin bump（v2.7.0 → v2.8.0） | 用户裁决 A（editorial）：`schema-ui-docs@v2.7.0` → `v2.8.0`（additive 超集，v2.7.0 机器契约保留，新增 Host/App 互操作层）；Charter 协议来源/目标语义/成功边界 1/H-001 同步；`I-PROTO-FULL-001` v1.0.1 保留为 v2.7.0 历史分母、被 v2.8.0 覆盖；身份权威 = provenance-v2.8.json（VP-010 W3 固定）。不改 `vision_id@version`（仍 `@0.2.0`）、不重开历史 VP，**无** strategic、**无** re-align。 |
