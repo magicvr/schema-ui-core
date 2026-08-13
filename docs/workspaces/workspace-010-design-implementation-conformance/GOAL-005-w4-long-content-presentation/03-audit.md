@@ -24,7 +24,9 @@ version: 0.1.0
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-13 | self | S2 方案出口（D-001） | pass | 无（BLOCKING_COUNT=0；F-1/F-2 recommended 自纠随 S3/S4 闭环） | `03-audit/A-001-s2-plan-freeze-self.md` |
 | A-002 | 2026-08-13 | self | S3/S4 事实 + go 影响判定 | pass | 无（BLOCKING_COUNT=0） | `03-audit/A-002-s5-self-audit-go-impact.md` |
+| A-003 | 2026-08-13 | independent（grok build · grok 4.6 · high） | S6 关门 cross（台账/代码 diff/验收/go/一致性） | 待落盘 | — | `03-audit/A-003-s6-closeout-independent-grok.md` |
+| A-004 | 2026-08-13 | self | S6 关门自审 | pass | 无（BLOCKING_COUNT=0；O-001/O-002 recommended 观察项） | `03-audit/A-004-s6-closeout-self.md` |
 
 ## 结论状态
 
-S2 方案冻结成立（D-001 accepted + A-001 pass）。S5 self 审视通过（A-002 pass）；go 无影响不暂挂。S6 关门 cross 审计待执行（self + grok build independent）。
+S2 方案冻结成立（D-001 accepted + A-001 pass）。S5 self 审视通过（A-002 pass）；go 无影响不暂挂。S6 cross：A-004（self）pass；A-003（independent）运行中，其 findings 闭合后放行关门。
