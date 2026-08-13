@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-12
 updated: 2026-08-13
 version: 0.2.0
-progress: 2/6
+progress: 3/6
 ---
 
 # GOAL-004 · W3 · Schema-UI 语义对齐与 Host/App 协议增补
@@ -34,23 +34,23 @@ progress: 2/6
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 基线与候选目录**：建立 Host/App 协议候选附件；区分现有覆盖、实现偏离、协议缺口与未来业务候选。（2026-08-12 · E-001）
-- [ ] **S2 · 上游协议方案**：逐项给出 `adopt-now` / `reserve-extension` / `explicitly-out` 处置，形成 schema、能力声明、状态机、错误语义和 fixtures 提案；完成方案级 cross 审视。
-- [x] **S3 · 新协议到手**：上游增补已合并并形成可固定的版本/commit（tag `v2.8.0` @ `593f625`）；本仓 provenance（`provenance-v2.8.json`）、schemas、registry、fixtures（正式 release 字节级 pin）已更新并通过结构/语义验证（E-004；vitest 862 + claim-artifact 门禁）。（2026-08-13）
+- [x] **S2 · 上游协议方案**：逐项给出 `adopt-now` / `reserve-extension` / `explicitly-out` 处置，形成 schema、能力声明、状态机、错误语义和 fixtures 提案；完成方案级 cross 审视。（2026-08-13 · D-002 + A-005/A-006）
+- [x] **S3 · 新协议到手**：上游增补已合并并形成可固定的版本/commit（正式 tag `v2.8.0` @ `521cff8`，上游审计 0080 V379 权威）；本仓 provenance（`provenance-v2.8.json`）、schemas、registry、fixtures（正式 release 字节级 pin）已更新并通过结构/语义验证（E-004；vitest 862 + claim-artifact 门禁）。（2026-08-13 · E-005 身份纠偏）
 - [ ] **S4 · 实现整改**：仅以 S3 固定的新协议为依据，修正 API/Web 的实现偏离并接入 Host/App 契约；不保留无治理的本地私有方言。
 - [ ] **S5 · 符合性验证**：API/Web validator、协议 fixtures、代表性业务页面、auth/bootstrap/shell/error 流程与回归测试通过；旧协议兼容策略有证据。
 - [ ] **S6 · 关门**：全部 required 信息项与 findings 合法闭合；完成实施事实审视、go 影响判定和关门审计。
 
-`progress: 1/6` 由上述六个等权检查点中的一个完成项确定。该展示不放行 S2～S6，也不覆盖信息门禁或审计 finding。
+`progress: 3/6` 由上述六个等权检查点中的完成项确定。该展示不放行 S4～S6，也不覆盖信息门禁或审计 finding。
 
 ## 信息就绪与未知项
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 当前实现与 2.7.0 的逐项覆盖/偏离基线是否完整 | S2 方案 | S2 冻结前 | 对照 upstream schema/registry/fixtures 与 API/Web 语义，维护附件处置列 | collecting | — | `attachments/I-HOST-APP-001-protocol-gap-catalog.md` |
-| I-002 | required | Host/App 候选哪些进入本次协议、哪些仅保留扩展点或明确排除 | S2 方案 | S2 冻结前 | 对每个候选记录 `adopt-now` / `reserve-extension` / `explicitly-out` 及理由 | verified | — | ADR-0034–0037 accepted（2026-08-13），D10 逐项处置 95/95 且 shape/state/security/fixtures 已随 2.8.0 发布齐备；本仓 S2 方案级 cross 审视仍待执行 |
+| I-001 | required | 当前实现与 2.7.0 的逐项覆盖/偏离基线是否完整 | S2 方案 | S2 冻结前 | 对照 upstream schema/registry/fixtures 与 API/Web 语义，维护附件处置列 | verified | — | 附件 §1c 逐项处置 95/95（§3 91 能力候选 + IMP-001～004）与上游 ADR-0034 D10 机械比对 0 差异（A-005）；D-002 §1 冻结为本地证据 |
+| I-002 | required | Host/App 候选哪些进入本次协议、哪些仅保留扩展点或明确排除 | S2 方案 | S2 冻结前 | 对每个候选记录 `adopt-now` / `reserve-extension` / `explicitly-out` 及理由 | verified | — | ADR-0034～0037 accepted（2026-08-13），D10 逐项处置 95/95 且 shape/state/security/fixtures 已随 2.8.0 发布齐备；本仓 S2 方案级 cross 审视（A-005 independent + A-006 self）已落盘 |
 | I-003 | required | 新协议是否已完成上游合并、发布和本仓固定引用 | **S4 实施** | S4 开始前 | 核对版本/commit、provenance、schema/registry/fixtures 与 capability matrix | verified | — | 上游 v2.8.0 正式发布（tag `v2.8.0` @ `521cff8`，content `4fae4605…` / artifact `6cdbffcc…` / fixture 树 `7aacf133…`；上游审计 0080 V379 权威）；本仓 `provenance-v2.8.json` 固定 + release 字节级 fixture pin（E-004；正式身份纠偏重 pin E-005） |
 | I-004 | required | 协议/跨边界变更的 independent provider | S2 审视、S6 关门 | 首次 cross 审视前 | 用户指定 provider；self + independent 分别落 A 台账 | verified | — | 用户指定 `grok build`（grok 4.5，reasoning high）；self=A-001（pass）；independent=A-002（conditional，BLOCKING_COUNT=0）已落盘 |
-| I-005 | required | 2.7.0 消费方的兼容、迁移、弃用和 fail-closed 规则 | S3/S4 | S3 固定前 | 形成版本矩阵、迁移说明、正反 fixtures | collecting | — | 上游已交付：`migrations/2.7-to-2.8.md`（双轨兼容矩阵、零动作项）、registry `deprecatedSince`/`removedIn` 弃用机制、正反 fixtures（host 99 + app-manifest 41 + version-negotiation 2.8 向量）；本仓 S3 台账录入随审计轮收尾 |
+| I-005 | required | 2.7.0 消费方的兼容、迁移、弃用和 fail-closed 规则 | S3/S4 | S3 固定前 | 形成版本矩阵、迁移说明、正反 fixtures | verified | — | 上游已交付：`docs/migrations/2.7-to-2.8.md`（双轨兼容矩阵、零动作项、capability 门控）、registry `deprecatedSince`/`removedIn` 弃用机制（`validateRegistry` 消费）、正反 fixtures（host 96 + app-manifest 41 + version-negotiation 2.8 向量，零排除）；本仓消费证据录 E-006 |
 | I-006 | required | `recordView` 行上下文、抽屉/详情交互等争议语义的最终归属 | S2/S4 | S2 冻结前 | 对照现行 registry；上游明确标准能力或明确 Host extension | verified | — | 上游已裁定：ADR-0034 D6 IMP-004（row selection → drawer/detail）保留独立 overlay ADR；`record.view.load` 复用既有；D7 明确 reserve 位置不冒充 capability |
 | I-007 | non-blocking | P1/P2 业务候选的引入顺序 | 后续发布节奏 | S2 后 | 依据产品需求分批，但每项必须有协议处置 | collecting | 责任人=维护者；复核=每次协议 release proposal | 附件已给初始优先级，不等于最终承诺 |
 

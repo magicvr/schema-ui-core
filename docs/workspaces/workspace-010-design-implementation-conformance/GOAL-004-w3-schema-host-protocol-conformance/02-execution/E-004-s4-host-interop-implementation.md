@@ -64,7 +64,7 @@ JS/Python 双 reference）。本仓 I-003（上游协议已发布/固定并进�
 
 ### 5. Conformance 消费与回归
 
-- `upstream-host-fixtures.test.ts`：上游三 suite **99 fixtures 零排除**逐字段核对生产模块
+- `upstream-host-fixtures.test.ts`：上游三 suite **96 fixtures 零排除**（host-bootstrap 23 + host-failure 43 + host-conformance-claim 30）逐字段核对生产模块
   （+ sha256 pin 校验）；
 - app-manifest 41 + app-navigation 16 零排除（原 2 个 envelope 排除项已消除）；
 - `claim-artifact.test.ts`：构建生成的 claim 通过 C0（Ajv）、C1（§4.8 → `CLAIM_OK`）、

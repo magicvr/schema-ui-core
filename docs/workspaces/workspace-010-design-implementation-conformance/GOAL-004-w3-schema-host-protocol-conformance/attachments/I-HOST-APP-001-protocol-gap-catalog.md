@@ -41,10 +41,10 @@ ADR-0034 D10 同步如下：
 | `reserve-extension` | 本次定义稳定 capability/extension point 与 fail-closed 行为，具体载荷后续版本补齐 | 认可独立问题域，但**不创建**空 capability/extension point | 本目录暂记“上游 deferred”；未来 ADR 给出稳定 capability/extension point 后才满足 S2 定义 |
 | `explicitly-out` | 协议明确说明不负责，并指出所属层；不是静默遗漏 | Schema-UI 核心明确不负责，并指出 Host/身份/安全/产品层 | 可直接同步为本目录 `explicitly-out` |
 
-因此：
+因此（2026-08-13 ADR-0034～0037 已 accepted、v2.8.0 正式发布后复审）：
 
 - §1c 的 `reserve-extension` 行 **一律视为“上游 deferred”**，不得写作“已保留 capability / extension point”；
-- §1c 的 `adopt-now` 行在对应 ADR（0035/0036/0037）accepted 之前，**不满足** §1 的 S2 adopt 定义；
+- §1c 的 `adopt-now` 行：对应 ADR（0035/0036/0037）已 accepted 且 shape/state/security/fixtures 已随 v2.8.0 正式制品齐备，**满足 §1 的 S2 adopt 定义**；
 - §1c 的 `explicitly-out` 行可直接作为本目录处置使用；
 - 每行处置的裁定理由以上游 ADR-0034 D10 表为权威，本目录不复述全文，防止双权威漂移；
 - IMP-001～004 的提案级裁定见 ADR-0034 D6（§1c 已投影）。
@@ -176,7 +176,7 @@ ADR-0034 D10 同步如下：
 | IMP-001 | Settings PATCH 只解码匿名结构，未显式拒绝未知 JSON 字段 | `apps/api/internal/handler/settings.go:165-188` | 若 action/request object 是闭集，则为实现偏离 | request object 的 unknown-key、额外 body 字段和服务端 validator 规则 |
 | IMP-002 | Users 导航文案同时来自 provider `Label: "Users"` 与 manifest `label`/`labelKey` | `apps/api/internal/modules/users/provider.go:85-93`；`manifest/fragment.json:21-30` | 单一语义源与 i18n precedence 疑似被破坏 | navigation projection 的 `label`/`labelKey` precedence 与 provider 可否覆写 |
 | IMP-003 | Host 侧字段/状态若只靠 TypeScript interface 或 handler struct 约束 | auth、branding、session 等当前实现 | 在协议补齐后会成为 conformance 修复项 | schema validation 放在 API、Web bootstrap 和 fixtures 的最低要求 |
-| IMP-004 | 争议中的 row selection → detail/drawer 交互可能依赖本地约定 | `recordView`/table Host integration 待逐项核验 | 未裁定；可能是实现偏离，也可能是协议缺口 | row context、selection binding、detail target、drawer/modal ownership |
+| IMP-004 | 争议中的 row selection → detail/drawer 交互可能依赖本地约定 | `recordView`/table Host integration 待逐项核验 | **已裁定**：`reserve-extension`（ADR-0034 D6，保留独立 overlay ADR；`record.view.load` 复用既有） | row context、selection binding、detail target、drawer/modal ownership |
 
 ### 2.3 合法 Host 边界，但协议不足
 
@@ -358,24 +358,25 @@ ADR-0034 D10 同步如下：
 
 ## 6. S2/S3 出口门禁
 
-> 以下均为未来出口条件，不是已完成事实。截至 2026-08-13，S2/S3 均未通过，I-003/I-005 仍为 `open`，且尚未发生正式 Goal Audit。
+> 2026-08-13 状态：ADR-0034～0037 已 accepted、v2.8.0 正式发布并固定（E-004/E-005），I-003/I-005
+> 已 `verified`。S2 方案冻结经 D-002 落盘，cross 审视由 A-005（independent）+ A-006（self）完成。
 
 S2 方案冻结前必须满足：
 
-- [ ] 本目录每一行均有 adopt/reserve/out 处置和理由；
-- [ ] P0 项有 schema/状态机/能力/错误/安全/fixtures 的可核对提案；
-- [ ] IMP-001～004 已被新协议裁定为实现偏离或合法 Host extension；
-- [ ] 完成 `cross` 方案审视，required findings 已合法闭合。
+- [x] 本目录每一行均有 adopt/reserve/out 处置和理由；
+- [x] P0 项有 schema/状态机/能力/错误/安全/fixtures 的可核对提案；
+- [x] IMP-001～004 已被新协议裁定为实现偏离或合法 Host extension；
+- [x] 完成 `cross` 方案审视，required findings 已合法闭合。
 
-**H0 同步状态（2026-08-13）：** §1c 已按上游 ADR-0034 D10/D6（`proposed`）为全部 95 行同步处置列，
-第 1 项因此在 **H0 上游评估层面**具备输入；但 S2 语义要求 `adopt-now` 行具备完整 shape/state/security/
-fixtures（须待 ADR accepted 与 H2 交付），`reserve-extension` 行具备稳定 capability/extension point（当前
-一律记为“上游 deferred”），故 S2 门禁整体仍未达成，四个复选框保持未勾选。禁止以 H0 处置列或 deferred
-标签冒充 S2 出口。
+**S2 冻结状态（2026-08-13）：** §1c 按上游 ADR-0034 D10/D6（`accepted`）为全部 95 行同步处置列
+（95/95，机械比对 0 差异，A-005）；adopt-now 行 shape/state/security/fixtures 由 accepted ADR-0035/0036/0037
++ v2.8.0 正式制品覆盖；reserve/explicitly-out 行未冒充 capability；IMP-001～004 与 D6 一致。D-002 冻结
+S2 范围与 S4 工作清单；cross 审视 A-005（independent，conditional）+ A-006（self，pass）落盘，A-005
+F-1～F-4 required findings 已合法闭合（见 A-005 编排器响应节）。
 
 S3 宣称“新协议到手”前必须满足：
 
-- [ ] 上游合并版本或 commit 可核对；
-- [ ] 本仓 provenance、schemas、registry、fixtures 与 capability matrix 已固定到同一来源；
-- [ ] 2.7.0 的兼容、迁移、弃用与 fail-closed 行为已有正反证据；
-- [ ] I-003/I-005 为 `verified`。只有此后才能进入 S4 修改 `apps/api` / `apps/web`。
+- [x] 上游合并版本或 commit 可核对；
+- [x] 本仓 provenance、schemas、registry、fixtures 与 capability matrix 已固定到同一来源；
+- [x] 2.7.0 的兼容、迁移、弃用与 fail-closed 行为已有正反证据；
+- [x] I-003/I-005 为 `verified`。只有此后才能进入 S4 修改 `apps/api` / `apps/web`。
