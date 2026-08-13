@@ -81,14 +81,14 @@ test("route not-found: HOST_ROUTE_NOT_FOUND surface and home recovery with focus
   await page.getByLabel("Username").fill("admin");
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/users$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.goto("/definitely-not-a-manifest-page");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("host-failure-title");
 
   await page.getByRole("button", { name: "Return home" }).click();
-  await expect(page).toHaveURL(/\/users$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
   // Recovery lands focus on the restored page's main heading.
   await expect.poll(() => page.evaluate(() => document.activeElement?.textContent ?? "")).toBe("Users");

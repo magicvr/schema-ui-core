@@ -48,6 +48,7 @@ func StaticDevSession() Session {
 			"menu_settings": true, // GOAL-013 site branding
 			"menu_activity": true, // GOAL-013 operation log
 			"menu_account":  true, // F-03 (GOAL-005) self-service account page
+			"menu_dashboard": true, // F-01 (GOAL-003) production home dashboard
 		},
 	}
 }

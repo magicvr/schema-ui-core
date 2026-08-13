@@ -89,6 +89,29 @@ describe("parseRenderNode", () => {
     expect(table).toMatchObject({ type: "table" });
   });
 
+  it("preserves textKey on text nodes and labelKey on statCard nodes (F-01)", () => {
+    const textNode = parseRenderNode(
+      { type: "text", props: { text: "Fallback", textKey: "schema.dashboard.text.intro" } },
+      "body",
+    );
+    expect(textNode).toMatchObject({
+      type: "text",
+      props: { text: "Fallback", textKey: "schema.dashboard.text.intro" },
+    });
+    const statCard = parseRenderNode(
+      {
+        type: "statCard",
+        id: "total",
+        props: { label: "Users", labelKey: "schema.dashboard.statCard.users", format: "plain", valueField: "total", dataSource: "/api/users" },
+      },
+      "body",
+    );
+    expect(statCard).toMatchObject({
+      type: "statCard",
+      props: { label: "Users", labelKey: "schema.dashboard.statCard.users", valueField: "total", dataSource: "/api/users" },
+    });
+  });
+
   it("normalizes statCard and chart nodes with their registry props", () => {
     const statCard = parseRenderNode(
       {

@@ -68,7 +68,7 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// F-03 (GOAL-005): self-service account page for every standard role.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "menu_account"}, NodeID: "menu_account", PageID: "account", Order: 1, Label: "Account", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// F-01 (GOAL-003): dashboard page for every standard role.
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.dashboard", Key: "menu_dashboard"}, NodeID: "menu_dashboard", PageID: "dashboard", Order: 0, Label: "Dashboard", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.dashboard", Key: "menu_dashboard"}, NodeID: "menu_dashboard", PageID: "dashboard", Order: 0, Label: "Dashboard", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

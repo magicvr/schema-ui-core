@@ -40,7 +40,7 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
   await page.getByLabel("用户名").fill("admin");
   await page.getByLabel("密码").fill("admin");
   await page.getByRole("button", { name: "登录" }).click();
-  await expect(page).toHaveURL(/\/users$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "用户" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
 
@@ -88,7 +88,7 @@ test("S5 mvp profile: locale switch + no settings surface + branding public", as
   await page.getByLabel("用户名").fill("admin");
   await page.getByLabel("密码").fill("admin");
   await page.getByRole("button", { name: "登录" }).click();
-  await expect(page).toHaveURL(/\/users$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "用户" })).toBeVisible();
 
   // Settings edit surface must not appear under mvp.

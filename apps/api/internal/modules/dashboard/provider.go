@@ -61,7 +61,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		Order:                0,
 		Label:                "Dashboard",
 		Visibility:           authsessiondata.PolicyAdminEditorViewer,
-		Permission:           "users.read",
+		Permission:           "",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err

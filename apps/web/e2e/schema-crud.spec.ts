@@ -15,7 +15,7 @@ async function signInAsAdmin(page: Page): Promise<void> {
   await page.getByLabel("Username").fill("admin");
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(profile === "demo" ? /\/overview$/ : /\/users$/);
+  await expect(page).toHaveURL(profile === "demo" ? /\/overview$/ : /\/dashboard$/);
 }
 
 test("users and roles drive real authorization management against Go SQLite", async ({
@@ -35,7 +35,7 @@ test("users and roles drive real authorization management against Go SQLite", as
   // resolve /me features so the link is present after sign-in.
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
   await page.getByRole("link", { name: "Users" }).click();
-  await expect(page).toHaveURL(/\/users$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
   await expect(page.getByRole("button", { name: "New user" })).toBeEnabled();
 

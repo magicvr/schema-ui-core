@@ -24,7 +24,8 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(manifestPageIds).toEqual(expect.arrayContaining(["users", "roles"]));
   expect(manifestPageIds.includes("overview")).toBe(isDemoProfile);
   expect(manifestPageIds.includes("data-table")).toBe(isDemoProfile);
-  expect(manifest.app.homePageRef).toBe(isDemoProfile ? "overview" : "users");
+  // F-01 (GOAL-003): mvp/admin production home is now the dashboard.
+  expect(manifest.app.homePageRef).toBe(isDemoProfile ? "overview" : "dashboard");
   expect(manifestPageIds.includes("settings")).toBe(isAdminProfile);
   expect(manifestPageIds.includes("activity")).toBe(isAdminProfile);
 
@@ -47,9 +48,9 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Shell renders and redirects home -> manifest home (demo: overview; else users).
-  await expect(page).toHaveURL(isDemoProfile ? /\/overview$/ : /\/users$/);
-  await expect(page.getByRole("heading", { name: isDemoProfile ? "Overview" : "Users" })).toBeVisible();
+  // Shell renders and redirects home -> manifest home (demo: overview; else dashboard).
+  await expect(page).toHaveURL(isDemoProfile ? /\/overview$/ : /\/dashboard$/);
+  await expect(page.getByRole("heading", { name: isDemoProfile ? "Overview" : "Dashboard" })).toBeVisible();
   // The shell brand renders the siteTitle from the public startup config. Read
   // it from /api/branding rather than hardcoding the default: an earlier spec
   // (localization M3) may have PATCHed a custom siteTitle into the shared

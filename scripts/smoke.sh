@@ -234,6 +234,13 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
       fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 缺少 ${page_id} 页面" 5
     fi
   done
+  # F-01 (GOAL-003): production home is the dashboard; demo keeps overview.
+  expect_home="dashboard"
+  if [ "$SMOKE_EXPECTED_PROFILE" = "demo" ]; then expect_home="overview"; fi
+  home_ref="$(printf '%s' "$api_manifest" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);process.stdout.write(o.app&&o.app.homePageRef||"")}catch(e){process.exit(1)}})')"
+  if [ "$home_ref" != "$expect_home" ]; then
+    fail_check "007" "${SMOKE_EXPECTED_PROFILE} homePageRef=${home_ref}，期望 ${expect_home}" 5
+  fi
   optional_status=200
   protected_status=401
   if [ "$SMOKE_EXPECTED_PROFILE" != "admin" ]; then

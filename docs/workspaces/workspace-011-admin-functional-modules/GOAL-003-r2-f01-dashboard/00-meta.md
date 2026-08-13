@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-f01-dashboard
 title: R2-F01 · 仪表盘/控制台（生产 Profile home）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.3.0
-progress: 4/5
+version: 0.4.0
+progress: 5/5
 ---
 
 # GOAL 003-r2-f01-dashboard · 仪表盘/控制台（生产 Profile home）
@@ -28,7 +28,7 @@ progress: 4/5
 - [x] **S2 · 实现**：实现：模块 + schema + 渲染（指标卡片/概览）+ 范例页与测试（E-003 · a9642f4）
 - [x] **S3 · 验证**：验证：单元/集成 + 代表页 + 全量回归（V-001～V-005）+ e2e 按可行性（E-003 · go 全绿 + web 892/892 + 冒烟）
 - [x] **S4 · go 影响判定 + 自审**：go 影响判定（无影响/不暂挂 或 暂挂留痕）+ self 审计（D-003 无影响不暂挂；A-002 pass）
-- [ ] **S5 · 关门**：关门：全部 required 闭合 + 关门审计 + goal-tree 同步
+- [x] **S5 · 关门**：关门：全部 required 闭合 + 关门审计（A-003 conditional → F-001~F-009 处置）+ goal-tree 同步（E-004 · 2026-08-14）
 
 progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 

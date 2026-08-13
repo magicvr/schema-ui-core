@@ -110,6 +110,8 @@ export interface RenderTextNode {
   id?: string;
   props?: {
     text?: string;
+    /** i18n key resolved before `text` (F-01 · GOAL-003 A-003 F-001). */
+    textKey?: string;
   };
   children?: RenderNode[];
 }
@@ -179,6 +181,8 @@ export interface RenderStatCardNode {
   id?: string;
   props?: {
     label?: string;
+    /** i18n key resolved before `label` (F-01 · GOAL-003 A-003 F-001). */
+    labelKey?: string;
     unit?: string;
     /** plain | currency | percent (registry enum). */
     format?: string;
@@ -387,13 +391,15 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
     } as RenderNode;
   }
   if (value.type === "text") {
+    const textProps = isRecord(value.props) ? value.props : {};
     return {
       type: "text",
       ...(value.id === undefined ? {} : { id: value.id }),
       props: {
-        ...(isRecord(value.props) && typeof value.props.text === "string"
-          ? { text: value.props.text }
-          : {}),
+        ...(typeof textProps.text === "string" ? { text: textProps.text } : {}),
+        // F-01 (GOAL-003 A-003 F-001): preserve textKey so the default render
+        // path localizes text nodes (was dropped before).
+        ...(typeof textProps.textKey === "string" ? { textKey: textProps.textKey } : {}),
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderTextNode;
@@ -441,6 +447,8 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
       ...(value.id === undefined ? {} : { id: value.id }),
       props: {
         ...(typeof props.label === "string" ? { label: props.label } : {}),
+        // F-01 (GOAL-003 A-003 F-001): preserve labelKey for runtime i18n.
+        ...(typeof props.labelKey === "string" ? { labelKey: props.labelKey } : {}),
         ...(typeof props.unit === "string" ? { unit: props.unit } : {}),
         ...(typeof props.format === "string" ? { format: props.format } : {}),
         ...(typeof props.valueField === "string" ? { valueField: props.valueField } : {}),

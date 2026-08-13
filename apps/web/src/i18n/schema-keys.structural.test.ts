@@ -32,6 +32,7 @@ const SCHEMA_FILES = [
   "settings/schema/settings.json",
   "activity/schema/activity.json",
   "account/schema/account.json",
+  "dashboard/schema/dashboard.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];
@@ -115,6 +116,7 @@ describe("S2 · F-V029 denominator schema key completeness", () => {
       "apps/api/internal/modules/settings/manifest/fragment.json",
       "apps/api/internal/modules/activity/manifest/fragment.json",
       "apps/api/internal/modules/account/manifest/fragment.json",
+      "apps/api/internal/modules/dashboard/manifest/fragment.json",
     ];
     const unknown: string[] = [];
     const keys: string[] = [];
