@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-12
 updated: 2026-08-13
 version: 0.2.0
-progress: 3/6
+progress: 5/6
 ---
 
 # GOAL-004 · W3 · Schema-UI 语义对齐与 Host/App 协议增补
@@ -36,11 +36,11 @@ progress: 3/6
 - [x] **S1 · 基线与候选目录**：建立 Host/App 协议候选附件；区分现有覆盖、实现偏离、协议缺口与未来业务候选。（2026-08-12 · E-001）
 - [x] **S2 · 上游协议方案**：逐项给出 `adopt-now` / `reserve-extension` / `explicitly-out` 处置，形成 schema、能力声明、状态机、错误语义和 fixtures 提案；完成方案级 cross 审视。（2026-08-13 · D-002 + A-005/A-006）
 - [x] **S3 · 新协议到手**：上游增补已合并并形成可固定的版本/commit（正式 tag `v2.8.0` @ `521cff8`，上游审计 0080 V379 权威）；本仓 provenance（`provenance-v2.8.json`）、schemas、registry、fixtures（正式 release 字节级 pin）已更新并通过结构/语义验证（E-004；vitest 862 + claim-artifact 门禁）。（2026-08-13 · E-005 身份纠偏）
-- [ ] **S4 · 实现整改**：仅以 S3 固定的新协议为依据，修正 API/Web 的实现偏离并接入 Host/App 契约；不保留无治理的本地私有方言。
-- [ ] **S5 · 符合性验证**：API/Web validator、协议 fixtures、代表性业务页面、auth/bootstrap/shell/error 流程与回归测试通过；旧协议兼容策略有证据。
+- [x] **S4 · 实现整改**：仅以 S3 固定的新协议为依据，修正 API/Web 的实现偏离并接入 Host/App 契约；不保留无治理的本地私有方言。（2026-08-13 · E-007）
+- [x] **S5 · 符合性验证**：API/Web validator、协议 fixtures、代表性业务页面、auth/bootstrap/shell/error 流程与回归测试通过；旧协议兼容策略有证据。（2026-08-13 · E-007）
 - [ ] **S6 · 关门**：全部 required 信息项与 findings 合法闭合；完成实施事实审视、go 影响判定和关门审计。
 
-`progress: 3/6` 由上述六个等权检查点中的完成项确定。该展示不放行 S4～S6，也不覆盖信息门禁或审计 finding。
+`progress: 5/6` 由上述六个等权检查点中的完成项确定。该展示不放行 S6，也不覆盖信息门禁或审计 finding。
 
 ## 信息就绪与未知项
 

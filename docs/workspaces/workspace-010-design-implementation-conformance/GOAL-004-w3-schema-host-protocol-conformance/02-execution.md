@@ -20,6 +20,7 @@ version: 0.1.1
 | E-004 | 2026-08-13 | S4 生产实现 — 上游 2.8 候选机器契约 pin、Host 模块与浏览器级证据 | recorded | `02-execution/E-004-s4-host-interop-implementation.md` |
 | E-005 | 2026-08-13 | v2.8.0 正式身份纠偏 — 重 pin 521cff8 / content 4fae4605 并重生成 claim | recorded | `02-execution/E-005-formal-v2-8-0-identity-repin.md` |
 | E-006 | 2026-08-13 | S2 方案冻结 + I-005 台账收尾 + cross 审视闭环（A-005/A-006） | recorded | `02-execution/E-006-s2-plan-freeze-and-i005-ledger.md` |
+| E-007 | 2026-08-13 | S4 残余整改完成 + S5 符合性验证证据（claim 重生成 buildId git:5e4c384） | recorded | `02-execution/E-007-s4-remediation-and-s5-verification.md` |
 
 ## 事实边界
 

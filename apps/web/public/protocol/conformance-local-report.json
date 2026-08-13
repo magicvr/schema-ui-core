@@ -1,6 +1,6 @@
 {
   "reportVersion": "1.0",
-  "subjectBuildId": "git:fd641c6e9dada57fe335ebadd56c33079303b13f",
+  "subjectBuildId": "git:5e4c3848dee57763461a9a52a511d14c57bcbb94",
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0"
@@ -44,7 +44,5 @@
     "fixtureSha256": "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2",
     "protocolContentSha256": "4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30"
   },
-  "residuals": [
-    "页面协议 2.7 mandatory behavior 的已登记 residual（R5：multi-round $deps reactions 子集）在闭环前，本 claim 的 pageVersions 条目视为待闭环绑定。"
-  ]
+  "residuals": []
 }
