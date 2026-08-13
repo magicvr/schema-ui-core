@@ -64,11 +64,11 @@ cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-25173}
 Windows 也可用仓库根一键脚本 `dev.cmd`（自动起停 API/Web 两个窗口，按端口停止，免手动开终端）：
 
 ```cmd
-dev.cmd start                              :: 默认 admin profile，自动打开浏览器
-dev.cmd start demo --no-browser            :: 切换 profile / 不自动开浏览器
-dev.cmd start custom --modules core.server-registration,users
-dev.cmd stop                               :: 停止 API + Web
-dev.cmd status                             :: 查看端口监听
+.\dev.cmd start                              :: 默认 admin profile，自动打开浏览器
+.\dev.cmd start demo --no-browser            :: 切换 profile / 不自动开浏览器
+.\dev.cmd start custom --modules core.server-registration,users
+.\dev.cmd stop                               :: 停止 API + Web
+.\dev.cmd status                             :: 查看端口监听
 ```
 
 ## 3. 验收四终点（≤15 分钟达标判据）
