@@ -1,7 +1,7 @@
 ---
 id: GOAL-004-w3-schema-host-protocol-conformance
 doc: audit
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-12
 updated: 2026-08-13
@@ -31,8 +31,8 @@ version: 0.1.1
 | A-004 | 2026-08-13 | self（response） | I-003 证据身份纠偏（上游审计 0080 V379 外部裁定）+ E-005 动作与门禁 | pass | 无（O-001/O-002 recommended 观察项） | `03-audit/A-004-formal-identity-repin-response-self.md` |
 | A-005 | 2026-08-13 | independent（grok build · grok 4.6 · xhigh） | S2 方案出口四门禁 + I-00N 证据链 + S4 工作清单覆盖 | conditional | 无（BLOCKING_COUNT=4；F-1～F-4 P1 已 fixed） | `03-audit/A-005-s2-plan-freeze-independent-grok.md` |
 | A-006 | 2026-08-13 | self | S2 方案出口四门禁 + D-002 冻结 + A-005 findings 整改 | pass | 无（O-001/O-002/O-003 recommended 观察项） | `03-audit/A-006-s2-plan-freeze-self.md` |
-| A-007 | 2026-08-13 | self | S6 关门审计（信息项/findings/检查点/residual/go 影响/claim 一致性） | conditional | 唯一前置 = account-locked residual 用户 P-004 书面决策 | `03-audit/A-007-s6-closeout-self.md` |
-| A-008 | 2026-08-13 | independent（grok build · grok 4.6 · xhigh） | GOAL-004 全量关门检查 | conditional | 无（BLOCKING_COUNT=2；F-1 待用户 P-004；F-2/F-3/F-4 已 fixed） | `03-audit/A-008-s6-closeout-independent-grok.md` |
+| A-007 | 2026-08-13 | self | S6 关门审计（信息项/findings/检查点/residual/go 影响/claim 一致性） | conditional | 无（account-locked 已按 P-004 裁决实现） | `03-audit/A-007-s6-closeout-self.md` |
+| A-008 | 2026-08-13 | independent（grok build · grok 4.6 · xhigh） | GOAL-004 全量关门检查 | conditional | 无（BLOCKING_COUNT=2→0；F-1 closed=实现生产源，F-2/F-3/F-4 已 fixed） | `03-audit/A-008-s6-closeout-independent-grok.md` |
 
 ## 结论状态
 
@@ -49,5 +49,7 @@ S2 方案出口 cross 审视。A-005 的 F-1～F-4（P1 required）已 fixed（I
 F-5～F-8（P2）已 fixed/acknowledged；S2 冻结成立（D-002）。
 **A-007（self，conditional）+ A-008（independent，conditional，BLOCKING_COUNT=2）（2026-08-13）**：
 S6 关门 cross 审计。A-008 F-2（生产 return-intent 未捕获 `location.search`）已 fixed、
-F-3/F-4（I-004 漂移/结论段）已 fixed；F-1（account-locked 拟议 residual）待用户 P-004 书面
-决策，为唯一剩余关门前置。go 不暂挂。
+F-3/F-4（I-004 漂移/结论段）已 fixed；F-1（account-locked 拟议 residual）经用户 P-004 裁决
+「**实现生产源**」并已闭环（E-008：锁策略 + 423 + Host 终态全链路）。go 不暂挂。
+**S6 关门成立（2026-08-13）：全部 required 信息项 verified、全部 required findings 三路径
+闭合、BLOCKING_COUNT=0；本目标 status=done、progress=6/6。**

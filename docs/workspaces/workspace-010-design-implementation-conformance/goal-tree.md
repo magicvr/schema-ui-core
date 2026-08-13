@@ -21,10 +21,11 @@ workspace_id: workspace-010-design-implementation-conformance
 GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-002-w1-examples-optional-module [done]       · W1 范例面可选化
 ├── GOAL-003-demo-profile [done]                      · W2 demo Profile：mvp + 范例
-└── GOAL-004-w3-schema-host-protocol-conformance [active] · W3 协议优先的 Host/App 符合性整改
+└── GOAL-004-w3-schema-host-protocol-conformance [done] · W3 协议优先的 Host/App 符合性整改
 ```
 
-Root **保持 active**。W1/W2 已关门；W3 上游协议增补已完成并固定（v2.8.0 正式 tag `521cff8`，S1+S2+S3），S4 残余整改完成、S5 符合性验证全绿；进入 S6 关门审计；不推导 Root/VP done。
+Root **保持 active**。W1/W2/W3 均关门；W3 六检查点全部完成（2026-08-13 关门：S6 cross 审计
+A-007/A-008，BLOCKING 清零，用户 P-004 裁决 account-locked 实现生产源）；不推导 Root/VP done。
 
 ## 状态表
 
@@ -33,7 +34,7 @@ Root **保持 active**。W1/W2 已关门；W3 上游协议增补已完成并固�
 | GOAL-001-design-implementation-conformance | 设计意图与实现符合性（持续对齐程序） | null | active | —（程序容器，不用 n/n→done） | 2026-08-12 |
 | GOAL-002-w1-examples-optional-module | W1 · 范例/演示产品面可选模块化 | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-11 |
 | GOAL-003-demo-profile | W2 · `demo` Profile：mvp + 范例页面 | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-11 |
-| GOAL-004-w3-schema-host-protocol-conformance | W3 · Schema-UI 语义对齐与 Host/App 协议增补 | GOAL-001-design-implementation-conformance | active | 5/6 | 2026-08-13 |
+| GOAL-004-w3-schema-host-protocol-conformance | W3 · Schema-UI 语义对齐与 Host/App 协议增补 | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-13 |
 
 ## 维护说明
 

@@ -1,7 +1,7 @@
 ---
 id: GOAL-004-w3-schema-host-protocol-conformance
 doc: decision
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-12
 updated: 2026-08-13
