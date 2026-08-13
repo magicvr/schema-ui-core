@@ -67,6 +67,10 @@ type Authenticator struct {
 	refreshTTL time.Duration
 	repository Repository
 	devSession bool // explicit opt-in: static dev session fallback (M9)
+	// OnLockOpened is an optional best-effort hook fired when a login failure
+	// opens the account-lock window (F-04 · GOAL-006 D-002 §3: system
+	// notification source). Nil = no hook; failures never block Login.
+	OnLockOpened func(userID string)
 }
 
 // New builds an Authenticator. The caller is responsible for a non-empty secret
@@ -127,6 +131,9 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 		}
 		if locked {
 			_ = a.repository.RevokeAllRefreshTokensForUser(u.ID, now)
+			if a.OnLockOpened != nil {
+				a.OnLockOpened(u.ID)
+			}
 		}
 		return "", "", account.User{}, ErrInvalidCredentials
 	}

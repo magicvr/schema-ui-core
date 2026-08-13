@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "pageId": "notifications",
+    "title": "Notifications",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "actions.row.request"
+    ]
+  },
+  "actions": {
+    "markRead": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/notifications/{id}/read",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "markAllRead": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/notifications/read-all",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "saveSettings": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/notifications/settings",
+      "bodyMapping": {
+        "enabled": "enabled"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "notifications",
+    "children": [
+      {
+        "type": "form",
+        "id": "notification-settings",
+        "props": {
+          "title": "Notification settings",
+          "titleKey": "schema.notifications.settings.title",
+          "fields": [
+            {
+              "id": "enabled",
+              "label": "Enable in-app notifications",
+              "type": "select",
+              "options": [
+                { "value": "true", "label": "Enabled", "labelKey": "schema.notifications.settings.enabled" },
+                { "value": "false", "label": "Disabled", "labelKey": "schema.notifications.settings.disabled" }
+              ],
+              "labelKey": "schema.notifications.settings.enable"
+            }
+          ],
+          "submitAction": "saveSettings",
+          "submitLabel": "Save settings",
+          "submitLabelKey": "schema.notifications.settings.submit"
+        }
+      },
+      {
+        "type": "table",
+        "id": "notifications-table",
+        "props": {
+          "columns": [
+            {
+              "field": "title",
+              "label": "Title",
+              "labelKey": "schema.notifications.column.title"
+            },
+            {
+              "field": "body",
+              "label": "Body",
+              "labelKey": "schema.notifications.column.body"
+            },
+            {
+              "field": "event",
+              "label": "Event",
+              "labelKey": "schema.notifications.column.event"
+            },
+            {
+              "field": "read",
+              "label": "Read",
+              "labelKey": "schema.notifications.column.read"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.notifications.column.created"
+            }
+          ],
+          "dataSource": "/api/notifications",
+          "toolbar": [
+            {
+              "key": "markAllRead",
+              "label": "Mark all read",
+              "actionRef": "markAllRead",
+              "labelKey": "schema.notifications.toolbar.markAllRead"
+            }
+          ],
+          "actions": [
+            {
+              "key": "read",
+              "label": "Mark read",
+              "actionRef": "markRead",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "read",
+                "equals": true
+              },
+              "labelKey": "schema.notifications.action.markRead"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

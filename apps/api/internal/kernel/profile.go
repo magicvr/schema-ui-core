@@ -39,6 +39,9 @@ var profileDefaults = map[ProfileName][]string{
 		// F-01 (GOAL-003 D-002 §3): production home dashboard — Profile content
 		// extension (explicit 必办-3 declaration).
 		"admin.dashboard",
+		// F-04 (GOAL-006 D-002 §6): in-app security notifications — account
+		// safety baseline (same rationale as F-03).
+		"admin.notifications",
 	},
 	ProfileAdmin: {
 		"core.server-registration",
@@ -57,6 +60,8 @@ var profileDefaults = map[ProfileName][]string{
 		"admin.data-transfer",
 		// F-01 (GOAL-003 D-002 §3): production home dashboard.
 		"admin.dashboard",
+		// F-04 (GOAL-006 D-002 §6): in-app security notifications.
+		"admin.notifications",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -74,6 +79,8 @@ var profileDefaults = map[ProfileName][]string{
 		"dev.examples",
 		"admin.account",
 		"admin.dashboard",
+		// F-04 (GOAL-006): in-app security notifications (inherited via demo).
+		"admin.notifications",
 	},
 }
 
@@ -137,6 +144,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.data-transfer", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/export/{resource}", "POST /api/import/{resource}"}, Permissions: []string{"data.export", "data.import"}}},
 		// F-01 admin.dashboard (GOAL-003): production home dashboard (no routes).
 		{ID: "admin.dashboard", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.manifest-route"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Pages: []string{"dashboard"}, Navigation: []string{"menu_dashboard"}, Fragments: []string{"dashboard"}}},
+		// F-04 admin.notifications (GOAL-006): in-app notifications.
+		{ID: "admin.notifications", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/notifications", "POST /api/notifications/{id}/read", "POST /api/notifications/read-all", "GET /api/notifications/unread-count", "PATCH /api/notifications/settings"}, Pages: []string{"notifications"}, Navigation: []string{"menu_notifications"}, Fragments: []string{"notifications"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

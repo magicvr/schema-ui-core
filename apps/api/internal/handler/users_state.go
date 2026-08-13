@@ -25,8 +25,11 @@ type UserStateRepository interface {
 
 // UserStateRoutes returns the admin enable/disable/unlock route contributions
 // (admin.account module; keys users.enable / users.disable).
-func UserStateRoutes(a *auth.Authenticator, repository UserStateRepository, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func UserStateRoutes(a *auth.Authenticator, repository UserStateRepository, operations operationlog.Recorder, moduleID string, notifier ...NotifyRepository) []kernel.RouteContribution {
 	h := &userStateHandler{repository: repository, operations: operations, now: time.Now}
+	if len(notifier) > 0 {
+		h.notifier = notifier[0]
+	}
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, handler http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -46,6 +49,7 @@ type userStateHandler struct {
 	repository UserStateRepository
 	operations operationlog.Recorder
 	now        func() time.Time
+	notifier   NotifyRepository
 }
 
 func (h *userStateHandler) toggle(permission string, enabled bool) http.Handler {
@@ -76,6 +80,10 @@ func (h *userStateHandler) toggle(permission string, enabled bool) http.Handler 
 			return
 		}
 		h.record(event, user, id, u.Username)
+		// F-04 system event: the target user is notified about a disable.
+		if !enabled {
+			NotifyAccountEvent(h.notifier, id, "account.disabled", h.now().UTC())
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 }
@@ -104,6 +112,7 @@ func (h *userStateHandler) unlock() http.Handler {
 			return
 		}
 		h.record(operationlog.EventUserUnlock, user, id, u.Username)
+		NotifyAccountEvent(h.notifier, id, "account.unlocked", h.now().UTC())
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

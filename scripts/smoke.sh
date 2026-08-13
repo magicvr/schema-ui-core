@@ -225,9 +225,9 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
   #   admin = dashboard, users, roles, settings, activity, account
   #   demo  = overview, dashboard, users, roles, account (+ examples surface)
   case "$SMOKE_EXPECTED_PROFILE" in
-    admin) required_pages="dashboard users roles settings activity account" ;;
-    demo)  required_pages="overview dashboard users roles account" ;;
-    *)     required_pages="dashboard users roles account" ;;
+    admin) required_pages="dashboard users roles settings activity account notifications" ;;
+    demo)  required_pages="overview dashboard users roles account notifications" ;;
+    *)     required_pages="dashboard users roles account notifications" ;;
   esac
   for page_id in $required_pages; do
     if ! json_has_page "$api_manifest" "$page_id"; then

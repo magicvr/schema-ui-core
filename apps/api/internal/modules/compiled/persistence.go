@@ -7,6 +7,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	accountmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/migration"
 	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
+	notificationsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/migration"
 	historymigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/corepersistence/migration"
 	operationlogmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog/migration"
 	settingsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
@@ -18,6 +19,7 @@ import (
 func PersistenceProviders() []kernel.Provider {
 	return []kernel.Provider{
 		accountmigration.Provider{},
+		notificationsmigration.Provider{},
 		authmigration.Provider{},
 		historymigration.Provider{},
 		operationlogmigration.Provider{},

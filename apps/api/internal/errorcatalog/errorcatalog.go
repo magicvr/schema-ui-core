@@ -95,6 +95,10 @@ var Catalog = map[string]Entry{
 	"INVALID_CSV":         {"error.invalidCsv", "could not parse CSV", "CSV 解析失败"},
 	"INVALID_IMPORT_BODY": {"error.invalidImportBody", "body must be JSON with fileId", "请求体必须是包含 fileId 的 JSON"},
 	"INVALID_EXPORT_LIMIT": {"error.invalidExportLimit", "pageSize must not exceed 10000", "导出每页条数不能超过 10000"},
+
+	// F-04 (GOAL-006 D-002 §4): notification codes.
+	"INVALID_SETTINGS_BODY":  {"error.invalidSettingsBody", "body must be JSON with enabled", "请求体必须是包含 enabled 的 JSON"},
+	"NOTIFICATION_NOT_FOUND": {"error.notificationNotFound", "no notification with that id", "没有该 id 对应的通知"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

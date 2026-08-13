@@ -60,12 +60,12 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, ModuleID) {
+	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, ModuleID, p.repository) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
 	}
-	for _, route := range handler.UserStateRoutes(p.a, p.repository, p.operations, ModuleID) {
+	for _, route := range handler.UserStateRoutes(p.a, p.repository, p.operations, ModuleID, p.repository) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

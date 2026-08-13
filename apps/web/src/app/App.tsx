@@ -48,6 +48,7 @@ import type { RenderPageDocument } from "@/renderer/render";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
 import { HostFailureScreen } from "@/app/HostFailureScreen";
+import { NotificationBell } from "@/app/notification-bell";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 
 const iconRegistry: Record<string, LucideIcon> = {
@@ -659,6 +660,12 @@ export function App({
             </button>
             <LocaleSwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
+            {currentUser !== undefined && currentUser !== null ? (
+              <NotificationBell
+                fetcher={resourceFetcher}
+                onViewAll={() => onNavigate("/notifications")}
+              />
+            ) : null}
             {currentUser !== undefined && currentUser !== null ? (
               <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1">
                 <span className="hidden max-w-[10rem] truncate text-xs text-muted-foreground sm:inline">

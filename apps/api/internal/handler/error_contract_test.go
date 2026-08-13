@@ -39,6 +39,8 @@ var frozenLiteralCodes = []string{
 	"ACCOUNT_DISABLED",
 	// F-02 (GOAL-004): data-transfer codes.
 	"RESOURCE_NOT_FOUND", "INVALID_CSV", "INVALID_IMPORT_BODY", "INVALID_EXPORT_LIMIT",
+	// F-04 (GOAL-006): notification codes.
+	"INVALID_SETTINGS_BODY", "NOTIFICATION_NOT_FOUND",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

@@ -13,6 +13,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	accountschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/schema"
 	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
+	notificationsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	examplesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
@@ -89,12 +90,16 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	}
 	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
-	mountRoutes(AccountSelfRoutes(a, authRepository, operations, "admin.account"))
-	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account"))
+	a.OnLockOpened = func(userID string) {
+		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
+	}
+	mountRoutes(AccountSelfRoutes(a, authRepository, operations, "admin.account", authRepository))
+	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account", authRepository))
 	uploadDir := filepath.Join(t.TempDir(), "uploads")
+	mountRoutes(NotificationRoutes(a, authRepository, "admin.notifications"))
 	mountRoutes(ExportRoutes(a, authRepository, authRepository, operations, "admin.data-transfer"))
 	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
-	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
+	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
 	RegisterUpload(mux, a, uploadDir)
@@ -113,6 +118,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		documents map[string][]byte
 	}{
 		{accountschema.ModuleID, accountschema.SchemaDocuments()},
+		{notificationsschema.ModuleID, notificationsschema.SchemaDocuments()},
 		{examplesschema.ModuleID, examplesschema.SchemaDocuments()},
 		{usersschema.ModuleID, usersschema.SchemaDocuments()},
 		{rolesschema.ModuleID, rolesschema.SchemaDocuments()},

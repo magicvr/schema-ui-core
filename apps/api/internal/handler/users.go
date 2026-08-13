@@ -32,6 +32,7 @@ const (
 	maxPasswordBytes = 72
 )
 
+// NotifyRepository is the best-effort system-event hook surface (F-04).
 // UsersRepository is the account-domain persistence required by the users
 // resource surface.
 type UsersRepository interface {
@@ -45,13 +46,18 @@ type UsersRepository interface {
 }
 
 func usersResource(repository UsersRepository, operations operationlog.Recorder) Resource {
+	return usersResourceWithNotifier(repository, operations, nil)
+}
+
+// usersResourceWithNotifier adds the F-04 password-change hook surface.
+func usersResourceWithNotifier(repository UsersRepository, operations operationlog.Recorder, notifier NotifyRepository) Resource {
 	return Resource{
 		ID:              "users",
 		Path:            "/api/users",
 		Listable:        true,
 		SortFields:      []string{"username", "name", "updatedAt"},
 		QSearch:         true,
-		Entity:          &usersEntity{repository: repository},
+		Entity:          &usersEntity{repository: repository, notifier: notifier},
 		CreateFields:    []string{"username", "name"},
 		PatchFields:     []string{"name"},
 		RawStringFields: []string{"password"},
@@ -70,10 +76,17 @@ func UsersResource(repository UsersRepository, operations operationlog.Recorder)
 	return usersResource(repository, operations)
 }
 
+// UsersResourceWithNotifier exposes the users descriptor with the F-04
+// password-change notification hook surface.
+func UsersResourceWithNotifier(repository UsersRepository, operations operationlog.Recorder, notifier NotifyRepository) Resource {
+	return usersResourceWithNotifier(repository, operations, notifier)
+}
+
 // usersEntity adapts the users store to the generic resource boundary. Rows
 // never contain password_hash (sensitive-field isolation, I-011-001 §2.2).
 type usersEntity struct {
 	repository UsersRepository
+	notifier   NotifyRepository
 }
 
 // userToMap maps a persisted user to the API row. password_hash is intentionally
@@ -184,6 +197,11 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 	u, err := e.repository.UpdateUser(id, patch, user.ID, now)
 	if err != nil {
 		return nil, mapUserStoreError(err)
+	}
+	// F-04 system event: the target user is notified when an admin resets
+	// their password (self-service changes notify through the account path).
+	if patch.PasswordHash != nil {
+		NotifyAccountEvent(e.notifier, id, "account.password-changed", now)
 	}
 	return userToMap(*u), nil
 }

@@ -443,8 +443,10 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// (+2 permissions, no navigation) to admin only.
 		// F-01 (GOAL-003): admin.dashboard contributes menu_dashboard (+1
 		// navigation, no permissions) to mvp and admin.
-		{profile: "mvp", wantPermissions: 8, wantNavigation: 4},
-		{profile: "admin", wantPermissions: 13, wantNavigation: 6},
+		// F-04 (GOAL-006): admin.notifications contributes menu_notifications
+		// (+1 navigation, no permissions) to mvp and admin.
+		{profile: "mvp", wantPermissions: 8, wantNavigation: 5},
+		{profile: "admin", wantPermissions: 13, wantNavigation: 7},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

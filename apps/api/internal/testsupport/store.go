@@ -69,6 +69,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "menu_account"}, NodeID: "menu_account", PageID: "account", Order: 1, Label: "Account", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// F-01 (GOAL-003): dashboard page for every standard role.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.dashboard", Key: "menu_dashboard"}, NodeID: "menu_dashboard", PageID: "dashboard", Order: 0, Label: "Dashboard", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
+		// F-04 (GOAL-006): notifications page for every standard role.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.notifications", Key: "menu_notifications"}, NodeID: "menu_notifications", PageID: "notifications", Order: 2, Label: "Notifications", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

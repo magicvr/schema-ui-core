@@ -30,12 +30,15 @@ type AccountRepository interface {
 }
 
 // AccountSelfRoutes returns the self-service route contributions (admin.account).
-func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, operations operationlog.Recorder, moduleID string, notifier ...NotifyRepository) []kernel.RouteContribution {
 	h := &accountSelfHandler{
 		repository:      repository,
 		operations:      operations,
 		now:             time.Now,
 		passwordLimiter: newLoginRateLimiter(15*time.Minute, 5, 1<<16),
+	}
+	if len(notifier) > 0 {
+		h.notifier = notifier[0]
 	}
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, handler http.Handler) {
@@ -58,6 +61,7 @@ type accountSelfHandler struct {
 	repository AccountRepository
 	operations operationlog.Recorder
 	now        func() time.Time
+	notifier   NotifyRepository
 	// F-003 (A-003 recommended): wrong currentPassword attempts are brute-force
 	// surface with a live access token — an in-memory sliding-window limiter per
 	// client identity (same model as login rate limiting) brakes online
@@ -197,6 +201,7 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 			return
 		}
 		h.record(operationlog.EventAccountPasswordChange, user.ID, user.Name, user.ID, "")
+		NotifyAccountEvent(h.notifier, user.ID, "account.password-changed", h.now().UTC())
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

@@ -58,7 +58,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.ResourceRoutes(p.a, handler.UsersResource(p.repository, p.operations), ModuleID) {
+	for _, route := range handler.ResourceRoutes(p.a, handler.UsersResourceWithNotifier(p.repository, p.operations, p.repository), ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

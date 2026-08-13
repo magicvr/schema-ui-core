@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync/atomic"
+	"time"
 
 	"go.uber.org/fx"
 
@@ -22,6 +23,7 @@ import (
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
+	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
@@ -217,6 +219,13 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.dashboard") {
 		providers = append(providers, dashboardmodule.New())
+	}
+	if plan.HasModule("admin.notifications") {
+		providers = append(providers, notificationsmodule.New(a, authRepository))
+		// F-04 best-effort system-event hooks (lock/disable/unlock/password).
+		a.OnLockOpened = func(userID string) {
+			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
+		}
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)

@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 15 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 {
-		t.Fatalf("applied = %+v, want versions [1..15]", applied)
+	if len(applied) != 17 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 {
+		t.Fatalf("applied = %+v, want versions [1..17]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -181,7 +181,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 15 {
+	if len(applied2) != 17 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -578,6 +578,8 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"admin.account", "account_enable_state", "ca2b3f38793d54c4d440f8e5af034dbed6cf32e50240304e9115d538ea05c539"},
 		{"core.operationlog", "operation_log_account_events", "643d0f44bdf0f62a7689a0c4bdae2b3b511b077c5f7291db1a08763af389567d"},
 		{"core.operationlog", "operation_log_data_transfer", "d8aa6a97fe57978126e7d06d03dbfcb1bb529c8ff680199e61f76791978f24b9"},
+		{"admin.notifications", "notifications", "70d1357dc638fec1b100e0e9287dba46375a387914b884a899294f273f0fcbaa"},
+		{"admin.notifications", "notifications_enabled", "16191741bded09598f2628da66f7b6251ef3886e616d839b5fd8b325a10d7264"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))
