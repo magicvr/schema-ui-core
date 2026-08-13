@@ -22,6 +22,12 @@ const (
 	EventRoleUpdate     = "roles.update"
 	EventRoleDelete     = "roles.delete"
 	EventSettingsUpdate = "settings.update"
+	// F-03 account lifecycle events (GOAL-005 D-002 §3/§4).
+	EventUserEnable            = "users.enable"
+	EventUserDisable           = "users.disable"
+	EventUserUnlock            = "users.unlock"
+	EventAccountPasswordChange = "account.password-change"
+	EventAccountSessionRevoke  = "account.session-revoke"
 )
 
 // Operation is one append-only operation log row.

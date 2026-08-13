@@ -18,14 +18,14 @@ func TestBuiltinProfilesResolveDeterministically(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := mvp.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles"}; !reflect.DeepEqual(got, want) {
+	if got, want := mvp.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles", "admin.account"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("mvp modules = %v, want %v", got, want)
 	}
 	plan, err := registry.Resolve(mvp.Modules)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := plan.IDs(), []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.roles", "admin.users"}; !reflect.DeepEqual(got, want) {
+	if got, want := plan.IDs(), []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.account", "admin.roles", "admin.users"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("mvp plan = %v, want %v", got, want)
 	}
 
@@ -42,7 +42,7 @@ func TestBuiltinProfilesResolveDeterministically(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve demo: %v", err)
 	}
-	if got, want := demo.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles", "dev.examples"}; !reflect.DeepEqual(got, want) {
+	if got, want := demo.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles", "dev.examples", "admin.account"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("demo modules = %v, want %v", got, want)
 	}
 	if _, err := registry.Resolve(demo.Modules); err != nil {

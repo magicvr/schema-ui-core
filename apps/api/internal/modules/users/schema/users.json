@@ -69,6 +69,30 @@
         "behavior": "reload"
       }
     },
+    "enableUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/enable",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "disableUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/disable",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "unlockUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/unlock",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
     "openCreate": {
       "type": "modal",
       "content": {
@@ -236,6 +260,11 @@
               "labelKey": "schema.users.column.roles"
             },
             {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.users.column.enabled"
+            },
+            {
               "field": "updatedAt",
               "label": "Updated",
               "sortable": true,
@@ -275,6 +304,66 @@
               "actionRef": "openPassword",
               "permissionIntent": "edit",
               "labelKey": "schema.users.action.password"
+            },
+            {
+              "key": "enable",
+              "label": "Enable",
+              "actionRef": "enableUser",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.enable\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "enabled",
+                "equals": true
+              },
+              "confirm": "Enable this user?",
+              "labelKey": "schema.users.action.enable",
+              "confirmKey": "schema.users.confirm.enable"
+            },
+            {
+              "key": "disable",
+              "label": "Disable",
+              "actionRef": "disableUser",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.disable\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "enabled",
+                "equals": false
+              },
+              "confirm": "Disable this user? All sessions will be revoked.",
+              "labelKey": "schema.users.action.disable",
+              "confirmKey": "schema.users.confirm.disable"
+            },
+            {
+              "key": "unlock",
+              "label": "Unlock",
+              "actionRef": "unlockUser",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.enable\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "locked",
+                "equals": false
+              },
+              "confirm": "Unlock this user?",
+              "labelKey": "schema.users.action.unlock",
+              "confirmKey": "schema.users.confirm.unlock"
             },
             {
               "key": "delete",

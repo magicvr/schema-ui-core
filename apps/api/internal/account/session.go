@@ -37,6 +37,7 @@ func StaticDevSession() Session {
 				"settings.read", "settings.write",
 				"operations.read",
 				"files.write", // W4 P0-2: admin-only upload gate, parity with seed
+				"users.enable", "users.disable", // F-03 (GOAL-005) admin-only keys
 			},
 		},
 		Features: map[string]bool{
@@ -45,6 +46,7 @@ func StaticDevSession() Session {
 			"menu_roles":    true, // GOAL-011 roles page grant parity
 			"menu_settings": true, // GOAL-013 site branding
 			"menu_activity": true, // GOAL-013 operation log
+			"menu_account":  true, // F-03 (GOAL-005) self-service account page
 		},
 	}
 }

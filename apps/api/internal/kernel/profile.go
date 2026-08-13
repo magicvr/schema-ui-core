@@ -32,6 +32,10 @@ var profileDefaults = map[ProfileName][]string{
 		"core.operationlog",
 		"admin.users",
 		"admin.roles",
+		// F-03 (GOAL-005 D-002 §6): self-service password/session management is
+		// an account-security baseline; Profile content extension, not an
+		// assembly-semantics change.
+		"admin.account",
 	},
 	ProfileAdmin: {
 		"core.server-registration",
@@ -44,6 +48,7 @@ var profileDefaults = map[ProfileName][]string{
 		"admin.roles",
 		"admin.settings",
 		"admin.activity",
+		"admin.account",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -59,6 +64,7 @@ var profileDefaults = map[ProfileName][]string{
 		"admin.users",
 		"admin.roles",
 		"dev.examples",
+		"admin.account",
 	},
 }
 
@@ -116,6 +122,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.roles", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}", "POST /api/roles/batch-delete"}, Pages: []string{"roles"}, Navigation: []string{"menu_roles"}, Permissions: []string{"roles.read", "roles.write", "roles.assign"}, Fragments: []string{"roles"}}},
 		{ID: "admin.settings", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset"}, Pages: []string{"settings"}, Navigation: []string{"menu_settings"}, Permissions: []string{"settings.read", "settings.write"}, ConfigNamespaces: []string{"settings.branding"}, Fragments: []string{"settings"}}},
 		{ID: "admin.activity", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.manifest-route", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/operations", "GET /api/operations/{id}"}, Pages: []string{"activity"}, Navigation: []string{"menu_activity"}, Permissions: []string{"operations.read"}, Fragments: []string{"activity"}}},
+		// F-03 admin.account (GOAL-005): self-service + enable/disable/unlock.
+		{ID: "admin.account", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/account/profile", "PATCH /api/account/profile", "POST /api/account/password", "GET /api/account/sessions", "POST /api/account/sessions/{id}/revoke", "POST /api/users/{id}/enable", "POST /api/users/{id}/disable", "POST /api/users/{id}/unlock"}, Pages: []string{"account"}, Navigation: []string{"menu_account"}, Permissions: []string{"users.enable", "users.disable"}, Fragments: []string{"account"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

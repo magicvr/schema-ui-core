@@ -30,6 +30,7 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("auth: invalid credentials")
 	ErrAccountLocked      = errors.New("auth: account locked")
+	ErrAccountDisabled    = errors.New("auth: account disabled")
 	ErrInvalidToken       = errors.New("auth: invalid token")
 	ErrExpiredToken       = errors.New("auth: expired token")
 	ErrTokenRevoked       = errors.New("auth: token revoked")
@@ -109,6 +110,12 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 	if u.LockedUntil > now.Unix() {
 		return "", "", account.User{}, ErrAccountLocked
 	}
+	// F-03 (GOAL-005 D-002 §3): a disabled account fails closed before any
+	// password work; the admin-facing operation is visible, so the state is
+	// surfaced as a distinct 403 rather than a generic credential failure.
+	if !u.Enabled {
+		return "", "", account.User{}, ErrAccountDisabled
+	}
 	if !VerifyPassword(u.PasswordHash, password) {
 		// Consecutive-failure accounting: reaching the threshold opens the lock
 		// window. When the lock just opened, live sessions are revoked too — a
@@ -161,10 +168,11 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	if err != nil {
 		return "", "", account.User{}, err
 	}
-	// Fail-closed if the account is locked: revoke-on-lock is best-effort, so
-	// Refresh must not mint a new pair from a leftover live refresh token.
-	// Same 401 envelope as an invalid token (no extra lock oracle on this path).
-	if u.LockedUntil > now.Unix() {
+	// Fail-closed if the account is locked or disabled: revoke-on-lock is
+	// best-effort, so Refresh must not mint a new pair from a leftover live
+	// refresh token. Same 401 envelope as an invalid token (no extra lock or
+	// disable oracle on this path).
+	if u.LockedUntil > now.Unix() || !u.Enabled {
 		return "", "", account.User{}, ErrInvalidToken
 	}
 	return a.issue(u, now)
@@ -406,6 +414,18 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				return
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "access token superseded")
+			return
+		}
+		// F-03 (GOAL-005 D-002 §3): disabling bumps token_version too, but the
+		// persisted state is authoritative — a disabled identity is rejected
+		// here even if a token somehow carried the current version (fail
+		// closed, same envelope as superseded; no state oracle).
+		if !u.Enabled {
+			if a.devSession {
+				a.injectDevSession(w, r, next)
+				return
+			}
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "account disabled")
 			return
 		}
 		acct, err := a.accountFromUser(u)

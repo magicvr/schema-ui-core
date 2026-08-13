@@ -81,6 +81,12 @@ func (h *authHandler) login() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusLocked, "ACCOUNT_LOCKED", "account is temporarily locked; try again later")
 			return
 		}
+		if errors.Is(err, auth.ErrAccountDisabled) {
+			// F-03 (GOAL-005 D-002 §3): a disabled account is a distinct,
+			// admin-visible terminal state (403) — same family as the lock.
+			writeLocalizedError(w, r, http.StatusForbidden, "ACCOUNT_DISABLED", "account is disabled; contact an administrator")
+			return
+		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			if h.rateLimiter != nil {
 				h.rateLimiter.record(limiterKey, h.now().UTC())

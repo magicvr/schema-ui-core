@@ -1,0 +1,111 @@
+// Package account provides the admin.account module surface as a
+// kernel.Provider (F-03 · GOAL-005 D-002): self-service profile/password/
+// sessions plus admin enable/disable/unlock. Framework-agnostic: no
+// go.uber.org/fx import; the composition root constructs the provider with
+// plain dependencies.
+package account
+
+import (
+	"context"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/manifest"
+	accountschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/schema"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+)
+
+const ModuleID = "admin.account"
+
+// Provider implements kernel.Provider for admin.account.
+type Provider struct {
+	a          *auth.Authenticator
+	repository *authsession.Repository
+	operations operationlog.Recorder
+}
+
+// New constructs the account provider with framework-agnostic dependencies.
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations}
+}
+
+func (p *Provider) Descriptor() kernel.Module {
+	return kernel.Module{
+		ID:             ModuleID,
+		Version:        "2.0.0",
+		KernelAPIRange: ">=2.0 <3.0",
+		DependsOn:      []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"},
+		Requires:       kernel.StandardAdminCapabilities(),
+		Contributions: kernel.ContributionKeys{
+			Routes: []string{
+				"GET /api/account/profile", "PATCH /api/account/profile",
+				"POST /api/account/password", "GET /api/account/sessions",
+				"POST /api/account/sessions/{id}/revoke",
+				"POST /api/users/{id}/enable", "POST /api/users/{id}/disable",
+				"POST /api/users/{id}/unlock",
+			},
+			Pages:       []string{"account"},
+			Navigation:  []string{"menu_account"},
+			Permissions: []string{"users.enable", "users.disable"},
+			Fragments:   []string{"account"},
+		},
+	}
+}
+
+func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
+	return nil, nil // migration 0013 is contributed via the migration package provider
+}
+
+func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
+	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, ModuleID) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
+	for _, route := range handler.UserStateRoutes(p.a, p.repository, p.operations, ModuleID) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account"},
+		PageID:               "account",
+		Resources:            []string{"account"},
+		Actions:              []string{"detail", "update", "list"},
+		DataSource:           "/api/account/sessions",
+		Owner:                ModuleID,
+		Document:             accountschema.SchemaDocuments()["account"],
+	}); err != nil {
+		return err
+	}
+	for _, permission := range []kernel.PermissionContribution{
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.enable"}, Permission: "users.enable", Resource: "users", Action: "enable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.disable"}, Permission: "users.disable", Resource: "users", Action: "disable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+	} {
+		if err := reg.Authorization(permission); err != nil {
+			return err
+		}
+	}
+	if err := reg.Navigation(kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_account"},
+		NodeID:               "menu_account",
+		PageID:               "account",
+		Order:                1,
+		Label:                "Account",
+		Visibility:           authsessiondata.PolicyAdminEditorViewer,
+		Permission:           "",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	}); err != nil {
+		return err
+	}
+	return reg.Manifest(kernel.FragmentContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account"},
+		FragmentID:           "account",
+		ProtocolVersion:      "2.7",
+		RequiredCapabilities: []string{"manifest", "navigation"},
+		JSON:                 manifest.FragmentJSON,
+	})
+}

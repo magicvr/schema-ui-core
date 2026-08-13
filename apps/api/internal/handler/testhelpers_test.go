@@ -11,6 +11,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	accountschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/schema"
 	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	examplesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples/schema"
@@ -88,6 +89,8 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	}
 	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
+	mountRoutes(AccountSelfRoutes(a, authRepository, operations, "admin.account"))
+	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account"))
 	mountRoutes(resourceRoutes(a, usersResource(authRepository, operations), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -107,6 +110,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		moduleID  string
 		documents map[string][]byte
 	}{
+		{accountschema.ModuleID, accountschema.SchemaDocuments()},
 		{examplesschema.ModuleID, examplesschema.SchemaDocuments()},
 		{usersschema.ModuleID, usersschema.SchemaDocuments()},
 		{rolesschema.ModuleID, rolesschema.SchemaDocuments()},

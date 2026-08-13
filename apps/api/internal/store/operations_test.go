@@ -51,8 +51,8 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 12 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" || applied[5].version != 6 || applied[5].name != "records_retire" || applied[6].version != 7 || applied[6].name != "site_settings" || applied[7].version != 8 || applied[7].name != "operation_log_settings" || applied[8].version != 9 || applied[8].name != "system_data_reconcile" || applied[9].version != 10 || applied[9].name != "site_settings_v2" || applied[10].version != 11 || applied[10].name != "access_token_revocation" || applied[11].version != 12 || applied[11].name != "account_lock" {
-		t.Fatalf("applied = %+v, want 12 ending in account_lock", applied)
+	if len(applied) != 14 || applied[3].version != 4 || applied[3].name != "operation_log" || applied[4].version != 5 || applied[4].name != "operation_log_expand" || applied[5].version != 6 || applied[5].name != "records_retire" || applied[6].version != 7 || applied[6].name != "site_settings" || applied[7].version != 8 || applied[7].name != "operation_log_settings" || applied[8].version != 9 || applied[8].name != "system_data_reconcile" || applied[9].version != 10 || applied[9].name != "site_settings_v2" || applied[10].version != 11 || applied[10].name != "access_token_revocation" || applied[11].version != 12 || applied[11].name != "account_lock" || applied[12].version != 13 || applied[12].name != "account_enable_state" || applied[13].version != 14 || applied[13].name != "operation_log_account_events" {
+		t.Fatalf("applied = %+v, want 14 ending in operation_log_account_events", applied)
 	}
 	if !tableExistsDB(t, st.db, "operation_log") {
 		t.Fatal("operation_log table missing after 0004")

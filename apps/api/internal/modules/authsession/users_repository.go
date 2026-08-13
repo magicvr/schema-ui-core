@@ -21,7 +21,7 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 		}
 
 		rows, err := tx.Query(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, created_at, updated_at FROM users`+where+
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, created_at, updated_at FROM users`+where+
 				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, id ASC`+
 				` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
@@ -119,8 +119,8 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		var rolesJSON string
 		var createdAt, updatedAt int64
 		err := tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, created_at, updated_at FROM users WHERE id = ?`, id,
-		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &createdAt, &updatedAt)
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, created_at, updated_at FROM users WHERE id = ?`, id,
+		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &createdAt, &updatedAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}

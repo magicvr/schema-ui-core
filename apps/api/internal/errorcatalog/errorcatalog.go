@@ -83,6 +83,12 @@ var Catalog = map[string]Entry{
 	// rate limit: this is a per-account state with a lock window.
 	"ACCOUNT_LOCKED":        {"error.accountLocked", "account is temporarily locked; try again later", "账号已暂时锁定，请稍后重试"},
 	"UPLOAD_QUOTA_EXCEEDED": {"error.uploadQuotaExceeded", "upload rejected: per-user quota exceeded", "上传被拒绝：超出每用户配额"},
+
+	// F-03 (GOAL-005 D-002 §3/§4): disabled terminal + self-service account codes.
+	"ACCOUNT_DISABLED":      {"error.accountDisabled", "account is disabled; contact an administrator", "账号已被停用，请联系管理员"},
+	"INVALID_PASSWORD":      {"error.invalidPassword", "current password is incorrect or the new password is invalid", "当前密码错误或新密码无效"},
+	"INVALID_PASSWORD_BODY": {"error.invalidPasswordBody", "body must be JSON with currentPassword and newPassword", "请求体必须是包含 currentPassword 和 newPassword 的 JSON"},
+	"SESSION_NOT_FOUND":     {"error.sessionNotFound", "no session with that id", "没有该 id 对应的会话"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

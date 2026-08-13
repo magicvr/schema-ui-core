@@ -33,6 +33,10 @@ var frozenLiteralCodes = []string{
 	"RATE_LIMITED",
 	// GOAL-004 S4-6 account lock terminal (423).
 	"ACCOUNT_LOCKED",
+	// F-03 (GOAL-005): self-service account codes.
+	"INVALID_PASSWORD", "INVALID_PASSWORD_BODY", "SESSION_NOT_FOUND",
+	// F-03 (GOAL-005 D-002 §3): disabled-account login terminal (403).
+	"ACCOUNT_DISABLED",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

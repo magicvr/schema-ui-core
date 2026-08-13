@@ -5,6 +5,7 @@ package compiled
 
 import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	accountmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/migration"
 	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
 	historymigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/corepersistence/migration"
 	operationlogmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog/migration"
@@ -16,6 +17,7 @@ import (
 // merged global catalog by version.
 func PersistenceProviders() []kernel.Provider {
 	return []kernel.Provider{
+		accountmigration.Provider{},
 		authmigration.Provider{},
 		historymigration.Provider{},
 		operationlogmigration.Provider{},

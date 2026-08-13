@@ -79,11 +79,14 @@ type usersEntity struct {
 // userToMap maps a persisted user to the API row. password_hash is intentionally
 // absent; createdAt/updatedAt serialize with the frozen 3-digit-millisecond shape.
 func userToMap(u authsession.User) map[string]any {
+	locked := u.LockedUntil > time.Now().UTC().Unix()
 	return map[string]any{
 		"id":        u.ID,
 		"username":  u.Username,
 		"name":      u.Name,
 		"roles":     u.Roles,
+		"enabled":   u.Enabled,
+		"locked":    locked,
 		"createdAt": u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"updatedAt": u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}

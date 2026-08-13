@@ -219,14 +219,15 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
     fail_check "007" "Manifest source header 不是 api" 5
   fi
   # Page sets per profile (post W1/VP-010 GOAL-002: dev.examples split out of
-  # production profiles; demo re-adds the examples surface):
-  #   mvp   = users, roles
-  #   admin = users, roles, settings, activity
-  #   demo  = overview, users, roles (+ examples surface)
+  # production profiles; demo re-adds the examples surface; F-03/GOAL-005 adds
+  # admin.account to mvp + admin defaults):
+  #   mvp   = users, roles, account
+  #   admin = users, roles, settings, activity, account
+  #   demo  = overview, users, roles, account (+ examples surface)
   case "$SMOKE_EXPECTED_PROFILE" in
-    admin) required_pages="users roles settings activity" ;;
-    demo)  required_pages="overview users roles" ;;
-    *)     required_pages="users roles" ;;
+    admin) required_pages="users roles settings activity account" ;;
+    demo)  required_pages="overview users roles account" ;;
+    *)     required_pages="users roles account" ;;
   esac
   for page_id in $required_pages; do
     if ! json_has_page "$api_manifest" "$page_id"; then

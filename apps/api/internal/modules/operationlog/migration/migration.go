@@ -48,6 +48,22 @@ var operationLogSettingsDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
+// operationLogAccountEventsDDL (0014 · F-03 GOAL-005 D-002 §3): adds the five
+// account-lifecycle events to the event CHECK. SQLite cannot ALTER a CHECK, so
+// the table is rebuilt like 0005/0008.
+var operationLogAccountEventsDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
 // Descriptors returns the immutable 0004, 0005 and 0008 operation-log history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -72,6 +88,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogSettingsDDL, "0008:operation-log-settings:v1"),
 			Apply:                migrateOperationLogSettings,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_account_events"},
+			Version:              14,
+			Name:                 "operation_log_account_events",
+			Checksum:             kernel.MigrationChecksum(operationLogAccountEventsDDL, "0014:operation-log-account-events:v1"),
+			Apply:                migrateOperationLogAccountEvents,
+		},
 	}
 }
 
@@ -90,6 +113,10 @@ func migrateOperationLogExpand(tx *sql.Tx) error {
 
 func migrateOperationLogSettings(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogSettingsDDL, "settings-expanded")
+}
+
+func migrateOperationLogAccountEvents(tx *sql.Tx) error {
+	return rebuildOperationLog(tx, operationLogAccountEventsDDL, "account-events-expanded")
 }
 
 func rebuildOperationLog(tx *sql.Tx, ddl []string, label string) error {

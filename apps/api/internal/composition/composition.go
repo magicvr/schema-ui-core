@@ -18,6 +18,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
+	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
@@ -203,6 +204,9 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("admin.activity") {
 		providers = append(providers, activitymodule.New(a, operations))
 	}
+	if plan.HasModule("admin.account") {
+		providers = append(providers, accountmodule.New(a, authRepository, operations))
+	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
 	if err != nil {
@@ -262,7 +266,10 @@ func newMuxWithExtraProviders(
 
 // adminFunctionalOrder is the frozen home-page priority (D-003 §2): the first
 // enabled admin.* functional module in declaration order becomes the home page.
-var adminFunctionalOrder = []string{"admin.users", "admin.roles", "admin.settings", "admin.activity"}
+// F-03 (GOAL-005 D-002 §6): admin.account appended at the tail — home stays
+// users-first; account only becomes home when every earlier admin module is
+// disabled (explicit, documented edge).
+var adminFunctionalOrder = []string{"admin.users", "admin.roles", "admin.settings", "admin.activity", "admin.account"}
 
 // deriveHomePageRef implements the D-003 §2 decision table:
 //

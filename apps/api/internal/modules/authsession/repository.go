@@ -38,6 +38,10 @@ type User struct {
 	// password change; the auth middleware rejects access-token JWTs issued at
 	// an older version, revoking already-signed tokens immediately.
 	TokenVersion int
+	// Enabled is the product-state account flag (F-03 · migration 0013):
+	// false = disabled by an admin (login/refresh/middleware fail closed;
+	// disable also bumps TokenVersion and revokes all refresh tokens).
+	Enabled bool
 	// FailedLoginCount counts consecutive failed password attempts (GOAL-004
 	// S4-6 account lock); reset on successful login.
 	FailedLoginCount int

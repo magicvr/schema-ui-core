@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 12 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8 9 10 11 12]", applied)
+	if len(applied) != 14 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 {
+		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8 9 10 11 12 13 14]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -181,7 +181,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 12 {
+	if len(applied2) != 14 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -575,6 +575,8 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"admin.settings", "site_settings_v2", "b593aa2dd003e1339710b35478c87b105e6bb1762be0b4b08f3c986a5063a047"},
 		{"core.auth-session", "access_token_revocation", "c3ea720aa0d0f10c67ee0ea734fe439db928de70a82b87c265391214dbce4688"},
 		{"core.auth-session", "account_lock", "b9039118ebf3444bc2309ea481daac7ffdb1c0d627b4621642b5803c4fa3deb4"},
+		{"admin.account", "account_enable_state", "ca2b3f38793d54c4d440f8e5af034dbed6cf32e50240304e9115d538ea05c539"},
+		{"core.operationlog", "operation_log_account_events", "643d0f44bdf0f62a7689a0c4bdae2b3b511b077c5f7291db1a08763af389567d"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

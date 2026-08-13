@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "pageId": "account",
+    "title": "Account",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "actions.row.request",
+      "form.controls.extended",
+      "form.controls.advanced"
+    ]
+  },
+  "actions": {
+    "saveProfile": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/account/profile",
+      "bodyMapping": {
+        "name": "name"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "changePassword": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/account/password",
+      "bodyMapping": {
+        "currentPassword": "currentPassword",
+        "newPassword": "newPassword"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "revokeSession": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/account/sessions/{id}/revoke",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "account",
+    "children": [
+      {
+        "type": "form",
+        "id": "profile-form",
+        "props": {
+          "title": "Profile",
+          "titleKey": "schema.account.profile.title",
+          "recordSource": {
+            "url": "/api/account/profile",
+            "responseMapping": {
+              "name": "name"
+            }
+          },
+          "fields": [
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.account.field.name"
+            }
+          ],
+          "submitAction": "saveProfile",
+          "submitLabel": "Save profile",
+          "submitLabelKey": "schema.account.submit.saveProfile"
+        }
+      },
+      {
+        "type": "form",
+        "id": "password-form",
+        "props": {
+          "title": "Change password",
+          "titleKey": "schema.account.password.title",
+          "fields": [
+            {
+              "id": "currentPassword",
+              "label": "Current password",
+              "type": "password",
+              "labelKey": "schema.account.field.currentPassword"
+            },
+            {
+              "id": "newPassword",
+              "label": "New password",
+              "type": "password",
+              "labelKey": "schema.account.field.newPassword"
+            }
+          ],
+          "submitAction": "changePassword",
+          "submitLabel": "Change password",
+          "submitLabelKey": "schema.account.submit.changePassword"
+        }
+      },
+      {
+        "type": "table",
+        "id": "sessions-table",
+        "props": {
+          "columns": [
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.account.column.created"
+            },
+            {
+              "field": "expiresAt",
+              "label": "Expires",
+              "labelKey": "schema.account.column.expires"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.account.column.status"
+            }
+          ],
+          "dataSource": "/api/account/sessions",
+          "actions": [
+            {
+              "key": "revoke",
+              "label": "Revoke",
+              "actionRef": "revokeSession",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "status",
+                "equals": "revoked"
+              },
+              "confirm": "Revoke this session?",
+              "labelKey": "schema.account.action.revoke",
+              "confirmKey": "schema.account.confirm.revoke"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

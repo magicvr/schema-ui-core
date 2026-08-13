@@ -53,12 +53,17 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// W4 P0-2: files.write is a central shared-capability permission
 		// (upload endpoint is centrally registered), admin-only by default.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.server-registration", Key: "files.write"}, Permission: "files.write", Resource: "files", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// F-03 (GOAL-005): admin.account enable/disable keys, admin-only.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.enable"}, Permission: "users.enable", Resource: "users", Action: "enable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.disable"}, Permission: "users.disable", Resource: "users", Action: "disable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.roles", Key: "menu_roles"}, NodeID: "menu_roles", PageID: "roles", Order: 2, Label: "Roles", Visibility: authsessiondata.PolicyAdmin, Permission: "roles.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.settings", Key: "menu_settings"}, NodeID: "menu_settings", PageID: "settings", Order: 1, Label: "Settings", Visibility: authsessiondata.PolicyAdmin, Permission: "settings.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.activity", Key: "menu_activity"}, NodeID: "menu_activity", PageID: "activity", Order: 2, Label: "Activity", Visibility: authsessiondata.PolicyAdminEditor, Permission: "operations.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		// F-03 (GOAL-005): self-service account page for every standard role.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "menu_account"}, NodeID: "menu_account", PageID: "account", Order: 1, Label: "Account", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

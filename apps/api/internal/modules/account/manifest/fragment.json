@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "account",
+      "title": "Account",
+      "schemaUrl": "/api/schema/account",
+      "route": "/account",
+      "titleKey": "manifest.title.account"
+    }
+  ],
+  "navigation": {
+    "user": [
+      {
+        "pageRef": "account",
+        "label": "Account",
+        "icon": "user",
+        "visibleWhen": {
+          "when": "$context.features.menu_account == true"
+        },
+        "labelKey": "manifest.nav.account"
+      }
+    ]
+  }
+}
