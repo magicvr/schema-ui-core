@@ -4,7 +4,7 @@ status: active
 created: 2026-08-14
 updated: 2026-08-14
 parent: null
-version: 0.2.1
+version: 0.2.3
 workspace_id: workspace-011-admin-functional-modules
 ---
 
@@ -22,7 +22,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-002-r1-bounded-research [done]       · R1 有界调研：候选池收集 + 三档分档（5/5）
 ├── GOAL-003-r2-f01-dashboard [active]        · R2-F01 仪表盘/控制台（生产 home）
 ├── GOAL-004-r2-f02-data-import-export [active] · R2-F02 数据导入/导出（共享能力）
-├── GOAL-005-r2-f03-account-center [active]   · R2-F03 个人中心与账户安全 + 账号启停（1/5 · S1 冻结）
+├── GOAL-005-r2-f03-account-center [done]      · R2-F03 个人中心与账户安全 + 账号启停（5/5）
 └── GOAL-006-r2-f04-notification-center [active] · R2-F04 通知中心（站内通知）
 ```
 
@@ -36,7 +36,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-002-r1-bounded-research | R1 · 有界调研：候选池收集与三档分档 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-003-r2-f01-dashboard | R2-F01 · 仪表盘/控制台（生产 Profile home） | GOAL-001-admin-functional-modules | active | 0/5 | 2026-08-14 |
 | GOAL-004-r2-f02-data-import-export | R2-F02 · 数据导入/导出（schema 驱动 · 共享能力） | GOAL-001-admin-functional-modules | active | 0/5 | 2026-08-14 |
-| GOAL-005-r2-f03-account-center | R2-F03 · 个人中心与账户安全 + 账号启停 | GOAL-001-admin-functional-modules | active | 1/5 | 2026-08-14 |
+| GOAL-005-r2-f03-account-center | R2-F03 · 个人中心与账户安全 + 账号启停 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-006-r2-f04-notification-center | R2-F04 · 通知中心（站内通知） | GOAL-001-admin-functional-modules | active | 0/5 | 2026-08-14 |
 
 ## 维护说明

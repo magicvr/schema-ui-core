@@ -61,10 +61,16 @@ func (h *userStateHandler) toggle(permission string, enabled bool) http.Handler 
 		id := r.PathValue("id")
 		u, err := h.repository.SetUserEnabled(id, enabled, user.ID, h.now().UTC())
 		if err != nil {
-			var de *DomainError
-			if errors.As(mapUserStoreError(err), &de) {
-				writeLocalizedError(w, r, de.Status, de.Code, de.Message)
-				return
+			if mapped := mapUserStoreError(err); mapped != err {
+				var de *DomainError
+				if errors.As(mapped, &de) {
+					writeLocalizedError(w, r, de.Status, de.Code, de.Message)
+					return
+				}
+				if errors.Is(mapped, errResourceNotFound) {
+					writeLocalizedError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "no user with that id")
+					return
+				}
 			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update user state")
 			return
@@ -83,10 +89,16 @@ func (h *userStateHandler) unlock() http.Handler {
 		id := r.PathValue("id")
 		u, err := h.repository.UnlockUser(id, h.now().UTC())
 		if err != nil {
-			var de *DomainError
-			if errors.As(mapUserStoreError(err), &de) {
-				writeLocalizedError(w, r, de.Status, de.Code, de.Message)
-				return
+			if mapped := mapUserStoreError(err); mapped != err {
+				var de *DomainError
+				if errors.As(mapped, &de) {
+					writeLocalizedError(w, r, de.Status, de.Code, de.Message)
+					return
+				}
+				if errors.Is(mapped, errResourceNotFound) {
+					writeLocalizedError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "no user with that id")
+					return
+				}
 			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not unlock user")
 			return

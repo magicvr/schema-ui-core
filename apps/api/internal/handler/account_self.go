@@ -31,7 +31,12 @@ type AccountRepository interface {
 
 // AccountSelfRoutes returns the self-service route contributions (admin.account).
 func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
-	h := &accountSelfHandler{repository: repository, operations: operations, now: time.Now}
+	h := &accountSelfHandler{
+		repository:      repository,
+		operations:      operations,
+		now:             time.Now,
+		passwordLimiter: newLoginRateLimiter(15*time.Minute, 5, 1<<16),
+	}
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, handler http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -53,6 +58,11 @@ type accountSelfHandler struct {
 	repository AccountRepository
 	operations operationlog.Recorder
 	now        func() time.Time
+	// F-003 (A-003 recommended): wrong currentPassword attempts are brute-force
+	// surface with a live access token — an in-memory sliding-window limiter per
+	// client identity (same model as login rate limiting) brakes online
+	// guessing. Best-effort and process-local, like the login limiter.
+	passwordLimiter *loginRateLimiter
 }
 
 func (h *accountSelfHandler) identity(w http.ResponseWriter, r *http.Request) (account.User, bool) {
@@ -157,9 +167,23 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load account")
 			return
 		}
+		// F-003: wrong-current-password attempts share the login limiter model
+		// (per client identity, 5 failures / 15 min window). The limiter is
+		// checked before the bcrypt work; a blocked client gets 429.
+		limiterKey := loginClientIP(r) + "|" + user.ID
+		if h.passwordLimiter != nil && !h.passwordLimiter.allow(limiterKey, h.now().UTC()) {
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed password attempts; try again later")
+			return
+		}
 		if !auth.VerifyPassword(u.PasswordHash, body.CurrentPassword) {
+			if h.passwordLimiter != nil {
+				h.passwordLimiter.record(limiterKey, h.now().UTC())
+			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "current password is incorrect")
 			return
+		}
+		if h.passwordLimiter != nil {
+			h.passwordLimiter.clear(limiterKey)
 		}
 		hash, err := auth.HashPassword(body.NewPassword, passwordHashCost)
 		if err != nil {

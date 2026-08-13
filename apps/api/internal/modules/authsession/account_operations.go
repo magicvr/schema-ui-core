@@ -114,7 +114,12 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 				return err
 			}
 			if isAdmin {
-				other, err := countAdminUsersExcluding(tx, id)
+				// F-001 (A-003 independent): the last-admin invariant must hold
+				// for ENABLED admins. Counting all admins lets a delegated
+				// users.disable holder disable the last enabled admin while a
+				// disabled admin still exists (recovery would then require
+				// direct DB access, since users.enable is admin-only).
+				other, err := countEnabledAdminUsersExcluding(tx, id)
 				if err != nil {
 					return err
 				}
@@ -137,6 +142,19 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 			boolInt(enabled), nextTokenVersion, now.Unix(), id,
 		); err != nil {
 			return fmt.Errorf("update user enabled: %w", err)
+		}
+		// Post-update invariant (F-001 hardening): after a disable lands, at
+		// least one ENABLED admin must remain. SQLite serializes writers, so a
+		// concurrent disable either fails closed (busy) or hits this check;
+		// either way zero-enabled-admin cannot commit.
+		if !enabled {
+			remaining, err := countEnabledAdminUsers(tx)
+			if err != nil {
+				return err
+			}
+			if remaining == 0 {
+				return ErrLastAdmin
+			}
 		}
 		return nil
 	})
@@ -198,4 +216,36 @@ func boolInt(value bool) int {
 		return 1
 	}
 	return 0
+}
+
+// countEnabledAdminUsersExcluding counts ENABLED admin users other than id
+// (F-001): the last-admin guard for enable/disable considers only accounts
+// that can actually administer (enabled=1), so disabling the last enabled
+// admin fails closed even when disabled admins still exist.
+func countEnabledAdminUsersExcluding(tx *sql.Tx, id string) (int, error) {
+	var count int
+	if err := tx.QueryRow(
+		`SELECT COUNT(*) FROM user_roles ur
+		 JOIN roles r ON r.id = ur.role_id
+		 JOIN users u ON u.id = ur.user_id
+		 WHERE r.key = 'admin' AND u.enabled = 1 AND ur.user_id != ?`, id,
+	).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count enabled admin users: %w", err)
+	}
+	return count, nil
+}
+
+// countEnabledAdminUsers counts every ENABLED admin user (post-update
+// invariant check for disable).
+func countEnabledAdminUsers(tx *sql.Tx) (int, error) {
+	var count int
+	if err := tx.QueryRow(
+		`SELECT COUNT(*) FROM user_roles ur
+		 JOIN roles r ON r.id = ur.role_id
+		 JOIN users u ON u.id = ur.user_id
+		 WHERE r.key = 'admin' AND u.enabled = 1`,
+	).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count enabled admin users: %w", err)
+	}
+	return count, nil
 }

@@ -3,10 +3,16 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 // --- profile ---
@@ -285,6 +291,143 @@ func TestDisabledMiddlewareRejectsLiveAccessToken(t *testing.T) {
 	env.mux.ServeHTTP(rr2, meReq)
 	if rr2.Code != http.StatusUnauthorized {
 		t.Fatalf("disabled middleware = %d, want 401", rr2.Code)
+	}
+}
+
+
+// --- F-004 (A-003): coverage gaps ---
+
+func TestAccountEndpointsAnonymous401(t *testing.T) {
+	env := newAuthTestEnv(t)
+	for _, tc := range []struct {
+		method string
+		path   string
+		body   string
+	}{
+		{http.MethodGet, "/api/account/profile", ""},
+		{http.MethodPatch, "/api/account/profile", `{"name":"X"}`},
+		{http.MethodPost, "/api/account/password", `{"currentPassword":"a","newPassword":"b"}`},
+		{http.MethodGet, "/api/account/sessions", ""},
+		{http.MethodPost, "/api/account/sessions/abc/revoke", ""},
+		{http.MethodPost, "/api/users/user-x/enable", ""},
+		{http.MethodPost, "/api/users/user-x/disable", ""},
+		{http.MethodPost, "/api/users/user-x/unlock", ""},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		if tc.body != "" {
+			req.Body = io.NopCloser(strings.NewReader(tc.body))
+		}
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("%s %s anonymous = %d, want 401", tc.method, tc.path, rr.Code)
+		}
+	}
+}
+
+func TestUserStateUnknownUser404(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	for _, path := range []string{"/api/users/nope/enable", "/api/users/nope/disable", "/api/users/nope/unlock"} {
+		req := bearer(t, token, http.MethodPost, path, "")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("%s = %d, want 404", path, rr.Code)
+		}
+	}
+}
+
+func TestAccountPasswordChangeTooLongNew(t *testing.T) {
+	env := newAuthTestEnv(t)
+	long := strings.Repeat("x", 73)
+	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/account/password", `{"currentPassword":"test-password","newPassword":"`+long+`"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("73-byte new password = %d, want 400", rr.Code)
+	}
+}
+
+func TestDisableLastEnabledAdminRejected(t *testing.T) {
+	env := newAuthTestEnv(t)
+	// admin (enabled) + admin2 (enabled). Disable admin2, then disabling admin
+	// (the last ENABLED admin) must fail closed even though admin2 exists but
+	// is disabled (F-001: last-admin counts enabled admins only).
+	env.addUser(t, "admin2", "admin2-password", []string{"admin"})
+	token := adminToken(t, env)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/users/user-admin2/disable", ""))
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("disable admin2 = %d, want 204: %s", rr.Code, rr.Body.String())
+	}
+	// Now disable admin (self) → 409 SELF_OPERATION, not LAST_ADMIN; use admin2's
+	// path instead: admin2 (disabled) cannot act. Simulate the delegated case:
+	// a non-admin actor with users.disable would be the attack vector, but the
+	// guard itself is actor-independent — verify the repository guard directly.
+	u, err := env.authRepository.SetUserEnabled("user-admin", false, "user-admin2", time.Now().UTC())
+	if err == nil {
+		t.Fatalf("disable last enabled admin unexpectedly succeeded: %+v", u)
+	}
+	if !errors.Is(err, authsession.ErrLastAdmin) {
+		t.Fatalf("disable last enabled admin err = %v, want ErrLastAdmin", err)
+	}
+	// Post-check invariant: the user remains enabled.
+	u2, err := env.authRepository.GetUser("user-admin")
+	if err != nil || !u2.Enabled {
+		t.Fatalf("admin enabled = %v (err %v), want true", u2 != nil && u2.Enabled, err)
+	}
+}
+
+func TestPasswordChangeRateLimited(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	body := `{"currentPassword":"wrong-pass","newPassword":"new-password-123"}`
+	var got429 bool
+	for i := 0; i < 8; i++ {
+		req := bearer(t, token, http.MethodPost, "/api/account/password", body)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code == http.StatusTooManyRequests {
+			got429 = true
+			break
+		}
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("wrong current password attempt %d = %d, want 400", i, rr.Code)
+		}
+	}
+	if !got429 {
+		t.Fatal("password-change limiter never engaged after repeated wrong current passwords")
+	}
+}
+
+func TestSessionRevokeLogsOperation(t *testing.T) {
+	env := newAuthTestEnv(t)
+	sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", `{"username":"admin","password":"test-password"}`)
+	token := adminToken(t, env)
+	rows, err := env.authRepository.ListRefreshTokensForUser("user-admin")
+	if err != nil || len(rows) == 0 {
+		t.Fatalf("sessions = %v (err %v)", rows, err)
+	}
+	req := bearer(t, token, http.MethodPost, "/api/account/sessions/"+rows[0].ID+"/revoke", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("revoke = %d, want 204", rr.Code)
+	}
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{Sort: "createdAt", Order: "desc", Page: 1, PageSize: 50})
+	if err != nil {
+		t.Fatalf("list operations: %v", err)
+	}
+	found := false
+	for _, op := range ops {
+		if op.Event == operationlog.EventAccountSessionRevoke && op.RecordID != nil && *op.RecordID == rows[0].ID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("account.session-revoke operation log entry missing")
 	}
 }
 
