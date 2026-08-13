@@ -7,6 +7,16 @@ rem Corresponds to QUICKSTART "Path B - local two-process" (dev default):
 rem   API  -> apps/api   go run ./cmd/server   (:25080, APP_ENV=development)
 rem   Web  -> apps/web   npm run dev           (:25173, /api proxied to :25080)
 rem
+rem Startup order: API starts first; Web is launched only after the API port
+rem   is listening AND /readyz returns HTTP 200 (DB ping + module graph
+rem   Start+Ready), so the Vite /api proxy never races an uninitialized backend.
+rem
+rem Stop precision: each started window records its PID to %TEMP%
+rem   (schema-ui-dev-api-<port>.pid / schema-ui-dev-web-<port>.pid). `stop`
+rem   kills ONLY those recorded processes (plus the listeners on the two
+rem   dev ports as a fallback) - it never matches window titles, so unrelated
+rem   console windows (Claude Code, other CLIs) are never touched.
+rem
 rem Usage:
 rem   dev.cmd start [profile] [options]   start API+Web (default profile: admin)
 rem   dev.cmd stop                        stop API+Web
@@ -86,6 +96,7 @@ rem ---- tool check ----
 set "TOOLS_MISSING="
 where go  >nul 2>&1 || set "TOOLS_MISSING=go"
 where npm >nul 2>&1 || set "TOOLS_MISSING=!TOOLS_MISSING! npm"
+where curl >nul 2>&1 || set "TOOLS_MISSING=!TOOLS_MISSING! curl"
 if defined TOOLS_MISSING (
   echo ERROR: missing required tools: !TOOLS_MISSING!
   exit /b 2
@@ -121,10 +132,29 @@ if defined API_UP (
   echo [skip] API already listening on :%API_PORT%
 ) else (
   echo [start] API ... go run ./cmd/server
-  start "schema-ui-api" /d "%API_DIR%" cmd /c "!API_CMD!"
+  set "DEV_CMD=!API_CMD!"
+  set "DEV_DIR=%API_DIR%"
+  set "DEV_PIDFILE=%TEMP%\schema-ui-dev-api-%API_PORT%.pid"
+  powershell -NoProfile -Command "$p = Start-Process cmd.exe -ArgumentList '/c',$env:DEV_CMD -WorkingDirectory $env:DEV_DIR -PassThru; $p.Id | Out-File -Encoding ascii $env:DEV_PIDFILE"
 )
 
-rem ---- launch Web ----
+rem ---- gate: Web must NOT start until API is up AND fully ready ----
+echo.
+echo Waiting for API to come up ...
+call :wait_listening "%API_PORT%" "API"
+if errorlevel 1 (
+  echo ERROR: API not listening on :%API_PORT% within ~60s -- Web NOT started.
+  exit /b 1
+)
+
+call :wait_ready "%API_PORT%"
+if errorlevel 1 (
+  echo ERROR: API /readyz did not return 200 within ~60s -- Web NOT started.
+  echo   Check the API window for errors ^(migrations / module Start+Ready^).
+  exit /b 1
+)
+
+rem ---- launch Web (only after API is fully ready) ----
 set "WEB_CMD=set WEB_PORT=%WEB_PORT% && npm run dev"
 set "WEB_UP="
 netstat -ano | findstr /R /C:":%WEB_PORT% " | findstr "LISTENING" >nul 2>&1 && set "WEB_UP=1"
@@ -132,13 +162,15 @@ if defined WEB_UP (
   echo [skip] Web already listening on :%WEB_PORT%
 ) else (
   echo [start] Web ... npm run dev
-  start "schema-ui-web" /d "%WEB_DIR%" cmd /c "!WEB_CMD!"
+  set "DEV_CMD=!WEB_CMD!"
+  set "DEV_DIR=%WEB_DIR%"
+  set "DEV_PIDFILE=%TEMP%\schema-ui-dev-web-%WEB_PORT%.pid"
+  powershell -NoProfile -Command "$p = Start-Process cmd.exe -ArgumentList '/c',$env:DEV_CMD -WorkingDirectory $env:DEV_DIR -PassThru; $p.Id | Out-File -Encoding ascii $env:DEV_PIDFILE"
 )
 
-rem ---- wait for readiness + open browser ----
+rem ---- wait for Web + open browser ----
 echo.
-echo Waiting for services to come up ...
-call :wait_listening "%API_PORT%" "API"
+echo Waiting for Web to come up ...
 call :wait_listening "%WEB_PORT%" "Web"
 
 if "%OPEN_BROWSER%"=="1" (
@@ -156,6 +188,7 @@ exit /b 0
 
 rem =====================================================================
 rem wait until a port starts listening (max ~60s)
+rem exit code: 0 = listening, 1 = timed out
 rem usage: call :wait_listening <port> <label>
 rem =====================================================================
 :wait_listening
@@ -164,25 +197,69 @@ set /a WL_N=0
 netstat -ano | findstr /R /C:":%~1 " | findstr "LISTENING" >nul 2>&1
 if not errorlevel 1 (
   echo   ok   %~2 listening on :%~1
-  goto :eof
+  exit /b 0
 )
 set /a WL_N+=1
 if %WL_N% geq 60 (
-  echo   warn %~2 not listening on :%~1 after ~60s (check its window for errors)
-  goto :eof
+  echo   error %~2 not listening on :%~1 after ~60s ^(check its window for errors^)
+  exit /b 1
 )
 timeout /t 1 /nobreak >nul 2>&1 || ping -n 2 127.0.0.1 >nul 2>&1
 goto :wait_listening_loop
 
 rem =====================================================================
-rem stop - kill by window title + port listeners (idempotent)
+rem wait until API /readyz returns HTTP 200 (SQLite ping + module graph
+rem Start+Ready), so Web starts against a fully-initialized backend.
+rem exit code: 0 = ready, 1 = timed out
+rem usage: call :wait_ready <port>
+rem =====================================================================
+:wait_ready
+set /a WR_N=0
+set "WR_CODE=000"
+:wait_ready_loop
+for /f "delims=" %%c in ('curl.exe -s -o nul --max-time 2 -w "%%{http_code}" http://127.0.0.1:%~1/readyz 2^>nul') do set "WR_CODE=%%c"
+if "%WR_CODE%"=="200" (
+  echo   ok   API ready ^(/readyz 200^)
+  exit /b 0
+)
+set /a WR_N+=1
+if %WR_N% geq 60 (
+  echo   error API /readyz not 200 within ~60s ^(last code %WR_CODE%^)
+  exit /b 1
+)
+timeout /t 1 /nobreak >nul 2>&1 || ping -n 2 127.0.0.1 >nul 2>&1
+goto :wait_ready_loop
+
+rem =====================================================================
+rem stop - kill only this script's own windows via recorded PID files,
+rem then fall back to the two dev-port listeners (idempotent).
+rem Window-title matching is deliberately NOT used: it can kill unrelated
+rem console windows whose titles merely start with the same prefix.
 rem =====================================================================
 :stop
 echo.
 echo == Stopping schema-ui-core ==
 set "FOUND="
-taskkill /FI "WINDOWTITLE eq schema-ui-api*" /T /F >nul 2>&1 && set "FOUND=1"
-taskkill /FI "WINDOWTITLE eq schema-ui-web*" /T /F >nul 2>&1 && set "FOUND=1"
+
+rem 1) recorded PIDs (the exact windows this script spawned)
+set "API_PIDFILE=%TEMP%\schema-ui-dev-api-%API_PORT%.pid"
+set "WEB_PIDFILE=%TEMP%\schema-ui-dev-web-%WEB_PORT%.pid"
+if exist "%API_PIDFILE%" (
+  set /p API_PID=<"%API_PIDFILE%"
+  if defined API_PID (
+    taskkill /PID !API_PID! /T /F >nul 2>&1 && set "FOUND=1"
+  )
+  del "%API_PIDFILE%" >nul 2>&1
+)
+if exist "%WEB_PIDFILE%" (
+  set /p WEB_PID=<"%WEB_PIDFILE%"
+  if defined WEB_PID (
+    taskkill /PID !WEB_PID! /T /F >nul 2>&1 && set "FOUND=1"
+  )
+  del "%WEB_PIDFILE%" >nul 2>&1
+)
+
+rem 2) port listeners (covers manually started services / stale pid files)
 for /f "tokens=5" %%p in ('netstat -ano ^| findstr /R /C:":%API_PORT% " ^| findstr "LISTENING"') do (
   taskkill /PID %%p /T /F >nul 2>&1
   set "FOUND=1"
@@ -191,6 +268,7 @@ for /f "tokens=5" %%p in ('netstat -ano ^| findstr /R /C:":%WEB_PORT% " ^| finds
   taskkill /PID %%p /T /F >nul 2>&1
   set "FOUND=1"
 )
+
 if defined FOUND (
   echo   stopped services ^(:%API_PORT% / :%WEB_PORT%^)
 ) else (
