@@ -24,7 +24,6 @@
         "pageRef": "dashboard",
         "label": "Dashboard",
         "icon": "dashboard",
-        "order": 0,
         "visibleWhen": {
           "when": "$context.features.menu_dashboard == true"
         },

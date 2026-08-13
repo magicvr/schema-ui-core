@@ -30,7 +30,7 @@ export APP_PROFILE=mvp                 # 或 admin / demo（非生产向演示 P
 ```
 
 - 开发（`APP_ENV=development` 显式设置）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。**`APP_ENV` 必须显式设置**——未设置时启动失败（C3：不静默回退到公开开发密钥/密码）。
-- `APP_PROFILE` 接受 `mvp`、`admin`、`demo`、`custom`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`（启动即展示 8 个协议范例页 + Examples 导航，home 指向 `overview`）；生产只应使用 `mvp` / `admin`。`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
+- `APP_PROFILE` 接受 `mvp`、`admin`、`demo`、`custom`。`mvp` = core + `users`/`roles`/`account`/`notifications`（首页 = Dashboard）；`admin` = `mvp` + `settings`/`activity`/`data-transfer`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`（启动即展示 8 个协议范例页 + Examples 导航，home 指向 `overview`）；生产只应使用 `mvp` / `admin`。`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
 - PowerShell 等价写法为 `$env:APP_PROFILE="mvp"`；每个本地 API/Web 进程都必须继承同一 Profile。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
@@ -78,7 +78,7 @@ Windows 也可用仓库根一键脚本 `dev.cmd`（自动起停 API/Web 两个�
 | 1 | `GET ${API_BASE_URL}/healthz` 与 `/readyz` | HTTP 200，JSON `status: "ok"` |
 | 2 | `POST ${WEB_BASE_URL}/api/auth/login`（admin / `ADMIN_INITIAL_PASSWORD`） | HTTP 200，响应含非空 `accessToken` |
 | 3 | 携带 token `GET ${WEB_BASE_URL}/api/accounts/me` | HTTP 200，含 `user` 与 `features` |
-| 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD） |
+| 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD）。登录默认首页为 `Dashboard`（`demo` 为 `overview`） |
 
 > **默认 base URL**：Compose → API `http://localhost:25080`、Web `http://localhost:25081`；本地双进程 → API `:25080`、Web `http://localhost:${WEB_PORT:-25173}`。以实际端口为准，不得用默认值覆盖实测端口。
 
@@ -96,7 +96,7 @@ curl -fsS http://localhost:25081/api/accounts/me -H "Authorization: Bearer $TOKE
 ### 完整 smoke（S4 机器可判定）
 
 ```bash
-# 对已启动实例做非破坏性部分检查（SM-001～005）
+# 对已启动实例做非破坏性部分检查（SM-001～005 + 可选 SM-007 Profile/Manifest 合同）
 # 注意：SM-006 未运行 → 退出码 8（部分绿），**不是** S4 完整绿
 SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp bash scripts/smoke.sh
 
@@ -129,7 +129,7 @@ bash scripts/smoke.sh --disposable
   **[docs/architecture/module-contribution-playbook.md](docs/architecture/module-contribution-playbook.md)**  
   （架构边界：[docs/architecture/module-architecture.md](docs/architecture/module-architecture.md)；概览入口：[docs/architecture/overview.md](docs/architecture/overview.md)）
 - 新增业务页面（**无需修改 Renderer 主路径**；从属于上表 MUST）：
-  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；标准 Admin 正例：`apps/api/internal/modules/users/`；
+  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；标准 Admin 正例：`apps/api/internal/modules/users/`、`dashboard/`、`account/`、`notifications/`、`datatransfer/`（一等公民波次，workspace-011 R2）；
   2. 在模块 Provider 的 Manifest/Navigation contribution 中登记 `pages[]` 与 `navigation`；不要在 `apps/web/public/` 放置生产 Manifest。Manifest 由 API 聚合并经 `/.well-known/schema-ui/app-manifest.json` 发布。
   - 注意：`docs/schemas/` 是上游 **协议 JSON Schema**（node/page/action…），**不是**业务页面文档目录。
 - 权限：通过模块的 Authorization/Persistence contribution 声明权限键与 system-data reconcile；全局迁移/快照执行仍由 `apps/api/internal/store` 负责；模块迁移须进入全局台账（见 playbook M5）。

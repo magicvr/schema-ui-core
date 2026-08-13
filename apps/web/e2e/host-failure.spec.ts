@@ -89,9 +89,9 @@ test("route not-found: HOST_ROUTE_NOT_FOUND surface and home recovery with focus
 
   await page.getByRole("button", { name: "Return home" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   // Recovery lands focus on the restored page's main heading.
-  await expect.poll(() => page.evaluate(() => document.activeElement?.textContent ?? "")).toBe("Users");
+  await expect.poll(() => page.evaluate(() => document.activeElement?.textContent ?? "")).toBe("Dashboard");
 });
 
 test("normal bootstrap document from the real entry boots the shell", async ({ page }) => {

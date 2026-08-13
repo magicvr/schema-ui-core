@@ -7,7 +7,7 @@
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
-    "homePageRef": "overview",
+    "homePageRef": "dashboard",
     "description": "The schema-ui-core administration workspace."
   },
   "pages": [
@@ -94,6 +94,27 @@
       "schemaUrl": "/api/schema/activity",
       "route": "/activity",
       "titleKey": "manifest.title.activity"
+    },
+    {
+      "pageId": "dashboard",
+      "title": "Dashboard",
+      "schemaUrl": "/api/schema/dashboard",
+      "route": "/dashboard",
+      "titleKey": "manifest.title.dashboard"
+    },
+    {
+      "pageId": "account",
+      "title": "Account",
+      "schemaUrl": "/api/schema/account",
+      "route": "/account",
+      "titleKey": "manifest.title.account"
+    },
+    {
+      "pageId": "notifications",
+      "title": "Notifications",
+      "schemaUrl": "/api/schema/notifications",
+      "route": "/notifications",
+      "titleKey": "manifest.title.notifications"
     }
   ],
   "navigation": {
@@ -106,6 +127,15 @@
       }
     ],
     "sidebar": [
+      {
+        "pageRef": "dashboard",
+        "label": "Dashboard",
+        "icon": "dashboard",
+        "labelKey": "manifest.nav.dashboard",
+        "visibleWhen": {
+          "when": "$context.features.menu_dashboard == true"
+        }
+      },
       {
         "label": "Examples",
         "icon": "folder",
@@ -199,6 +229,24 @@
           "when": "$context.features.menu_settings == true"
         },
         "labelKey": "manifest.nav.settings"
+      },
+      {
+        "pageRef": "account",
+        "label": "Account",
+        "icon": "user",
+        "labelKey": "manifest.nav.account",
+        "visibleWhen": {
+          "when": "$context.features.menu_account == true"
+        }
+      },
+      {
+        "pageRef": "notifications",
+        "label": "Notifications",
+        "icon": "bell",
+        "labelKey": "manifest.nav.notifications",
+        "visibleWhen": {
+          "when": "$context.features.menu_notifications == true"
+        }
       }
     ]
   }

@@ -58,8 +58,10 @@ const APP_MANIFEST_FIXTURE_SHA256 =
   "4ab9ec93e603dfd4b0e7a3b3c89de5e7a59d91a53a90f252bfcfa5fb3c43c347";
 const APP_NAVIGATION_FIXTURE_SHA256 =
   "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897";
+// F-01/F-04 (GOAL-003/006): the admin fixture now mirrors the runtime union
+// (dashboard home + account/notifications pages) — local artifact, re-pinned.
 const STATIC_MANIFEST_SHA256 =
-  "2b22d3f1cdc17c76c9608535526e3af566722b65c39f7ba04f8471b481c1338a";
+  "e4fddcfedcd809b1691cccb31dcb51b1f958d86149daf6c381e3723fe55da7bf";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

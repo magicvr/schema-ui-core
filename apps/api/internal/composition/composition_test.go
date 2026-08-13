@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -832,4 +833,136 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 	if ready.Code != http.StatusOK {
 		t.Fatalf("readyz with set gate = %d, want 200", ready.Code)
 	}
+}
+
+// TestManifestFragmentProtocolFields pins that the published manifest carries
+// only protocol-sanctioned fields per docs/schemas/app-manifest.schema.json
+// (additionalProperties: false on every envelope/app/page/navigation block).
+// R2 hygiene regression guard: the dashboard manifest fragment once leaked a
+// non-protocol "order" navigation field; the web host correctly refused it
+// (UNKNOWN_MANIFEST_FIELD) and every browser surface failed, but the leak only
+// surfaced in Playwright E2E. This test turns the leak into a go-test failure
+// for every enabled profile.
+func TestManifestFragmentProtocolFields(t *testing.T) {
+	envelopeKeys := setOf("protocolVersion", "requiredCapabilities", "app", "pages", "navigation")
+	appKeys := setOf("appId", "name", "nameKey", "homePageRef", "logo", "description", "descriptionKey")
+	logoKeys := setOf("light", "dark")
+	pageKeys := setOf("pageId", "title", "titleKey", "schemaUrl", "route", "returnIntentQueryKeys")
+	navSlotKeys := setOf("top", "sidebar", "user")
+	navItemKeys := setOf("pageRef", "url", "label", "labelKey", "icon", "visibleWhen", "permissions", "items")
+	visibleWhenKeys := setOf("when")
+	permissionKeys := setOf("view")
+
+	assertKeys := func(t *testing.T, node any, allowed map[string]bool, path string) {
+		t.Helper()
+		obj, ok := node.(map[string]any)
+		if !ok {
+			return
+		}
+		for key := range obj {
+			if !allowed[key] {
+				t.Fatalf("manifest %s carries non-protocol field %q (docs/schemas/app-manifest.schema.json)", path+"."+key, key)
+			}
+		}
+	}
+	var assertNavItem func(t *testing.T, node any, path string)
+	assertNavItem = func(t *testing.T, node any, path string) {
+		t.Helper()
+		obj, ok := node.(map[string]any)
+		if !ok {
+			return
+		}
+		assertKeys(t, obj, navItemKeys, path)
+		if items, ok := obj["items"].([]any); ok {
+			for i, child := range items {
+				assertNavItem(t, child, fmt.Sprintf("%s.items[%d]", path, i))
+			}
+		}
+		if vw, ok := obj["visibleWhen"]; ok {
+			assertKeys(t, vw, visibleWhenKeys, path+".visibleWhen")
+		}
+		if perm, ok := obj["permissions"]; ok {
+			assertKeys(t, perm, permissionKeys, path+".permissions")
+		}
+	}
+
+	fetch := func(t *testing.T, plan kernel.Plan) map[string]any {
+		t.Helper()
+		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = st.Close() })
+		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		mux, err := testMux(a, st, plan, &readinessGate{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("manifest status = %d: %s", rec.Code, rec.Body.String())
+		}
+		var doc map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc
+	}
+
+	checkPlan := func(t *testing.T, plan kernel.Plan, label string) {
+		t.Helper()
+		doc := fetch(t, plan)
+		assertKeys(t, doc, envelopeKeys, "$")
+		assertKeys(t, doc["app"], appKeys, "$.app")
+		if logo, ok := doc["app"].(map[string]any)["logo"]; ok {
+			assertKeys(t, logo, logoKeys, "$.app.logo")
+		}
+		pages, _ := doc["pages"].([]any)
+		for i, page := range pages {
+			assertKeys(t, page, pageKeys, fmt.Sprintf("$.pages[%d]", i))
+		}
+		assertKeys(t, doc["navigation"], navSlotKeys, "$.navigation")
+		nav, _ := doc["navigation"].(map[string]any)
+		for _, slot := range []string{"top", "sidebar", "user"} {
+			items, _ := nav[slot].([]any)
+			for i, item := range items {
+				assertNavItem(t, item, fmt.Sprintf("$.navigation.%s[%d]", slot, i))
+			}
+		}
+	}
+
+	for _, profile := range []string{"mvp", "admin"} {
+		t.Run(profile, func(t *testing.T) {
+			plan, err := ResolvePlan(&config.Config{ProfileName: profile})
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkPlan(t, plan, profile)
+		})
+	}
+	// dev.examples adds the upstream example fragments (demo surface).
+	registry, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatal(err)
+	}
+	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	examplesPlan, err := registry.Resolve(append(mvpPlan.IDs(), "dev.examples"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("demo-examples", func(t *testing.T) {
+		checkPlan(t, examplesPlan, "demo-examples")
+	})
+}
+
+func setOf(values ...string) map[string]bool {
+	result := make(map[string]bool, len(values))
+	for _, value := range values {
+		result[value] = true
+	}
+	return result
 }

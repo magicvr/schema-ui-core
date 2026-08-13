@@ -257,7 +257,9 @@ describe("manifest loading and expression boundaries", () => {
     });
     expect(requested).toBe(DEFAULT_MANIFEST_PATH);
     expect(loaded.app.appId).toBe("schema-ui-core");
-    expect(loaded.app.homePageRef).toBe("overview");
+    // F-01 (GOAL-003): the production home is now the dashboard; the R2 wave
+    // added dashboard/account/notifications pages to the fixture union.
+    expect(loaded.app.homePageRef).toBe("dashboard");
     expect(loaded.pages.map((page) => page.pageId)).toEqual([
       "admin-list-batch",
       "data-display",
@@ -271,6 +273,9 @@ describe("manifest loading and expression boundaries", () => {
       "roles",
       "settings",
       "activity",
+      "dashboard",
+      "account",
+      "notifications",
     ]);
   });
 

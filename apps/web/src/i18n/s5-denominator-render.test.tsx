@@ -41,6 +41,9 @@ const SCHEMA_PATHS: Record<string, string> = {
   roles: resolve(MODULES, "roles/schema/roles.json"),
   settings: resolve(MODULES, "settings/schema/settings.json"),
   activity: resolve(MODULES, "activity/schema/activity.json"),
+  dashboard: resolve(MODULES, "dashboard/schema/dashboard.json"),
+  account: resolve(MODULES, "account/schema/account.json"),
+  notifications: resolve(MODULES, "notifications/schema/notifications.json"),
 };
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];

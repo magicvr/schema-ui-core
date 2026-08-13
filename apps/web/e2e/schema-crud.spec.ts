@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 // API emulator; this file proves the browser → proxy → Go/SQLite path.
 
 async function signInAsAdmin(page: Page): Promise<void> {
-  // Home redirect follows the manifest home: demo -> overview, else users (W2).
+  // Home redirect follows the manifest home: demo -> overview, else dashboard (F-01).
   const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
@@ -35,7 +35,7 @@ test("users and roles drive real authorization management against Go SQLite", as
   // resolve /me features so the link is present after sign-in.
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
   await page.getByRole("link", { name: "Users" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page).toHaveURL(/\/users$/);
   await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
   await expect(page.getByRole("button", { name: "New user" })).toBeEnabled();
 

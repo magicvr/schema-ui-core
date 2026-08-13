@@ -1,4 +1,48 @@
+import { readFileSync } from "node:fs";
+
+import Ajv, { type ValidateFunction } from "ajv";
 import { expect, test } from "@playwright/test";
+
+// R2 hygiene regression guard: the published runtime manifest must satisfy the
+// pinned protocol schema (docs/schemas/app-manifest.schema.json — every block
+// is additionalProperties: false). The browser host refuses non-protocol
+// fields (UNKNOWN_MANIFEST_FIELD) and every shell surface fails; a dashboard
+// fragment once leaked a non-protocol "order" nav field and took the whole
+// suite down with it. This assertion turns that leak class into a targeted
+// failure at the exact surface the host consumes.
+const appManifestSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/app-manifest.schema.json", import.meta.url), "utf8"),
+) as object;
+const nodeSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/node.schema.json", import.meta.url), "utf8"),
+) as object;
+const pageSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/page.schema.json", import.meta.url), "utf8"),
+) as object;
+const actionSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/action.schema.json", import.meta.url), "utf8"),
+) as object;
+const reactionSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/reaction.schema.json", import.meta.url), "utf8"),
+) as object;
+const ajv = new Ajv({ allErrors: true, strict: false, validateSchema: false });
+// The app-manifest schema has its own absolute $id (schema-ui.dev), so its
+// relative $ref "node.schema.json#/definitions/VisibleWhen" resolves against
+// that base URI. The referenced schemas use a different $id namespace
+// (internal/schema-ui), so besides the filename registrations they must also
+// be registered under the app-manifest base (mirrors how
+// src/protocol/conformance/runtime-schema-validate.ts keeps refs resolvable).
+const manifestSchemaBase = String(appManifestSchema.$id).replace(/[^/]*$/, "");
+for (const [name, schema] of [
+  ["node", nodeSchema],
+  ["page", pageSchema],
+  ["action", actionSchema],
+  ["reaction", reactionSchema],
+] as const) {
+  ajv.addSchema(schema, `${name}.schema.json`);
+  ajv.addSchema(schema, `${manifestSchemaBase}${name}.schema.json`);
+}
+const validateManifestSchema: ValidateFunction = ajv.compile(appManifestSchema);
 
 // R6 browser E2E (I-008-005 forward path) updated for the R2 auth closed loop
 // (GOAL-005): boots the Go API + Vite dev server via playwright webServer;
@@ -19,6 +63,16 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(manifestResponse.status()).toBe(200);
   expect(manifestResponse.headers()["x-schema-ui-manifest-source"]).toBe("api");
   const manifest = await manifestResponse.json();
+  // The runtime manifest must be structurally valid per the pinned protocol
+  // schema; a fragment leaking a non-protocol field would be refused by the
+  // host (UNKNOWN_MANIFEST_FIELD) and break every browser surface.
+  const schemaValid = validateManifestSchema(manifest);
+  expect(
+    schemaValid,
+    validateManifestSchema.errors
+      ? validateManifestSchema.errors.map((error) => `${error.instancePath || "/"}: ${error.message}`).join("; ")
+      : "runtime manifest failed app-manifest.schema.json validation",
+  ).toBe(true);
   const manifestPageIds = manifest.pages.map((page: { pageId: string }) => page.pageId);
   // W1 (GOAL-002 / workspace-010): production defaults ship no dev.examples.
   expect(manifestPageIds).toEqual(expect.arrayContaining(["users", "roles"]));
