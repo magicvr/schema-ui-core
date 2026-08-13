@@ -54,7 +54,18 @@ composition / manifest 装配文件）。served manifest 内容不变，`go` 消
 
 ## 结论 + 建议下一步
 
-除 account-locked residual 需用户书面决策外，全部关门条件满足；claim（contentSha256 `4fae4605…` /
-fixtureSha256 `7aacf133…` / buildId `git:5e4c384…`）三处一致，台账 progress 5/6 一致。
-建议：用户对 account-locked residual 做出 P-004 决策（接受/驳回/范围修改）后，status → `done`、
-progress → 6/6，并同步 goal-tree / workspace.md / 索引。
+S6 cross 双审计落盘：本 A-007（self，conditional）+ A-008（independent，conditional，
+BLOCKING_COUNT=2）。A-008 的 F-2（生产 return-intent 不捕获 `location.search`）已 fixed
+（`captureReturnIntent` 无参调用解析 live query + 回归测试）；F-3/F-4（台账漂移）已 fixed。
+唯一剩余前置 = account-locked residual 的用户 P-004 书面决策（A-008 F-1）。
+建议：用户对 account-locked residual 做出 P-004 决策（接受/驳回/范围修改）后，status →
+`done`、progress → 6/6，并同步 goal-tree / workspace.md / 索引。
+
+## 编排器响应（2026-08-13 · A-008 落盘后）
+
+| 项 | 处置 | 说明 |
+|----|------|------|
+| A-008 F-2（生产 query 捕获） | fixed | `captureReturnIntent` 无参调用解析 `window.location.search`；`return-intent.test.ts` 补无参生产路径回归 |
+| A-008 F-3（I-004 漂移） | fixed | 00-meta/01-decision/03-audit 三处统一为「S2=A-005/A-006；S6=A-007/A-008」 |
+| A-008 F-4（结论段未吸收） | fixed | 03-audit 结论段已吸收 A-007/A-008 摘要 |
+| A-008 F-1（account-locked P-004） | **待用户决策** | 三选一：accepted-residual（建议）／实现生产源／user-overruled |
