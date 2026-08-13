@@ -74,6 +74,13 @@ func (h *authHandler) login() http.HandlerFunc {
 			return
 		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
+		if errors.Is(err, auth.ErrAccountLocked) {
+			// GOAL-004 S4-6: a locked account is a distinct, stable terminal
+			// state (423) the Host maps to HOST_ACCOUNT_LOCKED — not a generic
+			// 401 credential failure.
+			writeLocalizedError(w, r, http.StatusLocked, "ACCOUNT_LOCKED", "account is temporarily locked; try again later")
+			return
+		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			if h.rateLimiter != nil {
 				h.rateLimiter.record(limiterKey, h.now().UTC())

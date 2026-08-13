@@ -94,10 +94,13 @@ S1–S5 主体证据成立，claim 三处哈希一致，go 不暂挂可复核。
 
 | Finding | 处置 | 说明 |
 |---------|------|------|
-| F-1 (P1 required) | **待用户 P-004 决策** | account-locked residual 三选一（accept/实现/overrule）需用户书面落盘（见下方「用户裁决」） |
+| F-1 (P1 required) | **closed（已实现生产源）** | 用户 P-004 裁决「实现生产源」（2026-08-13）：E-008 完成锁策略 + 423 + Host 终态全链路；D-002 §3 residual #1 关闭 |
 | F-2 (P1 required) | fixed | `captureReturnIntent` 无参调用改为解析 `window.location.search`（`parseLocationQuery`）再走 `validateReturnIntent`；补无参生产路径测试（`return-intent.test.ts`）；commit `…` |
 | F-3 (P2) | fixed | I-004 三处统一为「provider=`grok build`；S2=A-005/A-006；S6=A-007/A-008」；A-007 检查表更新为 A-008 已落盘 |
 | F-4 (P2) | fixed | 03-audit 结论段吸收 A-007（self，conditional）与本 A-008（independent，conditional，BLOCKING=2）摘要 |
 
-**用户裁决（F-1，P-004）：** account-locked 生产源缺位 → 建议 `accepted-residual`
-（范围：本波不新增账号锁定安全特性；复审触发：认证迭代引入锁定状态时）。
+**用户裁决（F-1，P-004，2026-08-13）：** **实现生产源**（用户选择）。E-008 已完成：
+migration 12（`failed_login_count` + `locked_until`）、5 失败/15 分钟锁窗、锁开撤销 refresh
+token、423 `ACCOUNT_LOCKED`（error catalog 双语）、`AuthContext.locked`、`adapterAuthFor` 单一
+来源、`HOST_ACCOUNT_LOCKED` 终态（home/support only）。Go internal 全绿、web vitest 875、
+tsc 0、Playwright 7+1skip。F-1 **closed**；BLOCKING_COUNT=2 → 0。

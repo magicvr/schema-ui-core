@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
 
 func loginBody(t *testing.T, env *authTestEnv, username, password string) (int, map[string]any) {
@@ -49,6 +51,80 @@ func TestAuthLoginUnknownUser(t *testing.T) {
 	}
 	if body["error"] != "UNAUTHORIZED" {
 		t.Fatalf("error = %v, want UNAUTHORIZED (no enumeration)", body["error"])
+	}
+}
+
+// TestAccountLockLifecycle covers the GOAL-004 S4-6 production lock source:
+// 5 consecutive bad passwords open a 15-minute lock window (423 with the
+// ACCOUNT_LOCKED code), the 6th attempt is rejected even with the RIGHT
+// password, and the lock expires automatically once locked_until passes.
+func TestAccountLockLifecycle(t *testing.T) {
+	env := newAuthTestEnv(t)
+
+	// 5 consecutive failures: 401 each, no lock yet.
+	for range 5 {
+		code, body := loginBody(t, env, testSeedUsername, "wrong")
+		if code != http.StatusUnauthorized {
+			t.Fatalf("failure status = %d, want 401: %v", code, body)
+		}
+	}
+	// The 5th failure opened the lock: even the correct password is now 423.
+	code, body := loginBody(t, env, testSeedUsername, testSeedPassword)
+	if code != http.StatusLocked {
+		t.Fatalf("locked status = %d, want 423: %v", code, body)
+	}
+	if body["error"] != "ACCOUNT_LOCKED" {
+		t.Fatalf("error = %v, want ACCOUNT_LOCKED", body["error"])
+	}
+
+	// Expiry: move the clock past the lock window and the account recovers.
+	u, err := env.authRepository.UserByUsername(testSeedUsername)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Unix(u.LockedUntil+1, 0)
+	access, refresh, _, err := env.a.Login(testSeedUsername, testSeedPassword, now)
+	if err != nil {
+		t.Fatalf("login after expiry: %v", err)
+	}
+	if access == "" || refresh == "" {
+		t.Fatal("tokens missing after lock expiry")
+	}
+	// A successful login resets the failure counter.
+	u2, err := env.authRepository.UserByUsername(testSeedUsername)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u2.FailedLoginCount != 0 || u2.LockedUntil != 0 {
+		t.Fatalf("counter not reset: failed=%d lockedUntil=%d", u2.FailedLoginCount, u2.LockedUntil)
+	}
+}
+
+// TestAccountLockRevokesSessions: opening the lock revokes live refresh
+// tokens — a locked account must not keep rotating sessions.
+func TestAccountLockRevokesSessions(t *testing.T) {
+	env := newAuthTestEnv(t)
+	_, refresh, _, err := env.a.Login(testSeedUsername, testSeedPassword, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 5 {
+		_, body := loginBody(t, env, testSeedUsername, "wrong")
+		_ = body
+	}
+	u, err := env.authRepository.UserByUsername(testSeedUsername)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u.LockedUntil == 0 {
+		t.Fatal("expected a lock window")
+	}
+	rt, err := env.authRepository.RefreshTokenByHash(auth.HashToken(refresh))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rt.RevokedAt == nil {
+		t.Fatal("refresh token should be revoked when the lock opens")
 	}
 }
 
@@ -199,13 +275,17 @@ func TestAuthDevSessionDoesNotBypassLoginEndpoint(t *testing.T) {
 
 // D2 hardening: repeated failed logins from one client IP are rate-limited
 // (429 after the configured threshold), while the limiter is per-IP.
+// GOAL-004 S4-6: the first 5 consecutive failures trip the account lock
+// (423 ACCOUNT_LOCKED) before the 21-attempt per-IP limiter; the rate-limit
+// path is exercised with a nonexistent user, which never locks.
 func TestLoginRateLimit(t *testing.T) {
 	env := newAuthTestEnv(t)
 
-	// 20 failed attempts are allowed, the 21st is rejected with 429.
+	// A nonexistent user never locks an account: 20 failed attempts are
+	// allowed, the 21st is rejected with 429.
 	for range 20 {
 		req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
-			strings.NewReader(`{"username":"admin","password":"wrong-password"}`))
+			strings.NewReader(`{"username":"no-such-user","password":"wrong-password"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		env.mux.ServeHTTP(rr, req)
@@ -214,7 +294,7 @@ func TestLoginRateLimit(t *testing.T) {
 		}
 	}
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
-		strings.NewReader(`{"username":"admin","password":"wrong-password"}`))
+		strings.NewReader(`{"username":"no-such-user","password":"wrong-password"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
@@ -228,8 +308,9 @@ func TestLoginRateLimit(t *testing.T) {
 	}
 
 	// A correct password is still rejected under lockout (fail-closed).
+	// The nonexistent user is rate-limited per-IP but never account-locked.
 	req = httptest.NewRequest(http.MethodPost, "/api/auth/login",
-		strings.NewReader(`{"username":"admin","password":"test-password"}`))
+		strings.NewReader(`{"username":"no-such-user","password":"test-password"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)

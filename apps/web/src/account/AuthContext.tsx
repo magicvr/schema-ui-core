@@ -2,15 +2,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import {
   authFetch,
+  AuthError,
   login as loginRequest,
   logout as logoutRequest,
   restoreSession,
   setAuthLostListener,
   type AuthSession,
 } from "@/account/auth-client";
+import type { SessionAdapterState } from "@/host/boot";
 import { buildQueryString, captureReturnIntent, takeReturnIntent } from "@/host/return-intent";
 
-export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "reauth-required";
+export type AuthStatus = SessionAdapterState;
 
 export interface AuthContextValue {
   status: AuthStatus;
@@ -73,7 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const next = await loginRequest(username, password);
+    let next: AuthSession;
+    try {
+      next = await loginRequest(username, password);
+    } catch (err: unknown) {
+      // GOAL-004 S4-6: 423 is the account-lock terminal (ADR-0035 D4/D7
+      // locked state) — the login surface surfaces it as an error, and the
+      // failure path below keeps the session adapter in sync with the server
+      // terminal (locked until the window expires).
+      if (err instanceof AuthError && err.status === 423) {
+        setStatus("locked");
+      }
+      throw err;
+    }
     // Consume a captured return intent (single-use, validated by the pinned
     // validator) and restore the location BEFORE the shell mounts so its
     // initial route resolution picks the restored path up.

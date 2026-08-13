@@ -42,7 +42,7 @@ func (r *Repository) CreateUser(user User) error {
 func (r *Repository) UserByUsername(username string) (*User, error) {
 	return r.userBy("get user by username", func(tx *sql.Tx) *sql.Row {
 		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, created_at, updated_at
 			 FROM users WHERE username = ?`, username)
 	})
 }
@@ -51,7 +51,7 @@ func (r *Repository) UserByUsername(username string) (*User, error) {
 func (r *Repository) UserByID(id string) (*User, error) {
 	return r.userBy("get user by id", func(tx *sql.Tx) *sql.Row {
 		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, created_at, updated_at
 			 FROM users WHERE id = ?`, id)
 	})
 }
@@ -166,11 +166,67 @@ func (r *Repository) FeaturesForUser(userID string) (map[string]bool, error) {
 	return features, err
 }
 
+// RecordLoginFailure bumps the user's consecutive-failure counter and, past
+// the threshold, opens a lock window ending at lockedUntil (GOAL-004 S4-6).
+// It reports whether the lock opened on this failure.
+func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUntil time.Time, now time.Time) (bool, error) {
+	locked := false
+	err := r.withTx("record login failure", func(tx *sql.Tx) error {
+		var count int
+		if err := tx.QueryRow(`SELECT failed_login_count FROM users WHERE id = ?`, userID).Scan(&count); err != nil {
+			return fmt.Errorf("read failed login count: %w", err)
+		}
+		next := count + 1
+		lockedUntilUnix := int64(0)
+		if next >= threshold {
+			lockedUntilUnix = lockedUntil.Unix()
+			next = 0 // counter resets when the lock opens; it counts consecutive failures
+			locked = true
+		}
+		if _, err := tx.Exec(
+			`UPDATE users SET failed_login_count = ?, locked_until = ?, updated_at = ? WHERE id = ?`,
+			next, lockedUntilUnix, now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("record login failure: %w", err)
+		}
+		return nil
+	})
+	return locked, err
+}
+
+// ResetLoginFailures clears the consecutive-failure counter and lock window on
+// a successful login.
+func (r *Repository) ResetLoginFailures(userID string, now time.Time) error {
+	return r.withTx("reset login failures", func(tx *sql.Tx) error {
+		if _, err := tx.Exec(
+			`UPDATE users SET failed_login_count = 0, locked_until = 0, updated_at = ? WHERE id = ?`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("reset login failures: %w", err)
+		}
+		return nil
+	})
+}
+
+// RevokeAllRefreshTokensForUser revokes every live refresh token of the user
+// (account-lock hardening: a locked account's sessions must not keep rotating).
+func (r *Repository) RevokeAllRefreshTokensForUser(userID string, now time.Time) error {
+	return r.withTx("revoke user refresh tokens", func(tx *sql.Tx) error {
+		if _, err := tx.Exec(
+			`UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("revoke user refresh tokens: %w", err)
+		}
+		return nil
+	})
+}
+
 func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
 	var createdAt, updatedAt int64
-	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &createdAt, &updatedAt)
+	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &createdAt, &updatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}

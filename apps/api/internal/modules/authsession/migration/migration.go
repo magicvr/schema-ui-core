@@ -117,6 +117,14 @@ var accessTokenRevocationDDL = []string{
 	`ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0`,
 }
 
+// accountLockDDL adds the account-lock production source (GOAL-004 S4-6):
+// failed_login_count feeds the lock threshold; locked_until (unix seconds,
+// 0 = not locked) is the lock window with automatic expiry.
+var accountLockDDL = []string{
+	`ALTER TABLE users ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN locked_until INTEGER NOT NULL DEFAULT 0`,
+}
+
 // Descriptors returns the immutable 0001-0002 auth/session migration history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -147,6 +155,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "access_token_revocation",
 			Checksum:             kernel.MigrationChecksum(accessTokenRevocationDDL, "0011:access-token-revocation:v1"),
 			Apply:                migrateAccessTokenRevocation,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account_lock"},
+			Version:              12,
+			Name:                 "account_lock",
+			Checksum:             kernel.MigrationChecksum(accountLockDDL, "0012:account-lock:v1"),
+			Apply:                migrateAccountLock,
 		},
 	}
 }
@@ -193,6 +208,15 @@ func migrateAccessTokenRevocation(tx *sql.Tx) error {
 	for _, stmt := range accessTokenRevocationDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("add users.token_version: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateAccountLock(tx *sql.Tx) error {
+	for _, stmt := range accountLockDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("add account-lock columns: %w", err)
 		}
 	}
 	return nil

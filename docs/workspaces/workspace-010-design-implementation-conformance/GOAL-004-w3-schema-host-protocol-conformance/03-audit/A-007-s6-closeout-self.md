@@ -68,4 +68,4 @@ BLOCKING_COUNT=2）。A-008 的 F-2（生产 return-intent 不捕获 `location.s
 | A-008 F-2（生产 query 捕获） | fixed | `captureReturnIntent` 无参调用解析 `window.location.search`；`return-intent.test.ts` 补无参生产路径回归 |
 | A-008 F-3（I-004 漂移） | fixed | 00-meta/01-decision/03-audit 三处统一为「S2=A-005/A-006；S6=A-007/A-008」 |
 | A-008 F-4（结论段未吸收） | fixed | 03-audit 结论段已吸收 A-007/A-008 摘要 |
-| A-008 F-1（account-locked P-004） | **待用户决策** | 三选一：accepted-residual（建议）／实现生产源／user-overruled |
+| A-008 F-1（account-locked P-004） | **closed（已实现生产源）** | 用户 P-004 裁决「实现生产源」（2026-08-13）：E-008 完成锁策略（5 失败/15 分钟/撤销 refresh token）、423 ACCOUNT_LOCKED、`AuthContext.locked` + `HOST_ACCOUNT_LOCKED` 终态全链路；Go/web/e2e 门禁全绿 |

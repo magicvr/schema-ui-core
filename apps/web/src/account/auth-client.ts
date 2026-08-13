@@ -219,6 +219,11 @@ export async function login(username: string, password: string): Promise<AuthSes
   if (response.status === 401) {
     throw new AuthError("INVALID_CREDENTIALS", "invalid username or password");
   }
+  // GOAL-004 S4-6: 423 is the account-lock terminal (ADR-0035 D4/D7 locked
+  // state), distinct from 401 credential failure.
+  if (response.status === 423) {
+    throw new AuthError("ACCOUNT_LOCKED", "account is temporarily locked", 423);
+  }
   if (!response.ok) {
     throw new AuthError("LOGIN_FAILED", `login failed: HTTP ${response.status}`, response.status);
   }

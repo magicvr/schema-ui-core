@@ -31,6 +31,8 @@ var frozenLiteralCodes = []string{
 	"INVALID_DEFAULT_LOCALE", "INVALID_DEFAULT_THEME", "INVALID_TIMEZONE",
 	// D2 login rate limiting.
 	"RATE_LIMITED",
+	// GOAL-004 S4-6 account lock terminal (423).
+	"ACCOUNT_LOCKED",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

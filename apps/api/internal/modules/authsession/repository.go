@@ -38,8 +38,14 @@ type User struct {
 	// password change; the auth middleware rejects access-token JWTs issued at
 	// an older version, revoking already-signed tokens immediately.
 	TokenVersion int
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	// FailedLoginCount counts consecutive failed password attempts (GOAL-004
+	// S4-6 account lock); reset on successful login.
+	FailedLoginCount int
+	// LockedUntil is the unix-second lock window end (0 = not locked). Locks
+	// expire automatically once now passes the window.
+	LockedUntil int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // RefreshToken is a stored opaque refresh token; only its hash is persisted.

@@ -79,6 +79,9 @@ var Catalog = map[string]Entry{
 	"UNSUPPORTED_FILE_TYPE": {"error.unsupportedFileType", "file type is not allowed", "不允许的文件类型"},
 	"STORAGE_UNAVAILABLE":   {"error.storageUnavailable", "storage is temporarily unavailable", "存储服务暂不可用"},
 	"RATE_LIMITED":          {"error.rateLimited", "too many failed login attempts; try again later", "登录失败次数过多，请稍后重试"},
+	// GOAL-004 S4-6: account lock terminal (423) — distinct from the per-IP
+	// rate limit: this is a per-account state with a lock window.
+	"ACCOUNT_LOCKED":        {"error.accountLocked", "account is temporarily locked; try again later", "账号已暂时锁定，请稍后重试"},
 	"UPLOAD_QUOTA_EXCEEDED": {"error.uploadQuotaExceeded", "upload rejected: per-user quota exceeded", "上传被拒绝：超出每用户配额"},
 }
 

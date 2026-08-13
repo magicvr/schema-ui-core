@@ -29,9 +29,18 @@ import (
 // Sentinel errors surfaced to handlers for mapping to HTTP status codes.
 var (
 	ErrInvalidCredentials = errors.New("auth: invalid credentials")
+	ErrAccountLocked      = errors.New("auth: account locked")
 	ErrInvalidToken       = errors.New("auth: invalid token")
 	ErrExpiredToken       = errors.New("auth: expired token")
 	ErrTokenRevoked       = errors.New("auth: token revoked")
+)
+
+// Account-lock policy (GOAL-004 S4-6): 5 consecutive password failures open a
+// 15-minute lock window; the lock expires automatically once now passes
+// locked_until and a successful login resets the counter.
+const (
+	LockThresholdFailures = 5
+	LockWindow            = 15 * time.Minute
 )
 
 // Repository is the account/session persistence surface used by auth.
@@ -43,6 +52,10 @@ type Repository interface {
 	RevokeRefreshToken(string, time.Time) error
 	PermissionsForUser(string) ([]string, error)
 	FeaturesForUser(string) (map[string]bool, error)
+	// Account-lock surface (GOAL-004 S4-6).
+	RecordLoginFailure(string, int, time.Time, time.Time) (bool, error)
+	ResetLoginFailures(string, time.Time) error
+	RevokeAllRefreshTokensForUser(string, time.Time) error
 }
 
 // Authenticator holds the signing secret, token TTLs and the auth-session
@@ -82,7 +95,8 @@ var timingDummyHash = func() string {
 
 // Login verifies username/password against the store and issues a fresh
 // access/refresh token pair. Fail-closed: a missing user and a bad password
-// both yield ErrInvalidCredentials (no user enumeration).
+// both yield ErrInvalidCredentials (no user enumeration). A locked account
+// (locked_until in the future) yields ErrAccountLocked before password work.
 func (a *Authenticator) Login(username, password string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
 	u, err := a.repository.UserByUsername(username)
 	if errors.Is(err, authsession.ErrNotFound) {
@@ -92,8 +106,27 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 	if err != nil {
 		return "", "", account.User{}, err
 	}
+	if u.LockedUntil > now.Unix() {
+		return "", "", account.User{}, ErrAccountLocked
+	}
 	if !VerifyPassword(u.PasswordHash, password) {
+		// Consecutive-failure accounting: reaching the threshold opens the lock
+		// window. When the lock just opened, live sessions are revoked too — a
+		// locked account must not keep rotating (access tokens still expire
+		// normally; refresh rotation is the durable session channel).
+		locked, err := a.repository.RecordLoginFailure(u.ID, LockThresholdFailures, now.Add(LockWindow), now)
+		if err != nil {
+			return "", "", account.User{}, err
+		}
+		if locked {
+			_ = a.repository.RevokeAllRefreshTokensForUser(u.ID, now)
+		}
 		return "", "", account.User{}, ErrInvalidCredentials
+	}
+	if u.FailedLoginCount != 0 || u.LockedUntil != 0 {
+		if err := a.repository.ResetLoginFailures(u.ID, now); err != nil {
+			return "", "", account.User{}, err
+		}
 	}
 	return a.issue(u, now)
 }

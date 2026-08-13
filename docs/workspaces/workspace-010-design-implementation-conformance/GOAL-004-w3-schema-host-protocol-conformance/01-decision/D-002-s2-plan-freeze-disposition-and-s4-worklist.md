@@ -53,12 +53,13 @@ D10/D6）映射为本仓 S2 冻结结论与 S4 工作清单，冻结 S2 方案�
 | S4-3 | **hostOwnedPaths 显式集合** | E-004 residual #6 | 声明 `["/login"]`：认证态下命中 host-owned path 不再产生 `HOST_ROUTE_NOT_FOUND`，导航回 home |
 | S4-4 | **multi-round $deps residual 纠错** | E-004 residual #2（**过时**） | 引擎已于 `e18edce`（2026-08-08）落地且 stage3 reactions 套件零排除——**纠错台账**并更新 claim 生成脚本的 residuals 文本，重生成 claim |
 | S4-5 | **304/ETag** | E-004 residual #4 | 维持 200-only 装载（ADR-0035 D6 conditional GET 为「可用于」可选优化；200-only 是合规路径）→ residual 关闭为**无动作**，注明依据 |
-| S4-6 | **account-locked 生产源** | E-004 residual #5 后半 | 无服务端锁定状态可消费；映射 + fixtures 已 pin 行为 → 拟议 residual（见 §3，S6 用户 P-004 决策） |
+| S4-6 | **account-locked 生产源** | E-004 residual #5 后半 | **已实现（用户 P-004 裁决，2026-08-13，E-008）**：migration 12 锁列 + 5 失败/15 分钟锁窗 + 锁开撤销 refresh token + 423 `ACCOUNT_LOCKED` + `AuthContext.locked` + `HOST_ACCOUNT_LOCKED` 终态（home/support only） |
 | S4-7 | **IMP-002 导航 label 单源固化** | ADR-0034 D6；F-4 | 消费侧 labelKey 命中优先/字面 fallback 已实现（`navigation.ts`）；served manifest 导航来源仅 fragment（provider `NavigationContribution.Label` 只落 DB `menu_items` RBAC 元数据，不经 UI 渲染）→ 固化证据断言测试（served manifest 导航 labelKey/label 一致 + DB label 不参与 UI 投影），不新增 provider 消费权威 |
 
 ### 3. 已登记 residual（S2 冻结时点；S6 对照，最终需用户 P-004 书面决策）
 
-1. **account-locked 生产源缺位**（S4-6）：**拟议 `accepted-residual`**（范围：本波不新增账号锁定安全特性；复审触发：认证迭代引入锁定状态时）。—— 该 residual 在 S6 关门时点须经用户 P-004 书面接受或驳回，本决定不预写接受。
+1. **account-locked 生产源缺位**（S4-6）：**已关闭**——用户 P-004 裁决「实现生产源」
+   （2026-08-13），E-008 完成锁策略/423/终态全链路，不再作为 residual。
 2. **304/ETag conditional GET 复用未实现**：合规路径（200-only）已过 fixtures；属可选优化（ADR-0035 D6「可用于」），不作为本波工作。
 3. **return intent 的 registered 扩展 allowlist**（manifest `returnIntentQueryKeys`）：boot auth 终态发生在 manifest-load 之前，捕获时仅可用协议 allowlist（收窄合法）；登录后恢复不扩张 allowlist。会话中期 auth-lost 同此。
 4. **页面协议 2.7 mandatory residual（R5）**：multi-round `$deps` 已实现（S4-4 纠错），该 residual 随纠错关闭；claim `pageVersions: ["2.7"]` 维持（2.8 未改页面 schema 字段集）。

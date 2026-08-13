@@ -18,7 +18,7 @@ import {
   type BootstrapAuth,
   type BootstrapDiscovery,
 } from "@/host/bootstrap";
-import { bootHost, executeBootRecovery, reauthFailure, type HostBootState } from "@/host/boot";
+import { adapterAuthFor, bootHost, executeBootRecovery, lockedFailure, reauthFailure, type HostBootState } from "@/host/boot";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 import "./index.css";
 
@@ -62,6 +62,11 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
     // `reauth` captures the return intent before leaving for /login.
     return <HostFailureScreen failure={reauthFailure()} onAction={executeBootRecovery} />;
   }
+  if (status === "locked") {
+    // GOAL-004 S4-6: account-lock terminal (ADR-0035 D7 / ADR-0036 D6) —
+    // home/support only, no reauth, no retry loop.
+    return <HostFailureScreen failure={lockedFailure()} onAction={executeBootRecovery} />;
+  }
   if (status === "unauthenticated") {
     return <LoginPage onLogin={login} />;
   }
@@ -86,19 +91,7 @@ export function bootstrapAuthFor(
   status: string,
   user: { id: string; name?: string } | null,
 ): BootstrapAuth {
-  if (status === "authenticated" && user !== null) {
-    return {
-      state: "authenticated",
-      principal: { id: user.id, name: user.name ?? "", roles: [] },
-      provenance: "host-session-adapter",
-    };
-  }
-  if (status === "reauth-required") {
-    // The session adapter has a credential that no longer authenticates:
-    // reauth-required terminal — never anonymous, never a stale principal.
-    return { state: "reauth-required" };
-  }
-  return { state: "anonymous" };
+  return adapterAuthFor(status as SessionAdapterState, user);
 }
 
 /**
@@ -114,7 +107,7 @@ function HostBootGate({ discovery }: { discovery: BootstrapDiscovery }) {
   useEffect(() => {
     if (status === "loading") return;
     let cancelled = false;
-    const auth = bootstrapAuthFor(status, user);
+    const auth = adapterAuthFor(status, user);
     bootHost({
       documentResult: discovery,
       auth,

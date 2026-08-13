@@ -22,6 +22,34 @@ import {
 import { mapBootstrapResult, nextFailureId, type HostFailure } from "@/host/failure";
 import { captureReturnIntent } from "@/host/return-intent";
 
+/** Session adapter state (ADR-0035 D4): normalized by AuthContext. */
+export type SessionAdapterState = "loading" | "authenticated" | "unauthenticated" | "reauth-required" | "locked";
+
+/** Maps the session adapter state to the bootstrap normalized auth input (D4). */
+export function adapterAuthFor(
+  status: SessionAdapterState,
+  user: { id: string; name?: string } | null,
+): BootstrapAuth {
+  if (status === "authenticated" && user !== null) {
+    return {
+      state: "authenticated",
+      principal: { id: user.id, name: user.name ?? "", roles: [] },
+      provenance: "host-session-adapter",
+    };
+  }
+  if (status === "reauth-required") {
+    // The session adapter has a credential that no longer authenticates:
+    // reauth-required terminal — never anonymous, never a stale principal.
+    return { state: "reauth-required" };
+  }
+  if (status === "locked") {
+    // GOAL-004 S4-6: the account-lock terminal. Never anonymous, never a
+    // stale principal.
+    return { state: "locked" };
+  }
+  return { state: "anonymous" };
+}
+
 export interface HostBootState {
   evaluation: BootstrapEvaluation;
   failure: HostFailure | null;
@@ -251,6 +279,36 @@ export function reauthFailure(): HostFailure {
     recoveryActions: recoveryActionsFor(kind, {
       code: "REAUTH_REQUIRED",
       result: "REAUTH_REQUIRED",
+      phase: "auth-resolution",
+      fetchClassification: null,
+      missingCapabilities: [],
+      effectiveCapabilities: null,
+      context: null,
+    }),
+  };
+}
+
+/**
+ * Account-lock terminal (GOAL-004 S4-6, ADR-0035 D7 / ADR-0036 D6): the
+ * closed failure result for the locked adapter state. account-locked allows
+ * home/support only — no reauth, no retry loop.
+ */
+export function lockedFailure(): HostFailure {
+  const mapped = mapBootstrapResult({ result: "ACCOUNT_LOCKED", fetchClassification: null });
+  const scope = mapped?.scope ?? "auth";
+  const kind = mapped?.kind ?? "account-locked";
+  const hostCode = mapped?.hostCode ?? "HOST_ACCOUNT_LOCKED";
+  return {
+    failureVersion: "1.0",
+    failureId: nextFailureId(),
+    scope,
+    kind,
+    hostCode,
+    message: { messageKey: kindMessageKey(kind) },
+    diagnostics: { phase: "auth-resolution" },
+    recoveryActions: recoveryActionsFor(kind, {
+      code: "ACCOUNT_LOCKED",
+      result: "ACCOUNT_LOCKED",
       phase: "auth-resolution",
       fetchClassification: null,
       missingCapabilities: [],

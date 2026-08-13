@@ -95,6 +95,14 @@ describe("auth-client", () => {
     await expect(login("admin", "wrong")).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
   });
 
+  it("login maps a 423 to ACCOUNT_LOCKED with the terminal status (GOAL-004 S4-6)", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "ACCOUNT_LOCKED" }, 423));
+    await expect(login("admin", "right")).rejects.toMatchObject({
+      code: "ACCOUNT_LOCKED",
+      status: 423,
+    });
+  });
+
   it("authFetch attaches the Bearer access token", async () => {
     setAccessToken("access-1");
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
