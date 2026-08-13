@@ -19,7 +19,7 @@ workspace_id: workspace-011-admin-functional-modules
 
 ```text
 GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分档交付）
-└── （R1 有界调研子目标待开：候选池收集 → 三档分档 → 回写 Root 路线图）
+└── GOAL-002-r1-bounded-research [done]       · R1 有界调研：候选池收集 + 三档分档（5/5）
 ```
 
 Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14ab9d`）。首阶段 R1 = 有界调研；分档产出后按 Root 路线图逐波立项（R2 一等公民 / R3 常用 / R4 增补 backlog）。
@@ -28,7 +28,8 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-admin-functional-modules | 标准 Admin 功能模块（通用 + 常用业务领域 · 分档交付） | null | active | —（纲领路线图就位，阶段子目标待开） | 2026-08-14 |
+| GOAL-001-admin-functional-modules | 标准 Admin 功能模块（通用 + 常用业务领域 · 分档交付） | null | active | —（纲领路线图就位） | 2026-08-14 |
+| GOAL-002-r1-bounded-research | R1 · 有界调研：候选池收集与三档分档 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 
 ## 维护说明
 
