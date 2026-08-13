@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL 004-r2-f02-data-import-export · 数据导入/导出（schema 驱动 
@@ -24,7 +24,7 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：方案冻结：必办-1（协议对照）+ 导入校验/错误报告模型 + 权限键 + 审计设计；方案级 self 审视
+- [x] **S1 · 方案冻结**：方案冻结：必办-1（协议对照）+ 导入校验/错误报告模型 + 权限键 + 审计设计；方案级 self 审视（D-002 / A-001，2026-08-14）
 - [ ] **S2 · 实现**：实现：共享服务 + 导出/导入流程 + 页面（导出按钮、导入向导/错误报告）+ 测试
 - [ ] **S3 · 验证**：验证：单元/集成 + 代表资源（users/roles）实测 + 全量回归
 - [ ] **S4 · go 影响判定 + 自审**：go 影响判定 + self 审计
@@ -40,9 +40,9 @@ self + 关门 cross 候选（共享数据能力、权限/审计面 → 独立审
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 协议面（v2.8.0）对导出/导入是否有契约？ | S1 方案 | 对照 protocol-inventory（export 扩展动作键）、node.schema.json | open |
-| I-002 | required | 导入校验/错误报告模型与权限键设计（含大小/类型限制、审计） | S1 方案 | 复用 C-09 上传加固经验（VP-009 W2/W4） | open |
-| I-003 | non-blocking | Excel 二进制格式依赖（xlsx 库）评估 | S2 实现 | 方案冻结时定默认（CSV 优先） | open |
+| I-001 | required | 协议面（v2.8.0）对导出/导入是否有契约？ | S1 方案 | 对照 protocol-inventory（export 扩展动作键）、node.schema.json | **closed**（D-002 §2） |
+| I-002 | required | 导入校验/错误报告模型与权限键设计（含大小/类型限制、审计） | S1 方案 | 复用 C-09 上传加固经验（VP-009 W2/W4） | **closed**（D-002 §3/§4） |
+| I-003 | non-blocking | Excel 二进制格式依赖（xlsx 库）评估 | S2 实现 | 方案冻结时定默认（CSV 优先） | **closed**（D-002 §8） |
 
 ## 父目标
 
