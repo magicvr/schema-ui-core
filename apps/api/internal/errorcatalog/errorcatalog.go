@@ -94,6 +94,7 @@ var Catalog = map[string]Entry{
 	"RESOURCE_NOT_FOUND":  {"error.resourceNotFound", "no transfer surface for that resource", "该资源没有对应的传输面"},
 	"INVALID_CSV":         {"error.invalidCsv", "could not parse CSV", "CSV 解析失败"},
 	"INVALID_IMPORT_BODY": {"error.invalidImportBody", "body must be JSON with fileId", "请求体必须是包含 fileId 的 JSON"},
+	"INVALID_EXPORT_LIMIT": {"error.invalidExportLimit", "pageSize must not exceed 10000", "导出每页条数不能超过 10000"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

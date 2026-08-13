@@ -9,6 +9,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -70,14 +71,14 @@ func exportRow(resource string, row map[string]any) []string {
 	switch resource {
 	case "users":
 		return []string{
-			stringField(row, "id"), stringField(row, "username"), stringField(row, "name"),
-			jsonArrayOr(row["roles"]), boolString(row["enabled"]), boolString(row["locked"]),
+			formulaSafe(stringField(row, "id")), formulaSafe(stringField(row, "username")), formulaSafe(stringField(row, "name")),
+			formulaSafe(jsonArrayOr(row["roles"])), boolString(row["enabled"]), boolString(row["locked"]),
 			stringField(row, "createdAt"), stringField(row, "updatedAt"),
 		}
 	case "roles":
 		return []string{
-			stringField(row, "id"), stringField(row, "key"), stringField(row, "name"),
-			boolString(row["system"]), jsonArrayOr(row["permissions"]), jsonArrayOr(row["menuItems"]),
+			formulaSafe(stringField(row, "id")), formulaSafe(stringField(row, "key")), formulaSafe(stringField(row, "name")),
+			boolString(row["system"]), formulaSafe(jsonArrayOr(row["permissions"])), formulaSafe(jsonArrayOr(row["menuItems"])),
 			strconv.Itoa(intOf(row["assignedUsers"])), boolString(row["editable"]), boolString(row["deletable"]),
 			stringField(row, "createdAt"), stringField(row, "updatedAt"),
 		}
@@ -129,7 +130,7 @@ func (h *exportHandler) export() http.Handler {
 		query := r.URL.Query()
 		pageSize, ok := intParam(query.Get("pageSize"), maxExportRows)
 		if !ok || pageSize > maxExportRows {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must not exceed 10000")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_EXPORT_LIMIT", "pageSize must not exceed 10000")
 			return
 		}
 		order := query.Get("order")
@@ -234,7 +235,23 @@ func (h *exportHandler) record(event string, r *http.Request, resource string, r
 	if h.operations == nil {
 		return
 	}
-	_ = h.operations.RecordOperation(op)
+	if err := h.operations.RecordOperation(op); err != nil {
+		slog.Error("operation log write failed", "event", event, "err", err)
+	}
+}
+
+// formulaSafe neutralizes spreadsheet formula injection (F-009): a cell that
+// starts with = + - @ is prefixed with a single quote (visible in Excel, not
+// executed as a formula).
+func formulaSafe(value string) string {
+	if value == "" {
+		return value
+	}
+	switch value[0] {
+	case '=', '+', '-', '@':
+		return "'" + value
+	}
+	return value
 }
 
 func slicesContains(list []string, value string) bool {

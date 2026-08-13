@@ -9,7 +9,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
@@ -227,6 +229,169 @@ func TestImportPermissionGated(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("editor import = %d, want 403", rr.Code)
+	}
+}
+
+
+// --- A-003 F-005 补充用例 ---
+
+func TestTransferEndpointsAnonymous401(t *testing.T) {
+	env := newAuthTestEnv(t)
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodGet, "/api/export/users"},
+		{http.MethodGet, "/api/export/roles"},
+		{http.MethodPost, "/api/import/users"},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("%s %s anonymous = %d, want 401", tc.method, tc.path, rr.Code)
+		}
+	}
+}
+
+func TestEditorCanExport(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.addUser(t, "editor1", "editor-password", []string{"editor"})
+	token := env.login(t, "editor1", "editor-password")
+	req := bearer(t, token, http.MethodGet, "/api/export/users", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("editor export = %d, want 200 (data.export is PolicyAdminEditor)", rr.Code)
+	}
+}
+
+func TestExportAuditLogged(t *testing.T) {
+	env := newAuthTestEnv(t)
+	req := bearer(t, adminToken(t, env), http.MethodGet, "/api/export/users", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("export = %d", rr.Code)
+	}
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{Sort: "createdAt", Order: "desc", Page: 1, PageSize: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, op := range ops {
+		if op.Event == operationlog.EventDataExport && op.Detail != nil && strings.Contains(*op.Detail, `"rows":`) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("data.export operation log entry missing")
+	}
+}
+
+func TestExportCSVEscaping(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.addUser(t, "comma,user", "comma-password", []string{"editor"})
+	req := bearer(t, adminToken(t, env), http.MethodGet, "/api/export/users?q=comma", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("export = %d", rr.Code)
+	}
+	body := strings.TrimPrefix(rr.Body.String(), "\uFEFF")
+	if !strings.Contains(body, "\"comma,user\"") {
+		t.Fatalf("comma field not quoted: %s", body)
+	}
+}
+
+func TestExportFormulaInjectionGuarded(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.addUser(t, "formula1", "formula-password", []string{"editor"})
+	// rename via repository to a formula-like name
+	formulaName := "=HYPERLINK(\"http://evil\")"
+	now := time.Now().UTC()
+	if _, err := env.authRepository.UpdateUser("user-formula1", authsession.UserPatch{Name: &formulaName}, "user-admin", now); err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	req := bearer(t, adminToken(t, env), http.MethodGet, "/api/export/users?q=formula", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("export = %d", rr.Code)
+	}
+	body := strings.TrimPrefix(rr.Body.String(), "\uFEFF")
+	if !strings.Contains(body, "'=HYPERLINK") {
+		t.Fatalf("formula cell not neutralized: %s", body)
+	}
+}
+
+func TestImportSizeLimit(t *testing.T) {
+	env := newAuthTestEnv(t)
+	// 3 MiB body (upload allows up to 8 MiB; import rejects > 2 MiB)
+	big := strings.Repeat("a", 3<<20)
+	csv := "username,name,roles,password\n" + big
+	fileID := uploadCSV(t, env, adminToken(t, env), "big.csv", csv)
+	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/import/users", `{"fileId":"`+fileID+`"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("oversize import = %d, want 413", rr.Code)
+	}
+}
+
+func TestImportMissingHeaderInvalidCsv(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fileID := uploadCSV(t, env, adminToken(t, env), "bad.csv", "\n")
+	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/import/users", `{"fileId":"`+fileID+`"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("missing header = %d, want 400 INVALID_CSV", rr.Code)
+	}
+}
+
+func TestExportLimitExceeded(t *testing.T) {
+	env := newAuthTestEnv(t)
+	req := bearer(t, adminToken(t, env), http.MethodGet, "/api/export/users?pageSize=20000", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("oversize export = %d, want 400", rr.Code)
+	}
+}
+
+func TestImportRoleAssignmentBoundary(t *testing.T) {
+	env := newAuthTestEnv(t)
+	now := time.Now().UTC()
+	// A delegated data-import holder WITHOUT admin / roles.assign: importing
+	// roles=admin must fail per-row (F-001), not 403 the whole request.
+	// The import modal's upload control requires files.write (upload is a
+	// separate shared capability); a delegated importer needs both keys.
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"import-only", "Import only",
+		[]string{"data.import", "files.write"}, nil, now,
+	); err != nil {
+		t.Fatalf("create import-only role: %v", err)
+	}
+	env.addUser(t, "importer", "importer-password", []string{"import-only"})
+	token := env.login(t, "importer", "importer-password")
+	csv := "username,name,roles,password\nimpA,Import A,admin,import-pass-1\nimpB,Import B,,import-pass-1\n"
+	fileID := uploadCSV(t, env, token, "users.csv", csv)
+	req := bearer(t, token, http.MethodPost, "/api/import/users", `{"fileId":"`+fileID+`"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("import = %d, want 200 (per-row failures): %s", rr.Code, rr.Body.String())
+	}
+	var result struct {
+		Applied int              `json:"applied"`
+		Failed  int              `json:"failed"`
+		Errors  []importRowError `json:"errors"`
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&result)
+	if result.Applied != 1 || result.Failed != 1 {
+		t.Fatalf("import result = %+v, want applied=1 failed=1", result)
+	}
+	if !strings.Contains(result.Errors[0].Message, "roles.assign") && !strings.Contains(result.Errors[0].Message, "admin") {
+		t.Fatalf("delegation error message unexpected: %s", result.Errors[0].Message)
 	}
 }
 

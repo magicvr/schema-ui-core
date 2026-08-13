@@ -38,7 +38,7 @@ var frozenLiteralCodes = []string{
 	// F-03 (GOAL-005 D-002 §3): disabled-account login terminal (403).
 	"ACCOUNT_DISABLED",
 	// F-02 (GOAL-004): data-transfer codes.
-	"RESOURCE_NOT_FOUND", "INVALID_CSV", "INVALID_IMPORT_BODY",
+	"RESOURCE_NOT_FOUND", "INVALID_CSV", "INVALID_IMPORT_BODY", "INVALID_EXPORT_LIMIT",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

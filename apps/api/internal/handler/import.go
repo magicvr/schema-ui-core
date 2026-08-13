@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -30,6 +31,7 @@ const maxImportBytes = 2 << 20
 // ImportUsersRepository is the users write surface used by the import endpoint.
 type ImportUsersRepository interface {
 	CreateUserManagement(authsession.User) (*authsession.User, error)
+	PermissionsForRoles([]string) ([]string, error)
 }
 
 // ImportRoutes returns the import route contributions (admin.data-transfer).
@@ -93,6 +95,10 @@ func (h *importHandler) importResource() http.Handler {
 		user, _ := auth.IdentityFrom(r.Context())
 		// The upload field value is url-preferred (/api/files/{id}); normalize
 		// both forms to the stored id.
+		if user.ID == "" {
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
+			return
+		}
 		fileID := strings.TrimSpace(body.FileID)
 		if strings.HasPrefix(fileID, "/api/files/") {
 			fileID = strings.TrimPrefix(fileID, "/api/files/")
@@ -121,7 +127,7 @@ func (h *importHandler) importResource() http.Handler {
 			return
 		}
 
-		result, err := h.importUsersCSV(raw)
+		result, err := h.importUsersCSV(raw, user)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CSV", "could not parse CSV: "+err.Error())
 			return
@@ -134,11 +140,16 @@ func (h *importHandler) importResource() http.Handler {
 	})
 }
 
-// importUsersCSV parses and applies a users CSV. Returns a structured result;
-// a structural parse failure (bad header, unreadable rows) is returned as a
-// hard error so the caller can fail the whole request with INVALID_CSV.
-func (h *importHandler) importUsersCSV(raw []byte) (importResult, error) {
-	reader := csv.NewReader(strings.NewReader(string(raw)))
+// importUsersCSV parses and applies a users CSV. Returns a structured result.
+// A missing/unreadable header row is a hard error (INVALID_CSV); a malformed
+// data row is collected into the per-row error report and parsing stops (the
+// remainder of the file is unrecoverable) — applied rows still commit and are
+// always audited (F-002).
+func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importResult, error) {
+	body := string(raw)
+	// F-003: strip a UTF-8 BOM (Excel "UTF-8 CSV" writes one) before parsing.
+	body = strings.TrimPrefix(body, "\uFEFF")
+	reader := csv.NewReader(strings.NewReader(body))
 	reader.FieldsPerRecord = -1 // header-driven; tolerate ragged rows
 	header, err := reader.Read()
 	if err != nil {
@@ -169,8 +180,14 @@ func (h *importHandler) importUsersCSV(raw []byte) (importResult, error) {
 			break
 		}
 		if err != nil {
-			// A malformed row aborts the whole file (structural failure).
-			return importResult{}, fmt.Errorf("row %d: %w", rowNumber, err)
+			// F-002: a malformed row is a per-row failure — report it, stop
+			// parsing (the rest of the file is unrecoverable), keep applied
+			// rows committed and audited.
+			rowNumber++
+			result.Total++
+			result.Failed++
+			result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: "malformed CSV row: " + err.Error()})
+			break
 		}
 		rowNumber++
 		result.Total++
@@ -206,6 +223,19 @@ func (h *importHandler) importUsersCSV(raw []byte) (importResult, error) {
 				continue
 			}
 		}
+		// F-001 (A-003 independent): the import write path must enforce the
+		// same role-assignment delegation boundary as POST /api/users —
+		// roles.assign permission, admin-only admin assignment, and no
+		// assignment of roles carrying permissions the actor does not hold.
+		// Violations are per-row failures (no-rollback semantics), not a whole
+		// request 403.
+		if len(roles) > 0 {
+			if message := importRoleAssignmentError(h.repository, actor, roles); message != "" {
+				result.Failed++
+				result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: message})
+				continue
+			}
+		}
 		_, createErr := h.repository.CreateUserManagement(authsession.User{
 			ID:           newUserIDValue(),
 			Username:     row["username"],
@@ -230,6 +260,33 @@ func (h *importHandler) importUsersCSV(raw []byte) (importResult, error) {
 		result.Applied++
 	}
 	return result, nil
+}
+
+// importRoleAssignmentError mirrors usersEntity.authorizeRoleAssignment for
+// the import path (F-001). Returns "" when the assignment is allowed.
+func importRoleAssignmentError(repo ImportUsersRepository, actor account.User, roles []string) string {
+	if !slices.Contains(actor.Permissions, "roles.assign") {
+		return "role assignment forbidden: permission required: roles.assign"
+	}
+	if slices.Contains(roles, "admin") && !slices.Contains(actor.Roles, "admin") {
+		return "role assignment forbidden: only an admin may assign the admin role"
+	}
+	targetPermissions, err := repo.PermissionsForRoles(roles)
+	if err != nil {
+		// Unknown role keys are reported by CreateUserManagement as
+		// INVALID_ROLE_REF row errors — skip delegation for invalid roles so
+		// the row message stays precise (F-001 keeps valid-role delegation).
+		if errors.Is(err, authsession.ErrInvalidRole) {
+			return ""
+		}
+		return "role assignment forbidden: could not resolve target role permissions"
+	}
+	for _, permission := range targetPermissions {
+		if !slices.Contains(actor.Permissions, permission) {
+			return "role assignment forbidden: cannot assign a role with permissions the actor does not hold"
+		}
+	}
+	return ""
 }
 
 func validateImportUser(row map[string]string) string {

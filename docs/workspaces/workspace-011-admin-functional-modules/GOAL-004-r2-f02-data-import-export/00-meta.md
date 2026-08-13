@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r2-f02-data-import-export
 title: R2-F02 · 数据导入/导出（schema 驱动 · 共享能力）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.3.0
-progress: 4/5
+version: 0.4.0
+progress: 5/5
 ---
 
 # GOAL 004-r2-f02-data-import-export · 数据导入/导出（schema 驱动 
@@ -28,7 +28,7 @@ progress: 4/5
 - [x] **S2 · 实现**：实现：共享服务 + 导出/导入流程 + 页面（导出按钮、导入向导/错误报告）+ 测试（E-003 · 39a1671）
 - [x] **S3 · 验证**：验证：单元/集成 + 代表资源（users/roles）实测 + 全量回归（E-003 · go 全绿 + web 893/893 + 冒烟）
 - [x] **S4 · go 影响判定 + 自审**：go 影响判定 + self 审计（D-003 无影响不暂挂；A-002 pass）
-- [ ] **S5 · 关门**：关门：全部 required 闭合 + 关门审计 + goal-tree 同步
+- [x] **S5 · 关门**：关门：全部 required 闭合 + 关门审计（A-003 conditional → F-001~F-009 处置）+ goal-tree 同步（E-004 · 2026-08-14）
 
 progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 
