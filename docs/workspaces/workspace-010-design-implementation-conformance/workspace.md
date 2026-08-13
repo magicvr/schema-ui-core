@@ -10,8 +10,8 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-08-13
-version: 0.3.0
+updated: 2026-08-14
+version: 0.4.0
 parent: null
 ---
 
@@ -49,6 +49,8 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W2 | GOAL-003-demo-profile | **done**（6/6 · 2026-08-11 关门；go 无影响不暂挂） |
 | W3 | GOAL-004-w3-schema-host-protocol-conformance | **done**（6/6 · 2026-08-13 关门；S6 cross 审计 A-007/A-008，BLOCKING 清零；用户 P-004 裁决 account-locked 实现生产源；go 无影响不暂挂） |
 | W4 | GOAL-005-w4-long-content-presentation | **done**（6/6 · 2026-08-13 关门；S6 cross 审计 A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004 浏览器点验；go 无影响不暂挂） |
+| W5 | GOAL-006-w5-recordview-declared-fields | **done**（4/4 · 2026-08-14 关门；recordView 声明字段 + fail-open + dev 卫生；HEAD 回归 V-001～V-006 绿；**go 无影响不暂挂**；A-001 跨门禁 F-1 移交 W6） |
+| W6 | GOAL-007-w6-container-smoke-reproducibility | **done**（3/3 · 2026-08-14 关门；F-1a claim GIT_COMMIT 接线、F-1b nginx upstream 作用域、F-1c SM-007 页面集；V-007 exit 8 + V-008 exit 0 完整绿；**go 恢复可消费**） |
 
 ## 固定共享资料引用
 

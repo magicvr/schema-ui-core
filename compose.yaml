@@ -46,6 +46,8 @@ services:
       # Repo-root context so the build can reach docs/schemas (Vite @schemas alias).
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
     image: schema-ui-core-web:local
     depends_on:
       api:

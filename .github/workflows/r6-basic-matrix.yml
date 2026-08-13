@@ -114,6 +114,7 @@ jobs:
       ADMIN_INITIAL_PASSWORD: ci-admin
       SMOKE_ISOLATION_ID: ci-container-${{ matrix.profile }}
       SMOKE_EXPECTED_PROFILE: ${{ matrix.profile }}
+      GIT_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

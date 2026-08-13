@@ -218,14 +218,24 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
     || [ "$(header_value "${WEB_BASE_URL}/.well-known/schema-ui/app-manifest.json" "X-Schema-UI-Manifest-Source")" != "api" ]; then
     fail_check "007" "Manifest source header 不是 api" 5
   fi
-  for page_id in overview users roles; do
+  # Page sets per profile (post W1/VP-010 GOAL-002: dev.examples split out of
+  # production profiles; demo re-adds the examples surface):
+  #   mvp   = users, roles
+  #   admin = users, roles, settings, activity
+  #   demo  = overview, users, roles (+ examples surface)
+  case "$SMOKE_EXPECTED_PROFILE" in
+    admin) required_pages="users roles settings activity" ;;
+    demo)  required_pages="overview users roles" ;;
+    *)     required_pages="users roles" ;;
+  esac
+  for page_id in $required_pages; do
     if ! json_has_page "$api_manifest" "$page_id"; then
       fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 缺少 ${page_id} 页面" 5
     fi
   done
   optional_status=200
   protected_status=401
-  if [ "$SMOKE_EXPECTED_PROFILE" = "mvp" ]; then
+  if [ "$SMOKE_EXPECTED_PROFILE" != "admin" ]; then
     optional_status=404
     protected_status=404
   fi
@@ -235,7 +245,7 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
         fail_check "007" "admin Manifest 缺少 ${page_id} 页面" 5
       fi
     elif json_has_page "$api_manifest" "$page_id"; then
-      fail_check "007" "mvp Manifest 不应包含 ${page_id} 页面" 5
+      fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 不应包含 ${page_id} 页面" 5
     fi
     if [ "$(http_status "${API_BASE_URL}/api/schema/${page_id}")" != "$optional_status" ]; then
       fail_check "007" "${page_id} Schema 状态不符合 ${SMOKE_EXPECTED_PROFILE} profile" 5

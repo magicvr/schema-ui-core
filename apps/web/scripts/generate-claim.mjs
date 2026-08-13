@@ -46,7 +46,10 @@ const SUITES = [
 ];
 
 const packageJson = JSON.parse(readFileSync(join(WEB_ROOT, "package.json"), "utf8"));
-const buildId = `git:${execFileSync("git", ["rev-parse", "HEAD"], {
+// Container builds (Dockerfile) exclude .git from the build context, so the
+// GIT_COMMIT build arg is the source of truth there; local runs fall back to git.
+const gitCommit = (process.env.GIT_COMMIT || "").trim();
+const buildId = `git:${gitCommit || execFileSync("git", ["rev-parse", "HEAD"], {
   cwd: WEB_ROOT,
   encoding: "utf8",
 }).trim()}`;
