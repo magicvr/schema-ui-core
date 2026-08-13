@@ -34,7 +34,15 @@ const SCHEMA_FILES = [
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];
-const KEY_PROPS = ["labelKey", "textKey", "contentKey", "submitLabelKey", "confirmKey", "placeholderKey"];
+const KEY_PROPS = [
+  "labelKey",
+  "textKey",
+  "contentKey",
+  "submitLabelKey",
+  "confirmKey",
+  "placeholderKey",
+  "titleKey",
+];
 
 function loadCatalogs() {
   const en = JSON.parse(readFileSync(join(__dir, "messages/en-US.json"), "utf8")) as Record<string, string>;
@@ -58,6 +66,9 @@ function collectTextAndKeys(doc: unknown): Array<{ path: string; text: string; k
         if (typeof v === "string" && TEXT_PROPS.includes(k)) {
           const key = KEY_PROPS.map((kp) => record[kp]).find((entry): entry is string => typeof entry === "string" && entry !== "");
           out.push({ path: childPath, text: v, key });
+        }
+        if (typeof v === "string" && KEY_PROPS.includes(k) && v !== "") {
+          out.push({ path: childPath, text: "", key: v });
         }
       }
     }

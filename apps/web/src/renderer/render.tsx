@@ -1460,14 +1460,40 @@ function TextView({ node }: { node: RenderTextNode }) {
  * - With record: desktop right Drawer + mobile full-height Sheet (not centered Modal)
  * Static `props.record` still uses the same chrome so fixtures remain observable.
  */
+function formatRecordViewValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return String(value);
+}
+
 function RecordView({ node }: { node: RenderRecordViewNode }) {
   const crud = useSchemaCrud();
   const t = useTranslate();
   const staticRecord = node.props?.record;
   const hasStatic = isRecord(staticRecord);
   const record = hasStatic ? staticRecord : (crud?.selectedRow ?? null);
-  const entries = isRecord(record) ? Object.entries(record) : [];
-  if (entries.length === 0) {
+  const declaredFields = node.props?.fields ?? [];
+  const rows =
+    record === null
+      ? []
+      : declaredFields.length > 0
+        ? declaredFields.map((field) => ({
+            key: field.key,
+            label: resolveTextProp(
+              field as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              field.key,
+            ),
+            value: record[field.key],
+          }))
+        : Object.entries(record).map(([key, value]) => ({ key, label: key, value }));
+  if (rows.length === 0) {
     return (
       <p
         data-record-view="empty"
@@ -1477,6 +1503,14 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
       </p>
     );
   }
+
+  const title = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "titleKey",
+    "title",
+    t,
+    t("feedback.recordDetails"),
+  );
 
   const canClose = !hasStatic && crud !== null;
   const onClose = () => {
@@ -1501,7 +1535,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
         data-record-view-mode={canClose ? "drawer" : "panel"}
         role="dialog"
         aria-modal={canClose ? true : undefined}
-        aria-label={t("feedback.recordDetails")}
+        aria-label={title}
         className={
           canClose
             ? // Desktop (md+): right Drawer; mobile (<768, D-004): full-height Sheet
@@ -1511,7 +1545,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold tracking-tight text-foreground">
-            {t("feedback.recordDetails")}
+            {title}
           </h2>
           {canClose ? (
             <button
@@ -1525,13 +1559,13 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
           ) : null}
         </div>
         <dl className="flex-1 space-y-3 overflow-y-auto p-4">
-          {entries.map(([key, value]) => (
-            <div key={key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                {key}
+          {rows.map((row) => (
+            <div key={row.key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
+              <dt className="text-xs font-medium text-muted-foreground">
+                {row.label}
               </dt>
               <dd className="break-words text-foreground">
-                {Array.isArray(value) ? value.join(", ") : String(value)}
+                {formatRecordViewValue(row.value)}
               </dd>
             </div>
           ))}

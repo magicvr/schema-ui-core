@@ -375,7 +375,21 @@
       {
         "type": "recordView",
         "id": "role-detail",
-        "props": {}
+        "props": {
+          "title": "Role details",
+          "titleKey": "schema.roles.detail.title",
+          "fields": [
+            { "key": "id", "label": "ID", "labelKey": "schema.roles.column.id" },
+            { "key": "key", "label": "Key", "labelKey": "schema.roles.column.key" },
+            { "key": "name", "label": "Name", "labelKey": "schema.roles.column.name" },
+            { "key": "permissions", "label": "Permissions", "labelKey": "schema.roles.column.permissions" },
+            { "key": "menuItems", "label": "Menus", "labelKey": "schema.roles.column.menus" },
+            { "key": "assignedUsers", "label": "Users", "labelKey": "schema.roles.column.users" },
+            { "key": "system", "label": "System", "labelKey": "schema.roles.column.system" },
+            { "key": "createdAt", "label": "Created", "labelKey": "schema.roles.column.created" },
+            { "key": "updatedAt", "label": "Updated", "labelKey": "schema.roles.column.updated" }
+          ]
+        }
       }
     ]
   }

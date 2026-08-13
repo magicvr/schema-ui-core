@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   collectFieldIds,
   isWhitelistedNodeType,
+  parseRecordViewFields,
   parseRenderNode,
   resolveActionGate,
   resolveFormReactions,
   resolveResponsePath,
   tableActionGate,
   type RenderFormNode,
+  type RenderRecordViewNode,
 } from "@/renderer/render";
 
 const CONTEXT = { user: { roles: ["admin"] }, features: { audit: true } };
@@ -109,6 +111,37 @@ describe("parseRenderNode", () => {
       type: "chart",
       props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/users" },
     });
+  });
+
+  it("keeps recordView title/titleKey/fields and drops malformed field rows", () => {
+    const node = parseRenderNode(
+      {
+        type: "recordView",
+        id: "user-detail",
+        props: {
+          title: "User details",
+          titleKey: "schema.users.detail.title",
+          fields: [
+            { key: "username", label: "Username", labelKey: "schema.users.column.username" },
+            { key: "", label: "skip" },
+            { label: "no-key" },
+          ],
+        },
+      },
+      "body",
+    ) as RenderRecordViewNode;
+    expect(node).toMatchObject({
+      type: "recordView",
+      id: "user-detail",
+      props: {
+        title: "User details",
+        titleKey: "schema.users.detail.title",
+        fields: [
+          { key: "username", label: "Username", labelKey: "schema.users.column.username" },
+        ],
+      },
+    });
+    expect(parseRecordViewFields([{ key: "id" }, null, "x"])).toEqual([{ key: "id" }]);
   });
 
   it("drops non-registry props from statCard/chart nodes (fail-closed on shape)", () => {

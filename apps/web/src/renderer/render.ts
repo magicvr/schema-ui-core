@@ -130,11 +130,24 @@ export interface RenderTableNode {
   children?: RenderNode[];
 }
 
+/** Read-only field row on a recordView (registry `fields[]` since 2.4). */
+export interface RenderRecordViewField {
+  key: string;
+  label?: string;
+  labelKey?: string;
+}
+
 export interface RenderRecordViewNode {
   type: "recordView";
   id?: string;
   props?: {
     record?: Record<string, unknown>;
+    /** Detail panel heading (registry `title` since 2.4). */
+    title?: string;
+    /** i18n key resolved before `title`. */
+    titleKey?: string;
+    /** Declared display fields; when set, only these rows render. */
+    fields?: RenderRecordViewField[];
   };
   children?: RenderNode[];
 }
@@ -271,6 +284,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Keeps only well-formed recordView field rows (key required). */
+export function parseRecordViewFields(raw: unknown): RenderRecordViewField[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const fields: RenderRecordViewField[] = [];
+  for (const item of raw) {
+    if (!isRecord(item) || typeof item.key !== "string" || item.key === "") {
+      continue;
+    }
+    fields.push({
+      key: item.key,
+      ...(typeof item.label === "string" ? { label: item.label } : {}),
+      ...(typeof item.labelKey === "string" ? { labelKey: item.labelKey } : {}),
+    });
+  }
+  return fields;
+}
+
 export function isWhitelistedNodeType(type: string): type is RenderNodeType {
   return WHITELISTED_NODE_TYPES.has(type as RenderNodeType);
 }
@@ -364,13 +396,16 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
     } as RenderTextNode;
   }
   if (value.type === "recordView") {
+    const props = isRecord(value.props) ? value.props : {};
+    const fields = parseRecordViewFields(props.fields);
     return {
       type: "recordView",
       ...(value.id === undefined ? {} : { id: value.id }),
       props: {
-        ...(isRecord(value.props) && isRecord(value.props.record)
-          ? { record: value.props.record }
-          : {}),
+        ...(isRecord(props.record) ? { record: props.record } : {}),
+        ...(typeof props.title === "string" ? { title: props.title } : {}),
+        ...(typeof props.titleKey === "string" ? { titleKey: props.titleKey } : {}),
+        ...(fields.length > 0 ? { fields } : {}),
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderRecordViewNode;

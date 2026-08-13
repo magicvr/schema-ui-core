@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/i18n/runtime";
 import { RenderPage } from "@/renderer/render.tsx";
 import type { RenderMeta, RenderPageDocument } from "@/renderer/render";
 
@@ -475,6 +476,52 @@ describe("RenderPage form node with reactions", () => {
     expect(container.textContent).toContain("rec-1");
     expect(container.textContent).toContain("Approve");
     expect(container.textContent).toContain("tab one");
+  });
+});
+
+describe("RenderPage recordView title and field labels", () => {
+  it("resolves titleKey and field labelKey under zh-CN", async () => {
+    const pageDoc = displayDocument({
+      type: "recordView",
+      id: "user-detail",
+      props: {
+        title: "User details",
+        titleKey: "schema.users.detail.title",
+        record: { id: "usr-1", username: "alice", name: "Alice" },
+        fields: [
+          { key: "username", label: "Username", labelKey: "schema.users.column.username" },
+          { key: "name", label: "Name", labelKey: "schema.users.column.name" },
+        ],
+      },
+    });
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <I18nProvider stored="zh-CN" browserLanguages={["en-US"]}>
+          <RenderPage document={pageDoc} context={{}} />
+        </I18nProvider>,
+      );
+    });
+    const panel = container.querySelector('[data-record-view="panel"]');
+    expect(panel?.getAttribute("aria-label")).toBe("用户详情");
+    expect(panel?.querySelector("h2")?.textContent).toBe("用户详情");
+    const labels = [...(panel?.querySelectorAll("dt") ?? [])].map((el) => el.textContent);
+    expect(labels).toEqual(["用户名", "姓名"]);
+    expect(labels).not.toContain("username");
+  });
+
+  it("falls back to Record details and raw keys when title/fields are absent", async () => {
+    const pageDoc = displayDocument({
+      type: "recordView",
+      props: { record: { username: "alice" } },
+    });
+    const container = await renderDocument(pageDoc, {});
+    const panel = container.querySelector('[data-record-view="panel"]');
+    expect(panel?.getAttribute("aria-label")).toBe("Record details");
+    expect(panel?.querySelector("dt")?.textContent).toBe("username");
   });
 });
 

@@ -303,6 +303,43 @@ describe("S2 · schema key resolution (C3)", () => {
     expect(text).toContain("创建用户");
   });
 
+  it("resolves user recordView title and field labels under zh-CN", async () => {
+    const documents = { users: usersSchemaDocument() };
+    const container = await renderAt(
+      "/users",
+      shell(
+        <App
+          manifest={adminManifest()}
+          navigationContext={adminContext()}
+          schemaFetcher={fetcherFor(documents)}
+          resourceFetcher={fetcherFor(documents)}
+        />,
+        "zh-CN",
+      ),
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    const nameCells = Array.from(container.querySelectorAll("td")).filter((td) =>
+      td.textContent?.includes("Alice"),
+    );
+    expect(nameCells.length).toBeGreaterThan(0);
+    await act(async () => {
+      nameCells[0]!.closest("tr")?.click();
+    });
+    const panel = container.querySelector('[data-record-view="panel"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.getAttribute("aria-label")).toBe("用户详情");
+    expect(panel?.querySelector("h2")?.textContent).toBe("用户详情");
+    const labels = [...(panel?.querySelectorAll("dt") ?? [])].map((el) => el.textContent);
+    expect(labels).toContain("用户名");
+    expect(labels).toContain("姓名");
+    expect(labels).toContain("创建时间");
+    expect(labels).not.toContain("username");
+    expect(labels).not.toContain("updatedAt");
+  });
+
   it("resolves delete confirm through confirmKey under zh-CN", async () => {
     const documents = { users: usersSchemaDocument() };
     const container = await renderAt(
