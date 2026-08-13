@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL 003-r2-f01-dashboard · 仪表盘/控制台（生产 Profile home）
@@ -24,7 +24,7 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：方案冻结：必办-1（协议对照 grid-dashboard / 上游样例）+ 必办-3（home 装配内容扩展声明：贡献机制 + adminFunctionalOrder）+ 指标数据源设计；方案级 self 审视
+- [x] **S1 · 方案冻结**：方案冻结：必办-1（协议对照 grid-dashboard / 上游样例）+ 必办-3（home 装配内容扩展声明：贡献机制 + adminFunctionalOrder）+ 指标数据源设计；方案级 self 审视（D-002 / A-001，2026-08-14）
 - [ ] **S2 · 实现**：实现：模块 + schema + 渲染（指标卡片/概览）+ 范例页与测试
 - [ ] **S3 · 验证**：验证：单元/集成 + 代表页 + 全量回归（V-001～V-005）+ e2e 按可行性
 - [ ] **S4 · go 影响判定 + 自审**：go 影响判定（无影响/不暂挂 或 暂挂留痕）+ self 审计
@@ -40,9 +40,9 @@ self（呈现层 + Profile 内容扩展；协议对照在 S1 留痕）；若涉�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 协议面（v2.8.0）对 dashboard 是否有语义定义？ | S1 方案 | 核对 protocol-inventory `2.5 grid-dashboard、上游样例 | open |
-| I-002 | required | home 装配方案：admin.dashboard 进 mvp/admin 默认集 + adminFunctionalOrder 更新 | S1 方案 | 对照模块贡献机制（playbook M1–M6） | open |
-| I-003 | non-blocking | 指标数据源（API 聚合 vs 静态配置 vs 渲染器契约） | S2 实现 | 方案冻结时定默认 | open |
+| I-001 | required | 协议面（v2.8.0）对 dashboard 是否有语义定义？ | S1 方案 | 核对 protocol-inventory `2.5 grid-dashboard、上游样例 | **closed**（D-002 §2） |
+| I-002 | required | home 装配方案：admin.dashboard 进 mvp/admin 默认集 + adminFunctionalOrder 更新 | S1 方案 | 对照模块贡献机制（playbook M1–M6） | **closed**（D-002 §3） |
+| I-003 | non-blocking | 指标数据源（API 聚合 vs 静态配置 vs 渲染器契约） | S2 实现 | 方案冻结时定默认 | **closed**（D-002 §1：既有端点 envelope） |
 
 ## 父目标
 
