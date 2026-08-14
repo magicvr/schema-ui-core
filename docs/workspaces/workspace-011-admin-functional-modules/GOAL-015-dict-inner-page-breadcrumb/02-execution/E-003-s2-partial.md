@@ -34,6 +34,12 @@ version: 1.0.0
 - 条目页 dataSource 过滤（P-2 queryMapping 未落地）。
 - 表单 dictKey 只读显示（recordSource/route query 注入）。
 
+## 面包屑修正：纯路由栈（bafa6fa）
+
+- 原 resolveBreadcrumbTrail 依赖 manifest 页面 breadcrumbParent 键——但 parsePages 的 ensureKeys 白名单会拒绝未知键（UNKNOWN_MANIFEST_FIELD），且 page.schema.json additionalProperties:false → breadcrumbParent 本身需要协议增补。
+- 修正为**纯路由栈**（用户确认方案）：App 维护 visitStack（onNavigate 推入、popstate 截断）；trail 从栈推导（去重 + 上限 2 祖先 + 旧先新后）；Breadcrumbs 支持 showBack（栈非空时显示 ← 返回，history.back()）。
+- 无任何 manifest/协议依赖；测试 5 项（空栈/祖先链/未知路径跳过/去重/上限）；全量 web 919/919。
+
 ## 协议门禁更新 2（P-3 表单只读登记 + 先行撤销）
 
 - 2026-08-14：用户通知上游将增补**表单字段 readonly/disabled 协议** → 登记为 I-006 门禁（P-3）。
