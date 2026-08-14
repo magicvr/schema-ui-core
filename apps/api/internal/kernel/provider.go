@@ -394,6 +394,8 @@ func sortPermissions(perms []PermissionContribution) {
 }
 
 // DefaultNavigationOrder is the product-frozen admin navigation ordering
+// (W8 follow-up 2026-08-14: menu_account moved before menu_settings — the top
+// bar user slot renders 个人中心 / 设置 / 退出登录 left-to-right).
 // (GOAL-013 D-002 §2, user-confirmed 2026-08-14): Dashboard, Users, Roles,
 // Settings, Activity, Account, Notifications, File library, Data dictionary,
 // System monitoring, Scheduled tasks, Recycle bin. Maintainers extend this
@@ -402,9 +404,9 @@ var DefaultNavigationOrder = []string{
 	"menu_dashboard",
 	"menu_users",
 	"menu_roles",
-	"menu_settings",
-	"menu_activity",
 	"menu_account",
+	"menu_activity",
+	"menu_settings",
 	"menu_notifications",
 	"menu_files",
 	"menu_dictionary",

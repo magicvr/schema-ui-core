@@ -66,7 +66,7 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // admin.settings security section.
 // S-12 (GOAL-012): admin fixture extended with the recycle-bin page + nav.
 const STATIC_MANIFEST_SHA256 =
-  "cd7e5df7440e43894e98f2ba4ee14405a9d0511937f2ff382bf242e58dcec8d2";
+  "e3ec71313d9b8f5fbdfceb0435a906c5b54d565cba0e073b85e9bf17ea16896c";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

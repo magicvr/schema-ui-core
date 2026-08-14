@@ -697,6 +697,7 @@ export function App({
             <NavigationItems items={projection.top} onNavigate={onNavigate} horizontal />
           </nav>
 
+          {/* W8 follow-up: left-to-right = 个人中心 / 设置 / 退出登录 (user nav then signout). */}
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
             {/* Mobile hamburger — visible only on small screens (S3 sub-capability) */}
             <button
@@ -716,6 +717,11 @@ export function App({
                 onViewAll={() => onNavigate("/notifications")}
               />
             ) : null}
+            {projection.user.length > 0 ? (
+              <nav className="hidden items-center gap-1 lg:flex" aria-label="User navigation">
+                <NavigationItems items={projection.user} onNavigate={onNavigate} horizontal />
+              </nav>
+            ) : null}
             {currentUser !== undefined && currentUser !== null ? (
               <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1">
                 <span className="hidden max-w-[10rem] truncate text-xs text-muted-foreground sm:inline">
@@ -726,11 +732,6 @@ export function App({
                   {t("shell.signOut")}
                 </Button>
               </div>
-            ) : null}
-            {projection.user.length > 0 ? (
-              <nav className="hidden items-center gap-1 lg:flex" aria-label="User navigation">
-                <NavigationItems items={projection.user} onNavigate={onNavigate} horizontal />
-              </nav>
             ) : null}
           </div>
         </div>

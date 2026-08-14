@@ -316,15 +316,6 @@
     ],
     "user": [
       {
-        "pageRef": "settings",
-        "label": "Settings",
-        "icon": "settings",
-        "visibleWhen": {
-          "when": "$context.features.menu_settings == true"
-        },
-        "labelKey": "manifest.nav.settings"
-      },
-      {
         "pageRef": "account",
         "label": "Account",
         "icon": "user",
@@ -332,6 +323,15 @@
         "visibleWhen": {
           "when": "$context.features.menu_account == true"
         }
+      },
+      {
+        "pageRef": "settings",
+        "label": "Settings",
+        "icon": "settings",
+        "visibleWhen": {
+          "when": "$context.features.menu_settings == true"
+        },
+        "labelKey": "manifest.nav.settings"
       }
     ]
   }
