@@ -232,6 +232,11 @@
               "label": "Run now",
               "actionRef": "runTask",
               "permissionIntent": "edit",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
               "confirm": "Run this task now?",
               "labelKey": "schema.scheduledTasks.action.run",
               "confirmKey": "schema.scheduledTasks.confirm.run"
@@ -255,6 +260,11 @@
               "label": "Delete",
               "actionRef": "deleteTask",
               "permissionIntent": "delete",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
               "confirm": "Delete this task and its run history?",
               "labelKey": "schema.scheduledTasks.action.delete",
               "confirmKey": "schema.scheduledTasks.confirm.delete"

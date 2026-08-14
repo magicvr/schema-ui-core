@@ -148,6 +148,11 @@
               "label": "Delete",
               "actionRef": "deleteFile",
               "permissionIntent": "delete",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
               "confirm": "Delete this file?",
               "labelKey": "schema.fileLibrary.action.delete",
               "confirmKey": "schema.fileLibrary.confirm.delete"

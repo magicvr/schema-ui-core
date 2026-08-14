@@ -247,6 +247,11 @@
               "label": "Delete",
               "actionRef": "deleteEntry",
               "permissionIntent": "delete",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
               "confirm": "Delete this entry?",
               "labelKey": "schema.dictionaryEntries.action.delete",
               "confirmKey": "schema.dictionaryEntries.confirm.delete"
