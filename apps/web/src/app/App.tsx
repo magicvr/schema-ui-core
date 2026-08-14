@@ -111,6 +111,17 @@ function routeNotFoundFailure(): HostFailure {
  */
 const HOST_OWNED_PATHS = ["/login"];
 
+/**
+ * GOAL-015 semantic breadcrumbs: inner pages reached by row navigation declare
+ * their parent page here (web-shell level, no protocol change). The trail is
+ * hierarchy, not visit history (user ruling 2026-08-14): 首页 => 一级页 => ...
+ * => n级内页, rooted at the manifest homePageRef.
+ */
+const BREADCRUMB_PAGE_PARENTS: Record<string, string> = {
+  "dictionary-entries": "data-dictionary",
+  "task-runs": "scheduled-tasks",
+};
+
 // Parses the current URL's query string into a plain record; deep-linked query
 // parameters reach $context.route.query.* bindings through the render context.
 function parseLocationQuery(): Record<string, string> {
@@ -356,7 +367,6 @@ function PageSurface({
   navigationContext,
   schemaFetcher,
   resourceFetcher,
-  visitStack,
 }: {
   manifest: AppManifest;
   path: string;
@@ -365,8 +375,6 @@ function PageSurface({
   navigationContext: NavigationContext;
   schemaFetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
-  /** GOAL-015: session route stack (breadcrumb ancestors). */
-  visitStack: string[];
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
@@ -418,28 +426,45 @@ function PageSurface({
   const pageTitle =
     resolveTextProp(route.page as unknown as Record<string, unknown>, "titleKey", "title", t) ??
     route.page.pageId;
-  // GOAL-015: breadcrumb trail derived from the session route stack — no
-  // manifest/protocol dependency (user-confirmed route-stack approach).
+  // GOAL-015: SEMANTIC breadcrumb trail — the page's place in the manifest
+  // navigation tree plus declared parents for inner pages (user ruling
+  // 2026-08-14: hierarchy, not visit history).
   const trail = resolveBreadcrumbTrail(
     manifest.pages as unknown as Parameters<typeof resolveBreadcrumbTrail>[0],
     route.page as unknown as Parameters<typeof resolveBreadcrumbTrail>[1],
     t,
-    visitStack,
+    {
+      navigation: manifest.navigation,
+      parents: BREADCRUMB_PAGE_PARENTS,
+      homePageId: manifest.app.homePageRef,
+    },
   );
+  // Semantic back: the nearest ancestor page excluding the home root
+  // (group labels are not pages; 首页 is reachable via the trail itself).
+  const backRoute = [...trail]
+    .reverse()
+    .find(
+      (entry) =>
+        !entry.current &&
+        entry.route !== "" &&
+        entry.pageId !== manifest.app.homePageRef,
+    )?.route;
   return (
     <section className="w-full min-w-0 space-y-8" aria-labelledby="page-title">
       <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
-        <div className="min-w-0 flex-1 space-y-2">
+        <div className="min-w-0 flex-1">
           <Breadcrumbs
             entries={trail}
             onNavigate={onNavigate}
-            onBack={() => window.history.back()}
-            showBack={trail.length > 1}
+            onBack={() => {
+              if (backRoute !== undefined) {
+                onNavigate(backRoute);
+              }
+            }}
+            showBack={backRoute !== undefined}
           />
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {t("shell.adminWorkspace")}
-          </p>
-          <h1 id="page-title" tabIndex={-1} className="truncate text-3xl font-semibold tracking-tight outline-none">
+          {/* 10px breathing room between the breadcrumb and the page title. */}
+          <h1 id="page-title" tabIndex={-1} className="mt-2.5 truncate text-3xl font-semibold tracking-tight outline-none">
             {pageTitle}
           </h1>
         </div>
@@ -484,10 +509,6 @@ export function App({
   const [routeQuery, setRouteQuery] = useState<Record<string, string>>(() =>
     parseLocationQuery(),
   );
-  // GOAL-015: route stack for breadcrumbs (user-confirmed approach) — records
-  // the paths visited this session so inner pages can show an ancestor trail
-  // and a back button without any manifest/protocol change.
-  const [visitStack, setVisitStack] = useState<string[]>([]);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
@@ -518,18 +539,6 @@ export function App({
     };
   }, [brandingProp]);
 
-  // GOAL-015: seed the breadcrumb stack with the initial route so the
-  // current page always appears as a trail entry from first paint.
-  const initialPathRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (initialPathRef.current === null) {
-      initialPathRef.current = stripPathQuery(currentLocationPath());
-      setVisitStack((prev) =>
-        prev.length === 0 ? [initialPathRef.current as string] : prev,
-      );
-    }
-  }, []);
-
   useEffect(() => {
     const handlePopState = () => {
       const requested = currentLocationPath();
@@ -540,12 +549,6 @@ export function App({
       const resolved = initial?.path ?? requested;
       setPath(resolved);
       setRouteQuery(initial?.query ?? parseLocationQuery());
-      // Back navigation truncates the breadcrumb stack to the current path.
-      setVisitStack((prev) => {
-        const idx = prev.lastIndexOf(resolved);
-        if (idx >= 0) return prev.slice(0, idx + 1);
-        return [...prev.filter((p) => p !== resolved), resolved];
-      });
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -611,11 +614,6 @@ export function App({
     const nextPath = stripPathQuery(currentLocationPath());
     setPath(nextPath);
     setRouteQuery(parseLocationQuery());
-    // Record the previous path as an ancestor for breadcrumbs.
-    setVisitStack((prev) => {
-      const cleanPrev = prev.filter((p) => p !== nextPath);
-      return [...cleanPrev, nextPath];
-    });
     setMobileDrawerOpen(false);
   };
 
@@ -815,7 +813,6 @@ export function App({
               navigationContext={navigationContext}
               schemaFetcher={schemaFetcher}
               resourceFetcher={resourceFetcher}
-              visitStack={visitStack}
             />
           </div>
         </main>

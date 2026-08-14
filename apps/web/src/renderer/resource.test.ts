@@ -342,7 +342,7 @@ describe("fetchResourceList extraQuery (v2.9 ADR-0039)", () => {
       new Response(
         JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10 }),
         { status: 200 },
-      ),
+      )
     ) as typeof fetch;
     await expect(
       fetchResourceList(fetcher, "/api/entries?x=1", {}, "dictKey=order_status"),

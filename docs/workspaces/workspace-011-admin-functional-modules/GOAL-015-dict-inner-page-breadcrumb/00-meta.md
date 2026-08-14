@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.3.0
+version: 0.4.0
 progress: 5/5
 ---
 
@@ -22,6 +22,7 @@ progress: 5/5
 
 - 范围：API 条目 List 增加 dictKey 精确过滤；openEntries 导航带 dictKey query；条目页表单 dictKey 只读（显示类型名/传类型键）；web 面包屑组件（路由栈驱动）+ 返回按钮。
 - **不**改变现有路由协议形状；面包屑为 shell 层 UI（渲染层）。
+- 修订（2026-08-14 关门后）：面包屑改为语义层级（首页 => 一级页 => ... => n级内页，homePageRef 为根），取代路由栈方案（D-004/E-009）。
 
 ## 成功标准与路线图（P-001）
 

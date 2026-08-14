@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-015-dict-inner-page-breadcrumb
@@ -20,3 +20,4 @@ version: 0.4.0
 | E-006 | 2026-08-14 | vendor 重 pin 上游 v2.9.0（81aa1d8）+ 消费侧适配器 2.9 支持 | recorded | `02-execution/E-006-vendor-repin-v29.md` |
 | E-007 | 2026-08-14 | S2 实施：内页路由绑定 + 表单只读（v2.9 协议） | recorded | `02-execution/E-007-s2-implementation.md` |
 | E-008 | 2026-08-14 | S3 验证：内页链路 T-DE-01..05 + 全量回归 945/945 | recorded | `02-execution/E-008-s3-verification.md` |
+| E-009 | 2026-08-14 | 面包屑语义层级 + 视觉重构（D-004，取代路由栈） | recorded | `02-execution/E-009-semantic-breadcrumb.md` |

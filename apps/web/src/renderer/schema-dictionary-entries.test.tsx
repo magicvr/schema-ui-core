@@ -155,10 +155,6 @@ function createEntriesApi(
   return { fetcher, store, calls };
 }
 
-const DICT_WRITER = {
-  user: { id: "u1", roles: ["admin"], permissions: ["dictionary.read", "dictionary.write"] },
-};
-
 // F-007(b): the entries page route is /dictionary-entries/{dictKey} — the
 // render context carries the resolved path params + query (App injects
 // route: {params, query}); deep links without the param fail closed at the

@@ -166,34 +166,31 @@ describe("App shell integration", () => {
   });
 
 
-  // GOAL-015: route-stack breadcrumbs — after navigating into a nested page
-  // the trail shows ancestors and a back button appears; back returns via
-  // history.
-  it("shows breadcrumb trail and back button on nested pages", async () => {
+  // GOAL-015 semantic breadcrumbs (user ruling 2026-08-14): the trail is
+  // 首页 => 一级页 => ... => n级内页 — the home page (manifest homePageRef)
+  // always leads, then nav group labels, then the current page. It is
+  // hierarchy, not visit history: a deep link shows the same trail.
+  it("shows the semantic breadcrumb trail (首页 => 组 => 内页) on nested pages", async () => {
     const container = await renderApp("/");
-    // Home has no trail (single level) and no back button (empty stack).
+    // Home is the root — single level, no trail UI, no back button.
     expect(container.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
 
-    // Navigate home -> catalog -> catalog-detail (three levels).
+    // Deep-link straight into the nested page (no prior visits).
+    window.history.pushState({}, "", "/catalog/42");
     await act(async () => {
-      container.querySelector('a[href="/catalog"]')?.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, button: 0 }),
-      );
-    });
-    await act(async () => {
-      window.history.pushState({}, "", "/catalog/42");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(container.querySelector("h1")?.textContent).toBe("Catalog detail");
 
-    // Trail shows the ancestors (Home, Catalog) plus the current page, and a
-    // back button is present (visitStack non-empty).
+    // Semantic trail: Home (root) / Operations (group label) / Catalog detail.
     const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
     expect(breadcrumb).not.toBeNull();
     expect(breadcrumb?.textContent).toContain("Home");
-    expect(breadcrumb?.textContent).toContain("Catalog");
+    expect(breadcrumb?.textContent).toContain("Operations");
     expect(breadcrumb?.textContent).toContain("Catalog detail");
-    expect(breadcrumb?.textContent).toContain("←");
+    // No routed ancestor besides home (the group label is not a page) → the
+    // compact back button stays hidden; 首页 itself is the clickable root.
+    expect(breadcrumb?.querySelector('button[aria-label]')).toBeNull();
   });
 
 
@@ -210,7 +207,7 @@ describe("App shell integration", () => {
       pages: [
         { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/home" },
         {
-          pageId: "dictionary",
+          pageId: "data-dictionary",
           title: "Data dictionary",
           schemaUrl: "/schema/dictionary",
           route: "/data-dictionary",
@@ -224,12 +221,12 @@ describe("App shell integration", () => {
       ],
       navigation: {
         top: [{ pageRef: "home", label: "Home" }],
-        sidebar: [{ pageRef: "dictionary", label: "Data dictionary" }],
+        sidebar: [{ pageRef: "data-dictionary", label: "Data dictionary" }],
       },
     });
     const dictionaryDoc = {
       meta: {
-        pageId: "dictionary",
+        pageId: "data-dictionary",
         title: "Data dictionary",
         protocolVersion: "2.7",
         requiredCapabilities: ["app.manifest", "app.navigation", "actions.row.navigate"],
@@ -292,7 +289,7 @@ describe("App shell integration", () => {
           pageSize: 10,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+      )
     ) as typeof fetch;
     const container = await renderApp("/", {}, documents, resourceFetcher, manifest);
 
@@ -314,13 +311,18 @@ describe("App shell integration", () => {
     });
     expect(window.location.pathname).toBe("/dictionary-entries/order_status");
     expect(window.location.search).toBe("?dictTypeName=Order%20status");
+    // Semantic trail 首页 => 一级页 => 内页 (independent of how the page was
+    // reached): Home / Data dictionary / Dictionary entries.
     const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
     expect(breadcrumb).not.toBeNull();
     expect(breadcrumb?.textContent).toContain("Home");
     expect(breadcrumb?.textContent).toContain("Data dictionary");
     expect(breadcrumb?.textContent).toContain("Dictionary entries");
-    expect(breadcrumb?.textContent).toContain("←");
-    expect(container.textContent).toContain("Entries body");
+    // The compact circular back button (semantic parent = data-dictionary).
+    const backButton = breadcrumb?.querySelector('button[aria-label]') as HTMLButtonElement | null;
+    expect(backButton).not.toBeNull();
+    await act(async () => backButton?.click());
+    expect(window.location.pathname).toBe("/data-dictionary");
   });
 
 

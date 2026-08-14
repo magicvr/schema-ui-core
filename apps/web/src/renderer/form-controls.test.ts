@@ -324,7 +324,7 @@ describe("validateFieldValues (GOAL-014 D-002 §3)", () => {
 });
 
 describe("checkFormCapabilities · readOnly gate (ADR-0040, since 2.9)", () => {
-  const field = { id: "dictKey", type: "input", readOnly: true };
+  const field: FormControlField = { id: "dictKey", type: "input", readOnly: true };
 
   it("accepts readOnly at protocol 2.9 with form.controls.readonly", () => {
     const errors = checkFormCapabilities(
