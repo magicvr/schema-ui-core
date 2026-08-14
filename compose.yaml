@@ -1,6 +1,11 @@
 # GOAL-008 S2 / I-008-001 §3 — second startup path (Docker Compose one-click).
 # Fork users may choose local two-process or this Compose path.
 #
+# W7 (GOAL-008): the API config authority is configs/config.yaml (YAML with
+# ${VAR} / ${VAR:-default} interpolation); process environment variables always
+# override YAML. Compose therefore injects the runtime-relevant values here and
+# relies on the binary-embedded YAML default for everything else.
+#
 # Secrets are required and fail closed (compose interpolation aborts when unset).
 # Provide them in a repo-root .env (gitignored) or export in the shell:
 #   AUTH_JWT_SECRET=<strong random string>
@@ -27,6 +32,11 @@ services:
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required (fail-closed)}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD is required (fail-closed)}
       AUTH_DEV_SESSION_ENABLED: "false"
+      # Optional upload policy overrides (W7: YAML keys upload.* / env keys
+      # UPLOAD_ALLOWED_TYPES, UPLOAD_MAX_FILES_PER_USER, UPLOAD_MAX_BYTES_PER_USER).
+      # UPLOAD_ALLOWED_TYPES: ${UPLOAD_ALLOWED_TYPES:-}
+      # UPLOAD_MAX_FILES_PER_USER: ${UPLOAD_MAX_FILES_PER_USER:-}
+      # UPLOAD_MAX_BYTES_PER_USER: ${UPLOAD_MAX_BYTES_PER_USER:-}
     volumes:
       - db-data:/app/data
     ports:

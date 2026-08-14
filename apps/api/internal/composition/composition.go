@@ -205,7 +205,10 @@ func newMuxWithExtraProviders(
 	// uploads directory is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id).
 	uploadDir := filepath.Join(filepath.Dir(cfg.DBPath), "uploads")
-	handler.RegisterUpload(mux, a, uploadDir)
+	handler.RegisterUpload(mux, a, uploadDir,
+		handler.WithAllowedTypes(cfg.UploadAllowedTypes),
+		handler.WithUserLimits(cfg.UploadMaxFilesPerUser, cfg.UploadMaxBytesPerUser),
+	)
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.

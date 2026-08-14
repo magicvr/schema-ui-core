@@ -1,0 +1,63 @@
+# schema-ui-core API · built-in default configuration (go:embed fallback).
+#
+# This file is embedded into the binary and used ONLY when no CONFIG_FILE is
+# set and no ./configs/config.yaml exists next to the working directory
+# (e.g. a bare binary deployment). It mirrors the documented development
+# defaults exactly, so behavior is byte-identical to the pre-YAML env-only
+# loader when nothing else is present.
+#
+# Interpolation rules (W7 / GOAL-008 D-002):
+#   ${VAR}           -> fail-closed: startup error when VAR is unset
+#   ${VAR:-default}  -> use "default" when VAR is unset
+# Environment variables, when set, ALWAYS override YAML values (existing
+# env-only deployments keep working with zero migration).
+
+app:
+  name: schema-ui-core-api
+  # development | production | test. Empty keeps the explicit-set requirement
+  # of ValidateProd (APP_ENV must be set explicitly, refusing to guess).
+  env: ""
+  # mvp | admin | demo | custom. custom requires app.modules_enabled.
+  profile: mvp
+  # Optional comma-separated override of the Profile module set.
+  modules_enabled: ""
+
+http:
+  addr: ":25080"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s
+
+log:
+  # debug | info | warn | error
+  level: info
+
+auth:
+  # DEV-safe reference: empty default keeps the documented development signing
+  # key fallback (main.resolveJWTSecret). Production deployments MUST provide
+  # the real secret via env — compose.yaml already fails closed with
+  # ${AUTH_JWT_SECRET:?...}; for a bare YAML deployment set:
+  #   jwt_secret: ${AUTH_JWT_SECRET}
+  # (no :- default) so startup fails closed when the secret is missing.
+  jwt_secret: ${AUTH_JWT_SECRET:-}
+  access_ttl: 15m
+  refresh_ttl: 720h
+  dev_session_enabled: false
+
+db:
+  path: ./data/schema-ui.db
+
+admin:
+  # DEV-safe reference: empty default keeps the documented "admin" dev seed
+  # fallback (main.resolveSeedHash). Production deployments MUST provide the
+  # real password via env — compose.yaml fails closed; for a bare YAML
+  # deployment set:
+  #   initial_password: ${ADMIN_INITIAL_PASSWORD}
+  initial_password: ${ADMIN_INITIAL_PASSWORD:-}
+
+upload:
+  # Comma-separated MIME allow-list; empty = only the hard rejections
+  # (dangerous inline types + active-content markers) apply.
+  allowed_types: ""
+  max_files_per_user: 1000
+  max_bytes_per_user: 268435456

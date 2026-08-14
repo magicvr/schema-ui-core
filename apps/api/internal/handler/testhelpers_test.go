@@ -58,6 +58,10 @@ const (
 	testJWTSecret    = "test-secret"
 )
 
+// testUploadOpts lets tests override the upload policy (W7: config-driven
+// limits) without touching package state; reset by the env cleanup.
+var testUploadOpts []UploadOption
+
 // newAuthTestEnv seeds the admin user and mounts the complete Admin plan (no
 // dev-session fallback).
 func newAuthTestEnv(t *testing.T) *authTestEnv {
@@ -135,7 +139,10 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
-	RegisterUpload(mux, a, uploadDir)
+	RegisterUpload(mux, a, uploadDir, testUploadOpts...)
+	// testUploadOpts is reset after each test so per-test policy overrides
+	// cannot leak into sibling tests.
+	t.Cleanup(func() { testUploadOpts = nil })
 	return &authTestEnv{
 		mux: mux, a: a, st: st,
 		authRepository: authRepository,

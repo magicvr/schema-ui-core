@@ -403,16 +403,11 @@ func TestUploadRequiresFilesWritePermission(t *testing.T) {
 
 // W4 P0-2: the per-user quota bounds a files.write holder's stored objects —
 // a compromised admin cannot pump the disk past the configured cap. A tiny
-// maxUserFiles makes the gate observable without thousands of uploads.
+// maxUserFiles makes the gate observable without thousands of uploads. W7:
+// the limits are injected via RegisterUpload options (config-driven), not
+// package-level env reads.
 func TestUploadPerUserQuota(t *testing.T) {
-	prevFiles := maxUserFiles
-	prevBytes := maxUserBytes
-	maxUserFiles = 2
-	maxUserBytes = 0 // disable byte quota for a focused count check
-	t.Cleanup(func() {
-		maxUserFiles = prevFiles
-		maxUserBytes = prevBytes
-	})
+	testUploadOpts = []UploadOption{WithUserLimits(2, 0)} // disable byte quota for a focused count check
 
 	env := newAuthTestEnv(t)
 	tok := adminToken(t, env)

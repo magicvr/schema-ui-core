@@ -1,8 +1,11 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
@@ -122,3 +125,232 @@ func TestValidateProd(t *testing.T) {
 
 // strongSecret satisfies the production AUTH_JWT_SECRET rule (≥32 chars, mixed).
 const strongSecret = "a9k2m4n6p8q0r2s4t6u8v0w2x4y6z8a9b1c3d5"
+
+// W7 (GOAL-008): YAML authority with env override, interpolation, and
+// fail-closed behavior. These tests write a temp YAML and point CONFIG_FILE
+// at it; process env is cleared/restored per test via t.Setenv.
+
+func writeConfig(t *testing.T, yamlText string) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(p, []byte(yamlText), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CONFIG_FILE", p)
+	return p
+}
+
+func TestLoadYAMLLayer(t *testing.T) {
+	t.Run("CONFIG_FILE with plain values and env override", func(t *testing.T) {
+		y := `app:
+  name: yaml-name
+  env: development
+  profile: mvp
+http:
+  addr: ":9999"
+  read_timeout: 3s
+  write_timeout: 4s
+  idle_timeout: 9s
+log:
+  level: debug
+auth:
+  jwt_secret: yaml-secret
+  access_ttl: 10m
+  refresh_ttl: 48h
+  dev_session_enabled: true
+db:
+  path: /tmp/yaml.db
+admin:
+  initial_password: yaml-admin
+upload:
+  allowed_types: "image/png,text/plain"
+  max_files_per_user: 42
+  max_bytes_per_user: 1048576
+`
+		writeConfig(t, y)
+		// env overrides YAML when set
+		t.Setenv("HTTP_ADDR", ":4321")
+		t.Setenv("UPLOAD_MAX_FILES_PER_USER", "7")
+		t.Setenv("AUTH_DEV_SESSION_ENABLED", "false")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AppName != "yaml-name" {
+			t.Errorf("AppName = %q, want yaml-name", cfg.AppName)
+		}
+		if cfg.AppEnv != "development" {
+			t.Errorf("AppEnv = %q, want development", cfg.AppEnv)
+		}
+		if cfg.HTTPAddr != ":4321" {
+			t.Errorf("HTTPAddr = %q, want env override :4321", cfg.HTTPAddr)
+		}
+		if cfg.ReadTimeout != 3*time.Second {
+			t.Errorf("ReadTimeout = %v, want 3s", cfg.ReadTimeout)
+		}
+		if cfg.LogLevelName != "debug" {
+			t.Errorf("LogLevelName = %q, want debug", cfg.LogLevelName)
+		}
+		if cfg.AuthJWTSecret != "yaml-secret" {
+			t.Errorf("AuthJWTSecret = %q, want yaml-secret", cfg.AuthJWTSecret)
+		}
+		if cfg.AuthAccessTTL != 10*time.Minute {
+			t.Errorf("AuthAccessTTL = %v, want 10m", cfg.AuthAccessTTL)
+		}
+		if cfg.AuthDevSessionEnabled {
+			t.Error("AuthDevSessionEnabled = true, want env override false")
+		}
+		if cfg.DBPath != "/tmp/yaml.db" {
+			t.Errorf("DBPath = %q, want /tmp/yaml.db", cfg.DBPath)
+		}
+		if cfg.UploadAllowedTypes != "image/png,text/plain" {
+			t.Errorf("UploadAllowedTypes = %q", cfg.UploadAllowedTypes)
+		}
+		if cfg.UploadMaxFilesPerUser != 7 {
+			t.Errorf("UploadMaxFilesPerUser = %d, want env override 7", cfg.UploadMaxFilesPerUser)
+		}
+		if cfg.UploadMaxBytesPerUser != 1048576 {
+			t.Errorf("UploadMaxBytesPerUser = %d, want 1048576", cfg.UploadMaxBytesPerUser)
+		}
+		if cfg.ProfileError != nil {
+			t.Fatalf("ProfileError: %v", cfg.ProfileError)
+		}
+		if cfg.ProfileName != "mvp" {
+			t.Errorf("ProfileName = %q, want mvp", cfg.ProfileName)
+		}
+	})
+
+	t.Run("explicit CONFIG_FILE missing fails closed", func(t *testing.T) {
+		t.Setenv("CONFIG_FILE", filepath.Join(t.TempDir(), "nope.yaml"))
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("missing explicit CONFIG_FILE must be a LoadError (fail-closed)")
+		}
+	})
+
+	t.Run("bare env reference without value fails closed", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${MISSING_JWT_W7}
+`
+		writeConfig(t, y)
+		os.Unsetenv("MISSING_JWT_W7")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("bare ${MISSING_JWT_W7} must fail closed")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "MISSING_JWT_W7") {
+			t.Fatalf("LoadError = %v, want mention of MISSING_JWT_W7", cfg.LoadError)
+		}
+	})
+
+	t.Run("default value applies when env unset", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_DEFAULTED:-fallback-secret}
+`
+		writeConfig(t, y)
+		os.Unsetenv("W7_DEFAULTED")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "fallback-secret" {
+			t.Errorf("AuthJWTSecret = %q, want fallback-secret", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("interpolation uses env when set", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_INTERP:-fallback}
+`
+		writeConfig(t, y)
+		t.Setenv("W7_INTERP", "env-wins")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "env-wins" {
+			t.Errorf("AuthJWTSecret = %q, want env-wins", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("unknown YAML keys fail closed", func(t *testing.T) {
+		y := `app:
+  env: development
+  bogus_key: true
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("unknown YAML key must be a LoadError (typos fail loudly)")
+		}
+	})
+
+	t.Run("CONFIG_ENV_FILE supplies secrets without overriding process env", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_ENVFILE_SECRET}
+`
+		writeConfig(t, y)
+		envFile := filepath.Join(t.TempDir(), "secrets.env")
+		if err := os.WriteFile(envFile, []byte("W7_ENVFILE_SECRET=from-file\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("CONFIG_ENV_FILE", envFile)
+		os.Unsetenv("W7_ENVFILE_SECRET")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "from-file" {
+			t.Errorf("AuthJWTSecret = %q, want from-file", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("CONFIG_ENV_FILE never overrides an existing process env", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_ENVFILE_SECRET2}
+`
+		writeConfig(t, y)
+		envFile := filepath.Join(t.TempDir(), "secrets.env")
+		if err := os.WriteFile(envFile, []byte("W7_ENVFILE_SECRET2=from-file\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("CONFIG_ENV_FILE", envFile)
+		t.Setenv("W7_ENVFILE_SECRET2", "process-wins")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "process-wins" {
+			t.Errorf("AuthJWTSecret = %q, want process-wins (process env beats env file)", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("explicit CONFIG_ENV_FILE missing fails closed", func(t *testing.T) {
+		t.Setenv("CONFIG_ENV_FILE", filepath.Join(t.TempDir(), "nope.env"))
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("missing explicit CONFIG_ENV_FILE must be a LoadError (fail-closed)")
+		}
+	})
+
+	t.Run("ValidateProd surfaces LoadError", func(t *testing.T) {
+		t.Setenv("CONFIG_FILE", filepath.Join(t.TempDir(), "nope.yaml"))
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("missing explicit CONFIG_FILE must be a LoadError")
+		}
+		if err := cfg.ValidateProd(); err == nil {
+			t.Fatal("ValidateProd must fail when LoadError is set")
+		}
+	})
+}

@@ -1,18 +1,27 @@
 package config
 
 import (
+	_ "embed"
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
+//go:embed config.default.yaml
+var defaultConfigYAML []byte
+
 // Config is the R2 runtime configuration: HTTP + logging, plus the auth
-// (JWT / refresh / SQLite) and dev-session surface defined by GOAL-005 D-004.
+// (JWT / refresh / SQLite) and dev-session surface defined by GOAL-005 D-004,
+// and the upload surface (W7: UPLOAD_* moved from handler package vars into
+// Config so YAML is the single configuration authority).
 type Config struct {
 	AppName      string
 	AppEnv       string
@@ -29,39 +38,190 @@ type Config struct {
 	AdminInitialPassword  string
 	AuthDevSessionEnabled bool
 
+	UploadAllowedTypes    string
+	UploadMaxFilesPerUser int
+	UploadMaxBytesPerUser int
+
 	ProfileName       string
 	ModulesEnabled    []string
 	ProfileSource     string
 	ProfilePrecedence []string
 	ProfileError      error
+	// LoadError carries a fatal configuration-load failure (missing CONFIG_FILE,
+	// unset ${VAR} without default, invalid YAML). ValidateProd surfaces it so
+	// startup fails closed instead of silently running on fallback values.
+	LoadError error
 }
 
-// Load reads configuration from the environment with safe local defaults.
+// yamlFile mirrors the on-disk config schema (see configs/config.yaml and the
+// embedded config.default.yaml). Only recognized keys are read; unknown keys
+// are rejected by yaml.v3 KnownFields so typos fail loudly.
+type yamlFile struct {
+	App struct {
+		Name           string `yaml:"name"`
+		Env            string `yaml:"env"`
+		Profile        string `yaml:"profile"`
+		ModulesEnabled string `yaml:"modules_enabled"`
+	} `yaml:"app"`
+	HTTP struct {
+		Addr         string `yaml:"addr"`
+		ReadTimeout  string `yaml:"read_timeout"`
+		WriteTimeout string `yaml:"write_timeout"`
+		IdleTimeout  string `yaml:"idle_timeout"`
+	} `yaml:"http"`
+	Log struct {
+		Level string `yaml:"level"`
+	} `yaml:"log"`
+	Auth struct {
+		JWTSecret         string `yaml:"jwt_secret"`
+		AccessTTL         string `yaml:"access_ttl"`
+		RefreshTTL        string `yaml:"refresh_ttl"`
+		DevSessionEnabled bool   `yaml:"dev_session_enabled"`
+	} `yaml:"auth"`
+	DB struct {
+		Path string `yaml:"path"`
+	} `yaml:"db"`
+	Admin struct {
+		InitialPassword string `yaml:"initial_password"`
+	} `yaml:"admin"`
+	Upload struct {
+		AllowedTypes    string `yaml:"allowed_types"`
+		MaxFilesPerUser int    `yaml:"max_files_per_user"`
+		MaxBytesPerUser int    `yaml:"max_bytes_per_user"`
+	} `yaml:"upload"`
+}
+
+// defaultYAMLPath is the operator-editable config file loaded when CONFIG_FILE
+// is not set. Missing is fine (embedded default applies); CONFIG_FILE set but
+// missing is a startup error (fail-closed).
+const defaultYAMLPath = "configs/config.yaml"
+
+// Load reads configuration with safe local defaults. Priority (highest first):
+//  1. process environment variables (already set -> override YAML)
+//  2. CONFIG_FILE YAML (default configs/config.yaml)
+//  3. embedded config.default.yaml (go:embed)
+//
+// YAML values support ${VAR} (fail-closed when unset) and ${VAR:-default}.
+// CONFIG_ENV_FILE (default configs/.env) may supply secret values for the
+// interpolation; it never overrides an already-set process env. Load never
+// returns an error: fatal load failures land in LoadError (and therefore
+// ValidateProd) so existing call sites keep working.
 func Load() *Config {
 	cfg := &Config{
-		AppName:      envOr("APP_NAME", "schema-ui-core-api"),
-		AppEnv:       envOr("APP_ENV", ""),
-		HTTPAddr:     envOr("HTTP_ADDR", ":25080"),
-		ReadTimeout:  durationEnv("HTTP_READ_TIMEOUT", 5*time.Second),
-		WriteTimeout: durationEnv("HTTP_WRITE_TIMEOUT", 10*time.Second),
-		IdleTimeout:  durationEnv("HTTP_IDLE_TIMEOUT", 60*time.Second),
-		LogLevelName: envOr("LOG_LEVEL", "info"),
+		AppName:      "schema-ui-core-api",
+		AppEnv:       "",
+		HTTPAddr:     ":25080",
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+		LogLevelName: "info",
 
-		AuthJWTSecret:         envOr("AUTH_JWT_SECRET", ""),
-		AuthAccessTTL:         durationEnv("AUTH_ACCESS_TTL", 15*time.Minute),
-		AuthRefreshTTL:        durationEnv("AUTH_REFRESH_TTL", 30*24*time.Hour),
-		DBPath:                envOr("DB_PATH", "./data/schema-ui.db"),
-		AdminInitialPassword:  envOr("ADMIN_INITIAL_PASSWORD", ""),
-		AuthDevSessionEnabled: boolEnv("AUTH_DEV_SESSION_ENABLED", false),
-		ProfileName:           envOr("APP_PROFILE", string(kernel.ProfileMVP)),
+		AuthJWTSecret:         "",
+		AuthAccessTTL:         15 * time.Minute,
+		AuthRefreshTTL:        30 * 24 * time.Hour,
+		DBPath:                "./data/schema-ui.db",
+		AdminInitialPassword:  "",
+		AuthDevSessionEnabled: false,
+		UploadMaxFilesPerUser: 1000,
+		UploadMaxBytesPerUser: 256 << 20,
 	}
 
-	explicitModules, err := kernel.ParseModuleList(os.Getenv("APP_MODULES_ENABLED"))
+	// Optional env-file layer for secret values only (dev convenience).
+	if err := loadEnvFile(cfg); err != nil {
+		cfg.LoadError = err
+		return cfg
+	}
+
+	// Pick the YAML source: CONFIG_FILE (explicit -> must exist), default
+	// configs/config.yaml, else the embedded default.
+	var yamlBytes []byte
+	if p := strings.TrimSpace(os.Getenv("CONFIG_FILE")); p != "" {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			cfg.LoadError = fmt.Errorf("CONFIG_FILE %q: %w", p, err)
+			return cfg
+		}
+		yamlBytes = b
+	} else if b, err := os.ReadFile(defaultYAMLPath); err == nil {
+		yamlBytes = b
+	} else if !os.IsNotExist(err) {
+		cfg.LoadError = fmt.Errorf("read %s: %w", defaultYAMLPath, err)
+		return cfg
+	} else {
+		yamlBytes = defaultConfigYAML
+	}
+
+	// Interpolate ${VAR} / ${VAR:-default} (fail-closed on bare ${VAR}).
+	interpolated, err := interpolateAll(string(yamlBytes))
+	if err != nil {
+		cfg.LoadError = err
+		return cfg
+	}
+
+	var yf yamlFile
+	dec := yaml.NewDecoder(strings.NewReader(interpolated))
+	dec.KnownFields(true)
+	if err := dec.Decode(&yf); err != nil {
+		cfg.LoadError = fmt.Errorf("parse config YAML: %w", err)
+		return cfg
+	}
+
+	// YAML values (already interpolated) as the base layer.
+	cfg.AppName = yf.App.Name
+	cfg.AppEnv = yf.App.Env
+	cfg.HTTPAddr = yf.HTTP.Addr
+	cfg.ReadTimeout = orDuration(yf.HTTP.ReadTimeout, cfg.ReadTimeout)
+	cfg.WriteTimeout = orDuration(yf.HTTP.WriteTimeout, cfg.WriteTimeout)
+	cfg.IdleTimeout = orDuration(yf.HTTP.IdleTimeout, cfg.IdleTimeout)
+	cfg.LogLevelName = yf.Log.Level
+	cfg.AuthJWTSecret = yf.Auth.JWTSecret
+	cfg.AuthAccessTTL = orDuration(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
+	cfg.AuthRefreshTTL = orDuration(yf.Auth.RefreshTTL, cfg.AuthRefreshTTL)
+	cfg.AuthDevSessionEnabled = yf.Auth.DevSessionEnabled
+	cfg.DBPath = yf.DB.Path
+	cfg.AdminInitialPassword = yf.Admin.InitialPassword
+	cfg.UploadAllowedTypes = strings.TrimSpace(yf.Upload.AllowedTypes)
+	if yf.Upload.MaxFilesPerUser > 0 {
+		cfg.UploadMaxFilesPerUser = yf.Upload.MaxFilesPerUser
+	}
+	if yf.Upload.MaxBytesPerUser > 0 {
+		cfg.UploadMaxBytesPerUser = yf.Upload.MaxBytesPerUser
+	}
+	profile := yf.App.Profile
+	if profile == "" {
+		profile = string(kernel.ProfileMVP)
+	}
+
+	// Process env overrides YAML when set (existing env-only deployments keep
+	// working with zero migration; empty values count as unset).
+	cfg.AppName = envOr("APP_NAME", cfg.AppName)
+	cfg.AppEnv = envOr("APP_ENV", cfg.AppEnv)
+	cfg.HTTPAddr = envOr("HTTP_ADDR", cfg.HTTPAddr)
+	cfg.ReadTimeout = durationEnv("HTTP_READ_TIMEOUT", cfg.ReadTimeout)
+	cfg.WriteTimeout = durationEnv("HTTP_WRITE_TIMEOUT", cfg.WriteTimeout)
+	cfg.IdleTimeout = durationEnv("HTTP_IDLE_TIMEOUT", cfg.IdleTimeout)
+	cfg.LogLevelName = envOr("LOG_LEVEL", cfg.LogLevelName)
+	cfg.AuthJWTSecret = envOr("AUTH_JWT_SECRET", cfg.AuthJWTSecret)
+	cfg.AuthAccessTTL = durationEnv("AUTH_ACCESS_TTL", cfg.AuthAccessTTL)
+	cfg.AuthRefreshTTL = durationEnv("AUTH_REFRESH_TTL", cfg.AuthRefreshTTL)
+	cfg.AuthDevSessionEnabled = boolEnv("AUTH_DEV_SESSION_ENABLED", cfg.AuthDevSessionEnabled)
+	cfg.DBPath = envOr("DB_PATH", cfg.DBPath)
+	cfg.AdminInitialPassword = envOr("ADMIN_INITIAL_PASSWORD", cfg.AdminInitialPassword)
+	cfg.ProfileName = envOr("APP_PROFILE", profile)
+	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
+	cfg.UploadMaxFilesPerUser = positiveIntEnv("UPLOAD_MAX_FILES_PER_USER", cfg.UploadMaxFilesPerUser)
+	cfg.UploadMaxBytesPerUser = positiveIntEnv("UPLOAD_MAX_BYTES_PER_USER", cfg.UploadMaxBytesPerUser)
+
+	explicitModules := os.Getenv("APP_MODULES_ENABLED")
+	if explicitModules == "" && strings.TrimSpace(yf.App.ModulesEnabled) != "" {
+		explicitModules = yf.App.ModulesEnabled
+	}
+	parsedModules, err := kernel.ParseModuleList(explicitModules)
 	if err != nil {
 		cfg.ProfileError = err
 		return cfg
 	}
-	resolved, err := kernel.ResolveProfile(cfg.ProfileName, explicitModules)
+	resolved, err := kernel.ResolveProfile(cfg.ProfileName, parsedModules)
 	if err != nil {
 		cfg.ProfileError = err
 		return cfg
@@ -71,6 +231,96 @@ func Load() *Config {
 	cfg.ProfileSource = resolved.Source
 	cfg.ProfilePrecedence = append([]string(nil), resolved.Precedence...)
 	return cfg
+}
+
+// loadEnvFile reads the optional CONFIG_ENV_FILE (default configs/.env) of
+// KEY=VALUE lines and exports them WITHOUT overriding an already-set process
+// env. Missing default file is fine; an explicitly configured file that does
+// not exist is a startup error (fail-closed).
+func loadEnvFile(cfg *Config) error {
+	path := strings.TrimSpace(os.Getenv("CONFIG_ENV_FILE"))
+	explicit := path != ""
+	if path == "" {
+		path = "configs/.env"
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		if explicit {
+			return fmt.Errorf("CONFIG_ENV_FILE %q: %w", path, err)
+		}
+		if os.IsNotExist(err) {
+			return nil // optional dev convenience file
+		}
+		return fmt.Errorf("read %s: %w", path, err)
+	}
+	for i, line := range strings.Split(string(raw), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		k, v, ok := strings.Cut(line, "=")
+		if !ok || strings.TrimSpace(k) == "" {
+			return fmt.Errorf("%s line %d: expected KEY=VALUE", path, i+1)
+		}
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		v = strings.Trim(v, `"'`)
+		if _, exists := os.LookupEnv(k); exists {
+			continue // process env wins; never override
+		}
+		if err := os.Setenv(k, v); err != nil {
+			return fmt.Errorf("%s line %d: %w", path, i+1, err)
+		}
+	}
+	return nil
+}
+
+// varPattern matches ${NAME} and ${NAME:-default}.
+var varPattern = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}`)
+
+// interpolateAll expands every ${...} reference in the YAML text. A bare
+// ${VAR} whose env is unset is a hard error (fail-closed); ${VAR:-default}
+// falls back to default. Values are substituted verbatim (no re-parsing), so
+// the env value may contain YAML characters.
+//
+// Interpolation is line-scoped: whole-line comments (starting with #) and
+// inline comments (after " #") are excluded, so documentation examples such
+// as "  ${VAR} -> fail-closed" never count as live references.
+func interpolateAll(text string) (string, error) {
+	lines := strings.Split(text, "\n")
+	var missing string
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if idx := strings.Index(line, " #"); idx >= 0 {
+			line = line[:idx]
+		}
+		lines[i] = varPattern.ReplaceAllStringFunc(line, func(m string) string {
+			if missing != "" {
+				return m // already failing; keep the rest intact for the error
+			}
+			sub := varPattern.FindStringSubmatch(m)
+			name := sub[1]
+			if v, ok := os.LookupEnv(name); ok {
+				return v
+			}
+			// ${VAR:-default}: the default follows ":-" inside the braces. An empty
+			// default (${VAR:-}) is still a valid default, so detect the marker
+			// rather than testing the captured group for emptiness.
+			if _, def, hasDefault := strings.Cut(m, ":-"); hasDefault {
+				return strings.TrimSuffix(def, "}")
+			}
+			missing = name
+			return m
+		})
+	}
+	if missing != "" {
+		return "", fmt.Errorf("config interpolation: ${%s} is not set and has no default (fail-closed)", missing)
+	}
+	return strings.Join(lines, "\n"), nil
 }
 
 // ValidateProd fails startup for non-development environments when the static
@@ -83,7 +333,13 @@ func Load() *Config {
 // require a JWT signing secret with a minimum length and both letters and
 // digits, so a short or guessable HS256 key cannot silently start production.
 // Development keeps the explicit low bar (documented insecure dev key).
+//
+// W7: a LoadError (bad CONFIG_FILE, unset ${VAR}, invalid YAML) fails startup
+// regardless of environment — configuration must never silently fall back.
 func (c *Config) ValidateProd() error {
+	if c.LoadError != nil {
+		return fmt.Errorf("configuration load failed: %w", c.LoadError)
+	}
 	if c.ProfileError != nil {
 		return fmt.Errorf("invalid module profile: %w", c.ProfileError)
 	}
@@ -166,6 +422,20 @@ func durationEnv(key string, fallback time.Duration) time.Duration {
 	return d
 }
 
+// orDuration parses a YAML duration string; on empty/invalid it returns the
+// caller-provided default (same leniency as durationEnv).
+func orDuration(v string, fallback time.Duration) time.Duration {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+	return d
+}
+
 func boolEnv(key string, fallback bool) bool {
 	v := strings.TrimSpace(os.Getenv(key))
 	if v == "" {
@@ -176,4 +446,18 @@ func boolEnv(key string, fallback bool) bool {
 		return fallback
 	}
 	return b
+}
+
+// positiveIntEnv mirrors the upload handler's old envPositiveInt semantics:
+// unset or invalid keeps the fallback (never a zero/negative quota).
+func positiveIntEnv(key string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
 }

@@ -23,7 +23,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
@@ -34,36 +33,50 @@ import (
 // (ADR-0012 D2: server must independently validate).
 const maxUploadBytes = 8 << 20
 
-// uploadAllowedTypes, when non-empty (comma-separated MIME types), makes the
-// server independently reject other types with UNSUPPORTED_FILE_TYPE. The
-// allow-list is checked against the server-detected content type, never the
-// client-declared header.
-var uploadAllowedTypes = strings.TrimSpace(os.Getenv("UPLOAD_ALLOWED_TYPES"))
+// uploadPolicy carries the W7-configurable upload limits. The old package-level
+// UPLOAD_* environment reads moved into config.Config (single configuration
+// authority); RegisterUpload accepts optional UploadOption overrides and keeps
+// the historical defaults when none are given, so legacy callers are
+// unaffected.
+type uploadPolicy struct {
+	// allowedTypes, when non-empty (comma-separated MIME types), makes the
+	// server independently reject other types with UNSUPPORTED_FILE_TYPE. The
+	// allow-list is checked against the server-detected content type, never the
+	// client-declared header.
+	allowedTypes string
+	// Per-user upload quotas (W4 P0-2): the permission gate stops a
+	// low-privilege viewer from filling the disk, but a compromised
+	// files.write holder could still pump 8 MiB objects indefinitely. These
+	// best-effort limits bound each user's stored file count and total bytes.
+	// They are enforced by scanning the upload directory's owner meta
+	// (owner-only contract already guarantees every stored object records its
+	// uploader); a corrupt/unreadable meta entry counts toward the total
+	// conservatively so a failed read cannot bypass the quota.
+	maxUserFiles int
+	maxUserBytes int
+}
 
-// Per-user upload quotas (W4 P0-2): the permission gate stops a low-privilege
-// viewer from filling the disk, but a compromised files.write holder could
-// still pump 8 MiB objects indefinitely. These best-effort limits bound each
-// user's stored file count and total bytes. They are enforced by scanning the
-// upload directory's owner meta (owner-only contract already guarantees every
-// stored object records its uploader); a corrupt/unreadable meta entry counts
-// toward the total conservatively so a failed read cannot bypass the quota.
-var (
-	// maxUserFiles bounds the number of stored objects per uploader.
-	maxUserFiles = envPositiveInt("UPLOAD_MAX_FILES_PER_USER", 1000)
-	// maxUserBytes bounds the total stored bytes per uploader (default 256 MiB).
-	maxUserBytes = envPositiveInt("UPLOAD_MAX_BYTES_PER_USER", 256<<20)
-)
+// UploadOption configures the upload policy; zero or more may be passed to
+// RegisterUpload.
+type UploadOption func(*uploadPolicy)
 
-func envPositiveInt(name string, fallback int) int {
-	raw := strings.TrimSpace(os.Getenv(name))
-	if raw == "" {
-		return fallback
+// WithAllowedTypes sets the comma-separated MIME allow-list.
+func WithAllowedTypes(types string) UploadOption {
+	return func(p *uploadPolicy) { p.allowedTypes = strings.TrimSpace(types) }
+}
+
+// WithUserLimits sets the per-user file count and total byte quotas. A
+// non-positive value keeps the caller-supplied default (never disables the
+// server-side bound unintentionally).
+func WithUserLimits(maxFiles, maxBytes int) UploadOption {
+	return func(p *uploadPolicy) {
+		if maxFiles > 0 {
+			p.maxUserFiles = maxFiles
+		}
+		if maxBytes > 0 {
+			p.maxUserBytes = maxBytes
+		}
 	}
-	n, err := strconv.Atoi(raw)
-	if err != nil || n <= 0 {
-		return fallback
-	}
-	return n
 }
 
 // dangerousInlineTypes are MIME types browsers may render inline as active
@@ -101,7 +114,8 @@ func containsActiveContent(body []byte) bool {
 }
 
 type uploadStore struct {
-	dir string
+	dir    string
+	policy uploadPolicy
 }
 
 func (s *uploadStore) save(name string, contentType string, ownerID string, body []byte) (string, error) {
@@ -153,7 +167,7 @@ func (s *uploadStore) load(id string) ([]byte, map[string]string, error) {
 // cannot bypass the limit. Scanning is O(files) per upload — acceptable for an
 // admin tool where the permission gate already bounds who can upload.
 func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string, reached bool) {
-	if maxUserFiles <= 0 && maxUserBytes <= 0 {
+	if s.policy.maxUserFiles <= 0 && s.policy.maxUserBytes <= 0 {
 		return "", false // quotas disabled
 	}
 	entries, err := os.ReadDir(s.dir)
@@ -195,10 +209,10 @@ func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string,
 		files++
 		bytes += fileSize
 	}
-	if maxUserFiles > 0 && files+1 > maxUserFiles {
+	if s.policy.maxUserFiles > 0 && files+1 > s.policy.maxUserFiles {
 		return "per-user file count quota exceeded", true
 	}
-	if maxUserBytes > 0 && bytes+nextSize > maxUserBytes {
+	if s.policy.maxUserBytes > 0 && bytes+nextSize > s.policy.maxUserBytes {
 		return "per-user byte quota exceeded", true
 	}
 	return "", false
@@ -211,8 +225,18 @@ func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string,
 // account cannot fill the disk. The gate mirrors the resource-factory
 // permission model (requirePermission, fail-closed 403 for authenticated users
 // without the key).
-func RegisterUpload(mux *http.ServeMux, a authMiddleware, dir string) {
-	store := &uploadStore{dir: dir}
+func RegisterUpload(mux *http.ServeMux, a authMiddleware, dir string, opts ...UploadOption) {
+	store := &uploadStore{
+		dir: dir,
+		policy: uploadPolicy{
+			// Historical defaults (pre-W7 package-level env values).
+			maxUserFiles: 1000,
+			maxUserBytes: 256 << 20,
+		},
+	}
+	for _, o := range opts {
+		o(&store.policy)
+	}
 	mux.Handle("POST /api/upload", a.Middleware(uploadPermissionGate(store.upload())))
 	mux.Handle("GET /api/files/{id}", a.Middleware(store.file()))
 }
@@ -282,8 +306,8 @@ func (s *uploadStore) upload() http.Handler {
 			writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "file type is not allowed")
 			return
 		}
-		if uploadAllowedTypes != "" {
-			allowed := strings.Split(uploadAllowedTypes, ",")
+		if s.policy.allowedTypes != "" {
+			allowed := strings.Split(s.policy.allowedTypes, ",")
 			matched := false
 			for _, entry := range allowed {
 				if strings.EqualFold(strings.TrimSpace(entry), base) {
