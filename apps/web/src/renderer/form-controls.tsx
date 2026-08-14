@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -460,6 +460,18 @@ function DateRangeField({
   );
 }
 
+/**
+ * Same-origin path or http(s) URL — the only value shapes that may render as
+ * an image preview. Everything else (bare ids, javascript:/data: URLs) stays
+ * textual; a URL that fails to load falls back to the text too (onError).
+ */
+function isPreviewableUrl(value: string): boolean {
+  if (/^\/(?!\/)[^\s\\]*$/.test(value)) {
+    return true;
+  }
+  return /^https?:\/\//.test(value);
+}
+
 function UploadField({
   id,
   label,
@@ -486,12 +498,18 @@ function UploadField({
   const [status, setStatus] = useState<{ kind: "idle" | "uploading" | "error"; message?: string }>({
     kind: "idle",
   });
+  const [previewFailed, setPreviewFailed] = useState(false);
   const display =
     value === undefined || value === null || value === ""
       ? ""
       : Array.isArray(value)
         ? value.join(", ")
         : String(value);
+  // W9 follow-up (user 2026-08-15): a new committed value (re-upload) replaces
+  // a previously broken preview — reset the failure flag when the value changes.
+  useEffect(() => {
+    setPreviewFailed(false);
+  }, [display]);
   const handleFiles = async (fileList: FileList | null) => {
     if (fileList === null || fileList.length === 0 || onUpload === undefined) {
       return;
@@ -533,7 +551,19 @@ function UploadField({
       />
       {display !== "" ? (
         <div className="flex items-center gap-2">
-          <span className="min-w-0 truncate text-xs text-muted-foreground">Value: {display}</span>
+          {isPreviewableUrl(display) && !previewFailed ? (
+            // User-facing image preview (W9 follow-up): brand assets and other
+            // URL values render as a thumbnail; non-image URLs (CSV/pdf ids,
+            // bare ids) fail to load and fall back to the value text.
+            <img
+              src={display}
+              alt=""
+              className="h-10 w-auto max-w-full shrink-0 rounded border border-border object-contain"
+              onError={() => setPreviewFailed(true)}
+            />
+          ) : (
+            <span className="min-w-0 truncate text-xs text-muted-foreground">Value: {display}</span>
+          )}
           {field.multiple !== true && removeLabel !== undefined && !disabled && !readOnly ? (
             <button
               type="button"

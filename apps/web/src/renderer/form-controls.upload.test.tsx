@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 
 /**
- * W9 (GOAL-010): UploadField per-field remove button.
+ * W9 (GOAL-010): UploadField per-field remove button + image preview.
  * Single uploads with a committed value render a localized remove button
  * (I-008: the settings brand fields need a per-field clear affordance);
- * multiple uploads / readOnly / disabled fields never show it.
+ * URL-shaped values render an image preview (user follow-up 2026-08-15) with
+ * a value-text fallback when the image fails to load. Multiple / readOnly /
+ * disabled fields never show the remove button.
  */
 
 import { act } from "react";
@@ -46,8 +48,8 @@ async function renderControls(fields: FormControlField[], values: Record<string,
   return container;
 }
 
-describe("S3 upload field remove button (W9)", () => {
-  it("renders a remove button for a committed single upload and clears the value", async () => {
+describe("S3 upload field remove button + preview (W9)", () => {
+  it("renders an image preview and a remove button for a committed single upload", async () => {
     let cleared = false;
     const field: FormControlField = {
       id: "logoUrl",
@@ -64,13 +66,35 @@ describe("S3 upload field remove button (W9)", () => {
         }
       },
     );
-    expect(container.textContent).toContain("Value: /api/branding/assets/abcdef");
+    // URL-shaped values render as a thumbnail, not the raw "Value: …" text.
+    const preview = container.querySelector<HTMLImageElement>("img[src='/api/branding/assets/abcdef']");
+    expect(preview).not.toBeNull();
+    expect(container.textContent).not.toContain("Value:");
     const remove = [...container.querySelectorAll("button")].find((b) => b.textContent?.includes("移除图片"));
     expect(remove).not.toBeUndefined();
     await act(async () => {
       remove!.click();
     });
     expect(cleared).toBe(true);
+  });
+
+  it("falls back to the value text when the preview image fails to load", async () => {
+    const field: FormControlField = { id: "logoUrl", label: "Logo", type: "upload", actionRef: "uploadBrandingLogo" };
+    const container = await renderControls([field], { logoUrl: "/api/branding/assets/abcdef" }, () => undefined);
+    const preview = container.querySelector<HTMLImageElement>("img[src='/api/branding/assets/abcdef']");
+    expect(preview).not.toBeNull();
+    await act(async () => {
+      preview!.dispatchEvent(new Event("error"));
+    });
+    expect(container.textContent).toContain("Value: /api/branding/assets/abcdef");
+    expect(container.querySelector("img[src='/api/branding/assets/abcdef']")).toBeNull();
+  });
+
+  it("renders the value text for non-URL values (bare ids, file-library ack)", async () => {
+    const field: FormControlField = { id: "file", label: "CSV", type: "upload", actionRef: "uploadCsv" };
+    const container = await renderControls([field], { file: "file-abc" }, () => undefined);
+    expect(container.textContent).toContain("Value: file-abc");
+    expect(container.querySelector("img")).toBeNull();
   });
 
   it("does not render a remove button when the value is empty", async () => {

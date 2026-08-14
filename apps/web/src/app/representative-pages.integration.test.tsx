@@ -475,7 +475,10 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     expect(uploadCalls[0]!.url).toBe("/api/upload");
     expect(uploadCalls[0]!.method).toBe("POST");
     expect(uploadCalls[0]!.body).toBe("file=contract.pdf:9");
-    expect(container.textContent).toContain("Value: /api/files/file-abc");
+    // W9 follow-up: URL-shaped committed values render as an image preview
+    // instead of the raw "Value: …" text.
+    expect(container.querySelector<HTMLImageElement>("img[src='/api/files/file-abc']")).not.toBeNull();
+    expect(container.textContent).not.toContain("Value: /api/files/file-abc");
   });
 
   it("runs the ADR-0022 batch flow end-to-end (select → confirm → request → reload clears selection)", async () => {

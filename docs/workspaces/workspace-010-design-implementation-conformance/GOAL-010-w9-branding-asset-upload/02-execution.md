@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-15 | S5 验证（单测 + 全量回归 + 活栈点验） | recorded | `02-execution/E-003-s5-verification.md` |
 | E-004 | 2026-08-15 | S6 审计响应（A-001 F-001 + A-002 F-001～F-004 全部处置） | recorded | `02-execution/E-004-s6-audit-response.md` |
 | E-005 | 2026-08-15 | 关门验证 | recorded | `02-execution/E-005-closeout.md` |
+| E-006 | 2026-08-15 | 关门后跟进：上传字段图片预览（用户请求） | recorded | `02-execution/E-006-upload-preview-followup.md` |
 
 ## 事实边界
 
