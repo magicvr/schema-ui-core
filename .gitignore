@@ -95,3 +95,7 @@ apps/**/bin/
 # --- Goal Governance Skills updater backups ---
 .goal-governance-updates/
 
+# --- grok audit scratch (prompts + raw output; opinions are archived under docs) ---
+.grok/*.md
+.grok/*.txt
+
