@@ -1,12 +1,12 @@
 ---
 id: GOAL-013-nav-order-config
 title: 导航顺序：默认清单 + 配置文件覆盖（方案 A）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 4/5
+progress: 5/5
 ---
 
 # GOAL-013 · 导航顺序：默认清单 + 配置文件覆盖
@@ -26,9 +26,9 @@ progress: 4/5
 - [x] **S2 · 实现**：kernel 默认清单 + 排序；manifest 聚合排序（实施发现 UI 载体）；config navigation.order + env；快照/解析/排序测试（E-003，b839595，2026-08-14）
 - [x] **S3 · 验证**：单测全绿 + 三场景实测（默认/env 覆盖/非法回退）+ 全量回归（E-004，2026-08-14）
 - [x] **S4 · go 影响判定 + 自审**（E-005：go 不 held；A-002：pass，2026-08-14）
-- [ ] **S5 · 关门**：独立审计（grok，data 门禁）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：grok 审计（A-003）conditional → F-001 required 用户裁决 accepted-residual + F-002 fixed + 其余 accepted；关门（E-006，2026-08-14）
 
-progress: 4/5 由五个等权检查点派生。
+progress: 5/5 由五个等权检查点派生。
 
 ## 审计策略
 

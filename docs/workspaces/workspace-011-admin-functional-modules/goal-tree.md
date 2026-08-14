@@ -50,7 +50,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-010-r3-s04-scheduled-tasks | R3-S04 · 定时任务管理（cron 后台） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-011-r3-s11-login-captcha | R3-S11 · 登录验证码 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-012-r3-s12-recycle-bin | R3-S12 · 回收站/软删除管理 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
-| GOAL-013-nav-order-config | 导航顺序：默认清单 + 配置文件覆盖（方案 A） | GOAL-001-admin-functional-modules | active | 4/5 | 2026-08-14 |
+| GOAL-013-nav-order-config | 导航顺序：默认清单 + 配置文件覆盖（方案 A） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 
 ## 维护说明
 

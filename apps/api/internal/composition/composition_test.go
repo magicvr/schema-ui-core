@@ -13,6 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -979,4 +980,80 @@ func setOf(values ...string) map[string]bool {
 		result[value] = true
 	}
 	return result
+}
+
+
+
+// GOAL-013 D-002 §4 / A-003 F-002: the published manifest's sidebar/user
+// slots follow the default navigation order (and a NAVIGATION_ORDER override
+// reorders them). This locks the product-visible ordering contract that unit
+// tests cover piecemeal.
+func TestPublishedManifestNavigationOrder(t *testing.T) {
+	fetchSidebar := func(t *testing.T, plan kernel.Plan, order []string) []string {
+		t.Helper()
+		if len(order) > 0 {
+			plan.NavigationOrder = order
+		}
+		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer st.Close()
+		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		mux, err := testMux(a, st, plan, &readinessGate{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		response := httptest.NewRecorder()
+		mux.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("manifest status = %d, body=%s", response.Code, response.Body.String())
+		}
+		var document struct {
+			Navigation struct {
+				Sidebar []struct {
+					Label string `json:"label"`
+				} `json:"sidebar"`
+				User []struct {
+					Label string `json:"label"`
+				} `json:"user"`
+			} `json:"navigation"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &document); err != nil {
+			t.Fatal(err)
+		}
+		labels := make([]string, 0, len(document.Navigation.Sidebar))
+		for _, item := range document.Navigation.Sidebar {
+			labels = append(labels, item.Label)
+		}
+		return labels
+	}
+
+	t.Run("admin default order matches the frozen list", func(t *testing.T) {
+		plan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		labels := fetchSidebar(t, plan, nil)
+		want := []string{
+			"Dashboard", "Users", "Roles", "Activity",
+			"File library", "Data dictionary", "System monitoring",
+			"Scheduled tasks", "Recycle bin",
+		}
+		if strings.Join(labels, "|") != strings.Join(want, "|") {
+			t.Fatalf("sidebar = %v, want %v", labels, want)
+		}
+	})
+
+	t.Run("env override reorders the published sidebar", func(t *testing.T) {
+		plan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		labels := fetchSidebar(t, plan, []string{"menu_recycle_bin", "menu_dashboard"})
+		want := []string{"Recycle bin", "Dashboard"}
+		if len(labels) < 2 || labels[0] != want[0] || labels[1] != want[1] {
+			t.Fatalf("sidebar = %v, want prefix %v", labels, want)
+		}
+	})
 }
