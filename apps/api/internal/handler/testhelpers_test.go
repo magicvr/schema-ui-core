@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -20,6 +21,8 @@ import (
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	datadictionaryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/schema"
 	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
+	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
+	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
@@ -106,6 +109,8 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(FileLibraryRoutes(a, uploadDir, operations, "admin.file-library"))
 	mountRoutes(DictionaryRoutes(a, datadictionarystore.NewRepository(st), operations, "admin.data-dictionary"))
 	mountRoutes(MonitoringRoutes(a, st, testAdminPlan(t), nil, filepath.Join(t.TempDir(), "monitor.db"), time.Now(), operations, "admin.system-monitoring"))
+	scheduledTaskRunner := testTaskRunner{repository: tasksstore.NewRepository(st)}
+	mountRoutes(ScheduledTaskRoutes(a, scheduledTaskRunner.repository, scheduledTaskRunner, operations, "admin.scheduled-tasks"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -134,6 +139,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{filelibraryschema.ModuleID, filelibraryschema.SchemaDocuments()},
 		{datadictionaryschema.ModuleID, datadictionaryschema.SchemaDocuments()},
 		{monitoringschema.ModuleID, monitoringschema.SchemaDocuments()},
+		{tasksschema.ModuleID, tasksschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {
@@ -280,3 +286,18 @@ func sendJSON(t *testing.T, mux *http.ServeMux, method, path, body string) (int,
 func containsString(haystack, needle string) bool {
 	return strings.Contains(haystack, needle)
 }
+// testTaskRunner records a manual run row for the scheduled-tasks surface
+// (the real scheduler tick loop is exercised in the module package tests).
+type testTaskRunner struct {
+	repository *tasksstore.Repository
+}
+
+func (r testTaskRunner) Execute(task tasksstore.Task, now time.Time) error {
+	finished := now
+	return r.repository.RecordRun(tasksstore.TaskRun{
+		ID: "run-test-" + fmt.Sprint(now.UnixNano()), TaskID: task.ID, Status: "ran",
+		StartedAt: now, FinishedAt: &finished, Detail: "manual", CreatedAt: now,
+	})
+}
+
+func (r testTaskRunner) HandlerKeys() []string { return []string{"system.noop"} }

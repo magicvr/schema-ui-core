@@ -60,6 +60,8 @@ var frozenDomainCodes = []string{
 	// S-01 (GOAL-008 D-002 §3): dictionary domain codes (DomainError / notFound).
 	"DICT_TYPE_NOT_FOUND", "DICT_ENTRY_NOT_FOUND", "DICT_TYPE_KEY_TAKEN",
 	"DICT_ENTRY_KEY_TAKEN", "DICT_KEY_NOT_FOUND",
+	// S-04 (GOAL-010 D-002 §4): scheduled-task codes.
+	"TASK_NOT_FOUND", "TASK_RUN_NOT_FOUND", "TASK_KEY_TAKEN", "INVALID_CRON",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

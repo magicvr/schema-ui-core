@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "pageId": "scheduled-tasks",
+    "title": "Scheduled tasks",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended",
+      "form.controls.advanced",
+      "actions.row.navigate"
+    ]
+  },
+  "actions": {
+    "createTask": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/scheduled-tasks",
+      "bodyMapping": {
+        "key": "key",
+        "cron": "cron",
+        "name": "name",
+        "enabled": "enabled",
+        "description": "description",
+        "handler": "handler"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "updateTask": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/scheduled-tasks/{id}",
+      "bodyMapping": {
+        "cron": "cron",
+        "name": "name",
+        "enabled": "enabled",
+        "description": "description",
+        "handler": "handler"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "deleteTask": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/scheduled-tasks/{id}",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "runTask": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/scheduled-tasks/{id}/run",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-task-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"tasks.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "key",
+              "label": "Key",
+              "type": "input",
+              "labelKey": "schema.scheduledTasks.field.key"
+            },
+            {
+              "id": "cron",
+              "label": "Cron (5 fields)",
+              "type": "input",
+              "labelKey": "schema.scheduledTasks.field.cron"
+            },
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.scheduledTasks.field.name"
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.scheduledTasks.field.enabled"
+            },
+            {
+              "id": "description",
+              "label": "Description",
+              "type": "textarea",
+              "labelKey": "schema.scheduledTasks.field.description"
+            }
+          ],
+          "submitAction": "createTask",
+          "submitLabel": "Create task",
+          "submitLabelKey": "schema.scheduledTasks.submit.create"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-task-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"tasks.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "cron",
+              "label": "Cron (5 fields)",
+              "type": "input",
+              "labelKey": "schema.scheduledTasks.field.cron"
+            },
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.scheduledTasks.field.name"
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.scheduledTasks.field.enabled"
+            },
+            {
+              "id": "description",
+              "label": "Description",
+              "type": "textarea",
+              "labelKey": "schema.scheduledTasks.field.description"
+            }
+          ],
+          "submitAction": "updateTask",
+          "submitLabel": "Save changes",
+          "submitLabelKey": "schema.scheduledTasks.submit.save"
+        }
+      }
+    },
+    "openRuns": {
+      "type": "navigate",
+      "url": "/task-runs"
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "scheduled-tasks",
+    "children": [
+      {
+        "type": "table",
+        "id": "tasks-table",
+        "permissionCascade": {
+          "keys": [
+            "edit",
+            "delete"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"tasks.write\"",
+          "delete": "$context.user.permissions contains \"tasks.write\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "key",
+              "label": "Key",
+              "sortable": true,
+              "labelKey": "schema.scheduledTasks.column.key"
+            },
+            {
+              "field": "cron",
+              "label": "Cron",
+              "labelKey": "schema.scheduledTasks.column.cron"
+            },
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.scheduledTasks.column.name"
+            },
+            {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.scheduledTasks.column.enabled"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.scheduledTasks.column.updated"
+            }
+          ],
+          "dataSource": "/api/scheduled-tasks",
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New task",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.scheduledTasks.toolbar.newTask"
+            }
+          ],
+          "actions": [
+            {
+              "key": "run",
+              "label": "Run now",
+              "actionRef": "runTask",
+              "permissionIntent": "edit",
+              "confirm": "Run this task now?",
+              "labelKey": "schema.scheduledTasks.action.run",
+              "confirmKey": "schema.scheduledTasks.confirm.run"
+            },
+            {
+              "key": "runs",
+              "label": "Runs",
+              "actionRef": "openRuns",
+              "permissionIntent": "edit",
+              "labelKey": "schema.scheduledTasks.action.runs"
+            },
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit",
+              "labelKey": "schema.scheduledTasks.action.edit"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteTask",
+              "permissionIntent": "delete",
+              "confirm": "Delete this task and its run history?",
+              "labelKey": "schema.scheduledTasks.action.delete",
+              "confirmKey": "schema.scheduledTasks.confirm.delete"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

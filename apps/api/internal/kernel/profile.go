@@ -71,6 +71,9 @@ var profileDefaults = map[ProfileName][]string{
 		// S-03 (GOAL-009 D-001 §2): admin.system-monitoring — admin-only profile;
 		// read-only monitoring surface.
 		"admin.system-monitoring",
+		// S-04 (GOAL-010 D-001 §2): admin.scheduled-tasks — admin-only profile;
+		// cron task management + in-process scheduler.
+		"admin.scheduled-tasks",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -161,6 +164,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.data-dictionary", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/data-dictionary/types", "GET /api/data-dictionary/types/{id}", "POST /api/data-dictionary/types", "PATCH /api/data-dictionary/types/{id}", "DELETE /api/data-dictionary/types/{id}", "POST /api/data-dictionary/types/batch-delete", "GET /api/data-dictionary/entries", "GET /api/data-dictionary/entries/{id}", "POST /api/data-dictionary/entries", "PATCH /api/data-dictionary/entries/{id}", "DELETE /api/data-dictionary/entries/{id}", "POST /api/data-dictionary/entries/batch-delete"}, Pages: []string{"data-dictionary", "dictionary-entries"}, Navigation: []string{"menu_dictionary"}, Permissions: []string{"dictionary.read", "dictionary.write"}, Fragments: []string{"data-dictionary"}}},
 		// S-03 admin.system-monitoring (GOAL-009): read-only monitoring surface.
 		{ID: "admin.system-monitoring", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/system-monitoring/status", "GET /api/system-monitoring/errors", "GET /api/system-monitoring/errors/{id}"}, Pages: []string{"system-monitoring"}, Navigation: []string{"menu_monitoring"}, Permissions: []string{"monitoring.read"}, Fragments: []string{"system-monitoring"}}},
+		// S-04 admin.scheduled-tasks (GOAL-010): cron task management + scheduler.
+		{ID: "admin.scheduled-tasks", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/scheduled-tasks", "GET /api/scheduled-tasks/{id}", "POST /api/scheduled-tasks", "PATCH /api/scheduled-tasks/{id}", "DELETE /api/scheduled-tasks/{id}", "POST /api/scheduled-tasks/batch-delete", "POST /api/scheduled-tasks/{id}/run", "GET /api/scheduled-tasks/{id}/runs", "GET /api/task-runs", "GET /api/task-runs/{id}"}, Pages: []string{"scheduled-tasks", "task-runs"}, Navigation: []string{"menu_scheduled_tasks"}, Permissions: []string{"tasks.read", "tasks.write"}, Fragments: []string{"scheduled-tasks"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

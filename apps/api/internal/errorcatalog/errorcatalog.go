@@ -80,6 +80,12 @@ var Catalog = map[string]Entry{
 	"INVALID_UPLOAD_BODY":   {"error.invalidUploadBody", "body must be JSON with a file field", "请求体必须是包含 file 字段的 JSON"},
 	"INVALID_FILE_ID":       {"error.invalidFileId", "invalid file id", "文件 ID 无效"},
 
+	// S-04 (GOAL-010 D-002 §4): scheduled-task codes.
+	"TASK_NOT_FOUND":      {"error.taskNotFound", "no scheduled task with that id", "没有该 id 对应的定时任务"},
+	"TASK_RUN_NOT_FOUND":  {"error.taskRunNotFound", "no task run with that id", "没有该 id 对应的运行记录"},
+	"TASK_KEY_TAKEN":      {"error.taskKeyTaken", "a scheduled task with that key already exists", "该键已存在对应的定时任务"},
+	"INVALID_CRON":        {"error.invalidCron", "invalid cron expression", "cron 表达式无效"},
+
 	// S-01 (GOAL-008 D-002 §3): dictionary codes.
 	"DICT_TYPE_NOT_FOUND":   {"error.dictTypeNotFound", "no dict type with that id", "没有该 id 对应的字典类型"},
 	"DICT_ENTRY_NOT_FOUND":  {"error.dictEntryNotFound", "no dict entry with that id", "没有该 id 对应的字典条目"},

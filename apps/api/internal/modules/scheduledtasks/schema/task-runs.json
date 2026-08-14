@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "pageId": "task-runs",
+    "title": "Task runs",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "table.sort"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "task-runs",
+    "children": [
+      {
+        "type": "table",
+        "id": "task-runs-table",
+        "props": {
+          "columns": [
+            {
+              "field": "taskId",
+              "label": "Task",
+              "labelKey": "schema.taskRuns.column.task"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.taskRuns.column.status"
+            },
+            {
+              "field": "startedAt",
+              "label": "Started",
+              "sortable": true,
+              "labelKey": "schema.taskRuns.column.started"
+            },
+            {
+              "field": "finishedAt",
+              "label": "Finished",
+              "labelKey": "schema.taskRuns.column.finished"
+            },
+            {
+              "field": "detail",
+              "label": "Detail",
+              "labelKey": "schema.taskRuns.column.detail"
+            }
+          ],
+          "dataSource": "/api/task-runs"
+        }
+      }
+    ]
+  }
+}

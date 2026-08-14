@@ -25,6 +25,8 @@ import (
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
 	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary"
 	systemmonitoringmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring"
+	scheduledtasksmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks"
+	scheduledtasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
@@ -232,6 +234,9 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.system-monitoring") {
 		providers = append(providers, systemmonitoringmodule.New(a, st, plan, gate.Ready, cfg.DBPath, time.Now(), operations))
+	}
+	if plan.HasModule("admin.scheduled-tasks") {
+		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

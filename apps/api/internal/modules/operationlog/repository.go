@@ -39,6 +39,10 @@ const (
 	EventDictionaryCreate = "dictionary.create"
 	EventDictionaryUpdate = "dictionary.update"
 	EventDictionaryDelete = "dictionary.delete"
+	// S-04 scheduled-task events (GOAL-010 D-002 §4).
+	EventTaskCreate = "scheduled-tasks.create"
+	EventTaskUpdate = "scheduled-tasks.update"
+	EventTaskDelete = "scheduled-tasks.delete"
 )
 
 // Operation is one append-only operation log row.

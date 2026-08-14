@@ -143,6 +143,20 @@
       "schemaUrl": "/api/schema/system-monitoring",
       "route": "/system-monitoring",
       "titleKey": "manifest.title.systemMonitoring"
+    },
+    {
+      "pageId": "scheduled-tasks",
+      "title": "Scheduled tasks",
+      "schemaUrl": "/api/schema/scheduled-tasks",
+      "route": "/scheduled-tasks",
+      "titleKey": "manifest.title.scheduledTasks"
+    },
+    {
+      "pageId": "task-runs",
+      "title": "Task runs",
+      "schemaUrl": "/api/schema/task-runs",
+      "route": "/task-runs",
+      "titleKey": "manifest.title.taskRuns"
     }
   ],
   "navigation": {
@@ -190,6 +204,15 @@
           "when": "$context.features.menu_monitoring == true"
         },
         "labelKey": "manifest.nav.systemMonitoring"
+      },
+      {
+        "pageRef": "scheduled-tasks",
+        "label": "Scheduled tasks",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_scheduled_tasks == true"
+        },
+        "labelKey": "manifest.nav.scheduledTasks"
       },
       {
         "label": "Examples",

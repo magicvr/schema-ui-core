@@ -123,16 +123,18 @@ test("login gates the shell and the real auth chain works through the proxy", as
   if (isAdminProfile) {
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Activity" })).toBeVisible();
-    // S-02/S-01/S-03 (GOAL-007/008/009): admin-only surfaces.
+    // S-02/S-01/S-03/S-04 (GOAL-007/008/009/010): admin-only surfaces.
     await expect(page.getByRole("link", { name: "File library" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Data dictionary" })).toBeVisible();
     await expect(page.getByRole("link", { name: "System monitoring" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Scheduled tasks" })).toBeVisible();
   } else {
     await expect(page.getByRole("link", { name: "Settings" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Activity" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "File library" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Data dictionary" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "System monitoring" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Scheduled tasks" })).toHaveCount(0);
   }
 
   // No manifest failure surface, and the sign-out control is present.

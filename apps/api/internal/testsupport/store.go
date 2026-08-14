@@ -67,6 +67,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-dictionary", Key: "dictionary.write"}, Permission: "dictionary.write", Resource: "dictionary", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-03 (GOAL-009): admin.system-monitoring key, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.system-monitoring", Key: "monitoring.read"}, Permission: "monitoring.read", Resource: "system-monitoring", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-04 (GOAL-010): admin.scheduled-tasks keys, admin-only.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.scheduled-tasks", Key: "tasks.read"}, Permission: "tasks.read", Resource: "scheduled-tasks", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.scheduled-tasks", Key: "tasks.write"}, Permission: "tasks.write", Resource: "scheduled-tasks", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -85,6 +88,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-dictionary", Key: "menu_dictionary"}, NodeID: "menu_dictionary", PageID: "data-dictionary", Order: 4, Label: "Data dictionary", Visibility: authsessiondata.PolicyAdmin, Permission: "dictionary.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-03 (GOAL-009): system monitoring page (admin-only read surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.system-monitoring", Key: "menu_monitoring"}, NodeID: "menu_monitoring", PageID: "system-monitoring", Order: 5, Label: "System monitoring", Visibility: authsessiondata.PolicyAdmin, Permission: "monitoring.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-04 (GOAL-010): scheduled tasks page (admin-only management surface).
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.scheduled-tasks", Key: "menu_scheduled_tasks"}, NodeID: "menu_scheduled_tasks", PageID: "scheduled-tasks", Order: 6, Label: "Scheduled tasks", Visibility: authsessiondata.PolicyAdmin, Permission: "tasks.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

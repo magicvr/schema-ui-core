@@ -48,6 +48,8 @@ const SCHEMA_PATHS: Record<string, string> = {
   "data-dictionary": resolve(MODULES, "datadictionary/schema/data-dictionary.json"),
   "dictionary-entries": resolve(MODULES, "datadictionary/schema/dictionary-entries.json"),
   "system-monitoring": resolve(MODULES, "systemmonitoring/schema/system-monitoring.json"),
+  "scheduled-tasks": resolve(MODULES, "scheduledtasks/schema/scheduled-tasks.json"),
+  "task-runs": resolve(MODULES, "scheduledtasks/schema/task-runs.json"),
 };
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];

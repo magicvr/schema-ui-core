@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.2.0
-progress: 1/5
+version: 0.3.0
+progress: 3/5
 ---
 
 # GOAL-010-r3-s04-scheduled-tasks · 定时任务管理（cron 后台）
@@ -24,8 +24,8 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：任务模型（cron 校验/运行语义）、调度器边界（单实例/持久化）、权限/审计、Profile 归属；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
-- [ ] **S2 · 实现**：迁移 + 任务仓库 + 调度器 + 端点 + schema 页 + 测试
-- [ ] **S3 · 验证**：单元/集成 + 调度实测 + 全量回归
+- [x] **S2 · 实现**：迁移（0021/0022）+ 任务仓库 + 调度器 + 端点 + schema 页 + 测试（E-002）
+- [x] **S3 · 验证**：单元/集成 + 调度实测 + 全量回归（go 全绿 / 900/900 / e2e 双 profile 8/8，E-003）
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 

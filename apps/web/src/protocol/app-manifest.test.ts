@@ -280,6 +280,8 @@ describe("manifest loading and expression boundaries", () => {
       "data-dictionary",
       "dictionary-entries",
       "system-monitoring",
+      "scheduled-tasks",
+      "task-runs",
     ]);
   });
 

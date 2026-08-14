@@ -37,6 +37,8 @@ const SCHEMA_FILES = [
   "datadictionary/schema/data-dictionary.json",
   "datadictionary/schema/dictionary-entries.json",
   "systemmonitoring/schema/system-monitoring.json",
+  "scheduledtasks/schema/scheduled-tasks.json",
+  "scheduledtasks/schema/task-runs.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];
@@ -134,6 +136,7 @@ describe("S2 · F-V029 denominator schema key completeness", () => {
       "apps/api/internal/modules/filelibrary/manifest/fragment.json",
       "apps/api/internal/modules/datadictionary/manifest/fragment.json",
       "apps/api/internal/modules/systemmonitoring/manifest/fragment.json",
+      "apps/api/internal/modules/scheduledtasks/manifest/fragment.json",
     ];
     const unknown: string[] = [];
     const keys: string[] = [];

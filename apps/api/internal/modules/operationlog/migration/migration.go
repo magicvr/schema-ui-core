@@ -93,6 +93,21 @@ var operationLogDictionaryDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
+// operationLogTasksDDL (0022 · S-04 GOAL-010 D-002 §4): adds the three
+// scheduled-task events to the event CHECK (rebuild like 0005/0008/0014/0015/0018/0020).
+var operationLogTasksDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
 // operationLogAccountEventsDDL (0014 · F-03 GOAL-005 D-002 §3): adds the five
 // account-lifecycle events to the event CHECK. SQLite cannot ALTER a CHECK, so
 // the table is rebuilt like 0005/0008.
@@ -161,6 +176,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogDictionaryDDL, "0020:operation-log-dictionary:v1"),
 			Apply:                migrateOperationLogDictionary,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_tasks"},
+			Version:              22,
+			Name:                 "operation_log_tasks",
+			Checksum:             kernel.MigrationChecksum(operationLogTasksDDL, "0022:operation-log-tasks:v1"),
+			Apply:                migrateOperationLogTasks,
+		},
 	}
 }
 
@@ -195,6 +217,10 @@ func migrateOperationLogFileEvents(tx *sql.Tx) error {
 
 func migrateOperationLogDictionary(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogDictionaryDDL, "dictionary-events-expanded")
+}
+
+func migrateOperationLogTasks(tx *sql.Tx) error {
+	return rebuildOperationLog(tx, operationLogTasksDDL, "tasks-events-expanded")
 }
 
 func rebuildOperationLog(tx *sql.Tx, ddl []string, label string) error {

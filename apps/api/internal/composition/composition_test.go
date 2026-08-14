@@ -454,7 +454,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// admin only.
 		// S-03 (GOAL-009): admin.system-monitoring contributes monitoring.read
 		// (+1 permission) and menu_monitoring (+1 navigation) to admin only.
-		{profile: "admin", wantPermissions: 18, wantNavigation: 10},
+		// S-04 (GOAL-010): admin.scheduled-tasks contributes tasks.read/tasks.write
+		// (+2 permissions) and menu_scheduled_tasks (+1 navigation) to admin only.
+		{profile: "admin", wantPermissions: 20, wantNavigation: 11},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
