@@ -1,12 +1,12 @@
 ---
 id: GOAL-015-dict-inner-page-breadcrumb
 title: 数据字典内页（按类型过滤）+ 面包屑层级导航（R4）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.2.0
-progress: 4/5
+version: 0.3.0
+progress: 5/5
 ---
 
 # GOAL-015 · 数据字典内页（按类型过滤）+ 面包屑层级导航
@@ -29,9 +29,9 @@ progress: 4/5
 - [x] **S2**：服务端 dictKey 过滤 + 面包屑（门禁期先行 E-003/E-004）；v2.9 协议落地后完成 schema 改造——table node.data params 路由绑定 + dictKey 只读（D-003/E-006/E-007）
 - [x] **S3 · 验证**：内页链路 T-DE-01..05 + F-001 集成测试 + 过滤/面包屑回归 + 全量回归 946/946（E-008）
 - [x] **S4 · go 影响判定 + 自审**：go（不 held，I-004 closed）+ A-002 self；A-003 grok 独立审计 5 项 required findings 全部 fixed（A-002/A-003）
-- [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：独立审计（grok 4.6，A-003：fail → 5 项 required 全部 fixed）+ F-007 产品取舍待用户裁决 + goal-tree 5/5
 
-progress: 4/5 由五个等权检查点派生（S1～S4 已勾，S5 待关门）。
+progress: 5/5 由五个等权检查点派生（S1～S5 全勾）。
 
 ## 审计策略
 
