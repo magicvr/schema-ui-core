@@ -159,6 +159,12 @@ func NegotiateLocale(header string) string {
 // Body builds the wire envelope for a code in the given locale. Returns
 // (body, contentLanguage, ok); ok=false when the code is uncataloged (the
 // caller keeps the English generic message and omits messageKey).
+//
+// GOAL-014 D-002 §2: for field-validation codes (INVALID_CREATE_FIELD /
+// INVALID_PATCH_FIELD) the caller's message carries the concrete field
+// reason (e.g. "name must not be empty"); it is appended after the cataloged
+// text so the user sees both the localized code surface and the specific
+// field problem (previously the catalog text replaced it entirely).
 func Body(code, message, locale string) (map[string]any, string, bool) {
 	entry, found := Catalog[code]
 	if !found {
@@ -168,11 +174,44 @@ func Body(code, message, locale string) (map[string]any, string, bool) {
 	if locale == "zh-CN" {
 		text = entry.Zh
 	}
-	return map[string]any{
+	body := map[string]any{
 		"error":      code,
 		"message":    text,
 		"messageKey": entry.MessageKey,
-	}, locale, true
+	}
+	// Field-validation codes append the concrete field reason (GOAL-014
+	// D-002 §2); every other cataloged code keeps the pure localized text so
+	// caller-supplied diagnostics never leak into the response.
+	if isFieldValidationCode(code) {
+		if msg := strings.TrimSpace(message); msg != "" {
+			body["message"] = text + ": " + msg
+		}
+	}
+	return body, locale, true
+}
+
+// isFieldValidationCode reports codes whose message carries a field-level
+// reason that should be surfaced next to the localized catalog text.
+func isFieldValidationCode(code string) bool {
+	return code == "INVALID_CREATE_FIELD" || code == "INVALID_PATCH_FIELD"
+}
+
+// FieldError is one field-level validation failure (GOAL-014 D-002 §2.1).
+type FieldError struct {
+	Field  string `json:"field"`
+	Reason string `json:"reason"`
+}
+
+// BodyWithFields is Body plus an optional fieldErrors array. It is the same
+// envelope with an extra optional key, so old consumers that ignore unknown
+// keys keep working unchanged.
+func BodyWithFields(code, message, locale string, fields []FieldError) (map[string]any, string, bool) {
+	body, lang, ok := Body(code, message, locale)
+	if !ok || len(fields) == 0 {
+		return body, lang, ok
+	}
+	body["fieldErrors"] = fields
+	return body, lang, true
 }
 
 // Negotiate is a convenience for http handlers: header from the request.

@@ -4,6 +4,7 @@ import {
   checkFormCapabilities,
   coerceFieldValue,
   isWhitelistedFormControl,
+  validateFieldValues,
   wireKindOf,
   type FormControlField,
 } from "@/renderer/form-controls";
@@ -269,5 +270,50 @@ describe("checkFormCapabilities", () => {
       },
     ]);
     expect(errors.some((error) => error.code === "DATE_RANGE_DEFAULT_VALUE_FORBIDDEN")).toBe(true);
+  });
+});
+
+
+describe("validateFieldValues (GOAL-014 D-002 §3)", () => {
+  it("reports required failures and skips booleans", () => {
+    const fields: FormControlField[] = [
+      { id: "name", type: "input", required: true },
+      { id: "enabled", type: "switch", required: true },
+      { id: "notes", type: "textarea" },
+    ];
+    const errors = validateFieldValues(fields, { name: "", enabled: true, notes: "x" });
+    expect(errors).toEqual([
+      { field: "name", code: "REQUIRED", message: "this field is required" },
+    ]);
+  });
+
+  it("checks pattern, length and numeric bounds", () => {
+    const fields: FormControlField[] = [
+      { id: "code", type: "input", pattern: "^[a-z]+$" },
+      { id: "bio", type: "textarea", minLength: 3, maxLength: 5 },
+      { id: "age", type: "inputNumber", min: 1, max: 120 },
+    ];
+    const errors = validateFieldValues(fields, {
+      code: "ABC",
+      bio: "ab",
+      age: 200,
+    });
+    const codes = errors.map((e) => e.code).sort();
+    expect(codes).toEqual(["MAX_VALUE", "MIN_LENGTH", "PATTERN"]);
+  });
+
+  it("passes valid values", () => {
+    const fields: FormControlField[] = [
+      { id: "code", type: "input", pattern: "^[a-z]+$", required: true },
+      { id: "age", type: "inputNumber", min: 1, max: 120 },
+    ];
+    expect(validateFieldValues(fields, { code: "abc", age: 30 })).toEqual([]);
+  });
+
+  it("empty non-required values are not pattern-checked", () => {
+    const fields: FormControlField[] = [
+      { id: "code", type: "input", pattern: "^[a-z]+$" },
+    ];
+    expect(validateFieldValues(fields, { code: "" })).toEqual([]);
   });
 });

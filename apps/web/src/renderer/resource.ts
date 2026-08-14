@@ -34,6 +34,12 @@ export interface ResourceQuery {
   pageSize?: number;
 }
 
+/** One field-level validation failure (GOAL-014 D-002 §2.1). */
+export interface FieldError {
+  field: string;
+  reason: string;
+}
+
 /** A resource API failure carrying the frozen envelope `{error, message}`. */
 export class ResourceApiError extends Error {
   readonly code: string;
@@ -42,14 +48,24 @@ export class ResourceApiError extends Error {
   readonly messageKey?: string;
   /** VP-007 S4: interpolation params for messageKey. */
   readonly params?: Record<string, unknown>;
+  /** GOAL-014: field-level validation failures, when the server attached them. */
+  readonly fieldErrors: FieldError[];
 
-  constructor(status: number, code: string, message: string, messageKey?: string, params?: Record<string, unknown>) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    messageKey?: string,
+    params?: Record<string, unknown>,
+    fieldErrors?: FieldError[],
+  ) {
     super(message);
     this.name = "ResourceApiError";
     this.status = status;
     this.code = code;
     this.messageKey = messageKey;
     this.params = params;
+    this.fieldErrors = fieldErrors ?? [];
   }
 }
 
@@ -86,8 +102,30 @@ function parseResourceItem(value: unknown, label: string): ResourceItem {
   return value;
 }
 
+interface Envelope {
+  code: string;
+  message: string;
+  messageKey?: string;
+  params?: Record<string, unknown>;
+  fieldErrors?: FieldError[];
+}
+
+function parseFieldErrors(value: unknown): FieldError[] {
+  if (!Array.isArray(value)) return [];
+  const out: FieldError[] = [];
+  for (const raw of value) {
+    if (!isRecord(raw)) continue;
+    const field = typeof raw.field === "string" ? raw.field : "";
+    const reason = typeof raw.reason === "string" ? raw.reason : "";
+    if (field !== "" || reason !== "") {
+      out.push({ field, reason });
+    }
+  }
+  return out;
+}
+
 /** Reads the frozen error envelope from a non-OK response, defaulting safely. */
-async function readEnvelope(response: Response): Promise<{ code: string; message: string; messageKey?: string; params?: Record<string, unknown> }> {
+async function readEnvelope(response: Response): Promise<Envelope> {
   try {
     const value: unknown = await response.json();
     if (isRecord(value)) {
@@ -98,6 +136,7 @@ async function readEnvelope(response: Response): Promise<{ code: string; message
           ? { messageKey: value.messageKey }
           : {}),
         ...(isRecord(value.params) ? { params: value.params } : {}),
+        ...(value.fieldErrors !== undefined ? { fieldErrors: parseFieldErrors(value.fieldErrors) } : {}),
       };
     }
   } catch {
@@ -117,6 +156,7 @@ export async function readResourceApiError(response: Response, label: string): P
     `${label} failed: HTTP ${response.status}${suffix}`,
     envelope.messageKey,
     envelope.params,
+    envelope.fieldErrors,
   );
 }
 

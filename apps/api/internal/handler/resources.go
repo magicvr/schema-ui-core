@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
@@ -490,7 +491,7 @@ func (h *resourceHandler) create() http.Handler {
 		if err != nil {
 			var fe createFieldError
 			if errors.As(err, &fe) {
-				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", fe.Error())
+				writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", fe.Error(), []errorcatalog.FieldError{{Field: fe.field, Reason: fe.reason}})
 				return
 			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CREATE_BODY", "body must be JSON")
@@ -553,7 +554,7 @@ func (h *resourceHandler) update() http.Handler {
 		if err != nil {
 			var pe patchFieldError
 			if errors.As(err, &pe) {
-				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", pe.Error())
+				writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", pe.Error(), []errorcatalog.FieldError{{Field: pe.field, Reason: "must not be empty"}})
 				return
 			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")

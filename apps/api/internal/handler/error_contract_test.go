@@ -68,7 +68,7 @@ var frozenDomainCodes = []string{
 	"RECYCLE_ITEM_NOT_FOUND", "RECYCLE_RESTORE_CONFLICT", "RECYCLE_ITEM_ALREADY_RESTORED",
 }
 
-var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)
+var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)
 
 func collectCodeLiterals(t *testing.T) map[string]bool {
 	t.Helper()

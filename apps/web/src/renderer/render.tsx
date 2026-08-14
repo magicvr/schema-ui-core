@@ -31,6 +31,7 @@ import { FormControls } from "@/renderer/form-controls.tsx";
 import {
   FORM_RECORD_LOAD_CAPABILITY,
   coerceFieldValue,
+  validateFieldValues,
   type FormControlField,
 } from "@/renderer/form-controls";
 import { ModalHost } from "@/renderer/modal";
@@ -1291,6 +1292,9 @@ function FormInner({
     messageKey?: string;
     params?: Record<string, unknown>;
   } | null>(null);
+  // GOAL-014 D-002 §3: submit-time validation + server fieldErrors echo,
+  // keyed by field id for inline display.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isSearch = node.props.mode === "search";
   const submitAction = node.props.submitAction;
@@ -1323,11 +1327,32 @@ function FormInner({
     if (typeof submitAction !== "string") {
       return;
     }
+    // GOAL-014 D-002 §3.1: submit-time client validation — failures block the
+    // request and inline on their fields.
+    const validation = validateFieldValues(visibleFields, values);
+    if (validation.length > 0) {
+      const byField: Record<string, string> = {};
+      for (const err of validation) {
+        byField[err.field] = err.message;
+      }
+      setFieldErrors(byField);
+      setFormError(null);
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
     setFormError(null);
     try {
       const result = await crud.submitForm(node, values);
       if (!result.ok) {
+        // GOAL-014 D-002 §2: echo server fieldErrors onto the matching inputs;
+        // unmatched fields fall back to the form-level alert.
+        const serverErrors = (result as { fieldErrors?: Array<{ field: string; reason: string }> }).fieldErrors;
+        const byField: Record<string, string> = {};
+        for (const fe of serverErrors ?? []) {
+          byField[fe.field] = fe.reason;
+        }
+        setFieldErrors(byField);
         setFormError({
           code: result.code,
           message: result.message,
@@ -1338,6 +1363,7 @@ function FormInner({
     } catch (error) {
       // Defensive: a throwing submit (unexpected fetch/transport failure) must
       // never leave the button stuck in its disabled Submitting state (C5).
+      setFieldErrors({});
       setFormError({ code: "REQUEST_FAILED", message: requestFailedMessage(error) });
     } finally {
       setSubmitting(false);
@@ -1375,6 +1401,12 @@ function FormInner({
         onChange={(id, value) => setValues((prev) => ({ ...prev, [id]: value }))}
         fieldDisabled={fieldDisabled}
         onUpload={crud?.uploadFiles}
+        fieldErrors={fieldErrors}
+        columns={
+          isRecord(node.props) && typeof node.props.columns === "number"
+            ? node.props.columns
+            : undefined
+        }
       />
       {reaction.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">

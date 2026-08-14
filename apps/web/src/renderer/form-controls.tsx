@@ -22,6 +22,12 @@ export interface FormControlsProps {
   idPrefix?: string;
   /** Upload control transport (ADR-0012): validates + uploads + returns the field value. */
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
+  /** GOAL-014 D-002 §4: inline field errors keyed by field id (submit-time
+   * validation + server fieldErrors echo). */
+  fieldErrors?: Record<string, string>;
+  /** GOAL-014 D-002 §4: column count (default 1 = single-column layout).
+   * >1 enables a responsive grid; the mobile layout stays single-column. */
+  columns?: number;
 }
 
 type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
@@ -513,6 +519,7 @@ function FieldControl({
   idPrefix,
   onUpload,
   t,
+  error,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
@@ -521,6 +528,7 @@ function FieldControl({
   idPrefix?: string;
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
   t: (key: string, params?: MessageParams, literalFallback?: string) => string;
+  error?: string;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = resolveTextProp(
@@ -539,6 +547,7 @@ function FieldControl({
   );
   const value = displayValue(field, values[field.id]);
 
+  const renderControl = (): ReactNode => {
   switch (field.type) {
     case "input":
       return (
@@ -685,6 +694,17 @@ function FieldControl({
       );
   }
   return null;
+};
+  return (
+    <div className="min-w-0">
+      {renderControl()}
+      {error !== undefined ? (
+        <p role="alert" className="mt-1 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function FormControls({
@@ -695,12 +715,21 @@ export function FormControls({
   fieldDisabled,
   idPrefix,
   onUpload,
+  fieldErrors,
+  columns,
 }: FormControlsProps) {
   const t = useTranslate();
+  // GOAL-014 D-002 §4: single-column is the default (industry convention for
+  // modal forms); schema may opt into a responsive multi-column grid. Mobile
+  // stays single-column regardless.
+  const cols =
+    columns !== undefined && columns > 1 ? Math.min(Math.max(Math.floor(columns), 1), 4) : undefined;
+  const gridClass = cols !== undefined ? "sm:grid-cols-" + cols : undefined;
   return (
     <div
       data-form-controls="design-system"
-      className={cn("grid gap-4", fields.length > 1 && "sm:grid-cols-2")}
+      data-form-columns={cols !== undefined ? String(cols) : "1"}
+      className={cn("grid gap-4 grid-cols-1", gridClass)}
     >
       {fields.map((field) => (
         <FieldControl
@@ -712,6 +741,7 @@ export function FormControls({
           idPrefix={idPrefix}
           onUpload={onUpload}
           t={t}
+          error={fieldErrors?.[field.id]}
         />
       ))}
     </div>

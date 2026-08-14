@@ -23,3 +23,18 @@ func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, cod
 	w.Header().Set("Content-Language", contentLanguage)
 	writeJSON(w, status, body)
 }
+
+// writeLocalizedFieldError is writeLocalizedError plus a fieldErrors array
+// (GOAL-014 D-002 §2.1): field-level validation failures (create/patch) carry
+// the concrete {field, reason} pairs so the host can inline them on inputs.
+// The envelope stays backward compatible (fieldErrors is an optional key).
+func writeLocalizedFieldError(w http.ResponseWriter, r *http.Request, status int, code, message string, fields []errorcatalog.FieldError) {
+	locale := errorcatalog.Negotiate(r)
+	body, contentLanguage, cataloged := errorcatalog.BodyWithFields(code, message, locale, fields)
+	if !cataloged {
+		writeJSON(w, status, map[string]any{"error": code, "message": message, "fieldErrors": fields})
+		return
+	}
+	w.Header().Set("Content-Language", contentLanguage)
+	writeJSON(w, status, body)
+}

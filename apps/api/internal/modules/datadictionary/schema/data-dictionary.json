@@ -71,12 +71,16 @@
               "id": "key",
               "label": "Key",
               "type": "input",
+              "required": true,
               "labelKey": "schema.dataDictionary.field.key"
             },
             {
               "id": "name",
               "label": "Name",
               "type": "input",
+              "required": true,
+              "minLength": 1,
+              "maxLength": 64,
               "labelKey": "schema.dataDictionary.field.name"
             },
             {
@@ -125,6 +129,9 @@
               "id": "name",
               "label": "Name",
               "type": "input",
+              "required": true,
+              "minLength": 1,
+              "maxLength": 64,
               "labelKey": "schema.dataDictionary.field.name"
             },
             {

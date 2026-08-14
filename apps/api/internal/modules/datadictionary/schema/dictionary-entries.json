@@ -73,19 +73,22 @@
               "id": "dictKey",
               "label": "Type key",
               "type": "input",
-              "labelKey": "schema.dictionaryEntries.field.dictKey"
+              "labelKey": "schema.dictionaryEntries.field.dictKey",
+              "required": true
             },
             {
               "id": "entryKey",
               "label": "Entry key",
               "type": "input",
-              "labelKey": "schema.dictionaryEntries.field.entryKey"
+              "labelKey": "schema.dictionaryEntries.field.entryKey",
+              "required": true
             },
             {
               "id": "label",
               "label": "Label",
               "type": "input",
-              "labelKey": "schema.dictionaryEntries.field.label"
+              "labelKey": "schema.dictionaryEntries.field.label",
+              "required": true
             },
             {
               "id": "enabled",

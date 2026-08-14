@@ -96,6 +96,13 @@ export interface FormControlField {
   max?: number;
   step?: number;
   precision?: number;
+  /** GOAL-014 D-002 §3: field-level validation constraints (optional). */
+  required?: boolean;
+  /** Regex pattern for string-typed fields (submit-time validation). */
+  pattern?: string;
+  /** String length bounds for input/textarea. */
+  minLength?: number;
+  maxLength?: number;
   /** datePicker display format (display-only; data stays ISO 8601). */
   format?: string;
   /** upload only: direct-URL mode (registry oneOf with actionRef). */
@@ -411,4 +418,92 @@ export function checkFormCapabilitiesRaw(
       )
     : [];
   return checkFormCapabilities({ protocolVersion, requiredCapabilities }, fields);
+}
+
+
+/** One submit-time field validation failure (GOAL-014 D-002 §3). */
+export interface FieldValidationError {
+  field: string;
+  code: "REQUIRED" | "PATTERN" | "MIN_LENGTH" | "MAX_LENGTH" | "MIN_VALUE" | "MAX_VALUE";
+  message: string;
+}
+
+function isEmptyValue(kind: WireKind, value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (kind === "string") return String(value).trim() === "";
+  if (kind === "string-array") return Array.isArray(value) && value.length === 0;
+  return false;
+}
+
+/**
+ * Validates form values against each field's declared constraints (GOAL-014
+ * D-002 §3.1). Pure function: returns all failures (not just the first) so
+ * the host can inline every field error. Boolean fields (switch/checkbox)
+ * never fail REQUIRED — their wire kind is boolean and the toggle has an
+ * explicit state.
+ */
+export function validateFieldValues(
+  fields: FormControlField[],
+  values: Record<string, unknown>,
+): FieldValidationError[] {
+  const errors: FieldValidationError[] = [];
+  for (const field of fields) {
+    const kind = wireKindOf(field);
+    if (kind === "boolean") continue;
+    const value = values[field.id];
+    if (field.required === true && isEmptyValue(kind, value)) {
+      errors.push({
+        field: field.id,
+        code: "REQUIRED",
+        message: "this field is required",
+      });
+      continue;
+    }
+    if (isEmptyValue(kind, value)) continue;
+    const str = kind === "string" ? String(value) : "";
+    if (field.pattern !== undefined && kind === "string") {
+      try {
+        const re = new RegExp(field.pattern);
+        if (!re.test(str)) {
+          errors.push({
+            field: field.id,
+            code: "PATTERN",
+            message: "format does not match the expected pattern",
+          });
+        }
+      } catch {
+        // Invalid pattern in schema is a gate error, not a submit failure;
+        // skip rather than break the form.
+      }
+    }
+    if (field.minLength !== undefined && kind === "string" && str.length < field.minLength) {
+      errors.push({
+        field: field.id,
+        code: "MIN_LENGTH",
+        message: "value is shorter than the minimum length",
+      });
+    }
+    if (field.maxLength !== undefined && kind === "string" && str.length > field.maxLength) {
+      errors.push({
+        field: field.id,
+        code: "MAX_LENGTH",
+        message: "value is longer than the maximum length",
+      });
+    }
+    if (field.min !== undefined && kind === "number" && typeof value === "number" && value < field.min) {
+      errors.push({
+        field: field.id,
+        code: "MIN_VALUE",
+        message: "value is below the minimum",
+      });
+    }
+    if (field.max !== undefined && kind === "number" && typeof value === "number" && value > field.max) {
+      errors.push({
+        field: field.id,
+        code: "MAX_VALUE",
+        message: "value exceeds the maximum",
+      });
+    }
+  }
+  return errors;
 }

@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 0/5
+progress: 2/5
 ---
 
 # GOAL-014 · 表单体验：字段级校验与错误展示 + 弹窗布局
@@ -26,13 +26,13 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：字段级错误契约（错误响应结构 + 兼容策略）、schema 字段约束声明（required/pattern/min/max 等最小集）、布局方案（单列/栅格配置）；方案级 self 审视
-- [ ] **S2 · 实现**：服务端 fieldErrors 输出 + schema 约束解析 + renderer 校验/内联错误 + modal 布局
+- [x] **S1 · 方案冻结**：字段级错误契约（可选 fieldErrors）+ 约束最小集 + 单列布局方案（D-002/A-001/E-002，2026-08-14）
+- [x] **S2 · 实现**：服务端 fieldErrors + 前端 validateFieldValues/内联 + 单列布局 + schema 约束示范（E-003，2026-08-14）
 - [ ] **S3 · 验证**：字段级错误回归 + 前端校验单测 + 布局快照 + 全量回归
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 
-progress: 0/5 由五个等权检查点派生。
+progress: 2/5 由五个等权检查点派生。
 
 ## 审计策略
 
@@ -42,9 +42,9 @@ progress: 0/5 由五个等权检查点派生。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 字段级错误响应结构（与既有 {error,message} 信封兼容策略） | S1 方案 | 现有错误契约对照（errorcatalog / 前端 readResourceApiError） | open |
-| I-002 | required | schema 字段约束最小集（required/pattern/min/max/长度）与协议版本影响 | S1 方案 | 业界对照（JSON Schema / AntD 规则） | open |
-| I-003 | required | 弹窗布局方案（列数可配/单列默认）与既有两列 fixture 兼容 | S1 方案 | 现有 modal fixture 对照 | open |
+| I-001 | required | 字段级错误响应结构（与既有 {error,message} 信封兼容策略） | S1 方案 | 现有错误契约对照（errorcatalog / 前端 readResourceApiError） | **closed**（D-002 §2：可选 fieldErrors 键） |
+| I-002 | required | schema 字段约束最小集（required/pattern/min/max/长度）与协议版本影响 | S1 方案 | 业界对照（JSON Schema / AntD 规则） | **closed**（D-002 §3：required/pattern/minLength/maxLength + min/max；不 bump 版本） |
+| I-003 | required | 弹窗布局方案（列数可配/单列默认）与既有两列 fixture 兼容 | S1 方案 | 现有 modal fixture 对照 | **closed**（D-002 §4：单列默认 + columns 可配 + modal width；渲染层变化） |
 | I-004 | required | go 影响判定（错误契约/协议扩展） | S4 | VP-008 接口对照 | open |
 
 ## 依赖
