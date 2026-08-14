@@ -2,19 +2,31 @@ export const DEFAULT_MANIFEST_PATH = "/.well-known/schema-ui/app-manifest.json";
 /**
  * Host manifest-version support set (strict negotiation, ADR-0009): 2.7 for
  * existing production manifests, 2.8 for Host/App interoperability manifests
- * (returnIntentQueryKeys etc.). Kept additive — 2.7 manifests stay accepted.
+ * (returnIntentQueryKeys etc.), 2.9 for ADR-0039/ADR-0040 (data.route-binding /
+ * form.controls.readonly). Kept additive — older manifests stay accepted.
  */
-export const APP_MANIFEST_SUPPORTED_PROTOCOL_VERSIONS = ["2.7", "2.8"] as const;
-export const APP_MANIFEST_PROTOCOL_VERSION = "2.8" as const;
+export const APP_MANIFEST_SUPPORTED_PROTOCOL_VERSIONS = ["2.7", "2.8", "2.9"] as const;
+export const APP_MANIFEST_PROTOCOL_VERSION = "2.9" as const;
 export const MANIFEST_SOURCE_HEADER = "X-Schema-UI-Manifest-Source";
 export const APP_MANIFEST_SOURCE =
-  "https://github.com/magicvr/schema-ui-docs/tree/521cff8"; // v2.8.0 formal release commit
+  "https://github.com/magicvr/schema-ui-docs/tree/81aa1d8"; // v2.9.0 formal release commit
 
 const APP_ID_PATTERN = /^[a-z][a-z0-9_-]*$/;
 // v2.8: capability id segments may contain hyphens (host.failure-recovery).
 const CAPABILITY_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/;
 const RETURN_INTENT_KEY_PATTERN = /^[a-z][a-zA-Z0-9_]*$/;
 const ICON_PATTERN = /^[a-z][a-z0-9-]*$/;
+
+/** True when `version` (MAJOR.MINOR) is >= the given floor. */
+function versionAtLeast(version: string, major: number, minor: number): boolean {
+  const match = /^(\d+)\.(\d+)$/.exec(version);
+  if (!match) {
+    return false;
+  }
+  const gotMajor = Number(match[1]);
+  const gotMinor = Number(match[2]);
+  return gotMajor > major || (gotMajor === major && gotMinor >= minor);
+}
 const PATH_PATTERN = /^\/(?!\/)[^\s\\]*$/;
 const TEMPLATE_NAME_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 const EXPRESSION_PATTERN =
@@ -642,9 +654,10 @@ export function validateAppManifest(value: unknown): AppManifest {
   const pages = parsePages(record.pages);
   // v2.8 return-intent allowlist extension gate (ADR-0036 / 09 §6): presence
   // requires protocolVersion >= 2.8 AND host.failure-recovery capability.
+  // v2.9 keeps the same floor (2.9 pages are accepted).
   for (const [index, page] of pages.entries()) {
     if (page.returnIntentQueryKeys === undefined) continue;
-    if (protocolVersion !== "2.8") {
+    if (!versionAtLeast(protocolVersion, 2, 8)) {
       fail(
         "PROTOCOL_VERSION_TOO_LOW",
         `pages[${index}].returnIntentQueryKeys`,

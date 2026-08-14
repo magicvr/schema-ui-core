@@ -6,6 +6,7 @@ import { useTranslate } from "@/i18n/runtime";
 import {
   fetchResourceList,
   isValidDataSource,
+  resolveDataParamsQuery,
   type ResourceQuery,
   type ResourceItem,
   type ResourceList,
@@ -104,13 +105,24 @@ export function schemaTableColumns(node: RenderTableNode): SchemaTableColumnSpec
 }
 
 /**
- * Resolves the table node's list endpoint (F-001). Returns null when absent or
- * not a single-slash same-origin path; the table then fails closed and never
- * fetches (the fixture fallback was removed in GOAL-010 S3).
+ * Resolves the table node's list endpoint (F-001). v2.9 prefers the node-level
+ * DataRef (ADR-0039, source:api url); the legacy props.dataSource string stays
+ * supported. Returns null when absent or not a single-slash same-origin path;
+ * the table then fails closed and never fetches (the fixture fallback was
+ * removed in GOAL-010 S3).
  */
 export function schemaTableDataSource(node: RenderTableNode): string | null {
+  const dataUrl = node.data?.url;
+  if (typeof dataUrl === "string" && isValidDataSource(dataUrl)) {
+    return dataUrl;
+  }
   const raw = node.props?.dataSource;
   return typeof raw === "string" && isValidDataSource(raw) ? raw : null;
+}
+
+/** v2.9 node-level DataRef params (ADR-0039 route bindings), else empty. */
+export function schemaTableDataParams(node: RenderTableNode): Record<string, unknown> | undefined {
+  return node.data?.params;
 }
 
 /** F-002: the direct field name used as each row's unique key (default "id"). */
@@ -154,6 +166,7 @@ function checkRowKeys(items: ResourceItem[], field: string): RowKeyCheck {
 export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const columns = schemaTableColumns(node);
   const dataSource = schemaTableDataSource(node);
+  const dataParams = schemaTableDataParams(node);
   const rowKeyField = schemaTableRowKey(node);
   const crud = useSchemaCrud();
   const t = useTranslate();
@@ -184,6 +197,19 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // v2.9 ADR-0039: route snapshot for dataSource params bindings. The current
+  // route query is read from the location (path params are not used by the
+  // current page set and resolve as empty for table bindings).
+  const locationKey = typeof window === "undefined" ? "" : window.location.search;
+  const routeSnapshot = useMemo(() => {
+    const entries = new URLSearchParams(window.location.search);
+    const query: Record<string, string> = {};
+    for (const [key, value] of entries.entries()) {
+      query[key] = value;
+    }
+    return query;
+  }, [locationKey]);
+
   useEffect(() => {
     // F-001: absent/invalid dataSource fails closed — never fetch.
     if (dataSource === null) {
@@ -195,7 +221,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchResourceList(fetcher ?? fetch, dataSource, query)
+    const paramsQuery = resolveDataParamsQuery(dataParams, { query: routeSnapshot, params: {} });
+    fetchResourceList(fetcher ?? fetch, dataSource, query, paramsQuery)
       .then((next) => {
         if (!cancelled) {
           setList(next);
@@ -211,7 +238,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, query, crud?.reloadToken]);
+  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken]);
 
   // F-002: validate row keys on every fetched page; invalid → fail closed.
   const keyCheck = useMemo(

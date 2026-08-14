@@ -45,6 +45,7 @@ import {
   fetchResourceList,
   isValidDataSource,
   readResourceApiError,
+  resolveDataParamsQuery,
   type ResourceList,
   type ResourceQuery,
 } from "@/renderer/resource";
@@ -1263,20 +1264,36 @@ function FormInner({
   const gate = gateRenderFormFields(metaValue, node.props.fields, "fields");
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
+    // GOAL-015 / ADR-0040: a create-modal (no row, no recordSource) may have
+    // its readOnly fields seeded by the Host from the current route query —
+    // the v2.9 route-filter scenario ("值由 Host 在 modal 场景提供") wires
+    // the inner-page type key into the new-entry form this way.
+    const routeQueryValues: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+        routeQueryValues[key] = value;
+      }
+    }
     for (const raw of node.props.fields) {
       if (!isRecord(raw) || typeof raw.id !== "string") {
         continue;
       }
-      // Precedence: modal row (edit-in-modal) → recordSource prefill → empty.
-      // Always coerce through the field wire kind so row arrays (e.g. roles[])
-      // become textarea strings or checkboxGroup string[] as appropriate (A-006 R-004).
+      // Precedence: modal row (edit-in-modal) → recordSource prefill → route
+      // query (create-modal readOnly fields) → empty. Always coerce through
+      // the field wire kind so row arrays (e.g. roles[]) become textarea
+      // strings or checkboxGroup string[] as appropriate (A-006 R-004).
       const modalValue =
         modalRow !== null && modalRow[raw.id] !== undefined ? modalRow[raw.id] : undefined;
       const prefillValue =
         prefillValues !== null && prefillValues[raw.id] !== undefined
           ? prefillValues[raw.id]
           : undefined;
-      const fromRow = modalValue !== undefined ? modalValue : prefillValue;
+      const routeValue =
+        raw.readOnly === true && routeQueryValues[raw.id] !== undefined
+          ? routeQueryValues[raw.id]
+          : undefined;
+      const fromRow =
+        modalValue !== undefined ? modalValue : prefillValue !== undefined ? prefillValue : routeValue;
       initial[raw.id] = coerceFieldValue(raw as unknown as FormControlField, fromRow);
     }
     return initial;
@@ -1762,6 +1779,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
 function useDisplayData(
   dataSource: string | null,
   fetcher: typeof fetch,
+  params?: Record<string, unknown>,
 ): { list: ResourceList | null; error: string | null } {
   const crud = useSchemaCrud();
   useEffect(() => {
@@ -1771,6 +1789,15 @@ function useDisplayData(
   }, [crud, fetcher]);
   const [list, setList] = useState<ResourceList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // v2.9 ADR-0039: current route query snapshot for dataSource params bindings.
+  const locationKey = typeof window === "undefined" ? "" : window.location.search;
+  const routeQuery = useMemo(() => {
+    const query: Record<string, string> = {};
+    for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+      query[key] = value;
+    }
+    return query;
+  }, [locationKey]);
   useEffect(() => {
     if (dataSource === null) {
       setList(null);
@@ -1783,7 +1810,8 @@ function useDisplayData(
     // (same dataSource, new reloadToken) keeps showing the old error because
     // resolveAsyncDisplayState prefers `error` over `ready`.
     setError(null);
-    fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 })
+    const paramsQuery = resolveDataParamsQuery(params, { query: routeQuery, params: {} });
+    fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 }, paramsQuery)
       .then((next) => {
         if (!cancelled) {
           setList(next);
@@ -1798,7 +1826,7 @@ function useDisplayData(
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, crud?.reloadToken]);
+  }, [fetcher, dataSource, params, routeQuery, crud?.reloadToken]);
   return { list, error };
 }
 
@@ -1896,11 +1924,14 @@ function ChartView({ node }: { node: RenderChartNode }) {
   const chartType = node.props?.chartType;
   const xField = node.props?.xField;
   const yField = node.props?.yField;
+  // v2.9 ADR-0039: node-level DataRef preferred over legacy props.dataSource.
   const dataSource =
-    typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
-      ? node.props.dataSource
-      : null;
-  const { list, error } = useDisplayData(dataSource, fetcher);
+    typeof node.data?.url === "string" && isValidDataSource(node.data.url)
+      ? node.data.url
+      : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
+        ? node.props.dataSource
+        : null;
+  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   const missingProps = chartType === undefined || xField === undefined || yField === undefined;
   if (dataSource === null || missingProps) {

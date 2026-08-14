@@ -161,6 +161,54 @@ export async function readResourceApiError(response: Response, label: string): P
 }
 
 /** Serializes a ResourceQuery into a URL query string (query-serialization). */
+
+/**
+ * v2.9 dataSource params resolution (ADR-0039, capability data.route-binding).
+ * Literal scalars pass through; whole `$context.route.query.*` /
+ * `$context.route.params.*` bindings are resolved from the route snapshot;
+ * a missing key (or absent route) is a tombstone — the parameter is dropped
+ * (ADR-0010 semantics, same as null values). Returns the merged query string
+ * (empty when nothing resolves).
+ */
+export function resolveDataParamsQuery(
+  params: Record<string, unknown> | undefined,
+  route: { query?: Record<string, string>; params?: Record<string, string> },
+): string {
+  const out = new URLSearchParams();
+  if (params === undefined) {
+    return "";
+  }
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === "string" && value.startsWith("$context.route.")) {
+      if (value.startsWith("$context.route.query.")) {
+        const routeKey = value.slice("$context.route.query.".length);
+        const resolved = route.query?.[routeKey];
+        if (resolved === undefined || resolved === null) {
+          continue; // tombstone: drop the parameter
+        }
+        out.set(key, String(resolved));
+        continue;
+      }
+      if (value.startsWith("$context.route.params.")) {
+        const routeKey = value.slice("$context.route.params.".length);
+        const resolved = route.params?.[routeKey];
+        if (resolved === undefined || resolved === null) {
+          continue; // tombstone: drop the parameter
+        }
+        out.set(key, String(resolved));
+        continue;
+      }
+      // Unknown $context.route.* shape: fail closed by dropping the param.
+      continue;
+    }
+    if (value === null || value === undefined) {
+      continue; // tombstone
+    }
+    out.set(key, String(value));
+  }
+  return out.toString();
+}
+
 export function buildResourceQuery(query: ResourceQuery): string {
   const params = new URLSearchParams();
   if (query.q !== undefined && query.q.trim() !== "") {
@@ -203,11 +251,20 @@ export function parseResourceList(value: unknown): ResourceList {
   };
 }
 
-/** Fetches a page of a schema-driven resource list (request-construction). */
+/**
+ * Fetches a page of a schema-driven resource list (request-construction).
+ *
+ * `extraQuery` carries v2.9 ADR-0039 dataSource params that already resolved
+ * to literal key=value pairs (e.g. `dictKey=order_status` from a
+ * `$context.route.query.*` binding). It is merged with the standard
+ * q/sort/order/page/pageSize query; baseURL itself must stay a bare
+ * single-slash same-origin path (F-001).
+ */
 export async function fetchResourceList(
   fetcher: typeof fetch,
   baseURL: string,
   query: ResourceQuery,
+  extraQuery?: string,
 ): Promise<ResourceList> {
   // F-001: validate BEFORE touching the (auth) fetcher so an invalid dataSource
   // never reaches Bearer-attaching transport.
@@ -216,8 +273,13 @@ export async function fetchResourceList(
       `invalid dataSource "${baseURL}": expected a single-slash same-origin path (no //, scheme, whitespace, backslash, ? or #)`,
     );
   }
-  const queryString = buildResourceQuery(query);
-  const url = queryString === "" ? baseURL : `${baseURL}?${queryString}`;
+  const params = new URLSearchParams(buildResourceQuery(query));
+  if (extraQuery !== undefined && extraQuery !== "") {
+    for (const [key, value] of new URLSearchParams(extraQuery).entries()) {
+      params.set(key, value);
+    }
+  }
+  const url = params.size === 0 ? baseURL : `${baseURL}?${params.toString()}`;
   const response = await fetcher(url);
   if (!response.ok) {
     throw await readResourceApiError(response, "resource fetch");

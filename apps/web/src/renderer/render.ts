@@ -116,9 +116,20 @@ export interface RenderTextNode {
   children?: RenderNode[];
 }
 
+/**
+ * v2.9 DataRef subset consumed by data nodes (ADR-0039): source:api url +
+ * params (literal scalars or whole $context.route.query.* / params.* bindings).
+ */
+export interface RenderDataRef {
+  url: string;
+  params?: Record<string, unknown>;
+}
+
 export interface RenderTableNode {
   type: "table";
   id?: string;
+  /** v2.9 node-level DataRef (source:api). Preferred over props.dataSource. */
+  data?: RenderDataRef;
   props: {
     columns?: Array<Record<string, unknown>>;
     actions?: Array<Record<string, unknown>>;
@@ -179,6 +190,8 @@ export interface RenderActionButtonNode {
 export interface RenderStatCardNode {
   type: "statCard";
   id?: string;
+  /** v2.9 node-level DataRef (source:api). Preferred over props.dataSource. */
+  data?: RenderDataRef;
   props?: {
     label?: string;
     /** i18n key resolved before `label` (F-01 · GOAL-003 A-003 F-001). */
@@ -197,6 +210,8 @@ export interface RenderStatCardNode {
 export interface RenderChartNode {
   type: "chart";
   id?: string;
+  /** v2.9 node-level DataRef (source:api). Preferred over props.dataSource. */
+  data?: RenderDataRef;
   props?: {
     /** line | bar | pie (registry enum, required). */
     chartType?: string;
@@ -334,6 +349,21 @@ export function resolveResponsePath(record: unknown, path: string): unknown {
   return value;
 }
 
+/** Parses a raw node-level DataRef (v2.9, source:api url + params). */
+function parseRenderDataRef(value: unknown): RenderDataRef | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const url = value.url;
+  if (typeof url !== "string" || url === "") {
+    return undefined;
+  }
+  return {
+    url,
+    ...(isRecord(value.params) ? { params: value.params as Record<string, unknown> } : {}),
+  };
+}
+
 /** Normalizes an unknown body value into a typed RenderNode, fail-closed. */
 export function parseRenderNode(value: unknown, path: string): RenderNode | RenderError {
   if (!isRecord(value) || typeof value.type !== "string") {
@@ -445,6 +475,9 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
     return {
       type: "statCard",
       ...(value.id === undefined ? {} : { id: value.id }),
+      ...(parseRenderDataRef(value.data) === undefined
+        ? {}
+        : { data: parseRenderDataRef(value.data) }),
       props: {
         ...(typeof props.label === "string" ? { label: props.label } : {}),
         // F-01 (GOAL-003 A-003 F-001): preserve labelKey for runtime i18n.
@@ -462,6 +495,9 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
     return {
       type: "chart",
       ...(value.id === undefined ? {} : { id: value.id }),
+      ...(parseRenderDataRef(value.data) === undefined
+        ? {}
+        : { data: parseRenderDataRef(value.data) }),
       props: {
         ...(typeof props.chartType === "string" ? { chartType: props.chartType } : {}),
         ...(typeof props.xField === "string" ? { xField: props.xField } : {}),
@@ -474,6 +510,9 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
   return {
     type: "table",
     ...(value.id === undefined ? {} : { id: value.id }),
+    ...(parseRenderDataRef(value.data) === undefined
+      ? {}
+      : { data: parseRenderDataRef(value.data) }),
     props: {
       ...(isRecord(value.props) ? value.props : {}),
     },
@@ -629,6 +668,9 @@ export function gateRenderFormFields(
       // GOAL-014 D-002 §3: pass through submit-time validation constraints
       // (A-003 F-001: without this they were dropped at parse time).
       ...(entry.required === true ? { required: true } : {}),
+      // ADR-0040 (since 2.9): readOnly fields render non-editable but keep
+      // their value in the submit projection (gated by checkFormCapabilities).
+      ...(entry.readOnly === true ? { readOnly: true } : {}),
       ...(typeof entry.pattern === "string" ? { pattern: entry.pattern } : {}),
       ...(typeof entry.minLength === "number" ? { minLength: entry.minLength } : {}),
       ...(typeof entry.maxLength === "number" ? { maxLength: entry.maxLength } : {}),

@@ -192,6 +192,8 @@
 "schema.dataDictionary.action.delete": "Delete",
 "schema.dataDictionary.confirm.delete": "Delete this type and all its entries?",
 "schema.dictionaryEntries.field.dictKey": "Type key",
+"schema.dictionaryEntries.field.dictTypeName": "Type name",
+"schema.dictionaryEntries.field.dictKeyReadonly": "Type (read-only)",
 "schema.dictionaryEntries.field.entryKey": "Entry key",
 "schema.dictionaryEntries.field.label": "Label",
 "schema.dictionaryEntries.field.enabled": "Enabled",

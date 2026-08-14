@@ -1,0 +1,128 @@
+{
+  "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
+  "sourceCommit": "81aa1d8954717f4ebdcc695eed6fafaeafcebe8d",
+  "artifactVersion": "2.9.0",
+  "note": "上游 schema-ui-protocol v2.9.0（tag v2.9.0 @ 81aa1d8，PR #39，上游审计 0082）：MINOR 发布 — ADR-0039 data.route-binding（data.params / optionsSource.params / datasources.*.params 的 $context.route.query.* / $context.route.params.* 整值绑定，缺失 tombstone 删除）与 ADR-0040 form.controls.readonly（表单字段 readOnly 声明，用户不可编辑但值仍参与 values 与提交投影）。本仓消费 pin：docs/schemas 全量 11 件 + 20 个 conformance fixture 套件（scenarios 未 vendor）；fixture 算法线升 2.9（fixture digest 89baddbc…）。v2.8.x（521cff8…f07157d）与本版机器契约差异即上述两个 capability 增补 + 协议版本线。",
+  "artifacts": [
+    {
+      "path": "docs/schemas/action.schema.json",
+      "sha256": "2f929e1fa4706a66a6e14bb4c58b2cd8a7c8c7b01f8e624c9c56adfb440af5c0"
+    },
+    {
+      "path": "docs/schemas/app-manifest.schema.json",
+      "sha256": "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55"
+    },
+    {
+      "path": "docs/schemas/capability-registry.json",
+      "sha256": "d7fa4043383be337fbc235d726f73c00ae0ac8ab614cca76474246b180585315"
+    },
+    {
+      "path": "docs/schemas/component-registry.json",
+      "sha256": "0714e1339b175a0822398d6105467aeb2dcba663903c141fee11d7911b2d21a9"
+    },
+    {
+      "path": "docs/schemas/fixture-suite.schema.json",
+      "sha256": "a93f500bcb94f93e7a289af700227a407688f8205218fe5681269956b91fd1a3"
+    },
+    {
+      "path": "docs/schemas/host-bootstrap.schema.json",
+      "sha256": "e861430275c24ca5108e90ae9a15a8a6feb72f7871983ccb76fadf5384d3e55e"
+    },
+    {
+      "path": "docs/schemas/host-conformance-claim.schema.json",
+      "sha256": "da6389f874787e377a80ea3f1c4364605941220b856091adade561db6877a74e"
+    },
+    {
+      "path": "docs/schemas/host-failure.schema.json",
+      "sha256": "1923c5710173e601fb3052c97a8ab0d1ccf88d00fb24b8b660f7979e051531be"
+    },
+    {
+      "path": "docs/schemas/node.schema.json",
+      "sha256": "deade0b3146415856584ab9dbaa197db077ceb4b3f1e5512c6be449e65392630"
+    },
+    {
+      "path": "docs/schemas/page.schema.json",
+      "sha256": "213d9df40194221f4461fe2246601e53b040d7fab64d5b29a9021780669b0923"
+    },
+    {
+      "path": "docs/schemas/reaction.schema.json",
+      "sha256": "c35f1beb6b4a717114aeae5b7bc5ba523b507177658e44bc60752e70f8a415f4"
+    },
+    {
+      "path": "conformance/fixtures/actions/cases.json",
+      "sha256": "109c36889e402d4ff8a52a5093807dd93ebc09053fd3e2dac5f8d13ac759d7d3"
+    },
+    {
+      "path": "conformance/fixtures/app-manifest/cases.json",
+      "sha256": "5f14de61686fac9d459a44fd5a27784fcb5d6c80d9508999608c8653b74d462a"
+    },
+    {
+      "path": "conformance/fixtures/app-navigation/cases.json",
+      "sha256": "d56d933cf4088d4b292417e258c0ad098f3ff31442653d65b6f37069ee9186af"
+    },
+    {
+      "path": "conformance/fixtures/component-format/cases.json",
+      "sha256": "e0e81380e67dc8fe2c3a56a3a94efa29c39a814d58451ef894f9a3fdcea5bf15"
+    },
+    {
+      "path": "conformance/fixtures/host-bootstrap/cases.json",
+      "sha256": "8798ee9d2d953a4c26e8fd58bede83b9f6b3a297d57888d33c9093befa7298dc"
+    },
+    {
+      "path": "conformance/fixtures/host-conformance-claim/cases.json",
+      "sha256": "c9b3264109ef50f8962575cd7df484303358d8214a04a31ee0334f6d38d357c0"
+    },
+    {
+      "path": "conformance/fixtures/host-failure/cases.json",
+      "sha256": "cc05cb79197c4067156a8bbc710516f688c129b42ccd4aa5acbbbed7df85f2c4"
+    },
+    {
+      "path": "conformance/fixtures/permissions-inheritance/cases.json",
+      "sha256": "a129c7e007f2511b64cecc700ed3e68a991ca050b8a0d417020d7e6922a1973d"
+    },
+    {
+      "path": "conformance/fixtures/query-serialization/cases.json",
+      "sha256": "9120f76b0ca6a3d2a13a06942c975f529f7d5fd044dd6e2c614b52f3d91137c1"
+    },
+    {
+      "path": "conformance/fixtures/reactions/cases.json",
+      "sha256": "451ed639011bace96cfe20e6aef41ac6b8955ef08c828500e252e899bdefce31"
+    },
+    {
+      "path": "conformance/fixtures/request-construction/cases.json",
+      "sha256": "3b52299eec4ac5574242138049b8b643bfda9b3e3147262462c0e3a167902a88"
+    },
+    {
+      "path": "conformance/fixtures/request-lifecycle/cases.json",
+      "sha256": "6fdf191766024a607866935f2711b0fca7d088d6b11e13d83511148c31ed30ba"
+    },
+    {
+      "path": "conformance/fixtures/response-mapping/cases.json",
+      "sha256": "76fee3bb34e7e510659100654b0972ccd797fef5a8bc3b850939151273c2b584"
+    },
+    {
+      "path": "conformance/fixtures/runtime-defaults/cases.json",
+      "sha256": "7107703e41df031f07e4f3ff7d33432e10e88acf1ceecdcb02b0bdfa90c83bf8"
+    },
+    {
+      "path": "conformance/fixtures/search-table/cases.json",
+      "sha256": "f2d813f5e4449f509abde0bd86bf7b5021283fe509ede3e8d49138ba68361b3b"
+    },
+    {
+      "path": "conformance/fixtures/static-data/cases.json",
+      "sha256": "6998b73b9a6966758e981c653d8c086a8bf40ff6f8c9685c01eb20779920d2ea"
+    },
+    {
+      "path": "conformance/fixtures/table-sort/cases.json",
+      "sha256": "5382fc3e26292cf44b90a53a2d22a21507620026e2fd3e286f1fbed400aa27e6"
+    },
+    {
+      "path": "conformance/fixtures/uploads/cases.json",
+      "sha256": "f9fedc90d25250a5a4ccc82dc134941244908cb65eb5fd53abdebc75844c724b"
+    },
+    {
+      "path": "conformance/fixtures/version-negotiation/cases.json",
+      "sha256": "8c5a69e8f6231b060084ec074af51050a86dec94dfd0c18cf93e564330bd9365"
+    }
+  ]
+}

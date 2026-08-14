@@ -36,6 +36,8 @@ export const FORM_CONTROLS_EXTENDED_CAPABILITY = "form.controls.extended";
 export const FORM_CONTROLS_ADVANCED_CAPABILITY = "form.controls.advanced";
 /** ADR-0021: `form.props.recordSource` prefill GET (registry since 2.1). */
 export const FORM_RECORD_LOAD_CAPABILITY = "form.record.load";
+/** ADR-0040 (since 2.9): `readOnly` field declaration (value still projects). */
+export const FORM_CONTROLS_READONLY_CAPABILITY = "form.controls.readonly";
 
 /** Whitelisted base controls (no capability gate; registry has no `since`). */
 const BASE_CONTROLS = new Set<FormControlType>([
@@ -98,6 +100,11 @@ export interface FormControlField {
   precision?: number;
   /** GOAL-014 D-002 §3: field-level validation constraints (optional). */
   required?: boolean;
+  /** ADR-0040 (since 2.9): read-only field — user cannot edit, value still
+   * participates in values and the submit projection (bodyMapping);
+   * recordSource backfill and reactions keep writing. Requires protocol
+   * >= 2.9 and form.controls.readonly. */
+  readOnly?: boolean;
   /** Regex pattern for string-typed fields (submit-time validation). */
   pattern?: string;
   /** String length bounds for input/textarea. */
@@ -305,6 +312,22 @@ export function checkFormCapabilities(
   }
 
   for (const field of fields) {
+    if (field.readOnly === true) {
+      if (!versionAtLeast(meta.protocolVersion, 2, 9)) {
+        errors.push({
+          code: "FORM_VERSION_TOO_LOW",
+          path: `fields[${field.id}].readOnly`,
+          message: "readOnly requires protocol >= 2.9",
+        });
+      }
+      if (!capabilities.has(FORM_CONTROLS_READONLY_CAPABILITY)) {
+        errors.push({
+          code: "FORM_CAPABILITY_REQUIRED",
+          path: `fields[${field.id}].readOnly`,
+          message: "readOnly requires form.controls.readonly",
+        });
+      }
+    }
     if (field.type === "select" && field.mode === "multiple") {
       if (!versionAtLeast(meta.protocolVersion, 2, 6)) {
         errors.push({

@@ -268,9 +268,24 @@ function buildDataRef(input: JsonObject): RequestConstructionResult {
   if (dataRef.requestInterceptor !== undefined) {
     return fail("INTERCEPTOR_VIOLATION", "requestInterceptor");
   }
+  // ADR-0039 (since 2.9): params may bind whole $context.route.query.* /
+  // $context.route.params.* values (any context). A missing route key (or an
+  // absent route input) is a tombstone: the parameter is deleted from the URL
+  // and the request still succeeds (ADR-0010 semantics, data-ref-route-* cases).
+  const route = (input.route as { query?: JsonObject; params?: JsonObject }) ?? {};
   const { path, query } = splitUrl(url);
   const params = (dataRef.params as JsonObject | undefined) ?? {};
   for (const [key, value] of Object.entries(params)) {
+    if (typeof value === "string" && value.startsWith("$context.route.")) {
+      const resolved = resolveRouteExpr(value, route, "dataRef.params." + key);
+      if (!resolved.ok) {
+        // Missing route key / no route context: tombstone delete, keep going.
+        query.delete(key);
+        continue;
+      }
+      query.set(key, resolved.value);
+      continue;
+    }
     if (value === null) {
       query.delete(key);
       continue;

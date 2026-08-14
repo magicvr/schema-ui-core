@@ -49,15 +49,15 @@ interface PinnedJson<T> {
   value: T;
 }
 
-// app-manifest schema + fixtures re-pinned 2026-08-13 to the 2.8.0 release
-// machine contracts (upstream 2.8.0 formal tag 521cff8: returnIntentQueryKeys +
-// capability id hyphen grammar). See provenance-v2.8.json.
+// app-manifest schema + fixtures re-pinned 2026-08-14 to the 2.9.0 release
+// machine contracts (upstream v2.9.0 @ 81aa1d8; schema unchanged since 2.8.0,
+// fixtures advanced to the 2.9 algorithm line). See provenance-v2.9.json.
 const APP_MANIFEST_SCHEMA_SHA256 =
   "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55";
 const APP_MANIFEST_FIXTURE_SHA256 =
-  "4ab9ec93e603dfd4b0e7a3b3c89de5e7a59d91a53a90f252bfcfa5fb3c43c347";
+  "5f14de61686fac9d459a44fd5a27784fcb5d6c80d9508999608c8653b74d462a";
 const APP_NAVIGATION_FIXTURE_SHA256 =
-  "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897";
+  "d56d933cf4088d4b292417e258c0ad098f3ff31442653d65b6f37069ee9186af";
 // F-01/F-04 (GOAL-003/006): the admin fixture now mirrors the runtime union
 // (dashboard home + account/notifications pages) — local artifact, re-pinned.
 // S-02/S-01 (GOAL-007/008): admin fixture extended with file-library +
@@ -212,10 +212,14 @@ function hostManifestValue(
         ? {}
         : { homePageRef: pageIdFromPages(pages) }),
     } satisfies JsonObject);
-  // The host supports exactly 2.7 and 2.8; older fixture inputs (2.5/2.6)
-  // are rewritten to 2.7 as before. 2.7/2.8 inputs pass through so the
-  // returnIntentQueryKeys version gate stays observable.
-  const rewriteVersion = !isBelowMinimum && rawProtocol !== "2.7" && rawProtocol !== "2.8";
+  // The host supports exactly 2.7, 2.8 and 2.9; older fixture inputs
+  // (2.5/2.6) are rewritten to 2.7 as before. 2.7/2.8/2.9 inputs pass through
+  // so the returnIntentQueryKeys version gate stays observable.
+  const rewriteVersion =
+    !isBelowMinimum &&
+    rawProtocol !== "2.7" &&
+    rawProtocol !== "2.8" &&
+    rawProtocol !== "2.9";
   return {
     ...raw,
     protocolVersion: rewriteVersion ? "2.7" : rawProtocol,
@@ -611,7 +615,7 @@ describe("pinned schema-ui-docs fixture artifacts", () => {
       "ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
     );
     expect(APP_MANIFEST_SOURCE).toBe(
-      "https://github.com/magicvr/schema-ui-docs/tree/521cff8",
+      "https://github.com/magicvr/schema-ui-docs/tree/81aa1d8",
     );
     expect(provenanceArtifact.value.artifactVersion).toBe("2.7.0");
     // R3 baseline artifacts remain pinned; R5 stage 3 extends provenance with

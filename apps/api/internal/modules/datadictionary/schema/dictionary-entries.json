@@ -2,7 +2,7 @@
   "meta": {
     "pageId": "dictionary-entries",
     "title": "Dictionary entries",
-    "protocolVersion": "2.7",
+    "protocolVersion": "2.9",
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
@@ -11,7 +11,9 @@
       "actions.page.trigger",
       "table.sort",
       "form.controls.extended",
-      "form.controls.advanced"
+      "form.controls.advanced",
+      "data.route-binding",
+      "form.controls.readonly"
     ]
   },
   "actions": {
@@ -71,10 +73,11 @@
           "fields": [
             {
               "id": "dictKey",
-              "label": "Type key",
+              "label": "Type (read-only)",
               "type": "input",
-              "labelKey": "schema.dictionaryEntries.field.dictKey",
-              "required": true
+              "labelKey": "schema.dictionaryEntries.field.dictKeyReadonly",
+              "required": true,
+              "readOnly": true
             },
             {
               "id": "entryKey",
@@ -134,9 +137,17 @@
           "fields": [
             {
               "id": "dictKey",
-              "label": "Type key",
+              "label": "Type key (read-only)",
               "type": "input",
-              "labelKey": "schema.dictionaryEntries.field.dictKey"
+              "labelKey": "schema.dictionaryEntries.field.dictKeyReadonly",
+              "readOnly": true
+            },
+            {
+              "id": "dictTypeName",
+              "label": "Type name",
+              "type": "input",
+              "readOnly": true,
+              "labelKey": "schema.dictionaryEntries.field.dictTypeName"
             },
             {
               "id": "label",
@@ -227,7 +238,6 @@
               "labelKey": "schema.dictionaryEntries.column.updated"
             }
           ],
-          "dataSource": "/api/data-dictionary/entries",
           "toolbar": [
             {
               "key": "create",
@@ -260,6 +270,13 @@
               "confirmKey": "schema.dictionaryEntries.confirm.delete"
             }
           ]
+        },
+        "data": {
+          "source": "api",
+          "url": "/api/data-dictionary/entries",
+          "params": {
+            "dictKey": "$context.route.query.dictKey"
+          }
         }
       }
     ]

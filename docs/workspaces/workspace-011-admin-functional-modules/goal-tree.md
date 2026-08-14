@@ -31,7 +31,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-011-r3-s11-login-captcha [done]       · R3-S11 登录验证码（5/5）
 ├── GOAL-012-r3-s12-recycle-bin [done]      · R3-S12 回收站/软删除（5/5）
 ├── GOAL-014-form-experience [done]      · R4 表单体验：字段级校验/错误展示 + 弹窗布局（5/5）
-└── GOAL-015-dict-inner-page-breadcrumb [blocked] · R4 数据字典内页 + 面包屑层级导航（2/5，等上游 P-2/P-3 协议）
+└── GOAL-015-dict-inner-page-breadcrumb [active] · R4 数据字典内页 + 面包屑层级导航（4/5）
 ```
 
 Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14ab9d`）。首阶段 R1 = 有界调研；分档产出后按 Root 路线图逐波立项（R2 一等公民 / R3 常用 / R4 增补 backlog）。
@@ -54,7 +54,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-012-r3-s12-recycle-bin | R3-S12 · 回收站/软删除管理 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-013-nav-order-config | 导航顺序：默认清单 + 配置文件覆盖（方案 A） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-014-form-experience | R4 · 表单体验：字段级校验/错误展示 + 弹窗布局 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
-| GOAL-015-dict-inner-page-breadcrumb | R4 · 数据字典内页 + 面包屑层级导航 | GOAL-001-admin-functional-modules | blocked | 2/5 | 2026-08-14 |
+| GOAL-015-dict-inner-page-breadcrumb | R4 · 数据字典内页 + 面包屑层级导航 | GOAL-001-admin-functional-modules | active | 4/5 | 2026-08-14 |
 
 ## 维护说明
 

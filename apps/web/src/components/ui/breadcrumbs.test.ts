@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { resolveBreadcrumbTrail, type BreadcrumbEntry } from "./breadcrumbs";
+import { resolveBreadcrumbTrail } from "./breadcrumbs";
 
 const t = (key: string) => key;
 

@@ -192,6 +192,8 @@
 "schema.dataDictionary.action.delete": "删除",
 "schema.dataDictionary.confirm.delete": "删除此类型及其全部条目？",
 "schema.dictionaryEntries.field.dictKey": "类型键",
+"schema.dictionaryEntries.field.dictTypeName": "类型名称",
+"schema.dictionaryEntries.field.dictKeyReadonly": "类型（只读）",
 "schema.dictionaryEntries.field.entryKey": "条目键",
 "schema.dictionaryEntries.field.label": "标签",
 "schema.dictionaryEntries.field.enabled": "启用",

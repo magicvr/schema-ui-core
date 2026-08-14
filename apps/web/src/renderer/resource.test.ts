@@ -6,6 +6,7 @@ import {
   fetchResourceList,
   isValidDataSource,
   parseResourceList,
+  resolveDataParamsQuery,
   updateResource,
   type ResourceList,
 } from "@/renderer/resource";
@@ -115,6 +116,57 @@ describe("parseResourceList (response-mapping)", () => {
   it("fails closed on a non-object payload", () => {
     expect(() => parseResourceList(null)).toThrow();
     expect(() => parseResourceList([])).toThrow();
+  });
+});
+
+describe("resolveDataParamsQuery (v2.9 ADR-0039 route bindings)", () => {
+  it("passes literal scalars through and drops nulls", () => {
+    expect(resolveDataParamsQuery({ status: "paid", flag: true, n: 3, gone: null }, { query: {}, params: {} })).toBe("status=paid&flag=true&n=3");
+  });
+
+  it("resolves whole $context.route.query.* bindings", () => {
+    expect(
+      resolveDataParamsQuery(
+        { dictKey: "$context.route.query.dictKey", status: "paid" },
+        { query: { dictKey: "ORDER_STATUS" }, params: {} },
+      ),
+    ).toBe("dictKey=ORDER_STATUS&status=paid");
+  });
+
+  it("resolves $context.route.params.* bindings", () => {
+    expect(
+      resolveDataParamsQuery(
+        { type: "$context.route.params.type" },
+        { query: {}, params: { type: "admin" } },
+      ),
+    ).toBe("type=admin");
+  });
+
+  it("tombstones a missing route key (ADR-0010)", () => {
+    expect(
+      resolveDataParamsQuery(
+        { dictKey: "$context.route.query.dictKey" },
+        { query: {}, params: {} },
+      ),
+    ).toBe("");
+  });
+
+  it("tombstones when no route snapshot is provided", () => {
+    expect(
+      resolveDataParamsQuery(
+        { dictKey: "$context.route.query.dictKey" },
+        { query: undefined, params: undefined },
+      ),
+    ).toBe("");
+  });
+
+  it("drops unknown $context.route.* shapes fail-closed", () => {
+    expect(
+      resolveDataParamsQuery(
+        { k: "$context.route.session.id" },
+        { query: { session: "x" }, params: {} },
+      ),
+    ).toBe("");
   });
 });
 

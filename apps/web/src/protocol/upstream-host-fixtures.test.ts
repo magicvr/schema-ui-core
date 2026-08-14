@@ -21,7 +21,7 @@ import {
 /**
  * Host/App 互操作 conformance（S4 生产实现消费上游候选 fixtures，零排除）。
  *
- * 与 R3/R5 的 fixture 消费同构：上游 `schema-ui-docs@521cff8`（v2.8.0 正式 tag）
+ * 与 R3/R5 的 fixture 消费同构：上游 `schema-ui-docs@81aa1d8`（v2.9.0）
  * 的 host-bootstrap / host-failure / host-conformance-claim 三个 suite 直接
  * 逐字段核对本仓生产 Host 模块（`src/host/*`）。这些模块是 main.tsx /
  * App shell 的生产代码路径，不是 fixture-only adapter；任何 skip/改写期望
@@ -29,11 +29,11 @@ import {
  */
 
 const HOST_BOOTSTRAP_FIXTURE_SHA256 =
-  "bfc71bbd27951f13a16daa2a2eca3ff7285e0c149faf7ef3476ccf2912d5528e";
+  "8798ee9d2d953a4c26e8fd58bede83b9f6b3a297d57888d33c9093befa7298dc";
 const HOST_FAILURE_FIXTURE_SHA256 =
-  "59efc00ad9870705f1a4f91df9b03d26355eb2ad9740d881af811e35fec1d184";
+  "cc05cb79197c4067156a8bbc710516f688c129b42ccd4aa5acbbbed7df85f2c4";
 const HOST_CLAIM_FIXTURE_SHA256 =
-  "e3511ecc1bc22fccbd2389c9b7411ddff1a82cc65988f2d6ce169f7db539590d";
+  "c9b3264109ef50f8962575cd7df484303358d8214a04a31ee0334f6d38d357c0";
 
 interface FixtureCase {
   id: string;

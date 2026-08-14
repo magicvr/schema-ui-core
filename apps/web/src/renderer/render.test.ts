@@ -350,3 +350,18 @@ describe("GOAL-014 · constraint passthrough + fieldErrors echo (A-003 F-001/F-0
   });
 });
 
+describe("gateRenderFormFields · readOnly (ADR-0040)", () => {
+  it("passes readOnly through and gates it on 2.9 + capability", () => {
+    const meta = { protocolVersion: "2.9", requiredCapabilities: ["form.controls.readonly"] };
+    const ok = gateRenderFormFields(meta, [{ id: "dictKey", type: "input", readOnly: true }], "fields");
+    expect(ok.errors).toEqual([]);
+    expect(ok.fields[0]?.readOnly).toBe(true);
+  });
+
+  it("rejects readOnly fields when the capability is missing", () => {
+    const meta = { protocolVersion: "2.9", requiredCapabilities: [] };
+    const bad = gateRenderFormFields(meta, [{ id: "dictKey", type: "input", readOnly: true }], "fields");
+    expect(bad.fields.length).toBe(0);
+    expect(bad.errors.some((e) => e.code === "FORM_CAPABILITY_REQUIRED")).toBe(true);
+  });
+});

@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 2/5
+version: 0.2.0
+progress: 4/5
 ---
 
 # GOAL-015 · 数据字典内页（按类型过滤）+ 面包屑层级导航
@@ -26,8 +26,8 @@ progress: 2/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：dictKey 过滤契约 + 内页导航 + 面包屑路由栈；协议增补门禁 P-1/P-2 登记 I-005（D-002/A-001/E-002，2026-08-14）
-- [x] **S2（部分）**：服务端 dictKey 过滤 + 面包屑组件（门禁期先行，E-003）；schema 改造待 I-005 解除
-- [ ] **S3 · 验证**：过滤回归 + 内页实测 + 面包屑测试 + 全量回归
+- [x] **S2**：服务端 dictKey 过滤 + 面包屑（门禁期先行 E-003/E-004）；v2.9 协议落地后完成 schema 改造——table node.data params 路由绑定 + dictKey 只读（D-003/E-006/E-007）
+- [x] **S3 · 验证**：内页链路 T-DE-01..05 + 过滤/面包屑回归 + 全量回归 945/945（E-008）
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 
@@ -45,8 +45,8 @@ progress: 2/5 由五个等权检查点派生。
 | I-002 | required | 内页表单 dictKey 只读绑定（显示类型名/传类型键；create 默认值来自 route query） | S1 方案 | 现有 recordSource/context.route.query 机制对照 | open |
 | I-003 | required | 面包屑路由栈方案（history 驱动；返回按钮语义；与 HOST_OWNED_PATHS/route-not-found 交互） | S1 方案 | 现有 App.tsx 路由对照 | open |
 | I-004 | required | go 影响判定（List 过滤参数/契约扩展） | S4 | VP-008 接口对照 | open |
-| I-005 | required | **协议增补门禁 · P-2**：table dataSource query 注入（queryMapping）——上游 schema-ui-docs 增补中 | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin | **open（用户增补中）** |
-| I-006 | required | **协议增补门禁 · 表单只读**：表单字段 readonly/disabled 协议（上游 2026-08-14 通知将增补）——dictKey 只读显示依赖；先行实现已撤销，等协议形状落地 | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin | **open（用户增补中）** |
+| I-005 | required | **协议增补门禁 · P-2**：dataSource 路由绑定——上游 v2.9.0 ADR-0039 落地为 data.params 的 `$context.route.query.*`/`params.*` 整值绑定（capability data.route-binding） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin（81aa1d8） | **closed**（D-003/E-006） |
+| I-006 | required | **协议增补门禁 · 表单只读**：上游 v2.9.0 ADR-0040 落地为字段 readOnly 声明（capability form.controls.readonly；值仍参与提交投影） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin（81aa1d8） | **closed**（D-003/E-006） |
 
 ## 依赖
 

@@ -69,6 +69,7 @@ function BaseInput({
   onChange,
   type,
   disabled,
+  readOnly,
   placeholder,
 }: {
   id: string;
@@ -77,6 +78,7 @@ function BaseInput({
   onChange: (value: string) => void;
   type: "text" | "password";
   disabled?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
 }) {
   return (
@@ -89,6 +91,7 @@ function BaseInput({
         type={type}
         value={value}
         disabled={disabled}
+        readOnly={readOnly}
         placeholder={placeholder}
         // W4 P2-2: password fields in schema-driven forms (change/reset) must
         // not be auto-filled from a saved login password — declare a new
@@ -107,6 +110,7 @@ function SelectField({
   value,
   onChange,
   disabled,
+  readOnly,
   t,
 }: {
   id: string;
@@ -115,6 +119,7 @@ function SelectField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   t: FieldTranslator;
 }) {
   const options = optionList(field, t);
@@ -136,7 +141,7 @@ function SelectField({
               <input
                 type="checkbox"
                 checked={selected.includes(option.value)}
-                disabled={disabled}
+                disabled={disabled || readOnly}
                 onChange={() => toggle(option.value)}
               />
               {option.label}
@@ -154,7 +159,7 @@ function SelectField({
       <select
         id={id}
         value={value === undefined || value === null ? "" : String(value)}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         onChange={(event) => onChange(event.target.value)}
         className={controlClass}
       >
@@ -175,6 +180,7 @@ function RadioField({
   value,
   onChange,
   disabled,
+  readOnly,
   t,
 }: {
   id: string;
@@ -183,6 +189,7 @@ function RadioField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   t: FieldTranslator;
 }) {
   const current = value === undefined || value === null ? "" : String(value);
@@ -197,7 +204,7 @@ function RadioField({
               name={id}
               value={option.value}
               checked={current === option.value}
-              disabled={disabled}
+              disabled={disabled || readOnly}
               onChange={() => onChange(option.value)}
             />
             {option.label}
@@ -215,6 +222,7 @@ function CheckboxGroupField({
   value,
   onChange,
   disabled,
+  readOnly,
   t,
 }: {
   id: string;
@@ -223,6 +231,7 @@ function CheckboxGroupField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   t: FieldTranslator;
 }) {
   const selected = Array.isArray(value) ? value.map(String) : [];
@@ -242,7 +251,7 @@ function CheckboxGroupField({
             <input
               type="checkbox"
               checked={selected.includes(option.value)}
-              disabled={disabled}
+              disabled={disabled || readOnly}
               onChange={() => toggle(option.value)}
             />
             {option.label}
@@ -260,6 +269,7 @@ function BooleanField({
   value,
   onChange,
   disabled,
+  readOnly,
 }: {
   id: string;
   label: string;
@@ -267,6 +277,7 @@ function BooleanField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  readOnly?: boolean;
 }) {
   const checked = value === true;
   const t = useTranslate();
@@ -276,7 +287,7 @@ function BooleanField({
         id={id}
         type="checkbox"
         checked={checked}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         onChange={(event) => onChange(event.target.checked)}
       />
       <Label htmlFor={id}>{label}</Label>
@@ -293,6 +304,7 @@ function TextAreaField({
   value,
   onChange,
   disabled,
+  readOnly,
   placeholder,
 }: {
   id: string;
@@ -300,6 +312,7 @@ function TextAreaField({
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
 }) {
   return (
@@ -311,6 +324,7 @@ function TextAreaField({
         id={id}
         value={value}
         disabled={disabled}
+        readOnly={readOnly}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
@@ -325,6 +339,7 @@ function NumberField({
   value,
   onChange,
   disabled,
+  readOnly,
   min,
   max,
   step,
@@ -334,6 +349,7 @@ function NumberField({
   value: number | undefined;
   onChange: (value: number | undefined) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   min?: number;
   max?: number;
   step?: number;
@@ -350,6 +366,7 @@ function NumberField({
         // as undefined (field omitted) so the backend default applies (D7).
         value={Number.isFinite(value) ? value : ""}
         disabled={disabled}
+        readOnly={readOnly}
         min={min}
         max={max}
         step={step}
@@ -368,6 +385,7 @@ function DateField({
   value,
   onChange,
   disabled,
+  readOnly,
   min,
   max,
 }: {
@@ -376,6 +394,7 @@ function DateField({
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   min?: string;
   max?: string;
 }) {
@@ -389,6 +408,7 @@ function DateField({
         type="date"
         value={value}
         disabled={disabled}
+        readOnly={readOnly}
         min={min}
         max={max}
         onChange={(event) => onChange(event.target.value)}
@@ -403,12 +423,14 @@ function DateRangeField({
   value,
   onChange,
   disabled,
+  readOnly,
 }: {
   id: string;
   label: string;
   value: { start: string; end: string };
   onChange: (value: { start: string; end: string }) => void;
   disabled?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <fieldset className="space-y-1.5" id={id}>
@@ -418,6 +440,7 @@ function DateRangeField({
           type="date"
           value={value.start}
           disabled={disabled}
+          readOnly={readOnly}
           aria-label={`${label} start`}
           onChange={(event) => onChange({ ...value, start: event.target.value })}
         />
@@ -426,6 +449,7 @@ function DateRangeField({
           type="date"
           value={value.end}
           disabled={disabled}
+          readOnly={readOnly}
           aria-label={`${label} end`}
           onChange={(event) => onChange({ ...value, end: event.target.value })}
         />
@@ -441,6 +465,7 @@ function UploadField({
   value,
   onChange,
   disabled,
+  readOnly,
   onUpload,
 }: {
   id: string;
@@ -449,6 +474,7 @@ function UploadField({
   value: unknown;
   onChange: (value: unknown) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
 }) {
   const [status, setStatus] = useState<{ kind: "idle" | "uploading" | "error"; message?: string }>({
@@ -489,7 +515,7 @@ function UploadField({
         id={id}
         type="file"
         multiple={field.multiple === true}
-        disabled={disabled || status.kind === "uploading"}
+        disabled={disabled || readOnly || status.kind === "uploading"}
         onChange={(event) => {
           void handleFiles(event.target.files).finally(() => {
             // Reset the input after the upload settles so re-selecting the same
@@ -516,6 +542,7 @@ function FieldControl({
   values,
   onChange,
   disabled,
+  readOnly,
   idPrefix,
   onUpload,
   t,
@@ -525,6 +552,7 @@ function FieldControl({
   values: Record<string, unknown>;
   onChange: (id: string, value: unknown) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   idPrefix?: string;
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
   t: (key: string, params?: MessageParams, literalFallback?: string) => string;
@@ -546,6 +574,15 @@ function FieldControl({
     undefined,
   );
   const value = displayValue(field, values[field.id]);
+  // ADR-0040: a readOnly field never accepts user edits — user-originated
+  // change events are dropped (reactions / recordSource / Host seeding still
+  // write through the form state, which is not routed via onChange).
+  const emitChange = (next: unknown) => {
+    if (field.readOnly === true) {
+      return;
+    }
+    onChange(field.id, next);
+  };
 
   const renderControl = (): ReactNode => {
   switch (field.type) {
@@ -557,7 +594,8 @@ function FieldControl({
           value={String(value)}
           type="text"
           disabled={disabled}
-          onChange={(next) => onChange(field.id, next)}
+          readOnly={readOnly}
+          onChange={emitChange}
           placeholder={placeholder}
         />
       );
@@ -569,7 +607,8 @@ function FieldControl({
           value={String(value)}
           type="password"
           disabled={disabled}
-          onChange={(next) => onChange(field.id, next)}
+          readOnly={readOnly}
+          onChange={emitChange}
           placeholder={placeholder}
         />
       );
@@ -580,10 +619,11 @@ function FieldControl({
           label={label}
           value={typeof value === "number" ? value : undefined}
           disabled={disabled}
+          readOnly={readOnly}
           min={field.min}
           max={field.max}
           step={field.step}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
     case "datePicker":
@@ -593,7 +633,8 @@ function FieldControl({
           label={label}
           value={String(value)}
           disabled={disabled}
-          onChange={(next) => onChange(field.id, next)}
+          readOnly={readOnly}
+          onChange={emitChange}
         />
       );
     case "dateRangePicker": {
@@ -605,7 +646,8 @@ function FieldControl({
           label={label}
           value={range}
           disabled={disabled}
-          onChange={(next) => onChange(field.id, next)}
+          readOnly={readOnly}
+          onChange={emitChange}
         />
       );
     }
@@ -617,8 +659,9 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          readOnly={readOnly}
           t={t}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
     case "radio":
@@ -629,8 +672,9 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          readOnly={readOnly}
           t={t}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
     case "checkboxGroup":
@@ -642,8 +686,9 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          readOnly={readOnly}
           t={t}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
     case "switch":
@@ -655,7 +700,8 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
-          onChange={(next) => onChange(field.id, next)}
+          readOnly={readOnly}
+          onChange={emitChange}
         />
       );
     case "textarea":
@@ -665,8 +711,9 @@ function FieldControl({
           label={label}
           value={String(value)}
           disabled={disabled}
+          readOnly={readOnly}
           placeholder={placeholder}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
     case "richText":
@@ -677,7 +724,7 @@ function FieldControl({
           value={String(value)}
           disabled={disabled}
           placeholder={placeholder ?? "Markdown"}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
     case "upload":
@@ -688,8 +735,9 @@ function FieldControl({
           field={field}
           value={value}
           disabled={disabled}
+          readOnly={readOnly}
           onUpload={onUpload}
-          onChange={(next) => onChange(field.id, next)}
+          onChange={emitChange}
         />
       );
   }
@@ -745,6 +793,9 @@ export function FormControls({
           values={values}
           onChange={onChange}
           disabled={disabled || (fieldDisabled?.(field.id) ?? false)}
+          // ADR-0040: readOnly fields render non-editable; their values stay
+          // in the form state and the submit projection.
+          readOnly={field.readOnly === true}
           idPrefix={idPrefix}
           onUpload={onUpload}
           t={t}
