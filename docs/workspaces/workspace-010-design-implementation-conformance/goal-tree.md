@@ -25,7 +25,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-005-w4-long-content-presentation [done]      · W4 长内容列截断与详情换行
 ├── GOAL-006-w5-recordview-declared-fields [done]     · W5 recordView 声明字段（declared-fields 契约 + dev 卫生）
 ├── GOAL-007-w6-container-smoke-reproducibility [done] · W6 容器 smoke 复现性修复（F-1a/b/c）
-└── GOAL-008-w7-yaml-config [active]  · W7 YAML 主配置体系（config.yaml + env 仅敏感信息）（4/5）
+└── GOAL-008-w7-yaml-config [done]  · W7 YAML 主配置体系（config.yaml + env 仅敏感信息）（5/5）
 ```
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
@@ -46,7 +46,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-005-w4-long-content-presentation | W4 · 长内容列的列表截断与详情换行（以角色页权限/菜单为代表） | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-13 |
 | GOAL-006-w5-recordview-declared-fields | W5 · recordView 声明字段符合性（declared-fields 契约 + dev/文档卫生） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-14 |
 | GOAL-007-w6-container-smoke-reproducibility | W6 · 容器 smoke 复现性修复（claim GIT_COMMIT / nginx upstream / SM-007 页面集） | GOAL-001-design-implementation-conformance | done | 3/3 | 2026-08-14 |
-| GOAL-008-w7-yaml-config | W7 · YAML 主配置体系（config.yaml + env 仅敏感信息） | GOAL-001-design-implementation-conformance | active | 4/5 | 2026-08-14 |
+| GOAL-008-w7-yaml-config | W7 · YAML 主配置体系（config.yaml + env 仅敏感信息） | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-14 |
 
 ## 维护说明
 

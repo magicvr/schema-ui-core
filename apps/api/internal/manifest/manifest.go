@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -46,7 +47,13 @@ func ForModules(moduleIDs []string) ([]byte, error) {
 // core-only, and every standard Admin module (users/roles/settings/activity)
 // contributes a manifest fragment. The function publishes the baseline as the
 // core fragment and merges the enabled provider fragments.
-func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment) ([]byte, error) {
+//
+// GOAL-013 D-002 §4: an optional navigation order (NodeID list) reorders the
+// merged top/sidebar/user slots after aggregation. Items whose NodeID is not
+// in the list keep their aggregate-relative order at the end (new modules
+// never disappear). order is derived from visibleWhen "features.<nodeID>"
+// expressions, falling back to id/pageRef.
+func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment, order ...[]string) ([]byte, error) {
 	enabled := make(map[string]struct{}, len(moduleIDs))
 	for _, rawID := range moduleIDs {
 		id := strings.TrimSpace(rawID)
@@ -69,7 +76,17 @@ func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment) ([]
 	}
 	allFragments := []Fragment{{ModuleID: "core.manifest-route", Raw: coreRaw}}
 	allFragments = append(allFragments, moduleFragments...)
-	return Aggregate(allFragments)
+	data, err := Aggregate(allFragments)
+	if err != nil {
+		return nil, err
+	}
+	if len(order) > 0 && len(order[0]) > 0 {
+		data, err = SortNavigation(data, order[0])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 
 func Aggregate(fragments []Fragment) ([]byte, error) {
@@ -164,6 +181,75 @@ func Aggregate(fragments []Fragment) ([]byte, error) {
 	encoded, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("manifest: encode aggregate: %w", err)
+	}
+	return append(encoded, '\n'), nil
+}
+
+// navigationNodeID extracts the navigation-order NodeID for one manifest
+// navigation item. The canonical source is the visibleWhen "when" expression,
+// which modules author as "$context.features.<nodeID> == true"; id/pageRef are
+// fallbacks for items without a feature expression.
+func navigationNodeID(raw json.RawMessage) string {
+	var item struct {
+		ID          string `json:"id"`
+		PageRef     string `json:"pageRef"`
+		VisibleWhen struct {
+			When string `json:"when"`
+		} `json:"visibleWhen"`
+	}
+	if err := json.Unmarshal(raw, &item); err != nil {
+		return ""
+	}
+	if m := featureNodePattern.FindStringSubmatch(item.VisibleWhen.When); len(m) == 2 {
+		return m[1]
+	}
+	for _, value := range []string{item.ID, item.PageRef} {
+		if value = strings.TrimSpace(value); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+// featureNodePattern matches "features.<nodeID>" inside a visibleWhen when
+// expression (GOAL-013 D-002 §4).
+var featureNodePattern = regexp.MustCompile(`features.([A-Za-z0-9_]+)`)
+
+// SortNavigation reorders the top/sidebar/user slots of an aggregated manifest
+// document by the given navigation order (NodeID list). Items not present in
+// the list keep their relative order and are appended at the end. Returns the
+// re-encoded document (same formatting as Aggregate).
+func SortNavigation(data []byte, order []string) ([]byte, error) {
+	rank := make(map[string]int, len(order))
+	for i, id := range order {
+		rank[id] = i
+	}
+	var doc envelope
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, fmt.Errorf("manifest: parse aggregated document for navigation sort: %w", err)
+	}
+	sortSlot := func(items []json.RawMessage) []json.RawMessage {
+		sorted := append([]json.RawMessage(nil), items...)
+		sort.SliceStable(sorted, func(i, j int) bool {
+			ri, iOK := rank[navigationNodeID(sorted[i])]
+			rj, jOK := rank[navigationNodeID(sorted[j])]
+			switch {
+			case iOK && jOK:
+				return ri < rj
+			case iOK:
+				return true // listed items precede unlisted ones
+			default:
+				return false
+			}
+		})
+		return sorted
+	}
+	doc.Navigation.Top = sortSlot(doc.Navigation.Top)
+	doc.Navigation.Sidebar = sortSlot(doc.Navigation.Sidebar)
+	doc.Navigation.User = sortSlot(doc.Navigation.User)
+	encoded, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("manifest: encode sorted document: %w", err)
 	}
 	return append(encoded, '\n'), nil
 }

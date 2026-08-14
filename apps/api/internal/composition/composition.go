@@ -74,7 +74,16 @@ func ResolvePlan(cfg *config.Config) (kernel.Plan, error) {
 	if err != nil {
 		return kernel.Plan{}, err
 	}
-	return registry.Resolve(modules)
+	plan, err := registry.Resolve(modules)
+	if err != nil {
+		return kernel.Plan{}, err
+	}
+	// GOAL-013 D-002 §4: the operator-provided navigation order rides on the
+	// resolved plan so the kernel sorts navigation deterministically.
+	if len(cfg.NavigationOrder) > 0 {
+		plan.NavigationOrder = append([]string(nil), cfg.NavigationOrder...)
+	}
+	return plan, nil
 }
 
 // NewApp creates the Fx composition root. Fx types remain confined to this
@@ -314,7 +323,14 @@ func newMuxWithExtraProviders(
 		for _, fragment := range set.Fragments {
 			moduleFragments = append(moduleFragments, manifest.Fragment{ModuleID: fragment.ModuleID, Raw: fragment.JSON})
 		}
-		data, err := manifest.ForModulesWithFragments(plan.IDs(), moduleFragments)
+		// GOAL-013 D-002 §4: the navigation order (config override or the
+		// product-frozen default) reorders the published manifest slots; the
+		// kernel sort only drives system-data menu_items ordering.
+		navOrder := plan.NavigationOrder
+		if len(navOrder) == 0 {
+			navOrder = kernel.DefaultNavigationOrder
+		}
+		data, err := manifest.ForModulesWithFragments(plan.IDs(), moduleFragments, navOrder)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
 		}

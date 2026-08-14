@@ -183,3 +183,43 @@ func TestNavigationSingleProjectionWithLabelKey(t *testing.T) {
 		t.Fatalf("label = %q, want Users", entry.Label)
 	}
 }
+
+
+// GOAL-013 D-002 §4: SortNavigation reorders manifest slots by NodeID list;
+// unlisted items keep their relative order at the end.
+func TestSortNavigationOrdersSlots(t *testing.T) {
+	// Two sidebar items, one with a visibleWhen feature expression (the
+	// canonical NodeID source), one with only a pageRef fallback.
+	frag := `{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"test"},"pages":[],"navigation":{"top":[],"sidebar":[
+		{"pageRef":"users","label":"Users","visibleWhen":{"when":"$context.features.menu_users == true"},"labelKey":"manifest.nav.users"},
+		{"pageRef":"roles","label":"Roles","visibleWhen":{"when":"$context.features.menu_roles == true"},"labelKey":"manifest.nav.roles"},
+		{"pageRef":"newbie","label":"Newbie","labelKey":"manifest.nav.newbie"}
+	],"user":[]}}`
+	aggregated, err := Aggregate([]Fragment{{ModuleID: "admin.test", Raw: []byte(frag)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sorted, err := SortNavigation(aggregated, []string{"menu_roles", "menu_users"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Navigation struct {
+			Sidebar []struct {
+				PageRef string `json:"pageRef"`
+			} `json:"sidebar"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(sorted, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"roles", "users", "newbie"}
+	if len(decoded.Navigation.Sidebar) != 3 {
+		t.Fatalf("sidebar len = %d, want 3", len(decoded.Navigation.Sidebar))
+	}
+	for i, item := range decoded.Navigation.Sidebar {
+		if item.PageRef != want[i] {
+			t.Fatalf("sidebar[%d] = %q, want %q", i, item.PageRef, want[i])
+		}
+	}
+}

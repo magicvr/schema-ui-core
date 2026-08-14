@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strings"
 )
@@ -374,7 +375,7 @@ func (s *ContributionSet) finalize(plan Plan) error {
 	sortRoutes(s.Routes)
 	sortPages(s.Pages)
 	sortPermissions(s.Permissions)
-	sortNavigation(s.Navigation)
+	sortNavigation(s.Navigation, plan.NavigationOrder)
 	sortFragments(s.Fragments)
 	sortConfigurations(s.Configurations)
 	return nil
@@ -392,16 +393,81 @@ func sortPermissions(perms []PermissionContribution) {
 	sort.Slice(perms, func(i, j int) bool { return perms[i].Permission < perms[j].Permission })
 }
 
-func sortNavigation(nodes []NavigationContribution) {
+// DefaultNavigationOrder is the product-frozen admin navigation ordering
+// (GOAL-013 D-002 §2, user-confirmed 2026-08-14): Dashboard, Users, Roles,
+// Settings, Activity, Account, Notifications, File library, Data dictionary,
+// System monitoring, Scheduled tasks, Recycle bin. Maintainers extend this
+// list when a new module lands (snapshot tests lock it).
+var DefaultNavigationOrder = []string{
+	"menu_dashboard",
+	"menu_users",
+	"menu_roles",
+	"menu_settings",
+	"menu_activity",
+	"menu_account",
+	"menu_notifications",
+	"menu_files",
+	"menu_dictionary",
+	"menu_monitoring",
+	"menu_scheduled_tasks",
+	"menu_recycle_bin",
+}
+
+// sortNavigation orders nodes by the resolved navigation order list, then by
+// the legacy Order/NodeID fallback for nodes not in the list (new modules must
+// not disappear). Parent grouping always wins so child nodes stay with their
+// parent. A provided order (plan.NavigationOrder) containing unknown NodeIDs
+// is invalid and falls back to DefaultNavigationOrder with a warning
+// (GOAL-013 D-002 §4: invalid config → fallback + warn, not fail-closed).
+func sortNavigation(nodes []NavigationContribution, order []string) {
+	order = resolveNavigationOrder(nodes, order)
+	rank := make(map[string]int, len(order))
+	for i, id := range order {
+		rank[id] = i
+	}
 	sort.Slice(nodes, func(i, j int) bool {
 		if nodes[i].Parent != nodes[j].Parent {
 			return nodes[i].Parent < nodes[j].Parent
 		}
-		if nodes[i].Order != nodes[j].Order {
-			return nodes[i].Order < nodes[j].Order
+		ri, iOK := rank[nodes[i].NodeID]
+		rj, jOK := rank[nodes[j].NodeID]
+		switch {
+		case iOK && jOK:
+			if ri != rj {
+				return ri < rj
+			}
+			return nodes[i].NodeID < nodes[j].NodeID
+		case iOK:
+			return true // listed nodes precede unlisted ones
+		case jOK:
+			return false
+		default:
+			if nodes[i].Order != nodes[j].Order {
+				return nodes[i].Order < nodes[j].Order
+			}
+			return nodes[i].NodeID < nodes[j].NodeID
 		}
-		return nodes[i].NodeID < nodes[j].NodeID
 	})
+}
+
+// resolveNavigationOrder returns the effective order list, falling back to
+// DefaultNavigationOrder (with a warning) when a provided list references a
+// NodeID no registered node declares. A nil order means the default applies.
+func resolveNavigationOrder(nodes []NavigationContribution, order []string) []string {
+	if len(order) == 0 {
+		return DefaultNavigationOrder
+	}
+	known := make(map[string]bool, len(nodes))
+	for _, n := range nodes {
+		known[n.NodeID] = true
+	}
+	for _, id := range order {
+		if !known[id] {
+			slog.Warn("navigation order contains unknown NodeID; falling back to the default order", "nodeID", id)
+			return DefaultNavigationOrder
+		}
+	}
+	return order
 }
 
 func sortFragments(fragments []FragmentContribution) {

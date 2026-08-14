@@ -1,12 +1,12 @@
 ---
 id: GOAL-008-w7-yaml-config
 title: W7 · YAML 主配置体系（config.yaml + env 仅敏感信息）
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 4/5
+progress: 5/5
 ---
 
 # GOAL-008 · W7 · YAML 主配置体系
@@ -26,9 +26,9 @@ progress: 4/5
 - [x] **S2 · 实现**：分层加载（CONFIG_FILE/embed/env 覆盖）+ 插值 + upload 迁入 Config + .env.example + compose 同步（E-003，df5d440，2026-08-14）
 - [x] **S3 · 验证**：单测全绿 + 四路径实测（纯 YAML / YAML+env 冒烟 / embed 回退 / fail-closed）+ 全量回归（E-004，2026-08-14）
 - [x] **S4 · go 影响判定 + 自审**（E-005：go 不 held；A-002：pass，2026-08-14）
-- [ ] **S5 · 关门**：独立审计（grok，data 门禁）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：grok 独立审计（A-003）pass，无 required；F-001~F-005 全部 fixed（E-006，2026-08-14）
 
-progress: 4/5 由五个等权检查点派生。
+progress: 5/5 由五个等权检查点派生。
 
 ## 审计策略
 

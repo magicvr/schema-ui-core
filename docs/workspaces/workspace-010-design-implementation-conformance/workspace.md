@@ -51,7 +51,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W4 | GOAL-005-w4-long-content-presentation | **done**（6/6 · 2026-08-13 关门；S6 cross 审计 A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004 浏览器点验；go 无影响不暂挂） |
 | W5 | GOAL-006-w5-recordview-declared-fields | **done**（4/4 · 2026-08-14 关门；recordView 声明字段 + fail-open + dev 卫生；HEAD 回归 V-001～V-006 绿；**go 无影响不暂挂**；A-001 跨门禁 F-1 移交 W6） |
 | W6 | GOAL-007-w6-container-smoke-reproducibility | **done**（3/3 · 2026-08-14 关门；F-1a claim GIT_COMMIT 接线、F-1b nginx upstream 作用域、F-1c SM-007 页面集；V-007 exit 8 + V-008 exit 0 完整绿；**go 恢复可消费**） |
-| W7 | GOAL-008-w7-yaml-config | **active**（0/5 · 2026-08-14 立项；YAML 主配置体系：config.yaml 全量配置 + ${VAR} 敏感引用 + env/.env 真实值；共享基架整改，workspace-11 菜单排序覆盖载体依赖本波） |
+| W7 | GOAL-008-w7-yaml-config | **done**（5/5 · 2026-08-14 关门：A-003 grok 审计 pass，F-001~F-005 fixed；configs/config.yaml 权威 + ${VAR} 敏感引用 + env 覆盖；workspace-11 导航排序覆盖载体已就位） |
 
 ## 固定共享资料引用
 

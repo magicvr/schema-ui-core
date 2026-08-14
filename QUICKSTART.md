@@ -21,8 +21,9 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 配置环境（本地 fork 开发）：
 
 ```bash
-# apps/api/.env.example 只是配置参考；Go API 不会自动加载该文件。
-# Compose 才会读取仓库根 .env（gitignored）。本地进程请 export：
+# W7：配置权威是 apps/api/configs/config.yaml（非敏感值直写，敏感值 ${VAR}
+# 占位符）；敏感值可放 apps/api/configs/.env（开发，gitignored；进程 env 优先）。
+# Compose 由仓库根 .env 提供插值。本地进程请 export：
 export APP_PROFILE=mvp                 # 或 admin / demo（非生产向演示 Profile）
 # custom 时还必须提供完整的显式模块列表：
 # export APP_PROFILE=custom

@@ -2,7 +2,9 @@ package config
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"regexp"
@@ -42,6 +44,11 @@ type Config struct {
 	UploadMaxFilesPerUser int
 	UploadMaxBytesPerUser int
 
+	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
+	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
+	// NodeIDs). Empty means the built-in kernel default applies.
+	NavigationOrder []string
+
 	ProfileName       string
 	ModulesEnabled    []string
 	ProfileSource     string
@@ -58,37 +65,40 @@ type Config struct {
 // are rejected by yaml.v3 KnownFields so typos fail loudly.
 type yamlFile struct {
 	App struct {
-		Name           string `yaml:"name"`
-		Env            string `yaml:"env"`
-		Profile        string `yaml:"profile"`
-		ModulesEnabled string `yaml:"modules_enabled"`
+		Name           *string `yaml:"name"`
+		Env            *string `yaml:"env"`
+		Profile        *string `yaml:"profile"`
+		ModulesEnabled *string `yaml:"modules_enabled"`
 	} `yaml:"app"`
 	HTTP struct {
-		Addr         string `yaml:"addr"`
-		ReadTimeout  string `yaml:"read_timeout"`
-		WriteTimeout string `yaml:"write_timeout"`
-		IdleTimeout  string `yaml:"idle_timeout"`
+		Addr         *string `yaml:"addr"`
+		ReadTimeout  *string `yaml:"read_timeout"`
+		WriteTimeout *string `yaml:"write_timeout"`
+		IdleTimeout  *string `yaml:"idle_timeout"`
 	} `yaml:"http"`
 	Log struct {
-		Level string `yaml:"level"`
+		Level *string `yaml:"level"`
 	} `yaml:"log"`
 	Auth struct {
-		JWTSecret         string `yaml:"jwt_secret"`
-		AccessTTL         string `yaml:"access_ttl"`
-		RefreshTTL        string `yaml:"refresh_ttl"`
-		DevSessionEnabled bool   `yaml:"dev_session_enabled"`
+		JWTSecret         *string `yaml:"jwt_secret"`
+		AccessTTL         *string `yaml:"access_ttl"`
+		RefreshTTL        *string `yaml:"refresh_ttl"`
+		DevSessionEnabled *bool  `yaml:"dev_session_enabled"`
 	} `yaml:"auth"`
 	DB struct {
-		Path string `yaml:"path"`
+		Path *string `yaml:"path"`
 	} `yaml:"db"`
 	Admin struct {
-		InitialPassword string `yaml:"initial_password"`
+		InitialPassword *string `yaml:"initial_password"`
 	} `yaml:"admin"`
 	Upload struct {
-		AllowedTypes    string `yaml:"allowed_types"`
+		AllowedTypes    *string `yaml:"allowed_types"`
 		MaxFilesPerUser int    `yaml:"max_files_per_user"`
 		MaxBytesPerUser int    `yaml:"max_bytes_per_user"`
 	} `yaml:"upload"`
+	Navigation struct {
+		Order yaml.Node `yaml:"order"`
+	} `yaml:"navigation"`
 }
 
 // defaultYAMLPath is the operator-editable config file loaded when CONFIG_FILE
@@ -162,34 +172,67 @@ func Load() *Config {
 	dec := yaml.NewDecoder(strings.NewReader(interpolated))
 	dec.KnownFields(true)
 	if err := dec.Decode(&yf); err != nil {
-		cfg.LoadError = fmt.Errorf("parse config YAML: %w", err)
+		if errors.Is(err, io.EOF) {
+			// F-005: an empty (or comment-only) file means "all defaults" —
+			// no keys were supplied, so the zero yamlFile keeps every code
+			// default below.
+			yf = yamlFile{}
+		} else {
+			cfg.LoadError = fmt.Errorf("parse config YAML: %w", err)
+			return cfg
+		}
+	}
+	// F-005: reject multi-document YAML — a second document would silently
+	// escape KnownFields validation (or introduce a different schema).
+	var extra yamlFile
+	if err := dec.Decode(&extra); err != io.EOF {
+		cfg.LoadError = fmt.Errorf("parse config YAML: multiple YAML documents are not supported (%v)", err)
 		return cfg
 	}
 
-	// YAML values (already interpolated) as the base layer.
-	cfg.AppName = yf.App.Name
-	cfg.AppEnv = yf.App.Env
-	cfg.HTTPAddr = yf.HTTP.Addr
-	cfg.ReadTimeout = orDuration(yf.HTTP.ReadTimeout, cfg.ReadTimeout)
-	cfg.WriteTimeout = orDuration(yf.HTTP.WriteTimeout, cfg.WriteTimeout)
-	cfg.IdleTimeout = orDuration(yf.HTTP.IdleTimeout, cfg.IdleTimeout)
-	cfg.LogLevelName = yf.Log.Level
-	cfg.AuthJWTSecret = yf.Auth.JWTSecret
-	cfg.AuthAccessTTL = orDuration(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
-	cfg.AuthRefreshTTL = orDuration(yf.Auth.RefreshTTL, cfg.AuthRefreshTTL)
-	cfg.AuthDevSessionEnabled = yf.Auth.DevSessionEnabled
-	cfg.DBPath = yf.DB.Path
-	cfg.AdminInitialPassword = yf.Admin.InitialPassword
-	cfg.UploadAllowedTypes = strings.TrimSpace(yf.Upload.AllowedTypes)
+	// YAML values (already interpolated) as the base layer. Pointer fields
+	// keep the code default when the key is omitted (F-002); explicit empty
+	// strings stay empty.
+	cfg.AppName = strPtrOr(yf.App.Name, cfg.AppName)
+	cfg.AppEnv = strPtrOr(yf.App.Env, cfg.AppEnv)
+	cfg.HTTPAddr = strPtrOr(yf.HTTP.Addr, cfg.HTTPAddr)
+	cfg.ReadTimeout = orDurationPtr(yf.HTTP.ReadTimeout, cfg.ReadTimeout)
+	cfg.WriteTimeout = orDurationPtr(yf.HTTP.WriteTimeout, cfg.WriteTimeout)
+	cfg.IdleTimeout = orDurationPtr(yf.HTTP.IdleTimeout, cfg.IdleTimeout)
+	cfg.LogLevelName = strPtrOr(yf.Log.Level, cfg.LogLevelName)
+	cfg.AuthJWTSecret = strPtrOr(yf.Auth.JWTSecret, cfg.AuthJWTSecret)
+	cfg.AuthAccessTTL = orDurationPtr(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
+	cfg.AuthRefreshTTL = orDurationPtr(yf.Auth.RefreshTTL, cfg.AuthRefreshTTL)
+	if yf.Auth.DevSessionEnabled != nil {
+		cfg.AuthDevSessionEnabled = *yf.Auth.DevSessionEnabled
+	}
+	cfg.DBPath = strPtrOr(yf.DB.Path, cfg.DBPath)
+	cfg.AdminInitialPassword = strPtrOr(yf.Admin.InitialPassword, cfg.AdminInitialPassword)
+	cfg.UploadAllowedTypes = strings.TrimSpace(strPtrOr(yf.Upload.AllowedTypes, cfg.UploadAllowedTypes))
 	if yf.Upload.MaxFilesPerUser > 0 {
 		cfg.UploadMaxFilesPerUser = yf.Upload.MaxFilesPerUser
 	}
 	if yf.Upload.MaxBytesPerUser > 0 {
 		cfg.UploadMaxBytesPerUser = yf.Upload.MaxBytesPerUser
 	}
-	profile := yf.App.Profile
-	if profile == "" {
-		profile = string(kernel.ProfileMVP)
+	profile := strPtrOr(yf.App.Profile, string(kernel.ProfileMVP))
+
+	// navigation.order (GOAL-013 D-002 §4): sequence of NodeIDs. A malformed
+	// value falls back to the kernel default with a warning (never fail-closed
+	// — ordering is UI structure, not a security gate). The env override
+	// NAVIGATION_ORDER (comma-separated) wins when set.
+	cfg.NavigationOrder = parseNavigationOrder(yf.Navigation.Order)
+	if raw := strings.TrimSpace(os.Getenv("NAVIGATION_ORDER")); raw != "" {
+		parts := strings.Split(raw, ",")
+		list := make([]string, 0, len(parts))
+		for _, p := range parts {
+			if p = strings.TrimSpace(p); p != "" {
+				list = append(list, p)
+			}
+		}
+		if len(list) > 0 {
+			cfg.NavigationOrder = list
+		}
 	}
 
 	// Process env overrides YAML when set (existing env-only deployments keep
@@ -213,8 +256,8 @@ func Load() *Config {
 	cfg.UploadMaxBytesPerUser = positiveIntEnv("UPLOAD_MAX_BYTES_PER_USER", cfg.UploadMaxBytesPerUser)
 
 	explicitModules := os.Getenv("APP_MODULES_ENABLED")
-	if explicitModules == "" && strings.TrimSpace(yf.App.ModulesEnabled) != "" {
-		explicitModules = yf.App.ModulesEnabled
+	if explicitModules == "" {
+		explicitModules = strPtrOr(yf.App.ModulesEnabled, "")
 	}
 	parsedModules, err := kernel.ParseModuleList(explicitModules)
 	if err != nil {
@@ -231,6 +274,31 @@ func Load() *Config {
 	cfg.ProfileSource = resolved.Source
 	cfg.ProfilePrecedence = append([]string(nil), resolved.Precedence...)
 	return cfg
+}
+
+// parseNavigationOrder extracts a string sequence from the YAML navigation
+// node. A missing/empty/null order yields nil (kernel default applies). A
+// sequence containing non-scalar or non-string items is invalid: the whole
+// order falls back to nil with a warning (GOAL-013 D-002 §4).
+func parseNavigationOrder(node yaml.Node) []string {
+	if node.Kind != yaml.SequenceNode {
+		if node.Kind != 0 {
+			slog.Warn("config: navigation.order is not a list; using the default navigation order")
+		}
+		return nil
+	}
+	list := make([]string, 0, len(node.Content))
+	for _, item := range node.Content {
+		if item.Kind != yaml.ScalarNode || item.Tag != "!!str" {
+			slog.Warn("config: navigation.order contains a non-string entry; using the default navigation order")
+			return nil
+		}
+		list = append(list, item.Value)
+	}
+	if len(list) == 0 {
+		return nil // empty list = default
+	}
+	return list
 }
 
 // loadEnvFile reads the optional CONFIG_ENV_FILE (default configs/.env) of
@@ -279,6 +347,40 @@ func loadEnvFile(cfg *Config) error {
 // varPattern matches ${NAME} and ${NAME:-default}.
 var varPattern = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}`)
 
+// inlineCommentIndex returns the index of the first YAML inline comment marker
+// (" #" or a hash preceded by whitespace) that is NOT inside a quoted value
+// (F-003: values like "My App #1" must survive). A hash without preceding
+// whitespace is not a comment per YAML.
+func inlineCommentIndex(line string) int {
+	inSingle, inDouble := false, false
+	escaped := false
+	for i := 0; i < len(line); i++ {
+		c := line[i]
+		if escaped {
+			escaped = false
+			continue
+		}
+		if c == '\\' && inDouble {
+			escaped = true
+			continue
+		}
+		if c == '\'' && !inDouble {
+			inSingle = !inSingle
+			continue
+		}
+		if c == '"' && !inSingle {
+			inDouble = !inDouble
+			continue
+		}
+		if c == '#' && !inSingle && !inDouble {
+			if i == 0 || line[i-1] == ' ' || line[i-1] == '\t' {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
 // interpolateAll expands every ${...} reference in the YAML text. A bare
 // ${VAR} whose env is unset is a hard error (fail-closed); ${VAR:-default}
 // falls back to default. Values are substituted verbatim (no re-parsing), so
@@ -295,7 +397,7 @@ func interpolateAll(text string) (string, error) {
 		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
 			continue
 		}
-		if idx := strings.Index(line, " #"); idx >= 0 {
+		if idx := inlineCommentIndex(line); idx >= 0 {
 			line = line[:idx]
 		}
 		lines[i] = varPattern.ReplaceAllStringFunc(line, func(m string) string {
@@ -422,6 +524,15 @@ func durationEnv(key string, fallback time.Duration) time.Duration {
 	return d
 }
 
+// strPtrOr returns the dereferenced value or the fallback when the pointer is
+// nil (key omitted in YAML, F-002).
+func strPtrOr(v *string, fallback string) string {
+	if v == nil {
+		return fallback
+	}
+	return *v
+}
+
 // orDuration parses a YAML duration string; on empty/invalid it returns the
 // caller-provided default (same leniency as durationEnv).
 func orDuration(v string, fallback time.Duration) time.Duration {
@@ -434,6 +545,14 @@ func orDuration(v string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return d
+}
+
+// orDurationPtr is orDuration for a possibly-omitted YAML key.
+func orDurationPtr(v *string, fallback time.Duration) time.Duration {
+	if v == nil {
+		return fallback
+	}
+	return orDuration(*v, fallback)
 }
 
 func boolEnv(key string, fallback bool) bool {

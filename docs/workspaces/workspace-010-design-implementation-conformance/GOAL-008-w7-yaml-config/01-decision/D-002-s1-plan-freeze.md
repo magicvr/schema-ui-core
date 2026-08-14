@@ -42,13 +42,13 @@ version: 1.0.0
 
 | YAML 路径 | 原 env | 敏感 | 默认 |
 |-----------|--------|------|------|
-| app.name | APP_NAME | 否 | schema-ui-core |
-| app.env | APP_ENV | 否 | dev |
+| app.name | APP_NAME | 否 | schema-ui-core-api |
+| app.env | APP_ENV | 否 | （空，必须显式设置） |
 | app.profile | APP_PROFILE | 否 | mvp |
 | app.modules_enabled | APP_MODULES_ENABLED | 否 | （空 = 全量） |
-| http.addr | HTTP_ADDR | 否 | :8080 |
-| http.read_timeout | HTTP_READ_TIMEOUT | 否 | 15s |
-| http.write_timeout | HTTP_WRITE_TIMEOUT | 否 | 15s |
+| http.addr | HTTP_ADDR | 否 | :25080 |
+| http.read_timeout | HTTP_READ_TIMEOUT | 否 | 5s |
+| http.write_timeout | HTTP_WRITE_TIMEOUT | 否 | 10s |
 | http.idle_timeout | HTTP_IDLE_TIMEOUT | 否 | 60s |
 | log.level | LOG_LEVEL | 否 | info |
 | auth.jwt_secret | AUTH_JWT_SECRET | **是** | `${AUTH_JWT_SECRET}`（fail-closed） |
@@ -63,6 +63,8 @@ version: 1.0.0
 
 枚举（app.env: dev/test/prod；app.profile: mvp/admin/dev；log.level: debug/info/warn/error）沿用现状，不新增。
 
+
+> F-001（A-003 修正）：本表默认列已按 as-built 对齐（代码默认值优先于早期草案；零迁移优先于表观默认）。
 ## 4. env 衔接（.env 与 CONFIG_ENV_FILE）
 
 - YAML 是权威；.env **不是**配置源，只承载敏感值（AUTH_JWT_SECRET=...、ADMIN_INITIAL_PASSWORD=...），供 CONFIG_ENV_FILE 指向。

@@ -17,3 +17,4 @@ version: 0.1.0
 | E-003 | 2026-08-14 | S2 实现完成：YAML 主配置（df5d440） | recorded | `02-execution/E-003-s2-implementation.md` |
 | E-004 | 2026-08-14 | S3 验证完成（单测 + 四路径实测 + 回归） | recorded | `02-execution/E-004-s3-verification.md` |
 | E-005 | 2026-08-14 | S4 go 影响判定（不 held） | recorded | `02-execution/E-005-s4-go-judgment.md` |
+| E-006 | 2026-08-14 | A-003 findings 响应与关门（F-001~F-005 fixed） | recorded | `02-execution/E-006-a003-findings-closeout.md` |

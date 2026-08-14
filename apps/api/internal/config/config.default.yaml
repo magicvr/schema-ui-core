@@ -61,3 +61,9 @@ upload:
   allowed_types: ""
   max_files_per_user: 1000
   max_bytes_per_user: 268435456
+
+navigation:
+  # Full navigation ordering (GOAL-013 D-002): list of menu NodeIDs in order.
+  # Empty = the built-in default order. Unknown NodeIDs fall back to the
+  # default with a warning. NAVIGATION_ORDER env (comma-separated) overrides.
+  order: []

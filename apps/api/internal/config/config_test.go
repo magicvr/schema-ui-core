@@ -354,3 +354,178 @@ auth:
 		}
 	})
 }
+
+// GOAL-013 D-002 §4: navigation.order parsing (YAML list + NAVIGATION_ORDER
+// env override + malformed fallback).
+func TestLoadNavigationOrder(t *testing.T) {
+	t.Run("yaml order list is parsed", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order:
+    - menu_roles
+    - menu_dashboard
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := []string{"menu_roles", "menu_dashboard"}
+		if !strings.EqualFold(strings.Join(cfg.NavigationOrder, ","), strings.Join(want, ",")) {
+			t.Fatalf("NavigationOrder = %v, want %v", cfg.NavigationOrder, want)
+		}
+	})
+
+	t.Run("empty order yields nil default", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order: []
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if len(cfg.NavigationOrder) != 0 {
+			t.Fatalf("NavigationOrder = %v, want empty (default)", cfg.NavigationOrder)
+		}
+	})
+
+	t.Run("env NAVIGATION_ORDER overrides yaml", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order:
+    - menu_roles
+`
+		writeConfig(t, y)
+		t.Setenv("NAVIGATION_ORDER", "menu_account, menu_users")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := []string{"menu_account", "menu_users"}
+		if !strings.EqualFold(strings.Join(cfg.NavigationOrder, ","), strings.Join(want, ",")) {
+			t.Fatalf("NavigationOrder = %v, want %v", cfg.NavigationOrder, want)
+		}
+	})
+
+	t.Run("malformed navigation.order is not fatal (fallback to default)", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order: not-a-list
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v, want graceful fallback", cfg.LoadError)
+		}
+		if len(cfg.NavigationOrder) != 0 {
+			t.Fatalf("NavigationOrder = %v, want empty after fallback", cfg.NavigationOrder)
+		}
+	})
+
+	t.Run("non-string entry falls back to default", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order:
+    - menu_roles
+    - 42
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v, want graceful fallback", cfg.LoadError)
+		}
+		if len(cfg.NavigationOrder) != 0 {
+			t.Fatalf("NavigationOrder = %v, want empty after fallback", cfg.NavigationOrder)
+		}
+	})
+}
+
+// A-003 findings regression tests:
+//  F-002: omitted YAML keys keep code defaults (no zeroing).
+//  F-003: inline " #" inside a quoted value is not a comment.
+//  F-005: empty/comment-only files mean all defaults; multi-document YAML is rejected.
+func TestLoadA003Findings(t *testing.T) {
+	t.Run("F-002 omitted keys keep defaults", func(t *testing.T) {
+		y := `app:
+  env: development
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.HTTPAddr != ":25080" {
+			t.Errorf("HTTPAddr = %q, want default :25080 (omitted key)", cfg.HTTPAddr)
+		}
+		if cfg.DBPath != "./data/schema-ui.db" {
+			t.Errorf("DBPath = %q, want default ./data/schema-ui.db (omitted key)", cfg.DBPath)
+		}
+		if cfg.ReadTimeout != 5*time.Second {
+			t.Errorf("ReadTimeout = %v, want default 5s (omitted key)", cfg.ReadTimeout)
+		}
+		if cfg.UploadMaxFilesPerUser != 1000 {
+			t.Errorf("UploadMaxFilesPerUser = %d, want default 1000", cfg.UploadMaxFilesPerUser)
+		}
+		if cfg.LogLevelName != "info" {
+			t.Errorf("LogLevelName = %q, want default info", cfg.LogLevelName)
+		}
+	})
+
+	t.Run("F-003 quoted hash is not a comment", func(t *testing.T) {
+		y := `app:
+  env: development
+  name: "My App #1"
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AppName != "My App #1" {
+			t.Errorf("AppName = %q, want My App #1 (quoted hash must survive)", cfg.AppName)
+		}
+	})
+
+	t.Run("F-005 empty file means defaults", func(t *testing.T) {
+		p := filepath.Join(t.TempDir(), "empty.yaml")
+		if err := os.WriteFile(p, []byte("# only a comment\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("CONFIG_FILE", p)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v, want empty file to fall back to defaults", cfg.LoadError)
+		}
+		if cfg.HTTPAddr != ":25080" {
+			t.Errorf("HTTPAddr = %q, want default :25080", cfg.HTTPAddr)
+		}
+		if cfg.AppEnv != "" {
+			t.Errorf("AppEnv = %q, want empty default", cfg.AppEnv)
+		}
+	})
+
+	t.Run("F-005 multi-document YAML rejected", func(t *testing.T) {
+		y := `app:
+  env: development
+---
+app:
+  bogus_key: true
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("multi-document YAML must be a LoadError (second doc escapes KnownFields)")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "multiple YAML documents") {
+			t.Fatalf("LoadError = %v, want mention of multiple documents", cfg.LoadError)
+		}
+	})
+}
+
