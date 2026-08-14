@@ -85,6 +85,7 @@ var Catalog = map[string]Entry{
 	"TASK_RUN_NOT_FOUND":  {"error.taskRunNotFound", "no task run with that id", "没有该 id 对应的运行记录"},
 	"TASK_KEY_TAKEN":      {"error.taskKeyTaken", "a scheduled task with that key already exists", "该键已存在对应的定时任务"},
 	"INVALID_CRON":        {"error.invalidCron", "invalid cron expression", "cron 表达式无效"},
+	"INVALID_HANDLER":     {"error.invalidHandler", "unknown task handler", "未知的任务处理器"},
 
 	// S-01 (GOAL-008 D-002 §3): dictionary codes.
 	"DICT_TYPE_NOT_FOUND":   {"error.dictTypeNotFound", "no dict type with that id", "没有该 id 对应的字典类型"},

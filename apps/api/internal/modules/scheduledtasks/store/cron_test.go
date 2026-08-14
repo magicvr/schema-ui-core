@@ -17,6 +17,8 @@ func TestParseCron(t *testing.T) {
 	for _, expr := range []string{
 		"", "a b c d e", "* * * *", "* * * * * *", "60 * * * *", "* 24 * * *",
 		"* * 0 * *", "* * * 13 *", "* * * * 7", "*/0 * * * *", "1, * * * *", "*/-1 * * * *",
+		// A-003 F-001: a bare scalar with /step would silently drop the step.
+		"0/5 * * * *", "5/2 * * * *", "0-59/0 * * * *",
 	} {
 		if _, err := ParseCron(expr); err == nil {
 			t.Fatalf("ParseCron(%q) = nil, want error", expr)

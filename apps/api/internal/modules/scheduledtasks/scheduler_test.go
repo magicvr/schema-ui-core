@@ -84,3 +84,33 @@ func TestSchedulerManualExecute(t *testing.T) {
 	}
 }
 
+
+// A never-matching expression records one unschedulable failed run per day
+// (A-003 F-002), not a flood.
+func TestSchedulerRecordsUnschedule(t *testing.T) {
+	hash, err := auth.HashPassword("pw", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st2, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "t.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+	repo := store.NewRepository(st2)
+	now := time.Date(2026, 8, 14, 10, 0, 0, 0, time.UTC)
+	task := store.Task{ID: "task-never", Key: "never", Cron: "0 0 31 2 *", Name: "Never", Enabled: true, Handler: "system.noop", CreatedAt: now, UpdatedAt: now}
+	if err := repo.CreateTask(task); err != nil {
+		t.Fatal(err)
+	}
+	s := NewScheduler(repo)
+	// Multiple ticks in the same day record at most one failed run.
+	s.tick(now)
+	s.tick(now.Add(30 * time.Second))
+	s.tick(now.Add(2 * time.Minute))
+	runs, total, _ := repo.ListAllRuns(store.ListFilter{Page: 1, PageSize: 10})
+	if total != 1 || runs[0].Status != "failed" || runs[0].Detail == "" {
+		t.Fatalf("runs = %d %+v, want 1 failed with detail", total, runs)
+	}
+}
+

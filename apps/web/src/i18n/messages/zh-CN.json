@@ -421,6 +421,7 @@
 "error.taskRunNotFound": "没有该 id 对应的运行记录",
 "error.taskKeyTaken": "该键已存在对应的定时任务",
 "error.invalidCron": "cron 表达式无效",
+"error.invalidHandler": "未知的任务处理器",
   "error.invalidFile": "文件内容无效",
   "error.unsupportedFileType": "不允许的文件类型",
   "error.storageUnavailable": "存储服务暂不可用",

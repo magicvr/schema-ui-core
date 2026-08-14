@@ -34,7 +34,22 @@ type TasksRepository interface {
 // taskEntity adapts the tasks repository to the generic factory.
 type taskEntity struct {
 	repository TasksRepository
+	runner     TaskRunner
 	operations operationlog.Recorder
+}
+
+// validateHandler rejects unknown handler keys at write time (A-003 F-003);
+// a typo must never silently fall back to system.noop.
+func (e *taskEntity) validateHandler(handler string) error {
+	if handler == "" {
+		return nil
+	}
+	for _, key := range e.runner.HandlerKeys() {
+		if key == handler {
+			return nil
+		}
+	}
+	return &DomainError{Status: http.StatusBadRequest, Code: "INVALID_HANDLER", Message: "unknown task handler: " + handler}
 }
 
 func (e *taskEntity) List(f resourceFilter) ([]map[string]any, int, error) {
@@ -70,6 +85,9 @@ func (e *taskEntity) Create(body map[string]any, id string, now time.Time, actor
 	handler := stringField(body, "handler")
 	if handler == "" {
 		handler = "system.noop"
+	}
+	if err := e.validateHandler(handler); err != nil {
+		return nil, err
 	}
 	row := tasksstore.Task{
 		ID: id, Key: key, Cron: cron, Name: name,
@@ -111,6 +129,9 @@ func (e *taskEntity) Update(id string, body map[string]any, now time.Time, actor
 	handler := stringField(body, "handler")
 	if _, present := body["handler"]; !present || handler == "" {
 		handler = existing.Handler
+	}
+	if err := e.validateHandler(handler); err != nil {
+		return nil, err
 	}
 	if err := e.repository.UpdateTask(id, cron, name, enabled, description, handler, now); err != nil {
 		return nil, mapTaskStoreError(err)
@@ -179,7 +200,7 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		Listable:        true,
 		SortFields:      []string{"key", "name", "updatedAt"},
 		QSearch:         true,
-		Entity:          &taskEntity{repository: repository, operations: operations},
+		Entity:          &taskEntity{repository: repository, runner: runner, operations: operations},
 		CreateFields:    []string{"key", "name", "cron"},
 		PatchFields:     []string{"name", "cron", "description"},
 		JSONFields:      []string{"enabled", "handler"},

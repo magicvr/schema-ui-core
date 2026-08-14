@@ -55,6 +55,12 @@ func parseCronField(part string, min, max int) (map[int]bool, error) {
 			if err != nil || n <= 0 {
 				return nil, fmt.Errorf("invalid step %q", stepText)
 			}
+			// A-003 F-001: step is only meaningful on * or a-b ranges (D-002 §2
+			// lists */n only). A bare scalar with /step would silently drop the
+			// step and match less often than the expression implies — reject it.
+			if base != "*" && !strings.Contains(base, "-") {
+				return nil, fmt.Errorf("step on a single value %q is not supported (use */n)", item)
+			}
 			step = n
 		}
 		if base == "*" {

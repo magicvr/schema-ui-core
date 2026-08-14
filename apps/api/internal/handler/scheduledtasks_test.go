@@ -122,3 +122,14 @@ func TestScheduledTasksPermissionGates(t *testing.T) {
 		t.Fatalf("anonymous list = %d, want 401", anon.Code)
 	}
 }
+
+// Unknown handler keys are rejected at write time (A-003 F-003).
+func TestScheduledTasksInvalidHandler(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+	code, body := bearerJSON(t, env, admin, http.MethodPost, "/api/scheduled-tasks",
+		"{\"key\":\"h\",\"cron\":\"* * * * *\",\"name\":\"H\",\"handler\":\"typo.handler\"}")
+	if code != http.StatusBadRequest || body["error"] != "INVALID_HANDLER" {
+		t.Fatalf("unknown handler = %d %v, want 400 INVALID_HANDLER", code, body)
+	}
+}

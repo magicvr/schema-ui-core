@@ -17,6 +17,7 @@ version: 0.1.0
 | E-001 | 2026-08-14 | S1 方案冻结完成（D-001/D-002/A-001） | recorded | `02-execution/E-001-s1-done.md` |
 | E-002 | 2026-08-14 | S2 实现完成（cron/0021-0022/调度器/handler/模块/web） | recorded | `02-execution/E-002-s2-implemented.md` |
 | E-003 | 2026-08-14 | S3 验证完成（go 全绿 + 900/900 + e2e 双 profile 8/8） | recorded | `02-execution/E-003-s3-verified.md` |
+| E-004 | 2026-08-14 | S5 关门完成（A-003 conditional → 全 fixed + 回归全绿） | recorded | `02-execution/E-004-s5-closeout.md` |
 
 ## 事实边界
 

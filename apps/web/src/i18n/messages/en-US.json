@@ -421,6 +421,7 @@
 "error.taskRunNotFound": "no task run with that id",
 "error.taskKeyTaken": "a scheduled task with that key already exists",
 "error.invalidCron": "invalid cron expression",
+"error.invalidHandler": "unknown task handler",
   "error.invalidFile": "file part is invalid",
   "error.unsupportedFileType": "file type is not allowed",
   "error.storageUnavailable": "storage is temporarily unavailable",

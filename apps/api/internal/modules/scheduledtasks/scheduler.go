@@ -29,9 +29,13 @@ type Scheduler struct {
 	now        func() time.Time
 	stop       chan struct{}
 	once       sync.Once
+	onceStop   sync.Once
 	// lastRun deduplicates executions within the same minute slot so the 30s
 	// tick never double-runs a task in one slot (D-002 §3).
 	lastRun map[string]time.Time
+	// unscheduled dedupes the "unschedulable" failed-run records per task per
+	// day so the 30s loop cannot flood task_runs (A-003 F-002).
+	unscheduled map[string]time.Time
 }
 
 // NewScheduler constructs the scheduler with the built-in handler set.
@@ -43,9 +47,10 @@ func NewScheduler(repository *store.Repository) *Scheduler {
 				return nil // noop handler: record the run only
 			},
 		},
-		now:     time.Now,
-		stop:    make(chan struct{}),
-		lastRun: map[string]time.Time{},
+		now:         time.Now,
+		stop:        make(chan struct{}),
+		lastRun:     map[string]time.Time{},
+		unscheduled: map[string]time.Time{},
 	}
 }
 
@@ -69,9 +74,11 @@ func (s *Scheduler) loop() {
 	}
 }
 
-// Stop halts the tick loop (used by tests; production runs for process life).
+// Stop halts the tick loop (idempotent — A-003 F-004).
 func (s *Scheduler) Stop() {
-	close(s.stop)
+	s.onceStop.Do(func() {
+		close(s.stop)
+	})
 }
 
 // tick executes every enabled task whose next moment is due.
@@ -88,8 +95,18 @@ func (s *Scheduler) tick(now time.Time) {
 			continue // invalid cron rows are rejected at write time; skip defensively
 		}
 		next, ok := fields.Next(now)
-		if !ok || next.After(now) {
-			continue // not due yet (or no match in the 5-year window)
+		if !ok {
+			// A-003 F-002: a never-matching expression is recorded as an
+			// unschedulable failed run at most once per day per task.
+			day := now.Truncate(24 * time.Hour)
+			if last, seen := s.unscheduled[task.ID]; !seen || last.Before(day) {
+				s.unscheduled[task.ID] = day
+				s.recordUnschedule(task, now)
+			}
+			continue
+		}
+		if next.After(now) {
+			continue // not due yet
 		}
 		if last, seen := s.lastRun[task.ID]; seen && last.Equal(slot) {
 			continue // already executed in this minute slot
@@ -129,6 +146,22 @@ func (s *Scheduler) Execute(task store.Task, now time.Time) error {
 		return err
 	}
 	return nil
+}
+
+// recordUnschedule records a failed run for a never-matching cron expression.
+func (s *Scheduler) recordUnschedule(task store.Task, now time.Time) {
+	detail := "unschedulable: no cron match within the 5-year window"
+	run := store.TaskRun{
+		ID:        newRunID(),
+		TaskID:    task.ID,
+		Status:    "failed",
+		StartedAt: now,
+		Detail:    detail,
+		CreatedAt: now,
+	}
+	if err := s.repository.RecordRun(run); err != nil {
+		slog.Error("scheduler unschedule record failed", "task", task.Key, "err", err)
+	}
 }
 
 // HandlerKeys lists the registered handler keys (v1: system.noop).
