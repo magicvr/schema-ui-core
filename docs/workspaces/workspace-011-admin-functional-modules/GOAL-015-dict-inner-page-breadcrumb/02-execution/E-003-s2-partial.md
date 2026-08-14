@@ -34,6 +34,12 @@ version: 1.0.0
 - 条目页 dataSource 过滤（P-2 queryMapping 未落地）。
 - 表单 dictKey 只读显示（recordSource/route query 注入）。
 
+## 协议门禁更新 2（P-3 表单只读登记 + 先行撤销）
+
+- 2026-08-14：用户通知上游将增补**表单字段 readonly/disabled 协议** → 登记为 I-006 门禁（P-3）。
+- 先行实现撤销：dictionary-entries.json 的 dictKey disabled/reactions（reactions apply.value 为字面量赋值，无法表达式求值，属无效探索）；render.ts disabled 透传；form-controls.tsx field.disabled 接线。等上游协议形状（readonly vs disabled 命名）落地后按协议接入。
+- 保留：openEntries 行 action navigateMapping（行 action 协议已有，合法）。
+
 ## 协议门禁更新（P-1 撤销）
 
 - 2026-08-14：上游质疑 P-1（toolbar navigateMapping 增补）无必要；自审确认「条目」按钮是**行 action**（table.actions[]），行 action navigateMapping 协议自 2.1 已有 → **P-1 从清单删除**，I-005 门禁仅剩 P-2（table dataSource query 注入）。

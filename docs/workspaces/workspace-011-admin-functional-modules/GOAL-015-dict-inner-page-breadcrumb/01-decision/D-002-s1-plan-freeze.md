@@ -38,6 +38,10 @@ version: 1.0.0
 
 > **P-1 已撤销（2026-08-14，上游质疑 + 自审确认）**：数据字典「条目」按钮是**行 action**（table.actions[]，非 toolbar），行 action 的 navigateMapping 协议自 2.1 / ADR-0021 已存在——toolbar ActionTrigger 增补 navigateMapping **无必要**，从清单删除。
 
+> **P-3 已登记（2026-08-14，用户通知）**：上游将增补**表单字段 readonly/disabled 协议**（dictKey 只读显示依赖）。本目标先行实现已撤销（render.ts disabled 透传、schema disabled/reactions），等协议形状落地后按上游命名接入。
+
+> **门禁汇总（I-005/I-006）**：P-2（table dataSource query 注入）+ P-3（表单 readonly/disabled）两项为当前 open 协议门禁；P-1 已撤销；面包屑路由栈不依赖协议（已先行完成）。
+
 ### 不需要增补
 
 | 项 | 说明 |
