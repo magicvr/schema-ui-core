@@ -186,6 +186,25 @@ func (r *Repository) MarkRestored(id string, now time.Time) error {
 	})
 }
 
+// PurgeAllUnrestored physically removes every active (unrestored) snapshot;
+// returns the number purged. Irreversible (D-002 §3).
+func (r *Repository) PurgeAllUnrestored() (int, error) {
+	purged := 0
+	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+		res, err := tx.Exec(`DELETE FROM recycle_items WHERE restored_at IS NULL`)
+		if err != nil {
+			return fmt.Errorf("purge all recycle items: %w", err)
+		}
+		n, _ := res.RowsAffected()
+		purged = int(n)
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return purged, nil
+}
+
 // Purge physically removes a snapshot (irreversible, D-002 §3).
 func (r *Repository) Purge(id string) error {
 	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {

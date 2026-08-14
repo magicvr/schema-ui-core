@@ -27,6 +27,14 @@
       "onSuccess": {
         "behavior": "reload"
       }
+    },
+    "purgeAll": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/recycle-bin/purge-all",
+      "onSuccess": {
+        "behavior": "reload"
+      }
     }
   },
   "body": {
@@ -87,6 +95,14 @@
             }
           },
           "labelKey": "schema.recycleBin.action.purge"
+        }
+      ],
+      "toolbar": [
+        {
+          "key": "purgeAll",
+          "label": "Purge all",
+          "actionRef": "purgeAll",
+          "labelKey": "schema.recycleBin.toolbar.purgeAll"
         }
       ]
     }

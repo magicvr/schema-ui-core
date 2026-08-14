@@ -44,6 +44,7 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/recycle-bin", "GET /api/recycle-bin/{id}",
 				"POST /api/recycle-bin/{id}/restore", "DELETE /api/recycle-bin/{id}",
+				"POST /api/recycle-bin/purge-all",
 			},
 			Pages:       []string{"recycle-bin"},
 			Navigation:  []string{"menu_recycle_bin"},

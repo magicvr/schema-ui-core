@@ -5,7 +5,8 @@ package recyclebin
 
 import (
 	"context"
-	"encoding/json"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -36,10 +37,17 @@ func NewService(repository *recyclestore.Repository, dictionary *store.Repositor
 }
 
 // Record implements handler.TrashRecorder (S-12 · GOAL-012 D-002 §2): called
-// by the resource factory after a successful delete.
+// by the resource factory after a successful delete. Snapshot ids are
+// "recycle-" + 16 random hex (crypto/rand) so a batch delete recording several
+// rows in the same second can never collide on the primary key
+// (grok A-003 F-001/F-005).
 func (s *Service) Record(_ context.Context, resource, id string, row map[string]any, actor account.User, now time.Time) error {
+	snapshotID, err := newSnapshotID()
+	if err != nil {
+		return err
+	}
 	return s.repository.Record(recyclestore.Item{
-		ID:         "recycle-" + hexID(now),
+		ID:         snapshotID,
 		Resource:   resource,
 		ResourceID: id,
 		Payload:    row,
@@ -74,6 +82,11 @@ func (s *Service) Restore(itemID string, now time.Time) (map[string]any, error) 
 // Purge physically removes the snapshot (irreversible, D-002 §3).
 func (s *Service) Purge(itemID string) error {
 	return s.repository.Purge(itemID)
+}
+
+// PurgeAll physically removes every active snapshot (D-002 §4 batch purge).
+func (s *Service) PurgeAll() (int, error) {
+	return s.repository.PurgeAllUnrestored()
 }
 
 // List returns active snapshots.
@@ -229,8 +242,11 @@ func timeField(m map[string]any, key string, fallback time.Time) time.Time {
 	return fallback
 }
 
-func hexID(now time.Time) string {
-	// deterministic-ish id for tests: time-based, unique enough for snapshots
-	raw, _ := json.Marshal(now.UnixNano())
-	return fmt.Sprintf("%x", raw)
+// newSnapshotID returns "recycle-" + 16 random hex bytes (crypto/rand).
+func newSnapshotID() (string, error) {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", err
+	}
+	return "recycle-" + hex.EncodeToString(b[:]), nil
 }

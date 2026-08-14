@@ -259,7 +259,8 @@ func TestRecycleFactoryHookSnapshotsOnDelete(t *testing.T) {
 }
 
 // TestRecycleFactoryHookNilKeepsLegacySemantics proves Trash nil leaves the
-// delete path byte-identical (the env-mounted dictionary routes have no trash).
+// delete path byte-identical (the env-mounted dictionary routes have no trash):
+// the delete succeeds and no recycle snapshot is produced.
 func TestRecycleFactoryHookNilKeepsLegacySemantics(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)
@@ -281,5 +282,21 @@ func TestRecycleFactoryHookNilKeepsLegacySemantics(t *testing.T) {
 	env.mux.ServeHTTP(rec, req)
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("delete = %d: %s", rec.Code, rec.Body.String())
+	}
+	// No Trash wired → no snapshots exist anywhere (F-008).
+	recycleReq := bearer(t, token, http.MethodGet, "/api/recycle-bin", "")
+	recycleRec := httptest.NewRecorder()
+	env.mux.ServeHTTP(recycleRec, recycleReq)
+	if recycleRec.Code != http.StatusOK {
+		t.Fatalf("recycle list = %d: %s", recycleRec.Code, recycleRec.Body.String())
+	}
+	var recycleBody struct {
+		Total int `json:"total"`
+	}
+	if err := json.Unmarshal(recycleRec.Body.Bytes(), &recycleBody); err != nil {
+		t.Fatalf("decode recycle: %v", err)
+	}
+	if recycleBody.Total != 0 {
+		t.Fatalf("recycle total = %d, want 0 (Trash nil must not snapshot)", recycleBody.Total)
 	}
 }

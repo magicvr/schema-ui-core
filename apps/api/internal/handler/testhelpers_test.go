@@ -423,6 +423,12 @@ func (s *testRecycleService) Purge(id string) error {
 	return recyclestore.ErrItemNotFound
 }
 
+func (s *testRecycleService) PurgeAll() (int, error) {
+	before := len(s.items)
+	s.items = nil
+	return before, nil
+}
+
 func (s *testRecycleService) add(item RecycleItem) {
 	s.items = append(s.items, item)
 }

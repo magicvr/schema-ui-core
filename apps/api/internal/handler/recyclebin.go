@@ -35,6 +35,7 @@ type RecycleBinService interface {
 	GetItem(id string) (*RecycleItem, error)
 	Restore(id string, now time.Time) (map[string]any, error)
 	Purge(id string) error
+	PurgeAll() (int, error)
 }
 
 // RecycleBinRoutes returns the admin.recycle-bin HTTP surface.
@@ -102,6 +103,26 @@ func RecycleBinRoutes(a *auth.Authenticator, service RecycleBinService, operatio
 	})
 
 	routes = append(routes, kernel.RouteContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("POST", "/api/recycle-bin/purge-all")},
+		Method:               "POST",
+		Pattern:              "/api/recycle-bin/purge-all",
+		Handler: a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, ok := requirePermission(w, r, "recycle.write")
+			if !ok {
+				return
+			}
+			now := time.Now().UTC()
+			purged, err := service.PurgeAll()
+			if err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not purge recycle items")
+				return
+			}
+			recordRecycleEvent(operations, operationlog.EventRecyclePurge, user, "purge-all", now)
+			writeJSON(w, http.StatusOK, map[string]any{"purged": purged})
+		})),
+	})
+
+	routes = append(routes, kernel.RouteContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("DELETE", "/api/recycle-bin/{id}")},
 		Method:               "DELETE",
 		Pattern:              "/api/recycle-bin/{id}",
@@ -152,7 +173,9 @@ func writeRecycleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 	var de *DomainError
 	if errors.As(err, &de) {
-		writeError(w, de.Status, de.Code, de.Message)
+		// Localized envelope so the conflict carries the catalog messageKey
+		// (grok A-003 F-003): RECYCLE_RESTORE_CONFLICT is cataloged.
+		writeLocalizedError(w, r, de.Status, de.Code, de.Message)
 		return
 	}
 	writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process recycle item")
