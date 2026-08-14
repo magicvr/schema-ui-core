@@ -1,12 +1,12 @@
 ---
 id: GOAL-008-r3-s01-data-dictionary
 title: R3-S01 · 数据字典（枚举/字典管理）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.4.0
-progress: 4/5
+version: 0.5.0
+progress: 5/5
 ---
 
 # GOAL-008-r3-s01-data-dictionary · 数据字典
@@ -28,7 +28,7 @@ progress: 4/5
 - [x] **S2 · 实现**：模块 provider + 迁移（0019/0020）+ schema 代表页 ×2 + 字典端点 + 测试（E-002）
 - [x] **S3 · 验证**：单元/集成 + 代表场景实测 + 全量回归（go test / 897/897 / e2e 双 profile 8/8；冒烟留波次收尾，E-003）
 - [x] **S4 · go 影响判定 + 自审**：go 影响判定（D-003 内容扩展不触发失效，不暂挂）+ self 审计（A-002 pass）
-- [ ] **S5 · 关门**：关门审计（按 P-004 确认独立 provider 或 self）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：关门审计（A-003 grok conditional → 2 required + 1 recommended 全 fixed，D-004）+ 关门（E-004）+ goal-tree 同步
 
 progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 

@@ -282,3 +282,45 @@ it("library.download resolves the row id and names the download from the row", a
   expect(downloadNames).toContain("report__Q1_.pdf");
   expect(objectUrls.length).toBeGreaterThan(0);
 });
+
+
+// ADR-0021 navigate actions (S-01 · GOAL-008 A-003 F-002): the host executes
+// top-level type:navigate actions referenced by rows/toolbars via
+// window.location.assign; non-relative or malformed urls fail closed.
+it("navigate actions assign the application route", async () => {
+  const assignSpy = vi.fn();
+  vi.stubGlobal("location", { ...window.location, assign: assignSpy });
+  const fetcher = vi.fn(async () => new Response("ok", { status: 200 }));
+  const doc = {
+    meta: {
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation", "actions.row.navigate"],
+    },
+    actions: {
+      openEntries: { type: "navigate", url: "/dictionary-entries" },
+      badNavigate: { type: "navigate", url: "https://evil.example/x" },
+    },
+    body: {
+      type: "section",
+      id: "root",
+      children: [
+        { type: "actionButton", id: "btn-go", props: { label: "Go", actionId: "openEntries" } },
+        { type: "actionButton", id: "btn-bad", props: { label: "Bad", actionId: "badNavigate" } },
+      ],
+    },
+  } as unknown as RenderPageDocument;
+  const container = await renderDocument(doc, fetcher as typeof fetch);
+  await act(async () => {
+    findButton(container, "Go").click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+  expect(assignSpy).toHaveBeenCalledWith("/dictionary-entries");
+  assignSpy.mockClear();
+  await act(async () => {
+    findButton(container, "Bad").click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+  // Absolute external urls fail closed — no assignment.
+  expect(assignSpy).not.toHaveBeenCalled();
+  vi.unstubAllGlobals();
+});

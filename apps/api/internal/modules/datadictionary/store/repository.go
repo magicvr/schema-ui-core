@@ -181,9 +181,30 @@ func (r *Repository) UpdateType(id string, name string, enabled bool, descriptio
 	})
 }
 
-// DeleteType removes a type and cascades to its entries.
-func (r *Repository) DeleteType(id string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+// DeleteType removes a type and cascades to its entries; the deleted entry
+// ids are returned so the caller can record per-entry audit detail (A-003
+// F-003).
+func (r *Repository) DeleteType(id string) ([]string, error) {
+	entryIDs := []string{}
+	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+		rows, err := tx.Query(
+			`SELECT e.id FROM dict_entries e JOIN dict_types t ON e.dict_key = t.key WHERE t.id = ?`, id,
+		)
+		if err != nil {
+			return fmt.Errorf("list dict entries for delete: %w", err)
+		}
+		for rows.Next() {
+			var entryID string
+			if err := rows.Scan(&entryID); err != nil {
+				rows.Close()
+				return fmt.Errorf("scan dict entry id: %w", err)
+			}
+			entryIDs = append(entryIDs, entryID)
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return err
+		}
 		res, err := tx.Exec(`DELETE FROM dict_types WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete dict type: %w", err)
@@ -194,6 +215,10 @@ func (r *Repository) DeleteType(id string) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	return entryIDs, nil
 }
 
 // ListEntries returns the paged entry rows (global list; q covers dict_key /

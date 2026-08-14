@@ -10,7 +10,8 @@
       "actions.row.request",
       "actions.page.trigger",
       "table.sort",
-      "form.controls.extended"
+      "form.controls.extended",
+      "form.controls.advanced"
     ]
   },
   "actions": {
@@ -94,7 +95,7 @@
             {
               "id": "sort",
               "label": "Sort",
-              "type": "number",
+              "type": "inputNumber",
               "defaultValue": 0,
               "labelKey": "schema.dataDictionary.field.sort"
             }
@@ -142,7 +143,7 @@
             {
               "id": "sort",
               "label": "Sort",
-              "type": "number",
+              "type": "inputNumber",
               "defaultValue": 0,
               "labelKey": "schema.dataDictionary.field.sort"
             }

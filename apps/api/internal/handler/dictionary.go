@@ -7,6 +7,7 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -26,7 +27,7 @@ type DictionaryRepository interface {
 	GetType(string) (*datadictionarystore.DictType, error)
 	CreateType(datadictionarystore.DictType) error
 	UpdateType(id, name string, enabled bool, description string, sort int, now time.Time) error
-	DeleteType(string) error
+	DeleteType(string) ([]string, error)
 	ListEntries(datadictionarystore.ListFilter) ([]datadictionarystore.DictEntry, int, error)
 	GetEntry(string) (*datadictionarystore.DictEntry, error)
 	CreateEntry(datadictionarystore.DictEntry) error
@@ -113,11 +114,20 @@ func (e *dictTypeEntity) Update(id string, body map[string]any, now time.Time, a
 }
 
 func (e *dictTypeEntity) Delete(id string, actor account.User) error {
-	err := e.repository.DeleteType(id)
+	entryIDs, err := e.repository.DeleteType(id)
 	if err != nil {
 		return mapDictStoreError(err)
 	}
-	recordDictionaryEvent(e.operations, operationlog.EventDictionaryDelete, actor, id, time.Now().UTC())
+	// A-003 F-003: cascade-deleted entries are recorded in the type event's
+	// detail so forensics keep the entry ids.
+	detail := ""
+	if len(entryIDs) > 0 {
+		raw, err := json.Marshal(map[string]any{"entries": entryIDs})
+		if err == nil {
+			detail = string(raw)
+		}
+	}
+	recordDictionaryEventDetail(e.operations, operationlog.EventDictionaryDelete, actor, id, detail, time.Now().UTC())
 	return nil
 }
 
@@ -315,4 +325,23 @@ func newDictionaryID() (string, error) {
 		return "", err
 	}
 	return "dict-" + hex.EncodeToString(b[:]), nil
+}
+
+// recordDictionaryEventDetail records an audit event with an optional detail
+// payload (same best-effort contract as recordDictionaryEvent).
+func recordDictionaryEventDetail(operations operationlog.Recorder, event string, user account.User, id string, detail string, now time.Time) {
+	if operations == nil {
+		return
+	}
+	recordID := id
+	var detailPtr *string
+	if detail != "" {
+		detailPtr = &detail
+	}
+	if err := operations.RecordOperation(operationlog.Operation{
+		ID: newOperationID(), Event: event, ActorID: user.ID, ActorName: user.Name,
+		RecordID: &recordID, Detail: detailPtr, CreatedAt: now.UTC(),
+	}); err != nil {
+		slog.Error("operation log write failed", "event", event, "err", err)
+	}
 }

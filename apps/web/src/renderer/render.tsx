@@ -707,6 +707,23 @@ function SchemaCrudProvider({
         });
         return;
       }
+      // ADR-0021 navigate actions (S-01 · GOAL-008 A-003 F-002): the host
+      // executes top-level type:navigate actions referenced by rows/toolbars.
+      // Only single-slash same-origin application-route paths are accepted
+      // (the protocol's NavigateAction shape); anything else fails closed.
+      if (action.type === "navigate") {
+        const url = stringOf((action as JsonRecord).url);
+        if (url === "" || !/^\/(?!\/)[^\s\\?#]*$/.test(url)) {
+          setFeedback({
+            kind: "error",
+            code: "INVALID_NAVIGATE_URL",
+            message: `navigate action "${actionRef}" has an invalid url`,
+          });
+          return;
+        }
+        window.location.assign(url);
+        return;
+      }
       const gateTargetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
       const requestMapping = isRecord(item.requestMapping) ? item.requestMapping : undefined;
       const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");
