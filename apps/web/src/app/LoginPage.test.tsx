@@ -136,6 +136,65 @@ describe("LoginPage", () => {
     }
   });
 
+
+  // S-11 (GOAL-011 D-002 §5): when the preflight reports the gate enabled, the
+  // page renders the challenge and submits captchaId/captchaAnswer.
+  it("renders the captcha challenge when the preflight reports it enabled", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        enabled: true,
+        challenge: { id: "cap-1", question: "7 + 3 = ?", expiresInSeconds: 300 },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const onLogin = vi.fn().mockResolvedValue(undefined);
+      const container = await renderLogin(onLogin);
+      expect(container.querySelector('[data-captcha-question]')?.textContent).toContain("7 + 3");
+      fill(container, "#username", "admin");
+      fill(container, "#password", "admin");
+      fill(container, "#captchaAnswer", "10");
+      const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+      await act(async () => button!.click());
+      expect(onLogin).toHaveBeenCalledWith("admin", "admin", { id: "cap-1", answer: "10" });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("stays captcha-free and still logs in when the preflight reports disabled", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ enabled: false }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const onLogin = vi.fn().mockResolvedValue(undefined);
+      const container = await renderLogin(onLogin);
+      expect(container.querySelector("#captchaAnswer")).toBeNull();
+      fill(container, "#username", "admin");
+      fill(container, "#password", "admin");
+      const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+      await act(async () => button!.click());
+      expect(onLogin).toHaveBeenCalledWith("admin", "admin");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("surfaces the INVALID_CAPTCHA error message", async () => {
+    const onLogin = vi
+      .fn()
+      .mockRejectedValue(new AuthError("INVALID_CAPTCHA", "captcha verification failed", 400));
+    const container = await renderLogin(onLogin);
+    fill(container, "#username", "admin");
+    fill(container, "#password", "admin");
+    const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+    await act(async () => button!.click());
+    expect(container.textContent).toContain("captcha verification failed");
+  });
+
   it("consumes design-system Card/Input/Label primitives (S3 / D-004 Sign in)", async () => {
     const container = await renderLogin(vi.fn());
     expect(container.querySelector('[data-login-surface="design-system"]')).not.toBeNull();

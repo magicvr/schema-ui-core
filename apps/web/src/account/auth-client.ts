@@ -208,16 +208,43 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   return response;
 }
 
+/** Captcha challenge submitted with login (S-11 · GOAL-011 D-002 §5). */
+export interface LoginCaptcha {
+  id: string;
+  answer: string;
+}
+
 /** Authenticates with username/password and persists the token pair. */
-export async function login(username: string, password: string): Promise<AuthSession> {
+export async function login(username: string, password: string, captcha?: LoginCaptcha): Promise<AuthSession> {
   let response: Response;
   try {
-    response = await postJSON(LOGIN_URL, { username, password });
+    response = await postJSON(LOGIN_URL, {
+      username,
+      password,
+      ...(captcha === undefined
+        ? {}
+        : { captchaId: captcha.id, captchaAnswer: captcha.answer }),
+    });
   } catch {
     throw new AuthError("LOGIN_NETWORK", "unable to reach the login service");
   }
   if (response.status === 401) {
     throw new AuthError("INVALID_CREDENTIALS", "invalid username or password");
+  }
+  // S-11 (GOAL-011 D-002 §2): the gate is on but the challenge was missing,
+  // expired or wrong — surface the captcha error so the UI can refresh the
+  // challenge and let the user retry (fail-open preflight per D-002 §5).
+  if (response.status === 400) {
+    let code = "LOGIN_FAILED";
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error === "INVALID_CAPTCHA") {
+        code = "INVALID_CAPTCHA";
+      }
+    } catch {
+      // non-JSON error body: keep LOGIN_FAILED
+    }
+    throw new AuthError(code, "login failed", 400);
   }
   // GOAL-004 S4-6: 423 is the account-lock terminal (ADR-0035 D4/D7 locked
   // state), distinct from 401 credential failure.

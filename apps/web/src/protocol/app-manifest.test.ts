@@ -283,6 +283,7 @@ describe("manifest loading and expression boundaries", () => {
       "scheduled-tasks",
       "task-runs",
       "captcha",
+      "recycle-bin",
     ]);
   });
 

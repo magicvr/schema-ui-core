@@ -29,6 +29,10 @@ import (
 	scheduledtasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
+	recyclebinmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin"
+	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
+	datadictionarystore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
+	tasksstore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
@@ -208,6 +212,15 @@ func newMuxWithExtraProviders(
 	// W1 (GOAL-002 / workspace-010): core.schema-render and the optional
 	// dev.examples module are both assembled by plan enablement (D-003 §3) —
 	// production profiles default to no examples surface.
+	// S-12 (GOAL-012 D-002 §2): the recycle-bin service is constructed before
+	// the managed modules so its TrashRecorder can be injected into their
+	// delete hooks. nil (module disabled) keeps delete semantics unchanged.
+	var recycleService *recyclebinmodule.Service
+	var trash handler.TrashRecorder
+	if plan.HasModule("admin.recycle-bin") {
+		recycleService = recyclebinmodule.NewService(recyclestore.NewRepository(st), datadictionarystore2.NewRepository(st), tasksstore2.NewRepository(st))
+		trash = recycleService
+	}
 	var providers []kernel.Provider
 	if plan.HasModule("core.schema-render") {
 		providers = append(providers, schemarendermodule.New())
@@ -244,16 +257,19 @@ func newMuxWithExtraProviders(
 		providers = append(providers, filelibrarymodule.New(a, operations, uploadDir))
 	}
 	if plan.HasModule("admin.data-dictionary") {
-		providers = append(providers, datadictionarymodule.New(a, datadictionarystore.NewRepository(st), operations))
+		providers = append(providers, datadictionarymodule.New(a, datadictionarystore.NewRepository(st), operations, trash))
 	}
 	if plan.HasModule("admin.system-monitoring") {
 		providers = append(providers, systemmonitoringmodule.New(a, st, plan, gate.Ready, cfg.DBPath, time.Now(), operations))
 	}
 	if plan.HasModule("admin.scheduled-tasks") {
-		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations))
+		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations, trash))
 	}
 	if plan.HasModule("admin.login-captcha") {
 		providers = append(providers, logincaptchamodule.New(a, captchaService, operations))
+	}
+	if plan.HasModule("admin.recycle-bin") {
+		providers = append(providers, recyclebinmodule.New(a, recycleService, operations))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

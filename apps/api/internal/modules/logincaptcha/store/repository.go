@@ -47,35 +47,39 @@ func (r *Repository) CreateChallenge(id, answerHash string, expiresAt, now time.
 	})
 }
 
-// GetChallenge loads one challenge by id.
-func (r *Repository) GetChallenge(id string) (*string, error) {
-	var answerHash string
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		row := tx.QueryRow(`SELECT answer_hash FROM captcha_challenges WHERE id = ?`, id)
-		if err := row.Scan(&answerHash); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return ErrChallengeNotFound
+// ConsumeChallenge atomically verifies-and-deletes one challenge: the row is
+	// removed on ANY attempt (success or failure) so a challenge cannot be
+	// brute-forced, and expiry is enforced inside the same transaction
+	// (S-11 · GOAL-011 D-002 §1; grok A-003 F-001/F-004). Returns true only
+	// when the challenge existed, was unexpired and the answer hash matched.
+	func (r *Repository) ConsumeChallenge(id, answerHash string, now time.Time) (bool, error) {
+		matched := false
+		err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+			var stored string
+			var expiresAt int64
+			row := tx.QueryRow(`SELECT answer_hash, expires_at FROM captcha_challenges WHERE id = ?`, id)
+			if err := row.Scan(&stored, &expiresAt); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return nil // unknown challenge: nothing to consume
+				}
+				return fmt.Errorf("get captcha challenge: %w", err)
 			}
-			return fmt.Errorf("get captcha challenge: %w", err)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &answerHash, nil
-}
-
-// DeleteChallenge removes one challenge (one-time use).
-func (r *Repository) DeleteChallenge(id string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`DELETE FROM captcha_challenges WHERE id = ?`, id)
+			// Consume on ANY attempt — success or failure (D-002 §1). A delete
+			// failure fails the whole verify (fail-closed, A-003 F-004).
+			if _, err := tx.Exec(`DELETE FROM captcha_challenges WHERE id = ?`, id); err != nil {
+				return fmt.Errorf("delete captcha challenge: %w", err)
+			}
+			if expiresAt <= now.Unix() || stored != answerHash {
+				return nil // expired or wrong answer: consumed, not matched
+			}
+			matched = true
+			return nil
+		})
 		if err != nil {
-			return fmt.Errorf("delete captcha challenge: %w", err)
+			return false, err
 		}
-		return nil
-	})
-}
+		return matched, nil
+	}
 
 // Enabled reports the config switch.
 func (r *Repository) Enabled() (bool, error) {

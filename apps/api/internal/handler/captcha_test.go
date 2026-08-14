@@ -79,10 +79,11 @@ func TestCaptchaSettingsReadWrite(t *testing.T) {
 		}
 		return body
 	}
-	if got := get(); got["enabled"] != false {
-		t.Fatalf("settings = %v, want disabled", got)
+	if got := get(); got["enabled"] != "false" {
+		t.Fatalf("settings = %v, want disabled string form (F-003)", got)
 	}
-	req := bearer(t, token, http.MethodPatch, "/api/captcha/settings", `{"enabled":true}`)
+	// The schema select submits "true"/"false" strings (F-003).
+	req := bearer(t, token, http.MethodPatch, "/api/captcha/settings", `{"enabled":"true"}`)
 	rec := httptest.NewRecorder()
 	env.mux.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -92,11 +93,18 @@ func TestCaptchaSettingsReadWrite(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &patched); err != nil {
 		t.Fatalf("decode patched: %v", err)
 	}
-	if patched["enabled"] != true {
-		t.Fatalf("patched = %v, want enabled", patched)
+	if patched["enabled"] != "true" {
+		t.Fatalf("patched = %v, want enabled string", patched)
 	}
-	if got := get(); got["enabled"] != true {
+	if got := get(); got["enabled"] != "true" {
 		t.Fatalf("settings after patch = %v, want enabled", got)
+	}
+	// JSON bool stays accepted for API clients.
+	reqBool := bearer(t, token, http.MethodPatch, "/api/captcha/settings", `{"enabled":false}`)
+	recBool := httptest.NewRecorder()
+	env.mux.ServeHTTP(recBool, reqBool)
+	if recBool.Code != http.StatusOK {
+		t.Fatalf("PATCH bool = %d: %s", recBool.Code, recBool.Body.String())
 	}
 }
 
@@ -164,7 +172,7 @@ func TestCaptchaLoginGateEnabledCorrect(t *testing.T) {
 func TestCaptchaSettingsUpdateAudited(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)
-	req := bearer(t, token, http.MethodPatch, "/api/captcha/settings", `{"enabled":true}`)
+	req := bearer(t, token, http.MethodPatch, "/api/captcha/settings", `{"enabled":"true"}`)
 	rec := httptest.NewRecorder()
 	env.mux.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {

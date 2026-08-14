@@ -164,6 +164,13 @@
       "schemaUrl": "/api/schema/captcha",
       "route": "/captcha",
       "titleKey": "manifest.title.captcha"
+    },
+    {
+      "pageId": "recycle-bin",
+      "title": "Recycle bin",
+      "schemaUrl": "/api/schema/recycle-bin",
+      "route": "/recycle-bin",
+      "titleKey": "manifest.title.recycleBin"
     }
   ],
   "navigation": {
@@ -312,6 +319,15 @@
           "when": "$context.features.menu_captcha == true"
         },
         "labelKey": "manifest.nav.captcha"
+      },
+      {
+        "pageRef": "recycle-bin",
+        "label": "Recycle bin",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_recycle_bin == true"
+        },
+        "labelKey": "manifest.nav.recycleBin"
       }
     ],
     "user": [

@@ -193,7 +193,13 @@ type TaskRunner interface {
 }
 
 // ScheduledTaskRoutes returns the admin.scheduled-tasks HTTP surface.
-func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runner TaskRunner, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runner TaskRunner, operations operationlog.Recorder, moduleID string, trash ...TrashRecorder) []kernel.RouteContribution {
+	// S-12 (GOAL-012 D-002 §2): optional recycle-bin snapshot hook. nil keeps
+	// the delete semantics byte-identical.
+	var recorder TrashRecorder
+	if len(trash) > 0 {
+		recorder = trash[0]
+	}
 	routes := ResourceRoutes(a, Resource{
 		ID:              "scheduled-tasks",
 		Path:            "/api/scheduled-tasks",
@@ -208,6 +214,7 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		PermissionWrite: "tasks.write",
 		NotFoundCode:    "TASK_NOT_FOUND",
 		NewID:           newTaskID,
+		Trash:           recorder,
 	}, moduleID)
 
 	// Global run history (read-only).

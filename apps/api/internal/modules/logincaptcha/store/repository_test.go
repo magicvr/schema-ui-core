@@ -1,10 +1,9 @@
 // Package store tests for the admin.login-captcha persistence (S-11 ·
-// GOAL-011 D-002 §1/§3): one-time challenge rows and the single-row switch.
+// GOAL-011 D-002 §1/§3): one-time challenge rows (atomic consume with expiry)
+// and the single-row switch.
 package store
 
 import (
-	"context"
-	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -22,24 +21,51 @@ func newTestEnv(t *testing.T) *Repository {
 	return NewRepository(st)
 }
 
-func TestChallengeLifecycle(t *testing.T) {
+func TestConsumeChallengeLifecycle(t *testing.T) {
 	r := newTestEnv(t)
 	now := time.Now().UTC()
 	if err := r.CreateChallenge("cap-1", "hash-1", now.Add(5*time.Minute), now); err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	got, err := r.GetChallenge("cap-1")
-	if err != nil {
-		t.Fatalf("get: %v", err)
+	ok, err := r.ConsumeChallenge("cap-1", "hash-1", now)
+	if err != nil || !ok {
+		t.Fatalf("consume = %v, %v; want true", ok, err)
 	}
-	if got == nil || *got != "hash-1" {
-		t.Fatalf("answer hash = %v, want hash-1", got)
+	// consumed: second attempt fails
+	ok, err = r.ConsumeChallenge("cap-1", "hash-1", now)
+	if err != nil || ok {
+		t.Fatalf("consume after consume = %v, %v; want false", ok, err)
 	}
-	if err := r.DeleteChallenge("cap-1"); err != nil {
-		t.Fatalf("delete: %v", err)
+	// wrong answer consumes too
+	if err := r.CreateChallenge("cap-2", "hash-2", now.Add(5*time.Minute), now); err != nil {
+		t.Fatalf("create 2: %v", err)
 	}
-	if _, err := r.GetChallenge("cap-1"); !errors.Is(err, ErrChallengeNotFound) {
-		t.Fatalf("get after delete = %v, want ErrChallengeNotFound", err)
+	ok, err = r.ConsumeChallenge("cap-2", "wrong", now)
+	if err != nil || ok {
+		t.Fatalf("wrong answer consume = %v, %v; want false", ok, err)
+	}
+	// unknown id: no-op false
+	ok, err = r.ConsumeChallenge("cap-unknown", "x", now)
+	if err != nil || ok {
+		t.Fatalf("unknown consume = %v, %v; want false", ok, err)
+	}
+}
+
+func TestConsumeChallengeExpiredFails(t *testing.T) {
+	r := newTestEnv(t)
+	now := time.Now().UTC()
+	if err := r.CreateChallenge("cap-old", "hash-old", now.Add(-time.Minute), now.Add(-time.Hour)); err != nil {
+		t.Fatalf("create expired: %v", err)
+	}
+	// expired challenge must not verify even with the right answer (F-001)
+	ok, err := r.ConsumeChallenge("cap-old", "hash-old", now)
+	if err != nil || ok {
+		t.Fatalf("expired consume = %v, %v; want false (F-001)", ok, err)
+	}
+	// and it is consumed
+	ok, err = r.ConsumeChallenge("cap-old", "hash-old", now)
+	if err != nil || ok {
+		t.Fatalf("expired re-consume = %v, %v; want false", ok, err)
 	}
 }
 
@@ -78,12 +104,12 @@ func TestCreateChallengeLazyPurgesExpired(t *testing.T) {
 	if err := r.CreateChallenge("cap-new", "hash-new", now.Add(5*time.Minute), now); err != nil {
 		t.Fatalf("create new: %v", err)
 	}
-	if _, err := r.GetChallenge("cap-old"); !errors.Is(err, ErrChallengeNotFound) {
-		t.Fatalf("expired challenge readable: %v", err)
+	ok, err := r.ConsumeChallenge("cap-old", "hash-old", now)
+	if err != nil || ok {
+		t.Fatalf("expired challenge verifies: %v %v", ok, err)
 	}
-	if got, err := r.GetChallenge("cap-new"); err != nil || got == nil || *got != "hash-new" {
-		t.Fatalf("new challenge = %v, %v", got, err)
+	ok, err = r.ConsumeChallenge("cap-new", "hash-new", now)
+	if err != nil || !ok {
+		t.Fatalf("new challenge = %v, %v; want true", ok, err)
 	}
 }
-
-var _ = context.Background

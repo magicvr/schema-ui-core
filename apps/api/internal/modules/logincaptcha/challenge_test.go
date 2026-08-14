@@ -105,6 +105,20 @@ func TestVerifyWrongAnswerFailsAndConsumes(t *testing.T) {
 	}
 }
 
+func TestVerifyExpiredChallengeFails(t *testing.T) {
+	s := newServiceEnv(t)
+	now := time.Now().UTC()
+	// Create an expired challenge directly through the repository (the service
+	// Generate always uses a fresh TTL).
+	expired := now.Add(-time.Minute)
+	if err := s.repository.CreateChallenge("cap-expired", "hash-x", expired, now.Add(-time.Hour)); err != nil {
+		t.Fatalf("create expired: %v", err)
+	}
+	if err := s.Verify("cap-expired", "hash-x", now); !errors.Is(err, ErrInvalidCaptcha) {
+		t.Fatalf("verify expired = %v, want ErrInvalidCaptcha (F-001)", err)
+	}
+}
+
 func TestVerifyEmptyOrUnknownChallenge(t *testing.T) {
 	s := newServiceEnv(t)
 	if err := s.Verify("", "2", time.Now().UTC()); !errors.Is(err, ErrInvalidCaptcha) {

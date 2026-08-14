@@ -130,6 +130,8 @@ test("login gates the shell and the real auth chain works through the proxy", as
     await expect(page.getByRole("link", { name: "Scheduled tasks" })).toBeVisible();
     // S-11 (GOAL-011): login captcha settings page (admin-only surface).
     await expect(page.getByRole("link", { name: "Login captcha" })).toBeVisible();
+    // S-12 (GOAL-012): recycle bin page (admin-only surface).
+    await expect(page.getByRole("link", { name: "Recycle bin" })).toBeVisible();
   } else {
     await expect(page.getByRole("link", { name: "Settings" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Activity" })).toHaveCount(0);
@@ -138,6 +140,7 @@ test("login gates the shell and the real auth chain works through the proxy", as
     await expect(page.getByRole("link", { name: "System monitoring" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Scheduled tasks" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Login captcha" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Recycle bin" })).toHaveCount(0);
   }
 
   // No manifest failure surface, and the sign-out control is present.

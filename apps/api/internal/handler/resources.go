@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"net/http"
 	"slices"
@@ -119,6 +120,16 @@ var (
 
 // Resource describes a schema-driven CRUD resource registered with the generic
 // handler factory (I-010-001 §4). users and roles are registered instances.
+//
+// TrashRecorder is the recycle-bin snapshot surface (S-12 · GOAL-012 D-002 §2):
+// a resource opts in by setting Resource.Trash; the factory captures the row
+// BEFORE the delete and records the snapshot only after the delete succeeds,
+// so a failed delete never leaves an orphan snapshot. The admin.recycle-bin
+// module service satisfies this interface structurally.
+type TrashRecorder interface {
+	Record(ctx context.Context, resource, id string, row map[string]any, actor account.User, now time.Time) error
+}
+
 type Resource struct {
 	ID       string // resource id, e.g. "users"
 	Path     string // mount path, e.g. "/api/users"
@@ -147,6 +158,10 @@ type Resource struct {
 	NewID        func() (string, error)
 	// OnWrite, when set, runs after a successful create/update/delete.
 	OnWrite func(ctx context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time)
+	// Trash, when set, records a pre-delete snapshot for the recycle bin
+	// (S-12 · GOAL-012 D-002 §2): the factory captures the row before the
+	// delete and records it only after the delete succeeds.
+	Trash TrashRecorder
 }
 
 // resourceHandler serves the five generic CRUD routes for one Resource.
@@ -564,12 +579,27 @@ func (h *resourceHandler) delete() http.Handler {
 			return
 		}
 		id := r.PathValue("id")
+		// S-12 (GOAL-012 D-002 §2): capture the pre-delete row so a successful
+		// delete can record a recycle snapshot. A failed delete records nothing
+		// (no orphan snapshots); a missing row records nothing.
+		var snapshot map[string]any
+		if h.res.Trash != nil {
+			if row, err := h.res.Entity.Get(id); err == nil {
+				snapshot = row
+			}
+		}
 		if err := h.res.Entity.Delete(id, user); err != nil {
 			writeEntityError(w, r, h.res, err, "delete")
 			return
 		}
 		if h.res.OnWrite != nil {
 			h.res.OnWrite(r.Context(), user, writeDelete, id, nil, time.Now().UTC())
+		}
+		if h.res.Trash != nil && snapshot != nil {
+			now := time.Now().UTC()
+			if err := h.res.Trash.Record(r.Context(), h.res.ID, id, snapshot, user, now); err != nil {
+				slog.Error("recycle snapshot failed", "resource", h.res.ID, "id", id, "err", err)
+			}
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -639,20 +669,55 @@ func (h *resourceHandler) batchDelete() http.Handler {
 
 		deleted := 0
 		if batch, ok := h.res.Entity.(BatchDeleter); ok {
+			// S-12 (GOAL-012 D-002 §2): capture all pre-delete rows, then
+			// record the snapshots only after the whole batch committed.
+			type trashSnapshot struct {
+				id  string
+				row map[string]any
+			}
+			var snapshots []trashSnapshot
+			if h.res.Trash != nil {
+				for _, id := range ids {
+					if row, err := h.res.Entity.Get(id); err == nil {
+						snapshots = append(snapshots, trashSnapshot{id: id, row: row})
+					}
+				}
+			}
 			var err error
 			deleted, err = batch.DeleteBatch(ids, user)
 			if writeEntityError(w, r, h.res, err, "batch delete") {
 				return
 			}
+			if h.res.Trash != nil {
+				now := time.Now().UTC()
+				for _, snapshot := range snapshots {
+					if err := h.res.Trash.Record(r.Context(), h.res.ID, snapshot.id, snapshot.row, user, now); err != nil {
+						slog.Error("recycle snapshot failed", "resource", h.res.ID, "id", snapshot.id, "err", err)
+					}
+				}
+			}
 		} else {
 			now := time.Now().UTC()
 			for _, id := range ids {
+				// S-12 (GOAL-012 D-002 §2): capture the pre-delete row; the
+				// snapshot is recorded only after this id's delete succeeds.
+				var snapshot map[string]any
+				if h.res.Trash != nil {
+					if row, err := h.res.Entity.Get(id); err == nil {
+						snapshot = row
+					}
+				}
 				if err := h.res.Entity.Delete(id, user); err != nil {
 					writeEntityError(w, r, h.res, err, "batch delete")
 					return
 				}
 				if h.res.OnWrite != nil {
 					h.res.OnWrite(r.Context(), user, writeDelete, id, nil, now)
+				}
+				if h.res.Trash != nil && snapshot != nil {
+					if err := h.res.Trash.Record(r.Context(), h.res.ID, id, snapshot, user, now); err != nil {
+						slog.Error("recycle snapshot failed", "resource", h.res.ID, "id", id, "err", err)
+					}
 				}
 				deleted++
 			}

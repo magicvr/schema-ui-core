@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "pageId": "recycle-bin",
+    "title": "Recycle bin",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "table.sort"
+    ]
+  },
+  "actions": {
+    "restore": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/recycle-bin/{id}/restore",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "purge": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/recycle-bin/{id}",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "table",
+    "id": "recycle-bin-table",
+    "props": {
+      "columns": [
+        {
+          "field": "resource",
+          "label": "Resource",
+          "labelKey": "schema.recycleBin.column.resource"
+        },
+        {
+          "field": "resourceId",
+          "label": "Resource ID",
+          "labelKey": "schema.recycleBin.column.resourceId"
+        },
+        {
+          "field": "actorName",
+          "label": "Deleted by",
+          "labelKey": "schema.recycleBin.column.actor"
+        },
+        {
+          "field": "deletedAt",
+          "label": "Deleted at",
+          "labelKey": "schema.recycleBin.column.deletedAt"
+        },
+        {
+          "field": "restored",
+          "label": "Restored",
+          "labelKey": "schema.recycleBin.column.restored"
+        }
+      ],
+      "dataSource": "/api/recycle-bin",
+      "actions": [
+        {
+          "key": "restore",
+          "label": "Restore",
+          "actionRef": "restore",
+          "requestMapping": {
+            "path": {
+              "id": "$row.id"
+            }
+          },
+          "disabledWhen": {
+            "field": "restored",
+            "equals": true
+          },
+          "labelKey": "schema.recycleBin.action.restore"
+        },
+        {
+          "key": "purge",
+          "label": "Purge",
+          "actionRef": "purge",
+          "requestMapping": {
+            "path": {
+              "id": "$row.id"
+            }
+          },
+          "labelKey": "schema.recycleBin.action.purge"
+        }
+      ]
+    }
+  }
+}

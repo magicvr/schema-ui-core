@@ -25,7 +25,9 @@ import (
 	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	captchaschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/schema"
+	recycleschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
@@ -47,6 +49,7 @@ type authTestEnv struct {
 	settings       *settingsrepository.Repository
 	uploadDir      string
 	captcha        *testCaptchaService
+	recycle        *testRecycleService
 }
 
 const (
@@ -90,6 +93,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	// the login gate receives a live (non-nil) verifier — a typed-nil passed
 	// through the variadic would satisfy the != nil check and panic on use.
 	captchaService := newTestCaptchaService()
+	recycleService := newTestRecycleService()
 	plan := testAdminPlan(t)
 	RegisterWithReadiness(mux, a, st, operations, plan, nil, captchaService)
 	// R6 C6.1: test env mounts the same resource-factory routes the module
@@ -124,6 +128,11 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	// tests cannot import the real service; the module's own tests cover the
 	// real store-backed service).
 	mountRoutes(CaptchaRoutes(a, captchaService, operations, "admin.login-captcha"))
+	// S-12 (GOAL-012): the admin plan enables admin.recycle-bin — the env
+	// mounts its routes with a fake service; the real store-backed service is
+	// covered by the module tests.
+	recycleService = newTestRecycleService()
+	mountRoutes(RecycleBinRoutes(a, recycleService, operations, "admin.recycle-bin"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -135,6 +144,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		settings:       settings,
 		uploadDir:      uploadDir,
 		captcha:        captchaService,
+		recycle:        recycleService,
 	}
 }
 
@@ -155,6 +165,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{monitoringschema.ModuleID, monitoringschema.SchemaDocuments()},
 		{tasksschema.ModuleID, tasksschema.SchemaDocuments()},
 		{captchaschema.ModuleID, captchaschema.SchemaDocuments()},
+		{recycleschema.ModuleID, recycleschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {
@@ -351,4 +362,67 @@ func (s *testCaptchaService) Verify(captchaID, answer string, now time.Time) err
 		return s.verifyErr
 	}
 	return errors.New("captcha verification failed")
+}
+
+// testRecycleService is a controllable recycle double implementing
+// handler.RecycleBinService. The real store-backed service is covered by the
+// module tests; the handler tests use this fake to exercise the routes.
+type testRecycleService struct {
+	items   []RecycleItem
+	restore func(id string) (map[string]any, error)
+}
+
+func newTestRecycleService() *testRecycleService {
+	return &testRecycleService{}
+}
+
+func (s *testRecycleService) ListItems(resource, q string, page, pageSize int) ([]RecycleItem, int, error) {
+	var out []RecycleItem
+	for _, item := range s.items {
+		if resource != "" && item.Resource != resource {
+			continue
+		}
+		if q != "" && !strings.Contains(item.ResourceID, q) {
+			continue
+		}
+		out = append(out, item)
+	}
+	return out, len(out), nil
+}
+
+func (s *testRecycleService) GetItem(id string) (*RecycleItem, error) {
+	for i := range s.items {
+		if s.items[i].ID == id {
+			item := s.items[i]
+			return &item, nil
+		}
+	}
+	return nil, recyclestore.ErrItemNotFound
+}
+
+func (s *testRecycleService) Restore(id string, now time.Time) (map[string]any, error) {
+	if s.restore != nil {
+		return s.restore(id)
+	}
+	for i := range s.items {
+		if s.items[i].ID == id {
+			s.items[i].RestoredAt = now
+			return s.items[i].Payload, nil
+		}
+	}
+	return nil, recyclestore.ErrItemNotFound
+}
+
+func (s *testRecycleService) Purge(id string) error {
+	for i := range s.items {
+		if s.items[i].ID == id {
+			s.items = append(s.items[:i], s.items[i+1:]...)
+			return nil
+		}
+	}
+	return recyclestore.ErrItemNotFound
+}
+
+func (s *testRecycleService) add(item RecycleItem) {
+	s.items = append(s.items, item)
 }

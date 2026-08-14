@@ -27,13 +27,20 @@ type Provider struct {
 	repository *store.Repository
 	runner     *Scheduler
 	operations operationlog.Recorder
+	trash      handler.TrashRecorder
 }
 
 // New constructs the tasks provider and starts the best-effort scheduler loop.
-func New(a *auth.Authenticator, repository *store.Repository, operations operationlog.Recorder) *Provider {
+// trash (S-12 · GOAL-012 D-002 §2), when non-nil, opts the tasks resource into
+// recycle-bin snapshot recording on delete.
+func New(a *auth.Authenticator, repository *store.Repository, operations operationlog.Recorder, trash ...handler.TrashRecorder) *Provider {
 	scheduler := NewScheduler(repository)
 	scheduler.Start()
-	return &Provider{a: a, repository: repository, runner: scheduler, operations: operations}
+	var recorder handler.TrashRecorder
+	if len(trash) > 0 {
+		recorder = trash[0]
+	}
+	return &Provider{a: a, repository: repository, runner: scheduler, operations: operations, trash: recorder}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -64,7 +71,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.ScheduledTaskRoutes(p.a, p.repository, p.runner, p.operations, ModuleID) {
+	for _, route := range handler.ScheduledTaskRoutes(p.a, p.repository, p.runner, p.operations, ModuleID, p.trash) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

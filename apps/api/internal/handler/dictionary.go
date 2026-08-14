@@ -224,7 +224,13 @@ func (e *dictEntryEntity) Delete(id string, actor account.User) error {
 }
 
 // DictionaryRoutes returns the admin.data-dictionary HTTP surface.
-func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, operations operationlog.Recorder, moduleID string, trash ...TrashRecorder) []kernel.RouteContribution {
+	// S-12 (GOAL-012 D-002 §2): optional recycle-bin snapshot hook. nil keeps
+	// the delete semantics byte-identical.
+	var recorder TrashRecorder
+	if len(trash) > 0 {
+		recorder = trash[0]
+	}
 	routes := ResourceRoutes(a, Resource{
 		ID:              "dict-types",
 		Path:            "/api/data-dictionary/types",
@@ -239,6 +245,7 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		PermissionWrite: "dictionary.write",
 		NotFoundCode:    "DICT_TYPE_NOT_FOUND",
 		NewID:           newDictionaryID,
+		Trash:           recorder,
 	}, moduleID)
 	routes = append(routes, ResourceRoutes(a, Resource{
 		ID:              "dict-entries",
@@ -254,6 +261,7 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		PermissionWrite: "dictionary.write",
 		NotFoundCode:    "DICT_ENTRY_NOT_FOUND",
 		NewID:           newDictionaryID,
+		Trash:           recorder,
 	}, moduleID)...)
 	return routes
 }

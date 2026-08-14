@@ -73,6 +73,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// S-11 (GOAL-011): admin.login-captcha keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.login-captcha", Key: "captcha.read"}, Permission: "captcha.read", Resource: "captcha", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.login-captcha", Key: "captcha.write"}, Permission: "captcha.write", Resource: "captcha", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-12 (GOAL-012): admin.recycle-bin keys, admin-only.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "recycle.read"}, Permission: "recycle.read", Resource: "recycle-bin", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "recycle.write"}, Permission: "recycle.write", Resource: "recycle-bin", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -95,6 +98,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.scheduled-tasks", Key: "menu_scheduled_tasks"}, NodeID: "menu_scheduled_tasks", PageID: "scheduled-tasks", Order: 6, Label: "Scheduled tasks", Visibility: authsessiondata.PolicyAdmin, Permission: "tasks.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-11 (GOAL-011): login captcha settings page (admin-only surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.login-captcha", Key: "menu_captcha"}, NodeID: "menu_captcha", PageID: "captcha", Order: 7, Label: "Login captcha", Visibility: authsessiondata.PolicyAdmin, Permission: "captcha.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-12 (GOAL-012): recycle bin page (admin-only surface).
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "menu_recycle_bin"}, NodeID: "menu_recycle_bin", PageID: "recycle-bin", Order: 8, Label: "Recycle bin", Visibility: authsessiondata.PolicyAdmin, Permission: "recycle.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

@@ -23,7 +23,9 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-14 | self | S1 方案冻结 | pass | 0 | `03-audit/A-001-s1-self.md` |
+| A-002 | 2026-08-14 | self | S2 实现 + S3 验证 + S4 go 判定 | pass | 0 | `03-audit/A-002-s2-s4-self.md` |
+| A-003 | 2026-08-14 | independent (grok) | S5 关门 · 安全门禁首轮 | fail | 5 required | `03-audit/A-003-s5-security-independent-fail.md` |
 
 ## 结论状态
 
-尚未到达审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 /govern 与用户裁决。
+A-002（S2–S4）pass；A-003（grok）fail → 5 required 已修复（F-001~F-005），待 A-004 复审与全量回归。

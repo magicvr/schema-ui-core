@@ -68,7 +68,9 @@ func CaptchaRoutes(a *auth.Authenticator, service CaptchaService, operations ope
 			if _, ok := requirePermission(w, r, "captcha.read"); !ok {
 				return
 			}
-			writeJSON(w, http.StatusOK, map[string]any{"enabled": service.Required()})
+			// Form-facing string value ("true"/"false") so the schema select
+			// control can prefill (F-003, notifications F-001 pattern).
+			writeJSON(w, http.StatusOK, map[string]any{"enabled": boolStringValue(service.Required())})
 		})),
 	})
 
@@ -83,24 +85,27 @@ func CaptchaRoutes(a *auth.Authenticator, service CaptchaService, operations ope
 				return
 			}
 			var body struct {
-				Enabled *bool `json:"enabled"`
+				Enabled json.RawMessage `json:"enabled"`
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
-			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil || len(body.Enabled) == 0 {
 				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "body must be JSON with enabled")
 				return
 			}
-			if body.Enabled == nil {
-				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "body must be JSON with enabled")
+			// Accept a JSON bool or the "true"/"false" strings the schema select
+			// control submits (F-003, notifications F-001 pattern).
+			enabled, err := parseBoolValue(body.Enabled)
+			if err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "enabled must be a boolean or "+`"true"/"false"`)
 				return
 			}
 			now := time.Now().UTC()
-			if err := service.SetEnabled(*body.Enabled, now); err != nil {
+			if err := service.SetEnabled(enabled, now); err != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update captcha settings")
 				return
 			}
-			recordCaptchaSettingsEvent(operations, user, *body.Enabled, now)
-			writeJSON(w, http.StatusOK, map[string]any{"enabled": *body.Enabled})
+			recordCaptchaSettingsEvent(operations, user, enabled, now)
+			writeJSON(w, http.StatusOK, map[string]any{"enabled": boolStringValue(enabled)})
 		})),
 	})
 	return routes

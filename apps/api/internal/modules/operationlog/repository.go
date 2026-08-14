@@ -45,6 +45,8 @@ const (
 	EventTaskDelete = "scheduled-tasks.delete"
 	// S-11 captcha events (GOAL-011 D-002 §3).
 	EventCaptchaSettingsUpdate = "captcha.settings-update"
+	EventRecycleRestore       = "recycle.restore"
+	EventRecyclePurge         = "recycle.purge"
 )
 
 // Operation is one append-only operation log row.

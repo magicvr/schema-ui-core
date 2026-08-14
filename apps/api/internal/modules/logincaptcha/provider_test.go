@@ -7,10 +7,12 @@ package logincaptcha
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -24,7 +26,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
-func newCaptchaTestEnv(t *testing.T) (*auth.Authenticator, *Service, *operationlog.Repository) {
+func newCaptchaTestEnv(t *testing.T) (*auth.Authenticator, *Service, *operationlog.Repository, *authsession.Repository) {
 	t.Helper()
 	hash, err := auth.HashPassword("test-password", 4)
 	if err != nil {
@@ -37,7 +39,7 @@ func newCaptchaTestEnv(t *testing.T) (*auth.Authenticator, *Service, *operationl
 	t.Cleanup(func() { _ = st.Close() })
 	repository := authsession.NewRepository(st)
 	a := auth.NewWithRepository([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
-	return a, NewService(store.NewRepository(st)), operationlog.NewRepository(st)
+	return a, NewService(store.NewRepository(st)), operationlog.NewRepository(st), repository
 }
 
 func planWithCaptcha(t *testing.T) kernel.Plan {
@@ -58,7 +60,7 @@ func planWithCaptcha(t *testing.T) kernel.Plan {
 }
 
 func TestCaptchaProviderRegistersSurfaces(t *testing.T) {
-	a, service, operations := newCaptchaTestEnv(t)
+	a, service, operations, _ := newCaptchaTestEnv(t)
 	provider := New(a, service, operations)
 	set, err := kernel.RegisterContributions(context.Background(), planWithCaptcha(t), []kernel.Provider{provider})
 	if err != nil {
@@ -91,7 +93,7 @@ func TestCaptchaProviderRegistersSurfaces(t *testing.T) {
 }
 
 func TestCaptchaProviderServesSurfaces(t *testing.T) {
-	a, service, operations := newCaptchaTestEnv(t)
+	a, service, operations, _ := newCaptchaTestEnv(t)
 	plan := planWithCaptcha(t)
 	provider := New(a, service, operations)
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
@@ -150,11 +152,11 @@ func TestCaptchaProviderServesSurfaces(t *testing.T) {
 		return rr
 	}
 	settings := authReq(http.MethodGet, "/api/captcha/settings", "")
-	if settings.Code != http.StatusOK || !strings.Contains(settings.Body.String(), `"enabled":false`) {
+	if settings.Code != http.StatusOK || !strings.Contains(settings.Body.String(), `"enabled":"false"`) {
 		t.Fatalf("settings = %d: %s", settings.Code, settings.Body.String())
 	}
-	patched := authReq(http.MethodPatch, "/api/captcha/settings", `{"enabled":true}`)
-	if patched.Code != http.StatusOK || !strings.Contains(patched.Body.String(), `"enabled":true`) {
+	patched := authReq(http.MethodPatch, "/api/captcha/settings", `{"enabled":"true"}`)
+	if patched.Code != http.StatusOK || !strings.Contains(patched.Body.String(), `"enabled":"true"`) {
 		t.Fatalf("patch = %d: %s", patched.Code, patched.Body.String())
 	}
 	gated := httptest.NewRecorder()
@@ -162,5 +164,147 @@ func TestCaptchaProviderServesSurfaces(t *testing.T) {
 		strings.NewReader(`{"username":"admin","password":"test-password"}`)))
 	if gated.Code != http.StatusBadRequest || !strings.Contains(gated.Body.String(), "INVALID_CAPTCHA") {
 		t.Fatalf("gated login = %d: %s", gated.Code, gated.Body.String())
+	}
+}
+
+// F-005 (grok A-003): real store-backed service end-to-end — challenge
+// generate → answer → login 200; settings 403 for a non-admin; captcha
+// failures never count toward the lockout budget.
+func TestCaptchaRealServiceChallengeLogin(t *testing.T) {
+	a, service, operations, _ := newCaptchaTestEnv(t)
+	plan := planWithCaptcha(t)
+	provider := New(a, service, operations)
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
+	if err != nil {
+		t.Fatalf("RegisterContributions: %v", err)
+	}
+	mux := http.NewServeMux()
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	for _, route := range set.Routes {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	if err := service.SetEnabled(true, time.Now().UTC()); err != nil {
+		t.Fatalf("enable: %v", err)
+	}
+	// Preflight issues a real persisted challenge.
+	pre := httptest.NewRecorder()
+	mux.ServeHTTP(pre, httptest.NewRequest(http.MethodGet, "/api/auth/captcha", nil))
+	if pre.Code != http.StatusOK {
+		t.Fatalf("preflight = %d: %s", pre.Code, pre.Body.String())
+	}
+	var body struct {
+		Enabled   bool `json:"enabled"`
+		Challenge *struct {
+			ID       string `json:"id"`
+			Question string `json:"question"`
+		} `json:"challenge"`
+	}
+	if err := json.NewDecoder(pre.Body).Decode(&body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if !body.Enabled || body.Challenge == nil {
+		t.Fatalf("preflight = %+v, want enabled challenge", body)
+	}
+	// Solve the arithmetic question.
+	var aNum, bNum int
+	var op string
+	if _, err := fmt.Sscanf(body.Challenge.Question, "%d %s %d = ?", &aNum, &op, &bNum); err != nil {
+		t.Fatalf("parse question %q: %v", body.Challenge.Question, err)
+	}
+	answer := ""
+	if op == "+" {
+		answer = strconv.Itoa(aNum + bNum)
+	} else {
+		answer = strconv.Itoa(aNum - bNum)
+	}
+	login := httptest.NewRecorder()
+	payload := fmt.Sprintf(`{"username":"admin","password":"test-password","captchaId":%q,"captchaAnswer":%q}`, body.Challenge.ID, answer)
+	mux.ServeHTTP(login, httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(payload)))
+	if login.Code != http.StatusOK {
+		t.Fatalf("login with solved challenge = %d: %s", login.Code, login.Body.String())
+	}
+}
+
+func TestCaptchaRealServiceSettingsForbiddenForNonAdmin(t *testing.T) {
+	a, service, operations, authRepository := newCaptchaTestEnv(t)
+	plan := planWithCaptcha(t)
+	provider := New(a, service, operations)
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
+	if err != nil {
+		t.Fatalf("RegisterContributions: %v", err)
+	}
+	mux := http.NewServeMux()
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	for _, route := range set.Routes {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	// Create an editor user (no captcha.read/write in the mvp system data set).
+	hash, err := auth.HashPassword("editor-pass", 4)
+	if err != nil {
+		t.Fatalf("hash: %v", err)
+	}
+	now := time.Now().UTC()
+	if err := authRepository.CreateUser(authsession.User{
+		ID: "user-editor", Username: "editor", Name: "Editor",
+		Roles: []string{"editor"}, PasswordHash: hash, CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("create editor: %v", err)
+	}
+	login := httptest.NewRecorder()
+	mux.ServeHTTP(login, httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"editor","password":"editor-pass"}`)))
+	if login.Code != http.StatusOK {
+		t.Fatalf("editor login = %d: %s", login.Code, login.Body.String())
+	}
+	var body struct {
+		AccessToken string `json:"accessToken"`
+	}
+	if err := json.NewDecoder(login.Body).Decode(&body); err != nil || body.AccessToken == "" {
+		t.Fatalf("editor login body missing accessToken")
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/captcha/settings", nil)
+	req.Header.Set("Authorization", "Bearer "+body.AccessToken)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("editor settings = %d, want 403 (F-005)", rec.Code)
+	}
+}
+
+func TestCaptchaRealServiceFailuresDoNotLock(t *testing.T) {
+	a, service, operations, _ := newCaptchaTestEnv(t)
+	plan := planWithCaptcha(t)
+	provider := New(a, service, operations)
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
+	if err != nil {
+		t.Fatalf("RegisterContributions: %v", err)
+	}
+	mux := http.NewServeMux()
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	for _, route := range set.Routes {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	if err := service.SetEnabled(true, time.Now().UTC()); err != nil {
+		t.Fatalf("enable: %v", err)
+	}
+	// Many captcha-rejected attempts (above the 20-attempt rate limit and the
+	// lockout budget) must never count: they never reach credential validation.
+	for i := 0; i < 25; i++ {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/auth/login",
+			strings.NewReader(`{"username":"admin","password":"test-password","captchaId":"cap-missing","captchaAnswer":"1"}`)))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("attempt %d = %d: %s", i, rec.Code, rec.Body.String())
+		}
+	}
+	// Disable the gate: the account must not be locked or rate-limited.
+	if err := service.SetEnabled(false, time.Now().UTC()); err != nil {
+		t.Fatalf("disable: %v", err)
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/auth/login",
+		strings.NewReader(`{"username":"admin","password":"test-password"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("login after captcha-only failures = %d: %s (F-005)", rec.Code, rec.Body.String())
 	}
 }

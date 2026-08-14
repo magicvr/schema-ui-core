@@ -39,6 +39,7 @@ const SCHEMA_FILES = [
   "systemmonitoring/schema/system-monitoring.json",
   "scheduledtasks/schema/scheduled-tasks.json",
   "logincaptcha/schema/captcha.json",
+  "recyclebin/schema/recycle-bin.json",
   "scheduledtasks/schema/task-runs.json",
 ];
 

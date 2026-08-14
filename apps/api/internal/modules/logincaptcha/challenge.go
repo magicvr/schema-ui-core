@@ -65,10 +65,15 @@ func (s *Service) Generate() (id, question string, expiresInSeconds int64, err e
 	return id, fmt.Sprintf("%d %s %d = ?", a, op, b), int64(challengeTTL.Seconds()), nil
 }
 
-// Required reports whether login must present a captcha.
+// Required reports whether login must present a captcha. Fail-closed on
+// config read errors (grok A-003 F-006): if the switch cannot be read the gate
+// is treated as ON so an operator must fix the config before logins resume.
 func (s *Service) Required() bool {
 	enabled, err := s.repository.Enabled()
-	return err == nil && enabled
+	if err != nil {
+		return true
+	}
+	return enabled
 }
 
 // SetEnabled flips the login captcha gate (D-002 §3).
@@ -78,17 +83,18 @@ func (s *Service) SetEnabled(enabled bool, now time.Time) error {
 
 // Verify checks a submitted challenge one-time: the challenge is consumed
 // (deleted) on ANY attempt — success or failure — so a challenge cannot be
-// brute-forced (D-002 §1).
+// brute-forced; expiry is enforced inside the same transaction (D-002 §1;
+// grok A-003 F-001/F-004). Any failure — unknown, expired, consumed, wrong
+// answer or store error — maps to ErrInvalidCaptcha without leaking which.
 func (s *Service) Verify(captchaID, answer string, now time.Time) error {
 	if captchaID == "" {
 		return ErrInvalidCaptcha
 	}
-	hash, err := s.repository.GetChallenge(captchaID)
+	ok, err := s.repository.ConsumeChallenge(captchaID, answerHash(captchaID, answer), now)
 	if err != nil {
 		return ErrInvalidCaptcha
 	}
-	_ = s.repository.DeleteChallenge(captchaID)
-	if hash == nil || *hash != answerHash(captchaID, answer) {
+	if !ok {
 		return ErrInvalidCaptcha
 	}
 	return nil

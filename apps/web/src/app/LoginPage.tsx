@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 
-import { AuthError } from "@/account/auth-client";
+import { AuthError, type LoginCaptcha } from "@/account/auth-client";
 import {
   applyDocumentBranding,
   defaultBranding,
@@ -39,6 +39,8 @@ function loginErrorKey(code: string): string {
       return "login.error.failed";
     case "LOGIN_MALFORMED":
       return "login.error.malformed";
+    case "INVALID_CAPTCHA":
+      return "login.error.invalidCaptcha";
     default:
       return "login.error.generic";
   }
@@ -48,13 +50,24 @@ function loginErrorKey(code: string): string {
  * R2 login surface (GOAL-005) + S3 visual upgrade (workspace-006 / D-004 Sign in).
  * Uses design-system Card / Input / Label / Button primitives (not one-off inputs).
  */
-export function LoginPage({ onLogin }: { onLogin: (username: string, password: string) => Promise<void> }) {
+export function LoginPage({
+  onLogin,
+}: {
+  onLogin: (username: string, password: string, captcha?: LoginCaptcha) => Promise<void>;
+}) {
   const t = useTranslate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [branding, setBranding] = useState<Branding>(() => defaultBranding());
+  // S-11 (GOAL-011 D-002 §5): the login page preflights the captcha gate on
+  // mount. When enabled it renders the arithmetic question and submits the
+  // challenge with the credentials. Preflight failure is fail-open: the form
+  // stays captcha-free and the server rejects login with INVALID_CAPTCHA if a
+  // challenge is actually required (the error surfaces in the form).
+  const [captchaChallenge, setCaptchaChallenge] = useState<{ id: string; question: string } | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const showSeedHint = import.meta.env.DEV;
 
   useEffect(() => {
@@ -76,6 +89,24 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
     };
   }, []);
 
+  // S-11 (GOAL-011 D-002 §5): preflight the login captcha gate once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/auth/captcha", { headers: { Accept: "application/json" } })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { enabled?: boolean; challenge?: { id?: string; question?: string } } | null) => {
+        if (!cancelled && body?.enabled === true && body.challenge?.id && body.challenge.question) {
+          setCaptchaChallenge({ id: body.challenge.id, question: body.challenge.question });
+        }
+      })
+      .catch(() => {
+        // fail-open (D-002 §5): the server enforces the gate on login.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (submitting) {
@@ -83,8 +114,16 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
     }
     setSubmitting(true);
     setError(null);
+    const captcha: LoginCaptcha | undefined =
+      captchaChallenge !== null
+        ? { id: captchaChallenge.id, answer: captchaAnswer.trim() }
+        : undefined;
     try {
-      await onLogin(username, password);
+      if (captcha === undefined) {
+        await onLogin(username, password);
+      } else {
+        await onLogin(username, password, captcha);
+      }
     } catch (err: unknown) {
       const code = err instanceof AuthError ? err.code : "LOGIN_UNKNOWN";
       // W4 P2-2: login.error.failed carries a `{status}` placeholder; the
@@ -160,6 +199,23 @@ export function LoginPage({ onLogin }: { onLogin: (username: string, password: s
                   onChange={(event) => setPassword(event.target.value)}
                 />
               </div>
+
+              {captchaChallenge !== null ? (
+                <div className="space-y-2">
+                  <Label htmlFor="captchaAnswer">{t("login.captchaQuestion")}</Label>
+                  <p className="text-sm font-medium" data-captcha-question>
+                    {captchaChallenge.question}
+                  </p>
+                  <Input
+                    id="captchaAnswer"
+                    name="captchaAnswer"
+                    autoComplete="off"
+                    placeholder={t("login.captchaAnswer")}
+                    value={captchaAnswer}
+                    onChange={(event) => setCaptchaAnswer(event.target.value)}
+                  />
+                </div>
+              ) : null}
 
               {error !== null ? (
                 <p role="alert" className="text-sm text-destructive">

@@ -24,7 +24,7 @@ export interface AuthContextValue {
   session: AuthSession | null;
   user: AuthSession["user"] | null;
   /** Authenticates, restores a captured return intent, and transitions to the shell. */
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, captcha?: import("@/account/auth-client").LoginCaptcha) => Promise<void>;
   /** Revokes the session and transitions to the login page. */
   logout: () => Promise<void>;
   /** Auth-aware fetch: attaches Bearer and refreshes once on 401. */
@@ -79,10 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string, captcha?: import("@/account/auth-client").LoginCaptcha) => {
     let next: AuthSession;
     try {
-      next = await loginRequest(username, password);
+      next = await loginRequest(username, password, captcha);
     } catch (err: unknown) {
       // GOAL-004 S4-6: 423 is the account-lock terminal (ADR-0035 D4/D7
       // locked state) — the login surface surfaces it as an error, and the

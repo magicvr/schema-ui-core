@@ -63,8 +63,9 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // S-02/S-01 (GOAL-007/008): admin fixture extended with file-library +
 // data-dictionary pages and nav.
 // S-11 (GOAL-011): admin fixture extended with the captcha page + nav.
+// S-12 (GOAL-012): admin fixture extended with the recycle-bin page + nav.
 const STATIC_MANIFEST_SHA256 =
-  "95e571e58cfd71a45a0b83ab3e8e10c50a8ce6dfadaec8a79cbbbc15871b4ea8";
+  "9649fbfa3ee06bec1ded6020fb867987c12d2daf2e6fdd41c202380ad5074bd4";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));
