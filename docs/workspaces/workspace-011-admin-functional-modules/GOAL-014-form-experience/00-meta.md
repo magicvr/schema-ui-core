@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 3/5
+progress: 4/5
 ---
 
 # GOAL-014 · 表单体验：字段级校验与错误展示 + 弹窗布局
@@ -29,10 +29,10 @@ progress: 3/5
 - [x] **S1 · 方案冻结**：字段级错误契约（可选 fieldErrors）+ 约束最小集 + 单列布局方案（D-002/A-001/E-002，2026-08-14）
 - [x] **S2 · 实现**：服务端 fieldErrors + 前端 validateFieldValues/内联 + 单列布局 + schema 约束示范（E-003，2026-08-14）
 - [x] **S3 · 验证**：validateFieldValues 单测 + 911/911 web + go 全绿 + HTTP fieldErrors 冒烟（E-004，2026-08-14）
-- [ ] **S4 · go 影响判定 + 自审**
+- [x] **S4 · go 影响判定 + 自审**（E-005：go 不 held；A-002：pass，2026-08-14）
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 
-progress: 3/5 由五个等权检查点派生。
+progress: 4/5 由五个等权检查点派生。
 
 ## 审计策略
 
@@ -45,7 +45,7 @@ progress: 3/5 由五个等权检查点派生。
 | I-001 | required | 字段级错误响应结构（与既有 {error,message} 信封兼容策略） | S1 方案 | 现有错误契约对照（errorcatalog / 前端 readResourceApiError） | **closed**（D-002 §2：可选 fieldErrors 键） |
 | I-002 | required | schema 字段约束最小集（required/pattern/min/max/长度）与协议版本影响 | S1 方案 | 业界对照（JSON Schema / AntD 规则） | **closed**（D-002 §3：required/pattern/minLength/maxLength + min/max；不 bump 版本） |
 | I-003 | required | 弹窗布局方案（列数可配/单列默认）与既有两列 fixture 兼容 | S1 方案 | 现有 modal fixture 对照 | **closed**（D-002 §4：单列默认 + columns 可配 + modal width；渲染层变化） |
-| I-004 | required | go 影响判定（错误契约/协议扩展） | S4 | VP-008 接口对照 | open |
+| I-004 | required | go 影响判定（错误契约/协议扩展） | S4 | VP-008 接口对照 | **closed**（E-005：go 不 held） |
 
 ## 依赖
 
