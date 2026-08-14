@@ -117,6 +117,22 @@ describe("S4 · readResourceApiError envelope", () => {
     const error = await readResourceApiError(response, "list");
     expect(error.messageKey).toBeUndefined();
     expect(error.code).toBe("FORBIDDEN");
+    expect(error.fieldErrors).toEqual([]);
+  });
+
+  it("parses fieldErrors from the GOAL-014 envelope (A-003 F-002)", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: "INVALID_PATCH_FIELD",
+        message: "invalid patch field: name must not be empty",
+        messageKey: "error.invalidPatchField",
+        fieldErrors: [{ field: "name", reason: "must not be empty" }],
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+    const error = await readResourceApiError(response, "dict type update");
+    expect(error.code).toBe("INVALID_PATCH_FIELD");
+    expect(error.fieldErrors).toEqual([{ field: "name", reason: "must not be empty" }]);
   });
 });
 

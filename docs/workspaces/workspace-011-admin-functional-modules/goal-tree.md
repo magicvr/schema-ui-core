@@ -30,7 +30,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-010-r3-s04-scheduled-tasks [done]  · R3-S04 定时任务管理（5/5）
 ├── GOAL-011-r3-s11-login-captcha [done]       · R3-S11 登录验证码（5/5）
 ├── GOAL-012-r3-s12-recycle-bin [done]      · R3-S12 回收站/软删除（5/5）
-└── GOAL-014-form-experience [active]    · R4 表单体验：字段级校验/错误展示 + 弹窗布局（4/5）
+└── GOAL-014-form-experience [done]      · R4 表单体验：字段级校验/错误展示 + 弹窗布局（5/5）
 ```
 
 Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14ab9d`）。首阶段 R1 = 有界调研；分档产出后按 Root 路线图逐波立项（R2 一等公民 / R3 常用 / R4 增补 backlog）。

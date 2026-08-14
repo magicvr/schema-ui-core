@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   collectFieldIds,
+  gateRenderFormFields,
   isWhitelistedNodeType,
   parseRecordViewFields,
   parseRenderNode,
@@ -323,3 +324,29 @@ describe("resolveResponsePath (form.recordSource.responseMapping · S6)", () => 
     expect(resolveResponsePath({ a: 1 }, "")).toBeUndefined();
   });
 });
+
+describe("GOAL-014 · constraint passthrough + fieldErrors echo (A-003 F-001/F-002)", () => {
+  it("gateRenderFormFields preserves submit-time constraints (F-001)", () => {
+    const result = gateRenderFormFields(
+      { protocolVersion: "2.7", requiredCapabilities: ["form.controls.extended"] },
+      [
+        {
+          id: "name",
+          type: "input",
+          required: true,
+          pattern: "^[a-z]+$",
+          minLength: 2,
+          maxLength: 10,
+        },
+      ],
+      "fields",
+    );
+    expect(result.errors).toEqual([]);
+    const field = result.fields[0];
+    expect(field.required).toBe(true);
+    expect(field.pattern).toBe("^[a-z]+$");
+    expect(field.minLength).toBe(2);
+    expect(field.maxLength).toBe(10);
+  });
+});
+

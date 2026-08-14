@@ -724,7 +724,14 @@ export function FormControls({
   // stays single-column regardless.
   const cols =
     columns !== undefined && columns > 1 ? Math.min(Math.max(Math.floor(columns), 1), 4) : undefined;
-  const gridClass = cols !== undefined ? "sm:grid-cols-" + cols : undefined;
+  // F-005 (A-003): Tailwind JIT cannot extract dynamically concatenated
+  // class names; use a static lookup so sm:grid-cols-2/3/4 are real utilities.
+  const GRID_COL_CLASSES: Record<number, string> = {
+    2: "sm:grid-cols-2",
+    3: "sm:grid-cols-3",
+    4: "sm:grid-cols-4",
+  };
+  const gridClass = cols !== undefined ? GRID_COL_CLASSES[cols] : undefined;
   return (
     <div
       data-form-controls="design-system"

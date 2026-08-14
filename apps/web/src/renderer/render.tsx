@@ -163,7 +163,15 @@ export interface TableSelection {
 
 export type ActionResult =
   | { ok: true }
-  | { ok: false; code: string; message: string; messageKey?: string; params?: Record<string, unknown> };
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      messageKey?: string;
+      params?: Record<string, unknown>;
+      /** GOAL-014 D-002 §2: server field-level validation failures. */
+      fieldErrors?: Array<{ field: string; reason: string }>;
+    };
 
 export interface SchemaCrudValue {
   selectedRow: Record<string, unknown> | null;
@@ -466,6 +474,7 @@ async function runRequest(
       message: apiError.message,
       ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
     };
   }
 
@@ -572,6 +581,7 @@ async function runBatchRequest(
       message: apiError.message,
       ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
     };
   }
   return { ok: true };
@@ -1333,7 +1343,8 @@ function FormInner({
     if (validation.length > 0) {
       const byField: Record<string, string> = {};
       for (const err of validation) {
-        byField[err.field] = err.message;
+        const localized = t(err.messageKey, undefined, err.message);
+        byField[err.field] = localized === err.messageKey ? err.message : localized;
       }
       setFieldErrors(byField);
       setFormError(null);
@@ -1347,9 +1358,8 @@ function FormInner({
       if (!result.ok) {
         // GOAL-014 D-002 §2: echo server fieldErrors onto the matching inputs;
         // unmatched fields fall back to the form-level alert.
-        const serverErrors = (result as { fieldErrors?: Array<{ field: string; reason: string }> }).fieldErrors;
         const byField: Record<string, string> = {};
-        for (const fe of serverErrors ?? []) {
+        for (const fe of result.fieldErrors ?? []) {
           byField[fe.field] = fe.reason;
         }
         setFieldErrors(byField);

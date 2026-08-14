@@ -626,6 +626,12 @@ export function gateRenderFormFields(
       ...(typeof entry.max === "number" ? { max: entry.max } : {}),
       ...(typeof entry.step === "number" ? { step: entry.step } : {}),
       ...(typeof entry.precision === "number" ? { precision: entry.precision } : {}),
+      // GOAL-014 D-002 §3: pass through submit-time validation constraints
+      // (A-003 F-001: without this they were dropped at parse time).
+      ...(entry.required === true ? { required: true } : {}),
+      ...(typeof entry.pattern === "string" ? { pattern: entry.pattern } : {}),
+      ...(typeof entry.minLength === "number" ? { minLength: entry.minLength } : {}),
+      ...(typeof entry.maxLength === "number" ? { maxLength: entry.maxLength } : {}),
       ...(typeof entry.format === "string" ? { format: entry.format } : {}),
       ...(typeof entry.action === "string" ? { action: entry.action } : {}),
       ...(typeof entry.actionRef === "string" ? { actionRef: entry.actionRef } : {}),

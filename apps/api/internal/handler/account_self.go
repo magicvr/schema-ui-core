@@ -15,6 +15,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
@@ -128,7 +129,7 @@ func (h *accountSelfHandler) updateProfile() http.Handler {
 		}
 		name = strings.TrimSpace(name)
 		if name == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", "name must not be empty")
+			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", "name must not be empty", []errorcatalog.FieldError{{Field: "name", Reason: "must not be empty"}})
 			return
 		}
 		u, err := h.repository.UpdateUser(user.ID, authsession.UserPatch{Name: &name}, user.ID, h.now().UTC())

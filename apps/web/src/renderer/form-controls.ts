@@ -425,6 +425,8 @@ export function checkFormCapabilitiesRaw(
 export interface FieldValidationError {
   field: string;
   code: "REQUIRED" | "PATTERN" | "MIN_LENGTH" | "MAX_LENGTH" | "MIN_VALUE" | "MAX_VALUE";
+  /** Stable i18n key (form.validation.*); message is the en fallback. */
+  messageKey: string;
   message: string;
 }
 
@@ -455,6 +457,7 @@ export function validateFieldValues(
       errors.push({
         field: field.id,
         code: "REQUIRED",
+        messageKey: "form.validation.required",
         message: "this field is required",
       });
       continue;
@@ -468,6 +471,7 @@ export function validateFieldValues(
           errors.push({
             field: field.id,
             code: "PATTERN",
+            messageKey: "form.validation.pattern",
             message: "format does not match the expected pattern",
           });
         }
@@ -480,6 +484,7 @@ export function validateFieldValues(
       errors.push({
         field: field.id,
         code: "MIN_LENGTH",
+        messageKey: "form.validation.minLength",
         message: "value is shorter than the minimum length",
       });
     }
@@ -487,6 +492,7 @@ export function validateFieldValues(
       errors.push({
         field: field.id,
         code: "MAX_LENGTH",
+        messageKey: "form.validation.maxLength",
         message: "value is longer than the maximum length",
       });
     }
@@ -494,6 +500,7 @@ export function validateFieldValues(
       errors.push({
         field: field.id,
         code: "MIN_VALUE",
+        messageKey: "form.validation.minValue",
         message: "value is below the minimum",
       });
     }
@@ -501,6 +508,7 @@ export function validateFieldValues(
       errors.push({
         field: field.id,
         code: "MAX_VALUE",
+        messageKey: "form.validation.maxValue",
         message: "value exceeds the maximum",
       });
     }

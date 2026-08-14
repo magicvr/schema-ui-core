@@ -1,12 +1,12 @@
 ---
 id: GOAL-014-form-experience
 title: 表单体验：字段级校验与错误展示 + 弹窗布局（R4）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 4/5
+progress: 5/5
 ---
 
 # GOAL-014 · 表单体验：字段级校验与错误展示 + 弹窗布局
@@ -30,9 +30,9 @@ progress: 4/5
 - [x] **S2 · 实现**：服务端 fieldErrors + 前端 validateFieldValues/内联 + 单列布局 + schema 约束示范（E-003，2026-08-14）
 - [x] **S3 · 验证**：validateFieldValues 单测 + 911/911 web + go 全绿 + HTTP fieldErrors 冒烟（E-004，2026-08-14）
 - [x] **S4 · go 影响判定 + 自审**（E-005：go 不 held；A-002：pass，2026-08-14）
-- [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：grok 审计（A-003）fail → F-001/F-002 fixed + F-003~F-007 处置；关门（E-006，2026-08-14）
 
-progress: 4/5 由五个等权检查点派生。
+progress: 5/5 由五个等权检查点派生。
 
 ## 审计策略
 

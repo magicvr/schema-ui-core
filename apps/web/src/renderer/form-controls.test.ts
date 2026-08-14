@@ -283,7 +283,12 @@ describe("validateFieldValues (GOAL-014 D-002 §3)", () => {
     ];
     const errors = validateFieldValues(fields, { name: "", enabled: true, notes: "x" });
     expect(errors).toEqual([
-      { field: "name", code: "REQUIRED", message: "this field is required" },
+      {
+        field: "name",
+        code: "REQUIRED",
+        messageKey: "form.validation.required",
+        message: "this field is required",
+      },
     ]);
   });
 
