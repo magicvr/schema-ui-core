@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL-009-r3-s03-system-monitoring · 系统监控与错误日志查看（health/指标/错误日志 UI）
@@ -23,7 +23,7 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：边界（指标集/日志切分）、权限键、协议对照、Profile 归属；方案级 self 审视
+- [x] **S1 · 方案冻结**：边界（指标集/日志切分）、权限键、协议对照、Profile 归属；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
 - [ ] **S2 · 实现**：模块 provider + 端点 + schema 页 + 测试
 - [ ] **S3 · 验证**：单元/集成 + 全量回归
 - [ ] **S4 · go 影响判定 + 自审**
@@ -39,8 +39,8 @@ progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 监控指标集与错误日志切分（与 operationlog/activity 的边界） | S1 方案 | 对照既有 activity 页与 healthz/readyz | open |
-| I-002 | required | Profile 归属：进入 admin 默认集？ | S1 方案 | S-02/S-01 先例（内容扩展） | open |
+| I-001 | required | 监控指标集与错误日志切分（与 operationlog/activity 的边界） | S1 方案 | 对照既有 activity 页与 healthz/readyz | **closed**（D-002 §1） |
+| I-002 | required | Profile 归属：进入 admin 默认集？ | S1 方案 | S-02/S-01 先例（内容扩展） | **closed**（D-001 §2） |
 
 ## 父目标
 
