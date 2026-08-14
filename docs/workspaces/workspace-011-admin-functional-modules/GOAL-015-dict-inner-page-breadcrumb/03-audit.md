@@ -10,4 +10,6 @@ version: 0.1.0
 
 # 审计 · GOAL-015-dict-inner-page-breadcrumb
 
-（索引随各条 E/D/A 记录更新）
+| A-ID | source | 日期 | scope | verdict | 文件 |
+|------|--------|------|-------|---------|------|
+| A-001 | self | 2026-08-14 | S1 方案冻结 + 协议门禁 | pass | `03-audit/A-001-s1-self.md` |

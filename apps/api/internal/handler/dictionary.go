@@ -138,7 +138,7 @@ type dictEntryEntity struct {
 }
 
 func (e *dictEntryEntity) List(filter resourceFilter) ([]map[string]any, int, error) {
-	rows, total, err := e.repository.ListEntries(datadictionarystore.ListFilter{Q: filter.Q, Sort: filter.Sort, Order: filter.Order, Page: filter.Page, PageSize: filter.PageSize})
+	rows, total, err := e.repository.ListEntries(datadictionarystore.ListFilter{Q: filter.Q, DictKey: filter.Extra["dictKey"], Sort: filter.Sort, Order: filter.Order, Page: filter.Page, PageSize: filter.PageSize})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -261,6 +261,8 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		CreateFields:    []string{"dictKey", "entryKey", "label"},
 		PatchFields:     []string{"dictKey", "label"},
 		JSONFields:      []string{"enabled", "sort", "remark"},
+		// GOAL-015: inner page narrows entries by exact dict key.
+		ExtraQuery: []string{"dictKey"},
 		PermissionRead:  "dictionary.read",
 		PermissionWrite: "dictionary.write",
 		NotFoundCode:    "DICT_ENTRY_NOT_FOUND",

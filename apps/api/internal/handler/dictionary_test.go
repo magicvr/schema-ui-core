@@ -69,6 +69,47 @@ func TestDictionaryLifecycle(t *testing.T) {
 	if code != http.StatusOK || q["total"] != float64(1) {
 		t.Fatalf("entry q = %d %v", code, q)
 	}
+	// GOAL-015: dictKey exact filter (inner page) — a second type's entries
+	// must not leak into the first type's filtered list.
+	code, otherType := bearerJSON(t, env, admin, http.MethodPost, "/api/data-dictionary/types",
+		"{\"key\":\"other_status\",\"name\":\"Other Status\"}")
+	if code != http.StatusCreated {
+		t.Fatalf("create other type = %d: %v", code, otherType)
+	}
+	code, otherEntry := bearerJSON(t, env, admin, http.MethodPost, "/api/data-dictionary/entries",
+		"{\"dictKey\":\"other_status\",\"entryKey\":\"done\",\"label\":\"Done\"}")
+	if code != http.StatusCreated {
+		t.Fatalf("create other entry = %d: %v", code, otherEntry)
+	}
+	code, filtered := getResource(t, env, "/api/data-dictionary/entries?dictKey=order_status&pageSize=100")
+	if code != http.StatusOK {
+		t.Fatalf("dictKey filter = %d %v", code, filtered)
+	}
+	items, _ := filtered["items"].([]any)
+	if len(items) != 1 {
+		t.Fatalf("dictKey filter items = %d, want 1 (only order_status)", len(items))
+	}
+	first := items[0].(map[string]any)
+	if first["dictKey"] != "order_status" {
+		t.Fatalf("filtered entry dictKey = %v, want order_status", first["dictKey"])
+	}
+	code, otherFiltered := getResource(t, env, "/api/data-dictionary/entries?dictKey=other_status&pageSize=100")
+	if code != http.StatusOK {
+		t.Fatalf("other dictKey filter = %d %v", code, otherFiltered)
+	}
+	otherItems, _ := otherFiltered["items"].([]any)
+	if len(otherItems) != 1 || otherItems[0].(map[string]any)["entryKey"] != "done" {
+		t.Fatalf("other dictKey filter items = %v, want [done]", otherItems)
+	}
+	// dictKey composes with q.
+	code, composed := getResource(t, env, "/api/data-dictionary/entries?dictKey=order_status&q=pending")
+	if code != http.StatusOK || composed["total"] != float64(1) {
+		t.Fatalf("dictKey+q = %d %v", code, composed)
+	}
+	code, composedMiss := getResource(t, env, "/api/data-dictionary/entries?dictKey=other_status&q=pending")
+	if code != http.StatusOK || composedMiss["total"] != float64(0) {
+		t.Fatalf("dictKey+q miss = %d %v", code, composedMiss)
+	}
 
 	// patch entry
 	code, patchBody := bearerJSON(t, env, admin, http.MethodPatch, "/api/data-dictionary/entries/"+entryID,
@@ -115,9 +156,15 @@ func TestDictionaryLifecycle(t *testing.T) {
 		t.Fatalf("entries after cascade = %d", code)
 	}
 	if code == http.StatusOK {
-		code2, q2 := getResource(t, env, "/api/data-dictionary/entries?pageSize=100")
+		// GOAL-015: cascade removes order_status entries; the other_status
+		// type's entry (added for the dictKey filter test) survives.
+		code2, q2 := getResource(t, env, "/api/data-dictionary/entries?dictKey=order_status&pageSize=100")
 		if code2 != http.StatusOK || q2["total"] != float64(0) {
-			t.Fatalf("cascade left entries: %d %v", code2, q2)
+			t.Fatalf("cascade left order_status entries: %d %v", code2, q2)
+		}
+		code3, q3 := getResource(t, env, "/api/data-dictionary/entries?dictKey=other_status&pageSize=100")
+		if code3 != http.StatusOK || q3["total"] != float64(1) {
+			t.Fatalf("other_status entries missing after cascade: %d %v", code3, q3)
 		}
 	}
 

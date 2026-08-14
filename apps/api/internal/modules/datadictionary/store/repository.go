@@ -65,8 +65,10 @@ type DictEntry struct {
 }
 
 // ListFilter carries validated list parameters from the resource factory.
+// DictKey optionally narrows entries to one dictionary type (GOAL-015).
 type ListFilter struct {
 	Q        string
+	DictKey  string
 	Sort     string
 	Order    string
 	Page     int
@@ -229,8 +231,17 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
 		where := ""
 		args := []any{}
+		// GOAL-015: exact dict-key narrowing (inner page) composes with q.
+		if dictKey := strings.TrimSpace(filter.DictKey); dictKey != "" {
+			where = ` WHERE dict_key = ?`
+			args = append(args, dictKey)
+		}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where = ` WHERE instr(lower(dict_key), ?) > 0 OR instr(lower(entry_key), ?) > 0 OR instr(lower(label), ?) > 0`
+			sep := " AND "
+			if where == "" {
+				sep = " WHERE "
+			}
+			where += sep + `(instr(lower(dict_key), ?) > 0 OR instr(lower(entry_key), ?) > 0 OR instr(lower(label), ?) > 0)`
 			args = append(args, q, q, q)
 		}
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_entries`+where, args...).Scan(&total); err != nil {

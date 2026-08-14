@@ -57,6 +57,7 @@
   "shell.routeFallback": "路由回退",
   "shell.pageNotFound": "页面不存在",
   "shell.noManifestPage": "没有匹配的 manifest 页面",
+  "shell.back": "返回上一页",
   "shell.returnHome": "返回首页",
   "shell.pageSchemaError": "页面 Schema 错误",
   "shell.loadingPageSchema": "正在加载页面 Schema…",

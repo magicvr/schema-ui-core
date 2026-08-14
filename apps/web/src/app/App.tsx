@@ -32,6 +32,7 @@ import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs, resolveBreadcrumbTrail } from "@/components/ui/breadcrumbs";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
 import { applySystemDefaultTheme } from "@/theme/theme";

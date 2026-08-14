@@ -46,6 +46,11 @@ type resourceFilter struct {
 	Order    string
 	Page     int
 	PageSize int
+	// Extra carries resource-specific list query parameters declared by
+	// Resource.ExtraQuery (GOAL-015: dictKey for the dictionary-entries page).
+	// Values are trimmed; keys are validated against the resource whitelist so
+	// unknown parameters never reach an entity.
+	Extra map[string]string
 }
 
 // ResourceEntity is the store boundary the generic factory drives. Rows are
@@ -139,6 +144,11 @@ type Resource struct {
 	ReadOnly     bool
 	SortFields   []string       // whitelist; empty = not sortable
 	QSearch      bool           // list supports the q search param
+	// ExtraQuery lists resource-specific list query parameter names (entity
+	// filters beyond q/sort/order/page/pageSize, e.g. "dictKey"). Declared
+	// params are passed through resourceFilter.Extra; undeclared query keys are
+	// ignored (GOAL-015 D-002 §3.1).
+	ExtraQuery   []string
 	Entity       ResourceEntity // store adapter
 	CreateFields []string       // required non-empty create fields (trimmed strings)
 	PatchFields  []string       // editable patch fields (trimmed strings)
@@ -345,6 +355,14 @@ func (h *resourceHandler) list() http.Handler {
 		filter := resourceFilter{Q: "", Sort: sortField, Order: order, Page: page, PageSize: pageSize}
 		if h.res.QSearch {
 			filter.Q = strings.ToLower(strings.TrimSpace(query.Get("q")))
+		}
+		for _, key := range h.res.ExtraQuery {
+			if value := strings.TrimSpace(query.Get(key)); value != "" {
+				if filter.Extra == nil {
+					filter.Extra = map[string]string{}
+				}
+				filter.Extra[key] = value
+			}
 		}
 		items, total, err := h.res.Entity.List(filter)
 		if err != nil {

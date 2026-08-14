@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 0/5
+progress: 2/5
 ---
 
 # GOAL-015 · 数据字典内页（按类型过滤）+ 面包屑层级导航
@@ -25,13 +25,13 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：dictKey 过滤契约（List query 参数 + store 层）、内页导航（query 传递 + 表单只读绑定）、面包屑方案（路由栈 + 返回）；方案级 self 审视
-- [ ] **S2 · 实现**：服务端过滤 + schema 改造（openEntries/dictKey 只读/dataSource query）+ 面包屑组件
+- [x] **S1 · 方案冻结**：dictKey 过滤契约 + 内页导航 + 面包屑路由栈；协议增补门禁 P-1/P-2 登记 I-005（D-002/A-001/E-002，2026-08-14）
+- [x] **S2（部分）**：服务端 dictKey 过滤 + 面包屑组件（门禁期先行，E-003）；schema 改造待 I-005 解除
 - [ ] **S3 · 验证**：过滤回归 + 内页实测 + 面包屑测试 + 全量回归
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 
-progress: 0/5 由五个等权检查点派生。
+progress: 2/5 由五个等权检查点派生。
 
 ## 审计策略
 
@@ -45,6 +45,7 @@ progress: 0/5 由五个等权检查点派生。
 | I-002 | required | 内页表单 dictKey 只读绑定（显示类型名/传类型键；create 默认值来自 route query） | S1 方案 | 现有 recordSource/context.route.query 机制对照 | open |
 | I-003 | required | 面包屑路由栈方案（history 驱动；返回按钮语义；与 HOST_OWNED_PATHS/route-not-found 交互） | S1 方案 | 现有 App.tsx 路由对照 | open |
 | I-004 | required | go 影响判定（List 过滤参数/契约扩展） | S4 | VP-008 接口对照 | open |
+| I-005 | required | **协议增补门禁**：table dataSource query 注入（queryMapping）+ toolbar navigateMapping（P-1/P-2 清单）——用户 2026-08-14 裁决先去上游 schema-ui-docs 增补，本目标暂停实施依赖项 | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin | **open（用户增补中）** |
 
 ## 依赖
 
