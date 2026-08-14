@@ -279,6 +279,6 @@ it("library.download resolves the row id and names the download from the row", a
   expect(downloadCall!.url).toBe("/api/library/files/abc123/download");
   expect(clickSpy).toHaveBeenCalled();
   // The anchor's download attribute carries the row name (quote-safe).
-  expect(downloadNames).toContain("report (Q1).pdf");
+  expect(downloadNames).toContain("report__Q1_.pdf");
   expect(objectUrls.length).toBeGreaterThan(0);
 });

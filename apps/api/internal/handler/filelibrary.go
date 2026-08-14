@@ -13,6 +13,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"log/slog"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -210,15 +211,24 @@ func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations opera
 				writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
 				return
 			}
-			if err := os.Remove(filepath.Join(store.dir, id)); err != nil {
-				if errors.Is(err, os.ErrNotExist) {
-					writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
-					return
-				}
+			// A-003 F-002: remove the object AND its meta best-effort; 404 only
+			// when neither existed. An orphan meta (object already gone) must not
+			// ghost-list in the quota scan, and a deleted object must not leave
+			// its meta behind.
+			removed := false
+			if err := os.Remove(filepath.Join(store.dir, id)); err == nil {
+				removed = true
+			} else if !errors.Is(err, os.ErrNotExist) {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not delete file")
 				return
 			}
-			_ = os.Remove(filepath.Join(store.dir, id+".meta.json"))
+			if err := os.Remove(filepath.Join(store.dir, id+".meta.json")); err == nil {
+				removed = true
+			}
+			if !removed {
+				writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
+				return
+			}
 			recordFileEvent(operations, operationlog.EventFileDelete, user, id, now())
 			w.WriteHeader(http.StatusNoContent)
 		})),
@@ -334,12 +344,17 @@ func recordFileEvent(operations operationlog.Recorder, event string, user accoun
 		return
 	}
 	recordID := id
-	_ = operations.RecordOperation(operationlog.Operation{
+	// A-003 F-003: audit writes stay best-effort (never fail the HTTP
+	// operation) but failures leave a log trail, matching the export/users
+	// peers (slog.Error).
+	if err := operations.RecordOperation(operationlog.Operation{
 		ID:        newOperationID(),
 		Event:     event,
 		ActorID:   user.ID,
 		ActorName: user.Name,
 		RecordID:  &recordID,
 		CreatedAt: now.UTC(),
-	})
+	}); err != nil {
+		slog.Error("operation log write failed", "event", event, "err", err)
+	}
 }

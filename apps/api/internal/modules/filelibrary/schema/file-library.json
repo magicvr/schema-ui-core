@@ -128,8 +128,10 @@
               "key": "upload",
               "label": "Upload file",
               "actionRef": "openUpload",
-              "permissionIntent": "edit",
-              "labelKey": "schema.fileLibrary.toolbar.upload"
+              "labelKey": "schema.fileLibrary.toolbar.upload",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"files.write\""
+              }
             }
           ],
           "actions": [

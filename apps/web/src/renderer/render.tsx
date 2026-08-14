@@ -308,16 +308,35 @@ async function runCustomAction(
     return { ok: false, code: apiError.code, message: apiError.message };
   }
   const blob = await response.blob();
-  // The download filename prefers the row's stored name (client-side blob
-  // download only — no header surface); the export fallback keeps the
-  // historical "<handler>.csv" shape.
+  // The download filename prefers the row's stored name, scrubbed with the
+  // server allowlist shape ([A-Za-z0-9._-], trimmed, capped — A-003 F-001);
+  // the export fallback keeps the historical "<handler>.csv" shape.
   const rowName = row?.name;
+  const rawName = typeof rowName === "string" ? rowName.trim() : "";
   const filename =
-    typeof rowName === "string" && rowName.trim() !== ""
-      ? rowName.trim().replace(/[\r\n"]/g, "_")
+    rawName !== ""
+      ? sanitizeClientFilename(rawName)
       : handler.split(".").pop() + ".csv";
   triggerBlobDownload(blob, filename);
   return { ok: true };
+}
+
+/**
+ * S-02 (GOAL-007 A-003 F-001): client download names mirror the server
+ * allowlist — path separators, controls and everything outside [A-Za-z0-9._-]
+ * become underscores, leading/trailing separators are trimmed, and the result
+ * is capped so a path-like or control-bearing stored name can never reach the
+ * local filesystem unscrubbed.
+ */
+function sanitizeClientFilename(name: string): string {
+  let out = name.replace(/[^A-Za-z0-9._-]/g, "_").replace(/^[._-]+|[._-]+$/g, "");
+  if (out === "") {
+    out = "download";
+  }
+  if (out.length > 100) {
+    out = out.slice(0, 100);
+  }
+  return out;
 }
 
 /** Triggers a browser download from a fetched blob (F-02 local extension). */
