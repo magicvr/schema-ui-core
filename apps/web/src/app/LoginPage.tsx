@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { AuthError, type LoginCaptcha } from "@/account/auth-client";
 import {
@@ -89,23 +89,28 @@ export function LoginPage({
     };
   }, []);
 
-  // S-11 (GOAL-011 D-002 §5): preflight the login captcha gate once on mount.
-  useEffect(() => {
-    let cancelled = false;
+  // S-11 (GOAL-011 D-002 §5): preflight the login captcha gate. Refreshes
+  // on mount and after an INVALID_CAPTCHA failure so a consumed/expired
+  // challenge is replaced without a page reload (grok A-004 F-009).
+  const refreshCaptcha = useCallback(() => {
     void fetch("/api/auth/captcha", { headers: { Accept: "application/json" } })
       .then((response) => (response.ok ? response.json() : null))
       .then((body: { enabled?: boolean; challenge?: { id?: string; question?: string } } | null) => {
-        if (!cancelled && body?.enabled === true && body.challenge?.id && body.challenge.question) {
+        if (body?.enabled === true && body.challenge?.id && body.challenge.question) {
           setCaptchaChallenge({ id: body.challenge.id, question: body.challenge.question });
+          setCaptchaAnswer("");
+        } else {
+          setCaptchaChallenge(null);
         }
       })
       .catch(() => {
         // fail-open (D-002 §5): the server enforces the gate on login.
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    refreshCaptcha();
+  }, [refreshCaptcha]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -131,6 +136,12 @@ export function LoginPage({
       // rendering the literal "{status}".
       const params = err instanceof AuthError && err.status !== undefined ? { status: err.status } : undefined;
       setError(t(loginErrorKey(code), params));
+      // S-11 (GOAL-011 · grok A-004 F-009): a rejected captcha was consumed
+      // server-side — issue a fresh challenge so the user can retry without a
+      // page reload.
+      if (code === "INVALID_CAPTCHA") {
+        refreshCaptcha();
+      }
     } finally {
       setSubmitting(false);
     }

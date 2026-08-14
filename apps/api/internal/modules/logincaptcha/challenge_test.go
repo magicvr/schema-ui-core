@@ -4,6 +4,8 @@
 package logincaptcha
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -109,12 +111,15 @@ func TestVerifyExpiredChallengeFails(t *testing.T) {
 	s := newServiceEnv(t)
 	now := time.Now().UTC()
 	// Create an expired challenge directly through the repository (the service
-	// Generate always uses a fresh TTL).
+	// Generate always uses a fresh TTL). The stored hash matches the scheme
+	// (answerHash(id, answer)) so the test isolates the EXPIRY rejection from
+	// a wrong-answer rejection (grok A-004 F-010).
 	expired := now.Add(-time.Minute)
-	if err := s.repository.CreateChallenge("cap-expired", "hash-x", expired, now.Add(-time.Hour)); err != nil {
+	correctHash := answerHash("cap-expired", "42")
+	if err := s.repository.CreateChallenge("cap-expired", correctHash, expired, now.Add(-time.Hour)); err != nil {
 		t.Fatalf("create expired: %v", err)
 	}
-	if err := s.Verify("cap-expired", "hash-x", now); !errors.Is(err, ErrInvalidCaptcha) {
+	if err := s.Verify("cap-expired", "42", now); !errors.Is(err, ErrInvalidCaptcha) {
 		t.Fatalf("verify expired = %v, want ErrInvalidCaptcha (F-001)", err)
 	}
 }
@@ -127,4 +132,21 @@ func TestVerifyEmptyOrUnknownChallenge(t *testing.T) {
 	if err := s.Verify("cap-unknown", "2", time.Now().UTC()); !errors.Is(err, ErrInvalidCaptcha) {
 		t.Fatalf("verify unknown id = %v, want ErrInvalidCaptcha", err)
 	}
+}
+
+// F-011 (grok A-004): Required() must fail CLOSED on config read errors —
+// an unreadable switch treats the gate as ON.
+func TestRequiredFailsClosedOnConfigError(t *testing.T) {
+	failing := &failingRunner{err: errors.New("store unavailable")}
+	s := &Service{repository: store.NewRepository(failing), now: time.Now}
+	if !s.Required() {
+		t.Fatal("Required() must return true when the config cannot be read (F-011)")
+	}
+}
+
+// failingRunner is a TxRunner that always fails, simulating a store outage.
+type failingRunner struct{ err error }
+
+func (r *failingRunner) WithTx(_ context.Context, _ func(*sql.Tx) error) error {
+	return r.err
 }

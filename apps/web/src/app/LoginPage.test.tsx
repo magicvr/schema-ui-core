@@ -183,16 +183,35 @@ describe("LoginPage", () => {
     }
   });
 
-  it("surfaces the INVALID_CAPTCHA error message", async () => {
-    const onLogin = vi
-      .fn()
-      .mockRejectedValue(new AuthError("INVALID_CAPTCHA", "captcha verification failed", 400));
-    const container = await renderLogin(onLogin);
-    fill(container, "#username", "admin");
-    fill(container, "#password", "admin");
-    const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
-    await act(async () => button!.click());
-    expect(container.textContent).toContain("captcha verification failed");
+  it("surfaces the INVALID_CAPTCHA error and refreshes the challenge (F-009)", async () => {
+    let calls = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      calls += 1;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          challenge: { id: "cap-" + calls, question: "3 + 4 = ?", expiresInSeconds: 300 },
+        }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const onLogin = vi
+        .fn()
+        .mockRejectedValue(new AuthError("INVALID_CAPTCHA", "captcha verification failed", 400));
+      const container = await renderLogin(onLogin);
+      fill(container, "#username", "admin");
+      fill(container, "#password", "admin");
+      const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+      await act(async () => button!.click());
+      expect(container.textContent).toContain("captcha verification failed");
+      // A fresh challenge was fetched after the rejection (consumed server-side).
+      expect(calls).toBeGreaterThanOrEqual(2);
+      expect(container.querySelector('[data-captcha-question]')?.textContent).toContain("3 + 4");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("consumes design-system Card/Input/Label primitives (S3 / D-004 Sign in)", async () => {

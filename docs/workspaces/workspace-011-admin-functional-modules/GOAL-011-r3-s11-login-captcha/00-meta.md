@@ -1,12 +1,12 @@
 ---
 id: GOAL-011-r3-s11-login-captcha
 title: R3-S11 · 登录验证码（防爆破补充）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.2.0
-progress: 4/5
+progress: 5/5
 ---
 
 # GOAL-011-r3-s11-login-captcha · 登录验证码（防爆破补充）
@@ -27,9 +27,9 @@ progress: 4/5
 - [x] **S2 · 实现**：挑战端点 + 校验集成（auth/login）+ 配置 + 测试（E-002，2026-08-14）
 - [x] **S3 · 验证**：单元/集成 + 登录链路实测 + 全量回归（go ./... 全绿、web 900/900，2026-08-14）
 - [x] **S4 · go 影响判定 + 自审**（A-002 pass：未启用字节级不变；2026-08-14）
-- [ ] **S5 · 关门**：独立审计（grok，security 门禁必须）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：独立审计两轮（A-003 fail → required 全修；A-004 conditional → 0 required）+ 全量回归 + goal-tree 同步（E-004，2026-08-14）
 
-progress: 4/5 由五个等权检查点派生。
+progress: 5/5 由五个等权检查点派生。
 
 ## 审计策略
 

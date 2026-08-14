@@ -25,7 +25,8 @@ version: 0.1.0
 | A-001 | 2026-08-14 | self | S1 方案冻结 | pass | 0 | `03-audit/A-001-s1-self.md` |
 | A-002 | 2026-08-14 | self | S2 实现 + S3 验证 + S4 go 判定 | pass | 0 | `03-audit/A-002-s2-s4-self.md` |
 | A-003 | 2026-08-14 | independent (grok) | S5 关门 · 安全门禁首轮 | fail | 5 required | `03-audit/A-003-s5-security-independent-fail.md` |
+| A-004 | 2026-08-14 | independent (grok) | S5 复审（修复验证） | conditional | 0 required（F-009~F-012 recommended：3 fixed + 1 residual） | `03-audit/A-004-s5-reaudit.md` |
 
 ## 结论状态
 
-A-002（S2–S4）pass；A-003（grok）fail → 5 required 已修复（F-001~F-005），待 A-004 复审与全量回归。
+A-002（S2–S4）pass；A-003（grok）fail → required 全部修复并经 A-004（grok）复审确认 closed（0 required；F-009~F-011 fixed、F-012 residual 留痕）。
