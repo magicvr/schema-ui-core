@@ -21,8 +21,8 @@ version: 0.1.0
 | I-005 | required | 参数进 config.yaml（env 覆盖） | 方案 | S1 | 用户 2026-08-15 书面确认 | closed | — | D-001 |
 | I-006 | required | 关门 cross 审计（self + independent） | 关门 | S6 | 用户 2026-08-15 书面确认；provider 执行时确认 | closed | provider 待 S6 | D-001 |
 | I-007 | required | 消费点完整清单 | 实施 | S4 | 创建时代码扫描（D-001 附录 A） | closed | — | D-001 |
-| I-008 | required | UploadField 移除已设图片交互能力 | 实施 | S4 | 检查/扩展 form-controls.tsx | open | — | 待确认 |
-| I-009 | non-blocking | 公开 GET 缓存/安全头细节 | 实施 | S2 | D-001 设计内定（沿用上传仓安全基线） | open | — | 待实施 |
+| I-008 | required | UploadField 移除已设图片交互能力 | 实施 | S4 | 检查/扩展 form-controls.tsx | closed | — | E-002（扩展 UploadField 移除按钮） |
+| I-009 | non-blocking | 公开 GET 缓存/安全头细节 | 实施 | S2 | D-001 设计内定（沿用上传仓安全基线） | closed | — | E-002/E-003（nosniff + CSP sandbox + immutable 实测） |
 
 ## 决策索引
 

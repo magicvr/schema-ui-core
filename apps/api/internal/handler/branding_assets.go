@@ -389,9 +389,24 @@ func processBrandingImage(body []byte, kind string, opts BrandingAssetsOptions) 
 	return out.Bytes(), "image/png", nil
 }
 
-// decodeBrandingImage decodes PNG, JPEG, GIF (first frame) or WebP. Any other
-// content (including SVG/HTML smuggled past the sniff checks) fails decode.
+// maxBrandingInputDimension is the hard longest-edge bound for DECODED input
+// (A-002 F-001 decompression-bomb guard): the output is at most 512/64px, so
+// larger input only wastes memory; bounding the decoded allocation keeps the
+// endpoint's per-request memory bounded.
+const maxBrandingInputDimension = 8192
+
+// decodeBrandingImage decodes PNG, JPEG, GIF (first frame) or WebP after a
+// header-only DecodeConfig pre-check (tiny file + huge declared dimensions is
+// rejected before any allocation). Any other content (including SVG/HTML
+// smuggled past the sniff checks) fails decode.
 func decodeBrandingImage(body []byte) (image.Image, error) {
+	cfg, err := brandingImageConfig(body)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Width > maxBrandingInputDimension || cfg.Height > maxBrandingInputDimension {
+		return nil, errors.New("image dimensions exceed the server limit")
+	}
 	reader := func() *bytes.Reader { return bytes.NewReader(body) }
 	if img, err := png.Decode(reader()); err == nil {
 		return img, nil
@@ -406,6 +421,24 @@ func decodeBrandingImage(body []byte) (image.Image, error) {
 		return img, nil
 	}
 	return nil, errors.New("unsupported image format")
+}
+
+// brandingImageConfig reads the header-only config for PNG/JPEG/GIF/WebP.
+func brandingImageConfig(body []byte) (image.Config, error) {
+	reader := func() *bytes.Reader { return bytes.NewReader(body) }
+	if cfg, err := png.DecodeConfig(reader()); err == nil {
+		return cfg, nil
+	}
+	if cfg, err := jpeg.DecodeConfig(reader()); err == nil {
+		return cfg, nil
+	}
+	if cfg, err := gif.DecodeConfig(reader()); err == nil {
+		return cfg, nil
+	}
+	if cfg, err := webp.DecodeConfig(reader()); err == nil {
+		return cfg, nil
+	}
+	return image.Config{}, errors.New("unsupported image format")
 }
 
 // imageIsOpaque reports whether every pixel has full alpha (JPEG output) or

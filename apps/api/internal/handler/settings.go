@@ -210,6 +210,15 @@ func cleanupReplacedBrandAssets(current, updated *settingsrepository.SiteSetting
 	if assets == nil {
 		return
 	}
+	// A replaced asset is only deleted when NO other branding column still
+	// references it (two fields can share one asset id via the API, e.g. the
+	// same upload committed to logoUrl and faviconUrl).
+	stillReferenced := map[string]bool{}
+	for _, value := range []string{updated.LogoURL, updated.LogoURLLight, updated.LogoURLDark, updated.FaviconURL} {
+		if id, ok := BrandAssetIDFromURL(value); ok {
+			stillReferenced[id] = true
+		}
+	}
 	fields := []struct{ before, after string }{
 		{current.LogoURL, updated.LogoURL},
 		{current.LogoURLLight, updated.LogoURLLight},
@@ -220,7 +229,7 @@ func cleanupReplacedBrandAssets(current, updated *settingsrepository.SiteSetting
 		if f.before == f.after {
 			continue
 		}
-		if id, ok := BrandAssetIDFromURL(f.before); ok {
+		if id, ok := BrandAssetIDFromURL(f.before); ok && !stillReferenced[id] {
 			_ = assets.Delete(id)
 		}
 	}

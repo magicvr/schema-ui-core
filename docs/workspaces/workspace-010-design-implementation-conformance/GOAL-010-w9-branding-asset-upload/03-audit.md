@@ -25,7 +25,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到达审计节点 |
+| A-001 | 2026-08-15 | self | S1～S5 + go 判定 | pass | 0（F-001 fixed） | `03-audit/A-001-s6-self.md` |
+| A-002 | 2026-08-15 | independent | S1～S5 close-out（security 面） | pass | 0 | `03-audit/A-002-s6-closeout-independent.md` |
 
 ## 审计策略
 
@@ -33,4 +34,4 @@ S6 关门执行 **cross**：self（04）+ independent（05，provider 执行时�
 
 ## 结论状态
 
-尚未到达审计节点。独立意见不直接改 `status` / `progress`；响应与状态变更走 /govern 与用户裁决。
+S6：A-001 self pass；A-002 independent（grok build · grok-4.6 · high）**pass**（0 条开放 required）。响应（E-004）：A-001 F-001（required）→ fixed；A-002 F-001～F-004（recommended）→ 全部 fixed。**开放 required = 0**，关门条件满足（E-005 / goal-tree 同步后 done）。

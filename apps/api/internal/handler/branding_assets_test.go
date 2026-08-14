@@ -2,9 +2,12 @@ package handler
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
+	"hash/crc32"
 	"image"
 	"image/color"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"mime/multipart"
@@ -107,6 +110,9 @@ func TestBrandingAssetUploadAndPublicServe(t *testing.T) {
 	}
 	if cc := serve.Header().Get("Cache-Control"); cc != "public, max-age=31536000, immutable" {
 		t.Fatalf("cache-control = %q", cc)
+	}
+	if csp := serve.Header().Get("Content-Security-Policy"); csp != "sandbox" {
+		t.Fatalf("content-security-policy = %q, want sandbox", csp)
 	}
 	decoded, err := jpeg.Decode(bytes.NewReader(serve.Body.Bytes()))
 	if err != nil {
@@ -298,6 +304,39 @@ func TestBrandingAssetCleanupOnReset(t *testing.T) {
 	}
 }
 
+func TestBrandingAssetSharedReferenceSurvivesReplace(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	// The same asset id is referenced by logoUrl AND faviconUrl; replacing
+	// logoUrl alone must not delete the asset still used by faviconUrl.
+	rr := uploadBrandAsset(t, env, token, "logo", makePNG(t, 32, 32, color.RGBA{9, 9, 9, 255}), "shared.png")
+	urlShared := assetURL(t, rr)
+	idShared, _ := BrandAssetIDFromURL(urlShared)
+	out := patchSettings(t, env, token, "{\"logoUrl\":\""+urlShared+"\",\"faviconUrl\":\""+urlShared+"\"}")
+	if out.Code != http.StatusOK {
+		t.Fatalf("patch shared = %d: %s", out.Code, out.Body.String())
+	}
+	rr = uploadBrandAsset(t, env, token, "logo", makePNG(t, 32, 32, color.RGBA{8, 8, 8, 255}), "replacement.png")
+	urlNew := assetURL(t, rr)
+	out = patchSettings(t, env, token, "{\"logoUrl\":\""+urlNew+"\"}")
+	if out.Code != http.StatusOK {
+		t.Fatalf("patch replace = %d: %s", out.Code, out.Body.String())
+	}
+	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idShared)); err != nil {
+		t.Fatalf("shared asset deleted although faviconUrl still references it: %v", err)
+	}
+	// Clearing faviconUrl now releases it.
+	out = patchSettings(t, env, token, "{\"faviconUrl\":\"\"}")
+	if out.Code != http.StatusOK {
+		t.Fatalf("patch clear favicon = %d: %s", out.Code, out.Body.String())
+	}
+	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idShared)); !os.IsNotExist(err) {
+		t.Fatalf("shared asset still present after last reference cleared (err=%v)", err)
+	}
+}
+
+
 func TestBrandingAssetStartupGC(t *testing.T) {
 	dir := t.TempDir()
 	store := NewBrandingAssetStore(dir, DefaultBrandingAssetsOptions())
@@ -318,6 +357,67 @@ func TestBrandingAssetStartupGC(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, dropID)); !os.IsNotExist(err) {
 		t.Fatalf("orphan asset survived gc (err=%v)", err)
+	}
+}
+
+
+// oversizedPNG builds a PNG header declaring 30000x30000 with a valid IHDR
+// CRC (decompression-bomb fixture, A-002 F-001).
+func oversizedPNG(t *testing.T) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	buf.Write([]byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a})
+	var length [4]byte
+	binary.BigEndian.PutUint32(length[:], 13)
+	buf.Write(length[:])
+	ihdr := make([]byte, 13)
+	binary.BigEndian.PutUint32(ihdr[0:4], 30000)
+	binary.BigEndian.PutUint32(ihdr[4:8], 30000)
+	ihdr[8] = 8 // bit depth
+	ihdr[9] = 2 // color type RGB
+	chunk := append([]byte("IHDR"), ihdr...)
+	buf.Write(chunk)
+	var crc [4]byte
+	binary.BigEndian.PutUint32(crc[:], crc32.ChecksumIEEE(chunk))
+	buf.Write(crc[:])
+	return buf.Bytes()
+}
+
+func TestBrandingAssetRejectsOversizedDimensions(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	// Tiny file (header only) declaring 30000x30000 -> rejected before decode.
+	if rr := uploadBrandAsset(t, env, token, "logo", oversizedPNG(t), "bomb.png"); rr.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("oversized-dimension upload = %d, want 415", rr.Code)
+	}
+}
+
+func TestBrandingAssetJpegAndGifInputs(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	// JPEG input: opaque photo-ish source re-encoded (JPEG out).
+	photo := image.NewRGBA(image.Rect(0, 0, 320, 240))
+	for y := 0; y < 240; y++ {
+		for x := 0; x < 320; x++ {
+			photo.SetRGBA(x, y, color.RGBA{uint8(x), uint8(y), 128, 255})
+		}
+	}
+	var jpgBuf bytes.Buffer
+	if err := jpeg.Encode(&jpgBuf, photo, &jpeg.Options{Quality: 90}); err != nil {
+		t.Fatalf("encode jpeg: %v", err)
+	}
+	if rr := uploadBrandAsset(t, env, token, "logo", jpgBuf.Bytes(), "photo.jpg"); rr.Code != http.StatusOK {
+		t.Fatalf("jpeg upload = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// GIF input: first frame accepted (animated input collapses to a frame).
+	var gifBuf bytes.Buffer
+	if err := gif.Encode(&gifBuf, image.NewRGBA(image.Rect(0, 0, 16, 16)), nil); err != nil {
+		t.Fatalf("encode gif: %v", err)
+	}
+	if rr := uploadBrandAsset(t, env, token, "logo", gifBuf.Bytes(), "frame.gif"); rr.Code != http.StatusOK {
+		t.Fatalf("gif upload = %d: %s", rr.Code, rr.Body.String())
 	}
 }
 

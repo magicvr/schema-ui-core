@@ -1,12 +1,12 @@
 ---
 id: GOAL-010-w9-branding-asset-upload
 title: W9 · 品牌图标上传（专用资产存储 + 自动图像处理）
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-15
 updated: 2026-08-15
 version: 0.1.0
-progress: 5/6
+progress: 6/6
 ---
 
 # GOAL-010 · W9 · 品牌图标上传（专用资产存储 + 自动图像处理）
@@ -31,7 +31,7 @@ VP-010 / workspace-010 的**第九波**（用户 2026-08-15 裁决立项）：�
 - [ ] **S3 · 自动图像处理**：PNG/JPEG/WebP 解码（新增 golang.org/x/image）、限幅重编码、参数进 config.yaml（env 可覆盖）
 - [ ] **S4 · 前端与消费点**：settings schema 品牌字段改 upload 控件（+ 单字段移除）、文案/i18n、旧 URL 兼容读取、相关测试更新
 - [x] **S5 · 验证与回归**：单测（处理/端点/安全）+ 全量回归 + 活栈点验（E-003）
-- [ ] **S6 · go 判定 + cross 审计 + 关门**：go 影响判定；self + independent 审计；goal-tree 同步（进行中）
+- [x] **S6 · go 判定 + cross 审计 + 关门**：go 不 held；A-001 self + A-002 independent（grok-4.6 high）pass；E-004 响应全 closed；goal-tree 同步
 
 progress: 0/6 由六个等权检查点派生（S1～S6 全勾后 6/6）。
 
