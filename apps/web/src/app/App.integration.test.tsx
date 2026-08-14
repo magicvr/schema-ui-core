@@ -110,6 +110,8 @@ async function renderApp(
   path: string,
   navigationContext?: NavigationContext,
   documents: Record<string, unknown> = DEFAULT_DOCUMENTS,
+  resourceFetcher?: typeof fetch,
+  manifest = testManifest(),
 ): Promise<HTMLDivElement> {
   window.history.replaceState({}, "", path);
   const container = document.createElement("div");
@@ -120,9 +122,10 @@ async function renderApp(
     root.render(
       <I18nProvider>
         <App
-          manifest={testManifest()}
+          manifest={manifest}
           navigationContext={navigationContext}
           schemaFetcher={schemaFetcher(documents)}
+          resourceFetcher={resourceFetcher}
         />
       </I18nProvider>,
     );
@@ -191,6 +194,130 @@ describe("App shell integration", () => {
     expect(breadcrumb?.textContent).toContain("Catalog");
     expect(breadcrumb?.textContent).toContain("Catalog detail");
     expect(breadcrumb?.textContent).toContain("←");
+  });
+
+
+  // GOAL-015 F-001 (grok audit): a schema-driven navigate action (type
+  // navigate + row navigateMapping, e.g. the dictionary types page 「条目」
+  // row action) must navigate session-internally through the host's
+  // onNavigate — the entries page then keeps its breadcrumb trail + back
+  // button (no full reload that would reset the visit stack).
+  it("keeps the breadcrumb trail when a row navigate action opens the inner page", async () => {
+    const manifest = validateAppManifest({
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+      app: { appId: "integration", name: "Integration", homePageRef: "home" },
+      pages: [
+        { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/home" },
+        {
+          pageId: "dictionary",
+          title: "Data dictionary",
+          schemaUrl: "/schema/dictionary",
+          route: "/data-dictionary",
+        },
+        {
+          pageId: "dictionary-entries",
+          title: "Dictionary entries",
+          schemaUrl: "/schema/dictionary-entries",
+          route: "/dictionary-entries",
+        },
+      ],
+      navigation: {
+        top: [{ pageRef: "home", label: "Home" }],
+        sidebar: [{ pageRef: "dictionary", label: "Data dictionary" }],
+      },
+    });
+    const dictionaryDoc = {
+      meta: {
+        pageId: "dictionary",
+        title: "Data dictionary",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["app.manifest", "app.navigation", "actions.row.navigate"],
+      },
+      actions: {
+        openEntries: { type: "navigate", url: "/dictionary-entries" },
+      },
+      body: {
+        type: "section",
+        children: [
+          {
+            type: "table",
+            id: "dict-types-table",
+            data: { source: "api", url: "/api/data-dictionary/types" },
+            props: {
+              rowKey: "id",
+              columns: [
+                { field: "key", label: "Type key" },
+                { field: "name", label: "Type name" },
+              ],
+              actions: [
+                {
+                  key: "entries",
+                  label: "Entries",
+                  actionRef: "openEntries",
+                  navigateMapping: { query: { dictKey: "$row.key" } },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const entriesDoc = {
+      meta: {
+        pageId: "dictionary-entries",
+        title: "Dictionary entries",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["app.manifest", "app.navigation"],
+      },
+      body: {
+        type: "section",
+        children: [{ type: "text", props: { text: "Entries body" } }],
+      },
+    };
+    const documents: Record<string, unknown> = {
+      "/schema/home": schemaDocument("home", "Home", "Schema home body"),
+      "/schema/dictionary": dictionaryDoc,
+      "/schema/dictionary-entries": entriesDoc,
+    };
+    const resourceFetcher = (async () =>
+      new Response(
+        JSON.stringify({
+          items: [{ id: "order_status", key: "order_status", name: "Order status" }],
+          total: 1,
+          page: 1,
+          pageSize: 10,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    ) as typeof fetch;
+    const container = await renderApp("/", {}, documents, resourceFetcher, manifest);
+
+    // Home → Data dictionary via the sidebar.
+    await act(async () => {
+      container.querySelector('a[href="/data-dictionary"]')?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, button: 0 }),
+      );
+    });
+    expect(container.querySelector("h1")?.textContent).toBe("Data dictionary");
+
+    // Click the row 「条目」 action: session-internal navigate with the row
+    // dictKey binding — the URL carries the query and the visit stack keeps
+    // Home + Data dictionary as ancestors.
+    await act(async () => {
+      (Array.from(container.querySelectorAll("button")).find((button) =>
+        button.textContent?.trim() === "Entries",
+      ) as HTMLButtonElement).click();
+    });
+    expect(window.location.pathname).toBe("/dictionary-entries");
+    expect(window.location.search).toBe("?dictKey=order_status");
+    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    expect(breadcrumb).not.toBeNull();
+    expect(breadcrumb?.textContent).toContain("Home");
+    expect(breadcrumb?.textContent).toContain("Data dictionary");
+    expect(breadcrumb?.textContent).toContain("Dictionary entries");
+    expect(breadcrumb?.textContent).toContain("←");
+    expect(container.textContent).toContain("Entries body");
   });
 
   it("renders a fail-closed fallback and returns to the manifest home route", async () => {

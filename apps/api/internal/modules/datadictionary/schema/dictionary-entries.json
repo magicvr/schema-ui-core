@@ -80,6 +80,13 @@
               "readOnly": true
             },
             {
+              "id": "dictTypeName",
+              "label": "Type name",
+              "type": "input",
+              "readOnly": true,
+              "labelKey": "schema.dictionaryEntries.field.dictTypeName"
+            },
+            {
               "id": "entryKey",
               "label": "Entry key",
               "type": "input",

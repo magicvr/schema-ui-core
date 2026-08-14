@@ -1,6 +1,6 @@
 {
   "reportVersion": "1.0",
-  "subjectBuildId": "git:b82e740616aadfa7d6fd10db71f66a33daa9984d",
+  "subjectBuildId": "git:f76634845e9fcb6792eb4a3952f637143141df95",
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0"
@@ -35,14 +35,26 @@
       "fixtures": 30,
       "suiteVersion": "1.0",
       "result": "pass"
+    },
+    {
+      "suiteId": "request-construction",
+      "fixtures": 81,
+      "suiteVersion": "1.0",
+      "result": "pass"
+    },
+    {
+      "suiteId": "component-format",
+      "fixtures": 5,
+      "suiteVersion": "1.0",
+      "result": "pass"
     }
   ],
   "pinnedUpstream": {
     "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
-    "sourceCommit": "521cff8",
+    "sourceCommit": "81aa1d8",
     "artifactVersion": "2.8.0",
-    "fixtureSha256": "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2",
-    "protocolContentSha256": "4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30"
+    "fixtureSha256": "89baddbc2879b0c183bcb50fbc730257df5786eee316b645e8238876fe0ca3e7",
+    "protocolContentSha256": "c87c22ad2ab4f4f19b93253312d6906b085ae6cd273168cc435d9863809d1c22"
   },
   "residuals": []
 }

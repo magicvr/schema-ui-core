@@ -3,31 +3,35 @@
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0",
-    "buildId": "git:b82e740616aadfa7d6fd10db71f66a33daa9984d"
+    "buildId": "git:f76634845e9fcb6792eb4a3952f637143141df95"
   },
   "protocolArtifact": {
-    "artifactVersion": "2.8.0",
-    "contentSha256": "4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30"
+    "artifactVersion": "2.9.0",
+    "contentSha256": "c87c22ad2ab4f4f19b93253312d6906b085ae6cd273168cc435d9863809d1c22"
   },
   "support": {
     "pageVersions": [
-      "2.7"
+      "2.7",
+      "2.9"
     ],
     "manifestVersions": [
       "2.7",
-      "2.8"
+      "2.8",
+      "2.9"
     ],
     "capabilities": [
       "app.manifest",
       "app.navigation",
       "host.bootstrap",
       "host.failure-recovery",
-      "host.conformance-claim"
+      "host.conformance-claim",
+      "data.route-binding",
+      "form.controls.readonly"
     ]
   },
   "conformance": {
     "fixtureVersion": "1.0",
-    "fixtureSha256": "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2",
+    "fixtureSha256": "89baddbc2879b0c183bcb50fbc730257df5786eee316b645e8238876fe0ca3e7",
     "suites": [
       {
         "suiteId": "app-manifest",
@@ -53,15 +57,25 @@
         "suiteId": "host-conformance-claim",
         "suiteVersion": "1.0",
         "result": "pass"
+      },
+      {
+        "suiteId": "request-construction",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "component-format",
+        "suiteVersion": "1.0",
+        "result": "pass"
       }
     ]
   },
   "evidence": [
     {
       "kind": "local-report",
-      "subjectBuildId": "git:b82e740616aadfa7d6fd10db71f66a33daa9984d",
+      "subjectBuildId": "git:f76634845e9fcb6792eb4a3952f637143141df95",
       "uri": "/protocol/conformance-local-report.json",
-      "sha256": "e93fdb2ba7eb9874b323c6f6943bc9c84c88886c77c964f4362d7dda09c75755"
+      "sha256": "dd27a889d704f6388709d512ae7113fabcfdee0231f4092713a5d0f05fe1c9cc"
     }
   ]
 }

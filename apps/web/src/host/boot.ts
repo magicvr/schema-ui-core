@@ -71,6 +71,9 @@ const HOST_SUPPORT: HostSupport = {
     "host.bootstrap",
     "host.failure-recovery",
     "host.conformance-claim",
+    // v2.9 (ADR-0039/ADR-0040): dataSource route binding + form readOnly.
+    "data.route-binding",
+    "form.controls.readonly",
   ],
 };
 

@@ -112,6 +112,12 @@ export interface RendererComponentProps {
   dataRenderer?: (node: RenderStatCardNode | RenderChartNode) => ReactNode;
   /** Invoked when an actionButton node is activated. */
   onAction?: (node: RenderActionButtonNode) => void;
+  /**
+   * Session-internal navigation hook (ADR-0021 navigate actions; GOAL-015
+   * F-001): the host pushes the target onto its own history/visit stack so
+   * breadcrumbs survive. Falls back to window.location.assign when absent.
+   */
+  onNavigate?: (url: string) => void;
   /** Overrides the default FormControls component (keeps field wiring local). */
   formComponent?: ComponentType<{
     fields: FormControlField[];
@@ -593,11 +599,14 @@ function SchemaCrudProvider({
   context,
   children,
   initialFetcher,
+  onNavigate,
 }: {
   document: RenderPageDocument;
   context: Record<string, unknown>;
   children: ReactNode;
   initialFetcher?: typeof fetch;
+  /** Session-internal navigation (breadcrumb-preserving); see RendererComponentProps. */
+  onNavigate?: (url: string) => void;
 }) {
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
   const [queries, setQueries] = useState<Record<string, ResourceQuery>>({});
@@ -756,10 +765,22 @@ function SchemaCrudProvider({
             setFeedback({ kind: "error", code: "INVALID_NAVIGATE_URL", message: "navigate mapping produced no url" });
             return;
           }
-          window.location.assign(target);
+          // GOAL-015 F-001: navigate through the host's session-internal
+          // onNavigate (pushState + visit stack) so the entries page keeps its
+          // breadcrumb trail; location.assign (full reload) is only the fallback
+          // when no host hook is wired (e.g. embedded renderer tests).
+          if (onNavigate !== undefined) {
+            onNavigate(target);
+          } else {
+            window.location.assign(target);
+          }
           return;
         }
-        window.location.assign(url);
+        if (onNavigate !== undefined) {
+          onNavigate(url);
+        } else {
+          window.location.assign(url);
+        }
         return;
       }
       const gateTargetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
@@ -2135,6 +2156,45 @@ function dispatchNode({
   });
 }
 
+/**
+ * F-008 (grok audit): gates a data node that uses v2.9 ADR-0039 route-bound
+ * params ($context.route.* bindings in node.data.params) on the page meta —
+ * protocolVersion >= 2.9 AND the data.route-binding capability must be
+ * declared, else the node fails closed with an observable error (same
+ * discipline as checkFormCapabilities for form fields).
+ */
+function gateDataRouteBinding(
+  metaValue: unknown,
+  node: RenderTableNode | RenderStatCardNode | RenderChartNode,
+): string | null {
+  const params = node.data?.params;
+  if (params === undefined) {
+    return null;
+  }
+  const usesRouteBinding = Object.values(params).some(
+    (value) => typeof value === "string" && value.startsWith("$context.route."),
+  );
+  if (!usesRouteBinding) {
+    return null;
+  }
+  const meta = isRecord(metaValue) ? metaValue : {};
+  const version = typeof meta.protocolVersion === "string" ? meta.protocolVersion : "";
+  const versionMatch = /^(\d+)\.(\d+)$/.exec(version);
+  const versionOk =
+    versionMatch !== null &&
+    (Number(versionMatch[1]) > 2 ||
+      (Number(versionMatch[1]) === 2 && Number(versionMatch[2]) >= 9));
+  const capabilities = Array.isArray(meta.requiredCapabilities)
+    ? (meta.requiredCapabilities as unknown[]).filter(
+        (c): c is string => typeof c === "string",
+      )
+    : [];
+  if (!versionOk || !capabilities.includes("data.route-binding")) {
+    return "dataSource params use $context.route.* bindings which require protocol >= 2.9 and the data.route-binding capability";
+  }
+  return null;
+}
+
 function dispatchParsedNode({
   node,
   metaValue,
@@ -2193,10 +2253,22 @@ function dispatchParsedNode({
     case "actionButton":
       return <ActionButtonView node={node} context={context} onAction={onAction} />;
     case "statCard":
-      return <StatCardView node={node} />;
     case "chart":
-      return <ChartView node={node} />;
-    case "table":
+    case "table": {
+      const routeGate = gateDataRouteBinding(metaValue, node);
+      if (routeGate !== null) {
+        return (
+          <p key={node.id ?? node.type} role="alert" className="text-sm text-destructive">
+            {routeGate}
+          </p>
+        );
+      }
+      if (node.type === "statCard") {
+        return <StatCardView node={node} />;
+      }
+      if (node.type === "chart") {
+        return <ChartView node={node} />;
+      }
       return (
         tableRenderer?.(node) ?? (
           <p className="text-sm text-muted-foreground">
@@ -2204,6 +2276,7 @@ function dispatchParsedNode({
           </p>
         )
       );
+    }
   }
 }
 
@@ -2277,10 +2350,16 @@ export function RenderPage({
   tableRenderer,
   dataFetcher,
   onAction,
+  onNavigate,
   formComponent,
 }: RendererComponentProps & { dataFetcher?: typeof fetch }) {
   return (
-    <SchemaCrudProvider document={document} context={context} initialFetcher={dataFetcher}>
+    <SchemaCrudProvider
+      document={document}
+      context={context}
+      initialFetcher={dataFetcher}
+      onNavigate={onNavigate}
+    >
       <RenderPageSurface
         document={document}
         context={context}

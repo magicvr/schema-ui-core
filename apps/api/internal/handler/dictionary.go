@@ -255,7 +255,7 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		ID:              "dict-entries",
 		Path:            "/api/data-dictionary/entries",
 		Listable:        true,
-		SortFields:      []string{"dictKey", "entryKey", "label", "sort", "updatedAt"},
+		SortFields:      []string{"dictKey", "entryKey", "label", "sort", "updatedAt", "dictTypeName"},
 		QSearch:         true,
 		Entity:          &dictEntryEntity{repository: repository, operations: operations},
 		CreateFields:    []string{"dictKey", "entryKey", "label"},

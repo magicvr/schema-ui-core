@@ -322,3 +322,39 @@ describe("validateFieldValues (GOAL-014 D-002 §3)", () => {
     expect(validateFieldValues(fields, { code: "" })).toEqual([]);
   });
 });
+
+describe("checkFormCapabilities · readOnly gate (ADR-0040, since 2.9)", () => {
+  const field = { id: "dictKey", type: "input", readOnly: true };
+
+  it("accepts readOnly at protocol 2.9 with form.controls.readonly", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.9", requiredCapabilities: ["app.manifest", "form.controls.readonly"] },
+      [field],
+    );
+    expect(errors).toEqual([]);
+  });
+
+  it("rejects readOnly below protocol 2.9", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.8", requiredCapabilities: ["app.manifest", "form.controls.readonly"] },
+      [field],
+    );
+    expect(errors.some((e) => e.code === "FORM_VERSION_TOO_LOW" && e.path.includes("readOnly"))).toBe(true);
+  });
+
+  it("rejects readOnly without the form.controls.readonly capability", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.9", requiredCapabilities: ["app.manifest"] },
+      [field],
+    );
+    expect(errors.some((e) => e.code === "FORM_CAPABILITY_REQUIRED" && e.path.includes("readOnly"))).toBe(true);
+  });
+
+  it("leaves non-readOnly fields ungated at lower protocol versions", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.8", requiredCapabilities: ["app.manifest"] },
+      [{ id: "label", type: "input" }],
+    );
+    expect(errors).toEqual([]);
+  });
+});

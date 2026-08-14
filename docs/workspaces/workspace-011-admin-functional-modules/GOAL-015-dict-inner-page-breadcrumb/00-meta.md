@@ -27,11 +27,11 @@ progress: 4/5
 
 - [x] **S1 · 方案冻结**：dictKey 过滤契约 + 内页导航 + 面包屑路由栈；协议增补门禁 P-1/P-2 登记 I-005（D-002/A-001/E-002，2026-08-14）
 - [x] **S2**：服务端 dictKey 过滤 + 面包屑（门禁期先行 E-003/E-004）；v2.9 协议落地后完成 schema 改造——table node.data params 路由绑定 + dictKey 只读（D-003/E-006/E-007）
-- [x] **S3 · 验证**：内页链路 T-DE-01..05 + 过滤/面包屑回归 + 全量回归 945/945（E-008）
-- [ ] **S4 · go 影响判定 + 自审**
+- [x] **S3 · 验证**：内页链路 T-DE-01..05 + F-001 集成测试 + 过滤/面包屑回归 + 全量回归 946/946（E-008）
+- [x] **S4 · go 影响判定 + 自审**：go（不 held，I-004 closed）+ A-002 self；A-003 grok 独立审计 5 项 required findings 全部 fixed（A-002/A-003）
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 
-progress: 2/5 由五个等权检查点派生。
+progress: 4/5 由五个等权检查点派生（S1～S4 已勾，S5 待关门）。
 
 ## 审计策略
 
@@ -41,10 +41,10 @@ progress: 2/5 由五个等权检查点派生。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | dictKey 过滤参数形状（?dictKey= 与现有 q/sort/page 组合） | S1 方案 | 现有 resourceFilter 对照 | open |
-| I-002 | required | 内页表单 dictKey 只读绑定（显示类型名/传类型键；create 默认值来自 route query） | S1 方案 | 现有 recordSource/context.route.query 机制对照 | open |
-| I-003 | required | 面包屑路由栈方案（history 驱动；返回按钮语义；与 HOST_OWNED_PATHS/route-not-found 交互） | S1 方案 | 现有 App.tsx 路由对照 | open |
-| I-004 | required | go 影响判定（List 过滤参数/契约扩展） | S4 | VP-008 接口对照 | open |
+| I-001 | required | dictKey 过滤参数形状（?dictKey= 与现有 q/sort/page 组合） | S1 方案 | ExtraQuery 白名单 + 服务端过滤 + dictKey+sort+page 回归（E-003/E-008/A-003 F-002） | **closed** |
+| I-002 | required | 内页表单 dictKey 只读绑定（显示类型名/传类型键；create 默认值来自 route query） | S1 方案 | ADR-0040 readOnly + Host modal 值源（D-003/E-007/T-DE-03/04） | **closed** |
+| I-003 | required | 面包屑路由栈方案（history 驱动；返回按钮语义；与 HOST_OWNED_PATHS/route-not-found 交互） | S1 方案 | visitStack 路由栈 + 集成测试（E-003/App.integration；A-003 F-001 后含 schema navigate 主路径） | **closed** |
+| I-004 | required | go 影响判定（List 过滤参数/契约扩展） | S4 | VP-008 对照 + A-002（go，不 held）+ A-003 F-002/F-003 修复后补验 | **closed** |
 | I-005 | required | **协议增补门禁 · P-2**：dataSource 路由绑定——上游 v2.9.0 ADR-0039 落地为 data.params 的 `$context.route.query.*`/`params.*` 整值绑定（capability data.route-binding） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin（81aa1d8） | **closed**（D-003/E-006） |
 | I-006 | required | **协议增补门禁 · 表单只读**：上游 v2.9.0 ADR-0040 落地为字段 readOnly 声明（capability form.controls.readonly；值仍参与提交投影） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin（81aa1d8） | **closed**（D-003/E-006） |
 

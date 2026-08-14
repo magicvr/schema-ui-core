@@ -7,11 +7,11 @@
  *   conformance-claim.json          — the static claim (closed C0 shape)
  *   conformance-claim.json.sha256   — canonical digest (D1a) of the claim
  *
- * Bindings: schema-ui-protocol v2.8.0 (formal tag v2.8.0, commit 521cff8) —
+ * Bindings: schema-ui-protocol v2.9.0 (formal tag v2.9.0, commit 81aa1d8) —
  *   fixtureSha256          = release-check fixture-tree digest of the release
  *   protocolContentSha256  = protocol artifact contentDigest of the release
  * （2026-08-13 身份纠偏：此前 593f625/40690917… 为上游 H4 预备身份，见
- *   上游审计 0080 V379；正式 tag v2.8.0 @ 521cff8，content 4fae4605…。）
+ *   上游审计 0082；正式 tag v2.9.0 @ 81aa1d8，content c87c22ad…，fixture 89baddbc…。）
  */
 
 import { execFileSync } from "node:child_process";
@@ -26,15 +26,15 @@ const HOST_ID = "schema-ui-web";
 const CLAIM_VERSION = "1.0";
 const FIXTURE_VERSION = "1.0";
 const SUITE_VERSION = "1.0";
-const ARTIFACT_VERSION = "2.8.0";
+const ARTIFACT_VERSION = "2.9.0";
 
-// Formal 2.8.0 release bindings (tag v2.8.0, commit 521cff8; upstream audit
-// 0080 V379). 593f625/40690917… was the H4 preparatory identity, not the tag.
-const UPSTREAM_SOURCE_COMMIT = "521cff8";
+// Formal 2.9.0 release bindings (tag v2.9.0, commit 81aa1d8; upstream audit
+// 0082). fixture 89baddbc…, content c87c22ad… (release manifest.json).
+const UPSTREAM_SOURCE_COMMIT = "81aa1d8";
 const UPSTREAM_FIXTURE_SHA256 =
-  "7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2";
+  "89baddbc2879b0c183bcb50fbc730257df5786eee316b645e8238876fe0ca3e7";
 const UPSTREAM_PROTOCOL_CONTENT_SHA256 =
-  "4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30";
+  "c87c22ad2ab4f4f19b93253312d6906b085ae6cd273168cc435d9863809d1c22";
 
 // Suites this repository runs green in CI (zero exclusions) at claim time.
 const SUITES = [
@@ -43,6 +43,11 @@ const SUITES = [
   { suiteId: "host-bootstrap", fixtures: 23 },
   { suiteId: "host-failure", fixtures: 43 },
   { suiteId: "host-conformance-claim", fixtures: 30 },
+  // v2.9 claimed capabilities' mandatorySuites (capability-registry):
+  // data.route-binding → request-construction; form.controls.readonly →
+  // component-format + request-construction (both run green in CI).
+  { suiteId: "request-construction", fixtures: 81 },
+  { suiteId: "component-format", fixtures: 5 },
 ];
 
 const packageJson = JSON.parse(readFileSync(join(WEB_ROOT, "package.json"), "utf8"));
@@ -111,14 +116,17 @@ const claim = {
     contentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
   support: {
-    pageVersions: ["2.7"],
-    manifestVersions: ["2.7", "2.8"],
+    pageVersions: ["2.7", "2.9"],
+    manifestVersions: ["2.7", "2.8", "2.9"],
     capabilities: [
       "app.manifest",
       "app.navigation",
       "host.bootstrap",
       "host.failure-recovery",
       "host.conformance-claim",
+      // v2.9 (ADR-0039/ADR-0040): dataSource route binding + form readOnly.
+      "data.route-binding",
+      "form.controls.readonly",
     ],
   },
   conformance: {

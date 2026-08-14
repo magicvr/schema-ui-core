@@ -233,7 +233,8 @@
               "permissionIntent": "edit",
               "navigateMapping": {
                 "query": {
-                  "dictKey": "$row.key"
+                  "dictKey": "$row.key",
+                  "dictTypeName": "$row.name"
                 }
               },
               "labelKey": "schema.dataDictionary.action.entries"

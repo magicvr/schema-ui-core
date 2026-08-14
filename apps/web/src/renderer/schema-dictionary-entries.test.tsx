@@ -279,7 +279,7 @@ describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
   });
 
   it("T-DE-03: create modal seeds the readOnly dictKey from the route and POSTs the type key", async () => {
-    routeTo("/dictionary-entries?dictKey=order_status");
+    routeTo("/dictionary-entries?dictKey=order_status&dictTypeName=Order%20status");
     const api = createEntriesApi(ENTRIES);
     const container = await renderCrud(entriesDocument(), DICT_WRITER, api.fetcher);
 
@@ -288,6 +288,12 @@ describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
     expect(dictKeyInput).not.toBeNull();
     expect(dictKeyInput.readOnly).toBe(true);
     expect(dictKeyInput.value).toBe("order_status");
+    // F-006: the create form also shows the type NAME read-only (seeded from
+    // the navigate query, which now carries dictTypeName=$row.name).
+    const typeNameInput = fieldInput(container, "dictTypeName") as HTMLInputElement;
+    expect(typeNameInput).not.toBeNull();
+    expect(typeNameInput.readOnly).toBe(true);
+    expect(typeNameInput.value).toBe("Order status");
 
     await act(async () => setFieldValue(fieldInput(container, "entryKey") as HTMLInputElement, "REFUNDED"));
     await act(async () => setFieldValue(fieldInput(container, "label") as HTMLInputElement, "Refunded"));

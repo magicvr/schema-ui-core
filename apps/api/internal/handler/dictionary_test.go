@@ -114,6 +114,37 @@ func TestDictionaryLifecycle(t *testing.T) {
 		t.Fatalf("dictKey+q miss = %d %v", code, composedMiss)
 	}
 
+	// GOAL-015 F-002 (grok audit): after the LEFT JOIN dict_types the ORDER BY
+	// columns must be qualified — dict_types also has sort/updated_at, so an
+	// unqualified sort previously 500'd with "ambiguous column name". These
+	// combos used to fail and now must succeed with stable ordering.
+	code, sortedBySort := getResource(t, env, "/api/data-dictionary/entries?dictKey=order_status&sort=sort&order=asc&pageSize=100")
+	if code != http.StatusOK {
+		t.Fatalf("dictKey+sort=sort = %d %v", code, sortedBySort)
+	}
+	code, sortedByUpdated := getResource(t, env, "/api/data-dictionary/entries?sort=updatedAt&order=desc&pageSize=100")
+	if code != http.StatusOK {
+		t.Fatalf("sort=updatedAt = %d %v", code, sortedByUpdated)
+	}
+	// GOAL-015 F-003: the sortable dictTypeName column maps to dt.name.
+	code, sortedByName := getResource(t, env, "/api/data-dictionary/entries?sort=dictTypeName&order=asc&pageSize=100")
+	if code != http.StatusOK {
+		t.Fatalf("sort=dictTypeName = %d %v", code, sortedByName)
+	}
+	nameItems, _ := sortedByName["items"].([]any)
+	if len(nameItems) != 2 || nameItems[0].(map[string]any)["dictTypeName"] != "Order status" {
+		t.Fatalf("sort=dictTypeName order = %v, want [Order status, Other Status]", nameItems)
+	}
+	// dictKey + sort + page composes (F-002 page slice path).
+	code, paged := getResource(t, env, "/api/data-dictionary/entries?dictKey=order_status&sort=sort&page=1&pageSize=1")
+	if code != http.StatusOK {
+		t.Fatalf("dictKey+sort+page = %d %v", code, paged)
+	}
+	pagedItems, _ := paged["items"].([]any)
+	if len(pagedItems) != 1 || paged["total"] != float64(1) {
+		t.Fatalf("dictKey+sort+page items = %v total=%v", pagedItems, paged["total"])
+	}
+
 	// patch entry
 	code, patchBody := bearerJSON(t, env, admin, http.MethodPatch, "/api/data-dictionary/entries/"+entryID,
 		"{\"label\":\"Pending (updated)\",\"enabled\":false}")

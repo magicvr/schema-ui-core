@@ -320,3 +320,32 @@ describe("fetchResourceList with the system-monitoring status envelope (S-03 · 
     ).rejects.toThrow();
   });
 });
+
+describe("fetchResourceList extraQuery (v2.9 ADR-0039)", () => {
+  it("merges extraQuery params with the standard query", async () => {
+    const seen: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      seen.push(String(input));
+      return new Response(
+        JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const list = await fetchResourceList(fetcher, "/api/entries", { q: "paid" }, "dictKey=order_status");
+    expect(list.total).toBe(0);
+    expect(seen[0]).toContain("q=paid");
+    expect(seen[0]).toContain("dictKey=order_status");
+  });
+
+  it("keeps baseURL bare — F-001 rejects a ?-carrying dataSource even with extraQuery", async () => {
+    const fetcher = (async () =>
+      new Response(
+        JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10 }),
+        { status: 200 },
+      ),
+    ) as typeof fetch;
+    await expect(
+      fetchResourceList(fetcher, "/api/entries?x=1", {}, "dictKey=order_status"),
+    ).rejects.toThrow(/invalid dataSource/);
+  });
+});

@@ -250,8 +250,12 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_entries de`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count dict entries: %w", err)
 		}
+		// GOAL-015 F-002/F-003 (grok audit): after the LEFT JOIN dict_types the
+		// sort columns must be qualified — dict_types also carries sort/updated_at
+		// and an unqualified ORDER BY is ambiguous (SQLite 500). dictTypeName
+		// maps to dt.name so the sortable type-name column works.
 		sortCol, ok := map[string]string{
-			"dictKey": "dict_key", "entryKey": "entry_key", "label": "label", "sort": "sort", "updatedAt": "updated_at",
+			"dictKey": "de.dict_key", "entryKey": "de.entry_key", "label": "de.label", "sort": "de.sort", "updatedAt": "de.updated_at", "dictTypeName": "dt.name",
 		}[filter.Sort]
 		if !ok {
 			sortCol = "entry_key"

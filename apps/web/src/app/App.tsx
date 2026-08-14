@@ -278,6 +278,7 @@ function SchemaPageSurface({
   context,
   fetcher,
   resourceFetcher,
+  onNavigate,
 }: {
   page: PageEntry;
   params: Record<string, string>;
@@ -285,6 +286,8 @@ function SchemaPageSurface({
   context: NavigationContext;
   fetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
+  /** Session-internal navigation for schema navigate actions (GOAL-015 F-001). */
+  onNavigate?: (url: string) => void;
 }) {
   const [state, setState] = useState<SchemaSurfaceState>({ status: "loading" });
   const t = useTranslate();
@@ -340,6 +343,7 @@ function SchemaPageSurface({
       }
       tableRenderer={(node) => <SchemaTable node={node} fetcher={resourceFetcher} />}
       dataFetcher={resourceFetcher}
+      onNavigate={onNavigate}
     />
   );
 }
@@ -452,6 +456,7 @@ function PageSurface({
           context={navigationContext}
           fetcher={schemaFetcher}
           resourceFetcher={resourceFetcher}
+          onNavigate={onNavigate}
         />
       </div>
     </section>
