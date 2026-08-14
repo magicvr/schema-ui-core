@@ -68,6 +68,9 @@ var profileDefaults = map[ProfileName][]string{
 		// S-01 (GOAL-008 D-001 §2): admin.data-dictionary — admin-only profile;
 		// two-level dictionary types and entries.
 		"admin.data-dictionary",
+		// S-03 (GOAL-009 D-001 §2): admin.system-monitoring — admin-only profile;
+		// read-only monitoring surface.
+		"admin.system-monitoring",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -156,6 +159,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.file-library", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/library/files", "GET /api/library/files/{id}", "GET /api/library/files/{id}/download", "DELETE /api/library/files/{id}", "POST /api/library/files/upload"}, Pages: []string{"file-library"}, Navigation: []string{"menu_files"}, Permissions: []string{"files.read", "files.delete"}, Fragments: []string{"file-library"}}},
 		// S-01 admin.data-dictionary (GOAL-008): two-level dictionary types/entries.
 		{ID: "admin.data-dictionary", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/data-dictionary/types", "GET /api/data-dictionary/types/{id}", "POST /api/data-dictionary/types", "PATCH /api/data-dictionary/types/{id}", "DELETE /api/data-dictionary/types/{id}", "POST /api/data-dictionary/types/batch-delete", "GET /api/data-dictionary/entries", "GET /api/data-dictionary/entries/{id}", "POST /api/data-dictionary/entries", "PATCH /api/data-dictionary/entries/{id}", "DELETE /api/data-dictionary/entries/{id}", "POST /api/data-dictionary/entries/batch-delete"}, Pages: []string{"data-dictionary", "dictionary-entries"}, Navigation: []string{"menu_dictionary"}, Permissions: []string{"dictionary.read", "dictionary.write"}, Fragments: []string{"data-dictionary"}}},
+		// S-03 admin.system-monitoring (GOAL-009): read-only monitoring surface.
+		{ID: "admin.system-monitoring", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/system-monitoring/status", "GET /api/system-monitoring/errors", "GET /api/system-monitoring/errors/{id}"}, Pages: []string{"system-monitoring"}, Navigation: []string{"menu_monitoring"}, Permissions: []string{"monitoring.read"}, Fragments: []string{"system-monitoring"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

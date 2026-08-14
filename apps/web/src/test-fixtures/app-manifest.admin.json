@@ -136,6 +136,13 @@
       "schemaUrl": "/api/schema/dictionary-entries",
       "route": "/dictionary-entries",
       "titleKey": "manifest.title.dictionaryEntries"
+    },
+    {
+      "pageId": "system-monitoring",
+      "title": "System monitoring",
+      "schemaUrl": "/api/schema/system-monitoring",
+      "route": "/system-monitoring",
+      "titleKey": "manifest.title.systemMonitoring"
     }
   ],
   "navigation": {
@@ -174,6 +181,15 @@
           "when": "$context.features.menu_dictionary == true"
         },
         "labelKey": "manifest.nav.dataDictionary"
+      },
+      {
+        "pageRef": "system-monitoring",
+        "label": "System monitoring",
+        "icon": "activity",
+        "visibleWhen": {
+          "when": "$context.features.menu_monitoring == true"
+        },
+        "labelKey": "manifest.nav.systemMonitoring"
       },
       {
         "label": "Examples",

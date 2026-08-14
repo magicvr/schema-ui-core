@@ -279,6 +279,7 @@ describe("manifest loading and expression boundaries", () => {
       "file-library",
       "data-dictionary",
       "dictionary-entries",
+      "system-monitoring",
     ]);
   });
 

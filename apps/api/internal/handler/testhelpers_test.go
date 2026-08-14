@@ -19,6 +19,7 @@ import (
 	filelibraryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary/schema"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	datadictionaryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/schema"
+	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
@@ -104,6 +105,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
 	mountRoutes(FileLibraryRoutes(a, uploadDir, operations, "admin.file-library"))
 	mountRoutes(DictionaryRoutes(a, datadictionarystore.NewRepository(st), operations, "admin.data-dictionary"))
+	mountRoutes(MonitoringRoutes(a, st, testAdminPlan(t), nil, filepath.Join(t.TempDir(), "monitor.db"), time.Now(), operations, "admin.system-monitoring"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -131,6 +133,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{activityschema.ModuleID, activityschema.SchemaDocuments()},
 		{filelibraryschema.ModuleID, filelibraryschema.SchemaDocuments()},
 		{datadictionaryschema.ModuleID, datadictionaryschema.SchemaDocuments()},
+		{monitoringschema.ModuleID, monitoringschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {

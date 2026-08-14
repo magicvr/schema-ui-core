@@ -452,7 +452,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// S-01 (GOAL-008): admin.data-dictionary contributes dictionary.read/
 		// dictionary.write (+2 permissions) and menu_dictionary (+1 navigation) to
 		// admin only.
-		{profile: "admin", wantPermissions: 17, wantNavigation: 9},
+		// S-03 (GOAL-009): admin.system-monitoring contributes monitoring.read
+		// (+1 permission) and menu_monitoring (+1 navigation) to admin only.
+		{profile: "admin", wantPermissions: 18, wantNavigation: 10},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
