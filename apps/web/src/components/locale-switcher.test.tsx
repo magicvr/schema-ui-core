@@ -40,45 +40,83 @@ async function renderSwitcher(props: { browserLanguages?: readonly string[] }) {
   return container;
 }
 
-describe("LocaleSwitcher", () => {
-  it("renders auto + both supported locales with catalog labels", async () => {
+describe("LocaleSwitcher (header dropdown)", () => {
+  it("renders a compact icon trigger (no form select)", async () => {
     const container = await renderSwitcher({ browserLanguages: ["en-US"] });
-    const select = container.querySelector<HTMLSelectElement>("select");
-    expect(select).not.toBeNull();
-    const options = Array.from(select?.options ?? []);
-    expect(options.map((option) => option.value)).toEqual(["auto", "zh-CN", "en-US"]);
-    expect(options[0].text).toBe("Auto (follow browser)");
-    expect(options[1].text).toBe("简体中文");
-    expect(options[2].text).toBe("English");
-    expect(select?.getAttribute("aria-label")).toBe("Language");
+    expect(container.querySelector("select")).toBeNull();
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Language"]');
+    expect(trigger).not.toBeNull();
+    expect(trigger?.getAttribute("aria-haspopup")).toBe("menu");
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+    // No menu content before opening.
+    expect(container.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it("opens a dropdown with auto + both supported locales and a checkmark on the current one", async () => {
+    const container = await renderSwitcher({ browserLanguages: ["en-US"] });
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Language"]');
+    await act(async () => trigger?.click());
+    const menu = container.querySelector('[role="menu"]');
+    expect(menu).not.toBeNull();
+    const items = Array.from(menu?.querySelectorAll('[role="menuitemradio"]') ?? []);
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      "Auto (follow browser)",
+      "简体中文",
+      "English",
+    ]);
+    // auto is the current preference → checkmarked.
+    expect(items[0]?.getAttribute("aria-checked")).toBe("true");
+    expect(items[0]?.querySelector("svg")).not.toBeNull();
+    expect(items[1]?.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("selecting a locale persists to localStorage and closes the menu", async () => {
+    const container = await renderSwitcher({ browserLanguages: ["en-US"] });
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Language"]');
+    await act(async () => trigger?.click());
+    const zh = Array.from(container.querySelectorAll('[role="menuitemradio"]')).find(
+      (item) => item.textContent?.trim() === "简体中文",
+    );
+    await act(async () => (zh as HTMLButtonElement).click());
+    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-CN");
+    expect(container.querySelector('[role="menu"]')).toBeNull(); // closed after select
+    // Reopen: zh-CN now carries the checkmark.
+    await act(async () => trigger?.click());
+    const items = Array.from(container.querySelectorAll('[role="menuitemradio"]'));
+    expect(items[1]?.getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("closes on Escape and on outside pointerdown", async () => {
+    const container = await renderSwitcher({ browserLanguages: ["en-US"] });
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Language"]');
+    await act(async () => trigger?.click());
+    expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+    expect(container.querySelector('[role="menu"]')).toBeNull();
+    await act(async () => trigger?.click());
+    await act(async () => {
+      document.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    });
+    expect(container.querySelector('[role="menu"]')).toBeNull();
   });
 
   it("shows translated labels under zh-CN", async () => {
     const container = await renderSwitcher({ browserLanguages: ["zh-CN"] });
-    const select = container.querySelector<HTMLSelectElement>("select");
-    expect(select?.getAttribute("aria-label")).toBe("语言");
-    expect(select?.options[0].text).toBe("自动（跟随浏览器）");
-  });
-
-  it("switching persists to localStorage and takes effect", async () => {
-    const container = await renderSwitcher({ browserLanguages: ["en-US"] });
-    const select = container.querySelector<HTMLSelectElement>("select");
-    expect(select?.value).toBe("auto");
-
-    await act(async () => {
-      select!.value = "zh-CN";
-      select!.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-
-    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-CN");
-    expect(select?.value).toBe("zh-CN");
-    expect(select?.options[0].text).toBe("自动（跟随浏览器）"); // labels re-render via zh-CN? option 0 is "auto" label — same in both; aria-label is the zh label:
-    expect(select?.getAttribute("aria-label")).toBe("语言");
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="语言"]');
+    expect(trigger).not.toBeNull();
+    await act(async () => trigger?.click());
+    const items = Array.from(container.querySelectorAll('[role="menuitemradio"]'));
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      "自动（跟随浏览器）",
+      "简体中文",
+      "English",
+    ]);
   });
 
   it("reachable without any settings permission — no auth prop required", async () => {
-    // The switcher only needs I18nProvider; no user/permission inputs exist.
     const container = await renderSwitcher({ browserLanguages: ["en-US"] });
-    expect(container.querySelector("select")).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Language"]')).not.toBeNull();
   });
 });
