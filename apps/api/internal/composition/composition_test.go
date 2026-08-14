@@ -447,7 +447,12 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// F-04 (GOAL-006): admin.notifications contributes menu_notifications
 		// (+1 navigation, no permissions) to mvp and admin.
 		{profile: "mvp", wantPermissions: 8, wantNavigation: 5},
-		{profile: "admin", wantPermissions: 13, wantNavigation: 7},
+		// S-02 (GOAL-007): admin.file-library contributes files.read/files.delete
+		// (+2 permissions) and menu_files (+1 navigation) to admin only.
+		// S-01 (GOAL-008): admin.data-dictionary contributes dictionary.read/
+		// dictionary.write (+2 permissions) and menu_dictionary (+1 navigation) to
+		// admin only.
+		{profile: "admin", wantPermissions: 17, wantNavigation: 9},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
