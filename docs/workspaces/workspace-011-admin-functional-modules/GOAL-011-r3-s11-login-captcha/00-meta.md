@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.2.0
-progress: 1/5
+progress: 2/5
 ---
 
 # GOAL-011-r3-s11-login-captcha · 登录验证码（防爆破补充）
@@ -24,12 +24,12 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：挑战类型（算术/图形/token）、与锁定限流的叠加语义、配置开关、协议对照；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
-- [ ] **S2 · 实现**：挑战端点 + 校验集成（auth/login）+ 配置 + 测试
+- [x] **S2 · 实现**：挑战端点 + 校验集成（auth/login）+ 配置 + 测试（E-002，2026-08-14）
 - [ ] **S3 · 验证**：单元/集成 + 登录链路实测 + 全量回归
 - [ ] **S4 · go 影响判定 + 自审**（核心认证路径 → go 失效检查重点）
 - [ ] **S5 · 关门**：独立审计（grok，security 门禁必须）+ required 闭合 + goal-tree 同步
 
-progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
+progress: 2/5 由五个等权检查点派生。
 
 ## 审计策略
 

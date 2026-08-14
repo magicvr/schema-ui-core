@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 22 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 {
-		t.Fatalf("applied = %+v, want versions [1..22]", applied)
+	if len(applied) != 24 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 {
+		t.Fatalf("applied = %+v, want versions [1..24]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -181,7 +181,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 22 {
+	if len(applied2) != 24 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -585,6 +585,8 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"core.operationlog", "operation_log_dictionary", "ac6d2c28eb213f90030b13f6e22bda470e4d7fa2c072d55939cda00e77ffd059"},
 		{"admin.scheduled-tasks", "scheduled_tasks", "076c8fa37fb28deecc3737ac1886e2eb98261081b1ee0188da11c4bfd2e44286"},
 		{"core.operationlog", "operation_log_tasks", "cb64c05e37e247127a0b4466a0812e113a96c0fce8f127bdd5ca6e5890326b04"},
+		{"admin.login-captcha", "login_captcha", "6bc0b55675f4d00a231de3a0d1f89f52688e3efb292ab3cc5975c225c308b853"},
+		{"core.operationlog", "operation_log_captcha", "51d6a3c11031d4fd2b3ff08573030e32747fff51b88d614af86e66a13548e264"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

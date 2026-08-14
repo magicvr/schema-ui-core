@@ -282,6 +282,7 @@ describe("manifest loading and expression boundaries", () => {
       "system-monitoring",
       "scheduled-tasks",
       "task-runs",
+      "captcha",
     ]);
   });
 

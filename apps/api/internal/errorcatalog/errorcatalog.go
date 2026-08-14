@@ -117,6 +117,9 @@ var Catalog = map[string]Entry{
 	// F-04 (GOAL-006 D-002 §4): notification codes.
 	"INVALID_SETTINGS_BODY":  {"error.invalidSettingsBody", "body must be JSON with enabled", "请求体必须是包含 enabled 的 JSON"},
 	"NOTIFICATION_NOT_FOUND": {"error.notificationNotFound", "no notification with that id", "没有该 id 对应的通知"},
+
+	// S-11 (GOAL-011 D-002 §2): login captcha code.
+	"INVALID_CAPTCHA": {"error.invalidCaptcha", "captcha verification failed", "验证码校验失败"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

@@ -157,6 +157,13 @@
       "schemaUrl": "/api/schema/task-runs",
       "route": "/task-runs",
       "titleKey": "manifest.title.taskRuns"
+    },
+    {
+      "pageId": "captcha",
+      "title": "Login captcha",
+      "schemaUrl": "/api/schema/captcha",
+      "route": "/captcha",
+      "titleKey": "manifest.title.captcha"
     }
   ],
   "navigation": {
@@ -296,6 +303,15 @@
           }
         ],
         "labelKey": "manifest.nav.admin"
+      },
+      {
+        "pageRef": "captcha",
+        "label": "Login captcha",
+        "icon": "shield",
+        "visibleWhen": {
+          "when": "$context.features.menu_captcha == true"
+        },
+        "labelKey": "manifest.nav.captcha"
       }
     ],
     "user": [

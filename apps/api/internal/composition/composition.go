@@ -27,6 +27,8 @@ import (
 	systemmonitoringmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring"
 	scheduledtasksmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks"
 	scheduledtasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
+	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha"
+	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
@@ -182,7 +184,19 @@ func newMuxWithExtraProviders(
 	extra []kernel.Provider,
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
-	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready)
+	// S-11 (GOAL-011): one shared captcha service instance feeds both the login
+	// gate verifier (handler.RegisterWithReadiness) and the module provider
+	// surface (routes/settings). nil when the module is disabled.
+	var captchaService *logincaptchamodule.Service
+	// S-11 (GOAL-011): the login captcha gate is wired through the variadic
+	// CaptchaVerifier — nil (module disabled) keeps the login contract
+	// byte-identical to the pre-captcha behavior.
+	var captchaVerifier handler.CaptchaVerifier
+	if plan.HasModule("admin.login-captcha") {
+		captchaService = logincaptchamodule.NewService(logincaptchastore.NewRepository(st))
+		captchaVerifier = captchaService
+	}
+	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready, captchaVerifier)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads directory is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id).
@@ -237,6 +251,9 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.scheduled-tasks") {
 		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations))
+	}
+	if plan.HasModule("admin.login-captcha") {
+		providers = append(providers, logincaptchamodule.New(a, captchaService, operations))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

@@ -1,0 +1,119 @@
+// Login captcha surface (S-11 · GOAL-011 D-002 §2/§3): the public preflight
+// (GET /api/auth/captcha) and the admin settings surface
+// (GET/PATCH /api/captcha/settings). The login gate itself is the
+// CaptchaVerifier interface consumed by the auth handler; this file only
+// owns the module's HTTP contributions.
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+)
+
+// CaptchaService is the challenge surface the captcha routes consume. It is
+// satisfied structurally by the admin.login-captcha module Service (no handler
+// import of the module package — the direction is module → handler).
+type CaptchaService interface {
+	// Generate issues a new one-time challenge.
+	Generate() (id, question string, expiresInSeconds int64, err error)
+	// Required reports whether login must present a captcha.
+	Required() bool
+	// SetEnabled flips the login captcha gate (admin settings).
+	SetEnabled(enabled bool, now time.Time) error
+}
+
+// CaptchaRoutes returns the admin.login-captcha HTTP surface.
+func CaptchaRoutes(a *auth.Authenticator, service CaptchaService, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+	var routes []kernel.RouteContribution
+
+	// Public preflight: the login page asks BEFORE authentication, so this
+	// route must not require a session (D-002 §2). When the gate is disabled
+	// the client skips the challenge entirely; when enabled the client renders
+	// the arithmetic question from the challenge payload.
+	routes = append(routes, kernel.RouteContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/auth/captcha")},
+		Method:               "GET",
+		Pattern:              "/api/auth/captcha",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			enabled := service.Required()
+			body := map[string]any{"enabled": enabled}
+			if enabled {
+				id, question, expiresInSeconds, err := service.Generate()
+				if err != nil {
+					writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate captcha")
+					return
+				}
+				body["challenge"] = map[string]any{
+					"id":               id,
+					"question":         question,
+					"expiresInSeconds": expiresInSeconds,
+				}
+			}
+			writeJSON(w, http.StatusOK, body)
+		}),
+	})
+
+	// Settings: read current gate state.
+	routes = append(routes, kernel.RouteContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/captcha/settings")},
+		Method:               "GET",
+		Pattern:              "/api/captcha/settings",
+		Handler: a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := requirePermission(w, r, "captcha.read"); !ok {
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"enabled": service.Required()})
+		})),
+	})
+
+	// Settings: flip the gate (audited).
+	routes = append(routes, kernel.RouteContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("PATCH", "/api/captcha/settings")},
+		Method:               "PATCH",
+		Pattern:              "/api/captcha/settings",
+		Handler: a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, ok := requirePermission(w, r, "captcha.write")
+			if !ok {
+				return
+			}
+			var body struct {
+				Enabled *bool `json:"enabled"`
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "body must be JSON with enabled")
+				return
+			}
+			if body.Enabled == nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SETTINGS_BODY", "body must be JSON with enabled")
+				return
+			}
+			now := time.Now().UTC()
+			if err := service.SetEnabled(*body.Enabled, now); err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update captcha settings")
+				return
+			}
+			recordCaptchaSettingsEvent(operations, user, *body.Enabled, now)
+			writeJSON(w, http.StatusOK, map[string]any{"enabled": *body.Enabled})
+		})),
+	})
+	return routes
+}
+
+// recordCaptchaSettingsEvent writes the captcha.settings-update audit row.
+func recordCaptchaSettingsEvent(operations operationlog.Recorder, user account.User, enabled bool, now time.Time) {
+	if operations == nil {
+		return
+	}
+	detail := `{"enabled":` + boolString(enabled) + `}`
+	_ = operations.RecordOperation(operationlog.Operation{
+		ID: newOperationID(), Event: operationlog.EventCaptchaSettingsUpdate,
+		ActorID: user.ID, ActorName: user.Name, Detail: &detail, CreatedAt: now,
+	})
+}

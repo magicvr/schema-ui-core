@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "pageId": "captcha",
+    "title": "Login captcha",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger"
+    ]
+  },
+  "actions": {
+    "saveSettings": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/captcha/settings",
+      "bodyMapping": {
+        "enabled": "enabled"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "captcha",
+    "children": [
+      {
+        "type": "form",
+        "id": "captcha-settings",
+        "props": {
+          "title": "Login captcha",
+          "titleKey": "schema.captcha.settings.title",
+          "recordSource": {
+            "url": "/api/captcha/settings",
+            "responseMapping": {
+              "enabled": "enabled"
+            }
+          },
+          "fields": [
+            {
+              "id": "enabled",
+              "label": "Require captcha on login",
+              "type": "select",
+              "options": [
+                { "value": "true", "label": "Enabled", "labelKey": "schema.captcha.settings.enabled" },
+                { "value": "false", "label": "Disabled", "labelKey": "schema.captcha.settings.disabled" }
+              ],
+              "labelKey": "schema.captcha.settings.enable"
+            }
+          ],
+          "submitAction": "saveSettings",
+          "submitLabel": "Save settings",
+          "submitLabelKey": "schema.captcha.settings.submit"
+        }
+      }
+    ]
+  }
+}

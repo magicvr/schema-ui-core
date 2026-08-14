@@ -62,8 +62,9 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // (dashboard home + account/notifications pages) — local artifact, re-pinned.
 // S-02/S-01 (GOAL-007/008): admin fixture extended with file-library +
 // data-dictionary pages and nav.
+// S-11 (GOAL-011): admin fixture extended with the captcha page + nav.
 const STATIC_MANIFEST_SHA256 =
-  "c61a3b3ea8a17135529355f592fa866bdc8ca11879f35e9ebf38e18f80c5bb59";
+  "95e571e58cfd71a45a0b83ab3e8e10c50a8ce6dfadaec8a79cbbbc15871b4ea8";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

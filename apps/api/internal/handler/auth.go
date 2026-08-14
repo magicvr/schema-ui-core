@@ -13,6 +13,15 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
+// CaptchaVerifier is the optional login captcha gate (S-11 · GOAL-011 D-002
+// `2): nil disables the gate entirely (module not enabled) — the login
+// contract is byte-identical to the pre-captcha behavior; a verifier with
+// Required()==true demands a valid one-time challenge before credentials.
+type CaptchaVerifier interface {
+	Required() bool
+	Verify(captchaID, answer string, now time.Time) error
+}
+
 // authHandler serves the R2 auth endpoints (GOAL-005): login, refresh and
 // logout. Login/refresh are public; the access/refresh pair returned is consumed
 // by the Web client (access in memory, refresh in localStorage, D-002). The
@@ -23,14 +32,16 @@ type authHandler struct {
 	operations  operationlog.Recorder
 	now         func() time.Time
 	rateLimiter *loginRateLimiter
+	captcha     CaptchaVerifier
 }
 
-func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder) {
+func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier) {
 	h := &authHandler{
 		a:           a,
 		operations:  operations,
 		now:         time.Now,
 		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
+		captcha:     captcha,
 	}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
@@ -38,8 +49,10 @@ func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operatio
 }
 
 type credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username      string `json:"username"`
+	Password      string `json:"password"`
+	CaptchaID     string `json:"captchaId,omitempty"`
+	CaptchaAnswer string `json:"captchaAnswer,omitempty"`
 }
 
 type tokenRequest struct {
@@ -72,6 +85,16 @@ func (h *authHandler) login() http.HandlerFunc {
 		if h.rateLimiter != nil && !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
 			return
+		}
+		// S-11 (GOAL-011 D-002): when the captcha gate is enabled it runs after
+		// the rate limiter (which bounds challenge exhaustion) and before
+		// credential validation. Any failure maps to the single INVALID_CAPTCHA
+		// code; failures do not count against the lockout budget.
+		if h.captcha != nil && h.captcha.Required() {
+			if err := h.captcha.Verify(creds.CaptchaID, creds.CaptchaAnswer, h.now().UTC()); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CAPTCHA", "captcha verification failed")
+				return
+			}
 		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
 		if errors.Is(err, auth.ErrAccountLocked) {

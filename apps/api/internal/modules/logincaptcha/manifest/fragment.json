@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "captcha",
+      "title": "Login captcha",
+      "schemaUrl": "/api/schema/captcha",
+      "route": "/captcha",
+      "titleKey": "manifest.title.captcha"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "captcha",
+        "label": "Login captcha",
+        "icon": "shield",
+        "visibleWhen": {
+          "when": "$context.features.menu_captcha == true"
+        },
+        "labelKey": "manifest.nav.captcha"
+      }
+    ]
+  }
+}

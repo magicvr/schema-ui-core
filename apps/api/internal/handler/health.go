@@ -36,11 +36,15 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operat
 // probe (R5). ready, when non-nil, gates /readyz on Start+Ready success.
 // Schema pages are registered separately via RegisterSchemas so composition can
 // pass runtime contribution ownership (R5 C5.1).
-func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool) {
+func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha ...CaptchaVerifier) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready))
 	if plan.HasModule("core.auth-session") {
-		authsHandler(mux, a, operations)
+		var verifier CaptchaVerifier
+		if len(captcha) > 0 {
+			verifier = captcha[0]
+		}
+		authsHandler(mux, a, operations, verifier)
 		accountsHandler(mux, a)
 	}
 }

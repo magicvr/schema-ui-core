@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +24,7 @@ import (
 	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
 	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
+	captchaschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
@@ -44,6 +46,7 @@ type authTestEnv struct {
 	operations     *operationlog.Repository
 	settings       *settingsrepository.Repository
 	uploadDir      string
+	captcha        *testCaptchaService
 }
 
 const (
@@ -83,8 +86,12 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	settings := settingsrepository.New(st)
 	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, authRepository, devSession)
 	mux := http.NewServeMux()
+	// S-11 (GOAL-011): the fake is constructed BEFORE RegisterWithReadiness so
+	// the login gate receives a live (non-nil) verifier — a typed-nil passed
+	// through the variadic would satisfy the != nil check and panic on use.
+	captchaService := newTestCaptchaService()
 	plan := testAdminPlan(t)
-	Register(mux, a, st, operations, plan)
+	RegisterWithReadiness(mux, a, st, operations, plan, nil, captchaService)
 	// R6 C6.1: test env mounts the same resource-factory routes the module
 	// providers register (behavior-identical to the production finalize path);
 	// dead handler adapters MountProviderRoutes/RegisterSettings/RegisterActivity
@@ -111,6 +118,12 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(MonitoringRoutes(a, st, testAdminPlan(t), nil, filepath.Join(t.TempDir(), "monitor.db"), time.Now(), operations, "admin.system-monitoring"))
 	scheduledTaskRunner := testTaskRunner{repository: tasksstore.NewRepository(st)}
 	mountRoutes(ScheduledTaskRoutes(a, scheduledTaskRunner.repository, scheduledTaskRunner, operations, "admin.scheduled-tasks"))
+	// S-11 (GOAL-011): the admin plan enables admin.login-captcha — the env
+	// mounts its routes with the same fake service the login gate received
+	// above (a test double: the module package imports handler, so handler
+	// tests cannot import the real service; the module's own tests cover the
+	// real store-backed service).
+	mountRoutes(CaptchaRoutes(a, captchaService, operations, "admin.login-captcha"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -121,6 +134,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		operations:     operations,
 		settings:       settings,
 		uploadDir:      uploadDir,
+		captcha:        captchaService,
 	}
 }
 
@@ -140,6 +154,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{datadictionaryschema.ModuleID, datadictionaryschema.SchemaDocuments()},
 		{monitoringschema.ModuleID, monitoringschema.SchemaDocuments()},
 		{tasksschema.ModuleID, tasksschema.SchemaDocuments()},
+		{captchaschema.ModuleID, captchaschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {
@@ -301,3 +316,39 @@ func (r testTaskRunner) Execute(task tasksstore.Task, now time.Time) error {
 }
 
 func (r testTaskRunner) HandlerKeys() []string { return []string{"system.noop"} }
+
+// testCaptchaService is a controllable captcha double implementing both
+// handler.CaptchaVerifier (login gate) and handler.CaptchaService (routes).
+type testCaptchaService struct {
+	required   bool
+	generateID string
+	verifyErr  error
+}
+
+func newTestCaptchaService() *testCaptchaService {
+	return &testCaptchaService{generateID: "cap-test-1"}
+}
+
+func (s *testCaptchaService) Required() bool { return s.required }
+
+func (s *testCaptchaService) Generate() (string, string, int64, error) {
+	return s.generateID, "1 + 1 = ?", 300, nil
+}
+
+func (s *testCaptchaService) SetEnabled(enabled bool, now time.Time) error {
+	s.required = enabled
+	return nil
+}
+
+func (s *testCaptchaService) Verify(captchaID, answer string, now time.Time) error {
+	if !s.required {
+		return nil
+	}
+	if captchaID == s.generateID && answer == "2" {
+		return nil
+	}
+	if s.verifyErr != nil {
+		return s.verifyErr
+	}
+	return errors.New("captcha verification failed")
+}
