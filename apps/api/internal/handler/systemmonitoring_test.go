@@ -18,17 +18,30 @@ func TestSystemMonitoringStatus(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("status = %d: %v", code, body)
 	}
-	for _, field := range []string{"status", "ready", "version", "commit", "uptimeSeconds", "modules", "dbSizeBytes"} {
-		if _, ok := body[field]; !ok {
-			t.Fatalf("status missing field %q: %v", field, body)
+	// Single-row list envelope (A-003 F-001): statCard dataSource loads via
+	// fetchResourceList, which requires {items,total,page,pageSize}.
+	if body["total"] != float64(1) || body["page"] != float64(1) {
+		t.Fatalf("status envelope = %v, want total=1 page=1", body)
+	}
+	items, _ := body["items"].([]any)
+	if len(items) != 1 {
+		t.Fatalf("status items = %d, want 1", len(items))
+	}
+	row := items[0].(map[string]any)
+	for _, field := range []string{"status", "ready", "version", "commit", "uptimeSeconds", "moduleCount", "modules", "dbSizeBytes"} {
+		if _, ok := row[field]; !ok {
+			t.Fatalf("status row missing field %q: %v", field, row)
 		}
 	}
-	if body["status"] != "ok" || body["ready"] != true {
-		t.Fatalf("status = %v, want ok/true", body)
+	if row["status"] != "ok" || row["ready"] != true {
+		t.Fatalf("status row = %v, want ok/true", row)
 	}
-	modules, _ := body["modules"].([]any)
+	modules, _ := row["modules"].([]any)
 	if len(modules) == 0 {
-		t.Fatalf("status modules empty: %v", body)
+		t.Fatalf("status modules empty: %v", row)
+	}
+	if row["moduleCount"] != float64(len(modules)) {
+		t.Fatalf("moduleCount = %v, want %d", row["moduleCount"], len(modules))
 	}
 
 	// Anonymous → 401.
@@ -81,5 +94,15 @@ func TestSystemMonitoringErrors(t *testing.T) {
 	code, _ = getResourceAs(t, env, viewer, "/api/system-monitoring/errors")
 	if code != http.StatusForbidden {
 		t.Fatalf("viewer errors = %d, want 403", code)
+	}
+}
+
+// Unknown error id → 404 OPERATION_NOT_FOUND (A-003 F-002: GetOperation wraps
+// the sentinel, so the entity must use errors.Is).
+func TestSystemMonitoringErrorsNotFound(t *testing.T) {
+	env := newAuthTestEnv(t)
+	code, body := getResource(t, env, "/api/system-monitoring/errors/op-missing")
+	if code != http.StatusNotFound || body["error"] != "OPERATION_NOT_FOUND" {
+		t.Fatalf("missing error id = %d %v, want 404 OPERATION_NOT_FOUND", code, body)
 	}
 }

@@ -1,12 +1,12 @@
 ---
 id: GOAL-009-r3-s03-system-monitoring
 title: R3-S03 · 系统监控与错误日志查看（health/指标/错误日志 UI）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.4.0
-progress: 4/5
+version: 0.5.0
+progress: 5/5
 ---
 
 # GOAL-009-r3-s03-system-monitoring · 系统监控与错误日志查看（health/指标/错误日志 UI）
@@ -27,7 +27,7 @@ progress: 4/5
 - [x] **S2 · 实现**：模块 provider + 端点（status/errors）+ schema 页 + 测试（E-002）
 - [x] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / 898/898 / e2e 双 profile 8/8，E-003）
 - [x] **S4 · go 影响判定 + 自审**：go 影响判定（D-003 不暂挂）+ self 审计（A-002 pass）
-- [ ] **S5 · 关门**：独立审计（grok，沿用用户偏好）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：独立审计（A-003 grok conditional → 全 fixed，D-004）+ 关门（E-004）+ goal-tree 同步
 
 progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 

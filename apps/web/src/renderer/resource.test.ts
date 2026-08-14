@@ -226,3 +226,45 @@ describe("deleteResource (DELETE)", () => {
     ).rejects.toThrow("HTTP 404");
   });
 });
+
+describe("fetchResourceList with the system-monitoring status envelope (S-03 · GOAL-009 A-003 F-001)", () => {
+  // The status endpoint serves a single-row list envelope so statCard
+  // dataSource loading (fetchResourceList) can bind every valueField.
+  it("parses the status row and reads every statCard valueField", async () => {
+    const statusRow = {
+      status: "ok",
+      ready: true,
+      version: "dev",
+      commit: "abc",
+      uptimeSeconds: 42,
+      moduleCount: 12,
+      modules: ["core.auth-session", "admin.users"],
+      dbSizeBytes: 1024,
+    };
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({ items: [statusRow], total: 1, page: 1, pageSize: 1 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    const list = await fetchResourceList(fetcher as typeof fetch, "/api/system-monitoring/status", {});
+    expect(list.total).toBe(1);
+    expect(list.items).toHaveLength(1);
+    const row = list.items[0] as Record<string, unknown>;
+    for (const field of ["status", "ready", "version", "commit", "uptimeSeconds", "moduleCount", "modules", "dbSizeBytes"]) {
+      expect(row[field]).toEqual(statusRow[field as keyof typeof statusRow]);
+    }
+  });
+
+  it("rejects a flat (non-envelope) status body fail-closed", async () => {
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({ status: "ok", ready: true, uptimeSeconds: 1 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    await expect(
+      fetchResourceList(fetcher as typeof fetch, "/api/system-monitoring/status", {}),
+    ).rejects.toThrow();
+  });
+});

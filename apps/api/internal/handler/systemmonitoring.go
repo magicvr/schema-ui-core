@@ -7,6 +7,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"time"
@@ -19,13 +20,17 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
-// MonitoringStatus is the status summary served by GET /api/system-monitoring/status.
-type MonitoringStatus struct {
+// MonitoringStatusRow is one status summary row. The endpoint serves it as a
+// single-row list envelope ({items,total,page,pageSize}) because the Host
+// loads statCard dataSource values through fetchResourceList (A-003 F-001);
+// the flat object alone would fail closed on the page.
+type MonitoringStatusRow struct {
 	Status        string   `json:"status"`
 	Ready         bool     `json:"ready"`
 	Version       string   `json:"version"`
 	Commit        string   `json:"commit"`
 	UptimeSeconds int64    `json:"uptimeSeconds"`
+	ModuleCount   int      `json:"moduleCount"`
 	Modules       []string `json:"modules"`
 	DBSizeBytes   int64    `json:"dbSizeBytes"`
 }
@@ -53,7 +58,9 @@ func (e *monitoringEntity) List(f resourceFilter) ([]map[string]any, int, error)
 func (e *monitoringEntity) Get(id string) (map[string]any, error) {
 	op, err := e.repository.GetOperation(id)
 	if err != nil {
-		if err == operationlog.ErrNotFound {
+		// GetOperation wraps the sentinel (fmt.Errorf %w) — use errors.Is
+		// (A-003 F-002), matching the activity operations entity.
+		if errors.Is(err, operationlog.ErrNotFound) {
 			return nil, errResourceNotFound
 		}
 		return nil, err
@@ -114,16 +121,31 @@ func MonitoringRoutes(a *auth.Authenticator, st *store.Store, plan kernel.Plan, 
 			if info, err := os.Stat(dbPath); err == nil {
 				dbSize = info.Size()
 			}
-			writeJSON(w, http.StatusOK, MonitoringStatus{
+			row := MonitoringStatusRow{
 				Status:        status,
 				Ready:         readyOK,
 				Version:       version.Version,
 				Commit:        version.Commit,
 				UptimeSeconds: int64(time.Since(startTime).Seconds()),
+				ModuleCount:   len(plan.IDs()),
 				Modules:       plan.IDs(),
 				DBSizeBytes:   dbSize,
-			})
+			}
+			writeJSON(w, http.StatusOK, resourceList{Items: []map[string]any{statusRowToMap(row)}, Total: 1, Page: 1, PageSize: 1})
 		})),
 	})
 	return routes
+}
+
+func statusRowToMap(row MonitoringStatusRow) map[string]any {
+	return map[string]any{
+		"status":        row.Status,
+		"ready":         row.Ready,
+		"version":       row.Version,
+		"commit":        row.Commit,
+		"uptimeSeconds": row.UptimeSeconds,
+		"moduleCount":   row.ModuleCount,
+		"modules":       row.Modules,
+		"dbSizeBytes":   row.DBSizeBytes,
+	}
 }
