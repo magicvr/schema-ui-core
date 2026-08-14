@@ -231,6 +231,11 @@
               "label": "Entries",
               "actionRef": "openEntries",
               "permissionIntent": "edit",
+              "navigateMapping": {
+                "query": {
+                  "dictKey": "$row.key"
+                }
+              },
               "labelKey": "schema.dataDictionary.action.entries"
             },
             {
