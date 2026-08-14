@@ -79,6 +79,13 @@ var Catalog = map[string]Entry{
 	// S-02 (GOAL-007 D-002 §4): file-library codes.
 	"INVALID_UPLOAD_BODY":   {"error.invalidUploadBody", "body must be JSON with a file field", "请求体必须是包含 file 字段的 JSON"},
 	"INVALID_FILE_ID":       {"error.invalidFileId", "invalid file id", "文件 ID 无效"},
+
+	// S-01 (GOAL-008 D-002 §3): dictionary codes.
+	"DICT_TYPE_NOT_FOUND":   {"error.dictTypeNotFound", "no dict type with that id", "没有该 id 对应的字典类型"},
+	"DICT_ENTRY_NOT_FOUND":  {"error.dictEntryNotFound", "no dict entry with that id", "没有该 id 对应的字典条目"},
+	"DICT_TYPE_KEY_TAKEN":   {"error.dictTypeKeyTaken", "a dict type with that key already exists", "该键已存在对应的字典类型"},
+	"DICT_ENTRY_KEY_TAKEN":  {"error.dictEntryKeyTaken", "an entry with that key already exists in the dict type", "该字典类型下已存在相同键的条目"},
+	"DICT_KEY_NOT_FOUND":    {"error.dictKeyNotFound", "no dict type with that key", "没有该键对应的字典类型"},
 	"INVALID_FILE":          {"error.invalidFile", "file part is invalid", "文件内容无效"},
 	"UNSUPPORTED_FILE_TYPE": {"error.unsupportedFileType", "file type is not allowed", "不允许的文件类型"},
 	"STORAGE_UNAVAILABLE":   {"error.storageUnavailable", "storage is temporarily unavailable", "存储服务暂不可用"},

@@ -65,6 +65,9 @@ var profileDefaults = map[ProfileName][]string{
 		// S-02 (GOAL-007 D-001 §2): admin.file-library — admin-only profile;
 		// unified file/attachment library over the shared upload store.
 		"admin.file-library",
+		// S-01 (GOAL-008 D-001 §2): admin.data-dictionary — admin-only profile;
+		// two-level dictionary types and entries.
+		"admin.data-dictionary",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -151,6 +154,8 @@ func BuiltinModules() []Module {
 		{ID: "admin.notifications", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/notifications", "POST /api/notifications/{id}/read", "POST /api/notifications/read-all", "GET /api/notifications/unread-count", "GET /api/notifications/settings", "PATCH /api/notifications/settings"}, Pages: []string{"notifications"}, Navigation: []string{"menu_notifications"}, Fragments: []string{"notifications"}}},
 		// S-02 admin.file-library (GOAL-007): unified file/attachment library.
 		{ID: "admin.file-library", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/library/files", "GET /api/library/files/{id}", "GET /api/library/files/{id}/download", "DELETE /api/library/files/{id}", "POST /api/library/files/upload"}, Pages: []string{"file-library"}, Navigation: []string{"menu_files"}, Permissions: []string{"files.read", "files.delete"}, Fragments: []string{"file-library"}}},
+		// S-01 admin.data-dictionary (GOAL-008): two-level dictionary types/entries.
+		{ID: "admin.data-dictionary", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/data-dictionary/types", "GET /api/data-dictionary/types/{id}", "POST /api/data-dictionary/types", "PATCH /api/data-dictionary/types/{id}", "DELETE /api/data-dictionary/types/{id}", "POST /api/data-dictionary/types/batch-delete", "GET /api/data-dictionary/entries", "GET /api/data-dictionary/entries/{id}", "POST /api/data-dictionary/entries", "PATCH /api/data-dictionary/entries/{id}", "DELETE /api/data-dictionary/entries/{id}", "POST /api/data-dictionary/entries/batch-delete"}, Pages: []string{"data-dictionary", "dictionary-entries"}, Navigation: []string{"menu_dictionary"}, Permissions: []string{"dictionary.read", "dictionary.write"}, Fragments: []string{"data-dictionary"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

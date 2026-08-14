@@ -277,6 +277,8 @@ describe("manifest loading and expression boundaries", () => {
       "account",
       "notifications",
       "file-library",
+      "data-dictionary",
+      "dictionary-entries",
     ]);
   });
 

@@ -35,6 +35,10 @@ const (
 	EventFileUpload   = "files.upload"
 	EventFileDownload = "files.download"
 	EventFileDelete   = "files.delete"
+	// S-01 dictionary events (GOAL-008 D-002 §5).
+	EventDictionaryCreate = "dictionary.create"
+	EventDictionaryUpdate = "dictionary.update"
+	EventDictionaryDelete = "dictionary.delete"
 )
 
 // Operation is one append-only operation log row.

@@ -23,6 +23,8 @@ import (
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
+	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
@@ -223,6 +225,9 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.file-library") {
 		providers = append(providers, filelibrarymodule.New(a, operations, uploadDir))
+	}
+	if plan.HasModule("admin.data-dictionary") {
+		providers = append(providers, datadictionarymodule.New(a, datadictionarystore.NewRepository(st), operations))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

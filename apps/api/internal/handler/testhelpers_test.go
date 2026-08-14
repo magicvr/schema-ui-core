@@ -17,6 +17,8 @@ import (
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	examplesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples/schema"
 	filelibraryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary/schema"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
+	datadictionaryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
@@ -101,6 +103,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(ExportRoutes(a, authRepository, authRepository, operations, "admin.data-transfer"))
 	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
 	mountRoutes(FileLibraryRoutes(a, uploadDir, operations, "admin.file-library"))
+	mountRoutes(DictionaryRoutes(a, datadictionarystore.NewRepository(st), operations, "admin.data-dictionary"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
@@ -127,6 +130,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{settingsschema.ModuleID, settingsschema.SchemaDocuments()},
 		{activityschema.ModuleID, activityschema.SchemaDocuments()},
 		{filelibraryschema.ModuleID, filelibraryschema.SchemaDocuments()},
+		{datadictionaryschema.ModuleID, datadictionaryschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {

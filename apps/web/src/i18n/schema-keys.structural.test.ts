@@ -34,6 +34,8 @@ const SCHEMA_FILES = [
   "account/schema/account.json",
   "dashboard/schema/dashboard.json",
   "filelibrary/schema/file-library.json",
+  "datadictionary/schema/data-dictionary.json",
+  "datadictionary/schema/dictionary-entries.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];
@@ -63,6 +65,16 @@ function collectTextAndKeys(doc: unknown): Array<{ path: string; text: string; k
     }
     if (typeof node === "object") {
       const record = node as Record<string, unknown>;
+      // Wire-mapping subtrees carry API field names, not user-visible text;
+      // a field named like a TEXT_PROPS key (e.g. bodyMapping.label) must not
+      // be treated as a translatable label (S-01 dictionary schemas).
+      if (
+        "bodyMapping" in record ||
+        "requestMapping" in record ||
+        "navigateMapping" in record
+      ) {
+        return;
+      }
       for (const [k, v] of Object.entries(record)) {
         const childPath = `${p}.${k}`;
         visit(v, childPath);
@@ -119,6 +131,7 @@ describe("S2 · F-V029 denominator schema key completeness", () => {
       "apps/api/internal/modules/account/manifest/fragment.json",
       "apps/api/internal/modules/dashboard/manifest/fragment.json",
       "apps/api/internal/modules/filelibrary/manifest/fragment.json",
+      "apps/api/internal/modules/datadictionary/manifest/fragment.json",
     ];
     const unknown: string[] = [];
     const keys: string[] = [];

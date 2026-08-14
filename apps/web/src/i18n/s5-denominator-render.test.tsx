@@ -45,6 +45,8 @@ const SCHEMA_PATHS: Record<string, string> = {
   account: resolve(MODULES, "account/schema/account.json"),
   notifications: resolve(MODULES, "notifications/schema/notifications.json"),
   "file-library": resolve(MODULES, "filelibrary/schema/file-library.json"),
+  "data-dictionary": resolve(MODULES, "datadictionary/schema/data-dictionary.json"),
+  "dictionary-entries": resolve(MODULES, "datadictionary/schema/dictionary-entries.json"),
 };
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];

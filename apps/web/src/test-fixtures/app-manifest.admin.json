@@ -122,6 +122,20 @@
       "schemaUrl": "/api/schema/file-library",
       "route": "/file-library",
       "titleKey": "manifest.title.fileLibrary"
+    },
+    {
+      "pageId": "data-dictionary",
+      "title": "Data dictionary",
+      "schemaUrl": "/api/schema/data-dictionary",
+      "route": "/data-dictionary",
+      "titleKey": "manifest.title.dataDictionary"
+    },
+    {
+      "pageId": "dictionary-entries",
+      "title": "Dictionary entries",
+      "schemaUrl": "/api/schema/dictionary-entries",
+      "route": "/dictionary-entries",
+      "titleKey": "manifest.title.dictionaryEntries"
     }
   ],
   "navigation": {
@@ -151,6 +165,15 @@
           "when": "$context.features.menu_files == true"
         },
         "labelKey": "manifest.nav.fileLibrary"
+      },
+      {
+        "pageRef": "data-dictionary",
+        "label": "Data dictionary",
+        "icon": "table",
+        "visibleWhen": {
+          "when": "$context.features.menu_dictionary == true"
+        },
+        "labelKey": "manifest.nav.dataDictionary"
       },
       {
         "label": "Examples",

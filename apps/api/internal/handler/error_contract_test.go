@@ -57,6 +57,9 @@ var frozenDomainCodes = []string{
 	"ROLE_NOT_FOUND", "USER_NOT_FOUND", "CATALOG_NOT_FOUND",
 	"LAST_ADMIN", "SELF_OPERATION", "INVALID_ROLE_REF", "ROLE_ASSIGNMENT_FORBIDDEN",
 	"INVALID_MENU_ITEM_REF", "ADMIN_ACCOUNT_FORBIDDEN",
+	// S-01 (GOAL-008 D-002 §3): dictionary domain codes (DomainError / notFound).
+	"DICT_TYPE_NOT_FOUND", "DICT_ENTRY_NOT_FOUND", "DICT_TYPE_KEY_TAKEN",
+	"DICT_ENTRY_KEY_TAKEN", "DICT_KEY_NOT_FOUND",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

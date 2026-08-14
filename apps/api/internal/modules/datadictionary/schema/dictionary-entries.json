@@ -1,0 +1,258 @@
+{
+  "meta": {
+    "pageId": "dictionary-entries",
+    "title": "Dictionary entries",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended"
+    ]
+  },
+  "actions": {
+    "createEntry": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/data-dictionary/entries",
+      "bodyMapping": {
+        "dictKey": "dictKey",
+        "entryKey": "entryKey",
+        "label": "label",
+        "enabled": "enabled",
+        "sort": "sort",
+        "remark": "remark"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "updateEntry": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/data-dictionary/entries/{id}",
+      "bodyMapping": {
+        "dictKey": "dictKey",
+        "label": "label",
+        "enabled": "enabled",
+        "sort": "sort",
+        "remark": "remark"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "deleteEntry": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/data-dictionary/entries/{id}",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-dict-entry-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"dictionary.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "dictKey",
+              "label": "Type key",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.dictKey"
+            },
+            {
+              "id": "entryKey",
+              "label": "Entry key",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.entryKey"
+            },
+            {
+              "id": "label",
+              "label": "Label",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.label"
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.dictionaryEntries.field.enabled"
+            },
+            {
+              "id": "sort",
+              "label": "Sort",
+              "type": "number",
+              "defaultValue": 0,
+              "labelKey": "schema.dictionaryEntries.field.sort"
+            },
+            {
+              "id": "remark",
+              "label": "Remark",
+              "type": "textarea",
+              "labelKey": "schema.dictionaryEntries.field.remark"
+            }
+          ],
+          "submitAction": "createEntry",
+          "submitLabel": "Create entry",
+          "submitLabelKey": "schema.dictionaryEntries.submit.create"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-dict-entry-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"dictionary.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "dictKey",
+              "label": "Type key",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.dictKey"
+            },
+            {
+              "id": "label",
+              "label": "Label",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.label"
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.dictionaryEntries.field.enabled"
+            },
+            {
+              "id": "sort",
+              "label": "Sort",
+              "type": "number",
+              "defaultValue": 0,
+              "labelKey": "schema.dictionaryEntries.field.sort"
+            },
+            {
+              "id": "remark",
+              "label": "Remark",
+              "type": "textarea",
+              "labelKey": "schema.dictionaryEntries.field.remark"
+            }
+          ],
+          "submitAction": "updateEntry",
+          "submitLabel": "Save changes",
+          "submitLabelKey": "schema.dictionaryEntries.submit.save"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "dictionary-entries",
+    "children": [
+      {
+        "type": "table",
+        "id": "dict-entries-table",
+        "permissionCascade": {
+          "keys": [
+            "edit",
+            "delete"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"dictionary.write\"",
+          "delete": "$context.user.permissions contains \"dictionary.write\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "dictKey",
+              "label": "Type key",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.dictKey"
+            },
+            {
+              "field": "entryKey",
+              "label": "Entry key",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.entryKey"
+            },
+            {
+              "field": "label",
+              "label": "Label",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.label"
+            },
+            {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.dictionaryEntries.column.enabled"
+            },
+            {
+              "field": "sort",
+              "label": "Sort",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.sort"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.updated"
+            }
+          ],
+          "dataSource": "/api/data-dictionary/entries",
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New entry",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.dictionaryEntries.toolbar.newEntry"
+            }
+          ],
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit",
+              "labelKey": "schema.dictionaryEntries.action.edit"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteEntry",
+              "permissionIntent": "delete",
+              "confirm": "Delete this entry?",
+              "labelKey": "schema.dictionaryEntries.action.delete",
+              "confirmKey": "schema.dictionaryEntries.confirm.delete"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

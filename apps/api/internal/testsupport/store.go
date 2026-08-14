@@ -62,6 +62,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// S-02 (GOAL-007): admin.file-library keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.file-library", Key: "files.read"}, Permission: "files.read", Resource: "files", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.file-library", Key: "files.delete"}, Permission: "files.delete", Resource: "files", Action: "delete", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-01 (GOAL-008): admin.data-dictionary keys, admin-only.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-dictionary", Key: "dictionary.read"}, Permission: "dictionary.read", Resource: "dictionary", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-dictionary", Key: "dictionary.write"}, Permission: "dictionary.write", Resource: "dictionary", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -76,6 +79,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.notifications", Key: "menu_notifications"}, NodeID: "menu_notifications", PageID: "notifications", Order: 2, Label: "Notifications", Visibility: authsessiondata.PolicyAdminEditorViewer, Permission: "", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-02 (GOAL-007): file library page (admin-only management surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.file-library", Key: "menu_files"}, NodeID: "menu_files", PageID: "file-library", Order: 3, Label: "File library", Visibility: authsessiondata.PolicyAdmin, Permission: "files.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-01 (GOAL-008): data dictionary page (admin-only management surface).
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-dictionary", Key: "menu_dictionary"}, NodeID: "menu_dictionary", PageID: "data-dictionary", Order: 4, Label: "Data dictionary", Visibility: authsessiondata.PolicyAdmin, Permission: "dictionary.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 18 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 {
-		t.Fatalf("applied = %+v, want versions [1..18]", applied)
+	if len(applied) != 20 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 {
+		t.Fatalf("applied = %+v, want versions [1..20]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -181,7 +181,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 18 {
+	if len(applied2) != 20 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -581,6 +581,8 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"admin.notifications", "notifications", "70d1357dc638fec1b100e0e9287dba46375a387914b884a899294f273f0fcbaa"},
 		{"admin.notifications", "notifications_enabled", "16191741bded09598f2628da66f7b6251ef3886e616d839b5fd8b325a10d7264"},
 		{"core.operationlog", "operation_log_file_events", "3351b6e6993dea21abd85f96049483eb8d9cfea4ad45bef34d3f5a824ac49249"},
+		{"admin.data-dictionary", "dictionary", "8f2c2a18037a4c3eb67704354bbdd01acbbe319b477731ced054070aec6f6587"},
+		{"core.operationlog", "operation_log_dictionary", "ac6d2c28eb213f90030b13f6e22bda470e4d7fa2c072d55939cda00e77ffd059"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))
