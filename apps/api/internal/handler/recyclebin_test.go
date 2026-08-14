@@ -5,11 +5,15 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 )
 
 func recycleItem(id, resource, resourceID string) RecycleItem {
@@ -180,5 +184,102 @@ func TestRecycleBinAuditEvents(t *testing.T) {
 	}
 	if !events["recycle.purge"] {
 		t.Fatalf("operations missing recycle.purge: %v", events)
+	}
+}
+
+// recordingTrash is a TrashRecorder test double capturing calls.
+type recordingTrash struct {
+	calls []struct {
+		resource string
+		id       string
+		row      map[string]any
+	}
+}
+
+func (r *recordingTrash) Record(_ context.Context, resource, id string, row map[string]any, _ account.User, _ time.Time) error {
+	r.calls = append(r.calls, struct {
+		resource string
+		id       string
+		row      map[string]any
+	}{resource: resource, id: id, row: row})
+	return nil
+}
+
+// TestRecycleFactoryHookSnapshotsOnDelete proves the S-12 delete hook: a
+// successful delete records a snapshot with the pre-delete row; a failed
+// delete records nothing (no orphan snapshots).
+func TestRecycleFactoryHookSnapshotsOnDelete(t *testing.T) {
+	env := newAuthTestEnv(t)
+	trash := &recordingTrash{}
+	mux := http.NewServeMux()
+	for _, route := range DictionaryRoutes(env.a, datadictionarystore.NewRepository(env.st), env.operations, "admin.data-dictionary", trash) {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	token := adminToken(t, env)
+	// Create a dict type via the API (bearer-authenticated).
+	createReq := bearer(t, token, http.MethodPost, "/api/data-dictionary/types", `{"key":"status","name":"Status"}`)
+	createRec := httptest.NewRecorder()
+	mux.ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", createRec.Code, createRec.Body.String())
+	}
+	var createdBody struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createdBody); err != nil || createdBody.ID == "" {
+		t.Fatalf("create body missing id: %v", err)
+	}
+	id := createdBody.ID
+	// Delete through the factory (with the trash-wired routes).
+	req := bearer(t, token, http.MethodDelete, "/api/data-dictionary/types/"+id, "")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("delete = %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(trash.calls) != 1 {
+		t.Fatalf("trash calls = %d, want 1", len(trash.calls))
+	}
+	if trash.calls[0].resource != "dict-types" || trash.calls[0].id != id {
+		t.Fatalf("trash call = %+v", trash.calls[0])
+	}
+	if trash.calls[0].row["key"] != "status" {
+		t.Fatalf("snapshot row = %v, want key status", trash.calls[0].row)
+	}
+	// Deleting an unknown id fails → no snapshot recorded.
+	req = bearer(t, token, http.MethodDelete, "/api/data-dictionary/types/nope", "")
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown delete = %d, want 404", rec.Code)
+	}
+	if len(trash.calls) != 1 {
+		t.Fatalf("trash calls after failed delete = %d, want 1 (no orphan)", len(trash.calls))
+	}
+}
+
+// TestRecycleFactoryHookNilKeepsLegacySemantics proves Trash nil leaves the
+// delete path byte-identical (the env-mounted dictionary routes have no trash).
+func TestRecycleFactoryHookNilKeepsLegacySemantics(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	createReq := bearer(t, token, http.MethodPost, "/api/data-dictionary/types", `{"key":"legacy","name":"Legacy"}`)
+	createRec := httptest.NewRecorder()
+	env.mux.ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", createRec.Code, createRec.Body.String())
+	}
+	var createdBody struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createdBody); err != nil || createdBody.ID == "" {
+		t.Fatalf("create body missing id: %v", err)
+	}
+	id := createdBody.ID
+	req := bearer(t, token, http.MethodDelete, "/api/data-dictionary/types/"+id, "")
+	rec := httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("delete = %d: %s", rec.Code, rec.Body.String())
 	}
 }

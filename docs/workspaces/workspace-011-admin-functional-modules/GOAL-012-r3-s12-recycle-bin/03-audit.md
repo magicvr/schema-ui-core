@@ -26,4 +26,4 @@ version: 0.1.0
 
 ## 结论状态
 
-尚未到达审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 /govern 与用户裁决。
+S4 完成（A-002 pass）。S5 关门：grok 独立审计（data 门禁）+ required 闭合 + goal-tree 同步。
