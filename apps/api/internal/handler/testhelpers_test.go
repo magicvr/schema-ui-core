@@ -47,6 +47,7 @@ type authTestEnv struct {
 	operations     *operationlog.Repository
 	settings       *settingsrepository.Repository
 	uploadDir      string
+	brandAssets    *BrandingAssetStore
 	captcha        *testCaptchaService
 	recycle        *testRecycleService
 }
@@ -61,6 +62,10 @@ const (
 // testUploadOpts lets tests override the upload policy (W7: config-driven
 // limits) without touching package state; reset by the env cleanup.
 var testUploadOpts []UploadOption
+
+// testBrandOpts lets tests override the brand asset processing policy (W9:
+// config-driven limits); reset by the env cleanup.
+var testBrandOpts *BrandingAssetsOptions
 
 // newAuthTestEnv seeds the admin user and mounts the complete Admin plan (no
 // dev-session fallback).
@@ -109,7 +114,17 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace))
+	// W9 (GOAL-010): dedicated brand-asset surface (auth upload + public GET).
+	// The store is also handed to SettingsRoutes so patch/reset clean up
+	// replaced/cleared assets (I-004).
+	brandDir := filepath.Join(t.TempDir(), "brand-assets")
+	brandOpts := DefaultBrandingAssetsOptions()
+	if testBrandOpts != nil {
+		brandOpts = *testBrandOpts
+	}
+	brandAssets := NewBrandingAssetStore(brandDir, brandOpts)
+	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace, brandAssets))
+	mountRoutes(BrandingAssetRoutes(a, brandAssets, "admin.settings"))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
 	a.OnLockOpened = func(userID string) {
 		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
@@ -142,13 +157,14 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	RegisterUpload(mux, a, uploadDir, testUploadOpts...)
 	// testUploadOpts is reset after each test so per-test policy overrides
 	// cannot leak into sibling tests.
-	t.Cleanup(func() { testUploadOpts = nil })
+	t.Cleanup(func() { testUploadOpts = nil; testBrandOpts = nil })
 	return &authTestEnv{
 		mux: mux, a: a, st: st,
 		authRepository: authRepository,
 		operations:     operations,
 		settings:       settings,
 		uploadDir:      uploadDir,
+		brandAssets:    brandAssets,
 		captcha:        captchaService,
 		recycle:        recycleService,
 	}

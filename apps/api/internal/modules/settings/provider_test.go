@@ -53,11 +53,11 @@ func planWithSettings(t *testing.T) kernel.Plan {
 
 func TestSettingsProviderRegistersSurfaces(t *testing.T) {
 	a, _, settings, operations := newTestEnv(t)
-	set, err := kernel.RegisterContributions(context.Background(), planWithSettings(t), []kernel.Provider{New(a, settings, operations)})
+	set, err := kernel.RegisterContributions(context.Background(), planWithSettings(t), []kernel.Provider{New(a, settings, operations, nil)})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
-	wantRoutes := []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset"}
+	wantRoutes := []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset", "POST /api/branding/assets", "GET /api/branding/assets/{id}"}
 	if len(set.Routes) != len(wantRoutes) {
 		t.Fatalf("routes = %d, want %d", len(set.Routes), len(wantRoutes))
 	}
@@ -80,7 +80,7 @@ func TestSettingsProviderRegistersSurfaces(t *testing.T) {
 func TestSettingsProviderServesBrandingAndAuth(t *testing.T) {
 	a, st, settings, operations := newTestEnv(t)
 	plan := planWithSettings(t)
-	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{New(a, settings, operations)})
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{New(a, settings, operations, nil)})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}

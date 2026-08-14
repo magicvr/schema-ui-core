@@ -75,6 +75,8 @@ var Catalog = map[string]Entry{
 	"INVALID_UPLOAD":        {"error.invalidUpload", "expected a multipart file part named file", "请求应为包含名为 file 的 multipart 文件"},
 	"FILE_TOO_LARGE":        {"error.fileTooLarge", "file exceeds the size limit", "文件超过大小限制"},
 	"FILE_NOT_FOUND":        {"error.fileNotFound", "file not found", "文件不存在"},
+	"ASSET_NOT_FOUND":       {"error.assetNotFound", "no brand asset with that id", "没有该 id 对应的品牌图片"},
+	"INVALID_KIND":          {"error.invalidKind", "kind must be logo or favicon", "kind 必须是 logo 或 favicon"},
 
 	// S-02 (GOAL-007 D-002 §4): file-library codes.
 	"INVALID_UPLOAD_BODY":   {"error.invalidUploadBody", "body must be JSON with a file field", "请求体必须是包含 file 字段的 JSON"},

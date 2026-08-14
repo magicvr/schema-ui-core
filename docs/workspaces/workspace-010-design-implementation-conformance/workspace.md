@@ -10,8 +10,8 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-08-14
-version: 0.4.0
+updated: 2026-08-15
+version: 0.5.0
 parent: null
 ---
 
@@ -52,6 +52,8 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W5 | GOAL-006-w5-recordview-declared-fields | **done**（4/4 · 2026-08-14 关门；recordView 声明字段 + fail-open + dev 卫生；HEAD 回归 V-001～V-006 绿；**go 无影响不暂挂**；A-001 跨门禁 F-1 移交 W6） |
 | W6 | GOAL-007-w6-container-smoke-reproducibility | **done**（3/3 · 2026-08-14 关门；F-1a claim GIT_COMMIT 接线、F-1b nginx upstream 作用域、F-1c SM-007 页面集；V-007 exit 8 + V-008 exit 0 完整绿；**go 恢复可消费**） |
 | W7 | GOAL-008-w7-yaml-config | **done**（5/5 · 2026-08-14 关门：A-003 grok 审计 pass，F-001~F-005 fixed；configs/config.yaml 权威 + ${VAR} 敏感引用 + env 覆盖；workspace-11 导航排序覆盖载体已就位） |
+| W8 | GOAL-009-w8-component-visual-style | **done**（5/5 · 2026-08-14 关门：语种下拉 / 明暗按钮统一 / 下拉暗色审计；self 审计；go 无影响不暂挂） |
+| W9 | GOAL-010-w9-branding-asset-upload | **active**（0/6 · 2026-08-15 立项：品牌图标 URL 填写 → 上传控件 + 专用资产存储 + 自动图像处理；S6 cross 审计） |
 
 ## 固定共享资料引用
 

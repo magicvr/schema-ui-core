@@ -31,13 +31,13 @@ type SettingsRepository interface {
 	ResetSiteSettings(time.Time) (*settingsrepository.SiteSettings, error)
 }
 
-func SettingsRoutes(a *auth.Authenticator, repository SettingsRepository, operations operationlog.Recorder, moduleID, configNamespace string) []kernel.RouteContribution {
+func SettingsRoutes(a *auth.Authenticator, repository SettingsRepository, operations operationlog.Recorder, moduleID, configNamespace string, assets *BrandingAssetStore) []kernel.RouteContribution {
 	return []kernel.RouteContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/branding")}, Method: "GET", Pattern: "/api/branding", Handler: brandingGET(repository), Public: true},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/settings")}, Method: "GET", Pattern: "/api/settings", Handler: a.Middleware(settingsList(repository))},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/settings/{id}")}, Method: "GET", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsDetail(repository))},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("PATCH", "/api/settings/{id}")}, Method: "PATCH", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsPatch(repository, operations, configNamespace))},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("POST", "/api/settings/{id}/reset")}, Method: "POST", Pattern: "/api/settings/{id}/reset", Handler: a.Middleware(settingsReset(repository, operations, configNamespace))},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("PATCH", "/api/settings/{id}")}, Method: "PATCH", Pattern: "/api/settings/{id}", Handler: a.Middleware(settingsPatch(repository, operations, configNamespace, assets))},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("POST", "/api/settings/{id}/reset")}, Method: "POST", Pattern: "/api/settings/{id}/reset", Handler: a.Middleware(settingsReset(repository, operations, configNamespace, assets))},
 	}
 }
 
@@ -155,7 +155,7 @@ func settingsDetail(repository SettingsRepository) http.Handler {
 	})
 }
 
-func settingsPatch(repository SettingsRepository, operations operationlog.Recorder, configNamespace string) http.Handler {
+func settingsPatch(repository SettingsRepository, operations operationlog.Recorder, configNamespace string, assets *BrandingAssetStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "settings.write")
 		if !ok {
@@ -181,6 +181,10 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
 			return
 		}
+		// W9 (GOAL-010): capture the pre-patch values so replaced brand assets
+		// can be deleted right after a successful patch (best-effort; the
+		// startup GC catches leftovers).
+		current, _ := repository.GetSiteSettings()
 		now := time.Now().UTC()
 		updated, err := repository.PatchSiteSettings(
 			body.SiteTitle, body.LogoURL, body.LogoURLLight, body.LogoURLDark, body.FaviconURL,
@@ -190,13 +194,39 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 			writeSettingsError(w, r, err)
 			return
 		}
+		if current != nil {
+			cleanupReplacedBrandAssets(current, updated, assets)
+		}
 		recordSettingsOperation(operations, user, "updated", updated, now)
 		w.Header().Set(configChangedHeader, configNamespace)
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
 }
 
-func settingsReset(repository SettingsRepository, operations operationlog.Recorder, configNamespace string) http.Handler {
+// cleanupReplacedBrandAssets deletes brand assets that the patch replaced or
+// cleared (I-004: replace/clear deletes immediately). Only assets previously
+// referenced by a branding column are touched; legacy URL values are skipped.
+func cleanupReplacedBrandAssets(current, updated *settingsrepository.SiteSettings, assets *BrandingAssetStore) {
+	if assets == nil {
+		return
+	}
+	fields := []struct{ before, after string }{
+		{current.LogoURL, updated.LogoURL},
+		{current.LogoURLLight, updated.LogoURLLight},
+		{current.LogoURLDark, updated.LogoURLDark},
+		{current.FaviconURL, updated.FaviconURL},
+	}
+	for _, f := range fields {
+		if f.before == f.after {
+			continue
+		}
+		if id, ok := BrandAssetIDFromURL(f.before); ok {
+			_ = assets.Delete(id)
+		}
+	}
+}
+
+func settingsReset(repository SettingsRepository, operations operationlog.Recorder, configNamespace string, assets *BrandingAssetStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "settings.write")
 		if !ok {
@@ -212,6 +242,10 @@ func settingsReset(repository SettingsRepository, operations operationlog.Record
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not reset settings")
 			return
+		}
+		// I-004: reset clears every stored brand asset.
+		if assets != nil {
+			_ = assets.DeleteAll()
 		}
 		recordSettingsOperation(operations, user, "reset", updated, now)
 		w.Header().Set(configChangedHeader, configNamespace)

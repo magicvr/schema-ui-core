@@ -140,6 +140,66 @@ func writeConfig(t *testing.T, yamlText string) string {
 	return p
 }
 
+// TestBrandingConfig covers the W9 brand-asset processing policy: defaults,
+// YAML layer and env overrides.
+func TestBrandingConfig(t *testing.T) {
+	t.Run("defaults", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingMaxBytes != 4<<20 {
+			t.Errorf("BrandingMaxBytes = %d, want %d", cfg.BrandingMaxBytes, 4<<20)
+		}
+		if cfg.BrandingLogoMaxDimension != 512 || cfg.BrandingFaviconDimension != 64 {
+			t.Errorf("dimensions = %d/%d, want 512/64", cfg.BrandingLogoMaxDimension, cfg.BrandingFaviconDimension)
+		}
+		if cfg.BrandingJPEGQuality != 82 {
+			t.Errorf("BrandingJPEGQuality = %d, want 82", cfg.BrandingJPEGQuality)
+		}
+	})
+
+	t.Run("yaml layer", func(t *testing.T) {
+		y := "app:\n  env: development\nbranding:\n  max_bytes: 2097152\n  logo_max_dimension: 256\n  favicon_dimension: 32\n  jpeg_quality: 75\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingMaxBytes != 2097152 || cfg.BrandingLogoMaxDimension != 256 ||
+			cfg.BrandingFaviconDimension != 32 || cfg.BrandingJPEGQuality != 75 {
+			t.Errorf("yaml branding = %+v", cfg)
+		}
+	})
+
+	t.Run("out-of-range jpeg quality falls back to default", func(t *testing.T) {
+		y := "app:\n  env: development\nbranding:\n  jpeg_quality: 120\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingJPEGQuality != 82 {
+			t.Errorf("BrandingJPEGQuality = %d, want default 82", cfg.BrandingJPEGQuality)
+		}
+	})
+
+	t.Run("env overrides", func(t *testing.T) {
+		t.Setenv("BRANDING_MAX_BYTES", "1048576")
+		t.Setenv("BRANDING_LOGO_MAX_DIMENSION", "128")
+		t.Setenv("BRANDING_FAVICON_DIMENSION", "16")
+		t.Setenv("BRANDING_JPEG_QUALITY", "60")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingMaxBytes != 1048576 || cfg.BrandingLogoMaxDimension != 128 ||
+			cfg.BrandingFaviconDimension != 16 || cfg.BrandingJPEGQuality != 60 {
+			t.Errorf("env branding = %+v", cfg)
+		}
+	})
+}
+
 func TestLoadYAMLLayer(t *testing.T) {
 	t.Run("CONFIG_FILE with plain values and env override", func(t *testing.T) {
 		y := `app:

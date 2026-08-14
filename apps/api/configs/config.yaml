@@ -77,6 +77,19 @@ upload:
   max_files_per_user: 1000
   max_bytes_per_user: 268435456
 
+branding:
+  # W9 (GOAL-010): brand asset upload processing policy.
+  #   max_bytes           single-upload cap in bytes (default 4194304 = 4 MiB)
+  #   logo_max_dimension  longest-edge limit for logo assets (512)
+  #   favicon_dimension   longest-edge limit for favicon assets (64)
+  #   jpeg_quality        JPEG quality for opaque output (82; 1..100)
+  # Env overrides: BRANDING_MAX_BYTES / BRANDING_LOGO_MAX_DIMENSION /
+  # BRANDING_FAVICON_DIMENSION / BRANDING_JPEG_QUALITY.
+  max_bytes: 4194304
+  logo_max_dimension: 512
+  favicon_dimension: 64
+  jpeg_quality: 82
+
 navigation:
   # Full navigation ordering (GOAL-013 D-002): list of menu NodeIDs in order.
   # Empty = the built-in default order. Unknown NodeIDs fall back to the

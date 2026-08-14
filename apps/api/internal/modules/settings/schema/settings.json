@@ -9,7 +9,8 @@
       "permissions.inheritance",
       "actions.page.trigger",
       "form.record.load",
-      "form.controls.extended"
+      "form.controls.extended",
+      "actions.upload"
     ]
   },
   "actions": {
@@ -37,6 +38,20 @@
       "onSuccess": {
         "behavior": "reload"
       }
+    },
+    "uploadBrandingLogo": {
+      "type": "upload",
+      "url": "/api/branding/assets?kind=logo",
+      "multiple": false,
+      "accept": "image/png,image/jpeg,image/webp",
+      "maxSize": 4194304
+    },
+    "uploadBrandingFavicon": {
+      "type": "upload",
+      "url": "/api/branding/assets?kind=favicon",
+      "multiple": false,
+      "accept": "image/png,image/jpeg,image/webp",
+      "maxSize": 4194304
     },
     "updateLocalization": {
       "type": "request",
@@ -96,7 +111,7 @@
       {
         "type": "text",
         "props": {
-          "text": "Site defaults used across the admin shell, login page, and public startup configuration. Branding assets are URLs (upload not available); leave empty to hide.",
+          "text": "Site defaults used across the admin shell, login page, and public startup configuration. Brand icons are uploaded (auto-resized and compressed; SVG not supported); leave empty to hide.",
           "textKey": "schema.settings.description"
         }
       },
@@ -132,27 +147,31 @@
           "fields": [
             {
               "id": "logoUrl",
-              "label": "Logo URL (empty = hide logo)",
+              "label": "Logo (empty = hide)",
               "labelKey": "schema.settings.field.logoUrl",
-              "type": "textarea"
+              "type": "upload",
+              "actionRef": "uploadBrandingLogo"
             },
             {
               "id": "logoUrlLight",
               "label": "Logo (light theme)",
               "labelKey": "schema.settings.field.logoUrlLight",
-              "type": "textarea"
+              "type": "upload",
+              "actionRef": "uploadBrandingLogo"
             },
             {
               "id": "logoUrlDark",
               "label": "Logo (dark theme)",
               "labelKey": "schema.settings.field.logoUrlDark",
-              "type": "textarea"
+              "type": "upload",
+              "actionRef": "uploadBrandingLogo"
             },
             {
               "id": "faviconUrl",
-              "label": "Favicon URL",
+              "label": "Favicon",
               "labelKey": "schema.settings.field.faviconUrl",
-              "type": "textarea"
+              "type": "upload",
+              "actionRef": "uploadBrandingFavicon"
             }
           ],
           "recordSource": {

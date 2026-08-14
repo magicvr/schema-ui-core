@@ -218,6 +218,24 @@ func newMuxWithExtraProviders(
 		handler.WithAllowedTypes(cfg.UploadAllowedTypes),
 		handler.WithUserLimits(cfg.UploadMaxFilesPerUser, cfg.UploadMaxBytesPerUser),
 	)
+	// W9 (GOAL-010): dedicated brand-assets store — NOT the shared upload
+	// store (owner-gated reads) and NOT admin.file-library. Brand icons must
+	// be publicly readable (login page / shell load pre-auth); every stored
+	// object is a server-side re-encoded raster (never raw upload bytes).
+	brandAssets := handler.NewBrandingAssetStore(
+		filepath.Join(filepath.Dir(cfg.DBPath), "brand-assets"),
+		handler.BrandingAssetsOptions{
+			MaxBytes:    cfg.BrandingMaxBytes,
+			LogoMaxDim:  cfg.BrandingLogoMaxDimension,
+			FaviconDim:  cfg.BrandingFaviconDimension,
+			JPEGQuality: cfg.BrandingJPEGQuality,
+		},
+	)
+	// I-004: startup GC — drop orphan assets not referenced by the current
+	// settings singleton (crashed uploads / cancelled edits).
+	if current, err := settingsRepository.GetSiteSettings(); err == nil {
+		_ = brandAssets.GC([]string{current.LogoURL, current.LogoURLLight, current.LogoURLDark, current.FaviconURL})
+	}
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
@@ -247,11 +265,13 @@ func newMuxWithExtraProviders(
 		providers = append(providers, rolesmodule.New(a, authRepository, operations))
 	}
 	if plan.HasModule("admin.settings") {
-		providers = append(providers, settingsmodule.New(a, settingsRepository, operations))
+		providers = append(providers, settingsmodule.New(a, settingsRepository, operations, brandAssets))
 	} else {
 		// Public bootstrap must work on mvp (and any profile without the
-		// settings edit module). Edit/list/patch/reset stay admin.settings-only.
+		// settings edit module). Edit/list/patch/reset stay admin.settings-only;
+		// previously uploaded brand assets stay publicly readable.
 		handler.RegisterPublicBranding(mux, settingsRepository)
+		handler.RegisterPublicBrandingAssets(mux, brandAssets)
 	}
 	if plan.HasModule("admin.activity") {
 		providers = append(providers, activitymodule.New(a, operations))

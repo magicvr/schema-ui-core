@@ -45,6 +45,8 @@ var frozenLiteralCodes = []string{
 	"INVALID_UPLOAD_BODY", "INVALID_FILE_ID",
 	// S-11 (GOAL-011 D-002 §2): login captcha code.
 	"INVALID_CAPTCHA",
+	// W9 (GOAL-010 D-001): brand asset upload codes.
+	"ASSET_NOT_FOUND", "INVALID_KIND",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

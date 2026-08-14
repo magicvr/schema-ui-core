@@ -25,11 +25,14 @@ type Provider struct {
 	a          *auth.Authenticator
 	repository *settingsrepository.Repository
 	operations operationlog.Recorder
+	assets     *handler.BrandingAssetStore
 }
 
 // New constructs the settings provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *settingsrepository.Repository, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations}
+// assets is the W9 dedicated brand-asset store (may be nil in narrow tests
+// that never exercise brand uploads).
+func New(a *auth.Authenticator, repository *settingsrepository.Repository, operations operationlog.Recorder, assets *handler.BrandingAssetStore) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, assets: assets}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -42,6 +45,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset",
+				"POST /api/branding/assets", "GET /api/branding/assets/{id}",
 			},
 			Pages:            []string{"settings"},
 			Navigation:       []string{"menu_settings"},
@@ -61,7 +65,13 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	if err := reg.Configuration(configuration); err != nil {
 		return err
 	}
-	for _, route := range handler.SettingsRoutes(p.a, p.repository, p.operations, ModuleID, configuration.Namespace) {
+	for _, route := range handler.SettingsRoutes(p.a, p.repository, p.operations, ModuleID, configuration.Namespace, p.assets) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
+	// W9 (GOAL-010): dedicated brand-asset surface (auth upload + public GET).
+	for _, route := range handler.BrandingAssetRoutes(p.a, p.assets, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

@@ -469,6 +469,7 @@ function UploadField({
   disabled,
   readOnly,
   onUpload,
+  removeLabel,
 }: {
   id: string;
   label: string;
@@ -478,6 +479,9 @@ function UploadField({
   disabled?: boolean;
   readOnly?: boolean;
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
+  /** W9 (GOAL-010): localized label for the per-field "remove image" button
+   * (single uploads only; clears the field value back to ""). */
+  removeLabel?: string;
 }) {
   const [status, setStatus] = useState<{ kind: "idle" | "uploading" | "error"; message?: string }>({
     kind: "idle",
@@ -528,7 +532,18 @@ function UploadField({
         }}
       />
       {display !== "" ? (
-        <span className="text-xs text-muted-foreground">Value: {display}</span>
+        <div className="flex items-center gap-2">
+          <span className="min-w-0 truncate text-xs text-muted-foreground">Value: {display}</span>
+          {field.multiple !== true && removeLabel !== undefined && !disabled && !readOnly ? (
+            <button
+              type="button"
+              className="shrink-0 text-xs text-destructive underline underline-offset-2"
+              onClick={() => onChange("")}
+            >
+              {removeLabel}
+            </button>
+          ) : null}
+        </div>
       ) : null}
       {status.kind === "error" ? (
         <span role="alert" className="text-xs text-destructive">
@@ -739,6 +754,7 @@ function FieldControl({
           disabled={disabled}
           readOnly={readOnly}
           onUpload={onUpload}
+          removeLabel={t("form.upload.remove")}
           onChange={emitChange}
         />
       );

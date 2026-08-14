@@ -44,6 +44,14 @@ type Config struct {
 	UploadMaxFilesPerUser int
 	UploadMaxBytesPerUser int
 
+	// W9 (GOAL-010): brand asset upload processing policy (config.yaml
+	// branding section; env-overridable). Out-of-range values fall back to
+	// the store defaults at construction.
+	BrandingLogoMaxDimension int
+	BrandingFaviconDimension int
+	BrandingJPEGQuality      int
+	BrandingMaxBytes         int
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -96,6 +104,12 @@ type yamlFile struct {
 		MaxFilesPerUser int    `yaml:"max_files_per_user"`
 		MaxBytesPerUser int    `yaml:"max_bytes_per_user"`
 	} `yaml:"upload"`
+	Branding struct {
+		LogoMaxDimension int `yaml:"logo_max_dimension"`
+		FaviconDimension int `yaml:"favicon_dimension"`
+		JPEGQuality      int `yaml:"jpeg_quality"`
+		MaxBytes         int `yaml:"max_bytes"`
+	} `yaml:"branding"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -134,6 +148,10 @@ func Load() *Config {
 		AuthDevSessionEnabled: false,
 		UploadMaxFilesPerUser: 1000,
 		UploadMaxBytesPerUser: 256 << 20,
+		BrandingLogoMaxDimension: 512,
+		BrandingFaviconDimension: 64,
+		BrandingJPEGQuality:      82,
+		BrandingMaxBytes:         4 << 20,
 	}
 
 	// Optional env-file layer for secret values only (dev convenience).
@@ -215,6 +233,18 @@ func Load() *Config {
 	if yf.Upload.MaxBytesPerUser > 0 {
 		cfg.UploadMaxBytesPerUser = yf.Upload.MaxBytesPerUser
 	}
+	if yf.Branding.LogoMaxDimension > 0 {
+		cfg.BrandingLogoMaxDimension = yf.Branding.LogoMaxDimension
+	}
+	if yf.Branding.FaviconDimension > 0 {
+		cfg.BrandingFaviconDimension = yf.Branding.FaviconDimension
+	}
+	if yf.Branding.JPEGQuality > 0 && yf.Branding.JPEGQuality <= 100 {
+		cfg.BrandingJPEGQuality = yf.Branding.JPEGQuality
+	}
+	if yf.Branding.MaxBytes > 0 {
+		cfg.BrandingMaxBytes = yf.Branding.MaxBytes
+	}
 	profile := strPtrOr(yf.App.Profile, string(kernel.ProfileMVP))
 
 	// navigation.order (GOAL-013 D-002 §4): sequence of NodeIDs. A malformed
@@ -254,6 +284,10 @@ func Load() *Config {
 	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
 	cfg.UploadMaxFilesPerUser = positiveIntEnv("UPLOAD_MAX_FILES_PER_USER", cfg.UploadMaxFilesPerUser)
 	cfg.UploadMaxBytesPerUser = positiveIntEnv("UPLOAD_MAX_BYTES_PER_USER", cfg.UploadMaxBytesPerUser)
+	cfg.BrandingMaxBytes = positiveIntEnv("BRANDING_MAX_BYTES", cfg.BrandingMaxBytes)
+	cfg.BrandingLogoMaxDimension = positiveIntEnv("BRANDING_LOGO_MAX_DIMENSION", cfg.BrandingLogoMaxDimension)
+	cfg.BrandingFaviconDimension = positiveIntEnv("BRANDING_FAVICON_DIMENSION", cfg.BrandingFaviconDimension)
+	cfg.BrandingJPEGQuality = positiveIntEnv("BRANDING_JPEG_QUALITY", cfg.BrandingJPEGQuality)
 
 	explicitModules := os.Getenv("APP_MODULES_ENABLED")
 	if explicitModules == "" {
