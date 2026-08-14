@@ -30,3 +30,9 @@ version: 1.0.0
 - App.integration：深链 /catalog/42 直接显示「Home / Operations / Catalog detail」（无访问历史）；行导航到条目页显示「Home / Data dictionary / Dictionary entries」+ 返回按钮点击回 /data-dictionary（10/10）。
 - 全量回归：web 53 文件 / 958 测试绿；tsc 仅剩 4 处历史既有错误（非本阶段引入）。
 - 边界：group 标签为纯文本段（不可点击）；homePageRef 未在 pages 中解析时首页段 fail-safe 跳过。
+
+## 活栈 DOM 验证（2026-08-14，本地双进程栈）
+
+- /data-dictionary、/users、/roles：`仪表盘 / 页面`（12px / weight 400 / 祖先浅灰 / 分隔 / 40% / 当前项 0.9 亮度不可点击）；无语义父级时不显示返回按钮。
+- /dictionary-entries/order_status 深链直达：`仪表盘 / 数据字典 / 字典条目` + 圆形幽灵 ← 按钮（lucide ArrowLeft 3.5、size-6 rounded-full、hover:bg-muted）——同一页面与访问历史无关。
+- /dictionary-entries（无参数）：HOST_ROUTE_NOT_FOUND fail-closed（页面不存在）。
