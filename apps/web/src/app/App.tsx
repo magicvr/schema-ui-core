@@ -430,7 +430,7 @@ function PageSurface({
             entries={trail}
             onNavigate={onNavigate}
             onBack={() => window.history.back()}
-            showBack={visitStack.length > 0}
+            showBack={trail.length > 1}
           />
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("shell.adminWorkspace")}
@@ -512,6 +512,18 @@ export function App({
       unsubscribe();
     };
   }, [brandingProp]);
+
+  // GOAL-015: seed the breadcrumb stack with the initial route so the
+  // current page always appears as a trail entry from first paint.
+  const initialPathRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialPathRef.current === null) {
+      initialPathRef.current = stripPathQuery(currentLocationPath());
+      setVisitStack((prev) =>
+        prev.length === 0 ? [initialPathRef.current as string] : prev,
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {

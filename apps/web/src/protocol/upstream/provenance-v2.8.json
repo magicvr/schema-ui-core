@@ -2,7 +2,7 @@
   "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
   "sourceCommit": "521cff8",
   "artifactVersion": "2.8.0",
-  "note": "上游 schema-ui-protocol v2.8.0 正式发布（tag v2.8.0 @ 521cff8，上游审计 0080 V379）。绑定值：contentDigest sha256:4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30；artifactDigest sha256:6cdbffccaa0da1f9e05487b7def93aaef14b7fbae7b14dc8761fc661c9946f31；fixture 树 digest sha256:7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2。身份纠偏（2026-08-13）：此前 593f625 / 40690917… 为上游 H4 预备身份，非正式 pin；本目录各工件字节与正式 tag 一致（上游 v2.8.1 亦未改机器契约）。",
+  "note": "上游 schema-ui-protocol v2.8.0 正式发布（tag v2.8.0 @ 521cff8，上游审计 0080 V379）。绑定值：contentDigest sha256:4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30；artifactDigest sha256:6cdbffccaa0da1f9e05487b7def93aaef14b7fbae7b14dc8761fc661c9946f31；fixture 树 digest sha256:7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2。身份纠偏（2026-08-13）：此前 593f625 / 40690917… 为上游 H4 预备身份，非正式 pin；本目录各工件字节与正式 tag 一致（上游 v2.8.1 / v2.8.2 @ f07157d 亦未改机器契约：均为文档修订——0080 身份纠偏 / 0081 ADR-0038 消费方角色，docs/schemas 零 diff，fixture digest 不变）。",
   "artifacts": [
     {
       "path": "docs/schemas/host-bootstrap.schema.json",

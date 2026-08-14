@@ -162,6 +162,37 @@ describe("App shell integration", () => {
     expect(container.textContent).toContain("Schema home body");
   });
 
+
+  // GOAL-015: route-stack breadcrumbs — after navigating into a nested page
+  // the trail shows ancestors and a back button appears; back returns via
+  // history.
+  it("shows breadcrumb trail and back button on nested pages", async () => {
+    const container = await renderApp("/");
+    // Home has no trail (single level) and no back button (empty stack).
+    expect(container.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
+
+    // Navigate home -> catalog -> catalog-detail (three levels).
+    await act(async () => {
+      container.querySelector('a[href="/catalog"]')?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, button: 0 }),
+      );
+    });
+    await act(async () => {
+      window.history.pushState({}, "", "/catalog/42");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(container.querySelector("h1")?.textContent).toBe("Catalog detail");
+
+    // Trail shows the ancestors (Home, Catalog) plus the current page, and a
+    // back button is present (visitStack non-empty).
+    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    expect(breadcrumb).not.toBeNull();
+    expect(breadcrumb?.textContent).toContain("Home");
+    expect(breadcrumb?.textContent).toContain("Catalog");
+    expect(breadcrumb?.textContent).toContain("Catalog detail");
+    expect(breadcrumb?.textContent).toContain("←");
+  });
+
   it("renders a fail-closed fallback and returns to the manifest home route", async () => {
     const container = await renderApp("/unknown");
     // HOST_ROUTE_NOT_FOUND global failure surface (ADR-0036 D3/D3a).
