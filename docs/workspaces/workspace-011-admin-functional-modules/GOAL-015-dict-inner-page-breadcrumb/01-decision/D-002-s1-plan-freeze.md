@@ -33,8 +33,10 @@ version: 1.0.0
 
 | ID | 增补内容 | 目标协议文件 | 依赖它的 GOAL-015 部分 |
 |----|----------|--------------|----------------------|
-| P-1 | toolbar ActionTrigger 支持 navigateMapping（与行 action 对齐） | component-registry.json toolbar items | （本次可用行 action 规避；系统性补） |
 | P-2 | table dataSource query 注入（如 props.queryMapping，值支持 $context.route.query.* / 字面量） | component-registry.json table props + node.schema.json | **条目页按类型过滤（核心需求）** |
+
+
+> **P-1 已撤销（2026-08-14，上游质疑 + 自审确认）**：数据字典「条目」按钮是**行 action**（table.actions[]，非 toolbar），行 action 的 navigateMapping 协议自 2.1 / ADR-0021 已存在——toolbar ActionTrigger 增补 navigateMapping **无必要**，从清单删除。
 
 ### 不需要增补
 

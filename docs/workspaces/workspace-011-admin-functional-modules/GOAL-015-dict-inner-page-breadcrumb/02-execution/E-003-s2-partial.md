@@ -34,6 +34,10 @@ version: 1.0.0
 - 条目页 dataSource 过滤（P-2 queryMapping 未落地）。
 - 表单 dictKey 只读显示（recordSource/route query 注入）。
 
+## 协议门禁更新（P-1 撤销）
+
+- 2026-08-14：上游质疑 P-1（toolbar navigateMapping 增补）无必要；自审确认「条目」按钮是**行 action**（table.actions[]），行 action navigateMapping 协议自 2.1 已有 → **P-1 从清单删除**，I-005 门禁仅剩 P-2（table dataSource query 注入）。
+
 ## 下一步
 
 - I-005 解除后：条目页 schema 改造 + 端到端实测 + S3/S4/S5。

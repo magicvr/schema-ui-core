@@ -45,7 +45,7 @@ progress: 2/5 由五个等权检查点派生。
 | I-002 | required | 内页表单 dictKey 只读绑定（显示类型名/传类型键；create 默认值来自 route query） | S1 方案 | 现有 recordSource/context.route.query 机制对照 | open |
 | I-003 | required | 面包屑路由栈方案（history 驱动；返回按钮语义；与 HOST_OWNED_PATHS/route-not-found 交互） | S1 方案 | 现有 App.tsx 路由对照 | open |
 | I-004 | required | go 影响判定（List 过滤参数/契约扩展） | S4 | VP-008 接口对照 | open |
-| I-005 | required | **协议增补门禁**：table dataSource query 注入（queryMapping）+ toolbar navigateMapping（P-1/P-2 清单）——用户 2026-08-14 裁决先去上游 schema-ui-docs 增补，本目标暂停实施依赖项 | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin | **open（用户增补中）** |
+| I-005 | required | **协议增补门禁**：table dataSource query 注入（queryMapping，P-2）——用户 2026-08-14 裁决先去上游 schema-ui-docs 增补，本目标暂停实施依赖项；P-1（toolbar navigateMapping）已撤销（「条目」是行 action，协议已有） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin | **open（用户增补中）** |
 
 ## 依赖
 
