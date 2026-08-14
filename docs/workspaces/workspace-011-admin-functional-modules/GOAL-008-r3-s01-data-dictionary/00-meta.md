@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL-008-r3-s01-data-dictionary · 数据字典
@@ -24,7 +24,7 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：两级模型（类型/条目）、字段与校验、权限键、审计设计、协议对照、Profile 归属；方案级 self 审视
+- [x] **S1 · 方案冻结**：两级模型（类型/条目）、字段与校验、权限键、审计设计、协议对照、Profile 归属；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
 - [ ] **S2 · 实现**：模块 provider + 迁移 + schema 代表页 + 字典端点 + 测试
 - [ ] **S3 · 验证**：单元/集成 + 代表场景实测 + 全量回归（go test / web suite / 冒烟）
 - [ ] **S4 · go 影响判定 + 自审**：go 影响判定（Profile 默认集变化触发失效检查）+ self 审计
@@ -40,8 +40,8 @@ progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 字典两级模型的字段/校验与协议对照（枚举呈现自由边界） | S1 方案 | 对照 protocol-inventory + node.schema.json 呈现自由 | open |
-| I-002 | required | Profile 归属：S-01 进入 admin 默认集？mvp 保持精简？ | S1 方案 | F-01 先例（Profile 内容扩展 + adminFunctionalOrder） | open |
+| I-001 | required | 字典两级模型的字段/校验与协议对照（枚举呈现自由边界） | S1 方案 | 对照 protocol-inventory + node.schema.json 呈现自由 | **closed**（D-002 §1） |
+| I-002 | required | Profile 归属：S-01 进入 admin 默认集？mvp 保持精简？ | S1 方案 | F-01 先例（Profile 内容扩展 + adminFunctionalOrder） | **closed**（D-001 §2） |
 
 ## 父目标
 
