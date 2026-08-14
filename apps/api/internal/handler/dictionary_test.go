@@ -77,6 +77,34 @@ func TestDictionaryLifecycle(t *testing.T) {
 		t.Fatalf("patch entry = %d: %v", code, patchBody)
 	}
 
+	// description round-trip on create + patch (fixed: create dropped it).
+	code, descBody := bearerJSON(t, env, admin, http.MethodPost, "/api/data-dictionary/types",
+		"{\"key\":\"desc_type\",\"name\":\"Desc\",\"description\":\"hello world\"}")
+	if code != http.StatusCreated {
+		t.Fatalf("create type with description = %d: %v", code, descBody)
+	}
+	if got, _ := descBody["description"].(string); got != "hello world" {
+		t.Fatalf("create description = %q, want hello world", got)
+	}
+	descID, _ := descBody["id"].(string)
+	code, descBody = bearerJSON(t, env, admin, http.MethodPatch, "/api/data-dictionary/types/"+descID,
+		"{\"description\":\"updated desc\"}")
+	if code != http.StatusOK {
+		t.Fatalf("patch type description = %d: %v", code, descBody)
+	}
+	if got, _ := descBody["description"].(string); got != "updated desc" {
+		t.Fatalf("patched description = %q, want updated desc", got)
+	}
+	// clearing to empty is allowed (JSONFields optional semantics).
+	code, descBody = bearerJSON(t, env, admin, http.MethodPatch, "/api/data-dictionary/types/"+descID,
+		"{\"description\":\"\"}")
+	if code != http.StatusOK {
+		t.Fatalf("patch type description to empty = %d: %v", code, descBody)
+	}
+	if got, _ := descBody["description"].(string); got != "" {
+		t.Fatalf("cleared description = %q, want empty", got)
+	}
+
 	// cascade: delete the type removes its entries
 	code, _ = bearerJSON(t, env, admin, http.MethodDelete, "/api/data-dictionary/types/"+typeID, "")
 	if code != http.StatusNoContent {

@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-14 | S2 实现完成（0019/0020/store/handler/模块/装配/web） | recorded | `02-execution/E-002-s2-implemented.md` |
 | E-003 | 2026-08-14 | S3 验证完成（go 全绿 + 897/897 + e2e 双 profile 8/8） | recorded | `02-execution/E-003-s3-verified.md` |
 | E-004 | 2026-08-14 | S5 关门完成（A-003 conditional → 全 fixed + 回归全绿） | recorded | `02-execution/E-004-s5-closeout.md` |
+| E-005 | 2026-08-14 | 关门后修复：新建类型 description 始终为空（JSONFields 通道） | recorded | `02-execution/E-005-description-create-fix.md` |
 
 ## 事实边界
 

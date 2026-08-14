@@ -239,8 +239,12 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		QSearch:         true,
 		Entity:          &dictTypeEntity{repository: repository, operations: operations},
 		CreateFields:    []string{"key", "name"},
-		PatchFields:     []string{"name", "description"},
-		JSONFields:      []string{"enabled", "sort"},
+		PatchFields:     []string{"name"},
+		// description is optional (create: entity default ""; patch: absent =
+		// untouched, present = updated, including clearing to "") — the factory
+		// only passes CreateFields/JSONFields through, so it must ride JSONFields
+		// (fixed: was silently dropped on create, field always empty).
+		JSONFields: []string{"enabled", "sort", "description"},
 		PermissionRead:  "dictionary.read",
 		PermissionWrite: "dictionary.write",
 		NotFoundCode:    "DICT_TYPE_NOT_FOUND",
