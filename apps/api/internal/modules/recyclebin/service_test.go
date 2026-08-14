@@ -6,12 +6,14 @@ package recyclebin
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
@@ -195,5 +197,48 @@ func TestRestoreDictEntryRoundTrip(t *testing.T) {
 	}
 	if _, err := s.dictionary.GetEntry("e1"); err != nil {
 		t.Fatalf("entry not restored: %v", err)
+	}
+}
+
+// W6 F2 (GOAL-006 D-001): restoring an orphaned dict entry whose parent dict
+// type no longer exists returns a typed DomainError (409 DICT_KEY_NOT_FOUND)
+// instead of an internal error, and the snapshot is kept for a retry.
+func TestRestoreOrphanDictEntryReturnsDomainError(t *testing.T) {
+	s := newServiceEnv(t)
+	now := time.Now().UTC()
+	actor := account.User{ID: "user-admin", Name: "Admin"}
+	// Parent type exists while the entry is created and snapshot-recorded.
+	if err := s.dictionary.CreateType(datadictionarystore.DictType{ID: "t1", Key: "status", Name: "Status", Enabled: true, CreatedAt: now, UpdatedAt: now}); err != nil {
+		t.Fatalf("create type: %v", err)
+	}
+	if err := s.dictionary.CreateEntry(datadictionarystore.DictEntry{ID: "e1", DictKey: "status", EntryKey: "active", Label: "Active", Enabled: true, CreatedAt: now, UpdatedAt: now}); err != nil {
+		t.Fatalf("create entry: %v", err)
+	}
+	if err := s.Record(t.Context(), "dict-entries", "e1", map[string]any{
+		"id": "e1", "dictKey": "status", "entryKey": "active", "label": "Active", "enabled": true,
+		"sort": 0, "remark": "", "createdAt": float64(now.Unix()), "updatedAt": float64(now.Unix()),
+	}, actor, now); err != nil {
+		t.Fatalf("record: %v", err)
+	}
+	if err := s.dictionary.DeleteEntry("e1"); err != nil {
+		t.Fatalf("delete entry: %v", err)
+	}
+	// Parent type is deleted before the restore is attempted → orphan.
+	if _, err := s.dictionary.DeleteType("t1"); err != nil {
+		t.Fatalf("delete type: %v", err)
+	}
+	items, _, _ := s.List(recyclestore.ListFilter{Page: 1, PageSize: 10})
+	_, err := s.Restore(items[0].ID, now)
+	var de *handler.DomainError
+	if !errors.As(err, &de) {
+		t.Fatalf("restore orphan = %v, want DomainError (DICT_KEY_NOT_FOUND)", err)
+	}
+	if de.Status != http.StatusConflict || de.Code != "DICT_KEY_NOT_FOUND" {
+		t.Fatalf("domain error = %d %q, want 409 DICT_KEY_NOT_FOUND", de.Status, de.Code)
+	}
+	// The snapshot must be kept (retryable after the parent type is restored).
+	items2, total, _ := s.List(recyclestore.ListFilter{Page: 1, PageSize: 10})
+	if total != 1 || items2[0].ID != items[0].ID {
+		t.Fatalf("snapshot after failed restore = %d items (%v), want the original kept", total, items2)
 	}
 }

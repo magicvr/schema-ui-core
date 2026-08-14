@@ -68,6 +68,14 @@ func (s *Service) Restore(itemID string, now time.Time) (map[string]any, error) 
 		return nil, recyclestore.ErrItemAlreadyRestored
 	}
 	if err := s.restoreRow(item.Resource, item.Payload, now); err != nil {
+		if errors.Is(err, store.ErrDictKeyNotFound) {
+			// W6 F2 (GOAL-006 D-001): restoring an orphaned dict entry whose
+			// parent dict type was deleted is a recoverable precondition
+			// failure, not an internal error — surface it as a clear 409 so
+			// the operator can restore the parent type first and retry. The
+			// snapshot stays untouched (retryable).
+			return nil, &handler.DomainError{Status: http.StatusConflict, Code: "DICT_KEY_NOT_FOUND", Message: "parent dict type does not exist"}
+		}
 		if isConflict(err) {
 			return nil, &handler.DomainError{Status: http.StatusConflict, Code: "RECYCLE_RESTORE_CONFLICT", Message: "a row with that key already exists"}
 		}

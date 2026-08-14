@@ -94,19 +94,21 @@ func (s *Scheduler) tick(now time.Time) {
 		if err != nil {
 			continue // invalid cron rows are rejected at write time; skip defensively
 		}
-		next, ok := fields.Next(now)
-		if !ok {
-			// A-003 F-002: a never-matching expression is recorded as an
-			// unschedulable failed run at most once per day per task.
+		if !fields.Matches(slot) {
+			// W6 F1 (GOAL-006 D-001): the current minute slot does not match.
+			// The previous implementation scanned the 5-year window on every
+			// 30s tick (up to ~2.6M iterations per task per tick) only to be
+			// told next.After(now) and continue. The match test is O(1); the
+			// 5-year scan now runs at most once per day per task, and only to
+			// keep the A-003 F-002 daily unschedulable diagnostic.
 			day := now.Truncate(24 * time.Hour)
 			if last, seen := s.unscheduled[task.ID]; !seen || last.Before(day) {
 				s.unscheduled[task.ID] = day
-				s.recordUnschedule(task, now)
+				if _, ok := fields.Next(now); !ok {
+					s.recordUnschedule(task, now)
+				}
 			}
 			continue
-		}
-		if next.After(now) {
-			continue // not due yet
 		}
 		if last, seen := s.lastRun[task.ID]; seen && last.Equal(slot) {
 			continue // already executed in this minute slot
