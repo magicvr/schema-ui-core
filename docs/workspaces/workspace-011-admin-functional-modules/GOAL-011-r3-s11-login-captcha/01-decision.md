@@ -22,3 +22,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | D-001 | 2026-08-14 | 立项边界：模块身份、Profile 归属与审计策略 | accepted | `01-decision/D-001-goal-boundaries.md` |
 | D-002 | 2026-08-14 | 方案冻结：登录验证码设计（S1） | accepted | `01-decision/D-002-s1-plan-freeze.md` |
+| D-003 | 2026-08-14 | 用户裁决：删除 captcha 独立页面，开关并入系统设置页 | accepted | `01-decision/D-003-captcha-page-removed.md` |

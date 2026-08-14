@@ -38,7 +38,6 @@ const SCHEMA_FILES = [
   "datadictionary/schema/dictionary-entries.json",
   "systemmonitoring/schema/system-monitoring.json",
   "scheduledtasks/schema/scheduled-tasks.json",
-  "logincaptcha/schema/captcha.json",
   "recyclebin/schema/recycle-bin.json",
   "scheduledtasks/schema/task-runs.json",
 ];

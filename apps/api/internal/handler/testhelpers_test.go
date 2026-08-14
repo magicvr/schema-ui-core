@@ -24,7 +24,6 @@ import (
 	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
 	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
-	captchaschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/schema"
 	recycleschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
@@ -164,7 +163,6 @@ func testSchemaContributions() []kernel.PageContribution {
 		{datadictionaryschema.ModuleID, datadictionaryschema.SchemaDocuments()},
 		{monitoringschema.ModuleID, monitoringschema.SchemaDocuments()},
 		{tasksschema.ModuleID, tasksschema.SchemaDocuments()},
-		{captchaschema.ModuleID, captchaschema.SchemaDocuments()},
 		{recycleschema.ModuleID, recycleschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution

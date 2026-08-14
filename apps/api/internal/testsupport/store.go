@@ -96,8 +96,6 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.system-monitoring", Key: "menu_monitoring"}, NodeID: "menu_monitoring", PageID: "system-monitoring", Order: 5, Label: "System monitoring", Visibility: authsessiondata.PolicyAdmin, Permission: "monitoring.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-04 (GOAL-010): scheduled tasks page (admin-only management surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.scheduled-tasks", Key: "menu_scheduled_tasks"}, NodeID: "menu_scheduled_tasks", PageID: "scheduled-tasks", Order: 6, Label: "Scheduled tasks", Visibility: authsessiondata.PolicyAdmin, Permission: "tasks.read", SystemDataVersion: authsessiondata.SystemDataVersion},
-		// S-11 (GOAL-011): login captcha settings page (admin-only surface).
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.login-captcha", Key: "menu_captcha"}, NodeID: "menu_captcha", PageID: "captcha", Order: 7, Label: "Login captcha", Visibility: authsessiondata.PolicyAdmin, Permission: "captcha.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-12 (GOAL-012): recycle bin page (admin-only surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "menu_recycle_bin"}, NodeID: "menu_recycle_bin", PageID: "recycle-bin", Order: 8, Label: "Recycle bin", Visibility: authsessiondata.PolicyAdmin, Permission: "recycle.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}

@@ -457,10 +457,11 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// S-04 (GOAL-010): admin.scheduled-tasks contributes tasks.read/tasks.write
 		// (+2 permissions) and menu_scheduled_tasks (+1 navigation) to admin only.
 		// S-11 (GOAL-011): admin.login-captcha contributes captcha.read/captcha.write
-		// (+2 permissions) and menu_captcha (+1 navigation) to admin only.
+		// (+2 permissions, no navigation — the switch lives in the settings
+		// page per D-003 user ruling) to admin only.
 		// S-12 (GOAL-012): admin.recycle-bin contributes recycle.read/recycle.write
 		// (+2 permissions) and menu_recycle_bin (+1 navigation) to admin only.
-		{profile: "admin", wantPermissions: 24, wantNavigation: 13},
+		{profile: "admin", wantPermissions: 24, wantNavigation: 12},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

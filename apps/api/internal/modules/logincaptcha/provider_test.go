@@ -76,19 +76,19 @@ func TestCaptchaProviderRegistersSurfaces(t *testing.T) {
 			t.Fatalf("route %q missing from provider set", key)
 		}
 	}
-	if len(set.Pages) != 1 || set.Pages[0].PageID != "captcha" {
-		t.Fatalf("pages = %+v, want captcha page", set.Pages)
+	if len(set.Pages) != 0 {
+		t.Fatalf("pages = %+v, want none (D-003: switch lives in settings)", set.Pages)
 	}
 	for _, perm := range []string{"captcha.read", "captcha.write"} {
 		if !slices.ContainsFunc(set.Permissions, func(p kernel.PermissionContribution) bool { return p.Permission == perm }) {
 			t.Fatalf("permission %q missing", perm)
 		}
 	}
-	if len(set.Navigation) != 1 || set.Navigation[0].NodeID != "menu_captcha" {
-		t.Fatalf("navigation = %+v, want menu_captcha", set.Navigation)
+	if len(set.Navigation) != 0 {
+		t.Fatalf("navigation = %+v, want none (D-003: no menu item)", set.Navigation)
 	}
-	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "captcha" {
-		t.Fatalf("fragments = %+v, want captcha fragment", set.Fragments)
+	if len(set.Fragments) != 0 {
+		t.Fatalf("fragments = %+v, want none (D-003)", set.Fragments)
 	}
 }
 
