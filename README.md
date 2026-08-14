@@ -110,3 +110,4 @@ fork 起点：选 Profile + `APP_MODULES_ENABLED` + 模块贡献接入业务，�
 - R2 MVP 协议覆盖子集已按 Root `I-PROTO-001` v0.1.3 冻结；这不是「支持全部协议功能」或 R3-R5 已实现的声明。
 - R1 目标：可运行前后端骨架 + 布局约定；Admin 外壳属 R3（历史路线图编号）。
 - R2 一等公民波次（[workspace-011](docs/workspaces/workspace-011-admin-functional-modules/goal-tree.md)）：`admin.dashboard` / `admin.account` / `admin.notifications` / `admin.data-transfer` 四个一方标准 Admin 模块已交付；订单/钱包等业务域降档至 R3（S-01～S-14）与 R4（B-01～B-11）。
+- R3 常用波第一批次：`admin.file-library`（文件/附件库）+ `admin.data-dictionary`（数据字典）已交付（admin 默认集；V-008 容器冒烟 exit 0）；R3 其余（S-03～S-14）与 R4 backlog 按路线图推进。

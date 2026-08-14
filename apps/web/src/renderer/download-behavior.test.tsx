@@ -215,7 +215,6 @@ it("library.download resolves the row id and names the download from the row", a
   vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
     const el = originalCreateElement(tag) as HTMLAnchorElement;
     if (tag === "a") {
-      const realClick = el.click.bind(el);
       el.click = () => {
         downloadNames.push(el.download);
         clickSpy();
