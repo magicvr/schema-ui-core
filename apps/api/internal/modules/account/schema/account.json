@@ -10,7 +10,8 @@
       "actions.page.trigger",
       "actions.row.request",
       "form.controls.extended",
-      "form.controls.advanced"
+      "form.controls.advanced",
+      "form.record.load"
     ]
   },
   "actions": {

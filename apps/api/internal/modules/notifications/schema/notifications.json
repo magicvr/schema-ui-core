@@ -8,7 +8,9 @@
       "app.navigation",
       "permissions.inheritance",
       "actions.page.trigger",
-      "actions.row.request"
+      "actions.row.request",
+      "form.record.load",
+      "form.controls.extended"
     ]
   },
   "actions": {
@@ -62,8 +64,16 @@
               "label": "Enable in-app notifications",
               "type": "select",
               "options": [
-                { "value": "true", "label": "Enabled", "labelKey": "schema.notifications.settings.enabled" },
-                { "value": "false", "label": "Disabled", "labelKey": "schema.notifications.settings.disabled" }
+                {
+                  "value": "true",
+                  "label": "Enabled",
+                  "labelKey": "schema.notifications.settings.enabled"
+                },
+                {
+                  "value": "false",
+                  "label": "Disabled",
+                  "labelKey": "schema.notifications.settings.disabled"
+                }
               ],
               "labelKey": "schema.notifications.settings.enable"
             }

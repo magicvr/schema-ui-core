@@ -18,3 +18,4 @@ version: 0.1.0
 | E-002 | 2026-08-14 | S1 方案冻结（I-001/002/003 关闭；必办-2 核对） | recorded | [E-002-s1-freeze.md](02-execution/E-002-s1-freeze.md) |
 | E-003 | 2026-08-14 | S2 实现 + S3 验证（a065288；go/web 全绿） | recorded | [E-003-s2-s3-implementation-verification.md](02-execution/E-003-s2-s3-implementation-verification.md) |
 | E-004 | 2026-08-14 | A-003 修复 + S5 关门（required 全闭合 · done 5/5） | recorded | [E-004-s5-closeout.md](02-execution/E-004-s5-closeout.md) |
+| E-005 | 2026-08-14 | schema capability 缺陷修复（notifications/account/users/file-library；done 后维护） | recorded | [E-005-schema-capability-fix.md](02-execution/E-005-schema-capability-fix.md) |

@@ -11,7 +11,8 @@
       "actions.page.trigger",
       "table.sort",
       "form.controls.extended",
-      "form.controls.advanced"
+      "form.controls.advanced",
+      "actions.upload"
     ]
   },
   "actions": {
@@ -457,12 +458,36 @@
           "title": "User details",
           "titleKey": "schema.users.detail.title",
           "fields": [
-            { "key": "id", "label": "ID", "labelKey": "schema.users.column.id" },
-            { "key": "username", "label": "Username", "labelKey": "schema.users.column.username" },
-            { "key": "name", "label": "Name", "labelKey": "schema.users.column.name" },
-            { "key": "roles", "label": "Roles", "labelKey": "schema.users.column.roles" },
-            { "key": "createdAt", "label": "Created", "labelKey": "schema.users.column.created" },
-            { "key": "updatedAt", "label": "Updated", "labelKey": "schema.users.column.updated" }
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "key": "username",
+              "label": "Username",
+              "labelKey": "schema.users.column.username"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "labelKey": "schema.users.column.name"
+            },
+            {
+              "key": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.users.column.created"
+            },
+            {
+              "key": "updatedAt",
+              "label": "Updated",
+              "labelKey": "schema.users.column.updated"
+            }
           ]
         }
       }
