@@ -25,7 +25,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-005-r2-f03-account-center [done]      · R2-F03 个人中心与账户安全 + 账号启停（5/5）
 ├── GOAL-006-r2-f04-notification-center [done] · R2-F04 通知中心（站内通知）（5/5）
 ├── GOAL-007-r3-s02-file-library [done]    · R3-S02 文件/附件库（统一文件管理）（5/5）
-└── GOAL-008-r3-s01-data-dictionary [active]  · R3-S01 数据字典（枚举/字典管理）（3/5）
+└── GOAL-008-r3-s01-data-dictionary [active]  · R3-S01 数据字典（枚举/字典管理）（4/5）
 ```
 
 Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14ab9d`）。首阶段 R1 = 有界调研；分档产出后按 Root 路线图逐波立项（R2 一等公民 / R3 常用 / R4 增补 backlog）。
@@ -41,7 +41,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-005-r2-f03-account-center | R2-F03 · 个人中心与账户安全 + 账号启停 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-006-r2-f04-notification-center | R2-F04 · 通知中心（站内通知） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-007-r3-s02-file-library | R3-S02 · 文件/附件库（统一文件管理、引用、清理） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
-| GOAL-008-r3-s01-data-dictionary | R3-S01 · 数据字典（枚举/字典管理） | GOAL-001-admin-functional-modules | active | 3/5 | 2026-08-14 |
+| GOAL-008-r3-s01-data-dictionary | R3-S01 · 数据字典（枚举/字典管理） | GOAL-001-admin-functional-modules | active | 4/5 | 2026-08-14 |
 
 ## 维护说明
 
