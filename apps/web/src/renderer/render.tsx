@@ -722,14 +722,40 @@ function SchemaCrudProvider({
       // executes top-level type:navigate actions referenced by rows/toolbars.
       // Only single-slash same-origin application-route paths are accepted
       // (the protocol's NavigateAction shape); anything else fails closed.
+      //
+      // GOAL-015 D-002 §3.2: a row action may carry navigateMapping to bind
+      // path/query parameters from the row (e.g. dictKey) — the request
+      // constructor's rowNavigate branch builds the final URL; without a
+      // mapping the plain navigate path is used unchanged.
       if (action.type === "navigate") {
         const url = stringOf((action as JsonRecord).url);
         if (url === "" || !/^\/(?!\/)[^\s\\?#]*$/.test(url)) {
           setFeedback({
             kind: "error",
             code: "INVALID_NAVIGATE_URL",
-            message: `navigate action "${actionRef}" has an invalid url`,
+            message: `${actionRef} has an invalid url`,
           });
+          return;
+        }
+        const navigateMapping = isRecord(item.navigateMapping) ? item.navigateMapping : undefined;
+        if (navigateMapping !== undefined) {
+          const constructed = constructRequest({
+            kind: "rowNavigate",
+            action: action as JsonRecord,
+            navigateMapping,
+            row: row ?? {},
+          });
+          if (!constructed.ok) {
+            setFeedback({ kind: "error", code: constructed.code, message: constructed.message });
+            return;
+          }
+          // rowNavigate returns navigation.url (not request.url).
+          const target = constructed.navigation?.url ?? constructed.request?.url;
+          if (target === undefined) {
+            setFeedback({ kind: "error", code: "INVALID_NAVIGATE_URL", message: "navigate mapping produced no url" });
+            return;
+          }
+          window.location.assign(target);
           return;
         }
         window.location.assign(url);

@@ -323,3 +323,61 @@ it("navigate actions assign the application route", async () => {
   expect(assignSpy).not.toHaveBeenCalled();
   vi.unstubAllGlobals();
 });
+
+
+// GOAL-015 D-002 §3.2: a row action with navigateMapping binds query params
+// from the row (dictKey) through the rowNavigate constructor.
+it("navigate actions with navigateMapping bind row query params", async () => {
+  const assignSpy = vi.fn();
+  vi.stubGlobal("location", { ...window.location, assign: assignSpy });
+  const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("/api/data-dictionary/types")) {
+      return new Response(
+        JSON.stringify({
+          items: [{ id: "t-1", key: "order_status", name: "Order status" }],
+          total: 1,
+          page: 1,
+          pageSize: 10,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    return new Response("not found", { status: 404 });
+  });
+  const doc = {
+    meta: {
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation", "permissions.inheritance", "table.sort"],
+    },
+    actions: {
+      openEntries: { type: "navigate", url: "/dictionary-entries" },
+    },
+    body: {
+      type: "table",
+      id: "dict-types",
+      props: {
+        columns: [{ field: "key", label: "Key" }],
+        dataSource: "/api/data-dictionary/types",
+        actions: [
+          {
+            key: "entries",
+            label: "Entries",
+            actionRef: "openEntries",
+            navigateMapping: { query: { dictKey: "$row.key" } },
+          },
+        ],
+      },
+    },
+  } as unknown as RenderPageDocument;
+  const container = await renderDocument(doc, fetcher as typeof fetch);
+  await act(async () => {
+    [...container.querySelectorAll("button")]
+      .find((b) => b.textContent?.includes("Entries"))
+      ?.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+  // The rowNavigate constructor resolves $row.key -> ?dictKey=order_status.
+  expect(assignSpy).toHaveBeenCalledWith("/dictionary-entries?dictKey=order_status");
+  vi.unstubAllGlobals();
+});

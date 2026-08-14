@@ -38,6 +38,13 @@ version: 1.0.0
 
 - 2026-08-14：上游质疑 P-1（toolbar navigateMapping 增补）无必要；自审确认「条目」按钮是**行 action**（table.actions[]），行 action navigateMapping 协议自 2.1 已有 → **P-1 从清单删除**，I-005 门禁仅剩 P-2（table dataSource query 注入）。
 
+### 4. render.tsx navigate 接线（不依赖协议）
+
+- invokeAction 的 navigate 分支接入 constructRequest rowNavigate：行 action 带 navigateMapping 时构造带 query 的 URL（navigation.url）；无 mapping 保持原路径。
+- 修复过程：rowNavigate 返回 navigation.url 而非 request.url（构造器形状核对）。
+- 测试：download-behavior.test.tsx 新增「navigate actions with navigateMapping bind row query params」（表格行 + $row.key → /dictionary-entries?dictKey=order_status）。
+- 全量 web 918/918 绿。
+
 ## 下一步
 
 - I-005 解除后：条目页 schema 改造 + 端到端实测 + S3/S4/S5。
