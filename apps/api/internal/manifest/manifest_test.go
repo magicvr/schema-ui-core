@@ -223,3 +223,37 @@ func TestSortNavigationOrdersSlots(t *testing.T) {
 		}
 	}
 }
+
+
+
+// GOAL-013 S5 follow-up (dev.cmd regression): sorting must never turn an empty
+// navigation slot into JSON null — the web host validator rejects null with
+// INVALID_MANIFEST "Expected an array". Empty slots stay [].
+func TestSortNavigationPreservesEmptySlotsAsArrays(t *testing.T) {
+	frag := `{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"test"},"pages":[],"navigation":{"top":[],"sidebar":[],"user":[]}}`
+	aggregated, err := Aggregate([]Fragment{{ModuleID: "admin.test", Raw: []byte(frag)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sorted, err := SortNavigation(aggregated, []string{"menu_dashboard"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A nil slot would marshal to "null"; the validator requires [].
+	if strings.Contains(string(sorted), "null") {
+		t.Fatalf("sorted manifest contains null (empty slot must stay []): %s", sorted)
+	}
+	var decoded struct {
+		Navigation struct {
+			Top     []json.RawMessage `json:"top"`
+			Sidebar []json.RawMessage `json:"sidebar"`
+			User    []json.RawMessage `json:"user"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(sorted, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Navigation.Top == nil || decoded.Navigation.Sidebar == nil || decoded.Navigation.User == nil {
+		t.Fatalf("empty slots must unmarshal to non-nil slices: %s", sorted)
+	}
+}

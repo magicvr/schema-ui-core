@@ -229,7 +229,12 @@ func SortNavigation(data []byte, order []string) ([]byte, error) {
 		return nil, fmt.Errorf("manifest: parse aggregated document for navigation sort: %w", err)
 	}
 	sortSlot := func(items []json.RawMessage) []json.RawMessage {
-		sorted := append([]json.RawMessage(nil), items...)
+		// Preserve the [] (never null) encoding for empty slots: a nil slice
+		// marshals to null, which the web host validator rejects with
+		// INVALID_MANIFEST "Expected an array" (dev.cmd startup regression,
+		// GOAL-013 S5 follow-up).
+		sorted := make([]json.RawMessage, len(items))
+		copy(sorted, items)
 		sort.SliceStable(sorted, func(i, j int) bool {
 			ri, iOK := rank[navigationNodeID(sorted[i])]
 			rj, jOK := rank[navigationNodeID(sorted[j])]
