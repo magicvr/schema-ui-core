@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
-version: 0.3.0
-progress: 3/5
+version: 0.4.0
+progress: 4/5
 ---
 
 # GOAL-009-r3-s03-system-monitoring · 系统监控与错误日志查看（health/指标/错误日志 UI）
@@ -26,7 +26,7 @@ progress: 3/5
 - [x] **S1 · 方案冻结**：边界（指标集/日志切分）、权限键、协议对照、Profile 归属；方案级 self 审视（D-001/D-002/A-001，2026-08-14）
 - [x] **S2 · 实现**：模块 provider + 端点（status/errors）+ schema 页 + 测试（E-002）
 - [x] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / 898/898 / e2e 双 profile 8/8，E-003）
-- [ ] **S4 · go 影响判定 + 自审**
+- [x] **S4 · go 影响判定 + 自审**：go 影响判定（D-003 不暂挂）+ self 审计（A-002 pass）
 - [ ] **S5 · 关门**：独立审计（grok，沿用用户偏好）+ required 闭合 + goal-tree 同步
 
 progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
