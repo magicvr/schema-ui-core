@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 2/5
+progress: 3/5
 ---
 
 # GOAL-014 · 表单体验：字段级校验与错误展示 + 弹窗布局
@@ -28,11 +28,11 @@ progress: 2/5
 
 - [x] **S1 · 方案冻结**：字段级错误契约（可选 fieldErrors）+ 约束最小集 + 单列布局方案（D-002/A-001/E-002，2026-08-14）
 - [x] **S2 · 实现**：服务端 fieldErrors + 前端 validateFieldValues/内联 + 单列布局 + schema 约束示范（E-003，2026-08-14）
-- [ ] **S3 · 验证**：字段级错误回归 + 前端校验单测 + 布局快照 + 全量回归
+- [x] **S3 · 验证**：validateFieldValues 单测 + 911/911 web + go 全绿 + HTTP fieldErrors 冒烟（E-004，2026-08-14）
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok）+ required 闭合 + goal-tree 同步
 
-progress: 2/5 由五个等权检查点派生。
+progress: 3/5 由五个等权检查点派生。
 
 ## 审计策略
 
