@@ -19,16 +19,6 @@
     }
   ],
   "navigation": {
-    "user": [
-      {
-        "pageRef": "notifications",
-        "label": "Notifications",
-        "icon": "bell",
-        "visibleWhen": {
-          "when": "$context.features.menu_notifications == true"
-        },
-        "labelKey": "manifest.nav.notifications"
-      }
-    ]
+    "user": []
   }
 }

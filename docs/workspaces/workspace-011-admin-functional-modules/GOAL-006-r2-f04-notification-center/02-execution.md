@@ -19,3 +19,4 @@ version: 0.1.0
 | E-003 | 2026-08-14 | S2 实现 + S3 验证（a065288；go/web 全绿） | recorded | [E-003-s2-s3-implementation-verification.md](02-execution/E-003-s2-s3-implementation-verification.md) |
 | E-004 | 2026-08-14 | A-003 修复 + S5 关门（required 全闭合 · done 5/5） | recorded | [E-004-s5-closeout.md](02-execution/E-004-s5-closeout.md) |
 | E-005 | 2026-08-14 | schema capability 缺陷修复（notifications/account/users/file-library；done 后维护） | recorded | [E-005-schema-capability-fix.md](02-execution/E-005-schema-capability-fix.md) |
+| E-006 | 2026-08-14 | recordSource.method 缺失 + 顶部「通知」入口重复修复 | recorded | [E-006-recordsource-method-nav-dedup.md](02-execution/E-006-recordsource-method-nav-dedup.md) |

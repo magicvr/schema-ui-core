@@ -332,15 +332,6 @@
         "visibleWhen": {
           "when": "$context.features.menu_account == true"
         }
-      },
-      {
-        "pageRef": "notifications",
-        "label": "Notifications",
-        "icon": "bell",
-        "labelKey": "manifest.nav.notifications",
-        "visibleWhen": {
-          "when": "$context.features.menu_notifications == true"
-        }
       }
     ]
   }

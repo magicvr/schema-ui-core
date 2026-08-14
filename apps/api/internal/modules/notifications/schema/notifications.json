@@ -53,6 +53,7 @@
           "title": "Notification settings",
           "titleKey": "schema.notifications.settings.title",
           "recordSource": {
+            "method": "GET",
             "url": "/api/notifications/settings",
             "responseMapping": {
               "enabled": "enabled"

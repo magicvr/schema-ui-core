@@ -58,6 +58,7 @@
           "title": "Profile",
           "titleKey": "schema.account.profile.title",
           "recordSource": {
+            "method": "GET",
             "url": "/api/account/profile",
             "responseMapping": {
               "name": "name"
