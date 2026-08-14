@@ -352,6 +352,7 @@ function PageSurface({
   navigationContext,
   schemaFetcher,
   resourceFetcher,
+  visitStack,
 }: {
   manifest: AppManifest;
   path: string;
@@ -360,6 +361,8 @@ function PageSurface({
   navigationContext: NavigationContext;
   schemaFetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
+  /** GOAL-015: session route stack (breadcrumb ancestors). */
+  visitStack: string[];
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
@@ -411,10 +414,24 @@ function PageSurface({
   const pageTitle =
     resolveTextProp(route.page as unknown as Record<string, unknown>, "titleKey", "title", t) ??
     route.page.pageId;
+  // GOAL-015: breadcrumb trail derived from the session route stack — no
+  // manifest/protocol dependency (user-confirmed route-stack approach).
+  const trail = resolveBreadcrumbTrail(
+    manifest.pages as unknown as Parameters<typeof resolveBreadcrumbTrail>[0],
+    route.page as unknown as Parameters<typeof resolveBreadcrumbTrail>[1],
+    t,
+    visitStack,
+  );
   return (
     <section className="w-full min-w-0 space-y-8" aria-labelledby="page-title">
       <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
         <div className="min-w-0 flex-1 space-y-2">
+          <Breadcrumbs
+            entries={trail}
+            onNavigate={onNavigate}
+            onBack={() => window.history.back()}
+            showBack={visitStack.length > 0}
+          />
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("shell.adminWorkspace")}
           </p>
@@ -462,6 +479,10 @@ export function App({
   const [routeQuery, setRouteQuery] = useState<Record<string, string>>(() =>
     parseLocationQuery(),
   );
+  // GOAL-015: route stack for breadcrumbs (user-confirmed approach) — records
+  // the paths visited this session so inner pages can show an ancestor trail
+  // and a back button without any manifest/protocol change.
+  const [visitStack, setVisitStack] = useState<string[]>([]);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
@@ -499,8 +520,15 @@ export function App({
       if (initial?.source === "home" && requested !== initial.path) {
         window.history.replaceState({}, "", initial.path);
       }
-      setPath(initial?.path ?? requested);
+      const resolved = initial?.path ?? requested;
+      setPath(resolved);
       setRouteQuery(initial?.query ?? parseLocationQuery());
+      // Back navigation truncates the breadcrumb stack to the current path.
+      setVisitStack((prev) => {
+        const idx = prev.lastIndexOf(resolved);
+        if (idx >= 0) return prev.slice(0, idx + 1);
+        return [...prev.filter((p) => p !== resolved), resolved];
+      });
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -563,8 +591,14 @@ export function App({
     window.history.pushState({}, "", href);
     // Keep the path free of the query string (matchRoute expects a clean path);
     // the query lives in routeQuery and reaches the render context (C8).
-    setPath(stripPathQuery(currentLocationPath()));
+    const nextPath = stripPathQuery(currentLocationPath());
+    setPath(nextPath);
     setRouteQuery(parseLocationQuery());
+    // Record the previous path as an ancestor for breadcrumbs.
+    setVisitStack((prev) => {
+      const cleanPrev = prev.filter((p) => p !== nextPath);
+      return [...cleanPrev, nextPath];
+    });
     setMobileDrawerOpen(false);
   };
 
@@ -764,6 +798,7 @@ export function App({
               navigationContext={navigationContext}
               schemaFetcher={schemaFetcher}
               resourceFetcher={resourceFetcher}
+              visitStack={visitStack}
             />
           </div>
         </main>
