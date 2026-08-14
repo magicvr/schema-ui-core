@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 1/5
+progress: 3/5
 ---
 
 # GOAL-013 · 导航顺序：默认清单 + 配置文件覆盖
@@ -23,12 +23,12 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：默认清单确认 + YAML navigation.order 覆盖载体（D-002/A-001/E-002，2026-08-14）
-- [ ] **S2 · 实现**：默认清单常量 + 排序改造 + 快照测试；覆盖加载（W7 YAML 就绪后接入）
-- [ ] **S3 · 验证**：排序快照 + 覆盖路径实测 + 全量回归
+- [x] **S2 · 实现**：kernel 默认清单 + 排序；manifest 聚合排序（实施发现 UI 载体）；config navigation.order + env；快照/解析/排序测试（E-003，b839595，2026-08-14）
+- [x] **S3 · 验证**：单测全绿 + 三场景实测（默认/env 覆盖/非法回退）+ 全量回归（E-004，2026-08-14）
 - [ ] **S4 · go 影响判定 + 自审**（manifest 导航内容变化 → go 判定）
 - [ ] **S5 · 关门**：独立审计（grok，data 门禁）+ required 闭合 + goal-tree 同步
 
-progress: 1/5 由五个等权检查点派生。
+progress: 3/5 由五个等权检查点派生。
 
 ## 审计策略
 

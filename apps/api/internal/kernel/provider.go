@@ -454,15 +454,34 @@ func sortNavigation(nodes []NavigationContribution, order []string) {
 // DefaultNavigationOrder (with a warning) when a provided list references a
 // NodeID no registered node declares. A nil order means the default applies.
 func resolveNavigationOrder(nodes []NavigationContribution, order []string) []string {
+	return NormalizeNavigationOrder(order, contributionNodeIDs(nodes))
+}
+
+// contributionNodeIDs returns the NodeIDs of the given navigation contributions.
+func contributionNodeIDs(nodes []NavigationContribution) []string {
+	ids := make([]string, 0, len(nodes))
+	for _, n := range nodes {
+		ids = append(ids, n.NodeID)
+	}
+	return ids
+}
+
+// NormalizeNavigationOrder validates an operator-provided navigation order
+// against the known NodeID set. An empty order yields DefaultNavigationOrder.
+// An order referencing an unknown NodeID is invalid and falls back to
+// DefaultNavigationOrder with a warning (GOAL-013 D-002 §4). It is exported so
+// the composition layer can normalize the order once and feed the same list to
+// both kernel sorting and manifest aggregation.
+func NormalizeNavigationOrder(order, known []string) []string {
 	if len(order) == 0 {
 		return DefaultNavigationOrder
 	}
-	known := make(map[string]bool, len(nodes))
-	for _, n := range nodes {
-		known[n.NodeID] = true
+	knownSet := make(map[string]bool, len(known))
+	for _, id := range known {
+		knownSet[id] = true
 	}
 	for _, id := range order {
-		if !known[id] {
+		if !knownSet[id] {
 			slog.Warn("navigation order contains unknown NodeID; falling back to the default order", "nodeID", id)
 			return DefaultNavigationOrder
 		}

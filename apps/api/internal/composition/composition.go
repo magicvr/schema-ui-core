@@ -325,11 +325,15 @@ func newMuxWithExtraProviders(
 		}
 		// GOAL-013 D-002 §4: the navigation order (config override or the
 		// product-frozen default) reorders the published manifest slots; the
-		// kernel sort only drives system-data menu_items ordering.
-		navOrder := plan.NavigationOrder
-		if len(navOrder) == 0 {
-			navOrder = kernel.DefaultNavigationOrder
+		// kernel sort only drives system-data menu_items ordering. The order is
+		// normalized against the registered NodeIDs so an invalid override
+		// falls back to the default here as well (manifest aggregation has no
+		// knowledge of the kernel's default list).
+		knownNodeIDs := make([]string, 0, len(set.Navigation))
+		for _, n := range set.Navigation {
+			knownNodeIDs = append(knownNodeIDs, n.NodeID)
 		}
+		navOrder := kernel.NormalizeNavigationOrder(plan.NavigationOrder, knownNodeIDs)
 		data, err := manifest.ForModulesWithFragments(plan.IDs(), moduleFragments, navOrder)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
