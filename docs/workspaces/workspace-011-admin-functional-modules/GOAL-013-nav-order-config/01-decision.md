@@ -10,4 +10,7 @@ version: 0.1.0
 
 # 决策记录 · GOAL-013-nav-order-config
 
-（索引随各条 E/D/A 记录更新）
+| D-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| D-001 | 2026-08-14 | 立项边界：导航顺序方案 A | accepted | `01-decision/D-001-goal-boundaries.md` |
+| D-002 | 2026-08-14 | 方案冻结：默认清单 + YAML 覆盖（S1） | accepted | `01-decision/D-002-s1-plan-freeze.md` |

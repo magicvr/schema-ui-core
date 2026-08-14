@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 0/5
+progress: 1/5
 ---
 
 # GOAL-013 · 导航顺序：默认清单 + 配置文件覆盖
@@ -22,13 +22,13 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：默认清单顺位（Dashboard → Users → Roles → Settings → Activity → Account → Notifications → File library → Data dictionary → System monitoring → Scheduled tasks → Recycle bin）、覆盖语义（全量清单，缺项追加末尾）、非法配置行为（回退默认 + 告警）；方案级 self 审视
+- [x] **S1 · 方案冻结**：默认清单确认 + YAML navigation.order 覆盖载体（D-002/A-001/E-002，2026-08-14）
 - [ ] **S2 · 实现**：默认清单常量 + 排序改造 + 快照测试；覆盖加载（W7 YAML 就绪后接入）
 - [ ] **S3 · 验证**：排序快照 + 覆盖路径实测 + 全量回归
 - [ ] **S4 · go 影响判定 + 自审**（manifest 导航内容变化 → go 判定）
 - [ ] **S5 · 关门**：独立审计（grok，data 门禁）+ required 闭合 + goal-tree 同步
 
-progress: 0/5 由五个等权检查点派生。
+progress: 1/5 由五个等权检查点派生。
 
 ## 审计策略
 
@@ -38,9 +38,9 @@ progress: 0/5 由五个等权检查点派生。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
 |----|------|-----------------|----------|--------------|-----------------|------|
-| I-001 | required | 默认清单顺位与分组需求（是否引入分组） | S1 方案 | 用户确认 + 业界对照 | open |
-| I-002 | required | 覆盖载体（W7 YAML 配置段 vs 独立文件）与非法配置行为 | S1 方案 | W7 依赖对照 | open |
-| I-003 | required | 新模块（S-05~S-14）加入时的清单维护规则 | S1 方案 | 波次流程对照 | open |
+| I-001 | required | 默认清单顺位与分组需求（是否引入分组） | S1 方案 | 用户确认 + 业界对照 | **closed**（用户 2026-08-14 确认 12 项，无分组） |
+| I-002 | required | 覆盖载体（W7 YAML 配置段 vs 独立文件）与非法配置行为 | S1 方案 | W7 依赖对照 | **closed**（用户裁决 navigation.order 段；非法回退+告警，D-002 §4） |
+| I-003 | required | 新模块（S-05~S-14）加入时的清单维护规则 | S1 方案 | 波次流程对照 | **closed**（入清单 + 快照锁定，D-002 §5） |
 | I-004 | required | go 影响判定（导航内容扩展） | S4 | VP-008 接口对照 | open |
 
 ## 依赖
