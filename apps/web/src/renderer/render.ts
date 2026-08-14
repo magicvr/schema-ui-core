@@ -80,6 +80,8 @@ export interface RenderFormNode {
      * `form.record.load`; search-mode forms forbid it.
      */
     recordSource?: Record<string, unknown>;
+    /** GOAL-014 D-002 §4: responsive form column count (>1 enables the grid). */
+    columns?: number;
   };
   children?: RenderNode[];
 }

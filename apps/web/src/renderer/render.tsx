@@ -781,7 +781,11 @@ function SchemaCrudProvider({
             row: row ?? {},
           });
           if (!constructed.ok) {
-            setFeedback({ kind: "error", code: constructed.code, message: constructed.message });
+            setFeedback({
+              kind: "error",
+              code: constructed.code,
+              message: `row navigation construction failed (${constructed.path})`,
+            });
             return;
           }
           // rowNavigate returns navigation.url (not request.url).
@@ -1443,7 +1447,7 @@ function FormInner({
     if (validation.length > 0) {
       const byField: Record<string, string> = {};
       for (const err of validation) {
-        const localized = t(err.messageKey, undefined, err.message);
+        const localized = t(err.messageKey);
         byField[err.field] = localized === err.messageKey ? err.message : localized;
       }
       setFieldErrors(byField);
