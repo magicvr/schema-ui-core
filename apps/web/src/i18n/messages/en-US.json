@@ -58,6 +58,7 @@
   "shell.pageNotFound": "Page not found",
   "shell.noManifestPage": "No manifest page matches",
   "shell.back": "Back to previous page",
+"shell.theme.toggle": "Toggle color theme",
   "shell.returnHome": "Return to home",
   "shell.pageSchemaError": "Page schema error",
   "shell.loadingPageSchema": "Loading page schema…",

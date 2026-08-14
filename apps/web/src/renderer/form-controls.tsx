@@ -156,12 +156,14 @@ function SelectField({
       <Label htmlFor={id} className="text-xs text-muted-foreground">
         {label}
       </Label>
+      {/* W8 P3 (GOAL-009): control-level color-scheme so the native option
+          popup renders dark immediately in dark mode (root cascades too). */}
       <select
         id={id}
         value={value === undefined || value === null ? "" : String(value)}
         disabled={disabled || readOnly}
         onChange={(event) => onChange(event.target.value)}
-        className={controlClass}
+        className={cn(controlClass, "scheme-light dark:scheme-dark")}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
