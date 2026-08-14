@@ -168,7 +168,7 @@ func writeRecycleError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	if errors.Is(err, recyclestore.ErrItemAlreadyRestored) {
-		writeLocalizedError(w, r, http.StatusConflict, "RECYCLE_RESTORE_CONFLICT", "recycle item is already restored")
+		writeLocalizedError(w, r, http.StatusConflict, "RECYCLE_ITEM_ALREADY_RESTORED", "recycle item is already restored")
 		return
 	}
 	var de *DomainError

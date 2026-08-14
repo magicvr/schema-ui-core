@@ -14,7 +14,9 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| （无） | — | — | — | — |
+| E-001 | 2026-08-14 | S1 方案冻结完成（D-001/D-002/A-001） | recorded | `02-execution/E-001-s1-done.md` |
+| E-002 | 2026-08-14 | S2 实现完成（迁移/钩子/端点/schema/测试/Web） | recorded | `02-execution/E-002-s2-implemented.md` |
+| E-004 | 2026-08-14 | S5 关门完成（A-003 required 全修 + A-004 pass） | recorded | `02-execution/E-004-s5-closeout.md` |
 
 ## 事实边界
 

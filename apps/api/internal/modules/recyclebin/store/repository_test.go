@@ -129,6 +129,37 @@ func TestPurge(t *testing.T) {
 	}
 }
 
+func TestPurgeAllUnrestored(t *testing.T) {
+	r := newTestEnv(t)
+	now := time.Now().UTC()
+	if err := r.Record(sampleItem("recycle-1")); err != nil {
+		t.Fatalf("record 1: %v", err)
+	}
+	two := sampleItem("recycle-2")
+	two.Resource = "scheduled-tasks"
+	two.ResourceID = "task-a"
+	if err := r.Record(two); err != nil {
+		t.Fatalf("record 2: %v", err)
+	}
+	// Restore one → it must survive the purge-all of active items.
+	if err := r.MarkRestored("recycle-1", now); err != nil {
+		t.Fatalf("mark restored: %v", err)
+	}
+	purged, err := r.PurgeAllUnrestored()
+	if err != nil {
+		t.Fatalf("purge all: %v", err)
+	}
+	if purged != 1 {
+		t.Fatalf("purged = %d, want 1 (F-010)", purged)
+	}
+	if _, err := r.Get("recycle-2"); !errors.Is(err, ErrItemNotFound) {
+		t.Fatalf("recycle-2 after purge-all = %v, want not found", err)
+	}
+	if _, err := r.Get("recycle-1"); err != nil {
+		t.Fatalf("restored item must survive purge-all: %v", err)
+	}
+}
+
 func TestMarkRestoredTwiceFails(t *testing.T) {
 	r := newTestEnv(t)
 	if err := r.Record(sampleItem("recycle-1")); err != nil {

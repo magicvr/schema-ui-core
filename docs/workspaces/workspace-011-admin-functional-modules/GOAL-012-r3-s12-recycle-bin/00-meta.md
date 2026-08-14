@@ -1,12 +1,12 @@
 ---
 id: GOAL-012-r3-s12-recycle-bin
 title: R3-S12 · 回收站/软删除管理
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 2/5
+progress: 5/5
 ---
 
 # GOAL-012-r3-s12-recycle-bin · 回收站/软删除管理
@@ -27,9 +27,9 @@ progress: 2/5
 - [x] **S2 · 实现**：回收表迁移 + 删除钩子接入 + 管理端点 + schema 页 + 测试（E-002，2026-08-14）
 - [x] **S3 · 验证**：单元/集成 + 恢复/清除实测 + 全量回归（go ./... 全绿、web 903/903，2026-08-14）
 - [x] **S4 · go 影响判定 + 自审**（A-002 pass：未接入资源零变化；2026-08-14）
-- [ ] **S5 · 关门**：独立审计（grok，data 门禁必须）+ required 闭合 + goal-tree 同步
+- [x] **S5 · 关门**：独立审计两轮（A-003 fail → required 全修；A-004 pass → 0 required）+ 全量回归 + goal-tree 同步（E-004，2026-08-14）
 
-progress: 2/5 由五个等权检查点派生（S1 完成后更新）。
+progress: 5/5 由五个等权检查点派生（S1 完成后更新）。
 
 ## 审计策略
 

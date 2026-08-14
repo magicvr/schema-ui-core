@@ -300,3 +300,96 @@ func TestRecycleFactoryHookNilKeepsLegacySemantics(t *testing.T) {
 		t.Fatalf("recycle total = %d, want 0 (Trash nil must not snapshot)", recycleBody.Total)
 	}
 }
+
+
+// F-009 (grok A-004): the sequential batch-delete path must snapshot EVERY
+// id (the factory records per id after each successful delete).
+func TestRecycleFactoryHookBatchDeleteSnapshots(t *testing.T) {
+	env := newAuthTestEnv(t)
+	trash := &recordingTrash{}
+	mux := http.NewServeMux()
+	for _, route := range DictionaryRoutes(env.a, datadictionarystore.NewRepository(env.st), env.operations, "admin.data-dictionary", trash) {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	token := adminToken(t, env)
+	createdIDs := []string{}
+	for _, key := range []string{"alpha", "beta"} {
+		payload := "{\"key\":\"" + key + "\",\"name\":\"" + key + "\"}"
+		req := bearer(t, token, http.MethodPost, "/api/data-dictionary/types", payload)
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create %s = %d: %s", key, rec.Code, rec.Body.String())
+		}
+		var createdBody struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &createdBody); err != nil || createdBody.ID == "" {
+			t.Fatalf("create %s missing id: %v", key, err)
+		}
+		createdIDs = append(createdIDs, createdBody.ID)
+	}
+	idsJSON := "["
+	for i, id := range createdIDs {
+		if i > 0 {
+			idsJSON += ","
+		}
+		idsJSON += "\"" + id + "\""
+	}
+	idsJSON += "]"
+	req := bearer(t, token, http.MethodPost, "/api/data-dictionary/types/batch-delete", "{\"ids\":" + idsJSON + "}")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("batch delete = %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(trash.calls) != 2 {
+		t.Fatalf("trash calls = %d, want 2 snapshots (F-009)", len(trash.calls))
+	}
+}
+
+// F-010 (grok A-004): purge-all endpoint — admin purges every active snapshot
+// (audited); non-admin is forbidden.
+func TestRecycleBinPurgeAll(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.recycle.add(recycleItem("recycle-1", "dict-types", "t1"))
+	env.recycle.add(recycleItem("recycle-2", "dict-entries", "e1"))
+	token := adminToken(t, env)
+
+	// editor lacks recycle.write → 403.
+	env.addUser(t, "ed", "editor-pass-1", []string{"editor"})
+	edToken := loginAs(t, env, "ed", "editor-pass-1")
+	req := bearer(t, edToken, http.MethodPost, "/api/recycle-bin/purge-all", "")
+	rec := httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("editor purge-all = %d, want 403", rec.Code)
+	}
+
+	req = bearer(t, token, http.MethodPost, "/api/recycle-bin/purge-all", "")
+	rec = httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("purge-all = %d: %s", rec.Code, rec.Body.String())
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body["purged"] != float64(2) {
+		t.Fatalf("purged = %v, want 2", body["purged"])
+	}
+	// Everything is gone.
+	req = bearer(t, token, http.MethodGet, "/api/recycle-bin", "")
+	rec = httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	var list struct {
+		Total int `json:"total"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil {
+		t.Fatalf("decode list: %v", err)
+	}
+	if list.Total != 0 {
+		t.Fatalf("total after purge-all = %d, want 0", list.Total)
+	}
+}

@@ -65,7 +65,7 @@ var frozenDomainCodes = []string{
 	// S-04 (GOAL-010 D-002 §4): scheduled-task codes.
 	"TASK_NOT_FOUND", "TASK_RUN_NOT_FOUND", "TASK_KEY_TAKEN", "INVALID_CRON", "INVALID_HANDLER",
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
-	"RECYCLE_ITEM_NOT_FOUND", "RECYCLE_RESTORE_CONFLICT",
+	"RECYCLE_ITEM_NOT_FOUND", "RECYCLE_RESTORE_CONFLICT", "RECYCLE_ITEM_ALREADY_RESTORED",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)
