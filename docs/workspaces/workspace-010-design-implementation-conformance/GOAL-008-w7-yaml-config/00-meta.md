@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-14
 updated: 2026-08-14
 version: 0.1.0
-progress: 1/5
+progress: 4/5
 ---
 
 # GOAL-008 · W7 · YAML 主配置体系
@@ -23,12 +23,12 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：YAML 字段清单（14+3 项）、优先级与插值、.env、迁移兼容（D-002/A-001，2026-08-14）
-- [ ] **S2 · 实现**：config.yaml 加载器 + 默认文件 + 迁移现有配置 + .env.example + compose 同步
-- [ ] **S3 · 验证**：单元/集成（插值、fail-closed、env 覆盖）+ 双路径实测（纯 YAML / YAML+env）+ 全量回归
-- [ ] **S4 · go 影响判定 + 自审**（配置载体变化 → go 判定）
+- [x] **S2 · 实现**：分层加载（CONFIG_FILE/embed/env 覆盖）+ 插值 + upload 迁入 Config + .env.example + compose 同步（E-003，df5d440，2026-08-14）
+- [x] **S3 · 验证**：单测全绿 + 四路径实测（纯 YAML / YAML+env 冒烟 / embed 回退 / fail-closed）+ 全量回归（E-004，2026-08-14）
+- [x] **S4 · go 影响判定 + 自审**（E-005：go 不 held；A-002：pass，2026-08-14）
 - [ ] **S5 · 关门**：独立审计（grok，data 门禁）+ required 闭合 + goal-tree 同步
 
-progress: 1/5 由五个等权检查点派生。
+progress: 4/5 由五个等权检查点派生。
 
 ## 审计策略
 
@@ -41,7 +41,7 @@ progress: 1/5 由五个等权检查点派生。
 | I-001 | required | YAML 覆盖哪些配置项（现有 env 全集迁移？保留哪些 env 直读） | S1 方案 | 现 config 清单对照 | **closed**（D-002 §3：14 项 + upload 3 项） |
 | I-002 | required | 敏感项清单与插值规则（未定义时 fail-closed 语义） | S1 方案 | compose :? 先例对照 | **closed**（D-002 §2） |
 | I-003 | required | 现有部署只设 env 的迁移路径（YAML 缺失时行为） | S1 方案 | 向后兼容对照 | **closed**（D-002 §1：env 覆盖保留，零迁移） |
-| I-004 | required | go 影响判定（Profile/模块矩阵语义不变） | S4 | VP-008 接口对照 | open |
+| I-004 | required | go 影响判定（Profile/模块矩阵语义不变） | S4 | VP-008 接口对照 | **closed**（E-005：go 不 held） |
 
 ## 父目标
 
