@@ -282,7 +282,7 @@ func dictTypeToMap(t datadictionarystore.DictType) map[string]any {
 
 func dictEntryToMap(e datadictionarystore.DictEntry) map[string]any {
 	return map[string]any{
-		"id": e.ID, "dictKey": e.DictKey, "entryKey": e.EntryKey, "label": e.Label,
+		"id": e.ID, "dictKey": e.DictKey, "dictTypeName": e.DictTypeName, "entryKey": e.EntryKey, "label": e.Label,
 		"enabled": e.Enabled, "sort": e.Sort, "remark": e.Remark,
 		"createdAt": e.CreatedAt.Unix(), "updatedAt": e.UpdatedAt.Unix(),
 	}

@@ -93,6 +93,9 @@ func TestDictionaryLifecycle(t *testing.T) {
 	if first["dictKey"] != "order_status" {
 		t.Fatalf("filtered entry dictKey = %v, want order_status", first["dictKey"])
 	}
+	if first["dictTypeName"] != "Order status" {
+		t.Fatalf("filtered entry dictTypeName = %v, want Order status", first["dictTypeName"])
+	}
 	code, otherFiltered := getResource(t, env, "/api/data-dictionary/entries?dictKey=other_status&pageSize=100")
 	if code != http.StatusOK {
 		t.Fatalf("other dictKey filter = %d %v", code, otherFiltered)

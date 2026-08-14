@@ -55,6 +55,9 @@ type DictType struct {
 type DictEntry struct {
 	ID        string
 	DictKey   string
+	// DictTypeName is the owning type's display name (JOIN, GOAL-015): lets
+	// the inner page show the type name instead of the raw key in columns.
+	DictTypeName string
 	EntryKey  string
 	Label     string
 	Enabled   bool
@@ -233,7 +236,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		args := []any{}
 		// GOAL-015: exact dict-key narrowing (inner page) composes with q.
 		if dictKey := strings.TrimSpace(filter.DictKey); dictKey != "" {
-			where = ` WHERE dict_key = ?`
+			where = ` WHERE de.dict_key = ?`
 			args = append(args, dictKey)
 		}
 		if q := strings.TrimSpace(filter.Q); q != "" {
@@ -241,10 +244,10 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 			if where == "" {
 				sep = " WHERE "
 			}
-			where += sep + `(instr(lower(dict_key), ?) > 0 OR instr(lower(entry_key), ?) > 0 OR instr(lower(label), ?) > 0)`
+			where += sep + `(instr(lower(de.dict_key), ?) > 0 OR instr(lower(de.entry_key), ?) > 0 OR instr(lower(de.label), ?) > 0)`
 			args = append(args, q, q, q)
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_entries`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_entries de`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count dict entries: %w", err)
 		}
 		sortCol, ok := map[string]string{
@@ -257,8 +260,8 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 			filter.Order = "asc"
 		}
 		rows, err := tx.Query(
-			`SELECT id, dict_key, entry_key, label, enabled, sort, COALESCE(remark, ''), created_at, updated_at
-			 FROM dict_entries`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
+			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), de.created_at, de.updated_at
+			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
 		)
 		if err != nil {
@@ -268,7 +271,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		for rows.Next() {
 			var e DictEntry
 			var created, updated int64
-			if err := rows.Scan(&e.ID, &e.DictKey, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &created, &updated); err != nil {
+			if err := rows.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &created, &updated); err != nil {
 				return fmt.Errorf("scan dict entry: %w", err)
 			}
 			e.CreatedAt = time.Unix(created, 0)
@@ -285,11 +288,11 @@ func (r *Repository) GetEntry(id string) (*DictEntry, error) {
 	var e DictEntry
 	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
 		row := tx.QueryRow(
-			`SELECT id, dict_key, entry_key, label, enabled, sort, COALESCE(remark, ''), created_at, updated_at
-			 FROM dict_entries WHERE id = ?`, id,
+			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), de.created_at, de.updated_at
+			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key WHERE de.id = ?`, id,
 		)
 		var created, updated int64
-		if err := row.Scan(&e.ID, &e.DictKey, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &created, &updated); err != nil {
+		if err := row.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &created, &updated); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrNotFound
 			}

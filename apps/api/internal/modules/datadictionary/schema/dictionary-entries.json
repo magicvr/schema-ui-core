@@ -192,8 +192,8 @@
         "props": {
           "columns": [
             {
-              "field": "dictKey",
-              "label": "Type key",
+              "field": "dictTypeName",
+              "label": "Type",
               "sortable": true,
               "labelKey": "schema.dictionaryEntries.column.dictKey"
             },
