@@ -1836,11 +1836,14 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
   const fetcher = crud?.fetcher ?? globalThis.fetch;
   const valueField = node.props?.valueField;
   const format = node.props?.format ?? "plain";
+  // v2.9 ADR-0039: node-level DataRef preferred over legacy props.dataSource.
   const dataSource =
-    typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
-      ? node.props.dataSource
-      : null;
-  const { list, error } = useDisplayData(dataSource, fetcher);
+    typeof node.data?.url === "string" && isValidDataSource(node.data.url)
+      ? node.data.url
+      : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
+        ? node.props.dataSource
+        : null;
+  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   if (dataSource === null) {
     return (

@@ -154,6 +154,42 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
     expect(container.textContent).toContain("1250");
   });
 
+  // GOAL-015 / ADR-0039 (F-002 follow-up): a statCard node-level DataRef
+  // with a $context.route.query.* params binding sends the resolved query
+  // parameter (tombstone when the route key is missing).
+  it("binds a statCard node-level DataRef params from the route query (v2.9)", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: {
+        protocolVersion: "2.9",
+        requiredCapabilities: ["app.manifest", "data.route-binding"],
+      },
+      body: {
+        type: "statCard",
+        id: "revenue",
+        data: {
+          source: "api",
+          url: "/api/orders",
+          params: { dictKey: "$context.route.query.dictKey" },
+        },
+        props: { label: "Revenue", format: "plain", valueField: "amount" },
+      },
+    };
+    const seen: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      seen.push(String(input));
+      return new Response(
+        JSON.stringify({ items: [{ id: "o1", amount: 1250 }], total: 1, page: 1, pageSize: 100 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    window.history.pushState({}, "", "/dictionary-entries?dictKey=order_status");
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(seen[0]).toContain("dictKey=order_status");
+    expect(container.textContent).toContain("1250");
+  });
   it("fails closed when statCard format rejects the value type", async () => {
     const pageDoc = displayDocument({
       type: "statCard",
