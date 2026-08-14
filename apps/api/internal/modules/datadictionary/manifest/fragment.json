@@ -21,7 +21,7 @@
       "pageId": "dictionary-entries",
       "title": "Dictionary entries",
       "schemaUrl": "/api/schema/dictionary-entries",
-      "route": "/dictionary-entries",
+      "route": "/dictionary-entries/{dictKey}",
       "titleKey": "manifest.title.dictionaryEntries"
     }
   ],

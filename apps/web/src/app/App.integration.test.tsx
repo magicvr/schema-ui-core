@@ -219,7 +219,7 @@ describe("App shell integration", () => {
           pageId: "dictionary-entries",
           title: "Dictionary entries",
           schemaUrl: "/schema/dictionary-entries",
-          route: "/dictionary-entries",
+          route: "/dictionary-entries/{dictKey}",
         },
       ],
       navigation: {
@@ -235,7 +235,7 @@ describe("App shell integration", () => {
         requiredCapabilities: ["app.manifest", "app.navigation", "actions.row.navigate"],
       },
       actions: {
-        openEntries: { type: "navigate", url: "/dictionary-entries" },
+        openEntries: { type: "navigate", url: "/dictionary-entries/{dictKey}" },
       },
       body: {
         type: "section",
@@ -255,7 +255,10 @@ describe("App shell integration", () => {
                   key: "entries",
                   label: "Entries",
                   actionRef: "openEntries",
-                  navigateMapping: { query: { dictKey: "$row.key" } },
+                  navigateMapping: {
+                    path: { dictKey: "$row.key" },
+                    query: { dictTypeName: "$row.name" },
+                  },
                 },
               ],
             },
@@ -309,8 +312,8 @@ describe("App shell integration", () => {
         button.textContent?.trim() === "Entries",
       ) as HTMLButtonElement).click();
     });
-    expect(window.location.pathname).toBe("/dictionary-entries");
-    expect(window.location.search).toBe("?dictKey=order_status");
+    expect(window.location.pathname).toBe("/dictionary-entries/order_status");
+    expect(window.location.search).toBe("?dictTypeName=Order%20status");
     const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
     expect(breadcrumb).not.toBeNull();
     expect(breadcrumb?.textContent).toContain("Home");
@@ -318,6 +321,32 @@ describe("App shell integration", () => {
     expect(breadcrumb?.textContent).toContain("Dictionary entries");
     expect(breadcrumb?.textContent).toContain("←");
     expect(container.textContent).toContain("Entries body");
+  });
+
+
+  // GOAL-015 F-007(b) (user ruling): the entries inner page requires the
+  // type context — its route is /dictionary-entries/{dictKey}, so a deep
+  // link without the param fails closed at the router (HOST_ROUTE_NOT_FOUND)
+  // instead of showing an unfiltered list / broken create form.
+  it("fails closed when the entries inner page is deep-linked without its dictKey param", async () => {
+    const manifest = validateAppManifest({
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+      app: { appId: "integration", name: "Integration", homePageRef: "home" },
+      pages: [
+        { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/home" },
+        {
+          pageId: "dictionary-entries",
+          title: "Dictionary entries",
+          schemaUrl: "/schema/dictionary-entries",
+          route: "/dictionary-entries/{dictKey}",
+        },
+      ],
+      navigation: { top: [{ pageRef: "home", label: "Home" }] },
+    });
+    const container = await renderApp("/dictionary-entries", {}, DEFAULT_DOCUMENTS, undefined, manifest);
+    expect(container.textContent).toContain("Page not found");
+    expect(container.querySelector("h1")?.textContent).not.toBe("Dictionary entries");
   });
 
   it("renders a fail-closed fallback and returns to the manifest home route", async () => {

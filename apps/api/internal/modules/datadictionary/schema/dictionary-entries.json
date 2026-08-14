@@ -282,7 +282,7 @@
           "source": "api",
           "url": "/api/data-dictionary/entries",
           "params": {
-            "dictKey": "$context.route.query.dictKey"
+            "dictKey": "$context.route.params.dictKey"
           }
         }
       }

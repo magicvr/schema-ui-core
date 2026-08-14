@@ -218,6 +218,12 @@ export interface SchemaCrudValue {
   /** Binds a search-mode form's fields to its target table query. */
   searchFormSubmit: (form: RenderFormNode, values: Record<string, unknown>) => void;
   effectivePermission: (targetId: string) => boolean;
+  /**
+   * Current route snapshot (from the render context; App injects
+   * route: {params, query}). Used for ADR-0039 dataSource bindings and
+   * create-modal readOnly seeding instead of reading window.location.
+   */
+  route: { query: Record<string, string>; params: Record<string, string> };
 }
 
 export interface RunRequestOptions {
@@ -622,6 +628,25 @@ function SchemaCrudProvider({
   const [fetcher, setFetcher] = useState<typeof fetch>(() => initialFetcher ?? globalThis.fetch);
   const t = useTranslate();
 
+  // Route snapshot from the render context (App injects route: {params, query});
+  // hostless renderers (tests) fall back to an empty snapshot.
+  const route = useMemo(() => {
+    const raw = isRecord(context.route) ? context.route : {};
+    const query: Record<string, string> = {};
+    if (isRecord(raw.query)) {
+      for (const [key, value] of Object.entries(raw.query)) {
+        if (typeof value === "string") query[key] = value;
+      }
+    }
+    const params: Record<string, string> = {};
+    if (isRecord(raw.params)) {
+      for (const [key, value] of Object.entries(raw.params)) {
+        if (typeof value === "string") params[key] = value;
+      }
+    }
+    return { query, params };
+  }, [context]);
+
   const permissionTargets = useMemo(
     () => evaluatePermissionTargets(document as unknown as JsonRecord, context as NavigationContext),
     [document, context],
@@ -1009,6 +1034,7 @@ function SchemaCrudProvider({
       submitForm,
       searchFormSubmit,
       effectivePermission,
+      route,
     }),
     [
       selectedRow,
@@ -1034,6 +1060,7 @@ function SchemaCrudProvider({
       submitForm,
       searchFormSubmit,
       effectivePermission,
+      route,
     ],
   );
 
@@ -1286,13 +1313,22 @@ function FormInner({
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
     // GOAL-015 / ADR-0040: a create-modal (no row, no recordSource) may have
-    // its readOnly fields seeded by the Host from the current route query —
-    // the v2.9 route-filter scenario ("值由 Host 在 modal 场景提供") wires
-    // the inner-page type key into the new-entry form this way.
-    const routeQueryValues: Record<string, string> = {};
-    if (typeof window !== "undefined") {
+    // its readOnly fields seeded by the Host from the current route — the
+    // v2.9 route-filter scenario ("值由 Host 在 modal 场景提供") wires the
+    // inner-page type key into the new-entry form this way. The provider's
+    // route snapshot covers both path params (dictKey) and the query
+    // (dictTypeName); hostless renders fall back to the location query.
+    const routeValues: Record<string, string> = {};
+    if (crud !== null) {
+      for (const [key, value] of Object.entries(crud.route.params)) {
+        routeValues[key] = value;
+      }
+      for (const [key, value] of Object.entries(crud.route.query)) {
+        routeValues[key] = value;
+      }
+    } else if (typeof window !== "undefined") {
       for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
-        routeQueryValues[key] = value;
+        routeValues[key] = value;
       }
     }
     for (const raw of node.props.fields) {
@@ -1310,8 +1346,8 @@ function FormInner({
           ? prefillValues[raw.id]
           : undefined;
       const routeValue =
-        raw.readOnly === true && routeQueryValues[raw.id] !== undefined
-          ? routeQueryValues[raw.id]
+        raw.readOnly === true && routeValues[raw.id] !== undefined
+          ? routeValues[raw.id]
           : undefined;
       const fromRow =
         modalValue !== undefined ? modalValue : prefillValue !== undefined ? prefillValue : routeValue;
@@ -1810,15 +1846,20 @@ function useDisplayData(
   }, [crud, fetcher]);
   const [list, setList] = useState<ResourceList | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // v2.9 ADR-0039: current route query snapshot for dataSource params bindings.
-  const locationKey = typeof window === "undefined" ? "" : window.location.search;
-  const routeQuery = useMemo(() => {
-    const query: Record<string, string> = {};
-    for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
-      query[key] = value;
+  // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
+  // provider's route context; hostless renders fall back to the location query.
+  const routeSnapshot = useMemo(() => {
+    if (crud !== null) {
+      return crud.route;
     }
-    return query;
-  }, [locationKey]);
+    const query: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+        query[key] = value;
+      }
+    }
+    return { query, params: {} };
+  }, [crud]);
   useEffect(() => {
     if (dataSource === null) {
       setList(null);
@@ -1831,7 +1872,7 @@ function useDisplayData(
     // (same dataSource, new reloadToken) keeps showing the old error because
     // resolveAsyncDisplayState prefers `error` over `ready`.
     setError(null);
-    const paramsQuery = resolveDataParamsQuery(params, { query: routeQuery, params: {} });
+    const paramsQuery = resolveDataParamsQuery(params, routeSnapshot);
     fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 }, paramsQuery)
       .then((next) => {
         if (!cancelled) {
@@ -1847,7 +1888,7 @@ function useDisplayData(
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, params, routeQuery, crud?.reloadToken]);
+  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken]);
   return { list, error };
 }
 

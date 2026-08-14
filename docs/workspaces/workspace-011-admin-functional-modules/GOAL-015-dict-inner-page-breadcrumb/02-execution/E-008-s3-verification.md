@@ -32,3 +32,9 @@ version: 1.1.0
 - F-006：行导航 navigateMapping 增 dictTypeName=$row.name；create 表单增 dictTypeName 只读显示。
 - F-008：data 节点路由绑定按页面 meta 门禁（>=2.9 + data.route-binding，否则 fail-closed）；host claim 重生成 2.9.0（content c87c22ad…，fixture 89baddbc…，含 request-construction/component-format suites）；boot.ts supportedCapabilities 增两个 capability。
 - F-009：readOnly 门禁 4 例与 extraQuery 2 例补齐（本记录计数已更正）。
+
+## F-007(b) 用户裁决补记
+
+- 用户裁决：(b) 无键时内页 fail-closed（隐藏列表/创建，仅允许从类型页进入）。
+- 实现：条目页路由 → `/dictionary-entries/{dictKey}`；行导航 path 绑定 dictKey（query 保留 dictTypeName）；条目表绑定 `$context.route.params.dictKey`；深链缺参 → HOST_ROUTE_NOT_FOUND；provider 暴露 route 上下文（SchemaTable/useDisplayData/FormInner 改读，hostless 回退 window.location）。
+- 测试：App.integration 深链 fail-closed 用例 + 行导航路径断言（10/10）；T-DE 改 context 路由（5/5）；provider_test.go 断言新 action URL。

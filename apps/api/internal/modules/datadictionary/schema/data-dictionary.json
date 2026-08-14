@@ -163,7 +163,7 @@
     },
     "openEntries": {
       "type": "navigate",
-      "url": "/dictionary-entries"
+      "url": "/dictionary-entries/{dictKey}"
     }
   },
   "body": {
@@ -232,8 +232,10 @@
               "actionRef": "openEntries",
               "permissionIntent": "edit",
               "navigateMapping": {
+                "path": {
+                  "dictKey": "$row.key"
+                },
                 "query": {
-                  "dictKey": "$row.key",
                   "dictTypeName": "$row.name"
                 }
               },

@@ -120,8 +120,10 @@ func TestDictionaryProviderRegistersSurfaces(t *testing.T) {
 			t.Fatalf("page schema parse: %v", err)
 		}
 	}
-	if doc.Actions["openEntries"].Type != "navigate" || doc.Actions["openEntries"].URL != "/dictionary-entries" {
-		t.Fatalf("openEntries action = %+v, want navigate /dictionary-entries", doc.Actions["openEntries"])
+	// GOAL-015 F-007(b): the entries inner page route is /dictionary-entries/{dictKey}
+	// (path-param template) — the row navigate action binds the type key into it.
+	if doc.Actions["openEntries"].Type != "navigate" || doc.Actions["openEntries"].URL != "/dictionary-entries/{dictKey}" {
+		t.Fatalf("openEntries action = %+v, want navigate /dictionary-entries/{dictKey}", doc.Actions["openEntries"])
 	}
 }
 

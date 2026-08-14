@@ -8,7 +8,8 @@
 //   - T-DE-01: v2.9 data.route-binding (ADR-0039) — table dataSource params
 //     bind dictKey from $context.route.query.dictKey and the list request
 //     carries ?dictKey=<type> (server-side filter).
-//   - T-DE-02: missing route key is a tombstone — no dictKey param is sent.
+//   - T-DE-02: missing route key is a tombstone — no dictKey param is sent (the
+//     router already fails closed on deep links without the path param, F-007b).
 //   - T-DE-03: create modal — the readOnly dictKey field is seeded by the Host
 //     from the route query (ADR-0040: value source in modal scenarios) and the
 //     POST body still carries the type key.
@@ -158,6 +159,20 @@ const DICT_WRITER = {
   user: { id: "u1", roles: ["admin"], permissions: ["dictionary.read", "dictionary.write"] },
 };
 
+// F-007(b): the entries page route is /dictionary-entries/{dictKey} — the
+// render context carries the resolved path params + query (App injects
+// route: {params, query}); deep links without the param fail closed at the
+// router level (HOST_ROUTE_NOT_FOUND), so the table binding always resolves.
+function dictContext(
+  params: Record<string, string>,
+  query: Record<string, string> = {},
+): Record<string, unknown> {
+  return {
+    user: { id: "u1", roles: ["admin"], permissions: ["dictionary.read", "dictionary.write"] },
+    route: { params, query },
+  };
+}
+
 const ENTRIES: ResourceItem[] = [
   {
     id: "ent-1",
@@ -249,15 +264,14 @@ function fieldInput(container: HTMLElement, id: string): HTMLInputElement | null
   return container.querySelector<HTMLInputElement>("#field-" + id);
 }
 
-function routeTo(path: string): void {
-  window.history.pushState({}, "", path);
-}
-
 describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
-  it("T-DE-01: table dataSource binds dictKey from the route query (ADR-0039)", async () => {
-    routeTo("/dictionary-entries?dictKey=order_status");
+  it("T-DE-01: table dataSource binds dictKey from the route path param (ADR-0039)", async () => {
     const api = createEntriesApi(ENTRIES);
-    const container = await renderCrud(entriesDocument(), DICT_WRITER, api.fetcher);
+    const container = await renderCrud(
+      entriesDocument(),
+      dictContext({ dictKey: "order_status" }),
+      api.fetcher,
+    );
 
     expect(api.calls.some((call) => call.method === "GET" && call.url.includes("dictKey=order_status"))).toBe(true);
     expect(container.textContent).toContain("Paid");
@@ -267,9 +281,8 @@ describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
   });
 
   it("T-DE-02: missing route key is a tombstone — no dictKey param is sent", async () => {
-    routeTo("/dictionary-entries");
     const api = createEntriesApi(ENTRIES);
-    const container = await renderCrud(entriesDocument(), DICT_WRITER, api.fetcher);
+    const container = await renderCrud(entriesDocument(), dictContext({}), api.fetcher);
 
     const firstList = api.calls.find((call) => call.method === "GET");
     expect(firstList?.url).toBe("/api/data-dictionary/entries");
@@ -279,9 +292,12 @@ describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
   });
 
   it("T-DE-03: create modal seeds the readOnly dictKey from the route and POSTs the type key", async () => {
-    routeTo("/dictionary-entries?dictKey=order_status&dictTypeName=Order%20status");
     const api = createEntriesApi(ENTRIES);
-    const container = await renderCrud(entriesDocument(), DICT_WRITER, api.fetcher);
+    const container = await renderCrud(
+      entriesDocument(),
+      dictContext({ dictKey: "order_status" }, { dictTypeName: "Order status" }),
+      api.fetcher,
+    );
 
     await act(async () => (buttonByText(container, "New entry") as HTMLButtonElement).click());
     const dictKeyInput = fieldInput(container, "dictKey") as HTMLInputElement;
@@ -310,9 +326,12 @@ describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
   });
 
   it("T-DE-04: edit form shows dictKey + dictTypeName read-only and PATCHes the type key", async () => {
-    routeTo("/dictionary-entries?dictKey=order_status");
     const api = createEntriesApi(ENTRIES);
-    const container = await renderCrud(entriesDocument(), DICT_WRITER, api.fetcher);
+    const container = await renderCrud(
+      entriesDocument(),
+      dictContext({ dictKey: "order_status" }),
+      api.fetcher,
+    );
 
     await act(async () => (buttonByText(container, "Edit") as HTMLButtonElement).click());
     const dictKeyInput = fieldInput(container, "dictKey") as HTMLInputElement;
@@ -335,9 +354,12 @@ describe("T-DE · GOAL-015 dictionary entries inner page (v2.9)", () => {
   });
 
   it("T-DE-05: a readOnly field cannot be edited by the user", async () => {
-    routeTo("/dictionary-entries?dictKey=order_status");
     const api = createEntriesApi(ENTRIES);
-    const container = await renderCrud(entriesDocument(), DICT_WRITER, api.fetcher);
+    const container = await renderCrud(
+      entriesDocument(),
+      dictContext({ dictKey: "order_status" }),
+      api.fetcher,
+    );
 
     await act(async () => (buttonByText(container, "New entry") as HTMLButtonElement).click());
     const dictKeyInput = fieldInput(container, "dictKey") as HTMLInputElement;

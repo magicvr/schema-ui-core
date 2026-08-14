@@ -197,18 +197,21 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // v2.9 ADR-0039: route snapshot for dataSource params bindings. The current
-  // route query is read from the location (path params are not used by the
-  // current page set and resolve as empty for table bindings).
-  const locationKey = typeof window === "undefined" ? "" : window.location.search;
+  // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
+  // provider's route context (App injects route: {params, query}); hostless
+  // renders fall back to the location query.
   const routeSnapshot = useMemo(() => {
-    const entries = new URLSearchParams(window.location.search);
+    if (crud !== null) {
+      return crud.route.query;
+    }
     const query: Record<string, string> = {};
-    for (const [key, value] of entries.entries()) {
-      query[key] = value;
+    if (typeof window !== "undefined") {
+      for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+        query[key] = value;
+      }
     }
     return query;
-  }, [locationKey]);
+  }, [crud]);
 
   useEffect(() => {
     // F-001: absent/invalid dataSource fails closed — never fetch.
@@ -221,7 +224,10 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const paramsQuery = resolveDataParamsQuery(dataParams, { query: routeSnapshot, params: {} });
+    const paramsQuery = resolveDataParamsQuery(dataParams, {
+      query: routeSnapshot,
+      params: crud !== null ? crud.route.params : {},
+    });
     fetchResourceList(fetcher ?? fetch, dataSource, query, paramsQuery)
       .then((next) => {
         if (!cancelled) {

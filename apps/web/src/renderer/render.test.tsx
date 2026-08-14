@@ -182,8 +182,11 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     }) as typeof fetch;
-    window.history.pushState({}, "", "/dictionary-entries?dictKey=order_status");
-    const container = await renderDocument(pageDoc, {}, fetcher);
+    const container = await renderDocument(
+      pageDoc,
+      { route: { query: { dictKey: "order_status" }, params: {} } },
+      fetcher,
+    );
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });

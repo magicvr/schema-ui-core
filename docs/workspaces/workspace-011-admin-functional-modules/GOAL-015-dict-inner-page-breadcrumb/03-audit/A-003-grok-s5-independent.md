@@ -8,7 +8,7 @@ verdict: fail → 处置后 required 全部 fixed
 parent: GOAL-015-dict-inner-page-breadcrumb
 created: 2026-08-14
 updated: 2026-08-14
-version: 1.0.0
+version: 1.1.0
 ---
 
 # A-003 · grok 4.6 独立审计（S5）与处置
@@ -31,7 +31,7 @@ version: 1.0.0
 ### recommended / note · 处置
 
 - **F-006（create 表单显示类型键而非类型名）** → fixed：行导航 navigateMapping 增 dictTypeName=$row.name；create 表单增 dictTypeName readOnly 显示（路由种子）；T-DE-03 断言补类型名。
-- **F-007（tombstone 全量列表 + 只读必填创建）** → 保留为产品取舍，待用户裁决（见 A-003 结论）：(a) 无 dictKey 内页 fail-closed；(b) 接受无键=全局列表。当前为 (b)+创建表单必填 fail-safe。
+- **F-007（tombstone 全量列表 + 只读必填创建）** → **用户裁决 (b)：无键时内页 fail-closed**。实现（2026-08-14）：条目页路由改为路径参数模板 `/dictionary-entries/{dictKey}`（fragment.json）；行导航 navigateMapping 改 path.dictKey=$row.key + query.dictTypeName=$row.name；条目表 data.params 绑定 `$context.route.params.dictKey`；深链缺参由路由层直接 fail-closed（HOST_ROUTE_NOT_FOUND，App.integration 新增用例）；renderer 经 SchemaCrudProvider 暴露 route {params,query}（SchemaTable/useDisplayData/FormInner 改读 provider 路由上下文，window.location 仅作 hostless 回退——顺带缓解 F-011）。
 - **F-008（运行时未门禁 data.route-binding；claim 停 2.8.0）** → fixed：dispatchParsedNode 对带 $context.route.* 绑定的 data 节点按页面 meta 门禁（>=2.9 + capability，否则 fail-closed 报错）；generate-claim.mjs 升 2.9.0（content c87c22ad…/fixture 89baddbc…，pageVersions [2.7,2.9]、manifestVersions [2.7,2.8,2.9]、capabilities 增两项、suites 增 request-construction/component-format），claim 重新生成；boot.ts supportedCapabilities 增两项。
 - **F-009（测试与台账数字不严）** → fixed：readOnly 门禁 4 例落 form-controls.test.ts；extraQuery 合并 + F-001 防绕过 2 例落 resource.test.ts；E-008 计数更正（946/946 + 修正单测描述）。
 - **F-010（readOnly 可伪造；schema 非安全边界）** → note 接受：写入 D-003/A-002（过滤与只读是 UX/契约，服务端仍独立鉴权；与 dictionary.write 同权非提权）。
@@ -45,5 +45,5 @@ version: 1.0.0
 ## 结论
 
 - 5 项 required findings 已按 fixed 闭合（可核对：测试/代码/记录引用如上）。
-- F-007 为产品取舍，**待用户裁决**（accepted-residual 或 fail-closed 改造）；不影响技术关门，但在关门汇报中显式列出。
+- F-007 已按用户裁决 (b) 实施（fail-closed，路由层强制）；技术关门与产品取舍均闭环。
 - S5 关门放行条件：required findings 全闭合（达成）+ goal-tree 5/5 + 用户裁决 F-007。
