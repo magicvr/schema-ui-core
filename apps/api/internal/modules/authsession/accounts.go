@@ -208,6 +208,28 @@ func (r *Repository) ResetLoginFailures(userID string, now time.Time) error {
 	})
 }
 
+// BumpTokenVersionAndRevokeAll bumps the user's token_version (invalidating
+// every already-signed access token, W4 P0-3) and revokes every live refresh
+// token in one transaction (S-10 · GOAL-017 D-002 §4: MFA disable / admin
+// reset force re-authentication at the same strength as password change).
+func (r *Repository) BumpTokenVersionAndRevokeAll(userID string, now time.Time) error {
+	return r.withTx("bump token version and revoke refresh tokens", func(tx *sql.Tx) error {
+		if _, err := tx.Exec(
+			`UPDATE users SET token_version = token_version + 1, updated_at = ? WHERE id = ?`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("bump token version: %w", err)
+		}
+		if _, err := tx.Exec(
+			`UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("revoke user refresh tokens: %w", err)
+		}
+		return nil
+	})
+}
+
 // RevokeAllRefreshTokensForUser revokes every live refresh token of the user
 // (account-lock hardening: a locked account's sessions must not keep rotating).
 func (r *Repository) RevokeAllRefreshTokensForUser(userID string, now time.Time) error {

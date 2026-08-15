@@ -30,6 +30,8 @@ import (
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha"
 	datapermissionmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission"
 	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
+	mfamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa"
+	mfastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa/store"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 	recyclebinmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
@@ -178,8 +180,9 @@ func newMux(
 	settingsRepository *settingsrepository.Repository,
 	plan kernel.Plan,
 	gate *readinessGate,
+	secret jwtSecret,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, nil)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, nil)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -196,6 +199,7 @@ func newMuxWithExtraProviders(
 	settingsRepository *settingsrepository.Repository,
 	plan kernel.Plan,
 	gate *readinessGate,
+	secret jwtSecret,
 	extra []kernel.Provider,
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
@@ -211,7 +215,19 @@ func newMuxWithExtraProviders(
 		captchaService = logincaptchamodule.NewService(logincaptchastore.NewRepository(st))
 		captchaVerifier = captchaService
 	}
-	handler.RegisterWithReadiness(mux, a, st, operations, plan, gate.Ready, captchaVerifier)
+	// S-10 (GOAL-017 D-002 §3): the MFA service feeds the second-factor
+	// login gate (nil when admin.mfa is disabled — login contract unchanged)
+	// and the module surface (verify / self-service / admin reset). The
+	// verifier is declared as the interface type so a disabled module yields
+	// a TRUE nil (a typed-nil *Service through the variadic would satisfy the
+	// != nil check and panic on use — testhelpers doc comment precedent).
+	var mfaService *mfamodule.Service
+	var mfaVerifier handler.MFAVerifier
+	if plan.HasModule("admin.mfa") {
+		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret))
+		mfaVerifier = mfaService
+	}
+	handler.RegisterWithMFA(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads directory is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id).
@@ -309,6 +325,13 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("admin.data-permission") {
 		dataPermissionService := datapermissionmodule.NewService(datapermissionstore.NewRepository(st), nil)
 		providers = append(providers, datapermissionmodule.New(a, dataPermissionService, operations))
+	}
+	// S-10 (GOAL-017 D-002 §4): admin.mfa — the MFAVerifier is already wired
+	// into the login gate above; the provider mounts verify/self-service/
+	// admin-reset routes and users.mfa-reset. The auth-session repository
+	// satisfies handler.SessionRevoker for disable/reset session invalidation.
+	if plan.HasModule("admin.mfa") {
+		providers = append(providers, mfamodule.New(a, mfaService, operations, authRepository))
 	}
 	if plan.HasModule("admin.recycle-bin") {
 		providers = append(providers, recyclebinmodule.New(a, recycleService, operations))

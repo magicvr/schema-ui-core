@@ -38,6 +38,10 @@ type User struct {
 	// password change; the auth middleware rejects access-token JWTs issued at
 	// an older version, revoking already-signed tokens immediately.
 	TokenVersion int
+	// MFAEnabled is the product-state second-factor flag (S-10 · GOAL-017
+	// D-002 §4, migration 0029): true when user_mfa has an active enrollment.
+	// Cross-module read of the admin.mfa table (contract = migration 0029).
+	MFAEnabled bool
 	// Enabled is the product-state account flag (F-03 · migration 0013):
 	// false = disabled by an admin (login/refresh/middleware fail closed;
 	// disable also bumps TokenVersion and revokes all refresh tokens).

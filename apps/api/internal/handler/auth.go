@@ -13,6 +13,18 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
+// MFAVerifier is the optional second-factor login gate (S-10 · GOAL-017
+// D-002 §3): nil disables the gate entirely — the login contract stays
+// byte-identical. Required()==true means the user must complete a second
+// factor before tokens are issued; BeginChallenge issues the one-time proof
+// after the password factor succeeded; Verify completes the login and returns
+// the verified user id.
+type MFAVerifier interface {
+	Required(userID string) bool
+	BeginChallenge(userID string, now time.Time) (proof string, err error)
+	Verify(proof, code, recoveryCode string, now time.Time) (userID string, err error)
+}
+
 // CaptchaVerifier is the optional login captcha gate (S-11 · GOAL-011 D-002
 // `2): nil disables the gate entirely (module not enabled) — the login
 // contract is byte-identical to the pre-captcha behavior; a verifier with
@@ -33,15 +45,22 @@ type authHandler struct {
 	now         func() time.Time
 	rateLimiter *loginRateLimiter
 	captcha     CaptchaVerifier
+	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
+	// nil keeps the login contract byte-identical.
+	mfa MFAVerifier
 }
 
-func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier) {
+func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier, mfa ...MFAVerifier) {
 	h := &authHandler{
 		a:           a,
 		operations:  operations,
 		now:         time.Now,
 		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
 		captcha:     captcha,
+	}
+	if len(mfa) > 0 && mfa[0] != nil {
+		h.mfa = mfa[0]
+		a.SetMFAEnforcer(mfa[0])
 	}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
@@ -115,6 +134,24 @@ func (h *authHandler) login() http.HandlerFunc {
 				h.rateLimiter.record(limiterKey, h.now().UTC())
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
+			return
+		}
+		// S-10 (GOAL-017 D-002 §3): the password factor succeeded but the
+		// account requires a second factor — no token is issued yet; the
+		// client completes /api/auth/mfa/verify with the one-time proof.
+		var mfaReq *auth.MFARequiredError
+		if errors.As(err, &mfaReq) {
+			if h.mfa == nil {
+				// The gate vanished between Login and here — fail closed.
+				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
+				return
+			}
+			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
+			if perr != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "mfaProof": proof})
 			return
 		}
 		if err != nil {

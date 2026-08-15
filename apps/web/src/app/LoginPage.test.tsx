@@ -66,7 +66,7 @@ describe("LoginPage", () => {
     const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
     expect(button).not.toBeNull();
     await act(async () => button!.click());
-    expect(onLogin).toHaveBeenCalledWith("admin", "admin");
+    expect(onLogin).toHaveBeenCalledWith("admin", "admin", undefined, expect.any(Function));
   });
 
   it("surfaces the server error when login fails", async () => {
@@ -157,7 +157,7 @@ describe("LoginPage", () => {
       fill(container, "#captchaAnswer", "10");
       const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
       await act(async () => button!.click());
-      expect(onLogin).toHaveBeenCalledWith("admin", "admin", { id: "cap-1", answer: "10" });
+      expect(onLogin).toHaveBeenCalledWith("admin", "admin", { id: "cap-1", answer: "10" }, expect.any(Function));
     } finally {
       vi.unstubAllGlobals();
     }
@@ -177,7 +177,7 @@ describe("LoginPage", () => {
       fill(container, "#password", "admin");
       const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
       await act(async () => button!.click());
-      expect(onLogin).toHaveBeenCalledWith("admin", "admin");
+      expect(onLogin).toHaveBeenCalledWith("admin", "admin", undefined, expect.any(Function));
     } finally {
       vi.unstubAllGlobals();
     }

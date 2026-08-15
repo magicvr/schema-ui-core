@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.2.0
-progress: 1/5
+version: 0.3.0
+progress: 3/5
 ---
 
 # GOAL-017-r3-s10-mfa-2fa · MFA / 2FA（TOTP 双因素认证）
@@ -26,12 +26,12 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：因子与恢复流程（TOTP 基准 / 恢复码策略 / 解绑）、登录挑战集成点与协议面（auth.login 扩展动作键、会话面、失效语义）、安全存储、权限键与 Profile 归属；方案级 self 审视 + **grok build independent（security 门禁，grok-4.6 · high）**（D-002，2026-08-15）
-- [ ] **S2 · 实现**：模块/内核扩展 + 挑战端点 + schema 页 + 测试
-- [ ] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / web 全量 / e2e 双 profile）
-- [ ] **S4 · go 影响判定 + 自审**
+- [x] **S2 · 实现**：模块/内核扩展 + 挑战端点 + schema 页 + 测试（E-003，2026-08-15；个人中心 MFA 区块 UI 登记残余）
+- [x] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / web 969/969；e2e 双 profile 归 S5 波次）（E-004，2026-08-15）
+- [x] **S4 · go 影响判定 + 自审**（D-004 不暂挂 + A-006 pass，2026-08-15）
 - [ ] **S5 · 关门**：独立审计（grok build）+ 关门 + goal-tree 同步
 
-progress: 1/5 由五个等权检查点派生（S1 完成后更新）。
+progress: 3/5 由五个等权检查点派生（S1~S4 完成后更新）。
 
 ## 信息就绪与未知项
 

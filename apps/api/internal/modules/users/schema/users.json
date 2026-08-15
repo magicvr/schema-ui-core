@@ -94,6 +94,14 @@
         "behavior": "reload"
       }
     },
+    "resetUserMfa": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/mfa/reset",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
     "uploadCsv": {
       "type": "upload",
       "url": "/api/upload",
@@ -316,6 +324,11 @@
               "labelKey": "schema.users.column.enabled"
             },
             {
+              "field": "mfaEnabled",
+              "label": "MFA",
+              "labelKey": "schema.users.column.mfaEnabled"
+            },
+            {
               "field": "updatedAt",
               "label": "Updated",
               "sortable": true,
@@ -433,6 +446,26 @@
               "confirm": "Unlock this user?",
               "labelKey": "schema.users.action.unlock",
               "confirmKey": "schema.users.confirm.unlock"
+            },
+            {
+              "key": "resetMfa",
+              "label": "Reset MFA",
+              "actionRef": "resetUserMfa",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.mfa-reset\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "mfaEnabled",
+                "equals": false
+              },
+              "confirm": "Reset this user's MFA? All sessions will be revoked.",
+              "labelKey": "schema.users.action.resetMfa",
+              "confirmKey": "schema.users.confirm.resetMfa"
             },
             {
               "key": "delete",

@@ -191,6 +191,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		settingsrepository.New(st),
 		plan,
 		&readinessGate{},
+		jwtSecret("test-secret"),
 		[]kernel.Provider{probe},
 	)
 	if err != nil {

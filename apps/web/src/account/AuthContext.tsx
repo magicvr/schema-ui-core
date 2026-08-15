@@ -3,8 +3,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   authFetch,
   AuthError,
+  isLoginMFARequired,
   login as loginRequest,
   logout as logoutRequest,
+  mfaVerify as mfaVerifyRequest,
   restoreSession,
   setAuthLostListener,
   type AuthSession,
@@ -23,8 +25,16 @@ export interface AuthContextValue {
   status: AuthStatus;
   session: AuthSession | null;
   user: AuthSession["user"] | null;
-  /** Authenticates, restores a captured return intent, and transitions to the shell. */
-  login: (username: string, password: string, captcha?: import("@/account/auth-client").LoginCaptcha) => Promise<void>;
+  /** Authenticates, restores a captured return intent, and transitions to the
+   * shell. When the account requires a second factor (S-10 · GOAL-017 D-002
+   * §3) resolveMFA is invoked with the one-time proof and must return the
+   * TOTP code (or recovery code) the user entered. */
+  login: (
+    username: string,
+    password: string,
+    captcha?: import("@/account/auth-client").LoginCaptcha,
+    resolveMFA?: (proof: string) => Promise<{ code: string; recoveryCode?: string }>,
+  ) => Promise<void>;
   /** Revokes the session and transitions to the login page. */
   logout: () => Promise<void>;
   /** Auth-aware fetch: attaches Bearer and refreshes once on 401. */
@@ -79,10 +89,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (username: string, password: string, captcha?: import("@/account/auth-client").LoginCaptcha) => {
+  const login = useCallback(async (
+    username: string,
+    password: string,
+    captcha?: import("@/account/auth-client").LoginCaptcha,
+    resolveMFA?: (proof: string) => Promise<{ code: string; recoveryCode?: string }>,
+  ) => {
     let next: AuthSession;
     try {
-      next = await loginRequest(username, password, captcha);
+      // S-10 (GOAL-017 D-002 §3): the first factor may return a second-factor
+      // proof instead of tokens — resolve it through the UI callback, then
+      // complete the login with /api/auth/mfa/verify.
+      const first = await loginRequest(username, password, captcha);
+      if (isLoginMFARequired(first)) {
+        if (resolveMFA === undefined) {
+          throw new AuthError("MFA_REQUIRED", "second factor required", 401);
+        }
+        const second = await resolveMFA(first.mfaProof);
+        next = await mfaVerifyRequest(first.mfaProof, second.code, second.recoveryCode);
+      } else {
+        next = first;
+      }
     } catch (err: unknown) {
       // GOAL-004 S4-6: 423 is the account-lock terminal (ADR-0035 D4/D7
       // locked state) — the login surface surfaces it as an error, and the

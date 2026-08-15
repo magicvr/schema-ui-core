@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { AuthError, type LoginCaptcha } from "@/account/auth-client";
 import {
@@ -41,6 +41,14 @@ function loginErrorKey(code: string): string {
       return "login.error.malformed";
     case "INVALID_CAPTCHA":
       return "login.error.invalidCaptcha";
+    case "MFA_INVALID":
+      return "login.error.mfaInvalid";
+    case "MFA_PROOF_EXPIRED":
+      return "login.error.mfaProofExpired";
+    case "MFA_PROOF_EXHAUSTED":
+      return "login.error.mfaProofExhausted";
+    case "MFA_REQUIRED":
+      return "login.error.mfaRequired";
     default:
       return "login.error.generic";
   }
@@ -53,7 +61,12 @@ function loginErrorKey(code: string): string {
 export function LoginPage({
   onLogin,
 }: {
-  onLogin: (username: string, password: string, captcha?: LoginCaptcha) => Promise<void>;
+  onLogin: (
+    username: string,
+    password: string,
+    captcha?: LoginCaptcha,
+    resolveMFA?: (proof: string) => Promise<{ code: string; recoveryCode?: string }>,
+  ) => Promise<void>;
 }) {
   const t = useTranslate();
   const [username, setUsername] = useState("");
@@ -68,6 +81,13 @@ export function LoginPage({
   // challenge is actually required (the error surfaces in the form).
   const [captchaChallenge, setCaptchaChallenge] = useState<{ id: string; question: string } | null>(null);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  // S-10 (GOAL-017 D-002 §3): two-step login — the password factor succeeded
+  // and the server issued a one-time proof; the code stage resolves the
+  // pending promise with the user's TOTP (or recovery) code.
+  const [mfaPending, setMfaPending] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaRecovery, setMfaRecovery] = useState("");
+  const mfaResolverRef = useRef<((v: { code: string; recoveryCode?: string }) => void) | null>(null);
   const showSeedHint = import.meta.env.DEV;
 
   useEffect(() => {
@@ -124,10 +144,20 @@ export function LoginPage({
         ? { id: captchaChallenge.id, answer: captchaAnswer.trim() }
         : undefined;
     try {
+      // S-10 (GOAL-017 D-002 §3): when the account requires a second factor
+      // the login callback pauses here until the code stage resolves.
+      const resolveMFA = async (proof: string): Promise<{ code: string; recoveryCode?: string }> => {
+        setMfaPending(proof);
+        setMfaCode("");
+        setMfaRecovery("");
+        return new Promise((resolve) => {
+          mfaResolverRef.current = resolve;
+        });
+      };
       if (captcha === undefined) {
-        await onLogin(username, password);
+        await onLogin(username, password, undefined, resolveMFA);
       } else {
-        await onLogin(username, password, captcha);
+        await onLogin(username, password, captcha, resolveMFA);
       }
     } catch (err: unknown) {
       const code = err instanceof AuthError ? err.code : "LOGIN_UNKNOWN";
@@ -225,6 +255,48 @@ export function LoginPage({
                     value={captchaAnswer}
                     onChange={(event) => setCaptchaAnswer(event.target.value)}
                   />
+                </div>
+              ) : null}
+
+              {mfaPending !== null ? (
+                <div className="space-y-2" data-mfa-stage>
+                  <Label>{t("login.mfa.title")}</Label>
+                  <p className="text-sm text-muted-foreground">{t("login.mfa.description")}</p>
+                  <Input
+                    id="mfaCode"
+                    name="mfaCode"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    placeholder={t("login.mfa.code")}
+                    value={mfaCode}
+                    onChange={(event) => setMfaCode(event.target.value)}
+                  />
+                  <Input
+                    id="mfaRecovery"
+                    name="mfaRecovery"
+                    autoComplete="off"
+                    placeholder={t("login.mfa.recovery")}
+                    value={mfaRecovery}
+                    onChange={(event) => setMfaRecovery(event.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    disabled={mfaCode.trim() === "" && mfaRecovery.trim() === ""}
+                    className="w-full"
+                    onClick={() => {
+                      const resolve = mfaResolverRef.current;
+                      if (resolve !== null) {
+                        mfaResolverRef.current = null;
+                        setMfaPending(null);
+                        resolve({
+                          code: mfaCode.trim(),
+                          ...(mfaRecovery.trim() === "" ? {} : { recoveryCode: mfaRecovery.trim() }),
+                        });
+                      }
+                    }}
+                  >
+                    {t("login.mfa.verify")}
+                  </Button>
                 </div>
               ) : null}
 

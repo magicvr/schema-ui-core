@@ -36,6 +36,15 @@ var (
 	ErrTokenRevoked       = errors.New("auth: token revoked")
 )
 
+// MFARequiredError is returned by Login when the account's second factor must
+// be completed before tokens are issued (S-10 · GOAL-017 D-002 §3). It carries
+// the verified user id so the login handler can begin a second-factor proof.
+type MFARequiredError struct {
+	UserID string
+}
+
+func (e *MFARequiredError) Error() string { return "auth: second factor required" }
+
 // Account-lock policy (GOAL-004 S4-6): 5 consecutive password failures open a
 // 15-minute lock window; the lock expires automatically once now passes
 // locked_until and a successful login resets the counter.
@@ -59,6 +68,14 @@ type Repository interface {
 	RevokeAllRefreshTokensForUser(string, time.Time) error
 }
 
+// MFAEnforcer is the optional second-factor login gate (S-10 · GOAL-017
+// D-002 §3): Required reports whether the user must complete a second factor
+// before tokens are issued. A nil enforcer keeps the login contract
+// byte-identical. Satisfied structurally by the handler.MFAVerifier.
+type MFAEnforcer interface {
+	Required(userID string) bool
+}
+
 // Authenticator holds the signing secret, token TTLs and the auth-session
 // repository.
 type Authenticator struct {
@@ -67,6 +84,9 @@ type Authenticator struct {
 	refreshTTL time.Duration
 	repository Repository
 	devSession bool // explicit opt-in: static dev session fallback (M9)
+	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
+	// nil = the login contract is byte-identical to the pre-MFA behavior.
+	mfa MFAEnforcer
 	// OnLockOpened is an optional best-effort hook fired when a login failure
 	// opens the account-lock window (F-04 · GOAL-006 D-002 §3: system
 	// notification source). Nil = no hook; failures never block Login.
@@ -141,6 +161,34 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 		if err := a.repository.ResetLoginFailures(u.ID, now); err != nil {
 			return "", "", account.User{}, err
 		}
+	}
+	// S-10 (GOAL-017 D-002 §3): the second factor gates token issuance after
+	// the password factor succeeded. nil enforcer → original behavior.
+	if a.mfa != nil && a.mfa.Required(u.ID) {
+		return "", "", account.User{}, &MFARequiredError{UserID: u.ID}
+	}
+	return a.issue(u, now)
+}
+
+// SetMFAEnforcer installs the optional second-factor gate (S-10 · GOAL-017
+// D-002 §3). nil restores the pre-MFA login contract.
+func (a *Authenticator) SetMFAEnforcer(mfa MFAEnforcer) {
+	a.mfa = mfa
+}
+
+// IssueTokensFor issues a fresh access/refresh pair for an already
+// second-factor-verified user (S-10 · GOAL-017 D-002 §3). Fail-closed on the
+// same terminal states as Login (locked / disabled).
+func (a *Authenticator) IssueTokensFor(userID string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
+	u, err := a.repository.UserByID(userID)
+	if err != nil {
+		return "", "", account.User{}, err
+	}
+	if u.LockedUntil > now.Unix() {
+		return "", "", account.User{}, ErrAccountLocked
+	}
+	if !u.Enabled {
+		return "", "", account.User{}, ErrAccountDisabled
 	}
 	return a.issue(u, now)
 }

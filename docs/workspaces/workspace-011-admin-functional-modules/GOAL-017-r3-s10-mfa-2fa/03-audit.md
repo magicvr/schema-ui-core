@@ -24,6 +24,7 @@ version: 0.1.3
 | A-001 | 2026-08-15 | self | 立项（五件套 + 路线图 + goal-tree） | pass | 0 | 03-audit/A-001-scaffold-self.md |
 | A-002 | 2026-08-15 | independent | 立项（五件套 + 分档/C-10·C-11·S-11 边界/信息门禁 + 路线图同步） | pass | 0 | 03-audit/A-002-scaffold-independent.md |
 | A-003 | 2026-08-15 | self | S1 方案冻结 | pass | 0 | 03-audit/A-003-s1-self.md |
+| A-006 | 2026-08-15 | self | S2-S4 实现与验证 | pass | 0 | 03-audit/A-006-s2-s4-self.md |
 | A-004 | 2026-08-15 | independent | S1 方案冻结（D-002 + I-001~I-004 + 登录集成/安全控制/协议） | conditional | 2（F-001、F-002） | 03-audit/A-004-s1-independent.md |
 | A-005 | 2026-08-15 | independent | A-004 F-001/F-002 required 闭合复审（D-002 §2/§3/§4/§6 + D-003） | pass | 0 | 03-audit/A-005-s1-reaudit.md |
 

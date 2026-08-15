@@ -83,6 +83,10 @@ var profileDefaults = map[ProfileName][]string{
 		// S-09 (GOAL-016 D-001 §2): admin.data-permission — admin-only profile;
 		// row-level scope policy + assignment management (v1 wires no resource).
 		"admin.data-permission",
+		// S-10 (GOAL-017 D-001 §1): admin.mfa — admin-only profile; TOTP
+		// second-factor gate + self-service surface (default: nobody enrolled,
+		// login behavior unchanged).
+		"admin.mfa",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -159,6 +163,9 @@ func BuiltinModules() []Module {
 		{ID: "admin.roles", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}", "POST /api/roles/batch-delete"}, Pages: []string{"roles"}, Navigation: []string{"menu_roles"}, Permissions: []string{"roles.read", "roles.write", "roles.assign"}, Fragments: []string{"roles"}}},
 		// S-09 admin.data-permission (GOAL-016): row-level scope policies/assignments.
 		{ID: "admin.data-permission", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/data-permission/policies", "PATCH /api/data-permission/policies/{resource}", "GET /api/data-permission/scopes", "PATCH /api/data-permission/scopes"}, Pages: []string{"data-permission"}, Navigation: []string{"menu_data_permission"}, Permissions: []string{"data-permission.read", "data-permission.write"}, Fragments: []string{"data-permission"}}},
+		// S-10 admin.mfa (GOAL-017): TOTP second factor — no page/nav/fragment
+		// (D-002 §4: personal-center block + users row action).
+		{ID: "admin.mfa", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"POST /api/auth/mfa/verify", "GET /api/mfa/status", "POST /api/mfa/enroll", "POST /api/mfa/confirm", "POST /api/mfa/disable", "POST /api/mfa/recovery/rotate", "POST /api/users/{id}/mfa/reset"}, Permissions: []string{"users.mfa-reset"}}},
 		{ID: "admin.settings", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset", "POST /api/branding/assets", "GET /api/branding/assets/{id}"}, Pages: []string{"settings"}, Navigation: []string{"menu_settings"}, Permissions: []string{"settings.read", "settings.write"}, ConfigNamespaces: []string{"settings.branding"}, Fragments: []string{"settings"}}},
 		{ID: "admin.activity", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.manifest-route", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/operations", "GET /api/operations/{id}"}, Pages: []string{"activity"}, Navigation: []string{"menu_activity"}, Permissions: []string{"operations.read"}, Fragments: []string{"activity"}}},
 		// F-03 admin.account (GOAL-005): self-service + enable/disable/unlock.

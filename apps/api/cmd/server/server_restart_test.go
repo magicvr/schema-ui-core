@@ -48,6 +48,7 @@ func TestServerProcessRestartPersistsUsers(t *testing.T) {
 
 	// Phase 1: first process (fresh DB seeds admin).
 	srv1, log1 := startServer(t, bin, dbPath, port1)
+	defer killServer(t, srv1, log1)
 	waitHealth(t, port1, 20*time.Second)
 	token := httpLogin(t, port1, "admin", "admin")
 	createdID, created := httpCreateUser(t, port1, token)

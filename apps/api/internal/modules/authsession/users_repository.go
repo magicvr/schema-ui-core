@@ -21,8 +21,10 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 		}
 
 		rows, err := tx.Query(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, created_at, updated_at FROM users`+where+
-				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, id ASC`+
+			`SELECT u.id, u.username, u.name, u.roles, u.password_hash, u.token_version, u.failed_login_count, u.locked_until, u.enabled, u.created_at, u.updated_at,
+			        EXISTS(SELECT 1 FROM user_mfa um WHERE um.user_id = u.id AND um.status = 'active') AS mfa_enabled
+			 FROM users u`+where+
+				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, u.id ASC`+
 				` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
 		)
@@ -31,7 +33,7 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 		}
 		items = make([]User, 0, filter.PageSize)
 		for rows.Next() {
-			user, err := scanUser(rows)
+			user, err := scanUserListRow(rows)
 			if err != nil {
 				_ = rows.Close()
 				return err
@@ -360,6 +362,34 @@ func countAdminUsersExcluding(tx *sql.Tx, id string) (int, error) {
 		return 0, fmt.Errorf("count admin users: %w", err)
 	}
 	return count, nil
+}
+
+
+// scanUserListRow scans the ListUsers projection: the 11 user columns plus the
+// cross-module MFA flag (S-10 · GOAL-017 D-002 §4, user_mfa table contract
+// from migration 0029). One Scan call — sql.Rows requires dest count ==
+// column count.
+func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
+	var user User
+	var roles string
+	var createdAt, updatedAt int64
+	var mfaEnabled int
+	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash,
+		&user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled,
+		&createdAt, &updatedAt, &mfaEnabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("scan user list row: %w", err)
+	}
+	if err := json.Unmarshal([]byte(roles), &user.Roles); err != nil {
+		return nil, fmt.Errorf("unmarshal roles: %w", err)
+	}
+	user.MFAEnabled = mfaEnabled != 0
+	user.CreatedAt = time.Unix(createdAt, 0).UTC()
+	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+	return &user, nil
 }
 
 func usersWhere(query string) (string, []any) {

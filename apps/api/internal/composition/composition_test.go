@@ -48,6 +48,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		settingsrepository.New(st),
 		plan,
 		gate,
+		jwtSecret("test-secret"),
 	)
 }
 
@@ -465,7 +466,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// S-09 (GOAL-016): admin.data-permission contributes
 		// data-permission.read/data-permission.write (+2 permissions) and
 		// menu_data_permission (+1 navigation) to admin only.
-		{profile: "admin", wantPermissions: 26, wantNavigation: 13},
+		// S-10 (GOAL-017): admin.mfa contributes users.mfa-reset (+1 permission,
+		// no navigation — personal-center block + users row action).
+		{profile: "admin", wantPermissions: 27, wantNavigation: 13},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

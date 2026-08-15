@@ -37,6 +37,13 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operat
 // Schema pages are registered separately via RegisterSchemas so composition can
 // pass runtime contribution ownership (R5 C5.1).
 func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha ...CaptchaVerifier) {
+	RegisterWithMFA(mux, a, st, operations, plan, ready, captcha, nil)
+}
+
+// RegisterWithMFA is RegisterWithReadiness plus the optional second-factor
+// login gate (S-10 · GOAL-017 D-002 §3): nil keeps the login contract
+// byte-identical.
+func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready))
 	if plan.HasModule("core.auth-session") {
@@ -44,7 +51,7 @@ func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.
 		if len(captcha) > 0 {
 			verifier = captcha[0]
 		}
-		authsHandler(mux, a, operations, verifier)
+		authsHandler(mux, a, operations, verifier, mfa)
 		accountsHandler(mux, a)
 	}
 }

@@ -214,8 +214,68 @@ export interface LoginCaptcha {
   answer: string;
 }
 
-/** Authenticates with username/password and persists the token pair. */
-export async function login(username: string, password: string, captcha?: LoginCaptcha): Promise<AuthSession> {
+/** Second factor required by the login (S-10 · GOAL-017 D-002 §3): the
+ * password factor succeeded; no tokens are issued until /api/auth/mfa/verify
+ * completes with the one-time proof. */
+export interface LoginMFARequired {
+  mfaRequired: true;
+  mfaProof: string;
+}
+
+export function isLoginMFARequired(value: AuthSession | LoginMFARequired): value is LoginMFARequired {
+  return (value as LoginMFARequired).mfaRequired === true;
+}
+
+/** Completes a two-step login with the second factor (S-10 · GOAL-017 D-002
+ * §3): proof + TOTP code (or one-time recovery code) → real token pair. */
+export async function mfaVerify(proof: string, code: string, recoveryCode?: string): Promise<AuthSession> {
+  let response: Response;
+  try {
+    response = await postJSON("/api/auth/mfa/verify", {
+      proof,
+      code,
+      ...(recoveryCode === undefined ? {} : { recoveryCode }),
+    });
+  } catch {
+    throw new AuthError("LOGIN_NETWORK", "unable to reach the login service");
+  }
+  if (response.status === 401) {
+    let codeName = "MFA_INVALID";
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error === "MFA_PROOF_EXPIRED" || body.error === "MFA_PROOF_EXHAUSTED") {
+        codeName = body.error;
+      }
+    } catch {
+      // non-JSON error body: keep MFA_INVALID
+    }
+    throw new AuthError(codeName, "second factor failed", 401);
+  }
+  if (!response.ok) {
+    throw new AuthError("LOGIN_FAILED", `mfa verify failed: HTTP ${response.status}`, response.status);
+  }
+  const body = (await response.json()) as {
+    accessToken?: string;
+    refreshToken?: string;
+    user?: { id?: string; name?: string };
+  };
+  if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string") {
+    throw new AuthError("LOGIN_MALFORMED", "mfa verify response was malformed");
+  }
+  setAccessToken(body.accessToken);
+  setRefreshToken(body.refreshToken);
+  try {
+    return await fetchMe();
+  } catch (error) {
+    clearTokens();
+    throw error;
+  }
+}
+
+/** Authenticates with username/password and persists the token pair. When the
+ * account requires a second factor the response carries mfaRequired + a
+ * one-time proof instead of tokens — complete it via mfaVerify. */
+export async function login(username: string, password: string, captcha?: LoginCaptcha): Promise<AuthSession | LoginMFARequired> {
   let response: Response;
   try {
     response = await postJSON(LOGIN_URL, {
@@ -255,12 +315,19 @@ export async function login(username: string, password: string, captcha?: LoginC
     throw new AuthError("LOGIN_FAILED", `login failed: HTTP ${response.status}`, response.status);
   }
   const body = (await response.json()) as {
+    mfaRequired?: boolean;
+    mfaProof?: string;
     accessToken?: string;
     refreshToken?: string;
     user?: AuthUser;
   };
   if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string" || !body.user) {
     throw new AuthError("LOGIN_MALFORMED", "login response was malformed");
+  }
+  // S-10 (GOAL-017 D-002 §3): the account requires a second factor — no
+  // tokens are issued; hand the one-time proof to mfaVerify.
+  if (body.mfaRequired === true && typeof body.mfaProof === "string") {
+    return { mfaRequired: true, mfaProof: body.mfaProof };
   }
   setAccessToken(body.accessToken);
   setRefreshToken(body.refreshToken);

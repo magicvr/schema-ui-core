@@ -56,6 +56,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// F-03 (GOAL-005): admin.account enable/disable keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.enable"}, Permission: "users.enable", Resource: "users", Action: "enable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.disable"}, Permission: "users.disable", Resource: "users", Action: "disable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-10 (GOAL-017): admin.mfa admin-reset key.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.mfa", Key: "users.mfa-reset"}, Permission: "users.mfa-reset", Resource: "users", Action: "mfa-reset", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-09 (GOAL-016): admin.data-permission keys.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "data-permission.read"}, Permission: "data-permission.read", Resource: "data-permission", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "data-permission.write"}, Permission: "data-permission.write", Resource: "data-permission", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},

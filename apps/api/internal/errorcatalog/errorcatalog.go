@@ -123,6 +123,15 @@ var Catalog = map[string]Entry{
 	// S-11 (GOAL-011 D-002 §2): login captcha code.
 	"INVALID_CAPTCHA": {"error.invalidCaptcha", "captcha verification failed", "验证码校验失败"},
 
+	// S-10 (GOAL-017 D-002 §3/§4): MFA codes.
+	"INVALID_MFA_BODY":       {"error.invalidMfaBody", "body must be JSON with proof and code", "请求体必须是包含 proof 和 code 的 JSON"},
+	"MFA_INVALID":            {"error.mfaInvalid", "invalid second-factor code", "第二因素验证码无效"},
+	"MFA_PROOF_EXPIRED":      {"error.mfaProofExpired", "second-factor proof expired; sign in again", "第二因素验证已过期，请重新登录"},
+	"MFA_PROOF_EXHAUSTED":    {"error.mfaProofExhausted", "too many failed attempts; sign in again", "失败次数过多，请重新登录"},
+	"MFA_NOT_ENROLLED":       {"error.mfaNotEnrolled", "no MFA enrollment for this account", "该账号未启用 MFA"},
+	"MFA_PENDING_ONLY":       {"error.mfaPendingOnly", "MFA is not activated yet", "MFA 尚未激活"},
+	"MFA_ALREADY_ACTIVE":     {"error.mfaAlreadyActive", "MFA is already active", "MFA 已激活"},
+
 	// S-09 (GOAL-016 D-002 §3): data-permission codes.
 	"INVALID_SCOPE":          {"error.invalidScope", "scope must be all or self", "数据范围必须是 all 或 self"},
 	"SCOPE_NOT_ENFORCEABLE":  {"error.scopeNotEnforceable", "resource is not wired for row-level scoping", "该资源未接入行级数据范围"},

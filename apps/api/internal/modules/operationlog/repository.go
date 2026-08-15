@@ -50,6 +50,13 @@ const (
 	// S-09 data-permission events (GOAL-016 D-002 §3).
 	EventDataPermissionPolicyUpdate = "data-permission.policy-update"
 	EventDataPermissionScopeUpdate  = "data-permission.scope-update"
+	// S-10 MFA events (GOAL-017 D-002 §2/§4).
+	EventMFAEnroll        = "mfa.enroll"
+	EventMFAConfirm       = "mfa.confirm"
+	EventMFADisable       = "mfa.disable"
+	EventMFARecoveryRotate = "mfa.recovery-rotate"
+	EventMFAAdminReset    = "mfa.admin-reset"
+	EventMFALogin         = "mfa.login"
 )
 
 // Operation is one append-only operation log row.

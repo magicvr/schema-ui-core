@@ -94,12 +94,13 @@ type usersEntity struct {
 func userToMap(u authsession.User) map[string]any {
 	locked := u.LockedUntil > time.Now().UTC().Unix()
 	return map[string]any{
-		"id":        u.ID,
-		"username":  u.Username,
-		"name":      u.Name,
-		"roles":     u.Roles,
-		"enabled":   u.Enabled,
-		"locked":    locked,
+		"id":         u.ID,
+		"username":   u.Username,
+		"name":       u.Name,
+		"roles":      u.Roles,
+		"enabled":    u.Enabled,
+		"mfaEnabled": u.MFAEnabled,
+		"locked":     locked,
 		"createdAt": u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"updatedAt": u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}

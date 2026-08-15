@@ -47,6 +47,8 @@ var frozenLiteralCodes = []string{
 	"INVALID_CAPTCHA",
 	// S-09 (GOAL-016 D-002 §3): data-permission codes.
 	"INVALID_SCOPE", "SCOPE_NOT_ENFORCEABLE",
+	// S-10 (GOAL-017 D-002 §3/§4): MFA codes.
+	"INVALID_MFA_BODY", "MFA_INVALID", "MFA_PROOF_EXPIRED", "MFA_PROOF_EXHAUSTED", "MFA_NOT_ENROLLED", "MFA_PENDING_ONLY", "MFA_ALREADY_ACTIVE",
 	// W9 (GOAL-010 D-001): brand asset upload codes.
 	"ASSET_NOT_FOUND", "INVALID_KIND",
 }
