@@ -35,6 +35,8 @@ var frozenLiteralCodes = []string{
 	"ACCOUNT_LOCKED",
 	// F-03 (GOAL-005): self-service account codes.
 	"INVALID_PASSWORD", "INVALID_PASSWORD_BODY", "SESSION_NOT_FOUND",
+	// F-03 sessions list status filter.
+	"INVALID_STATUS_FILTER",
 	// F-03 (GOAL-005 D-002 §3): disabled-account login terminal (403).
 	"ACCOUNT_DISABLED",
 	// F-02 (GOAL-004): data-transfer codes.

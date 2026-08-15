@@ -138,10 +138,16 @@ export interface RenderTableNode {
     actions?: Array<Record<string, unknown>>;
     toolbar?: Array<Record<string, unknown>>;
     dataSource?: string;
+    /** Table heading (literal fallback for titleKey). */
+    title?: string;
+    /** i18n key resolved before title. */
+    titleKey?: string;
     /** Direct field name of each row's unique key (F-002 · I-010-001 v0.2.0 §3; default "id"). */
     rowKey?: string;
     /** ADR-0022 multi-select model (registry; mode: multiple only). */
     selection?: { mode?: string };
+    /** Schema-driven filters (select-only; see schemaTableFilters). */
+    filters?: Array<Record<string, unknown>>;
   };
   children?: RenderNode[];
 }

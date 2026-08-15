@@ -131,6 +131,99 @@ export function schemaTableRowKey(node: RenderTableNode): string {
   return typeof raw === "string" && raw !== "" ? raw : "id";
 }
 
+/** One select option of a schema-driven table filter. */
+export interface SchemaTableFilterOptionSpec {
+  value: string;
+  label?: string;
+  labelKey?: string;
+}
+
+/** A schema-driven table filter (table node `props.filters`; select-only). */
+export interface SchemaTableFilterSpec {
+  field: string;
+  type: "select";
+  label?: string;
+  labelKey?: string;
+  options: SchemaTableFilterOptionSpec[];
+}
+
+function isFilterRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function filterOptionOf(value: unknown): SchemaTableFilterOptionSpec | null {
+  if (!isFilterRecord(value) || typeof value.value !== "string") {
+    return null;
+  }
+  return {
+    value: value.value,
+    ...(typeof value.label === "string" ? { label: value.label } : {}),
+    ...(typeof value.labelKey === "string" ? { labelKey: value.labelKey } : {}),
+  };
+}
+
+/**
+ * Extracts the table node's filter specs (fail-closed on malformed entries).
+ * Only `select` filters are supported; other/unknown types are dropped so a
+ * schema typo never renders a broken control.
+ */
+export function schemaTableFilters(node: RenderTableNode): SchemaTableFilterSpec[] {
+  const raw = node.props?.filters;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: SchemaTableFilterSpec[] = [];
+  for (const entry of raw) {
+    if (!isFilterRecord(entry)) {
+      continue;
+    }
+    const field = stringOf(entry.field);
+    if (field === "") {
+      continue;
+    }
+    if (entry.type !== "select") {
+      continue;
+    }
+    const options = (Array.isArray(entry.options) ? entry.options : [])
+      .map(filterOptionOf)
+      .filter((option): option is SchemaTableFilterOptionSpec => option !== null);
+    out.push({
+      field,
+      type: "select",
+      ...(typeof entry.label === "string" ? { label: entry.label } : {}),
+      ...(typeof entry.labelKey === "string" ? { labelKey: entry.labelKey } : {}),
+      options,
+    });
+  }
+  return out;
+}
+
+/**
+ * Windowed pager page list: 1 … current±1 … total, with gap markers for
+ * long page runs (stable shape for tests and a11y).
+ */
+export function pagerPages(current: number, total: number): Array<number | "gap"> {
+  const pages = Math.max(1, Math.floor(total));
+  const now = Math.min(Math.max(1, Math.floor(current)), pages);
+  if (pages <= 7) {
+    return Array.from({ length: pages }, (_, index) => index + 1);
+  }
+  const out: Array<number | "gap"> = [1];
+  if (now > 3) {
+    out.push("gap");
+  }
+  const start = Math.max(2, now - 1);
+  const end = Math.min(pages - 1, now + 1);
+  for (let page = start; page <= end; page += 1) {
+    out.push(page);
+  }
+  if (now < pages - 2) {
+    out.push("gap");
+  }
+  out.push(pages);
+  return out;
+}
+
 /** F-002: a row key must be a non-empty string or a finite number (JSON scalar). */
 function scalarRowKey(value: unknown): string | null {
   if (typeof value === "string" && value !== "") {
@@ -173,6 +266,14 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const tableId = node.id ?? "default";
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
   const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
+  const filters = schemaTableFilters(node);
+  const title = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "titleKey",
+    "title",
+    t,
+    "",
+  );
 
   // Register the injected transport with the page's Schema CRUD provider so
   // modal form submits and row actions share the same fetcher (S4).
@@ -264,7 +365,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       crud.clearSelection(tableId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.page, query.pageSize, query.sort, query.order, query.q]);
+  }, [query.page, query.pageSize, query.sort, query.order, query.q, query.filters]);
 
   if (columns.length === 0) {
     return (
@@ -457,6 +558,54 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
 
   return (
     <div className="w-full min-w-0 space-y-2">
+      {title !== "" ? (
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      ) : null}
+      {filters.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-4" data-table-filters>
+          {filters.map((filter) => {
+            const label = resolveTextProp(
+              filter as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              filter.field,
+            );
+            const value = query.filters?.[filter.field] ?? "";
+            return (
+              <label
+                key={filter.field}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
+                <span>{label}</span>
+                <select
+                  value={value}
+                  onChange={(event) =>
+                    setQuery({
+                      ...query,
+                      filters: { ...(query.filters ?? {}), [filter.field]: event.target.value },
+                      page: 1,
+                    })
+                  }
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {filter.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {resolveTextProp(
+                        option as unknown as Record<string, unknown>,
+                        "labelKey",
+                        "label",
+                        t,
+                        option.value,
+                      )}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            );
+          })}
+        </div>
+      ) : null}
       {toolbar.length > 0 ? (
         <div className="flex flex-wrap items-center justify-end gap-2">
           {toolbar.map((trigger) => {
@@ -510,13 +659,57 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         caption={t("feedback.schemaDrivenItems")}
       />
       {list !== null ? (
-        <p className="text-xs text-muted-foreground">
-          {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
-          {t("feedback.pageOf", {
-            page: String(list.page),
-            total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
-          })}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
+            {t("feedback.pageOf", {
+              page: String(list.page),
+              total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
+            })}
+          </p>
+          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
+            <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={list.page <= 1}
+                aria-label={t("feedback.previousPage")}
+                onClick={() => setQuery({ ...query, page: list.page - 1 })}
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+              >
+                {"‹"}
+              </button>
+              {pagerPages(list.page, Math.max(1, Math.ceil(list.total / list.pageSize))).map(
+                (page, index) =>
+                  page === "gap" ? (
+                    <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
+                      {"…"}
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      disabled={page === list.page}
+                      aria-current={page === list.page ? "page" : undefined}
+                      aria-label={t("feedback.pageNumber", { page: String(page) })}
+                      onClick={() => setQuery({ ...query, page })}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:border-primary/40 disabled:bg-primary/10 disabled:text-foreground"
+                    >
+                      {page}
+                    </button>
+                  ),
+              )}
+              <button
+                type="button"
+                disabled={list.page >= Math.max(1, Math.ceil(list.total / list.pageSize))}
+                aria-label={t("feedback.nextPage")}
+                onClick={() => setQuery({ ...query, page: list.page + 1 })}
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+              >
+                {"›"}
+              </button>
+            </nav>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

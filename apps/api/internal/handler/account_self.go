@@ -232,6 +232,23 @@ func (h *accountSelfHandler) sessions() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list sessions")
 			return
 		}
+		// Optional status filter (schema-driven: sessions-table filters.status).
+		switch statusFilter := strings.TrimSpace(r.URL.Query().Get("status")); statusFilter {
+		case "":
+			// no filter
+		case "active", "revoked":
+			filtered := make([]authsession.RefreshToken, 0, len(all))
+			for _, token := range all {
+				revoked := token.RevokedAt != nil
+				if (statusFilter == "active" && !revoked) || (statusFilter == "revoked" && revoked) {
+					filtered = append(filtered, token)
+				}
+			}
+			all = filtered
+		default:
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_STATUS_FILTER", "status must be active, revoked, or empty")
+			return
+		}
 		start := (page - 1) * pageSize
 		end := start + pageSize
 		if start > len(all) {

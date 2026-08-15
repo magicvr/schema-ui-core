@@ -103,9 +103,16 @@
         }
       },
       {
+        "type": "custom",
+        "id": "mfa-manager-block",
+        "component": "mfa-manager"
+      },
+      {
         "type": "table",
         "id": "sessions-table",
         "props": {
+          "title": "Signed-in sessions",
+          "titleKey": "schema.account.session.title",
           "columns": [
             {
               "field": "createdAt",
@@ -121,6 +128,27 @@
               "field": "status",
               "label": "Status",
               "labelKey": "schema.account.column.status"
+            }
+          ],
+          "filters": [
+            {
+              "field": "status",
+              "type": "select",
+              "labelKey": "schema.account.filter.status",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.account.filter.status.all"
+                },
+                {
+                  "value": "active",
+                  "labelKey": "schema.account.filter.status.active"
+                },
+                {
+                  "value": "revoked",
+                  "labelKey": "schema.account.filter.status.revoked"
+                }
+              ]
             }
           ],
           "dataSource": "/api/account/sessions",
@@ -144,11 +172,6 @@
             }
           ]
         }
-      },
-      {
-        "type": "custom",
-        "id": "mfa-manager-block",
-        "component": "mfa-manager"
       }
     ]
   }

@@ -7,9 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RenderTableNode } from "@/renderer/render";
 import {
   SchemaTable,
+  pagerPages,
   rowActionDisabled,
   schemaTableColumns,
   schemaTableDataSource,
+  schemaTableFilters,
   schemaTableRowKey,
 } from "@/renderer/schema-table";
 
@@ -278,5 +280,173 @@ describe("SchemaTable rowKey (F-002 · I-010-001 v0.2.0 §3)", () => {
       'no valid "sku" key',
     );
     expect(container.querySelectorAll("tbody tr").length).toBe(0);
+  });
+});
+
+// --- Title / filters / pager (account page sessions-table surface) ---
+
+const MANY_ROWS = Array.from({ length: 25 }, (_, index) => ({
+  id: "rec-" + String(index + 1),
+  name: "Item " + String(index + 1),
+  status: index % 2 === 0 ? "active" : "revoked",
+}));
+
+/** Server-side pagination emulator that also honours a status filter param. */
+function pagedFetcher(calls: string[] = []) {
+  return (async (input: RequestInfo | URL) => {
+    const url = new URL(String(input), "http://test.local");
+    calls.push(url.search);
+    const page = Number(url.searchParams.get("page") ?? "1");
+    const pageSize = Number(url.searchParams.get("pageSize") ?? "10");
+    const status = url.searchParams.get("status");
+    const items =
+      status === null
+        ? MANY_ROWS
+        : MANY_ROWS.filter((row) => row.status === status);
+    const start = (page - 1) * pageSize;
+    return new Response(
+      JSON.stringify({
+        items: items.slice(start, start + pageSize),
+        total: items.length,
+        page,
+        pageSize,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+}
+
+describe("pagerPages", () => {
+  it("lists every page when the run is short", () => {
+    expect(pagerPages(1, 1)).toEqual([1]);
+    expect(pagerPages(3, 7)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("windows long page runs with gap markers", () => {
+    expect(pagerPages(1, 10)).toEqual([1, 2, "gap", 10]);
+    expect(pagerPages(5, 10)).toEqual([1, "gap", 4, 5, 6, "gap", 10]);
+    expect(pagerPages(10, 10)).toEqual([1, "gap", 9, 10]);
+  });
+
+  it("clamps out-of-range current pages", () => {
+    expect(pagerPages(0, 10)).toEqual([1, 2, "gap", 10]);
+    expect(pagerPages(99, 10)).toEqual([1, "gap", 9, 10]);
+  });
+});
+
+describe("SchemaTable title / filters / pager", () => {
+  it("renders a title heading from titleKey/title", async () => {
+    const container = await renderTable(
+      tableNode({
+        columns: COLUMNS,
+        dataSource: "/api/users",
+        title: "Signed-in sessions",
+        titleKey: "schema.account.session.title",
+      }),
+      rowsFetcher(),
+    );
+    const heading = container.querySelector("h2");
+    expect(heading?.textContent).toBe("Signed-in sessions");
+  });
+
+  it("parses only well-formed select filters (fail-closed on malformed entries)", () => {
+    const node = tableNode({
+      columns: COLUMNS,
+      dataSource: "/api/users",
+      filters: [
+        { field: "status", type: "select", options: [{ value: "active" }] },
+        { field: "bogus", type: "checkbox" },
+        { field: "" },
+        { field: "noType" },
+        42,
+        { field: "badOptions", type: "select", options: [42, { value: "ok" }] },
+      ],
+    });
+    const filters = schemaTableFilters(node);
+    expect(filters.map((filter) => filter.field)).toEqual([
+      "status",
+      "badOptions",
+    ]);
+    expect(filters[0].options.map((option) => option.value)).toEqual(["active"]);
+    expect(filters[1].options.map((option) => option.value)).toEqual(["ok"]);
+  });
+
+  it("renders a status filter and refetches with the status param on change", async () => {
+    const calls: string[] = [];
+    const node = tableNode({
+      columns: COLUMNS,
+      dataSource: "/api/users",
+      filters: [
+        {
+          field: "status",
+          type: "select",
+          labelKey: "schema.account.filter.status",
+          options: [
+            { value: "", labelKey: "schema.account.filter.status.all" },
+            { value: "active", labelKey: "schema.account.filter.status.active" },
+            { value: "revoked", labelKey: "schema.account.filter.status.revoked" },
+          ],
+        },
+      ],
+    });
+    const container = await renderTable(node, pagedFetcher(calls));
+    const select = container.querySelector(
+      "[data-table-filters] select",
+    ) as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(select.value).toBe("");
+    await act(async () => {
+      select.value = "active";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(calls.some((query) => query.includes("status=active"))).toBe(true);
+    expect(container.querySelectorAll("tbody tr").length).toBe(10);
+    // Filter change resets to page 1 (no page=2 request for the filtered list).
+    expect(
+      calls.some(
+        (query) => query.includes("status=active") && query.includes("page=2"),
+      ),
+    ).toBe(false);
+  });
+
+  it("turns pages with the pager controls", async () => {
+    const calls: string[] = [];
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      pagedFetcher(calls),
+    );
+    expect(container.textContent).toContain("25 items · page 1 of 3");
+    const prev = container.querySelector(
+      '[aria-label="Previous page"]',
+    ) as HTMLButtonElement;
+    const next = container.querySelector(
+      '[aria-label="Next page"]',
+    ) as HTMLButtonElement;
+    expect(prev.disabled).toBe(true);
+    expect(next.disabled).toBe(false);
+    await act(async () => next.click());
+    expect(calls.some((query) => query.includes("page=2"))).toBe(true);
+    expect(container.textContent).toContain("25 items · page 2 of 3");
+    // The current page button carries aria-current="page".
+    const current = container.querySelector('[aria-current="page"]');
+    expect(current?.textContent).toBe("2");
+    // Jump to the last page via the pager number button.
+    const pageButtons = Array.from(container.querySelectorAll("nav button"));
+    await act(async () =>
+      (pageButtons[pageButtons.length - 1] as HTMLButtonElement).click(),
+    );
+    expect(calls.some((query) => query.includes("page=3"))).toBe(true);
+    expect(
+      (container.querySelector('[aria-label="Next page"]') as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+  });
+
+  it("hides the pager when everything fits on one page", async () => {
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      rowsFetcher(),
+    );
+    expect(container.querySelector("nav")).toBeNull();
   });
 });

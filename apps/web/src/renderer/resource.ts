@@ -32,6 +32,8 @@ export interface ResourceQuery {
   order?: SortOrder;
   page?: number;
   pageSize?: number;
+  /** Schema-driven table filters (table node props.filters): field to value. */
+  filters?: Record<string, string>;
 }
 
 /** One field-level validation failure (GOAL-014 D-002 §2.1). */
@@ -225,6 +227,15 @@ export function buildResourceQuery(query: ResourceQuery): string {
   }
   if (query.pageSize !== undefined && query.pageSize !== DEFAULT_PAGE_SIZE) {
     params.set("pageSize", String(query.pageSize));
+  }
+  if (query.filters !== undefined) {
+    for (const [field, value] of Object.entries(query.filters)) {
+      // An empty filter value means "all" — omit the parameter entirely so
+      // clearing a filter never sends a stale/meaningless value.
+      if (field !== "" && value !== "") {
+        params.set(field, value);
+      }
+    }
   }
   return params.toString();
 }

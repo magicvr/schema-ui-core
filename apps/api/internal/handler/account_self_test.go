@@ -152,6 +152,80 @@ func TestAccountSessionsListAndRevoke(t *testing.T) {
 	}
 }
 
+func TestAccountSessionsStatusFilter(t *testing.T) {
+	env := newAuthTestEnv(t)
+	loginBody := `{"username":"admin","password":"test-password"}`
+	sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", loginBody)
+	sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", loginBody)
+	// One stable bearer token for every request: adminToken logs in on each
+	// call, which would grow the session list and skew the filter counts.
+	token := adminToken(t, env)
+	// Baseline list (also creates the bearer's own session token).
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodGet, "/api/account/sessions", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("sessions status = %d, want 200", rr.Code)
+	}
+	var list struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+	}
+	if err := json.NewDecoder(rr.Body).Decode(&list); err != nil {
+		t.Fatalf("decode sessions: %v", err)
+	}
+	if list.Total < 2 {
+		t.Fatalf("session total = %d, want >= 2", list.Total)
+	}
+	// Revoke the first session so both statuses exist.
+	firstID, _ := list.Items[0]["id"].(string)
+	rr2 := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr2, bearer(t, token, http.MethodPost, "/api/account/sessions/"+firstID+"/revoke", `{}`))
+	if rr2.Code != http.StatusNoContent {
+		t.Fatalf("revoke status = %d, want 204", rr2.Code)
+	}
+
+	decodeFiltered := func(query string) (total int, allActive bool, allRevoked bool) {
+		req := bearer(t, token, http.MethodGet, "/api/account/sessions"+query, "")
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("filter %q status = %d, want 200", query, rec.Code)
+		}
+		var out struct {
+			Items []map[string]any `json:"items"`
+			Total int              `json:"total"`
+		}
+		if err := json.NewDecoder(rec.Body).Decode(&out); err != nil {
+			t.Fatalf("decode filtered sessions: %v", err)
+		}
+		allActive, allRevoked = true, true
+		for _, item := range out.Items {
+			if item["status"] != "active" {
+				allActive = false
+			}
+			if item["status"] != "revoked" {
+				allRevoked = false
+			}
+		}
+		return out.Total, allActive, allRevoked
+	}
+
+	activeTotal, activeOnly, _ := decodeFiltered("?status=active")
+	if activeTotal != list.Total-1 || !activeOnly {
+		t.Fatalf("active filter total = %d (want %d), all active = %v", activeTotal, list.Total-1, activeOnly)
+	}
+	revokedTotal, _, revokedOnly := decodeFiltered("?status=revoked")
+	if revokedTotal != 1 || !revokedOnly {
+		t.Fatalf("revoked filter total = %d (want 1), all revoked = %v", revokedTotal, revokedOnly)
+	}
+	// Invalid status values fail closed with 400.
+	rr3 := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr3, bearer(t, adminToken(t, env), http.MethodGet, "/api/account/sessions?status=bogus", ""))
+	if rr3.Code != http.StatusBadRequest {
+		t.Fatalf("invalid filter status = %d, want 400: %s", rr3.Code, rr3.Body.String())
+	}
+}
+
 func TestAccountRevokeForeignSession404(t *testing.T) {
 	env := newAuthTestEnv(t)
 	env.addUser(t, "editor1", "editor-password", []string{"editor"})
