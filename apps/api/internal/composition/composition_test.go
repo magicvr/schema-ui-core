@@ -468,7 +468,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// menu_data_permission (+1 navigation) to admin only.
 		// S-10 (GOAL-017): admin.mfa contributes users.mfa-reset (+1 permission,
 		// no navigation — personal-center block + users row action).
-		{profile: "admin", wantPermissions: 27, wantNavigation: 13},
+		// S-14 (GOAL-019): admin.wallet contributes wallet.read/wallet.write/
+		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
+		{profile: "admin", wantPermissions: 30, wantNavigation: 14},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
@@ -1044,7 +1046,7 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		want := []string{
 			"Dashboard", "Users", "Roles", "Activity",
 			"File library", "Data dictionary", "System monitoring",
-			"Scheduled tasks", "Recycle bin", "Data permission",
+			"Scheduled tasks", "Recycle bin", "Data permission", "Wallet",
 		}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {
 			t.Fatalf("sidebar = %v, want %v", labels, want)

@@ -57,6 +57,13 @@ const (
 	EventMFARecoveryRotate = "mfa.recovery-rotate"
 	EventMFAAdminReset    = "mfa.admin-reset"
 	EventMFALogin         = "mfa.login"
+	// S-14 wallet events (GOAL-019 D-002 §2).
+	EventWalletAccountCreate  = "wallet.account-create"
+	EventWalletAccountUpdate  = "wallet.account-update"
+	EventWalletAdjust         = "wallet.adjust"
+	EventWalletFreeze         = "wallet.freeze"
+	EventWalletUnfreeze       = "wallet.unfreeze"
+	EventWalletReconcile      = "wallet.reconcile"
 )
 
 // Operation is one append-only operation log row.

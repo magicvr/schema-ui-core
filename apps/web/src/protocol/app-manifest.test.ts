@@ -284,6 +284,8 @@ describe("manifest loading and expression boundaries", () => {
       "task-runs",
       "recycle-bin",
       "data-permission",
+      "wallet",
+      "wallet-entries",
     ]);
   });
 

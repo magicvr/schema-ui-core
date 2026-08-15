@@ -25,6 +25,7 @@ import (
 	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	recycleschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/schema"
+	walletschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
@@ -187,6 +188,7 @@ func testSchemaContributions() []kernel.PageContribution {
 		{monitoringschema.ModuleID, monitoringschema.SchemaDocuments()},
 		{tasksschema.ModuleID, tasksschema.SchemaDocuments()},
 		{recycleschema.ModuleID, recycleschema.SchemaDocuments()},
+		{walletschema.ModuleID, walletschema.SchemaDocuments()},
 	}
 	var pages []kernel.PageContribution
 	for _, contributor := range contributors {

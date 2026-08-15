@@ -23,6 +23,8 @@ func TestDefaultNavigationOrderSnapshot(t *testing.T) {
 		"menu_scheduled_tasks",
 		"menu_recycle_bin",
 		"menu_data_permission",
+		// S-14 (GOAL-019 D-002 §3): wallet/ledger management.
+		"menu_wallet",
 	}
 	if !reflect.DeepEqual(DefaultNavigationOrder, want) {
 		t.Fatalf("DefaultNavigationOrder = %v, want %v", DefaultNavigationOrder, want)

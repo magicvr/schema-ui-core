@@ -87,6 +87,9 @@ var profileDefaults = map[ProfileName][]string{
 		// second-factor gate + self-service surface (default: nobody enrolled,
 		// login behavior unchanged).
 		"admin.mfa",
+		// S-14 (GOAL-019 D-002 §3): admin.wallet — admin-only profile; wallet
+		// accounts + immutable ledger + reconciliation (content extension).
+		"admin.wallet",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -190,6 +193,9 @@ func BuiltinModules() []Module {
 		{ID: "admin.login-captcha", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/auth/captcha", "GET /api/captcha/settings", "PATCH /api/captcha/settings"}, Permissions: []string{"captcha.read", "captcha.write"}}},
 		// S-12 admin.recycle-bin (GOAL-012): deleted-row snapshots.
 		{ID: "admin.recycle-bin", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/recycle-bin", "GET /api/recycle-bin/{id}", "POST /api/recycle-bin/{id}/restore", "DELETE /api/recycle-bin/{id}", "POST /api/recycle-bin/purge-all"}, Pages: []string{"recycle-bin"}, Navigation: []string{"menu_recycle_bin"}, Permissions: []string{"recycle.read", "recycle.write"}, Fragments: []string{"recycle-bin"}}},
+		// S-14 admin.wallet (GOAL-019): wallet/ledger — accounts + immutable
+		// ledger + reconciliation. Money-path mutations use wallet.adjust.
+		{ID: "admin.wallet", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/wallet/accounts", "POST /api/wallet/accounts", "PATCH /api/wallet/accounts/{id}", "GET /api/wallet/accounts/{id}/entries", "GET /api/wallet/entries", "POST /api/wallet/accounts/{id}/adjust", "POST /api/wallet/accounts/{id}/freeze", "POST /api/wallet/accounts/{id}/unfreeze", "POST /api/wallet/reconcile", "GET /api/wallet/reconcile/runs"}, Pages: []string{"wallet", "wallet-entries"}, Navigation: []string{"menu_wallet"}, Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust"}, Fragments: []string{"wallet"}}},
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via

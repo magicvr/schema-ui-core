@@ -41,6 +41,8 @@ const SCHEMA_FILES = [
   "recyclebin/schema/recycle-bin.json",
   "scheduledtasks/schema/task-runs.json",
   "datapermission/schema/data-permission.json",
+  "wallet/schema/wallet.json",
+  "wallet/schema/wallet-entries.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];

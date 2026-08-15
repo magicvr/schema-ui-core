@@ -415,6 +415,8 @@ var DefaultNavigationOrder = []string{
 	"menu_recycle_bin",
 	// S-09 (GOAL-016): row-level data permission management.
 	"menu_data_permission",
+	// S-14 (GOAL-019 D-002 §3): wallet/ledger management.
+	"menu_wallet",
 }
 
 // sortNavigation orders nodes by the resolved navigation order list, then by

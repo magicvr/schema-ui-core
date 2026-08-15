@@ -6,7 +6,7 @@ parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
 version: 0.2.0
-progress: 1/5
+progress: 2/5
 ---
 
 # GOAL-019-r3-s14-wallet-ledger · 钱包/账务（账本：余额、流水、对账）
@@ -28,12 +28,12 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：账务领域模型（余额口径 / 流水实体 / 对账语义、幂等与并发）、余额变动审计与迁移基建、权限键与 Profile 归属、协议对照（独立口径，I-011-001 §7 必办）（D-002 v1.1.0 + D-003，2026-08-16；A-003 self pass + **A-004 grok independent conditional → required 全 fixed → A-005 reaudit pass**）
-- [ ] **S2 · 实现**：模块 provider + schema 页 + 迁移 + 测试（E-003）
+- [x] **S2 · 实现**：模块 provider + schema 页 + 迁移 0031/0032 + 测试（E-005，2026-08-16；go 全量全绿 + web 1004/1004）
 - [ ] **S3 · 验证**：单元/集成 + 全量回归（go / web；e2e 双 profile 归 S5 波次）（E-004）
 - [ ] **S4 · go 影响判定 + 自审**（不暂挂判定 + A 条目）（E-005）
 - [ ] **S5 · 关门**：独立审计（grok build）+ 关门 + goal-tree 同步（E-006）
 
-progress: 1/5 由五个等权检查点派生（S1 闭合后更新）。
+progress: 2/5 由五个等权检查点派生（S2 实现后更新）。
 
 ## 信息就绪与未知项
 

@@ -137,6 +137,16 @@ var Catalog = map[string]Entry{
 	"INVALID_SCOPE":          {"error.invalidScope", "scope must be all or self", "数据范围必须是 all 或 self"},
 	"SCOPE_NOT_ENFORCEABLE":  {"error.scopeNotEnforceable", "resource is not wired for row-level scoping", "该资源未接入行级数据范围"},
 
+	// S-14 (GOAL-019 D-002 §3): wallet codes.
+	"INVALID_WALLET_BODY":       {"error.invalidWalletBody", "body must be JSON with ownerType and ownerId", "请求体必须是包含 ownerType 和 ownerId 的 JSON"},
+	"WALLET_NOT_FOUND":          {"error.walletNotFound", "wallet account not found", "钱包账户不存在"},
+	"WALLET_OWNER_TAKEN":        {"error.walletOwnerTaken", "an account for that owner already exists", "该持有方已存在钱包账户"},
+	"WALLET_DISABLED":           {"error.walletDisabled", "wallet account is disabled", "钱包账户已停用"},
+	"INSUFFICIENT_BALANCE":      {"error.insufficientBalance", "insufficient balance for this mutation", "余额不足，无法执行该变动"},
+	"LEDGER_VERSION_CONFLICT":   {"error.ledgerVersionConflict", "the account changed concurrently; reload and retry", "账户已被并发修改，请刷新后重试"},
+	"LEDGER_IDEMPOTENCY_CONFLICT": {"error.ledgerIdempotencyConflict", "idempotency key was already used with a different payload", "幂等键已被不同载荷使用"},
+	"INVALID_LEDGER_ENTRY":      {"error.invalidLedgerEntry", "invalid ledger entry", "非法账本流水"},
+
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
 	"RECYCLE_ITEM_NOT_FOUND":  {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},
 	"RECYCLE_RESTORE_CONFLICT": {"error.recycleRestoreConflict", "a row with that key already exists; resolve the conflict and retry", "存在相同键的行，解决冲突后重试"},

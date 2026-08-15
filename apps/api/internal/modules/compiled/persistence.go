@@ -12,6 +12,7 @@ import (
 	datapermissionmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/migration"
 	mfamigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa/migration"
 	recyclebinmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/migration"
+	walletmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/migration"
 	scheduledtasksmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/migration"
 	notificationsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/migration"
 	historymigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/corepersistence/migration"
@@ -30,6 +31,7 @@ func PersistenceProviders() []kernel.Provider {
 		datapermissionmigration.Provider{},
 		mfamigration.Provider{},
 		recyclebinmigration.Provider{},
+		walletmigration.Provider{},
 		scheduledtasksmigration.Provider{},
 		notificationsmigration.Provider{},
 		authmigration.Provider{},

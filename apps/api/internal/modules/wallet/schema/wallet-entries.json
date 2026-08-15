@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "pageId": "wallet-entries",
+    "title": "Wallet entries",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "table.sort",
+      "data.route-binding"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "wallet-entries",
+    "children": [
+      {
+        "type": "form",
+        "id": "wallet-entries-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "wallet-entries-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "wallet-entries-table",
+        "props": {
+          "columns": [
+            {
+              "field": "entryType",
+              "label": "Type",
+              "sortable": true,
+              "labelKey": "schema.walletEntries.column.entryType"
+            },
+            {
+              "field": "amountDelta",
+              "label": "Amount",
+              "sortable": true,
+              "labelKey": "schema.walletEntries.column.amountDelta"
+            },
+            {
+              "field": "balanceAfterTotal",
+              "label": "Balance after",
+              "labelKey": "schema.walletEntries.column.balanceAfterTotal"
+            },
+            {
+              "field": "balanceAfterAvail",
+              "label": "Available after",
+              "labelKey": "schema.walletEntries.column.balanceAfterAvail"
+            },
+            {
+              "field": "balanceAfterFrozen",
+              "label": "Frozen after",
+              "labelKey": "schema.walletEntries.column.balanceAfterFrozen"
+            },
+            {
+              "field": "memo",
+              "label": "Memo",
+              "labelKey": "schema.walletEntries.column.memo"
+            },
+            {
+              "field": "actorName",
+              "label": "Actor",
+              "labelKey": "schema.walletEntries.column.actorName"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.walletEntries.column.created"
+            }
+          ],
+          "data": {
+            "source": "api",
+            "url": "/api/wallet/entries",
+            "params": {
+              "accountId": "$context.route.params.id"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

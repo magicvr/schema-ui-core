@@ -35,6 +35,8 @@ import (
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 	recyclebinmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
+	walletmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 	datadictionarystore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	tasksstore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
@@ -335,6 +337,12 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.recycle-bin") {
 		providers = append(providers, recyclebinmodule.New(a, recycleService, operations))
+	}
+	// S-14 (GOAL-019 D-002 §3): admin.wallet — accounts + immutable ledger +
+	// reconciliation. Money-path mutations are gated by wallet.adjust; the
+	// module never touches the manifest/profile semantics (content extension).
+	if plan.HasModule("admin.wallet") {
+		providers = append(providers, walletmodule.New(a, walletmodule.NewService(walletstore.NewRepository(st)), operations))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

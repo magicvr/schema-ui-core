@@ -61,6 +61,10 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// S-09 (GOAL-016): admin.data-permission keys.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "data-permission.read"}, Permission: "data-permission.read", Resource: "data-permission", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "data-permission.write"}, Permission: "data-permission.write", Resource: "data-permission", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-14 (GOAL-019): admin.wallet keys.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.wallet", Key: "wallet.read"}, Permission: "wallet.read", Resource: "wallet", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.wallet", Key: "wallet.write"}, Permission: "wallet.write", Resource: "wallet", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.wallet", Key: "wallet.adjust"}, Permission: "wallet.adjust", Resource: "wallet", Action: "adjust", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		// F-02 (GOAL-004): admin.data-transfer keys.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.export"}, Permission: "data.export", Resource: "data", Action: "export", PolicyID: authsessiondata.PolicyAdminEditor, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.import"}, Permission: "data.import", Resource: "data", Action: "import", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -104,6 +108,7 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// S-12 (GOAL-012): recycle bin page (admin-only surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "menu_recycle_bin"}, NodeID: "menu_recycle_bin", PageID: "recycle-bin", Order: 8, Label: "Recycle bin", Visibility: authsessiondata.PolicyAdmin, Permission: "recycle.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "menu_data_permission"}, NodeID: "menu_data_permission", PageID: "data-permission", Order: 9, Label: "Data permission", Visibility: authsessiondata.PolicyAdmin, Permission: "data-permission.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.wallet", Key: "menu_wallet"}, NodeID: "menu_wallet", PageID: "wallet", Order: 10, Label: "Wallet", Visibility: authsessiondata.PolicyAdmin, Permission: "wallet.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }
