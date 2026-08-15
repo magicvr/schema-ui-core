@@ -501,4 +501,64 @@ describe("SchemaTable title / filters / pager", () => {
     );
     expect(container.querySelector("nav")).toBeNull();
   });
+
+  // W11 · U-06: pageSize switcher + go-to-page control.
+  it("switches the per-page size (resets to page 1) and jumps to a page", async () => {
+    const calls: string[] = [];
+    const controlled = (async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), "http://test.local");
+      calls.push(url.search);
+      const pageSize = Number(url.searchParams.get("pageSize") ?? "10");
+      const page = Number(url.searchParams.get("page") ?? "1");
+      return new Response(
+        JSON.stringify({
+          items: MANY_ROWS.slice((page - 1) * pageSize, page * pageSize),
+          total: 25,
+          page,
+          pageSize,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      controlled,
+    );
+    // Page-size switch → page=1 + pageSize=20.
+    const sizeSelect = container.querySelector<HTMLSelectElement>('[aria-label="Rows per page"]');
+    // Go-to-page jump first: page 3 is valid at the default pageSize of 10
+    // (25 items → 3 pages); after switching to 20 per page only 2 pages exist.
+    const goToForm = container.querySelector<HTMLFormElement>('[aria-label="Go to page"]');
+    expect(goToForm).not.toBeNull();
+    const input = goToForm!.querySelector<HTMLInputElement>('input[type="number"]');
+    expect(input).not.toBeNull();
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
+        input,
+        "3",
+      );
+      input!.dispatchEvent(new Event("input", { bubbles: true }));
+      goToForm!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(calls.some((query) => query.includes("page=3"))).toBe(true);
+
+    // Page-size switch → page=1 (default, omitted) + pageSize=20; the jump to
+    // page 3 is no longer valid at 20 per page (2 pages), so no page=3+20 call.
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value")?.set?.call(
+        sizeSelect,
+        "20",
+      );
+      sizeSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(calls.some((query) => query.includes("pageSize=20"))).toBe(true);
+    expect(calls.some((query) => query.includes("page=2") && query.includes("pageSize=20"))).toBe(false);
+  });
 });

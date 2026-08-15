@@ -436,3 +436,66 @@ func rolesSortSQL(sort, order string) string {
 	}
 	return column + collate + " " + direction
 }
+
+// ListPermissionCatalog returns every registered permission key (W11 · U-02).
+// The catalog is the reconciled permissions table — the same source the
+// roles resource validates grants against, so the UI options can never offer
+// a key the backend would reject.
+func (r *Repository) ListPermissionCatalog() ([]PermissionCatalogEntry, error) {
+	var out []PermissionCatalogEntry
+	err := r.withTx("list permission catalog", func(tx *sql.Tx) error {
+		rows, err := tx.Query(`SELECT key, description FROM permissions ORDER BY key`)
+		if err != nil {
+			return fmt.Errorf("query permission catalog: %w", err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var entry PermissionCatalogEntry
+			if err := rows.Scan(&entry.Key, &entry.Description); err != nil {
+				return fmt.Errorf("scan permission catalog: %w", err)
+			}
+			out = append(out, entry)
+		}
+		return rows.Err()
+	})
+	return out, err
+}
+
+// ListMenuItemCatalog returns every enabled navigation node (W11 · U-02).
+// menu_items.id is the same value the roles resource validates menu grants
+// against ("menu-users" shape); the display label is derived from page_ref.
+func (r *Repository) ListMenuItemCatalog() ([]MenuItemCatalogEntry, error) {
+	var out []MenuItemCatalogEntry
+	err := r.withTx("list menu item catalog", func(tx *sql.Tx) error {
+		rows, err := tx.Query(
+			`SELECT id, page_ref FROM menu_items WHERE enabled = 1 ORDER BY sort_order, id`,
+		)
+		if err != nil {
+			return fmt.Errorf("query menu item catalog: %w", err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var entry MenuItemCatalogEntry
+			if err := rows.Scan(&entry.ID, &entry.PageRef); err != nil {
+				return fmt.Errorf("scan menu item catalog: %w", err)
+			}
+			entry.Label = menuItemLabel(entry.PageRef)
+			out = append(out, entry)
+		}
+		return rows.Err()
+	})
+	return out, err
+}
+
+// menuItemLabel derives a display label from a page id ("data-dictionary" →
+// "Data dictionary"), matching the admin console's English page titles.
+func menuItemLabel(pageRef string) string {
+	parts := strings.Split(pageRef, "-")
+	for i, part := range parts {
+		if part == "" {
+			continue
+		}
+		parts[i] = strings.ToUpper(part[:1]) + part[1:]
+	}
+	return strings.Join(parts, " ")
+}

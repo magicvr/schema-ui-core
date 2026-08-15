@@ -84,76 +84,22 @@
               "id": "permissions",
               "label": "Permissions",
               "type": "checkboxGroup",
-              "options": [
-                {
-                  "value": "users.read",
-                  "label": "Read users",
-                  "labelKey": "schema.roles.option.readUsers"
-                },
-                {
-                  "value": "users.write",
-                  "label": "Write users",
-                  "labelKey": "schema.roles.option.writeUsers"
-                },
-                {
-                  "value": "roles.read",
-                  "label": "Read roles",
-                  "labelKey": "schema.roles.option.readRoles"
-                },
-                {
-                  "value": "roles.write",
-                  "label": "Write roles",
-                  "labelKey": "schema.roles.option.writeRoles"
-                },
-                {
-                  "value": "roles.assign",
-                  "label": "Assign roles",
-                  "labelKey": "schema.roles.option.assignRoles"
-                },
-                {
-                  "value": "settings.read",
-                  "label": "Read settings",
-                  "labelKey": "schema.roles.option.readSettings"
-                },
-                {
-                  "value": "settings.write",
-                  "label": "Write settings",
-                  "labelKey": "schema.roles.option.writeSettings"
-                },
-                {
-                  "value": "operations.read",
-                  "label": "Read activity log",
-                  "labelKey": "schema.roles.option.readActivityLog"
-                }
-              ],
+              "optionsSource": {
+                "url": "/api/permissions",
+                "valueField": "key",
+                "labelField": "key"
+              },
               "labelKey": "schema.roles.field.permissions"
             },
             {
               "id": "menuItems",
               "label": "Menu access",
               "type": "checkboxGroup",
-              "options": [
-                {
-                  "value": "menu-users",
-                  "label": "Users",
-                  "labelKey": "schema.roles.option.users"
-                },
-                {
-                  "value": "menu-roles",
-                  "label": "Roles",
-                  "labelKey": "schema.roles.option.roles"
-                },
-                {
-                  "value": "menu-settings",
-                  "label": "Settings",
-                  "labelKey": "schema.roles.option.settings"
-                },
-                {
-                  "value": "menu-activity",
-                  "label": "Activity",
-                  "labelKey": "schema.roles.option.activity"
-                }
-              ],
+              "optionsSource": {
+                "url": "/api/menu-items",
+                "valueField": "id",
+                "labelField": "label"
+              },
               "labelKey": "schema.roles.field.menuAccess"
             }
           ],
@@ -188,76 +134,22 @@
               "id": "permissions",
               "label": "Permissions",
               "type": "checkboxGroup",
-              "options": [
-                {
-                  "value": "users.read",
-                  "label": "Read users",
-                  "labelKey": "schema.roles.option.readUsers"
-                },
-                {
-                  "value": "users.write",
-                  "label": "Write users",
-                  "labelKey": "schema.roles.option.writeUsers"
-                },
-                {
-                  "value": "roles.read",
-                  "label": "Read roles",
-                  "labelKey": "schema.roles.option.readRoles"
-                },
-                {
-                  "value": "roles.write",
-                  "label": "Write roles",
-                  "labelKey": "schema.roles.option.writeRoles"
-                },
-                {
-                  "value": "roles.assign",
-                  "label": "Assign roles",
-                  "labelKey": "schema.roles.option.assignRoles"
-                },
-                {
-                  "value": "settings.read",
-                  "label": "Read settings",
-                  "labelKey": "schema.roles.option.readSettings"
-                },
-                {
-                  "value": "settings.write",
-                  "label": "Write settings",
-                  "labelKey": "schema.roles.option.writeSettings"
-                },
-                {
-                  "value": "operations.read",
-                  "label": "Read activity log",
-                  "labelKey": "schema.roles.option.readActivityLog"
-                }
-              ],
+              "optionsSource": {
+                "url": "/api/permissions",
+                "valueField": "key",
+                "labelField": "key"
+              },
               "labelKey": "schema.roles.field.permissions"
             },
             {
               "id": "menuItems",
               "label": "Menu access",
               "type": "checkboxGroup",
-              "options": [
-                {
-                  "value": "menu-users",
-                  "label": "Users",
-                  "labelKey": "schema.roles.option.users"
-                },
-                {
-                  "value": "menu-roles",
-                  "label": "Roles",
-                  "labelKey": "schema.roles.option.roles"
-                },
-                {
-                  "value": "menu-settings",
-                  "label": "Settings",
-                  "labelKey": "schema.roles.option.settings"
-                },
-                {
-                  "value": "menu-activity",
-                  "label": "Activity",
-                  "labelKey": "schema.roles.option.activity"
-                }
-              ],
+              "optionsSource": {
+                "url": "/api/menu-items",
+                "valueField": "id",
+                "labelField": "label"
+              },
               "labelKey": "schema.roles.field.menuAccess"
             }
           ],
@@ -272,6 +164,24 @@
     "type": "section",
     "id": "roles",
     "children": [
+      {
+        "type": "form",
+        "id": "roles-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "roles-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
       {
         "type": "table",
         "id": "roles-table",
@@ -392,15 +302,51 @@
           "title": "Role details",
           "titleKey": "schema.roles.detail.title",
           "fields": [
-            { "key": "id", "label": "ID", "labelKey": "schema.roles.column.id" },
-            { "key": "key", "label": "Key", "labelKey": "schema.roles.column.key" },
-            { "key": "name", "label": "Name", "labelKey": "schema.roles.column.name" },
-            { "key": "permissions", "label": "Permissions", "labelKey": "schema.roles.column.permissions" },
-            { "key": "menuItems", "label": "Menus", "labelKey": "schema.roles.column.menus" },
-            { "key": "assignedUsers", "label": "Users", "labelKey": "schema.roles.column.users" },
-            { "key": "system", "label": "System", "labelKey": "schema.roles.column.system" },
-            { "key": "createdAt", "label": "Created", "labelKey": "schema.roles.column.created" },
-            { "key": "updatedAt", "label": "Updated", "labelKey": "schema.roles.column.updated" }
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.roles.column.id"
+            },
+            {
+              "key": "key",
+              "label": "Key",
+              "labelKey": "schema.roles.column.key"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "labelKey": "schema.roles.column.name"
+            },
+            {
+              "key": "permissions",
+              "label": "Permissions",
+              "labelKey": "schema.roles.column.permissions"
+            },
+            {
+              "key": "menuItems",
+              "label": "Menus",
+              "labelKey": "schema.roles.column.menus"
+            },
+            {
+              "key": "assignedUsers",
+              "label": "Users",
+              "labelKey": "schema.roles.column.users"
+            },
+            {
+              "key": "system",
+              "label": "System",
+              "labelKey": "schema.roles.column.system"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.roles.column.created"
+            },
+            {
+              "key": "updatedAt",
+              "label": "Updated",
+              "labelKey": "schema.roles.column.updated"
+            }
           ]
         }
       }

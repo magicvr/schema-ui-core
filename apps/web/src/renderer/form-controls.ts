@@ -89,6 +89,21 @@ export interface FormControlField {
   /** select only: single (default) or multiple. */
   mode?: "single" | "multiple";
   options?: FormOption[];
+  /**
+   * W11 · U-01/U-02 — dynamic option source, aligned with the upstream
+   * registry shape (component-registry.json, since 0.2): an object with a
+   * required single-slash same-origin url plus the response item fields used
+   * for value/label. The response is {items:[...]} (or a bare array); while
+   * the source loads, static options (if any) remain the fallback; an invalid
+   * source or failed fetch fails closed to an empty option set.
+   */
+  optionsSource?: {
+    url: string;
+    /** Optional scalar query params appended to url (e.g. pageSize). */
+    params?: Record<string, string | number | boolean | null>;
+    labelField: string;
+    valueField: string;
+  };
   defaultValue?: unknown;
   /** dateRangePicker only: the two bound output fields (registry props). */
   startField?: string;

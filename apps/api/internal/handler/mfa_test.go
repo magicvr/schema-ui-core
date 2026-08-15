@@ -57,6 +57,9 @@ func (s *fakeMFAService) Enroll(userID, name string, now time.Time) (string, str
 }
 
 func (s *fakeMFAService) Confirm(userID, code string, now time.Time) error {
+	if code != "123456" {
+		return ErrMFAInvalid
+	}
 	s.enrolled[userID] = true
 	s.required[userID] = true
 	return nil
@@ -72,6 +75,9 @@ func (s *fakeMFAService) Disable(userID, code, recoveryCode string, now time.Tim
 }
 
 func (s *fakeMFAService) RotateRecovery(userID, code, recoveryCode string, now time.Time) ([]string, error) {
+	if code != "123456" && recoveryCode != "RECOVERY" {
+		return nil, ErrMFAInvalid
+	}
 	return []string{"N1", "N2"}, nil
 }
 
@@ -192,6 +198,13 @@ func TestMFASelfService(t *testing.T) {
 		t.Fatalf("enroll = %d: %s", rr.Code, rr.Body.String())
 	}
 
+	// Confirm with a wrong code → 400 MFA_INVALID (client validation, NOT a
+	// lost session — W11 M-03: the web auth wrapper must not sign the user out).
+	req = bearer(t, token, http.MethodPost, "/api/mfa/confirm", `{"code":"000000"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	expectError(t, rr, http.StatusBadRequest, "MFA_INVALID")
+
 	// Confirm activates.
 	req = bearer(t, token, http.MethodPost, "/api/mfa/confirm", `{"code":"123456"}`)
 	rr = httptest.NewRecorder()
@@ -206,11 +219,12 @@ func TestMFASelfService(t *testing.T) {
 		t.Fatalf("status = %d: %s", rr.Code, rr.Body.String())
 	}
 
-	// Disable requires a valid code and revokes sessions.
+	// Disable requires a valid code and revokes sessions. A wrong code is a
+	// client validation failure (400, W11 M-02) — never a 401 session loss.
 	req = bearer(t, token, http.MethodPost, "/api/mfa/disable", `{"code":"wrong"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
-	expectError(t, rr, http.StatusUnauthorized, "MFA_INVALID")
+	expectError(t, rr, http.StatusBadRequest, "MFA_INVALID")
 	req = bearer(t, token, http.MethodPost, "/api/mfa/disable", `{"code":"123456"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
@@ -221,7 +235,13 @@ func TestMFASelfService(t *testing.T) {
 		t.Fatalf("revoker = %v, want [user-admin]", revoker.revoked)
 	}
 
-	// Recovery rotate returns a fresh set.
+	// Recovery rotate: a wrong code is a 400 validation failure (same
+	// self-service semantics as confirm/disable — W11 M-02/M-03); a valid
+	// recovery code returns a fresh set.
+	req = bearer(t, token, http.MethodPost, "/api/mfa/recovery/rotate", `{"code":"wrong"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	expectError(t, rr, http.StatusBadRequest, "MFA_INVALID")
 	req = bearer(t, token, http.MethodPost, "/api/mfa/recovery/rotate", `{"recoveryCode":"RECOVERY"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)

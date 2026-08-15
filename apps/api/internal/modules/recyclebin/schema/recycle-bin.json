@@ -38,73 +38,97 @@
     }
   },
   "body": {
-    "type": "table",
-    "id": "recycle-bin-table",
-    "props": {
-      "columns": [
-        {
-          "field": "resource",
-          "label": "Resource",
-          "labelKey": "schema.recycleBin.column.resource"
-        },
-        {
-          "field": "resourceId",
-          "label": "Resource ID",
-          "labelKey": "schema.recycleBin.column.resourceId"
-        },
-        {
-          "field": "actorName",
-          "label": "Deleted by",
-          "labelKey": "schema.recycleBin.column.actor"
-        },
-        {
-          "field": "deletedAt",
-          "label": "Deleted at",
-          "labelKey": "schema.recycleBin.column.deletedAt"
-        },
-        {
-          "field": "restored",
-          "label": "Restored",
-          "labelKey": "schema.recycleBin.column.restored"
-        }
-      ],
-      "dataSource": "/api/recycle-bin",
-      "actions": [
-        {
-          "key": "restore",
-          "label": "Restore",
-          "actionRef": "restore",
-          "requestMapping": {
-            "path": {
-              "id": "$row.id"
+    "type": "section",
+    "id": "recycle-bin",
+    "children": [
+      {
+        "type": "form",
+        "id": "recycle-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "recycle-bin-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
             }
-          },
-          "disabledWhen": {
-            "field": "restored",
-            "equals": true
-          },
-          "labelKey": "schema.recycleBin.action.restore"
-        },
-        {
-          "key": "purge",
-          "label": "Purge",
-          "actionRef": "purge",
-          "requestMapping": {
-            "path": {
-              "id": "$row.id"
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "recycle-bin-table",
+        "props": {
+          "columns": [
+            {
+              "field": "resource",
+              "label": "Resource",
+              "labelKey": "schema.recycleBin.column.resource"
+            },
+            {
+              "field": "resourceId",
+              "label": "Resource ID",
+              "labelKey": "schema.recycleBin.column.resourceId"
+            },
+            {
+              "field": "actorName",
+              "label": "Deleted by",
+              "labelKey": "schema.recycleBin.column.actor"
+            },
+            {
+              "field": "deletedAt",
+              "label": "Deleted at",
+              "labelKey": "schema.recycleBin.column.deletedAt"
+            },
+            {
+              "field": "restored",
+              "label": "Restored",
+              "labelKey": "schema.recycleBin.column.restored"
             }
-          },
-          "labelKey": "schema.recycleBin.action.purge"
+          ],
+          "dataSource": "/api/recycle-bin",
+          "actions": [
+            {
+              "key": "restore",
+              "label": "Restore",
+              "actionRef": "restore",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "restored",
+                "equals": true
+              },
+              "labelKey": "schema.recycleBin.action.restore"
+            },
+            {
+              "key": "purge",
+              "label": "Purge",
+              "actionRef": "purge",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "labelKey": "schema.recycleBin.action.purge"
+            }
+          ],
+          "toolbar": [
+            {
+              "key": "purgeAll",
+              "label": "Purge all",
+              "actionRef": "purgeAll",
+              "labelKey": "schema.recycleBin.toolbar.purgeAll"
+            }
+          ]
         }
-      ],
-      "toolbar": [
-        {
-          "key": "purgeAll",
-          "label": "Purge all",
-          "actionRef": "purgeAll",
-          "labelKey": "schema.recycleBin.toolbar.purgeAll"
-        }
-      ]
-    }
+      }
+    ]
   }
 }

@@ -237,9 +237,17 @@
           "fields": [
             {
               "id": "roles",
-              "label": "Role keys (comma-separated; system: admin, editor, viewer; custom keys allowed)",
-              "type": "textarea",
-              "labelKey": "schema.users.field.roles"
+              "label": "Roles",
+              "type": "checkboxGroup",
+              "labelKey": "schema.users.field.roles",
+              "optionsSource": {
+                "url": "/api/roles",
+                "params": {
+                  "pageSize": 100
+                },
+                "valueField": "key",
+                "labelField": "name"
+              }
             }
           ],
           "submitAction": "updateUserRoles",
@@ -281,6 +289,24 @@
     "type": "section",
     "id": "users",
     "children": [
+      {
+        "type": "form",
+        "id": "users-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "users-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
       {
         "type": "table",
         "id": "users-table",

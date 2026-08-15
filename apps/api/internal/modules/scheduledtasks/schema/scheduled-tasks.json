@@ -173,6 +173,24 @@
     "id": "scheduled-tasks",
     "children": [
       {
+        "type": "form",
+        "id": "tasks-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "tasks-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "tasks-table",
         "permissionCascade": {

@@ -7,6 +7,7 @@ import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
 import type { UploadableFile } from "@/protocol/conformance/upload-orchestration";
+
 import {
   coerceFieldValue,
   type FormControlField,
@@ -28,9 +29,86 @@ export interface FormControlsProps {
   /** GOAL-014 D-002 §4: column count (default 1 = single-column layout).
    * >1 enables a responsive grid; the mobile layout stays single-column. */
   columns?: number;
+  /** W11 · U-01/U-02: auth-aware transport for dynamic option sources
+   * (optionsSource); defaults to globalThis.fetch. */
+  fetcher?: typeof fetch;
 }
 
 type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
+
+/**
+ * W11 · U-01/U-02: loads a form field's dynamic option source. Returns
+ * null while no source is declared or the fetch is in flight (callers fall
+ * back to static options), and an option list once resolved. Invalid sources
+ * and failed fetches fail closed to an empty list.
+ */
+function useDynamicOptions(
+  field: FormControlField,
+  fetcher: typeof fetch | undefined,
+): Array<{ value: string; label: string }> | null {
+  const [items, setItems] = useState<Array<{ value: string; label: string }> | null>(null);
+
+  useEffect(() => {
+    const source = field.optionsSource;
+    if (source === undefined) {
+      setItems(null);
+      return;
+    }
+    // Options-source urls are same-origin single-slash paths like table data
+    // sources, but MAY carry a query string; fragments and scheme/host forms
+    // are rejected (fail closed, no fetch).
+    if (!/^\/(?!\/)[^\s\#]*$/.test(source.url)) {
+      setItems([]);
+      return;
+    }
+    let cancelled = false;
+    const url = new URL(source.url, window.location.origin);
+    if (source.params !== undefined) {
+      for (const [key, value] of Object.entries(source.params)) {
+        if (value === null || value === undefined) {
+          url.searchParams.delete(key);
+        } else {
+          url.searchParams.set(key, String(value));
+        }
+      }
+    }
+    (fetcher ?? globalThis.fetch)(url.toString(), { headers: { Accept: "application/json" } })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        const raw = Array.isArray(body)
+          ? body
+          : (body as { items?: unknown[] } | null)?.items;
+        const mapped: Array<{ value: string; label: string }> = [];
+        for (const entry of raw ?? []) {
+          if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+            continue;
+          }
+          const record = entry as Record<string, unknown>;
+          const value = record[source.valueField];
+          if (typeof value !== "string" || value === "") {
+            continue;
+          }
+          const rawLabel = record[source.labelField];
+          const label = typeof rawLabel === "string" && rawLabel !== "" ? rawLabel : value;
+          mapped.push({ value, label });
+        }
+        setItems(mapped);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setItems([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [field.optionsSource, fetcher]);
+
+  return items;
+}
 
 function optionList(field: FormControlField, t: FieldTranslator): Array<{ value: string; label: string }> {
   return (field.options ?? []).map((option) => ({
@@ -112,6 +190,7 @@ function SelectField({
   disabled,
   readOnly,
   t,
+  fetcher,
 }: {
   id: string;
   label: string;
@@ -121,8 +200,11 @@ function SelectField({
   disabled?: boolean;
   readOnly?: boolean;
   t: FieldTranslator;
+  fetcher?: typeof fetch;
 }) {
-  const options = optionList(field, t);
+  // W11 · U-01/U-02: dynamic options win over static options once loaded.
+  const dynamic = useDynamicOptions(field, fetcher);
+  const options = dynamic !== null ? dynamic : optionList(field, t);
   if (field.mode === "multiple") {
     const selected = Array.isArray(value) ? value.map(String) : [];
     const toggle = (option: string) => {
@@ -184,6 +266,7 @@ function RadioField({
   disabled,
   readOnly,
   t,
+  fetcher,
 }: {
   id: string;
   label: string;
@@ -193,13 +276,16 @@ function RadioField({
   disabled?: boolean;
   readOnly?: boolean;
   t: FieldTranslator;
+  fetcher?: typeof fetch;
 }) {
+  const dynamic = useDynamicOptions(field, fetcher);
+  const options = dynamic !== null ? dynamic : optionList(field, t);
   const current = value === undefined || value === null ? "" : String(value);
   return (
     <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="space-y-1">
-        {optionList(field, t).map((option) => (
+        {options.map((option) => (
           <label key={option.value} className="flex items-center gap-2 text-sm">
             <input
               type="radio"
@@ -226,6 +312,7 @@ function CheckboxGroupField({
   disabled,
   readOnly,
   t,
+  fetcher,
 }: {
   id: string;
   label: string;
@@ -235,7 +322,10 @@ function CheckboxGroupField({
   disabled?: boolean;
   readOnly?: boolean;
   t: FieldTranslator;
+  fetcher?: typeof fetch;
 }) {
+  const dynamic = useDynamicOptions(field, fetcher);
+  const options = dynamic !== null ? dynamic : optionList(field, t);
   const selected = Array.isArray(value) ? value.map(String) : [];
   const toggle = (option: string) => {
     onChange(
@@ -248,7 +338,7 @@ function CheckboxGroupField({
     <fieldset className="space-y-1.5" id={id}>
       <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
       <div className="space-y-1">
-        {optionList(field, t).map((option) => (
+        {options.map((option) => (
           <label key={option.value} className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -594,6 +684,7 @@ function FieldControl({
   onUpload,
   t,
   error,
+  fetcher,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
@@ -604,6 +695,7 @@ function FieldControl({
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
   t: (key: string, params?: MessageParams, literalFallback?: string) => string;
   error?: string;
+  fetcher?: typeof fetch;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = resolveTextProp(
@@ -708,6 +800,7 @@ function FieldControl({
           disabled={disabled}
           readOnly={readOnly}
           t={t}
+          fetcher={fetcher}
           onChange={emitChange}
         />
       );
@@ -721,6 +814,7 @@ function FieldControl({
           disabled={disabled}
           readOnly={readOnly}
           t={t}
+          fetcher={fetcher}
           onChange={emitChange}
         />
       );
@@ -735,6 +829,7 @@ function FieldControl({
           disabled={disabled}
           readOnly={readOnly}
           t={t}
+          fetcher={fetcher}
           onChange={emitChange}
         />
       );
@@ -813,6 +908,7 @@ export function FormControls({
   onUpload,
   fieldErrors,
   columns,
+  fetcher,
 }: FormControlsProps) {
   const t = useTranslate();
   // GOAL-014 D-002 §4: single-column is the default (industry convention for
@@ -848,6 +944,7 @@ export function FormControls({
           onUpload={onUpload}
           t={t}
           error={fieldErrors?.[field.id]}
+          fetcher={fetcher}
         />
       ))}
     </div>

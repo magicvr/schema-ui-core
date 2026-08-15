@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Inbox } from "lucide-react";
+
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslate } from "@/i18n/runtime";
@@ -255,10 +257,15 @@ export function DataTable<T>({
   }
 
   if (state === "empty") {
+    // W11 · U-07: graphic empty state — an inbox glyph plus the message.
     return (
-      <p className="rounded-md border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
-        {emptyMessage}
-      </p>
+      <div
+        className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border bg-card px-4 py-10 text-center"
+        data-table-empty="true"
+      >
+        <Inbox aria-hidden="true" className="size-8 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      </div>
     );
   }
 

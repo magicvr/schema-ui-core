@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 import { resolveTextProp } from "@/i18n/catalog";
@@ -260,6 +260,106 @@ function checkRowKeys(items: ResourceItem[], field: string): RowKeyCheck {
   return { ok: true };
 }
 
+/**
+ * W11 · U-05: actions beyond the primary two collapse into a "⋯ More" menu
+ * (one open row at a time; outside click / Escape closes). Keeps dense tables
+ * scannable and reduces accidental taps on destructive row actions.
+ */
+const MAX_INLINE_ROW_ACTIONS = 2;
+
+function RowActionsMenu({
+  row,
+  actions,
+  crud,
+  t,
+  rowKeyField,
+  disabledWhen,
+}: {
+  row: ResourceItem;
+  actions: Array<Record<string, unknown>>;
+  crud: ReturnType<typeof useSchemaCrud>;
+  t: ReturnType<typeof useTranslate>;
+  rowKeyField: string;
+  disabledWhen: (action: unknown, row: ResourceItem) => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current !== null && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const rowKey = scalarRowKey(row[rowKeyField]) ?? "row";
+  return (
+    <div ref={rootRef} className="relative" data-row-actions-menu={rowKey}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={t("feedback.moreActions")}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((value) => !value);
+        }}
+      >
+        {"⋯"}
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          aria-label={t("feedback.moreActions")}
+          className="absolute right-0 top-8 z-30 min-w-36 rounded-md border border-border bg-card py-1 shadow-lg"
+        >
+          {actions.map((action) => {
+            const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
+            const permitted = crud?.effectivePermission(key) ?? true;
+            const disabled = !permitted || disabledWhen(action, row);
+            return (
+              <button
+                key={key}
+                type="button"
+                role="menuitem"
+                disabled={disabled}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpen(false);
+                  crud?.invokeAction(action, rowAsRecord(row));
+                }}
+                className="block w-full px-3 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+              >
+                {resolveTextProp(
+                  action as unknown as Record<string, unknown>,
+                  "labelKey",
+                  "label",
+                  t,
+                  key,
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const columns = schemaTableColumns(node);
   const dataSource = schemaTableDataSource(node);
@@ -287,6 +387,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     }
   }, [crud, fetcher]);
 
+  // W11 · U-06: go-to-page input ref (submit reads it; no controlled state).
+  const goToPageRef = useRef<HTMLInputElement>(null);
   const providerQuery = crud?.tableQuery(tableId);
   const [localQuery, setLocalQuery] = useState<ResourceQuery>({ page: 1, pageSize: 10 });
   const query = providerQuery ?? localQuery;
@@ -531,39 +633,53 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
           {
             key: "actions",
             label: "",
-            render: (row: ResourceItem) => (
-              <div
-                className="flex justify-end gap-2"
-                data-row-click-ignore="true"
-                onClick={(event) => event.stopPropagation()}
-              >
-                {rowActions.map((action) => {
-                  const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
-                  const permitted = crud?.effectivePermission(key) ?? true;
-                  const disabled = !permitted || rowActionDisabled(action, row);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={disabled}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        crud?.invokeAction(action, rowAsRecord(row));
-                      }}
-                      className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-                    >
-                      {resolveTextProp(
-                        action as unknown as Record<string, unknown>,
-                        "labelKey",
-                        "label",
-                        t,
-                        key,
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ),
+            render: (row: ResourceItem) => {
+              const primary = rowActions.slice(0, MAX_INLINE_ROW_ACTIONS);
+              const overflow = rowActions.slice(MAX_INLINE_ROW_ACTIONS);
+              return (
+                <div
+                  className="flex items-center justify-end gap-1"
+                  data-row-click-ignore="true"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {primary.map((action) => {
+                    const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
+                    const permitted = crud?.effectivePermission(key) ?? true;
+                    const disabled = !permitted || rowActionDisabled(action, row);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={disabled}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          crud?.invokeAction(action, rowAsRecord(row));
+                        }}
+                        className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                      >
+                        {resolveTextProp(
+                          action as unknown as Record<string, unknown>,
+                          "labelKey",
+                          "label",
+                          t,
+                          key,
+                        )}
+                      </button>
+                    );
+                  })}
+                  {overflow.length > 0 ? (
+                    <RowActionsMenu
+                      row={row}
+                      actions={overflow}
+                      crud={crud}
+                      t={t}
+                      rowKeyField={rowKeyField}
+                      disabledWhen={rowActionDisabled}
+                    />
+                  ) : null}
+                </div>
+              );
+            },
           },
         ]
       : []),
@@ -673,13 +789,33 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       />
       {list !== null ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="pl-0.5 text-xs text-muted-foreground">
-            {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
-            {t("feedback.pageOf", {
-              page: String(list.page),
-              total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
-            })}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="pl-0.5 text-xs text-muted-foreground">
+              {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
+              {t("feedback.pageOf", {
+                page: String(list.page),
+                total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
+              })}
+            </p>
+            {/* W11 · U-06: per-page size switcher (resets to page 1). */}
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{t("feedback.pageSize")}</span>
+              <select
+                aria-label={t("feedback.pageSize")}
+                value={String(query.pageSize ?? 10)}
+                onChange={(event) =>
+                  setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
+                }
+                className="h-7 rounded-md border border-input bg-background px-1.5 text-xs scheme-light dark:scheme-dark"
+              >
+                {[10, 20, 50, 100].map((size) => (
+                  <option key={size} value={String(size)}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
             <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
               <button
@@ -721,6 +857,39 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 {"›"}
               </button>
             </nav>
+          ) : null}
+          {/* W11 · U-06: quick jump to a specific page. */}
+          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
+            <form
+              aria-label={t("feedback.goToPage")}
+              className="flex items-center gap-1.5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const target = Number(goToPageRef.current?.value ?? "");
+                const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+                if (Number.isFinite(target) && target >= 1 && target <= pages) {
+                  setQuery({ ...query, page: Math.floor(target) });
+                }
+              }}
+            >
+              <label className="text-xs text-muted-foreground">{t("feedback.goToPage")}</label>
+              <input
+                ref={goToPageRef}
+                type="number"
+                min={1}
+                max={Math.max(1, Math.ceil(list.total / list.pageSize))}
+                defaultValue=""
+                placeholder={String(list.page)}
+                aria-label={t("feedback.goToPage")}
+                className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-xs"
+              />
+              <button
+                type="submit"
+                className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {t("feedback.search")}
+              </button>
+            </form>
           ) : null}
         </div>
       ) : null}

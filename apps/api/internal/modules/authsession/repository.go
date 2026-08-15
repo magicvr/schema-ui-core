@@ -111,6 +111,22 @@ type RoleFilter struct {
 	PageSize int
 }
 
+// PermissionCatalogEntry is one row of the RBAC permission catalog (W11 ·
+// U-02 dynamic permission options).
+type PermissionCatalogEntry struct {
+	Key         string
+	Description string
+}
+
+// MenuItemCatalogEntry is one row of the RBAC navigation catalog (W11 · U-02
+// dynamic menu-access options). Label is a deterministic display derivation
+// from the page reference (admin console page ids are English tokens).
+type MenuItemCatalogEntry struct {
+	ID      string
+	PageRef string
+	Label   string
+}
+
 // Domain sentinels are owned by core.auth-session rather than the platform
 // persistence package.
 var (

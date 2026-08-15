@@ -78,6 +78,24 @@
     "id": "file-library",
     "children": [
       {
+        "type": "form",
+        "id": "file-library-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "file-library-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "file-library-table",
         "permissionCascade": {

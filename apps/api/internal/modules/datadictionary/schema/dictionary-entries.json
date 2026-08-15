@@ -195,6 +195,24 @@
     "id": "dictionary-entries",
     "children": [
       {
+        "type": "form",
+        "id": "dict-entries-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "dict-entries-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "dict-entries-table",
         "permissionCascade": {

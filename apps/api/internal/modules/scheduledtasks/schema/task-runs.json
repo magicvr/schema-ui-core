@@ -15,6 +15,24 @@
     "id": "task-runs",
     "children": [
       {
+        "type": "form",
+        "id": "task-runs-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "task-runs-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "task-runs-table",
         "props": {

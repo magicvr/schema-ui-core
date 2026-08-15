@@ -355,6 +355,14 @@ describe("S2 · schema key resolution (C3)", () => {
       ),
     );
     // Wait for the list to load, then click the row Delete action.
+    // W11 · U-05: delete lives in the row "⋯" overflow menu.
+    const moreTrigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label]',
+    );
+    expect(moreTrigger).not.toBeNull();
+    await act(async () => {
+      moreTrigger!.click();
+    });
     const deleteButton = [...container.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("删除"),
     );

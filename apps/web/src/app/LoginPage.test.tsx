@@ -264,4 +264,18 @@ describe("LoginPage", () => {
     const card = container.querySelector(".rounded-lg.border");
     expect(card).not.toBeNull();
   });
+
+  // W11 · M-02: after a successful MFA disable the app signs out locally and
+  // the login page shows a one-time notice (flag consumed on mount).
+  it("shows a one-time notice when mfa.disabledNotice is set", async () => {
+    sessionStorage.setItem("mfa.disabledNotice", "1");
+    const container = await renderLogin(vi.fn());
+    const banner = container.querySelector('[data-login-notice="mfa-disabled"]');
+    expect(banner).not.toBeNull();
+    expect(banner!.textContent).toContain("MFA was disabled");
+    // The flag was consumed — a second mount shows no banner.
+    sessionStorage.clear();
+    const container2 = await renderLogin(vi.fn());
+    expect(container2.querySelector('[data-login-notice="mfa-disabled"]')).toBeNull();
+  });
 });

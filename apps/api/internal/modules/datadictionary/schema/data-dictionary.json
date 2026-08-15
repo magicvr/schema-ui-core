@@ -171,6 +171,24 @@
     "id": "data-dictionary",
     "children": [
       {
+        "type": "form",
+        "id": "dict-types-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "dict-types-table",
+          "fields": [
+            {
+              "id": "q",
+              "label": "Search",
+              "type": "input",
+              "labelKey": "feedback.search"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "dict-types-table",
         "permissionCascade": {

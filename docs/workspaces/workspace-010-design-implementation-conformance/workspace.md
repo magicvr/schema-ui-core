@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-15
-version: 0.7.0
+version: 0.8.0
 parent: null
 ---
 
@@ -55,6 +55,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W8 | GOAL-009-w8-component-visual-style | **done**（5/5 · 2026-08-14 关门：语种下拉 / 明暗按钮统一 / 下拉暗色审计；self 审计；go 无影响不暂挂） |
 | W9 | GOAL-010-w9-branding-asset-upload | **done**（6/6 · 2026-08-15 关门：品牌图标 URL 填写 → 上传控件 + 专用资产存储 + 自动图像处理；S6 cross 审计 A-001 self + A-002 grok independent pass，findings 全 fixed；go 无影响不暂挂） |
 | W10 | GOAL-011-w10-account-page-conformance | **done**（4/4 · 2026-08-15 关门：数据权限页七层修复 + 翻页滚动稳定 + 表格样式刷新/时间格式化；参考样式 user-overruled；A-001/A-002 self pass；go 无影响不暂挂） |
+| W11 | GOAL-012-w11-mfa-ux-review | **done**（5/5 · 2026-08-15 关门：MFA 三缺陷修复 + UX P0/P1 实施；A-001 self pass + A-002 grok independent conditional→resolved + A-003 closeout self pass；Go 全量 + Web 1002/1002；go 无影响不暂挂） |
 
 ## 固定共享资料引用
 

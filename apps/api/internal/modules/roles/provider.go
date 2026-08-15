@@ -44,6 +44,8 @@ func (p *Provider) Descriptor() kernel.Module {
 				"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles",
 				"PATCH /api/roles/{id}", "DELETE /api/roles/{id}",
 				"POST /api/roles/batch-delete",
+				// W11 · U-02: RBAC catalogs for the role form dynamic options.
+				"GET /api/permissions", "GET /api/menu-items",
 			},
 			Pages:       []string{"roles"},
 			Navigation:  []string{"menu_roles"},
@@ -59,6 +61,13 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	for _, route := range handler.ResourceRoutes(p.a, handler.RolesResource(p.repository, p.operations), ModuleID) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
+	// W11 · U-02: read-only RBAC catalogs (permissions / menu items) consumed
+	// by the schema-driven role forms as dynamic option sources.
+	for _, route := range handler.CatalogRoutes(p.a, p.repository, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

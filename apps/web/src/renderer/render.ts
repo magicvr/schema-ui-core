@@ -731,6 +731,29 @@ export function gateRenderFormFields(
               })),
           }
         : {}),
+      // W11 · U-01/U-02: dynamic option source (upstream registry shape) —
+      // the renderer resolves the fetch; the url must be a single-slash
+      // same-origin path (validated at render time, fail closed).
+      ...(isRecord(entry.optionsSource) &&
+      typeof entry.optionsSource.url === "string" &&
+      typeof entry.optionsSource.valueField === "string" &&
+      typeof entry.optionsSource.labelField === "string"
+        ? {
+            optionsSource: {
+              url: entry.optionsSource.url,
+              valueField: entry.optionsSource.valueField,
+              labelField: entry.optionsSource.labelField,
+              ...(isRecord(entry.optionsSource.params)
+                ? {
+                    params: entry.optionsSource.params as Record<
+                      string,
+                      string | number | boolean | null
+                    >,
+                  }
+                : {}),
+            },
+          }
+        : {}),
       ...(entry.defaultValue !== undefined ? { defaultValue: entry.defaultValue } : {}),
     });
   }

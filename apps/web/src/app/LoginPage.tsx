@@ -73,6 +73,19 @@ export function LoginPage({
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // W11 · M-02: one-time notice after a successful MFA disable (the server
+  // revoked all sessions, so the app signed out locally and landed here).
+  const [notice, setNotice] = useState<string | null>(() => {
+    try {
+      if (sessionStorage.getItem("mfa.disabledNotice") !== null) {
+        sessionStorage.removeItem("mfa.disabledNotice");
+        return t("login.mfaDisabledNotice");
+      }
+    } catch {
+      // storage unavailable — skip the notice
+    }
+    return null;
+  });
   const [branding, setBranding] = useState<Branding>(() => defaultBranding());
   // S-11 (GOAL-011 D-002 §5): the login page preflights the captcha gate on
   // mount. When enabled it renders the arithmetic question and submits the
@@ -208,6 +221,24 @@ export function LoginPage({
             <ThemeToggle />
           </div>
         </div>
+
+        {notice !== null ? (
+          <div
+            role="status"
+            data-login-notice="mfa-disabled"
+            className="mb-3 flex items-start justify-between gap-3 rounded-md border border-success/50 bg-success/10 px-3 py-2 text-sm text-success"
+          >
+            <span>{notice}</span>
+            <button
+              type="button"
+              aria-label={t("feedback.cancel")}
+              className="shrink-0 text-success/70 transition-colors hover:text-success"
+              onClick={() => setNotice(null)}
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
 
         <Card className="shadow-md">
           <form onSubmit={handleSubmit} aria-label={t("login.title")}>

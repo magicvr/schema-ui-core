@@ -127,6 +127,8 @@ export interface RendererComponentProps {
     onChange: (id: string, value: unknown) => void;
     fieldDisabled?: (id: string) => boolean;
     onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
+    /** W11 · U-01/U-02: auth-aware transport for dynamic option sources. */
+    fetcher?: typeof fetch;
   }>;
 }
 
@@ -1090,6 +1092,17 @@ function errorFeedback(result: {
 
 function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
   const t = useTranslate();
+  const [dismissed, setDismissed] = useState(false);
+  // W11 · U-03: toasts auto-dismiss; the parent remounts this component per
+  // feedback occurrence, so the timer always starts fresh.
+  useEffect(() => {
+    setDismissed(false);
+    const timer = window.setTimeout(() => setDismissed(true), FEEDBACK_TOAST_MS);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
+  if (dismissed) {
+    return null;
+  }
   // VP-007 S4 frontend floor: render the catalog entry by key/params when the
   // catalog has it (current locale → en-US); otherwise the server message.
   let text = feedback.message;
@@ -1102,17 +1115,31 @@ function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
   return (
     <div
       role={feedback.kind === "error" ? "alert" : "status"}
-      className={`mb-4 rounded-md border px-3 py-2 text-sm ${
+      data-feedback-toast={feedback.kind}
+      className={`fixed right-4 top-16 z-50 flex max-w-sm items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm shadow-lg ${
         feedback.kind === "error"
           ? "border-destructive/50 bg-destructive/10 text-destructive"
           : "border-success/50 bg-success/10 text-success"
       }`}
     >
-      {feedback.code !== undefined && feedback.code !== "" ? `${feedback.code}: ` : ""}
-      {text}
+      <span>
+        {feedback.code !== undefined && feedback.code !== "" ? `${feedback.code}: ` : ""}
+        {text}
+      </span>
+      <button
+        type="button"
+        aria-label={t("feedback.cancel")}
+        onClick={() => setDismissed(true)}
+        className="shrink-0 text-xs opacity-70 transition-opacity hover:opacity-100"
+      >
+        {"×"}
+      </button>
     </div>
   );
 }
+
+/** W11 · U-03: auto-dismiss window for operation feedback toasts (ms). */
+const FEEDBACK_TOAST_MS = 4000;
 
 type RecordSourcePrefillState =
   | { status: "idle" }
@@ -1518,6 +1545,8 @@ function FormInner({
         fieldDisabled={fieldDisabled}
         onUpload={crud?.uploadFiles}
         fieldErrors={fieldErrors}
+        // W11 · U-01/U-02: auth-aware transport for dynamic option sources.
+        fetcher={crud?.fetcher}
         columns={
           isRecord(node.props) && typeof node.props.columns === "number"
             ? node.props.columns

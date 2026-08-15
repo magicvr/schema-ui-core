@@ -183,6 +183,14 @@ describe("S4 · feedback region localization", () => {
     });
     // A 400 on a page-level write action with messageKey: the feedback region
     // must show the catalog text, not the server English message and not the raw key.
+    // W11 · U-05: delete lives in the row "⋯" overflow menu.
+    const moreTrigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label]',
+    );
+    expect(moreTrigger).not.toBeNull();
+    await act(async () => {
+      moreTrigger!.click();
+    });
     const deleteButton = [...container.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("删除"),
     );
@@ -247,6 +255,12 @@ describe("S4 · feedback region localization", () => {
           />
         </I18nProvider>,
       );
+    });
+    const moreTrigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label]',
+    );
+    await act(async () => {
+      moreTrigger!.click();
     });
     const deleteButton = [...container.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("删除"),

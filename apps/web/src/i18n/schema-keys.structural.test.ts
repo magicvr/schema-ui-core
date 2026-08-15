@@ -76,7 +76,10 @@ function collectTextAndKeys(doc: unknown): Array<{ path: string; text: string; k
       if (
         "bodyMapping" in record ||
         "requestMapping" in record ||
-        "navigateMapping" in record
+        "navigateMapping" in record ||
+        // W11 · U-01/U-02: optionsMapping maps API response fields (value/label
+        // field names), not user-visible text.
+        "optionsMapping" in record
       ) {
         return;
       }

@@ -142,7 +142,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			return
 		}
 		if err := service.Confirm(user.ID, body.Code, time.Now().UTC()); err != nil {
-			writeMFAError(w, r, err)
+			writeSelfServiceMFAError(w, r, err)
 			return
 		}
 		recordMFAEvent(operations, user, operationlog.EventMFAConfirm, `{"userId":`+jsonQuote(user.ID)+`}`)
@@ -167,7 +167,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		now := time.Now().UTC()
 		if err := service.Disable(user.ID, body.Code, body.RecoveryCode, now); err != nil {
-			writeMFAError(w, r, err)
+			writeSelfServiceMFAError(w, r, err)
 			return
 		}
 		if err := revoker.BumpTokenVersionAndRevokeAll(user.ID, now); err != nil {
@@ -195,7 +195,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		codes, err := service.RotateRecovery(user.ID, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
-			writeMFAError(w, r, err)
+			writeSelfServiceMFAError(w, r, err)
 			return
 		}
 		recordMFAEvent(operations, user, operationlog.EventMFARecoveryRotate, `{"userId":`+jsonQuote(user.ID)+`}`)
@@ -236,7 +236,9 @@ func requireIdentity(w http.ResponseWriter, r *http.Request) (account.User, bool
 	return user, true
 }
 
-// writeMFAError maps MFA domain errors to the frozen wire codes.
+// writeMFAError maps MFA domain errors to the frozen wire codes. Used by the
+// login second-factor endpoint (/api/auth/mfa/verify): an invalid code there
+// is an authentication failure (401) handled directly by the login surface.
 func writeMFAError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, ErrMFAProofExpired):
@@ -245,6 +247,26 @@ func writeMFAError(w http.ResponseWriter, r *http.Request, err error) {
 		writeLocalizedError(w, r, http.StatusUnauthorized, "MFA_PROOF_EXHAUSTED", "too many failed attempts; sign in again")
 	case errors.Is(err, ErrMFAInvalid):
 		writeLocalizedError(w, r, http.StatusUnauthorized, "MFA_INVALID", "invalid second-factor code")
+	case errors.Is(err, ErrMFANotEnrolled):
+		writeLocalizedError(w, r, http.StatusBadRequest, "MFA_NOT_ENROLLED", "no MFA enrollment for this account")
+	case errors.Is(err, ErrMFAPendingOnly):
+		writeLocalizedError(w, r, http.StatusBadRequest, "MFA_PENDING_ONLY", "MFA is not activated yet")
+	case errors.Is(err, ErrMFAActive):
+		writeLocalizedError(w, r, http.StatusBadRequest, "MFA_ALREADY_ACTIVE", "MFA is already active")
+	default:
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not complete MFA operation")
+	}
+}
+
+// writeSelfServiceMFAError maps MFA domain errors for the identity-scoped
+// self-service endpoints (confirm/disable/recovery rotate). An invalid code
+// here is a CLIENT VALIDATION failure (400), not a lost session (401): the
+// web auth wrapper (authFetch) must not treat it as session expiry and force
+// a sign-out (W11 · M-02/M-03). Proof errors never occur on this surface.
+func writeSelfServiceMFAError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, ErrMFAInvalid):
+		writeLocalizedError(w, r, http.StatusBadRequest, "MFA_INVALID", "invalid second-factor code")
 	case errors.Is(err, ErrMFANotEnrolled):
 		writeLocalizedError(w, r, http.StatusBadRequest, "MFA_NOT_ENROLLED", "no MFA enrollment for this account")
 	case errors.Is(err, ErrMFAPendingOnly):

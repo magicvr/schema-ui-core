@@ -61,7 +61,8 @@ func TestRolesProviderRegistersSurfaces(t *testing.T) {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 
-	wantRoutes := []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}", "POST /api/roles/batch-delete"}
+	// W11 · U-02: RBAC catalog routes are part of the provider surface.
+	wantRoutes := []string{"GET /api/roles", "GET /api/roles/{id}", "POST /api/roles", "PATCH /api/roles/{id}", "DELETE /api/roles/{id}", "POST /api/roles/batch-delete", "GET /api/permissions", "GET /api/menu-items"}
 	if len(set.Routes) != len(wantRoutes) {
 		t.Fatalf("routes = %d, want %d", len(set.Routes), len(wantRoutes))
 	}

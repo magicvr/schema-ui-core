@@ -5,7 +5,9 @@
 // page via the custom-node registry (renderer/custom-components.ts).
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
+import { useAuth } from "@/account/AuthContext";
 import { AuthError, authFetch } from "@/account/auth-client";
+import { QrCode } from "@/components/qr-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +16,13 @@ import {
   registerCustomComponent,
   type CustomComponentProps,
 } from "@/renderer/custom-components";
+
+/**
+ * W11 · M-02: flag consumed by the login page after a successful MFA disable.
+ * The server revokes ALL sessions (A-004 F-002), so the web app signs out
+ * locally and the login page shows a one-time notice explaining the re-login.
+ */
+const MFA_DISABLED_NOTICE_KEY = "mfa.disabledNotice";
 
 interface MFAStatus {
   enabled: boolean;
@@ -81,6 +90,7 @@ function splitMFAInput(value: string): { code?: string; recoveryCode?: string } 
 
 export function MfaManager(_props: CustomComponentProps) {
   const t = useTranslate();
+  const { logout } = useAuth();
   const [status, setStatus] = useState<MFAStatus | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +156,16 @@ export function MfaManager(_props: CustomComponentProps) {
     void run(async () => {
       await postJSON<void>("/api/mfa/disable", splitMFAInput(disableCode));
       setDisableCode("");
-      await refresh();
+      setStatus({ enabled: false, enrolledAt: null });
+      // W11 · M-02: disable revokes every session server-side. Set the notice
+      // flag first, then sign out locally so the user lands on the login page
+      // with a clear message instead of a mid-session reauth failure screen.
+      try {
+        sessionStorage.setItem(MFA_DISABLED_NOTICE_KEY, "1");
+      } catch {
+        // storage unavailable — the logout below still proceeds
+      }
+      await logout();
     });
   };
 
@@ -179,6 +198,14 @@ export function MfaManager(_props: CustomComponentProps) {
 
       {enrollPayload !== null ? (
         <div className="space-y-2" data-mfa-enroll>
+          {/* W11 · M-01: scannable QR for the otpauth URI (SVG, no canvas). */}
+          <QrCode
+            value={enrollPayload.otpauthURL}
+            size={168}
+            label={t("schema.account.mfa.qr")}
+            className="mx-auto"
+          />
+          <p className="text-center text-sm text-muted-foreground">{t("schema.account.mfa.qrHint")}</p>
           <Label>{t("schema.account.mfa.secret")}</Label>
           <Input readOnly value={enrollPayload.secretBase32} data-mfa-secret />
           <Label>{t("schema.account.mfa.otpauth")}</Label>
