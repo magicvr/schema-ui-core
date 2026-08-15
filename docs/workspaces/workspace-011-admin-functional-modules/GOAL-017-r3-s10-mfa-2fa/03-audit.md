@@ -25,6 +25,8 @@ version: 0.1.5
 | A-002 | 2026-08-15 | independent | 立项（五件套 + 分档/C-10·C-11·S-11 边界/信息门禁 + 路线图同步） | pass | 0 | 03-audit/A-002-scaffold-independent.md |
 | A-003 | 2026-08-15 | self | S1 方案冻结 | pass | 0 | 03-audit/A-003-s1-self.md |
 | A-006 | 2026-08-15 | self | S2-S4 实现与验证 | pass | 0 | 03-audit/A-006-s2-s4-self.md |
+| A-007 | 2026-08-15 | independent | S5 关门（两段登录契约 + Enroll 守卫 + MFA UI 残余） | fail | 2（F-001/F-002 全 fixed） | 03-audit/A-007-s5-independent.md |
+| A-008 | 2026-08-15 | independent | S5 复审（A-007 闭合验证） | pass | 0 | 03-audit/A-008-s5-reaudit.md |
 | A-004 | 2026-08-15 | independent | S1 方案冻结（D-002 + I-001~I-004 + 登录集成/安全控制/协议） | conditional | 2（F-001、F-002；已由 D-003/A-005 闭合） | 03-audit/A-004-s1-independent.md |
 | A-005 | 2026-08-15 | independent | A-004 F-001/F-002 required 闭合复审（D-002 §2/§3/§4/§6 + D-003） | pass | 0 | 03-audit/A-005-s1-reaudit.md |
 | A-007 | 2026-08-15 | independent | S5 关门（成功标准 + 审计链 + 安全控制 + 验证证据 + MFA UI 残余 + 协议/go + I-001~I-004） | fail | 2（F-001 web 两段登录断裂、F-002 enroll 覆盖 active；已由实现/A-008 闭合） | 03-audit/A-007-s5-independent.md |

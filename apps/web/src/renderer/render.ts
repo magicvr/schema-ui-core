@@ -437,10 +437,9 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
     }
     return {
       type: "custom",
-      ...(value.id === undefined ? {} : { id: value.id }),
+      ...(value.id === undefined ? {} : { id: value.id as string }),
       component: value.component,
-      ...(isRecord(value.props) ? { props: value.props } : {}),
-      ...(Array.isArray(value.children) ? { children: value.children } : {}),
+      ...(isRecord(value.props) ? { props: value.props as Record<string, unknown> } : {}),
     };
   }
   if (value.type === "section" || value.type === "grid" || value.type === "tabs") {

@@ -69,6 +69,16 @@ async function postJSON<T>(url: string, body: unknown): Promise<T> {
   return (await response.json()) as T;
 }
 
+/** Splits the disable/rotate input: a 6-digit value is a TOTP code, anything
+ * else is treated as a one-time recovery code (A-003 F-002: both must work). */
+function splitMFAInput(value: string): { code?: string; recoveryCode?: string } {
+  const trimmed = value.trim();
+  if (/^\d{6}$/.test(trimmed)) {
+    return { code: trimmed };
+  }
+  return { recoveryCode: trimmed };
+}
+
 export function MfaManager(_props: CustomComponentProps) {
   const t = useTranslate();
   const [status, setStatus] = useState<MFAStatus | null>(null);
@@ -134,7 +144,7 @@ export function MfaManager(_props: CustomComponentProps) {
   const disable = (event: FormEvent) => {
     event.preventDefault();
     void run(async () => {
-      await postJSON<void>("/api/mfa/disable", { code: disableCode.trim() });
+      await postJSON<void>("/api/mfa/disable", splitMFAInput(disableCode));
       setDisableCode("");
       await refresh();
     });
@@ -143,9 +153,7 @@ export function MfaManager(_props: CustomComponentProps) {
   const rotate = (event: FormEvent) => {
     event.preventDefault();
     void run(async () => {
-      const payload = await postJSON<{ recoveryCodes: string[] }>("/api/mfa/recovery/rotate", {
-        recoveryCode: rotateRecovery.trim(),
-      });
+      const payload = await postJSON<{ recoveryCodes: string[] }>("/api/mfa/recovery/rotate", splitMFAInput(rotateRecovery));
       setNewRecovery(payload.recoveryCodes);
       setRotateRecovery("");
     });
@@ -206,7 +214,7 @@ export function MfaManager(_props: CustomComponentProps) {
               value={disableCode}
               onChange={(event) => setDisableCode(event.target.value)}
             />
-            <Button type="submit" variant="destructive" disabled={busy || disableCode.trim() === ""} className="w-full">
+            <Button type="submit" disabled={busy || disableCode.trim() === ""} className="w-full">
               {t("schema.account.mfa.disable")}
             </Button>
           </form>

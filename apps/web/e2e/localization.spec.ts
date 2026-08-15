@@ -20,7 +20,9 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
   // M1 · anonymous login page (en default) → switch to zh.
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  await page.getByLabel("Language").selectOption("zh-CN");
+  // 2026-08-14 refactor: the switcher is a header dropdown (no <select>).
+  await page.getByRole("button", { name: "Language" }).click();
+  await page.getByRole("menuitemradio", { name: "简体中文" }).click();
   await expect(page.getByRole("heading", { name: "登录" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
 
@@ -81,7 +83,9 @@ test("S5 mvp profile: locale switch + no settings surface + branding public", as
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  await page.getByLabel("Language").selectOption("zh-CN");
+  // 2026-08-14 refactor: the switcher is a header dropdown (no <select>).
+  await page.getByRole("button", { name: "Language" }).click();
+  await page.getByRole("menuitemradio", { name: "简体中文" }).click();
   await expect(page.getByRole("heading", { name: "登录" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
 

@@ -9,6 +9,7 @@ import {
   logout,
   restoreSession,
   setAuthLostListener,
+  type AuthSession,
 } from "@/account/auth-client";
 import {
   clearTokens,
@@ -76,7 +77,9 @@ describe("auth-client", () => {
           features: { menu_users: true },
         }),
       );
-    const session = await login("admin", "admin");
+    // login now returns AuthSession | LoginMFARequired (S-10 two-step);
+    // the token-bearing path narrows to AuthSession.
+    const session = (await login("admin", "admin")) as AuthSession;
     expect(session.user.id).toBe("user-admin");
     expect(session.user.permissions).toEqual(["users.read", "users.write", "settings.write"]);
     expect(session.features).toEqual({ menu_users: true });

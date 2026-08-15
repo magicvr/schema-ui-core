@@ -65,6 +65,24 @@ function expectErrorCode(
 }
 
 describe("validatePageDocument", () => {
+  it("accepts custom nodes registered for GOAL-018 (MFA manager block)", () => {
+    const documentWithCustom = {
+      meta: { pageId: "account", title: "Account", protocolVersion: "2.7", requiredCapabilities: [] },
+      body: {
+        type: "section",
+        id: "account",
+        children: [
+          { type: "form", id: "profile-form", props: { fields: [{ id: "name", label: "Name", type: "input" }] } },
+          { type: "custom", id: "mfa-manager-block", component: "mfa-manager" },
+        ],
+      },
+    };
+    const result = validatePageDocument(documentWithCustom);
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("validatePageDocument", () => {
   it("accepts a structurally valid page document", () => {
     expect(validatePageDocument(VALID_DOCUMENT).ok).toBe(true);
   });

@@ -1,12 +1,12 @@
 ---
 id: GOAL-018-mfa-manager-ui
 title: MFA 个人中心管理组件（自定义 renderer 节点）
-status: active
+status: done
 parent: GOAL-017-r3-s10-mfa-2fa
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.2.0
-progress: 3/5
+version: 0.3.0
+progress: 5/5
 ---
 
 # GOAL-018-mfa-manager-ui · MFA 个人中心管理组件
@@ -27,7 +27,7 @@ progress: 3/5
 - [x] **S2 · 实现**：renderer 扩展 + MfaManager 组件 + account.json custom 节点 + i18n（E-002，2026-08-15）
 - [x] **S3 · 验证**：go 回归 + web 974/974（render/s5/代表页）+ 两段登录回归（E-003，2026-08-15）
 - [x] **S4 · go 影响判定 + 自审**（D-002 不暂挂 + A-002 pass，2026-08-15）
-- [ ] **S5 · 关门**：独立审计（grok build）+ 关门 + GOAL-017 回归关门
+- [x] **S5 · 关门**：独立审计（grok build A-003 fail → 全 fixed → A-004 pass）+ 关门 + GOAL-017 回归关门（E-004，2026-08-15）
 
 progress: 0/5 由五个等权检查点派生。
 

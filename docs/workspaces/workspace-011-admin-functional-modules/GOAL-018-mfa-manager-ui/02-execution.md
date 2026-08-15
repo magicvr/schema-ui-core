@@ -17,6 +17,7 @@ version: 0.1.0
 | E-001 | 2026-08-15 | 立项：用户裁决（A-007 F-004 阻断 → 子目标承接） | recorded | 02-execution/E-001-init.md |
 | E-002 | 2026-08-15 | S2 实现完成（renderer custom 节点 + MfaManager + account.json + i18n） | recorded | 02-execution/E-002-s2-implemented.md |
 | E-003 | 2026-08-15 | S3 验证完成（web 974/974 + go 全量） | recorded | 02-execution/E-003-s3-verified.md |
+| E-004 | 2026-08-15 | S5 关门完成（A-003 fail → 全 fixed → A-004 pass → done） | recorded | 02-execution/E-004-s5-closeout.md |
 
 ## 事实边界
 

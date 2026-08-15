@@ -89,6 +89,58 @@ describe("MfaManager", () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(4);
   });
 
+
+  // A-003 F-002: the disable input accepts a recovery code (non-6-digit) and
+  // the rotate flow returns a fresh set.
+  it("disables with a recovery code and rotates recovery codes", async () => {
+    // Flow order: status(0) → rotate(1, payload) → disable(2, 204) →
+    // status refresh(3). rotate does not refresh; disable does.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ enabled: true, enrolledAt: "2026-08-15T00:00:00Z" })) // 0 status
+      .mockResolvedValueOnce(jsonResponse({ recoveryCodes: ["N1", "N2"] })) // 1 rotate
+      .mockResolvedValueOnce(new Response(null, { status: 204 })) // 2 disable
+      .mockResolvedValueOnce(jsonResponse({ enabled: false, enrolledAt: null })); // 3 status refresh
+    vi.stubGlobal("fetch", fetchMock);
+
+    const container = await renderManager();
+    await act(async () => {});
+    expect(container.querySelector('[data-mfa-active]')).not.toBeNull();
+
+    // Rotate with a 6-digit code → fresh recovery set visible (A-004
+    // recommended: unconditional, not gated on later UI state).
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    const rotateInput = container.querySelector<HTMLInputElement>("#mfaRotateRecovery");
+    expect(rotateInput).not.toBeNull();
+    await act(async () => {
+      setter?.call(rotateInput, "123456");
+      rotateInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const rotateBtn = container.querySelector<HTMLButtonElement>('[data-mfa-active] form:nth-of-type(2) button[type="submit"]');
+    expect(rotateBtn).not.toBeNull();
+    await act(async () => rotateBtn!.click());
+    await act(async () => {});
+    expect(container.querySelector('[data-mfa-new-recovery]')).not.toBeNull();
+    expect(container.textContent).toContain("N1");
+
+    // Disable with a recovery code (non-6-digit).
+    const disableInput = container.querySelector<HTMLInputElement>("#mfaDisableCode");
+    expect(disableInput).not.toBeNull();
+    await act(async () => {
+      setter?.call(disableInput, "ABCDEFGH");
+      disableInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const disableBtn = container.querySelector<HTMLButtonElement>('[data-mfa-active] button[type="submit"]');
+    await act(async () => disableBtn!.click());
+    await act(async () => {});
+    expect(container.textContent).toContain("Enable MFA");
+    // The rotate request carried the 6-digit code; the disable request
+    // carried the recovery code.
+    const rotateBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body ?? "{}")) as { code?: string; recoveryCode?: string };
+    expect(rotateBody.code).toBe("123456");
+    const disableBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body ?? "{}")) as { code?: string; recoveryCode?: string };
+    expect(disableBody.recoveryCode).toBe("ABCDEFGH");
+  });
   it("degrades to an unavailable placeholder when the status call fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
     const container = await renderManager();

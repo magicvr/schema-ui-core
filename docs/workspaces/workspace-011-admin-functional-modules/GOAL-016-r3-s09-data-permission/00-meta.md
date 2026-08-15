@@ -1,12 +1,12 @@
 ---
 id: GOAL-016-r3-s09-data-permission
 title: R3-S09 · 数据权限（行级/数据范围）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.3.0
-progress: 3/5
+version: 0.4.0
+progress: 5/5
 ---
 
 # GOAL-016-r3-s09-data-permission · 数据权限（行级/数据范围）
@@ -28,9 +28,9 @@ progress: 3/5
 - [x] **S2 · 实现**：模块 provider + 范围/过滤能力 + schema 页 + 测试（E-003，2026-08-15）
 - [x] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / web 969/969；e2e 双 profile 归 S5 波次）（E-004，2026-08-15）
 - [x] **S4 · go 影响判定 + 自审**（D-004 不暂挂 + A-006 pass，2026-08-15）
-- [ ] **S5 · 关门**：独立审计（grok build）+ 关门 + goal-tree 同步
+- [x] **S5 · 关门**：独立审计（grok build A-007 pass）+ 关门 + goal-tree 同步（E-005，2026-08-15）
 
-progress: 3/5 由五个等权检查点派生（S1~S4 完成后更新）。
+progress: 5/5 由五个等权检查点派生（S1~S5 全部完成后更新）。
 
 ## 信息就绪与未知项
 

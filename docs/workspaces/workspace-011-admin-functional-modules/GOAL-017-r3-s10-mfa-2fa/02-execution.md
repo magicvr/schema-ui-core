@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-15 | S1 方案冻结完成（D-002 + I-001~I-004 闭合 + progress 1/5） | recorded | 02-execution/E-002-s1-done.md |
 | E-003 | 2026-08-15 | S2 实现完成（auth 核心 + admin.mfa + 两段登录 web） | recorded | 02-execution/E-003-s2-implemented.md |
 | E-004 | 2026-08-15 | S3 验证完成（go 全量全绿 + web 969/969） | recorded | 02-execution/E-004-s3-verified.md |
+| E-005 | 2026-08-15 | S5 关门完成（A-007 fail → 全 fixed → A-008 pass → GOAL-018 回归后 done） | recorded | 02-execution/E-005-s5-closeout.md |
 
 ## 事实边界
 
