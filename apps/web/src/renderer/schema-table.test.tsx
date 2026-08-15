@@ -561,4 +561,76 @@ describe("SchemaTable title / filters / pager", () => {
     expect(calls.some((query) => query.includes("pageSize=20"))).toBe(true);
     expect(calls.some((query) => query.includes("page=2") && query.includes("pageSize=20"))).toBe(false);
   });
+
+  // W11 · U-05 fix: the overflow menu is portaled to document.body and fixed to
+  // the viewport, so the table's overflow-x-auto container cannot clip it.
+  it("portals the overflow menu to document.body (not clipped by the table)", async () => {
+    const node = tableNode({
+      columns: COLUMNS,
+      dataSource: "/api/users",
+      actions: [
+        { key: "edit", label: "Edit", actionRef: "edit", requestMapping: { path: { id: "$row.id" } } },
+        { key: "delete", label: "Delete", actionRef: "delete", requestMapping: { path: { id: "$row.id" } } },
+        { key: "enable", label: "Enable", actionRef: "enable", requestMapping: { path: { id: "$row.id" } } },
+        { key: "disable", label: "Disable", actionRef: "disable", requestMapping: { path: { id: "$row.id" } } },
+      ],
+    });
+    const container = await renderTable(node, rowsFetcher());
+    // Edit + Delete stay inline (MAX_INLINE_ROW_ACTIONS = 2)…
+    expect(container.textContent).toContain("Edit");
+    expect(container.textContent).toContain("Delete");
+    // …Enable/Disable live in the "⋯" menu, rendered OUTSIDE the table DOM.
+    const trigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label="More actions"]',
+    );
+    expect(trigger).not.toBeNull();
+    await act(async () => trigger!.click());
+    const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
+    expect(menu).not.toBeNull();
+    expect(menu!.textContent).toContain("Enable");
+    expect(menu!.textContent).toContain("Disable");
+    // The menu is not a descendant of the table container.
+    expect(container.querySelector('[role="menu"]')).toBeNull();
+    // Fixed viewport positioning is applied (jsdom rects are zero, so the
+    // menu anchors at the trigger's bottom + 4 = 4).
+    expect(menu!.style.position).toBe("fixed");
+    expect(Number(menu!.style.zIndex)).toBeGreaterThanOrEqual(50);
+    // Escape closes it again.
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+    expect(document.body.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it("closes the portaled menu on an outside pointerdown and on scroll", async () => {
+    const node = tableNode({
+      columns: COLUMNS,
+      dataSource: "/api/users",
+      actions: [
+        { key: "edit", label: "Edit", actionRef: "edit" },
+        { key: "delete", label: "Delete", actionRef: "delete" },
+        { key: "enable", label: "Enable", actionRef: "enable" },
+      ],
+    });
+    const container = await renderTable(node, rowsFetcher());
+    const trigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label="More actions"]',
+    );
+    await act(async () => trigger!.click());
+    expect(document.body.querySelector('[role="menu"]')).not.toBeNull();
+
+    // Outside pointerdown closes.
+    await act(async () => {
+      document.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+    });
+    expect(document.body.querySelector('[role="menu"]')).toBeNull();
+
+    // Reopen, then a scroll event (capture) closes.
+    await act(async () => trigger!.click());
+    expect(document.body.querySelector('[role="menu"]')).not.toBeNull();
+    await act(async () => {
+      document.dispatchEvent(new Event("scroll", { bubbles: true }));
+    });
+    expect(document.body.querySelector('[role="menu"]')).toBeNull();
+  });
 });

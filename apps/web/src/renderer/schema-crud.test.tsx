@@ -440,12 +440,22 @@ async function rowActionButton(container: HTMLElement, label: string): Promise<H
   if (inline !== undefined) {
     return inline;
   }
+  // The overflow menu is portaled to document.body (W11 · U-05 fix: the table's
+  // overflow container would otherwise clip the absolutely-positioned menu).
+  // The menu may already be open from a previous lookup in the same loop —
+  // toggling the trigger again would close it.
+  const alreadyOpen = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).find(
+    (button) => button.textContent?.trim() === label,
+  );
+  if (alreadyOpen !== undefined) {
+    return alreadyOpen;
+  }
   const trigger = container.querySelector<HTMLButtonElement>(
     '[data-row-actions-menu] button[aria-label]',
   );
   expect(trigger, "more-menu trigger for " + label).not.toBeNull();
   await act(async () => trigger!.click());
-  const item = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).find(
+  const item = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).find(
     (button) => button.textContent?.trim() === label,
   );
   expect(item, label + " in overflow menu").not.toBeUndefined();

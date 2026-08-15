@@ -191,7 +191,7 @@ describe("S4 · feedback region localization", () => {
     await act(async () => {
       moreTrigger!.click();
     });
-    const deleteButton = [...container.querySelectorAll("button")].find((button) =>
+    const deleteButton = [...document.body.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("删除"),
     );
     expect(deleteButton).toBeDefined();
@@ -262,7 +262,7 @@ describe("S4 · feedback region localization", () => {
     await act(async () => {
       moreTrigger!.click();
     });
-    const deleteButton = [...container.querySelectorAll("button")].find((button) =>
+    const deleteButton = [...document.body.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("删除"),
     );
     await act(async () => {

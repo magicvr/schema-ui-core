@@ -17,3 +17,4 @@ version: 0.1.0
 - **E-003（2026-08-15）**：S3 UX P0（optionsSource 动态选项 + RBAC 目录端点 + users/roles schema 改造）；Go/Web 回归绿（详见 E-003 条目）。
 - **E-004（2026-08-15）**：S4 UX P1（Toast、7 页搜索表单、行操作收纳、分页增强、空状态）；Web 1002/1002 绿；tsc 0（详见 E-004 条目）。
 - **E-005（2026-08-15）**：S5 关门（grok independent A-002 conditional→resolved 全 findings fixed；Go 全量 + Web 1002/1002 + tsc 0；A-003 closeout self pass；checkpoint 286c32a；5/5 关门）。
+- **E-006（2026-08-15）**：用户报告修复——U-05 行操作 ⋯ 菜单层级错误（被表格 overflow-x-auto 容器裁剪、z 层级不足）；改为 portal 到 document.body + fixed 定位（zIndex 60）+ scroll/resize 关闭；Web 1004/1004 + tsc 0（详见 E-006 条目）。

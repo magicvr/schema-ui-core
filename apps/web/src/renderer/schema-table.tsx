@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 import { resolveTextProp } from "@/i18n/catalog";
@@ -283,80 +284,143 @@ function RowActionsMenu({
   disabledWhen: (action: unknown, row: ResourceItem) => boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  // Anchor rect of the trigger button at open time (viewport coordinates).
+  const [anchor, setAnchor] = useState<{ top: number; bottom: number; left: number; right: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setAnchor(null);
+  }, []);
+
   useEffect(() => {
     if (!open) {
       return;
     }
     const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current !== null && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) {
+        return;
       }
+      close();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
+        event.stopPropagation();
+        close();
       }
     };
+    // The menu is fixed to the viewport: any scroll (incl. inside the table's
+    // overflow container, hence capture) or resize invalidates the anchor, so
+    // close instead of rendering a detached menu.
+    const onScroll = () => close();
+    const onResize = () => close();
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+    document.addEventListener("scroll", onScroll, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("scroll", onScroll, true);
     };
+  }, [open, close]);
+
+  // Move focus into the menu once it renders (portal mount).
+  useEffect(() => {
+    if (open) {
+      menuRef.current
+        ?.querySelector<HTMLButtonElement>('[role="menuitem"]:not([disabled])')
+        ?.focus();
+    }
   }, [open]);
 
   const rowKey = scalarRowKey(row[rowKeyField]) ?? "row";
+  const toggle = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (open) {
+      close();
+      return;
+    }
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect === undefined || rect === null) {
+      return;
+    }
+    setAnchor({ top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right });
+    setOpen(true);
+  };
+
+  // Viewport-aligned placement: anchored to the trigger's bottom-right corner,
+  // flipping upward when there is not enough room below; clamped to the window.
+  const menuWidth = 144; // min-w-36
+  let placement: { top?: number; bottom?: number; left: number } | null = null;
+  if (open && anchor !== null) {
+    const estimatedHeight = actions.length * 32 + 12;
+    const upward = anchor.bottom + estimatedHeight > window.innerHeight;
+    placement = {
+      left: Math.min(anchor.left, Math.max(8, window.innerWidth - menuWidth - 8)),
+      ...(upward ? { bottom: window.innerHeight - anchor.top + 4 } : { top: anchor.bottom + 4 }),
+    };
+  }
+
   return (
-    <div ref={rootRef} className="relative" data-row-actions-menu={rowKey}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-label={t("feedback.moreActions")}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((value) => !value);
-        }}
-      >
-        {"⋯"}
-      </button>
-      {open ? (
-        <div
-          role="menu"
+    <>
+      <div className="relative" data-row-actions-menu={rowKey}>
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-expanded={open}
+          aria-haspopup="menu"
           aria-label={t("feedback.moreActions")}
-          className="absolute right-0 top-8 z-30 min-w-36 rounded-md border border-border bg-card py-1 shadow-lg"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          onClick={toggle}
         >
-          {actions.map((action) => {
-            const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
-            const permitted = crud?.effectivePermission(key) ?? true;
-            const disabled = !permitted || disabledWhen(action, row);
-            return (
-              <button
-                key={key}
-                type="button"
-                role="menuitem"
-                disabled={disabled}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setOpen(false);
-                  crud?.invokeAction(action, rowAsRecord(row));
-                }}
-                className="block w-full px-3 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-accent disabled:opacity-50"
-              >
-                {resolveTextProp(
-                  action as unknown as Record<string, unknown>,
-                  "labelKey",
-                  "label",
-                  t,
-                  key,
-                )}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
+          {"⋯"}
+        </button>
+      </div>
+      {open && placement !== null
+        ? createPortal(
+            <div
+              ref={menuRef}
+              role="menu"
+              aria-label={t("feedback.moreActions")}
+              style={{ position: "fixed", zIndex: 60, minWidth: menuWidth, ...placement }}
+              className="rounded-md border border-border bg-card py-1 shadow-lg"
+            >
+              {actions.map((action) => {
+                const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
+                const permitted = crud?.effectivePermission(key) ?? true;
+                const disabled = !permitted || disabledWhen(action, row);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="menuitem"
+                    disabled={disabled}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      close();
+                      crud?.invokeAction(action, rowAsRecord(row));
+                    }}
+                    className="block w-full px-3 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                  >
+                    {resolveTextProp(
+                      action as unknown as Record<string, unknown>,
+                      "labelKey",
+                      "label",
+                      t,
+                      key,
+                    )}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 

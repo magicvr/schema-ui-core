@@ -213,13 +213,14 @@ describe("migrated representative pages (GOAL-004)", () => {
     // trigger, row edit/delete actions, and a selected-row recordView.
     expect(container.textContent).toContain("New user");
     expect(container.textContent).toContain("Edit");
-    // W11 · U-05: secondary actions (Delete) live in the "⋯" overflow menu.
+    // W11 · U-05: secondary actions (Delete) live in the "⋯" overflow menu,
+    // which is portaled to document.body.
     const moreTrigger = container.querySelector<HTMLButtonElement>(
       '[data-row-actions-menu] button[aria-label]',
     );
     expect(moreTrigger).not.toBeNull();
     await act(async () => moreTrigger!.click());
-    expect(container.textContent).toContain("Delete");
+    expect(document.body.textContent).toContain("Delete");
     expect(container.textContent).toContain("alice");
     // recordView renders the selected-row copy once a row is selected.
     expect(container.textContent).toContain("Select a record to view details.");

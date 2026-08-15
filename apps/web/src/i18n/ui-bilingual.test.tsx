@@ -363,7 +363,7 @@ describe("S2 · schema key resolution (C3)", () => {
     await act(async () => {
       moreTrigger!.click();
     });
-    const deleteButton = [...container.querySelectorAll("button")].find((button) =>
+    const deleteButton = [...document.body.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("删除"),
     );
     expect(deleteButton).toBeDefined();
