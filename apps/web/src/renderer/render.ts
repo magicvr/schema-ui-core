@@ -42,7 +42,8 @@ export type RenderNodeType =
   | "recordView"
   | "actionButton"
   | "statCard"
-  | "chart";
+  | "chart"
+  | "custom";
 
 export interface RenderMeta {
   protocolVersion: string;
@@ -225,6 +226,15 @@ export interface RenderChartNode {
   children?: RenderNode[];
 }
 
+export interface RenderCustomNode {
+  type: "custom";
+  id?: string;
+  /** Registered component key (GOAL-018: renderer custom-component registry). */
+  component: string;
+  props?: Record<string, unknown>;
+  children?: RenderNode[];
+}
+
 export type RenderNode =
   | RenderFormNode
   | RenderSectionNode
@@ -235,7 +245,8 @@ export type RenderNode =
   | RenderRecordViewNode
   | RenderActionButtonNode
   | RenderStatCardNode
-  | RenderChartNode;
+  | RenderChartNode
+  | RenderCustomNode;
 
 /** Page-level action table entry (registry: modal | request | navigate). */
 export interface RenderPageAction {
@@ -299,6 +310,8 @@ const WHITELISTED_NODE_TYPES = new Set<RenderNodeType>([
   "actionButton",
   "statCard",
   "chart",
+  // GOAL-018: custom nodes dispatch to the registered component map.
+  "custom",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -413,6 +426,22 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderFormNode;
+  }
+  if (value.type === "custom") {
+    if (typeof value.component !== "string" || value.component === "") {
+      return {
+        code: "RENDER_INVALID_BODY",
+        path: `${path}.component`,
+        message: "custom nodes require a component key",
+      };
+    }
+    return {
+      type: "custom",
+      ...(value.id === undefined ? {} : { id: value.id }),
+      component: value.component,
+      ...(isRecord(value.props) ? { props: value.props } : {}),
+      ...(Array.isArray(value.children) ? { children: value.children } : {}),
+    };
   }
   if (value.type === "section" || value.type === "grid" || value.type === "tabs") {
     return {

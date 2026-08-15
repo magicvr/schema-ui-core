@@ -53,6 +53,20 @@ describe("auth-client", () => {
     setAuthLostListener(null);
   });
 
+
+  // S-10 (GOAL-017 D-002 §3 / A-007 F-001 contract): the first stage of a
+  // two-step login returns {mfaRequired, mfaProof} with NO tokens — the
+  // client must surface the proof instead of LOGIN_MALFORMED.
+  it("login surfaces the MFA proof when the server demands a second factor", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ mfaRequired: true, mfaProof: "proof-1" }),
+    );
+    const result = await login("admin", "admin");
+    expect(result).toEqual({ mfaRequired: true, mfaProof: "proof-1" });
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
   it("login stores the token pair and resolves features via /me", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ accessToken: "a1", refreshToken: "r1", ...SESSION }))

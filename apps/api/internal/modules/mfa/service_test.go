@@ -182,3 +182,35 @@ func TestServiceAdminReset(t *testing.T) {
 		t.Fatalf("Required after admin reset must be false")
 	}
 }
+// A-007 F-002: an active enrollment cannot be overwritten by re-enrolling
+// (that would tear down MFA without the second factor); pending ones can.
+func TestServiceEnrollCannotOverwriteActive(t *testing.T) {
+	s := newService(t)
+	now := time.Now().UTC()
+	secret, _, _, err := s.Enroll("user-admin", "Admin", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A pending enrollment may be re-enrolled (A-005 recommended).
+	secret2, _, _, err := s.Enroll("user-admin", "Admin", now)
+	if err != nil {
+		t.Fatalf("re-enroll over pending: %v", err)
+	}
+	if secret2 == secret {
+		t.Fatalf("pending re-enroll must rotate the secret")
+	}
+	if err := s.Confirm("user-admin", totpForSecret(t, s, secret2, now), now); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := s.Enroll("user-admin", "Admin", now); err != ErrActive {
+		t.Fatalf("re-enroll over active err = %v, want ErrActive", err)
+	}
+	// After disable, enrollment works again.
+	at := now.Add(90 * time.Second)
+	if err := s.Disable("user-admin", totpForSecret(t, s, secret2, at), "", at); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := s.Enroll("user-admin", "Admin", at); err != nil {
+		t.Fatalf("enroll after disable: %v", err)
+	}
+}

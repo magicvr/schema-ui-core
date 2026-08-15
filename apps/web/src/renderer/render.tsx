@@ -28,6 +28,7 @@ import {
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
+import { getCustomComponent } from "@/renderer/custom-components";
 import {
   FORM_RECORD_LOAD_CAPABILITY,
   coerceFieldValue,
@@ -2293,6 +2294,19 @@ function dispatchParsedNode({
       );
     case "text":
       return <TextView node={node} />;
+    case "custom": {
+      // GOAL-018: custom nodes dispatch to the module-level registry; an
+      // unregistered component renders a safe fallback (never crashes).
+      const Custom = getCustomComponent(node.component);
+      if (Custom === null) {
+        return (
+          <p className="text-sm text-muted-foreground">
+            unknown custom component: {node.component}
+          </p>
+        );
+      }
+      return <Custom node={node} context={context} children={node.children} />;
+    }
     case "recordView":
       return <RecordView node={node} />;
     case "actionButton":

@@ -32,7 +32,8 @@ func NewRepository(runner TxRunner) *Repository {
 
 // Domain sentinels mapped by the handler to frozen error codes.
 var (
-	ErrNotFound = errors.New("mfa row not found")
+	ErrNotFound       = errors.New("mfa row not found")
+	ErrActiveConflict = errors.New("mfa enrollment is active; disable it first")
 )
 
 // State is one user_mfa row.
@@ -81,10 +82,12 @@ func (r *Repository) GetState(userID string) (*State, error) {
 }
 
 // UpsertPending creates (or resets) a pending enrollment. Re-enrolling
-// overwrites any previous pending/active row (A-005 recommended).
+// overwrites a previous PENDING row (A-005 recommended); an ACTIVE row is
+// rejected with ErrActiveConflict — tearing down an active enrollment
+// requires the second factor (A-007 F-002).
 func (r *Repository) UpsertPending(userID, secretCiphertext, recoveryCodesHash string, now time.Time) error {
 	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+		res, err := tx.Exec(
 			`INSERT INTO user_mfa (user_id, status, totp_secret_ciphertext, recovery_codes_hash, last_used_step, created_at, updated_at)
 			 VALUES (?, 'pending', ?, ?, 0, ?, ?)
 			 ON CONFLICT(user_id) DO UPDATE SET
@@ -92,11 +95,18 @@ func (r *Repository) UpsertPending(userID, secretCiphertext, recoveryCodesHash s
 			   totp_secret_ciphertext = excluded.totp_secret_ciphertext,
 			   recovery_codes_hash = excluded.recovery_codes_hash,
 			   last_used_step = 0,
-			   updated_at = excluded.updated_at`,
+			   updated_at = excluded.updated_at
+			 WHERE user_mfa.status = 'pending'`,
 			userID, secretCiphertext, recoveryCodesHash, now.Unix(), now.Unix(),
 		)
 		if err != nil {
 			return fmt.Errorf("upsert pending mfa: %w", err)
+		}
+		// A filtered conflict-update (0 rows) means the row exists and is
+		// ACTIVE — enrollment must not tear down an active enrollment without
+		// the second factor (A-007 F-002).
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrActiveConflict
 		}
 		return nil
 	})

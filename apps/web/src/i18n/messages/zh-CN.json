@@ -496,5 +496,20 @@
   "error.invalidMfaBody": "请求体必须是包含 proof 和 code 的 JSON",
   "schema.users.column.mfaEnabled": "MFA",
   "schema.users.action.resetMfa": "重置 MFA",
-  "schema.users.confirm.resetMfa": "重置该用户的 MFA？其所有会话将被吊销。"
+  "schema.users.confirm.resetMfa": "重置该用户的 MFA？其所有会话将被吊销。",
+  "schema.account.mfa.title": "双重验证（MFA）",
+  "schema.account.mfa.unavailable": "MFA 状态不可用。",
+  "schema.account.mfa.statusEnabled": "已启用 MFA。",
+  "schema.account.mfa.statusDisabled": "未启用 MFA。",
+  "schema.account.mfa.enroll": "启用 MFA",
+  "schema.account.mfa.secret": "密钥（手动添加）",
+  "schema.account.mfa.otpauth": "验证器 URI",
+  "schema.account.mfa.recoveryCodes": "恢复码（请妥善保存一次）",
+  "schema.account.mfa.confirmCode": "6 位动态码",
+  "schema.account.mfa.confirm": "确认并启用",
+  "schema.account.mfa.disableCode": "当前动态码或恢复码",
+  "schema.account.mfa.disable": "停用 MFA",
+  "schema.account.mfa.rotateRecovery": "当前动态码或恢复码",
+  "schema.account.mfa.rotate": "轮换恢复码",
+  "schema.account.mfa.errorGeneric": "MFA 操作失败。"
 }

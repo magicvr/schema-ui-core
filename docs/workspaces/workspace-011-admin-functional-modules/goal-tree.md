@@ -34,7 +34,9 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-014-form-experience [done]      · R4 表单体验：字段级校验/错误展示 + 弹窗布局（5/5）
 ├── GOAL-015-dict-inner-page-breadcrumb [done] · R4 数据字典内页 + 面包屑层级导航（5/5）
 ├── GOAL-016-r3-s09-data-permission [active] · R3-S09 数据权限（行级/数据范围）（3/5）
-└── GOAL-017-r3-s10-mfa-2fa [active]      · R3-S10 MFA/2FA（TOTP 双因素认证）（3/5）
+├── GOAL-017-r3-s10-mfa-2fa [active]      · R3-S10 MFA/2FA（TOTP 双因素认证）（3/5）
+│   └── GOAL-018-mfa-manager-ui [active]  · MFA 个人中心管理组件（自定义 renderer 节点）（3/5）
+
 ```
 
 Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14ab9d`）。首阶段 R1 = 有界调研；分档产出后按 Root 路线图逐波立项（R2 一等公民 / R3 常用 / R4 增补 backlog）。
@@ -60,6 +62,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-015-dict-inner-page-breadcrumb | R4 · 数据字典内页 + 面包屑层级导航 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-016-r3-s09-data-permission | R3-S09 · 数据权限（行级/数据范围） | GOAL-001-admin-functional-modules | active | 3/5 | 2026-08-15 |
 | GOAL-017-r3-s10-mfa-2fa | R3-S10 · MFA / 2FA（TOTP 双因素认证） | GOAL-001-admin-functional-modules | active | 3/5 | 2026-08-15 |
+| GOAL-018-mfa-manager-ui | MFA 个人中心管理组件（自定义 renderer 节点） | GOAL-017-r3-s10-mfa-2fa | active | 3/5 | 2026-08-15 |
 
 ## 维护说明
 

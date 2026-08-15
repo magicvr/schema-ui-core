@@ -55,6 +55,43 @@ function fill(container: HTMLDivElement, selector: string, value: string) {
 }
 
 describe("LoginPage", () => {
+
+  // S-10 (GOAL-017 D-002 §3 / A-007 F-001 contract): when the server demands a
+  // second factor the login pauses at the code stage; the entered code
+  // resolves the pending two-step promise.
+  it("renders the second-factor stage and completes the two-step login", async () => {
+    let entered: { code: string; recoveryCode?: string } | null = null;
+    const onLogin = vi.fn(
+      async (
+        _u: string,
+        _p: string,
+        _c?: unknown,
+        resolveMFA?: (proof: string) => Promise<{ code: string; recoveryCode?: string }>,
+      ) => {
+        if (!resolveMFA) {
+          return;
+        }
+        entered = await resolveMFA("proof-1");
+      },
+    );
+    const container = await renderLogin(onLogin);
+    fill(container, "#username", "admin");
+    fill(container, "#password", "admin");
+    const submit = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+    await act(async () => submit!.click());
+
+    // The code stage is now visible while the login promise stays pending.
+    expect(container.querySelector('[data-mfa-stage]')).not.toBeNull();
+    fill(container, "#mfaCode", "123456");
+    const verify = container.querySelector<HTMLButtonElement>('[data-mfa-stage] button[type="button"]');
+    expect(verify).not.toBeNull();
+    await act(async () => verify!.click());
+
+    expect(entered).toEqual({ code: "123456" });
+    expect(container.querySelector('[data-mfa-stage]')).toBeNull();
+    expect(onLogin).toHaveBeenCalledWith("admin", "admin", undefined, expect.any(Function));
+  });
+
   it("renders the sign-in form and submits credentials", async () => {
     const onLogin = vi.fn().mockResolvedValue(undefined);
     const container = await renderLogin(onLogin);

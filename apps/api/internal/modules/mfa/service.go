@@ -158,6 +158,16 @@ func (s *Service) Status(userID string) (enabled bool, enrolledAt time.Time, err
 
 // Enroll creates a pending enrollment and returns the one-time secret payload.
 func (s *Service) Enroll(userID, name string, now time.Time) (secretBase32, otpauth string, recoveryCodes []string, err error) {
+	// A-007 F-002: an ACTIVE enrollment must not be overwritten without the
+	// second factor (disabling first requires a valid code/recovery). Pending
+	// enrollments may be re-enrolled (A-005 recommended).
+	if existing, err := s.repo.GetState(userID); err == nil {
+		if existing.Status == "active" {
+			return "", "", nil, ErrActive
+		}
+	} else if !errors.Is(err, store.ErrNotFound) {
+		return "", "", nil, err
+	}
 	secret, err := GenerateSecret()
 	if err != nil {
 		return "", "", nil, err

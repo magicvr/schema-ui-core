@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.1.3
+version: 0.1.5
 ---
 
 # 审计 · GOAL-017-r3-s10-mfa-2fa
@@ -14,7 +14,7 @@ version: 0.1.3
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001~I-004 设计层 verified；A-005 复审未重开；I-003 强制启用仍未裁定（non-blocking，A-005 F-002） | S1 方案冻结 / A-004 F-001·F-002 闭合复审；无到期 required 信息项 |
+| 影响本 scope 的 I-00N | I-001~I-004 设计层 verified；A-005 / A-007 / A-008 均未重开；I-003 强制启用仍未裁定（non-blocking） | S5 关门：无到期 required 信息项；A-007 required 已由 A-008 闭合 |
 | 资料引用（若有）是否固定且用户确认 | 无 | shared_materials_catalog: none |
 
 ## 意见台账索引
@@ -25,14 +25,18 @@ version: 0.1.3
 | A-002 | 2026-08-15 | independent | 立项（五件套 + 分档/C-10·C-11·S-11 边界/信息门禁 + 路线图同步） | pass | 0 | 03-audit/A-002-scaffold-independent.md |
 | A-003 | 2026-08-15 | self | S1 方案冻结 | pass | 0 | 03-audit/A-003-s1-self.md |
 | A-006 | 2026-08-15 | self | S2-S4 实现与验证 | pass | 0 | 03-audit/A-006-s2-s4-self.md |
-| A-004 | 2026-08-15 | independent | S1 方案冻结（D-002 + I-001~I-004 + 登录集成/安全控制/协议） | conditional | 2（F-001、F-002） | 03-audit/A-004-s1-independent.md |
+| A-004 | 2026-08-15 | independent | S1 方案冻结（D-002 + I-001~I-004 + 登录集成/安全控制/协议） | conditional | 2（F-001、F-002；已由 D-003/A-005 闭合） | 03-audit/A-004-s1-independent.md |
 | A-005 | 2026-08-15 | independent | A-004 F-001/F-002 required 闭合复审（D-002 §2/§3/§4/§6 + D-003） | pass | 0 | 03-audit/A-005-s1-reaudit.md |
+| A-007 | 2026-08-15 | independent | S5 关门（成功标准 + 审计链 + 安全控制 + 验证证据 + MFA UI 残余 + 协议/go + I-001~I-004） | fail | 2（F-001 web 两段登录断裂、F-002 enroll 覆盖 active；已由实现/A-008 闭合） | 03-audit/A-007-s5-independent.md |
+| A-008 | 2026-08-15 | independent | A-007 F-001/F-002 required 闭合复审（login 第一段 + Enroll active 守卫 + 契约/回归测试） | pass | 0 | 03-audit/A-008-s5-reaudit.md |
 
 ## 结论状态
 
 立项 scope：A-001 self pass + A-002 independent pass（0 required）。已放行立项并完成 S1 起草。
 
 S1 方案冻结 scope：A-003 self pass + A-004 independent conditional（当时开放 F-001、F-002）+ **A-005 independent pass**（0 required）。A-004 F-001/F-002 已由 D-002 修正合法闭合（fixed）。**可放行 S2**（含写 0029）；A-005 recommended（pending 再 enroll / 强制启用未裁定 / proof 回传 / 迁移合计数字）随实施处理。独立意见不直接改 status / progress；响应和状态变更走 /govern。
+
+S5 关门 scope：A-006 self pass + A-007 independent fail（当时开放 F-001、F-002）+ **A-008 independent pass**（0 required）。A-007 F-001/F-002 已由实现修正合法闭合（fixed）。个人中心 MFA UI 残余（A-007 / A-008 F-004）仍为 **non-blocking**。**可关门**；`status: done` 由 /govern 执行。独立意见不直接改 status / progress。
 
 ## 响应记录（/govern · 2026-08-15）
 

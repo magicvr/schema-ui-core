@@ -496,5 +496,20 @@
   "error.invalidMfaBody": "Body must be JSON with proof and code",
   "schema.users.column.mfaEnabled": "MFA",
   "schema.users.action.resetMfa": "Reset MFA",
-  "schema.users.confirm.resetMfa": "Reset this user's MFA? All sessions will be revoked."
+  "schema.users.confirm.resetMfa": "Reset this user's MFA? All sessions will be revoked.",
+  "schema.account.mfa.title": "Two-factor authentication (MFA)",
+  "schema.account.mfa.unavailable": "MFA status is unavailable.",
+  "schema.account.mfa.statusEnabled": "MFA is enabled.",
+  "schema.account.mfa.statusDisabled": "MFA is disabled.",
+  "schema.account.mfa.enroll": "Enable MFA",
+  "schema.account.mfa.secret": "Secret (add manually)",
+  "schema.account.mfa.otpauth": "Authenticator URI",
+  "schema.account.mfa.recoveryCodes": "Recovery codes (save them once)",
+  "schema.account.mfa.confirmCode": "6-digit code",
+  "schema.account.mfa.confirm": "Confirm and enable",
+  "schema.account.mfa.disableCode": "Current code or recovery code",
+  "schema.account.mfa.disable": "Disable MFA",
+  "schema.account.mfa.rotateRecovery": "Current code or recovery code",
+  "schema.account.mfa.rotate": "Rotate recovery codes",
+  "schema.account.mfa.errorGeneric": "MFA operation failed."
 }

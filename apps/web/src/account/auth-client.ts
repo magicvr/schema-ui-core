@@ -321,13 +321,14 @@ export async function login(username: string, password: string, captcha?: LoginC
     refreshToken?: string;
     user?: AuthUser;
   };
-  if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string" || !body.user) {
-    throw new AuthError("LOGIN_MALFORMED", "login response was malformed");
-  }
-  // S-10 (GOAL-017 D-002 §3): the account requires a second factor — no
-  // tokens are issued; hand the one-time proof to mfaVerify.
+  // S-10 (GOAL-017 D-002 §3): the account requires a second factor — the
+  // first stage returns {mfaRequired, mfaProof} with NO tokens, so this must
+  // run before the token-shape validation (A-007 F-001).
   if (body.mfaRequired === true && typeof body.mfaProof === "string") {
     return { mfaRequired: true, mfaProof: body.mfaProof };
+  }
+  if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string" || !body.user) {
+    throw new AuthError("LOGIN_MALFORMED", "login response was malformed");
   }
   setAccessToken(body.accessToken);
   setRefreshToken(body.refreshToken);

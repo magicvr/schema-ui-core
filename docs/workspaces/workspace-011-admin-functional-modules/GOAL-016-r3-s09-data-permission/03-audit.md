@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.1.3
+version: 0.1.4
 ---
 
 # 审计 · GOAL-016-r3-s09-data-permission
@@ -14,7 +14,8 @@ version: 0.1.3
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001~I-004 设计层 verified；A-005 复审未重开 | S1 方案冻结 / A-004 F-001 闭合复审；无到期 required 信息项 |
+| 影响本 scope 的 I-00N | I-001~I-004 均 verified；A-007 关门复审未重开 | S5 关门；无到期 required 信息项 |
+| 到期 required 是否已 verified / residual | 无到期未证 required | 最晚阶段均为 S1，已闭合 |
 | 资料引用（若有）是否固定且用户确认 | 无 | shared_materials_catalog: none |
 
 ## 意见台账索引
@@ -27,12 +28,15 @@ version: 0.1.3
 | A-006 | 2026-08-15 | self | S2-S4 实现与验证 | pass | 0 | 03-audit/A-006-s2-s4-self.md |
 | A-004 | 2026-08-15 | independent | S1 方案冻结（D-002 + I-001~I-004 + 过滤下推/协议/迁移） | conditional | 1（F-001） | 03-audit/A-004-s1-independent.md |
 | A-005 | 2026-08-15 | independent | A-004 F-001 required 闭合复审（D-002 §2/§3/§6 + D-003） | pass | 0 | 03-audit/A-005-s1-reaudit.md |
+| A-007 | 2026-08-15 | independent | S5 关门（成功标准 + A-004 F-001 闭合核验 + 实现/验证/安全/协议） | pass | 0 | 03-audit/A-007-s5-independent.md |
 
 ## 结论状态
 
 立项 scope：A-001 self pass + A-002 independent pass（0 required）。已放行立项并完成 S1 起草。
 
 S1 方案冻结 scope：A-003 self pass + A-004 independent conditional（当时开放 F-001）+ **A-005 independent pass**（0 required）。A-004 F-001 已由 D-002 修正合法闭合（fixed）。**可放行 S2**；A-005 recommended（ScopeAware 强制点 / Create owner 覆盖 / S2 清单回写）随实施处理。独立意见不直接改 status / progress；响应和状态变更走 /govern。
+
+S5 关门 scope：A-006 self pass + **A-007 independent pass**（0 required）。A-004 F-001 实现可核对（行访问全覆盖）。A-007 三条 recommended（owner_column 白名单 / 错误码名 / 组合根快照）不阻断关门。e2e / V-007 / V-008 接受为 R3 第三批收尾统一验证。**可关门**（`status: done` 由 /govern 执行）。
 
 ## 响应记录（/govern · 2026-08-15）
 

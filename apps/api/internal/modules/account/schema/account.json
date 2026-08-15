@@ -144,6 +144,11 @@
             }
           ]
         }
+      },
+      {
+        "type": "custom",
+        "id": "mfa-manager-block",
+        "component": "mfa-manager"
       }
     ]
   }

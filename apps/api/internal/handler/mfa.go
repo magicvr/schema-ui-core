@@ -118,7 +118,9 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		secret, otpauth, codes, err := service.Enroll(user.ID, user.Name, time.Now().UTC())
 		if err != nil {
-			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not enroll MFA")
+			// A-008 recommended: an active enrollment maps to 400
+			// MFA_ALREADY_ACTIVE (disable first), not a generic 500.
+			writeMFAError(w, r, err)
 			return
 		}
 		recordMFAEvent(operations, user, operationlog.EventMFAEnroll, `{"userId":`+jsonQuote(user.ID)+`}`)

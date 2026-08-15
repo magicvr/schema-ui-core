@@ -61,6 +61,18 @@ describe("isWhitelistedNodeType", () => {
     expect(isWhitelistedNodeType("upload")).toBe(false);
     expect(isWhitelistedNodeType("slider")).toBe(false);
   });
+
+  // GOAL-018: custom nodes are whitelisted and dispatch to the registry.
+  it("accepts the custom node type (GOAL-018)", () => {
+    expect(isWhitelistedNodeType("custom")).toBe(true);
+    expect(parseRenderNode({ type: "custom", component: "mfa-manager" }, "body")).toMatchObject({
+      type: "custom",
+      component: "mfa-manager",
+    });
+    expect(parseRenderNode({ type: "custom", props: {} }, "body")).toMatchObject({
+      code: "RENDER_INVALID_BODY",
+    });
+  });
 });
 
 describe("parseRenderNode", () => {
