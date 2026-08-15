@@ -53,6 +53,10 @@ export interface SchemaTableColumnSpec {
   sortable?: boolean;
   /** W4 · GOAL-005: single-line truncate + title affordance for long values. */
   truncate?: boolean;
+  /** Column width hint (px number or CSS length). */
+  width?: number | string;
+  /** Minimum column width (px number or CSS length). */
+  minWidth?: number | string;
 }
 
 function stringOf(value: unknown): string {
@@ -519,6 +523,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       ),
       sortable: column.sortable === true,
       truncate: column.truncate === true,
+      ...(column.width !== undefined ? { width: column.width } : {}),
+      ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
     })),
     ...(rowActions.length > 0
       ? [
@@ -544,7 +550,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                         event.stopPropagation();
                         crud?.invokeAction(action, rowAsRecord(row));
                       }}
-                      className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                      className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     >
                       {resolveTextProp(
                         action as unknown as Record<string, unknown>,
@@ -667,7 +673,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       />
       {list !== null ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">
+          <p className="pl-0.5 text-xs text-muted-foreground">
             {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
             {t("feedback.pageOf", {
               page: String(list.page),

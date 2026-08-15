@@ -224,8 +224,10 @@ describe("DataTable", () => {
       <DataTable columns={longColumns} rows={longRows} rowKey={(row) => row.id} />,
     );
     const full = "users.read,users.write,roles.read,roles.write";
-    const cell = container.querySelector('[data-table-cell="truncated"]');
-    expect(cell).not.toBeNull();
+    const cell = Array.from(
+      container.querySelectorAll('[data-table-cell="truncated"]'),
+    ).find((entry) => entry.getAttribute("title") === full);
+    expect(cell).not.toBeUndefined();
     expect(cell?.className).toMatch(/truncate/);
     expect(cell?.className).toMatch(/max-w-\[16rem\]/);
     expect(cell?.getAttribute("title")).toBe(full);
@@ -237,11 +239,40 @@ describe("DataTable", () => {
     expect(td?.className).toMatch(/max-w-\[16rem\]/);
   });
 
-  it("keeps non-truncate columns unwrapped (behavior unchanged)", async () => {
+  it("truncates every string cell by default with a full-text title (universal ellipsis)", async () => {
     const container = await renderTable(
       <DataTable columns={columns} rows={rows} rowKey={rowKey} />,
     );
-    expect(container.querySelector('[data-table-cell="truncated"]')).toBeNull();
+    const cells = Array.from(container.querySelectorAll('[data-table-cell="truncated"]'));
+    expect(cells.length).toBeGreaterThan(0);
+    // Non-truncate columns cap at the universal 20rem; truncate columns keep 16rem.
+    const nameCell = cells.find((cell) => cell.getAttribute("title") === "Acme Console");
+    expect(nameCell).not.toBeUndefined();
+    expect(nameCell?.className).toMatch(/truncate/);
+    expect(nameCell?.closest("td")?.className).toMatch(/max-w-\[20rem\]/);
     expect(container.textContent).toContain("Acme Console");
+  });
+
+  it("renders a muted placeholder for null / undefined / empty cells", async () => {
+    const sparse = [
+      { id: "r1", name: "With value", note: null },
+      { id: "r2", name: "", note: "has note" },
+      { id: "r3" },
+    ];
+    const container = await renderTable(
+      <DataTable
+        columns={[
+          { key: "id", label: "ID" },
+          { key: "name", label: "Name" },
+          { key: "note", label: "Note" },
+        ]}
+        rows={sparse}
+        rowKey={(row) => row.id}
+      />,
+    );
+    const rowsEl = Array.from(container.querySelectorAll("tbody tr"));
+    expect(rowsEl[0]?.textContent).toContain("—");
+    expect(rowsEl[1]?.textContent).toContain("—");
+    expect(rowsEl[2]?.textContent).toContain("—");
   });
 });

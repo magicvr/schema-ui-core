@@ -16,6 +16,7 @@ import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDisplayTime } from "@/lib/datetime";
 import {
   constructRequest,
   normalizeSelection,
@@ -1729,7 +1730,8 @@ function formatRecordViewValue(value: unknown): string {
   if (value === undefined || value === null) {
     return "—";
   }
-  return String(value);
+  // ISO timestamps render as local "YYYY-MM-DD HH:mm" (display formatting).
+  return formatDisplayTime(value) ?? String(value);
 }
 
 function RecordView({ node }: { node: RenderRecordViewNode }) {

@@ -139,9 +139,10 @@ describe("SchemaTable (R1 list-data injection)", () => {
       tableNode({ columns: truncateColumns, dataSource: "/api/roles" }),
       fetcher,
     );
-    const cell = container.querySelector('[data-table-cell="truncated"]');
-    expect(cell).not.toBeNull();
-    expect(cell?.getAttribute("title")).toBe("users.read,roles.write");
+    const cell = Array.from(
+      container.querySelectorAll('[data-table-cell="truncated"]'),
+    ).find((entry) => entry.getAttribute("title") === "users.read,roles.write");
+    expect(cell).not.toBeUndefined();
   });
 
   it("fails closed (null) when the table node has no data source (no /api/users fallback)", () => {

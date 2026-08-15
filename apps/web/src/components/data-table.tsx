@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslate } from "@/i18n/runtime";
+import { formatDisplayTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 
 export type SortOrder = "asc" | "desc";
@@ -18,9 +19,17 @@ export interface DataTableColumn<T> {
   label: ReactNode;
   sortable?: boolean;
   /** W4 · GOAL-005: render the string fallback single-line truncated with a
-   *  native `title` full-text affordance so long values do not crowd out
-   *  sibling columns. Custom `render` cells are unaffected. */
+   *  native title full-text affordance so long values do not crowd out
+   *  sibling columns. Custom render cells are unaffected. Since the
+   *  table-style refresh every string cell truncates by default; this flag
+   *  is kept for schema declarations that opt into the 16rem cap. */
   truncate?: boolean;
+  /** Column width hint (px number or CSS length). Content-driven auto layout
+   *  otherwise; a column that declares a width skips the default max-width
+   *  cap so it can exceed it (table-layout auto still grows on content). */
+  width?: number | string;
+  /** Minimum column width (px number or CSS length). */
+  minWidth?: number | string;
   render?: (row: T) => ReactNode;
 }
 
@@ -48,22 +57,31 @@ function cellContent<T>(
     return column.render(row);
   }
   const value = (row as Record<string, unknown>)[column.key];
-  if (value === undefined || value === null) {
+  // Universal empty fallback: null / undefined / empty string render a
+  // muted placeholder so blank cells stay visually consistent.
+  if (value === undefined || value === null || String(value) === "") {
     return <span className="text-muted-foreground">—</span>;
   }
   const text = String(value);
-  if (column.truncate === true) {
-    return (
-      <span
-        className="block max-w-[16rem] truncate"
-        title={text}
-        data-table-cell="truncated"
-      >
-        {text}
-      </span>
-    );
-  }
-  return text;
+  // Display formatting: ISO-8601 timestamps render as local
+  // "YYYY-MM-DD HH:mm" instead of the raw wire value.
+  const display = formatDisplayTime(value) ?? text;
+  // Universal single-line ellipsis: every string cell truncates at the
+  // column cap with a native title tooltip for the full value. The width
+  // cap lives on the td (W4 A-003 F-3) unless the column declares its own
+  // width, which then owns the constraint.
+  return (
+    <span
+      className={cn(
+        "block truncate",
+        column.truncate === true ? "max-w-[16rem]" : "",
+      )}
+      title={display}
+      data-table-cell="truncated"
+    >
+      {display}
+    </span>
+  );
 }
 
 function labelText(label: ReactNode): string {
@@ -254,13 +272,17 @@ export function DataTable<T>({
         <table className="w-full min-w-[32rem] border-collapse text-sm">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           <thead>
-            <tr className="border-b border-border bg-muted/40">
+            <tr className="border-b border-border bg-muted/30">
               {columns.map((column) => {
                 const isActive = sort?.field === column.key;
                 return (
                   <th
                     key={column.key}
-                    className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                    style={{
+                      ...(column.width !== undefined ? { width: column.width } : {}),
+                      ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
+                    }}
+                    className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
                     scope="col"
                   >
                     {column.sortable ? (
@@ -318,10 +340,10 @@ export function DataTable<T>({
                   }
                   aria-selected={onRowClick === undefined ? undefined : selected}
                   className={cn(
-                    "border-b border-border last:border-b-0",
+                    "border-b border-border transition-colors last:border-b-0 hover:bg-accent/40",
                     onRowClick === undefined
                       ? ""
-                      : "cursor-pointer transition-colors hover:bg-accent/50",
+                      : "cursor-pointer hover:bg-accent/50",
                     selected ? "bg-accent/60" : "",
                   )}
                 >
@@ -332,13 +354,23 @@ export function DataTable<T>({
                       <td
                         key={column.key}
                         data-row-click-ignore={interactive ? "true" : undefined}
+                        style={{
+                          ...(column.width !== undefined ? { width: column.width } : {}),
+                          ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
+                        }}
                         className={cn(
-                          "px-3 py-2 align-middle text-sm",
+                          "px-4 py-3 align-middle text-sm",
                           // W4 · GOAL-005: table-layout auto sizes a column by
                           // its cell max-content; the inner span's max-width
                           // alone does not clamp the cell, so the width cap
-                          // must live on the td itself.
-                          column.truncate === true ? "max-w-[16rem]" : "",
+                          // must live on the td itself. Universal cap: every
+                          // column truncates at 20rem unless it declares an
+                          // explicit width (which then owns the constraint).
+                          column.truncate === true
+                            ? "max-w-[16rem]"
+                            : column.width === undefined
+                              ? "max-w-[20rem]"
+                              : "",
                         )}
                         onClick={
                           interactive
