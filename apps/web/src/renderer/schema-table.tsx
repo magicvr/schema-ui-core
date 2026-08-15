@@ -323,7 +323,14 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    // Keep the current rows rendered while refetching (page/filter/sort
+    // changes): swapping rows in place keeps the list height and the browser
+    // scroll anchor stable, so paginating never yanks the viewport back to
+    // the top. The loading skeleton only appears on the first load (no rows
+    // yet). (GOAL-011 W10)
+    if (list === null) {
+      setLoading(true);
+    }
     setError(null);
     const paramsQuery = resolveDataParamsQuery(dataParams, {
       query: routeSnapshot,

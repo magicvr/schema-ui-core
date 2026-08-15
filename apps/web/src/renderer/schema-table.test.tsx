@@ -442,6 +442,57 @@ describe("SchemaTable title / filters / pager", () => {
     ).toBe(true);
   });
 
+  it("keeps the current rows rendered while paginating (no skeleton swap)", async () => {
+    let resolvePage2: (value: Response) => void = () => {};
+    const calls: string[] = [];
+    const controlled = (async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), "http://test.local");
+      calls.push(url.search);
+      const page = Number(url.searchParams.get("page") ?? "1");
+      if (page === 1) {
+        return new Response(
+          JSON.stringify({ items: MANY_ROWS.slice(0, 10), total: 25, page: 1, pageSize: 10 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Promise<Response>((resolve) => {
+        resolvePage2 = resolve;
+      });
+    }) as typeof fetch;
+
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      controlled,
+    );
+    expect(container.textContent).toContain("Item 1");
+    const next = container.querySelector(
+      '[aria-label="Next page"]',
+    ) as HTMLButtonElement;
+    await act(async () => next.click());
+    // While page 2 is in flight the old rows stay rendered: no loading
+    // skeleton swap, so the list height (and the scroll anchor) is stable.
+    expect(container.querySelector('[data-table-presentation="loading"]')).toBeNull();
+    expect(container.textContent).toContain("Item 1");
+    await act(async () => {
+      resolvePage2(
+        new Response(
+          JSON.stringify({ items: MANY_ROWS.slice(10, 20), total: 25, page: 2, pageSize: 10 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    });
+    expect(container.textContent).toContain("Item 11");
+    // Page-1-only rows gone. Row cells are rendered as "Item N<status>", so a
+    // page-1 row starts with "Item 1a" (active) or "Item 1r" (revoked) while
+    // page-2 rows start with "Item 1<digit>".
+    const rowTexts = Array.from(container.querySelectorAll("tbody tr")).map(
+      (row) => row.textContent ?? "",
+    );
+    expect(rowTexts.length).toBe(10);
+    expect(rowTexts.every((text) => !/^Item 1[ar]/.test(text))).toBe(true);
+    expect(calls.some((query) => query.includes("page=2"))).toBe(true);
+  });
+
   it("hides the pager when everything fits on one page", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
