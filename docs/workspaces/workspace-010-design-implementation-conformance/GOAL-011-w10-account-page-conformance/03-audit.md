@@ -15,6 +15,7 @@ version: 0.1.0
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
 | A-001 | self | 2026-08-15 | 目标建立与门禁状态 | pass | 五件套齐备；两项问题登记为 required 信息项（I-001/I-002/I-003）；**本目标在裁决闭合前不得变门** | `03-audit/A-001-scaffold-self.md` |
+| A-002 | self | 2026-08-15 | 关门审计（全目标） | pass | 三项裁决全闭合（保留修复 / user-overruled ×2）；S1～S4 完成；无 required findings；go 不暂挂 | `03-audit/A-002-closeout-self.md` |
 
 ## 开放必改项
 
