@@ -262,6 +262,20 @@ describe("migrated representative pages (GOAL-004)", () => {
     });
     expect(container.textContent).toContain("orders");
     expect(container.textContent).toContain("Register policy");
+
+    // Open the register-policy modal: the form must render with its fields
+    // (defaultValue on select/switch requires form.controls.advanced — the
+    // page declares it, so no FORM_CAPABILITY_REQUIRED gate error).
+    const registerButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Register policy",
+    );
+    expect(registerButton).not.toBeUndefined();
+    await act(async () => (registerButton as HTMLButtonElement).click());
+    expect(container.textContent).not.toContain("FORM_CAPABILITY_REQUIRED");
+    expect(container.textContent).toContain("Owner column");
+    expect(container.textContent).toContain("Default scope");
+    const defaultScope = container.querySelector("#field-defaultScope") as HTMLSelectElement | null;
+    expect(defaultScope?.value).toBe("all");
   });
 
   it("fails closed on an unknown node type on a representative path", async () => {

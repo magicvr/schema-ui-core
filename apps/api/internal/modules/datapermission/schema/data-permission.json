@@ -10,7 +10,8 @@
       "actions.row.request",
       "actions.page.trigger",
       "table.sort",
-      "form.controls.extended"
+      "form.controls.extended",
+      "form.controls.advanced"
     ]
   },
   "actions": {

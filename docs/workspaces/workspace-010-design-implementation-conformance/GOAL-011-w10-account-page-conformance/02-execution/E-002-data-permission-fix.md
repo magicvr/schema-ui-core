@@ -22,6 +22,7 @@ version: 0.1.0
 | L4 | registerPolicy 用 `{resource}` path 槽，而 formAction 只绑定 `{id}` 槽（request-construction.ts buildFormAction 无 path 绑定；render.tsx 仅 `{id}` 特判）→ 表单提交打到字面 `/policies/resource` | registerPolicy.url + requestMapping；临时验证 | 后端 `PATCH /api/data-permission/policies`（resource 移入 body，`Resource` 字段必填）；schema 同步去占位符 + requestMapping 删除 |
 | L5 | 菜单 icon `shield` 不在前端 `iconRegistry`（App.tsx 硬编码映射）→ iconFor 返回 null → 无图标 | fragment.json icon: "shield"；App.tsx iconRegistry 无 shield | App.tsx 注册 `shield: Shield`（lucide-react） |
 | L6 | GET policies 返回 `{"items": ...}` 无统一信封（缺 total/page/pageSize）→ 前端 parseResourceList fail closed（"expected a finite number"）；且 Policy 结构体无 json tag，序列化字段为大写 `Resource` 等，与 schema 列 camelCase 不匹配 → 列值缺失 | 用户实测报错 `parseResourceList.total: expected a finite number`；Policy struct（repository.go:48）无 json tag | 返回 `resourceList` 完整信封（Total/Page/PageSize）+ camelCase 行投影（resource/ownerColumn/defaultScope/enabled/updatedAt）；pageSize = max(1, len(items)) 使列表恒单页 |
+| L7 | 登记策略 modal 表单字段含 `defaultValue`（defaultScope="all"、enabled=true），冻结 2.7 规则要求声明 `form.controls.advanced`，页面 meta 只声明 extended → 打开弹窗报 `FORM_CAPABILITY_REQUIRED: defaultValue requires form.controls.advanced`（×2） | 用户实测弹窗报错；form-controls.ts checkFormCapabilities defaultValue 分支 | meta.requiredCapabilities 增 `form.controls.advanced`（protocolVersion 已是 2.7）；representative-pages 增 modal 打开回归（断言无 FORM_CAPABILITY_REQUIRED + defaultScope 默认值 "all"） |
 
 ## 改动文件
 
@@ -34,7 +35,8 @@ version: 0.1.0
 
 ## 验证
 
-- Go 全量 `go test ./...` 全绿（含 handler、composition、datapermission、kernel；L6 修复后复跑无 FAIL）
+- Go 全量 `go test ./...` 全绿（含 handler、composition、datapermission、kernel；L6/L7 修复后复跑无 FAIL）
+- Web 全量 985/985（representative-pages data-permission 用例扩展：列表渲染 + 登记弹窗打开 + defaultScope 默认值）
 - Web 全量 985/985（新增 1 个 representative-pages 用例）
 - tsc -b --noEmit 0 错误
 - 临时验证（已删）：D-VAL pass + RenderPage 渲染出 orders 行与 Register policy 按钮
