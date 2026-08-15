@@ -4,8 +4,8 @@ title: 标准 Admin 功能模块（通用 + 常用业务领域 · 分档交付�
 status: active
 parent: null
 created: 2026-08-14
-updated: 2026-08-15
-version: 0.3.0
+updated: 2026-08-16
+version: 0.3.1
 plan_refs:
   - VP-011-admin-functional-modules
 primary_plan: VP-011-admin-functional-modules
@@ -26,7 +26,7 @@ serves_summary: 在已 closed 基架（VP-001～008）之上交付标准 Admin �
 |------|------|------|------|
 | R1 | **有界调研**：候选池 → 基架对照 → 三档分档 → 回写本路线图 | 起点 | ✅ **done**（GOAL-002-r1-bounded-research 5/5；分档清单 = GOAL-002-r1-bounded-research/attachments/I-011-001-tiered-inventory.md v1.1.0） |
 | R2 | **一等公民波**（F-01～F-04）：仪表盘/控制台、数据导入导出、个人中心与账户安全（含账号启停）、通知中心——每个纳入能力带协议驱动范例页 + 验证路径；立项时逐项核对 I-011-001 §8 方案必办 | 依赖 R1 | ✅ **done**（GOAL-003～GOAL-006 各 5/5 关门；4 次 grok independent 关门审计全部 required 修复后放行；V-007 exit 8 + **V-008 exit 0 容器冒烟全绿**，home=dashboard、SM-007 新页面集） |
-| R3 | **常用波**（S-01～S-14）：数据字典、文件/附件库、系统监控与错误日志、定时任务、公告、API 令牌、类目、商品、数据权限（行级）、MFA/2FA、登录验证码、回收站/软删除、**订单、钱包/账务**（A-002 F-001 降档） | 依赖 R2 | 第一/二批次 5/5 关门（S-01/S-02 第一批；GOAL-009~012 第二批 S-03/S-04/S-11/S-12，grok 独立审计 required 全闭合；V-007 exit 8 + V-008 exit 0；e2e 双 profile 8/8）；**第三批次全部 5/5 关门（2026-08-15）**：S-09 数据权限（GOAL-016，A-007 grok 关门审计 pass）+ S-10 MFA/2FA（GOAL-017，A-007 fail → 全 fixed → A-008 pass；个人中心 MFA 管理 UI 经用户裁决由子目标 **GOAL-018-mfa-manager-ui** 承接并 5/5 关门）；security/data 门禁全程 grok build independent（grok-4.6 · high）；波次级验证 e2e 双 profile 16/16 + 隔离 compose 容器冒烟 SM-001~007 PASS + go/web 全量全绿 |
+| R3 | **常用波**（S-01～S-14）：数据字典、文件/附件库、系统监控与错误日志、定时任务、公告、API 令牌、类目、商品、数据权限（行级）、MFA/2FA、登录验证码、回收站/软删除、**订单、钱包/账务**（A-002 F-001 降档） | 依赖 R2 | 第一/二批次 5/5 关门（S-01/S-02 第一批；GOAL-009~012 第二批 S-03/S-04/S-11/S-12，grok 独立审计 required 全闭合；V-007 exit 8 + V-008 exit 0；e2e 双 profile 8/8）；**第三批次全部 5/5 关门（2026-08-15）**：S-09 数据权限（GOAL-016，A-007 grok 关门审计 pass）+ S-10 MFA/2FA（GOAL-017，A-007 fail → 全 fixed → A-008 pass；个人中心 MFA 管理 UI 经用户裁决由子目标 **GOAL-018-mfa-manager-ui** 承接并 5/5 关门）；security/data 门禁全程 grok build independent（grok-4.6 · high）；波次级验证 e2e 双 profile 16/16 + 隔离 compose 容器冒烟 SM-001~007 PASS + go/web 全量全绿；**第四批次 2026-08-16 立项：S-14 钱包/账务（GOAL-019-r3-s14-wallet-ledger，余额/流水/对账 + 余额变动审计 + 迁移基建，0/5）** |
 | R4 | **用户裁决增补**：表单体验（字段级校验/错误展示 + 弹窗布局） | 随 R3 收尾 | ✅ **done**（GOAL-014-form-experience 5/5；A-003 fail → F-001/F-002 fixed 后关门，2026-08-14） |
 | R4 | **用户裁决增补**：数据字典内页 + 面包屑层级导航 | 随 R3 收尾 | ✅ **done**（GOAL-015-dict-inner-page-breadcrumb 5/5，2026-08-14） |
 | R4 | **增补 backlog**（B-01～B-11）：Webhook、报表中心、营销/优惠券、物流履约、订阅套餐、工单、库存、帮助页、消息模板、组织/部门/岗位、登录日志独立视图——登记 + 触发条件（按需立项，不由 VP 强行关闭） | 依赖 R1 | 已登记（I-011-001 §5） |
