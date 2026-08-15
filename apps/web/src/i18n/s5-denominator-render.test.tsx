@@ -51,6 +51,7 @@ const SCHEMA_PATHS: Record<string, string> = {
   "scheduled-tasks": resolve(MODULES, "scheduledtasks/schema/scheduled-tasks.json"),
   "recycle-bin": resolve(MODULES, "recyclebin/schema/recycle-bin.json"),
   "task-runs": resolve(MODULES, "scheduledtasks/schema/task-runs.json"),
+  "data-permission": resolve(MODULES, "datapermission/schema/data-permission.json"),
 };
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];

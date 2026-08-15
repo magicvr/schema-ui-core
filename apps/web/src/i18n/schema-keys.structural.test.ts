@@ -40,6 +40,7 @@ const SCHEMA_FILES = [
   "scheduledtasks/schema/scheduled-tasks.json",
   "recyclebin/schema/recycle-bin.json",
   "scheduledtasks/schema/task-runs.json",
+  "datapermission/schema/data-permission.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];

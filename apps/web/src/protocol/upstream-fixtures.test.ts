@@ -65,8 +65,9 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // S-11 (GOAL-011, D-003): captcha page removed — the switch lives in the
 // admin.settings security section.
 // S-12 (GOAL-012): admin fixture extended with the recycle-bin page + nav.
+// S-09 (GOAL-016): admin fixture extended with the data-permission page + nav.
 const STATIC_MANIFEST_SHA256 =
-  "e3ec71313d9b8f5fbdfceb0435a906c5b54d565cba0e073b85e9bf17ea16896c";
+  "4a43bcad0b825a4de18735a1890d5671efd0faf04716baf582a2438daf2bc76f";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

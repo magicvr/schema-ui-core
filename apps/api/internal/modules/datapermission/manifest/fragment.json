@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "data-permission",
+      "title": "Data permission",
+      "schemaUrl": "/api/schema/data-permission",
+      "route": "/data-permission",
+      "titleKey": "manifest.title.dataPermission"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "data-permission",
+        "label": "Data permission",
+        "icon": "shield",
+        "visibleWhen": {
+          "when": "$context.features.menu_data_permission == true"
+        },
+        "labelKey": "manifest.nav.dataPermission"
+      }
+    ]
+  }
+}

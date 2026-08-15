@@ -461,5 +461,21 @@
   "hostFailure.action.home": "返回首页",
   "hostFailure.action.back": "返回",
   "hostFailure.action.reload": "重新加载",
-  "hostFailure.action.support": "联系支持"
+  "hostFailure.action.support": "联系支持",
+  "manifest.title.dataPermission": "数据权限",
+  "manifest.nav.dataPermission": "数据权限",
+  "schema.dataPermission.field.resource": "资源",
+  "schema.dataPermission.field.ownerColumn": "属主列",
+  "schema.dataPermission.field.defaultScope": "默认范围",
+  "schema.dataPermission.field.enabled": "启用",
+  "schema.dataPermission.scope.all": "全部",
+  "schema.dataPermission.scope.self": "本人",
+  "schema.dataPermission.submit.register": "登记策略",
+  "schema.dataPermission.column.resource": "资源",
+  "schema.dataPermission.column.ownerColumn": "属主列",
+  "schema.dataPermission.column.defaultScope": "默认范围",
+  "schema.dataPermission.column.enabled": "启用",
+  "schema.dataPermission.toolbar.register": "登记策略",
+  "error.invalidScope": "数据范围必须是 all 或 self",
+  "error.scopeNotEnforceable": "该资源未接入行级数据范围"
 }

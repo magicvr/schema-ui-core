@@ -225,7 +225,7 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
   #   admin = dashboard, users, roles, settings, activity, account
   #   demo  = overview, dashboard, users, roles, account (+ examples surface)
   case "$SMOKE_EXPECTED_PROFILE" in
-    admin) required_pages="dashboard users roles settings activity account notifications file-library data-dictionary system-monitoring scheduled-tasks recycle-bin" ;;
+    admin) required_pages="dashboard users roles settings activity account notifications file-library data-dictionary system-monitoring scheduled-tasks recycle-bin data-permission" ;;
     demo)  required_pages="overview dashboard users roles account notifications" ;;
     *)     required_pages="dashboard users roles account notifications" ;;
   esac

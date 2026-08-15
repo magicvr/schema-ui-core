@@ -51,6 +51,10 @@ type resourceFilter struct {
 	// Values are trimmed; keys are validated against the resource whitelist so
 	// unknown parameters never reach an entity.
 	Extra map[string]string
+	// Scope carries the effective row-level scope constraint for the request
+	// actor (S-09 · GOAL-016 D-002 §2); nil means no constraint. Entities that
+	// opt into scoping consume it in their where assembly.
+	Scope *ScopeConstraint
 }
 
 // ResourceEntity is the store boundary the generic factory drives. Rows are
@@ -136,6 +140,25 @@ type TrashRecorder interface {
 	Record(ctx context.Context, resource, id string, row map[string]any, actor account.User, now time.Time) error
 }
 
+// ScopeConstraint is the resolved row-level scope for one request actor on
+// one resource (S-09 · GOAL-016 D-002 §1). ScopeType "self" narrows access to
+// rows whose OwnerColumn equals ActorID; "all" carries no restriction.
+type ScopeConstraint struct {
+	Resource    string
+	ScopeType   string // "all" | "self"
+	OwnerColumn string
+	ActorID     string
+}
+
+// RowScopeProvider resolves the row-level scope for a request actor on a
+// resource (S-09 · GOAL-016 D-002 §2). A nil *ScopeConstraint (or a nil
+// provider) means no constraint applies — the request path is byte-identical
+// to the unscoped behavior. Implemented by the admin.data-permission module
+// service; resources opt in by setting Resource.Scoper.
+type RowScopeProvider interface {
+	ScopeFor(userID, resource string) (*ScopeConstraint, error)
+}
+
 type Resource struct {
 	ID       string // resource id, e.g. "users"
 	Path     string // mount path, e.g. "/api/users"
@@ -173,6 +196,12 @@ type Resource struct {
 	// (S-12 · GOAL-012 D-002 §2): the factory captures the row before the
 	// delete and records it only after the delete succeeds.
 	Trash TrashRecorder
+	// Scoper (S-09 · GOAL-016 D-002 §2), when set, resolves a row-level scope
+	// for the request actor on this resource. nil (the default) means no
+	// scoping — the unscoped path stays byte-identical. Composition wires the
+	// admin.data-permission service only for resources whose entity consumes
+	// filter.Scope (ScopeAware); v1 registers no production resource.
+	Scoper RowScopeProvider
 }
 
 // resourceHandler serves the five generic CRUD routes for one Resource.
@@ -267,6 +296,24 @@ func requirePermission(w http.ResponseWriter, r *http.Request, permission string
 	return user, true
 }
 
+// resolveScope returns the effective scope constraint for the request actor,
+// if the resource opts into scoping (S-09 · GOAL-016 D-002 §2).
+func (h *resourceHandler) resolveScope(user account.User) (*ScopeConstraint, error) {
+	if h.res.Scoper == nil {
+		return nil, nil
+	}
+	return h.res.Scoper.ScopeFor(user.ID, h.res.ID)
+}
+
+// scopeOwned reports whether a row passes the self-scope ownership check. A
+// nil or "all" constraint always passes.
+func scopeOwned(row map[string]any, constraint *ScopeConstraint) bool {
+	if constraint == nil || constraint.ScopeType != "self" {
+		return true
+	}
+	return stringField(row, constraint.OwnerColumn) == constraint.ActorID
+}
+
 func notFoundCode(res Resource) string {
 	if res.NotFoundCode != "" {
 		return res.NotFoundCode
@@ -309,7 +356,8 @@ func stringField(m map[string]any, key string) string {
 // (q only when the resource declares QSearch).
 func (h *resourceHandler) list() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r, h.readPerm); !ok {
+		user, ok := requirePermission(w, r, h.readPerm)
+		if !ok {
 			return
 		}
 		query := r.URL.Query()
@@ -364,6 +412,14 @@ func (h *resourceHandler) list() http.Handler {
 				filter.Extra[key] = value
 			}
 		}
+		// S-09 (GOAL-016 D-002 §2): the effective row-level scope rides the
+		// filter into the entity's where assembly (ScopeAware contract).
+		constraint, err := h.resolveScope(user)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve data scope")
+			return
+		}
+		filter.Scope = constraint
 		items, total, err := h.res.Entity.List(filter)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list "+h.res.ID)
@@ -517,6 +573,16 @@ func (h *resourceHandler) create() http.Handler {
 		}
 
 		now := time.Now().UTC()
+		// S-09 (GOAL-016 D-002 §2): self scope forces the owner column to the
+		// creating actor (A-005 recommended: overwrite, never trust the body).
+		constraint, err := h.resolveScope(user)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve data scope")
+			return
+		}
+		if constraint != nil && constraint.ScopeType == "self" {
+			body[constraint.OwnerColumn] = constraint.ActorID
+		}
 		var row map[string]any
 		for attempt := 0; attempt < resourceIDRetries; attempt++ {
 			id, err := h.res.NewID()
@@ -548,11 +614,23 @@ func (h *resourceHandler) create() http.Handler {
 // detail serves GET {path}/{id}.
 func (h *resourceHandler) detail() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := requirePermission(w, r, h.readPerm); !ok {
+		user, ok := requirePermission(w, r, h.readPerm)
+		if !ok {
 			return
 		}
 		row, err := h.res.Entity.Get(r.PathValue("id"))
 		if writeEntityError(w, r, h.res, err, "load") {
+			return
+		}
+		// S-09 (GOAL-016 D-002 §2): self scope hides rows owned by others as
+		// 404 (no existence oracle).
+		constraint, err := h.resolveScope(user)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve data scope")
+			return
+		}
+		if !scopeOwned(row, constraint) {
+			writeLocalizedError(w, r, http.StatusNotFound, notFoundCode(h.res), "no "+h.res.ID+" with that id")
 			return
 		}
 		writeJSON(w, http.StatusOK, row)
@@ -579,6 +657,24 @@ func (h *resourceHandler) update() http.Handler {
 			return
 		}
 		now := time.Now().UTC()
+		// S-09 (GOAL-016 D-002 §2): self scope rejects updates of rows owned by
+		// others as 404 before any mutation.
+		constraint, err := h.resolveScope(user)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve data scope")
+			return
+		}
+		if constraint != nil && constraint.ScopeType == "self" {
+			existing, gerr := h.res.Entity.Get(id)
+			if gerr == nil && !scopeOwned(existing, constraint) {
+				writeLocalizedError(w, r, http.StatusNotFound, notFoundCode(h.res), "no "+h.res.ID+" with that id")
+				return
+			}
+			if gerr != nil && !errors.Is(gerr, errResourceNotFound) {
+				writeEntityError(w, r, h.res, gerr, "update")
+				return
+			}
+		}
 		row, err := h.res.Entity.Update(id, body, now, user)
 		if writeEntityError(w, r, h.res, err, "update") {
 			return
@@ -598,12 +694,23 @@ func (h *resourceHandler) delete() http.Handler {
 			return
 		}
 		id := r.PathValue("id")
+		// S-09 (GOAL-016 D-002 §2): self scope rejects deletes of rows owned by
+		// others as 404 before any mutation.
+		constraint, err := h.resolveScope(user)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve data scope")
+			return
+		}
 		// S-12 (GOAL-012 D-002 §2): capture the pre-delete row so a successful
 		// delete can record a recycle snapshot. A failed delete records nothing
 		// (no orphan snapshots); a missing row records nothing.
 		var snapshot map[string]any
-		if h.res.Trash != nil {
-			if row, err := h.res.Entity.Get(id); err == nil {
+		if h.res.Trash != nil || (constraint != nil && constraint.ScopeType == "self") {
+			if row, gerr := h.res.Entity.Get(id); gerr == nil {
+				if !scopeOwned(row, constraint) {
+					writeLocalizedError(w, r, http.StatusNotFound, notFoundCode(h.res), "no "+h.res.ID+" with that id")
+					return
+				}
 				snapshot = row
 			}
 		}
@@ -684,6 +791,27 @@ func (h *resourceHandler) batchDelete() http.Handler {
 		if len(ids) == 0 {
 			writeLocalizedError(w, r, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one scalar key")
 			return
+		}
+
+		// S-09 (GOAL-016 D-002 §2): self scope deletes only rows owned by the
+		// actor — non-owned ids are skipped (never a 404 for the batch).
+		constraint, err := h.resolveScope(user)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve data scope")
+			return
+		}
+		if constraint != nil && constraint.ScopeType == "self" {
+			owned := ids[:0]
+			for _, id := range ids {
+				if row, gerr := h.res.Entity.Get(id); gerr == nil && scopeOwned(row, constraint) {
+					owned = append(owned, id)
+				}
+			}
+			ids = owned
+			if len(ids) == 0 {
+				writeJSON(w, http.StatusOK, map[string]any{"deleted": 0})
+				return
+			}
 		}
 
 		deleted := 0

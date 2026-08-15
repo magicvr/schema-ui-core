@@ -28,6 +28,8 @@ import (
 	scheduledtasksmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks"
 	scheduledtasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha"
+	datapermissionmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission"
+	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 	recyclebinmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
@@ -299,6 +301,14 @@ func newMuxWithExtraProviders(
 	}
 	if plan.HasModule("admin.login-captcha") {
 		providers = append(providers, logincaptchamodule.New(a, captchaService, operations))
+	}
+	// S-09 (GOAL-016 D-002 §2): the data-permission service feeds both the
+	// management routes and the RowScopeProvider contract. v1 wires NO
+	// production resource into the enforceable set — registration is left to
+	// future domain modules (A-005: the gate lives on the policy PATCH).
+	if plan.HasModule("admin.data-permission") {
+		dataPermissionService := datapermissionmodule.NewService(datapermissionstore.NewRepository(st), nil)
+		providers = append(providers, datapermissionmodule.New(a, dataPermissionService, operations))
 	}
 	if plan.HasModule("admin.recycle-bin") {
 		providers = append(providers, recyclebinmodule.New(a, recycleService, operations))

@@ -56,6 +56,9 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// F-03 (GOAL-005): admin.account enable/disable keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.enable"}, Permission: "users.enable", Resource: "users", Action: "enable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.disable"}, Permission: "users.disable", Resource: "users", Action: "disable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// S-09 (GOAL-016): admin.data-permission keys.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "data-permission.read"}, Permission: "data-permission.read", Resource: "data-permission", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "data-permission.write"}, Permission: "data-permission.write", Resource: "data-permission", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		// F-02 (GOAL-004): admin.data-transfer keys.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.export"}, Permission: "data.export", Resource: "data", Action: "export", PolicyID: authsessiondata.PolicyAdminEditor, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-transfer", Key: "data.import"}, Permission: "data.import", Resource: "data", Action: "import", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -98,6 +101,7 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.scheduled-tasks", Key: "menu_scheduled_tasks"}, NodeID: "menu_scheduled_tasks", PageID: "scheduled-tasks", Order: 6, Label: "Scheduled tasks", Visibility: authsessiondata.PolicyAdmin, Permission: "tasks.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		// S-12 (GOAL-012): recycle bin page (admin-only surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "menu_recycle_bin"}, NodeID: "menu_recycle_bin", PageID: "recycle-bin", Order: 8, Label: "Recycle bin", Visibility: authsessiondata.PolicyAdmin, Permission: "recycle.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "menu_data_permission"}, NodeID: "menu_data_permission", PageID: "data-permission", Order: 9, Label: "Data permission", Visibility: authsessiondata.PolicyAdmin, Permission: "data-permission.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }

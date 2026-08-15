@@ -164,6 +164,13 @@
       "schemaUrl": "/api/schema/recycle-bin",
       "route": "/recycle-bin",
       "titleKey": "manifest.title.recycleBin"
+    },
+    {
+      "pageId": "data-permission",
+      "title": "Data permission",
+      "schemaUrl": "/api/schema/data-permission",
+      "route": "/data-permission",
+      "titleKey": "manifest.title.dataPermission"
     }
   ],
   "navigation": {
@@ -312,6 +319,15 @@
           "when": "$context.features.menu_recycle_bin == true"
         },
         "labelKey": "manifest.nav.recycleBin"
+      },
+      {
+        "pageRef": "data-permission",
+        "label": "Data permission",
+        "icon": "shield",
+        "visibleWhen": {
+          "when": "$context.features.menu_data_permission == true"
+        },
+        "labelKey": "manifest.nav.dataPermission"
       }
     ],
     "user": [

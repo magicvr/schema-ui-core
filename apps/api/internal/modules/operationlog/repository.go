@@ -47,6 +47,9 @@ const (
 	EventCaptchaSettingsUpdate = "captcha.settings-update"
 	EventRecycleRestore       = "recycle.restore"
 	EventRecyclePurge         = "recycle.purge"
+	// S-09 data-permission events (GOAL-016 D-002 §3).
+	EventDataPermissionPolicyUpdate = "data-permission.policy-update"
+	EventDataPermissionScopeUpdate  = "data-permission.scope-update"
 )
 
 // Operation is one append-only operation log row.

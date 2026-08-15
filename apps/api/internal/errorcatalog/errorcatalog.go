@@ -123,6 +123,10 @@ var Catalog = map[string]Entry{
 	// S-11 (GOAL-011 D-002 §2): login captcha code.
 	"INVALID_CAPTCHA": {"error.invalidCaptcha", "captcha verification failed", "验证码校验失败"},
 
+	// S-09 (GOAL-016 D-002 §3): data-permission codes.
+	"INVALID_SCOPE":          {"error.invalidScope", "scope must be all or self", "数据范围必须是 all 或 self"},
+	"SCOPE_NOT_ENFORCEABLE":  {"error.scopeNotEnforceable", "resource is not wired for row-level scoping", "该资源未接入行级数据范围"},
+
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
 	"RECYCLE_ITEM_NOT_FOUND":  {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},
 	"RECYCLE_RESTORE_CONFLICT": {"error.recycleRestoreConflict", "a row with that key already exists; resolve the conflict and retry", "存在相同键的行，解决冲突后重试"},

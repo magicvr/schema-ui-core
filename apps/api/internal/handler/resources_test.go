@@ -269,3 +269,202 @@ func TestResourceFactoryDefaultPermissionDerivation(t *testing.T) {
 	mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusForbidden, "FORBIDDEN")
 }
+// --- S-09 (GOAL-016 D-002 §2): row-level scope enforcement in the factory ---
+
+// scopedEntity is an in-memory ScopeAware entity: rows carry an owner column
+// and List consumes filter.Scope.
+type scopedEntity struct {
+	rows map[string]map[string]any
+}
+
+func newScopedEntity(seed ...map[string]any) *scopedEntity {
+	e := &scopedEntity{rows: map[string]map[string]any{}}
+	for _, row := range seed {
+		if id, _ := row["id"].(string); id != "" {
+			e.rows[id] = row
+		}
+	}
+	return e
+}
+
+func (e *scopedEntity) List(filter resourceFilter) ([]map[string]any, int, error) {
+	items := make([]map[string]any, 0, len(e.rows))
+	for _, row := range e.rows {
+		if filter.Scope == nil || filter.Scope.ScopeType != "self" || stringField(row, filter.Scope.OwnerColumn) == filter.Scope.ActorID {
+			items = append(items, row)
+		}
+	}
+	return items, len(items), nil
+}
+
+func (e *scopedEntity) Get(id string) (map[string]any, error) {
+	row, ok := e.rows[id]
+	if !ok {
+		return nil, errResourceNotFound
+	}
+	return row, nil
+}
+
+func (e *scopedEntity) Create(body map[string]any, id string, now time.Time, _ account.User) (map[string]any, error) {
+	row := map[string]any{
+		"id":    id,
+		"title": stringField(body, "title"),
+		"owner": stringField(body, "owner"),
+	}
+	e.rows[id] = row
+	return row, nil
+}
+
+func (e *scopedEntity) Update(id string, body map[string]any, now time.Time, _ account.User) (map[string]any, error) {
+	row, ok := e.rows[id]
+	if !ok {
+		return nil, errResourceNotFound
+	}
+	if v, ok := body["title"]; ok {
+		row["title"] = v
+	}
+	return row, nil
+}
+
+func (e *scopedEntity) Delete(id string, _ account.User) error {
+	if _, ok := e.rows[id]; !ok {
+		return errResourceNotFound
+	}
+	delete(e.rows, id)
+	return nil
+}
+
+// fixedScoper returns a fixed constraint (or nil).
+type fixedScoper struct {
+	constraint *ScopeConstraint
+}
+
+func (s fixedScoper) ScopeFor(userID, resource string) (*ScopeConstraint, error) { return s.constraint, nil }
+
+func scopedResource(entity ResourceEntity, scoper RowScopeProvider) Resource {
+	next := 0
+	return Resource{
+		ID:           "orders",
+		Path:         "/api/orders",
+		Listable:     true,
+		SortFields:   []string{"id"},
+		Entity:       entity,
+		CreateFields: []string{"title"},
+		PatchFields:  []string{"title"},
+		PermissionRead:  "users.read",
+		PermissionWrite: "users.write",
+		Scoper:       scoper,
+		NewID: func() (string, error) {
+			next++
+			return fmt.Sprintf("o-%d", next), nil
+		},
+	}
+}
+
+// Self scope: list filters to owned rows, detail/update/delete 404 on rows
+// owned by others, create forces the owner column, batch-delete skips others.
+func TestResourceFactoryEnforcesSelfScope(t *testing.T) {
+	env := newAuthTestEnv(t)
+	entity := newScopedEntity(
+		map[string]any{"id": "o-1", "title": "Mine", "owner": "user-a"},
+		map[string]any{"id": "o-2", "title": "Theirs", "owner": "user-b"},
+	)
+	scoper := fixedScoper{constraint: &ScopeConstraint{Resource: "orders", ScopeType: "self", OwnerColumn: "owner", ActorID: "user-a"}}
+	res := scopedResource(entity, scoper)
+	mux := http.NewServeMux()
+	registerResource(mux, env.a, res)
+	token := adminToken(t, env)
+
+	// list: only owned rows.
+	req := bearer(t, token, http.MethodGet, "/api/orders", "")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "Mine") || strings.Contains(rr.Body.String(), "Theirs") {
+		t.Fatalf("list = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// detail: owned OK, other 404 (no existence oracle).
+	req = bearer(t, token, http.MethodGet, "/api/orders/o-1", "")
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("owned detail = %d", rr.Code)
+	}
+	req = bearer(t, token, http.MethodGet, "/api/orders/o-2", "")
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	expectError(t, rr, http.StatusNotFound, "ORDERS_NOT_FOUND")
+
+	// update: other 404; owned OK.
+	req = bearer(t, token, http.MethodPatch, "/api/orders/o-2", `{"title":"Hacked"}`)
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	expectError(t, rr, http.StatusNotFound, "ORDERS_NOT_FOUND")
+	req = bearer(t, token, http.MethodPatch, "/api/orders/o-1", `{"title":"Renamed"}`)
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("owned update = %d", rr.Code)
+	}
+
+	// delete: other 404; owned 204.
+	req = bearer(t, token, http.MethodDelete, "/api/orders/o-2", "")
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	expectError(t, rr, http.StatusNotFound, "ORDERS_NOT_FOUND")
+	req = bearer(t, token, http.MethodDelete, "/api/orders/o-1", "")
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("owned delete = %d", rr.Code)
+	}
+
+	// create: owner column forced to the actor regardless of body.
+	req = bearer(t, token, http.MethodPost, "/api/orders", `{"title":"New","owner":"user-b"}`)
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	if err := json.NewDecoder(rr.Body).Decode(&created); err != nil || created["owner"] != "user-a" {
+		t.Fatalf("created owner = %v (want user-a), err=%v", created["owner"], err)
+	}
+
+	// batch-delete: only owned rows are deleted.
+	entity.rows["o-3"] = map[string]any{"id": "o-3", "title": "Mine2", "owner": "user-a"}
+	entity.rows["o-4"] = map[string]any{"id": "o-4", "title": "Theirs2", "owner": "user-b"}
+	req = bearer(t, token, http.MethodPost, "/api/orders/batch-delete", `{"ids":["o-3","o-4"]}`)
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "\"deleted\":1") {
+		t.Fatalf("batch-delete = %d: %s", rr.Code, rr.Body.String())
+	}
+	if _, ok := entity.rows["o-4"]; !ok {
+		t.Fatalf("batch-delete removed an unowned row")
+	}
+}
+
+// A nil scoper leaves the unscoped path byte-identical.
+func TestResourceFactoryUnscopedNilScoper(t *testing.T) {
+	env := newAuthTestEnv(t)
+	entity := newScopedEntity(
+		map[string]any{"id": "o-1", "title": "A", "owner": "user-a"},
+		map[string]any{"id": "o-2", "title": "B", "owner": "user-b"},
+	)
+	mux := http.NewServeMux()
+	registerResource(mux, env.a, scopedResource(entity, nil))
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodGet, "/api/orders", "")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "B") {
+		t.Fatalf("unscoped list = %d: %s", rr.Code, rr.Body.String())
+	}
+	req = bearer(t, token, http.MethodGet, "/api/orders/o-2", "")
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("unscoped detail = %d", rr.Code)
+	}
+}

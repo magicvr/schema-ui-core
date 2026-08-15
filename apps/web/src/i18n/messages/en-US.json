@@ -461,5 +461,21 @@
   "hostFailure.action.home": "Return home",
   "hostFailure.action.back": "Go back",
   "hostFailure.action.reload": "Reload",
-  "hostFailure.action.support": "Support"
+  "hostFailure.action.support": "Support",
+  "manifest.title.dataPermission": "Data permission",
+  "manifest.nav.dataPermission": "Data permission",
+  "schema.dataPermission.field.resource": "Resource",
+  "schema.dataPermission.field.ownerColumn": "Owner column",
+  "schema.dataPermission.field.defaultScope": "Default scope",
+  "schema.dataPermission.field.enabled": "Enabled",
+  "schema.dataPermission.scope.all": "All",
+  "schema.dataPermission.scope.self": "Self",
+  "schema.dataPermission.submit.register": "Register policy",
+  "schema.dataPermission.column.resource": "Resource",
+  "schema.dataPermission.column.ownerColumn": "Owner column",
+  "schema.dataPermission.column.defaultScope": "Default scope",
+  "schema.dataPermission.column.enabled": "Enabled",
+  "schema.dataPermission.toolbar.register": "Register policy",
+  "error.invalidScope": "Scope must be all or self",
+  "error.scopeNotEnforceable": "Resource is not wired for row-level scoping"
 }

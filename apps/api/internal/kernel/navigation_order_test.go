@@ -22,6 +22,7 @@ func TestDefaultNavigationOrderSnapshot(t *testing.T) {
 		"menu_monitoring",
 		"menu_scheduled_tasks",
 		"menu_recycle_bin",
+		"menu_data_permission",
 	}
 	if !reflect.DeepEqual(DefaultNavigationOrder, want) {
 		t.Fatalf("DefaultNavigationOrder = %v, want %v", DefaultNavigationOrder, want)

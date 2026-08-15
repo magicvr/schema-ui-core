@@ -413,6 +413,8 @@ var DefaultNavigationOrder = []string{
 	"menu_monitoring",
 	"menu_scheduled_tasks",
 	"menu_recycle_bin",
+	// S-09 (GOAL-016): row-level data permission management.
+	"menu_data_permission",
 }
 
 // sortNavigation orders nodes by the resolved navigation order list, then by

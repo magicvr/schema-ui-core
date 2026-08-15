@@ -124,6 +124,21 @@ var operationLogCaptchaDDL = []string{
 }
 
 
+// operationLogDataPermissionDDL (0028 · S-09 GOAL-016 D-002 §3): adds the two
+// data-permission events to the event CHECK (rebuild like 0005/0008/0014/0015/0018/0020/0022/0024/0026).
+var operationLogDataPermissionDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
 // operationLogRecycleDDL (0026 · S-12 GOAL-012 D-002 §5): adds the two
 // recycle events to the event CHECK (rebuild like 0005/0008/0014/0015/0018/0020/0022/0024).
 var operationLogRecycleDDL = []string{
@@ -222,6 +237,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateOperationLogCaptcha,
 		},
 		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_data_permission"},
+			Version:              28,
+			Name:                 "operation_log_data_permission",
+			Checksum:             kernel.MigrationChecksum(operationLogDataPermissionDDL, "0028:operation-log-data-permission:v1"),
+			Apply:                migrateOperationLogDataPermission,
+		},
+		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_recycle"},
 			Version:              26,
 			Name:                 "operation_log_recycle",
@@ -274,6 +296,10 @@ func migrateOperationLogCaptcha(tx *sql.Tx) error {
 
 func migrateOperationLogRecycle(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogRecycleDDL, "recycle-events-expanded")
+}
+
+func migrateOperationLogDataPermission(tx *sql.Tx) error {
+	return rebuildOperationLog(tx, operationLogDataPermissionDDL, "data-permission-events-expanded")
 }
 
 func rebuildOperationLog(tx *sql.Tx, ddl []string, label string) error {

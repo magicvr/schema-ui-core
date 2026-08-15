@@ -33,7 +33,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-013-nav-order-config [done]      · 导航顺序：默认清单 + 配置文件覆盖（方案 A）（5/5）
 ├── GOAL-014-form-experience [done]      · R4 表单体验：字段级校验/错误展示 + 弹窗布局（5/5）
 ├── GOAL-015-dict-inner-page-breadcrumb [done] · R4 数据字典内页 + 面包屑层级导航（5/5）
-├── GOAL-016-r3-s09-data-permission [active] · R3-S09 数据权限（行级/数据范围）（1/5）
+├── GOAL-016-r3-s09-data-permission [active] · R3-S09 数据权限（行级/数据范围）（3/5）
 └── GOAL-017-r3-s10-mfa-2fa [active]      · R3-S10 MFA/2FA（TOTP 双因素认证）（1/5）
 ```
 
@@ -58,7 +58,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-013-nav-order-config | 导航顺序：默认清单 + 配置文件覆盖（方案 A） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-014-form-experience | R4 · 表单体验：字段级校验/错误展示 + 弹窗布局 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-015-dict-inner-page-breadcrumb | R4 · 数据字典内页 + 面包屑层级导航 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
-| GOAL-016-r3-s09-data-permission | R3-S09 · 数据权限（行级/数据范围） | GOAL-001-admin-functional-modules | active | 1/5 | 2026-08-15 |
+| GOAL-016-r3-s09-data-permission | R3-S09 · 数据权限（行级/数据范围） | GOAL-001-admin-functional-modules | active | 3/5 | 2026-08-15 |
 | GOAL-017-r3-s10-mfa-2fa | R3-S10 · MFA / 2FA（TOTP 双因素认证） | GOAL-001-admin-functional-modules | active | 1/5 | 2026-08-15 |
 
 ## 维护说明
