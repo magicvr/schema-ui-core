@@ -136,19 +136,19 @@ func TestDataPermissionRoutesPolicyLifecycle(t *testing.T) {
 	token := adminToken(t, env)
 
 	// Unwired resource → 400 SCOPE_NOT_ENFORCEABLE.
-	req := bearer(t, token, http.MethodPatch, "/api/data-permission/policies/users", `{"ownerColumn":"owner_id","defaultScope":"self"}`)
+	req := bearer(t, token, http.MethodPatch, "/api/data-permission/policies", `{"resource":"users","ownerColumn":"owner_id","defaultScope":"self"}`)
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusBadRequest, "SCOPE_NOT_ENFORCEABLE")
 
 	// Missing defaultScope → 400 INVALID_SCOPE.
-	req = bearer(t, token, http.MethodPatch, "/api/data-permission/policies/orders", `{"ownerColumn":"owner_id"}`)
+	req = bearer(t, token, http.MethodPatch, "/api/data-permission/policies", `{"resource":"orders","ownerColumn":"owner_id"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusBadRequest, "INVALID_SCOPE")
 
 	// Wired resource → 200 + list shows it.
-	req = bearer(t, token, http.MethodPatch, "/api/data-permission/policies/orders", `{"ownerColumn":"owner_id","defaultScope":"self"}`)
+	req = bearer(t, token, http.MethodPatch, "/api/data-permission/policies", `{"resource":"orders","ownerColumn":"owner_id","defaultScope":"self"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {

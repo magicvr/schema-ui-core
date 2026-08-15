@@ -63,25 +63,29 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		writeJSON(w, http.StatusOK, map[string]any{"items": policies})
 	})))
 
-	// Policies: register/update one resource policy (audited).
-	add("PATCH", "/api/data-permission/policies/{resource}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Policies: register/update one resource policy (audited). The resource
+	// rides in the body (not a path slot): the schema-driven form action only
+	// binds `{id}` slots, and the modal form owns the resource field
+	// (W10 fix, GOAL-011).
+	add("PATCH", "/api/data-permission/policies", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "data-permission.write")
 		if !ok {
 			return
 		}
-		resource := strings.TrimSpace(r.PathValue("resource"))
-		if resource == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "resource is required")
-			return
-		}
 		var body struct {
+			Resource     string `json:"resource"`
 			OwnerColumn  string `json:"ownerColumn"`
 			DefaultScope string `json:"defaultScope"`
 			Enabled      *bool  `json:"enabled"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "body must be JSON with ownerColumn and defaultScope")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "body must be JSON with resource, ownerColumn and defaultScope")
+			return
+		}
+		resource := strings.TrimSpace(body.Resource)
+		if resource == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "resource is required")
 			return
 		}
 		// default_scope is REQUIRED (A-004 F-001: no implicit default).

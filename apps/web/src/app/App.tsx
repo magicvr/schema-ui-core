@@ -12,6 +12,7 @@ import {
   Pencil,
   Search,
   Settings,
+  Shield,
   Table2,
   UserRound,
   X,
@@ -66,6 +67,7 @@ const iconRegistry: Record<string, LucideIcon> = {
   reaction: Zap,
   search: Search,
   settings: Settings,
+  shield: Shield,
   table: Table2,
   user: UserRound,
 };

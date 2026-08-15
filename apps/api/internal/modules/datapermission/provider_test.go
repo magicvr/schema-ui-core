@@ -62,7 +62,7 @@ func TestDataPermissionProviderRegistersSurfaces(t *testing.T) {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	wantRoutes := []string{
-		"GET /api/data-permission/policies", "PATCH /api/data-permission/policies/{resource}",
+		"GET /api/data-permission/policies", "PATCH /api/data-permission/policies",
 		"GET /api/data-permission/scopes", "PATCH /api/data-permission/scopes",
 	}
 	for _, key := range wantRoutes {

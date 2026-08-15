@@ -43,6 +43,10 @@ const MODULE_FIXTURE_DIRS: Record<string, string> = {
     dirname(fileURLToPath(import.meta.url)),
     "../../../api/internal/modules/roles/schema",
   ),
+  "data-permission": resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/datapermission/schema",
+  ),
 };
 
 const MIGRATED_PAGE_IDS = [
@@ -54,6 +58,7 @@ const MIGRATED_PAGE_IDS = [
   "roles",
   "settings",
   "activity",
+  "data-permission",
 ];
 
 function fixtureDocument(pageId: string): unknown {
@@ -219,6 +224,44 @@ describe("migrated representative pages (GOAL-004)", () => {
     await act(async () => (editRow as HTMLButtonElement).click());
     expect(container.textContent).toContain("Save changes");
     expect(container.textContent).toContain("alice");
+  });
+
+  it("renders the data-permission page (W10: D-VAL body shape + policies table)", async () => {
+    const policies = {
+      items: [
+        { resource: "orders", ownerColumn: "owner_id", defaultScope: "self", enabled: true },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+    };
+    const fetcher = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/data-permission/policies")) {
+        return new Response(JSON.stringify(policies), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <RenderPage
+          document={fixtureDocument("data-permission") as RenderPageDocument}
+          context={{
+            user: { id: "admin", permissions: ["data-permission.read", "data-permission.write"] },
+          }}
+          tableRenderer={(node) => <SchemaTable node={node} fetcher={fetcher} />}
+        />,
+      );
+    });
+    expect(container.textContent).toContain("orders");
+    expect(container.textContent).toContain("Register policy");
   });
 
   it("fails closed on an unknown node type on a representative path", async () => {

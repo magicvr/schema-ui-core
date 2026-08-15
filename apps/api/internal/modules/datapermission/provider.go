@@ -122,7 +122,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
-				"GET /api/data-permission/policies", "PATCH /api/data-permission/policies/{resource}",
+				"GET /api/data-permission/policies", "PATCH /api/data-permission/policies",
 				"GET /api/data-permission/scopes", "PATCH /api/data-permission/scopes",
 			},
 			Pages:       []string{"data-permission"},

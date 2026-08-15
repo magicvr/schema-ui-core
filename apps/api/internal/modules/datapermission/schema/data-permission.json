@@ -17,13 +17,9 @@
     "registerPolicy": {
       "type": "request",
       "method": "PATCH",
-      "url": "/api/data-permission/policies/{resource}",
-      "requestMapping": {
-        "path": {
-          "resource": "resource"
-        }
-      },
+      "url": "/api/data-permission/policies",
       "bodyMapping": {
+        "resource": "resource",
         "ownerColumn": "ownerColumn",
         "defaultScope": "defaultScope",
         "enabled": "enabled"
@@ -108,44 +104,48 @@
       }
     }
   },
-  "view": {
-    "type": "column",
+  "body": {
+    "type": "section",
+    "id": "data-permission",
     "children": [
       {
         "type": "table",
         "id": "policies",
-        "columns": [
-          {
-            "field": "resource",
-            "label": "Resource",
-            "labelKey": "schema.dataPermission.column.resource"
-          },
-          {
-            "field": "ownerColumn",
-            "label": "Owner column",
-            "labelKey": "schema.dataPermission.column.ownerColumn"
-          },
-          {
-            "field": "defaultScope",
-            "label": "Default scope",
-            "labelKey": "schema.dataPermission.column.defaultScope"
-          },
-          {
-            "field": "enabled",
-            "label": "Enabled",
-            "labelKey": "schema.dataPermission.column.enabled"
-          }
-        ],
-        "dataSource": "/api/data-permission/policies",
-        "toolbar": [
-          {
-            "key": "register",
-            "label": "Register policy",
-            "actionRef": "openRegister",
-            "permissionIntent": "edit",
-            "labelKey": "schema.dataPermission.toolbar.register"
-          }
-        ]
+        "props": {
+          "rowKey": "resource",
+          "columns": [
+            {
+              "field": "resource",
+              "label": "Resource",
+              "labelKey": "schema.dataPermission.column.resource"
+            },
+            {
+              "field": "ownerColumn",
+              "label": "Owner column",
+              "labelKey": "schema.dataPermission.column.ownerColumn"
+            },
+            {
+              "field": "defaultScope",
+              "label": "Default scope",
+              "labelKey": "schema.dataPermission.column.defaultScope"
+            },
+            {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.dataPermission.column.enabled"
+            }
+          ],
+          "dataSource": "/api/data-permission/policies",
+          "toolbar": [
+            {
+              "key": "register",
+              "label": "Register policy",
+              "actionRef": "openRegister",
+              "permissionIntent": "edit",
+              "labelKey": "schema.dataPermission.toolbar.register"
+            }
+          ]
+        }
       }
     ]
   }
