@@ -47,7 +47,9 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		})
 	}
 
-	// Policies: list registered scope policies.
+	// Policies: list registered scope policies (unified list envelope
+	// I-010-001 §3 + camelCase row projection the schema-driven table
+	// surface renders: resource / ownerColumn / defaultScope / enabled).
 	add("GET", "/api/data-permission/policies", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := requirePermission(w, r, "data-permission.read"); !ok {
 			return
@@ -60,7 +62,21 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		if policies == nil {
 			policies = []datapermissionstore.Policy{}
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"items": policies})
+		items := make([]map[string]any, 0, len(policies))
+		for _, policy := range policies {
+			items = append(items, map[string]any{
+				"resource":     policy.Resource,
+				"ownerColumn":  policy.OwnerColumn,
+				"defaultScope": policy.DefaultScope,
+				"enabled":      policy.Enabled,
+				"updatedAt":    policy.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+			})
+		}
+		pageSize := len(items)
+		if pageSize < 1 {
+			pageSize = 1
+		}
+		writeJSON(w, http.StatusOK, resourceList{Items: items, Total: len(items), Page: 1, PageSize: pageSize})
 	})))
 
 	// Policies: register/update one resource policy (audited). The resource
