@@ -67,9 +67,9 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // S-12 (GOAL-012): admin fixture extended with the recycle-bin page + nav.
 // S-09 (GOAL-016): admin fixture extended with the data-permission page + nav.
 // S-14 (GOAL-019): admin fixture extended with the wallet + wallet-entries pages
-// and the wallet nav.
+// and the wallet nav (user 2026-08-16: wallet sits below Roles, above Activity).
 const STATIC_MANIFEST_SHA256 =
-  "23c8196de19c276fbdcf348a4d1f4fa862564e6586a0d8561b78cd2b79bf3022";
+  "1011068ea324de9d41848a11497fceaa4a5812020f18ecb74a1d4308f1f34c07";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

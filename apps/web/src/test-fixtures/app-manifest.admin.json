@@ -314,6 +314,15 @@
             "labelKey": "manifest.nav.roles"
           },
           {
+            "pageRef": "wallet",
+            "label": "Wallet",
+            "icon": "wallet",
+            "visibleWhen": {
+              "when": "$context.features.menu_wallet == true"
+            },
+            "labelKey": "manifest.nav.wallet"
+          },
+          {
             "pageRef": "activity",
             "label": "Activity",
             "icon": "activity",
@@ -342,15 +351,6 @@
           "when": "$context.features.menu_data_permission == true"
         },
         "labelKey": "manifest.nav.dataPermission"
-      },
-      {
-        "pageRef": "wallet",
-        "label": "Wallet",
-        "icon": "wallet",
-        "visibleWhen": {
-          "when": "$context.features.menu_wallet == true"
-        },
-        "labelKey": "manifest.nav.wallet"
       }
     ],
     "user": [

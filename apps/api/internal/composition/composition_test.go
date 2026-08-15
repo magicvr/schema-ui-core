@@ -1044,9 +1044,9 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		}
 		labels := fetchSidebar(t, plan, nil)
 		want := []string{
-			"Dashboard", "Users", "Roles", "Activity",
-			"File library", "Data dictionary", "System monitoring",
-			"Scheduled tasks", "Recycle bin", "Data permission", "Wallet",
+			"Dashboard", "Users", "Roles", "Wallet",
+			"Activity", "File library", "Data dictionary",
+			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
 		}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {
 			t.Fatalf("sidebar = %v, want %v", labels, want)

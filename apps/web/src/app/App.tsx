@@ -15,6 +15,7 @@ import {
   Shield,
   Table2,
   UserRound,
+  Wallet,
   X,
   Zap,
   type LucideIcon,
@@ -70,6 +71,7 @@ const iconRegistry: Record<string, LucideIcon> = {
   shield: Shield,
   table: Table2,
   user: UserRound,
+  wallet: Wallet,
 };
 
 export interface AppProps {

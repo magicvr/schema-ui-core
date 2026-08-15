@@ -404,6 +404,9 @@ var DefaultNavigationOrder = []string{
 	"menu_dashboard",
 	"menu_users",
 	"menu_roles",
+	// S-14 (GOAL-019, user 2026-08-16): wallet/ledger — directly below Roles,
+	// above Account/Activity per user's navigation-order request.
+	"menu_wallet",
 	"menu_account",
 	"menu_activity",
 	"menu_settings",
@@ -415,8 +418,6 @@ var DefaultNavigationOrder = []string{
 	"menu_recycle_bin",
 	// S-09 (GOAL-016): row-level data permission management.
 	"menu_data_permission",
-	// S-14 (GOAL-019 D-002 §3): wallet/ledger management.
-	"menu_wallet",
 }
 
 // sortNavigation orders nodes by the resolved navigation order list, then by

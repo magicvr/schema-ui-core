@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 审计 · GOAL-019-r3-s14-wallet-ledger
@@ -40,6 +40,12 @@ version: 0.6.0
 立项 scope：A-001 self **pass** + **A-002 grok build independent pass**（grok-4.6 · reasoning high；0 required；F-001/F-002 已随 D-002 响应）。**已放行立项**。
 
 S1 方案冻结 scope：A-003 self **pass** + **A-004 grok build independent conditional**（F-001/F-002 required → D-003 全 fixed → D-002 v1.1.0）+ **A-005 grok build reaudit pass**（0 required；F-001/F-002 合法闭合，门禁互否解除）。I-001/I-002/I-003 **verified**。**S1 门禁闭合——可放行 S2 实施**（S2 按 D-002 §1 apply 表 + §3 权限 + §6 基线 27→30 / 13→14 / 30→32 执行）。独立意见不直接改 status / progress；响应和状态变更走 /govern。
+
+## 响应记录（/govern · 2026-08-16 · 用户反馈 E-008）
+
+- 用户报告钱包页 PAGE_SCHEMA_INVALID → **fixed**（wallet.json 移除 requestMapping + 权限枚举合规；D-VAL 验证通过；根因分析见 E-008）。
+- 用户要求菜单图标 → **fixed**（iconRegistry 注册 wallet: Wallet）。
+- 用户要求导航排序（角色下面、操作日志上面）→ **fixed**（DefaultNavigationOrder Roles → Wallet；快照/夹具/SHA 全量同步）。
 
 ## 响应记录（/govern · 2026-08-16 · S5 关门）
 

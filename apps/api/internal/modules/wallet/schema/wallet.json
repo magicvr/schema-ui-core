@@ -32,7 +32,6 @@
       "method": "PATCH",
       "url": "/api/wallet/accounts/{id}",
       "bodyMapping": { "status": "status", "version": "version" },
-      "requestMapping": { "path": { "id": "$row.id" } },
       "onSuccess": { "behavior": "reload" }
     },
     "adjust": {
@@ -40,7 +39,6 @@
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/adjust",
       "bodyMapping": { "amountDelta": "amountDelta", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "requestMapping": { "path": { "id": "$row.id" } },
       "onSuccess": { "behavior": "reload" }
     },
     "freeze": {
@@ -48,7 +46,6 @@
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/freeze",
       "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "requestMapping": { "path": { "id": "$row.id" } },
       "onSuccess": { "behavior": "reload" }
     },
     "unfreeze": {
@@ -56,7 +53,6 @@
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/unfreeze",
       "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "requestMapping": { "path": { "id": "$row.id" } },
       "onSuccess": { "behavior": "reload" }
     },
     "runReconcile": {
@@ -194,11 +190,9 @@
       {
         "type": "table",
         "id": "wallet-table",
-        "permissionCascade": { "keys": ["read", "edit", "adjust"] },
+        "permissionCascade": { "keys": ["edit"] },
         "permissions": {
-          "read": "$context.user.permissions contains \"wallet.read\"",
-          "edit": "$context.user.permissions contains \"wallet.write\"",
-          "adjust": "$context.user.permissions contains \"wallet.adjust\""
+          "edit": "$context.user.permissions contains \"wallet.adjust\""
         },
         "props": {
           "columns": [
@@ -214,13 +208,13 @@
           "dataSource": "/api/wallet/accounts",
           "toolbar": [
             { "key": "create", "label": "New account", "actionRef": "openCreate", "permissionIntent": "edit", "labelKey": "schema.wallet.toolbar.create" },
-            { "key": "reconcile", "label": "Reconcile", "actionRef": "runReconcile", "permissionIntent": "read", "labelKey": "schema.wallet.toolbar.reconcile" }
+            { "key": "reconcile", "label": "Reconcile", "actionRef": "runReconcile", "labelKey": "schema.wallet.toolbar.reconcile" }
           ],
           "actions": [
             { "key": "entries", "label": "Entries", "actionRef": "openEntries", "labelKey": "schema.wallet.action.entries" },
-            { "key": "adjust", "label": "Adjust", "actionRef": "openAdjust", "permissionIntent": "adjust", "labelKey": "schema.wallet.action.adjust" },
-            { "key": "freeze", "label": "Freeze", "actionRef": "openFreeze", "permissionIntent": "adjust", "labelKey": "schema.wallet.action.freeze" },
-            { "key": "unfreeze", "label": "Unfreeze", "actionRef": "openUnfreeze", "permissionIntent": "adjust", "labelKey": "schema.wallet.action.unfreeze" },
+            { "key": "adjust", "label": "Adjust", "actionRef": "openAdjust", "permissionIntent": "edit", "labelKey": "schema.wallet.action.adjust" },
+            { "key": "freeze", "label": "Freeze", "actionRef": "openFreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.freeze" },
+            { "key": "unfreeze", "label": "Unfreeze", "actionRef": "openUnfreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.unfreeze" },
             { "key": "status", "label": "Status", "actionRef": "openStatus", "permissionIntent": "edit", "labelKey": "schema.wallet.action.status" }
           ]
         }

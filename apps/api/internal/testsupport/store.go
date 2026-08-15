@@ -108,7 +108,7 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// S-12 (GOAL-012): recycle bin page (admin-only surface).
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "menu_recycle_bin"}, NodeID: "menu_recycle_bin", PageID: "recycle-bin", Order: 8, Label: "Recycle bin", Visibility: authsessiondata.PolicyAdmin, Permission: "recycle.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.data-permission", Key: "menu_data_permission"}, NodeID: "menu_data_permission", PageID: "data-permission", Order: 9, Label: "Data permission", Visibility: authsessiondata.PolicyAdmin, Permission: "data-permission.read", SystemDataVersion: authsessiondata.SystemDataVersion},
-		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.wallet", Key: "menu_wallet"}, NodeID: "menu_wallet", PageID: "wallet", Order: 10, Label: "Wallet", Visibility: authsessiondata.PolicyAdmin, Permission: "wallet.read", SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.wallet", Key: "menu_wallet"}, NodeID: "menu_wallet", PageID: "wallet", Order: 3, Label: "Wallet", Visibility: authsessiondata.PolicyAdmin, Permission: "wallet.read", SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	return permissions, navigation
 }
