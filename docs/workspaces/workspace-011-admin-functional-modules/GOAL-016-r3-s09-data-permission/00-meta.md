@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL-016-r3-s09-data-permission · 数据权限（行级/数据范围）
@@ -24,22 +24,22 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：数据范围模型（作用域集合 / 继承 / 与角色权限的合成）、过滤下推路径、权限键与端点、协议对照（独立口径，I-011-001 §7 必办）、Profile 归属；方案级 self 审视 + **grok build independent（data 门禁，grok-4.6 · high）**
+- [x] **S1 · 方案冻结**：数据范围模型（作用域集合 / 继承 / 与角色权限的合成）、过滤下推路径、权限键与端点、协议对照（独立口径，I-011-001 §7 必办）、Profile 归属；方案级 self 审视 + **grok build independent（data 门禁，grok-4.6 · high）**（D-002，2026-08-15）
 - [ ] **S2 · 实现**：模块 provider + 范围/过滤能力 + schema 页 + 测试
 - [ ] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / web 全量 / e2e 双 profile）
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok build）+ 关门 + goal-tree 同步
 
-progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
+progress: 1/5 由五个等权检查点派生（S1 完成后更新）。
 
 ## 信息就绪与未知项
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 数据范围模型：作用域集合（全部/组织/本人…）、继承与角色权限合成语义 | S1 方案 | S1 | 对照既有 RBAC（roles/permissions-inheritance）+ 协议清单 | open | — | 待确认（S1 闭合） |
-| I-002 | required | 过滤下推集成点：list/search 查询面注入位置与审计 | S1 方案 | S1 | 对照 renderer/schema-render 查询链路 | open | — | 待确认（S1 闭合） |
-| I-003 | non-blocking | Profile 归属与权限键（admin 默认集？） | S1 方案 | S1 | S-01/S-02 内容扩展先例 | open | — | 待确认（S1 闭合） |
-| I-004 | non-blocking | 「组织范围」作用域与未立项 B-10（组织/部门/岗位）的依赖裁定：降级 / 桩 / 本波不纳入 | S1 方案 | S1 | A-002 016-F-003 登记；对照 B-10 触发条件（I-011-001 §5） | open | — | 待确认（S1 裁定） |
+| I-001 | required | 数据范围模型：作用域集合（全部/组织/本人…）、继承与角色权限合成语义 | S1 方案 | S1 | 对照既有 RBAC（roles/permissions-inheritance）+ 协议清单 | **verified** | — | D-002 §1（2026-08-15；all/self v1，org 按 I-004 排除） |
+| I-002 | required | 过滤下推集成点：list/search 查询面注入位置与审计 | S1 方案 | S1 | 对照 renderer/schema-render 查询链路 | **verified** | — | D-002 §2（2026-08-15；resourceFilter→ResourceEntity.List 边界） |
+| I-003 | non-blocking | Profile 归属与权限键（admin 默认集？） | S1 方案 | S1 | S-01/S-02 内容扩展先例 | **verified** | — | D-002 §3（2026-08-15；admin 默认集 + data-permission.read/write） |
+| I-004 | non-blocking | 「组织范围」作用域与未立项 B-10（组织/部门/岗位）的依赖裁定：降级 / 桩 / 本波不纳入 | S1 方案 | S1 | A-002 016-F-003 登记；对照 B-10 触发条件（I-011-001 §5） | **verified** | — | D-002 §1（2026-08-15：本波不纳入，枚举留扩展位） |
 
 ## 审计策略
 

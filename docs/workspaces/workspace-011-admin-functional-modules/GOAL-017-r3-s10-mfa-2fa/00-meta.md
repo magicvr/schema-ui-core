@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-15
 updated: 2026-08-15
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 ---
 
 # GOAL-017-r3-s10-mfa-2fa · MFA / 2FA（TOTP 双因素认证）
@@ -25,22 +25,22 @@ progress: 0/5
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：因子与恢复流程（TOTP 基准 / 恢复码策略 / 解绑）、登录挑战集成点与协议面（auth.login 扩展动作键、会话面、失效语义）、安全存储、权限键与 Profile 归属；方案级 self 审视 + **grok build independent（security 门禁，grok-4.6 · high）**
+- [x] **S1 · 方案冻结**：因子与恢复流程（TOTP 基准 / 恢复码策略 / 解绑）、登录挑战集成点与协议面（auth.login 扩展动作键、会话面、失效语义）、安全存储、权限键与 Profile 归属；方案级 self 审视 + **grok build independent（security 门禁，grok-4.6 · high）**（D-002，2026-08-15）
 - [ ] **S2 · 实现**：模块/内核扩展 + 挑战端点 + schema 页 + 测试
 - [ ] **S3 · 验证**：单元/集成 + 全量回归（go 全绿 / web 全量 / e2e 双 profile）
 - [ ] **S4 · go 影响判定 + 自审**
 - [ ] **S5 · 关门**：独立审计（grok build）+ 关门 + goal-tree 同步
 
-progress: 0/5 由五个等权检查点派生（S1 完成后更新）。
+progress: 1/5 由五个等权检查点派生（S1 完成后更新）。
 
 ## 信息就绪与未知项
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 因子与恢复流程：TOTP 基准/漂移窗、恢复码策略（数量/一次性/吊销）、解绑流程 | S1 方案 | S1 | 业界惯例（RFC 6238）+ 既有 auth 会话面 | open | — | 待确认（S1 闭合） |
-| I-002 | required | 登录挑战集成点与协议面：auth.login 扩展动作键、会话态、失效/吊销语义 | S1 方案 | S1 | 对照 auth 模块 + protocol-inventory（登录/会话面） | open | — | 待确认（S1 闭合） |
-| I-003 | non-blocking | 管理面与 Profile 归属：自助入口（个人中心）+ 管理员强制启用候选 | S1 方案 | S1 | F-03 个人中心先例 + 权限键清单 | open | — | 待确认（S1 闭合） |
-| I-004 | non-blocking | 与已关门 S-11 登录验证码的 login 链路合成裁定：先后/并存、失败计数分轨 | S1 方案 | S1 | A-002 017-F-003 登记；对照 GOAL-011 登录挑战先例 | open | — | 待确认（S1 裁定） |
+| I-001 | required | 因子与恢复流程：TOTP 基准/漂移窗、恢复码策略（数量/一次性/吊销）、解绑流程 | S1 方案 | S1 | 业界惯例（RFC 6238）+ 既有 auth 会话面 | **verified** | — | D-002 §1（2026-08-15） |
+| I-002 | required | 登录挑战集成点与协议面：auth.login 扩展动作键、会话态、失效/吊销语义 | S1 方案 | S1 | 对照 auth 模块 + protocol-inventory（登录/会话面） | **verified** | — | D-002 §3/§5（2026-08-15；AUTH-004 explicitly-out、AUTH-006 reserve-extension） |
+| I-003 | non-blocking | 管理面与 Profile 归属：自助入口（个人中心）+ 管理员强制启用候选 | S1 方案 | S1 | F-03 个人中心先例 + 权限键清单 | **verified** | — | D-002 §4（2026-08-15） |
+| I-004 | non-blocking | 与已关门 S-11 登录验证码的 login 链路合成裁定：先后/并存、失败计数分轨 | S1 方案 | S1 | A-002 017-F-003 登记；对照 GOAL-011 登录挑战先例 | **verified** | — | D-002 §3（2026-08-15：串行并存 + 分轨计数） |
 
 ## 审计策略
 
