@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-019-r3-s14-wallet-ledger
@@ -26,3 +26,4 @@ version: 0.2.0
 | D-001 | 2026-08-16 | 立项边界：模块身份、Profile 归属与审计策略 | accepted | 01-decision/D-001-goal-boundaries.md |
 | D-002 | 2026-08-16 | 方案冻结：钱包/账务（admin.wallet）设计（S1；I-001~I-004 闭合 + F-001/F-002 响应；v1.1.0 勘误） | accepted | 01-decision/D-002-s1-plan-freeze.md |
 | D-003 | 2026-08-16 | A-004 响应：S1 独立审计 required 全 fixed（F-001 apply 表 / F-002 幂等范围 + F-003~F-006 勘误） | accepted | 01-decision/D-003-a004-response.md |
+| D-004 | 2026-08-16 | S4 go 影响判定（内容扩展不触发失效，不暂挂） | accepted | 01-decision/D-004-s4-go-judgment.md |

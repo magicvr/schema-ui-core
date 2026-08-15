@@ -57,8 +57,18 @@ func (s *Service) GetAccount(id string) (*walletstore.Account, error) {
 	return s.repo.GetAccount(id)
 }
 
-// CreateAccount implements handler.WalletService. currency defaults to CNY.
+// CreateAccount implements handler.WalletService. ownerType must be a known
+// owner kind, ownerID non-empty (A-007 F-003: production validation matches
+// the test double); currency defaults to CNY.
 func (s *Service) CreateAccount(ownerType, ownerID, currency string, now time.Time) (*walletstore.Account, error) {
+	switch ownerType {
+	case walletstore.OwnerUser, walletstore.OwnerBusiness, walletstore.OwnerSystem:
+	default:
+		return nil, walletstore.ErrInvalidEntry
+	}
+	if ownerID == "" {
+		return nil, walletstore.ErrInvalidEntry
+	}
 	id, err := newID(now)
 	if err != nil {
 		return nil, err

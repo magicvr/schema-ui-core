@@ -194,8 +194,9 @@
       {
         "type": "table",
         "id": "wallet-table",
-        "permissionCascade": { "keys": ["edit", "adjust"] },
+        "permissionCascade": { "keys": ["read", "edit", "adjust"] },
         "permissions": {
+          "read": "$context.user.permissions contains \"wallet.read\"",
           "edit": "$context.user.permissions contains \"wallet.write\"",
           "adjust": "$context.user.permissions contains \"wallet.adjust\""
         },
@@ -213,7 +214,7 @@
           "dataSource": "/api/wallet/accounts",
           "toolbar": [
             { "key": "create", "label": "New account", "actionRef": "openCreate", "permissionIntent": "edit", "labelKey": "schema.wallet.toolbar.create" },
-            { "key": "reconcile", "label": "Reconcile", "actionRef": "runReconcile", "permissionIntent": "edit", "labelKey": "schema.wallet.toolbar.reconcile" }
+            { "key": "reconcile", "label": "Reconcile", "actionRef": "runReconcile", "permissionIntent": "read", "labelKey": "schema.wallet.toolbar.reconcile" }
           ],
           "actions": [
             { "key": "entries", "label": "Entries", "actionRef": "openEntries", "labelKey": "schema.wallet.action.entries" },

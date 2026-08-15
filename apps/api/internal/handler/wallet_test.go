@@ -109,6 +109,7 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"POST", "/api/wallet/accounts"},
 		{"PATCH", "/api/wallet/accounts/acct-1"},
 		{"GET", "/api/wallet/accounts/acct-1/entries"},
+		{"GET", "/api/wallet/entries?accountId=acct-1"},
 		{"POST", "/api/wallet/accounts/acct-1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/freeze"},
 		{"POST", "/api/wallet/accounts/acct-1/unfreeze"},
@@ -191,6 +192,22 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 		t.Fatalf("over-freeze = %d, want 409", rr.Code)
 	}
 
+	// Unfreeze 100 (audited) then disable the account (audited).
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/accounts/"+accountID+"/unfreeze", `{"amount":100,"memo":"release"}`))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("unfreeze = %d %s", rr.Code, rr.Body.String())
+	}
+	var afterUnfreeze map[string]any
+	_ = json.Unmarshal(rr.Body.Bytes(), &afterUnfreeze)
+	acctAfter, _ := afterUnfreeze["account"].(map[string]any)
+	ver, _ := json.Marshal(acctAfter["version"])
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"disabled","version":`+string(ver)+`}`))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status update = %d %s", rr.Code, rr.Body.String())
+	}
+
 	// Reconcile → consistent.
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/reconcile", ""))
@@ -203,6 +220,30 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	}
 	if run["result"] != "consistent" {
 		t.Fatalf("reconcile result = %v", run["result"])
+	}
+
+	// A-007 F-001: operationlog actually received the six wallet events.
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/operations?q=wallet", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("operations = %d %s", rr.Code, rr.Body.String())
+	}
+	var opsResp struct {
+		Items []struct {
+			Event string `json:"event"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &opsResp); err != nil {
+		t.Fatal(err)
+	}
+	events := map[string]bool{}
+	for _, item := range opsResp.Items {
+		events[item.Event] = true
+	}
+	for _, want := range []string{"wallet.account-create", "wallet.account-update", "wallet.adjust", "wallet.freeze", "wallet.unfreeze", "wallet.reconcile"} {
+		if !events[want] {
+			t.Fatalf("missing audit event %s (got %v)", want, events)
+		}
 	}
 }
 

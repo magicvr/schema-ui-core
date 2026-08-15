@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.4.0
+version: 0.6.0
 ---
 
 # 审计 · GOAL-019-r3-s14-wallet-ledger
@@ -25,14 +25,30 @@ version: 0.4.0
 | A-001 | 2026-08-16 | self | 立项（五件套 + 路线图 + 分档对齐 + goal-tree 同步） | pass | 0 | 03-audit/A-001-scaffold-self.md |
 | A-002 | 2026-08-16 | independent | 立项（五件套 + 分档/信息门禁/审计策略 + Root R3 / goal-tree / workspace.md 同步） | pass | 0 | 03-audit/A-002-scaffold-independent.md |
 | A-003 | 2026-08-16 | self | S1 方案冻结（D-002 + I-001~I-004 闭合 + F-001/F-002 响应） | pass | 0 | 03-audit/A-003-s1-self.md |
+| A-006 | 2026-08-16 | self | S2 实现 + S3 验证 + S4 go 判定 | pass | 0 | 03-audit/A-006-s2-s4-self.md |
+| A-007 | 2026-08-16 | independent | S5 关门（成功标准 + D-002 落实 + 实现/验证/安全/协议 + 台账） | pass | 0 | 03-audit/A-007-s5-independent.md |
 | A-004 | 2026-08-16 | independent | S1 方案冻结（D-002 + I-001~I-004 + F-001/F-002 响应 + data 门禁） | conditional | 2 | 03-audit/A-004-s1-independent.md |
 | A-005 | 2026-08-16 | independent | A-004 F-001~F-006 闭合核验 | pass | 0 | 03-audit/A-005-s1-reaudit.md |
+| A-007 | 2026-08-16 | independent | S5 关门（成功标准 + D-002 落实 + 实现/验证/安全/协议 + 台账） | pass | 0 | 03-audit/A-007-s5-independent.md |
+
+## 结论状态
+
+**GOAL-019 已关门（2026-08-16）**：A-001/A-003/A-006 self pass + A-002/A-004→A-005/A-007 grok build independent（data 门禁）0 required；I-001~I-004 verified；progress 5/5；波次级 e2e/V-007/V-008 留 R3 批末统一验证。独立意见不直接改 status；status: done 由 /govern 执行。
 
 ## 结论状态
 
 立项 scope：A-001 self **pass** + **A-002 grok build independent pass**（grok-4.6 · reasoning high；0 required；F-001/F-002 已随 D-002 响应）。**已放行立项**。
 
 S1 方案冻结 scope：A-003 self **pass** + **A-004 grok build independent conditional**（F-001/F-002 required → D-003 全 fixed → D-002 v1.1.0）+ **A-005 grok build reaudit pass**（0 required；F-001/F-002 合法闭合，门禁互否解除）。I-001/I-002/I-003 **verified**。**S1 门禁闭合——可放行 S2 实施**（S2 按 D-002 §1 apply 表 + §3 权限 + §6 基线 27→30 / 13→14 / 30→32 执行）。独立意见不直接改 status / progress；响应和状态变更走 /govern。
+
+## 响应记录（/govern · 2026-08-16 · S5 关门）
+
+- **A-007**（grok build · grok-4.6 · high · independent · close-out）verdict **pass**（0 required）——S5 关门放行。
+- 019-F-001（recommended · med）对账不一致 + operationlog 六事件无断言 → **fixed**（TestReconcileDetectsMismatch 经公共 WithTx 篡改构造 inconsistent 路径 + handler 六事件断言）。
+- 019-F-002（recommended · med）权限分键隔离无用例 → **部分 fixed**（补 GET /api/wallet/entries 403 用例；分键端点绑定 A-007 代码核对确认；完整隔离用例登记 R3 批末加固）。
+- 019-F-003（recommended · low）生产 CreateAccount 不校验 → **fixed**（provider 校验 ownerType/ownerID → 400 INVALID_WALLET_BODY）。
+- 019-F-004（recommended · low）对账工具栏 intent=edit → **fixed**（wallet.json read 键 + permissionCascade read）。
+- 波次级（e2e 双 profile + V-007/V-008 冒烟）：按 R3 批末统一验证，失败回流——不以此代替波次证据。
 
 ## 响应记录（/govern · 2026-08-16 · A-005）
 

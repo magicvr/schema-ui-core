@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-011-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-16
-version: 0.1.2
+version: 0.1.3
 parent: null
 ---
 
@@ -47,7 +47,7 @@ F-007（上传授权深度）deferred residual 由本 VP 消费时手递（owner
 |------|------|------|
 | R1 | 有界调研：候选池 + 基架对照 + 三档分档 + 回写 Root 路线图 | ✅ **done**（GOAL-002-r1-bounded-research 5/5；分档清单 I-011-001） |
 | R2 | 一等公民波 F-01～F-04（仪表盘 / 导入导出 / 个人中心与账户安全含启停 / 通知中心） | ✅ **done**（GOAL-003～GOAL-006 5/5 关门；独立关门审计 4 次全部 required 修复放行；V-007 exit 8 + V-008 exit 0 容器冒烟） |
-| R3 | 常用波 S-01～S-14（含订单、钱包——A-002 降档） | 第一批次 5/5（S-01/S-02 + V-008 exit 0）；第二批次 **GOAL-009~012 全部 5/5 关门**（系统监控/定时任务/登录验证码/回收站；V-007 exit 8 + V-008 exit 0 容器冒烟；go + 903/903 web + e2e 双 profile 全绿）；结构子目标 **GOAL-013-nav-order-config**（导航顺序方案 A）2026-08-14 立项，W7 关门后**5/5 关门**（S5 grok 审计 A-003 conditional → F-001 required 用户裁决 accepted-residual（产品权威序 = 仅 manifest）+ F-002 fixed 集成测试；E-006，2026-08-14）；**第三批次全部 5/5 关门（2026-08-15）**：GOAL-016（S-09 数据权限）+ GOAL-017（S-10 MFA/2FA，含用户裁决承接的 UI 子目标 GOAL-018-mfa-manager-ui 5/5）；security/data 门禁全程 grok build independent（grok-4.6 · high）；波次级验证 e2e 双 profile 16/16 + 容器冒烟 PASS；**第四批次（2026-08-16 立项）：S-14 钱包/账务（GOAL-019-r3-s14-wallet-ledger，0/5）** |
+| R3 | 常用波 S-01～S-14（含订单、钱包——A-002 降档） | 第一批次 5/5（S-01/S-02 + V-008 exit 0）；第二批次 **GOAL-009~012 全部 5/5 关门**（系统监控/定时任务/登录验证码/回收站；V-007 exit 8 + V-008 exit 0 容器冒烟；go + 903/903 web + e2e 双 profile 全绿）；结构子目标 **GOAL-013-nav-order-config**（导航顺序方案 A）2026-08-14 立项，W7 关门后**5/5 关门**（S5 grok 审计 A-003 conditional → F-001 required 用户裁决 accepted-residual（产品权威序 = 仅 manifest）+ F-002 fixed 集成测试；E-006，2026-08-14）；**第三批次全部 5/5 关门（2026-08-15）**：GOAL-016（S-09 数据权限）+ GOAL-017（S-10 MFA/2FA，含用户裁决承接的 UI 子目标 GOAL-018-mfa-manager-ui 5/5）；security/data 门禁全程 grok build independent（grok-4.6 · high）；波次级验证 e2e 双 profile 16/16 + 容器冒烟 PASS；**第四批次（2026-08-16 立项 → 同日关门）：S-14 钱包/账务（GOAL-019-r3-s14-wallet-ledger，5/5 · A-007 grok pass；e2e/V-007/V-008 留批末统一验证）** |
 | R4 | 表单体验 form-experience（字段级校验/错误展示 + 弹窗布局，用户 2026-08-14 裁决，GOAL-014） | **done**（5/5 · 2026-08-14 关门：fieldErrors 服务端+回显、提交前校验/内联、单列布局；A-003 fail → F-001/F-002 fixed 后关门） |
 | R4 | 数据字典内页 + 面包屑层级导航（GOAL-015-dict-inner-page-breadcrumb，用户 2026-08-14 裁决） | **done**（5/5 · 2026-08-14 关门） |
 | R4 | 增补 backlog B-01～B-11（登记 + 触发条件） | 已登记（I-011-001 §5） |

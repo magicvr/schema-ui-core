@@ -4,6 +4,9 @@
 package store_test
 
 import (
+	"context"
+	"database/sql"
+	"strings"
 	"testing"
 	"time"
 
@@ -231,7 +234,6 @@ func TestReconcileConsistentAndInconsistent(t *testing.T) {
 		t.Fatalf("per-account run = %s/%s", run2.Result, run2.AccountID)
 	}
 	_ = st
-
 	// List runs newest first.
 	runs, total, err := repo.ListReconcileRuns(1, 20)
 	if err != nil || total != 2 || len(runs) != 2 {
@@ -239,5 +241,38 @@ func TestReconcileConsistentAndInconsistent(t *testing.T) {
 	}
 	if runs[0].ID != "run-2" || runs[1].ID != "run-1" {
 		t.Fatalf("run order wrong")
+	}
+}
+
+// A-007 F-001: the inconsistent path is exercised by tampering the account
+// row directly through the platform transaction boundary (public WithTx).
+func TestReconcileDetectsMismatch(t *testing.T) {
+	st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { st.Close() })
+	repo := store.NewRepository(st)
+
+	createAccount(t, repo, "u1")
+	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 1000, Memo: "grant", ActorID: "a1", ActorName: "Admin"}, "e1", now()); err != nil {
+		t.Fatal(err)
+	}
+	// Tamper: the ledger says 1000, the account row says 500.
+	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE wallet_accounts SET balance_total = 500, balance_available = 500 WHERE id = ?", "acct-u1")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	run, err := repo.ReconcileRun("acct-u1", "run-mismatch", "a1", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run.Result != store.ResultInconsistent || run.MismatchCount != 1 {
+		t.Fatalf("mismatch run = %s/%d, want inconsistent/1", run.Result, run.MismatchCount)
+	}
+	if !strings.Contains(run.Details, "mismatches") {
+		t.Fatalf("details = %s, want mismatch list", run.Details)
 	}
 }
