@@ -40,6 +40,7 @@ progress: 3/5 由五个等权检查点派生（S1~S4 完成后更新）。
 | I-002 | required | 过滤下推集成点：list/search 查询面注入位置与审计 | S1 方案 | S1 | 对照 renderer/schema-render 查询链路 | **verified** | — | D-002 §2（2026-08-15；resourceFilter→ResourceEntity.List 边界） |
 | I-003 | non-blocking | Profile 归属与权限键（admin 默认集？） | S1 方案 | S1 | S-01/S-02 内容扩展先例 | **verified** | — | D-002 §3（2026-08-15；admin 默认集 + data-permission.read/write） |
 | I-004 | non-blocking | 「组织范围」作用域与未立项 B-10（组织/部门/岗位）的依赖裁定：降级 / 桩 / 本波不纳入 | S1 方案 | S1 | A-002 016-F-003 登记；对照 B-10 触发条件（I-011-001 §5） | **verified** | — | D-002 §1（2026-08-15：本波不纳入，枚举留扩展位） |
+| I-005 | non-blocking | owner_column 白名单校验（A-007 F-001）——首次登记生产资源前必办 | 登记首个生产资源 | 触发 | 登记时按白名单校验 owner 列并拒绝未知列 | open | 触发=首个生产资源登记（当前 enforceable=nil 无法落策略） | 待确认 |
 
 ## 审计策略
 

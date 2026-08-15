@@ -49,3 +49,10 @@ S5 关门 scope：A-006 self pass + A-007 independent fail（当时开放 F-001�
 - A-004（independent · conditional，2 required：F-001 数据模型不一致、F-002 admin reset 弱化）→ **D-003 全 fixed**（D-002 §2 status pending/active + fail_count + last_used_step、§4 admin reset 强化 token_version+1 + 吊销）；A-005（grok reaudit）**pass**，required 合法闭合。
 - A-005 recommended（pending 重复 enroll 覆盖、强制启用留扩展位、proof 回传形状、迁移合计）→ 已带入 D-002 §8 S2 清单。
 - **S1 门禁放行**：A-001 self pass + A-002 independent pass + A-003 self pass + A-004 conditional（已闭合）+ A-005 reaudit pass → 可进入 S2 实施。
+
+## 响应记录（/govern · 2026-08-15 · S5）
+
+- A-007 fail：F-001（high）/ F-002（med）→ **D-005 全 fixed**（auth-client 顺序 + Enroll 守卫 + 契约/回归测试 + enroll 错误映射）；A-008（grok reaudit）**pass**——required 合法闭合。
+- A-007 F-004（MFA 个人中心 UI 残余）→ **用户书面裁决：阻断关门**，新建 GOAL-018-mfa-manager-ui（renderer custom 节点 + MfaManager，S2/S3 已完成）；GOAL-018 关门后回归关闭本目标。
+- A-008 recommended F-002（整链客户端测试）登记后续补强；F-003 已随回归修正。
+- **关门状态**：A-007 required 闭合（A-008 pass）；本目标 S5 关门待 GOAL-018 回归后执行（含波次级 e2e/冒烟）。

@@ -49,3 +49,12 @@ S5 关门 scope：A-006 self pass + **A-007 independent pass**（0 required）�
 - A-004（independent · conditional，1 required F-001 list-only IDOR）→ **D-003 全 fixed**（D-002 §2 行访问全覆盖 + ScopeAware + 导出面必办、§3 default_scope 必填、§6 组合根 24→26）；A-005（grok reaudit）**pass**，required 合法闭合。
 - A-005 recommended（ScopeAware 强制点落 PATCH、Create owner 覆盖、全路径测试）→ 已带入 D-002 §8 S2 清单。
 - **S1 门禁放行**：A-001 self pass + A-002 independent pass + A-003 self pass + A-004 conditional（已闭合）+ A-005 reaudit pass → 可进入 S2 实施。
+
+## 响应记录（/govern · 2026-08-15 · S5）
+
+- A-007（grok build · grok-4.6 · high · independent）verdict **pass**（0 required）——S5 关门放行。
+- F-001（recommended · med）：owner_column 白名单未实现——**首次登记生产资源前必办**，已登记为 00-meta I-005（non-blocking，触发=登记首个生产资源）。
+- F-002（recommended · low）：省略 defaultScope 返回 INVALID_SCOPE（方案原文 INVALID_PATCH_FIELD）——语义（必填/400）满足，记录不改。
+- F-003（recommended · low）：台账组合根 26/13 → 实际 27/13（含 S-10 MFA +1 权限）；S-09 自身贡献仍为 +2 权限 / +1 导航，表述已修正。
+- 波次级（e2e 双 profile / V-007/V-008 容器冒烟）：接受为关门后统一验证（GOAL-012 E-004 先例），批末补跑。
+- **S5 门禁放行**：审计链 A-001~A-007 全部闭合 → status=done 由 /govern 执行（待波次级验证一并落）。

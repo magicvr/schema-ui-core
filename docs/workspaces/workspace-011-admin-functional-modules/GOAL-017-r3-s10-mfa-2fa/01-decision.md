@@ -27,3 +27,4 @@ version: 0.1.0
 | D-002 | 2026-08-15 | 方案冻结：MFA / 2FA（TOTP）设计（S1） | accepted | 01-decision/D-002-s1-plan-freeze.md |
 | D-003 | 2026-08-15 | A-004 响应：S1 独立审计 required 全 fixed | accepted | 01-decision/D-003-a004-response.md |
 | D-004 | 2026-08-15 | S4 go 影响判定（内容扩展不触发失效，不暂挂） | accepted | 01-decision/D-004-s4-go-judgment.md |
+| D-005 | 2026-08-15 | A-007/A-008 响应：required 全 fixed + MFA UI 用户裁决（阻断 → GOAL-018） | accepted | 01-decision/D-005-a007-response.md |
