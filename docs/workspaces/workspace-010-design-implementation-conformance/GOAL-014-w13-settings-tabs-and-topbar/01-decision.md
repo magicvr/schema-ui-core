@@ -25,7 +25,8 @@ version: 0.1.0
 | D-001 | 2026-08-16 | 开波：四项交互整改纳入本波；设计冻结 | accepted（范围+设计） | `01-decision/D-001-w13-freeze.md` |
 | D-002 | 2026-08-16 | 追加：移动端汉堡靠左修正 + T-05 头像上传设计 | accepted（范围+设计） | `01-decision/D-002-w13-followup-avatar.md` |
 | D-003 | 2026-08-16 | 追加：T-06 通知中心交互修正设计（点击即读 + 展开详情 + 未读数即时刷新） | accepted（范围+设计） | `01-decision/D-003-t06-notification-interactions.md` |
+| D-004 | 2026-08-16 | 追加：T-07 列表筛选即时生效设计（即时控件 vs 提交式文本框；chips 以已提交查询为真相源） | accepted（范围+设计） | `01-decision/D-004-t07-live-filters.md` |
 
 ## 待决问题（P-004）
 
-无。追加指令即范围确认；通知交互修正为呈现/交互层整改（仅响应头 + 自定义组件），无冲突意见、无开放 required 信息项。
+无。追加指令即范围确认；筛选即时生效为渲染层整改（无协议/schema/Go 变更），无冲突意见、无开放 required 信息项。
