@@ -2,9 +2,9 @@
 title: 目标树 · workspace-010-design-implementation-conformance
 status: active
 created: 2026-08-11
-updated: 2026-08-15
+updated: 2026-08-16
 parent: null
-version: 0.10.0
+version: 0.11.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -29,12 +29,15 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-009-w8-component-visual-style [done] · W8 组件视觉样式优化（语种下拉 / 明暗按钮 / 下拉暗色审计）（5/5）
 ├── GOAL-010-w9-branding-asset-upload [done] · W9 品牌图标上传（专用资产存储 + 自动图像处理）（6/6）
 ├── GOAL-011-w10-account-page-conformance [done] · W10 个人中心页面层符合性（数据权限页修复 + 表格样式刷新）（4/4）
-└── GOAL-012-w11-mfa-ux-review [done] · W11 个人中心 MFA 缺陷修复与全局 UX 审视整改（5/5）
+├── GOAL-012-w11-mfa-ux-review [done] · W11 个人中心 MFA 缺陷修复与全局 UX 审视整改（5/5）
+└── GOAL-013-w12-product-surface-intent [active] · W12 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置）（2/4）
 ```
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
 
 **W5（2026-08-14 关门，4/4）**：recordView 按 schema 声明渲染字段（标题/顺序），缺失/异常 fail-open 兜底；users/roles/activity schema + i18n + 测试；dev 脚本与 QUICKSTART 卫生。HEAD 回归 V-001～V-006 绿；**go 判定：无影响、不暂挂**（未改 Profile 默认集/模块矩阵/Manifest 装配/协议 pin）。A-001 记录跨门禁 F-1（容器 smoke 复现性破损，W3 引入）移交 freshness review。
+
+**W12（2026-08-16，2/4）**：S1/S2 冻结（D-002～D-008）。T-04 移交 [workspace-011] GOAL-022。待 S3：P0=T-05+T-01；P1=T-03+T-02；P2=T-06。
 
 **W11（2026-08-15 关门，5/5）**：S1 裁决（D-001/D-002/D-003）；S2 MFA 三缺陷修复（二维码、401→400 分轨、解绑成功提示+登出、错码重填）；S3 UX P0（optionsSource 上游对象形态 + /api/permissions、/api/menu-items 目录端点）；S4 UX P1（Toast 浮动、8 页搜索表单、行操作收纳、分页增强、空状态）；S5 回归 Go 全量 + Web 1002/1002 + tsc 0；审计 A-001 self pass + A-002 independent（grok）conditional→resolved（F-001~F-007 全 fixed）+ A-003 closeout self pass；go 判定：无影响不暂挂。
 
@@ -61,7 +64,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-010-w9-branding-asset-upload | W9 · 品牌图标上传（专用资产存储 + 自动图像处理） | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-15 |
 | GOAL-011-w10-account-page-conformance | W10 · 个人中心页面层符合性（数据权限页修复 + 表格样式刷新） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-15 |
 | GOAL-012-w11-mfa-ux-review | W11 · 个人中心 MFA 缺陷修复与全局 UX 审视整改（M-01～M-03 + U-01～U-14 落盘） | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-15 |
-| GOAL-009-w8-component-visual-style | W8 · 组件视觉样式优化（语种下拉 / 明暗按钮 / 下拉暗色审计） | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-14 |
+| GOAL-013-w12-product-surface-intent | W12 · 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置） | GOAL-001-design-implementation-conformance | active | 2/4 | 2026-08-16 |
 
 ## 维护说明
 
