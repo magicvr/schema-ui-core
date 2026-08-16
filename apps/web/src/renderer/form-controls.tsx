@@ -155,7 +155,7 @@ function displayValue(field: FormControlField, value: unknown): unknown {
 }
 
 const controlClass =
-  "h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+  "h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50";
 
 function BaseInput({
   id,
@@ -182,14 +182,14 @@ function BaseInput({
   const t = useTranslate();
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground/80 select-none">
         {label}
       </Label>
       <div className="relative">
         {searchMode === true ? (
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60"
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50"
           />
         ) : null}
         <Input
@@ -205,7 +205,7 @@ function BaseInput({
           autoComplete={type === "password" ? "new-password" : undefined}
           onChange={(event) => onChange(event.target.value)}
           className={cn(
-            searchMode === true ? "pl-8" : undefined,
+            searchMode === true ? "pl-9" : undefined,
             searchMode === true && value !== "" ? "pr-8" : undefined,
           )}
         />
@@ -213,10 +213,10 @@ function BaseInput({
           <button
             type="button"
             aria-label={t("feedback.clearSearch")}
-            className="absolute right-2 top-1/2 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+            className="absolute right-2.5 top-1/2 inline-flex size-4.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground active:scale-95"
             onClick={() => onChange("")}
           >
-            <X aria-hidden="true" className="size-3.5" />
+            <X aria-hidden="true" className="size-3" />
           </button>
         ) : null}
       </div>
@@ -259,13 +259,13 @@ function SelectField({
     };
     return (
       <fieldset className="space-y-1.5">
-        <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
-        <div className="space-y-1">
+        <legend className="text-xs font-medium text-muted-foreground/80 select-none">{label}</legend>
+        <div className="space-y-1.5">
           {options.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 text-sm">
+            <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm text-foreground/90 transition-colors hover:text-foreground">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
+                className="size-4 cursor-pointer rounded border-input text-primary accent-primary transition-colors focus:ring-2 focus:ring-ring/20"
                 checked={selected.includes(option.value)}
                 disabled={disabled || readOnly}
                 onChange={() => toggle(option.value)}
@@ -279,7 +279,7 @@ function SelectField({
   }
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground/80 select-none">
         {label}
       </Label>
       {/* W8 P3 (GOAL-009): control-level color-scheme so the native option
@@ -292,18 +292,21 @@ function SelectField({
           onChange={(event) => onChange(event.target.value)}
           className={cn(
             controlClass,
-            "appearance-none pr-8 scheme-light dark:scheme-dark",
+            "appearance-none pr-8 cursor-pointer scheme-light dark:scheme-dark",
+            value === "" || value === undefined || value === null
+              ? "text-muted-foreground"
+              : "text-foreground font-normal",
           )}
         >
           {options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} className="bg-background text-foreground">
               {option.label}
             </option>
           ))}
         </select>
         <ChevronDown
           aria-hidden="true"
-          className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60 transition-transform"
         />
       </div>
     </div>
@@ -336,15 +339,15 @@ function RadioField({
   const current = value === undefined || value === null ? "" : String(value);
   return (
     <fieldset className="space-y-1.5" id={id}>
-      <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
-      <div className="space-y-1">
+      <legend className="text-xs font-medium text-muted-foreground/80 select-none">{label}</legend>
+      <div className="space-y-1.5">
         {options.map((option) => (
-          <label key={option.value} className="flex items-center gap-2 text-sm">
+          <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm text-foreground/90 transition-colors hover:text-foreground">
             <input
               type="radio"
               name={id}
               value={option.value}
-              className="size-4 accent-primary"
+              className="size-4 cursor-pointer accent-primary"
               checked={current === option.value}
               disabled={disabled || readOnly}
               onChange={() => onChange(option.value)}
@@ -390,15 +393,16 @@ function CheckboxGroupField({
   };
   return (
     <fieldset className="space-y-1.5" id={id}>
-      <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
-      <div className="space-y-1">
+      <legend className="text-xs font-medium text-muted-foreground/80 select-none">{label}</legend>
+      <div className="space-y-1.5">
         {options.map((option) => (
-          <label key={option.value} className="flex items-center gap-2 text-sm">
+          <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm text-foreground/90 transition-colors hover:text-foreground">
             <input
               type="checkbox"
               checked={selected.includes(option.value)}
               disabled={disabled || readOnly}
               onChange={() => toggle(option.value)}
+              className="size-4 cursor-pointer rounded border-input text-primary accent-primary transition-colors focus:ring-2 focus:ring-ring/20"
             />
             {option.label}
           </label>
@@ -428,18 +432,20 @@ function BooleanField({
   const checked = value === true;
   const t = useTranslate();
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex items-center gap-2.5 pt-1 text-sm">
       <input
         id={id}
         type="checkbox"
         checked={checked}
         disabled={disabled || readOnly}
         onChange={(event) => onChange(event.target.checked)}
-        className="size-4 accent-primary"
+        className="size-4 cursor-pointer rounded border-input text-primary accent-primary transition-colors focus:ring-2 focus:ring-ring/20"
       />
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="cursor-pointer font-normal text-foreground select-none">{label}</Label>
       {field.type === "switch" ? (
-        <span className="text-xs text-muted-foreground">{t("feedback.switchMarker")}</span>
+        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          {t("feedback.switchMarker")}
+        </span>
       ) : null}
     </div>
   );
@@ -464,7 +470,7 @@ function TextAreaField({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground/80 select-none">
         {label}
       </Label>
       <Textarea
@@ -503,7 +509,7 @@ function NumberField({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground/80 select-none">
         {label}
       </Label>
       <Input
@@ -547,7 +553,7 @@ function DateField({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground/80 select-none">
         {label}
       </Label>
       <Input
@@ -558,6 +564,7 @@ function DateField({
         readOnly={readOnly}
         min={min}
         max={max}
+        className="cursor-pointer scheme-light dark:scheme-dark"
         onChange={(event) => onChange(event.target.value)}
       />
     </div>
@@ -581,7 +588,7 @@ function DateRangeField({
 }) {
   return (
     <fieldset className="space-y-1.5" id={id}>
-      <legend className="text-xs font-medium text-muted-foreground">{label}</legend>
+      <legend className="text-xs font-medium text-muted-foreground/80 select-none">{label}</legend>
       <div className="flex items-center gap-2">
         <Input
           type="date"
@@ -589,15 +596,17 @@ function DateRangeField({
           disabled={disabled}
           readOnly={readOnly}
           aria-label={`${label} start`}
+          className="cursor-pointer scheme-light dark:scheme-dark"
           onChange={(event) => onChange({ ...value, start: event.target.value })}
         />
-        <span className="text-xs text-muted-foreground">–</span>
+        <span className="text-xs font-medium text-muted-foreground/60 select-none">–</span>
         <Input
           type="date"
           value={value.end}
           disabled={disabled}
           readOnly={readOnly}
           aria-label={`${label} end`}
+          className="cursor-pointer scheme-light dark:scheme-dark"
           onChange={(event) => onChange({ ...value, end: event.target.value })}
         />
       </div>

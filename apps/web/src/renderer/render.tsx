@@ -1607,7 +1607,7 @@ function FormInner({
 
   return (
     <form
-      className={isSearch ? "space-y-3 rounded-lg border border-border/80 bg-card/60 p-3.5 shadow-xs" : "space-y-3"}
+      className={isSearch ? "space-y-3.5 rounded-xl border border-border/70 bg-card/85 p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.03),0_1px_2px_-1px_rgba(0,0,0,0.03)] dark:border-border/60 dark:bg-card/70 dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.2)]" : "space-y-3"}
       onSubmit={(event) => {
         event.preventDefault();
         void handleSubmit();
@@ -1647,9 +1647,9 @@ function FormInner({
             <button
               type="submit"
               disabled={hasBlockingErrors}
-              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
             >
-              <Search aria-hidden="true" className="size-4" />
+              <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
               {resolveTextProp(
                 node.props as unknown as Record<string, unknown>,
                 "submitLabelKey",
@@ -1666,9 +1666,9 @@ function FormInner({
               <button
                 type="button"
                 onClick={resetValues}
-                className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-input/80 bg-background px-3.5 text-sm font-medium text-muted-foreground shadow-2xs transition-all duration-150 hover:border-muted-foreground/30 hover:bg-accent/40 hover:text-foreground hover:shadow-xs active:scale-[0.98]"
               >
-                <RotateCcw aria-hidden="true" className="size-4" />
+                <RotateCcw aria-hidden="true" className="size-3.5" />
                 {t("feedback.reset")}
               </button>
             </div>
@@ -1693,7 +1693,7 @@ function FormInner({
         </p>
       ) : null}
       {activeFilters.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2" data-filter-chips>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2.5 text-xs" data-filter-chips>
           {activeFilters.map(({ field, valueLabel }) => {
             const fieldLabel = resolveTextProp(
               field as unknown as Record<string, unknown>,
@@ -1705,23 +1705,24 @@ function FormInner({
             return (
               <span
                 key={field.id}
-                className="inline-flex h-6 items-center gap-1 rounded-full border border-border bg-background px-2 text-xs text-foreground"
+                className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/70 bg-muted/40 px-2.5 text-xs font-normal text-foreground/90 shadow-2xs transition-all hover:border-border dark:bg-muted/30"
               >
-                {fieldLabel}={valueLabel}
+                <span className="text-muted-foreground/80">{fieldLabel}:</span>
+                <span className="font-medium text-foreground">{valueLabel}</span>
                 <button
                   type="button"
                   aria-label={t("feedback.removeFilter") + ": " + fieldLabel}
-                  className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="ml-0.5 inline-flex size-3.5 cursor-pointer items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted-foreground/20 hover:text-foreground"
                   onClick={() => removeFilter(field)}
                 >
-                  <X aria-hidden="true" className="size-3" />
+                  <X aria-hidden="true" className="size-3 stroke-[2.5]" />
                 </button>
               </span>
             );
           })}
           <button
             type="button"
-            className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            className="ml-1 cursor-pointer text-xs font-medium text-muted-foreground/70 underline-offset-4 transition-colors hover:text-destructive hover:underline"
             onClick={resetValues}
           >
             {t("feedback.clearFilters")}
