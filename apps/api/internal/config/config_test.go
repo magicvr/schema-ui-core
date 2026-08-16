@@ -10,8 +10,6 @@ import (
 
 func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 	t.Run("default mvp profile", func(t *testing.T) {
-		t.Setenv("APP_PROFILE", "")
-		t.Setenv("APP_MODULES_ENABLED", "")
 		cfg := Load()
 		if cfg.ProfileError != nil {
 			t.Fatal(cfg.ProfileError)
@@ -21,27 +19,103 @@ func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 		}
 	})
 
-	t.Run("explicit modules override profile defaults", func(t *testing.T) {
-		t.Setenv("APP_PROFILE", "admin")
+	t.Run("app.modules.list overrides profile defaults (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    list: [core.server-registration, admin.users]
+`)
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.list" {
+			t.Fatalf("ProfileSource = %q, want modules.list", cfg.ProfileSource)
+		}
+		if len(cfg.ModulesEnabled) != 2 || cfg.ModulesEnabled[0] != "core.server-registration" || cfg.ModulesEnabled[1] != "admin.users" {
+			t.Fatalf("ModulesEnabled = %v", cfg.ModulesEnabled)
+		}
+		if cfg.ProfileName != "custom" {
+			t.Fatalf("ProfileName = %q, want custom", cfg.ProfileName)
+		}
+	})
+
+	t.Run("app.modules.preset builtin name (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    preset: admin
+`)
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.preset" || cfg.ProfileName != "admin" {
+			t.Fatalf("preset resolution = %s/%s, want modules.preset/admin", cfg.ProfileSource, cfg.ProfileName)
+		}
+		if len(cfg.ModulesEnabled) == 0 {
+			t.Fatal("preset admin must enable modules")
+		}
+	})
+
+	t.Run("app.modules.preset custom file (T-06)", func(t *testing.T) {
+		dir := t.TempDir()
+		preset := filepath.Join(dir, "custom.yaml")
+		if err := os.WriteFile(preset, []byte(`modules:
+  - core.server-registration
+  - admin.roles
+`), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    preset: `+preset+`
+`)
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.preset" || len(cfg.ModulesEnabled) != 2 {
+			t.Fatalf("preset file resolution: source=%s modules=%v", cfg.ProfileSource, cfg.ModulesEnabled)
+		}
+	})
+
+	t.Run("app.modules preset and list are mutually exclusive (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    preset: admin
+    list: [core.server-registration]
+`)
+		cfg := Load()
+		if cfg.ProfileError == nil || !strings.Contains(cfg.ProfileError.Error(), "mutually exclusive") {
+			t.Fatalf("both preset+list must fail closed, got %v", cfg.ProfileError)
+		}
+	})
+
+	t.Run("custom profile without app.modules fails closed (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: custom
+`)
+		cfg := Load()
+		if cfg.ProfileError == nil {
+			t.Fatal("custom profile without app.modules must fail closed")
+		}
+		if !strings.Contains(cfg.ProfileError.Error(), "app.modules") {
+			t.Fatalf("custom profile error = %q, want app.modules mention", cfg.ProfileError)
+		}
+	})
+
+	t.Run("legacy env module selectors are ignored (T-06)", func(t *testing.T) {
+		t.Setenv("APP_PROFILE", "demo")
 		t.Setenv("APP_MODULES_ENABLED", "core.server-registration")
 		cfg := Load()
 		if cfg.ProfileError != nil {
 			t.Fatal(cfg.ProfileError)
 		}
-		if cfg.ProfileSource != "modules.enabled" || len(cfg.ModulesEnabled) != 1 || cfg.ModulesEnabled[0] != "core.server-registration" {
-			t.Fatalf("unexpected explicit module config: %+v", cfg)
-		}
-	})
-
-	t.Run("custom profile requires explicit modules", func(t *testing.T) {
-		t.Setenv("APP_PROFILE", "custom")
-		t.Setenv("APP_MODULES_ENABLED", "")
-		cfg := Load()
-		if cfg.ProfileError == nil {
-			t.Fatal("custom profile without modules must fail closed")
-		}
-		if !strings.Contains(cfg.ProfileError.Error(), "APP_MODULES_ENABLED") {
-			t.Fatalf("custom profile error = %q, want actual environment key", cfg.ProfileError)
+		if cfg.ProfileName != "mvp" {
+			t.Fatalf("APP_PROFILE must be ignored (YAML-only), got %q", cfg.ProfileName)
 		}
 	})
 }

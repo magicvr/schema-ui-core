@@ -73,10 +73,15 @@ type Config struct {
 // are rejected by yaml.v3 KnownFields so typos fail loudly.
 type yamlFile struct {
 	App struct {
-		Name           *string `yaml:"name"`
-		Env            *string `yaml:"env"`
-		Profile        *string `yaml:"profile"`
-		ModulesEnabled *string `yaml:"modules_enabled"`
+		Name    *string   `yaml:"name"`
+		Env     *string   `yaml:"env"`
+		Profile *string   `yaml:"profile"`
+		// T-06 (GOAL-013 D-007): app.modules — preset (builtin name or preset
+		// file path) OR inline list; mutually exclusive. This is the ONLY
+		// authority for the enabled-module set (APP_PROFILE /
+		// APP_MODULES_ENABLED and the legacy app.modules_enabled comma string
+		// are no longer read).
+		Modules yaml.Node `yaml:"modules"`
 	} `yaml:"app"`
 	HTTP struct {
 		Addr         *string `yaml:"addr"`
@@ -280,7 +285,7 @@ func Load() *Config {
 	cfg.AuthDevSessionEnabled = boolEnv("AUTH_DEV_SESSION_ENABLED", cfg.AuthDevSessionEnabled)
 	cfg.DBPath = envOr("DB_PATH", cfg.DBPath)
 	cfg.AdminInitialPassword = envOr("ADMIN_INITIAL_PASSWORD", cfg.AdminInitialPassword)
-	cfg.ProfileName = envOr("APP_PROFILE", profile)
+	cfg.ProfileName = profile
 	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
 	cfg.UploadMaxFilesPerUser = positiveIntEnv("UPLOAD_MAX_FILES_PER_USER", cfg.UploadMaxFilesPerUser)
 	cfg.UploadMaxBytesPerUser = positiveIntEnv("UPLOAD_MAX_BYTES_PER_USER", cfg.UploadMaxBytesPerUser)
@@ -289,16 +294,10 @@ func Load() *Config {
 	cfg.BrandingFaviconDimension = positiveIntEnv("BRANDING_FAVICON_DIMENSION", cfg.BrandingFaviconDimension)
 	cfg.BrandingJPEGQuality = positiveIntEnv("BRANDING_JPEG_QUALITY", cfg.BrandingJPEGQuality)
 
-	explicitModules := os.Getenv("APP_MODULES_ENABLED")
-	if explicitModules == "" {
-		explicitModules = strPtrOr(yf.App.ModulesEnabled, "")
-	}
-	parsedModules, err := kernel.ParseModuleList(explicitModules)
-	if err != nil {
-		cfg.ProfileError = err
-		return cfg
-	}
-	resolved, err := kernel.ResolveProfile(cfg.ProfileName, parsedModules)
+	// T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only.
+	// app.modules (preset name/path or inline list) is authoritative; the
+	// app.profile builtin defaults apply when it is absent.
+	resolved, err := resolveModulesFromYAML(yf.App.Modules, cfg.ProfileName)
 	if err != nil {
 		cfg.ProfileError = err
 		return cfg
@@ -309,6 +308,114 @@ func Load() *Config {
 	cfg.ProfilePrecedence = append([]string(nil), resolved.Precedence...)
 	return cfg
 }
+// modulesPresetNames are the compiled built-in presets (D-007 §2: mvp /
+// admin / demo; their module sets stay identical to kernel.ResolveProfile).
+var modulesPresetNames = map[string]bool{"mvp": true, "admin": true, "demo": true}
+
+// resolveModulesFromYAML resolves the enabled-module set from the app.modules
+// YAML node (T-06 · GOAL-013 D-007):
+//   - preset: <name>  — builtin compiled preset (mvp | admin | demo)
+//   - preset: <path>  — custom preset YAML file declaring a modules: list
+//   - list: [a, b]    — inline module ids (the "custom" form)
+// preset and list are mutually exclusive; both present fails closed. A node
+// kind of 0 means the section is absent — the app.profile builtin defaults
+// apply.
+func resolveModulesFromYAML(node yaml.Node, profileName string) (kernel.ProfileResolution, error) {
+	if node.Kind == 0 {
+		return kernel.ResolveProfile(profileName, nil)
+	}
+	if node.Kind != yaml.MappingNode {
+		return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules must be a mapping with preset or list")
+	}
+	var preset, list *yaml.Node
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key := node.Content[i]
+		if key.Kind != yaml.ScalarNode {
+			continue
+		}
+		switch key.Value {
+		case "preset":
+			preset = node.Content[i+1]
+		case "list":
+			list = node.Content[i+1]
+		}
+	}
+	if preset != nil && list != nil {
+		return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules preset and list are mutually exclusive")
+	}
+	if preset != nil {
+		name := strings.TrimSpace(preset.Value)
+		if name == "" {
+			return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules.preset must not be empty")
+		}
+		var resolved kernel.ProfileResolution
+		var err error
+		if modulesPresetNames[name] {
+			resolved, err = kernel.ResolveProfile(name, nil)
+		} else {
+			// Custom preset file: a YAML document declaring a modules: list.
+			var modules []string
+			modules, err = loadPresetFile(name)
+			if err == nil {
+				resolved, err = kernel.ResolveProfile(string(kernel.ProfileCustom), modules)
+			}
+		}
+		if err != nil {
+			return kernel.ProfileResolution{}, err
+		}
+		// The preset form is one YAML authority; surface it as modules.preset
+		// regardless of whether the preset was a builtin or a custom file.
+		resolved.Source = "modules.preset"
+		resolved.Precedence = []string{"compiled-profile-default", "modules.preset"}
+		return resolved, nil
+	}
+	if list != nil {
+		if list.Kind != yaml.SequenceNode {
+			return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules.list must be a YAML list")
+		}
+		modules := make([]string, 0, len(list.Content))
+		for _, item := range list.Content {
+			if item.Kind != yaml.ScalarNode || item.Tag != "!!str" {
+				return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules.list entries must be strings")
+			}
+			modules = append(modules, item.Value)
+		}
+		if len(modules) == 0 {
+			return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules.list must not be empty")
+		}
+		return kernel.ResolveProfile(string(kernel.ProfileCustom), modules)
+	}
+	return kernel.ProfileResolution{}, fmt.Errorf("config: app.modules must declare preset or list")
+}
+
+// presetFile is the shape of a custom preset YAML file (app.modules.preset
+// pointing at a path): a single modules: list.
+type presetFile struct {
+	Modules []string `yaml:"modules"`
+}
+
+// loadPresetFile reads a custom preset YAML file and returns its module list.
+func loadPresetFile(path string) ([]string, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("config: app.modules.preset %q: %w", path, err)
+	}
+	var pf presetFile
+	dec := yaml.NewDecoder(strings.NewReader(string(raw)))
+	dec.KnownFields(true)
+	if err := dec.Decode(&pf); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, fmt.Errorf("config: preset %q is empty", path)
+		}
+		return nil, fmt.Errorf("config: parse preset %q: %w", path, err)
+	}
+	if len(pf.Modules) == 0 {
+		return nil, fmt.Errorf("config: preset %q declares no modules", path)
+	}
+	return pf.Modules, nil
+}
+
+
 
 // parseNavigationOrder extracts a string sequence from the YAML navigation
 // node. A missing/empty/null order yields nil (kernel default applies). A

@@ -39,7 +39,7 @@ architecture_boundary: module-architecture.md
 | M1 | **模块 id / 版本 / 内核 API 范围 / 依赖** | 实现 `kernel.Provider`：`Descriptor()` 返回稳定不可复用 `ID`、`Version`、`KernelAPIRange`、显式 `DependsOn`（可为空列表但必须声明）。契约类型：`apps/api/internal/kernel/module.go`。 |
 | M2 | **核心六项贡献** | 标准 Admin 功能模块必须实现 HTTP、Schema、Authorization、Navigation、Manifest、Persistence（语义见 architecture §2.1）。通过 `Register(ctx, Registrar)` 注册；不得以「按需」永久缺省六项。 |
 | M3 | **组合根静态候选注册** | 在 `apps/api/internal/composition/composition.go` 将 Provider 纳入已编译候选集（静态 import + 按 `plan.HasModule(...)` 装配）。不得依赖运行时下载/插件加载。 |
-| M4 | **Profile / `modules.enabled` 成员关系** | 新模块若需进入默认 Profile，更新 `apps/api/internal/kernel/profile.go` 中 `profileDefaults`（`mvp` / `admin` 等）；custom 须显式 `modules.enabled`。解析优先级见 architecture §3 与 config。 |
+| M4 | **Profile / `modules.list` 成员关系** | 新模块若需进入默认 Profile，更新 `apps/api/internal/kernel/profile.go` 中 `profileDefaults`（`mvp` / `admin` 等）；custom 须显式 `modules.enabled`。解析优先级见 architecture §3 与 config。 |
 | M5 | **全局迁移台账参与** | 若模块拥有 schema 迁移：经 `apps/api/internal/modules/compiled/persistence.go` 的 `PersistenceProviders()` 参与 **全局** 不可变 checksum 台账；**不以是否启用以过滤迁移**（architecture §4.1）。无迁移时 `CompiledPersistence()` 可返回空，但仍须声明 Persistence 能力语义。 |
 | M6 | **验证 / 回归最小集** | 至少：模块级 Provider/契约测试；依赖/冲突 fail-closed；相关 Profile 启动路径；页面/权限/导航可观察。仓库范例：`apps/api/internal/modules/users/provider_test.go`、`apps/api/internal/kernel/provider_test.go`、`apps/api/internal/composition/composition_test.go`。 |
 

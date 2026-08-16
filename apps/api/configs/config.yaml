@@ -32,10 +32,16 @@ app:
   # development | production | test. Empty keeps the explicit-set requirement
   # of ValidateProd (APP_ENV must be set explicitly, refusing to guess).
   env: ""
-  # mvp | admin | demo | custom. custom requires app.modules_enabled.
+  # mvp | admin | demo. Selects the built-in preset when app.modules is absent.
   profile: mvp
-  # Optional comma-separated override of the Profile module set.
-  modules_enabled: ""
+  # T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only — either a
+  # preset (builtin name or a custom preset file path) or an inline list.
+  # preset and list are mutually exclusive. APP_PROFILE / APP_MODULES_ENABLED
+  # env vars and the legacy app.modules_enabled comma string are NOT read.
+  # modules:
+  #   preset: admin            # builtin: mvp | admin | demo
+  #   preset: ./configs/modules/my-company.yaml   # custom preset file
+  #   list: [core.server-registration, admin.users, admin.roles]
 
 http:
   addr: ":25080"

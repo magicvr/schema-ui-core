@@ -2,7 +2,7 @@
 // kernel.Provider. W1 (GOAL-002 / workspace-010): the protocol example pages and
 // Examples navigation are a horizontal, dev-only demonstration surface — never
 // enabled by mvp/admin defaults, explicitly enableable for development/dogfood
-// via APP_MODULES_ENABLED or a dedicated profile (D-003 §3).
+// via app.modules (config.yaml) or a dedicated profile (D-003 §3).
 //
 // dev.examples is exempt from the standard Admin six-face: it contributes only
 // Schema documents + a Manifest fragment (no HTTP API / permissions / system-data

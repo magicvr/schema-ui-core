@@ -57,7 +57,7 @@ func TestModuleContributionPlaybookShippedContent(t *testing.T) {
 		"模块 id / 版本 / 内核 API 范围 / 依赖",
 		"核心六项贡献",
 		"组合根静态候选注册",
-		"Profile / `modules.enabled`",
+		"Profile / `modules.list`",
 		"全局迁移台账",
 		"验证 / 回归最小集",
 		"不要为接模块改 Renderer",

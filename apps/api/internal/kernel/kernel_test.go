@@ -78,7 +78,7 @@ func TestProfileOverrideAndCustomRequireExplicitModules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resolved.Source != "modules.enabled" || !reflect.DeepEqual(resolved.Modules, []string{"core.server-registration"}) {
+	if resolved.Source != "modules.list" || !reflect.DeepEqual(resolved.Modules, []string{"core.server-registration"}) {
 		t.Fatalf("unexpected override: %+v", resolved)
 	}
 	if _, err := ResolveProfile("custom", nil); err == nil {

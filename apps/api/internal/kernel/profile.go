@@ -93,7 +93,8 @@ var profileDefaults = map[ProfileName][]string{
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
-	// dev.examples module, so a single APP_PROFILE=demo boots the protocol
+	// dev.examples module, so a single app.profile: demo (or app.modules.preset:
+// demo) boots the protocol
 	// examples alongside the real mvp pages. It is never a production default.
 	ProfileDemo: {
 		"core.server-registration",
@@ -138,19 +139,19 @@ func ResolveProfile(name string, explicitModules []string) (ProfileResolution, e
 		return ProfileResolution{}, kernelError(CodeProfileUnknown, string(profileName), "profile is not compiled")
 	}
 	if profileName == ProfileCustom && len(explicitModules) == 0 {
-		return ProfileResolution{}, kernelError(CodeProfileModulesRequired, string(profileName), "custom profile requires APP_MODULES_ENABLED")
+		return ProfileResolution{}, kernelError(CodeProfileModulesRequired, string(profileName), "custom profile requires an explicit app.modules list or preset (config.yaml)")
 	}
 	modules := append([]string(nil), defaults...)
 	source := "profile.default"
 	if len(explicitModules) > 0 {
 		modules = append([]string(nil), explicitModules...)
-		source = "modules.enabled"
+		source = "modules.list"
 	}
 	return ProfileResolution{
 		Name:       profileName,
 		Modules:    modules,
 		Source:     source,
-		Precedence: []string{"compiled-profile-default", "modules.enabled", "environment"},
+		Precedence: []string{"compiled-profile-default", "modules.preset", "modules.list"},
 	}, nil
 }
 
@@ -199,7 +200,7 @@ func BuiltinModules() []Module {
 		// dev.examples is the optional demonstration module (W1, GOAL-002): it owns
 		// the 8 example pages + Examples navigation as a horizontal demo surface.
 		// It is compiled but never enabled by mvp/admin defaults; enable via
-		// APP_MODULES_ENABLED or a dedicated dogfood profile (D-003 §3).
+		// app.modules (config.yaml) or a dedicated dogfood profile (D-003 §3).
 		{ID: "dev.examples", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.schema-render", "core.navigation-capability"}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions", "form-with-upload", "data-display", "admin-list-batch"}, Fragments: []string{"examples"}}},
 	}
 }

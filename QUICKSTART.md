@@ -24,15 +24,14 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 # W7：配置权威是 apps/api/configs/config.yaml（非敏感值直写，敏感值 ${VAR}
 # 占位符）；敏感值可放 apps/api/configs/.env（开发，gitignored；进程 env 优先）。
 # Compose 由仓库根 .env 提供插值。本地进程请 export：
-export APP_PROFILE=mvp                 # 或 admin / demo（非生产向演示 Profile）
+# T-06：模块启用集只认 apps/api/configs/config.yaml（app.profile / app.modules）
 # custom 时还必须提供完整的显式模块列表：
-# export APP_PROFILE=custom
-# export APP_MODULES_ENABLED=core.server-registration,...
+# app.modules.list: [core.server-registration, admin.users, ...]
 ```
 
 - 开发（`APP_ENV=development` 显式设置）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。**`APP_ENV` 必须显式设置**——未设置时启动失败（C3：不静默回退到公开开发密钥/密码）。
-- `APP_PROFILE` 接受 `mvp`、`admin`、`demo`、`custom`。`mvp` = core + `users`/`roles`/`account`/`notifications`（首页 = Dashboard）；`admin` = `mvp` + `settings`/`activity`/`data-transfer`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`（启动即展示 8 个协议范例页 + Examples 导航，home 指向 `overview`）；生产只应使用 `mvp` / `admin`。`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
-- PowerShell 等价写法为 `$env:APP_PROFILE="mvp"`；每个本地 API/Web 进程都必须继承同一 Profile。
+- 模块启用集只来自 `apps/api/configs/config.yaml`（T-06）：`app.profile` 接受 `mvp`、`admin`、`demo`（内置预设），`app.modules` 可指向预设文件或内联 `list`。`mvp` = core + `users`/`roles`/`account`/`notifications`（首页 = Dashboard）；`admin` = `mvp` + `settings`/`activity`/`data-transfer`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`；生产只应使用 `mvp` / `admin`。`app.modules` 覆盖 Profile 默认集合。
+- 每个本地 API/Web 进程共用同一份 `configs/config.yaml`，无需再设置 Profile 环境变量。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
 ## 2. 启动（两条路径选一）
@@ -43,8 +42,7 @@ export APP_PROFILE=mvp                 # 或 admin / demo（非生产向演示 P
 # 仓库根 .env（gitignored）写入，避免新 shell 重复 export：
 #   AUTH_JWT_SECRET=<强随机串>
 #   ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
-#   APP_PROFILE=mvp                 # 或 admin / demo
-#   APP_MODULES_ENABLED=            # 可选，逗号分隔
+#   app.profile: mvp            # 或 admin / demo（configs/config.yaml）
 docker compose up -d --build
 ```
 
@@ -56,7 +54,7 @@ docker compose up -d --build
 
 ```bash
 # 终端 1 —— API
-cd apps/api && APP_ENV=development APP_PROFILE=mvp go run ./cmd/server  # 监听 :25080；或改为 admin / demo
+cd apps/api && APP_ENV=development go run ./cmd/server  # 监听 :25080；Profile 由 configs/config.yaml 决定
 
 # 终端 2 —— Web
 cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-25173}

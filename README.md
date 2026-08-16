@@ -37,7 +37,7 @@ skills/    # 治理 Skills 包
 ```bash
 cd apps/api
 export APP_ENV=development   # 必须显式设置；未设置时启动 fail-closed（生产无公开弱默认）
-export APP_PROFILE=mvp       # 或 admin / demo；custom 必须同时设置 APP_MODULES_ENABLED
+# 模块启用集只认 config.yaml（T-06）：编辑 apps/api/configs/config.yaml 的 app.modules
 make run
 # 或：go run ./cmd/server
 # 探活：curl http://localhost:25080/healthz
@@ -68,8 +68,7 @@ npm run dev
 # 需先提供生产必填密钥（fail-closed）；可写入仓库根 .env（gitignored）或 export
 AUTH_JWT_SECRET=<强随机串>
 ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
-APP_PROFILE=mvp                 # 或 admin / demo
-APP_MODULES_ENABLED=            # 可选，逗号分隔的显式模块覆盖
+# app.modules: preset: mvp|admin|demo，或 list: [模块...]（见 configs/config.yaml）
 
 docker compose up --build
 #  API: http://localhost:25080  (GET /healthz 探活)
@@ -80,8 +79,8 @@ docker compose up --build
 - 本地开发仍为默认双进程路径（见上文 API / Web 段）；fork 使用者可选本地双进程或 Compose。
 - `docker compose down` / 重启后 SQLite 数据由命名卷 `db-data` 保持。
 - 将密钥写入仓库根 `.env`（gitignored）可避免新 shell 里 `docker compose config` / `down` 因 fail-closed 插值重复 export。
-- `APP_PROFILE` 默认为 `mvp`（users/roles/account/notifications + Dashboard 首页）；选择 `admin` 会在同一 Web build 上增加 Settings/Activity/Data-Transfer；选择 `demo`（**非生产向**）会额外启用 `dev.examples`，在同一 build 上展示 8 个协议范例页 + Examples 导航（home 指向 `overview`）。
-- `APP_MODULES_ENABLED` 非空时覆盖 Profile 默认模块集合；`custom` Profile 没有显式模块时 fail-closed。
+- 模块启用集只来自 `configs/config.yaml`（T-06）：`app.profile` 选内置预设 `mvp`/`admin`/`demo`，或 `app.modules` 指向预设文件 / 内联列表。`mvp` = users/roles/account/notifications + Dashboard 首页；`admin` 会在同一 Web build 上增加 Settings/Activity/Data-Transfer；`demo`（**非生产向**）会额外启用 `dev.examples`（home 指向 `overview`）。
+- `app.modules`（preset 或 list）覆盖 Profile 默认模块集合；preset 与 list 互斥，`custom` Profile 没有显式模块时 fail-closed。
 - 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
 
 ## 模块化 Admin 架构与 Profile（R4 起）
@@ -96,13 +95,13 @@ docker compose up --build
 - **Profile**：`mvp`（core + users/roles + dashboard/account/notifications，
   home = `dashboard`）与 `admin`（+ settings/activity/data-transfer）为编译候选集；
   `demo`（W2，非生产向）= mvp + `dev.examples`（范例页演示面，home = `overview`）；
-  `APP_MODULES_ENABLED` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，无需改前端。
+  `app.modules` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，无需改前端。
 - **数据**：迁移账本 `0001`-`0017` 全局唯一；fresh 与 versioned reconcile 分离；
   operationlog best-effort；`/api/records` 已退场（`0006` historical-only）。
 - **探测**：`/healthz`（liveness）与 `/readyz`（store ping + 模块图 Start/Ready
   readiness，R5）。
 
-fork 起点：选 Profile + `APP_MODULES_ENABLED` + 模块贡献接入业务，不修改 Renderer/Shell
+fork 起点：在 config.yaml 选 Profile/模块集 + 模块贡献接入业务，不修改 Renderer/Shell
 主路径。
 
 ## 状态说明

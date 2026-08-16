@@ -27,7 +27,7 @@ rem profile:  mvp | admin | demo | custom  (default admin)
 rem   custom requires --modules "core.xxx,module.yyy" (full explicit module closure)
 rem options:
 rem   --profile <name>      explicit profile
-rem   --modules <a,b,c>     APP_MODULES_ENABLED override (REQUIRED for custom)
+rem   --modules <a,b,c>     app.modules list override (REQUIRED for custom)
 rem   --browser             open web UI in the default browser (default)
 rem   --no-browser          do not open a browser
 rem env:
@@ -118,13 +118,30 @@ echo.
 echo == schema-ui-core dev ^| profile=%PROFILE% ==
 echo   API  :%API_PORT%   %API_DIR%
 echo   Web  :%WEB_PORT%   %WEB_DIR%
-if defined MODULES echo   APP_MODULES_ENABLED=%MODULES%
+if defined MODULES echo   app.modules.list=%MODULES%
 echo.
 
 rem ---- launch API ----
-set "API_CMD=set APP_ENV=development && set APP_PROFILE=%PROFILE% && set HTTP_ADDR=:%API_PORT%"
-if defined MODULES set "API_CMD=!API_CMD! && set APP_MODULES_ENABLED=%MODULES%"
-set "API_CMD=!API_CMD! && go run ./cmd/server"
+rem T-06 (GOAL-013 D-007): the module-enabled set is YAML-only. dev.cmd
+rem writes a small overlay config (profile + optional modules) to %TEMP% and
+rem points CONFIG_FILE at it; APP_PROFILE / APP_MODULES_ENABLED env vars are
+rem no longer read by the API.
+set "DEV_CONFIG=%TEMP%schema-ui-dev-config.yaml"
+(
+  echo app:
+  echo   env: development
+  echo   profile: %PROFILE%
+  if "%PROFILE%"=="custom" (
+    echo   modules:
+    echo     list: [%MODULES%]
+  ) else (
+    echo   modules:
+    echo     preset: %PROFILE%
+  )
+  echo http:
+  echo   addr: :%API_PORT%
+) > "%DEV_CONFIG%"
+set "API_CMD=set CONFIG_FILE=%DEV_CONFIG% && go run ./cmd/server"
 
 set "API_UP="
 netstat -ano | findstr /R /C:":%API_PORT% " | findstr "LISTENING" >nul 2>&1 && set "API_UP=1"
@@ -306,7 +323,7 @@ echo.
 echo profile:   mvp ^| admin ^| demo ^| custom   (default admin)
 echo options:
 echo   --profile ^<name^>      explicit profile
-echo   --modules ^<a,b,c^>     APP_MODULES_ENABLED override; REQUIRED for custom
+echo   --modules ^<a,b,c^>     app.modules list (config.yaml); REQUIRED for custom
 echo   --browser               open web UI in browser (default)
 echo   --no-browser            do not open browser
 echo env:

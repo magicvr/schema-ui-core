@@ -29,7 +29,7 @@ pkg/version/         # 构建版本变量
 # 配置权威是 configs/config.yaml（W7）：非敏感值直接写 YAML；敏感值写 ${VAR}
 # 占位符，真实值来自 configs/.env（开发，gitignored）或进程 env（生产）。
 # 已设置的进程 env 总是覆盖 YAML。Compose 路径由仓库根 .env 提供插值。
-export APP_PROFILE=mvp  # 或 admin / demo；custom 还需 APP_MODULES_ENABLED
+# 模块启用集只认 configs/config.yaml（T-06）：app.profile 或 app.modules（preset / list）
 
 make run
 # 或
@@ -48,8 +48,8 @@ go run ./cmd/server
 | `AUTH_ACCESS_TTL` | `15m` | access token 时效 |
 | `AUTH_REFRESH_TTL` | `720h` (30d) | refresh token 时效 |
 | `DB_PATH` | `./data/schema-ui.db` | SQLite 路径 |
-| `APP_PROFILE` | `mvp` | `mvp`、`admin`、`demo` 或 `custom`；选择已编译模块候选集 |
-| `APP_MODULES_ENABLED` | 空 | 逗号分隔显式模块列表；非空时覆盖 Profile 默认集合；custom 必填 |
+| `app.profile` (YAML) | `mvp` | `mvp`、`admin`、`demo`；无 `app.modules` 时选内置预设 |
+| `app.modules` (YAML) | 无 | `preset`（内置名或预设文件路径）或内联 `list`；互斥；覆盖 Profile 默认集合 |
 | `ADMIN_INITIAL_PASSWORD` | dev `admin` | 首次种子 admin 密码；生产必填 |
 | `AUTH_DEV_SESSION_ENABLED` | `false` | 显式本地开发静态会话兜底；**生产禁止启用** |
 
@@ -66,7 +66,7 @@ go run ./cmd/server
 Profile 选择只影响启动时模块集合，不改变编译产物或全局迁移台账：`mvp` 包含 users/roles，
 `admin` 另外包含 settings/activity，`demo`（W2 · **非生产向演示 Profile**）= mvp 集 + `dev.examples`
 （启动即展示 8 个协议范例页 + Examples 导航，home 指向 `overview`），`custom` 必须显式提供完整
-依赖闭包。`APP_MODULES_ENABLED` 的优先级高于 Profile 默认值；未知、重复或缺依赖模块会 fail-closed。
+依赖闭包。`app.modules` 的优先级高于 Profile 默认值；未知、重复或缺依赖模块会 fail-closed。
 生产只应使用 `mvp` / `admin`；`demo` 用于开发/演示，不得作为生产默认。
 
 完整契约见 GOAL-008 `attachments/I-008-001-engineering-contract.md`。
