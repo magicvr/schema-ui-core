@@ -31,7 +31,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-011-w10-account-page-conformance [done] · W10 个人中心页面层符合性（数据权限页修复 + 表格样式刷新）（4/4）
 ├── GOAL-012-w11-mfa-ux-review [done] · W11 个人中心 MFA 缺陷修复与全局 UX 审视整改（5/5）
 ├── GOAL-013-w12-product-surface-intent [done] · W12 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置）（4/4）
-└── GOAL-014-w13-settings-tabs-and-topbar [done] · W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传）（4/4）
+└── GOAL-014-w13-settings-tabs-and-topbar [done] · W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传 + 通知中心交互修正（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传 / 通知点击即读）（4/4）
 ```
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
@@ -50,7 +50,7 @@ Root **保持 active**。W1/W2/W3/W4 均关门；W4 六检查点全部完成（2
 A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004 浏览器点验）；不推导 Root/VP done。
 
 
-**W13（2026-08-16 三次关门，4/4）**：设置页功能单元 Tabs（恢复默认常驻 Tabs 外）；移动端品牌条独立一行（<lg）+ 汉堡按键靠工具栏最左；搜索框组【文本框+搜索键】零间隙贴合恒同行；顶栏亮暗/语种按键对调；追加 T-05 个人中心头像上传（共享 RasterAssetStore、迁移 0035/0036、/me 快照 + 用户菜单展示）；用户反馈修复：资料保存后顶栏头像/显示名即时刷新（config-change 头 + AuthContext 会话刷新，无需整页刷新）；A-001/A-002/A-003 self pass；回归 Go 0 FAIL + vitest 1032/1032 + tsc 0 + e2e admin/mvp 全绿（含 W11/W12 遗留 e2e 断言修复）；go 判定各轮均无影响、不暂挂。
+**W13（2026-08-16 四次关门，4/4）**：设置页功能单元 Tabs（恢复默认常驻 Tabs 外）；移动端品牌条独立一行（<lg）+ 汉堡按键靠工具栏最左；搜索框组【文本框+搜索键】零间隙贴合恒同行；顶栏亮暗/语种按键对调；T-05 个人中心头像上传（共享 RasterAssetStore、迁移 0035/0036、/me 快照 + 用户菜单展示）+ 顶栏头像即时刷新修复；T-06 通知中心交互修正（铃铛条目点击跳转展开并标已读、列表点击即读+行内展开、移除行内已读 action、未读数即时刷新——notification-center 自定义组件 + notifications.read 响应头）；A-001～A-004 self pass；回归 Go 0 FAIL + vitest 1037/1037 + tsc 0 + e2e admin/mvp 全绿（含 W11/W12 遗留 e2e 断言修复）；go 判定各轮均无影响、不暂挂。
 ## 状态表
 
 | id | title | parent | status | progress | updated |
@@ -68,7 +68,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-011-w10-account-page-conformance | W10 · 个人中心页面层符合性（数据权限页修复 + 表格样式刷新） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-15 |
 | GOAL-012-w11-mfa-ux-review | W11 · 个人中心 MFA 缺陷修复与全局 UX 审视整改（M-01～M-03 + U-01～U-14 落盘） | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-15 |
 | GOAL-013-w12-product-surface-intent | W12 · 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-16 |
-| GOAL-014-w13-settings-tabs-and-topbar | W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-16 |
+| GOAL-014-w13-settings-tabs-and-topbar | W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传 + 通知中心交互修正（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传 / 通知点击即读） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-16 |
 
 ## 维护说明
 

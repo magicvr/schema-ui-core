@@ -23,6 +23,9 @@ version: 0.1.0
 | E-007 | 2026-08-16 | S4 追加关门（A-002 pass；go 判定；台账与 checkpoint） | recorded | `02-execution/E-007-s4-followup-closeout.md` |
 | E-008 | 2026-08-16 | 用户缺陷反馈修复：顶栏头像即时刷新（config-change 头 + 会话刷新 + 测试） | recorded | `02-execution/E-008-avatar-header-refresh-fix.md` |
 | E-009 | 2026-08-16 | 修复轮关门（A-003 pass；go 判定；台账与 checkpoint） | recorded | `02-execution/E-009-fix-closeout.md` |
+| E-010 | 2026-08-16 | T-06 通知中心交互修正实施（铃铛条目可点击 / notification-center 组件 / 移除行内已读 / 未读数即时刷新） | recorded | `02-execution/E-010-t06-notifications.md` |
+| E-011 | 2026-08-16 | T-06 回归（Go 0 FAIL / vitest 1037/1037 / tsc 0 / e2e admin·mvp 8/8） | recorded | `02-execution/E-011-t06-regression.md` |
+| E-012 | 2026-08-16 | T-06 关门（A-004 pass；go 判定；台账与 checkpoint） | recorded | `02-execution/E-012-t06-closeout.md` |
 
 ## 事实边界
 
@@ -34,3 +37,4 @@ version: 0.1.0
 - **2026-08-16**：S4 关门（E-004）——A-001 self pass；go 无影响不暂挂；goal-tree/workspace/Root 台账同步。
 - **2026-08-16**：用户追加任务重开——D-002 冻结（汉堡靠左 + T-05 头像上传）；S2 追加实施（E-005）、S3 追加回归（E-006，全绿）、S4 追加关门（E-007，A-002 self pass）。
 - **2026-08-16**：用户反馈「顶栏头像未即时显示」缺陷修复轮——E-008（config-change 头 + AuthContext 会话刷新 + 测试）、E-009（A-003 pass 关门）。
+- **2026-08-16**：用户点名新增 T-06 通知中心交互修正——D-003 冻结；S2 实施（E-010）、S3 回归（E-011，全绿）、S4 关门（E-012，A-004 self pass）。
