@@ -14,7 +14,7 @@ serves: VP-003-modular-admin-architecture
 
 ## 决策
 
-`schema-ui-core` 的目标架构是**单一代码主线上的模块化单体**。同一份可执行产物静态包含受支持的一方模块候选集，由启动时 Profile 和 `modules.enabled` 选择启用集合；MVP、完整 Admin 与后续 fork 起点是同一架构的不同配置，不再维护两套长期演进代码线。
+`schema-ui-core` 的目标架构是**单一代码主线上的模块化单体**。同一份可执行产物静态包含受支持的一方模块候选集，由启动时 `app.profile` / `app.modules`（config.yaml，T-06）选择启用集合；MVP、完整 Admin 与后续 fork 起点是同一架构的不同配置，不再维护两套长期演进代码线。
 
 本文件固化 [VP-003](../vision/plans/VP-003-modular-admin-architecture.md) 的终态架构边界。
 
@@ -25,7 +25,7 @@ serves: VP-003-modular-admin-architecture
 ### 1.1 边界
 
 - **薄内核**只提供稳定的基础契约：配置、日志、数据库、HTTP 生命周期、认证/授权接口、模块描述与能力注册协议。内核包不得导入业务模块。
-- **组合根**静态导入全部受支持的一方模块，解析 Profile 与 `modules.enabled`，校验依赖图，组装能力并统一管理启动/停止。
+- **组合根**静态导入全部受支持的一方模块，解析 Profile 与 `app.modules`（config.yaml），校验依赖图，组装能力并统一管理启动/停止。
 - **模块**不得通过修改中央业务注册表接入；它们只实现框架无关的模块契约和所需能力接口。
 
 ### 1.2 DI 选型
@@ -69,7 +69,7 @@ serves: VP-003-modular-admin-architecture
 
 ## 3. Profile 与启用语义
 
-- `mvp`、`admin`、`custom` 等 Profile 是版本化配置，不是分支名；Profile 展开后仍形成显式 `modules.enabled` 集合。
+- `mvp`、`admin`、`custom` 等 Profile 是版本化配置，不是分支名；Profile 展开后仍形成显式 `modules.list` / `modules.preset` 集合（config.yaml）。
 - 运行时只能在**已编译候选集**中选择模块，不支持 `.so`、远程下载、热插拔或运行中启停。
 - Profile 的默认值、覆盖优先级和最终解析结果必须可观察；未知 ID、冲突配置或不满足依赖闭包时拒绝启动。
 - Profile 控制能力暴露与 UI 组合，不承诺从二进制中物理移除代码。需要物理裁剪时，由 fork 或独立构建目标负责。
