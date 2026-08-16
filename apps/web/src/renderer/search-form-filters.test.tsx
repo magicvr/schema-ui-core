@@ -95,8 +95,8 @@ function renderSurface(fetcher: typeof fetch): HTMLDivElement {
   return container;
 }
 
-describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
-  it("sends select filters as query params and drops cleared ones", async () => {
+describe("T-02 search form filter binding (GOAL-013 D-003 / T-07 GOAL-014)", () => {
+  it("applies select filters immediately; the keyword waits for Search; chips follow the applied query", async () => {
     const calls: string[] = [];
     const fetcher = (async (input: RequestInfo | URL) => {
       calls.push(String(input));
@@ -115,17 +115,13 @@ describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
 
     const form = container.querySelector('form');
     expect(form).not.toBeNull();
-
-    // Type a keyword and pick enabled=true from the select.
     const qInput = form!.querySelector('input');
     const select = form!.querySelector('select');
+
+    // T-07: changing the SELECT applies the filter IMMEDIATELY — the list
+    // refetches without pressing Search, and the chip appears at once.
+    const beforeSelect = calls.length;
     await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        "value",
-      )!.set!;
-      setter.call(qInput, "ali");
-      qInput!.dispatchEvent(new Event("input", { bubbles: true }));
       const selectSetter = Object.getOwnPropertyDescriptor(
         window.HTMLSelectElement.prototype,
         "value",
@@ -134,22 +130,47 @@ describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
       select!.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(calls.length).toBeGreaterThan(beforeSelect);
+    let last = calls[calls.length - 1];
+    expect(last).toContain("enabled=true");
+    expect(last).not.toContain("q=");
+    let chips = container.querySelector('[data-filter-chips]');
+    expect(chips).not.toBeNull();
+    expect(chips!.textContent).toContain("Enabled");
+    expect(chips!.textContent).not.toContain("ali");
+
+    // T-07: typing the keyword does NOT filter and does NOT change the chips
+    // — the paired Search button commits it.
+    const beforeType = calls.length;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      )!.set!;
+      setter.call(qInput, "ali");
+      qInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(calls.length).toBe(beforeType);
+    chips = container.querySelector('[data-filter-chips]');
+    expect(chips).not.toBeNull();
+    expect(chips!.textContent).not.toContain("ali");
+
+    // Press the paired Search button → keyword joins the applied query.
+    await act(async () => {
       form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-
-    const last = calls[calls.length - 1];
+    last = calls[calls.length - 1];
     expect(last).toContain("q=ali");
     expect(last).toContain("enabled=true");
-
-    // A-003: active filter chips appear for non-empty conditions.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-    const chips = container.querySelector('[data-filter-chips]');
-    expect(chips).not.toBeNull();
+    chips = container.querySelector('[data-filter-chips]');
     expect(chips!.textContent).toContain("ali");
     expect(chips!.textContent).toContain("Enabled");
 
@@ -169,6 +190,24 @@ describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
     expect((searchButton as HTMLButtonElement).className).toContain("rounded-l-none");
     const searchInput = container.querySelector("input") as HTMLInputElement;
     expect(searchInput.className).toContain("rounded-r-none");
+
+    // T-07: removing a chip (click ×) drops the condition and re-filters at once.
+    // The chip remove aria-label is removeFilter + the field label; the
+    // test field has no label, so it falls back to the field id (enabled).
+    const removeChip = [...chips!.querySelectorAll('button[aria-label]')].find((el) =>
+      el.getAttribute("aria-label")?.toLowerCase().includes("enabled"),
+    );
+    expect(removeChip).not.toBeUndefined();
+    const beforeRemove = calls.length;
+    await act(async () => {
+      (removeChip as HTMLButtonElement).click();
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(calls.length).toBeGreaterThan(beforeRemove);
+    const afterRemove = calls[calls.length - 1];
+    expect(afterRemove).not.toContain("enabled=");
 
     // A-003: the reset button clears every condition and re-runs the search
     // (the request drops q and enabled).

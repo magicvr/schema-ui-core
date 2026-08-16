@@ -1567,10 +1567,20 @@ function FormInner({
   // A-003 (audit response): search-mode toolbar — active filter chips with
   // per-condition clear + one-click clear-all; the reset button restores the
   // default values and re-runs the search immediately.
+  //
+  // T-07 (GOAL-014): chips reflect the SUBMITTED query (the target table's
+  // query state), not the local draft values — a keyword that was typed but
+  // not submitted (or a select that was changed but not applied) never shows
+  // as an active filter. This keeps the chips truthful: they describe what
+  // the list is actually filtered by.
+  const targetTable =
+    isSearch && typeof node.props.targetTable === "string" ? node.props.targetTable : "";
+  const submittedQuery =
+    isSearch && crud !== null && targetTable !== "" ? crud.tableQuery(targetTable) : undefined;
   const activeFilters = isSearch
     ? visibleFields
         .map((field) => {
-          const raw = values[field.id];
+          const raw = field.id === "q" ? submittedQuery?.q : submittedQuery?.filters?.[field.id];
           if (raw === undefined || raw === null || raw === "") {
             return null;
           }
@@ -1586,6 +1596,22 @@ function FormInner({
         })
         .filter((entry): entry is { field: FormControlField; value: string; valueLabel: string } => entry !== null)
     : [];
+  // T-07 (GOAL-014): non-text filter controls (selects, date pickers, …)
+  // apply IMMEDIATELY on change — the list re-filters as the condition
+  // changes. The keyword box keeps the submit-on-search contract (its value
+  // only joins the query when the paired search button is pressed).
+  const handleFieldChange = (id: string, value: unknown) => {
+    const next = { ...values, [id]: value };
+    setValues(next);
+    if (!isSearch || crud === null) {
+      return;
+    }
+    const field = visibleFields.find((entry) => entry.id === id);
+    if (field !== undefined && field.type !== "input") {
+      crud.searchFormSubmit(node, next);
+    }
+  };
+
   const resetValues = () => {
     const cleared: Record<string, unknown> = {};
     for (const field of visibleFields) {
@@ -1628,7 +1654,7 @@ function FormInner({
       <Component
         fields={visibleFields}
         values={values}
-        onChange={(id, value) => setValues((prev) => ({ ...prev, [id]: value }))}
+        onChange={handleFieldChange}
         fieldDisabled={fieldDisabled}
         onUpload={crud?.uploadFiles}
         fieldErrors={fieldErrors}
