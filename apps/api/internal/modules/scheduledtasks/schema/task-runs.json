@@ -23,9 +23,27 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.taskRuns.search.q"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "schema.taskRuns.filter.status",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.taskRuns.filter.status.all"
+                },
+                {
+                  "value": "ran",
+                  "labelKey": "schema.taskRuns.filter.status.ran"
+                },
+                {
+                  "value": "failed",
+                  "labelKey": "schema.taskRuns.filter.status.failed"
+                }
+              ]
             }
           ],
           "submitLabel": "Search",

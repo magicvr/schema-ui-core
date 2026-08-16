@@ -24,9 +24,8 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.walletEntries.search.q"
             }
           ],
           "submitLabel": "Search",

@@ -1,6 +1,7 @@
 import {
   Activity,
   Boxes,
+  ChevronDown,
   CircleHelp,
   FolderKanban,
   FormInput,
@@ -33,7 +34,6 @@ import {
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
 import { Breadcrumbs, resolveBreadcrumbTrail } from "@/components/ui/breadcrumbs";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
@@ -246,6 +246,128 @@ function NavigationItems({
           </section>
         ),
       )}
+    </div>
+  );
+}
+
+
+/**
+ * T-01 (GOAL-013 D-002): topbar user dropdown — one trigger for every
+ * breakpoint (avatar + display name + chevron), menu from projection.user
+ * declaration order (个人中心 → 我的钱包[if present] → 设置) plus a
+ * divider and the shell-injected 退出登录 last item. Closes on outside
+ * click / Escape (parity with the notification bell). The mobile drawer no
+ * longer repeats the user chain (D-002 §3).
+ */
+function UserMenu({
+  items,
+  user,
+  onNavigate,
+  onLogout,
+}: {
+  items: Array<Extract<ProjectedItem, { type: "link" }>>;
+  user: { id: string; name?: string };
+  onNavigate: (href: string) => void;
+  onLogout?: () => void;
+}) {
+  const t = useTranslate();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const displayName = user.name !== undefined && user.name.trim() !== "" ? user.name : user.id;
+  const initials = displayName.slice(0, 1).toUpperCase();
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current !== null && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-label={t("shell.userMenu")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1 transition-colors hover:bg-accent"
+      >
+        <span
+          aria-hidden="true"
+          className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
+        >
+          {initials}
+        </span>
+        <span className="hidden max-w-[10rem] truncate text-xs text-foreground sm:inline">
+          {displayName}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          aria-label={t("shell.userMenu")}
+          className="absolute right-0 top-11 z-50 min-w-52 rounded-md border border-border bg-card py-1 shadow-lg"
+        >
+          {items.length > 0 ? (
+            <div className="p-1">
+              {items.map((item, index) => (
+                <button
+                  key={`${item.href}-${index}`}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    if (item.href !== undefined) {
+                      onNavigate(item.href);
+                    }
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-accent"
+                >
+                  {iconFor(item.icon)}
+                  <span className="truncate">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {items.length > 0 ? (
+            <div role="separator" className="my-1 border-t border-border" />
+          ) : null}
+          <div className="p-1">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onLogout?.();
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <LogOut aria-hidden="true" className="size-4" />
+              <span>{t("shell.signOut")}</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -703,7 +825,7 @@ export function App({
             <NavigationItems items={projection.top} onNavigate={onNavigate} horizontal />
           </nav>
 
-          {/* W8 follow-up: left-to-right = 个人中心 / 设置 / 退出登录 (user nav then signout). */}
+          {/* T-01 (GOAL-013 D-002): user nav + signout folded into the user dropdown. */}
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
             {/* Mobile hamburger — visible only on small screens (S3 sub-capability) */}
             <button
@@ -723,21 +845,15 @@ export function App({
                 onViewAll={() => onNavigate("/notifications")}
               />
             ) : null}
-            {projection.user.length > 0 ? (
-              <nav className="hidden items-center gap-1 lg:flex" aria-label="User navigation">
-                <NavigationItems items={projection.user} onNavigate={onNavigate} horizontal />
-              </nav>
-            ) : null}
             {currentUser !== undefined && currentUser !== null ? (
-              <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1">
-                <span className="hidden max-w-[10rem] truncate text-xs text-muted-foreground sm:inline">
-                  {currentUser.name ?? currentUser.id}
-                </span>
-                <Button type="button" variant="outline" size="sm" onClick={onLogout}>
-                  <LogOut aria-hidden="true" className="size-4" />
-                  {t("shell.signOut")}
-                </Button>
-              </div>
+              <UserMenu
+                items={projection.user.filter(
+                  (item): item is Extract<ProjectedItem, { type: "link" }> => item.type === "link",
+                )}
+                user={currentUser}
+                onNavigate={onNavigate}
+                onLogout={onLogout}
+              />
             ) : null}
           </div>
         </div>
@@ -769,11 +885,7 @@ export function App({
             </div>
             <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
               <NavigationItems
-                items={[
-                  ...projection.top,
-                  ...projection.sidebar,
-                  ...projection.user,
-                ]}
+                items={[...projection.top, ...projection.sidebar]}
                 onNavigate={onNavigate}
               />
             </div>

@@ -102,8 +102,21 @@ func (h *notificationHandler) list() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
 			return
 		}
+		// T-02 (GOAL-013 D-003): q (title/body keyword) + read state
+		// (read=unread | read=read) joins the legacy unreadOnly param.
+		var readState *bool
+		switch strings.ToLower(strings.TrimSpace(r.URL.Query().Get("read"))) {
+		case "unread":
+			v := false
+			readState = &v
+		case "read":
+			v := true
+			readState = &v
+		}
 		items, total, err := h.repository.ListNotifications(user.ID, authsession.NotificationFilter{
 			UnreadOnly: strings.EqualFold(r.URL.Query().Get("unreadOnly"), "true"),
+			Q:          strings.TrimSpace(r.URL.Query().Get("q")),
+			Read:       readState,
 			Page:       page,
 			PageSize:   pageSize,
 		})

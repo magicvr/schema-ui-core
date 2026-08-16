@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -29,9 +30,15 @@ type Notification struct {
 
 // NotificationFilter carries list parameters for the notifications endpoint.
 type NotificationFilter struct {
+	// UnreadOnly is the legacy boolean filter (unreadOnly=true query param).
 	UnreadOnly bool
-	Page       int
-	PageSize   int
+	// T-02 (GOAL-013 D-003): keyword search over title/body plus an exact
+	// read-state filter. Read=nil means no constraint; Read=&true means the
+	// row is read, Read=&false means unread.
+	Q    string
+	Read *bool
+	Page int
+	PageSize int
 }
 
 // NotificationsEnabledFor reports whether a user accepts new notifications.
@@ -126,8 +133,19 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 	err := r.withTx("list notifications", func(tx *sql.Tx) error {
 		where := ` WHERE user_id = ?`
 		args := []any{userID}
+		if q := strings.TrimSpace(filter.Q); q != "" {
+			where += ` AND (instr(lower(title), ?) > 0 OR instr(lower(body), ?) > 0)`
+			args = append(args, q, q)
+		}
 		if filter.UnreadOnly {
 			where += ` AND read_at IS NULL`
+		}
+		if filter.Read != nil {
+			if *filter.Read {
+				where += ` AND read_at IS NOT NULL`
+			} else {
+				where += ` AND read_at IS NULL`
+			}
 		}
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM notifications`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count notifications: %w", err)

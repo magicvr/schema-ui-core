@@ -26,68 +26,130 @@
         "ownerId": "ownerId",
         "currency": "currency"
       },
-      "onSuccess": { "behavior": "reload" }
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "updateStatus": {
       "type": "request",
       "method": "PATCH",
       "url": "/api/wallet/accounts/{id}",
-      "bodyMapping": { "status": "status", "version": "version" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "status": "status",
+        "version": "version"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "adjust": {
       "type": "request",
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/adjust",
-      "bodyMapping": { "amountDelta": "amountDelta", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "amountDelta": "amountDelta",
+        "memo": "memo",
+        "idempotencyKey": "idempotencyKey"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "freeze": {
       "type": "request",
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/freeze",
-      "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "amount": "amount",
+        "memo": "memo",
+        "idempotencyKey": "idempotencyKey"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "unfreeze": {
       "type": "request",
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/unfreeze",
-      "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "amount": "amount",
+        "memo": "memo",
+        "idempotencyKey": "idempotencyKey"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "deductFrozen": {
       "type": "request",
       "method": "POST",
       "url": "/api/wallet/accounts/{id}/deduct-frozen",
-      "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "amount": "amount",
+        "memo": "memo",
+        "idempotencyKey": "idempotencyKey"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "runReconcile": {
       "type": "request",
       "method": "POST",
       "url": "/api/wallet/reconcile",
-      "onSuccess": { "behavior": "reload" }
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "openCreate": {
       "type": "modal",
       "content": {
         "type": "form",
         "id": "create-wallet-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"wallet.write\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.write\""
+        },
         "props": {
           "fields": [
             {
-              "id": "ownerType", "label": "Owner type", "type": "select", "required": true,
+              "id": "ownerType",
+              "label": "Owner type",
+              "type": "select",
+              "required": true,
               "options": [
-                { "value": "business", "label": "Business", "labelKey": "schema.wallet.owner.business" },
-                { "value": "system", "label": "System", "labelKey": "schema.wallet.owner.system" }
+                {
+                  "value": "business",
+                  "label": "Business",
+                  "labelKey": "schema.wallet.owner.business"
+                },
+                {
+                  "value": "system",
+                  "label": "System",
+                  "labelKey": "schema.wallet.owner.system"
+                }
               ],
               "labelKey": "schema.wallet.field.ownerType"
             },
-            { "id": "ownerId", "label": "Owner ID", "type": "input", "required": true, "labelKey": "schema.wallet.field.ownerId" },
-            { "id": "currency", "label": "Currency", "type": "input", "defaultValue": "CNY", "labelKey": "schema.wallet.field.currency" }
+            {
+              "id": "ownerId",
+              "label": "Owner ID",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.wallet.field.ownerId"
+            },
+            {
+              "id": "currency",
+              "label": "Currency",
+              "type": "input",
+              "defaultValue": "CNY",
+              "labelKey": "schema.wallet.field.currency"
+            }
           ],
           "submitAction": "createAccount",
           "submitLabel": "Create account",
@@ -100,13 +162,36 @@
       "content": {
         "type": "form",
         "id": "adjust-wallet-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"wallet.adjust\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.adjust\""
+        },
         "props": {
           "fields": [
-            { "id": "amountDelta", "label": "Amount (signed, min units)", "type": "inputNumber", "required": true, "labelKey": "schema.wallet.field.amountDelta" },
-            { "id": "memo", "label": "Memo", "type": "textarea", "required": true, "labelKey": "schema.wallet.field.memo" },
-            { "id": "idempotencyKey", "label": "Idempotency key (optional)", "type": "input", "labelKey": "schema.wallet.field.idempotencyKey" }
+            {
+              "id": "amountDelta",
+              "label": "Amount (signed, min units)",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.wallet.field.amountDelta"
+            },
+            {
+              "id": "memo",
+              "label": "Memo",
+              "type": "textarea",
+              "required": true,
+              "labelKey": "schema.wallet.field.memo"
+            },
+            {
+              "id": "idempotencyKey",
+              "label": "Idempotency key (optional)",
+              "type": "input",
+              "labelKey": "schema.wallet.field.idempotencyKey"
+            }
           ],
           "submitAction": "adjust",
           "submitLabel": "Adjust balance",
@@ -119,13 +204,36 @@
       "content": {
         "type": "form",
         "id": "freeze-wallet-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"wallet.adjust\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.adjust\""
+        },
         "props": {
           "fields": [
-            { "id": "amount", "label": "Amount (min units)", "type": "inputNumber", "required": true, "labelKey": "schema.wallet.field.amount" },
-            { "id": "memo", "label": "Memo", "type": "textarea", "required": true, "labelKey": "schema.wallet.field.memo" },
-            { "id": "idempotencyKey", "label": "Idempotency key (optional)", "type": "input", "labelKey": "schema.wallet.field.idempotencyKey" }
+            {
+              "id": "amount",
+              "label": "Amount (min units)",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.wallet.field.amount"
+            },
+            {
+              "id": "memo",
+              "label": "Memo",
+              "type": "textarea",
+              "required": true,
+              "labelKey": "schema.wallet.field.memo"
+            },
+            {
+              "id": "idempotencyKey",
+              "label": "Idempotency key (optional)",
+              "type": "input",
+              "labelKey": "schema.wallet.field.idempotencyKey"
+            }
           ],
           "submitAction": "freeze",
           "submitLabel": "Freeze",
@@ -138,13 +246,36 @@
       "content": {
         "type": "form",
         "id": "unfreeze-wallet-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"wallet.adjust\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.adjust\""
+        },
         "props": {
           "fields": [
-            { "id": "amount", "label": "Amount (min units)", "type": "inputNumber", "required": true, "labelKey": "schema.wallet.field.amount" },
-            { "id": "memo", "label": "Memo", "type": "textarea", "required": true, "labelKey": "schema.wallet.field.memo" },
-            { "id": "idempotencyKey", "label": "Idempotency key (optional)", "type": "input", "labelKey": "schema.wallet.field.idempotencyKey" }
+            {
+              "id": "amount",
+              "label": "Amount (min units)",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.wallet.field.amount"
+            },
+            {
+              "id": "memo",
+              "label": "Memo",
+              "type": "textarea",
+              "required": true,
+              "labelKey": "schema.wallet.field.memo"
+            },
+            {
+              "id": "idempotencyKey",
+              "label": "Idempotency key (optional)",
+              "type": "input",
+              "labelKey": "schema.wallet.field.idempotencyKey"
+            }
           ],
           "submitAction": "unfreeze",
           "submitLabel": "Unfreeze",
@@ -157,13 +288,36 @@
       "content": {
         "type": "form",
         "id": "deduct-frozen-wallet-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"wallet.adjust\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.adjust\""
+        },
         "props": {
           "fields": [
-            { "id": "amount", "label": "Amount (min units)", "type": "inputNumber", "required": true, "labelKey": "schema.wallet.field.amount" },
-            { "id": "memo", "label": "Memo", "type": "textarea", "required": true, "labelKey": "schema.wallet.field.memo" },
-            { "id": "idempotencyKey", "label": "Idempotency key (optional)", "type": "input", "labelKey": "schema.wallet.field.idempotencyKey" }
+            {
+              "id": "amount",
+              "label": "Amount (min units)",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.wallet.field.amount"
+            },
+            {
+              "id": "memo",
+              "label": "Memo",
+              "type": "textarea",
+              "required": true,
+              "labelKey": "schema.wallet.field.memo"
+            },
+            {
+              "id": "idempotencyKey",
+              "label": "Idempotency key (optional)",
+              "type": "input",
+              "labelKey": "schema.wallet.field.idempotencyKey"
+            }
           ],
           "submitAction": "deductFrozen",
           "submitLabel": "Deduct frozen",
@@ -176,19 +330,42 @@
       "content": {
         "type": "form",
         "id": "status-wallet-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"wallet.write\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.write\""
+        },
         "props": {
           "fields": [
             {
-              "id": "status", "label": "Status", "type": "select", "required": true,
+              "id": "status",
+              "label": "Status",
+              "type": "select",
+              "required": true,
               "options": [
-                { "value": "active", "label": "Active", "labelKey": "schema.wallet.status.active" },
-                { "value": "disabled", "label": "Disabled", "labelKey": "schema.wallet.status.disabled" }
+                {
+                  "value": "active",
+                  "label": "Active",
+                  "labelKey": "schema.wallet.status.active"
+                },
+                {
+                  "value": "disabled",
+                  "label": "Disabled",
+                  "labelKey": "schema.wallet.status.disabled"
+                }
               ],
               "labelKey": "schema.wallet.field.status"
             },
-            { "id": "version", "label": "Version", "type": "inputNumber", "readOnly": true, "labelKey": "schema.wallet.field.version" }
+            {
+              "id": "version",
+              "label": "Version",
+              "type": "inputNumber",
+              "readOnly": true,
+              "labelKey": "schema.wallet.field.version"
+            }
           ],
           "submitAction": "updateStatus",
           "submitLabel": "Save status",
@@ -196,7 +373,10 @@
         }
       }
     },
-    "openEntries": { "type": "navigate", "url": "/wallet-entries/{id}" }
+    "openEntries": {
+      "type": "navigate",
+      "url": "/wallet-entries/{id}"
+    }
   },
   "body": {
     "type": "section",
@@ -208,7 +388,36 @@
         "props": {
           "mode": "search",
           "targetTable": "wallet-table",
-          "fields": [{ "id": "q", "label": "Search", "type": "input", "labelKey": "feedback.search" }],
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.wallet.search.q"
+            },
+            {
+              "id": "ownerType",
+              "type": "select",
+              "labelKey": "schema.wallet.filter.ownerType",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.wallet.filter.ownerType.all"
+                },
+                {
+                  "value": "user",
+                  "labelKey": "schema.wallet.owner.user"
+                },
+                {
+                  "value": "business",
+                  "labelKey": "schema.wallet.owner.business"
+                },
+                {
+                  "value": "system",
+                  "labelKey": "schema.wallet.owner.system"
+                }
+              ]
+            }
+          ],
           "submitLabel": "Search",
           "submitLabelKey": "feedback.search"
         }
@@ -216,33 +425,124 @@
       {
         "type": "table",
         "id": "wallet-table",
-        "permissionCascade": { "keys": ["edit"] },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
         "permissions": {
           "edit": "$context.user.permissions contains \"wallet.adjust\""
         },
         "props": {
           "columns": [
-            { "field": "ownerType", "label": "Owner type", "sortable": true, "labelKey": "schema.wallet.column.ownerType" },
-            { "field": "ownerId", "label": "Owner ID", "sortable": true, "labelKey": "schema.wallet.column.ownerId" },
-            { "field": "currency", "label": "Currency", "labelKey": "schema.wallet.column.currency" },
-            { "field": "balanceTotal", "label": "Balance", "sortable": true, "labelKey": "schema.wallet.column.balanceTotal" },
-            { "field": "balanceAvailable", "label": "Available", "labelKey": "schema.wallet.column.balanceAvailable" },
-            { "field": "balanceFrozen", "label": "Frozen", "labelKey": "schema.wallet.column.balanceFrozen" },
-            { "field": "status", "label": "Status", "labelKey": "schema.wallet.column.status" },
-            { "field": "updatedAt", "label": "Updated", "sortable": true, "labelKey": "schema.wallet.column.updated" }
+            {
+              "field": "ownerType",
+              "label": "Owner type",
+              "sortable": true,
+              "labelKey": "schema.wallet.column.ownerType"
+            },
+            {
+              "field": "ownerId",
+              "label": "Owner ID",
+              "sortable": true,
+              "labelKey": "schema.wallet.column.ownerId"
+            },
+            {
+              "field": "currency",
+              "label": "Currency",
+              "labelKey": "schema.wallet.column.currency"
+            },
+            {
+              "field": "balanceTotal",
+              "label": "Balance",
+              "sortable": true,
+              "labelKey": "schema.wallet.column.balanceTotal"
+            },
+            {
+              "field": "balanceAvailable",
+              "label": "Available",
+              "labelKey": "schema.wallet.column.balanceAvailable"
+            },
+            {
+              "field": "balanceFrozen",
+              "label": "Frozen",
+              "labelKey": "schema.wallet.column.balanceFrozen"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.wallet.column.status"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.wallet.column.updated"
+            }
           ],
           "dataSource": "/api/wallet/accounts",
           "toolbar": [
-            { "key": "create", "label": "New account", "actionRef": "openCreate", "permissionIntent": "edit", "labelKey": "schema.wallet.toolbar.create" },
-            { "key": "reconcile", "label": "Reconcile", "actionRef": "runReconcile", "labelKey": "schema.wallet.toolbar.reconcile" }
+            {
+              "key": "create",
+              "label": "New account",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.wallet.toolbar.create"
+            },
+            {
+              "key": "reconcile",
+              "label": "Reconcile",
+              "actionRef": "runReconcile",
+              "labelKey": "schema.wallet.toolbar.reconcile"
+            }
           ],
           "actions": [
-            { "key": "entries", "label": "Entries", "actionRef": "openEntries", "navigateMapping": { "path": { "id": "$row.id" } }, "labelKey": "schema.wallet.action.entries" },
-            { "key": "adjust", "label": "Adjust", "actionRef": "openAdjust", "permissionIntent": "edit", "labelKey": "schema.wallet.action.adjust" },
-            { "key": "freeze", "label": "Freeze", "actionRef": "openFreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.freeze" },
-            { "key": "unfreeze", "label": "Unfreeze", "actionRef": "openUnfreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.unfreeze" },
-            { "key": "deductFrozen", "label": "Deduct frozen", "actionRef": "openDeductFrozen", "permissionIntent": "edit", "labelKey": "schema.wallet.action.deductFrozen" },
-            { "key": "status", "label": "Status", "actionRef": "openStatus", "permissionIntent": "edit", "labelKey": "schema.wallet.action.status" }
+            {
+              "key": "entries",
+              "label": "Entries",
+              "actionRef": "openEntries",
+              "navigateMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "labelKey": "schema.wallet.action.entries"
+            },
+            {
+              "key": "adjust",
+              "label": "Adjust",
+              "actionRef": "openAdjust",
+              "permissionIntent": "edit",
+              "labelKey": "schema.wallet.action.adjust"
+            },
+            {
+              "key": "freeze",
+              "label": "Freeze",
+              "actionRef": "openFreeze",
+              "permissionIntent": "edit",
+              "labelKey": "schema.wallet.action.freeze"
+            },
+            {
+              "key": "unfreeze",
+              "label": "Unfreeze",
+              "actionRef": "openUnfreeze",
+              "permissionIntent": "edit",
+              "labelKey": "schema.wallet.action.unfreeze"
+            },
+            {
+              "key": "deductFrozen",
+              "label": "Deduct frozen",
+              "actionRef": "openDeductFrozen",
+              "permissionIntent": "edit",
+              "labelKey": "schema.wallet.action.deductFrozen"
+            },
+            {
+              "key": "status",
+              "label": "Status",
+              "actionRef": "openStatus",
+              "permissionIntent": "edit",
+              "labelKey": "schema.wallet.action.status"
+            }
           ]
         }
       }

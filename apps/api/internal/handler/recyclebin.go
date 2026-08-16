@@ -144,17 +144,20 @@ func RecycleBinRoutes(a *auth.Authenticator, service RecycleBinService, operatio
 }
 
 func recycleItemToMap(item RecycleItem) map[string]any {
+	// T-05 (GOAL-013 D-006): deletedAt/restoredAt serialize as UTC ISO-8601
+	// (the frozen 3-digit-millisecond shape), matching every other list —
+	// never raw Unix seconds. The frontend renders them with formatDisplayTime.
 	row := map[string]any{
 		"id":         item.ID,
 		"resource":   item.Resource,
 		"resourceId": item.ResourceID,
 		"actorId":    item.ActorID,
 		"actorName":  item.ActorName,
-		"deletedAt":  item.DeletedAt.Unix(),
+		"deletedAt":  item.DeletedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"restored":   !item.RestoredAt.IsZero(),
 	}
 	if !item.RestoredAt.IsZero() {
-		row["restoredAt"] = item.RestoredAt.Unix()
+		row["restoredAt"] = item.RestoredAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
 	}
 	if item.Payload != nil {
 		row["payload"] = item.Payload

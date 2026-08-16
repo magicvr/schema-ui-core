@@ -203,9 +203,8 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.dictionaryEntries.search.q"
             }
           ],
           "submitLabel": "Search",

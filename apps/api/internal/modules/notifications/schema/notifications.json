@@ -48,6 +48,41 @@
     "children": [
       {
         "type": "form",
+        "id": "notifications-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "notifications-table",
+          "fields": [
+            {
+              "id": "q",
+              "labelKey": "schema.notifications.search.q",
+              "type": "input"
+            },
+            {
+              "id": "read",
+              "type": "select",
+              "labelKey": "schema.notifications.filter.read",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.notifications.filter.read.all"
+                },
+                {
+                  "value": "unread",
+                  "labelKey": "schema.notifications.filter.read.unread"
+                },
+                {
+                  "value": "read",
+                  "labelKey": "schema.notifications.filter.read.read"
+                }
+              ]
+            }
+          ],
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "form",
         "id": "notification-settings",
         "props": {
           "title": "Notification settings",

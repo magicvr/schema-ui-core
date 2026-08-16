@@ -179,9 +179,8 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.dataDictionary.search.q"
             }
           ],
           "submitLabel": "Search",

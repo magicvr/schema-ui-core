@@ -53,7 +53,12 @@ func (e *taskEntity) validateHandler(handler string) error {
 }
 
 func (e *taskEntity) List(f resourceFilter) ([]map[string]any, int, error) {
-	rows, total, err := e.repository.ListTasks(tasksstore.ListFilter{Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize})
+	var enabled *bool
+	if raw, ok := f.Extra["enabled"]; ok && (raw == "true" || raw == "false") {
+		v := raw == "true"
+		enabled = &v
+	}
+	rows, total, err := e.repository.ListTasks(tasksstore.ListFilter{Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize, Enabled: enabled})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -159,7 +164,7 @@ type taskRunsEntity struct {
 }
 
 func (e *taskRunsEntity) List(f resourceFilter) ([]map[string]any, int, error) {
-	rows, total, err := e.repository.ListAllRuns(tasksstore.ListFilter{Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize})
+	rows, total, err := e.repository.ListAllRuns(tasksstore.ListFilter{Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize, Status: f.Extra["status"]})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -206,6 +211,8 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		Listable:        true,
 		SortFields:      []string{"key", "name", "updatedAt"},
 		QSearch:         true,
+		// T-02 (GOAL-013 D-003): enabled state select on the tasks search form.
+		ExtraQuery:      []string{"enabled"},
 		Entity:          &taskEntity{repository: repository, runner: runner, operations: operations},
 		CreateFields:    []string{"key", "name", "cron"},
 		PatchFields:     []string{"name", "cron", "description"},
@@ -225,6 +232,8 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		ReadOnly:        true,
 		SortFields:      []string{"startedAt"},
 		QSearch:         true,
+		// T-02 (GOAL-013 D-003): status select on the task-runs search form.
+		ExtraQuery:      []string{"status"},
 		Entity:          &taskRunsEntity{repository: repository},
 		PermissionRead:  "tasks.read",
 		PermissionWrite: "tasks.write", // unused when ReadOnly

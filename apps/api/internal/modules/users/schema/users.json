@@ -298,9 +298,46 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.users.search.q"
+            },
+            {
+              "id": "enabled",
+              "type": "select",
+              "labelKey": "schema.users.filter.enabled",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.users.filter.enabled.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.users.filter.enabled.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.users.filter.enabled.no"
+                }
+              ]
+            },
+            {
+              "id": "locked",
+              "type": "select",
+              "labelKey": "schema.users.filter.locked",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.users.filter.locked.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.users.filter.locked.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.users.filter.locked.no"
+                }
+              ]
             }
           ],
           "submitLabel": "Search",

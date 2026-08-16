@@ -1006,11 +1006,48 @@ function SchemaCrudProvider({
     }
     const raw = values.q;
     const q = typeof raw === "string" ? raw.trim() : "";
+    // T-02 (GOAL-013 D-003): search forms may declare extra fields beyond the
+    // keyword box (selects for discrete states). Every non-q field is bound
+    // to the target table query filters (serialized by buildResourceQuery
+    // into URL params) — this is the ExtraQuery pipe the backend whitelists.
+    // Field ids owned by this form are first removed from the previous
+    // filters so clearing a select actually clears the parameter (same
+    // discipline as the q reset, C6). Table-level props.filters selects live
+    // in the same query filters map and are preserved because they are not
+    // owned by this form.
+    const owned = new Set<string>();
+    for (const rawField of form.props.fields) {
+      if (typeof rawField.id === "string" && rawField.id !== "" && rawField.id !== "q") {
+        owned.add(rawField.id);
+      }
+    }
     setQueries((prev) => {
       const current = prev[targetTable] ?? { page: 1, pageSize: 10 };
-      // Always write the (possibly empty) q so clearing the search box actually
-      // clears the filter; an empty value must overwrite the previous one (C6).
-      return { ...prev, [targetTable]: { ...current, page: 1, q } };
+      const filters: Record<string, string> = { ...(current.filters ?? {}) };
+      for (const id of owned) {
+        delete filters[id];
+      }
+      for (const rawField of form.props.fields) {
+        const id = rawField.id;
+        if (typeof id !== "string" || id === "" || id === "q") {
+          continue;
+        }
+        const value = values[id];
+        const text =
+          typeof value === "string"
+            ? value.trim()
+            : value === undefined || value === null
+              ? ""
+              : String(value);
+        if (text !== "") {
+          filters[id] = text;
+        }
+      }
+      const next: ResourceQuery = { ...current, page: 1, q };
+      if (Object.keys(filters).length > 0) {
+        next.filters = filters;
+      }
+      return { ...prev, [targetTable]: next };
     });
   }, []);
 
@@ -1697,10 +1734,15 @@ function TabsView({
         <div role="tablist" className="flex flex-wrap items-center gap-1 border-b border-border">
           {children.map((child, index) => {
             const rawProps = (child as unknown as { props?: unknown }).props;
-            const label =
-              isRecord(rawProps) && typeof rawProps.label === "string"
-                ? rawProps.label
-                : `Tab ${index + 1}`;
+            // T-03 (GOAL-013 D-004): resolve labelKey before the literal
+            // label (registry convention), so tabs stay bilingual.
+            const label = resolveTextProp(
+              isRecord(rawProps) ? rawProps : {},
+              "labelKey",
+              "label",
+              t,
+              `Tab ${index + 1}`,
+            );
             return (
               <button
                 key={index}

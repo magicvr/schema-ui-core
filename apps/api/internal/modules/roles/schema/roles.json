@@ -173,9 +173,27 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.roles.search.q"
+            },
+            {
+              "id": "system",
+              "type": "select",
+              "labelKey": "schema.roles.filter.system",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.roles.filter.system.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.roles.filter.system.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.roles.filter.system.no"
+                }
+              ]
             }
           ],
           "submitLabel": "Search",

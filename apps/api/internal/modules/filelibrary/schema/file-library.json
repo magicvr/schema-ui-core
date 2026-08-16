@@ -86,9 +86,8 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.fileLibrary.search.q"
             }
           ],
           "submitLabel": "Search",

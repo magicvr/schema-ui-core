@@ -64,6 +64,15 @@ func TestRecycleBinListAndDetail(t *testing.T) {
 	if detail["resourceId"] != "t1" || detail["restored"] != false {
 		t.Fatalf("detail = %v", detail)
 	}
+	// T-05 (GOAL-013 D-006): deletedAt must be a UTC ISO-8601 string (never
+	// a raw Unix second), so the frontend formatDisplayTime can render it.
+	rawDeleted, ok := detail["deletedAt"].(string)
+	if !ok {
+		t.Fatalf("deletedAt = %v, want ISO-8601 string", detail["deletedAt"])
+	}
+	if _, err := time.Parse("2006-01-02T15:04:05.000Z07:00", rawDeleted); err != nil {
+		t.Fatalf("deletedAt %q is not ISO-8601: %v", rawDeleted, err)
+	}
 }
 
 func TestRecycleBinRestoreAndPurge(t *testing.T) {

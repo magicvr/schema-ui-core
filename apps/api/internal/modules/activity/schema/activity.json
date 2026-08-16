@@ -92,9 +92,8 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "schema.activity.field.search"
+              "labelKey": "schema.activity.search.q"
             }
           ],
           "submitLabel": "Search",
@@ -157,13 +156,41 @@
           "title": "Activity details",
           "titleKey": "schema.activity.detail.title",
           "fields": [
-            { "key": "id", "label": "ID", "labelKey": "schema.activity.field.id" },
-            { "key": "event", "label": "Event", "labelKey": "schema.activity.field.event" },
-            { "key": "actorName", "label": "Actor", "labelKey": "schema.activity.field.actorName" },
-            { "key": "actorId", "label": "Actor ID", "labelKey": "schema.activity.field.actorId" },
-            { "key": "recordId", "label": "Record ID", "labelKey": "schema.activity.field.recordId" },
-            { "key": "detail", "label": "Detail", "labelKey": "schema.activity.field.detail" },
-            { "key": "createdAt", "label": "Created", "labelKey": "schema.activity.field.createdAt" }
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.activity.field.id"
+            },
+            {
+              "key": "event",
+              "label": "Event",
+              "labelKey": "schema.activity.field.event"
+            },
+            {
+              "key": "actorName",
+              "label": "Actor",
+              "labelKey": "schema.activity.field.actorName"
+            },
+            {
+              "key": "actorId",
+              "label": "Actor ID",
+              "labelKey": "schema.activity.field.actorId"
+            },
+            {
+              "key": "recordId",
+              "label": "Record ID",
+              "labelKey": "schema.activity.field.recordId"
+            },
+            {
+              "key": "detail",
+              "label": "Detail",
+              "labelKey": "schema.activity.field.detail"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.activity.field.createdAt"
+            }
           ]
         }
       }

@@ -50,9 +50,31 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.recycleBin.search.q"
+            },
+            {
+              "id": "resource",
+              "type": "select",
+              "labelKey": "schema.recycleBin.filter.resource",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.recycleBin.filter.resource.all"
+                },
+                {
+                  "value": "dict-types",
+                  "labelKey": "schema.recycleBin.filter.resource.dictTypes"
+                },
+                {
+                  "value": "dict-entries",
+                  "labelKey": "schema.recycleBin.filter.resource.dictEntries"
+                },
+                {
+                  "value": "scheduled-tasks",
+                  "labelKey": "schema.recycleBin.filter.resource.scheduledTasks"
+                }
+              ]
             }
           ],
           "submitLabel": "Search",

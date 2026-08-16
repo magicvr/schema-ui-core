@@ -48,130 +48,160 @@
     }
   },
   "body": {
-    "type": "section",
-    "id": "account",
+    "type": "tabs",
+    "id": "account-tabs",
     "children": [
       {
-        "type": "form",
-        "id": "profile-form",
+        "type": "section",
+        "id": "tab-profile",
         "props": {
-          "title": "Profile",
-          "titleKey": "schema.account.profile.title",
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/account/profile",
-            "responseMapping": {
-              "name": "name"
+          "labelKey": "schema.account.tab.profile",
+          "label": "Profile"
+        },
+        "children": [
+          {
+            "type": "form",
+            "id": "profile-form",
+            "props": {
+              "title": "Profile",
+              "titleKey": "schema.account.profile.title",
+              "recordSource": {
+                "method": "GET",
+                "url": "/api/account/profile",
+                "responseMapping": {
+                  "name": "name"
+                }
+              },
+              "fields": [
+                {
+                  "id": "name",
+                  "label": "Name",
+                  "type": "input",
+                  "labelKey": "schema.account.field.name"
+                }
+              ],
+              "submitAction": "saveProfile",
+              "submitLabel": "Save profile",
+              "submitLabelKey": "schema.account.submit.saveProfile"
+            }
+          }
+        ]
+      },
+      {
+        "type": "section",
+        "id": "tab-security",
+        "props": {
+          "labelKey": "schema.account.tab.security",
+          "label": "Security"
+        },
+        "children": [
+          {
+            "type": "form",
+            "id": "password-form",
+            "props": {
+              "title": "Change password",
+              "titleKey": "schema.account.password.title",
+              "fields": [
+                {
+                  "id": "currentPassword",
+                  "label": "Current password",
+                  "type": "password",
+                  "labelKey": "schema.account.field.currentPassword"
+                },
+                {
+                  "id": "newPassword",
+                  "label": "New password",
+                  "type": "password",
+                  "labelKey": "schema.account.field.newPassword"
+                }
+              ],
+              "submitAction": "changePassword",
+              "submitLabel": "Change password",
+              "submitLabelKey": "schema.account.submit.changePassword"
             }
           },
-          "fields": [
-            {
-              "id": "name",
-              "label": "Name",
-              "type": "input",
-              "labelKey": "schema.account.field.name"
-            }
-          ],
-          "submitAction": "saveProfile",
-          "submitLabel": "Save profile",
-          "submitLabelKey": "schema.account.submit.saveProfile"
-        }
+          {
+            "type": "custom",
+            "id": "mfa-manager-block",
+            "component": "mfa-manager"
+          }
+        ]
       },
       {
-        "type": "form",
-        "id": "password-form",
+        "type": "section",
+        "id": "tab-sessions",
         "props": {
-          "title": "Change password",
-          "titleKey": "schema.account.password.title",
-          "fields": [
-            {
-              "id": "currentPassword",
-              "label": "Current password",
-              "type": "password",
-              "labelKey": "schema.account.field.currentPassword"
-            },
-            {
-              "id": "newPassword",
-              "label": "New password",
-              "type": "password",
-              "labelKey": "schema.account.field.newPassword"
-            }
-          ],
-          "submitAction": "changePassword",
-          "submitLabel": "Change password",
-          "submitLabelKey": "schema.account.submit.changePassword"
-        }
-      },
-      {
-        "type": "custom",
-        "id": "mfa-manager-block",
-        "component": "mfa-manager"
-      },
-      {
-        "type": "table",
-        "id": "sessions-table",
-        "props": {
-          "title": "Signed-in sessions",
-          "titleKey": "schema.account.session.title",
-          "columns": [
-            {
-              "field": "createdAt",
-              "label": "Created",
-              "labelKey": "schema.account.column.created"
-            },
-            {
-              "field": "expiresAt",
-              "label": "Expires",
-              "labelKey": "schema.account.column.expires"
-            },
-            {
-              "field": "status",
-              "label": "Status",
-              "labelKey": "schema.account.column.status"
-            }
-          ],
-          "filters": [
-            {
-              "field": "status",
-              "type": "select",
-              "labelKey": "schema.account.filter.status",
-              "options": [
+          "labelKey": "schema.account.tab.sessions",
+          "label": "Sessions"
+        },
+        "children": [
+          {
+            "type": "table",
+            "id": "sessions-table",
+            "props": {
+              "title": "Signed-in sessions",
+              "titleKey": "schema.account.session.title",
+              "columns": [
                 {
-                  "value": "",
-                  "labelKey": "schema.account.filter.status.all"
+                  "field": "createdAt",
+                  "label": "Created",
+                  "labelKey": "schema.account.column.created"
                 },
                 {
-                  "value": "active",
-                  "labelKey": "schema.account.filter.status.active"
+                  "field": "expiresAt",
+                  "label": "Expires",
+                  "labelKey": "schema.account.column.expires"
                 },
                 {
-                  "value": "revoked",
-                  "labelKey": "schema.account.filter.status.revoked"
+                  "field": "status",
+                  "label": "Status",
+                  "labelKey": "schema.account.column.status"
+                }
+              ],
+              "filters": [
+                {
+                  "field": "status",
+                  "type": "select",
+                  "labelKey": "schema.account.filter.status",
+                  "options": [
+                    {
+                      "value": "",
+                      "labelKey": "schema.account.filter.status.all"
+                    },
+                    {
+                      "value": "active",
+                      "labelKey": "schema.account.filter.status.active"
+                    },
+                    {
+                      "value": "revoked",
+                      "labelKey": "schema.account.filter.status.revoked"
+                    }
+                  ]
+                }
+              ],
+              "dataSource": "/api/account/sessions",
+              "actions": [
+                {
+                  "key": "revoke",
+                  "label": "Revoke",
+                  "actionRef": "revokeSession",
+                  "requestMapping": {
+                    "path": {
+                      "id": "$row.id"
+                    }
+                  },
+                  "disabledWhen": {
+                    "field": "status",
+                    "equals": "revoked"
+                  },
+                  "confirm": "Revoke this session?",
+                  "labelKey": "schema.account.action.revoke",
+                  "confirmKey": "schema.account.confirm.revoke"
                 }
               ]
             }
-          ],
-          "dataSource": "/api/account/sessions",
-          "actions": [
-            {
-              "key": "revoke",
-              "label": "Revoke",
-              "actionRef": "revokeSession",
-              "requestMapping": {
-                "path": {
-                  "id": "$row.id"
-                }
-              },
-              "disabledWhen": {
-                "field": "status",
-                "equals": "revoked"
-              },
-              "confirm": "Revoke this session?",
-              "labelKey": "schema.account.action.revoke",
-              "confirmKey": "schema.account.confirm.revoke"
-            }
-          ]
-        }
+          }
+        ]
       }
     ]
   }

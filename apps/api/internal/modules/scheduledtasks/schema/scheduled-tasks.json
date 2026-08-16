@@ -181,9 +181,27 @@
           "fields": [
             {
               "id": "q",
-              "label": "Search",
               "type": "input",
-              "labelKey": "feedback.search"
+              "labelKey": "schema.scheduledTasks.search.q"
+            },
+            {
+              "id": "enabled",
+              "type": "select",
+              "labelKey": "schema.scheduledTasks.filter.enabled",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.scheduledTasks.filter.enabled.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.scheduledTasks.filter.enabled.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.scheduledTasks.filter.enabled.no"
+                }
+              ]
             }
           ],
           "submitLabel": "Search",

@@ -73,6 +73,11 @@ type UserFilter struct {
 	Order    string
 	Page     int
 	PageSize int
+	// T-02 (GOAL-013 D-003): optional management-list filters (nil = no
+	// constraint). Enabled matches the enabled flag; Locked matches rows
+	// currently lock-expired (locked_until in the future).
+	Enabled *bool
+	Locked  *bool
 }
 
 // UserPatch is the editable subset of a managed user.
@@ -109,6 +114,8 @@ type RoleFilter struct {
 	Order    string
 	Page     int
 	PageSize int
+	// T-02 (GOAL-013 D-003): optional system-flag filter (nil = no constraint).
+	System *bool
 }
 
 // PermissionCatalogEntry is one row of the RBAC permission catalog (W11 ·

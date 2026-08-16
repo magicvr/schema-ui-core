@@ -67,6 +67,10 @@ type ListFilter struct {
 	Order    string
 	Page     int
 	PageSize int
+	// T-02 (GOAL-013 D-003): optional enabled flag filter (tasks) / exact
+	// status filter (task runs); zero value means no constraint.
+	Enabled *bool
+	Status  string
 }
 
 // ListTasks returns the paged task rows.
@@ -79,6 +83,15 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 		if q := strings.TrimSpace(filter.Q); q != "" {
 			where = ` WHERE instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0`
 			args = append(args, q, q)
+		}
+		if filter.Enabled != nil {
+			if where == "" {
+				where = ` WHERE `
+			} else {
+				where += ` AND `
+			}
+			where += `enabled = ?`
+			args = append(args, boolInt(*filter.Enabled))
 		}
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM scheduled_tasks`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count tasks: %w", err)
@@ -284,6 +297,15 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 		if q := strings.TrimSpace(filter.Q); q != "" {
 			where = ` WHERE instr(lower(detail), ?) > 0 OR task_id IN (SELECT id FROM scheduled_tasks WHERE instr(lower(key), ?) > 0)`
 			args = append(args, q, q)
+		}
+		if s := strings.TrimSpace(filter.Status); s != "" {
+			if where == "" {
+				where = ` WHERE `
+			} else {
+				where += ` AND `
+			}
+			where += `status = ?`
+			args = append(args, s)
 		}
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM task_runs`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count all runs: %w", err)

@@ -57,6 +57,9 @@ func usersResourceWithNotifier(repository UsersRepository, operations operationl
 		Listable:        true,
 		SortFields:      []string{"username", "name", "updatedAt"},
 		QSearch:         true,
+		// T-02 (GOAL-013 D-003): management-list filters — enabled / locked
+		// state selects on the users search form.
+		ExtraQuery:      []string{"enabled", "locked"},
 		Entity:          &usersEntity{repository: repository, notifier: notifier},
 		CreateFields:    []string{"username", "name"},
 		PatchFields:     []string{"name"},
@@ -107,8 +110,19 @@ func userToMap(u authsession.User) map[string]any {
 }
 
 func (e *usersEntity) List(f resourceFilter) ([]map[string]any, int, error) {
+	// T-02 (GOAL-013 D-003): enabled / locked query params ("true"/"false").
+	var enabled, locked *bool
+	if raw, ok := f.Extra["enabled"]; ok && (raw == "true" || raw == "false") {
+		v := raw == "true"
+		enabled = &v
+	}
+	if raw, ok := f.Extra["locked"]; ok && (raw == "true" || raw == "false") {
+		v := raw == "true"
+		locked = &v
+	}
 	items, total, err := e.repository.ListUsers(authsession.UserFilter{
 		Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
+		Enabled: enabled, Locked: locked,
 	})
 	if err != nil {
 		return nil, 0, err

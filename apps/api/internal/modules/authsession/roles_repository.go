@@ -13,7 +13,7 @@ func (r *Repository) ListRoles(filter RoleFilter) ([]Role, int, error) {
 	var items []Role
 	var total int
 	err := r.withTx("list roles", func(tx *sql.Tx) error {
-		where, args := rolesWhere(filter.Q)
+		where, args := rolesWhere(filter.Q, filter.System)
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM roles`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count roles: %w", err)
 		}
@@ -414,12 +414,21 @@ func scanRoleRow(row interface{ Scan(...any) error }, role *Role) error {
 	return nil
 }
 
-func rolesWhere(query string) (string, []any) {
-	query = strings.ToLower(strings.TrimSpace(query))
-	if query == "" {
+func rolesWhere(query string, system *bool) (string, []any) {
+	clauses := []string{}
+	args := []any{}
+	if q := strings.ToLower(strings.TrimSpace(query)); q != "" {
+		clauses = append(clauses, `(instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0)`)
+		args = append(args, q, q)
+	}
+	if system != nil {
+		clauses = append(clauses, `system = ?`)
+		args = append(args, boolInt(*system))
+	}
+	if len(clauses) == 0 {
 		return "", nil
 	}
-	return ` WHERE (instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0)`, []any{query, query}
+	return ` WHERE ` + strings.Join(clauses, ` AND `), args
 }
 
 func rolesSortSQL(sort, order string) string {
