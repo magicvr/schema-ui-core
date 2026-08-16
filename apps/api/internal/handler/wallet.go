@@ -239,6 +239,13 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		walletMutate(w, r, service, operations, walletstore.EntryUnfreeze, "unfreeze")
 	})))
 
+	// Deduct-frozen: consume from the frozen bucket atomically (A-008 F-001 ·
+	// GOAL-021 D-001 §1). available stays untouched — the pre-authorized money
+	// is consumed, never re-exposed.
+	add("POST", "/api/wallet/accounts/{id}/deduct-frozen", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		walletMutate(w, r, service, operations, walletstore.EntryDeductFrozen, "deduct-frozen")
+	})))
+
 	// Reconcile: ledger chain check (read path — does not change balances).
 	add("POST", "/api/wallet/reconcile", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "wallet.read")

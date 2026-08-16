@@ -173,6 +173,25 @@ func migrateOperationLogWallet(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogWalletDDL, "wallet-events-expanded")
 }
 
+// operationLogWalletDeductDDL (0034 · GOAL-021 D-001 §3): adds the
+// wallet.deduct-frozen event to the CHECK (rebuild like 0032).
+var operationLogWalletDeductDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update','mfa.enroll','mfa.confirm','mfa.disable','mfa.recovery-rotate','mfa.admin-reset','mfa.login','wallet.account-create','wallet.account-update','wallet.adjust','wallet.freeze','wallet.unfreeze','wallet.reconcile','wallet.deduct-frozen')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
+func migrateOperationLogWalletDeduct(tx *sql.Tx) error {
+	return rebuildOperationLog(tx, operationLogWalletDeductDDL, "wallet-deduct-events-expanded")
+}
+
 // operationLogRecycleDDL (0026 · S-12 GOAL-012 D-002 §5): adds the two
 // recycle events to the event CHECK (rebuild like 0005/0008/0014/0015/0018/0020/0022/0024).
 var operationLogRecycleDDL = []string{
@@ -290,6 +309,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_wallet",
 			Checksum:             kernel.MigrationChecksum(operationLogWalletDDL, "0032:operation-log-wallet:v1"),
 			Apply:                migrateOperationLogWallet,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_wallet_deduct"},
+			Version:              34,
+			Name:                 "operation_log_wallet_deduct",
+			Checksum:             kernel.MigrationChecksum(operationLogWalletDeductDDL, "0034:operation-log-wallet-deduct:v1"),
+			Apply:                migrateOperationLogWalletDeduct,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_recycle"},

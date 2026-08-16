@@ -158,6 +158,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/accounts/{id}/adjust",
 				"POST /api/wallet/accounts/{id}/freeze",
 				"POST /api/wallet/accounts/{id}/unfreeze",
+				"POST /api/wallet/accounts/{id}/deduct-frozen",
 				"POST /api/wallet/reconcile", "GET /api/wallet/reconcile/runs",
 			},
 			Pages:       []string{"wallet", "wallet-entries"},

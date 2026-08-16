@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.7.0
+version: 0.9.0
 ---
 
 # 审计 · GOAL-019-r3-s14-wallet-ledger
@@ -30,6 +30,13 @@ version: 0.7.0
 | A-004 | 2026-08-16 | independent | S1 方案冻结（D-002 + I-001~I-004 + F-001/F-002 响应 + data 门禁） | conditional | 2 | 03-audit/A-004-s1-independent.md |
 | A-005 | 2026-08-16 | independent | A-004 F-001~F-006 闭合核验 | pass | 0 | 03-audit/A-005-s1-reaudit.md |
 | A-007 | 2026-08-16 | independent | S5 关门（成功标准 + D-002 落实 + 实现/验证/安全/协议 + 台账） | pass | 0 | 03-audit/A-007-s5-independent.md |
+| A-008 | 2026-08-16 | independent | 业界对标（冻结扣款/复式记账/转账/风控/对账性能/前端） | conditional | 2（F-001/F-002） | 03-audit/A-008-industry-benchmark-independent.md |
+
+## 响应记录（/govern · 2026-08-16 · A-008）
+
+- **A-008**（independent · 业界对标 · conditional，2 required）：019-F-001（缺失冻结扣款原语）→ **fixed**（GOAL-021-wallet-deduct-frozen：EntryDeductFrozen + 端点 + 0033/0034 迁移 + 审计；A-002 grok pass）；019-F-002（幂等比对遗漏 refType/refId）→ **fixed**（Mutate 比对纳入 RefType/RefID + TestMutateIdempotencyRefCompare）。
+- 019-F-003~F-011（recommended/non-blocking 演进）→ **登记演进方向**（GOAL-021 D-001 §5 触发条件清单：复式记账/原子转账/交易类型/对账快照/热点并发/调账风控/operationlog 同事务/多币种/前端格式化），按需立项。
+- 波次级（e2e/V-007/V-008）：维持批末统一验证。
 
 ## 结论状态
 

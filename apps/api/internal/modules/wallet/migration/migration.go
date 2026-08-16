@@ -64,7 +64,56 @@ var walletDDL = []string{
 )`,
 }
 
-// Descriptors returns the immutable 0031 wallet history.
+
+// walletLedgerDeductDDL (0033 · GOAL-021 D-001 §3): the ledger entry_type CHECK
+// gains 'deduct_frozen' (consume from the frozen bucket). SQLite cannot alter a
+// CHECK, so the table is rebuilt (rename → create → copy → drop) like the
+// operationlog rebuild pattern; data and constraints are preserved verbatim.
+var walletLedgerDeductDDL = []string{
+	`CREATE TABLE wallet_ledger_entries (
+  id                      TEXT PRIMARY KEY,
+  account_id              TEXT NOT NULL,
+  entry_type              TEXT NOT NULL CHECK (entry_type IN ('adjust','freeze','unfreeze','deduct_frozen')),
+  amount_delta            INTEGER NOT NULL CHECK (amount_delta != 0),
+  balance_after_total     INTEGER NOT NULL CHECK (balance_after_total >= 0),
+  balance_after_available INTEGER NOT NULL CHECK (balance_after_available >= 0),
+  balance_after_frozen    INTEGER NOT NULL CHECK (balance_after_frozen >= 0),
+  ref_type                TEXT,
+  ref_id                  TEXT,
+  idempotency_key         TEXT,
+  memo                    TEXT NOT NULL,
+  actor_id                TEXT NOT NULL,
+  actor_name              TEXT NOT NULL,
+  created_at              INTEGER NOT NULL,
+  UNIQUE (account_id, idempotency_key),
+  CHECK (balance_after_total = balance_after_available + balance_after_frozen)
+)`,
+	`CREATE INDEX idx_wallet_ledger_account ON wallet_ledger_entries(account_id, created_at DESC)`,
+}
+
+func migrateWalletLedgerDeduct(tx *sql.Tx) error {
+	if _, err := tx.Exec(`ALTER TABLE wallet_ledger_entries RENAME TO wallet_ledger_entries_old`); err != nil {
+		return fmt.Errorf("rename wallet_ledger_entries: %w", err)
+	}
+	if _, err := tx.Exec(walletLedgerDeductDDL[0]); err != nil {
+		return fmt.Errorf("recreate wallet_ledger_entries: %w", err)
+	}
+	if _, err := tx.Exec(
+		`INSERT INTO wallet_ledger_entries (id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at)
+		 SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at FROM wallet_ledger_entries_old`,
+	); err != nil {
+		return fmt.Errorf("migrate wallet_ledger_entries rows: %w", err)
+	}
+	if _, err := tx.Exec(`DROP TABLE wallet_ledger_entries_old`); err != nil {
+		return fmt.Errorf("drop wallet_ledger_entries_old: %w", err)
+	}
+	if _, err := tx.Exec(walletLedgerDeductDDL[1]); err != nil {
+		return fmt.Errorf("recreate wallet ledger index: %w", err)
+	}
+	return nil
+}
+
+// Descriptors returns the immutable 0031 + 0033 wallet history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
 		{
@@ -73,6 +122,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "wallet",
 			Checksum:             kernel.MigrationChecksum(walletDDL, "0031:wallet:v1"),
 			Apply:                migrateWallet,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet_ledger_deduct"},
+			Version:              33,
+			Name:                 "wallet_ledger_deduct",
+			Checksum:             kernel.MigrationChecksum(walletLedgerDeductDDL, "0033:wallet-ledger-deduct:v1"),
+			Apply:                migrateWalletLedgerDeduct,
 		},
 	}
 }

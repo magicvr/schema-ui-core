@@ -93,6 +93,7 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"POST", "/api/wallet/accounts/acct-1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/freeze"},
 		{"POST", "/api/wallet/accounts/acct-1/unfreeze"},
+		{"POST", "/api/wallet/accounts/acct-1/deduct-frozen"},
 		{"POST", "/api/wallet/reconcile"},
 		{"GET", "/api/wallet/reconcile/runs"},
 	} {
@@ -117,6 +118,7 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"POST", "/api/wallet/accounts/acct-1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/freeze"},
 		{"POST", "/api/wallet/accounts/acct-1/unfreeze"},
+		{"POST", "/api/wallet/accounts/acct-1/deduct-frozen"},
 		{"POST", "/api/wallet/reconcile"},
 		{"GET", "/api/wallet/reconcile/runs"},
 	} {

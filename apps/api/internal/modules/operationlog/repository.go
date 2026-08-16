@@ -64,6 +64,8 @@ const (
 	EventWalletFreeze         = "wallet.freeze"
 	EventWalletUnfreeze       = "wallet.unfreeze"
 	EventWalletReconcile      = "wallet.reconcile"
+	// GOAL-021 (D-001 §1): consume from the frozen bucket.
+	EventWalletDeductFrozen   = "wallet.deduct-frozen"
 )
 
 // Operation is one append-only operation log row.

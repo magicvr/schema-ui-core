@@ -53,6 +53,9 @@ func TestApplyTable(t *testing.T) {
 		{"freeze zero rejected", store.LedgerEntryInput{EntryType: store.EntryFreeze, AmountDelta: 0}, 0, 0, 0, true},
 		{"freeze negative rejected", store.LedgerEntryInput{EntryType: store.EntryFreeze, AmountDelta: -5}, 0, 0, 0, true},
 		{"freeze over available", store.LedgerEntryInput{EntryType: store.EntryFreeze, AmountDelta: 101}, 0, 0, 0, true},
+		{"deduct frozen no frozen", store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 30}, 0, 0, 0, true},
+		{"deduct frozen zero", store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 0}, 0, 0, 0, true},
+		{"deduct frozen negative", store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: -5}, 0, 0, 0, true},
 		{"adjust over-draft negative", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: -101}, 0, 0, 0, true},
 		{"unknown type", store.LedgerEntryInput{EntryType: "transfer", AmountDelta: 10}, 0, 0, 0, true},
 	}
@@ -314,5 +317,113 @@ func TestGetOrCreateUserAccount(t *testing.T) {
 	}
 	if acct.BalanceTotal != 100 {
 		t.Fatalf("balance = %d, want 100", acct.BalanceTotal)
+	}
+}
+
+// GOAL-021 D-001 §1: deduct_frozen consumes from the frozen bucket atomically
+// (available untouched) and stays inside the ledger invariants.
+func TestMutateDeductFrozen(t *testing.T) {
+	repo := newRepo(t)
+	createAccount(t, repo, "u1")
+
+	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 1000, Memo: "grant", ActorID: "a1", ActorName: "Admin"}, "d1", now()); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryFreeze, AmountDelta: 400, Memo: "hold", ActorID: "a1", ActorName: "Admin"}, "d2", now()); err != nil {
+		t.Fatal(err)
+	}
+
+	// Deduct 250 from the frozen bucket: total 750, available 600, frozen 150.
+	acct, entry, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 250, Memo: "settle", ActorID: "a1", ActorName: "Admin"}, "d3", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.BalanceTotal != 750 || acct.BalanceAvailable != 600 || acct.BalanceFrozen != 150 {
+		t.Fatalf("after deduct = (%d,%d,%d)", acct.BalanceTotal, acct.BalanceAvailable, acct.BalanceFrozen)
+	}
+	if entry.EntryType != store.EntryDeductFrozen || entry.BalanceAfterTotal != 750 || entry.BalanceAfterFrozen != 150 {
+		t.Fatalf("entry = %+v", entry)
+	}
+
+	// Over-deduct rejected.
+	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 999, Memo: "too much", ActorID: "a1", ActorName: "Admin"}, "d4", now()); err != store.ErrInsufficient {
+		t.Fatalf("over-deduct err = %v, want ErrInsufficient", err)
+	}
+
+	// Reconcile stays consistent.
+	run, err := repo.ReconcileRun("acct-u1", "run-deduct", "a1", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run.Result != store.ResultConsistent {
+		t.Fatalf("reconcile after deduct = %s", run.Result)
+	}
+}
+
+// GOAL-021 D-001 §2: idempotency compare includes refType/refId — same key
+// with a different reference document is a conflict, not a replay.
+func TestMutateIdempotencyRefCompare(t *testing.T) {
+	repo := newRepo(t)
+	createAccount(t, repo, "u1")
+	base := store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 100, Memo: "grant", IdempotencyKey: "k-ref", ActorID: "a1", ActorName: "Admin", RefType: "order", RefID: "ord-1"}
+	if _, _, err := repo.Mutate("acct-u1", base, "r1", now()); err != nil {
+		t.Fatal(err)
+	}
+	// Same key + same ref → replay.
+	if _, _, err := repo.Mutate("acct-u1", base, "r2", now()); err != nil {
+		t.Fatalf("same-ref replay: %v", err)
+	}
+	// Same key + different ref id → conflict (the new document was NOT booked).
+	other := base
+	other.RefID = "ord-2"
+	if _, _, err := repo.Mutate("acct-u1", other, "r3", now()); err != store.ErrIdempotencyConflict {
+		t.Fatalf("different-ref err = %v, want ErrIdempotencyConflict", err)
+	}
+	// Balance unchanged (no double booking).
+	acct, _ := repo.GetAccount("acct-u1")
+	if acct.BalanceTotal != 100 {
+		t.Fatalf("balance = %d, want 100", acct.BalanceTotal)
+	}
+}
+
+// GOAL-021 D-001 §1: deduct_frozen on a frozen-holding account.
+func TestApplyDeductFrozenWithFrozenBalance(t *testing.T) {
+	base := store.Account{BalanceTotal: 100, BalanceAvailable: 60, BalanceFrozen: 40}
+	total, avail, frozen, err := store.Apply(base, store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 25})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 75 || avail != 60 || frozen != 15 {
+		t.Fatalf("deduct = (%d,%d,%d), want (75,60,15)", total, avail, frozen)
+	}
+	if _, _, _, err := store.Apply(base, store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 41}); err != store.ErrInsufficient {
+		t.Fatalf("over-deduct err = %v, want ErrInsufficient", err)
+	}
+}
+
+// GOAL-021 F-002（A-002 recommended）：精确哨兵断言——deduct 边界区分
+// ErrInvalidEntry（d<=0）与 ErrInsufficient（frozen 不足），disabled 拒写含 deduct。
+func TestDeductFrozenPreciseSentinels(t *testing.T) {
+	base := store.Account{BalanceTotal: 100, BalanceAvailable: 60, BalanceFrozen: 40}
+	if _, _, _, err := store.Apply(base, store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 0}); err != store.ErrInvalidEntry {
+		t.Fatalf("zero deduct err = %v, want ErrInvalidEntry", err)
+	}
+	if _, _, _, err := store.Apply(base, store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: -5}); err != store.ErrInvalidEntry {
+		t.Fatalf("negative deduct err = %v, want ErrInvalidEntry", err)
+	}
+	if _, _, _, err := store.Apply(base, store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 41}); err != store.ErrInsufficient {
+		t.Fatalf("over deduct err = %v, want ErrInsufficient", err)
+	}
+
+	repo := newRepo(t)
+	createAccount(t, repo, "u1")
+	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 100, Memo: "g", ActorID: "a", ActorName: "A"}, "s1", now()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.UpdateStatus("acct-u1", store.StatusDisabled, 1, now()); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryDeductFrozen, AmountDelta: 10, Memo: "x", ActorID: "a", ActorName: "A"}, "s2", now()); err != store.ErrDisabled {
+		t.Fatalf("disabled deduct err = %v, want ErrDisabled", err)
 	}
 }

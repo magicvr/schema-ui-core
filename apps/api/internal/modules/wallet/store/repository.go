@@ -46,9 +46,10 @@ var (
 
 // Entry types (D-002 §1 apply table).
 const (
-	EntryAdjust   = "adjust"
-	EntryFreeze   = "freeze"
-	EntryUnfreeze = "unfreeze"
+	EntryAdjust      = "adjust"
+	EntryFreeze      = "freeze"
+	EntryUnfreeze    = "unfreeze"
+	EntryDeductFrozen = "deduct_frozen"
 )
 
 // Account statuses.
@@ -359,6 +360,15 @@ func Apply(prev Account, in LedgerEntryInput) (total, available, frozen int64, e
 		}
 		available += in.AmountDelta
 		frozen -= in.AmountDelta
+	case EntryDeductFrozen:
+		// A-008 F-001: deduct from the frozen bucket atomically — total and
+		// frozen drop by d, available stays untouched (the pre-authorized
+		// money is consumed, never re-exposed as available).
+		if in.AmountDelta <= 0 {
+			return 0, 0, 0, ErrInvalidEntry
+		}
+		total -= in.AmountDelta
+		frozen -= in.AmountDelta
 	default:
 		return 0, 0, 0, ErrInvalidEntry
 	}
@@ -395,7 +405,8 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 			existing.IdempotencyKey = idemKey.String
 			if err == nil {
 				existing.CreatedAt = time.Unix(created, 0)
-				if existing.EntryType == in.EntryType && existing.AmountDelta == in.AmountDelta && existing.Memo == in.Memo {
+				if existing.EntryType == in.EntryType && existing.AmountDelta == in.AmountDelta &&
+				existing.Memo == in.Memo && existing.RefType == in.RefType && existing.RefID == in.RefID {
 					entry = existing
 					// Return the current account too so the caller can report
 					// the idempotent replay without a second read.

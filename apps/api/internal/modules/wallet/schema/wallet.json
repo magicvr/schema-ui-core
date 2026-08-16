@@ -56,6 +56,13 @@
       "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
       "onSuccess": { "behavior": "reload" }
     },
+    "deductFrozen": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/wallet/accounts/{id}/deduct-frozen",
+      "bodyMapping": { "amount": "amount", "memo": "memo", "idempotencyKey": "idempotencyKey" },
+      "onSuccess": { "behavior": "reload" }
+    },
     "runReconcile": {
       "type": "request",
       "method": "POST",
@@ -145,6 +152,25 @@
         }
       }
     },
+    "openDeductFrozen": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "deduct-frozen-wallet-form",
+        "permissionCascade": { "keys": ["edit"] },
+        "permissions": { "edit": "$context.user.permissions contains \"wallet.adjust\"" },
+        "props": {
+          "fields": [
+            { "id": "amount", "label": "Amount (min units)", "type": "inputNumber", "required": true, "labelKey": "schema.wallet.field.amount" },
+            { "id": "memo", "label": "Memo", "type": "textarea", "required": true, "labelKey": "schema.wallet.field.memo" },
+            { "id": "idempotencyKey", "label": "Idempotency key (optional)", "type": "input", "labelKey": "schema.wallet.field.idempotencyKey" }
+          ],
+          "submitAction": "deductFrozen",
+          "submitLabel": "Deduct frozen",
+          "submitLabelKey": "schema.wallet.submit.deductFrozen"
+        }
+      }
+    },
     "openStatus": {
       "type": "modal",
       "content": {
@@ -215,6 +241,7 @@
             { "key": "adjust", "label": "Adjust", "actionRef": "openAdjust", "permissionIntent": "edit", "labelKey": "schema.wallet.action.adjust" },
             { "key": "freeze", "label": "Freeze", "actionRef": "openFreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.freeze" },
             { "key": "unfreeze", "label": "Unfreeze", "actionRef": "openUnfreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.unfreeze" },
+            { "key": "deductFrozen", "label": "Deduct frozen", "actionRef": "openDeductFrozen", "permissionIntent": "edit", "labelKey": "schema.wallet.action.deductFrozen" },
             { "key": "status", "label": "Status", "actionRef": "openStatus", "permissionIntent": "edit", "labelKey": "schema.wallet.action.status" }
           ]
         }
