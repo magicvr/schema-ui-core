@@ -314,7 +314,7 @@ function UserMenu({
         >
           {initials}
         </span>
-        <span className="hidden max-w-[10rem] truncate text-xs text-foreground sm:inline">
+        <span className="max-w-[8rem] truncate text-xs text-foreground">
           {displayName}
         </span>
         <ChevronDown

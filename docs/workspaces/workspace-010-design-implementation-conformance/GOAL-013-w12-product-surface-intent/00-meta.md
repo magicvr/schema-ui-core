@@ -1,12 +1,12 @@
 ---
 id: GOAL-013-w12-product-surface-intent
 title: W12 · 产品面交互意图对齐（顶栏菜单 / 列表搜索 / 个人中心 / 我的钱包 / 回收站时间 / 模块配置）
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.7.0
-progress: 2/4
+version: 0.9.0
+progress: 4/4
 ---
 
 # GOAL-013 · W12 · 产品面交互意图对齐
@@ -23,10 +23,10 @@ VP-010 / workspace-010 的**第十二波**（用户 2026-08-16 `/govern` 点名�
 
 - [x] **S1 · 意图盘点**：六条意图对照 as-built 落盘；信息项登记；用户确认范围与分批（D-001～D-008，2026-08-16）
 - [x] **S2 · 方案冻结**：逐项设计决策（D-002～D-008）；required I-001～I-004、I-006 已闭合
-- [ ] **S3 · 按冻结范围实施**：可分批（建议 P0 = T-05 + T-01；P1 = T-03 + T-02；P2 = T-06。T-04 已移交 workspace-011）
-- [ ] **S4 · 验证与关门**：回归绿 + 自审（T-04/T-06 若改数据面或 Profile/模块语义则加 independent / go 判定）
+- [x] **S3 · 按冻结范围实施**：P0 = T-05 + T-01；P1 = T-03 + T-02；P2 = T-06（T-04 已移交 workspace-011 GOAL-022；E-002～E-004）
+- [x] **S4 · 验证与关门**：回归绿（Go 0 FAIL / Web 1027/1027 / tsc 0）+ 自审 A-001 pass + independent A-002（grok，conditional，required F-001 已 fixed——E-006）+ T-06 go 判定（部署契约变化、默认集不变 → 不暂挂；E-005）
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **2/4**。
+progress: 由四个等权检查点派生（S1～S4）；当前 **4/4**。
 
 ## 审计策略
 

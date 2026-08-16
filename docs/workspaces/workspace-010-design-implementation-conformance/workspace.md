@@ -56,7 +56,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W9 | GOAL-010-w9-branding-asset-upload | **done**（6/6 · 2026-08-15 关门：品牌图标 URL 填写 → 上传控件 + 专用资产存储 + 自动图像处理；S6 cross 审计 A-001 self + A-002 grok independent pass，findings 全 fixed；go 无影响不暂挂） |
 | W10 | GOAL-011-w10-account-page-conformance | **done**（4/4 · 2026-08-15 关门：数据权限页七层修复 + 翻页滚动稳定 + 表格样式刷新/时间格式化；参考样式 user-overruled；A-001/A-002 self pass；go 无影响不暂挂） |
 | W11 | GOAL-012-w11-mfa-ux-review | **done**（5/5 · 2026-08-15 关门：MFA 三缺陷修复 + UX P0/P1 实施；A-001 self pass + A-002 grok independent conditional→resolved + A-003 closeout self pass；Go 全量 + Web 1002/1002；go 无影响不暂挂） |
-| W12 | GOAL-013-w12-product-surface-intent | **active**（2/4 · S1/S2 冻结 D-002～D-008；T-04 移交 GOAL-022；待 S3） |
+| W12 | GOAL-013-w12-product-surface-intent | **done**（4/4 · 2026-08-16 关门：T-05/T-01/T-03/T-02/T-06 实施；T-04 移交 GOAL-022；回归 Go 0 FAIL + Web 1027/1027；A-001 self pass + A-002 grok conditional（F-001 fixed / F-003·F-004 fixed / F-005 accepted）；T-06 go 判定不暂挂） |
 
 ## 固定共享资料引用
 

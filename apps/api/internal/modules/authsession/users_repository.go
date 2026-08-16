@@ -16,7 +16,7 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 	var total int
 	err := r.withTx("list users", func(tx *sql.Tx) error {
 		where, args := usersWhere(filter.Q, filter.Enabled, filter.Locked)
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM users`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM users u`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count users: %w", err)
 		}
 
@@ -394,13 +394,15 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 
 // usersWhere builds the list WHERE clause for q + optional enabled/locked
 // filters (T-02 · GOAL-013 D-003). Locked matches rows whose lock has not
-// expired yet (mirrors the row projection's "locked" semantics).
+// expired yet (mirrors the row projection's "locked" semantics). The keyword
+// clause matches username / display name / id, mirroring the frozen search
+// label (A-002 F-003).
 func usersWhere(query string, enabled, locked *bool) (string, []any) {
 	clauses := []string{}
 	args := []any{}
 	if q := strings.ToLower(strings.TrimSpace(query)); q != "" {
-		clauses = append(clauses, `(instr(lower(username), ?) > 0 OR instr(lower(name), ?) > 0)`)
-		args = append(args, q, q)
+		clauses = append(clauses, `(instr(lower(username), ?) > 0 OR instr(lower(name), ?) > 0 OR instr(lower(u.id), ?) > 0)`)
+		args = append(args, q, q, q)
 	}
 	if enabled != nil {
 		clauses = append(clauses, `u.enabled = ?`)
