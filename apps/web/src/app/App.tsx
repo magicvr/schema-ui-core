@@ -21,7 +21,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
 import {
   applyDocumentBranding,
@@ -114,6 +114,68 @@ function routeNotFoundFailure(): HostFailure {
  * than shown HOST_ROUTE_NOT_FOUND — the path belongs to the Host, not the app.
  */
 const HOST_OWNED_PATHS = ["/login"];
+
+/**
+ * W13 T-02: shell brand link (logo + site title + subtitle). Rendered twice —
+ * once in the mobile-only brand bar, once in the desktop single-row header —
+ * with the caller's className deciding visibility. The logo/title block is a
+ * single semantic unit either way.
+ */
+function BrandLink({
+  href,
+  onClick,
+  branding,
+  appName,
+  t,
+  className,
+}: {
+  href: string;
+  onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
+  branding: Branding;
+  appName: string;
+  t: (key: string) => string;
+  className?: string;
+}) {
+  const showLogo =
+    branding.logoUrl !== "" || branding.logoUrlLight !== "" || branding.logoUrlDark !== "";
+  return (
+    <a href={href} onClick={onClick} className={className}>
+      {showLogo ? (
+        <>
+          {/* VP-007 S3: light/dark logo variants follow the active theme via CSS. */}
+          {branding.logoUrlLight !== "" ? (
+            <img
+              src={branding.logoUrlLight}
+              alt=""
+              className="size-8 shrink-0 object-contain dark:hidden"
+            />
+          ) : null}
+          {branding.logoUrlDark !== "" ? (
+            <img
+              src={branding.logoUrlDark}
+              alt=""
+              className="hidden size-8 shrink-0 object-contain dark:block"
+            />
+          ) : null}
+          {branding.logoUrlLight === "" && branding.logoUrlDark === "" ? (
+            <img src={branding.logoUrl} alt="" className="size-8 shrink-0 object-contain" />
+          ) : null}
+        </>
+      ) : (
+        <span
+          aria-hidden="true"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground"
+        >
+          {appName.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold tracking-tight">{appName}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{t("shell.adminConsole")}</p>
+      </div>
+    </a>
+  );
+}
 
 /**
  * GOAL-015 semantic breadcrumbs: inner pages reached by row navigation declare
@@ -750,8 +812,15 @@ export function App({
     [manifest, navigationContext, path, t],
   );
   const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
-  const showLogo =
-    branding.logoUrl !== "" || branding.logoUrlLight !== "" || branding.logoUrlDark !== "";
+  // W13 T-02: shared brand-link handler for the mobile brand bar and the
+  // desktop single-row header (home navigation when homePageRef is declared).
+  const handleBrandClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (manifest.app.homePageRef) {
+      event.preventDefault();
+      const home = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
+      onNavigate(home?.route ?? "/");
+    }
+  };
 
   return (
     <div
@@ -772,54 +841,32 @@ export function App({
         data-shell-region="topbar"
         className="sticky top-0 z-20 border-b border-border bg-background/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/75"
       >
-        <div className="flex min-h-14 items-center gap-4 px-4 sm:px-6">
-          <a
+        {/* W13 T-02: mobile brand bar — the logo + site title own a dedicated
+            row on small screens (<lg) so the top functional area below keeps
+            its full width instead of being squeezed by the brand block. */}
+        <div
+          data-shell-region="mobile-brandbar"
+          className="flex items-center border-b border-border/60 px-4 py-2 lg:hidden"
+        >
+          <BrandLink
             href={manifest.app.homePageRef ? "/" : "#main"}
-            className="flex min-w-0 items-center gap-3"
-            onClick={(event) => {
-              if (manifest.app.homePageRef) {
-                event.preventDefault();
-                const home = manifest.pages.find(
-                  (page) => page.pageId === manifest.app.homePageRef,
-                );
-                onNavigate(home?.route ?? "/");
-              }
-            }}
-          >
-            {showLogo ? (
-              <>
-                {/* VP-007 S3: light/dark logo variants follow the active theme via CSS. */}
-                {branding.logoUrlLight !== "" ? (
-                  <img
-                    src={branding.logoUrlLight}
-                    alt=""
-                    className="size-8 shrink-0 object-contain dark:hidden"
-                  />
-                ) : null}
-                {branding.logoUrlDark !== "" ? (
-                  <img
-                    src={branding.logoUrlDark}
-                    alt=""
-                    className="hidden size-8 shrink-0 object-contain dark:block"
-                  />
-                ) : null}
-                {branding.logoUrlLight === "" && branding.logoUrlDark === "" ? (
-                  <img src={branding.logoUrl} alt="" className="size-8 shrink-0 object-contain" />
-                ) : null}
-              </>
-            ) : (
-              <span
-                aria-hidden="true"
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground"
-              >
-                {appName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight">{appName}</p>
-              <p className="truncate text-[11px] text-muted-foreground">{t("shell.adminConsole")}</p>
-            </div>
-          </a>
+            onClick={handleBrandClick}
+            branding={branding}
+            appName={appName}
+            t={t}
+            className="flex w-full min-w-0 items-center gap-3"
+          />
+        </div>
+        <div className="flex min-h-14 items-center gap-4 px-4 sm:px-6">
+          {/* Desktop brand — back in the single-row layout at lg+. */}
+          <BrandLink
+            href={manifest.app.homePageRef ? "/" : "#main"}
+            onClick={handleBrandClick}
+            branding={branding}
+            appName={appName}
+            t={t}
+            className="hidden min-w-0 items-center gap-3 lg:flex"
+          />
 
           <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
             <NavigationItems items={projection.top} onNavigate={onNavigate} horizontal />
@@ -837,8 +884,9 @@ export function App({
             >
               <Menu aria-hidden="true" className="size-4" />
             </button>
-            <LocaleSwitcher className="hidden sm:inline-flex" />
+            {/* W13 T-04: theme toggle on the left, language switcher on the right. */}
             <ThemeToggle />
+            <LocaleSwitcher className="hidden sm:inline-flex" />
             {currentUser !== undefined && currentUser !== null ? (
               <NotificationBell
                 fetcher={resourceFetcher}

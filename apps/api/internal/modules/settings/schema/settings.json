@@ -116,202 +116,258 @@
         }
       },
       {
-        "type": "form",
-        "id": "settings-general",
-        "props": {
-          "titleKey": "schema.settings.toolbar.general",
-          "fields": [
-            {
-              "id": "siteTitle",
-              "label": "Site title",
-              "labelKey": "schema.settings.field.siteTitle",
-              "type": "input"
-            }
-          ],
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/settings/default",
-            "responseMapping": {
-              "siteTitle": "siteTitle"
-            }
-          },
-          "submitAction": "updateGeneral",
-          "submitLabelKey": "schema.settings.submit.save"
-        }
-      },
-      {
-        "type": "form",
-        "id": "settings-branding",
-        "props": {
-          "titleKey": "schema.settings.toolbar.branding",
-          "fields": [
-            {
-              "id": "logoUrl",
-              "label": "Logo (empty = hide)",
-              "labelKey": "schema.settings.field.logoUrl",
-              "type": "upload",
-              "actionRef": "uploadBrandingLogo"
+        "type": "tabs",
+        "id": "settings-tabs",
+        "children": [
+          {
+            "type": "section",
+            "id": "tab-general",
+            "props": {
+              "labelKey": "schema.settings.tab.general",
+              "label": "General"
             },
-            {
-              "id": "logoUrlLight",
-              "label": "Logo (light theme)",
-              "labelKey": "schema.settings.field.logoUrlLight",
-              "type": "upload",
-              "actionRef": "uploadBrandingLogo"
-            },
-            {
-              "id": "logoUrlDark",
-              "label": "Logo (dark theme)",
-              "labelKey": "schema.settings.field.logoUrlDark",
-              "type": "upload",
-              "actionRef": "uploadBrandingLogo"
-            },
-            {
-              "id": "faviconUrl",
-              "label": "Favicon",
-              "labelKey": "schema.settings.field.faviconUrl",
-              "type": "upload",
-              "actionRef": "uploadBrandingFavicon"
-            }
-          ],
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/settings/default",
-            "responseMapping": {
-              "logoUrl": "logoUrl",
-              "logoUrlLight": "logoUrlLight",
-              "logoUrlDark": "logoUrlDark",
-              "faviconUrl": "faviconUrl"
-            }
-          },
-          "submitAction": "updateBranding",
-          "submitLabelKey": "schema.settings.submit.save"
-        }
-      },
-      {
-        "type": "form",
-        "id": "settings-localization",
-        "props": {
-          "titleKey": "schema.settings.toolbar.localization",
-          "fields": [
-            {
-              "id": "defaultLocale",
-              "label": "Default language",
-              "labelKey": "schema.settings.field.defaultLocale",
-              "type": "select",
-              "options": [
-                {
-                  "value": "auto",
-                  "label": "Auto (follow browser)",
-                  "labelKey": "schema.settings.option.localeAuto"
-                },
-                {
-                  "value": "zh-CN",
-                  "label": "简体中文",
-                  "labelKey": "locale.name.zh-CN"
-                },
-                {
-                  "value": "en-US",
-                  "label": "English",
-                  "labelKey": "locale.name.en-US"
+            "children": [
+              {
+                "type": "form",
+                "id": "settings-general",
+                "props": {
+                  "titleKey": "schema.settings.toolbar.general",
+                  "fields": [
+                    {
+                      "id": "siteTitle",
+                      "label": "Site title",
+                      "labelKey": "schema.settings.field.siteTitle",
+                      "type": "input"
+                    }
+                  ],
+                  "recordSource": {
+                    "method": "GET",
+                    "url": "/api/settings/default",
+                    "responseMapping": {
+                      "siteTitle": "siteTitle"
+                    }
+                  },
+                  "submitAction": "updateGeneral",
+                  "submitLabelKey": "schema.settings.submit.save"
                 }
-              ]
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "id": "tab-branding",
+            "props": {
+              "labelKey": "schema.settings.tab.branding",
+              "label": "Branding"
             },
-            {
-              "id": "siteTimezone",
-              "label": "Default timezone (IANA name or auto)",
-              "labelKey": "schema.settings.field.siteTimezone",
-              "type": "input"
-            }
-          ],
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/settings/default",
-            "responseMapping": {
-              "defaultLocale": "defaultLocale",
-              "siteTimezone": "siteTimezone"
-            }
-          },
-          "submitAction": "updateLocalization",
-          "submitLabelKey": "schema.settings.submit.save"
-        }
-      },
-      {
-        "type": "form",
-        "id": "settings-appearance",
-        "props": {
-          "titleKey": "schema.settings.toolbar.appearance",
-          "fields": [
-            {
-              "id": "defaultTheme",
-              "label": "Default theme",
-              "labelKey": "schema.settings.field.defaultTheme",
-              "type": "select",
-              "options": [
-                {
-                  "value": "auto",
-                  "label": "Auto",
-                  "labelKey": "schema.settings.option.themeAuto"
-                },
-                {
-                  "value": "light",
-                  "label": "Light",
-                  "labelKey": "schema.settings.option.themeLight"
-                },
-                {
-                  "value": "dark",
-                  "label": "Dark",
-                  "labelKey": "schema.settings.option.themeDark"
+            "children": [
+              {
+                "type": "form",
+                "id": "settings-branding",
+                "props": {
+                  "titleKey": "schema.settings.toolbar.branding",
+                  "fields": [
+                    {
+                      "id": "logoUrl",
+                      "label": "Logo (empty = hide)",
+                      "labelKey": "schema.settings.field.logoUrl",
+                      "type": "upload",
+                      "actionRef": "uploadBrandingLogo"
+                    },
+                    {
+                      "id": "logoUrlLight",
+                      "label": "Logo (light theme)",
+                      "labelKey": "schema.settings.field.logoUrlLight",
+                      "type": "upload",
+                      "actionRef": "uploadBrandingLogo"
+                    },
+                    {
+                      "id": "logoUrlDark",
+                      "label": "Logo (dark theme)",
+                      "labelKey": "schema.settings.field.logoUrlDark",
+                      "type": "upload",
+                      "actionRef": "uploadBrandingLogo"
+                    },
+                    {
+                      "id": "faviconUrl",
+                      "label": "Favicon",
+                      "labelKey": "schema.settings.field.faviconUrl",
+                      "type": "upload",
+                      "actionRef": "uploadBrandingFavicon"
+                    }
+                  ],
+                  "recordSource": {
+                    "method": "GET",
+                    "url": "/api/settings/default",
+                    "responseMapping": {
+                      "logoUrl": "logoUrl",
+                      "logoUrlLight": "logoUrlLight",
+                      "logoUrlDark": "logoUrlDark",
+                      "faviconUrl": "faviconUrl"
+                    }
+                  },
+                  "submitAction": "updateBranding",
+                  "submitLabelKey": "schema.settings.submit.save"
                 }
-              ]
-            }
-          ],
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/settings/default",
-            "responseMapping": {
-              "defaultTheme": "defaultTheme"
-            }
+              }
+            ]
           },
-          "submitAction": "updateAppearance",
-          "submitLabelKey": "schema.settings.submit.save"
-        }
-      },
-      {
-        "type": "form",
-        "id": "settings-security",
-        "props": {
-          "titleKey": "schema.settings.toolbar.security",
-          "fields": [
-            {
-              "id": "enabled",
-              "label": "Require captcha on login",
-              "labelKey": "schema.settings.field.requireCaptcha",
-              "type": "select",
-              "options": [
-                {
-                  "value": "true",
-                  "label": "Enabled",
-                  "labelKey": "schema.settings.option.captchaEnabled"
-                },
-                {
-                  "value": "false",
-                  "label": "Disabled",
-                  "labelKey": "schema.settings.option.captchaDisabled"
+          {
+            "type": "section",
+            "id": "tab-localization",
+            "props": {
+              "labelKey": "schema.settings.tab.localization",
+              "label": "Localization"
+            },
+            "children": [
+              {
+                "type": "form",
+                "id": "settings-localization",
+                "props": {
+                  "titleKey": "schema.settings.toolbar.localization",
+                  "fields": [
+                    {
+                      "id": "defaultLocale",
+                      "label": "Default language",
+                      "labelKey": "schema.settings.field.defaultLocale",
+                      "type": "select",
+                      "options": [
+                        {
+                          "value": "auto",
+                          "label": "Auto (follow browser)",
+                          "labelKey": "schema.settings.option.localeAuto"
+                        },
+                        {
+                          "value": "zh-CN",
+                          "label": "简体中文",
+                          "labelKey": "locale.name.zh-CN"
+                        },
+                        {
+                          "value": "en-US",
+                          "label": "English",
+                          "labelKey": "locale.name.en-US"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "siteTimezone",
+                      "label": "Default timezone (IANA name or auto)",
+                      "labelKey": "schema.settings.field.siteTimezone",
+                      "type": "input"
+                    }
+                  ],
+                  "recordSource": {
+                    "method": "GET",
+                    "url": "/api/settings/default",
+                    "responseMapping": {
+                      "defaultLocale": "defaultLocale",
+                      "siteTimezone": "siteTimezone"
+                    }
+                  },
+                  "submitAction": "updateLocalization",
+                  "submitLabelKey": "schema.settings.submit.save"
                 }
-              ]
-            }
-          ],
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/captcha/settings",
-            "responseMapping": {
-              "enabled": "enabled"
-            }
+              }
+            ]
           },
-          "submitAction": "updateCaptcha",
-          "submitLabelKey": "schema.settings.submit.save"
-        }
+          {
+            "type": "section",
+            "id": "tab-appearance",
+            "props": {
+              "labelKey": "schema.settings.tab.appearance",
+              "label": "Appearance"
+            },
+            "children": [
+              {
+                "type": "form",
+                "id": "settings-appearance",
+                "props": {
+                  "titleKey": "schema.settings.toolbar.appearance",
+                  "fields": [
+                    {
+                      "id": "defaultTheme",
+                      "label": "Default theme",
+                      "labelKey": "schema.settings.field.defaultTheme",
+                      "type": "select",
+                      "options": [
+                        {
+                          "value": "auto",
+                          "label": "Auto",
+                          "labelKey": "schema.settings.option.themeAuto"
+                        },
+                        {
+                          "value": "light",
+                          "label": "Light",
+                          "labelKey": "schema.settings.option.themeLight"
+                        },
+                        {
+                          "value": "dark",
+                          "label": "Dark",
+                          "labelKey": "schema.settings.option.themeDark"
+                        }
+                      ]
+                    }
+                  ],
+                  "recordSource": {
+                    "method": "GET",
+                    "url": "/api/settings/default",
+                    "responseMapping": {
+                      "defaultTheme": "defaultTheme"
+                    }
+                  },
+                  "submitAction": "updateAppearance",
+                  "submitLabelKey": "schema.settings.submit.save"
+                }
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "id": "tab-security",
+            "props": {
+              "labelKey": "schema.settings.tab.security",
+              "label": "Security"
+            },
+            "children": [
+              {
+                "type": "form",
+                "id": "settings-security",
+                "props": {
+                  "titleKey": "schema.settings.toolbar.security",
+                  "fields": [
+                    {
+                      "id": "enabled",
+                      "label": "Require captcha on login",
+                      "labelKey": "schema.settings.field.requireCaptcha",
+                      "type": "select",
+                      "options": [
+                        {
+                          "value": "true",
+                          "label": "Enabled",
+                          "labelKey": "schema.settings.option.captchaEnabled"
+                        },
+                        {
+                          "value": "false",
+                          "label": "Disabled",
+                          "labelKey": "schema.settings.option.captchaDisabled"
+                        }
+                      ]
+                    }
+                  ],
+                  "recordSource": {
+                    "method": "GET",
+                    "url": "/api/captcha/settings",
+                    "responseMapping": {
+                      "enabled": "enabled"
+                    }
+                  },
+                  "submitAction": "updateCaptcha",
+                  "submitLabelKey": "schema.settings.submit.save"
+                }
+              }
+            ]
+          }
+        ]
       },
       {
         "type": "actionButton",

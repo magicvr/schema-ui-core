@@ -167,6 +167,7 @@ function BaseInput({
   readOnly,
   placeholder,
   searchMode,
+  paired,
 }: {
   id: string;
   label: string;
@@ -178,6 +179,8 @@ function BaseInput({
   placeholder?: string;
   /** A-003: search keyword input — magnifier prefix + one-click clear. */
   searchMode?: boolean;
+  /** W13 T-03: inside the [input+button] group — square right corner. */
+  paired?: boolean;
 }) {
   const t = useTranslate();
   return (
@@ -207,6 +210,7 @@ function BaseInput({
           className={cn(
             searchMode === true ? "pl-9" : undefined,
             searchMode === true && value !== "" ? "pr-8" : undefined,
+            paired === true ? "rounded-r-none" : undefined,
           )}
         />
         {searchMode === true && value !== "" ? (
@@ -766,6 +770,8 @@ function FieldControl({
   searchMode?: boolean;
   /** A-003 pairing rule: submit button rendered adjacent to the input. */
   searchButtonSlot?: ReactNode;
+  /** W13 T-03: input is part of the [input+button] search group — square inner corner. */
+  paired?: boolean;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = resolveTextProp(
@@ -807,12 +813,16 @@ function FieldControl({
           onChange={emitChange}
           placeholder={placeholder}
           searchMode={searchMode}
+          paired={searchMode === true && searchButtonSlot !== undefined}
         />
       );
-      // A-003 pairing rule: in search mode the keyword input and its search
-      // button sit side by side in one grid cell (as many buttons as inputs).
+      // W13 T-03 (user 2026-08-16): the keyword input and its search button
+      // are ONE semantic component — zero-gap flex-nowrap so the pair stays
+      // stuck together (贴在一起) and can never be wrapped onto separate
+      // lines at any page width. The button overlaps the input's right edge
+      // (-ml-px) and the inner corners are squared off on both sides.
       return searchMode === true && searchButtonSlot !== undefined ? (
-        <div className="flex items-end gap-2">
+        <div className="flex flex-nowrap items-end">
           <div className="min-w-0 flex-1">{control}</div>
           {searchButtonSlot}
         </div>
@@ -1038,6 +1048,7 @@ export function FormControls({
           fetcher={fetcher}
           searchMode={searchMode}
           searchButtonSlot={searchButtonSlot}
+          paired={searchMode === true && searchButtonSlot !== undefined}
         />
       ))}
       {actionSlot !== undefined ? actionSlot : null}

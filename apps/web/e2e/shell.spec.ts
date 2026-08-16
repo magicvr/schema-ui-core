@@ -113,7 +113,10 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(branding.status()).toBe(200);
   const brandBody = await branding.json();
   expect(typeof brandBody.siteTitle).toBe("string");
-  await expect(page.getByText(brandBody.siteTitle).first()).toBeVisible();
+  // W13 T-02: the brand text now appears twice in the DOM — the mobile-only
+  // brand bar (hidden at the desktop viewport) and the desktop single-row
+  // brand link — so target the LAST occurrence (the visible desktop one).
+  await expect(page.getByText(brandBody.siteTitle).last()).toBeVisible();
 
   // Manifest-driven navigation slots render (top / sidebar / user). Production
   // profiles expose no dev.examples navigation (S5 hygiene); demo does.
@@ -121,7 +124,8 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await expect(page.getByRole("link", { name: "Overview" })).toHaveCount(isDemoProfile ? 1 : 0);
   await expect(page.getByRole("link", { name: "Data table" })).toHaveCount(isDemoProfile ? 1 : 0);
   if (isAdminProfile) {
-    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    // T-01 (GOAL-013 D-002): Settings lives in the topbar user dropdown
+    // (user-chain), not the sidebar — asserted below via the menu.
     await expect(page.getByRole("link", { name: "Activity" })).toBeVisible();
     // S-02/S-01/S-03/S-04 (GOAL-007/008/009/010): admin-only surfaces.
     await expect(page.getByRole("link", { name: "File library" })).toBeVisible();
@@ -141,9 +145,32 @@ test("login gates the shell and the real auth chain works through the proxy", as
     await expect(page.getByRole("link", { name: "Recycle bin" })).toHaveCount(0);
   }
 
-  // No manifest failure surface, and the sign-out control is present.
+  // No manifest failure surface. The user chain (个人中心 / 我的钱包 / 设置
+  // + 退出登录) lives in the topbar user dropdown (W12 T-01) — open it and
+  // assert the menu items.
   await expect(page.getByText("MANIFEST_LOAD_FAILED")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await page.getByRole("button", { name: "User menu" }).click();
+  await expect(page.getByRole("menuitem", { name: "Settings" })).toHaveCount(isAdminProfile ? 1 : 0);
+  await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // W13 T-04: the theme toggle renders LEFT of the language switcher.
+  const themeBox = await page.getByRole("button", { name: "Toggle color theme" }).boundingBox();
+  const langBox = await page.getByRole("button", { name: "Language" }).boundingBox();
+  expect(themeBox).not.toBeNull();
+  expect(langBox).not.toBeNull();
+  expect(themeBox!.x).toBeLessThan(langBox!.x);
+
+  // W13 T-02: on a mobile viewport the logo + site title own a dedicated
+  // brand bar on top, and the functional area keeps its own row below.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('[data-shell-region="mobile-brandbar"]')).toBeVisible();
+  await expect(
+    page
+      .locator('[data-shell-region="mobile-brandbar"]')
+      .getByText(brandBody.siteTitle),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
 
   // Real auth chain through the Web /api proxy -> Go API (independent context).
   const login = await request.post("/api/auth/login", {

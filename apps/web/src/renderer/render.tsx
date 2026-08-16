@@ -1647,7 +1647,7 @@ function FormInner({
             <button
               type="submit"
               disabled={hasBlockingErrors}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-l-none rounded-r-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 -ml-px"
             >
               <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
               {resolveTextProp(

@@ -124,6 +124,12 @@ function fetcherFor(): typeof fetch {
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (pathname === "/api/captcha/settings") {
+      return new Response(JSON.stringify({ enabled: "true" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     if (pathname.startsWith("/api/settings")) {
       return new Response(JSON.stringify({ items: [SETTINGS_ROW], total: 1, page: 1, pageSize: 10 }), {
         status: 200,
@@ -378,7 +384,18 @@ describe("S3 · provider system default locale", () => {
 // ── C4/C5 · settings page four-category surface + permission gating ───────────
 
 describe("S3 · settings page four-category surface", () => {
-  it("renders the four category forms prefilled + restore defaults (zh-CN)", async () => {
+  // W13 T-01: the settings page switches by functional unit through tabs
+  // (same shape as the account page); Restore defaults stays reachable
+  // outside the tabs.
+  function clickTab(container: HTMLElement, label: string): void {
+    const tab = [...container.querySelectorAll("button[role=tab]")].find((button) =>
+      button.textContent?.includes(label),
+    );
+    expect(tab, "tab " + label + " present").not.toBeUndefined();
+    (tab as HTMLButtonElement).click();
+  }
+
+  it("renders functional-unit tabs + prefilled forms per tab + restore defaults (zh-CN)", async () => {
     const container = await renderAt(
       "/settings",
       <I18nProvider stored="zh-CN" browserLanguages={["en-US"]}>
@@ -394,23 +411,46 @@ describe("S3 · settings page four-category surface", () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
     const text = container.textContent ?? "";
-    // Four category form headings (form.titleKey).
+    // The five functional-unit tab labels are always rendered.
     expect(text).toContain("常规");
     expect(text).toContain("品牌");
     expect(text).toContain("本地化");
     expect(text).toContain("外观");
+    expect(text).toContain("安全");
+    // Restore defaults stays outside the tabs (any tab can reach it).
     expect(text).toContain("恢复默认");
-    // Field labels resolved via labelKey.
-    expect(text).toContain("默认语种");
-    expect(text).toContain("主题");
-    expect(text).toContain("时区");
-    // recordSource prefill: current values are loaded into the inline fields.
+
+    // First tab (常规) is active by default: siteTitle form prefilled.
     const titleInput = container.querySelector<HTMLInputElement>("#field-siteTitle");
     expect(titleInput?.value).toBe("Acme Admin");
+
+    // 品牌 tab → upload fields surface.
+    await act(async () => {
+      clickTab(container, "品牌");
+    });
+    expect(container.textContent).toContain("浅色主题 Logo");
+    expect(container.textContent).toContain("Favicon");
+
+    // 本地化 tab → locale + timezone prefilled.
+    await act(async () => {
+      clickTab(container, "本地化");
+    });
     const localeSelect = container.querySelector<HTMLSelectElement>("#field-defaultLocale");
     expect(localeSelect?.value).toBe("zh-CN");
+    expect(container.textContent).toContain("时区");
+
+    // 外观 tab → theme prefilled.
+    await act(async () => {
+      clickTab(container, "外观");
+    });
     const themeSelect = container.querySelector<HTMLSelectElement>("#field-defaultTheme");
     expect(themeSelect?.value).toBe("dark");
+
+    // 安全 tab → captcha select surfaces.
+    await act(async () => {
+      clickTab(container, "安全");
+    });
+    expect(container.textContent).toContain("登录时要求验证码");
   });
 
   it("edits the inline General form and saves through the real PATCH action", async () => {
@@ -482,15 +522,41 @@ describe("S3 · settings page four-category surface", () => {
     await act(async () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
-    const buttons = [...container.querySelectorAll("button")].filter((button) =>
-      ["Save settings", "Restore defaults"].some((label) => button.textContent?.includes(label)),
+    // W13 T-01: the Restore defaults action sits outside the tabs and is
+    // always visible; it is gated like every category action. The provider
+    // re-resolves the locale from /api/branding (defaultLocale zh-CN), so
+    // match labels in either locale.
+    const actionLabels = ["Restore defaults", "恢复默认"];
+    const saveLabels = ["Save settings", "保存设置"];
+    const tabLabels = [["General", "常规"], ["Branding", "品牌"], ["Localization", "本地化"], ["Appearance", "外观"], ["Security", "安全"]];
+    const restoreButtons = [...container.querySelectorAll("button")].filter((button) =>
+      actionLabels.some((label) => button.textContent?.includes(label)),
     );
-    // 4 section save buttons + the Restore defaults button.
-    expect(buttons.length).toBeGreaterThanOrEqual(5);
-    for (const button of buttons) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(restoreButtons.length).toBe(1);
+    expect((restoreButtons[0] as HTMLButtonElement).disabled).toBe(true);
+    // Each functional-unit tab's save button is disabled for the viewer.
+    for (const [tabLabel, zhTabLabel] of tabLabels) {
+      const tab = [...container.querySelectorAll("button[role=tab]")].find((button) =>
+        button.textContent?.includes(tabLabel) || button.textContent?.includes(zhTabLabel),
+      );
+      expect(tab, "tab " + tabLabel).not.toBeUndefined();
+      await act(async () => {
+        (tab as HTMLButtonElement).click();
+      });
+      const saveButtons = [...container.querySelectorAll("button")].filter((button) =>
+        saveLabels.some((label) => button.textContent?.includes(label)),
+      );
+      expect(saveButtons.length).toBe(1);
+      expect((saveButtons[0] as HTMLButtonElement).disabled).toBe(true);
     }
-    // Read-only viewer still sees the current values, with fields disabled.
+    // Read-only viewer still sees the current values on the General tab,
+    // with fields disabled (switch back from the last visited tab).
+    await act(async () => {
+      const generalTab = [...container.querySelectorAll("button[role=tab]")].find((button) =>
+        button.textContent?.includes("General") || button.textContent?.includes("常规"),
+      )!;
+      (generalTab as HTMLButtonElement).click();
+    });
     const titleInput = container.querySelector<HTMLInputElement>("#field-siteTitle");
     expect(titleInput?.value).toBe("Acme Admin");
     expect(titleInput?.disabled).toBe(true);

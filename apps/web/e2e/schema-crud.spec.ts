@@ -72,7 +72,7 @@ test("users and roles drive real authorization management against Go SQLite", as
 	const createRoleDialog = page.getByRole("dialog", { name: "New role" });
 	await createRoleDialog.getByLabel("Key").fill(roleKey);
 	await createRoleDialog.getByLabel("Name", { exact: true }).fill("E2E Support");
-	await createRoleDialog.getByLabel("Read users").check();
+	await createRoleDialog.getByLabel("users.read").check(); // W11 U-02: catalog labels = permission keys
 	await createRoleDialog.getByLabel("Users", { exact: true }).check();
 	await createRoleDialog.getByRole("button", { name: "Create role" }).click();
 	await expect(page.getByRole("cell", { name: roleKey, exact: true })).toBeVisible();
@@ -80,8 +80,8 @@ test("users and roles drive real authorization management against Go SQLite", as
 	const roleRow = page.getByRole("row").filter({ hasText: roleKey });
 	await roleRow.getByRole("button", { name: "Edit" }).click();
 	const editRoleDialog = page.getByRole("dialog", { name: "Edit" });
-	await expect(editRoleDialog.getByLabel("Read users")).toBeChecked();
-	await editRoleDialog.getByLabel("Read roles").check();
+	await expect(editRoleDialog.getByLabel("users.read")).toBeChecked();
+	await editRoleDialog.getByLabel("roles.read").check();
 	await editRoleDialog.getByRole("button", { name: "Save changes" }).click();
 
 	// --- Assign the custom role and rotate password through distinct forms ---
@@ -89,11 +89,14 @@ test("users and roles drive real authorization management against Go SQLite", as
 	const managedRow = page.getByRole("row").filter({ hasText: createdUsername });
 	await managedRow.getByRole("button", { name: "Roles" }).click();
 	const rolesDialog = page.getByRole("dialog", { name: "Roles" });
-	await rolesDialog.getByLabel(/^Role keys \(comma-separated/).fill(roleKey);
+	// W11 U-01: the roles assignment is a checkboxGroup of role names (optionsSource /api/roles).
+	await rolesDialog.getByLabel("E2E Support").check();
 	await rolesDialog.getByRole("button", { name: "Save roles" }).click();
 	await expect(rolesDialog).toBeHidden();
 
-	await managedRow.getByRole("button", { name: "Password" }).click();
+	// W11 U-05: row actions beyond the primary two collapse into a "⋯ More" menu.
+	await managedRow.getByRole("button", { name: "More actions" }).click();
+	await page.getByRole("menuitem", { name: "Password" }).click();
 	const passwordDialog = page.getByRole("dialog", { name: "Password" });
 	await expect(passwordDialog.getByLabel("New password")).toHaveAttribute("type", "password");
 	await passwordDialog.getByLabel("New password").fill(replacementPassword);
@@ -122,7 +125,8 @@ test("users and roles drive real authorization management against Go SQLite", as
 
   // --- Delete with confirm ---
   const editedRow = page.getByRole("row").filter({ hasText: editedName });
-  await editedRow.getByRole("button", { name: "Delete" }).click();
+  await editedRow.getByRole("button", { name: "More actions" }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
   const confirmDialog = page.getByRole("dialog", { name: "Confirm action" });
   await expect(confirmDialog).toBeVisible();
   await expect(confirmDialog.getByText("Delete this user?")).toBeVisible();
@@ -133,6 +137,7 @@ test("users and roles drive real authorization management against Go SQLite", as
 
 	await page.getByRole("link", { name: "Roles" }).click();
 	const freeRoleRow = page.getByRole("row").filter({ hasText: roleKey });
+	// Roles rows carry exactly two actions (Edit + Delete) — inline, no overflow.
 	await expect(freeRoleRow.getByRole("button", { name: "Delete" })).toBeEnabled();
 	await freeRoleRow.getByRole("button", { name: "Delete" }).click();
 	await page.getByRole("dialog", { name: "Confirm action" }).getByRole("button", { name: "Confirm" }).click();

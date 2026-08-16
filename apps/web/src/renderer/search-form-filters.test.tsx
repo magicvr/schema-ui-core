@@ -161,6 +161,14 @@ describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
     expect(searchButton).not.toBeUndefined();
     const cell = (searchButton as HTMLButtonElement).parentElement!;
     expect(cell.contains(container.querySelector('input') as Node)).toBe(true);
+    // W13 T-03 (user 2026-08-16): the pair is ONE attached component — the
+    // button overlaps the input's right border (-ml-px) and the inner
+    // corners are squared off, so they read as a single control and can
+    // never wrap onto separate rows.
+    expect((searchButton as HTMLButtonElement).className).toContain("-ml-px");
+    expect((searchButton as HTMLButtonElement).className).toContain("rounded-l-none");
+    const searchInput = container.querySelector("input") as HTMLInputElement;
+    expect(searchInput.className).toContain("rounded-r-none");
 
     // A-003: the reset button clears every condition and re-runs the search
     // (the request drops q and enabled).

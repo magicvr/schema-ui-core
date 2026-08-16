@@ -48,18 +48,28 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
 
   // M3 · admin settings: edit the inline General form, save, and the shell
   // header + document title project the new value (config refresh).
-  await page.getByRole("link", { name: "设置" }).click();
+  // W12 T-01: Settings is a user-menu item, not a sidebar link.
+  await page.getByRole("button", { name: "用户菜单" }).click();
+  await page.getByRole("menuitem", { name: "设置" }).click();
   await expect(page.getByRole("heading", { name: "设置" })).toBeVisible();
   const generalForm = page.locator("form").filter({ has: page.getByLabel("站点标题") });
   await generalForm.getByLabel("站点标题").fill("Acme 管理台");
   await generalForm.getByRole("button", { name: "保存设置" }).click();
-  await expect(page.getByText("Acme 管理台").first()).toBeVisible();
+  // W13 T-02: the brand text appears twice in the DOM (mobile-only brand bar
+  // hidden at the desktop viewport + the desktop single-row brand link) —
+  // target the LAST occurrence.
+  await expect(page.getByText("Acme 管理台").last()).toBeVisible();
   expect(await page.title()).toBe("Acme 管理台");
 
-  // The four-category surface renders as form section headings (zh) with the
-  // Restore defaults action still a button.
+  // W13 T-01: the settings surface now switches by functional unit through
+  // tabs (same shape as the account page); Restore defaults stays a button
+  // outside the tabs, reachable from any tab.
+  await expect(page.getByRole("tab", { name: "常规" })).toBeVisible();
+  await page.getByRole("tab", { name: "品牌" }).click();
   await expect(page.getByRole("heading", { name: "品牌" })).toBeVisible();
+  await page.getByRole("tab", { name: "本地化" }).click();
   await expect(page.getByRole("heading", { name: "本地化" })).toBeVisible();
+  await page.getByRole("tab", { name: "外观" }).click();
   await expect(page.getByRole("heading", { name: "外观" })).toBeVisible();
   await expect(page.getByRole("button", { name: "恢复默认" })).toBeVisible();
 

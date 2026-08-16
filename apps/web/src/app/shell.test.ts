@@ -120,4 +120,20 @@ describe("App.tsx shell structural checks (S3)", () => {
     expect(bodySnippet).toMatch(/w-full/);
     expect(appSource).toContain("min-w-0 w-full flex-1");
   });
+
+  // W13 T-02: on mobile (<lg) the logo + site title own a dedicated brand
+  // bar above the functional row; on lg+ the brand returns to the single row.
+  it("splits the mobile brand bar from the top functional area (W13 T-02)", () => {
+    expect(appSource).toContain('data-shell-region="mobile-brandbar"');
+    expect(appSource).toContain('lg:hidden');
+    expect(appSource).toContain('hidden min-w-0 items-center gap-3 lg:flex');
+  });
+
+  // W13 T-04: the theme toggle renders left of the language switcher.
+  it("renders the theme toggle left of the language switcher (W13 T-04)", () => {
+    const themeIdx = appSource.indexOf("<ThemeToggle />");
+    const localeIdx = appSource.indexOf('<LocaleSwitcher className="hidden sm:inline-flex" />');
+    expect(themeIdx).toBeGreaterThan(-1);
+    expect(localeIdx).toBeGreaterThan(themeIdx);
+  });
 });
