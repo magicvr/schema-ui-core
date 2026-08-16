@@ -183,6 +183,11 @@ func (h *accountSelfHandler) updateProfile() http.Handler {
 				slog.Error("avatar clear cleanup failed", "user", user.ID, "err", err)
 			}
 		}
+		// W13 T-05 follow-up (user 2026-08-16): the shell session (user-menu
+		// avatar + display name) must refresh immediately after a profile save
+		// — same config-change channel the settings branding surface uses. The
+		// host reacts by re-resolving /me; no page reload required.
+		w.Header().Set(configChangedHeader, "account.profile")
 		writeJSON(w, http.StatusOK, accountProfileRow(u))
 	})
 }

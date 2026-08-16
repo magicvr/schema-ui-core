@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   authFetch,
   AuthError,
+  fetchMe,
   isLoginMFARequired,
   login as loginRequest,
   logout as logoutRequest,
@@ -11,6 +12,10 @@ import {
   setAuthLostListener,
   type AuthSession,
 } from "@/account/auth-client";
+import {
+  ACCOUNT_PROFILE_NAMESPACE,
+  subscribeToConfigChanges,
+} from "@/app/config-events";
 import type { SessionAdapterState } from "@/host/boot";
 import {
   applyReturnIntentNavigation,
@@ -39,6 +44,13 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   /** Auth-aware fetch: attaches Bearer and refreshes once on 401. */
   authFetch: typeof fetch;
+  /**
+   * Re-resolves /me into the session (best-effort; keeps the current session
+   * on failure). W13 T-05 follow-up: the account profile save publishes the
+   * account.profile config-change event and the provider refreshes itself so
+   * the shell header (avatar / display name) updates without a reload.
+   */
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -88,6 +100,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthLostListener(null);
     };
   }, []);
+
+  // W13 T-05 follow-up: re-resolves the identity snapshot. Best-effort —
+  // a failed /me (transient network / revoked token) keeps the current
+  // session; the normal auth cycle handles real session loss.
+  const refreshSession = useCallback(async () => {
+    try {
+      const next = await fetchMe();
+      setSession(next);
+    } catch {
+      // keep the current session
+    }
+  }, []);
+
+  // The account profile save publishes the account.profile config-change
+  // event (X-Schema-UI-Config-Changed header on PATCH /api/account/profile);
+  // refresh the session so the shell header avatar/name update immediately.
+  useEffect(() => {
+    return subscribeToConfigChanges(ACCOUNT_PROFILE_NAMESPACE, () => {
+      void refreshSession();
+    });
+  }, [refreshSession]);
 
   const login = useCallback(async (
     username: string,
@@ -149,8 +182,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       authFetch,
+      refreshSession,
     }),
-    [status, session, login, logout],
+    [status, session, login, logout, refreshSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

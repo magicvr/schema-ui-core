@@ -49,6 +49,11 @@ func TestAccountProfileUpdateName(t *testing.T) {
 	if row["name"] != "Renamed" {
 		t.Fatalf("name = %v, want Renamed", row["name"])
 	}
+	// W13 T-05 follow-up: the profile PATCH publishes the session-refresh
+	// config-change header so the shell header updates without a reload.
+	if got := rr.Header().Get("X-Schema-UI-Config-Changed"); got != "account.profile" {
+		t.Fatalf("config-changed header = %q, want account.profile", got)
+	}
 }
 
 func TestAccountProfileUpdateNameEmpty(t *testing.T) {

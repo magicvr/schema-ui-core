@@ -250,5 +250,29 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await page.reload();
   await expect(page.locator(`img[src="${avatarBody.url}"]`).first()).toBeVisible();
 
+  // W13 T-05 follow-up (user 2026-08-16): the header must refresh IMMEDIATELY
+  // after a UI-driven avatar save — no reload. Drive the account page upload
+  // control, save the profile, and assert the user-menu trigger swaps to the
+  // new avatar via the account.profile session refresh.
+  await page.getByRole("button", { name: "User menu" }).click();
+  await page.getByRole("menuitem", { name: "Account" }).click();
+  await expect(page).toHaveURL(/\/account$/);
+  await page.locator("#field-avatarUrl").setInputFiles({
+    name: "avatar-ui.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  // The upload settles and the form preview shows the new avatar.
+  const profileForm = page.locator("form").filter({ has: page.getByLabel("Avatar") });
+  const preview = profileForm.locator('img[src^="/api/account/avatars/"]');
+  await expect(preview.first()).toBeVisible();
+  const uiAvatarUrl = (await preview.first().getAttribute("src"))!;
+  await page.getByRole("button", { name: "Save profile" }).click();
+  // The header avatar updates WITHOUT a reload (account.profile session refresh).
+  await expect(page.locator(`img[src="${uiAvatarUrl}"]`).first()).toBeVisible();
+
   await page.screenshot({ path: "test-results/r6-shell-users.png", fullPage: true });
 });

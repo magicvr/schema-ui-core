@@ -1,6 +1,8 @@
 export const CONFIG_CHANGED_EVENT = "schema-ui:config-changed";
 export const CONFIG_CHANGED_HEADER = "X-Schema-UI-Config-Changed";
 export const SETTINGS_BRANDING_NAMESPACE = "settings.branding";
+/** Account self-service profile saves (W13 T-05): the session refreshes /me. */
+export const ACCOUNT_PROFILE_NAMESPACE = "account.profile";
 
 export interface ConfigChangedDetail {
   namespace: string;
