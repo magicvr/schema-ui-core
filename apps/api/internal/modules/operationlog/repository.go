@@ -28,6 +28,8 @@ const (
 	EventUserUnlock            = "users.unlock"
 	EventAccountPasswordChange = "account.password-change"
 	EventAccountSessionRevoke  = "account.session-revoke"
+	// W13 T-05 avatar upload event (GOAL-014).
+	EventAccountAvatarChange = "account.avatar-change"
 	// F-02 data-transfer events (GOAL-004 D-002 §3/§4).
 	EventDataExport = "data.export"
 	EventDataImport = "data.import"

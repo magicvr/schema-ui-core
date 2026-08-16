@@ -25,11 +25,13 @@ type Provider struct {
 	a          *auth.Authenticator
 	repository *authsession.Repository
 	operations operationlog.Recorder
+	// avatarAssets is the account avatar store (W13 T-05).
+	avatarAssets *handler.RasterAssetStore
 }
 
 // New constructs the account provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations}
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, avatarAssets *handler.RasterAssetStore) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, avatarAssets: avatarAssets}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -42,6 +44,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/account/profile", "PATCH /api/account/profile",
+				"POST /api/account/avatar", "GET /api/account/avatars/{id}",
 				"POST /api/account/password", "GET /api/account/sessions",
 				"POST /api/account/sessions/{id}/revoke",
 				"POST /api/users/{id}/enable", "POST /api/users/{id}/disable",
@@ -60,9 +63,16 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, ModuleID, p.repository) {
+	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, p.avatarAssets, ModuleID, p.repository) {
 		if err := reg.HTTP(route); err != nil {
 			return err
+		}
+	}
+	if p.avatarAssets != nil {
+		for _, route := range handler.AccountAvatarRoutes(p.a, p.avatarAssets, p.repository, p.operations, ModuleID) {
+			if err := reg.HTTP(route); err != nil {
+				return err
+			}
 		}
 	}
 	for _, route := range handler.UserStateRoutes(p.a, p.repository, p.operations, ModuleID, p.repository) {

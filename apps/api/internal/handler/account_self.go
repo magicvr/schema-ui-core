@@ -31,10 +31,13 @@ type AccountRepository interface {
 }
 
 // AccountSelfRoutes returns the self-service route contributions (admin.account).
-func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, operations operationlog.Recorder, moduleID string, notifier ...NotifyRepository) []kernel.RouteContribution {
+// avatarStore is the account avatar asset store (W13 T-05); nil disables the
+// avatarUrl profile surface (used by bare test environments).
+func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, operations operationlog.Recorder, avatarStore *RasterAssetStore, moduleID string, notifier ...NotifyRepository) []kernel.RouteContribution {
 	h := &accountSelfHandler{
 		repository:      repository,
 		operations:      operations,
+		avatarStore:     avatarStore,
 		now:             time.Now,
 		passwordLimiter: newLoginRateLimiter(15*time.Minute, 5, 1<<16),
 	}
@@ -61,8 +64,10 @@ func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, oper
 type accountSelfHandler struct {
 	repository AccountRepository
 	operations operationlog.Recorder
-	now        func() time.Time
-	notifier   NotifyRepository
+	// avatarStore owns the user avatar assets (W13 T-05); nil = no avatar surface.
+	avatarStore *RasterAssetStore
+	now         func() time.Time
+	notifier    NotifyRepository
 	// F-003 (A-003 recommended): wrong currentPassword attempts are brute-force
 	// surface with a live access token — an in-memory sliding-window limiter per
 	// client identity (same model as login rate limiting) brakes online
@@ -84,6 +89,7 @@ func accountProfileRow(u *authsession.User) map[string]any {
 		"id":        u.ID,
 		"username":  u.Username,
 		"name":      u.Name,
+		"avatarUrl": u.AvatarURL,
 		"enabled":   u.Enabled,
 		"createdAt": u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"updatedAt": u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
@@ -132,10 +138,50 @@ func (h *accountSelfHandler) updateProfile() http.Handler {
 			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", "name must not be empty", []errorcatalog.FieldError{{Field: "name", Reason: "must not be empty"}})
 			return
 		}
-		u, err := h.repository.UpdateUser(user.ID, authsession.UserPatch{Name: &name}, user.ID, h.now().UTC())
+		patch := authsession.UserPatch{Name: &name}
+		// W13 T-05: optional avatarUrl ("" clears the avatar; a value must be a
+		// URL served by the account avatar store — nothing else may be
+		// committed to the profile). The previous avatar file is deleted
+		// best-effort once the new value is persisted.
+		if rawAvatar, hasAvatar := body["avatarUrl"]; hasAvatar {
+			if h.avatarStore == nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "avatarUrl is not supported")
+				return
+			}
+			var avatarURL string
+			if err := json.Unmarshal(rawAvatar, &avatarURL); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "avatarUrl must be a string")
+				return
+			}
+			avatarURL = strings.TrimSpace(avatarURL)
+			if avatarURL != "" {
+				if _, ok := h.avatarStore.AssetIDFromURL(avatarURL); !ok {
+					writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", "avatarUrl is not a valid avatar asset", []errorcatalog.FieldError{{Field: "avatarUrl", Reason: "must be a URL of the account avatar store"}})
+					return
+				}
+			}
+			patch.AvatarURL = &avatarURL
+		}
+		// Capture the previous avatar before the update so the replaced or
+		// cleared file can be dropped afterwards (best-effort).
+		oldAvatar := ""
+		if patch.AvatarURL != nil && h.avatarStore != nil {
+			if current, err := h.repository.GetUser(user.ID); err == nil {
+				oldAvatar = current.AvatarURL
+			}
+		}
+		u, err := h.repository.UpdateUser(user.ID, patch, user.ID, h.now().UTC())
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update profile")
 			return
+		}
+		if patch.AvatarURL != nil && h.avatarStore != nil && oldAvatar != *patch.AvatarURL {
+			// Only avatar-store assets are ever deleted here (the new value
+			// was validated above; the old value is either empty, the same
+			// asset, or an avatar-store asset from an earlier commit).
+			if err := h.avatarStore.DeleteOrphan(oldAvatar); err != nil {
+				slog.Error("avatar clear cleanup failed", "user", user.ID, "err", err)
+			}
 		}
 		writeJSON(w, http.StatusOK, accountProfileRow(u))
 	})

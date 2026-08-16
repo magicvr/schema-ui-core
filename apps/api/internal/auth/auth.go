@@ -384,7 +384,7 @@ func (a *Authenticator) accountFromUser(u *authsession.User) (account.User, erro
 	if err != nil {
 		return account.User{}, fmt.Errorf("resolve permissions for %s: %w", u.ID, err)
 	}
-	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms}, nil
+	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms, AvatarURL: u.AvatarURL}, nil
 }
 
 // Features returns the boolean menu projection for an authenticated identity

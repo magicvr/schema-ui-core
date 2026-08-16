@@ -13,6 +13,8 @@ type User struct {
 	ID    string   `json:"id"`
 	Name  string   `json:"name"`
 	Roles []string `json:"roles"`
+	// AvatarURL is the self-service avatar asset URL (W13 T-05); "" = none.
+	AvatarURL string `json:"avatarUrl,omitempty"`
 	// Permissions are the persisted role-permission keys resolved at identity
 	// load time (GOAL-006 S4): business gates check keys, not role strings.
 	Permissions []string `json:"permissions,omitempty"`

@@ -256,6 +256,14 @@ func newMuxWithExtraProviders(
 	if current, err := settingsRepository.GetSiteSettings(); err == nil {
 		_ = brandAssets.GC([]string{current.LogoURL, current.LogoURLLight, current.LogoURLDark, current.FaviconURL})
 	}
+	// W13 T-05 (GOAL-014): account avatar store — same raster processing as
+	// brand assets, dedicated directory, 256px longest-edge default. No startup
+	// GC: the referenced set lives in the users table and the replace/clear
+	// paths delete previous files best-effort (see account_avatar.go).
+	avatarAssets := handler.NewAvatarAssetStore(
+		filepath.Join(filepath.Dir(cfg.DBPath), "avatars"),
+		handler.BrandingAssetsOptions{},
+	)
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.
@@ -297,7 +305,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, activitymodule.New(a, operations))
 	}
 	if plan.HasModule("admin.account") {
-		providers = append(providers, accountmodule.New(a, authRepository, operations))
+		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets))
 	}
 	if plan.HasModule("admin.data-transfer") {
 		providers = append(providers, datatransfermodule.New(a, authRepository, operations, uploadDir))

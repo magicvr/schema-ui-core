@@ -49,6 +49,7 @@ type authTestEnv struct {
 	settings       *settingsrepository.Repository
 	uploadDir      string
 	brandAssets    *BrandingAssetStore
+	avatarAssets   *RasterAssetStore
 	captcha        *testCaptchaService
 	recycle        *testRecycleService
 }
@@ -124,13 +125,15 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		brandOpts = *testBrandOpts
 	}
 	brandAssets := NewBrandingAssetStore(brandDir, brandOpts)
+	avatarAssets := NewAvatarAssetStore(filepath.Join(t.TempDir(), "avatars"), BrandingAssetsOptions{})
 	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace, brandAssets))
 	mountRoutes(BrandingAssetRoutes(a, brandAssets, "admin.settings"))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
 	a.OnLockOpened = func(userID string) {
 		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 	}
-	mountRoutes(AccountSelfRoutes(a, authRepository, operations, "admin.account", authRepository))
+	mountRoutes(AccountSelfRoutes(a, authRepository, operations, avatarAssets, "admin.account", authRepository))
+	mountRoutes(AccountAvatarRoutes(a, avatarAssets, authRepository, operations, "admin.account"))
 	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account", authRepository))
 	uploadDir := filepath.Join(t.TempDir(), "uploads")
 	mountRoutes(NotificationRoutes(a, authRepository, "admin.notifications"))
@@ -166,6 +169,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		settings:       settings,
 		uploadDir:      uploadDir,
 		brandAssets:    brandAssets,
+		avatarAssets:   avatarAssets,
 		captcha:        captchaService,
 		recycle:        recycleService,
 	}

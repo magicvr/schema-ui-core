@@ -136,6 +136,8 @@
   "schema.users.confirm.unlock": "Unlock this user?",
   "schema.account.profile.title": "Profile",
   "schema.account.password.title": "Change password",
+  "schema.account.field.avatarUrl": "Avatar",
+  "schema.account.field.avatarUrl": "Avatar",
   "schema.account.field.name": "Name",
   "schema.account.field.currentPassword": "Current password",
   "schema.account.field.newPassword": "New password",

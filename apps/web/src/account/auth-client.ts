@@ -23,6 +23,8 @@ export interface AuthUser {
   id: string;
   name: string;
   roles: string[];
+  /** Self-service avatar asset URL (W13 T-05); absent = no avatar. */
+  avatarUrl?: string;
   /**
    * Permission keys resolved from persisted RBAC at identity load (`/me`).
    * Required by Schema expressions (`$context.user.permissions contains "…"`).
@@ -404,10 +406,15 @@ function parseAuthUser(raw: unknown): AuthUser | null {
   const permissions = Array.isArray(record.permissions)
     ? record.permissions.filter((entry): entry is string => typeof entry === "string")
     : undefined;
+  // W13 T-05: the self-service avatar URL rides the /me user snapshot so the
+  // shell header can render it; absent/empty stays undefined.
+  const avatarUrl =
+    typeof record.avatarUrl === "string" && record.avatarUrl !== "" ? record.avatarUrl : undefined;
   return {
     id: record.id,
     name: typeof record.name === "string" ? record.name : "",
     roles,
+    ...(avatarUrl === undefined ? {} : { avatarUrl }),
     ...(permissions === undefined ? {} : { permissions }),
   };
 }

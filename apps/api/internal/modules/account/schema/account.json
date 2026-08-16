@@ -11,7 +11,8 @@
       "actions.row.request",
       "form.controls.extended",
       "form.controls.advanced",
-      "form.record.load"
+      "form.record.load",
+      "actions.upload"
     ]
   },
   "actions": {
@@ -20,11 +21,19 @@
       "method": "PATCH",
       "url": "/api/account/profile",
       "bodyMapping": {
-        "name": "name"
+        "name": "name",
+        "avatarUrl": "avatarUrl"
       },
       "onSuccess": {
         "behavior": "reload"
       }
+    },
+    "uploadAvatar": {
+      "type": "upload",
+      "url": "/api/account/avatar",
+      "multiple": false,
+      "accept": "image/png,image/jpeg,image/webp",
+      "maxSize": 4194304
     },
     "changePassword": {
       "type": "request",
@@ -69,10 +78,18 @@
                 "method": "GET",
                 "url": "/api/account/profile",
                 "responseMapping": {
-                  "name": "name"
+                  "name": "name",
+                  "avatarUrl": "avatarUrl"
                 }
               },
               "fields": [
+                {
+                  "id": "avatarUrl",
+                  "label": "Avatar",
+                  "labelKey": "schema.account.field.avatarUrl",
+                  "type": "upload",
+                  "actionRef": "uploadAvatar"
+                },
                 {
                   "id": "name",
                   "label": "Name",

@@ -97,8 +97,8 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 		var rolesJSON string
 		var createdAt, updatedAt int64
 		err := tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, created_at, updated_at FROM users WHERE id = ?`, id,
-		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &createdAt, &updatedAt)
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, created_at, updated_at FROM users WHERE id = ?`, id,
+		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &createdAt, &updatedAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}

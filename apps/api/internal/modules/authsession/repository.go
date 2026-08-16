@@ -52,8 +52,12 @@ type User struct {
 	// LockedUntil is the unix-second lock window end (0 = not locked). Locks
 	// expire automatically once now passes the window.
 	LockedUntil int64
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// AvatarURL is the self-service avatar asset URL (W13 T-05 · migration
+	// 0035, account module): "" = no avatar. Values are committed by the
+	// account profile PATCH and validated against the avatar store.
+	AvatarURL string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // RefreshToken is a stored opaque refresh token; only its hash is persisted.
@@ -85,6 +89,8 @@ type UserPatch struct {
 	Name         *string
 	Roles        *[]string
 	PasswordHash *string
+	// AvatarURL is the self-service avatar value (W13 T-05); nil = untouched.
+	AvatarURL *string
 }
 
 // Role is the persisted RBAC role projection.

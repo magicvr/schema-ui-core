@@ -84,7 +84,7 @@ export interface AppProps {
   /** Injectable fetch for table data sources such as `/api/users` (GOAL-011). */
   resourceFetcher?: typeof fetch;
   /** Authenticated user rendered in the header; present → show a sign-out button. */
-  currentUser?: { id: string; name?: string } | null;
+  currentUser?: { id: string; name?: string; avatarUrl?: string } | null;
   /** Revokes the session (AuthProvider flips to the login page). */
   onLogout?: () => void;
   /** Optional branding override (tests); defaults to live GET /api/branding. */
@@ -328,7 +328,7 @@ function UserMenu({
   onLogout,
 }: {
   items: Array<Extract<ProjectedItem, { type: "link" }>>;
-  user: { id: string; name?: string };
+  user: { id: string; name?: string; avatarUrl?: string };
   onNavigate: (href: string) => void;
   onLogout?: () => void;
 }) {
@@ -370,12 +370,20 @@ function UserMenu({
         onClick={() => setOpen((value) => !value)}
         className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-card/60 px-2 py-1 transition-colors hover:bg-accent"
       >
-        <span
-          aria-hidden="true"
-          className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
-        >
-          {initials}
-        </span>
+        {user.avatarUrl !== undefined && user.avatarUrl !== "" ? (
+          <img
+            src={user.avatarUrl}
+            alt=""
+            className="size-6 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
+          >
+            {initials}
+          </span>
+        )}
         <span className="max-w-[8rem] truncate text-xs text-foreground">
           {displayName}
         </span>
@@ -872,18 +880,23 @@ export function App({
             <NavigationItems items={projection.top} onNavigate={onNavigate} horizontal />
           </nav>
 
+          {/* W13 follow-up (user 2026-08-16): the mobile drawer trigger sits at
+              the FAR LEFT of the functional row — the intuitive position for a
+              button that opens the left-hand navigation drawer. The remaining
+              controls stay right-aligned (ml-auto). Desktop is unaffected: the
+              brand link occupies the left slot at lg+. */}
+          <button
+            type="button"
+            aria-label={t("shell.openMenu")}
+            aria-expanded={mobileDrawerOpen}
+            className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
+            onClick={() => setMobileDrawerOpen(true)}
+          >
+            <Menu aria-hidden="true" className="size-4" />
+          </button>
+
           {/* T-01 (GOAL-013 D-002): user nav + signout folded into the user dropdown. */}
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
-            {/* Mobile hamburger — visible only on small screens (S3 sub-capability) */}
-            <button
-              type="button"
-              aria-label={t("shell.openMenu")}
-              aria-expanded={mobileDrawerOpen}
-              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
-              onClick={() => setMobileDrawerOpen(true)}
-            >
-              <Menu aria-hidden="true" className="size-4" />
-            </button>
             {/* W13 T-04: theme toggle on the left, language switcher on the right. */}
             <ThemeToggle />
             <LocaleSwitcher className="hidden sm:inline-flex" />

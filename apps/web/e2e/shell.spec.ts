@@ -224,5 +224,31 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // middleware path through the proxy (401 above); role denial is pure API logic
   // already pinned by that test.
 
+  // W13 T-05: avatar self-service through the real API — upload a PNG, commit
+  // it to the profile, reload, and the user-menu trigger shows the avatar.
+  const avatarUpload = await request.post("/api/account/avatar", {
+    headers,
+    multipart: {
+      file: {
+        name: "avatar.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "base64",
+        ),
+      },
+    },
+  });
+  expect(avatarUpload.status()).toBe(200);
+  const avatarBody = await avatarUpload.json();
+  expect(avatarBody.url).toMatch(/^\/api\/account\/avatars\//);
+  const avatarPatch = await request.patch("/api/account/profile", {
+    headers,
+    data: { name: "Admin", avatarUrl: avatarBody.url },
+  });
+  expect(avatarPatch.status()).toBe(200);
+  await page.reload();
+  await expect(page.locator(`img[src="${avatarBody.url}"]`).first()).toBeVisible();
+
   await page.screenshot({ path: "test-results/r6-shell-users.png", fullPage: true });
 });

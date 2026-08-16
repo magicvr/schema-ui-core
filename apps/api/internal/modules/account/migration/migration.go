@@ -21,7 +21,15 @@ var accountEnableDDL = []string{
 	`ALTER TABLE users ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1`,
 }
 
-// Descriptors returns the immutable 0013 migration history for admin.account.
+// accountAvatarDDL adds the self-service avatar column (W13 T-05): the avatar
+// URL points into the account avatar asset store (server-produced rasters);
+// "" = no avatar. Same additive ALTER pattern as accountEnableDDL.
+var accountAvatarDDL = []string{
+	`ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''`,
+}
+
+// Descriptors returns the immutable admin.account migration history:
+// 0013 (enable state) + 0035 (avatar url, appended to the global ledger).
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
 		{
@@ -31,6 +39,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(accountEnableDDL, "0013:account-enable-state:v1"),
 			Apply:                migrateAccountEnable,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account_avatar_url"},
+			Version:              35,
+			Name:                 "account_avatar_url",
+			Checksum:             kernel.MigrationChecksum(accountAvatarDDL, "0035:account-avatar-url:v1"),
+			Apply:                migrateAccountAvatar,
+		},
 	}
 }
 
@@ -38,6 +53,15 @@ func migrateAccountEnable(tx *sql.Tx) error {
 	for _, stmt := range accountEnableDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("add users.enabled: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateAccountAvatar(tx *sql.Tx) error {
+	for _, stmt := range accountAvatarDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("add users.avatar_url: %w", err)
 		}
 	}
 	return nil

@@ -136,6 +136,8 @@
   "schema.users.confirm.unlock": "确定解锁该用户？",
   "schema.account.profile.title": "个人资料",
   "schema.account.password.title": "修改密码",
+  "schema.account.field.avatarUrl": "头像",
+  "schema.account.field.avatarUrl": "头像",
   "schema.account.field.name": "姓名",
   "schema.account.field.currentPassword": "当前密码",
   "schema.account.field.newPassword": "新密码",
