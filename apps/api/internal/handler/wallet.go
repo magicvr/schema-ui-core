@@ -28,6 +28,10 @@ type WalletService interface {
 	CreateAccount(ownerType, ownerID, currency string, now time.Time) (*walletstore.Account, error)
 	UpdateStatus(id, status string, version int64, now time.Time) (*walletstore.Account, error)
 	ListEntries(accountID string, page, pageSize int) ([]walletstore.LedgerEntry, int, error)
+	// GetOrCreateUserAccount returns the user account for ownerID, creating a
+	// zero-balance account when absent (GOAL-020 D-001 §1). The bool reports
+	// whether this call created the account (auto-audit marker).
+	GetOrCreateUserAccount(ownerID string, now time.Time) (*walletstore.Account, bool, error)
 	Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error)
 	Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error)
 	ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error)
@@ -64,6 +68,86 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
 	})))
 
+
+	// Accounts: get-or-create one user account by owner (GOAL-020 D-001 §1).
+	// The auto-created zero-balance account is audited with an auto marker.
+	add("GET", "/api/wallet/by-owner/{ownerId}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.read")
+		if !ok {
+			return
+		}
+		ownerID := strings.TrimSpace(r.PathValue("ownerId"))
+		if ownerID == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "ownerId is required")
+			return
+		}
+		now := time.Now().UTC()
+		account, created, err := service.GetOrCreateUserAccount(ownerID, now)
+		if err != nil {
+			writeWalletError(w, r, err)
+			return
+		}
+		if created {
+			detail := `{"accountId":` + jsonQuote(account.ID) + `,"ownerId":` + jsonQuote(account.OwnerID) + `,"auto":true}`
+			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, detail, now)
+		}
+		writeJSON(w, http.StatusOK, accountToMap(*account))
+	})))
+
+	// Accounts: adjust a user account by owner, auto-creating it first
+	// (GOAL-020 D-001 §1).
+	add("POST", "/api/wallet/by-owner/{ownerId}/adjust", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.adjust")
+		if !ok {
+			return
+		}
+		ownerID := strings.TrimSpace(r.PathValue("ownerId"))
+		if ownerID == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "ownerId is required")
+			return
+		}
+		var body struct {
+			AmountDelta    int64  `json:"amountDelta"`
+			Memo           string `json:"memo"`
+			IdempotencyKey string `json:"idempotencyKey"`
+			RefType        string `json:"refType"`
+			RefID          string `json:"refId"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LEDGER_ENTRY", "body must be JSON")
+			return
+		}
+		now := time.Now().UTC()
+		account, created, err := service.GetOrCreateUserAccount(ownerID, now)
+		if err != nil {
+			writeWalletError(w, r, err)
+			return
+		}
+		// Audit the auto-open IMMEDIATELY (GOAL-020 A-003 F-002): the account
+		// row exists from this point on, so the create must be on record even
+		// when the subsequent adjust fails (invalid memo / zero amount /
+		// over-draft) — otherwise the account could stay forever without its
+		// wallet.account-create event.
+		if created {
+			detail := `{"accountId":` + jsonQuote(account.ID) + `,"ownerId":` + jsonQuote(ownerID) + `,"auto":true}`
+			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, detail, now)
+		}
+		account, entry, err := service.Mutate(account.ID, walletstore.LedgerEntryInput{
+			EntryType: walletstore.EntryAdjust, AmountDelta: body.AmountDelta,
+			RefType: strings.TrimSpace(body.RefType), RefID: strings.TrimSpace(body.RefID),
+			IdempotencyKey: strings.TrimSpace(body.IdempotencyKey), Memo: strings.TrimSpace(body.Memo),
+			ActorID: user.ID, ActorName: user.Name,
+		}, now)
+		if err != nil {
+			writeWalletError(w, r, err)
+			return
+		}
+		detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
+		recordWalletEvent(operations, user, operationlog.EventWalletAdjust, detail, now)
+		writeJSON(w, http.StatusOK, map[string]any{"account": accountToMap(*account), "entry": entryToMap(*entry)})
+	})))
+
 	// Accounts: create (audited).
 	add("POST", "/api/wallet/accounts", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "wallet.write")
@@ -80,8 +164,15 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "body must be JSON with ownerType and ownerId")
 			return
 		}
+		ownerType := strings.TrimSpace(body.OwnerType)
+		// GOAL-020 D-001 §2: user wallet accounts are created automatically by
+		// the system (get-or-create); manual creation is business/system only.
+		if ownerType == walletstore.OwnerUser {
+			writeLocalizedError(w, r, http.StatusConflict, "WALLET_USER_AUTO_ONLY", "user wallet accounts are created automatically")
+			return
+		}
 		now := time.Now().UTC()
-		account, err := service.CreateAccount(strings.TrimSpace(body.OwnerType), strings.TrimSpace(body.OwnerID), strings.TrimSpace(body.Currency), now)
+		account, err := service.CreateAccount(ownerType, strings.TrimSpace(body.OwnerID), strings.TrimSpace(body.Currency), now)
 		if err != nil {
 			writeWalletError(w, r, err)
 			return

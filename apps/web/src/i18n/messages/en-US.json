@@ -580,5 +580,6 @@
   "error.insufficientBalance": "Insufficient balance for this mutation",
   "error.ledgerVersionConflict": "The account changed concurrently; reload and retry",
   "error.ledgerIdempotencyConflict": "Idempotency key was already used with a different payload",
-  "error.invalidLedgerEntry": "Invalid ledger entry"
+  "error.invalidLedgerEntry": "Invalid ledger entry",
+  "error.walletUserAutoOnly": "User wallet accounts are created automatically"
 }

@@ -56,6 +56,8 @@ var frozenLiteralCodes = []string{
 	// S-14 (GOAL-019 D-002 §3): wallet codes.
 	"INVALID_WALLET_BODY", "WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED",
 	"INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY",
+	// GOAL-020 (D-001 §2): user accounts are auto-created.
+	"WALLET_USER_AUTO_ONLY",
 }
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/

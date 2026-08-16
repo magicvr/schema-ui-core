@@ -81,13 +81,13 @@
               "sortable": true,
               "labelKey": "schema.walletEntries.column.created"
             }
-          ],
-          "data": {
-            "source": "api",
-            "url": "/api/wallet/entries",
-            "params": {
-              "accountId": "$context.route.params.id"
-            }
+          ]
+        },
+        "data": {
+          "source": "api",
+          "url": "/api/wallet/entries",
+          "params": {
+            "accountId": "$context.route.params.id"
           }
         }
       }

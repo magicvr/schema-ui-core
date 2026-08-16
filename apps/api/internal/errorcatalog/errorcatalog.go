@@ -146,6 +146,8 @@ var Catalog = map[string]Entry{
 	"LEDGER_VERSION_CONFLICT":   {"error.ledgerVersionConflict", "the account changed concurrently; reload and retry", "账户已被并发修改，请刷新后重试"},
 	"LEDGER_IDEMPOTENCY_CONFLICT": {"error.ledgerIdempotencyConflict", "idempotency key was already used with a different payload", "幂等键已被不同载荷使用"},
 	"INVALID_LEDGER_ENTRY":      {"error.invalidLedgerEntry", "invalid ledger entry", "非法账本流水"},
+	// GOAL-020 D-001 §2: user wallet accounts are auto-created (get-or-create).
+	"WALLET_USER_AUTO_ONLY":     {"error.walletUserAutoOnly", "user wallet accounts are created automatically", "用户钱包账户由系统自动创建"},
 
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
 	"RECYCLE_ITEM_NOT_FOUND":  {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},

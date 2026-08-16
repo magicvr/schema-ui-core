@@ -99,6 +99,11 @@ func (s *Service) ListEntries(accountID string, page, pageSize int) ([]walletsto
 	return s.repo.ListEntries(accountID, page, pageSize)
 }
 
+// GetOrCreateUserAccount implements handler.WalletService (GOAL-020 D-001 §1).
+func (s *Service) GetOrCreateUserAccount(ownerID string, now time.Time) (*walletstore.Account, bool, error) {
+	return s.repo.GetOrCreateUserAccount(ownerID, now)
+}
+
 // Mutate implements handler.WalletService.
 func (s *Service) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error) {
 	if in.Memo == "" {
@@ -148,6 +153,7 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/wallet/accounts", "POST /api/wallet/accounts",
 				"PATCH /api/wallet/accounts/{id}",
+				"GET /api/wallet/by-owner/{ownerId}", "POST /api/wallet/by-owner/{ownerId}/adjust",
 				"GET /api/wallet/accounts/{id}/entries", "GET /api/wallet/entries",
 				"POST /api/wallet/accounts/{id}/adjust",
 				"POST /api/wallet/accounts/{id}/freeze",

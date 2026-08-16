@@ -88,6 +88,8 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"PATCH", "/api/wallet/accounts/acct-1"},
 		{"GET", "/api/wallet/accounts/acct-1/entries"},
 		{"GET", "/api/wallet/entries?accountId=acct-1"},
+		{"GET", "/api/wallet/by-owner/u1"},
+		{"POST", "/api/wallet/by-owner/u1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/freeze"},
 		{"POST", "/api/wallet/accounts/acct-1/unfreeze"},
@@ -110,6 +112,8 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"PATCH", "/api/wallet/accounts/acct-1"},
 		{"GET", "/api/wallet/accounts/acct-1/entries"},
 		{"GET", "/api/wallet/entries?accountId=acct-1"},
+		{"GET", "/api/wallet/by-owner/u1"},
+		{"POST", "/api/wallet/by-owner/u1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/adjust"},
 		{"POST", "/api/wallet/accounts/acct-1/freeze"},
 		{"POST", "/api/wallet/accounts/acct-1/unfreeze"},
@@ -131,11 +135,11 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	env, _ := newWalletEnv(t)
 	adminToken := env.login(t, testSeedUsername, testSeedPassword)
 
-	// Create account (wallet.write).
+	// Account auto-created by the system (GOAL-020 get-or-create).
 	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/accounts", `{"ownerType":"user","ownerId":"u1"}`))
-	if rr.Code != http.StatusCreated {
-		t.Fatalf("create = %d %s", rr.Code, rr.Body.String())
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/u1", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("by-owner open = %d %s", rr.Code, rr.Body.String())
 	}
 	var created map[string]any
 	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
@@ -253,9 +257,9 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	adminToken := env.login(t, testSeedUsername, testSeedPassword)
 
 	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/accounts", `{"ownerType":"user","ownerId":"u9"}`))
-	if rr.Code != http.StatusCreated {
-		t.Fatal("create failed")
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/u9", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatal("by-owner open failed")
 	}
 	var created map[string]any
 	_ = json.Unmarshal(rr.Body.Bytes(), &created)
@@ -313,7 +317,7 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 
 // S-14 error codes reach the frozen wire contract (localized catalog).
 func TestWalletErrorCodesCataloged(t *testing.T) {
-	for _, code := range []string{"WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED", "INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY", "INVALID_WALLET_BODY"} {
+	for _, code := range []string{"WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED", "INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY", "INVALID_WALLET_BODY", "WALLET_USER_AUTO_ONLY"} {
 		entry, ok := errorcatalog.Catalog[code]
 		if !ok || entry.En == "" || entry.Zh == "" || entry.MessageKey == "" {
 			t.Errorf("wallet code %s not cataloged: %+v", code, entry)

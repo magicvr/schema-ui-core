@@ -528,9 +528,9 @@
   "schema.account.mfa.rotate": "轮换恢复码",
   "schema.account.mfa.errorGeneric": "MFA 操作失败。"
 ,
-  "manifest.title.wallet": "钱包/账务",
+  "manifest.title.wallet": "钱包",
   "manifest.title.walletEntries": "钱包流水",
-  "manifest.nav.wallet": "钱包/账务",
+  "manifest.nav.wallet": "钱包",
   "schema.wallet.owner.user": "用户",
   "schema.wallet.owner.business": "商户",
   "schema.wallet.owner.system": "系统",
@@ -580,5 +580,6 @@
   "error.insufficientBalance": "余额不足，无法执行该变动",
   "error.ledgerVersionConflict": "账户已被并发修改，请刷新后重试",
   "error.ledgerIdempotencyConflict": "幂等键已被不同载荷使用",
-  "error.invalidLedgerEntry": "非法账本流水"
+  "error.invalidLedgerEntry": "非法账本流水",
+  "error.walletUserAutoOnly": "用户钱包账户由系统自动创建"
 }

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-14
 updated: 2026-08-16
 parent: null
-version: 0.6.0
+version: 0.8.0
 workspace_id: workspace-011-admin-functional-modules
 ---
 
@@ -37,6 +37,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-017-r3-s10-mfa-2fa [done]      · R3-S10 MFA/2FA（TOTP 双因素认证）（5/5）
 │   └── GOAL-018-mfa-manager-ui [done]  · MFA 个人中心管理组件（自定义 renderer 节点）（5/5）
 ├── GOAL-019-r3-s14-wallet-ledger [done] · R3-S14 钱包/账务（账本：余额、流水、对账）（5/5）
+├── GOAL-020-wallet-auto-account [done] · 钱包账户自动开户与用户绑定（get-or-create）（5/5）
 
 ```
 
@@ -65,6 +66,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-017-r3-s10-mfa-2fa | R3-S10 · MFA / 2FA（TOTP 双因素认证） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-15 |
 | GOAL-018-mfa-manager-ui | MFA 个人中心管理组件（自定义 renderer 节点） | GOAL-017-r3-s10-mfa-2fa | done | 5/5 | 2026-08-15 |
 | GOAL-019-r3-s14-wallet-ledger | R3-S14 · 钱包/账务（账本：余额、流水、对账） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-16 |
+| GOAL-020-wallet-auto-account | 钱包账户自动开户与用户绑定（get-or-create） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-16 |
 
 ## 维护说明
 

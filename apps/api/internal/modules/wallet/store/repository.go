@@ -8,7 +8,9 @@ package store
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -223,6 +225,67 @@ func (r *Repository) CreateAccount(a Account) error {
 		}
 		return nil
 	})
+}
+
+// GetOrCreateUserAccount returns the user account for ownerID, creating a
+// zero-balance account when absent (GOAL-020 D-001 §1 get-or-create). The
+// UNIQUE(owner_type, owner_id, currency) constraint makes concurrent creates
+// safe: an INSERT conflict falls back to re-reading the existing row.
+func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Account, bool, error) {
+	var a Account
+	isNew := false
+	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+		var created, updated int64
+		err := tx.QueryRow(
+			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
+			OwnerUser, ownerID, DefaultCurrency,
+		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
+		if err == nil {
+			a.CreatedAt = time.Unix(created, 0)
+			a.UpdatedAt = time.Unix(updated, 0)
+			return nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("get wallet account by owner: %w", err)
+		}
+		isNew = true
+		// Auto-create with a time-ordered id (millisecond prefix + random
+		// suffix — same convention as the module newID; GOAL-020 A-003 F-003).
+		randBytes := make([]byte, 12)
+		if _, err := rand.Read(randBytes); err != nil {
+			return fmt.Errorf("auto-create wallet id: %w", err)
+		}
+		id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
+		if _, err := tx.Exec(
+			`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)`,
+			id, OwnerUser, ownerID, DefaultCurrency, StatusActive, now.Unix(), now.Unix(),
+		); err != nil {
+			if isUniqueViolation(err) {
+				// Concurrent create won: re-read the existing row. The loser
+				// must NOT report a create (GOAL-020 A-003 F-001: no duplicate
+				// wallet.account-create on the shared row).
+				isNew = false
+				err := tx.QueryRow(
+					`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
+					OwnerUser, ownerID, DefaultCurrency,
+				).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
+				if err != nil {
+					return fmt.Errorf("re-read wallet account after create conflict: %w", err)
+				}
+				a.CreatedAt = time.Unix(created, 0)
+				a.UpdatedAt = time.Unix(updated, 0)
+				return nil
+			}
+			return fmt.Errorf("auto-create wallet account: %w", err)
+		}
+		a = Account{ID: id, OwnerType: OwnerUser, OwnerID: ownerID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
+		return nil
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	return &a, isNew, nil
 }
 
 // UpdateStatus flips account status (active/disabled) with the optimistic

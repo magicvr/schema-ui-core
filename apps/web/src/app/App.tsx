@@ -124,6 +124,8 @@ const HOST_OWNED_PATHS = ["/login"];
 const BREADCRUMB_PAGE_PARENTS: Record<string, string> = {
   "dictionary-entries": "data-dictionary",
   "task-runs": "scheduled-tasks",
+  // GOAL-020 (user 2026-08-16): wallet entries is the wallet inner page.
+  "wallet-entries": "wallet",
 };
 
 // Parses the current URL's query string into a plain record; deep-linked query

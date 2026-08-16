@@ -276,3 +276,43 @@ func TestReconcileDetectsMismatch(t *testing.T) {
 		t.Fatalf("details = %s, want mismatch list", run.Details)
 	}
 }
+
+// GOAL-020 D-001 §1: get-or-create — creates once, returns the same row, and
+// survives concurrent-style duplicate calls (UNIQUE constraint fallback).
+func TestGetOrCreateUserAccount(t *testing.T) {
+	repo := newRepo(t)
+
+	first, createdFirst, err := repo.GetOrCreateUserAccount("u-owner-1", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !createdFirst {
+		t.Fatal("first call must report created=true")
+	}
+	if first.OwnerType != store.OwnerUser || first.OwnerID != "u-owner-1" || first.BalanceTotal != 0 {
+		t.Fatalf("auto account = %+v", first)
+	}
+
+	second, createdSecond, err := repo.GetOrCreateUserAccount("u-owner-1", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if createdSecond {
+		t.Fatal("second call must report created=false")
+	}
+	if second.ID != first.ID {
+		t.Fatalf("second get-or-create returned %s, want %s", second.ID, first.ID)
+	}
+
+	// The account is a normal wallet account: mutations work on it.
+	if _, _, err := repo.Mutate(first.ID, store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 100, Memo: "m", ActorID: "a", ActorName: "A"}, "e-goc", now()); err != nil {
+		t.Fatalf("mutate auto account: %v", err)
+	}
+	acct, err := repo.GetAccount(first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.BalanceTotal != 100 {
+		t.Fatalf("balance = %d, want 100", acct.BalanceTotal)
+	}
+}

@@ -2,7 +2,7 @@
   "meta": {
     "pageId": "wallet",
     "title": "Wallet",
-    "protocolVersion": "2.7",
+    "protocolVersion": "2.9",
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
@@ -12,7 +12,8 @@
       "actions.row.navigate",
       "table.sort",
       "form.controls.extended",
-      "form.controls.advanced"
+      "form.controls.advanced",
+      "form.controls.readonly"
     ]
   },
   "actions": {
@@ -73,7 +74,6 @@
             {
               "id": "ownerType", "label": "Owner type", "type": "select", "required": true,
               "options": [
-                { "value": "user", "label": "User", "labelKey": "schema.wallet.owner.user" },
                 { "value": "business", "label": "Business", "labelKey": "schema.wallet.owner.business" },
                 { "value": "system", "label": "System", "labelKey": "schema.wallet.owner.system" }
               ],
@@ -211,7 +211,7 @@
             { "key": "reconcile", "label": "Reconcile", "actionRef": "runReconcile", "labelKey": "schema.wallet.toolbar.reconcile" }
           ],
           "actions": [
-            { "key": "entries", "label": "Entries", "actionRef": "openEntries", "labelKey": "schema.wallet.action.entries" },
+            { "key": "entries", "label": "Entries", "actionRef": "openEntries", "navigateMapping": { "path": { "id": "$row.id" } }, "labelKey": "schema.wallet.action.entries" },
             { "key": "adjust", "label": "Adjust", "actionRef": "openAdjust", "permissionIntent": "edit", "labelKey": "schema.wallet.action.adjust" },
             { "key": "freeze", "label": "Freeze", "actionRef": "openFreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.freeze" },
             { "key": "unfreeze", "label": "Unfreeze", "actionRef": "openUnfreeze", "permissionIntent": "edit", "labelKey": "schema.wallet.action.unfreeze" },
