@@ -50,7 +50,7 @@ Root **保持 active**。W1/W2/W3/W4 均关门；W4 六检查点全部完成（2
 A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004 浏览器点验）；不推导 Root/VP done。
 
 
-**W13（2026-08-16 二次关门，4/4）**：设置页功能单元 Tabs（恢复默认常驻 Tabs 外）；移动端品牌条独立一行（<lg）+ 汉堡按键靠工具栏最左；搜索框组【文本框+搜索键】零间隙贴合恒同行；顶栏亮暗/语种按键对调；追加 T-05 个人中心头像上传（共享 RasterAssetStore、迁移 0035/0036、/me 快照 + 用户菜单展示）；A-001/A-002 self pass；回归 Go 0 FAIL + vitest 1029/1029 + tsc 0 + e2e admin/mvp 8/8（含 W11/W12 遗留 e2e 断言修复）；go 判定两轮均无影响、不暂挂。
+**W13（2026-08-16 三次关门，4/4）**：设置页功能单元 Tabs（恢复默认常驻 Tabs 外）；移动端品牌条独立一行（<lg）+ 汉堡按键靠工具栏最左；搜索框组【文本框+搜索键】零间隙贴合恒同行；顶栏亮暗/语种按键对调；追加 T-05 个人中心头像上传（共享 RasterAssetStore、迁移 0035/0036、/me 快照 + 用户菜单展示）；用户反馈修复：资料保存后顶栏头像/显示名即时刷新（config-change 头 + AuthContext 会话刷新，无需整页刷新）；A-001/A-002/A-003 self pass；回归 Go 0 FAIL + vitest 1032/1032 + tsc 0 + e2e admin/mvp 全绿（含 W11/W12 遗留 e2e 断言修复）；go 判定各轮均无影响、不暂挂。
 ## 状态表
 
 | id | title | parent | status | progress | updated |
