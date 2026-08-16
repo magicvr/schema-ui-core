@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-16
-version: 0.10.0
+version: 0.11.0
 parent: null
 ---
 

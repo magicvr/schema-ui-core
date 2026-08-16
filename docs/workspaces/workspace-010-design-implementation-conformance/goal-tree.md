@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-16
 parent: null
-version: 0.12.0
+version: 0.13.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
