@@ -25,7 +25,8 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-16 | self | S2 实施 ～ S4 验证/关门 | pass | 无 | `03-audit/A-001-s2s4-self.md` |
+| A-002 | 2026-08-16 | self | 追加范围（汉堡靠左 + T-05 头像上传）实施/验证/关门 | pass | 无 | `03-audit/A-002-followup-self.md` |
 
 ## 结论状态
 
-A-001 self **pass**（无 required findings）。四项整改与 D-001 可核对；回归全绿（vitest 1029/1029、tsc 0、Go 0 FAIL、e2e admin/mvp 8/8）；go 判定无影响不暂挂。GOAL-014 关门 `done`（4/4）。
+A-001 self **pass**（T-01～T-04 与 D-001 可核对）。A-002 self **pass**（追加范围：汉堡靠左修正 + T-05 头像上传与 D-002 可核对，含安全模型/提交校验/清理/迁移台账/回归证据）。两轮回归全绿（Go 0 FAIL、vitest 1029/1029、tsc 0、e2e admin/mvp 8/8）；go 判定两轮均无影响不暂挂。GOAL-014 二次关门 `done`（4/4）。
