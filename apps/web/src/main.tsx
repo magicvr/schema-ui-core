@@ -8,9 +8,10 @@ import { I18nProvider, useI18n } from "@/i18n/runtime";
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
 import { LoginPage } from "@/app/LoginPage";
-// GOAL-018: self-registers the mfa-manager custom renderer component
-// (personal-center MFA block inside the account page).
+// GOAL-018: self-registers custom renderer components (mfa-manager in the
+// personal-center MFA block; notification-center on the notifications page).
 import "@/components/mfa-manager";
+import "@/components/notification-center";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,

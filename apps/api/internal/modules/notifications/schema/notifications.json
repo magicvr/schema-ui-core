@@ -14,14 +14,6 @@
     ]
   },
   "actions": {
-    "markRead": {
-      "type": "request",
-      "method": "POST",
-      "url": "/api/notifications/{id}/read",
-      "onSuccess": {
-        "behavior": "reload"
-      }
-    },
     "markAllRead": {
       "type": "request",
       "method": "POST",
@@ -120,62 +112,11 @@
         }
       },
       {
-        "type": "table",
-        "id": "notifications-table",
+        "type": "custom",
+        "id": "notifications-center",
+        "component": "notification-center",
         "props": {
-          "columns": [
-            {
-              "field": "title",
-              "label": "Title",
-              "labelKey": "schema.notifications.column.title"
-            },
-            {
-              "field": "body",
-              "label": "Body",
-              "labelKey": "schema.notifications.column.body"
-            },
-            {
-              "field": "event",
-              "label": "Event",
-              "labelKey": "schema.notifications.column.event"
-            },
-            {
-              "field": "read",
-              "label": "Read",
-              "labelKey": "schema.notifications.column.read"
-            },
-            {
-              "field": "createdAt",
-              "label": "Created",
-              "labelKey": "schema.notifications.column.created"
-            }
-          ],
-          "dataSource": "/api/notifications",
-          "toolbar": [
-            {
-              "key": "markAllRead",
-              "label": "Mark all read",
-              "actionRef": "markAllRead",
-              "labelKey": "schema.notifications.toolbar.markAllRead"
-            }
-          ],
-          "actions": [
-            {
-              "key": "read",
-              "label": "Mark read",
-              "actionRef": "markRead",
-              "requestMapping": {
-                "path": {
-                  "id": "$row.id"
-                }
-              },
-              "disabledWhen": {
-                "field": "read",
-                "equals": true
-              },
-              "labelKey": "schema.notifications.action.markRead"
-            }
-          ]
+          "targetTable": "notifications-table"
         }
       }
     ]

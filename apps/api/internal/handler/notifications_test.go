@@ -159,12 +159,15 @@ func TestNotificationListReadReadAllUnread(t *testing.T) {
 	if unread["unread"].(float64) != 2 {
 		t.Fatalf("unread = %v", unread)
 	}
-	// read one
+	// read one → the config-change header lets the shell badge refresh at once
 	req = bearer(t, token, http.MethodPost, "/api/notifications/ntf-a/read", "")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("read = %d", rr.Code)
+	}
+	if got := rr.Header().Get("X-Schema-UI-Config-Changed"); got != "notifications.read" {
+		t.Fatalf("read config-changed header = %q, want notifications.read", got)
 	}
 	// foreign id → 404
 	req = bearer(t, token, http.MethodPost, "/api/notifications/nope/read", "")
@@ -173,7 +176,7 @@ func TestNotificationListReadReadAllUnread(t *testing.T) {
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("foreign read = %d, want 404", rr.Code)
 	}
-	// read-all
+	// read-all → same immediate-refresh header
 	req = bearer(t, token, http.MethodPost, "/api/notifications/read-all", "")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
@@ -181,6 +184,9 @@ func TestNotificationListReadReadAllUnread(t *testing.T) {
 	_ = json.NewDecoder(rr.Body).Decode(&ra)
 	if ra["updated"].(float64) != 1 {
 		t.Fatalf("read-all updated = %v, want 1", ra)
+	}
+	if got := rr.Header().Get("X-Schema-UI-Config-Changed"); got != "notifications.read" {
+		t.Fatalf("read-all config-changed header = %q, want notifications.read", got)
 	}
 	// unread-only filter → 0
 	req = bearer(t, token, http.MethodGet, "/api/notifications?unreadOnly=true", "")

@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { NOTIFICATIONS_READ_NAMESPACE, subscribeToConfigChanges } from "@/app/config-events";
 import { useTranslate } from "@/i18n/runtime";
 
 /**
@@ -24,9 +25,12 @@ export interface NotificationBellProps {
   fetcher?: typeof fetch;
   /** Navigation callback for the "view all" link (kept out of router). */
   onViewAll: () => void;
+  /** W13 T-06: opens one notification — navigate to the list page with the
+   * detail target (/notifications?open=<id>); the page expands + marks read. */
+  onOpenItem: (id: string) => void;
 }
 
-export function NotificationBell({ fetcher, onViewAll }: NotificationBellProps) {
+export function NotificationBell({ fetcher, onViewAll, onOpenItem }: NotificationBellProps) {
   const t = useTranslate();
   const [unread, setUnread] = useState<number | null>(null);
   const [items, setItems] = useState<NotificationItem[] | null>(null);
@@ -57,6 +61,31 @@ export function NotificationBell({ fetcher, onViewAll }: NotificationBellProps) 
     loadCount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
+
+  // W13 T-06: any read/read-all (header or list page) refreshes the badge —
+  // and an open dropdown refetches its items — immediately.
+  useEffect(() => {
+    return subscribeToConfigChanges(NOTIFICATIONS_READ_NAMESPACE, () => {
+      loadCount();
+      if (open) {
+        setItems(null);
+        active("/api/notifications?pageSize=5")
+          .then((response) => {
+            if (!response.ok) {
+              setItems(null);
+              return;
+            }
+            return response.json() as Promise<{ items: NotificationItem[] }>;
+          })
+          .then((body) => {
+            if (body !== undefined) {
+              setItems(body.items);
+            }
+          })
+          .catch(() => setItems(null));
+      }
+    });
+  }, [active, open]);
 
   useEffect(() => {
     if (!open) {
@@ -151,9 +180,29 @@ export function NotificationBell({ fetcher, onViewAll }: NotificationBellProps) 
             ) : (
               <ul className="divide-y divide-border">
                 {items.map((item) => (
-                  <li key={item.id} className="px-3 py-2">
-                    <p className="text-sm font-medium text-foreground">{item.title}</p>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.body}</p>
+                  // W13 T-06: a dropdown entry is actionable — marking the
+                  // notification read (best-effort) and opening it on the
+                  // list page with its detail expanded.
+                  <li key={item.id} className="px-1.5 py-1">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="flex w-full items-start gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent"
+                      onClick={() => {
+                        setOpen(false);
+                        void active("/api/notifications/" + encodeURIComponent(item.id) + "/read", { method: "POST" }).catch(() => undefined);
+                        onOpenItem(item.id);
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={"mt-1.5 size-2 shrink-0 rounded-full " + (item.read ? "bg-transparent" : "bg-primary")}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-foreground">{item.title}</span>
+                        <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{item.body}</span>
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>

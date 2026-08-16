@@ -904,6 +904,9 @@ export function App({
               <NotificationBell
                 fetcher={resourceFetcher}
                 onViewAll={() => onNavigate("/notifications")}
+                // W13 T-06: a dropdown entry opens its detail on the list page
+                // (deep link ?open=<id>; the page expands + marks it read).
+                onOpenItem={(id) => onNavigate("/notifications?open=" + encodeURIComponent(id))}
               />
             ) : null}
             {currentUser !== undefined && currentUser !== null ? (

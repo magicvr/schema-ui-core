@@ -274,5 +274,14 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // The header avatar updates WITHOUT a reload (account.profile session refresh).
   await expect(page.locator(`img[src="${uiAvatarUrl}"]`).first()).toBeVisible();
 
+  // W13 T-06: the bell dropdown's "View all" reaches the notifications page,
+  // which renders the interactive center (custom node) + settings form. The
+  // fresh SQLite DB has no notifications → the empty state is shown.
+  await page.getByRole("button", { name: "Notifications" }).click();
+  await page.getByRole("menuitem", { name: "View all" }).click();
+  await expect(page).toHaveURL(/\/notifications$/);
+  await expect(page.locator("[data-notification-center]")).toBeVisible();
+  await expect(page.getByText("No items match")).toBeVisible();
+
   await page.screenshot({ path: "test-results/r6-shell-users.png", fullPage: true });
 });

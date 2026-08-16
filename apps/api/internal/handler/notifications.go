@@ -146,6 +146,9 @@ func (h *notificationHandler) read() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not mark notification read")
 			return
 		}
+		// W13 T-06 (GOAL-014): the header bell (badge + dropdown) refreshes
+		// immediately when a notification is read — config-change channel.
+		w.Header().Set(configChangedHeader, "notifications.read")
 		w.WriteHeader(http.StatusNoContent)
 	})
 }
@@ -161,6 +164,8 @@ func (h *notificationHandler) readAll() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not mark notifications read")
 			return
 		}
+		// W13 T-06 (GOAL-014): same immediate badge refresh as the single-read.
+		w.Header().Set(configChangedHeader, "notifications.read")
 		writeJSON(w, http.StatusOK, map[string]any{"updated": updated})
 	})
 }
