@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-011-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-16
-version: 0.1.5
+version: 0.1.6
 parent: null
 ---
 
