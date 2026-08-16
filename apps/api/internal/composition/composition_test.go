@@ -470,7 +470,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// no navigation — personal-center block + users row action).
 		// S-14 (GOAL-019): admin.wallet contributes wallet.read/wallet.write/
 		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
-		{profile: "admin", wantPermissions: 30, wantNavigation: 14},
+		// GOAL-022: admin.wallet adds menu_wallet_self (+1 navigation, no
+		// permission keys — identity-only self-service).
+		{profile: "admin", wantPermissions: 30, wantNavigation: 15},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

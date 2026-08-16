@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.2.0
+version: 0.3.0
 progress: 1/5
 ---
 
@@ -22,12 +22,12 @@ progress: 1/5
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：自服务范围、路由、权限、与管理端页分工、入口 Manifest（D-002，2026-08-16）
-- [ ] **S2 · 实现**：schema 页 + user-nav + 必要薄 API（当前用户作用域）
-- [ ] **S3 · 验证**：单元/集成 + 回归
+- [x] **S2 · 实现**：schema 页 + user-nav + 必要薄 API（当前用户作用域）（E-003，2026-08-16）
+- [x] **S3 · 验证**：单元/集成 + 回归（E-004：go 全量 + vitest 1038 + 实机冒烟，2026-08-16）
 - [ ] **S4 · go 判定 + 自审**
 - [ ] **S5 · 关门审计**
 
-progress: 1/5。
+progress: 3/5。
 
 ## 审计策略
 

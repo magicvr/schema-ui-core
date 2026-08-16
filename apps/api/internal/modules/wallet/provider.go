@@ -160,9 +160,11 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/accounts/{id}/unfreeze",
 				"POST /api/wallet/accounts/{id}/deduct-frozen",
 				"POST /api/wallet/reconcile", "GET /api/wallet/reconcile/runs",
+				// GOAL-022 (D-002 §2): identity-scoped self-service surface.
+				"GET /api/wallet/me", "GET /api/wallet/me/entries",
 			},
-			Pages:       []string{"wallet", "wallet-entries"},
-			Navigation:  []string{"menu_wallet"},
+			Pages:       []string{"wallet", "wallet-entries", "my-wallet"},
+			Navigation:  []string{"menu_wallet", "menu_wallet_self"},
 			Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust"},
 			Fragments:   []string{"wallet"},
 		},
@@ -179,6 +181,12 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			return err
 		}
 	}
+	// GOAL-022 (D-002 §2): identity-scoped self-service routes.
+	for _, route := range handler.WalletSelfRoutes(p.a, p.service, p.operations, ModuleID) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
 	for _, pageID := range []string{"wallet", "wallet-entries"} {
 		if err := reg.Schema(kernel.PageContribution{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: pageID},
@@ -191,6 +199,17 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		}); err != nil {
 			return err
 		}
+	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "my-wallet"},
+		PageID:               "my-wallet",
+		Resources:            []string{"wallet"},
+		Actions:              []string{"list"},
+		DataSource:           "/api/wallet/me",
+		Owner:                ModuleID,
+		Document:             walletschema.SchemaDocuments()["my-wallet"],
+	}); err != nil {
+		return err
 	}
 	for _, permission := range []kernel.PermissionContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.read"}, Permission: "wallet.read", Resource: "wallet", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -209,6 +228,21 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		Label:                "Wallet",
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "wallet.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	}); err != nil {
+		return err
+	}
+	// GOAL-022 (D-002 §2): my-wallet self-service entry in the topbar user slot
+	// (个人中心 → 我的钱包 → 设置). Identity-only: visible to every
+	// authenticated role, no permission key — like menu_account.
+	if err := reg.Navigation(kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_wallet_self"},
+		NodeID:               "menu_wallet_self",
+		PageID:               "my-wallet",
+		Order:                2,
+		Label:                "My wallet",
+		Visibility:           authsessiondata.PolicyAdminEditorViewer,
+		Permission:           "",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err

@@ -8,17 +8,18 @@ import "embed"
 // page gating.
 const ModuleID = "admin.wallet"
 
-//go:embed wallet.json wallet-entries.json
+//go:embed wallet.json wallet-entries.json my-wallet.json
 var schemaFiles embed.FS
 
 // PageIDs are the page identifiers this module contributes.
-func PageIDs() []string { return []string{"wallet", "wallet-entries"} }
+func PageIDs() []string { return []string{"wallet", "wallet-entries", "my-wallet"} }
 
 // SchemaDocuments returns the page documents owned by the wallet module.
 func SchemaDocuments() map[string][]byte {
 	return map[string][]byte{
 		"wallet":         mustRead("wallet.json"),
 		"wallet-entries": mustRead("wallet-entries.json"),
+		"my-wallet":      mustRead("my-wallet.json"),
 	}
 }
 

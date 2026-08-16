@@ -16,6 +16,9 @@ func TestDefaultNavigationOrderSnapshot(t *testing.T) {
 		// S-14 (GOAL-019, user 2026-08-16): wallet directly below Roles.
 		"menu_wallet",
 		"menu_account",
+		// GOAL-022 (D-002 §2): my-wallet self-service — user slot between
+		// 个人中心 and 设置.
+		"menu_wallet_self",
 		"menu_activity",
 		"menu_settings",
 		"menu_notifications",

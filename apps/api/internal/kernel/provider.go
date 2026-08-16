@@ -408,6 +408,9 @@ var DefaultNavigationOrder = []string{
 	// above Account/Activity per user's navigation-order request.
 	"menu_wallet",
 	"menu_account",
+	// GOAL-022 (D-002 §2): my-wallet self-service — topbar user slot between
+	// 个人中心 and 设置 (menu_activity/menu_settings).
+	"menu_wallet_self",
 	"menu_activity",
 	"menu_settings",
 	"menu_notifications",

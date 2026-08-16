@@ -286,6 +286,7 @@ describe("manifest loading and expression boundaries", () => {
       "data-permission",
       "wallet",
       "wallet-entries",
+      "my-wallet",
     ]);
   });
 

@@ -23,9 +23,27 @@
       "schemaUrl": "/api/schema/wallet-entries",
       "route": "/wallet-entries/{id}",
       "titleKey": "manifest.title.walletEntries"
+    },
+    {
+      "pageId": "my-wallet",
+      "title": "My wallet",
+      "schemaUrl": "/api/schema/my-wallet",
+      "route": "/my-wallet",
+      "titleKey": "manifest.title.myWallet"
     }
   ],
   "navigation": {
+    "user": [
+      {
+        "pageRef": "my-wallet",
+        "label": "My wallet",
+        "icon": "wallet",
+        "visibleWhen": {
+          "when": "$context.features.menu_wallet_self == true"
+        },
+        "labelKey": "manifest.nav.myWallet"
+      }
+    ],
     "sidebar": [
       {
         "pageRef": "wallet",

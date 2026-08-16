@@ -20,11 +20,14 @@ function userMenuManifest(): AppManifest {
     pages: [
       { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/" },
       { pageId: "account", title: "Account", schemaUrl: "/schema/account", route: "/account" },
+      { pageId: "my-wallet", title: "My wallet", schemaUrl: "/schema/my-wallet", route: "/my-wallet" },
       { pageId: "settings", title: "Settings", schemaUrl: "/schema/settings", route: "/settings" },
     ],
     navigation: {
       user: [
         { pageRef: "account", label: "Account", icon: "user" },
+        // GOAL-022: my-wallet sits between 个人中心 and 设置 (T-01 slot).
+        { pageRef: "my-wallet", label: "My wallet", icon: "wallet" },
         { pageRef: "settings", label: "Settings", icon: "settings" },
       ],
     },
@@ -103,8 +106,9 @@ describe("T-01 user dropdown (GOAL-013 D-002)", () => {
     const items = Array.from(menu!.querySelectorAll('[role="menuitem"]')).map((el) =>
       el.textContent?.trim(),
     );
-    // projection.user declaration order + divider + signout.
-    expect(items).toEqual(["Account", "Settings", "Sign out"]);
+    // projection.user declaration order + divider + signout. GOAL-022:
+    // 个人中心 → 我的钱包 → 设置 (T-01 slot between account and settings).
+    expect(items).toEqual(["Account", "My wallet", "Settings", "Sign out"]);
   });
 
   it("navigates from a menu item and closes the menu", async () => {

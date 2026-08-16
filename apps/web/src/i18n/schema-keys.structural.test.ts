@@ -43,6 +43,7 @@ const SCHEMA_FILES = [
   "datapermission/schema/data-permission.json",
   "wallet/schema/wallet.json",
   "wallet/schema/wallet-entries.json",
+  "wallet/schema/my-wallet.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];

@@ -185,6 +185,13 @@
       "schemaUrl": "/api/schema/wallet-entries",
       "route": "/wallet-entries/{id}",
       "titleKey": "manifest.title.walletEntries"
+    },
+    {
+      "pageId": "my-wallet",
+      "title": "My wallet",
+      "schemaUrl": "/api/schema/my-wallet",
+      "route": "/my-wallet",
+      "titleKey": "manifest.title.myWallet"
     }
   ],
   "navigation": {
@@ -361,6 +368,15 @@
         "labelKey": "manifest.nav.account",
         "visibleWhen": {
           "when": "$context.features.menu_account == true"
+        }
+      },
+      {
+        "pageRef": "my-wallet",
+        "label": "My wallet",
+        "icon": "wallet",
+        "labelKey": "manifest.nav.myWallet",
+        "visibleWhen": {
+          "when": "$context.features.menu_wallet_self == true"
         }
       },
       {
