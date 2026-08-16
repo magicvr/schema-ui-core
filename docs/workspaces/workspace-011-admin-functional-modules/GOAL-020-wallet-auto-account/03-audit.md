@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 审计 · GOAL-020-wallet-auto-account
@@ -30,6 +30,10 @@ version: 0.6.0
 | A-003 | 2026-08-16 | independent | S5 关门（方案+实现合并审） | conditional | F-001, F-002 | 03-audit/A-003-s5-independent.md |
 | A-004 | 2026-08-16 | independent | A-003 F-001~F-005 闭合核验 | conditional | A-003 F-001（测试腿） | 03-audit/A-004-s5-reaudit.md |
 | A-005 | 2026-08-16 | independent | A-004 F-001 闭合 + F-003~F-005 核验 | pass | 0 | 03-audit/A-005-s5-reaudit.md |
+
+## 响应记录（/govern · 2026-08-16 · E-004 用户反馈）
+
+- 数据字典 PAGE_SCHEMA_INVALID → **fixed**（openEntries action 定义残留 navigateMapping 已移除；D-VAL 17/17 回归测试新增，防同类复发——详见 E-004）。
 
 ## 结论状态
 

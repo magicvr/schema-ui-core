@@ -163,12 +163,7 @@
     },
     "openEntries": {
       "type": "navigate",
-      "url": "/dictionary-entries/{dictKey}",
-      "navigateMapping": {
-        "path": {
-          "dictKey": "$row.key"
-        }
-      }
+      "url": "/dictionary-entries/{dictKey}"
     }
   },
   "body": {
