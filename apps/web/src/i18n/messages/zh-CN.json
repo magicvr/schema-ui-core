@@ -630,5 +630,9 @@
   "schema.notifications.filter.read.read": "已读",
   "schema.account.tab.profile": "资料",
   "schema.account.tab.security": "安全",
-  "schema.account.tab.sessions": "会话"
+  "schema.account.tab.sessions": "会话",
+  "feedback.reset": "重置",
+  "feedback.clearFilters": "清除全部筛选",
+  "feedback.removeFilter": "移除筛选",
+  "feedback.clearSearch": "清空搜索"
 }

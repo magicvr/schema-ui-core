@@ -20,6 +20,7 @@ version: 0.3.0
 | E-004 | 2026-08-16 | S3 P2：T-06 模块启用只认 config.yaml | recorded | `02-execution/E-004-s3-p2-t06.md` |
 | E-005 | 2026-08-16 | S4 验证与关门（回归证据 + T-06 go 判定） | recorded | `02-execution/E-005-s4-verification-and-go.md` |
 | E-006 | 2026-08-16 | A-002 响应：F-001 fixed（台账纠正）/ F-002 复跑复现 / F-003 fixed / F-004 fixed / F-005 accepted | recorded | `02-execution/E-006-a002-response.md` |
+| E-007 | 2026-08-16 | A-003 响应：F-001 fixed（搜索工具栏横排 + Reset）/ F-002 fixed（Select/Input 视觉）/ F-003 fixed（激活筛选 chips） | recorded | `02-execution/E-007-a003-response.md` |
 
 ## 事实边界
 

@@ -1,3 +1,4 @@
+import { RotateCcw, Search, X } from "lucide-react";
 import {
   Fragment,
   createContext,
@@ -36,6 +37,7 @@ import {
   validateFieldValues,
   type FormControlField,
 } from "@/renderer/form-controls";
+import { optionList } from "@/renderer/form-controls.tsx";
 import { ModalHost } from "@/renderer/modal";
 import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
@@ -1046,6 +1048,10 @@ function SchemaCrudProvider({
       const next: ResourceQuery = { ...current, page: 1, q };
       if (Object.keys(filters).length > 0) {
         next.filters = filters;
+      } else {
+        // All owned conditions cleared: drop the inherited filters entirely
+        // (the spread above would otherwise keep stale params — A-003 reset).
+        delete next.filters;
       }
       return { ...prev, [targetTable]: next };
     });
@@ -1558,11 +1564,55 @@ function FormInner({
     "",
   );
 
+  // A-003 (audit response): search-mode toolbar — active filter chips with
+  // per-condition clear + one-click clear-all; the reset button restores the
+  // default values and re-runs the search immediately.
+  const activeFilters = isSearch
+    ? visibleFields
+        .map((field) => {
+          const raw = values[field.id];
+          if (raw === undefined || raw === null || raw === "") {
+            return null;
+          }
+          const text = typeof raw === "string" ? raw.trim() : String(raw);
+          if (text === "") {
+            return null;
+          }
+          const valueLabel =
+            field.type === "select"
+              ? (optionList(field, t).find((option) => option.value === text)?.label ?? text)
+              : text;
+          return { field, value: text, valueLabel };
+        })
+        .filter((entry): entry is { field: FormControlField; value: string; valueLabel: string } => entry !== null)
+    : [];
+  const resetValues = () => {
+    const cleared: Record<string, unknown> = {};
+    for (const field of visibleFields) {
+      cleared[field.id] =
+        field.defaultValue !== undefined ? field.defaultValue : "";
+    }
+    setValues(cleared);
+    if (crud !== null) {
+      crud.searchFormSubmit(node, cleared);
+    }
+  };
+  const removeFilter = (field: FormControlField) => {
+    const next = { ...values, [field.id]: "" };
+    setValues(next);
+    if (crud !== null) {
+      crud.searchFormSubmit(node, next);
+    }
+  };
+
   return (
-    <form className="space-y-3" onSubmit={(event) => {
-      event.preventDefault();
-      void handleSubmit();
-    }}>
+    <form
+      className={isSearch ? "space-y-3 rounded-lg border border-border/80 bg-card/60 p-3.5 shadow-xs" : "space-y-3"}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSubmit();
+      }}
+    >
       {title !== "" ? (
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       ) : null}
@@ -1589,6 +1639,35 @@ function FormInner({
             ? node.props.columns
             : undefined
         }
+        searchMode={isSearch}
+        actionSlot={
+          isSearch ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={hasBlockingErrors}
+                className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                <Search aria-hidden="true" className="size-4" />
+                {resolveTextProp(
+                  node.props as unknown as Record<string, unknown>,
+                  "submitLabelKey",
+                  "submitLabel",
+                  t,
+                  t("feedback.search"),
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={resetValues}
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
+              >
+                <RotateCcw aria-hidden="true" className="size-4" />
+                {t("feedback.reset")}
+              </button>
+            </div>
+          ) : undefined
+        }
       />
       {reaction.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">
@@ -1607,7 +1686,43 @@ function FormInner({
             : formError.message}
         </p>
       ) : null}
-      {canSubmit ? (
+      {activeFilters.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2" data-filter-chips>
+          {activeFilters.map(({ field, valueLabel }) => {
+            const fieldLabel = resolveTextProp(
+              field as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              field.id,
+            );
+            return (
+              <span
+                key={field.id}
+                className="inline-flex h-6 items-center gap-1 rounded-full border border-border bg-background px-2 text-xs text-foreground"
+              >
+                {fieldLabel}={valueLabel}
+                <button
+                  type="button"
+                  aria-label={t("feedback.removeFilter") + ": " + fieldLabel}
+                  className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  onClick={() => removeFilter(field)}
+                >
+                  <X aria-hidden="true" className="size-3" />
+                </button>
+              </span>
+            );
+          })}
+          <button
+            type="button"
+            className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            onClick={resetValues}
+          >
+            {t("feedback.clearFilters")}
+          </button>
+        </div>
+      ) : null}
+      {canSubmit && !isSearch ? (
         <button
           type="submit"
           disabled={submitting || hasBlockingErrors || (!isSearch && !canEdit)}

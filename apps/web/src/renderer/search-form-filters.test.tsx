@@ -143,5 +143,33 @@ describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
     const last = calls[calls.length - 1];
     expect(last).toContain("q=ali");
     expect(last).toContain("enabled=true");
+
+    // A-003: active filter chips appear for non-empty conditions.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const chips = container.querySelector('[data-filter-chips]');
+    expect(chips).not.toBeNull();
+    expect(chips!.textContent).toContain("ali");
+    expect(chips!.textContent).toContain("Enabled");
+
+    // A-003: the reset button clears every condition and re-runs the search
+    // (the request drops q and enabled).
+    const resetButton = Array.from(container.querySelectorAll("button")).find((el) =>
+      el.textContent?.includes("Reset"),
+    );
+    expect(resetButton).not.toBeUndefined();
+    const before = calls.length;
+    await act(async () => {
+      (resetButton as HTMLButtonElement).click();
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const afterReset = calls[calls.length - 1];
+    expect(calls.length).toBeGreaterThan(before);
+    expect(afterReset).not.toContain("q=");
+    expect(afterReset).not.toContain("enabled=");
+    expect(container.querySelector('[data-filter-chips]')).toBeNull();
   });
 });

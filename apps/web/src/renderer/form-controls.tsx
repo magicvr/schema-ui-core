@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
+import { ChevronDown, Search, X } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,9 +34,18 @@ export interface FormControlsProps {
   /** W11 · U-01/U-02: auth-aware transport for dynamic option sources
    * (optionsSource); defaults to globalThis.fetch. */
   fetcher?: typeof fetch;
+  /**
+   * A-003 (GOAL-013 audit response): search-mode presentation — compact
+   * responsive auto-grid (1..5 columns), keyword input with search prefix
+   * icon + clear affordance. Search schemas keep their exact JSON shape.
+   */
+  searchMode?: boolean;
+  /** A-003: action cluster (Search + Reset buttons) rendered inside the
+   * search-mode grid so it aligns with the field row. */
+  actionSlot?: ReactNode;
 }
 
-type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
+export type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
 
 /**
  * W11 · U-01/U-02: loads a form field's dynamic option source. Returns
@@ -110,7 +121,7 @@ function useDynamicOptions(
   return items;
 }
 
-function optionList(field: FormControlField, t: FieldTranslator): Array<{ value: string; label: string }> {
+export function optionList(field: FormControlField, t: FieldTranslator): Array<{ value: string; label: string }> {
   return (field.options ?? []).map((option) => ({
     value: option.value,
     label: resolveTextProp(
@@ -149,6 +160,7 @@ function BaseInput({
   disabled,
   readOnly,
   placeholder,
+  searchMode,
 }: {
   id: string;
   label: string;
@@ -158,25 +170,50 @@ function BaseInput({
   disabled?: boolean;
   readOnly?: boolean;
   placeholder?: string;
+  /** A-003: search keyword input — magnifier prefix + one-click clear. */
+  searchMode?: boolean;
 }) {
+  const t = useTranslate();
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs text-muted-foreground">
         {label}
       </Label>
-      <Input
-        id={id}
-        type={type}
-        value={value}
-        disabled={disabled}
-        readOnly={readOnly}
-        placeholder={placeholder}
-        // W4 P2-2: password fields in schema-driven forms (change/reset) must
-        // not be auto-filled from a saved login password — declare a new
-        // password context so the browser suggests a fresh one.
-        autoComplete={type === "password" ? "new-password" : undefined}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      <div className="relative">
+        {searchMode === true ? (
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60"
+          />
+        ) : null}
+        <Input
+          id={id}
+          type={type}
+          value={value}
+          disabled={disabled}
+          readOnly={readOnly}
+          placeholder={placeholder}
+          // W4 P2-2: password fields in schema-driven forms (change/reset) must
+          // not be auto-filled from a saved login password — declare a new
+          // password context so the browser suggests a fresh one.
+          autoComplete={type === "password" ? "new-password" : undefined}
+          onChange={(event) => onChange(event.target.value)}
+          className={cn(
+            searchMode === true ? "pl-8" : undefined,
+            searchMode === true && value !== "" ? "pr-8" : undefined,
+          )}
+        />
+        {searchMode === true && value !== "" ? (
+          <button
+            type="button"
+            aria-label={t("feedback.clearSearch")}
+            className="absolute right-2 top-1/2 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+            onClick={() => onChange("")}
+          >
+            <X aria-hidden="true" className="size-3.5" />
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -222,6 +259,7 @@ function SelectField({
             <label key={option.value} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
+                className="size-4 accent-primary"
                 checked={selected.includes(option.value)}
                 disabled={disabled || readOnly}
                 onChange={() => toggle(option.value)}
@@ -240,19 +278,28 @@ function SelectField({
       </Label>
       {/* W8 P3 (GOAL-009): control-level color-scheme so the native option
           popup renders dark immediately in dark mode (root cascades too). */}
-      <select
-        id={id}
-        value={value === undefined || value === null ? "" : String(value)}
-        disabled={disabled || readOnly}
-        onChange={(event) => onChange(event.target.value)}
-        className={cn(controlClass, "scheme-light dark:scheme-dark")}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          id={id}
+          value={value === undefined || value === null ? "" : String(value)}
+          disabled={disabled || readOnly}
+          onChange={(event) => onChange(event.target.value)}
+          className={cn(
+            controlClass,
+            "appearance-none pr-8 scheme-light dark:scheme-dark",
+          )}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          aria-hidden="true"
+          className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        />
+      </div>
     </div>
   );
 }
@@ -291,6 +338,7 @@ function RadioField({
               type="radio"
               name={id}
               value={option.value}
+              className="size-4 accent-primary"
               checked={current === option.value}
               disabled={disabled || readOnly}
               onChange={() => onChange(option.value)}
@@ -381,6 +429,7 @@ function BooleanField({
         checked={checked}
         disabled={disabled || readOnly}
         onChange={(event) => onChange(event.target.checked)}
+        className="size-4 accent-primary"
       />
       <Label htmlFor={id}>{label}</Label>
       {field.type === "switch" ? (
@@ -685,6 +734,7 @@ function FieldControl({
   t,
   error,
   fetcher,
+  searchMode,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
@@ -696,6 +746,8 @@ function FieldControl({
   t: (key: string, params?: MessageParams, literalFallback?: string) => string;
   error?: string;
   fetcher?: typeof fetch;
+  /** A-003: search presentation for the keyword input (prefix icon + clear). */
+  searchMode?: boolean;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = resolveTextProp(
@@ -736,6 +788,7 @@ function FieldControl({
           readOnly={readOnly}
           onChange={emitChange}
           placeholder={placeholder}
+          searchMode={searchMode}
         />
       );
     case "password":
@@ -909,6 +962,8 @@ export function FormControls({
   fieldErrors,
   columns,
   fetcher,
+  searchMode: searchModeProp,
+  actionSlot,
 }: FormControlsProps) {
   const t = useTranslate();
   // GOAL-014 D-002 §4: single-column is the default (industry convention for
@@ -916,6 +971,7 @@ export function FormControls({
   // stays single-column regardless.
   const cols =
     columns !== undefined && columns > 1 ? Math.min(Math.max(Math.floor(columns), 1), 4) : undefined;
+  const searchMode = searchModeProp === true;
   // F-005 (A-003): Tailwind JIT cannot extract dynamically concatenated
   // class names; use a static lookup so sm:grid-cols-2/3/4 are real utilities.
   const GRID_COL_CLASSES: Record<number, string> = {
@@ -928,7 +984,12 @@ export function FormControls({
     <div
       data-form-controls="design-system"
       data-form-columns={cols !== undefined ? String(cols) : "1"}
-      className={cn("grid gap-4 grid-cols-1", gridClass)}
+      data-form-search-mode={searchMode ? "true" : undefined}
+      className={
+        searchMode
+          ? "grid grid-cols-1 items-end gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          : cn("grid gap-4 grid-cols-1", gridClass)
+      }
     >
       {fields.map((field) => (
         <FieldControl
@@ -945,8 +1006,10 @@ export function FormControls({
           t={t}
           error={fieldErrors?.[field.id]}
           fetcher={fetcher}
+          searchMode={searchMode}
         />
       ))}
+      {actionSlot !== undefined ? actionSlot : null}
     </div>
   );
 }

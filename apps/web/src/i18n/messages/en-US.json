@@ -630,5 +630,9 @@
   "schema.notifications.filter.read.read": "Read",
   "schema.account.tab.profile": "Profile",
   "schema.account.tab.security": "Security",
-  "schema.account.tab.sessions": "Sessions"
+  "schema.account.tab.sessions": "Sessions",
+  "feedback.reset": "Reset",
+  "feedback.clearFilters": "Clear all filters",
+  "feedback.removeFilter": "Remove filter",
+  "feedback.clearSearch": "Clear search"
 }
