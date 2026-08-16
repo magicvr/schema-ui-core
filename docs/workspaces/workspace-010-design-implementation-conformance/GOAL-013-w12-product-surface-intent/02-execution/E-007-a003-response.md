@@ -37,6 +37,15 @@ version: 0.1.0
 - 折叠/展开高级筛选（字段 ≥4 时）：当前 12 页最多 3 个筛选字段（users），未触发；按 Phase 2 延后。
 - DateRange 范围胶囊美化：dateRangePicker 现状保留，Phase 2。
 
+
+## 修订（用户反馈 2026-08-16）：搜索按键与关键词输入框成对并排
+
+- 用户指出：上一版把「搜索」按钮放在网格末尾按钮组，与对应文本输入框脱开；应按「**有几个文本输入框就有几个搜索按键，且两两成对并排**」布局。
+- 实施：`FormControls` 新增 `searchButtonSlot`，search 模式下每个 `input` 字段与其搜索按钮同处一个网格单元（`flex items-end gap-2`，按钮 `h-9 shrink-0` 与输入框同高同基线）；`actionSlot` 只保留 Reset 按钮（网格尾部）。
+- 当前 12 页搜索表单每页恰好一个关键词输入，因此每页一个搜索键、紧贴输入框右侧；未来页面若含多个文本输入框，各输入框自动各配一个搜索键（提交同一表单条件）。
+- 测试：`search-form-filters.test.tsx` 增加成对断言（submit 按钮与 input 位于同一 grid cell）；全量回归绿。
+- 验证：`npx vitest run` 1027/1027；`tsc -b` 0。
+
 ## 验证
 
 - `npx vitest run`（apps/web）：全量结果见套件日志（1027 基线 + A-003 扩展断言）。

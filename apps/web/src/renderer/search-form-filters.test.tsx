@@ -153,6 +153,15 @@ describe("T-02 search form filter binding (GOAL-013 D-003)", () => {
     expect(chips!.textContent).toContain("ali");
     expect(chips!.textContent).toContain("Enabled");
 
+    // A-003 pairing rule (user 2026-08-16): the search submit button is
+    // adjacent to the keyword input — same grid cell, side by side.
+    const searchButton = Array.from(container.querySelectorAll('button[type="submit"]')).find(
+      (el) => el.textContent?.includes("Search"),
+    );
+    expect(searchButton).not.toBeUndefined();
+    const cell = (searchButton as HTMLButtonElement).parentElement!;
+    expect(cell.contains(container.querySelector('input') as Node)).toBe(true);
+
     // A-003: the reset button clears every condition and re-runs the search
     // (the request drops q and enabled).
     const resetButton = Array.from(container.querySelectorAll("button")).find((el) =>

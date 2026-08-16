@@ -1640,27 +1640,33 @@ function FormInner({
             : undefined
         }
         searchMode={isSearch}
+        // A-003 pairing rule (user 2026-08-16): the search button belongs
+        // beside its keyword input — one button per text input, adjacent.
+        searchButtonSlot={
+          isSearch ? (
+            <button
+              type="submit"
+              disabled={hasBlockingErrors}
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              <Search aria-hidden="true" className="size-4" />
+              {resolveTextProp(
+                node.props as unknown as Record<string, unknown>,
+                "submitLabelKey",
+                "submitLabel",
+                t,
+                t("feedback.search"),
+              )}
+            </button>
+          ) : undefined
+        }
         actionSlot={
           isSearch ? (
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                disabled={hasBlockingErrors}
-                className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                <Search aria-hidden="true" className="size-4" />
-                {resolveTextProp(
-                  node.props as unknown as Record<string, unknown>,
-                  "submitLabelKey",
-                  "submitLabel",
-                  t,
-                  t("feedback.search"),
-                )}
-              </button>
+            <div className="flex items-end">
               <button
                 type="button"
                 onClick={resetValues}
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
+                className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
               >
                 <RotateCcw aria-hidden="true" className="size-4" />
                 {t("feedback.reset")}

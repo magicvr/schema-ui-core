@@ -40,9 +40,15 @@ export interface FormControlsProps {
    * icon + clear affordance. Search schemas keep their exact JSON shape.
    */
   searchMode?: boolean;
-  /** A-003: action cluster (Search + Reset buttons) rendered inside the
+  /** A-003: action cluster (Reset button) rendered inside the
    * search-mode grid so it aligns with the field row. */
   actionSlot?: ReactNode;
+  /**
+   * A-003 (user pairing rule): one search button rendered side-by-side with
+   * EVERY keyword input field in search mode — as many buttons as there are
+   * text inputs, each pair adjacent in the same grid cell.
+   */
+  searchButtonSlot?: ReactNode;
 }
 
 export type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
@@ -735,6 +741,7 @@ function FieldControl({
   error,
   fetcher,
   searchMode,
+  searchButtonSlot,
 }: {
   field: FormControlField;
   values: Record<string, unknown>;
@@ -748,6 +755,8 @@ function FieldControl({
   fetcher?: typeof fetch;
   /** A-003: search presentation for the keyword input (prefix icon + clear). */
   searchMode?: boolean;
+  /** A-003 pairing rule: submit button rendered adjacent to the input. */
+  searchButtonSlot?: ReactNode;
 }) {
   const id = `${idPrefix ?? "field"}-${field.id}`;
   const label = resolveTextProp(
@@ -777,8 +786,8 @@ function FieldControl({
 
   const renderControl = (): ReactNode => {
   switch (field.type) {
-    case "input":
-      return (
+    case "input": {
+      const control = (
         <BaseInput
           id={id}
           label={label}
@@ -791,6 +800,17 @@ function FieldControl({
           searchMode={searchMode}
         />
       );
+      // A-003 pairing rule: in search mode the keyword input and its search
+      // button sit side by side in one grid cell (as many buttons as inputs).
+      return searchMode === true && searchButtonSlot !== undefined ? (
+        <div className="flex items-end gap-2">
+          <div className="min-w-0 flex-1">{control}</div>
+          {searchButtonSlot}
+        </div>
+      ) : (
+        control
+      );
+    }
     case "password":
       return (
         <BaseInput
@@ -964,6 +984,7 @@ export function FormControls({
   fetcher,
   searchMode: searchModeProp,
   actionSlot,
+  searchButtonSlot,
 }: FormControlsProps) {
   const t = useTranslate();
   // GOAL-014 D-002 §4: single-column is the default (industry convention for
@@ -1007,6 +1028,7 @@ export function FormControls({
           error={fieldErrors?.[field.id]}
           fetcher={fetcher}
           searchMode={searchMode}
+          searchButtonSlot={searchButtonSlot}
         />
       ))}
       {actionSlot !== undefined ? actionSlot : null}
