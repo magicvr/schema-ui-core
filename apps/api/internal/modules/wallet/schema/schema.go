@@ -1,5 +1,6 @@
 // Package schema owns the admin.wallet page documents (S-14 · GOAL-019 D-002
-// §3): the wallet accounts page and the wallet-entries ledger page.
+// §3): the wallet accounts page, the wallet-entries ledger page, and the
+// GOAL-022 my-wallet self-service page.
 package schema
 
 import "embed"

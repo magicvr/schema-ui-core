@@ -23,3 +23,4 @@ version: 0.2.0
 |------|------|------|------|------|
 | D-001 | 2026-08-16 | 开项目录：承接 W12 T-04 移交 | accepted | `01-decision/D-001-open-from-w12.md` |
 | D-002 | 2026-08-16 | 方案冻结：只读自服务 + /my-wallet 惰性开户 | accepted | `01-decision/D-002-s1-plan-freeze.md` |
+| D-003 | 2026-08-16 | S4 go 判定（只读加法面，无门禁语义变化） | accepted | `01-decision/D-003-s4-go-judgment.md` |

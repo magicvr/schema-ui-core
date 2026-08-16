@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.2.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-022
@@ -26,8 +26,9 @@ version: 0.2.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到审计节点 |
+| A-001 | 2026-08-16 | self | S2-S4（实现+验证+go 判定） | pass | 0 | `03-audit/A-001-s2-s4-self.md` |
+| A-002 | 2026-08-16 | independent | S5 关门（成功标准 + 身份隔离/只读/开户/装配） | pass | 0 | `03-audit/A-002-s5-independent.md` |
 
 ## 结论状态
 
-S1 已冻结；S2 未开始。独立意见不改 status。
+S2-S4 完成（A-001 self pass）。S5 独立关门审计 **A-002 pass**（0 required；F-001/F-002 recommended）。独立意见不改 status / progress；响应和关门由 `/govern` 执行。

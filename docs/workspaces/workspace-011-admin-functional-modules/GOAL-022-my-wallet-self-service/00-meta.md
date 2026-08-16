@@ -1,12 +1,12 @@
 ---
 id: GOAL-022-my-wallet-self-service
 title: 我的钱包（当前用户自服务页 + 顶栏入口）
-status: active
+status: done
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.3.0
-progress: 1/5
+version: 1.0.0
+progress: 5/5
 ---
 
 # GOAL-022 · 我的钱包（当前用户自服务页 + 顶栏入口）
@@ -24,10 +24,10 @@ progress: 1/5
 - [x] **S1 · 方案冻结**：自服务范围、路由、权限、与管理端页分工、入口 Manifest（D-002，2026-08-16）
 - [x] **S2 · 实现**：schema 页 + user-nav + 必要薄 API（当前用户作用域）（E-003，2026-08-16）
 - [x] **S3 · 验证**：单元/集成 + 回归（E-004：go 全量 + vitest 1038 + 实机冒烟，2026-08-16）
-- [ ] **S4 · go 判定 + 自审**
-- [ ] **S5 · 关门审计**
+- [x] **S4 · go 判定 + 自审**（D-003 + A-001 self pass，2026-08-16）
+- [x] **S5 · 关门审计**（A-002 grok independent pass，0 required；F-001/F-002 recommended → fixed，E-005，2026-08-16）
 
-progress: 3/5。
+progress: 5/5。
 
 ## 审计策略
 

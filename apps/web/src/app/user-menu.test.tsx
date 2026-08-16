@@ -135,6 +135,7 @@ describe("T-01 user dropdown (GOAL-013 D-002)", () => {
     const drawer = container.querySelector('nav[aria-label="Mobile navigation"]');
     expect(drawer).not.toBeNull();
     expect(drawer!.textContent).not.toContain("Account");
+    expect(drawer!.textContent).not.toContain("My wallet");
     expect(drawer!.textContent).not.toContain("Settings");
   });
 

@@ -167,7 +167,7 @@ func TestWalletSelfEntriesOwnScope(t *testing.T) {
 		t.Fatalf("alice entry = %v", entries.Items[0])
 	}
 
-	// bob 只看到自己的账户（1000），与 alice 完全隔离。
+	// bob 只看到自己的账户（1000）与自己的流水，与 alice 完全隔离。
 	bobToken := env.login(t, "bob", "bob-password")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, bobToken, http.MethodGet, "/api/wallet/me", ""))
@@ -177,5 +177,45 @@ func TestWalletSelfEntriesOwnScope(t *testing.T) {
 	_ = json.Unmarshal(rr.Body.Bytes(), &me)
 	if me.Items[0]["ownerId"] != "user-bob" || me.Items[0]["balanceTotal"].(float64) != 1000 {
 		t.Fatalf("bob self account = %v", me.Items[0])
+	}
+	bobAccountID := me.Items[0]["id"].(string)
+
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, bobToken, http.MethodGet, "/api/wallet/me/entries", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("bob /me/entries = %d %s", rr.Code, rr.Body.String())
+	}
+	var bobEntries struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+	}
+	_ = json.Unmarshal(rr.Body.Bytes(), &bobEntries)
+	if bobEntries.Total != 1 || len(bobEntries.Items) != 1 {
+		t.Fatalf("bob entries = %+v", bobEntries)
+	}
+	if bobEntries.Items[0]["memo"] != "grant bob" || bobEntries.Items[0]["amountDelta"].(float64) != 1000 {
+		t.Fatalf("bob entry = %v", bobEntries.Items[0])
+	}
+
+	// A-002 F-001：查询参数注入被忽略 —— /me 不接受 ?ownerId=，
+	// /me/entries 不接受 ?accountId=（账户恒由会话推导）。
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, aliceToken, http.MethodGet, "/api/wallet/me?ownerId=user-bob", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("alice /me?ownerId= = %d %s", rr.Code, rr.Body.String())
+	}
+	_ = json.Unmarshal(rr.Body.Bytes(), &me)
+	if me.Items[0]["ownerId"] != "user-alice" {
+		t.Fatalf("ownerId query ignored expected alice, got %v", me.Items[0]["ownerId"])
+	}
+
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, aliceToken, http.MethodGet, "/api/wallet/me/entries?accountId="+bobAccountID, ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("alice /me/entries?accountId= = %d %s", rr.Code, rr.Body.String())
+	}
+	_ = json.Unmarshal(rr.Body.Bytes(), &entries)
+	if entries.Total != 1 || entries.Items[0]["memo"] != "grant alice" {
+		t.Fatalf("accountId query ignored expected alice entry, got %+v", entries)
 	}
 }
