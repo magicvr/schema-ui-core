@@ -39,7 +39,7 @@ GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分�
 ├── GOAL-019-r3-s14-wallet-ledger [done] · R3-S14 钱包/账务（账本：余额、流水、对账）（5/5）
 ├── GOAL-020-wallet-auto-account [done] · 钱包账户自动开户与用户绑定（get-or-create）（5/5）
 ├── GOAL-021-wallet-deduct-frozen [done] · 钱包冻结扣款原语 + 幂等载荷修复（A-008 响应）（5/5）
-└── GOAL-022-my-wallet-self-service [active] · 我的钱包（当前用户自服务页 + 顶栏入口）（0/5）
+└── GOAL-022-my-wallet-self-service [active] · 我的钱包（当前用户自服务页 + 顶栏入口）（1/5）
 
 ```
 
@@ -70,7 +70,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 | GOAL-019-r3-s14-wallet-ledger | R3-S14 · 钱包/账务（账本：余额、流水、对账） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-16 |
 | GOAL-020-wallet-auto-account | 钱包账户自动开户与用户绑定（get-or-create） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-16 |
 | GOAL-021-wallet-deduct-frozen | 钱包冻结扣款原语 + 幂等载荷修复（A-008 响应） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-16 |
-| GOAL-022-my-wallet-self-service | 我的钱包（当前用户自服务页 + 顶栏入口） | GOAL-001-admin-functional-modules | active | 0/5 | 2026-08-16 |
+| GOAL-022-my-wallet-self-service | 我的钱包（当前用户自服务页 + 顶栏入口） | GOAL-001-admin-functional-modules | active | 1/5 | 2026-08-16 |
 
 ## 维护说明
 

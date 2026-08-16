@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-functional-modules
 created: 2026-08-16
 updated: 2026-08-16
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-022
@@ -14,9 +14,13 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-001 只读 vs 有界操作 | open required | 阻断 S1 |
-| I-002 路由与 get-or-create | open required | 阻断 S1 |
+| I-001 只读 vs 有界操作 | verified | 用户 2026-08-16 裁决只读（D-002 §1） |
+| I-002 路由与 get-or-create | verified | 用户 2026-08-16 裁决 /my-wallet + 惰性开户（D-002 §2） |
 | 资料引用 | 无 | — |
+
+## 审计模式
+
+只读（无资金操作面）→ S2/S3 **self**；S5 关门按用户偏好安排 **grok build independent**（grok-4.6 · high）核验身份隔离与数据暴露边界。
 
 ## 意见台账索引
 
@@ -26,4 +30,4 @@ version: 0.1.0
 
 ## 结论状态
 
-立项完成；S1 未冻结。独立意见不改 status。
+S1 已冻结；S2 未开始。独立意见不改 status。
