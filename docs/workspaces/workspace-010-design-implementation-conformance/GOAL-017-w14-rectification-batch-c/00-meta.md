@@ -1,12 +1,12 @@
 ---
 id: GOAL-017-w14-rectification-batch-c
 title: W14 整改批 C · 调试痕迹清理（F-08 移除 pageId/route 技术框 / F-09 反馈文案本地化与去错误码前缀 / F-10 Schema 加载失败友好化）
-status: active
+status: done
 parent: GOAL-015-w14-user-perspective-review
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-017 · W14 整改批 C（F-08～F-10 调试痕迹清理）
@@ -23,12 +23,12 @@ progress: 0/4
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：F-08～F-10 具体修改点与 i18n 键清单
-- [ ] **S2 · 实施**：前端/文案修改
-- [ ] **S3 · 测试与回归**：vitest/tsc + Web 全量（如涉 Go 则 Go 全量）
-- [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
+- [x] **S1 · 方案冻结**：F-08～F-10 具体修改点与 i18n 键清单
+- [x] **S2 · 实施**：前端/文案修改
+- [x] **S3 · 测试与回归**：vitest/tsc + Web 全量（如涉 Go 则 Go 全量）
+- [x] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**（本子目标 2026-08-17 在批 A 关门后渐进添加，尚未开工）。
+progress: 由四个等权检查点派生（S1～S4）；当前 **4/4**（S1～S4 完成，2026-08-17 关门）。
 
 ## 审计策略
 

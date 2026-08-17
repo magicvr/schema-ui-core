@@ -452,25 +452,40 @@ function PageSchemaErrorSurface({ error }: { error: PageSchemaError }) {
   const t = useTranslate();
   return (
     <section role="alert" className="space-y-6" aria-labelledby="schema-error-title">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {t("shell.pageSchemaError")}
         </p>
         <h1 id="schema-error-title" className="text-3xl font-semibold tracking-tight">
-          {error.code}
+          {t("shell.pageSchemaError.title")}
         </h1>
-        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{error.message}</p>
-        <p className="font-mono text-xs text-muted-foreground">{error.url}</p>
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          {t("shell.pageSchemaError.description")}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90"
+        >
+          {t("shell.pageSchemaError.reload")}
+        </button>
       </div>
-      {error.issues !== undefined && error.issues.length > 0 ? (
-        <ul className="space-y-1 text-sm text-destructive">
-          {error.issues.map((issue, index) => (
-            <li key={index}>
-              <code className="font-mono">{issue.path}</code>: {issue.message}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <details className="rounded-lg border border-border/70 bg-card/85 p-3 text-xs text-muted-foreground">
+        <summary className="cursor-pointer text-sm font-medium">
+          {t("shell.pageSchemaError.technicalDetails")}
+        </summary>
+        <p className="mt-2 font-mono">{error.code}</p>
+        <p className="mt-1 font-mono">{error.url}</p>
+        {error.issues !== undefined && error.issues.length > 0 ? (
+          <ul className="mt-2 space-y-1">
+            {error.issues.map((issue, index) => (
+              <li key={index}>
+                <code className="font-mono">{issue.path}</code>: {issue.message}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </details>
     </section>
   );
 }
@@ -665,10 +680,6 @@ function PageSurface({
           <h1 id="page-title" tabIndex={-1} className="mt-2.5 truncate text-3xl font-semibold tracking-tight outline-none">
             {pageTitle}
           </h1>
-        </div>
-        <div className="shrink-0 border border-border bg-card px-4 py-3 text-right text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">{route.page.pageId}</p>
-          <p className="mt-1 font-mono">{route.page.route}</p>
         </div>
       </div>
       <div className="w-full min-w-0">

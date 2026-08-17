@@ -1,11 +1,11 @@
 ---
 id: GOAL-017-w14-rectification-batch-c
 doc: audit
-status: active
+status: done
 parent: GOAL-015-w14-user-perspective-review
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-017
@@ -16,16 +16,16 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-001/I-002 | open | S1 冻结阶段收集 |
-| 到期 required | 无 | 本波尚无到期 required |
+| I-001/I-002 | **closed** | D-001 冻结：错误码保留在 data-feedback-code/title；F-10 恢复动作=重新加载 |
+| 到期 required | 无 | 本波无到期 required |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | 尚未到达审计节点 | — | — | — |
+| A-001 | 2026-08-17 | self | GOAL-017 S4 关门 | pass | 无 | [03-audit/A-001-closeout-self.md](03-audit/A-001-closeout-self.md) |
 
 ## 结论状态
 
-尚未到达审计节点。
+A-001 self **pass**，同意关门。

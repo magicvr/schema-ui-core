@@ -547,7 +547,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   if (columns.length === 0) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        table node requires a columns array
+        {t("error.tableColumnsRequired")}
       </p>
     );
   }
@@ -555,7 +555,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   if (dataSource === null) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        table node requires a valid dataSource (single-slash same-origin path)
+        {t("error.tableDataSourceInvalid")}
       </p>
     );
   }

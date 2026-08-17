@@ -313,7 +313,7 @@ async function runCustomAction(
   const handler = stringOf(action.handler);
   let url = CUSTOM_HANDLER_URLS[handler];
   if (url === undefined) {
-    return { ok: false, code: "CUSTOM_HANDLER_NOT_FOUND", message: "custom handler not whitelisted: " + handler };
+    return { ok: false, code: "CUSTOM_HANDLER_NOT_FOUND", message: "custom handler not whitelisted: " + handler, messageKey: "error.customHandlerNotFound", params: { handler } };
   }
   // Row-scoped custom handlers resolve the {id} slot from the captured row
   // context (S-02, GOAL-007 D-002 §5). A missing row id on a templated
@@ -321,7 +321,7 @@ async function runCustomAction(
   const rowId = row?.id;
   if (url.includes("{id}")) {
     if (typeof rowId !== "string" || rowId === "") {
-      return { ok: false, code: "CUSTOM_HANDLER_MISSING_ROW_ID", message: "custom handler requires a row id: " + handler };
+      return { ok: false, code: "CUSTOM_HANDLER_MISSING_ROW_ID", message: "custom handler requires a row id: " + handler, messageKey: "error.customHandlerMissingRowId", params: { handler } };
     }
     url = url.replaceAll("{id}", encodeURIComponent(rowId));
   }
@@ -388,7 +388,7 @@ async function runRequest(
 ): Promise<ActionResult> {
   const action = actionOf(document, actionRef);
   if (action === undefined) {
-    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` };
+    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } };
   }
   // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
   // CustomAction extension point (action.schema.json): a schema action may
@@ -398,7 +398,7 @@ async function runRequest(
     return runCustomAction(action, fetcher, opts.row ?? null);
   }
   if (action.type !== "request") {
-    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
   if (opts.gateTargetId !== undefined) {
     // Absent target = no declared permission entry (engine default is allow):
@@ -424,6 +424,8 @@ async function runRequest(
           ok: false,
           code: gate.reason ?? gate.outcome,
           message: `action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
+          messageKey: "error.actionNotExecuted",
+          params: { action: actionRef, reason: gate.reason ?? gate.outcome },
         };
       }
     }
@@ -524,10 +526,10 @@ async function runBatchRequest(
 ): Promise<ActionResult> {
   const action = actionOf(document, actionRef);
   if (action === undefined) {
-    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` };
+    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } };
   }
   if (action.type !== "request") {
-    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
   const targetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
   // ADR-0022 D5d: unmarked triggers do not participate in the permission
@@ -553,6 +555,8 @@ async function runBatchRequest(
         ok: false,
         code: gate.reason ?? gate.outcome,
         message: `batch action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
+        messageKey: "error.batchActionNotExecuted",
+        params: { action: actionRef, reason: gate.reason ?? gate.outcome },
       };
     }
   }
@@ -745,7 +749,7 @@ function SchemaCrudProvider({
         stringOf(item.actionRef) !== "" ? stringOf(item.actionRef) : stringOf(item.actionId);
       const action = actionOf(document, actionRef);
       if (actionRef === "" || action === undefined) {
-        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
+        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } });
         return;
       }
       // Row actions carry the row in modal/confirm/request payloads. Do NOT call
@@ -775,6 +779,8 @@ function SchemaCrudProvider({
             kind: "error",
             code: "INVALID_NAVIGATE_URL",
             message: `${actionRef} has an invalid url`,
+            messageKey: "error.invalidNavigateUrl",
+            params: { action: actionRef },
           });
           return;
         }
@@ -791,13 +797,15 @@ function SchemaCrudProvider({
               kind: "error",
               code: constructed.code,
               message: `row navigation construction failed (${constructed.path})`,
+              messageKey: "error.rowNavigationFailed",
+              params: { path: constructed.path },
             });
             return;
           }
           // rowNavigate returns navigation.url (not request.url).
           const target = constructed.navigation?.url ?? constructed.request?.url;
           if (target === undefined) {
-            setFeedback({ kind: "error", code: "INVALID_NAVIGATE_URL", message: "navigate mapping produced no url" });
+            setFeedback({ kind: "error", code: "INVALID_NAVIGATE_URL", message: "navigate mapping produced no url", messageKey: "error.navigateNoUrl" });
             return;
           }
           // GOAL-015 F-001: navigate through the host's session-internal
@@ -847,12 +855,12 @@ function SchemaCrudProvider({
       const actionRef = stringOf(item.actionRef);
       const action = actionOf(document, actionRef);
       if (actionRef === "" || action === undefined) {
-        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
+        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } });
         return;
       }
       const current = selection(tableId);
       if (current === undefined || current.count === 0) {
-        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first" });
+        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first", messageKey: "error.emptySelection" });
         return;
       }
       const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");
@@ -894,7 +902,7 @@ function SchemaCrudProvider({
       if (typeof field.actionRef === "string" && field.actionRef !== "") {
         const referenced = actionOf(document, field.actionRef);
         if (referenced === undefined || referenced.type !== "upload") {
-          throw new Error(`upload action "${field.actionRef}" is not a type=upload action`);
+          throw new Error(t("error.uploadNotUploadAction", { action: field.actionRef }));
         }
         action = referenced as unknown as UploadActionResult;
       } else if (typeof field.action === "string" && field.action !== "") {
@@ -906,7 +914,7 @@ function SchemaCrudProvider({
           multiple: field.multiple === true,
         };
       } else {
-        throw new Error("upload field requires action or actionRef");
+        throw new Error(t("error.uploadRequiresAction"));
       }
       const result = await uploadFilesWithFetch(action, files, fetcher);
       if (!result.ok) {
@@ -914,7 +922,7 @@ function SchemaCrudProvider({
       }
       return result.fieldValue;
     },
-    [document, fetcher],
+    [document, fetcher, t],
   );
 
   const resolveConfirm = useCallback(async (confirmed: boolean) => {
@@ -1165,8 +1173,7 @@ function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
           : "border-success/50 bg-success/10 text-success"
       }`}
     >
-      <span>
-        {feedback.code !== undefined && feedback.code !== "" ? `${feedback.code}: ` : ""}
+      <span data-feedback-code={feedback.code ?? ""} title={feedback.code ?? undefined}>
         {text}
       </span>
       <button

@@ -210,8 +210,10 @@ describe("S4 · feedback region localization", () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
     const alertAfter = container.querySelector('[role="alert"]');
-    expect(alertAfter?.textContent).toContain("INVALID_SITE_TITLE");
+    const codeEl = alertAfter?.querySelector("[data-feedback-code]");
+    expect(codeEl?.getAttribute("data-feedback-code")).toBe("INVALID_SITE_TITLE");
     expect(alertAfter?.textContent).toContain("站点标题不能为空");
+    expect(alertAfter?.textContent).not.toContain("INVALID_SITE_TITLE");
     expect(alertAfter?.textContent).not.toContain("siteTitle must not be empty");
   });
 
@@ -278,9 +280,11 @@ describe("S4 · feedback region localization", () => {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
     });
     const alertAfter = container.querySelector('[role="alert"]');
+    const codeEl = alertAfter?.querySelector("[data-feedback-code]");
     // Unknown key → the translator returns the key itself; the feedback
     // region detects that and keeps the server message (never a raw key).
-    expect(alertAfter?.textContent).toContain("MYSTERY_CODE");
+    expect(codeEl?.getAttribute("data-feedback-code")).toBe("MYSTERY_CODE");
     expect(alertAfter?.textContent).toContain("custom server detail");
+    expect(alertAfter?.textContent).not.toContain("MYSTERY_CODE");
   });
 });
