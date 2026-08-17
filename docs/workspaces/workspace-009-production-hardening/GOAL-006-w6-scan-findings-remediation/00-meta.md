@@ -4,8 +4,8 @@ title: W6 扫描审计发现修复（api/web）
 status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-15
-updated: 2026-08-15
-version: 0.3.0
+updated: 2026-08-17
+version: 0.3.1
 progress: 4/4
 ---
 
@@ -24,7 +24,7 @@ progress: 4/4
 - [x] S3：`branding.isSafeBrandingUrl` 支持安全 `data:image/*;base64` 内联 — **不采纳（user-overruled）**：API `normalizeLogoURL` 与 errorcatalog 均拒绝 data: URI，web 测试已锁定拒绝行为；保持 web/API 一致的有意收紧（防 SVG 脚本载荷） — [E-001](02-execution/E-001-w6-remediation.md) + [A-001](03-audit/A-001-w6-self.md)
 - [x] S4：执行事实 + self 审计落盘；开放 required = 0 — [E-001](02-execution/E-001-w6-remediation.md) + [A-001](03-audit/A-001-w6-self.md)
 
-**W6 待关门**：self 审计 A-001 pass，开放 required = 0。关门需用户确认后置 `status: done`（本文件与 goal-tree 同步）。
+**W6 已关门（2026-08-17 补记）**：self 审计 A-001 pass、开放 required = 0；用户书面授权关门（D-002）并补记 close-out self 审计 A-002 pass。`status: done` 维持，本文件与 goal-tree / workspace.md 已同步。
 
 ## 信息就绪与未知项
 

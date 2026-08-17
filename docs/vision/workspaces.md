@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-14
+updated: 2026-08-17
 parent: null
-version: 0.12.0
+version: 0.12.1
 ---
 
 # 工作区贡献图
@@ -20,9 +20,9 @@ version: 0.12.0
 | workspace-006-design-system-and-ui-experience | docs/workspaces/workspace-006-design-system-and-ui-experience/ | GOAL-001-design-system-and-ui-experience | delivery | VP-005-design-system-and-ui-experience | active |
 | workspace-007-localization-and-system-settings | docs/workspaces/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
 | workspace-008-admin-module-readiness | docs/workspaces/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
-| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1/W2 done；2026-08-10 语义纠正） |
-| workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；波次 W1 范例面可选化 done、W2 `demo` Profile done，`go` 均无新暂挂） |
-| workspace-011-admin-functional-modules | docs/workspaces/workspace-011-admin-functional-modules/ | GOAL-001-admin-functional-modules | lead | VP-011-admin-functional-modules | active（2026-08-14 开区；VP-011 激活 + freshness review PASS 候选 `f14ab9d`；Root 纲领路线图 R1 有界调研待开） |
+| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1–W4 与 W6 done，W5 扫描 0 中高危未开子目标；2026-08-10 语义纠正） |
+| workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；波次 W1–W13 done，`go` 均无新暂挂） |
+| workspace-011-admin-functional-modules | docs/workspaces/workspace-011-admin-functional-modules/ | GOAL-001-admin-functional-modules | lead | VP-011-admin-functional-modules | active（2026-08-14 开区；VP-011 激活 + freshness review PASS 候选 `f14ab9d`；Root 纲领路线图 R1 调研 / R2 一等公民 / R3 常用 done，R4 增补 backlog 已登记） |
 
 ## 说明
 
@@ -42,6 +42,6 @@ version: 0.12.0
 - **VP-007 已于 2026-08-09 经用户书面确认关门（`closed`）**：workspace-007 与 Root `GOAL-001-localization-and-system-settings`（`done / 6/6`）的历史绑定保留，默认不接新区（reopen 须用户确认）；S0–S5 证据与 independent 审计闭环见该区五件套（GOAL-006 A-001/A-002、D-002、E-001～E-003；Root `attachments/S5-evidence-matrix.md`）。不改变 Charter `primary_workspace`。
 - **VP-008 已于 2026-08-10 经用户书面确认关门（`closed`）**：workspace-008 与 Root `GOAL-001-admin-module-readiness`（`done / 6/6`，S0–S5）的历史绑定保留，默认不接新区（reopen 须用户确认）；`go` 已于 2026-08-10 签发（候选 `ed99e88`，clean；D-001），解锁后续标准业务模块实现，每个后续业务 VP 激活前须完成消费前 freshness review。关门证据链见该区五件套（GOAL-007 D-001、A-001/A-002/A-003、S5-evidence-matrix）。不改变 Charter `primary_workspace`。
 - **VP-009 已于 2026-08-10 落盘并激活**：初衷曾被写成「单次加固波次」；同日完成 W1（GOAL-002 16 项）后曾误记 `closed`。
-- **VP-009 / workspace-009 语义纠正（2026-08-10 用户书面）**：VP-009 = **持续**共享基架安全与健壮性程序（`active`）；workspace-009 = 唯一 lead；Root `GOAL-001-production-hardening` = **长期程序容器（`active`）**；有界波次 = 子目标（W1 GOAL-002 done、W2 GOAL-003 done）。单波完成或 `go` 恢复**不等于** VP/Root 关门。不改变 Charter `primary_workspace`。
-- **VP-010 / workspace-010 已于 2026-08-11 落盘并激活**：长期**设计意图—实现符合性**程序（类 VP-009 持续程序语义，与 009 正交：安全 vs 符合性）；lead = workspace-010-design-implementation-conformance；Root `GOAL-001-design-implementation-conformance` = **长期程序容器（`active`）**；首波 W1 = GOAL-002（范例/演示产品面可选模块化）。改变 Profile 默认集 / 模块矩阵 / Manifest 装配语义的 gap 按 VP-008 `go` 消费有效性规则暂挂/重验证。单波完成**不等于** VP/Root 关门。不改变 Charter `primary_workspace`。
+- **VP-009 / workspace-009 语义纠正（2026-08-10 用户书面）**：VP-009 = **持续**共享基架安全与健壮性程序（`active`）；workspace-009 = 唯一 lead；Root `GOAL-001-production-hardening` = **长期程序容器（`active`）**；有界波次 = 子目标（W1–W4 与 W6 done；W5 扫描 0 中高危未开子目标）。单波完成或 `go` 恢复**不等于** VP/Root 关门。不改变 Charter `primary_workspace`。
+- **VP-010 / workspace-010 已于 2026-08-11 落盘并激活**：长期**设计意图—实现符合性**程序（类 VP-009 持续程序语义，与 009 正交：安全 vs 符合性）；lead = workspace-010-design-implementation-conformance；Root `GOAL-001-design-implementation-conformance` = **长期程序容器（`active`）**；波次 W1–W13 均 done（W1 = GOAL-002 范例/演示产品面可选模块化）。改变 Profile 默认集 / 模块矩阵 / Manifest 装配语义的 gap 按 VP-008 `go` 消费有效性规则暂挂/重验证。单波完成**不等于** VP/Root 关门。不改变 Charter `primary_workspace`。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。波次 progress 不得推导 Root/`VP` done。

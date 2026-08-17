@@ -1,11 +1,11 @@
 ---
 id: GOAL-006-w6-scan-findings-remediation
 doc: decision
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-15
-updated: 2026-08-15
-version: 0.1.0
+updated: 2026-08-17
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-006
@@ -21,3 +21,4 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-15 | W6 修复范围与技术取舍 | accepted | `01-decision/D-001-w6-scope.md` |
+| D-002 | 2026-08-17 | W6 关门授权（补记） | accepted | `01-decision/D-002-w6-closeout.md` |
