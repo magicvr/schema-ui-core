@@ -10,6 +10,8 @@ version: 0.1.0
 
 # E-002 · S3 独立审计 + S4 关门（2026-08-17）
 
+> **⚠ superseded**：本文记录的历史事实（S3 审计、S4 响应与 A-003 关门自审）均实际发生过，但 **S4 关门结论已被用户裁决撤销**（见 E-003）：关门未先取得 I-001（required 用户裁决项）的书面裁决，违反 P-004。GOAL-015 现为 active（3/4），须 I-001 用户裁决后方可关门。
+
 ## 做了什么（事实）
 
 - **S3 · 独立交叉审计**：按用户书面偏好调用本地 grok build（`grok.exe · grok-4.6 · reasoning high`）做 independent 审计。审计任务书 `.grok/audit-w14-goal015-s1.md`，输出 `.grok/audit-w14-goal015-s1-out.txt`。审计员自行抽验 F-01～F-14 代码证据与 E-001 两条误判修正，落盘 `03-audit/A-002-s1s2-independent.md` 并更新 `03-audit.md` 索引。

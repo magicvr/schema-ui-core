@@ -32,7 +32,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-012-w11-mfa-ux-review [done] · W11 个人中心 MFA 缺陷修复与全局 UX 审视整改（5/5）
 ├── GOAL-013-w12-product-surface-intent [done] · W12 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置）（4/4）
 ├── GOAL-014-w13-settings-tabs-and-topbar [done] · W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传 + 通知中心交互修正 + 列表筛选即时生效（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传 / 通知点击即读 / 筛选即时生效）（4/4）
-└── GOAL-015-w14-user-perspective-review [done] · W14 · 真实用户视角审视 API/Web 并落盘改进项台账（F-01～F-14）；整改 deferred（待用户裁决）（4/4）
+└── GOAL-015-w14-user-perspective-review [active] · W14 · 真实用户视角审视 API/Web 并落盘改进项台账（F-01～F-14）；整改待用户裁决（3/4）
 ```
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
@@ -53,7 +53,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 
 **W13（2026-08-16 五次关门，4/4）**：设置页功能单元 Tabs（恢复默认常驻 Tabs 外）；移动端品牌条独立一行（<lg）+ 汉堡按键靠工具栏最左；搜索框组【文本框+搜索键】零间隙贴合恒同行；顶栏亮暗/语种按键对调；T-05 个人中心头像上传（共享 RasterAssetStore、迁移 0035/0036、/me 快照 + 用户菜单展示）+ 顶栏头像即时刷新修复；T-06 通知中心交互修正（铃铛条目点击跳转展开并标已读、列表点击即读+行内展开、移除行内已读 action、未读数即时刷新——notification-center 自定义组件 + notifications.read 响应头）；T-07 列表筛选即时生效（下拉等筛选项变动立即重新筛选、文本框+搜索键提交式、筛选记录以已提交查询为真相源）；A-001～A-005 self pass；回归 Go 0 FAIL + vitest 1037/1037 + tsc 0 + e2e admin/mvp 全绿（含 W11/W12 遗留 e2e 断言修复）；go 判定各轮均无影响、不暂挂。
 
-**W14（2026-08-17 关门，4/4）**：真实用户视角审视 API/Web 已实现功能；本波交付 = 审视 + 改进项台账落盘（F-01～F-14，D-001）+ 审计会签 + 台账同步；**整改 deferred（待用户裁决，D-002）**。S1 审视完成（E-001，编排器亲自复核 + 三个并行独立审视面）；S2 台账与待决项落盘（I-001 deferred / I-002 collecting）；S3 独立审计 A-002（grok-4.6 · independent · pass，无 required，3 条 non-blocking 全 fixed）；S4 关门 A-003 self pass；无代码改动；goal-tree/workspace 同步 done；go 判定无影响不暂挂。
+**W14（2026-08-17 回退为 active，3/4）**：真实用户视角审视 API/Web 已实现功能；S1 审视完成（E-001，编排器亲自复核 + 三个并行独立审视面）；S2 台账与待决项落盘（F-01～F-14，D-001；I-002 collecting）；S3 独立审计 A-002（grok-4.6 · independent · pass，无 required，3 条 non-blocking 全 fixed）。**前次执行未经用户裁决即关门 done（4/4），绕过 P-004，已由用户裁决回退（E-003/A-004）**：status active · 3/4；I-001（F-01～F-14 的 in-scope/defer/优先级）恢复 open required。关门须先取得用户书面裁决（含 F-01 handler 目录、F-04 本地化方案、F-08 调试框三方案选择）。
 ## 状态表
 
 | id | title | parent | status | progress | updated |
@@ -72,7 +72,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-012-w11-mfa-ux-review | W11 · 个人中心 MFA 缺陷修复与全局 UX 审视整改（M-01～M-03 + U-01～U-14 落盘） | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-15 |
 | GOAL-013-w12-product-surface-intent | W12 · 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-16 |
 | GOAL-014-w13-settings-tabs-and-topbar | W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传 + 通知中心交互修正 + 列表筛选即时生效（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传 / 通知点击即读 / 筛选即时生效） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-16 |
-| GOAL-015-w14-user-perspective-review | W14 · 真实用户视角审视 API/Web 并落盘改进项台账（F-01～F-14：审计过滤 / 通知本地化 / 列表一致性 / 表单与无障碍 / 调试痕迹清理 / 功能面补全）；整改 deferred（待用户裁决） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-17 |
+| GOAL-015-w14-user-perspective-review | W14 · 真实用户视角审视 API/Web 并落盘改进项台账（F-01～F-14：审计过滤 / 通知本地化 / 列表一致性 / 表单与无障碍 / 调试痕迹清理 / 功能面补全）；整改待用户裁决 | GOAL-001-design-implementation-conformance | active | 3/4 | 2026-08-17 |
 
 ## 维护说明
 

@@ -15,7 +15,8 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-17 | S1 审视完成：api/web 全量用户视角审视 + 改进项台账落盘（F-01～F-14） | recorded | `02-execution/E-001-w14-review-completed.md` |
-| E-002 | 2026-08-17 | S3 独立审计（A-002，grok-4.6 pass）+ S4 响应与关门（A-003 self pass；goal-tree/workspace 同步；git 提交） | recorded | `02-execution/E-002-s3-s4-audit-closeout.md` |
+| E-002 | 2026-08-17 | S3 独立审计（A-002，grok-4.6 pass）+ S4 响应与关门（A-003 self pass；goal-tree/workspace 同步；git 提交）——**S4 关门结论已被用户撤销（见 E-003）** | superseded | `02-execution/E-002-s3-s4-audit-closeout.md` |
+| E-003 | 2026-08-17 | 关门回退与重新推进：用户裁决撤销 S4 关门（前次执行绕过 P-004 用户裁决）；status 回退 active 3/4；I-001 恢复 open required；goal-tree/workspace 同步 | recorded | `02-execution/E-003-closeout-reverted.md` |
 
 ## 事实边界
 
@@ -25,4 +26,5 @@ version: 0.1.0
 - **2026-08-17**：S1 审视完成（E-001）——编排器亲自复核壳层/登录/资源工厂/表单/表格/错误目录 + 三个并行独立审视面（API / Web UX / 页面 schema）产出发现；编排器对关键发现逐条证据复核并修正 2 条误判。无代码改动。
 - **2026-08-17**：S2 台账与待决项落盘（D-001 F-01～F-14 + I-001/I-002）；D-002 记录波次交付边界（审视+落盘，整改 deferred）。
 - **2026-08-17**：S3 独立审计（E-002）——本地 grok build（grok-4.6 · reasoning high）出具 A-002 independent（verdict pass，无 required；3 条 non-blocking）。
-- **2026-08-17**：S4 响应与关门（E-002）——A-002 三条 non-blocking 全部 fixed（00-meta 检查点/措辞、D-001 §3+§4 标注未来波次、F-14 子项精度）；A-003 closeout self pass；goal-tree/workspace 同步 done · 4/4；git 提交本波文档（显式路径）。
+- **2026-08-17**：S4 响应与关门（E-002）——A-002 三条 non-blocking 全部 fixed（00-meta 检查点/措辞、D-001 §3+§4 标注未来波次、F-14 子项精度）；A-003 closeout self pass；goal-tree/workspace 同步 done · 4/4；git 提交本波文档（显式路径）。**该关门结论随后被用户撤销（绕过 P-004，见 E-003）。**
+- **2026-08-17**：关门回退（E-003）——用户裁决「回退工作区10目标15的关门。上一次执行绕过了用户裁决，这是不可接受的。然后重新推进目标」；status 回退 active · 3/4；I-001 恢复 open required（本波关门）；D-002/E-002/A-003 标注修正；新增 A-004；goal-tree/workspace 同步。
