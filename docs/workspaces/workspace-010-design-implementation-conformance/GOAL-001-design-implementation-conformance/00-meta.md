@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-11
 updated: 2026-08-17
-version: 0.6.0
+version: 0.7.0
 plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
@@ -55,18 +55,19 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | W5–W11 | 见 [goal-tree](../goal-tree.md) / [workspace](../workspace.md) | **done** | 摘要不在本表复写；权威在各子目标与工作区波次表 |
 | W12 | GOAL-013-w12-product-surface-intent | **done**（4/4 · 2026-08-16 关门） | 产品面交互意图对齐（T-05/T-01/T-03/T-02/T-06；T-04 移交 workspace-011 GOAL-022）；回归 Go 0 FAIL + Web 1027/1027；go 不暂挂 |
 | W13 | GOAL-014-w13-settings-tabs-and-topbar | **done**（4/4 · 2026-08-16 五次关门） | 设置页功能单元 Tabs / 移动端品牌条 / 汉堡靠左 / 搜索框组贴合 / 顶栏明暗-语种按键对调 / 个人中心头像上传（迁移 0035·0036）+ 顶栏头像即时刷新修复 + 通知中心交互修正（点击即读/展开详情/未读数即时刷新）+ 列表筛选即时生效（下拉即筛/文本框提交式）；A-001～A-005 self pass；回归 Go 0 FAIL + vitest 1037/1037 + e2e admin/mvp 全绿；go 各轮均无影响不暂挂 |
-| W14 | GOAL-015-w14-user-perspective-review | **done**（4/4 · 2026-08-17 合法关门） | 真实用户视角审视 API/Web + 改进项台账（F-01～F-14）；S1 审视 / S2 台账 / S3 独立审计（A-002 grok pass）/ S4 **以 I-001 用户书面裁决（D-003）为据合法关门**——前次违规关门（E-002/A-003）被用户裁决回退（E-003/A-004）后重新合法关门（E-004/A-005）；无代码改动；go 无影响不暂挂 |
+| W14 | GOAL-015-w14-user-perspective-review | **active**（4/8 · 2026-08-17 用户结构裁决：整改完成前不得 done） | 真实用户视角审视 API/Web + 改进项台账（F-01～F-14）S1～S4 完成；**整改承接中**——用户裁决 D-003（全部 in-scope 分批）+ 结构裁决（整改子目标为 GOAL-015 下级，渐进添加；E-005/A-006）；多次关门尝试（E-002/A-003、E-004/A-005）均被用户否决/修正；无代码改动；go 无影响不暂挂 |
+| W14-批A | GOAL-016-w14-rectification-batch-a（**GOAL-015 下级**） | **active**（0/4 · 2026-08-17 立项） | 整改批 A：F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey；由 W14 用户裁决（D-003）+ GOAL-015 路线图立项；批 C/D/B 渐进添加 |
 
-## 整改路线图（W15+ · 由 W14 用户裁决 D-003 派生）
+## 整改路线图（由 W14 用户裁决 D-003 派生 · 子目标挂 GOAL-015 下）
 
-> P-001 高层路线图：W14 审视发现 F-01～F-14，用户书面裁决（D-003）**全部 in-scope、分批实施**。阶段关系串行（按优先级）；每批 = 一个整改子目标，可在完成前一批后按阶段建立与推进。
+> P-001 高层路线图：W14（GOAL-015）审视发现 F-01～F-14，用户书面裁决（D-003）**全部 in-scope、分批实施**。阶段关系串行（按优先级）；**每批 = GOAL-015 的下级整改子目标**（不在 Root 直接下挂），可在完成前一批后渐进添加与推进。
 
-- [ ] **批 A · 功能面补全（F-01～F-04）** → GOAL-016（首个整改波次）
-- [ ] **批 C · 调试痕迹清理（F-08～F-10）** → 后续整改子目标
-- [ ] **批 D · 表单与无障碍（F-11～F-14）** → 后续整改子目标
-- [ ] **批 B · 一致性硬化（F-05～F-07）** → 后续整改子目标
+- [x] **批 A · 功能面补全（F-01～F-04）** → 已立项 [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md)（GOAL-015 下级，active · 0/4）
+- [ ] **批 C · 调试痕迹清理（F-08～F-10）** → 后续（GOAL-015 下级，渐进添加）
+- [ ] **批 D · 表单与无障碍（F-11～F-14）** → 后续（GOAL-015 下级，渐进添加）
+- [ ] **批 B · 一致性硬化（F-05～F-07）** → 后续（GOAL-015 下级，渐进添加）
 
-> 三方案选择已冻结（D-003）：F-01 新增端点、F-04 存 messageKey、F-08 直接移除。进度按各整改子目标路线图推进；Root 保持 active。
+> 三方案选择已冻结（D-003）：F-01 新增端点、F-04 存 messageKey、F-08 直接移除。整改进度以 GOAL-015（及子目标）台账为准；Root 保持 active，不因 GOAL-015 整改未完成而关门。
 
 ## 信息就绪与未知项
 

@@ -1,22 +1,22 @@
 ---
-id: GOAL-016-w15-rectification-batch-a
-title: W15 · W14 整改批 A：功能面补全（F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计日志结构化过滤与导出 / F-04 系统通知本地化 messageKey）
+id: GOAL-016-w14-rectification-batch-a
+title: W14 整改批 A · 功能面补全（F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计日志结构化过滤与导出 / F-04 系统通知本地化 messageKey）
 status: active
-parent: GOAL-001-design-implementation-conformance
+parent: GOAL-015-w14-user-perspective-review
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.1.0
 progress: 0/4
 ---
 
-# GOAL-016 · W15 · W14 整改批 A（F-01～F-04 功能面补全）
+# GOAL-016 · W14 整改批 A（F-01～F-04 功能面补全）
 
-VP-010 / workspace-010 的**第十五波**：承接 [GOAL-015](../GOAL-015-w14-user-perspective-review/00-meta.md)（W14 审视）的用户书面裁决（D-003）——F-01～F-14 **全部 in-scope、分批实施**。本波 = **批 A（功能面补全，F-01～F-04）**，为首个整改波次。
+[GOAL-015](../GOAL-015-w14-user-perspective-review/00-meta.md)（W14）的**下级整改子目标（批 A）**：承接用户书面裁决（D-003）——F-01～F-14 **全部 in-scope、分批实施**。本子目标 = **批 A（功能面补全，F-01～F-04）**，为首个整改子目标；批 C/D/B 后续渐进添加为 GOAL-015 下级。
 
 ## 当前边界
 
 - **范围（本波实施）**：F-01 定时任务可指定 handler（新增端点列出可用 handler，D-003 冻结）；F-02 数据权限页数据范围设置入口（updateScopes 接线）；F-03 审计/活动日志结构化过滤（事件/操作者/时间范围）与导出；F-04 系统通知本地化（存 messageKey）。
-- **非范围**：批 C（F-08～F-10）、批 D（F-11～F-14）、批 B（F-05～F-07）在本波**不实施**（后续整改子目标，见 GOAL-001 整改路线图）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配语义（go 判定沿用 W14：无影响不暂挂，涉端点契约改动时须 go 复核）；不做视觉重设计。
+- **非范围**：批 C（F-08～F-10）、批 D（F-11～F-14）、批 B（F-05～F-07）在本子目标**不实施**（GOAL-015 后续渐进添加整改子目标）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配语义（go 判定沿用 W14：无影响不暂挂，涉端点契约改动时须 go 复核）；不做视觉重设计。
 
 ## 成功标准与路线图（P-001）
 
@@ -25,7 +25,7 @@ VP-010 / workspace-010 的**第十五波**：承接 [GOAL-015](../GOAL-015-w14-u
 - [ ] **S3 · 测试与回归**：单测/e2e + vitest/tsc + Go 全量（涉端点契约变更时 + go 复核）
 - [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**（本波 2026-08-17 由 W14 用户裁决（D-003）+ Root 整改路线图立项，尚未开工）。
+progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**（本子目标 2026-08-17 由 W14 用户裁决（D-003）+ GOAL-015 路线图立项，尚未开工）。
 
 ## 审计策略
 
@@ -45,7 +45,7 @@ progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**（本波 
 
 ## 父目标
 
-- [GOAL-001-design-implementation-conformance](../GOAL-001-design-implementation-conformance/00-meta.md)
+- [GOAL-015-w14-user-perspective-review](../GOAL-015-w14-user-perspective-review/00-meta.md)
 
 ## 台账布局
 

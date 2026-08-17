@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计 · GOAL-015
@@ -28,7 +28,8 @@ version: 0.5.0
 | A-002 | 2026-08-17 | independent | S1/S2 证据 + D-002 关门边界 | pass | 无 | `03-audit/A-002-s1s2-independent.md` |
 | A-003 | 2026-08-17 | self | S3/S4 响应与关门 | pass（**superseded**：关门结论被用户撤销，见 E-003/A-004） | — | `03-audit/A-003-closeout-self.md` |
 | A-004 | 2026-08-17 | self | 关门回退（P-004 违规整改与状态回退） | conditional | 无新增；I-001 开放 required 待用户裁决 | `03-audit/A-004-closeout-reverted-self.md` |
-| A-005 | 2026-08-17 | self | S4 合法关门（I-001 用户书面裁决 D-003 为据） | pass | 无 | `03-audit/A-005-closeout-self.md` |
+| A-005 | 2026-08-17 | self | S4 关门自审（I-001 用户书面裁决 D-003 为据） | pass（**superseded**：关门结论被用户结构裁决否定，见 E-005/A-006） | — | `03-audit/A-005-closeout-self.md` |
+| A-006 | 2026-08-17 | self | 结构修正（GOAL-015 保持 active；整改子目标挂 GOAL-015 下） | pass | 无 | `03-audit/A-006-structure-correction-self.md` |
 
 ## 结论状态
 
@@ -36,6 +37,7 @@ version: 0.5.0
 - A-002 independent **pass**（无 required；3 条 non-blocking F-001～F-003）。
 - A-003 closeout self **pass（superseded）**：其记录的步骤（A-002 三条 non-blocking 处理、台账同步、git 提交）属事实，但**关门结论已由用户撤销**——前次执行未取得 I-001（required 用户裁决项）书面裁决即关门，违反 P-004。
 - A-004 self **conditional**：回退动作完整（E-003）；I-001 曾恢复 **open required（本波关门）**。
-- A-005 self **pass**：I-001 已由用户书面裁决（D-003）关闭；GOAL-015 **done · 4/4 合法关门**（与此前被撤销的违规关门 E-002/A-003 语义不同）；goal-tree / workspace 与 00-meta 一致。
+- A-005 self **pass（superseded）**：关门结论已被用户结构裁决否定（GOAL-015 整改完成前不得 done）。
+- A-006 self **pass**：结构修正落地——GOAL-015 **active · 4/8**（S1～S4 完成；R1～R4 整改子目标 + S5 关门待推进）；GOAL-016 更名 w14 批 A 挂 GOAL-015 下；I-001 裁决（D-003）作整改范围输入；goal-tree / workspace 与 00-meta 一致。
 
-GOAL-015 现为 **done（4/4）合法关门**（I-001 用户书面裁决 D-003 为据）。整改实施按 D-003 裁决分批 A（F-01～F-04）→ C（F-08～F-10）→ D（F-11～F-14）→ B（F-05～F-07）作为后续整改子目标推进。
+GOAL-015 现为 **active（4/8）**，关门出口 = R1～R4 全部整改子目标 done + S5 终审；在此前不得再次标记 done。整改批 A 由 [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md) 承接，批 C/D/B 渐进添加。

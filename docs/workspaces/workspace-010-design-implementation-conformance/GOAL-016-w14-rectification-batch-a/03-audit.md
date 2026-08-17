@@ -1,8 +1,8 @@
 ---
-id: GOAL-016-w15-rectification-batch-a
+id: GOAL-016-w14-rectification-batch-a
 doc: audit
 status: active
-parent: GOAL-001-design-implementation-conformance
+parent: GOAL-015-w14-user-perspective-review
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.1.0
