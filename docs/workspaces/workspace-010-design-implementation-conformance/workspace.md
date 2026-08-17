@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-17
-version: 0.30.0
+version: 0.32.0
 parent: null
 ---
 
@@ -67,10 +67,10 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W15-批A | GOAL-021-w15-rectification-batch-a（**GOAL-020 下级**） | **done** 4/4 |
 | W15-批B | GOAL-022-w15-rectification-batch-b（**GOAL-020 下级**） | **done** 4/4 |
 | W15-批C | GOAL-023-w15-rectification-batch-c（**GOAL-020 下级**） | **done** 4/4 |
-| W16 | GOAL-024-w16-user-perspective-improvements | **active**（6/8 · 2026-08-17：S1～S4 + R1 + R2 完成；批 A/B done，批 C GOAL-027 已渐进添加） |
+| W16 | GOAL-024-w16-user-perspective-improvements | **done**（8/8 · 2026-08-17：S1～S5 完成；批 A/B/C 全部 done，GOAL-024 已关门） |
 | W16-批A | GOAL-025-w16-rectification-batch-a（**GOAL-024 下级**） | **done**（4/4 · 2026-08-17：F01/F07/F08 实施、Go/Web 全量回归、independent A-001 + 响应 A-002 + 关门 A-003） |
 | W16-批B | GOAL-026-w16-rectification-batch-b（**GOAL-024 下级**） | **done**（4/4 · 2026-08-17：F02/F03/F04 实施、Go/Web 全量回归、关门 A-001） |
-| W16-批C | GOAL-027-w16-rectification-batch-c（**GOAL-024 下级**） | **active**（2/4 · 2026-08-17：S1 方案冻结 + S2 实施完成；F05/F06/F09/F10 代码与测试已落地，待 S3 全量回归） |
+| W16-批C | GOAL-027-w16-rectification-batch-c（**GOAL-024 下级**） | **done**（4/4 · 2026-08-17：F05/F06/F09/F10 实施、Go/Web 全量回归、关门 A-001） |
 
 
 ## 固定共享资料引用
