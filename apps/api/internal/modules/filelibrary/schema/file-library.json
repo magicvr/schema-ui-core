@@ -64,6 +64,14 @@
       "type": "custom",
       "handler": "library.download"
     },
+    "previewFile": {
+      "type": "custom",
+      "handler": "library.preview"
+    },
+    "copyLinkFile": {
+      "type": "custom",
+      "handler": "library.copyLink"
+    },
     "deleteFile": {
       "type": "request",
       "method": "DELETE",
@@ -159,6 +167,20 @@
               "actionRef": "downloadFile",
               "permissionIntent": "edit",
               "labelKey": "schema.fileLibrary.action.download"
+            },
+            {
+              "key": "preview",
+              "label": "Preview",
+              "actionRef": "previewFile",
+              "permissionIntent": "edit",
+              "labelKey": "schema.fileLibrary.action.preview"
+            },
+            {
+              "key": "copyLink",
+              "label": "Copy link",
+              "actionRef": "copyLinkFile",
+              "permissionIntent": "edit",
+              "labelKey": "schema.fileLibrary.action.copyLink"
             },
             {
               "key": "delete",

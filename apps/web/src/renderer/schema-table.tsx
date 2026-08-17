@@ -58,10 +58,24 @@ export interface SchemaTableColumnSpec {
   width?: number | string;
   /** Minimum column width (px number or CSS length). */
   minWidth?: number | string;
+  /** W16-F04: render a cent-valued number as a localized currency string. */
+  format?: "currency";
 }
 
 function stringOf(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+/** W16-F04: formats a cent-valued integer as a currency string (e.g. 10000 → 100.00). */
+function formatCents(value: unknown): string {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "";
+  }
+  return (numeric / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /** Spreads a typed row into a plain object the generic action executor accepts. */
@@ -697,6 +711,9 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       truncate: column.truncate === true,
       ...(column.width !== undefined ? { width: column.width } : {}),
       ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
+      ...(column.format === "currency"
+        ? { render: (row: ResourceItem) => formatCents(row[column.field]) }
+        : {}),
     })),
     ...(rowActions.length > 0
       ? [

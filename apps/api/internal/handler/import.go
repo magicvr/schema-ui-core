@@ -44,6 +44,12 @@ func ImportRoutes(a *auth.Authenticator, repo ImportUsersRepository, operations 
 			Pattern:              "/api/import/{resource}",
 			Handler:              a.Middleware(importPermissionGate(h.importResource())),
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/import/{resource}/template")},
+			Method:               "GET",
+			Pattern:              "/api/import/{resource}/template",
+			Handler:              a.Middleware(importPermissionGate(h.template())),
+		},
 	}
 }
 
@@ -66,14 +72,61 @@ type importHandler struct {
 
 type importRowError struct {
 	Row     int    `json:"row"`
+	Field   string `json:"field,omitempty"`
 	Message string `json:"message"`
 }
 
+type importFieldError struct {
+	RowNumber int    `json:"rowNumber"`
+	Field     string `json:"field"`
+	Reason    string `json:"reason"`
+}
+
 type importResult struct {
-	Applied int              `json:"applied"`
-	Failed  int              `json:"failed"`
-	Total   int              `json:"total"`
-	Errors  []importRowError `json:"errors"`
+	Applied     int                `json:"applied"`
+	Failed      int                `json:"failed"`
+	Total       int                `json:"total"`
+	Errors      []importRowError   `json:"errors"`
+	FieldErrors []importFieldError `json:"fieldErrors,omitempty"`
+}
+
+// appendImportError records a row failure in both the legacy errors list and
+// the W16-F03 fieldErrors detail (compatible additive upgrade).
+func appendImportError(result *importResult, row int, field, message string) {
+	result.Errors = append(result.Errors, importRowError{Row: row, Field: field, Message: message})
+	result.FieldErrors = append(result.FieldErrors, importFieldError{RowNumber: row, Field: field, Reason: message})
+}
+
+// importFieldForMessage derives a stable field hint from an import validation
+// message so the UI can highlight the offending column.
+func importFieldForMessage(message string) string {
+	switch {
+	case strings.Contains(message, "username"):
+		return "username"
+	case strings.Contains(message, "name"):
+		return "name"
+	case strings.Contains(message, "password"), strings.Contains(message, "hash password"):
+		return "password"
+	case strings.Contains(message, "roles"), strings.Contains(message, "role"):
+		return "roles"
+	default:
+		return ""
+	}
+}
+
+// template serves a downloadable CSV template for the supported import
+// resource (W16-F03). Currently users only.
+func (h *importHandler) template() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resource := r.PathValue("resource")
+		if resource != "users" {
+			writeLocalizedError(w, r, http.StatusNotFound, "RESOURCE_NOT_FOUND", "no import template for that resource")
+			return
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="users-import-template.csv"`)
+		_, _ = w.Write([]byte("username,name,roles,password\n"))
+	})
 }
 
 func (h *importHandler) importResource() http.Handler {
@@ -186,7 +239,7 @@ func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importRe
 			rowNumber++
 			result.Total++
 			result.Failed++
-			result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: "malformed CSV row: " + err.Error()})
+			appendImportError(&result, rowNumber, "", "malformed CSV row: "+err.Error())
 			break
 		}
 		rowNumber++
@@ -206,7 +259,7 @@ func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importRe
 		}
 		if message := validateImportUser(row); message != "" {
 			result.Failed++
-			result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: message})
+			appendImportError(&result, rowNumber, importFieldForMessage(message), message)
 			continue
 		}
 		roles := []string{}
@@ -219,7 +272,7 @@ func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importRe
 			hash, hashErr = auth.HashPassword(row["password"], passwordHashCost)
 			if hashErr != nil {
 				result.Failed++
-				result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: "could not hash password"})
+				appendImportError(&result, rowNumber, "password", "could not hash password")
 				continue
 			}
 		}
@@ -232,7 +285,7 @@ func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importRe
 		if len(roles) > 0 {
 			if message := importRoleAssignmentError(h.repository, actor, roles); message != "" {
 				result.Failed++
-				result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: message})
+				appendImportError(&result, rowNumber, "roles", message)
 				continue
 			}
 		}
@@ -255,7 +308,7 @@ func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importRe
 				message = "roles contain an unknown role key"
 			}
 			result.Failed++
-			result.Errors = append(result.Errors, importRowError{Row: rowNumber, Message: message})
+			appendImportError(&result, rowNumber, importFieldForMessage(message), message)
 			continue
 		}
 		result.Applied++

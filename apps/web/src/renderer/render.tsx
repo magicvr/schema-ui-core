@@ -303,6 +303,10 @@ const CUSTOM_HANDLER_URLS: Record<string, string> = {
   // resolved from the captured row context (bounded binding, same posture as
   // the formAction {id} slots, I-007-003 §9.1a).
   "library.download": "/api/library/files/{id}/download",
+  // W16-F02 (GOAL-026): preview opens the same authed URL in a new tab;
+  // copyLink writes the URL to the clipboard.
+  "library.preview": "/api/library/files/{id}/download",
+  "library.copyLink": "/api/library/files/{id}/download",
 };
 
 async function runCustomAction(
@@ -324,6 +328,20 @@ async function runCustomAction(
       return { ok: false, code: "CUSTOM_HANDLER_MISSING_ROW_ID", message: "custom handler requires a row id: " + handler, messageKey: "error.customHandlerMissingRowId", params: { handler } };
     }
     url = url.replaceAll("{id}", encodeURIComponent(rowId));
+  }
+  // W16-F02: preview opens the authed download URL in a new tab; copyLink
+  // writes it to the clipboard without fetching the file body.
+  if (handler === "library.preview") {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return { ok: true };
+  }
+  if (handler === "library.copyLink") {
+    try {
+      await navigator.clipboard.writeText(url);
+      return { ok: true };
+    } catch {
+      return { ok: false, code: "CLIPBOARD_UNAVAILABLE", message: "clipboard is unavailable", messageKey: "error.clipboardUnavailable" };
+    }
   }
   let response: Response;
   try {

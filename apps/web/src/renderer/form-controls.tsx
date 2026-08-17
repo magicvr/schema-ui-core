@@ -901,19 +901,27 @@ function FieldControl({
       );
     case "inputNumber":
       return (
-        <NumberField
-          id={id}
-          label={requiredLabel}
-          value={typeof value === "number" ? value : undefined}
-          disabled={disabled}
-          readOnly={readOnly}
-          required={required}
-          describedBy={errorId}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          onChange={emitChange}
-        />
+        <>
+          <NumberField
+            id={id}
+            label={requiredLabel}
+            value={typeof value === "number" ? value : undefined}
+            disabled={disabled}
+            readOnly={readOnly}
+            required={required}
+            describedBy={errorId}
+            min={field.min}
+            max={field.max}
+            step={field.step}
+            onChange={emitChange}
+          />
+          {/* W16-F04: wallet adjustment warning for negative or large deltas. */}
+          {field.id === "amountDelta" && typeof value === "number" && (value < 0 || Math.abs(value) > 100000) ? (
+            <p className="text-xs text-warning" data-wallet-adjust-warning>
+              {t("schema.wallet.adjustWarning")}
+            </p>
+          ) : null}
+        </>
       );
     case "datePicker":
       return (

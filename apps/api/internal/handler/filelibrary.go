@@ -11,9 +11,9 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
-	"log/slog"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -169,12 +169,13 @@ func sortRows(rows []fileRow, field, order string) {
 
 func fileRowToMap(row fileRow) map[string]any {
 	return map[string]any{
-		"id":      row.ID,
-		"name":    row.Name,
-		"type":    row.Type,
-		"size":    row.Size,
-		"owner":   row.Owner,
-		"created": row.Created,
+		"id":          row.ID,
+		"name":        row.Name,
+		"type":        row.Type,
+		"size":        row.Size,
+		"owner":       row.Owner,
+		"created":     row.Created,
+		"downloadUrl": "/api/library/files/" + row.ID + "/download",
 	}
 }
 

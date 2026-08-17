@@ -41,7 +41,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		DependsOn:      []string{"core.auth-session", "core.schema-render", "core.operationlog"},
 		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
-			Routes:      []string{"GET /api/export/{resource}", "POST /api/import/{resource}"},
+			Routes:      []string{"GET /api/export/{resource}", "POST /api/import/{resource}", "GET /api/import/{resource}/template"},
 			Permissions: []string{"data.export", "data.import"},
 		},
 	}

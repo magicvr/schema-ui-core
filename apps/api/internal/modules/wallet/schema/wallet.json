@@ -456,16 +456,19 @@
               "field": "balanceTotal",
               "label": "Balance",
               "sortable": true,
+              "format": "currency",
               "labelKey": "schema.wallet.column.balanceTotal"
             },
             {
               "field": "balanceAvailable",
               "label": "Available",
+              "format": "currency",
               "labelKey": "schema.wallet.column.balanceAvailable"
             },
             {
               "field": "balanceFrozen",
               "label": "Frozen",
+              "format": "currency",
               "labelKey": "schema.wallet.column.balanceFrozen"
             },
             {

@@ -165,6 +165,18 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect(container.textContent).toContain("2 items · page 1 of 1");
   });
 
+  it("formats currency columns from cent values (W16-F04)", async () => {
+    const currencyColumns = [
+      { field: "amount", label: "Amount", format: "currency" as const },
+    ];
+    const fetcher = itemsFetcher([{ id: "wallet-1", amount: 123456 }]);
+    const container = await renderTable(
+      tableNode({ columns: currencyColumns, dataSource: "/api/wallet" }),
+      fetcher,
+    );
+    expect(container.textContent).toContain("1,234.56");
+  });
+
   it("fails closed when the table node declares no columns", async () => {
     const container = await renderTable(tableNode({}), rowsFetcher());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
