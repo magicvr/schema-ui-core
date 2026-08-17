@@ -6,7 +6,7 @@ parent: GOAL-024-w16-user-perspective-improvements
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.1.0
-progress: 0/4
+progress: 1/4
 ---
 
 # GOAL-027 · W16 整改批 C（系统运维与通用外观）
@@ -20,12 +20,12 @@ progress: 0/4
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：F05/F06/F09/F10 设计（端点/schema/前端交互）+ 信息项登记。
+- [x] **S1 · 方案冻结**：F05/F06/F09/F10 设计（端点/schema/前端交互）+ 信息项登记（D-001）。
 - [ ] **S2 · 实施**：F05/F06/F09/F10 代码与 schema/前端接线。
 - [ ] **S3 · 测试与回归**：Go 全量 + Web vitest/tsc + 相关 e2e。
 - [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步。
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**。
+progress: 由四个等权检查点派生（S1～S4）；当前 **1/4**。
 
 ## 审计策略
 
@@ -39,8 +39,8 @@ progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|
-| I-001 | required | F05 Cron 预览端点响应结构（description/nextRuns）与前端调用方式 | S1 方案冻结 | S1 | 检查 scheduledtasks 包解析能力 | open | 待 S1 输出 |
-| I-002 | non-blocking | F10 页脚字段写入 settings 资源的 schema/API 路径 | S1 方案冻结 | S1 | 检查 settings schema | open | 待 S1 输出 |
+| I-001 | required | F05 Cron 预览端点响应结构（description/nextRuns）与前端调用方式 | S1 方案冻结 | S1 | 检查 scheduledtasks 包解析能力 | **closed** | D-001 §2：`{ description, nextRuns }` |
+| I-002 | non-blocking | F10 页脚字段写入 settings 资源的 schema/API 路径 | S1 方案冻结 | S1 | 检查 settings schema | **closed** | D-001 §5：现有 settings schema/API 扩展字段 |
 
 ## 父目标
 
