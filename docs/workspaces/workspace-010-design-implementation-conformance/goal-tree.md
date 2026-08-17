@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-17
 parent: null
-version: 0.25.0
+version: 0.26.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -41,10 +41,11 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 │   ├── GOAL-021-w15-rectification-batch-a [done] · 整改批 A · F01/F02/F04/F05/F07（4/4）
 │   ├── GOAL-022-w15-rectification-batch-b [done] · 整改批 B · F03/F11/F10/F12（4/4）
 │   └── GOAL-023-w15-rectification-batch-c [done] · 整改批 C · F06/F08/F09/F13/F14（4/4）
-└── GOAL-024-w16-user-perspective-improvements [active] · W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10）（0/4）
+└── GOAL-024-w16-user-perspective-improvements [active] · W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10）+ 整改承接（4/8）
+    └── GOAL-025-w16-rectification-batch-a [active] · W16 整改批 A · 安全与认证基线（F01 首次改密 / F07 一键下线其他 / F08 验证码与 MFA 备份）（0/4）
 ```
 
-**W16（2026-08-17 立项，0/4）**：S1 台账建立（D-001：W16-F01～W16-F10）+ 排除 workspace-011 已规划项 + 规划分批落盘（暂不实施）；自审 A-001 pass；Root/VP 保持 active。
+**W16（2026-08-17 立项，4/8）**：S1 台账建立（D-001）+ S2 技术方案（D-002，I-001 closed）+ S3 分批规划（D-003）+ S4 自审 A-002 pass；批 A 子目标 GOAL-025 已创建（active 0/4），批 B/C 渐进添加；Root/VP 保持 active。
 
 **W15（2026-08-17 关门，8/8）**：S1～S5 + 批 A/B/C。I-001 = D-002。A-002/A-004 independent 的 required 已 fixed。Root/VP 仍 active。
 
@@ -102,7 +103,8 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-021-w15-rectification-batch-a | W15 整改批 A：F01 会话容灾 / F02 表格重试 / F04 JSON 信封 / F05 CORS / F07 refresh 错误码 | GOAL-020-w15-user-perspective-findings | done | 4/4 | 2026-08-17 |
 | GOAL-022-w15-rectification-batch-b | W15 整改批 B：F03 时间格式 / F11 GET 只读 / F10 Retry-After / F12 分页 | GOAL-020-w15-user-perspective-findings | done | 4/4 | 2026-08-17 |
 | GOAL-023-w15-rectification-batch-c | W15 整改批 C：F06 改密提示 / F08 校验码 / F09 Toast / F13 当前会话 / F14 细节 | GOAL-020-w15-user-perspective-findings | done | 4/4 | 2026-08-17 |
-| GOAL-024-w16-user-perspective-improvements | W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10） | GOAL-001-design-implementation-conformance | active | 0/4 | 2026-08-17 |
+| GOAL-024-w16-user-perspective-improvements | W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10）+ 整改承接 | GOAL-001-design-implementation-conformance | active | 4/8 | 2026-08-17 |
+| GOAL-025-w16-rectification-batch-a | W16 整改批 A：安全与认证基线（F01 首次改密 / F07 一键下线其他 / F08 验证码与 MFA 备份） | GOAL-024-w16-user-perspective-improvements | active | 0/4 | 2026-08-17 |
 
 
 ## 维护说明
