@@ -424,7 +424,7 @@ func IdentityFrom(ctx context.Context) (account.User, bool) {
 // else stays gated until the user changes the initial/reset password.
 func isMustChangePasswordAllowed(method, path string) bool {
 	switch method + " " + path {
-	case "POST /api/account/password", "GET /api/account/profile":
+	case "POST /api/account/password", "GET /api/account/profile", "GET /api/accounts/me":
 		return true
 	default:
 		return false

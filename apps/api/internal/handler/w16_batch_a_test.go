@@ -48,6 +48,14 @@ func TestForcedPasswordChangeGateAndReissue(t *testing.T) {
 		t.Fatalf("login user mustChangePassword = %v, want true", userMap["mustChangePassword"])
 	}
 
+	// The /me surface is allowed so the frontend can resolve the session.
+	meProbe := bearer(t, token, http.MethodGet, "/api/accounts/me", "")
+	meRR := httptest.NewRecorder()
+	env.mux.ServeHTTP(meRR, meProbe)
+	if meRR.Code != http.StatusOK {
+		t.Fatalf("forced /me status = %d, want 200", meRR.Code)
+	}
+
 	// Business API is blocked.
 	probe := bearer(t, token, http.MethodGet, "/api/users/"+id, "")
 	probeRR := httptest.NewRecorder()

@@ -27,7 +27,7 @@ GOAL-024 D-002/D-003 已冻结技术方案与分批规划；本决策将批 A �
 - `POST /api/auth/login` 成功响应增加 `mustChangePassword: boolean`（`account.User` 或登录响应 map 增加字段）。
 - `POST /api/account/password` 保持 `{ currentPassword, newPassword }`；当 `must_change_password=1` 时用初始密码作为 `currentPassword`，成功后清标记。
 - 强制改密门禁：在认证中间件或账号端点入口增加白名单：
-  - 放行：`POST /api/auth/login`、`POST /api/auth/refresh`、`POST /api/auth/logout`、`POST /api/account/password`、`GET /api/account/profile`、验证码/MFA 相关必要端点。
+  - 放行：`POST /api/auth/login`、`POST /api/auth/refresh`、`POST /api/auth/logout`、`POST /api/account/password`、`GET /api/account/profile`、`GET /api/accounts/me`、验证码/MFA 相关必要端点。
   - 其余业务 API 在 `must_change_password=1` 时返回 `403 MUST_CHANGE_PASSWORD`。
 
 ### 2.3 前端
