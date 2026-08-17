@@ -18,6 +18,7 @@ version: 0.1.0
 - **W15-F05**：`server.WrapSecurity` nosniff + 可选 CORS（`http.cors_origins` / `HTTP_CORS_ORIGINS`）。测试：`server_test.go`。
 - **W15-F07**：`REFRESH_TOKEN_EXPIRED` 入 catalog；`authHandler.refresh` 使用。`error_contract_test` 冻结列表已加。
 - **回归**：`apps/api` `go test ./...` 两遍 exit 0；`apps/web` `npx vitest run` 两遍 1046/1046。日志 scratch `go-test-1.log` / `go-test-2.log` / `vitest-1.log` / `vitest-2.log`。
+- **git checkpoint**：`285c7e810881d80b3655ce2b07ba6edd614aa6f2`（owned 代码 + GOAL-020/021 文档；无 `git add -A`）。
 
 ## go 判定
 

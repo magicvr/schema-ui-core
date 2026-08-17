@@ -154,6 +154,23 @@ describe("auth-client", () => {
     expect(requireAuthorization(fetchMock.mock.calls[2][1])).toBe("Bearer access-2");
   });
 
+  it("authFetch keeps tokens when refresh returns 500 after a 401 (W15-F01)", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+    const lost = vi.fn();
+    setAuthLostListener(lost);
+
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ error: "INTERNAL" }, 500));
+
+    const res = await authFetch("/api/users");
+    expect(res.status).toBe(401);
+    expect(lost).not.toHaveBeenCalled();
+    expect(getRefreshToken()).toBe("refresh-1");
+    expect(getAccessToken()).toBe("expired");
+  });
+
   it("authFetch notifies auth loss when the refresh fails", async () => {
     setAccessToken("expired");
     setRefreshToken("refresh-1");

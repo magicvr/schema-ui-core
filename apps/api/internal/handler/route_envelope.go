@@ -9,6 +9,10 @@ import (
 // cataloged JSON error envelope (W15-F04) instead of Go's text/plain 404/405.
 func WithJSONRouteErrors(mux *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodHead && pathRegistered(mux, r, http.MethodGet) {
+			mux.ServeHTTP(w, r)
+			return
+		}
 		_, pattern := mux.Handler(r)
 		if pattern == "" || isMethodMismatch(mux, r, pattern) {
 			if pathHasOtherMethod(mux, r) {
@@ -22,6 +26,13 @@ func WithJSONRouteErrors(mux *http.ServeMux) http.Handler {
 		}
 		mux.ServeHTTP(w, r)
 	})
+}
+
+func pathRegistered(mux *http.ServeMux, r *http.Request, method string) bool {
+	probe := r.Clone(r.Context())
+	probe.Method = method
+	_, pattern := mux.Handler(probe)
+	return pattern != ""
 }
 
 func isMethodMismatch(mux *http.ServeMux, r *http.Request, pattern string) bool {

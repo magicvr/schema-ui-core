@@ -203,7 +203,9 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
         clearTokens();
         onAuthLost?.();
       }
-    } else {
+    } else if (getRefreshToken() === null) {
+      // Refresh already cleared on 401/403. Network/5xx keep tokens so the
+      // caller can retry without a forced logout (W15-F01 / A-001 F-001).
       clearTokens();
       onAuthLost?.();
     }

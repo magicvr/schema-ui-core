@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.3.0
-progress: 5/8
+progress: 6/8
 ---
 
 # GOAL-020 · W15 · 真实用户视角二期审视与体验加固台账
@@ -28,11 +28,11 @@ VP-010 / workspace-010 的**第十五波**（用户 2026-08-17 点名立项）�
 - [x] **S3 · 独立交叉审计**：independent 审计 A-002（grok-4.6 · reasoning high · conditional）
 - [x] **S4 · 审计意见响应与同步**：响应 A-002（A-003；required 全 fixed）+ 同步 goal-tree 与工作区上下文
 - [x] **S5 · 用户裁决与整改承接规划**：I-001 书面裁决（D-002）+ 子目标结构
-- [ ] **R1 · 整改批 A**：GOAL-021 · F01/F02/F04/F05/F07
+- [x] **R1 · 整改批 A**：GOAL-021 · F01/F02/F04/F05/F07
 - [ ] **R2 · 整改批 B**：GOAL-022 · F03/F11/F10/F12（渐进添加）
 - [ ] **R3 · 整改批 C**：GOAL-023 · F06/F08/F09/F13/F14（渐进添加）
 
-progress: 由八个等权检查点派生（S1～S5 + R1～R3）；当前 **5/8**。
+progress: 由八个等权检查点派生（S1～S5 + R1～R3）；当前 **6/8**。
 
 ## 审计策略
 

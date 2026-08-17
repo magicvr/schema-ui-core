@@ -58,4 +58,12 @@ func TestJSONRouteErrors404And405(t *testing.T) {
 			t.Fatalf("status = %d, want 200", rr.Code)
 		}
 	})
+
+	t.Run("HEAD on GET route is not JSON 405", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, httptest.NewRequest(http.MethodHead, "/api/health", nil))
+		if rr.Code == http.StatusMethodNotAllowed {
+			t.Fatalf("HEAD mapped to 405: %s", rr.Body.String())
+		}
+	})
 }
