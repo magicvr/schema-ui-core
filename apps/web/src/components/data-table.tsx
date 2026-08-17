@@ -49,6 +49,8 @@ export interface DataTableProps<T> {
   onRowClick?: (row: T) => void;
   /** Row key of the currently selected row (highlight), S4 · GOAL-007. */
   selectedKey?: string;
+  /** W15-F02: retry control shown in the error state. */
+  onRetry?: () => void;
 }
 
 function cellContent<T>(
@@ -218,6 +220,7 @@ export function DataTable<T>({
   caption,
   onRowClick,
   selectedKey,
+  onRetry,
 }: DataTableProps<T>) {
   const t = useTranslate();
   const toggleSort = (column: DataTableColumn<T>) => {
@@ -258,9 +261,22 @@ export function DataTable<T>({
 
   if (state === "error") {
     return (
-      <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-destructive">
-        {error}
-      </p>
+      <div
+        role="alert"
+        className="space-y-3 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-destructive"
+      >
+        <p>{error}</p>
+        {onRetry !== undefined ? (
+          <button
+            type="button"
+            data-table-retry="true"
+            onClick={onRetry}
+            className="rounded-md border border-destructive/40 bg-background px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+          >
+            {t("feedback.retry")}
+          </button>
+        ) : null}
+      </div>
     );
   }
 

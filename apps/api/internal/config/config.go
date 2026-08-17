@@ -31,7 +31,10 @@ type Config struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
-	LogLevelName string
+	// HTTPCORSOrigins is the optional CORS allow-list (W15-F05). Empty means
+	// no Access-Control headers (same-origin Nginx remains the default).
+	HTTPCORSOrigins []string
+	LogLevelName    string
 
 	AuthJWTSecret         string
 	AuthAccessTTL         time.Duration
@@ -88,6 +91,7 @@ type yamlFile struct {
 		ReadTimeout  *string `yaml:"read_timeout"`
 		WriteTimeout *string `yaml:"write_timeout"`
 		IdleTimeout  *string `yaml:"idle_timeout"`
+		CORSOrigins  *string `yaml:"cors_origins"`
 	} `yaml:"http"`
 	Log struct {
 		Level *string `yaml:"level"`
@@ -222,6 +226,9 @@ func Load() *Config {
 	cfg.ReadTimeout = orDurationPtr(yf.HTTP.ReadTimeout, cfg.ReadTimeout)
 	cfg.WriteTimeout = orDurationPtr(yf.HTTP.WriteTimeout, cfg.WriteTimeout)
 	cfg.IdleTimeout = orDurationPtr(yf.HTTP.IdleTimeout, cfg.IdleTimeout)
+	if yf.HTTP.CORSOrigins != nil {
+		cfg.HTTPCORSOrigins = splitCSV(*yf.HTTP.CORSOrigins)
+	}
 	cfg.LogLevelName = strPtrOr(yf.Log.Level, cfg.LogLevelName)
 	cfg.AuthJWTSecret = strPtrOr(yf.Auth.JWTSecret, cfg.AuthJWTSecret)
 	cfg.AuthAccessTTL = orDurationPtr(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
@@ -278,6 +285,9 @@ func Load() *Config {
 	cfg.ReadTimeout = durationEnv("HTTP_READ_TIMEOUT", cfg.ReadTimeout)
 	cfg.WriteTimeout = durationEnv("HTTP_WRITE_TIMEOUT", cfg.WriteTimeout)
 	cfg.IdleTimeout = durationEnv("HTTP_IDLE_TIMEOUT", cfg.IdleTimeout)
+	if raw := strings.TrimSpace(os.Getenv("HTTP_CORS_ORIGINS")); raw != "" {
+		cfg.HTTPCORSOrigins = splitCSV(raw)
+	}
 	cfg.LogLevelName = envOr("LOG_LEVEL", cfg.LogLevelName)
 	cfg.AuthJWTSecret = envOr("AUTH_JWT_SECRET", cfg.AuthJWTSecret)
 	cfg.AuthAccessTTL = durationEnv("AUTH_ACCESS_TTL", cfg.AuthAccessTTL)
@@ -416,6 +426,17 @@ func loadPresetFile(path string) ([]string, error) {
 }
 
 
+
+func splitCSV(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
 
 // parseNavigationOrder extracts a string sequence from the YAML navigation
 // node. A missing/empty/null order yields nil (kernel default applies). A

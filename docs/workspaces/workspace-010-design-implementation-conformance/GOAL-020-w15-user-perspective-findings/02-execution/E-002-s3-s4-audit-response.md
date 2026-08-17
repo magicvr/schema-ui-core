@@ -32,3 +32,4 @@ version: 0.1.0
 
 - 本条无业务代码改动。
 - 不关门；S3/S4 完成后进度 **4/5**，S5 仍待 I-001 落盘。
+- **git checkpoint**：`488a5ad5a2e982f446fa9a46e4011963f8b0f14b`（owned：GOAL-020 五件套 + goal-tree + workspace；无 `git add -A`；无 apps 代码）。

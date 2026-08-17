@@ -33,6 +33,9 @@ http:
   read_timeout: 5s
   write_timeout: 10s
   idle_timeout: 60s
+  # Optional comma-separated CORS allow-list (W15-F05). Empty = no CORS
+  # headers (same-origin reverse proxy). Env override: HTTP_CORS_ORIGINS.
+  cors_origins: ""
 
 log:
   # debug | info | warn | error

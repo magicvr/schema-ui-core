@@ -180,7 +180,7 @@ func (h *authHandler) refresh() http.HandlerFunc {
 		}
 		access, refresh, user, err := h.a.Refresh(body.RefreshToken, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidToken) || errors.Is(err, auth.ErrExpiredToken) || errors.Is(err, auth.ErrTokenRevoked) {
-			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid, expired or revoked refresh token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "REFRESH_TOKEN_EXPIRED", "invalid, expired or revoked refresh token")
 			return
 		}
 		if err != nil {

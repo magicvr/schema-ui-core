@@ -468,6 +468,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const [list, setList] = useState<ResourceList | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
   // provider's route context (App injects route: {params, query}); hostless
@@ -523,7 +524,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken]);
+  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken, retryNonce]);
 
   // F-002: validate row keys on every fetched page; invalid → fail closed.
   const keyCheck = useMemo(
@@ -860,7 +861,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         onRowClick={crud !== null ? onRowClick : undefined}
         selectedKey={selectedKey}
         loading={loading}
-        error={error}
+        error={error === null ? null : t("feedback.resourceFetchFailed")}
+        onRetry={() => setRetryNonce((n) => n + 1)}
         emptyMessage={t("feedback.noItemsMatch")}
         caption={t("feedback.schemaDrivenItems")}
       />

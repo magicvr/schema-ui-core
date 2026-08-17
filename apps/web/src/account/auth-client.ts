@@ -129,9 +129,8 @@ async function doRefresh(refresh: string, generation: number): Promise<boolean> 
   try {
     response = await postJSON(REFRESH_URL, { refreshToken: refresh });
   } catch {
-    if (isCurrentGeneration(generation)) {
-      clearTokens();
-    }
+    // W15-F01: a network throw is not credential failure — keep tokens so a
+    // later retry can succeed after a blip or server restart.
     return false;
   }
   if (!isCurrentGeneration(generation)) {
@@ -148,7 +147,9 @@ async function doRefresh(refresh: string, generation: number): Promise<boolean> 
     if (current !== null && current !== refresh) {
       return doRefresh(current, generation);
     }
-    clearTokens();
+    if (response.status === 401 || response.status === 403) {
+      clearTokens();
+    }
     return false;
   }
   const body = (await response.json()) as {

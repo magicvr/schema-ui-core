@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 
@@ -139,6 +139,23 @@ describe("DataTable", () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "resource fetch failed: HTTP 500",
     );
+  });
+
+  it("exposes a retry control on the error path (W15-F02)", async () => {
+    const onRetry = vi.fn();
+    const container = await renderTable(
+      <DataTable
+        columns={columns}
+        rows={[]}
+        rowKey={rowKey}
+        error="resource fetch failed: HTTP 500"
+        onRetry={onRetry}
+      />,
+    );
+    const retry = container.querySelector("[data-table-retry]") as HTMLButtonElement | null;
+    expect(retry).not.toBeNull();
+    retry?.click();
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it("renders a custom cell renderer", async () => {

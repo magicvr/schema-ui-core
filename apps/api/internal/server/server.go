@@ -20,11 +20,35 @@ func New(cfg *config.Config, handler http.Handler, logger *slog.Logger) *http.Se
 	}
 	return &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           handler,
+		Handler:           WrapSecurity(cfg, handler),
 		ReadTimeout:       cfg.ReadTimeout,
 		ReadHeaderTimeout: headerTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
 		IdleTimeout:       cfg.IdleTimeout,
 		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
+}
+
+// WrapSecurity adds nosniff and optional CORS (W15-F05). Empty CORS list
+// leaves cross-origin preflight unchanged (same-origin Nginx default).
+func WrapSecurity(cfg *config.Config, next http.Handler) http.Handler {
+	allow := map[string]struct{}{}
+	for _, origin := range cfg.HTTPCORSOrigins {
+		allow[origin] = struct{}{}
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		origin := r.Header.Get("Origin")
+		if _, ok := allow[origin]; origin != "" && ok {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }

@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-17
 parent: null
-version: 0.23.0
+version: 0.24.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -37,10 +37,11 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 │   ├── GOAL-017-w14-rectification-batch-c [done] · 整改批 C · 调试痕迹清理（F-08～F-10）（4/4）
 │   ├── GOAL-018-w14-rectification-batch-d [done] · 整改批 D · 表单与无障碍（F-11～F-14）（4/4）
 │   └── GOAL-019-w14-rectification-batch-b [done] · 整改批 B · 一致性硬化（F-05～F-07）（4/4）
-└── GOAL-020-w15-user-perspective-findings [active] · W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）（4/5）
+└── GOAL-020-w15-user-perspective-findings [active] · W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）（5/8）
+    └── GOAL-021-w15-rectification-batch-a [active] · 整改批 A · F01/F02/F04/F05/F07（3/4）
 ```
 
-**W15（2026-08-17，进行中 4/5）**：S1 审视（E-001）；S2 台账（D-001 v0.2.0）；S3 独立审计 A-002（grok-4.6 · conditional）；S4 响应 A-003（required F-001/F-002 fixed）。I-001 仍 open，S5 待用户书面裁决；暂不关门。
+**W15（2026-08-17，进行中 5/8）**：S1～S5 完成（A-002/A-003；I-001 = D-002 全部 in-scope、A→B→C、父目标等子目标）。整改批 A 已开 [GOAL-021](GOAL-021-w15-rectification-batch-a/00-meta.md)。不关门。
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
 
@@ -92,7 +93,8 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-017-w14-rectification-batch-c | W14 整改批 C：调试痕迹清理（F-08 移除调试框 / F-09 反馈文案本地化与去错误码前缀 / F-10 Schema 加载失败友好化） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
 | GOAL-018-w14-rectification-batch-d | W14 整改批 D：表单与无障碍（F-11 必填标记 / F-12 确认对话框焦点 / F-13 桌面表格键盘选中 / F-14 小缺口） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
 | GOAL-019-w14-rectification-batch-b | W14 整改批 B：一致性硬化（F-05 列表端点校验 / F-06 错误码与目录 / F-07 搜索排序一致性） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
-| GOAL-020-w15-user-perspective-findings | W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）+ 整改承接准备 | GOAL-001-design-implementation-conformance | active | 4/5 | 2026-08-17 |
+| GOAL-020-w15-user-perspective-findings | W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）+ 整改承接 | GOAL-001-design-implementation-conformance | active | 5/8 | 2026-08-17 |
+| GOAL-021-w15-rectification-batch-a | W15 整改批 A：F01 会话容灾 / F02 表格重试 / F04 JSON 信封 / F05 CORS / F07 refresh 错误码 | GOAL-020-w15-user-perspective-findings | active | 3/4 | 2026-08-17 |
 
 ## 维护说明
 

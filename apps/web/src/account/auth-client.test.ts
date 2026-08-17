@@ -235,6 +235,36 @@ describe("auth-client", () => {
     expect(restored).toEqual({ kind: "reauth" });
   });
 
+  it("restoreSession keeps tokens when refresh throws a network error (W15-F01)", async () => {
+    setRefreshToken("refresh-1");
+    setAccessToken("access-1");
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+    expect(getRefreshToken()).toBe("refresh-1");
+    expect(getAccessToken()).toBe("access-1");
+  });
+
+  it("restoreSession keeps tokens when refresh returns 500 (W15-F01)", async () => {
+    setRefreshToken("refresh-1");
+    setAccessToken("access-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "INTERNAL" }, 500));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+    expect(getRefreshToken()).toBe("refresh-1");
+    expect(getAccessToken()).toBe("access-1");
+  });
+
+  it("restoreSession clears tokens when refresh returns 401 (W15-F01)", async () => {
+    setRefreshToken("refresh-1");
+    setAccessToken("access-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "REFRESH_TOKEN_EXPIRED" }, 401));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+    expect(getRefreshToken()).toBeNull();
+    expect(getAccessToken()).toBeNull();
+  });
+
   it("fetchMe throws ME_FAILED on a 401 when refresh also fails", async () => {
     setAccessToken("expired");
     setRefreshToken("refresh-1");

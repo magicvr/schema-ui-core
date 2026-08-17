@@ -170,8 +170,8 @@ func TestAuthRefreshInvalid(t *testing.T) {
 	if code != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want %d", code, http.StatusUnauthorized)
 	}
-	if body["error"] != "UNAUTHORIZED" {
-		t.Fatalf("error = %v, want UNAUTHORIZED", body["error"])
+	if body["error"] != "REFRESH_TOKEN_EXPIRED" {
+		t.Fatalf("error = %v, want REFRESH_TOKEN_EXPIRED", body["error"])
 	}
 }
 

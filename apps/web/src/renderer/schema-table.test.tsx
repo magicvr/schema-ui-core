@@ -189,6 +189,30 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect(container.textContent).toContain("resource fetch failed");
   });
 
+  it("retries the resource fetch from the table error state (W15-F02)", async () => {
+    let calls = 0;
+    const fetcher = (async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response(JSON.stringify({ error: "resource down" }), { status: 500 });
+      }
+      return new Response(JSON.stringify(SAMPLE_ROWS), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      fetcher,
+    );
+    expect(container.querySelector("[data-table-retry]")).not.toBeNull();
+    await act(async () => {
+      (container.querySelector("[data-table-retry]") as HTMLButtonElement).click();
+    });
+    expect(calls).toBe(2);
+    expect(container.textContent).toContain("Acme Console");
+  });
+
   it("toggles column sort and marks the active column", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),

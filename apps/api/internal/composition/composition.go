@@ -464,7 +464,7 @@ func deriveHomePageRef(plan kernel.Plan) string {
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {
-	return server.New(cfg, mux, logger)
+	return server.New(cfg, handler.WithJSONRouteErrors(mux), logger)
 }
 
 func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate) {

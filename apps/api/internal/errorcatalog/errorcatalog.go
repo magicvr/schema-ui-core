@@ -25,6 +25,9 @@ type Entry struct {
 var Catalog = map[string]Entry{
 	"UNAUTHENTICATED": {"error.unauth", "no active session", "未登录或会话已失效"},
 	"UNAUTHORIZED":    {"error.unauthorized", "invalid username or password", "用户名或密码错误"},
+	"REFRESH_TOKEN_EXPIRED": {"error.refreshTokenExpired", "sign-in expired; please sign in again", "登录已过期，请重新登录"},
+	"NOT_FOUND":            {"error.notFound", "not found", "未找到"},
+	"METHOD_NOT_ALLOWED":   {"error.methodNotAllowed", "method not allowed", "不允许的请求方法"},
 	"FORBIDDEN":       {"error.forbidden", "you do not have permission for this action", "您没有执行此操作的权限"},
 
 	"INVALID_LOGIN_BODY":     {"error.invalidLoginBody", "body must be JSON with username and password", "请求体必须是包含用户名和密码的 JSON"},
