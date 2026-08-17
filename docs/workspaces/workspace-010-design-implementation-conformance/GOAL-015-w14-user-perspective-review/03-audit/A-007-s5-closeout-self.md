@@ -34,3 +34,7 @@ GOAL-015 满足关门条件，标记 done（8/8）。W14 波次整改全部完�
 ## 声明
 
 本意见为 self 终审；此前独立审计意见已逐项响应。
+
+## 修订（A-008 响应）
+
+A-008 independent conditional 指出「信息门禁均 closed」过述：I-002 当时仍 collecting、回收站排序 UI 未接线、`INVALID_DATE_FILTER` 未入目录。上述 required 已由 `/govern` 响应闭合；本 A-007 结论在 required 闭合后维持。

@@ -860,7 +860,7 @@ function SchemaCrudProvider({
       }
       const current = selection(tableId);
       if (current === undefined || current.count === 0) {
-        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first", messageKey: "error.emptySelection" });
+        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first", messageKey: "feedback.selectRowFirst" });
         return;
       }
       const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");

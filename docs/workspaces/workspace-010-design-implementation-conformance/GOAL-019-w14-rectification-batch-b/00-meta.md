@@ -42,8 +42,8 @@ progress: 由四个等权检查点派生（S1～S4）；当前 **4/4**（S1～S4
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | non-blocking | F-05 data-permission policies 是否改为真分页 | S2 F-05 | S1 | as-built + 方案 | open | — | 待 S1 |
-| I-002 | non-blocking | F-07 wallet ledger entry-type 取值集合 | S2 F-07 | S1 | as-built + 方案 | open | — | 待 S1 |
+| I-001 | non-blocking | F-05 data-permission policies 是否改为真分页 | S2 F-05 | S1 | as-built + 方案 | **closed** | — | D-001：内存分页足够 |
+| I-002 | non-blocking | F-07 wallet ledger entry-type 取值集合 | S2 F-07 | S1 | as-built + 方案 | **closed** | — | D-001：adjust/freeze/unfreeze/deduct_frozen |
 
 ## 父目标
 

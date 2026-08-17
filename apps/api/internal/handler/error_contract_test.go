@@ -20,7 +20,7 @@ var frozenLiteralCodes = []string{
 	"EMPTY_SELECTION", "FILE_NOT_FOUND", "FILE_TOO_LARGE", "FORBIDDEN", "INTERNAL",
 	"INVALID_BODY", "INVALID_CREATE_BODY", "INVALID_CREATE_FIELD", "INVALID_FILE",
 	"INVALID_LOGIN_BODY", "INVALID_LOGO_URL", "INVALID_LOGOUT_BODY", "INVALID_PAGE",
-	"INVALID_PAGE_SIZE", "INVALID_PATCH_BODY", "INVALID_PATCH_FIELD", "INVALID_REFRESH_BODY",
+	"INVALID_PAGE_SIZE", "INVALID_DATE_FILTER", "INVALID_PATCH_BODY", "INVALID_PATCH_FIELD", "INVALID_REFRESH_BODY",
 	"INVALID_SELECTION_KEY", "INVALID_SITE_TITLE", "INVALID_SORT_FIELD", "INVALID_SORT_ORDER",
 	"INVALID_UPLOAD", "LOGIN_FAILED", "LOGOUT_FAILED", "REFRESH_FAILED", "SCHEMA_NOT_FOUND",
 	"SETTINGS_NOT_FOUND", "STORAGE_UNAVAILABLE", "UNAUTHENTICATED", "UNAUTHORIZED",
@@ -85,6 +85,7 @@ var frozenDomainCodes = []string{
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)
 var notFoundCodePattern = regexp.MustCompile(`NotFoundCode:\s*"([A-Z_]+)"`)
+var domainErrorCodePattern = regexp.MustCompile(`Code:\s*"([A-Z_]+)"`)
 
 func collectCodeLiterals(t *testing.T) map[string]bool {
 	t.Helper()
@@ -109,6 +110,9 @@ func collectCodeLiterals(t *testing.T) map[string]bool {
 				found[match[1]] = true
 			}
 			for _, match := range notFoundCodePattern.FindAllStringSubmatch(string(src), -1) {
+				found[match[1]] = true
+			}
+			for _, match := range domainErrorCodePattern.FindAllStringSubmatch(string(src), -1) {
 				found[match[1]] = true
 			}
 		}

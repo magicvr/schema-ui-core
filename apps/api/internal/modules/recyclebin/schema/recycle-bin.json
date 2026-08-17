@@ -89,6 +89,7 @@
             {
               "field": "resource",
               "label": "Resource",
+              "sortable": true,
               "labelKey": "schema.recycleBin.column.resource"
             },
             {
@@ -99,11 +100,13 @@
             {
               "field": "actorName",
               "label": "Deleted by",
+              "sortable": true,
               "labelKey": "schema.recycleBin.column.actor"
             },
             {
               "field": "deletedAt",
               "label": "Deleted at",
+              "sortable": true,
               "labelKey": "schema.recycleBin.column.deletedAt"
             },
             {

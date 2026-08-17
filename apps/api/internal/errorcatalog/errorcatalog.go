@@ -46,6 +46,7 @@ var Catalog = map[string]Entry{
 	"INVALID_SORT_ORDER":     {"error.invalidSortOrder", "order must be asc or desc", "排序方向必须是 asc 或 desc"},
 	"INVALID_PAGE":           {"error.invalidPage", "page must be a positive integer", "页码必须是正整数"},
 	"INVALID_PAGE_SIZE":      {"error.invalidPageSize", "pageSize must be a positive integer not exceeding 100", "每页条数必须是 1–100 的整数"},
+	"INVALID_DATE_FILTER":    {"error.invalidDateFilter", "from/to must be YYYY-MM-DD or RFC3339", "from/to 必须是 YYYY-MM-DD 或 RFC3339"},
 	"INVALID_CREATE_BODY":    {"error.invalidCreateBody", "body must be JSON", "请求体必须是 JSON"},
 	"INVALID_CREATE_FIELD":   {"error.invalidCreateField", "invalid create field", "创建字段无效"},
 	"INVALID_PATCH_FIELD":    {"error.invalidPatchField", "invalid patch field", "更新字段无效"},
