@@ -58,7 +58,7 @@ version: 0.10.0
 | `docs/shared-materials/` | 工作区外的共享资料候选库存；不保存目标状态 |
 | `docs/templates/` | 核心 canonical 文档模板 |
 | `docs/contracts/` | 消费适配器的 canonical 机读版本与兼容声明 |
-| `docs/architecture/` | 技术与架构约定、[治理原则](principles.md)、[工作区协议](workspace-protocol.md)、[单主线模块架构](module-architecture.md)、[一方模块贡献 Playbook](module-contribution-playbook.md) |
+| `docs/architecture/` | 技术与架构约定、[治理原则](principles.md)、[工作区协议](workspace-protocol.md)、[独立审计执行路径](independent-audit-execution.md)、[单主线模块架构](module-architecture.md)、[一方模块贡献 Playbook](module-contribution-playbook.md) |
 | `docs/_index/` | 预留索引/术语 |
 | `skills/` | AI/Agent 消费适配器、安装包与模板/契约分发镜像 |
 | `web/` | FastAPI Web 应用（有界受控写入，默认门闩关闭） |

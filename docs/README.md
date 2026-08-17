@@ -24,6 +24,7 @@ docs/
 ├── architecture/             # 治理原则与协议（必备）
 │   ├── principles.md         # P-001～P-006
 │   ├── workspace-protocol.md
+│   ├── independent-audit-execution.md  # 项目级决策：独立审计执行路径（grok build）
 │   ├── overview.md
 │   └── directory-layout.md
 ├── templates/                # 五件套 + workspace-context + vision 冷启动模板

@@ -2,9 +2,9 @@
 title: AGENTS · 目标治理 AI 规则（Claude 安装源）
 status: active
 created: 2026-07-18
-updated: 2026-08-06
+updated: 2026-08-17
 parent: null
-version: 0.12.0
+version: 0.12.1
 ---
 
 # AGENTS.md
@@ -130,6 +130,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 - **开放必改门禁**：存在**未合法闭合**的 required / 必改 findings（不论 self 还是 independent、不论是否与其它意见冲突）时，**不得**推进该门禁对应的下一阶段，**不得**将目标标为 `done`（关门）。仅汇总意见而不闭合必改项 = 违规放行。
 - **Finding 合法闭合**（三路径，全文见 principles）：`fixed`（可核对修正）｜`accepted-residual`（用户书面接受残余，含范围与复审触发）｜`user-overruled`（用户书面驳回/降级，**单条意见亦可**）。口头不算。
 - 默认主入口仍为编排器；交叉审计为专用入口（如 `/audit`），非四填表并列主路径。
+- **本项目独立审计默认执行路径**（项目级决策）：需要交叉审计时，自审（self）之后直接调用本地 grok build（模型 grok 4.6 · 思考强度 high）执行独立审计——grok build 可使用本仓库全部 skills，直接调用 `/audit` 即可；意见落盘（`source: independent`）后由编排器合并响应。全文：`docs/architecture/independent-audit-execution.md`（跨工作区有效，不随工作区迁移）。
 
 #### 审计模式（实施前按风险确定）
 

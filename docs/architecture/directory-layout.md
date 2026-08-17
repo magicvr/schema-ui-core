@@ -46,6 +46,7 @@ schema-ui-core/                 # 本仓（Admin 基架 + 治理 dogfood）
 │       ├── overview.md
 │       ├── principles.md       # 治理原则（元规则）
 │       ├── workspace-protocol.md
+│       ├── independent-audit-execution.md  # 项目级决策：独立审计执行路径
 │       ├── monorepo-layout.md  # 应用 monorepo 约定（R1）
 │       └── directory-layout.md # 本文件
 └── skills/                     # AI/Agent 消费适配器与分发包
