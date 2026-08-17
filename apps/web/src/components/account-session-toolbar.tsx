@@ -11,6 +11,7 @@ import {
   registerCustomComponent,
   type CustomComponentProps,
 } from "@/renderer/custom-components";
+import { useSchemaCrud } from "@/renderer/render.tsx";
 
 interface RevokeOthersResponse {
   accessToken?: string;
@@ -20,6 +21,7 @@ interface RevokeOthersResponse {
 export function AccountSessionToolbar(_props: CustomComponentProps) {
   const t = useTranslate();
   const { authFetch, refreshSession } = useAuth();
+  const crud = useSchemaCrud();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export function AccountSessionToolbar(_props: CustomComponentProps) {
         setRefreshToken(body.refreshToken);
       }
       await refreshSession();
+      crud?.reloadList();
       setNotice(t("schema.account.session.revokeOthersDone"));
     } catch {
       setError(t("schema.account.session.revokeOthersFailed"));

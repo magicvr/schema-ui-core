@@ -15,6 +15,19 @@ async function signInAsAdmin(page: Page): Promise<void> {
   await page.getByLabel("Username").fill("admin");
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
+
+  // W16-F01: a fresh seed forces an initial password replacement.
+  const forced = page.getByRole("heading", { name: "Change your password" });
+  if (await forced.isVisible().catch(() => false)) {
+    await page.getByLabel("Current password").fill("admin");
+    await page.getByLabel("New password").fill("admin-e2e-pass");
+    await page.getByLabel("Confirm new password").fill("admin-e2e-pass");
+    await page.getByRole("button", { name: "Change password" }).click();
+  } else {
+    // If an earlier spec already replaced the seed password, retry with it.
+    await page.getByLabel("Password").fill("admin-e2e-pass");
+    await page.getByRole("button", { name: "Sign in" }).click();
+  }
   await expect(page).toHaveURL(profile === "demo" ? /\/overview$/ : /\/dashboard$/);
 }
 

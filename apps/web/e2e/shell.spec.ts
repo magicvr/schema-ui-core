@@ -102,6 +102,19 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await page.getByLabel("Password").fill("admin");
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  // W16-F01: a fresh seed forces an initial password replacement. If an
+  // earlier spec already replaced it, retry with the shared e2e password.
+  const forced = page.getByRole("heading", { name: "Change your password" });
+  if (await forced.isVisible().catch(() => false)) {
+    await page.getByLabel("Current password").fill("admin");
+    await page.getByLabel("New password").fill("admin-e2e-pass");
+    await page.getByLabel("Confirm new password").fill("admin-e2e-pass");
+    await page.getByRole("button", { name: "Change password" }).click();
+  } else {
+    await page.getByLabel("Password").fill("admin-e2e-pass");
+    await page.getByRole("button", { name: "Sign in" }).click();
+  }
+
   // Shell renders and redirects home -> manifest home (demo: overview; else dashboard).
   await expect(page).toHaveURL(isDemoProfile ? /\/overview$/ : /\/dashboard$/);
   await expect(page.getByRole("heading", { name: isDemoProfile ? "Overview" : "Dashboard" })).toBeVisible();
@@ -174,7 +187,7 @@ test("login gates the shell and the real auth chain works through the proxy", as
 
   // Real auth chain through the Web /api proxy -> Go API (independent context).
   const login = await request.post("/api/auth/login", {
-    data: { username: "admin", password: "admin" },
+    data: { username: "admin", password: "admin-e2e-pass" },
   });
   expect(login.status()).toBe(200);
   const tokens = await login.json();

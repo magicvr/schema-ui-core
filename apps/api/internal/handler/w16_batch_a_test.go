@@ -67,6 +67,15 @@ func TestForcedPasswordChangeGateAndReissue(t *testing.T) {
 		t.Fatalf("gated body = %s, want MUST_CHANGE_PASSWORD", probeRR.Body.String())
 	}
 
+	// Same-password replacement is rejected (independent audit F-002).
+	same := bearer(t, token, http.MethodPost, "/api/account/password",
+		`{"currentPassword":"initial-pass","newPassword":"initial-pass"}`)
+	sameRR := httptest.NewRecorder()
+	env.mux.ServeHTTP(sameRR, same)
+	if sameRR.Code != http.StatusBadRequest {
+		t.Fatalf("same-password change status = %d, want 400", sameRR.Code)
+	}
+
 	// Forced password change returns 200 with a fresh token pair.
 	change := bearer(t, token, http.MethodPost, "/api/account/password",
 		`{"currentPassword":"initial-pass","newPassword":"new-secret-123"}`)

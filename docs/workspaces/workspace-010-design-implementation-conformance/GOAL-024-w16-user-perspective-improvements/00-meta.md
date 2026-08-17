@@ -6,7 +6,7 @@ parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.2.0
-progress: 4/8
+progress: 5/8
 ---
 
 # GOAL-024 · W16 · 真实用户视角未计划改进项台账与规划
@@ -38,12 +38,12 @@ VP-010 / workspace-010 的**第十六波**（用户 2026-08-17 点名立项）�
 - [x] **S2 · 技术方案与接口设计**：明确各改进项的 Schema 契约、API 路由、前端交互与存储迁移方案（D-002）；关闭 I-001。
 - [x] **S3 · 实施分批与子目标规划**：按风险与模块关联度完成分批规划（D-003：批 A/B/C）；先创建批 A 子目标 [GOAL-025-w16-rectification-batch-a](../GOAL-025-w16-rectification-batch-a/00-meta.md)，批 B/C 渐进添加。
 - [x] **S4 · 阶段审计与就绪确认**：完成台账与规划的自审（A-002 pass），确认门禁满足，进入批 A 实施。
-- [ ] **R1 · 整改批 A 完成**——安全与认证基线（W16-F01 / W16-F07 / W16-F08），子目标 GOAL-025。
-- [ ] **R2 · 整改批 B 完成**——核心资产与数据交互（W16-F02 / W16-F03 / W16-F04），子目标渐进添加。
+- [x] **R1 · 整改批 A 完成**——安全与认证基线（W16-F01 / W16-F07 / W16-F08），子目标 [GOAL-025](../GOAL-025-w16-rectification-batch-a/00-meta.md)（done · 4/4）。
+- [ ] **R2 · 整改批 B 完成**——核心资产与数据交互（W16-F02 / W16-F03 / W16-F04），子目标 [GOAL-026](../GOAL-026-w16-rectification-batch-b/00-meta.md)（active · 0/4）。
 - [ ] **R3 · 整改批 C 完成**——系统运维与通用外观（W16-F05 / W16-F06 / W16-F09 / W16-F10），子目标渐进添加。
 - [ ] **S5 · 关门**：全部整改子目标 done + 终审 + goal-tree/workspace 同步为 done。
 
-> 当前进度：4/8（S1～S4 完成；R1～R3/S5 未完成，GOAL-024 保持 active）。
+> 当前进度：5/8（S1～S4 + R1 完成；R2/R3/S5 未完成，GOAL-024 保持 active）。
 
 ## 审计策略
 
@@ -68,7 +68,7 @@ VP-010 / workspace-010 的**第十六波**（用户 2026-08-17 点名立项）�
 | 批 | 子目标 | status | 范围 |
 |----|--------|--------|------|
 | A | [GOAL-025-w16-rectification-batch-a](../GOAL-025-w16-rectification-batch-a/00-meta.md) | active · 0/4 | W16-F01 首次改密 / W16-F07 一键下线其他 / W16-F08 验证码刷新 + MFA 备份 |
-| B | 待渐进添加（预计 GOAL-026） | — | W16-F02 文件预览复制 / W16-F03 导入模板与错误定位 / W16-F04 金额格式化与调账警示 |
+| B | [GOAL-026-w16-rectification-batch-b](../GOAL-026-w16-rectification-batch-b/00-meta.md) | active · 0/4 | W16-F02 文件预览复制 / W16-F03 导入模板与错误定位 / W16-F04 金额格式化与调账警示 |
 | C | 待渐进添加（预计 GOAL-027） | — | W16-F05 Cron 预览 / W16-F06 监控自动刷新 / W16-F09 字典 Badge / W16-F10 页脚版权 |
 
 ## 台账布局

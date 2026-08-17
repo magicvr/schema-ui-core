@@ -51,6 +51,9 @@ func TestServerProcessRestartPersistsUsers(t *testing.T) {
 	defer killServer(t, srv1, log1)
 	waitHealth(t, port1, 20*time.Second)
 	token := httpLogin(t, port1, "admin", "admin")
+	// W16-F01: the fresh seed starts with must_change_password=1; replace the
+	// initial password before using business APIs.
+	token = httpChangePassword(t, port1, token, "admin", "admin-new-pass")
 	createdID, created := httpCreateUser(t, port1, token)
 	createdAt, _ := created["updatedAt"].(string)
 	if createdAt == "" {
@@ -86,7 +89,7 @@ func TestServerProcessRestartPersistsUsers(t *testing.T) {
 	srv2, log2 := startServer(t, bin, dbPath, port2)
 	defer killServer(t, srv2, log2)
 	waitHealth(t, port2, 20*time.Second)
-	token2 := httpLogin(t, port2, "admin", "admin")
+	token2 := httpLogin(t, port2, "admin", "admin-new-pass")
 
 	code, body := httpDoJSON(t, port2, http.MethodGet, "/api/users?pageSize=100", "", token2)
 	if code != http.StatusOK {
@@ -236,6 +239,20 @@ func httpLogin(t *testing.T, port, username, password string) string {
 		t.Fatalf("login accessToken missing in %v", out)
 	}
 	return tok
+}
+
+func httpChangePassword(t *testing.T, port, token, current, next string) string {
+	t.Helper()
+	body := fmt.Sprintf(`{"currentPassword":%q,"newPassword":%q}`, current, next)
+	code, out := httpDoJSON(t, port, http.MethodPost, "/api/account/password", body, token)
+	if code != http.StatusOK {
+		t.Fatalf("forced password change status = %d, want 200", code)
+	}
+	access, _ := out["accessToken"].(string)
+	if access == "" {
+		t.Fatalf("forced password change missing accessToken in %v", out)
+	}
+	return access
 }
 
 func httpCreateUser(t *testing.T, port, token string) (string, map[string]any) {

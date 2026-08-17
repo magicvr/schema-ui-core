@@ -222,6 +222,10 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password must be a non-whitespace string of 8 to 72 bytes")
 			return
 		}
+		if body.NewPassword == body.CurrentPassword {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password must differ from the current password")
+			return
+		}
 		u, err := h.repository.GetUser(user.ID)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load account")
