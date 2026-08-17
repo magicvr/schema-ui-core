@@ -399,6 +399,7 @@ function RowActionsMenu({
                     type="button"
                     role="menuitem"
                     disabled={disabled}
+                    title={disabled ? t("feedback.actionNotPermitted") : undefined}
                     onClick={(event) => {
                       event.stopPropagation();
                       close();
@@ -573,7 +574,11 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       ? { field: query.sort, order: query.order }
       : undefined;
 
-  const onSortChange = (next: SortState) => {
+  const onSortChange = (next: SortState | null) => {
+    if (next === null) {
+      setQuery({ ...query, sort: undefined, order: undefined, page: 1 });
+      return;
+    }
     setQuery({ ...query, sort: next.field, order: next.order, page: 1 });
   };
 
@@ -715,6 +720,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                         key={key}
                         type="button"
                         disabled={disabled}
+                        title={disabled ? t("feedback.actionNotPermitted") : undefined}
                         onClick={(event) => {
                           event.stopPropagation();
                           crud?.invokeAction(action, rowAsRecord(row));
@@ -819,6 +825,13 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 key={key}
                 type="button"
                 disabled={disabled}
+                title={
+                  disabled
+                    ? selectionDisabled
+                      ? t("feedback.selectRowFirst")
+                      : t("feedback.actionNotPermitted")
+                    : undefined
+                }
                 onClick={() =>
                   isBatch && selectionEnabled
                     ? crud?.invokeBatchAction(trigger, tableId)

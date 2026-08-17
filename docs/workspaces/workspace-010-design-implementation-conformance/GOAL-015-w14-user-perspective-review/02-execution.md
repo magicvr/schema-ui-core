@@ -21,6 +21,7 @@ version: 0.1.0
 | E-005 | 2026-08-17 | 结构修正：GOAL-015 保持 active（4/8）；整改子目标（GOAL-016 批 A 等）挂 GOAL-015 下，渐进添加；E-004/A-005 标注 superseded；A-006 记录 | recorded | `02-execution/E-005-structure-correction.md` |
 | E-006 | 2026-08-17 | R1 整改批 A 完成：GOAL-016 done 4/4；GOAL-015 progress 5/8 | recorded | `02-execution/E-006-r1-batch-a-completed.md` |
 | E-007 | 2026-08-17 | R2 整改批 C 完成：GOAL-017 done 4/4；GOAL-015 progress 6/8 | recorded | `02-execution/E-007-r2-batch-c-completed.md` |
+| E-008 | 2026-08-17 | R3 整改批 D 完成：GOAL-018 done 4/4；GOAL-015 progress 7/8 | recorded | `02-execution/E-008-r3-batch-d-completed.md` |
 
 ## 事实边界
 
@@ -36,3 +37,4 @@ version: 0.1.0
 - **2026-08-17**：结构修正（E-005）——用户裁决「GOAL-015 在整改完成之前不应标记 done；GOAL-016 等整改子目标应为 GOAL-015 下级」；GOAL-015 回退 active · 4/8（S1～S4 完成，R1～R4 + S5 待整改）；GOAL-016 更名 w14 批 A 并挂 GOAL-015 下；A-006 记录。
 - **2026-08-17**：R1 整改批 A 完成（E-006）——GOAL-016 done 4/4；GOAL-015 progress 5/8；仍 active（R2～R4 + S5 待推进）。
 - **2026-08-17**：R2 整改批 C 完成（E-007）——GOAL-017 done 4/4；GOAL-015 progress 6/8；仍 active（R3～R4 + S5 待推进）。
+- **2026-08-17**：R3 整改批 D 完成（E-008）——GOAL-018 done 4/4；GOAL-015 progress 7/8；仍 active（R4 + S5 待推进）。

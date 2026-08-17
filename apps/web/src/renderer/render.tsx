@@ -1883,10 +1883,20 @@ function TabsView({
   const children = node.children ?? [];
   const [active, setActive] = useState(0);
   const current = children[Math.min(active, children.length - 1)];
+  const baseId = typeof node.id === "string" && node.id !== "" ? node.id : "tabs";
+  const focusTab = (from: number, direction: -1 | 0 | 1) => {
+    if (children.length === 0) {
+      return;
+    }
+    const next = (from + direction + children.length) % children.length;
+    setActive(next);
+    const button = document.getElementById(`tab-${baseId}-${next}`);
+    button?.focus();
+  };
   return (
     <div className="space-y-3">
       {children.length > 1 ? (
-        <div role="tablist" className="flex flex-wrap items-center gap-1 border-b border-border">
+        <div role="tablist" aria-label={t("feedback.tabs")} className="flex flex-wrap items-center gap-1 border-b border-border">
           {children.map((child, index) => {
             const rawProps = (child as unknown as { props?: unknown }).props;
             // T-03 (GOAL-013 D-004): resolve labelKey before the literal
@@ -1898,13 +1908,32 @@ function TabsView({
               t,
               `Tab ${index + 1}`,
             );
+            const panelId = `tab-panel-${baseId}-${index}`;
             return (
               <button
                 key={index}
+                id={`tab-${baseId}-${index}`}
                 type="button"
                 role="tab"
                 aria-selected={index === active}
+                aria-controls={panelId}
+                tabIndex={index === active ? 0 : -1}
                 onClick={() => setActive(index)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    focusTab(index, 1);
+                  } else if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    focusTab(index, -1);
+                  } else if (event.key === "Home") {
+                    event.preventDefault();
+                    focusTab(0, 0);
+                  } else if (event.key === "End") {
+                    event.preventDefault();
+                    focusTab(children.length - 1, 0);
+                  }
+                }}
                 className={`rounded-t px-3 py-1.5 text-sm ${
                   index === active
                     ? "border-b-2 border-primary font-medium text-foreground"
@@ -1918,15 +1947,23 @@ function TabsView({
         </div>
       ) : null}
       {current !== undefined ? (
-        dispatchNode({
-          node: current,
-          path: "body.children",
-          metaValue,
-          context,
-          tableRenderer,
-          onAction,
-          formComponent,
-        })
+        <div
+          id={`tab-panel-${baseId}-${active}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${baseId}-${active}`}
+          tabIndex={0}
+          className="outline-none"
+        >
+          {dispatchNode({
+            node: current,
+            path: "body.children",
+            metaValue,
+            context,
+            tableRenderer,
+            onAction,
+            formComponent,
+          })}
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">{t("feedback.tabsNoChildren")}</p>
       )}

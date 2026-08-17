@@ -910,7 +910,7 @@ export function App({
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
             {/* W13 T-04: theme toggle on the left, language switcher on the right. */}
             <ThemeToggle />
-            <LocaleSwitcher className="hidden sm:inline-flex" />
+            <LocaleSwitcher className="inline-flex" />
             {currentUser !== undefined && currentUser !== null ? (
               <NotificationBell
                 fetcher={resourceFetcher}

@@ -163,7 +163,7 @@ export function NotificationCenter({ node, context }: CustomComponentProps) {
       ) : state.status === "error" ? (
         <p role="alert" className="text-sm text-destructive">{t("shell.notifications.unavailable")}</p>
       ) : state.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("feedback.noItemsMatch")}</p>
+        <p className="text-sm text-muted-foreground">{t("schema.notifications.empty")}</p>
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border/70 bg-card/85">
           {state.items.map((item) => {

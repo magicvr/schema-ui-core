@@ -88,7 +88,7 @@ describe("DataTable", () => {
     function Harness() {
       const [sort, setSort] = useState<SortState | undefined>(undefined);
       return (
-        <DataTable columns={columns} rows={rows} rowKey={rowKey} sort={sort} onSortChange={setSort} />
+        <DataTable columns={columns} rows={rows} rowKey={rowKey} sort={sort} onSortChange={(next) => setSort(next ?? undefined)} />
       );
     }
     const container = await renderTable(<Harness />);

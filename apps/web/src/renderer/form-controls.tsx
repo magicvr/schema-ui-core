@@ -166,6 +166,8 @@ function BaseInput({
   disabled,
   readOnly,
   placeholder,
+  required,
+  describedBy,
   searchMode,
   paired,
 }: {
@@ -177,6 +179,8 @@ function BaseInput({
   disabled?: boolean;
   readOnly?: boolean;
   placeholder?: string;
+  required?: boolean;
+  describedBy?: string;
   /** A-003: search keyword input — magnifier prefix + one-click clear. */
   searchMode?: boolean;
   /** W13 T-03: inside the [input+button] group — square right corner. */
@@ -202,6 +206,8 @@ function BaseInput({
           disabled={disabled}
           readOnly={readOnly}
           placeholder={placeholder}
+          aria-required={required === true ? true : undefined}
+          aria-describedby={describedBy}
           // W4 P2-2: password fields in schema-driven forms (change/reset) must
           // not be auto-filled from a saved login password — declare a new
           // password context so the browser suggests a fresh one.
@@ -236,6 +242,8 @@ function SelectField({
   onChange,
   disabled,
   readOnly,
+  required,
+  describedBy,
   t,
   fetcher,
 }: {
@@ -246,6 +254,8 @@ function SelectField({
   onChange: (value: unknown) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  describedBy?: string;
   t: FieldTranslator;
   fetcher?: typeof fetch;
 }) {
@@ -293,6 +303,8 @@ function SelectField({
           id={id}
           value={value === undefined || value === null ? "" : String(value)}
           disabled={disabled || readOnly}
+          aria-required={required === true ? true : undefined}
+          aria-describedby={describedBy}
           onChange={(event) => onChange(event.target.value)}
           className={cn(
             controlClass,
@@ -302,6 +314,11 @@ function SelectField({
               : "text-foreground font-normal",
           )}
         >
+          {options.length === 0 || options[0]?.value !== "" ? (
+            <option value="" className="bg-background text-muted-foreground">
+              {t("feedback.selectPlaceholder")}
+            </option>
+          ) : null}
           {options.map((option) => (
             <option key={option.value} value={option.value} className="bg-background text-foreground">
               {option.label}
@@ -462,6 +479,8 @@ function TextAreaField({
   onChange,
   disabled,
   readOnly,
+  required,
+  describedBy,
   placeholder,
 }: {
   id: string;
@@ -470,6 +489,8 @@ function TextAreaField({
   onChange: (value: string) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  describedBy?: string;
   placeholder?: string;
 }) {
   return (
@@ -482,6 +503,8 @@ function TextAreaField({
         value={value}
         disabled={disabled}
         readOnly={readOnly}
+        aria-required={required === true ? true : undefined}
+        aria-describedby={describedBy}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
@@ -497,6 +520,8 @@ function NumberField({
   onChange,
   disabled,
   readOnly,
+  required,
+  describedBy,
   min,
   max,
   step,
@@ -507,6 +532,8 @@ function NumberField({
   onChange: (value: number | undefined) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  describedBy?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -524,6 +551,8 @@ function NumberField({
         value={Number.isFinite(value) ? value : ""}
         disabled={disabled}
         readOnly={readOnly}
+        aria-required={required === true ? true : undefined}
+        aria-describedby={describedBy}
         min={min}
         max={max}
         step={step}
@@ -543,6 +572,8 @@ function DateField({
   onChange,
   disabled,
   readOnly,
+  required,
+  describedBy,
   min,
   max,
 }: {
@@ -552,6 +583,8 @@ function DateField({
   onChange: (value: string) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  describedBy?: string;
   min?: string;
   max?: string;
 }) {
@@ -566,6 +599,8 @@ function DateField({
         value={value}
         disabled={disabled}
         readOnly={readOnly}
+        aria-required={required === true ? true : undefined}
+        aria-describedby={describedBy}
         min={min}
         max={max}
         className="cursor-pointer scheme-light dark:scheme-dark"
@@ -582,6 +617,8 @@ function DateRangeField({
   onChange,
   disabled,
   readOnly,
+  required,
+  describedBy,
 }: {
   id: string;
   label: string;
@@ -589,6 +626,8 @@ function DateRangeField({
   onChange: (value: { start: string; end: string }) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  describedBy?: string;
 }) {
   return (
     <fieldset className="space-y-1.5" id={id}>
@@ -599,6 +638,8 @@ function DateRangeField({
           value={value.start}
           disabled={disabled}
           readOnly={readOnly}
+          aria-required={required === true ? true : undefined}
+          aria-describedby={describedBy}
           aria-label={`${label} start`}
           className="cursor-pointer scheme-light dark:scheme-dark"
           onChange={(event) => onChange({ ...value, start: event.target.value })}
@@ -609,6 +650,8 @@ function DateRangeField({
           value={value.end}
           disabled={disabled}
           readOnly={readOnly}
+          aria-required={required === true ? true : undefined}
+          aria-describedby={describedBy}
           aria-label={`${label} end`}
           className="cursor-pointer scheme-light dark:scheme-dark"
           onChange={(event) => onChange({ ...value, end: event.target.value })}
@@ -638,6 +681,8 @@ function UploadField({
   onChange,
   disabled,
   readOnly,
+  required,
+  describedBy,
   onUpload,
   removeLabel,
 }: {
@@ -648,6 +693,8 @@ function UploadField({
   onChange: (value: unknown) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  describedBy?: string;
   onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
   /** W9 (GOAL-010): localized label for the per-field "remove image" button
    * (single uploads only; clears the field value back to ""). */
@@ -698,6 +745,8 @@ function UploadField({
         type="file"
         multiple={field.multiple === true}
         disabled={disabled || readOnly || status.kind === "uploading"}
+        aria-required={required === true ? true : undefined}
+        aria-describedby={describedBy}
         onChange={(event) => {
           void handleFiles(event.target.files).finally(() => {
             // Reset the input after the upload settles so re-selecting the same
@@ -781,6 +830,9 @@ function FieldControl({
     t,
     field.type,
   );
+  const required = field.required === true;
+  const requiredLabel = required ? label + " *" : label;
+  const errorId = error !== undefined ? `${id}-error` : undefined;
   const placeholder = resolveTextProp(
     field as unknown as Record<string, unknown>,
     "placeholderKey",
@@ -805,11 +857,13 @@ function FieldControl({
       const control = (
         <BaseInput
           id={id}
-          label={label}
+          label={requiredLabel}
           value={String(value)}
           type="text"
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           onChange={emitChange}
           placeholder={placeholder}
           searchMode={searchMode}
@@ -834,11 +888,13 @@ function FieldControl({
       return (
         <BaseInput
           id={id}
-          label={label}
+          label={requiredLabel}
           value={String(value)}
           type="password"
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           onChange={emitChange}
           placeholder={placeholder}
         />
@@ -847,10 +903,12 @@ function FieldControl({
       return (
         <NumberField
           id={id}
-          label={label}
+          label={requiredLabel}
           value={typeof value === "number" ? value : undefined}
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           min={field.min}
           max={field.max}
           step={field.step}
@@ -861,10 +919,12 @@ function FieldControl({
       return (
         <DateField
           id={id}
-          label={label}
+          label={requiredLabel}
           value={String(value)}
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           onChange={emitChange}
         />
       );
@@ -874,10 +934,12 @@ function FieldControl({
       return (
         <DateRangeField
           id={id}
-          label={label}
+          label={requiredLabel}
           value={range}
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           onChange={emitChange}
         />
       );
@@ -886,11 +948,13 @@ function FieldControl({
       return (
         <SelectField
           id={id}
-          label={label}
+          label={requiredLabel}
           field={field}
           value={value}
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           t={t}
           fetcher={fetcher}
           onChange={emitChange}
@@ -900,7 +964,7 @@ function FieldControl({
       return (
         <RadioField
           id={id}
-          label={label}
+          label={requiredLabel}
           field={field}
           value={value}
           disabled={disabled}
@@ -915,7 +979,7 @@ function FieldControl({
       return (
         <CheckboxGroupField
           id={id}
-          label={label}
+          label={requiredLabel}
           field={field}
           value={value}
           disabled={disabled}
@@ -930,7 +994,7 @@ function FieldControl({
       return (
         <BooleanField
           id={id}
-          label={label}
+          label={requiredLabel}
           field={field}
           value={value}
           disabled={disabled}
@@ -942,10 +1006,12 @@ function FieldControl({
       return (
         <TextAreaField
           id={id}
-          label={label}
+          label={requiredLabel}
           value={String(value)}
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           placeholder={placeholder}
           onChange={emitChange}
         />
@@ -954,9 +1020,11 @@ function FieldControl({
       return (
         <TextAreaField
           id={id}
-          label={label}
+          label={requiredLabel}
           value={String(value)}
           disabled={disabled}
+          required={required}
+          describedBy={errorId}
           placeholder={placeholder ?? "Markdown"}
           onChange={emitChange}
         />
@@ -965,11 +1033,13 @@ function FieldControl({
       return (
         <UploadField
           id={id}
-          label={label}
+          label={requiredLabel}
           field={field}
           value={value}
           disabled={disabled}
           readOnly={readOnly}
+          required={required}
+          describedBy={errorId}
           onUpload={onUpload}
           removeLabel={t("form.upload.remove")}
           onChange={emitChange}
@@ -982,7 +1052,7 @@ function FieldControl({
     <div className="min-w-0">
       {renderControl()}
       {error !== undefined ? (
-        <p role="alert" className="mt-1 text-sm text-destructive">
+        <p id={errorId} role="alert" className="mt-1 text-sm text-destructive">
           {error}
         </p>
       ) : null}

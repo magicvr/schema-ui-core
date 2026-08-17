@@ -40,7 +40,7 @@ export interface DataTableProps<T> {
   rows: T[];
   rowKey: (row: T) => string;
   sort?: SortState;
-  onSortChange?: (sort: SortState) => void;
+  onSortChange?: (sort: SortState | null) => void;
   loading?: boolean;
   error?: string | null;
   emptyMessage?: string;
@@ -121,7 +121,9 @@ function MobileCardList<T>({
   const fields = contentColumns(columns);
   const actions = actionColumn(columns);
   const titleColumn = fields[0];
-  const secondaryColumns = fields.slice(1, 3);
+  // W14 F-14 (GOAL-018): do not silently drop columns on mobile — render every
+  // remaining content column in the secondary stack.
+  const secondaryColumns = fields.slice(1);
   const t = useTranslate();
 
   return (
@@ -220,6 +222,12 @@ export function DataTable<T>({
   const t = useTranslate();
   const toggleSort = (column: DataTableColumn<T>) => {
     if (!column.sortable || onSortChange === undefined) {
+      return;
+    }
+    // W14 F-14 (GOAL-018): a third click on the active descending column clears
+    // the sort instead of cycling back to ascending.
+    if (sort?.field === column.key && sort.order === "desc") {
+      onSortChange(null);
       return;
     }
     const nextOrder: SortOrder =
@@ -328,6 +336,7 @@ export function DataTable<T>({
               return (
                 <tr
                   key={key}
+                  tabIndex={onRowClick === undefined ? undefined : 0}
                   onClick={
                     onRowClick === undefined
                       ? undefined
@@ -343,6 +352,24 @@ export function DataTable<T>({
                             return;
                           }
                           onRowClick(row);
+                        }
+                  }
+                  onKeyDown={
+                    onRowClick === undefined
+                      ? undefined
+                      : (event) => {
+                          const target = event.target as HTMLElement | null;
+                          if (
+                            target?.closest(
+                              "button, a, input, select, textarea, label, [data-row-click-ignore]",
+                            )
+                          ) {
+                            return;
+                          }
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onRowClick(row);
+                          }
                         }
                   }
                   aria-selected={onRowClick === undefined ? undefined : selected}

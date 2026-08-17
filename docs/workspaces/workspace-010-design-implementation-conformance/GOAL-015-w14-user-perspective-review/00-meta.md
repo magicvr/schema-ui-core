@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.9.0
-progress: 6/8
+version: 0.10.0
+progress: 7/8
 ---
 
 # GOAL-015 · W14 · 真实用户视角审视 API/Web（改进项落盘）
@@ -26,11 +26,11 @@ VP-010 / workspace-010 的**第十四波**（用户 2026-08-17 点名立项）�
 - [x] **S4 · 审计响应与台账同步**：响应 A-002（F-001~F-003 已处理）+ **I-001 用户书面裁决（D-003）** + goal-tree/workspace 同步 + git 提交（**不关门**；曾两次尝试关门均被用户否决/修正）
 - [x] **R1 · 整改批 A（F-01～F-04）完成**——子目标 [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md)（done · 4/4）
 - [x] **R2 · 整改批 C（F-08～F-10）完成**——子目标 [GOAL-017-w14-rectification-batch-c](../GOAL-017-w14-rectification-batch-c/00-meta.md)（done · 4/4）
-- [ ] **R3 · 整改批 D（F-11～F-14）完成**——子目标（渐进添加）
+- [x] **R3 · 整改批 D（F-11～F-14）完成**——子目标 [GOAL-018-w14-rectification-batch-d](../GOAL-018-w14-rectification-batch-d/00-meta.md)（done · 4/4）
 - [ ] **R4 · 整改批 B（F-05～F-07）完成**——子目标（渐进添加）
 - [ ] **S5 · 关门**：全部整改子目标 done + 终审 + goal-tree/workspace 同步为 done
 
-progress: 由八个等权检查点派生（S1～S4 + R1～R4）；当前 **6/8**（S1～S4 完成；R1 批 A、R2 批 C 完成；R3～R4 整改待后续批次推进，S5 关门待整改全部完成）。GOAL-015 在整改完成前保持 active。
+progress: 由八个等权检查点派生（S1～S4 + R1～R4）；当前 **7/8**（S1～S4 完成；R1 批 A、R2 批 C、R3 批 D 完成；R4 批 B 待推进，S5 关门待整改全部完成）。GOAL-015 在整改完成前保持 active。
 
 ## 审计策略
 
@@ -70,8 +70,8 @@ I-001 已由用户书面裁决（D-003）关闭（整改范围确定）。GOAL-0
 |----|--------|--------|------|
 | A | [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md) | done · 4/4 | F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey |
 | C | [GOAL-017-w14-rectification-batch-c](../GOAL-017-w14-rectification-batch-c/00-meta.md) | done · 4/4 | F-08 移除调试框 / F-09 反馈文案本地化与去错误码前缀 / F-10 Schema 加载失败友好化 |
-| D | [GOAL-018-w14-rectification-batch-d](../GOAL-018-w14-rectification-batch-d/00-meta.md) | active · 0/4 | F-11 必填标记 / F-12 确认对话框焦点 / F-13 桌面表格键盘选中 / F-14 小缺口 |
-| B | 渐进添加 | — | F-05～F-07（一致性硬化） |
+| D | [GOAL-018-w14-rectification-batch-d](../GOAL-018-w14-rectification-batch-d/00-meta.md) | done · 4/4 | F-11 必填标记 / F-12 确认对话框焦点 / F-13 桌面表格键盘选中 / F-14 小缺口 |
+| B | [GOAL-019-w14-rectification-batch-b](../GOAL-019-w14-rectification-batch-b/00-meta.md) | active · 0/4 | F-05 列表端点校验 / F-06 错误码与目录 / F-07 搜索排序一致性 |
 
 ## 台账布局
 

@@ -1,12 +1,12 @@
 ---
 id: GOAL-018-w14-rectification-batch-d
 title: W14 整改批 D · 表单与无障碍（F-11 必填标记 / F-12 确认对话框焦点 / F-13 桌面表格键盘选中 / F-14 小缺口）
-status: active
+status: done
 parent: GOAL-015-w14-user-perspective-review
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-018 · W14 整改批 D（F-11～F-14 表单与无障碍）
@@ -24,12 +24,12 @@ progress: 0/4
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：F-11～F-14 具体修改点与可访问性契约
-- [ ] **S2 · 实施**：前端组件/样式/键盘交互修改
-- [ ] **S3 · 测试与回归**：vitest/tsc + Web 全量（如涉 Go 则 Go 全量）
-- [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
+- [x] **S1 · 方案冻结**：F-11～F-14 具体修改点与可访问性契约
+- [x] **S2 · 实施**：前端组件/样式/键盘交互修改
+- [x] **S3 · 测试与回归**：vitest/tsc + Web 全量（如涉 Go 则 Go 全量）
+- [x] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**（本子目标 2026-08-17 在批 C 关门后渐进添加，尚未开工）。
+progress: 由四个等权检查点派生（S1～S4）；当前 **4/4**（S1～S4 完成，2026-08-17 关门）。
 
 ## 审计策略
 
