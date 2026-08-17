@@ -67,6 +67,8 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W15-批A | GOAL-021-w15-rectification-batch-a（**GOAL-020 下级**） | **done** 4/4 |
 | W15-批B | GOAL-022-w15-rectification-batch-b（**GOAL-020 下级**） | **done** 4/4 |
 | W15-批C | GOAL-023-w15-rectification-batch-c（**GOAL-020 下级**） | **done** 4/4 |
+| W16 | GOAL-024-w16-user-perspective-improvements | **active**（0/4 · 2026-08-17 立项：W16-F01～W16-F10 台账建立与分批规划，暂未实施） |
+
 
 ## 固定共享资料引用
 

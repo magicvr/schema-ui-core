@@ -37,11 +37,14 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 │   ├── GOAL-017-w14-rectification-batch-c [done] · 整改批 C · 调试痕迹清理（F-08～F-10）（4/4）
 │   ├── GOAL-018-w14-rectification-batch-d [done] · 整改批 D · 表单与无障碍（F-11～F-14）（4/4）
 │   └── GOAL-019-w14-rectification-batch-b [done] · 整改批 B · 一致性硬化（F-05～F-07）（4/4）
-└── GOAL-020-w15-user-perspective-findings [done] · W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）（8/8）
-    ├── GOAL-021-w15-rectification-batch-a [done] · 整改批 A · F01/F02/F04/F05/F07（4/4）
-    ├── GOAL-022-w15-rectification-batch-b [done] · 整改批 B · F03/F11/F10/F12（4/4）
-    └── GOAL-023-w15-rectification-batch-c [done] · 整改批 C · F06/F08/F09/F13/F14（4/4）
+├── GOAL-020-w15-user-perspective-findings [done] · W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）（8/8）
+│   ├── GOAL-021-w15-rectification-batch-a [done] · 整改批 A · F01/F02/F04/F05/F07（4/4）
+│   ├── GOAL-022-w15-rectification-batch-b [done] · 整改批 B · F03/F11/F10/F12（4/4）
+│   └── GOAL-023-w15-rectification-batch-c [done] · 整改批 C · F06/F08/F09/F13/F14（4/4）
+└── GOAL-024-w16-user-perspective-improvements [active] · W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10）（0/4）
 ```
+
+**W16（2026-08-17 立项，0/4）**：S1 台账建立（D-001：W16-F01～W16-F10）+ 排除 workspace-011 已规划项 + 规划分批落盘（暂不实施）；自审 A-001 pass；Root/VP 保持 active。
 
 **W15（2026-08-17 关门，8/8）**：S1～S5 + 批 A/B/C。I-001 = D-002。A-002/A-004 independent 的 required 已 fixed。Root/VP 仍 active。
 
@@ -99,6 +102,8 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-021-w15-rectification-batch-a | W15 整改批 A：F01 会话容灾 / F02 表格重试 / F04 JSON 信封 / F05 CORS / F07 refresh 错误码 | GOAL-020-w15-user-perspective-findings | done | 4/4 | 2026-08-17 |
 | GOAL-022-w15-rectification-batch-b | W15 整改批 B：F03 时间格式 / F11 GET 只读 / F10 Retry-After / F12 分页 | GOAL-020-w15-user-perspective-findings | done | 4/4 | 2026-08-17 |
 | GOAL-023-w15-rectification-batch-c | W15 整改批 C：F06 改密提示 / F08 校验码 / F09 Toast / F13 当前会话 / F14 细节 | GOAL-020-w15-user-perspective-findings | done | 4/4 | 2026-08-17 |
+| GOAL-024-w16-user-perspective-improvements | W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10） | GOAL-001-design-implementation-conformance | active | 0/4 | 2026-08-17 |
+
 
 ## 维护说明
 
