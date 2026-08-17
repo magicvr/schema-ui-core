@@ -40,6 +40,12 @@ func TestNotificationLockEventProduced(t *testing.T) {
 	if len(rows) != 1 || rows[0].Event != "account.locked" {
 		t.Fatalf("locked notification rows = %+v, want 1 account.locked", rows)
 	}
+	if rows[0].TitleKey == nil || *rows[0].TitleKey != "notification.account.locked.title" {
+		t.Fatalf("locked notification titleKey = %v, want notification.account.locked.title", rows[0].TitleKey)
+	}
+	if rows[0].BodyKey == nil || *rows[0].BodyKey != "notification.account.locked.body" {
+		t.Fatalf("locked notification bodyKey = %v, want notification.account.locked.body", rows[0].BodyKey)
+	}
 }
 
 func TestNotificationDisableAndUnlockEvents(t *testing.T) {

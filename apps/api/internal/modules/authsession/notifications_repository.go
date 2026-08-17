@@ -24,6 +24,11 @@ type Notification struct {
 	Event     string
 	Title     string
 	Body      string
+	// TitleKey/BodyKey (W14 F-04) are i18n message keys; nil/empty means the
+	// row predates the message-key migration and title/body are the literal
+	// fallback text.
+	TitleKey  *string
+	BodyKey   *string
 	ReadAt    *time.Time
 	CreatedAt time.Time
 }
@@ -79,9 +84,9 @@ func (r *Repository) SetNotificationsEnabled(userID string, enabled bool, now ti
 func (r *Repository) CreateNotification(n Notification, now time.Time) error {
 	return r.withTx("create notification", func(tx *sql.Tx) error {
 		if _, err := tx.Exec(
-			`INSERT INTO notifications (id, user_id, event, title, body, read_at, created_at)
-			 VALUES (?, ?, ?, ?, ?, NULL, ?)`,
-			n.ID, n.UserID, n.Event, n.Title, n.Body, now.Unix(),
+			`INSERT INTO notifications (id, user_id, event, title, body, title_key, body_key, read_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+			n.ID, n.UserID, n.Event, n.Title, n.Body, n.TitleKey, n.BodyKey, now.Unix(),
 		); err != nil {
 			return fmt.Errorf("insert notification: %w", err)
 		}
@@ -134,8 +139,8 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 		where := ` WHERE user_id = ?`
 		args := []any{userID}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where += ` AND (instr(lower(title), ?) > 0 OR instr(lower(body), ?) > 0)`
-			args = append(args, q, q)
+			where += ` AND (instr(lower(title), ?) > 0 OR instr(lower(body), ?) > 0 OR instr(lower(COALESCE(title_key,'')), ?) > 0 OR instr(lower(COALESCE(body_key,'')), ?) > 0)`
+			args = append(args, q, q, q, q)
 		}
 		if filter.UnreadOnly {
 			where += ` AND read_at IS NULL`
@@ -151,7 +156,7 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 			return fmt.Errorf("count notifications: %w", err)
 		}
 		rows, err := tx.Query(
-			`SELECT id, user_id, event, title, body, read_at, created_at FROM notifications`+where+
+			`SELECT id, user_id, event, title, body, title_key, body_key, read_at, created_at FROM notifications`+where+
 				` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
 		)
@@ -242,14 +247,21 @@ func (r *Repository) UnreadNotificationCount(userID string) (int, error) {
 
 func scanNotification(row interface{ Scan(...any) error }) (*Notification, error) {
 	var n Notification
+	var titleKey, bodyKey sql.NullString
 	var readAt *int64
 	var createdAt int64
-	err := row.Scan(&n.ID, &n.UserID, &n.Event, &n.Title, &n.Body, &readAt, &createdAt)
+	err := row.Scan(&n.ID, &n.UserID, &n.Event, &n.Title, &n.Body, &titleKey, &bodyKey, &readAt, &createdAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("scan notification: %w", err)
+	}
+	if titleKey.Valid {
+		n.TitleKey = &titleKey.String
+	}
+	if bodyKey.Valid {
+		n.BodyKey = &bodyKey.String
 	}
 	if readAt != nil {
 		value := time.Unix(*readAt, 0).UTC()

@@ -104,6 +104,18 @@
               "labelKey": "schema.scheduledTasks.field.enabled"
             },
             {
+              "id": "handler",
+              "label": "Handler",
+              "type": "select",
+              "defaultValue": "system.noop",
+              "labelKey": "schema.scheduledTasks.field.handler",
+              "optionsSource": {
+                "url": "/api/scheduled-tasks/handlers",
+                "valueField": "key",
+                "labelField": "key"
+              }
+            },
+            {
               "id": "description",
               "label": "Description",
               "type": "textarea",
@@ -149,6 +161,17 @@
               "type": "switch",
               "defaultValue": true,
               "labelKey": "schema.scheduledTasks.field.enabled"
+            },
+            {
+              "id": "handler",
+              "label": "Handler",
+              "type": "select",
+              "labelKey": "schema.scheduledTasks.field.handler",
+              "optionsSource": {
+                "url": "/api/scheduled-tasks/handlers",
+                "valueField": "key",
+                "labelField": "key"
+              }
             },
             {
               "id": "description",

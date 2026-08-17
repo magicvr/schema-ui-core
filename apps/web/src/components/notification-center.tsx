@@ -28,6 +28,8 @@ interface NotificationRow {
   event: string;
   title: string;
   body: string;
+  titleKey?: string;
+  bodyKey?: string;
   read: boolean;
   createdAt: string;
 }
@@ -166,6 +168,8 @@ export function NotificationCenter({ node, context }: CustomComponentProps) {
         <ul className="divide-y divide-border rounded-xl border border-border/70 bg-card/85">
           {state.items.map((item) => {
             const expanded = expandedId === item.id;
+            const titleText = item.titleKey !== undefined && item.titleKey !== "" ? t(item.titleKey) : item.title;
+            const bodyText = item.bodyKey !== undefined && item.bodyKey !== "" ? t(item.bodyKey) : item.body;
             return (
               <li key={item.id}>
                 <button
@@ -181,9 +185,9 @@ export function NotificationCenter({ node, context }: CustomComponentProps) {
                   />
                   <span className="min-w-0 flex-1">
                     <span className={"block truncate text-sm " + (item.read ? "text-muted-foreground" : "font-semibold text-foreground")}>
-                      {item.title}
+                      {titleText}
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.body}</span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">{bodyText}</span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground/70">
                     {formatDisplayTime(item.createdAt) ?? ""}
@@ -191,7 +195,7 @@ export function NotificationCenter({ node, context }: CustomComponentProps) {
                 </button>
                 {expanded ? (
                   <div data-notification-detail={item.id} className="border-t border-border/60 bg-muted/30 px-4 py-3 pl-9 text-sm">
-                    <p className="whitespace-pre-wrap break-words text-foreground">{item.body}</p>
+                    <p className="whitespace-pre-wrap break-words text-foreground">{bodyText}</p>
                     <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
                       <div>
                         <dt className="inline">{t("schema.notifications.column.event")}: </dt>

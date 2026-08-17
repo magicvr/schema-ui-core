@@ -129,6 +129,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace, brandAssets))
 	mountRoutes(BrandingAssetRoutes(a, brandAssets, "admin.settings"))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
+	mountRoutes([]kernel.RouteContribution{OperationsExportRoute(a, operations, "admin.activity")})
 	a.OnLockOpened = func(userID string) {
 		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 	}

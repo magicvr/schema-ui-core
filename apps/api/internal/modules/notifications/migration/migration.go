@@ -31,6 +31,14 @@ var notificationsEnabledDDL = []string{
 	`ALTER TABLE users ADD COLUMN notifications_enabled INTEGER NOT NULL DEFAULT 1`,
 }
 
+// notificationsMessageKeyDDL (0037 · W14 F-04): store i18n message keys instead
+// of server-side English text. Legacy title/body remain as the fallback for
+// rows produced before this migration.
+var notificationsMessageKeyDDL = []string{
+	`ALTER TABLE notifications ADD COLUMN title_key TEXT`,
+	`ALTER TABLE notifications ADD COLUMN body_key TEXT`,
+}
+
 // Descriptors returns the immutable 0016-0017 migration history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -48,6 +56,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(notificationsEnabledDDL, "0017:notifications-enabled:v1"),
 			Apply:                migrateNotificationsEnabled,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "notifications_message_keys"},
+			Version:              37,
+			Name:                 "notifications_message_keys",
+			Checksum:             kernel.MigrationChecksum(notificationsMessageKeyDDL, "0037:notifications-message-keys:v1"),
+			Apply:                migrateNotificationsMessageKeys,
+		},
 	}
 }
 
@@ -64,6 +79,15 @@ func migrateNotificationsEnabled(tx *sql.Tx) error {
 	for _, stmt := range notificationsEnabledDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("add users.notifications_enabled: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateNotificationsMessageKeys(tx *sql.Tx) error {
+	for _, stmt := range notificationsMessageKeyDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("add notifications title_key/body_key: %w", err)
 		}
 	}
 	return nil

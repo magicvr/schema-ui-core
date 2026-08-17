@@ -147,6 +147,12 @@
             }
           ]
         }
+      },
+      {
+        "type": "custom",
+        "id": "data-permission-scopes",
+        "component": "data-permission-scopes",
+        "props": {}
       }
     ]
   }

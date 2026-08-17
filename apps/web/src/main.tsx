@@ -12,6 +12,8 @@ import { LoginPage } from "@/app/LoginPage";
 // personal-center MFA block; notification-center on the notifications page).
 import "@/components/mfa-manager";
 import "@/components/notification-center";
+import "@/components/data-permission-scopes";
+import "@/components/activity-export";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,

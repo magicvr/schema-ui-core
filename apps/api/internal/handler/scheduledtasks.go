@@ -224,6 +224,30 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		Trash:           recorder,
 	}, moduleID)
 
+	// F-01 (W14 D-003): expose the registered handler directory so the task
+	// create/edit forms can offer a real handler instead of an invisible
+	// system.noop default.
+	routes = append(routes, kernel.RouteContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("GET", "/api/scheduled-tasks/handlers")},
+		Method:               "GET",
+		Pattern:              "/api/scheduled-tasks/handlers",
+		Handler: a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := requirePermission(w, r, "tasks.read"); !ok {
+				return
+			}
+			keys := runner.HandlerKeys()
+			items := make([]map[string]any, 0, len(keys))
+			for _, key := range keys {
+				items = append(items, map[string]any{"key": key, "label": key})
+			}
+			pageSize := len(items)
+			if pageSize < 1 {
+				pageSize = 1
+			}
+			writeJSON(w, http.StatusOK, resourceList{Items: items, Total: len(items), Page: 1, PageSize: pageSize})
+		})),
+	})
+
 	// Global run history (read-only).
 	routes = append(routes, ResourceRoutes(a, Resource{
 		ID:              "task-runs",

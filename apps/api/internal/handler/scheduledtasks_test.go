@@ -123,6 +123,24 @@ func TestScheduledTasksPermissionGates(t *testing.T) {
 	}
 }
 
+// F-01 (W14 D-003): the handler directory endpoint lists registered keys.
+func TestScheduledTasksHandlersDirectory(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+	code, body := getResourceAs(t, env, admin, "/api/scheduled-tasks/handlers")
+	if code != http.StatusOK {
+		t.Fatalf("handlers = %d: %v", code, body)
+	}
+	items, ok := body["items"].([]any)
+	if !ok || len(items) != 1 {
+		t.Fatalf("handlers items = %#v, want one system.noop", body["items"])
+	}
+	first, ok := items[0].(map[string]any)
+	if !ok || first["key"] != "system.noop" {
+		t.Fatalf("first handler = %#v, want system.noop", items[0])
+	}
+}
+
 // Unknown handler keys are rejected at write time (A-003 F-003).
 func TestScheduledTasksInvalidHandler(t *testing.T) {
 	env := newAuthTestEnv(t)

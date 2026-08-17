@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
@@ -152,6 +153,56 @@ func TestOperationLogFailurePreservesBusinessSuccess(t *testing.T) {
 		`{"key":"auditor","name":"Auditor"}`))
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("create role with log failure = %d, want 201", rr.Code)
+	}
+}
+
+// W14 F-03 (GOAL-016): structured filters (event/actor/date range) and CSV
+// export on the activity log.
+func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
+	env := newAuthTestEnv(t)
+	now := time.Now().UTC()
+	for _, op := range []operationlog.Operation{
+		{ID: "op-filter-1", Event: operationlog.EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: now.Add(-2 * time.Hour)},
+		{ID: "op-filter-2", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CreatedAt: now.Add(-time.Hour)},
+		{ID: "op-filter-3", Event: operationlog.EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: now},
+	} {
+		if err := env.operations.RecordOperation(op); err != nil {
+			t.Fatalf("record operation %s: %v", op.ID, err)
+		}
+	}
+
+	token := adminToken(t, env)
+	code, body := getResourceAs(t, env, token, "/api/operations?event=users.create")
+	if code != http.StatusOK || body["total"] != float64(1) {
+		t.Fatalf("structured list = %d %v, want total 1", code, body)
+	}
+
+	code, body = getResourceAs(t, env, token, "/api/operations?actorName=Editor")
+	if code != http.StatusOK || body["total"] != float64(1) {
+		t.Fatalf("actor filter list = %d %v, want total 1", code, body)
+	}
+
+	// Invalid date filter must surface as 400 (DomainError path in list).
+	code, body = getResourceAs(t, env, token, "/api/operations?from=not-a-date")
+	if code != http.StatusBadRequest || body["error"] != "INVALID_DATE_FILTER" {
+		t.Fatalf("invalid date filter = %d %v, want 400 INVALID_DATE_FILTER", code, body)
+	}
+
+	// CSV export applies the same filters and is attachment-disposed.
+	req := bearer(t, token, http.MethodGet, "/api/operations/export?event=users.create", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("export = %d: %s", rr.Code, rr.Body.String())
+	}
+	if ct := rr.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/csv") {
+		t.Fatalf("export content-type = %q, want text/csv", ct)
+	}
+	if rr.Header().Get("Content-Disposition") == "" {
+		t.Fatal("export missing Content-Disposition")
+	}
+	if !strings.Contains(rr.Body.String(), "users.create") {
+		t.Fatalf("export body missing users.create row: %q", rr.Body.String())
 	}
 }
 

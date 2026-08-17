@@ -79,6 +79,12 @@ func notificationRow(n authsession.Notification) map[string]any {
 		"read":      false,
 		"createdAt": n.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
+	if n.TitleKey != nil {
+		row["titleKey"] = *n.TitleKey
+	}
+	if n.BodyKey != nil {
+		row["bodyKey"] = *n.BodyKey
+	}
 	if n.ReadAt != nil {
 		row["read"] = true
 		row["readAt"] = n.ReadAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
@@ -270,16 +276,16 @@ func NotifyAccountEvent(repository NotifyRepository, userID, event string, now t
 	if err != nil || !enabled {
 		return
 	}
-	var title, body string
+	var titleKey, bodyKey string
 	switch event {
 	case "account.locked":
-		title, body = "Account locked", "Your account was temporarily locked after repeated failed sign-in attempts."
+		titleKey, bodyKey = "notification.account.locked.title", "notification.account.locked.body"
 	case "account.disabled":
-		title, body = "Account disabled", "Your account was disabled by an administrator."
+		titleKey, bodyKey = "notification.account.disabled.title", "notification.account.disabled.body"
 	case "account.unlocked":
-		title, body = "Account unlocked", "Your account was unlocked by an administrator."
+		titleKey, bodyKey = "notification.account.unlocked.title", "notification.account.unlocked.body"
 	case "account.password-changed":
-		title, body = "Password changed", "Your account password was changed."
+		titleKey, bodyKey = "notification.account.passwordChanged.title", "notification.account.passwordChanged.body"
 	default:
 		return
 	}
@@ -289,7 +295,8 @@ func NotifyAccountEvent(repository NotifyRepository, userID, event string, now t
 		return
 	}
 	if err := repository.CreateNotification(authsession.Notification{
-		ID: id, UserID: userID, Event: event, Title: title, Body: body,
+		ID: id, UserID: userID, Event: event,
+		Title: "", Body: "", TitleKey: &titleKey, BodyKey: &bodyKey,
 	}, now); err != nil {
 		// F-003: best-effort failures are logged, never block the business path.
 		slog.Error("notification produce failed", "event", event, "user_id", userID, "err", err)

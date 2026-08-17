@@ -94,10 +94,38 @@
               "id": "q",
               "type": "input",
               "labelKey": "schema.activity.search.q"
+            },
+            {
+              "id": "event",
+              "type": "input",
+              "labelKey": "schema.activity.search.event"
+            },
+            {
+              "id": "actorName",
+              "type": "input",
+              "labelKey": "schema.activity.search.actorName"
+            },
+            {
+              "id": "from",
+              "type": "datePicker",
+              "labelKey": "schema.activity.search.from"
+            },
+            {
+              "id": "to",
+              "type": "datePicker",
+              "labelKey": "schema.activity.search.to"
             }
           ],
           "submitLabel": "Search",
           "submitLabelKey": "schema.activity.submit.search"
+        }
+      },
+      {
+        "type": "custom",
+        "id": "activity-export",
+        "component": "activity-export",
+        "props": {
+          "targetTable": "operations-table"
         }
       },
       {

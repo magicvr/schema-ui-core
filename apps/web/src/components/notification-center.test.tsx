@@ -42,6 +42,24 @@ const TWO_ITEMS = {
   pageSize: 10,
 };
 
+const KEYED_ITEM = {
+  items: [
+    {
+      id: "ntf-keyed",
+      event: "account.locked",
+      title: "",
+      body: "",
+      titleKey: "notification.account.locked.title",
+      bodyKey: "notification.account.locked.body",
+      read: false,
+      createdAt: "2026-08-16T00:00:00.000Z",
+    },
+  ],
+  total: 1,
+  page: 1,
+  pageSize: 10,
+};
+
 function renderCenter(routeQuery: Record<string, string> = {}) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -94,6 +112,18 @@ describe("NotificationCenter (W13 T-06)", () => {
     expect(container.querySelector("[data-notification-detail=ntf-1]")).not.toBeNull();
     expect(container.textContent).toContain("Repeated failures.");
     expect(readCalls).toContain("/api/notifications/ntf-1/read");
+  });
+
+  it("renders message keys through the i18n catalog (W14 F-04)", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(KEYED_ITEM));
+    vi.stubGlobal("fetch", fetchMock);
+    const container = renderCenter();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(container.textContent).toContain("Account locked");
+    expect(container.textContent).toContain("Your account was temporarily locked");
+    expect(container.textContent).not.toContain("notification.account.locked.title");
   });
 
   it("does not re-mark an already-read row on click", async () => {

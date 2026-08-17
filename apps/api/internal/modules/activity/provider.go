@@ -37,7 +37,7 @@ func (p *Provider) Descriptor() kernel.Module {
 		DependsOn:      []string{"core.auth-session", "core.navigation-capability", "core.manifest-route", "core.operationlog"},
 		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
-			Routes:      []string{"GET /api/operations", "GET /api/operations/{id}"},
+			Routes:      []string{"GET /api/operations", "GET /api/operations/{id}", "GET /api/operations/export"},
 			Pages:       []string{"activity"},
 			Navigation:  []string{"menu_activity"},
 			Permissions: []string{"operations.read"},
@@ -55,6 +55,9 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
+	}
+	if err := reg.HTTP(handler.OperationsExportRoute(p.a, p.operations, ModuleID)); err != nil {
+		return err
 	}
 	if err := reg.Schema(kernel.PageContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "activity"},

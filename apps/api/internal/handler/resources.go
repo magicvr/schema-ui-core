@@ -422,6 +422,11 @@ func (h *resourceHandler) list() http.Handler {
 		filter.Scope = constraint
 		items, total, err := h.res.Entity.List(filter)
 		if err != nil {
+			var domainErr *DomainError
+			if errors.As(err, &domainErr) {
+				writeLocalizedError(w, r, domainErr.Status, domainErr.Code, domainErr.Message)
+				return
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list "+h.res.ID)
 			return
 		}

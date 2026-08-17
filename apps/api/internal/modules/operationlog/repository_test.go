@@ -70,6 +70,45 @@ func TestRepositoryAppendListFilterAndGet(t *testing.T) {
 	}
 }
 
+func TestRepositoryStructuredFilters(t *testing.T) {
+	repository := openOperationRepository(t, "operationlog-structured.db")
+	base := time.Date(2026, 8, 17, 8, 0, 0, 0, time.UTC)
+	ops := []Operation{
+		{ID: "op-a", Event: EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base},
+		{ID: "op-b", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(30 * time.Minute)},
+		{ID: "op-c", Event: EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: base.Add(2 * time.Hour)},
+	}
+	for _, op := range ops {
+		if err := repository.RecordOperation(op); err != nil {
+			t.Fatalf("RecordOperation(%s): %v", op.ID, err)
+		}
+	}
+
+	from := base.Add(15 * time.Minute)
+	to := base.Add(90 * time.Minute)
+	items, total, err := repository.ListOperationsFiltered(OperationFilter{
+		Event: EventUserCreate, ActorName: "admin", From: &from, To: &to,
+		Sort: "createdAt", Order: "asc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("structured filter: %v", err)
+	}
+	if total != 1 || len(items) != 1 || items[0].ID != "op-b" {
+		t.Fatalf("structured filtered = %+v total=%d, want op-b/1", items, total)
+	}
+
+	// From-only: op-b and op-c.
+	items, total, err = repository.ListOperationsFiltered(OperationFilter{
+		From: &from, Sort: "createdAt", Order: "asc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("from filter: %v", err)
+	}
+	if total != 2 || items[0].ID != "op-b" || items[1].ID != "op-c" {
+		t.Fatalf("from filtered = %+v total=%d, want op-b/op-c/2", items, total)
+	}
+}
+
 func TestRepositoryRejectsUnknownEventAndExposesFailureSeam(t *testing.T) {
 	repository := openOperationRepository(t, "operationlog-failure.db")
 	bad := Operation{

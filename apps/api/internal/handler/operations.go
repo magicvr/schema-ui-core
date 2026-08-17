@@ -4,6 +4,8 @@ package handler
 
 import (
 	"errors"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -18,6 +20,8 @@ func operationsResource(repository operationlog.Reader) Resource {
 		ReadOnly:        true,
 		SortFields:      []string{"createdAt", "event", "actorName"},
 		QSearch:         true,
+		// W14 F-03: structured audit filters (event / actor / time range).
+		ExtraQuery:      []string{"event", "actorName", "from", "to"},
 		Entity:          &operationsEntity{repository: repository},
 		PermissionRead:  "operations.read",
 		PermissionWrite: "operations.write", // unused when ReadOnly
@@ -51,9 +55,11 @@ func operationToMap(op operationlog.Operation) map[string]any {
 }
 
 func (e *operationsEntity) List(f resourceFilter) ([]map[string]any, int, error) {
-	items, total, err := e.repository.ListOperationsFiltered(operationlog.OperationFilter{
-		Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
-	})
+	filter, err := operationFilterFromResource(f)
+	if err != nil {
+		return nil, 0, err
+	}
+	items, total, err := e.repository.ListOperationsFiltered(filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -62,6 +68,48 @@ func (e *operationsEntity) List(f resourceFilter) ([]map[string]any, int, error)
 		out = append(out, operationToMap(it))
 	}
 	return out, total, nil
+}
+
+// operationFilterFromResource converts a validated resource list filter into
+// the operationlog filter, parsing the F-03 date-range query params.
+func operationFilterFromResource(f resourceFilter) (operationlog.OperationFilter, error) {
+	filter := operationlog.OperationFilter{
+		Q: f.Q, Event: f.Extra["event"], ActorName: f.Extra["actorName"],
+		Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
+	}
+	if raw := f.Extra["from"]; raw != "" {
+		from, parseErr := parseOperationTime(raw, false)
+		if parseErr != nil {
+			return operationlog.OperationFilter{}, parseErr
+		}
+		filter.From = &from
+	}
+	if raw := f.Extra["to"]; raw != "" {
+		to, parseErr := parseOperationTime(raw, true)
+		if parseErr != nil {
+			return operationlog.OperationFilter{}, parseErr
+		}
+		filter.To = &to
+	}
+	return filter, nil
+}
+
+// parseOperationTime accepts YYYY-MM-DD (inclusive day boundaries) or RFC3339.
+func parseOperationTime(raw string, endOfDay bool) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return time.Time{}, nil
+	}
+	if parsed, err := time.Parse("2006-01-02", raw); err == nil {
+		if endOfDay {
+			return parsed.Add(24*time.Hour - time.Nanosecond).UTC(), nil
+		}
+		return parsed.UTC(), nil
+	}
+	if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+		return parsed.UTC(), nil
+	}
+	return time.Time{}, &DomainError{Status: http.StatusBadRequest, Code: "INVALID_DATE_FILTER", Message: "from/to must be YYYY-MM-DD or RFC3339"}
 }
 
 func (e *operationsEntity) Get(id string) (map[string]any, error) {

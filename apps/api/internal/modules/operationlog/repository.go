@@ -83,7 +83,12 @@ type Operation struct {
 
 // OperationFilter carries handler-validated activity list parameters.
 type OperationFilter struct {
-	Q        string
+	Q         string
+	Event     string
+	ActorName string
+	// From/To are inclusive UTC boundaries; nil means unbounded.
+	From     *time.Time
+	To       *time.Time
 	Sort     string
 	Order    string
 	Page     int
@@ -172,7 +177,7 @@ func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation
 	var items []Operation
 	var total int
 	err := r.withTx("list operations", func(tx *sql.Tx) error {
-		where, args := operationsWhere(filter.Q)
+		where, args := operationsWhere(filter)
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM operation_log`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count: %w", err)
 		}
@@ -254,13 +259,33 @@ func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	return operation, nil
 }
 
-func operationsWhere(query string) (string, []any) {
-	query = strings.ToLower(strings.TrimSpace(query))
-	if query == "" {
+func operationsWhere(filter OperationFilter) (string, []any) {
+	var conditions []string
+	var args []any
+	if q := strings.ToLower(strings.TrimSpace(filter.Q)); q != "" {
+		conditions = append(conditions, `(instr(lower(event), ?) > 0 OR instr(lower(actor_name), ?) > 0 OR instr(lower(COALESCE(detail,'')), ?) > 0 OR instr(lower(COALESCE(record_id,'')), ?) > 0)`)
+		args = append(args, q, q, q, q)
+	}
+	if event := strings.TrimSpace(filter.Event); event != "" {
+		conditions = append(conditions, `event = ?`)
+		args = append(args, event)
+	}
+	if actor := strings.TrimSpace(filter.ActorName); actor != "" {
+		conditions = append(conditions, `lower(actor_name) = lower(?)`)
+		args = append(args, actor)
+	}
+	if filter.From != nil {
+		conditions = append(conditions, `created_at >= ?`)
+		args = append(args, filter.From.UTC().UnixMilli())
+	}
+	if filter.To != nil {
+		conditions = append(conditions, `created_at <= ?`)
+		args = append(args, filter.To.UTC().UnixMilli())
+	}
+	if len(conditions) == 0 {
 		return "", nil
 	}
-	return ` WHERE (instr(lower(event), ?) > 0 OR instr(lower(actor_name), ?) > 0 OR instr(lower(COALESCE(detail,'')), ?) > 0 OR instr(lower(COALESCE(record_id,'')), ?) > 0)`,
-		[]any{query, query, query, query}
+	return ` WHERE ` + strings.Join(conditions, " AND "), args
 }
 
 func operationsSortSQL(sort, order string) string {

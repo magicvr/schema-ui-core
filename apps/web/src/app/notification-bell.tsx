@@ -16,6 +16,8 @@ interface NotificationItem {
   event: string;
   title: string;
   body: string;
+  titleKey?: string;
+  bodyKey?: string;
   read: boolean;
   createdAt: string;
 }
@@ -179,10 +181,13 @@ export function NotificationBell({ fetcher, onViewAll, onOpenItem }: Notificatio
               <p className="px-3 py-2 text-xs text-muted-foreground">{t("feedback.noItemsMatch")}</p>
             ) : (
               <ul className="divide-y divide-border">
-                {items.map((item) => (
+                {items.map((item) => {
+                  const titleText = item.titleKey !== undefined && item.titleKey !== "" ? t(item.titleKey) : item.title;
+                  const bodyText = item.bodyKey !== undefined && item.bodyKey !== "" ? t(item.bodyKey) : item.body;
                   // W13 T-06: a dropdown entry is actionable — marking the
                   // notification read (best-effort) and opening it on the
                   // list page with its detail expanded.
+                  return (
                   <li key={item.id} className="px-1.5 py-1">
                     <button
                       type="button"
@@ -199,12 +204,13 @@ export function NotificationBell({ fetcher, onViewAll, onOpenItem }: Notificatio
                         className={"mt-1.5 size-2 shrink-0 rounded-full " + (item.read ? "bg-transparent" : "bg-primary")}
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-foreground">{item.title}</span>
-                        <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{item.body}</span>
+                        <span className="block text-sm font-medium text-foreground">{titleText}</span>
+                        <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{bodyText}</span>
                       </span>
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>
