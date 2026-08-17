@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-17
 parent: null
-version: 0.21.0
+version: 0.22.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -37,7 +37,10 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 │   ├── GOAL-017-w14-rectification-batch-c [done] · 整改批 C · 调试痕迹清理（F-08～F-10）（4/4）
 │   ├── GOAL-018-w14-rectification-batch-d [done] · 整改批 D · 表单与无障碍（F-11～F-14）（4/4）
 │   └── GOAL-019-w14-rectification-batch-b [done] · 整改批 B · 一致性硬化（F-05～F-07）（4/4）
+└── GOAL-020-w15-user-perspective-findings [active] · W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）（2/5）
 ```
+
+**W15（2026-08-17，进行中 2/5）**：真实用户视角二期全链路走查；S1 审视完成（E-001，代码行证据核验）；S2 台账落盘（D-001：W15-F01～W15-F14 涵盖会话网络容灾、表格重试、时间格式统一、404/405 JSON 信封等 14 项）；A-001 self pass；**按用户指示暂不启动代码修复**，待 S3/S4 审计与 S5 用户裁决后分批推进。
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
 
@@ -89,6 +92,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-017-w14-rectification-batch-c | W14 整改批 C：调试痕迹清理（F-08 移除调试框 / F-09 反馈文案本地化与去错误码前缀 / F-10 Schema 加载失败友好化） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
 | GOAL-018-w14-rectification-batch-d | W14 整改批 D：表单与无障碍（F-11 必填标记 / F-12 确认对话框焦点 / F-13 桌面表格键盘选中 / F-14 小缺口） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
 | GOAL-019-w14-rectification-batch-b | W14 整改批 B：一致性硬化（F-05 列表端点校验 / F-06 错误码与目录 / F-07 搜索排序一致性） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
+| GOAL-020-w15-user-perspective-findings | W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）+ 整改承接准备 | GOAL-001-design-implementation-conformance | active | 2/5 | 2026-08-17 |
 
 ## 维护说明
 

@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-17
-version: 0.21.0
+version: 0.22.0
 parent: null
 ---
 
@@ -63,6 +63,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W14-批C | GOAL-017-w14-rectification-batch-c（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-08～F-10 调试痕迹清理实施完成；S1 冻结 D-001、S2/S3 回归 Web 全量 1041/1041 + tsc + build、A-001 self pass） |
 | W14-批D | GOAL-018-w14-rectification-batch-d（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-11～F-14 表单与无障碍实施完成；S1 冻结 D-001、S2/S3 回归 Web 全量 1041/1041 + tsc + build、A-001 self pass） |
 | W14-批B | GOAL-019-w14-rectification-batch-b（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-05～F-07 一致性硬化实施完成；S1 冻结 D-001、S2/S3 回归 Go 全量 + Web 全量 1041/1041 + tsc + build、A-001 independent fail→fixed + A-002 self pass） |
+| W15 | GOAL-020-w15-user-perspective-findings | **active**（2/5 · 2026-08-17 开波：真实用户视角二期审视与体验加固台账 W15-F01～W15-F14 落盘；按指示暂不启动代码修复，待裁决） |
 
 ## 固定共享资料引用
 
