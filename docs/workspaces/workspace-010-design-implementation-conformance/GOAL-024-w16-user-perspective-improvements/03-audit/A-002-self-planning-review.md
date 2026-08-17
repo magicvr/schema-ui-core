@@ -26,7 +26,7 @@ scope: S2 技术方案 / S3 分批子目标规划 / S4 实施前就绪
 | I-001 已从 collecting 转 verified | 00-meta 信息表 + D-002 §2/§5 |
 | 分批规划与渐进添加策略已冻结 | D-003 |
 | 批 A 子目标已创建 | `GOAL-025-w16-rectification-batch-a/00-meta.md` |
-| 成功标准与 progress 已同步 | 00-meta（4/8）、goal-tree 待同步 |
+| 成功标准与 progress 已同步 | 00-meta（4/8）、goal-tree（4/8 + GOAL-025） |
 
 ## 3. 对照成功标准
 
