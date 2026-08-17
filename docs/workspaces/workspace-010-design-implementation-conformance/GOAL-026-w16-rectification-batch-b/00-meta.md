@@ -6,7 +6,7 @@ parent: GOAL-024-w16-user-perspective-improvements
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.1.0
-progress: 0/4
+progress: 1/4
 ---
 
 # GOAL-026 · W16 整改批 B（核心资产与数据交互）
@@ -20,12 +20,12 @@ progress: 0/4
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：F02/F03/F04 设计（端点/schema/前端交互）+ 信息项登记。
+- [x] **S1 · 方案冻结**：F02/F03/F04 设计（端点/schema/前端交互）+ 信息项登记（D-001）。
 - [ ] **S2 · 实施**：F02/F03/F04 代码与 schema/前端接线。
 - [ ] **S3 · 测试与回归**：Go 全量 + Web vitest/tsc + 相关 e2e。
 - [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步。
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**。
+progress: 由四个等权检查点派生（S1～S4）；当前 **1/4**。
 
 ## 审计策略
 
@@ -39,8 +39,8 @@ progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**。
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|
-| I-001 | required | F03 导入错误响应升级为 `fieldErrors` 时如何保持既有 `errors` 兼容 | S1 方案冻结 | S1 | 检查导入 handler 与前端调用方 | open | 待 S1 输出 |
-| I-002 | non-blocking | F02 文件库预览 URL 是否可直接用于新标签页（鉴权/Content-Disposition） | S1 方案冻结 | S1 | 检查 filelibrary 路由 | open | 待 S1 输出 |
+| I-001 | required | F03 导入错误响应升级为 `fieldErrors` 时如何保持既有 `errors` 兼容 | S1 方案冻结 | S1 | 检查导入 handler 与前端调用方 | **closed** | D-001 §3：新增 `fieldErrors` + 保留 `errors` |
+| I-002 | non-blocking | F02 文件库预览 URL 是否可直接用于新标签页（鉴权/Content-Disposition） | S1 方案冻结 | S1 | 检查 filelibrary 路由 | **closed** | D-001 §2：使用现有 `downloadUrl` 端点 |
 
 ## 父目标
 
