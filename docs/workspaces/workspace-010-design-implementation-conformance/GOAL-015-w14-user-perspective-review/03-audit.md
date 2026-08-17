@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 审计 · GOAL-015
@@ -31,7 +31,8 @@ version: 0.8.0
 | A-005 | 2026-08-17 | self | S4 关门自审（I-001 用户书面裁决 D-003 为据） | pass（**superseded**：关门结论被用户结构裁决否定，见 E-005/A-006） | — | `03-audit/A-005-closeout-self.md` |
 | A-006 | 2026-08-17 | self | 结构修正（GOAL-015 保持 active；整改子目标挂 GOAL-015 下） | pass | 无 | `03-audit/A-006-structure-correction-self.md` |
 | A-007 | 2026-08-17 | self | S5 关门终审（全部整改子目标 done） | pass | 无 | `03-audit/A-007-s5-closeout-self.md` |
-| A-008 | 2026-08-17 | independent | S5 工作结果（F-01～F-14 as-built + 关门包） | conditional | F-001 / F-002 / F-003 | `03-audit/A-008-w14-work-results-independent.md` |
+| A-008 | 2026-08-17 | independent | S5 工作结果（F-01～F-14 as-built + 关门包） | conditional | F-001 / F-002 / F-003（A-009 复审：required 已闭合） | `03-audit/A-008-w14-work-results-independent.md` |
+| A-009 | 2026-08-17 | independent | A-008 finding-closure 复审 | pass | 无 | `03-audit/A-009-a008-closure-independent.md` |
 
 ## 结论状态
 
@@ -44,7 +45,8 @@ version: 0.8.0
 
 GOAL-015 现为 **done（8/8）**：R1～R4 全部整改子目标完成，S5 终审通过；W14 波次正式关门。
 
-- A-008 independent **conditional**（2026-08-17，工作结果交叉审）：多数 F-01～F-14 as-built 成立；开放 required **F-001**（回收站排序 UI 未接线）、**F-002**（`INVALID_DATE_FILTER` 未入目录）、**F-003**（S5 台账/I-002 过期与 A-007 过述）。本索引不改 status；响应归 `/govern`。
+- A-008 independent **conditional**（2026-08-17，工作结果交叉审）：多数 F-01～F-14 as-built 成立；当时开放 required F-001 / F-002 / F-003。本索引不改 status；响应归 `/govern`。
+- A-009 independent **pass**（2026-08-17，A-008 关闭复审）：F-001/F-002/F-003 required 关闭证据可核对；无新 required。残余 recommended `01-decision.md` I-002 已响应 fixed。
 
 ## A-008 响应（编排器）
 
@@ -54,5 +56,11 @@ GOAL-015 现为 **done（8/8）**：R1～R4 全部整改子目标完成，S5 终
 | F-002 `INVALID_DATE_FILTER` 未入目录 | required | **fixed**：errorcatalog + 契约冻结集 + en/zh i18n 已补；DomainError `Code:` 字面量纳入契约扫描 | closed |
 | F-003 S5 台账/I-002 过期与 A-007 过述 | required | **fixed**：GOAL-015 00-meta/01-decision/03-audit 权威段刷新为 done·8/8、I-002 closed；子目标 00-meta 信息表同步；A-007 增加修订说明 | closed |
 | F-004 F-01 仅 system.noop 产品残余 | recommended | **响应**：属冻结范围内残余，保持 `system.noop` 单 handler；后续波次可扩展 | closed |
-| F-005 `error.emptySelection` 重复键 | recommended | **待处理**：需合并重复 i18n 键（见 F-005 处置） | open（non-blocking） |
+| F-005 `error.emptySelection` 重复键 | recommended | **fixed**：renderer 改用 `feedback.selectRowFirst`，移除重复 `error.emptySelection` | closed |
 | F-006 回归证据无日志附件 | recommended | **响应**：E-010/A-007 已记录命令与结果；全量回归在本会话实际执行过（Go 全量、Web 1041/1041、build） | closed |
+
+## A-009 响应（编排器）
+
+- F-001（recommended）：**fixed** —— `01-decision.md` I-002 已由 collecting 改为 closed，与 00-meta / 03-audit 一致。
+- A-008 响应表 F-005 同步为 **closed**（代码已修，证据优于索引表）。
+- 无 required finding；A-009 pass 接受。
