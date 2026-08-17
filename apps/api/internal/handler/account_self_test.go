@@ -157,6 +157,48 @@ func TestAccountSessionsListAndRevoke(t *testing.T) {
 	}
 }
 
+func TestAccountSessionsMarksCurrentFromRefreshHeader(t *testing.T) {
+	env := newAuthTestEnv(t)
+	_, login := loginBody(t, env, testSeedUsername, testSeedPassword)
+	access, _ := login["accessToken"].(string)
+	refresh, _ := login["refreshToken"].(string)
+	if access == "" || refresh == "" {
+		t.Fatalf("login tokens missing: %v", login)
+	}
+
+	req := bearer(t, access, http.MethodGet, "/api/account/sessions", "")
+	req.Header.Set("X-Refresh-Token", refresh)
+	req.Header.Set("User-Agent", "w15-session-probe")
+	req.RemoteAddr = "203.0.113.9:443"
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("sessions status = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	var list struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.NewDecoder(rr.Body).Decode(&list); err != nil {
+		t.Fatalf("decode sessions: %v", err)
+	}
+	var current map[string]any
+	for _, row := range list.Items {
+		if row["current"] == true {
+			current = row
+			break
+		}
+	}
+	if current == nil {
+		t.Fatalf("no current session in %v", list.Items)
+	}
+	if current["userAgent"] != "w15-session-probe" {
+		t.Fatalf("userAgent = %v, want w15-session-probe", current["userAgent"])
+	}
+	if current["ip"] != "203.0.113.9" {
+		t.Fatalf("ip = %v, want 203.0.113.9", current["ip"])
+	}
+}
+
 func TestAccountSessionsStatusFilter(t *testing.T) {
 	env := newAuthTestEnv(t)
 	loginBody := `{"username":"admin","password":"test-password"}`

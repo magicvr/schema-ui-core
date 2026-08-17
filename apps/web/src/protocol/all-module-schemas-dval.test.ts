@@ -34,6 +34,47 @@ function collectSchemaFiles(): Array<{ module: string; file: string; abs: string
 	return out;
 }
 
+describe("W15 A-004 schema wiring (shipped page documents)", () => {
+	it("my-wallet.json declares POST /api/wallet/me as openWallet", () => {
+		const abs = resolve(MODULES, "wallet/schema/my-wallet.json");
+		const doc = JSON.parse(readFileSync(abs, "utf8")) as {
+			actions?: { openWallet?: { method?: string; url?: string } };
+			body?: { children?: Array<{ props?: { toolbar?: Array<{ actionRef?: string }> } }> };
+		};
+		expect(doc.actions?.openWallet?.method).toBe("POST");
+		expect(doc.actions?.openWallet?.url).toBe("/api/wallet/me");
+		const toolbar = doc.body?.children?.flatMap((c) => c.props?.toolbar ?? []) ?? [];
+		expect(toolbar.some((item) => item.actionRef === "openWallet")).toBe(true);
+	});
+
+	it("account.json sessions table exposes current, userAgent, and ip", () => {
+		const abs = resolve(MODULES, "account/schema/account.json");
+		const doc = JSON.parse(readFileSync(abs, "utf8")) as {
+			body?: {
+				children?: Array<{
+					children?: Array<{
+						id?: string;
+						props?: { columns?: Array<{ field?: string }> };
+					}>;
+				}>;
+			};
+		};
+		const fields = new Set<string>();
+		for (const child of doc.body?.children ?? []) {
+			for (const inner of child.children ?? []) {
+				if (inner.id === "sessions-table") {
+					for (const col of inner.props?.columns ?? []) {
+						if (col.field !== undefined) fields.add(col.field);
+					}
+				}
+			}
+		}
+		expect(fields.has("current")).toBe(true);
+		expect(fields.has("userAgent")).toBe(true);
+		expect(fields.has("ip")).toBe(true);
+	});
+});
+
 describe("D-VAL · every module page document passes structural validation", () => {
 	const docs = collectSchemaFiles();
 	expect(docs.length).toBeGreaterThan(10);
