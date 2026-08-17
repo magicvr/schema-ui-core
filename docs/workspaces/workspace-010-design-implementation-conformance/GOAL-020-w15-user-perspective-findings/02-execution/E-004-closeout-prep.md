@@ -22,3 +22,4 @@ version: 0.2.0
   - `d40df27` 批 A A-001 修复与关门
   - `cb03a34` 批 B/C 实施与子目标关门
   - `e4b9c54` A-004 响应与 GOAL-020 关门
+  - `45d8f25` A-004 F-001/F-002 驱动测试（sessions handler + shipped schema）
