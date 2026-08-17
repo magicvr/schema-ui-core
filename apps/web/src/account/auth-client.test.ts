@@ -120,6 +120,14 @@ describe("auth-client", () => {
     });
   });
 
+  it("authFetch records a reauth notice after a successful password change (W15-F06)", async () => {
+    setAccessToken("a1");
+    sessionStorage.clear();
+    fetchMock.mockResolvedValueOnce(emptyResponse(204));
+    await authFetch("/api/account/password", { method: "POST", body: "{}" });
+    expect(sessionStorage.getItem("password.changedNotice")).toBe("1");
+  });
+
   it("authFetch attaches the Bearer access token", async () => {
     setAccessToken("access-1");
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));

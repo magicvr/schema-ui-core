@@ -323,7 +323,7 @@ func (s *uploadStore) upload() http.Handler {
 		// W4 P0-2: per-user quota gate before storage. Combined with the
 		// files.write permission gate, a single account cannot fill the disk.
 		if reason, reached := s.quotaReached(user.ID, len(body)); reached {
-			writeLocalizedError(w, r, http.StatusTooManyRequests, "UPLOAD_QUOTA_EXCEEDED", "upload rejected: "+reason)
+			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "UPLOAD_QUOTA_EXCEEDED", "upload rejected: "+reason)
 			return
 		}
 		id, err := s.save(header.Filename, detected, user.ID, body)

@@ -64,6 +64,28 @@ func (l *loginRateLimiter) allow(key string, now time.Time) bool {
 	return true
 }
 
+// retryAfterSeconds is the remaining window after the oldest in-window
+// failure (W15-F10). Zero when the key is allowed.
+func (l *loginRateLimiter) retryAfterSeconds(key string, now time.Time) int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	list := l.attempts[key]
+	if len(list) == 0 {
+		return 0
+	}
+	oldest := list[0]
+	for _, t := range list[1:] {
+		if t.Before(oldest) {
+			oldest = t
+		}
+	}
+	remain := oldest.Add(l.window).Sub(now)
+	if remain <= 0 {
+		return 1
+	}
+	return int(remain.Round(time.Second) / time.Second)
+}
+
 // record registers one failed attempt for the key, creating the map entry if
 // needed. Bounded: when the map exceeds capacity the oldest key is evicted, so
 // an attacker cannot exhaust memory by spraying distinct client identities.

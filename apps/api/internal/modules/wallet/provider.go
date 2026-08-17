@@ -104,6 +104,11 @@ func (s *Service) GetOrCreateUserAccount(ownerID string, now time.Time) (*wallet
 	return s.repo.GetOrCreateUserAccount(ownerID, now)
 }
 
+// GetUserAccountByOwner implements handler.WalletService (W15-F11 read-only).
+func (s *Service) GetUserAccountByOwner(ownerID string) (*walletstore.Account, error) {
+	return s.repo.GetUserAccountByOwner(ownerID)
+}
+
 // Mutate implements handler.WalletService.
 func (s *Service) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error) {
 	if in.Memo == "" {
@@ -153,7 +158,8 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/wallet/accounts", "POST /api/wallet/accounts",
 				"PATCH /api/wallet/accounts/{id}",
-				"GET /api/wallet/by-owner/{ownerId}", "POST /api/wallet/by-owner/{ownerId}/adjust",
+				"GET /api/wallet/by-owner/{ownerId}", "POST /api/wallet/by-owner/{ownerId}",
+				"POST /api/wallet/by-owner/{ownerId}/adjust",
 				"GET /api/wallet/accounts/{id}/entries", "GET /api/wallet/entries",
 				"POST /api/wallet/accounts/{id}/adjust",
 				"POST /api/wallet/accounts/{id}/freeze",
@@ -161,7 +167,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/accounts/{id}/deduct-frozen",
 				"POST /api/wallet/reconcile", "GET /api/wallet/reconcile/runs",
 				// GOAL-022 (D-002 §2): identity-scoped self-service surface.
-				"GET /api/wallet/me", "GET /api/wallet/me/entries",
+				"GET /api/wallet/me", "POST /api/wallet/me", "GET /api/wallet/me/entries",
 			},
 			Pages:       []string{"wallet", "wallet-entries", "my-wallet"},
 			Navigation:  []string{"menu_wallet", "menu_wallet_self"},

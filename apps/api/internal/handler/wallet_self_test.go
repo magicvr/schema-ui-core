@@ -40,6 +40,11 @@ func TestWalletSelfIdentityOnly(t *testing.T) {
 	env.addUser(t, "editor1", "editor-password", []string{"editor"})
 	editorToken := env.login(t, "editor1", "editor-password")
 	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, editorToken, http.MethodPost, "/api/wallet/me", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("editor POST /me = %d %s, want 200", rr.Code, rr.Body.String())
+	}
+	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, editorToken, http.MethodGet, "/api/wallet/me", ""))
 	if rr.Code != http.StatusOK {
 		t.Fatalf("editor /me = %d %s, want 200", rr.Code, rr.Body.String())
@@ -56,8 +61,13 @@ func TestWalletSelfAutoCreateAndIdempotency(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodGet, "/api/wallet/me", ""))
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("GET /me before create = %d, want 404", rr.Code)
+	}
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me", ""))
 	if rr.Code != http.StatusOK {
-		t.Fatalf("first /me = %d %s", rr.Code, rr.Body.String())
+		t.Fatalf("first POST /me = %d %s", rr.Code, rr.Body.String())
 	}
 	var first struct {
 		Items []map[string]any `json:"items"`

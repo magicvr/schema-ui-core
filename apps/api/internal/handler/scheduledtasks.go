@@ -302,7 +302,7 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 				return
 			}
-			pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 50)
+			pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
 			if !ok || pageSize > maxPageSize {
 				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
 				return
@@ -326,17 +326,17 @@ func taskToMap(t tasksstore.Task) map[string]any {
 	return map[string]any{
 		"id": t.ID, "key": t.Key, "cron": t.Cron, "name": t.Name,
 		"enabled": t.Enabled, "description": t.Description, "handler": t.Handler,
-		"createdAt": t.CreatedAt.Unix(), "updatedAt": t.UpdatedAt.Unix(),
+		"createdAt": formatRFC3339Milli(t.CreatedAt), "updatedAt": formatRFC3339Milli(t.UpdatedAt),
 	}
 }
 
 func taskRunToMap(rn tasksstore.TaskRun) map[string]any {
 	row := map[string]any{
 		"id": rn.ID, "taskId": rn.TaskID, "status": rn.Status,
-		"startedAt": rn.StartedAt.Unix(), "detail": rn.Detail,
+		"startedAt": formatRFC3339Milli(rn.StartedAt), "detail": rn.Detail,
 	}
 	if rn.FinishedAt != nil {
-		row["finishedAt"] = rn.FinishedAt.Unix()
+		row["finishedAt"] = formatRFC3339Milli(*rn.FinishedAt)
 	} else {
 		row["finishedAt"] = nil
 	}

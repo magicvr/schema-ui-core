@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -102,6 +103,9 @@ func (h *authHandler) login() http.HandlerFunc {
 		// usernames cannot lock out unrelated clients behind the same proxy.
 		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
 		if h.rateLimiter != nil && !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
+			if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+				w.Header().Set("Retry-After", strconv.Itoa(sec))
+			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
 			return
 		}

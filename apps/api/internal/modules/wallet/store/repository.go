@@ -230,6 +230,31 @@ func (r *Repository) CreateAccount(a Account) error {
 	})
 }
 
+// GetUserAccountByOwner is a read-only lookup (W15-F11). Missing → ErrNotFound.
+func (r *Repository) GetUserAccountByOwner(ownerID string) (*Account, error) {
+	var a Account
+	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+		var created, updated int64
+		err := tx.QueryRow(
+			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
+			OwnerUser, ownerID, DefaultCurrency,
+		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return fmt.Errorf("get wallet account by owner: %w", err)
+		}
+		a.CreatedAt = time.Unix(created, 0)
+		a.UpdatedAt = time.Unix(updated, 0)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
 // GetOrCreateUserAccount returns the user account for ownerID, creating a
 // zero-balance account when absent (GOAL-020 D-001 §1 get-or-create). The
 // UNIQUE(owner_type, owner_id, currency) constraint makes concurrent creates

@@ -15,7 +15,7 @@ func TestWalletDeductFrozenEndpoint(t *testing.T) {
 
 	// Auto-open + grant + freeze.
 	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/ufz", ""))
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/by-owner/ufz", ""))
 	if rr.Code != http.StatusOK {
 		t.Fatalf("open = %d %s", rr.Code, rr.Body.String())
 	}

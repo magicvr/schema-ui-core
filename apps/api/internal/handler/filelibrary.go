@@ -40,7 +40,7 @@ type fileRow struct {
 	Type    string `json:"type"`
 	Size    int64  `json:"size"`
 	Owner   string `json:"owner"`
-	Created int64  `json:"created"`
+	Created string `json:"created"`
 }
 
 func (e *fileLibraryEntity) List(filter resourceFilter) ([]map[string]any, int, error) {
@@ -89,7 +89,7 @@ func (e *fileLibraryEntity) Get(id string) (map[string]any, error) {
 	row := fileRow{ID: id, Name: meta["name"], Type: meta["type"], Owner: meta["owner"]}
 	if info, err := os.Stat(filepath.Join(e.dir, id)); err == nil {
 		row.Size = info.Size()
-		row.Created = info.ModTime().Unix()
+		row.Created = formatRFC3339Milli(info.ModTime())
 	}
 	return fileRowToMap(row), nil
 }
@@ -137,7 +137,7 @@ func (e *fileLibraryEntity) scan() ([]fileRow, error) {
 		row := fileRow{ID: id, Name: meta["name"], Type: meta["type"], Owner: meta["owner"]}
 		if info, err := os.Stat(filepath.Join(e.dir, id)); err == nil {
 			row.Size = info.Size()
-			row.Created = info.ModTime().Unix()
+			row.Created = formatRFC3339Milli(info.ModTime())
 		}
 		rows = append(rows, row)
 	}

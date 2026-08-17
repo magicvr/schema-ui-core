@@ -308,17 +308,27 @@ func (h *accountSelfHandler) sessions() http.Handler {
 		if end > len(all) {
 			end = len(all)
 		}
+		currentHash := ""
+		if raw := strings.TrimSpace(r.Header.Get("X-Refresh-Token")); raw != "" {
+			currentHash = auth.HashToken(raw)
+		}
 		items := make([]map[string]any, 0, end-start)
 		for _, token := range all[start:end] {
 			status := "active"
 			if token.RevokedAt != nil {
 				status = "revoked"
 			}
+			current := currentHash != "" && token.TokenHash == currentHash
 			row := map[string]any{
 				"id":        token.ID,
 				"createdAt": token.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 				"expiresAt": token.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 				"status":    status,
+				"current":   current,
+			}
+			if current {
+				row["userAgent"] = r.UserAgent()
+				row["ip"] = loginClientIP(r)
 			}
 			if token.RevokedAt != nil {
 				row["revokedAt"] = token.RevokedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")

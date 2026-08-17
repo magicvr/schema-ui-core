@@ -49,6 +49,8 @@ function loginErrorKey(code: string): string {
       return "login.error.mfaProofExhausted";
     case "MFA_REQUIRED":
       return "login.error.mfaRequired";
+    case "LOGIN_CANCELLED":
+      return "login.error.generic";
     default:
       return "login.error.generic";
   }
@@ -81,6 +83,10 @@ export function LoginPage({
         sessionStorage.removeItem("mfa.disabledNotice");
         return t("login.mfaDisabledNotice");
       }
+      if (sessionStorage.getItem("password.changedNotice") !== null) {
+        sessionStorage.removeItem("password.changedNotice");
+        return t("schema.account.passwordChangedReauth");
+      }
     } catch {
       // storage unavailable — skip the notice
     }
@@ -101,6 +107,7 @@ export function LoginPage({
   const [mfaCode, setMfaCode] = useState("");
   const [mfaRecovery, setMfaRecovery] = useState("");
   const mfaResolverRef = useRef<((v: { code: string; recoveryCode?: string }) => void) | null>(null);
+  const mfaCancelRef = useRef<(() => void) | null>(null);
   const showSeedHint = import.meta.env.DEV;
 
   useEffect(() => {
@@ -163,8 +170,16 @@ export function LoginPage({
         setMfaPending(proof);
         setMfaCode("");
         setMfaRecovery("");
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           mfaResolverRef.current = resolve;
+          mfaCancelRef.current = () => {
+            mfaResolverRef.current = null;
+            mfaCancelRef.current = null;
+            setMfaPending(null);
+            setMfaCode("");
+            setMfaRecovery("");
+            reject(new AuthError("LOGIN_CANCELLED", "mfa cancelled"));
+          };
         });
       };
       if (captcha === undefined) {
@@ -312,6 +327,17 @@ export function LoginPage({
                   />
                   <Button
                     type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      mfaCancelRef.current?.();
+                    }}
+                  >
+                    {t("feedback.cancel")}
+                  </Button>
+                  <Button
+                    type="button"
+                    data-mfa-verify="true"
                     disabled={mfaCode.trim() === "" && mfaRecovery.trim() === ""}
                     className="w-full"
                     onClick={() => {

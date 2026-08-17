@@ -34,6 +34,8 @@ import (
 const (
 	maxResourceBodyBytes = 4 << 10
 	maxPageSize          = 100
+	// DefaultPageSize is the shared list default (W15-F12).
+	DefaultPageSize = 20
 	// resourceIDRetries bounds PK-collision retries before INTERNAL.
 	resourceIDRetries = 3
 )
@@ -390,7 +392,7 @@ func (h *resourceHandler) list() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 			return
 		}
-		pageSize, ok := intParam(query.Get("pageSize"), 10)
+		pageSize, ok := intParam(query.Get("pageSize"), DefaultPageSize)
 		if !ok {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer")
 			return
@@ -444,7 +446,7 @@ type createFieldError struct {
 	reason string
 }
 
-func (e createFieldError) Error() string { return e.field + " must " + e.reason }
+func (e createFieldError) Error() string { return e.reason }
 
 // decodeResourceCreate parses a POST body. A body that is not a JSON object (or
 // is truncated/oversized) returns a plain error → INVALID_CREATE_BODY; a missing,
@@ -461,15 +463,15 @@ func decodeResourceCreate(r *http.Request, fields, rawStringFields, jsonFields [
 	for _, key := range fields {
 		val, ok := raw[key]
 		if !ok {
-			return nil, createFieldError{key, "not be empty"}
+			return nil, createFieldError{key, "required"}
 		}
 		var s string
 		if err := json.Unmarshal(val, &s); err != nil {
-			return nil, createFieldError{key, "be a string"}
+			return nil, createFieldError{key, "string"}
 		}
 		s = strings.TrimSpace(s)
 		if s == "" {
-			return nil, createFieldError{key, "not be empty"}
+			return nil, createFieldError{key, "required"}
 		}
 		body[key] = s
 	}

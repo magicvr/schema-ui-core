@@ -31,9 +31,21 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 		})
 	}
 
-	// Self summary: get-or-create the session user's account, returned in the
-	// resourceList envelope so schema statCards can bind balance fields.
+	// Self summary: read-only (W15-F11). Missing → 404.
 	add("GET", "/api/wallet/me", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := selfIdentity(w, r)
+		if !ok {
+			return
+		}
+		account, err := service.GetUserAccountByOwner(user.ID)
+		if err != nil {
+			writeWalletError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, resourceList{Items: []map[string]any{accountToMap(*account)}, Total: 1, Page: 1, PageSize: 1})
+	})))
+
+	add("POST", "/api/wallet/me", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := selfIdentity(w, r)
 		if !ok {
 			return
@@ -57,22 +69,17 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 		if !ok {
 			return
 		}
-		now := time.Now().UTC()
-		account, created, err := service.GetOrCreateUserAccount(user.ID, now)
+		account, err := service.GetUserAccountByOwner(user.ID)
 		if err != nil {
 			writeWalletError(w, r, err)
 			return
-		}
-		if created {
-			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate,
-				`{"accountId":`+jsonQuote(account.ID)+`,"ownerId":`+jsonQuote(account.OwnerID)+`,"auto":true}`, now)
 		}
 		page, ok := intParam(r.URL.Query().Get("page"), 1)
 		if !ok {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 			return
 		}
-		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
 		if !ok || pageSize > maxPageSize {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
 			return

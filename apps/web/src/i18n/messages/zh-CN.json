@@ -82,6 +82,8 @@
   "feedback.confirm": "确认",
   "feedback.cancel": "取消",
   "feedback.retry": "重试",
+  "schema.account.passwordChangedReauth": "密码已修改，所有会话已注销，请重新登录。",
+  "feedback.listEmpty": "暂无数据。",
   "feedback.confirmAction": "确认操作",
   "feedback.action": "操作",
   "feedback.recordDetails": "记录详情",

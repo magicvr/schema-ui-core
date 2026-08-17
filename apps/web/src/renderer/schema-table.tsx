@@ -863,7 +863,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         loading={loading}
         error={error === null ? null : t("feedback.resourceFetchFailed")}
         onRetry={() => setRetryNonce((n) => n + 1)}
-        emptyMessage={t("feedback.noItemsMatch")}
+        emptyMessage={query.q ? t("feedback.noItemsMatch") : t("feedback.listEmpty")}
         caption={t("feedback.schemaDrivenItems")}
       />
       {list !== null ? (

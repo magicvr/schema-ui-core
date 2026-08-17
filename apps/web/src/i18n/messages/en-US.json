@@ -82,6 +82,8 @@
   "feedback.confirm": "Confirm",
   "feedback.cancel": "Cancel",
   "feedback.retry": "Retry",
+  "schema.account.passwordChangedReauth": "Password updated. All sessions were signed out. Please sign in again.",
+  "feedback.listEmpty": "No items yet.",
   "feedback.confirmAction": "Confirm action",
   "feedback.action": "Action",
   "feedback.recordDetails": "Record details",

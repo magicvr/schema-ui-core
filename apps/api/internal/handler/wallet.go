@@ -32,6 +32,7 @@ type WalletService interface {
 	// zero-balance account when absent (GOAL-020 D-001 §1). The bool reports
 	// whether this call created the account (auto-audit marker).
 	GetOrCreateUserAccount(ownerID string, now time.Time) (*walletstore.Account, bool, error)
+	GetUserAccountByOwner(ownerID string) (*walletstore.Account, error)
 	Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error)
 	Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error)
 	ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error)
@@ -59,7 +60,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 			return
 		}
-		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
 		if !ok || pageSize > maxPageSize {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
 			return
@@ -77,10 +78,27 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 	})))
 
 
-	// Accounts: get-or-create one user account by owner (GOAL-020 D-001 §1).
-	// The auto-created zero-balance account is audited with an auto marker.
+	// Accounts: read-only lookup by owner (W15-F11). Missing → 404.
 	add("GET", "/api/wallet/by-owner/{ownerId}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r, "wallet.read")
+		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
+			return
+		}
+		ownerID := strings.TrimSpace(r.PathValue("ownerId"))
+		if ownerID == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_OWNER", "ownerId is required")
+			return
+		}
+		account, err := service.GetUserAccountByOwner(ownerID)
+		if err != nil {
+			writeWalletError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, accountToMap(*account))
+	})))
+
+	// Explicit create (POST). GET must stay read-only.
+	add("POST", "/api/wallet/by-owner/{ownerId}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.adjust")
 		if !ok {
 			return
 		}
@@ -286,7 +304,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 			return
 		}
-		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
 		if !ok || pageSize > maxPageSize {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
 			return
@@ -321,7 +339,7 @@ func walletListEntries(w http.ResponseWriter, r *http.Request, service WalletSer
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 		return
 	}
-	pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+	pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
 	if !ok || pageSize > maxPageSize {
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
 		return
@@ -432,6 +450,7 @@ func accountToMap(a walletstore.Account) map[string]any {
 		"status":           a.Status,
 		"version":          a.Version,
 		"updatedAt":        a.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"decimals":         2,
 	}
 }
 

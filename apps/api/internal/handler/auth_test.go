@@ -306,6 +306,9 @@ func TestLoginRateLimit(t *testing.T) {
 	if out["error"] != "RATE_LIMITED" {
 		t.Fatalf("over-limit code = %q, want RATE_LIMITED", out["error"])
 	}
+	if rr.Header().Get("Retry-After") == "" {
+		t.Fatal("RATE_LIMITED missing Retry-After")
+	}
 
 	// A correct password is still rejected under lockout (fail-closed).
 	// The nonexistent user is rate-limited per-IP but never account-locked.

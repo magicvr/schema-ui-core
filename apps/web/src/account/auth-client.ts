@@ -174,6 +174,10 @@ function withAuth(init?: RequestInit): RequestInit {
   if (access !== null) {
     headers.set("Authorization", `Bearer ${access}`);
   }
+  const refresh = getRefreshToken();
+  if (refresh !== null) {
+    headers.set("X-Refresh-Token", refresh);
+  }
   // VP-007 S4: attach the active locale so the server negotiates messages.
   headers.set("Accept-Language", getActiveLocale());
   return { ...init, headers };
@@ -195,6 +199,13 @@ function isAuthEndpoint(input: RequestInfo | URL): boolean {
  */
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let response = await fetch(input, withAuth(init));
+  if (response.ok && String(input).includes("/api/account/password")) {
+    try {
+      sessionStorage.setItem("password.changedNotice", "1");
+    } catch {
+      // storage unavailable
+    }
+  }
   if (response.status === 401 && !isAuthEndpoint(input)) {
     const refreshed = await refreshAccess();
     if (refreshed) {

@@ -137,9 +137,8 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	env, _ := newWalletEnv(t)
 	adminToken := env.login(t, testSeedUsername, testSeedPassword)
 
-	// Account auto-created by the system (GOAL-020 get-or-create).
 	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/u1", ""))
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/by-owner/u1", ""))
 	if rr.Code != http.StatusOK {
 		t.Fatalf("by-owner open = %d %s", rr.Code, rr.Body.String())
 	}
@@ -259,7 +258,7 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	adminToken := env.login(t, testSeedUsername, testSeedPassword)
 
 	rr := httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/u9", ""))
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/by-owner/u9", ""))
 	if rr.Code != http.StatusOK {
 		t.Fatal("by-owner open failed")
 	}

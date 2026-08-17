@@ -276,7 +276,7 @@ func dictTypeToMap(t datadictionarystore.DictType) map[string]any {
 	return map[string]any{
 		"id": t.ID, "key": t.Key, "name": t.Name, "enabled": t.Enabled,
 		"description": t.Description, "sort": t.Sort,
-		"createdAt": t.CreatedAt.Unix(), "updatedAt": t.UpdatedAt.Unix(),
+		"createdAt": formatRFC3339Milli(t.CreatedAt), "updatedAt": formatRFC3339Milli(t.UpdatedAt),
 	}
 }
 
@@ -284,7 +284,7 @@ func dictEntryToMap(e datadictionarystore.DictEntry) map[string]any {
 	return map[string]any{
 		"id": e.ID, "dictKey": e.DictKey, "dictTypeName": e.DictTypeName, "entryKey": e.EntryKey, "label": e.Label,
 		"enabled": e.Enabled, "sort": e.Sort, "remark": e.Remark,
-		"createdAt": e.CreatedAt.Unix(), "updatedAt": e.UpdatedAt.Unix(),
+		"createdAt": formatRFC3339Milli(e.CreatedAt), "updatedAt": formatRFC3339Milli(e.UpdatedAt),
 	}
 }
 

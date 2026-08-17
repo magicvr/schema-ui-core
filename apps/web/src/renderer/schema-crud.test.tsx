@@ -476,7 +476,7 @@ describe("T-UI-01 · list loads and empty state", () => {
   it("shows the empty message when the data source has no rows", async () => {
     const api = createUsersApi([]);
     const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
-    expect(container.textContent).toContain("No items match.");
+    expect(container.textContent).toContain("No items yet.");
   });
 });
 

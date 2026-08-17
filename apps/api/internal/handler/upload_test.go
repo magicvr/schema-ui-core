@@ -437,8 +437,8 @@ func TestUploadPerUserQuota(t *testing.T) {
 	if code := uploadOne(); code != http.StatusOK {
 		t.Fatalf("second upload = %d, want 200", code)
 	}
-	if code := uploadOne(); code != http.StatusTooManyRequests {
-		t.Fatalf("third upload = %d, want 429 (quota)", code)
+	if code := uploadOne(); code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("third upload = %d, want 413 (quota)", code)
 	}
 	_ = os.RemoveAll(env.uploadDir)
 }

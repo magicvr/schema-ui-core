@@ -83,7 +83,7 @@ describe("LoginPage", () => {
     // The code stage is now visible while the login promise stays pending.
     expect(container.querySelector('[data-mfa-stage]')).not.toBeNull();
     fill(container, "#mfaCode", "123456");
-    const verify = container.querySelector<HTMLButtonElement>('[data-mfa-stage] button[type="button"]');
+    const verify = container.querySelector<HTMLButtonElement>("[data-mfa-verify]");
     expect(verify).not.toBeNull();
     await act(async () => verify!.click());
 

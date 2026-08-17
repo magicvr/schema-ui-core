@@ -1148,6 +1148,9 @@ function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
   // feedback occurrence, so the timer always starts fresh.
   useEffect(() => {
     setDismissed(false);
+    if (feedback.kind === "error") {
+      return;
+    }
     const timer = window.setTimeout(() => setDismissed(true), FEEDBACK_TOAST_MS);
     return () => window.clearTimeout(timer);
   }, [feedback]);

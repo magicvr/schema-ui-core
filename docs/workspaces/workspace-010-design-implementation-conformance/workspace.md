@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-17
-version: 0.24.0
+version: 0.25.0
 parent: null
 ---
 
@@ -63,8 +63,10 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W14-批C | GOAL-017-w14-rectification-batch-c（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-08～F-10 调试痕迹清理实施完成；S1 冻结 D-001、S2/S3 回归 Web 全量 1041/1041 + tsc + build、A-001 self pass） |
 | W14-批D | GOAL-018-w14-rectification-batch-d（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-11～F-14 表单与无障碍实施完成；S1 冻结 D-001、S2/S3 回归 Web 全量 1041/1041 + tsc + build、A-001 self pass） |
 | W14-批B | GOAL-019-w14-rectification-batch-b（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-05～F-07 一致性硬化实施完成；S1 冻结 D-001、S2/S3 回归 Go 全量 + Web 全量 1041/1041 + tsc + build、A-001 independent fail→fixed + A-002 self pass） |
-| W15 | GOAL-020-w15-user-perspective-findings | **active**（6/8 · 2026-08-17：批 A 已关门；批 B/C 待开） |
-| W15-批A | GOAL-021-w15-rectification-batch-a（**GOAL-020 下级**） | **done**（4/4 · 2026-08-17：F01/F02/F04/F05/F07；A-001 required fixed） |
+| W15 | GOAL-020-w15-user-perspective-findings | **active**（8/8 · 待关门审计） |
+| W15-批A | GOAL-021-w15-rectification-batch-a（**GOAL-020 下级**） | **done** 4/4 |
+| W15-批B | GOAL-022-w15-rectification-batch-b（**GOAL-020 下级**） | **done** 4/4 |
+| W15-批C | GOAL-023-w15-rectification-batch-c（**GOAL-020 下级**） | **done** 4/4 |
 
 ## 固定共享资料引用
 

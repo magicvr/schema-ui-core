@@ -20,17 +20,26 @@ func (s *walletServiceStub) GetOrCreateUserAccount(ownerID string, now time.Time
 	return s.repo.GetOrCreateUserAccount(ownerID, now)
 }
 
+func (s *walletServiceStub) GetUserAccountByOwner(ownerID string) (*walletstore.Account, error) {
+	return s.repo.GetUserAccountByOwner(ownerID)
+}
+
 // D-001 §1: by-owner get-or-create — auto-created zero-balance account
 // (audited with auto marker); repeated reads return the same row.
 func TestWalletByOwnerAutoCreate(t *testing.T) {
 	env, _ := newWalletEnv(t)
 	adminToken := env.login(t, testSeedUsername, testSeedPassword)
 
-	// First read creates the account.
+	// GET is read-only (W15-F11): missing owner is 404 until POST creates.
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/u100", ""))
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("by-owner missing GET = %d %s, want 404", rr.Code, rr.Body.String())
+	}
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/by-owner/u100", ""))
 	if rr.Code != http.StatusOK {
-		t.Fatalf("by-owner read = %d %s", rr.Code, rr.Body.String())
+		t.Fatalf("by-owner create = %d %s", rr.Code, rr.Body.String())
 	}
 	var first map[string]any
 	if err := json.Unmarshal(rr.Body.Bytes(), &first); err != nil {
