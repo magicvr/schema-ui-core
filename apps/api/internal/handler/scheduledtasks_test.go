@@ -123,6 +123,28 @@ func TestScheduledTasksPermissionGates(t *testing.T) {
 	}
 }
 
+// W14 F-05 (GOAL-019): per-task run history honours page/pageSize instead of a
+// hard-coded 50-row page.
+func TestScheduledTaskRunsPagination(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+	id := taskCreate(t, env, admin, "paginated-runs", "*/5 * * * *", "Paginated")
+	for i := 0; i < 3; i++ {
+		code, _ := bearerJSON(t, env, admin, http.MethodPost, "/api/scheduled-tasks/"+id+"/run", "")
+		if code != http.StatusNoContent {
+			t.Fatalf("run %d = %d", i, code)
+		}
+	}
+	code, body := getResourceAs(t, env, admin, "/api/scheduled-tasks/"+id+"/runs?pageSize=1")
+	if code != http.StatusOK || body["total"] != float64(3) {
+		t.Fatalf("runs page = %d %v, want total 3", code, body)
+	}
+	items, _ := body["items"].([]any)
+	if len(items) != 1 {
+		t.Fatalf("runs page items = %d, want 1", len(items))
+	}
+}
+
 // F-01 (W14 D-003): the handler directory endpoint lists registered keys.
 func TestScheduledTasksHandlersDirectory(t *testing.T) {
 	env := newAuthTestEnv(t)

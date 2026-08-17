@@ -92,11 +92,11 @@ func (s *Service) UpdateStatus(id, status string, version int64, now time.Time) 
 }
 
 // ListEntries implements handler.WalletService.
-func (s *Service) ListEntries(accountID string, page, pageSize int) ([]walletstore.LedgerEntry, int, error) {
+func (s *Service) ListEntries(accountID, entryType, q string, page, pageSize int) ([]walletstore.LedgerEntry, int, error) {
 	if _, err := s.repo.GetAccount(accountID); err != nil {
 		return nil, 0, err
 	}
-	return s.repo.ListEntries(accountID, page, pageSize)
+	return s.repo.ListEntries(accountID, entryType, q, page, pageSize)
 }
 
 // GetOrCreateUserAccount implements handler.WalletService (GOAL-020 D-001 §1).

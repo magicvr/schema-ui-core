@@ -404,7 +404,7 @@ func newTestRecycleService() *testRecycleService {
 	return &testRecycleService{}
 }
 
-func (s *testRecycleService) ListItems(resource, q string, page, pageSize int) ([]RecycleItem, int, error) {
+func (s *testRecycleService) ListItems(resource, q, sortField, order string, page, pageSize int) ([]RecycleItem, int, error) {
 	var out []RecycleItem
 	for _, item := range s.items {
 		if resource != "" && item.Resource != resource {

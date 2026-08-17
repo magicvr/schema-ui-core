@@ -1,12 +1,12 @@
 ---
 id: GOAL-019-w14-rectification-batch-b
 title: W14 整改批 B · 数据一致性与健壮性（F-05 列表端点校验 / F-06 错误码与目录 / F-07 搜索排序一致性）
-status: active
+status: done
 parent: GOAL-015-w14-user-perspective-review
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-019 · W14 整改批 B（F-05～F-07 一致性硬化）
@@ -23,12 +23,12 @@ progress: 0/4
 
 ## 成功标准与路线图（P-001）
 
-- [ ] **S1 · 方案冻结**：F-05～F-07 具体契约变更与兼容性评估
-- [ ] **S2 · 实施**：API handler/repository/schema 修改
-- [ ] **S3 · 测试与回归**：Go 全量 + Web 相关 + tsc（如涉前端）
-- [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
+- [x] **S1 · 方案冻结**：F-05～F-07 具体契约变更与兼容性评估
+- [x] **S2 · 实施**：API handler/repository/schema 修改
+- [x] **S3 · 测试与回归**：Go 全量 + Web 相关 + tsc（如涉前端）
+- [x] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **0/4**（本子目标 2026-08-17 在批 D 关门后渐进添加，尚未开工）。
+progress: 由四个等权检查点派生（S1～S4）；当前 **4/4**（S1～S4 完成，2026-08-17 关门）。
 
 ## 审计策略
 

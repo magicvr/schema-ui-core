@@ -297,7 +297,17 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 				return
 			}
 			id := r.PathValue("id")
-			rows, total, err := repository.ListTaskRuns(id, tasksstore.ListFilter{Page: 1, PageSize: 50})
+			page, ok := intParam(r.URL.Query().Get("page"), 1)
+			if !ok {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+				return
+			}
+			pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 50)
+			if !ok || pageSize > maxPageSize {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+				return
+			}
+			rows, total, err := repository.ListTaskRuns(id, tasksstore.ListFilter{Page: page, PageSize: pageSize})
 			if err != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list task runs")
 				return
@@ -306,7 +316,7 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 			for _, row := range rows {
 				items = append(items, taskRunToMap(row))
 			}
-			writeJSON(w, http.StatusOK, resourceList{Items: items, Total: total, Page: 1, PageSize: 50})
+			writeJSON(w, http.StatusOK, resourceList{Items: items, Total: total, Page: page, PageSize: pageSize})
 		})),
 	})
 	return routes

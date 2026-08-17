@@ -62,8 +62,28 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		if policies == nil {
 			policies = []datapermissionstore.Policy{}
 		}
-		items := make([]map[string]any, 0, len(policies))
-		for _, policy := range policies {
+		page, ok := intParam(r.URL.Query().Get("page"), 1)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			return
+		}
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		if !ok || pageSize > maxPageSize {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+			return
+		}
+		total := len(policies)
+		start := (page - 1) * pageSize
+		if start > total {
+			start = total
+		}
+		end := start + pageSize
+		if end > total {
+			end = total
+		}
+		pagePolicies := policies[start:end]
+		items := make([]map[string]any, 0, len(pagePolicies))
+		for _, policy := range pagePolicies {
 			items = append(items, map[string]any{
 				"resource":     policy.Resource,
 				"ownerColumn":  policy.OwnerColumn,
@@ -72,11 +92,7 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 				"updatedAt":    policy.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 			})
 		}
-		pageSize := len(items)
-		if pageSize < 1 {
-			pageSize = 1
-		}
-		writeJSON(w, http.StatusOK, resourceList{Items: items, Total: len(items), Page: 1, PageSize: pageSize})
+		writeJSON(w, http.StatusOK, resourceList{Items: items, Total: total, Page: page, PageSize: pageSize})
 	})))
 
 	// Policies: register/update one resource policy (audited). The resource
@@ -96,17 +112,17 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "body must be JSON with resource, ownerColumn and defaultScope")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "body must be JSON with resource, ownerColumn and defaultScope")
 			return
 		}
 		resource := strings.TrimSpace(body.Resource)
 		if resource == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "resource is required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "resource is required")
 			return
 		}
 		// default_scope is REQUIRED (A-004 F-001: no implicit default).
 		if strings.TrimSpace(body.DefaultScope) == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "defaultScope is required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "defaultScope is required")
 			return
 		}
 		enabled := true
@@ -130,7 +146,7 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		}
 		userID := strings.TrimSpace(r.URL.Query().Get("userId"))
 		if userID == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "userId is required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "userId is required")
 			return
 		}
 		assignments, err := service.ListAssignments(userID)
@@ -156,15 +172,15 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "body must be JSON with userId and scopes")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "body must be JSON with userId and scopes")
 			return
 		}
 		if strings.TrimSpace(body.UserID) == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "userId is required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "userId is required")
 			return
 		}
 		if len(body.Scopes) == 0 {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE", "scopes must not be empty")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SCOPE_BODY", "scopes must not be empty")
 			return
 		}
 		now := time.Now().UTC()

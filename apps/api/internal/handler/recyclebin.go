@@ -31,7 +31,7 @@ type RecycleItem struct {
 // RecycleBinService is the surface the recycle routes consume (satisfied
 // structurally by the admin.recycle-bin module Service).
 type RecycleBinService interface {
-	ListItems(resource, q string, page, pageSize int) ([]RecycleItem, int, error)
+	ListItems(resource, q, sortField, order string, page, pageSize int) ([]RecycleItem, int, error)
 	GetItem(id string) (*RecycleItem, error)
 	Restore(id string, now time.Time) (map[string]any, error)
 	Purge(id string) error
@@ -50,9 +50,33 @@ func RecycleBinRoutes(a *auth.Authenticator, service RecycleBinService, operatio
 			if _, ok := requirePermission(w, r, "recycle.read"); !ok {
 				return
 			}
-			page, _ := intParam(r.URL.Query().Get("page"), 1)
-			pageSize, _ := intParam(r.URL.Query().Get("pageSize"), 20)
-			items, total, err := service.ListItems(r.URL.Query().Get("resource"), r.URL.Query().Get("q"), page, pageSize)
+			page, ok := intParam(r.URL.Query().Get("page"), 1)
+			if !ok {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+				return
+			}
+			pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+			if !ok || pageSize > maxPageSize {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+				return
+			}
+			sortField := r.URL.Query().Get("sort")
+			if sortField == "" {
+				sortField = "deletedAt"
+			}
+			if sortField != "deletedAt" && sortField != "resource" && sortField != "actorName" {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SORT_FIELD", "unsupported sort field")
+				return
+			}
+			order := r.URL.Query().Get("order")
+			if order == "" {
+				order = "desc"
+			}
+			if order != "asc" && order != "desc" {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SORT_ORDER", "order must be asc or desc")
+				return
+			}
+			items, total, err := service.ListItems(r.URL.Query().Get("resource"), r.URL.Query().Get("q"), sortField, order, page, pageSize)
 			if err != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list recycle items")
 				return

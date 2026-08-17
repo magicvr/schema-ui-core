@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -146,8 +147,9 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 		where := "WHERE 1=1"
 		args := []any{}
 		if filter.Q != "" {
-			where += " AND owner_id LIKE ?"
-			args = append(args, "%"+filter.Q+"%")
+			where += " AND (owner_id LIKE ? OR owner_type LIKE ? OR currency LIKE ?)"
+			like := "%" + filter.Q + "%"
+			args = append(args, like, like, like)
 		}
 		if filter.OwnerType != "" {
 			where += " AND owner_type = ?"
@@ -498,12 +500,24 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 	return &account, &entry, nil
 }
 
-// ListEntries returns the ledger of one account, newest first.
-func (r *Repository) ListEntries(accountID string, page, pageSize int) ([]LedgerEntry, int, error) {
+// ListEntries returns the ledger of one account, newest first. entryType, when
+// non-empty, filters to one entry type; q searches memo/ref fields (W14 F-07).
+func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize int) ([]LedgerEntry, int, error) {
 	entries := []LedgerEntry{}
 	total := 0
 	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_ledger_entries WHERE account_id = ?", accountID).Scan(&total); err != nil {
+		where := "WHERE account_id = ?"
+		args := []any{accountID}
+		if entryType != "" {
+			where += " AND entry_type = ?"
+			args = append(args, entryType)
+		}
+		if q != "" {
+			where += " AND (instr(lower(COALESCE(memo,'')), ?) > 0 OR instr(lower(COALESCE(ref_type,'')), ?) > 0 OR instr(lower(COALESCE(ref_id,'')), ?) > 0)"
+			lq := strings.ToLower(q)
+			args = append(args, lq, lq, lq)
+		}
+		if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_ledger_entries "+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count wallet entries: %w", err)
 		}
 		if page < 1 {
@@ -512,10 +526,11 @@ func (r *Repository) ListEntries(accountID string, page, pageSize int) ([]Ledger
 		if pageSize < 1 {
 			pageSize = 20
 		}
+		queryArgs := append(append([]any{}, args...), pageSize, (page-1)*pageSize)
 		rows, err := tx.Query(
 			`SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at
-			 FROM wallet_ledger_entries WHERE account_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
-			accountID, pageSize, (page-1)*pageSize,
+			 FROM wallet_ledger_entries `+where+` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
+			queryArgs...,
 		)
 		if err != nil {
 			return fmt.Errorf("list wallet entries: %w", err)

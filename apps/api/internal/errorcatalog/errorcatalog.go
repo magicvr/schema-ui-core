@@ -135,10 +135,14 @@ var Catalog = map[string]Entry{
 
 	// S-09 (GOAL-016 D-002 §3): data-permission codes.
 	"INVALID_SCOPE":          {"error.invalidScope", "scope must be all or self", "数据范围必须是 all 或 self"},
+	"INVALID_SCOPE_BODY":     {"error.invalidScopeBody", "body must be JSON with userId and scopes", "请求体必须是包含 userId 和 scopes 的 JSON"},
 	"SCOPE_NOT_ENFORCEABLE":  {"error.scopeNotEnforceable", "resource is not wired for row-level scoping", "该资源未接入行级数据范围"},
 
 	// S-14 (GOAL-019 D-002 §3): wallet codes.
 	"INVALID_WALLET_BODY":       {"error.invalidWalletBody", "body must be JSON with ownerType and ownerId", "请求体必须是包含 ownerType 和 ownerId 的 JSON"},
+	"INVALID_WALLET_OWNER":      {"error.invalidWalletOwner", "ownerId is required", "缺少 ownerId"},
+	"INVALID_WALLET_ACCOUNT":    {"error.invalidWalletAccount", "accountId is required", "缺少 accountId"},
+	"INVALID_WALLET_STATUS":     {"error.invalidWalletStatus", "status must be active or disabled", "状态必须是 active 或 disabled"},
 	"WALLET_NOT_FOUND":          {"error.walletNotFound", "wallet account not found", "钱包账户不存在"},
 	"WALLET_OWNER_TAKEN":        {"error.walletOwnerTaken", "an account for that owner already exists", "该持有方已存在钱包账户"},
 	"WALLET_DISABLED":           {"error.walletDisabled", "wallet account is disabled", "钱包账户已停用"},
@@ -148,6 +152,9 @@ var Catalog = map[string]Entry{
 	"INVALID_LEDGER_ENTRY":      {"error.invalidLedgerEntry", "invalid ledger entry", "非法账本流水"},
 	// GOAL-020 D-001 §2: user wallet accounts are auto-created (get-or-create).
 	"WALLET_USER_AUTO_ONLY":     {"error.walletUserAutoOnly", "user wallet accounts are created automatically", "用户钱包账户由系统自动创建"},
+
+	// W14 F-06 (GOAL-019): operations detail not found (previously uncataloged).
+	"OPERATION_NOT_FOUND": {"error.operationNotFound", "no operation with that id", "没有该 id 对应的操作日志"},
 
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
 	"RECYCLE_ITEM_NOT_FOUND":  {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},

@@ -1,11 +1,11 @@
 ---
 id: GOAL-015-w14-user-perspective-review
 doc: decision
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 决策记录 · GOAL-015

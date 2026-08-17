@@ -108,8 +108,8 @@ func (s *Service) Get(itemID string) (*recyclestore.Item, error) {
 }
 
 // ListItems adapts the store list to the handler surface (S-12 · GOAL-012 §3).
-func (s *Service) ListItems(resource, q string, page, pageSize int) ([]handler.RecycleItem, int, error) {
-	items, total, err := s.repository.List(recyclestore.ListFilter{Resource: resource, Q: q, Page: page, PageSize: pageSize})
+func (s *Service) ListItems(resource, q, sortField, order string, page, pageSize int) ([]handler.RecycleItem, int, error) {
+	items, total, err := s.repository.List(recyclestore.ListFilter{Resource: resource, Q: q, Sort: sortField, Order: order, Page: page, PageSize: pageSize})
 	if err != nil {
 		return nil, 0, err
 	}

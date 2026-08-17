@@ -10,6 +10,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -66,9 +67,19 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate,
 				`{"accountId":`+jsonQuote(account.ID)+`,"ownerId":`+jsonQuote(account.OwnerID)+`,"auto":true}`, now)
 		}
-		page, _ := intParam(r.URL.Query().Get("page"), 1)
-		pageSize, _ := intParam(r.URL.Query().Get("pageSize"), 20)
-		entries, total, err := service.ListEntries(account.ID, page, pageSize)
+		page, ok := intParam(r.URL.Query().Get("page"), 1)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			return
+		}
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		if !ok || pageSize > maxPageSize {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+			return
+		}
+		entryType := strings.TrimSpace(r.URL.Query().Get("entryType"))
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		entries, total, err := service.ListEntries(account.ID, entryType, q, page, pageSize)
 		if err != nil {
 			writeWalletError(w, r, err)
 			return

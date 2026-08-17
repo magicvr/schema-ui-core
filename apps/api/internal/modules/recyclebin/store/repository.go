@@ -95,6 +95,13 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 		if filter.Order == "asc" {
 			order = "ASC"
 		}
+		sortColumn := "deleted_at"
+		switch filter.Sort {
+		case "resource":
+			sortColumn = "resource"
+		case "actorName":
+			sortColumn = "actor_name"
+		}
 		page := filter.Page
 		if page < 1 {
 			page = 1
@@ -109,7 +116,7 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM recycle_items `+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count recycle items: %w", err)
 		}
-		query := `SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items ` + where + ` ORDER BY deleted_at ` + order + ` LIMIT ? OFFSET ?`
+		query := `SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items ` + where + ` ORDER BY ` + sortColumn + ` ` + order + `, id DESC LIMIT ? OFFSET ?`
 		queryArgs := append(append([]any{}, args...), pageSize, (page-1)*pageSize)
 		rows, err := tx.Query(query, queryArgs...)
 		if err != nil {

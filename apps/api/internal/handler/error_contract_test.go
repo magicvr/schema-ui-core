@@ -48,13 +48,13 @@ var frozenLiteralCodes = []string{
 	// S-11 (GOAL-011 D-002 §2): login captcha code.
 	"INVALID_CAPTCHA",
 	// S-09 (GOAL-016 D-002 §3): data-permission codes.
-	"INVALID_SCOPE", "SCOPE_NOT_ENFORCEABLE",
+	"INVALID_SCOPE", "INVALID_SCOPE_BODY", "SCOPE_NOT_ENFORCEABLE",
 	// S-10 (GOAL-017 D-002 §3/§4): MFA codes.
 	"INVALID_MFA_BODY", "MFA_INVALID", "MFA_PROOF_EXPIRED", "MFA_PROOF_EXHAUSTED", "MFA_NOT_ENROLLED", "MFA_PENDING_ONLY", "MFA_ALREADY_ACTIVE",
 	// W9 (GOAL-010 D-001): brand asset upload codes.
 	"ASSET_NOT_FOUND", "INVALID_KIND",
 	// S-14 (GOAL-019 D-002 §3): wallet codes.
-	"INVALID_WALLET_BODY", "WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED",
+	"INVALID_WALLET_BODY", "INVALID_WALLET_OWNER", "INVALID_WALLET_ACCOUNT", "INVALID_WALLET_STATUS", "WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED",
 	"INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY",
 	// GOAL-020 (D-001 §2): user accounts are auto-created.
 	"WALLET_USER_AUTO_ONLY",
@@ -79,9 +79,12 @@ var frozenDomainCodes = []string{
 	"TASK_NOT_FOUND", "TASK_RUN_NOT_FOUND", "TASK_KEY_TAKEN", "INVALID_CRON", "INVALID_HANDLER",
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
 	"RECYCLE_ITEM_NOT_FOUND", "RECYCLE_RESTORE_CONFLICT", "RECYCLE_ITEM_ALREADY_RESTORED",
+	// W14 F-06 (GOAL-019): operations detail not found.
+	"OPERATION_NOT_FOUND",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)
+var notFoundCodePattern = regexp.MustCompile(`NotFoundCode:\s*"([A-Z_]+)"`)
 
 func collectCodeLiterals(t *testing.T) map[string]bool {
 	t.Helper()
@@ -103,6 +106,9 @@ func collectCodeLiterals(t *testing.T) map[string]bool {
 				t.Fatalf("read %s: %v", entry.Name(), err)
 			}
 			for _, match := range codeLiteralPattern.FindAllStringSubmatch(string(src), -1) {
+				found[match[1]] = true
+			}
+			for _, match := range notFoundCodePattern.FindAllStringSubmatch(string(src), -1) {
 				found[match[1]] = true
 			}
 		}

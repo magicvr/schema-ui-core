@@ -43,11 +43,11 @@ func (s *walletServiceStub) CreateAccount(ownerType, ownerID, currency string, n
 func (s *walletServiceStub) UpdateStatus(id, status string, version int64, now time.Time) (*walletstore.Account, error) {
 	return s.repo.UpdateStatus(id, status, version, now)
 }
-func (s *walletServiceStub) ListEntries(accountID string, page, pageSize int) ([]walletstore.LedgerEntry, int, error) {
+func (s *walletServiceStub) ListEntries(accountID, entryType, q string, page, pageSize int) ([]walletstore.LedgerEntry, int, error) {
 	if _, err := s.repo.GetAccount(accountID); err != nil {
 		return nil, 0, err
 	}
-	return s.repo.ListEntries(accountID, page, pageSize)
+	return s.repo.ListEntries(accountID, entryType, q, page, pageSize)
 }
 func (s *walletServiceStub) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error) {
 	if in.Memo == "" {

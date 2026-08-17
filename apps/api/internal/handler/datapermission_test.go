@@ -107,6 +107,36 @@ func mountDataPermissionRoutes(t *testing.T, env *authTestEnv, service DataPermi
 	mountRoutes(DataPermissionRoutes(env.a, service, env.operations, "admin.data-permission"))
 }
 
+// W14 F-05 (GOAL-019): policies list honours real pagination instead of a fake
+// pageSize.
+func TestDataPermissionPoliciesPagination(t *testing.T) {
+	env := newAuthTestEnv(t)
+	service := newFakeDataPermissionService("orders", "invoices")
+	_ = service.UpsertPolicy("orders", "owner_id", "self", true, time.Now())
+	_ = service.UpsertPolicy("invoices", "owner_id", "all", true, time.Now())
+	mountDataPermissionRoutes(t, env, service)
+	token := adminToken(t, env)
+
+	req := bearer(t, token, http.MethodGet, "/api/data-permission/policies?pageSize=1", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("list policies = %d", rr.Code)
+	}
+	var list struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+		Page  int              `json:"page"`
+		PageSize int           `json:"pageSize"`
+	}
+	if err := json.NewDecoder(rr.Body).Decode(&list); err != nil {
+		t.Fatal(err)
+	}
+	if list.Total != 2 || len(list.Items) != 1 || list.PageSize != 1 || list.Page != 1 {
+		t.Fatalf("policies pagination = %+v, want total 2, one item, pageSize 1", list)
+	}
+}
+
 // S-09 (GOAL-016 D-002 §3): gates — anonymous 401, authenticated without the
 // key 403.
 func TestDataPermissionRoutesGates(t *testing.T) {
@@ -141,11 +171,11 @@ func TestDataPermissionRoutesPolicyLifecycle(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusBadRequest, "SCOPE_NOT_ENFORCEABLE")
 
-	// Missing defaultScope → 400 INVALID_SCOPE.
+	// Missing defaultScope → 400 INVALID_SCOPE_BODY.
 	req = bearer(t, token, http.MethodPatch, "/api/data-permission/policies", `{"resource":"orders","ownerColumn":"owner_id"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
-	expectError(t, rr, http.StatusBadRequest, "INVALID_SCOPE")
+	expectError(t, rr, http.StatusBadRequest, "INVALID_SCOPE_BODY")
 
 	// Wired resource → 200 + list shows it.
 	req = bearer(t, token, http.MethodPatch, "/api/data-permission/policies", `{"resource":"orders","ownerColumn":"owner_id","defaultScope":"self"}`)

@@ -1,11 +1,11 @@
 ---
 id: GOAL-015-w14-user-perspective-review
 doc: audit
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 审计 · GOAL-015
@@ -30,6 +30,7 @@ version: 0.6.0
 | A-004 | 2026-08-17 | self | 关门回退（P-004 违规整改与状态回退） | conditional | 无新增；I-001 开放 required 待用户裁决 | `03-audit/A-004-closeout-reverted-self.md` |
 | A-005 | 2026-08-17 | self | S4 关门自审（I-001 用户书面裁决 D-003 为据） | pass（**superseded**：关门结论被用户结构裁决否定，见 E-005/A-006） | — | `03-audit/A-005-closeout-self.md` |
 | A-006 | 2026-08-17 | self | 结构修正（GOAL-015 保持 active；整改子目标挂 GOAL-015 下） | pass | 无 | `03-audit/A-006-structure-correction-self.md` |
+| A-007 | 2026-08-17 | self | S5 关门终审（全部整改子目标 done） | pass | 无 | `03-audit/A-007-s5-closeout-self.md` |
 
 ## 结论状态
 
@@ -40,4 +41,4 @@ version: 0.6.0
 - A-005 self **pass（superseded）**：关门结论已被用户结构裁决否定（GOAL-015 整改完成前不得 done）。
 - A-006 self **pass**：结构修正落地——GOAL-015 **active · 4/8**（S1～S4 完成；R1～R4 整改子目标 + S5 关门待推进）；GOAL-016 更名 w14 批 A 挂 GOAL-015 下；I-001 裁决（D-003）作整改范围输入；goal-tree / workspace 与 00-meta 一致。
 
-GOAL-015 现为 **active（4/8）**，关门出口 = R1～R4 全部整改子目标 done + S5 终审；在此前不得再次标记 done。整改批 A 由 [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md) 承接，批 C/D/B 渐进添加。
+GOAL-015 现为 **done（8/8）**：R1～R4 全部整改子目标完成，S5 终审通过；W14 波次正式关门。

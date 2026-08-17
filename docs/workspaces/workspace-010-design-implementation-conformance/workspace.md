@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-17
-version: 0.20.0
+version: 0.21.0
 parent: null
 ---
 
@@ -58,11 +58,11 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W11 | GOAL-012-w11-mfa-ux-review | **done**（5/5 · 2026-08-15 关门：MFA 三缺陷修复 + UX P0/P1 实施；A-001 self pass + A-002 grok independent conditional→resolved + A-003 closeout self pass；Go 全量 + Web 1002/1002；go 无影响不暂挂） |
 | W12 | GOAL-013-w12-product-surface-intent | **done**（4/4 · 2026-08-16 关门：T-05/T-01/T-03/T-02/T-06 实施；T-04 移交 GOAL-022；回归 Go 0 FAIL + Web 1027/1027；A-001 self pass + A-002 grok conditional（F-001 fixed / F-003·F-004 fixed / F-005 accepted）；T-06 go 判定不暂挂） |
 | W13 | GOAL-014-w13-settings-tabs-and-topbar | **done**（4/4 · 2026-08-16 五次关门：设置页功能单元 Tabs + 移动端品牌条 + 汉堡靠左 + 搜索框组贴合 + 顶栏明暗/语种按键对调 + 个人中心头像上传（T-05）+ 顶栏头像即时刷新修复（E-008）+ 通知中心交互修正（T-06）+ 列表筛选即时生效（T-07）；A-001～A-005 self pass；回归 Go 0 FAIL + vitest 1037/1037 + tsc 0 + e2e admin/mvp 全绿（含 W11/W12 遗留 e2e 断言修复）；go 各轮均无影响不暂挂） |
-| W14 | GOAL-015-w14-user-perspective-review | **active**（6/8 · 2026-08-17 用户结构裁决：整改完成前不得 done。S1 审视 + S2 台账落盘（F-01～F-14）+ S3 独立审计 A-002（grok-4.6 · pass）+ S4 审计响应/同步 + I-001 用户书面裁决（D-003）。多次关门尝试（E-002/A-003、E-004/A-005）均被用户否决/修正（E-003/A-004、E-005/A-006）。整改按 D-003 分批 A→C→D→B 作为 GOAL-015 下级子目标渐进添加；批 A、批 C、批 D 已完成；批 B 已渐进添加；go 无影响不暂挂） |
+| W14 | GOAL-015-w14-user-perspective-review | **done**（8/8 · 2026-08-17 关门：S1 审视 + S2 台账落盘（F-01～F-14）+ S3 独立审计 A-002（grok-4.6 · pass）+ S4 审计响应/同步 + I-001 用户书面裁决（D-003）。多次关门尝试被用户否决/修正后，整改按 D-003 分批 A→C→D→B 作为 GOAL-015 下级子目标渐进添加；批 A/C/D/B 全部完成，S5 终审通过；go 无影响不暂挂） |
 | W14-批A | GOAL-016-w14-rectification-batch-a（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-01～F-04 功能面补全实施完成；S1 冻结 D-001、S2/S3 回归 Go 全量 + Web 1041/1041 + tsc + build、A-001 independent conditional（F-001 fixed）+ A-002 self pass） |
 | W14-批C | GOAL-017-w14-rectification-batch-c（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-08～F-10 调试痕迹清理实施完成；S1 冻结 D-001、S2/S3 回归 Web 全量 1041/1041 + tsc + build、A-001 self pass） |
 | W14-批D | GOAL-018-w14-rectification-batch-d（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-11～F-14 表单与无障碍实施完成；S1 冻结 D-001、S2/S3 回归 Web 全量 1041/1041 + tsc + build、A-001 self pass） |
-| W14-批B | GOAL-019-w14-rectification-batch-b（**GOAL-015 下级**） | **active**（0/4 · 2026-08-17 立项：批 B（F-05～F-07 一致性硬化）由 GOAL-015 路线图渐进添加；五件套落盘，尚未开工） |
+| W14-批B | GOAL-019-w14-rectification-batch-b（**GOAL-015 下级**） | **done**（4/4 · 2026-08-17 关门：F-05～F-07 一致性硬化实施完成；S1 冻结 D-001、S2/S3 回归 Go 全量 + Web 全量 1041/1041 + tsc + build、A-001 independent fail→fixed + A-002 self pass） |
 
 ## 固定共享资料引用
 

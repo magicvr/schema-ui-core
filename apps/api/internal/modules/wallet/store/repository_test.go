@@ -116,7 +116,7 @@ func TestMutateAdjustFreezeUnfreeze(t *testing.T) {
 
 	// Missing memo is rejected at the service layer (handler test covers), but
 	// the store accepts any memo — check the entry persisted with memo.
-	entries, total, err := repo.ListEntries("acct-u1", 1, 20)
+	entries, total, err := repo.ListEntries("acct-u1", "", "", 1, 20)
 	if err != nil || total != 3 || len(entries) != 3 {
 		t.Fatalf("entries = %d/%d err %v", len(entries), total, err)
 	}

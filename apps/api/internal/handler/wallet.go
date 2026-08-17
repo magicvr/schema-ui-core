@@ -27,7 +27,7 @@ type WalletService interface {
 	GetAccount(id string) (*walletstore.Account, error)
 	CreateAccount(ownerType, ownerID, currency string, now time.Time) (*walletstore.Account, error)
 	UpdateStatus(id, status string, version int64, now time.Time) (*walletstore.Account, error)
-	ListEntries(accountID string, page, pageSize int) ([]walletstore.LedgerEntry, int, error)
+	ListEntries(accountID, entryType, q string, page, pageSize int) ([]walletstore.LedgerEntry, int, error)
 	// GetOrCreateUserAccount returns the user account for ownerID, creating a
 	// zero-balance account when absent (GOAL-020 D-001 §1). The bool reports
 	// whether this call created the account (auto-audit marker).
@@ -54,8 +54,16 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
 			return
 		}
-		page, _ := intParam(r.URL.Query().Get("page"), 1)
-		pageSize, _ := intParam(r.URL.Query().Get("pageSize"), 20)
+		page, ok := intParam(r.URL.Query().Get("page"), 1)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			return
+		}
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		if !ok || pageSize > maxPageSize {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+			return
+		}
 		accounts, total, err := service.ListAccounts(r.URL.Query().Get("q"), r.URL.Query().Get("ownerType"), page, pageSize)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list wallet accounts")
@@ -78,7 +86,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		}
 		ownerID := strings.TrimSpace(r.PathValue("ownerId"))
 		if ownerID == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "ownerId is required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_OWNER", "ownerId is required")
 			return
 		}
 		now := time.Now().UTC()
@@ -103,7 +111,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		}
 		ownerID := strings.TrimSpace(r.PathValue("ownerId"))
 		if ownerID == "" {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "ownerId is required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_OWNER", "ownerId is required")
 			return
 		}
 		var body struct {
@@ -200,7 +208,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		}
 		status := strings.TrimSpace(body.Status)
 		if status != walletstore.StatusActive && status != walletstore.StatusDisabled {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "status must be active or disabled")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_STATUS", "status must be active or disabled")
 			return
 		}
 		now := time.Now().UTC()
@@ -273,8 +281,16 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
 			return
 		}
-		page, _ := intParam(r.URL.Query().Get("page"), 1)
-		pageSize, _ := intParam(r.URL.Query().Get("pageSize"), 20)
+		page, ok := intParam(r.URL.Query().Get("page"), 1)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			return
+		}
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+		if !ok || pageSize > maxPageSize {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+			return
+		}
 		runs, total, err := service.ListReconcileRuns(page, pageSize)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list reconciliation runs")
@@ -297,12 +313,22 @@ func walletListEntries(w http.ResponseWriter, r *http.Request, service WalletSer
 		return
 	}
 	if strings.TrimSpace(accountID) == "" {
-		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_BODY", "accountId is required")
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_ACCOUNT", "accountId is required")
 		return
 	}
-	page, _ := intParam(r.URL.Query().Get("page"), 1)
-	pageSize, _ := intParam(r.URL.Query().Get("pageSize"), 20)
-	entries, total, err := service.ListEntries(accountID, page, pageSize)
+	page, ok := intParam(r.URL.Query().Get("page"), 1)
+	if !ok {
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+		return
+	}
+	pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 20)
+	if !ok || pageSize > maxPageSize {
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+		return
+	}
+	entryType := strings.TrimSpace(r.URL.Query().Get("entryType"))
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	entries, total, err := service.ListEntries(accountID, entryType, q, page, pageSize)
 	if err != nil {
 		if errors.Is(err, walletstore.ErrNotFound) {
 			writeLocalizedError(w, r, http.StatusNotFound, "WALLET_NOT_FOUND", "wallet account not found")

@@ -1,11 +1,11 @@
 ---
 id: GOAL-015-w14-user-perspective-review
 doc: execution
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-015
@@ -22,6 +22,8 @@ version: 0.1.0
 | E-006 | 2026-08-17 | R1 整改批 A 完成：GOAL-016 done 4/4；GOAL-015 progress 5/8 | recorded | `02-execution/E-006-r1-batch-a-completed.md` |
 | E-007 | 2026-08-17 | R2 整改批 C 完成：GOAL-017 done 4/4；GOAL-015 progress 6/8 | recorded | `02-execution/E-007-r2-batch-c-completed.md` |
 | E-008 | 2026-08-17 | R3 整改批 D 完成：GOAL-018 done 4/4；GOAL-015 progress 7/8 | recorded | `02-execution/E-008-r3-batch-d-completed.md` |
+| E-009 | 2026-08-17 | R4 整改批 B 完成：GOAL-019 done 4/4；GOAL-015 progress 8/8 | recorded | `02-execution/E-009-r4-batch-b-completed.md` |
+| E-010 | 2026-08-17 | S5 关门：全部整改子目标 done + 终审；GOAL-015 done 8/8 | recorded | `02-execution/E-010-s5-closeout.md` |
 
 ## 事实边界
 
@@ -38,3 +40,5 @@ version: 0.1.0
 - **2026-08-17**：R1 整改批 A 完成（E-006）——GOAL-016 done 4/4；GOAL-015 progress 5/8；仍 active（R2～R4 + S5 待推进）。
 - **2026-08-17**：R2 整改批 C 完成（E-007）——GOAL-017 done 4/4；GOAL-015 progress 6/8；仍 active（R3～R4 + S5 待推进）。
 - **2026-08-17**：R3 整改批 D 完成（E-008）——GOAL-018 done 4/4；GOAL-015 progress 7/8；仍 active（R4 + S5 待推进）。
+- **2026-08-17**：R4 整改批 B 完成（E-009）——GOAL-019 done 4/4；GOAL-015 progress 8/8。
+- **2026-08-17**：S5 关门（E-010）——全部整改子目标 done + 终审；GOAL-015 done 8/8。

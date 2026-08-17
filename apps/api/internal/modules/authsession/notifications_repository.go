@@ -138,7 +138,7 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 	err := r.withTx("list notifications", func(tx *sql.Tx) error {
 		where := ` WHERE user_id = ?`
 		args := []any{userID}
-		if q := strings.TrimSpace(filter.Q); q != "" {
+		if q := strings.ToLower(strings.TrimSpace(filter.Q)); q != "" {
 			where += ` AND (instr(lower(title), ?) > 0 OR instr(lower(body), ?) > 0 OR instr(lower(COALESCE(title_key,'')), ?) > 0 OR instr(lower(COALESCE(body_key,'')), ?) > 0)`
 			args = append(args, q, q, q, q)
 		}

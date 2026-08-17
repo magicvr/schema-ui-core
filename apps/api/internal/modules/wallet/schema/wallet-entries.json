@@ -26,6 +26,33 @@
               "id": "q",
               "type": "input",
               "labelKey": "schema.walletEntries.search.q"
+            },
+            {
+              "id": "entryType",
+              "type": "select",
+              "labelKey": "schema.walletEntries.filter.entryType",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.walletEntries.filter.entryType.all"
+                },
+                {
+                  "value": "adjust",
+                  "labelKey": "schema.walletEntries.filter.entryType.adjust"
+                },
+                {
+                  "value": "freeze",
+                  "labelKey": "schema.walletEntries.filter.entryType.freeze"
+                },
+                {
+                  "value": "unfreeze",
+                  "labelKey": "schema.walletEntries.filter.entryType.unfreeze"
+                },
+                {
+                  "value": "deduct_frozen",
+                  "labelKey": "schema.walletEntries.filter.entryType.deductFrozen"
+                }
+              ]
             }
           ],
           "submitLabel": "Search",
