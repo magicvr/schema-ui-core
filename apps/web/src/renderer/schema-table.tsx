@@ -60,6 +60,8 @@ export interface SchemaTableColumnSpec {
   minWidth?: number | string;
   /** W16-F04: render a cent-valued number as a localized currency string. */
   format?: "currency";
+  /** W16-F09: render this cell as a colored badge using the row field value. */
+  badgeStyleField?: string;
 }
 
 function stringOf(value: unknown): string {
@@ -76,6 +78,22 @@ function formatCents(value: unknown): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+/** W16-F09: maps a badgeStyle preset to Tailwind badge classes. */
+function badgeClassesFor(style: unknown): string {
+  switch (style) {
+    case "success":
+      return "border-success/30 bg-success/10 text-success";
+    case "warning":
+      return "border-warning/30 bg-warning/10 text-warning";
+    case "destructive":
+      return "border-destructive/30 bg-destructive/10 text-destructive";
+    case "info":
+      return "border-info/30 bg-info/10 text-info";
+    default:
+      return "border-border bg-muted text-muted-foreground";
+  }
 }
 
 /** Spreads a typed row into a plain object the generic action executor accepts. */
@@ -713,6 +731,17 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
       ...(column.format === "currency"
         ? { render: (row: ResourceItem) => formatCents(row[column.field]) }
+        : {}),
+      ...(column.badgeStyleField !== undefined
+        ? {
+            render: (row: ResourceItem) => (
+              <span
+                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${badgeClassesFor(row[column.badgeStyleField as string])}`}
+              >
+                {String(row[column.field] ?? "")}
+              </span>
+            ),
+          }
         : {}),
     })),
     ...(rowActions.length > 0

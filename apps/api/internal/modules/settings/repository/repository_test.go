@@ -69,7 +69,7 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 		t.Fatalf("settings = %+v", settings)
 	}
 	title := "Operations"
-	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
+	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
 	if err != nil {
 		t.Fatalf("title-only patch: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 		t.Fatalf("title-only patch overwrote unsubmitted logo: %+v", settings)
 	}
 	logo := "/assets/logo.svg"
-	settings, err = repository.PatchSiteSettings(nil, &logo, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
+	settings, err = repository.PatchSiteSettings(nil, &logo, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
 	if err != nil {
 		t.Fatalf("logo-only patch: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 	light := "/assets/logo-light.svg"
 	dark := "/assets/logo-dark.svg"
 	favicon := "/favicon.ico"
-	settings, err := repository.PatchSiteSettings(nil, nil, &light, &dark, &favicon, &locale, &timezone, &theme, now)
+	settings, err := repository.PatchSiteSettings(nil, nil, &light, &dark, &favicon, &locale, &timezone, &theme, nil, nil, now)
 	if err != nil {
 		t.Fatalf("vp007 patch: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 
 	// Field-level merge: a locale-only patch must not touch theme/timezone.
 	locale = "en-US"
-	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, &locale, nil, nil, now.Add(time.Second))
+	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, &locale, nil, nil, nil, nil, now.Add(time.Second))
 	if err != nil {
 		t.Fatalf("locale-only patch: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 
 	// Empty string clears a branding field.
 	empty := ""
-	settings, err = repository.PatchSiteSettings(nil, nil, &empty, nil, nil, nil, nil, nil, now.Add(2*time.Second))
+	settings, err = repository.PatchSiteSettings(nil, nil, &empty, nil, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
 	if err != nil {
 		t.Fatalf("clear light logo: %v", err)
 	}
@@ -129,15 +129,15 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 
 	// Validation: enums + IANA timezone.
 	badLocale := "fr-FR"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &badLocale, nil, nil, now); !errors.Is(err, ErrInvalidDefaultLocale) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &badLocale, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultLocale) {
 		t.Fatalf("bad locale = %v, want ErrInvalidDefaultLocale", err)
 	}
 	badTheme := "neon"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &badTheme, now); !errors.Is(err, ErrInvalidDefaultTheme) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &badTheme, nil, nil, now); !errors.Is(err, ErrInvalidDefaultTheme) {
 		t.Fatalf("bad theme = %v, want ErrInvalidDefaultTheme", err)
 	}
 	badTimezone := "Foo/Bar"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, &badTimezone, nil, now); !errors.Is(err, ErrInvalidSiteTimezone) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, &badTimezone, nil, nil, nil, now); !errors.Is(err, ErrInvalidSiteTimezone) {
 		t.Fatalf("bad timezone = %v, want ErrInvalidSiteTimezone", err)
 	}
 	// A rejected patch must leave the previous values untouched.
@@ -169,7 +169,7 @@ func TestRepositoryEmptyLocaleThemeNormalizedToAuto(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 
 	empty := ""
-	settings, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &empty, nil, &empty, now)
+	settings, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &empty, nil, &empty, nil, nil, now)
 	if err != nil {
 		t.Fatalf("empty locale/theme patch: %v", err)
 	}

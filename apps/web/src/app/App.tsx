@@ -1025,6 +1025,15 @@ export function App({
           </div>
         </main>
       </div>
+      {(branding.copyrightText !== "" || branding.icpNumber !== "") ? (
+        <footer
+          data-shell-region="footer"
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-border px-4 py-3 text-xs text-muted-foreground"
+        >
+          {branding.copyrightText !== "" ? <span>{branding.copyrightText}</span> : null}
+          {branding.icpNumber !== "" ? <span>{branding.icpNumber}</span> : null}
+        </footer>
+      ) : null}
     </div>
   );
 }

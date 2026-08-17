@@ -27,7 +27,7 @@ import (
 // module providers reuse it so the provider surface matches the central adapter.
 type SettingsRepository interface {
 	GetSiteSettings() (*settingsrepository.SiteSettings, error)
-	PatchSiteSettings(*string, *string, *string, *string, *string, *string, *string, *string, time.Time) (*settingsrepository.SiteSettings, error)
+	PatchSiteSettings(*string, *string, *string, *string, *string, *string, *string, *string, *string, *string, time.Time) (*settingsrepository.SiteSettings, error)
 	ResetSiteSettings(time.Time) (*settingsrepository.SiteSettings, error)
 }
 
@@ -61,6 +61,8 @@ type brandingResponse struct {
 	SupportedLocales []string `json:"supportedLocales"`
 	SiteTimezone     string   `json:"siteTimezone"`
 	DefaultTheme     string   `json:"defaultTheme"`
+	CopyrightText    string   `json:"copyrightText"`
+	ICPNumber        string   `json:"icpNumber"`
 }
 
 const configChangedHeader = "X-Schema-UI-Config-Changed"
@@ -99,6 +101,8 @@ func brandingRow(s *settingsrepository.SiteSettings) brandingResponse {
 		SupportedLocales: settingsrepository.SupportedLocales,
 		SiteTimezone:     timezone,
 		DefaultTheme:     theme,
+		CopyrightText:    s.CopyrightText,
+		ICPNumber:        s.ICPNumber,
 	}
 }
 
@@ -113,6 +117,8 @@ func settingsRow(s *settingsrepository.SiteSettings) map[string]any {
 		"defaultLocale": s.DefaultLocale,
 		"siteTimezone":  s.SiteTimezone,
 		"defaultTheme":  s.DefaultTheme,
+		"copyrightText": s.CopyrightText,
+		"icpNumber":     s.ICPNumber,
 		"updatedAt":     s.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 }
@@ -176,6 +182,8 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 			DefaultLocale *string `json:"defaultLocale"`
 			SiteTimezone  *string `json:"siteTimezone"`
 			DefaultTheme  *string `json:"defaultTheme"`
+			CopyrightText *string `json:"copyrightText"`
+			ICPNumber     *string `json:"icpNumber"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
@@ -188,7 +196,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 		now := time.Now().UTC()
 		updated, err := repository.PatchSiteSettings(
 			body.SiteTitle, body.LogoURL, body.LogoURLLight, body.LogoURLDark, body.FaviconURL,
-			body.DefaultLocale, body.SiteTimezone, body.DefaultTheme, now,
+			body.DefaultLocale, body.SiteTimezone, body.DefaultTheme, body.CopyrightText, body.ICPNumber, now,
 		)
 		if err != nil {
 			writeSettingsError(w, r, err)

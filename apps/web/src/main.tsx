@@ -13,6 +13,8 @@ import { ForcePasswordChange } from "@/components/force-password-change";
 // personal-center MFA block; notification-center on the notifications page).
 import "@/components/mfa-manager";
 import "@/components/account-session-toolbar";
+import "@/components/cron-preview";
+import "@/components/monitoring-auto-refresh";
 import "@/components/notification-center";
 import "@/components/data-permission-scopes";
 import "@/components/activity-export";

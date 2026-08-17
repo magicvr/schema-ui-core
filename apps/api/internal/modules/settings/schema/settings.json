@@ -19,7 +19,9 @@
       "method": "PATCH",
       "url": "/api/settings/default",
       "bodyMapping": {
-        "siteTitle": "siteTitle"
+        "siteTitle": "siteTitle",
+        "copyrightText": "copyrightText",
+        "icpNumber": "icpNumber"
       },
       "onSuccess": {
         "behavior": "reload"
@@ -138,13 +140,27 @@
                       "label": "Site title",
                       "labelKey": "schema.settings.field.siteTitle",
                       "type": "input"
+                    },
+                    {
+                      "id": "copyrightText",
+                      "label": "Footer copyright text",
+                      "labelKey": "schema.settings.field.copyrightText",
+                      "type": "input"
+                    },
+                    {
+                      "id": "icpNumber",
+                      "label": "ICP number",
+                      "labelKey": "schema.settings.field.icpNumber",
+                      "type": "input"
                     }
                   ],
                   "recordSource": {
                     "method": "GET",
                     "url": "/api/settings/default",
                     "responseMapping": {
-                      "siteTitle": "siteTitle"
+                      "siteTitle": "siteTitle",
+                      "copyrightText": "copyrightText",
+                      "icpNumber": "icpNumber"
                     }
                   },
                   "submitAction": "updateGeneral",

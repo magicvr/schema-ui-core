@@ -31,7 +31,7 @@ type DictionaryRepository interface {
 	ListEntries(datadictionarystore.ListFilter) ([]datadictionarystore.DictEntry, int, error)
 	GetEntry(string) (*datadictionarystore.DictEntry, error)
 	CreateEntry(datadictionarystore.DictEntry) error
-	UpdateEntry(id, dictKey, label string, enabled bool, sort int, remark string, now time.Time) error
+	UpdateEntry(id, dictKey, label string, enabled bool, sort int, remark, badgeStyle string, now time.Time) error
 	DeleteEntry(string) error
 }
 
@@ -167,7 +167,8 @@ func (e *dictEntryEntity) Create(body map[string]any, id string, now time.Time, 
 	err := e.repository.CreateEntry(datadictionarystore.DictEntry{
 		ID: id, DictKey: dictKey, EntryKey: entryKey, Label: label,
 		Enabled: boolField(body, "enabled", true), Sort: intField(body, "sort"),
-		Remark: stringField(body, "remark"), CreatedAt: now, UpdatedAt: now,
+		Remark: stringField(body, "remark"), BadgeStyle: stringField(body, "badgeStyle"),
+		CreatedAt: now, UpdatedAt: now,
 	})
 	if err != nil {
 		return nil, mapDictStoreError(err)
@@ -203,7 +204,11 @@ func (e *dictEntryEntity) Update(id string, body map[string]any, now time.Time, 
 	if _, present := body["remark"]; !present {
 		remark = existing.Remark
 	}
-	if err := e.repository.UpdateEntry(id, dictKey, label, enabled, sort, remark, now); err != nil {
+	badgeStyle := stringField(body, "badgeStyle")
+	if _, present := body["badgeStyle"]; !present {
+		badgeStyle = existing.BadgeStyle
+	}
+	if err := e.repository.UpdateEntry(id, dictKey, label, enabled, sort, remark, badgeStyle, now); err != nil {
 		return nil, mapDictStoreError(err)
 	}
 	recordDictionaryEvent(e.operations, operationlog.EventDictionaryUpdate, actor, id, now)
@@ -232,19 +237,19 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		recorder = trash[0]
 	}
 	routes := ResourceRoutes(a, Resource{
-		ID:              "dict-types",
-		Path:            "/api/data-dictionary/types",
-		Listable:        true,
-		SortFields:      []string{"key", "name", "sort", "updatedAt"},
-		QSearch:         true,
-		Entity:          &dictTypeEntity{repository: repository, operations: operations},
-		CreateFields:    []string{"key", "name"},
-		PatchFields:     []string{"name"},
+		ID:           "dict-types",
+		Path:         "/api/data-dictionary/types",
+		Listable:     true,
+		SortFields:   []string{"key", "name", "sort", "updatedAt"},
+		QSearch:      true,
+		Entity:       &dictTypeEntity{repository: repository, operations: operations},
+		CreateFields: []string{"key", "name"},
+		PatchFields:  []string{"name"},
 		// description is optional (create: entity default ""; patch: absent =
 		// untouched, present = updated, including clearing to "") — the factory
 		// only passes CreateFields/JSONFields through, so it must ride JSONFields
 		// (fixed: was silently dropped on create, field always empty).
-		JSONFields: []string{"enabled", "sort", "description"},
+		JSONFields:      []string{"enabled", "sort", "description"},
 		PermissionRead:  "dictionary.read",
 		PermissionWrite: "dictionary.write",
 		NotFoundCode:    "DICT_TYPE_NOT_FOUND",
@@ -252,17 +257,17 @@ func DictionaryRoutes(a *auth.Authenticator, repository DictionaryRepository, op
 		Trash:           recorder,
 	}, moduleID)
 	routes = append(routes, ResourceRoutes(a, Resource{
-		ID:              "dict-entries",
-		Path:            "/api/data-dictionary/entries",
-		Listable:        true,
-		SortFields:      []string{"dictKey", "entryKey", "label", "sort", "updatedAt", "dictTypeName"},
-		QSearch:         true,
-		Entity:          &dictEntryEntity{repository: repository, operations: operations},
-		CreateFields:    []string{"dictKey", "entryKey", "label"},
-		PatchFields:     []string{"dictKey", "label"},
-		JSONFields:      []string{"enabled", "sort", "remark"},
+		ID:           "dict-entries",
+		Path:         "/api/data-dictionary/entries",
+		Listable:     true,
+		SortFields:   []string{"dictKey", "entryKey", "label", "sort", "updatedAt", "dictTypeName"},
+		QSearch:      true,
+		Entity:       &dictEntryEntity{repository: repository, operations: operations},
+		CreateFields: []string{"dictKey", "entryKey", "label"},
+		PatchFields:  []string{"dictKey", "label"},
+		JSONFields:   []string{"enabled", "sort", "remark", "badgeStyle"},
 		// GOAL-015: inner page narrows entries by exact dict key.
-		ExtraQuery: []string{"dictKey"},
+		ExtraQuery:      []string{"dictKey"},
 		PermissionRead:  "dictionary.read",
 		PermissionWrite: "dictionary.write",
 		NotFoundCode:    "DICT_ENTRY_NOT_FOUND",
@@ -283,7 +288,7 @@ func dictTypeToMap(t datadictionarystore.DictType) map[string]any {
 func dictEntryToMap(e datadictionarystore.DictEntry) map[string]any {
 	return map[string]any{
 		"id": e.ID, "dictKey": e.DictKey, "dictTypeName": e.DictTypeName, "entryKey": e.EntryKey, "label": e.Label,
-		"enabled": e.Enabled, "sort": e.Sort, "remark": e.Remark,
+		"enabled": e.Enabled, "sort": e.Sort, "remark": e.Remark, "badgeStyle": e.BadgeStyle,
 		"createdAt": formatRFC3339Milli(e.CreatedAt), "updatedAt": formatRFC3339Milli(e.UpdatedAt),
 	}
 }

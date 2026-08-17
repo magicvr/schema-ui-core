@@ -7,9 +7,12 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -36,6 +39,27 @@ type taskEntity struct {
 	repository TasksRepository
 	runner     TaskRunner
 	operations operationlog.Recorder
+}
+
+// describeCron returns a short human-readable description for a parsed 5-field
+// cron expression (W16-F05). It is intentionally conservative; the nextRuns
+// array carries the concrete evidence.
+func describeCron(fields tasksstore.CronFields) string {
+	everyMinute := len(fields[0]) == 60 && len(fields[1]) == 24 && len(fields[2]) == 31 && len(fields[3]) == 12 && len(fields[4]) == 7
+	if everyMinute {
+		return "every minute"
+	}
+	if len(fields[0]) == 1 && len(fields[1]) == 24 && len(fields[2]) == 31 && len(fields[3]) == 12 && len(fields[4]) == 7 {
+		return "every hour at minute " + itoaMinute(fields[0])
+	}
+	return "cron schedule (5-field)"
+}
+
+func itoaMinute(field map[int]bool) string {
+	for v := range field {
+		return strconv.Itoa(v)
+	}
+	return "0"
 }
 
 // validateHandler rejects unknown handler keys at write time (A-003 F-003);
@@ -206,11 +230,11 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		recorder = trash[0]
 	}
 	routes := ResourceRoutes(a, Resource{
-		ID:              "scheduled-tasks",
-		Path:            "/api/scheduled-tasks",
-		Listable:        true,
-		SortFields:      []string{"key", "name", "updatedAt"},
-		QSearch:         true,
+		ID:         "scheduled-tasks",
+		Path:       "/api/scheduled-tasks",
+		Listable:   true,
+		SortFields: []string{"key", "name", "updatedAt"},
+		QSearch:    true,
 		// T-02 (GOAL-013 D-003): enabled state select on the tasks search form.
 		ExtraQuery:      []string{"enabled"},
 		Entity:          &taskEntity{repository: repository, runner: runner, operations: operations},
@@ -248,14 +272,55 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 		})),
 	})
 
+	// W16-F05: cron preview — parse a 5-field expression and return the next
+	// three matching run times for the task form.
+	routes = append(routes, kernel.RouteContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("POST", "/api/scheduled-tasks/cron/preview")},
+		Method:               "POST",
+		Pattern:              "/api/scheduled-tasks/cron/preview",
+		Handler: a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := requirePermission(w, r, "tasks.read"); !ok {
+				return
+			}
+			var body struct {
+				Cron string `json:"cron"`
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Cron) == "" {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CRON", "cron is required")
+				return
+			}
+			fields, err := tasksstore.ParseCron(body.Cron)
+			if err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CRON", "invalid cron expression: "+err.Error())
+				return
+			}
+			now := time.Now().UTC()
+			nextRuns := []string{}
+			cursor := now
+			for len(nextRuns) < 3 {
+				next, ok := fields.Next(cursor)
+				if !ok {
+					break
+				}
+				nextRuns = append(nextRuns, next.Format(time.RFC3339))
+				cursor = next.Add(time.Minute)
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"description": describeCron(fields),
+				"nextRuns":    nextRuns,
+			})
+		})),
+	})
+
 	// Global run history (read-only).
 	routes = append(routes, ResourceRoutes(a, Resource{
-		ID:              "task-runs",
-		Path:            "/api/task-runs",
-		Listable:        true,
-		ReadOnly:        true,
-		SortFields:      []string{"startedAt"},
-		QSearch:         true,
+		ID:         "task-runs",
+		Path:       "/api/task-runs",
+		Listable:   true,
+		ReadOnly:   true,
+		SortFields: []string{"startedAt"},
+		QSearch:    true,
 		// T-02 (GOAL-013 D-003): status select on the task-runs search form.
 		ExtraQuery:      []string{"status"},
 		Entity:          &taskRunsEntity{repository: repository},

@@ -15,6 +15,11 @@
     "id": "system-monitoring",
     "children": [
       {
+        "type": "custom",
+        "id": "monitoring-refresh-control",
+        "component": "monitoring-auto-refresh"
+      },
+      {
         "type": "text",
         "props": {
           "text": "Read-only system status and recent events.",

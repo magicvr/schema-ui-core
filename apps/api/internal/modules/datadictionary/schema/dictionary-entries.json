@@ -119,6 +119,20 @@
               "label": "Remark",
               "type": "textarea",
               "labelKey": "schema.dictionaryEntries.field.remark"
+            },
+            {
+              "id": "badgeStyle",
+              "label": "Badge style",
+              "type": "select",
+              "defaultValue": "default",
+              "labelKey": "schema.dictionaryEntries.field.badgeStyle",
+              "options": [
+                { "value": "default", "labelKey": "schema.dictionaryEntries.badge.default" },
+                { "value": "success", "labelKey": "schema.dictionaryEntries.badge.success" },
+                { "value": "warning", "labelKey": "schema.dictionaryEntries.badge.warning" },
+                { "value": "destructive", "labelKey": "schema.dictionaryEntries.badge.destructive" },
+                { "value": "info", "labelKey": "schema.dictionaryEntries.badge.info" }
+              ]
             }
           ],
           "submitAction": "createEntry",
@@ -181,6 +195,20 @@
               "label": "Remark",
               "type": "textarea",
               "labelKey": "schema.dictionaryEntries.field.remark"
+            },
+            {
+              "id": "badgeStyle",
+              "label": "Badge style",
+              "type": "select",
+              "defaultValue": "default",
+              "labelKey": "schema.dictionaryEntries.field.badgeStyle",
+              "options": [
+                { "value": "default", "labelKey": "schema.dictionaryEntries.badge.default" },
+                { "value": "success", "labelKey": "schema.dictionaryEntries.badge.success" },
+                { "value": "warning", "labelKey": "schema.dictionaryEntries.badge.warning" },
+                { "value": "destructive", "labelKey": "schema.dictionaryEntries.badge.destructive" },
+                { "value": "info", "labelKey": "schema.dictionaryEntries.badge.info" }
+              ]
             }
           ],
           "submitAction": "updateEntry",
@@ -242,6 +270,7 @@
               "field": "label",
               "label": "Label",
               "sortable": true,
+              "badgeStyleField": "badgeStyle",
               "labelKey": "schema.dictionaryEntries.column.label"
             },
             {

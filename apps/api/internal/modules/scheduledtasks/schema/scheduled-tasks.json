@@ -196,6 +196,11 @@
     "id": "scheduled-tasks",
     "children": [
       {
+        "type": "custom",
+        "id": "cron-preview-block",
+        "component": "cron-preview"
+      },
+      {
         "type": "form",
         "id": "tasks-search",
         "props": {

@@ -75,6 +75,22 @@ func migrate0010(tx *sql.Tx) error {
 	return nil
 }
 
+// siteFooterDDL (0040 · W16-F10): optional footer copyright and ICP number.
+var siteFooterDDL = []string{
+	`ALTER TABLE site_settings ADD COLUMN copyright_text TEXT NOT NULL DEFAULT ''`,
+	`ALTER TABLE site_settings ADD COLUMN icp_number TEXT NOT NULL DEFAULT ''`,
+}
+
+// migrate0040 applies the footer settings column extension.
+func migrate0040(tx *sql.Tx) error {
+	for _, stmt := range siteFooterDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("extend site_settings footer: %w", err)
+		}
+	}
+	return nil
+}
+
 // Descriptors returns the admin.settings migration descriptors (R6 C6.2).
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -91,6 +107,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "site_settings_v2",
 			Checksum:             kernel.MigrationChecksum(siteSettingsV2DDL, transformV2ID),
 			Apply:                migrate0010,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_footer"},
+			Version:              40,
+			Name:                 "site_footer",
+			Checksum:             kernel.MigrationChecksum(siteFooterDDL, "0040:site-footer:v1"),
+			Apply:                migrate0040,
 		},
 	}
 }

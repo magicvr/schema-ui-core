@@ -22,6 +22,8 @@ export interface Branding {
   supportedLocales: string[];
   siteTimezone: string;
   defaultTheme: string;
+  copyrightText: string;
+  icpNumber: string;
 }
 
 export function subscribeToBrandingChanges(listener: () => void): () => void {
@@ -71,6 +73,8 @@ export async function fetchBranding(fetcher: typeof fetch = fetch): Promise<Bran
         : [],
       siteTimezone: str("siteTimezone") !== "" ? str("siteTimezone") : "auto",
       defaultTheme: str("defaultTheme") !== "" ? str("defaultTheme") : "auto",
+      copyrightText: str("copyrightText"),
+      icpNumber: str("icpNumber"),
     };
   } catch {
     return defaultBranding();
@@ -88,6 +92,8 @@ export function defaultBranding(): Branding {
     supportedLocales: [],
     siteTimezone: "auto",
     defaultTheme: "auto",
+    copyrightText: "",
+    icpNumber: "",
   };
 }
 

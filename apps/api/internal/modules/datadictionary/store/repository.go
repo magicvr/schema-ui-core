@@ -53,18 +53,20 @@ type DictType struct {
 
 // DictEntry is one dictionary entry row.
 type DictEntry struct {
-	ID        string
-	DictKey   string
+	ID      string
+	DictKey string
 	// DictTypeName is the owning type's display name (JOIN, GOAL-015): lets
 	// the inner page show the type name instead of the raw key in columns.
 	DictTypeName string
-	EntryKey  string
-	Label     string
-	Enabled   bool
-	Sort      int
-	Remark    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	EntryKey     string
+	Label        string
+	Enabled      bool
+	Sort         int
+	Remark       string
+	// BadgeStyle is the optional badge/tag color preset (W16-F09).
+	BadgeStyle string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // ListFilter carries validated list parameters from the resource factory.
@@ -264,7 +266,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 			filter.Order = "asc"
 		}
 		rows, err := tx.Query(
-			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), de.created_at, de.updated_at
+			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), COALESCE(de.badge_style, 'default'), de.created_at, de.updated_at
 			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
 		)
@@ -275,7 +277,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		for rows.Next() {
 			var e DictEntry
 			var created, updated int64
-			if err := rows.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &created, &updated); err != nil {
+			if err := rows.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &created, &updated); err != nil {
 				return fmt.Errorf("scan dict entry: %w", err)
 			}
 			e.CreatedAt = time.Unix(created, 0)
@@ -292,11 +294,11 @@ func (r *Repository) GetEntry(id string) (*DictEntry, error) {
 	var e DictEntry
 	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
 		row := tx.QueryRow(
-			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), de.created_at, de.updated_at
+			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), COALESCE(de.badge_style, 'default'), de.created_at, de.updated_at
 			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key WHERE de.id = ?`, id,
 		)
 		var created, updated int64
-		if err := row.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &created, &updated); err != nil {
+		if err := row.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &created, &updated); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrNotFound
 			}
@@ -323,10 +325,14 @@ func (r *Repository) CreateEntry(e DictEntry) error {
 		if exists == 0 {
 			return ErrDictKeyNotFound
 		}
+		badgeStyle := e.BadgeStyle
+		if badgeStyle == "" {
+			badgeStyle = "default"
+		}
 		_, err := tx.Exec(
-			`INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
+			`INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, badge_style, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, badgeStyle, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
 		)
 		if err != nil {
 			if strings.Contains(strings.ToLower(err.Error()), "unique") {
@@ -338,9 +344,9 @@ func (r *Repository) CreateEntry(e DictEntry) error {
 	})
 }
 
-// UpdateEntry patches dict_key/label/enabled/sort/remark with the same
-// existence and uniqueness checks.
-func (r *Repository) UpdateEntry(id string, dictKey string, label string, enabled bool, sort int, remark string, now time.Time) error {
+// UpdateEntry patches dict_key/label/enabled/sort/remark/badgeStyle with the
+// same existence and uniqueness checks.
+func (r *Repository) UpdateEntry(id string, dictKey string, label string, enabled bool, sort int, remark string, badgeStyle string, now time.Time) error {
 	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
 		var exists int
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_types WHERE key = ?`, dictKey).Scan(&exists); err != nil {
@@ -349,9 +355,12 @@ func (r *Repository) UpdateEntry(id string, dictKey string, label string, enable
 		if exists == 0 {
 			return ErrDictKeyNotFound
 		}
+		if badgeStyle == "" {
+			badgeStyle = "default"
+		}
 		res, err := tx.Exec(
-			`UPDATE dict_entries SET dict_key = ?, label = ?, enabled = ?, sort = ?, remark = ?, updated_at = ? WHERE id = ?`,
-			dictKey, label, boolInt(enabled), sort, remark, now.Unix(), id,
+			`UPDATE dict_entries SET dict_key = ?, label = ?, enabled = ?, sort = ?, remark = ?, badge_style = ?, updated_at = ? WHERE id = ?`,
+			dictKey, label, boolInt(enabled), sort, remark, badgeStyle, now.Unix(), id,
 		)
 		if err != nil {
 			if strings.Contains(strings.ToLower(err.Error()), "unique") {

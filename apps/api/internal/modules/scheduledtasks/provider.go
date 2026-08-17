@@ -54,6 +54,7 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/scheduled-tasks", "GET /api/scheduled-tasks/{id}",
 				"GET /api/scheduled-tasks/handlers",
+				"POST /api/scheduled-tasks/cron/preview",
 				"POST /api/scheduled-tasks", "PATCH /api/scheduled-tasks/{id}",
 				"DELETE /api/scheduled-tasks/{id}", "POST /api/scheduled-tasks/batch-delete",
 				"POST /api/scheduled-tasks/{id}/run", "GET /api/scheduled-tasks/{id}/runs",
