@@ -10,7 +10,7 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-08-16
+updated: 2026-08-17
 version: 0.11.0
 parent: null
 ---
@@ -58,6 +58,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W11 | GOAL-012-w11-mfa-ux-review | **done**（5/5 · 2026-08-15 关门：MFA 三缺陷修复 + UX P0/P1 实施；A-001 self pass + A-002 grok independent conditional→resolved + A-003 closeout self pass；Go 全量 + Web 1002/1002；go 无影响不暂挂） |
 | W12 | GOAL-013-w12-product-surface-intent | **done**（4/4 · 2026-08-16 关门：T-05/T-01/T-03/T-02/T-06 实施；T-04 移交 GOAL-022；回归 Go 0 FAIL + Web 1027/1027；A-001 self pass + A-002 grok conditional（F-001 fixed / F-003·F-004 fixed / F-005 accepted）；T-06 go 判定不暂挂） |
 | W13 | GOAL-014-w13-settings-tabs-and-topbar | **done**（4/4 · 2026-08-16 五次关门：设置页功能单元 Tabs + 移动端品牌条 + 汉堡靠左 + 搜索框组贴合 + 顶栏明暗/语种按键对调 + 个人中心头像上传（T-05）+ 顶栏头像即时刷新修复（E-008）+ 通知中心交互修正（T-06）+ 列表筛选即时生效（T-07）；A-001～A-005 self pass；回归 Go 0 FAIL + vitest 1037/1037 + tsc 0 + e2e admin/mvp 全绿（含 W11/W12 遗留 e2e 断言修复）；go 各轮均无影响不暂挂） |
+| W14 | GOAL-015-w14-user-perspective-review | **done**（4/4 · 2026-08-17 关门：真实用户视角审视 API/Web；本波交付 = 审视 + 改进项台账落盘（F-01～F-14，D-001）+ 审计会签 + 台账同步；**整改 deferred（待用户裁决，D-002）**；S1 审视完成 + S2 台账落盘；S3 独立审计 A-002（grok-4.6 · pass，3 条 non-blocking 全 fixed）；S4 关门 A-003 self pass；无代码改动；go 无影响不暂挂） |
 
 ## 固定共享资料引用
 
