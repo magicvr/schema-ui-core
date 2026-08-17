@@ -38,10 +38,10 @@ GOAL-016 承接 GOAL-015 D-003 用户书面裁决：批 A 实施 F-01～F-04。�
 
 ### F-04 · 通知本地化 messageKey
 
-- **存储**：在 `notifications` 表新增可空 `title_key`、`body_key` 列（迁移 0018）。新通知写入 messageKey，`title`/`body` 保留为空字符串（NOT NULL 兼容）；旧数据保持原英文 title/body 作为回退。
+- **存储**：在 `notifications` 表新增可空 `title_key`、`body_key` 列（迁移 0037）。新通知写入 messageKey，`title`/`body` 保留为空字符串（NOT NULL 兼容）；旧数据保持原英文 title/body 作为回退。
 - **API**：通知列表/详情返回 `titleKey`/`bodyKey`（非空时）以及原有 `title`/`body` 回退字段。
 - **前端**：notification-center 渲染时优先 `titleKey`/`bodyKey` 经 i18n 翻译，缺失时回退 `title`/`body`。
-- **i18n**：新增 `notification.account.locked.title/body`、`notification.account.disabled.*`、`notification.account.unlocked.*`、`notification.account.password-changed.*` 中英文键。
+- **i18n**：新增 `notification.account.locked.title/body`、`notification.account.disabled.*`、`notification.account.unlocked.*`、`notification.account.passwordChanged.*` 中英文键。
 
 ## 信息项更新
 

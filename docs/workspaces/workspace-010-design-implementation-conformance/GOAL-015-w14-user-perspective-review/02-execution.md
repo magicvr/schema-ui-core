@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-17 | 关门回退与重新推进：用户裁决撤销 S4 关门（前次执行绕过 P-004 用户裁决）；status 回退 active 3/4；I-001 恢复 open required；goal-tree/workspace 同步 | recorded | `02-execution/E-003-closeout-reverted.md` |
 | E-004 | 2026-08-17 | S4 关门尝试：I-001 用户书面裁决（D-003）后标记 done · 4/4；A-005 关门自审——**关门结论已被用户结构裁决否定（见 E-005/A-006）** | superseded | `02-execution/E-004-s4-legit-closeout.md` |
 | E-005 | 2026-08-17 | 结构修正：GOAL-015 保持 active（4/8）；整改子目标（GOAL-016 批 A 等）挂 GOAL-015 下，渐进添加；E-004/A-005 标注 superseded；A-006 记录 | recorded | `02-execution/E-005-structure-correction.md` |
+| E-006 | 2026-08-17 | R1 整改批 A 完成：GOAL-016 done 4/4；GOAL-015 progress 5/8 | recorded | `02-execution/E-006-r1-batch-a-completed.md` |
 
 ## 事实边界
 
@@ -32,3 +33,4 @@ version: 0.1.0
 - **2026-08-17**：关门回退（E-003）——用户裁决「回退工作区10目标15的关门。上一次执行绕过了用户裁决，这是不可接受的。然后重新推进目标」；status 回退 active · 3/4；I-001 恢复 open required（本波关门）；D-002/E-002/A-003 标注修正；新增 A-004；goal-tree/workspace 同步。
 - **2026-08-17**：S4 关门尝试（E-004）——用户经 GUI 问询作出书面裁决（D-003）：F-01～F-14 全部 in-scope（分批 A→C→D→B）+ 三方案选择；I-001 closed；曾标记 done · 4/4。
 - **2026-08-17**：结构修正（E-005）——用户裁决「GOAL-015 在整改完成之前不应标记 done；GOAL-016 等整改子目标应为 GOAL-015 下级」；GOAL-015 回退 active · 4/8（S1～S4 完成，R1～R4 + S5 待整改）；GOAL-016 更名 w14 批 A 并挂 GOAL-015 下；A-006 记录。
+- **2026-08-17**：R1 整改批 A 完成（E-006）——GOAL-016 done 4/4；GOAL-015 progress 5/8；仍 active（R2～R4 + S5 待推进）。

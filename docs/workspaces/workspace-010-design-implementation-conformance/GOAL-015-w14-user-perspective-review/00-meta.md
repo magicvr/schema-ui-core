@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
-version: 0.7.0
-progress: 4/8
+version: 0.8.0
+progress: 5/8
 ---
 
 # GOAL-015 · W14 · 真实用户视角审视 API/Web（改进项落盘）
@@ -24,13 +24,13 @@ VP-010 / workspace-010 的**第十四波**（用户 2026-08-17 点名立项）�
 - [x] **S2 · 台账与待决项落盘**：改进项台账 F-01～F-14（D-001）+ 信息项登记（I-001/I-002）
 - [x] **S3 · 独立交叉审计**：grok-4.6（reasoning high）对 S1/S2 证据做 independent 审计（A-002，verdict pass）
 - [x] **S4 · 审计响应与台账同步**：响应 A-002（F-001~F-003 已处理）+ **I-001 用户书面裁决（D-003）** + goal-tree/workspace 同步 + git 提交（**不关门**；曾两次尝试关门均被用户否决/修正）
-- [ ] **R1 · 整改批 A（F-01～F-04）完成**——子目标 [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md)
+- [x] **R1 · 整改批 A（F-01～F-04）完成**——子目标 [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md)（done · 4/4）
 - [ ] **R2 · 整改批 C（F-08～F-10）完成**——子目标（渐进添加）
 - [ ] **R3 · 整改批 D（F-11～F-14）完成**——子目标（渐进添加）
 - [ ] **R4 · 整改批 B（F-05～F-07）完成**——子目标（渐进添加）
 - [ ] **S5 · 关门**：全部整改子目标 done + 终审 + goal-tree/workspace 同步为 done
 
-progress: 由八个等权检查点派生（S1～S4 + R1～R4）；当前 **4/8**（S1～S4 完成；R1～R4 整改待子目标推进，S5 关门待整改全部完成）。GOAL-015 在整改完成前保持 active。
+progress: 由八个等权检查点派生（S1～S4 + R1～R4）；当前 **5/8**（S1～S4 完成；R1 整改批 A 完成；R2～R4 整改待后续批次推进，S5 关门待整改全部完成）。GOAL-015 在整改完成前保持 active。
 
 ## 审计策略
 
@@ -68,7 +68,7 @@ I-001 已由用户书面裁决（D-003）关闭（整改范围确定）。GOAL-0
 
 | 批 | 子目标 | status | 范围 |
 |----|--------|--------|------|
-| A | [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md) | active · 0/4 | F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey |
+| A | [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md) | done · 4/4 | F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey |
 | C | 渐进添加 | — | F-08～F-10（调试痕迹清理） |
 | D | 渐进添加 | — | F-11～F-14（表单与无障碍） |
 | B | 渐进添加 | — | F-05～F-07（一致性硬化） |
