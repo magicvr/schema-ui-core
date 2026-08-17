@@ -6,8 +6,19 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "table.sort"
+      "table.sort",
+      "actions.page.trigger"
     ]
+  },
+  "actions": {
+    "openWallet": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/wallet/me",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
   },
   "body": {
     "type": "section",
@@ -65,6 +76,14 @@
         "type": "table",
         "id": "my-wallet-entries",
         "props": {
+          "toolbar": [
+            {
+              "key": "openWallet",
+              "label": "Open wallet",
+              "labelKey": "schema.myWallet.action.open",
+              "actionRef": "openWallet"
+            }
+          ],
           "columns": [
             {
               "field": "entryType",

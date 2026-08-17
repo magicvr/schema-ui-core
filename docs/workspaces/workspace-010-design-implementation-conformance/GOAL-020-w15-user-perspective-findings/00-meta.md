@@ -1,7 +1,7 @@
 ---
 id: GOAL-020-w15-user-perspective-findings
 title: W15 · 真实用户视角二期审视与体验加固台账（W15-F01～W15-F14）+ 整改承接
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17
@@ -32,7 +32,7 @@ VP-010 / workspace-010 的**第十五波**（用户 2026-08-17 点名立项）�
 - [x] **R2 · 整改批 B**：GOAL-022 · F03/F11/F10/F12
 - [x] **R3 · 整改批 C**：GOAL-023 · F06/F08/F09/F13/F14
 
-progress: 由八个等权检查点派生（S1～S5 + R1～R3）；当前 **8/8**。status 仍 active，待关门审计。
+progress: 由八个等权检查点派生（S1～S5 + R1～R3）；当前 **8/8**。A-004 required 已闭合（A-005）；关门 A-006。
 
 ## 审计策略
 
@@ -52,6 +52,8 @@ progress: 由八个等权检查点派生（S1～S5 + R1～R3）；当前 **8/8**
 | A-002 F-002 | required | **fixed**（D-001 W15-F04 去掉首方崩溃） |
 | A-002 F-003 | recommended | **fixed**（F03/F07/F09/F10 措辞） |
 | A-002 F-004 | recommended | **fixed**（全路径 + 空目录 + S3 编号） |
+| A-004 F-001 | required | **fixed**（my-wallet POST 开通） |
+| A-004 F-002 | required | **fixed**（会话表 current/UA/IP） |
 
 ## 信息就绪与未知项（P-005）
 

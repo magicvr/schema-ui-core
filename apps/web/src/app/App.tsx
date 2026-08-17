@@ -350,7 +350,21 @@ function UserMenu({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpen(false);
+        return;
       }
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+        return;
+      }
+      const items = rootRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
+      if (items === undefined || items.length === 0) {
+        return;
+      }
+      event.preventDefault();
+      const list = Array.from(items);
+      const current = list.findIndex((el) => el === document.activeElement);
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      const next = current < 0 ? 0 : (current + delta + list.length) % list.length;
+      list[next]?.focus();
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);

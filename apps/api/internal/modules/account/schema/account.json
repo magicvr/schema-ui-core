@@ -173,6 +173,21 @@
                   "field": "status",
                   "label": "Status",
                   "labelKey": "schema.account.column.status"
+                },
+                {
+                  "field": "current",
+                  "label": "Current",
+                  "labelKey": "schema.account.column.current"
+                },
+                {
+                  "field": "userAgent",
+                  "label": "Device",
+                  "labelKey": "schema.account.column.userAgent"
+                },
+                {
+                  "field": "ip",
+                  "label": "IP",
+                  "labelKey": "schema.account.column.ip"
                 }
               ],
               "filters": [

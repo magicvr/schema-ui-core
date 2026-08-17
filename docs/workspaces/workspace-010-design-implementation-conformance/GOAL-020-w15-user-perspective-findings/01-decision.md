@@ -1,7 +1,7 @@
 ---
 id: GOAL-020-w15-user-perspective-findings
 doc: decision-index
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-17

@@ -269,7 +269,7 @@ func (h *accountSelfHandler) sessions() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
 			return
 		}
-		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), 10)
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
 		if !ok {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer")
 			return
