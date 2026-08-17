@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-17
 parent: null
-version: 0.16.0
+version: 0.17.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -33,7 +33,8 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-013-w12-product-surface-intent [done] · W12 产品面交互意图对齐（顶栏下拉 / 列表搜索 / 个人中心 Tabs / 我的钱包 / 回收站时间 / YAML 模块配置）（4/4）
 ├── GOAL-014-w13-settings-tabs-and-topbar [done] · W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传 + 通知中心交互修正 + 列表筛选即时生效（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传 / 通知点击即读 / 筛选即时生效）（4/4）
 ├── GOAL-015-w14-user-perspective-review [active] · W14 · 真实用户视角审视 API/Web 并落盘改进项台账（F-01～F-14）+ 整改承接（5/8）
-│   └── GOAL-016-w14-rectification-batch-a [done] · 整改批 A · 功能面补全（F-01～F-04）（4/4）
+│   ├── GOAL-016-w14-rectification-batch-a [done] · 整改批 A · 功能面补全（F-01～F-04）（4/4）
+│   └── GOAL-017-w14-rectification-batch-c [active] · 整改批 C · 调试痕迹清理（F-08～F-10）（0/4）
 ```
 
 **W6（2026-08-14 关门，3/3）**：F-1 修复——claim `GIT_COMMIT` 接线、nginx `upstream` 作用域、smoke.sh SM-007 按 profile 页面集；V-007 exit 8 + **V-008 exit 0 完整绿**（SM-006 PASS）；**go 判定：恢复可消费**（冻结命令全部可执行）。
@@ -56,7 +57,9 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 
 **W14（2026-08-17 用户结构裁决：active · 5/8，整改完成前不得 done）**：真实用户视角审视 API/Web 已实现功能；S1 审视完成（E-001）；S2 台账落盘（D-001：F-01～F-14；I-002 collecting）；S3 独立审计 A-002（grok-4.6 · pass，三条 non-blocking 全 fixed）；S4 审计响应 + 台账同步 + I-001 用户书面裁决（D-003）。多次关门尝试（E-002/A-003 违规、E-004/A-005）均被用户否决/修正（E-003/A-004、E-005/A-006）。**整改按 D-003 分批 A→C→D→B 作为 GOAL-015 下级子目标渐进添加**；F-01 新增端点 / F-04 存 messageKey / F-08 直接移除。整改完成前 GOAL-015 保持 active。批 A（R1）已完成。
 
-**W14-批A（2026-08-17 关门，done 4/4）**：GOAL-015 下级整改子目标 GOAL-016-w14-rectification-batch-a——功能面补全 F-01（定时任务 handler 新增端点）/ F-02（数据权限范围设置）/ F-03（审计结构化过滤与导出）/ F-04（通知本地化 messageKey）。S1 冻结（D-001）；S2/S3 实施回归（Go 全量 + Web 1041/1041 + tsc + build）；独立审计 A-001 conditional（F-001 fixed、F-002/F-003 响应）+ 自审 A-002 pass。批 C/D/B 后续渐进添加。
+**W14-批A（2026-08-17 关门，done 4/4）**：GOAL-015 下级整改子目标 GOAL-016-w14-rectification-batch-a——功能面补全 F-01（定时任务 handler 新增端点）/ F-02（数据权限范围设置）/ F-03（审计结构化过滤与导出）/ F-04（通知本地化 messageKey）。S1 冻结（D-001）；S2/S3 实施回归（Go 全量 + Web 1041/1041 + tsc + build）；独立审计 A-001 conditional（F-001 fixed、F-002/F-003 响应）+ 自审 A-002 pass。批 C 已渐进添加。
+
+**W14-批C（2026-08-17 立项，active 0/4）**：GOAL-015 下级整改子目标 GOAL-017-w14-rectification-batch-c——调试痕迹清理 F-08（移除 pageId/route 技术框）/ F-09（反馈文案本地化与去错误码前缀）/ F-10（Schema 加载失败友好化）。五件套落盘；尚未开工（S1 冻结待推进）；批 D/B 后续渐进添加。
 ## 状态表
 
 | id | title | parent | status | progress | updated |
@@ -77,6 +80,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-014-w13-settings-tabs-and-topbar | W13 · 设置页 Tabs 化与顶栏/搜索交互打磨 + 个人中心头像上传 + 通知中心交互修正 + 列表筛选即时生效（设置页功能单元 Tabs / 移动端品牌条 / 搜索框组贴合 / 明暗-语种按键对调 / 移动端汉堡靠左 / 头像上传 / 通知点击即读 / 筛选即时生效） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-16 |
 | GOAL-015-w14-user-perspective-review | W14 · 真实用户视角审视 API/Web 并落盘改进项台账（F-01～F-14）+ 整改承接（整改完成前不 done） | GOAL-001-design-implementation-conformance | active | 5/8 | 2026-08-17 |
 | GOAL-016-w14-rectification-batch-a | W14 整改批 A：功能面补全（F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey） | GOAL-015-w14-user-perspective-review | done | 4/4 | 2026-08-17 |
+| GOAL-017-w14-rectification-batch-c | W14 整改批 C：调试痕迹清理（F-08 移除调试框 / F-09 反馈文案本地化与去错误码前缀 / F-10 Schema 加载失败友好化） | GOAL-015-w14-user-perspective-review | active | 0/4 | 2026-08-17 |
 
 ## 维护说明
 

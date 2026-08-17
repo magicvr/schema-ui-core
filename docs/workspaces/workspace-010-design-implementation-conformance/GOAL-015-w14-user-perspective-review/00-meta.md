@@ -69,7 +69,7 @@ I-001 已由用户书面裁决（D-003）关闭（整改范围确定）。GOAL-0
 | 批 | 子目标 | status | 范围 |
 |----|--------|--------|------|
 | A | [GOAL-016-w14-rectification-batch-a](../GOAL-016-w14-rectification-batch-a/00-meta.md) | done · 4/4 | F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey |
-| C | 渐进添加 | — | F-08～F-10（调试痕迹清理） |
+| C | [GOAL-017-w14-rectification-batch-c](../GOAL-017-w14-rectification-batch-c/00-meta.md) | active · 0/4 | F-08 移除调试框 / F-09 反馈文案本地化与去错误码前缀 / F-10 Schema 加载失败友好化 |
 | D | 渐进添加 | — | F-11～F-14（表单与无障碍） |
 | B | 渐进添加 | — | F-05～F-07（一致性硬化） |
 
