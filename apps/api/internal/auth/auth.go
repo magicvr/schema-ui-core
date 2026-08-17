@@ -384,7 +384,7 @@ func (a *Authenticator) accountFromUser(u *authsession.User) (account.User, erro
 	if err != nil {
 		return account.User{}, fmt.Errorf("resolve permissions for %s: %w", u.ID, err)
 	}
-	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms, AvatarURL: u.AvatarURL}, nil
+	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms, AvatarURL: u.AvatarURL, MustChangePassword: u.MustChangePassword}, nil
 }
 
 // Features returns the boolean menu projection for an authenticated identity
@@ -416,6 +416,19 @@ func WithIdentity(ctx context.Context, u account.User) context.Context {
 func IdentityFrom(ctx context.Context) (account.User, bool) {
 	u, ok := ctx.Value(ctxKey{}).(account.User)
 	return u, ok
+}
+
+// isMustChangePasswordAllowed reports whether a protected endpoint may be used
+// while the account still has must_change_password=1 (W16-F01). Only the
+// self-service password change and profile surfaces are allowed; everything
+// else stays gated until the user changes the initial/reset password.
+func isMustChangePasswordAllowed(method, path string) bool {
+	switch method + " " + path {
+	case "POST /api/account/password", "GET /api/account/profile":
+		return true
+	default:
+		return false
+	}
 }
 
 func bearer(r *http.Request) (string, bool) {
@@ -490,6 +503,13 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				return
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
+			return
+		}
+		// W16-F01: a user with must_change_password=1 is limited to the
+		// password-change and profile surfaces until they replace the initial
+		// password. All other protected business APIs fail closed with 403.
+		if acct.MustChangePassword && !isMustChangePasswordAllowed(r.Method, r.URL.Path) {
+			writeLocalizedError(w, r, http.StatusForbidden, "MUST_CHANGE_PASSWORD", "password change required")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), acct)))

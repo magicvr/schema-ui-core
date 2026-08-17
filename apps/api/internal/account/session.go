@@ -15,6 +15,9 @@ type User struct {
 	Roles []string `json:"roles"`
 	// AvatarURL is the self-service avatar asset URL (W13 T-05); "" = none.
 	AvatarURL string `json:"avatarUrl,omitempty"`
+	// MustChangePassword is true when the user must set a new password before
+	// accessing business APIs (W16-F01).
+	MustChangePassword bool `json:"mustChangePassword"`
 	// Permissions are the persisted role-permission keys resolved at identity
 	// load time (GOAL-006 S4): business gates check keys, not role strings.
 	Permissions []string `json:"permissions,omitempty"`
@@ -38,18 +41,18 @@ func StaticDevSession() Session {
 				"roles.read", "roles.write", "roles.assign",
 				"settings.read", "settings.write",
 				"operations.read",
-				"files.write", // W4 P0-2: admin-only upload gate, parity with seed
+				"files.write",                   // W4 P0-2: admin-only upload gate, parity with seed
 				"users.enable", "users.disable", // F-03 (GOAL-005) admin-only keys
 				"data.export", "data.import", // F-02 (GOAL-004) transfer keys
 			},
 		},
 		Features: map[string]bool{
-			"beta":          true,
-			"menu_users":    true, // GOAL-011 users page grant parity
-			"menu_roles":    true, // GOAL-011 roles page grant parity
-			"menu_settings": true, // GOAL-013 site branding
-			"menu_activity": true, // GOAL-013 operation log
-			"menu_account":  true, // F-03 (GOAL-005) self-service account page
+			"beta":           true,
+			"menu_users":     true, // GOAL-011 users page grant parity
+			"menu_roles":     true, // GOAL-011 roles page grant parity
+			"menu_settings":  true, // GOAL-013 site branding
+			"menu_activity":  true, // GOAL-013 operation log
+			"menu_account":   true, // F-03 (GOAL-005) self-service account page
 			"menu_dashboard": true, // F-01 (GOAL-003) production home dashboard
 		},
 	}

@@ -25,6 +25,9 @@ export interface AuthUser {
   roles: string[];
   /** Self-service avatar asset URL (W13 T-05); absent = no avatar. */
   avatarUrl?: string;
+  /** True when the account must change its initial/reset password before using
+   * business APIs (W16-F01). */
+  mustChangePassword?: boolean;
   /**
    * Permission keys resolved from persisted RBAC at identity load (`/me`).
    * Required by Schema expressions (`$context.user.permissions contains "…"`).
@@ -424,11 +427,14 @@ function parseAuthUser(raw: unknown): AuthUser | null {
   // shell header can render it; absent/empty stays undefined.
   const avatarUrl =
     typeof record.avatarUrl === "string" && record.avatarUrl !== "" ? record.avatarUrl : undefined;
+  const mustChangePassword =
+    typeof record.mustChangePassword === "boolean" ? record.mustChangePassword : undefined;
   return {
     id: record.id,
     name: typeof record.name === "string" ? record.name : "",
     roles,
     ...(avatarUrl === undefined ? {} : { avatarUrl }),
+    ...(mustChangePassword === undefined ? {} : { mustChangePassword }),
     ...(permissions === undefined ? {} : { permissions }),
   };
 }

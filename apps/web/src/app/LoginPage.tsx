@@ -289,7 +289,17 @@ export function LoginPage({
 
               {captchaChallenge !== null ? (
                 <div className="space-y-2">
-                  <Label htmlFor="captchaAnswer">{t("login.captchaQuestion")}</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="captchaAnswer">{t("login.captchaQuestion")}</Label>
+                    <button
+                      type="button"
+                      data-captcha-refresh
+                      className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                      onClick={refreshCaptcha}
+                    >
+                      {t("login.captchaRefresh")}
+                    </button>
+                  </div>
                   <p className="text-sm font-medium" data-captcha-question>
                     {captchaChallenge.question}
                   </p>

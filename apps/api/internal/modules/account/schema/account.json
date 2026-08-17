@@ -153,6 +153,11 @@
         },
         "children": [
           {
+            "type": "custom",
+            "id": "session-toolbar",
+            "component": "account-session-toolbar"
+          },
+          {
             "type": "table",
             "id": "sessions-table",
             "props": {

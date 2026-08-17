@@ -124,8 +124,11 @@ func TestNotificationPasswordChangeEvents(t *testing.T) {
 	req2 := bearer(t, editorToken, http.MethodPost, "/api/account/password", `{"currentPassword":"brand-new-pass","newPassword":"another-new-pass"}`)
 	rr2 := httptest.NewRecorder()
 	env2.mux.ServeHTTP(rr2, req2)
-	if rr2.Code != http.StatusNoContent {
-		t.Fatalf("self password change = %d", rr2.Code)
+	// W16-F01: the admin reset left must_change_password=1, so this self
+	// password change is a forced replacement and the endpoint returns a fresh
+	// token pair (200) instead of the normal 204.
+	if rr2.Code != http.StatusOK {
+		t.Fatalf("self password change = %d, want 200 (forced change)", rr2.Code)
 	}
 	rows2, _, _ := env2.authRepository.ListNotifications("user-editor1", authsession.NotificationFilter{Page: 1, PageSize: 20})
 	if len(rows2) != 2 || rows2[0].Event != "account.password-changed" {

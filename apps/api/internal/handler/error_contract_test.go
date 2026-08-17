@@ -40,6 +40,8 @@ var frozenLiteralCodes = []string{
 	"INVALID_STATUS_FILTER",
 	// F-03 (GOAL-005 D-002 §3): disabled-account login terminal (403).
 	"ACCOUNT_DISABLED",
+	// W16-F01 (GOAL-025): forced initial-password-change gate.
+	"MUST_CHANGE_PASSWORD",
 	// F-02 (GOAL-004): data-transfer codes.
 	"RESOURCE_NOT_FOUND", "INVALID_CSV", "INVALID_IMPORT_BODY", "INVALID_EXPORT_LIMIT",
 	// F-04 (GOAL-006): notification codes.

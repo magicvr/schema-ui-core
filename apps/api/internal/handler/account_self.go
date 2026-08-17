@@ -28,6 +28,7 @@ type AccountRepository interface {
 	UpdateUser(string, authsession.UserPatch, string, time.Time) (*authsession.User, error)
 	ListRefreshTokensForUser(string) ([]authsession.RefreshToken, error)
 	RevokeRefreshTokenIfOwned(string, string, time.Time) error
+	BumpTokenVersionAndRevokeAll(string, time.Time) error
 }
 
 // AccountSelfRoutes returns the self-service route contributions (admin.account).
@@ -35,6 +36,7 @@ type AccountRepository interface {
 // avatarUrl profile surface (used by bare test environments).
 func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, operations operationlog.Recorder, avatarStore *RasterAssetStore, moduleID string, notifier ...NotifyRepository) []kernel.RouteContribution {
 	h := &accountSelfHandler{
+		auth:            a,
 		repository:      repository,
 		operations:      operations,
 		avatarStore:     avatarStore,
@@ -58,10 +60,12 @@ func AccountSelfRoutes(a *auth.Authenticator, repository AccountRepository, oper
 	add("POST", "/api/account/password", a.Middleware(h.changePassword()))
 	add("GET", "/api/account/sessions", a.Middleware(h.sessions()))
 	add("POST", "/api/account/sessions/{id}/revoke", a.Middleware(h.revokeSession()))
+	add("POST", "/api/account/sessions/revoke-others", a.Middleware(h.revokeOthers()))
 	return routes
 }
 
 type accountSelfHandler struct {
+	auth       *auth.Authenticator
 	repository AccountRepository
 	operations operationlog.Recorder
 	// avatarStore owns the user avatar assets (W13 T-05); nil = no avatar surface.
@@ -223,6 +227,8 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load account")
 			return
 		}
+		wasForced := u.MustChangePassword
+		now := h.now().UTC()
 		// F-003: wrong-current-password attempts share the login limiter model
 		// (per client identity, 5 failures / 15 min window). The limiter is
 		// checked before the bcrypt work; a blocked client gets 429.
@@ -248,12 +254,28 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 		}
 		// Reuses the management update path: bumps token_version and revokes
 		// every live refresh token atomically (W4 P0-3; GOAL-005 D-002 `2).
-		if _, err := h.repository.UpdateUser(user.ID, authsession.UserPatch{PasswordHash: &hash}, user.ID, h.now().UTC()); err != nil {
+		// W16-F01: a successful self-service password change clears the forced
+		// must-change flag.
+		mustChange := false
+		if _, err := h.repository.UpdateUser(user.ID, authsession.UserPatch{PasswordHash: &hash, MustChangePassword: &mustChange}, user.ID, now); err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not change password")
 			return
 		}
 		h.record(operationlog.EventAccountPasswordChange, user.ID, user.Name, user.ID, "")
-		NotifyAccountEvent(h.notifier, user.ID, "account.password-changed", h.now().UTC())
+		NotifyAccountEvent(h.notifier, user.ID, "account.password-changed", now)
+		// W16-F01: when the change was a forced initial-password replacement,
+		// reissue a fresh token pair so the user stays signed in and enters the
+		// app immediately. Normal password changes keep the historical 204 +
+		// re-login contract.
+		if wasForced {
+			access, refresh, acct, err := h.auth.IssueTokensFor(user.ID, now)
+			if err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not refresh current session")
+				return
+			}
+			writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: acct})
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 }
@@ -356,6 +378,30 @@ func (h *accountSelfHandler) revokeSession() http.Handler {
 		}
 		h.record(operationlog.EventAccountSessionRevoke, user.ID, user.Name, id, "")
 		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+func (h *accountSelfHandler) revokeOthers() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := h.identity(w, r)
+		if !ok {
+			return
+		}
+		now := h.now().UTC()
+		// W16-F07: revoke every other device's refresh token and invalidate all
+		// previously issued access tokens by bumping token_version, then mint a
+		// fresh pair for the current caller so this device stays signed in.
+		if err := h.repository.BumpTokenVersionAndRevokeAll(user.ID, now); err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not revoke other sessions")
+			return
+		}
+		access, refresh, acct, err := h.auth.IssueTokensFor(user.ID, now)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not refresh current session")
+			return
+		}
+		h.record(operationlog.EventAccountSessionRevoke, user.ID, user.Name, "others", "")
+		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: acct})
 	})
 }
 

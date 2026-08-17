@@ -6,7 +6,7 @@ parent: GOAL-024-w16-user-perspective-improvements
 created: 2026-08-17
 updated: 2026-08-17
 version: 0.1.0
-progress: 0/4
+progress: 2/4
 ---
 
 # GOAL-025 · W16 整改批 A（安全与认证基线）
@@ -24,11 +24,11 @@ progress: 0/4
 ## 成功标准与路线图（P-001）
 
 - [x] **S1 · 方案冻结**：F01/F07/F08 设计（端点/schema/存储契约/前端交互）+ 信息项登记（D-001）。
-- [ ] **S2 · 实施**：F01/F07/F08 代码与 schema/前端接线。
+- [x] **S2 · 实施**：F01/F07/F08 代码与 schema/前端接线。
 - [ ] **S3 · 测试与回归**：Go 全量 + Web vitest/tsc + 相关 e2e；涉登录/会话安全门禁时执行 independent 审计。
 - [ ] **S4 · 自审与关门**：审计 + 台账同步 + goal-tree/workspace 同步。
 
-progress: 由四个等权检查点派生（S1～S4）；当前 **1/4**。
+progress: 由四个等权检查点派生（S1～S4）；当前 **2/4**。
 
 ## 审计策略
 

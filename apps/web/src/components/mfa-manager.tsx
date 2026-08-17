@@ -88,6 +88,45 @@ function splitMFAInput(value: string): { code?: string; recoveryCode?: string } 
   return { recoveryCode: trimmed };
 }
 
+/** Copies text to the clipboard with a Web API fallback. Returns false when
+ * the clipboard is unavailable (used to skip success toasts). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the textarea fallback
+  }
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    textarea.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Downloads lines as a .txt file (W16-F08). */
+function downloadTextFile(filename: string, lines: string[]): void {
+  const blob = new Blob([lines.join("\n") + "\n"], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function MfaManager(_props: CustomComponentProps) {
   const t = useTranslate();
   const { logout } = useAuth();
@@ -100,6 +139,7 @@ export function MfaManager(_props: CustomComponentProps) {
   const [rotateRecovery, setRotateRecovery] = useState("");
   const [newRecovery, setNewRecovery] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -178,6 +218,21 @@ export function MfaManager(_props: CustomComponentProps) {
     });
   };
 
+  const copySecret = async () => {
+    if (enrollPayload === null) {
+      return;
+    }
+    const ok = await copyText(enrollPayload.secretBase32);
+    setCopyNotice(ok ? t("schema.account.mfa.secretCopied") : t("schema.account.mfa.copyFailed"));
+  };
+
+  const downloadRecovery = () => {
+    if (enrollPayload === null) {
+      return;
+    }
+    downloadTextFile("mfa-recovery-codes.txt", enrollPayload.recoveryCodes);
+  };
+
   if (unavailable) {
     return (
       <div className="space-y-2">
@@ -208,6 +263,9 @@ export function MfaManager(_props: CustomComponentProps) {
           <p className="text-center text-sm text-muted-foreground">{t("schema.account.mfa.qrHint")}</p>
           <Label>{t("schema.account.mfa.secret")}</Label>
           <Input readOnly value={enrollPayload.secretBase32} data-mfa-secret />
+          <Button type="button" variant="outline" className="w-full" onClick={() => void copySecret()} data-mfa-copy-secret>
+            {t("schema.account.mfa.copySecret")}
+          </Button>
           <Label>{t("schema.account.mfa.otpauth")}</Label>
           <Input readOnly value={enrollPayload.otpauthURL} />
           <Label>{t("schema.account.mfa.recoveryCodes")}</Label>
@@ -218,6 +276,14 @@ export function MfaManager(_props: CustomComponentProps) {
             value={enrollPayload.recoveryCodes.join("\n")}
             data-mfa-recovery
           />
+          <Button type="button" variant="outline" className="w-full" onClick={downloadRecovery} data-mfa-download-recovery>
+            {t("schema.account.mfa.downloadRecovery")}
+          </Button>
+          {copyNotice !== null ? (
+            <p className="text-xs text-muted-foreground" data-mfa-copy-notice>
+              {copyNotice}
+            </p>
+          ) : null}
           <form onSubmit={confirm} className="space-y-2">
             <Input
               id="mfaConfirmCode"

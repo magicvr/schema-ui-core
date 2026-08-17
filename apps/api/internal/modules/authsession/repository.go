@@ -56,8 +56,11 @@ type User struct {
 	// 0035, account module): "" = no avatar. Values are committed by the
 	// account profile PATCH and validated against the avatar store.
 	AvatarURL string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// MustChangePassword is true when the user has not yet replaced the
+	// initial/reset password (W16-F01).
+	MustChangePassword bool
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 // RefreshToken is a stored opaque refresh token; only its hash is persisted.
@@ -91,6 +94,9 @@ type UserPatch struct {
 	PasswordHash *string
 	// AvatarURL is the self-service avatar value (W13 T-05); nil = untouched.
 	AvatarURL *string
+	// MustChangePassword is the forced-password-change flag (W16-F01); nil =
+	// untouched.
+	MustChangePassword *bool
 }
 
 // Role is the persisted RBAC role projection.

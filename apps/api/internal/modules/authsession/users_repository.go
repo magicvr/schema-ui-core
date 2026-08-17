@@ -21,7 +21,7 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 		}
 
 		rows, err := tx.Query(
-			`SELECT u.id, u.username, u.name, u.roles, u.password_hash, u.token_version, u.failed_login_count, u.locked_until, u.enabled, u.avatar_url, u.created_at, u.updated_at,
+			`SELECT u.id, u.username, u.name, u.roles, u.password_hash, u.token_version, u.failed_login_count, u.locked_until, u.enabled, u.avatar_url, u.must_change_password, u.created_at, u.updated_at,
 			        EXISTS(SELECT 1 FROM user_mfa um WHERE um.user_id = u.id AND um.status = 'active') AS mfa_enabled
 			 FROM users u`+where+
 				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, u.id ASC`+
@@ -92,10 +92,10 @@ func (r *Repository) CreateUserManagement(user User) (*User, error) {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
 		if _, err := tx.Exec(
-			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			user.ID, user.Username, user.Name, string(rolesJSON), user.PasswordHash,
-			user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
+			boolInt(user.MustChangePassword), user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
 		); err != nil {
 			return fmt.Errorf("insert user: %w", err)
 		}
@@ -120,9 +120,10 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		var current User
 		var rolesJSON string
 		var createdAt, updatedAt int64
+		var mustChangePassword int
 		err := tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, created_at, updated_at FROM users WHERE id = ?`, id,
-		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &createdAt, &updatedAt)
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at FROM users WHERE id = ?`, id,
+		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &mustChangePassword, &createdAt, &updatedAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -132,6 +133,7 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		if err := json.Unmarshal([]byte(rolesJSON), &current.Roles); err != nil {
 			return fmt.Errorf("unmarshal roles: %w", err)
 		}
+		current.MustChangePassword = mustChangePassword != 0
 		current.CreatedAt = time.Unix(createdAt, 0).UTC()
 		current.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 
@@ -176,6 +178,10 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		if patch.AvatarURL != nil {
 			avatarURL = *patch.AvatarURL
 		}
+		mustChangePasswordFlag := current.MustChangePassword
+		if patch.MustChangePassword != nil {
+			mustChangePasswordFlag = *patch.MustChangePassword
+		}
 		rolesBytes, err := json.Marshal(newRoles)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
@@ -193,8 +199,8 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 			nextTokenVersion = current.TokenVersion + 1
 		}
 		if _, err := tx.Exec(
-			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, updated_at = ? WHERE id = ?`,
-			name, string(rolesBytes), passwordHash, nextTokenVersion, avatarURL, nextUpdatedAt, id,
+			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, must_change_password = ?, updated_at = ? WHERE id = ?`,
+			name, string(rolesBytes), passwordHash, nextTokenVersion, avatarURL, boolInt(mustChangePasswordFlag), nextUpdatedAt, id,
 		); err != nil {
 			return fmt.Errorf("update user: %w", err)
 		}
@@ -368,7 +374,6 @@ func countAdminUsersExcluding(tx *sql.Tx, id string) (int, error) {
 	return count, nil
 }
 
-
 // scanUserListRow scans the ListUsers projection: the 11 user columns plus the
 // cross-module MFA flag (S-10 · GOAL-017 D-002 §4, user_mfa table contract
 // from migration 0029). One Scan call — sql.Rows requires dest count ==
@@ -377,10 +382,10 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
 	var createdAt, updatedAt int64
-	var mfaEnabled int
+	var mustChangePassword, mfaEnabled int
 	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash,
 		&user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled,
-		&user.AvatarURL, &createdAt, &updatedAt, &mfaEnabled)
+		&user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &mfaEnabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -390,6 +395,7 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	if err := json.Unmarshal([]byte(roles), &user.Roles); err != nil {
 		return nil, fmt.Errorf("unmarshal roles: %w", err)
 	}
+	user.MustChangePassword = mustChangePassword != 0
 	user.MFAEnabled = mfaEnabled != 0
 	user.CreatedAt = time.Unix(createdAt, 0).UTC()
 	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()

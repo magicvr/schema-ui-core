@@ -2,6 +2,7 @@ package testsupport
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
@@ -33,6 +34,16 @@ func OpenStore(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*
 	}
 	permissions, navigation := testSystemDataContributions()
 	if err := authsessiondata.Reconcile(context.Background(), st, permissions, navigation); err != nil {
+		_ = st.Close()
+		return nil, err
+	}
+	// W16-F01: the production bootstrap seeds must_change_password=1. Test
+	// environments use the seeded admin as a normal pre-change account, so clear
+	// the flag after bootstrap to keep existing test contracts stable.
+	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE users SET must_change_password = 0`)
+		return err
+	}); err != nil {
 		_ = st.Close()
 		return nil, err
 	}

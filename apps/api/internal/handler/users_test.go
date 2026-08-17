@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
@@ -655,6 +656,13 @@ func TestUsersPasswordChangeRevokesAccessToken(t *testing.T) {
 	id, _ := created["id"].(string)
 	if id == "" {
 		t.Fatalf("created user missing id: %v", created)
+	}
+	// W16-F01: API-created users start with must_change_password=1. This test
+	// targets token-version revocation, so clear the forced-change flag before
+	// probing protected routes.
+	mustChange := false
+	if _, err := env.authRepository.UpdateUser(id, authsession.UserPatch{MustChangePassword: &mustChange}, id, time.Now().UTC()); err != nil {
+		t.Fatalf("clear must_change_password: %v", err)
 	}
 	oldToken := env.login(t, "alice", "old-secret")
 

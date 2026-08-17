@@ -21,10 +21,10 @@ func (r *Repository) CreateUser(user User) error {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
 		if _, err := tx.Exec(
-			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			user.ID, user.Username, user.Name, string(rolesJSON), user.PasswordHash,
-			user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
+			boolInt(user.MustChangePassword), user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
 		); err != nil {
 			return fmt.Errorf("insert user: %w", err)
 		}
@@ -42,7 +42,7 @@ func (r *Repository) CreateUser(user User) error {
 func (r *Repository) UserByUsername(username string) (*User, error) {
 	return r.userBy("get user by username", func(tx *sql.Tx) *sql.Row {
 		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at
 			 FROM users WHERE username = ?`, username)
 	})
 }
@@ -51,7 +51,7 @@ func (r *Repository) UserByUsername(username string) (*User, error) {
 func (r *Repository) UserByID(id string) (*User, error) {
 	return r.userBy("get user by id", func(tx *sql.Tx) *sql.Row {
 		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at
 			 FROM users WHERE id = ?`, id)
 	})
 }
@@ -248,7 +248,8 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
 	var createdAt, updatedAt int64
-	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled, &user.AvatarURL, &createdAt, &updatedAt)
+	var mustChangePassword int
+	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled, &user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -258,6 +259,7 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	if err := json.Unmarshal([]byte(roles), &user.Roles); err != nil {
 		return nil, fmt.Errorf("unmarshal roles: %w", err)
 	}
+	user.MustChangePassword = mustChangePassword != 0
 	user.CreatedAt = time.Unix(createdAt, 0).UTC()
 	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	return &user, nil

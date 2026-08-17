@@ -125,6 +125,13 @@ var accountLockDDL = []string{
 	`ALTER TABLE users ADD COLUMN locked_until INTEGER NOT NULL DEFAULT 0`,
 }
 
+// mustChangePasswordDDL adds the forced-password-change flag (W16-F01):
+// 1 = the user must replace the initial/reset password before business APIs
+// are usable; 0 = normal. Additive and backward compatible.
+var mustChangePasswordDDL = []string{
+	`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`,
+}
+
 // Descriptors returns the immutable 0001-0002 auth/session migration history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -162,6 +169,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "account_lock",
 			Checksum:             kernel.MigrationChecksum(accountLockDDL, "0012:account-lock:v1"),
 			Apply:                migrateAccountLock,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "must_change_password"},
+			Version:              38,
+			Name:                 "must_change_password",
+			Checksum:             kernel.MigrationChecksum(mustChangePasswordDDL, "0038:must-change-password:v1"),
+			Apply:                migrateMustChangePassword,
 		},
 	}
 }
@@ -217,6 +231,15 @@ func migrateAccountLock(tx *sql.Tx) error {
 	for _, stmt := range accountLockDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("add account-lock columns: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateMustChangePassword(tx *sql.Tx) error {
+	for _, stmt := range mustChangePasswordDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("add users.must_change_password: %w", err)
 		}
 	}
 	return nil

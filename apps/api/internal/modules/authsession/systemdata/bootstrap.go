@@ -50,8 +50,8 @@ func Bootstrap(ctx context.Context, runner TxRunner, username, passwordHash stri
 				return fmt.Errorf("marshal bootstrap roles: %w", marshalErr)
 			}
 			if _, err := tx.Exec(
-				`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+				`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
+				 VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
 				"user-admin", username, "Admin", string(roles), passwordHash, now, now,
 			); err != nil {
 				return fmt.Errorf("insert bootstrap admin: %w", err)

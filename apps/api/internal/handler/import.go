@@ -237,13 +237,14 @@ func (h *importHandler) importUsersCSV(raw []byte, actor account.User) (importRe
 			}
 		}
 		_, createErr := h.repository.CreateUserManagement(authsession.User{
-			ID:           newUserIDValue(),
-			Username:     row["username"],
-			Name:         row["name"],
-			Roles:        roles,
-			PasswordHash: hash,
-			CreatedAt:    now,
-			UpdatedAt:    now,
+			ID:                 newUserIDValue(),
+			Username:           row["username"],
+			Name:               row["name"],
+			Roles:              roles,
+			PasswordHash:       hash,
+			MustChangePassword: true,
+			CreatedAt:          now,
+			UpdatedAt:          now,
 		})
 		if createErr != nil {
 			message := "could not create user"

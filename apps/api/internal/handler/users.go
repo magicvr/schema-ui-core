@@ -52,11 +52,11 @@ func usersResource(repository UsersRepository, operations operationlog.Recorder)
 // usersResourceWithNotifier adds the F-04 password-change hook surface.
 func usersResourceWithNotifier(repository UsersRepository, operations operationlog.Recorder, notifier NotifyRepository) Resource {
 	return Resource{
-		ID:              "users",
-		Path:            "/api/users",
-		Listable:        true,
-		SortFields:      []string{"username", "name", "updatedAt"},
-		QSearch:         true,
+		ID:         "users",
+		Path:       "/api/users",
+		Listable:   true,
+		SortFields: []string{"username", "name", "updatedAt"},
+		QSearch:    true,
 		// T-02 (GOAL-013 D-003): management-list filters — enabled / locked
 		// state selects on the users search form.
 		ExtraQuery:      []string{"enabled", "locked"},
@@ -97,15 +97,16 @@ type usersEntity struct {
 func userToMap(u authsession.User) map[string]any {
 	locked := u.LockedUntil > time.Now().UTC().Unix()
 	return map[string]any{
-		"id":         u.ID,
-		"username":   u.Username,
-		"name":       u.Name,
-		"roles":      u.Roles,
-		"enabled":    u.Enabled,
-		"mfaEnabled": u.MFAEnabled,
-		"locked":     locked,
-		"createdAt": u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt": u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"id":                 u.ID,
+		"username":           u.Username,
+		"name":               u.Name,
+		"roles":              u.Roles,
+		"enabled":            u.Enabled,
+		"mfaEnabled":         u.MFAEnabled,
+		"mustChangePassword": u.MustChangePassword,
+		"locked":             locked,
+		"createdAt":          u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt":          u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 }
 
@@ -161,13 +162,14 @@ func (e *usersEntity) Create(body map[string]any, id string, now time.Time, acto
 		return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
 	}
 	u, err := e.repository.CreateUserManagement(authsession.User{
-		ID:           id,
-		Username:     stringField(body, "username"),
-		Name:         stringField(body, "name"),
-		Roles:        roles,
-		PasswordHash: hash,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:                 id,
+		Username:           stringField(body, "username"),
+		Name:               stringField(body, "name"),
+		Roles:              roles,
+		PasswordHash:       hash,
+		MustChangePassword: true,
+		CreatedAt:          now,
+		UpdatedAt:          now,
 	})
 	if err != nil {
 		return nil, mapUserStoreError(err)
@@ -191,6 +193,8 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 			return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
 		}
 		patch.PasswordHash = &hash
+		mustChange := true
+		patch.MustChangePassword = &mustChange
 	}
 	if v, ok := body["roles"]; ok {
 		roles, err := parseRolesValue(v)

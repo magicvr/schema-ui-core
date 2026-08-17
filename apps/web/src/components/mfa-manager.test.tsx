@@ -32,6 +32,7 @@ afterEach(async () => {
   logoutMock.mockClear();
   sessionStorage.clear();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 async function renderManager() {
@@ -98,6 +99,41 @@ describe("MfaManager", () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(4);
   });
 
+
+  it("copies the MFA secret and downloads recovery codes (W16-F08)", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const createObjectURL = vi.fn(() => "blob:test");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ enabled: false, enrolledAt: null })) // status
+      .mockResolvedValueOnce(
+        jsonResponse({ secretBase32: "SECRET123", otpauthURL: "otpauth://totp/x", recoveryCodes: ["R1", "R2"] }), // enroll
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const container = await renderManager();
+    await act(async () => {});
+    const enroll = container.querySelector<HTMLButtonElement>('button[type="button"]');
+    await act(async () => enroll!.click());
+    await act(async () => {});
+
+    const copy = container.querySelector<HTMLButtonElement>("[data-mfa-copy-secret]");
+    expect(copy).not.toBeNull();
+    await act(async () => copy!.click());
+    await act(async () => {});
+    expect(writeText).toHaveBeenCalledWith("SECRET123");
+    expect(container.textContent).toContain("Secret copied");
+
+    const download = container.querySelector<HTMLButtonElement>("[data-mfa-download-recovery]");
+    expect(download).not.toBeNull();
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    await act(async () => download!.click());
+    expect(createObjectURL).toHaveBeenCalled();
+  });
 
   // A-003 F-002: the disable input accepts a recovery code (non-6-digit) and
   // the rotate flow returns a fresh set.

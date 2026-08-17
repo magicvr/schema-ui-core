@@ -8,9 +8,11 @@ import { I18nProvider, useI18n } from "@/i18n/runtime";
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
 import { LoginPage } from "@/app/LoginPage";
+import { ForcePasswordChange } from "@/components/force-password-change";
 // GOAL-018: self-registers custom renderer components (mfa-manager in the
 // personal-center MFA block; notification-center on the notifications page).
 import "@/components/mfa-manager";
+import "@/components/account-session-toolbar";
 import "@/components/notification-center";
 import "@/components/data-permission-scopes";
 import "@/components/activity-export";
@@ -75,6 +77,10 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
   }
   if (status === "unauthenticated") {
     return <LoginPage onLogin={login} />;
+  }
+  if (user?.mustChangePassword === true) {
+    // W16-F01: force the initial/reset password change before entering the app.
+    return <ForcePasswordChange />;
   }
 
   const context: NavigationContext = {

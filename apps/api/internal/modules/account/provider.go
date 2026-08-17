@@ -46,7 +46,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"GET /api/account/profile", "PATCH /api/account/profile",
 				"POST /api/account/avatar", "GET /api/account/avatars/{id}",
 				"POST /api/account/password", "GET /api/account/sessions",
-				"POST /api/account/sessions/{id}/revoke",
+				"POST /api/account/sessions/{id}/revoke", "POST /api/account/sessions/revoke-others",
 				"POST /api/users/{id}/enable", "POST /api/users/{id}/disable",
 				"POST /api/users/{id}/unlock",
 			},

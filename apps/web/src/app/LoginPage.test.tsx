@@ -200,6 +200,33 @@ describe("LoginPage", () => {
     }
   });
 
+  it("refreshes the captcha challenge when the user clicks 换一题 (W16-F08)", async () => {
+    let calls = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      calls += 1;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          challenge: { id: "cap-" + calls, question: calls === 1 ? "1 + 1 = ?" : "2 + 2 = ?", expiresInSeconds: 300 },
+        }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const container = await renderLogin(vi.fn().mockResolvedValue(undefined));
+      const refresh = container.querySelector<HTMLButtonElement>("[data-captcha-refresh]");
+      expect(refresh).not.toBeNull();
+      const before = calls;
+      await act(async () => refresh!.click());
+      await act(async () => {});
+      expect(calls).toBeGreaterThan(before);
+      expect(container.querySelector('[data-captcha-question]')?.textContent).toContain("2 + 2");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("stays captcha-free and still logs in when the preflight reports disabled", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
