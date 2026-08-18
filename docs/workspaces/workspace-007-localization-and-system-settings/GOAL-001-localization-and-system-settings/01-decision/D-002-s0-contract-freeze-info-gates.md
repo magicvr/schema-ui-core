@@ -5,8 +5,8 @@ title: S0 · 差距盘点与契约冻结：关闭 I-L10N-001～005、冻结 F-V0
 status: accepted
 parent: GOAL-001-localization-and-system-settings
 created: 2026-08-09
-updated: 2026-08-09
-version: 0.1.0
+updated: 2026-08-18
+version: 0.1.1
 ---
 
 # D-002 · S0 契约冻结（用户书面裁决 2026-08-09）
@@ -57,6 +57,8 @@ S0 阶段启动：基线全绿（`go test ./...` 全包通过；vitest 629/629�
 **字面量码（31）**：`EMPTY_SELECTION`、`FILE_NOT_FOUND`、`FILE_TOO_LARGE`、`FORBIDDEN`、`INTERNAL`、`INVALID_BODY`、`INVALID_CREATE_BODY`、`INVALID_CREATE_FIELD`、`INVALID_FILE`、`INVALID_LOGIN_BODY`、`INVALID_LOGO_URL`、`INVALID_LOGOUT_BODY`、`INVALID_PAGE`、`INVALID_PAGE_SIZE`、`INVALID_PATCH_BODY`、`INVALID_PATCH_FIELD`、`INVALID_REFRESH_BODY`、`INVALID_SELECTION_KEY`、`INVALID_SITE_TITLE`、`INVALID_SORT_FIELD`、`INVALID_SORT_ORDER`、`INVALID_UPLOAD`、`LOGIN_FAILED`、`LOGOUT_FAILED`、`REFRESH_FAILED`、`SCHEMA_NOT_FOUND`、`SETTINGS_NOT_FOUND`、`STORAGE_UNAVAILABLE`、`UNAUTHENTICATED`、`UNAUTHORIZED`、`UNSUPPORTED_FILE_TYPE`。
 
 **动态/域码族（8）**：`{RESOURCE}_NOT_FOUND`（如 `ROLE_NOT_FOUND`/`USER_NOT_FOUND`/`CATALOG_NOT_FOUND`）、`USERNAME_TAKEN`、`ROLE_KEY_TAKEN`、`ROLE_IN_USE`、`ROLE_SYSTEM`、`INVALID_ROLE_KEY`、`INVALID_PERMISSION_REF`、`ROLE_GRANT_FORBIDDEN`。
+
+**增量稳定码（2026-08-18，VP-012 R4）**：按本附录“可新增、不可改语义/复用”的规则，追加异步 Job HTTP 码 `JOB_NOT_FOUND`、`JOB_NOT_CANCELLABLE`、`JOB_NOT_RETRYABLE`、`JOB_RESULT_NOT_READY`、`JOB_RESULT_EXPIRED`，以及仅持久化于 Job 终态 representation 的 `JOB_ATTEMPTS_EXHAUSTED`、`JOB_HANDLER_FAILED`。精确 HTTP/状态转换语义见 `docs/workspaces/workspace-012-shared-cross-module-contracts/GOAL-005-r4-async-job-contract/01-decision/D-002-r4-precise-contract.md` §3/§7；原始枚举及既有语义不变。
 
 **编目策略（S4 实施）**：上列全部码为稳定机读码；`INTERNAL` 及未编目码永不携带具体诊断（英文通用文案），编目码按 `Accept-Language` 返回语种化 `message` + `messageKey`/`params`。
 

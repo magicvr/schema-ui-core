@@ -62,7 +62,14 @@ var frozenLiteralCodes = []string{
 	"PRECONDITION_REQUIRED", "INVALID_PRECONDITION",
 	// GOAL-020 (D-001 §2): user accounts are auto-created.
 	"WALLET_USER_AUTO_ONLY",
+	// VP-012 R4 (GOAL-005 D-002 §7): actor-scoped async Job HTTP codes.
+	"JOB_NOT_FOUND", "JOB_NOT_CANCELLABLE", "JOB_NOT_RETRYABLE", "JOB_RESULT_NOT_READY", "JOB_RESULT_EXPIRED",
 }
+
+// frozenStoredCodes are stable Job terminal codes persisted in Job.error.
+// They are cataloged for clients reading a failed Job representation, but are
+// not emitted as top-level handler errors.
+var frozenStoredCodes = []string{"JOB_ATTEMPTS_EXHAUSTED", "JOB_HANDLER_FAILED"}
 
 // frozenDomainCodes are the verbatim domain rejection codes (resources/roles/
 // users), plus the dynamic {RESOURCE}_NOT_FOUND family and the F-006 additions
@@ -135,7 +142,7 @@ func TestErrorCodeContractPinnedSet(t *testing.T) {
 	}
 	// No unexpected literal codes (drift guard).
 	allowed := map[string]bool{}
-	for _, code := range append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...) {
+	for _, code := range append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...) {
 		allowed[code] = true
 	}
 	for code := range found {
@@ -152,7 +159,7 @@ func TestErrorCatalogCoversFrozenCodesExceptInternal(t *testing.T) {
 	}
 	// Every other frozen literal + domain code must have a bilingual entry
 	// with a stable messageKey.
-	for _, code := range append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...) {
+	for _, code := range append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...) {
 		if code == "INTERNAL" {
 			continue
 		}
@@ -171,7 +178,7 @@ func TestErrorCatalogCoversFrozenCodesExceptInternal(t *testing.T) {
 	// The catalog must not contain codes outside the frozen set.
 	for code := range errorcatalog.Catalog {
 		known := false
-		for _, frozen := range append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...) {
+		for _, frozen := range append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...) {
 			if code == frozen {
 				known = true
 				break
