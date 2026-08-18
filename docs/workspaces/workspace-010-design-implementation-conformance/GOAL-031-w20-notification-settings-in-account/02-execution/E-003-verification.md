@@ -21,6 +21,8 @@ parent: GOAL-001-design-implementation-conformance
 
 未跑全量 vitest / e2e / 浏览器。
 
+Git checkpoint（S2/S3 切片）：`c3aed7d`。
+
 ## 下一步（计划）
 
 S4 自审关门。
