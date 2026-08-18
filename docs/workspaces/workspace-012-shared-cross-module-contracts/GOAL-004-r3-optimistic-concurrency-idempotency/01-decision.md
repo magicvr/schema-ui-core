@@ -1,7 +1,7 @@
 ---
 id: GOAL-004-r3-optimistic-concurrency-idempotency
 doc: decision
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18

@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-optimistic-concurrency-idempotency
 doc: audit
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.5
+version: 0.2.0
 ---
 
 # 审计记录 · GOAL-004
@@ -22,4 +22,4 @@ version: 0.1.5
 
 ## 当前状态
 
-S0 finding 已闭合。S1/S2 实现 checkpoint `08dcec8` 与 API 全量验证已落盘，A-003 self = `pass`。A-004 independent final close-out = `pass`；A-005 已将两条 recommended 按 `fixed` 闭合。当前开放 required/recommended 均为 0；等待编排器同步关门状态。
+S0-S3 已完成。实现 checkpoint `08dcec8`、建议修复 checkpoint `84065b5`；A-004 independent final close-out = `pass`，A-005 将两条 recommended 按 `fixed` 闭合。当前开放 required/recommended 均为 0；R3 / GOAL-004 已关闭。

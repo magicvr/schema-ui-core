@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-optimistic-concurrency-idempotency
 title: R3 · 乐观并发与幂等契约
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.0
+version: 0.2.0
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -39,7 +39,7 @@ R3 以 `admin.wallet` 为首个真实消费模块，固化跨模块可复用的�
 | S0 | 扫描现有 version/ETag/idempotency/transaction 语义，冻结边界 | ✅ 已完成（D-001/D-002/E-001/E-002；A-002 closes A-001） |
 | S1 | 实现共享版本前置条件与 wallet ETag/expectedVersion | ✅ 已完成（08dcec8） |
 | S2 | 实现 operation replay 结果、冲突语义与回归测试 | ✅ 已完成（08dcec8） |
-| S3 | 全量验证、自审、independent 审计与关门 | 🚧 进行中（A-003 self pass） |
+| S3 | 全量验证、自审、independent 审计与关门 | ✅ 已完成（A-004 independent pass；A-005 closes recommendations） |
 
 ## 成功标准
 
