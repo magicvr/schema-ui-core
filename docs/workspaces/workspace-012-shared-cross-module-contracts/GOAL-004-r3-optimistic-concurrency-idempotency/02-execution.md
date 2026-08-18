@@ -15,3 +15,4 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-18 | R3 version/idempotency 现状扫描 | recorded | [E-001-r3-contract-scan.md](02-execution/E-001-r3-contract-scan.md) |
+| E-002 | 2026-08-18 | R3 S0 finding 响应 | recorded | [E-002-r3-s0-finding-response.md](02-execution/E-002-r3-s0-finding-response.md) |

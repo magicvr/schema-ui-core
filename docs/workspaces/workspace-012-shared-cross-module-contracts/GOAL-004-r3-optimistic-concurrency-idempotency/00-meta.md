@@ -36,8 +36,8 @@ R3 以 `admin.wallet` 为首个真实消费模块，固化跨模块可复用的�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S0 | 扫描现有 version/ETag/idempotency/transaction 语义，冻结边界 | ✅ 已完成（D-001/E-001；待 A-001） |
-| S1 | 实现共享版本前置条件与 wallet ETag/expectedVersion | 未开始 |
+| S0 | 扫描现有 version/ETag/idempotency/transaction 语义，冻结边界 | ✅ 已完成（D-001/D-002/E-001/E-002；A-002 closes A-001） |
+| S1 | 实现共享版本前置条件与 wallet ETag/expectedVersion | 🚧 进行中 |
 | S2 | 实现 operation replay 结果、冲突语义与回归测试 | 未开始 |
 | S3 | 全量验证、自审、independent 审计与关门 | 未开始 |
 
@@ -52,7 +52,7 @@ R3 以 `admin.wallet` 为首个真实消费模块，固化跨模块可复用的�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 现有 version/ETag/idempotency 实现与真实消费切片是否足以冻结契约 | S1 方案冻结 | S0 结束前 | 扫描 API repository/handler/migration/tests | verified | 2026-08-18 | E-001：wallet 已有 version CAS、409、账户作用域唯一 key 与事务；Manifest 仅有 If-None-Match |
+| I-001 | required | 现有 version/ETag/idempotency 实现与真实消费切片是否足以冻结契约 | S1 方案冻结 | S0 结束前 | 扫描 API repository/handler/migration/tests | verified | 2026-08-18 | E-001 证明 wallet 切片足够；wire/replay 细节由 A-001 发现并经 D-002/A-002 冻结 |
 | I-002 | required | 审计模式与 provider | S3 关门 | S1 实施前 | 按 data/compatibility 风险分级 | verified | 2026-08-18 | 模式 independent；provider 为项目级 grok-build (grok-4.6 reasoning high) |
 
 ## 父目标
