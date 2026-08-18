@@ -46,6 +46,8 @@ coverage/
 *.tsbuildinfo
 .npm
 .eslintcache
+pnpm-lock.yaml
+pnpm-workspace.yaml
 
 # --- Playwright ---
 apps/**/test-results/
