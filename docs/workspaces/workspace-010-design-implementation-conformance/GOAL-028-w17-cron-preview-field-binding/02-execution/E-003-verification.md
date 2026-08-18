@@ -24,6 +24,8 @@ parent: GOAL-001-design-implementation-conformance
 
 未跑全量 Web vitest / e2e / 浏览器点验。
 
+Git checkpoint（S2/S3 切片）：`1b6e9c2`。
+
 ## 阻塞
 
 无。S4 关门前建议补跑 handler 全包（更长 timeout）或接受定向证据做 self 关门。
