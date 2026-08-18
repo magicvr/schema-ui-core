@@ -689,6 +689,8 @@
   "error.ledgerVersionConflict": "账户已被并发修改，请刷新后重试",
   "error.ledgerIdempotencyConflict": "幂等键已被不同载荷使用",
   "error.invalidLedgerEntry": "非法账本流水",
+  "error.preconditionRequired": "请提供 If-Match 或 expectedVersion",
+  "error.invalidPrecondition": "版本前置条件必须有效且一致",
   "error.walletUserAutoOnly": "用户钱包账户由系统自动创建",
   "shell.userMenu": "用户菜单",
   "schema.users.search.q": "用户名 / 显示名 / ID",

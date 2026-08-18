@@ -689,6 +689,8 @@
   "error.ledgerVersionConflict": "The account changed concurrently; reload and retry",
   "error.ledgerIdempotencyConflict": "Idempotency key was already used with a different payload",
   "error.invalidLedgerEntry": "Invalid ledger entry",
+  "error.preconditionRequired": "Provide If-Match or expectedVersion",
+  "error.invalidPrecondition": "Version preconditions must be valid and agree",
   "error.walletUserAutoOnly": "User wallet accounts are created automatically",
   "shell.userMenu": "User menu",
   "schema.users.search.q": "Username / display name / ID",

@@ -276,6 +276,17 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	accountID := created["id"].(string)
 	version := int64(created["version"].(float64))
 
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/by-owner/u9", ""))
+	if rr.Code != http.StatusOK || rr.Header().Get("ETag") != `"v0"` {
+		t.Fatalf("by-owner GET = %d ETag=%q", rr.Code, rr.Header().Get("ETag"))
+	}
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/accounts", ""))
+	if rr.Code != http.StatusOK || rr.Header().Get("ETag") != "" {
+		t.Fatalf("account list = %d ETag=%q, want no account ETag", rr.Code, rr.Header().Get("ETag"))
+	}
+
 	body := `{"amountDelta":500,"memo":"grant","idempotencyKey":"k9"}`
 	var lastAccount map[string]any
 	var operationID string
@@ -382,6 +393,37 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK || rr.Header().Get("ETag") != `"v4"` {
 		t.Fatalf("If-Match update = %d ETag=%q body=%s", rr.Code, rr.Header().Get("ETag"), rr.Body.String())
+	}
+}
+
+func TestWalletMutationWithoutIdempotencyKeyReturnsOperation(t *testing.T) {
+	env, _ := newWalletEnv(t)
+	token := env.login(t, testSeedUsername, testSeedPassword)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/by-owner/no-key", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("open = %d %s", rr.Code, rr.Body.String())
+	}
+	var account map[string]any
+	_ = json.Unmarshal(rr.Body.Bytes(), &account)
+	accountID, _ := account["id"].(string)
+
+	req := bearer(t, token, http.MethodPost, "/api/wallet/accounts/"+accountID+"/adjust", `{"amountDelta":10,"memo":"no-key"}`)
+	req.Header.Set("If-Match", `W/"v999"`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("no-key adjust = %d %s", rr.Code, rr.Body.String())
+	}
+	var response map[string]any
+	_ = json.Unmarshal(rr.Body.Bytes(), &response)
+	operation, _ := response["operation"].(map[string]any)
+	operationID, _ := operation["operationId"].(string)
+	if operationID == "" || operation["state"] != "succeeded" || operation["replayed"] != false || operation["resourceVersion"] != float64(1) {
+		t.Fatalf("operation = %#v", operation)
+	}
+	if _, exists := operation["idempotencyKey"]; exists {
+		t.Fatalf("no-key operation unexpectedly contains idempotencyKey: %#v", operation)
 	}
 }
 

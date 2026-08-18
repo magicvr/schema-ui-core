@@ -33,6 +33,7 @@ func TestResolveExpectedVersion(t *testing.T) {
 		{name: "wildcard", header: []string{"*"}, wantErr: ErrInvalidPrecondition},
 		{name: "list", header: []string{`"v1", "v2"`}, wantErr: ErrInvalidPrecondition},
 		{name: "unquoted", header: []string{"v1"}, wantErr: ErrInvalidPrecondition},
+		{name: "extra quote", header: []string{`""v1""`}, wantErr: ErrInvalidPrecondition},
 		{name: "internal whitespace", header: []string{`"v 1"`}, wantErr: ErrInvalidPrecondition},
 		{name: "multiple headers", header: []string{`"v1"`, `"v1"`}, wantErr: ErrInvalidPrecondition},
 		{name: "overflow", header: []string{`"v9223372036854775808"`}, wantErr: ErrInvalidPrecondition},
