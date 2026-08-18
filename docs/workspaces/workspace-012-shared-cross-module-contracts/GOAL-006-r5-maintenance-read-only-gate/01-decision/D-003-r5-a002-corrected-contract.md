@@ -1,7 +1,7 @@
 ---
 id: D-003-r5-a002-corrected-contract
 goal: GOAL-006-r5-maintenance-read-only-gate
-status: proposed
+status: accepted
 created: 2026-08-18
 updated: 2026-08-18
 parent: GOAL-006-r5-maintenance-read-only-gate
@@ -34,4 +34,4 @@ version: 0.1.0
 
 ## 门禁
 
-本稿须经 A-004 independent closure 后将 D-003 标为 `accepted`，I-002～I-004 才可从 collecting 改为 verified 并放行 S1。
+A-004 independent closure 为 `pass`，required=0；D-003 已据此 accepted，I-002～I-004 已 verified，S1 获准开始。

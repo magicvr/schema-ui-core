@@ -15,5 +15,5 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-18 | R5 运行态与统一写边界初始方案 | proposed | [D-001-r5-operational-state.md](01-decision/D-001-r5-operational-state.md) |
-| D-002 | 2026-08-18 | R5 S0 精确模式、写门禁与 Host 投影 | proposed | [D-002-r5-precise-contract.md](01-decision/D-002-r5-precise-contract.md) |
-| D-003 | 2026-08-18 | R5 A-002 finding 修订契约 | proposed | [D-003-r5-a002-corrected-contract.md](01-decision/D-003-r5-a002-corrected-contract.md) |
+| D-002 | 2026-08-18 | R5 S0 精确模式、写门禁与 Host 投影 | superseded | [D-002-r5-precise-contract.md](01-decision/D-002-r5-precise-contract.md) |
+| D-003 | 2026-08-18 | R5 A-002 finding 修订契约 | accepted | [D-003-r5-a002-corrected-contract.md](01-decision/D-003-r5-a002-corrected-contract.md) |
