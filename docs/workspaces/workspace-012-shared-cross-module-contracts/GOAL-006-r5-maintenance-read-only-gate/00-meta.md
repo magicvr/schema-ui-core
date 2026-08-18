@@ -1,12 +1,12 @@
 ---
 id: GOAL-006-r5-maintenance-read-only-gate
 title: R5 · maintenance / degraded / read-only 门控
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-19
 version: 0.1.0
-progress: 75
+progress: 100
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -40,7 +40,7 @@ R5 建立跨模块运行态契约与统一写边界。后端应能公开表达 `
 | S0 | 现状扫描、信息门禁、模式/优先级/投影边界冻结与设计审计 | ✅ 已完成（A-001 pass / A-002 conditional findings fixed / A-004 pass） |
 | S1 | 运行态配置、校验与 bootstrap/status 契约实现 | ✅ 已完成（c4856f2；config/handler/composition/system-monitoring 全量通过） |
 | S2 | 统一写门禁、稳定错误码及核心/模块路由验证 | ✅ 已完成（composition 黑盒矩阵通过） |
-| S3 | system-monitoring/Host 消费、全量验证、独立审计与关门 | 进行中 |
+| S3 | system-monitoring/Host 消费、全量验证、独立审计与关门 | ✅ 已完成（A-007 self / A-008 independent pass / A-009 response） |
 
 ## 成功标准
 

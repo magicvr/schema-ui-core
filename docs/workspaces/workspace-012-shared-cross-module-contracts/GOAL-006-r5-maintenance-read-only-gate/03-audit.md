@@ -1,11 +1,11 @@
 ---
 id: GOAL-006-r5-maintenance-read-only-gate
 doc: audit
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
-updated: 2026-08-18
-version: 0.1.2
+updated: 2026-08-19
+version: 0.2.0
 ---
 
 # 审计记录 · GOAL-006
@@ -21,7 +21,9 @@ version: 0.1.2
 | A-005 | 2026-08-18 | self | R5 S1：runtime config、bootstrap/status projection、兼容/非回归测试 | pass | 0 | [A-005-r5-s1-self.md](03-audit/A-005-r5-s1-self.md) |
 | A-006 | 2026-08-18 | self | R5 S2：统一写门禁、错误码、core/Provider composition 黑盒矩阵 | pass | 0 | [A-006-r5-s2-self.md](03-audit/A-006-r5-s2-self.md) |
 | A-007 | 2026-08-18 | self | R5 S3：Host/前端消费、API/Web 全量回归、协议/装配不变式 | pass | 0 | [A-007-r5-s3-self.md](03-audit/A-007-r5-s3-self.md) |
+| A-008 | 2026-08-18 | independent | R5 S3 close-out：四模式/写门禁/Host 消费/不变式/A-002 F-001/F-002/全量证据 | pass | 0 | [A-008-r5-s3-closeout-independent.md](03-audit/A-008-r5-s3-closeout-independent.md) |
+| A-009 | 2026-08-19 | self | response：A-008 recommended F-001/F-002；R5 close | pass | 0 | [A-009-r5-a008-response-close.md](03-audit/A-009-r5-a008-response-close.md) |
 
 ## 当前状态
 
-S0、S1、S2、S3 self 已完成：A-007 self 为 pass，required=0。待 A-008 independent 关门审计；在其完成前不改目标为 done。
+S0–S3 已关闭：A-007 self、A-008 independent、A-009 response 均为 pass，A-008 F-001/F-002 已 fixed，开放 required=0。GOAL-006 已关门。
