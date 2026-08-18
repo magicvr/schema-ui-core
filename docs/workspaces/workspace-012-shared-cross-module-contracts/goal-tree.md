@@ -2,7 +2,7 @@
 title: 目标树 · workspace-012-shared-cross-module-contracts
 status: active
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-19
 parent: null
 version: 0.1.0
 workspace_id: workspace-012-shared-cross-module-contracts

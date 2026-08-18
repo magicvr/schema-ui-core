@@ -4,7 +4,7 @@ title: 共享横切契约与平台基架（分波交付）
 status: active
 parent: null
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-19
 version: 0.1.0
 plan_refs:
   - VP-012-shared-cross-module-contracts
