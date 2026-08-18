@@ -20,7 +20,8 @@ version: 0.1.2
 | A-004 | 2026-08-18 | independent | A-002 F-001/F-002 finding-closure；D-003；I-002～I-004；装配/协议不变式 | pass | 0（F-001/F-002 fixed） | [A-004-r5-a002-closure-independent.md](03-audit/A-004-r5-a002-closure-independent.md) |
 | A-005 | 2026-08-18 | self | R5 S1：runtime config、bootstrap/status projection、兼容/非回归测试 | pass | 0 | [A-005-r5-s1-self.md](03-audit/A-005-r5-s1-self.md) |
 | A-006 | 2026-08-18 | self | R5 S2：统一写门禁、错误码、core/Provider composition 黑盒矩阵 | pass | 0 | [A-006-r5-s2-self.md](03-audit/A-006-r5-s2-self.md) |
+| A-007 | 2026-08-18 | self | R5 S3：Host/前端消费、API/Web 全量回归、协议/装配不变式 | pass | 0 | [A-007-r5-s3-self.md](03-audit/A-007-r5-s3-self.md) |
 
 ## 当前状态
 
-S0、S1、S2 已完成：A-006 self 为 pass，required=0。R5 当前进入 S3；待完成 Host/前端消费核对、全量回归与 independent 关门审计。
+S0、S1、S2、S3 self 已完成：A-007 self 为 pass，required=0。待 A-008 independent 关门审计；在其完成前不改目标为 done。
