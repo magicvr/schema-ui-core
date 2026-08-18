@@ -920,6 +920,32 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
     });
   });
 
+  it("W18: a 200 import body with fieldErrors renders data-import-error-rows", async () => {
+    await withFetchSpy(async (fetchSpy) => {
+      fetchSpy.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            fieldErrors: [{ rowNumber: 2, field: "email", reason: "duplicate" }],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+      const pageDoc = submitFormDocument([{ id: "name", label: "Name", type: "input" }], []);
+      const container = await renderDocument(pageDoc, {}, fetchSpy);
+      await act(async () => {
+        submitButton(container).click();
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const rows = container.querySelector("[data-import-error-rows]");
+      expect(rows).not.toBeNull();
+      expect(rows?.textContent).toContain("#2");
+      expect(rows?.textContent).toContain("email");
+      expect(rows?.textContent).toContain("duplicate");
+    });
+  });
+
   it("C6: submitting an empty search box overwrites a previous filter (q cleared)", async () => {
     const pageDoc: RenderPageDocument = {
       meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },

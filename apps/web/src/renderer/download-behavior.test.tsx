@@ -384,8 +384,13 @@ it("navigate actions with navigateMapping bind row query params", async () => {
 
 // W16-F02: library.preview fetches the file through the authed transport as a
 // blob and opens the blob URL (does not 401 on a bare download URL).
-it("library.preview fetches a blob and opens its object URL", async () => {
-  const openSpy = vi.fn();
+it("library.preview opens a blank window before fetching, then navigates to the blob URL", async () => {
+  const previewWindow = {
+    closed: false,
+    location: { replace: vi.fn() },
+    close: vi.fn(),
+  };
+  const openSpy = vi.fn(() => previewWindow as unknown as Window);
   vi.spyOn(window, "open").mockImplementation(openSpy);
   let downloadFetched = false;
   const fetcher = vi.fn(async (input: RequestInfo | URL) => {
@@ -440,6 +445,67 @@ it("library.preview fetches a blob and opens its object URL", async () => {
   });
   expect(downloadFetched).toBe(true);
   expect(objectUrls.length).toBeGreaterThan(0);
-  expect(openSpy).toHaveBeenCalledWith("blob:mock-url", "_blank", "noopener,noreferrer");
+  expect(openSpy).toHaveBeenCalledWith("about:blank", "_blank");
+  expect(previewWindow.location.replace).toHaveBeenCalledWith("blob:mock-url");
+  vi.unstubAllGlobals();
+});
+
+it("library.copyLink copies the origin-absolute download URL, not a blob URL", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+  const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("/download")) {
+      return new Response("file-bytes", { status: 200 });
+    }
+    return new Response(
+      JSON.stringify({ items: [{ id: "abc", name: "report.pdf", type: "application/pdf" }], total: 1, page: 1, pageSize: 10 }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+  const doc = {
+    meta: {
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation", "permissions.inheritance", "table.sort"],
+    },
+    actions: {
+      copyFile: { type: "custom", handler: "library.copyLink" },
+    },
+    body: {
+      type: "table",
+      id: "files-table",
+      props: {
+        columns: [{ field: "name", label: "Name" }],
+        dataSource: "/api/library/files",
+        actions: [
+          { key: "copy", label: "Copy link", actionRef: "copyFile", permissionIntent: "edit" },
+        ],
+      },
+    },
+  } as unknown as RenderPageDocument;
+  const container = await renderDocument(doc, fetcher as typeof fetch);
+  let button: HTMLButtonElement | undefined;
+  for (let attempt = 0; attempt < 20 && button === undefined; attempt++) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    });
+    try {
+      button = Array.from(container.querySelectorAll("button")).find((b) =>
+        b.textContent?.includes("Copy link"),
+      );
+    } catch {
+      button = undefined;
+    }
+  }
+  if (button === undefined) throw new Error("Copy link row action not rendered");
+  await act(async () => {
+    button!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+  expect(writeText).toHaveBeenCalledTimes(1);
+  const copied = String(writeText.mock.calls[0]?.[0] ?? "");
+  expect(copied.startsWith("blob:")).toBe(false);
+  expect(copied).toMatch(/\/api\/library\/files\/abc\/download$/);
+  expect(objectUrls.length).toBe(0);
   vi.unstubAllGlobals();
 });

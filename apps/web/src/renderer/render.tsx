@@ -333,29 +333,42 @@ async function runCustomAction(
   // blob, then open/copy the blob object URL. This keeps content accessible
   // without leaking the Bearer token into a raw download URL (the download
   // endpoint itself is attachment + bearer-gated, so a bare window.open 401s).
-  if (handler === "library.preview" || handler === "library.copyLink") {
+  // W18: copy the origin-absolute download path (session-gated). A blob:
+  // URL is not pasteable outside this page (GOAL-024 A-007 F-001).
+  if (handler === "library.copyLink") {
+    const absolute = new URL(url, window.location.origin).href;
+    try {
+      await navigator.clipboard.writeText(absolute);
+      return { ok: true };
+    } catch {
+      return { ok: false, code: "CLIPBOARD_UNAVAILABLE", message: "clipboard is unavailable", messageKey: "error.clipboardUnavailable" };
+    }
+  }
+  if (handler === "library.preview") {
+    // Open synchronously in the user gesture, then navigate the blank tab
+    // after the authed blob fetch — a post-await window.open is blocked.
+    const previewWindow = window.open("about:blank", "_blank");
     let blob: Blob;
     try {
       const response = await fetcher(url, { method: "GET", headers: { Accept: "*/*" } });
       if (!response.ok) {
+        previewWindow?.close();
         const apiError = await readResourceApiError(response, handler);
         return { ok: false, code: apiError.code, message: apiError.message };
       }
       blob = await response.blob();
     } catch (error) {
+      previewWindow?.close();
       return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
     }
     const objectUrl = URL.createObjectURL(blob);
-    if (handler === "library.preview") {
-      window.open(objectUrl, "_blank", "noopener,noreferrer");
-      return { ok: true };
+    if (previewWindow === null || previewWindow.closed) {
+      URL.revokeObjectURL(objectUrl);
+      return { ok: false, code: "POPUP_BLOCKED", message: "preview window was blocked", messageKey: "error.popupBlocked" };
     }
-    try {
-      await navigator.clipboard.writeText(objectUrl);
-      return { ok: true };
-    } catch {
-      return { ok: false, code: "CLIPBOARD_UNAVAILABLE", message: "clipboard is unavailable", messageKey: "error.clipboardUnavailable" };
-    }
+    previewWindow.location.replace(objectUrl);
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    return { ok: true };
   }
   let response: Response;
   try {

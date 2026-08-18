@@ -143,7 +143,8 @@
               "type": "upload",
               "actionRef": "uploadCsv",
               "accept": ".csv,text/csv",
-              "labelKey": "schema.users.import.field.file"
+              "labelKey": "schema.users.import.field.file",
+              "afterComponent": "import-template-download"
             }
           ],
           "submitAction": "submitImport",
@@ -289,11 +290,6 @@
     "type": "section",
     "id": "users",
     "children": [
-      {
-        "type": "custom",
-        "id": "import-template-block",
-        "component": "import-template-download"
-      },
       {
         "type": "form",
         "id": "users-search",
