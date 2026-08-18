@@ -21,7 +21,8 @@ version: 0.1.2
 | A-005 | 2026-08-18 | self | response：A-004 F-009；recover-cancel + CompleteWithCommit | conditional | 1（F-009 候选 fixed） | [A-005-r4-a004-response-self.md](03-audit/A-005-r4-a004-response-self.md) |
 | A-006 | 2026-08-18 | independent | finding-closure：A-004 F-009；D-002 v0.2.0 recover-cancel + CompleteWithCommit；I-003；S0→S1 | pass | 0（F-009 可 fixed；F-010 recommended） | [A-006-r4-f009-closure-independent.md](03-audit/A-006-r4-f009-closure-independent.md) |
 | A-007 | 2026-08-18 | self | response：A-006；S0 close / S1 release | pass | 0 | [A-007-r4-s0-close-self.md](03-audit/A-007-r4-s0-close-self.md) |
+| A-008 | 2026-08-18 | self | R4 S1 migration/repository implementation | pass | 0 | [A-008-r4-s1-self.md](03-audit/A-008-r4-s1-self.md) |
 
 ## 当前状态
 
-S0 已关闭：A-002 F-001～F-008、A-004 F-009、A-006 F-010 均 `fixed`；I-002/I-003 verified；D-002 accepted；开放 required/recommended = 0。S1 已放行。
+S0/S1 已关闭；A-008 self = pass，开放 required/recommended = 0。S2 runner/recovery 已放行。

@@ -38,8 +38,8 @@ R4 建立不绑定具体业务域的异步 Job 契约，覆盖 `queued / running
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | S0 | 现状扫描、信息门禁、状态机/存储/消费边界冻结 | ✅ 已完成（D-002 accepted；A-006 pass / A-007 closed） |
-| S1 | Job contract、migration、repository 与状态转换测试 | 进行中 |
-| S2 | runner、取消/重试/恢复与测试 | 未开始 |
+| S1 | Job contract、migration、repository 与状态转换测试 | ✅ 已完成（2013e7f / e670b56；A-008 pass） |
+| S2 | runner、取消/重试/恢复与测试 | 进行中 |
 | S3 | wallet reconcile 异步消费与 HTTP/result 契约测试 | 未开始 |
 | S4 | 全量验证、自审、independent 审计与关门 | 未开始 |
 
