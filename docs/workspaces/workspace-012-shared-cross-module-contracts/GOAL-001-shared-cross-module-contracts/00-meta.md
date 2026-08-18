@@ -25,7 +25,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
 | R1 | **correlation / request-id / 错误恢复契约** | 起点 | ✅ 已完成（GOAL-002-r1-correlation-error-contract；A-001 pass） |
-| R2 | **审计事件模型增强**：结构化 diff、敏感字段脱敏、correlation 关联 | 依赖 R1 | 🚧 进行中（GOAL-003-r2-audit-event-model；S0） |
+| R2 | **审计事件模型增强**：结构化 diff、敏感字段脱敏、correlation 关联 | 依赖 R1 | 🚧 进行中（GOAL-003-r2-audit-event-model；S3 审计） |
 | R3 | **乐观并发 + 幂等契约**：expectedVersion / ETag / 409 / idempotency_key | 依赖 R1 | 未开始 |
 | R4 | **异步 Job / 长操作契约**：状态机、进度、重试、取消 | 依赖 R1/R3 | 未开始 |
 | R5 | **maintenance / degraded / read-only 门控** | 依赖 R1 | 未开始 |
