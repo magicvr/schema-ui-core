@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.3
+version: 0.1.4
 ---
 
 # 审计记录 · GOAL-005
@@ -24,7 +24,8 @@ version: 0.1.3
 | A-008 | 2026-08-18 | self | R4 S1 migration/repository implementation | pass | 0 | [A-008-r4-s1-self.md](03-audit/A-008-r4-s1-self.md) |
 | A-009 | 2026-08-18 | self | R4 S2 runner/recovery implementation | pass | 0 | [A-009-r4-s2-self.md](03-audit/A-009-r4-s2-self.md) |
 | A-010 | 2026-08-18 | self | R4 S3 wallet consumer / HTTP / audit / lifecycle / migration 43 | pass | 0 | [A-010-r4-s3-self.md](03-audit/A-010-r4-s3-self.md) |
+| A-011 | 2026-08-18 | self | R4 S4 close-out：D-002、success criteria、全量 API、Profile/migration/audit 边界 | pass | 0 | [A-011-r4-s4-closeout-self.md](03-audit/A-011-r4-s4-closeout-self.md) |
 
 ## 当前状态
 
-S0～S3 已关闭；A-010 self = pass，开放 required/recommended = 0。进入 S4 全量验证与 independent 关门审计。
+S0～S3 已关闭；A-011 close-out self = pass，开放 required/recommended = 0。S4 等待 grok-build independent 关门审计，不以 self 单独放行。
