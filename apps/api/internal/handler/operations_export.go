@@ -54,7 +54,7 @@ func OperationsExportRoute(a *auth.Authenticator, repository operationlog.Reader
 				}
 			}
 			filter, err := operationFilterFromResource(resourceFilter{
-				Q: strings.ToLower(strings.TrimSpace(query.Get("q"))),
+				Q:    strings.ToLower(strings.TrimSpace(query.Get("q"))),
 				Sort: sortField, Order: order, Page: 1, PageSize: pageSize,
 				Extra: extra,
 			})
@@ -73,7 +73,7 @@ func OperationsExportRoute(a *auth.Authenticator, repository operationlog.Reader
 				return
 			}
 
-			headers := []string{"id", "event", "actorId", "actorName", "recordId", "detail", "createdAt"}
+			headers := []string{"id", "event", "actorId", "actorName", "recordId", "detail", "correlationId", "createdAt"}
 			rows := make([][]string, 0, len(items))
 			for _, op := range items {
 				row := operationToMap(op)
@@ -84,6 +84,7 @@ func OperationsExportRoute(a *auth.Authenticator, repository operationlog.Reader
 					formulaSafe(stringField(row, "actorName")),
 					formulaSafe(stringField(row, "recordId")),
 					formulaSafe(stringField(row, "detail")),
+					formulaSafe(stringField(row, "correlationId")),
 					formulaSafe(stringField(row, "createdAt")),
 				})
 			}
@@ -115,4 +116,3 @@ func OperationsExportRoute(a *auth.Authenticator, repository operationlog.Reader
 		})),
 	}
 }
-

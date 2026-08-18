@@ -15,4 +15,4 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-18 | R2 审计事件模型范围与信息门禁 | accepted | [D-001-r2-audit-event-model.md](01-decision/D-001-r2-audit-event-model.md) |
-
+| D-002 | 2026-08-18 | R2 required finding 响应与 independent 审计模式确认 | accepted | [D-002-r2-finding-response-and-audit-mode.md](01-decision/D-002-r2-finding-response-and-audit-mode.md) |

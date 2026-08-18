@@ -21,6 +21,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // passwordHashCost is the bcrypt cost for users resource password hashing
@@ -384,7 +385,7 @@ func mapUserStoreError(err error) error {
 // usersOnWrite appends operation-log rows for users write endpoints
 // (I-011-001 §5). Best-effort: a logging failure never fails the write.
 func usersOnWrite(recorder operationlog.Recorder) func(context.Context, account.User, writeKind, string, map[string]any, time.Time) {
-	return func(_ context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time) {
+	return func(ctx context.Context, user account.User, kind writeKind, id string, row map[string]any, now time.Time) {
 		event := operationlog.EventUserDelete
 		detail := ""
 		switch kind {
@@ -396,11 +397,12 @@ func usersOnWrite(recorder operationlog.Recorder) func(context.Context, account.
 			detail = `{"username":` + jsonQuote(stringField(row, "username")) + `}`
 		}
 		op := operationlog.Operation{
-			ID:        newOperationID(),
-			Event:     event,
-			ActorID:   user.ID,
-			ActorName: user.Name,
-			CreatedAt: now,
+			ID:            newOperationID(),
+			Event:         event,
+			ActorID:       user.ID,
+			ActorName:     user.Name,
+			CreatedAt:     now,
+			CorrelationID: requestid.FromContext(ctx),
 		}
 		if id != "" {
 			op.RecordID = &id

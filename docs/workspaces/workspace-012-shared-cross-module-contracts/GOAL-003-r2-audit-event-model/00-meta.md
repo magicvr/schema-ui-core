@@ -35,8 +35,8 @@ R2 将现有 operationlog 的事件 detail 从“各 handler 自行拼接 JSON�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S0 | 扫描现有事件、敏感字段与读取兼容边界，冻结 D-001 | 进行中 |
-| S1 | 实现 detail schema、脱敏器与 repository/API 兼容 | 待开始 |
+| S0 | 扫描现有事件、敏感字段与读取兼容边界，冻结 D-001 | ✅ 已完成（E-001/E-002；A-001 required findings fixed） |
+| S1 | 实现 detail schema、脱敏器与 repository/API 兼容 | 🚧 进行中（D-002 已冻结边界） |
 | S2 | 接入 auth/settings/users 三类 mutation 并验证 | 待开始 |
 | S3 | 自审/独立审计、finding 闭合与关门 | 待开始 |
 
@@ -51,8 +51,8 @@ R2 将现有 operationlog 的事件 detail 从“各 handler 自行拼接 JSON�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 现有事件 detail、敏感字段与 API 兼容边界是否足以冻结 schema | S1 方案冻结 | S0 结束前 | 扫描 operationlog、auth/settings/users 与读取 API 测试 | collecting | 2026-08-18 建目标；S0 扫描完成后复核 | 待 E-001 |
-| I-002 | required | R2 是否需 independent 审计及可用 provider | S3 关门 | S1 实施前 | 按 P-003/P-004 确认审计模式与 provider | collecting | 用户裁决后更新 | 待用户确认 |
+| I-001 | required | 现有事件 detail、敏感字段与 API 兼容边界是否足以冻结 schema | S1 方案冻结 | S0 结束前 | 扫描 operationlog、全部 handler mutation、settings 全字段与读取 API 测试 | verified | 2026-08-18 E-001/E-002 补证；S1 仍需按清单实现 fail-closed redaction | E-002 全 mutation/敏感字段表；operations JSON/CSV correlation 测试 |
+| I-002 | required | R2 是否需 independent 审计及可用 provider | S3 关门 | S1 实施前 | 按 P-003/P-004 确认审计模式与 provider | verified | 2026-08-18 D-002：唯一模式 independent；沿用项目 grok-build provider | D-002；A-001 independent 已落盘 |
 
 ## 父目标
 

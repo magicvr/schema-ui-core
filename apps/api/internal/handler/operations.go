@@ -14,12 +14,12 @@ import (
 
 func operationsResource(repository operationlog.Reader) Resource {
 	return Resource{
-		ID:              "operations",
-		Path:            "/api/operations",
-		Listable:        true,
-		ReadOnly:        true,
-		SortFields:      []string{"createdAt", "event", "actorName"},
-		QSearch:         true,
+		ID:         "operations",
+		Path:       "/api/operations",
+		Listable:   true,
+		ReadOnly:   true,
+		SortFields: []string{"createdAt", "event", "actorName"},
+		QSearch:    true,
 		// W14 F-03: structured audit filters (event / actor / time range).
 		ExtraQuery:      []string{"event", "actorName", "from", "to"},
 		Entity:          &operationsEntity{repository: repository},
@@ -51,6 +51,7 @@ func operationToMap(op operationlog.Operation) map[string]any {
 	} else {
 		row["detail"] = ""
 	}
+	row["correlationId"] = op.CorrelationID
 	return row
 }
 

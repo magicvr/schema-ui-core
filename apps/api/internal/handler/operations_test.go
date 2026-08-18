@@ -185,8 +185,8 @@ func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
 	env := newAuthTestEnv(t)
 	now := time.Now().UTC()
 	for _, op := range []operationlog.Operation{
-		{ID: "op-filter-1", Event: operationlog.EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: now.Add(-2 * time.Hour)},
-		{ID: "op-filter-2", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CreatedAt: now.Add(-time.Hour)},
+		{ID: "op-filter-1", Event: operationlog.EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-001", CreatedAt: now.Add(-2 * time.Hour)},
+		{ID: "op-filter-2", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-002", CreatedAt: now.Add(-time.Hour)},
 		{ID: "op-filter-3", Event: operationlog.EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: now},
 	} {
 		if err := env.operations.RecordOperation(op); err != nil {
@@ -198,6 +198,15 @@ func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
 	code, body := getResourceAs(t, env, token, "/api/operations?event=users.create")
 	if code != http.StatusOK || body["total"] != float64(1) {
 		t.Fatalf("structured list = %d %v, want total 1", code, body)
+	}
+	items, _ := body["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["correlationId"] != "r2-read-002" {
+		t.Fatalf("operation list correlation = %v, want r2-read-002", items)
+	}
+
+	code, body = getResourceAs(t, env, token, "/api/operations/op-filter-1")
+	if code != http.StatusOK || body["correlationId"] != "r2-read-001" {
+		t.Fatalf("operation detail correlation = %d %v, want r2-read-001", code, body)
 	}
 
 	code, body = getResourceAs(t, env, token, "/api/operations?actorName=Editor")
@@ -226,6 +235,31 @@ func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
 	}
 	if !strings.Contains(rr.Body.String(), "users.create") {
 		t.Fatalf("export body missing users.create row: %q", rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "correlationId") || !strings.Contains(rr.Body.String(), "r2-read-002") {
+		t.Fatalf("export missing correlation column/value: %q", rr.Body.String())
+	}
+}
+
+func TestR2CorrelationIDPersistsOnUsersOperation(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	h := requestid.Middleware(env.mux)
+	req := bearer(t, token, http.MethodPost, "/api/users", `{"username":"r2-user","name":"R2 User","password":"passw0rd-ok"}`)
+	req.Header.Set(requestid.HeaderName, "r2-user-001")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
+		Event: operationlog.EventUserCreate, Sort: "createdAt", Order: "desc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("list user operations: %v", err)
+	}
+	if len(ops) != 1 || ops[0].CorrelationID != "r2-user-001" {
+		t.Fatalf("user operation correlation = %+v, want r2-user-001", ops)
 	}
 }
 
