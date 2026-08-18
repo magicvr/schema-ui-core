@@ -6,7 +6,7 @@ parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-19
 updated: 2026-08-19
 version: 0.1.0
-progress: 0
+progress: 25
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -37,7 +37,7 @@ R6 交付机器凭据管理与认证基架：管理员可创建、查看元数�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S0 | 现状扫描、信息门禁、精确身份/生命周期/权限/审计契约与 cross 设计审计 | 进行中 |
+| S0 | 现状扫描、信息门禁、精确身份/生命周期/权限/审计契约与 cross 设计审计 | ✅ 已完成（A-001 self / A-002 conditional / A-003 response / A-004 independent pass / A-005 close） |
 | S1 | 数据模型、hash-only repository 与管理生命周期实现 | 未开始 |
 | S2 | 独立 Bearer 认证、scope enforcement、错误与 operation log 集成 | 未开始 |
 | S3 | 组合黑盒/全量回归、独立关门审计与治理收口 | 未开始 |
@@ -54,9 +54,9 @@ R6 交付机器凭据管理与认证基架：管理员可创建、查看元数�
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 现有用户认证、opaque token、权限和审计的可复用边界 | S0 方案 | S0 结束前 | 扫描 auth/authsession/resources/operationlog/composition | verified | 2026-08-19 | E-001：用户 JWT 仅含 user subject/token_version；refresh 已有 256-bit opaque/hash-only 模式；权限为 persisted permission keys；operation log 可承载 correlation |
-| I-002 | required | 机器 principal 形状、scope 权限上限与用户会话隔离方式 | S1/S2 实施 | S0 结束前 | D-002 冻结 principal/context/permission ceiling 与 deny 语义并 cross 审计 | collecting | S0 设计审计 | 待 D-002/A-* |
-| I-003 | required | secret 前缀/熵/hash、过期、吊销、一次性展示与并发语义 | S1 实施 | S0 结束前 | D-002 冻结生命周期和数据约束；migration/repository tests | collecting | S0 设计审计 | 待 D-002/A-* |
-| I-004 | required | 管理 API、权限键、错误码、审计事件与 operational gate 组合 | S1/S2 实施 | S0 结束前 | D-002 路由/错误/审计矩阵；handler/composition tests | collecting | S0 设计审计 | 待 D-002/A-* |
+| I-002 | required | 机器 principal 形状、scope 权限上限与用户会话隔离方式 | S1/S2 实施 | S0 结束前 | D-003 修订 principal/context/permission ceiling 与 deny 语义并 A-004 cross 审计 | verified | 2026-08-19 A-004 pass；实施仍须按 D-003 测试 | D-003 §§3–4、§6；A-004 F-004/F-006 fixed |
+| I-003 | required | secret 前缀/熵/hash、过期、吊销、一次性展示与并发语义 | S1 实施 | S0 结束前 | D-003 冻结 0044/0045 生命周期和数据约束；A-004 closure | verified | 2026-08-19 A-004 pass；运行证据留在 S1/S3 | D-003 §§1–3、§7–8；A-004 F-001/F-002/F-003/F-007 fixed |
+| I-004 | required | 管理 API、权限键、错误码、审计事件与 operational gate 组合 | S1/S2 实施 | S0 结束前 | D-003 路由/错误/审计矩阵；A-004 closure | verified | 2026-08-19 A-004 pass；运行证据留在 S2/S3 | D-003 §§1、§4–6；A-004 F-001/F-004/F-005 fixed |
 | I-005 | required | Profile/Manifest/protocol/readiness 不变边界 | S3 关门 | S0 结束前 | 核对 profile/manifest/Host 与 VP-012 边界；全量回归 | verified | S3 复核 | E-001：现有 profile 无 credential 模块；VP-012 要求不改变装配语义；credential secret 禁止进入 public Manifest |
 | I-006 | required | 审计模式与 independent provider | S0/S3 审计 | S0 结束前 | 按 security/data/migration/cross-module 风险分级 | verified | 2026-08-19 | 模式 cross；self + 项目级 grok-build（grok-4.6 reasoning high）independent |
 

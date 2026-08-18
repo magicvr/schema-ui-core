@@ -1,7 +1,7 @@
 ---
 id: D-003-r6-a002-corrected-contract
 goal: GOAL-007-r6-api-token-service-credential
-status: proposed
+status: accepted
 created: 2026-08-19
 updated: 2026-08-19
 parent: GOAL-007-r6-api-token-service-credential
@@ -92,4 +92,4 @@ permission-gated resource/export/import/upload 等路径保留通用 identity。
 
 ## 门禁
 
-D-003 在 A-002 finding-closure independent 通过前保持 `proposed`；I-002～I-004 继续 `collecting`，S1/S2 不放行。
+D-003 经 A-004 independent finding-closure `pass` 后由 `/govern` 接受；I-002～I-004 已 `verified`，S1 按本契约放行。S1/S2 仍须以实现证据而非设计状态推进。
