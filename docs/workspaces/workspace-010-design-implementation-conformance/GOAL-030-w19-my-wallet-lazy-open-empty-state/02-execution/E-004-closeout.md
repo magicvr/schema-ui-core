@@ -19,3 +19,4 @@ parent: GOAL-001-design-implementation-conformance
 - 更新 W15 dval：不再要求 toolbar「开通钱包」，改为锁定 `wallet-ensure`。
 - 落盘 [A-001](../03-audit/A-001-closeout.md)（self · pass）；S4 勾选；`status: done`；progress **4/4**。
 - 同步 goal-tree / workspace / Root 波次表。
+- Git checkpoint：`078260d`。
