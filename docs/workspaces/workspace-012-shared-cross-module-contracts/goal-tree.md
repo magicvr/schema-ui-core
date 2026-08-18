@@ -24,7 +24,7 @@ GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台�
 ├── GOAL-004-r3-optimistic-concurrency-idempotency [done]   · R3 乐观并发与幂等契约
 ├── GOAL-005-r4-async-job-contract [done]                    · R4 异步 Job / 长操作契约
 ├── GOAL-006-r5-maintenance-read-only-gate [done]            · R5 maintenance / degraded / read-only 门控
-└── GOAL-007-r6-api-token-service-credential [active]        · R6 API Token / Service Credential
+└── GOAL-007-r6-api-token-service-credential [done]          · R6 API Token / Service Credential
 ```
 
 ## 状态表
@@ -37,7 +37,7 @@ GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台�
 | GOAL-004-r3-optimistic-concurrency-idempotency | R3 · 乐观并发与幂等契约 | GOAL-001-shared-cross-module-contracts | done | — | 2026-08-18 |
 | GOAL-005-r4-async-job-contract | R4 · 异步 Job / 长操作契约 | GOAL-001-shared-cross-module-contracts | done | 100%（5/5） | 2026-08-18 |
 | GOAL-006-r5-maintenance-read-only-gate | R5 · maintenance / degraded / read-only 门控 | GOAL-001-shared-cross-module-contracts | done | 100%（4/4） | 2026-08-19 |
-| GOAL-007-r6-api-token-service-credential | R6 · API Token / Service Credential | GOAL-001-shared-cross-module-contracts | active | 75%（3/4） | 2026-08-19 |
+| GOAL-007-r6-api-token-service-credential | R6 · API Token / Service Credential | GOAL-001-shared-cross-module-contracts | done | 100%（4/4） | 2026-08-19 |
 
 ## 维护说明
 

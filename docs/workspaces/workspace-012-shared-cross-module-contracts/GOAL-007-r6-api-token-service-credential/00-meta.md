@@ -1,12 +1,12 @@
 ---
 id: GOAL-007-r6-api-token-service-credential
 title: R6 · API Token / Service Credential
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-19
 updated: 2026-08-19
 version: 0.1.0
-progress: 75
+progress: 100
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -38,9 +38,9 @@ R6 交付机器凭据管理与认证基架：管理员可创建、查看元数�
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | S0 | 现状扫描、信息门禁、精确身份/生命周期/权限/审计契约与 cross 设计审计 | ✅ 已完成（A-001 self / A-002 conditional / A-003 response / A-004 independent pass / A-005 close） |
-| S1 | 数据模型、hash-only repository 与管理生命周期实现 | ✅ 已完成（E-005；A-006 self pass，待 S3 independent 复核） |
-| S2 | 独立 Bearer 认证、scope enforcement、错误与 operation log 集成 | ✅ 已完成（E-005；A-006 self pass，待 S3 independent 复核） |
-| S3 | 组合黑盒/全量回归、独立关门审计与治理收口 | 进行中（全量回归已通过；independent 待执行） |
+| S1 | 数据模型、hash-only repository 与管理生命周期实现 | ✅ 已完成（E-005；A-006 self pass） |
+| S2 | 独立 Bearer 认证、scope enforcement、错误与 operation log 集成 | ✅ 已完成（E-005；A-006 self pass） |
+| S3 | 组合黑盒/全量回归、独立关门审计与治理收口 | ✅ 已完成（A-007 conditional；A-008 response；A-009 independent pass；A-010 close） |
 
 ## 成功标准
 
@@ -57,7 +57,7 @@ R6 交付机器凭据管理与认证基架：管理员可创建、查看元数�
 | I-002 | required | 机器 principal 形状、scope 权限上限与用户会话隔离方式 | S1/S2 实施 | S0 结束前 | D-003 修订 principal/context/permission ceiling 与 deny 语义并 A-004 cross 审计 | verified | 2026-08-19 A-004 pass；实施仍须按 D-003 测试 | D-003 §§3–4、§6；A-004 F-004/F-006 fixed |
 | I-003 | required | secret 前缀/熵/hash、过期、吊销、一次性展示与并发语义 | S1 实施 | S0 结束前 | D-003 冻结 0044/0045 生命周期和数据约束；A-004 closure | verified | 2026-08-19 A-004 pass；运行证据留在 S1/S3 | D-003 §§1–3、§7–8；A-004 F-001/F-002/F-003/F-007 fixed |
 | I-004 | required | 管理 API、权限键、错误码、审计事件与 operational gate 组合 | S1/S2 实施 | S0 结束前 | D-003 路由/错误/审计矩阵；A-004 closure | verified | 2026-08-19 A-004 pass；运行证据留在 S2/S3 | D-003 §§1、§4–6；A-004 F-001/F-004/F-005 fixed |
-| I-005 | required | Profile/Manifest/protocol/readiness 不变边界 | S3 关门 | S0 结束前 | 核对 profile/manifest/Host 与 VP-012 边界；全量回归 | verified | 2026-08-19；S3 independent 再复核 | E-005/A-006：Profile/Manifest/kernel 定向与 API 全量通过；Web build 成功且生成 claim 已恢复，协议资产无交付 diff；未新增 module/page/navigation/fragment |
+| I-005 | required | Profile/Manifest/protocol/readiness 不变边界 | S3 关门 | S0 结束前 | 核对 profile/manifest/Host 与 VP-012 边界；全量回归 | verified | 2026-08-19；A-007/A-009/A-010 关门闭合 | E-005/A-006：Profile/Manifest/kernel 定向与 API 全量通过；Web build 成功且生成 claim 已恢复，协议资产无交付 diff；A-007 非 finding 主张成立，整改提交不触及装配/协议资产 |
 | I-006 | required | 审计模式与 independent provider | S0/S3 审计 | S0 结束前 | 按 security/data/migration/cross-module 风险分级 | verified | 2026-08-19 | 模式 cross；self + 项目级 grok-build（grok-4.6 reasoning high）independent |
 
 ## 父目标

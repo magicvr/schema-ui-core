@@ -1,7 +1,7 @@
 ---
 id: GOAL-007-r6-api-token-service-credential
 doc: audit
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-19
 updated: 2026-08-19
@@ -23,7 +23,8 @@ version: 0.1.0
 | A-007 | 2026-08-19 | independent | R6 S3 close-out：D-003、aa00f33/ce8d952/1864f49/2a2d0dd、E-005、A-006；secret/hash、0044/0045、事务 audit、prefix、ceiling、user-only、R5、不变式 | conditional | 0（F-001～F-005 闭合见 A-009） | [A-007-r6-s3-closeout-independent.md](03-audit/A-007-r6-s3-closeout-independent.md) |
 | A-008 | 2026-08-19 | self | response：A-007 F-001～F-005；提交 b6ebfec；整改后全量回归 | pass | 0（finding-closure 见 A-009） | [A-008-r6-a007-response.md](03-audit/A-008-r6-a007-response.md) |
 | A-009 | 2026-08-19 | independent | A-007 F-001～F-005 finding-closure；b6ebfec / E-006 / A-008；现行代码/测试 | pass | 0（F-001～F-005 fixed） | [A-009-r6-a007-closure-independent.md](03-audit/A-009-r6-a007-closure-independent.md) |
+| A-010 | 2026-08-19 | self | response：A-009；R6 S3 与 GOAL-007 close | pass | 0 | [A-010-r6-a009-response-close.md](03-audit/A-010-r6-a009-response-close.md) |
 
 ## 当前状态
 
-S0 已关闭；S1/S2 已有 E-005 实施与验证事实。A-009 已独立复核 A-007 F-001～F-005，verdict=`pass`，required=0。本索引不改目标 `status`/`progress`；S3 关门与目标结项由 `/govern` 响应本条后处理。
+S0～S3 已关闭：A-007 完整 S3 independent 为 conditional，其 F-001～F-005 已由 A-008 响应并经 A-009 independent 确认全部 fixed；A-010 close 为 pass，开放 required=0。GOAL-007 已关门。

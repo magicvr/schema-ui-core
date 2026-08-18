@@ -49,7 +49,7 @@ VP-012：共享横切契约与平台基架（correlation / 审计模型 / 并发
 | R3 | 乐观并发 + 幂等契约 | ✅ 已完成（GOAL-004-r3-optimistic-concurrency-idempotency；A-004 pass / A-005 closed） |
 | R4 | 异步 Job / 长操作契约 | ✅ 已完成（GOAL-005-r4-async-job-contract；A-012 pass / A-013 closed） |
 | R5 | maintenance / degraded / read-only 门控 | ✅ 已完成（GOAL-006-r5-maintenance-read-only-gate；A-008 pass / A-009 closed） |
-| R6 | API Token / Service Credential | 进行中（GOAL-007-r6-api-token-service-credential；S3 independent） |
+| R6 | API Token / Service Credential | ✅ 已完成（GOAL-007-r6-api-token-service-credential；A-009 pass / A-010 closed） |
 
 ## 固定共享资料引用
 

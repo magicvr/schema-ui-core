@@ -29,7 +29,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | R3 | **乐观并发 + 幂等契约**：expectedVersion / ETag / 409 / idempotency_key | 依赖 R1 | ✅ 已完成（GOAL-004-r3-optimistic-concurrency-idempotency；A-004 pass / A-005 closed） |
 | R4 | **异步 Job / 长操作契约**：状态机、进度、重试、取消 | 依赖 R1/R3 | ✅ 已完成（GOAL-005-r4-async-job-contract；A-012 pass / A-013 closed） |
 | R5 | **maintenance / degraded / read-only 门控** | 依赖 R1 | ✅ 已完成（GOAL-006-r5-maintenance-read-only-gate；A-008 pass / A-009 closed） |
-| R6 | **API Token / Service Credential** | 依赖 R2 审计模型 | 进行中（GOAL-007-r6-api-token-service-credential；S3 independent） |
+| R6 | **API Token / Service Credential** | 依赖 R2 审计模型 | ✅ 已完成（GOAL-007-r6-api-token-service-credential；A-009 pass / A-010 closed） |
 
 ## 成功标准（方向级）
 

@@ -1,7 +1,7 @@
 ---
 id: GOAL-007-r6-api-token-service-credential
 doc: execution
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-19
 updated: 2026-08-19
@@ -20,3 +20,4 @@ version: 0.1.0
 | E-004 | 2026-08-19 | R6 S0 关门与 S1 放行 | recorded | [E-004-r6-s0-close.md](02-execution/E-004-r6-s0-close.md) |
 | E-005 | 2026-08-19 | R6 S1/S2 实施与全量验证 | recorded | [E-005-r6-s1-s2-implementation.md](02-execution/E-005-r6-s1-s2-implementation.md) |
 | E-006 | 2026-08-19 | R6 A-007 整改与全量回归 | recorded | [E-006-r6-a007-remediation.md](02-execution/E-006-r6-a007-remediation.md) |
+| E-007 | 2026-08-19 | R6 关门 | recorded | [E-007-r6-close.md](02-execution/E-007-r6-close.md) |
