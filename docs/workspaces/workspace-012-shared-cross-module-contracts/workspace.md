@@ -47,8 +47,8 @@ VP-012：共享横切契约与平台基架（correlation / 审计模型 / 并发
 | R1 | correlation / request-id / 错误恢复契约 | ✅ 已完成（GOAL-002-r1-correlation-error-contract） |
 | R2 | 审计事件模型增强（结构化 diff / 脱敏 / correlation） | ✅ 已完成（GOAL-003-r2-audit-event-model；A-006 pass / A-007 closed） |
 | R3 | 乐观并发 + 幂等契约 | ✅ 已完成（GOAL-004-r3-optimistic-concurrency-idempotency；A-004 pass / A-005 closed） |
-| R4 | 异步 Job / 长操作契约 | 进行中（GOAL-005-r4-async-job-contract；S0） |
-| R5 | maintenance / degraded / read-only 门控 | 未开始 |
+| R4 | 异步 Job / 长操作契约 | ✅ 已完成（GOAL-005-r4-async-job-contract；A-012 pass / A-013 closed） |
+| R5 | maintenance / degraded / read-only 门控 | 进行中（GOAL-006-r5-maintenance-read-only-gate；S0） |
 | R6 | API Token / Service Credential | 未开始 |
 
 ## 固定共享资料引用
