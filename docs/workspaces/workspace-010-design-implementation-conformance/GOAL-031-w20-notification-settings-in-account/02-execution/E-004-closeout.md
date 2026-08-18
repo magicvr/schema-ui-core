@@ -18,3 +18,4 @@ parent: GOAL-001-design-implementation-conformance
 - 关门复跑：Web **25/25**；`tsc` **0**；Go `TestNotification` **ok**。
 - 落盘 [A-001](../03-audit/A-001-closeout.md)（self · pass）；S4 勾选；`status: done`；progress **4/4**。
 - 同步 goal-tree / workspace / Root 波次表。
+- Git checkpoint：`6053d63`。
