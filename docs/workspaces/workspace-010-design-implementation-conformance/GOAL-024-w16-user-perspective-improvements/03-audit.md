@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-18
-version: 0.2.0
+version: 0.2.2
 ---
 
 # 审计记录 · GOAL-024 · W16 · 真实用户视角未计划改进项台账与规划
@@ -20,5 +20,20 @@ version: 0.2.0
 | [A-002](03-audit/A-002-self-planning-review.md) | self | 2026-08-17 | S2 技术方案 / S3 分批规划 / S4 就绪 | pass | 0 | D-002 逐项方案完整、I-001 关闭、GOAL-025 批 A 子目标已建，可进入实施门禁 |
 | [A-003](03-audit/A-003-closeout.md) | self | 2026-08-17 | GOAL-024 全目标关门 | pass | 0 | 批 A/B/C 全部 done，Go/Web 全量回归通过，可关门 |
 | [A-004](03-audit/A-004-independent-w16-completion-audit.md) | independent | 2026-08-17 | GOAL-024 整体完成情况与 W16-F01～W16-F10 落地核实 | pass | 0 | 10项改进点均有代码与测试证据，子目标批 A/B/C 全部完成，全量回归通过 |
-| [A-005](03-audit/A-005-independent-w16-closeout-completion.md) | independent | 2026-08-18 | GOAL-024 全目标完成情况与 W16-F01～W16-F10 落地核实 | fail | 2（F-001 F02 预览不可用；F-002 F03 导入前端未落地） | 规划与批 A/C 大部可核对；F02 预览无鉴权且 attachment；F03 模板/行错误 UI 缺失；不同意 A-003/A-004 关门 pass |
-| [A-006](03-audit/A-006-self-response.md) | self | 2026-08-18 | 响应 A-005（冲突裁决与 required 闭合） | pass | 0 | 用户裁决采纳 A-005；F-001/F-002 required fixed，F-003～F-005 fixed，台账收口，GOAL-024 维持 done 8/8 |
+| [A-005](03-audit/A-005-independent-w16-closeout-completion.md) | independent | 2026-08-18 | GOAL-024 全目标完成情况与 W16-F01～W16-F10 落地核实 | fail | 0（A-008：原 2 条 required 已 fixed；F-004 recommended 仍 open） | 规划与批 A/C 大部可核对；F02 预览无鉴权且 attachment；F03 模板/行错误 UI 缺失；不同意 A-003/A-004 关门 pass |
+| [A-006](03-audit/A-006-self-response.md) | self | 2026-08-18 | 响应 A-005（冲突裁决与 required 闭合） | pass | 0 | 用户裁决采纳 A-005；F-001/F-002 required fixed；F-003/F-005 fixed；F-004 原误标已由 A-008 撤回 |
+| [A-007](03-audit/A-007-independent-a005-closure-review.md) | independent | 2026-08-18 | A-005 F-001～F-005 关闭复审 | pass | 0 | A-005 两条 required 可闭合；不同意 A-006 将 A-005 F-004 标 fixed；余 recommended（blob 链接 / 模板不在模态 / Cron 未挂字段） |
+| [A-008](03-audit/A-008-self-a007-response.md) | self | 2026-08-18 | 响应 A-007 | pass | 0 | A-005 F-001/F-002 记 fixed；A-005 F-004 保持 recommended open；A-007 F-001～F-003 保持 open；GOAL-024 维持 done 8/8 |
+
+## A-007 响应（编排器）
+
+| finding | 级别 | 响应 | 状态 |
+|---------|------|------|------|
+| A-005 F-001 预览鉴权 | required | **fixed**：A-007 可核对 `fetcher`+blob 预览/复制；D-004 / A-008 | closed |
+| A-005 F-002 模板 + 行错误 | required | **fixed**：模板入口 + 200 `fieldErrors` 列表可核对；D-004 / A-008 | closed |
+| A-005 F-003 调账二次确认 | recommended | **fixed**（维持 A-006 / A-007） | closed |
+| A-005 F-004 Cron 字段 + 中文 | recommended | **保持 open**：撤回 A-006 `fixed`；用户未书面 residual | open |
+| A-005 F-005 台账残留 | recommended | **fixed**（维持 A-006 / A-007） | closed |
+| A-007 F-001 blob / `window.open` | recommended | 保持 open | open |
+| A-007 F-002 模板不在模态 | recommended | 保持 open | open |
+| A-007 F-003 同 A-005 F-004 | recommended | 保持 open | open |

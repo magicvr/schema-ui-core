@@ -9,7 +9,7 @@ status: recorded
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.0
+version: 0.1.1
 ---
 
 # A-005 · 独立审计 · GOAL-024 完成情况与 W16-F01～W16-F10 落地核实（2026-08-18）
@@ -68,7 +68,8 @@ version: 0.1.0
 |------|-----|
 | level | required |
 | severity | high |
-| status | open |
+| status | fixed |
+| closure | A-007 复审可闭合 + A-008 / D-004（2026-08-18） |
 | evidence | `apps/web/src/renderer/render.tsx` `library.preview` 仅 `window.open(url)`；`apps/api/internal/auth/auth.go` Middleware 只认 `Authorization: Bearer`；`apps/api/internal/handler/filelibrary.go` 下载端点强制 `Content-Disposition: attachment`。GOAL-026 D-001 要求图片 Lightbox + PDF/文本新标签预览。 |
 
 D-001 问题是「无法在浏览器内直接预览，只能下载」。现实现：
@@ -86,7 +87,8 @@ D-001 问题是「无法在浏览器内直接预览，只能下载」。现实�
 |------|-----|
 | level | required |
 | severity | high |
-| status | open |
+| status | fixed |
+| closure | A-007 复审可闭合 + A-008 / D-004（2026-08-18） |
 | evidence | `apps/api/internal/modules/users/schema/users.json` `openImport` 表单只有 `file` 上传字段，无模板链接；`submitImport.onSuccess.behavior = reload`；`apps/web/src/renderer/render.tsx` `submitForm` 在 `result.ok` 时只 toast + `reloadList` + 关模态。导入接口在部分行失败时仍 **HTTP 200** 返回 `fieldErrors`。GOAL-026 D-001 §3 明确要求模态内「下载 CSV 模板」和 `rowNumber/field/reason` 表格/列表。 |
 
 后端契约存在且本轮 Go 测试通过（`TestImportTemplateUsers`、`TestImportFieldErrors`）。用户原问题是「不知表头」和「无法定位第几行哪个字段」。当前导入模态仍只有上传控件；成功响应里的 `fieldErrors` 不会被渲染。GOAL-014 的 form `fieldErrors` echo 只作用于失败响应且映射到同名表单字段，无法展示导入行号明细。
@@ -97,7 +99,8 @@ D-001 问题是「无法在浏览器内直接预览，只能下载」。现实�
 |------|-----|
 | level | recommended |
 | severity | med |
-| status | open |
+| status | fixed |
+| closure | A-006 实施 + A-007 同意闭合 |
 | evidence | `apps/web/src/renderer/form-controls.tsx` 对 `amountDelta` 仅渲染 `schema.wallet.adjustWarning`；form-controls 无 confirm。GOAL-024 D-002 / GOAL-026 D-001 均写「高亮警示与二次确认」。货币列 `format: "currency"` / `formatCents` 已落地。 |
 
 ### F-004 · W16-F05 Cron 预览未按冻结方案接到表单字段，描述也不是中文人话
@@ -107,6 +110,7 @@ D-001 问题是「无法在浏览器内直接预览，只能下载」。现实�
 | level | recommended |
 | severity | med |
 | status | open |
+| closure | A-008 / D-004：保持 recommended open（用户未书面 residual） |
 | evidence | `cron-preview.tsx` 是独立输入+提交，无防抖、不读取任务表单 `cron` 字段；`scheduled-tasks.json` 把它挂在页面块而非 Cron 字段下方。`describeCron` 只返回 `"every minute"` / `"every hour at minute N"` / `"cron schedule (5-field)"`。D-001 要求中文人话；GOAL-027 D-001 要求字段下方防抖预览。API 与未来 3 次 `nextRuns` 本身存在且测试通过。 |
 
 ### F-005 · 父目标台账未与关门状态对齐
@@ -115,7 +119,8 @@ D-001 问题是「无法在浏览器内直接预览，只能下载」。现实�
 |------|-----|
 | level | recommended |
 | severity | low |
-| status | open |
+| status | fixed |
+| closure | A-006 台账收口 + A-007 同意闭合 |
 | evidence | `00-meta.md` 子目标表仍写 GOAL-025 `active · 0/4`；`01-decision.md` / `02-execution.md` / `03-audit.md` frontmatter `status: active`。`02-execution.md` 只有 E-001/E-002（规划），没有 R1～R3/S5 实施完成事实条目。goal-tree / workspace 波次表已写 done 8/8。 |
 
 此条不单独构成 fail；说明 S5 台账收口不完整。A-004 F-001/F-002 已点出部分残留，本条合并并补上执行索引缺口。
@@ -125,7 +130,7 @@ D-001 问题是「无法在浏览器内直接预览，只能下载」。现实�
 1. **F-001（required / high）**：按鉴权通道实现真正的在线预览（复用已鉴权 fetch + blob/Lightbox 或 inline 预览端点）；复制链接给出当前会话可用的完整 URL，而不是裸相对下载路径。
 2. **F-002（required / high）**：导入模态增加模板下载入口；导入 200 响应中的 `fieldErrors` 必须以行号/字段/原因展示，不能只 reload。
 
-未闭合 required = **2**。按 P-003，存在开放必改时不得把本目标视为可维持的关门。
+未闭合 required = **2**（审计当时）。**编排闭合（2026-08-18 · A-008）**：F-001 / F-002 → `fixed`；F-003 / F-005 → `fixed`；F-004 保持 recommended `open`。现开放 required = **0**。
 
 ## 与既有意见的异同
 

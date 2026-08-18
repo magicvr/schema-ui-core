@@ -4,7 +4,7 @@ title: W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W1
 status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
-updated: 2026-08-17
+updated: 2026-08-18
 version: 0.3.0
 progress: 8/8
 ---
