@@ -170,7 +170,7 @@ func isSensitiveKey(key string) bool {
 			return true
 		}
 	}
-	if normalized == "token" || normalized == "code" || normalized == "otp" {
+	if normalized == "token" || strings.HasSuffix(normalized, "token") || normalized == "code" || normalized == "otp" {
 		return true
 	}
 	return normalized == "url" || strings.HasSuffix(normalized, "url")

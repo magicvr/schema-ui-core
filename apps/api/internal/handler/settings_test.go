@@ -7,10 +7,12 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	env := newAuthTestEnv(t)
+	withRequestID := requestid.Middleware(env.mux)
 
 	// Public branding without auth.
 	req := httptest.NewRequest(http.MethodGet, "/api/branding", nil)
@@ -51,8 +53,9 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	// Valid patch
 	req = bearer(t, token, http.MethodPatch, "/api/settings/default",
 		`{"siteTitle":"Acme Admin","logoUrl":"https://example.com/logo.png"}`)
+	req.Header.Set(requestid.HeaderName, "r2-settings-001")
 	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, req)
+	withRequestID.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("patch status = %d: %s", rr.Code, rr.Body.String())
 	}
@@ -94,7 +97,7 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 	}
 	found := false
 	for _, op := range ops {
-		if op.Event == operationlog.EventSettingsUpdate {
+		if op.Event == operationlog.EventSettingsUpdate && op.CorrelationID == "r2-settings-001" {
 			found = true
 			if op.RecordID == nil || *op.RecordID != "default" {
 				t.Fatalf("settings.update record_id = %v, want default", op.RecordID)
@@ -113,7 +116,7 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Fatalf("settings.update not found in operations: %+v", ops)
+		t.Fatalf("settings.update with correlation r2-settings-001 not found in operations: %+v", ops)
 	}
 }
 

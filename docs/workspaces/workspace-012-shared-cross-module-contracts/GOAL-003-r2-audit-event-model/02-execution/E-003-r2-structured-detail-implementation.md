@@ -19,7 +19,7 @@ version: 0.1.0
 
 ## 验证
 
-- `go test ./internal/modules/operationlog ./internal/handler -run 'TestNewDetail|TestParseDetail|TestOperationLogAuthEvents|TestR1CorrelationIDPersistsOnAuthOperation|TestR2CorrelationIDPersistsOnUsersOperation|TestSettingsPatchProducesOperation|TestOperationLogStructuredFiltersAndExport'` 通过。
+- `go test ./internal/modules/operationlog ./internal/handler -run 'TestNewDetail|TestParseDetail|TestOperationLogAuthEvents|TestR1CorrelationIDPersistsOnAuthOperation|TestR2CorrelationIDPersistsOnUsersOperation|TestBrandingPublicAndSettingsPatch|TestOperationLogStructuredFiltersAndExport'` 通过；settings mutation 同时验证 `r2-settings-001` correlation 持久化。
 - API 全量 `go test ./...` 通过（含 docscheck）；handler 246.100s，operationlog 8.205s。
 - 代码路径：`apps/api/internal/modules/operationlog/detail.go`、`handler/auth.go`、`handler/settings.go`、`handler/users.go`、相关测试。
 - 实现 checkpoint：`516e085`，scope 为 R2 S1 detail schema/redaction、auth/settings/users 接入与回归测试。
