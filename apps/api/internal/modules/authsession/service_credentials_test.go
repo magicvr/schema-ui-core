@@ -138,3 +138,50 @@ func TestServiceCredentialConcurrentDuplicateName(t *testing.T) {
 		t.Fatalf("concurrent results successes=%d duplicates=%d errors=%v", successes, duplicates, errorsByIndex)
 	}
 }
+
+func TestServiceCredentialConcurrentRevokeTransitionsOnce(t *testing.T) {
+	repository, _ := openRepository(t, "service-credential-concurrent-revoke.db", true)
+	now := time.Now().UTC()
+	credential := ServiceCredential{
+		ID: "33333333333333333333333333333333", Name: "Revoke Agent",
+		TokenPrefix: "sui_sc_33333333", TokenHash: "3333333333333333333333333333333333333333333333333333333333333333",
+		Scopes: []string{"users.read"}, ExpiresAt: now.Add(time.Hour), CreatedBy: "user-admin",
+		CreatedAt: now, UpdatedAt: now,
+	}
+	if err := repository.CreateServiceCredential(credential, nil); err != nil {
+		t.Fatal(err)
+	}
+	start := make(chan struct{})
+	results := make([]bool, 2)
+	errorsByIndex := make([]error, 2)
+	audits := 0
+	var auditMu sync.Mutex
+	var wait sync.WaitGroup
+	for index := range results {
+		wait.Add(1)
+		go func(index int) {
+			defer wait.Done()
+			<-start
+			_, results[index], errorsByIndex[index] = repository.RevokeServiceCredential(credential.ID, now.Add(time.Minute), func(*sql.Tx, ServiceCredential) error {
+				auditMu.Lock()
+				audits++
+				auditMu.Unlock()
+				return nil
+			})
+		}(index)
+	}
+	close(start)
+	wait.Wait()
+	changes := 0
+	for index, err := range errorsByIndex {
+		if err != nil {
+			t.Fatalf("revoke %d: %v", index, err)
+		}
+		if results[index] {
+			changes++
+		}
+	}
+	if changes != 1 || audits != 1 {
+		t.Fatalf("concurrent revoke changes=%d audits=%d results=%v", changes, audits, results)
+	}
+}

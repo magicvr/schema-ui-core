@@ -72,6 +72,14 @@ func TestOperationalGateCompositionCoversCoreAndProviderRoutes(t *testing.T) {
 			srv.Handler.ServeHTTP(provider, providerReq)
 			assertOperationalError(t, provider, tc.code, "r5-provider")
 
+			// R6 central management mutation is covered by the same operational
+			// boundary before auth or credential creation runs.
+			credential := httptest.NewRecorder()
+			credentialReq := httptest.NewRequest(http.MethodPost, "/api/service-credentials", nil)
+			credentialReq.Header.Set("X-Request-ID", "r6-service-credential")
+			srv.Handler.ServeHTTP(credential, credentialReq)
+			assertOperationalError(t, credential, tc.code, "r6-service-credential")
+
 			// Core route: login remains available for session recovery and keeps its
 			// own validation error rather than becoming an operational denial.
 			login := httptest.NewRecorder()
