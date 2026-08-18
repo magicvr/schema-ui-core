@@ -5,7 +5,7 @@ status: proposed
 created: 2026-08-18
 updated: 2026-08-18
 parent: GOAL-005-r4-async-job-contract
-version: 0.1.0
+version: 0.2.0
 responds_to: A-002
 ---
 
@@ -48,29 +48,33 @@ responds_to: A-002
 | progress | running, exact owner+version, new>=current, new<=99 | running | progress=new |
 | request-cancel queued | queued, actor match | cancelled | finished_at=now；清 lease；cancel_requested=0 |
 | request-cancel running | running, actor match | running | cancel_requested=1；runner cancel signal best-effort |
-| complete | running, exact owner+version | succeeded | progress=100；result；finished_at=now；expires_at=now+24h；清 lease/error/cancel flag |
+| complete-with-commit | running, exact owner+version | succeeded | 同一事务先复核 fencing，再执行 consumer commit callback，随后写 progress=100/result/finished/expires 并清 lease/error/cancel flag；任一步失败则整体回滚 |
 | fail | running, exact owner+version, cancel_requested=0 | failed | error fields；finished_at=now；清 lease/result |
 | finalize-cancel | running, exact owner+version, cancel_requested=1 | cancelled | finished_at=now；清 lease/result/error |
+| recover-cancel | running, cancel_requested=1, lease_expires_at <= now | cancelled | 不依赖旧 owner；finished_at=now；清 lease/result/error。仅因 consumer durable write 必须走 complete-with-commit，故此转换不会掩盖已提交业务结果 |
 | retry | failed, actor match, attempt < max_attempts | queued | progress=0；清 cancel/lease/result/error/finished/expires；保留 id/payload/actor/correlation/attempt/max |
 | expire | succeeded, expires_at <= now | expired | 同一 UPDATE 清 result 并写 updated_at；保留 finished/expires |
 
-`complete` 表示 handler 已提交业务结果，因此即使 cancel flag 已置位也允许它用 owner+fencing token 赢得终态；取消是 best-effort，不承诺回滚已提交副作用。非成功返回时 runner 重新读取 cancel flag：为 1 则 `finalize-cancel`，否则 `fail`；二者均由条件 UPDATE 唯一决胜。终态不再接受取消；只有 failed 可 retry；expired 不可 retry。
+`complete-with-commit` 把 consumer durable commit 与 Job `succeeded` 放进同一数据库事务。事务先锁定/复核 running+owner+lease_version，再调用 callback；因此 cancel/recover-cancel 若先赢，旧 owner 的 callback 不执行；callback 若先赢，业务结果与 Job success 同时提交。即使 cancel flag 已置位，持有有效 fencing token 的 callback 仍可先赢。非成功返回时 runner 重新读取 cancel flag：为 1 则 `finalize-cancel`，否则 `fail`。终态不接受取消；只有 failed 可 retry；expired 不可 retry。
 
 ## 4. claim、fencing 与恢复
 
 - 每次 claim/reclaim 都代表一次 handler 执行并增加 attempt；manual retry 仅 requeue，下一次 claim 才增加 attempt。
 - runner 启动时立即扫描，之后每 10s 扫描 queued 与 lease-expired running；同进程 active Job set 会跳过仍在运行的 ID。
 - handler 运行期间 heartbeat 续租。每次 claim 生成随机 lease_owner 并增加 lease_version；progress/heartbeat/terminal 更新均要求 owner+version，旧执行者不能写 Job 状态。
-- 多进程或暂停超过 lease 的 handler 仍可能重入，因此业务 handler **必须按 Job ID 幂等**；fencing 保护 Job 状态，消费方幂等保护副作用。
+- runner 的成功路径必须调用 repository `CompleteWithCommit`：先在事务内复核 fencing，再执行短小的 consumer durable callback，最后同事务写 succeeded。长计算在事务外完成，callback 只做最终持久化。
+- 多进程或暂停超过 lease 的 handler 仍可能重入；fencing + `CompleteWithCommit` 防止失效 owner 提交数据库副作用，Job ID 幂等继续保护非数据库外部副作用。
 - lease-expired 且 attempt 已耗尽的 Job 由 scanner 原子转 failed；不会永久停在 running。
+- lease-expired 且 `cancel_requested=1` 的 Job 由 scanner 执行 `recover-cancel`，不受 attempt 是否耗尽影响；因此取消后进程崩溃不会留下永久 running。
 
 ## 5. wallet 消费幂等与结果
 
 - `wallet.reconcile` payload 只含可选 accountId；Job ID 同时作为 reconcile run ID。
-- 新增 `ReconcileOnce(accountID, runID, actorID, now)`：相同 runID 已存在时返回既有 run；并发插入由主键唯一约束决胜，败者 reload。一个 Job 至多一行 `wallet_reconciliation_runs`，无需改 wallet 表。
+- wallet handler 在事务外只准备输入；通过 `CompleteWithCommit` callback 调用 `ReconcileOnceTx(tx, accountID, runID=jobID, actorID, now)`。callback 插入 reconcile run，随后同事务写 Job succeeded；取消先赢时 callback 不执行，进程崩溃时二者一起回滚。
+- 相同 runID 已存在时 `ReconcileOnceTx` 返回既有 run；并发插入由主键唯一约束决胜。一个 Job 至多一行 `wallet_reconciliation_runs`，无需改 wallet 表。
 - `consistent` 与 `inconsistent` 都表示对账成功，Job 均为 `succeeded`；只有执行/存储错误令 Job failed。
 - result 是稳定 reconcile run JSON：`id/accountId/result/mismatchCount/details/actorId/createdAt`。result endpoint 以 JSON attachment 返回。
-- handler 在 run 持久化后返回成功；此后取消到达时 complete 可胜出。若 cancel 在业务调用前被观察到则不执行；若 run 已提交，Job 不伪称 cancelled。
+- consumer commit 与 Job success 原子提交；不存在“run 已提交但 Job 尚未 complete”的崩溃窗口。cancel/recover-cancel 先赢则没有 run；complete-with-commit 先赢则 Job succeeded，故 Job 不伪称 cancelled。
 - 提交时记录 `wallet.reconcile.queued`（jobId/correlationId）；成功终态记录既有 `wallet.reconcile`（jobId/runId/result），failed/cancelled 分别记录终态事件。旧同步 200 测试改为 202+轮询+结果断言。
 
 ## 6. actor 与 HTTP
@@ -99,6 +103,12 @@ GET Job/result 在读取前调用同一 repository `ExpireIfDue`；周期 scanne
 | F-007 recommended | 第 2/3 节冻结默认 attempt/max 与 retry 字段复位 |
 | F-008 recommended | 第 5/6 节登记 202、轮询/result 与 audit 时点 |
 
+## 9. A-004 F-009 disposition
+
+| finding | 响应 |
+|---------|------|
+| F-009 required | 第 3/4 节新增 `recover-cancel`，覆盖 `running + cancel_requested + lease expired`；第 3～5 节新增 `CompleteWithCommit` 原子 consumer commit，使 recover-cancel 不会掩盖已提交 wallet run |
+
 ## 门禁
 
-A-002 required 当前仅为“候选 fixed”，须经 independent 复核。复核通过后：D-002 转 `accepted`，I-002/I-003 转 `verified`，S0 才完成并放行 S1。
+A-002 F-001～F-006 已由 A-004 确认 `fixed`，I-002 可转 `verified`；A-004 F-009 当前为候选 fixed，须经 independent 复核。复核通过后：D-002 转 `accepted`，I-003 转 `verified`，S0 才完成并放行 S1。
