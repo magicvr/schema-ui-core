@@ -6,6 +6,7 @@ parent: null
 created: 2026-08-18
 updated: 2026-08-19
 version: 0.1.0
+progress: 100
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -43,6 +44,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | non-blocking | 各契约的消费方与验证载体（哪个模块或测试先引用） | R1 方案 | R1 开始前 | 扫描现有模块/测试可接入点 | **verified** | 2026-08-18 R1 链路扫描已完成 | R1 D-001/E-001：server/requestid、handler 错误包络、Web ResourceApiError、operationlog auth/settings 写路径与定向测试 |
+| I-002 | required | R1～R6 是否全部合法闭合并共同满足 Root 成功标准 | Root 关门 | Root 关门前 | 核对六个子目标 final audit、全量验证、不变式与目标树投影 | verified | 2026-08-19；A-001 self，待 independent close-out | E-006；A-001：六目标 done、开放 required=0、Root 四条成功标准 pass |
 
 ## 父目标
 
