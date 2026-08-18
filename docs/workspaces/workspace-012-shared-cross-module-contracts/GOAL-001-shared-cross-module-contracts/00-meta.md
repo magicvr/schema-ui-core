@@ -24,7 +24,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
-| R1 | **correlation / request-id / 错误恢复契约** | 起点 | 🚧 进行中（GOAL-002-r1-correlation-error-contract） |
+| R1 | **correlation / request-id / 错误恢复契约** | 起点 | ✅ 已完成（GOAL-002-r1-correlation-error-contract；A-001 pass） |
 | R2 | **审计事件模型增强**：结构化 diff、敏感字段脱敏、correlation 关联 | 依赖 R1 | 未开始 |
 | R3 | **乐观并发 + 幂等契约**：expectedVersion / ETag / 409 / idempotency_key | 依赖 R1 | 未开始 |
 | R4 | **异步 Job / 长操作契约**：状态机、进度、重试、取消 | 依赖 R1/R3 | 未开始 |
@@ -42,7 +42,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | non-blocking | 各契约的消费方与验证载体（哪个模块或测试先引用） | R1 方案 | R1 开始前 | 扫描现有模块/测试可接入点 | **collecting** | 2026-08-18 首子目标 S1 收集 | 待 R1 方案冻结 |
+| I-001 | non-blocking | 各契约的消费方与验证载体（哪个模块或测试先引用） | R1 方案 | R1 开始前 | 扫描现有模块/测试可接入点 | **verified** | 2026-08-18 R1 链路扫描已完成 | R1 D-001/E-001：server/requestid、handler 错误包络、Web ResourceApiError、operationlog auth/settings 写路径与定向测试 |
 
 ## 父目标
 

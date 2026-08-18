@@ -1,7 +1,7 @@
 ---
 id: GOAL-002-r1-correlation-error-contract
 title: R1 · correlation / request-id / 错误恢复契约
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18

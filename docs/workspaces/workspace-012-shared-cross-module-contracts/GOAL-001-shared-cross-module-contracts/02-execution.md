@@ -15,3 +15,4 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-18 | 开区 scaffold（workspace-012 + Root + 横切契约波路线图 + GOAL-002 立项） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-18 | R1 correlation / request-id 实现切片与全量验证 | recorded | [E-002-r1-correlation-implementation.md](02-execution/E-002-r1-correlation-implementation.md) |

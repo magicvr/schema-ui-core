@@ -19,7 +19,7 @@ workspace_id: workspace-012-shared-cross-module-contracts
 
 ```text
 GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台基架（分波交付）
-└── GOAL-002-r1-correlation-error-contract [active] · R1 correlation / request-id / 错误恢复契约
+└── GOAL-002-r1-correlation-error-contract [done] · R1 correlation / request-id / 错误恢复契约
 ```
 
 ## 状态表
@@ -27,7 +27,7 @@ GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台�
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-shared-cross-module-contracts | 共享横切契约与平台基架（分波交付） | null | active | —（纲领路线图就位） | 2026-08-18 |
-| GOAL-002-r1-correlation-error-contract | R1 · correlation / request-id / 错误恢复契约 | GOAL-001-shared-cross-module-contracts | active | — | 2026-08-18 |
+| GOAL-002-r1-correlation-error-contract | R1 · correlation / request-id / 错误恢复契约 | GOAL-001-shared-cross-module-contracts | done | — | 2026-08-18 |
 
 ## 维护说明
 
