@@ -79,6 +79,24 @@ describe("W15 A-004 schema wiring (shipped page documents)", () => {
 		expect(fields.has("userAgent")).toBe(true);
 		expect(fields.has("ip")).toBe(true);
 	});
+
+	it("notification settings live on the account page, not the inbox", () => {
+		const notifications = JSON.parse(
+			readFileSync(resolve(MODULES, "notifications/schema/notifications.json"), "utf8"),
+		) as { body?: { children?: Array<{ id?: string }> } };
+		expect(notifications.body?.children?.some((c) => c.id === "notification-settings")).toBe(false);
+
+		const account = JSON.parse(readFileSync(resolve(MODULES, "account/schema/account.json"), "utf8")) as {
+			actions?: { saveNotificationSettings?: { method?: string; url?: string } };
+			body?: { children?: Array<{ id?: string; children?: Array<{ id?: string; props?: { fields?: Array<{ type?: string }> } }> }> };
+		};
+		expect(account.actions?.saveNotificationSettings?.method).toBe("PATCH");
+		expect(account.actions?.saveNotificationSettings?.url).toBe("/api/notifications/settings");
+		const tab = account.body?.children?.find((c) => c.id === "tab-notifications");
+		expect(tab).toBeDefined();
+		const form = tab?.children?.find((c) => c.id === "notification-settings");
+		expect(form?.props?.fields?.some((f) => f.type === "switch")).toBe(true);
+	});
 });
 
 describe("D-VAL · every module page document passes structural validation", () => {

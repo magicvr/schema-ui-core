@@ -207,6 +207,17 @@ func TestNotificationListReadReadAllUnread(t *testing.T) {
 		t.Fatalf("unreadOnly total = %v, want 0", ul)
 	}
 	// settings toggle off → new notifications suppressed
+	req = bearer(t, token, http.MethodGet, "/api/notifications/settings", "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("settings GET = %d", rr.Code)
+	}
+	var settings map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&settings)
+	if settings["enabled"] != true {
+		t.Fatalf("settings GET enabled = %v, want true", settings["enabled"])
+	}
 	req = bearer(t, token, http.MethodPatch, "/api/notifications/settings", `{"enabled":false}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)

@@ -9,7 +9,6 @@
       "permissions.inheritance",
       "actions.page.trigger",
       "actions.row.request",
-      "form.record.load",
       "form.controls.extended"
     ]
   },
@@ -18,17 +17,6 @@
       "type": "request",
       "method": "POST",
       "url": "/api/notifications/read-all",
-      "onSuccess": {
-        "behavior": "reload"
-      }
-    },
-    "saveSettings": {
-      "type": "request",
-      "method": "PATCH",
-      "url": "/api/notifications/settings",
-      "bodyMapping": {
-        "enabled": "enabled"
-      },
       "onSuccess": {
         "behavior": "reload"
       }
@@ -71,44 +59,6 @@
             }
           ],
           "submitLabelKey": "feedback.search"
-        }
-      },
-      {
-        "type": "form",
-        "id": "notification-settings",
-        "props": {
-          "title": "Notification settings",
-          "titleKey": "schema.notifications.settings.title",
-          "recordSource": {
-            "method": "GET",
-            "url": "/api/notifications/settings",
-            "responseMapping": {
-              "enabled": "enabled"
-            }
-          },
-          "fields": [
-            {
-              "id": "enabled",
-              "label": "Enable in-app notifications",
-              "type": "select",
-              "options": [
-                {
-                  "value": "true",
-                  "label": "Enabled",
-                  "labelKey": "schema.notifications.settings.enabled"
-                },
-                {
-                  "value": "false",
-                  "label": "Disabled",
-                  "labelKey": "schema.notifications.settings.disabled"
-                }
-              ],
-              "labelKey": "schema.notifications.settings.enable"
-            }
-          ],
-          "submitAction": "saveSettings",
-          "submitLabel": "Save settings",
-          "submitLabelKey": "schema.notifications.settings.submit"
         }
       },
       {

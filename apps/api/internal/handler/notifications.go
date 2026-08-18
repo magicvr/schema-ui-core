@@ -191,8 +191,7 @@ func (h *notificationHandler) unreadCount() http.Handler {
 	})
 }
 
-// settingsGet returns the current switch as a form-facing string value
-// ("true"/"false") so the schema select control can prefill (F-001).
+// settingsGet returns the current switch as a JSON bool (W20: account switch).
 func (h *notificationHandler) settingsGet() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := h.identity(w, r)
@@ -204,12 +203,11 @@ func (h *notificationHandler) settingsGet() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not read notification settings")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"enabled": boolStringValue(enabled)})
+		writeJSON(w, http.StatusOK, map[string]any{"enabled": enabled})
 	})
 }
 
-// settings accepts the switch as a JSON bool or a "true"/"false" string (the
-// schema select control submits strings; F-001).
+// settings accepts a JSON bool or a "true"/"false" string (legacy select).
 func (h *notificationHandler) settings() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := h.identity(w, r)
@@ -233,16 +231,8 @@ func (h *notificationHandler) settings() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update notification settings")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"enabled": boolStringValue(enabled)})
+		writeJSON(w, http.StatusOK, map[string]any{"enabled": enabled})
 	})
-}
-
-// boolStringValue renders the form-facing string form of the switch.
-func boolStringValue(enabled bool) string {
-	if enabled {
-		return "true"
-	}
-	return "false"
 }
 
 // parseBoolValue accepts a JSON bool or the strings "true"/"false".
@@ -261,6 +251,14 @@ func parseBoolValue(raw json.RawMessage) (bool, error) {
 		}
 	}
 	return false, errors.New("invalid boolean value")
+}
+
+// boolStringValue renders a form-facing "true"/"false" string (captcha settings).
+func boolStringValue(enabled bool) string {
+	if enabled {
+		return "true"
+	}
+	return "false"
 }
 
 // --- best-effort system-event hooks ---

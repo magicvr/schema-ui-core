@@ -741,6 +741,7 @@
   "schema.notifications.filter.read.unread": "Unread",
   "schema.notifications.filter.read.read": "Read",
   "schema.account.tab.profile": "Profile",
+  "schema.account.tab.notifications": "Notifications",
   "schema.account.tab.security": "Security",
   "schema.account.tab.sessions": "Sessions",
   "feedback.reset": "Reset",

@@ -54,6 +54,17 @@
       "onSuccess": {
         "behavior": "reload"
       }
+    },
+    "saveNotificationSettings": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/notifications/settings",
+      "bodyMapping": {
+        "enabled": "enabled"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     }
   },
   "body": {
@@ -100,6 +111,42 @@
               "submitAction": "saveProfile",
               "submitLabel": "Save profile",
               "submitLabelKey": "schema.account.submit.saveProfile"
+            }
+          }
+        ]
+      },
+      {
+        "type": "section",
+        "id": "tab-notifications",
+        "props": {
+          "labelKey": "schema.account.tab.notifications",
+          "label": "Notifications"
+        },
+        "children": [
+          {
+            "type": "form",
+            "id": "notification-settings",
+            "props": {
+              "title": "Notification settings",
+              "titleKey": "schema.notifications.settings.title",
+              "recordSource": {
+                "method": "GET",
+                "url": "/api/notifications/settings",
+                "responseMapping": {
+                  "enabled": "enabled"
+                }
+              },
+              "fields": [
+                {
+                  "id": "enabled",
+                  "label": "Enable in-app notifications",
+                  "type": "switch",
+                  "labelKey": "schema.notifications.settings.enable"
+                }
+              ],
+              "submitAction": "saveNotificationSettings",
+              "submitLabel": "Save settings",
+              "submitLabelKey": "schema.notifications.settings.submit"
             }
           }
         ]
