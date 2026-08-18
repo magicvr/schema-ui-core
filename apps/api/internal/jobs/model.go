@@ -2,9 +2,12 @@
 package jobs
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -67,6 +70,15 @@ type Lease struct {
 	JobID   string
 	Owner   string
 	Version int64
+}
+
+// NewID returns a sortable Job identifier without coupling callers to a module.
+func NewID(now time.Time) (string, error) {
+	random := make([]byte, 12)
+	if _, err := rand.Read(random); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%016x%s", now.UTC().UnixMilli(), hex.EncodeToString(random)), nil
 }
 
 type rowScanner interface {

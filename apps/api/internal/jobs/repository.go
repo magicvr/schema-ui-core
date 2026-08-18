@@ -251,6 +251,11 @@ WHERE id=? AND status='succeeded' AND expires_at <= ?`, toMillis(now), id, toMil
 	return job, err
 }
 
+func (r *Repository) ExpireDue(ctx context.Context, now time.Time) (int64, error) {
+	return r.bulkTransition(ctx, `UPDATE jobs SET status='expired', result=NULL, updated_at=?
+WHERE status='succeeded' AND expires_at <= ?`, toMillis(now), toMillis(now))
+}
+
 func (r *Repository) RecoverCancelledDue(ctx context.Context, now time.Time) (int64, error) {
 	return r.bulkTransition(ctx, `UPDATE jobs SET status='cancelled', cancel_requested=0,
 lease_owner=NULL, lease_expires_at=NULL, result=NULL, error_code=NULL, error_message=NULL,
