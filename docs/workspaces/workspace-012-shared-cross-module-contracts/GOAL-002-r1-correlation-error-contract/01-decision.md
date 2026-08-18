@@ -14,4 +14,4 @@ version: 0.1.0
 
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| — | — | 待 S1 方案冻结 | — | — |
+| D-001 | 2026-08-18 | R1 请求链路与 correlation 契约方案冻结 | accepted | [D-001-r1-correlation-contract.md](01-decision/D-001-r1-correlation-contract.md) |

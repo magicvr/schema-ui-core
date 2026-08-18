@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 func TestJSONRouteErrors404And405(t *testing.T) {
@@ -66,4 +68,26 @@ func TestJSONRouteErrors404And405(t *testing.T) {
 			t.Fatalf("HEAD mapped to 405: %s", rr.Body.String())
 		}
 	})
+}
+
+func TestR1CorrelationIDAppearsInRouteErrorEnvelope(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
+	})
+	h := requestid.Middleware(WithJSONRouteErrors(mux))
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/missing", nil)
+	req.Header.Set(requestid.HeaderName, "r1-route-001")
+	h.ServeHTTP(rr, req)
+	if rr.Header().Get(requestid.HeaderName) != "r1-route-001" {
+		t.Fatalf("response request id = %q", rr.Header().Get(requestid.HeaderName))
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	if body[requestid.BodyName] != "r1-route-001" {
+		t.Fatalf("correlation_id = %v", body[requestid.BodyName])
+	}
 }

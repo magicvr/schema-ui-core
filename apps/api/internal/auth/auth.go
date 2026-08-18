@@ -24,6 +24,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // Sentinel errors surfaced to handlers for mapping to HTTP status codes.
@@ -535,8 +536,17 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
 	locale := errorcatalog.Negotiate(r)
 	body, contentLanguage, cataloged := errorcatalog.Body(code, message, locale)
+	if id := requestid.FromContext(r.Context()); id != "" {
+		body[requestid.BodyName] = id
+	}
 	if !cataloged {
-		writeError(w, status, code, message)
+		uncataloged := map[string]any{"error": code, "message": message}
+		if id := requestid.FromContext(r.Context()); id != "" {
+			uncataloged[requestid.BodyName] = id
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
+		_ = json.NewEncoder(w).Encode(uncataloged)
 		return
 	}
 	w.Header().Set("Content-Language", contentLanguage)

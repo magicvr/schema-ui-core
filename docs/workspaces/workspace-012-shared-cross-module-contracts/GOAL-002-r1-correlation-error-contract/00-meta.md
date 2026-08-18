@@ -42,7 +42,7 @@ serves_summary: 交付请求级 correlation id、错误响应语义与前端可�
 
 | ID | 级别 | 所需信息 | 状态 | 说明 |
 |----|------|----------|------|------|
-| I-001 | required | 现有 API/Web/operationlog 的请求链路与可插入点 | collecting | S1 方案冻结前扫描 |
+| I-001 | required | 现有 API/Web/operationlog 的请求链路与可插入点 | verified | D-001 / E-001 已记录扫描证据；实现范围限定为 requestid middleware、错误包络、ResourceApiError 与 auth/settings operationlog 关联 |
 
 ## 父目标
 

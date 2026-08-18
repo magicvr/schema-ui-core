@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // writeLocalizedError writes the compatible error envelope with server-side
@@ -16,8 +17,15 @@ import (
 func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
 	locale := errorcatalog.Negotiate(r)
 	body, contentLanguage, cataloged := errorcatalog.Body(code, message, locale)
+	if id := requestid.FromContext(r.Context()); id != "" {
+		body[requestid.BodyName] = id
+	}
 	if !cataloged {
-		writeJSON(w, status, map[string]string{"error": code, "message": message})
+		uncataloged := map[string]any{"error": code, "message": message}
+		if id := requestid.FromContext(r.Context()); id != "" {
+			uncataloged[requestid.BodyName] = id
+		}
+		writeJSON(w, status, uncataloged)
 		return
 	}
 	w.Header().Set("Content-Language", contentLanguage)
@@ -31,8 +39,15 @@ func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, cod
 func writeLocalizedFieldError(w http.ResponseWriter, r *http.Request, status int, code, message string, fields []errorcatalog.FieldError) {
 	locale := errorcatalog.Negotiate(r)
 	body, contentLanguage, cataloged := errorcatalog.BodyWithFields(code, message, locale, fields)
+	if id := requestid.FromContext(r.Context()); id != "" {
+		body[requestid.BodyName] = id
+	}
 	if !cataloged {
-		writeJSON(w, status, map[string]any{"error": code, "message": message, "fieldErrors": fields})
+		uncataloged := map[string]any{"error": code, "message": message, "fieldErrors": fields}
+		if id := requestid.FromContext(r.Context()); id != "" {
+			uncataloged[requestid.BodyName] = id
+		}
+		writeJSON(w, status, uncataloged)
 		return
 	}
 	w.Header().Set("Content-Language", contentLanguage)

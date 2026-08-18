@@ -52,6 +52,8 @@ export class ResourceApiError extends Error {
   readonly params?: Record<string, unknown>;
   /** GOAL-014: field-level validation failures, when the server attached them. */
   readonly fieldErrors: FieldError[];
+  /** R1 correlation identifier for support/operator lookup. */
+  readonly correlationId?: string;
 
   constructor(
     status: number,
@@ -60,6 +62,7 @@ export class ResourceApiError extends Error {
     messageKey?: string,
     params?: Record<string, unknown>,
     fieldErrors?: FieldError[],
+    correlationId?: string,
   ) {
     super(message);
     this.name = "ResourceApiError";
@@ -68,6 +71,7 @@ export class ResourceApiError extends Error {
     this.messageKey = messageKey;
     this.params = params;
     this.fieldErrors = fieldErrors ?? [];
+    this.correlationId = correlationId;
   }
 }
 
@@ -117,6 +121,7 @@ interface Envelope {
   messageKey?: string;
   params?: Record<string, unknown>;
   fieldErrors?: FieldError[];
+  correlationId?: string;
 }
 
 function parseFieldErrors(value: unknown): FieldError[] {
@@ -146,6 +151,11 @@ async function readEnvelope(response: Response): Promise<Envelope> {
           : {}),
         ...(isRecord(value.params) ? { params: value.params } : {}),
         ...(value.fieldErrors !== undefined ? { fieldErrors: parseFieldErrors(value.fieldErrors) } : {}),
+        ...(typeof value.correlation_id === "string" && value.correlation_id !== ""
+          ? { correlationId: value.correlation_id }
+          : typeof value.correlationId === "string" && value.correlationId !== ""
+            ? { correlationId: value.correlationId }
+            : {}),
       };
     }
   } catch {
@@ -157,15 +167,18 @@ async function readEnvelope(response: Response): Promise<Envelope> {
 /** Reads the frozen error envelope from a non-OK response. */
 export async function readResourceApiError(response: Response, label: string): Promise<ResourceApiError> {
   const envelope = await readEnvelope(response);
+  const correlationId = envelope.correlationId ?? response.headers.get("X-Request-ID") ?? undefined;
   const suffix =
     envelope.message === "" ? "" : envelope.message.startsWith(":") ? envelope.message : `: ${envelope.message}`;
+  const correlationSuffix = correlationId === undefined ? "" : ` (request ${correlationId})`;
   return new ResourceApiError(
     response.status,
     envelope.code,
-    `${label} failed: HTTP ${response.status}${suffix}`,
+    `${label} failed: HTTP ${response.status}${suffix}${correlationSuffix}`,
     envelope.messageKey,
     envelope.params,
     envelope.fieldErrors,
+    correlationId,
   );
 }
 

@@ -29,7 +29,7 @@ func TestRepositoryAppendListFilterAndGet(t *testing.T) {
 	recordID := "user-9"
 	detail := `{"username":"alice"}`
 	operations := []Operation{
-		{ID: "op-1", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin", RecordID: &recordID, Detail: &detail, CreatedAt: base},
+		{ID: "op-1", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin", RecordID: &recordID, Detail: &detail, CorrelationID: "r1-op-1", CreatedAt: base},
 		{ID: "op-2", Event: EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(time.Second)},
 		{ID: "op-3", Event: EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: base.Add(2 * time.Second)},
 	}
@@ -59,7 +59,7 @@ func TestRepositoryAppendListFilterAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOperation: %v", err)
 	}
-	if operation.RecordID == nil || *operation.RecordID != recordID || operation.Detail == nil || *operation.Detail != detail || !operation.CreatedAt.Equal(base) {
+	if operation.RecordID == nil || *operation.RecordID != recordID || operation.Detail == nil || *operation.Detail != detail || operation.CorrelationID != "r1-op-1" || !operation.CreatedAt.Equal(base) {
 		t.Fatalf("GetOperation(op-1) = %+v", operation)
 	}
 	if _, err := repository.GetOperation("missing"); !errors.Is(err, ErrNotFound) {

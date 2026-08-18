@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // users/roles write operation-log events are covered by TestUsersOperationLogEvents
@@ -91,6 +92,28 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		if err := json.Unmarshal([]byte(*op.Detail), &extra); err == nil && len(extra) != 1 {
 			t.Fatalf("authOps[%d].detail = %v, want exactly {username} (no token/password/secret)", i, extra)
 		}
+	}
+}
+
+func TestR1CorrelationIDPersistsOnAuthOperation(t *testing.T) {
+	env := newAuthTestEnv(t)
+	h := requestid.Middleware(env.mux)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`{"username":"admin","password":"test-password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(requestid.HeaderName, "r1-auth-001")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("login status = %d: %s", rr.Code, rr.Body.String())
+	}
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
+		Event: operationlog.EventAuthLogin, Sort: "createdAt", Order: "desc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("list auth operations: %v", err)
+	}
+	if len(ops) != 1 || ops[0].CorrelationID != "r1-auth-001" {
+		t.Fatalf("auth operation correlation = %+v, want r1-auth-001", ops)
 	}
 }
 

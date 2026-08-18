@@ -123,7 +123,6 @@ var operationLogCaptchaDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
-
 // operationLogDataPermissionDDL (0028 · S-09 GOAL-016 D-002 §3): adds the two
 // data-permission events to the event CHECK (rebuild like 0005/0008/0014/0015/0018/0020/0022/0024/0026).
 var operationLogDataPermissionDDL = []string{
@@ -176,7 +175,7 @@ func migrateOperationLogWallet(tx *sql.Tx) error {
 // operationLogAvatarEventsDDL (0036 · W13 T-05 GOAL-014): adds the
 // account.avatar-change event to the CHECK (rebuild like 0032/0034).
 var operationLogAvatarEventsDDL = []string{
-`CREATE TABLE operation_log (
+	`CREATE TABLE operation_log (
   id         TEXT PRIMARY KEY,
   event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update','mfa.enroll','mfa.confirm','mfa.disable','mfa.recovery-rotate','mfa.admin-reset','mfa.login','wallet.account-create','wallet.account-update','wallet.adjust','wallet.freeze','wallet.unfreeze','wallet.reconcile','wallet.deduct-frozen','account.avatar-change')),
   actor_id   TEXT NOT NULL,
@@ -185,7 +184,7 @@ var operationLogAvatarEventsDDL = []string{
   detail     TEXT,
   created_at INTEGER NOT NULL
 )`,
-`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
 // operationLogWalletDeductDDL (0034 · GOAL-021 D-001 §3): adds the
@@ -350,6 +349,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogRecycleDDL, "0026:operation-log-recycle:v1"),
 			Apply:                migrateOperationLogRecycle,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_correlation"},
+			Version:              41,
+			Name:                 "operation_log_correlation",
+			Checksum:             kernel.MigrationChecksum(operationLogCorrelationDDL, "0041:operation-log-correlation:v1"),
+			Apply:                migrateOperationLogCorrelation,
+		},
 	}
 }
 
@@ -398,6 +404,15 @@ func migrateOperationLogRecycle(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogRecycleDDL, "recycle-events-expanded")
 }
 
+func migrateOperationLogCorrelation(tx *sql.Tx) error {
+	for _, stmt := range operationLogCorrelationDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create operation_log_correlation: %w", err)
+		}
+	}
+	return nil
+}
+
 func migrateOperationLogDataPermission(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogDataPermissionDDL, "data-permission-events-expanded")
 }
@@ -426,4 +441,15 @@ func rebuildOperationLog(tx *sql.Tx, ddl []string, label string) error {
 		return fmt.Errorf("create operation_log index: %w", err)
 	}
 	return nil
+}
+
+// operationLogCorrelationDDL (0041 · VP-012 R1): keeps request correlation
+// separate from the stable business-event detail JSON, preserving existing
+// auth/audit detail contracts while allowing operations to be traced.
+var operationLogCorrelationDDL = []string{
+	`CREATE TABLE operation_log_correlation (
+  operation_id   TEXT PRIMARY KEY REFERENCES operation_log(id) ON DELETE CASCADE,
+  correlation_id TEXT NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_correlation_id ON operation_log_correlation(correlation_id)`,
 }

@@ -68,3 +68,21 @@ func TestWrapSecurityCORSAndNosniff(t *testing.T) {
 		}
 	})
 }
+
+func TestNewEmitsCorrelationIDForDownstreamErrors(t *testing.T) {
+	cfg := &config.Config{HTTPAddr: ":0"}
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	srv := New(cfg, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}), logger)
+	// The downstream body is intentionally irrelevant; the boundary guarantee is
+	// the stable response header and request propagation, exercised by the
+	// requestid package. Keep this test focused on the server composition.
+	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+	req.Header.Set("X-Request-ID", "server-test-1")
+	rr := httptest.NewRecorder()
+	srv.Handler.ServeHTTP(rr, req)
+	if got := rr.Header().Get("X-Request-ID"); got != "server-test-1" {
+		t.Fatalf("response X-Request-ID = %q", got)
+	}
+}

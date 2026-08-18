@@ -12,6 +12,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // MFAVerifier is the optional second-factor login gate (S-10 · GOAL-017
@@ -168,7 +169,7 @@ func (h *authHandler) login() http.HandlerFunc {
 		if h.rateLimiter != nil {
 			h.rateLimiter.clear(limiterKey)
 		}
-		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
+		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`, requestid.FromContext(r.Context()))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -191,7 +192,7 @@ func (h *authHandler) refresh() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
 			return
 		}
-		h.authEvent(operationlog.EventAuthRefresh, user.ID)
+		h.authEvent(operationlog.EventAuthRefresh, user.ID, requestid.FromContext(r.Context()))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -212,7 +213,7 @@ func (h *authHandler) logout() http.HandlerFunc {
 			return
 		}
 		if userID != "" {
-			h.authEvent(operationlog.EventAuthLogout, userID)
+			h.authEvent(operationlog.EventAuthLogout, userID, requestid.FromContext(r.Context()))
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -223,20 +224,20 @@ func (h *authHandler) logout() http.HandlerFunc {
 // auth does not carry the login username, so it is resolved from the store;
 // best-effort: an unresolvable actor still logs with the actor id and a
 // service-log error, never blocking the business response (§5).
-func (h *authHandler) authEvent(event, userID string) {
+func (h *authHandler) authEvent(event, userID, correlationID string) {
 	u, err := h.a.UserByID(userID)
 	if err != nil {
 		slog.Error("operation log auth event: resolve user", "event", event, "user_id", userID, "err", err)
-		h.logOperation(event, userID, "", "")
+		h.logOperation(event, userID, "", "", correlationID)
 		return
 	}
-	h.logOperation(event, u.ID, u.Name, `{"username":`+jsonQuote(u.Username)+`}`)
+	h.logOperation(event, u.ID, u.Name, `{"username":`+jsonQuote(u.Username)+`}`, correlationID)
 }
 
 // logOperation appends one operation-log row (R5 S6 optional bonus checkpoint,
 // I-008-003 §5). Best-effort: a logging failure is logged to the service log
 // and never changes the business response.
-func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
+func (h *authHandler) logOperation(event, actorID, actorName, detail, correlationID string) {
 	op := operationlog.Operation{
 		ID:        newOperationID(),
 		Event:     event,
@@ -247,6 +248,7 @@ func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
 	if detail != "" {
 		op.Detail = &detail
 	}
+	op.CorrelationID = correlationID
 	if h.operations == nil {
 		return
 	}

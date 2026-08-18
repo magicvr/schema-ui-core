@@ -98,6 +98,7 @@ describe("S4 · readResourceApiError envelope", () => {
         message: "站点标题不能为空",
         messageKey: "error.invalidSiteTitle",
         params: { field: "siteTitle" },
+        correlation_id: "req-r1-001",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } },
     );
@@ -106,6 +107,8 @@ describe("S4 · readResourceApiError envelope", () => {
     expect(error.code).toBe("INVALID_SITE_TITLE");
     expect(error.messageKey).toBe("error.invalidSiteTitle");
     expect(error.params).toEqual({ field: "siteTitle" });
+    expect(error.correlationId).toBe("req-r1-001");
+    expect(error.message).toContain("request req-r1-001");
     expect(error.message).toContain("HTTP 400");
   });
 
@@ -118,6 +121,16 @@ describe("S4 · readResourceApiError envelope", () => {
     expect(error.messageKey).toBeUndefined();
     expect(error.code).toBe("FORBIDDEN");
     expect(error.fieldErrors).toEqual([]);
+  });
+
+  it("falls back to the response header when the body omits correlation_id", async () => {
+    const response = new Response(JSON.stringify({ error: "FORBIDDEN", message: "nope" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json", "X-Request-ID": "header-r1-001" },
+    });
+    const error = await readResourceApiError(response, "list");
+    expect(error.correlationId).toBe("header-r1-001");
+    expect(error.message).toContain("request header-r1-001");
   });
 
   it("parses fieldErrors from the GOAL-014 envelope (A-003 F-002)", async () => {

@@ -15,6 +15,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // RegisterSettings is removed in R6 C6.1: the Settings module mounts its HTTP
@@ -205,7 +206,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 		if current != nil {
 			cleanupReplacedBrandAssets(current, updated, assets)
 		}
-		recordSettingsOperation(operations, user, "updated", updated, now)
+		recordSettingsOperation(operations, user, "updated", updated, now, requestid.FromContext(r.Context()))
 		w.Header().Set(configChangedHeader, configNamespace)
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
@@ -264,7 +265,7 @@ func settingsReset(repository SettingsRepository, operations operationlog.Record
 		if assets != nil {
 			_ = assets.DeleteAll()
 		}
-		recordSettingsOperation(operations, user, "reset", updated, now)
+		recordSettingsOperation(operations, user, "reset", updated, now, requestid.FromContext(r.Context()))
 		w.Header().Set(configChangedHeader, configNamespace)
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
@@ -289,20 +290,21 @@ func writeSettingsError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func recordSettingsOperation(operations operationlog.Recorder, user account.User, action string, updated *settingsrepository.SiteSettings, now time.Time) {
+func recordSettingsOperation(operations operationlog.Recorder, user account.User, action string, updated *settingsrepository.SiteSettings, now time.Time, correlationID string) {
 	if operations == nil {
 		return
 	}
 	recordID := "default"
 	detail := `{"siteTitle":` + jsonQuote(updated.SiteTitle) + `,"action":"` + action + `"}`
 	op := operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     operationlog.EventSettingsUpdate,
-		ActorID:   user.ID,
-		ActorName: user.Name,
-		RecordID:  &recordID,
-		Detail:    &detail,
-		CreatedAt: now,
+		ID:            newOperationID(),
+		Event:         operationlog.EventSettingsUpdate,
+		ActorID:       user.ID,
+		ActorName:     user.Name,
+		RecordID:      &recordID,
+		Detail:        &detail,
+		CreatedAt:     now,
+		CorrelationID: correlationID,
 	}
 	if err := operations.RecordOperation(op); err != nil {
 		slog.Error("operation log write failed", "event", operationlog.EventSettingsUpdate, "err", err)

@@ -47,38 +47,39 @@ const (
 	EventTaskDelete = "scheduled-tasks.delete"
 	// S-11 captcha events (GOAL-011 D-002 §3).
 	EventCaptchaSettingsUpdate = "captcha.settings-update"
-	EventRecycleRestore       = "recycle.restore"
-	EventRecyclePurge         = "recycle.purge"
+	EventRecycleRestore        = "recycle.restore"
+	EventRecyclePurge          = "recycle.purge"
 	// S-09 data-permission events (GOAL-016 D-002 §3).
 	EventDataPermissionPolicyUpdate = "data-permission.policy-update"
 	EventDataPermissionScopeUpdate  = "data-permission.scope-update"
 	// S-10 MFA events (GOAL-017 D-002 §2/§4).
-	EventMFAEnroll        = "mfa.enroll"
-	EventMFAConfirm       = "mfa.confirm"
-	EventMFADisable       = "mfa.disable"
+	EventMFAEnroll         = "mfa.enroll"
+	EventMFAConfirm        = "mfa.confirm"
+	EventMFADisable        = "mfa.disable"
 	EventMFARecoveryRotate = "mfa.recovery-rotate"
-	EventMFAAdminReset    = "mfa.admin-reset"
-	EventMFALogin         = "mfa.login"
+	EventMFAAdminReset     = "mfa.admin-reset"
+	EventMFALogin          = "mfa.login"
 	// S-14 wallet events (GOAL-019 D-002 §2).
-	EventWalletAccountCreate  = "wallet.account-create"
-	EventWalletAccountUpdate  = "wallet.account-update"
-	EventWalletAdjust         = "wallet.adjust"
-	EventWalletFreeze         = "wallet.freeze"
-	EventWalletUnfreeze       = "wallet.unfreeze"
-	EventWalletReconcile      = "wallet.reconcile"
+	EventWalletAccountCreate = "wallet.account-create"
+	EventWalletAccountUpdate = "wallet.account-update"
+	EventWalletAdjust        = "wallet.adjust"
+	EventWalletFreeze        = "wallet.freeze"
+	EventWalletUnfreeze      = "wallet.unfreeze"
+	EventWalletReconcile     = "wallet.reconcile"
 	// GOAL-021 (D-001 §1): consume from the frozen bucket.
-	EventWalletDeductFrozen   = "wallet.deduct-frozen"
+	EventWalletDeductFrozen = "wallet.deduct-frozen"
 )
 
 // Operation is one append-only operation log row.
 type Operation struct {
-	ID        string
-	Event     string
-	ActorID   string
-	ActorName string
-	RecordID  *string
-	Detail    *string
-	CreatedAt time.Time
+	ID            string
+	Event         string
+	ActorID       string
+	ActorName     string
+	RecordID      *string
+	Detail        *string
+	CorrelationID string
+	CreatedAt     time.Time
 }
 
 // OperationFilter carries handler-validated activity list parameters.
@@ -150,6 +151,14 @@ func (r *Repository) RecordOperation(operation Operation) error {
 		); err != nil {
 			return err
 		}
+		if correlationID := strings.TrimSpace(operation.CorrelationID); correlationID != "" {
+			if _, err := tx.Exec(
+				`INSERT INTO operation_log_correlation (operation_id, correlation_id) VALUES (?, ?)`,
+				operation.ID, correlationID,
+			); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
@@ -182,8 +191,9 @@ func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation
 			return fmt.Errorf("count: %w", err)
 		}
 		rows, err := tx.Query(
-			`SELECT id, event, actor_id, actor_name, record_id, detail, created_at
-			 FROM operation_log`+where+
+			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
+			        c.correlation_id, o.created_at
+			 FROM operation_log o LEFT JOIN operation_log_correlation c ON c.operation_id = o.id`+where+
 				` ORDER BY `+operationsSortSQL(filter.Sort, filter.Order)+`, id DESC`+
 				` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
@@ -214,8 +224,9 @@ func (r *Repository) GetOperation(id string) (*Operation, error) {
 	err := r.withTx("get operation", func(tx *sql.Tx) error {
 		var err error
 		operation, err = scanOperation(tx.QueryRow(
-			`SELECT id, event, actor_id, actor_name, record_id, detail, created_at
-			 FROM operation_log WHERE id = ?`, id,
+			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
+			        c.correlation_id, o.created_at
+			 FROM operation_log o LEFT JOIN operation_log_correlation c ON c.operation_id = o.id WHERE o.id = ?`, id,
 		))
 		return err
 	})
@@ -237,11 +248,11 @@ func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
 
 func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	var operation Operation
-	var recordID, detail sql.NullString
+	var recordID, detail, correlationID sql.NullString
 	var createdAt int64
 	err := row.Scan(
 		&operation.ID, &operation.Event, &operation.ActorID, &operation.ActorName,
-		&recordID, &detail, &createdAt,
+		&recordID, &detail, &correlationID, &createdAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Operation{}, ErrNotFound
@@ -254,6 +265,9 @@ func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	}
 	if detail.Valid {
 		operation.Detail = &detail.String
+	}
+	if correlationID.Valid {
+		operation.CorrelationID = correlationID.String
 	}
 	operation.CreatedAt = time.UnixMilli(createdAt).UTC()
 	return operation, nil
