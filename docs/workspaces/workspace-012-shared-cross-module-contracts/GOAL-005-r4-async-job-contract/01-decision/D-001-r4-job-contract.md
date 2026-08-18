@@ -1,7 +1,7 @@
 ---
 id: D-001-r4-job-contract
 goal: GOAL-005-r4-async-job-contract
-status: proposed
+status: superseded
 created: 2026-08-18
 updated: 2026-08-18
 parent: GOAL-005-r4-async-job-contract
@@ -35,3 +35,7 @@ version: 0.1.0
 ## 门禁
 
 本决定须经 S0 independent 设计审计；I-002/I-003 关闭后状态才改为 `accepted`，随后才能进入 S1。
+
+## 后续
+
+A-002 independent 指出六条 required 精确化缺口；本初稿由 D-002 替代，历史判断保留。
