@@ -20,6 +20,8 @@ parent: GOAL-001-design-implementation-conformance
 
 未跑全量 vitest / e2e / 浏览器点验。本波无 Go 业务改动。
 
+Git checkpoint（S2/S3 切片）：`e4ef26a`。
+
 ## 下一步（计划）
 
 S4 自审关门。
