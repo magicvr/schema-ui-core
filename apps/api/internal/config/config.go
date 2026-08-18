@@ -64,11 +64,34 @@ type Config struct {
 	ModulesEnabled    []string
 	ProfileSource     string
 	ProfilePrecedence []string
-	ProfileError      error
+	// RuntimeMode is the startup-selected operational state consumed by the
+	// bootstrap/status projections and the HTTP write gate (GOAL-006 R5).
+	RuntimeMode  RuntimeMode
+	ProfileError error
 	// LoadError carries a fatal configuration-load failure (missing CONFIG_FILE,
 	// unset ${VAR} without default, invalid YAML). ValidateProd surfaces it so
 	// startup fails closed instead of silently running on fallback values.
 	LoadError error
+}
+
+// RuntimeMode is the bounded operational state for cross-module availability.
+type RuntimeMode string
+
+const (
+	RuntimeModeNormal      RuntimeMode = "normal"
+	RuntimeModeMaintenance RuntimeMode = "maintenance"
+	RuntimeModeDegraded    RuntimeMode = "degraded"
+	RuntimeModeReadOnly    RuntimeMode = "read-only"
+)
+
+// ValidRuntimeMode reports whether a value belongs to the frozen R5 contract.
+func ValidRuntimeMode(mode RuntimeMode) bool {
+	switch mode {
+	case RuntimeModeNormal, RuntimeModeMaintenance, RuntimeModeDegraded, RuntimeModeReadOnly:
+		return true
+	default:
+		return false
+	}
 }
 
 // yamlFile mirrors the on-disk config schema (see configs/config.yaml and the
@@ -76,9 +99,9 @@ type Config struct {
 // are rejected by yaml.v3 KnownFields so typos fail loudly.
 type yamlFile struct {
 	App struct {
-		Name    *string   `yaml:"name"`
-		Env     *string   `yaml:"env"`
-		Profile *string   `yaml:"profile"`
+		Name    *string `yaml:"name"`
+		Env     *string `yaml:"env"`
+		Profile *string `yaml:"profile"`
 		// T-06 (GOAL-013 D-007): app.modules — preset (builtin name or preset
 		// file path) OR inline list; mutually exclusive. This is the ONLY
 		// authority for the enabled-module set (APP_PROFILE /
@@ -100,7 +123,7 @@ type yamlFile struct {
 		JWTSecret         *string `yaml:"jwt_secret"`
 		AccessTTL         *string `yaml:"access_ttl"`
 		RefreshTTL        *string `yaml:"refresh_ttl"`
-		DevSessionEnabled *bool  `yaml:"dev_session_enabled"`
+		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
 	} `yaml:"auth"`
 	DB struct {
 		Path *string `yaml:"path"`
@@ -110,8 +133,8 @@ type yamlFile struct {
 	} `yaml:"admin"`
 	Upload struct {
 		AllowedTypes    *string `yaml:"allowed_types"`
-		MaxFilesPerUser int    `yaml:"max_files_per_user"`
-		MaxBytesPerUser int    `yaml:"max_bytes_per_user"`
+		MaxFilesPerUser int     `yaml:"max_files_per_user"`
+		MaxBytesPerUser int     `yaml:"max_bytes_per_user"`
 	} `yaml:"upload"`
 	Branding struct {
 		LogoMaxDimension int `yaml:"logo_max_dimension"`
@@ -122,6 +145,9 @@ type yamlFile struct {
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
+	Runtime struct {
+		Mode *string `yaml:"mode"`
+	} `yaml:"runtime"`
 }
 
 // defaultYAMLPath is the operator-editable config file loaded when CONFIG_FILE
@@ -149,18 +175,19 @@ func Load() *Config {
 		IdleTimeout:  60 * time.Second,
 		LogLevelName: "info",
 
-		AuthJWTSecret:         "",
-		AuthAccessTTL:         15 * time.Minute,
-		AuthRefreshTTL:        30 * 24 * time.Hour,
-		DBPath:                "./data/schema-ui.db",
-		AdminInitialPassword:  "",
-		AuthDevSessionEnabled: false,
-		UploadMaxFilesPerUser: 1000,
-		UploadMaxBytesPerUser: 256 << 20,
+		AuthJWTSecret:            "",
+		AuthAccessTTL:            15 * time.Minute,
+		AuthRefreshTTL:           30 * 24 * time.Hour,
+		DBPath:                   "./data/schema-ui.db",
+		AdminInitialPassword:     "",
+		AuthDevSessionEnabled:    false,
+		UploadMaxFilesPerUser:    1000,
+		UploadMaxBytesPerUser:    256 << 20,
 		BrandingLogoMaxDimension: 512,
 		BrandingFaviconDimension: 64,
 		BrandingJPEGQuality:      82,
 		BrandingMaxBytes:         4 << 20,
+		RuntimeMode:              RuntimeModeNormal,
 	}
 
 	// Optional env-file layer for secret values only (dev convenience).
@@ -303,6 +330,18 @@ func Load() *Config {
 	cfg.BrandingLogoMaxDimension = positiveIntEnv("BRANDING_LOGO_MAX_DIMENSION", cfg.BrandingLogoMaxDimension)
 	cfg.BrandingFaviconDimension = positiveIntEnv("BRANDING_FAVICON_DIMENSION", cfg.BrandingFaviconDimension)
 	cfg.BrandingJPEGQuality = positiveIntEnv("BRANDING_JPEG_QUALITY", cfg.BrandingJPEGQuality)
+	if yf.Runtime.Mode != nil {
+		cfg.RuntimeMode = RuntimeMode(strings.TrimSpace(*yf.Runtime.Mode))
+	}
+	if raw, set := os.LookupEnv("RUNTIME_MODE"); set {
+		// Unlike ordinary optional overrides, an explicitly empty runtime mode is
+		// invalid: silently falling back to normal would defeat fail-closed ops.
+		cfg.RuntimeMode = RuntimeMode(strings.TrimSpace(raw))
+	}
+	if !ValidRuntimeMode(cfg.RuntimeMode) {
+		cfg.LoadError = fmt.Errorf("config: runtime.mode must be one of normal, maintenance, degraded, read-only")
+		return cfg
+	}
 
 	// T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only.
 	// app.modules (preset name/path or inline list) is authoritative; the
@@ -318,6 +357,7 @@ func Load() *Config {
 	cfg.ProfilePrecedence = append([]string(nil), resolved.Precedence...)
 	return cfg
 }
+
 // modulesPresetNames are the compiled built-in presets (D-007 §2: mvp /
 // admin / demo; their module sets stay identical to kernel.ResolveProfile).
 var modulesPresetNames = map[string]bool{"mvp": true, "admin": true, "demo": true}
@@ -327,6 +367,7 @@ var modulesPresetNames = map[string]bool{"mvp": true, "admin": true, "demo": tru
 //   - preset: <name>  — builtin compiled preset (mvp | admin | demo)
 //   - preset: <path>  — custom preset YAML file declaring a modules: list
 //   - list: [a, b]    — inline module ids (the "custom" form)
+//
 // preset and list are mutually exclusive; both present fails closed. A node
 // kind of 0 means the section is absent — the app.profile builtin defaults
 // apply.
@@ -424,8 +465,6 @@ func loadPresetFile(path string) ([]string, error) {
 	}
 	return pf.Modules, nil
 }
-
-
 
 func splitCSV(raw string) []string {
 	parts := strings.Split(raw, ",")
@@ -606,6 +645,11 @@ func (c *Config) ValidateProd() error {
 	}
 	if c.ProfileError != nil {
 		return fmt.Errorf("invalid module profile: %w", c.ProfileError)
+	}
+	// A zero-value Config is used by focused unit tests and means the loader
+	// was bypassed; Load itself rejects an explicitly empty runtime mode.
+	if c.RuntimeMode != "" && !ValidRuntimeMode(c.RuntimeMode) {
+		return fmt.Errorf("invalid runtime mode %q", c.RuntimeMode)
 	}
 	if c.AppEnv == "" {
 		return fmt.Errorf("APP_ENV must be set explicitly (development for local runs, production for deployments); refusing to guess")

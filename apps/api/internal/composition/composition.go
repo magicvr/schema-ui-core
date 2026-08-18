@@ -353,7 +353,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, datadictionarymodule.New(a, datadictionarystore.NewRepository(st), operations, trash))
 	}
 	if plan.HasModule("admin.system-monitoring") {
-		providers = append(providers, systemmonitoringmodule.New(a, st, plan, gate.Ready, cfg.DBPath, time.Now(), operations))
+		providers = append(providers, systemmonitoringmodule.New(a, st, plan, gate.Ready, cfg.DBPath, time.Now(), operations, string(cfg.RuntimeMode)))
 	}
 	if plan.HasModule("admin.scheduled-tasks") {
 		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations, trash))
@@ -459,7 +459,7 @@ func newMuxWithExtraProviders(
 		}
 		// Host/App 互操作（ADR-0035）：bootstrap document 与 manifest 同字节组装，
 		// 声明的 manifest.sha256 与真实响应一致。
-		if err := handler.RegisterBootstrap(mux, data); err != nil {
+		if err := handler.RegisterBootstrapWithAvailability(mux, data, string(cfg.RuntimeMode)); err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: fmt.Sprintf("register bootstrap: %v", err)}
 		}
 	}
@@ -477,10 +477,10 @@ var adminFunctionalOrder = []string{"admin.dashboard", "admin.users", "admin.rol
 
 // deriveHomePageRef implements the D-003 §2 decision table:
 //
-//	1. dev.examples enabled              -> "overview"
-//	2. else first enabled admin module   -> that module's first declared page
-//	3. else first enabled module with a page contribution -> that page
-//	4. else "" (omit homePageRef)
+//  1. dev.examples enabled              -> "overview"
+//  2. else first enabled admin module   -> that module's first declared page
+//  3. else first enabled module with a page contribution -> that page
+//  4. else "" (omit homePageRef)
 func deriveHomePageRef(plan kernel.Plan) string {
 	if plan.HasModule("dev.examples") {
 		return "overview"
@@ -503,7 +503,8 @@ func deriveHomePageRef(plan kernel.Plan) string {
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {
-	return server.New(cfg, handler.WithJSONRouteErrors(mux), logger)
+	routes := handler.WithJSONRouteErrors(mux)
+	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
 func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime) {

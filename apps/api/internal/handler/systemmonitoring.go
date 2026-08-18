@@ -25,14 +25,15 @@ import (
 // loads statCard dataSource values through fetchResourceList (A-003 F-001);
 // the flat object alone would fail closed on the page.
 type MonitoringStatusRow struct {
-	Status        string   `json:"status"`
-	Ready         bool     `json:"ready"`
-	Version       string   `json:"version"`
-	Commit        string   `json:"commit"`
-	UptimeSeconds int64    `json:"uptimeSeconds"`
-	ModuleCount   int      `json:"moduleCount"`
-	Modules       []string `json:"modules"`
-	DBSizeBytes   int64    `json:"dbSizeBytes"`
+	Status           string   `json:"status"`
+	AvailabilityMode string   `json:"availabilityMode"`
+	Ready            bool     `json:"ready"`
+	Version          string   `json:"version"`
+	Commit           string   `json:"commit"`
+	UptimeSeconds    int64    `json:"uptimeSeconds"`
+	ModuleCount      int      `json:"moduleCount"`
+	Modules          []string `json:"modules"`
+	DBSizeBytes      int64    `json:"dbSizeBytes"`
 }
 
 // monitoringEntity adapts the operation-log reader to the read-only errors
@@ -81,7 +82,7 @@ func (e *monitoringEntity) Delete(string, account.User) error {
 }
 
 // MonitoringRoutes returns the admin.system-monitoring HTTP surface.
-func MonitoringRoutes(a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, repository operationlog.Reader, moduleID string) []kernel.RouteContribution {
+func MonitoringRoutes(a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, repository operationlog.Reader, availabilityMode, moduleID string) []kernel.RouteContribution {
 	routes := ResourceRoutes(a, Resource{
 		ID:              "monitoring-errors",
 		Path:            "/api/system-monitoring/errors",
@@ -122,14 +123,15 @@ func MonitoringRoutes(a *auth.Authenticator, st *store.Store, plan kernel.Plan, 
 				dbSize = info.Size()
 			}
 			row := MonitoringStatusRow{
-				Status:        status,
-				Ready:         readyOK,
-				Version:       version.Version,
-				Commit:        version.Commit,
-				UptimeSeconds: int64(time.Since(startTime).Seconds()),
-				ModuleCount:   len(plan.IDs()),
-				Modules:       plan.IDs(),
-				DBSizeBytes:   dbSize,
+				Status:           status,
+				AvailabilityMode: availabilityMode,
+				Ready:            readyOK,
+				Version:          version.Version,
+				Commit:           version.Commit,
+				UptimeSeconds:    int64(time.Since(startTime).Seconds()),
+				ModuleCount:      len(plan.IDs()),
+				Modules:          plan.IDs(),
+				DBSizeBytes:      dbSize,
 			}
 			writeJSON(w, http.StatusOK, resourceList{Items: []map[string]any{statusRowToMap(row)}, Total: 1, Page: 1, PageSize: 1})
 		})),
@@ -139,13 +141,14 @@ func MonitoringRoutes(a *auth.Authenticator, st *store.Store, plan kernel.Plan, 
 
 func statusRowToMap(row MonitoringStatusRow) map[string]any {
 	return map[string]any{
-		"status":        row.Status,
-		"ready":         row.Ready,
-		"version":       row.Version,
-		"commit":        row.Commit,
-		"uptimeSeconds": row.UptimeSeconds,
-		"moduleCount":   row.ModuleCount,
-		"modules":       row.Modules,
-		"dbSizeBytes":   row.DBSizeBytes,
+		"status":           row.Status,
+		"availabilityMode": row.AvailabilityMode,
+		"ready":            row.Ready,
+		"version":          row.Version,
+		"commit":           row.Commit,
+		"uptimeSeconds":    row.UptimeSeconds,
+		"moduleCount":      row.ModuleCount,
+		"modules":          row.Modules,
+		"dbSizeBytes":      row.DBSizeBytes,
 	}
 }

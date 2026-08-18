@@ -13,9 +13,8 @@ import (
 // manifest route serves, so the declared manifest.sha256 always matches the
 // real response — the Host's integrity stage verifies production bytes.
 //
-// The first version always serves availability mode "normal"; maintenance /
-// upgrade-required / degraded documents are exercised through the Host's
-// browser-level tests (route interception), not through this endpoint.
+// Runtime modes are projected onto the existing Host availability enum; the
+// read-only mode deliberately uses the existing degraded representation.
 
 type bootstrapDocument struct {
 	BootstrapVersion     string            `json:"bootstrapVersion"`
@@ -30,10 +29,25 @@ type bootstrapManifest struct {
 }
 
 type bootstrapMode struct {
-	Mode string `json:"mode"`
+	Mode                 string   `json:"mode"`
+	MessageKey           string   `json:"messageKey,omitempty"`
+	RetryAfterSeconds    int      `json:"retryAfterSeconds,omitempty"`
+	DisabledCapabilities []string `json:"disabledCapabilities,omitempty"`
 }
 
 func RegisterBootstrap(mux *http.ServeMux, manifestBytes []byte) error {
+	return RegisterBootstrapWithAvailability(mux, manifestBytes, "normal")
+}
+
+// RegisterBootstrapWithAvailability projects the backend runtime mode onto
+// the existing Host availability enum. read-only intentionally uses the
+// existing degraded mode; its precise distinction is carried by the status
+// endpoint, not by a new protocol capability or mode.
+func RegisterBootstrapWithAvailability(mux *http.ServeMux, manifestBytes []byte, runtimeMode string) error {
+	availability, err := bootstrapAvailability(runtimeMode)
+	if err != nil {
+		return err
+	}
 	sum := sha256.Sum256(manifestBytes)
 	document := bootstrapDocument{
 		BootstrapVersion:     "1.0",
@@ -42,7 +56,7 @@ func RegisterBootstrap(mux *http.ServeMux, manifestBytes []byte) error {
 			URL:    "/.well-known/schema-ui/app-manifest.json",
 			Sha256: hex.EncodeToString(sum[:]),
 		},
-		Availability: bootstrapMode{Mode: "normal"},
+		Availability: availability,
 	}
 	data, err := json.Marshal(document)
 	if err != nil {
@@ -57,4 +71,17 @@ func RegisterBootstrap(mux *http.ServeMux, manifestBytes []byte) error {
 		_, _ = w.Write(data)
 	}))
 	return nil
+}
+
+func bootstrapAvailability(runtimeMode string) (bootstrapMode, error) {
+	switch runtimeMode {
+	case "", "normal":
+		return bootstrapMode{Mode: "normal"}, nil
+	case "maintenance":
+		return bootstrapMode{Mode: "maintenance"}, nil
+	case "degraded", "read-only":
+		return bootstrapMode{Mode: "degraded"}, nil
+	default:
+		return bootstrapMode{}, fmt.Errorf("bootstrap: invalid runtime mode %q", runtimeMode)
+	}
 }

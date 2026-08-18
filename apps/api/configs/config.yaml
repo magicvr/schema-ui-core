@@ -101,3 +101,7 @@ navigation:
   # Empty = the built-in default order. Unknown NodeIDs fall back to the
   # default with a warning. NAVIGATION_ORDER env (comma-separated) overrides.
   order: []
+
+runtime:
+  # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
+  mode: normal

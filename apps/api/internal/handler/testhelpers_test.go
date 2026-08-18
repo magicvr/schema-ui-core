@@ -142,7 +142,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
 	mountRoutes(FileLibraryRoutes(a, uploadDir, operations, "admin.file-library"))
 	mountRoutes(DictionaryRoutes(a, datadictionarystore.NewRepository(st), operations, "admin.data-dictionary"))
-	mountRoutes(MonitoringRoutes(a, st, testAdminPlan(t), nil, filepath.Join(t.TempDir(), "monitor.db"), time.Now(), operations, "admin.system-monitoring"))
+	mountRoutes(MonitoringRoutes(a, st, testAdminPlan(t), nil, filepath.Join(t.TempDir(), "monitor.db"), time.Now(), operations, "normal", "admin.system-monitoring"))
 	scheduledTaskRunner := testTaskRunner{repository: tasksstore.NewRepository(st)}
 	mountRoutes(ScheduledTaskRoutes(a, scheduledTaskRunner.repository, scheduledTaskRunner, operations, "admin.scheduled-tasks"))
 	// S-11 (GOAL-011): the admin plan enables admin.login-captcha — the env

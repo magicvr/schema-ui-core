@@ -71,3 +71,38 @@ func TestRegisterBootstrapOnlyGET(t *testing.T) {
 		t.Fatalf("status = %d, want 405", response.Code)
 	}
 }
+
+func TestRegisterBootstrapProjectsRuntimeAvailability(t *testing.T) {
+	for _, tc := range []struct {
+		mode string
+		want string
+	}{
+		{mode: "normal", want: "normal"},
+		{mode: "maintenance", want: "maintenance"},
+		{mode: "degraded", want: "degraded"},
+		{mode: "read-only", want: "degraded"},
+	} {
+		t.Run(tc.mode, func(t *testing.T) {
+			mux := http.NewServeMux()
+			if err := RegisterBootstrapWithAvailability(mux, []byte(`{}`), tc.mode); err != nil {
+				t.Fatalf("RegisterBootstrapWithAvailability: %v", err)
+			}
+			recorder := httptest.NewRecorder()
+			mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/host-bootstrap.json", nil))
+			var document struct {
+				Availability struct {
+					Mode string `json:"mode"`
+				} `json:"availability"`
+			}
+			if err := json.Unmarshal(recorder.Body.Bytes(), &document); err != nil {
+				t.Fatal(err)
+			}
+			if document.Availability.Mode != tc.want {
+				t.Fatalf("availability.mode = %q, want %q", document.Availability.Mode, tc.want)
+			}
+		})
+	}
+	if err := RegisterBootstrapWithAvailability(http.NewServeMux(), []byte(`{}`), "invalid"); err == nil {
+		t.Fatal("invalid runtime mode must fail closed")
+	}
+}

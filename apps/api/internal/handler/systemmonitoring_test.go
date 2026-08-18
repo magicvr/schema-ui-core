@@ -28,13 +28,16 @@ func TestSystemMonitoringStatus(t *testing.T) {
 		t.Fatalf("status items = %d, want 1", len(items))
 	}
 	row := items[0].(map[string]any)
-	for _, field := range []string{"status", "ready", "version", "commit", "uptimeSeconds", "moduleCount", "modules", "dbSizeBytes"} {
+	for _, field := range []string{"status", "availabilityMode", "ready", "version", "commit", "uptimeSeconds", "moduleCount", "modules", "dbSizeBytes"} {
 		if _, ok := row[field]; !ok {
 			t.Fatalf("status row missing field %q: %v", field, row)
 		}
 	}
 	if row["status"] != "ok" || row["ready"] != true {
 		t.Fatalf("status row = %v, want ok/true", row)
+	}
+	if row["availabilityMode"] != "normal" {
+		t.Fatalf("availabilityMode = %v, want normal", row["availabilityMode"])
 	}
 	modules, _ := row["modules"].([]any)
 	if len(modules) == 0 {

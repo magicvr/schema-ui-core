@@ -30,6 +30,9 @@ var Catalog = map[string]Entry{
 	"METHOD_NOT_ALLOWED":    {"error.methodNotAllowed", "method not allowed", "不允许的请求方法"},
 	"FORBIDDEN":             {"error.forbidden", "you do not have permission for this action", "您没有执行此操作的权限"},
 	"MUST_CHANGE_PASSWORD":  {"error.mustChangePassword", "password change required before continuing", "请先修改初始密码后再继续"},
+	"SERVICE_MAINTENANCE":   {"error.serviceMaintenance", "service is under maintenance", "服务正在维护中"},
+	"SERVICE_DEGRADED":      {"error.serviceDegraded", "service is operating in degraded mode", "服务当前处于降级模式"},
+	"SERVICE_READ_ONLY":     {"error.serviceReadOnly", "service is read-only", "服务当前为只读模式"},
 
 	"INVALID_LOGIN_BODY":     {"error.invalidLoginBody", "body must be JSON with username and password", "请求体必须是包含用户名和密码的 JSON"},
 	"LOGIN_FAILED":           {"error.loginFailed", "authentication unavailable", "认证服务暂不可用"},

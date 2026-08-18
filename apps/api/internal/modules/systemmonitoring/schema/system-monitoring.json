@@ -56,6 +56,17 @@
           },
           {
             "type": "statCard",
+            "id": "availability-mode",
+            "props": {
+              "label": "Availability",
+              "format": "plain",
+              "valueField": "availabilityMode",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.availability"
+            }
+          },
+          {
+            "type": "statCard",
             "id": "uptime",
             "props": {
               "label": "Uptime (s)",

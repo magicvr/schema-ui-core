@@ -23,18 +23,23 @@ const ModuleID = "admin.system-monitoring"
 
 // Provider implements kernel.Provider for admin.system-monitoring.
 type Provider struct {
-	a          *auth.Authenticator
-	st         *store.Store
-	plan       kernel.Plan
-	ready      func() bool
-	dbPath     string
-	startTime  time.Time
-	operations operationlog.Reader
+	a                *auth.Authenticator
+	st               *store.Store
+	plan             kernel.Plan
+	ready            func() bool
+	dbPath           string
+	startTime        time.Time
+	operations       operationlog.Reader
+	availabilityMode string
 }
 
 // New constructs the monitoring provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, operations operationlog.Reader) *Provider {
-	return &Provider{a: a, st: st, plan: plan, ready: ready, dbPath: dbPath, startTime: startTime, operations: operations}
+func New(a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, operations operationlog.Reader, mode ...string) *Provider {
+	availabilityMode := "normal"
+	if len(mode) > 0 && mode[0] != "" {
+		availabilityMode = mode[0]
+	}
+	return &Provider{a: a, st: st, plan: plan, ready: ready, dbPath: dbPath, startTime: startTime, operations: operations, availabilityMode: availabilityMode}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -62,7 +67,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.MonitoringRoutes(p.a, p.st, p.plan, p.ready, p.dbPath, p.startTime, p.operations, ModuleID) {
+	for _, route := range handler.MonitoringRoutes(p.a, p.st, p.plan, p.ready, p.dbPath, p.startTime, p.operations, p.availabilityMode, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

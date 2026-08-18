@@ -120,6 +120,51 @@ func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 	})
 }
 
+func TestLoadRuntimeModePrecedenceAndFailClosed(t *testing.T) {
+	t.Run("default is normal", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.RuntimeMode != RuntimeModeNormal {
+			t.Fatalf("runtime mode = %q, load error = %v", cfg.RuntimeMode, cfg.LoadError)
+		}
+	})
+	t.Run("yaml value", func(t *testing.T) {
+		writeConfig(t, "runtime:\n  mode: read-only\n")
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.RuntimeMode != RuntimeModeReadOnly {
+			t.Fatalf("runtime mode = %q, load error = %v", cfg.RuntimeMode, cfg.LoadError)
+		}
+	})
+	t.Run("environment overrides yaml", func(t *testing.T) {
+		writeConfig(t, "runtime:\n  mode: maintenance\n")
+		t.Setenv("RUNTIME_MODE", "degraded")
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.RuntimeMode != RuntimeModeDegraded {
+			t.Fatalf("runtime mode = %q, load error = %v", cfg.RuntimeMode, cfg.LoadError)
+		}
+	})
+	for _, tc := range []struct {
+		name  string
+		yaml  string
+		env   string
+	}{
+		{name: "empty yaml", yaml: "runtime:\n  mode: \"\"\n"},
+		{name: "unknown yaml", yaml: "runtime:\n  mode: paused\n"},
+		{name: "empty env", yaml: "", env: ""},
+		{name: "unknown env", yaml: "", env: "paused"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.yaml != "" {
+				writeConfig(t, tc.yaml)
+			}
+			t.Setenv("RUNTIME_MODE", tc.env)
+			cfg := Load()
+			if cfg.LoadError == nil {
+				t.Fatalf("invalid runtime mode %q must set LoadError", tc.env)
+			}
+		})
+	}
+}
+
 // TestValidateProd covers the production guard added in response to GOAL-008
 // A-005 F-002 (dev-session fallback) and A-002 F-002-005 (JWT secret minimum
 // length/entropy): both are local-development-only or non-negotiable settings
