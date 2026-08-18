@@ -155,6 +155,8 @@ var Catalog = map[string]Entry{
 	"LEDGER_VERSION_CONFLICT":     {"error.ledgerVersionConflict", "the account changed concurrently; reload and retry", "账户已被并发修改，请刷新后重试"},
 	"LEDGER_IDEMPOTENCY_CONFLICT": {"error.ledgerIdempotencyConflict", "idempotency key was already used with a different payload", "幂等键已被不同载荷使用"},
 	"INVALID_LEDGER_ENTRY":        {"error.invalidLedgerEntry", "invalid ledger entry", "非法账本流水"},
+	"PRECONDITION_REQUIRED":       {"error.preconditionRequired", "provide If-Match or expectedVersion", "请提供 If-Match 或 expectedVersion"},
+	"INVALID_PRECONDITION":        {"error.invalidPrecondition", "version preconditions must be valid and agree", "版本前置条件必须有效且一致"},
 	// GOAL-020 D-001 §2: user wallet accounts are auto-created (get-or-create).
 	"WALLET_USER_AUTO_ONLY": {"error.walletUserAutoOnly", "user wallet accounts are created automatically", "用户钱包账户由系统自动创建"},
 

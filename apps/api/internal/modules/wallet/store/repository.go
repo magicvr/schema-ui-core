@@ -36,20 +36,21 @@ func NewRepository(runner TxRunner) *Repository {
 
 // Domain sentinels mapped by the handler to frozen error codes.
 var (
-	ErrNotFound             = errors.New("wallet account not found")
-	ErrOwnerTaken           = errors.New("wallet owner already exists")
-	ErrDisabled             = errors.New("wallet account disabled")
-	ErrInsufficient         = errors.New("insufficient balance")
-	ErrVersionConflict      = errors.New("wallet ledger version conflict")
-	ErrIdempotencyConflict  = errors.New("idempotency key reused with different payload")
-	ErrInvalidEntry         = errors.New("invalid ledger entry")
+	ErrNotFound            = errors.New("wallet account not found")
+	ErrOwnerTaken          = errors.New("wallet owner already exists")
+	ErrDisabled            = errors.New("wallet account disabled")
+	ErrInsufficient        = errors.New("insufficient balance")
+	ErrVersionConflict     = errors.New("wallet ledger version conflict")
+	ErrIdempotencyConflict = errors.New("idempotency key reused with different payload")
+	ErrInvalidEntry        = errors.New("invalid ledger entry")
+	errIdempotencyRace     = errors.New("wallet idempotency insert race")
 )
 
 // Entry types (D-002 §1 apply table).
 const (
-	EntryAdjust      = "adjust"
-	EntryFreeze      = "freeze"
-	EntryUnfreeze    = "unfreeze"
+	EntryAdjust       = "adjust"
+	EntryFreeze       = "freeze"
+	EntryUnfreeze     = "unfreeze"
 	EntryDeductFrozen = "deduct_frozen"
 )
 
@@ -86,20 +87,20 @@ type Account struct {
 
 // LedgerEntry is one immutable wallet_ledger_entries row.
 type LedgerEntry struct {
-	ID                  string
-	AccountID           string
-	EntryType           string
-	AmountDelta         int64
-	BalanceAfterTotal   int64
-	BalanceAfterAvail   int64
-	BalanceAfterFrozen  int64
-	RefType             string
-	RefID               string
-	IdempotencyKey      string
-	Memo                string
-	ActorID             string
-	ActorName           string
-	CreatedAt           time.Time
+	ID                 string
+	AccountID          string
+	EntryType          string
+	AmountDelta        int64
+	BalanceAfterTotal  int64
+	BalanceAfterAvail  int64
+	BalanceAfterFrozen int64
+	RefType            string
+	RefID              string
+	IdempotencyKey     string
+	Memo               string
+	ActorID            string
+	ActorName          string
+	CreatedAt          time.Time
 }
 
 // ReconciliationRun is one wallet_reconciliation_runs row.
@@ -360,7 +361,6 @@ func (r *Repository) UpdateStatus(id, status string, version int64, now time.Tim
 	return &a, nil
 }
 
-
 // Apply computes the balance-after triplets for one entry per the D-002 §1
 // apply table. It returns ErrInvalidEntry for malformed entries and
 // ErrInsufficient when the mutation would drive any balance negative.
@@ -419,34 +419,16 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 		// existing entry; same key + different payload → conflict. Lookups
 		// always carry the account id (D-002 v1.1.0 §1: no bare-key reads).
 		if in.IdempotencyKey != "" {
-			var existing LedgerEntry
-			var created int64
-			var refType, refID, idemKey sql.NullString
-			err := tx.QueryRow(
-				`SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at
-				 FROM wallet_ledger_entries WHERE account_id = ? AND idempotency_key = ?`,
-				id, in.IdempotencyKey,
-			).Scan(&existing.ID, &existing.AccountID, &existing.EntryType, &existing.AmountDelta, &existing.BalanceAfterTotal, &existing.BalanceAfterAvail, &existing.BalanceAfterFrozen, &refType, &refID, &idemKey, &existing.Memo, &existing.ActorID, &existing.ActorName, &created)
-			existing.RefType = refType.String
-			existing.RefID = refID.String
-			existing.IdempotencyKey = idemKey.String
+			existing, err := readIdempotentEntry(tx, id, in.IdempotencyKey)
 			if err == nil {
-				existing.CreatedAt = time.Unix(created, 0)
-				if existing.EntryType == in.EntryType && existing.AmountDelta == in.AmountDelta &&
-				existing.Memo == in.Memo && existing.RefType == in.RefType && existing.RefID == in.RefID {
+				if sameIdempotencyPayload(existing, in) {
 					entry = existing
 					// Return the current account too so the caller can report
 					// the idempotent replay without a second read.
-					var acct Account
-					var cr, up int64
-					if err := tx.QueryRow(
-						`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
-						id,
-					).Scan(&acct.ID, &acct.OwnerType, &acct.OwnerID, &acct.Currency, &acct.BalanceTotal, &acct.BalanceAvailable, &acct.BalanceFrozen, &acct.Status, &acct.Version, &cr, &up); err != nil {
+					acct, err := readAccount(tx, id)
+					if err != nil {
 						return fmt.Errorf("reload wallet account: %w", err)
 					}
-					acct.CreatedAt = time.Unix(cr, 0)
-					acct.UpdatedAt = time.Unix(up, 0)
 					account = acct
 					return nil
 				}
@@ -500,9 +482,9 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 		)
 		if err != nil {
 			if isUniqueViolation(err) {
-				// Raced with a concurrent identical key insert — replay the
-				// lookup semantics by failing closed on the composite key.
-				return ErrIdempotencyConflict
+				// Roll back our balance update before re-reading the winning
+				// operation outside this transaction.
+				return errIdempotencyRace
 			}
 			return fmt.Errorf("insert wallet ledger entry: %w", err)
 		}
@@ -517,6 +499,78 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 			RefType: in.RefType, RefID: in.RefID, IdempotencyKey: in.IdempotencyKey,
 			Memo: in.Memo, ActorID: in.ActorID, ActorName: in.ActorName, CreatedAt: now,
 		}
+		return nil
+	})
+	if errors.Is(err, errIdempotencyRace) && in.IdempotencyKey != "" {
+		return r.replayAfterIdempotencyRace(id, in)
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	return &account, &entry, nil
+}
+
+type rowQueryer interface {
+	QueryRow(string, ...any) *sql.Row
+}
+
+func readIdempotentEntry(q rowQueryer, accountID, key string) (LedgerEntry, error) {
+	var entry LedgerEntry
+	var created int64
+	var refType, refID, idemKey sql.NullString
+	err := q.QueryRow(
+		`SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at
+		 FROM wallet_ledger_entries WHERE account_id = ? AND idempotency_key = ?`,
+		accountID, key,
+	).Scan(&entry.ID, &entry.AccountID, &entry.EntryType, &entry.AmountDelta, &entry.BalanceAfterTotal, &entry.BalanceAfterAvail, &entry.BalanceAfterFrozen, &refType, &refID, &idemKey, &entry.Memo, &entry.ActorID, &entry.ActorName, &created)
+	if err != nil {
+		return LedgerEntry{}, err
+	}
+	entry.RefType = refType.String
+	entry.RefID = refID.String
+	entry.IdempotencyKey = idemKey.String
+	entry.CreatedAt = time.Unix(created, 0)
+	return entry, nil
+}
+
+func readAccount(q rowQueryer, id string) (Account, error) {
+	var account Account
+	var created, updated int64
+	err := q.QueryRow(
+		`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
+		id,
+	).Scan(&account.ID, &account.OwnerType, &account.OwnerID, &account.Currency, &account.BalanceTotal, &account.BalanceAvailable, &account.BalanceFrozen, &account.Status, &account.Version, &created, &updated)
+	if err != nil {
+		return Account{}, err
+	}
+	account.CreatedAt = time.Unix(created, 0)
+	account.UpdatedAt = time.Unix(updated, 0)
+	return account, nil
+}
+
+func sameIdempotencyPayload(entry LedgerEntry, in LedgerEntryInput) bool {
+	return entry.EntryType == in.EntryType &&
+		entry.AmountDelta == in.AmountDelta &&
+		entry.Memo == in.Memo &&
+		entry.RefType == in.RefType &&
+		entry.RefID == in.RefID &&
+		entry.ActorID == in.ActorID
+}
+
+func (r *Repository) replayAfterIdempotencyRace(accountID string, in LedgerEntryInput) (*Account, *LedgerEntry, error) {
+	var account Account
+	var entry LedgerEntry
+	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+		existing, err := readIdempotentEntry(tx, accountID, in.IdempotencyKey)
+		if err != nil || !sameIdempotencyPayload(existing, in) {
+			return ErrIdempotencyConflict
+		}
+		current, err := readAccount(tx, accountID)
+		if err != nil {
+			return ErrIdempotencyConflict
+		}
+		entry = existing
+		account = current
 		return nil
 	})
 	if err != nil {

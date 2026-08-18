@@ -14,6 +14,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/concurrency"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
@@ -33,7 +34,7 @@ type WalletService interface {
 	// whether this call created the account (auto-audit marker).
 	GetOrCreateUserAccount(ownerID string, now time.Time) (*walletstore.Account, bool, error)
 	GetUserAccountByOwner(ownerID string) (*walletstore.Account, error)
-	Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error)
+	Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, bool, error)
 	Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error)
 	ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error)
 }
@@ -77,7 +78,6 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
 	})))
 
-
 	// Accounts: read-only lookup by owner (W15-F11). Missing → 404.
 	add("GET", "/api/wallet/by-owner/{ownerId}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
@@ -93,7 +93,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			writeWalletError(w, r, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, accountToMap(*account))
+		writeWalletAccount(w, http.StatusOK, *account)
 	})))
 
 	// Explicit create (POST). GET must stay read-only.
@@ -117,7 +117,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			detail := `{"accountId":` + jsonQuote(account.ID) + `,"ownerId":` + jsonQuote(account.OwnerID) + `,"auto":true}`
 			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, detail, now)
 		}
-		writeJSON(w, http.StatusOK, accountToMap(*account))
+		writeWalletAccount(w, http.StatusOK, *account)
 	})))
 
 	// Accounts: adjust a user account by owner, auto-creating it first
@@ -159,7 +159,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			detail := `{"accountId":` + jsonQuote(account.ID) + `,"ownerId":` + jsonQuote(ownerID) + `,"auto":true}`
 			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, detail, now)
 		}
-		account, entry, err := service.Mutate(account.ID, walletstore.LedgerEntryInput{
+		account, entry, replayed, err := service.Mutate(account.ID, walletstore.LedgerEntryInput{
 			EntryType: walletstore.EntryAdjust, AmountDelta: body.AmountDelta,
 			RefType: strings.TrimSpace(body.RefType), RefID: strings.TrimSpace(body.RefID),
 			IdempotencyKey: strings.TrimSpace(body.IdempotencyKey), Memo: strings.TrimSpace(body.Memo),
@@ -169,9 +169,11 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			writeWalletError(w, r, err)
 			return
 		}
-		detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
-		recordWalletEvent(operations, user, operationlog.EventWalletAdjust, detail, now)
-		writeJSON(w, http.StatusOK, map[string]any{"account": accountToMap(*account), "entry": entryToMap(*entry)})
+		if !replayed {
+			detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
+			recordWalletEvent(operations, user, operationlog.EventWalletAdjust, detail, now)
+		}
+		writeWalletMutation(w, *account, *entry, replayed)
 	})))
 
 	// Accounts: create (audited).
@@ -205,7 +207,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		}
 		recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate,
 			`{"accountId":`+jsonQuote(account.ID)+`,"ownerType":`+jsonQuote(account.OwnerType)+`,"ownerId":`+jsonQuote(account.OwnerID)+`}`, now)
-		writeJSON(w, http.StatusCreated, accountToMap(*account))
+		writeWalletAccount(w, http.StatusCreated, *account)
 	})))
 
 	// Accounts: status update (audited). Optimistic lock: the caller passes
@@ -216,8 +218,9 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			return
 		}
 		var body struct {
-			Status  string `json:"status"`
-			Version int64  `json:"version"`
+			Status          string `json:"status"`
+			ExpectedVersion *int64 `json:"expectedVersion"`
+			Version         *int64 `json:"version"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -229,15 +232,24 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_STATUS", "status must be active or disabled")
 			return
 		}
+		expectedVersion, err := concurrency.ResolveExpectedVersion(r.Header.Values("If-Match"), body.ExpectedVersion, body.Version)
+		if err != nil {
+			if errors.Is(err, concurrency.ErrPreconditionRequired) {
+				writeLocalizedError(w, r, http.StatusPreconditionRequired, "PRECONDITION_REQUIRED", "provide If-Match or expectedVersion")
+				return
+			}
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PRECONDITION", "version preconditions must be valid and agree")
+			return
+		}
 		now := time.Now().UTC()
-		account, err := service.UpdateStatus(r.PathValue("id"), status, body.Version, now)
+		account, err := service.UpdateStatus(r.PathValue("id"), status, expectedVersion, now)
 		if err != nil {
 			writeWalletError(w, r, err)
 			return
 		}
 		recordWalletEvent(operations, user, operationlog.EventWalletAccountUpdate,
 			`{"accountId":`+jsonQuote(account.ID)+`,"status":`+jsonQuote(account.Status)+`}`, now)
-		writeJSON(w, http.StatusOK, accountToMap(*account))
+		writeWalletAccount(w, http.StatusOK, *account)
 	})))
 
 	// Entries: canonical REST path variant (D-002 §3).
@@ -386,7 +398,7 @@ func walletMutate(w http.ResponseWriter, r *http.Request, service WalletService,
 		delta = body.Amount
 	}
 	now := time.Now().UTC()
-	account, entry, err := service.Mutate(r.PathValue("id"), walletstore.LedgerEntryInput{
+	account, entry, replayed, err := service.Mutate(r.PathValue("id"), walletstore.LedgerEntryInput{
 		EntryType:      entryType,
 		AmountDelta:    delta,
 		RefType:        strings.TrimSpace(body.RefType),
@@ -400,9 +412,11 @@ func walletMutate(w http.ResponseWriter, r *http.Request, service WalletService,
 		writeWalletError(w, r, err)
 		return
 	}
-	detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
-	recordWalletEvent(operations, user, "wallet."+eventSuffix, detail, now)
-	writeJSON(w, http.StatusOK, map[string]any{"account": accountToMap(*account), "entry": entryToMap(*entry)})
+	if !replayed {
+		detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
+		recordWalletEvent(operations, user, "wallet."+eventSuffix, detail, now)
+	}
+	writeWalletMutation(w, *account, *entry, replayed)
 }
 
 // writeWalletError maps wallet domain errors to the frozen wire codes.
@@ -454,21 +468,44 @@ func accountToMap(a walletstore.Account) map[string]any {
 	}
 }
 
+func writeWalletAccount(w http.ResponseWriter, status int, account walletstore.Account) {
+	w.Header().Set("ETag", concurrency.ETag(account.Version))
+	writeJSON(w, status, accountToMap(account))
+}
+
+func writeWalletMutation(w http.ResponseWriter, account walletstore.Account, entry walletstore.LedgerEntry, replayed bool) {
+	w.Header().Set("ETag", concurrency.ETag(account.Version))
+	operation := map[string]any{
+		"operationId":     entry.ID,
+		"state":           "succeeded",
+		"replayed":        replayed,
+		"resourceVersion": account.Version,
+	}
+	if entry.IdempotencyKey != "" {
+		operation["idempotencyKey"] = entry.IdempotencyKey
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"account":   accountToMap(account),
+		"entry":     entryToMap(entry),
+		"operation": operation,
+	})
+}
+
 func entryToMap(e walletstore.LedgerEntry) map[string]any {
 	return map[string]any{
-		"id":                  e.ID,
-		"accountId":           e.AccountID,
-		"entryType":           e.EntryType,
-		"amountDelta":         e.AmountDelta,
-		"balanceAfterTotal":   e.BalanceAfterTotal,
-		"balanceAfterAvail":   e.BalanceAfterAvail,
-		"balanceAfterFrozen":  e.BalanceAfterFrozen,
-		"refType":             e.RefType,
-		"refId":               e.RefID,
-		"memo":                e.Memo,
-		"actorId":             e.ActorID,
-		"actorName":           e.ActorName,
-		"createdAt":           e.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"id":                 e.ID,
+		"accountId":          e.AccountID,
+		"entryType":          e.EntryType,
+		"amountDelta":        e.AmountDelta,
+		"balanceAfterTotal":  e.BalanceAfterTotal,
+		"balanceAfterAvail":  e.BalanceAfterAvail,
+		"balanceAfterFrozen": e.BalanceAfterFrozen,
+		"refType":            e.RefType,
+		"refId":              e.RefID,
+		"memo":               e.Memo,
+		"actorId":            e.ActorID,
+		"actorName":          e.ActorName,
+		"createdAt":          e.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 }
 

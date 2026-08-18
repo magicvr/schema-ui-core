@@ -17,8 +17,8 @@ import (
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/manifest"
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 	walletschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/schema"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 )
 
 // ModuleID is the stable admin.wallet module identifier.
@@ -110,15 +110,19 @@ func (s *Service) GetUserAccountByOwner(ownerID string) (*walletstore.Account, e
 }
 
 // Mutate implements handler.WalletService.
-func (s *Service) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error) {
+func (s *Service) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, bool, error) {
 	if in.Memo == "" {
-		return nil, nil, walletstore.ErrInvalidEntry
+		return nil, nil, false, walletstore.ErrInvalidEntry
 	}
 	entryID, err := newID(now)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, err
 	}
-	return s.repo.Mutate(id, in, entryID, now)
+	account, entry, err := s.repo.Mutate(id, in, entryID, now)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	return account, entry, entry.ID != entryID, nil
 }
 
 // Reconcile implements handler.WalletService (read path, persisted run).

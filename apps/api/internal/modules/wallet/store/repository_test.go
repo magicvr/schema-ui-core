@@ -38,12 +38,12 @@ func createAccount(t *testing.T, repo *store.Repository, ownerID string) *store.
 func TestApplyTable(t *testing.T) {
 	base := store.Account{BalanceTotal: 100, BalanceAvailable: 100, BalanceFrozen: 0}
 	cases := []struct {
-		name        string
-		in          store.LedgerEntryInput
-		wantTotal   int64
-		wantAvail   int64
-		wantFrozen  int64
-		wantErr     bool
+		name       string
+		in         store.LedgerEntryInput
+		wantTotal  int64
+		wantAvail  int64
+		wantFrozen int64
+		wantErr    bool
 	}{
 		{"adjust positive", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 50}, 150, 150, 0, false},
 		{"adjust negative", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: -40}, 60, 60, 0, false},
@@ -148,6 +148,17 @@ func TestMutateIdempotency(t *testing.T) {
 	// Same key + different payload → conflict.
 	if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 999, Memo: "other", IdempotencyKey: "k1", ActorID: "a1", ActorName: "Admin"}, "e", now()); err != store.ErrIdempotencyConflict {
 		t.Fatalf("same key different payload err = %v, want ErrIdempotencyConflict", err)
+	}
+	// Actor identity participates in the payload fingerprint; display name does not.
+	actorChanged := in
+	actorChanged.ActorID = "a2"
+	if _, _, err := repo.Mutate("acct-u1", actorChanged, "e", now()); err != store.ErrIdempotencyConflict {
+		t.Fatalf("same key different actor err = %v, want ErrIdempotencyConflict", err)
+	}
+	displayNameChanged := in
+	displayNameChanged.ActorName = "Renamed Admin"
+	if _, _, err := repo.Mutate("acct-u1", displayNameChanged, "e", now()); err != nil {
+		t.Fatalf("same key changed display name: %v", err)
 	}
 	// A different account may reuse the key.
 	createAccount(t, repo, "u2")

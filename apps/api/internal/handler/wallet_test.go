@@ -4,14 +4,15 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 )
 
@@ -49,11 +50,16 @@ func (s *walletServiceStub) ListEntries(accountID, entryType, q string, page, pa
 	}
 	return s.repo.ListEntries(accountID, entryType, q, page, pageSize)
 }
-func (s *walletServiceStub) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, error) {
+func (s *walletServiceStub) Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, bool, error) {
 	if in.Memo == "" {
-		return nil, nil, walletstore.ErrInvalidEntry
+		return nil, nil, false, walletstore.ErrInvalidEntry
 	}
-	return s.repo.Mutate(id, in, fmt.Sprintf("%016x", now.UnixMilli())+newOperationID(), now)
+	entryID := fmt.Sprintf("%016x", now.UnixMilli()) + newOperationID()
+	account, entry, err := s.repo.Mutate(id, in, entryID, now)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	return account, entry, entry.ID != entryID, nil
 }
 func (s *walletServiceStub) Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error) {
 	return s.repo.ReconcileRun(accountID, fmt.Sprintf("%016x", now.UnixMilli())+newOperationID(), actorID, now)
@@ -262,6 +268,9 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatal("by-owner open failed")
 	}
+	if got := rr.Header().Get("ETag"); got != `"v0"` {
+		t.Fatalf("initial ETag = %q, want %q", got, `"v0"`)
+	}
 	var created map[string]any
 	_ = json.Unmarshal(rr.Body.Bytes(), &created)
 	accountID := created["id"].(string)
@@ -269,6 +278,7 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 
 	body := `{"amountDelta":500,"memo":"grant","idempotencyKey":"k9"}`
 	var lastAccount map[string]any
+	var operationID string
 	for i := 0; i < 2; i++ {
 		rr = httptest.NewRecorder()
 		env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/accounts/"+accountID+"/adjust", body))
@@ -278,6 +288,21 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 		var ar map[string]any
 		_ = json.Unmarshal(rr.Body.Bytes(), &ar)
 		lastAccount, _ = ar["account"].(map[string]any)
+		operation, _ := ar["operation"].(map[string]any)
+		if operation["state"] != "succeeded" || operation["idempotencyKey"] != "k9" || int64(operation["resourceVersion"].(float64)) != 1 {
+			t.Fatalf("operation #%d = %#v", i, operation)
+		}
+		if got, _ := operation["replayed"].(bool); got != (i == 1) {
+			t.Fatalf("operation #%d replayed = %v", i, got)
+		}
+		if i == 0 {
+			operationID, _ = operation["operationId"].(string)
+		} else if operation["operationId"] != operationID {
+			t.Fatalf("replay operationId = %v, want %s", operation["operationId"], operationID)
+		}
+		if got := rr.Header().Get("ETag"); got != `"v1"` {
+			t.Fatalf("adjust #%d ETag = %q, want %q", i, got, `"v1"`)
+		}
 	}
 	if lastAccount != nil {
 		version = int64(lastAccount["version"].(float64))
@@ -294,18 +319,48 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	if listResp.Total != 1 {
 		t.Fatalf("idempotent replay wrote %d entries, want 1", listResp.Total)
 	}
+	ops, opTotal, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
+		Event: operationlog.EventWalletAdjust, Sort: "createdAt", Order: "desc", Page: 1, PageSize: 20,
+	})
+	if err != nil || opTotal != 1 || len(ops) != 1 {
+		t.Fatalf("wallet.adjust audit rows = %d/%d err=%v, want 1", len(ops), opTotal, err)
+	}
 
-	// Stale status update → 409 LEDGER_VERSION_CONFLICT; fresh → 200.
+	// Same key with a different payload is a 409 and does not mint an operation.
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/accounts/"+accountID+"/adjust", `{"amountDelta":501,"memo":"grant","idempotencyKey":"k9"}`))
+	if rr.Code != http.StatusConflict || !bodyHasCode(rr, "LEDGER_IDEMPOTENCY_CONFLICT") {
+		t.Fatalf("different payload replay = %d %s", rr.Code, rr.Body.String())
+	}
+
+	// Missing, invalid, or contradictory preconditions fail closed.
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"disabled"}`))
+	if rr.Code != http.StatusPreconditionRequired || !bodyHasCode(rr, "PRECONDITION_REQUIRED") {
+		t.Fatalf("missing precondition = %d %s", rr.Code, rr.Body.String())
+	}
+	req := bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"disabled","expectedVersion":1}`)
+	req.Header.Set("If-Match", `"v0"`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest || !bodyHasCode(rr, "INVALID_PRECONDITION") {
+		t.Fatalf("contradictory precondition = %d %s", rr.Code, rr.Body.String())
+	}
+
+	// Stale legacy version → 409; fresh legacy version remains compatible.
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"disabled","version":0}`))
-	if rr.Code != http.StatusConflict {
-		t.Fatalf("stale status = %d, want 409", rr.Code)
+	if rr.Code != http.StatusConflict || !bodyHasCode(rr, "LEDGER_VERSION_CONFLICT") {
+		t.Fatalf("stale status = %d %s, want 409", rr.Code, rr.Body.String())
 	}
 	ver, _ := json.Marshal(version)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"disabled","version":`+string(ver)+`}`))
 	if rr.Code != http.StatusOK {
 		t.Fatalf("fresh status = %d, want 200", rr.Code)
+	}
+	if got := rr.Header().Get("ETag"); got != `"v2"` {
+		t.Fatalf("legacy update ETag = %q, want %q", got, `"v2"`)
 	}
 
 	// Disabled account rejects mutations.
@@ -314,11 +369,25 @@ func TestWalletIdempotencyAndStatus(t *testing.T) {
 	if rr.Code != http.StatusConflict {
 		t.Fatalf("disabled adjust = %d, want 409", rr.Code)
 	}
+
+	// expectedVersion and header-only If-Match both drive successful updates.
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"active","expectedVersion":2}`))
+	if rr.Code != http.StatusOK || rr.Header().Get("ETag") != `"v3"` {
+		t.Fatalf("expectedVersion update = %d ETag=%q", rr.Code, rr.Header().Get("ETag"))
+	}
+	req = bearer(t, adminToken, http.MethodPatch, "/api/wallet/accounts/"+accountID, `{"status":"disabled"}`)
+	req.Header.Set("If-Match", `"v3"`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK || rr.Header().Get("ETag") != `"v4"` {
+		t.Fatalf("If-Match update = %d ETag=%q body=%s", rr.Code, rr.Header().Get("ETag"), rr.Body.String())
+	}
 }
 
 // S-14 error codes reach the frozen wire contract (localized catalog).
 func TestWalletErrorCodesCataloged(t *testing.T) {
-	for _, code := range []string{"WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED", "INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY", "INVALID_WALLET_BODY", "WALLET_USER_AUTO_ONLY"} {
+	for _, code := range []string{"WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED", "INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY", "INVALID_WALLET_BODY", "WALLET_USER_AUTO_ONLY", "PRECONDITION_REQUIRED", "INVALID_PRECONDITION"} {
 		entry, ok := errorcatalog.Catalog[code]
 		if !ok || entry.En == "" || entry.Zh == "" || entry.MessageKey == "" {
 			t.Errorf("wallet code %s not cataloged: %+v", code, entry)
