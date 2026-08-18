@@ -37,8 +37,8 @@ R4 建立不绑定具体业务域的异步 Job 契约，覆盖 `queued / running
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S0 | 现状扫描、信息门禁、状态机/存储/消费边界冻结 | 进行中（D-001/E-001；待 independent 设计审计） |
-| S1 | Job contract、migration、repository 与状态转换测试 | 未开始 |
+| S0 | 现状扫描、信息门禁、状态机/存储/消费边界冻结 | ✅ 已完成（D-002 accepted；A-006 pass / A-007 closed） |
+| S1 | Job contract、migration、repository 与状态转换测试 | 进行中 |
 | S2 | runner、取消/重试/恢复与测试 | 未开始 |
 | S3 | wallet reconcile 异步消费与 HTTP/result 契约测试 | 未开始 |
 | S4 | 全量验证、自审、independent 审计与关门 | 未开始 |
@@ -56,7 +56,7 @@ R4 建立不绑定具体业务域的异步 Job 契约，覆盖 `queued / running
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 当前是否已有可复用的 Job 表、worker、状态机或前端轮询契约 | S0 方案冻结 | S0 结束前 | 跨 API storage/module 与 Web 调用路径扫描 | verified | 2026-08-18 | E-001：现有 scheduled task/import/export/wallet reconcile 均为同步或仅存最终运行记录，不具备通用 Job 契约 |
 | I-002 | required | 通用 Job migration/runtime 的所有权如何不改变默认 Profile/Manifest 语义 | S1 实施 | S0 结束前 | 核对 compiled migration provider、profile contribution 与 module matrix | verified | 2026-08-18 A-004 | D-002 §1 冻结 migration-only owner、Profile/BuiltinModules 禁入、wallet route 双写；A-004 确认 F-004 fixed、I-002 可 verified |
-| I-003 | required | 取消、重试、租约恢复与结果过期的精确状态转换 | S1/S2 方案冻结 | S0 结束前 | 写明 transition table 并由 independent 审计 | collecting | S0 independent 审计后复核 | D-001 初版；审计后冻结 |
+| I-003 | required | 取消、重试、租约恢复与结果过期的精确状态转换 | S1/S2 方案冻结 | S0 结束前 | 写明 transition table 并由 independent 审计 | verified | 2026-08-18 A-006 | D-002 v0.2.0 精确表 + CompleteWithCommit；A-006 确认 F-009 fixed、无新死状态或 run/Job 分裂 |
 | I-004 | required | 审计模式与 provider | S4 关门 | S1 实施前 | 按 data/migration/compatibility 风险分级 | verified | 2026-08-18 | 模式 independent；provider 为项目级 grok-build（grok-4.6 reasoning high） |
 
 ## 父目标

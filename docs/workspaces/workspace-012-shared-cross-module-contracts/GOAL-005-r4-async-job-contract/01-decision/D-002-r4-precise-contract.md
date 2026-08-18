@@ -1,7 +1,7 @@
 ---
 id: D-002-r4-precise-contract
 goal: GOAL-005-r4-async-job-contract
-status: proposed
+status: accepted
 created: 2026-08-18
 updated: 2026-08-18
 parent: GOAL-005-r4-async-job-contract
@@ -43,7 +43,7 @@ responds_to: A-002
 | submit | new id | queued | 写不可变字段与默认值 |
 | claim | queued, attempt < max_attempts | running | attempt+1；new lease_owner；lease_version+1；lease_expires_at=now+lease；清 finished/expires/error |
 | reclaim | running, lease_expires_at <= now, cancel_requested=0, attempt < max_attempts | running | attempt+1；new lease_owner；lease_version+1；续写 lease；保留 progress |
-| exhaust | running, lease expired, attempt >= max_attempts | failed | error_code=`JOB_ATTEMPTS_EXHAUSTED`；finished_at=now；清 lease |
+| exhaust | running, lease expired, cancel_requested=0, attempt >= max_attempts | failed | error_code=`JOB_ATTEMPTS_EXHAUSTED`；finished_at=now；清 lease |
 | heartbeat | running, exact lease_owner+lease_version | running | lease_expires_at=now+lease |
 | progress | running, exact owner+version, new>=current, new<=99 | running | progress=new |
 | request-cancel queued | queued, actor match | cancelled | finished_at=now；清 lease；cancel_requested=0 |
@@ -111,4 +111,4 @@ GET Job/result 在读取前调用同一 repository `ExpireIfDue`；周期 scanne
 
 ## 门禁
 
-A-002 F-001～F-006 已由 A-004 确认 `fixed`，I-002 可转 `verified`；A-004 F-009 当前为候选 fixed，须经 independent 复核。复核通过后：D-002 转 `accepted`，I-003 转 `verified`，S0 才完成并放行 S1。
+A-002 F-001～F-008 已由 A-004 确认 `fixed`；A-006 确认 A-004 F-009 可 `fixed`、I-003 可 `verified`、S0 可放行。F-010 的 guard 重叠也已按原意见修正；本决定现为 `accepted`。
