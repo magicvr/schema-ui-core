@@ -1,7 +1,7 @@
 ---
 id: D-002-r6-precise-contract
 goal: GOAL-007-r6-api-token-service-credential
-status: proposed
+status: superseded
 created: 2026-08-19
 updated: 2026-08-19
 parent: GOAL-007-r6-api-token-service-credential
@@ -90,4 +90,4 @@ version: 0.1.0
 
 ## 门禁
 
-D-002 在 cross independent 复核前保持 `proposed`；I-002～I-004 保持 `collecting`，S1/S2 不放行。
+D-002 经 A-002 independent 复核后由 D-003 修订并 supersede；I-002～I-004 保持 `collecting`，S1/S2 不放行，直至 finding-closure independent 通过。
