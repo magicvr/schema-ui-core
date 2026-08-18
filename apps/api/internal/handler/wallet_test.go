@@ -129,7 +129,17 @@ func (s *walletJobTestService) SubmitReconcile(ctx context.Context, accountID st
 }
 
 func (s *walletJobTestService) Get(ctx context.Context, id, actorID string) (*jobs.Job, error) {
-	return s.repository.GetForActor(ctx, id, "wallet.reconcile", actorID)
+	job, err := s.repository.GetForActor(ctx, id, "wallet.reconcile", actorID)
+	if err != nil {
+		return nil, err
+	}
+	if job.Status == jobs.StatusSucceeded {
+		if _, err := s.repository.ExpireIfDue(ctx, id, time.Now().UTC()); err != nil {
+			return nil, err
+		}
+		return s.repository.GetForActor(ctx, id, "wallet.reconcile", actorID)
+	}
+	return job, nil
 }
 
 func (s *walletJobTestService) Cancel(ctx context.Context, id, actorID string) (*jobs.Job, error) {
@@ -365,6 +375,17 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/jobs/missing", ""))
 	if rr.Code != http.StatusNotFound || !bodyHasCode(rr, "JOB_NOT_FOUND") {
 		t.Fatalf("missing job = %d %s", rr.Code, rr.Body.String())
+	}
+	if err := env.st.WithTx(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE jobs SET expires_at=? WHERE id=?`, time.Now().Add(-time.Minute).UnixMilli(), jobID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/jobs/"+jobID+"/result", ""))
+	if rr.Code != http.StatusGone || !bodyHasCode(rr, "JOB_RESULT_EXPIRED") {
+		t.Fatalf("expired result = %d %s", rr.Code, rr.Body.String())
 	}
 
 	// A-007 F-001: operationlog actually received the six wallet events.

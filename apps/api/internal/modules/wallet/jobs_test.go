@@ -135,6 +135,11 @@ func TestWalletJobServiceCompletesAtomicallyAndAudits(t *testing.T) {
 	if len(events) != 2 || events[0] != operationlog.EventWalletReconcileQueued || events[1] != operationlog.EventWalletReconcile {
 		t.Fatalf("events = %v", events)
 	}
+	service.now = func() time.Time { return completed.FinishedAt.Add(25 * time.Hour) }
+	expired, err := service.Get(context.Background(), job.ID, "user-1")
+	if err != nil || expired.Status != jobs.StatusExpired || len(expired.Result) != 0 {
+		t.Fatalf("expired=%+v err=%v", expired, err)
+	}
 }
 
 func TestWalletJobServiceCancelsQueuedWithoutBusinessRun(t *testing.T) {
