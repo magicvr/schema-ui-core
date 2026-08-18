@@ -37,9 +37,9 @@ R3 以 `admin.wallet` 为首个真实消费模块，固化跨模块可复用的�
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | S0 | 扫描现有 version/ETag/idempotency/transaction 语义，冻结边界 | ✅ 已完成（D-001/D-002/E-001/E-002；A-002 closes A-001） |
-| S1 | 实现共享版本前置条件与 wallet ETag/expectedVersion | 🚧 进行中 |
-| S2 | 实现 operation replay 结果、冲突语义与回归测试 | 未开始 |
-| S3 | 全量验证、自审、independent 审计与关门 | 未开始 |
+| S1 | 实现共享版本前置条件与 wallet ETag/expectedVersion | ✅ 已完成（08dcec8） |
+| S2 | 实现 operation replay 结果、冲突语义与回归测试 | ✅ 已完成（08dcec8） |
+| S3 | 全量验证、自审、independent 审计与关门 | 🚧 进行中（A-003 self pass） |
 
 ## 成功标准
 
