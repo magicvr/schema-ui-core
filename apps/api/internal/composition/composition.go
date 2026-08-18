@@ -241,6 +241,7 @@ func newMuxWithExtraProviders(
 	a.SetServiceCredentialUseRecorder(func(use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
 			"credentialId": use.CredentialID,
+			"scopeCount":   use.ScopeCount,
 			"method":       use.Method,
 			"path":         use.Path,
 		})

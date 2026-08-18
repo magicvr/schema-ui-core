@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,7 +16,8 @@ import (
 )
 
 func TestServiceCredentialManagementAndAuthentication(t *testing.T) {
-	env := newAuthTestEnv(t)
+	env, _ := newWalletSelfEnv(t)
+	mountMFASurface(t, env, newFakeMFAService(), &fakeSessionRevoker{})
 	admin := loginAs(t, env, testSeedUsername, testSeedPassword)
 	expiresAt := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
 	createBody := `{"name":"Build Agent","scopes":["users.read"],"expiresAt":"` + expiresAt + `"}`
@@ -30,15 +32,15 @@ func TestServiceCredentialManagementAndAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	credentialID, _ := created["id"].(string)
-	secret, _ := created["token"].(string)
-	if credentialID == "" || !strings.HasPrefix(secret, "sui_sc_") || created["tokenHash"] != nil {
+	secret, _ := created["secret"].(string)
+	if credentialID == "" || !strings.HasPrefix(secret, "sui_sc_") || created["token"] != nil || created["tokenHash"] != nil {
 		t.Fatalf("create response = %+v", created)
 	}
 
 	for _, path := range []string{"/api/service-credentials", "/api/service-credentials/" + credentialID} {
 		response := httptest.NewRecorder()
 		env.mux.ServeHTTP(response, bearer(t, admin, http.MethodGet, path, ""))
-		if response.Code != http.StatusOK || strings.Contains(response.Body.String(), secret) || strings.Contains(response.Body.String(), "tokenHash") || strings.Contains(response.Body.String(), `"token"`) {
+		if response.Code != http.StatusOK || strings.Contains(response.Body.String(), secret) || strings.Contains(response.Body.String(), "tokenHash") || strings.Contains(response.Body.String(), `"secret"`) {
 			t.Fatalf("metadata %s = %d %s", path, response.Code, response.Body.String())
 		}
 	}
@@ -52,9 +54,21 @@ func TestServiceCredentialManagementAndAuthentication(t *testing.T) {
 	if serviceRequest.Code != http.StatusOK {
 		t.Fatalf("service permission request = %d %s", serviceRequest.Code, serviceRequest.Body.String())
 	}
-	userOnly := httptest.NewRecorder()
-	env.mux.ServeHTTP(userOnly, bearer(t, secret, http.MethodGet, "/api/accounts/me", ""))
-	expectError(t, userOnly, http.StatusUnauthorized, "UNAUTHENTICATED")
+	for _, userOnlyRoute := range []struct {
+		method string
+		path   string
+	}{
+		{http.MethodGet, "/api/accounts/me"},
+		{http.MethodGet, "/api/account/profile"},
+		{http.MethodPost, "/api/account/avatar"},
+		{http.MethodGet, "/api/mfa/status"},
+		{http.MethodGet, "/api/notifications"},
+		{http.MethodGet, "/api/wallet/me"},
+	} {
+		userOnly := httptest.NewRecorder()
+		env.mux.ServeHTTP(userOnly, bearer(t, secret, userOnlyRoute.method, userOnlyRoute.path, ""))
+		expectError(t, userOnly, http.StatusUnauthorized, "UNAUTHENTICATED")
+	}
 	management := httptest.NewRecorder()
 	env.mux.ServeHTTP(management, bearer(t, secret, http.MethodGet, "/api/service-credentials", ""))
 	expectError(t, management, http.StatusForbidden, "FORBIDDEN")
@@ -82,6 +96,9 @@ func TestServiceCredentialManagementAndAuthentication(t *testing.T) {
 		if operation.Detail != nil && strings.Contains(*operation.Detail, secret) {
 			t.Fatal("raw service credential leaked into audit detail")
 		}
+		if operation.Event == operationlog.EventServiceCredentialUse && (operation.Detail == nil || !strings.Contains(*operation.Detail, `"scopeCount":1`)) {
+			t.Fatalf("use audit missing scopeCount: %+v", operation)
+		}
 	}
 	if events[operationlog.EventServiceCredentialCreate] != 1 || events[operationlog.EventServiceCredentialUse] == 0 || events[operationlog.EventServiceCredentialRevoke] != 1 {
 		t.Fatalf("service credential audit events = %v", events)
@@ -107,6 +124,17 @@ func TestServiceCredentialCreateRejectsUnknownReservedAndExcessScopes(t *testing
 			expectError(t, response, test.status, test.code)
 		})
 	}
+	overLimitScopes := make([]string, 65)
+	for index := range overLimitScopes {
+		overLimitScopes[index] = fmt.Sprintf("permission.%02d", index)
+	}
+	overLimitBody, err := json.Marshal(map[string]any{"name": "over-limit", "scopes": overLimitScopes, "expiresAt": expiresAt})
+	if err != nil {
+		t.Fatal(err)
+	}
+	overLimit := httptest.NewRecorder()
+	env.mux.ServeHTTP(overLimit, bearer(t, admin, http.MethodPost, "/api/service-credentials", string(overLimitBody)))
+	expectError(t, overLimit, http.StatusBadRequest, "INVALID_CREATE_FIELD")
 
 	managerPassword := "manager-password"
 	managerHash, err := auth.HashPassword(managerPassword, testBcryptCost)

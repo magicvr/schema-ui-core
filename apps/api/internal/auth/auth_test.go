@@ -128,6 +128,25 @@ func TestServiceCredentialMiddlewarePrecedesDevFallback(t *testing.T) {
 			t.Fatalf("%s service credential response=%d called=%v body=%s", name, response.Code, called, response.Body.String())
 		}
 	}
+	expiredRaw, expiredHash, expiredPrefix, err := NewServiceCredentialToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.CreateServiceCredential(authsession.ServiceCredential{
+		ID: "fedcba9876543210fedcba9876543210", Name: "Expired Agent",
+		TokenPrefix: expiredPrefix, TokenHash: expiredHash, Scopes: []string{"records.read"},
+		ExpiresAt: now.Add(-time.Minute), CreatedBy: "user-admin", CreatedAt: now, UpdatedAt: now,
+	}, nil); err != nil {
+		t.Fatal(err)
+	}
+	called = false
+	request = httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+	request.Header.Set("Authorization", "Bearer "+expiredRaw)
+	response = httptest.NewRecorder()
+	protected.ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized || called {
+		t.Fatalf("expired service credential response=%d called=%v body=%s", response.Code, called, response.Body.String())
+	}
 }
 
 func TestNewServiceCredentialTokenContract(t *testing.T) {

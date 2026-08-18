@@ -100,7 +100,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, authRepository, devSession)
 	a.SetServiceCredentialUseRecorder(func(use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
-			"credentialId": use.CredentialID, "method": use.Method, "path": use.Path,
+			"credentialId": use.CredentialID, "scopeCount": use.ScopeCount, "method": use.Method, "path": use.Path,
 		})
 		if err != nil {
 			return err

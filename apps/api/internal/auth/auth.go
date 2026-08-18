@@ -77,6 +77,7 @@ type Repository interface {
 type ServiceCredentialUse struct {
 	CredentialID  string
 	Name          string
+	ScopeCount    int
 	Method        string
 	Path          string
 	CorrelationID string
@@ -585,6 +586,7 @@ func (a *Authenticator) authenticateServiceCredential(w http.ResponseWriter, r *
 		_ = a.serviceCredentialUseRecorder(ServiceCredentialUse{
 			CredentialID:  credential.ID,
 			Name:          credential.Name,
+			ScopeCount:    len(credential.Scopes),
 			Method:        r.Method,
 			Path:          r.URL.Path,
 			CorrelationID: requestid.FromContext(r.Context()),

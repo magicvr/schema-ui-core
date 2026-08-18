@@ -150,8 +150,8 @@ func (h *serviceCredentialHandler) create() http.Handler {
 			return
 		}
 		body.Scopes = normalizedCredentialScopes(body.Scopes)
-		if len(body.Scopes) == 0 {
-			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", "scopes must contain at least one permission", []errorcatalog.FieldError{{Field: "scopes", Reason: "must contain at least one permission"}})
+		if len(body.Scopes) == 0 || len(body.Scopes) > 64 {
+			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", "scopes must contain 1 to 64 unique permissions", []errorcatalog.FieldError{{Field: "scopes", Reason: "must contain 1 to 64 unique permissions"}})
 			return
 		}
 		if err := h.repository.ValidatePermissionKeys(body.Scopes); errors.Is(err, authsession.ErrInvalidPermission) {
@@ -195,7 +195,7 @@ func (h *serviceCredentialHandler) create() http.Handler {
 			})
 		})
 		if errors.Is(err, authsession.ErrCredentialNameTaken) {
-			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", "name is already in use", []errorcatalog.FieldError{{Field: "name", Reason: "already in use"}})
+			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", "name already exists", []errorcatalog.FieldError{{Field: "name", Reason: "name already exists"}})
 			return
 		}
 		if err != nil {
@@ -203,7 +203,7 @@ func (h *serviceCredentialHandler) create() http.Handler {
 			return
 		}
 		response := serviceCredentialRow(credential, now)
-		response["token"] = raw
+		response["secret"] = raw
 		writeJSON(w, http.StatusCreated, response)
 	})
 }
