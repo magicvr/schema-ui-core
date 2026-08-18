@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-011-admin-functional-modules
 title: 标准 Admin 功能模块（通用模块 + 常用业务领域 · 分档交付）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-011-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-18
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
@@ -105,7 +105,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-18 | closed（有界） | 标准 Admin 功能模块波次完成：R1 调研、R2 一等公民、R3 常用（已立项子集）、R4 增补/体验均交付或登记；四档能力地图上提至 vision roadmap，剩余候选移交未来 VP/工作区 | workspace-011 Root done；goal-tree 全部子目标 done；VRev-027；roadmap 四档能力地图 | S-05/S-06/S-07/S-08/S-13 及 B-01～B-11 已 reclassify 到四档地图 Tier A/D，按触发条件由未来 VP/工作区承接 |
 
 ## 规划修订短史
 
@@ -117,3 +117,4 @@ parent: null
 | 2026-08-14 | `/govern` 完成：W5 归档（VP-009 goal-tree / VP-010 GOAL-006 done）、W6 修复 F-1a/b/c（GOAL-007 done，V-007 exit 8 + V-008 exit 0 完整绿）、checkpoint `f14ab9d` |
 | 2026-08-14 | **消费前 freshness review 第二轮：PASS → `go` 可消费**（候选 `f14ab9d`；V-001～V-008 全绿）；用户确认激活（VR-021） |
 | 2026-08-18 | VRev-027 响应（editorial）：增加“能力分层边界”，明确三档只用于功能模块、四档能力地图为路线图登记、横切基架问题不自动进入本 VP；版本 0.3.0 |
+| 2026-08-18 | 有界关门（用户确认）：status `active → closed`；四档能力地图上提至 `docs/vision/roadmap.md`；workspace-011 Root 置 done；剩余候选 reclassify 到未来 VP/工作区；版本 0.4.0 |

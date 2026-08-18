@@ -5,7 +5,7 @@ status: active
 source: self
 created: 2026-08-18
 updated: 2026-08-18
-version: 1.0.0
+version: 1.1.0
 parent: null
 ---
 
@@ -95,3 +95,7 @@ parent: null
 ### 当前门禁
 
 本报告 open required = 0；原 verdict `conditional` 保留。VP-011 保持 `active`，workspace-011 保持 `active`；本次仅完成路线图与边界登记，不构成任何功能实现或 VP/Root 关门。
+
+### 后续追加（2026-08-18 · VR-023）
+
+用户后续确认：四档能力地图上提至 `docs/vision/roadmap.md`，VP-011 有界 `closed`，workspace-011 Root `done`。本报告历史结论与响应不变，当前状态以 `roadmap.md` / `workspaces.md` / `VP-011` 为准。

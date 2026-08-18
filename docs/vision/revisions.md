@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-18
 parent: null
-version: 0.4.6
+version: 0.4.7
 ---
 
 # Charter 修订台账
@@ -36,3 +36,4 @@ version: 0.4.6
 | VR-020 | 2026-08-14 | editorial | 协议 pin bump（v2.7.0 → v2.8.0） | 用户裁决 A（editorial）：`schema-ui-docs@v2.7.0` → `v2.8.0`（additive 超集，v2.7.0 机器契约保留，新增 Host/App 互操作层）；Charter 协议来源/目标语义/成功边界 1/H-001 同步；`I-PROTO-FULL-001` v1.0.1 保留为 v2.7.0 历史分母、被 v2.8.0 覆盖；身份权威 = provenance-v2.8.json（VP-010 W3 固定）。不改 `vision_id@version`（仍 `@0.2.0`）、不重开历史 VP，**无** strategic、**无** re-align。 |
 | VR-021 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认激活 VP-011（v0.2.0 `active`，lead workspace-011-admin-functional-modules）：消费前 freshness review 第二轮 **PASS**（候选 `f14ab9d`，V-001～V-008 全绿；F-1a/b/c 由 VP-010 W6 修复；VR-020 pin bump 已对齐）；`/govern` 当日 scaffold 工作区 + Root（首阶段 = 有界调研）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-022 | 2026-08-18 | editorial | VP 关系指针 + 组合编排 | 用户确认新建并激活 VP-012（v0.1.0 `active`，lead workspace-012-shared-cross-module-contracts）：承载共享横切契约与平台基架（correlation/审计模型/并发幂等/异步 Job + maintenance 门控/API Token）；承接 VP-011 R5 中“横切契约”部分，Tier D 业务域仍按触发条件；不改变 Charter 边界或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-023 | 2026-08-18 | editorial | VP 关系指针 + 组合编排 + 关门投影 | 用户确认四档能力地图上提至 vision roadmap，并关闭 VP-011（`active → closed` v0.4.0）与 workspace-011 Root（`active → done`）：标准 Admin 功能模块波次完成；S-05/S-06/S-07/S-08/S-13 及 B-01～B-11 reclassify 到四档地图未来 VP/工作区；当前 active 交付 VP = VP-012；不改变 Charter 边界或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-admin-functional-modules
 title: 标准 Admin 功能模块（通用 + 常用业务领域 · 分档交付）
-status: active
+status: done
 parent: null
 created: 2026-08-14
 updated: 2026-08-18
-version: 0.4.0
+version: 0.5.0
 plan_refs:
   - VP-011-admin-functional-modules
 primary_plan: VP-011-admin-functional-modules
@@ -30,7 +30,7 @@ serves_summary: 在已 closed 基架（VP-001～008）之上交付标准 Admin �
 | R4 | **用户裁决增补**：表单体验（字段级校验/错误展示 + 弹窗布局） | 随 R3 收尾 | ✅ **done**（GOAL-014-form-experience 5/5；A-003 fail → F-001/F-002 fixed 后关门，2026-08-14） |
 | R4 | **用户裁决增补**：数据字典内页 + 面包屑层级导航 | 随 R3 收尾 | ✅ **done**（GOAL-015-dict-inner-page-breadcrumb 5/5，2026-08-14） |
 | R4 | **增补 backlog**（B-01～B-11）：Webhook、报表中心、营销/优惠券、物流履约、订阅套餐、工单、库存、帮助页、消息模板、组织/部门/岗位、登录日志独立视图——登记 + 触发条件（按需立项，不由 VP 强行关闭） | 依赖 R1 | 已登记（I-011-001 §5） |
-| R5 | **四档能力地图与跨模块路线图登记**：Tier A 基架规划 / Tier B 扩展接缝 / Tier C 体验增强 / Tier D 业务领域；只登记路线图，不立即立项 | 依赖 R1/R4 | 已登记（2026-08-18；I-011-002；VRev-027；VP-011 v0.3.0） |
+| R5 | **四档能力地图与跨模块路线图登记**：Tier A 基架规划 / Tier B 扩展接缝 / Tier C 体验增强 / Tier D 业务领域；只登记路线图，不立即立项 | 依赖 R1/R4 | 已登记并上提至 vision roadmap（2026-08-18；I-011-002；VRev-027；VP-011 v0.4.0 closed） |
 
 ## 成功标准（方向级）
 

@@ -11,16 +11,16 @@ plan_refs:
 primary_plan: VP-011-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-18
-version: 0.1.9
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · 标准 Admin 功能模块
 
-本工作区是 [VP-011-admin-functional-modules](../../vision/plans/VP-011-admin-functional-modules.md)（`active` · 首个**标准业务模块**交付波次）的唯一 lead delivery workspace。
+本工作区是 [VP-011-admin-functional-modules](../../vision/plans/VP-011-admin-functional-modules.md)（`closed` · 首个**标准业务模块**交付波次）的历史 lead delivery workspace。
 
-- **Root** 为交付目标（默认 `active`），首阶段 = **有界调研**（收集业界通用 Admin 功能 + 常用业务领域，分档后回写 Root 纲领路线图）。
-- **子目标** = 调研阶段 + 分档后的波次（一等公民 / 常用 / 增补）。
+- **Root** 已 `done`：标准 Admin 功能模块波次完成；四档能力地图已上提至 `docs/vision/roadmap.md`。
+- **子目标** = 调研阶段 + 分档后的波次（一等公民 / 常用 / 增补），现已全部完成。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 
 ## 绑定

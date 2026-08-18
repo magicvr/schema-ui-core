@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-14
-updated: 2026-08-15
-version: 0.1.1
+updated: 2026-08-18
+version: 0.2.0
 ---
 
 # 审计记录 · GOAL-001
@@ -16,10 +16,13 @@ version: 0.1.1
 |------|------|--------|-------|---------|---------------|------|
 | — | — | — | 开区 scaffold 采用审计模式 none（低风险可逆）；后继 R1/R2 阶段按门禁补审计 | — | — | — |
 | A-001 | 2026-08-15 | independent | R3 第三批次立项 + R4 014/015 漂移修正 + 三处同步 | pass | 0 | 03-audit/A-001-r3-batch3-independent.md |
+| A-002 | 2026-08-18 | self | Root 关门（VP-011 有界 closed + Root done） | pass | 0 | 03-audit/A-002-root-closeout-self.md |
 
 ## 结论状态
 
 A-001 independent pass（0 required；non-blocking F-001～F-003：workspace.md R4 缺 GOAL-015、ASCII 树缺 GOAL-013、状态表 GOAL-001 日期未跟）。不阻断 GOAL-016/017 立项放行。独立意见不直接改 status / progress；响应走 /govern。
+
+A-002 self pass（2026-08-18）：Root 关门自审通过；R1～R4 全部 done，R5 已上提至 vision roadmap，VP-011 有界 closed，无开放 required。
 
 ## 响应记录（/govern · 2026-08-15）
 

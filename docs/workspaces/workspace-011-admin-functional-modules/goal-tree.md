@@ -2,9 +2,9 @@
 title: 目标树 · workspace-011-admin-functional-modules
 status: active
 created: 2026-08-14
-updated: 2026-08-16
+updated: 2026-08-18
 parent: null
-version: 0.11.0
+version: 0.12.0
 workspace_id: workspace-011-admin-functional-modules
 ---
 
@@ -18,7 +18,7 @@ workspace_id: workspace-011-admin-functional-modules
 ## 树
 
 ```text
-GOAL-001-admin-functional-modules [active]  · 标准 Admin 功能模块（分档交付）
+GOAL-001-admin-functional-modules [done]  · 标准 Admin 功能模块（分档交付）
 ├── GOAL-002-r1-bounded-research [done]       · R1 有界调研：候选池收集 + 三档分档（5/5）
 ├── GOAL-003-r2-f01-dashboard [done]        · R2-F01 仪表盘/控制台（生产 home）（5/5 · 990daa8）
 ├── GOAL-004-r2-f02-data-import-export [done]    · R2-F02 数据导入/导出（共享能力）（5/5）
@@ -49,7 +49,7 @@ Root 于 2026-08-14 开区（VP-011 激活 + freshness review PASS，候选 `f14
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-admin-functional-modules | 标准 Admin 功能模块（通用 + 常用业务领域 · 分档交付） | null | active | —（纲领路线图就位） | 2026-08-16 |
+| GOAL-001-admin-functional-modules | 标准 Admin 功能模块（通用 + 常用业务领域 · 分档交付） | null | done | —（纲领路线图就位；四档能力地图已上提） | 2026-08-18 |
 | GOAL-002-r1-bounded-research | R1 · 有界调研：候选池收集与三档分档 | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-003-r2-f01-dashboard | R2-F01 · 仪表盘/控制台（生产 Profile home） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
 | GOAL-004-r2-f02-data-import-export | R2-F02 · 数据导入/导出（schema 驱动 · 共享能力） | GOAL-001-admin-functional-modules | done | 5/5 | 2026-08-14 |
