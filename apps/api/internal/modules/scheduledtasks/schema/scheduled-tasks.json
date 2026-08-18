@@ -88,7 +88,8 @@
               "id": "cron",
               "label": "Cron (5 fields)",
               "type": "input",
-              "labelKey": "schema.scheduledTasks.field.cron"
+              "labelKey": "schema.scheduledTasks.field.cron",
+              "afterComponent": "cron-preview"
             },
             {
               "id": "name",
@@ -147,7 +148,8 @@
               "id": "cron",
               "label": "Cron (5 fields)",
               "type": "input",
-              "labelKey": "schema.scheduledTasks.field.cron"
+              "labelKey": "schema.scheduledTasks.field.cron",
+              "afterComponent": "cron-preview"
             },
             {
               "id": "name",
@@ -195,11 +197,6 @@
     "type": "section",
     "id": "scheduled-tasks",
     "children": [
-      {
-        "type": "custom",
-        "id": "cron-preview-block",
-        "component": "cron-preview"
-      },
       {
         "type": "form",
         "id": "tasks-search",

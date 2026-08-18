@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
@@ -41,25 +43,115 @@ type taskEntity struct {
 	operations operationlog.Recorder
 }
 
-// describeCron returns a short human-readable description for a parsed 5-field
-// cron expression (W16-F05). It is intentionally conservative; the nextRuns
-// array carries the concrete evidence.
-func describeCron(fields tasksstore.CronFields) string {
-	everyMinute := len(fields[0]) == 60 && len(fields[1]) == 24 && len(fields[2]) == 31 && len(fields[3]) == 12 && len(fields[4]) == 7
-	if everyMinute {
-		return "every minute"
+var cronWeekdaysZh = [7]string{"周日", "周一", "周二", "周三", "周四", "周五", "周六"}
+var cronWeekdaysEn = [7]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+
+func cronFieldSingle(field map[int]bool) (int, bool) {
+	if len(field) != 1 {
+		return 0, false
 	}
-	if len(fields[0]) == 1 && len(fields[1]) == 24 && len(fields[2]) == 31 && len(fields[3]) == 12 && len(fields[4]) == 7 {
-		return "every hour at minute " + itoaMinute(fields[0])
+	for value := range field {
+		return value, true
 	}
-	return "cron schedule (5-field)"
+	return 0, false
 }
 
-func itoaMinute(field map[int]bool) string {
-	for v := range field {
-		return strconv.Itoa(v)
+func cronFieldStep(field map[int]bool, min, max int) (int, bool) {
+	if len(field) < 2 {
+		return 0, false
 	}
-	return "0"
+	values := make([]int, 0, len(field))
+	for value := range field {
+		values = append(values, value)
+	}
+	for i := 1; i < len(values); i++ {
+		j := i
+		for j > 0 && values[j-1] > values[j] {
+			values[j-1], values[j] = values[j], values[j-1]
+			j--
+		}
+	}
+	step := values[1] - values[0]
+	if step <= 0 {
+		return 0, false
+	}
+	expected := 0
+	for value := min; value <= max; value += step {
+		if !field[value] {
+			return 0, false
+		}
+		expected++
+	}
+	if expected != len(field) {
+		return 0, false
+	}
+	return step, true
+}
+
+func cronClock(hour, minute int) string {
+	return fmt.Sprintf("%02d:%02d", hour, minute)
+}
+
+// describeCron returns a locale-aware natural-language description for a
+// parsed 5-field cron (W17). nextRuns still carries the concrete evidence.
+func describeCron(fields tasksstore.CronFields, locale string) string {
+	zh := locale == "zh-CN"
+	fullMinute := len(fields[0]) == 60
+	fullHour := len(fields[1]) == 24
+	fullDay := len(fields[2]) == 31
+	fullMonth := len(fields[3]) == 12
+	fullDow := len(fields[4]) == 7
+	minute, hasMinute := cronFieldSingle(fields[0])
+	hour, hasHour := cronFieldSingle(fields[1])
+	day, hasDay := cronFieldSingle(fields[2])
+	dow, hasDow := cronFieldSingle(fields[4])
+
+	if fullMinute && fullHour && fullDay && fullMonth && fullDow {
+		if zh {
+			return "每分钟"
+		}
+		return "Every minute"
+	}
+	if minuteStep, ok := cronFieldStep(fields[0], 0, 59); ok && fullHour && fullDay && fullMonth && fullDow {
+		if zh {
+			return "每 " + strconv.Itoa(minuteStep) + " 分钟"
+		}
+		return "Every " + strconv.Itoa(minuteStep) + " minutes"
+	}
+	if hasMinute && fullHour && fullDay && fullMonth && fullDow {
+		if zh {
+			return "每小时的第 " + strconv.Itoa(minute) + " 分钟"
+		}
+		return "Every hour at minute " + strconv.Itoa(minute)
+	}
+	if hasMinute && hasHour && fullDay && fullMonth && fullDow {
+		clock := cronClock(hour, minute)
+		if zh {
+			return "每天 " + clock
+		}
+		return "Every day at " + clock
+	}
+	if hasMinute && hasHour && hasDow && fullDay && fullMonth {
+		clock := cronClock(hour, minute)
+		if dow < 0 || dow > 6 {
+			dow = 0
+		}
+		if zh {
+			return "每周" + cronWeekdaysZh[dow] + " " + clock
+		}
+		return "Every " + cronWeekdaysEn[dow] + " at " + clock
+	}
+	if hasMinute && hasHour && hasDay && fullMonth && fullDow {
+		clock := cronClock(hour, minute)
+		if zh {
+			return "每月 " + strconv.Itoa(day) + " 日 " + clock
+		}
+		return "On day " + strconv.Itoa(day) + " of every month at " + clock
+	}
+	if zh {
+		return "5 段 Cron 计划"
+	}
+	return "5-field cron schedule"
 }
 
 // validateHandler rejects unknown handler keys at write time (A-003 F-003);
@@ -307,7 +399,7 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 				cursor = next.Add(time.Minute)
 			}
 			writeJSON(w, http.StatusOK, map[string]any{
-				"description": describeCron(fields),
+				"description": describeCron(fields, errorcatalog.Negotiate(r)),
 				"nextRuns":    nextRuns,
 			})
 		})),

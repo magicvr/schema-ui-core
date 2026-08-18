@@ -23,6 +23,9 @@ func TestCronPreviewEndpoint(t *testing.T) {
 	if err := json.NewDecoder(rr.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
+	if body.Description != "Every day at 02:00" {
+		t.Fatalf("description = %q, want Every day at 02:00", body.Description)
+	}
 	if len(body.NextRuns) != 3 {
 		t.Fatalf("nextRuns = %d, want 3", len(body.NextRuns))
 	}

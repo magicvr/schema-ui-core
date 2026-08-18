@@ -131,6 +131,12 @@ export interface FormControlField {
   action?: string;
   /** upload only: references a top-level type=upload action (requires actions.upload). */
   actionRef?: string;
+  /**
+   * W17: optional Host-local addon rendered under this field. The value is a
+   * registered custom-component key (e.g. cron-preview). Not a protocol
+   * control type.
+   */
+  afterComponent?: string;
   /** upload constraints (direct-URL mode only; actionRef mode reads the action). */
   accept?: string;
   maxSize?: number;

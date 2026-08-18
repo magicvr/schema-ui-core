@@ -2,9 +2,9 @@
 title: 目标树 · workspace-010-design-implementation-conformance
 status: active
 created: 2026-08-11
-updated: 2026-08-17
+updated: 2026-08-18
 parent: null
-version: 0.32.0
+version: 0.33.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -41,11 +41,14 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 │   ├── GOAL-021-w15-rectification-batch-a [done] · 整改批 A · F01/F02/F04/F05/F07（4/4）
 │   ├── GOAL-022-w15-rectification-batch-b [done] · 整改批 B · F03/F11/F10/F12（4/4）
 │   └── GOAL-023-w15-rectification-batch-c [done] · 整改批 C · F06/F08/F09/F13/F14（4/4）
-└── GOAL-024-w16-user-perspective-improvements [done] · W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10）+ 整改承接（8/8）
-    ├── GOAL-025-w16-rectification-batch-a [done] · W16 整改批 A · 安全与认证基线（F01 首次改密 / F07 一键下线其他 / F08 验证码与 MFA 备份）（4/4）
-    ├── GOAL-026-w16-rectification-batch-b [done] · W16 整改批 B · 核心资产与数据交互（F02 文件预览复制 / F03 导入模板与错误定位 / F04 金额格式化与调账警示）（4/4）
-    └── GOAL-027-w16-rectification-batch-c [done] · W16 整改批 C · 系统运维与通用外观（F05 Cron 预览 / F06 监控自动刷新 / F09 字典 Badge / F10 页脚版权）（4/4）
+├── GOAL-024-w16-user-perspective-improvements [done] · W16 · 真实用户视角未计划改进项台账与规划（W16-F01～W16-F10）+ 整改承接（8/8）
+│   ├── GOAL-025-w16-rectification-batch-a [done] · W16 整改批 A · 安全与认证基线（F01 首次改密 / F07 一键下线其他 / F08 验证码与 MFA 备份）（4/4）
+│   ├── GOAL-026-w16-rectification-batch-b [done] · W16 整改批 B · 核心资产与数据交互（F02 文件预览复制 / F03 导入模板与错误定位 / F04 金额格式化与调账警示）（4/4）
+│   └── GOAL-027-w16-rectification-batch-c [done] · W16 整改批 C · 系统运维与通用外观（F05 Cron 预览 / F06 监控自动刷新 / F09 字典 Badge / F10 页脚版权）（4/4）
+└── GOAL-028-w17-cron-preview-field-binding [active] · W17 · Cron 字段绑定与中文 describeCron（3/4）
 ```
+
+**W17（2026-08-18 立项）**：承接 GOAL-024 A-005 F-004 / A-007 F-003。S1 已冻结（D-001）。Root/VP 保持 active。
 
 **W16（2026-08-17 立项，8/8 关门）**：S1 台账建立（D-001）+ S2 技术方案（D-002，I-001 closed）+ S3 分批规划（D-003）+ S4 自审 A-002 pass；批 A GOAL-025、批 B GOAL-026、批 C GOAL-027 全部 done 4/4；S5 终审 A-003 pass；GOAL-024 已 done。Root/VP 保持 active。
 
@@ -109,6 +112,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-025-w16-rectification-batch-a | W16 整改批 A：安全与认证基线（F01 首次改密 / F07 一键下线其他 / F08 验证码与 MFA 备份） | GOAL-024-w16-user-perspective-improvements | done | 4/4 | 2026-08-17 |
 | GOAL-026-w16-rectification-batch-b | W16 整改批 B：核心资产与数据交互（F02 文件预览复制 / F03 导入模板与错误定位 / F04 金额格式化与调账警示） | GOAL-024-w16-user-perspective-improvements | done | 4/4 | 2026-08-17 |
 | GOAL-027-w16-rectification-batch-c | W16 整改批 C：系统运维与通用外观（F05 Cron 预览 / F06 监控自动刷新 / F09 字典 Badge / F10 页脚版权） | GOAL-024-w16-user-perspective-improvements | done | 4/4 | 2026-08-17 |
+| GOAL-028-w17-cron-preview-field-binding | W17 · Cron 字段绑定与中文 describeCron | GOAL-001-design-implementation-conformance | active | 3/4 | 2026-08-18 |
 
 
 ## 维护说明

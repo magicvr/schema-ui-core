@@ -755,6 +755,9 @@ export function gateRenderFormFields(
           }
         : {}),
       ...(entry.defaultValue !== undefined ? { defaultValue: entry.defaultValue } : {}),
+      ...(typeof entry.afterComponent === "string" && entry.afterComponent !== ""
+        ? { afterComponent: entry.afterComponent }
+        : {}),
     });
   }
 

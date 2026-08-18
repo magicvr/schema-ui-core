@@ -1,5 +1,6 @@
-// Cron expression preview (W16-F05): accepts a 5-field cron expression and
-// shows the server-computed description and next three run times.
+// Cron expression preview (W16-F05 / W17): shows the server-computed
+// description and next three run times. Bound mode reads the form field
+// via node.props.bindValue; standalone mode keeps its own input.
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/account/AuthContext";
@@ -17,13 +18,25 @@ interface CronPreviewResponse {
   nextRuns?: string[];
 }
 
-export function CronPreview(_props: CustomComponentProps) {
+function boundCronValue(props: CustomComponentProps): string | undefined {
+  const raw = props.node.props?.bindValue;
+  return typeof raw === "string" ? raw : undefined;
+}
+
+export function CronPreview(props: CustomComponentProps) {
   const t = useTranslate();
   const { authFetch } = useAuth();
-  const [cron, setCron] = useState("");
+  const bound = boundCronValue(props);
+  const [cron, setCron] = useState(bound ?? "");
   const [preview, setPreview] = useState<CronPreviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (bound !== undefined) {
+      setCron(bound);
+    }
+  }, [bound]);
 
   const runPreview = useCallback(
     async (expr: string) => {
@@ -55,7 +68,6 @@ export function CronPreview(_props: CustomComponentProps) {
     [authFetch, t],
   );
 
-  // W16-F05: debounced auto-preview while typing.
   useEffect(() => {
     const id = window.setTimeout(() => {
       void runPreview(cron);
@@ -68,23 +80,8 @@ export function CronPreview(_props: CustomComponentProps) {
     void runPreview(cron);
   };
 
-  return (
-    <div className="space-y-2 rounded-md border p-3" data-cron-preview>
-      <h3 className="text-base font-semibold">{t("cronPreview.title")}</h3>
-      <form onSubmit={submit} className="flex items-end gap-2">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <Label htmlFor="cronPreviewInput">{t("cronPreview.cron")}</Label>
-          <Input
-            id="cronPreviewInput"
-            value={cron}
-            onChange={(event) => setCron(event.target.value)}
-            placeholder="0 0 2 * * *"
-          />
-        </div>
-        <Button type="submit" disabled={busy || cron.trim() === ""}>
-          {busy ? t("cronPreview.loading") : t("cronPreview.preview")}
-        </Button>
-      </form>
+  const result = (
+    <>
       {error !== null ? <p className="text-sm text-destructive">{error}</p> : null}
       {preview !== null ? (
         <div className="space-y-1 text-sm">
@@ -100,6 +97,36 @@ export function CronPreview(_props: CustomComponentProps) {
           </ul>
         </div>
       ) : null}
+    </>
+  );
+
+  if (bound !== undefined) {
+    return (
+      <div className="mt-1.5 space-y-1" data-cron-preview data-cron-bound="true">
+        {busy ? <p className="text-xs text-muted-foreground">{t("cronPreview.loading")}</p> : null}
+        {result}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border p-3" data-cron-preview>
+      <h3 className="text-base font-semibold">{t("cronPreview.title")}</h3>
+      <form onSubmit={submit} className="flex items-end gap-2">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Label htmlFor="cronPreviewInput">{t("cronPreview.cron")}</Label>
+          <Input
+            id="cronPreviewInput"
+            value={cron}
+            onChange={(event) => setCron(event.target.value)}
+            placeholder="0 2 * * *"
+          />
+        </div>
+        <Button type="submit" disabled={busy || cron.trim() === ""}>
+          {busy ? t("cronPreview.loading") : t("cronPreview.preview")}
+        </Button>
+      </form>
+      {result}
     </div>
   );
 }

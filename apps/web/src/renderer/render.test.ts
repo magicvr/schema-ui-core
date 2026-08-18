@@ -362,6 +362,18 @@ describe("GOAL-014 · constraint passthrough + fieldErrors echo (A-003 F-001/F-0
   });
 });
 
+describe("gateRenderFormFields · afterComponent (W17)", () => {
+  it("preserves afterComponent on input fields", () => {
+    const result = gateRenderFormFields(
+      { protocolVersion: "2.7", requiredCapabilities: [] },
+      [{ id: "cron", type: "input", afterComponent: "cron-preview" }],
+      "fields",
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.fields[0]?.afterComponent).toBe("cron-preview");
+  });
+});
+
 describe("gateRenderFormFields · readOnly (ADR-0040)", () => {
   it("passes readOnly through and gates it on 2.9 + capability", () => {
     const meta = { protocolVersion: "2.9", requiredCapabilities: ["form.controls.readonly"] };

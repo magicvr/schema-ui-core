@@ -10,6 +10,7 @@ import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
 import type { UploadableFile } from "@/protocol/conformance/upload-orchestration";
 
+import { getCustomComponent } from "@/renderer/custom-components";
 import {
   coerceFieldValue,
   type FormControlField,
@@ -1056,9 +1057,23 @@ function FieldControl({
   }
   return null;
 };
+  const AfterComponent =
+    typeof field.afterComponent === "string" && field.afterComponent !== ""
+      ? getCustomComponent(field.afterComponent)
+      : null;
   return (
     <div className="min-w-0">
       {renderControl()}
+      {AfterComponent !== null ? (
+        <AfterComponent
+          node={{
+            type: "custom",
+            component: field.afterComponent ?? "",
+            props: { bindValue: String(value) },
+          }}
+          context={{}}
+        />
+      ) : null}
       {error !== undefined ? (
         <p id={errorId} role="alert" className="mt-1 text-sm text-destructive">
           {error}

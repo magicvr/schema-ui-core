@@ -4,7 +4,7 @@ title: 设计意图与实现符合性（持续对齐程序）
 status: active
 parent: null
 created: 2026-08-11
-updated: 2026-08-17
+updated: 2026-08-18
 version: 0.7.0
 plan_refs:
   - VP-010-design-implementation-conformance
@@ -55,7 +55,8 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | W5–W11 | 见 [goal-tree](../goal-tree.md) / [workspace](../workspace.md) | **done** | 摘要不在本表复写；权威在各子目标与工作区波次表 |
 | W12 | GOAL-013-w12-product-surface-intent | **done**（4/4 · 2026-08-16 关门） | 产品面交互意图对齐（T-05/T-01/T-03/T-02/T-06；T-04 移交 workspace-011 GOAL-022）；回归 Go 0 FAIL + Web 1027/1027；go 不暂挂 |
 | W13 | GOAL-014-w13-settings-tabs-and-topbar | **done**（4/4 · 2026-08-16 五次关门） | 设置页功能单元 Tabs / 移动端品牌条 / 汉堡靠左 / 搜索框组贴合 / 顶栏明暗-语种按键对调 / 个人中心头像上传（迁移 0035·0036）+ 顶栏头像即时刷新修复 + 通知中心交互修正（点击即读/展开详情/未读数即时刷新）+ 列表筛选即时生效（下拉即筛/文本框提交式）；A-001～A-005 self pass；回归 Go 0 FAIL + vitest 1037/1037 + e2e admin/mvp 全绿；go 各轮均无影响不暂挂 |
-| W14 | GOAL-015-w14-user-perspective-review | **active**（4/8 · 2026-08-17 用户结构裁决：整改完成前不得 done） | 真实用户视角审视 API/Web + 改进项台账（F-01～F-14）S1～S4 完成；**整改承接中**——用户裁决 D-003（全部 in-scope 分批）+ 结构裁决（整改子目标为 GOAL-015 下级，渐进添加；E-005/A-006）；多次关门尝试（E-002/A-003、E-004/A-005）均被用户否决/修正；无代码改动；go 无影响不暂挂 |
+| W14 | GOAL-015-w14-user-perspective-review | **done**（8/8 · 2026-08-17） | 真实用户视角审视 + 整改承接；权威见 goal-tree / workspace |
+| W17 | GOAL-028-w17-cron-preview-field-binding | **active**（3/4 · 2026-08-18） | 承接 GOAL-024 A-005 F-004：Cron 表单字段绑定 + 中文 describeCron |
 | W14-批A | GOAL-016-w14-rectification-batch-a（**GOAL-015 下级**） | **active**（0/4 · 2026-08-17 立项） | 整改批 A：F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey；由 W14 用户裁决（D-003）+ GOAL-015 路线图立项；批 C/D/B 渐进添加 |
 
 ## 整改路线图（由 W14 用户裁决 D-003 派生 · 子目标挂 GOAL-015 下）
