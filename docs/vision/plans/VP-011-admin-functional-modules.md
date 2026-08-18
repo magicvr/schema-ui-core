@@ -6,8 +6,8 @@ status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-011-admin-functional-modules
 created: 2026-08-14
-updated: 2026-08-14
-version: 0.2.0
+updated: 2026-08-18
+version: 0.3.0
 parent: null
 ---
 
@@ -31,6 +31,19 @@ parent: null
 | **一等公民** | 业界普遍存在、几乎所有 Admin 都需要、且当前基架尚未覆盖的核心能力 | 第一批次（第一波） |
 | **常用** | 高频使用但非普遍必备 | 第二批次（第二波） |
 | **增补** | 低频、按需，可由后续 fork 项目按需启用 | 增补 backlog（按触发条件立项） |
+
+### 能力分层边界（2026-08-18 · VRev-027 响应）
+
+本 VP 的**三档方法论只用于“可见功能/页面模块”**。规划与审视时另使用**四档能力地图**，以避免把横切基架、平台接缝和未来业务域全部堆进本 VP 的 S/B 编号：
+
+| 档 | 含义 | 处置 |
+|----|------|------|
+| **Tier A · Admin 基架规划** | 身份/安全/审计/并发/运维/配置迁移等通用基架能力 | 作为路线图登记；实现时按门禁与触发条件分流到 VP-009/VP-010 或未来平台 VP，不默认作为本 VP 功能模块 |
+| **Tier B · 扩展接缝** | 领域事件、通知 Transport、SSO、Approval、Entitlement、多组织上下文等 | 预留接口/接缝；出现真实触发条件后再实现，不提前做完整框架 |
+| **Tier C · Admin 体验增强** | 全局搜索、Saved Views、批量任务结果、统一错误恢复等 | 后续体验波次；按用户/产品触发立项 |
+| **Tier D · 真实业务领域** | Catalog、库存、订单/支付/退款、物流、营销、订阅、工单、CMS 等 | 保持领域问题留领域台账；只有业务成立后再独立立项 |
+
+**横切基架问题不自动进入本 VP**：correlation、并发、异步 Job、配置迁移、审计 retention 等共享基架/平台契约，按与 VP-009/VP-010 的边界分流；不得用本 VP 的模块编号替代平台层治理。详细四档地图与推进顺序见 lead workspace Root 附件 `I-011-002-cross-module-roadmap.md`。
 
 ### 与相邻 VP 的边界
 
@@ -103,3 +116,4 @@ parent: null
 | 2026-08-14 | 阻断项 1 闭合（VR-020 editorial pin bump）；阻断项 2、3 交 `/govern` |
 | 2026-08-14 | `/govern` 完成：W5 归档（VP-009 goal-tree / VP-010 GOAL-006 done）、W6 修复 F-1a/b/c（GOAL-007 done，V-007 exit 8 + V-008 exit 0 完整绿）、checkpoint `f14ab9d` |
 | 2026-08-14 | **消费前 freshness review 第二轮：PASS → `go` 可消费**（候选 `f14ab9d`；V-001～V-008 全绿）；用户确认激活（VR-021） |
+| 2026-08-18 | VRev-027 响应（editorial）：增加“能力分层边界”，明确三档只用于功能模块、四档能力地图为路线图登记、横切基架问题不自动进入本 VP；版本 0.3.0 |

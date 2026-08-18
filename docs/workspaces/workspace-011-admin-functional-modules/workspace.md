@@ -10,8 +10,8 @@ plan_refs:
   - VP-011-admin-functional-modules
 primary_plan: VP-011-admin-functional-modules
 created: 2026-08-14
-updated: 2026-08-17
-version: 0.1.8
+updated: 2026-08-18
+version: 0.1.9
 parent: null
 ---
 
@@ -51,6 +51,7 @@ F-007（上传授权深度）deferred residual 由本 VP 消费时手递（owner
 | R4 | 表单体验 form-experience（字段级校验/错误展示 + 弹窗布局，用户 2026-08-14 裁决，GOAL-014） | **done**（5/5 · 2026-08-14 关门：fieldErrors 服务端+回显、提交前校验/内联、单列布局；A-003 fail → F-001/F-002 fixed 后关门） |
 | R4 | 数据字典内页 + 面包屑层级导航（GOAL-015-dict-inner-page-breadcrumb，用户 2026-08-14 裁决） | **done**（5/5 · 2026-08-14 关门） |
 | R4 | 增补 backlog B-01～B-11（登记 + 触发条件） | 已登记（I-011-001 §5） |
+| R5 | 四档能力地图与跨模块路线图登记（Tier A/B/C/D；非立即实施） | 已登记（I-011-002 · VRev-027 · VP-011 v0.3.0） |
 
 ## 固定共享资料引用
 

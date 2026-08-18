@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-08-14
-updated: 2026-08-17
-version: 0.4.0
+updated: 2026-08-18
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-001
@@ -18,3 +18,4 @@ version: 0.4.0
 | E-002 | 2026-08-17 | R3 第四批批末统一验证尝试（环境受阻，未完成） | recorded | [E-002-r3-batch4-verification-blocked.md](02-execution/E-002-r3-batch4-verification-blocked.md) |
 | E-003 | 2026-08-17 | R3 第四批批末统一验证（V-001～V-006 绿；V-007/V-008 环境受阻） | recorded | [E-003-r3-batch4-verification-partial.md](02-execution/E-003-r3-batch4-verification-partial.md) |
 | E-004 | 2026-08-17 | R3 第四批批末统一验证完成（V-001～V-008 全绿） | recorded | [E-004-r3-batch4-verification-complete.md](02-execution/E-004-r3-batch4-verification-complete.md) |
+| E-005 | 2026-08-18 | 四档能力地图与跨模块路线图登记（VRev-027 响应） | recorded | [E-005-cross-module-roadmap-registration.md](02-execution/E-005-cross-module-roadmap-registration.md) |
