@@ -19,3 +19,4 @@ version: 0.1.0
 | E-003 | 2026-08-19 | 响应 A-002 设计 findings | recorded | [E-003-r6-a002-response.md](02-execution/E-003-r6-a002-response.md) |
 | E-004 | 2026-08-19 | R6 S0 关门与 S1 放行 | recorded | [E-004-r6-s0-close.md](02-execution/E-004-r6-s0-close.md) |
 | E-005 | 2026-08-19 | R6 S1/S2 实施与全量验证 | recorded | [E-005-r6-s1-s2-implementation.md](02-execution/E-005-r6-s1-s2-implementation.md) |
+| E-006 | 2026-08-19 | R6 A-007 整改与全量回归 | recorded | [E-006-r6-a007-remediation.md](02-execution/E-006-r6-a007-remediation.md) |

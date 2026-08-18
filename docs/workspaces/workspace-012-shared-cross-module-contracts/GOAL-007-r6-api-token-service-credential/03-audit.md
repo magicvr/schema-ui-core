@@ -20,8 +20,9 @@ version: 0.1.0
 | A-004 | 2026-08-19 | independent | A-002 F-001～F-007 finding-closure；D-003；A-003 | pass | 0（F-001～F-007 fixed） | [A-004-r6-a002-closure-independent.md](03-audit/A-004-r6-a002-closure-independent.md) |
 | A-005 | 2026-08-19 | self | response：A-004 pass；R6 S0 close / I-002～I-004 verification | pass | 0 | [A-005-r6-s0-close-response.md](03-audit/A-005-r6-s0-close-response.md) |
 | A-006 | 2026-08-19 | self | R6 S1/S2 实施：migration/repository/principal/API/scope/audit/R5 gate/不变式 | pass | 0（S3 independent 待执行） | [A-006-r6-s1-s2-self.md](03-audit/A-006-r6-s1-s2-self.md) |
-| A-007 | 2026-08-19 | independent | R6 S3 close-out：D-003、aa00f33/ce8d952/1864f49/2a2d0dd、E-005、A-006；secret/hash、0044/0045、事务 audit、prefix、ceiling、user-only、R5、不变式 | conditional | 1（F-001 med：create 字段 `token` vs 冻结 `secret`） | [A-007-r6-s3-closeout-independent.md](03-audit/A-007-r6-s3-closeout-independent.md) |
+| A-007 | 2026-08-19 | independent | R6 S3 close-out：D-003、aa00f33/ce8d952/1864f49/2a2d0dd、E-005、A-006；secret/hash、0044/0045、事务 audit、prefix、ceiling、user-only、R5、不变式 | conditional | 0（F-001～F-005 实现整改见 A-008；待 independent 复核） | [A-007-r6-s3-closeout-independent.md](03-audit/A-007-r6-s3-closeout-independent.md) |
+| A-008 | 2026-08-19 | self | response：A-007 F-001～F-005；提交 b6ebfec；整改后全量回归 | pass | 0（S3 仍待 independent finding-closure） | [A-008-r6-a007-response.md](03-audit/A-008-r6-a007-response.md) |
 
 ## 当前状态
 
-S0 已关闭；S1/S2 已有 E-005 实施与验证事实，A-006 self `pass`。S3 independent A-007 verdict=`conditional`，开放 required=1（F-001）。本索引不改目标 `status`/`progress`；响应与关门由 `/govern` 处理。
+S0 已关闭；S1/S2 已有 E-005 实施与验证事实。A-008 已响应 A-007，并以提交 `b6ebfec` 与整改后全量回归将 F-001～F-005 记为实现侧 fixed；S3 仍等待 independent finding-closure 复核。本索引不改目标 `status`/`progress`；响应与关门由 `/govern` 处理。
