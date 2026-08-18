@@ -1,7 +1,7 @@
 ---
 id: GOAL-028-w17-cron-preview-field-binding
 title: 决策记录 · W17 · Cron 字段绑定与中文 describeCron
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-18
 updated: 2026-08-18

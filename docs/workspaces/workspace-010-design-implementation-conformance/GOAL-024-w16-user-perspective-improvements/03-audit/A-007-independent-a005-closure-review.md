@@ -78,7 +78,8 @@ A-005 的 required 鉴权缺口已补。残余：异步 `window.open` 可能被�
 |------|-----|
 | level | recommended |
 | severity | med |
-| status | open |
+| status | fixed |
+| closure | A-009 / GOAL-028 A-001（W17） |
 | evidence | `cron-preview.tsx` 独立输入 + 400ms 防抖；`scheduled-tasks.json` 仍是页面块，不绑创建/编辑表单 `cron`；`apps/api/internal/handler/scheduledtasks.go` `describeCron` 仍返回 `"every minute"` / `"every hour at minute N"` / `"cron schedule (5-field)"`。 |
 
 A-006 把 A-005 F-004 整条标 fixed 不成立。防抖是增量，冻结方案的「字段下方即时中文语义」仍未交付。

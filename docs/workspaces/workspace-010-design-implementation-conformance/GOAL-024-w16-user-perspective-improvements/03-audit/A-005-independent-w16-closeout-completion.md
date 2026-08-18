@@ -109,8 +109,8 @@ D-001 问题是「无法在浏览器内直接预览，只能下载」。现实�
 |------|-----|
 | level | recommended |
 | severity | med |
-| status | open |
-| closure | A-008 / D-004：保持 recommended open（用户未书面 residual） |
+| status | fixed |
+| closure | A-009 / GOAL-028 A-001（W17 字段绑定 + 中文 describeCron） |
 | evidence | `cron-preview.tsx` 是独立输入+提交，无防抖、不读取任务表单 `cron` 字段；`scheduled-tasks.json` 把它挂在页面块而非 Cron 字段下方。`describeCron` 只返回 `"every minute"` / `"every hour at minute N"` / `"cron schedule (5-field)"`。D-001 要求中文人话；GOAL-027 D-001 要求字段下方防抖预览。API 与未来 3 次 `nextRuns` 本身存在且测试通过。 |
 
 ### F-005 · 父目标台账未与关门状态对齐
