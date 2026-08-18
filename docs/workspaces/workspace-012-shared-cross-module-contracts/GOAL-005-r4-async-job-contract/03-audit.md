@@ -22,7 +22,8 @@ version: 0.1.2
 | A-006 | 2026-08-18 | independent | finding-closure：A-004 F-009；D-002 v0.2.0 recover-cancel + CompleteWithCommit；I-003；S0→S1 | pass | 0（F-009 可 fixed；F-010 recommended） | [A-006-r4-f009-closure-independent.md](03-audit/A-006-r4-f009-closure-independent.md) |
 | A-007 | 2026-08-18 | self | response：A-006；S0 close / S1 release | pass | 0 | [A-007-r4-s0-close-self.md](03-audit/A-007-r4-s0-close-self.md) |
 | A-008 | 2026-08-18 | self | R4 S1 migration/repository implementation | pass | 0 | [A-008-r4-s1-self.md](03-audit/A-008-r4-s1-self.md) |
+| A-009 | 2026-08-18 | self | R4 S2 runner/recovery implementation | pass | 0 | [A-009-r4-s2-self.md](03-audit/A-009-r4-s2-self.md) |
 
 ## 当前状态
 
-S0/S1 已关闭；A-008 self = pass，开放 required/recommended = 0。S2 runner/recovery 已放行。
+S0～S2 已关闭；A-009 self = pass，开放 required/recommended = 0。S3 wallet/HTTP/lifecycle 已放行。

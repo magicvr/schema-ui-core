@@ -19,3 +19,4 @@ version: 0.1.0
 | E-003 | 2026-08-18 | R4 A-004 F-009 响应 | recorded | [E-003-r4-f009-response.md](02-execution/E-003-r4-f009-response.md) |
 | E-004 | 2026-08-18 | R4 S0 关门 | recorded | [E-004-r4-s0-close.md](02-execution/E-004-r4-s0-close.md) |
 | E-005 | 2026-08-18 | R4 S1 migration/repository 实现 | recorded | [E-005-r4-s1-implementation.md](02-execution/E-005-r4-s1-implementation.md) |
+| E-006 | 2026-08-18 | R4 S2 runner/recovery 实现 | recorded | [E-006-r4-s2-runner.md](02-execution/E-006-r4-s2-runner.md) |
