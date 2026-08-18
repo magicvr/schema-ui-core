@@ -19,7 +19,8 @@ version: 0.1.0
 | A-003 | 2026-08-19 | self | response：A-002 F-001～F-007；D-003 修订契约 | pass | 0（F-001～F-003 fixed 见 A-004） | [A-003-r6-a002-response.md](03-audit/A-003-r6-a002-response.md) |
 | A-004 | 2026-08-19 | independent | A-002 F-001～F-007 finding-closure；D-003；A-003 | pass | 0（F-001～F-007 fixed） | [A-004-r6-a002-closure-independent.md](03-audit/A-004-r6-a002-closure-independent.md) |
 | A-005 | 2026-08-19 | self | response：A-004 pass；R6 S0 close / I-002～I-004 verification | pass | 0 | [A-005-r6-s0-close-response.md](03-audit/A-005-r6-s0-close-response.md) |
+| A-006 | 2026-08-19 | self | R6 S1/S2 实施：migration/repository/principal/API/scope/audit/R5 gate/不变式 | pass | 0（S3 independent 待执行） | [A-006-r6-s1-s2-self.md](03-audit/A-006-r6-s1-s2-self.md) |
 
 ## 当前状态
 
-S0 已关闭：A-001 self pass、A-002 conditional、A-003 response、A-004 independent closure pass、A-005 self close；A-002 F-001～F-007 全部 `fixed`，required=0。D-003 已 accepted，I-002～I-004 已 verified，progress=25%（1/4）；S1 已放行，尚无实施完成结论。
+S0 已关闭；S1/S2 已有 E-005 实施与验证事实，A-006 self `pass`、required=0。A-001 recommended F-001～F-003 已以 repository/API/user-only/R5/Profile/Manifest 测试证据覆盖。progress=75%（3/4）；S3 independent 关门审计待执行，目标仍 active。
