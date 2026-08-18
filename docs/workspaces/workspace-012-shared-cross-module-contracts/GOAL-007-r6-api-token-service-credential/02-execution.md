@@ -15,3 +15,4 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-19 | R6 认证、权限、审计与协议现状扫描 | recorded | [E-001-r6-contract-scan.md](02-execution/E-001-r6-contract-scan.md) |
+| E-002 | 2026-08-19 | R6 精确契约与 self 设计审计 | recorded | [E-002-r6-design-self.md](02-execution/E-002-r6-design-self.md) |

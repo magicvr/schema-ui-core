@@ -15,3 +15,4 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-19 | R6 机器凭据初始边界 | proposed | [D-001-r6-initial-boundary.md](01-decision/D-001-r6-initial-boundary.md) |
+| D-002 | 2026-08-19 | R6 精确机器凭据契约 | proposed | [D-002-r6-precise-contract.md](01-decision/D-002-r6-precise-contract.md) |
