@@ -79,3 +79,43 @@ func TestOperationalGatePreservesUnknownAndMethodMismatch(t *testing.T) {
 		t.Fatalf("method mismatch status = %d, want 405", mismatch.Code)
 	}
 }
+
+func TestOperationalGateCoversAllMutationMethods(t *testing.T) {
+	methods := []string{http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete}
+	mux := http.NewServeMux()
+	for _, method := range methods {
+		mux.Handle(method+" /api/mutation", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		}))
+	}
+	h := WithOperationalGate(&config.Config{RuntimeMode: config.RuntimeModeReadOnly}, mux, WithJSONRouteErrors(mux))
+	for _, method := range methods {
+		t.Run(method, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			h.ServeHTTP(recorder, httptest.NewRequest(method, "/api/mutation", nil))
+			if recorder.Code != http.StatusServiceUnavailable {
+				t.Fatalf("%s status = %d, want 503", method, recorder.Code)
+			}
+		})
+	}
+}
+
+func TestOperationalGateAllowsEveryRecoveryPath(t *testing.T) {
+	paths := []string{"/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/mfa/verify", "/api/account/password"}
+	mux := http.NewServeMux()
+	for _, path := range paths {
+		mux.Handle("POST "+path, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		}))
+	}
+	h := WithOperationalGate(&config.Config{RuntimeMode: config.RuntimeModeMaintenance}, mux, WithJSONRouteErrors(mux))
+	for _, path := range paths {
+		t.Run(path, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			h.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, path, nil))
+			if recorder.Code != http.StatusNoContent {
+				t.Fatalf("%s status = %d, want 204", path, recorder.Code)
+			}
+		})
+	}
+}

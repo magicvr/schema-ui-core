@@ -143,20 +143,23 @@ func TestLoadRuntimeModePrecedenceAndFailClosed(t *testing.T) {
 		}
 	})
 	for _, tc := range []struct {
-		name  string
-		yaml  string
-		env   string
+		name   string
+		yaml   string
+		env    string
+		setEnv bool
 	}{
 		{name: "empty yaml", yaml: "runtime:\n  mode: \"\"\n"},
 		{name: "unknown yaml", yaml: "runtime:\n  mode: paused\n"},
-		{name: "empty env", yaml: "", env: ""},
-		{name: "unknown env", yaml: "", env: "paused"},
+		{name: "empty env", env: "", setEnv: true},
+		{name: "unknown env", env: "paused", setEnv: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.yaml != "" {
 				writeConfig(t, tc.yaml)
 			}
-			t.Setenv("RUNTIME_MODE", tc.env)
+			if tc.setEnv {
+				t.Setenv("RUNTIME_MODE", tc.env)
+			}
 			cfg := Load()
 			if cfg.LoadError == nil {
 				t.Fatalf("invalid runtime mode %q must set LoadError", tc.env)
@@ -707,4 +710,3 @@ app:
 		}
 	})
 }
-
