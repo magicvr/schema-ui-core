@@ -6,7 +6,7 @@ parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
 version: 0.1.0
-progress: 25
+progress: 50
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -38,8 +38,8 @@ R5 建立跨模块运行态契约与统一写边界。后端应能公开表达 `
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | S0 | 现状扫描、信息门禁、模式/优先级/投影边界冻结与设计审计 | ✅ 已完成（A-001 pass / A-002 conditional findings fixed / A-004 pass） |
-| S1 | 运行态配置、校验与 bootstrap/status 契约实现 | 进行中 |
-| S2 | 统一写门禁、稳定错误码及核心/模块路由验证 | 未开始 |
+| S1 | 运行态配置、校验与 bootstrap/status 契约实现 | ✅ 已完成（c4856f2；config/handler/composition/system-monitoring 全量通过） |
+| S2 | 统一写门禁、稳定错误码及核心/模块路由验证 | 进行中 |
 | S3 | system-monitoring/Host 消费、全量验证、独立审计与关门 | 未开始 |
 
 ## 成功标准
@@ -54,9 +54,9 @@ R5 建立跨模块运行态契约与统一写边界。后端应能公开表达 `
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 是否已有统一运行态、写边界与可复用消费者 | S0 方案 | S0 结束前 | 扫描 config/server/composition/handler/Host/status | verified | 2026-08-18 | E-001：后端无统一实现；最终 handler 是共同边界；Host bootstrap 与 system-monitoring 可消费 |
-| I-002 | required | 四种模式各自的写阻断、HTTP 状态/错误码和重试语义 | S1/S2 实施 | S0 结束前 | D-003 修订精确表 + A-004 independent closure | verified | 2026-08-18 | D-003；A-004：F-002 fixed |
+| I-002 | required | 四种模式各自的写阻断、HTTP 状态/错误码和重试语义 | S1/S2 实施 | S0 结束前 | D-003 修订精确表 + A-004 independent closure + S1 tests | verified | 2026-08-18 | D-003；A-004：F-002 fixed；S1 operational/bootstrap tests |
 | I-003 | required | 认证/权限错误与运行态门禁的优先级，以及 public/auth/probe 豁免 | S2 实施 | S0 结束前 | 列举路由类别并用黑盒测试矩阵验证 | verified | 2026-08-18 | D-003；A-004：设计证据足够，实施仍须测试 |
-| I-004 | required | read-only/degraded 如何投影到既有 Host availability，且不引入未知 capability | S1/S3 实施 | S0 结束前 | 核对 bootstrap validator/capability registry 并冻结兼容映射 | verified | 2026-08-18 | D-003；A-004：F-001 fixed |
+| I-004 | required | read-only/degraded 如何投影到既有 Host availability，且不引入未知 capability | S1/S3 实施 | S0 结束前 | 核对 bootstrap validator/capability registry 并冻结兼容映射 | verified | 2026-08-18 | D-003；A-004：F-001 fixed；bootstrap projection tests |
 | I-005 | required | 审计模式与 provider | S3 关门 | S1 实施前 | 按跨模块共同门禁/兼容性风险分级 | verified | 2026-08-18 | 模式 cross；self + 项目级 grok-build（grok-4.6 reasoning high）independent |
 
 ## 父目标

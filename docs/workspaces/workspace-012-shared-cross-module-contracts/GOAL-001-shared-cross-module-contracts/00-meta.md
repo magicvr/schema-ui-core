@@ -28,7 +28,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | R2 | **审计事件模型增强**：结构化 diff、敏感字段脱敏、correlation 关联 | 依赖 R1 | ✅ 已完成（GOAL-003-r2-audit-event-model；A-006 pass / A-007 closed） |
 | R3 | **乐观并发 + 幂等契约**：expectedVersion / ETag / 409 / idempotency_key | 依赖 R1 | ✅ 已完成（GOAL-004-r3-optimistic-concurrency-idempotency；A-004 pass / A-005 closed） |
 | R4 | **异步 Job / 长操作契约**：状态机、进度、重试、取消 | 依赖 R1/R3 | ✅ 已完成（GOAL-005-r4-async-job-contract；A-012 pass / A-013 closed） |
-| R5 | **maintenance / degraded / read-only 门控** | 依赖 R1 | 进行中（GOAL-006-r5-maintenance-read-only-gate；S1） |
+| R5 | **maintenance / degraded / read-only 门控** | 依赖 R1 | 进行中（GOAL-006-r5-maintenance-read-only-gate；S2） |
 | R6 | **API Token / Service Credential** | 依赖 R2 审计模型 | 未开始 |
 
 ## 成功标准（方向级）

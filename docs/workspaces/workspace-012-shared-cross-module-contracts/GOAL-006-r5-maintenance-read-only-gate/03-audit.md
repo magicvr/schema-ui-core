@@ -18,7 +18,8 @@ version: 0.1.2
 | A-002 | 2026-08-18 | independent | R5 S0：四模式、写门禁/认证优先级、错误语义、bootstrap/status 投影、不变式、I-002～I-004 | conditional | 2（F-001 high / F-002 med；闭合见 A-004） | [A-002-r5-s0-design-independent.md](03-audit/A-002-r5-s0-design-independent.md) |
 | A-003 | 2026-08-18 | self | response：A-002 F-001/F-002；D-003 修订契约 | pass | 0 | [A-003-r5-a002-response.md](03-audit/A-003-r5-a002-response.md) |
 | A-004 | 2026-08-18 | independent | A-002 F-001/F-002 finding-closure；D-003；I-002～I-004；装配/协议不变式 | pass | 0（F-001/F-002 fixed） | [A-004-r5-a002-closure-independent.md](03-audit/A-004-r5-a002-closure-independent.md) |
+| A-005 | 2026-08-18 | self | R5 S1：runtime config、bootstrap/status projection、兼容/非回归测试 | pass | 0 | [A-005-r5-s1-self.md](03-audit/A-005-r5-s1-self.md) |
 
 ## 当前状态
 
-S0 已关闭：A-001 self、A-002 independent、A-003 response 与 A-004 independent closure 均已落盘。A-002 F-001/F-002 为 fixed，required=0；I-002～I-004 已 verified，D-003 accepted，S1 已放行。
+S0 已关闭且 S1 已完成：A-005 self 为 pass，required=0。R5 当前进入 S2；S2 的写门禁黑盒矩阵尚未完成。
