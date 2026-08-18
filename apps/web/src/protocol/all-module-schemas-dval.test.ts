@@ -35,16 +35,22 @@ function collectSchemaFiles(): Array<{ module: string; file: string; abs: string
 }
 
 describe("W15 A-004 schema wiring (shipped page documents)", () => {
-	it("my-wallet.json declares POST /api/wallet/me as openWallet", () => {
+	it("my-wallet.json lazy-opens via wallet-ensure and keeps POST /api/wallet/me", () => {
 		const abs = resolve(MODULES, "wallet/schema/my-wallet.json");
 		const doc = JSON.parse(readFileSync(abs, "utf8")) as {
 			actions?: { openWallet?: { method?: string; url?: string } };
-			body?: { children?: Array<{ props?: { toolbar?: Array<{ actionRef?: string }> } }> };
+			body?: {
+				children?: Array<{
+					component?: string;
+					props?: { toolbar?: Array<{ actionRef?: string }> };
+				}>;
+			};
 		};
 		expect(doc.actions?.openWallet?.method).toBe("POST");
 		expect(doc.actions?.openWallet?.url).toBe("/api/wallet/me");
+		expect(doc.body?.children?.some((c) => c.component === "wallet-ensure")).toBe(true);
 		const toolbar = doc.body?.children?.flatMap((c) => c.props?.toolbar ?? []) ?? [];
-		expect(toolbar.some((item) => item.actionRef === "openWallet")).toBe(true);
+		expect(toolbar.some((item) => item.actionRef === "openWallet")).toBe(false);
 	});
 
 	it("account.json sessions table exposes current, userAgent, and ip", () => {

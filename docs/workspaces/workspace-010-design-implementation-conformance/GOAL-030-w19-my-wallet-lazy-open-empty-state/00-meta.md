@@ -1,12 +1,12 @@
 ---
 id: GOAL-030-w19-my-wallet-lazy-open-empty-state
 title: W19 · 我的钱包惰性开通与未开户空态
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.0
-progress: 3/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-030 · W19 · 我的钱包惰性开通与未开户空态
@@ -23,9 +23,9 @@ VP-010 / workspace-010 的**第十九波**：修正「我的钱包」新用户�
 - [x] **S1 · 方案冻结**：D-001。
 - [x] **S2 · 实施**：`wallet-ensure` + 空态（E-002）。
 - [x] **S3 · 定向验证**：Web 73/73 + `tsc`（E-003）。
-- [ ] **S4 · 自审与关门**：self。
+- [x] **S4 · 自审与关门**：A-001 self pass；goal-tree / workspace 同步（E-004）。
 
-progress: 四个等权检查点；当前 **3/4**。
+progress: 四个等权检查点；当前 **4/4**。
 
 ## 审计策略
 
