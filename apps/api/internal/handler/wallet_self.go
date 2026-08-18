@@ -104,7 +104,7 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 // selfIdentity resolves the session user (401 when absent). The self-service
 // surface is identity-only: no permission key, never a client-supplied owner.
 func selfIdentity(w http.ResponseWriter, r *http.Request) (account.User, bool) {
-	user, ok := auth.IdentityFrom(r.Context())
+	user, ok := auth.UserIdentityFrom(r.Context())
 	if !ok {
 		writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 		return account.User{}, false

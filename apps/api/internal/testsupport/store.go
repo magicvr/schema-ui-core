@@ -64,6 +64,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// W4 P0-2: files.write is a central shared-capability permission
 		// (upload endpoint is centrally registered), admin-only by default.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.server-registration", Key: "files.write"}, Permission: "files.write", Resource: "files", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.auth-session", Key: "service-credentials.read"}, Permission: "service-credentials.read", Resource: "service-credentials", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.auth-session", Key: "service-credentials.write"}, Permission: "service-credentials.write", Resource: "service-credentials", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		// F-03 (GOAL-005): admin.account enable/disable keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.enable"}, Permission: "users.enable", Resource: "users", Action: "enable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.account", Key: "users.disable"}, Permission: "users.disable", Resource: "users", Action: "disable", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},

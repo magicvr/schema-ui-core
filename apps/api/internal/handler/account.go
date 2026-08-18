@@ -19,7 +19,7 @@ func accountsHandler(mux *http.ServeMux, a *auth.Authenticator) {
 // the persisted menu grants (GOAL-006 S5 / I-006-002).
 func meHandler(a *auth.Authenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, ok := auth.IdentityFrom(r.Context())
+		user, ok := auth.UserIdentityFrom(r.Context())
 		if !ok {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 			return

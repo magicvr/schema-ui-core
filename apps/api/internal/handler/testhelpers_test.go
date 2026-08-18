@@ -15,24 +15,24 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	accountschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/schema"
 	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
-	notificationsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	datadictionaryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/schema"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	examplesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples/schema"
 	filelibraryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary/schema"
-	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
-	datadictionaryschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/schema"
-	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
-	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
-	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
-	recycleschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/schema"
-	walletschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/schema"
+	notificationsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	recycleschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/schema"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	rolesschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/schema"
+	tasksschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/schema"
+	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
 	settingsschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/schema"
+	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
 	usersschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/schema"
+	walletschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -98,6 +98,20 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	operations := operationlog.NewRepository(st)
 	settings := settingsrepository.New(st)
 	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, authRepository, devSession)
+	a.SetServiceCredentialUseRecorder(func(use auth.ServiceCredentialUse) error {
+		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
+			"credentialId": use.CredentialID, "method": use.Method, "path": use.Path,
+		})
+		if err != nil {
+			return err
+		}
+		recordID := use.CredentialID
+		return operations.RecordOperation(operationlog.Operation{
+			ID: newOperationID(), Event: operationlog.EventServiceCredentialUse,
+			ActorID: "service-credential:" + use.CredentialID, ActorName: use.Name,
+			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, CreatedAt: use.At,
+		})
+	})
 	mux := http.NewServeMux()
 	// S-11 (GOAL-011): the fake is constructed BEFORE RegisterWithReadiness so
 	// the login gate receives a live (non-nil) verifier — a typed-nil passed
@@ -130,6 +144,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(BrandingAssetRoutes(a, brandAssets, "admin.settings"))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
 	mountRoutes([]kernel.RouteContribution{OperationsExportRoute(a, operations, "admin.activity")})
+	mountRoutes(ServiceCredentialRoutes(a, authRepository, operations, "core.auth-session"))
 	a.OnLockOpened = func(userID string) {
 		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 	}
@@ -340,6 +355,7 @@ func sendJSON(t *testing.T, mux *http.ServeMux, method, path, body string) (int,
 func containsString(haystack, needle string) bool {
 	return strings.Contains(haystack, needle)
 }
+
 // testTaskRunner records a manual run row for the scheduled-tasks surface
 // (the real scheduler tick loop is exercised in the module package tests).
 type testTaskRunner struct {

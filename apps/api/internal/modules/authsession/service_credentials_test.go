@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 )
@@ -92,5 +93,48 @@ func TestServiceCredentialAuditFailureRollsBackMutation(t *testing.T) {
 	}
 	if count := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM service_credentials`); count != 0 {
 		t.Fatalf("credentials after rollback = %d, want 0", count)
+	}
+}
+
+func TestServiceCredentialConcurrentDuplicateName(t *testing.T) {
+	repository, _ := openRepository(t, "service-credential-concurrent.db", true)
+	now := time.Now().UTC()
+	credentials := []ServiceCredential{
+		{ID: "11111111111111111111111111111111", Name: "Deploy Agent", TokenPrefix: "sui_sc_11111111", TokenHash: "1111111111111111111111111111111111111111111111111111111111111111"},
+		{ID: "22222222222222222222222222222222", Name: "deploy agent", TokenPrefix: "sui_sc_22222222", TokenHash: "2222222222222222222222222222222222222222222222222222222222222222"},
+	}
+	for index := range credentials {
+		credentials[index].Scopes = []string{"users.read"}
+		credentials[index].ExpiresAt = now.Add(time.Hour)
+		credentials[index].CreatedBy = "user-admin"
+		credentials[index].CreatedAt = now
+		credentials[index].UpdatedAt = now
+	}
+	start := make(chan struct{})
+	errorsByIndex := make([]error, len(credentials))
+	var wait sync.WaitGroup
+	for index := range credentials {
+		wait.Add(1)
+		go func(index int) {
+			defer wait.Done()
+			<-start
+			errorsByIndex[index] = repository.CreateServiceCredential(credentials[index], nil)
+		}(index)
+	}
+	close(start)
+	wait.Wait()
+	successes, duplicates := 0, 0
+	for _, err := range errorsByIndex {
+		switch {
+		case err == nil:
+			successes++
+		case errors.Is(err, ErrCredentialNameTaken):
+			duplicates++
+		default:
+			t.Fatalf("unexpected concurrent create error: %v", err)
+		}
+	}
+	if successes != 1 || duplicates != 1 {
+		t.Fatalf("concurrent results successes=%d duplicates=%d errors=%v", successes, duplicates, errorsByIndex)
 	}
 }

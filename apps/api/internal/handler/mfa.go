@@ -22,12 +22,12 @@ import (
 // (module → handler direction, captcha precedent) and mapped here to the
 // frozen wire codes.
 var (
-	ErrMFAProofExpired  = errors.New("mfa: proof expired")
+	ErrMFAProofExpired   = errors.New("mfa: proof expired")
 	ErrMFAProofExhausted = errors.New("mfa: proof exhausted")
-	ErrMFAInvalid       = errors.New("mfa: code invalid")
-	ErrMFANotEnrolled   = errors.New("mfa: not enrolled")
-	ErrMFAPendingOnly   = errors.New("mfa: pending activation")
-	ErrMFAActive        = errors.New("mfa: already active")
+	ErrMFAInvalid        = errors.New("mfa: code invalid")
+	ErrMFANotEnrolled    = errors.New("mfa: not enrolled")
+	ErrMFAPendingOnly    = errors.New("mfa: pending activation")
+	ErrMFAActive         = errors.New("mfa: already active")
 )
 
 // MFASelfService is the identity-scoped self-service surface consumed by the
@@ -228,7 +228,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 // requireIdentity resolves the request identity for self-service endpoints
 // (no permission key — every authenticated user can manage their own MFA).
 func requireIdentity(w http.ResponseWriter, r *http.Request) (account.User, bool) {
-	user, ok := auth.IdentityFrom(r.Context())
+	user, ok := auth.UserIdentityFrom(r.Context())
 	if !ok {
 		writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 		return account.User{}, false

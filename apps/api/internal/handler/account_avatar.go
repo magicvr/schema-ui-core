@@ -48,7 +48,7 @@ type accountAvatarHandler struct {
 // deleted best-effort, then the new asset URL is returned.
 func (h *accountAvatarHandler) upload() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := auth.IdentityFrom(r.Context())
+		user, ok := auth.UserIdentityFrom(r.Context())
 		if !ok {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 			return

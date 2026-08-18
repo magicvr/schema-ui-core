@@ -238,6 +238,22 @@ func newMuxWithExtraProviders(
 	extra []kernel.Provider,
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
+	a.SetServiceCredentialUseRecorder(func(use auth.ServiceCredentialUse) error {
+		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
+			"credentialId": use.CredentialID,
+			"method":       use.Method,
+			"path":         use.Path,
+		})
+		if err != nil {
+			return err
+		}
+		recordID := use.CredentialID
+		return operations.RecordOperation(operationlog.Operation{
+			ID: "op-service-" + auth.NewServiceCredentialID(), Event: operationlog.EventServiceCredentialUse,
+			ActorID: "service-credential:" + use.CredentialID, ActorName: use.Name,
+			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, CreatedAt: use.At,
+		})
+	})
 	// S-11 (GOAL-011): one shared captcha service instance feeds both the login
 	// gate verifier (handler.RegisterWithReadiness) and the module provider
 	// surface (routes/settings). nil when the module is disabled.
@@ -407,20 +423,41 @@ func newMuxWithExtraProviders(
 	// owning module provider), so its files.write permission is contributed
 	// centrally here. Default grant is admin-only (PolicyAdmin); a delegated
 	// role holding files.write can still upload (RBAC委派对称).
-	set.Permissions = append(set.Permissions, kernel.PermissionContribution{
-		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.server-registration", Key: "files.write"},
-		Permission:           "files.write",
-		Resource:             "files",
-		Action:               "write",
-		PolicyID:             authsessiondata.PolicyAdmin,
-		SystemDataVersion:    authsessiondata.SystemDataVersion,
-	})
+	set.Permissions = append(set.Permissions,
+		kernel.PermissionContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.server-registration", Key: "files.write"},
+			Permission:           "files.write",
+			Resource:             "files",
+			Action:               "write",
+			PolicyID:             authsessiondata.PolicyAdmin,
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+		kernel.PermissionContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.auth-session", Key: "service-credentials.read"},
+			Permission:           "service-credentials.read",
+			Resource:             "service-credentials",
+			Action:               "read",
+			PolicyID:             authsessiondata.PolicyAdmin,
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+		kernel.PermissionContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "core.auth-session", Key: "service-credentials.write"},
+			Permission:           "service-credentials.write",
+			Resource:             "service-credentials",
+			Action:               "write",
+			PolicyID:             authsessiondata.PolicyAdmin,
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+	)
 	if err := authsessiondata.Reconcile(context.Background(), st, set.Permissions, set.Navigation); err != nil {
 		_ = st.Close()
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("reconcile system data: %v", err)}
 	}
 	st.MarkSystemDataReady()
 	for _, route := range set.Routes {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	for _, route := range handler.ServiceCredentialRoutes(a, authRepository, operations, "core.auth-session") {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
 	// R6 C6.3: finalized page contributions own both metadata and document bytes;

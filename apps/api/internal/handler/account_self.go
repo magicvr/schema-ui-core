@@ -80,7 +80,7 @@ type accountSelfHandler struct {
 }
 
 func (h *accountSelfHandler) identity(w http.ResponseWriter, r *http.Request) (account.User, bool) {
-	user, ok := auth.IdentityFrom(r.Context())
+	user, ok := auth.UserIdentityFrom(r.Context())
 	if !ok {
 		writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 		return account.User{}, false
