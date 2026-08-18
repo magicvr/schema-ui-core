@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-14
+updated: 2026-08-18
 parent: null
-version: 0.4.5
+version: 0.4.6
 ---
 
 # Charter 修订台账
@@ -35,3 +35,4 @@ version: 0.4.5
 | VR-019 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认结构选型并新建 planned `VP-011-admin-functional-modules`（标准 Admin 通用模块 + 常用业务领域分档交付；0 区）；调研回写 Root 纲领路线图而非 VP，VP 只留意图 + 三档方法论；roadmap 已落盘意图 + 后续方向同步；激活前须完成 VP-008 `go` 消费前 freshness review。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-020 | 2026-08-14 | editorial | 协议 pin bump（v2.7.0 → v2.8.0） | 用户裁决 A（editorial）：`schema-ui-docs@v2.7.0` → `v2.8.0`（additive 超集，v2.7.0 机器契约保留，新增 Host/App 互操作层）；Charter 协议来源/目标语义/成功边界 1/H-001 同步；`I-PROTO-FULL-001` v1.0.1 保留为 v2.7.0 历史分母、被 v2.8.0 覆盖；身份权威 = provenance-v2.8.json（VP-010 W3 固定）。不改 `vision_id@version`（仍 `@0.2.0`）、不重开历史 VP，**无** strategic、**无** re-align。 |
 | VR-021 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认激活 VP-011（v0.2.0 `active`，lead workspace-011-admin-functional-modules）：消费前 freshness review 第二轮 **PASS**（候选 `f14ab9d`，V-001～V-008 全绿；F-1a/b/c 由 VP-010 W6 修复；VR-020 pin bump 已对齐）；`/govern` 当日 scaffold 工作区 + Root（首阶段 = 有界调研）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-022 | 2026-08-18 | editorial | VP 关系指针 + 组合编排 | 用户确认新建并激活 VP-012（v0.1.0 `active`，lead workspace-012-shared-cross-module-contracts）：承载共享横切契约与平台基架（correlation/审计模型/并发幂等/异步 Job + maintenance 门控/API Token）；承接 VP-011 R5 中“横切契约”部分，Tier D 业务域仍按触发条件；不改变 Charter 边界或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

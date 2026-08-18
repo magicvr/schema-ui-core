@@ -1,0 +1,35 @@
+---
+title: 目标树 · workspace-012-shared-cross-module-contracts
+status: active
+created: 2026-08-18
+updated: 2026-08-18
+parent: null
+version: 0.1.0
+workspace_id: workspace-012-shared-cross-module-contracts
+---
+
+# 目标树 · 共享横切契约与平台基架
+
+> 工作区：`workspace-012-shared-cross-module-contracts`
+> canonical：`docs/workspaces/workspace-012-shared-cross-module-contracts/`
+> Root：`GOAL-001-shared-cross-module-contracts`（**交付目标 · active**）
+> primary_plan：`VP-012-shared-cross-module-contracts`（**active**）
+
+## 树
+
+```text
+GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台基架（分波交付）
+└── GOAL-002-r1-correlation-error-contract [active] · R1 correlation / request-id / 错误恢复契约
+```
+
+## 状态表
+
+| id | title | parent | status | progress | updated |
+|----|-------|--------|--------|----------|---------|
+| GOAL-001-shared-cross-module-contracts | 共享横切契约与平台基架（分波交付） | null | active | —（纲领路线图就位） | 2026-08-18 |
+| GOAL-002-r1-correlation-error-contract | R1 · correlation / request-id / 错误恢复契约 | GOAL-001-shared-cross-module-contracts | active | — | 2026-08-18 |
+
+## 维护说明
+
+- 层级唯一来源是目标 `00-meta.md` 的 `parent`。
+- 阶段子目标按 Root 纲领路线图立项；progress 只写在子目标。
