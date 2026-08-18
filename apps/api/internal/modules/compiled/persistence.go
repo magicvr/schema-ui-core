@@ -7,17 +7,18 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	accountmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/migration"
 	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
-	datadictionarymigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/migration"
-	logincaptchamigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/migration"
-	datapermissionmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/migration"
-	mfamigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa/migration"
-	recyclebinmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/migration"
-	walletmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/migration"
-	scheduledtasksmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/migration"
-	notificationsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/migration"
 	historymigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/corepersistence/migration"
+	datadictionarymigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/migration"
+	datapermissionmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/migration"
+	jobsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/jobs/migration"
+	logincaptchamigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/migration"
+	mfamigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa/migration"
+	notificationsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications/migration"
 	operationlogmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog/migration"
+	recyclebinmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/migration"
+	scheduledtasksmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/migration"
 	settingsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
+	walletmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/migration"
 )
 
 // PersistenceProviders returns all compiled migration owners. The order is not
@@ -38,6 +39,7 @@ func PersistenceProviders() []kernel.Provider {
 		historymigration.Provider{},
 		operationlogmigration.Provider{},
 		settingsmigration.Provider{},
+		jobsmigration.Provider{},
 	}
 }
 
