@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-18
 parent: null
-version: 0.39.0
+version: 0.40.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -48,10 +48,10 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-028-w17-cron-preview-field-binding [done] · W17 · Cron 字段绑定与中文 describeCron（4/4）
 ├── GOAL-029-w18-preview-copy-and-import-modal [done] · W18 · 预览弹窗/复制链接与导入模态模板（4/4）
 ├── GOAL-030-w19-my-wallet-lazy-open-empty-state [done] · W19 · 我的钱包惰性开通与未开户空态（4/4）
-└── GOAL-031-w20-notification-settings-in-account [active] · W20 · 通知设置迁入个人中心（3/4）
+└── GOAL-031-w20-notification-settings-in-account [done] · W20 · 通知设置迁入个人中心（4/4）
 ```
 
-**W20（2026-08-18 立项）**：通知设置从列表页迁到个人中心「通知」Tab。S1 已冻结。
+**W20（2026-08-18 关门，4/4）**：通知设置迁入个人中心。S1 D-001 + S2 实施 + S3 定向 + S4 A-001 self pass。Root/VP 保持 active。
 
 **W19（2026-08-18 关门，4/4）**：进页 POST 惰性开通 + WALLET_NOT_FOUND 空态。S1 D-001 + S2 实施 + S3 定向 + S4 A-001 self pass。Root/VP 保持 active。
 
@@ -124,7 +124,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-028-w17-cron-preview-field-binding | W17 · Cron 字段绑定与中文 describeCron | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-029-w18-preview-copy-and-import-modal | W18 · 预览弹窗/复制链接与导入模态模板 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-030-w19-my-wallet-lazy-open-empty-state | W19 · 我的钱包惰性开通与未开户空态 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
-| GOAL-031-w20-notification-settings-in-account | W20 · 通知设置迁入个人中心 | GOAL-001-design-implementation-conformance | active | 3/4 | 2026-08-18 |
+| GOAL-031-w20-notification-settings-in-account | W20 · 通知设置迁入个人中心 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 
 
 ## 维护说明

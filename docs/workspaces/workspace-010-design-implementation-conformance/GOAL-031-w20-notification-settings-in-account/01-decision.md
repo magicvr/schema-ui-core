@@ -1,7 +1,7 @@
 ---
 id: GOAL-031-w20-notification-settings-in-account
 title: 决策记录 · W20
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-18
 updated: 2026-08-18

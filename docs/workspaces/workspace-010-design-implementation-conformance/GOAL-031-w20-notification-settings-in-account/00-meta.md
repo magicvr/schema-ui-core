@@ -1,12 +1,12 @@
 ---
 id: GOAL-031-w20-notification-settings-in-account
 title: W20 · 通知设置迁入个人中心
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.0
-progress: 3/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-031 · W20 · 通知设置迁入个人中心
@@ -23,9 +23,9 @@ VP-010 / workspace-010 的**第二十波**：把「启用站内通知」从通�
 - [x] **S1 · 方案冻结**：D-001。
 - [x] **S2 · 实施**：schema + i18n + 契约测试（E-002）。
 - [x] **S3 · 定向验证**：dval/schema-keys + Go 通知套件 + `tsc`（E-003）。
-- [ ] **S4 · 自审与关门**：self。
+- [x] **S4 · 自审与关门**：A-001 self pass；goal-tree / workspace 同步（E-004）。
 
-progress: 四个等权检查点；当前 **3/4**。
+progress: 四个等权检查点；当前 **4/4**。
 
 ## 审计策略
 
