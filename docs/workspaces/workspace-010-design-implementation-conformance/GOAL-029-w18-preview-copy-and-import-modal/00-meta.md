@@ -1,12 +1,12 @@
 ---
 id: GOAL-029-w18-preview-copy-and-import-modal
 title: W18 · 预览弹窗/复制链接与导入模态模板
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.0
-progress: 3/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-029 · W18 · 预览弹窗/复制链接与导入模态模板
@@ -23,9 +23,9 @@ VP-010 / workspace-010 的**第十八波**：承接 [GOAL-024](../GOAL-024-w16-u
 - [x] **S1 · 方案冻结**：D-001。
 - [x] **S2 · 实施**：预览/复制 + 模态模板 + 失败提示（E-002）。
 - [x] **S3 · 定向验证**：Web 73/73 + `tsc`（E-003）。
-- [ ] **S4 · 自审与关门**：self。
+- [x] **S4 · 自审与关门**：A-001 self pass；goal-tree / workspace 同步（E-004）。
 
-progress: 四个等权检查点；当前 **3/4**。
+progress: 四个等权检查点；当前 **4/4**。
 
 ## 审计策略
 
@@ -43,5 +43,5 @@ S4 关门 `self`（可逆 UX，无安全门禁语义变化）。
 
 ## 溯源
 
-- GOAL-024 A-007 F-001 / F-002（recommended open）
+- GOAL-024 A-007 F-001 / F-002（经本波 A-001 / A-010 记 **fixed**）
 - GOAL-024 D-002 W16-F02 / W16-F03 原冻结（Lightbox / 对外直链本波不做）

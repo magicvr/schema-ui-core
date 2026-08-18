@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-17
 updated: 2026-08-18
-version: 0.2.3
+version: 0.2.4
 ---
 
 # 审计记录 · GOAL-024 · W16 · 真实用户视角未计划改进项台账与规划
@@ -22,9 +22,10 @@ version: 0.2.3
 | [A-004](03-audit/A-004-independent-w16-completion-audit.md) | independent | 2026-08-17 | GOAL-024 整体完成情况与 W16-F01～W16-F10 落地核实 | pass | 0 | 10项改进点均有代码与测试证据，子目标批 A/B/C 全部完成，全量回归通过 |
 | [A-005](03-audit/A-005-independent-w16-closeout-completion.md) | independent | 2026-08-18 | GOAL-024 全目标完成情况与 W16-F01～W16-F10 落地核实 | fail | 0（required 已 fixed；F-004 经 A-009 / W17 亦 fixed） | 规划与批 A/C 大部可核对；当时 F02 预览无鉴权、F03 导入前端缺失 |
 | [A-006](03-audit/A-006-self-response.md) | self | 2026-08-18 | 响应 A-005（冲突裁决与 required 闭合） | pass | 0 | 用户裁决采纳 A-005；F-001/F-002 required fixed；F-003/F-005 fixed；F-004 原误标已由 A-008 撤回 |
-| [A-007](03-audit/A-007-independent-a005-closure-review.md) | independent | 2026-08-18 | A-005 F-001～F-005 关闭复审 | pass | 0 | A-005 两条 required 可闭合；不同意 A-006 将 A-005 F-004 标 fixed；余 recommended（blob 链接 / 模板不在模态 / Cron 未挂字段） |
+| [A-007](03-audit/A-007-independent-a005-closure-review.md) | independent | 2026-08-18 | A-005 F-001～F-005 关闭复审 | pass | 0 | A-005 两条 required 可闭合；F-001/F-002 经 A-010 / W18 亦 fixed；F-003 经 A-009 / W17 fixed |
 | [A-008](03-audit/A-008-self-a007-response.md) | self | 2026-08-18 | 响应 A-007 | pass | 0 | A-005 F-001/F-002 记 fixed；A-005 F-004 当时保持 recommended open；A-007 F-001～F-003 保持 open |
-| [A-009](03-audit/A-009-self-w17-f004-closure.md) | self | 2026-08-18 | 响应 W17：闭合 A-005 F-004 / A-007 F-003 | pass | 0 | GOAL-028 交付后 F-004/F-003 记 fixed；A-007 F-001/F-002 仍 recommended open |
+| [A-009](03-audit/A-009-self-w17-f004-closure.md) | self | 2026-08-18 | 响应 W17：闭合 A-005 F-004 / A-007 F-003 | pass | 0 | GOAL-028 交付后 F-004/F-003 记 fixed |
+| [A-010](03-audit/A-010-self-w18-f001-f002-closure.md) | self | 2026-08-18 | 响应 W18：闭合 A-007 F-001 / F-002 | pass | 0 | GOAL-029 交付后 A-007 F-001/F-002 记 fixed |
 
 ## A-007 响应（编排器）
 
@@ -35,6 +36,6 @@ version: 0.2.3
 | A-005 F-003 调账二次确认 | recommended | **fixed**（维持 A-006 / A-007） | closed |
 | A-005 F-004 Cron 字段 + 中文 | recommended | **fixed**（A-009 / GOAL-028 A-001） | closed |
 | A-005 F-005 台账残留 | recommended | **fixed**（维持 A-006 / A-007） | closed |
-| A-007 F-001 blob / `window.open` | recommended | 保持 open | open |
-| A-007 F-002 模板不在模态 | recommended | 保持 open | open |
+| A-007 F-001 blob / `window.open` | recommended | **fixed**（A-010 / GOAL-029 A-001） | closed |
+| A-007 F-002 模板不在模态 | recommended | **fixed**（A-010 / GOAL-029 A-001） | closed |
 | A-007 F-003 同 A-005 F-004 | recommended | **fixed**（A-009 / GOAL-028 A-001） | closed |

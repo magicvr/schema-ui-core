@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-18
-version: 0.35.0
+version: 0.36.0
 parent: null
 ---
 
@@ -72,7 +72,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W16-批B | GOAL-026-w16-rectification-batch-b（**GOAL-024 下级**） | **done**（4/4 · 2026-08-17：F02/F03/F04 实施、Go/Web 全量回归、关门 A-001） |
 | W16-批C | GOAL-027-w16-rectification-batch-c（**GOAL-024 下级**） | **done**（4/4 · 2026-08-17：F05/F06/F09/F10 实施、Go/Web 全量回归、关门 A-001） |
 | W17 | GOAL-028-w17-cron-preview-field-binding | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
-| W18 | GOAL-029-w18-preview-copy-and-import-modal | **active**（3/4 · 2026-08-18：S1～S3；待 S4 自审关门） |
+| W18 | GOAL-029-w18-preview-copy-and-import-modal | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 
 
 ## 固定共享资料引用

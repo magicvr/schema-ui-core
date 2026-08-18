@@ -56,7 +56,8 @@ version: 0.1.0
 |------|-----|
 | level | recommended |
 | severity | med |
-| status | open |
+| status | fixed |
+| closure | A-010 / GOAL-029 A-001（W18） |
 | evidence | `apps/web/src/renderer/render.tsx`：`await fetcher` 之后 `window.open(objectUrl)`；`library.copyLink` 写入 `blob:`；两端均未 `revokeObjectURL`。 |
 
 A-005 的 required 鉴权缺口已补。残余：异步 `window.open` 可能被弹窗拦截（本轮未浏览器点验）；`blob:` 不能作为可分享/可粘贴到外部的文件 URL；大文件 object URL 未释放。冻结方案中的 Lightbox 仍未做。不阻断 A-005 F-001 required 闭合。
@@ -67,7 +68,8 @@ A-005 的 required 鉴权缺口已补。残余：异步 `window.open` 可能被�
 |------|-----|
 | level | recommended |
 | severity | low |
-| status | open |
+| status | fixed |
+| closure | A-010 / GOAL-029 A-001（W18） |
 | evidence | `users.json` `import-template-block` 在页面 `body`，`openImport` 模态仍只有 `file` 字段；仓库内无 `data-import-error-rows` / 导入 200 `fieldErrors` 的 vitest。`import-template-download.tsx` 在 `!response.ok` 时静默返回。 |
 
 用户已能在用户页下载模板，导入失败行可在模态内看到。与 D-001/GOAL-026 D-001「模态内链接」不完全一致，但不构成再开 required。
