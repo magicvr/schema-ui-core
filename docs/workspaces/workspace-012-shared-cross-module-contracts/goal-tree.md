@@ -22,7 +22,7 @@ GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台�
 ├── GOAL-002-r1-correlation-error-contract [done] · R1 correlation / request-id / 错误恢复契约
 ├── GOAL-003-r2-audit-event-model [done]   · R2 审计事件模型增强
 ├── GOAL-004-r3-optimistic-concurrency-idempotency [done]   · R3 乐观并发与幂等契约
-└── GOAL-005-r4-async-job-contract [active]                  · R4 异步 Job / 长操作契约
+└── GOAL-005-r4-async-job-contract [done]                    · R4 异步 Job / 长操作契约
 ```
 
 ## 状态表
@@ -33,7 +33,7 @@ GOAL-001-shared-cross-module-contracts [active]  · 共享横切契约与平台�
 | GOAL-002-r1-correlation-error-contract | R1 · correlation / request-id / 错误恢复契约 | GOAL-001-shared-cross-module-contracts | done | — | 2026-08-18 |
 | GOAL-003-r2-audit-event-model | R2 · 审计事件模型增强 | GOAL-001-shared-cross-module-contracts | done | — | 2026-08-18 |
 | GOAL-004-r3-optimistic-concurrency-idempotency | R3 · 乐观并发与幂等契约 | GOAL-001-shared-cross-module-contracts | done | — | 2026-08-18 |
-| GOAL-005-r4-async-job-contract | R4 · 异步 Job / 长操作契约 | GOAL-001-shared-cross-module-contracts | active | 80%（4/5） | 2026-08-18 |
+| GOAL-005-r4-async-job-contract | R4 · 异步 Job / 长操作契约 | GOAL-001-shared-cross-module-contracts | done | 100%（5/5） | 2026-08-18 |
 
 ## 维护说明
 

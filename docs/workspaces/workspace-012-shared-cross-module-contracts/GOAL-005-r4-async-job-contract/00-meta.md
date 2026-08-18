@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-async-job-contract
 title: R4 · 异步 Job / 长操作契约
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.1
-progress: 80
+version: 0.2.0
+progress: 100
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -42,7 +42,7 @@ R4 建立不绑定具体业务域的异步 Job 契约，覆盖 `queued / running
 | S1 | Job contract、migration、repository 与状态转换测试 | ✅ 已完成（2013e7f / e670b56；A-008 pass） |
 | S2 | runner、取消/重试/恢复与测试 | ✅ 已完成（c8305bb；A-009 pass） |
 | S3 | wallet reconcile 异步消费与 HTTP/result 契约测试 | ✅ 已完成（3ce848b；A-010 pass） |
-| S4 | 全量验证、自审、independent 审计与关门 | 进行中 |
+| S4 | 全量验证、自审、independent 审计与关门 | ✅ 已完成（A-011 self pass；A-012 independent pass；A-013 response） |
 
 ## 成功标准
 

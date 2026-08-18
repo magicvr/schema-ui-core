@@ -22,3 +22,4 @@ version: 0.1.0
 | E-006 | 2026-08-18 | R4 S2 runner/recovery 实现 | recorded | [E-006-r4-s2-runner.md](02-execution/E-006-r4-s2-runner.md) |
 | E-007 | 2026-08-18 | R4 S3 wallet async Job / HTTP / lifecycle 实现 | recorded | [E-007-r4-s3-wallet-jobs.md](02-execution/E-007-r4-s3-wallet-jobs.md) |
 | E-008 | 2026-08-18 | R4 S4 全量验证与错误码契约修复 | recorded | [E-008-r4-s4-validation.md](02-execution/E-008-r4-s4-validation.md) |
+| E-009 | 2026-08-18 | R4 A-012 响应与目标关门 | recorded | [E-009-r4-close.md](02-execution/E-009-r4-close.md) |

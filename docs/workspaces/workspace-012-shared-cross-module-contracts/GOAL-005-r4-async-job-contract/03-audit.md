@@ -1,11 +1,11 @@
 ---
 id: GOAL-005-r4-async-job-contract
 doc: audit
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.5
+version: 0.2.0
 ---
 
 # 审计记录 · GOAL-005
@@ -26,7 +26,8 @@ version: 0.1.5
 | A-010 | 2026-08-18 | self | R4 S3 wallet consumer / HTTP / audit / lifecycle / migration 43 | pass | 0 | [A-010-r4-s3-self.md](03-audit/A-010-r4-s3-self.md) |
 | A-011 | 2026-08-18 | self | R4 S4 close-out：D-002、success criteria、全量 API、Profile/migration/audit 边界 | pass | 0 | [A-011-r4-s4-closeout-self.md](03-audit/A-011-r4-s4-closeout-self.md) |
 | A-012 | 2026-08-18 | independent | R4 S4 close-out：D-002 v0.2.0、四条成功标准、A-001～A-011、代码/测试/提交 | pass | 0（F-011 recommended） | [A-012-r4-s4-closeout-independent.md](03-audit/A-012-r4-s4-closeout-independent.md) |
+| A-013 | 2026-08-18 | self | response：A-012 F-011；S4 / GOAL-005 close | pass | 0 | [A-013-r4-a012-response-close.md](03-audit/A-013-r4-a012-response-close.md) |
 
 ## 当前状态
 
-S0～S3 已关闭；A-011 self = pass；A-012 independent close-out = pass。开放 required = 0；开放 recommended = F-011（HTTP/JobService 410 读路径用例，不阻断）。状态/progress/路线图变更由 `/govern` 响应本条后写入。
+S0～S4 已关闭；A-011 self 与 A-012 independent 均为 pass。A-012 F-011 已由 `7de9a0b` 补测并在 A-013 以 `fixed` 闭合；开放 required/recommended = 0。GOAL-005 已关门。
