@@ -19,7 +19,8 @@ parent: GOAL-001-design-implementation-conformance
 2. 记录决策 [D-004](../01-decision/D-004-a007-response.md)：接受 A-007 `pass`；F-001/F-002 `fixed`；F-004 保持 recommended open（不写 residual，因未给范围与复审触发）。
 3. 落盘 [A-008](../03-audit/A-008-self-a007-response.md)（`source: self` · response）。
 4. 更正 [A-006](../03-audit/A-006-self-response.md) 关闭表：A-005 F-004 由误标 `fixed` 改回 `open`。
-5. 本轮**未改产品代码**。编排器复核 `fbe7c40` 路径仍在：
+5. Git checkpoint（required 闭合后）：`7917f7e`（仅 GOAL-024 台账路径；含 A-007 落盘与本响应）。
+6. 本轮**未改产品代码**。编排器复核 `fbe7c40` 路径仍在：
    - `apps/web/src/renderer/render.tsx`：`library.preview` / `library.copyLink` 经 `fetcher` 拉 blob 再 `createObjectURL`；导入 200 `fieldErrors` 解析 + `data-import-error-rows`。
    - `apps/web/src/components/import-template-download.tsx` + `users.json` `import-template-block`。
    - `apps/web/src/components/cron-preview.tsx` 仍为独立输入 + 400ms 防抖；`scheduled-tasks.json` 仍挂页面块；`apps/api/internal/handler/scheduledtasks.go` `describeCron` 仍为英文 stub。
