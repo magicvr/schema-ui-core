@@ -46,8 +46,10 @@ import {
   evaluatePermissionTargets,
 } from "@/renderer/permissions";
 import {
+  EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
+  isWalletNotFoundError,
   readResourceApiError,
   resolveDataParamsQuery,
   type ResourceList,
@@ -2269,6 +2271,11 @@ function useDisplayData(
       })
       .catch((err: unknown) => {
         if (!cancelled) {
+          if (isWalletNotFoundError(err)) {
+            setList(EMPTY_RESOURCE_LIST);
+            setError(null);
+            return;
+          }
           setError(err instanceof Error ? err.message : String(err));
         }
       });

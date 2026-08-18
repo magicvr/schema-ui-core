@@ -5,11 +5,21 @@ import {
   deleteResource,
   fetchResourceList,
   isValidDataSource,
+  isWalletNotFoundError,
   parseResourceList,
+  ResourceApiError,
   resolveDataParamsQuery,
   updateResource,
   type ResourceList,
 } from "@/renderer/resource";
+
+describe("isWalletNotFoundError (W19)", () => {
+  it("matches only WALLET_NOT_FOUND resource errors", () => {
+    expect(isWalletNotFoundError(new ResourceApiError(404, "WALLET_NOT_FOUND", "missing"))).toBe(true);
+    expect(isWalletNotFoundError(new ResourceApiError(404, "NOT_FOUND", "missing"))).toBe(false);
+    expect(isWalletNotFoundError(new Error("WALLET_NOT_FOUND"))).toBe(false);
+  });
+});
 
 describe("buildResourceQuery (query-serialization)", () => {
   it("omits empty query", () => {

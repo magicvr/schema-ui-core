@@ -58,6 +58,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | W14 | GOAL-015-w14-user-perspective-review | **done**（8/8 · 2026-08-17） | 真实用户视角审视 + 整改承接；权威见 goal-tree / workspace |
 | W17 | GOAL-028-w17-cron-preview-field-binding | **done**（4/4 · 2026-08-18） | 承接 GOAL-024 A-005 F-004：Cron 表单字段绑定 + 中文 describeCron |
 | W18 | GOAL-029-w18-preview-copy-and-import-modal | **done**（4/4 · 2026-08-18） | 承接 GOAL-024 A-007 F-001/F-002：预览弹窗/复制链接 + 导入模态模板 |
+| W19 | GOAL-030-w19-my-wallet-lazy-open-empty-state | **active**（3/4 · 2026-08-18） | 我的钱包惰性开通（POST）+ WALLET_NOT_FOUND 空态 |
 | W14-批A | GOAL-016-w14-rectification-batch-a（**GOAL-015 下级**） | **active**（0/4 · 2026-08-17 立项） | 整改批 A：F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey；由 W14 用户裁决（D-003）+ GOAL-015 路线图立项；批 C/D/B 渐进添加 |
 
 ## 整改路线图（由 W14 用户裁决 D-003 派生 · 子目标挂 GOAL-015 下）

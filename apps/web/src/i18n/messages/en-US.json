@@ -110,6 +110,8 @@
   "schema.account.column.userAgent": "Device",
   "schema.account.column.ip": "IP",
   "schema.myWallet.action.open": "Open wallet",
+  "schema.myWallet.ensure.failed": "Could not open the wallet. Try again.",
+  "schema.myWallet.ensure.retrying": "Opening…",
   "feedback.listEmpty": "No items yet.",
   "feedback.confirmAction": "Confirm action",
   "feedback.action": "Action",

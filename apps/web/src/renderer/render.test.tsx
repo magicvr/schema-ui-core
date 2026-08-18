@@ -193,6 +193,26 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
     expect(seen[0]).toContain("dictKey=order_status");
     expect(container.textContent).toContain("1250");
   });
+  it("W19: WALLET_NOT_FOUND on a statCard is an empty 0, not a hard error", async () => {
+    const pageDoc = displayDocument({
+      type: "statCard",
+      id: "wallet-total",
+      props: { label: "Total", format: "plain", valueField: "balanceTotal", dataSource: "/api/wallet/me" },
+    });
+    const fetcher = (async () =>
+      new Response(JSON.stringify({ error: "WALLET_NOT_FOUND", message: "wallet account not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.textContent).toContain("Total");
+    expect(container.textContent).toContain("0");
+  });
+
   it("fails closed when statCard format rejects the value type", async () => {
     const pageDoc = displayDocument({
       type: "statCard",

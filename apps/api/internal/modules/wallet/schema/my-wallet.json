@@ -25,6 +25,11 @@
     "id": "my-wallet",
     "children": [
       {
+        "type": "custom",
+        "id": "wallet-ensure",
+        "component": "wallet-ensure"
+      },
+      {
         "type": "text",
         "props": {
           "text": "Your wallet balance and recent ledger entries.",
@@ -76,14 +81,6 @@
         "type": "table",
         "id": "my-wallet-entries",
         "props": {
-          "toolbar": [
-            {
-              "key": "openWallet",
-              "label": "Open wallet",
-              "labelKey": "schema.myWallet.action.open",
-              "actionRef": "openWallet"
-            }
-          ],
           "columns": [
             {
               "field": "entryType",

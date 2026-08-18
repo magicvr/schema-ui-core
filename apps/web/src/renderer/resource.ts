@@ -71,6 +71,13 @@ export class ResourceApiError extends Error {
   }
 }
 
+/** W19: missing self-wallet is an empty surface, not a hard page error. */
+export function isWalletNotFoundError(err: unknown): boolean {
+  return err instanceof ResourceApiError && err.code === "WALLET_NOT_FOUND";
+}
+
+export const EMPTY_RESOURCE_LIST: ResourceList = { items: [], total: 0, page: 1, pageSize: 100 };
+
 export type ResourceCreateBody = ResourceItem;
 export type ResourcePatch = Partial<ResourceItem>;
 

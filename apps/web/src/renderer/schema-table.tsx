@@ -5,8 +5,10 @@ import { DataTable, type DataTableColumn, type SortState } from "@/components/da
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
 import {
+  EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
+  isWalletNotFoundError,
   resolveDataParamsQuery,
   type ResourceQuery,
   type ResourceItem,
@@ -549,6 +551,12 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
+          if (isWalletNotFoundError(err)) {
+            setList(EMPTY_RESOURCE_LIST);
+            setError(null);
+            setLoading(false);
+            return;
+          }
           setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }

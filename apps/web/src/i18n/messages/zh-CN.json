@@ -110,6 +110,8 @@
   "schema.account.column.userAgent": "设备",
   "schema.account.column.ip": "IP",
   "schema.myWallet.action.open": "开通钱包",
+  "schema.myWallet.ensure.failed": "无法开通钱包，请重试。",
+  "schema.myWallet.ensure.retrying": "开通中…",
   "feedback.listEmpty": "暂无数据。",
   "feedback.confirmAction": "确认操作",
   "feedback.action": "操作",
