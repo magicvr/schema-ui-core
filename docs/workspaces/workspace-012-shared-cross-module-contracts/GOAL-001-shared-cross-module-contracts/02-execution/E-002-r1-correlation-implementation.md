@@ -19,6 +19,7 @@ version: 0.1.0
 - 定向验证通过：`go test ./internal/requestid ./internal/server ./internal/modules/operationlog ./internal/handler ./internal/store`；`npm --prefix apps/web test -- --run src/renderer/error-localization.test.tsx`。
 - 全量验证通过：在 `apps/api` 执行 `go test ./...`；在 `apps/web` 执行 `npm test -- --run`（72 files / 1069 tests）；执行 `npm run build` 通过。
 - 第一个实现 checkpoint 已创建：`e1f211f`，scope 为 R1 API/Web/operationlog 与治理记录。
+- R1 关门 checkpoint 已创建：`49b8d78`，scope 为 R1 关闭材料、goal-tree/workspace 同步与构建产物。
 
 ## 成功标准对照（事实）
 

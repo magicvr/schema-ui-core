@@ -16,6 +16,7 @@ version: 0.1.0
 - auth login/refresh/logout 与 settings patch/reset 真实 operationlog 写路径已接入 correlation id；既有 `{username}` detail 形状保持不变。
 - 定向与全量测试均通过：API `go test ./...`；Web `npm test -- --run`（72 files / 1069 tests）；Web `npm run build`。
 - 实现 checkpoint：`e1f211f`，包含代码、测试、D-001/E-001 与迁移目录变更。
+- 关门 checkpoint：`49b8d78`，包含 R1 关闭审计、目标树同步与构建产物。
 
 ## 成功标准
 

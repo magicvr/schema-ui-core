@@ -21,7 +21,7 @@ version: 0.1.0
 
 - `D-001-r1-correlation-contract.md` 冻结了入口、错误包络、Web 解析与 operationlog 关联方案，并记录未选方案。
 - `E-002-r1-implementation.md` 与 Root `E-002-r1-correlation-implementation.md` 记录了真实产物和验证命令；`I-001` 已有可核对链路证据并标为 `verified`。
-- Git checkpoint `e1f211f` 固化实现切片；后续 build 产物在本次关门提交中继续固化。
+- Git checkpoint `e1f211f` 固化实现切片；关门 checkpoint `49b8d78` 固化关闭材料、树同步与 build 产物。
 - `apps/api/internal/requestid`、server middleware、handler/auth 错误包络和 `apps/web/src/renderer/resource.ts` 共同覆盖生成/透传、错误体和前端展示；`operation_log_correlation` version 41 与 auth/settings 写路径覆盖审计关联。
 
 ## 成功标准对照
