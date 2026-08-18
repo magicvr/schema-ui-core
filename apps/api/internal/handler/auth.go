@@ -169,7 +169,7 @@ func (h *authHandler) login() http.HandlerFunc {
 		if h.rateLimiter != nil {
 			h.rateLimiter.clear(limiterKey)
 		}
-		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`, requestid.FromContext(r.Context()))
+		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -219,9 +219,9 @@ func (h *authHandler) logout() http.HandlerFunc {
 	}
 }
 
-// authEvent records an auth operation-log event with the frozen username detail
-// (I-008-003 §3: detail = {"username":"<用户名>"}). The account snapshot from
-// auth does not carry the login username, so it is resolved from the store;
+// authEvent records an auth operation-log event with the R2 versioned username
+// detail. The account snapshot from auth does not carry the login username, so
+// it is resolved from the store;
 // best-effort: an unresolvable actor still logs with the actor id and a
 // service-log error, never blocking the business response (§5).
 func (h *authHandler) authEvent(event, userID, correlationID string) {
@@ -231,7 +231,16 @@ func (h *authHandler) authEvent(event, userID, correlationID string) {
 		h.logOperation(event, userID, "", "", correlationID)
 		return
 	}
-	h.logOperation(event, u.ID, u.Name, `{"username":`+jsonQuote(u.Username)+`}`, correlationID)
+	h.logOperation(event, u.ID, u.Name, newAuthDetail(strings.TrimPrefix(event, "auth."), u.Username), correlationID)
+}
+
+func newAuthDetail(action, username string) string {
+	detail, err := operationlog.NewDetail(action, nil, map[string]any{"username": username})
+	if err != nil {
+		slog.Error("operation log auth detail: build", "action", action, "err", err)
+		return ""
+	}
+	return detail
 }
 
 // logOperation appends one operation-log row (R5 S6 optional bonus checkpoint,

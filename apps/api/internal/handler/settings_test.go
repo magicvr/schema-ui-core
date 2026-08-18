@@ -99,6 +99,16 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 			if op.RecordID == nil || *op.RecordID != "default" {
 				t.Fatalf("settings.update record_id = %v, want default", op.RecordID)
 			}
+			if op.Detail == nil {
+				t.Fatal("settings.update missing structured detail")
+			}
+			detail, parseErr := operationlog.ParseDetail(*op.Detail)
+			if parseErr != nil || detail.SchemaVersion != operationlog.DetailSchemaVersion {
+				t.Fatalf("settings.update detail = %+v, err=%v", detail, parseErr)
+			}
+			if got := detail.After["logoUrl"]; got != operationlog.RedactedValue {
+				t.Fatalf("settings logoUrl = %v, want redacted", got)
+			}
 			break
 		}
 	}

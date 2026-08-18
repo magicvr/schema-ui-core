@@ -625,12 +625,24 @@ func TestUsersOperationLogEvents(t *testing.T) {
 		if op.Detail != nil && strings.Contains(*op.Detail, "password") {
 			t.Fatalf("detail leaked a secret: %v", *op.Detail)
 		}
-		if op.Event == operationlog.EventUserDelete {
-			if op.Detail != nil {
-				t.Fatalf("delete detail = %q, want nil", *op.Detail)
-			}
-		} else if op.Detail == nil || *op.Detail != `{"username":"opuser"}` {
-			t.Fatalf("%s detail = %v, want username-only JSON", op.Event, op.Detail)
+		if op.Detail == nil {
+			t.Fatalf("%s detail is nil, want R2 envelope", op.Event)
+		}
+		detail, parseErr := operationlog.ParseDetail(*op.Detail)
+		if parseErr != nil {
+			t.Fatalf("%s detail = %q is not R2 envelope: %v", op.Event, *op.Detail, parseErr)
+		}
+		wantAction := "delete"
+		if op.Event == operationlog.EventUserCreate {
+			wantAction = "create"
+		} else if op.Event == operationlog.EventUserUpdate {
+			wantAction = "update"
+		}
+		if detail.Action != wantAction {
+			t.Fatalf("%s detail action = %q, want %q", op.Event, detail.Action, wantAction)
+		}
+		if op.Event != operationlog.EventUserDelete && detail.After["username"] != "opuser" {
+			t.Fatalf("%s detail username = %v, want opuser", op.Event, detail.After["username"])
 		}
 	}
 }

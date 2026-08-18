@@ -206,7 +206,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 		if current != nil {
 			cleanupReplacedBrandAssets(current, updated, assets)
 		}
-		recordSettingsOperation(operations, user, "updated", updated, now, requestid.FromContext(r.Context()))
+		recordSettingsOperation(operations, user, "updated", current, updated, now, requestid.FromContext(r.Context()))
 		w.Header().Set(configChangedHeader, configNamespace)
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
@@ -256,6 +256,7 @@ func settingsReset(repository SettingsRepository, operations operationlog.Record
 			return
 		}
 		now := time.Now().UTC()
+		current, _ := repository.GetSiteSettings()
 		updated, err := repository.ResetSiteSettings(now)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not reset settings")
@@ -265,7 +266,7 @@ func settingsReset(repository SettingsRepository, operations operationlog.Record
 		if assets != nil {
 			_ = assets.DeleteAll()
 		}
-		recordSettingsOperation(operations, user, "reset", updated, now, requestid.FromContext(r.Context()))
+		recordSettingsOperation(operations, user, "reset", current, updated, now, requestid.FromContext(r.Context()))
 		w.Header().Set(configChangedHeader, configNamespace)
 		writeJSON(w, http.StatusOK, settingsRow(updated))
 	})
@@ -290,12 +291,16 @@ func writeSettingsError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func recordSettingsOperation(operations operationlog.Recorder, user account.User, action string, updated *settingsrepository.SiteSettings, now time.Time, correlationID string) {
+func recordSettingsOperation(operations operationlog.Recorder, user account.User, action string, before, updated *settingsrepository.SiteSettings, now time.Time, correlationID string) {
 	if operations == nil {
 		return
 	}
 	recordID := "default"
-	detail := `{"siteTitle":` + jsonQuote(updated.SiteTitle) + `,"action":"` + action + `"}`
+	detail, err := operationlog.NewDetail(action, settingsAuditValues(before), settingsAuditValues(updated))
+	if err != nil {
+		slog.Error("operation log settings detail: build", "event", operationlog.EventSettingsUpdate, "err", err)
+		return
+	}
 	op := operationlog.Operation{
 		ID:            newOperationID(),
 		Event:         operationlog.EventSettingsUpdate,
@@ -308,5 +313,23 @@ func recordSettingsOperation(operations operationlog.Recorder, user account.User
 	}
 	if err := operations.RecordOperation(op); err != nil {
 		slog.Error("operation log write failed", "event", operationlog.EventSettingsUpdate, "err", err)
+	}
+}
+
+func settingsAuditValues(settings *settingsrepository.SiteSettings) map[string]any {
+	if settings == nil {
+		return nil
+	}
+	return map[string]any{
+		"siteTitle":     settings.SiteTitle,
+		"logoUrl":       settings.LogoURL,
+		"logoUrlLight":  settings.LogoURLLight,
+		"logoUrlDark":   settings.LogoURLDark,
+		"faviconUrl":    settings.FaviconURL,
+		"defaultLocale": settings.DefaultLocale,
+		"siteTimezone":  settings.SiteTimezone,
+		"defaultTheme":  settings.DefaultTheme,
+		"copyrightText": settings.CopyrightText,
+		"icpNumber":     settings.ICPNumber,
 	}
 }

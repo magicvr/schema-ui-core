@@ -391,10 +391,12 @@ func usersOnWrite(recorder operationlog.Recorder) func(context.Context, account.
 		switch kind {
 		case writeCreate:
 			event = operationlog.EventUserCreate
-			detail = `{"username":` + jsonQuote(stringField(row, "username")) + `}`
+			detail = newUserAuditDetail("create", stringField(row, "username"))
 		case writeUpdate:
 			event = operationlog.EventUserUpdate
-			detail = `{"username":` + jsonQuote(stringField(row, "username")) + `}`
+			detail = newUserAuditDetail("update", stringField(row, "username"))
+		default:
+			detail = newUserAuditDetail("delete", "")
 		}
 		op := operationlog.Operation{
 			ID:            newOperationID(),
@@ -416,6 +418,19 @@ func usersOnWrite(recorder operationlog.Recorder) func(context.Context, account.
 			}
 		}
 	}
+}
+
+func newUserAuditDetail(action, username string) string {
+	after := map[string]any{}
+	if username != "" {
+		after["username"] = username
+	}
+	detail, err := operationlog.NewDetail(action, nil, after)
+	if err != nil {
+		slog.Error("operation log users detail: build", "action", action, "err", err)
+		return ""
+	}
+	return detail
 }
 
 // newUserID returns "usr-" + 16 lowercase hex chars (8 bytes of crypto/rand),

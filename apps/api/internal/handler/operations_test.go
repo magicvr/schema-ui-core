@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -74,23 +73,22 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		if op.ActorID != "user-admin" {
 			t.Fatalf("authOps[%d].actor_id = %q, want user-admin", i, op.ActorID)
 		}
-		// I-008-003 §3: every auth event carries the frozen username detail —
-		// exact JSON shape, username only, no sensitive fields (R-015).
+		// R2: every auth event carries the versioned audit detail with username
+		// only; credentials remain excluded/redacted.
 		if op.Detail == nil {
 			t.Fatalf("authOps[%d].detail = nil, want username summary", i)
 		}
-		var d struct {
-			Username string `json:"username"`
+		detail, err := operationlog.ParseDetail(*op.Detail)
+		if err != nil {
+			t.Fatalf("authOps[%d].detail %q not R2 envelope: %v", i, *op.Detail, err)
 		}
-		if err := json.Unmarshal([]byte(*op.Detail), &d); err != nil {
-			t.Fatalf("authOps[%d].detail %q not JSON: %v", i, *op.Detail, err)
+		if detail.After["username"] != "admin" {
+			t.Fatalf("authOps[%d].detail.after.username = %v, want admin", i, detail.After["username"])
 		}
-		if d.Username != "admin" {
-			t.Fatalf("authOps[%d].detail.username = %q, want admin", i, d.Username)
-		}
-		var extra map[string]any
-		if err := json.Unmarshal([]byte(*op.Detail), &extra); err == nil && len(extra) != 1 {
-			t.Fatalf("authOps[%d].detail = %v, want exactly {username} (no token/password/secret)", i, extra)
+		for _, forbidden := range []string{"password", "accessToken", "refreshToken", "secret"} {
+			if strings.Contains(*op.Detail, forbidden) {
+				t.Fatalf("authOps[%d].detail contains sensitive key %q: %s", i, forbidden, *op.Detail)
+			}
 		}
 	}
 }
@@ -260,6 +258,13 @@ func TestR2CorrelationIDPersistsOnUsersOperation(t *testing.T) {
 	}
 	if len(ops) != 1 || ops[0].CorrelationID != "r2-user-001" {
 		t.Fatalf("user operation correlation = %+v, want r2-user-001", ops)
+	}
+	if ops[0].Detail == nil {
+		t.Fatal("user operation missing structured detail")
+	}
+	detail, err := operationlog.ParseDetail(*ops[0].Detail)
+	if err != nil || detail.Action != "create" || detail.After["username"] != "r2-user" {
+		t.Fatalf("user operation detail = %+v, err=%v", detail, err)
 	}
 }
 
