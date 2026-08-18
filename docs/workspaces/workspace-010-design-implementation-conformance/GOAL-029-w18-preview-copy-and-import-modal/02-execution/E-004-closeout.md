@@ -19,6 +19,7 @@ parent: GOAL-001-design-implementation-conformance
 - 落盘 [A-001](../03-audit/A-001-closeout.md)（self · pass）；S4 勾选；`status: done`；progress **4/4**。
 - 同步 goal-tree / workspace / Root 波次表。
 - 在 GOAL-024 将 A-007 F-001 / F-002 标 `fixed`。
+- Git checkpoint：`c53d885`。
 
 ## 阻塞
 
