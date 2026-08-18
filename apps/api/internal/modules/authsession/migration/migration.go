@@ -132,6 +132,24 @@ var mustChangePasswordDDL = []string{
 	`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`,
 }
 
+var serviceCredentialsDDL = []string{
+	`CREATE TABLE service_credentials (
+  id           TEXT PRIMARY KEY CHECK (length(id) = 32),
+  name         TEXT NOT NULL COLLATE NOCASE UNIQUE CHECK (length(trim(name)) BETWEEN 1 AND 100),
+  token_prefix TEXT NOT NULL CHECK (length(token_prefix) = 15),
+  token_hash   TEXT NOT NULL UNIQUE CHECK (length(token_hash) = 64),
+  scopes       TEXT NOT NULL,
+  expires_at   INTEGER NOT NULL,
+  revoked_at   INTEGER,
+  last_used_at INTEGER,
+  created_by   TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_service_credentials_created_at ON service_credentials(created_at DESC, id DESC)`,
+	`CREATE INDEX idx_service_credentials_expires_at ON service_credentials(expires_at)`,
+}
+
 // Descriptors returns the immutable 0001-0002 auth/session migration history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -176,6 +194,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "must_change_password",
 			Checksum:             kernel.MigrationChecksum(mustChangePasswordDDL, "0038:must-change-password:v1"),
 			Apply:                migrateMustChangePassword,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "service_credentials"},
+			Version:              44,
+			Name:                 "service_credentials",
+			Checksum:             kernel.MigrationChecksum(serviceCredentialsDDL, "0044:service-credentials:v1"),
+			Apply:                migrateServiceCredentials,
 		},
 	}
 }
@@ -240,6 +265,15 @@ func migrateMustChangePassword(tx *sql.Tx) error {
 	for _, stmt := range mustChangePasswordDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("add users.must_change_password: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateServiceCredentials(tx *sql.Tx) error {
+	for _, stmt := range serviceCredentialsDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create service credentials: %w", err)
 		}
 	}
 	return nil

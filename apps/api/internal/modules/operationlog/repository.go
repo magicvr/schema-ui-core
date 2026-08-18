@@ -70,7 +70,10 @@ const (
 	EventWalletReconcileFailed    = "wallet.reconcile.failed"
 	EventWalletReconcileCancelled = "wallet.reconcile.cancelled"
 	// GOAL-021 (D-001 §1): consume from the frozen bucket.
-	EventWalletDeductFrozen = "wallet.deduct-frozen"
+	EventWalletDeductFrozen      = "wallet.deduct-frozen"
+	EventServiceCredentialCreate = "service-credentials.create"
+	EventServiceCredentialUse    = "service-credentials.use"
+	EventServiceCredentialRevoke = "service-credentials.revoke"
 )
 
 // Operation is one append-only operation log row.
@@ -104,6 +107,12 @@ type Recorder interface {
 	RecordOperation(Operation) error
 }
 
+// TransactionalRecorder lets a business mutation append its required audit
+// row using the caller-owned transaction.
+type TransactionalRecorder interface {
+	RecordOperationTx(*sql.Tx, Operation) error
+}
+
 // Reader is the query boundary consumed by the optional Activity module.
 type Reader interface {
 	ListOperationsFiltered(OperationFilter) ([]Operation, int, error)
@@ -132,38 +141,44 @@ func NewRepository(runner TxRunner) *Repository {
 
 // RecordOperation appends one row. Callers deliberately decide best-effort policy.
 func (r *Repository) RecordOperation(operation Operation) error {
+	return r.withTx("record operation "+operation.Event, func(tx *sql.Tx) error {
+		return r.RecordOperationTx(tx, operation)
+	})
+}
+
+// RecordOperationTx appends one row using a caller-owned transaction. It is
+// used for mutation audits that must fail closed with the domain write.
+func (r *Repository) RecordOperationTx(tx *sql.Tx, operation Operation) error {
 	r.failureMu.RLock()
 	forced := r.failure
 	r.failureMu.RUnlock()
 	if forced != nil {
 		return fmt.Errorf("record operation %s: %w", operation.Event, forced)
 	}
-	return r.withTx("record operation "+operation.Event, func(tx *sql.Tx) error {
-		var recordID, detail any
-		if operation.RecordID != nil {
-			recordID = *operation.RecordID
-		}
-		if operation.Detail != nil {
-			detail = *operation.Detail
-		}
+	var recordID, detail any
+	if operation.RecordID != nil {
+		recordID = *operation.RecordID
+	}
+	if operation.Detail != nil {
+		detail = *operation.Detail
+	}
+	if _, err := tx.Exec(
+		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		operation.ID, operation.Event, operation.ActorID, operation.ActorName,
+		recordID, detail, operation.CreatedAt.UnixMilli(),
+	); err != nil {
+		return err
+	}
+	if correlationID := strings.TrimSpace(operation.CorrelationID); correlationID != "" {
 		if _, err := tx.Exec(
-			`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			operation.ID, operation.Event, operation.ActorID, operation.ActorName,
-			recordID, detail, operation.CreatedAt.UnixMilli(),
+			`INSERT INTO operation_log_correlation (operation_id, correlation_id) VALUES (?, ?)`,
+			operation.ID, correlationID,
 		); err != nil {
 			return err
 		}
-		if correlationID := strings.TrimSpace(operation.CorrelationID); correlationID != "" {
-			if _, err := tx.Exec(
-				`INSERT INTO operation_log_correlation (operation_id, correlation_id) VALUES (?, ?)`,
-				operation.ID, correlationID,
-			); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	}
+	return nil
 }
 
 // SetOperationLogError configures the test-only best-effort failure seam.

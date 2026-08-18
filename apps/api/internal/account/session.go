@@ -20,7 +20,18 @@ type User struct {
 	MustChangePassword bool `json:"mustChangePassword"`
 	// Permissions are the persisted role-permission keys resolved at identity
 	// load time (GOAL-006 S4): business gates check keys, not role strings.
-	Permissions []string `json:"permissions,omitempty"`
+	Permissions   []string `json:"permissions,omitempty"`
+	PrincipalKind string   `json:"-"`
+	CredentialID  string   `json:"-"`
+}
+
+const (
+	PrincipalKindUser              = "user"
+	PrincipalKindServiceCredential = "service-credential"
+)
+
+func (u User) IsServiceCredential() bool {
+	return u.PrincipalKind == PrincipalKindServiceCredential
 }
 
 // StaticDevSession returns the development bootstrap session. Fail-closed:
