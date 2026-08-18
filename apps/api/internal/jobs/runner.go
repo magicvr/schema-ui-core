@@ -21,6 +21,16 @@ type Reporter interface {
 
 type Handler func(context.Context, Job, Reporter) (CommitFunc, error)
 
+// TerminalHook observes a durable terminal transition after its transaction
+// commits. Hooks are best-effort side effects such as audit recording; they
+// must not be used for the consumer's durable result.
+type TerminalHook func(Job)
+
+type registration struct {
+	handler  Handler
+	terminal TerminalHook
+}
+
 type runnerOutcome struct {
 	commit CommitFunc
 	err    error
@@ -49,7 +59,7 @@ type Runner struct {
 	instance string
 
 	mu       sync.Mutex
-	handlers map[string]Handler
+	handlers map[string]registration
 	active   map[string]context.CancelFunc
 	started  bool
 	stopping bool
@@ -71,12 +81,18 @@ func NewRunner(repo *Repository, options RunnerOptions) (*Runner, error) {
 	}
 	return &Runner{
 		repo: repo, options: options, instance: instance,
-		handlers: map[string]Handler{}, active: map[string]context.CancelFunc{},
+		handlers: map[string]registration{}, active: map[string]context.CancelFunc{},
 		wake: make(chan struct{}, 1),
 	}, nil
 }
 
 func (r *Runner) Register(kind string, handler Handler) error {
+	return r.RegisterWithTerminalHook(kind, handler, nil)
+}
+
+// RegisterWithTerminalHook registers a handler and an optional observer for
+// succeeded, failed, and cancelled terminal transitions.
+func (r *Runner) RegisterWithTerminalHook(kind string, handler Handler, terminal TerminalHook) error {
 	if kind == "" || handler == nil {
 		return ErrInvalid
 	}
@@ -88,7 +104,7 @@ func (r *Runner) Register(kind string, handler Handler) error {
 	if _, exists := r.handlers[kind]; exists {
 		return fmt.Errorf("jobs: handler %q already registered", kind)
 	}
-	r.handlers[kind] = handler
+	r.handlers[kind] = registration{handler: handler, terminal: terminal}
 	return nil
 }
 
@@ -168,11 +184,19 @@ func (r *Runner) Retry(ctx context.Context, id, actorID string) (*Job, error) {
 
 func (r *Runner) ScanOnce(ctx context.Context) error {
 	now := r.options.Now().UTC()
-	if _, err := r.repo.RecoverCancelledDue(ctx, now); err != nil {
+	cancelled, err := r.repo.RecoverCancelledDueJobs(ctx, now)
+	if err != nil {
 		return err
 	}
-	if _, err := r.repo.ExhaustExpired(ctx, now); err != nil {
+	for _, job := range cancelled {
+		r.notifyTerminalJob(job)
+	}
+	exhausted, err := r.repo.ExhaustExpiredJobs(ctx, now)
+	if err != nil {
 		return err
+	}
+	for _, job := range exhausted {
+		r.notifyTerminalJob(job)
 	}
 	if _, err := r.repo.ExpireDue(ctx, now); err != nil {
 		return err
@@ -242,9 +266,9 @@ func (r *Runner) execute(ctx context.Context, cancel context.CancelFunc, id stri
 		return
 	}
 	r.mu.Lock()
-	handler := r.handlers[job.Kind]
+	registered := r.handlers[job.Kind]
 	r.mu.Unlock()
-	if handler == nil {
+	if registered.handler == nil {
 		_ = r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", "job handler not registered", r.options.Now().UTC())
 		return
 	}
@@ -252,7 +276,7 @@ func (r *Runner) execute(ctx context.Context, cancel context.CancelFunc, id stri
 	reporter := &runnerReporter{ctx: ctx, cancelFn: cancel, repo: r.repo, lease: lease, now: r.options.Now}
 	result := make(chan runnerOutcome, 1)
 	go func() {
-		commit, err := handler(ctx, *job, reporter)
+		commit, err := registered.handler(ctx, *job, reporter)
 		result <- runnerOutcome{commit: commit, err: err}
 	}()
 
@@ -290,17 +314,56 @@ func (r *Runner) finish(lease Lease, outcome runnerOutcome) {
 	}
 	if outcome.err != nil {
 		if requested {
-			_ = r.repo.FinalizeCancel(context.Background(), lease, now)
+			if err := r.repo.FinalizeCancel(context.Background(), lease, now); err == nil {
+				r.notifyTerminal(lease.JobID)
+			}
 			return
 		}
-		_ = r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", outcome.err.Error(), now)
+		if err := r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", outcome.err.Error(), now); err == nil {
+			r.notifyTerminal(lease.JobID)
+		}
 		return
 	}
 	if outcome.commit == nil {
-		_ = r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", "job handler returned no commit", now)
+		if err := r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", "job handler returned no commit", now); err == nil {
+			r.notifyTerminal(lease.JobID)
+		}
 		return
 	}
-	_, _ = r.repo.CompleteWithCommit(context.Background(), lease, now, r.options.ResultTTL, outcome.commit)
+	if _, err := r.repo.CompleteWithCommit(context.Background(), lease, now, r.options.ResultTTL, outcome.commit); err == nil {
+		r.notifyTerminal(lease.JobID)
+	} else {
+		requested, leaseErr := r.repo.IsCancelRequested(context.Background(), lease)
+		if leaseErr != nil {
+			return
+		}
+		if requested {
+			if cancelErr := r.repo.FinalizeCancel(context.Background(), lease, now); cancelErr == nil {
+				r.notifyTerminal(lease.JobID)
+			}
+			return
+		}
+		if failErr := r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", err.Error(), now); failErr == nil {
+			r.notifyTerminal(lease.JobID)
+		}
+	}
+}
+
+func (r *Runner) notifyTerminal(id string) {
+	job, err := r.repo.Get(context.Background(), id)
+	if err != nil {
+		return
+	}
+	r.notifyTerminalJob(*job)
+}
+
+func (r *Runner) notifyTerminalJob(job Job) {
+	r.mu.Lock()
+	hook := r.handlers[job.Kind].terminal
+	r.mu.Unlock()
+	if hook != nil {
+		hook(job)
+	}
 }
 
 func (r *Runner) isStopping() bool {

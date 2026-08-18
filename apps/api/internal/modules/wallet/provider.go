@@ -7,6 +7,7 @@ package wallet
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -134,6 +135,11 @@ func (s *Service) Reconcile(accountID, actorID string, now time.Time) (*walletst
 	return s.repo.ReconcileRun(accountID, runID, actorID, now)
 }
 
+// ReconcileOnceTx implements the Job consumer's atomic commit callback.
+func (s *Service) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID, runID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error) {
+	return s.repo.ReconcileOnceTx(ctx, tx, accountID, runID, actorID, now)
+}
+
 // ListReconcileRuns implements handler.WalletService.
 func (s *Service) ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error) {
 	return s.repo.ListReconcileRuns(page, pageSize)
@@ -143,12 +149,13 @@ func (s *Service) ListReconcileRuns(page, pageSize int) ([]walletstore.Reconcili
 type Provider struct {
 	a          *auth.Authenticator
 	service    *Service
+	jobs       *JobService
 	operations operationlog.Recorder
 }
 
 // New constructs the wallet provider.
-func New(a *auth.Authenticator, service *Service, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, service: service, operations: operations}
+func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder) *Provider {
+	return &Provider{a: a, service: service, jobs: jobs, operations: operations}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -170,6 +177,8 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/accounts/{id}/unfreeze",
 				"POST /api/wallet/accounts/{id}/deduct-frozen",
 				"POST /api/wallet/reconcile", "GET /api/wallet/reconcile/runs",
+				"GET /api/wallet/jobs/{id}", "POST /api/wallet/jobs/{id}/cancel",
+				"POST /api/wallet/jobs/{id}/retry", "GET /api/wallet/jobs/{id}/result",
 				// GOAL-022 (D-002 §2): identity-scoped self-service surface.
 				"GET /api/wallet/me", "POST /api/wallet/me", "GET /api/wallet/me/entries",
 			},
@@ -186,7 +195,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.WalletRoutes(p.a, p.service, p.operations, ModuleID) {
+	for _, route := range handler.WalletRoutes(p.a, p.service, p.jobs, p.operations, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

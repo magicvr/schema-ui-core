@@ -257,7 +257,15 @@ WHERE status='succeeded' AND expires_at <= ?`, toMillis(now), toMillis(now))
 }
 
 func (r *Repository) RecoverCancelledDue(ctx context.Context, now time.Time) (int64, error) {
-	return r.bulkTransition(ctx, `UPDATE jobs SET status='cancelled', cancel_requested=0,
+	transitioned, err := r.RecoverCancelledDueJobs(ctx, now)
+	return int64(len(transitioned)), err
+}
+
+func (r *Repository) RecoverCancelledDueJobs(ctx context.Context, now time.Time) ([]Job, error) {
+	return r.transitionJobs(ctx,
+		`SELECT id FROM jobs WHERE status='running' AND cancel_requested=1 AND lease_expires_at <= ?`,
+		[]any{toMillis(now)},
+		`UPDATE jobs SET status='cancelled', cancel_requested=0,
 lease_owner=NULL, lease_expires_at=NULL, result=NULL, error_code=NULL, error_message=NULL,
 updated_at=?, finished_at=?, expires_at=NULL
 WHERE status='running' AND cancel_requested=1 AND lease_expires_at <= ?`,
@@ -265,7 +273,15 @@ WHERE status='running' AND cancel_requested=1 AND lease_expires_at <= ?`,
 }
 
 func (r *Repository) ExhaustExpired(ctx context.Context, now time.Time) (int64, error) {
-	return r.bulkTransition(ctx, `UPDATE jobs SET status='failed',
+	transitioned, err := r.ExhaustExpiredJobs(ctx, now)
+	return int64(len(transitioned)), err
+}
+
+func (r *Repository) ExhaustExpiredJobs(ctx context.Context, now time.Time) ([]Job, error) {
+	return r.transitionJobs(ctx,
+		`SELECT id FROM jobs WHERE status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt >= max_attempts`,
+		[]any{toMillis(now)},
+		`UPDATE jobs SET status='failed',
 lease_owner=NULL, lease_expires_at=NULL, result=NULL,
 error_code='JOB_ATTEMPTS_EXHAUSTED', error_message='job attempts exhausted',
 updated_at=?, finished_at=?, expires_at=NULL
@@ -363,6 +379,43 @@ func (r *Repository) bulkTransition(ctx context.Context, query string, args ...a
 		return err
 	})
 	return affected, err
+}
+
+func (r *Repository) transitionJobs(ctx context.Context, selectQuery string, selectArgs []any, updateQuery string, updateArgs ...any) ([]Job, error) {
+	var transitioned []Job
+	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, selectQuery, selectArgs...)
+		if err != nil {
+			return err
+		}
+		var ids []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			ids = append(ids, id)
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, updateQuery, updateArgs...); err != nil {
+			return err
+		}
+		for _, id := range ids {
+			job, err := getTx(ctx, tx, id)
+			if err != nil {
+				return err
+			}
+			transitioned = append(transitioned, *job)
+		}
+		return nil
+	})
+	return transitioned, err
 }
 
 func validLease(lease Lease) bool {

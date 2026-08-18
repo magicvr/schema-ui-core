@@ -152,8 +152,9 @@ func probeModule() kernel.Module {
 // (1) 把 test-only probe 模块并入编译候选（BuiltinModules + probe），
 // (2) 在 admin plan 中启用 probe，
 // (3) composition root 装配后，probe 的 route / schema / manifest 均经聚合表面发布，
-//     且 central registration（Web Renderer/Shell）无 probe 分支 —— 见下方断言
-//     「probe 不依赖任何中央业务注册改动」。
+//
+//	且 central registration（Web Renderer/Shell）无 probe 分支 —— 见下方断言
+//	「probe 不依赖任何中央业务注册改动」。
 func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 	all := append([]kernel.Module(nil), kernel.BuiltinModules()...)
 	all = append(all, probeModule())
@@ -182,6 +183,10 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 	// composition root 装配：extra 传入 probe（等效 M3 静态 import + plan 分支）。
 	// 不包含任何 handler / Web Renderer-Shell 中央业务注册改动。
 	probe := &probeProvider{desc: probeModule()}
+	jobRuntime, err := newJobRuntime(st)
+	if err != nil {
+		t.Fatal(err)
+	}
 	mux, err := newMuxWithExtraProviders(
 		&config.Config{ProfileName: "admin"},
 		a,
@@ -192,6 +197,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		plan,
 		&readinessGate{},
 		jwtSecret("test-secret"),
+		jobRuntime,
 		[]kernel.Provider{probe},
 	)
 	if err != nil {

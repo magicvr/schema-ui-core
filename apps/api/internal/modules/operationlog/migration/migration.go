@@ -356,6 +356,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogCorrelationDDL, "0041:operation-log-correlation:v1"),
 			Apply:                migrateOperationLogCorrelation,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_wallet_jobs"},
+			Version:              43,
+			Name:                 "operation_log_wallet_jobs",
+			Checksum:             kernel.MigrationChecksum(operationLogWalletJobsDDL, "0043:operation-log-wallet-jobs:v1"),
+			Apply:                migrateOperationLogWalletJobs,
+		},
 	}
 }
 
@@ -413,6 +420,32 @@ func migrateOperationLogCorrelation(tx *sql.Tx) error {
 	return nil
 }
 
+func migrateOperationLogWalletJobs(tx *sql.Tx) error {
+	if _, err := tx.Exec(`CREATE TEMP TABLE operation_log_correlation_backup AS
+SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
+		return fmt.Errorf("backup operation log correlations: %w", err)
+	}
+	if _, err := tx.Exec(`DROP TABLE operation_log_correlation`); err != nil {
+		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
+	}
+	if err := rebuildOperationLog(tx, operationLogWalletJobsDDL, "wallet-job-events-expanded"); err != nil {
+		return err
+	}
+	for _, statement := range operationLogCorrelationDDL {
+		if _, err := tx.Exec(statement); err != nil {
+			return fmt.Errorf("recreate operation log correlations: %w", err)
+		}
+	}
+	if _, err := tx.Exec(`INSERT INTO operation_log_correlation (operation_id, correlation_id)
+SELECT operation_id, correlation_id FROM operation_log_correlation_backup`); err != nil {
+		return fmt.Errorf("restore operation log correlations: %w", err)
+	}
+	if _, err := tx.Exec(`DROP TABLE operation_log_correlation_backup`); err != nil {
+		return fmt.Errorf("drop operation log correlation backup: %w", err)
+	}
+	return nil
+}
+
 func migrateOperationLogDataPermission(tx *sql.Tx) error {
 	return rebuildOperationLog(tx, operationLogDataPermissionDDL, "data-permission-events-expanded")
 }
@@ -452,4 +485,19 @@ var operationLogCorrelationDDL = []string{
   correlation_id TEXT NOT NULL
 )`,
 	`CREATE INDEX idx_operation_log_correlation_id ON operation_log_correlation(correlation_id)`,
+}
+
+// operationLogWalletJobsDDL (0043 · VP-012 R4): separates enqueue and
+// terminal failure/cancellation from the existing successful reconcile event.
+var operationLogWalletJobsDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update','mfa.enroll','mfa.confirm','mfa.disable','mfa.recovery-rotate','mfa.admin-reset','mfa.login','wallet.account-create','wallet.account-update','wallet.adjust','wallet.freeze','wallet.unfreeze','wallet.reconcile','wallet.deduct-frozen','account.avatar-change','wallet.reconcile.queued','wallet.reconcile.failed','wallet.reconcile.cancelled')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }

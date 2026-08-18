@@ -17,41 +17,42 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
-	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
-	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
-	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary"
-	systemmonitoringmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring"
-	scheduledtasksmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks"
-	scheduledtasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
-	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha"
-	datapermissionmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission"
-	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
-	mfamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa"
-	mfastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa/store"
-	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
-	recyclebinmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin"
-	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
-	walletmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet"
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
-	datadictionarystore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
-	tasksstore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
-	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
-	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
-	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dashboard"
+	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
+	datadictionarystore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
+	datapermissionmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission"
+	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
+	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datatransfer"
 	devexamplesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/dev/examples"
+	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/filelibrary"
+	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha"
+	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
+	mfamodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa"
+	mfastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/mfa/store"
+	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/notifications"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	recyclebinmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin"
+	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	rolesmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles"
+	scheduledtasksmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks"
+	scheduledtasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
+	tasksstore2 "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	schemarendermodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender"
 	settingsmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
+	systemmonitoringmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring"
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
+	walletmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
@@ -115,6 +116,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newOperationLogRepository,
 			newSettingsRepository,
 			newAuthenticator,
+			newJobRuntime,
 			newMux,
 			newServer,
 		),
@@ -130,6 +132,35 @@ type readinessGate struct {
 
 func (g *readinessGate) Ready() bool { return g.ready.Load() }
 func (g *readinessGate) setReady()   { g.ready.Store(true) }
+
+type jobRuntime struct {
+	repository *jobs.Repository
+	runner     *jobs.Runner
+	enabled    atomic.Bool
+}
+
+func newJobRuntime(st *store.Store) (*jobRuntime, error) {
+	repository := jobs.NewRepository(st)
+	runner, err := jobs.NewRunner(repository, jobs.DefaultRunnerOptions())
+	if err != nil {
+		return nil, err
+	}
+	return &jobRuntime{repository: repository, runner: runner}, nil
+}
+
+func (r *jobRuntime) Start() error {
+	if !r.enabled.Load() {
+		return nil
+	}
+	return r.runner.Start()
+}
+
+func (r *jobRuntime) Stop(ctx context.Context) error {
+	if !r.enabled.Load() {
+		return nil
+	}
+	return r.runner.Stop(ctx)
+}
 
 func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, error) {
 	// Persistence is compiled-global rather than profile-gated. The static
@@ -183,8 +214,9 @@ func newMux(
 	plan kernel.Plan,
 	gate *readinessGate,
 	secret jwtSecret,
+	jobRuntime *jobRuntime,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, nil)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -202,6 +234,7 @@ func newMuxWithExtraProviders(
 	plan kernel.Plan,
 	gate *readinessGate,
 	secret jwtSecret,
+	jobRuntime *jobRuntime,
 	extra []kernel.Provider,
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
@@ -350,7 +383,13 @@ func newMuxWithExtraProviders(
 	// reconciliation. Money-path mutations are gated by wallet.adjust; the
 	// module never touches the manifest/profile semantics (content extension).
 	if plan.HasModule("admin.wallet") {
-		providers = append(providers, walletmodule.New(a, walletmodule.NewService(walletstore.NewRepository(st)), operations))
+		walletService := walletmodule.NewService(walletstore.NewRepository(st))
+		walletJobs, err := walletmodule.NewJobService(walletService, jobRuntime.repository, jobRuntime.runner, operations)
+		if err != nil {
+			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("register wallet jobs: %v", err)}
+		}
+		jobRuntime.enabled.Store(true)
+		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))
@@ -467,7 +506,7 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithJSONRouteErrors(mux), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime) {
 	var listener net.Listener
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
 	lc.Append(fx.Hook{
@@ -489,6 +528,13 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 				listener = nil
 				_ = st.Close()
 				return err
+			}
+			if err := jobs.Start(); err != nil {
+				_ = runtime.Stop(ctx)
+				_ = ln.Close()
+				listener = nil
+				_ = st.Close()
+				return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("start job runner: %v", err)}
 			}
 			// R5 real readiness: only after every module Start + Ready succeeds
 			// does /readyz report ready.
@@ -516,9 +562,10 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 			if listener != nil {
 				_ = listener.Close()
 			}
+			jobsErr := jobs.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)
 			closeErr := st.Close()
-			return errors.Join(shutdownErr, runtimeErr, closeErr)
+			return errors.Join(shutdownErr, jobsErr, runtimeErr, closeErr)
 		},
 	})
 }

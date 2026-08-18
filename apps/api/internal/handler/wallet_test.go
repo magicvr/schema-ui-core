@@ -3,6 +3,8 @@
 package handler
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,7 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
@@ -70,9 +74,92 @@ func (s *walletServiceStub) ListReconcileRuns(page, pageSize int) ([]walletstore
 
 func mountWalletRoutes(t *testing.T, env *authTestEnv, service WalletService) {
 	t.Helper()
-	for _, r := range WalletRoutes(env.a, service, env.operations, "admin.wallet") {
+	jobService := newWalletJobTestService(t, env, service.(*walletServiceStub).repo)
+	for _, r := range WalletRoutes(env.a, service, jobService, env.operations, "admin.wallet") {
 		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 	}
+}
+
+type walletJobTestService struct {
+	repository *jobs.Repository
+	runner     *jobs.Runner
+	wallet     *walletstore.Repository
+}
+
+func newWalletJobTestService(t *testing.T, env *authTestEnv, wallet *walletstore.Repository) *walletJobTestService {
+	t.Helper()
+	repository := jobs.NewRepository(env.st)
+	options := jobs.DefaultRunnerOptions()
+	options.HeartbeatInterval = 5 * time.Millisecond
+	options.LeaseDuration = 50 * time.Millisecond
+	options.ScanInterval = 5 * time.Millisecond
+	runner, err := jobs.NewRunner(repository, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := &walletJobTestService{repository: repository, runner: runner, wallet: wallet}
+	if err := runner.RegisterWithTerminalHook("wallet.reconcile", service.handle, func(job jobs.Job) {
+		if job.Status != jobs.StatusSucceeded {
+			return
+		}
+		detail := `{"jobId":` + jsonQuote(job.ID) + `}`
+		_ = env.operations.RecordOperation(operationlog.Operation{ID: newOperationID(), Event: operationlog.EventWalletReconcile, ActorID: job.ActorID, ActorName: job.ActorID, Detail: &detail, CorrelationID: job.CorrelationID, CreatedAt: time.Now().UTC()})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := runner.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		_ = runner.Stop(ctx)
+	})
+	return service
+}
+
+func (s *walletJobTestService) SubmitReconcile(ctx context.Context, accountID string, actor account.User, correlationID string) (*jobs.Job, error) {
+	now := time.Now().UTC()
+	id, err := jobs.NewID(now)
+	if err != nil {
+		return nil, err
+	}
+	payload, _ := json.Marshal(map[string]any{"accountId": accountID})
+	return s.runner.Submit(ctx, jobs.CreateInput{ID: id, Kind: "wallet.reconcile", Payload: payload, ActorID: actor.ID, CorrelationID: correlationID, Now: now})
+}
+
+func (s *walletJobTestService) Get(ctx context.Context, id, actorID string) (*jobs.Job, error) {
+	return s.repository.GetForActor(ctx, id, "wallet.reconcile", actorID)
+}
+
+func (s *walletJobTestService) Cancel(ctx context.Context, id, actorID string) (*jobs.Job, error) {
+	if _, err := s.Get(ctx, id, actorID); err != nil {
+		return nil, err
+	}
+	return s.runner.Cancel(ctx, id, actorID)
+}
+
+func (s *walletJobTestService) Retry(ctx context.Context, id, actorID string) (*jobs.Job, error) {
+	if _, err := s.Get(ctx, id, actorID); err != nil {
+		return nil, err
+	}
+	return s.runner.Retry(ctx, id, actorID)
+}
+
+func (s *walletJobTestService) handle(_ context.Context, job jobs.Job, reporter jobs.Reporter) (jobs.CommitFunc, error) {
+	var payload struct {
+		AccountID string `json:"accountId"`
+	}
+	if err := json.Unmarshal(job.Payload, &payload); err != nil {
+		return nil, err
+	}
+	return func(tx *sql.Tx) (json.RawMessage, error) {
+		run, err := s.wallet.ReconcileOnceTx(context.Background(), tx, payload.AccountID, job.ID, job.ActorID, time.Now().UTC())
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(reconcileRunToMap(*run))
+	}, nil
 }
 
 func newWalletEnv(t *testing.T) (*authTestEnv, *walletServiceStub) {
@@ -102,6 +189,10 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"POST", "/api/wallet/accounts/acct-1/deduct-frozen"},
 		{"POST", "/api/wallet/reconcile"},
 		{"GET", "/api/wallet/reconcile/runs"},
+		{"GET", "/api/wallet/jobs/job-1"},
+		{"POST", "/api/wallet/jobs/job-1/cancel"},
+		{"POST", "/api/wallet/jobs/job-1/retry"},
+		{"GET", "/api/wallet/jobs/job-1/result"},
 	} {
 		req := httptest.NewRequest(tc.method, tc.path, nil)
 		rr := httptest.NewRecorder()
@@ -127,6 +218,10 @@ func TestWalletRoutesGates(t *testing.T) {
 		{"POST", "/api/wallet/accounts/acct-1/deduct-frozen"},
 		{"POST", "/api/wallet/reconcile"},
 		{"GET", "/api/wallet/reconcile/runs"},
+		{"GET", "/api/wallet/jobs/job-1"},
+		{"POST", "/api/wallet/jobs/job-1/cancel"},
+		{"POST", "/api/wallet/jobs/job-1/retry"},
+		{"GET", "/api/wallet/jobs/job-1/result"},
 	} {
 		req := bearer(t, editorToken, tc.method, tc.path, "")
 		rr := httptest.NewRecorder()
@@ -219,18 +314,57 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 		t.Fatalf("status update = %d %s", rr.Code, rr.Body.String())
 	}
 
-	// Reconcile → consistent.
+	// Reconcile → 202, then poll to succeeded and download the result.
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/reconcile", ""))
-	if rr.Code != http.StatusOK {
+	if rr.Code != http.StatusAccepted {
 		t.Fatalf("reconcile = %d %s", rr.Code, rr.Body.String())
 	}
-	var run map[string]any
-	if err := json.Unmarshal(rr.Body.Bytes(), &run); err != nil {
+	var submitted map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &submitted); err != nil {
 		t.Fatal(err)
 	}
-	if run["result"] != "consistent" {
-		t.Fatalf("reconcile result = %v", run["result"])
+	jobID := submitted["id"].(string)
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/jobs/"+jobID, ""))
+		var polled map[string]any
+		_ = json.Unmarshal(rr.Body.Bytes(), &polled)
+		if polled["status"] == "succeeded" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("job did not succeed: %s", rr.Body.String())
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/jobs/"+jobID+"/result", ""))
+	if rr.Code != http.StatusOK || rr.Header().Get("Content-Disposition") == "" {
+		t.Fatalf("result = %d headers=%v body=%s", rr.Code, rr.Header(), rr.Body.String())
+	}
+	var run map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &run); err != nil || run["result"] != "consistent" {
+		t.Fatalf("reconcile result = %v err=%v", run["result"], err)
+	}
+	for _, tc := range []struct {
+		path string
+		code string
+	}{
+		{"/api/wallet/jobs/" + jobID + "/cancel", "JOB_NOT_CANCELLABLE"},
+		{"/api/wallet/jobs/" + jobID + "/retry", "JOB_NOT_RETRYABLE"},
+	} {
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, tc.path, ""))
+		if rr.Code != http.StatusConflict || !bodyHasCode(rr, tc.code) {
+			t.Fatalf("POST %s = %d %s", tc.path, rr.Code, rr.Body.String())
+		}
+	}
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/jobs/missing", ""))
+	if rr.Code != http.StatusNotFound || !bodyHasCode(rr, "JOB_NOT_FOUND") {
+		t.Fatalf("missing job = %d %s", rr.Code, rr.Body.String())
 	}
 
 	// A-007 F-001: operationlog actually received the six wallet events.
@@ -429,7 +563,7 @@ func TestWalletMutationWithoutIdempotencyKeyReturnsOperation(t *testing.T) {
 
 // S-14 error codes reach the frozen wire contract (localized catalog).
 func TestWalletErrorCodesCataloged(t *testing.T) {
-	for _, code := range []string{"WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED", "INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY", "INVALID_WALLET_BODY", "WALLET_USER_AUTO_ONLY", "PRECONDITION_REQUIRED", "INVALID_PRECONDITION"} {
+	for _, code := range []string{"WALLET_NOT_FOUND", "WALLET_OWNER_TAKEN", "WALLET_DISABLED", "INSUFFICIENT_BALANCE", "LEDGER_VERSION_CONFLICT", "LEDGER_IDEMPOTENCY_CONFLICT", "INVALID_LEDGER_ENTRY", "INVALID_WALLET_BODY", "WALLET_USER_AUTO_ONLY", "PRECONDITION_REQUIRED", "INVALID_PRECONDITION", "JOB_NOT_FOUND", "JOB_NOT_CANCELLABLE", "JOB_NOT_RETRYABLE", "JOB_RESULT_NOT_READY", "JOB_RESULT_EXPIRED", "JOB_ATTEMPTS_EXHAUSTED", "JOB_HANDLER_FAILED"} {
 		entry, ok := errorcatalog.Catalog[code]
 		if !ok || entry.En == "" || entry.Zh == "" || entry.MessageKey == "" {
 			t.Errorf("wallet code %s not cataloged: %+v", code, entry)

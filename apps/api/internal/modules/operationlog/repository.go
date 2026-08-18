@@ -60,12 +60,15 @@ const (
 	EventMFAAdminReset     = "mfa.admin-reset"
 	EventMFALogin          = "mfa.login"
 	// S-14 wallet events (GOAL-019 D-002 §2).
-	EventWalletAccountCreate = "wallet.account-create"
-	EventWalletAccountUpdate = "wallet.account-update"
-	EventWalletAdjust        = "wallet.adjust"
-	EventWalletFreeze        = "wallet.freeze"
-	EventWalletUnfreeze      = "wallet.unfreeze"
-	EventWalletReconcile     = "wallet.reconcile"
+	EventWalletAccountCreate      = "wallet.account-create"
+	EventWalletAccountUpdate      = "wallet.account-update"
+	EventWalletAdjust             = "wallet.adjust"
+	EventWalletFreeze             = "wallet.freeze"
+	EventWalletUnfreeze           = "wallet.unfreeze"
+	EventWalletReconcile          = "wallet.reconcile"
+	EventWalletReconcileQueued    = "wallet.reconcile.queued"
+	EventWalletReconcileFailed    = "wallet.reconcile.failed"
+	EventWalletReconcileCancelled = "wallet.reconcile.cancelled"
 	// GOAL-021 (D-001 §1): consume from the frozen bucket.
 	EventWalletDeductFrozen = "wallet.deduct-frozen"
 )

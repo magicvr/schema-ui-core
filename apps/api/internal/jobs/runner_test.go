@@ -72,6 +72,62 @@ func successCommit(result string) jobs.CommitFunc {
 	}
 }
 
+func TestRunnerScanNotifiesRecoveredTerminalTransitions(t *testing.T) {
+	repo, _ := newRepository(t)
+	now := time.Now().UTC()
+	exhausted, err := repo.Create(context.Background(), jobs.CreateInput{
+		ID: "job-exhaust-hook", Kind: "wallet.reconcile", Payload: json.RawMessage(`{}`),
+		ActorID: "user-1", CorrelationID: "corr-exhaust", MaxAttempts: 1, Now: now.Add(-time.Second),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := repo.Claim(context.Background(), exhausted.ID, "dead-owner", now.Add(-time.Second), 100*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	cancelled, err := repo.Create(context.Background(), jobs.CreateInput{
+		ID: "job-cancel-hook", Kind: "wallet.reconcile", Payload: json.RawMessage(`{}`),
+		ActorID: "user-1", CorrelationID: "corr-cancel", Now: now.Add(-time.Second),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := repo.Claim(context.Background(), cancelled.ID, "dead-owner", now.Add(-time.Second), 100*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.RequestCancel(context.Background(), cancelled.ID, "user-1", now.Add(-900*time.Millisecond)); err != nil {
+		t.Fatal(err)
+	}
+
+	options := runnerOptions()
+	options.Now = func() time.Time { return now }
+	runner, err := jobs.NewRunner(repo, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	terminal := make(chan jobs.Job, 2)
+	if err := runner.RegisterWithTerminalHook("wallet.reconcile", func(context.Context, jobs.Job, jobs.Reporter) (jobs.CommitFunc, error) {
+		return successCommit(`{"ok":true}`), nil
+	}, func(job jobs.Job) { terminal <- job }); err != nil {
+		t.Fatal(err)
+	}
+	if err := runner.ScanOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]jobs.Status{}
+	for range 2 {
+		select {
+		case job := <-terminal:
+			seen[job.ID] = job.Status
+		case <-time.After(time.Second):
+			t.Fatal("terminal hook was not called")
+		}
+	}
+	if seen[exhausted.ID] != jobs.StatusFailed || seen[cancelled.ID] != jobs.StatusCancelled {
+		t.Fatalf("terminal hook statuses = %v", seen)
+	}
+}
+
 func TestRunnerStartupReclaimsExpiredJob(t *testing.T) {
 	repo, _ := newRepository(t)
 	past := time.Now().Add(-time.Second)

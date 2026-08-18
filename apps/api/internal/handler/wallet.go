@@ -5,8 +5,10 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,9 +17,11 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/concurrency"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // WalletService is the surface the wallet routes consume (satisfied
@@ -39,8 +43,17 @@ type WalletService interface {
 	ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error)
 }
 
+// WalletJobService is the actor-scoped async boundary consumed by wallet
+// reconciliation routes.
+type WalletJobService interface {
+	SubmitReconcile(ctx context.Context, accountID string, actor account.User, correlationID string) (*jobs.Job, error)
+	Get(ctx context.Context, id, actorID string) (*jobs.Job, error)
+	Cancel(ctx context.Context, id, actorID string) (*jobs.Job, error)
+	Retry(ctx context.Context, id, actorID string) (*jobs.Job, error)
+}
+
 // WalletRoutes returns the admin.wallet HTTP surface.
-func WalletRoutes(a *auth.Authenticator, service WalletService, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, h http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -284,7 +297,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		walletMutate(w, r, service, operations, walletstore.EntryDeductFrozen, "deduct-frozen")
 	})))
 
-	// Reconcile: ledger chain check (read path — does not change balances).
+	// Reconcile: durable async ledger chain check.
 	add("POST", "/api/wallet/reconcile", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "wallet.read")
 		if !ok {
@@ -295,15 +308,82 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, operations opera
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		_ = json.NewDecoder(r.Body).Decode(&body)
-		now := time.Now().UTC()
-		run, err := service.Reconcile(strings.TrimSpace(body.AccountID), user.ID, now)
+		correlationID := requestid.FromContext(r.Context())
+		if correlationID == "" {
+			correlationID = requestid.New()
+		}
+		job, err := jobService.SubmitReconcile(r.Context(), strings.TrimSpace(body.AccountID), user, correlationID)
 		if err != nil {
 			writeWalletError(w, r, err)
 			return
 		}
-		detail := `{"runId":` + jsonQuote(run.ID) + `,"result":` + jsonQuote(run.Result) + `}`
-		recordWalletEvent(operations, user, operationlog.EventWalletReconcile, detail, now)
-		writeJSON(w, http.StatusOK, reconcileRunToMap(*run))
+		writeJSON(w, http.StatusAccepted, walletJobToMap(*job))
+	})))
+
+	add("GET", "/api/wallet/jobs/{id}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.read")
+		if !ok {
+			return
+		}
+		job, err := jobService.Get(r.Context(), r.PathValue("id"), user.ID)
+		if err != nil {
+			writeWalletJobError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, walletJobToMap(*job))
+	})))
+
+	add("POST", "/api/wallet/jobs/{id}/cancel", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.read")
+		if !ok {
+			return
+		}
+		job, err := jobService.Cancel(r.Context(), r.PathValue("id"), user.ID)
+		if err != nil {
+			writeWalletJobError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, walletJobToMap(*job))
+	})))
+
+	add("POST", "/api/wallet/jobs/{id}/retry", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.read")
+		if !ok {
+			return
+		}
+		job, err := jobService.Retry(r.Context(), r.PathValue("id"), user.ID)
+		if err != nil {
+			writeWalletJobError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, walletJobToMap(*job))
+	})))
+
+	add("GET", "/api/wallet/jobs/{id}/result", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.read")
+		if !ok {
+			return
+		}
+		job, err := jobService.Get(r.Context(), r.PathValue("id"), user.ID)
+		if err != nil {
+			writeWalletJobError(w, r, err)
+			return
+		}
+		switch job.Status {
+		case jobs.StatusQueued, jobs.StatusRunning:
+			writeLocalizedError(w, r, http.StatusConflict, "JOB_RESULT_NOT_READY", "job result is not ready")
+		case jobs.StatusExpired:
+			writeLocalizedError(w, r, http.StatusGone, "JOB_RESULT_EXPIRED", "job result has expired")
+		case jobs.StatusFailed, jobs.StatusCancelled:
+			writeJSON(w, http.StatusOK, walletJobToMap(*job))
+		case jobs.StatusSucceeded:
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", "wallet-reconcile-"+job.ID+".json"))
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(job.Result)
+		default:
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "invalid job status")
+		}
 	})))
 
 	// Reconcile runs: list.
@@ -441,6 +521,19 @@ func writeWalletError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
+func writeWalletJobError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, jobs.ErrNotFound):
+		writeLocalizedError(w, r, http.StatusNotFound, "JOB_NOT_FOUND", "job not found")
+	case errors.Is(err, jobs.ErrNotCancellable):
+		writeLocalizedError(w, r, http.StatusConflict, "JOB_NOT_CANCELLABLE", "job cannot be cancelled")
+	case errors.Is(err, jobs.ErrNotRetryable):
+		writeLocalizedError(w, r, http.StatusConflict, "JOB_NOT_RETRYABLE", "job cannot be retried")
+	default:
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "job operation failed")
+	}
+}
+
 // recordWalletEvent writes a wallet audit row.
 func recordWalletEvent(operations operationlog.Recorder, user account.User, event, detail string, now time.Time) {
 	if operations == nil {
@@ -519,4 +612,23 @@ func reconcileRunToMap(r walletstore.ReconciliationRun) map[string]any {
 		"actorId":       r.ActorID,
 		"createdAt":     r.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
+}
+
+func walletJobToMap(job jobs.Job) map[string]any {
+	row := map[string]any{
+		"id": job.ID, "kind": job.Kind, "status": job.Status,
+		"progress": job.Progress, "attempt": job.Attempt, "maxAttempts": job.MaxAttempts,
+		"cancelRequested": job.CancelRequested, "createdAt": job.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt": job.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+	}
+	if job.ErrorCode != "" {
+		row["error"] = map[string]any{"code": job.ErrorCode, "message": job.ErrorMessage}
+	}
+	if job.FinishedAt != nil {
+		row["finishedAt"] = job.FinishedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+	}
+	if job.Status == jobs.StatusSucceeded {
+		row["resultUrl"] = "/api/wallet/jobs/" + job.ID + "/result"
+	}
+	return row
 }

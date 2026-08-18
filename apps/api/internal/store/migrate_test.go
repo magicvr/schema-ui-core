@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 42 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" {
-		t.Fatalf("applied = %+v, want versions [1..42]", applied)
+	if len(applied) != 43 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" {
+		t.Fatalf("applied = %+v, want versions [1..43]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -181,7 +181,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 42 {
+	if len(applied2) != 43 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
@@ -614,6 +614,8 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"core.operationlog", "operation_log_correlation", "17922088b0b6911c47ad338faccf40bcd0654d500a4277fbe392ece62293842a"},
 		// VP-012 R4: migration-only core.jobs durable state machine.
 		{"core.jobs", "async_jobs", "55e1d3f88de080bd0b6015841e76f1ce32604444619d180a3b228123f99dec68"},
+		// VP-012 R4: wallet Job enqueue and terminal audit events.
+		{"core.operationlog", "operation_log_wallet_jobs", "210a2ebe080081478242c3b1fd4a348f9c0f3922dbd1d98f4b31c8c86345c24e"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

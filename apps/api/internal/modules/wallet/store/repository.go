@@ -638,72 +638,105 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 // equality, snapshot invariant, and last-snapshot == current balances. The
 // run is persisted as a reconciliation_runs row.
 func (r *Repository) ReconcileRun(accountID, runID, actorID string, now time.Time) (*ReconciliationRun, error) {
-	var run ReconciliationRun
+	var run *ReconciliationRun
 	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		type mismatch struct {
-			AccountID string `json:"accountId"`
-			Reason    string `json:"reason"`
-		}
-		var mismatches []mismatch
-		ids := []string{}
-		if accountID == "" {
-			rows, err := tx.Query("SELECT id FROM wallet_accounts ORDER BY id")
-			if err != nil {
-				return fmt.Errorf("list wallet accounts for reconcile: %w", err)
-			}
-			defer rows.Close()
-			for rows.Next() {
-				var id string
-				if err := rows.Scan(&id); err != nil {
-					return fmt.Errorf("scan wallet account id: %w", err)
-				}
-				ids = append(ids, id)
-			}
-			if err := rows.Err(); err != nil {
-				return err
-			}
-		} else {
-			var exists int
-			if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_accounts WHERE id = ?", accountID).Scan(&exists); err != nil {
-				return fmt.Errorf("check wallet account: %w", err)
-			}
-			if exists == 0 {
-				return ErrNotFound
-			}
-			ids = append(ids, accountID)
-		}
-		for _, id := range ids {
-			if reason, ok := checkAccountChain(tx, id); !ok {
-				mismatches = append(mismatches, mismatch{AccountID: id, Reason: reason})
-			}
-		}
-		result := ResultConsistent
-		if len(mismatches) > 0 {
-			result = ResultInconsistent
-		}
-		details := "{}"
-		if len(mismatches) > 0 {
-			raw, err := json.Marshal(map[string]any{"mismatches": mismatches})
-			if err == nil {
-				details = string(raw)
-			}
-		}
-		var acctID any
-		if accountID != "" {
-			acctID = accountID
-		}
-		if _, err := tx.Exec(
-			`INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			runID, acctID, result, len(mismatches), details, actorID, now.Unix(),
-		); err != nil {
-			return fmt.Errorf("insert wallet reconciliation run: %w", err)
-		}
-		run = ReconciliationRun{ID: runID, AccountID: accountID, Result: result, MismatchCount: len(mismatches), Details: details, ActorID: actorID, CreatedAt: now}
-		return nil
+		var err error
+		run, err = r.ReconcileOnceTx(context.Background(), tx, accountID, runID, actorID, now)
+		return err
 	})
-	if err != nil {
+	return run, err
+}
+
+// ReconcileOnceTx persists one idempotent reconciliation run inside the
+// caller's transaction. Job consumers use this to atomically commit the
+// wallet run and the Job succeeded transition.
+func (r *Repository) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID, runID, actorID string, now time.Time) (*ReconciliationRun, error) {
+	if tx == nil || runID == "" || actorID == "" {
+		return nil, ErrInvalidEntry
+	}
+	if existing, err := getReconciliationRunTx(ctx, tx, runID); err == nil {
+		return existing, nil
+	} else if !errors.Is(err, ErrNotFound) {
 		return nil, err
 	}
+
+	type mismatch struct {
+		AccountID string `json:"accountId"`
+		Reason    string `json:"reason"`
+	}
+	var mismatches []mismatch
+	ids := []string{}
+	if accountID == "" {
+		rows, err := tx.QueryContext(ctx, "SELECT id FROM wallet_accounts ORDER BY id")
+		if err != nil {
+			return nil, fmt.Errorf("list wallet accounts for reconcile: %w", err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				return nil, fmt.Errorf("scan wallet account id: %w", err)
+			}
+			ids = append(ids, id)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+	} else {
+		var exists int
+		if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM wallet_accounts WHERE id = ?", accountID).Scan(&exists); err != nil {
+			return nil, fmt.Errorf("check wallet account: %w", err)
+		}
+		if exists == 0 {
+			return nil, ErrNotFound
+		}
+		ids = append(ids, accountID)
+	}
+	for _, id := range ids {
+		if reason, ok := checkAccountChain(tx, id); !ok {
+			mismatches = append(mismatches, mismatch{AccountID: id, Reason: reason})
+		}
+	}
+	result := ResultConsistent
+	if len(mismatches) > 0 {
+		result = ResultInconsistent
+	}
+	details := "{}"
+	if len(mismatches) > 0 {
+		raw, err := json.Marshal(map[string]any{"mismatches": mismatches})
+		if err == nil {
+			details = string(raw)
+		}
+	}
+	var acctID any
+	if accountID != "" {
+		acctID = accountID
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		runID, acctID, result, len(mismatches), details, actorID, now.Unix(),
+	); err != nil {
+		return nil, fmt.Errorf("insert wallet reconciliation run: %w", err)
+	}
+	run := &ReconciliationRun{ID: runID, AccountID: accountID, Result: result, MismatchCount: len(mismatches), Details: details, ActorID: actorID, CreatedAt: now.UTC()}
+	return run, nil
+}
+
+func getReconciliationRunTx(ctx context.Context, tx *sql.Tx, id string) (*ReconciliationRun, error) {
+	var run ReconciliationRun
+	var accountID sql.NullString
+	var created int64
+	err := tx.QueryRowContext(ctx,
+		`SELECT id, account_id, result, mismatch_count, details, actor_id, created_at FROM wallet_reconciliation_runs WHERE id = ?`, id,
+	).Scan(&run.ID, &accountID, &run.Result, &run.MismatchCount, &run.Details, &run.ActorID, &created)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get wallet reconciliation run: %w", err)
+	}
+	run.AccountID = accountID.String
+	run.CreatedAt = time.Unix(created, 0).UTC()
 	return &run, nil
 }
 

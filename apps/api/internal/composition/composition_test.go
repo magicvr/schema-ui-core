@@ -39,6 +39,10 @@ func compositionCount(t *testing.T, st *store.Store, query string, args ...any) 
 }
 
 func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
+	jobRuntime, err := newJobRuntime(st)
+	if err != nil {
+		return nil, err
+	}
 	return newMux(
 		&config.Config{DBPath: "test.db"},
 		a,
@@ -49,6 +53,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		plan,
 		gate,
 		jwtSecret("test-secret"),
+		jobRuntime,
 	)
 }
 
@@ -991,8 +996,6 @@ func setOf(values ...string) map[string]bool {
 	}
 	return result
 }
-
-
 
 // GOAL-013 D-002 §4 / A-003 F-002: the published manifest's sidebar/user
 // slots follow the default navigation order (and a NAVIGATION_ORDER override
