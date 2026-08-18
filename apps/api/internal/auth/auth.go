@@ -50,8 +50,9 @@ func (e *MFARequiredError) Error() string { return "auth: second factor required
 // 15-minute lock window; the lock expires automatically once now passes
 // locked_until and a successful login resets the counter.
 const (
-	LockThresholdFailures = 5
-	LockWindow            = 15 * time.Minute
+	LockThresholdFailures   = 5
+	LockWindow              = 15 * time.Minute
+	serviceCredentialPrefix = "sui_sc_"
 )
 
 // Repository is the account/session persistence surface used by auth.
@@ -67,7 +68,22 @@ type Repository interface {
 	RecordLoginFailure(string, int, time.Time, time.Time) (bool, error)
 	ResetLoginFailures(string, time.Time) error
 	RevokeAllRefreshTokensForUser(string, time.Time) error
+	ServiceCredentialByHash(string) (*authsession.ServiceCredential, error)
+	MarkServiceCredentialUsed(string, time.Time) error
 }
+
+// ServiceCredentialUse is the safe audit projection for one authenticated
+// machine request. It deliberately excludes the raw token and its hash.
+type ServiceCredentialUse struct {
+	CredentialID  string
+	Name          string
+	Method        string
+	Path          string
+	CorrelationID string
+	At            time.Time
+}
+
+type ServiceCredentialUseRecorder func(ServiceCredentialUse) error
 
 // MFAEnforcer is the optional second-factor login gate (S-10 · GOAL-017
 // D-002 §3): Required reports whether the user must complete a second factor
@@ -87,7 +103,8 @@ type Authenticator struct {
 	devSession bool // explicit opt-in: static dev session fallback (M9)
 	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
 	// nil = the login contract is byte-identical to the pre-MFA behavior.
-	mfa MFAEnforcer
+	mfa                          MFAEnforcer
+	serviceCredentialUseRecorder ServiceCredentialUseRecorder
 	// OnLockOpened is an optional best-effort hook fired when a login failure
 	// opens the account-lock window (F-04 · GOAL-006 D-002 §3: system
 	// notification source). Nil = no hook; failures never block Login.
@@ -175,6 +192,12 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 // D-002 §3). nil restores the pre-MFA login contract.
 func (a *Authenticator) SetMFAEnforcer(mfa MFAEnforcer) {
 	a.mfa = mfa
+}
+
+// SetServiceCredentialUseRecorder installs a best-effort machine-use audit
+// hook. Authentication remains successful when the hook fails.
+func (a *Authenticator) SetServiceCredentialUseRecorder(recorder ServiceCredentialUseRecorder) {
+	a.serviceCredentialUseRecorder = recorder
 }
 
 // IssueTokensFor issues a fresh access/refresh pair for an already
@@ -362,6 +385,20 @@ func NewOpaqueToken() (raw, hash string, err error) {
 	return raw, HashToken(raw), nil
 }
 
+// NewServiceCredentialToken returns a one-time 256-bit prefixed secret, its
+// persisted SHA-256 hash, and the display-safe prefix.
+func NewServiceCredentialToken() (raw, hash, tokenPrefix string, err error) {
+	random, _, err := NewOpaqueToken()
+	if err != nil {
+		return "", "", "", err
+	}
+	raw = serviceCredentialPrefix + random
+	return raw, HashToken(raw), raw[:15], nil
+}
+
+// NewServiceCredentialID returns the fixed-width random credential id.
+func NewServiceCredentialID() string { return newID() }
+
 // HashToken hex-encodes the SHA-256 of a raw token.
 func HashToken(raw string) string {
 	sum := sha256.Sum256([]byte(raw))
@@ -419,6 +456,13 @@ func IdentityFrom(ctx context.Context) (account.User, bool) {
 	return u, ok
 }
 
+// UserIdentityFrom returns only human user identities. User-owned self-service
+// surfaces use this helper to reject service principals.
+func UserIdentityFrom(ctx context.Context) (account.User, bool) {
+	u, ok := IdentityFrom(ctx)
+	return u, ok && !u.IsServiceCredential()
+}
+
 // isMustChangePasswordAllowed reports whether a protected endpoint may be used
 // while the account still has must_change_password=1 (W16-F01). Only the
 // self-service password change and profile surfaces are allowed; everything
@@ -454,6 +498,10 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				return
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no access token")
+			return
+		}
+		if strings.HasPrefix(raw, serviceCredentialPrefix) {
+			a.authenticateServiceCredential(w, r, next, raw)
 			return
 		}
 		parsed, err := ParseAccessToken(a.secret, raw)
@@ -515,6 +563,35 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), acct)))
 	})
+}
+
+func (a *Authenticator) authenticateServiceCredential(w http.ResponseWriter, r *http.Request, next http.Handler, raw string) {
+	credential, err := a.repository.ServiceCredentialByHash(HashToken(raw))
+	now := time.Now().UTC()
+	if err != nil || credential.RevokedAt != nil || !now.Before(credential.ExpiresAt) {
+		writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired service credential")
+		return
+	}
+	identity := account.User{
+		ID:            "service-credential:" + credential.ID,
+		Name:          credential.Name,
+		Roles:         []string{},
+		Permissions:   append([]string(nil), credential.Scopes...),
+		PrincipalKind: account.PrincipalKindServiceCredential,
+		CredentialID:  credential.ID,
+	}
+	_ = a.repository.MarkServiceCredentialUsed(credential.ID, now)
+	if a.serviceCredentialUseRecorder != nil {
+		_ = a.serviceCredentialUseRecorder(ServiceCredentialUse{
+			CredentialID:  credential.ID,
+			Name:          credential.Name,
+			Method:        r.Method,
+			Path:          r.URL.Path,
+			CorrelationID: requestid.FromContext(r.Context()),
+			At:            now,
+		})
+	}
+	next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), identity)))
 }
 
 // injectDevSession is the explicit opt-in local-development fallback (M9). It

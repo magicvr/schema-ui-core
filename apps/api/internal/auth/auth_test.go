@@ -4,13 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	_ "modernc.org/sqlite"
 
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
@@ -53,6 +57,92 @@ func TestLoginSuccess(t *testing.T) {
 	}
 	if sub.UserID != "user-admin" {
 		t.Fatalf("subject = %v, want user-admin", sub.UserID)
+	}
+}
+
+func TestServiceCredentialMiddlewarePrecedesDevFallback(t *testing.T) {
+	hash, err := HashPassword("pw", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "service-auth.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	repository := authsession.NewRepository(st)
+	a := NewWithRepository([]byte("secret"), 15*time.Minute, 30*24*time.Hour, repository, true)
+	raw, tokenHash, prefix, err := NewServiceCredentialToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	credential := authsession.ServiceCredential{
+		ID: "0123456789abcdef0123456789abcdef", Name: "Build Agent",
+		TokenPrefix: prefix, TokenHash: tokenHash, Scopes: []string{"records.read"},
+		ExpiresAt: now.Add(time.Hour), CreatedBy: "user-admin", CreatedAt: now, UpdatedAt: now,
+	}
+	if err := repository.CreateServiceCredential(credential, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	called := false
+	protected := a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		identity, ok := IdentityFrom(r.Context())
+		if !ok || identity.ID != "service-credential:"+credential.ID || identity.CredentialID != credential.ID || !identity.IsServiceCredential() {
+			t.Fatalf("identity = %+v, ok=%v", identity, ok)
+		}
+		if _, ok := UserIdentityFrom(r.Context()); ok {
+			t.Fatal("service principal passed UserIdentityFrom")
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	request := httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+	request.Header.Set("Authorization", "Bearer "+raw)
+	response := httptest.NewRecorder()
+	protected.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent || !called {
+		t.Fatalf("valid credential response=%d called=%v body=%s", response.Code, called, response.Body.String())
+	}
+	got, err := repository.ServiceCredentialByID(credential.ID)
+	if err != nil || got.LastUsedAt == nil {
+		t.Fatalf("last used credential = %+v, err=%v", got, err)
+	}
+
+	for name, token := range map[string]string{
+		"unknown": serviceCredentialPrefix + "unknown",
+		"revoked": raw,
+	} {
+		if name == "revoked" {
+			if _, _, err := repository.RevokeServiceCredential(credential.ID, now, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		called = false
+		request = httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+		request.Header.Set("Authorization", "Bearer "+token)
+		response = httptest.NewRecorder()
+		protected.ServeHTTP(response, request)
+		if response.Code != http.StatusUnauthorized || called {
+			t.Fatalf("%s service credential response=%d called=%v body=%s", name, response.Code, called, response.Body.String())
+		}
+	}
+}
+
+func TestNewServiceCredentialTokenContract(t *testing.T) {
+	raw, hash, prefix, err := NewServiceCredentialToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(raw, serviceCredentialPrefix) || len(raw) != len(serviceCredentialPrefix)+43 {
+		t.Fatalf("raw shape = %q", raw)
+	}
+	if prefix != raw[:15] || hash != HashToken(raw) || len(hash) != 64 {
+		t.Fatalf("hash/prefix contract failed: hash=%q prefix=%q", hash, prefix)
+	}
+	if id := NewServiceCredentialID(); len(id) != 32 {
+		t.Fatalf("credential id length = %d, want 32", len(id))
 	}
 }
 
