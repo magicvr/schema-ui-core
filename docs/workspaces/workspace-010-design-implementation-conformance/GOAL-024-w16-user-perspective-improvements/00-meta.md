@@ -67,7 +67,7 @@ VP-010 / workspace-010 的**第十六波**（用户 2026-08-17 点名立项）�
 
 | 批 | 子目标 | status | 范围 |
 |----|--------|--------|------|
-| A | [GOAL-025-w16-rectification-batch-a](../GOAL-025-w16-rectification-batch-a/00-meta.md) | active · 0/4 | W16-F01 首次改密 / W16-F07 一键下线其他 / W16-F08 验证码刷新 + MFA 备份 |
+| A | [GOAL-025-w16-rectification-batch-a](../GOAL-025-w16-rectification-batch-a/00-meta.md) | done · 4/4 | W16-F01 首次改密 / W16-F07 一键下线其他 / W16-F08 验证码刷新 + MFA 备份 |
 | B | [GOAL-026-w16-rectification-batch-b](../GOAL-026-w16-rectification-batch-b/00-meta.md) | done · 4/4 | W16-F02 文件预览复制 / W16-F03 导入模板与错误定位 / W16-F04 金额格式化与调账警示 |
 | C | [GOAL-027-w16-rectification-batch-c](../GOAL-027-w16-rectification-batch-c/00-meta.md) | done · 4/4 | W16-F05 Cron 预览 / W16-F06 监控自动刷新 / W16-F09 字典 Badge / W16-F10 页脚版权 |
 

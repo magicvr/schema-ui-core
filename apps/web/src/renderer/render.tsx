@@ -175,7 +175,7 @@ export interface TableSelection {
 }
 
 export type ActionResult =
-  | { ok: true }
+  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }> }
   | {
       ok: false;
       code: string;
@@ -183,7 +183,7 @@ export type ActionResult =
       messageKey?: string;
       params?: Record<string, unknown>;
       /** GOAL-014 D-002 §2: server field-level validation failures. */
-      fieldErrors?: Array<{ field: string; reason: string }>;
+      fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>;
     };
 
 export interface SchemaCrudValue {
@@ -329,15 +329,29 @@ async function runCustomAction(
     }
     url = url.replaceAll("{id}", encodeURIComponent(rowId));
   }
-  // W16-F02: preview opens the authed download URL in a new tab; copyLink
-  // writes it to the clipboard without fetching the file body.
-  if (handler === "library.preview") {
-    window.open(url, "_blank", "noopener,noreferrer");
-    return { ok: true };
-  }
-  if (handler === "library.copyLink") {
+  // W16-F02: preview/copy fetch the file through the authed transport as a
+  // blob, then open/copy the blob object URL. This keeps content accessible
+  // without leaking the Bearer token into a raw download URL (the download
+  // endpoint itself is attachment + bearer-gated, so a bare window.open 401s).
+  if (handler === "library.preview" || handler === "library.copyLink") {
+    let blob: Blob;
     try {
-      await navigator.clipboard.writeText(url);
+      const response = await fetcher(url, { method: "GET", headers: { Accept: "*/*" } });
+      if (!response.ok) {
+        const apiError = await readResourceApiError(response, handler);
+        return { ok: false, code: apiError.code, message: apiError.message };
+      }
+      blob = await response.blob();
+    } catch (error) {
+      return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    if (handler === "library.preview") {
+      window.open(objectUrl, "_blank", "noopener,noreferrer");
+      return { ok: true };
+    }
+    try {
+      await navigator.clipboard.writeText(objectUrl);
       return { ok: true };
     } catch {
       return { ok: false, code: "CLIPBOARD_UNAVAILABLE", message: "clipboard is unavailable", messageKey: "error.clipboardUnavailable" };
@@ -520,7 +534,35 @@ async function runRequest(
 
   // Branding refresh after settings PATCH lives in the App/host layer (A-006 R-002),
   // not in this generic request executor — keep Renderer free of product endpoints.
-  return { ok: true };
+  // W16-F03: a 200 import response may still carry `fieldErrors` (partial
+  // failure) — surface them to the form instead of pretending full success.
+  let successFieldErrors: Array<{ field: string; reason: string }> | undefined;
+  try {
+    const text = await response.text();
+    if (text !== "") {
+      const parsed = JSON.parse(text) as { fieldErrors?: unknown };
+      if (Array.isArray(parsed.fieldErrors)) {
+        const cleaned = parsed.fieldErrors
+          .filter((entry): entry is { field?: unknown; reason?: unknown; rowNumber?: unknown } =>
+            typeof entry === "object" && entry !== null && !Array.isArray(entry),
+          )
+          .map((entry) => ({
+            field: typeof entry.field === "string" ? entry.field : "",
+            reason: typeof entry.reason === "string" ? entry.reason : "",
+            ...(typeof entry.rowNumber === "number" ? { rowNumber: entry.rowNumber } : {}),
+          }))
+          .filter((entry) => entry.field !== "" || entry.reason !== "");
+        if (cleaned.length > 0) {
+          successFieldErrors = cleaned;
+        }
+      }
+    }
+  } catch {
+    // non-JSON success body (e.g. 204/CSV) — nothing to surface
+  }
+  return successFieldErrors !== undefined
+    ? { ok: true, fieldErrors: successFieldErrors }
+    : { ok: true };
 }
 
 function requestFailedMessage(error: unknown): string {
@@ -1016,7 +1058,7 @@ function SchemaCrudProvider({
         row: activeModal?.row ?? null,
         gateTargetId,
       });
-      if (result.ok) {
+      if (result.ok && (result.fieldErrors === undefined || result.fieldErrors.length === 0)) {
         setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method, t) });
         reloadList();
         setActiveModal(null);
@@ -1509,6 +1551,10 @@ function FormInner({
   // GOAL-014 D-002 §3: submit-time validation + server fieldErrors echo,
   // keyed by field id for inline display.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // W16-F03: row-level import failure detail (200 response fieldErrors).
+  const [importErrorRows, setImportErrorRows] = useState<
+    Array<{ rowNumber?: number; field: string; reason: string }>
+  >([]);
 
   const isSearch = node.props.mode === "search";
   const submitAction = node.props.submitAction;
@@ -1554,7 +1600,17 @@ function FormInner({
       setFormError(null);
       return;
     }
+    // W16-F04: retain a second confirmation for risky wallet adjustments.
+    if (node.id === "adjust-wallet-form") {
+      const delta = values.amountDelta;
+      const risky =
+        typeof delta === "number" && (delta < 0 || Math.abs(delta) > 100000);
+      if (risky && !window.confirm(t("schema.wallet.adjustConfirm"))) {
+        return;
+      }
+    }
     setFieldErrors({});
+    setImportErrorRows([]);
     setSubmitting(true);
     setFormError(null);
     try {
@@ -1573,6 +1629,20 @@ function FormInner({
           ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
           ...(result.params === undefined ? {} : { params: result.params }),
         });
+      } else if (result.ok && (result.fieldErrors ?? []).length > 0) {
+        // W16-F03: a 200 import response with fieldErrors is a partial
+        // failure — keep the modal open and show row-level errors.
+        const rows = (result.fieldErrors ?? []).map((fe) => ({
+          rowNumber: fe.rowNumber,
+          field: fe.field,
+          reason: fe.reason,
+        }));
+        setImportErrorRows(rows);
+        setFormError({
+          code: "IMPORT_HAS_ERRORS",
+          message: t("importErrors.title"),
+        });
+        return;
       }
     } catch (error) {
       // Defensive: a throwing submit (unexpected fetch/transport failure) must
@@ -1745,6 +1815,19 @@ function FormInner({
             ? t(formError.messageKey, formError.params as MessageParams | undefined)
             : formError.message}
         </p>
+      ) : null}
+      {importErrorRows.length > 0 ? (
+        <ul role="alert" className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs" data-import-error-rows>
+          {importErrorRows.map((row, index) => (
+            <li key={index} className="flex gap-2">
+              <span className="shrink-0 font-mono text-muted-foreground">
+                {row.rowNumber === undefined ? "—" : `#${row.rowNumber}`}
+              </span>
+              <span className="shrink-0 font-medium">{row.field}</span>
+              <span className="text-destructive">{row.reason}</span>
+            </li>
+          ))}
+        </ul>
       ) : null}
       {activeFilters.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2.5 text-xs" data-filter-chips>

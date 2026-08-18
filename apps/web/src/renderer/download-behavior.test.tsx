@@ -381,3 +381,65 @@ it("navigate actions with navigateMapping bind row query params", async () => {
   expect(assignSpy).toHaveBeenCalledWith("/dictionary-entries?dictKey=order_status");
   vi.unstubAllGlobals();
 });
+
+// W16-F02: library.preview fetches the file through the authed transport as a
+// blob and opens the blob URL (does not 401 on a bare download URL).
+it("library.preview fetches a blob and opens its object URL", async () => {
+  const openSpy = vi.fn();
+  vi.spyOn(window, "open").mockImplementation(openSpy);
+  let downloadFetched = false;
+  const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    downloadFetched = downloadFetched || url.includes("/download");
+    if (url.includes("/download")) {
+      return new Response("file-bytes", { status: 200 });
+    }
+    return new Response(
+      JSON.stringify({ items: [{ id: "abc", name: "report.pdf", type: "application/pdf" }], total: 1, page: 1, pageSize: 10 }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+  const doc = {
+    meta: {
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation", "permissions.inheritance", "table.sort"],
+    },
+    actions: {
+      previewFile: { type: "custom", handler: "library.preview" },
+    },
+    body: {
+      type: "table",
+      id: "files-table",
+      props: {
+        columns: [{ field: "name", label: "Name" }],
+        dataSource: "/api/library/files",
+        actions: [
+          { key: "preview", label: "Preview", actionRef: "previewFile", permissionIntent: "edit" },
+        ],
+      },
+    },
+  } as unknown as RenderPageDocument;
+  const container = await renderDocument(doc, fetcher as typeof fetch);
+  let button: HTMLButtonElement | undefined;
+  for (let attempt = 0; attempt < 20 && button === undefined; attempt++) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    });
+    try {
+      button = Array.from(container.querySelectorAll("button")).find((b) =>
+        b.textContent?.includes("Preview"),
+      );
+    } catch {
+      button = undefined;
+    }
+  }
+  if (button === undefined) throw new Error("Preview row action not rendered");
+  await act(async () => {
+    button!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+  expect(downloadFetched).toBe(true);
+  expect(objectUrls.length).toBeGreaterThan(0);
+  expect(openSpy).toHaveBeenCalledWith("blob:mock-url", "_blank", "noopener,noreferrer");
+  vi.unstubAllGlobals();
+});

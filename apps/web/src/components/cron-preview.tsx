@@ -1,6 +1,6 @@
 // Cron expression preview (W16-F05): accepts a 5-field cron expression and
 // shows the server-computed description and next three run times.
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/account/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,29 +25,47 @@ export function CronPreview(_props: CustomComponentProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (busy) {
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const response = await authFetch("/api/scheduled-tasks/cron/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ cron: cron.trim() }),
-      });
-      if (!response.ok) {
-        setError(t("cronPreview.invalid"));
+  const runPreview = useCallback(
+    async (expr: string) => {
+      const trimmed = expr.trim();
+      if (trimmed === "") {
+        setPreview(null);
+        setError(null);
         return;
       }
-      setPreview((await response.json()) as CronPreviewResponse);
-    } catch {
-      setError(t("cronPreview.failed"));
-    } finally {
-      setBusy(false);
-    }
+      setBusy(true);
+      setError(null);
+      try {
+        const response = await authFetch("/api/scheduled-tasks/cron/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ cron: trimmed }),
+        });
+        if (!response.ok) {
+          setError(t("cronPreview.invalid"));
+          return;
+        }
+        setPreview((await response.json()) as CronPreviewResponse);
+      } catch {
+        setError(t("cronPreview.failed"));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [authFetch, t],
+  );
+
+  // W16-F05: debounced auto-preview while typing.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      void runPreview(cron);
+    }, 400);
+    return () => window.clearTimeout(id);
+  }, [cron, runPreview]);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void runPreview(cron);
   };
 
   return (

@@ -15,6 +15,7 @@ import "@/components/mfa-manager";
 import "@/components/account-session-toolbar";
 import "@/components/cron-preview";
 import "@/components/monitoring-auto-refresh";
+import "@/components/import-template-download";
 import "@/components/notification-center";
 import "@/components/data-permission-scopes";
 import "@/components/activity-export";
