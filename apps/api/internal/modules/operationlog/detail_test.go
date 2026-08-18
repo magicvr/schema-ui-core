@@ -71,7 +71,7 @@ func TestNewDetailRedactsNestedSensitiveValues(t *testing.T) {
 	}
 	nested := envelope.After["nested"].(map[string]any)
 	for _, key := range []string{"secretBase32", "recoveryCodes", "otpauthURL"} {
-		if nested[key] == nil || nested[key] == "" || nested[key] == "otpauth://secret" {
+		if nested[key] != RedactedValue {
 			t.Fatalf("nested %s = %v, want redacted", key, nested[key])
 		}
 	}
@@ -79,7 +79,9 @@ func TestNewDetailRedactsNestedSensitiveValues(t *testing.T) {
 	if items[0].(map[string]any)["password"] != RedactedValue {
 		t.Fatalf("array password = %v, want redacted", items[0])
 	}
-	if strings.Contains(raw, "session-secret") || strings.Contains(raw, "nested-password") {
+	if strings.Contains(raw, "session-secret") || strings.Contains(raw, "nested-password") ||
+		strings.Contains(raw, "mfa-secret") || strings.Contains(raw, "recovery-secret") ||
+		strings.Contains(raw, "otpauth://secret") {
 		t.Fatalf("raw detail contains sensitive value: %s", raw)
 	}
 }

@@ -1,7 +1,7 @@
 ---
 id: GOAL-003-r2-audit-event-model
 doc: decision
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18

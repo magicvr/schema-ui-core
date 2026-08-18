@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r2-audit-event-model
 title: R2 · 审计事件模型增强
-status: active
+status: done
 parent: GOAL-001-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-18
-version: 0.1.0
+version: 0.2.0
 plan_refs:
   - VP-012-shared-cross-module-contracts
 primary_plan: VP-012-shared-cross-module-contracts
@@ -38,7 +38,7 @@ R2 将现有 operationlog 的事件 detail 从“各 handler 自行拼接 JSON�
 | S0 | 扫描现有事件、敏感字段与读取兼容边界，冻结 D-001 | ✅ 已完成（E-001/E-002；A-001 required findings fixed） |
 | S1 | 实现 detail schema、脱敏器与 repository/API 兼容 | ✅ 已完成（D-003/E-003；checkpoint 516e085） |
 | S2 | 接入 auth/settings/users 三类 mutation 并验证 | ✅ 已完成（E-003；API 全量通过） |
-| S3 | 自审/独立审计、finding 闭合与关门 | 🚧 进行中（self → independent） |
+| S3 | 自审/独立审计、finding 闭合与关门 | ✅ 已完成（A-006 independent pass；A-007 closes final recommendation） |
 
 ## 成功标准
 
