@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-012-shared-cross-module-contracts](../../vision/plans/VP-012-shared-cross-module-contracts.md)（`active`）的唯一 lead delivery workspace。
 
-- **Root** 为交付目标（默认 `active`），首波 = **横切契约波**。
+- **Root** 交付目标已完成（`done`），首波 **横切契约波** R1～R6 已关门。
 - **子目标** = 各契约的独立交付波次。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 

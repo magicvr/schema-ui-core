@@ -1,7 +1,7 @@
 ---
 id: GOAL-001-shared-cross-module-contracts
 doc: execution
-status: active
+status: done
 parent: null
 created: 2026-08-18
 updated: 2026-08-19
@@ -20,3 +20,4 @@ version: 0.1.0
 | E-004 | 2026-08-18 | R3 乐观并发与幂等契约关门 | recorded | [E-004-r3-close-out.md](02-execution/E-004-r3-close-out.md) |
 | E-005 | 2026-08-18 | R4 异步 Job 契约关门与 R5 立项 | recorded | [E-005-r4-close-r5-start.md](02-execution/E-005-r4-close-r5-start.md) |
 | E-006 | 2026-08-19 | R5/R6 关门与 Root 关门就绪 | recorded | [E-006-r5-r6-root-closeout-readiness.md](02-execution/E-006-r5-r6-root-closeout-readiness.md) |
+| E-007 | 2026-08-19 | Workspace-012 Root 关门 | recorded | [E-007-root-close.md](02-execution/E-007-root-close.md) |
