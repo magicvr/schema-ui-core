@@ -193,7 +193,9 @@ func (h *accountSelfHandler) updateProfile() http.Handler {
 			// Only avatar-store assets are ever deleted here (the new value
 			// was validated above; the old value is either empty, the same
 			// asset, or an avatar-store asset from an earlier commit).
-			if err := h.avatarStore.DeleteOrphan(oldAvatar); err != nil {
+			// A-003 F-003 (defense-depth): verify the stored owner matches
+			// the current user before deleting, aligning with dropPreviousAvatar.
+			if err := h.avatarStore.DeleteOrphanOwnedBy(oldAvatar, user.ID); err != nil {
 				slog.Error("avatar clear cleanup failed", "user", user.ID, "err", err)
 			}
 		}

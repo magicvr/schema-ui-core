@@ -26,6 +26,7 @@ version: 0.1.0
 | A-002 | 2026-08-19 | self | A-001 F-001～F-012 修复闭合证据 | pass | 0（实施范围） | [A-002-w7-self.md](03-audit/A-002-w7-self.md) |
 | A-003 | 2026-08-19 | independent | A-001 F-001～F-012 修复闭合复核（close-out） | conditional | 1 | [A-003-w7-independent.md](03-audit/A-003-w7-independent.md) |
 | A-004 | 2026-08-19 | independent | A-001 F-001～F-012 close-out（E-003 后复核 A-003 F-006） | pass | 0 | [A-004-w7-independent.md](03-audit/A-004-w7-independent.md) |
+| A-005 | 2026-08-19 | independent | A-001 F-001/F-002/F-006 代码层面修正复核 + VP-008 go 宣称恢复判断 | pass | 0 | [A-005-w7-independent-code-review.md](03-audit/A-005-w7-independent-code-review.md) |
 
 ## 结论状态
 
@@ -33,4 +34,5 @@ version: 0.1.0
 - self A-002 **pass**：12 条 required 已 `fixed`，开放 required = 0（实施范围）。
 - independent A-003 **conditional**：11/12 required genuine fixed（含 2 条 high）；A-001 F-006 关闭声明不实（生成限流未 `record()`），开放 required = 1。
 - independent A-004 **pass**：E-003 后 A-001 F-006 / A-003 F-001 已 genuine fixed（`record()` + 429 回归）；12/12 required 可核对闭合，开放 required = 0。
-- 独立意见不改本目标 `status`/`progress`。S4 关门条件已满足：self A-002 + independent A-003（conditional）+ independent A-004（pass）后，12/12 required 已合法闭合，`status: done`（本索引不直接改状态，状态由 goal-tree/00-meta 记录）。
+- independent A-005 **pass**：独立代码复核确认 F-001（MFA fail-closed）、F-002（MFA admin reset boundary）、F-006（captcha generate limiter）在现行代码中 genuine fixed；**VP-008 go 宣称恢复条件已满足**（D-002 复核条款：F-001/F-002 闭合后恢复宣称前应复核——本条 + A-004 构成复核）。
+- 独立意见不改本目标 `status`/`progress`。S4 关门条件已满足：self A-002 + independent A-003（conditional）+ independent A-004（pass）+ independent A-005（pass）后，12/12 required 已合法闭合，`status: done`（本索引不直接改状态，状态由 goal-tree/00-meta 记录）。

@@ -278,3 +278,34 @@ func TestAccountAvatarMissingAsset404(t *testing.T) {
 	t.Fatalf("missing avatar = %d, want 404", rr.Code)
 	}
 }
+
+// TestDeleteOrphanOwnedBy verifies the ownership-guarded cleanup (A-003 F-003,
+// defense-in-depth): a URL-leaked avatar asset belonging to another owner must
+// not be deleted by DeleteOrphanOwnedBy, while the owner's own asset is.
+func TestDeleteOrphanOwnedBy(t *testing.T) {
+	dir := t.TempDir()
+	store := NewAvatarAssetStore(dir, DefaultBrandingAssetsOptions())
+
+	// Owner A stores an asset.
+	idA, err := store.save("image/png", "avatar", "user-a", []byte("a"))
+	if err != nil {
+		t.Fatalf("save A: %v", err)
+	}
+	urlA := store.urlPrefix + idA
+
+	// Owner B tries to delete A's asset via its URL → must be a no-op.
+	if err := store.DeleteOrphanOwnedBy(urlA, "user-b"); err != nil {
+		t.Fatalf("cross-owner DeleteOrphanOwnedBy: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(store.dir, idA)); err != nil {
+		t.Fatalf("cross-owner delete removed asset: %v", err)
+	}
+
+	// Owner A deletes their own asset → must succeed.
+	if err := store.DeleteOrphanOwnedBy(urlA, "user-a"); err != nil {
+		t.Fatalf("owner DeleteOrphanOwnedBy: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(store.dir, idA)); !os.IsNotExist(err) {
+		t.Fatalf("owner delete did not remove asset: %v", err)
+	}
+}

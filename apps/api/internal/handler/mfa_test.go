@@ -274,3 +274,56 @@ func TestMFASelfService(t *testing.T) {
 }
 
 var _ = auth.ErrInvalidCredentials
+
+// TestMFAResetAdminTargetBoundary verifies W7 F-002 / A-003 F-004: a delegated
+// (non-admin) actor who DOES hold users.mfa-reset must still be blocked from
+// resetting an ADMIN account's MFA (ADMIN_ACCOUNT_FORBIDDEN), while remaining
+// able to reset a non-admin account.
+func TestMFAResetAdminTargetBoundary(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mountMFASurface(t, env, fake, revoker)
+
+	now := time.Now().UTC()
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"mfa-resetter", "MFA resetter",
+		[]string{"users.read", "users.mfa-reset"}, nil, now,
+	); err != nil {
+		t.Fatalf("create mfa-resetter role: %v", err)
+	}
+	env.addUser(t, "resetter", "resetter-password", []string{"mfa-resetter"})
+	resetterToken := env.login(t, "resetter", "resetter-password")
+
+	// The seeded admin user is a real admin (has the admin role).
+	adminID := "user-" + testSeedUsername
+
+	// Resetting an admin target from a non-admin delegated actor → 403
+	// ADMIN_ACCOUNT_FORBIDDEN (the boundary, not the permission gate — the
+	// actor legitimately holds users.mfa-reset).
+	req := bearer(t, resetterToken, http.MethodPost, "/api/users/"+adminID+"/mfa/reset", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	var out map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if rr.Code != http.StatusForbidden || out["error"] != "ADMIN_ACCOUNT_FORBIDDEN" {
+		t.Fatalf("delegated reset of admin = %d %v, want 403 ADMIN_ACCOUNT_FORBIDDEN", rr.Code, out)
+	}
+	if len(revoker.revoked) != 0 {
+		t.Fatalf("revoker = %v, want none (boundary rejected before reset)", revoker.revoked)
+	}
+
+	// The same delegated actor may reset a NON-admin user's MFA.
+	env.addUser(t, "staff", "staff-password", []string{"editor"})
+	fake.required["user-staff"] = true
+	fake.enrolled["user-staff"] = true
+	req = bearer(t, resetterToken, http.MethodPost, "/api/users/user-staff/mfa/reset", "")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("delegated reset of non-admin = %d, want 204: %s", rr.Code, rr.Body.String())
+	}
+	if len(revoker.revoked) != 1 || revoker.revoked[0] != "user-staff" {
+		t.Fatalf("revoker after non-admin reset = %v, want [user-staff]", revoker.revoked)
+	}
+}

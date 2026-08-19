@@ -325,6 +325,25 @@ func (s *RasterAssetStore) DeleteOrphan(raw string) error {
 	return nil
 }
 
+// DeleteOrphanOwnedBy is DeleteOrphan with an additional ownership guard: the
+// asset is only deleted when its stored owner meta matches the caller. This
+// prevents a URL-leak from enabling cross-account file deletion — a defense-
+// depth hardening of the avatar profile PATCH cleanup (A-003 F-003).
+func (s *RasterAssetStore) DeleteOrphanOwnedBy(raw string, owner string) error {
+	id, ok := s.AssetIDFromURL(raw)
+	if !ok {
+		return nil
+	}
+	_, meta, err := s.load(id)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(meta["owner"]) != owner {
+		return nil
+	}
+	return s.Delete(id)
+}
+
 
 // CountOwner returns the number of stored assets whose meta marks them as owned
 // by owner. Corrupt/unreadable meta files count conservatively toward every
