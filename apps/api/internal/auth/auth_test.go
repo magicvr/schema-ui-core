@@ -38,6 +38,87 @@ func now() time.Time {
 	return time.Now().UTC()
 }
 
+type serviceCredentialMarkFailureRepository struct {
+	Repository
+	err error
+}
+
+func (r serviceCredentialMarkFailureRepository) MarkServiceCredentialUsed(string, time.Time) error {
+	return r.err
+}
+
+func createServiceCredentialForMiddlewareTest(t *testing.T, repository *authsession.Repository) (string, authsession.ServiceCredential) {
+	t.Helper()
+	raw, tokenHash, prefix, err := NewServiceCredentialToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	credential := authsession.ServiceCredential{
+		ID: "0123456789abcdef0123456789abcdef", Name: "Build Agent",
+		TokenPrefix: prefix, TokenHash: tokenHash, Scopes: []string{"records.read"},
+		ExpiresAt: now.Add(time.Hour), CreatedBy: "user-admin", CreatedAt: now, UpdatedAt: now,
+	}
+	if err := repository.CreateServiceCredential(credential, nil); err != nil {
+		t.Fatal(err)
+	}
+	return raw, credential
+}
+
+func TestServiceCredentialMiddlewareFailsClosedWhenUseAuditFails(t *testing.T) {
+	hash, err := HashPassword("pw", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "service-audit-failure.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	repository := authsession.NewRepository(st)
+	raw, credential := createServiceCredentialForMiddlewareTest(t, repository)
+	a := NewWithRepository([]byte("secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
+	a.SetServiceCredentialUseTransactionalRecorder(func(*sql.Tx, ServiceCredentialUse) error { return errors.New("forced use audit failure") })
+	called := false
+	protected := a.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true }))
+	request := httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+	request.Header.Set("Authorization", "Bearer "+raw)
+	response := httptest.NewRecorder()
+	protected.ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable || called {
+		t.Fatalf("use audit failure response=%d called=%v body=%s", response.Code, called, response.Body.String())
+	}
+	got, err := repository.ServiceCredentialByID(credential.ID)
+	if err != nil || got.LastUsedAt != nil {
+		t.Fatalf("last used credential after failed audit = %+v, err=%v", got, err)
+	}
+}
+
+func TestServiceCredentialMiddlewareFailsClosedWhenUseMetadataFails(t *testing.T) {
+	hash, err := HashPassword("pw", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "service-metadata-failure.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	base := authsession.NewRepository(st)
+	raw, _ := createServiceCredentialForMiddlewareTest(t, base)
+	repository := serviceCredentialMarkFailureRepository{Repository: base, err: errors.New("forced metadata failure")}
+	a := NewWithRepository([]byte("secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
+	called := false
+	protected := a.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true }))
+	request := httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+	request.Header.Set("Authorization", "Bearer "+raw)
+	response := httptest.NewRecorder()
+	protected.ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable || called {
+		t.Fatalf("use metadata failure response=%d called=%v body=%s", response.Code, called, response.Body.String())
+	}
+}
+
 func TestNewServiceCredentialIDFallbackRemainsUnique(t *testing.T) {
 	original := readRandom
 	readRandom = func([]byte) (int, error) { return 0, errors.New("random unavailable") }

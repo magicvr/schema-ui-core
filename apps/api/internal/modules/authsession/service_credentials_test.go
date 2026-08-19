@@ -96,6 +96,29 @@ func TestServiceCredentialAuditFailureRollsBackMutation(t *testing.T) {
 	}
 }
 
+func TestServiceCredentialUseAuditFailureRollsBackLastUsedAt(t *testing.T) {
+	repository, _ := openRepository(t, "service-credential-use-rollback.db", true)
+	now := time.Date(2026, 8, 19, 10, 0, 0, 0, time.UTC)
+	credential := ServiceCredential{
+		ID: "0123456789abcdef0123456789abcdef", Name: "Rollback Use",
+		TokenPrefix: "sui_sc_abcdefgh", TokenHash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		Scopes: []string{"records.read"}, ExpiresAt: now.Add(time.Hour), CreatedBy: "user-admin",
+		CreatedAt: now, UpdatedAt: now,
+	}
+	if err := repository.CreateServiceCredential(credential, nil); err != nil {
+		t.Fatal(err)
+	}
+	forced := errors.New("forced use audit failure")
+	err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now.Add(time.Minute), func(*sql.Tx) error { return forced })
+	if !errors.Is(err, forced) {
+		t.Fatalf("MarkServiceCredentialUsedWithAudit error = %v, want forced audit failure", err)
+	}
+	got, err := repository.ServiceCredentialByID(credential.ID)
+	if err != nil || got.LastUsedAt != nil {
+		t.Fatalf("credential after failed use audit = %+v, err=%v", got, err)
+	}
+}
+
 func TestServiceCredentialConcurrentDuplicateName(t *testing.T) {
 	repository, _ := openRepository(t, "service-credential-concurrent.db", true)
 	now := time.Now().UTC()

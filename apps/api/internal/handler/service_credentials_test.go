@@ -184,11 +184,20 @@ func TestServiceCredentialRequiredAuditFailureRollsBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := created["id"].(string)
+	secret := created["secret"].(string)
 	env.operations.SetOperationLogError(forced)
+	failedUse := httptest.NewRecorder()
+	env.mux.ServeHTTP(failedUse, bearer(t, secret, http.MethodGet, "/api/users", ""))
+	expectError(t, failedUse, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE")
+	credential, err := env.authRepository.ServiceCredentialByID(id)
+	if err != nil || credential.LastUsedAt != nil {
+		t.Fatalf("credential after failed use audit = %+v err=%v", credential, err)
+	}
+
 	failedRevoke := httptest.NewRecorder()
 	env.mux.ServeHTTP(failedRevoke, bearer(t, admin, http.MethodPost, "/api/service-credentials/"+id+"/revoke", ""))
 	expectError(t, failedRevoke, http.StatusInternalServerError, "INTERNAL")
-	credential, err := env.authRepository.ServiceCredentialByID(id)
+	credential, err = env.authRepository.ServiceCredentialByID(id)
 	if err != nil || credential.RevokedAt != nil {
 		t.Fatalf("credential after failed revoke audit = %+v err=%v", credential, err)
 	}

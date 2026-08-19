@@ -2,6 +2,7 @@ package composition
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -238,7 +239,7 @@ func newMuxWithExtraProviders(
 	extra []kernel.Provider,
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
-	a.SetServiceCredentialUseRecorder(func(use auth.ServiceCredentialUse) error {
+	a.SetServiceCredentialUseTransactionalRecorder(func(tx *sql.Tx, use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
 			"credentialId": use.CredentialID,
 			"scopeCount":   use.ScopeCount,
@@ -249,7 +250,7 @@ func newMuxWithExtraProviders(
 			return err
 		}
 		recordID := use.CredentialID
-		return operations.RecordOperation(operationlog.Operation{
+		return operations.RecordOperationTx(tx, operationlog.Operation{
 			ID: "op-service-" + auth.NewServiceCredentialID(), Event: operationlog.EventServiceCredentialUse,
 			ActorID: "service-credential:" + use.CredentialID, ActorName: use.Name,
 			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, CreatedAt: use.At,

@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -87,6 +88,15 @@ type ServiceCredentialUse struct {
 
 type ServiceCredentialUseRecorder func(ServiceCredentialUse) error
 
+// ServiceCredentialUseTxRecorder writes the use audit row on the caller-owned
+// credential transaction. Production composition uses this seam so the audit
+// event and last_used_at update commit or roll back together.
+type ServiceCredentialUseTxRecorder func(*sql.Tx, ServiceCredentialUse) error
+
+type ServiceCredentialUseTransactionalRepository interface {
+	MarkServiceCredentialUsedWithAudit(string, time.Time, authsession.ServiceCredentialAudit) error
+}
+
 // MFAEnforcer is the optional second-factor login gate (S-10 · GOAL-017
 // D-002 §3): Required reports whether the user must complete a second factor
 // before tokens are issued. A nil enforcer keeps the login contract
@@ -105,8 +115,9 @@ type Authenticator struct {
 	devSession bool // explicit opt-in: static dev session fallback (M9)
 	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
 	// nil = the login contract is byte-identical to the pre-MFA behavior.
-	mfa                          MFAEnforcer
-	serviceCredentialUseRecorder ServiceCredentialUseRecorder
+	mfa                            MFAEnforcer
+	serviceCredentialUseRecorder   ServiceCredentialUseRecorder
+	serviceCredentialUseTxRecorder ServiceCredentialUseTxRecorder
 	// OnLockOpened is an optional best-effort hook fired when a login failure
 	// opens the account-lock window (F-04 · GOAL-006 D-002 §3: system
 	// notification source). Nil = no hook; failures never block Login.
@@ -196,10 +207,16 @@ func (a *Authenticator) SetMFAEnforcer(mfa MFAEnforcer) {
 	a.mfa = mfa
 }
 
-// SetServiceCredentialUseRecorder installs a best-effort machine-use audit
-// hook. Authentication remains successful when the hook fails.
+// SetServiceCredentialUseRecorder installs the machine-use audit hook.
+// Authentication fails closed when the hook cannot persist the audit event.
 func (a *Authenticator) SetServiceCredentialUseRecorder(recorder ServiceCredentialUseRecorder) {
 	a.serviceCredentialUseRecorder = recorder
+}
+
+// SetServiceCredentialUseTransactionalRecorder installs the production audit
+// hook that shares the service-credential usage transaction.
+func (a *Authenticator) SetServiceCredentialUseTransactionalRecorder(recorder ServiceCredentialUseTxRecorder) {
+	a.serviceCredentialUseTxRecorder = recorder
 }
 
 // IssueTokensFor issues a fresh access/refresh pair for an already
@@ -591,17 +608,39 @@ func (a *Authenticator) authenticateServiceCredential(w http.ResponseWriter, r *
 		PrincipalKind: account.PrincipalKindServiceCredential,
 		CredentialID:  credential.ID,
 	}
-	_ = a.repository.MarkServiceCredentialUsed(credential.ID, now)
+	use := ServiceCredentialUse{
+		CredentialID:  credential.ID,
+		Name:          credential.Name,
+		ScopeCount:    len(credential.Scopes),
+		Method:        r.Method,
+		Path:          r.URL.Path,
+		CorrelationID: requestid.FromContext(r.Context()),
+		At:            now,
+	}
+	if a.serviceCredentialUseTxRecorder != nil {
+		repository, ok := a.repository.(ServiceCredentialUseTransactionalRepository)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+			return
+		}
+		if err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now, func(tx *sql.Tx) error {
+			return a.serviceCredentialUseTxRecorder(tx, use)
+		}); err != nil {
+			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), identity)))
+		return
+	}
 	if a.serviceCredentialUseRecorder != nil {
-		_ = a.serviceCredentialUseRecorder(ServiceCredentialUse{
-			CredentialID:  credential.ID,
-			Name:          credential.Name,
-			ScopeCount:    len(credential.Scopes),
-			Method:        r.Method,
-			Path:          r.URL.Path,
-			CorrelationID: requestid.FromContext(r.Context()),
-			At:            now,
-		})
+		if err := a.serviceCredentialUseRecorder(use); err != nil {
+			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+			return
+		}
+	}
+	if err := a.repository.MarkServiceCredentialUsed(credential.ID, now); err != nil {
+		writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+		return
 	}
 	next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), identity)))
 }

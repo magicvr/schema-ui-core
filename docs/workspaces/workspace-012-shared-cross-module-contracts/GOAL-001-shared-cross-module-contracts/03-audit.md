@@ -23,6 +23,8 @@ version: 0.1.0
 | A-007 | 2026-08-19 | self | response：A-004/A-005/A-006；全部 finding 修复后的实现复核 | pass | 0 | [A-007-root-all-findings-response.md](03-audit/A-007-root-all-findings-response.md) |
 | A-008 | 2026-08-19 | independent | finding-closure：A-004/A-005 F-001～F-009、E-009/A-007、受影响 API/Web、Root 关门证据、VACUUM 超时是否阻断 | pass | 0 | [A-008-root-a004-a005-closure-independent.md](03-audit/A-008-root-a004-a005-closure-independent.md) |
 | A-009 | 2026-08-19 | self | response：A-008 F-001/F-002 recommended residual 修复 | pass | 0 | [A-009-root-a008-response.md](03-audit/A-009-root-a008-response.md) |
+| A-010 | 2026-08-19 | independent | 当前 R1-R6 代码、回归与安全审计；R6 service-credential 使用审计失败路径 | fail | 1（F-010） | [A-010-root-current-code-security-independent.md](03-audit/A-010-root-current-code-security-independent.md) |
+| A-011 | 2026-08-19 | self | response：A-010 F-010；R6 使用审计 fail-closed 与 Root close-out | pass | 0 | [A-011-root-a010-response.md](03-audit/A-011-root-a010-response.md) |
 
 ## 结论状态
 
@@ -39,3 +41,7 @@ A-007 self 编排响应：A-004 F-001～F-007 与 A-005 F-009 均已按可核对
 A-008 independent 复审：verdict=pass；A-004 F-001～F-007 与 A-005 F-008 修复可重复核对；A-005 F-009 实现已修。full API handler SQLite VACUUM 超时 **非阻断**（孤立 `TestNotificationPruneKeepsUnread` 7.28s 通过）。新增 2 条 recommended（heartbeat 错误注入测试缺口、`finish()` 取消查询失败路径），开放 required=0。响应归 `/govern`。
 
 A-009 self 编排响应：A-008 F-001/F-002 已分别补充 `abortLease` 终态回归测试与 finish 对称失败清理；当前审计台账开放 required=0、recommended residual=0。Root `done/100` 投影保持不变。
+
+A-010 independent 当前代码与安全审计：API `go test ./...` 全部通过，Web 72/72 文件、1069/1069 用例通过；但 R6 service-credential 成功认证后的 `MarkServiceCredentialUsed` 与 `serviceCredentialUseRecorder` 错误均被丢弃，请求仍继续执行（F-010，required/medium）。在 `/govern` 合法响应前，R6 使用审计与 Root close-out 不能无条件宣称完成。
+
+A-011 self 编排响应：用户确认 `fixed`；生产 R6 使用审计与 `last_used_at` 通过调用方事务原子提交，任一失败均返回 503 `STORAGE_UNAVAILABLE` 且不调用 downstream，新增 auth 故障注入回归覆盖事务审计失败与 metadata 失败。A-010 F-010 已按可核对证据 fixed，Root I-002 保持 verified，当前开放 required=0；A-010 原 independent verdict 与 finding 原文保留，建议后续独立复审专门核对该 fail-closed 契约。

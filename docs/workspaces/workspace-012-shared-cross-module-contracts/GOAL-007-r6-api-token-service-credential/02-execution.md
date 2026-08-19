@@ -21,3 +21,4 @@ version: 0.1.0
 | E-005 | 2026-08-19 | R6 S1/S2 实施与全量验证 | recorded | [E-005-r6-s1-s2-implementation.md](02-execution/E-005-r6-s1-s2-implementation.md) |
 | E-006 | 2026-08-19 | R6 A-007 整改与全量回归 | recorded | [E-006-r6-a007-remediation.md](02-execution/E-006-r6-a007-remediation.md) |
 | E-007 | 2026-08-19 | R6 关门 | recorded | [E-007-r6-close.md](02-execution/E-007-r6-close.md) |
+| E-008 | 2026-08-19 | A-010 F-010 fixed 实施 | recorded | [E-008-r6-a010-fixed.md](02-execution/E-008-r6-a010-fixed.md) |

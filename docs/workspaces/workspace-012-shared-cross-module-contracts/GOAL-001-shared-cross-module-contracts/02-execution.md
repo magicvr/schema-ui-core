@@ -24,3 +24,4 @@ version: 0.1.0
 | E-008 | 2026-08-19 | F-008 i18n 修复与 Web 全量回归 | recorded | [E-008-f008-i18n-fix-regression.md](02-execution/E-008-f008-i18n-fix-regression.md) |
 | E-009 | 2026-08-19 | A-004/A-005 全部 finding 修复与回归验证 | recorded | [E-009-all-audit-findings-remediation.md](02-execution/E-009-all-audit-findings-remediation.md) |
 | E-010 | 2026-08-19 | A-008 recommended residual 修复与 runner 终态回归 | recorded | [E-010-a008-recommended-remediation.md](02-execution/E-010-a008-recommended-remediation.md) |
+| E-011 | 2026-08-19 | A-010 F-010 fixed 响应与 R6 使用审计 fail-closed | recorded | [E-011-a010-f010-fixed-response.md](02-execution/E-011-a010-f010-fixed-response.md) |

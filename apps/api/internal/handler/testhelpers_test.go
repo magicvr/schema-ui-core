@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -98,7 +99,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	operations := operationlog.NewRepository(st)
 	settings := settingsrepository.New(st)
 	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, authRepository, devSession)
-	a.SetServiceCredentialUseRecorder(func(use auth.ServiceCredentialUse) error {
+	a.SetServiceCredentialUseTransactionalRecorder(func(tx *sql.Tx, use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
 			"credentialId": use.CredentialID, "scopeCount": use.ScopeCount, "method": use.Method, "path": use.Path,
 		})
@@ -106,7 +107,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 			return err
 		}
 		recordID := use.CredentialID
-		return operations.RecordOperation(operationlog.Operation{
+		return operations.RecordOperationTx(tx, operationlog.Operation{
 			ID: newOperationID(), Event: operationlog.EventServiceCredentialUse,
 			ActorID: "service-credential:" + use.CredentialID, ActorName: use.Name,
 			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, CreatedAt: use.At,

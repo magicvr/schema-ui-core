@@ -177,6 +177,24 @@ func (r *Repository) MarkServiceCredentialUsed(id string, now time.Time) error {
 	})
 }
 
+// MarkServiceCredentialUsedWithAudit updates usage metadata and appends the
+// corresponding audit row on one transaction. Any audit error rolls back the
+// metadata update, keeping credential usage and its audit evidence aligned.
+func (r *Repository) MarkServiceCredentialUsedWithAudit(id string, now time.Time, audit ServiceCredentialAudit) error {
+	if audit == nil {
+		return errors.New("authsession: service credential use audit is required")
+	}
+	return r.withTx("mark service credential used with audit", func(tx *sql.Tx) error {
+		if _, err := tx.Exec(`UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
+			return err
+		}
+		if err := audit(tx); err != nil {
+			return fmt.Errorf("record service credential use audit: %w", err)
+		}
+		return nil
+	})
+}
+
 func sortedScopes(scopes []string) []string {
 	seen := make(map[string]struct{}, len(scopes))
 	result := make([]string, 0, len(scopes))
