@@ -73,7 +73,7 @@ func OperationsExportRoute(a *auth.Authenticator, repository operationlog.Reader
 				return
 			}
 
-			headers := []string{"id", "event", "actorId", "actorName", "recordId", "detail", "correlationId", "createdAt"}
+			headers := []string{"id", "event", "actorId", "actorName", "recordId", "detail", "correlationId", "sessionId", "createdAt"}
 			rows := make([][]string, 0, len(items))
 			for _, op := range items {
 				row := operationToMap(op)
@@ -85,6 +85,7 @@ func OperationsExportRoute(a *auth.Authenticator, repository operationlog.Reader
 					formulaSafe(stringField(row, "recordId")),
 					formulaSafe(stringField(row, "detail")),
 					formulaSafe(stringField(row, "correlationId")),
+					formulaSafe(stringField(row, "sessionId")),
 					formulaSafe(stringField(row, "createdAt")),
 				})
 			}

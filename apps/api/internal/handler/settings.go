@@ -329,6 +329,7 @@ func recordSettingsOperation(operations operationlog.Recorder, user account.User
 		Detail:        &detail,
 		CreatedAt:     now,
 		CorrelationID: correlationID,
+		SessionID:     identitySession(user),
 	}
 	if err := operations.RecordOperation(op); err != nil {
 		slog.Error("operation log write failed", "event", operationlog.EventSettingsUpdate, "err", err)

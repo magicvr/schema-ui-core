@@ -191,7 +191,7 @@ func (h *serviceCredentialHandler) create() http.Handler {
 			return h.operations.RecordOperationTx(tx, operationlog.Operation{
 				ID: newOperationID(), Event: operationlog.EventServiceCredentialCreate,
 				ActorID: actor.ID, ActorName: actor.Name, RecordID: &credential.ID, Detail: &detail,
-				CorrelationID: requestid.FromContext(r.Context()), CreatedAt: now,
+				CorrelationID: requestid.FromContext(r.Context()), SessionID: identitySession(actor), CreatedAt: now,
 			})
 		})
 		if errors.Is(err, authsession.ErrCredentialNameTaken) {
@@ -223,7 +223,7 @@ func (h *serviceCredentialHandler) revoke() http.Handler {
 			return h.operations.RecordOperationTx(tx, operationlog.Operation{
 				ID: newOperationID(), Event: operationlog.EventServiceCredentialRevoke,
 				ActorID: actor.ID, ActorName: actor.Name, RecordID: &credential.ID, Detail: &detail,
-				CorrelationID: requestid.FromContext(r.Context()), CreatedAt: now,
+				CorrelationID: requestid.FromContext(r.Context()), SessionID: identitySession(actor), CreatedAt: now,
 			})
 		})
 		if errors.Is(err, authsession.ErrNotFound) {

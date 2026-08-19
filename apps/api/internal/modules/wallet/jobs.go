@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -140,15 +141,15 @@ func (s *JobService) recordOperation(event string, job jobs.Job, actorName strin
 	if s.operations == nil {
 		return
 	}
-	detailJSON, err := json.Marshal(detailValue)
-	if err != nil {
-		return
-	}
 	id, err := newID(now)
 	if err != nil {
 		return
 	}
-	detail := string(detailJSON)
+	action := strings.TrimPrefix(event, "wallet.")
+	detail, err := operationlog.NewDetail(action, nil, detailValue)
+	if err != nil {
+		return
+	}
 	_ = s.operations.RecordOperation(operationlog.Operation{
 		ID: id, Event: event, ActorID: job.ActorID, ActorName: actorName,
 		RecordID: &job.ID, Detail: &detail, CorrelationID: job.CorrelationID, CreatedAt: now,

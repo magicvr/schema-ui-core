@@ -169,7 +169,7 @@ func (h *authHandler) login() http.HandlerFunc {
 		if h.rateLimiter != nil {
 			h.rateLimiter.clear(limiterKey)
 		}
-		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()))
+		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()), user.SessionID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -192,7 +192,7 @@ func (h *authHandler) refresh() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
 			return
 		}
-		h.authEvent(operationlog.EventAuthRefresh, user.ID, requestid.FromContext(r.Context()))
+		h.authEvent(operationlog.EventAuthRefresh, user.ID, requestid.FromContext(r.Context()), user.SessionID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -207,13 +207,13 @@ func (h *authHandler) logout() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
 			return
 		}
-		userID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
+		userID, sessionID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
 			return
 		}
 		if userID != "" {
-			h.authEvent(operationlog.EventAuthLogout, userID, requestid.FromContext(r.Context()))
+			h.authEvent(operationlog.EventAuthLogout, userID, requestid.FromContext(r.Context()), sessionID)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -224,14 +224,14 @@ func (h *authHandler) logout() http.HandlerFunc {
 // it is resolved from the store;
 // best-effort: an unresolvable actor still logs with the actor id and a
 // service-log error, never blocking the business response (§5).
-func (h *authHandler) authEvent(event, userID, correlationID string) {
+func (h *authHandler) authEvent(event, userID, correlationID, sessionID string) {
 	u, err := h.a.UserByID(userID)
 	if err != nil {
 		slog.Error("operation log auth event: resolve user", "event", event, "user_id", userID, "err", err)
-		h.logOperation(event, userID, "", "", correlationID)
+		h.logOperation(event, userID, "", "", correlationID, sessionID)
 		return
 	}
-	h.logOperation(event, u.ID, u.Name, newAuthDetail(strings.TrimPrefix(event, "auth."), u.Username), correlationID)
+	h.logOperation(event, u.ID, u.Name, newAuthDetail(strings.TrimPrefix(event, "auth."), u.Username), correlationID, sessionID)
 }
 
 func newAuthDetail(action, username string) string {
@@ -246,7 +246,7 @@ func newAuthDetail(action, username string) string {
 // logOperation appends one operation-log row (R5 S6 optional bonus checkpoint,
 // I-008-003 §5). Best-effort: a logging failure is logged to the service log
 // and never changes the business response.
-func (h *authHandler) logOperation(event, actorID, actorName, detail, correlationID string) {
+func (h *authHandler) logOperation(event, actorID, actorName, detail, correlationID, sessionID string) {
 	op := operationlog.Operation{
 		ID:        newOperationID(),
 		Event:     event,
@@ -258,6 +258,7 @@ func (h *authHandler) logOperation(event, actorID, actorName, detail, correlatio
 		op.Detail = &detail
 	}
 	op.CorrelationID = correlationID
+	op.SessionID = sessionID
 	if h.operations == nil {
 		return
 	}

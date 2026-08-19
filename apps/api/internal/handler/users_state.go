@@ -6,8 +6,8 @@ package handler
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -135,20 +135,5 @@ func (h *userStateHandler) unlock() http.Handler {
 }
 
 func (h *userStateHandler) record(event string, actor account.User, recordID, username string) {
-	op := operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     event,
-		ActorID:   actor.ID,
-		ActorName: actor.Name,
-		RecordID:  &recordID,
-		CreatedAt: h.now().UTC(),
-	}
-	detail := `{"username":` + jsonQuote(username) + `}`
-	op.Detail = &detail
-	if h.operations == nil {
-		return
-	}
-	if err := h.operations.RecordOperation(op); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
+	recordAudit(h.operations, actor, event, recordID, auditDetail(strings.TrimPrefix(event, "users."), map[string]any{"username": username}), h.now().UTC(), nil)
 }

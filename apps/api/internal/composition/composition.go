@@ -253,7 +253,7 @@ func newMuxWithExtraProviders(
 		return operations.RecordOperationTx(tx, operationlog.Operation{
 			ID: "op-service-" + auth.NewServiceCredentialID(), Event: operationlog.EventServiceCredentialUse,
 			ActorID: "service-credential:" + use.CredentialID, ActorName: use.Name,
-			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, CreatedAt: use.At,
+			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, SessionID: use.CredentialID, CreatedAt: use.At,
 		})
 	})
 	// S-11 (GOAL-011): one shared captcha service instance feeds both the login

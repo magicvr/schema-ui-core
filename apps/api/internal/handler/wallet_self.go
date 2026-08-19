@@ -57,8 +57,7 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 			return
 		}
 		if created {
-			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate,
-				`{"accountId":`+jsonQuote(account.ID)+`,"ownerId":`+jsonQuote(account.OwnerID)+`,"auto":true}`, now)
+			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, "account-create", map[string]any{"accountId": account.ID, "ownerId": account.OwnerID, "auto": true}, now)
 		}
 		writeJSON(w, http.StatusOK, resourceList{Items: []map[string]any{accountToMap(*account)}, Total: 1, Page: 1, PageSize: 1})
 	})))

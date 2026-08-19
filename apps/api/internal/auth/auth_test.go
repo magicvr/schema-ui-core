@@ -150,6 +150,9 @@ func TestLoginSuccess(t *testing.T) {
 	if sub.UserID != "user-admin" {
 		t.Fatalf("subject = %v, want user-admin", sub.UserID)
 	}
+	if user.SessionID == "" || sub.SessionID != user.SessionID {
+		t.Fatalf("session id user=%q token=%q", user.SessionID, sub.SessionID)
+	}
 }
 
 func TestServiceCredentialMiddlewarePrecedesDevFallback(t *testing.T) {
@@ -388,13 +391,13 @@ func TestLogoutRevokes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Login: %v", err)
 	}
-	if uid, err := a.Logout(refresh, now().Add(time.Minute)); err != nil {
+	if uid, _, err := a.Logout(refresh, now().Add(time.Minute)); err != nil {
 		t.Fatalf("Logout: %v", err)
 	} else if uid != "user-admin" {
 		t.Fatalf("Logout user id = %q, want user-admin", uid)
 	}
 	// Idempotent: logging out the same token again is a no-op success.
-	if _, err := a.Logout(refresh, now().Add(2*time.Minute)); err != nil {
+	if _, _, err := a.Logout(refresh, now().Add(2*time.Minute)); err != nil {
 		t.Fatalf("second Logout = %v, want nil", err)
 	}
 	if _, _, _, err := a.Refresh(refresh, now().Add(3*time.Minute)); !errors.Is(err, ErrTokenRevoked) {
@@ -404,7 +407,7 @@ func TestLogoutRevokes(t *testing.T) {
 
 func TestParseAccessTokenExpiredAndWrongSecret(t *testing.T) {
 	// A token minted with a negative TTL is already expired at signing.
-	expired, err := SignAccessToken([]byte("secret"), "user-admin", 0, -time.Minute, now())
+	expired, err := SignAccessToken([]byte("secret"), "user-admin", 0, "", -time.Minute, now())
 	if err != nil {
 		t.Fatalf("SignAccessToken: %v", err)
 	}
@@ -412,7 +415,7 @@ func TestParseAccessTokenExpiredAndWrongSecret(t *testing.T) {
 		t.Fatalf("ParseAccessToken(expired) = nil, want error")
 	}
 	// A token signed with a different secret must be rejected.
-	other, err := SignAccessToken([]byte("other"), "user-admin", 0, time.Minute, now())
+	other, err := SignAccessToken([]byte("other"), "user-admin", 0, "", time.Minute, now())
 	if err != nil {
 		t.Fatalf("SignAccessToken: %v", err)
 	}

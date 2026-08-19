@@ -32,6 +32,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | R5 | **maintenance / degraded / read-only 门控** | 依赖 R1 | ✅ 已完成（GOAL-006-r5-maintenance-read-only-gate；A-008 pass / A-009 closed） |
 | R6 | **API Token / Service Credential** | 依赖 R2 审计模型 | ✅ 已完成（GOAL-007-r6-api-token-service-credential；A-010 F-010 fixed / A-012 independent pass / A-013 response） |
 | R7 | **审计日志保留设置与过期归档/删除** | 依赖 R2 | ✅ 已完成（GOAL-008-audit-log-retention-settings；A-002 independent pass / A-003 close） |
+| R8 | **审计 envelope 全覆盖与 session 关联** | 依赖 R2 | ✅ 已完成（GOAL-009-audit-envelope-and-session；A-002 independent pass / A-003 close） |
 
 ## 成功标准（方向级）
 

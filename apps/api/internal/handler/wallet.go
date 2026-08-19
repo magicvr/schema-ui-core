@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -127,8 +126,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			return
 		}
 		if created {
-			detail := `{"accountId":` + jsonQuote(account.ID) + `,"ownerId":` + jsonQuote(account.OwnerID) + `,"auto":true}`
-			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, detail, now)
+			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, "account-create", map[string]any{"accountId": account.ID, "ownerId": account.OwnerID, "auto": true}, now)
 		}
 		writeWalletAccount(w, http.StatusOK, *account)
 	})))
@@ -169,8 +167,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		// over-draft) — otherwise the account could stay forever without its
 		// wallet.account-create event.
 		if created {
-			detail := `{"accountId":` + jsonQuote(account.ID) + `,"ownerId":` + jsonQuote(ownerID) + `,"auto":true}`
-			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, detail, now)
+			recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, "account-create", map[string]any{"accountId": account.ID, "ownerId": ownerID, "auto": true}, now)
 		}
 		account, entry, replayed, err := service.Mutate(account.ID, walletstore.LedgerEntryInput{
 			EntryType: walletstore.EntryAdjust, AmountDelta: body.AmountDelta,
@@ -183,8 +180,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			return
 		}
 		if !replayed {
-			detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
-			recordWalletEvent(operations, user, operationlog.EventWalletAdjust, detail, now)
+			recordWalletEvent(operations, user, operationlog.EventWalletAdjust, "adjust", map[string]any{"accountId": account.ID, "entryId": entry.ID, "amountDelta": entry.AmountDelta}, now)
 		}
 		writeWalletMutation(w, *account, *entry, replayed)
 	})))
@@ -218,8 +214,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			writeWalletError(w, r, err)
 			return
 		}
-		recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate,
-			`{"accountId":`+jsonQuote(account.ID)+`,"ownerType":`+jsonQuote(account.OwnerType)+`,"ownerId":`+jsonQuote(account.OwnerID)+`}`, now)
+		recordWalletEvent(operations, user, operationlog.EventWalletAccountCreate, "account-create", map[string]any{"accountId": account.ID, "ownerType": account.OwnerType, "ownerId": account.OwnerID}, now)
 		writeWalletAccount(w, http.StatusCreated, *account)
 	})))
 
@@ -260,8 +255,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			writeWalletError(w, r, err)
 			return
 		}
-		recordWalletEvent(operations, user, operationlog.EventWalletAccountUpdate,
-			`{"accountId":`+jsonQuote(account.ID)+`,"status":`+jsonQuote(account.Status)+`}`, now)
+		recordWalletEvent(operations, user, operationlog.EventWalletAccountUpdate, "account-update", map[string]any{"accountId": account.ID, "status": account.Status}, now)
 		writeWalletAccount(w, http.StatusOK, *account)
 	})))
 
@@ -493,8 +487,7 @@ func walletMutate(w http.ResponseWriter, r *http.Request, service WalletService,
 		return
 	}
 	if !replayed {
-		detail := `{"accountId":` + jsonQuote(account.ID) + `,"entryId":` + jsonQuote(entry.ID) + `,"amountDelta":` + strconv.FormatInt(entry.AmountDelta, 10) + `}`
-		recordWalletEvent(operations, user, "wallet."+eventSuffix, detail, now)
+		recordWalletEvent(operations, user, "wallet."+eventSuffix, eventSuffix, map[string]any{"accountId": account.ID, "entryId": entry.ID, "amountDelta": entry.AmountDelta}, now)
 	}
 	writeWalletMutation(w, *account, *entry, replayed)
 }
@@ -534,15 +527,8 @@ func writeWalletJobError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-// recordWalletEvent writes a wallet audit row.
-func recordWalletEvent(operations operationlog.Recorder, user account.User, event, detail string, now time.Time) {
-	if operations == nil {
-		return
-	}
-	_ = operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: event,
-		ActorID: user.ID, ActorName: user.Name, Detail: &detail, CreatedAt: now,
-	})
+func recordWalletEvent(operations operationlog.Recorder, user account.User, event, action string, fields map[string]any, now time.Time) {
+	recordAudit(operations, user, event, "", auditDetail(action, fields), now, nil)
 }
 
 func accountToMap(a walletstore.Account) map[string]any {

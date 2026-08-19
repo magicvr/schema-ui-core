@@ -11,7 +11,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -341,21 +340,5 @@ func sanitizeFileHeaderName(name string) string {
 }
 
 func recordFileEvent(operations operationlog.Recorder, event string, user account.User, id string, now time.Time) {
-	if operations == nil {
-		return
-	}
-	recordID := id
-	// A-003 F-003: audit writes stay best-effort (never fail the HTTP
-	// operation) but failures leave a log trail, matching the export/users
-	// peers (slog.Error).
-	if err := operations.RecordOperation(operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     event,
-		ActorID:   user.ID,
-		ActorName: user.Name,
-		RecordID:  &recordID,
-		CreatedAt: now.UTC(),
-	}); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
+	recordAudit(operations, user, event, id, nil, now.UTC(), nil)
 }

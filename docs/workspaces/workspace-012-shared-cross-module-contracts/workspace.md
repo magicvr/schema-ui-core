@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-012-shared-cross-module-contracts](../../vision/plans/VP-012-shared-cross-module-contracts.md)（**`closed`**，2026-08-19 完整关门 · 首波）的唯一 lead delivery workspace。历史绑定保留，默认不接新区。
 
-- **Root** 仍为 `active`：R1～R7 子目标均已关门；Root 关门审计未做。
+- **Root** 仍为 `active`：R1～R8 子目标均已关门；Root 关门审计未做。
 - **子目标** = 各契约的独立交付波次。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 
@@ -51,6 +51,7 @@ VP-012：共享横切契约与平台基架（correlation / 审计模型 / 并发
 | R5 | maintenance / degraded / read-only 门控 | ✅ 已完成（GOAL-006-r5-maintenance-read-only-gate；A-008 pass / A-009 closed） |
 | R6 | API Token / Service Credential | ✅ 已完成（GOAL-007-r6-api-token-service-credential；A-010 F-010 fixed / Root A-012 independent pass / A-013 response） |
 | R7 | 审计日志保留设置与过期归档/删除 | ✅ 已完成（GOAL-008-audit-log-retention-settings；A-002 independent pass / A-003 close） |
+| R8 | 审计 envelope 全覆盖与 session 关联 | ✅ 已完成（GOAL-009-audit-envelope-and-session；A-002 independent pass / A-003 close） |
 
 ## 固定共享资料引用
 

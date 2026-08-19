@@ -265,7 +265,7 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not change password")
 			return
 		}
-		h.record(operationlog.EventAccountPasswordChange, user.ID, user.Name, user.ID, "")
+		h.record(operationlog.EventAccountPasswordChange, user, user.ID, "")
 		NotifyAccountEvent(h.notifier, user.ID, "account.password-changed", now)
 		// W16-F01: when the change was a forced initial-password replacement,
 		// reissue a fresh token pair so the user stays signed in and enters the
@@ -380,7 +380,7 @@ func (h *accountSelfHandler) revokeSession() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not revoke session")
 			return
 		}
-		h.record(operationlog.EventAccountSessionRevoke, user.ID, user.Name, id, "")
+		h.record(operationlog.EventAccountSessionRevoke, user, id, "")
 		w.WriteHeader(http.StatusNoContent)
 	})
 }
@@ -404,29 +404,15 @@ func (h *accountSelfHandler) revokeOthers() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not refresh current session")
 			return
 		}
-		h.record(operationlog.EventAccountSessionRevoke, user.ID, user.Name, "others", "")
+		h.record(operationlog.EventAccountSessionRevoke, user, "others", "")
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: acct})
 	})
 }
 
-func (h *accountSelfHandler) record(event, actorID, actorName, recordID, detail string) {
-	op := operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     event,
-		ActorID:   actorID,
-		ActorName: actorName,
-		CreatedAt: h.now().UTC(),
+func (h *accountSelfHandler) record(event string, user account.User, recordID, detail string) {
+	var detailPtr *string
+	if strings.TrimSpace(detail) != "" {
+		detailPtr = auditDetail(strings.TrimPrefix(event, "account."), map[string]any{"detail": detail})
 	}
-	if recordID != "" {
-		op.RecordID = &recordID
-	}
-	if detail != "" {
-		op.Detail = &detail
-	}
-	if h.operations == nil {
-		return
-	}
-	if err := h.operations.RecordOperation(op); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
+	recordAudit(h.operations, user, event, recordID, detailPtr, h.now().UTC(), nil)
 }

@@ -51,6 +51,16 @@ func (r *Repository) ApplyRetention(now time.Time, days int, action string) (int
 			); err != nil {
 				return fmt.Errorf("archive correlations: %w", err)
 			}
+			if _, err := tx.Exec(
+				`INSERT OR IGNORE INTO operation_log_archive_session (operation_id, session_id)
+				 SELECT s.operation_id, s.session_id
+				 FROM operation_log_session s
+				 INNER JOIN operation_log o ON o.id = s.operation_id
+				 WHERE o.created_at < ?`,
+				cutoff,
+			); err != nil {
+				return fmt.Errorf("archive sessions: %w", err)
+			}
 		}
 		result, err := tx.Exec(`DELETE FROM operation_log WHERE created_at < ?`, cutoff)
 		if err != nil {

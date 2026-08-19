@@ -27,7 +27,7 @@ func TestApplyRetentionArchivesThenRemovesHotRows(t *testing.T) {
 	fresh := now.Add(-2 * 24 * time.Hour)
 	if err := repo.RecordOperation(Operation{
 		ID: "old-1", Event: EventSettingsUpdate, ActorID: "u1", ActorName: "Ada",
-		CorrelationID: "corr-old", CreatedAt: old,
+		CorrelationID: "corr-old", SessionID: "sess-old", CreatedAt: old,
 	}); err != nil {
 		t.Fatalf("record old: %v", err)
 	}
@@ -53,17 +53,20 @@ func TestApplyRetentionArchivesThenRemovesHotRows(t *testing.T) {
 		t.Fatalf("fresh row: %v", err)
 	}
 
-	var archivedID, archivedCorr string
+	var archivedID, archivedCorr, archivedSession string
 	if err := repo.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
 		if err := tx.QueryRow(`SELECT id FROM operation_log_archive WHERE id = 'old-1'`).Scan(&archivedID); err != nil {
 			return err
 		}
-		return tx.QueryRow(`SELECT correlation_id FROM operation_log_archive_correlation WHERE operation_id = 'old-1'`).Scan(&archivedCorr)
+		if err := tx.QueryRow(`SELECT correlation_id FROM operation_log_archive_correlation WHERE operation_id = 'old-1'`).Scan(&archivedCorr); err != nil {
+			return err
+		}
+		return tx.QueryRow(`SELECT session_id FROM operation_log_archive_session WHERE operation_id = 'old-1'`).Scan(&archivedSession)
 	}); err != nil {
 		t.Fatalf("archive lookup: %v", err)
 	}
-	if archivedID != "old-1" || archivedCorr != "corr-old" {
-		t.Fatalf("archive = %s %s", archivedID, archivedCorr)
+	if archivedID != "old-1" || archivedCorr != "corr-old" || archivedSession != "sess-old" {
+		t.Fatalf("archive = %s %s %s", archivedID, archivedCorr, archivedSession)
 	}
 }
 

@@ -9,7 +9,6 @@ package handler
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -276,29 +275,16 @@ func rolesOnWrite(recorder operationlog.Recorder) func(context.Context, account.
 		switch kind {
 		case writeCreate:
 			event = operationlog.EventRoleCreate
-			detail = `{"key":` + jsonQuote(stringField(row, "key")) + `}`
+			detail = "create"
 		case writeUpdate:
 			event = operationlog.EventRoleUpdate
-			detail = `{"key":` + jsonQuote(stringField(row, "key")) + `}`
+			detail = "update"
 		}
-		op := operationlog.Operation{
-			ID:        newOperationID(),
-			Event:     event,
-			ActorID:   user.ID,
-			ActorName: user.Name,
-			CreatedAt: now,
-		}
-		if id != "" {
-			op.RecordID = &id
-		}
+		var detailPtr *string
 		if detail != "" {
-			op.Detail = &detail
+			detailPtr = auditDetail(strings.TrimPrefix(event, "roles."), map[string]any{"key": stringField(row, "key")})
 		}
-		if recorder != nil {
-			if err := recorder.RecordOperation(op); err != nil {
-				slog.Error("operation log write failed", "event", event, "err", err)
-			}
-		}
+		recordAudit(recorder, user, event, id, detailPtr, now, nil)
 	}
 }
 

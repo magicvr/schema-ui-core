@@ -9,7 +9,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -223,21 +222,7 @@ func (h *exportHandler) record(event string, r *http.Request, resource string, r
 	if !ok {
 		return
 	}
-	detail := fmt.Sprintf(`{"resource":%s,"rows":%d}`, jsonQuote(resource), rows)
-	op := operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     event,
-		ActorID:   user.ID,
-		ActorName: user.Name,
-		CreatedAt: h.now().UTC(),
-	}
-	op.Detail = &detail
-	if h.operations == nil {
-		return
-	}
-	if err := h.operations.RecordOperation(op); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
+	recordAudit(h.operations, user, event, "", auditDetail("export", map[string]any{"resource": resource, "rows": rows}), h.now().UTC(), r.Context())
 }
 
 // formulaSafe neutralizes spreadsheet formula injection (F-009): a cell that

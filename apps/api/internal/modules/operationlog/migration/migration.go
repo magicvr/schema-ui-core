@@ -377,6 +377,13 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogArchiveDDL, "0047:operation-log-archive:v1"),
 			Apply:                migrateOperationLogArchive,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_session"},
+			Version:              48,
+			Name:                 "operation_log_session",
+			Checksum:             kernel.MigrationChecksum(operationLogSessionDDL, "0048:operation-log-session:v1"),
+			Apply:                migrateOperationLogSession,
+		},
 	}
 }
 
@@ -403,6 +410,27 @@ func migrateOperationLogArchive(tx *sql.Tx) error {
 	for _, stmt := range operationLogArchiveDDL {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("create operation_log_archive: %w", err)
+		}
+	}
+	return nil
+}
+
+var operationLogSessionDDL = []string{
+	`CREATE TABLE operation_log_session (
+  operation_id TEXT PRIMARY KEY REFERENCES operation_log(id) ON DELETE CASCADE,
+  session_id   TEXT NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_session_id ON operation_log_session(session_id)`,
+	`CREATE TABLE operation_log_archive_session (
+  operation_id TEXT PRIMARY KEY,
+  session_id   TEXT NOT NULL
+)`,
+}
+
+func migrateOperationLogSession(tx *sql.Tx) error {
+	for _, stmt := range operationLogSessionDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create operation_log_session: %w", err)
 		}
 	}
 	return nil

@@ -85,6 +85,7 @@ type Operation struct {
 	RecordID      *string
 	Detail        *string
 	CorrelationID string
+	SessionID     string
 	CreatedAt     time.Time
 }
 
@@ -178,6 +179,14 @@ func (r *Repository) RecordOperationTx(tx *sql.Tx, operation Operation) error {
 			return err
 		}
 	}
+	if sessionID := strings.TrimSpace(operation.SessionID); sessionID != "" {
+		if _, err := tx.Exec(
+			`INSERT INTO operation_log_session (operation_id, session_id) VALUES (?, ?)`,
+			operation.ID, sessionID,
+		); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -210,8 +219,10 @@ func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation
 		}
 		rows, err := tx.Query(
 			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
-			        c.correlation_id, o.created_at
-			 FROM operation_log o LEFT JOIN operation_log_correlation c ON c.operation_id = o.id`+where+
+			        c.correlation_id, s.session_id, o.created_at
+			 FROM operation_log o
+			 LEFT JOIN operation_log_correlation c ON c.operation_id = o.id
+			 LEFT JOIN operation_log_session s ON s.operation_id = o.id`+where+
 				` ORDER BY `+operationsSortSQL(filter.Sort, filter.Order)+`, id DESC`+
 				` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
@@ -243,8 +254,10 @@ func (r *Repository) GetOperation(id string) (*Operation, error) {
 		var err error
 		operation, err = scanOperation(tx.QueryRow(
 			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
-			        c.correlation_id, o.created_at
-			 FROM operation_log o LEFT JOIN operation_log_correlation c ON c.operation_id = o.id WHERE o.id = ?`, id,
+			        c.correlation_id, s.session_id, o.created_at
+			 FROM operation_log o
+			 LEFT JOIN operation_log_correlation c ON c.operation_id = o.id
+			 LEFT JOIN operation_log_session s ON s.operation_id = o.id WHERE o.id = ?`, id,
 		))
 		return err
 	})
@@ -266,11 +279,11 @@ func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
 
 func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	var operation Operation
-	var recordID, detail, correlationID sql.NullString
+	var recordID, detail, correlationID, sessionID sql.NullString
 	var createdAt int64
 	err := row.Scan(
 		&operation.ID, &operation.Event, &operation.ActorID, &operation.ActorName,
-		&recordID, &detail, &correlationID, &createdAt,
+		&recordID, &detail, &correlationID, &sessionID, &createdAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Operation{}, ErrNotFound
@@ -286,6 +299,9 @@ func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	}
 	if correlationID.Valid {
 		operation.CorrelationID = correlationID.String
+	}
+	if sessionID.Valid {
+		operation.SessionID = sessionID.String
 	}
 	operation.CreatedAt = time.UnixMilli(createdAt).UTC()
 	return operation, nil

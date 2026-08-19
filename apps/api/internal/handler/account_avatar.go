@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
@@ -63,7 +64,7 @@ func (h *accountAvatarHandler) upload() http.Handler {
 		if err := h.dropPreviousAvatar(user.ID); err != nil {
 			slog.Error("avatar replace cleanup failed", "user", user.ID, "err", err)
 		}
-		h.record(user.ID, user.Name, payload)
+		h.record(user, payload)
 		writeJSON(w, http.StatusOK, payload)
 	})
 }
@@ -83,22 +84,6 @@ func (h *accountAvatarHandler) dropPreviousAvatar(userID string) error {
 	return nil
 }
 
-func (h *accountAvatarHandler) record(userID, userName string, payload map[string]any) {
-	if h.operations == nil {
-		return
-	}
-	url, _ := payload["url"].(string)
-	op := operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     operationlog.EventAccountAvatarChange,
-		ActorID:   userID,
-		ActorName: userName,
-		CreatedAt: time.Now().UTC(),
-	}
-	if url != "" {
-		op.Detail = &url
-	}
-	if err := h.operations.RecordOperation(op); err != nil {
-		slog.Error("operation log write failed", "event", operationlog.EventAccountAvatarChange, "err", err)
-	}
+func (h *accountAvatarHandler) record(user account.User, payload map[string]any) {
+	recordAudit(h.operations, user, operationlog.EventAccountAvatarChange, "", auditDetail("avatar-change", payload), time.Now().UTC(), nil)
 }

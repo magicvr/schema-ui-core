@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"slices"
@@ -382,21 +381,7 @@ func newUserIDValue() string {
 }
 
 func (h *importHandler) record(resource string, result importResult, actor account.User) {
-	detail := fmt.Sprintf(`{"resource":%s,"applied":%d,"failed":%d}`, jsonQuote(resource), result.Applied, result.Failed)
-	op := operationlog.Operation{
-		ID:        newOperationID(),
-		Event:     operationlog.EventDataImport,
-		ActorID:   actor.ID,
-		ActorName: actor.Name,
-		CreatedAt: h.now().UTC(),
-	}
-	op.Detail = &detail
-	if h.operations == nil {
-		return
-	}
-	if err := h.operations.RecordOperation(op); err != nil {
-		slog.Error("operation log write failed", "event", operationlog.EventDataImport, "err", err)
-	}
+	recordAudit(h.operations, actor, operationlog.EventDataImport, "", auditDetail("import", map[string]any{"resource": resource, "applied": result.Applied, "failed": result.Failed}), h.now().UTC(), nil)
 }
 
 // LoadUploadedFile exposes the upload store's load to sibling handlers (import).

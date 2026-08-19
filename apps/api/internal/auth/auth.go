@@ -280,34 +280,30 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 // user id (for the operation log, I-008-003 §5). It is idempotent: unknown or
 // already-revoked tokens are treated as success (user id empty) so a logout
 // cannot be replayed.
-func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error) {
+func (a *Authenticator) Logout(rawRefresh string, now time.Time) (userID, sessionID string, err error) {
 	rt, err := a.repository.RefreshTokenByHash(HashToken(rawRefresh))
 	if errors.Is(err, authsession.ErrNotFound) {
-		return "", nil
+		return "", "", nil
 	}
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if rt.RevokedAt != nil {
-		return rt.UserID, nil
+		return rt.UserID, rt.ID, nil
 	}
 	err = a.repository.RevokeRefreshToken(rt.ID, now)
 	if err != nil && !errors.Is(err, authsession.ErrAlreadyRevoked) {
-		return rt.UserID, err
+		return rt.UserID, rt.ID, err
 	}
 	// ErrAlreadyRevoked under concurrency: another logout won the race, which is
 	// the same end state (token revoked) — treat as success for idempotency.
-	return rt.UserID, nil
+	return rt.UserID, rt.ID, nil
 }
 
 // issue creates a fresh access/refresh pair for an authenticated user and
 // persists the (hashed) opaque refresh token. The access token carries the
 // user's current token_version so a later password change revokes it.
 func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, string, account.User, error) {
-	access, err := SignAccessToken(a.secret, u.ID, u.TokenVersion, a.accessTTL, now)
-	if err != nil {
-		return "", "", account.User{}, err
-	}
 	raw, hash, err := NewOpaqueToken()
 	if err != nil {
 		return "", "", account.User{}, err
@@ -322,10 +318,15 @@ func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, strin
 	if err := a.repository.CreateRefreshToken(rt); err != nil {
 		return "", "", account.User{}, err
 	}
+	access, err := SignAccessToken(a.secret, u.ID, u.TokenVersion, rt.ID, a.accessTTL, now)
+	if err != nil {
+		return "", "", account.User{}, err
+	}
 	acct, err := a.accountFromUser(u)
 	if err != nil {
 		return "", "", account.User{}, err
 	}
+	acct.SessionID = rt.ID
 	return access, raw, acct, nil
 }
 
@@ -335,15 +336,17 @@ func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, strin
 // every already-signed access token immediately instead of leaving a
 // ~accessTTL window where a stolen token still works.
 type accessClaims struct {
-	TokenVersion int `json:"tv"`
+	TokenVersion int    `json:"tv"`
+	SessionID    string `json:"sid,omitempty"`
 	jwt.RegisteredClaims
 }
 
 // SignAccessToken mints a short-lived HMAC-SHA256 access token whose subject is
-// the user id and which carries the user's current token_version.
-func SignAccessToken(secret []byte, userID string, tokenVersion int, ttl time.Duration, now time.Time) (string, error) {
+// the user id and which carries the user's current token_version and login session id.
+func SignAccessToken(secret []byte, userID string, tokenVersion int, sessionID string, ttl time.Duration, now time.Time) (string, error) {
 	claims := accessClaims{
 		TokenVersion: tokenVersion,
+		SessionID:    strings.TrimSpace(sessionID),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID,
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -360,6 +363,7 @@ func SignAccessToken(secret []byte, userID string, tokenVersion int, ttl time.Du
 type ParsedAccessToken struct {
 	UserID       string
 	TokenVersion int
+	SessionID    string
 }
 
 // ParseAccessToken verifies signature and expiry, returning the subject user id
@@ -379,7 +383,7 @@ func ParseAccessToken(secret []byte, raw string) (ParsedAccessToken, error) {
 	if !ok || !token.Valid {
 		return ParsedAccessToken{}, ErrInvalidToken
 	}
-	return ParsedAccessToken{UserID: claims.Subject, TokenVersion: claims.TokenVersion}, nil
+	return ParsedAccessToken{UserID: claims.Subject, TokenVersion: claims.TokenVersion, SessionID: strings.TrimSpace(claims.SessionID)}, nil
 }
 
 // HashPassword hashes a plaintext password with bcrypt at the given cost.
@@ -582,6 +586,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
 			return
 		}
+		acct.SessionID = parsed.SessionID
 		// W16-F01: a user with must_change_password=1 is limited to the
 		// password-change and profile surfaces until they replace the initial
 		// password. All other protected business APIs fail closed with 403.
@@ -607,6 +612,7 @@ func (a *Authenticator) authenticateServiceCredential(w http.ResponseWriter, r *
 		Permissions:   append([]string(nil), credential.Scopes...),
 		PrincipalKind: account.PrincipalKindServiceCredential,
 		CredentialID:  credential.ID,
+		SessionID:     credential.ID,
 	}
 	use := ServiceCredentialUse{
 		CredentialID:  credential.ID,

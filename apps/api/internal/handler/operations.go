@@ -52,6 +52,7 @@ func operationToMap(op operationlog.Operation) map[string]any {
 		row["detail"] = ""
 	}
 	row["correlationId"] = op.CorrelationID
+	row["sessionId"] = op.SessionID
 	return row
 }
 

@@ -23,6 +23,8 @@ type User struct {
 	Permissions   []string `json:"permissions,omitempty"`
 	PrincipalKind string   `json:"-"`
 	CredentialID  string   `json:"-"`
+	// SessionID is the login session (refresh-token id) or machine credential id.
+	SessionID string `json:"-"`
 }
 
 const (
@@ -40,8 +42,9 @@ func (u User) IsServiceCredential() bool {
 func StaticDevSession() Session {
 	return Session{
 		User: User{
-			ID:   "dev-001",
-			Name: "Dev Admin",
+			ID:        "dev-001",
+			Name:      "Dev Admin",
+			SessionID: "dev-session",
 			// editor + admin unlock every permission-inheritance fixture
 			// scenario used by the R4 conformance tests.
 			Roles: []string{"admin", "editor"},

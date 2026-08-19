@@ -86,12 +86,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			return
 		}
 		if operations != nil {
-			now := time.Now().UTC()
-			detail := `{"userId":` + jsonQuote(userID) + `}`
-			_ = operations.RecordOperation(operationlog.Operation{
-				ID: newOperationID(), Event: operationlog.EventMFALogin,
-				ActorID: user.ID, ActorName: user.Name, Detail: &detail, CreatedAt: now,
-			})
+			recordAudit(operations, user, operationlog.EventMFALogin, userID, auditDetail("login", map[string]any{"userId": userID}), time.Now().UTC(), r.Context())
 		}
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}))
@@ -123,7 +118,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			writeMFAError(w, r, err)
 			return
 		}
-		recordMFAEvent(operations, user, operationlog.EventMFAEnroll, `{"userId":`+jsonQuote(user.ID)+`}`)
+		recordAudit(operations, user, operationlog.EventMFAEnroll, user.ID, auditDetail("enroll", map[string]any{"userId": user.ID}), time.Now().UTC(), r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"secretBase32": secret, "otpauthURL": otpauth, "recoveryCodes": codes})
 	})))
 
@@ -145,7 +140,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
-		recordMFAEvent(operations, user, operationlog.EventMFAConfirm, `{"userId":`+jsonQuote(user.ID)+`}`)
+		recordAudit(operations, user, operationlog.EventMFAConfirm, user.ID, auditDetail("confirm", map[string]any{"userId": user.ID}), time.Now().UTC(), r.Context())
 		w.WriteHeader(http.StatusNoContent)
 	})))
 
@@ -174,7 +169,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not invalidate sessions")
 			return
 		}
-		recordMFAEvent(operations, user, operationlog.EventMFADisable, `{"userId":`+jsonQuote(user.ID)+`}`)
+		recordAudit(operations, user, operationlog.EventMFADisable, user.ID, auditDetail("disable", map[string]any{"userId": user.ID}), time.Now().UTC(), r.Context())
 		w.WriteHeader(http.StatusNoContent)
 	})))
 
@@ -198,7 +193,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
-		recordMFAEvent(operations, user, operationlog.EventMFARecoveryRotate, `{"userId":`+jsonQuote(user.ID)+`}`)
+		recordAudit(operations, user, operationlog.EventMFARecoveryRotate, user.ID, auditDetail("recovery-rotate", map[string]any{"userId": user.ID}), time.Now().UTC(), r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"recoveryCodes": codes})
 	})))
 
@@ -218,7 +213,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not invalidate sessions")
 			return
 		}
-		recordMFAEvent(operations, user, operationlog.EventMFAAdminReset, `{"userId":`+jsonQuote(targetID)+`}`)
+		recordAudit(operations, user, operationlog.EventMFAAdminReset, targetID, auditDetail("admin-reset", map[string]any{"userId": targetID}), time.Now().UTC(), r.Context())
 		w.WriteHeader(http.StatusNoContent)
 	})))
 
@@ -278,14 +273,4 @@ func writeSelfServiceMFAError(w http.ResponseWriter, r *http.Request, err error)
 	}
 }
 
-// recordMFAEvent writes an MFA audit row.
-func recordMFAEvent(operations operationlog.Recorder, user account.User, event, detail string) {
-	if operations == nil {
-		return
-	}
-	now := time.Now().UTC()
-	_ = operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: event,
-		ActorID: user.ID, ActorName: user.Name, Detail: &detail, CreatedAt: now,
-	})
-}
+

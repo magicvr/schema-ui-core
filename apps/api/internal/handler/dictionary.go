@@ -7,9 +7,7 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -120,14 +118,11 @@ func (e *dictTypeEntity) Delete(id string, actor account.User) error {
 	}
 	// A-003 F-003: cascade-deleted entries are recorded in the type event's
 	// detail so forensics keep the entry ids.
-	detail := ""
+	var detailPtr *string
 	if len(entryIDs) > 0 {
-		raw, err := json.Marshal(map[string]any{"entries": entryIDs})
-		if err == nil {
-			detail = string(raw)
-		}
+		detailPtr = auditDetail("delete", map[string]any{"entries": entryIDs})
 	}
-	recordDictionaryEventDetail(e.operations, operationlog.EventDictionaryDelete, actor, id, detail, time.Now().UTC())
+	recordAudit(e.operations, actor, operationlog.EventDictionaryDelete, id, detailPtr, time.Now().UTC(), nil)
 	return nil
 }
 
@@ -324,16 +319,7 @@ func intField(body map[string]any, key string) int {
 }
 
 func recordDictionaryEvent(operations operationlog.Recorder, event string, user account.User, id string, now time.Time) {
-	if operations == nil {
-		return
-	}
-	recordID := id
-	if err := operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: event, ActorID: user.ID, ActorName: user.Name,
-		RecordID: &recordID, CreatedAt: now.UTC(),
-	}); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
+	recordAudit(operations, user, event, id, nil, now.UTC(), nil)
 }
 
 // newDictionaryID returns "dict-" + 16 lowercase hex chars (8 bytes of
@@ -344,23 +330,4 @@ func newDictionaryID() (string, error) {
 		return "", err
 	}
 	return "dict-" + hex.EncodeToString(b[:]), nil
-}
-
-// recordDictionaryEventDetail records an audit event with an optional detail
-// payload (same best-effort contract as recordDictionaryEvent).
-func recordDictionaryEventDetail(operations operationlog.Recorder, event string, user account.User, id string, detail string, now time.Time) {
-	if operations == nil {
-		return
-	}
-	recordID := id
-	var detailPtr *string
-	if detail != "" {
-		detailPtr = &detail
-	}
-	if err := operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: event, ActorID: user.ID, ActorName: user.Name,
-		RecordID: &recordID, Detail: detailPtr, CreatedAt: now.UTC(),
-	}); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
 }

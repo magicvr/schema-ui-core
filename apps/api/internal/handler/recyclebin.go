@@ -5,7 +5,6 @@ package handler
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -209,14 +208,5 @@ func writeRecycleError(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func recordRecycleEvent(operations operationlog.Recorder, event string, user account.User, id string, now time.Time) {
-	if operations == nil {
-		return
-	}
-	recordID := id
-	if err := operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: event, ActorID: user.ID, ActorName: user.Name,
-		RecordID: &recordID, CreatedAt: now.UTC(),
-	}); err != nil {
-		slog.Error("operation log write failed", "event", event, "err", err)
-	}
+	recordAudit(operations, user, event, id, nil, now.UTC(), nil)
 }

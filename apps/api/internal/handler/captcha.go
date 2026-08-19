@@ -116,9 +116,5 @@ func recordCaptchaSettingsEvent(operations operationlog.Recorder, user account.U
 	if operations == nil {
 		return
 	}
-	detail := `{"enabled":` + boolString(enabled) + `}`
-	_ = operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: operationlog.EventCaptchaSettingsUpdate,
-		ActorID: user.ID, ActorName: user.Name, Detail: &detail, CreatedAt: now,
-	})
+	recordAudit(operations, user, operationlog.EventCaptchaSettingsUpdate, "", auditDetail("settings-update", map[string]any{"enabled": enabled}), now, nil)
 }

@@ -45,7 +45,7 @@ version: 0.23.0
 |------|------|------------|------------------|
 | 9 | 订单、钱包、类目、通知等业务能力 | 默认承载：VP-003 架构 + VP-004 playbook + **VP-006 协议面** + VP-005 设计系统 + VP-007 locale/settings，并消费 VP-008 的准入结论 | 建 VP 前须 `/vision` 复核；VP-008 已 `closed` 且 `go` 已签发（候选 `ed99e88`），后续业务 VP 可实现；每个后续业务 VP 激活前必须针对拟消费候选与 scope 完成并记录 freshness review，复核失败或证据不可用时暂停 `go` 并回流 VP-008 重验证或 P-004 裁决；单领域问题留在该业务 VP 的 Root/Goal 台账，共享基架或 `go` 语义问题由 `/vision` 决定重开 VP-008 或新建准入 VP；不得用业务模块倒逼恢复长期双线、跳过协议覆盖或私增协议语义 |
 | 10 | 业务能力后续波次 | 在 VP-008 `go` 有效且无未恢复的共享基架 Critical/High 阻断时推进 | 消费 VP-008 `go`；共享基架问题回流 **active VP-009** 波次，不默认新开一次性加固 VP | 建 VP 前须 `/vision` 复核 |
-| 11 | 共享基架横切能力、扩展接缝与后续业务域（四档能力地图） | 横切契约**首波**已由 **VP-012** `closed` 交付；剩余 Tier A（session/effective actor、operationlog 保留/归档、D-003 外写路径结构化 envelope）与扩展接缝、Tier D 按本表登记，按触发条件独立立项 | 共享基架安全/符合性问题回流 **active VP-009/VP-010**；横切增量不默认重开 VP-012，须 `/vision` 复核后新建 VP；Tier D 在业务成立后再独立立项 |
+| 11 | 共享基架横切能力、扩展接缝与后续业务域（四档能力地图） | 横切契约**首波**已由 **VP-012** `closed` 交付；lead 区增量 R7 保留/归档、R8 session+envelope 已 done。剩余 Tier A（impersonation/effective actor 产品化若再出现）与扩展接缝、Tier D 按本表登记，按触发条件独立立项 | 共享基架安全/符合性问题回流 **active VP-009/VP-010**；横切增量不默认重开 VP-012，须 `/vision` 复核后新建 VP；Tier D 在业务成立后再独立立项 |
 
 ### 四档能力地图（组合层后续方向 · 2026-08-18 上提）
 
@@ -53,7 +53,7 @@ version: 0.23.0
 
 | 档 | 含义 | 当前/未来承载 |
 |----|------|----------------|
-| **Tier A · Admin 基架规划** | 身份/安全/审计/并发/运维/配置迁移等通用基架能力 | **VP-012** 首波已 `closed`。**operationlog 保留/归档**改由 workspace-012 **GOAL-008** 按设置页交付（默认 90 天归档）。待建：session/effective actor；D-003 外 writer envelope |
+| **Tier A · Admin 基架规划** | 身份/安全/审计/并发/运维/配置迁移等通用基架能力 | **VP-012** 首波已 `closed`。保留/归档 = GOAL-008（done）。session + D-003 外 envelope = GOAL-009（done）。effective actor 冻结为当前 actor；不做 impersonation |
 | **Tier B · 扩展接缝** | 领域事件、通知 Transport、SSO、Approval、Entitlement、多组织上下文等 | 预留接口；出现真实触发条件后新建 VP/工作区 |
 | **Tier C · Admin 体验增强** | 全局搜索、Saved Views、批量任务结果、统一错误恢复等 | 后续体验波次；按用户/产品触发新建 VP/工作区 |
 | **Tier D · 真实业务领域** | Catalog、库存、订单/支付/退款、物流、营销、订阅、工单、CMS 等 | 业务成立后独立立项为业务 VP/工作区 |

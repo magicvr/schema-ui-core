@@ -112,6 +112,9 @@ func TestBrandingPublicAndSettingsPatch(t *testing.T) {
 			if got := detail.After["logoUrl"]; got != operationlog.RedactedValue {
 				t.Fatalf("settings logoUrl = %v, want redacted", got)
 			}
+			if op.SessionID == "" {
+				t.Fatal("settings.update missing session_id")
+			}
 			break
 		}
 	}

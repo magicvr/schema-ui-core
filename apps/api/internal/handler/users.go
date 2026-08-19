@@ -405,6 +405,7 @@ func usersOnWrite(recorder operationlog.Recorder) func(context.Context, account.
 			ActorName:     user.Name,
 			CreatedAt:     now,
 			CorrelationID: requestid.FromContext(ctx),
+			SessionID:     identitySession(user),
 		}
 		if id != "" {
 			op.RecordID = &id

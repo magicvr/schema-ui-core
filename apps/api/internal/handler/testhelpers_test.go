@@ -110,7 +110,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		return operations.RecordOperationTx(tx, operationlog.Operation{
 			ID: newOperationID(), Event: operationlog.EventServiceCredentialUse,
 			ActorID: "service-credential:" + use.CredentialID, ActorName: use.Name,
-			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, CreatedAt: use.At,
+			RecordID: &recordID, Detail: &detail, CorrelationID: use.CorrelationID, SessionID: use.CredentialID, CreatedAt: use.At,
 		})
 	})
 	mux := http.NewServeMux()

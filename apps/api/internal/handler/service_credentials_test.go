@@ -96,8 +96,15 @@ func TestServiceCredentialManagementAndAuthentication(t *testing.T) {
 		if operation.Detail != nil && strings.Contains(*operation.Detail, secret) {
 			t.Fatal("raw service credential leaked into audit detail")
 		}
-		if operation.Event == operationlog.EventServiceCredentialUse && (operation.Detail == nil || !strings.Contains(*operation.Detail, `"scopeCount":1`)) {
-			t.Fatalf("use audit missing scopeCount: %+v", operation)
+		if operation.Event == operationlog.EventServiceCredentialUse {
+			if operation.Detail == nil || !strings.Contains(*operation.Detail, `"scopeCount":1`) {
+				t.Fatalf("use audit missing scopeCount: %+v", operation)
+			}
+			if operation.SessionID != credentialID {
+				t.Fatalf("use session = %q, want credential id", operation.SessionID)
+			}
+		} else if operation.SessionID == "" {
+			t.Fatalf("%s missing session_id", operation.Event)
 		}
 	}
 	if events[operationlog.EventServiceCredentialCreate] != 1 || events[operationlog.EventServiceCredentialUse] == 0 || events[operationlog.EventServiceCredentialRevoke] != 1 {

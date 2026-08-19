@@ -85,6 +85,9 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		if detail.After["username"] != "admin" {
 			t.Fatalf("authOps[%d].detail.after.username = %v, want admin", i, detail.After["username"])
 		}
+		if op.SessionID == "" {
+			t.Fatalf("authOps[%d].session_id empty", i)
+		}
 		for _, forbidden := range []string{"password", "accessToken", "refreshToken", "secret"} {
 			if strings.Contains(*op.Detail, forbidden) {
 				t.Fatalf("authOps[%d].detail contains sensitive key %q: %s", i, forbidden, *op.Detail)
@@ -184,7 +187,7 @@ func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
 	now := time.Now().UTC()
 	for _, op := range []operationlog.Operation{
 		{ID: "op-filter-1", Event: operationlog.EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-001", CreatedAt: now.Add(-2 * time.Hour)},
-		{ID: "op-filter-2", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-002", CreatedAt: now.Add(-time.Hour)},
+		{ID: "op-filter-2", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-002", SessionID: "sess-filter-2", CreatedAt: now.Add(-time.Hour)},
 		{ID: "op-filter-3", Event: operationlog.EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: now},
 	} {
 		if err := env.operations.RecordOperation(op); err != nil {
@@ -198,8 +201,8 @@ func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
 		t.Fatalf("structured list = %d %v, want total 1", code, body)
 	}
 	items, _ := body["items"].([]any)
-	if len(items) != 1 || items[0].(map[string]any)["correlationId"] != "r2-read-002" {
-		t.Fatalf("operation list correlation = %v, want r2-read-002", items)
+	if len(items) != 1 || items[0].(map[string]any)["correlationId"] != "r2-read-002" || items[0].(map[string]any)["sessionId"] != "sess-filter-2" {
+		t.Fatalf("operation list correlation/session = %v, want r2-read-002 / sess-filter-2", items)
 	}
 
 	code, body = getResourceAs(t, env, token, "/api/operations/op-filter-1")
@@ -237,6 +240,9 @@ func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
 	if !strings.Contains(rr.Body.String(), "correlationId") || !strings.Contains(rr.Body.String(), "r2-read-002") {
 		t.Fatalf("export missing correlation column/value: %q", rr.Body.String())
 	}
+	if !strings.Contains(rr.Body.String(), "sessionId") || !strings.Contains(rr.Body.String(), "sess-filter-2") {
+		t.Fatalf("export missing session column/value: %q", rr.Body.String())
+	}
 }
 
 func TestR2CorrelationIDPersistsOnUsersOperation(t *testing.T) {
@@ -258,6 +264,9 @@ func TestR2CorrelationIDPersistsOnUsersOperation(t *testing.T) {
 	}
 	if len(ops) != 1 || ops[0].CorrelationID != "r2-user-001" {
 		t.Fatalf("user operation correlation = %+v, want r2-user-001", ops)
+	}
+	if ops[0].SessionID == "" {
+		t.Fatal("user operation missing session_id")
 	}
 	if ops[0].Detail == nil {
 		t.Fatal("user operation missing structured detail")

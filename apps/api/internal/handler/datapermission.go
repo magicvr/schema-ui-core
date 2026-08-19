@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
@@ -134,8 +133,7 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 			writeScopeError(w, r, err)
 			return
 		}
-		recordDataPermissionEvent(operations, user, "data-permission.policy-update",
-			`{"resource":`+jsonQuote(resource)+`}`, now)
+		recordAudit(operations, user, "data-permission.policy-update", "", auditDetail("policy-update", map[string]any{"resource": resource}), now, r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"resource": resource, "ownerColumn": body.OwnerColumn, "defaultScope": body.DefaultScope, "enabled": enabled})
 	})))
 
@@ -188,8 +186,7 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 			writeScopeError(w, r, err)
 			return
 		}
-		recordDataPermissionEvent(operations, user, "data-permission.scope-update",
-			`{"userId":`+jsonQuote(body.UserID)+`}`, now)
+		recordAudit(operations, user, "data-permission.scope-update", "", auditDetail("scope-update", map[string]any{"userId": body.UserID}), now, r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"userId": body.UserID, "updated": len(body.Scopes)})
 	})))
 
@@ -208,13 +205,4 @@ func writeScopeError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-// recordDataPermissionEvent writes a data-permission audit row.
-func recordDataPermissionEvent(operations operationlog.Recorder, user account.User, event, detail string, now time.Time) {
-	if operations == nil {
-		return
-	}
-	_ = operations.RecordOperation(operationlog.Operation{
-		ID: newOperationID(), Event: event,
-		ActorID: user.ID, ActorName: user.Name, Detail: &detail, CreatedAt: now,
-	})
-}
+
