@@ -28,7 +28,7 @@ import (
 // module providers reuse it so the provider surface matches the central adapter.
 type SettingsRepository interface {
 	GetSiteSettings() (*settingsrepository.SiteSettings, error)
-	PatchSiteSettings(*string, *string, *string, *string, *string, *string, *string, *string, *string, *string, time.Time) (*settingsrepository.SiteSettings, error)
+	PatchSiteSettings(*string, *string, *string, *string, *string, *string, *string, *string, *string, *string, *int, *string, time.Time) (*settingsrepository.SiteSettings, error)
 	ResetSiteSettings(time.Time) (*settingsrepository.SiteSettings, error)
 }
 
@@ -118,9 +118,11 @@ func settingsRow(s *settingsrepository.SiteSettings) map[string]any {
 		"defaultLocale": s.DefaultLocale,
 		"siteTimezone":  s.SiteTimezone,
 		"defaultTheme":  s.DefaultTheme,
-		"copyrightText": s.CopyrightText,
-		"icpNumber":     s.ICPNumber,
-		"updatedAt":     s.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"copyrightText":                  s.CopyrightText,
+		"icpNumber":                      s.ICPNumber,
+		"operationLogRetentionDays":      s.OperationLogRetentionDays,
+		"operationLogExpirationAction":   s.OperationLogExpirationAction,
+		"updatedAt":                      s.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 }
 
@@ -175,20 +177,32 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxResourceBodyBytes)
 		var body struct {
-			SiteTitle     *string `json:"siteTitle"`
-			LogoURL       *string `json:"logoUrl"`
-			LogoURLLight  *string `json:"logoUrlLight"`
-			LogoURLDark   *string `json:"logoUrlDark"`
-			FaviconURL    *string `json:"faviconUrl"`
-			DefaultLocale *string `json:"defaultLocale"`
-			SiteTimezone  *string `json:"siteTimezone"`
-			DefaultTheme  *string `json:"defaultTheme"`
-			CopyrightText *string `json:"copyrightText"`
-			ICPNumber     *string `json:"icpNumber"`
+			SiteTitle                    *string  `json:"siteTitle"`
+			LogoURL                      *string  `json:"logoUrl"`
+			LogoURLLight                 *string  `json:"logoUrlLight"`
+			LogoURLDark                  *string  `json:"logoUrlDark"`
+			FaviconURL                   *string  `json:"faviconUrl"`
+			DefaultLocale                *string  `json:"defaultLocale"`
+			SiteTimezone                 *string  `json:"siteTimezone"`
+			DefaultTheme                 *string  `json:"defaultTheme"`
+			CopyrightText                *string  `json:"copyrightText"`
+			ICPNumber                    *string  `json:"icpNumber"`
+			OperationLogRetentionDays    *float64 `json:"operationLogRetentionDays"`
+			OperationLogExpirationAction *string  `json:"operationLogExpirationAction"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PATCH_BODY", "body must be JSON")
 			return
+		}
+		var retentionDays *int
+		if body.OperationLogRetentionDays != nil {
+			value := *body.OperationLogRetentionDays
+			if value != float64(int(value)) {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_RETENTION_DAYS", "operationLogRetentionDays must be a whole number of days")
+				return
+			}
+			days := int(value)
+			retentionDays = &days
 		}
 		// W9 (GOAL-010): capture the pre-patch values so replaced brand assets
 		// can be deleted right after a successful patch (best-effort; the
@@ -197,7 +211,8 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 		now := time.Now().UTC()
 		updated, err := repository.PatchSiteSettings(
 			body.SiteTitle, body.LogoURL, body.LogoURLLight, body.LogoURLDark, body.FaviconURL,
-			body.DefaultLocale, body.SiteTimezone, body.DefaultTheme, body.CopyrightText, body.ICPNumber, now,
+			body.DefaultLocale, body.SiteTimezone, body.DefaultTheme, body.CopyrightText, body.ICPNumber,
+			retentionDays, body.OperationLogExpirationAction, now,
 		)
 		if err != nil {
 			writeSettingsError(w, r, err)
@@ -286,6 +301,10 @@ func writeSettingsError(w http.ResponseWriter, r *http.Request, err error) {
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_DEFAULT_THEME", "defaultTheme must be auto, light or dark")
 	case errors.Is(err, settingsrepository.ErrInvalidSiteTimezone):
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_TIMEZONE", "siteTimezone must be auto or a valid IANA timezone")
+	case errors.Is(err, settingsrepository.ErrInvalidRetentionDays):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_RETENTION_DAYS", "operationLogRetentionDays must be between 1 and 3650")
+	case errors.Is(err, settingsrepository.ErrInvalidExpirationAction):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_EXPIRATION_ACTION", "operationLogExpirationAction must be archive or delete")
 	default:
 		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update settings")
 	}
@@ -329,7 +348,9 @@ func settingsAuditValues(settings *settingsrepository.SiteSettings) map[string]a
 		"defaultLocale": settings.DefaultLocale,
 		"siteTimezone":  settings.SiteTimezone,
 		"defaultTheme":  settings.DefaultTheme,
-		"copyrightText": settings.CopyrightText,
-		"icpNumber":     settings.ICPNumber,
+		"copyrightText":                settings.CopyrightText,
+		"icpNumber":                    settings.ICPNumber,
+		"operationLogRetentionDays":    settings.OperationLogRetentionDays,
+		"operationLogExpirationAction": settings.OperationLogExpirationAction,
 	}
 }

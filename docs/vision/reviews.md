@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-18
+updated: 2026-08-19
 parent: null
-version: 1.3.36
+version: 1.3.38
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.36
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-026 对 VP-008 v0.9.0 意图清晰度复审为 `pass`；V-F053 recommended → **fixed**（VP-008 v0.10.0）；VRev-027 对 VP-011/workspace-011 路线图审视为 `conditional`，V-F054～V-F056 recommended → **fixed**（VP-011 v0.3.0 + Root R5 + I-011-002），均无新增 required |
+| — | — | — | **无** | VRev-028 `pass`；V-F057 recommended → **fixed**（VP-012 v0.2.0 完整关门 + roadmap Tier A 移交）；VRev-027 V-F054～V-F056 recommended → **fixed**；均无新增 required |
 
-> Vision Review **open required = 0**。VRev-026（independent，`pass`）确认 VP-008 v0.9.0 方向级意图已足够清晰与自洽；V-F053 recommended → **fixed**（VP-008 v0.10.0 + 报告内 `/vision` 响应）。VP-008 已按用户确认激活、绑定单一 lead delivery workspace `workspace-008-admin-module-readiness`，并于 2026-08-10 用户书面签发 `go`（候选 `ed99e88`、clean）后 **`closed`**，解锁后续标准业务模块实现。VRev-025 原 verdict `conditional` 保留；V-F051 carried projection 与 V-F052 均已 `fixed`。VRev-024 原 verdict `conditional` 保留；V-F051 → `fixed`。VRev-017～VRev-023 原 verdict `conditional` 与既有 fixed 响应继续保留。**VRev-027（self，`conditional`）**：VP-011 / workspace-011 规划边界与跨模块路线图审视；V-F054～V-F056 recommended 均已 **fixed**（VP-011 v0.3.0 + Root R5 + I-011-002 + roadmap 第 11 行），仅登记不实施。当前 active 交付 VP：**[VP-012](plans/VP-012-shared-cross-module-contracts.md)**（共享横切契约与平台基架，2026-08-18 创建；首波 = 横切契约波）；**[VP-011](plans/VP-011-admin-functional-modules.md) 已于 2026-08-18 有界 `closed`**（标准 Admin 功能模块波次完成，四档能力地图上提至 roadmap）；持续程序 **VP-009**（共享基架安全与健壮性）与 **VP-010**（设计意图—实现符合性持续对齐）；组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。**VRev-028（self，`pass`）**：原 verdict 保留；V-F057 recommended → **fixed**（2026-08-19 `/vision` 用户确认完整关门；VP-012 `active → closed` v0.2.0；session/effective actor、保留/归档、D-003 外 writer envelope 移交 roadmap Tier A，不作为本 VP residual）。当前**无 active 交付 VP**；持续程序 **VP-009** / **VP-010**；**[VP-012](plans/VP-012-shared-cross-module-contracts.md) 已完整 `closed`**；组合焦点见 [roadmap.md](roadmap.md)。
 
 ## 条目索引
 
@@ -65,3 +65,4 @@ version: 1.3.36
 | VRev-025 | 2026-08-10 | independent | VP-008 v0.8.0 · intent clarity reaudit / gate projection | conditional | 0 | 原 verdict 保留；V-F051 carried projection 与 V-F052 → fixed（VP-008 v0.9.0 + 报告内 `/vision` editorial 响应） | [VRev-025-vp008-v0-8-0-intent-clarity-reaudit.md](reviews/VRev-025-vp008-v0-8-0-intent-clarity-reaudit.md) |
 | VRev-026 | 2026-08-10 | independent | VP-008 v0.9.0 · 意图清晰度 / 残余问题 / 未考虑项 | pass | 0 | 原 verdict 保留；V-F053 recommended → fixed（VP-008 v0.10.0 + 报告内 `/vision` 响应）；报告时 VP-008 active、0 workspace；现已绑定 `workspace-008-admin-module-readiness`，用户 2026-08-10 签发 `go` 并确认 VP-008 **closed** | [VRev-026-vp008-v0-9-0-intent-clarity-pass.md](reviews/VRev-026-vp008-v0-9-0-intent-clarity-pass.md) |
 | VRev-027 | 2026-08-18 | self | VP-011 / workspace-011 · 规划边界与跨模块路线图（四档能力地图） | conditional | 0 | V-F054～V-F056 recommended → fixed（VP-011 v0.3.0 + Root R5 + I-011-002 + roadmap 第 11 行）；仅登记，不实施、不改 Charter | [VRev-027-vp011-cross-module-roadmap.md](reviews/VRev-027-vp011-cross-module-roadmap.md) |
+| VRev-028 | 2026-08-19 | self | VP-012 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F057 recommended → fixed（VP-012 v0.2.0 完整 closed + exit↔证据 + Tier A 移交；VR-024） | [VRev-028-vp012-closeout-readiness.md](reviews/VRev-028-vp012-closeout-readiness.md) |

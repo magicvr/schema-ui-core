@@ -30,6 +30,7 @@ var frozenLiteralCodes = []string{
 	"UPLOAD_QUOTA_EXCEEDED",
 	// S3 settings validation additions (D-002 appendix A family).
 	"INVALID_DEFAULT_LOCALE", "INVALID_DEFAULT_THEME", "INVALID_TIMEZONE",
+	"INVALID_RETENTION_DAYS", "INVALID_EXPIRATION_ACTION",
 	// D2 login rate limiting.
 	"RATE_LIMITED",
 	// GOAL-004 S4-6 account lock terminal (423).

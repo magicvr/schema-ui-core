@@ -276,6 +276,26 @@ func TestSettingsValidationAndReset(t *testing.T) {
 	if row["logoUrlLight"] != "" || row["logoUrlDark"] != "" || row["faviconUrl"] != "" {
 		t.Fatalf("reset assets = %v", row)
 	}
+	if row["operationLogRetentionDays"] != float64(90) || row["operationLogExpirationAction"] != "archive" {
+		t.Fatalf("reset retention = %v", row)
+	}
+
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"operationLogRetentionDays":30,"operationLogExpirationAction":"delete"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("retention patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&row)
+	if row["operationLogRetentionDays"] != float64(30) || row["operationLogExpirationAction"] != "delete" {
+		t.Fatalf("retention patch row = %v", row)
+	}
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"operationLogRetentionDays":0}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest || !bodyHasCode(rr, "INVALID_RETENTION_DAYS") {
+		t.Fatalf("days 0 = %d %s", rr.Code, rr.Body.String())
+	}
 
 	// Reset requires settings.write.
 	env.addUser(t, "ed", "editor-pass-1", []string{"editor"})

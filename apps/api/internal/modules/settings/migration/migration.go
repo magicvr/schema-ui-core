@@ -65,6 +65,19 @@ var siteSettingsV2DDL = []string{
 
 const transformV2ID = "0010:site-settings:v2"
 
+// DefaultOperationLogRetentionDays is the admin-editable default (90 days).
+const DefaultOperationLogRetentionDays = 90
+
+// DefaultOperationLogExpirationAction archives expired rows instead of deleting.
+const DefaultOperationLogExpirationAction = "archive"
+
+const (
+	MinOperationLogRetentionDays = 1
+	MaxOperationLogRetentionDays = 3650
+	ExpirationActionArchive      = "archive"
+	ExpirationActionDelete       = "delete"
+)
+
 // migrate0010 applies the VP-007 settings column extension.
 func migrate0010(tx *sql.Tx) error {
 	for _, stmt := range siteSettingsV2DDL {
@@ -115,5 +128,27 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(siteFooterDDL, "0040:site-footer:v1"),
 			Apply:                migrate0040,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_operation_log_retention"},
+			Version:              46,
+			Name:                 "site_operation_log_retention",
+			Checksum:             kernel.MigrationChecksum(siteOperationLogRetentionDDL, "0046:site-operation-log-retention:v1"),
+			Apply:                migrate0046,
+		},
 	}
+}
+
+// siteOperationLogRetentionDDL (0046): admin-editable audit log retention.
+var siteOperationLogRetentionDDL = []string{
+	`ALTER TABLE site_settings ADD COLUMN operation_log_retention_days INTEGER NOT NULL DEFAULT 90`,
+	`ALTER TABLE site_settings ADD COLUMN operation_log_expiration_action TEXT NOT NULL DEFAULT 'archive'`,
+}
+
+func migrate0046(tx *sql.Tx) error {
+	for _, stmt := range siteOperationLogRetentionDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("extend site_settings retention: %w", err)
+		}
+	}
+	return nil
 }

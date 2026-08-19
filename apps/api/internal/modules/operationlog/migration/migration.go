@@ -370,7 +370,42 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogServiceCredentialsDDL, "0045:operation-log-service-credentials:v1"),
 			Apply:                migrateOperationLogServiceCredentials,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_archive"},
+			Version:              47,
+			Name:                 "operation_log_archive",
+			Checksum:             kernel.MigrationChecksum(operationLogArchiveDDL, "0047:operation-log-archive:v1"),
+			Apply:                migrateOperationLogArchive,
+		},
 	}
+}
+
+// operationLogArchiveDDL (0047): cold store for expired audit rows.
+var operationLogArchiveDDL = []string{
+	`CREATE TABLE operation_log_archive (
+  id          TEXT PRIMARY KEY,
+  event       TEXT NOT NULL,
+  actor_id    TEXT NOT NULL,
+  actor_name  TEXT NOT NULL,
+  record_id   TEXT,
+  detail      TEXT,
+  created_at  INTEGER NOT NULL,
+  archived_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_archive_created_at ON operation_log_archive(created_at DESC)`,
+	`CREATE TABLE operation_log_archive_correlation (
+  operation_id   TEXT PRIMARY KEY,
+  correlation_id TEXT NOT NULL
+)`,
+}
+
+func migrateOperationLogArchive(tx *sql.Tx) error {
+	for _, stmt := range operationLogArchiveDDL {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("create operation_log_archive: %w", err)
+		}
+	}
+	return nil
 }
 
 func migrateOperationLog(tx *sql.Tx) error {

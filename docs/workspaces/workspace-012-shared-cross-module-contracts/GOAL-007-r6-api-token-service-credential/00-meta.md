@@ -40,7 +40,7 @@ R6 交付机器凭据管理与认证基架：管理员可创建、查看元数�
 | S0 | 现状扫描、信息门禁、精确身份/生命周期/权限/审计契约与 cross 设计审计 | ✅ 已完成（A-001 self / A-002 conditional / A-003 response / A-004 independent pass / A-005 close） |
 | S1 | 数据模型、hash-only repository 与管理生命周期实现 | ✅ 已完成（E-005；A-006 self pass） |
 | S2 | 独立 Bearer 认证、scope enforcement、错误与 operation log 集成 | ✅ 已完成（E-005；A-006 self pass） |
-| S3 | 组合黑盒/全量回归、独立关门审计与治理收口 | ✅ 已完成（A-007 conditional；A-008 response；A-009 independent pass；A-010 F-010；A-011 Root response） |
+| S3 | 组合黑盒/全量回归、独立关门审计与治理收口 | ✅ 已完成（A-007 conditional；A-008 response；A-009 independent pass；Root A-010 F-010 fixed / A-012 independent pass / A-013 response） |
 
 ## 成功标准
 

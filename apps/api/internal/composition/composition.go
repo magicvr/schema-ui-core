@@ -546,8 +546,9 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository) {
 	var listener net.Listener
+	var stopRetention func()
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -576,6 +577,16 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 				_ = st.Close()
 				return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("start job runner: %v", err)}
 			}
+			stopRetention = operationlog.StartRetentionSweep(operations, func() (operationlog.RetentionPolicy, error) {
+				settings, err := settingsRepository.GetSiteSettings()
+				if err != nil {
+					return operationlog.RetentionPolicy{}, err
+				}
+				return operationlog.RetentionPolicy{
+					Days:   settings.OperationLogRetentionDays,
+					Action: settings.OperationLogExpirationAction,
+				}, nil
+			}, time.Hour, logger)
 			// R5 real readiness: only after every module Start + Ready succeeds
 			// does /readyz report ready.
 			gate.setReady()
@@ -601,6 +612,9 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 			shutdownErr := srv.Shutdown(ctx)
 			if listener != nil {
 				_ = listener.Close()
+			}
+			if stopRetention != nil {
+				stopRetention()
 			}
 			jobsErr := jobs.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)

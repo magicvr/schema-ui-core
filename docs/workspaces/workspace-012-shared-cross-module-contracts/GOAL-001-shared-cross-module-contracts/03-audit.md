@@ -25,6 +25,8 @@ version: 0.1.0
 | A-009 | 2026-08-19 | self | response：A-008 F-001/F-002 recommended residual 修复 | pass | 0 | [A-009-root-a008-response.md](03-audit/A-009-root-a008-response.md) |
 | A-010 | 2026-08-19 | independent | 当前 R1-R6 代码、回归与安全审计；R6 service-credential 使用审计失败路径 | fail | 1（F-010） | [A-010-root-current-code-security-independent.md](03-audit/A-010-root-current-code-security-independent.md) |
 | A-011 | 2026-08-19 | self | response：A-010 F-010；R6 使用审计 fail-closed 与 Root close-out | pass | 0 | [A-011-root-a010-response.md](03-audit/A-011-root-a010-response.md) |
+| A-012 | 2026-08-19 | independent | finding-closure：A-010 F-010 关闭复审；R6 使用审计 fail-closed 与 Root I-002 | pass | 0 | [A-012-root-a010-f010-closure-independent.md](03-audit/A-012-root-a010-f010-closure-independent.md) |
+| A-013 | 2026-08-19 | self | response：接收 A-012 对 A-010 F-010 fixed 闭合的独立复审 | pass | 0 | [A-013-root-a012-response.md](03-audit/A-013-root-a012-response.md) |
 
 ## 结论状态
 
@@ -45,3 +47,7 @@ A-009 self 编排响应：A-008 F-001/F-002 已分别补充 `abortLease` 终态�
 A-010 independent 当前代码与安全审计：API `go test ./...` 全部通过，Web 72/72 文件、1069/1069 用例通过；但 R6 service-credential 成功认证后的 `MarkServiceCredentialUsed` 与 `serviceCredentialUseRecorder` 错误均被丢弃，请求仍继续执行（F-010，required/medium）。在 `/govern` 合法响应前，R6 使用审计与 Root close-out 不能无条件宣称完成。
 
 A-011 self 编排响应：用户确认 `fixed`；生产 R6 使用审计与 `last_used_at` 通过调用方事务原子提交，任一失败均返回 503 `STORAGE_UNAVAILABLE` 且不调用 downstream，新增 auth 故障注入回归覆盖事务审计失败与 metadata 失败。A-010 F-010 已按可核对证据 fixed，Root I-002 保持 verified，当前开放 required=0；A-010 原 independent verdict 与 finding 原文保留，建议后续独立复审专门核对该 fail-closed 契约。
+
+A-012 independent 复审：verdict=pass；A-010 F-010 关闭证据可重复核对（原 `_ =` 丢弃路径已删除；生产事务 fail-closed 503；本轮 auth/authsession/composition 与 handler `TestServiceCredential*` 通过）。开放 required=0。响应归 `/govern`。
+
+A-013 self 编排响应：已正式接收 A-012 `independent / pass`；A-012 与 A-011 的 `fixed` 结论同向且无新 finding。A-010 F-010 当前闭合状态为 `fixed；independent re-review pass`，开放 required=0；无需 residual 或 overruled 裁决，Root `done/100` 与 I-002 `verified` 保持不变。

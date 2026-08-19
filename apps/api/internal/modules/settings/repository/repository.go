@@ -43,7 +43,10 @@ type SiteSettings struct {
 	// W16-F10: optional footer text.
 	CopyrightText string
 	ICPNumber     string
-	UpdatedAt     time.Time
+	// Audit log retention (not hardcoded in the sweeper).
+	OperationLogRetentionDays    int
+	OperationLogExpirationAction string
+	UpdatedAt                    time.Time
 }
 
 var (
@@ -52,6 +55,8 @@ var (
 	ErrInvalidDefaultLocale = errors.New("settings: invalid default locale")
 	ErrInvalidDefaultTheme  = errors.New("settings: invalid default theme")
 	ErrInvalidSiteTimezone  = errors.New("settings: invalid site timezone")
+	ErrInvalidRetentionDays = errors.New("settings: invalid operation log retention days")
+	ErrInvalidExpirationAction = errors.New("settings: invalid operation log expiration action")
 )
 
 // SupportedLocales is the frozen v1 locale set (VP-007).
@@ -77,7 +82,7 @@ func (r *Repository) GetSiteSettings() (*SiteSettings, error) {
 // UpdateSiteSettings is the legacy two-field convenience wrapper (title + logo);
 // kept for the composition recovery tests and callers that predate VP-007.
 func (r *Repository) UpdateSiteSettings(siteTitle, logoURL string, now time.Time) (*SiteSettings, error) {
-	return r.writeSiteSettings(&siteTitle, &logoURL, nil, nil, nil, nil, nil, nil, nil, nil, now)
+	return r.writeSiteSettings(&siteTitle, &logoURL, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now)
 }
 
 // PatchSiteSettings updates only the supplied fields in one SQL statement.
@@ -86,18 +91,20 @@ func (r *Repository) UpdateSiteSettings(siteTitle, logoURL string, now time.Time
 // validation errors reject the whole patch atomically.
 func (r *Repository) PatchSiteSettings(
 	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber *string,
+	retentionDays *int, expirationAction *string,
 	now time.Time,
 ) (*SiteSettings, error) {
-	return r.writeSiteSettings(siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber, now)
+	return r.writeSiteSettings(siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber, retentionDays, expirationAction, now)
 }
 
 // ResetSiteSettings restores every VP-007 field to its frozen default.
 func (r *Repository) ResetSiteSettings(now time.Time) (*SiteSettings, error) {
-	return r.writeSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now, true)
+	return r.writeSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now, true)
 }
 
 func (r *Repository) writeSiteSettings(
 	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber *string,
+	retentionDays *int, expirationAction *string,
 	now time.Time,
 	reset ...bool,
 ) (*SiteSettings, error) {
@@ -162,6 +169,25 @@ func (r *Repository) writeSiteSettings(
 		icp = strings.TrimSpace(*icpNumber)
 		icpSet = 1
 	}
+	days := settingsmigration.DefaultOperationLogRetentionDays
+	daysSet := 0
+	if retentionDays != nil {
+		if *retentionDays < settingsmigration.MinOperationLogRetentionDays || *retentionDays > settingsmigration.MaxOperationLogRetentionDays {
+			return nil, ErrInvalidRetentionDays
+		}
+		days = *retentionDays
+		daysSet = 1
+	}
+	action := settingsmigration.DefaultOperationLogExpirationAction
+	actionSet := 0
+	if expirationAction != nil {
+		value := strings.TrimSpace(*expirationAction)
+		if value != settingsmigration.ExpirationActionArchive && value != settingsmigration.ExpirationActionDelete {
+			return nil, ErrInvalidExpirationAction
+		}
+		action = value
+		actionSet = 1
+	}
 
 	forceReset := len(reset) > 0 && reset[0]
 	var settings *SiteSettings
@@ -172,13 +198,21 @@ func (r *Repository) writeSiteSettings(
 			stmt = `UPDATE site_settings SET
 			  site_title = ?, logo_url = '', logo_url_light = '', logo_url_dark = '',
 			  favicon_url = '', default_locale = 'auto', site_timezone = 'auto',
-			  default_theme = 'auto', copyright_text = '', icp_number = '', updated_at = ? WHERE id = 'default'`
-			args = []any{settingsmigration.DefaultSiteTitle, now.Unix()}
+			  default_theme = 'auto', copyright_text = '', icp_number = '',
+			  operation_log_retention_days = ?, operation_log_expiration_action = ?,
+			  updated_at = ? WHERE id = 'default'`
+			args = []any{
+				settingsmigration.DefaultSiteTitle,
+				settingsmigration.DefaultOperationLogRetentionDays,
+				settingsmigration.DefaultOperationLogExpirationAction,
+				now.Unix(),
+			}
 		} else {
 			stmt = `INSERT INTO site_settings (
 			  id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
-			  default_locale, site_timezone, default_theme, copyright_text, icp_number, updated_at)
-			 VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			  default_locale, site_timezone, default_theme, copyright_text, icp_number,
+			  operation_log_retention_days, operation_log_expiration_action, updated_at)
+			 VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			 ON CONFLICT(id) DO UPDATE SET
 			   site_title = CASE WHEN ? = 1 THEN excluded.site_title ELSE site_settings.site_title END,
 			   logo_url = CASE WHEN ? = 1 THEN excluded.logo_url ELSE site_settings.logo_url END,
@@ -190,10 +224,12 @@ func (r *Repository) writeSiteSettings(
 			   default_theme = CASE WHEN ? = 1 THEN excluded.default_theme ELSE site_settings.default_theme END,
 			   copyright_text = CASE WHEN ? = 1 THEN excluded.copyright_text ELSE site_settings.copyright_text END,
 			   icp_number = CASE WHEN ? = 1 THEN excluded.icp_number ELSE site_settings.icp_number END,
+			   operation_log_retention_days = CASE WHEN ? = 1 THEN excluded.operation_log_retention_days ELSE site_settings.operation_log_retention_days END,
+			   operation_log_expiration_action = CASE WHEN ? = 1 THEN excluded.operation_log_expiration_action ELSE site_settings.operation_log_expiration_action END,
 			   updated_at = excluded.updated_at`
 			args = []any{
-				title, logo, logoLight, logoDark, favicon, locale, timezone, theme, copyright, icp, now.Unix(),
-				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, themeSet, copyrightSet, icpSet,
+				title, logo, logoLight, logoDark, favicon, locale, timezone, theme, copyright, icp, days, action, now.Unix(),
+				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, themeSet, copyrightSet, icpSet, daysSet, actionSet,
 			}
 		}
 		if _, err := tx.Exec(stmt, args...); err != nil {
@@ -266,22 +302,26 @@ func getSiteSettings(row interface{ QueryRow(string, ...any) *sql.Row }) (*SiteS
 	var updatedAt int64
 	err := row.QueryRow(
 		`SELECT id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
-		        default_locale, site_timezone, default_theme, copyright_text, icp_number, updated_at
+		        default_locale, site_timezone, default_theme, copyright_text, icp_number,
+		        operation_log_retention_days, operation_log_expiration_action, updated_at
 		 FROM site_settings WHERE id = 'default'`,
 	).Scan(
 		&settings.ID, &settings.SiteTitle, &settings.LogoURL, &settings.LogoURLLight,
 		&settings.LogoURLDark, &settings.FaviconURL, &settings.DefaultLocale,
 		&settings.SiteTimezone, &settings.DefaultTheme, &settings.CopyrightText,
-		&settings.ICPNumber, &updatedAt,
+		&settings.ICPNumber, &settings.OperationLogRetentionDays, &settings.OperationLogExpirationAction,
+		&updatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return &SiteSettings{
-			ID:            "default",
-			SiteTitle:     settingsmigration.DefaultSiteTitle,
-			DefaultLocale: "auto",
-			SiteTimezone:  "auto",
-			DefaultTheme:  "auto",
-			UpdatedAt:     time.Unix(0, 0).UTC(),
+			ID:                           "default",
+			SiteTitle:                    settingsmigration.DefaultSiteTitle,
+			DefaultLocale:                "auto",
+			SiteTimezone:                 "auto",
+			DefaultTheme:                 "auto",
+			OperationLogRetentionDays:    settingsmigration.DefaultOperationLogRetentionDays,
+			OperationLogExpirationAction: settingsmigration.DefaultOperationLogExpirationAction,
+			UpdatedAt:                    time.Unix(0, 0).UTC(),
 		}, nil
 	}
 	if err != nil {

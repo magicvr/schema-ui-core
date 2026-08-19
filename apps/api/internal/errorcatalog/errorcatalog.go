@@ -47,7 +47,9 @@ var Catalog = map[string]Entry{
 	"INVALID_LOGO_URL":       {"error.invalidLogoUrl", "logoUrl fields must be empty, a same-origin path, or an http(s) URL", "Logo URL 必须为空、同源路径或 http(s) URL"},
 	"INVALID_DEFAULT_LOCALE": {"error.invalidDefaultLocale", "defaultLocale must be auto, zh-CN or en-US", "默认语种必须是 auto、zh-CN 或 en-US"},
 	"INVALID_DEFAULT_THEME":  {"error.invalidDefaultTheme", "defaultTheme must be auto, light or dark", "默认主题必须是 auto、light 或 dark"},
-	"INVALID_TIMEZONE":       {"error.invalidTimezone", "siteTimezone must be auto or a valid IANA timezone", "默认时区必须是 auto 或有效的 IANA 时区"},
+	"INVALID_TIMEZONE":          {"error.invalidTimezone", "siteTimezone must be auto or a valid IANA timezone", "默认时区必须是 auto 或有效的 IANA 时区"},
+	"INVALID_RETENTION_DAYS":    {"error.invalidRetentionDays", "operationLogRetentionDays must be between 1 and 3650", "审计日志保留天数必须是 1 到 3650 之间的整数"},
+	"INVALID_EXPIRATION_ACTION": {"error.invalidExpirationAction", "operationLogExpirationAction must be archive or delete", "过期处理必须是归档或删除"},
 
 	"INVALID_SORT_FIELD":    {"error.invalidSortField", "unsupported sort field", "不支持的排序字段"},
 	"INVALID_SORT_ORDER":    {"error.invalidSortOrder", "order must be asc or desc", "排序方向必须是 asc 或 desc"},

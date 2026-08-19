@@ -78,6 +78,18 @@
         "behavior": "reload"
       }
     },
+    "updateAudit": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/settings/default",
+      "bodyMapping": {
+        "operationLogRetentionDays": "operationLogRetentionDays",
+        "operationLogExpirationAction": "operationLogExpirationAction"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
     "resetSettings": {
       "type": "request",
       "method": "POST",
@@ -332,6 +344,62 @@
                     }
                   },
                   "submitAction": "updateAppearance",
+                  "submitLabelKey": "schema.settings.submit.save"
+                }
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "id": "tab-audit",
+            "props": {
+              "labelKey": "schema.settings.tab.audit",
+              "label": "Audit log"
+            },
+            "children": [
+              {
+                "type": "form",
+                "id": "settings-audit",
+                "props": {
+                  "titleKey": "schema.settings.toolbar.audit",
+                  "fields": [
+                    {
+                      "id": "operationLogRetentionDays",
+                      "label": "Retention days",
+                      "labelKey": "schema.settings.field.operationLogRetentionDays",
+                      "type": "inputNumber",
+                      "min": 1,
+                      "max": 3650,
+                      "step": 1
+                    },
+                    {
+                      "id": "operationLogExpirationAction",
+                      "label": "When logs expire",
+                      "labelKey": "schema.settings.field.operationLogExpirationAction",
+                      "type": "select",
+                      "options": [
+                        {
+                          "value": "archive",
+                          "label": "Archive",
+                          "labelKey": "schema.settings.option.expirationArchive"
+                        },
+                        {
+                          "value": "delete",
+                          "label": "Delete",
+                          "labelKey": "schema.settings.option.expirationDelete"
+                        }
+                      ]
+                    }
+                  ],
+                  "recordSource": {
+                    "method": "GET",
+                    "url": "/api/settings/default",
+                    "responseMapping": {
+                      "operationLogRetentionDays": "operationLogRetentionDays",
+                      "operationLogExpirationAction": "operationLogExpirationAction"
+                    }
+                  },
+                  "submitAction": "updateAudit",
                   "submitLabelKey": "schema.settings.submit.save"
                 }
               }

@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-18
+updated: 2026-08-19
 parent: null
-version: 0.4.7
+version: 0.4.8
 ---
 
 # Charter 修订台账
@@ -37,3 +37,4 @@ version: 0.4.7
 | VR-021 | 2026-08-14 | editorial | VP 关系指针 + 组合编排 | 用户确认激活 VP-011（v0.2.0 `active`，lead workspace-011-admin-functional-modules）：消费前 freshness review 第二轮 **PASS**（候选 `f14ab9d`，V-001～V-008 全绿；F-1a/b/c 由 VP-010 W6 修复；VR-020 pin bump 已对齐）；`/govern` 当日 scaffold 工作区 + Root（首阶段 = 有界调研）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-022 | 2026-08-18 | editorial | VP 关系指针 + 组合编排 | 用户确认新建并激活 VP-012（v0.1.0 `active`，lead workspace-012-shared-cross-module-contracts）：承载共享横切契约与平台基架（correlation/审计模型/并发幂等/异步 Job + maintenance 门控/API Token）；承接 VP-011 R5 中“横切契约”部分，Tier D 业务域仍按触发条件；不改变 Charter 边界或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-023 | 2026-08-18 | editorial | VP 关系指针 + 组合编排 + 关门投影 | 用户确认四档能力地图上提至 vision roadmap，并关闭 VP-011（`active → closed` v0.4.0）与 workspace-011 Root（`active → done`）：标准 Admin 功能模块波次完成；S-05/S-06/S-07/S-08/S-13 及 B-01～B-11 reclassify 到四档地图未来 VP/工作区；当前 active 交付 VP = VP-012；不改变 Charter 边界或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-024 | 2026-08-19 | editorial | VP-012 完整关门投影 | 用户确认关闭 VP-012（v0.2.0 `active → closed`，完整 · 首波）：lead workspace-012 Root `done 6/6`；VRev-028 V-F057 → fixed；session/effective actor、保留/归档、D-003 外 writer envelope 移交 roadmap Tier A，不作为本 VP residual。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

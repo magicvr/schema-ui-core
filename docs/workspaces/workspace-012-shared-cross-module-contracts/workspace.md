@@ -11,15 +11,15 @@ plan_refs:
 primary_plan: VP-012-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-19
-version: 0.1.1
+version: 0.1.2
 parent: null
 ---
 
 # 工作区上下文 · 共享横切契约与平台基架
 
-本工作区是 [VP-012-shared-cross-module-contracts](../../vision/plans/VP-012-shared-cross-module-contracts.md)（`active`）的唯一 lead delivery workspace。
+本工作区是 [VP-012-shared-cross-module-contracts](../../vision/plans/VP-012-shared-cross-module-contracts.md)（**`closed`**，2026-08-19 完整关门 · 首波）的唯一 lead delivery workspace。历史绑定保留，默认不接新区。
 
-- **Root** 交付目标已完成（`done`），首波 **横切契约波** R1～R6 已关门。
+- **Root** 仍为 `active`：R1～R7 子目标均已关门；Root 关门审计未做。
 - **子目标** = 各契约的独立交付波次。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 
@@ -32,7 +32,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-012-shared-cross-module-contracts/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-012 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-012-shared-cross-module-contracts` | 共享横切契约与平台基架 |
+| 规划对齐 | `primary_plan` = `VP-012-shared-cross-module-contracts`（`closed`） | 共享横切契约与平台基架；历史绑定 |
 
 ## 愿景对齐
 
@@ -49,7 +49,8 @@ VP-012：共享横切契约与平台基架（correlation / 审计模型 / 并发
 | R3 | 乐观并发 + 幂等契约 | ✅ 已完成（GOAL-004-r3-optimistic-concurrency-idempotency；A-004 pass / A-005 closed） |
 | R4 | 异步 Job / 长操作契约 | ✅ 已完成（GOAL-005-r4-async-job-contract；A-012 pass / A-013 closed） |
 | R5 | maintenance / degraded / read-only 门控 | ✅ 已完成（GOAL-006-r5-maintenance-read-only-gate；A-008 pass / A-009 closed） |
-| R6 | API Token / Service Credential | ✅ 已完成（GOAL-007-r6-api-token-service-credential；A-009 pass / A-010 closed） |
+| R6 | API Token / Service Credential | ✅ 已完成（GOAL-007-r6-api-token-service-credential；A-010 F-010 fixed / Root A-012 independent pass / A-013 response） |
+| R7 | 审计日志保留设置与过期归档/删除 | ✅ 已完成（GOAL-008-audit-log-retention-settings；A-002 independent pass / A-003 close） |
 
 ## 固定共享资料引用
 
