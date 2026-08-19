@@ -71,7 +71,7 @@ ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
 # app.modules: preset: mvp|admin|demo，或 list: [模块...]（见 configs/config.yaml）
 
 docker compose up --build
-#  API: http://localhost:25080  (GET /healthz 探活)
+#  API: 容器内 :25080，不发布宿主端口（W7 F-008）；经 Web http://localhost:25081 同源访问
 #  Web: http://localhost:25081  (nginx 服务 SPA + /api 反代；同源免 CORS)
 #  登录种子 admin → 后台首页
 ```

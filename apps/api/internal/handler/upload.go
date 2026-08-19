@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
@@ -114,8 +115,12 @@ func containsActiveContent(body []byte) bool {
 }
 
 type uploadStore struct {
-	dir    string
-	policy uploadPolicy
+	dir      string
+	policy   uploadPolicy
+	// quotaMu serializes the quota check + save pair (W7 F-012): without it,
+	// concurrent uploads from one owner could each pass quotaReached before the
+	// other's object is written and collectively exceed the quota.
+	quotaMu sync.Mutex
 }
 
 func (s *uploadStore) save(name string, contentType string, ownerID string, body []byte) (string, error) {
@@ -132,8 +137,16 @@ func (s *uploadStore) save(name string, contentType string, ownerID string, body
 	}
 	meta := map[string]string{"name": name, "type": contentType, "owner": ownerID}
 	raw, err := json.Marshal(meta)
-	if err == nil {
-		_ = os.WriteFile(filepath.Join(s.dir, id+".meta.json"), raw, 0o644)
+	if err != nil {
+		// W7 F-013: fail the upload when the meta record cannot be written;
+		// remove the orphan object so a successful-looking 200 cannot leave a
+		// file that is invisible to quota/GET (fail-closed).
+		_ = os.Remove(filepath.Join(s.dir, id))
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(s.dir, id+".meta.json"), raw, 0o644); err != nil {
+		_ = os.Remove(filepath.Join(s.dir, id))
+		return "", err
 	}
 	return id, nil
 }
@@ -322,11 +335,17 @@ func (s *uploadStore) upload() http.Handler {
 		}
 		// W4 P0-2: per-user quota gate before storage. Combined with the
 		// files.write permission gate, a single account cannot fill the disk.
+		// W7 F-012: quota check + save are serialized per store so concurrent
+		// uploads from one owner cannot each pass the check before the other's
+		// object is counted.
+		s.quotaMu.Lock()
 		if reason, reached := s.quotaReached(user.ID, len(body)); reached {
+			s.quotaMu.Unlock()
 			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "UPLOAD_QUOTA_EXCEEDED", "upload rejected: "+reason)
 			return
 		}
 		id, err := s.save(header.Filename, detected, user.ID, body)
+		s.quotaMu.Unlock()
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store upload")
 			return

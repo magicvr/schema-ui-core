@@ -368,7 +368,17 @@ async function runCustomAction(
       URL.revokeObjectURL(objectUrl);
       return { ok: false, code: "POPUP_BLOCKED", message: "preview window was blocked", messageKey: "error.popupBlocked" };
     }
-    previewWindow.location.replace(objectUrl);
+        // W7 F-010: do not navigate the preview tab directly to a blob: URL — that
+    // strips the server Content-Disposition/CSP sandbox headers. Embed the blob
+    // in a sandboxed (no allow-scripts, no allow-same-origin) iframe instead.
+    const previewDocument = previewWindow.document;
+    previewDocument.open();
+    previewDocument.write(
+      "<!doctype html><meta charset=\"utf-8\"><title>Preview</title>" +
+        "<style>html,body{margin:0;height:100%}iframe{width:100vw;height:100vh;border:0;display:block}</style>" +
+        '<iframe sandbox="" src="' + objectUrl + '"></iframe>',
+    );
+    previewDocument.close();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     return { ok: true };
   }

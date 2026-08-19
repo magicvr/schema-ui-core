@@ -34,13 +34,14 @@ var frozenLiteralCodes = []string{
 	// D2 login rate limiting.
 	"RATE_LIMITED",
 	// GOAL-004 S4-6 account lock terminal (423).
-	"ACCOUNT_LOCKED",
+	// W7 F-009: ACCOUNT_LOCKED/ACCOUNT_DISABLED are retired from the login
+	// surface — locked/disabled accounts return the generic UNAUTHORIZED so the
+	// login endpoint no longer discloses account state. They remain cataloged
+	// for backwards compatibility (see frozenRetiredCodes).
 	// F-03 (GOAL-005): self-service account codes.
 	"INVALID_PASSWORD", "INVALID_PASSWORD_BODY", "SESSION_NOT_FOUND",
 	// F-03 sessions list status filter.
 	"INVALID_STATUS_FILTER",
-	// F-03 (GOAL-005 D-002 §3): disabled-account login terminal (403).
-	"ACCOUNT_DISABLED",
 	// W16-F01 (GOAL-025): forced initial-password-change gate.
 	"MUST_CHANGE_PASSWORD",
 	// F-02 (GOAL-004): data-transfer codes.
@@ -55,6 +56,10 @@ var frozenLiteralCodes = []string{
 	"INVALID_SCOPE", "INVALID_SCOPE_BODY", "SCOPE_NOT_ENFORCEABLE",
 	// S-10 (GOAL-017 D-002 §3/§4): MFA codes.
 	"INVALID_MFA_BODY", "MFA_INVALID", "MFA_PROOF_EXPIRED", "MFA_PROOF_EXHAUSTED", "MFA_NOT_ENROLLED", "MFA_PENDING_ONLY", "MFA_ALREADY_ACTIVE",
+	// W7 F-007: MFA enrollment step-up requires the current password.
+	"MFA_CURRENT_PASSWORD_REQUIRED",
+	// W7 F-004: account avatar per-user upload quota.
+	"AVATAR_QUOTA_EXCEEDED",
 	// W9 (GOAL-010 D-001): brand asset upload codes.
 	"ASSET_NOT_FOUND", "INVALID_KIND",
 	// S-14 (GOAL-019 D-002 §3): wallet codes.
@@ -71,6 +76,11 @@ var frozenLiteralCodes = []string{
 // They are cataloged for clients reading a failed Job representation, but are
 // not emitted as top-level handler errors.
 var frozenStoredCodes = []string{"JOB_ATTEMPTS_EXHAUSTED", "JOB_HANDLER_FAILED"}
+
+// frozenRetiredCodes remain in the error catalog for backward compatibility
+// but are no longer emitted by current handlers (W7 F-009: the login endpoint
+// no longer discloses lock/disable account state via distinct codes).
+var frozenRetiredCodes = []string{"ACCOUNT_LOCKED", "ACCOUNT_DISABLED"}
 
 // frozenOperationalCodes are selected through the R5 mode switch rather than
 // emitted as direct string literals at every call site.
@@ -147,7 +157,7 @@ func TestErrorCodeContractPinnedSet(t *testing.T) {
 	}
 	// No unexpected literal codes (drift guard).
 	allowed := map[string]bool{}
-	for _, code := range append(append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...), frozenOperationalCodes...) {
+	for _, code := range append(append(append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...), frozenOperationalCodes...), frozenRetiredCodes...) {
 		allowed[code] = true
 	}
 	for code := range found {
@@ -164,7 +174,7 @@ func TestErrorCatalogCoversFrozenCodesExceptInternal(t *testing.T) {
 	}
 	// Every other frozen literal + domain code must have a bilingual entry
 	// with a stable messageKey.
-	for _, code := range append(append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...), frozenOperationalCodes...) {
+	for _, code := range append(append(append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...), frozenOperationalCodes...), frozenRetiredCodes...) {
 		if code == "INTERNAL" {
 			continue
 		}
@@ -183,7 +193,7 @@ func TestErrorCatalogCoversFrozenCodesExceptInternal(t *testing.T) {
 	// The catalog must not contain codes outside the frozen set.
 	for code := range errorcatalog.Catalog {
 		known := false
-		for _, frozen := range append(append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...), frozenOperationalCodes...) {
+		for _, frozen := range append(append(append(append(append([]string{}, frozenLiteralCodes...), frozenDomainCodes...), frozenStoredCodes...), frozenOperationalCodes...), frozenRetiredCodes...) {
 			if code == frozen {
 				known = true
 				break

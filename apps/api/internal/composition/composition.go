@@ -239,6 +239,11 @@ func newMuxWithExtraProviders(
 	extra []kernel.Provider,
 ) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
+	// W7 F-008: install the explicit trusted reverse-proxy CIDR allow-list for
+	// login/captcha client-IP resolution (fail-closed on invalid CIDRs).
+	if err := handler.SetTrustedProxyCIDRs(cfg.HTTPTrustedProxies); err != nil {
+		return nil, err
+	}
 	a.SetServiceCredentialUseTransactionalRecorder(func(tx *sql.Tx, use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
 			"credentialId": use.CredentialID,
@@ -308,13 +313,23 @@ func newMuxWithExtraProviders(
 		_ = brandAssets.GC([]string{current.LogoURL, current.LogoURLLight, current.LogoURLDark, current.FaviconURL})
 	}
 	// W13 T-05 (GOAL-014): account avatar store — same raster processing as
-	// brand assets, dedicated directory, 256px longest-edge default. No startup
-	// GC: the referenced set lives in the users table and the replace/clear
-	// paths delete previous files best-effort (see account_avatar.go).
+	// brand assets, dedicated directory, 256px longest-edge default. W7 F-004:
+	// startup GC now reclaims unreferenced avatar files (crashed uploads,
+	// uploads never assigned to a profile) by keeping only the avatar URLs
+	// currently referenced by users.
 	avatarAssets := handler.NewAvatarAssetStore(
 		filepath.Join(filepath.Dir(cfg.DBPath), "avatars"),
 		handler.BrandingAssetsOptions{},
 	)
+	if users, _, err := authRepository.ListUsers(authsession.UserFilter{Page: 1, PageSize: 1_000_000}); err == nil {
+		refs := make([]string, 0, len(users))
+		for _, u := range users {
+			if u.AvatarURL != "" {
+				refs = append(refs, u.AvatarURL)
+			}
+		}
+		_ = avatarAssets.GC(refs)
+	}
 	// R4 C3.3: admin.users / admin.roles HTTP surface comes from the module
 	// kernel.Provider contract (freeze package §7 step 3). Core auth/accounts/
 	// health/schema stay central; settings/activity migrate in C4.

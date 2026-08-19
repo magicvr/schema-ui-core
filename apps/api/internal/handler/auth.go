@@ -121,17 +121,13 @@ func (h *authHandler) login() http.HandlerFunc {
 			}
 		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
-		if errors.Is(err, auth.ErrAccountLocked) {
-			// GOAL-004 S4-6: a locked account is a distinct, stable terminal
-			// state (423) the Host maps to HOST_ACCOUNT_LOCKED — not a generic
-			// 401 credential failure.
-			writeLocalizedError(w, r, http.StatusLocked, "ACCOUNT_LOCKED", "account is temporarily locked; try again later")
-			return
-		}
-		if errors.Is(err, auth.ErrAccountDisabled) {
-			// F-03 (GOAL-005 D-002 §3): a disabled account is a distinct,
-			// admin-visible terminal state (403) — same family as the lock.
-			writeLocalizedError(w, r, http.StatusForbidden, "ACCOUNT_DISABLED", "account is disabled; contact an administrator")
+		// W7 F-009: locked / disabled accounts surface the SAME 401
+		// UNAUTHORIZED envelope as an unknown user / wrong password. The
+		// distinct 423/403 previously let an attacker distinguish "exists and
+		// locked/disabled" from "does not exist" (account-enumeration oracle).
+		// Fail-closed: no lock/disable status leak on the login surface.
+		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {

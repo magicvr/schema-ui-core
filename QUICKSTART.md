@@ -46,7 +46,7 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 docker compose up -d --build
 ```
 
-- API：`http://localhost:25080`（`GET /healthz` 探活）
+- API：容器内 `:25080`（W7 F-008 起**不发布宿主端口**；通过 Web `http://localhost:25081` 同源访问）
 - Web：`http://localhost:25081`（nginx 服务 SPA，`/api` 同源反代到 API）
 - 停止：`docker compose down`（SQLite 数据由命名卷 `db-data` 保持）
 
@@ -79,12 +79,12 @@ Windows 也可用仓库根一键脚本 `dev.cmd`（自动起停 API/Web 两个�
 | 3 | 携带 token `GET ${WEB_BASE_URL}/api/accounts/me` | HTTP 200，含 `user` 与 `features` |
 | 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD）。登录默认首页为 `Dashboard`（`demo` 为 `overview`） |
 
-> **默认 base URL**：Compose → API `http://localhost:25080`、Web `http://localhost:25081`；本地双进程 → API `:25080`、Web `http://localhost:${WEB_PORT:-25173}`。以实际端口为准，不得用默认值覆盖实测端口。
+> **默认 base URL**：Compose → API 不发布宿主端口（经 Web `http://localhost:25081` 同源访问）、Web `http://localhost:25081`；本地双进程 → API `:25080`、Web `http://localhost:${WEB_PORT:-25173}`。以实际端口为准，不得用默认值覆盖实测端口。
 
 ### 命令行冒烟（终点 1–3 快速验证）
 
 ```bash
-curl -fsS http://localhost:25080/healthz
+curl -fsS http://localhost:25081/api/healthz
 TOKEN=$(curl -fsS -X POST http://localhost:25081/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"<ADMIN_INITIAL_PASSWORD>"}'

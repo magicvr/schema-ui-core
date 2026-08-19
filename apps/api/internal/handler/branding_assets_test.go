@@ -340,11 +340,11 @@ func TestBrandingAssetSharedReferenceSurvivesReplace(t *testing.T) {
 func TestBrandingAssetStartupGC(t *testing.T) {
 	dir := t.TempDir()
 	store := NewBrandingAssetStore(dir, DefaultBrandingAssetsOptions())
-	keepID, err := store.save("image/png", "logo", makePNG(t, 16, 16, color.RGBA{255, 0, 0, 255}))
+	keepID, err := store.save("image/png", "logo", "", makePNG(t, 16, 16, color.RGBA{255, 0, 0, 255}))
 	if err != nil {
 		t.Fatalf("save keep: %v", err)
 	}
-	dropID, err := store.save("image/png", "favicon", makePNG(t, 16, 16, color.RGBA{0, 0, 255, 255}))
+	dropID, err := store.save("image/png", "favicon", "", makePNG(t, 16, 16, color.RGBA{0, 0, 255, 255}))
 	if err != nil {
 		t.Fatalf("save drop: %v", err)
 	}

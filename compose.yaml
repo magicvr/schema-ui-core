@@ -41,8 +41,11 @@ services:
       # T-06 (GOAL-013 D-007): the operator config (profile / app.modules /
       # upload / branding) comes from the repo file, mounted read-only.
       - ./apps/api/configs:/app/configs:ro
-    ports:
-      - "${API_HOST_PORT:-25080}:25080"
+    # W7 F-008: the API port is intentionally NOT published to the host/LAN — it is
+    # only reachable from the internal compose network through the web nginx
+    # reverse proxy. To enable per-client rate limiting across that proxy, set
+    # HTTP_TRUSTED_PROXIES to the compose network's CIDR (e.g. 172.16.0.0/12);
+    # default is loopback-only (fail-safe).
     healthcheck:
       # Readiness probe (A-002 F-002-006): liveness + SQLite ping, so a dead or
       # unmigrated database flips the gate instead of reporting healthy.

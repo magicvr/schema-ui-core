@@ -131,6 +131,14 @@ func BrandAssetIDFromURL(raw string) (string, bool) {
 // replacement cleanup, can run first). Permission gating is the caller's
 // responsibility.
 func (s *RasterAssetStore) storeUpload(w http.ResponseWriter, r *http.Request) (map[string]any, bool) {
+	return s.storeUploadForOwner(w, r, "")
+}
+
+// storeUploadForOwner is storeUpload with an explicit asset owner (used by the
+// avatar surface so ownership is recorded in the meta file and later enforced
+// by profile PATCH and cleanup). An empty owner means a shared/global asset
+// (branding).
+func (s *RasterAssetStore) storeUploadForOwner(w http.ResponseWriter, r *http.Request, owner string) (map[string]any, bool) {
 	kind := strings.TrimSpace(r.URL.Query().Get("kind"))
 	if kind == "" {
 		// Single-kind stores (avatar) default; multi-kind stores require an
@@ -201,7 +209,7 @@ func (s *RasterAssetStore) storeUpload(w http.ResponseWriter, r *http.Request) (
 		writeLocalizedError(w, r, http.StatusUnsupportedMediaType, "UNSUPPORTED_FILE_TYPE", "image must be a decodable PNG, JPEG, GIF or WebP")
 		return nil, false
 	}
-	id, err := s.save(contentType, kind, processed)
+	id, err := s.save(contentType, kind, owner, processed)
 	if err != nil {
 		writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store asset")
 		return nil, false
@@ -257,7 +265,7 @@ func (s *RasterAssetStore) file() http.Handler {
 }
 
 // save persists a processed asset + its meta file.
-func (s *RasterAssetStore) save(contentType, kind string, body []byte) (string, error) {
+func (s *RasterAssetStore) save(contentType, kind, owner string, body []byte) (string, error) {
 	idBytes := make([]byte, 16)
 	if _, err := rand.Read(idBytes); err != nil {
 		return "", err
@@ -269,7 +277,7 @@ func (s *RasterAssetStore) save(contentType, kind string, body []byte) (string, 
 	if err := os.WriteFile(filepath.Join(s.dir, id), body, 0o644); err != nil {
 		return "", err
 	}
-	meta := map[string]string{"type": contentType, "kind": kind}
+	meta := map[string]string{"type": contentType, "kind": kind, "owner": owner}
 	raw, err := json.Marshal(meta)
 	if err == nil {
 		_ = os.WriteFile(filepath.Join(s.dir, id+".meta.json"), raw, 0o644)
@@ -315,6 +323,47 @@ func (s *RasterAssetStore) DeleteOrphan(raw string) error {
 		return s.Delete(id)
 	}
 	return nil
+}
+
+
+// CountOwner returns the number of stored assets whose meta marks them as owned
+// by owner. Corrupt/unreadable meta files count conservatively toward every
+// caller so a failed read cannot be used to bypass a per-user avatar quota.
+func (s *RasterAssetStore) CountOwner(owner string) (int, error) {
+	if owner == "" {
+		return 0, nil
+	}
+	entries, err := os.ReadDir(s.dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	count := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
+			continue
+		}
+		id := strings.TrimSuffix(entry.Name(), ".meta.json")
+		if !uploadFileIDPattern.MatchString(id) {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(s.dir, entry.Name()))
+		if err != nil {
+			count++ // conservative: unreadable meta may still be an owned asset
+			continue
+		}
+		meta := map[string]string{}
+		if err := json.Unmarshal(raw, &meta); err != nil {
+			count++ // conservative
+			continue
+		}
+		if meta["owner"] == owner {
+			count++
+		}
+	}
+	return count, nil
 }
 
 // DeleteAll removes every stored asset of this store.
@@ -417,7 +466,7 @@ func processRasterImage(body []byte, targetDim int, opts BrandingAssetsOptions) 
 // (decompression-bomb guard): the output is at most 512/256/64px, so larger
 // input only wastes memory; bounding the decoded allocation keeps the
 // endpoint's per-request memory bounded.
-const maxRasterInputDimension = 8192
+const maxRasterInputDimension = 2048 // W7 F-005: 2048^2*4 ≈ 16 MiB worst decode allocation
 
 // decodeRasterImage decodes PNG, JPEG, GIF (first frame) or WebP after a
 // header-only DecodeConfig pre-check (tiny file + huge declared dimensions is

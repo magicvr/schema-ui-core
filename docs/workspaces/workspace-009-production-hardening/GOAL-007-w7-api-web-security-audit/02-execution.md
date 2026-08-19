@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-19 | W7 开立 + 独立审计意见落盘（无代码改动） | recorded | `02-execution/E-001-w7-audit-landed.md` |
+| E-002 | 2026-08-19 | W7 F-001～F-012 required 修复实施与回归（F-013 顺手修复） | recorded | `02-execution/E-002-w7-implementation.md` |
 
 ## 事实边界
 

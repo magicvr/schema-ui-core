@@ -113,6 +113,8 @@ var Catalog = map[string]Entry{
 	// rate limit: this is a per-account state with a lock window.
 	"ACCOUNT_LOCKED":        {"error.accountLocked", "account is temporarily locked; try again later", "账号已暂时锁定，请稍后重试"},
 	"UPLOAD_QUOTA_EXCEEDED": {"error.uploadQuotaExceeded", "upload rejected: per-user quota exceeded", "上传被拒绝：超出每用户配额"},
+	// W7 F-004: account avatar per-user upload quota.
+	"AVATAR_QUOTA_EXCEEDED": {"error.avatarQuotaExceeded", "avatar upload quota exceeded; assign or clear your current avatar first", "头像上传超过配额；请先设置或清除当前头像"},
 
 	// F-03 (GOAL-005 D-002 §3/§4): disabled terminal + self-service account codes.
 	"ACCOUNT_DISABLED":      {"error.accountDisabled", "account is disabled; contact an administrator", "账号已被停用，请联系管理员"},
@@ -136,6 +138,8 @@ var Catalog = map[string]Entry{
 
 	// S-10 (GOAL-017 D-002 §3/§4): MFA codes.
 	"INVALID_MFA_BODY":    {"error.invalidMfaBody", "body must be JSON with proof and code", "请求体必须是包含 proof 和 code 的 JSON"},
+	// W7 F-007: MFA enrollment step-up requires the current password.
+	"MFA_CURRENT_PASSWORD_REQUIRED": {"error.mfaCurrentPasswordRequired", "currentPassword is required to start MFA enrollment", "启用 MFA 需要验证当前密码"},
 	"MFA_INVALID":         {"error.mfaInvalid", "invalid second-factor code", "第二因素验证码无效"},
 	"MFA_PROOF_EXPIRED":   {"error.mfaProofExpired", "second-factor proof expired; sign in again", "第二因素验证已过期，请重新登录"},
 	"MFA_PROOF_EXHAUSTED": {"error.mfaProofExhausted", "too many failed attempts; sign in again", "失败次数过多，请重新登录"},

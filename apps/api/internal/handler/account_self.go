@@ -159,8 +159,18 @@ func (h *accountSelfHandler) updateProfile() http.Handler {
 			}
 			avatarURL = strings.TrimSpace(avatarURL)
 			if avatarURL != "" {
-				if _, ok := h.avatarStore.AssetIDFromURL(avatarURL); !ok {
+				assetID, ok := h.avatarStore.AssetIDFromURL(avatarURL)
+				if !ok {
 					writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", "avatarUrl is not a valid avatar asset", []errorcatalog.FieldError{{Field: "avatarUrl", Reason: "must be a URL of the account avatar store"}})
+					return
+				}
+				// W7 F-003: an avatar URL may only reference an asset owned by the
+				// current user. A leaked/shared URL must not be committable to
+				// another profile and must not cause deletion of another user's
+				// file when the previous avatar is cleaned up.
+				_, meta, err := h.avatarStore.load(assetID)
+				if err != nil || strings.TrimSpace(meta["owner"]) != user.ID {
+					writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_PATCH_FIELD", "avatarUrl must reference your own avatar asset", []errorcatalog.FieldError{{Field: "avatarUrl", Reason: "avatar asset ownership mismatch"}})
 					return
 				}
 			}

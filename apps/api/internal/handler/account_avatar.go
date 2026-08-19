@@ -17,6 +17,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -54,7 +55,20 @@ func (h *accountAvatarHandler) upload() http.Handler {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
 			return
 		}
-		payload, ok := h.store.storeUpload(w, r)
+		// W7 F-004: enforce a per-user avatar file cap before storing. A user
+		// may upload the same total number across replace cycles; referenced
+		// avatars still count until the profile switches away (startup GC then
+		// reclaims unreferenced files).
+		owned, err := h.store.CountOwner(user.ID)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not check avatar quota")
+			return
+		}
+		if owned >= maxAvatarPerUser {
+			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "AVATAR_QUOTA_EXCEEDED", "avatar upload quota exceeded; assign or clear your current avatar first")
+			return
+		}
+		payload, ok := h.store.storeUploadForOwner(w, r, user.ID)
 		if !ok {
 			return
 		}
@@ -69,16 +83,27 @@ func (h *accountAvatarHandler) upload() http.Handler {
 	})
 }
 
+// maxAvatarPerUser bounds the number of stored avatar files an account may
+// upload before assigning one to the profile (W7 F-004): even if a client never
+// PATCHes the profile, a single account cannot create unbounded orphan files.
+// The startup GC (composition) removes unreferenced assets on restart; the cap
+// bounds growth between restarts.
+const maxAvatarPerUser = 10
+
 // dropPreviousAvatar deletes the user's stored avatar file when its URL
-// points into the avatar store.
+// points into the avatar store AND the asset is owned by the user (W7 F-003:
+// a URL leak must never let one account delete another user's avatar file).
 func (h *accountAvatarHandler) dropPreviousAvatar(userID string) error {
 	current, err := h.repository.GetUser(userID)
 	if err != nil {
 		return err
 	}
 	if id, ok := h.store.AssetIDFromURL(current.AvatarURL); ok {
-		if err := h.store.Delete(id); err != nil {
-			return err
+		_, meta, err := h.store.load(id)
+		if err == nil && strings.TrimSpace(meta["owner"]) == userID {
+			if err := h.store.Delete(id); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

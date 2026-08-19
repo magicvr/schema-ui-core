@@ -224,6 +224,51 @@ func TestAccountAvatarProfileRejectsForeignURL(t *testing.T) {
 	}
 }
 
+func TestAccountAvatarProfileRejectsAnotherUsersAsset(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+
+	// Admin uploads an avatar.
+	rr := uploadAvatar(t, env, admin, makePNG(t, 64, 64, color.RGBA{255, 0, 0, 255}), "a.png")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("admin upload = %d: %s", rr.Code, rr.Body.String())
+	}
+	urlA := avatarURL(t, decodeUpload(t, rr))
+
+	// A different user must NOT be able to commit that asset to their own
+	// profile (W7 F-003: avatar URL ownership is enforced by the server).
+	env.addUser(t, "editor1", "editor-password", []string{"editor"})
+	editorToken := env.login(t, "editor1", "editor-password")
+	out := patchProfile(t, env, editorToken, "{\"name\":\"Editor\",\"avatarUrl\":\""+urlA+"\"}")
+	if out.Code != http.StatusBadRequest {
+		t.Fatalf("cross-user avatarUrl = %d, want 400: %s", out.Code, out.Body.String())
+	}
+}
+
+func TestAccountAvatarPerUserQuota(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	// The cap is maxAvatarPerUser (10) unreferenced avatar files per account.
+	for i := 0; i < maxAvatarPerUser; i++ {
+		rr := uploadAvatar(t, env, token, makePNG(t, 16, 16, color.RGBA{uint8(i * 20), 0, 0, 255}), "a.png")
+		if rr.Code != http.StatusOK {
+			t.Fatalf("upload %d = %d: %s", i, rr.Code, rr.Body.String())
+		}
+	}
+	// The next upload is rejected even though none were committed to a profile
+	// (W7 F-004: an account cannot create unbounded orphan avatar files).
+	rr := uploadAvatar(t, env, token, makePNG(t, 16, 16, color.RGBA{0, 0, 255, 255}), "overflow.png")
+	if rr.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("overflow upload = %d, want 413", rr.Code)
+	}
+	var out map[string]string
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "AVATAR_QUOTA_EXCEEDED" {
+		t.Fatalf("overflow error = %q, want AVATAR_QUOTA_EXCEEDED", out["error"])
+	}
+}
+
 func TestAccountAvatarMissingAsset404(t *testing.T) {
 	env := newAuthTestEnv(t)
 	req := httptest.NewRequest(http.MethodGet, "/api/account/avatars/00000000000000000000000000000000", nil)

@@ -310,13 +310,13 @@ func TestAdminDisableRejectsLoginAndRevokes(t *testing.T) {
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("disable status = %d, want 204: %s", rr.Code, rr.Body.String())
 	}
-	// Login rejected.
+	// Login rejected with the same generic 401 as invalid credentials (W7\n\t// F-009: no account-state enumeration on the login surface).
 	code, body := sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", loginBody)
-	if code != http.StatusForbidden {
-		t.Fatalf("disabled login = %d (%v), want 403", code, body)
+	if code != http.StatusUnauthorized {
+		t.Fatalf("disabled login = %d (%v), want 401", code, body)
 	}
-	if body["error"] != "ACCOUNT_DISABLED" {
-		t.Fatalf("disabled login error = %v, want ACCOUNT_DISABLED", body["error"])
+	if body["error"] != "UNAUTHORIZED" {
+		t.Fatalf("disabled login error = %v, want UNAUTHORIZED", body["error"])
 	}
 	// Refresh rejected.
 	refreshReq := sendJSONExpect(t, env.mux, http.MethodPost, "/api/auth/refresh", `{"refreshToken":"`+refresh+`"}`)
@@ -377,8 +377,8 @@ func TestAdminUnlockClearsLockWindow(t *testing.T) {
 		sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", loginBody)
 	}
 	code, _ := sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", `{"username":"editor1","password":"editor-password"}`)
-	if code != http.StatusLocked {
-		t.Fatalf("locked login = %d, want 423", code)
+	if code != http.StatusUnauthorized {
+		t.Fatalf("locked login = %d, want 401 (W7 F-009: no lock enumeration)", code)
 	}
 	// Unlock.
 	req := bearer(t, adminToken(t, env), http.MethodPost, "/api/users/user-editor1/unlock", "")

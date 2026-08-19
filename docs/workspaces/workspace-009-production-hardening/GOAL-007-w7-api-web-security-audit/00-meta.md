@@ -6,7 +6,7 @@ parent: GOAL-001-production-hardening
 created: 2026-08-19
 updated: 2026-08-19
 version: 0.1.0
-progress: 1/4
+progress: 3/4
 ---
 
 # GOAL-007 · W7 api/web 独立安全审计（落盘）
@@ -20,9 +20,9 @@ progress: 1/4
 ## 成功标准
 
 - [x] S1：独立审计意见落盘 `03-audit/A-001`（`source: independent`），含编号 findings、严重度、required/recommended 区分 — [A-001](03-audit/A-001-w7-independent.md)
-- [ ] S2：用户确认本波 required 修复范围（P-004；未决前不实施、不关门）
-- [ ] S3：按确认范围实施并回归（`apps/api` `go test` / `apps/web` 相关测试）
-- [ ] S4：开放 required = 0 后关门审计（security 高影响默认 `cross`）
+- [x] S2：用户确认本波 required 修复范围（整单采纳 F-001～F-012；I-002 暂挂 go 宣称）— [D-002](01-decision/D-002-w7-scope-and-go-hold.md)
+- [x] S3：按确认范围实施并回归（`apps/api` `go test` / `apps/web` 相关测试）— [E-002](02-execution/E-002-w7-implementation.md)、[A-002](03-audit/A-002-w7-self.md)
+- [ ] S4：独立/cross 审计复核后关门（security 高影响默认 `cross`；独立 provider 未运行前不标 done）
 
 ## 范围外 / 已知残余（本波不重开为 required）
 
@@ -41,7 +41,7 @@ progress: 1/4
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 本波 finding 清单与优先级 | 方案/实施 | 方案前 | 本会话独立审计 | verified | — | [A-001](03-audit/A-001-w7-independent.md) + [D-001](01-decision/D-001-w7-open.md) |
-| I-002 | required | High findings（F-001/F-002）是否触发 VP-008 `go` 消费有效性暂挂 | 对外宣称 go 仍有效 | 宣称前 / 本波实施规划 | 用户书面裁决 | open | 责任人=维护者；复核=S2 范围确认 | 待确认；落盘审计不自动暂挂 |
+| I-002 | required | High findings（F-001/F-002）是否触发 VP-008 `go` 消费有效性暂挂 | 对外宣称 go 仍有效 | 宣称前 / 本波实施规划 | 用户书面裁决 | verified | 复核=F-001/F-002 闭合后恢复宣称 | D-002（暂挂） |
 
 ## 父目标
 

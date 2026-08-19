@@ -50,6 +50,24 @@ async function renderManager() {
   return container;
 }
 
+/** Fills the current-password step and submits the MFA enrollment form. */
+async function clickEnroll(container: HTMLElement): Promise<void> {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+  const input = container.querySelector<HTMLInputElement>("#mfaEnrollPassword");
+  if (input === null) {
+    throw new Error("enroll password input missing");
+  }
+  await act(async () => {
+    setter?.call(input, "current-pass");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const submit = container.querySelector<HTMLButtonElement>('[data-mfa-disabled] button[type="submit"]');
+  if (submit === null) {
+    throw new Error("enroll submit button missing");
+  }
+  await act(async () => submit.click());
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
@@ -70,9 +88,7 @@ describe("MfaManager", () => {
     await act(async () => {});
     expect(container.textContent).toContain("Enable MFA");
 
-    const enroll = container.querySelector<HTMLButtonElement>('button[type="button"]');
-    expect(enroll).not.toBeNull();
-    await act(async () => enroll!.click());
+    await clickEnroll(container);
     await act(async () => {});
 
     // One-time payload is visible.
@@ -117,8 +133,7 @@ describe("MfaManager", () => {
 
     const container = await renderManager();
     await act(async () => {});
-    const enroll = container.querySelector<HTMLButtonElement>('button[type="button"]');
-    await act(async () => enroll!.click());
+    await clickEnroll(container);
     await act(async () => {});
 
     const copy = container.querySelector<HTMLButtonElement>("[data-mfa-copy-secret]");
@@ -205,8 +220,7 @@ describe("MfaManager", () => {
 
     const container = await renderManager();
     await act(async () => {});
-    const enroll = container.querySelector<HTMLButtonElement>('button[type="button"]');
-    await act(async () => enroll!.click());
+    await clickEnroll(container);
     await act(async () => {});
 
     const codeInput = container.querySelector<HTMLInputElement>("#mfaConfirmCode");

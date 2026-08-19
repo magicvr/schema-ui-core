@@ -23,9 +23,11 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-19 | independent | apps/api + apps/web 当前实现：bug 与安全漏洞 | fail | 12 | [A-001-w7-independent.md](03-audit/A-001-w7-independent.md) |
+| A-002 | 2026-08-19 | self | A-001 F-001～F-012 修复闭合证据 | pass | 0（实施范围） | [A-002-w7-self.md](03-audit/A-002-w7-self.md) |
 
 ## 结论状态
 
 - independent A-001 **fail**（2 high + 10 med required 未闭合）。
+- self A-002 **pass**：12 条 required 已 `fixed`，开放 required = 0（实施范围）。
 - 独立意见不改本目标 `status`/`progress`。响应与实施走 `/govern` + 用户确认 S2。
-- 开放 required = **12**；冲突：无。
+- S4 关门仍须 independent/cross 复核（D-001 §4）；开放 required = 0 后待独立审计。

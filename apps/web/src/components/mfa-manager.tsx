@@ -134,6 +134,7 @@ export function MfaManager(_props: CustomComponentProps) {
   const [unavailable, setUnavailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enrollPayload, setEnrollPayload] = useState<EnrollPayload | null>(null);
+  const [enrollPassword, setEnrollPassword] = useState("");
   const [confirmCode, setConfirmCode] = useState("");
   const [disableCode, setDisableCode] = useState("");
   const [rotateRecovery, setRotateRecovery] = useState("");
@@ -176,8 +177,13 @@ export function MfaManager(_props: CustomComponentProps) {
 
   const enroll = () =>
     run(async () => {
-      const payload = await postJSON<EnrollPayload>("/api/mfa/enroll", {});
+      // W7 F-007 step-up: the API requires the current password before a new
+      // TOTP enrollment can be bound to the account.
+      const payload = await postJSON<EnrollPayload>("/api/mfa/enroll", {
+        currentPassword: enrollPassword,
+      });
       setEnrollPayload(payload);
+      setEnrollPassword("");
       setNewRecovery(null);
     });
 
@@ -336,9 +342,27 @@ export function MfaManager(_props: CustomComponentProps) {
           ) : null}
         </div>
       ) : (
-        <Button type="button" disabled={busy} onClick={() => void enroll()} className="w-full">
-          {t("schema.account.mfa.enroll")}
-        </Button>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void enroll();
+          }}
+          className="space-y-2"
+          data-mfa-disabled
+        >
+          <Label htmlFor="mfaEnrollPassword">{t("schema.account.field.currentPassword")}</Label>
+          <Input
+            id="mfaEnrollPassword"
+            type="password"
+            autoComplete="current-password"
+            placeholder={t("schema.account.field.currentPassword")}
+            value={enrollPassword}
+            onChange={(event) => setEnrollPassword(event.target.value)}
+          />
+          <Button type="submit" disabled={busy || enrollPassword.trim() === ""} className="w-full">
+            {t("schema.account.mfa.enroll")}
+          </Button>
+        </form>
       )}
 
       {error !== null ? (

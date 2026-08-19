@@ -175,11 +175,24 @@ func TestServiceAdminReset(t *testing.T) {
 	if err := s.Confirm("user-admin", totpForSecret(t, s, secret, now), now); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.AdminReset("user-admin"); err != nil {
+	removed, err := s.AdminReset("user-admin")
+	if err != nil {
 		t.Fatalf("admin reset: %v", err)
+	}
+	if !removed {
+		t.Fatalf("admin reset of active enrollment must report removed=true")
 	}
 	if s.Required("user-admin") {
 		t.Fatalf("Required after admin reset must be false")
+	}
+	// Resetting a user with no enrollment is a no-op and must NOT report an
+	// active removal (W7 F-002: no generic forced-logout from mfa-reset).
+	removed, err = s.AdminReset("user-none")
+	if err != nil {
+		t.Fatalf("admin reset no-enrollment: %v", err)
+	}
+	if removed {
+		t.Fatalf("no-enrollment reset must report removed=false")
 	}
 }
 // A-007 F-002: an active enrollment cannot be overwritten by re-enrolling

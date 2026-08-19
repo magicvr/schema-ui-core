@@ -91,6 +91,7 @@ function postJSON(url: string, body: unknown): Promise<Response> {
 
 /** Exchanges the stored refresh token for a new access/refresh pair (rotation). */
 async function refreshAccess(): Promise<boolean> {
+  // W7 F-011: the long-lived refresh token is NOT attached to every request.
   const refresh = getRefreshToken();
   if (!refresh) {
     return false;
@@ -171,19 +172,28 @@ async function doRefresh(refresh: string, generation: number): Promise<boolean> 
   return true;
 }
 
-function withAuth(init?: RequestInit): RequestInit {
+function withAuth(input: RequestInfo | URL, init?: RequestInit): RequestInit {
   const access = getAccessToken();
   const headers = new Headers(init?.headers);
   if (access !== null) {
     headers.set("Authorization", `Bearer ${access}`);
   }
+  // W7 F-011: the long-lived refresh token is NOT attached to every request.
   const refresh = getRefreshToken();
-  if (refresh !== null) {
+  if (refresh !== null && isSessionListRequest(input)) {
     headers.set("X-Refresh-Token", refresh);
   }
   // VP-007 S4: attach the active locale so the server negotiates messages.
   headers.set("Accept-Language", getActiveLocale());
   return { ...init, headers };
+}
+
+function isSessionListRequest(input: RequestInfo | URL): boolean {
+  try {
+    return new URL(String(input), window.location.origin).pathname === "/api/account/sessions";
+  } catch {
+    return false;
+  }
 }
 
 function isAuthEndpoint(input: RequestInfo | URL): boolean {
@@ -201,7 +211,7 @@ function isAuthEndpoint(input: RequestInfo | URL): boolean {
  * and the auth-lost listener fires (UI → login page).
  */
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  let response = await fetch(input, withAuth(init));
+  let response = await fetch(input, withAuth(input, init));
   if (response.ok && String(input).includes("/api/account/password")) {
     try {
       sessionStorage.setItem("password.changedNotice", "1");
@@ -212,7 +222,7 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   if (response.status === 401 && !isAuthEndpoint(input)) {
     const refreshed = await refreshAccess();
     if (refreshed) {
-      response = await fetch(input, withAuth(init));
+      response = await fetch(input, withAuth(input, init));
       if (response.status === 401) {
         clearTokens();
         onAuthLost?.();
@@ -365,6 +375,7 @@ export async function login(username: string, password: string, captcha?: LoginC
 
 /** Revokes the refresh token (best-effort, idempotent) and clears local state. */
 export async function logout(): Promise<void> {
+  // W7 F-011: the long-lived refresh token is NOT attached to every request.
   const refresh = getRefreshToken();
   // D-001 P2: bump the generation first so an in-flight refresh can never write
   // a rotated token pair back after logout.

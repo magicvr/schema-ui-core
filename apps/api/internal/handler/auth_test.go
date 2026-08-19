@@ -54,10 +54,11 @@ func TestAuthLoginUnknownUser(t *testing.T) {
 	}
 }
 
-// TestAccountLockLifecycle covers the GOAL-004 S4-6 production lock source:
-// 5 consecutive bad passwords open a 15-minute lock window (423 with the
-// ACCOUNT_LOCKED code), the 6th attempt is rejected even with the RIGHT
-// password, and the lock expires automatically once locked_until passes.
+// TestAccountLockLifecycle covers the GOAL-004 S4-6 production lock source,
+// hardened per W7 F-009: the login surface no longer distinguishes a locked
+// account from an unknown user — both are a generic 401 UNAUTHORIZED so an
+// attacker cannot enumerate account existence via the lock/disable codes. The
+// underlying lock still opens after 5 failures and still expires.
 func TestAccountLockLifecycle(t *testing.T) {
 	env := newAuthTestEnv(t)
 
@@ -68,13 +69,14 @@ func TestAccountLockLifecycle(t *testing.T) {
 			t.Fatalf("failure status = %d, want 401: %v", code, body)
 		}
 	}
-	// The 5th failure opened the lock: even the correct password is now 423.
+	// The 5th failure opened the lock: even the correct password is now a
+	// generic 401 UNAUTHORIZED (W7 F-009 — no distinct lock/disable oracle).
 	code, body := loginBody(t, env, testSeedUsername, testSeedPassword)
-	if code != http.StatusLocked {
-		t.Fatalf("locked status = %d, want 423: %v", code, body)
+	if code != http.StatusUnauthorized {
+		t.Fatalf("locked login status = %d, want 401: %v", code, body)
 	}
-	if body["error"] != "ACCOUNT_LOCKED" {
-		t.Fatalf("error = %v, want ACCOUNT_LOCKED", body["error"])
+	if body["error"] != "UNAUTHORIZED" {
+		t.Fatalf("error = %v, want UNAUTHORIZED", body["error"])
 	}
 
 	// Expiry: move the clock past the lock window and the account recovers.
@@ -276,7 +278,7 @@ func TestAuthDevSessionDoesNotBypassLoginEndpoint(t *testing.T) {
 // D2 hardening: repeated failed logins from one client IP are rate-limited
 // (429 after the configured threshold), while the limiter is per-IP.
 // GOAL-004 S4-6: the first 5 consecutive failures trip the account lock
-// (423 ACCOUNT_LOCKED) before the 21-attempt per-IP limiter; the rate-limit
+// (401 UNAUTHORIZED after W7 F-009, no lock enumeration) before the 21-attempt per-IP limiter; the rate-limit
 // path is exercised with a nonexistent user, which never locks.
 func TestLoginRateLimit(t *testing.T) {
 	env := newAuthTestEnv(t)

@@ -34,7 +34,13 @@ type Config struct {
 	// HTTPCORSOrigins is the optional CORS allow-list (W15-F05). Empty means
 	// no Access-Control headers (same-origin Nginx remains the default).
 	HTTPCORSOrigins []string
-	LogLevelName    string
+	// HTTPTrustedProxies is the explicit reverse-proxy CIDR allow-list (W7
+	// F-008). Only a direct peer within one of these CIDRs may supply the
+	// X-Real-IP header used for login/captcha rate limiting. Empty means only
+	// loopback is trusted (fail-safe); operators must add their proxy networks
+	// explicitly rather than trusting all RFC1918 addresses.
+	HTTPTrustedProxies []string
+	LogLevelName       string
 
 	AuthJWTSecret         string
 	AuthAccessTTL         time.Duration
@@ -110,11 +116,12 @@ type yamlFile struct {
 		Modules yaml.Node `yaml:"modules"`
 	} `yaml:"app"`
 	HTTP struct {
-		Addr         *string `yaml:"addr"`
-		ReadTimeout  *string `yaml:"read_timeout"`
-		WriteTimeout *string `yaml:"write_timeout"`
-		IdleTimeout  *string `yaml:"idle_timeout"`
-		CORSOrigins  *string `yaml:"cors_origins"`
+		Addr            *string `yaml:"addr"`
+		ReadTimeout     *string `yaml:"read_timeout"`
+		WriteTimeout    *string `yaml:"write_timeout"`
+		IdleTimeout     *string `yaml:"idle_timeout"`
+		CORSOrigins     *string `yaml:"cors_origins"`
+		TrustedProxies  *string `yaml:"trusted_proxies"`
 	} `yaml:"http"`
 	Log struct {
 		Level *string `yaml:"level"`
@@ -256,6 +263,9 @@ func Load() *Config {
 	if yf.HTTP.CORSOrigins != nil {
 		cfg.HTTPCORSOrigins = splitCSV(*yf.HTTP.CORSOrigins)
 	}
+	if yf.HTTP.TrustedProxies != nil {
+		cfg.HTTPTrustedProxies = splitCSV(*yf.HTTP.TrustedProxies)
+	}
 	cfg.LogLevelName = strPtrOr(yf.Log.Level, cfg.LogLevelName)
 	cfg.AuthJWTSecret = strPtrOr(yf.Auth.JWTSecret, cfg.AuthJWTSecret)
 	cfg.AuthAccessTTL = orDurationPtr(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
@@ -314,6 +324,9 @@ func Load() *Config {
 	cfg.IdleTimeout = durationEnv("HTTP_IDLE_TIMEOUT", cfg.IdleTimeout)
 	if raw := strings.TrimSpace(os.Getenv("HTTP_CORS_ORIGINS")); raw != "" {
 		cfg.HTTPCORSOrigins = splitCSV(raw)
+	}
+	if raw := strings.TrimSpace(os.Getenv("HTTP_TRUSTED_PROXIES")); raw != "" {
+		cfg.HTTPTrustedProxies = splitCSV(raw)
 	}
 	cfg.LogLevelName = envOr("LOG_LEVEL", cfg.LogLevelName)
 	cfg.AuthJWTSecret = envOr("AUTH_JWT_SECRET", cfg.AuthJWTSecret)

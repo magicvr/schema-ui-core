@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ type MFASelfService interface {
 	Confirm(userID, code string, now time.Time) error
 	Disable(userID, code, recoveryCode string, now time.Time) error
 	RotateRecovery(userID, code, recoveryCode string, now time.Time) ([]string, error)
-	AdminReset(userID string) error
+	AdminReset(userID string) (removedActive bool, err error)
 }
 
 // SessionRevoker is the session-invalidation surface MFA disable / admin
@@ -109,6 +110,27 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 	add("POST", "/api/mfa/enroll", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requireIdentity(w, r)
 		if !ok {
+			return
+		}
+		var body struct {
+			CurrentPassword string `json:"currentPassword"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.CurrentPassword) == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "MFA_CURRENT_PASSWORD_REQUIRED", "currentPassword is required to start MFA enrollment")
+			return
+		}
+		// W7 F-007 step-up: a Bearer session alone must not be enough to bind a
+		// new TOTP secret to the account. Confirm the current password first; an
+		// account that already has active MFA is rejected by Enroll with
+		// ErrActive (and must use disable/rotate instead).
+		current, err := a.UserByID(user.ID)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load account")
+			return
+		}
+		if !auth.VerifyPassword(current.PasswordHash, body.CurrentPassword) {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "current password is incorrect")
 			return
 		}
 		secret, otpauth, codes, err := service.Enroll(user.ID, user.Name, time.Now().UTC())
@@ -205,15 +227,36 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		targetID := r.PathValue("id")
 		now := time.Now().UTC()
-		if err := service.AdminReset(targetID); err != nil {
+		// W7 F-002: mirror the users-resource admin target boundary (users.go
+		// authorizeAdminTargetBoundary) — a delegated users.mfa-reset actor
+		// must not strip 2FA from an admin account. The store's SELF_OPERATION
+		// guard does not apply here; this endpoint is management of another
+		// user, so the actor is allowed to reset themselves only when they hold
+		// the management permission (same posture as users.write).
+		target, err := a.UserByID(targetID)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "no user with that id")
+			return
+		}
+		if !slices.Contains(user.Roles, "admin") && slices.Contains(target.Roles, "admin") {
+			writeLocalizedError(w, r, http.StatusForbidden, "ADMIN_ACCOUNT_FORBIDDEN", "only an admin may reset an admin's MFA")
+			return
+		}
+		removedActive, err := service.AdminReset(targetID)
+		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not reset MFA")
 			return
 		}
-		if err := revoker.BumpTokenVersionAndRevokeAll(targetID, now); err != nil {
-			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not invalidate sessions")
-			return
+		// W7 F-002: only an ACTIVE enrollment removal should invalidate the
+		// target's sessions. Resetting a user who has no active MFA must not be
+		// treated as a generic force-logout primitive.
+		if removedActive {
+			if err := revoker.BumpTokenVersionAndRevokeAll(targetID, now); err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not invalidate sessions")
+				return
+			}
 		}
-		recordAudit(operations, user, operationlog.EventMFAAdminReset, targetID, auditDetail("admin-reset", map[string]any{"userId": targetID}), time.Now().UTC(), r.Context())
+		recordAudit(operations, user, operationlog.EventMFAAdminReset, targetID, auditDetail("admin-reset", map[string]any{"userId": targetID, "revokedSessions": removedActive}), time.Now().UTC(), r.Context())
 		w.WriteHeader(http.StatusNoContent)
 	})))
 

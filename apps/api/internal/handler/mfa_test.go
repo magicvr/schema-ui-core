@@ -81,10 +81,11 @@ func (s *fakeMFAService) RotateRecovery(userID, code, recoveryCode string, now t
 	return []string{"N1", "N2"}, nil
 }
 
-func (s *fakeMFAService) AdminReset(userID string) error {
+func (s *fakeMFAService) AdminReset(userID string) (bool, error) {
+	wasActive := s.required[userID]
 	delete(s.enrolled, userID)
 	delete(s.required, userID)
-	return nil
+	return wasActive, nil
 }
 
 // fakeSessionRevoker records revocation calls.
@@ -190,8 +191,8 @@ func TestMFASelfService(t *testing.T) {
 	env.mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusUnauthorized, "UNAUTHENTICATED")
 
-	// Enroll → one-time payload.
-	req = bearer(t, token, http.MethodPost, "/api/mfa/enroll", "")
+	// Enroll → one-time payload (W7 F-007: requires current password).
+	req = bearer(t, token, http.MethodPost, "/api/mfa/enroll", `{"currentPassword":"test-password"}`)
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "recoveryCodes") {
@@ -256,6 +257,11 @@ func TestMFASelfService(t *testing.T) {
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusForbidden, "FORBIDDEN")
+	// Mark editor1 as having ACTIVE MFA so the admin reset reports an active
+	// removal and revokes sessions (W7 F-002: no-enrollment resets must NOT
+	// force-logout; this positive case proves the active path still revokes).
+	fake.required["user-editor1"] = true
+	fake.enrolled["user-editor1"] = true
 	req = bearer(t, token, http.MethodPost, "/api/users/user-editor1/mfa/reset", "")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)

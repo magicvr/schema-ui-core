@@ -36,6 +36,11 @@ http:
   # Optional comma-separated CORS allow-list (W15-F05). Empty = no CORS
   # headers (same-origin reverse proxy). Env override: HTTP_CORS_ORIGINS.
   cors_origins: ""
+  # Optional explicit reverse-proxy CIDR allow-list (W7 F-008). X-Real-IP is
+  # trusted ONLY from direct peers inside one of these CIDRs. Empty = loopback
+  # only (fail-safe; operators behind a proxy must set this). Env override:
+  # HTTP_TRUSTED_PROXIES, e.g. "172.16.0.0/12,10.0.0.0/8".
+  trusted_proxies: ""
 
 log:
   # debug | info | warn | error

@@ -382,13 +382,19 @@ it("navigate actions with navigateMapping bind row query params", async () => {
   vi.unstubAllGlobals();
 });
 
-// W16-F02: library.preview fetches the file through the authed transport as a
-// blob and opens the blob URL (does not 401 on a bare download URL).
-it("library.preview opens a blank window before fetching, then navigates to the blob URL", async () => {
+// W16-F02/W7 F-010: library.preview fetches the file through the authed
+// transport as a blob and embeds it in a sandboxed iframe (no direct blob:
+// top-level navigation, so server CSP/attachment headers are not stripped).
+it("library.preview opens a blank window before fetching, then embeds the blob in a sandboxed iframe", async () => {
   const previewWindow = {
     closed: false,
     location: { replace: vi.fn() },
     close: vi.fn(),
+    document: {
+      open: vi.fn(),
+      write: vi.fn(),
+      close: vi.fn(),
+    },
   };
   const openSpy = vi.fn(() => previewWindow as unknown as Window);
   vi.spyOn(window, "open").mockImplementation(openSpy);
@@ -446,7 +452,10 @@ it("library.preview opens a blank window before fetching, then navigates to the 
   expect(downloadFetched).toBe(true);
   expect(objectUrls.length).toBeGreaterThan(0);
   expect(openSpy).toHaveBeenCalledWith("about:blank", "_blank");
-  expect(previewWindow.location.replace).toHaveBeenCalledWith("blob:mock-url");
+  expect(previewWindow.document.write).toHaveBeenCalledWith(
+    expect.stringContaining('<iframe sandbox="" src="blob:mock-url"></iframe>'),
+  );
+  expect(previewWindow.location.replace).not.toHaveBeenCalled();
   vi.unstubAllGlobals();
 });
 

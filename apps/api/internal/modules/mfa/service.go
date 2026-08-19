@@ -71,7 +71,10 @@ func NewService(repo *store.Repository, serverSecret []byte) *Service {
 
 // Required reports whether the user must complete a second factor before token
 // issuance (only active enrollments gate login; pending ones do not — A-004
-// F-001: no self-lock after enrollment).
+// F-001: no self-lock after enrollment). Fail-closed (W7 F-001): a storage
+// error is NOT treated as "no MFA" — only a definitive ErrNotFound means the
+// user has no enrollment. Any other read error forces the login into the
+// second-factor branch, which then fails closed until the store can be read.
 func (s *Service) Required(userID string) bool {
 	// Defensive: a typed-nil *Service must never panic the login path (the
 	// composition root passes a true nil interface when admin.mfa is off).
@@ -79,8 +82,11 @@ func (s *Service) Required(userID string) bool {
 		return false
 	}
 	st, err := s.repo.GetState(userID)
-	if err != nil {
+	if errors.Is(err, store.ErrNotFound) {
 		return false
+	}
+	if err != nil {
+		return true
 	}
 	return st.Status == "active"
 }
@@ -249,9 +255,22 @@ func (s *Service) RotateRecovery(userID, code, recoveryCode string, now time.Tim
 }
 
 // AdminReset removes another user's enrollment (caller then bumps
-// token_version and revokes sessions — A-004 F-002).
-func (s *Service) AdminReset(userID string) error {
-	return s.repo.DeleteState(userID)
+// token_version and revokes sessions only when an ACTIVE enrollment existed —
+// W7 F-002: resetting a user without active MFA must not become a generic
+// forced-logout primitive). The returned bool reports whether an active
+// enrollment was removed; a pending state is removed but reported false.
+func (s *Service) AdminReset(userID string) (bool, error) {
+	st, err := s.repo.GetState(userID)
+	if errors.Is(err, store.ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if err := s.repo.DeleteState(userID); err != nil {
+		return false, err
+	}
+	return st.Status == "active", nil
 }
 
 // requireActiveSecondFactor validates a code or recovery code against an
