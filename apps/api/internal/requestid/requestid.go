@@ -7,9 +7,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -22,6 +24,7 @@ const (
 type contextKey struct{}
 
 var validPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
+var readRandom = rand.Read
 
 // Valid reports whether id is safe to propagate as a request correlation ID.
 func Valid(id string) bool {
@@ -50,11 +53,13 @@ func WithContext(ctx context.Context, id string) context.Context {
 // uniqueness if the process cannot access the system CSPRNG.
 func New() string {
 	var raw [16]byte
-	if _, err := rand.Read(raw[:]); err == nil {
+	if _, err := readRandom(raw[:]); err == nil {
 		return hex.EncodeToString(raw[:])
 	}
-	return hex.EncodeToString([]byte(time.Now().UTC().Format(time.RFC3339Nano)))
+	return fmt.Sprintf("%x-%x", time.Now().UTC().UnixNano(), fallbackSequence.Add(1))
 }
+
+var fallbackSequence atomic.Uint64
 
 // Middleware establishes one correlation ID for every request and emits it on
 // every response, including route/auth errors produced by downstream layers.

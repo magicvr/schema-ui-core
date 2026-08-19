@@ -15,21 +15,7 @@ import (
 // Content-Language; uncataloged codes keep the English generic message with no
 // messageKey (never leaks diagnostics).
 func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
-	locale := errorcatalog.Negotiate(r)
-	body, contentLanguage, cataloged := errorcatalog.Body(code, message, locale)
-	if id := requestid.FromContext(r.Context()); id != "" {
-		body[requestid.BodyName] = id
-	}
-	if !cataloged {
-		uncataloged := map[string]any{"error": code, "message": message}
-		if id := requestid.FromContext(r.Context()); id != "" {
-			uncataloged[requestid.BodyName] = id
-		}
-		writeJSON(w, status, uncataloged)
-		return
-	}
-	w.Header().Set("Content-Language", contentLanguage)
-	writeJSON(w, status, body)
+	errorcatalog.WriteLocalizedError(w, r, status, code, message)
 }
 
 // writeLocalizedFieldError is writeLocalizedError plus a fieldErrors array

@@ -85,3 +85,32 @@ func TestNewDetailRedactsNestedSensitiveValues(t *testing.T) {
 		t.Fatalf("raw detail contains sensitive value: %s", raw)
 	}
 }
+
+func TestNewDetailNormalizesTypedValues(t *testing.T) {
+	type profile struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	}
+	raw, err := NewDetail("typed", nil, map[string]any{
+		"labels":   map[string]string{"tier": "admin"},
+		"attempts": []int{1, 2},
+		"profile":  profile{Name: "alice", Password: "secret"},
+	})
+	if err != nil {
+		t.Fatalf("NewDetail typed values: %v", err)
+	}
+	envelope, err := ParseDetail(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := envelope.After["labels"].(map[string]any)["tier"]; got != "admin" {
+		t.Fatalf("labels.tier = %v", got)
+	}
+	if got := envelope.After["attempts"].([]any); len(got) != 2 || got[0] != float64(1) {
+		t.Fatalf("attempts = %#v", got)
+	}
+	profileValue := envelope.After["profile"].(map[string]any)
+	if profileValue["password"] != RedactedValue || profileValue["name"] != "alice" {
+		t.Fatalf("profile = %#v", profileValue)
+	}
+}

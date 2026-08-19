@@ -152,7 +152,18 @@ func redactValue(value any, key string) (any, error) {
 		}
 		return out, nil
 	default:
-		return nil, fmt.Errorf("unsupported detail value type %T", value)
+		// Normalize structs, typed maps and typed slices through JSON so audit
+		// details remain serializable as callers evolve beyond the original
+		// primitive set. Re-enter redaction to protect tagged sensitive fields.
+		raw, err := json.Marshal(value)
+		if err != nil {
+			return fmt.Sprint(value), nil
+		}
+		var normalized any
+		if err := json.Unmarshal(raw, &normalized); err != nil {
+			return string(raw), nil
+		}
+		return redactValue(normalized, key)
 	}
 }
 

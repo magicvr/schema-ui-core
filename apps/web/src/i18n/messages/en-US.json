@@ -289,6 +289,7 @@
 "schema.systemMonitoring.text.intro": "Read-only system status and recent events.",
 "schema.systemMonitoring.statCard.status": "Status",
 "schema.systemMonitoring.statCard.ready": "Ready",
+"schema.systemMonitoring.statCard.availability": "Availability",
 "schema.systemMonitoring.statCard.uptime": "Uptime (s)",
 "schema.systemMonitoring.statCard.modules": "Modules",
 "schema.systemMonitoring.statCard.dbSize": "DB size (bytes)",

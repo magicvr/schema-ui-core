@@ -101,7 +101,7 @@ func TestOperationalGateCoversAllMutationMethods(t *testing.T) {
 }
 
 func TestOperationalGateAllowsEveryRecoveryPath(t *testing.T) {
-	paths := []string{"/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/mfa/verify", "/api/account/password"}
+	paths := []string{"/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/mfa/verify", "/api/account/password", "/api/mfa/enroll", "/api/mfa/confirm", "/api/mfa/disable", "/api/mfa/recovery/rotate"}
 	mux := http.NewServeMux()
 	for _, path := range paths {
 		mux.Handle("POST "+path, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

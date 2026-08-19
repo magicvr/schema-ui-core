@@ -289,6 +289,7 @@
 "schema.systemMonitoring.text.intro": "只读的系统状态与最近事件。",
 "schema.systemMonitoring.statCard.status": "状态",
 "schema.systemMonitoring.statCard.ready": "就绪",
+"schema.systemMonitoring.statCard.availability": "可用性",
 "schema.systemMonitoring.statCard.uptime": "运行时长（秒）",
 "schema.systemMonitoring.statCard.modules": "模块数",
 "schema.systemMonitoring.statCard.dbSize": "数据库大小（字节）",

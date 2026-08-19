@@ -38,6 +38,17 @@ func now() time.Time {
 	return time.Now().UTC()
 }
 
+func TestNewServiceCredentialIDFallbackRemainsUnique(t *testing.T) {
+	original := readRandom
+	readRandom = func([]byte) (int, error) { return 0, errors.New("random unavailable") }
+	defer func() { readRandom = original }()
+
+	first, second := NewServiceCredentialID(), NewServiceCredentialID()
+	if first == second || first == "" || second == "" {
+		t.Fatalf("fallback service credential IDs must be unique: first=%q second=%q", first, second)
+	}
+}
+
 func TestLoginSuccess(t *testing.T) {
 	a := newTestAuth(t, false)
 	access, refresh, user, err := a.Login("admin", "pw", now())

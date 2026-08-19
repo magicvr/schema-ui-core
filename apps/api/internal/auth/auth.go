@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -408,12 +409,21 @@ func HashToken(raw string) string {
 
 func newID() string {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		// crypto/rand failure is effectively fatal; fall back to a non-cryptographic
-		// timestamp+seq id so a broken RNG does not wedge the server silently.
-		return fmt.Sprintf("rt-%d", time.Now().UnixNano())
+	if _, err := readRandom(b); err != nil {
+		// Preserve uniqueness even if the system CSPRNG is unavailable. This ID
+		// is a database identifier, not the refresh secret itself.
+		return fmt.Sprintf("rt-%x-%x", time.Now().UnixNano(), fallbackIDSequence.Add(1))
 	}
 	return hex.EncodeToString(b)
+}
+
+var fallbackIDSequence atomic.Uint64
+var readRandom = rand.Read
+
+// writeLocalizedError preserves auth's literal error-code call surface for
+// the frozen contract test while delegating wire behavior to shared code.
+func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
+	errorcatalog.WriteLocalizedError(w, r, status, code, message)
 }
 
 // accountFromUser builds the identity snapshot, resolving the user's persisted
@@ -607,29 +617,4 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": code, "message": message})
-}
-
-// writeLocalizedError writes the VP-007 S4 envelope: cataloged codes get a
-// locale-negotiated message + messageKey + Content-Language; uncataloged codes
-// stay English with no key (I-L10N-004 path a).
-func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
-	locale := errorcatalog.Negotiate(r)
-	body, contentLanguage, cataloged := errorcatalog.Body(code, message, locale)
-	if id := requestid.FromContext(r.Context()); id != "" {
-		body[requestid.BodyName] = id
-	}
-	if !cataloged {
-		uncataloged := map[string]any{"error": code, "message": message}
-		if id := requestid.FromContext(r.Context()); id != "" {
-			uncataloged[requestid.BodyName] = id
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(status)
-		_ = json.NewEncoder(w).Encode(uncataloged)
-		return
-	}
-	w.Header().Set("Content-Language", contentLanguage)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
 }

@@ -56,19 +56,28 @@ func isBusinessMutation(r *http.Request) bool {
 	}
 }
 
-// These paths preserve sign-in, session recovery and forced password change
-// while business writes are paused. Matching is intentionally exact.
+// These paths preserve sign-in, session recovery and self-service MFA/password
+// recovery while business writes are paused. Keep this explicit registry in
+// sync with the registered recovery routes; ordinary auth-adjacent mutations
+// must remain gated.
+var operationalRecoveryPaths = map[string]struct{}{
+	"/api/auth/login":          {},
+	"/api/auth/refresh":        {},
+	"/api/auth/logout":         {},
+	"/api/auth/mfa/verify":     {},
+	"/api/account/password":    {},
+	"/api/mfa/enroll":          {},
+	"/api/mfa/confirm":         {},
+	"/api/mfa/disable":         {},
+	"/api/mfa/recovery/rotate": {},
+}
+
 func operationalAllowlisted(r *http.Request) bool {
 	if r.Method != http.MethodPost {
 		return false
 	}
-	switch r.URL.Path {
-	case "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
-		"/api/auth/mfa/verify", "/api/account/password":
-		return true
-	default:
-		return false
-	}
+	_, ok := operationalRecoveryPaths[r.URL.Path]
+	return ok
 }
 
 func operationalMessage(code string) string {

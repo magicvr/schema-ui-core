@@ -261,7 +261,7 @@ func (r *Runner) execute(ctx context.Context, cancel context.CancelFunc, id stri
 		return
 	}
 	now := r.options.Now().UTC()
-	job, lease, err := r.repo.Claim(context.Background(), id, r.instance+":"+ownerSuffix, now, r.options.LeaseDuration)
+	job, lease, err := r.repo.Claim(ctx, id, r.instance+":"+ownerSuffix, now, r.options.LeaseDuration)
 	if err != nil {
 		return
 	}
@@ -285,21 +285,42 @@ func (r *Runner) execute(ctx context.Context, cancel context.CancelFunc, id stri
 	for {
 		select {
 		case <-heartbeat.C:
-			requested, err := r.repo.IsCancelRequested(context.Background(), lease)
+			requested, err := r.repo.IsCancelRequested(ctx, lease)
 			if err != nil {
+				reporter.cancelExecution()
+				if ctx.Err() == nil {
+					r.abortLease(lease, err)
+				}
 				return
 			}
 			if requested {
 				reporter.cancelExecution()
 			}
-			if err := r.repo.Heartbeat(context.Background(), lease, r.options.Now().UTC(), r.options.LeaseDuration); err != nil {
+			if err := r.repo.Heartbeat(ctx, lease, r.options.Now().UTC(), r.options.LeaseDuration); err != nil {
 				reporter.cancelExecution()
+				if ctx.Err() == nil {
+					r.abortLease(lease, err)
+				}
 				return
 			}
 		case outcome := <-result:
 			r.finish(lease, outcome)
 			return
 		}
+	}
+}
+
+// abortLease cancels the handler and records a durable failure when the
+// runner loses its heartbeat/cancellation database path. Cleanup uses a
+// background context so an unrelated runner shutdown does not leave a lease
+// silently running; shutdown cancellation is intentionally recoverable.
+func (r *Runner) abortLease(lease Lease, cause error) {
+	message := "job heartbeat failed"
+	if cause != nil {
+		message += ": " + cause.Error()
+	}
+	if err := r.repo.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", message, r.options.Now().UTC()); err == nil {
+		r.notifyTerminal(lease.JobID)
 	}
 }
 
@@ -310,6 +331,7 @@ func (r *Runner) finish(lease Lease, outcome runnerOutcome) {
 	now := r.options.Now().UTC()
 	requested, leaseErr := r.repo.IsCancelRequested(context.Background(), lease)
 	if leaseErr != nil {
+		r.abortLease(lease, leaseErr)
 		return
 	}
 	if outcome.err != nil {
@@ -335,6 +357,7 @@ func (r *Runner) finish(lease Lease, outcome runnerOutcome) {
 	} else {
 		requested, leaseErr := r.repo.IsCancelRequested(context.Background(), lease)
 		if leaseErr != nil {
+			r.abortLease(lease, leaseErr)
 			return
 		}
 		if requested {

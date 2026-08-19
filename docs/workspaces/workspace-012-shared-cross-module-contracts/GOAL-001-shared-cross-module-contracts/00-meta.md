@@ -44,7 +44,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | non-blocking | 各契约的消费方与验证载体（哪个模块或测试先引用） | R1 方案 | R1 开始前 | 扫描现有模块/测试可接入点 | **verified** | 2026-08-18 R1 链路扫描已完成 | R1 D-001/E-001：server/requestid、handler 错误包络、Web ResourceApiError、operationlog auth/settings 写路径与定向测试 |
-| I-002 | required | R1～R6 是否全部合法闭合并共同满足 Root 成功标准 | Root 关门 | Root 关门前 | 核对六个子目标 final audit、全量验证、不变式与目标树投影 | verified | 2026-08-19；A-002 independent pass / A-003 close | E-006；A-001/A-002：六目标 done、开放 required=0、Root 四条成功标准 pass |
+| I-002 | required | R1～R6 是否全部合法闭合并共同满足 Root 成功标准 | Root 关门 | Root 关门前 | 核对六个子目标 final audit、全量验证、不变式与目标树投影 | verified | 2026-08-19；A-002 independent pass / A-003 close；A-006 fixed F-008；A-007 fixed A-004/A-005 findings；A-008 independent pass；A-009 fixed A-008 residual | E-006/E-008/E-009/E-010；A-001/A-002/A-006/A-007/A-008/A-009：六目标 done、F-001～F-009 fixed、A-008 residual fixed、Web 1069/1069、受影响 API 定向测试通过、开放 required=0、Root 四条成功标准 pass；VACUUM 专项独立复核为非阻断 |
 
 ## 父目标
 

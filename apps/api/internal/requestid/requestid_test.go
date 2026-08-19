@@ -1,10 +1,17 @@
 package requestid
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+type failingReader struct{}
+
+func (failingReader) Read([]byte) (int, error) { return 0, errRandomUnavailable }
+
+var errRandomUnavailable = errors.New("random unavailable")
 
 func TestValid(t *testing.T) {
 	for _, tc := range []struct {
@@ -50,4 +57,15 @@ func TestMiddlewarePropagatesAndGeneratesIDs(t *testing.T) {
 			t.Fatalf("generated response id = %q", got)
 		}
 	})
+}
+
+func TestNewFallbackRemainsUniqueWhenRandomUnavailable(t *testing.T) {
+	original := readRandom
+	readRandom = failingReader{}.Read
+	defer func() { readRandom = original }()
+
+	first, second := New(), New()
+	if first == second || !Valid(first) || !Valid(second) {
+		t.Fatalf("fallback IDs must be unique and valid: first=%q second=%q", first, second)
+	}
 }
