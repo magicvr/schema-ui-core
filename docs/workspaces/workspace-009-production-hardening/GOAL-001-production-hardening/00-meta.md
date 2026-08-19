@@ -4,8 +4,8 @@ title: 生产加固（共享基架持续安全与健壮性）
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-14
-version: 0.6.0
+updated: 2026-08-19
+version: 0.7.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
@@ -42,7 +42,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 - [x] **P2 · 与 go 的接口**：共享基架 Critical/High 可触发 VP-008 `go` 消费有效性暂挂/恢复的路径有台账约定。（见 VP-009；W1 曾完成一次恢复证据）
 - [x] **W1 · 波次档案**：2026-08-10 审查 16 项（C1–C8 + D1–D8）修复 + cross 闭环 — [GOAL-002](../GOAL-002-audit-findings-remediation/00-meta.md) `done` 16/16
 - [x] **W2 · 波次档案**：上传 owner/下载鉴权 + `ReadHeaderTimeout` — [GOAL-003](../GOAL-003-upload-ownership-hardening/00-meta.md) `done` 4/4
-- [ ] **P3 · 下一波就绪**：存在约定的触发（例行/发版前/变更后）时，可开新子目标承接扫描，无需重开 Root/VP
+- [x] **P3 · 下一波就绪**：存在约定的触发（例行/发版前/变更后）时，可开新子目标承接扫描，无需重开 Root/VP。（W3–W7 已按此开波；最近：2026-08-19 W7）
 
 > `progress`：不使用「n/n → Root done」推导。波次完成只更新子目标与下表档案；Root `status` 仅在用户明确废弃程序或迁移 `primary_plan` 时改为 `done`/`cancelled`。
 
@@ -55,6 +55,8 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 | W3 | GOAL-004-w3-security-audit-remediation | done | 2026-08-11 安全审计修复 |
 | W4 | GOAL-005-w4-security-audit-remediation | done | 2026-08-11 限流/上传/token_version/前端异常 |
 | W5 scan | — | 未开子目标 | 2026-08-14 全量审计 0 中高危；低危就地修补见 E-002 |
+| W6 | GOAL-006-w6-scan-findings-remediation | done | 低危扫描修补；2026-08-17 关门 |
+| W7 | GOAL-007-w7-api-web-security-audit | active | 2026-08-19 独立审计落盘；A-001 fail；开放 required = 12 |
 
 ## 信息就绪与未知项
 
@@ -62,7 +64,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 本程序是否为长期意图（非单波关门）？ | 程序定义 | 纠正当日 | 用户 2026-08-10 书面纠正 | verified | — | D-003；VP-009 v0.4.0 |
 | I-002 | non-blocking | 例行扫描的具体日历/cron | 运营节奏 | 下一波前 | 用户或 CI 约定；可先事件触发 | open | deferred：事件触发足够启动 W3；责任人=维护者；复核=首次例行扫描前 | 待确认 |
-| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1–W4 在子目标 verified；W5 扫描 0 中高危，清单在 E-002 / scratch `w5-audit-2026-08-14.md` |
+| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1–W4、W6 在子目标 verified；W5 扫描 0 中高危见 E-002；W7 清单 = GOAL-007 A-001（verified 于该波方案前） |
 
 ## 台账布局
 

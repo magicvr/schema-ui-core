@@ -10,8 +10,8 @@ plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
 created: 2026-08-10
-updated: 2026-08-17
-version: 0.5.1
+updated: 2026-08-19
+version: 0.6.0
 parent: null
 ---
 
@@ -50,6 +50,7 @@ independent provider（沿用 workspace-008 D-002）：**grok build · grok-4.5 
 | W4 | GOAL-005-w4-security-audit-remediation | done |
 | W5 scan | （未开子目标） | 2026-08-14 全量审计 **0 中高危**；低危就地修补见 Root E-002；**go 判定：无影响、不暂挂**（安全加固与冻结 fail-closed 语义一致；未改 Profile/模块矩阵/Manifest 装配/协议 pin） |
 | W6 | GOAL-006-w6-scan-findings-remediation | **done**（4/4 · 2026-08-15 完成；2026-08-17 补记用户授权关门 D-002 + close-out self 审计 A-002 pass） |
+| W7 | GOAL-007-w7-api-web-security-audit | **active**（1/4 · 2026-08-19 独立审计落盘 A-001 fail；开放 required = 12；修复范围待确认） |
 
 ## 固定共享资料引用
 

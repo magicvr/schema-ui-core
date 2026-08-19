@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-14
-version: 0.3.0
+updated: 2026-08-19
+version: 0.4.0
 ---
 
 # 执行记录 · GOAL-001
@@ -16,6 +16,7 @@ version: 0.3.0
 |------|------|------|------|------|
 | E-001 | 2026-08-10 | 程序语义纠正落盘（VP-009 + Root 长期容器） | recorded | [E-001-standing-program-rewrite.md](02-execution/E-001-standing-program-rewrite.md) |
 | E-002 | 2026-08-14 | W5 全量审计 0 中高危；低危就地修补（未开子目标） | recorded | [E-002-w5-scan-zero-midhigh.md](02-execution/E-002-w5-scan-zero-midhigh.md) |
+| E-003 | 2026-08-19 | 开 W7 子目标承接独立审计落盘 | recorded | [E-003-w7-opened.md](02-execution/E-003-w7-opened.md) |
 
 ## 波次执行（子目标）
 
@@ -26,3 +27,5 @@ version: 0.3.0
 - W3 → [GOAL-004](../GOAL-004-w3-security-audit-remediation/02-execution.md)
 - W4 → [GOAL-005](../GOAL-005-w4-security-audit-remediation/02-execution.md)
 - W5 scan → **0 中高危，未开子目标**；低危就地修补见 E-002
+- W6 → [GOAL-006](../GOAL-006-w6-scan-findings-remediation/02-execution.md)（done）
+- W7 → [GOAL-007](../GOAL-007-w7-api-web-security-audit/02-execution.md)（active；独立审计已落盘，修复未开始）

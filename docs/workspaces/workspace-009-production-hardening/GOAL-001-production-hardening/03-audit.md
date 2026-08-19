@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-10
-version: 0.2.0
+updated: 2026-08-19
+version: 0.3.0
 ---
 
 # 审计 · GOAL-001
@@ -24,8 +24,9 @@ Goal 审计模式：程序级变更以 self 留痕；含 security 高影响的**
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| （波次） | — | — | GOAL-002 / GOAL-003 | 见子目标 | 0 | 子目标 `03-audit` |
+| （波次） | — | — | GOAL-002～GOAL-006 | 见子目标 | 0 | 子目标 `03-audit` |
+| （W7） | 2026-08-19 | independent | GOAL-007 api/web 当前实现 | fail | 12 | [GOAL-007 A-001](../GOAL-007-w7-api-web-security-audit/03-audit/A-001-w7-independent.md) |
 
 ## 结论状态
 
-程序语义纠正已落盘；Root/`VP-009` 现行 `active`。无新的程序级开放 required finding。下一波扫描修复走新子目标 + 波次审计。
+程序语义纠正已落盘；Root/`VP-009` 现行 `active`。程序级无新 required。W7 波次独立意见 **fail**（开放 required = 12）在 [GOAL-007](../GOAL-007-w7-api-web-security-audit/03-audit.md)；响应与实施走该子目标，不在本 Root 冒充 independent。
