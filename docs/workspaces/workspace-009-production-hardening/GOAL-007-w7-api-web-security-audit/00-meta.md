@@ -1,12 +1,12 @@
 ---
 id: GOAL-007-w7-api-web-security-audit
 title: W7 api/web 独立安全审计（落盘）
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-19
 updated: 2026-08-19
 version: 0.1.0
-progress: 3/4
+progress: 4/4
 ---
 
 # GOAL-007 · W7 api/web 独立安全审计（落盘）
@@ -22,7 +22,7 @@ progress: 3/4
 - [x] S1：独立审计意见落盘 `03-audit/A-001`（`source: independent`），含编号 findings、严重度、required/recommended 区分 — [A-001](03-audit/A-001-w7-independent.md)
 - [x] S2：用户确认本波 required 修复范围（整单采纳 F-001～F-012；I-002 暂挂 go 宣称）— [D-002](01-decision/D-002-w7-scope-and-go-hold.md)
 - [x] S3：按确认范围实施并回归（`apps/api` `go test` / `apps/web` 相关测试）— [E-002](02-execution/E-002-w7-implementation.md)、[A-002](03-audit/A-002-w7-self.md)
-- [ ] S4：独立/cross 审计复核后关门（security 高影响默认 `cross`；独立 provider 未运行前不标 done）
+- [x] S4：独立审计 A-004 pass（E-003 后 12/12 required 可核对闭合；cross 门禁满足）— [A-004](03-audit/A-004-w7-independent.md)
 
 ## 范围外 / 已知残余（本波不重开为 required）
 

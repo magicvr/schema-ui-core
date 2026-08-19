@@ -61,6 +61,38 @@ func TestCaptchaPreflightEnabledServesChallenge(t *testing.T) {
 	}
 }
 
+func TestCaptchaPreflightRateLimited(t *testing.T) {
+	env := newAuthTestEnv(t)
+	if err := env.captcha.SetEnabled(true, time.Now().UTC()); err != nil {
+		t.Fatalf("enable: %v", err)
+	}
+	old := captchaGenerateLimiter
+	captchaGenerateLimiter = newLoginRateLimiter(time.Minute, 10, 1<<16)
+	defer func() { captchaGenerateLimiter = old }()
+
+	for i := 0; i < 10; i++ {
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/auth/captcha", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("preflight %d = %d: %s", i, rec.Code, rec.Body.String())
+		}
+	}
+	// The 11th request within the window is rejected (W7 F-006: generation is
+	// actually counted, not just checked).
+	rec := httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/auth/captcha", nil))
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("11th preflight = %d, want 429: %s", rec.Code, rec.Body.String())
+	}
+	var body map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body["error"] != "RATE_LIMITED" {
+		t.Fatalf("error = %q, want RATE_LIMITED", body["error"])
+	}
+}
+
 func TestCaptchaSettingsReadWrite(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)

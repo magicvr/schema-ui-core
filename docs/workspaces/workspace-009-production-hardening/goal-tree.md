@@ -22,10 +22,10 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-004-w3-security-audit-remediation [done] (8/8)   · W3
 ├── GOAL-005-w4-security-audit-remediation [done] (8/8)   · W4
 ├── GOAL-006-w6-scan-findings-remediation [done] (4/4)    · W6
-└── GOAL-007-w7-api-web-security-audit [active] (3/4)     · W7
+└── GOAL-007-w7-api-web-security-audit [done] (4/4)      · W7
 ```
 
-**W7（2026-08-19，S3 完成 / S4 待独立复核）**：独立代码审计落盘（A-001 fail，12 required）；用户确认整单采纳 F-001～F-012 并暂挂 go 宣称（D-002）。已实施全部 12 条 required（E-002），self 审计 A-002 pass（开放 required=0）。`go test ./...`、web `npm test` 全绿。S4 关门待 independent/cross 审计复核后置 done。Root 保持 active。见 [GOAL-007](GOAL-007-w7-api-web-security-audit/00-meta.md) / [E-002](GOAL-007-w7-api-web-security-audit/02-execution/E-002-w7-implementation.md) / [A-002](GOAL-007-w7-api-web-security-audit/03-audit/A-002-w7-self.md)。
+**W7（2026-08-19，已关门）**：独立代码审计落盘（A-001 fail，12 required）；用户确认整单采纳 F-001～F-012 并暂挂 go 宣称（D-002）。已实施全部 12 条 required（E-002/E-003），self A-002 pass，independent A-003 conditional 指出 F-006 限流未 record → 修正（E-003）后 independent A-004 **pass**（12/12 required 闭合）。`go test ./...` 与 web `npm test` 全绿。`status: done`。Root 保持 active。见 [GOAL-007](GOAL-007-w7-api-web-security-audit/00-meta.md) / [E-002](GOAL-007-w7-api-web-security-audit/02-execution/E-002-w7-implementation.md) / [A-002](GOAL-007-w7-api-web-security-audit/03-audit/A-002-w7-self.md) / [A-004](GOAL-007-w7-api-web-security-audit/03-audit/A-004-w7-independent.md)。
 **W6（2026-08-15）**：承接本会话对 api/web 的代码审视——scheduler 未到期任务 5 年分钟空扫描改 O(1) Matches 快速路径（每日一次诊断保留）；回收站还原孤儿字典项 500 退化改 409 DICT_KEY_NOT_FOUND（快照保留可重试）；branding data:image 内联评估后**不采纳**（API normalizeLogoURL 与 errorcatalog 均拒绝，web 测试锁定，保持一致收紧）。`go test ./...` 全绿，self 审计 A-001 pass，开放 required = 0；**2026-08-17 补记用户授权关门（D-002）+ close-out self 审计 A-002 pass**，`status: done` 维持。
 **W5（2026-08-14 扫描）**：全量审计 **0 中高危**（L-001～L-006 低危就地修补，见 Root [E-002](GOAL-001-production-hardening/02-execution/E-002-w5-scan-zero-midhigh.md)）；按程序约定未开子目标。**go 判定：无影响、不暂挂**（安全加固与已冻结 fail-closed 语义一致；未改 Profile 默认集 / 模块矩阵 / Manifest 装配 / 协议 pin）。
 Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11 新一批 api/web 全量审计修复（限流驱逐、上传权限门+配额、改密吊销 access token、前端异常捕获、URL 校验、启动加固、文案）。
@@ -40,7 +40,7 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-004-w3-security-audit-remediation | W3 安全审计发现修复（api/web） | GOAL-001-production-hardening | done | 8/8 | 2026-08-11 |
 | GOAL-005-w4-security-audit-remediation | W4 安全审计发现修复（api/web） | GOAL-001-production-hardening | done | 8/8 | 2026-08-11 |
 | GOAL-006-w6-scan-findings-remediation | W6 扫描审计发现修复（api/web） | GOAL-001-production-hardening | done | 4/4 | 2026-08-15 |
-| GOAL-007-w7-api-web-security-audit | W7 api/web 独立安全审计（落盘） | GOAL-001-production-hardening | active | 3/4 | 2026-08-19 |
+| GOAL-007-w7-api-web-security-audit | W7 api/web 独立安全审计（落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-19 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
 ## 维护说明

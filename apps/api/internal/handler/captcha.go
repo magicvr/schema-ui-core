@@ -58,6 +58,11 @@ func CaptchaRoutes(a *auth.Authenticator, service CaptchaService, operations ope
 					writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many captcha requests; try again later")
 					return
 				}
+				// W7 F-006: record this generation attempt so the sliding window
+				// actually counts requests (allow() only checks; record() creates
+				// the entry). This bounds an anonymous client to 10 challenges per
+				// minute.
+				captchaGenerateLimiter.record(loginClientIP(r), time.Now().UTC())
 				id, question, expiresInSeconds, err := service.Generate()
 				if err != nil {
 					writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate captcha")
