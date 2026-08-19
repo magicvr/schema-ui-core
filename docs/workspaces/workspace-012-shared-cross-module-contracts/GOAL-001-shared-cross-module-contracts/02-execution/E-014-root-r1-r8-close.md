@@ -25,6 +25,6 @@ GOAL-001 关闭为 `done`、progress=`100`（8/8），并同步 goal-tree 与 wo
 
 ## Git checkpoint
 
-- hash：`aceab6d`
+- hash：`82f5364`
 - scope：本区 Root 五件套 close-out 台账、goal-tree、workspace.md；愿景索引中 Root `done 8/8` 投影
 - 验证：A-015 定向 API/Web 复测；不把 commit hash 替代审计/验收
