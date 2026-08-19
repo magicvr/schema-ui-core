@@ -26,3 +26,5 @@ version: 0.1.0
 | E-010 | 2026-08-19 | A-008 recommended residual 修复与 runner 终态回归 | recorded | [E-010-a008-recommended-remediation.md](02-execution/E-010-a008-recommended-remediation.md) |
 | E-011 | 2026-08-19 | A-010 F-010 fixed 响应与 R6 使用审计 fail-closed | recorded | [E-011-a010-f010-fixed-response.md](02-execution/E-011-a010-f010-fixed-response.md) |
 | E-012 | 2026-08-19 | 接收 A-012 独立复审，确认 F-010 fixed 闭合链 | recorded | [E-012-a012-independent-review-received.md](02-execution/E-012-a012-independent-review-received.md) |
+| E-013 | 2026-08-19 | Root R1～R8 close-out self 落盘；Root 仍 active | recorded | [E-013-root-r1-r8-closeout-self.md](02-execution/E-013-root-r1-r8-closeout-self.md) |
+| E-014 | 2026-08-19 | Workspace-012 Root R1～R8 关门 | recorded | [E-014-root-r1-r8-close.md](02-execution/E-014-root-r1-r8-close.md) |

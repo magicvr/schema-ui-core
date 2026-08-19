@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-012-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-19
-version: 0.1.2
+version: 0.1.3
 parent: null
 ---
 
@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-012-shared-cross-module-contracts](../../vision/plans/VP-012-shared-cross-module-contracts.md)（**`closed`**，2026-08-19 完整关门 · 首波）的唯一 lead delivery workspace。历史绑定保留，默认不接新区。
 
-- **Root** 仍为 `active`：R1～R8 子目标均已关门；Root 关门审计未做。
+- **Root** 已为 `done`（2026-08-19；R1～R8 8/8；A-014 self / A-015 independent / A-016 close）。
 - **子目标** = 各契约的独立交付波次。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 

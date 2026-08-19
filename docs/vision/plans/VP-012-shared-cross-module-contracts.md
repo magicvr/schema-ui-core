@@ -18,7 +18,7 @@ parent: null
 | 项 | 值 |
 |----|-----|
 | status | **`closed`**（2026-08-19 用户书面确认完整关门；VRev-028 `V-F057` → `fixed`） |
-| **lead_workspace** | **`workspace-012-shared-cross-module-contracts`**（Root `GOAL-001-shared-cross-module-contracts` `done 6/6`） |
+| **lead_workspace** | **`workspace-012-shared-cross-module-contracts`**（Root `GOAL-001-shared-cross-module-contracts` `done 8/8`） |
 | **Vision required** | **已满足**：VRev-028 `pass`，open required = 0；`V-F057` recommended 由本关门记录闭合 |
 | **关门门闩（现行）** | 已 `closed`；保留 workspace-012 历史绑定，默认不接新区；reopen 须用户确认 |
 | **完整 ≠ 方向表无限扩张** | 首波退出分母 = R1～R6。**保留/归档**改由 lead 区 R7（GOAL-008）按用户书面设置策略交付。session/effective actor 与 D-003 外 writer envelope 仍在 `roadmap.md` Tier A |

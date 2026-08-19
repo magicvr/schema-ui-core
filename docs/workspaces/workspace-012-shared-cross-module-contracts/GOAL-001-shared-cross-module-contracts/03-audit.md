@@ -27,10 +27,13 @@ version: 0.1.0
 | A-011 | 2026-08-19 | self | response：A-010 F-010；R6 使用审计 fail-closed 与 Root close-out | pass | 0 | [A-011-root-a010-response.md](03-audit/A-011-root-a010-response.md) |
 | A-012 | 2026-08-19 | independent | finding-closure：A-010 F-010 关闭复审；R6 使用审计 fail-closed 与 Root I-002 | pass | 0 | [A-012-root-a010-f010-closure-independent.md](03-audit/A-012-root-a010-f010-closure-independent.md) |
 | A-013 | 2026-08-19 | self | response：接收 A-012 对 A-010 F-010 fixed 闭合的独立复审 | pass | 0 | [A-013-root-a012-response.md](03-audit/A-013-root-a012-response.md) |
+| A-014 | 2026-08-19 | self | Root close-out：R1～R8、方向成功标准、工作区/VP/Charter 边界、I-001/I-002、开放门禁 | pass | 0（independent 见 A-015） | [A-014-root-r1-r8-closeout-self.md](03-audit/A-014-root-r1-r8-closeout-self.md) |
+| A-015 | 2026-08-19 | independent | Root close-out：R1～R8 最终闭合链、四条方向成功标准、workspace/VP-012/Charter 对齐、I-001/I-002、A-014、开放门禁 | pass | 0 | [A-015-root-r1-r8-closeout-independent.md](03-audit/A-015-root-r1-r8-closeout-independent.md) |
+| A-016 | 2026-08-19 | self | response：A-015；Workspace-012 Root R1～R8 close | pass | 0 | [A-016-root-a015-response-close.md](03-audit/A-016-root-a015-response-close.md) |
 
 ## 结论状态
 
-A-001 self、A-002 independent 与 A-003 response 均为 `pass`，开放 required=0。Root 路线图完成 6/6；GOAL-001 已关门为 done/100。workspace 与 VP-012 保持 active。
+A-001 self、A-002 independent 与 A-003 response 均为 `pass`，开放 required=0。那是 **R1～R6 首波** close-out；随后新增 R7/R8，Root 曾回到 `active`。
 
 A-004 independent 代码审查：verdict=conditional（R1～R6 均有可验证实现，7 个 recommended findings 无一票否决）。
 
@@ -50,4 +53,10 @@ A-011 self 编排响应：用户确认 `fixed`；生产 R6 使用审计与 `last
 
 A-012 independent 复审：verdict=pass；A-010 F-010 关闭证据可重复核对（原 `_ =` 丢弃路径已删除；生产事务 fail-closed 503；本轮 auth/authsession/composition 与 handler `TestServiceCredential*` 通过）。开放 required=0。响应归 `/govern`。
 
-A-013 self 编排响应：已正式接收 A-012 `independent / pass`；A-012 与 A-011 的 `fixed` 结论同向且无新 finding。A-010 F-010 当前闭合状态为 `fixed；independent re-review pass`，开放 required=0；无需 residual 或 overruled 裁决，Root `done/100` 与 I-002 `verified` 保持不变。
+A-013 self 编排响应：已正式接收 A-012 `independent / pass`；A-012 与 A-011 的 `fixed` 结论同向且无新 finding。A-010 F-010 当前闭合状态为 `fixed；independent re-review pass`，开放 required=0；无需 residual 或 overruled 裁决。
+
+A-014 self close-out（现行 R1～R8）：verdict=`pass`；八个子目标均 `done` 且最终审计链开放 required=0；四条方向成功标准成立；I-002 分母更新为 R1～R8 后仍 `verified`。
+
+A-015 independent close-out：verdict=`pass`；与 A-014 同向；本轮定向 API/Web 复测通过；handler 全量 VACUUM 超时沿用 A-008 非阻断结论；开放 required=0。
+
+A-016 self 编排响应：接受 A-015；无 P-004 冲突、无 residual/overrule。GOAL-001 合法关闭为 `done`、progress=`100`（8/8）。workspace 保持历史绑定；VP-012 保持 `closed`（不重开）。

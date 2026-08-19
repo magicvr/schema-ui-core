@@ -1,7 +1,7 @@
 ---
 id: GOAL-001-shared-cross-module-contracts
 title: 共享横切契约与平台基架（分波交付）
-status: active
+status: done
 parent: null
 created: 2026-08-18
 updated: 2026-08-19
@@ -17,7 +17,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 
 ## 概述
 
-本 Root 承载 [VP-012](../../../vision/plans/VP-012-shared-cross-module-contracts.md)（active）的实现：把 `I-011-002` 中属于“横切基架/平台契约”的能力作为可交付、可验证的基架能力落地。首波 = 横切契约波（P0 四项 + P1 两项）。
+本 Root 承载 [VP-012](../../../vision/plans/VP-012-shared-cross-module-contracts.md)（**`closed`**，2026-08-19 首波）的实现：把 `I-011-002` 中属于“横切基架/平台契约”的能力作为可交付、可验证的基架能力落地。首波 = 横切契约波（P0 四项 + P1 两项，R1～R6）；R7/R8 为关门后增量（保留/归档、envelope/session）。
 
 **边界**：不承载具体业务领域；安全威胁面回流 VP-009；设计/实现符合性 gap 回流 VP-010；不改变 Charter 边界。
 
@@ -46,7 +46,7 @@ serves_summary: 在 VP-011 已交付标准 Admin 功能模块后，交付所有�
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | non-blocking | 各契约的消费方与验证载体（哪个模块或测试先引用） | R1 方案 | R1 开始前 | 扫描现有模块/测试可接入点 | **verified** | 2026-08-18 R1 链路扫描已完成 | R1 D-001/E-001：server/requestid、handler 错误包络、Web ResourceApiError、operationlog auth/settings 写路径与定向测试 |
-| I-002 | required | R1～R6 是否全部合法闭合并共同满足 Root 成功标准 | Root 关门 | Root 关门前 | 核对六个子目标 final audit、全量验证、不变式与目标树投影 | verified | 2026-08-19；A-002 independent pass / A-003 close；A-006 fixed F-008；A-007 fixed A-004/A-005 findings；A-008 independent pass；A-009 fixed A-008 residual；A-010 F-010 fixed by A-011；A-012 independent pass / A-013 response | E-006/E-008/E-009/E-010/E-011/E-012；A-001/A-002/A-006/A-007/A-008/A-009/A-011/A-012/A-013：六目标 done、F-001～F-010 fixed、A-008 residual fixed、Web 1069/1069、受影响 API 定向测试通过、R6 使用审计故障 fail-closed 回归与独立复审通过、开放 required=0、Root 四条成功标准 pass；VACUUM 专项独立复核为非阻断 |
+| I-002 | required | R1～R8 是否全部合法闭合并共同满足 Root 成功标准 | Root 关门 | Root 关门前 | 核对八个子目标 final audit、不变式与目标树投影 | verified | 2026-08-19；A-014 self pass / A-015 independent pass / A-016 close | 八目标 done、开放 required=0、Root 四条成功标准 pass；R7/R8 子目标 recommended residual 已点名非阻断 |
 
 ## 父目标
 
