@@ -21,6 +21,7 @@ version: 0.5.0
 | E-005 | 2026-08-20 | R1 冻结合同 v1.3（A-006 必改已闭合） | recorded | [E-005-r1-contract-v1-3.md](02-execution/E-005-r1-contract-v1-3.md) |
 | E-006 | 2026-08-20 | R1 冻结合同 v1.4（A-008 recommended 已闭合） | recorded | [E-006-r1-contract-v1-4.md](02-execution/E-006-r1-contract-v1-4.md) |
 | E-007 | 2026-08-20 | R2 立项：驱动选型 D-002（I-002 verified）+ GOAL-003 建立 | recorded | [E-007-r2-kickoff-driver.md](02-execution/E-007-r2-kickoff-driver.md) |
+| E-008 | 2026-08-20 | R2 实施完成 + self A-001（GOAL-003；independent 待做） | recorded | [E-008-r2-implemented-self-audited.md](02-execution/E-008-r2-implemented-self-audited.md) |
 
 ## 事实边界
 

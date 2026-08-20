@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-20 | R2 立项与方案（D-001）| recorded | [E-001-r2-plan-established.md](02-execution/E-001-r2-plan-established.md) |
+| E-002 | 2026-08-20 | R2 访问层实施（pgx + kernel.Store/Tx + Open + config；全量测试绿） | recorded | [E-002-r2-access-layer-implemented.md](02-execution/E-002-r2-access-layer-implemented.md) |
 
 ## 事实边界
 

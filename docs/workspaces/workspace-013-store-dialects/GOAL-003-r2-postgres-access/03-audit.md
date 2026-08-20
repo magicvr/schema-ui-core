@@ -24,7 +24,11 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚无 |
+| A-001 | 2026-08-20 | self | R2 访问层实施切片（S2–S5） | pass | 0 | [A-001-r2-access-layer-self.md](03-audit/A-001-r2-access-layer-self.md) |
+
+## 结论状态
+
+A-001 self `pass`（0 required；F-001～F-003 recommended = live PG 验证与独立审前置项）。GOAL-003 未关门：需要 independent 审计（Root D-001/D-002）与 live PG 探测证据，见 A-001 后续。
 
 ## 结论状态
 
