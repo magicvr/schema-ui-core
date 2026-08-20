@@ -7,7 +7,6 @@ package wallet
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -136,7 +135,7 @@ func (s *Service) Reconcile(accountID, actorID string, now time.Time) (*walletst
 }
 
 // ReconcileOnceTx implements the Job consumer's atomic commit callback.
-func (s *Service) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID, runID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error) {
+func (s *Service) ReconcileOnceTx(ctx context.Context, tx kernel.Tx, accountID, runID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error) {
 	return s.repo.ReconcileOnceTx(ctx, tx, accountID, runID, actorID, now)
 }
 

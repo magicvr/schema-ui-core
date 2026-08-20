@@ -2,9 +2,9 @@ package jobs_test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -67,7 +67,7 @@ func submitInput(id string) jobs.CreateInput {
 }
 
 func successCommit(result string) jobs.CommitFunc {
-	return func(*sql.Tx) (json.RawMessage, error) {
+	return func(kernel.Tx) (json.RawMessage, error) {
 		return json.RawMessage(result), nil
 	}
 }

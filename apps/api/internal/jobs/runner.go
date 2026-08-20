@@ -3,16 +3,16 @@ package jobs
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"sync"
 	"time"
 )
 
-type CommitFunc func(*sql.Tx) (json.RawMessage, error)
+type CommitFunc func(kernel.Tx) (json.RawMessage, error)
 
 type Reporter interface {
 	Progress(int) error

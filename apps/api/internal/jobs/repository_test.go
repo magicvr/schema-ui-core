@@ -2,9 +2,9 @@ package jobs_test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"testing"
 	"time"
 
@@ -77,7 +77,7 @@ func TestRepositoryLifecycleRetryCompleteAndExpire(t *testing.T) {
 		t.Fatalf("second claim lease=%+v err=%v", lease2, err)
 	}
 	completed, err := repo.CompleteWithCommit(context.Background(), lease2, testNow.Add(6*time.Second), 24*time.Hour,
-		func(*sql.Tx) (json.RawMessage, error) { return json.RawMessage(`{"result":"consistent"}`), nil })
+		func(kernel.Tx) (json.RawMessage, error) { return json.RawMessage(`{"result":"consistent"}`), nil })
 	if err != nil || completed.Status != jobs.StatusSucceeded || completed.Progress != 100 || completed.Attempt != 2 {
 		t.Fatalf("completed job = %+v err=%v", completed, err)
 	}
@@ -156,7 +156,7 @@ func TestFencingAndCompleteWithCommitRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	called := false
-	_, err = repo.CompleteWithCommit(context.Background(), stale, testNow.Add(2*time.Second), time.Hour, func(*sql.Tx) (json.RawMessage, error) {
+	_, err = repo.CompleteWithCommit(context.Background(), stale, testNow.Add(2*time.Second), time.Hour, func(kernel.Tx) (json.RawMessage, error) {
 		called = true
 		return json.RawMessage(`{}`), nil
 	})
@@ -165,8 +165,8 @@ func TestFencingAndCompleteWithCommitRollback(t *testing.T) {
 	}
 
 	rollbackErr := errors.New("rollback consumer")
-	_, err = repo.CompleteWithCommit(context.Background(), current, testNow.Add(2*time.Second), time.Hour, func(tx *sql.Tx) (json.RawMessage, error) {
-		_, insertErr := tx.Exec(`INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES ('job-fencing', NULL, 'consistent', 0, '{}', 'user-1', ?)`, testNow.Unix())
+	_, err = repo.CompleteWithCommit(context.Background(), current, testNow.Add(2*time.Second), time.Hour, func(tx kernel.Tx) (json.RawMessage, error) {
+		_, insertErr := tx.Exec(context.Background(), `INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES ('job-fencing', NULL, 'consistent', 0, '{}', 'user-1', ?)`, testNow.Unix())
 		if insertErr != nil {
 			return nil, insertErr
 		}
@@ -175,8 +175,8 @@ func TestFencingAndCompleteWithCommitRollback(t *testing.T) {
 	if !errors.Is(err, rollbackErr) {
 		t.Fatalf("rollback complete error = %v", err)
 	}
-	completed, err := repo.CompleteWithCommit(context.Background(), current, testNow.Add(3*time.Second), time.Hour, func(tx *sql.Tx) (json.RawMessage, error) {
-		_, insertErr := tx.Exec(`INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES ('job-fencing', NULL, 'consistent', 0, '{}', 'user-1', ?)`, testNow.Unix())
+	completed, err := repo.CompleteWithCommit(context.Background(), current, testNow.Add(3*time.Second), time.Hour, func(tx kernel.Tx) (json.RawMessage, error) {
+		_, insertErr := tx.Exec(context.Background(), `INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES ('job-fencing', NULL, 'consistent', 0, '{}', 'user-1', ?)`, testNow.Unix())
 		return json.RawMessage(`{"id":"job-fencing"}`), insertErr
 	})
 	if err != nil || completed.Status != jobs.StatusSucceeded {

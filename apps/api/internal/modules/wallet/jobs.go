@@ -2,9 +2,9 @@ package wallet
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 
@@ -108,7 +108,7 @@ func (s *JobService) runReconcile(ctx context.Context, job jobs.Job, reporter jo
 	if reporter.Cancelled() {
 		return nil, ctx.Err()
 	}
-	return func(tx *sql.Tx) (json.RawMessage, error) {
+	return func(tx kernel.Tx) (json.RawMessage, error) {
 		run, err := s.service.ReconcileOnceTx(context.Background(), tx, payload.AccountID, job.ID, job.ActorID, s.now().UTC())
 		if err != nil {
 			return nil, err

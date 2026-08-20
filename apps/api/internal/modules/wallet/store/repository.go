@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the wallet domain queries.
@@ -146,7 +147,7 @@ type LedgerEntryInput struct {
 func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 	accounts := []Account{}
 	total := 0
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := "WHERE 1=1"
 		args := []any{}
 		if filter.Q != "" {
@@ -158,7 +159,7 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 			where += " AND owner_type = ?"
 			args = append(args, filter.OwnerType)
 		}
-		if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_accounts "+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), "SELECT COUNT(*) FROM wallet_accounts "+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count wallet accounts: %w", err)
 		}
 		page := filter.Page
@@ -170,7 +171,7 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 			pageSize = 20
 		}
 		query := "SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts " + where + " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
-		rows, err := tx.Query(query, append(args, pageSize, pagination.Offset(page, pageSize, total))...)
+		rows, err := tx.Query(context.Background(), query, append(args, pageSize, pagination.Offset(page, pageSize, total))...)
 		if err != nil {
 			return fmt.Errorf("list wallet accounts: %w", err)
 		}
@@ -193,13 +194,13 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 // GetAccount returns one account by id.
 func (r *Repository) GetAccount(id string) (*Account, error) {
 	var a Account
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var created, updated int64
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
 			id,
 		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -217,8 +218,8 @@ func (r *Repository) GetAccount(id string) (*Account, error) {
 
 // CreateAccount inserts a zero-balance account. Duplicate owner → ErrOwnerTaken.
 func (r *Repository) CreateAccount(a Account) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)`,
 			a.ID, a.OwnerType, a.OwnerID, a.Currency, a.Status, a.CreatedAt.Unix(), a.UpdatedAt.Unix(),
@@ -236,13 +237,13 @@ func (r *Repository) CreateAccount(a Account) error {
 // GetUserAccountByOwner is a read-only lookup (W15-F11). Missing → ErrNotFound.
 func (r *Repository) GetUserAccountByOwner(ownerID string) (*Account, error) {
 	var a Account
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var created, updated int64
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
 			OwnerUser, ownerID, DefaultCurrency,
 		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -265,9 +266,9 @@ func (r *Repository) GetUserAccountByOwner(ownerID string) (*Account, error) {
 func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Account, bool, error) {
 	var a Account
 	isNew := false
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var created, updated int64
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
 			OwnerUser, ownerID, DefaultCurrency,
 		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
@@ -276,7 +277,7 @@ func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Acc
 			a.UpdatedAt = time.Unix(updated, 0)
 			return nil
 		}
-		if !errors.Is(err, sql.ErrNoRows) {
+		if !errors.Is(err, kernel.ErrNoRows) {
 			return fmt.Errorf("get wallet account by owner: %w", err)
 		}
 		isNew = true
@@ -287,7 +288,7 @@ func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Acc
 			return fmt.Errorf("auto-create wallet id: %w", err)
 		}
 		id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)`,
 			id, OwnerUser, ownerID, DefaultCurrency, StatusActive, now.Unix(), now.Unix(),
@@ -297,7 +298,7 @@ func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Acc
 				// must NOT report a create (GOAL-020 A-003 F-001: no duplicate
 				// wallet.account-create on the shared row).
 				isNew = false
-				err := tx.QueryRow(
+				err := tx.QueryRow(context.Background(),
 					`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
 					OwnerUser, ownerID, DefaultCurrency,
 				).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
@@ -323,8 +324,8 @@ func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Acc
 // lock: the caller passes the version observed when loading the row.
 func (r *Repository) UpdateStatus(id, status string, version int64, now time.Time) (*Account, error) {
 	var a Account
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE wallet_accounts SET status = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?`,
 			status, now.Unix(), id, version,
 		)
@@ -338,7 +339,7 @@ func (r *Repository) UpdateStatus(id, status string, version int64, now time.Tim
 		if affected == 0 {
 			// Either the account does not exist or the version moved.
 			var exists int
-			if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_accounts WHERE id = ?", id).Scan(&exists); err != nil {
+			if err := tx.QueryRow(context.Background(), "SELECT COUNT(*) FROM wallet_accounts WHERE id = ?", id).Scan(&exists); err != nil {
 				return fmt.Errorf("check wallet account: %w", err)
 			}
 			if exists == 0 {
@@ -347,7 +348,7 @@ func (r *Repository) UpdateStatus(id, status string, version int64, now time.Tim
 			return ErrVersionConflict
 		}
 		var created, updated int64
-		if err := tx.QueryRow(
+		if err := tx.QueryRow(context.Background(),
 			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
 			id,
 		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated); err != nil {
@@ -416,7 +417,7 @@ func Apply(prev Account, in LedgerEntryInput) (total, available, frozen int64, e
 func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now time.Time) (*Account, *LedgerEntry, error) {
 	var account Account
 	var entry LedgerEntry
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		// Idempotency: same account + same key + same payload → return the
 		// existing entry; same key + different payload → conflict. Lookups
 		// always carry the account id (D-002 v1.1.0 §1: no bare-key reads).
@@ -436,17 +437,17 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 				}
 				return ErrIdempotencyConflict
 			}
-			if !errors.Is(err, sql.ErrNoRows) {
+			if !errors.Is(err, kernel.ErrNoRows) {
 				return fmt.Errorf("check idempotency key: %w", err)
 			}
 		}
 		// Load the account inside the transaction.
 		var cr, up int64
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
 			id,
 		).Scan(&account.ID, &account.OwnerType, &account.OwnerID, &account.Currency, &account.BalanceTotal, &account.BalanceAvailable, &account.BalanceFrozen, &account.Status, &account.Version, &cr, &up)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -461,7 +462,7 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 		if err != nil {
 			return err
 		}
-		res, err := tx.Exec(
+		res, err := tx.Exec(context.Background(),
 			`UPDATE wallet_accounts SET balance_total = ?, balance_available = ?, balance_frozen = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?`,
 			total, available, frozen, now.Unix(), id, account.Version,
 		)
@@ -475,7 +476,7 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 		if affected == 0 {
 			return ErrVersionConflict
 		}
-		_, err = tx.Exec(
+		_, err = tx.Exec(context.Background(),
 			`INSERT INTO wallet_ledger_entries (id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			entryID, id, in.EntryType, in.AmountDelta, total, available, frozen,
@@ -513,14 +514,14 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 }
 
 type rowQueryer interface {
-	QueryRow(string, ...any) *sql.Row
+	QueryRow(context.Context, string, ...any) kernel.Row
 }
 
 func readIdempotentEntry(q rowQueryer, accountID, key string) (LedgerEntry, error) {
 	var entry LedgerEntry
 	var created int64
 	var refType, refID, idemKey sql.NullString
-	err := q.QueryRow(
+	err := q.QueryRow(context.Background(),
 		`SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at
 		 FROM wallet_ledger_entries WHERE account_id = ? AND idempotency_key = ?`,
 		accountID, key,
@@ -538,7 +539,7 @@ func readIdempotentEntry(q rowQueryer, accountID, key string) (LedgerEntry, erro
 func readAccount(q rowQueryer, id string) (Account, error) {
 	var account Account
 	var created, updated int64
-	err := q.QueryRow(
+	err := q.QueryRow(context.Background(),
 		`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
 		id,
 	).Scan(&account.ID, &account.OwnerType, &account.OwnerID, &account.Currency, &account.BalanceTotal, &account.BalanceAvailable, &account.BalanceFrozen, &account.Status, &account.Version, &created, &updated)
@@ -562,7 +563,7 @@ func sameIdempotencyPayload(entry LedgerEntry, in LedgerEntryInput) bool {
 func (r *Repository) replayAfterIdempotencyRace(accountID string, in LedgerEntryInput) (*Account, *LedgerEntry, error) {
 	var account Account
 	var entry LedgerEntry
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		existing, err := readIdempotentEntry(tx, accountID, in.IdempotencyKey)
 		if err != nil || !sameIdempotencyPayload(existing, in) {
 			return ErrIdempotencyConflict
@@ -586,7 +587,7 @@ func (r *Repository) replayAfterIdempotencyRace(accountID string, in LedgerEntry
 func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize int) ([]LedgerEntry, int, error) {
 	entries := []LedgerEntry{}
 	total := 0
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := "WHERE account_id = ?"
 		args := []any{accountID}
 		if entryType != "" {
@@ -598,7 +599,7 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 			lq := strings.ToLower(q)
 			args = append(args, lq, lq, lq)
 		}
-		if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_ledger_entries "+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), "SELECT COUNT(*) FROM wallet_ledger_entries "+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count wallet entries: %w", err)
 		}
 		if page < 1 {
@@ -608,7 +609,7 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 			pageSize = 20
 		}
 		queryArgs := append(append([]any{}, args...), pageSize, pagination.Offset(page, pageSize, total))
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at
 			 FROM wallet_ledger_entries `+where+` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
 			queryArgs...,
@@ -641,7 +642,7 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 // run is persisted as a reconciliation_runs row.
 func (r *Repository) ReconcileRun(accountID, runID, actorID string, now time.Time) (*ReconciliationRun, error) {
 	var run *ReconciliationRun
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var err error
 		run, err = r.ReconcileOnceTx(context.Background(), tx, accountID, runID, actorID, now)
 		return err
@@ -652,7 +653,7 @@ func (r *Repository) ReconcileRun(accountID, runID, actorID string, now time.Tim
 // ReconcileOnceTx persists one idempotent reconciliation run inside the
 // caller's transaction. Job consumers use this to atomically commit the
 // wallet run and the Job succeeded transition.
-func (r *Repository) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID, runID, actorID string, now time.Time) (*ReconciliationRun, error) {
+func (r *Repository) ReconcileOnceTx(ctx context.Context, tx kernel.Tx, accountID, runID, actorID string, now time.Time) (*ReconciliationRun, error) {
 	if tx == nil || runID == "" || actorID == "" {
 		return nil, ErrInvalidEntry
 	}
@@ -669,7 +670,7 @@ func (r *Repository) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID,
 	var mismatches []mismatch
 	ids := []string{}
 	if accountID == "" {
-		rows, err := tx.QueryContext(ctx, "SELECT id FROM wallet_accounts ORDER BY id")
+		rows, err := tx.Query(ctx, "SELECT id FROM wallet_accounts ORDER BY id")
 		if err != nil {
 			return nil, fmt.Errorf("list wallet accounts for reconcile: %w", err)
 		}
@@ -686,7 +687,7 @@ func (r *Repository) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID,
 		}
 	} else {
 		var exists int
-		if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM wallet_accounts WHERE id = ?", accountID).Scan(&exists); err != nil {
+		if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM wallet_accounts WHERE id = ?", accountID).Scan(&exists); err != nil {
 			return nil, fmt.Errorf("check wallet account: %w", err)
 		}
 		if exists == 0 {
@@ -714,7 +715,7 @@ func (r *Repository) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID,
 	if accountID != "" {
 		acctID = accountID
 	}
-	if _, err := tx.ExecContext(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO wallet_reconciliation_runs (id, account_id, result, mismatch_count, details, actor_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		runID, acctID, result, len(mismatches), details, actorID, now.Unix(),
 	); err != nil {
@@ -724,14 +725,14 @@ func (r *Repository) ReconcileOnceTx(ctx context.Context, tx *sql.Tx, accountID,
 	return run, nil
 }
 
-func getReconciliationRunTx(ctx context.Context, tx *sql.Tx, id string) (*ReconciliationRun, error) {
+func getReconciliationRunTx(ctx context.Context, tx kernel.Tx, id string) (*ReconciliationRun, error) {
 	var run ReconciliationRun
 	var accountID sql.NullString
 	var created int64
-	err := tx.QueryRowContext(ctx,
+	err := tx.QueryRow(ctx,
 		`SELECT id, account_id, result, mismatch_count, details, actor_id, created_at FROM wallet_reconciliation_runs WHERE id = ?`, id,
 	).Scan(&run.ID, &accountID, &run.Result, &run.MismatchCount, &run.Details, &run.ActorID, &created)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
@@ -747,9 +748,9 @@ func getReconciliationRunTx(ctx context.Context, tx *sql.Tx, id string) (*Reconc
 // (0,0,0); the last snapshot must equal the account's current balances; every
 // snapshot must satisfy the invariant. Returns a human-readable reason when
 // the chain is inconsistent.
-func checkAccountChain(tx *sql.Tx, accountID string) (string, bool) {
+func checkAccountChain(tx kernel.Tx, accountID string) (string, bool) {
 	var total, available, frozen int64
-	rows, err := tx.Query(
+	rows, err := tx.Query(context.Background(),
 		`SELECT entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen FROM wallet_ledger_entries WHERE account_id = ? ORDER BY created_at ASC, id ASC`,
 		accountID,
 	)
@@ -785,7 +786,7 @@ func checkAccountChain(tx *sql.Tx, accountID string) (string, bool) {
 		return "ledger iteration failed", false
 	}
 	var curTotal, curAvail, curFrozen int64
-	if err := tx.QueryRow(
+	if err := tx.QueryRow(context.Background(),
 		`SELECT balance_total, balance_available, balance_frozen FROM wallet_accounts WHERE id = ?`,
 		accountID,
 	).Scan(&curTotal, &curAvail, &curFrozen); err != nil {
@@ -804,8 +805,8 @@ func checkAccountChain(tx *sql.Tx, accountID string) (string, bool) {
 func (r *Repository) ListReconcileRuns(page, pageSize int) ([]ReconciliationRun, int, error) {
 	runs := []ReconciliationRun{}
 	total := 0
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if err := tx.QueryRow("SELECT COUNT(*) FROM wallet_reconciliation_runs").Scan(&total); err != nil {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), "SELECT COUNT(*) FROM wallet_reconciliation_runs").Scan(&total); err != nil {
 			return fmt.Errorf("count reconciliation runs: %w", err)
 		}
 		if page < 1 {
@@ -814,7 +815,7 @@ func (r *Repository) ListReconcileRuns(page, pageSize int) ([]ReconciliationRun,
 		if pageSize < 1 {
 			pageSize = 20
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, account_id, result, mismatch_count, details, actor_id, created_at FROM wallet_reconciliation_runs ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
 			pageSize, pagination.Offset(page, pageSize, total),
 		)

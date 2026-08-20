@@ -163,7 +163,7 @@ func (s *walletJobTestService) handle(_ context.Context, job jobs.Job, reporter 
 	if err := json.Unmarshal(job.Payload, &payload); err != nil {
 		return nil, err
 	}
-	return func(tx *sql.Tx) (json.RawMessage, error) {
+	return func(tx kernel.Tx) (json.RawMessage, error) {
 		run, err := s.wallet.ReconcileOnceTx(context.Background(), tx, payload.AccountID, job.ID, job.ActorID, time.Now().UTC())
 		if err != nil {
 			return nil, err

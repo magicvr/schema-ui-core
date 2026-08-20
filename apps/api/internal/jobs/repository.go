@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 )
 
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 type Repository struct {
@@ -36,8 +37,8 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (*Job, error
 	}
 	now := input.Now.UTC()
 	var created *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO jobs (
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		if _, err := tx.Exec(ctx, `INSERT INTO jobs (
 id, kind, status, payload, progress, cancel_requested, attempt, max_attempts,
 lease_version, actor_id, correlation_id, created_at, updated_at
 ) VALUES (?,?, 'queued', ?,0,0,0,?,0,?,?,?,?)`,
@@ -55,7 +56,7 @@ lease_version, actor_id, correlation_id, created_at, updated_at
 
 func (r *Repository) Get(ctx context.Context, id string) (*Job, error) {
 	var job *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
 		var err error
 		job, err = getTx(ctx, tx, id)
 		return err
@@ -65,9 +66,9 @@ func (r *Repository) Get(ctx context.Context, id string) (*Job, error) {
 
 func (r *Repository) GetForActor(ctx context.Context, id, kind, actorID string) (*Job, error) {
 	var job *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
 		var err error
-		job, err = scanJob(tx.QueryRowContext(ctx, `SELECT `+jobColumns+` FROM jobs WHERE id=? AND kind=? AND actor_id=?`, id, kind, actorID))
+		job, err = scanJob(tx.QueryRow(ctx, `SELECT `+jobColumns+` FROM jobs WHERE id=? AND kind=? AND actor_id=?`, id, kind, actorID))
 		return err
 	})
 	return job, err
@@ -79,8 +80,8 @@ func (r *Repository) Claim(ctx context.Context, id, owner string, now time.Time,
 	}
 	now = now.UTC()
 	var claimed *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, `UPDATE jobs SET
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		result, err := tx.Exec(ctx, `UPDATE jobs SET
 status='running', attempt=attempt+1, lease_owner=?, lease_version=lease_version+1,
 lease_expires_at=?, updated_at=?, finished_at=NULL, expires_at=NULL,
 error_code=NULL, error_message=NULL
@@ -123,18 +124,18 @@ WHERE id=? AND status='running' AND lease_owner=? AND lease_version=? AND progre
 
 func (r *Repository) RequestCancel(ctx context.Context, id, actorID string, now time.Time) (*Job, error) {
 	var job *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
 		current, err := getForActorTx(ctx, tx, id, actorID)
 		if err != nil {
 			return err
 		}
 		switch current.Status {
 		case StatusQueued:
-			_, err = tx.ExecContext(ctx, `UPDATE jobs SET status='cancelled', cancel_requested=0,
+			_, err = tx.Exec(ctx, `UPDATE jobs SET status='cancelled', cancel_requested=0,
 updated_at=?, finished_at=? WHERE id=? AND status='queued' AND actor_id=?`,
 				toMillis(now), toMillis(now), id, actorID)
 		case StatusRunning:
-			_, err = tx.ExecContext(ctx, `UPDATE jobs SET cancel_requested=1, updated_at=?
+			_, err = tx.Exec(ctx, `UPDATE jobs SET cancel_requested=1, updated_at=?
 WHERE id=? AND status='running' AND actor_id=?`, toMillis(now), id, actorID)
 		default:
 			return ErrNotCancellable
@@ -178,13 +179,13 @@ func (r *Repository) CompleteWithCommit(
 	lease Lease,
 	now time.Time,
 	resultTTL time.Duration,
-	commit func(*sql.Tx) (json.RawMessage, error),
+	commit func(kernel.Tx) (json.RawMessage, error),
 ) (*Job, error) {
 	if !validLease(lease) || resultTTL <= 0 || commit == nil {
 		return nil, ErrInvalid
 	}
 	var completed *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
 		current, err := getTx(ctx, tx, lease.JobID)
 		if err != nil {
 			return err
@@ -199,7 +200,7 @@ func (r *Repository) CompleteWithCommit(
 		if len(payload) == 0 || !json.Valid(payload) {
 			return ErrInvalid
 		}
-		result, err := tx.ExecContext(ctx, `UPDATE jobs SET status='succeeded', progress=100,
+		result, err := tx.Exec(ctx, `UPDATE jobs SET status='succeeded', progress=100,
 cancel_requested=0, lease_owner=NULL, lease_expires_at=NULL, result=?,
 error_code=NULL, error_message=NULL, updated_at=?, finished_at=?, expires_at=?
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
@@ -219,8 +220,8 @@ WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
 
 func (r *Repository) Retry(ctx context.Context, id, actorID string, now time.Time) (*Job, error) {
 	var job *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, `UPDATE jobs SET status='queued', progress=0,
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		result, err := tx.Exec(ctx, `UPDATE jobs SET status='queued', progress=0,
 cancel_requested=0, lease_owner=NULL, lease_expires_at=NULL, result=NULL,
 error_code=NULL, error_message=NULL, updated_at=?, finished_at=NULL, expires_at=NULL
 WHERE id=? AND actor_id=? AND status='failed' AND attempt < max_attempts`,
@@ -239,8 +240,8 @@ WHERE id=? AND actor_id=? AND status='failed' AND attempt < max_attempts`,
 
 func (r *Repository) ExpireIfDue(ctx context.Context, id string, now time.Time) (*Job, error) {
 	var job *Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(ctx, `UPDATE jobs SET status='expired', result=NULL, updated_at=?
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		if _, err := tx.Exec(ctx, `UPDATE jobs SET status='expired', result=NULL, updated_at=?
 WHERE id=? AND status='succeeded' AND expires_at <= ?`, toMillis(now), id, toMillis(now)); err != nil {
 			return fmt.Errorf("expire job result: %w", err)
 		}
@@ -294,8 +295,8 @@ func (r *Repository) ListRunnable(ctx context.Context, now time.Time, limit int)
 		return nil, ErrInvalid
 	}
 	var jobs []Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		rows, err := tx.QueryContext(ctx, `SELECT `+jobColumns+` FROM jobs
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		rows, err := tx.Query(ctx, `SELECT `+jobColumns+` FROM jobs
 WHERE (status='queued' AND attempt < max_attempts)
    OR (status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt < max_attempts)
 ORDER BY created_at, id LIMIT ?`, toMillis(now), limit)
@@ -320,9 +321,9 @@ func (r *Repository) IsCancelRequested(ctx context.Context, lease Lease) (bool, 
 		return false, ErrInvalid
 	}
 	var requested bool
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
 		var value int
-		err := tx.QueryRowContext(ctx, `SELECT cancel_requested FROM jobs
+		err := tx.QueryRow(ctx, `SELECT cancel_requested FROM jobs
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
 			lease.JobID, lease.Owner, lease.Version).Scan(&value)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -335,8 +336,8 @@ WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
 }
 
 func (r *Repository) updateLease(ctx context.Context, lease Lease, query string, args ...any) error {
-	return r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, query, args...)
+	return r.runner.Run(ctx, func(tx kernel.Tx) error {
+		result, err := tx.Exec(ctx, query, args...)
 		if err != nil {
 			return err
 		}
@@ -345,8 +346,8 @@ func (r *Repository) updateLease(ctx context.Context, lease Lease, query string,
 }
 
 func (r *Repository) updateGuardedLease(ctx context.Context, lease Lease, guardError error, query string, args ...any) error {
-	return r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, query, args...)
+	return r.runner.Run(ctx, func(tx kernel.Tx) error {
+		result, err := tx.Exec(ctx, query, args...)
 		if err != nil {
 			return err
 		}
@@ -370,8 +371,8 @@ func (r *Repository) updateGuardedLease(ctx context.Context, lease Lease, guardE
 
 func (r *Repository) bulkTransition(ctx context.Context, query string, args ...any) (int64, error) {
 	var affected int64
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, query, args...)
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		result, err := tx.Exec(ctx, query, args...)
 		if err != nil {
 			return err
 		}
@@ -383,8 +384,8 @@ func (r *Repository) bulkTransition(ctx context.Context, query string, args ...a
 
 func (r *Repository) transitionJobs(ctx context.Context, selectQuery string, selectArgs []any, updateQuery string, updateArgs ...any) ([]Job, error) {
 	var transitioned []Job
-	err := r.runner.WithTx(ctx, func(tx *sql.Tx) error {
-		rows, err := tx.QueryContext(ctx, selectQuery, selectArgs...)
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		rows, err := tx.Query(ctx, selectQuery, selectArgs...)
 		if err != nil {
 			return err
 		}
@@ -403,7 +404,7 @@ func (r *Repository) transitionJobs(ctx context.Context, selectQuery string, sel
 		if err := rows.Err(); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, updateQuery, updateArgs...); err != nil {
+		if _, err := tx.Exec(ctx, updateQuery, updateArgs...); err != nil {
 			return err
 		}
 		for _, id := range ids {
@@ -422,7 +423,7 @@ func validLease(lease Lease) bool {
 	return lease.JobID != "" && lease.Owner != "" && lease.Version > 0
 }
 
-func affectedExactlyOne(result sql.Result, zeroError error) error {
+func affectedExactlyOne(result kernel.Result, zeroError error) error {
 	affected, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -433,7 +434,7 @@ func affectedExactlyOne(result sql.Result, zeroError error) error {
 	return nil
 }
 
-func requireAffected(ctx context.Context, tx *sql.Tx, id string, result sql.Result, transitionError error) error {
+func requireAffected(ctx context.Context, tx kernel.Tx, id string, result kernel.Result, transitionError error) error {
 	affected, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -447,7 +448,7 @@ func requireAffected(ctx context.Context, tx *sql.Tx, id string, result sql.Resu
 	return transitionError
 }
 
-func requireAffectedForActor(ctx context.Context, tx *sql.Tx, id, actorID string, result sql.Result, transitionError error) error {
+func requireAffectedForActor(ctx context.Context, tx kernel.Tx, id, actorID string, result kernel.Result, transitionError error) error {
 	affected, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -461,10 +462,10 @@ func requireAffectedForActor(ctx context.Context, tx *sql.Tx, id, actorID string
 	return transitionError
 }
 
-func getTx(ctx context.Context, tx *sql.Tx, id string) (*Job, error) {
-	return scanJob(tx.QueryRowContext(ctx, `SELECT `+jobColumns+` FROM jobs WHERE id=?`, id))
+func getTx(ctx context.Context, tx kernel.Tx, id string) (*Job, error) {
+	return scanJob(tx.QueryRow(ctx, `SELECT `+jobColumns+` FROM jobs WHERE id=?`, id))
 }
 
-func getForActorTx(ctx context.Context, tx *sql.Tx, id, actorID string) (*Job, error) {
-	return scanJob(tx.QueryRowContext(ctx, `SELECT `+jobColumns+` FROM jobs WHERE id=? AND actor_id=?`, id, actorID))
+func getForActorTx(ctx context.Context, tx kernel.Tx, id, actorID string) (*Job, error) {
+	return scanJob(tx.QueryRow(ctx, `SELECT `+jobColumns+` FROM jobs WHERE id=? AND actor_id=?`, id, actorID))
 }
