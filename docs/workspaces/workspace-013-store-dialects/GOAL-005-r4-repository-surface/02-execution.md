@@ -1,7 +1,7 @@
 ---
 id: GOAL-005-r4-repository-surface
 doc: execution
-status: active
+status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-20 | S0/S1/S2 首批：扫描 + kernel.Tx 接缝 + 6 模块迁移 + live PG 佐证 | recorded | [E-002-s0-s1-s2-batch1.md](02-execution/E-002-s0-s1-s2-batch1.md) |
 | E-003 | 2026-08-20 | S2 完成 + S3 收口：全仓公共面去 `*sql.Tx` + D 链 | recorded | [E-003-s2-s3-complete.md](02-execution/E-003-s2-s3-complete.md) |
 | E-004 | 2026-08-20 | S2 收尾（LIKE/COLLATE 改写）+ S4（postgres 完整启动 live 证明） | recorded | [E-004-s2-s4-complete.md](02-execution/E-004-s2-s4-complete.md) |
+| E-005 | 2026-08-20 | R4 关门：independent A-004 → A-005 响应 → done（progress 6/6） | recorded | [E-005-r4-close-out.md](02-execution/E-005-r4-close-out.md) |
 
 ## 事实边界
 

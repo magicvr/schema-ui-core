@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-repository-surface
 title: R4 · 仓库公共面收口（*sql.Tx → kernel.Store/Tx + 运行时 SQL 债）
-status: active
+status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.1.0
-progress: 5/6
+version: 1.0.0
+progress: 6/6
 plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
@@ -32,7 +32,7 @@ Root 纲领 **R4**（依赖 R1；可与 R3 部分并行，现 R3 已 done）：�
 | S2 | 逐模块仓库迁移签名 + SQL 债改写 | ✅ E-003/E-004（全模块 + systemdata/wallet/jobs；`INSERT OR IGNORE`→`ON CONFLICT DO NOTHING`；**`LIKE`/`COLLATE NOCASE` → `LOWER(...)` 等价改写**，A-002 F-001 fixed） |
 | S3 | jobs / handler 公共面收口（`CommitFunc` 等 `func(kernel.Tx)`） | ✅ E-003（jobs CommitFunc/CompleteWithCommit、auth recorder、handler ServiceCredentialOperations、composition RecordOperationTx） |
 | S4 | composition postgres 启动路由 + 运行证据（postgres DSN 启动、readyz 模块门禁全绿） | ✅ E-004（`kernel.Store` 公共面；`TestCompositionPostgresStartup` live PG 全绿） |
-| S5 | 关门：sqlite 全量回归 + postgres 生产向运行验收；self + independent（compatibility/production 门禁） | 待做 |
+| S5 | 关门：sqlite 全量回归 + postgres 生产向运行验收；self + independent（compatibility/production 门禁） | ✅ 2026-08-20（sqlite 0 FAIL；postgres full boot + 完整启动 + 可移植检索 live；self A-001~A-003/A-005 + independent A-004 → **done**） |
 
 ## 成功标准
 
@@ -46,8 +46,8 @@ Root 纲领 **R4**（依赖 R1；可与 R3 部分并行，现 R3 已 done）：�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 全量 `*sql.Tx`/方言 SQL 泄漏面（handler/jobs/模块） | S0/S2 | S0 前补全 | 代码扫描（grep） | **verified** | 2026-08-20 E-002 | 144 处四类清单（模块 TxRunner / withTx helper / jobs+systemdata / 公共回调） |
-| I-002 | required | 各模块运行时 SQL 债的具体改写决策（LIKE 大小写、COLLATE NOCASE 查询侧、INSERT OR IGNORE、RETURNING） | S2 每处 | 每处前 | 逐处核对 + 测试 | open | — | 待确认（S1/S2 落盘） |
+| I-001 | required | 全量 `*sql.Tx`/方言 SQL 泄漏面（handler/jobs/模块） | S0/S2 | S0 前补全 | 代码扫描（grep） | **verified** | 2026-08-20 E-002 / A-005 | 144 处四类清单 + `instr()` 检索债登记并入 |
+| I-002 | required | 各模块运行时 SQL 债的具体改写决策（LIKE 大小写、COLLATE NOCASE 查询侧、INSERT OR IGNORE、RETURNING/instr） | S2 每处 | 每处前 | 逐处核对 + 测试 | **verified** | 2026-08-20（A-005 闭合 A-004 F-002） | `INSERT OR IGNORE`→`ON CONFLICT DO NOTHING`；`LIKE`/`instr`→`LOWER(col) LIKE LOWER(?)` / `LOWER(col) LIKE '%'||CAST(? AS TEXT)||'%'`；`COLLATE NOCASE`→`LOWER(col)`；无 `RETURNING` 需求（R3 已按 upsert/PK RETURNING 语义处理） |
 | I-003 | non-blocking | postgres 生产向启动的运维面（连接池/SSL/超时键） | S4 验收 | S4 | OpenOptions 扩展 + 文档 | collecting | S4 前 | R2 已留字段；T3 用 ConnectTimeout |
 
 > Root I-001（SQLite→PG 升级策略）与 Root I-004（PG 备份合同）为 R5，不构成本目标到期门禁。
