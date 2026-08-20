@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"strings"
 	"testing"
@@ -109,6 +110,20 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 
 	// A freshly created, empty probe database must report WasFresh()=true on
 	// the default $user/public search_path (also exercises $user resolution).
+	// The probe database is shared across tests/processes, so first clean any
+	// leftover scratch table to make the assertion deterministic.
+	seed, err := probe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := seed.Run(ctx, func(tx kernel.Tx) error {
+		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS _r2_wasfresh_probe, r3_users, schema_migrations")
+		return err
+	}); err != nil {
+		t.Fatalf("clean slate: %v", err)
+	}
+	_ = seed.Close()
+
 	st, err := probe()
 	if err != nil {
 		t.Fatal(err)
@@ -154,5 +169,119 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 		return err
 	}); err != nil {
 		t.Fatalf("cleanup: %v", err)
+	}
+}
+
+// TestPostgresMigrateRunnerIntegration proves the R3 T2 postgres migration
+// runner: a portable scratch catalog (rebindable '?') applies on a live PG,
+// the ledger records sqlite-bound checksums, re-open is idempotent, and
+// checksum drift fails closed. Gated by SCHEMA_UI_R2_PG_DSN (no PG = skip).
+func TestPostgresMigrateRunnerIntegration(t *testing.T) {
+	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	if dsn == "" {
+		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres migrate runner integration")
+	}
+	ctx := context.Background()
+	openPG := func() *postgres {
+		st, err := Open(ctx, OpenOptions{
+			Dialect:        kernel.DialectPostgres,
+			DSN:            dsn,
+			ConnectTimeout: 10 * time.Second,
+		}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = st.Close() })
+		return st.(*postgres)
+	}
+
+	ledgerDDL := `CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, checksum TEXT NOT NULL, applied_at BIGINT NOT NULL)`
+	usersDDL := `CREATE TABLE r3_users (id SERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, enabled SMALLINT NOT NULL DEFAULT 1, created_at BIGINT NOT NULL)`
+	seedSQL := `INSERT INTO r3_users (username, enabled, created_at) VALUES (?, ?, ?)`
+	bootstrapSQL := []string{ledgerDDL, usersDDL}
+
+	catalog := []kernel.MigrationContribution{
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "r3.test", Key: "bootstrap"},
+			Version:              1,
+			Name:                 "bootstrap",
+			Checksum:             kernel.MigrationChecksum(bootstrapSQL, "r3:bootstrap:v1"),
+			Apply: func(tx kernel.Tx) error {
+				for _, s := range bootstrapSQL {
+					if _, err := tx.Exec(ctx, s); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "r3.test", Key: "seed"},
+			Version:              2,
+			Name:                 "seed",
+			Checksum:             kernel.MigrationChecksum([]string{seedSQL}, "r3:seed:v1"),
+			Apply: func(tx kernel.Tx) error {
+				rows := [][3]any{{"alice", 1, int64(1)}, {"bob", 1, int64(2)}}
+				for _, r := range rows {
+					if _, err := tx.Exec(ctx, seedSQL, r[0], r[1], r[2]); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+	}
+
+	// Deterministic clean slate BEFORE WasFresh assertions: drop any leftover
+	// scratch tables from a prior run, then open a fresh probe.
+	seed := openPG()
+	if _, err := seed.db.ExecContext(ctx, `DROP TABLE IF EXISTS r3_users, schema_migrations, _r2_wasfresh_probe`); err != nil {
+		t.Fatalf("clean slate: %v", err)
+	}
+	_ = seed.Close()
+
+	st := openPG()
+	t.Cleanup(func() {
+		// Use a dedicated connection (st may already be closed in the body) so
+		// the scratch tables are always removed for the next test / process.
+		if db, err := sql.Open("pgx", dsn); err == nil {
+			_, _ = db.ExecContext(context.Background(), `DROP TABLE IF EXISTS r3_users, schema_migrations, _r2_wasfresh_probe`)
+			_ = db.Close()
+		}
+	})
+
+	if err := st.migrate(catalog); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	var migCount, userRows int
+	if err := st.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.db.QueryRowContext(ctx, `SELECT count(*) FROM r3_users`).Scan(&userRows); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != 2 || userRows != 2 {
+		t.Fatalf("ledger=%d rows=%d, want 2/2", migCount, userRows)
+	}
+	if !st.WasFresh() {
+		t.Errorf("WasFresh recorded at open (pre-migrate) should be true")
+	}
+	_ = st.Close()
+
+	// Re-open + migrate = idempotent (validateApplied prefix ok, nothing new).
+	st2 := openPG()
+	if err := st2.migrate(catalog); err != nil {
+		t.Fatalf("re-migrate should be idempotent: %v", err)
+	}
+	if st2.WasFresh() {
+		t.Errorf("reopened db with user tables: WasFresh() = true, want false")
+	}
+
+	// Checksum drift fails closed (same ledger, drifted catalog copy).
+	st3 := openPG()
+	drifted := append([]kernel.MigrationContribution(nil), catalog...)
+	drifted[1].Checksum = strings.Repeat("a", 64)
+	if err := st3.migrate(drifted); err == nil || !strings.Contains(err.Error(), "drift") {
+		t.Fatalf("checksum drift must fail closed, got %v", err)
 	}
 }

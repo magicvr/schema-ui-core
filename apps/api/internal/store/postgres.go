@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // registers driver name "pgx"
 
@@ -54,6 +55,90 @@ func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.Migrat
 		return nil, fmt.Errorf("postgres WasFresh: %w", err)
 	}
 	return &postgres{db: db, fresh: fresh}, nil
+}
+
+// migrate applies the compiled catalog to postgres (R3 T2 runner). It mirrors
+// the sqlite runner without the SQLite-only snapshot / PRAGMA-integrity steps
+// (PG backup and integrity contracts land in R5). One migration = one tx,
+// applied through the dialect-neutral kernel.Tx so '?' placeholders are
+// rebound; the ledger checksum stays bound to the sqlite/canonical history
+// (R1 v1.4 §4). The v1 bootstrap apply is responsible for creating the
+// schema_migrations ledger, same contract as the sqlite runner.
+func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
+	normalized, err := normalizeCatalog(catalog)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	applied, err := p.appliedMigrationsPG(ctx)
+	if err != nil {
+		return err
+	}
+	if applied == nil {
+		if err := p.applyMigrationPG(ctx, normalized[0]); err != nil {
+			return err
+		}
+		applied, err = p.appliedMigrationsPG(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if err := validateApplied(applied, normalized); err != nil {
+		return err
+	}
+	for _, migration := range pendingMigrations(applied, normalized) {
+		if err := p.applyMigrationPG(ctx, migration); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *postgres) applyMigrationPG(ctx context.Context, migration kernel.MigrationContribution) error {
+	return p.Run(ctx, func(tx kernel.Tx) error {
+		if migration.Apply != nil {
+			if err := migration.Apply(tx); err != nil {
+				return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
+			}
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
+			migration.Version, migration.Name, migration.Checksum, time.Now().UTC().Unix(),
+		); err != nil {
+			return fmt.Errorf("record migration %d (%s): %w", migration.Version, migration.Name, err)
+		}
+		return nil
+	})
+}
+
+// appliedMigrationsPG returns nil when no schema_migrations ledger exists,
+// otherwise the applied rows ordered by version (postgres variant of the
+// sqlite appliedMigrations).
+func (p *postgres) appliedMigrationsPG(ctx context.Context) ([]appliedMigration, error) {
+	var reg *string
+	if err := p.db.QueryRowContext(ctx, `SELECT to_regclass('schema_migrations')`).Scan(&reg); err != nil {
+		return nil, fmt.Errorf("store: probe migration ledger: %w", err)
+	}
+	if reg == nil {
+		return nil, nil
+	}
+	rows, err := p.db.QueryContext(ctx, `SELECT version, name, checksum FROM schema_migrations ORDER BY version`)
+	if err != nil {
+		return nil, fmt.Errorf("store: read migration ledger: %w", err)
+	}
+	defer rows.Close()
+	var applied []appliedMigration
+	for rows.Next() {
+		var row appliedMigration
+		if err := rows.Scan(&row.version, &row.name, &row.checksum); err != nil {
+			return nil, fmt.Errorf("store: scan migration ledger: %w", err)
+		}
+		applied = append(applied, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("store: read migration ledger: %w", err)
+	}
+	return applied, nil
 }
 
 func applyPostgresPoolOptions(db *sql.DB, opts OpenOptions) {
