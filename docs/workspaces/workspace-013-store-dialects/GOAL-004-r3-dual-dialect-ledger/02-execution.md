@@ -16,6 +16,7 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-20 | R3 立项与方案（D-001）+ 迁移方言债快照 | recorded | [E-001-r3-plan-and-scan.md](02-execution/E-001-r3-plan-and-scan.md) |
 | E-002 | 2026-08-20 | T1 实施：迁移贡献形状转 kernel.Tx（14 包；全量测试绿） | recorded | [E-002-t1-kernel-tx-shape.md](02-execution/E-002-t1-kernel-tx-shape.md) |
+| E-003 | 2026-08-20 | T2a 实施：postgres 迁移运行器（live PG 证明；生产解闸并入 T3） | recorded | [E-003-t2a-postgres-runner.md](02-execution/E-003-t2a-postgres-runner.md) |
 
 ## 事实边界
 

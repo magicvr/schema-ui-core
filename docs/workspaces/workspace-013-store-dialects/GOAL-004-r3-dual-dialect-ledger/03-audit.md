@@ -25,7 +25,8 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-20 | self | R3 T1 切片（kernel.Tx 形状 + store 适配） | pass | 0 | [A-001-t1-kernel-tx-shape-self.md](03-audit/A-001-t1-kernel-tx-shape-self.md) |
+| A-002 | 2026-08-20 | self | R3 T2a 切片（postgres 迁移运行器，live 证明） | pass | 0 | [A-002-t2a-postgres-runner-self.md](03-audit/A-002-t2a-postgres-runner-self.md) |
 
 ## 结论状态
 
-T1 self `pass`（0 required / recommended）。T2/T3 待续；T3/T4 迁移/数据门禁走 self + independent。
+T1 + T2a self `pass`（各 0 required）。T2a F-001（生产解闸）计划并入 T3。T3/T4 续；T3/T4 迁移/数据门禁走 self + independent。
