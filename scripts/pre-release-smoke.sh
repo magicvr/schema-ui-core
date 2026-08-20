@@ -5,7 +5,9 @@
 # 组合现有验收：
 #   1. 在独立 Compose project（不自复用开发库）构建并启动生产栈。
 #   2. 运行 scripts/smoke.sh --disposable（SM-001~005 + SM-006 种子可重复性 +
-#      可选 SM-007 Profile/Manifest + SMOKE_CSP=1 → 真实浏览器 + 生产 CSP 头 SM-008）。
+#      可选 SM-007 Profile/Manifest + SMOKE_CSP=1 → 真实浏览器 + 生产 CSP 头 SM-008。
+#      W16-F01 首登强制改密在 SM-004 内走真实 /api/account/password 完成，
+#      wrapper 不做状态预置）。
 #   3. 结束后默认 docker compose -p <隔离 project> down -v 清理（保留镜像/缓存）。
 #
 # 说明：compose.yaml 按 W7 F-008 不发布 API 宿主端口；本脚本为本地/CI 冒烟，
@@ -63,9 +65,6 @@ if [ -z "$PROFILE" ]; then
   PROFILE="$(grep -m1 '^  profile:' apps/api/configs/config.yaml 2>/dev/null | sed -E 's/^[[:space:]]*profile:[[:space:]]*//; s/"//g' || true)"
 fi
 PROFILE="${PROFILE:-mvp}"
-# W16-F01: fresh seed 的 admin 强制改密（must_change_password=1）。冒烟前用
-# 初始密码登录并换成新密码；后续 smoke 全部用新密码（隔离卷，删除即清）。
-NEW_PASSWORD="${SMOKE_PASSWORD_NEW:-${ADMIN_INITIAL_PASSWORD}-${PROFILE}-smoke}"
 
 # 临时 override：仅为本机/CI 冒烟把 API 端口 loopback 发布给 smoke.sh（生产仍不发布）
 OVERRIDE_DIR="$(mktemp -d)"
@@ -103,26 +102,11 @@ for _ in $(seq 1 60); do
 done
 [ "$up" = "1" ] || fail "web 未在 120s 内可访问（${WEB_BASE_URL}）"
 
-# ---- 强制改密 bootstrap（W16-F01：fresh admin 强制改密） ----
-printf 'PRE-RELEASE: admin 强制改密 bootstrap ...\n'
-SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
-BOOT_TOKEN="$( \
-  SMU="$SMOKE_USERNAME" SMP="$ADMIN_INITIAL_PASSWORD" WEB="$WEB_BASE_URL" node -e '
-    fetch(process.env.WEB+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:process.env.SMU,password:process.env.SMP})})
-      .then(async r=>{const b=await r.json();process.stdout.write(r.ok?(b.accessToken||""):"")})
-      .catch(()=>{})
-  ' || true)"
-[ -n "$BOOT_TOKEN" ] || fail "初始 admin 登录失败（无法获取 bootstrap token）"
-
-SMU="$SMOKE_USERNAME" SMP="$ADMIN_INITIAL_PASSWORD" NEW="$NEW_PASSWORD" TOK="$BOOT_TOKEN" WEB="$WEB_BASE_URL" node -e '
-  fetch(process.env.WEB+"/api/account/password",{method:"POST",headers:{Authorization:"Bearer "+process.env.TOK,"Content-Type":"application/json"},body:JSON.stringify({currentPassword:process.env.SMP,newPassword:process.env.NEW})})
-    .then(async r=>{process.exit(r.ok?0:1)})
-    .catch(()=>process.exit(1))
-' || fail "强制改密失败（/api/account/password）"
-
-# ---- 完整冒烟（disposable + CSP 真实浏览器，使用新密码） ----
-SMOKE_USERNAME="$SMOKE_USERNAME" \
-SMOKE_PASSWORD="$NEW_PASSWORD" \
+# ---- 完整冒烟（disposable + CSP 真实浏览器） ----
+# W16-F01 首登强制改密由 smoke.sh SM-004 内走真实 /api/account/password 处理。
+SMOKE_USERNAME="${SMOKE_USERNAME:-admin}" \
+SMOKE_PASSWORD="$ADMIN_INITIAL_PASSWORD" \
+SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-}" \
 SMOKE_EXPECTED_PROFILE="$PROFILE" \
 SMOKE_ISOLATION_ID="$PROJECT" \
 SMOKE_DISPOSABLE_CONFIRM=yes \

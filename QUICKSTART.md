@@ -104,6 +104,7 @@ SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROF
 #      docker compose -p ci-smoke-local down -v && docker compose -p ci-smoke-local up -d
 #   2) 提供隔离身份 + 书面确认标记（脚本机器校验 project/卷绑定，不满足 → exit 2）
 #   3) 追加 SMOKE_CSP=1 启用 SM-008 真实浏览器 + 生产 CSP 头检查
+#   W16-F01：fresh seed 首登在 SM-004 走真实 /api/account/password 强制改密；可用 SMOKE_PASSWORD_NEW 指定新密码（默认 <初始>-changed）
 SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp \
 SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes SMOKE_CSP=1 \
 bash scripts/smoke.sh --disposable

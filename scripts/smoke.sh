@@ -19,6 +19,8 @@
 #   WEB_BASE_URL         默认 http://localhost:25081
 #   SMOKE_USERNAME       默认 admin
 #   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
+#   SMOKE_PASSWORD_NEW   可选：开启 W16-F01 首登强制改密后的新密码
+#                        （默认 = <SMOKE_PASSWORD>-changed；smoke 走真实改密接口）
 #   SMOKE_SEED_ID         默认 user-admin
 #   SMOKE_EXPECTED_SEED_TOTAL  默认 1
 #   SMOKE_EXPECTED_PROFILE  可选：mvp 或 admin；启用 Profile/Manifest/route 断言
@@ -38,6 +40,7 @@ API_BASE_URL="${API_BASE_URL:-http://localhost:25080}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:25081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
+SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-1}"
 SMOKE_EXPECTED_PROFILE="${SMOKE_EXPECTED_PROFILE:-}"
@@ -188,7 +191,28 @@ if [ -n "$me" ]; then
   u="$(json_field "$me" user || true)"
   f="$(json_field "$me" features || true)"
   if [ -n "$u" ] && [ -n "$f" ]; then
-    smoke_line "004" "PASS"
+    # W16-F01：fresh seed 的 admin 首登必须改密。真实用户流程即改密后继续访问，
+    # 因此 smoke 在此走真实 /api/account/password 并切到新密码，而不是绕过门禁。
+    must_change=0
+    if printf '%s' "$me" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);process.exit(o&&o.user&&o.user.mustChangePassword===true?0:1)}catch(e){process.exit(1)}})'; then
+      must_change=1
+    fi
+    if [ "$must_change" = "1" ]; then
+      SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-${SMOKE_PASSWORD}-changed}"
+      pwd_json="$(SMOKE_CURRENT="$SMOKE_PASSWORD" SMOKE_NEW="$SMOKE_PASSWORD_NEW" node -e 'process.stdout.write(JSON.stringify({currentPassword:process.env.SMOKE_CURRENT,newPassword:process.env.SMOKE_NEW}))')"
+      change_body="$(curl -fsS --max-time 5 -X POST "${WEB_BASE_URL}/api/account/password" -H "Authorization: Bearer ${ACCESS_TOKEN}" -H 'Content-Type: application/json' -d "$pwd_json" 2>/dev/null || true)"
+      new_access="$(json_field "$change_body" accessToken || true)"
+      if [ -n "$new_access" ]; then
+        ACCESS_TOKEN="$new_access"
+        SMOKE_PASSWORD="$SMOKE_PASSWORD_NEW"
+        printf 'SM-004=PASS（W16-F01 首登强制改密已执行；后续以新密码继续）\n'
+      else
+        printf 'SM-004=FAIL\n  detail: 检测到 mustChangePassword 但 /api/account/password 未返回新 accessToken\n'
+        exit 4
+      fi
+    else
+      smoke_line "004" "PASS"
+    fi
   else
     printf 'SM-004=FAIL\n  detail: /api/accounts/me 200 但缺少 user 或 features 投影\n'
     exit 4
