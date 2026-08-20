@@ -17,6 +17,7 @@ version: 1.0.0
 - 冻结合同附件升至 **v1.4.0**（path 扩展名谓词；`COLLATE NOCASE` 点名；checksum 输入 = sqlite 历史 SQL；嵌套 `Run` 按回调检测）。
 - A-009 记录闭合证据。GOAL-002 `status` 仍为 `done`；检查点仍 2/2。
 - **未修改** `apps/api` 运行时。现行 `INSERT OR IGNORE`、`COLLATE NOCASE`、`authsession` 的 `sqlite_master`/`PRAGMA`、钱包 `INTEGER` 余额均仍在代码中，属 R3/R4 按规则改写，不是本条目失败。
+- Git checkpoint `7110fdb`（仅 `docs/workspaces/workspace-013-store-dialects/`）。
 
 ## 证据
 
@@ -26,6 +27,7 @@ version: 1.0.0
 | 取舍 | `01-decision/D-005-a008-freeze-patch.md` |
 | 响应意见 | `03-audit/A-009-a008-response.md` |
 | 独立审原文（未改 verdict） | `03-audit/A-008-r1-freeze-v1-3-independent.md` |
+| checkpoint | `7110fdb` |
 
 ## 计划（非事实）
 
