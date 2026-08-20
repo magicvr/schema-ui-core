@@ -27,7 +27,8 @@ version: 0.1.0
 | A-001 | 2026-08-20 | self | R3 T1 切片（kernel.Tx 形状 + store 适配） | pass | 0 | [A-001-t1-kernel-tx-shape-self.md](03-audit/A-001-t1-kernel-tx-shape-self.md) |
 | A-002 | 2026-08-20 | self | R3 T2a 切片（postgres 迁移运行器，live 证明） | pass | 0 | [A-002-t2a-postgres-runner-self.md](03-audit/A-002-t2a-postgres-runner-self.md) |
 | A-003 | 2026-08-20 | self | R3 T2b/T3 切片（12 模块对写 + 全量 PG boot + BIGINT） | conditional | 1（F-001 operationlog） | [A-003-t3-dual-write-self.md](03-audit/A-003-t3-dual-write-self.md) |
+| A-004 | 2026-08-20 | self | 响应 A-003（F-001/F-002 关闭；composition 路由移交 R4） | pass | 0 | [A-004-a003-response.md](03-audit/A-004-a003-response.md) |
 
 ## 结论状态
 
-T1/T2a self `pass`。T2b/T3 主体 self `conditional`（open required = **A-003 F-001 operationlog 对写**，T3 收尾）。T3 收尾后关门；T4 双路径证据 + independent。
+T1/T2a `pass`；T2b/T3 主体 `conditional` → **A-004 已 fixed 关闭 A-003 F-001/F-002**（open required = 0）。T3 完成（progress 4/5）。待 T4 双路径证据 + independent 关门。
