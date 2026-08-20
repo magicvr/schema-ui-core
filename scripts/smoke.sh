@@ -3,12 +3,14 @@
 # scripts/smoke.sh · S4 可复现 smoke 验收（GOAL-008 / I-008-002 v0.1.2 §5）
 #
 # 机器可判定的非破坏性冒烟：SM-001 参数/工具/安全前提 → SM-002 API readiness →
-# SM-003 代理登录 → SM-004 当前身份 → SM-005 代表页路由。
+# SM-003 代理登录 → SM-004 当前身份 → SM-005 代表页路由 → 可选 SM-007 Profile/
+# Manifest 合同 → 可选 SM-008 真实浏览器 + 生产 CSP 响应头（SMOKE_CSP=1）。
 # 仅在显式 --disposable 下执行 SM-006（种子可重复性，要求隔离 Compose project/volume）。
 #
 # 退出码：0=完整绿（SM-001～005 且 disposable SM-006 通过）｜2=参数、工具或安全
 # 前提不满足（含不安全 destructive/隔离校验失败）｜3=readiness 30s 超时｜
 # 4=登录/身份失败｜5=路由/数据失败｜6=SM-006 种子断言失败｜
+# 7=SM-008 真实浏览器 CSP/生产头冒烟失败｜
 # 8=部分绿（非 disposable，SM-006 未运行——不是 S4 完整绿，不得作为种子可重复证据）｜
 # 70=未分类内部错误。
 #
@@ -20,6 +22,8 @@
 #   SMOKE_SEED_ID         默认 user-admin
 #   SMOKE_EXPECTED_SEED_TOTAL  默认 1
 #   SMOKE_EXPECTED_PROFILE  可选：mvp 或 admin；启用 Profile/Manifest/route 断言
+#   SMOKE_CSP               可选：1 启用 SM-008 真实浏览器 + 生产 CSP 头冒烟
+#                            （运行 apps/web/scripts/check-prod-csp.mjs；需 Playwright Chromium）
 #   SMOKE_ISOLATION_ID   仅 --disposable 必填：隔离 Compose project 名（机器校验
 #                        运行中 project 与 db-data 卷均绑定该身份；不得指向默认开发库）
 #   SMOKE_DISPOSABLE_CONFIRM   仅 --disposable 必填：必须为 yes（书面确认 disposable 语义）
@@ -28,6 +32,8 @@
 
 set -u
 
+SMOKE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 API_BASE_URL="${API_BASE_URL:-http://localhost:25080}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:25081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
@@ -35,6 +41,7 @@ SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-1}"
 SMOKE_EXPECTED_PROFILE="${SMOKE_EXPECTED_PROFILE:-}"
+SMOKE_CSP="${SMOKE_CSP:-0}"
 SMOKE_ISOLATION_ID="${SMOKE_ISOLATION_ID:-}"
 SMOKE_DISPOSABLE_CONFIRM="${SMOKE_DISPOSABLE_CONFIRM:-}"
 DISPOSABLE=0
@@ -327,10 +334,27 @@ else
   printf 'SM-006=SKIP（非 disposable；S4 完整绿需 --disposable 且 SM-006=PASS）\n'
 fi
 
+# ---------------------------------------------------------------------------
+# SM-008 · 真实浏览器 + 生产 CSP 响应头（发版前冒烟；SMOKE_CSP=1 启用）
+#   要求正在运行的生产 web（默认 http://localhost:25081）与 Playwright Chromium。
+# ---------------------------------------------------------------------------
+if [ "$SMOKE_CSP" = "1" ]; then
+  csp_tmp="$(mktemp)"
+  if ! PROD_WEB_URL="${WEB_BASE_URL}" node "${SMOKE_ROOT}/apps/web/scripts/check-prod-csp.mjs" >"$csp_tmp" 2>&1; then
+    printf 'SM-008=FAIL\n  detail: %s\n' "$(cat "$csp_tmp")"
+    rm -f "$csp_tmp"
+    exit 7
+  fi
+  rm -f "$csp_tmp"
+  smoke_line "008" "PASS"
+else
+  printf 'SM-008=SKIP（未设置 SMOKE_CSP=1；发版前冒烟建议启用）\n'
+fi
+
 if [ "$DISPOSABLE" = "1" ]; then
-  printf 'SMOKE RESULT: PASS (SM-001~005 + optional SM-007 + SM-006)\n'
+  printf 'SMOKE RESULT: PASS (SM-001~005 + optional SM-007/008 + SM-006)\n'
   exit 0
 else
-  printf 'SMOKE RESULT: PARTIAL (SM-001~005 + 可选 SM-007；SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
+  printf 'SMOKE RESULT: PARTIAL (SM-001~005 + 可选 SM-007/008；SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
   exit 8
 fi

@@ -103,12 +103,24 @@ SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROF
 #   1) 用独立 compose project 启动（不得指向普通开发库）：
 #      docker compose -p ci-smoke-local down -v && docker compose -p ci-smoke-local up -d
 #   2) 提供隔离身份 + 书面确认标记（脚本机器校验 project/卷绑定，不满足 → exit 2）
+#   3) 追加 SMOKE_CSP=1 启用 SM-008 真实浏览器 + 生产 CSP 头检查
 SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp \
-SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
+SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes SMOKE_CSP=1 \
 bash scripts/smoke.sh --disposable
 ```
 
-> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
+### 发版前完整冒烟（生产 CSP + 真实浏览器 + 隔离种子，一键）
+
+```bash
+# 自动用独立 Compose project 构建/启动生产栈，运行 smoke --disposable + SMOKE_CSP=1，
+# 结束后默认 docker compose -p <project> down -v 清理。前置：
+#   Docker Compose v2 + Node + apps/web Playwright Chromium（npx playwright install chromium）
+bash scripts/pre-release-smoke.sh
+# 可选 env：PRERELEASE_PROFILE=mvp|admin（默认读 apps/api/configs/config.yaml）
+#          WEB_HOST_PORT=<port>（默认从 .env 或 25081）｜SMOKE_USERNAME｜SMOKE_PASSWORD_NEW｜KEEP_STACK=1（保留栈）
+```
+
+> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`7`=SM-008 真实浏览器 CSP/生产头失败｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
 
 ## 4. 升级与恢复边界
 

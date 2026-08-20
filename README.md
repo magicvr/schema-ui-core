@@ -83,6 +83,19 @@ docker compose up --build
 - `app.modules`（preset 或 list）覆盖 Profile 默认模块集合；preset 与 list 互斥，`custom` Profile 没有显式模块时 fail-closed。
 - 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
 
+### 发版前冒烟（W8 起 · 生产 CSP + 真实浏览器 + 隔离种子）
+
+```bash
+# 一键：独立 Compose project 构建/启动生产栈 → scripts/smoke.sh --disposable
+#（SM-001~005 + SM-006 种子可重复 + 可选 SM-007 Profile 合同）+ SMOKE_CSP=1
+#（SM-008 真实浏览器校验生产 CSP 头 / theme-init.js）→ 默认 down -v 清理
+bash scripts/pre-release-smoke.sh
+
+# 仅单独启用 SM-008（需已运行生产 Web，见 QUICKSTART §3）：
+SMOKE_CSP=1 SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
+  bash scripts/smoke.sh --disposable
+```
+
 ## 模块化 Admin 架构与 Profile（R4 起）
 
 后端以**薄内核 + 模块 Provider + 启动时 Profile** 组装（workspace-003 模块化架构）：

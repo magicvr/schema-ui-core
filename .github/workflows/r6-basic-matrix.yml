@@ -114,6 +114,7 @@ jobs:
       ADMIN_INITIAL_PASSWORD: ci-admin
       SMOKE_ISOLATION_ID: ci-container-${{ matrix.profile }}
       SMOKE_EXPECTED_PROFILE: ${{ matrix.profile }}
+      SMOKE_CSP: "1"
       GIT_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -125,6 +126,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
+      - name: Install web deps + Playwright Chromium
+        working-directory: apps/web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
       - name: Build images (isolated project)
         run: docker compose -p "$SMOKE_ISOLATION_ID" build
       - name: Start services (isolated project)
@@ -146,6 +152,7 @@ jobs:
           SMOKE_ISOLATION_ID="$SMOKE_ISOLATION_ID" \
           SMOKE_EXPECTED_PROFILE="$APP_PROFILE" \
           SMOKE_DISPOSABLE_CONFIRM=yes \
+          SMOKE_CSP=1 \
           bash scripts/smoke.sh --disposable
         shell: bash
       - name: Persistence across api restart (C-006)

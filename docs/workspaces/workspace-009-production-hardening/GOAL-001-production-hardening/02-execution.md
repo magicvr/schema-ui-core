@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-10
 updated: 2026-08-20
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 执行记录 · GOAL-001
@@ -18,6 +18,7 @@ version: 0.5.0
 | E-002 | 2026-08-14 | W5 全量审计 0 中高危；低危就地修补（未开子目标） | recorded | [E-002-w5-scan-zero-midhigh.md](02-execution/E-002-w5-scan-zero-midhigh.md) |
 | E-003 | 2026-08-19 | 开 W7 子目标承接独立审计落盘 | recorded | [E-003-w7-opened.md](02-execution/E-003-w7-opened.md) |
 | E-004 | 2026-08-20 | W8 波次关门 + 真实浏览器/CSP 回归 · Root 汇总 | recorded | [E-004-w8-closed.md](02-execution/E-004-w8-closed.md) |
+| E-005 | 2026-08-20 | W8 CSP/真实浏览器冒烟纳入发版前流程 | recorded | [E-005-prerelease-smoke-integration.md](02-execution/E-005-prerelease-smoke-integration.md) |
 
 ## 波次执行（子目标）
 
