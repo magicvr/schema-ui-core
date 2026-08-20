@@ -16,6 +16,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // DataPermissionService is the surface the data-permission routes consume. It
@@ -72,14 +73,7 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 			return
 		}
 		total := len(policies)
-		start := (page - 1) * pageSize
-		if start > total {
-			start = total
-		}
-		end := start + pageSize
-		if end > total {
-			end = total
-		}
+		start, end := pagination.Bounds(page, pageSize, total)
 		pagePolicies := policies[start:end]
 		items := make([]map[string]any, 0, len(pagePolicies))
 		for _, policy := range pagePolicies {
@@ -204,5 +198,3 @@ func writeScopeError(w http.ResponseWriter, r *http.Request, err error) {
 		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update data permission")
 	}
 }
-
-

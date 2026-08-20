@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 const (
@@ -225,7 +227,7 @@ func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation
 			 LEFT JOIN operation_log_session s ON s.operation_id = o.id`+where+
 				` ORDER BY `+operationsSortSQL(filter.Sort, filter.Order)+`, id DESC`+
 				` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return err

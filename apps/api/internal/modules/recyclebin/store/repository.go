@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
@@ -117,7 +119,7 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 			return fmt.Errorf("count recycle items: %w", err)
 		}
 		query := `SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items ` + where + ` ORDER BY ` + sortColumn + ` ` + order + `, id DESC LIMIT ? OFFSET ?`
-		queryArgs := append(append([]any{}, args...), pageSize, (page-1)*pageSize)
+		queryArgs := append(append([]any{}, args...), pageSize, pagination.Offset(page, pageSize, total))
 		rows, err := tx.Query(query, queryArgs...)
 		if err != nil {
 			return fmt.Errorf("list recycle items: %w", err)

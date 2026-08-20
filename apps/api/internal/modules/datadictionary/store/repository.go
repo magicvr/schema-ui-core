@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
@@ -106,7 +108,7 @@ func (r *Repository) ListTypes(filter ListFilter) ([]DictType, int, error) {
 		rows, err := tx.Query(
 			`SELECT id, key, name, enabled, COALESCE(description, ''), sort, created_at, updated_at
 			 FROM dict_types`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("list dict types: %w", err)
@@ -268,7 +270,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		rows, err := tx.Query(
 			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), COALESCE(de.badge_style, 'default'), de.created_at, de.updated_at
 			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("list dict entries: %w", err)

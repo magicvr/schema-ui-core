@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // ListUsers returns the filtered management projection and total count.
@@ -26,7 +28,7 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 			 FROM users u`+where+
 				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, u.id ASC`+
 				` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("query users: %w", err)

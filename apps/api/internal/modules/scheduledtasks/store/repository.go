@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
@@ -31,9 +33,9 @@ func NewRepository(runner TxRunner) *Repository {
 
 // Domain sentinels mapped by the handler to the frozen error codes.
 var (
-	ErrNotFound     = errors.New("scheduled task not found")
-	ErrKeyTaken     = errors.New("scheduled task key already exists")
-	ErrInvalidCron  = errors.New("invalid cron expression")
+	ErrNotFound    = errors.New("scheduled task not found")
+	ErrKeyTaken    = errors.New("scheduled task key already exists")
+	ErrInvalidCron = errors.New("invalid cron expression")
 )
 
 // Task is one scheduled task definition row.
@@ -108,7 +110,7 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 		rows, err := tx.Query(
 			`SELECT id, key, cron, name, enabled, COALESCE(description, ''), handler, created_at, updated_at
 			 FROM scheduled_tasks`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("list tasks: %w", err)
@@ -262,7 +264,7 @@ func (r *Repository) ListTaskRuns(taskID string, filter ListFilter) ([]TaskRun, 
 		rows, err := tx.Query(
 			`SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at
 			 FROM task_runs WHERE task_id = ? ORDER BY started_at DESC LIMIT ? OFFSET ?`,
-			taskID, filter.PageSize, (filter.Page-1)*filter.PageSize,
+			taskID, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total),
 		)
 		if err != nil {
 			return fmt.Errorf("list task runs: %w", err)
@@ -313,7 +315,7 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 		rows, err := tx.Query(
 			`SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at
 			 FROM task_runs`+where+` ORDER BY started_at DESC LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("list all runs: %w", err)

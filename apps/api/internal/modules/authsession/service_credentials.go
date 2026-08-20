@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // ServiceCredential is the metadata projection for a machine credential.
@@ -79,7 +81,7 @@ func (r *Repository) ListServiceCredentials(page, pageSize int) ([]ServiceCreden
 SELECT id, name, token_prefix, token_hash, scopes, expires_at, revoked_at,
        last_used_at, created_by, created_at, updated_at
 FROM service_credentials ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
-			pageSize, (page-1)*pageSize)
+			pageSize, pagination.Offset(page, pageSize, total))
 		if err != nil {
 			return fmt.Errorf("query service credentials: %w", err)
 		}

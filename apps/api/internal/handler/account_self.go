@@ -19,6 +19,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // AccountRepository is the persistence surface consumed by the self-service
@@ -338,14 +339,7 @@ func (h *accountSelfHandler) sessions() http.Handler {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_STATUS_FILTER", "status must be active, revoked, or empty")
 			return
 		}
-		start := (page - 1) * pageSize
-		end := start + pageSize
-		if start > len(all) {
-			start = len(all)
-		}
-		if end > len(all) {
-			end = len(all)
-		}
+		start, end := pagination.Bounds(page, pageSize, len(all))
 		currentHash := ""
 		if raw := strings.TrimSpace(r.Header.Get("X-Refresh-Token")); raw != "" {
 			currentHash = auth.HashToken(raw)

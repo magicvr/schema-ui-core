@@ -23,6 +23,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // fileLibraryEntity adapts the shared upload store to the generic resource
@@ -59,14 +60,7 @@ func (e *fileLibraryEntity) List(filter resourceFilter) ([]map[string]any, int, 
 	}
 	sortRows(rows, filter.Sort, filter.Order)
 	total := len(rows)
-	start := (filter.Page - 1) * filter.PageSize
-	if start > total {
-		start = total
-	}
-	end := start + filter.PageSize
-	if end > total {
-		end = total
-	}
+	start, end := pagination.Bounds(filter.Page, filter.PageSize, total)
 	items := make([]map[string]any, 0, end-start)
 	for _, row := range rows[start:end] {
 		items = append(items, fileRowToMap(row))

@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // maxNotificationsPerUser is the per-user retention cap (D-002 `2).
@@ -19,11 +21,11 @@ const maxNotificationsPerUser = 500
 
 // Notification is one in-app notification row.
 type Notification struct {
-	ID        string
-	UserID    string
-	Event     string
-	Title     string
-	Body      string
+	ID     string
+	UserID string
+	Event  string
+	Title  string
+	Body   string
 	// TitleKey/BodyKey (W14 F-04) are i18n message keys; nil/empty means the
 	// row predates the message-key migration and title/body are the literal
 	// fallback text.
@@ -40,9 +42,9 @@ type NotificationFilter struct {
 	// T-02 (GOAL-013 D-003): keyword search over title/body plus an exact
 	// read-state filter. Read=nil means no constraint; Read=&true means the
 	// row is read, Read=&false means unread.
-	Q    string
-	Read *bool
-	Page int
+	Q        string
+	Read     *bool
+	Page     int
 	PageSize int
 }
 
@@ -158,7 +160,7 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 		rows, err := tx.Query(
 			`SELECT id, user_id, event, title, body, title_key, body_key, read_at, created_at FROM notifications`+where+
 				` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("query notifications: %w", err)

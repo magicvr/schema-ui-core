@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // ListRoles returns the filtered RBAC role projection and total count.
@@ -21,7 +23,7 @@ func (r *Repository) ListRoles(filter RoleFilter) ([]Role, int, error) {
 			`SELECT id, key, name, system, created_at, updated_at FROM roles`+where+
 				` ORDER BY `+rolesSortSQL(filter.Sort, filter.Order)+`, id ASC`+
 				` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return fmt.Errorf("query roles: %w", err)

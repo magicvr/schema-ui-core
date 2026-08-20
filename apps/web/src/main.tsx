@@ -34,9 +34,10 @@ import { adapterAuthFor, bootHost, executeBootRecovery, lockedFailure, reauthFai
 import { nextFailureId, type HostFailure } from "@/host/failure";
 import "./index.css";
 
-// Theme bootstrap is handled by the synchronous inline script in index.html
-// (S1 · C3). The call below is kept as a safety net for module-only entry
-// points (e.g. Storybook / test harness) that do not serve index.html.
+// Theme bootstrap is handled by the synchronous external /theme-init.js script
+// in index.html (S1 · C3 + W8 F-002). The call below is kept as a safety net
+// for module-only entry points (e.g. Storybook / test harness) that do not serve
+// index.html.
 import { initTheme } from "@/theme/theme";
 function applyStoredTheme() {
   initTheme();

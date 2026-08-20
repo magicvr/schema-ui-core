@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
@@ -168,7 +170,7 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 			pageSize = 20
 		}
 		query := "SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts " + where + " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
-		rows, err := tx.Query(query, append(args, pageSize, (page-1)*pageSize)...)
+		rows, err := tx.Query(query, append(args, pageSize, pagination.Offset(page, pageSize, total))...)
 		if err != nil {
 			return fmt.Errorf("list wallet accounts: %w", err)
 		}
@@ -605,7 +607,7 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 		if pageSize < 1 {
 			pageSize = 20
 		}
-		queryArgs := append(append([]any{}, args...), pageSize, (page-1)*pageSize)
+		queryArgs := append(append([]any{}, args...), pageSize, pagination.Offset(page, pageSize, total))
 		rows, err := tx.Query(
 			`SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at
 			 FROM wallet_ledger_entries `+where+` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
@@ -814,7 +816,7 @@ func (r *Repository) ListReconcileRuns(page, pageSize int) ([]ReconciliationRun,
 		}
 		rows, err := tx.Query(
 			`SELECT id, account_id, result, mismatch_count, details, actor_id, created_at FROM wallet_reconciliation_runs ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
-			pageSize, (page-1)*pageSize,
+			pageSize, pagination.Offset(page, pageSize, total),
 		)
 		if err != nil {
 			return fmt.Errorf("list reconciliation runs: %w", err)

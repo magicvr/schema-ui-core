@@ -5,9 +5,9 @@
  * and then applies it to the provided document root.  Keeping the decision
  * logic in a plain function lets vitest exercise it without a browser.
  *
- * `initTheme` is the top-level boot call used by the synchronous inline
- * script in index.html and by main.tsx (no longer needed after inline
- * migration, kept for backwards-compat import path).
+ * `initTheme` is the top-level boot call used by the synchronous external
+ * `/theme-init.js` script in index.html and by main.tsx (the module call is
+ * kept as a safety net for test/storybook entry points).
  *
  * VP-007 S3 priority (D-002, user-confirmed): user explicit choice →
  * system default theme (from the public startup configuration, non-auto) →
@@ -66,7 +66,7 @@ export function applyThemeToElement(
 
 /**
  * End-to-end theme boot: reads real browser APIs and mutates the DOM.
- * Called from the inline <script> in index.html and from main.tsx.
+ * Called from the synchronous external /theme-init.js script in index.html and from main.tsx.
  *
  * W4 P2-1: localStorage may throw when site storage is disabled (privacy
  * mode). main.tsx calls initTheme at module top level — an uncaught throw
