@@ -139,7 +139,7 @@ type jobRuntime struct {
 	enabled    atomic.Bool
 }
 
-func newJobRuntime(st *store.Store) (*jobRuntime, error) {
+func newJobRuntime(st kernel.Store) (*jobRuntime, error) {
 	repository := jobs.NewRepository(st)
 	runner, err := jobs.NewRunner(repository, jobs.DefaultRunnerOptions())
 	if err != nil {
@@ -162,7 +162,7 @@ func (r *jobRuntime) Stop(ctx context.Context) error {
 	return r.runner.Stop(ctx)
 }
 
-func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, error) {
+func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, error) {
 	// Persistence is compiled-global rather than profile-gated. The static
 	// registry collects module-owned descriptors before store startup; store
 	// only validates and executes the resulting catalog.
@@ -171,26 +171,20 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.persistence", Detail: fmt.Sprintf("collect persistence: %v", err)}
 	}
 	// VP-013 R1 v1.4: sqlite keeps applying the catalog on the default dev
-	// path. Postgres (R3) applies the dual-dialect catalog at store level, but
-	// the composition root still wires the sqlite implementation only — module
-	// repositories still speak *store.Store / WithTx(*sql.Tx), which R4 moves
-	// to kernel.Store/Tx before a postgres DSN can boot the full app.
+	// path; postgres (R3 dual-dialect ledger) applies it too. From R4 the
+	// composition root wires the kernel.Store interface, so a postgres DSN can
+	// boot the full application (repositories speak kernel.Tx).
 	dialect := kernel.DialectSQLite
 	if cfg.DBDialect != "" {
 		dialect = kernel.Dialect(cfg.DBDialect)
 	}
-	kst, err := store.Open(context.Background(), store.OpenOptions{
+	st, err := store.Open(context.Background(), store.OpenOptions{
 		Dialect: dialect,
 		Path:    cfg.DBPath,
 		DSN:     cfg.DBDSN,
 	}, catalog)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
-	}
-	st, ok := kst.(*store.Store)
-	if !ok {
-		_ = kst.Close()
-		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: "store dialect selected a non-sqlite implementation, which is not wired until R4 (module repositories move to kernel.Store/Tx)"}
 	}
 	// (db.path) file-storage root derivation and upload/avatar dirs already use
 	// cfg.DBPath below; postgres keeps the same file-path-shaped value.
@@ -208,15 +202,15 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	return st, nil
 }
 
-func newAuthSessionRepository(st *store.Store) *authsession.Repository {
+func newAuthSessionRepository(st kernel.Store) *authsession.Repository {
 	return authsession.NewRepository(st)
 }
 
-func newOperationLogRepository(st *store.Store) *operationlog.Repository {
+func newOperationLogRepository(st kernel.Store) *operationlog.Repository {
 	return operationlog.NewRepository(st)
 }
 
-func newSettingsRepository(st *store.Store) *settingsrepository.Repository {
+func newSettingsRepository(st kernel.Store) *settingsrepository.Repository {
 	return settingsrepository.New(st)
 }
 
@@ -227,7 +221,7 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsess
 func newMux(
 	cfg *config.Config,
 	a *auth.Authenticator,
-	st *store.Store,
+	st kernel.Store,
 	authRepository *authsession.Repository,
 	operations *operationlog.Repository,
 	settingsRepository *settingsrepository.Repository,
@@ -247,7 +241,7 @@ func newMux(
 func newMuxWithExtraProviders(
 	cfg *config.Config,
 	a *auth.Authenticator,
-	st *store.Store,
+	st kernel.Store,
 	authRepository *authsession.Repository,
 	operations *operationlog.Repository,
 	settingsRepository *settingsrepository.Repository,
@@ -580,7 +574,7 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository) {
 	var listener net.Listener
 	var stopRetention func()
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
@@ -658,7 +652,7 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st *store.Store, logge
 	})
 }
 
-func withLifecycleHooks(plan kernel.Plan, st *store.Store, logger *slog.Logger, listenerReady func() bool) kernel.Plan {
+func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, listenerReady func() bool) kernel.Plan {
 	for i := range plan.Modules {
 		moduleID := plan.Modules[i].ID
 		plan.Modules[i].Hooks = kernel.Hooks{

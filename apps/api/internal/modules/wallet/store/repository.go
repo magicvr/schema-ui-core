@@ -151,7 +151,10 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 		where := "WHERE 1=1"
 		args := []any{}
 		if filter.Q != "" {
-			where += " AND (owner_id LIKE ? OR owner_type LIKE ? OR currency LIKE ?)"
+			// R4 S2: portable case-insensitive search (sqlite LIKE is CI for
+			// ASCII; postgres LIKE is CS). LOWER(...) LIKE LOWER(?) restores
+			// parity on both dialects.
+			where += " AND (LOWER(owner_id) LIKE LOWER(?) OR LOWER(owner_type) LIKE LOWER(?) OR LOWER(currency) LIKE LOWER(?))"
 			like := "%" + filter.Q + "%"
 			args = append(args, like, like, like)
 		}

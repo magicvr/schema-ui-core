@@ -16,7 +16,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -82,7 +81,7 @@ func (e *monitoringEntity) Delete(string, account.User) error {
 }
 
 // MonitoringRoutes returns the admin.system-monitoring HTTP surface.
-func MonitoringRoutes(a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, repository operationlog.Reader, availabilityMode, moduleID string) []kernel.RouteContribution {
+func MonitoringRoutes(a *auth.Authenticator, st kernel.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, repository operationlog.Reader, availabilityMode, moduleID string) []kernel.RouteContribution {
 	routes := ResourceRoutes(a, Resource{
 		ID:              "monitoring-errors",
 		Path:            "/api/system-monitoring/errors",

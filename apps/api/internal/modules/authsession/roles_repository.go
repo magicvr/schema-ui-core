@@ -435,18 +435,20 @@ func rolesWhere(query string, system *bool) (string, []any) {
 }
 
 func rolesSortSQL(sort, order string) string {
-	column, collate := "key", " COLLATE NOCASE"
+	// R4 S2 (R1 v1.4 F-002): portable case-insensitive collation via LOWER —
+	// sqlite COLLATE NOCASE has no postgres equivalent.
+	expr := "LOWER(key)"
 	switch sort {
 	case "name":
-		column, collate = "name", " COLLATE NOCASE"
+		expr = "LOWER(name)"
 	case "updatedAt":
-		column, collate = "updated_at", ""
+		expr = "updated_at"
 	}
 	direction := "ASC"
 	if order == "desc" {
 		direction = "DESC"
 	}
-	return column + collate + " " + direction
+	return expr + " " + direction
 }
 
 // ListPermissionCatalog returns every registered permission key (W11 · U-02).

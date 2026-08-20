@@ -436,16 +436,19 @@ func usersWhere(query string, enabled, locked *bool) (string, []any) {
 }
 
 func usersSortSQL(sort, order string) string {
-	column, collate := "username", " COLLATE NOCASE"
+	// R4 S2 (R1 v1.4 F-002): portable case-insensitive collation via LOWER —
+	// sqlite COLLATE NOCASE has no postgres equivalent. LOWER sorts
+	// case-insensitively on both dialects.
+	expr := "LOWER(username)"
 	switch sort {
 	case "name":
-		column, collate = "name", " COLLATE NOCASE"
+		expr = "LOWER(name)"
 	case "updatedAt":
-		column, collate = "updated_at", ""
+		expr = "updated_at"
 	}
 	direction := "ASC"
 	if order == "desc" {
 		direction = "DESC"
 	}
-	return column + collate + " " + direction
+	return expr + " " + direction
 }

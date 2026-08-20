@@ -90,7 +90,10 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 			args = append(args, filter.Resource)
 		}
 		if filter.Q != "" {
-			where += ` AND (resource_id LIKE ? OR actor_name LIKE ?)`
+			// R4 S2: portable case-insensitive search (sqlite LIKE is CI for
+			// ASCII; postgres LIKE is CS). LOWER(...) LIKE LOWER(?) restores
+			// parity on both dialects.
+			where += ` AND (LOWER(resource_id) LIKE LOWER(?) OR LOWER(actor_name) LIKE LOWER(?))`
 			like := "%" + filter.Q + "%"
 			args = append(args, like, like)
 		}

@@ -15,7 +15,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/manifest"
 	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 // ModuleID is the stable admin.system-monitoring module identifier.
@@ -24,7 +23,7 @@ const ModuleID = "admin.system-monitoring"
 // Provider implements kernel.Provider for admin.system-monitoring.
 type Provider struct {
 	a                *auth.Authenticator
-	st               *store.Store
+	st               kernel.Store
 	plan             kernel.Plan
 	ready            func() bool
 	dbPath           string
@@ -34,7 +33,7 @@ type Provider struct {
 }
 
 // New constructs the monitoring provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, st *store.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, operations operationlog.Reader, mode ...string) *Provider {
+func New(a *auth.Authenticator, st kernel.Store, plan kernel.Plan, ready func() bool, dbPath string, startTime time.Time, operations operationlog.Reader, mode ...string) *Provider {
 	availabilityMode := "normal"
 	if len(mode) > 0 && mode[0] != "" {
 		availabilityMode = mode[0]
