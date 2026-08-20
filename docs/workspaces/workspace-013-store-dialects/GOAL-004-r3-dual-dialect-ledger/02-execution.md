@@ -1,7 +1,7 @@
 ---
 id: GOAL-004-r3-dual-dialect-ledger
 doc: execution
-status: active
+status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-20 | T2a 实施：postgres 迁移运行器（live PG 证明；生产解闸并入 T3） | recorded | [E-003-t2a-postgres-runner.md](02-execution/E-003-t2a-postgres-runner.md) |
 | E-004 | 2026-08-20 | T3 对写：PostgresApply 管道 + 12 模块 + 全量 PG boot + BIGINT 断言（operationlog 待续） | recorded | [E-004-t3-dual-write.md](02-execution/E-004-t3-dual-write.md) |
 | E-005 | 2026-08-20 | T3 完成：operationlog 对写 + postgres open 解闸 + 合规扫尾 | recorded | [E-005-t3-complete.md](02-execution/E-005-t3-complete.md) |
+| E-006 | 2026-08-20 | R3 关门：independent A-005 → A-006 响应 → done（progress 5/5） | recorded | [E-006-r3-close-out.md](02-execution/E-006-r3-close-out.md) |
 
 ## 事实边界
 

@@ -25,6 +25,7 @@ version: 0.5.0
 | E-009 | 2026-08-20 | R2 关门（GOAL-003 done）；R3 立项（GOAL-004） | recorded | [E-009-r2-closed-r3-established.md](02-execution/E-009-r2-closed-r3-established.md) |
 | E-010 | 2026-08-20 | R3 主体实施：T1/T2a/T3（12/13 模块对写 + 全量 PG boot） | recorded | [E-010-r3-progress.md](02-execution/E-010-r3-progress.md) |
 | E-011 | 2026-08-20 | R3（GOAL-004）T3 完成：48 迁移双写 + PG boot + 解闸 | recorded | [E-011-r3-t3-complete.md](02-execution/E-011-r3-t3-complete.md) |
+| E-012 | 2026-08-20 | R3 关门（GOAL-004 done，Root 3/5）；R4 立项（GOAL-005） | recorded | [E-012-r3-closed-r4-established.md](02-execution/E-012-r3-closed-r4-established.md) |
 
 ## 事实边界
 

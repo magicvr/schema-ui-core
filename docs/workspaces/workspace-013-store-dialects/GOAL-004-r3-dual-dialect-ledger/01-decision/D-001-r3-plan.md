@@ -26,7 +26,7 @@ version: 1.0.0
    - `?` 可 rebind 文本保持统一 `?`；不可 rebind 的方言差异成对文件。
    - **不处理**模块运行时 SQL（operationlog `INSERT OR IGNORE`、wallet/recyclebin `LIKE`、users/roles `COLLATE NOCASE` ORDER BY、布尔运行时读写）——全部归 **R4**（Root R4 收口）。
 4. **postgres 迁移运行器（T2）**：postgres Store 上实现一方言 apply：`WasFresh`（已实现）→ 空库执行 postgres catalog 全部迁移 → `schema_migrations` 台账（version/name/checksum 与 sqlite 同值，checksum 绑 sqlite 文本）。`Run` 内一个迁移一个事务；非空 catalog 不再 fail-closed（R3 起 postgres 允许 apply 双方言 catalog；R2 的「非空 fail-closed」解除——需同步改 R2 的 `openPostgres` 守卫与 `composition.openStore` 路由）。
-5. **composition 路由（T2 伴随）**：postgres + catalog 走 apply 路径（不再 fail-closed）；`/readyz` 仍以 Open+Ping+模块就绪为准，模块门禁在 Reconcile 后。
+5. **composition 路由（T2 伴随）— 实施中已按边界修正**：store 级 `openPostgres` 接受非空 catalog 并 apply（T3 完成，`openPostgres` 解闸——commit `e7fd924`）；**composition 层把 postgres DSN 接入完整应用启动属 R4**（模块仓库公共签名仍 `*store.Store`/`WithTx(*sql.Tx)`，须先迁到 `kernel.Store`/`kernel.Tx`——Root R4 范围，不从 R3 重开）。`/readyz` 仍以 Open+Ping+模块就绪为准，模块门禁在 Reconcile 后。
 6. **审计模式**：迁移/数据门禁 → **self + independent**（项目默认 grok build），T3 对写完成且双路径证据后关门。
 7. **信息门禁**：I-001/I-002 在每迁移对写前闭合（逐迁移核对清单 + 逐列证据）；I-003 由本 D-001 裁决为「分列 catalog」；I-004（T4 前）live 对比。
 
