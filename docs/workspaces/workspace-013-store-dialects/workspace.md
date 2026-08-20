@@ -45,7 +45,7 @@ VP-013：内核 Store 为持久化端口；PostgreSQL 生产权威；SQLite 内�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | 内核持久化端口与配置面冻结（Tx ≠ `*sql.Tx`；SQLite 默认 / PG DSN；合同 v1.2） | ✅ GOAL-002 |
+| R1 | 内核持久化端口与配置面冻结（Tx ≠ `*sql.Tx`；SQLite 默认 / PG DSN；合同 v1.3） | ✅ GOAL-002 |
 | R2 | PostgreSQL 接入（驱动、连接池、`readyz`） | 依赖 R1 |
 | R3 | 现有 compiled 台账双方言对写 + checksum | 依赖 R2 |
 | R4 | 模块仓库公共面收口（去掉 `*sql.Tx`） | 依赖 R1；可与 R3 部分并行 |

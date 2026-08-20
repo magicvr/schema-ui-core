@@ -6,14 +6,16 @@ status: accepted
 created: 2026-08-20
 updated: 2026-08-20
 parent: GOAL-002-r1-tx-port-and-config
-version: 1.2.0
+version: 1.3.0
 ---
 
 # R1 冻结合同
 
-权威：本附件 + GOAL-002 D-001 + D-002 + **D-003**（A-004 响应补丁）。R2 起实现必须遵守 **v1.2.0**。未在此出现的 API 不得进入模块公共契约。
+权威：本附件 + GOAL-002 D-001 + D-002 + D-003 + **D-004**（A-006 响应补丁）。R2 起实现必须遵守 **v1.3.0**。未在此出现的 API 不得进入模块公共契约。
 
-v1.2.0（2026-08-20）：闭合 A-004 F-001～F-005。修正时间单位与现行 INTEGER 秒/毫秒并存；钉死 R2 postgres `Open` 相对 catalog 的行为。不改 `apps/api` 运行时。
+v1.3.0（2026-08-20）：闭合 A-006 F-001～F-005。Unix 时间列在 PostgreSQL 上为 `BIGINT`/`int8`，禁止把 SQLite `INTEGER` 字面当 postgres DDL；补 R2 `/readyz` 证据边界、`db.path` 文件路径判定谓词、`WasFresh` 的 `search_path` 解析、非时间 INTEGER 宽度。不改 `apps/api` 运行时。
+
+v1.2.0（2026-08-20）：闭合 A-004 F-001～F-005。修正时间单位与现行秒/毫秒并存；钉死 R2 postgres `Open` 相对 catalog 的行为。时间**单位**仍以本版为准；时间**宽度**以 v1.3 为准。
 
 v1.1.0（2026-08-20）：闭合 A-002 F-001～F-006。upsert / path 文件根 / `WasFresh` 骨架仍成立；其中「时间 = 一律 Unix 秒」已被 v1.2 取代。
 
@@ -83,6 +85,8 @@ R2 可在**不改 `kernel.Tx` / `Run` 语义**的前提下为 `OpenOptions` 增�
 4. 若 postgres 路径被要求 apply 含 SQLite 专用 SQL 的 catalog：**fail closed**，不得半执行。
 5. **sqlite 方言**：R2 期间仍按现行路径 apply catalog（缺省开发路径不能断）。
 
+**R2 证据边界（相对 Root 文案里的 `readyz`）**：本拍 postgres 可核对证据是 `Open` + `Ping`（及连接池）。**不是** composition 全量 bootstrap，**不是**现行 HTTP `/readyz` 返回 200。现行 `/readyz`（`handler/health.go`）= `Store.Ping` **加上**模块图 `ready`；`core.auth-session` Ready 还要求 `SystemDataReady()`（`composition.go` `withLifecycleHooks`）。`SystemDataReady` 在 `Reconcile` 成功后才 mark，而 Reconcile 需要表。因此：默认进程用 postgres DSN 走现行 `openStore`（必带 compiled catalog）→ 按上条 fail closed；空 catalog 探测打开则过不了 `SystemDataReady`，现行 `/readyz` 不会 200。这与 fail closed 一致，不是合同自相矛盾。Root R2 的「`readyz`」在本拍读作「可 Ping 的连接就绪」，模块门禁全绿属 R3 apply 之后。
+
 **R3 完成后**两方言均在 `WasFresh` 求值之后 apply 双方言 catalog。不得把 R2 postgres 的「只连 + Ping + WasFresh」当成终态省略迁移。
 
 ### `WasFresh` / 系统数据就绪
@@ -92,7 +96,7 @@ R2 可在**不改 `kernel.Tx` / `Run` 语义**的前提下为 `OpenOptions` 增�
 方言中立语义：**当时库中用户基表数为 0**。不是「无业务种子」，也不是「无 `schema_migrations` 行」。
 
 - sqlite：`sqlite_master` 中 `type = 'table' AND name NOT LIKE 'sqlite_%'` 计数为 0。
-- postgres：当前连接 `search_path` 解析出的第一个用户 schema（缺省 `public`）内，**用户基表**计数为 0。基表 = `information_schema.tables.table_type = 'BASE TABLE'`，或 `pg_class.relkind = 'r'`。**不计**视图、序列、物化视图、索引、toast。
+- postgres：当前连接 **服务器实际解析后** 的 `search_path` 中，**第一个存在的用户 schema** 内，**用户基表**计数为 0。基表 = `information_schema.tables.table_type = 'BASE TABLE'`，或 `pg_class.relkind = 'r'`。**不计**视图、序列、物化视图、索引、toast。PostgreSQL 默认常为 `"$user", public`，并跳过不存在的 schema；若 `$user` schema 不存在则落到 `public`。实现必须跟驱动/服务器解析，**禁止**把字面 `"$user"` 当 schema 名去查 `information_schema`。缺省落到 `public`。
 
 已有任意用户基表（含半失败迁移留下的表）→ 非 fresh。空库无用户基表 → fresh；随后 apply 迁移不改变该快照。
 
@@ -155,16 +159,23 @@ store 实现内部的 `sqlite_master` / `PRAGMA`（`migrate.go`、`databaseIsEmp
 
 ### 时间存储
 
-约定：时间值由 Go 以 **UTC** 绑参写入，不在 SQL 里调用方言时间函数。
+约定：时间值由 Go 以 **UTC** 绑参写入（逻辑值 = `int64` 的 `Unix()` 或 `UnixMilli()`），不在 SQL 里调用方言时间函数。
 
-INTEGER 时间列允许 **Unix 秒或 Unix 毫秒**。**按表/列沿用现行单位**；禁止无证据换单位（含把毫秒列改成秒，或把 INTEGER 毫秒改成 RFC3339 文本）。
+**逻辑类型**与**物理 SQL 类型**必须拆开。不得再用「INTEGER 时间列」当作 postgres 可执行的列类型合同。
 
-- 亚秒精度的现行列继续用 INTEGER 毫秒（`time.Now().UTC().UnixMilli()`），**不**把 RFC3339 文本当作现行默认。
+| 层 | 合同 |
+|----|------|
+| 逻辑 | UTC 整数 **秒或毫秒**，**按表/列沿用现行单位**；禁止无证据换单位（含把毫秒列改成秒，或把毫秒改成 RFC3339 文本） |
+| 物理 · SQLite | 时间列保持 `INTEGER`（动态整数，**64-bit affinity**） |
+| 物理 · PostgreSQL | Unix 时间列（**秒与毫秒**）映射为 **`BIGINT` / `int8`** |
+| 禁止 | 把 SQLite 的 `INTEGER` 字面抄进 postgres DDL；PostgreSQL 用 `INTEGER` / `int4` 存 Unix 时间（现行毫秒约 1.7×10¹²，超出 int4 上限 2 147 483 647 约 800×）。秒列目前仍落在 int4 内（至 2038），**不能**拿来证明毫秒列可移植，本条仍要求秒列也用 `BIGINT` |
+
+- 亚秒精度的现行列继续用 **毫秒** 逻辑单位（`time.Now().UTC().UnixMilli()`）：SQLite DDL 仍写 `INTEGER`，PostgreSQL DDL **必须**写 `BIGINT`。**不**把 RFC3339 文本当作现行默认。
 - RFC3339 文本列仅当该列现行已是文本，或 R3 对写时对新列书面另立并验证两方言等价。HTTP JSON 的 RFC3339 输出（handler）不是 SQL 列合同。
 - **禁止**模块/迁移 SQL 使用 `datetime('now')`、`now()`、以及两方言语义不一致的 `CURRENT_TIMESTAMP`（含列 `DEFAULT CURRENT_TIMESTAMP`，除非 R3 对写时两方言显式验证等价并落盘例外）。
 - 不把 SQL 原生 `TIMESTAMPTZ` 当作模块公共约定（避免 sqlite 无对应类型）。
 
-现行 INTEGER 单位（抽样，R3 对写须按列核对；**本表不是全库穷尽**）：
+现行时间列单位（抽样，R3 对写须按列核对；**本表不是全库穷尽**）：
 
 | 面 | 列 | 单位 | 证据 |
 |----|----|------|------|
@@ -175,9 +186,9 @@ INTEGER 时间列允许 **Unix 秒或 Unix 毫秒**。**按表/列沿用现行�
 | 若干模块 | `created_at` / `updated_at` | 秒 | datadictionary / scheduledtasks / authsession / logincaptcha `Unix()` |
 | ID 前缀 | 非时间列 | 毫秒 hex | `jobs.NewID`、wallet 流水 id；**不得**拿来证明列单位 |
 
-**新 INTEGER 时间列**：若无现行对照，必须在该迁移的 R3 对写条目写明秒或毫秒。禁止再把「一律 Unix 秒」当作未声明新列的缺省。
+**新时间列**：若无现行对照，必须在该迁移的 R3 对写条目写明秒或毫秒，并遵守上表物理类型（sqlite `INTEGER` / postgres `BIGINT`）。禁止再把「一律 Unix 秒」或「两方言都写 INTEGER」当作未声明新列的缺省。
 
-v1.1「默认列形态与现行一致：INTEGER Unix 秒」作废。A-003 对 A-002 F-001 **时间半段**的 `fixed` 以本条为准重闭合；upsert 半段仍依 v1.1。
+v1.1「默认列形态与现行一致：INTEGER Unix 秒」作废。v1.2 的单位规则仍成立；v1.2 把公共列形态写成 `INTEGER` 的部分由本条（v1.3）取代。A-003 对 A-002 F-001 **时间半段**、A-005 对 A-004 F-001 **单位半段**仍有效；**宽度**以本条为准。
 
 ### 不能靠 rebind 解决的物理 SQL（R3）
 
@@ -185,6 +196,7 @@ v1.1「默认列形态与现行一致：INTEGER Unix 秒」作废。A-003 对 A-
 
 - **`LIKE`**：模块已用（wallet / recyclebin）。SQLite 对 ASCII 默认大小写不敏感；PostgreSQL `LIKE` 敏感。R3 须显式决定 `ILIKE` / 校对 / 写入前规范化。
 - **布尔列**：现行多为 INTEGER 0/1（`boolInt`）。PostgreSQL `BOOLEAN` 与 INTEGER 不等价。R3 对写时按列选择两方言等价形态并落盘。
+- **INTEGER 宽度（非时间）**：SQLite `INTEGER` 可 64-bit；PostgreSQL `INTEGER` 是 int4。R3 对写必须**按列**决定 postgres 用 `INTEGER`/`int4` 还是 `BIGINT`/`int8`，**禁止**只修时间列、把会超出 int4 的列留在 postgres `INTEGER`。已点名：`wallet_accounts.balance_*`、流水/归档的 `amount_delta` / `balance_after_*`（`wallet/migration/migration.go`）。Unix 时间列走上一节硬规则（一律 `BIGINT`），不在本条再选。
 
 ### 错误 sentinel
 
@@ -206,7 +218,7 @@ Apply     func(Tx) error
 Reconcile func(Tx) error
 ```
 
-取代现行 `func(*sql.Tx) error`。物理 SQL 成对或可 rebind 的 `?` 文本属 R3，且必须遵守 §3 upsert / 时间 / 点名方言债 / `LIKE` 与布尔规则。checksum 算法不变（规范化 SQL + transform id）。
+取代现行 `func(*sql.Tx) error`。物理 SQL 成对或可 rebind 的 `?` 文本属 R3，且必须遵守 §3 upsert / 时间（单位 + 宽度）/ 点名方言债 / `LIKE` 与布尔 / 非时间 INTEGER 宽度规则。checksum 算法不变（规范化 SQL + transform id）。
 
 `jobs.CommitFunc` 等公共 `func(*sql.Tx)` 在 **R4** 改为 `func(kernel.Tx)`。
 
@@ -224,7 +236,12 @@ Reconcile func(Tx) error
 2. **sqlite**：`db.path` 非空；**`db.dsn` 必须为空**（防止误连 PG）。
 3. **postgres**：`db.dsn` 非空。`db.path` **不用于** `store.Open` 的 SQL 连接；**用于**文件存储根：`filepath.Dir(db.path)` 派生 `uploads` / `brand-assets` / `avatars`（与现行 `composition.go` 一致）。`system-monitoring` 仍接收该 path 字符串。
 4. postgres 省略 `db.path` 时，**仍应用**缺省 `./data/schema-ui.db`（因此 Dir = `./data`）。**禁止**把 postgres 下的空 path 解释成「没有数据目录」。不新增 `db.data_dir` 键。
-5. postgres 下 `db.path` **必须是文件路径形状**（与缺省 `./data/schema-ui.db` 同形）。**禁止**配成目录（例如 `./data`：`filepath.Dir` 会变成 `.`，文件根错位）。
+5. postgres 下 `db.path` **必须是文件路径形状**（与缺省 `./data/schema-ui.db` 同形）。**禁止**配成目录（例如 `./data`：`filepath.Dir` 会变成 `.`，文件根错位）。启动判定谓词（fail-closed；缺省 `./data/schema-ui.db` 必须通过）：
+   1. **拒绝**尾部分隔符（`/`、`\` 或 `filepath.Separator`）。例：`./data/`。
+   2. 若路径已存在：**拒绝** `os.Stat` 为目录。例：已存在的 `./data`。
+   3. `filepath.Base(path)` 必须非空，且不得为 `.` 或 `..`。
+   4. **允许** cwd 相对文件（例 `schema-ui.db`）：此时 `filepath.Dir` 为 `.` 是因为父目录是 cwd，不是因为 path 本身是目录。
+   5. **禁止**因 path 本身是目录而导致 `Dir` 落到 `.`。判定用 1–3，**不要**单靠 `Dir == "."` 拒绝（否则误杀 cwd 文件）。
 6. R2 在 postgres 下应 `MkdirAll(filepath.Dir(path))` 以保证文件根存在，**不得**为此创建 sqlite 库文件。
 7. 监控页对 `db.path` 做 `os.Stat`：**仅 sqlite 且文件存在**时报告 `DBSizeBytes`；postgres 下该字段为 **0**（PostgreSQL 库体积不在 R1 端口；可用 `Ping`/`readyz` 证明连接）。
 8. Env 覆盖 YAML 的既有优先级不变。
@@ -255,6 +272,8 @@ Go `config.Config` 对应字段：`DBDialect`、`DBPath`（已有）、`DBDSN`�
 | 现行 `INSERT OR IGNORE` 等改写 | R3/R4（规则已在 §3；R1 不改代码） |
 | `authsession` 迁移中的 `sqlite_master` / `PRAGMA` | R3（已点名；R1 不改代码） |
 | `LIKE` 大小写与 INTEGER 0/1 布尔 | R3 物理 SQL（规则已在 §3） |
+| 时间列 postgres `BIGINT` 与钱包等非时间 INTEGER 宽度 | R3 对写 DDL（规则已在 §3；R1 不改代码） |
+| 现行 HTTP `/readyz` 模块门禁全绿 | R3 apply + Reconcile 之后（R2 只证 Open+Ping） |
 | 对象存储、Redis、队列 | 非本 VP |
 
-本附件 **不是** VP-013 / RT-P03「内核端口」的全部：连接/事务/占位符/upsert/时间已冻；迁移 runner 对写、备份与生产就绪属 R3/R5。R2 按本 **v1.2** 实现 `Open`/`Run`/配置校验：postgres 本拍只连 + Ping + `WasFresh`，不得把未修补的 v1.1 或 v1.0 当完整实施合同，也不得把本附件当成已覆盖备份合同或模块 SQL 已全部可移植。
+本附件 **不是** VP-013 / RT-P03「内核端口」的全部：连接/事务/占位符/upsert/时间（单位 + 宽度）已冻；迁移 runner 对写、备份与生产就绪属 R3/R5。R2 按本 **v1.3** 实现 `Open`/`Run`/配置校验：postgres 本拍只连 + Ping + `WasFresh`，不得把 INTEGER 时间列字面抄进 postgres DDL，不得把未修补的 v1.2 / v1.1 / v1.0 当完整实施合同，也不得把本附件当成已覆盖备份合同或模块 SQL 已全部可移植。

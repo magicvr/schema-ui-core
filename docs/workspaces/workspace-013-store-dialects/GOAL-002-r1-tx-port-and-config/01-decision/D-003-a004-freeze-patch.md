@@ -59,4 +59,4 @@ F-002 选「只连 + Ping + WasFresh」：由 Root 纲领 R2≠R3 唯一决定�
 
 ## 后续
 
-R2 立项前先冻结 Root I-002（驱动）。实施合同 = 本附件 **v1.2**。建议 R2 方案冻结后再 `/audit`（independent）。建议对本条关闭证据再跑一次 `/audit` 复审（可选）。
+R2 立项前先冻结 Root I-002（驱动）。实施合同已被 [D-004](D-004-a006-freeze-patch.md) 升为 **v1.3**（本条 v1.2 的时间单位与 `Open` 不 apply catalog 仍成立；时间宽度以 v1.3 为准）。建议 R2 方案冻结后再 `/audit`（independent）。
