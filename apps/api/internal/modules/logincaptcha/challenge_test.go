@@ -5,7 +5,6 @@ package logincaptcha
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -147,6 +147,6 @@ func TestRequiredFailsClosedOnConfigError(t *testing.T) {
 // failingRunner is a TxRunner that always fails, simulating a store outage.
 type failingRunner struct{ err error }
 
-func (r *failingRunner) WithTx(_ context.Context, _ func(*sql.Tx) error) error {
+func (r *failingRunner) Run(_ context.Context, _ func(kernel.Tx) error) error {
 	return r.err
 }

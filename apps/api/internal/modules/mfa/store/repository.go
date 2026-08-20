@@ -7,16 +7,16 @@ package store
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"time"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the MFA domain queries.
@@ -38,13 +38,13 @@ var (
 
 // State is one user_mfa row.
 type State struct {
-	UserID             string
-	Status             string // pending | active
-	SecretCiphertext   string
-	RecoveryCodesHash  string
-	LastUsedStep       int64
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	UserID            string
+	Status            string // pending | active
+	SecretCiphertext  string
+	RecoveryCodesHash string
+	LastUsedStep      int64
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // Proof is one mfa_proofs row.
@@ -60,12 +60,12 @@ type Proof struct {
 func (r *Repository) GetState(userID string) (*State, error) {
 	var s State
 	var created, updated int64
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		err := tx.QueryRow(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		err := tx.QueryRow(context.Background(),
 			`SELECT user_id, status, totp_secret_ciphertext, recovery_codes_hash, last_used_step, created_at, updated_at
 			 FROM user_mfa WHERE user_id = ?`, userID,
 		).Scan(&s.UserID, &s.Status, &s.SecretCiphertext, &s.RecoveryCodesHash, &s.LastUsedStep, &created, &updated)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -86,8 +86,8 @@ func (r *Repository) GetState(userID string) (*State, error) {
 // rejected with ErrActiveConflict — tearing down an active enrollment
 // requires the second factor (A-007 F-002).
 func (r *Repository) UpsertPending(userID, secretCiphertext, recoveryCodesHash string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`INSERT INTO user_mfa (user_id, status, totp_secret_ciphertext, recovery_codes_hash, last_used_step, created_at, updated_at)
 			 VALUES (?, 'pending', ?, ?, 0, ?, ?)
 			 ON CONFLICT(user_id) DO UPDATE SET
@@ -115,8 +115,8 @@ func (r *Repository) UpsertPending(userID, secretCiphertext, recoveryCodesHash s
 // Activate flips a pending enrollment to active (only pending rows may
 // activate; the login gate requires active — A-004 F-001 response).
 func (r *Repository) Activate(userID string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET status = 'active', updated_at = ? WHERE user_id = ? AND status = 'pending'`,
 			now.Unix(), userID,
 		)
@@ -132,8 +132,8 @@ func (r *Repository) Activate(userID string, now time.Time) error {
 
 // DeleteState removes the MFA enrollment (disable / admin reset).
 func (r *Repository) DeleteState(userID string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`DELETE FROM user_mfa WHERE user_id = ?`, userID); err != nil {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(), `DELETE FROM user_mfa WHERE user_id = ?`, userID); err != nil {
 			return fmt.Errorf("delete mfa state: %w", err)
 		}
 		return nil
@@ -142,8 +142,8 @@ func (r *Repository) DeleteState(userID string) error {
 
 // UpdateRecoveryCodes replaces the recovery-code hash set.
 func (r *Repository) UpdateRecoveryCodes(userID, recoveryCodesHash string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET recovery_codes_hash = ?, updated_at = ? WHERE user_id = ?`,
 			recoveryCodesHash, now.Unix(), userID,
 		)
@@ -159,8 +159,8 @@ func (r *Repository) UpdateRecoveryCodes(userID, recoveryCodesHash string, now t
 
 // SetLastUsedStep records the last consumed TOTP time step (replay window).
 func (r *Repository) SetLastUsedStep(userID string, step int64, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET last_used_step = ?, updated_at = ? WHERE user_id = ?`,
 			step, now.Unix(), userID,
 		); err != nil {
@@ -177,8 +177,8 @@ func (r *Repository) CreateProof(userID string, expiresAt time.Time, now time.Ti
 		return nil, fmt.Errorf("mfa proof id: %w", err)
 	}
 	id := hex.EncodeToString(idBytes[:])
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO mfa_proofs (id, user_id, fail_count, expires_at, created_at) VALUES (?, ?, 0, ?, ?)`,
 			id, userID, expiresAt.Unix(), now.Unix(),
 		)
@@ -197,11 +197,11 @@ func (r *Repository) CreateProof(userID string, expiresAt time.Time, now time.Ti
 func (r *Repository) GetProof(id string) (*Proof, error) {
 	var p Proof
 	var expires, created int64
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		err := tx.QueryRow(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		err := tx.QueryRow(context.Background(),
 			`SELECT id, user_id, fail_count, expires_at, created_at FROM mfa_proofs WHERE id = ?`, id,
 		).Scan(&p.ID, &p.UserID, &p.FailCount, &expires, &created)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -219,8 +219,8 @@ func (r *Repository) GetProof(id string) (*Proof, error) {
 
 // IncrementProofFailures counts one failed second-factor attempt.
 func (r *Repository) IncrementProofFailures(id string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
 			`UPDATE mfa_proofs SET fail_count = fail_count + 1 WHERE id = ?`, id,
 		); err != nil {
 			return fmt.Errorf("increment mfa proof failures: %w", err)
@@ -231,8 +231,8 @@ func (r *Repository) IncrementProofFailures(id string, now time.Time) error {
 
 // DeleteProof consumes a proof (successful verify or exhaustion).
 func (r *Repository) DeleteProof(id string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`DELETE FROM mfa_proofs WHERE id = ?`, id); err != nil {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(), `DELETE FROM mfa_proofs WHERE id = ?`, id); err != nil {
 			return fmt.Errorf("delete mfa proof: %w", err)
 		}
 		return nil

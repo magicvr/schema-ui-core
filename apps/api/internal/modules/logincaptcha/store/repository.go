@@ -6,15 +6,17 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
-// TxRunner is the platform persistence boundary consumed by the repository.
+// TxRunner is the platform persistence boundary consumed by the repository
+// (kernel port; R4 — the public surface no longer exposes *sql.Tx).
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the captcha domain queries.
@@ -33,10 +35,10 @@ var ErrChallengeNotFound = errors.New("captcha challenge not found")
 
 // CreateChallenge stores one challenge.
 func (r *Repository) CreateChallenge(id, answerHash string, expiresAt, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		// Best-effort lazy purge of expired rows (D-002 `1).
-		_, _ = tx.Exec(`DELETE FROM captcha_challenges WHERE expires_at <= ?`, now.Unix())
-		_, err := tx.Exec(
+		_, _ = tx.Exec(context.Background(), `DELETE FROM captcha_challenges WHERE expires_at <= ?`, now.Unix())
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO captcha_challenges (id, answer_hash, expires_at, created_at) VALUES (?, ?, ?, ?)`,
 			id, answerHash, expiresAt.Unix(), now.Unix(),
 		)
@@ -48,46 +50,46 @@ func (r *Repository) CreateChallenge(id, answerHash string, expiresAt, now time.
 }
 
 // ConsumeChallenge atomically verifies-and-deletes one challenge: the row is
-	// removed on ANY attempt (success or failure) so a challenge cannot be
-	// brute-forced, and expiry is enforced inside the same transaction
-	// (S-11 · GOAL-011 D-002 §1; grok A-003 F-001/F-004). Returns true only
-	// when the challenge existed, was unexpired and the answer hash matched.
-	func (r *Repository) ConsumeChallenge(id, answerHash string, now time.Time) (bool, error) {
-		matched := false
-		err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-			var stored string
-			var expiresAt int64
-			row := tx.QueryRow(`SELECT answer_hash, expires_at FROM captcha_challenges WHERE id = ?`, id)
-			if err := row.Scan(&stored, &expiresAt); err != nil {
-				if errors.Is(err, sql.ErrNoRows) {
-					return nil // unknown challenge: nothing to consume
-				}
-				return fmt.Errorf("get captcha challenge: %w", err)
+// removed on ANY attempt (success or failure) so a challenge cannot be
+// brute-forced, and expiry is enforced inside the same transaction
+// (S-11 · GOAL-011 D-002 §1; grok A-003 F-001/F-004). Returns true only
+// when the challenge existed, was unexpired and the answer hash matched.
+func (r *Repository) ConsumeChallenge(id, answerHash string, now time.Time) (bool, error) {
+	matched := false
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		var stored string
+		var expiresAt int64
+		row := tx.QueryRow(context.Background(), `SELECT answer_hash, expires_at FROM captcha_challenges WHERE id = ?`, id)
+		if err := row.Scan(&stored, &expiresAt); err != nil {
+			if errors.Is(err, kernel.ErrNoRows) {
+				return nil // unknown challenge: nothing to consume
 			}
-			// Consume on ANY attempt — success or failure (D-002 §1). A delete
-			// failure fails the whole verify (fail-closed, A-003 F-004).
-			if _, err := tx.Exec(`DELETE FROM captcha_challenges WHERE id = ?`, id); err != nil {
-				return fmt.Errorf("delete captcha challenge: %w", err)
-			}
-			if expiresAt <= now.Unix() || stored != answerHash {
-				return nil // expired or wrong answer: consumed, not matched
-			}
-			matched = true
-			return nil
-		})
-		if err != nil {
-			return false, err
+			return fmt.Errorf("get captcha challenge: %w", err)
 		}
-		return matched, nil
+		// Consume on ANY attempt — success or failure (D-002 §1). A delete
+		// failure fails the whole verify (fail-closed, A-003 F-004).
+		if _, err := tx.Exec(context.Background(), `DELETE FROM captcha_challenges WHERE id = ?`, id); err != nil {
+			return fmt.Errorf("delete captcha challenge: %w", err)
+		}
+		if expiresAt <= now.Unix() || stored != answerHash {
+			return nil // expired or wrong answer: consumed, not matched
+		}
+		matched = true
+		return nil
+	})
+	if err != nil {
+		return false, err
 	}
+	return matched, nil
+}
 
 // Enabled reports the config switch.
 func (r *Repository) Enabled() (bool, error) {
 	var enabled int
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		row := tx.QueryRow(`SELECT enabled FROM captcha_config WHERE id = 1`)
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		row := tx.QueryRow(context.Background(), `SELECT enabled FROM captcha_config WHERE id = 1`)
 		if err := row.Scan(&enabled); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, kernel.ErrNoRows) {
 				enabled = 0 // default disabled
 				return nil
 			}
@@ -103,8 +105,8 @@ func (r *Repository) Enabled() (bool, error) {
 
 // SetEnabled flips the config switch.
 func (r *Repository) SetEnabled(enabled bool, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO captcha_config (id, enabled, created_at, updated_at) VALUES (1, ?, ?, ?)
 			 ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at`,
 			boolInt(enabled), now.Unix(), now.Unix(),

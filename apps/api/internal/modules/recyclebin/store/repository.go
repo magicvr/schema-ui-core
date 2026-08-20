@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
@@ -17,7 +18,7 @@ import (
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Item is one recycle snapshot.
@@ -65,8 +66,8 @@ func (r *Repository) Record(item Item) error {
 	if err != nil {
 		return fmt.Errorf("marshal recycle payload: %w", err)
 	}
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO recycle_items (id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
 			item.ID, item.Resource, item.ResourceID, string(payload), item.ActorID, item.ActorName, item.DeletedAt.Unix(),
 		)
@@ -81,7 +82,7 @@ func (r *Repository) Record(item Item) error {
 func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 	var items []Item
 	total := 0
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := `WHERE restored_at IS NULL`
 		var args []any
 		if filter.Resource != "" {
@@ -115,12 +116,12 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 		if pageSize > 100 {
 			pageSize = 100
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM recycle_items `+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM recycle_items `+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count recycle items: %w", err)
 		}
 		query := `SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items ` + where + ` ORDER BY ` + sortColumn + ` ` + order + `, id DESC LIMIT ? OFFSET ?`
 		queryArgs := append(append([]any{}, args...), pageSize, pagination.Offset(page, pageSize, total))
-		rows, err := tx.Query(query, queryArgs...)
+		rows, err := tx.Query(context.Background(), query, queryArgs...)
 		if err != nil {
 			return fmt.Errorf("list recycle items: %w", err)
 		}
@@ -157,10 +158,10 @@ func (r *Repository) Get(id string) (*Item, error) {
 	var payload string
 	var deletedAt int64
 	var restoredAt sql.NullInt64
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		row := tx.QueryRow(`SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items WHERE id = ?`, id)
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		row := tx.QueryRow(context.Background(), `SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items WHERE id = ?`, id)
 		if err := row.Scan(&item.ID, &item.Resource, &item.ResourceID, &payload, &item.ActorID, &item.ActorName, &deletedAt, &restoredAt); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrItemNotFound
 			}
 			return fmt.Errorf("get recycle item: %w", err)
@@ -183,8 +184,8 @@ func (r *Repository) Get(id string) (*Item, error) {
 
 // MarkRestored flags a snapshot as restored (partial-unique frees the slot).
 func (r *Repository) MarkRestored(id string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`, now.Unix(), id)
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(), `UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`, now.Unix(), id)
 		if err != nil {
 			return fmt.Errorf("mark restored: %w", err)
 		}
@@ -199,8 +200,8 @@ func (r *Repository) MarkRestored(id string, now time.Time) error {
 // returns the number purged. Irreversible (D-002 §3).
 func (r *Repository) PurgeAllUnrestored() (int, error) {
 	purged := 0
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`DELETE FROM recycle_items WHERE restored_at IS NULL`)
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(), `DELETE FROM recycle_items WHERE restored_at IS NULL`)
 		if err != nil {
 			return fmt.Errorf("purge all recycle items: %w", err)
 		}
@@ -216,8 +217,8 @@ func (r *Repository) PurgeAllUnrestored() (int, error) {
 
 // Purge physically removes a snapshot (irreversible, D-002 §3).
 func (r *Repository) Purge(id string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`DELETE FROM recycle_items WHERE id = ?`, id)
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(), `DELETE FROM recycle_items WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("purge recycle item: %w", err)
 		}

@@ -6,9 +6,9 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 
@@ -17,7 +17,7 @@ import (
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the scheduled-task domain queries.
@@ -79,7 +79,7 @@ type ListFilter struct {
 func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 	tasks := []Task{}
 	var total int
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
@@ -95,7 +95,7 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 			where += `enabled = ?`
 			args = append(args, boolInt(*filter.Enabled))
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM scheduled_tasks`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM scheduled_tasks`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count tasks: %w", err)
 		}
 		sortCol, ok := map[string]string{
@@ -107,7 +107,7 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 		if filter.Order != "desc" {
 			filter.Order = "asc"
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, key, cron, name, enabled, COALESCE(description, ''), handler, created_at, updated_at
 			 FROM scheduled_tasks`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
@@ -134,14 +134,14 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 // GetTask returns one task by id.
 func (r *Repository) GetTask(id string) (*Task, error) {
 	var t Task
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var created, updated int64
-		row := tx.QueryRow(
+		row := tx.QueryRow(context.Background(),
 			`SELECT id, key, cron, name, enabled, COALESCE(description, ''), handler, created_at, updated_at
 			 FROM scheduled_tasks WHERE id = ?`, id,
 		)
 		if err := row.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &created, &updated); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("get task: %w", err)
@@ -158,8 +158,8 @@ func (r *Repository) GetTask(id string) (*Task, error) {
 
 // CreateTask inserts a task; key collisions fail with ErrKeyTaken.
 func (r *Repository) CreateTask(t Task) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO scheduled_tasks (id, key, cron, name, enabled, description, handler, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			t.ID, t.Key, t.Cron, t.Name, boolInt(t.Enabled), t.Description, t.Handler, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
@@ -176,8 +176,8 @@ func (r *Repository) CreateTask(t Task) error {
 
 // UpdateTask patches cron/name/enabled/description/handler.
 func (r *Repository) UpdateTask(id, cron, name string, enabled bool, description, handler string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE scheduled_tasks SET cron = ?, name = ?, enabled = ?, description = ?, handler = ?, updated_at = ? WHERE id = ?`,
 			cron, name, boolInt(enabled), description, handler, now.Unix(), id,
 		)
@@ -194,8 +194,8 @@ func (r *Repository) UpdateTask(id, cron, name string, enabled bool, description
 
 // DeleteTask removes a task and cascades to its run rows.
 func (r *Repository) DeleteTask(id string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`DELETE FROM scheduled_tasks WHERE id = ?`, id)
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(), `DELETE FROM scheduled_tasks WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete task: %w", err)
 		}
@@ -210,8 +210,8 @@ func (r *Repository) DeleteTask(id string) error {
 // EnabledTasks returns all enabled tasks (scheduler scan).
 func (r *Repository) EnabledTasks() ([]Task, error) {
 	tasks := []Task{}
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, key, cron, name, enabled, COALESCE(description, ''), handler, created_at, updated_at
 			 FROM scheduled_tasks WHERE enabled = 1`,
 		)
@@ -236,12 +236,12 @@ func (r *Repository) EnabledTasks() ([]Task, error) {
 
 // RecordRun inserts one run row.
 func (r *Repository) RecordRun(run TaskRun) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		finished := int64(0)
 		if run.FinishedAt != nil {
 			finished = run.FinishedAt.Unix()
 		}
-		_, err := tx.Exec(
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO task_runs (id, task_id, status, started_at, finished_at, detail, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			run.ID, run.TaskID, run.Status, run.StartedAt.Unix(), finished, run.Detail, run.CreatedAt.Unix(),
@@ -257,11 +257,11 @@ func (r *Repository) RecordRun(run TaskRun) error {
 func (r *Repository) ListTaskRuns(taskID string, filter ListFilter) ([]TaskRun, int, error) {
 	runs := []TaskRun{}
 	var total int
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM task_runs WHERE task_id = ?`, taskID).Scan(&total); err != nil {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM task_runs WHERE task_id = ?`, taskID).Scan(&total); err != nil {
 			return fmt.Errorf("count task runs: %w", err)
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at
 			 FROM task_runs WHERE task_id = ? ORDER BY started_at DESC LIMIT ? OFFSET ?`,
 			taskID, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total),
@@ -293,7 +293,7 @@ func (r *Repository) ListTaskRuns(taskID string, filter ListFilter) ([]TaskRun, 
 func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 	runs := []TaskRun{}
 	var total int
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
@@ -309,10 +309,10 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 			where += `status = ?`
 			args = append(args, s)
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM task_runs`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM task_runs`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count all runs: %w", err)
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at
 			 FROM task_runs`+where+` ORDER BY started_at DESC LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,

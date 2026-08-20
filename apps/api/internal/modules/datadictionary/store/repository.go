@@ -8,9 +8,9 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 
@@ -19,7 +19,7 @@ import (
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the dictionary domain queries.
@@ -86,14 +86,14 @@ type ListFilter struct {
 func (r *Repository) ListTypes(filter ListFilter) ([]DictType, int, error) {
 	types := []DictType{}
 	var total int
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
 			where = ` WHERE instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0`
 			args = append(args, q, q)
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_types`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_types`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count dict types: %w", err)
 		}
 		sortCol, ok := map[string]string{
@@ -105,7 +105,7 @@ func (r *Repository) ListTypes(filter ListFilter) ([]DictType, int, error) {
 		if filter.Order != "desc" {
 			filter.Order = "asc"
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, key, name, enabled, COALESCE(description, ''), sort, created_at, updated_at
 			 FROM dict_types`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
@@ -132,14 +132,14 @@ func (r *Repository) ListTypes(filter ListFilter) ([]DictType, int, error) {
 // GetType returns one type by id.
 func (r *Repository) GetType(id string) (*DictType, error) {
 	var t DictType
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		row := tx.QueryRow(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		row := tx.QueryRow(context.Background(),
 			`SELECT id, key, name, enabled, COALESCE(description, ''), sort, created_at, updated_at
 			 FROM dict_types WHERE id = ?`, id,
 		)
 		var created, updated int64
 		if err := row.Scan(&t.ID, &t.Key, &t.Name, &t.Enabled, &t.Description, &t.Sort, &created, &updated); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("get dict type: %w", err)
@@ -156,8 +156,8 @@ func (r *Repository) GetType(id string) (*DictType, error) {
 
 // CreateType inserts a type; key collisions fail with ErrTypeKeyTaken.
 func (r *Repository) CreateType(t DictType) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO dict_types (id, key, name, enabled, description, sort, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			t.ID, t.Key, t.Name, boolInt(t.Enabled), t.Description, t.Sort, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
@@ -174,8 +174,8 @@ func (r *Repository) CreateType(t DictType) error {
 
 // UpdateType patches name/enabled/description/sort.
 func (r *Repository) UpdateType(id string, name string, enabled bool, description string, sort int, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE dict_types SET name = ?, enabled = ?, description = ?, sort = ?, updated_at = ? WHERE id = ?`,
 			name, boolInt(enabled), description, sort, now.Unix(), id,
 		)
@@ -195,8 +195,8 @@ func (r *Repository) UpdateType(id string, name string, enabled bool, descriptio
 // F-003).
 func (r *Repository) DeleteType(id string) ([]string, error) {
 	entryIDs := []string{}
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT e.id FROM dict_entries e JOIN dict_types t ON e.dict_key = t.key WHERE t.id = ?`, id,
 		)
 		if err != nil {
@@ -214,7 +214,7 @@ func (r *Repository) DeleteType(id string) ([]string, error) {
 		if err := rows.Err(); err != nil {
 			return err
 		}
-		res, err := tx.Exec(`DELETE FROM dict_types WHERE id = ?`, id)
+		res, err := tx.Exec(context.Background(), `DELETE FROM dict_types WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete dict type: %w", err)
 		}
@@ -235,7 +235,7 @@ func (r *Repository) DeleteType(id string) ([]string, error) {
 func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 	entries := []DictEntry{}
 	var total int
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := ""
 		args := []any{}
 		// GOAL-015: exact dict-key narrowing (inner page) composes with q.
@@ -251,7 +251,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 			where += sep + `(instr(lower(de.dict_key), ?) > 0 OR instr(lower(de.entry_key), ?) > 0 OR instr(lower(de.label), ?) > 0)`
 			args = append(args, q, q, q)
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_entries de`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_entries de`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count dict entries: %w", err)
 		}
 		// GOAL-015 F-002/F-003 (grok audit): after the LEFT JOIN dict_types the
@@ -267,7 +267,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		if filter.Order != "desc" {
 			filter.Order = "asc"
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), COALESCE(de.badge_style, 'default'), de.created_at, de.updated_at
 			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key`+where+` ORDER BY `+sortCol+` `+filter.Order+` LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
@@ -294,14 +294,14 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 // GetEntry returns one entry by id.
 func (r *Repository) GetEntry(id string) (*DictEntry, error) {
 	var e DictEntry
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		row := tx.QueryRow(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		row := tx.QueryRow(context.Background(),
 			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), COALESCE(de.badge_style, 'default'), de.created_at, de.updated_at
 			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key WHERE de.id = ?`, id,
 		)
 		var created, updated int64
 		if err := row.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &created, &updated); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("get dict entry: %w", err)
@@ -319,9 +319,9 @@ func (r *Repository) GetEntry(id string) (*DictEntry, error) {
 // CreateEntry inserts an entry; the dict_key must exist (ErrDictKeyNotFound)
 // and (dict_key, entry_key) must be unique (ErrEntryKeyTaken).
 func (r *Repository) CreateEntry(e DictEntry) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var exists int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_types WHERE key = ?`, e.DictKey).Scan(&exists); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_types WHERE key = ?`, e.DictKey).Scan(&exists); err != nil {
 			return fmt.Errorf("check dict type: %w", err)
 		}
 		if exists == 0 {
@@ -331,7 +331,7 @@ func (r *Repository) CreateEntry(e DictEntry) error {
 		if badgeStyle == "" {
 			badgeStyle = "default"
 		}
-		_, err := tx.Exec(
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, badge_style, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, badgeStyle, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
@@ -349,9 +349,9 @@ func (r *Repository) CreateEntry(e DictEntry) error {
 // UpdateEntry patches dict_key/label/enabled/sort/remark/badgeStyle with the
 // same existence and uniqueness checks.
 func (r *Repository) UpdateEntry(id string, dictKey string, label string, enabled bool, sort int, remark string, badgeStyle string, now time.Time) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var exists int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM dict_types WHERE key = ?`, dictKey).Scan(&exists); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_types WHERE key = ?`, dictKey).Scan(&exists); err != nil {
 			return fmt.Errorf("check dict type: %w", err)
 		}
 		if exists == 0 {
@@ -360,7 +360,7 @@ func (r *Repository) UpdateEntry(id string, dictKey string, label string, enable
 		if badgeStyle == "" {
 			badgeStyle = "default"
 		}
-		res, err := tx.Exec(
+		res, err := tx.Exec(context.Background(),
 			`UPDATE dict_entries SET dict_key = ?, label = ?, enabled = ?, sort = ?, remark = ?, badge_style = ?, updated_at = ? WHERE id = ?`,
 			dictKey, label, boolInt(enabled), sort, remark, badgeStyle, now.Unix(), id,
 		)
@@ -380,8 +380,8 @@ func (r *Repository) UpdateEntry(id string, dictKey string, label string, enable
 
 // DeleteEntry removes one entry row.
 func (r *Repository) DeleteEntry(id string) error {
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`DELETE FROM dict_entries WHERE id = ?`, id)
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(), `DELETE FROM dict_entries WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete dict entry: %w", err)
 		}

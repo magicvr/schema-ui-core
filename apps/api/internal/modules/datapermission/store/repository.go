@@ -6,15 +6,15 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"time"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the data-permission domain queries.
@@ -30,9 +30,9 @@ func NewRepository(runner TxRunner) *Repository {
 
 // Domain sentinels mapped by the handler to frozen error codes.
 var (
-	ErrNotFound         = errors.New("data permission row not found")
-	ErrInvalidScope     = errors.New("invalid scope type")
-	ErrNotEnforceable   = errors.New("resource is not enforceable")
+	ErrNotFound       = errors.New("data permission row not found")
+	ErrInvalidScope   = errors.New("invalid scope type")
+	ErrNotEnforceable = errors.New("resource is not enforceable")
 )
 
 // Scope types (v1; org deferred to B-10, I-011-001 §5).
@@ -64,8 +64,8 @@ type Assignment struct {
 // ListPolicies returns all registered scope policies ordered by resource.
 func (r *Repository) ListPolicies() ([]Policy, error) {
 	policies := []Policy{}
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT resource, owner_column, default_scope, enabled, updated_at FROM data_scope_policies ORDER BY resource`)
 		if err != nil {
 			return fmt.Errorf("list scope policies: %w", err)
@@ -90,14 +90,14 @@ func (r *Repository) ListPolicies() ([]Policy, error) {
 // GetPolicy returns one policy by resource id.
 func (r *Repository) GetPolicy(resource string) (*Policy, error) {
 	var p Policy
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var updated int64
 		var enabled int
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT resource, owner_column, default_scope, enabled, updated_at FROM data_scope_policies WHERE resource = ?`,
 			resource,
 		).Scan(&p.Resource, &p.OwnerColumn, &p.DefaultScope, &enabled, &updated)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -123,8 +123,8 @@ func (r *Repository) UpsertPolicy(resource, ownerColumn, defaultScope string, en
 	if enabled {
 		enabledInt = 1
 	}
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO data_scope_policies (resource, owner_column, default_scope, enabled, updated_at)
 			 VALUES (?, ?, ?, ?, ?)
 			 ON CONFLICT(resource) DO UPDATE SET
@@ -144,8 +144,8 @@ func (r *Repository) UpsertPolicy(resource, ownerColumn, defaultScope string, en
 // ListAssignments returns the scope assignments for one user.
 func (r *Repository) ListAssignments(userID string) ([]Assignment, error) {
 	assignments := []Assignment{}
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT user_id, resource, scope_type, updated_at FROM user_data_scopes WHERE user_id = ? ORDER BY resource`,
 			userID,
 		)
@@ -170,13 +170,13 @@ func (r *Repository) ListAssignments(userID string) ([]Assignment, error) {
 // GetAssignment returns one user × resource assignment.
 func (r *Repository) GetAssignment(userID, resource string) (*Assignment, error) {
 	var a Assignment
-	err := r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		var updated int64
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT user_id, resource, scope_type, updated_at FROM user_data_scopes WHERE user_id = ? AND resource = ?`,
 			userID, resource,
 		).Scan(&a.UserID, &a.Resource, &a.ScopeType, &updated)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -199,9 +199,9 @@ func (r *Repository) UpsertAssignments(userID string, scopes map[string]string, 
 			return ErrInvalidScope
 		}
 	}
-	return r.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		for resource, scopeType := range scopes {
-			if _, err := tx.Exec(
+			if _, err := tx.Exec(context.Background(),
 				`INSERT INTO user_data_scopes (user_id, resource, scope_type, updated_at)
 				 VALUES (?, ?, ?, ?)
 				 ON CONFLICT(user_id, resource) DO UPDATE SET

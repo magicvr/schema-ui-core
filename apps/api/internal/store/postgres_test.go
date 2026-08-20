@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 )
 
 func TestRebindPostgres(t *testing.T) {
@@ -313,6 +315,32 @@ WHERE table_schema = 'public' AND data_type = 'integer' AND column_name = ANY($1
 	}
 	if leftover != 0 {
 		t.Fatalf("%d Unix time column(s) are still integer/int4 on postgres (violates R1 v1.3)", leftover)
+	}
+
+	// R4 evidence: a repository migrated to the kernel.Tx port runs on the
+	// bootstrapped postgres store (working end-to-end, not just probing).
+	captchaRepo := logincaptchastore.NewRepository(st2.(*postgres))
+	now := time.Now()
+	if err := captchaRepo.SetEnabled(true, now); err != nil {
+		t.Fatalf("captcha SetEnabled on postgres: %v", err)
+	}
+	on, err := captchaRepo.Enabled()
+	if err != nil {
+		t.Fatalf("captcha Enabled on postgres: %v", err)
+	}
+	if !on {
+		t.Errorf("captcha Enabled() after SetEnabled(true) = false, want true")
+	}
+	id := "r4repo" + strconv.FormatInt(now.UnixNano(), 10)
+	if err := captchaRepo.CreateChallenge(id, "hash", now.Add(time.Minute), now); err != nil {
+		t.Fatalf("captcha CreateChallenge on postgres: %v", err)
+	}
+	matched, err := captchaRepo.ConsumeChallenge(id, "hash", now)
+	if err != nil {
+		t.Fatalf("captcha ConsumeChallenge on postgres: %v", err)
+	}
+	if !matched {
+		t.Errorf("ConsumeChallenge with correct answer = false, want true")
 	}
 }
 
