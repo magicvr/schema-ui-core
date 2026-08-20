@@ -3,12 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
 )
 
 func TestRebindPostgres(t *testing.T) {
@@ -70,6 +72,115 @@ func TestIsSystemSchema(t *testing.T) {
 			t.Errorf("isSystemSchema(%q) = true, want false", s)
 		}
 	}
+}
+
+// TestAuthsessionPostgresApplyIntegration proves the R3 T3 ported authsession
+// migration bodies apply on a live postgres fresh bootstrap: the schema lands,
+// Unix time columns are BIGINT, and service_credentials.name is CITEXT (the
+// COLLATE NOCASE equivalent). Runs in a dedicated scratch database so the
+// shared probe DB stays clean.
+func TestAuthsessionPostgresApplyIntegration(t *testing.T) {
+	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	if dsn == "" {
+		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping authsession postgres apply integration")
+	}
+	ctx := context.Background()
+
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const dbName = "r3auth"
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	authDSN := u.String()
+
+	admin, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            authDSN,
+		ConnectTimeout: 10 * time.Second,
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pg, ok := st.(*postgres)
+	if !ok {
+		t.Fatal("expected *postgres store")
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if !st.WasFresh() {
+		t.Errorf("fresh scratch db: WasFresh() = false, want true")
+	}
+
+	descs := authmigration.Descriptors()
+	byVersion := map[int]kernel.MigrationContribution{}
+	for _, m := range descs {
+		byVersion[m.Version] = m
+	}
+	// Dependency order of the authsession-owned chain (v1 bootstraps users).
+	for _, v := range []int{1, 2, 9, 11, 12, 38, 44} {
+		m, ok := byVersion[v]
+		if !ok {
+			t.Fatalf("missing authsession migration %d", v)
+		}
+		apply := m.Apply
+		if m.ApplyPostgres != nil {
+			apply = m.ApplyPostgres
+		}
+		if err := st.Run(ctx, func(tx kernel.Tx) error { return apply(tx) }); err != nil {
+			t.Fatalf("apply %d (%s) on postgres: %v", v, m.Name, err)
+		}
+	}
+
+	var reg *string
+	if err := pg.db.QueryRowContext(ctx, `SELECT to_regclass('schema_migrations')`).Scan(&reg); err != nil {
+		t.Fatal(err)
+	}
+	if reg == nil {
+		t.Fatal("schema_migrations ledger not created by the postgres baseline")
+	}
+	// R1 v1.3: Unix time columns are BIGINT on postgres.
+	for _, tc := range []struct{ table, col string }{
+		{"users", "created_at"}, {"refresh_tokens", "expires_at"},
+		{"roles", "updated_at"}, {"service_credentials", "created_at"},
+	} {
+		var typ string
+		if err := pg.db.QueryRowContext(ctx,
+			`SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
+			tc.table, tc.col,
+		).Scan(&typ); err != nil {
+			t.Fatalf("read type %s.%s: %v", tc.table, tc.col, err)
+		}
+		if typ != "bigint" {
+			t.Errorf("%s.%s data_type = %q, want bigint", tc.table, tc.col, typ)
+		}
+	}
+	// R1 v1.4 F-002: COLLATE NOCASE becomes CITEXT on postgres (USER-DEFINED).
+	var nameTyp string
+	if err := pg.db.QueryRowContext(ctx,
+		`SELECT data_type FROM information_schema.columns WHERE table_name = 'service_credentials' AND column_name = 'name'`,
+	).Scan(&nameTyp); err != nil {
+		t.Fatal(err)
+	}
+	if nameTyp != "USER-DEFINED" {
+		t.Errorf("service_credentials.name data_type = %q, want USER-DEFINED (citext)", nameTyp)
+	}
+	_ = st.Close()
 }
 
 func TestOpenPostgresRequiresDSN(t *testing.T) {

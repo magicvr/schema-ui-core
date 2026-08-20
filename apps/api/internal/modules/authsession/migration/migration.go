@@ -133,6 +133,139 @@ var mustChangePasswordDDL = []string{
 	`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`,
 }
 
+// ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
+// The sqlite/canonical SQL above is untouched so its checksums stay stable;
+// these bodies run only on the postgres runner. Unix time columns are BIGINT,
+// COLLATE NOCASE becomes CITEXT, and introspective fingerprinting is omitted
+// (postgres fresh bootstrap has no legacy sqlite file DB to fingerprint).
+
+// postgresBaselineDDL mirrors r2BaselineDDL + schemaMigrationsDDL with BIGINT
+// time columns; the ledger is created here (the sqlite Apply creates it inside
+// migrateBaseline, this postgres body inlines it).
+var postgresBaselineDDL = []string{
+	`CREATE TABLE schema_migrations (
+  version    INTEGER PRIMARY KEY,
+  name       TEXT NOT NULL UNIQUE,
+  checksum   TEXT NOT NULL CHECK (length(checksum) = 64),
+  applied_at BIGINT NOT NULL
+)`,
+	`CREATE TABLE users (
+  id            TEXT PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL,
+  roles         TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at    BIGINT NOT NULL,
+  updated_at    BIGINT NOT NULL
+)`,
+	`CREATE TABLE refresh_tokens (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at BIGINT NOT NULL,
+  revoked_at BIGINT,
+  created_at BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id)`,
+}
+
+// postgresRBACDDL mirrors rbacExpandDDL with BIGINT time columns.
+var postgresRBACDDL = []string{
+	`CREATE TABLE roles (
+  id         TEXT PRIMARY KEY,
+  key        TEXT NOT NULL UNIQUE CHECK (key <> ''),
+  name       TEXT NOT NULL,
+  system     INTEGER NOT NULL DEFAULT 0 CHECK (system IN (0, 1)),
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+)`,
+	`CREATE TABLE user_roles (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE RESTRICT,
+  PRIMARY KEY (user_id, role_id)
+)`,
+	`CREATE INDEX idx_user_roles_role_id ON user_roles(role_id)`,
+	`CREATE TABLE permissions (
+  id          TEXT PRIMARY KEY,
+  key         TEXT NOT NULL UNIQUE CHECK (key <> ''),
+  description TEXT NOT NULL DEFAULT '',
+  created_at  BIGINT NOT NULL,
+  updated_at  BIGINT NOT NULL
+)`,
+	`CREATE TABLE role_permissions (
+  role_id       TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE RESTRICT,
+  PRIMARY KEY (role_id, permission_id)
+)`,
+	`CREATE INDEX idx_role_permissions_permission_id ON role_permissions(permission_id)`,
+	`CREATE TABLE menu_items (
+  id          TEXT PRIMARY KEY,
+  page_ref    TEXT NOT NULL UNIQUE CHECK (page_ref <> ''),
+  feature_key TEXT NOT NULL UNIQUE CHECK (feature_key <> ''),
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  enabled     INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+  created_at  BIGINT NOT NULL,
+  updated_at  BIGINT NOT NULL
+)`,
+	`CREATE TABLE role_menu_items (
+  role_id      TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  menu_item_id TEXT NOT NULL REFERENCES menu_items(id) ON DELETE RESTRICT,
+  PRIMARY KEY (role_id, menu_item_id)
+)`,
+	`CREATE INDEX idx_role_menu_items_menu_item_id ON role_menu_items(menu_item_id)`,
+}
+
+// postgresSystemDataDDL mirrors systemDataReconcileDDL with BIGINT applied_at.
+var postgresSystemDataDDL = []string{
+	`CREATE TABLE system_data_reconcile (
+  module_id        TEXT NOT NULL,
+  kind             TEXT NOT NULL CHECK (kind IN ('base','authorization','navigation')),
+  contribution_key TEXT NOT NULL,
+  version          INTEGER NOT NULL CHECK (version > 0),
+  checksum         TEXT NOT NULL CHECK (length(checksum) = 64),
+  applied_at       BIGINT NOT NULL,
+  PRIMARY KEY (module_id, kind, contribution_key)
+)`,
+	`CREATE TABLE system_data_grants (
+  module_id        TEXT NOT NULL,
+  kind             TEXT NOT NULL CHECK (kind IN ('authorization','navigation')),
+  contribution_key TEXT NOT NULL,
+  role_key         TEXT NOT NULL,
+  target_id        TEXT NOT NULL,
+  PRIMARY KEY (module_id, kind, contribution_key, role_key, target_id)
+)`,
+}
+
+// postgresAccountLockDDL mirrors accountLockDDL; locked_until is a unix-seconds
+// time column and must be BIGINT on postgres.
+var postgresAccountLockDDL = []string{
+	`ALTER TABLE users ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN locked_until BIGINT NOT NULL DEFAULT 0`,
+}
+
+// postgresServiceCredentialsDDL mirrors serviceCredentialsDDL with BIGINT time
+// columns and the name unique key on CITEXT (case-insensitive like sqlite
+// COLLATE NOCASE; R1 v1.4 F-002 — citing the extension is the DDL-level
+// equivalent).
+var postgresServiceCredentialsDDL = []string{
+	`CREATE EXTENSION IF NOT EXISTS citext`,
+	`CREATE TABLE service_credentials (
+  id           TEXT PRIMARY KEY CHECK (length(id) = 32),
+  name         CITEXT NOT NULL UNIQUE CHECK (length(trim(name)) BETWEEN 1 AND 100),
+  token_prefix TEXT NOT NULL CHECK (length(token_prefix) = 15),
+  token_hash   TEXT NOT NULL UNIQUE CHECK (length(token_hash) = 64),
+  scopes       TEXT NOT NULL,
+  expires_at   BIGINT NOT NULL,
+  revoked_at   BIGINT,
+  last_used_at BIGINT,
+  created_by   TEXT NOT NULL,
+  created_at   BIGINT NOT NULL,
+  updated_at   BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_service_credentials_created_at ON service_credentials(created_at DESC, id DESC)`,
+	`CREATE INDEX idx_service_credentials_expires_at ON service_credentials(expires_at)`,
+}
+
 var serviceCredentialsDDL = []string{
 	`CREATE TABLE service_credentials (
   id           TEXT PRIMARY KEY CHECK (length(id) = 32),
@@ -160,6 +293,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "r2_baseline",
 			Checksum:             kernel.MigrationChecksum(r2BaselineDDL, "0001:r2-baseline:v1"),
 			Apply:                migrateBaseline,
+			ApplyPostgres:        migrateBaselinePG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "rbac_expand"},
@@ -167,6 +301,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "rbac_expand",
 			Checksum:             kernel.MigrationChecksum(rbacExpandDDL, "0002:rbac-expand:v1"),
 			Apply:                migrateRBAC,
+			ApplyPostgres:        migrateRBACPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "system_data_reconcile"},
@@ -174,6 +309,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "system_data_reconcile",
 			Checksum:             kernel.MigrationChecksum(systemDataReconcileDDL, "0009:system-data-reconcile:v1"),
 			Apply:                migrateSystemDataReconcile,
+			ApplyPostgres:        migrateSystemDataPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "access_token_revocation"},
@@ -181,6 +317,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "access_token_revocation",
 			Checksum:             kernel.MigrationChecksum(accessTokenRevocationDDL, "0011:access-token-revocation:v1"),
 			Apply:                migrateAccessTokenRevocation,
+			// ApplyPostgres nil: portable additive ALTER (INTEGER token_version).
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account_lock"},
@@ -188,6 +325,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "account_lock",
 			Checksum:             kernel.MigrationChecksum(accountLockDDL, "0012:account-lock:v1"),
 			Apply:                migrateAccountLock,
+			ApplyPostgres:        migrateAccountLockPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "must_change_password"},
@@ -195,6 +333,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "must_change_password",
 			Checksum:             kernel.MigrationChecksum(mustChangePasswordDDL, "0038:must-change-password:v1"),
 			Apply:                migrateMustChangePassword,
+			// ApplyPostgres nil: portable additive ALTER (INTEGER flag).
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "service_credentials"},
@@ -202,6 +341,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "service_credentials",
 			Checksum:             kernel.MigrationChecksum(serviceCredentialsDDL, "0044:service-credentials:v1"),
 			Apply:                migrateServiceCredentials,
+			ApplyPostgres:        migrateServiceCredentialsPG,
 		},
 	}
 }
@@ -275,6 +415,55 @@ func migrateServiceCredentials(tx kernel.Tx) error {
 	for _, stmt := range serviceCredentialsDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create service credentials: %w", err)
+		}
+	}
+	return nil
+}
+
+// migrateBaselinePG is the postgres fresh-bootstrap variant of migrateBaseline:
+// it always creates the ledger + baseline schema (no R2 sqlite fingerprint).
+func migrateBaselinePG(tx kernel.Tx) error {
+	for _, stmt := range postgresBaselineDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create baseline (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateRBACPG(tx kernel.Tx) error {
+	for _, stmt := range postgresRBACDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create rbac (postgres): %w", err)
+		}
+	}
+	// On a postgres fresh bootstrap there are no pre-existing users, so this is
+	// a no-op here and stays for parity with the sqlite apply.
+	return backfillRoles(tx)
+}
+
+func migrateSystemDataPG(tx kernel.Tx) error {
+	for _, stmt := range postgresSystemDataDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create system-data reconcile tables (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateAccountLockPG(tx kernel.Tx) error {
+	for _, stmt := range postgresAccountLockDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("add account-lock columns (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateServiceCredentialsPG(tx kernel.Tx) error {
+	for _, stmt := range postgresServiceCredentialsDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create service credentials (postgres): %w", err)
 		}
 	}
 	return nil

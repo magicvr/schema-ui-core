@@ -96,8 +96,12 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 
 func (p *postgres) applyMigrationPG(ctx context.Context, migration kernel.MigrationContribution) error {
 	return p.Run(ctx, func(tx kernel.Tx) error {
-		if migration.Apply != nil {
-			if err := migration.Apply(tx); err != nil {
+		apply := migration.Apply
+		if migration.ApplyPostgres != nil {
+			apply = migration.ApplyPostgres
+		}
+		if apply != nil {
+			if err := apply(tx); err != nil {
 				return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 			}
 		}

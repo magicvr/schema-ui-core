@@ -96,10 +96,16 @@ type ConfigurationContribution struct {
 // (freeze package §4).
 type MigrationContribution struct {
 	ContributionIdentity
-	Version           int
-	Name              string
-	Checksum          string
-	Apply             func(Tx) error
+	Version  int
+	Name     string
+	Checksum string
+	Apply    func(Tx) error
+	// ApplyPostgres is the optional postgres-flavored apply body (R3 dual-dialect
+	// ledger, R1 v1.4 §4). nil = the canonical Apply is portable and runs on
+	// postgres unchanged (e.g. additive ALTERs). When set, the postgres migrate
+	// runner uses it instead of Apply; the ledger checksum stays bound to the
+	// sqlite/canonical history in both cases.
+	ApplyPostgres     func(Tx) error
 	Tombstone         bool
 	ReconcileVersion  int
 	ReconcileChecksum string
