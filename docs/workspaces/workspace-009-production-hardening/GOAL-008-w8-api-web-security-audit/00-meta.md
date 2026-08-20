@@ -6,7 +6,7 @@ progress: 4/4
 parent: GOAL-001-production-hardening
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-008 · W8 api/web 独立安全审计（审计报告落盘）

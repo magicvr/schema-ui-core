@@ -51,7 +51,7 @@ independent provider（沿用 workspace-008 D-002）：**grok build · grok-4.5 
 | W5 scan | （未开子目标） | 2026-08-14 全量审计 **0 中高危**；低危就地修补见 Root E-002；**go 判定：无影响、不暂挂**（安全加固与冻结 fail-closed 语义一致；未改 Profile/模块矩阵/Manifest 装配/协议 pin） |
 | W6 | GOAL-006-w6-scan-findings-remediation | **done**（4/4 · 2026-08-15 完成；2026-08-17 补记用户授权关门 D-002 + close-out self 审计 A-002 pass） |
 | W7 | GOAL-007-w7-api-web-security-audit | **done**（4/4 · 2026-08-19 独立审计 A-001 fail → D-002 整单采纳 → E-002/E-003 实施 → self A-002 + independent A-004 pass → **A-005 独立代码复核 pass + VP-008 go 宣称恢复（D-003）**） |
-| W8 | GOAL-008-w8-api-web-security-audit | **done**（4/4 · 2026-08-20：A-001 fail → D-002 整单采纳 + go 暂挂 → E-002 修复 → A-002 self pass + A-003 independent pass → D-003 恢复 VP-008 go 宣称） |
+| W8 | GOAL-008-w8-api-web-security-audit | **done**（4/4 · 2026-08-20：A-001 fail → D-002 整单采纳 + go 暂挂 → E-002 修复 → A-002 self pass + A-003 independent pass → D-003 恢复 VP-008 go 宣称；真实浏览器/CSP 回归 E-004 通过） |
 
 ## 固定共享资料引用
 
