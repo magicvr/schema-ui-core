@@ -31,6 +31,34 @@ var siteSettingsDDL = []string{
 )`,
 }
 
+// siteSettingsPGDDL is the postgres variant of siteSettingsDDL: updated_at
+// (Unix time) is BIGINT (R1 v1.4 §3).
+var siteSettingsPGDDL = []string{
+	`CREATE TABLE site_settings (
+  id         TEXT PRIMARY KEY CHECK (id = 'default'),
+  site_title TEXT NOT NULL,
+  logo_url   TEXT NOT NULL DEFAULT '',
+  updated_at BIGINT NOT NULL
+)`,
+}
+
+// migrate0007PG is the postgres variant of migrate0007 (BIGINT updated_at).
+func migrate0007PG(tx kernel.Tx) error {
+	for _, stmt := range siteSettingsPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create site_settings (postgres): %w", err)
+		}
+	}
+	now := time.Now().UTC().Unix()
+	if _, err := tx.Exec(context.Background(),
+		`INSERT INTO site_settings (id, site_title, logo_url, updated_at) VALUES ('default', ?, '', ?)`,
+		DefaultSiteTitle, now,
+	); err != nil {
+		return fmt.Errorf("seed site_settings (postgres): %w", err)
+	}
+	return nil
+}
+
 // migrate0007 creates site_settings and seeds the default singleton row.
 func migrate0007(tx kernel.Tx) error {
 	for _, stmt := range siteSettingsDDL {
@@ -113,6 +141,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "site_settings",
 			Checksum:             kernel.MigrationChecksum(siteSettingsDDL, transformID),
 			Apply:                migrate0007,
+			ApplyPostgres:        migrate0007PG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_settings_v2"},

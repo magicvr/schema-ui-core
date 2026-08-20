@@ -11,6 +11,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
+	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 )
 
 func TestRebindPostgres(t *testing.T) {
@@ -181,6 +182,119 @@ func TestAuthsessionPostgresApplyIntegration(t *testing.T) {
 		t.Errorf("service_credentials.name data_type = %q, want USER-DEFINED (citext)", nameTyp)
 	}
 	_ = st.Close()
+}
+
+// TestFullCatalogPostgresBootstrapIntegration drives T3 to completion: the
+// COMPLETE compiled catalog must fresh-bootstrap on a live postgres via the
+// R3 runner (PostgresApply ?? Apply per migration), creating the ledger with
+// sqlite-bound checksums. It is the close-out evidence test for GOAL-004.
+func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
+	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	if dsn == "" {
+		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping full catalog postgres bootstrap")
+	}
+	ctx := context.Background()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const dbName = "r3full"
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	fullDSN := u.String()
+
+	admin, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(catalog) == 0 {
+		t.Fatal("empty compiled catalog")
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            fullDSN,
+		ConnectTimeout: 15 * time.Second,
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pg := st.(*postgres)
+	t.Cleanup(func() { _ = st.Close() })
+	if !st.WasFresh() {
+		t.Errorf("fresh scratch db: WasFresh() = false, want true")
+	}
+
+	if err := pg.migrate(catalog); err != nil {
+		t.Fatalf("full catalog postgres bootstrap failed at: %v", err)
+	}
+	_ = st.Close()
+
+	// Reopen and migrate again = idempotent; ledger matches catalog.
+	st2, err := Open(ctx, OpenOptions{Dialect: kernel.DialectPostgres, DSN: fullDSN, ConnectTimeout: 15 * time.Second}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+	if st2.WasFresh() {
+		t.Errorf("reopened bootstrapped db: WasFresh() = true, want false")
+	}
+	if err := st2.(*postgres).migrate(catalog); err != nil {
+		t.Fatalf("re-migrate full catalog should be idempotent: %v", err)
+	}
+	var migCount int
+	if err := st2.(*postgres).db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != len(catalog) {
+		t.Fatalf("ledger rows = %d, want %d (full catalog)", migCount, len(catalog))
+	}
+
+	// R1 v1.3 / §3 compliance: ported Unix time + money columns are BIGINT.
+	// (operation_log is the known outstanding module — see GOAL-004 T3 notes.)
+	assertPGType := func(table, col, want string) {
+		t.Helper()
+		var typ string
+		if err := st2.(*postgres).db.QueryRowContext(ctx,
+			`SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
+			table, col,
+		).Scan(&typ); err != nil {
+			t.Fatalf("read type %s.%s: %v", table, col, err)
+		}
+		if typ != want {
+			t.Errorf("%s.%s data_type = %q, want %q", table, col, typ, want)
+		}
+	}
+	for _, tc := range []struct{ table, col string }{
+		{"users", "created_at"}, {"refresh_tokens", "expires_at"},
+		{"service_credentials", "created_at"},
+		{"jobs", "created_at"}, {"jobs", "lease_expires_at"},
+		{"notifications", "created_at"}, {"dict_types", "updated_at"},
+		{"data_scope_policies", "updated_at"}, {"user_mfa", "created_at"},
+		{"mfa_proofs", "expires_at"}, {"captcha_challenges", "expires_at"},
+		{"scheduled_tasks", "created_at"}, {"task_runs", "started_at"},
+		{"site_settings", "updated_at"},
+		{"recycle_items", "deleted_at"},
+		{"wallet_accounts", "balance_total"}, {"wallet_accounts", "created_at"},
+		{"wallet_ledger_entries", "amount_delta"},
+	} {
+		assertPGType(tc.table, tc.col, "bigint")
+	}
 }
 
 func TestOpenPostgresRequiresDSN(t *testing.T) {

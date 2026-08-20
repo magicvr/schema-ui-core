@@ -64,6 +64,79 @@ var walletDDL = []string{
 )`,
 }
 
+// walletPGDDL is the postgres variant of walletDDL: money columns
+// (balance_* / amount_delta / balance_after_*) and Unix time columns
+// (created_at / updated_at) are BIGINT (R1 v1.4 §3; wallet money exceeds int4).
+var walletPGDDL = []string{
+	`CREATE TABLE wallet_accounts (
+  id                TEXT PRIMARY KEY,
+  owner_type        TEXT NOT NULL CHECK (owner_type IN ('user','business','system')),
+  owner_id          TEXT NOT NULL,
+  currency          TEXT NOT NULL DEFAULT 'CNY',
+  balance_total     BIGINT NOT NULL DEFAULT 0 CHECK (balance_total >= 0),
+  balance_available BIGINT NOT NULL DEFAULT 0 CHECK (balance_available >= 0),
+  balance_frozen    BIGINT NOT NULL DEFAULT 0 CHECK (balance_frozen >= 0),
+  status            TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','disabled')),
+  version           INTEGER NOT NULL DEFAULT 0,
+  created_at        BIGINT NOT NULL,
+  updated_at        BIGINT NOT NULL,
+  UNIQUE (owner_type, owner_id, currency),
+  CHECK (balance_total = balance_available + balance_frozen)
+)`,
+	`CREATE TABLE wallet_ledger_entries (
+  id                      TEXT PRIMARY KEY,
+  account_id              TEXT NOT NULL,
+  entry_type              TEXT NOT NULL CHECK (entry_type IN ('adjust','freeze','unfreeze')),
+  amount_delta            BIGINT NOT NULL CHECK (amount_delta != 0),
+  balance_after_total     BIGINT NOT NULL CHECK (balance_after_total >= 0),
+  balance_after_available BIGINT NOT NULL CHECK (balance_after_available >= 0),
+  balance_after_frozen    BIGINT NOT NULL CHECK (balance_after_frozen >= 0),
+  ref_type                TEXT,
+  ref_id                  TEXT,
+  idempotency_key         TEXT,
+  memo                    TEXT NOT NULL,
+  actor_id                TEXT NOT NULL,
+  actor_name              TEXT NOT NULL,
+  created_at              BIGINT NOT NULL,
+  UNIQUE (account_id, idempotency_key),
+  CHECK (balance_after_total = balance_after_available + balance_after_frozen)
+)`,
+	`CREATE INDEX idx_wallet_ledger_account ON wallet_ledger_entries(account_id, created_at DESC)`,
+	`CREATE TABLE wallet_reconciliation_runs (
+  id             TEXT PRIMARY KEY,
+  account_id     TEXT,
+  result         TEXT NOT NULL CHECK (result IN ('consistent','inconsistent')),
+  mismatch_count INTEGER NOT NULL DEFAULT 0,
+  details        TEXT NOT NULL DEFAULT '{}',
+  actor_id       TEXT NOT NULL,
+  created_at     BIGINT NOT NULL
+)`,
+}
+
+// walletLedgerDeductPGDDL is the postgres variant of walletLedgerDeductDDL:
+// BIGINT money/time columns.
+var walletLedgerDeductPGDDL = []string{
+	`CREATE TABLE wallet_ledger_entries (
+  id                      TEXT PRIMARY KEY,
+  account_id              TEXT NOT NULL,
+  entry_type              TEXT NOT NULL CHECK (entry_type IN ('adjust','freeze','unfreeze','deduct_frozen')),
+  amount_delta            BIGINT NOT NULL CHECK (amount_delta != 0),
+  balance_after_total     BIGINT NOT NULL CHECK (balance_after_total >= 0),
+  balance_after_available BIGINT NOT NULL CHECK (balance_after_available >= 0),
+  balance_after_frozen    BIGINT NOT NULL CHECK (balance_after_frozen >= 0),
+  ref_type                TEXT,
+  ref_id                  TEXT,
+  idempotency_key         TEXT,
+  memo                    TEXT NOT NULL,
+  actor_id                TEXT NOT NULL,
+  actor_name              TEXT NOT NULL,
+  created_at              BIGINT NOT NULL,
+  UNIQUE (account_id, idempotency_key),
+  CHECK (balance_after_total = balance_after_available + balance_after_frozen)
+)`,
+	`CREATE INDEX idx_wallet_ledger_account ON wallet_ledger_entries(account_id, created_at DESC)`,
+}
+
 // walletLedgerDeductDDL (0033 · GOAL-021 D-001 §3): the ledger entry_type CHECK
 // gains 'deduct_frozen' (consume from the frozen bucket). SQLite cannot alter a
 // CHECK, so the table is rebuilt (rename → create → copy → drop) like the
@@ -91,10 +164,25 @@ var walletLedgerDeductDDL = []string{
 }
 
 func migrateWalletLedgerDeduct(tx kernel.Tx) error {
+	return walletLedgerDeduct(rebuildCommon{tx: tx, ddl: walletLedgerDeductDDL})
+}
+
+// migrateWalletLedgerDeductPG is the postgres variant of migrateWalletLedgerDeduct.
+func migrateWalletLedgerDeductPG(tx kernel.Tx) error {
+	return walletLedgerDeduct(rebuildCommon{tx: tx, ddl: walletLedgerDeductPGDDL})
+}
+
+type rebuildCommon struct {
+	tx  kernel.Tx
+	ddl []string
+}
+
+func walletLedgerDeduct(r rebuildCommon) error {
+	tx, ddl := r.tx, r.ddl
 	if _, err := tx.Exec(context.Background(), `ALTER TABLE wallet_ledger_entries RENAME TO wallet_ledger_entries_old`); err != nil {
 		return fmt.Errorf("rename wallet_ledger_entries: %w", err)
 	}
-	if _, err := tx.Exec(context.Background(), walletLedgerDeductDDL[0]); err != nil {
+	if _, err := tx.Exec(context.Background(), ddl[0]); err != nil {
 		return fmt.Errorf("recreate wallet_ledger_entries: %w", err)
 	}
 	if _, err := tx.Exec(context.Background(),
@@ -106,7 +194,7 @@ func migrateWalletLedgerDeduct(tx kernel.Tx) error {
 	if _, err := tx.Exec(context.Background(), `DROP TABLE wallet_ledger_entries_old`); err != nil {
 		return fmt.Errorf("drop wallet_ledger_entries_old: %w", err)
 	}
-	if _, err := tx.Exec(context.Background(), walletLedgerDeductDDL[1]); err != nil {
+	if _, err := tx.Exec(context.Background(), ddl[1]); err != nil {
 		return fmt.Errorf("recreate wallet ledger index: %w", err)
 	}
 	return nil
@@ -121,6 +209,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "wallet",
 			Checksum:             kernel.MigrationChecksum(walletDDL, "0031:wallet:v1"),
 			Apply:                migrateWallet,
+			ApplyPostgres:        migrateWalletPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet_ledger_deduct"},
@@ -128,6 +217,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "wallet_ledger_deduct",
 			Checksum:             kernel.MigrationChecksum(walletLedgerDeductDDL, "0033:wallet-ledger-deduct:v1"),
 			Apply:                migrateWalletLedgerDeduct,
+			ApplyPostgres:        migrateWalletLedgerDeductPG,
 		},
 	}
 }
@@ -136,6 +226,15 @@ func migrateWallet(tx kernel.Tx) error {
 	for _, stmt := range walletDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create wallet tables: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateWalletPG(tx kernel.Tx) error {
+	for _, stmt := range walletPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create wallet tables (postgres): %w", err)
 		}
 	}
 	return nil

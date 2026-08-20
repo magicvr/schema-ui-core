@@ -25,6 +25,21 @@ var notificationsDDL = []string{
 	`CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC)`,
 }
 
+// notificationsPGDDL is the postgres variant of notificationsDDL: the Unix
+// time columns (read_at / created_at) are BIGINT (R1 v1.4 §3).
+var notificationsPGDDL = []string{
+	`CREATE TABLE notifications (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  event      TEXT NOT NULL CHECK (event IN ('account.locked','account.disabled','account.unlocked','account.password-changed')),
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  read_at    BIGINT,
+  created_at BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC)`,
+}
+
 // notificationsEnabledDDL (0017): per-user in-app notification master switch.
 // 0 = new notifications are not produced for this user (settings API).
 var notificationsEnabledDDL = []string{
@@ -48,6 +63,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "notifications",
 			Checksum:             kernel.MigrationChecksum(notificationsDDL, "0016:notifications:v1"),
 			Apply:                migrateNotifications,
+			ApplyPostgres:        migrateNotificationsPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "notifications_enabled"},
@@ -70,6 +86,15 @@ func migrateNotifications(tx kernel.Tx) error {
 	for _, stmt := range notificationsDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create notifications: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateNotificationsPG(tx kernel.Tx) error {
+	for _, stmt := range notificationsPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create notifications (postgres): %w", err)
 		}
 	}
 	return nil

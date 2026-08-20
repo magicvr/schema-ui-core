@@ -38,6 +38,32 @@ var tasksDDL = []string{
 	`CREATE INDEX idx_task_runs_task_started ON task_runs(task_id, started_at DESC)`,
 }
 
+// tasksPGDDL is the postgres variant of tasksDDL: Unix time columns
+// (created_at / updated_at / started_at / finished_at) are BIGINT (R1 v1.4 §3).
+var tasksPGDDL = []string{
+	`CREATE TABLE scheduled_tasks (
+  id          TEXT PRIMARY KEY,
+  key         TEXT NOT NULL UNIQUE,
+  cron        TEXT NOT NULL,
+  name        TEXT NOT NULL,
+  enabled     INTEGER NOT NULL DEFAULT 1,
+  description TEXT,
+  handler     TEXT NOT NULL DEFAULT 'system.noop',
+  created_at  BIGINT NOT NULL,
+  updated_at  BIGINT NOT NULL
+)`,
+	`CREATE TABLE task_runs (
+  id          TEXT PRIMARY KEY,
+  task_id     TEXT NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  status      TEXT NOT NULL CHECK (status IN ('ran','failed')),
+  started_at  BIGINT NOT NULL,
+  finished_at BIGINT,
+  detail      TEXT,
+  created_at  BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_task_runs_task_started ON task_runs(task_id, started_at DESC)`,
+}
+
 // Descriptors returns the immutable 0021 tasks history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -47,6 +73,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "scheduled_tasks",
 			Checksum:             kernel.MigrationChecksum(tasksDDL, "0021:scheduled-tasks:v1"),
 			Apply:                migrateTasks,
+			ApplyPostgres:        migrateTasksPG,
 		},
 	}
 }
@@ -55,6 +82,15 @@ func migrateTasks(tx kernel.Tx) error {
 	for _, stmt := range tasksDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create scheduled task tables: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateTasksPG(tx kernel.Tx) error {
+	for _, stmt := range tasksPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create scheduled task tables (postgres): %w", err)
 		}
 	}
 	return nil

@@ -42,6 +42,34 @@ var dictDDL = []string{
 	`CREATE INDEX idx_dict_entries_dict_key ON dict_entries(dict_key, sort)`,
 }
 
+// dictPGDDL is the postgres variant of dictDDL: created_at/updated_at are
+// BIGINT (R1 v1.4 §3).
+var dictPGDDL = []string{
+	`CREATE TABLE dict_types (
+  id         TEXT PRIMARY KEY,
+  key        TEXT NOT NULL UNIQUE,
+  name       TEXT NOT NULL,
+  enabled    INTEGER NOT NULL DEFAULT 1,
+  description TEXT,
+  sort       INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+)`,
+	`CREATE TABLE dict_entries (
+  id         TEXT PRIMARY KEY,
+  dict_key   TEXT NOT NULL REFERENCES dict_types(key) ON DELETE CASCADE,
+  entry_key  TEXT NOT NULL,
+  label      TEXT NOT NULL,
+  enabled    INTEGER NOT NULL DEFAULT 1,
+  sort       INTEGER NOT NULL DEFAULT 0,
+  remark     TEXT,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL,
+  UNIQUE (dict_key, entry_key)
+)`,
+	`CREATE INDEX idx_dict_entries_dict_key ON dict_entries(dict_key, sort)`,
+}
+
 // dictEntryBadgeStyleDDL (0039 · W16-F09): optional badge/tag color style for
 // dictionary entries. Additive and backward compatible.
 var dictEntryBadgeStyleDDL = []string{
@@ -57,6 +85,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "dictionary",
 			Checksum:             kernel.MigrationChecksum(dictDDL, "0019:dictionary:v1"),
 			Apply:                migrateDict,
+			ApplyPostgres:        migrateDictPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "dict_entry_badge_style"},
@@ -72,6 +101,15 @@ func migrateDict(tx kernel.Tx) error {
 	for _, stmt := range dictDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create dictionary tables: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateDictPG(tx kernel.Tx) error {
+	for _, stmt := range dictPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create dictionary tables (postgres): %w", err)
 		}
 	}
 	return nil
