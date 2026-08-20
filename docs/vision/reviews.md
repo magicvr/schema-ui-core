@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-20
 parent: null
-version: 1.3.40
+version: 1.3.42
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.40
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-028 `pass`；V-F057 recommended → **fixed**（VP-012 v0.2.0 完整关门 + roadmap Tier A 移交）；VRev-027 V-F054～V-F056 recommended → **fixed**；均无新增 required |
+| — | — | — | **无** | VRev-029 `pass`；V-F058/V-F059 recommended → **fixed**（VP-013 激活 + Root P-001/I-00N/配置面）。VRev-028 V-F057、VRev-027 V-F054～V-F056 仍为 fixed |
 
-> Vision Review **open required = 0**。**VRev-028（self，`pass`）**：原 verdict 保留；V-F057 recommended → **fixed**。当前**无 active 交付 VP**；持续程序 **VP-009** / **VP-010**；**[VP-012](plans/VP-012-shared-cross-module-contracts.md) 已完整 `closed`**。2026-08-20 起后续方向按 [roadmap.md](roadmap.md) **架构 / Admin 功能 / 业务域** 三分支并行登记（VR-026 editorial；取代同日 VR-025 二分）。
+> Vision Review **open required = 0**。**VRev-028（self，`pass`）**：原 verdict 保留；V-F057 recommended → **fixed**。当前交付 VP = **[VP-013-store-dialects](plans/VP-013-store-dialects.md) `active`**（架构 A1；lead `workspace-013-store-dialects`；VRev-029 `pass`）。持续程序 **VP-009** / **VP-010**；**[VP-012](plans/VP-012-shared-cross-module-contracts.md) 已完整 `closed`**。后续方向按 [roadmap.md](roadmap.md) 三分支并行登记。
 
 ## 条目索引
 
@@ -66,3 +66,4 @@ version: 1.3.40
 | VRev-026 | 2026-08-10 | independent | VP-008 v0.9.0 · 意图清晰度 / 残余问题 / 未考虑项 | pass | 0 | 原 verdict 保留；V-F053 recommended → fixed（VP-008 v0.10.0 + 报告内 `/vision` 响应）；报告时 VP-008 active、0 workspace；现已绑定 `workspace-008-admin-module-readiness`，用户 2026-08-10 签发 `go` 并确认 VP-008 **closed** | [VRev-026-vp008-v0-9-0-intent-clarity-pass.md](reviews/VRev-026-vp008-v0-9-0-intent-clarity-pass.md) |
 | VRev-027 | 2026-08-18 | self | VP-011 / workspace-011 · 规划边界与跨模块路线图（四档能力地图） | conditional | 0 | V-F054～V-F056 recommended → fixed（VP-011 v0.3.0 + Root R5 + I-011-002 + roadmap 第 11 行）；仅登记，不实施、不改 Charter | [VRev-027-vp011-cross-module-roadmap.md](reviews/VRev-027-vp011-cross-module-roadmap.md) |
 | VRev-028 | 2026-08-19 | self | VP-012 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F057 recommended → fixed（VP-012 v0.2.0 完整 closed + exit↔证据 + Tier A 移交；VR-024） | [VRev-028-vp012-closeout-readiness.md](reviews/VRev-028-vp012-closeout-readiness.md) |
+| VRev-029 | 2026-08-20 | self | VP-013 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F058/V-F059 recommended → fixed（激活 + workspace-013 Root P-001/I-00N + 配置面） | [VRev-029-vp013-intent-activation.md](reviews/VRev-029-vp013-intent-activation.md) |

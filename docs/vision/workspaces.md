@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-19
+updated: 2026-08-20
 parent: null
-version: 0.15.0
+version: 0.16.0
 ---
 
 # 工作区贡献图
@@ -24,11 +24,13 @@ version: 0.15.0
 | workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；波次 W1–W13 done，`go` 均无新暂挂） |
 | workspace-011-admin-functional-modules | docs/workspaces/workspace-011-admin-functional-modules/ | GOAL-001-admin-functional-modules | lead | VP-011-admin-functional-modules | active（历史；VP-011 已于 2026-08-18 有界 closed；Root done；四档能力地图上提至 vision roadmap） |
 | workspace-012-shared-cross-module-contracts | docs/workspaces/workspace-012-shared-cross-module-contracts/ | GOAL-001-shared-cross-module-contracts | lead | VP-012-shared-cross-module-contracts | active（历史；VP-012 已于 2026-08-19 完整 closed；Root done 8/8；后续 Tier A 移交 vision roadmap） |
+| workspace-013-store-dialects | docs/workspaces/workspace-013-store-dialects/ | GOAL-001-store-dialects | lead | VP-013-store-dialects | active（2026-08-20 开区；VP-013 active；Root active 0/5；架构 A1） |
 
 ## 说明
 
 - **workspace-011（2026-08-14 开区）**：VP-011（标准 Admin 功能模块分档交付）唯一 lead delivery 工作区；消费前 freshness review **PASS**（候选 `f14ab9d`；VR-020 pin bump、W5/W6 归档、F-1a/b/c fixed）；Root `GOAL-001-admin-functional-modules` 纲领路线图 R1 有界调研 → R2 一等公民 → R3 常用 → R4 增补 backlog → R5 四档能力地图与跨模块路线图登记。**2026-08-18：VP-011 有界 closed，Root done，四档能力地图上提至 vision roadmap**。不改变 Charter `primary_workspace`。
 - **workspace-012（2026-08-18 开区）**：VP-012（共享横切契约与平台基架）唯一 lead delivery 工作区；首波 = 横切契约波（correlation/审计模型/并发幂等/异步 Job + maintenance 门控/API Token）；不承载 Tier D 业务域；与 VP-009/VP-010 正交分流。**2026-08-19：VP-012 完整 closed**；Root 随后完成 R7/R8 增量并于同日 `done 8/8`。session/effective actor 宽项、D-003 外 writer envelope 仍在 vision roadmap Tier A。不改变 Charter `primary_workspace`。
+- **workspace-013（2026-08-20 开区）**：VP-013（Store 双方言）唯一 lead delivery 工作区；首波 = 架构 A1（内核持久化端口 + PostgreSQL + 现有台账对写）；SQLite 为内嵌默认。不改变 Charter `primary_workspace`。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。
