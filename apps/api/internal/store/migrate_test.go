@@ -151,8 +151,12 @@ func TestMigrateFreshDB(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("settings.update on fresh operation_log: %v", err)
 	}
-	// A fresh empty DB has nothing to recover: no snapshot should exist.
-	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
+	// A fresh empty DB has nothing to recover: no snapshot should exist for ANY
+	// version. This globs all pre-vN snapshots, not just pre-v0002 — mid-batch
+	// system-data seeding used to trip the dbHasRows guard and produce ~39
+	// wasteful full-database copies per fresh open (the full handler test
+	// timeout); asserting the whole pattern locks that regression out.
+	if snaps, _ := filepath.Glob(path + ".pre-v*.sqlite"); len(snaps) != 0 {
 		t.Fatalf("fresh DB produced snapshots %v", snaps)
 	}
 	u, err := authRepository.UserByUsername("admin")
@@ -184,7 +188,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if len(applied2) != 48 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
-	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
+	// Reopen of a fully-migrated fresh DB: no new snapshots for any version.
+	if snaps, _ := filepath.Glob(path + ".pre-v*.sqlite"); len(snaps) != 0 {
 		t.Fatalf("reopen produced snapshots %v", snaps)
 	}
 }
