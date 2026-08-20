@@ -16,6 +16,7 @@ version: 1.0.0
 - D-001 采纳冻结合同附件。
 - A-001 self 对 S0/S1 关门，verdict `pass`，open required = 0。
 - 应用代码未改。GOAL-002 → `done`；Root R1 → 已完成。
+- Git checkpoint `e7e38c3`（仅 `docs/workspaces/workspace-013-store-dialects/`）。
 
 ## 证据
 
@@ -24,3 +25,4 @@ version: 1.0.0
 | 合同 | `attachments/r1-tx-port-and-config-freeze.md` |
 | 决策 | `01-decision/D-001-tx-port-and-config-freeze.md` |
 | 自审 | `03-audit/A-001-r1-freeze-self.md` |
+| checkpoint | `e7e38c3` |

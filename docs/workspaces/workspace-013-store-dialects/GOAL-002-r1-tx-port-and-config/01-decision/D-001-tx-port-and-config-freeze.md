@@ -30,4 +30,4 @@ version: 1.0.0
   - 用 `DATABASE_URL` 兼作 DSN：第二权威。
 - **影响范围**：R2 起的 `kernel`/`store`/`config`；R3 迁移 Apply 签名；R4 jobs/模块 `WithTx`。不改 Profile、Manifest、模块矩阵。
 - **关联信息项**：GOAL-002 I-001/I-002 → verified。Root I-002（驱动）仍 open，最晚 R2。Root I-003（泄漏清单）本回合开始收集，见 E-001。
-- **后续**：R1 自审关门；下一拍 `/govern` 立项 R2（驱动 + `store.Open` + postgres 接入），按合同实现。
+- **后续**：R1 自审关门。合同已被 [D-002](D-002-a002-freeze-patch.md) 升为 v1.1；R2 按 v1.1 实施，勿按本条原文的 v1.0 附件猜测 upsert / path / `WasFresh`。
