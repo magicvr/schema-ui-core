@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -205,83 +206,83 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateBaseline(tx *sql.Tx) error {
+func migrateBaseline(tx kernel.Tx) error {
 	empty, err := isEmptyDatabase(tx)
 	if err != nil {
 		return err
 	}
 	if empty {
 		for _, stmt := range r2BaselineDDL {
-			if _, err := tx.Exec(stmt); err != nil {
+			if _, err := tx.Exec(context.Background(), stmt); err != nil {
 				return fmt.Errorf("create baseline: %w", err)
 			}
 		}
 	} else if err := fingerprintR2(tx); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(schemaMigrationsDDL); err != nil {
+	if _, err := tx.Exec(context.Background(), schemaMigrationsDDL); err != nil {
 		return fmt.Errorf("create migration ledger: %w", err)
 	}
 	return nil
 }
 
-func migrateRBAC(tx *sql.Tx) error {
+func migrateRBAC(tx kernel.Tx) error {
 	for _, stmt := range rbacExpandDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create rbac: %w", err)
 		}
 	}
 	return backfillRoles(tx)
 }
 
-func migrateSystemDataReconcile(tx *sql.Tx) error {
+func migrateSystemDataReconcile(tx kernel.Tx) error {
 	for _, stmt := range systemDataReconcileDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create system-data reconcile tables: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateAccessTokenRevocation(tx *sql.Tx) error {
+func migrateAccessTokenRevocation(tx kernel.Tx) error {
 	for _, stmt := range accessTokenRevocationDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add users.token_version: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateAccountLock(tx *sql.Tx) error {
+func migrateAccountLock(tx kernel.Tx) error {
 	for _, stmt := range accountLockDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add account-lock columns: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateMustChangePassword(tx *sql.Tx) error {
+func migrateMustChangePassword(tx kernel.Tx) error {
 	for _, stmt := range mustChangePasswordDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add users.must_change_password: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateServiceCredentials(tx *sql.Tx) error {
+func migrateServiceCredentials(tx kernel.Tx) error {
 	for _, stmt := range serviceCredentialsDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create service credentials: %w", err)
 		}
 	}
 	return nil
 }
 
-func isEmptyDatabase(tx *sql.Tx) (bool, error) {
+func isEmptyDatabase(tx kernel.Tx) (bool, error) {
 	var count int
-	err := tx.QueryRow(
+	err := tx.QueryRow(context.Background(),
 		`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`,
 	).Scan(&count)
 	if err != nil {
@@ -290,9 +291,9 @@ func isEmptyDatabase(tx *sql.Tx) (bool, error) {
 	return count == 0, nil
 }
 
-func fingerprintR2(tx *sql.Tx) error {
+func fingerprintR2(tx kernel.Tx) error {
 	got := map[string]bool{}
-	rows, err := tx.Query(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`)
+	rows, err := tx.Query(context.Background(), `SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`)
 	if err != nil {
 		return fmt.Errorf("fingerprint: list tables: %w", err)
 	}
@@ -328,7 +329,7 @@ func fingerprintR2(tx *sql.Tx) error {
 	}
 
 	var foreignKeys int
-	fkRows, err := tx.Query(`PRAGMA foreign_key_list(refresh_tokens)`)
+	fkRows, err := tx.Query(context.Background(), `PRAGMA foreign_key_list(refresh_tokens)`)
 	if err != nil {
 		return fmt.Errorf("fingerprint: fk list: %w", err)
 	}
@@ -354,7 +355,7 @@ func fingerprintR2(tx *sql.Tx) error {
 	}
 
 	var indexCount int
-	if err := tx.QueryRow(
+	if err := tx.QueryRow(context.Background(),
 		`SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'idx_refresh_tokens_user_id' AND tbl_name = 'refresh_tokens'`,
 	).Scan(&indexCount); err != nil {
 		return fmt.Errorf("fingerprint: check index: %w", err)
@@ -373,8 +374,8 @@ func tableSet(items map[string]bool) []string {
 	return out
 }
 
-func fingerprintColumns(tx *sql.Tx, table string, want map[string]string) error {
-	rows, err := tx.Query(fmt.Sprintf(`PRAGMA table_info(%s)`, table))
+func fingerprintColumns(tx kernel.Tx, table string, want map[string]string) error {
+	rows, err := tx.Query(context.Background(), fmt.Sprintf(`PRAGMA table_info(%s)`, table))
 	if err != nil {
 		return fmt.Errorf("fingerprint %s: %w", table, err)
 	}
@@ -405,8 +406,8 @@ func fingerprintColumns(tx *sql.Tx, table string, want map[string]string) error 
 
 var roleKeyPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]*$`)
 
-func ensureRole(tx *sql.Tx, key string, now int64) error {
-	if _, err := tx.Exec(
+func ensureRole(tx kernel.Tx, key string, now int64) error {
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO roles (id, key, name, system, created_at, updated_at)
 		 VALUES (?, ?, ?, 0, ?, ?)
 		 ON CONFLICT(id) DO NOTHING`,
@@ -417,14 +418,14 @@ func ensureRole(tx *sql.Tx, key string, now int64) error {
 	return nil
 }
 
-func linkUserRole(tx *sql.Tx, userID, key string, now int64) error {
+func linkUserRole(tx kernel.Tx, userID, key string, now int64) error {
 	if !roleKeyPattern.MatchString(key) {
 		return fmt.Errorf("invalid role key %q", key)
 	}
 	if err := ensureRole(tx, key, now); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)
 		 ON CONFLICT(user_id, role_id) DO NOTHING`,
 		userID, "role-"+key,
@@ -434,8 +435,8 @@ func linkUserRole(tx *sql.Tx, userID, key string, now int64) error {
 	return nil
 }
 
-func backfillRoles(tx *sql.Tx) error {
-	rows, err := tx.Query(`SELECT id, roles FROM users`)
+func backfillRoles(tx kernel.Tx) error {
+	rows, err := tx.Query(context.Background(), `SELECT id, roles FROM users`)
 	if err != nil {
 		return fmt.Errorf("backfill: list users: %w", err)
 	}

@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -49,18 +49,18 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateAccountEnable(tx *sql.Tx) error {
+func migrateAccountEnable(tx kernel.Tx) error {
 	for _, stmt := range accountEnableDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add users.enabled: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateAccountAvatar(tx *sql.Tx) error {
+func migrateAccountAvatar(tx kernel.Tx) error {
 	for _, stmt := range accountAvatarDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add users.avatar_url: %w", err)
 		}
 	}

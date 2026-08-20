@@ -6,7 +6,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"time"
 
@@ -32,14 +32,14 @@ var siteSettingsDDL = []string{
 }
 
 // migrate0007 creates site_settings and seeds the default singleton row.
-func migrate0007(tx *sql.Tx) error {
+func migrate0007(tx kernel.Tx) error {
 	for _, stmt := range siteSettingsDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create site_settings: %w", err)
 		}
 	}
 	now := time.Now().UTC().Unix()
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO site_settings (id, site_title, logo_url, updated_at) VALUES ('default', ?, '', ?)`,
 		DefaultSiteTitle, now,
 	); err != nil {
@@ -52,7 +52,7 @@ const transformID = "0007:site-settings:v1"
 
 // siteSettingsV2DDL extends the singleton with the VP-007 system-settings
 // fields: light/dark logo + favicon URLs, default locale, default timezone and
-// default theme. All new columns are TEXT NOT NULL DEFAULT '' so existing rows
+// default theme. All new columns are TEXT NOT NULL DEFAULT ” so existing rows
 // migrate in place; empty strings carry "unset" semantics.
 var siteSettingsV2DDL = []string{
 	`ALTER TABLE site_settings ADD COLUMN logo_url_light TEXT NOT NULL DEFAULT ''`,
@@ -79,9 +79,9 @@ const (
 )
 
 // migrate0010 applies the VP-007 settings column extension.
-func migrate0010(tx *sql.Tx) error {
+func migrate0010(tx kernel.Tx) error {
 	for _, stmt := range siteSettingsV2DDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("extend site_settings: %w", err)
 		}
 	}
@@ -95,9 +95,9 @@ var siteFooterDDL = []string{
 }
 
 // migrate0040 applies the footer settings column extension.
-func migrate0040(tx *sql.Tx) error {
+func migrate0040(tx kernel.Tx) error {
 	for _, stmt := range siteFooterDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("extend site_settings footer: %w", err)
 		}
 	}
@@ -144,9 +144,9 @@ var siteOperationLogRetentionDDL = []string{
 	`ALTER TABLE site_settings ADD COLUMN operation_log_expiration_action TEXT NOT NULL DEFAULT 'archive'`,
 }
 
-func migrate0046(tx *sql.Tx) error {
+func migrate0046(tx kernel.Tx) error {
 	for _, stmt := range siteOperationLogRetentionDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("extend site_settings retention: %w", err)
 		}
 	}

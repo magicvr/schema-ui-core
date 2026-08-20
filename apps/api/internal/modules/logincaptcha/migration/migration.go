@@ -3,7 +3,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -43,9 +43,9 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateCaptcha(tx *sql.Tx) error {
+func migrateCaptcha(tx kernel.Tx) error {
 	for _, stmt := range captchaDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create captcha tables: %w", err)
 		}
 	}

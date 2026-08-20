@@ -1,7 +1,6 @@
 package kernel
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,8 +9,10 @@ import (
 
 // This file implements the R4 C2 structured contribution contract frozen in
 // GOAL-005/attachments/r4-c1-freeze-package-draft.md §2. The types are
-// framework-agnostic: only standard library (net/http, database/sql) types are
-// referenced; no go.uber.org/fx import is permitted in this package.
+// framework-agnostic: only standard library types plus the kernel persistence
+// port (Tx) are referenced; no go.uber.org/fx import is permitted in this
+// package. Migration Apply/Reconcile carry kernel.Tx (R1 v1.4 §4), never a
+// driver *sql.Tx.
 
 // ContributionIdentity is the immutable identity every structured contribution
 // carries. Key is the canonical semantic id for its kind (see keyFor*), not an
@@ -98,11 +99,11 @@ type MigrationContribution struct {
 	Version           int
 	Name              string
 	Checksum          string
-	Apply             func(*sql.Tx) error
+	Apply             func(Tx) error
 	Tombstone         bool
 	ReconcileVersion  int
 	ReconcileChecksum string
-	Reconcile         func(*sql.Tx) error
+	Reconcile         func(Tx) error
 }
 
 // ContributionKind enumerates the structured contribution kinds.

@@ -1,7 +1,6 @@
 package kernel
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 )
@@ -12,7 +11,7 @@ func migrationFixture(version int, name, checksum string, mutate func(*Migration
 		Version:              version,
 		Name:                 name,
 		Checksum:             checksum,
-		Apply:                func(*sql.Tx) error { return nil },
+		Apply:                func(Tx) error { return nil },
 	}
 	if mutate != nil {
 		mutate(&m)

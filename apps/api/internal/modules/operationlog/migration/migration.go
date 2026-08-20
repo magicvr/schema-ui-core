@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -168,7 +168,7 @@ var operationLogWalletDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
-func migrateOperationLogWallet(tx *sql.Tx) error {
+func migrateOperationLogWallet(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogWalletDDL, "wallet-events-expanded")
 }
 
@@ -202,11 +202,11 @@ var operationLogWalletDeductDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
-func migrateOperationLogWalletDeduct(tx *sql.Tx) error {
+func migrateOperationLogWalletDeduct(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogWalletDeductDDL, "wallet-deduct-events-expanded")
 }
 
-func migrateOperationLogAvatarEvents(tx *sql.Tx) error {
+func migrateOperationLogAvatarEvents(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogAvatarEventsDDL, "avatar-events-expanded")
 }
 
@@ -406,9 +406,9 @@ var operationLogArchiveDDL = []string{
 )`,
 }
 
-func migrateOperationLogArchive(tx *sql.Tx) error {
+func migrateOperationLogArchive(tx kernel.Tx) error {
 	for _, stmt := range operationLogArchiveDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create operation_log_archive: %w", err)
 		}
 	}
@@ -427,146 +427,146 @@ var operationLogSessionDDL = []string{
 )`,
 }
 
-func migrateOperationLogSession(tx *sql.Tx) error {
+func migrateOperationLogSession(tx kernel.Tx) error {
 	for _, stmt := range operationLogSessionDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create operation_log_session: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateOperationLog(tx *sql.Tx) error {
+func migrateOperationLog(tx kernel.Tx) error {
 	for _, stmt := range operationLogDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create operation_log: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateOperationLogExpand(tx *sql.Tx) error {
+func migrateOperationLogExpand(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogExpandDDL, "expanded")
 }
 
-func migrateOperationLogSettings(tx *sql.Tx) error {
+func migrateOperationLogSettings(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogSettingsDDL, "settings-expanded")
 }
 
-func migrateOperationLogAccountEvents(tx *sql.Tx) error {
+func migrateOperationLogAccountEvents(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogAccountEventsDDL, "account-events-expanded")
 }
 
-func migrateOperationLogDataTransfer(tx *sql.Tx) error {
+func migrateOperationLogDataTransfer(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogDataTransferDDL, "data-transfer-expanded")
 }
 
-func migrateOperationLogFileEvents(tx *sql.Tx) error {
+func migrateOperationLogFileEvents(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogFileEventsDDL, "file-events-expanded")
 }
 
-func migrateOperationLogDictionary(tx *sql.Tx) error {
+func migrateOperationLogDictionary(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogDictionaryDDL, "dictionary-events-expanded")
 }
 
-func migrateOperationLogTasks(tx *sql.Tx) error {
+func migrateOperationLogTasks(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogTasksDDL, "tasks-events-expanded")
 }
 
-func migrateOperationLogCaptcha(tx *sql.Tx) error {
+func migrateOperationLogCaptcha(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogCaptchaDDL, "captcha-events-expanded")
 }
 
-func migrateOperationLogRecycle(tx *sql.Tx) error {
+func migrateOperationLogRecycle(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogRecycleDDL, "recycle-events-expanded")
 }
 
-func migrateOperationLogCorrelation(tx *sql.Tx) error {
+func migrateOperationLogCorrelation(tx kernel.Tx) error {
 	for _, stmt := range operationLogCorrelationDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create operation_log_correlation: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateOperationLogWalletJobs(tx *sql.Tx) error {
-	if _, err := tx.Exec(`CREATE TEMP TABLE operation_log_correlation_backup AS
+func migrateOperationLogWalletJobs(tx kernel.Tx) error {
+	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
 SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
 		return fmt.Errorf("backup operation log correlations: %w", err)
 	}
-	if _, err := tx.Exec(`DROP TABLE operation_log_correlation`); err != nil {
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
 		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
 	}
 	if err := rebuildOperationLog(tx, operationLogWalletJobsDDL, "wallet-job-events-expanded"); err != nil {
 		return err
 	}
 	for _, statement := range operationLogCorrelationDDL {
-		if _, err := tx.Exec(statement); err != nil {
+		if _, err := tx.Exec(context.Background(), statement); err != nil {
 			return fmt.Errorf("recreate operation log correlations: %w", err)
 		}
 	}
-	if _, err := tx.Exec(`INSERT INTO operation_log_correlation (operation_id, correlation_id)
+	if _, err := tx.Exec(context.Background(), `INSERT INTO operation_log_correlation (operation_id, correlation_id)
 SELECT operation_id, correlation_id FROM operation_log_correlation_backup`); err != nil {
 		return fmt.Errorf("restore operation log correlations: %w", err)
 	}
-	if _, err := tx.Exec(`DROP TABLE operation_log_correlation_backup`); err != nil {
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation_backup`); err != nil {
 		return fmt.Errorf("drop operation log correlation backup: %w", err)
 	}
 	return nil
 }
 
-func migrateOperationLogServiceCredentials(tx *sql.Tx) error {
-	if _, err := tx.Exec(`CREATE TEMP TABLE operation_log_correlation_backup AS
+func migrateOperationLogServiceCredentials(tx kernel.Tx) error {
+	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
 SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
 		return fmt.Errorf("backup operation log correlations: %w", err)
 	}
-	if _, err := tx.Exec(`DROP TABLE operation_log_correlation`); err != nil {
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
 		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
 	}
 	if err := rebuildOperationLog(tx, operationLogServiceCredentialsDDL, "service-credential-events-expanded"); err != nil {
 		return err
 	}
 	for _, statement := range operationLogCorrelationDDL {
-		if _, err := tx.Exec(statement); err != nil {
+		if _, err := tx.Exec(context.Background(), statement); err != nil {
 			return fmt.Errorf("recreate operation log correlations: %w", err)
 		}
 	}
-	if _, err := tx.Exec(`INSERT INTO operation_log_correlation (operation_id, correlation_id)
+	if _, err := tx.Exec(context.Background(), `INSERT INTO operation_log_correlation (operation_id, correlation_id)
 SELECT operation_id, correlation_id FROM operation_log_correlation_backup`); err != nil {
 		return fmt.Errorf("restore operation log correlations: %w", err)
 	}
-	if _, err := tx.Exec(`DROP TABLE operation_log_correlation_backup`); err != nil {
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation_backup`); err != nil {
 		return fmt.Errorf("drop operation log correlation backup: %w", err)
 	}
 	return nil
 }
 
-func migrateOperationLogDataPermission(tx *sql.Tx) error {
+func migrateOperationLogDataPermission(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogDataPermissionDDL, "data-permission-events-expanded")
 }
 
-func migrateOperationLogMFA(tx *sql.Tx) error {
+func migrateOperationLogMFA(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogMFADDL, "mfa-events-expanded")
 }
 
-func rebuildOperationLog(tx *sql.Tx, ddl []string, label string) error {
-	if _, err := tx.Exec(`ALTER TABLE operation_log RENAME TO operation_log_old`); err != nil {
+func rebuildOperationLog(tx kernel.Tx, ddl []string, label string) error {
+	if _, err := tx.Exec(context.Background(), `ALTER TABLE operation_log RENAME TO operation_log_old`); err != nil {
 		return fmt.Errorf("rename operation_log: %w", err)
 	}
-	if _, err := tx.Exec(ddl[0]); err != nil {
+	if _, err := tx.Exec(context.Background(), ddl[0]); err != nil {
 		return fmt.Errorf("create operation_log %s: %w", label, err)
 	}
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
 		 SELECT id, event, actor_id, actor_name, record_id, detail, created_at FROM operation_log_old`,
 	); err != nil {
 		return fmt.Errorf("migrate operation_log rows: %w", err)
 	}
-	if _, err := tx.Exec(`DROP TABLE operation_log_old`); err != nil {
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_old`); err != nil {
 		return fmt.Errorf("drop operation_log_old: %w", err)
 	}
-	if _, err := tx.Exec(ddl[1]); err != nil {
+	if _, err := tx.Exec(context.Background(), ddl[1]); err != nil {
 		return fmt.Errorf("create operation_log index: %w", err)
 	}
 	return nil

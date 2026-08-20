@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -53,18 +53,18 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateRecordsPersist(tx *sql.Tx) error {
+func migrateRecordsPersist(tx kernel.Tx) error {
 	for _, stmt := range recordsPersistDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create records: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateRecordsRetire(tx *sql.Tx) error {
+func migrateRecordsRetire(tx kernel.Tx) error {
 	for _, stmt := range recordsRetireDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("records retire: %w", err)
 		}
 	}

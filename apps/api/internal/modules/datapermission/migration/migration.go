@@ -4,7 +4,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -46,9 +46,9 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateDataPermission(tx *sql.Tx) error {
+func migrateDataPermission(tx kernel.Tx) error {
 	for _, stmt := range dataPermissionDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create data permission tables: %w", err)
 		}
 	}

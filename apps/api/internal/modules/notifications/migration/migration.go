@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -66,27 +66,27 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateNotifications(tx *sql.Tx) error {
+func migrateNotifications(tx kernel.Tx) error {
 	for _, stmt := range notificationsDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create notifications: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateNotificationsEnabled(tx *sql.Tx) error {
+func migrateNotificationsEnabled(tx kernel.Tx) error {
 	for _, stmt := range notificationsEnabledDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add users.notifications_enabled: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateNotificationsMessageKeys(tx *sql.Tx) error {
+func migrateNotificationsMessageKeys(tx kernel.Tx) error {
 	for _, stmt := range notificationsMessageKeyDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add notifications title_key/body_key: %w", err)
 		}
 	}

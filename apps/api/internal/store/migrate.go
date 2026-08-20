@@ -83,7 +83,9 @@ func (s *Store) applyMigration(migration kernel.MigrationContribution) error {
 		return fmt.Errorf("begin migration %d (%s): %w", migration.Version, migration.Name, err)
 	}
 	if migration.Apply != nil {
-		if err := migration.Apply(tx); err != nil {
+		// Apply receives the dialect-neutral kernel.Tx (R1 v1.4 §4); on sqlite
+		// the *sql.Tx adapter keeps the '?' placeholder unchanged.
+		if err := migration.Apply(sqlTx{tx: tx}); err != nil {
 			_ = tx.Rollback()
 			return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 		}

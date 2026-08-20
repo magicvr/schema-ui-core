@@ -4,7 +4,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -64,7 +64,6 @@ var walletDDL = []string{
 )`,
 }
 
-
 // walletLedgerDeductDDL (0033 · GOAL-021 D-001 §3): the ledger entry_type CHECK
 // gains 'deduct_frozen' (consume from the frozen bucket). SQLite cannot alter a
 // CHECK, so the table is rebuilt (rename → create → copy → drop) like the
@@ -91,23 +90,23 @@ var walletLedgerDeductDDL = []string{
 	`CREATE INDEX idx_wallet_ledger_account ON wallet_ledger_entries(account_id, created_at DESC)`,
 }
 
-func migrateWalletLedgerDeduct(tx *sql.Tx) error {
-	if _, err := tx.Exec(`ALTER TABLE wallet_ledger_entries RENAME TO wallet_ledger_entries_old`); err != nil {
+func migrateWalletLedgerDeduct(tx kernel.Tx) error {
+	if _, err := tx.Exec(context.Background(), `ALTER TABLE wallet_ledger_entries RENAME TO wallet_ledger_entries_old`); err != nil {
 		return fmt.Errorf("rename wallet_ledger_entries: %w", err)
 	}
-	if _, err := tx.Exec(walletLedgerDeductDDL[0]); err != nil {
+	if _, err := tx.Exec(context.Background(), walletLedgerDeductDDL[0]); err != nil {
 		return fmt.Errorf("recreate wallet_ledger_entries: %w", err)
 	}
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO wallet_ledger_entries (id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at)
 		 SELECT id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at FROM wallet_ledger_entries_old`,
 	); err != nil {
 		return fmt.Errorf("migrate wallet_ledger_entries rows: %w", err)
 	}
-	if _, err := tx.Exec(`DROP TABLE wallet_ledger_entries_old`); err != nil {
+	if _, err := tx.Exec(context.Background(), `DROP TABLE wallet_ledger_entries_old`); err != nil {
 		return fmt.Errorf("drop wallet_ledger_entries_old: %w", err)
 	}
-	if _, err := tx.Exec(walletLedgerDeductDDL[1]); err != nil {
+	if _, err := tx.Exec(context.Background(), walletLedgerDeductDDL[1]); err != nil {
 		return fmt.Errorf("recreate wallet ledger index: %w", err)
 	}
 	return nil
@@ -133,9 +132,9 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateWallet(tx *sql.Tx) error {
+func migrateWallet(tx kernel.Tx) error {
 	for _, stmt := range walletDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create wallet tables: %w", err)
 		}
 	}
