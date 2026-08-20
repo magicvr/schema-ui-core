@@ -86,38 +86,60 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres probe integration (no PG = dev/fast-test keeps working)")
 	}
 	ctx := context.Background()
-	st, err := Open(ctx, OpenOptions{
-		Dialect:        kernel.DialectPostgres,
-		DSN:            dsn,
-		ConnectTimeout: 10 * time.Second,
-	}, nil)
+	probe := func() (kernel.Store, error) {
+		return Open(ctx, OpenOptions{
+			Dialect:        kernel.DialectPostgres,
+			DSN:            dsn,
+			ConnectTimeout: 10 * time.Second,
+		}, nil)
+	}
+
+	// A freshly created, empty probe database must report WasFresh()=true on
+	// the default $user/public search_path (also exercises $user resolution).
+	st, err := probe()
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = st.Close() })
-
 	if st.Dialect() != kernel.DialectPostgres {
 		t.Fatalf("dialect = %q, want postgres", st.Dialect())
 	}
 	if err := st.Ping(ctx); err != nil {
 		t.Fatalf("ping: %v", err)
 	}
-	// WasFresh must evaluate without error (empty default search_path may be
-	// fresh or not depending on the database, but the query must not fail).
-	_ = st.WasFresh()
+	if !st.WasFresh() {
+		t.Errorf("empty probe db: WasFresh() = false, want true (search_path resolution)")
+	}
 
-	// One Run = one tx; placeholders rebound '?' -> $n; temp table lives on the
-	// tx connection and is dropped at session close.
+	// One Run = one tx; placeholders rebound '?' -> $n; commit persists.
 	if err := st.Run(ctx, func(tx kernel.Tx) error {
-		if _, err := tx.Exec(ctx, "CREATE TEMP TABLE _r2_probe (id serial PRIMARY KEY, name text)"); err != nil {
+		if _, err := tx.Exec(ctx, "CREATE TABLE IF NOT EXISTS _r2_wasfresh_probe (id serial PRIMARY KEY, name text)"); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, "INSERT INTO _r2_probe (name) VALUES (?)", "hello"); err != nil {
+		if _, err := tx.Exec(ctx, "INSERT INTO _r2_wasfresh_probe (name) VALUES (?)", "hello"); err != nil {
 			return err
 		}
 		var n int
-		return tx.QueryRow(ctx, "SELECT count(*) FROM _r2_probe WHERE name = ?", "hello").Scan(&n)
+		return tx.QueryRow(ctx, "SELECT count(*) FROM _r2_wasfresh_probe WHERE name = ?", "hello").Scan(&n)
 	}); err != nil {
 		t.Fatalf("run on postgres: %v", err)
+	}
+	_ = st.Close()
+
+	// A user base table now exists in the first existing schema (public):
+	// WasFresh must flip to false on a fresh open; the table also drops cleanly
+	// so the test stays idempotent.
+	st2, err := probe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st2.Close()
+	if st2.WasFresh() {
+		t.Errorf("db with a user table: WasFresh() = true, want false")
+	}
+	if err := st2.Run(ctx, func(tx kernel.Tx) error {
+		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS _r2_wasfresh_probe")
+		return err
+	}); err != nil {
+		t.Fatalf("cleanup: %v", err)
 	}
 }
