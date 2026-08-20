@@ -88,7 +88,7 @@ docker compose up --build
 ```bash
 # 一键：独立 Compose project 构建/启动生产栈 → scripts/smoke.sh --disposable
 #（SM-001~005 + SM-006 种子可重复 + 可选 SM-007 Profile 合同）+ SMOKE_CSP=1
-#（SM-008 真实浏览器校验生产 CSP 头 / theme-init.js）→ 默认 down -v 清理
+#（SM-008 真实浏览器校验生产 CSP 头 / theme-init.js）+ C-006 新建用户跨 API 重启留存 → 默认 down -v 清理
 bash scripts/pre-release-smoke.sh
 
 # 仅单独启用 SM-008（需已运行生产 Web，见 QUICKSTART §3）：
