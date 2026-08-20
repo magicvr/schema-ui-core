@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.3.0
+version: 0.5.0
 ---
 
 # 审计 · GOAL-002
@@ -14,8 +14,8 @@ version: 0.3.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-001 / I-002 | verified | E-001 / D-001；A-002 过窄缺口由 D-002 写入合同 v1.1，不另立 I-00N |
-| 到期 required 信息项 | 无 | — |
+| I-001 / I-002 | verified | E-001 / D-001；A-002 过窄缺口 → v1.1；A-004 时间/`Open` 缺口 → D-003 写入 v1.2，未另立 I-00N |
+| 到期 required 信息项 | 无 | Root I-002 仍 open，最晚 R2 方案冻结，不构成本条到期 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -23,9 +23,11 @@ version: 0.3.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-20 | self | R1 S0/S1 冻结合同关门 | pass | 0 | [A-001-r1-freeze-self.md](03-audit/A-001-r1-freeze-self.md) |
-| A-002 | 2026-08-20 | independent | R1 方案冻结是否合理 / 可否作 R2 合同 | conditional | 3（F-001～F-003；**A-003 已 fixed**） | [A-002-r1-freeze-independent.md](03-audit/A-002-r1-freeze-independent.md) |
-| A-003 | 2026-08-20 | self | 响应 A-002（全部 fixed） | pass | 0 | [A-003-a002-response.md](03-audit/A-003-a002-response.md) |
+| A-002 | 2026-08-20 | independent | R1 方案冻结是否合理 / 可否作 R2 合同 | conditional | 3（原文；时间半段经 A-004 否定后由 A-005 重闭合） | [A-002-r1-freeze-independent.md](03-audit/A-002-r1-freeze-independent.md) |
+| A-003 | 2026-08-20 | self | 响应 A-002（全部 fixed） | pass | 0（自述；时间半段见 A-004/A-005） | [A-003-a002-response.md](03-audit/A-003-a002-response.md) |
+| A-004 | 2026-08-20 | independent | R1 方案冻结 v1.1 是否合理 / 可否作 R2 合同 | conditional | 2（原文；A-005 宣称 fixed） | [A-004-r1-freeze-v1-1-independent.md](03-audit/A-004-r1-freeze-v1-1-independent.md) |
+| A-005 | 2026-08-20 | self | 响应 A-004（全部 fixed） | pass | 0 | [A-005-a004-response.md](03-audit/A-005-a004-response.md) |
 
 ## 结论状态
 
-A-001 self `pass`（「同构」主张已由 D-002 降级）。A-002 independent **conditional** 原文保留。A-003 响应：F-001～F-007 全部 **fixed**。本目标开放 required = **0**。GOAL-002 保持 `done`。R2 必须按附件 **v1.1** 实施。
+A-001 self `pass`（「同构」主张已由 D-002 降级）。A-002 independent **conditional** 原文保留。A-003 响应自称 F-001～F-007 `fixed`（时间半段被 A-004 否定）。A-004 independent **conditional** 原文保留。A-005 响应自称 F-001～F-005 `fixed`。本目标开放 required = **0**（编排响应口径）。GOAL-002 `status` 仍为 `done`，不是冻结质量证明。R2 必须对照 **v1.2**，不得对照 v1.1/v1.0。

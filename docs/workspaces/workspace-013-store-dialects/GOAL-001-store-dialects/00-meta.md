@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.2.0
+version: 0.3.0
 progress: 1/5
 plan_refs:
   - VP-013-store-dialects
@@ -25,7 +25,7 @@ serves_summary: 交付架构 A1：内核持久化端口 + PostgreSQL 实现 + �
 
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
-| R1 | **端口与配置面冻结**：Tx 公共类型 ≠ `*sql.Tx`；方言由配置选择；缺省 `db.path` SQLite；PG DSN 键名冻结；v1.1 补 upsert/时间/`WasFresh`/path 数据根 | 起点 | ✅ GOAL-002（D-001 / A-001；**D-002 / A-003** 闭合 A-002 required；合同 **v1.1**） |
+| R1 | **端口与配置面冻结**：Tx 公共类型 ≠ `*sql.Tx`；方言由配置选择；缺省 `db.path` SQLite；PG DSN 键名冻结；v1.2 补时间单位（秒/毫秒按列）与 R2 postgres `Open` 不 apply catalog | 起点 | ✅ GOAL-002（D-001 / A-001；D-002 / A-003 闭合 A-002；**D-003 / A-005** 闭合 A-004 required；合同 **v1.2**） |
 | R2 | **PostgreSQL 接入**：驱动、连接池、`readyz` 扩依赖 | 依赖 R1 | 未开始 |
 | R3 | **台账对写**：开区时全部 compiled 迁移两方言 apply + checksum | 依赖 R2 | 未开始 |
 | R4 | **仓库公共面收口**：Handler / 模块公共契约去掉 `*sql.Tx` 与驱动类型 | 依赖 R1；可与 R3 部分并行 | 未开始 |
