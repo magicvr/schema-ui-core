@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-19
+updated: 2026-08-20
 parent: null
-version: 1.3.38
+version: 1.3.40
 ---
 
 # Vision Review 台账
@@ -32,7 +32,7 @@ version: 1.3.38
 |---------|-------|------|------|------|
 | — | — | — | **无** | VRev-028 `pass`；V-F057 recommended → **fixed**（VP-012 v0.2.0 完整关门 + roadmap Tier A 移交）；VRev-027 V-F054～V-F056 recommended → **fixed**；均无新增 required |
 
-> Vision Review **open required = 0**。**VRev-028（self，`pass`）**：原 verdict 保留；V-F057 recommended → **fixed**（2026-08-19 `/vision` 用户确认完整关门；VP-012 `active → closed` v0.2.0；session/effective actor、保留/归档、D-003 外 writer envelope 移交 roadmap Tier A，不作为本 VP residual）。当前**无 active 交付 VP**；持续程序 **VP-009** / **VP-010**；**[VP-012](plans/VP-012-shared-cross-module-contracts.md) 已完整 `closed`**；组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。**VRev-028（self，`pass`）**：原 verdict 保留；V-F057 recommended → **fixed**。当前**无 active 交付 VP**；持续程序 **VP-009** / **VP-010**；**[VP-012](plans/VP-012-shared-cross-module-contracts.md) 已完整 `closed`**。2026-08-20 起后续方向按 [roadmap.md](roadmap.md) **架构 / Admin 功能 / 业务域** 三分支并行登记（VR-026 editorial；取代同日 VR-025 二分）。
 
 ## 条目索引
 
