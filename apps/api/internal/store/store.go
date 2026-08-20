@@ -71,9 +71,10 @@ func (s *Store) Dialect() kernel.Dialect { return kernel.DialectSQLite }
 // kernel.Tx (R1 v1.4 §2). This is the kernel port entry point; modules keep
 // using WithTx(*sql.Tx) until R4 moves their public signature.
 //
-// Nested Run is forbidden and detected per-callback via the ctx handed to fn
-// (R1 v1.4 A-008 F-004): a Store-level flag would misclassify the concurrent
-// Runs that the postgres pool is allowed to carry.
+// Nested Run is forbidden and detected per-callback via a goroutine-local
+// marker (R1 v1.4 A-008 F-004 permits a ctx value or the equivalent
+// call-stack/goroutine-local): a Store-level flag would misclassify the
+// concurrent Runs that the postgres pool is allowed to carry.
 func (s *Store) Run(ctx context.Context, fn func(kernel.Tx) error) error {
 	if err := enterRun(); err != nil {
 		return err
@@ -83,11 +84,20 @@ func (s *Store) Run(ctx context.Context, fn func(kernel.Tx) error) error {
 	if err != nil {
 		return err
 	}
+	// R1 v1.4 §2: a panicking fn rolls the transaction back and re-panics, so
+	// the tx handle is never abandoned and the caller still observes the panic.
+	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			panic(r)
+		}
+	}()
 	if err := fn(sqlTx{tx: tx}); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
 	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
 		return err
 	}
 	return nil

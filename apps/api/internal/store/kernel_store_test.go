@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -120,6 +121,76 @@ func TestKernelStoreNestedRunFailsClosed(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "nested Run") {
 		t.Fatalf("nested Run must fail closed, got %v", err)
+	}
+}
+
+func TestKernelStoreRunPanicRollsBackAndRepanics(t *testing.T) {
+	st := openSQLiteKernel(t)
+
+	// A panicking fn must roll back (the CREATE TABLE must not persist) and
+	// re-panic so the caller observes the panic (R1 v1.4 §2).
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Fatal("Run must re-panic when fn panics")
+			}
+		}()
+		_ = st.Run(context.Background(), func(tx kernel.Tx) error {
+			if _, err := tx.Exec(context.Background(), "CREATE TABLE kernel_panic_probe (id INTEGER PRIMARY KEY)"); err != nil {
+				return err
+			}
+			panic("boom")
+		})
+	}()
+
+	var n int
+	err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), "SELECT count(*) FROM kernel_panic_probe").Scan(&n)
+	})
+	if err == nil || !strings.Contains(err.Error(), "no such table") {
+		t.Fatalf("DDL should have been rolled back after fn panic, got %v", err)
+	}
+}
+
+func TestKernelStoreRunConcurrentGoroutinesNoFalseNesting(t *testing.T) {
+	st := openSQLiteKernel(t)
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), "CREATE TABLE kernel_conc_probe (id INTEGER PRIMARY KEY, g INTEGER)")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	const n = 8
+	var wg sync.WaitGroup
+	errs := make([]error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			errs[i] = st.Run(context.Background(), func(tx kernel.Tx) error {
+				if _, err := tx.Exec(context.Background(), "INSERT INTO kernel_conc_probe (g) VALUES (?)", i); err != nil {
+					return err
+				}
+				var cnt int
+				return tx.QueryRow(context.Background(), "SELECT count(*) FROM kernel_conc_probe WHERE g = ?", i).Scan(&cnt)
+			})
+		}(i)
+	}
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("goroutine %d run failed: %v (false 'nested Run' from shared goroutine marker?)", i, err)
+		}
+	}
+	var total int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), "SELECT count(*) FROM kernel_conc_probe").Scan(&total)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if total != n {
+		t.Fatalf("committed rows = %d, want %d", total, n)
 	}
 }
 

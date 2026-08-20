@@ -82,11 +82,20 @@ func (p *postgres) Run(ctx context.Context, fn func(kernel.Tx) error) error {
 	if err != nil {
 		return err
 	}
+	// R1 v1.4 §2: a panicking fn rolls the transaction back and re-panics, so
+	// the tx handle is never abandoned and the caller still observes the panic.
+	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			panic(r)
+		}
+	}()
 	if err := fn(pgTx{tx: tx}); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
 	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
 		return err
 	}
 	return nil
@@ -120,8 +129,10 @@ func (t pgTx) QueryRow(ctx context.Context, query string, args ...any) kernel.Ro
 }
 
 // postgresWasFresh reports whether the database has zero user base tables in
-// the first existing schema of the server-resolved search_path (R1 v1.4 §2).
-// A completely empty search_path (no existing user schema) is fresh.
+// the first existing USER (non-system) schema of the server-resolved
+// search_path (R1 v1.4 §2). A search_path with no existing user schema is
+// fresh; system schemas (pg_catalog / information_schema / pg_toast / pg_temp_*)
+// never count as the probed user schema.
 func postgresWasFresh(ctx context.Context, db *sql.DB) (bool, error) {
 	var raw string
 	if err := db.QueryRowContext(ctx, `SHOW search_path`).Scan(&raw); err != nil {
@@ -175,8 +186,11 @@ func searchPathCandidates(raw string) []string {
 }
 
 // firstExistingSchema walks the ordered search_path candidates and returns the
-// first schema that actually exists (postgres skips non-existent entries).
-// "$user" is resolved against current_user when it appears.
+// first schema that actually exists (postgres skips non-existent entries) AND
+// is a user schema — system schemas (pg_catalog / information_schema /
+// pg_toast / pg_temp_*) are skipped like postgres treats them as non-resolvable
+// for user objects. "$user" is resolved against current_user when it appears.
+// Empty result = no existing user schema = a fresh database.
 func firstExistingSchema(ctx context.Context, db *sql.DB, raw string) (string, error) {
 	resolvedUser := ""
 	for _, cand := range searchPathCandidates(raw) {
@@ -188,6 +202,9 @@ func firstExistingSchema(ctx context.Context, db *sql.DB, raw string) (string, e
 				}
 			}
 			name = resolvedUser
+		}
+		if isSystemSchema(name) {
+			continue
 		}
 		var exists bool
 		if err := db.QueryRowContext(ctx,
@@ -201,4 +218,14 @@ func firstExistingSchema(ctx context.Context, db *sql.DB, raw string) (string, e
 		}
 	}
 	return "", nil
+}
+
+// isSystemSchema reports whether name is a PostgreSQL system schema that must
+// never be treated as the probed user schema for WasFresh.
+func isSystemSchema(name string) bool {
+	switch name {
+	case "pg_catalog", "information_schema", "pg_toast":
+		return true
+	}
+	return strings.HasPrefix(name, "pg_temp_") || strings.HasPrefix(name, "pg_toast_temp_")
 }

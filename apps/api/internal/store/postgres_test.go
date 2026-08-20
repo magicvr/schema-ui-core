@@ -58,6 +58,19 @@ func stringsEqual(a, b []string) bool {
 	return true
 }
 
+func TestIsSystemSchema(t *testing.T) {
+	for _, s := range []string{"pg_catalog", "information_schema", "pg_toast", "pg_temp_1", "pg_toast_temp_1"} {
+		if !isSystemSchema(s) {
+			t.Errorf("isSystemSchema(%q) = false, want true", s)
+		}
+	}
+	for _, s := range []string{"public", "app", "probe", "$user", "MySchema"} {
+		if isSystemSchema(s) {
+			t.Errorf("isSystemSchema(%q) = true, want false", s)
+		}
+	}
+}
+
 func TestOpenPostgresRequiresDSN(t *testing.T) {
 	_, err := Open(context.Background(), OpenOptions{Dialect: kernel.DialectPostgres}, nil)
 	if err == nil || !strings.Contains(err.Error(), "DSN") {
