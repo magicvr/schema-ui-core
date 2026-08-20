@@ -23,15 +23,13 @@ type postgres struct {
 	systemDataReady atomic.Bool
 }
 
-// openPostgres opens a probe connection: DSN connect, Ping, WasFresh. A
-// non-empty catalog fails closed because the R2 catalog still contains
-// SQLite-specific SQL (R1 v1.4 §2).
+// openPostgres opens a postgres connection: DSN connect, Ping, WasFresh, and —
+// when a non-empty catalog is supplied (R3 dual-dialect ledger) — applies it
+// through the postgres migrate runner so a postgres DSN can fresh-bootstrap or
+// validate an existing database. A nil/empty catalog is the probe-open path.
 func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.MigrationContribution) (*postgres, error) {
 	if opts.DSN == "" {
 		return nil, errors.New("store: postgres requires a non-empty DSN")
-	}
-	if len(catalog) > 0 {
-		return nil, errors.New("store: postgres (R2) cannot apply the compiled catalog — it contains SQLite-specific SQL; dual-dialect apply lands in R3, refusing to half-execute")
 	}
 	db, err := sql.Open("pgx", opts.DSN)
 	if err != nil {
@@ -54,7 +52,14 @@ func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.Migrat
 		_ = db.Close()
 		return nil, fmt.Errorf("postgres WasFresh: %w", err)
 	}
-	return &postgres{db: db, fresh: fresh}, nil
+	st := &postgres{db: db, fresh: fresh}
+	if len(catalog) > 0 {
+		if err := st.migrate(catalog); err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("postgres apply catalog: %w", err)
+		}
+	}
+	return st, nil
 }
 
 // migrate applies the compiled catalog to postgres (R3 T2 runner). It mirrors

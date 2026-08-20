@@ -297,6 +297,23 @@ func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
 	} {
 		assertPGType(tc.table, tc.col, "bigint")
 	}
+
+	// R1 v1.3 hard rule — no Unix time column may remain integer/int4 on
+	// postgres: any column whose name looks like a time stamp must be bigint.
+	var leftover int
+	timeNames := []string{
+		`created_at`, `updated_at`, `expires_at`, `applied_at`, `archived_at`,
+		`lease_expires_at`, `finished_at`, `started_at`, `read_at`, `revoked_at`,
+		`last_used_at`, `restored_at`, `deleted_at`,
+	}
+	q := `SELECT count(*) FROM information_schema.columns
+WHERE table_schema = 'public' AND data_type = 'integer' AND column_name = ANY($1)`
+	if err := st2.(*postgres).db.QueryRowContext(ctx, q, timeNames).Scan(&leftover); err != nil {
+		t.Fatal(err)
+	}
+	if leftover != 0 {
+		t.Fatalf("%d Unix time column(s) are still integer/int4 on postgres (violates R1 v1.3)", leftover)
+	}
 }
 
 func TestOpenPostgresRequiresDSN(t *testing.T) {
@@ -306,18 +323,93 @@ func TestOpenPostgresRequiresDSN(t *testing.T) {
 	}
 }
 
-func TestOpenPostgresFailsClosedOnNonEmptyCatalog(t *testing.T) {
-	// This must fail BEFORE any network connection: R2 cannot apply the
-	// SQLite-specific compiled catalog to postgres.
-	_, err := Open(context.Background(), OpenOptions{
-		Dialect: kernel.DialectPostgres,
-		DSN:     "postgres://user:pass@127.0.0.1:5432/nonexistent",
-	}, []kernel.MigrationContribution{{
-		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "m", Key: "m1"},
-		Name:                 "m1",
-	}})
-	if err == nil || !strings.Contains(err.Error(), "R3") {
-		t.Fatalf("postgres with non-empty catalog must fail closed, got %v", err)
+// TestOpenPostgresAppliesNonEmptyCatalogIntegration proves the R3 unblock:
+// Open with a non-empty (dual-dialect) catalog runs the postgres migrate
+// runner during open (fresh bootstrap), instead of the R2-era fail-closed.
+func TestOpenPostgresAppliesNonEmptyCatalogIntegration(t *testing.T) {
+	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	if dsn == "" {
+		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres non-empty-catalog open integration")
+	}
+	ctx := context.Background()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const dbName = "r3open"
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	openDSN := u.String()
+
+	admin, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+
+	bootstrap := []string{
+		`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, checksum TEXT NOT NULL, applied_at BIGINT NOT NULL)`,
+		`CREATE TABLE r3_open_probe (id SERIAL PRIMARY KEY, note TEXT NOT NULL)`,
+	}
+	catalog := []kernel.MigrationContribution{
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "r3.test", Key: "bootstrap"},
+			Version:              1,
+			Name:                 "bootstrap",
+			Checksum:             kernel.MigrationChecksum(bootstrap, "r3:open-bootstrap:v1"),
+			Apply: func(tx kernel.Tx) error {
+				for _, s := range bootstrap {
+					if _, err := tx.Exec(ctx, s); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "r3.test", Key: "seed"},
+			Version:              2,
+			Name:                 "seed",
+			Checksum:             kernel.MigrationChecksum([]string{`INSERT INTO r3_open_probe (note) VALUES (?)`}, "r3:open-seed:v1"),
+			Apply: func(tx kernel.Tx) error {
+				_, err := tx.Exec(ctx, `INSERT INTO r3_open_probe (note) VALUES (?)`, "hello")
+				return err
+			},
+		},
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            openDSN,
+		ConnectTimeout: 10 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("open with non-empty catalog: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	pg := st.(*postgres)
+
+	var migCount, rows int
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM r3_open_probe`).Scan(&rows); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != 2 || rows != 1 {
+		t.Fatalf("ledger=%d rows=%d, want 2/1 (open-time bootstrap)", migCount, rows)
+	}
+	if !st.WasFresh() {
+		t.Errorf("WasFresh recorded at open (pre-migrate) should be true")
 	}
 }
 
