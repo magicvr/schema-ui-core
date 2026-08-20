@@ -83,7 +83,7 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where = ` WHERE instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0`
+			where = ` WHERE lower(key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(name) LIKE '%' || CAST(? AS TEXT) || '%'`
 			args = append(args, q, q)
 		}
 		if filter.Enabled != nil {
@@ -297,7 +297,7 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where = ` WHERE instr(lower(detail), ?) > 0 OR task_id IN (SELECT id FROM scheduled_tasks WHERE instr(lower(key), ?) > 0)`
+			where = ` WHERE lower(detail) LIKE '%' || CAST(? AS TEXT) || '%' OR task_id IN (SELECT id FROM scheduled_tasks WHERE lower(key) LIKE '%' || CAST(? AS TEXT) || '%')`
 			args = append(args, q, q)
 		}
 		if s := strings.TrimSpace(filter.Status); s != "" {

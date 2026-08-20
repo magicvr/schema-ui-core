@@ -90,7 +90,7 @@ func (r *Repository) ListTypes(filter ListFilter) ([]DictType, int, error) {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where = ` WHERE instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0`
+			where = ` WHERE lower(key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(name) LIKE '%' || CAST(? AS TEXT) || '%'`
 			args = append(args, q, q)
 		}
 		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_types`+where, args...).Scan(&total); err != nil {
@@ -248,7 +248,7 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 			if where == "" {
 				sep = " WHERE "
 			}
-			where += sep + `(instr(lower(de.dict_key), ?) > 0 OR instr(lower(de.entry_key), ?) > 0 OR instr(lower(de.label), ?) > 0)`
+			where += sep + `(lower(de.dict_key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(de.entry_key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(de.label) LIKE '%' || CAST(? AS TEXT) || '%')`
 			args = append(args, q, q, q)
 		}
 		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_entries de`+where, args...).Scan(&total); err != nil {

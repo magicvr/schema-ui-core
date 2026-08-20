@@ -143,7 +143,7 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 		where := ` WHERE user_id = ?`
 		args := []any{userID}
 		if q := strings.ToLower(strings.TrimSpace(filter.Q)); q != "" {
-			where += ` AND (instr(lower(title), ?) > 0 OR instr(lower(body), ?) > 0 OR instr(lower(COALESCE(title_key,'')), ?) > 0 OR instr(lower(COALESCE(body_key,'')), ?) > 0)`
+			where += ` AND (lower(title) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(body) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(title_key,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(body_key,'')) LIKE '%' || CAST(? AS TEXT) || '%')`
 			args = append(args, q, q, q, q)
 		}
 		if filter.UnreadOnly {

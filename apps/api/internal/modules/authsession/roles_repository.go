@@ -421,7 +421,7 @@ func rolesWhere(query string, system *bool) (string, []any) {
 	clauses := []string{}
 	args := []any{}
 	if q := strings.ToLower(strings.TrimSpace(query)); q != "" {
-		clauses = append(clauses, `(instr(lower(key), ?) > 0 OR instr(lower(name), ?) > 0)`)
+		clauses = append(clauses, `(lower(key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(name) LIKE '%' || CAST(? AS TEXT) || '%')`)
 		args = append(args, q, q)
 	}
 	if system != nil {

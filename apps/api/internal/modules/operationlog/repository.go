@@ -314,7 +314,7 @@ func operationsWhere(filter OperationFilter) (string, []any) {
 	var conditions []string
 	var args []any
 	if q := strings.ToLower(strings.TrimSpace(filter.Q)); q != "" {
-		conditions = append(conditions, `(instr(lower(event), ?) > 0 OR instr(lower(actor_name), ?) > 0 OR instr(lower(COALESCE(detail,'')), ?) > 0 OR instr(lower(COALESCE(record_id,'')), ?) > 0)`)
+		conditions = append(conditions, `(lower(event) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(actor_name) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(detail,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(record_id,'')) LIKE '%' || CAST(? AS TEXT) || '%')`)
 		args = append(args, q, q, q, q)
 	}
 	if event := strings.TrimSpace(filter.Event); event != "" {

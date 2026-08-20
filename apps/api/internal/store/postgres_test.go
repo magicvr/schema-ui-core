@@ -342,6 +342,18 @@ WHERE table_schema = 'public' AND data_type = 'integer' AND column_name = ANY($1
 	if !matched {
 		t.Errorf("ConsumeChallenge with correct answer = false, want true")
 	}
+
+	// R4 A-004 F-001: runtime substring search must be portable — no sqlite
+	// instr(); LOWER(col) LIKE '%' || CAST($1 AS TEXT) || '%' executes on
+	// postgres (the -count=1 run above migrated all 48 via the same search
+	// shapes without "function instr does not exist").
+	var portable int
+	if err := st2.(*postgres).db.QueryRowContext(ctx,
+		`SELECT count(*) FROM roles WHERE lower(name) LIKE '%' || CAST($1 AS TEXT) || '%'`,
+		"admin",
+	).Scan(&portable); err != nil {
+		t.Fatalf("portable LIKE-concat search on postgres: %v", err)
+	}
 }
 
 func TestOpenPostgresRequiresDSN(t *testing.T) {

@@ -598,7 +598,7 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 			args = append(args, entryType)
 		}
 		if q != "" {
-			where += " AND (instr(lower(COALESCE(memo,'')), ?) > 0 OR instr(lower(COALESCE(ref_type,'')), ?) > 0 OR instr(lower(COALESCE(ref_id,'')), ?) > 0)"
+			where += " AND (lower(COALESCE(memo,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(ref_type,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(ref_id,'')) LIKE '%' || CAST(? AS TEXT) || '%')"
 			lq := strings.ToLower(q)
 			args = append(args, lq, lq, lq)
 		}

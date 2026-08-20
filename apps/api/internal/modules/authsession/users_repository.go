@@ -414,7 +414,7 @@ func usersWhere(query string, enabled, locked *bool) (string, []any) {
 	clauses := []string{}
 	args := []any{}
 	if q := strings.ToLower(strings.TrimSpace(query)); q != "" {
-		clauses = append(clauses, `(instr(lower(username), ?) > 0 OR instr(lower(name), ?) > 0 OR instr(lower(u.id), ?) > 0)`)
+		clauses = append(clauses, `(lower(username) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(name) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(u.id) LIKE '%' || CAST(? AS TEXT) || '%')`)
 		args = append(args, q, q, q)
 	}
 	if enabled != nil {
