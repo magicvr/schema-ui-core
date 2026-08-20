@@ -6,12 +6,13 @@ import (
 	"io"
 	"log/slog"
 	"net/url"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pgtest"
 )
 
 // TestCompositionPostgresStartup proves R4 S4: a postgres DSN boots the full
@@ -20,9 +21,9 @@ import (
 // SystemDataReady) passes — through the kernel.Store interface. Gated by
 // SCHEMA_UI_R2_PG_DSN (no PG = skip).
 func TestCompositionPostgresStartup(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres composition startup")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres composition startup")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(dsn)

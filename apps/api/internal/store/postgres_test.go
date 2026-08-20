@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,6 +17,8 @@ import (
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pgtest"
 )
 
 func TestRebindPostgres(t *testing.T) {
@@ -87,9 +88,9 @@ func TestIsSystemSchema(t *testing.T) {
 // COLLATE NOCASE equivalent). Runs in a dedicated scratch database so the
 // shared probe DB stays clean.
 func TestAuthsessionPostgresApplyIntegration(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping authsession postgres apply integration")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping authsession postgres apply integration")
 	}
 	ctx := context.Background()
 
@@ -195,9 +196,9 @@ func TestAuthsessionPostgresApplyIntegration(t *testing.T) {
 // R3 runner (PostgresApply ?? Apply per migration), creating the ledger with
 // sqlite-bound checksums. It is the close-out evidence test for GOAL-004.
 func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping full catalog postgres bootstrap")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping full catalog postgres bootstrap")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(dsn)
@@ -371,9 +372,9 @@ func TestOpenPostgresRequiresDSN(t *testing.T) {
 // Open with a non-empty (dual-dialect) catalog runs the postgres migrate
 // runner during open (fresh bootstrap), instead of the R2-era fail-closed.
 func TestOpenPostgresAppliesNonEmptyCatalogIntegration(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres non-empty-catalog open integration")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres non-empty-catalog open integration")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(dsn)
@@ -458,9 +459,9 @@ func TestOpenPostgresAppliesNonEmptyCatalogIntegration(t *testing.T) {
 }
 
 func TestOpenPostgresProbeIntegration(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres probe integration (no PG = dev/fast-test keeps working)")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres probe integration (no PG = dev/fast-test keeps working)")
 	}
 	ctx := context.Background()
 	probe := func() (kernel.Store, error) {
@@ -540,9 +541,9 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 // the ledger records sqlite-bound checksums, re-open is idempotent, and
 // checksum drift fails closed. Gated by SCHEMA_UI_R2_PG_DSN (no PG = skip).
 func TestPostgresMigrateRunnerIntegration(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres migrate runner integration")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres migrate runner integration")
 	}
 	ctx := context.Background()
 	openPG := func() *postgres {
@@ -655,9 +656,9 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 // audit fails. Uses the logincaptcha-repo trick of running directly over a
 // bootstrapped postgres store.
 func TestPostgresCrossModuleSharedTx(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres cross-module tx integration")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres cross-module tx integration")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(dsn)
@@ -758,9 +759,9 @@ func TestPostgresCrossModuleSharedTx(t *testing.T) {
 // repository — read a user from a seeded SQLite store, write it to a
 // fresh-bootstrapped postgres store, verify it round-trips.
 func TestPostgresDataMigrationPrototype(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres data migration prototype")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres data migration prototype")
 	}
 	ctx := context.Background()
 

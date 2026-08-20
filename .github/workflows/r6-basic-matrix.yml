@@ -75,6 +75,46 @@ jobs:
       - run: go vet ./...
       - run: go build ./...
 
+  # Dual-dialect gate: the whole Go suite is exercised again against a local
+  # PostgreSQL (all DB tests run on sqlite by default; the postgres-gated tests
+  # light up when PG_TEST_* are set). A superuser account creates & drops the
+  # scratch databases the integration tests use.
+  api-postgres:
+    name: api + postgres (Linux, Go 1.26)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PG_TEST_HOST: localhost
+      PG_TEST_PORT: "5432"
+      PG_TEST_USER: postgres
+      PG_TEST_PASSWORD: postgres
+      PG_TEST_DB: postgres
+      PG_TEST_SSLMODE: disable
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: go test ./...
+      - run: go vet ./...
+      - run: go build ./...
+
   browser-e2e:
     name: browser E2E (${{ matrix.profile }}, Linux, Node 22)
     runs-on: ubuntu-latest

@@ -67,19 +67,15 @@ db:
   # storage root (uploads / brand-assets / avatars). Default: ./data/schema-ui.db
   path: ./data/schema-ui.db
   #
-  # --- postgres connection params (only read when dialect: postgres) ---
-  # host/port/sslmode have defaults; name/user/password have none. The PASSWORD
-  # is a SECRET and must come from DB_PASSWORD env / configs/.env — ${DB_PASSWORD}
-  # resolves it at load time; never hardcode it here. DATABASE_URL is not read.
-  host: 127.0.0.1         # DB_HOST
-  port: 5432              # DB_PORT
-  name: schema_ui         # DB_NAME (database to connect)
-  user: postgres          # DB_USER
-  password: ${DB_PASSWORD:-}
+  # --- postgres: this file keeps only long-lived / non-secret settings ---
+  # The ADDRESS (host/port), USERNAME and PASSWORD come from the environment
+  # (DB_HOST / DB_PORT / DB_USER / DB_PASSWORD; host/port have defaults) so this
+  # file never carries server-specific or secret connection details. A whole
+  # postgres DSN may also be supplied via db.dsn / DB_DSN and overrides the
+  # exploded params. DATABASE_URL is intentionally not read.
+  name: schema_ui         # DB_NAME (database to connect — stable per env)
   sslmode: disable        # DB_SSLMODE (disable | require | verify-full...)
-  # Optional whole-DSN override: when set, it wins over host/port/name/user/
-  # password (put the password inside the DSN / its env reference).
-  dsn: ${DB_DSN:-}
+  # password: NEVER set here — only via DB_PASSWORD env / configs/.env.
 
 admin:
   # DEV-safe reference: empty default keeps the documented "admin" dev seed

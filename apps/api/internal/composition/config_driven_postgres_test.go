@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pgtest"
 )
 
 // TestCompositionPostgresConfigDriven proves the exact usage scenario: a
@@ -20,9 +22,9 @@ import (
 // and the database PASSWORD is supplied only via the DB_PASSWORD env var
 // (configs/.env). The loaded Config then boots the full app on postgres.
 func TestCompositionPostgresConfigDriven(t *testing.T) {
-	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	dsn := pgtest.DSN()
 	if dsn == "" {
-		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping config-driven postgres startup")
+		t.Skip("postgres test env not set (PG_TEST_*); skipping config-driven postgres startup")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(dsn)
