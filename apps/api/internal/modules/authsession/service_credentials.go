@@ -1,10 +1,12 @@
 package authsession
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"slices"
 	"strings"
 	"time"
@@ -30,10 +32,10 @@ type ServiceCredential struct {
 
 // ServiceCredentialAudit is executed inside the credential mutation
 // transaction. Returning an error rolls the mutation back.
-type ServiceCredentialAudit func(*sql.Tx) error
+type ServiceCredentialAudit func(kernel.Tx) error
 
 // ServiceCredentialRevokeAudit is the revoke-specific audit callback.
-type ServiceCredentialRevokeAudit func(*sql.Tx, ServiceCredential) error
+type ServiceCredentialRevokeAudit func(kernel.Tx, ServiceCredential) error
 
 var ErrCredentialNameTaken = errors.New("authsession: service credential name already taken")
 
@@ -46,8 +48,8 @@ func (r *Repository) CreateServiceCredential(credential ServiceCredential, audit
 	if err != nil {
 		return fmt.Errorf("marshal service credential scopes: %w", err)
 	}
-	err = r.withTx("create service credential", func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`
+	err = r.withTx("create service credential", func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(), `
 INSERT INTO service_credentials
   (id, name, token_prefix, token_hash, scopes, expires_at, created_by, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -73,11 +75,11 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 func (r *Repository) ListServiceCredentials(page, pageSize int) ([]ServiceCredential, int, error) {
 	var items []ServiceCredential
 	var total int
-	err := r.withTx("list service credentials", func(tx *sql.Tx) error {
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM service_credentials`).Scan(&total); err != nil {
+	err := r.withTx("list service credentials", func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM service_credentials`).Scan(&total); err != nil {
 			return fmt.Errorf("count service credentials: %w", err)
 		}
-		rows, err := tx.Query(`
+		rows, err := tx.Query(context.Background(), `
 SELECT id, name, token_prefix, token_hash, scopes, expires_at, revoked_at,
        last_used_at, created_by, created_at, updated_at
 FROM service_credentials ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
@@ -114,8 +116,8 @@ func (r *Repository) ServiceCredentialByHash(tokenHash string) (*ServiceCredenti
 
 func (r *Repository) serviceCredentialBy(where string, arg string) (*ServiceCredential, error) {
 	var credential ServiceCredential
-	err := r.withTx("get service credential", func(tx *sql.Tx) error {
-		got, err := scanServiceCredential(tx.QueryRow(`
+	err := r.withTx("get service credential", func(tx kernel.Tx) error {
+		got, err := scanServiceCredential(tx.QueryRow(context.Background(), `
 SELECT id, name, token_prefix, token_hash, scopes, expires_at, revoked_at,
        last_used_at, created_by, created_at, updated_at
 FROM service_credentials WHERE `+where, arg))
@@ -126,7 +128,7 @@ FROM service_credentials WHERE `+where, arg))
 		return nil
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
@@ -139,12 +141,12 @@ FROM service_credentials WHERE `+where, arg))
 func (r *Repository) RevokeServiceCredential(id string, now time.Time, audit ServiceCredentialRevokeAudit) (*ServiceCredential, bool, error) {
 	var credential ServiceCredential
 	changed := false
-	err := r.withTx("revoke service credential", func(tx *sql.Tx) error {
-		got, err := scanServiceCredential(tx.QueryRow(`
+	err := r.withTx("revoke service credential", func(tx kernel.Tx) error {
+		got, err := scanServiceCredential(tx.QueryRow(context.Background(), `
 SELECT id, name, token_prefix, token_hash, scopes, expires_at, revoked_at,
        last_used_at, created_by, created_at, updated_at
 FROM service_credentials WHERE id = ?`, id))
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -154,7 +156,7 @@ FROM service_credentials WHERE id = ?`, id))
 		if credential.RevokedAt != nil {
 			return nil
 		}
-		if _, err := tx.Exec(`UPDATE service_credentials SET revoked_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
+		if _, err := tx.Exec(context.Background(), `UPDATE service_credentials SET revoked_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
 			return fmt.Errorf("revoke service credential: %w", err)
 		}
 		revokedAt := now.UTC()
@@ -173,8 +175,8 @@ FROM service_credentials WHERE id = ?`, id))
 
 // MarkServiceCredentialUsed is best effort metadata bookkeeping for requests.
 func (r *Repository) MarkServiceCredentialUsed(id string, now time.Time) error {
-	return r.withTx("mark service credential used", func(tx *sql.Tx) error {
-		_, err := tx.Exec(`UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id)
+	return r.withTx("mark service credential used", func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), `UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id)
 		return err
 	})
 }
@@ -186,8 +188,8 @@ func (r *Repository) MarkServiceCredentialUsedWithAudit(id string, now time.Time
 	if audit == nil {
 		return errors.New("authsession: service credential use audit is required")
 	}
-	return r.withTx("mark service credential used with audit", func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
+	return r.withTx("mark service credential used with audit", func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(), `UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
 			return err
 		}
 		if err := audit(tx); err != nil {

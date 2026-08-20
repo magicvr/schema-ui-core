@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -99,7 +98,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	operations := operationlog.NewRepository(st)
 	settings := settingsrepository.New(st)
 	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, authRepository, devSession)
-	a.SetServiceCredentialUseTransactionalRecorder(func(tx *sql.Tx, use auth.ServiceCredentialUse) error {
+	a.SetServiceCredentialUseTransactionalRecorder(func(tx kernel.Tx, use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
 			"credentialId": use.CredentialID, "scopeCount": use.ScopeCount, "method": use.Method, "path": use.Path,
 		})

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"sync"
 	"testing"
 	"time"
@@ -24,9 +25,9 @@ func TestServiceCredentialPersistenceContract(t *testing.T) {
 		CreatedAt: now, UpdatedAt: now,
 	}
 	audited := false
-	if err := repository.CreateServiceCredential(credential, func(tx *sql.Tx) error {
+	if err := repository.CreateServiceCredential(credential, func(tx kernel.Tx) error {
 		audited = true
-		_, err := tx.Exec(`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, created_at)
+		_, err := tx.Exec(context.Background(), `INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, created_at)
 VALUES ('op-credential-create', 'service-credentials.create', 'user-admin', 'Admin', ?, ?)`, credential.ID, now.UnixMilli())
 		return err
 	}); err != nil {
@@ -87,7 +88,7 @@ func TestServiceCredentialAuditFailureRollsBackMutation(t *testing.T) {
 		TokenPrefix: "sui_sc_abcdefgh", TokenHash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 		Scopes: []string{"records.read"}, ExpiresAt: now.Add(time.Hour), CreatedBy: "user-admin",
 		CreatedAt: now, UpdatedAt: now,
-	}, func(*sql.Tx) error { return forced })
+	}, func(kernel.Tx) error { return forced })
 	if !errors.Is(err, forced) {
 		t.Fatalf("CreateServiceCredential error = %v, want forced audit failure", err)
 	}
@@ -109,7 +110,7 @@ func TestServiceCredentialUseAuditFailureRollsBackLastUsedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 	forced := errors.New("forced use audit failure")
-	err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now.Add(time.Minute), func(*sql.Tx) error { return forced })
+	err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now.Add(time.Minute), func(kernel.Tx) error { return forced })
 	if !errors.Is(err, forced) {
 		t.Fatalf("MarkServiceCredentialUsedWithAudit error = %v, want forced audit failure", err)
 	}
@@ -185,7 +186,7 @@ func TestServiceCredentialConcurrentRevokeTransitionsOnce(t *testing.T) {
 		go func(index int) {
 			defer wait.Done()
 			<-start
-			_, results[index], errorsByIndex[index] = repository.RevokeServiceCredential(credential.ID, now.Add(time.Minute), func(*sql.Tx, ServiceCredential) error {
+			_, results[index], errorsByIndex[index] = repository.RevokeServiceCredential(credential.ID, now.Add(time.Minute), func(kernel.Tx, ServiceCredential) error {
 				auditMu.Lock()
 				audits++
 				auditMu.Unlock()

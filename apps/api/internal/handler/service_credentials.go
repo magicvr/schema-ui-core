@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -187,7 +186,7 @@ func (h *serviceCredentialHandler) create() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not create service credential")
 			return
 		}
-		err = h.repository.CreateServiceCredential(credential, func(tx *sql.Tx) error {
+		err = h.repository.CreateServiceCredential(credential, func(tx kernel.Tx) error {
 			return h.operations.RecordOperationTx(tx, operationlog.Operation{
 				ID: newOperationID(), Event: operationlog.EventServiceCredentialCreate,
 				ActorID: actor.ID, ActorName: actor.Name, RecordID: &credential.ID, Detail: &detail,
@@ -215,7 +214,7 @@ func (h *serviceCredentialHandler) revoke() http.Handler {
 			return
 		}
 		now := h.now().UTC()
-		_, _, err := h.repository.RevokeServiceCredential(r.PathValue("id"), now, func(tx *sql.Tx, credential authsession.ServiceCredential) error {
+		_, _, err := h.repository.RevokeServiceCredential(r.PathValue("id"), now, func(tx kernel.Tx, credential authsession.ServiceCredential) error {
 			detail, detailErr := operationlog.NewDetail("service-credential-revoke", serviceCredentialAuditRow(credential), map[string]any{"revokedAt": now.Format(time.RFC3339)})
 			if detailErr != nil {
 				return detailErr

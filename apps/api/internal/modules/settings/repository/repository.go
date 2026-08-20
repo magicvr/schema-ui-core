@@ -3,19 +3,19 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	settingsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 )
 
 // TxRunner is the platform transaction boundary consumed by settings.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the site settings singleton queries.
@@ -50,12 +50,12 @@ type SiteSettings struct {
 }
 
 var (
-	ErrInvalidSiteTitle     = errors.New("settings: site title must not be empty")
-	ErrInvalidLogoURL       = errors.New("settings: invalid logo url")
-	ErrInvalidDefaultLocale = errors.New("settings: invalid default locale")
-	ErrInvalidDefaultTheme  = errors.New("settings: invalid default theme")
-	ErrInvalidSiteTimezone  = errors.New("settings: invalid site timezone")
-	ErrInvalidRetentionDays = errors.New("settings: invalid operation log retention days")
+	ErrInvalidSiteTitle        = errors.New("settings: site title must not be empty")
+	ErrInvalidLogoURL          = errors.New("settings: invalid logo url")
+	ErrInvalidDefaultLocale    = errors.New("settings: invalid default locale")
+	ErrInvalidDefaultTheme     = errors.New("settings: invalid default theme")
+	ErrInvalidSiteTimezone     = errors.New("settings: invalid site timezone")
+	ErrInvalidRetentionDays    = errors.New("settings: invalid operation log retention days")
 	ErrInvalidExpirationAction = errors.New("settings: invalid operation log expiration action")
 )
 
@@ -71,7 +71,7 @@ var ValidDefaultThemes = []string{"", "auto", "light", "dark"}
 // GetSiteSettings returns the singleton or the frozen defaults when it is absent.
 func (r *Repository) GetSiteSettings() (*SiteSettings, error) {
 	var settings *SiteSettings
-	err := r.withTx("get site settings", func(tx *sql.Tx) error {
+	err := r.withTx("get site settings", func(tx kernel.Tx) error {
 		var err error
 		settings, err = getSiteSettings(tx)
 		return err
@@ -191,7 +191,7 @@ func (r *Repository) writeSiteSettings(
 
 	forceReset := len(reset) > 0 && reset[0]
 	var settings *SiteSettings
-	err = r.withTx("update site settings", func(tx *sql.Tx) error {
+	err = r.withTx("update site settings", func(tx kernel.Tx) error {
 		var stmt string
 		var args []any
 		if forceReset {
@@ -232,7 +232,7 @@ func (r *Repository) writeSiteSettings(
 				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, themeSet, copyrightSet, icpSet, daysSet, actionSet,
 			}
 		}
-		if _, err := tx.Exec(stmt, args...); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt, args...); err != nil {
 			return fmt.Errorf("upsert singleton: %w", err)
 		}
 		var err error
@@ -287,20 +287,20 @@ func validateTimezone(raw string) error {
 	return nil
 }
 
-func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
+func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 	if r == nil || r.runner == nil {
 		return fmt.Errorf("%s: settings repository is not configured", operation)
 	}
-	if err := r.runner.WithTx(context.Background(), fn); err != nil {
+	if err := r.runner.Run(context.Background(), fn); err != nil {
 		return fmt.Errorf("%s: %w", operation, err)
 	}
 	return nil
 }
 
-func getSiteSettings(row interface{ QueryRow(string, ...any) *sql.Row }) (*SiteSettings, error) {
+func getSiteSettings(tx kernel.Tx) (*SiteSettings, error) {
 	var settings SiteSettings
 	var updatedAt int64
-	err := row.QueryRow(
+	err := tx.QueryRow(context.Background(),
 		`SELECT id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
 		        default_locale, site_timezone, default_theme, copyright_text, icp_number,
 		        operation_log_retention_days, operation_log_expiration_action, updated_at
@@ -312,7 +312,7 @@ func getSiteSettings(row interface{ QueryRow(string, ...any) *sql.Row }) (*SiteS
 		&settings.ICPNumber, &settings.OperationLogRetentionDays, &settings.OperationLogExpirationAction,
 		&updatedAt,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return &SiteSettings{
 			ID:                           "default",
 			SiteTitle:                    settingsmigration.DefaultSiteTitle,

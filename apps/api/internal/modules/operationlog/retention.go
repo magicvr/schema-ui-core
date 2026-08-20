@@ -1,12 +1,13 @@
 package operationlog
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	settingsmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/migration"
 )
 
@@ -30,39 +31,39 @@ func (r *Repository) ApplyRetention(now time.Time, days int, action string) (int
 	cutoff := now.UTC().AddDate(0, 0, -days).UnixMilli()
 	archivedAt := now.UTC().UnixMilli()
 	var affected int64
-	err := r.withTx("apply operation log retention", func(tx *sql.Tx) error {
+	err := r.withTx("apply operation log retention", func(tx kernel.Tx) error {
 		if action == settingsmigration.ExpirationActionArchive {
-			if _, err := tx.Exec(
-				`INSERT OR IGNORE INTO operation_log_archive
+			if _, err := tx.Exec(context.Background(),
+				`INSERT INTO operation_log_archive
 				 (id, event, actor_id, actor_name, record_id, detail, created_at, archived_at)
 				 SELECT id, event, actor_id, actor_name, record_id, detail, created_at, ?
-				 FROM operation_log WHERE created_at < ?`,
+				 FROM operation_log WHERE created_at < ? ON CONFLICT (id) DO NOTHING`,
 				archivedAt, cutoff,
 			); err != nil {
 				return fmt.Errorf("archive rows: %w", err)
 			}
-			if _, err := tx.Exec(
-				`INSERT OR IGNORE INTO operation_log_archive_correlation (operation_id, correlation_id)
+			if _, err := tx.Exec(context.Background(),
+				`INSERT INTO operation_log_archive_correlation (operation_id, correlation_id)
 				 SELECT c.operation_id, c.correlation_id
 				 FROM operation_log_correlation c
 				 INNER JOIN operation_log o ON o.id = c.operation_id
-				 WHERE o.created_at < ?`,
+				 WHERE o.created_at < ? ON CONFLICT (operation_id) DO NOTHING`,
 				cutoff,
 			); err != nil {
 				return fmt.Errorf("archive correlations: %w", err)
 			}
-			if _, err := tx.Exec(
-				`INSERT OR IGNORE INTO operation_log_archive_session (operation_id, session_id)
+			if _, err := tx.Exec(context.Background(),
+				`INSERT INTO operation_log_archive_session (operation_id, session_id)
 				 SELECT s.operation_id, s.session_id
 				 FROM operation_log_session s
 				 INNER JOIN operation_log o ON o.id = s.operation_id
-				 WHERE o.created_at < ?`,
+				 WHERE o.created_at < ? ON CONFLICT (operation_id) DO NOTHING`,
 				cutoff,
 			); err != nil {
 				return fmt.Errorf("archive sessions: %w", err)
 			}
 		}
-		result, err := tx.Exec(`DELETE FROM operation_log WHERE created_at < ?`, cutoff)
+		result, err := tx.Exec(context.Background(), `DELETE FROM operation_log WHERE created_at < ?`, cutoff)
 		if err != nil {
 			return fmt.Errorf("delete expired rows: %w", err)
 		}

@@ -2,7 +2,6 @@ package composition
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -264,7 +263,7 @@ func newMuxWithExtraProviders(
 	if err := handler.SetTrustedProxyCIDRs(cfg.HTTPTrustedProxies); err != nil {
 		return nil, err
 	}
-	a.SetServiceCredentialUseTransactionalRecorder(func(tx *sql.Tx, use auth.ServiceCredentialUse) error {
+	a.SetServiceCredentialUseTransactionalRecorder(func(tx kernel.Tx, use auth.ServiceCredentialUse) error {
 		detail, err := operationlog.NewDetail("service-credential-use", nil, map[string]any{
 			"credentialId": use.CredentialID,
 			"scopeCount":   use.ScopeCount,

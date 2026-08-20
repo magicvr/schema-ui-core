@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -78,7 +79,7 @@ func TestServiceCredentialMiddlewareFailsClosedWhenUseAuditFails(t *testing.T) {
 	repository := authsession.NewRepository(st)
 	raw, credential := createServiceCredentialForMiddlewareTest(t, repository)
 	a := NewWithRepository([]byte("secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
-	a.SetServiceCredentialUseTransactionalRecorder(func(*sql.Tx, ServiceCredentialUse) error { return errors.New("forced use audit failure") })
+	a.SetServiceCredentialUseTransactionalRecorder(func(kernel.Tx, ServiceCredentialUse) error { return errors.New("forced use audit failure") })
 	called := false
 	protected := a.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true }))
 	request := httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)

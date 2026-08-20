@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
@@ -113,7 +114,7 @@ type Recorder interface {
 // TransactionalRecorder lets a business mutation append its required audit
 // row using the caller-owned transaction.
 type TransactionalRecorder interface {
-	RecordOperationTx(*sql.Tx, Operation) error
+	RecordOperationTx(kernel.Tx, Operation) error
 }
 
 // Reader is the query boundary consumed by the optional Activity module.
@@ -124,7 +125,7 @@ type Reader interface {
 
 // TxRunner is the platform transaction boundary consumed by operationlog.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 var ErrNotFound = errors.New("operationlog: not found")
@@ -144,14 +145,14 @@ func NewRepository(runner TxRunner) *Repository {
 
 // RecordOperation appends one row. Callers deliberately decide best-effort policy.
 func (r *Repository) RecordOperation(operation Operation) error {
-	return r.withTx("record operation "+operation.Event, func(tx *sql.Tx) error {
+	return r.withTx("record operation "+operation.Event, func(tx kernel.Tx) error {
 		return r.RecordOperationTx(tx, operation)
 	})
 }
 
 // RecordOperationTx appends one row using a caller-owned transaction. It is
 // used for mutation audits that must fail closed with the domain write.
-func (r *Repository) RecordOperationTx(tx *sql.Tx, operation Operation) error {
+func (r *Repository) RecordOperationTx(tx kernel.Tx, operation Operation) error {
 	r.failureMu.RLock()
 	forced := r.failure
 	r.failureMu.RUnlock()
@@ -165,7 +166,7 @@ func (r *Repository) RecordOperationTx(tx *sql.Tx, operation Operation) error {
 	if operation.Detail != nil {
 		detail = *operation.Detail
 	}
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		operation.ID, operation.Event, operation.ActorID, operation.ActorName,
@@ -174,7 +175,7 @@ func (r *Repository) RecordOperationTx(tx *sql.Tx, operation Operation) error {
 		return err
 	}
 	if correlationID := strings.TrimSpace(operation.CorrelationID); correlationID != "" {
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO operation_log_correlation (operation_id, correlation_id) VALUES (?, ?)`,
 			operation.ID, correlationID,
 		); err != nil {
@@ -182,7 +183,7 @@ func (r *Repository) RecordOperationTx(tx *sql.Tx, operation Operation) error {
 		}
 	}
 	if sessionID := strings.TrimSpace(operation.SessionID); sessionID != "" {
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO operation_log_session (operation_id, session_id) VALUES (?, ?)`,
 			operation.ID, sessionID,
 		); err != nil {
@@ -214,12 +215,12 @@ func (r *Repository) ListOperations(limit int) ([]Operation, error) {
 func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation, int, error) {
 	var items []Operation
 	var total int
-	err := r.withTx("list operations", func(tx *sql.Tx) error {
+	err := r.withTx("list operations", func(tx kernel.Tx) error {
 		where, args := operationsWhere(filter)
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM operation_log`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM operation_log`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count: %w", err)
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
 			        c.correlation_id, s.session_id, o.created_at
 			 FROM operation_log o
@@ -252,9 +253,9 @@ func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation
 // GetOperation returns one row by id.
 func (r *Repository) GetOperation(id string) (*Operation, error) {
 	var operation Operation
-	err := r.withTx("get operation", func(tx *sql.Tx) error {
+	err := r.withTx("get operation", func(tx kernel.Tx) error {
 		var err error
-		operation, err = scanOperation(tx.QueryRow(
+		operation, err = scanOperation(tx.QueryRow(context.Background(),
 			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
 			        c.correlation_id, s.session_id, o.created_at
 			 FROM operation_log o
@@ -269,11 +270,11 @@ func (r *Repository) GetOperation(id string) (*Operation, error) {
 	return &operation, nil
 }
 
-func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
+func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 	if r == nil || r.runner == nil {
 		return fmt.Errorf("%s: operationlog repository is not configured", operation)
 	}
-	if err := r.runner.WithTx(context.Background(), fn); err != nil {
+	if err := r.runner.Run(context.Background(), fn); err != nil {
 		return fmt.Errorf("%s: %w", operation, err)
 	}
 	return nil
@@ -287,7 +288,7 @@ func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 		&operation.ID, &operation.Event, &operation.ActorID, &operation.ActorName,
 		&recordID, &detail, &correlationID, &sessionID, &createdAt,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return Operation{}, ErrNotFound
 	}
 	if err != nil {

@@ -4,16 +4,16 @@ package authsession
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"time"
 )
 
 // TxRunner is the platform persistence boundary consumed by the repository.
 // Domain code never imports the concrete store implementation.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 // Repository owns the auth-session and RBAC domain queries.
@@ -163,11 +163,11 @@ var (
 	ErrInvalidMenuItem   = errors.New("authsession: invalid menu item reference")
 )
 
-func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
+func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 	if r == nil || r.runner == nil {
 		return fmt.Errorf("%s: authsession repository is not configured", operation)
 	}
-	if err := r.runner.WithTx(context.Background(), fn); err != nil {
+	if err := r.runner.Run(context.Background(), fn); err != nil {
 		return fmt.Errorf("%s: %w", operation, err)
 	}
 	return nil

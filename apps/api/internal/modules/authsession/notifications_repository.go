@@ -7,9 +7,11 @@
 package authsession
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 
@@ -51,8 +53,8 @@ type NotificationFilter struct {
 // NotificationsEnabledFor reports whether a user accepts new notifications.
 func (r *Repository) NotificationsEnabledFor(userID string) (bool, error) {
 	var enabled int
-	err := r.withTx("notifications enabled for", func(tx *sql.Tx) error {
-		if err := tx.QueryRow(`SELECT notifications_enabled FROM users WHERE id = ?`, userID).Scan(&enabled); err != nil {
+	err := r.withTx("notifications enabled for", func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT notifications_enabled FROM users WHERE id = ?`, userID).Scan(&enabled); err != nil {
 			return fmt.Errorf("read notifications_enabled: %w", err)
 		}
 		return nil
@@ -65,12 +67,12 @@ func (r *Repository) NotificationsEnabledFor(userID string) (bool, error) {
 
 // SetNotificationsEnabled flips the per-user master switch.
 func (r *Repository) SetNotificationsEnabled(userID string, enabled bool, now time.Time) error {
-	return r.withTx("set notifications enabled", func(tx *sql.Tx) error {
+	return r.withTx("set notifications enabled", func(tx kernel.Tx) error {
 		value := 0
 		if enabled {
 			value = 1
 		}
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET notifications_enabled = ?, updated_at = ? WHERE id = ?`,
 			value, now.Unix(), userID,
 		); err != nil {
@@ -84,8 +86,8 @@ func (r *Repository) SetNotificationsEnabled(userID string, enabled bool, now ti
 // target). When the per-user cap is exceeded, the oldest READ rows are pruned
 // in the same transaction; unread rows are never pruned.
 func (r *Repository) CreateNotification(n Notification, now time.Time) error {
-	return r.withTx("create notification", func(tx *sql.Tx) error {
-		if _, err := tx.Exec(
+	return r.withTx("create notification", func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO notifications (id, user_id, event, title, body, title_key, body_key, read_at, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
 			n.ID, n.UserID, n.Event, n.Title, n.Body, n.TitleKey, n.BodyKey, now.Unix(),
@@ -95,12 +97,12 @@ func (r *Repository) CreateNotification(n Notification, now time.Time) error {
 		// Prune: keep at most maxNotificationsPerUser rows; delete oldest READ
 		// rows beyond the cap, never unread ones (two-step, explicitly correct).
 		var count int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM notifications WHERE user_id = ?`, n.UserID).Scan(&count); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM notifications WHERE user_id = ?`, n.UserID).Scan(&count); err != nil {
 			return fmt.Errorf("count notifications for prune: %w", err)
 		}
 		if count > maxNotificationsPerUser {
 			excess := count - maxNotificationsPerUser
-			rows, err := tx.Query(
+			rows, err := tx.Query(context.Background(),
 				`SELECT id FROM notifications WHERE user_id = ? AND read_at IS NOT NULL ORDER BY created_at ASC LIMIT ?`,
 				n.UserID, excess,
 			)
@@ -124,7 +126,7 @@ func (r *Repository) CreateNotification(n Notification, now time.Time) error {
 				return err
 			}
 			for _, id := range ids {
-				if _, err := tx.Exec(`DELETE FROM notifications WHERE id = ?`, id); err != nil {
+				if _, err := tx.Exec(context.Background(), `DELETE FROM notifications WHERE id = ?`, id); err != nil {
 					return fmt.Errorf("prune notification %s: %w", id, err)
 				}
 			}
@@ -137,7 +139,7 @@ func (r *Repository) CreateNotification(n Notification, now time.Time) error {
 func (r *Repository) ListNotifications(userID string, filter NotificationFilter) ([]Notification, int, error) {
 	var items []Notification
 	var total int
-	err := r.withTx("list notifications", func(tx *sql.Tx) error {
+	err := r.withTx("list notifications", func(tx kernel.Tx) error {
 		where := ` WHERE user_id = ?`
 		args := []any{userID}
 		if q := strings.ToLower(strings.TrimSpace(filter.Q)); q != "" {
@@ -154,10 +156,10 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 				where += ` AND read_at IS NULL`
 			}
 		}
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM notifications`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM notifications`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count notifications: %w", err)
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, user_id, event, title, body, title_key, body_key, read_at, created_at FROM notifications`+where+
 				` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
@@ -184,8 +186,8 @@ func (r *Repository) ListNotifications(userID string, filter NotificationFilter)
 // MarkNotificationRead marks one owned notification read (idempotent). Unknown
 // or foreign ids fail closed with ErrNotFound.
 func (r *Repository) MarkNotificationRead(id, userID string, now time.Time) error {
-	return r.withTx("mark notification read", func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	return r.withTx("mark notification read", func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE notifications SET read_at = COALESCE(read_at, ?) WHERE id = ? AND user_id = ?`,
 			now.Unix(), id, userID,
 		)
@@ -198,7 +200,7 @@ func (r *Repository) MarkNotificationRead(id, userID string, now time.Time) erro
 		}
 		if affected == 0 {
 			var owned int
-			if err := tx.QueryRow(`SELECT COUNT(*) FROM notifications WHERE id = ? AND user_id = ?`, id, userID).Scan(&owned); err != nil {
+			if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM notifications WHERE id = ? AND user_id = ?`, id, userID).Scan(&owned); err != nil {
 				return fmt.Errorf("check notification: %w", err)
 			}
 			if owned == 0 {
@@ -213,8 +215,8 @@ func (r *Repository) MarkNotificationRead(id, userID string, now time.Time) erro
 // MarkAllNotificationsRead marks every unread notification of a user read.
 func (r *Repository) MarkAllNotificationsRead(userID string, now time.Time) (int, error) {
 	var count int64
-	err := r.withTx("mark all notifications read", func(tx *sql.Tx) error {
-		res, err := tx.Exec(
+	err := r.withTx("mark all notifications read", func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
 			`UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL`,
 			now.Unix(), userID,
 		)
@@ -233,8 +235,8 @@ func (r *Repository) MarkAllNotificationsRead(userID string, now time.Time) (int
 // UnreadNotificationCount returns the unread count for the bell badge.
 func (r *Repository) UnreadNotificationCount(userID string) (int, error) {
 	var count int
-	err := r.withTx("unread notification count", func(tx *sql.Tx) error {
-		if err := tx.QueryRow(
+	err := r.withTx("unread notification count", func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(),
 			`SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL`, userID,
 		).Scan(&count); err != nil {
 			return fmt.Errorf("count unread notifications: %w", err)
@@ -253,7 +255,7 @@ func scanNotification(row interface{ Scan(...any) error }) (*Notification, error
 	var readAt *int64
 	var createdAt int64
 	err := row.Scan(&n.ID, &n.UserID, &n.Event, &n.Title, &n.Body, &titleKey, &bodyKey, &readAt, &createdAt)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {

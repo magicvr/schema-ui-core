@@ -2,7 +2,7 @@ package operationlog
 
 import (
 	"context"
-	"database/sql"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"path/filepath"
 	"testing"
 	"time"
@@ -54,14 +54,14 @@ func TestApplyRetentionArchivesThenRemovesHotRows(t *testing.T) {
 	}
 
 	var archivedID, archivedCorr, archivedSession string
-	if err := repo.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if err := tx.QueryRow(`SELECT id FROM operation_log_archive WHERE id = 'old-1'`).Scan(&archivedID); err != nil {
+	if err := repo.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT id FROM operation_log_archive WHERE id = 'old-1'`).Scan(&archivedID); err != nil {
 			return err
 		}
-		if err := tx.QueryRow(`SELECT correlation_id FROM operation_log_archive_correlation WHERE operation_id = 'old-1'`).Scan(&archivedCorr); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT correlation_id FROM operation_log_archive_correlation WHERE operation_id = 'old-1'`).Scan(&archivedCorr); err != nil {
 			return err
 		}
-		return tx.QueryRow(`SELECT session_id FROM operation_log_archive_session WHERE operation_id = 'old-1'`).Scan(&archivedSession)
+		return tx.QueryRow(context.Background(), `SELECT session_id FROM operation_log_archive_session WHERE operation_id = 'old-1'`).Scan(&archivedSession)
 	}); err != nil {
 		t.Fatalf("archive lookup: %v", err)
 	}
@@ -87,8 +87,8 @@ func TestApplyRetentionDeleteDoesNotArchive(t *testing.T) {
 		t.Fatalf("expired = %d", n)
 	}
 	var count int
-	if err := repo.runner.WithTx(context.Background(), func(tx *sql.Tx) error {
-		return tx.QueryRow(`SELECT COUNT(*) FROM operation_log_archive`).Scan(&count)
+	if err := repo.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM operation_log_archive`).Scan(&count)
 	}); err != nil {
 		t.Fatalf("count archive: %v", err)
 	}

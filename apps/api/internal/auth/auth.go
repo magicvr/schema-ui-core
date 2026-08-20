@@ -9,12 +9,12 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -91,7 +91,7 @@ type ServiceCredentialUseRecorder func(ServiceCredentialUse) error
 // ServiceCredentialUseTxRecorder writes the use audit row on the caller-owned
 // credential transaction. Production composition uses this seam so the audit
 // event and last_used_at update commit or roll back together.
-type ServiceCredentialUseTxRecorder func(*sql.Tx, ServiceCredentialUse) error
+type ServiceCredentialUseTxRecorder func(kernel.Tx, ServiceCredentialUse) error
 
 type ServiceCredentialUseTransactionalRepository interface {
 	MarkServiceCredentialUsedWithAudit(string, time.Time, authsession.ServiceCredentialAudit) error
@@ -629,7 +629,7 @@ func (a *Authenticator) authenticateServiceCredential(w http.ResponseWriter, r *
 			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
 			return
 		}
-		if err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now, func(tx *sql.Tx) error {
+		if err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now, func(tx kernel.Tx) error {
 			return a.serviceCredentialUseTxRecorder(tx, use)
 		}); err != nil {
 			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")

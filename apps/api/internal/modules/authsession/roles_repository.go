@@ -1,9 +1,10 @@
 package authsession
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"strings"
 	"time"
 
@@ -14,12 +15,12 @@ import (
 func (r *Repository) ListRoles(filter RoleFilter) ([]Role, int, error) {
 	var items []Role
 	var total int
-	err := r.withTx("list roles", func(tx *sql.Tx) error {
+	err := r.withTx("list roles", func(tx kernel.Tx) error {
 		where, args := rolesWhere(filter.Q, filter.System)
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM roles`+where, args...).Scan(&total); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM roles`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count roles: %w", err)
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, key, name, system, created_at, updated_at FROM roles`+where+
 				` ORDER BY `+rolesSortSQL(filter.Sort, filter.Order)+`, id ASC`+
 				` LIMIT ? OFFSET ?`,
@@ -57,8 +58,8 @@ func (r *Repository) ListRoles(filter RoleFilter) ([]Role, int, error) {
 // GetRole fetches one role by primary key.
 func (r *Repository) GetRole(id string) (*Role, error) {
 	var role Role
-	err := r.withTx("get role", func(tx *sql.Tx) error {
-		if err := scanRoleRow(tx.QueryRow(
+	err := r.withTx("get role", func(tx kernel.Tx) error {
+		if err := scanRoleRow(tx.QueryRow(context.Background(),
 			`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
 		), &role); err != nil {
 			return err
@@ -81,16 +82,16 @@ func (r *Repository) CreateRoleWithGrants(key, name string, permissions, menuIte
 	if !roleKeyRe.MatchString(key) {
 		return nil, ErrInvalidKey
 	}
-	err := r.withTx("create role", func(tx *sql.Tx) error {
+	err := r.withTx("create role", func(tx kernel.Tx) error {
 		var exists int
-		if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM roles WHERE key = ?)`, key).Scan(&exists); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM roles WHERE key = ?)`, key).Scan(&exists); err != nil {
 			return fmt.Errorf("check role key: %w", err)
 		}
 		if exists == 1 {
 			return ErrRoleTaken
 		}
 		nowUnix := now.Unix()
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)`,
 			"role-"+key, key, name, nowUnix, nowUnix,
 		); err != nil {
@@ -114,9 +115,9 @@ func (r *Repository) UpdateRole(id, name string, now time.Time) (*Role, error) {
 
 // UpdateRoleWithGrants updates a custom role and optional grant sets.
 func (r *Repository) UpdateRoleWithGrants(id string, patch RolePatch, now time.Time) (*Role, error) {
-	err := r.withTx("update role", func(tx *sql.Tx) error {
+	err := r.withTx("update role", func(tx kernel.Tx) error {
 		var current Role
-		if err := scanRoleRow(tx.QueryRow(
+		if err := scanRoleRow(tx.QueryRow(context.Background(),
 			`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
 		), &current); err != nil {
 			return err
@@ -132,7 +133,7 @@ func (r *Repository) UpdateRoleWithGrants(id string, patch RolePatch, now time.T
 		if updatedAt <= current.UpdatedAt.Unix() {
 			updatedAt = current.UpdatedAt.Unix() + 1
 		}
-		if _, err := tx.Exec(`UPDATE roles SET name = ?, updated_at = ? WHERE id = ?`, name, updatedAt, id); err != nil {
+		if _, err := tx.Exec(context.Background(), `UPDATE roles SET name = ?, updated_at = ? WHERE id = ?`, name, updatedAt, id); err != nil {
 			return fmt.Errorf("update role: %w", err)
 		}
 		if patch.Permissions != nil {
@@ -155,9 +156,9 @@ func (r *Repository) UpdateRoleWithGrants(id string, patch RolePatch, now time.T
 
 // DeleteRole removes a custom role when it is not assigned.
 func (r *Repository) DeleteRole(id string) error {
-	return r.withTx("delete role", func(tx *sql.Tx) error {
+	return r.withTx("delete role", func(tx kernel.Tx) error {
 		var current Role
-		if err := scanRoleRow(tx.QueryRow(
+		if err := scanRoleRow(tx.QueryRow(context.Background(),
 			`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
 		), &current); err != nil {
 			return err
@@ -166,13 +167,13 @@ func (r *Repository) DeleteRole(id string) error {
 			return ErrRoleSystem
 		}
 		var used int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, id).Scan(&used); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, id).Scan(&used); err != nil {
 			return fmt.Errorf("count role users: %w", err)
 		}
 		if used > 0 {
 			return ErrRoleInUse
 		}
-		if _, err := tx.Exec(`DELETE FROM roles WHERE id = ?`, id); err != nil {
+		if _, err := tx.Exec(context.Background(), `DELETE FROM roles WHERE id = ?`, id); err != nil {
 			return fmt.Errorf("delete role: %w", err)
 		}
 		return nil
@@ -189,10 +190,10 @@ func (r *Repository) DeleteRolesBatch(ids []string) (int, error) {
 		return 0, nil
 	}
 	deleted := 0
-	err := r.withTx("delete roles batch", func(tx *sql.Tx) error {
+	err := r.withTx("delete roles batch", func(tx kernel.Tx) error {
 		for _, id := range keys {
 			var current Role
-			if err := scanRoleRow(tx.QueryRow(
+			if err := scanRoleRow(tx.QueryRow(context.Background(),
 				`SELECT id, key, name, system, created_at, updated_at FROM roles WHERE id = ?`, id,
 			), &current); err != nil {
 				return err
@@ -201,7 +202,7 @@ func (r *Repository) DeleteRolesBatch(ids []string) (int, error) {
 				return ErrRoleSystem
 			}
 			var used int
-			if err := tx.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, id).Scan(&used); err != nil {
+			if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, id).Scan(&used); err != nil {
 				return fmt.Errorf("count role %s users: %w", id, err)
 			}
 			if used > 0 {
@@ -209,7 +210,7 @@ func (r *Repository) DeleteRolesBatch(ids []string) (int, error) {
 			}
 		}
 		for _, id := range keys {
-			if _, err := tx.Exec(`DELETE FROM roles WHERE id = ?`, id); err != nil {
+			if _, err := tx.Exec(context.Background(), `DELETE FROM roles WHERE id = ?`, id); err != nil {
 				return fmt.Errorf("delete role %s: %w", id, err)
 			}
 		}
@@ -226,20 +227,20 @@ func (r *Repository) PermissionsForRoles(roleKeys []string) ([]string, error) {
 		return []string{}, nil
 	}
 	permissions := []string{}
-	err := r.withTx("permissions for roles", func(tx *sql.Tx) error {
+	err := r.withTx("permissions for roles", func(tx kernel.Tx) error {
 		placeholders := strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")
 		args := make([]any, len(keys))
 		for i, key := range keys {
 			args[i] = key
 		}
 		var count int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM roles WHERE key IN (`+placeholders+`)`, args...).Scan(&count); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM roles WHERE key IN (`+placeholders+`)`, args...).Scan(&count); err != nil {
 			return fmt.Errorf("count assignment roles: %w", err)
 		}
 		if count != len(keys) {
 			return ErrInvalidRole
 		}
-		rows, err := tx.Query(
+		rows, err := tx.Query(context.Background(),
 			`SELECT DISTINCT p.key
 			 FROM roles r
 			 JOIN role_permissions rp ON rp.role_id = r.id
@@ -267,10 +268,10 @@ func (r *Repository) PermissionsForRoles(roleKeys []string) ([]string, error) {
 
 // ValidatePermissionKeys rejects unknown permission references.
 func (r *Repository) ValidatePermissionKeys(keys []string) error {
-	return r.withTx("validate permission keys", func(tx *sql.Tx) error {
+	return r.withTx("validate permission keys", func(tx kernel.Tx) error {
 		for _, key := range dedupeKeys(keys) {
 			var exists int
-			if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM permissions WHERE key = ?)`, key).Scan(&exists); err != nil {
+			if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM permissions WHERE key = ?)`, key).Scan(&exists); err != nil {
 				return fmt.Errorf("validate permission %s: %w", key, err)
 			}
 			if exists == 0 {
@@ -283,10 +284,10 @@ func (r *Repository) ValidatePermissionKeys(keys []string) error {
 
 // ValidateMenuItemIDs rejects unknown navigation references.
 func (r *Repository) ValidateMenuItemIDs(ids []string) error {
-	return r.withTx("validate menu item ids", func(tx *sql.Tx) error {
+	return r.withTx("validate menu item ids", func(tx kernel.Tx) error {
 		for _, id := range dedupeKeys(ids) {
 			var exists int
-			if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
+			if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
 				return fmt.Errorf("validate menu item %s: %w", id, err)
 			}
 			if exists == 0 {
@@ -297,9 +298,9 @@ func (r *Repository) ValidateMenuItemIDs(ids []string) error {
 	})
 }
 
-func hydrateRole(tx *sql.Tx, role *Role) error {
+func hydrateRole(tx kernel.Tx, role *Role) error {
 	role.Permissions = []string{}
-	rows, err := tx.Query(
+	rows, err := tx.Query(context.Background(),
 		`SELECT p.key FROM role_permissions rp
 		 JOIN permissions p ON p.id = rp.permission_id
 		 WHERE rp.role_id = ? ORDER BY p.key`, role.ID,
@@ -324,7 +325,7 @@ func hydrateRole(tx *sql.Tx, role *Role) error {
 	}
 
 	role.MenuItems = []string{}
-	rows, err = tx.Query(
+	rows, err = tx.Query(context.Background(),
 		`SELECT m.id FROM role_menu_items rmi
 		 JOIN menu_items m ON m.id = rmi.menu_item_id
 		 WHERE rmi.role_id = ? ORDER BY m.id`, role.ID,
@@ -347,19 +348,19 @@ func hydrateRole(tx *sql.Tx, role *Role) error {
 	if err := rows.Close(); err != nil {
 		return fmt.Errorf("close role menu item rows: %w", err)
 	}
-	if err := tx.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, role.ID).Scan(&role.AssignedUsers); err != nil {
+	if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM user_roles WHERE role_id = ?`, role.ID).Scan(&role.AssignedUsers); err != nil {
 		return fmt.Errorf("count assigned role users: %w", err)
 	}
 	return nil
 }
 
-func replaceRolePermissions(tx *sql.Tx, roleID string, keys []string) error {
+func replaceRolePermissions(tx kernel.Tx, roleID string, keys []string) error {
 	keys = dedupeKeys(keys)
 	ids := make([]string, 0, len(keys))
 	for _, key := range keys {
 		var id string
-		err := tx.QueryRow(`SELECT id FROM permissions WHERE key = ?`, key).Scan(&id)
-		if errors.Is(err, sql.ErrNoRows) {
+		err := tx.QueryRow(context.Background(), `SELECT id FROM permissions WHERE key = ?`, key).Scan(&id)
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrInvalidPermission
 		}
 		if err != nil {
@@ -367,33 +368,33 @@ func replaceRolePermissions(tx *sql.Tx, roleID string, keys []string) error {
 		}
 		ids = append(ids, id)
 	}
-	if _, err := tx.Exec(`DELETE FROM role_permissions WHERE role_id = ?`, roleID); err != nil {
+	if _, err := tx.Exec(context.Background(), `DELETE FROM role_permissions WHERE role_id = ?`, roleID); err != nil {
 		return fmt.Errorf("clear role permissions: %w", err)
 	}
 	for _, id := range ids {
-		if _, err := tx.Exec(`INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)`, roleID, id); err != nil {
+		if _, err := tx.Exec(context.Background(), `INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)`, roleID, id); err != nil {
 			return fmt.Errorf("grant role permission %s: %w", id, err)
 		}
 	}
 	return nil
 }
 
-func replaceRoleMenuItems(tx *sql.Tx, roleID string, ids []string) error {
+func replaceRoleMenuItems(tx kernel.Tx, roleID string, ids []string) error {
 	ids = dedupeKeys(ids)
 	for _, id := range ids {
 		var exists int
-		if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
+		if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
 			return fmt.Errorf("validate menu item %s: %w", id, err)
 		}
 		if exists == 0 {
 			return ErrInvalidMenuItem
 		}
 	}
-	if _, err := tx.Exec(`DELETE FROM role_menu_items WHERE role_id = ?`, roleID); err != nil {
+	if _, err := tx.Exec(context.Background(), `DELETE FROM role_menu_items WHERE role_id = ?`, roleID); err != nil {
 		return fmt.Errorf("clear role menu items: %w", err)
 	}
 	for _, id := range ids {
-		if _, err := tx.Exec(`INSERT INTO role_menu_items (role_id, menu_item_id) VALUES (?, ?)`, roleID, id); err != nil {
+		if _, err := tx.Exec(context.Background(), `INSERT INTO role_menu_items (role_id, menu_item_id) VALUES (?, ?)`, roleID, id); err != nil {
 			return fmt.Errorf("grant role menu item %s: %w", id, err)
 		}
 	}
@@ -404,7 +405,7 @@ func scanRoleRow(row interface{ Scan(...any) error }, role *Role) error {
 	var system int
 	var createdAt, updatedAt int64
 	err := row.Scan(&role.ID, &role.Key, &role.Name, &system, &createdAt, &updatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return ErrNotFound
 	}
 	if err != nil {
@@ -454,8 +455,8 @@ func rolesSortSQL(sort, order string) string {
 // a key the backend would reject.
 func (r *Repository) ListPermissionCatalog() ([]PermissionCatalogEntry, error) {
 	var out []PermissionCatalogEntry
-	err := r.withTx("list permission catalog", func(tx *sql.Tx) error {
-		rows, err := tx.Query(`SELECT key, description FROM permissions ORDER BY key`)
+	err := r.withTx("list permission catalog", func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(), `SELECT key, description FROM permissions ORDER BY key`)
 		if err != nil {
 			return fmt.Errorf("query permission catalog: %w", err)
 		}
@@ -477,8 +478,8 @@ func (r *Repository) ListPermissionCatalog() ([]PermissionCatalogEntry, error) {
 // against ("menu-users" shape); the display label is derived from page_ref.
 func (r *Repository) ListMenuItemCatalog() ([]MenuItemCatalogEntry, error) {
 	var out []MenuItemCatalogEntry
-	err := r.withTx("list menu item catalog", func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.withTx("list menu item catalog", func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT id, page_ref FROM menu_items WHERE enabled = 1 ORDER BY sort_order, id`,
 		)
 		if err != nil {

@@ -3,7 +3,6 @@ package systemdata
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -44,7 +43,7 @@ func Reconcile(ctx context.Context, runner TxRunner, permissions []kernel.Permis
 	if err := validateInputs(perms, navs); err != nil {
 		return err
 	}
-	return runner.WithTx(ctx, func(tx *sql.Tx) error {
+	return runner.Run(ctx, func(tx kernel.Tx) error {
 		now := time.Now().UTC().Unix()
 		if err := ensureSystemRoles(tx, now); err != nil {
 			return err
@@ -147,14 +146,14 @@ func validateInputs(perms []kernel.PermissionContribution, navs []kernel.Navigat
 	return nil
 }
 
-func checkLedger(tx *sql.Tx, entry reconcileEntry) error {
+func checkLedger(tx kernel.Tx, entry reconcileEntry) error {
 	var version int
 	var checksum string
-	err := tx.QueryRow(
+	err := tx.QueryRow(context.Background(),
 		`SELECT version, checksum FROM system_data_reconcile WHERE module_id = ? AND kind = ? AND contribution_key = ?`,
 		entry.moduleID, entry.kind, entry.key,
 	).Scan(&version, &checksum)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return nil
 	}
 	if err != nil {
@@ -169,8 +168,8 @@ func checkLedger(tx *sql.Tx, entry reconcileEntry) error {
 	return nil
 }
 
-func writeLedger(tx *sql.Tx, entry reconcileEntry, now int64) error {
-	if _, err := tx.Exec(
+func writeLedger(tx kernel.Tx, entry reconcileEntry, now int64) error {
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO system_data_reconcile (module_id, kind, contribution_key, version, checksum, applied_at)
 		 VALUES (?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(module_id, kind, contribution_key) DO UPDATE SET version = excluded.version, checksum = excluded.checksum, applied_at = excluded.applied_at
@@ -182,9 +181,9 @@ func writeLedger(tx *sql.Tx, entry reconcileEntry, now int64) error {
 	return nil
 }
 
-func ensurePermission(tx *sql.Tx, id string, p kernel.PermissionContribution) error {
+func ensurePermission(tx kernel.Tx, id string, p kernel.PermissionContribution) error {
 	description := strings.TrimSpace(p.Resource + " " + p.Action + " gate")
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO permissions (id, key, description, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?)
 		 ON CONFLICT(id) DO NOTHING`, id, p.Permission, description, time.Now().UTC().Unix(), time.Now().UTC().Unix(),
@@ -192,7 +191,7 @@ func ensurePermission(tx *sql.Tx, id string, p kernel.PermissionContribution) er
 		return fmt.Errorf("ensure permission %s: %w", p.Permission, err)
 	}
 	var storedID, storedKey string
-	if err := tx.QueryRow(`SELECT id, key FROM permissions WHERE key = ?`, p.Permission).Scan(&storedID, &storedKey); err != nil {
+	if err := tx.QueryRow(context.Background(), `SELECT id, key FROM permissions WHERE key = ?`, p.Permission).Scan(&storedID, &storedKey); err != nil {
 		return fmt.Errorf("verify permission %s: %w", p.Permission, err)
 	}
 	if storedID != id || storedKey != p.Permission {
@@ -201,8 +200,8 @@ func ensurePermission(tx *sql.Tx, id string, p kernel.PermissionContribution) er
 	return nil
 }
 
-func ensureNavigation(tx *sql.Tx, id string, n kernel.NavigationContribution) error {
-	if _, err := tx.Exec(
+func ensureNavigation(tx kernel.Tx, id string, n kernel.NavigationContribution) error {
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, 1, ?, ?)
 		 ON CONFLICT(id) DO NOTHING`, id, n.PageID, n.NodeID, n.Order, time.Now().UTC().Unix(), time.Now().UTC().Unix(),
@@ -210,7 +209,7 @@ func ensureNavigation(tx *sql.Tx, id string, n kernel.NavigationContribution) er
 		return fmt.Errorf("ensure navigation %s: %w", n.NodeID, err)
 	}
 	var storedID, pageRef, featureKey string
-	if err := tx.QueryRow(`SELECT id, page_ref, feature_key FROM menu_items WHERE feature_key = ?`, n.NodeID).Scan(&storedID, &pageRef, &featureKey); err != nil {
+	if err := tx.QueryRow(context.Background(), `SELECT id, page_ref, feature_key FROM menu_items WHERE feature_key = ?`, n.NodeID).Scan(&storedID, &pageRef, &featureKey); err != nil {
 		return fmt.Errorf("verify navigation %s: %w", n.NodeID, err)
 	}
 	if storedID != id || pageRef != n.PageID || featureKey != n.NodeID {
@@ -219,8 +218,8 @@ func ensureNavigation(tx *sql.Tx, id string, n kernel.NavigationContribution) er
 	return nil
 }
 
-func syncGrant(tx *sql.Tx, entry reconcileEntry, targetID string, roles []string, permission bool) error {
-	rows, err := tx.Query(
+func syncGrant(tx kernel.Tx, entry reconcileEntry, targetID string, roles []string, permission bool) error {
+	rows, err := tx.Query(context.Background(),
 		`SELECT role_key, target_id FROM system_data_grants WHERE module_id = ? AND kind = ? AND contribution_key = ?`,
 		entry.moduleID, entry.kind, entry.key,
 	)
@@ -254,27 +253,27 @@ func syncGrant(tx *sql.Tx, entry reconcileEntry, targetID string, roles []string
 		}
 		roleID := "role-" + old.roleKey
 		if permission {
-			_, err = tx.Exec(`DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?`, roleID, old.targetID)
+			_, err = tx.Exec(context.Background(), `DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?`, roleID, old.targetID)
 		} else {
-			_, err = tx.Exec(`DELETE FROM role_menu_items WHERE role_id = ? AND menu_item_id = ?`, roleID, old.targetID)
+			_, err = tx.Exec(context.Background(), `DELETE FROM role_menu_items WHERE role_id = ? AND menu_item_id = ?`, roleID, old.targetID)
 		}
 		if err != nil {
 			return fmt.Errorf("remove managed grant %s/%s: %w", entry.kind, entry.key, err)
 		}
 	}
-	if _, err := tx.Exec(`DELETE FROM system_data_grants WHERE module_id = ? AND kind = ? AND contribution_key = ?`, entry.moduleID, entry.kind, entry.key); err != nil {
+	if _, err := tx.Exec(context.Background(), `DELETE FROM system_data_grants WHERE module_id = ? AND kind = ? AND contribution_key = ?`, entry.moduleID, entry.kind, entry.key); err != nil {
 		return fmt.Errorf("reset managed grants %s/%s: %w", entry.kind, entry.key, err)
 	}
 	for _, role := range roles {
 		roleID := "role-" + role
 		if permission {
-			if _, err := tx.Exec(`INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?) ON CONFLICT(role_id, permission_id) DO NOTHING`, roleID, targetID); err != nil {
+			if _, err := tx.Exec(context.Background(), `INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?) ON CONFLICT(role_id, permission_id) DO NOTHING`, roleID, targetID); err != nil {
 				return fmt.Errorf("grant permission %s to %s: %w", targetID, role, err)
 			}
-		} else if _, err := tx.Exec(`INSERT INTO role_menu_items (role_id, menu_item_id) VALUES (?, ?) ON CONFLICT(role_id, menu_item_id) DO NOTHING`, roleID, targetID); err != nil {
+		} else if _, err := tx.Exec(context.Background(), `INSERT INTO role_menu_items (role_id, menu_item_id) VALUES (?, ?) ON CONFLICT(role_id, menu_item_id) DO NOTHING`, roleID, targetID); err != nil {
 			return fmt.Errorf("grant menu %s to %s: %w", targetID, role, err)
 		}
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO system_data_grants (module_id, kind, contribution_key, role_key, target_id) VALUES (?, ?, ?, ?, ?)`,
 			entry.moduleID, entry.kind, entry.key, role, targetID,
 		); err != nil {
