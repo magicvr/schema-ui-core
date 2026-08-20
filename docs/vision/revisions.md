@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-20
 parent: null
-version: 0.4.10
+version: 0.4.11
 ---
 
 # Charter 修订台账
@@ -40,3 +40,4 @@ version: 0.4.10
 | VR-024 | 2026-08-19 | editorial | VP-012 完整关门投影 | 用户确认关闭 VP-012（v0.2.0 `active → closed`，完整 · 首波）：lead workspace-012 Root `done 6/6`；VRev-028 V-F057 → fixed；session/effective actor、保留/归档、D-003 外 writer envelope 移交 roadmap Tier A，不作为本 VP residual。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-025 | 2026-08-20 | editorial | 组合编排双分支 | 用户确认后续方向改为可并行的架构 / 业务两条轨道。落盘名称为架构分支（运行时平台横切清单）与产品分支（原四档地图；业务领域 = Tier D）。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不建 VP、不开区，**无** strategic、**无** re-align。同日被 **VR-026** 三分取代，本行保留为过程记录。 |
 | VR-026 | 2026-08-20 | editorial | 组合编排三分支 | 用户确认将后续方向改为 **架构 / Admin 功能 / 业务域** 三条可并行轨道（取代 VR-025 二分）。原四档 A 剩余+B+C → Admin 功能；Tier D → 业务域；运行时平台清单 → 架构。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不建 VP、不开区，**无** strategic、**无** re-align。 |
+| VR-027 | 2026-08-20 | editorial | 架构分支 Store 双方言 | 用户确认：不引入 ORM；自持 PostgreSQL + SQLite 两个 Store 方言；内核 Store 为持久化端口而非业务仓库；逻辑 schema 一份、物理 SQL 可成对；PostgreSQL 为生产验收权威，SQLite 为 dev/mvp/快测默认且合同平等（不得残缺）。写入 roadmap RT-P03。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不建 VP、不开区，**无** strategic、**无** re-align。 |

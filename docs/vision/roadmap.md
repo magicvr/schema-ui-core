@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-20
 parent: null
-version: 0.25.0
+version: 0.26.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -74,8 +74,24 @@ version: 0.25.0
 
 ## 架构分支
 
-> 性质：P-005 有界清单。本表**不是**实施清单，也尚未冻结首波退出分母。  
+> 性质：P-005 有界清单。整波退出分母尚未立项冻结。  
+> **已冻结（2026-08-20 用户确认）**：Store 双方言决策，见下节。  
 > 现状锚点：单进程 + SQLite（`MaxOpenConns=1`）+ 本地盘上传 + 进程内 Job + 内存限流。Compose 已声明非目标含 TLS 终止与多实例（`compose.yaml`）。
+
+### 已冻结：Store 双方言（RT-P03）
+
+用户确认（2026-08-20）。未建 VP、未写驱动。
+
+| 项 | 决定 |
+|----|------|
+| ORM | **不引入**（GORM / ent / AutoMigrate 均否）。不自研查询构造器或 session。 |
+| 方言集合 | 只支持 **PostgreSQL** 与 **SQLite**。禁止第三库、禁止「支持所有数据库」。 |
+| 内核 Store | **持久化端口**（连接/事务/占位符/upsert/时间类型/迁移 runner/备份与就绪）。**不是**业务仓库。禁止 `*sql.Tx`、驱动类型进入 handler 与模块公共契约。 |
+| 业务对接 | Handler / 其他模块只打**本模块 Repository**。模块拥有表与 Persistence 贡献；逻辑 schema **一份**，物理 SQL 可以按方言成对。 |
+| 生产权威 | **PostgreSQL**：生产 fork 推荐与架构验收（升级、备份、共事务、CI）以 PG 为准。 |
+| 内嵌默认 | **SQLite**：dev / mvp / 快测 / 当前 `db.path` 与 Compose 卷继续默认。不因「生产首要」强制本地必须有 PG。 |
+| 合同平等 | 两实现走同一迁移台账与同一表结构语义。SQLite **不是**可残缺的缩水库；新迁移须两方言都能 apply + checksum。 |
+| 迁移 | 仍为全局、不可变、带 checksum 的台账。禁止用 ORM 推 schema。PG 备份合同替换 `VACUUM INTO`，不删 SQLite 快照路径。 |
 
 ### 判定
 
@@ -90,9 +106,9 @@ version: 0.25.0
 
 | id | 项 | 现状 | 状态 | 备注 |
 |----|----|------|------|------|
-| RT-P01 | SQLite 文件库 + 全局迁移台账 + 升级前快照 | `modernc.org/sqlite`；`VACUUM INTO`；模块 Persistence 贡献 | **delivered** | mvp/dev 默认，建议长期保留 |
-| RT-P02 | 生产 SQL 方言（PostgreSQL） | 无 | **registered** | 中型 fork 最高杠杆；硬问题是迁移方言，不是换驱动 |
-| RT-P03 | Store 方言边界（内核适配器） | Store 即 SQLite 平台 | **registered** | RT-P02 的前置；模块不得直连驱动 |
+| RT-P01 | SQLite 文件库 + 全局迁移台账 + 升级前快照 | `modernc.org/sqlite`；`VACUUM INTO`；模块 Persistence 贡献 | **delivered** | 内嵌默认；合同上与 PG 平等，不得残缺 |
+| RT-P02 | PostgreSQL 方言实现 | 无 | **registered** | 生产权威实现；硬问题是迁移方言 + 备份合同 |
+| RT-P03 | Store 双方言端口（无 ORM） | Store 即 SQLite 平台 | **registered**（决策已冻结，实现未做） | 见上节；A1 前置 |
 | RT-P04 | 连接池 / 读写分离 / replica | `MaxOpenConns=1` | **trigger-gated** | 多实例或 PG 之后才有意义 |
 | RT-P05 | 备份 / 恢复 / PITR | 仅 SQLite 快照 | **registered** | 生产方言必须重做恢复合同 |
 | RT-P06 | 加密静止数据 / 表级密钥 | 无 | **trigger-gated** | 合规触发；密钥见 RT-K\* |
@@ -174,7 +190,8 @@ version: 0.25.0
 
 | id | 项 | 理由 |
 |----|----|------|
-| RT-N01 | MongoDB / 泛「支持所有数据库」 | 第二模型与无限方言会拆内核 |
+| RT-N01 | MongoDB / 泛「支持所有数据库」 | 第二模型与无限方言会拆内核；双方言集合已冻结为 PG + SQLite |
+| RT-N06 | 引入 ORM（GORM / ent / AutoMigrate） | 与全局 checksum 台账、模块拥有 Persistence、薄内核边界冲突；查询层也不用 ORM 换方言 |
 | RT-N02 | 先上 Kafka/Rabbit 再补事件模型 | 与 RT-Q06 顺序相反 |
 | RT-N03 | 微服务拆分 / 运行时插件市场 | VP-003 非目标 |
 | RT-N04 | GraphQL 网关、CQRS/事件溯源默认化 | 无 Charter 要求 |
@@ -183,8 +200,9 @@ version: 0.25.0
 ### 架构分支建议顺序（草案，未冻结）
 
 ```text
-A0  本清单（已登记）→ 冻结首波退出分母（尚未立项）
-A1  Store 方言边界 + PostgreSQL；SQLite 保留为 mvp/dev
+A0  本清单（已登记）；Store 双方言决策已冻结（RT-P03）
+A1  内核持久化端口 + PostgreSQL 实现 + 现有台账对写/翻译；
+    SQLite 保留为 dev/mvp/快测默认；生产 CI 以 PG 为权威
 A2  对象存储适配器；本地盘保留为默认
 A3  仅当需要多实例：就绪探针扩依赖、优雅停机、
     再评估 PG 锁/SKIP LOCKED vs Redis vs 外部队列
@@ -192,9 +210,9 @@ A4  指标 + OpenTelemetry（可与 A1 部分并行）
 A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
 ```
 
-**刻意后置**：MongoDB、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，不是独立采购项。
+**刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支下一拍：`/vision` 冻结 A0 首波分母并决定是否建 VP-013（建议首阶段仍只做冻结，不写驱动）。
+架构分支下一拍：`/vision` 决定是否建 VP-013 承接 A1（内核端口 + PG + SQLite 合同平等）。RT-P03 决策已冻结，不必再讨论 ORM。
 
 ---
 
