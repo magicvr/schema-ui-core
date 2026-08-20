@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-postgres-access
 title: R2 · PostgreSQL 接入（驱动、连接池、Open/Ping/WasFresh）
-status: active
+status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.1.0
-progress: —
+version: 1.0.0
+progress: 6/6
 plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
@@ -39,7 +39,7 @@ Root 纲领 **R2**（依赖 R1 合同 v1.4）：把 PostgreSQL 方言接入内�
 | S2 | 驱动 + `kernel.Store`/`kernel.Tx` + `store.Open` + rebind | 待做（本回合） |
 | S3 | config `db.dialect`/`db.dsn` 字段 + 校验谓词 | 待做（本回合） |
 | S4 | postgres Store：连接 / Ping / WasFresh / 空 catalog 探测，非空 fail closed | 待做（本回合） |
-| S5 | 测试（sqlite 运行时 + rebind + config + pg 探测 gate）+ self 审计；independent 后续 | 待做 |
+| S5 | 测试（sqlite 运行时 + rebind + config + pg 探测 gate）+ self 审计 + independent 审计 | ✅ 2026-08-20（A-001 self pass；A-002 independent pass；A-003 关闭全部 recommended；live PG 探测通过） |
 
 ## 成功标准
 

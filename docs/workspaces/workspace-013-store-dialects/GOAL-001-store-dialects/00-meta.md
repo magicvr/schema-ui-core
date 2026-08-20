@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.5.0
-progress: 1/5
+version: 0.6.0
+progress: 2/5
 plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
@@ -26,12 +26,12 @@ serves_summary: 交付架构 A1：内核持久化端口 + PostgreSQL 实现 + �
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
 | R1 | **端口与配置面冻结**：Tx 公共类型 ≠ `*sql.Tx`；方言由配置选择；缺省 `db.path` SQLite；PG DSN 键名冻结；v1.4 补 path 扩展名谓词、`COLLATE NOCASE`、checksum 输入与嵌套 Run 检测 | 起点 | ✅ GOAL-002（D-001 / A-001；D-002 / A-003 闭合 A-002；D-003 / A-005 闭合 A-004；D-004 / A-007 闭合 A-006 required；**D-005 / A-009** 闭合 A-008 recommended；合同 **v1.4**） |
-| R2 | **PostgreSQL 接入**：驱动、连接池、`readyz` 扩依赖 | 依赖 R1 | 🔄 GOAL-003（2026-08-20 立项；驱动 = pgx v5 stdlib，D-002） |
-| R3 | **台账对写**：开区时全部 compiled 迁移两方言 apply + checksum | 依赖 R2 | 未开始 |
+| R2 | **PostgreSQL 接入**：驱动、连接池、`readyz` 扩依赖 | 依赖 R1 | ✅ GOAL-003（pgx v5 stdlib；Open/Ping/WasFresh；self A-001 + independent A-002 pass；A-003 关闭 F-001～F-005；**done**，2026-08-20） |
+| R3 | **台账对写**：开区时全部 compiled 迁移两方言 apply + checksum | 依赖 R2 | 🔄 GOAL-004（2026-08-20 立项；D-001 方案：Apply→kernel.Tx、分列 catalog、checksum 绑 sqlite 历史） |
 | R4 | **仓库公共面收口**：Handler / 模块公共契约去掉 `*sql.Tx` 与驱动类型 | 依赖 R1；可与 R3 部分并行 | 未开始 |
 | R5 | **双路径证据**：SQLite 默认路径回归 + PostgreSQL 生产向验收（迁移、共事务、备份合同） | 依赖 R3/R4 | 未开始 |
 
-`progress` = 已完成阶段数 / 5。当前 `1/5`。progress 不放行、不关门。
+`progress` = 已完成阶段数 / 5。当前 `2/5`（R1、R2 已完成）。progress 不放行、不关门。
 
 ## 成功标准（方向级）
 
