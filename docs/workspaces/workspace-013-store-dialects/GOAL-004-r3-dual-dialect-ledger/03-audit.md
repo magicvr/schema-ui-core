@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚无 |
+| A-001 | 2026-08-20 | self | R3 T1 切片（kernel.Tx 形状 + store 适配） | pass | 0 | [A-001-t1-kernel-tx-shape-self.md](03-audit/A-001-t1-kernel-tx-shape-self.md) |
 
 ## 结论状态
 
-R3 立项与方案。无 A 条目。
+T1 self `pass`（0 required / recommended）。T2/T3 待续；T3/T4 迁移/数据门禁走 self + independent。

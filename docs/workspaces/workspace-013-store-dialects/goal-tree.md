@@ -31,4 +31,4 @@ GOAL-001-store-dialects [active]    · Store 双方言（PostgreSQL 生产权威
 | GOAL-001-store-dialects | Store 双方言（PostgreSQL 生产权威 + SQLite 内嵌） | null | active | 2/5 | 2026-08-20 |
 | GOAL-002-r1-tx-port-and-config | R1 · 内核 Tx 端口与配置键名冻结（合同 v1.4） | GOAL-001-store-dialects | done | 2/2 | 2026-08-20 |
 | GOAL-003-r2-postgres-access | R2 · PostgreSQL 接入（pgx v5 stdlib；Open/Ping/WasFresh） | GOAL-001-store-dialects | done | 6/6 | 2026-08-20 |
-| GOAL-004-r3-dual-dialect-ledger | R3 · 双方言台账对写（compiled catalog 两方言 apply + checksum） | GOAL-001-store-dialects | active | — | 2026-08-20 |
+| GOAL-004-r3-dual-dialect-ledger | R3 · 双方言台账对写（compiled catalog 两方言 apply + checksum） | GOAL-001-store-dialects | active | 2/5 | 2026-08-20 |

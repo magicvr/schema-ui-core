@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-20 | R3 立项与方案（D-001）+ 迁移方言债快照 | recorded | [E-001-r3-plan-and-scan.md](02-execution/E-001-r3-plan-and-scan.md) |
+| E-002 | 2026-08-20 | T1 实施：迁移贡献形状转 kernel.Tx（14 包；全量测试绿） | recorded | [E-002-t1-kernel-tx-shape.md](02-execution/E-002-t1-kernel-tx-shape.md) |
 
 ## 事实边界
 
