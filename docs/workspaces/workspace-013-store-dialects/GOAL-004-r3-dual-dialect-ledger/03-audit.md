@@ -26,7 +26,8 @@ version: 0.1.0
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-20 | self | R3 T1 切片（kernel.Tx 形状 + store 适配） | pass | 0 | [A-001-t1-kernel-tx-shape-self.md](03-audit/A-001-t1-kernel-tx-shape-self.md) |
 | A-002 | 2026-08-20 | self | R3 T2a 切片（postgres 迁移运行器，live 证明） | pass | 0 | [A-002-t2a-postgres-runner-self.md](03-audit/A-002-t2a-postgres-runner-self.md) |
+| A-003 | 2026-08-20 | self | R3 T2b/T3 切片（12 模块对写 + 全量 PG boot + BIGINT） | conditional | 1（F-001 operationlog） | [A-003-t3-dual-write-self.md](03-audit/A-003-t3-dual-write-self.md) |
 
 ## 结论状态
 
-T1 + T2a self `pass`（各 0 required）。T2a F-001（生产解闸）计划并入 T3。T3/T4 续；T3/T4 迁移/数据门禁走 self + independent。
+T1/T2a self `pass`。T2b/T3 主体 self `conditional`（open required = **A-003 F-001 operationlog 对写**，T3 收尾）。T3 收尾后关门；T4 双路径证据 + independent。
