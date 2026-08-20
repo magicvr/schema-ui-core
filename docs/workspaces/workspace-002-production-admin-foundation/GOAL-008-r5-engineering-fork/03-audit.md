@@ -4,7 +4,7 @@ status: active
 created: 2026-08-02
 updated: 2026-08-20
 parent: GOAL-001-production-admin-foundation
-version: 0.25.0
+version: 0.26.0
 ---
 
 # 审计台账 · GOAL-008
@@ -32,6 +32,7 @@ version: 0.25.0
 | A-017 | independent | 2026-08-03 | finding-closure · A-016 F-010 关闭证据复审 | pass | responded：pass 采纳；F-010 `fixed` 维持闭合；R-014 维持 handled；R-015 recommended（测试加固）→ handled |
 | A-018 | self | 2026-08-03 | close-out · S1～S6 关门自审（含 S6 scope · P-004 §3.1 用户裁决补 self） | pass | —；GOAL-008 关门条件满足；F-001～F-010 全部 fixed、无开放 required；`I-008-001/002/003` verified |
 | A-019 | self | 2026-08-20 | design · I-008-002 协议 v0.1.3 修订（W16-F01 首登真实改密 + 对齐 smoke/CI/端口/退出码 7） | pass | —；协议与现行 smoke/CI/文档一致；不重开关门结论 |
+| A-020 | self | 2026-08-20 | design/execution · W16-F01 反向体现（前端 E2E + 复现模板 + e2e tsconfig） | pass | —；E2E 9/10（mvp，1 admin-only skip）；模板 §7 必填；e2e tsc 0 错误 |
 | A-017 | independent | 2026-08-03 | finding-closure · A-016 F-010 修复与当前 S6 revision 收据复审 | pass | F-010 `fixed` 维持闭合；R-014 handled 经 `eb6ff19` clean revision 复核；R-015 recommended（测试断言强度） |
 
 ## 当前审计边界
@@ -1314,3 +1315,18 @@ A-010 的浏览器终点与本地 disposable 主体事实经 A-011 点验基本�
 - **已核对事实**：本轮实跑 `bash scripts/pre-release-smoke.sh` 全绿（SM-004 含真实 W16-F01 改密、SM-006、SM-008、C-006 persistence PASS）；工作树 clean 前已提交相关脚本/CI。
 - **不改变**：GOAL-008 `done`/`5/5` 状态、F-001～F-010 closed 结论、`I-008-002` `verified`（权威版本 v0.1.3）；不重开 Root R5 或 VP-002 关门结论。
 - **建议**：后续 fork 复现/CI 判据以 v0.1.3 为准；S3 浏览器终点仍为 `list-edit-lifecycle`（协议 §3.2）。
+
+## A-020 · W16-F01 反向体现（前端 E2E + 复现模板 + e2e tsconfig）self 复核（2026-08-20）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：design/execution · 复核 v0.1.3 首登改密要求是否真实下沉到浏览器 E2E 与 S3 复现模板（D-012）。
+- **verdict**：pass
+- **复核结论**：
+  - 新增 `force-password-change.spec.ts` 在 fresh seed 上强制断言「Change your password」→ 真实改密 → 旧密码 401 + 新密码可访问 `/api/users`，与 I-008-002 v0.1.3 §5.1/§5.2 一致；
+  - 共享 `sign-in.ts` 及 host-failure/localization/w4/shell/schema-crud 均 W16-F01-aware，不再出现“初始密码直进业务页”；
+  - `shell.spec.ts` 通知页断言改为 W16-F01 产生的 `account.password-changed` 通知行（反映真实副作用）；
+  - `e2e/tsconfig.json`（`types: ["node"]` + DOM）解决 IDE `process`/`document` 报错，`npx tsc --noEmit -p e2e/tsconfig.json` **0 错误**；
+  - 新增 `R5-S3-REPRO-TEMPLATE.md`（§7 W16-F01 必填）并在协议 §4 加指针。
+- **已核对事实**：本机 `npm run test:e2e`（APP_PROFILE=mvp）**9 passed / 1 skipped**（admin-only localization skip）；未改产品代码/`scripts/`。
+- **不改变**：GOAL-008 `done`/`5/5`、F-001～F-010 closed、`I-008-001/002` `verified` 状态。

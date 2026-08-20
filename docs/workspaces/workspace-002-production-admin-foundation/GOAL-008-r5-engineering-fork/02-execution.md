@@ -4,7 +4,7 @@ status: done
 created: 2026-08-02
 updated: 2026-08-20
 parent: GOAL-001-production-admin-foundation
-version: 0.1.17
+version: 0.1.18
 ---
 
 # 执行记录 · GOAL-008
@@ -190,3 +190,12 @@ version: 0.1.17
 - 修订要点：§3.2 默认 URL 更新为 25080/25081/25173 并写明 compose API 默认不发布宿主端口、S4 smoke 经 `scripts/pre-release-smoke.sh` loopback override；§5.1 新增 **W16-F01 首登强制改密必须走真实 `/api/account/password`（禁止清标志/改库/跳过）**；§5.2 SM-002 改 `/healthz`+`/readyz`、SM-004 内置改密、SM-005 代表路由 `/users`、SM-006 种子检查对齐 `SMOKE_SEED_ID=user-admin`/`SMOKE_EXPECTED_SEED_TOTAL=1`；§5.3 补 `SMOKE_PASSWORD_NEW`/`SMOKE_CSP`/`SMOKE_SEED_ID` 输入与退出码 `7`（SM-008）。
 - 事实依据：本轮已实跑 `scripts/pre-release-smoke.sh` 全绿（SM-004 含 W16-F01 真实改密、SM-006、SM-008、C-006 persistence PASS），CI `container-smoke` 已统一走 wrapper；协议修订属文档对齐，不改代码/脚本/GOAL-008 status。
 - 未做：未改产品代码/脚本；未重开 GOAL-008 关门；`I-008-002` 维持 `verified`（v0.1.3）。
+
+## 2026-08-20 · W16-F01 反向体现到前端 E2E + 复现记录模板（D-012）
+
+- 新增 `apps/web/e2e/force-password-change.spec.ts`（fresh seed 强制改密 UI + 旧密码 401 + 新密码可访问 `/api/users`）；新增共享 `apps/web/e2e/sign-in.ts`（W16-F01-aware）并让 host-failure / localization / w4 / shell / schema-crud 统一走该登录路径或本地等效实现。
+- `shell.spec.ts` 的通知页断言改为断言 W16-F01 改密产生的 `account.password-changed` 通知行（不再假设空收件箱）。
+- 新增 `apps/web/e2e/tsconfig.json`（`types: ["node"]` + DOM），`npx tsc --noEmit -p e2e/tsconfig.json` **0 错误**；顺带修掉 e2e 既有类型问题（`document`、unused var、`$id` cast、`Table` 类型）。
+- 新增复现模板 `attachments/R5-S3-REPRO-TEMPLATE.md`（含 W16-F01 §7 必填字段），并在 I-008-002 v0.1.3 §4 加指针。
+- **验证**：`npm run test:e2e`（APP_PROFILE=mvp）**9 passed / 1 skipped**（跳过的为 admin-only localization 用例）；e2e tsc 0 错误；`npm test` / `npm run build` 未受影响（未改 src）。
+- 未做：未改产品代码/`scripts/`；未重开 GOAL-008 关门。

@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import Ajv, { type ValidateFunction } from "ajv";
 import { expect, test } from "@playwright/test";
 
+import { signInAsAdmin } from "./sign-in";
+
 // R2 hygiene regression guard: the published runtime manifest must satisfy the
 // pinned protocol schema (docs/schemas/app-manifest.schema.json — every block
 // is additionalProperties: false). The browser host refuses non-protocol
@@ -32,7 +34,7 @@ const ajv = new Ajv({ allErrors: true, strict: false, validateSchema: false });
 // (internal/schema-ui), so besides the filename registrations they must also
 // be registered under the app-manifest base (mirrors how
 // src/protocol/conformance/runtime-schema-validate.ts keeps refs resolvable).
-const manifestSchemaBase = String(appManifestSchema.$id).replace(/[^/]*$/, "");
+const manifestSchemaBase = String((appManifestSchema as { $id?: string }).$id).replace(/[^/]*$/, "");
 for (const [name, schema] of [
   ["node", nodeSchema],
   ["page", pageSchema],
@@ -97,23 +99,9 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
 
-  // Sign in with the dev seed.
-  await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill("admin");
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  // W16-F01: a fresh seed forces an initial password replacement. If an
-  // earlier spec already replaced it, retry with the shared e2e password.
-  const forced = page.getByRole("heading", { name: "Change your password" });
-  if (await forced.isVisible().catch(() => false)) {
-    await page.getByLabel("Current password").fill("admin");
-    await page.getByLabel("New password").fill("admin-e2e-pass");
-    await page.getByLabel("Confirm new password").fill("admin-e2e-pass");
-    await page.getByRole("button", { name: "Change password" }).click();
-  } else {
-    await page.getByLabel("Password").fill("admin-e2e-pass");
-    await page.getByRole("button", { name: "Sign in" }).click();
-  }
+  // Sign in with the dev seed (W16-F01-aware shared helper; handles forced
+  // first-login password change and the already-replaced fallback).
+  await signInAsAdmin(page);
 
   // Shell renders and redirects home -> manifest home (demo: overview; else dashboard).
   await expect(page).toHaveURL(isDemoProfile ? /\/overview$/ : /\/dashboard$/);
@@ -287,14 +275,12 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // The header avatar updates WITHOUT a reload (account.profile session refresh).
   await expect(page.locator(`img[src="${uiAvatarUrl}"]`).first()).toBeVisible();
 
-  // W13 T-06: the bell dropdown's "View all" reaches the notifications page,
-  // which renders the interactive center (custom node) + settings form. The
-  // fresh SQLite DB has no notifications → the empty state is shown.
-  await page.getByRole("button", { name: "Notifications" }).click();
-  await page.getByRole("menuitem", { name: "View all" }).click();
-  await expect(page).toHaveURL(/\/notifications$/);
+  // W13 T-06 · notifications page renders the interactive center. The W16-F01
+  // forced password change emits an account.password-changed notification, so
+  // the inbox is non-empty on this run (no brittle empty-state text).
+  await page.goto("/notifications");
   await expect(page.locator("[data-notification-center]")).toBeVisible();
-  await expect(page.getByText("No items match")).toBeVisible();
+  await expect(page.locator("[data-notification-row]").first()).toBeVisible();
 
   await page.screenshot({ path: "test-results/r6-shell-users.png", fullPage: true });
 });

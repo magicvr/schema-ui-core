@@ -214,3 +214,16 @@ version: 0.1.9
 
 - **保持 v0.1.2 不变**：会让 S4 判据继续假设“种子 admin 可用初始密码直接访问业务 API”，与 W16-F01 及现行 smoke 实际行为冲突。
 - **只改文档不改协议**：QUICKSTART/脚本已先行对齐，协议作为验收权威仍会误导后续复现/CI 判据。
+
+## D-012 · v0.1.3 首登改密要求反向体现：前端 E2E + 复现记录模板
+
+- **日期**：2026-08-20
+- **状态**：accepted
+- **决定**：按用户指令将 I-008-002 v0.1.3 的 W16-F01 首登强制改密要求下沉到可执行资产：
+  - 浏览器 E2E：新增 `apps/web/e2e/force-password-change.spec.ts`（fresh seed 必须走真实强制改密 UI，旧密码 401、新密码可访问业务 API）；新增共享 `apps/web/e2e/sign-in.ts`（W16-F01-aware，含强制改密与已改密回退）；host-failure / localization / w4 / shell / schema-crud 统一使用 W16-aware 登录。
+  - 顺带修正：强制改密会触发 `account.password-changed` 通知，shell 的通知页断言由「空收件箱」改为断言该通知行存在；新增 `apps/web/e2e/tsconfig.json`（`types: ["node"]` + DOM）修复 IDE `process`/`document` 报错并把 e2e 类型检查清零。
+  - 复现记录模板：新增 `attachments/R5-S3-REPRO-TEMPLATE.md`（含 §7 W16-F01 必填字段）并在 I-008-002 v0.1.3 §4 增加模板指针。
+- **依据**：v0.1.3 判据要求首登强制改密是真实流程步骤；前端 E2E 与 S3 复现记录应与之同构，避免「测试直接以初始密码进业务页」与协议/产品行为脱节。
+- **边界**：只新增/修改 E2E 测试、e2e tsconfig、复现模板与协议指针；不改产品代码、不改 `scripts/`、不改 GOAL-008 status/progress、不重开 S1～S6 验收结论。
+- **影响**：`I-008-002` 维持 `verified`（v0.1.3）；浏览器 E2E 现从首个 spec 起就覆盖真实首登改密旅程。
+- **后续**：落盘执行事实与 self 复核（A-020）。

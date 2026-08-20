@@ -1,5 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import { signInAsAdmin } from "./sign-in";
 // A-010 R-004 · real browser Schema CRUD lifecycle against Go + SQLite.
 // GOAL-011 S3 repoints the driver from the retired demo page to the users
 // resource page. Boots via playwright webServer (same as shell.spec.ts): Go API
@@ -7,29 +8,6 @@ import { expect, test, type Page } from "@playwright/test";
 // delete with confirm. T-UI-01～10 cover Renderer behavior with an in-memory
 // API emulator; this file proves the browser → proxy → Go/SQLite path.
 
-async function signInAsAdmin(page: Page): Promise<void> {
-  // Home redirect follows the manifest home: demo -> overview, else dashboard (F-01).
-  const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill("admin");
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  // W16-F01: a fresh seed forces an initial password replacement.
-  const forced = page.getByRole("heading", { name: "Change your password" });
-  if (await forced.isVisible().catch(() => false)) {
-    await page.getByLabel("Current password").fill("admin");
-    await page.getByLabel("New password").fill("admin-e2e-pass");
-    await page.getByLabel("Confirm new password").fill("admin-e2e-pass");
-    await page.getByRole("button", { name: "Change password" }).click();
-  } else {
-    // If an earlier spec already replaced the seed password, retry with it.
-    await page.getByLabel("Password").fill("admin-e2e-pass");
-    await page.getByRole("button", { name: "Sign in" }).click();
-  }
-  await expect(page).toHaveURL(profile === "demo" ? /\/overview$/ : /\/dashboard$/);
-}
 
 test("users and roles drive real authorization management against Go SQLite", async ({
   page,
@@ -57,7 +35,7 @@ test("users and roles drive real authorization management against Go SQLite", as
   const createDialog = page.getByRole("dialog", { name: "New user" });
   await expect(createDialog).toBeVisible();
 	await createDialog.getByLabel("Username").fill(createdUsername);
-  await createDialog.getByLabel("Name", { exact: true }).fill("E2E Bot");
+  await createDialog.getByLabel("Name", { exact: true }).fill(createdName);
   await createDialog.getByLabel("Password").fill("e2e-password");
   await createDialog.getByRole("button", { name: "Create user" }).click();
 

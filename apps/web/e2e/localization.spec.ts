@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 // S5 browser evidence (VP-007): the same shipped build, real Go API, and real
 // manifest serve the localization + settings surfaces end-to-end:
@@ -11,6 +11,25 @@ import { expect, test } from "@playwright/test";
 //   switch + branding bootstrap still work.
 
 const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
+
+// W16-F01-aware sign-in on the zh-CN login surface. A fresh seed shows the
+// forced "修改初始密码" screen; an already-replaced seed falls back to the shared
+// e2e password. Mirrors I-008-002 v0.1.3: the first-login change is a real step.
+async function signInZh(page: Page): Promise<void> {
+  await page.getByLabel("用户名").fill("admin");
+  await page.getByLabel("密码").fill("admin");
+  await page.getByRole("button", { name: "登录" }).click();
+  const forced = page.getByRole("heading", { name: "修改初始密码" });
+  if (await forced.isVisible().catch(() => false)) {
+    await page.getByLabel("当前密码").fill("admin");
+    await page.getByLabel("新密码", { exact: true }).fill("admin-e2e-pass");
+    await page.getByLabel("确认新密码", { exact: true }).fill("admin-e2e-pass");
+    await page.getByRole("button", { name: "修改密码" }).click();
+  } else {
+    await page.getByLabel("密码").fill("admin-e2e-pass");
+    await page.getByRole("button", { name: "登录" }).click();
+  }
+}
 
 test("S5 localization: zh switch, lang, error negotiation, settings projection", async ({ page, request }) => {
   test.skip(appProfile !== "admin", "admin-only: settings edit surface requires admin profile");
@@ -39,9 +58,7 @@ test("S5 localization: zh switch, lang, error negotiation, settings projection",
   expect(failedBody.messageKey).toBe("error.unauthorized");
 
   // M1 · login in zh: the same seed works and the shell stays zh.
-  await page.getByLabel("用户名").fill("admin");
-  await page.getByLabel("密码").fill("admin");
-  await page.getByRole("button", { name: "登录" }).click();
+  await signInZh(page);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "仪表盘" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
@@ -98,10 +115,7 @@ test("S5 mvp profile: locale switch + no settings surface + branding public", as
   await page.getByRole("menuitemradio", { name: "简体中文" }).click();
   await expect(page.getByRole("heading", { name: "登录" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("zh-CN");
-
-  await page.getByLabel("用户名").fill("admin");
-  await page.getByLabel("密码").fill("admin");
-  await page.getByRole("button", { name: "登录" }).click();
+  await signInZh(page);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "仪表盘" })).toBeVisible();
 

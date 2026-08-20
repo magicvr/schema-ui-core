@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { signInAsAdmin } from "./sign-in";
+
 // W4 · GOAL-005 (workspace-010) browser spot-check — answers A-003 F-3:
 // the roles list must no longer let long permissions/menuItems values crowd
 // out sibling columns, and the recordView drawer must wrap long values
@@ -10,11 +12,8 @@ import { expect, test } from "@playwright/test";
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test("roles list truncates long columns and the detail drawer wraps", async ({ page }) => {
-  // Sign in with the dev seed (same flow as shell.spec.ts).
-  await page.goto("/");
-  await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill("admin");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  // Sign in (W16-F01-aware; shared helper handles forced first-login change).
+  await signInAsAdmin(page);
   await expect(page.getByRole("link", { name: "Roles" })).toBeVisible();
 
   await page.getByRole("link", { name: "Roles" }).click();
@@ -45,8 +44,9 @@ test("roles list truncates long columns and the detail drawer wraps", async ({ p
   const desktop = page.locator('[data-table-presentation="desktop-table"]');
   await expect(desktop).toBeVisible();
   const colWidths = await desktop.evaluate((el) => {
+    const root = el as HTMLElement;
     const out: Record<string, number> = {};
-    for (const th of Array.from(el.querySelectorAll("th"))) {
+    for (const th of Array.from(root.querySelectorAll("th")) as HTMLElement[]) {
       out[th.textContent ?? ""] = th.getBoundingClientRect().width;
     }
     return out;

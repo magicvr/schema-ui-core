@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { signInAsAdmin } from "./sign-in";
+
 // Host failure browser-level conformance (ADR-0036 D7 / spec 10 §3.8):
 // production Host surface for maintenance / protocol-rejected / route
 // not-found, focus management, live-region announcement classes and recovery
@@ -77,10 +79,9 @@ test("route not-found: HOST_ROUTE_NOT_FOUND surface and home recovery with focus
   // Maintenance blocks sign-in (correct stage order); unroute and reload to
   // exercise the router path with a real normal bootstrap.
   await page.unroute(`**${BOOTSTRAP_PATH}`);
-  await page.goto("/");
-  await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill("admin");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  // Sign in with the dev seed (W16-F01-aware shared helper; handles forced
+  // first-login password change and the already-replaced fallback).
+  await signInAsAdmin(page);
   await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.goto("/definitely-not-a-manifest-page");
