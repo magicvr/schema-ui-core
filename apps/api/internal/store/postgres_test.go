@@ -304,7 +304,7 @@ func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
 	timeNames := []string{
 		`created_at`, `updated_at`, `expires_at`, `applied_at`, `archived_at`,
 		`lease_expires_at`, `finished_at`, `started_at`, `read_at`, `revoked_at`,
-		`last_used_at`, `restored_at`, `deleted_at`,
+		`last_used_at`, `restored_at`, `deleted_at`, `locked_until`,
 	}
 	q := `SELECT count(*) FROM information_schema.columns
 WHERE table_schema = 'public' AND data_type = 'integer' AND column_name = ANY($1)`

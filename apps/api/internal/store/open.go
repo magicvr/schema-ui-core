@@ -11,11 +11,10 @@ import (
 //
 //   - sqlite: applies the supplied compiled catalog (default dev path
 //     unchanged; this is also the fast-test path).
-//   - postgres: R2 connects + Ping + evaluates WasFresh only. It FAILS CLOSED
-//     when a non-empty catalog is supplied because the current compiled
-//     catalog still contains SQLite-specific SQL (sqlite_master / PRAGMA);
-//     dual-dialect apply lands in R3. A nil/empty catalog is the probe-open
-//     path (driver, pool, readyz).
+//   - postgres (R3 dual-dialect ledger): connect + Ping + WasFresh, then,
+//     when a non-empty catalog is supplied, applies it through the postgres
+//     migrate runner (fresh bootstrap / incremental / ledger + checksum). A
+//     nil/empty catalog is the probe-open path (driver, pool, readyz).
 func Open(ctx context.Context, opts OpenOptions, catalog []kernel.MigrationContribution) (kernel.Store, error) {
 	switch opts.Dialect {
 	case kernel.DialectPostgres:

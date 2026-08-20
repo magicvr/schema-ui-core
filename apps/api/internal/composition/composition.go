@@ -171,9 +171,11 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.persistence", Detail: fmt.Sprintf("collect persistence: %v", err)}
 	}
-	// VP-013 R1 v1.4 §2: sqlite keeps applying the catalog on the default dev
-	// path; postgres with a non-empty catalog fails closed (dual-dialect apply
-	// is R3) with a clear error instead of silently half-executing SQLite SQL.
+	// VP-013 R1 v1.4: sqlite keeps applying the catalog on the default dev
+	// path. Postgres (R3) applies the dual-dialect catalog at store level, but
+	// the composition root still wires the sqlite implementation only — module
+	// repositories still speak *store.Store / WithTx(*sql.Tx), which R4 moves
+	// to kernel.Store/Tx before a postgres DSN can boot the full app.
 	dialect := kernel.DialectSQLite
 	if cfg.DBDialect != "" {
 		dialect = kernel.Dialect(cfg.DBDialect)
@@ -186,12 +188,10 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
 	}
-	// R2 only wires the sqlite implementation into the composition root; the
-	// postgres probe path is exercised by tests / operators until R3 wiring.
 	st, ok := kst.(*store.Store)
 	if !ok {
 		_ = kst.Close()
-		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: "store dialect selected a non-sqlite implementation, which is not wired until R3"}
+		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: "store dialect selected a non-sqlite implementation, which is not wired until R4 (module repositories move to kernel.Store/Tx)"}
 	}
 	// (db.path) file-storage root derivation and upload/avatar dirs already use
 	// cfg.DBPath below; postgres keeps the same file-path-shaped value.
