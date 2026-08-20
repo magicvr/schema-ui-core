@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-20 | 开区 scaffold（workspace-013 + Root + A1 路线图） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-20 | R1 端口/配置冻结完成（GOAL-002 done） | recorded | [E-002-r1-freeze-complete.md](02-execution/E-002-r1-freeze-complete.md) |
 
 ## 事实边界
 

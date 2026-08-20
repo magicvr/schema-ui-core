@@ -16,7 +16,7 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001/I-002/I-004 required **open**；I-003 non-blocking **open** | 均未到期（最晚 R2/R5） |
+| 影响本 scope 的 I-00N | I-001/I-002/I-004 required **open**；I-003 **collecting** | 均未到期（最晚 R2/R5）；R1 已完成 |
 | 到期 required 是否已 verified / residual | 无到期项 | 未进入 R2/R5 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
