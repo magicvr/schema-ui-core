@@ -59,7 +59,16 @@ auth:
   dev_session_enabled: false
 
 db:
+  # sqlite (default, embedded file db) | postgres (production DSN). Empty means
+  # sqlite. Env override: DB_DIALECT. Unknown values fail closed at startup.
+  dialect: sqlite
+  # sqlite: the embedded database file path. postgres: NOT a SQL connection —
+  # must keep the same file-path shape; filepath.Dir(path) derives the file
+  # storage root (uploads / brand-assets / avatars). Default: ./data/schema-ui.db
   path: ./data/schema-ui.db
+  # postgres SQL connection string only (DB_DSN). No default; must be empty
+  # when dialect is sqlite. DATABASE_URL is intentionally NOT read.
+  dsn: ${DB_DSN:-}
 
 admin:
   # DEV-safe reference: empty default keeps the documented "admin" dev seed

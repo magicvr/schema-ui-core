@@ -13,7 +13,7 @@ import (
 // (system=1), permissions, representative menu item and grants; editor and
 // viewer stay read-only.
 func TestSeedRBACEntitiesAndGrants(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "seed-rbac.db"), "admin", "hash", true)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "seed-rbac.db"), "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestSeedRBACEntitiesAndGrants(t *testing.T) {
 // repeated startup is idempotent and does not overwrite non-seed user fields.
 func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "seed-incremental.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open (no seed): %v", err)
 	}
@@ -127,7 +127,7 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 
 	// Reopen with seeding enabled: finalized system-data contributions repair
 	// system relations, but fresh bootstrap does not create a second admin.
-	st2, err := Open(path, "admin", "hash", true)
+	st2, err := OpenSeeded(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("reopen with seed: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 	if err := st2.Close(); err != nil {
 		t.Fatal(err)
 	}
-	st3, err := Open(path, "admin", "hash", true)
+	st3, err := OpenSeeded(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("third open: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestSeedRBACIncrementalWithExistingUsers(t *testing.T) {
 // S4 gate source · PermissionsForUser resolves a user's permission keys from
 // the seeded role-permission relations.
 func TestPermissionsForUser(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "perms.db"), "admin", "hash", true)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "perms.db"), "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -237,7 +237,7 @@ func TestPermissionsForUser(t *testing.T) {
 // V-MENU-01 · FeaturesForUser projects every registered menu feature key: true
 // only when any of the user's roles holds the grant (multi-role OR).
 func TestFeaturesForUser(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "feat.db"), "admin", "hash", true)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "feat.db"), "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}

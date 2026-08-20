@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -42,10 +43,17 @@ type Config struct {
 	HTTPTrustedProxies []string
 	LogLevelName       string
 
-	AuthJWTSecret         string
-	AuthAccessTTL         time.Duration
-	AuthRefreshTTL        time.Duration
-	DBPath                string
+	AuthJWTSecret  string
+	AuthAccessTTL  time.Duration
+	AuthRefreshTTL time.Duration
+	DBPath         string
+	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
+	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
+	// unknown values and enforces DSN/path pairing rules.
+	DBDialect string
+	// DBDSN is the postgres SQL connection string (DB_DSN; no default). It must
+	// be empty when DBDialect is sqlite and non-empty for postgres.
+	DBDSN                 string
 	AdminInitialPassword  string
 	AuthDevSessionEnabled bool
 
@@ -116,12 +124,12 @@ type yamlFile struct {
 		Modules yaml.Node `yaml:"modules"`
 	} `yaml:"app"`
 	HTTP struct {
-		Addr            *string `yaml:"addr"`
-		ReadTimeout     *string `yaml:"read_timeout"`
-		WriteTimeout    *string `yaml:"write_timeout"`
-		IdleTimeout     *string `yaml:"idle_timeout"`
-		CORSOrigins     *string `yaml:"cors_origins"`
-		TrustedProxies  *string `yaml:"trusted_proxies"`
+		Addr           *string `yaml:"addr"`
+		ReadTimeout    *string `yaml:"read_timeout"`
+		WriteTimeout   *string `yaml:"write_timeout"`
+		IdleTimeout    *string `yaml:"idle_timeout"`
+		CORSOrigins    *string `yaml:"cors_origins"`
+		TrustedProxies *string `yaml:"trusted_proxies"`
 	} `yaml:"http"`
 	Log struct {
 		Level *string `yaml:"level"`
@@ -133,7 +141,9 @@ type yamlFile struct {
 		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
 	} `yaml:"auth"`
 	DB struct {
-		Path *string `yaml:"path"`
+		Path    *string `yaml:"path"`
+		Dialect *string `yaml:"dialect"`
+		DSN     *string `yaml:"dsn"`
 	} `yaml:"db"`
 	Admin struct {
 		InitialPassword *string `yaml:"initial_password"`
@@ -186,6 +196,8 @@ func Load() *Config {
 		AuthAccessTTL:            15 * time.Minute,
 		AuthRefreshTTL:           30 * 24 * time.Hour,
 		DBPath:                   "./data/schema-ui.db",
+		DBDialect:                "sqlite",
+		DBDSN:                    "",
 		AdminInitialPassword:     "",
 		AuthDevSessionEnabled:    false,
 		UploadMaxFilesPerUser:    1000,
@@ -274,6 +286,8 @@ func Load() *Config {
 		cfg.AuthDevSessionEnabled = *yf.Auth.DevSessionEnabled
 	}
 	cfg.DBPath = strPtrOr(yf.DB.Path, cfg.DBPath)
+	cfg.DBDialect = strPtrOr(yf.DB.Dialect, cfg.DBDialect)
+	cfg.DBDSN = strPtrOr(yf.DB.DSN, cfg.DBDSN)
 	cfg.AdminInitialPassword = strPtrOr(yf.Admin.InitialPassword, cfg.AdminInitialPassword)
 	cfg.UploadAllowedTypes = strings.TrimSpace(strPtrOr(yf.Upload.AllowedTypes, cfg.UploadAllowedTypes))
 	if yf.Upload.MaxFilesPerUser > 0 {
@@ -334,6 +348,8 @@ func Load() *Config {
 	cfg.AuthRefreshTTL = durationEnv("AUTH_REFRESH_TTL", cfg.AuthRefreshTTL)
 	cfg.AuthDevSessionEnabled = boolEnv("AUTH_DEV_SESSION_ENABLED", cfg.AuthDevSessionEnabled)
 	cfg.DBPath = envOr("DB_PATH", cfg.DBPath)
+	cfg.DBDialect = envOr("DB_DIALECT", cfg.DBDialect)
+	cfg.DBDSN = envOr("DB_DSN", cfg.DBDSN)
 	cfg.AdminInitialPassword = envOr("ADMIN_INITIAL_PASSWORD", cfg.AdminInitialPassword)
 	cfg.ProfileName = profile
 	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
@@ -353,6 +369,21 @@ func Load() *Config {
 	}
 	if !ValidRuntimeMode(cfg.RuntimeMode) {
 		cfg.LoadError = fmt.Errorf("config: runtime.mode must be one of normal, maintenance, degraded, read-only")
+		return cfg
+	}
+
+	// db.dialect / db.dsn (VP-013 R1 v1.4 §5): empty = sqlite; unknown dialect
+	// fails closed at load time (mirrors runtime.mode). The DSN/path pairing and
+	// file-path-shape rules are enforced again in ValidateProd for every
+	// environment, including development.
+	cfg.DBDialect = strings.ToLower(strings.TrimSpace(cfg.DBDialect))
+	switch cfg.DBDialect {
+	case "", "sqlite":
+		cfg.DBDialect = "sqlite"
+	case "postgres":
+		cfg.DBDialect = "postgres"
+	default:
+		cfg.LoadError = fmt.Errorf("config: db.dialect must be one of sqlite or postgres (got %q)", cfg.DBDialect)
 		return cfg
 	}
 
@@ -667,6 +698,12 @@ func (c *Config) ValidateProd() error {
 	if c.AppEnv == "" {
 		return fmt.Errorf("APP_ENV must be set explicitly (development for local runs, production for deployments); refusing to guess")
 	}
+	// VP-013 R1 v1.4 §5: db dialect/DSN/path-shape rules are startup gates for
+	// every environment (including development). An empty DBDialect / DBPath on
+	// a zero-value or test Config means "use load defaults" and is skipped.
+	if err := c.validateDB(); err != nil {
+		return err
+	}
 	if c.AppEnv == "development" {
 		return nil
 	}
@@ -684,6 +721,72 @@ func (c *Config) ValidateProd() error {
 			"AUTH_JWT_SECRET must contain both letters and digits when APP_ENV=%q",
 			c.AppEnv,
 		)
+	}
+	return nil
+}
+
+// validateDB enforces the VP-013 R1 v1.4 §5 pairing and path-shape rules.
+// An empty DBDialect means sqlite (zero-value / test Config); an empty DBPath
+// means "load default applies" and is skipped so focused unit Configs keep
+// working. Real configs from Load always carry non-empty defaults.
+func (c *Config) validateDB() error {
+	dialect := strings.ToLower(strings.TrimSpace(c.DBDialect))
+	if dialect == "" {
+		dialect = "sqlite"
+	}
+	switch dialect {
+	case "sqlite":
+		if strings.TrimSpace(c.DBDSN) != "" {
+			return fmt.Errorf("config: db.dsn must be empty when db.dialect is sqlite (DB_DSN must not be set)")
+		}
+		if strings.TrimSpace(c.DBPath) != "" {
+			return validateDBPathShape(c.DBPath)
+		}
+	case "postgres":
+		if strings.TrimSpace(c.DBDSN) == "" {
+			return fmt.Errorf("config: db.dsn is required when db.dialect is postgres (DB_DSN must be set)")
+		}
+		if strings.TrimSpace(c.DBPath) != "" {
+			return validateDBPathShape(c.DBPath)
+		}
+	default:
+		return fmt.Errorf("config: db.dialect must be one of sqlite or postgres (got %q)", c.DBDialect)
+	}
+	return nil
+}
+
+// validateDBPathShape rejects values that are not a file path with an
+// extension, so filepath.Dir(db.path) derives a stable file-storage root
+// (R1 v1.4 §5 predicates 1–6). The default ./data/schema-ui.db passes; a
+// trailing separator or an existing directory (e.g. ./data) is rejected.
+func validateDBPathShape(path string) error {
+	trimmed := strings.TrimSpace(path)
+	if trimmed == "" {
+		return fmt.Errorf("config: db.path must not be empty")
+	}
+	// Predicate 1: reject a trailing separator (/ \ or filepath.Separator).
+	if strings.HasSuffix(trimmed, "/") || strings.HasSuffix(trimmed, "\\") {
+		return fmt.Errorf("config: db.path %q must be a file path, not a directory (reject trailing separator)", trimmed)
+	}
+	// Predicate 2: an already-existing path must not be a directory.
+	if st, err := os.Stat(trimmed); err == nil {
+		if st.IsDir() {
+			return fmt.Errorf("config: db.path %q is an existing directory, want a database file path", trimmed)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("config: stat db.path %q: %w", trimmed, err)
+	}
+	// Predicate 3: base must be non-empty and not "." or "..".
+	base := filepath.Base(trimmed)
+	if base == "" || base == "." || base == ".." {
+		return fmt.Errorf("config: db.path %q must name a file, not a directory", trimmed)
+	}
+	// Predicate 4/5: don't reject on Dir=="." alone (cwd-relative files are
+	// valid); the file-shape guarantee comes from the extension predicate.
+	// Predicate 6: a non-empty extension is required (blocks a not-yet-existing
+	// "./data" / ".\\data" directory component masquerading as a file path).
+	if ext := filepath.Ext(base); ext == "" {
+		return fmt.Errorf("config: db.path %q must include a file extension (e.g. .db)", trimmed)
 	}
 	return nil
 }

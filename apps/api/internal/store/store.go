@@ -64,6 +64,35 @@ func open(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 // WasFresh reports whether the database was empty before migration.
 func (s *Store) WasFresh() bool { return s.fresh }
 
+// Dialect reports the dialect this store implements (kernel port; R1 v1.4 §2).
+func (s *Store) Dialect() kernel.Dialect { return kernel.DialectSQLite }
+
+// Run executes fn inside one transaction and exposes the dialect-neutral
+// kernel.Tx (R1 v1.4 §2). This is the kernel port entry point; modules keep
+// using WithTx(*sql.Tx) until R4 moves their public signature.
+//
+// Nested Run is forbidden and detected per-callback via the ctx handed to fn
+// (R1 v1.4 A-008 F-004): a Store-level flag would misclassify the concurrent
+// Runs that the postgres pool is allowed to carry.
+func (s *Store) Run(ctx context.Context, fn func(kernel.Tx) error) error {
+	if err := enterRun(); err != nil {
+		return err
+	}
+	defer leaveRun()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	if err := fn(sqlTx{tx: tx}); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // WithTx exposes the platform transaction boundary to module repositories.
 func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -78,6 +107,22 @@ func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 		return err
 	}
 	return nil
+}
+
+// sqlTx adapts *sql.Tx to kernel.Tx. SQLite keeps the '?' placeholder, so no
+// rebinding is applied here.
+type sqlTx struct{ tx *sql.Tx }
+
+func (t sqlTx) Exec(ctx context.Context, query string, args ...any) (kernel.Result, error) {
+	return t.tx.ExecContext(ctx, query, args...)
+}
+
+func (t sqlTx) Query(ctx context.Context, query string, args ...any) (kernel.Rows, error) {
+	return t.tx.QueryContext(ctx, query, args...)
+}
+
+func (t sqlTx) QueryRow(ctx context.Context, query string, args ...any) kernel.Row {
+	return t.tx.QueryRowContext(ctx, query, args...)
 }
 
 // MarkSystemDataReady records successful post-finalize reconciliation.

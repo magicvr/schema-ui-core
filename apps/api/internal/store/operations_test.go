@@ -30,7 +30,7 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("upgrade v3→v4: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	st, err := Open(path, "admin", "hash", false) // applies 0005 and 0006
+	st, err := OpenSeeded(path, "admin", "hash", false) // applies 0005 and 0006
 	if err != nil {
 		t.Fatalf("upgrade v4 through current migrations: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestMigrate0005PreservesOperationLogRows(t *testing.T) {
 	if err := st.Close(); err != nil {
 		t.Fatalf("close migrated store: %v", err)
 	}
-	st, err = Open(path, "admin", "hash", false)
+	st, err = OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("reopen migrated store: %v", err)
 	}

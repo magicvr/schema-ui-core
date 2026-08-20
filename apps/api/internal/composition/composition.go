@@ -171,10 +171,30 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (*store.Store, err
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.persistence", Detail: fmt.Sprintf("collect persistence: %v", err)}
 	}
-	st, err := store.OpenWithCatalog(cfg.DBPath, catalog)
+	// VP-013 R1 v1.4 §2: sqlite keeps applying the catalog on the default dev
+	// path; postgres with a non-empty catalog fails closed (dual-dialect apply
+	// is R3) with a clear error instead of silently half-executing SQLite SQL.
+	dialect := kernel.DialectSQLite
+	if cfg.DBDialect != "" {
+		dialect = kernel.Dialect(cfg.DBDialect)
+	}
+	kst, err := store.Open(context.Background(), store.OpenOptions{
+		Dialect: dialect,
+		Path:    cfg.DBPath,
+		DSN:     cfg.DBDSN,
+	}, catalog)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
 	}
+	// R2 only wires the sqlite implementation into the composition root; the
+	// postgres probe path is exercised by tests / operators until R3 wiring.
+	st, ok := kst.(*store.Store)
+	if !ok {
+		_ = kst.Close()
+		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: "store dialect selected a non-sqlite implementation, which is not wired until R3"}
+	}
+	// (db.path) file-storage root derivation and upload/avatar dirs already use
+	// cfg.DBPath below; postgres keeps the same file-path-shaped value.
 	needsBootstrap, err := authsessiondata.NeedsBootstrap(context.Background(), st)
 	if err != nil {
 		_ = st.Close()

@@ -15,7 +15,7 @@ import (
 // 身份、refresh、权限与菜单投影全部保持。
 func TestRestartPersistence(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "restart.db")
-	st, err := Open(path, "admin", "hash", true)
+	st, err := OpenSeeded(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestRestartPersistence(t *testing.T) {
 	}
 
 	// Restart with a different seed hash: nothing is re-applied or overwritten.
-	st2, err := Open(path, "admin", "hash-v2", true)
+	st2, err := OpenSeeded(path, "admin", "hash-v2", true)
 	if err != nil {
 		t.Fatalf("restart open: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestRestartPersistence(t *testing.T) {
 func TestRestorePreV0002Snapshot(t *testing.T) {
 	orig := filepath.Join(t.TempDir(), "orig.db")
 	createR2Fixture(t, orig) // user-admin (roles admin+editor) + refresh token rt1/abc123
-	st, err := Open(orig, "admin", "hash", false)
+	st, err := OpenSeeded(orig, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open orig: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestRestorePreV0002Snapshot(t *testing.T) {
 	if err := os.WriteFile(restored, data, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	r, err := Open(restored, "admin", "hash", true)
+	r, err := OpenSeeded(restored, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open restored: %v", err)
 	}

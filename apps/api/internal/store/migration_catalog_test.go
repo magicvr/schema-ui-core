@@ -24,9 +24,10 @@ func MigrationCatalog() []kernel.MigrationContribution {
 	return append([]kernel.MigrationContribution(nil), compiledMigrations...)
 }
 
-// Open exists only in store's test build. Production callers must supply the
-// compiled catalog explicitly through OpenWithCatalog.
-func Open(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
+// OpenSeeded exists only in store's test build. Production callers must supply
+// the compiled catalog explicitly through OpenWithCatalog (the kernel port
+// entry point is store.Open; R1 v1.4 sec.2).
+func OpenSeeded(path, adminUsername, adminPasswordHash string, seedAdmin bool) (*Store, error) {
 	st, err := OpenWithCatalog(path, MigrationCatalog())
 	if err != nil || !seedAdmin {
 		return st, err

@@ -630,9 +630,10 @@ navigation:
 }
 
 // A-003 findings regression tests:
-//  F-002: omitted YAML keys keep code defaults (no zeroing).
-//  F-003: inline " #" inside a quoted value is not a comment.
-//  F-005: empty/comment-only files mean all defaults; multi-document YAML is rejected.
+//
+//	F-002: omitted YAML keys keep code defaults (no zeroing).
+//	F-003: inline " #" inside a quoted value is not a comment.
+//	F-005: empty/comment-only files mean all defaults; multi-document YAML is rejected.
 func TestLoadA003Findings(t *testing.T) {
 	t.Run("F-002 omitted keys keep defaults", func(t *testing.T) {
 		y := `app:
@@ -707,6 +708,113 @@ app:
 		}
 		if !strings.Contains(cfg.LoadError.Error(), "multiple YAML documents") {
 			t.Fatalf("LoadError = %v, want mention of multiple documents", cfg.LoadError)
+		}
+	})
+}
+
+// TestDBDialectConfig covers VP-013 R1 v1.4 §5: db.dialect / db.dsn loading,
+// env override and unknown-dialect rejection.
+func TestDBDialectConfig(t *testing.T) {
+	t.Run("defaults to sqlite with empty dsn", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDialect != "sqlite" {
+			t.Errorf("DBDialect = %q, want sqlite", cfg.DBDialect)
+		}
+		if cfg.DBDSN != "" {
+			t.Errorf("DBDSN = %q, want empty default", cfg.DBDSN)
+		}
+		// (ValidateProd on the raw default is intentionally not asserted here:
+		// AppEnv is empty by design and fails APP_ENV before DB checks.)
+	})
+
+	t.Run("yaml dialect + dsn", func(t *testing.T) {
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  path: ./data/runtime.db\n  dsn: postgres://u:p@localhost:5432/db\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDialect != "postgres" || cfg.DBDSN != "postgres://u:p@localhost:5432/db" || cfg.DBPath != "./data/runtime.db" {
+			t.Errorf("db config = %q/%q/%q", cfg.DBDialect, cfg.DBDSN, cfg.DBPath)
+		}
+	})
+
+	t.Run("env overrides dialect", func(t *testing.T) {
+		t.Setenv("DB_DIALECT", "postgres")
+		t.Setenv("DB_DSN", "postgres://env:secret@localhost:5432/db")
+		y := "app:\n  env: development\ndb:\n  dialect: sqlite\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDialect != "postgres" || cfg.DBDSN != "postgres://env:secret@localhost:5432/db" {
+			t.Errorf("env override = %q/%q", cfg.DBDialect, cfg.DBDSN)
+		}
+	})
+
+	t.Run("unknown dialect fails closed at load", func(t *testing.T) {
+		y := "app:\n  env: development\ndb:\n  dialect: oracle\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil || !strings.Contains(cfg.LoadError.Error(), "db.dialect") {
+			t.Fatalf("unknown dialect must be a LoadError, got %v", cfg.LoadError)
+		}
+	})
+}
+
+// TestValidateDBPairs covers the R1 v1.4 §5 startup rules: dsn/dialect pairing
+// and db.path file-shape predicates.
+func TestValidateDBPairs(t *testing.T) {
+	t.Run("sqlite with dsn fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "sqlite", DBPath: "./data/x.db", DBDSN: "postgres://x"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "db.dsn must be empty") {
+			t.Fatalf("sqlite + dsn must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres without dsn fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data/x.db"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "db.dsn is required") {
+			t.Fatalf("postgres without dsn must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres with directory path fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data", DBDSN: "postgres://x"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "file") {
+			t.Fatalf("postgres with directory path must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres with extensionless path fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data/schema-ui", DBDSN: "postgres://x"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "extension") {
+			t.Fatalf("extensionless path must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres with valid config passes development", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data/schema-ui.db", DBDSN: "postgres://x", AuthJWTSecret: "dev", AuthDevSessionEnabled: true}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("valid postgres dev config should pass, got %v", err)
+		}
+	})
+
+	t.Run("default sqlite path shape passes", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "sqlite", DBPath: "./data/schema-ui.db", DBDSN: ""}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("default sqlite path should pass, got %v", err)
+		}
+	})
+
+	t.Run("trailing separator path fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "sqlite", DBPath: "./data/", DBDSN: ""}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "file") {
+			t.Fatalf("trailing separator must fail closed, got %v", err)
 		}
 	})
 }

@@ -26,7 +26,7 @@ serves_summary: 交付架构 A1：内核持久化端口 + PostgreSQL 实现 + �
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
 | R1 | **端口与配置面冻结**：Tx 公共类型 ≠ `*sql.Tx`；方言由配置选择；缺省 `db.path` SQLite；PG DSN 键名冻结；v1.4 补 path 扩展名谓词、`COLLATE NOCASE`、checksum 输入与嵌套 Run 检测 | 起点 | ✅ GOAL-002（D-001 / A-001；D-002 / A-003 闭合 A-002；D-003 / A-005 闭合 A-004；D-004 / A-007 闭合 A-006 required；**D-005 / A-009** 闭合 A-008 recommended；合同 **v1.4**） |
-| R2 | **PostgreSQL 接入**：驱动、连接池、`readyz` 扩依赖 | 依赖 R1 | 未开始 |
+| R2 | **PostgreSQL 接入**：驱动、连接池、`readyz` 扩依赖 | 依赖 R1 | 🔄 GOAL-003（2026-08-20 立项；驱动 = pgx v5 stdlib，D-002） |
 | R3 | **台账对写**：开区时全部 compiled 迁移两方言 apply + checksum | 依赖 R2 | 未开始 |
 | R4 | **仓库公共面收口**：Handler / 模块公共契约去掉 `*sql.Tx` 与驱动类型 | 依赖 R1；可与 R3 部分并行 | 未开始 |
 | R5 | **双路径证据**：SQLite 默认路径回归 + PostgreSQL 生产向验收（迁移、共事务、备份合同） | 依赖 R3/R4 | 未开始 |
@@ -46,7 +46,7 @@ serves_summary: 交付架构 A1：内核持久化端口 + PostgreSQL 实现 + �
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 存量 SQLite 文件库到 PostgreSQL：in-place 升级是否可行，还是只支持 dump/restore / fresh bootstrap | R5 验收；退出判据 2 | R5 开始前 | 抽样台账 + 原型或书面 residual 范围 | **open** | 责任人：本区编排；R3 结束后复核 | 待确认 |
-| I-002 | required | PostgreSQL 驱动选型（`database/sql` + pgx stdlib / 其他）；须兼容内核端口且禁止 ORM | R2 方案冻结 | R2 实施前 | R1/R2 决策落盘 | **open** | 责任人：本区编排 | 待确认 |
+| I-002 | required | PostgreSQL 驱动选型（`database/sql` + pgx stdlib / 其他）；须兼容内核端口且禁止 ORM | R2 方案冻结 | R2 实施前 | Root D-002 决策 + `go get` 编译证据 | **verified** | 闭合于 D-002（2026-08-20） | pgx v5 stdlib（驱动名 `pgx`）；lib/pq 维护模式排除 |
 | I-003 | non-blocking | 哪些模块公共 API / 内核类型泄漏 `*sql.Tx` | R4 范围 | R4 方案 | 代码扫描清单 | **collecting** | R4 前补全 | GOAL-002 E-001：WithTx、jobs、wallet runner、Migration Apply、CommitFunc；非完整清单 |
 | I-004 | required | PG 备份/恢复合同（替代 `VACUUM INTO` 的生产路径）具体形态 | R5；退出判据 4 | R5 开始前 | R2/R5 设计 | **open** | 可与 I-001 一并裁决 | 待确认 |
 

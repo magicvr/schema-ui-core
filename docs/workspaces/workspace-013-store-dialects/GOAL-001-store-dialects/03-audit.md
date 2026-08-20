@@ -16,8 +16,8 @@ version: 0.5.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001/I-002/I-004 required **open**；I-003 **collecting** | 均未到期（最晚 R2/R5）；R1 合同 **v1.4**（GOAL-002 A-009 已闭合 A-008 recommended） |
-| 到期 required 是否已 verified / residual | 无到期项 | 未进入 R2/R5 |
+| 影响本 scope 的 I-00N | I-002 **verified**（D-002，2026-08-20）；I-001/I-004 required **open**（最晚 R5）；I-003 **collecting**（最晚 R4） | R1 合同 **v1.4**；I-002 在 R2 方案冻结前已闭合 |
+| 到期 required 是否已 verified / residual | 无到期项 | R2 已立项（GOAL-003）；I-001/I-004 最晚 R5 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引

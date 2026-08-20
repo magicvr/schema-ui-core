@@ -15,7 +15,7 @@ import (
 )
 
 // createR2Fixture builds a database shaped exactly like the pre-migration R2
-// store (users + refresh_tokens, no schema_migrations) so Open() has to run the
+// store (users + refresh_tokens, no schema_migrations) so OpenSeeded() has to run the
 // 0001 fingerprint/registration path.
 func createR2Fixture(t *testing.T, path string) {
 	t.Helper()
@@ -111,7 +111,7 @@ func tableExistsDB(t *testing.T, db *sql.DB, name string) bool {
 // reopening is a no-op.
 func TestMigrateFreshDB(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "fresh.db")
-	st, err := Open(path, "admin", "hash", true)
+	st, err := OpenSeeded(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -171,7 +171,7 @@ func TestMigrateFreshDB(t *testing.T) {
 	}
 
 	// Reopen: migrations not re-applied, seed not overwritten, no new snapshot.
-	st2, err := Open(path, "admin", "hash-v2", true)
+	st2, err := OpenSeeded(path, "admin", "hash-v2", true)
 	if err != nil {
 		t.Fatalf("reopen: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestMigrateExistingR2DB(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "existing.db")
 	createR2Fixture(t, path)
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open existing R2 DB: %v", err)
 	}
@@ -273,7 +273,7 @@ func TestMigrateExistingR2DedupeRoles(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "dedupe.db")
 	createR2FixtureRoles(t, path, `["admin","admin","editor"]`)
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -294,7 +294,7 @@ func TestMigrateExistingR2DuplicateRolesReadable(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "legacy-dup-read.db")
 	createR2FixtureRoles(t, path, `["admin","admin","editor"]`)
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -321,7 +321,7 @@ func TestMigrateExistingR2DuplicateRolesReadable(t *testing.T) {
 // V-MIG-03 · an unknown applied version fails closed.
 func TestMigrateFailClosedUnknownVersion(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "unknown.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -336,7 +336,7 @@ func TestMigrateFailClosedUnknownVersion(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for unknown applied version")
 	}
 }
@@ -344,7 +344,7 @@ func TestMigrateFailClosedUnknownVersion(t *testing.T) {
 // V-MIG-03 · a missing intermediate version fails closed.
 func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "gap.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -356,7 +356,7 @@ func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for missing intermediate version")
 	}
 }
@@ -366,7 +366,7 @@ func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 // MissingIntermediate test only exercises the "ledger does not start at 1" path).
 func TestMigrateFailClosedMissingMiddle(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "middlegap.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -379,7 +379,7 @@ func TestMigrateFailClosedMissingMiddle(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for ledger {1,3} with a missing middle version")
 	}
 }
@@ -387,7 +387,7 @@ func TestMigrateFailClosedMissingMiddle(t *testing.T) {
 // V-MIG-03 · a ledger checksum that no longer matches the code fails closed.
 func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "drift.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -402,7 +402,7 @@ func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for checksum drift")
 	}
 }
@@ -424,7 +424,7 @@ func TestMigrateFailClosedPartialBaseline(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for partial baseline (missing refresh_tokens)")
 	}
 	check := rawOpen(t, path)
@@ -444,7 +444,7 @@ func TestMigrateFailClosedInvalidRoles(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "badroles-"+name+".db")
 			createR2FixtureRoles(t, path, rolesJSON)
 
-			if _, err := Open(path, "admin", "hash", false); err == nil {
+			if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 				t.Fatalf("expected fail closed for roles %s", rolesJSON)
 			}
 			check := rawOpen(t, path)
@@ -466,7 +466,7 @@ func TestMigrateFailClosedInvalidRoles(t *testing.T) {
 
 // V-MIG-04 · foreign_keys is asserted ON for the store connection.
 func TestForeignKeyEnabled(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "fk.db"), "admin", "hash", false)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "fk.db"), "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -485,7 +485,7 @@ func TestForeignKeyEnabled(t *testing.T) {
 // CHECK constraints, and CASCADE|RESTRICT delete semantics across the RBAC tables
 // are asserted on the store connection (not just declared in DDL).
 func TestRBACConstraintsAndIndexes(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "rbac-mig.db"), "admin", "hash", true)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "rbac-mig.db"), "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
