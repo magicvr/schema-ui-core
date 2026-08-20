@@ -6,7 +6,7 @@ parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
 version: 0.1.0
-progress: 2/5
+progress: 4/6
 plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
@@ -29,8 +29,8 @@ Root 纲领 **R4**（依赖 R1；可与 R3 部分并行，现 R3 已 done）：�
 |------|------|------|
 | S0 | 泄漏面扫描（I-003 补全）：`*sql.Tx`/驱动类型/方言 SQL 全量清单 | ✅ E-002（144 处；四类：模块 TxRunner / withTx helper / jobs+systemdata / 公共回调） |
 | S1 | 内核端口接缝：把各模块 `TxRunner`/`WithTx(ctx, func(*sql.Tx))` 接口改为 `kernel.Store`/`func(kernel.Tx)`（或 `Run`） | ✅ E-002（`Run(ctx, func(kernel.Tx))`；6 模块落地 + live PG 佐证） |
-| S2 | 逐模块仓库迁移签名 + SQL 债改写（operationlog `INSERT OR IGNORE`→`ON CONFLICT DO NOTHING`；wallet/recyclebin `LIKE`→显式 `ILIKE`/校对决策；users/roles `ORDER BY … COLLATE NOCASE`→CITEXT/LOWER；插入取 id 用 `RETURNING`；布尔 `INTEGER` 0/1 保持并按 R1 落盘） | 🔄 6/12 模块已迁移（logincaptcha/datapermission/datadictionary/mfa/scheduledtasks/recyclebin）；wallet/authsession/jobs/operationlog/settings/systemdata + SQL 债待续 |
-| S3 | jobs / handler 公共面收口（`CommitFunc` 等 `func(kernel.Tx)`） | 待做 |
+| S2 | 逐模块仓库迁移签名 + SQL 债改写（operationlog `INSERT OR IGNORE`→`ON CONFLICT DO NOTHING`；wallet/recyclebin `LIKE`→显式 `ILIKE`/校对决策；users/roles `ORDER BY … COLLATE NOCASE`→CITEXT/LOWER；插入取 id 用 `RETURNING`；布尔 `INTEGER` 0/1 保持并按 R1 落盘） | ✅ E-003 全部模块迁移（含 systemdata/wallet/jobs）；`INSERT OR IGNORE` 已改写；**运行时 `LIKE`/`COLLATE NOCASE` 查询侧改写为 S2 收尾项（A-002 F-001，R4 关门 required）** |
+| S3 | jobs / handler 公共面收口（`CommitFunc` 等 `func(kernel.Tx)`） | ✅ E-003（jobs CommitFunc/CompleteWithCommit、auth recorder、handler ServiceCredentialOperations、composition RecordOperationTx） |
 | S4 | composition postgres 启动路由 + 运行证据（postgres DSN 启动、readyz 模块门禁全绿） | 待做 |
 | S5 | 关门：sqlite 全量回归 + postgres 生产向运行验收；self + independent（compatibility/production 门禁） | 待做 |
 
