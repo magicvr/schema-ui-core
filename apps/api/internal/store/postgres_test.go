@@ -292,6 +292,8 @@ func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
 		{"recycle_items", "deleted_at"},
 		{"wallet_accounts", "balance_total"}, {"wallet_accounts", "created_at"},
 		{"wallet_ledger_entries", "amount_delta"},
+		{"operation_log", "created_at"},
+		{"operation_log_archive", "created_at"}, {"operation_log_archive", "archived_at"},
 	} {
 		assertPGType(tc.table, tc.col, "bigint")
 	}

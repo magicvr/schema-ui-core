@@ -3,6 +3,7 @@ package migration
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
@@ -241,6 +242,72 @@ var operationLogAccountEventsDDL = []string{
 	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
+// ---- postgres-flavored operation_log DDL (R3 dual-dialect ledger; R1 v1.4
+// §3/§4). The canonical sqlite literals above stay untouched (checksums
+// stable). The postgres bodies derive from them so the event CHECK lists stay
+// in lockstep; the only dialect difference is the Unix time columns
+// (created_at / archived_at) becoming BIGINT.
+var pgTimeColRe = regexp.MustCompile(`(?m)^(\s*)(created_at|archived_at)\s+INTEGER NOT NULL`)
+
+func pgTimeDDL(stmts []string) []string {
+	out := make([]string, len(stmts))
+	for i, s := range stmts {
+		out[i] = pgTimeColRe.ReplaceAllString(s, "$1$2 BIGINT NOT NULL")
+	}
+	return out
+}
+
+var (
+	operationLogPGDDL                   = pgTimeDDL(operationLogDDL)
+	operationLogExpandPGDDL             = pgTimeDDL(operationLogExpandDDL)
+	operationLogSettingsPGDDL           = pgTimeDDL(operationLogSettingsDDL)
+	operationLogAccountEventsPGDDL      = pgTimeDDL(operationLogAccountEventsDDL)
+	operationLogDataTransferPGDDL       = pgTimeDDL(operationLogDataTransferDDL)
+	operationLogFileEventsPGDDL         = pgTimeDDL(operationLogFileEventsDDL)
+	operationLogDictionaryPGDDL         = pgTimeDDL(operationLogDictionaryDDL)
+	operationLogTasksPGDDL              = pgTimeDDL(operationLogTasksDDL)
+	operationLogCaptchaPGDDL            = pgTimeDDL(operationLogCaptchaDDL)
+	operationLogRecyclePGDDL            = pgTimeDDL(operationLogRecycleDDL)
+	operationLogDataPermissionPGDDL     = pgTimeDDL(operationLogDataPermissionDDL)
+	operationLogMFAPGDDL                = pgTimeDDL(operationLogMFADDL)
+	operationLogWalletPGDDL             = pgTimeDDL(operationLogWalletDDL)
+	operationLogWalletDeductPGDDL       = pgTimeDDL(operationLogWalletDeductDDL)
+	operationLogAvatarEventsPGDDL       = pgTimeDDL(operationLogAvatarEventsDDL)
+	operationLogWalletJobsPGDDL         = pgTimeDDL(operationLogWalletJobsDDL)
+	operationLogServiceCredentialsPGDDL = pgTimeDDL(operationLogServiceCredentialsDDL)
+	operationLogArchivePGDDL            = pgTimeDDL(operationLogArchiveDDL)
+)
+
+// pgExecDDL builds a postgres apply that runs the given (postgres-flavored)
+// DDL statements in order.
+func pgExecDDL(ddl []string) func(kernel.Tx) error {
+	return func(tx kernel.Tx) error {
+		for _, stmt := range ddl {
+			if _, err := tx.Exec(context.Background(), stmt); err != nil {
+				return fmt.Errorf("apply postgres DDL: %w", err)
+			}
+		}
+		return nil
+	}
+}
+
+// pgRebuild builds a postgres apply that runs the operation_log rebuild
+// (rename → create → copy → drop → index) with postgres-flavored DDL.
+func pgRebuild(ddl []string, label string) func(kernel.Tx) error {
+	return func(tx kernel.Tx) error {
+		return rebuildOperationLog(tx, ddl, label)
+	}
+}
+
+// pgRebuildWithCorrelation is pgRebuild for the 0043/0045 migrations whose
+// postgres apply must also preserve the operation_log_correlation side table
+// (its FK depends on operation_log, which the rebuild rename breaks).
+func pgRebuildWithCorrelation(ddl []string, label string) func(kernel.Tx) error {
+	return func(tx kernel.Tx) error {
+		return rebuildOperationLogWithCorrelation(tx, ddl, label)
+	}
+}
+
 // Descriptors returns the immutable 0004, 0005 and 0008 operation-log history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
@@ -250,6 +317,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log",
 			Checksum:             kernel.MigrationChecksum(operationLogDDL, "0004:operation-log:v1"),
 			Apply:                migrateOperationLog,
+			ApplyPostgres:        pgExecDDL(operationLogPGDDL),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_expand"},
@@ -257,6 +325,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_expand",
 			Checksum:             kernel.MigrationChecksum(operationLogExpandDDL, "0005:operation-log-expand:v1"),
 			Apply:                migrateOperationLogExpand,
+			ApplyPostgres:        pgRebuild(operationLogExpandPGDDL, `expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_settings"},
@@ -264,6 +333,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_settings",
 			Checksum:             kernel.MigrationChecksum(operationLogSettingsDDL, "0008:operation-log-settings:v1"),
 			Apply:                migrateOperationLogSettings,
+			ApplyPostgres:        pgRebuild(operationLogSettingsPGDDL, `settings-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_account_events"},
@@ -271,6 +341,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_account_events",
 			Checksum:             kernel.MigrationChecksum(operationLogAccountEventsDDL, "0014:operation-log-account-events:v1"),
 			Apply:                migrateOperationLogAccountEvents,
+			ApplyPostgres:        pgRebuild(operationLogAccountEventsPGDDL, `account-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_data_transfer"},
@@ -278,6 +349,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_data_transfer",
 			Checksum:             kernel.MigrationChecksum(operationLogDataTransferDDL, "0015:operation-log-data-transfer:v1"),
 			Apply:                migrateOperationLogDataTransfer,
+			ApplyPostgres:        pgRebuild(operationLogDataTransferPGDDL, `data-transfer-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_file_events"},
@@ -285,6 +357,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_file_events",
 			Checksum:             kernel.MigrationChecksum(operationLogFileEventsDDL, "0018:operation-log-file-events:v1"),
 			Apply:                migrateOperationLogFileEvents,
+			ApplyPostgres:        pgRebuild(operationLogFileEventsPGDDL, `file-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_dictionary"},
@@ -292,6 +365,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_dictionary",
 			Checksum:             kernel.MigrationChecksum(operationLogDictionaryDDL, "0020:operation-log-dictionary:v1"),
 			Apply:                migrateOperationLogDictionary,
+			ApplyPostgres:        pgRebuild(operationLogDictionaryPGDDL, `dictionary-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_tasks"},
@@ -299,6 +373,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_tasks",
 			Checksum:             kernel.MigrationChecksum(operationLogTasksDDL, "0022:operation-log-tasks:v1"),
 			Apply:                migrateOperationLogTasks,
+			ApplyPostgres:        pgRebuild(operationLogTasksPGDDL, `tasks-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_captcha"},
@@ -306,6 +381,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_captcha",
 			Checksum:             kernel.MigrationChecksum(operationLogCaptchaDDL, "0024:operation-log-captcha:v1"),
 			Apply:                migrateOperationLogCaptcha,
+			ApplyPostgres:        pgRebuild(operationLogCaptchaPGDDL, `captcha-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_data_permission"},
@@ -313,6 +389,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_data_permission",
 			Checksum:             kernel.MigrationChecksum(operationLogDataPermissionDDL, "0028:operation-log-data-permission:v1"),
 			Apply:                migrateOperationLogDataPermission,
+			ApplyPostgres:        pgRebuild(operationLogDataPermissionPGDDL, `data-permission-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_mfa"},
@@ -320,6 +397,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_mfa",
 			Checksum:             kernel.MigrationChecksum(operationLogMFADDL, "0030:operation-log-mfa:v1"),
 			Apply:                migrateOperationLogMFA,
+			ApplyPostgres:        pgRebuild(operationLogMFAPGDDL, `mfa-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_wallet"},
@@ -327,6 +405,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_wallet",
 			Checksum:             kernel.MigrationChecksum(operationLogWalletDDL, "0032:operation-log-wallet:v1"),
 			Apply:                migrateOperationLogWallet,
+			ApplyPostgres:        pgRebuild(operationLogWalletPGDDL, `wallet-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_wallet_deduct"},
@@ -334,6 +413,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_wallet_deduct",
 			Checksum:             kernel.MigrationChecksum(operationLogWalletDeductDDL, "0034:operation-log-wallet-deduct:v1"),
 			Apply:                migrateOperationLogWalletDeduct,
+			ApplyPostgres:        pgRebuild(operationLogWalletDeductPGDDL, `wallet-deduct-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_avatar_events"},
@@ -341,6 +421,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_avatar_events",
 			Checksum:             kernel.MigrationChecksum(operationLogAvatarEventsDDL, "0036:operation-log-avatar-events:v1"),
 			Apply:                migrateOperationLogAvatarEvents,
+			ApplyPostgres:        pgRebuild(operationLogAvatarEventsPGDDL, `avatar-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_recycle"},
@@ -348,6 +429,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_recycle",
 			Checksum:             kernel.MigrationChecksum(operationLogRecycleDDL, "0026:operation-log-recycle:v1"),
 			Apply:                migrateOperationLogRecycle,
+			ApplyPostgres:        pgRebuild(operationLogRecyclePGDDL, `recycle-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_correlation"},
@@ -362,6 +444,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_wallet_jobs",
 			Checksum:             kernel.MigrationChecksum(operationLogWalletJobsDDL, "0043:operation-log-wallet-jobs:v1"),
 			Apply:                migrateOperationLogWalletJobs,
+			ApplyPostgres:        pgRebuildWithCorrelation(operationLogWalletJobsPGDDL, `wallet-job-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_service_credentials"},
@@ -369,6 +452,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_service_credentials",
 			Checksum:             kernel.MigrationChecksum(operationLogServiceCredentialsDDL, "0045:operation-log-service-credentials:v1"),
 			Apply:                migrateOperationLogServiceCredentials,
+			ApplyPostgres:        pgRebuildWithCorrelation(operationLogServiceCredentialsPGDDL, `service-credential-events-expanded`),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_archive"},
@@ -376,6 +460,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "operation_log_archive",
 			Checksum:             kernel.MigrationChecksum(operationLogArchiveDDL, "0047:operation-log-archive:v1"),
 			Apply:                migrateOperationLogArchive,
+			ApplyPostgres:        pgExecDDL(operationLogArchivePGDDL),
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_session"},
@@ -491,32 +576,19 @@ func migrateOperationLogCorrelation(tx kernel.Tx) error {
 }
 
 func migrateOperationLogWalletJobs(tx kernel.Tx) error {
-	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
-SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
-		return fmt.Errorf("backup operation log correlations: %w", err)
-	}
-	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
-		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
-	}
-	if err := rebuildOperationLog(tx, operationLogWalletJobsDDL, "wallet-job-events-expanded"); err != nil {
-		return err
-	}
-	for _, statement := range operationLogCorrelationDDL {
-		if _, err := tx.Exec(context.Background(), statement); err != nil {
-			return fmt.Errorf("recreate operation log correlations: %w", err)
-		}
-	}
-	if _, err := tx.Exec(context.Background(), `INSERT INTO operation_log_correlation (operation_id, correlation_id)
-SELECT operation_id, correlation_id FROM operation_log_correlation_backup`); err != nil {
-		return fmt.Errorf("restore operation log correlations: %w", err)
-	}
-	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation_backup`); err != nil {
-		return fmt.Errorf("drop operation log correlation backup: %w", err)
-	}
-	return nil
+	return rebuildOperationLogWithCorrelation(tx, operationLogWalletJobsDDL, "wallet-job-events-expanded")
 }
 
 func migrateOperationLogServiceCredentials(tx kernel.Tx) error {
+	return rebuildOperationLogWithCorrelation(tx, operationLogServiceCredentialsDDL, "service-credential-events-expanded")
+}
+
+// rebuildOperationLogWithCorrelation is the shared dialect-neutral dance used
+// by 0043/0045: back up the correlation side table (operation_log_correlation
+// FK depends on operation_log, which the rebuild rename breaks), drop it,
+// rebuild operation_log, recreate it, restore the rows. Works on sqlite and
+// postgres (dialect difference lives in the DDL slice).
+func rebuildOperationLogWithCorrelation(tx kernel.Tx, ddl []string, label string) error {
 	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
 SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
 		return fmt.Errorf("backup operation log correlations: %w", err)
@@ -524,7 +596,7 @@ SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil
 	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
 		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
 	}
-	if err := rebuildOperationLog(tx, operationLogServiceCredentialsDDL, "service-credential-events-expanded"); err != nil {
+	if err := rebuildOperationLog(tx, ddl, label); err != nil {
 		return err
 	}
 	for _, statement := range operationLogCorrelationDDL {
