@@ -1,12 +1,12 @@
 ---
 id: GOAL-006-r5-dual-path-acceptance
 title: R5 · 双路径验收（升级策略 + 备份合同 + 全链证据 → Root 关门）
-status: active
+status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.1.0
-progress: 4/5
+version: 1.0.0
+progress: 5/5
 plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
@@ -31,7 +31,7 @@ Root 纲领 **R5**（依赖 R3/R4）：把 VP-013 的「SQLite 内嵌缺省 + Po
 | U1 | **I-001 升级策略**（SQLite→PG）：结论/残余（in-place vs dump/restore vs fresh bootstrap），书面落盘 + 抽样证据 | ✅ D-002 / E-002（fresh bootstrap + 逻辑迁移；in-place 跨引擎不可行书面 residual） |
 | U2 | **I-004 备份/恢复合同**：替代 `VACUUM INTO` 的 PG 生产路径（pg_dump 或等价），落盘 + 可执行验证 | ✅ D-002 / E-002（pg_dump→pg_restore round-trip 实跑通过） |
 | U3 | 跨模块共事务验收（job/审计/钱包等共用事务在 PG 上的一致性与回滚）+ `readyz` 生产向就绪 | ✅ E-002（`TestPostgresCrossModuleSharedTx` live PG：commit+rollback 双双验证） |
-| U4 | 关门：VP-013 退出判据 1–6 全链核对 + self + independent（production 门禁）→ GOAL-006 done → **Root 5/5 关门** | 🔄 待 independent 后关门 |
+| U4 | 关门：VP-013 退出判据 1–6 全链核对 + self + independent（production 门禁）→ GOAL-006 done → **Root 5/5 关门** | ✅ 2026-08-20（self A-002 pass；independent A-001 → A-003 fixed；退出 1–6 全链 → **done 5/5** → Root 5/5） |
 
 ## 成功标准
 

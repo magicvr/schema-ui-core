@@ -19,11 +19,11 @@ version: 1.0.0
 ### U1 · SQLite→PostgreSQL 升级策略（I-001 → verified）
 
 1. **in-place（原地改库文件）不可行**：SQLite 与 PostgreSQL 是不同引擎、无共享物理格式；且 R1 v1.4 明确要求 PG 时间列 `BIGINT`、`COLLATE NOCASE→CITEXT` 等 DDL 差异，不存在「同一文件直接升级」路径。
-2. **支持路径**（VP-013 退出判据 2 的合法解）：
-   - **fresh bootstrap（推荐）**：在 PG 建空库 → 双方言 compiled catalog（48 迁移）apply（live 已证明 `TestFullCatalogPostgresBootstrapIntegration` / `TestCompositionPostgresStartup`）→ 再迁移业务数据。
-   - **逻辑数据迁移（dump/restore 或模块级导出/导入）**：从 SQLite 导出（`VACUUM INTO` 文件副本 / 逐表导出），导入到已 bootstrap 的 PG；或按模块 import 命令回放。
-3. **不写死唯一迁移器**：本 VP 是「存储方言」架构，升级工具属运维范畴，不在内核契约内——但必须支持「重建 + 回放」；不承诺无人值守自动 in-place。
-4. **残余范围（书面，评估期）**：自动 in-place 转换不提供（跨引擎）；需要 dump/restore 或重放工具由 fork/运维选型。此残余随本决策留痕，后续若出现 in-place 需求另立目标。
+2. **支持的升级路径（已实证）**：
+   - **fresh bootstrap（verified）**：在 PG 建空库 → 双方言 compiled catalog（48 迁移）apply（live：`TestFullCatalogPostgresBootstrapIntegration` / `TestCompositionPostgresStartup`）→ 逻辑迁移业务数据。
+   - **逻辑数据迁移最小原型（verified）**：`TestPostgresDataMigrationPrototype`——从 seeded SQLite store 读用户，经同一领域仓库写回 fresh PG，round-trip 一致（`go test -run TestPostgresDataMigrationPrototype ./internal/store/` PASS，live PG）。
+3. **有界残余（VP-013 退出判据 2 形式，书面记录）**：本 VP **不提供**自动化 SQLite→PG 搬运器（批量 dump/import 工具由 fork / 运维选型；既有存量 = fresh bootstrap + 运维自备搬运）。此残余随本决策留痕，后续若出现 in-place 或内置搬运需求另立目标。
+4. **不写死唯一迁移器**：本 VP 是「存储方言」架构；内核契约只保证「双方言 schema + 同仓库 API 可读写」，不承诺无人值守自动 in-place。
 
 ### U2 · PostgreSQL 备份/恢复合同（I-004 → verified）
 

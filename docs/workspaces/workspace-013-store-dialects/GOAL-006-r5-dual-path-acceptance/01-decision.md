@@ -1,7 +1,7 @@
 ---
 id: GOAL-006-r5-dual-path-acceptance
 doc: decision
-status: active
+status: done
 parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
@@ -22,3 +22,4 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-20 | R5 方案：升级策略、备份合同、共事务与关门路径 | accepted | [D-001-r5-plan.md](01-decision/D-001-r5-plan.md) |
+| D-002 | 2026-08-20 | 升级策略（I-001）与 PG 备份/恢复合同（I-004）；数据迁移有界 residual | accepted | [D-002-upgrade-backup-contract.md](01-decision/D-002-upgrade-backup-contract.md) |

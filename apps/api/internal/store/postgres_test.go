@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -749,5 +750,84 @@ func TestPostgresCrossModuleSharedTx(t *testing.T) {
 	}
 	if cred2Count != 0 || op2Count != 0 {
 		t.Fatalf("cross-module rollback: cred=%d op=%d, want 0/0", cred2Count, op2Count)
+	}
+}
+
+// TestPostgresDataMigrationPrototype closes R5 A-001 F-002: a minimal
+// SQLite→Postgres logical data-migration prototype through the domain
+// repository — read a user from a seeded SQLite store, write it to a
+// fresh-bootstrapped postgres store, verify it round-trips.
+func TestPostgresDataMigrationPrototype(t *testing.T) {
+	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	if dsn == "" {
+		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres data migration prototype")
+	}
+	ctx := context.Background()
+
+	// Source: a seeded sqlite store.
+	src, err := OpenSeeded(filepath.Join(t.TempDir(), "src.db"), "admin", "hash", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = src.Close() })
+	srcAuth := authsession.NewRepository(src)
+	admin, err := srcAuth.UserByUsername("admin")
+	if err != nil {
+		t.Fatalf("read source user: %v", err)
+	}
+
+	// Target: a fresh postgres store (48 migrations), then copy the user.
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const dbName = "r5mig"
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	migDSN := u.String()
+	adm, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = adm.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = adm.Close()
+	})
+	if _, err := adm.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := adm.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := Open(ctx, OpenOptions{Dialect: kernel.DialectPostgres, DSN: migDSN, ConnectTimeout: 15 * time.Second}, catalog)
+	if err != nil {
+		t.Fatalf("open+bootstrap target: %v", err)
+	}
+	t.Cleanup(func() { _ = target.Close() })
+	targetAuth := authsession.NewRepository(target)
+
+	// Copy the source user's persisted fields to the target (logical migration).
+	migrated := authsession.User{
+		ID: admin.ID, Username: admin.Username, Name: admin.Name,
+		Roles: admin.Roles, PasswordHash: admin.PasswordHash,
+		MustChangePassword: admin.MustChangePassword,
+		CreatedAt:          admin.CreatedAt, UpdatedAt: admin.UpdatedAt,
+	}
+	if err := targetAuth.CreateUser(migrated); err != nil {
+		t.Fatalf("write migrated user to postgres: %v", err)
+	}
+	got, err := targetAuth.UserByUsername(admin.Username)
+	if err != nil {
+		t.Fatalf("read migrated user from postgres: %v", err)
+	}
+	if got.ID != admin.ID || got.Name != admin.Name {
+		t.Fatalf("migrated user mismatch: got %q/%q want %q/%q", got.ID, got.Name, admin.ID, admin.Name)
+	}
+	if len(got.Roles) != len(admin.Roles) {
+		t.Fatalf("roles mismatch: %v vs %v", got.Roles, admin.Roles)
 	}
 }
