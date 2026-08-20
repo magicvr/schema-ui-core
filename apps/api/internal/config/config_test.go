@@ -818,3 +818,85 @@ func TestValidateDBPairs(t *testing.T) {
 		}
 	})
 }
+
+// TestDBPostgresExplodedParams covers the env-driven config.yaml postgres
+// connection surface: host/port/name/user/sslmode declarative, password only
+// via DB_PASSWORD, optional whole-DSN override, and sqlite ignoring the params.
+func TestDBPostgresExplodedParams(t *testing.T) {
+	t.Run("builds DSN from exploded params with env password", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "Ss.110110")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 192.168.31.213\n  port: 5432\n  name: sa\n  user: sa\n  sslmode: disable\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := "postgres://sa:Ss.110110@192.168.31.213:5432/sa?sslmode=disable"
+		if cfg.DBDSN != want {
+			t.Fatalf("DBDSN = %q, want %q", cfg.DBDSN, want)
+		}
+		if cfg.DBPassword != "Ss.110110" {
+			t.Errorf("DBPassword = %q, want value from env", cfg.DBPassword)
+		}
+	})
+
+	t.Run("postgres without password fails closed", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 192.168.31.213\n  name: sa\n  user: sa\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil || !strings.Contains(cfg.LoadError.Error(), "DB_PASSWORD") {
+			t.Fatalf("postgres without password must fail closed, got %v", cfg.LoadError)
+		}
+	})
+
+	t.Run("db.dsn overrides exploded params", func(t *testing.T) {
+		t.Setenv("DB_DSN", "postgres://u:p@h:5432/db?sslmode=require")
+		t.Setenv("DB_PASSWORD", "ignored")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 1.2.3.4\n  user: other\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDSN != "postgres://u:p@h:5432/db?sslmode=require" {
+			t.Fatalf("DBDSN = %q, want explicit override", cfg.DBDSN)
+		}
+	})
+
+	t.Run("sqlite ignores exploded params", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: sqlite\n  host: 1.2.3.4\n  user: x\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDSN != "" || cfg.DBDialect != "sqlite" {
+			t.Fatalf("sqlite must keep DSN empty, got %q/%q", cfg.DBDialect, cfg.DBDSN)
+		}
+	})
+
+	t.Run("exploded env overrides work", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "pw2")
+		t.Setenv("DB_HOST", "db.example")
+		t.Setenv("DB_PORT", "6432")
+		t.Setenv("DB_NAME", "app_db")
+		t.Setenv("DB_USER", "svc")
+		t.Setenv("DB_SSLMODE", "verify-full")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := "postgres://svc:pw2@db.example:6432/app_db?sslmode=verify-full"
+		if cfg.DBDSN != want {
+			t.Fatalf("DBDSN = %q, want %q", cfg.DBDSN, want)
+		}
+	})
+}

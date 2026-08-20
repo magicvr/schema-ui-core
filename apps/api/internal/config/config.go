@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -52,8 +54,21 @@ type Config struct {
 	// unknown values and enforces DSN/path pairing rules.
 	DBDialect string
 	// DBDSN is the postgres SQL connection string (DB_DSN; no default). It must
-	// be empty when DBDialect is sqlite and non-empty for postgres.
-	DBDSN                 string
+	// be empty when DBDialect is sqlite and non-empty for postgres. When set it
+	// overrides the exploded db.host/port/name/user/password params below.
+	DBDSN string
+	// Exploded postgres connection params (db.host/port/name/user/password/
+	// sslmode). host/port/sslmode have defaults; name/user/password come from
+	// YAML/configs/.env/process env. The PASSWORD is a secret and must be
+	// supplied via DB_PASSWORD (env / configs/.env), never hardcoded. A DSN is
+	// built from these when db.dsn is empty.
+	DBHost     string
+	DBPort     string
+	DBName     string
+	DBUser     string
+	DBPassword string
+	DBSSLMode  string
+
 	AdminInitialPassword  string
 	AuthDevSessionEnabled bool
 
@@ -141,9 +156,15 @@ type yamlFile struct {
 		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
 	} `yaml:"auth"`
 	DB struct {
-		Path    *string `yaml:"path"`
-		Dialect *string `yaml:"dialect"`
-		DSN     *string `yaml:"dsn"`
+		Path     *string `yaml:"path"`
+		Dialect  *string `yaml:"dialect"`
+		DSN      *string `yaml:"dsn"`
+		Host     *string `yaml:"host"`
+		Port     *string `yaml:"port"`
+		Name     *string `yaml:"name"`
+		User     *string `yaml:"user"`
+		Password *string `yaml:"password"`
+		SSLMode  *string `yaml:"sslmode"`
 	} `yaml:"db"`
 	Admin struct {
 		InitialPassword *string `yaml:"initial_password"`
@@ -198,6 +219,9 @@ func Load() *Config {
 		DBPath:                   "./data/schema-ui.db",
 		DBDialect:                "sqlite",
 		DBDSN:                    "",
+		DBHost:                   "127.0.0.1",
+		DBPort:                   "5432",
+		DBSSLMode:                "disable",
 		AdminInitialPassword:     "",
 		AuthDevSessionEnabled:    false,
 		UploadMaxFilesPerUser:    1000,
@@ -288,6 +312,12 @@ func Load() *Config {
 	cfg.DBPath = strPtrOr(yf.DB.Path, cfg.DBPath)
 	cfg.DBDialect = strPtrOr(yf.DB.Dialect, cfg.DBDialect)
 	cfg.DBDSN = strPtrOr(yf.DB.DSN, cfg.DBDSN)
+	cfg.DBHost = strPtrOr(yf.DB.Host, cfg.DBHost)
+	cfg.DBPort = strPtrOr(yf.DB.Port, cfg.DBPort)
+	cfg.DBName = strPtrOr(yf.DB.Name, cfg.DBName)
+	cfg.DBUser = strPtrOr(yf.DB.User, cfg.DBUser)
+	cfg.DBPassword = strPtrOr(yf.DB.Password, cfg.DBPassword)
+	cfg.DBSSLMode = strPtrOr(yf.DB.SSLMode, cfg.DBSSLMode)
 	cfg.AdminInitialPassword = strPtrOr(yf.Admin.InitialPassword, cfg.AdminInitialPassword)
 	cfg.UploadAllowedTypes = strings.TrimSpace(strPtrOr(yf.Upload.AllowedTypes, cfg.UploadAllowedTypes))
 	if yf.Upload.MaxFilesPerUser > 0 {
@@ -350,6 +380,12 @@ func Load() *Config {
 	cfg.DBPath = envOr("DB_PATH", cfg.DBPath)
 	cfg.DBDialect = envOr("DB_DIALECT", cfg.DBDialect)
 	cfg.DBDSN = envOr("DB_DSN", cfg.DBDSN)
+	cfg.DBHost = envOr("DB_HOST", cfg.DBHost)
+	cfg.DBPort = envOr("DB_PORT", cfg.DBPort)
+	cfg.DBName = envOr("DB_NAME", cfg.DBName)
+	cfg.DBUser = envOr("DB_USER", cfg.DBUser)
+	cfg.DBPassword = envOr("DB_PASSWORD", cfg.DBPassword)
+	cfg.DBSSLMode = envOr("DB_SSLMODE", cfg.DBSSLMode)
 	cfg.AdminInitialPassword = envOr("ADMIN_INITIAL_PASSWORD", cfg.AdminInitialPassword)
 	cfg.ProfileName = profile
 	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
@@ -385,6 +421,20 @@ func Load() *Config {
 	default:
 		cfg.LoadError = fmt.Errorf("config: db.dialect must be one of sqlite or postgres (got %q)", cfg.DBDialect)
 		return cfg
+	}
+
+	// Compose a postgres DSN from the exploded params when no explicit db.dsn
+	// was configured. The password is a secret supplied via DB_PASSWORD (env /
+	// configs/.env) — never a hardcoded YAML literal — and is required (fail
+	// closed) here and re-checked in validateDB.
+	if cfg.DBDialect == "postgres" && strings.TrimSpace(cfg.DBDSN) == "" {
+		if strings.TrimSpace(cfg.DBHost) == "" || strings.TrimSpace(cfg.DBPort) == "" ||
+			strings.TrimSpace(cfg.DBName) == "" || strings.TrimSpace(cfg.DBUser) == "" ||
+			strings.TrimSpace(cfg.DBPassword) == "" {
+			cfg.LoadError = fmt.Errorf("config: db.dialect=postgres requires db.host/port/name/user/password — provide the password via DB_PASSWORD env (configs/.env) or set an explicit db.dsn")
+			return cfg
+		}
+		cfg.DBDSN = buildPostgresDSN(cfg)
 	}
 
 	// T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only.
@@ -789,6 +839,22 @@ func validateDBPathShape(path string) error {
 		return fmt.Errorf("config: db.path %q must include a file extension (e.g. .db)", trimmed)
 	}
 	return nil
+}
+
+// buildPostgresDSN composes a postgres URL DSN from the exploded connection
+// params. User/password are URL-escaped so special characters in the secret
+// survive; sslmode is applied as a query param (default disable).
+func buildPostgresDSN(c *Config) string {
+	u := url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(c.DBUser, c.DBPassword),
+		Host:   net.JoinHostPort(c.DBHost, c.DBPort),
+		Path:   "/" + c.DBName,
+	}
+	q := u.Query()
+	q.Set("sslmode", c.DBSSLMode)
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // minJWTSecretLen is the minimum HS256 signing-key length enforced outside

@@ -66,8 +66,19 @@ db:
   # must keep the same file-path shape; filepath.Dir(path) derives the file
   # storage root (uploads / brand-assets / avatars). Default: ./data/schema-ui.db
   path: ./data/schema-ui.db
-  # postgres SQL connection string only (DB_DSN). No default; must be empty
-  # when dialect is sqlite. DATABASE_URL is intentionally NOT read.
+  #
+  # --- postgres connection params (only read when dialect: postgres) ---
+  # host/port/sslmode have defaults; name/user/password have none. The PASSWORD
+  # is a SECRET and must come from DB_PASSWORD env / configs/.env — ${DB_PASSWORD}
+  # resolves it at load time; never hardcode it here. DATABASE_URL is not read.
+  host: 127.0.0.1         # DB_HOST
+  port: 5432              # DB_PORT
+  name: schema_ui         # DB_NAME (database to connect)
+  user: postgres          # DB_USER
+  password: ${DB_PASSWORD:-}
+  sslmode: disable        # DB_SSLMODE (disable | require | verify-full...)
+  # Optional whole-DSN override: when set, it wins over host/port/name/user/
+  # password (put the password inside the DSN / its env reference).
   dsn: ${DB_DSN:-}
 
 admin:

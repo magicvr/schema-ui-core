@@ -29,6 +29,7 @@ version: 0.5.0
 | E-013 | 2026-08-20 | R4 关门（GOAL-005 done，Root 4/5）；R5 立项（GOAL-006） | recorded | [E-013-r4-closed-r5-established.md](02-execution/E-013-r4-closed-r5-established.md) |
 | E-014 | 2026-08-20 | Root 关门（GOAL-006 done；Root 5/5；workspace-013 结项） | recorded | [E-014-root-close-out.md](02-execution/E-014-root-close-out.md) |
 | E-015 | 2026-08-20 | 真实本地测试 PG（192.168.31.213/sa）连接验证全绿（关门前提确认） | recorded | [E-015-real-pg-verification.md](02-execution/E-015-real-pg-verification.md) |
+| E-016 | 2026-08-20 | 配置面补强：config.yaml 切方言 + postgres 参数 + 密码 env-only（真实库验证） | recorded | [E-016-config-usage-scenario.md](02-execution/E-016-config-usage-scenario.md) |
 
 ## 事实边界
 
