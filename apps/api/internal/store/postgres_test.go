@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/url"
 	"os"
 	"strconv"
@@ -11,9 +12,11 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
 func TestRebindPostgres(t *testing.T) {
@@ -642,5 +645,109 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 	drifted[1].Checksum = strings.Repeat("a", 64)
 	if err := st3.migrate(drifted); err == nil || !strings.Contains(err.Error(), "drift") {
 		t.Fatalf("checksum drift must fail closed, got %v", err)
+	}
+}
+
+// TestPostgresCrossModuleSharedTx proves R5 U3: a caller-owned transaction can
+// span multiple repositories on postgres — authsession credential creation
+// plus an operation-log audit row commit together, and both roll back when the
+// audit fails. Uses the logincaptcha-repo trick of running directly over a
+// bootstrapped postgres store.
+func TestPostgresCrossModuleSharedTx(t *testing.T) {
+	dsn := os.Getenv("SCHEMA_UI_R2_PG_DSN")
+	if dsn == "" {
+		t.Skip("SCHEMA_UI_R2_PG_DSN not set; skipping postgres cross-module tx integration")
+	}
+	ctx := context.Background()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const dbName = "r5tx"
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	txDSN := u.String()
+
+	admin, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{Dialect: kernel.DialectPostgres, DSN: txDSN, ConnectTimeout: 15 * time.Second}, catalog)
+	if err != nil {
+		t.Fatalf("open+bootstrap: %v", err)
+	}
+	pg := st.(*postgres)
+	t.Cleanup(func() { _ = st.Close() })
+
+	authRepo := authsession.NewRepository(st)
+	opRepo := operationlog.NewRepository(st)
+	now := time.Date(2026, 8, 20, 12, 0, 0, 0, time.UTC)
+
+	credential := authsession.ServiceCredential{
+		ID: "0123456789abcdef0123456789abcdef", Name: "cross-module",
+		TokenPrefix: "sui_sc_crossmod", TokenHash: strings.Repeat("a", 64),
+		Scopes: []string{"records.read"}, ExpiresAt: now.Add(24 * time.Hour),
+		CreatedBy: "user-admin", CreatedAt: now, UpdatedAt: now,
+	}
+	op := operationlog.Operation{
+		ID: "op-cross-" + strconv.FormatInt(now.UnixNano(), 10), Event: operationlog.EventServiceCredentialUse,
+		ActorID: "service-credential:" + credential.ID, ActorName: credential.Name,
+		CorrelationID: "corr-cross", CreatedAt: now,
+	}
+
+	// Commit path: audit writes the op-log row in the same tx; both persist.
+	opID := op.ID
+	if err := authRepo.CreateServiceCredential(credential, func(tx kernel.Tx) error {
+		return opRepo.RecordOperationTx(tx, op)
+	}); err != nil {
+		t.Fatalf("create credential with audit (commit): %v", err)
+	}
+	var credCount, opCount int
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM service_credentials WHERE id = $1`, credential.ID).Scan(&credCount); err != nil {
+		t.Fatal(err)
+	}
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM operation_log WHERE id = $1`, opID).Scan(&opCount); err != nil {
+		t.Fatal(err)
+	}
+	if credCount != 1 || opCount != 1 {
+		t.Fatalf("cross-module commit: cred=%d op=%d, want 1/1", credCount, opCount)
+	}
+
+	// Rollback path: audit failure rolls back BOTH the credential and audit row.
+	cred2 := credential
+	cred2.ID = "1123456789abcdef0123456789abcdef"
+	cred2.Name = "cross-module-rollback"
+	op2 := op
+	op2.ID = "op-rollback"
+	if err := authRepo.CreateServiceCredential(cred2, func(tx kernel.Tx) error {
+		_ = opRepo.RecordOperationTx(tx, op2)
+		return errors.New("audit forced failure")
+	}); err == nil {
+		t.Fatal("expected audit failure to fail the creation")
+	}
+	var cred2Count, op2Count int
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM service_credentials WHERE id = $1`, cred2.ID).Scan(&cred2Count); err != nil {
+		t.Fatal(err)
+	}
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM operation_log WHERE id = $1`, op2.ID).Scan(&op2Count); err != nil {
+		t.Fatal(err)
+	}
+	if cred2Count != 0 || op2Count != 0 {
+		t.Fatalf("cross-module rollback: cred=%d op=%d, want 0/0", cred2Count, op2Count)
 	}
 }

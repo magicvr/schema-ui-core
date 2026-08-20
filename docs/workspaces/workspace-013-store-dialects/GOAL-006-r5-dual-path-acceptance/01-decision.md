@@ -14,8 +14,8 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证/收集动作 | 状态 | 注 |
 |----|------|-----------------|----------|--------------|----------------|------|----|
-| RT-I-001 | required | SQLite→PG 升级策略 | U1/Exit 2 | U1 | 原型/抽样 + residual 台账 | open | Root I-001 |
-| RT-I-004 | required | PG 备份/恢复合同 | U2/Exit 4 | U2 | 设计 + 可执行验证 | open | Root I-004 |
+| RT-I-001 | required | SQLite→PG 升级策略 | U1/Exit 2 | U1 | 原型/抽样 + residual 台账 | verified | 2026-08-20（D-002）· Root I-001 |
+| RT-I-004 | required | PG 备份/恢复合同 | U2/Exit 4 | U2 | 设计 + 可执行验证 | verified | 2026-08-20（D-002）· Root I-004 |
 
 ## 决策索引
 

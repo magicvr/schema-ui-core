@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-20 | R5 立项与方案（D-001） | recorded | [E-001-r5-plan-established.md](02-execution/E-001-r5-plan-established.md) |
+| E-002 | 2026-08-20 | U0–U3：升级策略 + 备份合同 + 跨模块共事务（live 验证） | recorded | [E-002-u0-u3.md](02-execution/E-002-u0-u3.md) |
 
 ## 事实边界
 
