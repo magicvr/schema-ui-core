@@ -30,4 +30,4 @@ version: 1.0.0
   - 用 `DATABASE_URL` 兼作 DSN：第二权威。
 - **影响范围**：R2 起的 `kernel`/`store`/`config`；R3 迁移 Apply 签名；R4 jobs/模块 `WithTx`。不改 Profile、Manifest、模块矩阵。
 - **关联信息项**：GOAL-002 I-001/I-002 → verified。Root I-002（驱动）仍 open，最晚 R2。Root I-003（泄漏清单）本回合开始收集，见 E-001。
-- **后续**：R1 自审关门。合同已被 [D-002](D-002-a002-freeze-patch.md) 升为 v1.1、[D-003](D-003-a004-freeze-patch.md) 升为 v1.2、[D-004](D-004-a006-freeze-patch.md) 升为 **v1.3**；R2 按 v1.3 实施，勿按本条原文的 v1.0～v1.2 猜测时间宽度 / `Open` vs catalog。
+- **后续**：R1 自审关门。合同已被 [D-002](D-002-a002-freeze-patch.md) 升为 v1.1、[D-003](D-003-a004-freeze-patch.md) 升为 v1.2、[D-004](D-004-a006-freeze-patch.md) 升为 v1.3、[D-005](D-005-a008-freeze-patch.md) 升为 **v1.4**；R2 按 v1.4 实施，勿按本条原文的 v1.0～v1.3 猜测时间宽度 / `Open` vs catalog / path 扩展名。

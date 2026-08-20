@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-20
 updated: 2026-08-20
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计 · GOAL-001
@@ -16,7 +16,7 @@ version: 0.4.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001/I-002/I-004 required **open**；I-003 **collecting** | 均未到期（最晚 R2/R5）；R1 合同 **v1.3**（GOAL-002 A-007 已闭合 A-006 required） |
+| 影响本 scope 的 I-00N | I-001/I-002/I-004 required **open**；I-003 **collecting** | 均未到期（最晚 R2/R5）；R1 合同 **v1.4**（GOAL-002 A-009 已闭合 A-008 recommended） |
 | 到期 required 是否已 verified / residual | 无到期项 | 未进入 R2/R5 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 

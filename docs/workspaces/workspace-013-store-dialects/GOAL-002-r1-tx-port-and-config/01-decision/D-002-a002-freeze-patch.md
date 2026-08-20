@@ -55,4 +55,4 @@ A-002 independent `conditional` 给出可核对反证：附件未冻 upsert/时�
 
 ## 后续
 
-R2 立项前先冻结 Root I-002（驱动）。实施合同已被 [D-004](D-004-a006-freeze-patch.md) 升为 **v1.3**（本条 v1.1 的 upsert / path / `WasFresh` 骨架仍成立；时间「一律秒」与 `Open(..., catalog)` 时序以 v1.2 为准；时间宽度以 v1.3 为准）。建议 R2 方案冻结后再 `/audit`（independent）。
+R2 立项前先冻结 Root I-002（驱动）。实施合同已被 [D-005](D-005-a008-freeze-patch.md) 升为 **v1.4**（本条 v1.1 的 upsert / path / `WasFresh` 骨架仍成立；时间「一律秒」与 `Open(..., catalog)` 时序以 v1.2 为准；时间宽度以 v1.3 为准；path 扩展名 / `COLLATE NOCASE` / checksum 输入 / 嵌套检测以 v1.4 为准）。建议 R2 方案冻结后再 `/audit`（independent）。

@@ -59,4 +59,4 @@ F-002～F-005 与 A-004 响应同口径写入合同：都是 R2/R3 实施者会�
 
 ## 后续
 
-R2 立项前先冻结 Root I-002（驱动）。实施合同 = 本附件 **v1.3**。建议对本条关闭证据再跑一次 `/audit` 复审（可选）。R2 方案冻结后再 `/audit`（independent）。
+R2 立项前先冻结 Root I-002（驱动）。实施合同已被 [D-005](D-005-a008-freeze-patch.md) 升为 **v1.4**（本条 v1.3 的时间宽度与 Open+Ping 证据边界仍成立；path 扩展名 / `COLLATE NOCASE` / checksum 输入 / 嵌套检测以 v1.4 为准）。A-008 已对 v1.3 复审为 pass。R2 方案冻结后再 `/audit`（independent）。
