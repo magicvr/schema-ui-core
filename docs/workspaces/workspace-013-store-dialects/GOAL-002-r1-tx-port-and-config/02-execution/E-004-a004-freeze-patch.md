@@ -17,6 +17,7 @@ version: 1.0.0
 - 冻结合同附件升至 **v1.2.0**（时间列按现行秒/毫秒沿用；R2 postgres `Open` 不 apply catalog）。
 - A-005 记录闭合证据。GOAL-002 `status` 仍为 `done`；检查点仍 2/2。
 - **未修改** `apps/api` 运行时。现行 jobs / operation_log 毫秒列、`INSERT OR IGNORE`、`authsession` 的 `sqlite_master`/`PRAGMA` 均仍在代码中，属 R3/R4 按新规则改写，不是本条目失败。
+- Git checkpoint `cd46ce9`（仅 `docs/workspaces/workspace-013-store-dialects/`）。
 
 ## 证据
 
@@ -26,7 +27,7 @@ version: 1.0.0
 | 取舍 | `01-decision/D-003-a004-freeze-patch.md` |
 | 响应意见 | `03-audit/A-005-a004-response.md` |
 | 独立审原文（未改 verdict） | `03-audit/A-004-r1-freeze-v1-1-independent.md` |
-| checkpoint | 待本回合 Git checkpoint 回写 |
+| checkpoint | `cd46ce9` |
 
 ## 计划（非事实）
 
