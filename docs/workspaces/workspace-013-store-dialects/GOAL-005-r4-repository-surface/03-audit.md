@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚无 |
+| A-001 | 2026-08-20 | self | R4 S0/S1/S2 首批（扫描 + 接缝 + 6 模块 + live PG） | pass | 0 | [A-001-s0-s2-batch1-self.md](03-audit/A-001-s0-s2-batch1-self.md) |
 
 ## 结论状态
 
-R4 立项与方案。无 A 条目。
+S0/S1 完成、S2 首批 6 模块 self `pass`（0 required；F-001 recommended = 剩余迁移面）。进度 2/5。续 S2 余量 + S3/S4/S5。

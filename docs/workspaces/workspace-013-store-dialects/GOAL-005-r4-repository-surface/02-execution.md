@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-20 | R4 立项与方案（D-001） | recorded | [E-001-r4-plan-established.md](02-execution/E-001-r4-plan-established.md) |
+| E-002 | 2026-08-20 | S0/S1/S2 首批：扫描 + kernel.Tx 接缝 + 6 模块迁移 + live PG 佐证 | recorded | [E-002-s0-s1-s2-batch1.md](02-execution/E-002-s0-s1-s2-batch1.md) |
 
 ## 事实边界
 

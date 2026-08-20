@@ -6,7 +6,7 @@ parent: GOAL-001-store-dialects
 created: 2026-08-20
 updated: 2026-08-20
 version: 0.1.0
-progress: —
+progress: 2/5
 plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
@@ -27,9 +27,9 @@ Root 纲领 **R4**（依赖 R1；可与 R3 部分并行，现 R3 已 done）：�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S0 | 泄漏面扫描（I-003 补全）：`*sql.Tx`/驱动类型/方言 SQL 全量清单 | 待做（GOAL-002 E-001 已有部分） |
-| S1 | 内核端口接缝：把各模块 `TxRunner`/`WithTx(ctx, func(*sql.Tx))` 接口改为 `kernel.Store`/`func(kernel.Tx)`（或 `Run`） | 待做 |
-| S2 | 逐模块仓库迁移签名 + SQL 债改写（operationlog `INSERT OR IGNORE`→`ON CONFLICT DO NOTHING`；wallet/recyclebin `LIKE`→显式 `ILIKE`/校对决策；users/roles `ORDER BY … COLLATE NOCASE`→CITEXT/LOWER；插入取 id 用 `RETURNING`；布尔 `INTEGER` 0/1 保持并按 R1 落盘） | 待做 |
+| S0 | 泄漏面扫描（I-003 补全）：`*sql.Tx`/驱动类型/方言 SQL 全量清单 | ✅ E-002（144 处；四类：模块 TxRunner / withTx helper / jobs+systemdata / 公共回调） |
+| S1 | 内核端口接缝：把各模块 `TxRunner`/`WithTx(ctx, func(*sql.Tx))` 接口改为 `kernel.Store`/`func(kernel.Tx)`（或 `Run`） | ✅ E-002（`Run(ctx, func(kernel.Tx))`；6 模块落地 + live PG 佐证） |
+| S2 | 逐模块仓库迁移签名 + SQL 债改写（operationlog `INSERT OR IGNORE`→`ON CONFLICT DO NOTHING`；wallet/recyclebin `LIKE`→显式 `ILIKE`/校对决策；users/roles `ORDER BY … COLLATE NOCASE`→CITEXT/LOWER；插入取 id 用 `RETURNING`；布尔 `INTEGER` 0/1 保持并按 R1 落盘） | 🔄 6/12 模块已迁移（logincaptcha/datapermission/datadictionary/mfa/scheduledtasks/recyclebin）；wallet/authsession/jobs/operationlog/settings/systemdata + SQL 债待续 |
 | S3 | jobs / handler 公共面收口（`CommitFunc` 等 `func(kernel.Tx)`） | 待做 |
 | S4 | composition postgres 启动路由 + 运行证据（postgres DSN 启动、readyz 模块门禁全绿） | 待做 |
 | S5 | 关门：sqlite 全量回归 + postgres 生产向运行验收；self + independent（compatibility/production 门禁） | 待做 |
@@ -46,7 +46,7 @@ Root 纲领 **R4**（依赖 R1；可与 R3 部分并行，现 R3 已 done）：�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 全量 `*sql.Tx`/方言 SQL 泄漏面（handler/jobs/模块） | S0/S2 | S0 前补全 | 代码扫描（grep） | collecting | 责任人：本区编排 | GOAL-002 E-001 + R3 迁移期扫描；S0 补全到 handler/jobs |
+| I-001 | required | 全量 `*sql.Tx`/方言 SQL 泄漏面（handler/jobs/模块） | S0/S2 | S0 前补全 | 代码扫描（grep） | **verified** | 2026-08-20 E-002 | 144 处四类清单（模块 TxRunner / withTx helper / jobs+systemdata / 公共回调） |
 | I-002 | required | 各模块运行时 SQL 债的具体改写决策（LIKE 大小写、COLLATE NOCASE 查询侧、INSERT OR IGNORE、RETURNING） | S2 每处 | 每处前 | 逐处核对 + 测试 | open | — | 待确认（S1/S2 落盘） |
 | I-003 | non-blocking | postgres 生产向启动的运维面（连接池/SSL/超时键） | S4 验收 | S4 | OpenOptions 扩展 + 文档 | collecting | S4 前 | R2 已留字段；T3 用 ConnectTimeout |
 
