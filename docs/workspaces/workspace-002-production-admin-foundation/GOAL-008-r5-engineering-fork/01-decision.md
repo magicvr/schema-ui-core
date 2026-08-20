@@ -196,3 +196,21 @@ version: 0.1.9
 
 - **F-010 走 accepted-residual / user-overruled**：用户书面指示优先修复；该偏差为明确可实现修正（logout 已知 userID，经 store 解析 username 即可），无残余价值。
 - **修改契约 §3 放宽 auth detail 要求**：契约刚冻结（v1.0.0），放宽会削弱审计可追溯性，且与 D-009 未选方案一致——契约依实现倒改。
+
+## D-011 · 修订 I-008-002 至 v0.1.3（W16-F01 首登改密 + 对齐现行 smoke/CI/端口）
+
+- **日期**：2026-08-20
+- **状态**：accepted
+- **决定**：按用户指令「好，继续」推进协议小版本修订，将 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) 由 **v0.1.2 修订至 v0.1.3**：
+  - **W16-F01 首登强制改密**：smoke 必须走真实 `POST /api/account/password`（`currentPassword`=初始密码、`newPassword`=`SMOKE_PASSWORD_NEW`）完成改密并以新 token 继续；**禁止清 must_change_password 标志、改库或加 dev 跳过开关绕过门禁**。
+  - **对齐现行实现与端口**：默认 URL 更新为 API `:25080` / Web `:25081` / local `25173`；compose API 默认不发布宿主端口，S4 smoke 经 `scripts/pre-release-smoke.sh` 临时 loopback override；SM-002 改为 `/healthz`+`/readyz`；SM-004 内置改密；SM-005 代表路由为 `/users`；SM-006 种子检查对齐 `SMOKE_SEED_ID=user-admin` / `SMOKE_EXPECTED_SEED_TOTAL=1`。
+  - **退出码 `7`**：新增 SM-008 真实浏览器/CSP 冒烟失败退出码；补 `SMOKE_PASSWORD_NEW`/`SMOKE_CSP`/`SMOKE_SEED_ID` 输入。
+- **依据**：`scripts/smoke.sh`（SM-004 已内置 W16-F01 改密、SM-008）、`scripts/pre-release-smoke.sh`（隔离栈 + loopback override + C-006）、CI `container-smoke` 已统一走 wrapper；QUICKSTART/README 已同步。协议作为 S4 判据应反映这些事实，避免“初始密码可直接过业务 API”的过期假设。
+- **边界**：只修订协议文本（v0.1.3）与相关决策/执行/审计留痕；不改产品代码、不改 `scripts/`、不改 GOAL-008 status/progress（保持 `done`）、不开新 required finding；F-001～F-010 历史 closed 结论不重开。
+- **影响**：`I-008-002` 维持 `verified`，权威版本 v0.1.3；S4 判据与当前脚本/CI 对齐。
+- **后续**：落盘执行事实（02-execution）与 self 复核（03-audit A-019）；无需重新关门 GOAL-008（协议修订不改变已完成的 S1～S5 验收结论）。
+
+### 未选方案
+
+- **保持 v0.1.2 不变**：会让 S4 判据继续假设“种子 admin 可用初始密码直接访问业务 API”，与 W16-F01 及现行 smoke 实际行为冲突。
+- **只改文档不改协议**：QUICKSTART/脚本已先行对齐，协议作为验收权威仍会误导后续复现/CI 判据。

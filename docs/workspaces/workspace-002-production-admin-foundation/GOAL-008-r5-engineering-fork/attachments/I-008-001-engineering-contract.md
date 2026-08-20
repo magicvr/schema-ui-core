@@ -7,7 +7,7 @@ updated: 2026-08-03
 parent: GOAL-008-r5-engineering-fork
 version: 1.0.1
 related_info: I-008-001
-related_decisions: D-003
+related_decisions: D-003, D-011
 ---
 
 # I-008-001 · 环境 / 配置与容器部署契约（冻结）
@@ -22,7 +22,7 @@ related_decisions: D-003
 |----|------------|----------|------|
 | `APP_NAME` | `schema-ui-core-api` | — | 应用名 |
 | `APP_ENV` | `development` | `production` | 驱动 dev/prod 密钥与种子分支 |
-| `HTTP_ADDR` | `:8080` | `:8080`（容器内固定） | API 监听地址 |
+| `HTTP_ADDR` | `:25080` | `:25080`（容器内固定；W7 F-008 起 compose 不发布宿主端口） | API 监听地址 |
 | `HTTP_READ_TIMEOUT` | `5s` | 保持 | 读超时 |
 | `HTTP_WRITE_TIMEOUT` | `10s` | 保持 | 写超时 |
 | `HTTP_IDLE_TIMEOUT` | `60s` | 保持 | 空闲超时 |
@@ -34,7 +34,7 @@ related_decisions: D-003
 | `ADMIN_INITIAL_PASSWORD` | dev 兜底 `admin` | **必填，缺失 fail-closed** | 首次种子 admin 密码；生产缺失 → 启动失败 |
 | `AUTH_DEV_SESSION_ENABLED` | `false` | `false`（生产禁止） | 静态开发会话兜底，显式 opt-in |
 
-**Web**：仅 dev 用 `WEB_PORT`（默认 5173，`strictPort`）；SPA 使用**相对路径** `/api/*`（`auth-client.ts` 硬编码，无 `VITE_` API base），因此生产**必须**同源反代（见 §4），无需 CORS。
+**Web**：仅 dev 用 `WEB_PORT`（默认 25173，`strictPort`）；SPA 使用**相对路径** `/api/*`（`auth-client.ts` 硬编码，无 `VITE_` API base），因此生产**必须**同源反代（见 §4），无需 CORS。
 
 ## 2. 健康检查 / 启动验证契约
 
@@ -43,7 +43,7 @@ related_decisions: D-003
 | API liveness | `GET /healthz` → `200` + `{"status":"ok",...}`；进程存活探针，**不访问数据库** |
 | API readiness | `GET /readyz` → `200` + `{"status":"ok",...}`；在 liveness 之上执行轻量 SQLite `SELECT 1`，数据库不可读时 `503 {"status":"unavailable",...}`（A-002 F-002-006 / GOAL-009 S5） |
 | Web readiness | 静态服务返回 `index.html`（SPA fallback）；`/api` 经反代可达 `api` 的 `/readyz` |
-| Compose healthcheck | `api`：`wget -qO- http://127.0.0.1:8080/readyz`（或容器内 `curl`）作为 `service_healthy` 就绪判据；`web`：`wget -qO- http://127.0.0.1/` 200 |
+| Compose healthcheck | `api`：`wget -qO- http://127.0.0.1:25080/readyz`（或容器内 `curl`）作为 `service_healthy` 就绪判据；`web`：`wget -qO- http://127.0.0.1/` 200 |
 | 启动验证口径 | 本地双进程与 `docker compose up` 两条路径，均以「`/healthz` ok + 登录种子 admin + 后台首页可交互」为终态（S3 计时终点，见 `I-008-002`；smoke 判据沿用 `/healthz` liveness） |
 
 ## 3. 容器 / Compose 契约（部署基线 A）
@@ -51,7 +51,7 @@ related_decisions: D-003
 | 项 | 契约 |
 |----|------|
 | 清单位置 | 仓库根 `compose.yaml`；服务名 `api`、`web` |
-| `api` 服务 | 构建 `apps/api/Dockerfile`（**多阶段**：`golang:1.26` 构建 → 精简运行镜像）；暴露 `8080`；`DB_PATH` 指向 `/app/data/schema-ui.db`；secret 经 `.env` / compose env（`AUTH_JWT_SECRET`、`ADMIN_INITIAL_PASSWORD` 生产必填）；healthcheck `/readyz`；`restart: on-failure` |
+| `api` 服务 | 构建 `apps/api/Dockerfile`（**多阶段**：`golang:1.26` 构建 → 精简运行镜像）；暴露 `25080`；`DB_PATH` 指向 `/app/data/schema-ui.db`；secret 经 `.env` / compose env（`AUTH_JWT_SECRET`、`ADMIN_INITIAL_PASSWORD` 生产必填）；healthcheck `/readyz`；`restart: on-failure` |
 | `web` 服务 | 构建 `apps/web/Dockerfile`（**多阶段**：`node:22` `npm ci` + `npm run build` → `nginx:alpine` 服务 `dist/`）；暴露 `80`；healthcheck 静态页 200；`depends_on: api: condition: service_healthy` |
 | DB volume | 命名卷（如 `db-data`）挂载到 `api` 的 `/app/data`；`docker compose down`/重启后数据保持 |
 | 探针 | `/healthz`（api liveness）、`/readyz`（api readiness，Compose `service_healthy`）与静态页 200（web），见 §2 |
@@ -59,7 +59,7 @@ related_decisions: D-003
 ## 4. Web SPA fallback 与 `/api` 反代（nginx）
 
 - `location /` → `try_files $uri $uri/ /index.html;`（SPA fallback，直接刷新路由可回退）。
-- `location /api` → `proxy_pass http://api:8080;`（含 `/api` 前缀透传；API 路由均在 `/api` 下）。
+- `location /api` → `proxy_pass http://api:25080;`（含 `/api` 前缀透传；API 路由均在 `/api` 下）。
 - 单源同源部署：SPA 相对路径 `/api/*` 与反代天然匹配，**无需 CORS 配置**。
 - 静态资源：`dist/` 产物与 `public/.well-known/schema-ui/app-manifest.json` 由 nginx 直接服务。
 
@@ -76,7 +76,7 @@ related_decisions: D-003
 ## 6. CI 入口
 
 - `.github/workflows/r6-basic-matrix.yml`（或后续新增 job）增加**容器/smoke 入口**：构建 `api`/`web` 镜像 + `docker compose up` + 执行 smoke（`/healthz` → 登录 → `/me` → 代表页）作为回归；精确 job 与 smoke 判据随 S2/S4 落地（`I-008-002` 冻结 smoke 判据）。
-- 现状 CI 仅 web（npm ci/test/build）、api（go test/build）、browser-e2e（Playwright），无部署 job（保持非目标）。
+- 现状 CI 另有 web（npm ci/test/build）、api（go test/build）、browser-e2e（Playwright）；无完整部署/CD 流水线（保持非目标）。
 
 ## 7. 验收清单（S1/S2 可核对）
 
@@ -110,3 +110,4 @@ related_decisions: D-003
 - `.github/workflows/r6-basic-matrix.yml`
 - Root D-012 / D-013、[I-005-engineering-fork-collection.md](../../GOAL-001-production-admin-foundation/attachments/I-005-engineering-fork-collection.md) v0.2.2
 - A-001 R-002 最低清单（GOAL-008 `00-meta` 信息表）
+| 1.0.2 | 2026-08-20 | 对齐现行端口与 smoke 入口（D-011）：§1 `HTTP_ADDR` 默认 `:8080`→`:25080`、Web `WEB_PORT` 默认 `5173`→`25173`；§2 Compose healthcheck `127.0.0.1:8080`→`:25080`；§3 `api` 暴露 `8080`→`25080`（compose 不发布宿主端口）；§4 `proxy_pass http://api:8080`→`:25080`；§6 CI `container-smoke` 改为调用 `scripts/pre-release-smoke.sh`（隔离 + CSP + W16-F01 + C-006）。C-001～C-007 为 S1/S2 历史验收事实，不因本次端口/CI 文字同步重写。

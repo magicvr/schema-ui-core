@@ -2,9 +2,9 @@
 title: 审计台账 · R5 · 工程化、fork 体验与集成关门
 status: active
 created: 2026-08-02
-updated: 2026-08-03
+updated: 2026-08-20
 parent: GOAL-001-production-admin-foundation
-version: 0.24.0
+version: 0.25.0
 ---
 
 # 审计台账 · GOAL-008
@@ -31,6 +31,7 @@ version: 0.24.0
 | A-016 | independent | 2026-08-03 | close-out · S1～S5 关门证据与当前 D-009 / I-008-003 S6 实现 | conditional | responded：F-010 **fixed**（auth logout/refresh 经 `authEvent` 写入冻结 username detail + 三类事件测试断言）；R-014 handled（S6 未提交 revision 收据与本地测试记录） |
 | A-017 | independent | 2026-08-03 | finding-closure · A-016 F-010 关闭证据复审 | pass | responded：pass 采纳；F-010 `fixed` 维持闭合；R-014 维持 handled；R-015 recommended（测试加固）→ handled |
 | A-018 | self | 2026-08-03 | close-out · S1～S6 关门自审（含 S6 scope · P-004 §3.1 用户裁决补 self） | pass | —；GOAL-008 关门条件满足；F-001～F-010 全部 fixed、无开放 required；`I-008-001/002/003` verified |
+| A-019 | self | 2026-08-20 | design · I-008-002 协议 v0.1.3 修订（W16-F01 首登真实改密 + 对齐 smoke/CI/端口/退出码 7） | pass | —；协议与现行 smoke/CI/文档一致；不重开关门结论 |
 | A-017 | independent | 2026-08-03 | finding-closure · A-016 F-010 修复与当前 S6 revision 收据复审 | pass | F-010 `fixed` 维持闭合；R-014 handled 经 `eb6ff19` clean revision 复核；R-015 recommended（测试断言强度） |
 
 ## 当前审计边界
@@ -1298,3 +1299,18 @@ A-010 的浏览器终点与本地 disposable 主体事实经 A-011 点验基本�
 - `I-008-001/002/003` 全部 `verified`；无开放 required、无到期信息门禁。
 - **未做**：Root close-out 关门审计与 VP-002 关门为独立用户裁决（Root / 愿景层），本响应不自动推进。
 - **证据路径**：本响应节；A-017（independent · pass）；A-018（self · close-out · pass）；`01-decision` D-010；`02-execution` 2026-08-03「响应 A-016」节与「关门」节；`00-meta`/goal-tree 状态同步。
+
+## A-019 · I-008-002 协议 v0.1.3 修订 self 复核（2026-08-20）
+
+- **source**：self
+- **auditor**：/govern（self）
+- **类型 / scope**：design · 复核 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) **v0.1.3**（D-011）与现行 `scripts/smoke.sh` / `scripts/pre-release-smoke.sh` / CI `container-smoke` / 端口 25080/25081/25173 / W16-F01 强改语义的一致性。
+- **verdict**：pass
+- **复核结论**：
+  - §5.1 新增 W16-F01：首登强制改密必须走真实 `/api/account/password`，禁止清标志/改库/跳过——与 `smoke.sh` SM-004 实现一致；
+  - §5.2 SM-002（`/healthz`+`/readyz`）、SM-004（内置改密）、SM-005（`/users`）、SM-006（`SMOKE_SEED_ID=user-admin`/total=1）与现行脚本一致；
+  - §5.3 输入/退出码补 `SMOKE_PASSWORD_NEW`、`SMOKE_CSP`、`SMOKE_SEED_ID` 与退出码 `7`，与脚本及 CI 一致；
+  - §3.2 端口（25080/25081/25173、compose API 不发布 + pre-release wrapper loopback override）与仓库现状一致。
+- **已核对事实**：本轮实跑 `bash scripts/pre-release-smoke.sh` 全绿（SM-004 含真实 W16-F01 改密、SM-006、SM-008、C-006 persistence PASS）；工作树 clean 前已提交相关脚本/CI。
+- **不改变**：GOAL-008 `done`/`5/5` 状态、F-001～F-010 closed 结论、`I-008-002` `verified`（权威版本 v0.1.3）；不重开 Root R5 或 VP-002 关门结论。
+- **建议**：后续 fork 复现/CI 判据以 v0.1.3 为准；S3 浏览器终点仍为 `list-edit-lifecycle`（协议 §3.2）。

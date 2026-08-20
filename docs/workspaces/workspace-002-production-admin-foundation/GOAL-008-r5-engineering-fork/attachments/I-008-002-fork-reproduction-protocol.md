@@ -3,11 +3,11 @@ title: I-008-002 · 15 分钟 fork 复现与 smoke 验收协议
 status: active
 doc_type: information-contract
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-20
 parent: GOAL-008-r5-engineering-fork
-version: 0.1.2
+version: 0.1.3
 related_info: I-008-002
-related_decisions: D-004, D-005, D-007
+related_decisions: D-004, D-005, D-007, D-011
 frozen_revision: 5e27019482eb8d0695c402b784860233bbc90c39
 ---
 
@@ -74,8 +74,8 @@ frozen_revision: 5e27019482eb8d0695c402b784860233bbc90c39
 
 | 路径 | 默认期望 |
 |------|----------|
-| `compose` | API `http://localhost:8080`、Web `http://localhost:8081`（compose.yaml `web` 映射 `8081:80`） |
-| `local-dual-process` | API `http://localhost:8080`、Web `http://localhost:${WEB_PORT:-5173}`（Vite dev 默认 5173，`WEB_PORT` 可覆盖） |
+| `compose` | API 默认**不发布宿主端口**（W7 F-008；容器内 `:25080`）；Web `http://localhost:25081`（compose.yaml `web` 映射 `25081:80`）。S4 smoke 经 `scripts/pre-release-smoke.sh` 以临时 override 把 API `127.0.0.1:25080` loopback 发布供 readiness 检查 |
+| `local-dual-process` | API `http://localhost:25080`、Web `http://localhost:${WEB_PORT:-25173}`（Vite dev 默认 25173，`WEB_PORT` 可覆盖） |
 
 D-013 的「后台首页可交互（列表加载）」在本目标操作化为 R4 代表页路由 **`list-edit-lifecycle`**（page title `List + edit lifecycle`，含列表加载 `Acme Console`），而非 manifest `homePageRef: overview`；QUICKSTART/README 必须覆盖该路由。
 
@@ -111,6 +111,9 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 
 脚本不得输出 access token、password、JWT secret 或 `.env` 内容。若要验证空数据库的种子重复性，只能在明确标记为 disposable 的环境中运行；实现必须拒绝对普通开发数据库执行 reset。**S4 验收必须包含至少一次 disposable/隔离运行且 `SM-006=PASS`**；CI 必须使用隔离的 Compose project/volume 或等价临时 DB，并默认以 disposable 模式运行（或等价 job 覆盖该次证据）。非 disposable 默认路径的 exit 0 不得单独作为 S4「种子可重复」关闭证据。
 
+**W16-F01（v0.1.3 · 响应 D-011）：**fresh seed 的 admin 首登携带 `must_change_password=1`（除 `/auth/login`、`/account/password`、`/account/profile`、`/me` 等白名单端点外，业务 API 返回 `403 MUST_CHANGE_PASSWORD`）。smoke **必须把首登强制改密作为真实流程步骤**：SM-004 检测 `user.mustChangePassword === true` 后执行 `POST ${WEB_BASE_URL}/api/account/password`（`currentPassword`=初始密码、`newPassword`=`SMOKE_PASSWORD_NEW`，默认 `<SMOKE_PASSWORD>-changed`），以返回的新 token 继续后续检查。**禁止用清 `must_change_password` 标志、改库或加 dev 跳过开关来绕过门禁**；该步骤是 S4 验收对真实首登旅程的覆盖。
+
+
 **disposable 隔离守卫（v0.1.2 · 响应 A-011 F-008）**：`--disposable` 运行必须机器可判定地满足全部安全前提，否则按退出码 `2` 失败（安全前提不满足），且绝不 reset 普通开发库：
 
 - 必须显式提供隔离身份 `SMOKE_ISOLATION_ID`（隔离 Compose project 名或等价隔离身份）与书面确认标记 `SMOKE_DISPOSABLE_CONFIRM=yes`；缺失任一 → exit 2。
@@ -123,24 +126,25 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 | ID | 检查 | 通过条件 |
 |----|------|----------|
 | SM-001 | 参数与工具 | `bash`/`curl`/`node` 可用，必需 URL 与脱敏密码输入有效。 |
-| SM-002 | API readiness | `${API_BASE_URL}/healthz` 在 30 秒内返回 HTTP 200 且 `status=ok`。 |
+| SM-002 | API readiness | `${API_BASE_URL}/healthz` 与 `${API_BASE_URL}/readyz` 均在 30 秒内返回 HTTP 200 且 `status=ok`（liveness + readiness；SM-006 重启后须重判）。 |
 | SM-003 | 代理登录 | `${WEB_BASE_URL}/api/auth/login` 返回 HTTP 200 和非空 `accessToken`。 |
-| SM-004 | 当前身份 | Bearer 调用 `${WEB_BASE_URL}/api/accounts/me` 返回 HTTP 200，含 user 与 features。 |
-| SM-005 | 代表页路由 | `${WEB_BASE_URL}/list-edit-lifecycle` 返回 HTTP 200 且响应体含 `id="root"`（或等价稳定 SPA 挂载标记）；S3 独立复现记录另行完成真实浏览器可交互/列表加载验证。 |
-| SM-006 | 种子重复性（disposable 模式 · S4 必检） | 从空 DB 启动后，认证的 `GET ${WEB_BASE_URL}/api/records?pageSize=100` 返回 `SMOKE_EXPECTED_SEED_TOTAL` 条种子记录并含 `${SMOKE_RECORD_ID}`（默认 `rec-1`）/ `Acme Console`；重启 API 后再次断言数量和同一记录不变，不产生重复种子。**重启由脚本以校验过的隔离 project 执行（v0.1.2，拒绝外部注入命令）**；重启后必须重新判定 readiness，失败按退出码 3。**S4 验收必须至少一次以 disposable/隔离运行且 `SM-006=PASS`；无该次证据不得把 S4「种子可重复」判为满足。** |
+| SM-004 | 当前身份（含 W16-F01 首登改密） | Bearer 调用 `${WEB_BASE_URL}/api/accounts/me` 返回 HTTP 200 且含 user 与 features；若 `user.mustChangePassword === true`，执行真实 `POST ${WEB_BASE_URL}/api/account/password` 改密（见 §5.1 W16-F01）并用返回的新 token 继续；不得绕过门禁。 |
+| SM-005 | 代表页路由 | `${WEB_BASE_URL}/users`（或等价 SPA 路由）返回 HTTP 200 且响应体含 `id="root"`（或等价稳定 SPA 挂载标记）；S3 独立复现记录另行完成真实浏览器可交互/列表加载验证（`list-edit-lifecycle`）。 |
+| SM-006 | 种子重复性（disposable 模式 · S4 必检） | 从空 DB 启动并在 W16-F01 改密后，认证的 `GET ${WEB_BASE_URL}/api/users?pageSize=100` 返回 `SMOKE_EXPECTED_SEED_TOTAL`（默认 `1`）条种子用户并含 `${SMOKE_SEED_ID}`（默认 `user-admin`）；重启 API 后再次断言总数与同一用户不变，不产生重复种子。**重启由脚本以校验过的隔离 project 执行（v0.1.2，拒绝外部注入命令）**；重启后必须重新判定 readiness，失败按退出码 3。**S4 验收必须至少一次以 disposable/隔离运行且 `SM-006=PASS`；无该次证据不得把 S4「种子可重复」判为满足。** |
 
 ### 5.3 输入与退出码
 
-最小输入为 `API_BASE_URL`、`WEB_BASE_URL`、`SMOKE_USERNAME`、`SMOKE_PASSWORD`、`SMOKE_RECORD_ID`（默认 `rec-1`）和 `SMOKE_EXPECTED_SEED_TOTAL`（默认 `8`）。实现可增加明确文档化的 `--disposable` 或等价安全开关；无该开关时不得执行种子 reset。
+最小输入为 `API_BASE_URL`、`WEB_BASE_URL`、`SMOKE_USERNAME`、`SMOKE_PASSWORD`、`SMOKE_SEED_ID`（默认 `user-admin`）和 `SMOKE_EXPECTED_SEED_TOTAL`（默认 `1`）。W16-F01 相关：`SMOKE_PASSWORD_NEW`（可选，改密新密码，默认 `<SMOKE_PASSWORD>-changed`）；可选 `SMOKE_CSP=1` 启用 SM-008 真实浏览器 + 生产 CSP 头检查。实现可增加明确文档化的 `--disposable` 或等价安全开关；无该开关时不得执行种子 reset。`--disposable` 必须同时提供 `SMOKE_ISOLATION_ID` 与 `SMOKE_DISPOSABLE_CONFIRM=yes`（见 §5.1 隔离守卫）。
 
 | 退出码 | 含义 |
 |--------|------|
 | `0` | SM-001～SM-005 通过，且 SM-006（disposable）通过——S4 完整绿。 |
 | `2` | 参数、工具或安全前提不满足；请求了不安全的 destructive 模式；disposable 隔离守卫（v0.1.2）校验失败。 |
 | `3` | readiness 在 30 秒内未达到（含 SM-006 重启后的 readiness 重判，v0.1.2）。 |
-| `4` | 登录或身份检查失败。 |
+| `4` | 登录、身份或 W16-F01 改密检查失败。 |
 | `5` | 代表页路由或数据检查失败。 |
 | `6` | 种子重复性（SM-006）断言失败。 |
+| `7` | **真实浏览器/CSP 冒烟失败（v0.1.3）**：`SMOKE_CSP=1` 时 SM-008（`apps/web/scripts/check-prod-csp.mjs`）未通过。 |
 | `8` | **部分绿（v0.1.2）**：非 disposable 默认路径下 SM-001～SM-005 通过、SM-006 未运行；**不是 S4 完整绿**，调用方不得把它当作「种子可重复」或 S4 验收通过的证据。 |
 | `70` | 未分类的脚本内部错误；实现必须输出失败检查项和脱敏诊断。 |
 
@@ -159,3 +163,4 @@ S4 新建的脚本必须位于仓库根 `scripts/smoke.sh`，使用 `bash` 执�
 | v0.1.0 | 2026-08-03 | 初始冻结（D-004）。 |
 | v0.1.1 | 2026-08-03 | 响应 A-008（independent · design-plan · conditional）：**F-004 → fixed**——S4 验收强制 ≥1 次 disposable/隔离运行且 `SM-006=PASS`，非 disposable exit 0 不得单独作为「种子可重复」关闭证据（§5.1/§5.2/§5.3）；吸收 **R-008-001**（默认 URL 按路径区分）、**R-008-002**（终点 4 操作化对齐 `list-edit-lifecycle`）、**R-008-003**（SM-005 判据钉死 `id="root"`）、**R-008-004**（不安全 destructive → 退出码 2，SM-006 失败单独 6）。D-005。 |
 | v0.1.2 | 2026-08-03 | 响应 A-011（independent · execution-facts · fail）：**F-007 → fixed**——新增部分绿退出码 `8`（§5.3），非 disposable 路径不得以 `0` 退出，输出非完整绿摘要；**F-008 → fixed**——disposable 隔离守卫（§5.1）：强制 `SMOKE_ISOLATION_ID` + `SMOKE_DISPOSABLE_CONFIRM=yes`，机器校验运行 project 与 `<id>_db-data` 卷绑定，禁止外部注入重启命令（去 `eval`，重启由脚本以隔离 project 执行），不满足 → exit 2；CI 使用显式隔离 project 并把隔离身份写入环境与日志（§5.1）；SM-006 重启后 readiness 重判 → exit 3（§5.2）。D-007。 |
+| v0.1.3 | 2026-08-20 | 对齐现行实现与 W16-F01（D-011）：§3.2 默认 URL 更新为 25080/25081/25173 并写明 compose API 默认不发布宿主端口、S4 smoke 经 `scripts/pre-release-smoke.sh` loopback override；§5.1 新增 **W16-F01 首登强制改密必须走真实 `/api/account/password`（禁止清标志/改库/跳过）**；§5.2 SM-002 改为 `/healthz`+`/readyz`、SM-004 内置改密、SM-005 代表路由改 `/users`、SM-006 种子检查对齐 `SMOKE_SEED_ID=user-admin`/`SMOKE_EXPECTED_SEED_TOTAL=1`；§5.3 输入与退出码表新增 `7`（SM-008 真实浏览器/CSP 失败）并补 `SMOKE_PASSWORD_NEW`/`SMOKE_CSP`/`SMOKE_SEED_ID`。D-011。 |

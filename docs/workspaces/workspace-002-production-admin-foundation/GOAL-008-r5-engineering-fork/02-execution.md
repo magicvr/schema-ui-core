@@ -2,9 +2,9 @@
 title: 执行记录 · R5 · 工程化、fork 体验与集成关门
 status: done
 created: 2026-08-02
-updated: 2026-08-03
+updated: 2026-08-20
 parent: GOAL-001-production-admin-foundation
-version: 0.1.16
+version: 0.1.17
 ---
 
 # 执行记录 · GOAL-008
@@ -183,3 +183,10 @@ version: 0.1.16
 - **关门（用户确认）**：GOAL-008 已置 `done`（`00-meta` status、`03-audit`、goal-tree 同步）；**Root R5 检查点已勾选**（Root `00-meta` R5 行 + `progress 4/5 → 5/5`）。
 - **未做**：Root close-out 关门审计与 VP-002 关门为独立用户裁决（Root / 愿景层），未自动推进。
 - **计划（非事实）**：由用户裁决 Root close-out 关门审计与 VP-002 关门（`/vision` 或 `/audit`）。
+
+## 2026-08-20 · 协议 v0.1.3：W16-F01 首登改密 + 对齐现行 smoke/CI/端口（D-011）
+
+- 按用户指令「好，继续」将 [I-008-002-fork-reproduction-protocol.md](attachments/I-008-002-fork-reproduction-protocol.md) 修订至 **v0.1.3**（D-011）。
+- 修订要点：§3.2 默认 URL 更新为 25080/25081/25173 并写明 compose API 默认不发布宿主端口、S4 smoke 经 `scripts/pre-release-smoke.sh` loopback override；§5.1 新增 **W16-F01 首登强制改密必须走真实 `/api/account/password`（禁止清标志/改库/跳过）**；§5.2 SM-002 改 `/healthz`+`/readyz`、SM-004 内置改密、SM-005 代表路由 `/users`、SM-006 种子检查对齐 `SMOKE_SEED_ID=user-admin`/`SMOKE_EXPECTED_SEED_TOTAL=1`；§5.3 补 `SMOKE_PASSWORD_NEW`/`SMOKE_CSP`/`SMOKE_SEED_ID` 输入与退出码 `7`（SM-008）。
+- 事实依据：本轮已实跑 `scripts/pre-release-smoke.sh` 全绿（SM-004 含 W16-F01 真实改密、SM-006、SM-008、C-006 persistence PASS），CI `container-smoke` 已统一走 wrapper；协议修订属文档对齐，不改代码/脚本/GOAL-008 status。
+- 未做：未改产品代码/脚本；未重开 GOAL-008 关门；`I-008-002` 维持 `verified`（v0.1.3）。
