@@ -53,6 +53,21 @@ go run ./cmd/server
 | `ADMIN_INITIAL_PASSWORD` | dev `admin` | 首次种子 admin 密码；生产必填 |
 | `AUTH_DEV_SESSION_ENABLED` | `false` | 显式本地开发静态会话兜底；**生产禁止启用** |
 
+### 可观测性（VP-015 · workspace-015）
+
+缺省**完全关闭**：不监听额外端口、无 tracer 路径，mvp/dev/Compose 无需任何 collector。下表为显式开启键（YAML `observability:` 段见 `configs/config.yaml`；env 名同列）。
+
+| 键（YAML） | env 覆盖 | 默认 | 说明 |
+|------------|----------|------|------|
+| `observability.metrics.enabled` | `OBSERVABILITY_METRICS_ENABLED` | `false` | 开启专用 Prometheus 曝光 listener（独立端口，非主 mux） |
+| `observability.metrics.addr` | `OBSERVABILITY_METRICS_ADDR` | `127.0.0.1:25081` | listener 绑定；非 loopback 绑定必须配 token（任何环境 fail-closed） |
+| `observability.metrics.auth_token` | `OBSERVABILITY_METRICS_AUTH_TOKEN` | 空 | 可选 Bearer（≥16 字符）；secret 只经 env/`${VAR}` 提供；与 enabled=false 同时设置 fail-closed |
+| `observability.traces.enabled` | `OBSERVABILITY_TRACES_ENABLED` | `false` | 开启 OTLP/HTTP 导出 |
+| `observability.traces.endpoint` | `OBSERVABILITY_TRACES_ENDPOINT` | 空 | OTLP 基础 URL（如 `http://localhost:4318`）；enabled 时必填，非 http(s) fail-closed；导出失败仅告警不致命 |
+| `observability.traces.sample_ratio` | `OBSERVABILITY_TRACES_SAMPLE_RATIO` | `1.0` | 采样比 ∈ (0,1]，ParentBased+TraceIDRatio |
+
+指标面固定系列见 GOAL-002 D-001 §3（`suc_build_info` / `suc_http_requests_total{module_id,method,route,status}` / `suc_http_request_duration_seconds` / `suc_kernel_modules_enabled` / Go+process collectors）；端点 `GET /metrics`（专用 listener 上）。trace 侧每个注册路由一个 SERVER span，属性含 `correlation.request_id`（W3C traceparent 入站关联）。证据命令序列见 workspace-015 GOAL-006 E-002；本地排障可 `go run ./cmd/otlp-sink`。
+
 ### 开发 vs 生产（GOAL-008 S1 / I-008-001）
 
 | 维度 | 开发（`APP_ENV=development`） | 生产（`APP_ENV=production` / compose） |

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-21
 updated: 2026-08-22
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计 · GOAL-001
@@ -16,8 +16,8 @@ version: 0.2.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001～I-005 | 全部 **verified**（各阶段 D-001，见 `00-meta.md` 信息表） |
-| 到期 required 是否已 verified / residual | 已核对 | 零开放 |
+| 影响本 scope 的 I-00N | I-001～I-005 | `00-meta` 与 `01-decision` 均 **verified**（A-002 F-002 已 fixed） |
+| 到期 required 是否已 verified / residual | 已核对 | 实质零开放；登记两处一致 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -25,7 +25,9 @@ version: 0.2.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-22 | self | Root 关门（R1–R5 全范围 + 成功标准逐条） | pass | 0 | `03-audit/A-001-self-root-closeout.md` |
+| A-002 | 2026-08-22 | independent | Root 关门（R1–R5 + 成功标准 5 条 + 信息门禁 + 愿景对齐） | conditional | 2→0（F-001/F-002 fixed） | `03-audit/A-002-independent-root-closeout.md` |
+| A-003 | 2026-08-22 | govern-orchestrator | 响应 A-002（F-001～F-005 闭环） | pass | 0 | `03-audit/A-003-response-a002.md` |
 
 ## 结论状态
 
-A-001（self）`pass`；独立审计（grok build /audit，项目决策路径）进行中。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+关门闭环完成：A-001 self `pass` + A-002 independent `conditional` → 采纳 independent 建议（先修台账再关门）；F-001/F-002 `fixed`、F-004/F-005 `fixed`、F-003 文档化残余（recommended 不设门禁）→ **开放 required = 0**。Root `status: done`（5/5）。VP-015 关门记录（vision 层）待 `/vision`。

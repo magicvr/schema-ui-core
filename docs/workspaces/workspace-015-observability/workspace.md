@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-015-observability](../../vision/plans/VP-015-observability.md)（**`active`**，架构 A4）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-observability`：纲领 R1～R5；R1–R4 已完成（GOAL-002/003/004/005 均 done）；R5 收尾 + Root 关门在即。
+- **Root** `GOAL-001-observability`：纲领 R1～R5 全部完成；Root 于 2026-08-22 **done 5/5**（GOAL-002～006 均 done）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-014-object-storage`。
 - 不承接 Admin 功能或业务域；不重开 VP-012 / VP-013 / VP-014。
@@ -49,7 +49,9 @@ VP-015：Prometheus 类指标导出 + OTLP traces；无收集器为内嵌默认�
 | R2 | 指标 scrape 接入 | 已完成（GOAL-003 done 4/4） |
 | R3 | OpenTelemetry traces 接入 | 已完成（GOAL-004 done 4/4；I-002 已闭合） |
 | R4 | 与现有 request-id / correlation 关联 | 已完成（GOAL-005 done 4/4；I-005 已闭合） |
-| R5 | 默认无收集器 + 显式导出双路径证据 | 待立项（收尾后 Root 关门） |
+| R5 | 默认无收集器 + 显式导出双路径证据 | 已完成（GOAL-006 done 4/4；E-002 live 证据落盘） |
+
+Root `GOAL-001-observability` 于 2026-08-22 **关门**（done 5/5；A-001 self + A-002 independent 闭环）。VP-015 关门记录（vision 层）待 `/vision`。
 
 ## 固定共享资料引用
 

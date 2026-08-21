@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-21 | 开区 scaffold（workspace-015 + Root + A4 路线图） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-22 | R1–R5 五阶段交付与关门（阶段明细在各子目标 E 条目） | recorded | [E-002-r1-r5-delivery-closeout.md](02-execution/E-002-r1-r5-delivery-closeout.md) |
 
 ## 事实边界
 

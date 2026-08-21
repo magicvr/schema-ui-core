@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-observability
 title: 可观测性（指标导出 + OpenTelemetry）
-status: active
+status: done
 parent: null
 created: 2026-08-21
 updated: 2026-08-22
-version: 0.5.0
-progress: 4/5
+version: 1.0.0
+progress: 5/5
 plan_refs:
   - VP-015-observability
 primary_plan: VP-015-observability
@@ -29,9 +29,9 @@ serves_summary: 交付架构 A4：Prometheus 类指标导出 + OpenTelemetry tra
 | R2 | **指标 scrape 接入**：Prometheus 类 pull 面；系列携带 `module_id`；未显式配置不成为启动硬依赖；是否扩 `readyz`（I-004 已闭合：不扩）。承载子目标：[GOAL-003-metrics-scrape-endpoint](../GOAL-003-metrics-scrape-endpoint/00-meta.md) | 依赖 R1 | 已完成（GOAL-003 done 4/4；live 冒烟实测 suc_* 系列） |
 | R3 | **OpenTelemetry traces 接入**：OTLP 协议/采样/no-op（I-002）；HTTP 请求至少可出 span；未配置 endpoint 不得挡住 mvp/dev。承载子目标：[GOAL-004-otel-traces](../GOAL-004-otel-traces/00-meta.md) | 依赖 R1 | 已完成（GOAL-004 done 4/4；I-002 闭合；live 冒烟实证导出失败不致命） |
 | R4 | **与 request-id 关联**：属性名 / baggage（I-005）；退出 2 的关联判据可核对。承载子目标：[GOAL-005-requestid-correlation](../GOAL-005-requestid-correlation/00-meta.md) | 依赖 R3 | 已完成（GOAL-005 done 4/4；I-005 闭合；判据测试锁定） |
-| R5 | **双路径证据**：默认无收集器仍能开发快测 + 显式配置下 metrics scrape **与** 至少一条 trace 导出。承载子目标：待立项 | 依赖 R2/R4 | 未开始 |
+| R5 | **双路径证据**：默认无收集器仍能开发快测 + 显式配置下 metrics scrape **与** 至少一条 trace 导出。承载子目标：[GOAL-006-dual-path-evidence](../GOAL-006-dual-path-evidence/00-meta.md) | 依赖 R2/R4 | 已完成（GOAL-006 done 4/4；E-002 live 双路径证据落盘） |
 
-`progress` = 已完成阶段数 / 5。当前 `4/5`（R1–R4 已完成；R5 收尾后关门）。
+`progress` = 已完成阶段数 / 5。当前 **5/5**。关门审计：A-001 self `pass`；A-002 independent `conditional` → F-001/F-002 `fixed`、F-003 文档化残余、F-004/F-005 `fixed`；A-003 响应闭环。
 
 ## 成功标准（方向级）
 
