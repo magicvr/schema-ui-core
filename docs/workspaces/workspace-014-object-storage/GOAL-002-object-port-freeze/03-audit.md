@@ -16,4 +16,4 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| （尚未到达审计节点） | | | | | | |
+| A-001 | 2026-08-21 | self | GOAL-002 全部交付（端口/适配器/配置面） | pass | 0 | [A-001-self-r1-freeze.md](03-audit/A-001-self-r1-freeze.md) |

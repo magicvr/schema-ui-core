@@ -123,6 +123,27 @@ navigation:
   # default with a warning. NAVIGATION_ORDER env (comma-separated) overrides.
   order: []
 
+storage:
+  objects:
+    # VP-014 (workspace-014 GOAL-002 D-001): kernel object-storage driver.
+    #   local (default) keeps the embedded disk layout
+    #     (<db dir>/avatars | brand-assets | uploads).
+    #   s3 selects the S3-compatible backend and requires the s3 block below —
+    #     endpoint/bucket/access_key_id/secret_access_key fail closed at load;
+    #     readyz extends to cover the backend only when driver=s3 is explicit.
+    driver: local
+    local:
+      # Optional override of the derived disk root. Empty keeps the
+      # historical <db dir> derivation.
+      root: ""
+    s3:
+      endpoint: ""          # required when driver=s3, e.g. http://minio:9000
+      region: ""            # optional; empty = driver default
+      bucket: ""            # required; single bucket, keys namespaced avatars/ brand-assets/ uploads/
+      access_key_id: ""     # required; supply via STORAGE_OBJECTS_S3_ACCESS_KEY_ID
+      secret_access_key: "" # required SECRET — via STORAGE_OBJECTS_S3_SECRET_ACCESS_KEY only, never a literal
+      use_path_style: true  # MinIO/R2 need path-style; AWS can set false
+
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
   mode: normal

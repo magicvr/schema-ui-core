@@ -89,6 +89,27 @@ type Config struct {
 	BrandingJPEGQuality      int
 	BrandingMaxBytes         int
 
+	// Object-storage surface (VP-014 / workspace-014 GOAL-002 D-001, R1).
+	// ObjectsDriver selects the kernel.ObjectStore adapter: "" / "local" (the
+	// embedded default; root derived from filepath.Dir(DBPath) at composition)
+	// or "s3" (explicit production configuration; readyz extends only then).
+	ObjectsDriver string
+	// ObjectsLocalRoot optionally overrides the local disk root. Empty keeps
+	// the historical derivation (the directory containing the sqlite file).
+	ObjectsLocalRoot string
+	// S3-compatible backend settings. Credentials are secrets: they must come
+	// from env interpolation (configs/.env or process env), never literals.
+	// driver=s3 requires endpoint/bucket/access_key_id/secret_access_key
+	// (fail-closed at load); any non-empty s3.* key with driver=local fails.
+	ObjectsS3Endpoint        string
+	ObjectsS3Region          string
+	ObjectsS3Bucket          string
+	ObjectsS3AccessKeyID     string
+	ObjectsS3SecretAccessKey string
+	// ObjectsS3UsePathStyle defaults to true (MinIO/R2 need path-style);
+	// virtual-host style can be enabled for AWS-compatible endpoints.
+	ObjectsS3UsePathStyle bool
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -188,6 +209,22 @@ type yamlFile struct {
 		JPEGQuality      int `yaml:"jpeg_quality"`
 		MaxBytes         int `yaml:"max_bytes"`
 	} `yaml:"branding"`
+	Storage struct {
+		Objects struct {
+			Driver *string `yaml:"driver"`
+			Local  struct {
+				Root *string `yaml:"root"`
+			} `yaml:"local"`
+			S3 struct {
+				Endpoint       *string `yaml:"endpoint"`
+				Region         *string `yaml:"region"`
+				Bucket         *string `yaml:"bucket"`
+				AccessKeyID    *string `yaml:"access_key_id"`
+				SecretAccessKey *string `yaml:"secret_access_key"`
+				UsePathStyle   *bool   `yaml:"use_path_style"`
+			} `yaml:"s3"`
+		} `yaml:"objects"`
+	} `yaml:"storage"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -241,6 +278,8 @@ func Load() *Config {
 		BrandingFaviconDimension: 64,
 		BrandingJPEGQuality:      82,
 		BrandingMaxBytes:         4 << 20,
+		ObjectsDriver:            "local",
+		ObjectsS3UsePathStyle:    true,
 		RuntimeMode:              RuntimeModeNormal,
 	}
 
@@ -356,6 +395,16 @@ func Load() *Config {
 	if yf.Branding.MaxBytes > 0 {
 		cfg.BrandingMaxBytes = yf.Branding.MaxBytes
 	}
+	cfg.ObjectsDriver = strings.ToLower(strings.TrimSpace(strPtrOr(yf.Storage.Objects.Driver, cfg.ObjectsDriver)))
+	cfg.ObjectsLocalRoot = strPtrOr(yf.Storage.Objects.Local.Root, cfg.ObjectsLocalRoot)
+	cfg.ObjectsS3Endpoint = strPtrOr(yf.Storage.Objects.S3.Endpoint, cfg.ObjectsS3Endpoint)
+	cfg.ObjectsS3Region = strPtrOr(yf.Storage.Objects.S3.Region, cfg.ObjectsS3Region)
+	cfg.ObjectsS3Bucket = strPtrOr(yf.Storage.Objects.S3.Bucket, cfg.ObjectsS3Bucket)
+	cfg.ObjectsS3AccessKeyID = strPtrOr(yf.Storage.Objects.S3.AccessKeyID, cfg.ObjectsS3AccessKeyID)
+	cfg.ObjectsS3SecretAccessKey = strPtrOr(yf.Storage.Objects.S3.SecretAccessKey, cfg.ObjectsS3SecretAccessKey)
+	if yf.Storage.Objects.S3.UsePathStyle != nil {
+		cfg.ObjectsS3UsePathStyle = *yf.Storage.Objects.S3.UsePathStyle
+	}
 	profile := strPtrOr(yf.App.Profile, string(kernel.ProfileMVP))
 
 	// navigation.order (GOAL-013 D-002 §4): sequence of NodeIDs. A malformed
@@ -416,6 +465,16 @@ func Load() *Config {
 	cfg.BrandingLogoMaxDimension = positiveIntEnv("BRANDING_LOGO_MAX_DIMENSION", cfg.BrandingLogoMaxDimension)
 	cfg.BrandingFaviconDimension = positiveIntEnv("BRANDING_FAVICON_DIMENSION", cfg.BrandingFaviconDimension)
 	cfg.BrandingJPEGQuality = positiveIntEnv("BRANDING_JPEG_QUALITY", cfg.BrandingJPEGQuality)
+	cfg.ObjectsDriver = strings.ToLower(envOr("STORAGE_OBJECTS_DRIVER", cfg.ObjectsDriver))
+	cfg.ObjectsLocalRoot = envOr("STORAGE_OBJECTS_LOCAL_ROOT", cfg.ObjectsLocalRoot)
+	cfg.ObjectsS3Endpoint = envOr("STORAGE_OBJECTS_S3_ENDPOINT", cfg.ObjectsS3Endpoint)
+	cfg.ObjectsS3Region = envOr("STORAGE_OBJECTS_S3_REGION", cfg.ObjectsS3Region)
+	cfg.ObjectsS3Bucket = envOr("STORAGE_OBJECTS_S3_BUCKET", cfg.ObjectsS3Bucket)
+	cfg.ObjectsS3AccessKeyID = envOr("STORAGE_OBJECTS_S3_ACCESS_KEY_ID", cfg.ObjectsS3AccessKeyID)
+	cfg.ObjectsS3SecretAccessKey = envOr("STORAGE_OBJECTS_S3_SECRET_ACCESS_KEY", cfg.ObjectsS3SecretAccessKey)
+	if v, set := os.LookupEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE"); set && strings.TrimSpace(v) != "" {
+		cfg.ObjectsS3UsePathStyle = boolEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE", cfg.ObjectsS3UsePathStyle)
+	}
 	if yf.Runtime.Mode != nil {
 		cfg.RuntimeMode = RuntimeMode(strings.TrimSpace(*yf.Runtime.Mode))
 	}
@@ -441,6 +500,27 @@ func Load() *Config {
 		cfg.DBDialect = "postgres"
 	default:
 		cfg.LoadError = fmt.Errorf("config: db.dialect must be one of sqlite or postgres (got %q)", cfg.DBDialect)
+		return cfg
+	}
+
+	// storage.objects.driver (VP-014 GOAL-002 D-001): empty = local; unknown
+	// drivers fail closed at load. S3 pairing rules mirror the postgres
+	// credential rule above and are re-checked by ValidateProd.
+	switch cfg.ObjectsDriver {
+	case "", "local":
+		cfg.ObjectsDriver = "local"
+		if leak := firstNonEmpty(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region, cfg.ObjectsS3Bucket,
+			cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey); leak != "" {
+			cfg.LoadError = fmt.Errorf("config: storage.objects.s3.* is set (%q) but storage.objects.driver is local — set driver to s3 or remove the s3 keys", leak)
+			return cfg
+		}
+	case "s3":
+		if err := validateObjectsS3(cfg); err != nil {
+			cfg.LoadError = err
+			return cfg
+		}
+	default:
+		cfg.LoadError = fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", cfg.ObjectsDriver)
 		return cfg
 	}
 
@@ -775,6 +855,11 @@ func (c *Config) ValidateProd() error {
 	if err := c.validateDB(); err != nil {
 		return err
 	}
+	// VP-014 GOAL-002 D-001: object-storage pairing rules are startup gates
+	// for every environment (including development), like the db rules.
+	if err := c.validateObjects(); err != nil {
+		return err
+	}
 	if c.AppEnv == "development" {
 		return nil
 	}
@@ -792,6 +877,49 @@ func (c *Config) ValidateProd() error {
 			"AUTH_JWT_SECRET must contain both letters and digits when APP_ENV=%q",
 			c.AppEnv,
 		)
+	}
+	return nil
+}
+
+// firstNonEmpty returns the first trimmed-non-empty value, used to name the
+// offending s3 key when driver=local is misconfigured with s3 settings.
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if t := strings.TrimSpace(v); t != "" {
+			return t
+		}
+	}
+	return ""
+}
+
+// validateObjects enforces the storage.objects pairing rules (VP-014
+// workspace-014 GOAL-002 D-001) on every Config that reaches ValidateProd,
+// including zero-value/test configs that bypass Load's own checks.
+func (c *Config) validateObjects() error {
+	switch c.ObjectsDriver {
+	case "", "local":
+	case "s3":
+		return validateObjectsS3(c)
+	default:
+		return fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", c.ObjectsDriver)
+	}
+	return nil
+}
+
+// validateObjectsS3 fails closed when an explicitly selected S3-compatible
+// backend is missing any required setting. The secret must arrive via env
+// interpolation (configs/.env or process env); a literal in YAML is possible
+// but documented as forbidden — the same contract as DB_PASSWORD.
+func validateObjectsS3(c *Config) error {
+	for _, pair := range []struct{ name, value string }{
+		{"endpoint", c.ObjectsS3Endpoint},
+		{"bucket", c.ObjectsS3Bucket},
+		{"access_key_id", c.ObjectsS3AccessKeyID},
+		{"secret_access_key", c.ObjectsS3SecretAccessKey},
+	} {
+		if strings.TrimSpace(pair.value) == "" {
+			return fmt.Errorf("config: storage.objects.driver=s3 requires storage.objects.s3.%s (provide secrets via STORAGE_OBJECTS_S3_* env / configs/.env)", pair.name)
+		}
 	}
 	return nil
 }
