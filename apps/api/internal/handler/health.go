@@ -50,7 +50,7 @@ func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store,
 // beyond the store ping (VP-014 GOAL-003 D-001): when an S3-compatible object
 // backend is explicitly configured, composition passes a HeadBucket probe so
 // readyz covers the backend too. Nil entries are ignored.
-func RegisterWithMFAProbes(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier, probes ...func(context.Context) error) {
+func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier, probes ...func(context.Context) error) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready, probes...))
 	if plan.HasModule("core.auth-session") {

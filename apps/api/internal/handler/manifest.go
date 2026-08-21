@@ -13,7 +13,7 @@ import (
 // response is assembled before registration so an invalid fragment fails app
 // construction rather than becoming a silent runtime fallback.
 
-func RegisterManifest(mux *http.ServeMux, supplied ...[]byte) error {
+func RegisterManifest(mux routeRegistrar, supplied ...[]byte) error {
 	if len(supplied) > 1 {
 		return fmt.Errorf("manifest: at most one prebuilt document is allowed")
 	}

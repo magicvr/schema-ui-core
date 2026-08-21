@@ -216,7 +216,7 @@ func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string,
 // account cannot fill the disk. The gate mirrors the resource-factory
 // permission model (requirePermission, fail-closed 403 for authenticated users
 // without the key).
-func RegisterUpload(mux *http.ServeMux, a authMiddleware, objects kernel.ObjectStore, opts ...UploadOption) {
+func RegisterUpload(mux routeRegistrar, a authMiddleware, objects kernel.ObjectStore, opts ...UploadOption) {
 	store := &uploadStore{
 		objects: objects,
 		policy: uploadPolicy{

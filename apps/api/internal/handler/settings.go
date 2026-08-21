@@ -46,7 +46,7 @@ func SettingsRoutes(a *auth.Authenticator, repository SettingsRepository, operat
 // admin.settings (VP-007 exit 4 / I-L10N-003: public startup config must not
 // require the settings edit module). When admin.settings is present, branding
 // is contributed by SettingsRoutes instead — do not double-register.
-func RegisterPublicBranding(mux *http.ServeMux, repository SettingsRepository) {
+func RegisterPublicBranding(mux routeRegistrar, repository SettingsRepository) {
 	mux.Handle("GET /api/branding", brandingGET(repository))
 }
 

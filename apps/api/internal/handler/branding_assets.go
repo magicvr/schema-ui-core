@@ -70,6 +70,6 @@ func BrandingAssetRoutes(a authMiddleware, store *BrandingAssetStore, moduleID s
 // admin.settings (mvp): /api/branding may reference previously uploaded
 // assets, so the read surface must stay available. Do not double-register
 // when the settings module contributes the same route.
-func RegisterPublicBrandingAssets(mux *http.ServeMux, store *BrandingAssetStore) {
+func RegisterPublicBrandingAssets(mux routeRegistrar, store *BrandingAssetStore) {
 	mux.Handle("GET /api/branding/assets/{id}", store.file())
 }

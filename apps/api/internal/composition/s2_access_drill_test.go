@@ -199,6 +199,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		jwtSecret("test-secret"),
 		jobRuntime,
 		[]kernel.Provider{probe},
+		nil,
 	)
 	if err != nil {
 		t.Fatalf("newMuxWithExtraProviders with probe: %v", err)

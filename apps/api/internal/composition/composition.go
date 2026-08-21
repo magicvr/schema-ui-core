@@ -21,6 +21,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
@@ -119,6 +120,8 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newSettingsRepository,
 			newAuthenticator,
 			newJobRuntime,
+			newObserver,
+			newMetricsServer,
 			newMux,
 			newServer,
 		),
@@ -223,6 +226,27 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsess
 	return auth.NewWithRepository([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
 }
 
+// newObserver builds the kernel metrics registry (VP-015 R2 / GOAL-003
+// D-001 §5): static build identity plus one suc_kernel_modules_enabled line
+// per enabled module in the resolved plan.
+func newObserver(cfg *config.Config, plan kernel.Plan) *obs.Observer {
+	observer := obs.NewObserver(obs.BuildInfoFromVersion(cfg.ProfileName))
+	for _, id := range plan.IDs() {
+		observer.RegisterModule(id)
+	}
+	return observer
+}
+
+// newMetricsServer maps the observability.metrics config surface onto the
+// dedicated listener. Disabled (the default) means nothing listens.
+func newMetricsServer(cfg *config.Config, observer *obs.Observer, logger *slog.Logger) *obs.Server {
+	return obs.NewServer(obs.ServerOptions{
+		Enabled:   cfg.MetricsEnabled,
+		Addr:      cfg.MetricsAddr,
+		AuthToken: cfg.MetricsAuthToken,
+	}, observer, logger)
+}
+
 func newMux(
 	cfg *config.Config,
 	a *auth.Authenticator,
@@ -234,8 +258,9 @@ func newMux(
 	gate *readinessGate,
 	secret jwtSecret,
 	jobRuntime *jobRuntime,
+	observer *obs.Observer,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -255,8 +280,13 @@ func newMuxWithExtraProviders(
 	secret jwtSecret,
 	jobRuntime *jobRuntime,
 	extra []kernel.Provider,
+	observer *obs.Observer,
 ) (*http.ServeMux, error) {
-	mux := http.NewServeMux()
+	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
+	// interception point — central handler registrations (Handle/HandleFunc)
+	// and module-contributed routes are all measured with their owning
+	// module_id. A nil observer (metrics disabled) passes through untouched.
+	mux := obs.NewInstrumentedMux(observer)
 	// W7 F-008: install the explicit trusted reverse-proxy CIDR allow-list for
 	// login/captcha client-IP resolution (fail-closed on invalid CIDRs).
 	if err := handler.SetTrustedProxyCIDRs(cfg.HTTPTrustedProxies); err != nil {
@@ -498,7 +528,11 @@ func newMuxWithExtraProviders(
 	}
 	st.MarkSystemDataReady()
 	for _, route := range set.Routes {
-		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+		full := route.Method + " " + route.Pattern
+		// VP-015 R2: contributed routes carry their owning module_id in the
+		// metrics labels (R1 D-001 §6); central registrations default to core.
+		mux.Own(full, route.ModuleID)
+		mux.Handle(full, route.Handler)
 	}
 	for _, route := range handler.ServiceCredentialRoutes(a, authRepository, operations, "core.auth-session") {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
@@ -543,7 +577,7 @@ func newMuxWithExtraProviders(
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: fmt.Sprintf("register bootstrap: %v", err)}
 		}
 	}
-	return mux, nil
+	return mux.ServeMux, nil
 }
 
 // adminFunctionalOrder is the frozen home-page priority (D-003 §2): the first
@@ -615,7 +649,7 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server) {
 	var listener net.Listener
 	var stopRetention func()
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
@@ -656,6 +690,18 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 					Action: settings.OperationLogExpirationAction,
 				}, nil
 			}, time.Hour, logger)
+			// VP-015 R2 (GOAL-003 D-001 §3): the dedicated metrics listener is a
+			// bypass face — it never gates readiness, but an explicitly enabled
+			// listener that cannot bind fails startup (fail-closed).
+			if err := metrics.Start(ctx); err != nil {
+				stopRetention()
+				_ = jobs.Stop(ctx)
+				_ = runtime.Stop(ctx)
+				_ = ln.Close()
+				listener = nil
+				_ = st.Close()
+				return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.server-registration", Detail: fmt.Sprintf("start metrics listener: %v", err)}
+			}
 			// R5 real readiness: only after every module Start + Ready succeeds
 			// does /readyz report ready.
 			gate.setReady()
@@ -685,10 +731,11 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 			if stopRetention != nil {
 				stopRetention()
 			}
+			metricsErr := metrics.Stop(ctx)
 			jobsErr := jobs.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)
 			closeErr := st.Close()
-			return errors.Join(shutdownErr, jobsErr, runtimeErr, closeErr)
+			return errors.Join(shutdownErr, metricsErr, jobsErr, runtimeErr, closeErr)
 		},
 	})
 }

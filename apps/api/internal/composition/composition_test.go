@@ -54,6 +54,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		gate,
 		jwtSecret("test-secret"),
 		jobRuntime,
+		nil,
 	)
 }
 

@@ -52,7 +52,7 @@ type authHandler struct {
 	mfa MFAVerifier
 }
 
-func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier, mfa ...MFAVerifier) {
+func authsHandler(mux routeRegistrar, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier, mfa ...MFAVerifier) {
 	h := &authHandler{
 		a:           a,
 		operations:  operations,
