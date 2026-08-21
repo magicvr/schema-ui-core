@@ -38,7 +38,6 @@ type fakeS3 struct {
 	// transport-error injection (non-miss failures; A-002 R-003):
 	putErr, getErr, headErr, deleteErr, listErr error
 }
-}
 
 func newFakeS3() *fakeS3 { return &fakeS3{objects: map[string]s3Object{}} }
 

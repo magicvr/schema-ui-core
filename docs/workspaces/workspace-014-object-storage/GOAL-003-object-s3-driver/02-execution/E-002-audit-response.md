@@ -24,3 +24,8 @@ version: 0.1.0
 ## 验证
 
 go build exit 0；go test ./internal/{objectstore,composition}/ 全绿；全量套件见 E-001 补记与本条。
+## 验证
+
+go build exit 0；objectstore/composition 测试全绿；全量 go test ./... exit 0。
+
+> **修正记录（诚实留痕）**：本条初版在 stray-brace 修复前写了"全量绿"——实际全量首跑 FAIL（s3_test.go 结构体多一个右括号，commit a4c68ef 带入）。修复后复跑全量 exit 0（本修正所在提交）。教训：全量验证必须在提交前完成。
