@@ -83,7 +83,10 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where = ` WHERE lower(key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(name) LIKE '%' || CAST(? AS TEXT) || '%'`
+			// W9 F-012: the OR group must be parenthesized — AND binds tighter
+			// than OR, so the unparenthesized form let "q + enabled=true"
+			// return disabled tasks that matched on key alone.
+			where = ` WHERE (lower(key) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(name) LIKE '%' || CAST(? AS TEXT) || '%')`
 			args = append(args, q, q)
 		}
 		if filter.Enabled != nil {
@@ -297,7 +300,10 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 		where := ""
 		args := []any{}
 		if q := strings.TrimSpace(filter.Q); q != "" {
-			where = ` WHERE lower(detail) LIKE '%' || CAST(? AS TEXT) || '%' OR task_id IN (SELECT id FROM scheduled_tasks WHERE lower(key) LIKE '%' || CAST(? AS TEXT) || '%')`
+			// W9 F-012: same precedence fix as ListTasks — the OR group is
+			// parenthesized so the status filter cannot be bypassed for rows
+			// matching on detail alone.
+			where = ` WHERE (lower(detail) LIKE '%' || CAST(? AS TEXT) || '%' OR task_id IN (SELECT id FROM scheduled_tasks WHERE lower(key) LIKE '%' || CAST(? AS TEXT) || '%'))`
 			args = append(args, q, q)
 		}
 		if s := strings.TrimSpace(filter.Status); s != "" {

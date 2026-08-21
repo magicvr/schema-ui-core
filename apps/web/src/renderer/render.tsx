@@ -44,6 +44,7 @@ import { useTranslate } from "@/i18n/runtime";
 import {
   executeAction,
   evaluatePermissionTargets,
+  validatePermissions,
 } from "@/renderer/permissions";
 import {
   EMPTY_RESOURCE_LIST,
@@ -747,13 +748,32 @@ function SchemaCrudProvider({
     [document, context],
   );
 
+  // W9 A-005 R-F-001: the L2 permission validator now runs in the production
+  // render path. A malformed permission structure surfaces at load time
+  // (console.error with codes + paths) and fails CLOSED — while invalid, every
+  // registered permission target is denied instead of trusting a structure the
+  // validator rejected. Unmarked targets keep the protocol's default-allow.
+  const permissionStructureInvalid = useMemo(() => {
+    const l2Errors = validatePermissions(document as unknown as JsonRecord);
+    if (l2Errors.length > 0) {
+      console.error(
+        "[schema-ui] permission L2 validation failed; gated targets are denied",
+        l2Errors,
+      );
+    }
+    return l2Errors.length > 0;
+  }, [document]);
+
   const effectivePermission = useCallback(
     (targetId: string) => {
+      if (permissionStructureInvalid) {
+        return false;
+      }
       const entry = permissionTargets.find((target) => target.targetId === targetId);
       // Absent target = no declared permission (engine default is allow).
       return entry === undefined ? true : entry.effectivePermission;
     },
-    [permissionTargets],
+    [permissionTargets, permissionStructureInvalid],
   );
 
   const registerFetcher = useCallback((next: typeof fetch) => {

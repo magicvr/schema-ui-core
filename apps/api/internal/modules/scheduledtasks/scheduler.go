@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -69,7 +70,16 @@ func (s *Scheduler) loop() {
 		case <-s.stop:
 			return
 		case now := <-ticker.C:
-			s.tick(now)
+			// W9 F-007: a panicking tick must kill neither the loop goroutine
+			// nor the process; the next tick retries.
+			func() {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						slog.Error("scheduler tick panicked", "err", recovered)
+					}
+				}()
+				s.tick(now)
+			}()
 		}
 	}
 }
@@ -128,8 +138,18 @@ func (s *Scheduler) Execute(task store.Task, now time.Time) error {
 	started := now
 	finished := now
 	detail := ""
-	if err := handler(context.Background(), task, now); err != nil {
-		detail = err.Error()
+	// W9 F-007: a panicking task handler is recorded as a failed run (same
+	// durable trail as an error return) instead of crashing the process.
+	runErr := func() (err error) {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("task handler panicked: %v", recovered)
+			}
+		}()
+		return handler(context.Background(), task, now)
+	}()
+	if runErr != nil {
+		detail = runErr.Error()
 	}
 	run := store.TaskRun{
 		ID:        newRunID(),

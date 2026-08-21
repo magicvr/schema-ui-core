@@ -265,62 +265,46 @@ func (r *Repository) GetUserAccountByOwner(ownerID string) (*Account, error) {
 // GetOrCreateUserAccount returns the user account for ownerID, creating a
 // zero-balance account when absent (GOAL-020 D-001 §1 get-or-create). The
 // UNIQUE(owner_type, owner_id, currency) constraint makes concurrent creates
-// safe: an INSERT conflict falls back to re-reading the existing row.
+// safe: an INSERT conflict falls back to re-reading the existing row in a
+// FRESH transaction — on postgres a failed INSERT aborts its own transaction,
+// so the loser must never re-read inside it (W9 F-001).
 func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Account, bool, error) {
-	var a Account
-	isNew := false
-	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var created, updated int64
-		err := tx.QueryRow(context.Background(),
-			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
-			OwnerUser, ownerID, DefaultCurrency,
-		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
-		if err == nil {
-			a.CreatedAt = time.Unix(created, 0)
-			a.UpdatedAt = time.Unix(updated, 0)
-			return nil
-		}
-		if !errors.Is(err, kernel.ErrNoRows) {
-			return fmt.Errorf("get wallet account by owner: %w", err)
-		}
-		isNew = true
-		// Auto-create with a time-ordered id (millisecond prefix + random
-		// suffix — same convention as the module newID; GOAL-020 A-003 F-003).
-		randBytes := make([]byte, 12)
-		if _, err := rand.Read(randBytes); err != nil {
-			return fmt.Errorf("auto-create wallet id: %w", err)
-		}
-		id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
-		if _, err := tx.Exec(context.Background(),
+	// Fast path: the account already exists.
+	if existing, err := r.GetUserAccountByOwner(ownerID); err == nil {
+		return existing, false, nil
+	} else if !errors.Is(err, ErrNotFound) {
+		return nil, false, fmt.Errorf("get wallet account by owner: %w", err)
+	}
+	// Auto-create with a time-ordered id (millisecond prefix + random
+	// suffix — same convention as the module newID; GOAL-020 A-003 F-003).
+	randBytes := make([]byte, 12)
+	if _, err := rand.Read(randBytes); err != nil {
+		return nil, false, fmt.Errorf("auto-create wallet id: %w", err)
+	}
+	id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
+	insertErr := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
 			`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)`,
 			id, OwnerUser, ownerID, DefaultCurrency, StatusActive, now.Unix(), now.Unix(),
-		); err != nil {
-			if isUniqueViolation(err) {
-				// Concurrent create won: re-read the existing row. The loser
-				// must NOT report a create (GOAL-020 A-003 F-001: no duplicate
-				// wallet.account-create on the shared row).
-				isNew = false
-				err := tx.QueryRow(context.Background(),
-					`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
-					OwnerUser, ownerID, DefaultCurrency,
-				).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
-				if err != nil {
-					return fmt.Errorf("re-read wallet account after create conflict: %w", err)
-				}
-				a.CreatedAt = time.Unix(created, 0)
-				a.UpdatedAt = time.Unix(updated, 0)
-				return nil
-			}
-			return fmt.Errorf("auto-create wallet account: %w", err)
-		}
-		a = Account{ID: id, OwnerType: OwnerUser, OwnerID: ownerID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
-		return nil
+		)
+		return err
 	})
-	if err != nil {
-		return nil, false, err
+	if insertErr != nil {
+		if !isUniqueViolation(insertErr) {
+			return nil, false, fmt.Errorf("auto-create wallet account: %w", insertErr)
+		}
+		// Concurrent create won: re-read the existing row in a fresh
+		// transaction. The loser must NOT report a create (GOAL-020 A-003
+		// F-001: no duplicate wallet.account-create on the shared row).
+		existing, err := r.GetUserAccountByOwner(ownerID)
+		if err != nil {
+			return nil, false, fmt.Errorf("re-read wallet account after create conflict: %w", err)
+		}
+		return existing, false, nil
 	}
-	return &a, isNew, nil
+	a := Account{ID: id, OwnerType: OwnerUser, OwnerID: ownerID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
+	return &a, true, nil
 }
 
 // UpdateStatus flips account status (active/disabled) with the optimistic
@@ -842,8 +826,12 @@ func (r *Repository) ListReconcileRuns(page, pageSize int) ([]ReconciliationRun,
 	return runs, total, err
 }
 
+// isUniqueViolation is dialect-agnostic (W9 F-001): the SQLite-only message
+// match previously never fired on postgres (SQLSTATE 23505), silently breaking
+// ErrOwnerTaken mapping, the get-or-create conflict fallback and the ledger
+// idempotency-race replay on the postgres dialect.
 func isUniqueViolation(err error) bool {
-	return err != nil && (contains(err.Error(), "UNIQUE constraint failed") || contains(err.Error(), "constraint failed: UNIQUE"))
+	return kernel.IsUniqueViolation(err)
 }
 
 func contains(s, sub string) bool {

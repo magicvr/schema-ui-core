@@ -56,7 +56,13 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			credential.ID, credential.Name, credential.TokenPrefix, credential.TokenHash,
 			string(scopesJSON), credential.ExpiresAt.Unix(), credential.CreatedBy,
 			credential.CreatedAt.Unix(), credential.UpdatedAt.Unix()); err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "service_credentials.name") {
+			// W9 F-011: the unique-violation predicate is dialect-agnostic, and
+			// the name constraint is identified by both dialects' names (sqlite
+			// auto-index "service_credentials.name"; postgres UNIQUE DDL name
+			// "service_credentials_name_key").
+			lowered := strings.ToLower(err.Error())
+			if kernel.IsUniqueViolation(err) &&
+				(strings.Contains(lowered, "service_credentials.name") || strings.Contains(lowered, "service_credentials_name_key")) {
 				return ErrCredentialNameTaken
 			}
 			return fmt.Errorf("insert service credential: %w", err)

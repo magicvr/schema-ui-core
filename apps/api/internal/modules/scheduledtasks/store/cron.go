@@ -96,14 +96,26 @@ func parseCronField(part string, min, max int) (map[int]bool, error) {
 }
 
 // Matches reports whether the fields match the given time.
+//
+// W9 F-025 (POSIX/Vixie cron day semantics): when BOTH day-of-month and
+// day-of-week are restricted, the day matches when EITHER matches; otherwise
+// both must match. Restriction is detected as "the parsed set does not cover
+// the field's full range" — a full-range map is behaviorally identical to a
+// literal `*` (every candidate day matches), so subset detection is
+// equivalent to syntactic `*` detection for every expression while keeping
+// the CronFields array shape unchanged.
 func (f CronFields) Matches(t time.Time) bool {
-	if !f[0][t.Minute()] || !f[1][t.Hour()] || !f[2][t.Day()] {
+	if !f[0][t.Minute()] || !f[1][t.Hour()] || !f[3][int(t.Month())] {
 		return false
 	}
-	if !f[3][int(t.Month())] {
-		return false
+	domMatch := f[2][t.Day()]
+	dowMatch := f[4][int(t.Weekday())]
+	domRestricted := len(f[2]) < 31
+	dowRestricted := len(f[4]) < 7
+	if domRestricted && dowRestricted {
+		return domMatch || dowMatch
 	}
-	return f[4][int(t.Weekday())]
+	return domMatch && dowMatch
 }
 
 // Next returns the next matching time at or after from, searching up to

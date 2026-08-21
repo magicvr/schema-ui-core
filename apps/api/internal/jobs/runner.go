@@ -276,6 +276,14 @@ func (r *Runner) execute(ctx context.Context, cancel context.CancelFunc, id stri
 	reporter := &runnerReporter{ctx: ctx, cancelFn: cancel, repo: r.repo, lease: lease, now: r.options.Now}
 	result := make(chan runnerOutcome, 1)
 	go func() {
+		// W9 F-007: a panicking handler must degrade to a durable job failure,
+		// never crash the process. The panic is converted to the same outcome
+		// path as a returned error so finish() records JOB_HANDLER_FAILED.
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				result <- runnerOutcome{err: fmt.Errorf("job handler panicked: %v", recovered)}
+			}
+		}()
 		commit, err := registered.handler(ctx, *job, reporter)
 		result <- runnerOutcome{commit: commit, err: err}
 	}()

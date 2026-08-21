@@ -711,9 +711,18 @@ func (h *resourceHandler) delete() http.Handler {
 		// S-12 (GOAL-012 D-002 §2): capture the pre-delete row so a successful
 		// delete can record a recycle snapshot. A failed delete records nothing
 		// (no orphan snapshots); a missing row records nothing.
+		//
+		// W9 F-010: the ownership precheck fails CLOSED on transient read
+		// errors, mirroring update() — the previous shape skipped the self-scope
+		// check whenever Get failed and proceeded to Delete anyway.
 		var snapshot map[string]any
 		if h.res.Trash != nil || (constraint != nil && constraint.ScopeType == "self") {
-			if row, gerr := h.res.Entity.Get(id); gerr == nil {
+			row, gerr := h.res.Entity.Get(id)
+			if gerr != nil && !errors.Is(gerr, errResourceNotFound) {
+				writeEntityError(w, r, h.res, gerr, "delete")
+				return
+			}
+			if gerr == nil {
 				if !scopeOwned(row, constraint) {
 					writeLocalizedError(w, r, http.StatusNotFound, notFoundCode(h.res), "no "+h.res.ID+" with that id")
 					return

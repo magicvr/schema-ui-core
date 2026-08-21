@@ -130,10 +130,14 @@ func (s *Service) Verify(proofID, code, recoveryCode string, now time.Time) (str
 	} else {
 		step, valid := ValidateTotp(decryptSecret(s.key, st.SecretCiphertext), code, now, totpWindow, st.LastUsedStep)
 		if valid {
-			if err := s.repo.SetLastUsedStep(proof.UserID, step, now); err != nil {
-				return "", err
+			// W9 F-005: the guarded advance IS the replay gate — a concurrent
+			// verification of the same code loses the CAS (0 rows affected) and
+			// is rejected below instead of being accepted twice.
+			advanced, advErr := s.repo.AdvanceLastUsedStep(proof.UserID, step, now)
+			if advErr != nil {
+				return "", advErr
 			}
-			ok = true
+			ok = advanced
 		}
 	}
 	if !ok {
@@ -296,24 +300,45 @@ func (s *Service) requireActiveSecondFactor(userID, code, recoveryCode string, n
 }
 
 // consumeRecoveryCode bcrypt-compares the code against the stored hash set and
-// removes the matched hash (one-time consumption).
+// removes the matched hash (one-time consumption). W9 F-006: the rewrite is a
+// guarded compare-and-set on updated_at — a concurrent redemption of another
+// code moves the set first, so this caller's guarded write fails, it re-reads
+// and retries; a concurrently re-presented SAME code loses the race and is
+// rejected. The previous read-list/rewrite-whole-list pair resurrected consumed
+// codes and allowed double use under concurrency.
 func (s *Service) consumeRecoveryCode(st *store.State, code string, now time.Time) bool {
-	var hashes []string
-	if err := json.Unmarshal([]byte(st.RecoveryCodesHash), &hashes); err != nil {
-		return false
-	}
-	for i, h := range hashes {
-		if bcrypt.CompareHashAndPassword([]byte(h), []byte(strings.TrimSpace(code))) == nil {
-			remaining := append(append([]string{}, hashes[:i]...), hashes[i+1:]...)
-			next, err := json.Marshal(remaining)
-			if err != nil {
-				return false
-			}
-			if err := s.repo.UpdateRecoveryCodes(st.UserID, string(next), now); err != nil {
-				return false
-			}
-			return true
+	trimmed := strings.TrimSpace(code)
+	for attempt := 0; attempt < 4; attempt++ {
+		var hashes []string
+		if err := json.Unmarshal([]byte(st.RecoveryCodesHash), &hashes); err != nil {
+			return false
 		}
+		matched := -1
+		for i, h := range hashes {
+			if bcrypt.CompareHashAndPassword([]byte(h), []byte(trimmed)) == nil {
+				matched = i
+				break
+			}
+		}
+		if matched < 0 {
+			return false
+		}
+		remaining := append(append([]string{}, hashes[:matched]...), hashes[matched+1:]...)
+		next, err := json.Marshal(remaining)
+		if err != nil {
+			return false
+		}
+		consumed, err := s.repo.UpdateRecoveryCodesIfUnchanged(st.UserID, string(next), st.RecoveryCodesHash, now)
+		if err != nil || consumed {
+			return err == nil
+		}
+		// Lost the optimistic race: re-read the current set and retry so the
+		// one-time semantics hold under concurrent redemption.
+		fresh, err := s.repo.GetState(st.UserID)
+		if err != nil {
+			return false
+		}
+		st = fresh
 	}
 	return false
 }
