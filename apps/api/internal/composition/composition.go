@@ -307,13 +307,9 @@ func newMuxWithExtraProviders(
 	// The port is constructed here but not yet consumed by call sites - the
 	// three families move onto it in R3; main.go logs that window at startup.
 	var objectProbe func(context.Context) error
-	if cfg.ObjectsDriver == "s3" {
-		objStore, err := objectstore.NewS3(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region, cfg.ObjectsS3Bucket,
-			cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey, cfg.ObjectsS3UsePathStyle)
-		if err != nil {
-			return nil, err
-		}
-		objectProbe = objStore.Ping
+	objectProbe, err := newObjectProbe(cfg)
+	if err != nil {
+		return nil, err
 	}
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
@@ -584,6 +580,22 @@ func deriveHomePageRef(plan kernel.Plan) string {
 		}
 	}
 	return ""
+}
+
+// newObjectProbe builds the readyz probe for an explicitly configured
+// S3-compatible object backend (VP-014 GOAL-003 D-001). nil for the local
+// default so readyz semantics stay unchanged; a Ping closure when driver=s3.
+func newObjectProbe(cfg *config.Config) (func(context.Context) error, error) {
+	if cfg.ObjectsDriver != "s3" {
+		return nil, nil
+	}
+	objStore, err := objectstore.NewS3(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region,
+		cfg.ObjectsS3Bucket, cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey,
+		cfg.ObjectsS3UsePathStyle)
+	if err != nil {
+		return nil, err
+	}
+	return objStore.Ping, nil
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {

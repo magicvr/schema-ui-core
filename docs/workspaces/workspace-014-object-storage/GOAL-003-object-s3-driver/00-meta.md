@@ -1,11 +1,12 @@
 ---
 id: GOAL-003-object-s3-driver
 title: R2 S3 兼容接入（驱动 + readyz 扩依赖）
-status: active
+status: done
 parent: GOAL-001-object-storage
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.1.0
+version: 0.2.0
+progress: 3/3
 plan_refs:
   - VP-014-object-storage
 primary_plan: VP-014-object-storage

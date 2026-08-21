@@ -14,7 +14,7 @@ version: 0.1.0
 
 ## 实现要点
 
-1. **客户端**：`config.LoadDefaultConfig` 仅注入 static credentials + region；`s3.NewFromConfig` 带 `BaseEndpoint` 与 `UsePathStyle`（cfg.ObjectsS3UsePathStyle，缺省 true）。不触碰默认凭证链/共享配置文件（D-005）。
+1. **客户端**：手写 `aws.Config{Region, Credentials: static}` + `s3.NewFromConfig` 带 `BaseEndpoint` 与 `UsePathStyle`（cfg.ObjectsS3UsePathStyle，缺省 true）——比最初设想的 LoadDefaultConfig 更贴 D-005 的禁默认链要求（A-002 N-001 同步）。不触碰默认凭证链/共享配置文件/IMDS（D-005）。
 2. **方法映射**：
    - Put → PutObject（body 整块 bytes；meta → Metadata map，空值键省略）
    - Get → GetObject 读全量 body；NoSuchKey/`NotFound`/`StatusCode 404` → `kernel.ErrObjectNotFound`

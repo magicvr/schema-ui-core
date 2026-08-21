@@ -35,12 +35,18 @@ type fakeS3 struct {
 	bucketErr error
 	calls     int
 	pageSize  int // list page size for pagination tests (0 = single page)
+	// transport-error injection (non-miss failures; A-002 R-003):
+	putErr, getErr, headErr, deleteErr, listErr error
+}
 }
 
 func newFakeS3() *fakeS3 { return &fakeS3{objects: map[string]s3Object{}} }
 
 func (f *fakeS3) PutObject(_ context.Context, params *s3.PutObjectInput, _ ...func(*s3.Options)) (*s3.PutObjectOutput, error) {
 	f.calls++
+	if f.putErr != nil {
+		return nil, f.putErr
+	}
 	body, err := io.ReadAll(params.Body)
 	if err != nil {
 		return nil, err
@@ -51,6 +57,9 @@ func (f *fakeS3) PutObject(_ context.Context, params *s3.PutObjectInput, _ ...fu
 
 func (f *fakeS3) GetObject(_ context.Context, params *s3.GetObjectInput, _ ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 	f.calls++
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
 	obj, ok := f.objects[*params.Key]
 	if !ok {
 		return nil, &stubAPIError{code: "NoSuchKey"}
@@ -60,6 +69,9 @@ func (f *fakeS3) GetObject(_ context.Context, params *s3.GetObjectInput, _ ...fu
 
 func (f *fakeS3) HeadObject(_ context.Context, params *s3.HeadObjectInput, _ ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
 	f.calls++
+	if f.headErr != nil {
+		return nil, f.headErr
+	}
 	obj, ok := f.objects[*params.Key]
 	if !ok {
 		return nil, &stubAPIError{code: "NotFound"}
@@ -70,12 +82,18 @@ func (f *fakeS3) HeadObject(_ context.Context, params *s3.HeadObjectInput, _ ...
 
 func (f *fakeS3) DeleteObject(_ context.Context, params *s3.DeleteObjectInput, _ ...func(*s3.Options)) (*s3.DeleteObjectOutput, error) {
 	f.calls++
+	if f.deleteErr != nil {
+		return nil, f.deleteErr
+	}
 	delete(f.objects, *params.Key)
 	return &s3.DeleteObjectOutput{}, nil
 }
 
 func (f *fakeS3) ListObjectsV2(_ context.Context, params *s3.ListObjectsV2Input, _ ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
 	f.calls++
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
 	var keys []*string
 	for k := range f.objects {
 		if strings.HasPrefix(k, *params.Prefix) {
@@ -245,5 +263,40 @@ func TestS3Ping(t *testing.T) {
 func TestNewS3RejectsEmptyBucket(t *testing.T) {
 	if _, err := NewS3("http://x", "us-east-1", "  ", "k", "s", true); err == nil {
 		t.Fatal("empty bucket must be rejected")
+	}
+}
+
+// A-002 R-003: transport (non-miss) failures propagate instead of being
+// mistaken for misses; Exists must NOT report false on a real error.
+func TestS3TransportErrorsPropagate(t *testing.T) {
+	ctx := context.Background()
+	transport := errors.New("connection reset by peer")
+
+	f := newFakeS3()
+	f.putErr = transport
+	s := &S3Store{client: f, bucket: "b"}
+	if err := s.Put(ctx, kernel.ObjectNamespaceUploads, idA, []byte("x"), kernel.ObjectMeta{}); !errors.Is(err, transport) {
+		t.Fatalf("put error = %v, want wrapped transport error", err)
+	}
+
+	f = newFakeS3()
+	f.deleteErr = transport
+	s = &S3Store{client: f, bucket: "b"}
+	if err := s.Delete(ctx, kernel.ObjectNamespaceUploads, idA); !errors.Is(err, transport) {
+		t.Fatalf("delete error = %v", err)
+	}
+
+	f = newFakeS3()
+	f.listErr = transport
+	s = &S3Store{client: f, bucket: "b"}
+	if _, err := s.List(ctx, kernel.ObjectNamespaceUploads); !errors.Is(err, transport) {
+		t.Fatalf("list error = %v", err)
+	}
+
+	f = newFakeS3()
+	f.headErr = transport
+	s = &S3Store{client: f, bucket: "b"}
+	if ok, err := s.Exists(ctx, kernel.ObjectNamespaceUploads, idA); ok || !errors.Is(err, transport) {
+		t.Fatalf("exists on transport error = %v/%v; want false + propagated error", ok, err)
 	}
 }

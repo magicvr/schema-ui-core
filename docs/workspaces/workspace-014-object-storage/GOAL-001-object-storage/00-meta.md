@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-21
 updated: 2026-08-21
 version: 0.2.0
-progress: 1/5
+progress: 2/5
 plan_refs:
   - VP-014-object-storage
 primary_plan: VP-014-object-storage
@@ -26,12 +26,12 @@ serves_summary: 交付架构 A2：内核对象存储端口 + S3 兼容实现；�
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
 | R1 | **端口与配置面冻结**：公共类型无本地路径 / `os.File`；命名空间隔离三类落盘；缺省本地盘；S3 为显式配置；裁定 List/GC 是否进端口（I-005）与桶模型（I-002）。承载子目标：GOAL-002-object-port-freeze | 起点 | **已完成**（2026-08-21：实现 + self/independent 审计闭合，见其 E/A 台账） |
-| R2 | **S3 兼容接入**：驱动公约数（I-001）、凭证键名（I-003）、配置后 `readyz` 扩依赖。承载子目标：GOAL-003-object-s3-driver | 依赖 R1 | 进行中（D-004/D-005 已裁，方案见 GOAL-003 D-001） |
+| R2 | **S3 兼容接入**：驱动公约数（I-001）、凭证键名（I-003）、配置后 `readyz` 扩依赖。承载子目标：GOAL-003-object-s3-driver | 依赖 R1 | **已完成**（2026-08-21：适配器 + readyz 探针；self/independent 审计 pass，recommended 项同批闭合） |
 | R3 | **三类落盘收口**：avatars / brand-assets / uploads（含 file-library 与 data-transfer 共享上传目录）走同一端口 | 依赖 R2 | 未开始 |
 | R4 | **公共面收口**：Handler / 模块公共契约去掉本地路径与 `os.File` | 依赖 R1；可与 R3 部分并行 | 未开始 |
 | R5 | **双路径证据**：本地盘默认路径回归 + S3 兼容生产向验收（配置接入、读写删除、就绪探针） | 依赖 R3/R4 | 未开始 |
 
-`progress` = 已完成阶段数 / 5。当前 `1/5`（R1 完成）。progress 不放行、不关门。
+`progress` = 已完成阶段数 / 5。当前 `2/5`（R1、R2 完成）。progress 不放行、不关门。
 
 ## 成功标准（方向级）
 
