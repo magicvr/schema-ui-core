@@ -900,3 +900,44 @@ func TestDBPostgresExplodedParams(t *testing.T) {
 		}
 	})
 }
+
+// TestDBPoolKnobs covers the postgres connection-pool bounds (A-001 F-002):
+// env overrides YAML, zero keeps the driver default, and the values flow to
+// config so composition can pass them to store.OpenOptions.
+func TestDBPoolKnobs(t *testing.T) {
+	t.Setenv("DB_PASSWORD", "pw")
+	t.Setenv("DB_DSN", "")
+	y := "app:\n  env: development\ndb:\n  dialect: postgres\n  name: appdb\n  user: testuser\n  pool_max_open: 13\n  pool_max_idle: 4\n  conn_max_lifetime: 30m\n"
+	writeConfig(t, y)
+	cfg := Load()
+	if cfg.LoadError != nil {
+		t.Fatalf("LoadError: %v", cfg.LoadError)
+	}
+	if cfg.DBPoolMaxOpen != 13 || cfg.DBPoolMaxIdle != 4 || cfg.DBConnLifetime != 30*time.Minute {
+		t.Errorf("yaml pool knobs: open=%d idle=%d lifetime=%v, want 13/4/30m", cfg.DBPoolMaxOpen, cfg.DBPoolMaxIdle, cfg.DBConnLifetime)
+	}
+	// environment overrides yaml.
+	t.Setenv("DB_POOL_MAX_OPEN", "25")
+	t.Setenv("DB_POOL_MAX_IDLE", "7")
+	t.Setenv("DB_CONN_MAX_LIFETIME", "45m")
+	cfg2 := Load()
+	if cfg2.LoadError != nil {
+		t.Fatalf("LoadError: %v", cfg2.LoadError)
+	}
+	if cfg2.DBPoolMaxOpen != 25 || cfg2.DBPoolMaxIdle != 7 || cfg2.DBConnLifetime != 45*time.Minute {
+		t.Errorf("env pool knobs: open=%d idle=%d lifetime=%v, want 25/7/45m", cfg2.DBPoolMaxOpen, cfg2.DBPoolMaxIdle, cfg2.DBConnLifetime)
+	}
+	// empty env keeps values (driver default at load when unset).
+	t.Setenv("DB_POOL_MAX_OPEN", "")
+	t.Setenv("DB_POOL_MAX_IDLE", "")
+	t.Setenv("DB_CONN_MAX_LIFETIME", "")
+	y2 := "app:\n  env: development\ndb:\n  dialect: postgres\n  name: appdb\n  user: testuser\n"
+	writeConfig(t, y2)
+	cfg3 := Load()
+	if cfg3.LoadError != nil {
+		t.Fatalf("LoadError: %v", cfg3.LoadError)
+	}
+	if cfg3.DBPoolMaxOpen != 0 || cfg3.DBPoolMaxIdle != 0 || cfg3.DBConnLifetime != 0 {
+		t.Errorf("unset pool knobs: open=%d idle=%d lifetime=%v, want 0/0/0", cfg3.DBPoolMaxOpen, cfg3.DBPoolMaxIdle, cfg3.DBConnLifetime)
+	}
+}

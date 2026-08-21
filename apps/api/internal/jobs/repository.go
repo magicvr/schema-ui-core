@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -326,7 +325,7 @@ func (r *Repository) IsCancelRequested(ctx context.Context, lease Lease) (bool, 
 		err := tx.QueryRow(ctx, `SELECT cancel_requested FROM jobs
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
 			lease.JobID, lease.Owner, lease.Version).Scan(&value)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrLeaseLost
 		}
 		requested = value != 0

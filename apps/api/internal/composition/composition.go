@@ -179,9 +179,12 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 		dialect = kernel.Dialect(cfg.DBDialect)
 	}
 	st, err := store.Open(context.Background(), store.OpenOptions{
-		Dialect: dialect,
-		Path:    cfg.DBPath,
-		DSN:     cfg.DBDSN,
+		Dialect:          dialect,
+		Path:             cfg.DBPath,
+		DSN:              cfg.DBDSN,
+		PoolMaxOpenConns: cfg.DBPoolMaxOpen,
+		PoolMaxIdleConns: cfg.DBPoolMaxIdle,
+		ConnMaxLifetime:  cfg.DBConnLifetime,
 	}, catalog)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}

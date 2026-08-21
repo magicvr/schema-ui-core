@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 type Status string
@@ -104,7 +106,7 @@ func scanJob(row rowScanner) (*Job, error) {
 		&result, &errorCode, &errorMessage, &job.ActorID, &job.CorrelationID,
 		&createdAt, &updatedAt, &finishedAt, &expiresAt,
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err

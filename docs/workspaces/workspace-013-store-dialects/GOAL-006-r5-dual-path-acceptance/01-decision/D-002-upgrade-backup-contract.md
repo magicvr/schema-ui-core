@@ -28,7 +28,8 @@ version: 1.0.0
 ### U2 · PostgreSQL 备份/恢复合同（I-004 → verified）
 
 1. **替代 SQLite `VACUUM INTO` 的 PG 生产路径**：
-   - **逻辑备份**：`pg_dump -F c <db> > backup.dump`（custom 格式，可 `pg_restore -d <new> backup.dump`）——适合常规/跨版本/选择性恢复，**本次已可执行验证**（round-9：r5u2 建表+2 行 → pg_dump → pg_restore → count=2）。
+   - **逻辑备份**：`pg_dump -F c <db> > backup.dump`（custom 格式，可 `pg_restore -d <new> backup.dump`）——适合常规/跨版本/选择性恢复，**本次已可执行验证**（round-9：r5u2 建表+2 行 → pg_dump → pg_restore → count=2；2026-08-21 独立审在 fresh-bootstrap 库上 catalog 级 round-trip：48 迁移/35 表 checksum 一致）。
+   - **客户端主版本（A-001 F-004）**：`pg_dump`/`pg_restore` 客户端主版本应 **≤ 服务器主版本**（同机或容器内同版工具）；否则恢复可能遇到未知 GUC 的 SET 告警（如 `transaction_timeout`，`errors ignored: 1`，功能与 checksum 仍成立）。剧本应钉工具镜像版本或显式允许该类告警。
    - **物理/PITR**（高可用规模）：`pg_basebackup` + WAL 归档；运维按部署规模选型，最小合同要求「至少逻辑备份可恢复」。
 2. **恢复验证要求**：任何备份合同上线前必须跑一次「dump → restore 到新库 → 数据/台账可核对」（本 VP 以账台账计数 + 代表性行计数为核对面）。
 3. **非目标**：不在本 VP 实现自动备份调度/KMS/TLS；属 VP-009/运维。

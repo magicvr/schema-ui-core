@@ -68,6 +68,11 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBSSLMode  string
+	// DBConnPool carries postgres connection-pool bounds (0 = driver default).
+	// Wired through to store.OpenOptions; sqlite ignores them.
+	DBPoolMaxOpen  int
+	DBPoolMaxIdle  int
+	DBConnLifetime time.Duration
 
 	AdminInitialPassword  string
 	AuthDevSessionEnabled bool
@@ -156,15 +161,18 @@ type yamlFile struct {
 		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
 	} `yaml:"auth"`
 	DB struct {
-		Path     *string `yaml:"path"`
-		Dialect  *string `yaml:"dialect"`
-		DSN      *string `yaml:"dsn"`
-		Host     *string `yaml:"host"`
-		Port     *string `yaml:"port"`
-		Name     *string `yaml:"name"`
-		User     *string `yaml:"user"`
-		Password *string `yaml:"password"`
-		SSLMode  *string `yaml:"sslmode"`
+		Path         *string `yaml:"path"`
+		Dialect      *string `yaml:"dialect"`
+		DSN          *string `yaml:"dsn"`
+		Host         *string `yaml:"host"`
+		Port         *string `yaml:"port"`
+		Name         *string `yaml:"name"`
+		User         *string `yaml:"user"`
+		Password     *string `yaml:"password"`
+		SSLMode      *string `yaml:"sslmode"`
+		PoolMaxOpen  *int    `yaml:"pool_max_open"`
+		PoolMaxIdle  *int    `yaml:"pool_max_idle"`
+		ConnLifetime *string `yaml:"conn_max_lifetime"`
 	} `yaml:"db"`
 	Admin struct {
 		InitialPassword *string `yaml:"initial_password"`
@@ -222,6 +230,9 @@ func Load() *Config {
 		DBHost:                   "127.0.0.1",
 		DBPort:                   "5432",
 		DBSSLMode:                "disable",
+		DBPoolMaxOpen:            0,
+		DBPoolMaxIdle:            0,
+		DBConnLifetime:           0,
 		AdminInitialPassword:     "",
 		AuthDevSessionEnabled:    false,
 		UploadMaxFilesPerUser:    1000,
@@ -318,6 +329,13 @@ func Load() *Config {
 	cfg.DBUser = strPtrOr(yf.DB.User, cfg.DBUser)
 	cfg.DBPassword = strPtrOr(yf.DB.Password, cfg.DBPassword)
 	cfg.DBSSLMode = strPtrOr(yf.DB.SSLMode, cfg.DBSSLMode)
+	if yf.DB.PoolMaxOpen != nil {
+		cfg.DBPoolMaxOpen = *yf.DB.PoolMaxOpen
+	}
+	if yf.DB.PoolMaxIdle != nil {
+		cfg.DBPoolMaxIdle = *yf.DB.PoolMaxIdle
+	}
+	cfg.DBConnLifetime = orDurationPtr(yf.DB.ConnLifetime, cfg.DBConnLifetime)
 	cfg.AdminInitialPassword = strPtrOr(yf.Admin.InitialPassword, cfg.AdminInitialPassword)
 	cfg.UploadAllowedTypes = strings.TrimSpace(strPtrOr(yf.Upload.AllowedTypes, cfg.UploadAllowedTypes))
 	if yf.Upload.MaxFilesPerUser > 0 {
@@ -386,6 +404,9 @@ func Load() *Config {
 	cfg.DBUser = envOr("DB_USER", cfg.DBUser)
 	cfg.DBPassword = envOr("DB_PASSWORD", cfg.DBPassword)
 	cfg.DBSSLMode = envOr("DB_SSLMODE", cfg.DBSSLMode)
+	cfg.DBPoolMaxOpen = nonNegIntEnv("DB_POOL_MAX_OPEN", cfg.DBPoolMaxOpen)
+	cfg.DBPoolMaxIdle = nonNegIntEnv("DB_POOL_MAX_IDLE", cfg.DBPoolMaxIdle)
+	cfg.DBConnLifetime = durationEnv("DB_CONN_MAX_LIFETIME", cfg.DBConnLifetime)
 	cfg.AdminInitialPassword = envOr("ADMIN_INITIAL_PASSWORD", cfg.AdminInitialPassword)
 	cfg.ProfileName = profile
 	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
@@ -964,6 +985,20 @@ func positiveIntEnv(key string, fallback int) int {
 	}
 	n, err := strconv.Atoi(raw)
 	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
+}
+
+// nonNegIntEnv mirrors positiveIntEnv but accepts 0 (pool knobs use 0 as
+// "driver default / no cap"); unset or invalid keeps the fallback.
+func nonNegIntEnv(key string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
 		return fallback
 	}
 	return n

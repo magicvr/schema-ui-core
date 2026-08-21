@@ -68,8 +68,10 @@ func (s *Store) WasFresh() bool { return s.fresh }
 func (s *Store) Dialect() kernel.Dialect { return kernel.DialectSQLite }
 
 // Run executes fn inside one transaction and exposes the dialect-neutral
-// kernel.Tx (R1 v1.4 §2). This is the kernel port entry point; modules keep
-// using WithTx(*sql.Tx) until R4 moves their public signature.
+// kernel.Tx (R1 v1.4 §2). This is the kernel port entry point; R4 completed the
+// public-surface migration, so modules/jobs/handler speak kernel.Tx — the
+// sqlite-only WithTx below is a retained test/adaptation seam, not part of the
+// module public contract (A-001 F-001).
 //
 // Nested Run is forbidden and detected per-callback via a goroutine-local
 // marker (R1 v1.4 A-008 F-004 permits a ctx value or the equivalent
@@ -103,7 +105,10 @@ func (s *Store) Run(ctx context.Context, fn func(kernel.Tx) error) error {
 	return nil
 }
 
-// WithTx exposes the platform transaction boundary to module repositories.
+// WithTx is the retained sqlite-only adaptation seam (tests / testsupport /
+// legacy callers). It is NOT part of the dialect-neutral module contract, which
+// goes through Run(func(kernel.Tx)); production wiring never injects it after
+// R4 (A-001 F-001 — intentionally kept, documented as hygiene debt).
 func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
