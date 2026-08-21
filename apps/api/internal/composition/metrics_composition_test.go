@@ -8,14 +8,15 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/repository"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
@@ -47,7 +48,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 	if err != nil {
 		t.Fatal(err)
 	}
-	observer := newObserver(cfg, plan)
+	observer := newObserver(cfg, plan, obs.NewTracing(obs.TracingOptions{Enabled: false}, slog.Default()))
 	mux, err := newMuxWithExtraProviders(
 		cfg,
 		a,
@@ -109,7 +110,7 @@ func TestMetricsCompositionTagsModuleOwnership(t *testing.T) {
 // (config -> obs.Server) serves the exposition face end to end.
 func TestMetricsServerWiringEnabledScrapes(t *testing.T) {
 	cfg := &config.Config{ProfileName: "admin", MetricsEnabled: true, MetricsAddr: "127.0.0.1:0"}
-	observer := newObserver(cfg, kernel.Plan{})
+	observer := newObserver(cfg, kernel.Plan{}, obs.NewTracing(obs.TracingOptions{Enabled: false}, slog.Default()))
 	srv := newMetricsServer(cfg, observer, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if !srv.Enabled() {
 		t.Fatal("enabled config must produce an enabled server")
@@ -133,11 +134,46 @@ func TestMetricsServerWiringEnabledScrapes(t *testing.T) {
 	}
 }
 
+// TestTracingWiringNoopByDefault pins GOAL-004 D-001 §3 at the wiring layer:
+// the default config produces an inert tracer path.
+func TestTracingWiringNoopByDefault(t *testing.T) {
+	cfg := &config.Config{ProfileName: "admin"}
+	tr := newTracing(cfg)
+	if tr.Enabled() {
+		t.Fatal("default config must keep tracing a no-op")
+	}
+	if err := tr.Shutdown(context.Background()); err != nil {
+		t.Fatalf("no-op Shutdown must return nil, got %v", err)
+	}
+}
+
+// TestTracingWiringEnabledBuildsProvider proves the config mapping flips the
+// tracer path on with an explicit endpoint.
+func TestTracingWiringEnabledBuildsProvider(t *testing.T) {
+	cfg := &config.Config{
+		ProfileName:       "admin",
+		TracesEnabled:     true,
+		TracesEndpoint:    "http://127.0.0.1:4318",
+		TracesSampleRatio: 1.0,
+		AppName:           "schema-ui-core-api",
+	}
+	tr := newTracing(cfg)
+	if !tr.Enabled() {
+		t.Fatal("enabled config must produce an enabled tracer path")
+	}
+	// Shutdown without any spans must still succeed (provider exists).
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := tr.Shutdown(ctx); err != nil {
+		t.Fatalf("Shutdown: %v", err)
+	}
+}
+
 // TestMetricsServerWiringDisabledIsInert pins the default: disabled config
 // yields an inert server even with a live observer.
 func TestMetricsServerWiringDisabledIsInert(t *testing.T) {
 	cfg := &config.Config{ProfileName: "admin"}
-	observer := newObserver(cfg, kernel.Plan{})
+	observer := newObserver(cfg, kernel.Plan{}, obs.NewTracing(obs.TracingOptions{Enabled: false}, slog.Default()))
 	srv := newMetricsServer(cfg, observer, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if srv.Enabled() {
 		t.Fatal("default config must keep metrics disabled")

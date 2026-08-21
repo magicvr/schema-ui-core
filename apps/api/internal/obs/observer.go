@@ -9,12 +9,15 @@
 package obs
 
 import (
+	"context"
 	"crypto/subtle"
 	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -58,6 +61,7 @@ type Observer struct {
 	httpRequestsTotal    *prometheus.CounterVec
 	httpRequestDuration  *prometheus.HistogramVec
 	kernelModulesEnabled *prometheus.GaugeVec
+	tracing              *Tracing // optional; nil or disabled = no spans
 }
 
 // NewObserver builds the registry with exactly the R1 contract series. No
@@ -121,6 +125,15 @@ func (o *Observer) RegisterModule(moduleID string) {
 	o.kernelModulesEnabled.WithLabelValues(moduleID).Set(1)
 }
 
+// SetTracing attaches the (optional) tracer path to this observer BEFORE the
+// mux is assembled. Disabled or nil keeps Wrap purely metric-side.
+func (o *Observer) SetTracing(t *Tracing) {
+	if o == nil {
+		return
+	}
+	o.tracing = t
+}
+
 // Handler returns the exposition handler served on the dedicated listener. A
 // non-empty token requires "Authorization: Bearer <token>" (constant-time
 // comparison); an empty token leaves the endpoint open on its bound interface.
@@ -182,8 +195,9 @@ func (r *statusRecorder) Write(b []byte) (int, error) {
 }
 
 // Wrap instruments one registered handler: requests and handler latency are
-// counted under (owner, method, route[, status]). Nil-safe: a disabled
-// Observer returns the next handler unchanged.
+// counted under (owner, method, route[, status]) and, when tracing is
+// enabled, one SERVER span is created per request (GOAL-004 D-001 §5).
+// Nil-safe: a disabled Observer returns the next handler unchanged.
 func (o *Observer) Wrap(pattern, owner string, next http.Handler) http.Handler {
 	if o == nil || next == nil {
 		return next
@@ -195,8 +209,15 @@ func (o *Observer) Wrap(pattern, owner string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		start := time.Now()
+		var span trace.Span
+		if o.tracing != nil && o.tracing.Enabled() {
+			var ctx context.Context
+			ctx, span = o.tracing.serverSpan(r, method, route)
+			r = r.WithContext(ctx)
+		}
 		next.ServeHTTP(rec, r)
 		o.httpRequestsTotal.WithLabelValues(owner, method, route, strconv.Itoa(rec.status)).Inc()
 		o.httpRequestDuration.WithLabelValues(owner, method, route).Observe(time.Since(start).Seconds())
+		finishServerSpan(span, rec.status)
 	})
 }

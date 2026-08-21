@@ -140,3 +140,118 @@ func TestObservabilityMetricsConfig(t *testing.T) {
 		}
 	})
 }
+
+// TestObservabilityTracesConfig covers the observability.traces contract
+// (VP-015 / workspace-015 GOAL-004 D-001 §2): defaults stay no-op, YAML and
+// env layers apply, and fail-closed pairing rules hold.
+func TestObservabilityTracesConfig(t *testing.T) {
+	t.Run("defaults are fully no-op", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.TracesEnabled {
+			t.Errorf("TracesEnabled = true, want default false")
+		}
+		if cfg.TracesEndpoint != "" {
+			t.Errorf("TracesEndpoint = %q, want empty", cfg.TracesEndpoint)
+		}
+		if cfg.TracesSampleRatio != 1.0 {
+			t.Errorf("TracesSampleRatio = %v, want default 1.0", cfg.TracesSampleRatio)
+		}
+	})
+
+	t.Run("yaml enables with loopback collector endpoint", func(t *testing.T) {
+		y := "app:\n  env: development\nobservability:\n  traces:\n    enabled: true\n    endpoint: http://localhost:4318\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if !cfg.TracesEnabled || cfg.TracesEndpoint != "http://localhost:4318" {
+			t.Errorf("traces = enabled=%v endpoint=%q", cfg.TracesEnabled, cfg.TracesEndpoint)
+		}
+	})
+
+	t.Run("enabled without endpoint fails closed", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\nobservability:\n  traces:\n    enabled: true\n")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("enabled traces without endpoint must fail closed")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "endpoint is required") {
+			t.Errorf("unexpected error wording: %v", cfg.LoadError)
+		}
+	})
+
+	t.Run("non-http endpoint scheme fails closed", func(t *testing.T) {
+		y := "app:\n  env: development\nobservability:\n  traces:\n    enabled: true\n    endpoint: ftp://files:21\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("ftp endpoint must fail closed")
+		}
+	})
+
+	t.Run("dead endpoint fails closed", func(t *testing.T) {
+		y := "app:\n  env: development\nobservability:\n  traces:\n    endpoint: http://localhost:4318\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("endpoint set while disabled must fail closed")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "enabled is false") {
+			t.Errorf("unexpected error wording: %v", cfg.LoadError)
+		}
+	})
+
+	t.Run("out-of-range sample ratio fails closed", func(t *testing.T) {
+		y := "app:\n  env: development\nobservability:\n  traces:\n    enabled: true\n    endpoint: http://localhost:4318\n    sample_ratio: 1.5\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("sample_ratio > 1 must fail closed")
+		}
+	})
+
+	t.Run("invalid sample ratio env keeps default", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\n")
+		t.Setenv("OBSERVABILITY_TRACES_SAMPLE_RATIO", "not-a-number")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.TracesSampleRatio != 1.0 {
+			t.Errorf("TracesSampleRatio = %v, want default on invalid env", cfg.TracesSampleRatio)
+		}
+	})
+
+	t.Run("env overrides win", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\n")
+		t.Setenv("OBSERVABILITY_TRACES_ENABLED", "true")
+		t.Setenv("OBSERVABILITY_TRACES_ENDPOINT", "http://127.0.0.1:4318")
+		t.Setenv("OBSERVABILITY_TRACES_SAMPLE_RATIO", "0.5")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if !cfg.TracesEnabled || cfg.TracesEndpoint != "http://127.0.0.1:4318" || cfg.TracesSampleRatio != 0.5 {
+			t.Errorf("env trace config lost: %+v", cfg)
+		}
+	})
+
+	t.Run("ValidateProd tolerates zero-value config", func(t *testing.T) {
+		c := &Config{AppEnv: "development"}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("zero-value config must skip observability gate, got: %v", err)
+		}
+	})
+
+	t.Run("ValidateProd re-checks enabled-without-endpoint", func(t *testing.T) {
+		c := &Config{AppEnv: "development", TracesEnabled: true}
+		err := c.ValidateProd()
+		if err == nil {
+			t.Fatal("hand-built enabled traces without endpoint must fail ValidateProd")
+		}
+	})
+}

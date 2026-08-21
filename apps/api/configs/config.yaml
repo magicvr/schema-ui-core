@@ -158,6 +158,17 @@ observability:
     # SECRET — supply via OBSERVABILITY_METRICS_AUTH_TOKEN env / configs/.env,
     # never a literal here; set while enabled=false also fails closed.
     auth_token: ""          # OBSERVABILITY_METRICS_AUTH_TOKEN
+  traces:
+    # VP-015 (workspace-015 GOAL-004 D-001): OpenTelemetry OTLP/HTTP export.
+    # Disabled by default: pure no-op tracer path, no provider, zero behavior
+    # change for mvp/dev (a collector is never required).
+    enabled: false          # OBSERVABILITY_TRACES_ENABLED
+    # OTLP/HTTP base endpoint (the SDK appends /v1/traces), e.g.
+    # http://localhost:4318. Required when enabled; must be absolute http(s).
+    endpoint: ""            # OBSERVABILITY_TRACES_ENDPOINT
+    # Sampling ratio in (0,1], applied as ParentBased(TraceIDRatioBased).
+    # 1.0 = sample everything once enabled; lower to reduce volume.
+    sample_ratio: 1.0       # OBSERVABILITY_TRACES_SAMPLE_RATIO
 
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.

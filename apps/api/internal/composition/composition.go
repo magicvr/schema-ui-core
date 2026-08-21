@@ -21,7 +21,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
@@ -56,8 +55,10 @@ import (
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
 type jwtSecret string
@@ -120,6 +121,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newSettingsRepository,
 			newAuthenticator,
 			newJobRuntime,
+			newTracing,
 			newObserver,
 			newMetricsServer,
 			newMux,
@@ -226,11 +228,27 @@ func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsess
 	return auth.NewWithRepository([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
 }
 
+// newTracing maps the observability.traces config surface onto the tracer
+// path (GOAL-004 D-001 §3): disabled (the default) is a pure no-op.
+func newTracing(cfg *config.Config) *obs.Tracing {
+	return obs.NewTracing(obs.TracingOptions{
+		Enabled:     cfg.TracesEnabled,
+		Endpoint:    cfg.TracesEndpoint,
+		SampleRatio: cfg.TracesSampleRatio,
+		ServiceName: cfg.AppName,
+		Version:     version.Version,
+		Environment: cfg.AppEnv,
+	}, slog.Default())
+}
+
 // newObserver builds the kernel metrics registry (VP-015 R2 / GOAL-003
 // D-001 §5): static build identity plus one suc_kernel_modules_enabled line
-// per enabled module in the resolved plan.
-func newObserver(cfg *config.Config, plan kernel.Plan) *obs.Observer {
+// per enabled module in the resolved plan. Tracing is attached so Wrap emits
+// both metrics and (when enabled) server spans from the same interception
+// point.
+func newObserver(cfg *config.Config, plan kernel.Plan, tracing *obs.Tracing) *obs.Observer {
 	observer := obs.NewObserver(obs.BuildInfoFromVersion(cfg.ProfileName))
+	observer.SetTracing(tracing)
 	for _, id := range plan.IDs() {
 		observer.RegisterModule(id)
 	}
@@ -649,7 +667,7 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing) {
 	var listener net.Listener
 	var stopRetention func()
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
@@ -735,7 +753,10 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 			jobsErr := jobs.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)
 			closeErr := st.Close()
-			return errors.Join(shutdownErr, metricsErr, jobsErr, runtimeErr, closeErr)
+			// GOAL-004 D-001 §6: shutdown flushes pending spans through the
+			// OTLP exporter before the process exits.
+			tracingErr := tracing.Shutdown(ctx)
+			return errors.Join(shutdownErr, metricsErr, jobsErr, runtimeErr, closeErr, tracingErr)
 		},
 	})
 }

@@ -122,6 +122,17 @@ type Config struct {
 	MetricsAddr      string
 	MetricsAuthToken string
 
+	// Observability traces surface (VP-015 / workspace-015 GOAL-004 D-001).
+	// TracesEnabled selects OTLP/HTTP export; disabled (the default) keeps a
+	// pure no-op tracer path — no provider, no spans, zero behavior change
+	// (mvp/dev never require a collector). The endpoint is required when
+	// enabled and must be an absolute http(s) URL (the SDK appends
+	// /v1/traces). SampleRatio applies as ParentBased(TraceIDRatioBased)
+	// with default 1.0. Export failures are logged, never fatal.
+	TracesEnabled     bool
+	TracesEndpoint    string
+	TracesSampleRatio float64
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -243,6 +254,11 @@ type yamlFile struct {
 			Addr      *string `yaml:"addr"`
 			AuthToken *string `yaml:"auth_token"`
 		} `yaml:"metrics"`
+		Traces struct {
+			Enabled     *bool    `yaml:"enabled"`
+			Endpoint    *string  `yaml:"endpoint"`
+			SampleRatio *float64 `yaml:"sample_ratio"`
+		} `yaml:"traces"`
 	} `yaml:"observability"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
@@ -302,6 +318,9 @@ func Load() *Config {
 		MetricsEnabled:           false,
 		MetricsAddr:              "127.0.0.1:25081",
 		MetricsAuthToken:         "",
+		TracesEnabled:            false,
+		TracesEndpoint:           "",
+		TracesSampleRatio:        1.0,
 		RuntimeMode:              RuntimeModeNormal,
 	}
 
@@ -432,6 +451,13 @@ func Load() *Config {
 	}
 	cfg.MetricsAddr = strPtrOr(yf.Observability.Metrics.Addr, cfg.MetricsAddr)
 	cfg.MetricsAuthToken = strPtrOr(yf.Observability.Metrics.AuthToken, cfg.MetricsAuthToken)
+	if yf.Observability.Traces.Enabled != nil {
+		cfg.TracesEnabled = *yf.Observability.Traces.Enabled
+	}
+	cfg.TracesEndpoint = strPtrOr(yf.Observability.Traces.Endpoint, cfg.TracesEndpoint)
+	if yf.Observability.Traces.SampleRatio != nil {
+		cfg.TracesSampleRatio = *yf.Observability.Traces.SampleRatio
+	}
 	profile := strPtrOr(yf.App.Profile, string(kernel.ProfileMVP))
 
 	// navigation.order (GOAL-013 D-002 §4): sequence of NodeIDs. A malformed
@@ -505,6 +531,13 @@ func Load() *Config {
 	cfg.MetricsEnabled = boolEnv("OBSERVABILITY_METRICS_ENABLED", cfg.MetricsEnabled)
 	cfg.MetricsAddr = envOr("OBSERVABILITY_METRICS_ADDR", cfg.MetricsAddr)
 	cfg.MetricsAuthToken = envOr("OBSERVABILITY_METRICS_AUTH_TOKEN", cfg.MetricsAuthToken)
+	cfg.TracesEnabled = boolEnv("OBSERVABILITY_TRACES_ENABLED", cfg.TracesEnabled)
+	cfg.TracesEndpoint = envOr("OBSERVABILITY_TRACES_ENDPOINT", cfg.TracesEndpoint)
+	if raw := strings.TrimSpace(os.Getenv("OBSERVABILITY_TRACES_SAMPLE_RATIO")); raw != "" {
+		if ratio, err := strconv.ParseFloat(raw, 64); err == nil {
+			cfg.TracesSampleRatio = ratio
+		} // invalid value keeps the default; range is enforced by validation
+	}
 	if yf.Runtime.Mode != nil {
 		cfg.RuntimeMode = RuntimeMode(strings.TrimSpace(*yf.Runtime.Mode))
 	}
@@ -560,6 +593,12 @@ func Load() *Config {
 	// and exposure rules fail closed at load time, mirroring runtime.mode /
 	// db.dialect / storage.objects.driver above.
 	if err := validateMetrics(cfg.MetricsEnabled, cfg.MetricsAddr, cfg.MetricsAuthToken); err != nil {
+		cfg.LoadError = err
+		return cfg
+	}
+	// observability.traces (VP-015 / workspace-015 GOAL-004 D-001): same
+	// fail-closed posture for the OTLP export surface.
+	if err := validateTraces(cfg.TracesEnabled, cfg.TracesEndpoint, cfg.TracesSampleRatio); err != nil {
 		cfg.LoadError = err
 		return cfg
 	}
@@ -997,14 +1036,19 @@ const minMetricsTokenLen = 16
 // bypass Load's own checks. An untouched surface (disabled, no addr, no
 // token) is skipped so focused unit Configs keep working.
 func (c *Config) validateObservability() error {
-	if !c.MetricsEnabled && strings.TrimSpace(c.MetricsAddr) == "" && strings.TrimSpace(c.MetricsAuthToken) == "" {
+	metricsUntouched := !c.MetricsEnabled && strings.TrimSpace(c.MetricsAddr) == "" && strings.TrimSpace(c.MetricsAuthToken) == ""
+	tracesUntouched := !c.TracesEnabled && strings.TrimSpace(c.TracesEndpoint) == "" && c.TracesSampleRatio == 0
+	if metricsUntouched && tracesUntouched {
 		return nil
 	}
 	addr := c.MetricsAddr
 	if strings.TrimSpace(addr) == "" {
 		addr = "127.0.0.1:25081" // zero-value Config keeps the documented default
 	}
-	return validateMetrics(c.MetricsEnabled, addr, c.MetricsAuthToken)
+	if err := validateMetrics(c.MetricsEnabled, addr, c.MetricsAuthToken); err != nil {
+		return err
+	}
+	return validateTraces(c.TracesEnabled, c.TracesEndpoint, c.TracesSampleRatio)
 }
 
 // validateMetrics enforces the observability.metrics contract (VP-015 /
@@ -1050,6 +1094,33 @@ func isLoopbackHost(host string) bool {
 		return ip.IsLoopback()
 	}
 	return false
+}
+
+// validateTraces enforces the observability.traces contract (VP-015 /
+// workspace-015 GOAL-004 D-001 §2): a dead endpoint is rejected (mirroring
+// the metrics token precedent), an enabled surface requires an absolute
+// http(s) endpoint, and an explicitly provided sample ratio must lie in
+// (0,1]. A zero ratio on hand-built/test Configs means "not set" and is
+// tolerated (the loader default is 1.0). Error messages never carry secrets.
+func validateTraces(enabled bool, endpoint string, ratio float64) error {
+	endpoint = strings.TrimSpace(endpoint)
+	if !enabled {
+		if endpoint != "" {
+			return fmt.Errorf("config: observability.traces.endpoint is set but observability.traces.enabled is false — enable traces or remove the endpoint")
+		}
+		return nil
+	}
+	if endpoint == "" {
+		return fmt.Errorf("config: observability.traces.endpoint is required when observability.traces.enabled is true (OTLP/HTTP base URL, e.g. http://localhost:4318)")
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return fmt.Errorf("config: observability.traces.endpoint %q must be an absolute http(s) URL", endpoint)
+	}
+	if ratio < 0 || ratio > 1 {
+		return fmt.Errorf("config: observability.traces.sample_ratio must be within (0, 1] (got %v)", ratio)
+	}
+	return nil
 }
 
 // validateDB enforces the VP-013 R1 v1.4 §5 pairing and path-shape rules.
