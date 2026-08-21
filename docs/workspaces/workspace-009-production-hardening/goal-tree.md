@@ -2,9 +2,9 @@
 title: 目标树 · workspace-009-production-hardening
 status: active
 created: 2026-08-10
-updated: 2026-08-20
+updated: 2026-08-21
 parent: null
-version: 0.13.0
+version: 0.15.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -23,9 +23,11 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-005-w4-security-audit-remediation [done] (8/8)   · W4
 ├── GOAL-006-w6-scan-findings-remediation [done] (4/4)    · W6
 ├── GOAL-007-w7-api-web-security-audit [done] (4/4)      · W7
-└── GOAL-008-w8-api-web-security-audit [done] (4/4)      · W8
+├── GOAL-008-w8-api-web-security-audit [done] (4/4)      · W8
+└── GOAL-009-w9-api-web-security-audit [active] (2/4)    · W9
 ```
 
+**W9（2026-08-21，进行中）**：A-001 fail + A-002 conditional。D-002 调和 required **12**（F-001/F-002 + F-004～F-012、F-025；F-003 作废）。D-003 用户整单采纳并**暂挂 VP-008 go**。S2 勾选，`status: active` (2/4)；S3 未开工。见 [GOAL-009](GOAL-009-w9-api-web-security-audit/00-meta.md) / [D-003](GOAL-009-w9-api-web-security-audit/01-decision/D-003-w9-scope-and-go-hold.md)。
 **W8（2026-08-20，已关门）**：独立代码审计 A-001（`source: independent`）判定 **fail**（F-001 分页整数溢出/切片 panic-DoS、F-002 生产 CSP 阻止 inline 主题脚本为 2 条 required；F-003/F-004 为非阻断/条件风险）。用户目标轮次指令授权修复并闭门（D-002 整单采纳 F-001/F-002 + 暂挂 VP-008 go 宣称）；实现 E-002 修复 + E-003 处置 recommended；self A-002 pass + independent A-003 pass（grok-4.6）确认 required 0 开放；D-003 恢复 VP-008 go 宣称。`go test ./...`、web `npm test`（1072）、`npm run build` 全绿。`status: done`。Root 保持 active。见 [GOAL-008](GOAL-008-w8-api-web-security-audit/00-meta.md) / [D-002](GOAL-008-w8-api-web-security-audit/01-decision/D-002-w8-scope-and-go-hold.md) / [A-003](GOAL-008-w8-api-web-security-audit/03-audit/A-003-w8-independent.md)。
 
 **W7（2026-08-19，已关门）**：独立代码审计落盘（A-001 fail，12 required）；用户确认整单采纳 F-001～F-012 并暂挂 go 宣称（D-002）。已实施全部 12 条 required（E-002/E-003），self A-002 pass，independent A-003 conditional 指出 F-006 限流未 record → 修正（E-003）后 independent A-004 **pass**（12/12 required 闭合）。**A-005 独立代码复核确认 F-001/F-002/F-006 genuine fixed + 恢复 VP-008 go 宣称（D-003）**；A-003 recommended F-002/F-003 修复 + F-004/F-005 处置（E-004）。`go test ./...` 与 web `npm test` 全绿。`status: done`。Root 保持 active。见 [GOAL-007](GOAL-007-w7-api-web-security-audit/00-meta.md) / [E-002](GOAL-007-w7-api-web-security-audit/02-execution/E-002-w7-implementation.md) / [A-002](GOAL-007-w7-api-web-security-audit/03-audit/A-002-w7-self.md) / [A-004](GOAL-007-w7-api-web-security-audit/03-audit/A-004-w7-independent.md) / [A-005](GOAL-007-w7-api-web-security-audit/03-audit/A-005-w7-independent-code-review.md)。
@@ -45,6 +47,7 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-006-w6-scan-findings-remediation | W6 扫描审计发现修复（api/web） | GOAL-001-production-hardening | done | 4/4 | 2026-08-15 |
 | GOAL-007-w7-api-web-security-audit | W7 api/web 独立安全审计（落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-19 |
 | GOAL-008-w8-api-web-security-audit | W8 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-20 |
+| GOAL-009-w9-api-web-security-audit | W9 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | active | 2/4 | 2026-08-21 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
 ## 维护说明
