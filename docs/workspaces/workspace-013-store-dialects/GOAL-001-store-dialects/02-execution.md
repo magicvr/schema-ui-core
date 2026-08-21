@@ -31,6 +31,7 @@ version: 0.5.0
 | E-015 | 2026-08-20 | 真实本地测试 PG（192.168.31.213/sa）连接验证全绿（关门前提确认） | recorded | [E-015-real-pg-verification.md](02-execution/E-015-real-pg-verification.md) |
 | E-016 | 2026-08-20 | 配置面补强：config.yaml 切方言 + postgres 参数 + 密码 env-only（真实库验证） | recorded | [E-016-config-usage-scenario.md](02-execution/E-016-config-usage-scenario.md) |
 | E-017 | 2026-08-20 | 双方言测试策略：PG 凭据 env 化（pgtest）+ config 稳定/机密分离 + CI 双跑 | recorded | [E-017-dual-dialect-test-policy.md](02-execution/E-017-dual-dialect-test-policy.md) |
+| E-018 | 2026-08-20 | 本地 .env（测试 PG）+ CI Docker postgres 服务模拟验证 | recorded | [E-018-local-env-ci-pg.md](02-execution/E-018-local-env-ci-pg.md) |
 
 ## 事实边界
 
