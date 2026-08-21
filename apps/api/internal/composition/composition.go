@@ -597,6 +597,12 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 		}
 		return objStore, objStore.Ping, nil
 	}
+	// Defense-in-depth (GOAL-003 A-002 N-005): Load already rejects unknown
+	// drivers fail-closed; re-check here so a hand-built Config cannot silently
+	// fall through to the local adapter.
+	if cfg.ObjectsDriver != "local" && cfg.ObjectsDriver != "" {
+		return nil, nil, fmt.Errorf("composition: unknown storage.objects.driver %q", cfg.ObjectsDriver)
+	}
 	root := cfg.ObjectsLocalRoot
 	if strings.TrimSpace(root) == "" {
 		root = filepath.Dir(cfg.DBPath)
