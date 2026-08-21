@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 
@@ -25,6 +25,23 @@ const rows: Row[] = [
 function rowKey(row: Row): string {
   return row.id;
 }
+
+interface LongRow {
+  id: string;
+  permissions: string[];
+}
+
+const longColumns: DataTableColumn<LongRow>[] = [
+  { key: "id", label: "ID" },
+  { key: "permissions", label: "Permissions", truncate: true },
+];
+
+const longRows: LongRow[] = [
+  {
+    id: "role-1",
+    permissions: ["users.read", "users.write", "roles.read", "roles.write"],
+  },
+];
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
@@ -71,7 +88,7 @@ describe("DataTable", () => {
     function Harness() {
       const [sort, setSort] = useState<SortState | undefined>(undefined);
       return (
-        <DataTable columns={columns} rows={rows} rowKey={rowKey} sort={sort} onSortChange={setSort} />
+        <DataTable columns={columns} rows={rows} rowKey={rowKey} sort={sort} onSortChange={(next) => setSort(next ?? undefined)} />
       );
     }
     const container = await renderTable(<Harness />);
@@ -122,6 +139,23 @@ describe("DataTable", () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "resource fetch failed: HTTP 500",
     );
+  });
+
+  it("exposes a retry control on the error path (W15-F02)", async () => {
+    const onRetry = vi.fn();
+    const container = await renderTable(
+      <DataTable
+        columns={columns}
+        rows={[]}
+        rowKey={rowKey}
+        error="resource fetch failed: HTTP 500"
+        onRetry={onRetry}
+      />,
+    );
+    const retry = container.querySelector("[data-table-retry]") as HTMLButtonElement | null;
+    expect(retry).not.toBeNull();
+    retry?.click();
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it("renders a custom cell renderer", async () => {
@@ -200,5 +234,62 @@ describe("DataTable", () => {
     expect(mobile?.querySelectorAll("li").length).toBe(2);
     expect(mobile?.textContent).toContain("Acme Console");
     expect(mobile?.textContent).toContain("Northwind Sales");
+  });
+
+  it("truncates a truncate column with a full-text title affordance (W4 · GOAL-005)", async () => {
+    const container = await renderTable(
+      <DataTable columns={longColumns} rows={longRows} rowKey={(row) => row.id} />,
+    );
+    const full = "users.read,users.write,roles.read,roles.write";
+    const cell = Array.from(
+      container.querySelectorAll('[data-table-cell="truncated"]'),
+    ).find((entry) => entry.getAttribute("title") === full);
+    expect(cell).not.toBeUndefined();
+    expect(cell?.className).toMatch(/truncate/);
+    expect(cell?.className).toMatch(/max-w-\[16rem\]/);
+    expect(cell?.getAttribute("title")).toBe(full);
+    expect(cell?.textContent).toBe(full);
+    // W4 · GOAL-005 / A-003 F-3: the width cap must live on the td too —
+    // table-layout auto sizes a column by its cell max-content, so the
+    // inner span's max-width alone does not clamp the column.
+    const td = cell?.closest("td");
+    expect(td?.className).toMatch(/max-w-\[16rem\]/);
+  });
+
+  it("truncates every string cell by default with a full-text title (universal ellipsis)", async () => {
+    const container = await renderTable(
+      <DataTable columns={columns} rows={rows} rowKey={rowKey} />,
+    );
+    const cells = Array.from(container.querySelectorAll('[data-table-cell="truncated"]'));
+    expect(cells.length).toBeGreaterThan(0);
+    // Non-truncate columns cap at the universal 20rem; truncate columns keep 16rem.
+    const nameCell = cells.find((cell) => cell.getAttribute("title") === "Acme Console");
+    expect(nameCell).not.toBeUndefined();
+    expect(nameCell?.className).toMatch(/truncate/);
+    expect(nameCell?.closest("td")?.className).toMatch(/max-w-\[20rem\]/);
+    expect(container.textContent).toContain("Acme Console");
+  });
+
+  it("renders a muted placeholder for null / undefined / empty cells", async () => {
+    const sparse = [
+      { id: "r1", name: "With value", note: null },
+      { id: "r2", name: "", note: "has note" },
+      { id: "r3" },
+    ];
+    const container = await renderTable(
+      <DataTable
+        columns={[
+          { key: "id", label: "ID" },
+          { key: "name", label: "Name" },
+          { key: "note", label: "Note" },
+        ]}
+        rows={sparse}
+        rowKey={(row) => row.id}
+      />,
+    );
+    const rowsEl = Array.from(container.querySelectorAll("tbody tr"));
+    expect(rowsEl[0]?.textContent).toContain("—");
+    expect(rowsEl[1]?.textContent).toContain("—");
+    expect(rowsEl[2]?.textContent).toContain("—");
   });
 });

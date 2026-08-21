@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "pageId": "notifications",
+    "title": "Notifications",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "actions.row.request",
+      "form.controls.extended"
+    ]
+  },
+  "actions": {
+    "markAllRead": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/notifications/read-all",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "notifications",
+    "children": [
+      {
+        "type": "form",
+        "id": "notifications-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "notifications-table",
+          "fields": [
+            {
+              "id": "q",
+              "labelKey": "schema.notifications.search.q",
+              "type": "input"
+            },
+            {
+              "id": "read",
+              "type": "select",
+              "labelKey": "schema.notifications.filter.read",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.notifications.filter.read.all"
+                },
+                {
+                  "value": "unread",
+                  "labelKey": "schema.notifications.filter.read.unread"
+                },
+                {
+                  "value": "read",
+                  "labelKey": "schema.notifications.filter.read.read"
+                }
+              ]
+            }
+          ],
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "custom",
+        "id": "notifications-center",
+        "component": "notification-center",
+        "props": {
+          "targetTable": "notifications-table"
+        }
+      }
+    ]
+  }
+}

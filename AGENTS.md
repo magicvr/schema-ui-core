@@ -2,9 +2,9 @@
 title: AGENTS · 目标治理 AI 规则（Claude 安装源）
 status: active
 created: 2026-07-18
-updated: 2026-08-06
+updated: 2026-08-17
 parent: null
-version: 0.12.0
+version: 0.12.1
 ---
 
 # AGENTS.md
@@ -18,7 +18,7 @@ version: 0.12.0
 
 | 内容 | 路径 | 要求 |
 |------|------|------|
-| 目标与过程记录 | `docs/workspace-<NNN>-<slug>/` | 当前工作区内的唯一长期存储 |
+| 目标与过程记录 | `docs/workspaces/workspace-<NNN>-<slug>/` | 当前工作区内的唯一长期存储 |
 | 目标树与状态 | `<workspace-root>/goal-tree.md` | **必读、必更新** |
 | 核心方法论（architecture） | `docs/architecture/` | **与 Skills 同级必备**（install 默认安装）；含 principles、workspace-protocol 等 |
 | 治理原则全文 | `docs/architecture/principles.md` | **必备**；P-001～**P-006** 权威长文；AGENTS §6/6b/6d/6e 为操作摘要 |
@@ -31,7 +31,7 @@ version: 0.12.0
 
 ## 2. 目标存储与编号
 
-1. **工作区内扁平存储**：所有目标文件夹平铺在 `docs/workspace-<NNN>-<slug>/` 根，**禁止**用子文件夹表达父子关系。
+1. **工作区内扁平存储**：所有目标文件夹平铺在 `docs/workspaces/workspace-<NNN>-<slug>/` 根，**禁止**用子文件夹表达父子关系。
 2. **Root**：每个工作区的 `GOAL-001` 固定为总目标，其 `parent` 必须为 `null`；禁止改号。
 3. **编号**：先读当前工作区 `goal-tree.md`（或扫描其 canonical root），新编号 = 当前最大编号 + 1，三位数字（如 `004`）。编号在工作区内**单调不复用**（含 `cancelled`）；历史空洞可保留；**禁止**把已取消编号赋予新含义。跨工作区 id **可重复**；**禁止**把工作区编号嵌进 goal id。跨区引用见 `docs/architecture/workspace-protocol.md` §2.6：文档默认 **Q2** 路径，对话默认 **Q3** 标签；裸 `GOAL-*` 仅限已绑定当前工作区。
 4. **文件夹名**：`GOAL-NNN-short-slug`（`NNN` 三位；slug 小写英文、短横线）。
@@ -44,7 +44,7 @@ version: 0.12.0
 ## 3. 目标五件套（创建时一次建齐）
 
 ```text
-docs/workspace-001-example/GOAL-NNN-short-slug/
+docs/workspaces/workspace-001-example/GOAL-NNN-short-slug/
 ├── 00-meta.md
 ├── 01-decision.md
 ├── 02-execution.md
@@ -130,6 +130,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 - **开放必改门禁**：存在**未合法闭合**的 required / 必改 findings（不论 self 还是 independent、不论是否与其它意见冲突）时，**不得**推进该门禁对应的下一阶段，**不得**将目标标为 `done`（关门）。仅汇总意见而不闭合必改项 = 违规放行。
 - **Finding 合法闭合**（三路径，全文见 principles）：`fixed`（可核对修正）｜`accepted-residual`（用户书面接受残余，含范围与复审触发）｜`user-overruled`（用户书面驳回/降级，**单条意见亦可**）。口头不算。
 - 默认主入口仍为编排器；交叉审计为专用入口（如 `/audit`），非四填表并列主路径。
+- **本项目独立审计默认执行路径**（项目级决策）：需要交叉审计时，自审（self）之后直接调用本地 grok build（模型 grok 4.6 · 思考强度 high）执行独立审计——grok build 可使用本仓库全部 skills，直接调用 `/audit` 即可；意见落盘（`source: independent`）后由编排器合并响应。全文：`docs/architecture/independent-audit-execution.md`（跨工作区有效，不随工作区迁移）。
 
 #### 审计模式（实施前按风险确定）
 
@@ -183,7 +184,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 
 ## 6c. 工作区与共享资料边界
 
-先定位当前 `docs/workspace-<NNN>-<slug>/workspace.md`，再按 `docs/architecture/workspace-protocol.md`（完整安装必备）校验其 `root_goal`、`canonical_scope` 和共享资料引用。多个工作区而用户未指定焦点时必须 fail closed：
+先定位当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md`，再按 `docs/architecture/workspace-protocol.md`（完整安装必备）校验其 `root_goal`、`canonical_scope` 和共享资料引用。多个工作区而用户未指定焦点时必须 fail closed：
 
 1. 工作区绑定一个 `parent: null` 的 Root Goal 与其 canonical 目标范围；它不是 `parent` 层级、审计 scope 或第二套状态。
 2. Root 路线图的**纲领阶段**通常串行；**同一纲领阶段内**允许并行子目标。只有长期目的、成功边界或战略方向实际变化时，才记录决策后改写 Root Goal 定义。
@@ -250,7 +251,7 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 
 默认：**文档驱动的目标治理**；代码与可视化应用按项目实际叠加。
 
-1. **文档体系（本包约定）**：`docs/workspace-<NNN>-<slug>/` + 工作区内 `goal-tree.md`
+1. **文档体系（本包约定）**：`docs/workspaces/workspace-<NNN>-<slug>/` + 工作区内 `goal-tree.md`
 2. **产品/代码（常见）**：仓库根或项目实际目录
 3. **独立可视化应用（可选）**：有则按项目路径
 4. **Skills 包（可选）**：`{{SKILLS_DIR}}`

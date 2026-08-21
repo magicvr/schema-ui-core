@@ -29,7 +29,7 @@ interface FixtureSuite {
   cases: FixtureCase[];
 }
 
-const CASES_SHA256 = "ac124fa1d831d0aa2544b7544b1e177c3498c8c3b36ee4d535e8c3f2f5b8849e";
+const CASES_SHA256 = "a129c7e007f2511b64cecc700ed3e68a991ca050b8a0d417020d7e6922a1973d";
 const casesBytes = canonicalArtifactBytes(
   readFileSync(
     new URL("../protocol/upstream/permissions-inheritance.cases.json", import.meta.url),

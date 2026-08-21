@@ -1,3 +1,4 @@
+import { RotateCcw, Search, X } from "lucide-react";
 import {
   Fragment,
   createContext,
@@ -16,9 +17,11 @@ import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDisplayTime } from "@/lib/datetime";
 import {
   constructRequest,
   normalizeSelection,
+  type RequestConstructionResult,
 } from "@/protocol/conformance/request-construction";
 import {
   uploadFilesWithFetch,
@@ -27,16 +30,28 @@ import {
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { FormControls } from "@/renderer/form-controls.tsx";
-import { coerceFieldValue, type FormControlField } from "@/renderer/form-controls";
+import { getCustomComponent } from "@/renderer/custom-components";
+import {
+  FORM_RECORD_LOAD_CAPABILITY,
+  coerceFieldValue,
+  validateFieldValues,
+  type FormControlField,
+} from "@/renderer/form-controls";
+import { optionList } from "@/renderer/form-controls.tsx";
 import { ModalHost } from "@/renderer/modal";
+import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
+import { useTranslate } from "@/i18n/runtime";
 import {
   executeAction,
   evaluatePermissionTargets,
 } from "@/renderer/permissions";
 import {
+  EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
+  isWalletNotFoundError,
   readResourceApiError,
+  resolveDataParamsQuery,
   type ResourceList,
   type ResourceQuery,
 } from "@/renderer/resource";
@@ -49,6 +64,7 @@ import {
   gateRenderFormFields,
   parseRenderNode,
   resolveFormReactions,
+  resolveResponsePath,
   tableActionGate,
   type RenderActionButtonNode,
   type RenderChartNode,
@@ -102,6 +118,12 @@ export interface RendererComponentProps {
   dataRenderer?: (node: RenderStatCardNode | RenderChartNode) => ReactNode;
   /** Invoked when an actionButton node is activated. */
   onAction?: (node: RenderActionButtonNode) => void;
+  /**
+   * Session-internal navigation hook (ADR-0021 navigate actions; GOAL-015
+   * F-001): the host pushes the target onto its own history/visit stack so
+   * breadcrumbs survive. Falls back to window.location.assign when absent.
+   */
+  onNavigate?: (url: string) => void;
   /** Overrides the default FormControls component (keeps field wiring local). */
   formComponent?: ComponentType<{
     fields: FormControlField[];
@@ -109,6 +131,8 @@ export interface RendererComponentProps {
     onChange: (id: string, value: unknown) => void;
     fieldDisabled?: (id: string) => boolean;
     onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
+    /** W11 · U-01/U-02: auth-aware transport for dynamic option sources. */
+    fetcher?: typeof fetch;
   }>;
 }
 
@@ -128,6 +152,10 @@ export interface SchemaCrudFeedback {
   kind: "success" | "error";
   message: string;
   code?: string;
+  /** VP-007 S4: catalog key for the frontend localization floor. */
+  messageKey?: string;
+  /** VP-007 S4: interpolation params for messageKey. */
+  params?: Record<string, unknown>;
 }
 
 export interface SchemaCrudConfirm {
@@ -148,7 +176,17 @@ export interface TableSelection {
   count: number;
 }
 
-export type ActionResult = { ok: true } | { ok: false; code: string; message: string };
+export type ActionResult =
+  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }> }
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      messageKey?: string;
+      params?: Record<string, unknown>;
+      /** GOAL-014 D-002 §2: server field-level validation failures. */
+      fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>;
+    };
 
 export interface SchemaCrudValue {
   selectedRow: Record<string, unknown> | null;
@@ -188,6 +226,12 @@ export interface SchemaCrudValue {
   /** Binds a search-mode form's fields to its target table query. */
   searchFormSubmit: (form: RenderFormNode, values: Record<string, unknown>) => void;
   effectivePermission: (targetId: string) => boolean;
+  /**
+   * Current route snapshot (from the render context; App injects
+   * route: {params, query}). Used for ADR-0039 dataSource bindings and
+   * create-modal readOnly seeding instead of reading window.location.
+   */
+  route: { query: Record<string, string>; params: Record<string, string> };
 }
 
 export interface RunRequestOptions {
@@ -215,26 +259,28 @@ function actionOf(document: RenderPageDocument, actionRef: string): JsonRecord |
   return isRecord(action) ? action : undefined;
 }
 
-function successMessageFor(method: unknown): string {
+type Translator = (key: string, params?: MessageParams, literalFallback?: string) => string;
+
+function successMessageFor(method: unknown, t: Translator): string {
   switch (method) {
     case "POST":
-      return "Item created";
+      return t("feedback.itemCreated");
     case "PATCH":
-      return "Item updated";
+      return t("feedback.itemUpdated");
     case "DELETE":
-      return "Item deleted";
+      return t("feedback.itemDeleted");
     default:
-      return "Action completed";
+      return t("feedback.actionCompleted");
   }
 }
 
 /** Batch triggers process a selection: delete-shaped URLs get the plural message. */
-function batchSuccessMessageFor(action: JsonRecord): string {
+function batchSuccessMessageFor(action: JsonRecord, t: Translator): string {
   const url = stringOf(action.url);
   if (url.endsWith("/batch-delete")) {
-    return "Items deleted";
+    return t("feedback.itemsDeleted");
   }
-  return successMessageFor(action.method);
+  return successMessageFor(action.method, t);
 }
 
 /**
@@ -246,6 +292,150 @@ function batchSuccessMessageFor(action: JsonRecord): string {
  * - `{id}` slots on a formAction URL are resolved from the captured row context
  *   (bounded extension, §9.1a); row actions resolve `$row.*` in the constructor.
  */
+
+/**
+ * F-02 (GOAL-004 D-002 §5): whitelisted custom-action handlers. Export
+ * handlers fetch the CSV with the authed transport and trigger a browser
+ * download (blob + anchor); the filename derives from the handler name.
+ */
+const CUSTOM_HANDLER_URLS: Record<string, string> = {
+  "export.users": "/api/export/users",
+  "export.roles": "/api/export/roles",
+  // S-02 (GOAL-007 D-002 §5): file-library row download. The {id} slot is
+  // resolved from the captured row context (bounded binding, same posture as
+  // the formAction {id} slots, I-007-003 §9.1a).
+  "library.download": "/api/library/files/{id}/download",
+  // W16-F02 (GOAL-026): preview opens the same authed URL in a new tab;
+  // copyLink writes the URL to the clipboard.
+  "library.preview": "/api/library/files/{id}/download",
+  "library.copyLink": "/api/library/files/{id}/download",
+};
+
+async function runCustomAction(
+  action: JsonRecord,
+  fetcher: typeof fetch,
+  row?: Record<string, unknown> | null,
+): Promise<ActionResult> {
+  const handler = stringOf(action.handler);
+  let url = CUSTOM_HANDLER_URLS[handler];
+  if (url === undefined) {
+    return { ok: false, code: "CUSTOM_HANDLER_NOT_FOUND", message: "custom handler not whitelisted: " + handler, messageKey: "error.customHandlerNotFound", params: { handler } };
+  }
+  // Row-scoped custom handlers resolve the {id} slot from the captured row
+  // context (S-02, GOAL-007 D-002 §5). A missing row id on a templated
+  // handler fails closed.
+  const rowId = row?.id;
+  if (url.includes("{id}")) {
+    if (typeof rowId !== "string" || rowId === "") {
+      return { ok: false, code: "CUSTOM_HANDLER_MISSING_ROW_ID", message: "custom handler requires a row id: " + handler, messageKey: "error.customHandlerMissingRowId", params: { handler } };
+    }
+    url = url.replaceAll("{id}", encodeURIComponent(rowId));
+  }
+  // W16-F02: preview/copy fetch the file through the authed transport as a
+  // blob, then open/copy the blob object URL. This keeps content accessible
+  // without leaking the Bearer token into a raw download URL (the download
+  // endpoint itself is attachment + bearer-gated, so a bare window.open 401s).
+  // W18: copy the origin-absolute download path (session-gated). A blob:
+  // URL is not pasteable outside this page (GOAL-024 A-007 F-001).
+  if (handler === "library.copyLink") {
+    const absolute = new URL(url, window.location.origin).href;
+    try {
+      await navigator.clipboard.writeText(absolute);
+      return { ok: true };
+    } catch {
+      return { ok: false, code: "CLIPBOARD_UNAVAILABLE", message: "clipboard is unavailable", messageKey: "error.clipboardUnavailable" };
+    }
+  }
+  if (handler === "library.preview") {
+    // Open synchronously in the user gesture, then navigate the blank tab
+    // after the authed blob fetch — a post-await window.open is blocked.
+    const previewWindow = window.open("about:blank", "_blank");
+    let blob: Blob;
+    try {
+      const response = await fetcher(url, { method: "GET", headers: { Accept: "*/*" } });
+      if (!response.ok) {
+        previewWindow?.close();
+        const apiError = await readResourceApiError(response, handler);
+        return { ok: false, code: apiError.code, message: apiError.message };
+      }
+      blob = await response.blob();
+    } catch (error) {
+      previewWindow?.close();
+      return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    if (previewWindow === null || previewWindow.closed) {
+      URL.revokeObjectURL(objectUrl);
+      return { ok: false, code: "POPUP_BLOCKED", message: "preview window was blocked", messageKey: "error.popupBlocked" };
+    }
+        // W7 F-010: do not navigate the preview tab directly to a blob: URL — that
+    // strips the server Content-Disposition/CSP sandbox headers. Embed the blob
+    // in a sandboxed (no allow-scripts, no allow-same-origin) iframe instead.
+    const previewDocument = previewWindow.document;
+    previewDocument.open();
+    previewDocument.write(
+      "<!doctype html><meta charset=\"utf-8\"><title>Preview</title>" +
+        "<style>html,body{margin:0;height:100%}iframe{width:100vw;height:100vh;border:0;display:block}</style>" +
+        '<iframe sandbox="" src="' + objectUrl + '"></iframe>',
+    );
+    previewDocument.close();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    return { ok: true };
+  }
+  let response: Response;
+  try {
+    response = await fetcher(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+  } catch (error) {
+    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+  }
+  if (!response.ok) {
+    const apiError = await readResourceApiError(response, handler);
+    return { ok: false, code: apiError.code, message: apiError.message };
+  }
+  const blob = await response.blob();
+  // The download filename prefers the row's stored name, scrubbed with the
+  // server allowlist shape ([A-Za-z0-9._-], trimmed, capped — A-003 F-001);
+  // the export fallback keeps the historical "<handler>.csv" shape.
+  const rowName = row?.name;
+  const rawName = typeof rowName === "string" ? rowName.trim() : "";
+  const filename =
+    rawName !== ""
+      ? sanitizeClientFilename(rawName)
+      : handler.split(".").pop() + ".csv";
+  triggerBlobDownload(blob, filename);
+  return { ok: true };
+}
+
+/**
+ * S-02 (GOAL-007 A-003 F-001): client download names mirror the server
+ * allowlist — path separators, controls and everything outside [A-Za-z0-9._-]
+ * become underscores, leading/trailing separators are trimmed, and the result
+ * is capped so a path-like or control-bearing stored name can never reach the
+ * local filesystem unscrubbed.
+ */
+function sanitizeClientFilename(name: string): string {
+  let out = name.replace(/[^A-Za-z0-9._-]/g, "_").replace(/^[._-]+|[._-]+$/g, "");
+  if (out === "") {
+    out = "download";
+  }
+  if (out.length > 100) {
+    out = out.slice(0, 100);
+  }
+  return out;
+}
+
+/** Triggers a browser download from a fetched blob (F-02 local extension). */
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 async function runRequest(
   document: RenderPageDocument,
   context: Record<string, unknown>,
@@ -255,28 +445,46 @@ async function runRequest(
 ): Promise<ActionResult> {
   const action = actionOf(document, actionRef);
   if (action === undefined) {
-    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` };
+    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } };
+  }
+  // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
+  // CustomAction extension point (action.schema.json): a schema action may
+  // reference a whitelisted handler name; the renderer resolves it locally.
+  // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND).
+  if (action.type === "custom") {
+    return runCustomAction(action, fetcher, opts.row ?? null);
   }
   if (action.type !== "request") {
-    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
   if (opts.gateTargetId !== undefined) {
-    const gate = executeAction(
+    // Absent target = no declared permission entry (engine default is allow):
+    // only gate when the page actually declares a permission for this target,
+    // matching the batch path (ADR-0022 D5d) and effectivePermission (C7).
+    const hasPermissionEntry = evaluatePermissionTargets(
       document as unknown as JsonRecord,
-      {
-        targetId: opts.gateTargetId,
-        visible: true,
-        ...(opts.confirmed !== undefined ? { confirm: true, confirmed: opts.confirmed } : {}),
-        disabled: false,
-      },
       context as NavigationContext,
-    );
-    if (gate.outcome !== "EXECUTED") {
-      return {
-        ok: false,
-        code: gate.reason ?? gate.outcome,
-        message: `action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
-      };
+    ).some((entry) => entry.targetId === opts.gateTargetId);
+    if (hasPermissionEntry) {
+      const gate = executeAction(
+        document as unknown as JsonRecord,
+        {
+          targetId: opts.gateTargetId,
+          visible: true,
+          ...(opts.confirmed !== undefined ? { confirm: true, confirmed: opts.confirmed } : {}),
+          disabled: false,
+        },
+        context as NavigationContext,
+      );
+      if (gate.outcome !== "EXECUTED") {
+        return {
+          ok: false,
+          code: gate.reason ?? gate.outcome,
+          message: `action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
+          messageKey: "error.actionNotExecuted",
+          params: { action: actionRef, reason: gate.reason ?? gate.outcome },
+        };
+      }
     }
   }
 
@@ -293,7 +501,20 @@ async function runRequest(
       input.requestMapping = opts.requestMapping;
     }
   }
-  const constructed = constructRequest(input);
+  // W4 P1-1: constructRequest can throw on malformed schema values (e.g.
+  // serializeQueryValue rejects non-scalars). The UI call sites must never let
+  // that escape as an unhandled rejection / white screen — return a failed
+  // ActionResult so the caller surfaces it through the normal feedback channel.
+  let constructed: RequestConstructionResult;
+  try {
+    constructed = constructRequest(input);
+  } catch (error) {
+    return {
+      ok: false,
+      code: "REQUEST_CONSTRUCTION_FAILED",
+      message: error instanceof Error ? error.message : "request construction failed",
+    };
+  }
   if (!constructed.ok) {
     return { ok: false, code: constructed.code, message: `request construction failed (${constructed.path})` };
   }
@@ -311,18 +532,69 @@ async function runRequest(
   }
 
   const body = request.body === null || request.body === undefined ? undefined : JSON.stringify(request.body);
-  const response = await fetcher(url, {
-    method: request.method,
-    headers: { "Content-Type": "application/json" },
-    ...(body === undefined ? {} : { body }),
-  });
+  let response: Response;
+  try {
+    response = await fetcher(url, {
+      method: request.method,
+      headers: { "Content-Type": "application/json" },
+      ...(body === undefined ? {} : { body }),
+    });
+  } catch (error) {
+    // Network-level failure (offline, server down, CORS): surface as an action
+    // result so every caller shows feedback instead of an unhandled rejection.
+    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+  }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
-    return { ok: false, code: apiError.code, message: apiError.message };
+    return {
+      ok: false,
+      code: apiError.code,
+      message: apiError.message,
+      ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+      ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
+    };
   }
+
+
   // Branding refresh after settings PATCH lives in the App/host layer (A-006 R-002),
   // not in this generic request executor — keep Renderer free of product endpoints.
-  return { ok: true };
+  // W16-F03: a 200 import response may still carry `fieldErrors` (partial
+  // failure) — surface them to the form instead of pretending full success.
+  let successFieldErrors: Array<{ field: string; reason: string }> | undefined;
+  try {
+    const text = await response.text();
+    if (text !== "") {
+      const parsed = JSON.parse(text) as { fieldErrors?: unknown };
+      if (Array.isArray(parsed.fieldErrors)) {
+        const cleaned = parsed.fieldErrors
+          .filter((entry): entry is { field?: unknown; reason?: unknown; rowNumber?: unknown } =>
+            typeof entry === "object" && entry !== null && !Array.isArray(entry),
+          )
+          .map((entry) => ({
+            field: typeof entry.field === "string" ? entry.field : "",
+            reason: typeof entry.reason === "string" ? entry.reason : "",
+            ...(typeof entry.rowNumber === "number" ? { rowNumber: entry.rowNumber } : {}),
+          }))
+          .filter((entry) => entry.field !== "" || entry.reason !== "");
+        if (cleaned.length > 0) {
+          successFieldErrors = cleaned;
+        }
+      }
+    }
+  } catch {
+    // non-JSON success body (e.g. 204/CSV) — nothing to surface
+  }
+  return successFieldErrors !== undefined
+    ? { ok: true, fieldErrors: successFieldErrors }
+    : { ok: true };
+}
+
+function requestFailedMessage(error: unknown): string {
+  if (error instanceof Error && error.message !== "") {
+    return error.message;
+  }
+  return "request failed (network error)";
 }
 
 /**
@@ -339,10 +611,10 @@ async function runBatchRequest(
 ): Promise<ActionResult> {
   const action = actionOf(document, actionRef);
   if (action === undefined) {
-    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` };
+    return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } };
   }
   if (action.type !== "request") {
-    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action` };
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
   const targetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
   // ADR-0022 D5d: unmarked triggers do not participate in the permission
@@ -368,16 +640,29 @@ async function runBatchRequest(
         ok: false,
         code: gate.reason ?? gate.outcome,
         message: `batch action "${actionRef}" was not executed (${gate.reason ?? gate.outcome})`,
+        messageKey: "error.batchActionNotExecuted",
+        params: { action: actionRef, reason: gate.reason ?? gate.outcome },
       };
     }
   }
   const batchMapping = isRecord(item.batchMapping) ? item.batchMapping : undefined;
-  const constructed = constructRequest({
-    kind: "batchRequest",
-    action,
-    batchMapping,
-    selection: { keys: selection.keys, count: selection.count },
-  });
+  // W4 P1-1: constructRequest can throw on malformed schema values; never let
+  // that escape as an unhandled rejection — return a failed result instead.
+  let constructed: RequestConstructionResult;
+  try {
+    constructed = constructRequest({
+      kind: "batchRequest",
+      action,
+      batchMapping,
+      selection: { keys: selection.keys, count: selection.count },
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      code: "REQUEST_CONSTRUCTION_FAILED",
+      message: error instanceof Error ? error.message : "batch request construction failed",
+    };
+  }
   if (!constructed.ok) {
     return { ok: false, code: constructed.code, message: `batch request construction failed (${constructed.path})` };
   }
@@ -386,14 +671,26 @@ async function runBatchRequest(
     return { ok: false, code: "NO_REQUEST", message: "batch action produced no request" };
   }
   const body = request.body === null || request.body === undefined ? undefined : JSON.stringify(request.body);
-  const response = await fetcher(request.url, {
-    method: request.method,
-    headers: { "Content-Type": "application/json" },
-    ...(body === undefined ? {} : { body }),
-  });
+  let response: Response;
+  try {
+    response = await fetcher(request.url, {
+      method: request.method,
+      headers: { "Content-Type": "application/json" },
+      ...(body === undefined ? {} : { body }),
+    });
+  } catch (error) {
+    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+  }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
-    return { ok: false, code: apiError.code, message: apiError.message };
+    return {
+      ok: false,
+      code: apiError.code,
+      message: apiError.message,
+      ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+      ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
+    };
   }
   return { ok: true };
 }
@@ -403,11 +700,14 @@ function SchemaCrudProvider({
   context,
   children,
   initialFetcher,
+  onNavigate,
 }: {
   document: RenderPageDocument;
   context: Record<string, unknown>;
   children: ReactNode;
   initialFetcher?: typeof fetch;
+  /** Session-internal navigation (breadcrumb-preserving); see RendererComponentProps. */
+  onNavigate?: (url: string) => void;
 }) {
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
   const [queries, setQueries] = useState<Record<string, ResourceQuery>>({});
@@ -421,6 +721,26 @@ function SchemaCrudProvider({
   const [pendingConfirm, setPendingConfirm] = useState<SchemaCrudConfirm | null>(null);
   const [feedback, setFeedback] = useState<SchemaCrudFeedback | null>(null);
   const [fetcher, setFetcher] = useState<typeof fetch>(() => initialFetcher ?? globalThis.fetch);
+  const t = useTranslate();
+
+  // Route snapshot from the render context (App injects route: {params, query});
+  // hostless renderers (tests) fall back to an empty snapshot.
+  const route = useMemo(() => {
+    const raw = isRecord(context.route) ? context.route : {};
+    const query: Record<string, string> = {};
+    if (isRecord(raw.query)) {
+      for (const [key, value] of Object.entries(raw.query)) {
+        if (typeof value === "string") query[key] = value;
+      }
+    }
+    const params: Record<string, string> = {};
+    if (isRecord(raw.params)) {
+      for (const [key, value] of Object.entries(raw.params)) {
+        if (typeof value === "string") params[key] = value;
+      }
+    }
+    return { query, params };
+  }, [context]);
 
   const permissionTargets = useMemo(
     () => evaluatePermissionTargets(document as unknown as JsonRecord, context as NavigationContext),
@@ -496,36 +816,105 @@ function SchemaCrudProvider({
     async (actionRef: string, opts: RunRequestOptions): Promise<ActionResult> => {
       const result = await runRequestCallback(actionRef, opts);
       if (result.ok) {
-        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, actionRef)?.method) });
+        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, actionRef)?.method, t) });
         reloadList();
         setSelectedRow(null);
       } else {
-        setFeedback({ kind: "error", code: result.code, message: result.message });
+        setFeedback(errorFeedback(result));
       }
       return result;
     },
-    [runRequestCallback, document, reloadList],
+    [runRequestCallback, document, reloadList, t],
   );
 
   const invokeAction = useCallback(
     (item: Record<string, unknown>, row: Record<string, unknown> | null) => {
-      const actionRef = stringOf(item.actionRef);
+      // actionButton nodes carry `props.actionId`; other entries use `actionRef`.
+      const actionRef =
+        stringOf(item.actionRef) !== "" ? stringOf(item.actionRef) : stringOf(item.actionId);
       const action = actionOf(document, actionRef);
       if (actionRef === "" || action === undefined) {
-        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
+        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } });
         return;
       }
       // Row actions carry the row in modal/confirm/request payloads. Do NOT call
       // setSelectedRow here — that opens the recordView Drawer and is wrong for
       // Edit / Delete / any toolbar-row action (user gap 2026-08-09).
       if (action.type === "modal") {
-        setActiveModal({ actionRef, row, title: stringOf(item.label) ?? "Action" });
+        setActiveModal({
+          actionRef,
+          row,
+          title: resolveTextProp(item, "labelKey", "label", t, t("feedback.action")),
+        });
+        return;
+      }
+      // ADR-0021 navigate actions (S-01 · GOAL-008 A-003 F-002): the host
+      // executes top-level type:navigate actions referenced by rows/toolbars.
+      // Only single-slash same-origin application-route paths are accepted
+      // (the protocol's NavigateAction shape); anything else fails closed.
+      //
+      // GOAL-015 D-002 §3.2: a row action may carry navigateMapping to bind
+      // path/query parameters from the row (e.g. dictKey) — the request
+      // constructor's rowNavigate branch builds the final URL; without a
+      // mapping the plain navigate path is used unchanged.
+      if (action.type === "navigate") {
+        const url = stringOf((action as JsonRecord).url);
+        if (url === "" || !/^\/(?!\/)[^\s\\?#]*$/.test(url)) {
+          setFeedback({
+            kind: "error",
+            code: "INVALID_NAVIGATE_URL",
+            message: `${actionRef} has an invalid url`,
+            messageKey: "error.invalidNavigateUrl",
+            params: { action: actionRef },
+          });
+          return;
+        }
+        const navigateMapping = isRecord(item.navigateMapping) ? item.navigateMapping : undefined;
+        if (navigateMapping !== undefined) {
+          const constructed = constructRequest({
+            kind: "rowNavigate",
+            action: action as JsonRecord,
+            navigateMapping,
+            row: row ?? {},
+          });
+          if (!constructed.ok) {
+            setFeedback({
+              kind: "error",
+              code: constructed.code,
+              message: `row navigation construction failed (${constructed.path})`,
+              messageKey: "error.rowNavigationFailed",
+              params: { path: constructed.path },
+            });
+            return;
+          }
+          // rowNavigate returns navigation.url (not request.url).
+          const target = constructed.navigation?.url ?? constructed.request?.url;
+          if (target === undefined) {
+            setFeedback({ kind: "error", code: "INVALID_NAVIGATE_URL", message: "navigate mapping produced no url", messageKey: "error.navigateNoUrl" });
+            return;
+          }
+          // GOAL-015 F-001: navigate through the host's session-internal
+          // onNavigate (pushState + visit stack) so the entries page keeps its
+          // breadcrumb trail; location.assign (full reload) is only the fallback
+          // when no host hook is wired (e.g. embedded renderer tests).
+          if (onNavigate !== undefined) {
+            onNavigate(target);
+          } else {
+            window.location.assign(target);
+          }
+          return;
+        }
+        if (onNavigate !== undefined) {
+          onNavigate(url);
+        } else {
+          window.location.assign(url);
+        }
         return;
       }
       const gateTargetId = stringOf(item.key) !== "" ? stringOf(item.key) : actionRef;
       const requestMapping = isRecord(item.requestMapping) ? item.requestMapping : undefined;
-      const confirmMessage = typeof item.confirm === "string" && item.confirm !== "" ? item.confirm : undefined;
-      if (confirmMessage !== undefined) {
+      const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");
+      if (confirmMessage !== "") {
         setPendingConfirm({
           actionRef,
           actionKey: gateTargetId,
@@ -539,6 +928,8 @@ function SchemaCrudProvider({
         row: row ?? undefined,
         requestMapping,
         gateTargetId,
+      }).catch((error: unknown) => {
+        setFeedback(errorFeedback({ code: "ROW_ACTION_FAILED", message: String(error) }));
       });
     },
     [document, runRowAction],
@@ -549,16 +940,16 @@ function SchemaCrudProvider({
       const actionRef = stringOf(item.actionRef);
       const action = actionOf(document, actionRef);
       if (actionRef === "" || action === undefined) {
-        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page` });
+        setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } });
         return;
       }
       const current = selection(tableId);
       if (current === undefined || current.count === 0) {
-        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first" });
+        setFeedback({ kind: "error", code: "EMPTY_SELECTION", message: "select at least one row first", messageKey: "feedback.selectRowFirst" });
         return;
       }
-      const confirmMessage = typeof item.confirm === "string" && item.confirm !== "" ? item.confirm : undefined;
-      if (confirmMessage !== undefined) {
+      const confirmMessage = resolveTextProp(item, "confirmKey", "confirm", t, "");
+      if (confirmMessage !== "") {
         setPendingConfirm({
           actionRef,
           actionKey: stringOf(item.key) !== "" ? stringOf(item.key) : actionRef,
@@ -569,16 +960,23 @@ function SchemaCrudProvider({
         });
         return;
       }
-      void runBatchRequest(document, context, fetcher, actionRef, item, current).then((result) => {
-        if (result.ok) {
-          setFeedback({ kind: "success", message: batchSuccessMessageFor(action) });
-          reloadList();
-        } else {
-          setFeedback({ kind: "error", code: result.code, message: result.message });
-        }
-      });
+      // W4 P1-1: runBatchRequest resolves (never rejects) for construction and
+      // network failures, but keep a catch so any unforeseen rejection still
+      // surfaces as feedback instead of an unhandled promise rejection.
+      void runBatchRequest(document, context, fetcher, actionRef, item, current)
+        .then((result) => {
+          if (result.ok) {
+            setFeedback({ kind: "success", message: batchSuccessMessageFor(action, t) });
+            reloadList();
+          } else {
+            setFeedback(errorFeedback(result));
+          }
+        })
+        .catch((error: unknown) => {
+          setFeedback(errorFeedback({ code: "BATCH_FAILED", message: String(error) }));
+        });
     },
-    [document, context, fetcher, selection, reloadList],
+    [document, context, fetcher, selection, reloadList, t],
   );
 
   // ADR-0012 upload transport: resolve action (actionRef → page action, else
@@ -589,7 +987,7 @@ function SchemaCrudProvider({
       if (typeof field.actionRef === "string" && field.actionRef !== "") {
         const referenced = actionOf(document, field.actionRef);
         if (referenced === undefined || referenced.type !== "upload") {
-          throw new Error(`upload action "${field.actionRef}" is not a type=upload action`);
+          throw new Error(t("error.uploadNotUploadAction", { action: field.actionRef }));
         }
         action = referenced as unknown as UploadActionResult;
       } else if (typeof field.action === "string" && field.action !== "") {
@@ -601,7 +999,7 @@ function SchemaCrudProvider({
           multiple: field.multiple === true,
         };
       } else {
-        throw new Error("upload field requires action or actionRef");
+        throw new Error(t("error.uploadRequiresAction"));
       }
       const result = await uploadFilesWithFetch(action, files, fetcher);
       if (!result.ok) {
@@ -609,7 +1007,7 @@ function SchemaCrudProvider({
       }
       return result.fieldValue;
     },
-    [document, fetcher],
+    [document, fetcher, t],
   );
 
   const resolveConfirm = useCallback(async (confirmed: boolean) => {
@@ -625,16 +1023,16 @@ function SchemaCrudProvider({
         const item = { actionRef, key: actionKey, batchMapping: pendingConfirm.batchMapping };
         const result = await runBatchRequest(document, context, fetcher, actionRef, item, batch.selection);
         if (result.ok) {
-          setFeedback({ kind: "success", message: batchSuccessMessageFor(actionOf(document, actionRef) ?? {}) });
+          setFeedback({ kind: "success", message: batchSuccessMessageFor(actionOf(document, actionRef) ?? {}, t) });
           reloadList();
         } else {
-          setFeedback({ kind: "error", code: result.code, message: result.message });
+          setFeedback(errorFeedback(result));
         }
         return;
       }
       await runRowAction(actionRef, { row, requestMapping, gateTargetId: actionKey, confirmed: true });
     },
-    [pendingConfirm, runRowAction, document, context, fetcher, reloadList],
+    [pendingConfirm, runRowAction, document, context, fetcher, reloadList, t],
   );
 
   const submitForm = useCallback(
@@ -685,15 +1083,15 @@ function SchemaCrudProvider({
         row: activeModal?.row ?? null,
         gateTargetId,
       });
-      if (result.ok) {
-        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method) });
+      if (result.ok && (result.fieldErrors === undefined || result.fieldErrors.length === 0)) {
+        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method, t) });
         reloadList();
         setActiveModal(null);
         setSelectedRow(null);
       }
       return result;
     },
-    [runRequestCallback, document, activeModal, reloadList],
+    [runRequestCallback, document, activeModal, reloadList, t],
   );
 
   const searchFormSubmit = useCallback((form: RenderFormNode, values: Record<string, unknown>) => {
@@ -703,9 +1101,52 @@ function SchemaCrudProvider({
     }
     const raw = values.q;
     const q = typeof raw === "string" ? raw.trim() : "";
+    // T-02 (GOAL-013 D-003): search forms may declare extra fields beyond the
+    // keyword box (selects for discrete states). Every non-q field is bound
+    // to the target table query filters (serialized by buildResourceQuery
+    // into URL params) — this is the ExtraQuery pipe the backend whitelists.
+    // Field ids owned by this form are first removed from the previous
+    // filters so clearing a select actually clears the parameter (same
+    // discipline as the q reset, C6). Table-level props.filters selects live
+    // in the same query filters map and are preserved because they are not
+    // owned by this form.
+    const owned = new Set<string>();
+    for (const rawField of form.props.fields) {
+      if (typeof rawField.id === "string" && rawField.id !== "" && rawField.id !== "q") {
+        owned.add(rawField.id);
+      }
+    }
     setQueries((prev) => {
       const current = prev[targetTable] ?? { page: 1, pageSize: 10 };
-      return { ...prev, [targetTable]: { ...current, page: 1, ...(q === "" ? {} : { q }) } };
+      const filters: Record<string, string> = { ...(current.filters ?? {}) };
+      for (const id of owned) {
+        delete filters[id];
+      }
+      for (const rawField of form.props.fields) {
+        const id = rawField.id;
+        if (typeof id !== "string" || id === "" || id === "q") {
+          continue;
+        }
+        const value = values[id];
+        const text =
+          typeof value === "string"
+            ? value.trim()
+            : value === undefined || value === null
+              ? ""
+              : String(value);
+        if (text !== "") {
+          filters[id] = text;
+        }
+      }
+      const next: ResourceQuery = { ...current, page: 1, q };
+      if (Object.keys(filters).length > 0) {
+        next.filters = filters;
+      } else {
+        // All owned conditions cleared: drop the inherited filters entirely
+        // (the spread above would otherwise keep stale params — A-003 reset).
+        delete next.filters;
+      }
+      return { ...prev, [targetTable]: next };
     });
   }, []);
 
@@ -737,6 +1178,7 @@ function SchemaCrudProvider({
       submitForm,
       searchFormSubmit,
       effectivePermission,
+      route,
     }),
     [
       selectedRow,
@@ -762,26 +1204,214 @@ function SchemaCrudProvider({
       submitForm,
       searchFormSubmit,
       effectivePermission,
+      route,
     ],
   );
 
   return <SchemaCrudContext.Provider value={value}>{children}</SchemaCrudContext.Provider>;
 }
 
+function errorFeedback(result: {
+  code: string;
+  message: string;
+  messageKey?: string;
+  params?: Record<string, unknown>;
+}): SchemaCrudFeedback {
+  return {
+    kind: "error",
+    code: result.code,
+    message: result.message,
+    ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
+    ...(result.params === undefined ? {} : { params: result.params }),
+  };
+}
+
 function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
+  const t = useTranslate();
+  const [dismissed, setDismissed] = useState(false);
+  // W11 · U-03: toasts auto-dismiss; the parent remounts this component per
+  // feedback occurrence, so the timer always starts fresh.
+  useEffect(() => {
+    setDismissed(false);
+    if (feedback.kind === "error") {
+      return;
+    }
+    const timer = window.setTimeout(() => setDismissed(true), FEEDBACK_TOAST_MS);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
+  if (dismissed) {
+    return null;
+  }
+  // VP-007 S4 frontend floor: render the catalog entry by key/params when the
+  // catalog has it (current locale → en-US); otherwise the server message.
+  let text = feedback.message;
+  if (feedback.messageKey !== undefined && feedback.messageKey !== "") {
+    const localized = t(feedback.messageKey, feedback.params as MessageParams | undefined);
+    if (localized !== feedback.messageKey) {
+      text = localized;
+    }
+  }
   return (
     <div
       role={feedback.kind === "error" ? "alert" : "status"}
-      className={`mb-4 rounded-md border px-3 py-2 text-sm ${
+      data-feedback-toast={feedback.kind}
+      className={`fixed right-4 top-16 z-50 flex max-w-sm items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm shadow-lg ${
         feedback.kind === "error"
           ? "border-destructive/50 bg-destructive/10 text-destructive"
           : "border-success/50 bg-success/10 text-success"
       }`}
     >
-      {feedback.code !== undefined && feedback.code !== "" ? `${feedback.code}: ` : ""}
-      {feedback.message}
+      <span data-feedback-code={feedback.code ?? ""} title={feedback.code ?? undefined}>
+        {text}
+      </span>
+      <button
+        type="button"
+        aria-label={t("feedback.cancel")}
+        onClick={() => setDismissed(true)}
+        className="shrink-0 text-xs opacity-70 transition-opacity hover:opacity-100"
+      >
+        {"×"}
+      </button>
     </div>
   );
+}
+
+/** W11 · U-03: auto-dismiss window for operation feedback toasts (ms). */
+const FEEDBACK_TOAST_MS = 4000;
+
+type RecordSourcePrefillState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "ready"; values: Record<string, unknown> };
+
+function hasRequiredCapability(metaValue: unknown, capability: string): boolean {
+  return (
+    isRecord(metaValue) &&
+    Array.isArray(metaValue.requiredCapabilities) &&
+    (metaValue.requiredCapabilities as unknown[]).includes(capability)
+  );
+}
+
+/**
+ * ADR-0021 `form.props.recordSource` prefill (S6): loads the record from a
+ * detail GET and maps it to field ids via `responseMapping` (field → dot-path).
+ * Fails closed on missing capability / invalid shape / network error — never
+ * renders an editable blank form that could overwrite the record.
+ */
+function useRecordSourcePrefill(
+  node: RenderFormNode,
+  metaValue: unknown,
+  crud: SchemaCrudValue | null,
+  context?: Record<string, unknown>,
+): RecordSourcePrefillState {
+  const recordSource = node.props.recordSource;
+  // A-002 F-001: start a recordSource form in `loading` (not `idle`) so the
+  // first commit renders the skeleton, never a blank editable form that could
+  // overwrite the record while the prefill GET is pending.
+  const [state, setState] = useState<RecordSourcePrefillState>(() =>
+    recordSource !== undefined ? { status: "loading" } : { status: "idle" },
+  );
+  useEffect(() => {
+    if (recordSource === undefined) {
+      setState({ status: "idle" });
+      return;
+    }
+    if (node.props.mode === "search") {
+      setState({ status: "error", message: "form.recordSource is forbidden on search-mode forms" });
+      return;
+    }
+    if (!hasRequiredCapability(metaValue, FORM_RECORD_LOAD_CAPABILITY)) {
+      setState({
+        status: "error",
+        message: `form.recordSource requires capability "${FORM_RECORD_LOAD_CAPABILITY}" in meta.requiredCapabilities`,
+      });
+      return;
+    }
+    // Route bindings ($context.route.query/params) flow in via the render
+    // context so deep links and query strings reach recordSource mapping (C8).
+    const route = isRecord(context?.route)
+      ? (context.route as { params?: Record<string, unknown>; query?: Record<string, unknown> })
+      : undefined;
+    // W4 P1-1: constructRequest throws on malformed recordSource values (e.g.
+    // serializeQueryValue rejects non-scalars). This effect runs in a React
+    // useEffect — an uncaught throw would unmount the whole tree (no
+    // ErrorBoundary). Trap it into the error state instead.
+    let constructed: RequestConstructionResult;
+    try {
+      constructed = constructRequest({
+        kind: "recordSource",
+        recordSource,
+        route: route ?? { params: {}, query: {} },
+        baseURL: "",
+      });
+    } catch (error) {
+      setState({
+        status: "error",
+        message: `recordSource construction failed: ${error instanceof Error ? error.message : "unknown error"}`,
+      });
+      return;
+    }
+    if (!constructed.ok) {
+      setState({
+        status: "error",
+        message: `recordSource construction failed (${constructed.path}): ${constructed.code}`,
+      });
+      return;
+    }
+    const url = constructed.request?.url;
+    if (typeof url !== "string") {
+      setState({ status: "error", message: "recordSource produced no request URL" });
+      return;
+    }
+    let cancelled = false;
+    setState({ status: "loading" });
+    const fetcher = crud?.fetcher ?? globalThis.fetch;
+    fetcher(url)
+      .then(async (response) => {
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          const apiError = await readResourceApiError(response, "recordSource");
+          if (!cancelled) {
+            setState({ status: "error", message: `${apiError.code}: ${apiError.message}` });
+          }
+          return;
+        }
+        const record: unknown = await response.json();
+        const raw = isRecord(record) ? record : {};
+        const mapping = isRecord(recordSource.responseMapping)
+          ? recordSource.responseMapping
+          : {};
+        const values: Record<string, unknown> = {};
+        for (const [fieldId, pathExpr] of Object.entries(mapping)) {
+          if (typeof pathExpr !== "string") {
+            continue;
+          }
+          const resolved = resolveResponsePath(raw, pathExpr);
+          if (resolved !== undefined) {
+            values[fieldId] = resolved;
+          }
+        }
+        if (!cancelled) {
+          setState({ status: "ready", values });
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setState({
+          status: "error",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken]);
+  return state;
 }
 
 function FormView({
@@ -795,20 +1425,103 @@ function FormView({
   context: Record<string, unknown>;
   formComponent?: RendererComponentProps["formComponent"];
 }) {
+  const crud = useSchemaCrud();
+  const t = useTranslate();
+  const prefill = useRecordSourcePrefill(node, metaValue, crud, context);
+
+  if (prefill.status === "loading") {
+    return (
+      <div
+        role="status"
+        aria-label={t("feedback.loading")}
+        className="space-y-2 rounded-md border border-border bg-card p-4"
+      >
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
+  }
+  if (prefill.status === "error") {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {prefill.message}
+      </p>
+    );
+  }
+  return (
+    <FormInner
+      // Remount on reload so recordSource forms re-initialize from the fresh
+      // record after a save / batch reload (no stale typed values).
+      key={node.props.recordSource !== undefined ? crud?.reloadToken : undefined}
+      node={node}
+      metaValue={metaValue}
+      context={context}
+      formComponent={formComponent}
+      prefillValues={prefill.status === "ready" ? prefill.values : null}
+    />
+  );
+}
+
+function FormInner({
+  node,
+  metaValue,
+  context,
+  formComponent,
+  prefillValues,
+}: {
+  node: RenderFormNode;
+  metaValue: unknown;
+  context: Record<string, unknown>;
+  formComponent?: RendererComponentProps["formComponent"];
+  prefillValues: Record<string, unknown> | null;
+}) {
   const Component = formComponent ?? FormControls;
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const modalRow = crud?.modalRow ?? null;
   const gate = gateRenderFormFields(metaValue, node.props.fields, "fields");
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
+    // GOAL-015 / ADR-0040: a create-modal (no row, no recordSource) may have
+    // its readOnly fields seeded by the Host from the current route — the
+    // v2.9 route-filter scenario ("值由 Host 在 modal 场景提供") wires the
+    // inner-page type key into the new-entry form this way. The provider's
+    // route snapshot covers both path params (dictKey) and the query
+    // (dictTypeName); hostless renders fall back to the location query.
+    const routeValues: Record<string, string> = {};
+    if (crud !== null) {
+      for (const [key, value] of Object.entries(crud.route.params)) {
+        routeValues[key] = value;
+      }
+      for (const [key, value] of Object.entries(crud.route.query)) {
+        routeValues[key] = value;
+      }
+    } else if (typeof window !== "undefined") {
+      for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+        routeValues[key] = value;
+      }
+    }
     for (const raw of node.props.fields) {
       if (!isRecord(raw) || typeof raw.id !== "string") {
         continue;
       }
-      // Always coerce through the field wire kind so row arrays (e.g. roles[])
-      // become textarea strings or checkboxGroup string[] as appropriate (A-006 R-004).
-      const fromRow =
+      // Precedence: modal row (edit-in-modal) → recordSource prefill → route
+      // query (create-modal readOnly fields) → empty. Always coerce through
+      // the field wire kind so row arrays (e.g. roles[]) become textarea
+      // strings or checkboxGroup string[] as appropriate (A-006 R-004).
+      const modalValue =
         modalRow !== null && modalRow[raw.id] !== undefined ? modalRow[raw.id] : undefined;
+      const prefillValue =
+        prefillValues !== null && prefillValues[raw.id] !== undefined
+          ? prefillValues[raw.id]
+          : undefined;
+      const routeValue =
+        raw.readOnly === true && routeValues[raw.id] !== undefined
+          ? routeValues[raw.id]
+          : undefined;
+      const fromRow =
+        modalValue !== undefined ? modalValue : prefillValue !== undefined ? prefillValue : routeValue;
       initial[raw.id] = coerceFieldValue(raw as unknown as FormControlField, fromRow);
     }
     return initial;
@@ -854,18 +1567,36 @@ function FormView({
   }, [fullReaction]);
 
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<{ code: string; message: string } | null>(null);
+  const [formError, setFormError] = useState<{
+    code: string;
+    message: string;
+    messageKey?: string;
+    params?: Record<string, unknown>;
+  } | null>(null);
+  // GOAL-014 D-002 §3: submit-time validation + server fieldErrors echo,
+  // keyed by field id for inline display.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // W16-F03: row-level import failure detail (200 response fieldErrors).
+  const [importErrorRows, setImportErrorRows] = useState<
+    Array<{ rowNumber?: number; field: string; reason: string }>
+  >([]);
 
   const isSearch = node.props.mode === "search";
   const submitAction = node.props.submitAction;
   const canSubmit = isSearch || typeof submitAction === "string";
   const hasBlockingErrors = gate.errors.length > 0 || reactionErrors.length > 0;
+  // Permission gate: a default-mode form with a declared submit permission is
+  // read-only when the `${formId}:submit` target is denied — the viewer sees
+  // current values but cannot save (backend `settings.write` stays the hard
+  // gate). Absent a declared target the effective permission defaults to true.
+  const canEdit = crud === null ? true : crud.effectivePermission(`${node.id ?? "unnamed"}:submit`);
 
   const visibleFields = gate.fields.filter(
     (raw) => reactionState[raw.id]?.visible !== false,
   );
 
-  const fieldDisabled = (id: string) => reactionState[id]?.disabled === true;
+  const fieldDisabled = (id: string) =>
+    reactionState[id]?.disabled === true || (!isSearch && !canEdit);
 
   const handleSubmit = async () => {
     if (crud === null) {
@@ -881,20 +1612,159 @@ function FormView({
     if (typeof submitAction !== "string") {
       return;
     }
+    // GOAL-014 D-002 §3.1: submit-time client validation — failures block the
+    // request and inline on their fields.
+    const validation = validateFieldValues(visibleFields, values);
+    if (validation.length > 0) {
+      const byField: Record<string, string> = {};
+      for (const err of validation) {
+        const localized = t(err.messageKey);
+        byField[err.field] = localized === err.messageKey ? err.message : localized;
+      }
+      setFieldErrors(byField);
+      setFormError(null);
+      return;
+    }
+    // W16-F04: retain a second confirmation for risky wallet adjustments.
+    if (node.id === "adjust-wallet-form") {
+      const delta = values.amountDelta;
+      const risky =
+        typeof delta === "number" && (delta < 0 || Math.abs(delta) > 100000);
+      if (risky && !window.confirm(t("schema.wallet.adjustConfirm"))) {
+        return;
+      }
+    }
+    setFieldErrors({});
+    setImportErrorRows([]);
     setSubmitting(true);
     setFormError(null);
-    const result = await crud.submitForm(node, values);
-    if (!result.ok) {
-      setFormError({ code: result.code, message: result.message });
+    try {
+      const result = await crud.submitForm(node, values);
+      if (!result.ok) {
+        // GOAL-014 D-002 §2: echo server fieldErrors onto the matching inputs;
+        // unmatched fields fall back to the form-level alert.
+        const byField: Record<string, string> = {};
+        for (const fe of result.fieldErrors ?? []) {
+          byField[fe.field] = fe.reason;
+        }
+        setFieldErrors(byField);
+        setFormError({
+          code: result.code,
+          message: result.message,
+          ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
+          ...(result.params === undefined ? {} : { params: result.params }),
+        });
+      } else if (result.ok && (result.fieldErrors ?? []).length > 0) {
+        // W16-F03: a 200 import response with fieldErrors is a partial
+        // failure — keep the modal open and show row-level errors.
+        const rows = (result.fieldErrors ?? []).map((fe) => ({
+          rowNumber: fe.rowNumber,
+          field: fe.field,
+          reason: fe.reason,
+        }));
+        setImportErrorRows(rows);
+        setFormError({
+          code: "IMPORT_HAS_ERRORS",
+          message: t("importErrors.title"),
+        });
+        return;
+      }
+    } catch (error) {
+      // Defensive: a throwing submit (unexpected fetch/transport failure) must
+      // never leave the button stuck in its disabled Submitting state (C5).
+      setFieldErrors({});
+      setFormError({ code: "REQUEST_FAILED", message: requestFailedMessage(error) });
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
+  };
+
+  const title = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "titleKey",
+    "title",
+    t,
+    "",
+  );
+
+  // A-003 (audit response): search-mode toolbar — active filter chips with
+  // per-condition clear + one-click clear-all; the reset button restores the
+  // default values and re-runs the search immediately.
+  //
+  // T-07 (GOAL-014): chips reflect the SUBMITTED query (the target table's
+  // query state), not the local draft values — a keyword that was typed but
+  // not submitted (or a select that was changed but not applied) never shows
+  // as an active filter. This keeps the chips truthful: they describe what
+  // the list is actually filtered by.
+  const targetTable =
+    isSearch && typeof node.props.targetTable === "string" ? node.props.targetTable : "";
+  const submittedQuery =
+    isSearch && crud !== null && targetTable !== "" ? crud.tableQuery(targetTable) : undefined;
+  const activeFilters = isSearch
+    ? visibleFields
+        .map((field) => {
+          const raw = field.id === "q" ? submittedQuery?.q : submittedQuery?.filters?.[field.id];
+          if (raw === undefined || raw === null || raw === "") {
+            return null;
+          }
+          const text = typeof raw === "string" ? raw.trim() : String(raw);
+          if (text === "") {
+            return null;
+          }
+          const valueLabel =
+            field.type === "select"
+              ? (optionList(field, t).find((option) => option.value === text)?.label ?? text)
+              : text;
+          return { field, value: text, valueLabel };
+        })
+        .filter((entry): entry is { field: FormControlField; value: string; valueLabel: string } => entry !== null)
+    : [];
+  // T-07 (GOAL-014): non-text filter controls (selects, date pickers, …)
+  // apply IMMEDIATELY on change — the list re-filters as the condition
+  // changes. The keyword box keeps the submit-on-search contract (its value
+  // only joins the query when the paired search button is pressed).
+  const handleFieldChange = (id: string, value: unknown) => {
+    const next = { ...values, [id]: value };
+    setValues(next);
+    if (!isSearch || crud === null) {
+      return;
+    }
+    const field = visibleFields.find((entry) => entry.id === id);
+    if (field !== undefined && field.type !== "input") {
+      crud.searchFormSubmit(node, next);
+    }
+  };
+
+  const resetValues = () => {
+    const cleared: Record<string, unknown> = {};
+    for (const field of visibleFields) {
+      cleared[field.id] =
+        field.defaultValue !== undefined ? field.defaultValue : "";
+    }
+    setValues(cleared);
+    if (crud !== null) {
+      crud.searchFormSubmit(node, cleared);
+    }
+  };
+  const removeFilter = (field: FormControlField) => {
+    const next = { ...values, [field.id]: "" };
+    setValues(next);
+    if (crud !== null) {
+      crud.searchFormSubmit(node, next);
+    }
   };
 
   return (
-    <form className="space-y-3" onSubmit={(event) => {
-      event.preventDefault();
-      void handleSubmit();
-    }}>
+    <form
+      className={isSearch ? "space-y-3.5 rounded-xl border border-border/70 bg-card/85 p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.03),0_1px_2px_-1px_rgba(0,0,0,0.03)] dark:border-border/60 dark:bg-card/70 dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.2)]" : "space-y-3"}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSubmit();
+      }}
+    >
+      {title !== "" ? (
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      ) : null}
       {gate.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">
           {gate.errors.map((error, index) => (
@@ -907,9 +1777,52 @@ function FormView({
       <Component
         fields={visibleFields}
         values={values}
-        onChange={(id, value) => setValues((prev) => ({ ...prev, [id]: value }))}
+        onChange={handleFieldChange}
         fieldDisabled={fieldDisabled}
         onUpload={crud?.uploadFiles}
+        fieldErrors={fieldErrors}
+        // W11 · U-01/U-02: auth-aware transport for dynamic option sources.
+        fetcher={crud?.fetcher}
+        columns={
+          isRecord(node.props) && typeof node.props.columns === "number"
+            ? node.props.columns
+            : undefined
+        }
+        searchMode={isSearch}
+        // A-003 pairing rule (user 2026-08-16): the search button belongs
+        // beside its keyword input — one button per text input, adjacent.
+        searchButtonSlot={
+          isSearch ? (
+            <button
+              type="submit"
+              disabled={hasBlockingErrors}
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-l-none rounded-r-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 -ml-px"
+            >
+              <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
+              {resolveTextProp(
+                node.props as unknown as Record<string, unknown>,
+                "submitLabelKey",
+                "submitLabel",
+                t,
+                t("feedback.search"),
+              )}
+            </button>
+          ) : undefined
+        }
+        actionSlot={
+          isSearch ? (
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={resetValues}
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-input/80 bg-background px-3.5 text-sm font-medium text-muted-foreground shadow-2xs transition-all duration-150 hover:border-muted-foreground/30 hover:bg-accent/40 hover:text-foreground hover:shadow-xs active:scale-[0.98]"
+              >
+                <RotateCcw aria-hidden="true" className="size-3.5" />
+                {t("feedback.reset")}
+              </button>
+            </div>
+          ) : undefined
+        }
       />
       {reaction.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">
@@ -922,16 +1835,77 @@ function FormView({
       ) : null}
       {formError !== null ? (
         <p role="alert" className="text-sm text-destructive">
-          {formError.code}: {formError.message}
+          {formError.code}:{" "}
+          {formError.messageKey !== undefined && formError.messageKey !== ""
+            ? t(formError.messageKey, formError.params as MessageParams | undefined)
+            : formError.message}
         </p>
       ) : null}
-      {canSubmit ? (
+      {importErrorRows.length > 0 ? (
+        <ul role="alert" className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs" data-import-error-rows>
+          {importErrorRows.map((row, index) => (
+            <li key={index} className="flex gap-2">
+              <span className="shrink-0 font-mono text-muted-foreground">
+                {row.rowNumber === undefined ? "—" : `#${row.rowNumber}`}
+              </span>
+              <span className="shrink-0 font-medium">{row.field}</span>
+              <span className="text-destructive">{row.reason}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {activeFilters.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2.5 text-xs" data-filter-chips>
+          {activeFilters.map(({ field, valueLabel }) => {
+            const fieldLabel = resolveTextProp(
+              field as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              field.id,
+            );
+            return (
+              <span
+                key={field.id}
+                className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/70 bg-muted/40 px-2.5 text-xs font-normal text-foreground/90 shadow-2xs transition-all hover:border-border dark:bg-muted/30"
+              >
+                <span className="text-muted-foreground/80">{fieldLabel}:</span>
+                <span className="font-medium text-foreground">{valueLabel}</span>
+                <button
+                  type="button"
+                  aria-label={t("feedback.removeFilter") + ": " + fieldLabel}
+                  className="ml-0.5 inline-flex size-3.5 cursor-pointer items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted-foreground/20 hover:text-foreground"
+                  onClick={() => removeFilter(field)}
+                >
+                  <X aria-hidden="true" className="size-3 stroke-[2.5]" />
+                </button>
+              </span>
+            );
+          })}
+          <button
+            type="button"
+            className="ml-1 cursor-pointer text-xs font-medium text-muted-foreground/70 underline-offset-4 transition-colors hover:text-destructive hover:underline"
+            onClick={resetValues}
+          >
+            {t("feedback.clearFilters")}
+          </button>
+        </div>
+      ) : null}
+      {canSubmit && !isSearch ? (
         <button
           type="submit"
-          disabled={submitting || hasBlockingErrors}
+          disabled={submitting || hasBlockingErrors || (!isSearch && !canEdit)}
           className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {submitting ? "Submitting…" : (node.props.submitLabel ?? (isSearch ? "Search" : "Submit"))}
+          {submitting
+            ? t("feedback.submitting")
+            : resolveTextProp(
+                node.props as unknown as Record<string, unknown>,
+                "submitLabelKey",
+                "submitLabel",
+                t,
+                isSearch ? t("feedback.search") : t("feedback.submit"),
+              )}
         </button>
       ) : null}
     </form>
@@ -1034,26 +2008,61 @@ function TabsView({
   onAction?: RendererComponentProps["onAction"];
   formComponent?: RendererComponentProps["formComponent"];
 }) {
+  const t = useTranslate();
   const children = node.children ?? [];
   const [active, setActive] = useState(0);
   const current = children[Math.min(active, children.length - 1)];
+  const baseId = typeof node.id === "string" && node.id !== "" ? node.id : "tabs";
+  const focusTab = (from: number, direction: -1 | 0 | 1) => {
+    if (children.length === 0) {
+      return;
+    }
+    const next = (from + direction + children.length) % children.length;
+    setActive(next);
+    const button = document.getElementById(`tab-${baseId}-${next}`);
+    button?.focus();
+  };
   return (
     <div className="space-y-3">
       {children.length > 1 ? (
-        <div role="tablist" className="flex flex-wrap items-center gap-1 border-b border-border">
+        <div role="tablist" aria-label={t("feedback.tabs")} className="flex flex-wrap items-center gap-1 border-b border-border">
           {children.map((child, index) => {
             const rawProps = (child as unknown as { props?: unknown }).props;
-            const label =
-              isRecord(rawProps) && typeof rawProps.label === "string"
-                ? rawProps.label
-                : `Tab ${index + 1}`;
+            // T-03 (GOAL-013 D-004): resolve labelKey before the literal
+            // label (registry convention), so tabs stay bilingual.
+            const label = resolveTextProp(
+              isRecord(rawProps) ? rawProps : {},
+              "labelKey",
+              "label",
+              t,
+              `Tab ${index + 1}`,
+            );
+            const panelId = `tab-panel-${baseId}-${index}`;
             return (
               <button
                 key={index}
+                id={`tab-${baseId}-${index}`}
                 type="button"
                 role="tab"
                 aria-selected={index === active}
+                aria-controls={panelId}
+                tabIndex={index === active ? 0 : -1}
                 onClick={() => setActive(index)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    focusTab(index, 1);
+                  } else if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    focusTab(index, -1);
+                  } else if (event.key === "Home") {
+                    event.preventDefault();
+                    focusTab(0, 0);
+                  } else if (event.key === "End") {
+                    event.preventDefault();
+                    focusTab(children.length - 1, 0);
+                  }
+                }}
                 className={`rounded-t px-3 py-1.5 text-sm ${
                   index === active
                     ? "border-b-2 border-primary font-medium text-foreground"
@@ -1067,24 +2076,37 @@ function TabsView({
         </div>
       ) : null}
       {current !== undefined ? (
-        dispatchNode({
-          node: current,
-          path: "body.children",
-          metaValue,
-          context,
-          tableRenderer,
-          onAction,
-          formComponent,
-        })
+        <div
+          id={`tab-panel-${baseId}-${active}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${baseId}-${active}`}
+          tabIndex={0}
+          className="outline-none"
+        >
+          {dispatchNode({
+            node: current,
+            path: "body.children",
+            metaValue,
+            context,
+            tableRenderer,
+            onAction,
+            formComponent,
+          })}
+        </div>
       ) : (
-        <p className="text-sm text-muted-foreground">tabs node has no children</p>
+        <p className="text-sm text-muted-foreground">{t("feedback.tabsNoChildren")}</p>
       )}
     </div>
   );
 }
 
 function TextView({ node }: { node: RenderTextNode }) {
-  return <p className="text-sm text-foreground">{node.props?.text ?? ""}</p>;
+  const t = useTranslate();
+  return (
+    <p className="text-sm text-foreground">
+      {resolveTextProp(node.props as unknown as Record<string, unknown>, "textKey", "text", t, "")}
+    </p>
+  );
 }
 
 /**
@@ -1093,22 +2115,58 @@ function TextView({ node }: { node: RenderTextNode }) {
  * - With record: desktop right Drawer + mobile full-height Sheet (not centered Modal)
  * Static `props.record` still uses the same chrome so fixtures remain observable.
  */
+function formatRecordViewValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+  if (value === undefined || value === null) {
+    return "—";
+  }
+  // ISO timestamps render as local "YYYY-MM-DD HH:mm" (display formatting).
+  return formatDisplayTime(value) ?? String(value);
+}
+
 function RecordView({ node }: { node: RenderRecordViewNode }) {
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const staticRecord = node.props?.record;
   const hasStatic = isRecord(staticRecord);
   const record = hasStatic ? staticRecord : (crud?.selectedRow ?? null);
-  const entries = isRecord(record) ? Object.entries(record) : [];
-  if (entries.length === 0) {
+  const declaredFields = node.props?.fields ?? [];
+  const rows =
+    record === null
+      ? []
+      : declaredFields.length > 0
+        ? declaredFields.map((field) => ({
+            key: field.key,
+            label: resolveTextProp(
+              field as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              field.key,
+            ),
+            value: record[field.key],
+          }))
+        : Object.entries(record).map(([key, value]) => ({ key, label: key, value }));
+  if (rows.length === 0) {
     return (
       <p
         data-record-view="empty"
         className="text-sm text-muted-foreground"
       >
-        Select a record to view details.
+        {t("feedback.selectRecordToView")}
       </p>
     );
   }
+
+  const title = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "titleKey",
+    "title",
+    t,
+    t("feedback.recordDetails"),
+  );
 
   const canClose = !hasStatic && crud !== null;
   const onClose = () => {
@@ -1133,7 +2191,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
         data-record-view-mode={canClose ? "drawer" : "panel"}
         role="dialog"
         aria-modal={canClose ? true : undefined}
-        aria-label="Record details"
+        aria-label={title}
         className={
           canClose
             ? // Desktop (md+): right Drawer; mobile (<768, D-004): full-height Sheet
@@ -1143,12 +2201,12 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold tracking-tight text-foreground">
-            Record details
+            {title}
           </h2>
           {canClose ? (
             <button
               type="button"
-              aria-label="Close record details"
+              aria-label={t("feedback.closeRecordDetails")}
               onClick={onClose}
               className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -1157,12 +2215,14 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
           ) : null}
         </div>
         <dl className="flex-1 space-y-3 overflow-y-auto p-4">
-          {entries.map(([key, value]) => (
-            <div key={key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_1fr] sm:gap-3">
-              <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                {key}
+          {rows.map((row) => (
+            <div key={row.key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
+              <dt className="text-xs font-medium text-muted-foreground">
+                {row.label}
               </dt>
-              <dd className="break-words text-foreground">{String(value)}</dd>
+              <dd className="break-words text-foreground">
+                {formatRecordViewValue(row.value)}
+              </dd>
             </div>
           ))}
         </dl>
@@ -1175,6 +2235,7 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
 function useDisplayData(
   dataSource: string | null,
   fetcher: typeof fetch,
+  params?: Record<string, unknown>,
 ): { list: ResourceList | null; error: string | null } {
   const crud = useSchemaCrud();
   useEffect(() => {
@@ -1184,6 +2245,20 @@ function useDisplayData(
   }, [crud, fetcher]);
   const [list, setList] = useState<ResourceList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
+  // provider's route context; hostless renders fall back to the location query.
+  const routeSnapshot = useMemo(() => {
+    if (crud !== null) {
+      return crud.route;
+    }
+    const query: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+        query[key] = value;
+      }
+    }
+    return { query, params: {} };
+  }, [crud]);
   useEffect(() => {
     if (dataSource === null) {
       setList(null);
@@ -1196,7 +2271,8 @@ function useDisplayData(
     // (same dataSource, new reloadToken) keeps showing the old error because
     // resolveAsyncDisplayState prefers `error` over `ready`.
     setError(null);
-    fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 })
+    const paramsQuery = resolveDataParamsQuery(params, routeSnapshot);
+    fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 }, paramsQuery)
       .then((next) => {
         if (!cancelled) {
           setList(next);
@@ -1205,26 +2281,35 @@ function useDisplayData(
       })
       .catch((err: unknown) => {
         if (!cancelled) {
+          if (isWalletNotFoundError(err)) {
+            setList(EMPTY_RESOURCE_LIST);
+            setError(null);
+            return;
+          }
           setError(err instanceof Error ? err.message : String(err));
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, crud?.reloadToken]);
+  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken]);
   return { list, error };
 }
 
 function StatCardView({ node }: { node: RenderStatCardNode }) {
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const fetcher = crud?.fetcher ?? globalThis.fetch;
   const valueField = node.props?.valueField;
   const format = node.props?.format ?? "plain";
+  // v2.9 ADR-0039: node-level DataRef preferred over legacy props.dataSource.
   const dataSource =
-    typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
-      ? node.props.dataSource
-      : null;
-  const { list, error } = useDisplayData(dataSource, fetcher);
+    typeof node.data?.url === "string" && isValidDataSource(node.data.url)
+      ? node.data.url
+      : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
+        ? node.props.dataSource
+        : null;
+  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   if (dataSource === null) {
     return (
@@ -1239,7 +2324,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
   }
   if (displayState === "loading") {
     return (
-      <div role="status" aria-label="Loading statCard" className="space-y-2 rounded-md border border-border bg-card p-4">
+      <div role="status" aria-label={t("feedback.loadingStatCard")} className="space-y-2 rounded-md border border-border bg-card p-4">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-7 w-24" />
       </div>
@@ -1278,7 +2363,13 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
-  const label = node.props?.label ?? valueField ?? "Value";
+  const label = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "labelKey",
+    "label",
+    t,
+    valueField ?? t("feedback.value"),
+  );
   const unit = node.props?.unit;
   return (
     <Card data-display-surface="statCard" className="shadow-sm">
@@ -1297,15 +2388,19 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
 
 function ChartView({ node }: { node: RenderChartNode }) {
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const fetcher = crud?.fetcher ?? globalThis.fetch;
   const chartType = node.props?.chartType;
   const xField = node.props?.xField;
   const yField = node.props?.yField;
+  // v2.9 ADR-0039: node-level DataRef preferred over legacy props.dataSource.
   const dataSource =
-    typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
-      ? node.props.dataSource
-      : null;
-  const { list, error } = useDisplayData(dataSource, fetcher);
+    typeof node.data?.url === "string" && isValidDataSource(node.data.url)
+      ? node.data.url
+      : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
+        ? node.props.dataSource
+        : null;
+  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   const missingProps = chartType === undefined || xField === undefined || yField === undefined;
   if (dataSource === null || missingProps) {
@@ -1321,7 +2416,7 @@ function ChartView({ node }: { node: RenderChartNode }) {
   }
   if (chartDisplayState === "loading") {
     return (
-      <div role="status" aria-label="Loading chart" className="space-y-2 rounded-md border border-border bg-card p-4">
+      <div role="status" aria-label={t("feedback.loadingChart")} className="space-y-2 rounded-md border border-border bg-card p-4">
         <Skeleton className="h-40 w-full" />
       </div>
     );
@@ -1426,19 +2521,37 @@ function ActionButtonView({
   context: Record<string, unknown>;
   onAction?: RendererComponentProps["onAction"];
 }) {
+  const t = useTranslate();
+  const crud = useSchemaCrud();
   const gate = tableActionGate(node.props ?? {}, context);
   if (!gate.visible) {
     return null;
   }
+  // ADR-0023 D4b: actionButton permission-intent targets are gated by their
+  // `props.key` (fallback node id); a denied target renders the button disabled.
+  const targetId =
+    typeof node.props?.key === "string" && node.props.key !== ""
+      ? node.props.key
+      : node.id;
+  const canAct =
+    crud === null || targetId === undefined
+      ? true
+      : crud.effectivePermission(targetId);
   return (
     <div className="space-y-1">
       <button
         type="button"
-        disabled={gate.disabled}
+        disabled={gate.disabled || !canAct}
         onClick={() => onAction?.(node)}
         className="h-9 rounded-md border border-input bg-background px-3 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
-        {node.props?.label ?? node.props?.actionId ?? "Action"}
+        {resolveTextProp(
+          node.props as unknown as Record<string, unknown>,
+          "labelKey",
+          "label",
+          t,
+          t("feedback.action"),
+        )}
       </button>
       {gate.errors.length > 0 ? (
         <ul role="alert" className="space-y-1 text-sm text-destructive">
@@ -1486,6 +2599,45 @@ function dispatchNode({
     onAction,
     formComponent,
   });
+}
+
+/**
+ * F-008 (grok audit): gates a data node that uses v2.9 ADR-0039 route-bound
+ * params ($context.route.* bindings in node.data.params) on the page meta —
+ * protocolVersion >= 2.9 AND the data.route-binding capability must be
+ * declared, else the node fails closed with an observable error (same
+ * discipline as checkFormCapabilities for form fields).
+ */
+function gateDataRouteBinding(
+  metaValue: unknown,
+  node: RenderTableNode | RenderStatCardNode | RenderChartNode,
+): string | null {
+  const params = node.data?.params;
+  if (params === undefined) {
+    return null;
+  }
+  const usesRouteBinding = Object.values(params).some(
+    (value) => typeof value === "string" && value.startsWith("$context.route."),
+  );
+  if (!usesRouteBinding) {
+    return null;
+  }
+  const meta = isRecord(metaValue) ? metaValue : {};
+  const version = typeof meta.protocolVersion === "string" ? meta.protocolVersion : "";
+  const versionMatch = /^(\d+)\.(\d+)$/.exec(version);
+  const versionOk =
+    versionMatch !== null &&
+    (Number(versionMatch[1]) > 2 ||
+      (Number(versionMatch[1]) === 2 && Number(versionMatch[2]) >= 9));
+  const capabilities = Array.isArray(meta.requiredCapabilities)
+    ? (meta.requiredCapabilities as unknown[]).filter(
+        (c): c is string => typeof c === "string",
+      )
+    : [];
+  if (!versionOk || !capabilities.includes("data.route-binding")) {
+    return "dataSource params use $context.route.* bindings which require protocol >= 2.9 and the data.route-binding capability";
+  }
+  return null;
 }
 
 function dispatchParsedNode({
@@ -1541,15 +2693,40 @@ function dispatchParsedNode({
       );
     case "text":
       return <TextView node={node} />;
+    case "custom": {
+      // GOAL-018: custom nodes dispatch to the module-level registry; an
+      // unregistered component renders a safe fallback (never crashes).
+      const Custom = getCustomComponent(node.component);
+      if (Custom === null) {
+        return (
+          <p className="text-sm text-muted-foreground">
+            unknown custom component: {node.component}
+          </p>
+        );
+      }
+      return <Custom node={node} context={context} children={node.children} />;
+    }
     case "recordView":
       return <RecordView node={node} />;
     case "actionButton":
       return <ActionButtonView node={node} context={context} onAction={onAction} />;
     case "statCard":
-      return <StatCardView node={node} />;
     case "chart":
-      return <ChartView node={node} />;
-    case "table":
+    case "table": {
+      const routeGate = gateDataRouteBinding(metaValue, node);
+      if (routeGate !== null) {
+        return (
+          <p key={node.id ?? node.type} role="alert" className="text-sm text-destructive">
+            {routeGate}
+          </p>
+        );
+      }
+      if (node.type === "statCard") {
+        return <StatCardView node={node} />;
+      }
+      if (node.type === "chart") {
+        return <ChartView node={node} />;
+      }
       return (
         tableRenderer?.(node) ?? (
           <p className="text-sm text-muted-foreground">
@@ -1557,6 +2734,7 @@ function dispatchParsedNode({
           </p>
         )
       );
+    }
   }
 }
 
@@ -1568,6 +2746,12 @@ function RenderPageSurface({
   formComponent,
 }: RendererComponentProps) {
   const crud = useSchemaCrud()!;
+  // VP-007 S3: actionButton nodes are first-class page actions in the default
+  // app path — dispatch through the frozen Schema CRUD executor (gate →
+  // confirm → request) unless the host overrides onAction.
+  const resolvedOnAction = onAction ?? ((node: RenderActionButtonNode) => {
+    crud.invokeAction(node.props as unknown as Record<string, unknown>, null);
+  });
   const modalAction =
     crud.activeModal !== null ? actionOf(document, crud.activeModal.actionRef) : undefined;
   const modalContent =
@@ -1587,7 +2771,7 @@ function RenderPageSurface({
         metaValue: document.meta,
         context,
         tableRenderer,
-        onAction,
+        onAction: resolvedOnAction,
         formComponent,
       })}
       {modalContent !== undefined ? (
@@ -1602,7 +2786,7 @@ function RenderPageSurface({
             metaValue: document.meta,
             context,
             tableRenderer,
-            onAction,
+            onAction: resolvedOnAction,
             formComponent,
           })}
         </ModalHost>
@@ -1624,10 +2808,16 @@ export function RenderPage({
   tableRenderer,
   dataFetcher,
   onAction,
+  onNavigate,
   formComponent,
 }: RendererComponentProps & { dataFetcher?: typeof fetch }) {
   return (
-    <SchemaCrudProvider document={document} context={context} initialFetcher={dataFetcher}>
+    <SchemaCrudProvider
+      document={document}
+      context={context}
+      initialFetcher={dataFetcher}
+      onNavigate={onNavigate}
+    >
       <RenderPageSurface
         document={document}
         context={context}

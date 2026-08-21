@@ -1,10 +1,11 @@
 package authsession
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"regexp"
 	"time"
 )
@@ -14,17 +15,17 @@ var roleKeyRe = regexp.MustCompile(`^[a-z][a-z0-9_-]*$`)
 // CreateUser inserts an internal account and keeps the legacy roles JSON and
 // normalized user_roles relation set-equal in one transaction.
 func (r *Repository) CreateUser(user User) error {
-	return r.withTx("create user", func(tx *sql.Tx) error {
+	return r.withTx("create user", func(tx kernel.Tx) error {
 		roles := dedupeKeys(user.Roles)
 		rolesJSON, err := json.Marshal(roles)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
-		if _, err := tx.Exec(
-			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		if _, err := tx.Exec(context.Background(),
+			`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			user.ID, user.Username, user.Name, string(rolesJSON), user.PasswordHash,
-			user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
+			boolInt(user.MustChangePassword), user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
 		); err != nil {
 			return fmt.Errorf("insert user: %w", err)
 		}
@@ -40,25 +41,25 @@ func (r *Repository) CreateUser(user User) error {
 
 // UserByUsername fetches an identity by its unique username.
 func (r *Repository) UserByUsername(username string) (*User, error) {
-	return r.userBy("get user by username", func(tx *sql.Tx) *sql.Row {
-		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, created_at, updated_at
+	return r.userBy("get user by username", func(tx kernel.Tx) kernel.Row {
+		return tx.QueryRow(context.Background(),
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at
 			 FROM users WHERE username = ?`, username)
 	})
 }
 
 // UserByID fetches an identity by primary key.
 func (r *Repository) UserByID(id string) (*User, error) {
-	return r.userBy("get user by id", func(tx *sql.Tx) *sql.Row {
-		return tx.QueryRow(
-			`SELECT id, username, name, roles, password_hash, created_at, updated_at
+	return r.userBy("get user by id", func(tx kernel.Tx) kernel.Row {
+		return tx.QueryRow(context.Background(),
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at
 			 FROM users WHERE id = ?`, id)
 	})
 }
 
-func (r *Repository) userBy(operation string, query func(*sql.Tx) *sql.Row) (*User, error) {
+func (r *Repository) userBy(operation string, query func(kernel.Tx) kernel.Row) (*User, error) {
 	var user *User
-	err := r.withTx(operation, func(tx *sql.Tx) error {
+	err := r.withTx(operation, func(tx kernel.Tx) error {
 		var err error
 		user, err = userWithRoles(tx, query(tx))
 		return err
@@ -66,7 +67,7 @@ func (r *Repository) userBy(operation string, query func(*sql.Tx) *sql.Row) (*Us
 	return user, err
 }
 
-func userWithRoles(tx *sql.Tx, row *sql.Row) (*User, error) {
+func userWithRoles(tx kernel.Tx, row kernel.Row) (*User, error) {
 	user, err := scanUser(row)
 	if err != nil {
 		return nil, err
@@ -82,8 +83,8 @@ func userWithRoles(tx *sql.Tx, row *sql.Row) (*User, error) {
 	return user, nil
 }
 
-func rolesForUser(tx *sql.Tx, userID string) ([]string, error) {
-	rows, err := tx.Query(
+func rolesForUser(tx kernel.Tx, userID string) ([]string, error) {
+	rows, err := tx.Query(context.Background(),
 		`SELECT r.key FROM user_roles ur JOIN roles r ON r.id = ur.role_id
 		 WHERE ur.user_id = ? ORDER BY r.key`, userID)
 	if err != nil {
@@ -107,8 +108,8 @@ func rolesForUser(tx *sql.Tx, userID string) ([]string, error) {
 // PermissionsForUser returns the normalized permission projection.
 func (r *Repository) PermissionsForUser(userID string) ([]string, error) {
 	var keys []string
-	err := r.withTx("permissions for user", func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.withTx("permissions for user", func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT DISTINCT p.key
 			 FROM user_roles ur
 			 JOIN role_permissions rp ON rp.role_id = ur.role_id
@@ -136,8 +137,8 @@ func (r *Repository) PermissionsForUser(userID string) ([]string, error) {
 // FeaturesForUser returns the enabled menu feature projection.
 func (r *Repository) FeaturesForUser(userID string) (map[string]bool, error) {
 	features := make(map[string]bool)
-	err := r.withTx("features for user", func(tx *sql.Tx) error {
-		rows, err := tx.Query(
+	err := r.withTx("features for user", func(tx kernel.Tx) error {
+		rows, err := tx.Query(context.Background(),
 			`SELECT m.feature_key, EXISTS(
 				SELECT 1 FROM user_roles ur
 				JOIN role_menu_items rmi ON rmi.role_id = ur.role_id
@@ -166,12 +167,91 @@ func (r *Repository) FeaturesForUser(userID string) (map[string]bool, error) {
 	return features, err
 }
 
+// RecordLoginFailure bumps the user's consecutive-failure counter and, past
+// the threshold, opens a lock window ending at lockedUntil (GOAL-004 S4-6).
+// It reports whether the lock opened on this failure.
+func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUntil time.Time, now time.Time) (bool, error) {
+	locked := false
+	err := r.withTx("record login failure", func(tx kernel.Tx) error {
+		var count int
+		if err := tx.QueryRow(context.Background(), `SELECT failed_login_count FROM users WHERE id = ?`, userID).Scan(&count); err != nil {
+			return fmt.Errorf("read failed login count: %w", err)
+		}
+		next := count + 1
+		lockedUntilUnix := int64(0)
+		if next >= threshold {
+			lockedUntilUnix = lockedUntil.Unix()
+			next = 0 // counter resets when the lock opens; it counts consecutive failures
+			locked = true
+		}
+		if _, err := tx.Exec(context.Background(),
+			`UPDATE users SET failed_login_count = ?, locked_until = ?, updated_at = ? WHERE id = ?`,
+			next, lockedUntilUnix, now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("record login failure: %w", err)
+		}
+		return nil
+	})
+	return locked, err
+}
+
+// ResetLoginFailures clears the consecutive-failure counter and lock window on
+// a successful login.
+func (r *Repository) ResetLoginFailures(userID string, now time.Time) error {
+	return r.withTx("reset login failures", func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
+			`UPDATE users SET failed_login_count = 0, locked_until = 0, updated_at = ? WHERE id = ?`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("reset login failures: %w", err)
+		}
+		return nil
+	})
+}
+
+// BumpTokenVersionAndRevokeAll bumps the user's token_version (invalidating
+// every already-signed access token, W4 P0-3) and revokes every live refresh
+// token in one transaction (S-10 · GOAL-017 D-002 §4: MFA disable / admin
+// reset force re-authentication at the same strength as password change).
+func (r *Repository) BumpTokenVersionAndRevokeAll(userID string, now time.Time) error {
+	return r.withTx("bump token version and revoke refresh tokens", func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
+			`UPDATE users SET token_version = token_version + 1, updated_at = ? WHERE id = ?`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("bump token version: %w", err)
+		}
+		if _, err := tx.Exec(context.Background(),
+			`UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("revoke user refresh tokens: %w", err)
+		}
+		return nil
+	})
+}
+
+// RevokeAllRefreshTokensForUser revokes every live refresh token of the user
+// (account-lock hardening: a locked account's sessions must not keep rotating).
+func (r *Repository) RevokeAllRefreshTokensForUser(userID string, now time.Time) error {
+	return r.withTx("revoke user refresh tokens", func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
+			`UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
+			now.Unix(), userID,
+		); err != nil {
+			return fmt.Errorf("revoke user refresh tokens: %w", err)
+		}
+		return nil
+	})
+}
+
 func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
 	var createdAt, updatedAt int64
-	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &createdAt, &updatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
+	var mustChangePassword int
+	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled, &user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt)
+	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
@@ -180,6 +260,7 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	if err := json.Unmarshal([]byte(roles), &user.Roles); err != nil {
 		return nil, fmt.Errorf("unmarshal roles: %w", err)
 	}
+	user.MustChangePassword = mustChangePassword != 0
 	user.CreatedAt = time.Unix(createdAt, 0).UTC()
 	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	return &user, nil
@@ -187,12 +268,12 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 
 // CreateRefreshToken persists a hashed opaque refresh token.
 func (r *Repository) CreateRefreshToken(token RefreshToken) error {
-	return r.withTx("create refresh token", func(tx *sql.Tx) error {
+	return r.withTx("create refresh token", func(tx kernel.Tx) error {
 		var revokedAt any
 		if token.RevokedAt != nil {
 			revokedAt = token.RevokedAt.Unix()
 		}
-		if _, err := tx.Exec(
+		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, revoked_at, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?)`,
 			token.ID, token.UserID, token.TokenHash, token.ExpiresAt.Unix(), revokedAt, token.CreatedAt.Unix(),
@@ -206,15 +287,15 @@ func (r *Repository) CreateRefreshToken(token RefreshToken) error {
 // RefreshTokenByHash fetches a refresh token by its stored hash.
 func (r *Repository) RefreshTokenByHash(hash string) (*RefreshToken, error) {
 	var token RefreshToken
-	err := r.withTx("get refresh token", func(tx *sql.Tx) error {
+	err := r.withTx("get refresh token", func(tx kernel.Tx) error {
 		var expiresAt int64
 		var revokedAt *int64
 		var createdAt int64
-		err := tx.QueryRow(
+		err := tx.QueryRow(context.Background(),
 			`SELECT id, user_id, token_hash, expires_at, revoked_at, created_at
 			 FROM refresh_tokens WHERE token_hash = ?`, hash,
 		).Scan(&token.ID, &token.UserID, &token.TokenHash, &expiresAt, &revokedAt, &createdAt)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
@@ -234,29 +315,36 @@ func (r *Repository) RefreshTokenByHash(hash string) (*RefreshToken, error) {
 	return &token, nil
 }
 
-// RevokeRefreshToken marks a refresh token revoked atomically.
+// RevokeRefreshToken marks a refresh token revoked atomically. The guarded
+// UPDATE (revoked_at IS NULL) makes concurrent revocations race-safe: exactly
+// one caller wins, every later caller gets ErrAlreadyRevoked instead of a
+// check-then-act window that would let two rotations both proceed.
 func (r *Repository) RevokeRefreshToken(id string, now time.Time) error {
-	return r.withTx("revoke refresh token", func(tx *sql.Tx) error {
-		var current *int64
-		err := tx.QueryRow(`SELECT revoked_at FROM refresh_tokens WHERE id = ?`, id).Scan(&current)
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNotFound
-		}
+	return r.withTx("revoke refresh token", func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(), `UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), id)
 		if err != nil {
-			return fmt.Errorf("select revoked_at: %w", err)
-		}
-		if current != nil {
-			return ErrAlreadyRevoked
-		}
-		if _, err := tx.Exec(`UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?`, now.Unix(), id); err != nil {
 			return fmt.Errorf("update refresh token: %w", err)
+		}
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("rows affected: %w", err)
+		}
+		if affected == 0 {
+			var exists int64
+			if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM refresh_tokens WHERE id = ?`, id).Scan(&exists); err != nil {
+				return fmt.Errorf("check refresh token: %w", err)
+			}
+			if exists == 0 {
+				return ErrNotFound
+			}
+			return ErrAlreadyRevoked
 		}
 		return nil
 	})
 }
 
-func ensureRole(tx *sql.Tx, key string, now int64) error {
-	if _, err := tx.Exec(
+func ensureRole(tx kernel.Tx, key string, now int64) error {
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO roles (id, key, name, system, created_at, updated_at)
 		 VALUES (?, ?, ?, 0, ?, ?)
 		 ON CONFLICT(id) DO NOTHING`,
@@ -267,14 +355,14 @@ func ensureRole(tx *sql.Tx, key string, now int64) error {
 	return nil
 }
 
-func linkUserRole(tx *sql.Tx, userID, key string, now int64) error {
+func linkUserRole(tx kernel.Tx, userID, key string, now int64) error {
 	if !roleKeyRe.MatchString(key) {
 		return fmt.Errorf("invalid role key %q", key)
 	}
 	if err := ensureRole(tx, key, now); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(
+	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)
 		 ON CONFLICT(user_id, role_id) DO NOTHING`, userID, "role-"+key,
 	); err != nil {

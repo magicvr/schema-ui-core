@@ -1,0 +1,159 @@
+{
+  "meta": {
+    "pageId": "data-permission",
+    "title": "Data permission",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended",
+      "form.controls.advanced"
+    ]
+  },
+  "actions": {
+    "registerPolicy": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/data-permission/policies",
+      "bodyMapping": {
+        "resource": "resource",
+        "ownerColumn": "ownerColumn",
+        "defaultScope": "defaultScope",
+        "enabled": "enabled"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "updateScopes": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/data-permission/scopes",
+      "bodyMapping": {
+        "userId": "userId",
+        "scopes": "scopes"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openRegister": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "register-policy-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"data-permission.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "resource",
+              "label": "Resource",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.dataPermission.field.resource"
+            },
+            {
+              "id": "ownerColumn",
+              "label": "Owner column",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.dataPermission.field.ownerColumn"
+            },
+            {
+              "id": "defaultScope",
+              "label": "Default scope",
+              "type": "select",
+              "required": true,
+              "defaultValue": "all",
+              "options": [
+                {
+                  "value": "all",
+                  "label": "All",
+                  "labelKey": "schema.dataPermission.scope.all"
+                },
+                {
+                  "value": "self",
+                  "label": "Self",
+                  "labelKey": "schema.dataPermission.scope.self"
+                }
+              ],
+              "labelKey": "schema.dataPermission.field.defaultScope"
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.dataPermission.field.enabled"
+            }
+          ],
+          "submitAction": "registerPolicy",
+          "submitLabel": "Register policy",
+          "submitLabelKey": "schema.dataPermission.submit.register"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "data-permission",
+    "children": [
+      {
+        "type": "table",
+        "id": "policies",
+        "props": {
+          "rowKey": "resource",
+          "columns": [
+            {
+              "field": "resource",
+              "label": "Resource",
+              "labelKey": "schema.dataPermission.column.resource"
+            },
+            {
+              "field": "ownerColumn",
+              "label": "Owner column",
+              "labelKey": "schema.dataPermission.column.ownerColumn"
+            },
+            {
+              "field": "defaultScope",
+              "label": "Default scope",
+              "labelKey": "schema.dataPermission.column.defaultScope"
+            },
+            {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.dataPermission.column.enabled"
+            }
+          ],
+          "dataSource": "/api/data-permission/policies",
+          "toolbar": [
+            {
+              "key": "register",
+              "label": "Register policy",
+              "actionRef": "openRegister",
+              "permissionIntent": "edit",
+              "labelKey": "schema.dataPermission.toolbar.register"
+            }
+          ]
+        }
+      },
+      {
+        "type": "custom",
+        "id": "data-permission-scopes",
+        "component": "data-permission-scopes",
+        "props": {}
+      }
+    ]
+  }
+}

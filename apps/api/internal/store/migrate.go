@@ -51,8 +51,18 @@ func (s *Store) migrate(catalog []kernel.MigrationContribution) error {
 		return err
 	}
 
+	// One recoverable snapshot per pending data-mutating migration (version >= 2,
+	// I-011-002 A-002 F-002): each upgrade step keeps an independent rollback
+	// point. Snapshot filenames carry millisecond precision so an immediate
+	// retry after a failed upgrade cannot collide (D5).
+	//
+	// A fresh database (no pre-existing tables/data at open) has nothing to
+	// recover, so snapshots are never taken — signal that in the loop and the
+	// snapshotBeforePending method itself (defense-in-depth). Fresh DBs are the
+	// hot path of every test that opens a store, so skipping the file copies
+	// keeps the full handler package comfortably under the go test timeout.
 	for _, migration := range pendingMigrations(applied, catalog) {
-		if migration.Version >= 2 {
+		if !s.fresh && migration.Version >= 2 {
 			if err := s.snapshotBeforePending(migration.Version); err != nil {
 				return err
 			}
@@ -73,7 +83,9 @@ func (s *Store) applyMigration(migration kernel.MigrationContribution) error {
 		return fmt.Errorf("begin migration %d (%s): %w", migration.Version, migration.Name, err)
 	}
 	if migration.Apply != nil {
-		if err := migration.Apply(tx); err != nil {
+		// Apply receives the dialect-neutral kernel.Tx (R1 v1.4 §4); on sqlite
+		// the *sql.Tx adapter keeps the '?' placeholder unchanged.
+		if err := migration.Apply(sqlTx{tx: tx}); err != nil {
 			_ = tx.Rollback()
 			return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 		}
@@ -221,8 +233,21 @@ func (s *Store) assertForeignKeysOn() error {
 }
 
 // snapshotBeforePending produces a recoverable copy of a non-empty file
-// database before each pending data-mutating migration (version >= 2).
+// database before the first pending data-mutating migration of an upgrade
+// batch. The filename carries millisecond precision so an immediate retry
+// after a failed upgrade cannot collide with an existing snapshot (D5).
+//
+// Defense-in-depth: a fresh database (no pre-existing tables/data at open) has
+// nothing to recover, so no snapshot is ever produced regardless of caller.
+// Without this guard a fresh bootstrap would still trip the dbHasRows check the
+// moment a migration in the batch seeds rows (e.g. system data), copying the
+// whole file for every later data-mutating migration even though there was no
+// pre-upgrade data to protect — exactly the per-test blowup that drove the
+// full handler test toward the go test timeout.
 func (s *Store) snapshotBeforePending(firstPendingVersion int) error {
+	if s.fresh {
+		return nil
+	}
 	if s.path == "" || s.path == ":memory:" {
 		return nil
 	}
@@ -233,7 +258,7 @@ func (s *Store) snapshotBeforePending(firstPendingVersion int) error {
 	if !hasData {
 		return nil
 	}
-	target := fmt.Sprintf("%s.pre-v%04d-%s.sqlite", s.path, firstPendingVersion, time.Now().UTC().Format("20060102T150405Z"))
+	target := fmt.Sprintf("%s.pre-v%04d-%s.sqlite", s.path, firstPendingVersion, time.Now().UTC().Format("20060102T150405.000Z"))
 	if _, err := s.db.Exec("VACUUM INTO '" + strings.ReplaceAll(target, "'", "''") + "'"); err != nil {
 		return fmt.Errorf("pre-v%04d snapshot to %s: %w", firstPendingVersion, target, err)
 	}

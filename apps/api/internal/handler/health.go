@@ -9,7 +9,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -28,7 +27,7 @@ type healthResponse struct {
 // composition root from their kernel.Provider surfaces (RegisterContributions),
 // not by this central Register. This function keeps core auth/accounts/health
 // registration only.
-func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan) {
+func Register(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan) {
 	RegisterWithReadiness(mux, a, st, operations, plan, nil)
 }
 
@@ -36,11 +35,22 @@ func Register(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operat
 // probe (R5). ready, when non-nil, gates /readyz on Start+Ready success.
 // Schema pages are registered separately via RegisterSchemas so composition can
 // pass runtime contribution ownership (R5 C5.1).
-func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st *store.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool) {
+func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha ...CaptchaVerifier) {
+	RegisterWithMFA(mux, a, st, operations, plan, ready, captcha, nil)
+}
+
+// RegisterWithMFA is RegisterWithReadiness plus the optional second-factor
+// login gate (S-10 · GOAL-017 D-002 §3): nil keeps the login contract
+// byte-identical.
+func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready))
 	if plan.HasModule("core.auth-session") {
-		authsHandler(mux, a, operations)
+		var verifier CaptchaVerifier
+		if len(captcha) > 0 {
+			verifier = captcha[0]
+		}
+		authsHandler(mux, a, operations, verifier, mfa)
 		accountsHandler(mux, a)
 	}
 }
@@ -64,7 +74,7 @@ func healthz() http.Handler {
 // non-nil it must also report true (module graph Start+Ready succeeded),
 // otherwise the probe stays unavailable (freeze §3 — readyz is real module-graph
 // readiness, not just store ping).
-func readyz(st *store.Store, ready func() bool) http.Handler {
+func readyz(st kernel.Store, ready func() bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 		defer cancel()

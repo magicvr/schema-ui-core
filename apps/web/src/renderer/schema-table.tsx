@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
+import { resolveTextProp } from "@/i18n/catalog";
+import { useTranslate } from "@/i18n/runtime";
 import {
+  EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
+  isWalletNotFoundError,
+  resolveDataParamsQuery,
   type ResourceQuery,
   type ResourceItem,
   type ResourceList,
@@ -48,10 +54,48 @@ export interface SchemaTableColumnSpec {
   field: string;
   label?: string;
   sortable?: boolean;
+  /** W4 · GOAL-005: single-line truncate + title affordance for long values. */
+  truncate?: boolean;
+  /** Column width hint (px number or CSS length). */
+  width?: number | string;
+  /** Minimum column width (px number or CSS length). */
+  minWidth?: number | string;
+  /** W16-F04: render a cent-valued number as a localized currency string. */
+  format?: "currency";
+  /** W16-F09: render this cell as a colored badge using the row field value. */
+  badgeStyleField?: string;
 }
 
 function stringOf(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+/** W16-F04: formats a cent-valued integer as a currency string (e.g. 10000 → 100.00). */
+function formatCents(value: unknown): string {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "";
+  }
+  return (numeric / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/** W16-F09: maps a badgeStyle preset to Tailwind badge classes. */
+function badgeClassesFor(style: unknown): string {
+  switch (style) {
+    case "success":
+      return "border-success/30 bg-success/10 text-success";
+    case "warning":
+      return "border-warning/30 bg-warning/10 text-warning";
+    case "destructive":
+      return "border-destructive/30 bg-destructive/10 text-destructive";
+    case "info":
+      return "border-info/30 bg-info/10 text-info";
+    default:
+      return "border-border bg-muted text-muted-foreground";
+  }
 }
 
 /** Spreads a typed row into a plain object the generic action executor accepts. */
@@ -100,19 +144,123 @@ export function schemaTableColumns(node: RenderTableNode): SchemaTableColumnSpec
 }
 
 /**
- * Resolves the table node's list endpoint (F-001). Returns null when absent or
- * not a single-slash same-origin path; the table then fails closed and never
- * fetches (the fixture fallback was removed in GOAL-010 S3).
+ * Resolves the table node's list endpoint (F-001). v2.9 prefers the node-level
+ * DataRef (ADR-0039, source:api url); the legacy props.dataSource string stays
+ * supported. Returns null when absent or not a single-slash same-origin path;
+ * the table then fails closed and never fetches (the fixture fallback was
+ * removed in GOAL-010 S3).
  */
 export function schemaTableDataSource(node: RenderTableNode): string | null {
+  const dataUrl = node.data?.url;
+  if (typeof dataUrl === "string" && isValidDataSource(dataUrl)) {
+    return dataUrl;
+  }
   const raw = node.props?.dataSource;
   return typeof raw === "string" && isValidDataSource(raw) ? raw : null;
+}
+
+/** v2.9 node-level DataRef params (ADR-0039 route bindings), else empty. */
+export function schemaTableDataParams(node: RenderTableNode): Record<string, unknown> | undefined {
+  return node.data?.params;
 }
 
 /** F-002: the direct field name used as each row's unique key (default "id"). */
 export function schemaTableRowKey(node: RenderTableNode): string {
   const raw = node.props?.rowKey;
   return typeof raw === "string" && raw !== "" ? raw : "id";
+}
+
+/** One select option of a schema-driven table filter. */
+export interface SchemaTableFilterOptionSpec {
+  value: string;
+  label?: string;
+  labelKey?: string;
+}
+
+/** A schema-driven table filter (table node `props.filters`; select-only). */
+export interface SchemaTableFilterSpec {
+  field: string;
+  type: "select";
+  label?: string;
+  labelKey?: string;
+  options: SchemaTableFilterOptionSpec[];
+}
+
+function isFilterRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function filterOptionOf(value: unknown): SchemaTableFilterOptionSpec | null {
+  if (!isFilterRecord(value) || typeof value.value !== "string") {
+    return null;
+  }
+  return {
+    value: value.value,
+    ...(typeof value.label === "string" ? { label: value.label } : {}),
+    ...(typeof value.labelKey === "string" ? { labelKey: value.labelKey } : {}),
+  };
+}
+
+/**
+ * Extracts the table node's filter specs (fail-closed on malformed entries).
+ * Only `select` filters are supported; other/unknown types are dropped so a
+ * schema typo never renders a broken control.
+ */
+export function schemaTableFilters(node: RenderTableNode): SchemaTableFilterSpec[] {
+  const raw = node.props?.filters;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: SchemaTableFilterSpec[] = [];
+  for (const entry of raw) {
+    if (!isFilterRecord(entry)) {
+      continue;
+    }
+    const field = stringOf(entry.field);
+    if (field === "") {
+      continue;
+    }
+    if (entry.type !== "select") {
+      continue;
+    }
+    const options = (Array.isArray(entry.options) ? entry.options : [])
+      .map(filterOptionOf)
+      .filter((option): option is SchemaTableFilterOptionSpec => option !== null);
+    out.push({
+      field,
+      type: "select",
+      ...(typeof entry.label === "string" ? { label: entry.label } : {}),
+      ...(typeof entry.labelKey === "string" ? { labelKey: entry.labelKey } : {}),
+      options,
+    });
+  }
+  return out;
+}
+
+/**
+ * Windowed pager page list: 1 … current±1 … total, with gap markers for
+ * long page runs (stable shape for tests and a11y).
+ */
+export function pagerPages(current: number, total: number): Array<number | "gap"> {
+  const pages = Math.max(1, Math.floor(total));
+  const now = Math.min(Math.max(1, Math.floor(current)), pages);
+  if (pages <= 7) {
+    return Array.from({ length: pages }, (_, index) => index + 1);
+  }
+  const out: Array<number | "gap"> = [1];
+  if (now > 3) {
+    out.push("gap");
+  }
+  const start = Math.max(2, now - 1);
+  const end = Math.min(pages - 1, now + 1);
+  for (let page = start; page <= end; page += 1) {
+    out.push(page);
+  }
+  if (now < pages - 2) {
+    out.push("gap");
+  }
+  out.push(pages);
+  return out;
 }
 
 /** F-002: a row key must be a non-empty string or a finite number (JSON scalar). */
@@ -147,14 +295,188 @@ function checkRowKeys(items: ResourceItem[], field: string): RowKeyCheck {
   return { ok: true };
 }
 
+/**
+ * W11 · U-05: actions beyond the primary two collapse into a "⋯ More" menu
+ * (one open row at a time; outside click / Escape closes). Keeps dense tables
+ * scannable and reduces accidental taps on destructive row actions.
+ */
+const MAX_INLINE_ROW_ACTIONS = 2;
+
+function RowActionsMenu({
+  row,
+  actions,
+  crud,
+  t,
+  rowKeyField,
+  disabledWhen,
+}: {
+  row: ResourceItem;
+  actions: Array<Record<string, unknown>>;
+  crud: ReturnType<typeof useSchemaCrud>;
+  t: ReturnType<typeof useTranslate>;
+  rowKeyField: string;
+  disabledWhen: (action: unknown, row: ResourceItem) => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  // Anchor rect of the trigger button at open time (viewport coordinates).
+  const [anchor, setAnchor] = useState<{ top: number; bottom: number; left: number; right: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setAnchor(null);
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) {
+        return;
+      }
+      close();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        close();
+      }
+    };
+    // The menu is fixed to the viewport: any scroll (incl. inside the table's
+    // overflow container, hence capture) or resize invalidates the anchor, so
+    // close instead of rendering a detached menu.
+    const onScroll = () => close();
+    const onResize = () => close();
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+    document.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open, close]);
+
+  // Move focus into the menu once it renders (portal mount).
+  useEffect(() => {
+    if (open) {
+      menuRef.current
+        ?.querySelector<HTMLButtonElement>('[role="menuitem"]:not([disabled])')
+        ?.focus();
+    }
+  }, [open]);
+
+  const rowKey = scalarRowKey(row[rowKeyField]) ?? "row";
+  const toggle = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (open) {
+      close();
+      return;
+    }
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect === undefined || rect === null) {
+      return;
+    }
+    setAnchor({ top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right });
+    setOpen(true);
+  };
+
+  // Viewport-aligned placement: anchored to the trigger's bottom-right corner,
+  // flipping upward when there is not enough room below; clamped to the window.
+  const menuWidth = 144; // min-w-36
+  let placement: { top?: number; bottom?: number; left: number } | null = null;
+  if (open && anchor !== null) {
+    const estimatedHeight = actions.length * 32 + 12;
+    const upward = anchor.bottom + estimatedHeight > window.innerHeight;
+    placement = {
+      left: Math.min(anchor.left, Math.max(8, window.innerWidth - menuWidth - 8)),
+      ...(upward ? { bottom: window.innerHeight - anchor.top + 4 } : { top: anchor.bottom + 4 }),
+    };
+  }
+
+  return (
+    <>
+      <div className="relative" data-row-actions-menu={rowKey}>
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label={t("feedback.moreActions")}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          onClick={toggle}
+        >
+          {"⋯"}
+        </button>
+      </div>
+      {open && placement !== null
+        ? createPortal(
+            <div
+              ref={menuRef}
+              role="menu"
+              aria-label={t("feedback.moreActions")}
+              style={{ position: "fixed", zIndex: 60, minWidth: menuWidth, ...placement }}
+              className="rounded-md border border-border bg-card py-1 shadow-lg"
+            >
+              {actions.map((action) => {
+                const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
+                const permitted = crud?.effectivePermission(key) ?? true;
+                const disabled = !permitted || disabledWhen(action, row);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="menuitem"
+                    disabled={disabled}
+                    title={disabled ? t("feedback.actionNotPermitted") : undefined}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      close();
+                      crud?.invokeAction(action, rowAsRecord(row));
+                    }}
+                    className="block w-full px-3 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                  >
+                    {resolveTextProp(
+                      action as unknown as Record<string, unknown>,
+                      "labelKey",
+                      "label",
+                      t,
+                      key,
+                    )}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
 export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const columns = schemaTableColumns(node);
   const dataSource = schemaTableDataSource(node);
+  const dataParams = schemaTableDataParams(node);
   const rowKeyField = schemaTableRowKey(node);
   const crud = useSchemaCrud();
+  const t = useTranslate();
   const tableId = node.id ?? "default";
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
   const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
+  const filters = schemaTableFilters(node);
+  const title = resolveTextProp(
+    node.props as unknown as Record<string, unknown>,
+    "titleKey",
+    "title",
+    t,
+    "",
+  );
 
   // Register the injected transport with the page's Schema CRUD provider so
   // modal form submits and row actions share the same fetcher (S4).
@@ -164,6 +486,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     }
   }, [crud, fetcher]);
 
+  // W11 · U-06: go-to-page input ref (submit reads it; no controlled state).
+  const goToPageRef = useRef<HTMLInputElement>(null);
   const providerQuery = crud?.tableQuery(tableId);
   const [localQuery, setLocalQuery] = useState<ResourceQuery>({ page: 1, pageSize: 10 });
   const query = providerQuery ?? localQuery;
@@ -178,6 +502,23 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const [list, setList] = useState<ResourceList | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
+
+  // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
+  // provider's route context (App injects route: {params, query}); hostless
+  // renders fall back to the location query.
+  const routeSnapshot = useMemo(() => {
+    if (crud !== null) {
+      return crud.route.query;
+    }
+    const query: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+        query[key] = value;
+      }
+    }
+    return query;
+  }, [crud]);
 
   useEffect(() => {
     // F-001: absent/invalid dataSource fails closed — never fetch.
@@ -188,9 +529,20 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    // Keep the current rows rendered while refetching (page/filter/sort
+    // changes): swapping rows in place keeps the list height and the browser
+    // scroll anchor stable, so paginating never yanks the viewport back to
+    // the top. The loading skeleton only appears on the first load (no rows
+    // yet). (GOAL-011 W10)
+    if (list === null) {
+      setLoading(true);
+    }
     setError(null);
-    fetchResourceList(fetcher ?? fetch, dataSource, query)
+    const paramsQuery = resolveDataParamsQuery(dataParams, {
+      query: routeSnapshot,
+      params: crud !== null ? crud.route.params : {},
+    });
+    fetchResourceList(fetcher ?? fetch, dataSource, query, paramsQuery)
       .then((next) => {
         if (!cancelled) {
           setList(next);
@@ -199,6 +551,12 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
+          if (isWalletNotFoundError(err)) {
+            setList(EMPTY_RESOURCE_LIST);
+            setError(null);
+            setLoading(false);
+            return;
+          }
           setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }
@@ -206,7 +564,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, query, crud?.reloadToken]);
+  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken, retryNonce]);
 
   // F-002: validate row keys on every fetched page; invalid → fail closed.
   const keyCheck = useMemo(
@@ -226,12 +584,12 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       crud.clearSelection(tableId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.page, query.pageSize, query.sort, query.order, query.q]);
+  }, [query.page, query.pageSize, query.sort, query.order, query.q, query.filters]);
 
   if (columns.length === 0) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        table node requires a columns array
+        {t("error.tableColumnsRequired")}
       </p>
     );
   }
@@ -239,7 +597,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   if (dataSource === null) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        table node requires a valid dataSource (single-slash same-origin path)
+        {t("error.tableDataSourceInvalid")}
       </p>
     );
   }
@@ -257,7 +615,11 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       ? { field: query.sort, order: query.order }
       : undefined;
 
-  const onSortChange = (next: SortState) => {
+  const onSortChange = (next: SortState | null) => {
+    if (next === null) {
+      setQuery({ ...query, sort: undefined, order: undefined, page: 1 });
+      return;
+    }
     setQuery({ ...query, sort: next.field, order: next.order, page: 1 });
   };
 
@@ -340,7 +702,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             label: (
               <input
                 type="checkbox"
-                aria-label="Select all on this page"
+                aria-label={t("feedback.selectAllOnPage")}
                 checked={allPageSelected}
                 disabled={list === null || keyCheck === null || !keyCheck.ok}
                 onChange={toggleAllPage}
@@ -351,7 +713,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               return (
                 <input
                   type="checkbox"
-                  aria-label="Select row"
+                  aria-label={t("feedback.selectRow")}
                   checked={token !== null && selectedKeys.has(token)}
                   disabled={token === null}
                   onClick={(event) => event.stopPropagation()}
@@ -364,41 +726,85 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       : []),
     ...columns.map((column) => ({
       key: column.field,
-      label: column.label ?? column.field,
+      label: resolveTextProp(
+        column as unknown as Record<string, unknown>,
+        "labelKey",
+        "label",
+        t,
+        column.field,
+      ),
       sortable: column.sortable === true,
+      truncate: column.truncate === true,
+      ...(column.width !== undefined ? { width: column.width } : {}),
+      ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
+      ...(column.format === "currency"
+        ? { render: (row: ResourceItem) => formatCents(row[column.field]) }
+        : {}),
+      ...(column.badgeStyleField !== undefined
+        ? {
+            render: (row: ResourceItem) => (
+              <span
+                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${badgeClassesFor(row[column.badgeStyleField as string])}`}
+              >
+                {String(row[column.field] ?? "")}
+              </span>
+            ),
+          }
+        : {}),
     })),
     ...(rowActions.length > 0
       ? [
           {
             key: "actions",
             label: "",
-            render: (row: ResourceItem) => (
-              <div
-                className="flex justify-end gap-2"
-                data-row-click-ignore="true"
-                onClick={(event) => event.stopPropagation()}
-              >
-                {rowActions.map((action) => {
-                  const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
-                  const permitted = crud?.effectivePermission(key) ?? true;
-                  const disabled = !permitted || rowActionDisabled(action, row);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={disabled}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        crud?.invokeAction(action, rowAsRecord(row));
-                      }}
-                      className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-                    >
-                      {stringOf(action.label) ?? key}
-                    </button>
-                  );
-                })}
-              </div>
-            ),
+            render: (row: ResourceItem) => {
+              const primary = rowActions.slice(0, MAX_INLINE_ROW_ACTIONS);
+              const overflow = rowActions.slice(MAX_INLINE_ROW_ACTIONS);
+              return (
+                <div
+                  className="flex items-center justify-end gap-1"
+                  data-row-click-ignore="true"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {primary.map((action) => {
+                    const key = stringOf(action.key) !== "" ? stringOf(action.key) : stringOf(action.actionRef);
+                    const permitted = crud?.effectivePermission(key) ?? true;
+                    const disabled = !permitted || rowActionDisabled(action, row);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={disabled}
+                        title={disabled ? t("feedback.actionNotPermitted") : undefined}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          crud?.invokeAction(action, rowAsRecord(row));
+                        }}
+                        className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                      >
+                        {resolveTextProp(
+                          action as unknown as Record<string, unknown>,
+                          "labelKey",
+                          "label",
+                          t,
+                          key,
+                        )}
+                      </button>
+                    );
+                  })}
+                  {overflow.length > 0 ? (
+                    <RowActionsMenu
+                      row={row}
+                      actions={overflow}
+                      crud={crud}
+                      t={t}
+                      rowKeyField={rowKeyField}
+                      disabledWhen={rowActionDisabled}
+                    />
+                  ) : null}
+                </div>
+              );
+            },
           },
         ]
       : []),
@@ -406,6 +812,54 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
 
   return (
     <div className="w-full min-w-0 space-y-2">
+      {title !== "" ? (
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      ) : null}
+      {filters.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-4" data-table-filters>
+          {filters.map((filter) => {
+            const label = resolveTextProp(
+              filter as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              filter.field,
+            );
+            const value = query.filters?.[filter.field] ?? "";
+            return (
+              <label
+                key={filter.field}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
+                <span>{label}</span>
+                <select
+                  value={value}
+                  onChange={(event) =>
+                    setQuery({
+                      ...query,
+                      filters: { ...(query.filters ?? {}), [filter.field]: event.target.value },
+                      page: 1,
+                    })
+                  }
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {filter.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {resolveTextProp(
+                        option as unknown as Record<string, unknown>,
+                        "labelKey",
+                        "label",
+                        t,
+                        option.value,
+                      )}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            );
+          })}
+        </div>
+      ) : null}
       {toolbar.length > 0 ? (
         <div className="flex flex-wrap items-center justify-end gap-2">
           {toolbar.map((trigger) => {
@@ -426,6 +880,13 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 key={key}
                 type="button"
                 disabled={disabled}
+                title={
+                  disabled
+                    ? selectionDisabled
+                      ? t("feedback.selectRowFirst")
+                      : t("feedback.actionNotPermitted")
+                    : undefined
+                }
                 onClick={() =>
                   isBatch && selectionEnabled
                     ? crud?.invokeBatchAction(trigger, tableId)
@@ -433,7 +894,13 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 }
                 className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {stringOf(trigger.label) ?? key}
+                {resolveTextProp(
+                  trigger as unknown as Record<string, unknown>,
+                  "labelKey",
+                  "label",
+                  t,
+                  key,
+                )}
               </button>
             );
           })}
@@ -448,15 +915,116 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         onRowClick={crud !== null ? onRowClick : undefined}
         selectedKey={selectedKey}
         loading={loading}
-        error={error}
-        emptyMessage="No items match."
-        caption="Schema-driven items"
+        error={error === null ? null : t("feedback.resourceFetchFailed")}
+        onRetry={() => setRetryNonce((n) => n + 1)}
+        emptyMessage={query.q ? t("feedback.noItemsMatch") : t("feedback.listEmpty")}
+        caption={t("feedback.schemaDrivenItems")}
       />
       {list !== null ? (
-        <p className="text-xs text-muted-foreground">
-          {list.total} item{list.total === 1 ? "" : "s"} · page {list.page} of{" "}
-          {Math.max(1, Math.ceil(list.total / list.pageSize))}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="pl-0.5 text-xs text-muted-foreground">
+              {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
+              {t("feedback.pageOf", {
+                page: String(list.page),
+                total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
+              })}
+            </p>
+            {/* W11 · U-06: per-page size switcher (resets to page 1). */}
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{t("feedback.pageSize")}</span>
+              <select
+                aria-label={t("feedback.pageSize")}
+                value={String(query.pageSize ?? 10)}
+                onChange={(event) =>
+                  setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
+                }
+                className="h-7 rounded-md border border-input bg-background px-1.5 text-xs scheme-light dark:scheme-dark"
+              >
+                {[10, 20, 50, 100].map((size) => (
+                  <option key={size} value={String(size)}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
+            <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={list.page <= 1}
+                aria-label={t("feedback.previousPage")}
+                onClick={() => setQuery({ ...query, page: list.page - 1 })}
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+              >
+                {"‹"}
+              </button>
+              {pagerPages(list.page, Math.max(1, Math.ceil(list.total / list.pageSize))).map(
+                (page, index) =>
+                  page === "gap" ? (
+                    <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
+                      {"…"}
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      disabled={page === list.page}
+                      aria-current={page === list.page ? "page" : undefined}
+                      aria-label={t("feedback.pageNumber", { page: String(page) })}
+                      onClick={() => setQuery({ ...query, page })}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:border-primary/40 disabled:bg-primary/10 disabled:text-foreground"
+                    >
+                      {page}
+                    </button>
+                  ),
+              )}
+              <button
+                type="button"
+                disabled={list.page >= Math.max(1, Math.ceil(list.total / list.pageSize))}
+                aria-label={t("feedback.nextPage")}
+                onClick={() => setQuery({ ...query, page: list.page + 1 })}
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+              >
+                {"›"}
+              </button>
+            </nav>
+          ) : null}
+          {/* W11 · U-06: quick jump to a specific page. */}
+          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
+            <form
+              aria-label={t("feedback.goToPage")}
+              className="flex items-center gap-1.5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const target = Number(goToPageRef.current?.value ?? "");
+                const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+                if (Number.isFinite(target) && target >= 1 && target <= pages) {
+                  setQuery({ ...query, page: Math.floor(target) });
+                }
+              }}
+            >
+              <label className="text-xs text-muted-foreground">{t("feedback.goToPage")}</label>
+              <input
+                ref={goToPageRef}
+                type="number"
+                min={1}
+                max={Math.max(1, Math.ceil(list.total / list.pageSize))}
+                defaultValue=""
+                placeholder={String(list.page)}
+                aria-label={t("feedback.goToPage")}
+                className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-xs"
+              />
+              <button
+                type="submit"
+                className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {t("feedback.search")}
+              </button>
+            </form>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

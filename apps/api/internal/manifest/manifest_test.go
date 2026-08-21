@@ -122,7 +122,7 @@ func TestForModulesOnlyPublishesSelectedAdminPages(t *testing.T) {
 			t.Fatalf("disabled page %q leaked into %s", pageID, data)
 		}
 	}
-	if len(decoded.Navigation.Sidebar) != 3 || len(decoded.Navigation.User) != 0 {
+	if len(decoded.Navigation.Sidebar) != 2 || len(decoded.Navigation.User) != 0 {
 		t.Fatalf("navigation projection = %+v", decoded.Navigation)
 	}
 }
@@ -141,5 +141,119 @@ func TestAggregateRejectsSecretKey(t *testing.T) {
 	_, err := Aggregate([]Fragment{{ModuleID: "leaky", Raw: fragment}})
 	if err == nil {
 		t.Fatal("fragment with secret key must fail closed")
+	}
+}
+
+// TestNavigationSingleProjectionWithLabelKey verifies IMP-002 (ADR-0034 D6):
+// the served manifest is the single navigation projection source, and every
+// navigation entry carries a labelKey (labelKey-hit priority, label literal
+// fallback — GOV-006). The module provider's NavigationContribution.Label is
+// RBAC-side metadata only and never leaks into the published manifest document.
+func TestNavigationSingleProjectionWithLabelKey(t *testing.T) {
+	data, err := ForModulesWithFragments([]string{"core.manifest-route", "admin.users"},
+		[]Fragment{{ModuleID: "admin.users", Raw: usersmanifest.FragmentJSON}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Navigation struct {
+			Sidebar []struct {
+				PageRef  string `json:"pageRef"`
+				Label    string `json:"label"`
+				LabelKey string `json:"labelKey"`
+			} `json:"sidebar"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if len(decoded.Navigation.Sidebar) != 1 {
+		t.Fatalf("expected 1 sidebar nav entry, got %d", len(decoded.Navigation.Sidebar))
+	}
+	entry := decoded.Navigation.Sidebar[0]
+	if entry.PageRef != "users" {
+		t.Fatalf("pageRef = %q, want users", entry.PageRef)
+	}
+	// Single projection: the manifest is the authoritative source and carries the
+	// i18n key (labelKey) with a literal fallback; no provider-side Label leaks in.
+	if entry.LabelKey != "manifest.nav.users" {
+		t.Fatalf("labelKey = %q, want manifest.nav.users", entry.LabelKey)
+	}
+	if entry.Label != "Users" {
+		t.Fatalf("label = %q, want Users", entry.Label)
+	}
+}
+
+
+// GOAL-013 D-002 §4: SortNavigation reorders manifest slots by NodeID list;
+// unlisted items keep their relative order at the end.
+func TestSortNavigationOrdersSlots(t *testing.T) {
+	// Two sidebar items, one with a visibleWhen feature expression (the
+	// canonical NodeID source), one with only a pageRef fallback.
+	frag := `{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"test"},"pages":[],"navigation":{"top":[],"sidebar":[
+		{"pageRef":"users","label":"Users","visibleWhen":{"when":"$context.features.menu_users == true"},"labelKey":"manifest.nav.users"},
+		{"pageRef":"roles","label":"Roles","visibleWhen":{"when":"$context.features.menu_roles == true"},"labelKey":"manifest.nav.roles"},
+		{"pageRef":"newbie","label":"Newbie","labelKey":"manifest.nav.newbie"}
+	],"user":[]}}`
+	aggregated, err := Aggregate([]Fragment{{ModuleID: "admin.test", Raw: []byte(frag)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sorted, err := SortNavigation(aggregated, []string{"menu_roles", "menu_users"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Navigation struct {
+			Sidebar []struct {
+				PageRef string `json:"pageRef"`
+			} `json:"sidebar"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(sorted, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"roles", "users", "newbie"}
+	if len(decoded.Navigation.Sidebar) != 3 {
+		t.Fatalf("sidebar len = %d, want 3", len(decoded.Navigation.Sidebar))
+	}
+	for i, item := range decoded.Navigation.Sidebar {
+		if item.PageRef != want[i] {
+			t.Fatalf("sidebar[%d] = %q, want %q", i, item.PageRef, want[i])
+		}
+	}
+}
+
+
+
+// GOAL-013 S5 follow-up (dev.cmd regression): sorting must never turn an empty
+// navigation slot into JSON null — the web host validator rejects null with
+// INVALID_MANIFEST "Expected an array". Empty slots stay [].
+func TestSortNavigationPreservesEmptySlotsAsArrays(t *testing.T) {
+	frag := `{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"test"},"pages":[],"navigation":{"top":[],"sidebar":[],"user":[]}}`
+	aggregated, err := Aggregate([]Fragment{{ModuleID: "admin.test", Raw: []byte(frag)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sorted, err := SortNavigation(aggregated, []string{"menu_dashboard"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A nil slot would marshal to "null"; the validator requires [].
+	if strings.Contains(string(sorted), "null") {
+		t.Fatalf("sorted manifest contains null (empty slot must stay []): %s", sorted)
+	}
+	var decoded struct {
+		Navigation struct {
+			Top     []json.RawMessage `json:"top"`
+			Sidebar []json.RawMessage `json:"sidebar"`
+			User    []json.RawMessage `json:"user"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(sorted, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Navigation.Top == nil || decoded.Navigation.Sidebar == nil || decoded.Navigation.User == nil {
+		t.Fatalf("empty slots must unmarshal to non-nil slices: %s", sorted)
 	}
 }

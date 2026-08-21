@@ -75,7 +75,7 @@ VP-006 作为「同愿景下纠正组合焦点的新纲领波次」结构选型*
   5. Exit 后段禁止「又钉更小子集替代整份契约目标」——与 exit 1 前段 partial 并列表述之间，缺少可操作的判定规则（何时 partial 仍算整份契约、何时必须升格 exclude+residual 或用户书面接受范围收缩）。
 - evidence:
   - `docs/vision/plans/VP-006-full-protocol-contract-v2-7-0.md` §方向级退出判据 1、§建议实现阶段 S1、§意图用户裁决
-  - `docs/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md` v0.1.3（include-partial / exclude 先例）
+  - `docs/workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md` v0.1.3（include-partial / exclude 先例）
   - `docs/vision/charter.md` 成功边界 1；H-001 分列 ③ open → VP-006
   - `docs/vision/roadmap.md` 组合门闩 2（MVP 子集不是终态成功条件）
 - closure: |

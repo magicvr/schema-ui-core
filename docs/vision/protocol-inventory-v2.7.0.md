@@ -8,9 +8,9 @@ source_commit: ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b
 artifact_version: 2.7.0
 protocol_version: "2.7"
 created: 2026-07-31
-updated: 2026-08-08
+updated: 2026-08-10
 parent: null
-version: 0.1.2
+version: 0.1.3
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 source_vision_ref: schema-ui-core-admin-foundation@0.1.0
 serves: |
@@ -192,9 +192,9 @@ Manifest 点名的样例 YAML：`order-list-batch`、`order-detail-lifecycle`、
 | 外部固定源 | 已 pin（Charter / VP 已记录） |
 | 完整实施清单 | **本文件**（F-V001 闭合证据；**全量**输入，非 MVP 上界） |
 | MVP 协议覆盖子集冻结 | **已完成（历史）**；workspace-001 Root D-009 冻结 `I-PROTO-001 v0.1.3`，**不等于**全量协议支持，也**不是** VP-006 退出上界 |
-| 整份 v2.7.0 契约收口 | **进行中（交付）**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（`active`；lead `workspace-005-full-protocol-contract-v2-7-0`）；现行覆盖权威 = **`I-PROTO-FULL-001`**（已冻结：`workspace-005` Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md`，12/12 域、24/24 registry、16/16 行为套件 include） |
-| “支持全部协议功能”主张 | **禁止**，直至 `I-PROTO-FULL-001`（或等价）冻结且实现证据闭合 |
-| H-001 | ① 清单提取 = 本文件；② MVP 子集 = `I-PROTO-001 v0.1.3`；③ 整份契约可验证兼容 = open → VP-006 |
+| 整份 v2.7.0 契约收口 | **已完成（交付）**：[VP-006](plans/VP-006-full-protocol-contract-v2-7-0.md)（`closed`；lead `workspace-005-full-protocol-contract-v2-7-0`）；现行覆盖权威 = **`I-PROTO-FULL-001` v1.0.1**（`workspace-005` Root `attachments/`，12/12 域、24/24 registry、16/16 行为套件 include；320 total = 318 executed + 2 local adapter excluded） |
+| “支持全部协议功能”主张 | **仅可在覆盖表与实现证据明确的范围内主张**；不得将 12/12 域 include 或 318 executed + 2 local adapter excluded 扩写为无边界的全部产品功能支持 |
+| H-001 | ① 清单提取 = 本文件；② MVP 子集 = `I-PROTO-001 v0.1.3`；③ 整份契约可验证兼容 = **verified / VP-006 closed**，现行权威 `I-PROTO-FULL-001` v1.0.1（318 executed + 2 local adapter excluded） |
 
 ## 5. 信息项指针（历史 + 整份契约）
 
@@ -213,3 +213,9 @@ Manifest 点名的样例 YAML：`order-list-batch`、`order-detail-lifecycle`、
 - 上游 pin 变更 → 重新提取本清单并升 `version`；同步 Charter/VP 协议引用。  
 - 仅修正映射笔误 → editorial，不改 pin。  
 - 本文件**不得**写入 goal progress% 或关闭 Goal finding。
+
+## 7. 变更短史
+
+| 日期 | 版本 | 变更 |
+|------|------|------|
+| 2026-08-10 | `0.1.3` | editorial 同步 VP-006 / `I-PROTO-FULL-001` 现行勘误：12/12 域、24/24 registry、16/16 suite include 保持；320 total = 318 executed + 2 local adapter excluded。上游 pin 未变更。 |

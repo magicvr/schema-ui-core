@@ -5,10 +5,21 @@ import {
   deleteResource,
   fetchResourceList,
   isValidDataSource,
+  isWalletNotFoundError,
   parseResourceList,
+  ResourceApiError,
+  resolveDataParamsQuery,
   updateResource,
   type ResourceList,
 } from "@/renderer/resource";
+
+describe("isWalletNotFoundError (W19)", () => {
+  it("matches only WALLET_NOT_FOUND resource errors", () => {
+    expect(isWalletNotFoundError(new ResourceApiError(404, "WALLET_NOT_FOUND", "missing"))).toBe(true);
+    expect(isWalletNotFoundError(new ResourceApiError(404, "NOT_FOUND", "missing"))).toBe(false);
+    expect(isWalletNotFoundError(new Error("WALLET_NOT_FOUND"))).toBe(false);
+  });
+});
 
 describe("buildResourceQuery (query-serialization)", () => {
   it("omits empty query", () => {
@@ -118,6 +129,57 @@ describe("parseResourceList (response-mapping)", () => {
   });
 });
 
+describe("resolveDataParamsQuery (v2.9 ADR-0039 route bindings)", () => {
+  it("passes literal scalars through and drops nulls", () => {
+    expect(resolveDataParamsQuery({ status: "paid", flag: true, n: 3, gone: null }, { query: {}, params: {} })).toBe("status=paid&flag=true&n=3");
+  });
+
+  it("resolves whole $context.route.query.* bindings", () => {
+    expect(
+      resolveDataParamsQuery(
+        { dictKey: "$context.route.query.dictKey", status: "paid" },
+        { query: { dictKey: "ORDER_STATUS" }, params: {} },
+      ),
+    ).toBe("dictKey=ORDER_STATUS&status=paid");
+  });
+
+  it("resolves $context.route.params.* bindings", () => {
+    expect(
+      resolveDataParamsQuery(
+        { type: "$context.route.params.type" },
+        { query: {}, params: { type: "admin" } },
+      ),
+    ).toBe("type=admin");
+  });
+
+  it("tombstones a missing route key (ADR-0010)", () => {
+    expect(
+      resolveDataParamsQuery(
+        { dictKey: "$context.route.query.dictKey" },
+        { query: {}, params: {} },
+      ),
+    ).toBe("");
+  });
+
+  it("tombstones when no route snapshot is provided", () => {
+    expect(
+      resolveDataParamsQuery(
+        { dictKey: "$context.route.query.dictKey" },
+        { query: undefined, params: undefined },
+      ),
+    ).toBe("");
+  });
+
+  it("drops unknown $context.route.* shapes fail-closed", () => {
+    expect(
+      resolveDataParamsQuery(
+        { k: "$context.route.session.id" },
+        { query: { session: "x" }, params: {} },
+      ),
+    ).toBe("");
+  });
+});
+
 describe("fetchResourceList (request-construction)", () => {
   it("builds the URL and maps the response", async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL) => {
@@ -224,5 +286,76 @@ describe("deleteResource (DELETE)", () => {
     await expect(
       deleteResource(fetcher as unknown as typeof fetch, "/api/users", "usr-999"),
     ).rejects.toThrow("HTTP 404");
+  });
+});
+
+describe("fetchResourceList with the system-monitoring status envelope (S-03 · GOAL-009 A-003 F-001)", () => {
+  // The status endpoint serves a single-row list envelope so statCard
+  // dataSource loading (fetchResourceList) can bind every valueField.
+  it("parses the status row and reads every statCard valueField", async () => {
+    const statusRow = {
+      status: "ok",
+      ready: true,
+      version: "dev",
+      commit: "abc",
+      uptimeSeconds: 42,
+      moduleCount: 12,
+      modules: ["core.auth-session", "admin.users"],
+      dbSizeBytes: 1024,
+    };
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({ items: [statusRow], total: 1, page: 1, pageSize: 1 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    const list = await fetchResourceList(fetcher as typeof fetch, "/api/system-monitoring/status", {});
+    expect(list.total).toBe(1);
+    expect(list.items).toHaveLength(1);
+    const row = list.items[0] as Record<string, unknown>;
+    for (const field of ["status", "ready", "version", "commit", "uptimeSeconds", "moduleCount", "modules", "dbSizeBytes"]) {
+      expect(row[field]).toEqual(statusRow[field as keyof typeof statusRow]);
+    }
+  });
+
+  it("rejects a flat (non-envelope) status body fail-closed", async () => {
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({ status: "ok", ready: true, uptimeSeconds: 1 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    await expect(
+      fetchResourceList(fetcher as typeof fetch, "/api/system-monitoring/status", {}),
+    ).rejects.toThrow();
+  });
+});
+
+describe("fetchResourceList extraQuery (v2.9 ADR-0039)", () => {
+  it("merges extraQuery params with the standard query", async () => {
+    const seen: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      seen.push(String(input));
+      return new Response(
+        JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const list = await fetchResourceList(fetcher, "/api/entries", { q: "paid" }, "dictKey=order_status");
+    expect(list.total).toBe(0);
+    expect(seen[0]).toContain("q=paid");
+    expect(seen[0]).toContain("dictKey=order_status");
+  });
+
+  it("keeps baseURL bare — F-001 rejects a ?-carrying dataSource even with extraQuery", async () => {
+    const fetcher = (async () =>
+      new Response(
+        JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10 }),
+        { status: 200 },
+      )
+    ) as typeof fetch;
+    await expect(
+      fetchResourceList(fetcher, "/api/entries?x=1", {}, "dictKey=order_status"),
+    ).rejects.toThrow(/invalid dataSource/);
   });
 });

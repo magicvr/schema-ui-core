@@ -9,6 +9,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 const (
@@ -22,22 +25,81 @@ const (
 	EventRoleUpdate     = "roles.update"
 	EventRoleDelete     = "roles.delete"
 	EventSettingsUpdate = "settings.update"
+	// F-03 account lifecycle events (GOAL-005 D-002 §3/§4).
+	EventUserEnable            = "users.enable"
+	EventUserDisable           = "users.disable"
+	EventUserUnlock            = "users.unlock"
+	EventAccountPasswordChange = "account.password-change"
+	EventAccountSessionRevoke  = "account.session-revoke"
+	// W13 T-05 avatar upload event (GOAL-014).
+	EventAccountAvatarChange = "account.avatar-change"
+	// F-02 data-transfer events (GOAL-004 D-002 §3/§4).
+	EventDataExport = "data.export"
+	EventDataImport = "data.import"
+	// S-02 file-library events (GOAL-007 D-002 §4).
+	EventFileUpload   = "files.upload"
+	EventFileDownload = "files.download"
+	EventFileDelete   = "files.delete"
+	// S-01 dictionary events (GOAL-008 D-002 §5).
+	EventDictionaryCreate = "dictionary.create"
+	EventDictionaryUpdate = "dictionary.update"
+	EventDictionaryDelete = "dictionary.delete"
+	// S-04 scheduled-task events (GOAL-010 D-002 §4).
+	EventTaskCreate = "scheduled-tasks.create"
+	EventTaskUpdate = "scheduled-tasks.update"
+	EventTaskDelete = "scheduled-tasks.delete"
+	// S-11 captcha events (GOAL-011 D-002 §3).
+	EventCaptchaSettingsUpdate = "captcha.settings-update"
+	EventRecycleRestore        = "recycle.restore"
+	EventRecyclePurge          = "recycle.purge"
+	// S-09 data-permission events (GOAL-016 D-002 §3).
+	EventDataPermissionPolicyUpdate = "data-permission.policy-update"
+	EventDataPermissionScopeUpdate  = "data-permission.scope-update"
+	// S-10 MFA events (GOAL-017 D-002 §2/§4).
+	EventMFAEnroll         = "mfa.enroll"
+	EventMFAConfirm        = "mfa.confirm"
+	EventMFADisable        = "mfa.disable"
+	EventMFARecoveryRotate = "mfa.recovery-rotate"
+	EventMFAAdminReset     = "mfa.admin-reset"
+	EventMFALogin          = "mfa.login"
+	// S-14 wallet events (GOAL-019 D-002 §2).
+	EventWalletAccountCreate      = "wallet.account-create"
+	EventWalletAccountUpdate      = "wallet.account-update"
+	EventWalletAdjust             = "wallet.adjust"
+	EventWalletFreeze             = "wallet.freeze"
+	EventWalletUnfreeze           = "wallet.unfreeze"
+	EventWalletReconcile          = "wallet.reconcile"
+	EventWalletReconcileQueued    = "wallet.reconcile.queued"
+	EventWalletReconcileFailed    = "wallet.reconcile.failed"
+	EventWalletReconcileCancelled = "wallet.reconcile.cancelled"
+	// GOAL-021 (D-001 §1): consume from the frozen bucket.
+	EventWalletDeductFrozen      = "wallet.deduct-frozen"
+	EventServiceCredentialCreate = "service-credentials.create"
+	EventServiceCredentialUse    = "service-credentials.use"
+	EventServiceCredentialRevoke = "service-credentials.revoke"
 )
 
 // Operation is one append-only operation log row.
 type Operation struct {
-	ID        string
-	Event     string
-	ActorID   string
-	ActorName string
-	RecordID  *string
-	Detail    *string
-	CreatedAt time.Time
+	ID            string
+	Event         string
+	ActorID       string
+	ActorName     string
+	RecordID      *string
+	Detail        *string
+	CorrelationID string
+	SessionID     string
+	CreatedAt     time.Time
 }
 
 // OperationFilter carries handler-validated activity list parameters.
 type OperationFilter struct {
-	Q        string
+	Q         string
+	Event     string
+	ActorName string
+	// From/To are inclusive UTC boundaries; nil means unbounded.
+	From     *time.Time
+	To       *time.Time
 	Sort     string
 	Order    string
 	Page     int
@@ -49,6 +111,12 @@ type Recorder interface {
 	RecordOperation(Operation) error
 }
 
+// TransactionalRecorder lets a business mutation append its required audit
+// row using the caller-owned transaction.
+type TransactionalRecorder interface {
+	RecordOperationTx(kernel.Tx, Operation) error
+}
+
 // Reader is the query boundary consumed by the optional Activity module.
 type Reader interface {
 	ListOperationsFiltered(OperationFilter) ([]Operation, int, error)
@@ -57,7 +125,7 @@ type Reader interface {
 
 // TxRunner is the platform transaction boundary consumed by operationlog.
 type TxRunner interface {
-	WithTx(context.Context, func(*sql.Tx) error) error
+	Run(context.Context, func(kernel.Tx) error) error
 }
 
 var ErrNotFound = errors.New("operationlog: not found")
@@ -77,30 +145,52 @@ func NewRepository(runner TxRunner) *Repository {
 
 // RecordOperation appends one row. Callers deliberately decide best-effort policy.
 func (r *Repository) RecordOperation(operation Operation) error {
+	return r.withTx("record operation "+operation.Event, func(tx kernel.Tx) error {
+		return r.RecordOperationTx(tx, operation)
+	})
+}
+
+// RecordOperationTx appends one row using a caller-owned transaction. It is
+// used for mutation audits that must fail closed with the domain write.
+func (r *Repository) RecordOperationTx(tx kernel.Tx, operation Operation) error {
 	r.failureMu.RLock()
 	forced := r.failure
 	r.failureMu.RUnlock()
 	if forced != nil {
 		return fmt.Errorf("record operation %s: %w", operation.Event, forced)
 	}
-	return r.withTx("record operation "+operation.Event, func(tx *sql.Tx) error {
-		var recordID, detail any
-		if operation.RecordID != nil {
-			recordID = *operation.RecordID
-		}
-		if operation.Detail != nil {
-			detail = *operation.Detail
-		}
-		if _, err := tx.Exec(
-			`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			operation.ID, operation.Event, operation.ActorID, operation.ActorName,
-			recordID, detail, operation.CreatedAt.UnixMilli(),
+	var recordID, detail any
+	if operation.RecordID != nil {
+		recordID = *operation.RecordID
+	}
+	if operation.Detail != nil {
+		detail = *operation.Detail
+	}
+	if _, err := tx.Exec(context.Background(),
+		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		operation.ID, operation.Event, operation.ActorID, operation.ActorName,
+		recordID, detail, operation.CreatedAt.UnixMilli(),
+	); err != nil {
+		return err
+	}
+	if correlationID := strings.TrimSpace(operation.CorrelationID); correlationID != "" {
+		if _, err := tx.Exec(context.Background(),
+			`INSERT INTO operation_log_correlation (operation_id, correlation_id) VALUES (?, ?)`,
+			operation.ID, correlationID,
 		); err != nil {
 			return err
 		}
-		return nil
-	})
+	}
+	if sessionID := strings.TrimSpace(operation.SessionID); sessionID != "" {
+		if _, err := tx.Exec(context.Background(),
+			`INSERT INTO operation_log_session (operation_id, session_id) VALUES (?, ?)`,
+			operation.ID, sessionID,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetOperationLogError configures the test-only best-effort failure seam.
@@ -125,17 +215,20 @@ func (r *Repository) ListOperations(limit int) ([]Operation, error) {
 func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation, int, error) {
 	var items []Operation
 	var total int
-	err := r.withTx("list operations", func(tx *sql.Tx) error {
-		where, args := operationsWhere(filter.Q)
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM operation_log`+where, args...).Scan(&total); err != nil {
+	err := r.withTx("list operations", func(tx kernel.Tx) error {
+		where, args := operationsWhere(filter)
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM operation_log`+where, args...).Scan(&total); err != nil {
 			return fmt.Errorf("count: %w", err)
 		}
-		rows, err := tx.Query(
-			`SELECT id, event, actor_id, actor_name, record_id, detail, created_at
-			 FROM operation_log`+where+
+		rows, err := tx.Query(context.Background(),
+			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
+			        c.correlation_id, s.session_id, o.created_at
+			 FROM operation_log o
+			 LEFT JOIN operation_log_correlation c ON c.operation_id = o.id
+			 LEFT JOIN operation_log_session s ON s.operation_id = o.id`+where+
 				` ORDER BY `+operationsSortSQL(filter.Sort, filter.Order)+`, id DESC`+
 				` LIMIT ? OFFSET ?`,
-			append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...,
+			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
 		if err != nil {
 			return err
@@ -160,11 +253,14 @@ func (r *Repository) ListOperationsFiltered(filter OperationFilter) ([]Operation
 // GetOperation returns one row by id.
 func (r *Repository) GetOperation(id string) (*Operation, error) {
 	var operation Operation
-	err := r.withTx("get operation", func(tx *sql.Tx) error {
+	err := r.withTx("get operation", func(tx kernel.Tx) error {
 		var err error
-		operation, err = scanOperation(tx.QueryRow(
-			`SELECT id, event, actor_id, actor_name, record_id, detail, created_at
-			 FROM operation_log WHERE id = ?`, id,
+		operation, err = scanOperation(tx.QueryRow(context.Background(),
+			`SELECT o.id, o.event, o.actor_id, o.actor_name, o.record_id, o.detail,
+			        c.correlation_id, s.session_id, o.created_at
+			 FROM operation_log o
+			 LEFT JOIN operation_log_correlation c ON c.operation_id = o.id
+			 LEFT JOIN operation_log_session s ON s.operation_id = o.id WHERE o.id = ?`, id,
 		))
 		return err
 	})
@@ -174,11 +270,11 @@ func (r *Repository) GetOperation(id string) (*Operation, error) {
 	return &operation, nil
 }
 
-func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
+func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 	if r == nil || r.runner == nil {
 		return fmt.Errorf("%s: operationlog repository is not configured", operation)
 	}
-	if err := r.runner.WithTx(context.Background(), fn); err != nil {
+	if err := r.runner.Run(context.Background(), fn); err != nil {
 		return fmt.Errorf("%s: %w", operation, err)
 	}
 	return nil
@@ -186,13 +282,13 @@ func (r *Repository) withTx(operation string, fn func(*sql.Tx) error) error {
 
 func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	var operation Operation
-	var recordID, detail sql.NullString
+	var recordID, detail, correlationID, sessionID sql.NullString
 	var createdAt int64
 	err := row.Scan(
 		&operation.ID, &operation.Event, &operation.ActorID, &operation.ActorName,
-		&recordID, &detail, &createdAt,
+		&recordID, &detail, &correlationID, &sessionID, &createdAt,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, kernel.ErrNoRows) {
 		return Operation{}, ErrNotFound
 	}
 	if err != nil {
@@ -204,17 +300,43 @@ func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	if detail.Valid {
 		operation.Detail = &detail.String
 	}
+	if correlationID.Valid {
+		operation.CorrelationID = correlationID.String
+	}
+	if sessionID.Valid {
+		operation.SessionID = sessionID.String
+	}
 	operation.CreatedAt = time.UnixMilli(createdAt).UTC()
 	return operation, nil
 }
 
-func operationsWhere(query string) (string, []any) {
-	query = strings.ToLower(strings.TrimSpace(query))
-	if query == "" {
+func operationsWhere(filter OperationFilter) (string, []any) {
+	var conditions []string
+	var args []any
+	if q := strings.ToLower(strings.TrimSpace(filter.Q)); q != "" {
+		conditions = append(conditions, `(lower(event) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(actor_name) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(detail,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(record_id,'')) LIKE '%' || CAST(? AS TEXT) || '%')`)
+		args = append(args, q, q, q, q)
+	}
+	if event := strings.TrimSpace(filter.Event); event != "" {
+		conditions = append(conditions, `event = ?`)
+		args = append(args, event)
+	}
+	if actor := strings.TrimSpace(filter.ActorName); actor != "" {
+		conditions = append(conditions, `lower(actor_name) = lower(?)`)
+		args = append(args, actor)
+	}
+	if filter.From != nil {
+		conditions = append(conditions, `created_at >= ?`)
+		args = append(args, filter.From.UTC().UnixMilli())
+	}
+	if filter.To != nil {
+		conditions = append(conditions, `created_at <= ?`)
+		args = append(args, filter.To.UTC().UnixMilli())
+	}
+	if len(conditions) == 0 {
 		return "", nil
 	}
-	return ` WHERE (instr(lower(event), ?) > 0 OR instr(lower(actor_name), ?) > 0 OR instr(lower(COALESCE(detail,'')), ?) > 0 OR instr(lower(COALESCE(record_id,'')), ?) > 0)`,
-		[]any{query, query, query, query}
+	return ` WHERE ` + strings.Join(conditions, " AND "), args
 }
 
 func operationsSortSQL(sort, order string) string {

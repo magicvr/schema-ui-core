@@ -11,7 +11,7 @@ import {
 const BASE = "https://example.test";
 
 // Structurally valid page document (mirrors the module-owned Go document
-// apps/api/internal/modules/schemarender/schema/overview.json so the loader
+// apps/api/internal/modules/dev/examples/schema/overview.json so the loader
 // test exercises the same shape the endpoint serves).
 const VALID_DOCUMENT = {
   meta: {
@@ -63,6 +63,24 @@ function expectErrorCode(
     },
   );
 }
+
+describe("validatePageDocument", () => {
+  it("accepts custom nodes registered for GOAL-018 (MFA manager block)", () => {
+    const documentWithCustom = {
+      meta: { pageId: "account", title: "Account", protocolVersion: "2.7", requiredCapabilities: [] },
+      body: {
+        type: "section",
+        id: "account",
+        children: [
+          { type: "form", id: "profile-form", props: { fields: [{ id: "name", label: "Name", type: "input" }] } },
+          { type: "custom", id: "mfa-manager-block", component: "mfa-manager" },
+        ],
+      },
+    };
+    const result = validatePageDocument(documentWithCustom);
+    expect(result.ok).toBe(true);
+  });
+});
 
 describe("validatePageDocument", () => {
   it("accepts a structurally valid page document", () => {

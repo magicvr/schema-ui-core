@@ -9,7 +9,6 @@ package handler
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -27,6 +26,7 @@ type RolesRepository interface {
 	CreateRoleWithGrants(string, string, []string, []string, time.Time) (*authsession.Role, error)
 	UpdateRoleWithGrants(string, authsession.RolePatch, time.Time) (*authsession.Role, error)
 	DeleteRole(string) error
+	DeleteRolesBatch([]string) (int, error)
 	ValidatePermissionKeys([]string) error
 	ValidateMenuItemIDs([]string) error
 }
@@ -38,6 +38,8 @@ func rolesResource(repository RolesRepository, operations operationlog.Recorder)
 		Listable:        true,
 		SortFields:      []string{"key", "name", "updatedAt"},
 		QSearch:         true,
+		// T-02 (GOAL-013 D-003): system-flag select on the roles search form.
+		ExtraQuery:      []string{"system"},
 		Entity:          &rolesEntity{repository: repository},
 		CreateFields:    []string{"key", "name"},
 		PatchFields:     []string{"name"},
@@ -82,8 +84,15 @@ func roleToMap(r authsession.Role) map[string]any {
 }
 
 func (e *rolesEntity) List(f resourceFilter) ([]map[string]any, int, error) {
+	// T-02 (GOAL-013 D-003): system query param ("true"/"false").
+	var system *bool
+	if raw, ok := f.Extra["system"]; ok && (raw == "true" || raw == "false") {
+		v := raw == "true"
+		system = &v
+	}
 	items, total, err := e.repository.ListRoles(authsession.RoleFilter{
 		Q: f.Q, Sort: f.Sort, Order: f.Order, Page: f.Page, PageSize: f.PageSize,
+		System: system,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -186,6 +195,17 @@ func (e *rolesEntity) Delete(id string, _ account.User) error {
 	return mapRoleStoreError(e.repository.DeleteRole(id))
 }
 
+// DeleteBatch is the atomic whole-batch delete (ADR-0022 D5d · D-001 P0): the
+// repository commits the whole selection in one transaction, so a failure
+// (system role, in-use role, not-found) rolls every target back.
+func (e *rolesEntity) DeleteBatch(ids []string, _ account.User) (int, error) {
+	deleted, err := e.repository.DeleteRolesBatch(ids)
+	if err != nil {
+		return 0, mapRoleStoreError(err)
+	}
+	return deleted, nil
+}
+
 func stringArrayFromBody(body map[string]any, field, code string) ([]string, error) {
 	v, ok := body[field]
 	if !ok || v == nil {
@@ -255,29 +275,16 @@ func rolesOnWrite(recorder operationlog.Recorder) func(context.Context, account.
 		switch kind {
 		case writeCreate:
 			event = operationlog.EventRoleCreate
-			detail = `{"key":` + jsonQuote(stringField(row, "key")) + `}`
+			detail = "create"
 		case writeUpdate:
 			event = operationlog.EventRoleUpdate
-			detail = `{"key":` + jsonQuote(stringField(row, "key")) + `}`
+			detail = "update"
 		}
-		op := operationlog.Operation{
-			ID:        newOperationID(),
-			Event:     event,
-			ActorID:   user.ID,
-			ActorName: user.Name,
-			CreatedAt: now,
-		}
-		if id != "" {
-			op.RecordID = &id
-		}
+		var detailPtr *string
 		if detail != "" {
-			op.Detail = &detail
+			detailPtr = auditDetail(strings.TrimPrefix(event, "roles."), map[string]any{"key": stringField(row, "key")})
 		}
-		if recorder != nil {
-			if err := recorder.RecordOperation(op); err != nil {
-				slog.Error("operation log write failed", "event", event, "err", err)
-			}
-		}
+		recordAudit(recorder, user, event, id, detailPtr, now, nil)
 	}
 }
 

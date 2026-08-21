@@ -8,6 +8,10 @@
 # With WORKDIR /app holding the web app, that resolves to /docs/schemas.
 FROM node:22 AS build
 WORKDIR /app
+# GIT_COMMIT build arg feeds generate-claim buildId in container builds
+# (.git is excluded from the build context via .dockerignore).
+ARG GIT_COMMIT
+ENV GIT_COMMIT=${GIT_COMMIT}
 # npm deps first for layer caching (no root package.json; web is self-contained).
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci

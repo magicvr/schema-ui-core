@@ -75,7 +75,7 @@ role: vision-decision
 4. **VP 列表**：`plans/VP-*.md` 的 id、status、`vision_ref`、lead_workspace、绑定区数。  
 5. **组合编排**：`roadmap.md` 索引是否与 plans 一致。  
 6. **Vision Review**：合并扫描 `reviews.md` legacy inline 与 `reviews/VRev-NNN-*.md`；核对索引链接、最大编号和开放 required（未 fixed/residual/overruled）。
-7. **工作区对齐（只读）**：各 `docs/workspace-*/workspace.md` 的 `plan_refs`/`primary_plan`/`vision_role`（不混合多区目标正文）。  
+7. **工作区对齐（只读）**：各 `docs/workspaces/workspace-*/workspace.md` 的 `plan_refs`/`primary_plan`/`vision_role`（不混合多区目标正文）。  
 8. **re-align 债务**：Charter version 与各 VP `vision_ref` 是否一致；strategic 后未刷新的区/Root。  
 9. 吸收用户本轮意图（建愿景 / 改 Charter / 新 VP / Review / re-align / 结构选型…）。
 

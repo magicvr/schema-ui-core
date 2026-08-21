@@ -24,7 +24,7 @@ import { SchemaTable } from "@/renderer/schema-table";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/schemarender/schema",
+  "../../../api/internal/modules/dev/examples/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(
@@ -43,6 +43,10 @@ const MODULE_FIXTURE_DIRS: Record<string, string> = {
     dirname(fileURLToPath(import.meta.url)),
     "../../../api/internal/modules/roles/schema",
   ),
+  "data-permission": resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../api/internal/modules/datapermission/schema",
+  ),
 };
 
 const MIGRATED_PAGE_IDS = [
@@ -54,6 +58,7 @@ const MIGRATED_PAGE_IDS = [
   "roles",
   "settings",
   "activity",
+  "data-permission",
 ];
 
 function fixtureDocument(pageId: string): unknown {
@@ -208,7 +213,14 @@ describe("migrated representative pages (GOAL-004)", () => {
     // trigger, row edit/delete actions, and a selected-row recordView.
     expect(container.textContent).toContain("New user");
     expect(container.textContent).toContain("Edit");
-    expect(container.textContent).toContain("Delete");
+    // W11 · U-05: secondary actions (Delete) live in the "⋯" overflow menu,
+    // which is portaled to document.body.
+    const moreTrigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label]',
+    );
+    expect(moreTrigger).not.toBeNull();
+    await act(async () => moreTrigger!.click());
+    expect(document.body.textContent).toContain("Delete");
     expect(container.textContent).toContain("alice");
     // recordView renders the selected-row copy once a row is selected.
     expect(container.textContent).toContain("Select a record to view details.");
@@ -219,6 +231,58 @@ describe("migrated representative pages (GOAL-004)", () => {
     await act(async () => (editRow as HTMLButtonElement).click());
     expect(container.textContent).toContain("Save changes");
     expect(container.textContent).toContain("alice");
+  });
+
+  it("renders the data-permission page (W10: D-VAL body shape + policies table)", async () => {
+    const policies = {
+      items: [
+        { resource: "orders", ownerColumn: "owner_id", defaultScope: "self", enabled: true },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+    };
+    const fetcher = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/data-permission/policies")) {
+        return new Response(JSON.stringify(policies), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    activeRoots.push({ root, container });
+    await act(async () => {
+      root.render(
+        <RenderPage
+          document={fixtureDocument("data-permission") as RenderPageDocument}
+          context={{
+            user: { id: "admin", permissions: ["data-permission.read", "data-permission.write"] },
+          }}
+          tableRenderer={(node) => <SchemaTable node={node} fetcher={fetcher} />}
+        />,
+      );
+    });
+    expect(container.textContent).toContain("orders");
+    expect(container.textContent).toContain("Register policy");
+
+    // Open the register-policy modal: the form must render with its fields
+    // (defaultValue on select/switch requires form.controls.advanced — the
+    // page declares it, so no FORM_CAPABILITY_REQUIRED gate error).
+    const registerButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Register policy",
+    );
+    expect(registerButton).not.toBeUndefined();
+    await act(async () => (registerButton as HTMLButtonElement).click());
+    expect(container.textContent).not.toContain("FORM_CAPABILITY_REQUIRED");
+    expect(container.textContent).toContain("Owner column");
+    expect(container.textContent).toContain("Default scope");
+    const defaultScope = container.querySelector("#field-defaultScope") as HTMLSelectElement | null;
+    expect(defaultScope?.value).toBe("all");
   });
 
   it("fails closed on an unknown node type on a representative path", async () => {

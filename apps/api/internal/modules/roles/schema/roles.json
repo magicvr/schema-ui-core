@@ -18,62 +18,94 @@
       "type": "request",
       "method": "POST",
       "url": "/api/roles",
-      "bodyMapping": { "key": "key", "name": "name", "permissions": "permissions", "menuItems": "menuItems" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "key": "key",
+        "name": "name",
+        "permissions": "permissions",
+        "menuItems": "menuItems"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "updateRole": {
       "type": "request",
       "method": "PATCH",
       "url": "/api/roles/{id}",
-      "bodyMapping": { "name": "name", "permissions": "permissions", "menuItems": "menuItems" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "name": "name",
+        "permissions": "permissions",
+        "menuItems": "menuItems"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "deleteRole": {
       "type": "request",
       "method": "DELETE",
       "url": "/api/roles/{id}",
-      "onSuccess": { "behavior": "reload" }
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "exportRoles": {
+      "type": "custom",
+      "handler": "export.roles"
     },
     "openCreate": {
       "type": "modal",
       "content": {
         "type": "form",
         "id": "create-role-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.roles contains \"admin\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.roles contains \"admin\""
+        },
         "props": {
           "fields": [
-            { "id": "key", "label": "Key", "type": "input" },
-            { "id": "name", "label": "Name", "type": "input" },
+            {
+              "id": "key",
+              "label": "Key",
+              "type": "input",
+              "labelKey": "schema.roles.field.key"
+            },
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.roles.field.name"
+            },
             {
               "id": "permissions",
               "label": "Permissions",
               "type": "checkboxGroup",
-              "options": [
-                { "value": "users.read", "label": "Read users" },
-                { "value": "users.write", "label": "Write users" },
-                { "value": "roles.read", "label": "Read roles" },
-                { "value": "roles.write", "label": "Write roles" },
-                { "value": "roles.assign", "label": "Assign roles" },
-                { "value": "settings.read", "label": "Read settings" },
-                { "value": "settings.write", "label": "Write settings" },
-                { "value": "operations.read", "label": "Read activity log" }
-              ]
+              "optionsSource": {
+                "url": "/api/permissions",
+                "valueField": "key",
+                "labelField": "key"
+              },
+              "labelKey": "schema.roles.field.permissions"
             },
             {
               "id": "menuItems",
               "label": "Menu access",
               "type": "checkboxGroup",
-              "options": [
-                { "value": "menu-users", "label": "Users" },
-                { "value": "menu-roles", "label": "Roles" },
-                { "value": "menu-settings", "label": "Settings" },
-                { "value": "menu-activity", "label": "Activity" }
-              ]
+              "optionsSource": {
+                "url": "/api/menu-items",
+                "valueField": "id",
+                "labelField": "label"
+              },
+              "labelKey": "schema.roles.field.menuAccess"
             }
           ],
           "submitAction": "createRole",
-          "submitLabel": "Create role"
+          "submitLabel": "Create role",
+          "submitLabelKey": "schema.roles.submit.create"
         }
       }
     },
@@ -82,40 +114,48 @@
       "content": {
         "type": "form",
         "id": "edit-role-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.roles contains \"admin\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.roles contains \"admin\""
+        },
         "props": {
           "fields": [
-            { "id": "name", "label": "Name", "type": "input" },
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.roles.field.name"
+            },
             {
               "id": "permissions",
               "label": "Permissions",
               "type": "checkboxGroup",
-              "options": [
-                { "value": "users.read", "label": "Read users" },
-                { "value": "users.write", "label": "Write users" },
-                { "value": "roles.read", "label": "Read roles" },
-                { "value": "roles.write", "label": "Write roles" },
-                { "value": "roles.assign", "label": "Assign roles" },
-                { "value": "settings.read", "label": "Read settings" },
-                { "value": "settings.write", "label": "Write settings" },
-                { "value": "operations.read", "label": "Read activity log" }
-              ]
+              "optionsSource": {
+                "url": "/api/permissions",
+                "valueField": "key",
+                "labelField": "key"
+              },
+              "labelKey": "schema.roles.field.permissions"
             },
             {
               "id": "menuItems",
               "label": "Menu access",
               "type": "checkboxGroup",
-              "options": [
-                { "value": "menu-users", "label": "Users" },
-                { "value": "menu-roles", "label": "Roles" },
-                { "value": "menu-settings", "label": "Settings" },
-                { "value": "menu-activity", "label": "Activity" }
-              ]
+              "optionsSource": {
+                "url": "/api/menu-items",
+                "valueField": "id",
+                "labelField": "label"
+              },
+              "labelKey": "schema.roles.field.menuAccess"
             }
           ],
           "submitAction": "updateRole",
-          "submitLabel": "Save changes"
+          "submitLabel": "Save changes",
+          "submitLabelKey": "schema.roles.submit.save"
         }
       }
     }
@@ -125,27 +165,120 @@
     "id": "roles",
     "children": [
       {
+        "type": "form",
+        "id": "roles-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "roles-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.roles.search.q"
+            },
+            {
+              "id": "system",
+              "type": "select",
+              "labelKey": "schema.roles.filter.system",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.roles.filter.system.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.roles.filter.system.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.roles.filter.system.no"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "roles-table",
-        "permissionCascade": { "keys": ["edit", "delete"] },
+        "permissionCascade": {
+          "keys": [
+            "edit",
+            "delete"
+          ]
+        },
         "permissions": {
           "edit": "$context.user.roles contains \"admin\"",
           "delete": "$context.user.permissions contains \"roles.write\""
         },
         "props": {
           "columns": [
-            { "field": "id", "label": "ID" },
-            { "field": "key", "label": "Key", "sortable": true },
-            { "field": "name", "label": "Name", "sortable": true },
-            { "field": "permissions", "label": "Permissions" },
-            { "field": "menuItems", "label": "Menus" },
-            { "field": "assignedUsers", "label": "Users" },
-            { "field": "system", "label": "System" },
-            { "field": "updatedAt", "label": "Updated", "sortable": true }
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.roles.column.id"
+            },
+            {
+              "field": "key",
+              "label": "Key",
+              "sortable": true,
+              "labelKey": "schema.roles.column.key"
+            },
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.roles.column.name"
+            },
+            {
+              "field": "permissions",
+              "label": "Permissions",
+              "labelKey": "schema.roles.column.permissions",
+              "truncate": true
+            },
+            {
+              "field": "menuItems",
+              "label": "Menus",
+              "labelKey": "schema.roles.column.menus",
+              "truncate": true
+            },
+            {
+              "field": "assignedUsers",
+              "label": "Users",
+              "labelKey": "schema.roles.column.users"
+            },
+            {
+              "field": "system",
+              "label": "System",
+              "labelKey": "schema.roles.column.system"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.roles.column.updated"
+            }
           ],
           "dataSource": "/api/roles",
           "toolbar": [
-            { "key": "create", "label": "New role", "actionRef": "openCreate", "permissionIntent": "edit" }
+            {
+              "key": "export",
+              "label": "Export",
+              "actionRef": "exportRoles",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"data.export\""
+              },
+              "labelKey": "schema.roles.toolbar.export"
+            },
+            {
+              "key": "create",
+              "label": "New role",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.roles.toolbar.newRole"
+            }
           ],
           "actions": [
             {
@@ -153,21 +286,88 @@
               "label": "Edit",
               "actionRef": "openEdit",
               "permissionIntent": "edit",
-              "disabledWhen": { "field": "editable", "equals": false }
+              "disabledWhen": {
+                "field": "editable",
+                "equals": false
+              },
+              "labelKey": "schema.roles.action.edit"
             },
             {
               "key": "delete",
               "label": "Delete",
               "actionRef": "deleteRole",
               "permissionIntent": "delete",
-              "disabledWhen": { "field": "deletable", "equals": false },
-              "requestMapping": { "path": { "id": "$row.id" } },
-              "confirm": "Delete this role?"
+              "disabledWhen": {
+                "field": "deletable",
+                "equals": false
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "confirm": "Delete this role?",
+              "labelKey": "schema.roles.action.delete",
+              "confirmKey": "schema.roles.confirm.delete"
             }
           ]
         }
       },
-      { "type": "recordView", "id": "role-detail", "props": {} }
+      {
+        "type": "recordView",
+        "id": "role-detail",
+        "props": {
+          "title": "Role details",
+          "titleKey": "schema.roles.detail.title",
+          "fields": [
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.roles.column.id"
+            },
+            {
+              "key": "key",
+              "label": "Key",
+              "labelKey": "schema.roles.column.key"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "labelKey": "schema.roles.column.name"
+            },
+            {
+              "key": "permissions",
+              "label": "Permissions",
+              "labelKey": "schema.roles.column.permissions"
+            },
+            {
+              "key": "menuItems",
+              "label": "Menus",
+              "labelKey": "schema.roles.column.menus"
+            },
+            {
+              "key": "assignedUsers",
+              "label": "Users",
+              "labelKey": "schema.roles.column.users"
+            },
+            {
+              "key": "system",
+              "label": "System",
+              "labelKey": "schema.roles.column.system"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.roles.column.created"
+            },
+            {
+              "key": "updatedAt",
+              "label": "Updated",
+              "labelKey": "schema.roles.column.updated"
+            }
+          ]
+        }
+      }
     ]
   }
 }

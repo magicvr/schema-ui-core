@@ -9,6 +9,7 @@ import {
   logout,
   restoreSession,
   setAuthLostListener,
+  type AuthSession,
 } from "@/account/auth-client";
 import {
   clearTokens,
@@ -53,6 +54,20 @@ describe("auth-client", () => {
     setAuthLostListener(null);
   });
 
+
+  // S-10 (GOAL-017 D-002 §3 / A-007 F-001 contract): the first stage of a
+  // two-step login returns {mfaRequired, mfaProof} with NO tokens — the
+  // client must surface the proof instead of LOGIN_MALFORMED.
+  it("login surfaces the MFA proof when the server demands a second factor", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ mfaRequired: true, mfaProof: "proof-1" }),
+    );
+    const result = await login("admin", "admin");
+    expect(result).toEqual({ mfaRequired: true, mfaProof: "proof-1" });
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
   it("login stores the token pair and resolves features via /me", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ accessToken: "a1", refreshToken: "r1", ...SESSION }))
@@ -62,7 +77,9 @@ describe("auth-client", () => {
           features: { menu_users: true },
         }),
       );
-    const session = await login("admin", "admin");
+    // login now returns AuthSession | LoginMFARequired (S-10 two-step);
+    // the token-bearing path narrows to AuthSession.
+    const session = (await login("admin", "admin")) as AuthSession;
     expect(session.user.id).toBe("user-admin");
     expect(session.user.permissions).toEqual(["users.read", "users.write", "settings.write"]);
     expect(session.features).toEqual({ menu_users: true });
@@ -93,6 +110,22 @@ describe("auth-client", () => {
   it("login maps a 401 to INVALID_CREDENTIALS", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
     await expect(login("admin", "wrong")).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
+  });
+
+  it("login maps a 423 to ACCOUNT_LOCKED with the terminal status (GOAL-004 S4-6)", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "ACCOUNT_LOCKED" }, 423));
+    await expect(login("admin", "right")).rejects.toMatchObject({
+      code: "ACCOUNT_LOCKED",
+      status: 423,
+    });
+  });
+
+  it("authFetch records a reauth notice after a successful password change (W15-F06)", async () => {
+    setAccessToken("a1");
+    sessionStorage.clear();
+    fetchMock.mockResolvedValueOnce(emptyResponse(204));
+    await authFetch("/api/account/password", { method: "POST", body: "{}" });
+    expect(sessionStorage.getItem("password.changedNotice")).toBe("1");
   });
 
   it("authFetch attaches the Bearer access token", async () => {
@@ -127,6 +160,23 @@ describe("auth-client", () => {
     // Refresh stored the rotated pair.
     expect(requireAuthorization(fetchMock.mock.calls[1][1])).toBeNull(); // refresh is not authed
     expect(requireAuthorization(fetchMock.mock.calls[2][1])).toBe("Bearer access-2");
+  });
+
+  it("authFetch keeps tokens when refresh returns 500 after a 401 (W15-F01)", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+    const lost = vi.fn();
+    setAuthLostListener(lost);
+
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ error: "INTERNAL" }, 500));
+
+    const res = await authFetch("/api/users");
+    expect(res.status).toBe(401);
+    expect(lost).not.toHaveBeenCalled();
+    expect(getRefreshToken()).toBe("refresh-1");
+    expect(getAccessToken()).toBe("expired");
   });
 
   it("authFetch notifies auth loss when the refresh fails", async () => {
@@ -191,14 +241,53 @@ describe("auth-client", () => {
       .mockResolvedValueOnce(jsonResponse({ accessToken: "access-2", refreshToken: "refresh-2" }))
       .mockResolvedValueOnce(jsonResponse(SESSION));
 
-    const session = await restoreSession();
-    expect(session?.user.id).toBe("user-admin");
+    const restored = await restoreSession();
+    expect(restored.kind).toBe("session");
+    if (restored.kind !== "session") return;
+    expect(restored.session.user.id).toBe("user-admin");
     expect(fetchMock.mock.calls[1][0]).toBe("/api/accounts/me");
   });
 
-  it("restoreSession returns null without a refresh token", async () => {
-    const session = await restoreSession();
-    expect(session).toBeNull();
+  it("restoreSession reports none without a refresh token", async () => {
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "none" });
+  });
+
+  it("restoreSession reports reauth when rotation fails with a stored token", async () => {
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+  });
+
+  it("restoreSession keeps tokens when refresh throws a network error (W15-F01)", async () => {
+    setRefreshToken("refresh-1");
+    setAccessToken("access-1");
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+    expect(getRefreshToken()).toBe("refresh-1");
+    expect(getAccessToken()).toBe("access-1");
+  });
+
+  it("restoreSession keeps tokens when refresh returns 500 (W15-F01)", async () => {
+    setRefreshToken("refresh-1");
+    setAccessToken("access-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "INTERNAL" }, 500));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+    expect(getRefreshToken()).toBe("refresh-1");
+    expect(getAccessToken()).toBe("access-1");
+  });
+
+  it("restoreSession clears tokens when refresh returns 401 (W15-F01)", async () => {
+    setRefreshToken("refresh-1");
+    setAccessToken("access-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "REFRESH_TOKEN_EXPIRED" }, 401));
+    const restored = await restoreSession();
+    expect(restored).toEqual({ kind: "reauth" });
+    expect(getRefreshToken()).toBeNull();
+    expect(getAccessToken()).toBeNull();
   });
 
   it("fetchMe throws ME_FAILED on a 401 when refresh also fails", async () => {
@@ -217,6 +306,58 @@ describe("auth-client", () => {
 
     await logout();
     expect(requireBody(fetchMock.mock.calls[0][1])).toEqual({ refreshToken: "refresh-1" });
+  });
+
+  it("logout before a 401 refresh prevents any further refresh (D-001 P2)", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(emptyResponse(204));
+
+    await logout();
+    // After logout there is no refresh token, so a later 401 must NOT hit the
+    // refresh endpoint — the session is already closed.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401));
+    const res = await authFetch("/api/users");
+    expect(res.status).toBe(401);
+    const refreshCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes("/api/auth/refresh"),
+    );
+    expect(refreshCalls).toHaveLength(0);
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
+  it("an in-flight refresh resolving after logout must not write tokens back (D-001 P2)", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+
+    // First request 401s; the refresh request is kept pending.
+    let resolveRefresh!: (response: Response) => void;
+    const pendingRefresh = new Promise<Response>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: "UNAUTHENTICATED" }, 401))
+      .mockImplementationOnce(() => pendingRefresh);
+
+    const fetchPromise = authFetch("/api/users");
+    await vi.waitFor(() => {
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/auth/refresh"))).toBe(
+        true,
+      );
+    });
+
+    // Logout closes the session while the rotation is in flight.
+    fetchMock.mockResolvedValueOnce(emptyResponse(204));
+    await logout();
+
+    // The stale rotation resolves with a fresh pair — it must be discarded.
+    resolveRefresh(jsonResponse({ accessToken: "access-2", refreshToken: "refresh-2" }));
+    await fetchPromise;
+    await vi.waitFor(() => {
+      expect(getAccessToken()).toBeNull();
+      expect(getRefreshToken()).toBeNull();
+    });
   });
 });
 

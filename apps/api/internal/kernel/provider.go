@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strings"
 )
@@ -374,7 +375,7 @@ func (s *ContributionSet) finalize(plan Plan) error {
 	sortRoutes(s.Routes)
 	sortPages(s.Pages)
 	sortPermissions(s.Permissions)
-	sortNavigation(s.Navigation)
+	sortNavigation(s.Navigation, plan.NavigationOrder)
 	sortFragments(s.Fragments)
 	sortConfigurations(s.Configurations)
 	return nil
@@ -392,16 +393,110 @@ func sortPermissions(perms []PermissionContribution) {
 	sort.Slice(perms, func(i, j int) bool { return perms[i].Permission < perms[j].Permission })
 }
 
-func sortNavigation(nodes []NavigationContribution) {
+// DefaultNavigationOrder is the product-frozen admin navigation ordering
+// (W8 follow-up 2026-08-14: menu_account moved before menu_settings — the top
+// bar user slot renders 个人中心 / 设置 / 退出登录 left-to-right).
+// (GOAL-013 D-002 §2, user-confirmed 2026-08-14): Dashboard, Users, Roles,
+// Settings, Activity, Account, Notifications, File library, Data dictionary,
+// System monitoring, Scheduled tasks, Recycle bin. Maintainers extend this
+// list when a new module lands (snapshot tests lock it).
+var DefaultNavigationOrder = []string{
+	"menu_dashboard",
+	"menu_users",
+	"menu_roles",
+	// S-14 (GOAL-019, user 2026-08-16): wallet/ledger — directly below Roles,
+	// above Account/Activity per user's navigation-order request.
+	"menu_wallet",
+	"menu_account",
+	// GOAL-022 (D-002 §2): my-wallet self-service — topbar user slot between
+	// 个人中心 and 设置 (menu_activity/menu_settings).
+	"menu_wallet_self",
+	"menu_activity",
+	"menu_settings",
+	"menu_notifications",
+	"menu_files",
+	"menu_dictionary",
+	"menu_monitoring",
+	"menu_scheduled_tasks",
+	"menu_recycle_bin",
+	// S-09 (GOAL-016): row-level data permission management.
+	"menu_data_permission",
+}
+
+// sortNavigation orders nodes by the resolved navigation order list, then by
+// the legacy Order/NodeID fallback for nodes not in the list (new modules must
+// not disappear). Parent grouping always wins so child nodes stay with their
+// parent. A provided order (plan.NavigationOrder) containing unknown NodeIDs
+// is invalid and falls back to DefaultNavigationOrder with a warning
+// (GOAL-013 D-002 §4: invalid config → fallback + warn, not fail-closed).
+func sortNavigation(nodes []NavigationContribution, order []string) {
+	order = resolveNavigationOrder(nodes, order)
+	rank := make(map[string]int, len(order))
+	for i, id := range order {
+		rank[id] = i
+	}
 	sort.Slice(nodes, func(i, j int) bool {
 		if nodes[i].Parent != nodes[j].Parent {
 			return nodes[i].Parent < nodes[j].Parent
 		}
-		if nodes[i].Order != nodes[j].Order {
-			return nodes[i].Order < nodes[j].Order
+		ri, iOK := rank[nodes[i].NodeID]
+		rj, jOK := rank[nodes[j].NodeID]
+		switch {
+		case iOK && jOK:
+			if ri != rj {
+				return ri < rj
+			}
+			return nodes[i].NodeID < nodes[j].NodeID
+		case iOK:
+			return true // listed nodes precede unlisted ones
+		case jOK:
+			return false
+		default:
+			if nodes[i].Order != nodes[j].Order {
+				return nodes[i].Order < nodes[j].Order
+			}
+			return nodes[i].NodeID < nodes[j].NodeID
 		}
-		return nodes[i].NodeID < nodes[j].NodeID
 	})
+}
+
+// resolveNavigationOrder returns the effective order list, falling back to
+// DefaultNavigationOrder (with a warning) when a provided list references a
+// NodeID no registered node declares. A nil order means the default applies.
+func resolveNavigationOrder(nodes []NavigationContribution, order []string) []string {
+	return NormalizeNavigationOrder(order, contributionNodeIDs(nodes))
+}
+
+// contributionNodeIDs returns the NodeIDs of the given navigation contributions.
+func contributionNodeIDs(nodes []NavigationContribution) []string {
+	ids := make([]string, 0, len(nodes))
+	for _, n := range nodes {
+		ids = append(ids, n.NodeID)
+	}
+	return ids
+}
+
+// NormalizeNavigationOrder validates an operator-provided navigation order
+// against the known NodeID set. An empty order yields DefaultNavigationOrder.
+// An order referencing an unknown NodeID is invalid and falls back to
+// DefaultNavigationOrder with a warning (GOAL-013 D-002 §4). It is exported so
+// the composition layer can normalize the order once and feed the same list to
+// both kernel sorting and manifest aggregation.
+func NormalizeNavigationOrder(order, known []string) []string {
+	if len(order) == 0 {
+		return DefaultNavigationOrder
+	}
+	knownSet := make(map[string]bool, len(known))
+	for _, id := range known {
+		knownSet[id] = true
+	}
+	for _, id := range order {
+		if !knownSet[id] {
+			slog.Warn("navigation order contains unknown NodeID; falling back to the default order", "nodeID", id)
+			return DefaultNavigationOrder
+		}
+	}
+	return order
 }
 
 func sortFragments(fragments []FragmentContribution) {

@@ -1,0 +1,89 @@
+---
+id: GOAL-001-production-admin-foundation
+title: 生产级可用 Admin 基架
+status: done
+created: 2026-08-01
+updated: 2026-08-04
+parent: null
+version: 1.0.1
+progress: 5/5
+plan_refs:
+  - VP-002-production-admin-foundation
+primary_plan: VP-002-production-admin-foundation
+serves_summary: 在 VP-001 冻结协议基线之上，把现有 Demo 推进为具备真实认证、持久化权限、Schema 驱动 CRUD 与可复现工程交付的生产级 Admin 基架。
+---
+
+# GOAL-001 · 生产级可用 Admin 基架
+
+## 概述
+
+本 Root 承接 [VP-002 · 生产级可用 Admin 基架](../../../vision/plans/VP-002-production-admin-foundation.md)。目标不是扩大冻结协议覆盖面，而是在既定边界内把当前前端演示推进为可运行、可验证、可 fork 的生产级 Admin 基架。
+
+## 愿景对齐
+
+| 字段 | 值 |
+|------|----|
+| `plan_refs` | `VP-002-production-admin-foundation` |
+| `primary_plan` | `VP-002-production-admin-foundation` |
+| Charter | `schema-ui-core-admin-foundation@0.2.0` |
+| 工作区角色 | `delivery` |
+
+继承范围以 VP-002 引用的 `I-PROTO-001 v0.1.3` 为准。冻结基线是实施输入，不是本目标的实施完成证据。2026-08-04 仅精确 re-align Charter；本 Root 保持 `done / 5/5`，planned VP-003 不自动挂接本区。
+
+## 成功边界
+
+- Schema Renderer 在冻结协议范围内成为默认页面能力，并有结构、运行时与失败路径证据。
+- 登录、登出、会话恢复和请求级身份来自真实认证链路，不再由前端本地状态模拟。
+- 用户、角色、菜单及最小权限关系可持久化，并由后端实施授权边界。
+- 至少一个代表性实体完成 Schema 驱动的列表、新建、编辑、删除与统一校验/错误闭环。
+- 种子数据、环境配置、健康检查、部署/容器路径与 fork 文档可重复执行；目标用户可在 15 分钟内启动并看到可用后台。
+- 各阶段留下可核对的实现事实与审计结论；关门前不存在开放 required 信息项或必改 finding。
+
+## 纲领路线图
+
+五个检查点默认等权并原则上串行；同一阶段内部可以按依赖拆分并行子目标。
+
+- [x] **R1 · 协议实施边界与 Schema Renderer 产品化**：核对冻结覆盖映射，把 Renderer 接入默认页面路径，并验证关键失败行为。  
+  阶段内子目标（D-005）：`GOAL-002-r1-schema-load-validate`（done）· `GOAL-003-r1-default-render-path`（done）· `GOAL-004-r1-representative-node-pages`（done）。证据：I-001 覆盖矩阵 verified（D-004）+ Renderer 默认 `schemaUrl` 主路径 + 2026-08-02 Web 425/425、Go test/vet 全绿与 fail-closed 断言（各子目标关门审计）。
+- [x] **R2 · 真实认证与请求级身份**：交付登录、登出、会话恢复、受保护路由和 API 身份传递。  
+  阶段子目标：`GOAL-005-r2-auth-session`（**done**，2026-08-02；`I-002` verified + D-007 方案）。证据：登录/登出/刷新/撤销与请求级身份中间件 + SQLite 存储 + 前端认证闭环（441 单测、`go test ./...` 全绿）；close-out 审计 A-001（independent，F-001 → fixed）+ A-002（self，pass）；browser E2E 在 Linux CI 通过（run #30711903555，`1 passed`，含匿名 401 断言）。
+- [x] **R3 · 持久化身份、角色与最小权限模型**：交付用户/角色/菜单持久化、种子数据与后端授权最小闭环。  
+  阶段子目标：`GOAL-006-r3-persistent-rbac-menu`（**done**，2026-08-02；D-009 冻结方案 B、`features` 菜单投影、两步迁移、读写权限与恢复证据口径；D-004 S1 迁移链 + pre-v0002 快照；D-005 S2 阶段 B 终态；D-006 S3 增量幂等种子；D-007 S4 permission key 读写门禁；D-008 S5 `me.features` 投影 + manifest `visibleWhen`；S6 恢复/重启/回归证据齐备）。证据：`schema_migrations` + `0001/0002` 事务化迁移 + pre-v0002 恢复快照、规范化 RBAC 双写/集合核对、`seedRBAC` 增量幂等种子、records `records.read`/`records.write` 门禁、`me.features` 菜单投影 + 真实 manifest `visibleWhen`、`TestRestartPersistence`/`TestRestorePreV0002Snapshot` 与 API/Web 全量回归；close-out 审计 A-005（independent，F-005 → fixed）+ A-006（independent，F-005 关闭复核 pass）+ A-004（self 阶段审计）；无开放 required finding 或 required 信息项。
+- [x] **R4 · Schema 驱动 CRUD 与统一交互闭环**：以代表性实体验证列表、表单、操作、校验、加载/空态/错误态及权限失败。
+  阶段子目标：`GOAL-007-r4-schema-crud`（**done**，2026-08-02；D-010/D-011 立项；D-002/D-003 冻结 API/错误与 SQLite 迁移计划，`I-007-001`/`I-007-002` verified，S1/S2 勾选；**S3 已实施**——0003 + repository + seedRecords + handler 走 SQLite、POST 新增，T-API/T-DB 全绿，S3 勾选；**S4/S5 已实施**——`list-edit-lifecycle` 代表页 + 渲染层一次性补齐 + `createRecord` + search form-to-query，T-UI-01～10 全绿，S4/S5 勾选；**S6 已实施**——`I-007-004` verified（D-007 协议），L1 HTTP 层 + L2 进程级重启持久化证据（A-010 F-008 → fixed，rec-1/`{newID}` detail `updatedAt` 毫秒精确跨进程断言），`go test ./...` 全绿 + web vitest 458/458，S6 勾选）。`I-007-001/002/003/004` 全部 verified；A-011/A-012（independent · finding-closure）确认 F-008 `fixed`，A-013（self · close-out）`pass`；**GOAL-007 已置 `done`**。**Root R4 检查点已勾选**（Root `3/5 → 4/5`）。
+- [x] **R5 · 工程化、fork 体验与集成关门**：完成环境/容器/健康检查/文档、可重复验收、阶段审计与 Root 关门审计。（2026-08-02：`I-005` verified、`I-006` closed（D-013，部署基线 A + 建议口径 + 复现方法）；`GOAL-008-r5-engineering-fork` 已立项，S1/S2 已实施 `2/5`——env 清单/health/dev-prod 文档 + Dockerfile × 2/compose/nginx 反代/CI smoke，契约 C-001～C-007 验证通过。**2026-08-03：`GOAL-008` 已 `5/5` 并 `done`**——S3（QUICKSTART + REPRO-003 无编译缓存复现 64.833s ≤ 900s）、S4（smoke.sh + 隔离守卫 + CI run 30776646293）、S5（A-014 self finding-closure + A-015 self stage-audit）、S6 加分（operation_log，`I-008-003` verified + F-010 fixed）；关门审计 A-016（independent · conditional → F-010 fixed）+ A-017（independent · finding-closure · pass）+ A-018（self · close-out · pass）。**Root R5 检查点已勾选（Root `4/5 → 5/5`，用户确认）**；Root close-out 关门审计与 VP-002 关门为独立用户裁决。）
+
+当前派生进度为 `5/5`（R1、R2、R3、R4 于 2026-08-02 勾选；**R5 于 2026-08-03 勾选**——`GOAL-008-r5-engineering-fork` 置 `done`，A-016/A-017/A-018 关门闭环）。勾选仅能由对应阶段的可验证事实和审计结论驱动，不得用百分比替代门禁判断。子目标 progress 不替代本 Root 检查点。**Root 已于 2026-08-04 经 A-004 self close-out `pass` 置 `done`**；VP-002 关门为独立 `/vision` 用户裁决。
+
+> **2026-08-03 · A-002 响应波次（不改变 5/5 派生）**：Root 收到 A-002（independent · fail）三条 required——F-002-001（Renderer 硬编码 records 实体）、F-002-002（表单校验错误不阻断提交）、F-002-003（认证失效状态不清理）。用户按 P-004 裁决全部走 `fixed`（D-014）：F-002-002/003 → `GOAL-009-a002-auth-form-fixes`；F-002-001 通用适配层改造 → `GOAL-010-a002-schema-adapter`（P-001 路线图 + `I-010-001/002`）。**Root 关门与 VP-002 关门在 A-002 required 全部合法闭合前保持阻断**。
+
+> **2026-08-04 · A-002 F-002-001 已闭合、关门阻断解除**：`GOAL-010-a002-schema-adapter` 已置 `done / 5/5`（S5 全量回归齐备：go test 7 包全绿 + vet、vitest 491/491、tsc/build、e2e 2/2；self close-out A-002 pass）；Root 03-audit 关闭证据表 **F-002-001 → `fixed`**（2026-08-04）。**A-002 三条 required 全部合法闭合，Root 关门与 VP-002 关门阻断解除**；Root close-out 关门审计与 VP-002 关门为独立用户裁决（下一拍 `/govern` 处理）。F-002-001 关闭证据的 `/audit` finding-closure 独立复审为可选加固。
+
+> **2026-08-04 · Root A-003 已响应、进入 close-out 裁决**：A-003（independent · finding-closure · pass）独立复核 F-002-001 `fixed` 关闭证据充分（索引/关闭表/载体三处一致），用户裁决**采纳 `pass`、维持 F-002-001 `fixed`**；R-001/R-002 → handled（Root 03-audit A-003 响应节）。A-002 三条 required 全部合法闭合确认，Root 关门门禁全部解除；**Root close-out 关门审计与 VP-002 关门为独立用户裁决**（P-004 §3.1：是否补 Root self 关门审计待用户裁决）。Root 保持 `active`、派生进度 `5/5`。
+
+> **2026-08-04 · Root self close-out 通过并关门**：用户指令「补 Root self 关门审计，通过后置 done」。**A-004（self · close-out · pass）**——五个纲领 `5/5`、子目标 GOAL-002～011 全部 `done`、A-002 三条 required 全部 `fixed`、I-001～I-006 verified/closed、无开放 required finding；本轮回归 `go test ./...` 全绿 + `go vet`、vitest **491/491**、`tsc -b` 干净。**Root 置 `status: done`**，派生进度保持 `5/5`。VP-002 关门为独立 `/vision` 流程，不由本 Goal 自动放行。
+
+> **2026-08-04 · A-005 独立代码审计 · 回退关门**：A-005（independent · fail · apps/api + apps/web · VP-002 产品意图复审）发现 **F-001 required**（default Shell 导航 `activity`/`settings` 无 embed fixture → 必 `SCHEMA_NOT_FOUND`）。按用户指令与 P-003 fail closed：**Root `done → active`**，派生进度保持 `5/5`；新设修复子目标 `GOAL-012-a005-shell-nav-fixtures`（active `0/4`）。Root/VP-002 重新关门须先闭合 F-001。
+
+> **2026-08-04 · GOAL-012 已关门、A-005 F-001 已闭合**：`GOAL-012` 置 `done / 4/4`（S1 移除占位导航 · S2 manifest↔fixture 测试 · S3 回归全绿 · S4 self close-out pass；S5 QUICKSTART 路径修正加分）。Root 03-audit **F-001 → `fixed`**。A-005 无开放 required；**Root 保持 `active / 5/5`**——重新关门为独立用户裁决（可 `/govern` 补 self close-out 或直接裁决）。
+
+> **2026-08-04 · A-006 落盘并响应 recommended**：A-006（independent · pass）无 required；R-001～R-004 已 fixed、R-005 residual-by-design handled；回归 go test 全绿 + vitest **492/492**。Root 保持 `active / 5/5`；重新关门与 VP-002 关门仍为独立用户裁决。
+
+> **2026-08-04 · Root self close-out（A-007）通过并再关门**：用户指令「补 Root self close-out，通过后置 done」。**A-007（self · close-out · pass）**——R1～R5 `5/5`、GOAL-002～013 全部 `done`、A-002/A-005 required 均 `fixed`、A-006 recommended 已闭合/residual、I-001～I-006 verified/closed、Vision Review 0 open required；本轮回归 go vet/test 全绿、vitest **492/492**、`tsc -b` 干净、manifest↔fixture 9/9。**Root `active → done`**，progress 保持 `5/5`。VP-002 关门为独立 `/vision` 流程。
+
+## 信息需求与阶段门禁
+
+| ID | 问题 / 所需信息 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据或结论 |
+|----|-----------------|------|----------|----------|-----------------|------|-------------|------------|
+| `I-001` | 冻结协议到当前代码、fixture 与 Renderer 运行路径的实施差量是什么？ | required | R1 方案冻结与实施 | R1 方案冻结前 | 以 `I-PROTO-001 v0.1.3` 逐项建立实现与验证矩阵 | **verified** | 已关闭（D-004） | [I-001-implementation-gap-matrix.md](attachments/I-001-implementation-gap-matrix.md)；D-004 采用为 R1 方案边界；**不**勾选 R1 完成 |
+| `I-002` | 认证/会话机制、凭据边界与安全配置采用什么最小方案？ | required | R2 方案冻结与实施 | R2 方案冻结前 | 调查当前栈、部署约束与威胁边界，形成认证生命周期、请求身份、配置边界与验收矩阵后记录方案取舍 | **verified** | 已关闭（D-007） | D-007（2026-08-02）裁决：短 JWT Access + Opaque Refresh + SQLite 存储 + 接受 JWT 库；现状与三候选方案、M1–M14 验收矩阵见 [I-002-auth-collection.md](attachments/I-002-auth-collection.md)；**不**冻结 R2 实施细节（TTL / env / 前端存储 / CORS / 表结构在 R2 子目标定稿） |
+| `I-003` | 数据存储、迁移、种子和用户—角色—菜单关系的最小模型是什么？ | required | R3 方案冻结与实施 | R3 方案冻结前 | 对照 R2 SQLite 占位、真实授权/导航链与既有测试，形成候选数据模型、版本迁移、增量种子和恢复验证矩阵后提交用户裁决 | **verified** | 已关闭（D-009） | [I-003-persistence-permission-collection.md](attachments/I-003-persistence-permission-collection.md)；D-009 采用方案 B + `features` 菜单投影 + 两步迁移 + `records.read`/`records.write` + 自动恢复证据；仅解除 R3 方案/立项目门禁，**不代表已实现** |
+| `I-004` | 哪个代表性实体及 API/错误语义能够完整证明 Schema CRUD 闭环？ | required | R4 方向冻结与子目标立项；详细方案/验收由子目标 required 承接 | R4 子目标立项前 | 选择实体并固定持久化、错误 envelope 与最低验收方向；精确实施契约下沉子目标 | **verified** | 已关闭（D-010）；R4 子目标立项时登记实施前 required 细项 | D-010 采用 `records`，要求 SQLite 持久化与重启保持，沿用统一错误 envelope；[I-004-schema-crud-collection.md](attachments/I-004-schema-crud-collection.md) 提供 M-R4-01～11。只解除 Root 的 R4 方向/立项目门禁；精确 API/error code、DDL/migration/seed、并发与重启证据须在 R4 子目标方案中先冻结，不代表已实现或验收 |
+| `I-005` | 目标部署基线、15 分钟 fork 计时口径与可复现实验环境是什么？ | required | R5 方案冻结与关门 | R5 方案冻结前 | 固定环境、命令、容器/部署边界和独立复现实验方法 | **verified** | 已关闭（D-013） | [I-005-engineering-fork-collection.md](attachments/I-005-engineering-fork-collection.md) v0.2.1；D-013 采用部署基线 A、建议计时口径、复现方法（含 `scripts/smoke.sh`）；Compose 为 R5 **必须交付的第二启动路径**（fork 用户可选本地双进程或 Compose，GOAL-008 D-002）；**不**勾选 R5 完成 |
+| `I-006` | 是否在本波次纳入最小操作日志？ | non-blocking | R5 范围取舍 | R5 方案冻结前 | 评估对交付价值与成本；如升级为必需则另记决策 | **closed** | 已关闭（D-013） | 方案甲：R5 可选加分 checkpoint（若实施则 SQLite `operation_log`，覆盖 records 写 + auth 关键事件，不阻断核心验收）；非目标即非硬关门条件 |
+
+开放信息项不妨碍 Root 立项，但会阻断其列明的阶段门禁。任何 residual 接受必须由用户书面裁决并记录范围与复审触发条件。
+
+## 层级
+
+本目标是工作区 Root，`parent: null`。后续子目标必须在本工作区根平铺，并使用本目标完整 id 作为 `parent`。

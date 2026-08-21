@@ -27,7 +27,7 @@ import type { ResourceItem } from "@/renderer/resource";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/schemarender/schema",
+  "../../../api/internal/modules/dev/examples/schema",
 );
 // R4 C3.3: users/roles schema documents are module-owned.
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
@@ -80,6 +80,18 @@ function createUsersApi(
       url: raw,
       body: init?.body !== undefined ? JSON.parse(String(init.body)) : undefined,
     });
+    // W11 · U-01: role options for the openRoles checkboxGroup (the schema
+    // requests the full catalog via ?pageSize=100; list fetches carry the
+    // standard page/pageSize query and keep routing to the resource below).
+    if (url.pathname === "/api/roles" && url.searchParams.get("pageSize") === "100") {
+      return json({
+        items: [
+          { key: "admin", name: "Administrator" },
+          { key: "editor", name: "Editor" },
+          { key: "viewer", name: "Viewer" },
+        ],
+      });
+    }
     const match = new RegExp(`^${resourcePath}(?:/([^/]+))?$`).exec(url.pathname);
     if (!match) {
       return json({ error: "NOT_FOUND", message: "no such route" }, 404);
@@ -201,6 +213,31 @@ function createRolesApi(
     const method = (init?.method ?? "GET").toUpperCase();
     const body = init?.body !== undefined ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, url: raw, body });
+    // W11 · U-01/U-02: RBAC catalogs served to the role form dynamic options.
+    if (url.pathname === "/api/permissions") {
+      return json({
+        items: [
+          { key: "users.read", label: "users.read" },
+          { key: "users.write", label: "users.write" },
+          { key: "roles.read", label: "roles.read" },
+          { key: "roles.write", label: "roles.write" },
+          { key: "roles.assign", label: "roles.assign" },
+          { key: "settings.read", label: "settings.read" },
+          { key: "settings.write", label: "settings.write" },
+          { key: "operations.read", label: "operations.read" },
+        ],
+      });
+    }
+    if (url.pathname === "/api/menu-items") {
+      return json({
+        items: [
+          { id: "menu-users", pageRef: "users", label: "Users" },
+          { id: "menu-roles", pageRef: "roles", label: "Roles" },
+          { id: "menu-settings", pageRef: "settings", label: "Settings" },
+          { id: "menu-activity", pageRef: "activity", label: "Activity" },
+        ],
+      });
+    }
     const match = /^\/api\/roles(?:\/([^/]+))?$/.exec(url.pathname);
     if (!match) {
       return json({ error: "NOT_FOUND", message: "no such route" }, 404);
@@ -390,6 +427,41 @@ function checkboxByLabel(container: HTMLElement, label: string): HTMLInputElemen
   return owner?.querySelector<HTMLInputElement>('input[type="checkbox"]') ?? null;
 }
 
+/**
+ * W11 · U-05: finds a row-action button, opening the row's "⋯" overflow menu
+ * when the action is not inline (users tables carry 8 actions; only 2 stay
+ * visible). Desktop + mobile dual-end renders duplicate menus — the first
+ * match wins.
+ */
+async function rowActionButton(container: HTMLElement, label: string): Promise<HTMLButtonElement> {
+  const inline = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+    (button) => button.textContent?.trim() === label,
+  );
+  if (inline !== undefined) {
+    return inline;
+  }
+  // The overflow menu is portaled to document.body (W11 · U-05 fix: the table's
+  // overflow container would otherwise clip the absolutely-positioned menu).
+  // The menu may already be open from a previous lookup in the same loop —
+  // toggling the trigger again would close it.
+  const alreadyOpen = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).find(
+    (button) => button.textContent?.trim() === label,
+  );
+  if (alreadyOpen !== undefined) {
+    return alreadyOpen;
+  }
+  const trigger = container.querySelector<HTMLButtonElement>(
+    '[data-row-actions-menu] button[aria-label]',
+  );
+  expect(trigger, "more-menu trigger for " + label).not.toBeNull();
+  await act(async () => trigger!.click());
+  const item = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).find(
+    (button) => button.textContent?.trim() === label,
+  );
+  expect(item, label + " in overflow menu").not.toBeUndefined();
+  return item!;
+}
+
 // --- T-UI tests ---
 
 describe("T-UI-01 · list loads and empty state", () => {
@@ -404,7 +476,7 @@ describe("T-UI-01 · list loads and empty state", () => {
   it("shows the empty message when the data source has no rows", async () => {
     const api = createUsersApi([]);
     const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
-    expect(container.textContent).toContain("No items match.");
+    expect(container.textContent).toContain("No items yet.");
   });
 });
 
@@ -485,7 +557,7 @@ describe("T-UI-06 · delete with confirmation", () => {
   it("confirms then deletes the row (DELETE 204) and removes it from the list", async () => {
     const api = createUsersApi(USERS);
     const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
-    await act(async () => (buttonByText(container, "Delete") as HTMLButtonElement).click());
+    await act(async () => (await rowActionButton(container, "Delete")).click());
     expect(container.textContent).toContain("Delete this user?");
     await act(async () => (buttonByText(container, "Confirm") as HTMLButtonElement).click());
     expect(api.calls.some((call) => call.method === "DELETE" && call.url === "/api/users/usr-1")).toBe(true);
@@ -496,7 +568,7 @@ describe("T-UI-06 · delete with confirmation", () => {
   it("cancelling issues no request", async () => {
     const api = createUsersApi(USERS);
     const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
-    await act(async () => (buttonByText(container, "Delete") as HTMLButtonElement).click());
+    await act(async () => (await rowActionButton(container, "Delete")).click());
     await act(async () => (buttonByText(container, "Cancel") as HTMLButtonElement).click());
     expect(api.calls.some((call) => call.method === "DELETE")).toBe(false);
     expect(container.textContent).toContain("alice");
@@ -530,7 +602,7 @@ describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
     const api = createUsersApi(USERS);
     const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
     for (const label of ["New user", "Edit", "Roles", "Password", "Delete"]) {
-      const button = buttonByText(container, label) as HTMLButtonElement;
+      const button = await rowActionButton(container, label);
       expect(button, `${label} present`).not.toBeUndefined();
       expect(button.disabled, `${label} enabled for admin`).toBe(false);
     }
@@ -540,7 +612,7 @@ describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
     const api = createUsersApi(USERS);
     const container = await renderCrud(fixtureDocument("users"), VIEWER, api.fetcher);
     for (const label of ["New user", "Edit", "Roles", "Password", "Delete"]) {
-      const button = buttonByText(container, label) as HTMLButtonElement;
+      const button = await rowActionButton(container, label);
       expect(button, `${label} present`).not.toBeUndefined();
       expect(button.disabled, `${label} disabled for viewer`).toBe(true);
     }
@@ -554,7 +626,7 @@ describe("T-UI-08 · permission matrix (admin vs viewer)", () => {
     expect((buttonByText(container, "New user") as HTMLButtonElement).disabled).toBe(false);
     expect((buttonByText(container, "Edit") as HTMLButtonElement).disabled).toBe(false);
     expect((buttonByText(container, "Roles") as HTMLButtonElement).disabled).toBe(true);
-    expect((buttonByText(container, "Password") as HTMLButtonElement).disabled).toBe(false);
+    expect((await rowActionButton(container, "Password")).disabled).toBe(false);
   });
 });
 
@@ -584,7 +656,8 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
     await act(async () => (buttonByText(container, "New role") as HTMLButtonElement).click());
     await act(async () => setFieldValue(fieldInput(container, "key") as HTMLInputElement, "auditor"));
     await act(async () => setFieldValue(fieldInput(container, "name") as HTMLInputElement, "Auditor"));
-    await act(async () => (checkboxByLabel(container, "Read users") as HTMLInputElement).click());
+    // W11 · U-02: permission/menu options come from the RBAC catalogs.
+    await act(async () => (checkboxByLabel(container, "users.read") as HTMLInputElement).click());
     await act(async () => (checkboxByLabel(container, "Users") as HTMLInputElement).click());
     await act(async () => (buttonByText(container, "Create role") as HTMLButtonElement).click());
     expect(api.calls.find((call) => call.method === "POST")).toEqual({
@@ -621,8 +694,9 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
     const nameInput = fieldInput(container, "name") as HTMLInputElement;
     expect(nameInput.value).toBe("Operator");
     await act(async () => setFieldValue(nameInput, "Operations"));
-	await act(async () => (checkboxByLabel(container, "Read users") as HTMLInputElement).click());
-	await act(async () => (checkboxByLabel(container, "Read roles") as HTMLInputElement).click());
+	// W11 · U-02: dynamic catalog options — toggle users.read off, roles.read on.
+	await act(async () => (checkboxByLabel(container, "users.read") as HTMLInputElement).click());
+	await act(async () => (checkboxByLabel(container, "roles.read") as HTMLInputElement).click());
     await act(async () => (buttonByText(container, "Save changes") as HTMLButtonElement).click());
     expect(api.calls.find((call) => call.method === "PATCH")).toEqual({
       method: "PATCH",
@@ -695,16 +769,20 @@ describe("T-UI-10 · dual-resource page changes are fixture-only", () => {
 	const api = createUsersApi(USERS);
 	const container = await renderCrud(fixtureDocument("users"), ADMIN, api.fetcher);
 	await act(async () => (buttonByText(container, "Roles") as HTMLButtonElement).click());
-	const roles = container.querySelector<HTMLTextAreaElement>("#field-roles");
-	// A-006 R-004: row roles[] coerces to a comma-separated textarea wire string.
-	expect(roles?.value).toBe("admin");
-	await act(async () => setFieldValue(roles as HTMLTextAreaElement, "viewer, editor"));
+	// W11 · U-01: roles are a checkboxGroup with dynamic options; the row's
+	// roles[] prefill checks "Administrator" (admin).
+	const adminBox = checkboxByLabel(container, "Administrator");
+	expect(adminBox).not.toBeNull();
+	expect(adminBox!.checked).toBe(true);
+	await act(async () => adminBox!.click());
+	await act(async () => (checkboxByLabel(container, "Editor") as HTMLInputElement).click());
+	await act(async () => (checkboxByLabel(container, "Viewer") as HTMLInputElement).click());
 	await act(async () => (buttonByText(container, "Save roles") as HTMLButtonElement).click());
 	expect(api.calls.find((call) => call.method === "PATCH")?.body).toEqual({
-	  roles: "viewer, editor",
+	  roles: ["editor", "viewer"],
 	});
 
-	await act(async () => (buttonByText(container, "Password") as HTMLButtonElement).click());
+	await act(async () => (await rowActionButton(container, "Password")).click());
 	const password = fieldInput(container, "password") as HTMLInputElement;
 	expect(password.type).toBe("password");
 	await act(async () => setFieldValue(password, "  exact-password  "));

@@ -34,6 +34,10 @@ export type FormControlType =
 
 export const FORM_CONTROLS_EXTENDED_CAPABILITY = "form.controls.extended";
 export const FORM_CONTROLS_ADVANCED_CAPABILITY = "form.controls.advanced";
+/** ADR-0021: `form.props.recordSource` prefill GET (registry since 2.1). */
+export const FORM_RECORD_LOAD_CAPABILITY = "form.record.load";
+/** ADR-0040 (since 2.9): `readOnly` field declaration (value still projects). */
+export const FORM_CONTROLS_READONLY_CAPABILITY = "form.controls.readonly";
 
 /** Whitelisted base controls (no capability gate; registry has no `since`). */
 const BASE_CONTROLS = new Set<FormControlType>([
@@ -64,6 +68,8 @@ export type WireKind = "string" | "boolean" | "string-array" | "number" | "date-
 export interface FormOption {
   value: string;
   label?: string;
+  /** S2 (VP-007): i18n key resolved before `label` (upstream registry field). */
+  labelKey?: string;
 }
 
 export interface DateRangeValue {
@@ -74,10 +80,30 @@ export interface DateRangeValue {
 export interface FormControlField {
   id: string;
   label?: string;
+  /** S2 (VP-007): i18n key resolved before `label` (missing-key observable). */
+  labelKey?: string;
+  placeholder?: string;
+  /** S2 (VP-007): i18n key resolved before `placeholder` (local doc convention). */
+  placeholderKey?: string;
   type: FormControlType;
   /** select only: single (default) or multiple. */
   mode?: "single" | "multiple";
   options?: FormOption[];
+  /**
+   * W11 · U-01/U-02 — dynamic option source, aligned with the upstream
+   * registry shape (component-registry.json, since 0.2): an object with a
+   * required single-slash same-origin url plus the response item fields used
+   * for value/label. The response is {items:[...]} (or a bare array); while
+   * the source loads, static options (if any) remain the fallback; an invalid
+   * source or failed fetch fails closed to an empty option set.
+   */
+  optionsSource?: {
+    url: string;
+    /** Optional scalar query params appended to url (e.g. pageSize). */
+    params?: Record<string, string | number | boolean | null>;
+    labelField: string;
+    valueField: string;
+  };
   defaultValue?: unknown;
   /** dateRangePicker only: the two bound output fields (registry props). */
   startField?: string;
@@ -87,12 +113,30 @@ export interface FormControlField {
   max?: number;
   step?: number;
   precision?: number;
+  /** GOAL-014 D-002 §3: field-level validation constraints (optional). */
+  required?: boolean;
+  /** ADR-0040 (since 2.9): read-only field — user cannot edit, value still
+   * participates in values and the submit projection (bodyMapping);
+   * recordSource backfill and reactions keep writing. Requires protocol
+   * >= 2.9 and form.controls.readonly. */
+  readOnly?: boolean;
+  /** Regex pattern for string-typed fields (submit-time validation). */
+  pattern?: string;
+  /** String length bounds for input/textarea. */
+  minLength?: number;
+  maxLength?: number;
   /** datePicker display format (display-only; data stays ISO 8601). */
   format?: string;
   /** upload only: direct-URL mode (registry oneOf with actionRef). */
   action?: string;
   /** upload only: references a top-level type=upload action (requires actions.upload). */
   actionRef?: string;
+  /**
+   * W17: optional Host-local addon rendered under this field. The value is a
+   * registered custom-component key (e.g. cron-preview). Not a protocol
+   * control type.
+   */
+  afterComponent?: string;
   /** upload constraints (direct-URL mode only; actionRef mode reads the action). */
   accept?: string;
   maxSize?: number;
@@ -289,6 +333,22 @@ export function checkFormCapabilities(
   }
 
   for (const field of fields) {
+    if (field.readOnly === true) {
+      if (!versionAtLeast(meta.protocolVersion, 2, 9)) {
+        errors.push({
+          code: "FORM_VERSION_TOO_LOW",
+          path: `fields[${field.id}].readOnly`,
+          message: "readOnly requires protocol >= 2.9",
+        });
+      }
+      if (!capabilities.has(FORM_CONTROLS_READONLY_CAPABILITY)) {
+        errors.push({
+          code: "FORM_CAPABILITY_REQUIRED",
+          path: `fields[${field.id}].readOnly`,
+          message: "readOnly requires form.controls.readonly",
+        });
+      }
+    }
     if (field.type === "select" && field.mode === "multiple") {
       if (!versionAtLeast(meta.protocolVersion, 2, 6)) {
         errors.push({
@@ -402,4 +462,100 @@ export function checkFormCapabilitiesRaw(
       )
     : [];
   return checkFormCapabilities({ protocolVersion, requiredCapabilities }, fields);
+}
+
+
+/** One submit-time field validation failure (GOAL-014 D-002 §3). */
+export interface FieldValidationError {
+  field: string;
+  code: "REQUIRED" | "PATTERN" | "MIN_LENGTH" | "MAX_LENGTH" | "MIN_VALUE" | "MAX_VALUE";
+  /** Stable i18n key (form.validation.*); message is the en fallback. */
+  messageKey: string;
+  message: string;
+}
+
+function isEmptyValue(kind: WireKind, value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (kind === "string") return String(value).trim() === "";
+  if (kind === "string-array") return Array.isArray(value) && value.length === 0;
+  return false;
+}
+
+/**
+ * Validates form values against each field's declared constraints (GOAL-014
+ * D-002 §3.1). Pure function: returns all failures (not just the first) so
+ * the host can inline every field error. Boolean fields (switch/checkbox)
+ * never fail REQUIRED — their wire kind is boolean and the toggle has an
+ * explicit state.
+ */
+export function validateFieldValues(
+  fields: FormControlField[],
+  values: Record<string, unknown>,
+): FieldValidationError[] {
+  const errors: FieldValidationError[] = [];
+  for (const field of fields) {
+    const kind = wireKindOf(field);
+    if (kind === "boolean") continue;
+    const value = values[field.id];
+    if (field.required === true && isEmptyValue(kind, value)) {
+      errors.push({
+        field: field.id,
+        code: "REQUIRED",
+        messageKey: "form.validation.required",
+        message: "this field is required",
+      });
+      continue;
+    }
+    if (isEmptyValue(kind, value)) continue;
+    const str = kind === "string" ? String(value) : "";
+    if (field.pattern !== undefined && kind === "string") {
+      try {
+        const re = new RegExp(field.pattern);
+        if (!re.test(str)) {
+          errors.push({
+            field: field.id,
+            code: "PATTERN",
+            messageKey: "form.validation.pattern",
+            message: "format does not match the expected pattern",
+          });
+        }
+      } catch {
+        // Invalid pattern in schema is a gate error, not a submit failure;
+        // skip rather than break the form.
+      }
+    }
+    if (field.minLength !== undefined && kind === "string" && str.length < field.minLength) {
+      errors.push({
+        field: field.id,
+        code: "MIN_LENGTH",
+        messageKey: "form.validation.minLength",
+        message: "value is shorter than the minimum length",
+      });
+    }
+    if (field.maxLength !== undefined && kind === "string" && str.length > field.maxLength) {
+      errors.push({
+        field: field.id,
+        code: "MAX_LENGTH",
+        messageKey: "form.validation.maxLength",
+        message: "value is longer than the maximum length",
+      });
+    }
+    if (field.min !== undefined && kind === "number" && typeof value === "number" && value < field.min) {
+      errors.push({
+        field: field.id,
+        code: "MIN_VALUE",
+        messageKey: "form.validation.minValue",
+        message: "value is below the minimum",
+      });
+    }
+    if (field.max !== undefined && kind === "number" && typeof value === "number" && value > field.max) {
+      errors.push({
+        field: field.id,
+        code: "MAX_VALUE",
+        messageKey: "form.validation.maxValue",
+        message: "value exceeds the maximum",
+      });
+    }
+  }
+  return errors;
 }

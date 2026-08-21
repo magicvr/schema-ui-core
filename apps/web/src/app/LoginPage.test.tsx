@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthError } from "@/account/auth-client";
 import { LoginPage } from "@/app/LoginPage";
+import { I18nProvider } from "@/i18n/runtime";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
@@ -29,7 +30,11 @@ async function renderLogin(onLogin: (u: string, p: string) => Promise<void>) {
   const root = createRoot(container);
   activeRoots.push({ root, container });
   await act(async () => {
-    root.render(<LoginPage onLogin={onLogin} />);
+    root.render(
+      <I18nProvider>
+        <LoginPage onLogin={onLogin} />
+      </I18nProvider>,
+    );
   });
   return container;
 }
@@ -50,6 +55,43 @@ function fill(container: HTMLDivElement, selector: string, value: string) {
 }
 
 describe("LoginPage", () => {
+
+  // S-10 (GOAL-017 D-002 §3 / A-007 F-001 contract): when the server demands a
+  // second factor the login pauses at the code stage; the entered code
+  // resolves the pending two-step promise.
+  it("renders the second-factor stage and completes the two-step login", async () => {
+    let entered: { code: string; recoveryCode?: string } | null = null;
+    const onLogin = vi.fn(
+      async (
+        _u: string,
+        _p: string,
+        _c?: unknown,
+        resolveMFA?: (proof: string) => Promise<{ code: string; recoveryCode?: string }>,
+      ) => {
+        if (!resolveMFA) {
+          return;
+        }
+        entered = await resolveMFA("proof-1");
+      },
+    );
+    const container = await renderLogin(onLogin);
+    fill(container, "#username", "admin");
+    fill(container, "#password", "admin");
+    const submit = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+    await act(async () => submit!.click());
+
+    // The code stage is now visible while the login promise stays pending.
+    expect(container.querySelector('[data-mfa-stage]')).not.toBeNull();
+    fill(container, "#mfaCode", "123456");
+    const verify = container.querySelector<HTMLButtonElement>("[data-mfa-verify]");
+    expect(verify).not.toBeNull();
+    await act(async () => verify!.click());
+
+    expect(entered).toEqual({ code: "123456" });
+    expect(container.querySelector('[data-mfa-stage]')).toBeNull();
+    expect(onLogin).toHaveBeenCalledWith("admin", "admin", undefined, expect.any(Function));
+  });
+
   it("renders the sign-in form and submits credentials", async () => {
     const onLogin = vi.fn().mockResolvedValue(undefined);
     const container = await renderLogin(onLogin);
@@ -61,7 +103,7 @@ describe("LoginPage", () => {
     const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
     expect(button).not.toBeNull();
     await act(async () => button!.click());
-    expect(onLogin).toHaveBeenCalledWith("admin", "admin");
+    expect(onLogin).toHaveBeenCalledWith("admin", "admin", undefined, expect.any(Function));
   });
 
   it("surfaces the server error when login fails", async () => {
@@ -75,6 +117,25 @@ describe("LoginPage", () => {
 
     expect(container.textContent).toContain("invalid username or password");
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  // W4 P2-2: login.error.failed carries a `{status}` placeholder; the AuthError
+  // keeps the real HTTP status so it interpolates instead of rendering the
+  // literal "{status}".
+  it("interpolates the HTTP status into login.error.failed (no literal {status})", async () => {
+    const onLogin = vi
+      .fn()
+      .mockRejectedValue(new AuthError("LOGIN_FAILED", "login failed: HTTP 503", 503));
+    const container = await renderLogin(onLogin);
+
+    fill(container, "#username", "admin");
+    fill(container, "#password", "admin");
+    const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+    await act(async () => button!.click());
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("503");
+    expect(text).not.toContain("{status}");
   });
 
   it("disables submit until both fields are filled", async () => {
@@ -112,6 +173,111 @@ describe("LoginPage", () => {
     }
   });
 
+
+  // S-11 (GOAL-011 D-002 §5): when the preflight reports the gate enabled, the
+  // page renders the challenge and submits captchaId/captchaAnswer.
+  it("renders the captcha challenge when the preflight reports it enabled", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        enabled: true,
+        challenge: { id: "cap-1", question: "7 + 3 = ?", expiresInSeconds: 300 },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const onLogin = vi.fn().mockResolvedValue(undefined);
+      const container = await renderLogin(onLogin);
+      expect(container.querySelector('[data-captcha-question]')?.textContent).toContain("7 + 3");
+      fill(container, "#username", "admin");
+      fill(container, "#password", "admin");
+      fill(container, "#captchaAnswer", "10");
+      const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+      await act(async () => button!.click());
+      expect(onLogin).toHaveBeenCalledWith("admin", "admin", { id: "cap-1", answer: "10" }, expect.any(Function));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("refreshes the captcha challenge when the user clicks 换一题 (W16-F08)", async () => {
+    let calls = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      calls += 1;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          challenge: { id: "cap-" + calls, question: calls === 1 ? "1 + 1 = ?" : "2 + 2 = ?", expiresInSeconds: 300 },
+        }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const container = await renderLogin(vi.fn().mockResolvedValue(undefined));
+      const refresh = container.querySelector<HTMLButtonElement>("[data-captcha-refresh]");
+      expect(refresh).not.toBeNull();
+      const before = calls;
+      await act(async () => refresh!.click());
+      await act(async () => {});
+      expect(calls).toBeGreaterThan(before);
+      expect(container.querySelector('[data-captcha-question]')?.textContent).toContain("2 + 2");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("stays captcha-free and still logs in when the preflight reports disabled", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ enabled: false }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const onLogin = vi.fn().mockResolvedValue(undefined);
+      const container = await renderLogin(onLogin);
+      expect(container.querySelector("#captchaAnswer")).toBeNull();
+      fill(container, "#username", "admin");
+      fill(container, "#password", "admin");
+      const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+      await act(async () => button!.click());
+      expect(onLogin).toHaveBeenCalledWith("admin", "admin", undefined, expect.any(Function));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("surfaces the INVALID_CAPTCHA error and refreshes the challenge (F-009)", async () => {
+    let calls = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      calls += 1;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          challenge: { id: "cap-" + calls, question: "3 + 4 = ?", expiresInSeconds: 300 },
+        }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const onLogin = vi
+        .fn()
+        .mockRejectedValue(new AuthError("INVALID_CAPTCHA", "captcha verification failed", 400));
+      const container = await renderLogin(onLogin);
+      fill(container, "#username", "admin");
+      fill(container, "#password", "admin");
+      const button = container.querySelector<HTMLButtonElement>('button[type="submit"]');
+      await act(async () => button!.click());
+      expect(container.textContent).toContain("captcha verification failed");
+      // A fresh challenge was fetched after the rejection (consumed server-side).
+      expect(calls).toBeGreaterThanOrEqual(2);
+      expect(container.querySelector('[data-captcha-question]')?.textContent).toContain("3 + 4");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("consumes design-system Card/Input/Label primitives (S3 / D-004 Sign in)", async () => {
     const container = await renderLogin(vi.fn());
     expect(container.querySelector('[data-login-surface="design-system"]')).not.toBeNull();
@@ -124,5 +290,19 @@ describe("LoginPage", () => {
     // Card surface (rounded-lg border from ui/card)
     const card = container.querySelector(".rounded-lg.border");
     expect(card).not.toBeNull();
+  });
+
+  // W11 · M-02: after a successful MFA disable the app signs out locally and
+  // the login page shows a one-time notice (flag consumed on mount).
+  it("shows a one-time notice when mfa.disabledNotice is set", async () => {
+    sessionStorage.setItem("mfa.disabledNotice", "1");
+    const container = await renderLogin(vi.fn());
+    const banner = container.querySelector('[data-login-notice="mfa-disabled"]');
+    expect(banner).not.toBeNull();
+    expect(banner!.textContent).toContain("MFA was disabled");
+    // The flag was consumed — a second mount shows no banner.
+    sessionStorage.clear();
+    const container2 = await renderLogin(vi.fn());
+    expect(container2.querySelector('[data-login-notice="mfa-disabled"]')).toBeNull();
   });
 });

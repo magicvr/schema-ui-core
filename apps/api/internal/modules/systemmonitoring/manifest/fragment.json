@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "system-monitoring",
+      "title": "System monitoring",
+      "schemaUrl": "/api/schema/system-monitoring",
+      "route": "/system-monitoring",
+      "titleKey": "manifest.title.systemMonitoring"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "system-monitoring",
+        "label": "System monitoring",
+        "icon": "activity",
+        "visibleWhen": {
+          "when": "$context.features.menu_monitoring == true"
+        },
+        "labelKey": "manifest.nav.systemMonitoring"
+      }
+    ]
+  }
+}

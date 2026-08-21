@@ -1,4 +1,50 @@
+import { readFileSync } from "node:fs";
+
+import Ajv, { type ValidateFunction } from "ajv";
 import { expect, test } from "@playwright/test";
+
+import { signInAsAdmin } from "./sign-in";
+
+// R2 hygiene regression guard: the published runtime manifest must satisfy the
+// pinned protocol schema (docs/schemas/app-manifest.schema.json — every block
+// is additionalProperties: false). The browser host refuses non-protocol
+// fields (UNKNOWN_MANIFEST_FIELD) and every shell surface fails; a dashboard
+// fragment once leaked a non-protocol "order" nav field and took the whole
+// suite down with it. This assertion turns that leak class into a targeted
+// failure at the exact surface the host consumes.
+const appManifestSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/app-manifest.schema.json", import.meta.url), "utf8"),
+) as object;
+const nodeSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/node.schema.json", import.meta.url), "utf8"),
+) as object;
+const pageSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/page.schema.json", import.meta.url), "utf8"),
+) as object;
+const actionSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/action.schema.json", import.meta.url), "utf8"),
+) as object;
+const reactionSchema = JSON.parse(
+  readFileSync(new URL("../../../docs/schemas/reaction.schema.json", import.meta.url), "utf8"),
+) as object;
+const ajv = new Ajv({ allErrors: true, strict: false, validateSchema: false });
+// The app-manifest schema has its own absolute $id (schema-ui.dev), so its
+// relative $ref "node.schema.json#/definitions/VisibleWhen" resolves against
+// that base URI. The referenced schemas use a different $id namespace
+// (internal/schema-ui), so besides the filename registrations they must also
+// be registered under the app-manifest base (mirrors how
+// src/protocol/conformance/runtime-schema-validate.ts keeps refs resolvable).
+const manifestSchemaBase = String((appManifestSchema as { $id?: string }).$id).replace(/[^/]*$/, "");
+for (const [name, schema] of [
+  ["node", nodeSchema],
+  ["page", pageSchema],
+  ["action", actionSchema],
+  ["reaction", reactionSchema],
+] as const) {
+  ajv.addSchema(schema, `${name}.schema.json`);
+  ajv.addSchema(schema, `${manifestSchemaBase}${name}.schema.json`);
+}
+const validateManifestSchema: ValidateFunction = ajv.compile(appManifestSchema);
 
 // R6 browser E2E (I-008-005 forward path) updated for the R2 auth closed loop
 // (GOAL-005): boots the Go API + Vite dev server via playwright webServer;
@@ -9,6 +55,9 @@ import { expect, test } from "@playwright/test";
 test("login gates the shell and the real auth chain works through the proxy", async ({ page, request }) => {
   const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
   const isAdminProfile = profile === "admin";
+  // W2 (GOAL-003 / workspace-010): demo = mvp capability + dev.examples, so it
+  // exposes the example pages and homes to overview; mvp/admin stay examples-free.
+  const isDemoProfile = profile === "demo";
 
   // The same browser build must consume the runtime Manifest selected by the
   // API profile. The proxy must not silently fall back to a static Web file.
@@ -16,8 +65,23 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(manifestResponse.status()).toBe(200);
   expect(manifestResponse.headers()["x-schema-ui-manifest-source"]).toBe("api");
   const manifest = await manifestResponse.json();
+  // The runtime manifest must be structurally valid per the pinned protocol
+  // schema; a fragment leaking a non-protocol field would be refused by the
+  // host (UNKNOWN_MANIFEST_FIELD) and break every browser surface.
+  const schemaValid = validateManifestSchema(manifest);
+  expect(
+    schemaValid,
+    validateManifestSchema.errors
+      ? validateManifestSchema.errors.map((error) => `${error.instancePath || "/"}: ${error.message}`).join("; ")
+      : "runtime manifest failed app-manifest.schema.json validation",
+  ).toBe(true);
   const manifestPageIds = manifest.pages.map((page: { pageId: string }) => page.pageId);
-  expect(manifestPageIds).toEqual(expect.arrayContaining(["overview", "users", "roles"]));
+  // W1 (GOAL-002 / workspace-010): production defaults ship no dev.examples.
+  expect(manifestPageIds).toEqual(expect.arrayContaining(["users", "roles"]));
+  expect(manifestPageIds.includes("overview")).toBe(isDemoProfile);
+  expect(manifestPageIds.includes("data-table")).toBe(isDemoProfile);
+  // F-01 (GOAL-003): mvp/admin production home is now the dashboard.
+  expect(manifest.app.homePageRef).toBe(isDemoProfile ? "overview" : "dashboard");
   expect(manifestPageIds.includes("settings")).toBe(isAdminProfile);
   expect(manifestPageIds.includes("activity")).toBe(isAdminProfile);
 
@@ -35,35 +99,83 @@ test("login gates the shell and the real auth chain works through the proxy", as
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
 
-  // Sign in with the dev seed.
-  await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill("admin");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  // Sign in with the dev seed (W16-F01-aware shared helper; handles forced
+  // first-login password change and the already-replaced fallback).
+  await signInAsAdmin(page);
 
-  // Shell renders and redirects home -> overview.
-  await expect(page).toHaveURL(/\/overview$/);
-  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
-  await expect(page.getByText("Schema UI Core")).toBeVisible();
+  // Shell renders and redirects home -> manifest home (demo: overview; else dashboard).
+  await expect(page).toHaveURL(isDemoProfile ? /\/overview$/ : /\/dashboard$/);
+  await expect(page.getByRole("heading", { name: isDemoProfile ? "Overview" : "Dashboard" })).toBeVisible();
+  // The shell brand renders the siteTitle from the public startup config. Read
+  // it from /api/branding rather than hardcoding the default: an earlier spec
+  // (localization M3) may have PATCHed a custom siteTitle into the shared
+  // playwright SQLite, so the header value is data-dependent, not constant.
+  const branding = await request.get("/api/branding");
+  expect(branding.status()).toBe(200);
+  const brandBody = await branding.json();
+  expect(typeof brandBody.siteTitle).toBe("string");
+  // W13 T-02: the brand text now appears twice in the DOM — the mobile-only
+  // brand bar (hidden at the desktop viewport) and the desktop single-row
+  // brand link — so target the LAST occurrence (the visible desktop one).
+  await expect(page.getByText(brandBody.siteTitle).last()).toBeVisible();
 
-  // Manifest-driven navigation slots render (top / sidebar / user).
-  await expect(page.getByRole("link", { name: "Overview" })).toBeVisible();
+  // Manifest-driven navigation slots render (top / sidebar / user). Production
+  // profiles expose no dev.examples navigation (S5 hygiene); demo does.
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Data table" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Overview" })).toHaveCount(isDemoProfile ? 1 : 0);
+  await expect(page.getByRole("link", { name: "Data table" })).toHaveCount(isDemoProfile ? 1 : 0);
   if (isAdminProfile) {
-    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    // T-01 (GOAL-013 D-002): Settings lives in the topbar user dropdown
+    // (user-chain), not the sidebar — asserted below via the menu.
     await expect(page.getByRole("link", { name: "Activity" })).toBeVisible();
+    // S-02/S-01/S-03/S-04 (GOAL-007/008/009/010): admin-only surfaces.
+    await expect(page.getByRole("link", { name: "File library" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Data dictionary" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "System monitoring" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Scheduled tasks" })).toBeVisible();
+    // S-11 (GOAL-011): login captcha settings page (admin-only surface).
+    // S-12 (GOAL-012): recycle bin page (admin-only surface).
+    await expect(page.getByRole("link", { name: "Recycle bin" })).toBeVisible();
   } else {
     await expect(page.getByRole("link", { name: "Settings" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Activity" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "File library" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Data dictionary" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "System monitoring" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Scheduled tasks" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Recycle bin" })).toHaveCount(0);
   }
 
-  // No manifest failure surface, and the sign-out control is present.
+  // No manifest failure surface. The user chain (个人中心 / 我的钱包 / 设置
+  // + 退出登录) lives in the topbar user dropdown (W12 T-01) — open it and
+  // assert the menu items.
   await expect(page.getByText("MANIFEST_LOAD_FAILED")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await page.getByRole("button", { name: "User menu" }).click();
+  await expect(page.getByRole("menuitem", { name: "Settings" })).toHaveCount(isAdminProfile ? 1 : 0);
+  await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // W13 T-04: the theme toggle renders LEFT of the language switcher.
+  const themeBox = await page.getByRole("button", { name: "Toggle color theme" }).boundingBox();
+  const langBox = await page.getByRole("button", { name: "Language" }).boundingBox();
+  expect(themeBox).not.toBeNull();
+  expect(langBox).not.toBeNull();
+  expect(themeBox!.x).toBeLessThan(langBox!.x);
+
+  // W13 T-02: on a mobile viewport the logo + site title own a dedicated
+  // brand bar on top, and the functional area keeps its own row below.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('[data-shell-region="mobile-brandbar"]')).toBeVisible();
+  await expect(
+    page
+      .locator('[data-shell-region="mobile-brandbar"]')
+      .getByText(brandBody.siteTitle),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
 
   // Real auth chain through the Web /api proxy -> Go API (independent context).
   const login = await request.post("/api/auth/login", {
-    data: { username: "admin", password: "admin" },
+    data: { username: "admin", password: "admin-e2e-pass" },
   });
   expect(login.status()).toBe(200);
   const tokens = await login.json();
@@ -113,5 +225,62 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // middleware path through the proxy (401 above); role denial is pure API logic
   // already pinned by that test.
 
-  await page.screenshot({ path: "test-results/r6-overview.png", fullPage: true });
+  // W13 T-05: avatar self-service through the real API — upload a PNG, commit
+  // it to the profile, reload, and the user-menu trigger shows the avatar.
+  const avatarUpload = await request.post("/api/account/avatar", {
+    headers,
+    multipart: {
+      file: {
+        name: "avatar.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "base64",
+        ),
+      },
+    },
+  });
+  expect(avatarUpload.status()).toBe(200);
+  const avatarBody = await avatarUpload.json();
+  expect(avatarBody.url).toMatch(/^\/api\/account\/avatars\//);
+  const avatarPatch = await request.patch("/api/account/profile", {
+    headers,
+    data: { name: "Admin", avatarUrl: avatarBody.url },
+  });
+  expect(avatarPatch.status()).toBe(200);
+  await page.reload();
+  await expect(page.locator(`img[src="${avatarBody.url}"]`).first()).toBeVisible();
+
+  // W13 T-05 follow-up (user 2026-08-16): the header must refresh IMMEDIATELY
+  // after a UI-driven avatar save — no reload. Drive the account page upload
+  // control, save the profile, and assert the user-menu trigger swaps to the
+  // new avatar via the account.profile session refresh.
+  await page.getByRole("button", { name: "User menu" }).click();
+  await page.getByRole("menuitem", { name: "Account" }).click();
+  await expect(page).toHaveURL(/\/account$/);
+  await page.locator("#field-avatarUrl").setInputFiles({
+    name: "avatar-ui.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  // The upload settles and the form preview shows the new avatar.
+  const profileForm = page.locator("form").filter({ has: page.getByLabel("Avatar") });
+  const preview = profileForm.locator('img[src^="/api/account/avatars/"]');
+  await expect(preview.first()).toBeVisible();
+  const uiAvatarUrl = (await preview.first().getAttribute("src"))!;
+  await page.getByRole("button", { name: "Save profile" }).click();
+  // The header avatar updates WITHOUT a reload (account.profile session refresh).
+  await expect(page.locator(`img[src="${uiAvatarUrl}"]`).first()).toBeVisible();
+
+  // W13 T-06 · notifications page renders the interactive center. The W16-F01
+  // forced password change emits an account.password-changed notification, so
+  // the inbox is non-empty on this run (no brittle empty-state text).
+  await page.goto("/notifications");
+  await expect(page.locator("[data-notification-center]")).toBeVisible();
+  await expect(page.locator("[data-notification-row]").first()).toBeVisible();
+
+  await page.screenshot({ path: "test-results/r6-shell-users.png", fullPage: true });
 });

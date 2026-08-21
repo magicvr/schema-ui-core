@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,6 +39,10 @@ func compositionCount(t *testing.T, st *store.Store, query string, args ...any) 
 }
 
 func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *readinessGate) (*http.ServeMux, error) {
+	jobRuntime, err := newJobRuntime(st)
+	if err != nil {
+		return nil, err
+	}
 	return newMux(
 		&config.Config{DBPath: "test.db"},
 		a,
@@ -46,6 +52,8 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		settingsrepository.New(st),
 		plan,
 		gate,
+		jwtSecret("test-secret"),
+		jobRuntime,
 	)
 }
 
@@ -136,7 +144,7 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 			profile:          "mvp",
 			settingsRoute:    http.StatusNotFound,
 			operationsRoute:  http.StatusNotFound,
-			brandingRoute:    http.StatusNotFound,
+			brandingRoute:    http.StatusOK, // public bootstrap remains available without admin.settings
 			settingsSchema:   http.StatusNotFound,
 			activitySchema:   http.StatusNotFound,
 			wantSettingsPage: false,
@@ -210,14 +218,268 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 	}
 }
 
+// TestManifestHomePageRefDerivation pins the W1 home-page derivation table
+// (D-003 §2) and the product-surface hygiene of default profiles (S4/S5):
+// mvp/admin publish no dev.examples pages and home -> the first admin page;
+// explicitly enabling dev.examples restores the overview home and examples.
+func TestManifestHomePageRefDerivation(t *testing.T) {
+	type manifestApp struct {
+		HomePageRef string `json:"homePageRef"`
+	}
+	type manifestDoc struct {
+		App   manifestApp `json:"app"`
+		Pages []struct {
+			PageID string `json:"pageId"`
+		} `json:"pages"`
+		Navigation struct {
+			Sidebar []json.RawMessage `json:"sidebar"`
+		} `json:"navigation"`
+	}
+
+	fetch := func(t *testing.T, plan kernel.Plan) (manifestDoc, *http.ServeMux) {
+		t.Helper()
+		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = st.Close() })
+		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		mux, err := testMux(a, st, plan, &readinessGate{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("manifest status = %d: %s", rec.Code, rec.Body.String())
+		}
+		var doc manifestDoc
+		if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc, mux
+	}
+
+	// Default mvp: F-01 dashboard is the production home (GOAL-003 D-002 §3),
+	// no examples surface.
+	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mvpDoc, mvpMux := fetch(t, mvpPlan)
+	if mvpDoc.App.HomePageRef != "dashboard" {
+		t.Fatalf("mvp homePageRef = %q, want dashboard", mvpDoc.App.HomePageRef)
+	}
+	for _, page := range mvpDoc.Pages {
+		if page.PageID == "overview" || page.PageID == "data-table" || page.PageID == "form-controls" {
+			t.Fatalf("mvp default manifest leaks example page %q (S5)", page.PageID)
+		}
+	}
+	// Disabled examples: example schema endpoint 404s (S5).
+	overviewSchema := httptest.NewRecorder()
+	mvpMux.ServeHTTP(overviewSchema, httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil))
+	if overviewSchema.Code != http.StatusNotFound {
+		t.Fatalf("mvp /api/schema/overview status = %d, want 404 (S5)", overviewSchema.Code)
+	}
+	// Disabled examples: no "Examples" sidebar navigation group (S5, F-003).
+	for _, raw := range mvpDoc.Navigation.Sidebar {
+		var item struct {
+			Label string `json:"label"`
+		}
+		if err := json.Unmarshal(raw, &item); err != nil {
+			t.Fatal(err)
+		}
+		if item.Label == "Examples" {
+			t.Fatalf("mvp default manifest exposes Examples navigation group (S5)")
+		}
+	}
+
+	// Default admin: F-01 dashboard is the production home (GOAL-003 D-002 §3).
+	adminPlan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	adminDoc, _ := fetch(t, adminPlan)
+	if adminDoc.App.HomePageRef != "dashboard" {
+		t.Fatalf("admin homePageRef = %q, want dashboard", adminDoc.App.HomePageRef)
+	}
+
+	// mvp + dev.examples (dogfood): home -> overview, examples restored.
+	registry, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatal(err)
+	}
+	examplesPlan, err := registry.Resolve(append(mvpPlan.IDs(), "dev.examples"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	examplesDoc, examplesMux := fetch(t, examplesPlan)
+	if examplesDoc.App.HomePageRef != "overview" {
+		t.Fatalf("dev.examples enabled homePageRef = %q, want overview", examplesDoc.App.HomePageRef)
+	}
+	seen := map[string]bool{}
+	for _, page := range examplesDoc.Pages {
+		seen[page.PageID] = true
+	}
+	if !seen["overview"] || !seen["data-table"] {
+		t.Fatalf("dev.examples enabled manifest missing example pages: %v", seen)
+	}
+	// Enabled examples: example schema endpoint serves again.
+	overviewSchemaOn := httptest.NewRecorder()
+	examplesMux.ServeHTTP(overviewSchemaOn, httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil))
+	if overviewSchemaOn.Code != http.StatusOK {
+		t.Fatalf("dev.examples enabled /api/schema/overview status = %d, want 200", overviewSchemaOn.Code)
+	}
+}
+
+// TestDeriveHomePageRefBranches pins the remaining decision-table branches of
+// deriveHomePageRef (D-003 §2, F-002 of the independent wave audit): non-users
+// admin order, no-admin-with-page fallback, and the no-page omit case.
+func TestDeriveHomePageRefBranches(t *testing.T) {
+	mkPlan := func(modules ...kernel.Module) kernel.Plan {
+		return kernel.Plan{Modules: modules}
+	}
+	pages := func(id string, pageIDs ...string) kernel.Module {
+		return kernel.Module{ID: id, Contributions: kernel.ContributionKeys{Pages: pageIDs}}
+	}
+	cases := []struct {
+		name string
+		plan kernel.Plan
+		want string
+	}{
+		{name: "dev.examples wins", plan: mkPlan(pages("dev.examples", "overview", "data-table"), pages("admin.users", "users")), want: "overview"},
+		{name: "users precedes roles", plan: mkPlan(pages("admin.roles", "roles"), pages("admin.users", "users")), want: "users"},
+		{name: "dashboard precedes users (F-01 head insert)", plan: mkPlan(pages("admin.users", "users"), pages("admin.dashboard", "dashboard")), want: "dashboard"},
+		{name: "roles only", plan: mkPlan(pages("admin.roles", "roles")), want: "roles"},
+		{name: "activity only", plan: mkPlan(pages("admin.activity", "activity")), want: "activity"},
+		{name: "no admin, page-bearing module", plan: mkPlan(pages("custom.foo", "foo")), want: "foo"},
+		{name: "no pages omits home", plan: mkPlan(pages("custom.empty")), want: ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := deriveHomePageRef(tc.plan); got != tc.want {
+				t.Fatalf("deriveHomePageRef = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestDemoProfileManifest pins the W2 demo Profile (GOAL-003): demo = mvp +
+// dev.examples, so the manifest exposes both the mvp pages and the examples,
+// home -> overview, while mvp/admin production defaults stay examples-free.
+func TestDemoProfileManifest(t *testing.T) {
+	plan, err := ResolvePlan(&config.Config{ProfileName: "demo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !plan.HasModule("dev.examples") || !plan.HasModule("admin.users") {
+		t.Fatalf("demo plan must include dev.examples and mvp admin modules: %v", plan.IDs())
+	}
+	st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	mux, err := testMux(a, st, plan, &readinessGate{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("manifest status = %d: %s", rec.Code, rec.Body.String())
+	}
+	var doc struct {
+		App struct {
+			HomePageRef string `json:"homePageRef"`
+		} `json:"app"`
+		Pages []struct {
+			PageID string `json:"pageId"`
+		} `json:"pages"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if doc.App.HomePageRef != "overview" {
+		t.Fatalf("demo homePageRef = %q, want overview", doc.App.HomePageRef)
+	}
+	seen := map[string]bool{}
+	for _, page := range doc.Pages {
+		seen[page.PageID] = true
+	}
+	wants := []string{"users", "roles",
+		"overview", "data-table", "admin-list-batch", "data-display",
+		"search-form-table", "form-controls", "form-with-reactions", "form-with-upload"}
+	for _, want := range wants {
+		if !seen[want] {
+			t.Fatalf("demo manifest missing page %q: %v", want, seen)
+		}
+	}
+	if seen["settings"] || seen["activity"] {
+		t.Fatalf("demo manifest leaks non-mvp pages: %v", seen)
+	}
+	// Example schema endpoint serves under demo.
+	overviewSchema := httptest.NewRecorder()
+	mux.ServeHTTP(overviewSchema, httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil))
+	if overviewSchema.Code != http.StatusOK {
+		t.Fatalf("demo /api/schema/overview status = %d, want 200", overviewSchema.Code)
+	}
+	// mvp/admin still exclude examples (S3, W1 hygiene).
+	for _, profile := range []string{"mvp", "admin"} {
+		p, err := ResolvePlan(&config.Config{ProfileName: profile})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, id := range p.IDs() {
+			if id == "dev.examples" {
+				t.Fatalf("%s default must not include dev.examples (S3)", profile)
+			}
+		}
+	}
+}
+
 func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 	tests := []struct {
 		profile         string
 		wantPermissions int
 		wantNavigation  int
 	}{
-		{profile: "mvp", wantPermissions: 5, wantNavigation: 2},
-		{profile: "admin", wantPermissions: 8, wantNavigation: 4},
+		// F-03 (GOAL-005): admin.account contributes users.enable/users.disable
+		// (+2 permissions) and menu_account (+1 navigation) to mvp and admin.
+		// F-02 (GOAL-004): admin.data-transfer contributes data.export/data.import
+		// (+2 permissions, no navigation) to admin only.
+		// F-01 (GOAL-003): admin.dashboard contributes menu_dashboard (+1
+		// navigation, no permissions) to mvp and admin.
+		// F-04 (GOAL-006): admin.notifications contributes menu_notifications
+		// (+1 navigation, no permissions) to mvp and admin.
+		// VP-012 R6: core.auth-session contributes service-credentials.read/write
+		// (+2 permissions, no page/navigation) to every profile.
+		{profile: "mvp", wantPermissions: 10, wantNavigation: 5},
+		// S-02 (GOAL-007): admin.file-library contributes files.read/files.delete
+		// (+2 permissions) and menu_files (+1 navigation) to admin only.
+		// S-01 (GOAL-008): admin.data-dictionary contributes dictionary.read/
+		// dictionary.write (+2 permissions) and menu_dictionary (+1 navigation) to
+		// admin only.
+		// S-03 (GOAL-009): admin.system-monitoring contributes monitoring.read
+		// (+1 permission) and menu_monitoring (+1 navigation) to admin only.
+		// S-04 (GOAL-010): admin.scheduled-tasks contributes tasks.read/tasks.write
+		// (+2 permissions) and menu_scheduled_tasks (+1 navigation) to admin only.
+		// S-11 (GOAL-011): admin.login-captcha contributes captcha.read/captcha.write
+		// (+2 permissions, no navigation — the switch lives in the settings
+		// page per D-003 user ruling) to admin only.
+		// S-12 (GOAL-012): admin.recycle-bin contributes recycle.read/recycle.write
+		// (+2 permissions) and menu_recycle_bin (+1 navigation) to admin only.
+		// S-09 (GOAL-016): admin.data-permission contributes
+		// data-permission.read/data-permission.write (+2 permissions) and
+		// menu_data_permission (+1 navigation) to admin only.
+		// S-10 (GOAL-017): admin.mfa contributes users.mfa-reset (+1 permission,
+		// no navigation — personal-center block + users row action).
+		// S-14 (GOAL-019): admin.wallet contributes wallet.read/wallet.write/
+		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
+		// GOAL-022: admin.wallet adds menu_wallet_self (+1 navigation, no
+		// permission keys — identity-only self-service).
+		{profile: "admin", wantPermissions: 32, wantNavigation: 15},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
@@ -603,4 +865,210 @@ func TestReadyzGatedOnModuleReadiness(t *testing.T) {
 	if ready.Code != http.StatusOK {
 		t.Fatalf("readyz with set gate = %d, want 200", ready.Code)
 	}
+}
+
+// TestManifestFragmentProtocolFields pins that the published manifest carries
+// only protocol-sanctioned fields per docs/schemas/app-manifest.schema.json
+// (additionalProperties: false on every envelope/app/page/navigation block).
+// R2 hygiene regression guard: the dashboard manifest fragment once leaked a
+// non-protocol "order" navigation field; the web host correctly refused it
+// (UNKNOWN_MANIFEST_FIELD) and every browser surface failed, but the leak only
+// surfaced in Playwright E2E. This test turns the leak into a go-test failure
+// for every enabled profile.
+func TestManifestFragmentProtocolFields(t *testing.T) {
+	envelopeKeys := setOf("protocolVersion", "requiredCapabilities", "app", "pages", "navigation")
+	appKeys := setOf("appId", "name", "nameKey", "homePageRef", "logo", "description", "descriptionKey")
+	logoKeys := setOf("light", "dark")
+	pageKeys := setOf("pageId", "title", "titleKey", "schemaUrl", "route", "returnIntentQueryKeys")
+	navSlotKeys := setOf("top", "sidebar", "user")
+	navItemKeys := setOf("pageRef", "url", "label", "labelKey", "icon", "visibleWhen", "permissions", "items")
+	visibleWhenKeys := setOf("when")
+	permissionKeys := setOf("view")
+
+	assertKeys := func(t *testing.T, node any, allowed map[string]bool, path string) {
+		t.Helper()
+		obj, ok := node.(map[string]any)
+		if !ok {
+			return
+		}
+		for key := range obj {
+			if !allowed[key] {
+				t.Fatalf("manifest %s carries non-protocol field %q (docs/schemas/app-manifest.schema.json)", path+"."+key, key)
+			}
+		}
+	}
+	var assertNavItem func(t *testing.T, node any, path string)
+	assertNavItem = func(t *testing.T, node any, path string) {
+		t.Helper()
+		obj, ok := node.(map[string]any)
+		if !ok {
+			return
+		}
+		assertKeys(t, obj, navItemKeys, path)
+		if items, ok := obj["items"].([]any); ok {
+			for i, child := range items {
+				assertNavItem(t, child, fmt.Sprintf("%s.items[%d]", path, i))
+			}
+		}
+		if vw, ok := obj["visibleWhen"]; ok {
+			assertKeys(t, vw, visibleWhenKeys, path+".visibleWhen")
+		}
+		if perm, ok := obj["permissions"]; ok {
+			assertKeys(t, perm, permissionKeys, path+".permissions")
+		}
+	}
+
+	fetch := func(t *testing.T, plan kernel.Plan) map[string]any {
+		t.Helper()
+		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = st.Close() })
+		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		mux, err := testMux(a, st, plan, &readinessGate{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("manifest status = %d: %s", rec.Code, rec.Body.String())
+		}
+		var doc map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc
+	}
+
+	checkPlan := func(t *testing.T, plan kernel.Plan, label string) {
+		t.Helper()
+		doc := fetch(t, plan)
+		assertKeys(t, doc, envelopeKeys, "$")
+		assertKeys(t, doc["app"], appKeys, "$.app")
+		if logo, ok := doc["app"].(map[string]any)["logo"]; ok {
+			assertKeys(t, logo, logoKeys, "$.app.logo")
+		}
+		pages, _ := doc["pages"].([]any)
+		for i, page := range pages {
+			assertKeys(t, page, pageKeys, fmt.Sprintf("$.pages[%d]", i))
+		}
+		assertKeys(t, doc["navigation"], navSlotKeys, "$.navigation")
+		nav, _ := doc["navigation"].(map[string]any)
+		for _, slot := range []string{"top", "sidebar", "user"} {
+			items, _ := nav[slot].([]any)
+			for i, item := range items {
+				assertNavItem(t, item, fmt.Sprintf("$.navigation.%s[%d]", slot, i))
+			}
+		}
+	}
+
+	for _, profile := range []string{"mvp", "admin"} {
+		t.Run(profile, func(t *testing.T) {
+			plan, err := ResolvePlan(&config.Config{ProfileName: profile})
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkPlan(t, plan, profile)
+		})
+	}
+	// dev.examples adds the upstream example fragments (demo surface).
+	registry, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatal(err)
+	}
+	mvpPlan, err := ResolvePlan(&config.Config{ProfileName: "mvp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	examplesPlan, err := registry.Resolve(append(mvpPlan.IDs(), "dev.examples"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("demo-examples", func(t *testing.T) {
+		checkPlan(t, examplesPlan, "demo-examples")
+	})
+}
+
+func setOf(values ...string) map[string]bool {
+	result := make(map[string]bool, len(values))
+	for _, value := range values {
+		result[value] = true
+	}
+	return result
+}
+
+// GOAL-013 D-002 §4 / A-003 F-002: the published manifest's sidebar/user
+// slots follow the default navigation order (and a NAVIGATION_ORDER override
+// reorders them). This locks the product-visible ordering contract that unit
+// tests cover piecemeal.
+func TestPublishedManifestNavigationOrder(t *testing.T) {
+	fetchSidebar := func(t *testing.T, plan kernel.Plan, order []string) []string {
+		t.Helper()
+		if len(order) > 0 {
+			plan.NavigationOrder = order
+		}
+		st, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer st.Close()
+		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		mux, err := testMux(a, st, plan, &readinessGate{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		response := httptest.NewRecorder()
+		mux.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("manifest status = %d, body=%s", response.Code, response.Body.String())
+		}
+		var document struct {
+			Navigation struct {
+				Sidebar []struct {
+					Label string `json:"label"`
+				} `json:"sidebar"`
+				User []struct {
+					Label string `json:"label"`
+				} `json:"user"`
+			} `json:"navigation"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &document); err != nil {
+			t.Fatal(err)
+		}
+		labels := make([]string, 0, len(document.Navigation.Sidebar))
+		for _, item := range document.Navigation.Sidebar {
+			labels = append(labels, item.Label)
+		}
+		return labels
+	}
+
+	t.Run("admin default order matches the frozen list", func(t *testing.T) {
+		plan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		labels := fetchSidebar(t, plan, nil)
+		want := []string{
+			"Dashboard", "Users", "Roles", "Wallet",
+			"Activity", "File library", "Data dictionary",
+			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
+		}
+		if strings.Join(labels, "|") != strings.Join(want, "|") {
+			t.Fatalf("sidebar = %v, want %v", labels, want)
+		}
+	})
+
+	t.Run("env override reorders the published sidebar", func(t *testing.T) {
+		plan, err := ResolvePlan(&config.Config{ProfileName: "admin"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		labels := fetchSidebar(t, plan, []string{"menu_recycle_bin", "menu_dashboard"})
+		want := []string{"Recycle bin", "Dashboard"}
+		if len(labels) < 2 || labels[0] != want[0] || labels[1] != want[1] {
+			t.Fatalf("sidebar = %v, want prefix %v", labels, want)
+		}
+	})
 }

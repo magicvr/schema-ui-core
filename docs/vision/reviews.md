@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-09
+updated: 2026-08-20
 parent: null
-version: 1.3.5
+version: 1.3.42
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.5
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | 仓库级 Vision Review open required = **0**（2026-08-09） |
+| — | — | — | **无** | VRev-029 `pass`；V-F058/V-F059 recommended → **fixed**（VP-013 激活 + Root P-001/I-00N/配置面）。VRev-028 V-F057、VRev-027 V-F054～V-F056 仍为 fixed |
 
-> Vision Review **open required = 0**。**VRev-011** findings fixed；**VP-005 `active`**（v0.4.1）+ lead **`workspace-006-design-system-and-ui-experience`**（2026-08-09 `/govern` 开区，Root `0/5`）。**VP-006 已 `closed`**。组合焦点见 [roadmap.md](roadmap.md)。
+> Vision Review **open required = 0**。**VRev-028（self，`pass`）**：原 verdict 保留；V-F057 recommended → **fixed**。当前交付 VP = **[VP-013-store-dialects](plans/VP-013-store-dialects.md) `active`**（架构 A1；lead `workspace-013-store-dialects`；VRev-029 `pass`）。持续程序 **VP-009** / **VP-010**；**[VP-012](plans/VP-012-shared-cross-module-contracts.md) 已完整 `closed`**。后续方向按 [roadmap.md](roadmap.md) 三分支并行登记。
 
 ## 条目索引
 
@@ -51,10 +51,19 @@ version: 1.3.5
 | VRev-011 | 2026-08-08 | independent | VP-005 设计系统与 UI/UX · 意图合理性 / 退出边界 / I-PROTO 对齐 | conditional | 0 | 原 verdict conditional 保留；F-V018/019/020 → fixed（2026-08-09 `/vision`，VP-005 v0.3.0） | [VRev-011-vp005-design-system-ui-experience.md](reviews/VRev-011-vp005-design-system-ui-experience.md) |
 | VRev-012 | 2026-08-08 | independent | VP-006 整份 v2.7.0 契约 · 意图 / 退出 #1 partial 纪律 / 组合焦点 | conditional | 0 | 方向正确；F-V021/022/023 → fixed（`/vision` editorial 0.1.1） | [VRev-012-vp006-full-protocol-contract.md](reviews/VRev-012-vp006-full-protocol-contract.md) |
 | VRev-013 | 2026-08-08 | independent | VP-006 v0.1.1 闭合后复审 · 退出纪律 / 对齐链 / 组合焦点 | pass | 0 | F-V021～023 闭合可复核；方向已稳；F-V024 → fixed（README）；VP-006 已激活 | [VRev-013-vp006-post-closure-reaudit.md](reviews/VRev-013-vp006-post-closure-reaudit.md) |
-| VRev-014 | 2026-08-09 | independent | VP-006 closed 主张复核 · 工作区治理 + 代码/验证 | pass | 0 | 关门成立；Root done/6/6；vitest 569 + go 全绿 + fixture 320；F-V025/F-V026 → fixed（`/vision`+`/govern`） | [VRev-014-vp006-closed-claim-verification.md](reviews/VRev-014-vp006-closed-claim-verification.md) |
-
-## 迁移记录
-
-| date | actor | summary |
-|------|-------|---------|
-| 2026-08-07 | maintain | goal-governance v0.13.0 方法论：legacy inline → 稳定索引 + `reviews/` 平铺报告；编号 VRev-001～010 不变；正文原样迁移，仅调整相对链接深度。 |
+| VRev-014 | 2026-08-09 | independent | VP-006 closed 主张复核 · 工作区治理 + 代码/验证 | pass | 0 | 原 verdict/finding 保留；F-V025/F-V026 fixed；2026-08-10 执行分母勘误投影：`I-PROTO-FULL-001` v1.0.1 = 318 executed + 2 local adapter excluded | [VRev-014-vp006-closed-claim-verification.md](reviews/VRev-014-vp006-closed-claim-verification.md) |
+| VRev-015 | 2026-08-09 | independent | VP-005 关门就绪 · 区证据 / 退出判据 / Vision required / 组合索引同步 | conditional | 0 | 实质证据齐备（Root done 5/5；616 tests + e2e 2/2；open required=0）；F-V027/F-V028 → fixed（2026-08-09 `/vision` 用户书面「确认关门」，VP-005 closed v0.5.0 + 组合索引原子同步） | [VRev-015-vp005-closeout-readiness.md](reviews/VRev-015-vp005-closeout-readiness.md) |
+| VRev-016 | 2026-08-09 | independent | VP-007 多语种与系统设置 · 意图 / 退出 #2 分母 / 对齐链 | conditional | 0 | 原 verdict 保留；F-V029/030/031 → fixed（VP-007 v0.1.1 + Charter VR-012 + 报告内响应）；审视时为 planned，后续已激活并于 2026-08-09 closed | [VRev-016-vp007-localization-system-settings.md](reviews/VRev-016-vp007-localization-system-settings.md) |
+| VRev-017 | 2026-08-10 | independent | VP-008 全基架准入 · 意图清晰度 / 退出可判定性 / 未考虑项 | conditional | 0 | 原 verdict 保留；F-V032 → fixed；F-V033/034/035 recommended 同批 fixed（`/vision` editorial 响应）；VP-008 仍 planned、0 workspace | [VRev-017-vp008-intent-clarity-readiness-gates.md](reviews/VRev-017-vp008-intent-clarity-readiness-gates.md) |
+| VRev-018 | 2026-08-10 | independent | VP-008 v0.2.0 闭合后复审 · 意图清晰度 / 残余问题 / 未考虑项 | conditional | 0 | 原 verdict 保留；F-V036 → fixed；F-V037～F-V040 recommended 同批 fixed（`/vision` editorial 响应）；VP-008 已修订 v0.3.0，仍 planned、0 workspace | [VRev-018-vp008-v0-2-0-post-closure-intent-reaudit.md](reviews/VRev-018-vp008-v0-2-0-post-closure-intent-reaudit.md) |
+| VRev-019 | 2026-08-10 | independent | VP-008 v0.3.0 · 意图清晰度 / 证据有效性 / 未考虑项 | conditional | 0 | 原 verdict 保留；F-V041 → fixed；F-V042～F-V044 recommended 同批 fixed（`/vision` editorial 响应）；VP-008 已修订 v0.4.0，仍 planned、0 workspace | [VRev-019-vp008-v0-3-0-evidence-validity-review.md](reviews/VRev-019-vp008-v0-3-0-evidence-validity-review.md) |
+| VRev-020 | 2026-08-10 | independent | VP-008 v0.4.0 · 意图清晰度 / 准入边界 / 未考虑项 | conditional | 0 | 原 verdict 保留；F-V045 → fixed（`/vision` editorial 响应）；VP-008 已修订 v0.5.0，仍 planned、0 workspace | [VRev-020-vp008-v0-4-0-accessibility-readiness.md](reviews/VRev-020-vp008-v0-4-0-accessibility-readiness.md) |
+| VRev-021 | 2026-08-10 | independent | VP-008 v0.5.0 · 基线来源 / go 消费边界 / 未考虑项 | conditional | 0 | 原 verdict 保留；F-V046 → fixed，F-V047 → fixed（`/vision` editorial 响应）；VP-008 已修订 v0.6.0，仍 planned、0 workspace | [VRev-021-vp008-v0-5-0-baseline-consumption-review.md](reviews/VRev-021-vp008-v0-5-0-baseline-consumption-review.md) |
+| VRev-022 | 2026-08-10 | independent | VP-008 v0.6.0 · 意图清晰度 / 准入结论效期 / 未考虑项 | conditional | 0 | 原 verdict 保留；F-V048 → fixed；VP-008 已修订 v0.7.0，规定每个后续业务 VP 激活前的消费前 freshness review 及失败暂挂/重验证；仍 planned、0 workspace | [VRev-022-vp008-v0-6-0-freshness-review.md](reviews/VRev-022-vp008-v0-6-0-freshness-review.md) |
+| VRev-023 | 2026-08-10 | independent | VP-008 v0.7.0 · 意图边界 / 愿景层级卫生 / 遗漏问题 | conditional | 0 | 原 verdict 保留；V-F049 → fixed，V-F050 recommended 同批 fixed；VP-008 已修订 v0.8.0，冻结愿景/实现分层与 `go` 回归治理所有者；仍 planned、0 workspace | [VRev-023-vp008-v0-7-0-layer-boundary-review.md](reviews/VRev-023-vp008-v0-7-0-layer-boundary-review.md) |
+| VRev-024 | 2026-08-10 | independent | VP-008 v0.8.0 · 意图清晰度 / `go` 裁决责任 / 未考虑项 | conditional | 0 | 原 verdict 保留；V-F051 → fixed（VP-008 v0.9.0 + 报告内 `/vision` editorial 响应）；VP-008 仍 planned、0 workspace | [VRev-024-vp008-v0-8-0-decision-ownership-review.md](reviews/VRev-024-vp008-v0-8-0-decision-ownership-review.md) |
+| VRev-025 | 2026-08-10 | independent | VP-008 v0.8.0 · intent clarity reaudit / gate projection | conditional | 0 | 原 verdict 保留；V-F051 carried projection 与 V-F052 → fixed（VP-008 v0.9.0 + 报告内 `/vision` editorial 响应） | [VRev-025-vp008-v0-8-0-intent-clarity-reaudit.md](reviews/VRev-025-vp008-v0-8-0-intent-clarity-reaudit.md) |
+| VRev-026 | 2026-08-10 | independent | VP-008 v0.9.0 · 意图清晰度 / 残余问题 / 未考虑项 | pass | 0 | 原 verdict 保留；V-F053 recommended → fixed（VP-008 v0.10.0 + 报告内 `/vision` 响应）；报告时 VP-008 active、0 workspace；现已绑定 `workspace-008-admin-module-readiness`，用户 2026-08-10 签发 `go` 并确认 VP-008 **closed** | [VRev-026-vp008-v0-9-0-intent-clarity-pass.md](reviews/VRev-026-vp008-v0-9-0-intent-clarity-pass.md) |
+| VRev-027 | 2026-08-18 | self | VP-011 / workspace-011 · 规划边界与跨模块路线图（四档能力地图） | conditional | 0 | V-F054～V-F056 recommended → fixed（VP-011 v0.3.0 + Root R5 + I-011-002 + roadmap 第 11 行）；仅登记，不实施、不改 Charter | [VRev-027-vp011-cross-module-roadmap.md](reviews/VRev-027-vp011-cross-module-roadmap.md) |
+| VRev-028 | 2026-08-19 | self | VP-012 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F057 recommended → fixed（VP-012 v0.2.0 完整 closed + exit↔证据 + Tier A 移交；VR-024） | [VRev-028-vp012-closeout-readiness.md](reviews/VRev-028-vp012-closeout-readiness.md) |
+| VRev-029 | 2026-08-20 | self | VP-013 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F058/V-F059 recommended → fixed（激活 + workspace-013 Root P-001/I-00N + 配置面） | [VRev-029-vp013-intent-activation.md](reviews/VRev-029-vp013-intent-activation.md) |

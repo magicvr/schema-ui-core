@@ -15,7 +15,7 @@ import (
 // 身份、refresh、权限与菜单投影全部保持。
 func TestRestartPersistence(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "restart.db")
-	st, err := Open(path, "admin", "hash", true)
+	st, err := OpenSeeded(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestRestartPersistence(t *testing.T) {
 	}
 
 	// Restart with a different seed hash: nothing is re-applied or overwritten.
-	st2, err := Open(path, "admin", "hash-v2", true)
+	st2, err := OpenSeeded(path, "admin", "hash-v2", true)
 	if err != nil {
 		t.Fatalf("restart open: %v", err)
 	}
@@ -49,8 +49,12 @@ func TestRestartPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 9 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 {
-		t.Fatalf("applied after restart = %+v, want {1..9} (no re-migration)", applied)
+	if len(applied) != 48 || applied[47].version != 48 || applied[47].name != "operation_log_session" {
+		t.Fatalf("applied after restart = %+v, want 48 ending in operation_log_session", applied)
+	}
+	applied = applied[:42]
+	if len(applied) != 42 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" {
+		t.Fatalf("applied after restart = %+v, want {1..42} (no re-migration)", applied)
 	}
 	var ur int
 	if err := st2.db.QueryRow(`SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-admin'`).Scan(&ur); err != nil || ur != 2 {
@@ -109,7 +113,7 @@ func TestRestartPersistence(t *testing.T) {
 func TestRestorePreV0002Snapshot(t *testing.T) {
 	orig := filepath.Join(t.TempDir(), "orig.db")
 	createR2Fixture(t, orig) // user-admin (roles admin+editor) + refresh token rt1/abc123
-	st, err := Open(orig, "admin", "hash", false)
+	st, err := OpenSeeded(orig, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open orig: %v", err)
 	}
@@ -130,7 +134,7 @@ func TestRestorePreV0002Snapshot(t *testing.T) {
 	if err := os.WriteFile(restored, data, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	r, err := Open(restored, "admin", "hash", true)
+	r, err := OpenSeeded(restored, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open restored: %v", err)
 	}

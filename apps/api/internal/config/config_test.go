@@ -1,14 +1,15 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 	t.Run("default mvp profile", func(t *testing.T) {
-		t.Setenv("APP_PROFILE", "")
-		t.Setenv("APP_MODULES_ENABLED", "")
 		cfg := Load()
 		if cfg.ProfileError != nil {
 			t.Fatal(cfg.ProfileError)
@@ -18,29 +19,153 @@ func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 		}
 	})
 
-	t.Run("explicit modules override profile defaults", func(t *testing.T) {
-		t.Setenv("APP_PROFILE", "admin")
+	t.Run("app.modules.list overrides profile defaults (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    list: [core.server-registration, admin.users]
+`)
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.list" {
+			t.Fatalf("ProfileSource = %q, want modules.list", cfg.ProfileSource)
+		}
+		if len(cfg.ModulesEnabled) != 2 || cfg.ModulesEnabled[0] != "core.server-registration" || cfg.ModulesEnabled[1] != "admin.users" {
+			t.Fatalf("ModulesEnabled = %v", cfg.ModulesEnabled)
+		}
+		if cfg.ProfileName != "custom" {
+			t.Fatalf("ProfileName = %q, want custom", cfg.ProfileName)
+		}
+	})
+
+	t.Run("app.modules.preset builtin name (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    preset: admin
+`)
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.preset" || cfg.ProfileName != "admin" {
+			t.Fatalf("preset resolution = %s/%s, want modules.preset/admin", cfg.ProfileSource, cfg.ProfileName)
+		}
+		if len(cfg.ModulesEnabled) == 0 {
+			t.Fatal("preset admin must enable modules")
+		}
+	})
+
+	t.Run("app.modules.preset custom file (T-06)", func(t *testing.T) {
+		dir := t.TempDir()
+		preset := filepath.Join(dir, "custom.yaml")
+		if err := os.WriteFile(preset, []byte(`modules:
+  - core.server-registration
+  - admin.roles
+`), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    preset: `+preset+`
+`)
+		cfg := Load()
+		if cfg.ProfileError != nil {
+			t.Fatal(cfg.ProfileError)
+		}
+		if cfg.ProfileSource != "modules.preset" || len(cfg.ModulesEnabled) != 2 {
+			t.Fatalf("preset file resolution: source=%s modules=%v", cfg.ProfileSource, cfg.ModulesEnabled)
+		}
+	})
+
+	t.Run("app.modules preset and list are mutually exclusive (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: mvp
+  modules:
+    preset: admin
+    list: [core.server-registration]
+`)
+		cfg := Load()
+		if cfg.ProfileError == nil || !strings.Contains(cfg.ProfileError.Error(), "mutually exclusive") {
+			t.Fatalf("both preset+list must fail closed, got %v", cfg.ProfileError)
+		}
+	})
+
+	t.Run("custom profile without app.modules fails closed (T-06)", func(t *testing.T) {
+		writeConfig(t, `app:
+  profile: custom
+`)
+		cfg := Load()
+		if cfg.ProfileError == nil {
+			t.Fatal("custom profile without app.modules must fail closed")
+		}
+		if !strings.Contains(cfg.ProfileError.Error(), "app.modules") {
+			t.Fatalf("custom profile error = %q, want app.modules mention", cfg.ProfileError)
+		}
+	})
+
+	t.Run("legacy env module selectors are ignored (T-06)", func(t *testing.T) {
+		t.Setenv("APP_PROFILE", "demo")
 		t.Setenv("APP_MODULES_ENABLED", "core.server-registration")
 		cfg := Load()
 		if cfg.ProfileError != nil {
 			t.Fatal(cfg.ProfileError)
 		}
-		if cfg.ProfileSource != "modules.enabled" || len(cfg.ModulesEnabled) != 1 || cfg.ModulesEnabled[0] != "core.server-registration" {
-			t.Fatalf("unexpected explicit module config: %+v", cfg)
+		if cfg.ProfileName != "mvp" {
+			t.Fatalf("APP_PROFILE must be ignored (YAML-only), got %q", cfg.ProfileName)
 		}
 	})
+}
 
-	t.Run("custom profile requires explicit modules", func(t *testing.T) {
-		t.Setenv("APP_PROFILE", "custom")
-		t.Setenv("APP_MODULES_ENABLED", "")
+func TestLoadRuntimeModePrecedenceAndFailClosed(t *testing.T) {
+	t.Run("default is normal", func(t *testing.T) {
 		cfg := Load()
-		if cfg.ProfileError == nil {
-			t.Fatal("custom profile without modules must fail closed")
-		}
-		if !strings.Contains(cfg.ProfileError.Error(), "APP_MODULES_ENABLED") {
-			t.Fatalf("custom profile error = %q, want actual environment key", cfg.ProfileError)
+		if cfg.LoadError != nil || cfg.RuntimeMode != RuntimeModeNormal {
+			t.Fatalf("runtime mode = %q, load error = %v", cfg.RuntimeMode, cfg.LoadError)
 		}
 	})
+	t.Run("yaml value", func(t *testing.T) {
+		writeConfig(t, "runtime:\n  mode: read-only\n")
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.RuntimeMode != RuntimeModeReadOnly {
+			t.Fatalf("runtime mode = %q, load error = %v", cfg.RuntimeMode, cfg.LoadError)
+		}
+	})
+	t.Run("environment overrides yaml", func(t *testing.T) {
+		writeConfig(t, "runtime:\n  mode: maintenance\n")
+		t.Setenv("RUNTIME_MODE", "degraded")
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.RuntimeMode != RuntimeModeDegraded {
+			t.Fatalf("runtime mode = %q, load error = %v", cfg.RuntimeMode, cfg.LoadError)
+		}
+	})
+	for _, tc := range []struct {
+		name   string
+		yaml   string
+		env    string
+		setEnv bool
+	}{
+		{name: "empty yaml", yaml: "runtime:\n  mode: \"\"\n"},
+		{name: "unknown yaml", yaml: "runtime:\n  mode: paused\n"},
+		{name: "empty env", env: "", setEnv: true},
+		{name: "unknown env", env: "paused", setEnv: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.yaml != "" {
+				writeConfig(t, tc.yaml)
+			}
+			if tc.setEnv {
+				t.Setenv("RUNTIME_MODE", tc.env)
+			}
+			cfg := Load()
+			if cfg.LoadError == nil {
+				t.Fatalf("invalid runtime mode %q must set LoadError", tc.env)
+			}
+		})
+	}
 }
 
 // TestValidateProd covers the production guard added in response to GOAL-008
@@ -48,6 +173,13 @@ func TestLoadResolvesProfileAndModuleOverrides(t *testing.T) {
 // length/entropy): both are local-development-only or non-negotiable settings
 // that must fail startup in any non-development environment.
 func TestValidateProd(t *testing.T) {
+	t.Run("unset APP_ENV fails closed (C3)", func(t *testing.T) {
+		c := &Config{AppEnv: ""}
+		if err := c.ValidateProd(); err == nil {
+			t.Fatal("unset APP_ENV must be a startup error, not a silent development fallback")
+		}
+	})
+
 	t.Run("development may enable dev session", func(t *testing.T) {
 		c := &Config{AppEnv: "development", AuthDevSessionEnabled: true}
 		if err := c.ValidateProd(); err != nil {
@@ -115,3 +247,697 @@ func TestValidateProd(t *testing.T) {
 
 // strongSecret satisfies the production AUTH_JWT_SECRET rule (≥32 chars, mixed).
 const strongSecret = "a9k2m4n6p8q0r2s4t6u8v0w2x4y6z8a9b1c3d5"
+
+// W7 (GOAL-008): YAML authority with env override, interpolation, and
+// fail-closed behavior. These tests write a temp YAML and point CONFIG_FILE
+// at it; process env is cleared/restored per test via t.Setenv.
+
+func writeConfig(t *testing.T, yamlText string) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(p, []byte(yamlText), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CONFIG_FILE", p)
+	return p
+}
+
+// TestBrandingConfig covers the W9 brand-asset processing policy: defaults,
+// YAML layer and env overrides.
+func TestBrandingConfig(t *testing.T) {
+	t.Run("defaults", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingMaxBytes != 4<<20 {
+			t.Errorf("BrandingMaxBytes = %d, want %d", cfg.BrandingMaxBytes, 4<<20)
+		}
+		if cfg.BrandingLogoMaxDimension != 512 || cfg.BrandingFaviconDimension != 64 {
+			t.Errorf("dimensions = %d/%d, want 512/64", cfg.BrandingLogoMaxDimension, cfg.BrandingFaviconDimension)
+		}
+		if cfg.BrandingJPEGQuality != 82 {
+			t.Errorf("BrandingJPEGQuality = %d, want 82", cfg.BrandingJPEGQuality)
+		}
+	})
+
+	t.Run("yaml layer", func(t *testing.T) {
+		y := "app:\n  env: development\nbranding:\n  max_bytes: 2097152\n  logo_max_dimension: 256\n  favicon_dimension: 32\n  jpeg_quality: 75\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingMaxBytes != 2097152 || cfg.BrandingLogoMaxDimension != 256 ||
+			cfg.BrandingFaviconDimension != 32 || cfg.BrandingJPEGQuality != 75 {
+			t.Errorf("yaml branding = %+v", cfg)
+		}
+	})
+
+	t.Run("out-of-range jpeg quality falls back to default", func(t *testing.T) {
+		y := "app:\n  env: development\nbranding:\n  jpeg_quality: 120\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingJPEGQuality != 82 {
+			t.Errorf("BrandingJPEGQuality = %d, want default 82", cfg.BrandingJPEGQuality)
+		}
+	})
+
+	t.Run("env overrides", func(t *testing.T) {
+		t.Setenv("BRANDING_MAX_BYTES", "1048576")
+		t.Setenv("BRANDING_LOGO_MAX_DIMENSION", "128")
+		t.Setenv("BRANDING_FAVICON_DIMENSION", "16")
+		t.Setenv("BRANDING_JPEG_QUALITY", "60")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.BrandingMaxBytes != 1048576 || cfg.BrandingLogoMaxDimension != 128 ||
+			cfg.BrandingFaviconDimension != 16 || cfg.BrandingJPEGQuality != 60 {
+			t.Errorf("env branding = %+v", cfg)
+		}
+	})
+}
+
+func TestLoadYAMLLayer(t *testing.T) {
+	t.Run("CONFIG_FILE with plain values and env override", func(t *testing.T) {
+		y := `app:
+  name: yaml-name
+  env: development
+  profile: mvp
+http:
+  addr: ":9999"
+  read_timeout: 3s
+  write_timeout: 4s
+  idle_timeout: 9s
+log:
+  level: debug
+auth:
+  jwt_secret: yaml-secret
+  access_ttl: 10m
+  refresh_ttl: 48h
+  dev_session_enabled: true
+db:
+  path: /tmp/yaml.db
+admin:
+  initial_password: yaml-admin
+upload:
+  allowed_types: "image/png,text/plain"
+  max_files_per_user: 42
+  max_bytes_per_user: 1048576
+`
+		writeConfig(t, y)
+		// env overrides YAML when set
+		t.Setenv("HTTP_ADDR", ":4321")
+		t.Setenv("UPLOAD_MAX_FILES_PER_USER", "7")
+		t.Setenv("AUTH_DEV_SESSION_ENABLED", "false")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AppName != "yaml-name" {
+			t.Errorf("AppName = %q, want yaml-name", cfg.AppName)
+		}
+		if cfg.AppEnv != "development" {
+			t.Errorf("AppEnv = %q, want development", cfg.AppEnv)
+		}
+		if cfg.HTTPAddr != ":4321" {
+			t.Errorf("HTTPAddr = %q, want env override :4321", cfg.HTTPAddr)
+		}
+		if cfg.ReadTimeout != 3*time.Second {
+			t.Errorf("ReadTimeout = %v, want 3s", cfg.ReadTimeout)
+		}
+		if cfg.LogLevelName != "debug" {
+			t.Errorf("LogLevelName = %q, want debug", cfg.LogLevelName)
+		}
+		if cfg.AuthJWTSecret != "yaml-secret" {
+			t.Errorf("AuthJWTSecret = %q, want yaml-secret", cfg.AuthJWTSecret)
+		}
+		if cfg.AuthAccessTTL != 10*time.Minute {
+			t.Errorf("AuthAccessTTL = %v, want 10m", cfg.AuthAccessTTL)
+		}
+		if cfg.AuthDevSessionEnabled {
+			t.Error("AuthDevSessionEnabled = true, want env override false")
+		}
+		if cfg.DBPath != "/tmp/yaml.db" {
+			t.Errorf("DBPath = %q, want /tmp/yaml.db", cfg.DBPath)
+		}
+		if cfg.UploadAllowedTypes != "image/png,text/plain" {
+			t.Errorf("UploadAllowedTypes = %q", cfg.UploadAllowedTypes)
+		}
+		if cfg.UploadMaxFilesPerUser != 7 {
+			t.Errorf("UploadMaxFilesPerUser = %d, want env override 7", cfg.UploadMaxFilesPerUser)
+		}
+		if cfg.UploadMaxBytesPerUser != 1048576 {
+			t.Errorf("UploadMaxBytesPerUser = %d, want 1048576", cfg.UploadMaxBytesPerUser)
+		}
+		if cfg.ProfileError != nil {
+			t.Fatalf("ProfileError: %v", cfg.ProfileError)
+		}
+		if cfg.ProfileName != "mvp" {
+			t.Errorf("ProfileName = %q, want mvp", cfg.ProfileName)
+		}
+	})
+
+	t.Run("explicit CONFIG_FILE missing fails closed", func(t *testing.T) {
+		t.Setenv("CONFIG_FILE", filepath.Join(t.TempDir(), "nope.yaml"))
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("missing explicit CONFIG_FILE must be a LoadError (fail-closed)")
+		}
+	})
+
+	t.Run("bare env reference without value fails closed", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${MISSING_JWT_W7}
+`
+		writeConfig(t, y)
+		os.Unsetenv("MISSING_JWT_W7")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("bare ${MISSING_JWT_W7} must fail closed")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "MISSING_JWT_W7") {
+			t.Fatalf("LoadError = %v, want mention of MISSING_JWT_W7", cfg.LoadError)
+		}
+	})
+
+	t.Run("default value applies when env unset", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_DEFAULTED:-fallback-secret}
+`
+		writeConfig(t, y)
+		os.Unsetenv("W7_DEFAULTED")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "fallback-secret" {
+			t.Errorf("AuthJWTSecret = %q, want fallback-secret", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("interpolation uses env when set", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_INTERP:-fallback}
+`
+		writeConfig(t, y)
+		t.Setenv("W7_INTERP", "env-wins")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "env-wins" {
+			t.Errorf("AuthJWTSecret = %q, want env-wins", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("unknown YAML keys fail closed", func(t *testing.T) {
+		y := `app:
+  env: development
+  bogus_key: true
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("unknown YAML key must be a LoadError (typos fail loudly)")
+		}
+	})
+
+	t.Run("CONFIG_ENV_FILE supplies secrets without overriding process env", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_ENVFILE_SECRET}
+`
+		writeConfig(t, y)
+		envFile := filepath.Join(t.TempDir(), "secrets.env")
+		if err := os.WriteFile(envFile, []byte("W7_ENVFILE_SECRET=from-file\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("CONFIG_ENV_FILE", envFile)
+		os.Unsetenv("W7_ENVFILE_SECRET")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "from-file" {
+			t.Errorf("AuthJWTSecret = %q, want from-file", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("CONFIG_ENV_FILE never overrides an existing process env", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: ${W7_ENVFILE_SECRET2}
+`
+		writeConfig(t, y)
+		envFile := filepath.Join(t.TempDir(), "secrets.env")
+		if err := os.WriteFile(envFile, []byte("W7_ENVFILE_SECRET2=from-file\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("CONFIG_ENV_FILE", envFile)
+		t.Setenv("W7_ENVFILE_SECRET2", "process-wins")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecret != "process-wins" {
+			t.Errorf("AuthJWTSecret = %q, want process-wins (process env beats env file)", cfg.AuthJWTSecret)
+		}
+	})
+
+	t.Run("explicit CONFIG_ENV_FILE missing fails closed", func(t *testing.T) {
+		t.Setenv("CONFIG_ENV_FILE", filepath.Join(t.TempDir(), "nope.env"))
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("missing explicit CONFIG_ENV_FILE must be a LoadError (fail-closed)")
+		}
+	})
+
+	t.Run("ValidateProd surfaces LoadError", func(t *testing.T) {
+		t.Setenv("CONFIG_FILE", filepath.Join(t.TempDir(), "nope.yaml"))
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("missing explicit CONFIG_FILE must be a LoadError")
+		}
+		if err := cfg.ValidateProd(); err == nil {
+			t.Fatal("ValidateProd must fail when LoadError is set")
+		}
+	})
+}
+
+// GOAL-013 D-002 §4: navigation.order parsing (YAML list + NAVIGATION_ORDER
+// env override + malformed fallback).
+func TestLoadNavigationOrder(t *testing.T) {
+	t.Run("yaml order list is parsed", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order:
+    - menu_roles
+    - menu_dashboard
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := []string{"menu_roles", "menu_dashboard"}
+		if !strings.EqualFold(strings.Join(cfg.NavigationOrder, ","), strings.Join(want, ",")) {
+			t.Fatalf("NavigationOrder = %v, want %v", cfg.NavigationOrder, want)
+		}
+	})
+
+	t.Run("empty order yields nil default", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order: []
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if len(cfg.NavigationOrder) != 0 {
+			t.Fatalf("NavigationOrder = %v, want empty (default)", cfg.NavigationOrder)
+		}
+	})
+
+	t.Run("env NAVIGATION_ORDER overrides yaml", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order:
+    - menu_roles
+`
+		writeConfig(t, y)
+		t.Setenv("NAVIGATION_ORDER", "menu_account, menu_users")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := []string{"menu_account", "menu_users"}
+		if !strings.EqualFold(strings.Join(cfg.NavigationOrder, ","), strings.Join(want, ",")) {
+			t.Fatalf("NavigationOrder = %v, want %v", cfg.NavigationOrder, want)
+		}
+	})
+
+	t.Run("malformed navigation.order is not fatal (fallback to default)", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order: not-a-list
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v, want graceful fallback", cfg.LoadError)
+		}
+		if len(cfg.NavigationOrder) != 0 {
+			t.Fatalf("NavigationOrder = %v, want empty after fallback", cfg.NavigationOrder)
+		}
+	})
+
+	t.Run("non-string entry falls back to default", func(t *testing.T) {
+		y := `app:
+  env: development
+navigation:
+  order:
+    - menu_roles
+    - 42
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v, want graceful fallback", cfg.LoadError)
+		}
+		if len(cfg.NavigationOrder) != 0 {
+			t.Fatalf("NavigationOrder = %v, want empty after fallback", cfg.NavigationOrder)
+		}
+	})
+}
+
+// A-003 findings regression tests:
+//
+//	F-002: omitted YAML keys keep code defaults (no zeroing).
+//	F-003: inline " #" inside a quoted value is not a comment.
+//	F-005: empty/comment-only files mean all defaults; multi-document YAML is rejected.
+func TestLoadA003Findings(t *testing.T) {
+	t.Run("F-002 omitted keys keep defaults", func(t *testing.T) {
+		y := `app:
+  env: development
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.HTTPAddr != ":25080" {
+			t.Errorf("HTTPAddr = %q, want default :25080 (omitted key)", cfg.HTTPAddr)
+		}
+		if cfg.DBPath != "./data/schema-ui.db" {
+			t.Errorf("DBPath = %q, want default ./data/schema-ui.db (omitted key)", cfg.DBPath)
+		}
+		if cfg.ReadTimeout != 5*time.Second {
+			t.Errorf("ReadTimeout = %v, want default 5s (omitted key)", cfg.ReadTimeout)
+		}
+		if cfg.UploadMaxFilesPerUser != 1000 {
+			t.Errorf("UploadMaxFilesPerUser = %d, want default 1000", cfg.UploadMaxFilesPerUser)
+		}
+		if cfg.LogLevelName != "info" {
+			t.Errorf("LogLevelName = %q, want default info", cfg.LogLevelName)
+		}
+	})
+
+	t.Run("F-003 quoted hash is not a comment", func(t *testing.T) {
+		y := `app:
+  env: development
+  name: "My App #1"
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AppName != "My App #1" {
+			t.Errorf("AppName = %q, want My App #1 (quoted hash must survive)", cfg.AppName)
+		}
+	})
+
+	t.Run("F-005 empty file means defaults", func(t *testing.T) {
+		p := filepath.Join(t.TempDir(), "empty.yaml")
+		if err := os.WriteFile(p, []byte("# only a comment\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("CONFIG_FILE", p)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v, want empty file to fall back to defaults", cfg.LoadError)
+		}
+		if cfg.HTTPAddr != ":25080" {
+			t.Errorf("HTTPAddr = %q, want default :25080", cfg.HTTPAddr)
+		}
+		if cfg.AppEnv != "" {
+			t.Errorf("AppEnv = %q, want empty default", cfg.AppEnv)
+		}
+	})
+
+	t.Run("F-005 multi-document YAML rejected", func(t *testing.T) {
+		y := `app:
+  env: development
+---
+app:
+  bogus_key: true
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("multi-document YAML must be a LoadError (second doc escapes KnownFields)")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "multiple YAML documents") {
+			t.Fatalf("LoadError = %v, want mention of multiple documents", cfg.LoadError)
+		}
+	})
+}
+
+// TestDBDialectConfig covers VP-013 R1 v1.4 §5: db.dialect / db.dsn loading,
+// env override and unknown-dialect rejection.
+func TestDBDialectConfig(t *testing.T) {
+	t.Run("defaults to sqlite with empty dsn", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDialect != "sqlite" {
+			t.Errorf("DBDialect = %q, want sqlite", cfg.DBDialect)
+		}
+		if cfg.DBDSN != "" {
+			t.Errorf("DBDSN = %q, want empty default", cfg.DBDSN)
+		}
+		// (ValidateProd on the raw default is intentionally not asserted here:
+		// AppEnv is empty by design and fails APP_ENV before DB checks.)
+	})
+
+	t.Run("yaml dialect + dsn", func(t *testing.T) {
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  path: ./data/runtime.db\n  dsn: postgres://u:p@localhost:5432/db\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDialect != "postgres" || cfg.DBDSN != "postgres://u:p@localhost:5432/db" || cfg.DBPath != "./data/runtime.db" {
+			t.Errorf("db config = %q/%q/%q", cfg.DBDialect, cfg.DBDSN, cfg.DBPath)
+		}
+	})
+
+	t.Run("env overrides dialect", func(t *testing.T) {
+		t.Setenv("DB_DIALECT", "postgres")
+		t.Setenv("DB_DSN", "postgres://env:secret@localhost:5432/db")
+		y := "app:\n  env: development\ndb:\n  dialect: sqlite\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDialect != "postgres" || cfg.DBDSN != "postgres://env:secret@localhost:5432/db" {
+			t.Errorf("env override = %q/%q", cfg.DBDialect, cfg.DBDSN)
+		}
+	})
+
+	t.Run("unknown dialect fails closed at load", func(t *testing.T) {
+		y := "app:\n  env: development\ndb:\n  dialect: oracle\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil || !strings.Contains(cfg.LoadError.Error(), "db.dialect") {
+			t.Fatalf("unknown dialect must be a LoadError, got %v", cfg.LoadError)
+		}
+	})
+}
+
+// TestValidateDBPairs covers the R1 v1.4 §5 startup rules: dsn/dialect pairing
+// and db.path file-shape predicates.
+func TestValidateDBPairs(t *testing.T) {
+	t.Run("sqlite with dsn fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "sqlite", DBPath: "./data/x.db", DBDSN: "postgres://x"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "db.dsn must be empty") {
+			t.Fatalf("sqlite + dsn must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres without dsn fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data/x.db"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "db.dsn is required") {
+			t.Fatalf("postgres without dsn must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres with directory path fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data", DBDSN: "postgres://x"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "file") {
+			t.Fatalf("postgres with directory path must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres with extensionless path fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data/schema-ui", DBDSN: "postgres://x"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "extension") {
+			t.Fatalf("extensionless path must fail closed, got %v", err)
+		}
+	})
+
+	t.Run("postgres with valid config passes development", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "postgres", DBPath: "./data/schema-ui.db", DBDSN: "postgres://x", AuthJWTSecret: "dev", AuthDevSessionEnabled: true}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("valid postgres dev config should pass, got %v", err)
+		}
+	})
+
+	t.Run("default sqlite path shape passes", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "sqlite", DBPath: "./data/schema-ui.db", DBDSN: ""}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("default sqlite path should pass, got %v", err)
+		}
+	})
+
+	t.Run("trailing separator path fails closed", func(t *testing.T) {
+		c := &Config{AppEnv: "development", DBDialect: "sqlite", DBPath: "./data/", DBDSN: ""}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "file") {
+			t.Fatalf("trailing separator must fail closed, got %v", err)
+		}
+	})
+}
+
+// TestDBPostgresExplodedParams covers the env-driven config.yaml postgres
+// connection surface: host/port/name/user/sslmode declarative, password only
+// via DB_PASSWORD, optional whole-DSN override, and sqlite ignoring the params.
+func TestDBPostgresExplodedParams(t *testing.T) {
+	t.Run("builds DSN from exploded params with env password", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "Ss.110110")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 192.168.31.213\n  port: 5432\n  name: sa\n  user: sa\n  sslmode: disable\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := "postgres://sa:Ss.110110@192.168.31.213:5432/sa?sslmode=disable"
+		if cfg.DBDSN != want {
+			t.Fatalf("DBDSN = %q, want %q", cfg.DBDSN, want)
+		}
+		if cfg.DBPassword != "Ss.110110" {
+			t.Errorf("DBPassword = %q, want value from env", cfg.DBPassword)
+		}
+	})
+
+	t.Run("postgres without password fails closed", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 192.168.31.213\n  name: sa\n  user: sa\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil || !strings.Contains(cfg.LoadError.Error(), "DB_PASSWORD") {
+			t.Fatalf("postgres without password must fail closed, got %v", cfg.LoadError)
+		}
+	})
+
+	t.Run("db.dsn overrides exploded params", func(t *testing.T) {
+		t.Setenv("DB_DSN", "postgres://u:p@h:5432/db?sslmode=require")
+		t.Setenv("DB_PASSWORD", "ignored")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 1.2.3.4\n  user: other\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDSN != "postgres://u:p@h:5432/db?sslmode=require" {
+			t.Fatalf("DBDSN = %q, want explicit override", cfg.DBDSN)
+		}
+	})
+
+	t.Run("sqlite ignores exploded params", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: sqlite\n  host: 1.2.3.4\n  user: x\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBDSN != "" || cfg.DBDialect != "sqlite" {
+			t.Fatalf("sqlite must keep DSN empty, got %q/%q", cfg.DBDialect, cfg.DBDSN)
+		}
+	})
+
+	t.Run("exploded env overrides work", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "pw2")
+		t.Setenv("DB_HOST", "db.example")
+		t.Setenv("DB_PORT", "6432")
+		t.Setenv("DB_NAME", "app_db")
+		t.Setenv("DB_USER", "svc")
+		t.Setenv("DB_SSLMODE", "verify-full")
+		t.Setenv("DB_DSN", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		want := "postgres://svc:pw2@db.example:6432/app_db?sslmode=verify-full"
+		if cfg.DBDSN != want {
+			t.Fatalf("DBDSN = %q, want %q", cfg.DBDSN, want)
+		}
+	})
+}
+
+// TestDBPoolKnobs covers the postgres connection-pool bounds (A-001 F-002):
+// env overrides YAML, zero keeps the driver default, and the values flow to
+// config so composition can pass them to store.OpenOptions.
+func TestDBPoolKnobs(t *testing.T) {
+	t.Setenv("DB_PASSWORD", "pw")
+	t.Setenv("DB_DSN", "")
+	y := "app:\n  env: development\ndb:\n  dialect: postgres\n  name: appdb\n  user: testuser\n  pool_max_open: 13\n  pool_max_idle: 4\n  conn_max_lifetime: 30m\n"
+	writeConfig(t, y)
+	cfg := Load()
+	if cfg.LoadError != nil {
+		t.Fatalf("LoadError: %v", cfg.LoadError)
+	}
+	if cfg.DBPoolMaxOpen != 13 || cfg.DBPoolMaxIdle != 4 || cfg.DBConnLifetime != 30*time.Minute {
+		t.Errorf("yaml pool knobs: open=%d idle=%d lifetime=%v, want 13/4/30m", cfg.DBPoolMaxOpen, cfg.DBPoolMaxIdle, cfg.DBConnLifetime)
+	}
+	// environment overrides yaml.
+	t.Setenv("DB_POOL_MAX_OPEN", "25")
+	t.Setenv("DB_POOL_MAX_IDLE", "7")
+	t.Setenv("DB_CONN_MAX_LIFETIME", "45m")
+	cfg2 := Load()
+	if cfg2.LoadError != nil {
+		t.Fatalf("LoadError: %v", cfg2.LoadError)
+	}
+	if cfg2.DBPoolMaxOpen != 25 || cfg2.DBPoolMaxIdle != 7 || cfg2.DBConnLifetime != 45*time.Minute {
+		t.Errorf("env pool knobs: open=%d idle=%d lifetime=%v, want 25/7/45m", cfg2.DBPoolMaxOpen, cfg2.DBPoolMaxIdle, cfg2.DBConnLifetime)
+	}
+	// empty env keeps values (driver default at load when unset).
+	t.Setenv("DB_POOL_MAX_OPEN", "")
+	t.Setenv("DB_POOL_MAX_IDLE", "")
+	t.Setenv("DB_CONN_MAX_LIFETIME", "")
+	y2 := "app:\n  env: development\ndb:\n  dialect: postgres\n  name: appdb\n  user: testuser\n"
+	writeConfig(t, y2)
+	cfg3 := Load()
+	if cfg3.LoadError != nil {
+		t.Fatalf("LoadError: %v", cfg3.LoadError)
+	}
+	if cfg3.DBPoolMaxOpen != 0 || cfg3.DBPoolMaxIdle != 0 || cfg3.DBConnLifetime != 0 {
+		t.Errorf("unset pool knobs: open=%d idle=%d lifetime=%v, want 0/0/0", cfg3.DBPoolMaxOpen, cfg3.DBPoolMaxIdle, cfg3.DBConnLifetime)
+	}
+}

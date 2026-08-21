@@ -41,7 +41,7 @@ Skills 是核心方法论的 **AI 消费适配器**。**核心方法论与 Skill
 生命周期（P-006）：**愿景/意图 → 工作区+Root → 纲领路线图 → 阶段计划 → 子目标 → 审计/整改 → 关门**。  
 决策层与 Vision finding 响应由 `/vision` 负责；Goal 交叉意见由 `/audit` 写入，独立 Vision Review 由 `/vision-audit` 写入；Goal 的**响应与放行**由 `/govern` 处理。
 
-工作区协议：`/govern` 和 `/audit` 先定位当前 `docs/workspace-<NNN>-<slug>/workspace.md`，校验其 Root Goal、canonical 范围和共享资料固定引用；不匹配或多个工作区未指定焦点时 fail closed。冷启动缺 Charter 时先 **`/vision`**。没有显式工作区根的旧项目才按 `docs/goals/` 的 legacy 隐式单工作区工作。
+工作区协议：`/govern` 和 `/audit` 先定位当前 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md`，校验其 Root Goal、canonical 范围和共享资料固定引用；不匹配或多个工作区未指定焦点时 fail closed。冷启动缺 Charter 时先 **`/vision`**。没有显式工作区根的旧项目才按 `docs/goals/` 的 legacy 隐式单工作区工作。
 
 | 工具 / 表面 | 安装位置 | 斜杠 | 当前契约层级 |
 |------|----------|------|--------------|
@@ -303,7 +303,7 @@ install/copilot/prompts/vision-audit.md
 | `--codex` / `-Codex` | `AGENTS.md` + `.agents/skills/{govern,audit,vision,vision-audit}` + **core → docs/** |
 | `--with-primitives` / `-WithPrimitives` | 可选：四个 advanced 填表 slash（new-goal 等） |
 | `--all` / `-All` | Claude + Grok + Copilot + Codex + prompts/templates/contracts + **core** |
-| `--init-workspace` / `-InitWorkspace` | 可选：scaffold `docs/workspace-NNN-slug/`（**须**同时给 slug） |
+| `--init-workspace` / `-InitWorkspace` | 可选：scaffold `docs/workspaces/workspace-NNN-slug/`（**须**同时给 slug） |
 | `--workspace-slug` / `-WorkspaceSlug` | 与 init-workspace 联用；小写短横线；**禁止静默默认** |
 | `--root-slug` / `-RootSlug` | 与 init-workspace 联用 → 计划中的 `GOAL-001-<slug>` |
 | `--root-title` / `-RootTitle` | 可选；计划中 Root 标题 |
@@ -351,7 +351,7 @@ bash ./skills/install.sh --all --skills-dir ./skills \
 | **`docs/architecture/`**（principles、workspace-protocol、overview、directory-layout） | install 从 `core/` |
 | **`docs/templates/`** + 精简 **`docs/README.md`** | install 从 `core/` |
 | 现行 Charter + 至少一 VP（完整治理） | `/vision` 冷启动 |
-| `docs/workspace-…/workspace.md` + `goal-tree` | `/govern` S0，或 install `--init-workspace`（slug **显式**） |
+| `docs/workspaces/workspace-…/workspace.md` + `goal-tree` | `/govern` S0，或 install `--init-workspace`（slug **显式**） |
 | Root 五件套 | `/govern` / 原语 01 创建（init-workspace **不**代建） |
 
 | 不要期望随包出现 | 原因 |
@@ -375,7 +375,7 @@ bash ./skills/install.sh --all --skills-dir ./skills \
 | 规则 | 说明 |
 |------|------|
 | 核心 + Skills | 同级必备；仅装适配器不算完整 |
-| 扁平存储 | 目标平铺在当前 `docs/workspace-<NNN>-<slug>/` 根 |
+| 扁平存储 | 目标平铺在当前 `docs/workspaces/workspace-<NNN>-<slug>/` 根 |
 | 编号 | `GOAL-001` 为 Root；slug 自定 |
 | 层级 | 仅 `parent` 字段 |
 | 总览 | 变更后更新 `goal-tree.md` |

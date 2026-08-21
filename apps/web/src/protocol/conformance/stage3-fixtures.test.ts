@@ -1,6 +1,8 @@
 /**
  * R5 stage 3 — structure + behavior fixture execution against vendored
- * schema-ui-docs@2.7.0 artifacts (I-PROTO-004 = vendor).
+ * schema-ui-docs@2.9.0 artifacts (I-PROTO-004 = vendor, re-pinned 2026-08-14
+ * from v2.8.0 @ 521cff8 to v2.9.0 @ 81aa1d8: ADR-0039 data.route-binding +
+ * ADR-0040 form.controls.readonly; see provenance-v2.9.json).
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -88,9 +90,9 @@ function loadSuite(name: string): { bytes: Buffer; value: FixtureSuite } {
   return { bytes, value: parsed };
 }
 
-const provenance = readJsonFile<FixtureProvenance>(join(UPSTREAM, "provenance.json"));
+const provenance = readJsonFile<FixtureProvenance>(join(UPSTREAM, "provenance-v2.9.json"));
 
-const SOURCE_COMMIT = "ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b";
+const SOURCE_COMMIT = "81aa1d8954717f4ebdcc695eed6fafaeafcebe8d";
 
 function assertCoverage(
   suite: FixtureSuite,
@@ -110,10 +112,10 @@ function assertCoverage(
 }
 
 describe("stage 3 · pinned vendor artifacts (I-PROTO-004)", () => {
-  it("pins schemas and included fixture suites at schema-ui-docs@2.7.0", () => {
+  it("pins schemas and included fixture suites at schema-ui-docs@2.9.0", () => {
     expect(provenance.value.sourceRepo).toBe("https://github.com/magicvr/schema-ui-docs");
     expect(provenance.value.sourceCommit).toBe(SOURCE_COMMIT);
-    expect(provenance.value.artifactVersion).toBe("2.7.0");
+    expect(provenance.value.artifactVersion).toBe("2.9.0");
 
     for (const artifact of provenance.value.artifacts) {
       const isSchema = artifact.path.startsWith("docs/schemas/");
@@ -387,4 +389,16 @@ describe("stage 3 · request-construction fixtures (incl. batch, I-PROTO-FULL-00
       expect(constructRequest(fixtureCase.input)).toEqual(fixtureCase.expected);
     });
   }
+
+  // D4 hardening: a malformed percent-encoding in the action URL must not throw
+  // URIError — the request still constructs with the raw part passed through.
+  it("tolerates malformed percent-encoding in action URLs (D4)", () => {
+    const result = constructRequest({
+      kind: "rowAction",
+      action: { method: "DELETE", url: "/api/users/{id}?q=%zz&flag=100%" },
+      row: { id: "u1" },
+      requestMapping: { path: { id: "$row.id" } },
+    } as never);
+    expect(result.ok).toBe(true);
+  });
 });

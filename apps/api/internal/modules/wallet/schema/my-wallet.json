@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "pageId": "my-wallet",
+    "title": "My wallet",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "table.sort",
+      "actions.page.trigger"
+    ]
+  },
+  "actions": {
+    "openWallet": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/wallet/me",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "my-wallet",
+    "children": [
+      {
+        "type": "custom",
+        "id": "wallet-ensure",
+        "component": "wallet-ensure"
+      },
+      {
+        "type": "text",
+        "props": {
+          "text": "Your wallet balance and recent ledger entries.",
+          "textKey": "schema.myWallet.text.intro"
+        }
+      },
+      {
+        "type": "grid",
+        "props": {
+          "columns": 3
+        },
+        "children": [
+          {
+            "type": "statCard",
+            "id": "my-wallet-total",
+            "props": {
+              "label": "Total balance",
+              "format": "plain",
+              "valueField": "balanceTotal",
+              "dataSource": "/api/wallet/me",
+              "labelKey": "schema.myWallet.statCard.total"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "my-wallet-available",
+            "props": {
+              "label": "Available",
+              "format": "plain",
+              "valueField": "balanceAvailable",
+              "dataSource": "/api/wallet/me",
+              "labelKey": "schema.myWallet.statCard.available"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "my-wallet-frozen",
+            "props": {
+              "label": "Frozen",
+              "format": "plain",
+              "valueField": "balanceFrozen",
+              "dataSource": "/api/wallet/me",
+              "labelKey": "schema.myWallet.statCard.frozen"
+            }
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "id": "my-wallet-entries",
+        "props": {
+          "columns": [
+            {
+              "field": "entryType",
+              "label": "Type",
+              "sortable": true,
+              "labelKey": "schema.walletEntries.column.entryType"
+            },
+            {
+              "field": "amountDelta",
+              "label": "Amount",
+              "sortable": true,
+              "labelKey": "schema.walletEntries.column.amountDelta"
+            },
+            {
+              "field": "balanceAfterTotal",
+              "label": "Balance after",
+              "labelKey": "schema.walletEntries.column.balanceAfterTotal"
+            },
+            {
+              "field": "memo",
+              "label": "Memo",
+              "labelKey": "schema.walletEntries.column.memo"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.walletEntries.column.created"
+            }
+          ]
+        },
+        "data": {
+          "source": "api",
+          "url": "/api/wallet/me/entries"
+        }
+      }
+    ]
+  }
+}

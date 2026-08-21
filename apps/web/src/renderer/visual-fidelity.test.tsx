@@ -82,8 +82,9 @@ describe("S2 form-controls design-system consumption", () => {
 describe("S2 recordView Drawer/Sheet presentation", () => {
   it("implements Drawer/Sheet chrome (not centered Modal-only detail)", () => {
     expect(renderSource).toContain('data-record-view="panel"');
-    expect(renderSource).toContain("Record details");
-    expect(renderSource).toContain("Close record details");
+    // S2: chrome texts resolve through the catalog (en-US default).
+    expect(renderSource).toContain('t("feedback.recordDetails")');
+    expect(renderSource).toContain('t("feedback.closeRecordDetails")');
     expect(renderSource).toMatch(/fixed inset-y-0 right-0/);
     expect(renderSource).toMatch(/role="dialog"/);
     // D-004 mobile band uses md (768), not max-sm (640) alone

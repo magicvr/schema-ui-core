@@ -2,7 +2,6 @@ package kernel
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -142,7 +141,7 @@ func sampleModule(overrides Module) (Module, *testProvider) {
 		return []MigrationContribution{{
 			ContributionIdentity: ContributionIdentity{ModuleID: module.ID, Key: "sample_migration"},
 			Version:              1, Name: "sample_migration", Checksum: "c1",
-			Apply: func(*sql.Tx) error { return nil },
+			Apply: func(Tx) error { return nil },
 		}}, nil
 	}
 	return module, provider

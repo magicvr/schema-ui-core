@@ -1,0 +1,62 @@
+---
+id: GOAL-015-dict-inner-page-breadcrumb
+title: 数据字典内页（按类型过滤）+ 面包屑层级导航（R4）
+status: done
+parent: GOAL-001-admin-functional-modules
+created: 2026-08-14
+updated: 2026-08-14
+version: 0.4.0
+progress: 5/5
+---
+
+# GOAL-015 · 数据字典内页（按类型过滤）+ 面包屑层级导航
+
+## 概述
+
+用户 2026-08-14 反馈两个系统性问题：
+
+1. **数据字典内页**：从类型行「条目」进入的应该是该类型的内页——只显示属于该类型的条目；新增/编辑默认类型键指向该类型（表单显示类型名称只读，提交传类型键，不需要用户填）。
+2. **面包屑层级导航**：超过 2 级的页面（如 首页→数据字典→条目内页）缺乏返回上层的方式；业界通用实践是面包屑 + 返回按钮，需系统性修正（所有 2+ 级内页通用）。
+
+## 当前边界
+
+- 范围：API 条目 List 增加 dictKey 精确过滤；openEntries 导航带 dictKey query；条目页表单 dictKey 只读（显示类型名/传类型键）；web 面包屑组件（路由栈驱动）+ 返回按钮。
+- **不**改变现有路由协议形状；面包屑为 shell 层 UI（渲染层）。
+- 修订（2026-08-14 关门后）：面包屑改为语义层级（首页 => 一级页 => ... => n级内页，homePageRef 为根），取代路由栈方案（D-004/E-009）。
+
+## 成功标准与路线图（P-001）
+
+- [x] **S1 · 方案冻结**：dictKey 过滤契约 + 内页导航 + 面包屑路由栈；协议增补门禁 P-1/P-2 登记 I-005（D-002/A-001/E-002，2026-08-14）
+- [x] **S2**：服务端 dictKey 过滤 + 面包屑（门禁期先行 E-003/E-004）；v2.9 协议落地后完成 schema 改造——table node.data params 路由绑定 + dictKey 只读（D-003/E-006/E-007）
+- [x] **S3 · 验证**：内页链路 T-DE-01..05 + F-001 集成测试 + 过滤/面包屑回归 + 全量回归 946/946（E-008）
+- [x] **S4 · go 影响判定 + 自审**：go（不 held，I-004 closed）+ A-002 self；A-003 grok 独立审计 5 项 required findings 全部 fixed（A-002/A-003）
+- [x] **S5 · 关门**：独立审计（grok 4.6，A-003：fail → 5 项 required 全部 fixed）+ F-007 产品取舍待用户裁决 + goal-tree 5/5
+
+progress: 5/5 由五个等权检查点派生（S1～S5 全勾）。
+
+## 审计策略
+
+独立审计沿用 grok build（用户书面偏好）；过滤参数为 API 契约扩展（compatibility 门禁），S5 独立审计。
+
+## 信息就绪与未知项
+
+| ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 |
+|----|------|-----------------|----------|--------------|-----------------|------|
+| I-001 | required | dictKey 过滤参数形状（?dictKey= 与现有 q/sort/page 组合） | S1 方案 | ExtraQuery 白名单 + 服务端过滤 + dictKey+sort+page 回归（E-003/E-008/A-003 F-002） | **closed** |
+| I-002 | required | 内页表单 dictKey 只读绑定（显示类型名/传类型键；create 默认值来自 route query） | S1 方案 | ADR-0040 readOnly + Host modal 值源（D-003/E-007/T-DE-03/04） | **closed** |
+| I-003 | required | 面包屑路由栈方案（history 驱动；返回按钮语义；与 HOST_OWNED_PATHS/route-not-found 交互） | S1 方案 | visitStack 路由栈 + 集成测试（E-003/App.integration；A-003 F-001 后含 schema navigate 主路径） | **closed** |
+| I-004 | required | go 影响判定（List 过滤参数/契约扩展） | S4 | VP-008 对照 + A-002（go，不 held）+ A-003 F-002/F-003 修复后补验 | **closed** |
+| I-005 | required | **协议增补门禁 · P-2**：dataSource 路由绑定——上游 v2.9.0 ADR-0039 落地为 data.params 的 `$context.route.query.*`/`params.*` 整值绑定（capability data.route-binding） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin（81aa1d8） | **closed**（D-003/E-006） |
+| I-006 | required | **协议增补门禁 · 表单只读**：上游 v2.9.0 ADR-0040 落地为字段 readOnly 声明（capability form.controls.readonly；值仍参与提交投影） | S1 方案 → 实施 | 上游协议仓库变更 + vendor 重 pin（81aa1d8） | **closed**（D-003/E-006） |
+
+## 依赖
+
+- 无外部波次依赖；基于现有 schema 协议（recordSource path 绑定、route.query）扩展。
+
+## 父目标
+
+- [GOAL-001-admin-functional-modules](../GOAL-001-admin-functional-modules/00-meta.md)
+
+## 台账布局
+
+本目标从首条记录起使用 `01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；索引与目录条目共同构成正式记录。

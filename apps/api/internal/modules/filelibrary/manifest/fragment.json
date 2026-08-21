@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "file-library",
+      "title": "File library",
+      "schemaUrl": "/api/schema/file-library",
+      "route": "/file-library",
+      "titleKey": "manifest.title.fileLibrary"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "file-library",
+        "label": "File library",
+        "icon": "folder",
+        "visibleWhen": {
+          "when": "$context.features.menu_files == true"
+        },
+        "labelKey": "manifest.nav.fileLibrary"
+      }
+    ]
+  }
+}

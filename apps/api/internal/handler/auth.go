@@ -5,13 +5,36 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
+
+// MFAVerifier is the optional second-factor login gate (S-10 · GOAL-017
+// D-002 §3): nil disables the gate entirely — the login contract stays
+// byte-identical. Required()==true means the user must complete a second
+// factor before tokens are issued; BeginChallenge issues the one-time proof
+// after the password factor succeeded; Verify completes the login and returns
+// the verified user id.
+type MFAVerifier interface {
+	Required(userID string) bool
+	BeginChallenge(userID string, now time.Time) (proof string, err error)
+	Verify(proof, code, recoveryCode string, now time.Time) (userID string, err error)
+}
+
+// CaptchaVerifier is the optional login captcha gate (S-11 · GOAL-011 D-002
+// `2): nil disables the gate entirely (module not enabled) — the login
+// contract is byte-identical to the pre-captcha behavior; a verifier with
+// Required()==true demands a valid one-time challenge before credentials.
+type CaptchaVerifier interface {
+	Required() bool
+	Verify(captchaID, answer string, now time.Time) error
+}
 
 // authHandler serves the R2 auth endpoints (GOAL-005): login, refresh and
 // logout. Login/refresh are public; the access/refresh pair returned is consumed
@@ -19,21 +42,38 @@ import (
 // store is used only for the R5 S6 operation log (auth events); identity data
 // is resolved through the module-owned auth-session repository.
 type authHandler struct {
-	a          *auth.Authenticator
-	operations operationlog.Recorder
-	now        func() time.Time
+	a           *auth.Authenticator
+	operations  operationlog.Recorder
+	now         func() time.Time
+	rateLimiter *loginRateLimiter
+	captcha     CaptchaVerifier
+	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
+	// nil keeps the login contract byte-identical.
+	mfa MFAVerifier
 }
 
-func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder) {
-	h := &authHandler{a: a, operations: operations, now: time.Now}
+func authsHandler(mux *http.ServeMux, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier, mfa ...MFAVerifier) {
+	h := &authHandler{
+		a:           a,
+		operations:  operations,
+		now:         time.Now,
+		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
+		captcha:     captcha,
+	}
+	if len(mfa) > 0 && mfa[0] != nil {
+		h.mfa = mfa[0]
+		a.SetMFAEnforcer(mfa[0])
+	}
 	mux.HandleFunc("POST /api/auth/login", h.login())
 	mux.HandleFunc("POST /api/auth/refresh", h.refresh())
 	mux.HandleFunc("POST /api/auth/logout", h.logout())
 }
 
 type credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username      string `json:"username"`
+	Password      string `json:"password"`
+	CaptchaID     string `json:"captchaId,omitempty"`
+	CaptchaAnswer string `json:"captchaAnswer,omitempty"`
 }
 
 type tokenRequest struct {
@@ -52,23 +92,80 @@ func (h *authHandler) login() http.HandlerFunc {
 		var creds credentials
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_LOGIN_BODY", "body must be JSON with username and password")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGIN_BODY", "body must be JSON with username and password")
 			return
 		}
 		if strings.TrimSpace(creds.Username) == "" || creds.Password == "" {
-			writeError(w, http.StatusBadRequest, "INVALID_LOGIN_BODY", "username and password are required")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGIN_BODY", "username and password are required")
 			return
 		}
+		// D-001 P1: the bucket key is the real client IP (trusted reverse proxy
+		// X-Real-IP) plus the attempted username, so one attacker spraying many
+		// usernames cannot lock out unrelated clients behind the same proxy.
+		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
+		if h.rateLimiter != nil && !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
+			if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+				w.Header().Set("Retry-After", strconv.Itoa(sec))
+			}
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
+			return
+		}
+		// S-11 (GOAL-011 D-002): when the captcha gate is enabled it runs after
+		// the rate limiter (which bounds challenge exhaustion) and before
+		// credential validation. Any failure maps to the single INVALID_CAPTCHA
+		// code; failures do not count against the lockout budget.
+		if h.captcha != nil && h.captcha.Required() {
+			if err := h.captcha.Verify(creds.CaptchaID, creds.CaptchaAnswer, h.now().UTC()); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CAPTCHA", "captcha verification failed")
+				return
+			}
+		}
 		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
+		// W7 F-009: locked / disabled accounts surface the SAME 401
+		// UNAUTHORIZED envelope as an unknown user / wrong password. The
+		// distinct 423/403 previously let an attacker distinguish "exists and
+		// locked/disabled" from "does not exist" (account-enumeration oracle).
+		// Fail-closed: no lock/disable status leak on the login surface.
+		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
+			return
+		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {
-			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
+			if h.rateLimiter != nil {
+				h.rateLimiter.record(limiterKey, h.now().UTC())
+			}
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
+			return
+		}
+		// S-10 (GOAL-017 D-002 §3): the password factor succeeded but the
+		// account requires a second factor — no token is issued yet; the
+		// client completes /api/auth/mfa/verify with the one-time proof.
+		var mfaReq *auth.MFARequiredError
+		if errors.As(err, &mfaReq) {
+			if h.mfa == nil {
+				// The gate vanished between Login and here — fail closed.
+				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
+				return
+			}
+			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
+			if perr != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "mfaProof": proof})
 			return
 		}
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
 		}
-		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, `{"username":`+jsonQuote(creds.Username)+`}`)
+		// A successful login clears the client's failure bucket (D-001 P1): a
+		// legitimate user who mis-typed the password a few times must not be
+		// locked out by their own earlier failures.
+		if h.rateLimiter != nil {
+			h.rateLimiter.clear(limiterKey)
+		}
+		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()), user.SessionID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -79,19 +176,19 @@ func (h *authHandler) refresh() http.HandlerFunc {
 		var body tokenRequest
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
 			return
 		}
 		access, refresh, user, err := h.a.Refresh(body.RefreshToken, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidToken) || errors.Is(err, auth.ErrExpiredToken) || errors.Is(err, auth.ErrTokenRevoked) {
-			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid, expired or revoked refresh token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "REFRESH_TOKEN_EXPIRED", "invalid, expired or revoked refresh token")
 			return
 		}
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "REFRESH_FAILED", "refresh unavailable")
 			return
 		}
-		h.authEvent(operationlog.EventAuthRefresh, user.ID)
+		h.authEvent(operationlog.EventAuthRefresh, user.ID, requestid.FromContext(r.Context()), user.SessionID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -103,40 +200,49 @@ func (h *authHandler) logout() http.HandlerFunc {
 		var body tokenRequest
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
 			return
 		}
-		userID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
+		userID, sessionID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
+			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
 			return
 		}
 		if userID != "" {
-			h.authEvent(operationlog.EventAuthLogout, userID)
+			h.authEvent(operationlog.EventAuthLogout, userID, requestid.FromContext(r.Context()), sessionID)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-// authEvent records an auth operation-log event with the frozen username detail
-// (I-008-003 §3: detail = {"username":"<用户名>"}). The account snapshot from
-// auth does not carry the login username, so it is resolved from the store;
+// authEvent records an auth operation-log event with the R2 versioned username
+// detail. The account snapshot from auth does not carry the login username, so
+// it is resolved from the store;
 // best-effort: an unresolvable actor still logs with the actor id and a
 // service-log error, never blocking the business response (§5).
-func (h *authHandler) authEvent(event, userID string) {
+func (h *authHandler) authEvent(event, userID, correlationID, sessionID string) {
 	u, err := h.a.UserByID(userID)
 	if err != nil {
 		slog.Error("operation log auth event: resolve user", "event", event, "user_id", userID, "err", err)
-		h.logOperation(event, userID, "", "")
+		h.logOperation(event, userID, "", "", correlationID, sessionID)
 		return
 	}
-	h.logOperation(event, u.ID, u.Name, `{"username":`+jsonQuote(u.Username)+`}`)
+	h.logOperation(event, u.ID, u.Name, newAuthDetail(strings.TrimPrefix(event, "auth."), u.Username), correlationID, sessionID)
+}
+
+func newAuthDetail(action, username string) string {
+	detail, err := operationlog.NewDetail(action, nil, map[string]any{"username": username})
+	if err != nil {
+		slog.Error("operation log auth detail: build", "action", action, "err", err)
+		return ""
+	}
+	return detail
 }
 
 // logOperation appends one operation-log row (R5 S6 optional bonus checkpoint,
 // I-008-003 §5). Best-effort: a logging failure is logged to the service log
 // and never changes the business response.
-func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
+func (h *authHandler) logOperation(event, actorID, actorName, detail, correlationID, sessionID string) {
 	op := operationlog.Operation{
 		ID:        newOperationID(),
 		Event:     event,
@@ -147,6 +253,8 @@ func (h *authHandler) logOperation(event, actorID, actorName, detail string) {
 	if detail != "" {
 		op.Detail = &detail
 	}
+	op.CorrelationID = correlationID
+	op.SessionID = sessionID
 	if h.operations == nil {
 		return
 	}

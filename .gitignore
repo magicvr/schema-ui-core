@@ -30,6 +30,12 @@ lerna-debug.log*
 # --- R6 evidence artifacts (tracked; hashes must stay recomputable) ---
 !**/GOAL-008-r6-integration-acceptance-vp-evidence/attachments/evidence/**
 
+# --- Workspace-007 S5 launch evidence artifacts (tracked; close A-001 F-001 durable logs) ---
+!**/GOAL-006-s5-evidence-and-closeout/attachments/s5-launch/*.log
+
+# --- Workspace-007 S6 e2e evidence artifacts (tracked; F-002 discharge logs) ---
+!**/GOAL-007-s6-settings-form-page/attachments/*.log
+
 # --- Node / frontend ---
 node_modules/
 dist/
@@ -40,6 +46,8 @@ coverage/
 *.tsbuildinfo
 .npm
 .eslintcache
+pnpm-lock.yaml
+pnpm-workspace.yaml
 
 # --- Playwright ---
 apps/**/test-results/
@@ -88,4 +96,8 @@ apps/**/bin/
 
 # --- Goal Governance Skills updater backups ---
 .goal-governance-updates/
+
+# --- grok audit scratch (prompts + raw output; opinions are archived under docs) ---
+.grok/*.md
+.grok/*.txt
 

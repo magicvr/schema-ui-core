@@ -10,7 +10,7 @@ version: 0.13.0
 # docs/ · 文档体系（消费方）
 
 本目录是 **Goal Governance** 在目标仓库中的核心规范入口：方法论、文档协议与模板。  
-目标实例的状态真相只存在于各自 `docs/workspace-<NNN>-<slug>/` 根。  
+目标实例的状态真相只存在于各自 `docs/workspaces/workspace-<NNN>-<slug>/` 根。  
 仓库级愿景规则见 `docs/vision/alignment.md`（**不是**第二套目标状态）。
 
 > **完整安装**：`docs/architecture/` 与 Skills **同级必备**。缺 architecture = 不完整安装。  
@@ -24,6 +24,7 @@ docs/
 ├── architecture/             # 治理原则与协议（必备）
 │   ├── principles.md         # P-001～P-006
 │   ├── workspace-protocol.md
+│   ├── independent-audit-execution.md  # 项目级决策：独立审计执行路径（grok build）
 │   ├── overview.md
 │   └── directory-layout.md
 ├── templates/                # 五件套 + workspace-context + vision 冷启动模板
@@ -32,7 +33,8 @@ docs/
 │   ├── README.md             # 消费方愿景说明
 │   ├── charter.md            # 冷启动后由 /vision 创建（实例）
 │   └── plans/VP-*.md         # 冷启动后创建
-└── workspace-<NNN>-<slug>/   # 工作区：goal-tree + GOAL-* 五件套
+└── workspaces/
+    └── workspace-<NNN>-<slug>/  # 工作区：goal-tree + GOAL-* 五件套
 ```
 
 **不**随 Skills 包安装：`tech-stack.md`、monorepo dogfood 目标树、`web/`、`artifacts/`。
@@ -74,4 +76,4 @@ docs/
 4. [templates/README.md](templates/README.md)  
 5. 仓库根 `AGENTS.md`（install 安装）
 
-> 本仓库的**协议覆盖权威**（schema-ui-docs@v2.7.0 整份契约）为工作区五件套附件 `I-PROTO-FULL-001`（`docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/`）；历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线。愿景与目标状态仍以各区 `goal-tree.md` 为准。
+> 本仓库的**协议覆盖权威**（schema-ui-docs@v2.7.0 整份契约）为工作区五件套附件 `I-PROTO-FULL-001`（`docs/workspaces/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/`）；历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线。愿景与目标状态仍以各区 `goal-tree.md` 为准。

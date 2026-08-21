@@ -15,7 +15,7 @@ import (
 )
 
 // createR2Fixture builds a database shaped exactly like the pre-migration R2
-// store (users + refresh_tokens, no schema_migrations) so Open() has to run the
+// store (users + refresh_tokens, no schema_migrations) so OpenSeeded() has to run the
 // 0001 fingerprint/registration path.
 func createR2Fixture(t *testing.T, path string) {
 	t.Helper()
@@ -111,7 +111,7 @@ func tableExistsDB(t *testing.T, db *sql.DB, name string) bool {
 // reopening is a no-op.
 func TestMigrateFreshDB(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "fresh.db")
-	st, err := Open(path, "admin", "hash", true)
+	st, err := OpenSeeded(path, "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -121,13 +121,13 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 9 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 {
-		t.Fatalf("applied = %+v, want versions [1 2 3 4 5 6 7 8 9]", applied)
+	if len(applied) != 48 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" || applied[43].version != 44 || applied[43].name != "service_credentials" || applied[44].version != 45 || applied[44].name != "operation_log_service_credentials" || applied[45].version != 46 || applied[45].name != "site_operation_log_retention" || applied[46].version != 47 || applied[46].name != "operation_log_archive" || applied[47].version != 48 || applied[47].name != "operation_log_session" {
+		t.Fatalf("applied = %+v, want versions [1..48]", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
 		"roles", "user_roles", "permissions", "role_permissions", "menu_items", "role_menu_items",
-		"operation_log", "site_settings", "system_data_reconcile", "system_data_grants",
+		"operation_log", "operation_log_correlation", "operation_log_archive", "operation_log_session", "site_settings", "system_data_reconcile", "system_data_grants", "jobs", "service_credentials",
 	} {
 		if !tableExistsDB(t, st.db, tbl) {
 			t.Fatalf("table %s missing after fresh migration", tbl)
@@ -151,8 +151,12 @@ func TestMigrateFreshDB(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("settings.update on fresh operation_log: %v", err)
 	}
-	// A fresh empty DB has nothing to recover: no snapshot should exist.
-	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
+	// A fresh empty DB has nothing to recover: no snapshot should exist for ANY
+	// version. This globs all pre-vN snapshots, not just pre-v0002 — mid-batch
+	// system-data seeding used to trip the dbHasRows guard and produce ~39
+	// wasteful full-database copies per fresh open (the full handler test
+	// timeout); asserting the whole pattern locks that regression out.
+	if snaps, _ := filepath.Glob(path + ".pre-v*.sqlite"); len(snaps) != 0 {
 		t.Fatalf("fresh DB produced snapshots %v", snaps)
 	}
 	u, err := authRepository.UserByUsername("admin")
@@ -167,7 +171,7 @@ func TestMigrateFreshDB(t *testing.T) {
 	}
 
 	// Reopen: migrations not re-applied, seed not overwritten, no new snapshot.
-	st2, err := Open(path, "admin", "hash-v2", true)
+	st2, err := OpenSeeded(path, "admin", "hash-v2", true)
 	if err != nil {
 		t.Fatalf("reopen: %v", err)
 	}
@@ -181,10 +185,11 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 9 {
+	if len(applied2) != 48 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
-	if snaps, _ := filepath.Glob(path + ".pre-v0002-*.sqlite"); len(snaps) != 0 {
+	// Reopen of a fully-migrated fresh DB: no new snapshots for any version.
+	if snaps, _ := filepath.Glob(path + ".pre-v*.sqlite"); len(snaps) != 0 {
 		t.Fatalf("reopen produced snapshots %v", snaps)
 	}
 }
@@ -195,7 +200,7 @@ func TestMigrateExistingR2DB(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "existing.db")
 	createR2Fixture(t, path)
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open existing R2 DB: %v", err)
 	}
@@ -268,7 +273,7 @@ func TestMigrateExistingR2DedupeRoles(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "dedupe.db")
 	createR2FixtureRoles(t, path, `["admin","admin","editor"]`)
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -289,7 +294,7 @@ func TestMigrateExistingR2DuplicateRolesReadable(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "legacy-dup-read.db")
 	createR2FixtureRoles(t, path, `["admin","admin","editor"]`)
 
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -316,7 +321,7 @@ func TestMigrateExistingR2DuplicateRolesReadable(t *testing.T) {
 // V-MIG-03 · an unknown applied version fails closed.
 func TestMigrateFailClosedUnknownVersion(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "unknown.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -331,7 +336,7 @@ func TestMigrateFailClosedUnknownVersion(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for unknown applied version")
 	}
 }
@@ -339,7 +344,7 @@ func TestMigrateFailClosedUnknownVersion(t *testing.T) {
 // V-MIG-03 · a missing intermediate version fails closed.
 func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "gap.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -351,7 +356,7 @@ func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for missing intermediate version")
 	}
 }
@@ -361,7 +366,7 @@ func TestMigrateFailClosedMissingIntermediate(t *testing.T) {
 // MissingIntermediate test only exercises the "ledger does not start at 1" path).
 func TestMigrateFailClosedMissingMiddle(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "middlegap.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -374,7 +379,7 @@ func TestMigrateFailClosedMissingMiddle(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for ledger {1,3} with a missing middle version")
 	}
 }
@@ -382,7 +387,7 @@ func TestMigrateFailClosedMissingMiddle(t *testing.T) {
 // V-MIG-03 · a ledger checksum that no longer matches the code fails closed.
 func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "drift.db")
-	st, err := Open(path, "admin", "hash", false)
+	st, err := OpenSeeded(path, "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -397,7 +402,7 @@ func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for checksum drift")
 	}
 }
@@ -419,7 +424,7 @@ func TestMigrateFailClosedPartialBaseline(t *testing.T) {
 	}
 	db.Close()
 
-	if _, err := Open(path, "admin", "hash", false); err == nil {
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 		t.Fatal("expected fail closed for partial baseline (missing refresh_tokens)")
 	}
 	check := rawOpen(t, path)
@@ -439,7 +444,7 @@ func TestMigrateFailClosedInvalidRoles(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "badroles-"+name+".db")
 			createR2FixtureRoles(t, path, rolesJSON)
 
-			if _, err := Open(path, "admin", "hash", false); err == nil {
+			if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
 				t.Fatalf("expected fail closed for roles %s", rolesJSON)
 			}
 			check := rawOpen(t, path)
@@ -461,7 +466,7 @@ func TestMigrateFailClosedInvalidRoles(t *testing.T) {
 
 // V-MIG-04 · foreign_keys is asserted ON for the store connection.
 func TestForeignKeyEnabled(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "fk.db"), "admin", "hash", false)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "fk.db"), "admin", "hash", false)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -480,7 +485,7 @@ func TestForeignKeyEnabled(t *testing.T) {
 // CHECK constraints, and CASCADE|RESTRICT delete semantics across the RBAC tables
 // are asserted on the store connection (not just declared in DDL).
 func TestRBACConstraintsAndIndexes(t *testing.T) {
-	st, err := Open(filepath.Join(t.TempDir(), "rbac-mig.db"), "admin", "hash", true)
+	st, err := OpenSeeded(filepath.Join(t.TempDir(), "rbac-mig.db"), "admin", "hash", true)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -572,6 +577,56 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"admin.settings", "site_settings", "6ffb1d0d978d7475ebd807f4dc1aab609d255186ddefa08e28a5398d265b7dfa"},
 		{"core.operationlog", "operation_log_settings", "ec3635f99db24907eb4a371ebd8c8f328c80a69e07715b866e1bca319f518d6c"},
 		{"core.auth-session", "system_data_reconcile", "3e1c1e6d95c1f94c38a17ead999ee2cda685ec1e78d2148b4d12111d1eca74b6"},
+		{"admin.settings", "site_settings_v2", "b593aa2dd003e1339710b35478c87b105e6bb1762be0b4b08f3c986a5063a047"},
+		{"core.auth-session", "access_token_revocation", "c3ea720aa0d0f10c67ee0ea734fe439db928de70a82b87c265391214dbce4688"},
+		{"core.auth-session", "account_lock", "b9039118ebf3444bc2309ea481daac7ffdb1c0d627b4621642b5803c4fa3deb4"},
+		{"admin.account", "account_enable_state", "ca2b3f38793d54c4d440f8e5af034dbed6cf32e50240304e9115d538ea05c539"},
+		{"core.operationlog", "operation_log_account_events", "643d0f44bdf0f62a7689a0c4bdae2b3b511b077c5f7291db1a08763af389567d"},
+		{"core.operationlog", "operation_log_data_transfer", "d8aa6a97fe57978126e7d06d03dbfcb1bb529c8ff680199e61f76791978f24b9"},
+		{"admin.notifications", "notifications", "70d1357dc638fec1b100e0e9287dba46375a387914b884a899294f273f0fcbaa"},
+		{"admin.notifications", "notifications_enabled", "16191741bded09598f2628da66f7b6251ef3886e616d839b5fd8b325a10d7264"},
+		{"core.operationlog", "operation_log_file_events", "3351b6e6993dea21abd85f96049483eb8d9cfea4ad45bef34d3f5a824ac49249"},
+		{"admin.data-dictionary", "dictionary", "8f2c2a18037a4c3eb67704354bbdd01acbbe319b477731ced054070aec6f6587"},
+		{"core.operationlog", "operation_log_dictionary", "ac6d2c28eb213f90030b13f6e22bda470e4d7fa2c072d55939cda00e77ffd059"},
+		{"admin.scheduled-tasks", "scheduled_tasks", "076c8fa37fb28deecc3737ac1886e2eb98261081b1ee0188da11c4bfd2e44286"},
+		{"core.operationlog", "operation_log_tasks", "cb64c05e37e247127a0b4466a0812e113a96c0fce8f127bdd5ca6e5890326b04"},
+		{"admin.login-captcha", "login_captcha", "6bc0b55675f4d00a231de3a0d1f89f52688e3efb292ab3cc5975c225c308b853"},
+		{"core.operationlog", "operation_log_captcha", "51d6a3c11031d4fd2b3ff08573030e32747fff51b88d614af86e66a13548e264"},
+		{"admin.recycle-bin", "recycle_items", "39087fe4f00cf1832cc5f1021cfd8aa0f2d153c9866a28732da17a6eae2f8408"},
+		{"core.operationlog", "operation_log_recycle", "681f3bdce9f7a1fa7956849823d7e599e963638474b9d89b42151410a9dcb361"},
+		{"admin.data-permission", "data_permission", "f3ce4c717b2f7c43090183c53f05cc1ecbd2299622d7c4ad06296f0c1f1a4318"},
+		{"core.operationlog", "operation_log_data_permission", "a18c42e714030251c8f8eb7a1dec1b098e56f42138664f688991891bffbfc2e8"},
+		{"admin.mfa", "user_mfa", "daa2592f09da53ccc77062d27c2f1d5bdf590ffa5886af62fe323318331764d3"},
+		{"core.operationlog", "operation_log_mfa", "70464abf1bc3e9eb4dac3c836efaabc4f046610fba62c51486555cba91c40b9d"},
+		// S-14 (GOAL-019): admin.wallet tables (0031) + operationlog wallet events (0032).
+		{"admin.wallet", "wallet", "bc92082f6fadfc1812f16037275685f7901c1bb026334dc6f1256fac6db7358f"},
+		{"core.operationlog", "operation_log_wallet", "1c27e86cbf362cdd08e7721fbfe416f21e2752bc84fa688253ef7000232f74dc"},
+		// GOAL-021 (D-001 §3): ledger CHECK rebuild (deduct_frozen) + operationlog event.
+		{"admin.wallet", "wallet_ledger_deduct", "b3135b2888dec0aa6da032121026e1ebfa07bed8bc75396bdc60166a09b3077d"},
+		{"core.operationlog", "operation_log_wallet_deduct", "b6b54bee8b1baff9b5c8222a6619074ef3be54f211c55bceabe96f1c3a291467"},
+		// W13 T-05 (GOAL-014): account self-service avatar column + avatar event.
+		{"admin.account", "account_avatar_url", "a2872e8d7142a955851092b294f548394f2aea88567edbe9f486bd78b32c9f2a"},
+		{"core.operationlog", "operation_log_avatar_events", "3f4a67b35244036f081728891c6b942abdab25d55b74da9a1b0095a877afb35c"},
+		// W14 F-04 (GOAL-016): notification i18n message keys.
+		{"admin.notifications", "notifications_message_keys", "4f0a99c0e14940e3df488cc031af240161c9b5d7843920f078df08a1c22159a0"},
+		// W16 F-01 (GOAL-025): forced initial-password-change flag.
+		{"core.auth-session", "must_change_password", "922df3e58653dcc491b96b11cc86217080d92958193aa95eb5cde55117a9e47d"},
+		// W16 F-09 (GOAL-027): dictionary entry badge style.
+		{"admin.data-dictionary", "dict_entry_badge_style", "b1a53caae83bfb7bac824185059830014d1beab916bf5d69d6e134201acdf987"},
+		// W16 F-10 (GOAL-027): site footer copyright/ICP columns.
+		{"admin.settings", "site_footer", "5277f8b095001e658958c47f597f8f31e9869bbeced572b94c65fdc8829b2aba"},
+		// VP-012 R1: correlation IDs are persisted separately from operation detail.
+		{"core.operationlog", "operation_log_correlation", "17922088b0b6911c47ad338faccf40bcd0654d500a4277fbe392ece62293842a"},
+		// VP-012 R4: migration-only core.jobs durable state machine.
+		{"core.jobs", "async_jobs", "55e1d3f88de080bd0b6015841e76f1ce32604444619d180a3b228123f99dec68"},
+		// VP-012 R4: wallet Job enqueue and terminal audit events.
+		{"core.operationlog", "operation_log_wallet_jobs", "210a2ebe080081478242c3b1fd4a348f9c0f3922dbd1d98f4b31c8c86345c24e"},
+		// VP-012 R6: service credential storage and lifecycle audit events.
+		{"core.auth-session", "service_credentials", "5c51ade23d7f97e8142b3d1d53b2d084438b8e1a7dc08c3739b000010e4b8f5d"},
+		{"core.operationlog", "operation_log_service_credentials", "4cacb1a9262aedaf68df5b38b0294cb58d0735d28454b2a7640805c6b91766b6"},
+		{"admin.settings", "site_operation_log_retention", "5038cd0dc684f801409db24bc61eba671d3f12327bc3615d086f58892b33e14b"},
+		{"core.operationlog", "operation_log_archive", "6228b4e840bf28ce9afc534435dd201822b80f79474fd448522880a355774d40"},
+		{"core.operationlog", "operation_log_session", "1427328e3942b8bddf0d0970ac173d72a4bbefeee427f32a819e16cb3935edf5"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

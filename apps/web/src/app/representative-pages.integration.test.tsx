@@ -17,6 +17,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "@/app/App";
+import { I18nProvider } from "@/i18n/runtime";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const MANIFEST_PATH = resolve(
@@ -25,7 +26,7 @@ const MANIFEST_PATH = resolve(
 );
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/schemarender/schema",
+  "../../../api/internal/modules/dev/examples/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(
@@ -159,6 +160,20 @@ function combinedFetcher(
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (pathname === "/api/settings/default") {
+      return new Response(
+        JSON.stringify({
+          id: "default",
+          siteTitle: "Schema UI Core",
+          logoUrl: "",
+          defaultLocale: "auto",
+          siteTimezone: "auto",
+          defaultTheme: "auto",
+          updatedAt: "2026-08-04T00:00:00.000Z",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
     if (pathname.startsWith("/api/settings") || pathname === "/api/branding") {
       return new Response(
         JSON.stringify(
@@ -229,12 +244,14 @@ async function renderApp(
   activeRoots.push({ root, container });
   await act(async () => {
     root.render(
-      <App
-        manifest={manifest()}
-        navigationContext={context}
-        schemaFetcher={fetcher}
-        resourceFetcher={fetcher}
-      />,
+      <I18nProvider>
+        <App
+          manifest={manifest()}
+          navigationContext={context}
+          schemaFetcher={fetcher}
+          resourceFetcher={fetcher}
+        />
+      </I18nProvider>,
     );
   });
   return container;
@@ -288,7 +305,14 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     // S4 surface: create toolbar trigger, row edit/delete actions, recordView.
     expect(container.textContent).toContain("New user");
     expect(container.textContent).toContain("Edit");
-    expect(container.textContent).toContain("Delete");
+    // W11 · U-05: secondary actions (Delete) live in the "⋯" overflow menu,
+    // which is portaled to document.body.
+    const moreTrigger = container.querySelector<HTMLButtonElement>(
+      '[data-row-actions-menu] button[aria-label]',
+    );
+    expect(moreTrigger).not.toBeNull();
+    await act(async () => moreTrigger!.click());
+    expect(document.body.textContent).toContain("Delete");
     expect(container.textContent).toContain("alice");
     expect(container.textContent).toContain("bob");
     expect(container.textContent).toContain("Select a record to view details.");
@@ -351,25 +375,28 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={manifest()}
-          navigationContext={admin}
-          schemaFetcher={trackingFetcher}
-          resourceFetcher={trackingFetcher}
-        />,
+        <I18nProvider>
+          <App
+            manifest={manifest()}
+            navigationContext={admin}
+            schemaFetcher={trackingFetcher}
+            resourceFetcher={trackingFetcher}
+          />
+        </I18nProvider>,
       );
     });
 
     // requiresSelection keeps the button disabled with no rows selected; the
     // confirm never appears and no batch request is constructed (fail-closed).
+    // S2: the toolbar label resolves through the en-US catalog ("Batch delete").
     const batchButton = [...container.querySelectorAll("button")].find((button) =>
-      button.textContent?.includes("批量删除"),
+      button.textContent?.includes("Batch delete"),
     )!;
     expect(batchButton.disabled).toBe(true);
     await act(async () => {
       batchButton.click();
     });
-    expect(container.textContent).not.toContain("确认删除所选用户？");
+    expect(container.textContent).not.toContain("Delete the selected users?");
     expect(
       fetchSpy.mock.calls.filter(([url, method]) => url === "/api/users/batch-delete" && method === "POST"),
     ).toHaveLength(0);
@@ -425,12 +452,14 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={manifest()}
-          navigationContext={admin}
-          schemaFetcher={trackingFetcher}
-          resourceFetcher={trackingFetcher}
-        />,
+        <I18nProvider>
+          <App
+            manifest={manifest()}
+            navigationContext={admin}
+            schemaFetcher={trackingFetcher}
+            resourceFetcher={trackingFetcher}
+          />
+        </I18nProvider>,
       );
     });
 
@@ -453,7 +482,10 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     expect(uploadCalls[0]!.url).toBe("/api/upload");
     expect(uploadCalls[0]!.method).toBe("POST");
     expect(uploadCalls[0]!.body).toBe("file=contract.pdf:9");
-    expect(container.textContent).toContain("Value: /api/files/file-abc");
+    // W9 follow-up: URL-shaped committed values render as an image preview
+    // instead of the raw "Value: …" text.
+    expect(container.querySelector<HTMLImageElement>("img[src='/api/files/file-abc']")).not.toBeNull();
+    expect(container.textContent).not.toContain("Value: /api/files/file-abc");
   });
 
   it("runs the ADR-0022 batch flow end-to-end (select → confirm → request → reload clears selection)", async () => {
@@ -485,24 +517,27 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={manifest()}
-          navigationContext={admin}
-          schemaFetcher={trackingFetcher}
-          resourceFetcher={trackingFetcher}
-        />,
+        <I18nProvider>
+          <App
+            manifest={manifest()}
+            navigationContext={admin}
+            schemaFetcher={trackingFetcher}
+            resourceFetcher={trackingFetcher}
+          />
+        </I18nProvider>,
       );
     });
 
     expect(container.querySelector("h1")?.textContent).toContain("List + batch");
-    expect(container.textContent).toContain("批量删除");
+    // S2: the toolbar label resolves through the en-US catalog.
+    expect(container.textContent).toContain("Batch delete");
 
     // The batch button starts disabled (requiresSelection + empty selection).
     const rowCheckboxes = container.querySelectorAll("input[aria-label='Select row']");
     expect(rowCheckboxes.length).toBe(2);
     const batchButton = () =>
       [...container.querySelectorAll("button")].find((button) =>
-        button.textContent?.includes("批量删除"),
+        button.textContent?.includes("Batch delete"),
       )!;
     expect(batchButton().disabled).toBe(true);
 
@@ -515,7 +550,7 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
     await act(async () => {
       batchButton().click();
     });
-    expect(container.textContent).toContain("确认删除所选用户？");
+    expect(container.textContent).toContain("Delete the selected users?");
     const confirmButton = [...container.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("Confirm"),
     )!;

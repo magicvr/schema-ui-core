@@ -29,7 +29,7 @@ func TestRepositoryAppendListFilterAndGet(t *testing.T) {
 	recordID := "user-9"
 	detail := `{"username":"alice"}`
 	operations := []Operation{
-		{ID: "op-1", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin", RecordID: &recordID, Detail: &detail, CreatedAt: base},
+		{ID: "op-1", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin", RecordID: &recordID, Detail: &detail, CorrelationID: "r1-op-1", CreatedAt: base},
 		{ID: "op-2", Event: EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(time.Second)},
 		{ID: "op-3", Event: EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: base.Add(2 * time.Second)},
 	}
@@ -59,7 +59,7 @@ func TestRepositoryAppendListFilterAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOperation: %v", err)
 	}
-	if operation.RecordID == nil || *operation.RecordID != recordID || operation.Detail == nil || *operation.Detail != detail || !operation.CreatedAt.Equal(base) {
+	if operation.RecordID == nil || *operation.RecordID != recordID || operation.Detail == nil || *operation.Detail != detail || operation.CorrelationID != "r1-op-1" || !operation.CreatedAt.Equal(base) {
 		t.Fatalf("GetOperation(op-1) = %+v", operation)
 	}
 	if _, err := repository.GetOperation("missing"); !errors.Is(err, ErrNotFound) {
@@ -67,6 +67,45 @@ func TestRepositoryAppendListFilterAndGet(t *testing.T) {
 	}
 	if got, err := repository.ListOperations(0); err != nil || len(got) != 0 {
 		t.Fatalf("ListOperations(0) = %v (err %v), want empty", got, err)
+	}
+}
+
+func TestRepositoryStructuredFilters(t *testing.T) {
+	repository := openOperationRepository(t, "operationlog-structured.db")
+	base := time.Date(2026, 8, 17, 8, 0, 0, 0, time.UTC)
+	ops := []Operation{
+		{ID: "op-a", Event: EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base},
+		{ID: "op-b", Event: EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CreatedAt: base.Add(30 * time.Minute)},
+		{ID: "op-c", Event: EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: base.Add(2 * time.Hour)},
+	}
+	for _, op := range ops {
+		if err := repository.RecordOperation(op); err != nil {
+			t.Fatalf("RecordOperation(%s): %v", op.ID, err)
+		}
+	}
+
+	from := base.Add(15 * time.Minute)
+	to := base.Add(90 * time.Minute)
+	items, total, err := repository.ListOperationsFiltered(OperationFilter{
+		Event: EventUserCreate, ActorName: "admin", From: &from, To: &to,
+		Sort: "createdAt", Order: "asc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("structured filter: %v", err)
+	}
+	if total != 1 || len(items) != 1 || items[0].ID != "op-b" {
+		t.Fatalf("structured filtered = %+v total=%d, want op-b/1", items, total)
+	}
+
+	// From-only: op-b and op-c.
+	items, total, err = repository.ListOperationsFiltered(OperationFilter{
+		From: &from, Sort: "createdAt", Order: "asc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("from filter: %v", err)
+	}
+	if total != 2 || items[0].ID != "op-b" || items[1].ID != "op-c" {
+		t.Fatalf("from filtered = %+v total=%d, want op-b/op-c/2", items, total)
 	}
 }
 

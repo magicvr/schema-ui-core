@@ -4,8 +4,8 @@ id: VRev-014
 status: active
 source: independent
 created: 2026-08-09
-updated: 2026-08-09
-version: 0.1.1
+updated: 2026-08-10
+version: 0.1.2
 parent: null
 ---
 
@@ -137,3 +137,4 @@ parent: null
 | 日期 | 入口 | 摘要 |
 |------|------|------|
 | 2026-08-09 | `/vision` + `/govern` | 用户确认响应 F-V025/F-V026。**F-V025 → `fixed`**：`reviews.md` 焦点注改为「VP-006 已 `closed`」+ Root `done / 6/6`；open required 说明仍仅 `F-V018`（VP-005）；VRev-014 索引摘要同步。**F-V026 → `fixed`**：`/govern` 回填 `00-meta` 阶段↔exit 映射证据列与 S5 终态说明、`03-audit` 结论状态、`goal-tree` 维护说明（覆盖表现行权威 = I-PROTO-FULL-001 v1.0.0）；执行台账 E-006。原 verdict **pass** 不变；**未**改写 A-001/A-002 findings 原文；**未**改 VP/Root status（已为 closed/done）。本 scope **0 open required、0 open recommended**。仓库级仍余 **F-V018**（仅阻断 VP-005）。 |
+| 2026-08-10 | `/vision` + `/govern` | **执行分母勘误投影**：保留本独立报告原 verdict、finding 与 2026-08-09 响应原文；现行覆盖权威升为 `I-PROTO-FULL-001` v1.0.1，12/12 域、24/24 registry、16/16 suite include 不变，320 case 改按 **318 executed + 2 local adapter excluded** 解读。勘误证据为 workspace-005 D-003/E-007 与 workspace-008 A-003；VP-006/Root 终态不重开。 |

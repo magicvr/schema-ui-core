@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -16,6 +16,21 @@ var recordsPersistDDL = []string{
   status     TEXT NOT NULL CHECK (length(trim(status)) > 0),
   owner      TEXT NOT NULL CHECK (length(trim(owner)) > 0),
   updated_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_records_name ON records(name)`,
+	`CREATE INDEX idx_records_updated_at ON records(updated_at)`,
+	`CREATE INDEX idx_records_owner ON records(owner)`,
+}
+
+// recordsPersistPGDDL is the postgres variant of recordsPersistDDL:
+// updated_at (Unix time) is BIGINT (R1 v1.4 §3).
+var recordsPersistPGDDL = []string{
+	`CREATE TABLE records (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL CHECK (length(trim(name)) > 0),
+  status     TEXT NOT NULL CHECK (length(trim(status)) > 0),
+  owner      TEXT NOT NULL CHECK (length(trim(owner)) > 0),
+  updated_at BIGINT NOT NULL
 )`,
 	`CREATE INDEX idx_records_name ON records(name)`,
 	`CREATE INDEX idx_records_updated_at ON records(updated_at)`,
@@ -42,6 +57,7 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "records_persist",
 			Checksum:             kernel.MigrationChecksum(recordsPersistDDL, "0003:records-persist:v1"),
 			Apply:                migrateRecordsPersist,
+			ApplyPostgres:        migrateRecordsPersistPG,
 		},
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "records_retire"},
@@ -53,18 +69,27 @@ func Descriptors() []kernel.MigrationContribution {
 	}
 }
 
-func migrateRecordsPersist(tx *sql.Tx) error {
+func migrateRecordsPersist(tx kernel.Tx) error {
 	for _, stmt := range recordsPersistDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create records: %w", err)
 		}
 	}
 	return nil
 }
 
-func migrateRecordsRetire(tx *sql.Tx) error {
+func migrateRecordsPersistPG(tx kernel.Tx) error {
+	for _, stmt := range recordsPersistPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create records (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateRecordsRetire(tx kernel.Tx) error {
 	for _, stmt := range recordsRetireDDL {
-		if _, err := tx.Exec(stmt); err != nil {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("records retire: %w", err)
 		}
 	}

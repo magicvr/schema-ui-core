@@ -1,10 +1,13 @@
 {
   "protocolVersion": "2.7",
-  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
-    "homePageRef": "overview",
+    "homePageRef": "dashboard",
     "description": "The schema-ui-core administration workspace."
   },
   "pages": [
@@ -12,73 +15,183 @@
       "pageId": "admin-list-batch",
       "title": "List + batch",
       "schemaUrl": "/api/schema/admin-list-batch",
-      "route": "/admin-list-batch"
+      "route": "/admin-list-batch",
+      "titleKey": "manifest.title.admin-list-batch"
     },
     {
       "pageId": "data-display",
       "title": "Data display",
       "schemaUrl": "/api/schema/data-display",
-      "route": "/data-display"
+      "route": "/data-display",
+      "titleKey": "manifest.title.data-display"
     },
     {
       "pageId": "overview",
       "title": "Overview",
       "schemaUrl": "/api/schema/overview",
-      "route": "/overview"
+      "route": "/overview",
+      "titleKey": "manifest.title.overview"
     },
     {
       "pageId": "data-table",
       "title": "Data table",
       "schemaUrl": "/api/schema/data-table",
-      "route": "/data-table"
+      "route": "/data-table",
+      "titleKey": "manifest.title.data-table"
     },
     {
       "pageId": "search-form-table",
       "title": "Search + table",
       "schemaUrl": "/api/schema/search-form-table",
-      "route": "/search-form-table"
+      "route": "/search-form-table",
+      "titleKey": "manifest.title.search-form-table"
     },
     {
       "pageId": "form-controls",
       "title": "Form controls",
       "schemaUrl": "/api/schema/form-controls",
-      "route": "/form-controls"
+      "route": "/form-controls",
+      "titleKey": "manifest.title.form-controls"
     },
     {
       "pageId": "form-with-reactions",
       "title": "Form with reactions",
       "schemaUrl": "/api/schema/form-with-reactions",
-      "route": "/form-with-reactions"
+      "route": "/form-with-reactions",
+      "titleKey": "manifest.title.form-with-reactions"
     },
     {
       "pageId": "form-with-upload",
       "title": "Form with upload",
       "schemaUrl": "/api/schema/form-with-upload",
-      "route": "/form-with-upload"
+      "route": "/form-with-upload",
+      "titleKey": "manifest.title.form-with-upload"
     },
     {
       "pageId": "users",
       "title": "Users",
       "schemaUrl": "/api/schema/users",
-      "route": "/users"
+      "route": "/users",
+      "titleKey": "manifest.title.users"
     },
     {
       "pageId": "roles",
       "title": "Roles",
       "schemaUrl": "/api/schema/roles",
-      "route": "/roles"
+      "route": "/roles",
+      "titleKey": "manifest.title.roles"
     },
     {
       "pageId": "settings",
       "title": "Settings",
       "schemaUrl": "/api/schema/settings",
-      "route": "/settings"
+      "route": "/settings",
+      "titleKey": "manifest.title.settings"
     },
     {
       "pageId": "activity",
       "title": "Activity",
       "schemaUrl": "/api/schema/activity",
-      "route": "/activity"
+      "route": "/activity",
+      "titleKey": "manifest.title.activity"
+    },
+    {
+      "pageId": "dashboard",
+      "title": "Dashboard",
+      "schemaUrl": "/api/schema/dashboard",
+      "route": "/dashboard",
+      "titleKey": "manifest.title.dashboard"
+    },
+    {
+      "pageId": "account",
+      "title": "Account",
+      "schemaUrl": "/api/schema/account",
+      "route": "/account",
+      "titleKey": "manifest.title.account"
+    },
+    {
+      "pageId": "notifications",
+      "title": "Notifications",
+      "schemaUrl": "/api/schema/notifications",
+      "route": "/notifications",
+      "titleKey": "manifest.title.notifications"
+    },
+    {
+      "pageId": "file-library",
+      "title": "File library",
+      "schemaUrl": "/api/schema/file-library",
+      "route": "/file-library",
+      "titleKey": "manifest.title.fileLibrary"
+    },
+    {
+      "pageId": "data-dictionary",
+      "title": "Data dictionary",
+      "schemaUrl": "/api/schema/data-dictionary",
+      "route": "/data-dictionary",
+      "titleKey": "manifest.title.dataDictionary"
+    },
+    {
+      "pageId": "dictionary-entries",
+      "title": "Dictionary entries",
+      "schemaUrl": "/api/schema/dictionary-entries",
+      "route": "/dictionary-entries",
+      "titleKey": "manifest.title.dictionaryEntries"
+    },
+    {
+      "pageId": "system-monitoring",
+      "title": "System monitoring",
+      "schemaUrl": "/api/schema/system-monitoring",
+      "route": "/system-monitoring",
+      "titleKey": "manifest.title.systemMonitoring"
+    },
+    {
+      "pageId": "scheduled-tasks",
+      "title": "Scheduled tasks",
+      "schemaUrl": "/api/schema/scheduled-tasks",
+      "route": "/scheduled-tasks",
+      "titleKey": "manifest.title.scheduledTasks"
+    },
+    {
+      "pageId": "task-runs",
+      "title": "Task runs",
+      "schemaUrl": "/api/schema/task-runs",
+      "route": "/task-runs",
+      "titleKey": "manifest.title.taskRuns"
+    },
+    {
+      "pageId": "recycle-bin",
+      "title": "Recycle bin",
+      "schemaUrl": "/api/schema/recycle-bin",
+      "route": "/recycle-bin",
+      "titleKey": "manifest.title.recycleBin"
+    },
+    {
+      "pageId": "data-permission",
+      "title": "Data permission",
+      "schemaUrl": "/api/schema/data-permission",
+      "route": "/data-permission",
+      "titleKey": "manifest.title.dataPermission"
+    },
+    {
+      "pageId": "wallet",
+      "title": "Wallet",
+      "schemaUrl": "/api/schema/wallet",
+      "route": "/wallet",
+      "titleKey": "manifest.title.wallet"
+    },
+    {
+      "pageId": "wallet-entries",
+      "title": "Wallet entries",
+      "schemaUrl": "/api/schema/wallet-entries",
+      "route": "/wallet-entries/{id}",
+      "titleKey": "manifest.title.walletEntries"
+    },
+    {
+      "pageId": "my-wallet",
+      "title": "My wallet",
+      "schemaUrl": "/api/schema/my-wallet",
+      "route": "/my-wallet",
+      "titleKey": "manifest.title.myWallet"
     }
   ],
   "navigation": {
@@ -86,10 +199,56 @@
       {
         "pageRef": "overview",
         "label": "Overview",
-        "icon": "dashboard"
+        "icon": "dashboard",
+        "labelKey": "manifest.nav.overview"
       }
     ],
     "sidebar": [
+      {
+        "pageRef": "dashboard",
+        "label": "Dashboard",
+        "icon": "dashboard",
+        "labelKey": "manifest.nav.dashboard",
+        "visibleWhen": {
+          "when": "$context.features.menu_dashboard == true"
+        }
+      },
+      {
+        "pageRef": "file-library",
+        "label": "File library",
+        "icon": "folder",
+        "visibleWhen": {
+          "when": "$context.features.menu_files == true"
+        },
+        "labelKey": "manifest.nav.fileLibrary"
+      },
+      {
+        "pageRef": "data-dictionary",
+        "label": "Data dictionary",
+        "icon": "table",
+        "visibleWhen": {
+          "when": "$context.features.menu_dictionary == true"
+        },
+        "labelKey": "manifest.nav.dataDictionary"
+      },
+      {
+        "pageRef": "system-monitoring",
+        "label": "System monitoring",
+        "icon": "activity",
+        "visibleWhen": {
+          "when": "$context.features.menu_monitoring == true"
+        },
+        "labelKey": "manifest.nav.systemMonitoring"
+      },
+      {
+        "pageRef": "scheduled-tasks",
+        "label": "Scheduled tasks",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_scheduled_tasks == true"
+        },
+        "labelKey": "manifest.nav.scheduledTasks"
+      },
       {
         "label": "Examples",
         "icon": "folder",
@@ -97,39 +256,47 @@
           {
             "pageRef": "data-table",
             "label": "Data table",
-            "icon": "table"
+            "icon": "table",
+            "labelKey": "manifest.nav.data-table"
           },
           {
             "pageRef": "admin-list-batch",
             "label": "List + batch",
-            "icon": "batch"
+            "icon": "batch",
+            "labelKey": "manifest.nav.admin-list-batch"
           },
           {
             "pageRef": "data-display",
             "label": "Data display",
-            "icon": "chart"
+            "icon": "chart",
+            "labelKey": "manifest.nav.data-display"
           },
           {
             "pageRef": "search-form-table",
             "label": "Search + table",
-            "icon": "search"
+            "icon": "search",
+            "labelKey": "manifest.nav.search-form-table"
           },
           {
             "pageRef": "form-controls",
             "label": "Form controls",
-            "icon": "form"
+            "icon": "form",
+            "labelKey": "manifest.nav.form-controls"
           },
           {
             "pageRef": "form-with-reactions",
             "label": "Form with reactions",
-            "icon": "reaction"
+            "icon": "reaction",
+            "labelKey": "manifest.nav.form-with-reactions"
           },
           {
             "pageRef": "form-with-upload",
             "label": "Form with upload",
-            "icon": "upload"
+            "icon": "upload",
+            "labelKey": "manifest.nav.form-with-upload"
           }
-        ]
+        ],
+        "labelKey": "manifest.nav.examples"
       },
       {
         "label": "Admin",
@@ -141,7 +308,8 @@
             "icon": "user",
             "visibleWhen": {
               "when": "$context.features.menu_users == true"
-            }
+            },
+            "labelKey": "manifest.nav.users"
           },
           {
             "pageRef": "roles",
@@ -149,7 +317,17 @@
             "icon": "user",
             "visibleWhen": {
               "when": "$context.features.menu_roles == true"
-            }
+            },
+            "labelKey": "manifest.nav.roles"
+          },
+          {
+            "pageRef": "wallet",
+            "label": "Wallet",
+            "icon": "wallet",
+            "visibleWhen": {
+              "when": "$context.features.menu_wallet == true"
+            },
+            "labelKey": "manifest.nav.wallet"
           },
           {
             "pageRef": "activity",
@@ -157,19 +335,58 @@
             "icon": "activity",
             "visibleWhen": {
               "when": "$context.features.menu_activity == true"
-            }
+            },
+            "labelKey": "manifest.nav.activity"
           }
-        ]
+        ],
+        "labelKey": "manifest.nav.admin"
+      },
+      {
+        "pageRef": "recycle-bin",
+        "label": "Recycle bin",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_recycle_bin == true"
+        },
+        "labelKey": "manifest.nav.recycleBin"
+      },
+      {
+        "pageRef": "data-permission",
+        "label": "Data permission",
+        "icon": "shield",
+        "visibleWhen": {
+          "when": "$context.features.menu_data_permission == true"
+        },
+        "labelKey": "manifest.nav.dataPermission"
       }
     ],
     "user": [
+      {
+        "pageRef": "account",
+        "label": "Account",
+        "icon": "user",
+        "labelKey": "manifest.nav.account",
+        "visibleWhen": {
+          "when": "$context.features.menu_account == true"
+        }
+      },
+      {
+        "pageRef": "my-wallet",
+        "label": "My wallet",
+        "icon": "wallet",
+        "labelKey": "manifest.nav.myWallet",
+        "visibleWhen": {
+          "when": "$context.features.menu_wallet_self == true"
+        }
+      },
       {
         "pageRef": "settings",
         "label": "Settings",
         "icon": "settings",
         "visibleWhen": {
           "when": "$context.features.menu_settings == true"
-        }
+        },
+        "labelKey": "manifest.nav.settings"
       }
     ]
   }

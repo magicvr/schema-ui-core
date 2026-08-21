@@ -1,0 +1,24 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "notifications",
+      "title": "Notifications",
+      "schemaUrl": "/api/schema/notifications",
+      "route": "/notifications",
+      "titleKey": "manifest.title.notifications"
+    }
+  ],
+  "navigation": {
+    "user": []
+  }
+}

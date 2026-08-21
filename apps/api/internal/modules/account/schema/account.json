@@ -1,0 +1,292 @@
+{
+  "meta": {
+    "pageId": "account",
+    "title": "Account",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "actions.row.request",
+      "form.controls.extended",
+      "form.controls.advanced",
+      "form.record.load",
+      "actions.upload"
+    ]
+  },
+  "actions": {
+    "saveProfile": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/account/profile",
+      "bodyMapping": {
+        "name": "name",
+        "avatarUrl": "avatarUrl"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "uploadAvatar": {
+      "type": "upload",
+      "url": "/api/account/avatar",
+      "multiple": false,
+      "accept": "image/png,image/jpeg,image/webp",
+      "maxSize": 4194304
+    },
+    "changePassword": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/account/password",
+      "bodyMapping": {
+        "currentPassword": "currentPassword",
+        "newPassword": "newPassword"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "revokeSession": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/account/sessions/{id}/revoke",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "saveNotificationSettings": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/notifications/settings",
+      "bodyMapping": {
+        "enabled": "enabled"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "tabs",
+    "id": "account-tabs",
+    "children": [
+      {
+        "type": "section",
+        "id": "tab-profile",
+        "props": {
+          "labelKey": "schema.account.tab.profile",
+          "label": "Profile"
+        },
+        "children": [
+          {
+            "type": "form",
+            "id": "profile-form",
+            "props": {
+              "title": "Profile",
+              "titleKey": "schema.account.profile.title",
+              "recordSource": {
+                "method": "GET",
+                "url": "/api/account/profile",
+                "responseMapping": {
+                  "name": "name",
+                  "avatarUrl": "avatarUrl"
+                }
+              },
+              "fields": [
+                {
+                  "id": "avatarUrl",
+                  "label": "Avatar",
+                  "labelKey": "schema.account.field.avatarUrl",
+                  "type": "upload",
+                  "actionRef": "uploadAvatar"
+                },
+                {
+                  "id": "name",
+                  "label": "Name",
+                  "type": "input",
+                  "labelKey": "schema.account.field.name"
+                }
+              ],
+              "submitAction": "saveProfile",
+              "submitLabel": "Save profile",
+              "submitLabelKey": "schema.account.submit.saveProfile"
+            }
+          }
+        ]
+      },
+      {
+        "type": "section",
+        "id": "tab-notifications",
+        "props": {
+          "labelKey": "schema.account.tab.notifications",
+          "label": "Notifications"
+        },
+        "children": [
+          {
+            "type": "form",
+            "id": "notification-settings",
+            "props": {
+              "title": "Notification settings",
+              "titleKey": "schema.notifications.settings.title",
+              "recordSource": {
+                "method": "GET",
+                "url": "/api/notifications/settings",
+                "responseMapping": {
+                  "enabled": "enabled"
+                }
+              },
+              "fields": [
+                {
+                  "id": "enabled",
+                  "label": "Enable in-app notifications",
+                  "type": "switch",
+                  "labelKey": "schema.notifications.settings.enable"
+                }
+              ],
+              "submitAction": "saveNotificationSettings",
+              "submitLabel": "Save settings",
+              "submitLabelKey": "schema.notifications.settings.submit"
+            }
+          }
+        ]
+      },
+      {
+        "type": "section",
+        "id": "tab-security",
+        "props": {
+          "labelKey": "schema.account.tab.security",
+          "label": "Security"
+        },
+        "children": [
+          {
+            "type": "form",
+            "id": "password-form",
+            "props": {
+              "title": "Change password",
+              "titleKey": "schema.account.password.title",
+              "fields": [
+                {
+                  "id": "currentPassword",
+                  "label": "Current password",
+                  "type": "password",
+                  "labelKey": "schema.account.field.currentPassword"
+                },
+                {
+                  "id": "newPassword",
+                  "label": "New password",
+                  "type": "password",
+                  "labelKey": "schema.account.field.newPassword"
+                }
+              ],
+              "submitAction": "changePassword",
+              "submitLabel": "Change password",
+              "submitLabelKey": "schema.account.submit.changePassword"
+            }
+          },
+          {
+            "type": "custom",
+            "id": "mfa-manager-block",
+            "component": "mfa-manager"
+          }
+        ]
+      },
+      {
+        "type": "section",
+        "id": "tab-sessions",
+        "props": {
+          "labelKey": "schema.account.tab.sessions",
+          "label": "Sessions"
+        },
+        "children": [
+          {
+            "type": "custom",
+            "id": "session-toolbar",
+            "component": "account-session-toolbar"
+          },
+          {
+            "type": "table",
+            "id": "sessions-table",
+            "props": {
+              "title": "Signed-in sessions",
+              "titleKey": "schema.account.session.title",
+              "columns": [
+                {
+                  "field": "createdAt",
+                  "label": "Created",
+                  "labelKey": "schema.account.column.created"
+                },
+                {
+                  "field": "expiresAt",
+                  "label": "Expires",
+                  "labelKey": "schema.account.column.expires"
+                },
+                {
+                  "field": "status",
+                  "label": "Status",
+                  "labelKey": "schema.account.column.status"
+                },
+                {
+                  "field": "current",
+                  "label": "Current",
+                  "labelKey": "schema.account.column.current"
+                },
+                {
+                  "field": "userAgent",
+                  "label": "Device",
+                  "labelKey": "schema.account.column.userAgent"
+                },
+                {
+                  "field": "ip",
+                  "label": "IP",
+                  "labelKey": "schema.account.column.ip"
+                }
+              ],
+              "filters": [
+                {
+                  "field": "status",
+                  "type": "select",
+                  "labelKey": "schema.account.filter.status",
+                  "options": [
+                    {
+                      "value": "",
+                      "labelKey": "schema.account.filter.status.all"
+                    },
+                    {
+                      "value": "active",
+                      "labelKey": "schema.account.filter.status.active"
+                    },
+                    {
+                      "value": "revoked",
+                      "labelKey": "schema.account.filter.status.revoked"
+                    }
+                  ]
+                }
+              ],
+              "dataSource": "/api/account/sessions",
+              "actions": [
+                {
+                  "key": "revoke",
+                  "label": "Revoke",
+                  "actionRef": "revokeSession",
+                  "requestMapping": {
+                    "path": {
+                      "id": "$row.id"
+                    }
+                  },
+                  "disabledWhen": {
+                    "field": "status",
+                    "equals": "revoked"
+                  },
+                  "confirm": "Revoke this session?",
+                  "labelKey": "schema.account.action.revoke",
+                  "confirmKey": "schema.account.confirm.revoke"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

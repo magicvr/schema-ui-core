@@ -1,0 +1,59 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "wallet",
+      "title": "Wallet",
+      "schemaUrl": "/api/schema/wallet",
+      "route": "/wallet",
+      "titleKey": "manifest.title.wallet"
+    },
+    {
+      "pageId": "wallet-entries",
+      "title": "Wallet entries",
+      "schemaUrl": "/api/schema/wallet-entries",
+      "route": "/wallet-entries/{id}",
+      "titleKey": "manifest.title.walletEntries"
+    },
+    {
+      "pageId": "my-wallet",
+      "title": "My wallet",
+      "schemaUrl": "/api/schema/my-wallet",
+      "route": "/my-wallet",
+      "titleKey": "manifest.title.myWallet"
+    }
+  ],
+  "navigation": {
+    "user": [
+      {
+        "pageRef": "my-wallet",
+        "label": "My wallet",
+        "icon": "wallet",
+        "visibleWhen": {
+          "when": "$context.features.menu_wallet_self == true"
+        },
+        "labelKey": "manifest.nav.myWallet"
+      }
+    ],
+    "sidebar": [
+      {
+        "pageRef": "wallet",
+        "label": "Wallet",
+        "icon": "wallet",
+        "visibleWhen": {
+          "when": "$context.features.menu_wallet == true"
+        },
+        "labelKey": "manifest.nav.wallet"
+      }
+    ]
+  }
+}

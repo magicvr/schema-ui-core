@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "pageId": "system-monitoring",
+    "title": "System monitoring",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "table.sort"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "system-monitoring",
+    "children": [
+      {
+        "type": "custom",
+        "id": "monitoring-refresh-control",
+        "component": "monitoring-auto-refresh"
+      },
+      {
+        "type": "text",
+        "props": {
+          "text": "Read-only system status and recent events.",
+          "textKey": "schema.systemMonitoring.text.intro"
+        }
+      },
+      {
+        "type": "grid",
+        "props": {
+          "columns": 3
+        },
+        "children": [
+          {
+            "type": "statCard",
+            "id": "status",
+            "props": {
+              "label": "Status",
+              "format": "plain",
+              "valueField": "status",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.status"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "ready",
+            "props": {
+              "label": "Ready",
+              "format": "plain",
+              "valueField": "ready",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.ready"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "availability-mode",
+            "props": {
+              "label": "Availability",
+              "format": "plain",
+              "valueField": "availabilityMode",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.availability"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "uptime",
+            "props": {
+              "label": "Uptime (s)",
+              "format": "plain",
+              "valueField": "uptimeSeconds",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.uptime"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "modules",
+            "props": {
+              "label": "Modules",
+              "format": "plain",
+              "valueField": "moduleCount",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.modules"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "db-size",
+            "props": {
+              "label": "DB size (bytes)",
+              "format": "plain",
+              "valueField": "dbSizeBytes",
+              "dataSource": "/api/system-monitoring/status",
+              "labelKey": "schema.systemMonitoring.statCard.dbSize"
+            }
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "id": "monitoring-events-table",
+        "props": {
+          "columns": [
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.systemMonitoring.column.created"
+            },
+            {
+              "field": "event",
+              "label": "Event",
+              "sortable": true,
+              "labelKey": "schema.systemMonitoring.column.event"
+            },
+            {
+              "field": "actorName",
+              "label": "Actor",
+              "sortable": true,
+              "labelKey": "schema.systemMonitoring.column.actor"
+            },
+            {
+              "field": "detail",
+              "label": "Detail",
+              "labelKey": "schema.systemMonitoring.column.detail"
+            }
+          ],
+          "dataSource": "/api/system-monitoring/errors"
+        }
+      }
+    ]
+  }
+}

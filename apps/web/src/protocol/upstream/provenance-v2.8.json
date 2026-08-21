@@ -1,0 +1,52 @@
+{
+  "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
+  "sourceCommit": "521cff8",
+  "artifactVersion": "2.8.0",
+  "note": "上游 schema-ui-protocol v2.8.0 正式发布（tag v2.8.0 @ 521cff8，上游审计 0080 V379）。绑定值：contentDigest sha256:4fae46058d01bb62d8ff5a17b35f57021a417302c9d8b932916e17ab8acf3c30；artifactDigest sha256:6cdbffccaa0da1f9e05487b7def93aaef14b7fbae7b14dc8761fc661c9946f31；fixture 树 digest sha256:7aacf1332ec66a16db8c79c5f3af37d241bd69b88103e503fe4d91984dd138a2。身份纠偏（2026-08-13）：此前 593f625 / 40690917… 为上游 H4 预备身份，非正式 pin；本目录各工件字节与正式 tag 一致（上游 v2.8.1 / v2.8.2 @ f07157d 亦未改机器契约：均为文档修订——0080 身份纠偏 / 0081 ADR-0038 消费方角色，docs/schemas 零 diff，fixture digest 不变）。",
+  "artifacts": [
+    {
+      "path": "docs/schemas/host-bootstrap.schema.json",
+      "sha256": "e861430275c24ca5108e90ae9a15a8a6feb72f7871983ccb76fadf5384d3e55e"
+    },
+    {
+      "path": "docs/schemas/host-failure.schema.json",
+      "sha256": "1923c5710173e601fb3052c97a8ab0d1ccf88d00fb24b8b660f7979e051531be"
+    },
+    {
+      "path": "docs/schemas/host-conformance-claim.schema.json",
+      "sha256": "da6389f874787e377a80ea3f1c4364605941220b856091adade561db6877a74e"
+    },
+    {
+      "path": "docs/schemas/capability-registry.json",
+      "sha256": "2550a5d2f957c74d7fc62484c97275bbb84775e3ee9046566c8ed2c30befcf9c"
+    },
+    {
+      "path": "docs/schemas/app-manifest.schema.json",
+      "sha256": "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55"
+    },
+    {
+      "path": "conformance/fixtures/host-bootstrap/cases.json",
+      "sha256": "bfc71bbd27951f13a16daa2a2eca3ff7285e0c149faf7ef3476ccf2912d5528e"
+    },
+    {
+      "path": "conformance/fixtures/host-failure/cases.json",
+      "sha256": "59efc00ad9870705f1a4f91df9b03d26355eb2ad9740d881af811e35fec1d184"
+    },
+    {
+      "path": "conformance/fixtures/host-conformance-claim/cases.json",
+      "sha256": "e3511ecc1bc22fccbd2389c9b7411ddff1a82cc65988f2d6ce169f7db539590d"
+    },
+    {
+      "path": "conformance/fixtures/app-manifest/cases.json",
+      "sha256": "4ab9ec93e603dfd4b0e7a3b3c89de5e7a59d91a53a90f252bfcfa5fb3c43c347"
+    },
+    {
+      "path": "conformance/fixtures/version-negotiation/cases.json",
+      "sha256": "ed66a29c8f84bdea5bc93f263d73480382d16992c490da83c71c6dbd1ccb0e74"
+    },
+    {
+      "path": "conformance/schemas/fixture-suite.schema.json",
+      "sha256": "a93f500bcb94f93e7a289af700227a407688f8205218fe5681269956b91fd1a3"
+    }
+  ]
+}

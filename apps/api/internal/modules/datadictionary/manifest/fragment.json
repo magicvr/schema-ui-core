@@ -1,0 +1,41 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "data-dictionary",
+      "title": "Data dictionary",
+      "schemaUrl": "/api/schema/data-dictionary",
+      "route": "/data-dictionary",
+      "titleKey": "manifest.title.dataDictionary"
+    },
+    {
+      "pageId": "dictionary-entries",
+      "title": "Dictionary entries",
+      "schemaUrl": "/api/schema/dictionary-entries",
+      "route": "/dictionary-entries/{dictKey}",
+      "titleKey": "manifest.title.dictionaryEntries"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "data-dictionary",
+        "label": "Data dictionary",
+        "icon": "table",
+        "visibleWhen": {
+          "when": "$context.features.menu_dictionary == true"
+        },
+        "labelKey": "manifest.nav.dataDictionary"
+      }
+    ]
+  }
+}

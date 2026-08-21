@@ -5,7 +5,7 @@
   "artifacts": [
     {
       "path": "docs/schemas/app-manifest.schema.json",
-      "sha256": "294eb0f391a515a123ed07ef5e19b40f1126fbe57e585ebdf639a34232a6c2e8"
+      "sha256": "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55"
     },
     {
       "path": "docs/schemas/node.schema.json",
@@ -29,11 +29,11 @@
     },
     {
       "path": "conformance/fixtures/app-manifest/cases.json",
-      "sha256": "8aafd684a40c4350d39ce0c94ab3c986455cb21fe0ebc37e4f3640261163405e"
+      "sha256": "5f14de61686fac9d459a44fd5a27784fcb5d6c80d9508999608c8653b74d462a"
     },
     {
       "path": "conformance/fixtures/app-navigation/cases.json",
-      "sha256": "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897"
+      "sha256": "d56d933cf4088d4b292417e258c0ad098f3ff31442653d65b6f37069ee9186af"
     },
     {
       "path": "conformance/fixtures/actions/cases.json",
@@ -89,7 +89,8 @@
     },
     {
       "path": "conformance/fixtures/version-negotiation/cases.json",
-      "sha256": "19be6d14f2396a359c7c8e41452c865ea8b874ac4b4a64e665f2303e7d337aa7"
+      "sha256": "ed66a29c8f84bdea5bc93f263d73480382d16992c490da83c71c6dbd1ccb0e74"
     }
-  ]
+  ],
+  "note": "app-manifest.schema.json、app-manifest/cases.json 与 version-negotiation/cases.json 三项已于 2026-08-13 随上游 2.8.0 正式发布（tag v2.8.0 @ 521cff8）重 pin：算法类 fixtures 版本线推进 至 2.8（version-negotiation 保留历史版本输入并新增 2.8/host capability 向量）。其余条目仍为 2.7.0 pin。2.8 全量 pin 见 provenance-v2.8.json。注：2.8.0 正式 tag 身份以上游审计 0080 V379 为准（521cff8 / content 4fae4605…；此前 593f625 为 H4 预备身份）。 2026-08-14 随上游 v2.9.0（81aa1d8）重 pin：app-manifest / app-navigation cases 算法线升 2.9（fixture digest 89baddbc…）；全量 v2.9 pin 见 provenance-v2.9.json。"
 }

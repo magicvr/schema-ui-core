@@ -1,0 +1,121 @@
+# schema-ui-core API · built-in default configuration (go:embed fallback).
+#
+# This file is embedded into the binary and used ONLY when no CONFIG_FILE is
+# set and no ./configs/config.yaml exists next to the working directory
+# (e.g. a bare binary deployment). It mirrors the documented development
+# defaults exactly, so behavior is byte-identical to the pre-YAML env-only
+# loader when nothing else is present.
+#
+# Interpolation rules (W7 / GOAL-008 D-002):
+#   ${VAR}           -> fail-closed: startup error when VAR is unset
+#   ${VAR:-default}  -> use "default" when VAR is unset
+# Environment variables, when set, ALWAYS override YAML values (existing
+# env-only deployments keep working with zero migration).
+
+app:
+  name: schema-ui-core-api
+  # development | production | test. Empty keeps the explicit-set requirement
+  # of ValidateProd (APP_ENV must be set explicitly, refusing to guess).
+  env: ""
+  # mvp | admin | demo. Selects the built-in preset when app.modules is absent.
+  profile: mvp
+  # T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only — either a
+  # preset (builtin name or a custom preset file path) or an inline list.
+  # preset and list are mutually exclusive. APP_PROFILE / APP_MODULES_ENABLED
+  # env vars and the legacy app.modules_enabled comma string are NOT read.
+  # modules:
+  #   preset: admin            # builtin: mvp | admin | demo
+  #   preset: ./configs/modules/my-company.yaml   # custom preset file
+  #   list: [core.server-registration, admin.users, admin.roles]
+
+http:
+  addr: ":25080"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s
+  # Optional comma-separated CORS allow-list (W15-F05). Empty = no CORS
+  # headers (same-origin reverse proxy). Env override: HTTP_CORS_ORIGINS.
+  cors_origins: ""
+  # Optional explicit reverse-proxy CIDR allow-list (W7 F-008). X-Real-IP is
+  # trusted ONLY from direct peers inside one of these CIDRs. Empty = loopback
+  # only (fail-safe; operators behind a proxy must set this). Env override:
+  # HTTP_TRUSTED_PROXIES, e.g. "172.16.0.0/12,10.0.0.0/8".
+  trusted_proxies: ""
+
+log:
+  # debug | info | warn | error
+  level: info
+
+auth:
+  # DEV-safe reference: empty default keeps the documented development signing
+  # key fallback (main.resolveJWTSecret). Production deployments MUST provide
+  # the real secret via env — compose.yaml already fails closed with
+  # ${AUTH_JWT_SECRET:?...}; for a bare YAML deployment set:
+  #   jwt_secret: ${AUTH_JWT_SECRET}
+  # (no :- default) so startup fails closed when the secret is missing.
+  jwt_secret: ${AUTH_JWT_SECRET:-}
+  access_ttl: 15m
+  refresh_ttl: 720h
+  dev_session_enabled: false
+
+db:
+  # sqlite (default, embedded file db) | postgres (production DSN). Empty means
+  # sqlite. Env override: DB_DIALECT. Unknown values fail closed at startup.
+  dialect: sqlite
+  # sqlite: the embedded database file path. postgres: NOT a SQL connection —
+  # must keep the same file-path shape; filepath.Dir(path) derives the file
+  # storage root (uploads / brand-assets / avatars). Default: ./data/schema-ui.db
+  path: ./data/schema-ui.db
+  #
+  # --- postgres: this file keeps only long-lived / non-secret settings ---
+  # The ADDRESS (host/port), USERNAME and PASSWORD come from the environment
+  # (DB_HOST / DB_PORT / DB_USER / DB_PASSWORD; host/port have defaults) so this
+  # file never carries server-specific or secret connection details. A whole
+  # postgres DSN may also be supplied via db.dsn / DB_DSN and overrides the
+  # exploded params. DATABASE_URL is intentionally not read.
+  name: schema_ui         # DB_NAME (database to connect — stable per env)
+  sslmode: disable        # DB_SSLMODE (disable | require | verify-full...)
+  # password: NEVER set here — only via DB_PASSWORD env / configs/.env.
+  #
+  # postgres connection-pool bounds (0 = driver default / no cap; sqlite ignores).
+  pool_max_open: 0        # DB_POOL_MAX_OPEN
+  pool_max_idle: 0        # DB_POOL_MAX_IDLE
+  conn_max_lifetime: 0s   # DB_CONN_MAX_LIFETIME (Go duration, e.g. 30m; 0 = unlimited)
+
+admin:
+  # DEV-safe reference: empty default keeps the documented "admin" dev seed
+  # fallback (main.resolveSeedHash). Production deployments MUST provide the
+  # real password via env — compose.yaml fails closed; for a bare YAML
+  # deployment set:
+  #   initial_password: ${ADMIN_INITIAL_PASSWORD}
+  initial_password: ${ADMIN_INITIAL_PASSWORD:-}
+
+upload:
+  # Comma-separated MIME allow-list; empty = only the hard rejections
+  # (dangerous inline types + active-content markers) apply.
+  allowed_types: ""
+  max_files_per_user: 1000
+  max_bytes_per_user: 268435456
+
+branding:
+  # W9 (GOAL-010): brand asset upload processing policy.
+  #   max_bytes           single-upload cap in bytes (default 4194304 = 4 MiB)
+  #   logo_max_dimension  longest-edge limit for logo assets (512)
+  #   favicon_dimension   longest-edge limit for favicon assets (64)
+  #   jpeg_quality        JPEG quality for opaque output (82; 1..100)
+  # Env overrides: BRANDING_MAX_BYTES / BRANDING_LOGO_MAX_DIMENSION /
+  # BRANDING_FAVICON_DIMENSION / BRANDING_JPEG_QUALITY.
+  max_bytes: 4194304
+  logo_max_dimension: 512
+  favicon_dimension: 64
+  jpeg_quality: 82
+
+navigation:
+  # Full navigation ordering (GOAL-013 D-002): list of menu NodeIDs in order.
+  # Empty = the built-in default order. Unknown NodeIDs fall back to the
+  # default with a warning. NAVIGATION_ORDER env (comma-separated) overrides.
+  order: []
+
+runtime:
+  # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
+  mode: normal

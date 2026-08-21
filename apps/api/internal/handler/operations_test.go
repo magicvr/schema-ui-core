@@ -1,14 +1,15 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // users/roles write operation-log events are covered by TestUsersOperationLogEvents
@@ -72,24 +73,48 @@ func TestOperationLogAuthEvents(t *testing.T) {
 		if op.ActorID != "user-admin" {
 			t.Fatalf("authOps[%d].actor_id = %q, want user-admin", i, op.ActorID)
 		}
-		// I-008-003 §3: every auth event carries the frozen username detail —
-		// exact JSON shape, username only, no sensitive fields (R-015).
+		// R2: every auth event carries the versioned audit detail with username
+		// only; credentials remain excluded/redacted.
 		if op.Detail == nil {
 			t.Fatalf("authOps[%d].detail = nil, want username summary", i)
 		}
-		var d struct {
-			Username string `json:"username"`
+		detail, err := operationlog.ParseDetail(*op.Detail)
+		if err != nil {
+			t.Fatalf("authOps[%d].detail %q not R2 envelope: %v", i, *op.Detail, err)
 		}
-		if err := json.Unmarshal([]byte(*op.Detail), &d); err != nil {
-			t.Fatalf("authOps[%d].detail %q not JSON: %v", i, *op.Detail, err)
+		if detail.After["username"] != "admin" {
+			t.Fatalf("authOps[%d].detail.after.username = %v, want admin", i, detail.After["username"])
 		}
-		if d.Username != "admin" {
-			t.Fatalf("authOps[%d].detail.username = %q, want admin", i, d.Username)
+		if op.SessionID == "" {
+			t.Fatalf("authOps[%d].session_id empty", i)
 		}
-		var extra map[string]any
-		if err := json.Unmarshal([]byte(*op.Detail), &extra); err == nil && len(extra) != 1 {
-			t.Fatalf("authOps[%d].detail = %v, want exactly {username} (no token/password/secret)", i, extra)
+		for _, forbidden := range []string{"password", "accessToken", "refreshToken", "secret"} {
+			if strings.Contains(*op.Detail, forbidden) {
+				t.Fatalf("authOps[%d].detail contains sensitive key %q: %s", i, forbidden, *op.Detail)
+			}
 		}
+	}
+}
+
+func TestR1CorrelationIDPersistsOnAuthOperation(t *testing.T) {
+	env := newAuthTestEnv(t)
+	h := requestid.Middleware(env.mux)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`{"username":"admin","password":"test-password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(requestid.HeaderName, "r1-auth-001")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("login status = %d: %s", rr.Code, rr.Body.String())
+	}
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
+		Event: operationlog.EventAuthLogin, Sort: "createdAt", Order: "desc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("list auth operations: %v", err)
+	}
+	if len(ops) != 1 || ops[0].CorrelationID != "r1-auth-001" {
+		t.Fatalf("auth operation correlation = %+v, want r1-auth-001", ops)
 	}
 }
 
@@ -152,6 +177,103 @@ func TestOperationLogFailurePreservesBusinessSuccess(t *testing.T) {
 		`{"key":"auditor","name":"Auditor"}`))
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("create role with log failure = %d, want 201", rr.Code)
+	}
+}
+
+// W14 F-03 (GOAL-016): structured filters (event/actor/date range) and CSV
+// export on the activity log.
+func TestOperationLogStructuredFiltersAndExport(t *testing.T) {
+	env := newAuthTestEnv(t)
+	now := time.Now().UTC()
+	for _, op := range []operationlog.Operation{
+		{ID: "op-filter-1", Event: operationlog.EventAuthLogin, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-001", CreatedAt: now.Add(-2 * time.Hour)},
+		{ID: "op-filter-2", Event: operationlog.EventUserCreate, ActorID: "user-admin", ActorName: "Admin", CorrelationID: "r2-read-002", SessionID: "sess-filter-2", CreatedAt: now.Add(-time.Hour)},
+		{ID: "op-filter-3", Event: operationlog.EventAuthLogout, ActorID: "user-editor", ActorName: "Editor", CreatedAt: now},
+	} {
+		if err := env.operations.RecordOperation(op); err != nil {
+			t.Fatalf("record operation %s: %v", op.ID, err)
+		}
+	}
+
+	token := adminToken(t, env)
+	code, body := getResourceAs(t, env, token, "/api/operations?event=users.create")
+	if code != http.StatusOK || body["total"] != float64(1) {
+		t.Fatalf("structured list = %d %v, want total 1", code, body)
+	}
+	items, _ := body["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["correlationId"] != "r2-read-002" || items[0].(map[string]any)["sessionId"] != "sess-filter-2" {
+		t.Fatalf("operation list correlation/session = %v, want r2-read-002 / sess-filter-2", items)
+	}
+
+	code, body = getResourceAs(t, env, token, "/api/operations/op-filter-1")
+	if code != http.StatusOK || body["correlationId"] != "r2-read-001" {
+		t.Fatalf("operation detail correlation = %d %v, want r2-read-001", code, body)
+	}
+
+	code, body = getResourceAs(t, env, token, "/api/operations?actorName=Editor")
+	if code != http.StatusOK || body["total"] != float64(1) {
+		t.Fatalf("actor filter list = %d %v, want total 1", code, body)
+	}
+
+	// Invalid date filter must surface as 400 (DomainError path in list).
+	code, body = getResourceAs(t, env, token, "/api/operations?from=not-a-date")
+	if code != http.StatusBadRequest || body["error"] != "INVALID_DATE_FILTER" {
+		t.Fatalf("invalid date filter = %d %v, want 400 INVALID_DATE_FILTER", code, body)
+	}
+
+	// CSV export applies the same filters and is attachment-disposed.
+	req := bearer(t, token, http.MethodGet, "/api/operations/export?event=users.create", "")
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("export = %d: %s", rr.Code, rr.Body.String())
+	}
+	if ct := rr.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/csv") {
+		t.Fatalf("export content-type = %q, want text/csv", ct)
+	}
+	if rr.Header().Get("Content-Disposition") == "" {
+		t.Fatal("export missing Content-Disposition")
+	}
+	if !strings.Contains(rr.Body.String(), "users.create") {
+		t.Fatalf("export body missing users.create row: %q", rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "correlationId") || !strings.Contains(rr.Body.String(), "r2-read-002") {
+		t.Fatalf("export missing correlation column/value: %q", rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "sessionId") || !strings.Contains(rr.Body.String(), "sess-filter-2") {
+		t.Fatalf("export missing session column/value: %q", rr.Body.String())
+	}
+}
+
+func TestR2CorrelationIDPersistsOnUsersOperation(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	h := requestid.Middleware(env.mux)
+	req := bearer(t, token, http.MethodPost, "/api/users", `{"username":"r2-user","name":"R2 User","password":"passw0rd-ok"}`)
+	req.Header.Set(requestid.HeaderName, "r2-user-001")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
+		Event: operationlog.EventUserCreate, Sort: "createdAt", Order: "desc", Page: 1, PageSize: 10,
+	})
+	if err != nil {
+		t.Fatalf("list user operations: %v", err)
+	}
+	if len(ops) != 1 || ops[0].CorrelationID != "r2-user-001" {
+		t.Fatalf("user operation correlation = %+v, want r2-user-001", ops)
+	}
+	if ops[0].SessionID == "" {
+		t.Fatal("user operation missing session_id")
+	}
+	if ops[0].Detail == nil {
+		t.Fatal("user operation missing structured detail")
+	}
+	detail, err := operationlog.ParseDetail(*ops[0].Detail)
+	if err != nil || detail.Action != "create" || detail.After["username"] != "r2-user" {
+		t.Fatalf("user operation detail = %+v, err=%v", detail, err)
 	}
 }
 

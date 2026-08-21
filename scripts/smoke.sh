@@ -3,23 +3,29 @@
 # scripts/smoke.sh · S4 可复现 smoke 验收（GOAL-008 / I-008-002 v0.1.2 §5）
 #
 # 机器可判定的非破坏性冒烟：SM-001 参数/工具/安全前提 → SM-002 API readiness →
-# SM-003 代理登录 → SM-004 当前身份 → SM-005 代表页路由。
+# SM-003 代理登录 → SM-004 当前身份 → SM-005 代表页路由 → 可选 SM-007 Profile/
+# Manifest 合同 → 可选 SM-008 真实浏览器 + 生产 CSP 响应头（SMOKE_CSP=1）。
 # 仅在显式 --disposable 下执行 SM-006（种子可重复性，要求隔离 Compose project/volume）。
 #
 # 退出码：0=完整绿（SM-001～005 且 disposable SM-006 通过）｜2=参数、工具或安全
 # 前提不满足（含不安全 destructive/隔离校验失败）｜3=readiness 30s 超时｜
 # 4=登录/身份失败｜5=路由/数据失败｜6=SM-006 种子断言失败｜
+# 7=SM-008 真实浏览器 CSP/生产头冒烟失败｜
 # 8=部分绿（非 disposable，SM-006 未运行——不是 S4 完整绿，不得作为种子可重复证据）｜
 # 70=未分类内部错误。
 #
 # 输入（env）：
-#   API_BASE_URL         默认 http://localhost:8080
-#   WEB_BASE_URL         默认 http://localhost:8081
+#   API_BASE_URL         默认 http://localhost:25080
+#   WEB_BASE_URL         默认 http://localhost:25081
 #   SMOKE_USERNAME       默认 admin
 #   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
+#   SMOKE_PASSWORD_NEW   可选：开启 W16-F01 首登强制改密后的新密码
+#                        （默认 = <SMOKE_PASSWORD>-changed；smoke 走真实改密接口）
 #   SMOKE_SEED_ID         默认 user-admin
 #   SMOKE_EXPECTED_SEED_TOTAL  默认 1
 #   SMOKE_EXPECTED_PROFILE  可选：mvp 或 admin；启用 Profile/Manifest/route 断言
+#   SMOKE_CSP               可选：1 启用 SM-008 真实浏览器 + 生产 CSP 头冒烟
+#                            （运行 apps/web/scripts/check-prod-csp.mjs；需 Playwright Chromium）
 #   SMOKE_ISOLATION_ID   仅 --disposable 必填：隔离 Compose project 名（机器校验
 #                        运行中 project 与 db-data 卷均绑定该身份；不得指向默认开发库）
 #   SMOKE_DISPOSABLE_CONFIRM   仅 --disposable 必填：必须为 yes（书面确认 disposable 语义）
@@ -28,13 +34,17 @@
 
 set -u
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
-WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:8081}"
+SMOKE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+API_BASE_URL="${API_BASE_URL:-http://localhost:25080}"
+WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:25081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
 SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
+SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-1}"
 SMOKE_EXPECTED_PROFILE="${SMOKE_EXPECTED_PROFILE:-}"
+SMOKE_CSP="${SMOKE_CSP:-0}"
 SMOKE_ISOLATION_ID="${SMOKE_ISOLATION_ID:-}"
 SMOKE_DISPOSABLE_CONFIRM="${SMOKE_DISPOSABLE_CONFIRM:-}"
 DISPOSABLE=0
@@ -181,7 +191,28 @@ if [ -n "$me" ]; then
   u="$(json_field "$me" user || true)"
   f="$(json_field "$me" features || true)"
   if [ -n "$u" ] && [ -n "$f" ]; then
-    smoke_line "004" "PASS"
+    # W16-F01：fresh seed 的 admin 首登必须改密。真实用户流程即改密后继续访问，
+    # 因此 smoke 在此走真实 /api/account/password 并切到新密码，而不是绕过门禁。
+    must_change=0
+    if printf '%s' "$me" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);process.exit(o&&o.user&&o.user.mustChangePassword===true?0:1)}catch(e){process.exit(1)}})'; then
+      must_change=1
+    fi
+    if [ "$must_change" = "1" ]; then
+      SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-${SMOKE_PASSWORD}-changed}"
+      pwd_json="$(SMOKE_CURRENT="$SMOKE_PASSWORD" SMOKE_NEW="$SMOKE_PASSWORD_NEW" node -e 'process.stdout.write(JSON.stringify({currentPassword:process.env.SMOKE_CURRENT,newPassword:process.env.SMOKE_NEW}))')"
+      change_body="$(curl -fsS --max-time 5 -X POST "${WEB_BASE_URL}/api/account/password" -H "Authorization: Bearer ${ACCESS_TOKEN}" -H 'Content-Type: application/json' -d "$pwd_json" 2>/dev/null || true)"
+      new_access="$(json_field "$change_body" accessToken || true)"
+      if [ -n "$new_access" ]; then
+        ACCESS_TOKEN="$new_access"
+        SMOKE_PASSWORD="$SMOKE_PASSWORD_NEW"
+        printf 'SM-004=PASS（W16-F01 首登强制改密已执行；后续以新密码继续）\n'
+      else
+        printf 'SM-004=FAIL\n  detail: 检测到 mustChangePassword 但 /api/account/password 未返回新 accessToken\n'
+        exit 4
+      fi
+    else
+      smoke_line "004" "PASS"
+    fi
   else
     printf 'SM-004=FAIL\n  detail: /api/accounts/me 200 但缺少 user 或 features 投影\n'
     exit 4
@@ -218,14 +249,32 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
     || [ "$(header_value "${WEB_BASE_URL}/.well-known/schema-ui/app-manifest.json" "X-Schema-UI-Manifest-Source")" != "api" ]; then
     fail_check "007" "Manifest source header 不是 api" 5
   fi
-  for page_id in overview users roles; do
+  # Page sets per profile (post W1/VP-010 GOAL-002: dev.examples split out of
+  # production profiles; demo re-adds the examples surface; F-03/GOAL-005 adds
+  # admin.account; F-01/GOAL-003 adds admin.dashboard to mvp + admin defaults):
+  #   mvp   = dashboard, users, roles, account
+  #   admin = dashboard, users, roles, settings, activity, account
+  #   demo  = overview, dashboard, users, roles, account (+ examples surface)
+  case "$SMOKE_EXPECTED_PROFILE" in
+    admin) required_pages="dashboard users roles settings activity account notifications file-library data-dictionary system-monitoring scheduled-tasks recycle-bin data-permission" ;;
+    demo)  required_pages="overview dashboard users roles account notifications" ;;
+    *)     required_pages="dashboard users roles account notifications" ;;
+  esac
+  for page_id in $required_pages; do
     if ! json_has_page "$api_manifest" "$page_id"; then
       fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 缺少 ${page_id} 页面" 5
     fi
   done
+  # F-01 (GOAL-003): production home is the dashboard; demo keeps overview.
+  expect_home="dashboard"
+  if [ "$SMOKE_EXPECTED_PROFILE" = "demo" ]; then expect_home="overview"; fi
+  home_ref="$(printf '%s' "$api_manifest" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const o=JSON.parse(s);process.stdout.write(o.app&&o.app.homePageRef||"")}catch(e){process.exit(1)}})')"
+  if [ "$home_ref" != "$expect_home" ]; then
+    fail_check "007" "${SMOKE_EXPECTED_PROFILE} homePageRef=${home_ref}，期望 ${expect_home}" 5
+  fi
   optional_status=200
   protected_status=401
-  if [ "$SMOKE_EXPECTED_PROFILE" = "mvp" ]; then
+  if [ "$SMOKE_EXPECTED_PROFILE" != "admin" ]; then
     optional_status=404
     protected_status=404
   fi
@@ -235,7 +284,7 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
         fail_check "007" "admin Manifest 缺少 ${page_id} 页面" 5
       fi
     elif json_has_page "$api_manifest" "$page_id"; then
-      fail_check "007" "mvp Manifest 不应包含 ${page_id} 页面" 5
+      fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 不应包含 ${page_id} 页面" 5
     fi
     if [ "$(http_status "${API_BASE_URL}/api/schema/${page_id}")" != "$optional_status" ]; then
       fail_check "007" "${page_id} Schema 状态不符合 ${SMOKE_EXPECTED_PROFILE} profile" 5
@@ -309,10 +358,27 @@ else
   printf 'SM-006=SKIP（非 disposable；S4 完整绿需 --disposable 且 SM-006=PASS）\n'
 fi
 
+# ---------------------------------------------------------------------------
+# SM-008 · 真实浏览器 + 生产 CSP 响应头（发版前冒烟；SMOKE_CSP=1 启用）
+#   要求正在运行的生产 web（默认 http://localhost:25081）与 Playwright Chromium。
+# ---------------------------------------------------------------------------
+if [ "$SMOKE_CSP" = "1" ]; then
+  csp_tmp="$(mktemp)"
+  if ! PROD_WEB_URL="${WEB_BASE_URL}" node "${SMOKE_ROOT}/apps/web/scripts/check-prod-csp.mjs" >"$csp_tmp" 2>&1; then
+    printf 'SM-008=FAIL\n  detail: %s\n' "$(cat "$csp_tmp")"
+    rm -f "$csp_tmp"
+    exit 7
+  fi
+  rm -f "$csp_tmp"
+  smoke_line "008" "PASS"
+else
+  printf 'SM-008=SKIP（未设置 SMOKE_CSP=1；发版前冒烟建议启用）\n'
+fi
+
 if [ "$DISPOSABLE" = "1" ]; then
-  printf 'SMOKE RESULT: PASS (SM-001~005 + optional SM-007 + SM-006)\n'
+  printf 'SMOKE RESULT: PASS (SM-001~005 + optional SM-007/008 + SM-006)\n'
   exit 0
 else
-  printf 'SMOKE RESULT: PARTIAL (SM-001~005 + 可选 SM-007；SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
+  printf 'SMOKE RESULT: PARTIAL (SM-001~005 + 可选 SM-007/008；SM-006 未运行——非 S4 完整绿，不得作为种子可重复证据；需 --disposable + 隔离环境)\n'
   exit 8
 fi

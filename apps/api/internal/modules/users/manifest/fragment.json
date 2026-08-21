@@ -1,10 +1,12 @@
 {
   "protocolVersion": "2.7",
-  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
-    "homePageRef": "overview",
     "description": "The schema-ui-core administration workspace."
   },
   "pages": [
@@ -12,7 +14,8 @@
       "pageId": "users",
       "title": "Users",
       "schemaUrl": "/api/schema/users",
-      "route": "/users"
+      "route": "/users",
+      "titleKey": "manifest.title.users"
     }
   ],
   "navigation": {
@@ -23,7 +26,8 @@
         "icon": "user",
         "visibleWhen": {
           "when": "$context.features.menu_users == true"
-        }
+        },
+        "labelKey": "manifest.nav.users"
       }
     ]
   }

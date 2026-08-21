@@ -81,9 +81,9 @@ function expectCode(action: () => unknown, code: string) {
 }
 
 describe("app manifest validation", () => {
-  it("accepts the pinned 2.7 default manifest shape", () => {
+  it("accepts the pinned default manifest shape", () => {
     const result = validateAppManifest(manifest());
-    expect(result.protocolVersion).toBe("2.7");
+    expect(result.protocolVersion).toBe(APP_MANIFEST_PROTOCOL_VERSION);
     expect(result.pages).toHaveLength(4);
     expect(result.navigation?.sidebar).toHaveLength(1);
   });
@@ -99,7 +99,7 @@ describe("app manifest validation", () => {
           ...manifest(),
           requiredCapabilities: ["app.manifest"],
         }),
-      "MISSING_REQUIRED_CAPABILITY",
+      "CAPABILITY_REQUIRED",
     );
   });
 
@@ -257,7 +257,9 @@ describe("manifest loading and expression boundaries", () => {
     });
     expect(requested).toBe(DEFAULT_MANIFEST_PATH);
     expect(loaded.app.appId).toBe("schema-ui-core");
-    expect(loaded.app.homePageRef).toBe("overview");
+    // F-01 (GOAL-003): the production home is now the dashboard; the R2 wave
+    // added dashboard/account/notifications pages to the fixture union.
+    expect(loaded.app.homePageRef).toBe("dashboard");
     expect(loaded.pages.map((page) => page.pageId)).toEqual([
       "admin-list-batch",
       "data-display",
@@ -271,6 +273,20 @@ describe("manifest loading and expression boundaries", () => {
       "roles",
       "settings",
       "activity",
+      "dashboard",
+      "account",
+      "notifications",
+      "file-library",
+      "data-dictionary",
+      "dictionary-entries",
+      "system-monitoring",
+      "scheduled-tasks",
+      "task-runs",
+      "recycle-bin",
+      "data-permission",
+      "wallet",
+      "wallet-entries",
+      "my-wallet",
     ]);
   });
 
@@ -283,7 +299,8 @@ describe("manifest loading and expression boundaries", () => {
           status: 200,
           url: "http://127.0.0.1:5173/.well-known/schema-ui/app-manifest.json",
           headers: new Headers(),
-          json: async () => manifest(),
+          arrayBuffer: async () =>
+            new TextEncoder().encode(JSON.stringify(manifest())).buffer as ArrayBuffer,
         }) as Response,
     });
     expect(warning).toHaveBeenCalledWith(

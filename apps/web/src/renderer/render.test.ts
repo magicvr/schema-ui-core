@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   collectFieldIds,
+  gateRenderFormFields,
   isWhitelistedNodeType,
+  parseRecordViewFields,
   parseRenderNode,
   resolveActionGate,
   resolveFormReactions,
+  resolveResponsePath,
   tableActionGate,
   type RenderFormNode,
+  type RenderRecordViewNode,
 } from "@/renderer/render";
 
 const CONTEXT = { user: { roles: ["admin"] }, features: { audit: true } };
@@ -57,6 +61,18 @@ describe("isWhitelistedNodeType", () => {
     expect(isWhitelistedNodeType("upload")).toBe(false);
     expect(isWhitelistedNodeType("slider")).toBe(false);
   });
+
+  // GOAL-018: custom nodes are whitelisted and dispatch to the registry.
+  it("accepts the custom node type (GOAL-018)", () => {
+    expect(isWhitelistedNodeType("custom")).toBe(true);
+    expect(parseRenderNode({ type: "custom", component: "mfa-manager" }, "body")).toMatchObject({
+      type: "custom",
+      component: "mfa-manager",
+    });
+    expect(parseRenderNode({ type: "custom", props: {} }, "body")).toMatchObject({
+      code: "RENDER_INVALID_BODY",
+    });
+  });
 });
 
 describe("parseRenderNode", () => {
@@ -86,6 +102,29 @@ describe("parseRenderNode", () => {
     expect(table).toMatchObject({ type: "table" });
   });
 
+  it("preserves textKey on text nodes and labelKey on statCard nodes (F-01)", () => {
+    const textNode = parseRenderNode(
+      { type: "text", props: { text: "Fallback", textKey: "schema.dashboard.text.intro" } },
+      "body",
+    );
+    expect(textNode).toMatchObject({
+      type: "text",
+      props: { text: "Fallback", textKey: "schema.dashboard.text.intro" },
+    });
+    const statCard = parseRenderNode(
+      {
+        type: "statCard",
+        id: "total",
+        props: { label: "Users", labelKey: "schema.dashboard.statCard.users", format: "plain", valueField: "total", dataSource: "/api/users" },
+      },
+      "body",
+    );
+    expect(statCard).toMatchObject({
+      type: "statCard",
+      props: { label: "Users", labelKey: "schema.dashboard.statCard.users", valueField: "total", dataSource: "/api/users" },
+    });
+  });
+
   it("normalizes statCard and chart nodes with their registry props", () => {
     const statCard = parseRenderNode(
       {
@@ -108,6 +147,37 @@ describe("parseRenderNode", () => {
       type: "chart",
       props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/users" },
     });
+  });
+
+  it("keeps recordView title/titleKey/fields and drops malformed field rows", () => {
+    const node = parseRenderNode(
+      {
+        type: "recordView",
+        id: "user-detail",
+        props: {
+          title: "User details",
+          titleKey: "schema.users.detail.title",
+          fields: [
+            { key: "username", label: "Username", labelKey: "schema.users.column.username" },
+            { key: "", label: "skip" },
+            { label: "no-key" },
+          ],
+        },
+      },
+      "body",
+    ) as RenderRecordViewNode;
+    expect(node).toMatchObject({
+      type: "recordView",
+      id: "user-detail",
+      props: {
+        title: "User details",
+        titleKey: "schema.users.detail.title",
+        fields: [
+          { key: "username", label: "Username", labelKey: "schema.users.column.username" },
+        ],
+      },
+    });
+    expect(parseRecordViewFields([{ key: "id" }, null, "x"])).toEqual([{ key: "id" }]);
   });
 
   it("drops non-registry props from statCard/chart nodes (fail-closed on shape)", () => {
@@ -243,5 +313,79 @@ describe("tableActionGate", () => {
 
   it("defaults absent gates without errors", () => {
     expect(tableActionGate({}, CONTEXT)).toEqual({ visible: true, disabled: false, errors: [] });
+  });
+});
+
+describe("resolveResponsePath (form.recordSource.responseMapping · S6)", () => {
+  it("resolves a nested dot-path and an identity path", () => {
+    const record = { id: "default", customer: { name: "Acme" } };
+    expect(resolveResponsePath(record, "customer.name")).toBe("Acme");
+    expect(resolveResponsePath(record, "id")).toBe("default");
+  });
+
+  it("returns undefined for a missing segment or a non-object intermediate", () => {
+    const record = { customer: { name: "Acme" }, tags: ["a"] };
+    expect(resolveResponsePath(record, "customer.missing")).toBeUndefined();
+    expect(resolveResponsePath(record, "customer.name.deep")).toBeUndefined();
+    expect(resolveResponsePath(record, "tags.length")).toBeUndefined();
+  });
+
+  it("returns undefined for non-object inputs or an empty path", () => {
+    expect(resolveResponsePath(null, "a")).toBeUndefined();
+    expect(resolveResponsePath("x", "a")).toBeUndefined();
+    expect(resolveResponsePath({ a: 1 }, "")).toBeUndefined();
+  });
+});
+
+describe("GOAL-014 · constraint passthrough + fieldErrors echo (A-003 F-001/F-002)", () => {
+  it("gateRenderFormFields preserves submit-time constraints (F-001)", () => {
+    const result = gateRenderFormFields(
+      { protocolVersion: "2.7", requiredCapabilities: ["form.controls.extended"] },
+      [
+        {
+          id: "name",
+          type: "input",
+          required: true,
+          pattern: "^[a-z]+$",
+          minLength: 2,
+          maxLength: 10,
+        },
+      ],
+      "fields",
+    );
+    expect(result.errors).toEqual([]);
+    const field = result.fields[0];
+    expect(field.required).toBe(true);
+    expect(field.pattern).toBe("^[a-z]+$");
+    expect(field.minLength).toBe(2);
+    expect(field.maxLength).toBe(10);
+  });
+});
+
+describe("gateRenderFormFields · afterComponent (W17)", () => {
+  it("preserves afterComponent on input fields", () => {
+    const result = gateRenderFormFields(
+      { protocolVersion: "2.7", requiredCapabilities: [] },
+      [{ id: "cron", type: "input", afterComponent: "cron-preview" }],
+      "fields",
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.fields[0]?.afterComponent).toBe("cron-preview");
+  });
+});
+
+describe("gateRenderFormFields · readOnly (ADR-0040)", () => {
+  it("passes readOnly through and gates it on 2.9 + capability", () => {
+    const meta = { protocolVersion: "2.9", requiredCapabilities: ["form.controls.readonly"] };
+    const ok = gateRenderFormFields(meta, [{ id: "dictKey", type: "input", readOnly: true }], "fields");
+    expect(ok.errors).toEqual([]);
+    expect(ok.fields[0]?.readOnly).toBe(true);
+  });
+
+  it("rejects readOnly fields when the capability is missing", () => {
+    const meta = { protocolVersion: "2.9", requiredCapabilities: [] };
+    const bad = gateRenderFormFields(meta, [{ id: "dictKey", type: "input", readOnly: true }], "fields");
+    expect(bad.fields.length).toBe(0);
+    expect(bad.errors.some((e) => e.code === "FORM_CAPABILITY_REQUIRED")).toBe(true);
   });
 });

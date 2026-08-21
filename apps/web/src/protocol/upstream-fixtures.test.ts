@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import {
   APP_MANIFEST_SOURCE,
-  APP_MANIFEST_PROTOCOL_VERSION,
   ManifestError,
   type NavigationContext,
   type PageEntry,
@@ -50,14 +49,29 @@ interface PinnedJson<T> {
   value: T;
 }
 
+// app-manifest schema + fixtures re-pinned 2026-08-14 to the 2.9.0 release
+// machine contracts (upstream v2.9.0 @ 81aa1d8; schema unchanged since 2.8.0,
+// fixtures advanced to the 2.9 algorithm line). See provenance-v2.9.json.
 const APP_MANIFEST_SCHEMA_SHA256 =
-  "294eb0f391a515a123ed07ef5e19b40f1126fbe57e585ebdf639a34232a6c2e8";
+  "34a3354e245dbf3900744b5797edeb1ca5f2ac19872ac908d781274d47d68c55";
 const APP_MANIFEST_FIXTURE_SHA256 =
-  "8aafd684a40c4350d39ce0c94ab3c986455cb21fe0ebc37e4f3640261163405e";
+  "5f14de61686fac9d459a44fd5a27784fcb5d6c80d9508999608c8653b74d462a";
 const APP_NAVIGATION_FIXTURE_SHA256 =
-  "11b0117078b6e12c92805e21da02f9fe522fe69ae8bf41d74498cbef468f2897";
+  "d56d933cf4088d4b292417e258c0ad098f3ff31442653d65b6f37069ee9186af";
+// F-01/F-04 (GOAL-003/006): the admin fixture now mirrors the runtime union
+// (dashboard home + account/notifications pages) — local artifact, re-pinned.
+// S-02/S-01 (GOAL-007/008): admin fixture extended with file-library +
+// data-dictionary pages and nav.
+// S-11 (GOAL-011, D-003): captcha page removed — the switch lives in the
+// admin.settings security section.
+// S-12 (GOAL-012): admin fixture extended with the recycle-bin page + nav.
+// S-09 (GOAL-016): admin fixture extended with the data-permission page + nav.
+// S-14 (GOAL-019): admin fixture extended with the wallet + wallet-entries pages
+// and the wallet nav (user 2026-08-16: wallet sits below Roles, above Activity).
+// GOAL-022: admin fixture extended with the my-wallet page + navigation.user
+// entry (user slot: account → my-wallet → settings).
 const STATIC_MANIFEST_SHA256 =
-  "d36794f7c4ab7fbbe178d3978d61f087edf7a9db8461b8f2929f377a880e787d";
+  "0efb4054d0473ce0649277e9b755b2109e473e89fef6507df0badd5d403868a0";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));
@@ -127,12 +141,17 @@ function errorResult(error: unknown, includeErrors = false): JsonObject {
   if (!(error instanceof ManifestError)) {
     throw error;
   }
+  const firstError = {
+    code: error.code,
+    path: error.path,
+    ...(error.detail === undefined ? {} : { detail: error.detail }),
+  };
   return includeErrors
     ? {
         ok: false,
         code: error.code,
         path: error.path,
-        errors: [{ code: error.code, path: error.path }],
+        errors: [firstError],
       }
     : { ok: false, code: error.code, path: error.path };
 }
@@ -158,6 +177,7 @@ function pageIdFromPages(value: unknown): string | undefined {
 function hostManifestValue(
   rawValue: unknown,
   fallbackPages?: unknown,
+  injectCapabilities = false,
 ): JsonObject {
   const raw = record(rawValue, "manifest");
   const rawProtocol = typeof raw.protocolVersion === "string" ? raw.protocolVersion : "";
@@ -174,13 +194,19 @@ function hostManifestValue(
         (capability): capability is string => typeof capability === "string",
       )
     : [];
-  const capabilities = [
-    ...new Set([
-      ...rawCapabilities,
-      "app.manifest",
-      ...(navigation === undefined ? [] : ["app.navigation"]),
-    ]),
-  ];
+  // app-manifest cases pass capabilities through untouched so the upstream
+  // M1 gates (CAPABILITY_REQUIRED) stay observable. The app-navigation suite
+  // inputs are navigation fragments; only there the adapter supplies the
+  // manifest envelope capabilities.
+  const capabilities = injectCapabilities
+    ? [
+        ...new Set([
+          ...rawCapabilities,
+          "app.manifest",
+          ...(navigation === undefined ? [] : ["app.navigation"]),
+        ]),
+      ]
+    : [...new Set(rawCapabilities)];
   const pages = raw.pages ?? fallbackPages ?? [];
   const app =
     raw.app ??
@@ -191,9 +217,17 @@ function hostManifestValue(
         ? {}
         : { homePageRef: pageIdFromPages(pages) }),
     } satisfies JsonObject);
+  // The host supports exactly 2.7, 2.8 and 2.9; older fixture inputs
+  // (2.5/2.6) are rewritten to 2.7 as before. 2.7/2.8/2.9 inputs pass through
+  // so the returnIntentQueryKeys version gate stays observable.
+  const rewriteVersion =
+    !isBelowMinimum &&
+    rawProtocol !== "2.7" &&
+    rawProtocol !== "2.8" &&
+    rawProtocol !== "2.9";
   return {
     ...raw,
-    protocolVersion: isBelowMinimum ? rawProtocol : APP_MANIFEST_PROTOCOL_VERSION,
+    protocolVersion: rewriteVersion ? "2.7" : rawProtocol,
     requiredCapabilities: capabilities,
     app,
     pages,
@@ -216,6 +250,9 @@ function navigationManifestValue(input: JsonObject): JsonObject {
       navigation: input.navigation,
     },
     pages,
+    // Navigation suite inputs are fragments; the adapter supplies the
+    // manifest envelope capabilities (app.manifest + app.navigation).
+    true,
   );
 }
 
@@ -546,12 +583,10 @@ function runNavigationCase(fixtureCase: FixtureCase): JsonObject {
   }
 }
 
-const manifestCaseExclusions: Record<string, string> = {
-  "m1-missing-app-manifest-capability":
-    "Excluded: the upstream M1 schema fixture uses CAPABILITY_REQUIRED, while the R3 hand-written host validator exposes MISSING_REQUIRED_CAPABILITY; this schema error-envelope difference is outside the frozen R3 subset.",
-  "m1-navigation-without-capability":
-    "Excluded: the upstream M1 schema fixture uses CAPABILITY_REQUIRED, while the R3 hand-written host validator exposes MISSING_REQUIRED_CAPABILITY; this schema error-envelope difference is outside the frozen R3 subset.",
-};
+// S4 (2026-08-13): the host validator now emits the upstream M1 envelope
+// (CAPABILITY_REQUIRED + detail), so the previously excluded cases are
+// executed. The vendored app-manifest suite runs with ZERO exclusions.
+const manifestCaseExclusions: Record<string, string> = {};
 
 const manifestCases = appManifestArtifact.value.cases.filter(
   (fixtureCase) => !Object.prototype.hasOwnProperty.call(manifestCaseExclusions, fixtureCase.id),
@@ -585,7 +620,7 @@ describe("pinned schema-ui-docs fixture artifacts", () => {
       "ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
     );
     expect(APP_MANIFEST_SOURCE).toBe(
-      "https://github.com/magicvr/schema-ui-docs/tree/ca9e5fe207c169d6957bdd4f9a968deaf3bd2d7b",
+      "https://github.com/magicvr/schema-ui-docs/tree/81aa1d8",
     );
     expect(provenanceArtifact.value.artifactVersion).toBe("2.7.0");
     // R3 baseline artifacts remain pinned; R5 stage 3 extends provenance with

@@ -1,0 +1,60 @@
+=== RUN   TestAppStartsAndStopsDualProfiles
+=== RUN   TestAppStartsAndStopsDualProfiles/mvp
+=== RUN   TestAppStartsAndStopsDualProfiles/admin
+--- PASS: TestAppStartsAndStopsDualProfiles (0.44s)
+=== RUN   TestAppStartsCustomProfileWithExplicitModules
+--- PASS: TestAppStartsCustomProfileWithExplicitModules (0.22s)
+=== RUN   TestDualProfileRegisterValidationFailClosed
+--- PASS: TestDualProfileRegisterValidationFailClosed (0.00s)
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/composition	2.741s
+=== RUN   TestAccountsMeRequiresAuth
+--- PASS: TestAccountsMeRequiresAuth (0.18s)
+=== RUN   TestAuthLoginSuccess
+--- PASS: TestAuthLoginSuccess (0.20s)
+=== RUN   TestAuthLoginBadPassword
+--- PASS: TestAuthLoginBadPassword (0.21s)
+=== RUN   TestAuthLoginUnknownUser
+--- PASS: TestAuthLoginUnknownUser (0.22s)
+=== RUN   TestAuthLoginBadBody
+--- PASS: TestAuthLoginBadBody (0.22s)
+=== RUN   TestAuthRefreshRotates
+--- PASS: TestAuthRefreshRotates (0.27s)
+=== RUN   TestAuthRefreshInvalid
+--- PASS: TestAuthRefreshInvalid (0.19s)
+=== RUN   TestAuthLogoutRevokesRefresh
+--- PASS: TestAuthLogoutRevokesRefresh (0.23s)
+=== RUN   TestAuthLogoutUnknownIdempotent
+--- PASS: TestAuthLogoutUnknownIdempotent (0.18s)
+=== RUN   TestAuthFlowEndToEnd
+--- PASS: TestAuthFlowEndToEnd (0.24s)
+=== RUN   TestAuthDevSessionDoesNotBypassLoginEndpoint
+--- PASS: TestAuthDevSessionDoesNotBypassLoginEndpoint (0.17s)
+=== RUN   TestAuthMiddlewareCodesAreCataloged
+--- PASS: TestAuthMiddlewareCodesAreCataloged (0.00s)
+=== RUN   TestWriteLocalizedErrorNegotiatesLanguage
+--- PASS: TestWriteLocalizedErrorNegotiatesLanguage (0.00s)
+=== RUN   TestWriteLocalizedErrorUncatalogedStaysEnglishWithoutKey
+--- PASS: TestWriteLocalizedErrorUncatalogedStaysEnglishWithoutKey (0.00s)
+=== RUN   TestLoginFailureLocalizedEndToEnd
+--- PASS: TestLoginFailureLocalizedEndToEnd (0.17s)
+=== RUN   TestSettingsValidationLocalizedEndToEnd
+--- PASS: TestSettingsValidationLocalizedEndToEnd (0.18s)
+=== RUN   TestAuthMiddlewareLocalized
+--- PASS: TestAuthMiddlewareLocalized (0.19s)
+=== RUN   TestOperationLogAuthEvents
+--- PASS: TestOperationLogAuthEvents (0.25s)
+=== RUN   TestRolesAuthGates
+--- PASS: TestRolesAuthGates (0.20s)
+=== RUN   TestBrandingPublicAndSettingsPatch
+--- PASS: TestBrandingPublicAndSettingsPatch (0.22s)
+=== RUN   TestSettingsWriteRequiresPermission
+--- PASS: TestSettingsWriteRequiresPermission (0.21s)
+=== RUN   TestBrandingVp007StartupFieldsAndPatch
+--- PASS: TestBrandingVp007StartupFieldsAndPatch (0.24s)
+=== RUN   TestSettingsValidationAndReset
+--- PASS: TestSettingsValidationAndReset (0.26s)
+=== RUN   TestUsersAuthGates
+--- PASS: TestUsersAuthGates (0.22s)
+=== RUN   TestUsersRoleAssignmentAuthorization
+--- PASS: TestUsersRoleAssignmentAuthorization (0.39s)
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/handler	6.223s

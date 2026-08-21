@@ -72,12 +72,12 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const appSource = readFileSync(join(__dir, "App.tsx"), "utf-8");
 
 describe("App.tsx shell structural checks (S3)", () => {
-  it("contains hamburger aria-label", () => {
-    expect(appSource).toContain("Open navigation menu");
+  it("contains hamburger aria-label (S2: localized via catalog)", () => {
+    expect(appSource).toContain('aria-label={t("shell.openMenu")}');
   });
 
-  it("contains close drawer aria-label", () => {
-    expect(appSource).toContain("Close navigation menu");
+  it("contains close drawer aria-label (S2: localized via catalog)", () => {
+    expect(appSource).toContain('aria-label={t("shell.closeMenu")}');
   });
 
   it("uses bg-overlay for mobile drawer backdrop", () => {
@@ -119,5 +119,21 @@ describe("App.tsx shell structural checks (S3)", () => {
     expect(bodySnippet).not.toMatch(/max-w-\[1440px\]/);
     expect(bodySnippet).toMatch(/w-full/);
     expect(appSource).toContain("min-w-0 w-full flex-1");
+  });
+
+  // W13 T-02: on mobile (<lg) the logo + site title own a dedicated brand
+  // bar above the functional row; on lg+ the brand returns to the single row.
+  it("splits the mobile brand bar from the top functional area (W13 T-02)", () => {
+    expect(appSource).toContain('data-shell-region="mobile-brandbar"');
+    expect(appSource).toContain('lg:hidden');
+    expect(appSource).toContain('hidden min-w-0 items-center gap-3 lg:flex');
+  });
+
+  // W13 T-04: the theme toggle renders left of the language switcher.
+  it("renders the theme toggle left of the language switcher (W13 T-04)", () => {
+    const themeIdx = appSource.indexOf("<ThemeToggle />");
+    const localeIdx = appSource.indexOf("<LocaleSwitcher");
+    expect(themeIdx).toBeGreaterThan(-1);
+    expect(localeIdx).toBeGreaterThan(themeIdx);
   });
 });

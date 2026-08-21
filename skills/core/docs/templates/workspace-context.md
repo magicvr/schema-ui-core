@@ -3,7 +3,7 @@ id: workspace-001-example
 title: 示例工作区
 status: active
 root_goal: GOAL-001-example-root
-canonical_scope: docs/workspace-001-example/
+canonical_scope: docs/workspaces/workspace-001-example/
 shared_materials_catalog: docs/shared-materials/
 vision_role: delivery
 plan_refs: VP-001-example-plan
@@ -15,7 +15,7 @@ version: 0.5.0
 
 # 工作区上下文 · 示例工作区
 
-> 复制本模板为 `docs/workspace-001-example/workspace.md`，再替换示例字段。工作区根直接保存 `goal-tree.md` 与平铺的 `GOAL-*` 五件套；它不替代这些文件的状态真相。
+> 复制本模板为 `docs/workspaces/workspace-001-example/workspace.md`，再替换示例字段。工作区根直接保存 `goal-tree.md` 与平铺的 `GOAL-*` 五件套；它不替代这些文件的状态真相。
 
 ## 绑定
 
@@ -23,7 +23,7 @@ version: 0.5.0
 |------|--------|------|
 | 工作区 ID | `workspace-001-example` | 与所有共享资料引用的 `workspace_id` 一致。 |
 | Root Goal | `GOAL-001-example-root` | 必须存在，且其 `parent: null`。 |
-| canonical 范围 | `docs/workspace-001-example/` | 当前工作区唯一的目标状态范围。 |
+| canonical 范围 | `docs/workspaces/workspace-001-example/` | 当前工作区唯一的目标状态范围。 |
 | 共享资料目录 | `docs/shared-materials/` | 固定路径/URI，或 `none`；不在此文档保存资料内容。 |
 | 愿景角色 | `delivery` | `primary` \| `delivery`。 |
 | 规划对齐 | `plan_refs` / `primary_plan` | 指向 `docs/vision/plans/VP-*.md`；**必填**（无 opt-out）。 |

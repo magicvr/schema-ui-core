@@ -21,7 +21,7 @@ architecture_boundary: module-architecture.md
 | 架构终态（契约与边界） | [module-architecture.md](module-architecture.md) |
 | 本 playbook（操作化清单） | 本文件 |
 | 发现入口 | [overview.md](overview.md) · 根 [QUICKSTART.md](../../QUICKSTART.md) §5 |
-| 过程台账 | `docs/workspace-004-module-contribution-readiness/`（VP-004） |
+| 过程台账 | `docs/workspaces/workspace-004-module-contribution-readiness/`（VP-004） |
 
 **不是**本文件职责：Goal Governance 元规则（[principles.md](principles.md) P-001～P-006）、workspace-protocol、默认代码脚手架、`AGENTS.md`/Skills 改写。
 
@@ -39,7 +39,7 @@ architecture_boundary: module-architecture.md
 | M1 | **模块 id / 版本 / 内核 API 范围 / 依赖** | 实现 `kernel.Provider`：`Descriptor()` 返回稳定不可复用 `ID`、`Version`、`KernelAPIRange`、显式 `DependsOn`（可为空列表但必须声明）。契约类型：`apps/api/internal/kernel/module.go`。 |
 | M2 | **核心六项贡献** | 标准 Admin 功能模块必须实现 HTTP、Schema、Authorization、Navigation、Manifest、Persistence（语义见 architecture §2.1）。通过 `Register(ctx, Registrar)` 注册；不得以「按需」永久缺省六项。 |
 | M3 | **组合根静态候选注册** | 在 `apps/api/internal/composition/composition.go` 将 Provider 纳入已编译候选集（静态 import + 按 `plan.HasModule(...)` 装配）。不得依赖运行时下载/插件加载。 |
-| M4 | **Profile / `modules.enabled` 成员关系** | 新模块若需进入默认 Profile，更新 `apps/api/internal/kernel/profile.go` 中 `profileDefaults`（`mvp` / `admin` 等）；custom 须显式 `modules.enabled`。解析优先级见 architecture §3 与 config。 |
+| M4 | **Profile / `modules.list` 成员关系** | 新模块若需进入默认 Profile，更新 `apps/api/internal/kernel/profile.go` 中 `profileDefaults`（`mvp` / `admin` 等）；custom 须显式 `app.modules`（list / preset）。解析优先级见 architecture §3 与 config。 |
 | M5 | **全局迁移台账参与** | 若模块拥有 schema 迁移：经 `apps/api/internal/modules/compiled/persistence.go` 的 `PersistenceProviders()` 参与 **全局** 不可变 checksum 台账；**不以是否启用以过滤迁移**（architecture §4.1）。无迁移时 `CompiledPersistence()` 可返回空，但仍须声明 Persistence 能力语义。 |
 | M6 | **验证 / 回归最小集** | 至少：模块级 Provider/契约测试；依赖/冲突 fail-closed；相关 Profile 启动路径；页面/权限/导航可观察。仓库范例：`apps/api/internal/modules/users/provider_test.go`、`apps/api/internal/kernel/provider_test.go`、`apps/api/internal/composition/composition_test.go`。 |
 
@@ -85,7 +85,7 @@ apps/api/internal/modules/compiled/            # 全局迁移收集（全候选�
 | D2 | **不要在生产路径静默使用静态 Manifest 兜底** | 禁止把生产 Manifest 放进 `apps/web/public/` 静默兜底；开发期兼容须有期限与删除门禁（architecture §5）。 |
 | D3 | **不要私建平行认证 / 授权 / DB** | 认证、授权、数据库、错误协议与日志属内核能力；模块只消费稳定接口（architecture §6）。 |
 | D4 | **不要把「按需能力」当成核心六项可永久缺省** | §2.2 按需（Configuration / Lifecycle / Observability）**不得**覆盖 §2.1 核心六项。横切模块若豁免 UI 相关项须有显式架构说明。 |
-| D5 | **不要做运行时插件 / 热插拔 / `.so` / 远程下载幻想** | 仅在已编译候选集中由 Profile/`modules.enabled` 选择启用；不支持运行中启停（architecture §3）。 |
+| D5 | **不要做运行时插件 / 热插拔 / `.so` / 远程下载幻想** | 仅在已编译候选集中由 `app.profile` / `app.modules`（config.yaml）选择启用；不支持运行中启停（architecture §3）。 |
 
 ### 2.1 额外高风险反模式（推荐遵守）
 

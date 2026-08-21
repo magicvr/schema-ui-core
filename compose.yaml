@@ -1,12 +1,18 @@
 # GOAL-008 S2 / I-008-001 §3 — second startup path (Docker Compose one-click).
 # Fork users may choose local two-process or this Compose path.
 #
+# W7 (GOAL-008): the API config authority is apps/api/configs/config.yaml.
+# T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only — edit
+# apps/api/configs/config.yaml and use app.modules (preset or list) to pick
+# which modules boot. APP_PROFILE / APP_MODULES_ENABLED env vars are NOT read.
+# The file is mounted read-only at the default configs/config.yaml path; the
+# ${VAR} / ${VAR:-default} interpolation still resolves the secrets injected
+# below.
+#
 # Secrets are required and fail closed (compose interpolation aborts when unset).
 # Provide them in a repo-root .env (gitignored) or export in the shell:
 #   AUTH_JWT_SECRET=<strong random string>
 #   ADMIN_INITIAL_PASSWORD=<initial admin password>
-#   APP_PROFILE=admin               # or mvp
-#   APP_MODULES_ENABLED=            # optional explicit comma-separated override
 #
 # Non-goal: full production ops / CI-CD pipeline, TLS termination, multi-instance
 # scaling (see I-008-001 §8).
@@ -19,22 +25,32 @@ services:
     image: schema-ui-core-api:local
     environment:
       APP_ENV: production
-      APP_PROFILE: ${APP_PROFILE:-admin}
-      APP_MODULES_ENABLED: ${APP_MODULES_ENABLED:-}
       DB_PATH: /app/data/schema-ui.db
       LOG_LEVEL: info
       # Fail closed: compose aborts if these are unset.
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required (fail-closed)}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD is required (fail-closed)}
       AUTH_DEV_SESSION_ENABLED: "false"
+      # Optional upload policy overrides (W7: YAML keys upload.* / env keys
+      # UPLOAD_ALLOWED_TYPES, UPLOAD_MAX_FILES_PER_USER, UPLOAD_MAX_BYTES_PER_USER).
+      # UPLOAD_ALLOWED_TYPES: ${UPLOAD_ALLOWED_TYPES:-}
+      # UPLOAD_MAX_FILES_PER_USER: ${UPLOAD_MAX_FILES_PER_USER:-}
+      # UPLOAD_MAX_BYTES_PER_USER: ${UPLOAD_MAX_BYTES_PER_USER:-}
     volumes:
       - db-data:/app/data
-    ports:
-      - "${API_HOST_PORT:-8080}:8080"
+      # T-06 (GOAL-013 D-007): the operator config (profile / app.modules /
+      # upload / branding) comes from the repo file, mounted read-only.
+      - ./apps/api/configs:/app/configs:ro
+    # W7 F-008: the API port is intentionally NOT published to the host/LAN — it is
+    # only reachable from the internal compose network through the web nginx
+    # reverse proxy. To enable per-client rate limiting across that proxy, set
+    # HTTP_TRUSTED_PROXIES to the specific compose network subnet (e.g. the
+    # web container's internal IP /32 or the project network's /24 subnet);
+    # default is loopback-only (fail-safe).
     healthcheck:
       # Readiness probe (A-002 F-002-006): liveness + SQLite ping, so a dead or
       # unmigrated database flips the gate instead of reporting healthy.
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/readyz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:25080/readyz"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -46,12 +62,14 @@ services:
       # Repo-root context so the build can reach docs/schemas (Vite @schemas alias).
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
     image: schema-ui-core-web:local
     depends_on:
       api:
         condition: service_healthy
     ports:
-      - "${WEB_HOST_PORT:-8081}:80"
+      - "${WEB_HOST_PORT:-25081}:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 5s

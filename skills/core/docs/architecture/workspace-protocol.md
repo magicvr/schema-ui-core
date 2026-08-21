@@ -2,9 +2,9 @@
 title: 工作区与共享资料区协议
 status: active
 created: 2026-07-20
-updated: 2026-08-06
+updated: 2026-08-10
 parent: null
-version: 0.9.0
+version: 0.10.0
 ---
 
 # 工作区与共享资料区协议
@@ -17,7 +17,7 @@ version: 0.9.0
 
 | 术语 | 含义 | 不是 |
 |------|------|------|
-| **工作区根** | `docs/workspace-<NNN>-<slug>/`，其中包含 `workspace.md`、`goal-tree.md` 与平铺的 `GOAL-*`。 | `parent` 层级、页面缓存、审计 `scope` 或第二套目标状态。 |
+| **工作区根** | `docs/workspaces/workspace-<NNN>-<slug>/`，其中包含 `workspace.md`、`goal-tree.md` 与平铺的 `GOAL-*`。 | `parent` 层级、页面缓存、审计 `scope` 或第二套目标状态。 |
 | **工作区上下文文档** | 工作区根内的 `workspace.md`，从 [workspace-context.md](../templates/workspace-context.md) 复制。 | 每个目标重复保存的元数据，或全局工作区注册表。 |
 | **legacy 隐式单工作区** | 外部旧仓库没有显式工作区根、但保留 `docs/goals/` 与唯一 Root Goal 时的兼容模式。 | 多工作区发现、共享资料访问或跨目录自动搜索许可。 |
 | **共享资料目录** | 位于工作区根之外的资料集合；当前项目为 `docs/shared-materials/`。 | 目标树、目标状态库或任一工作区可写的隐式公共区。 |
@@ -31,7 +31,7 @@ version: 0.9.0
 ## 2. 工作区不变量
 
 1. 一个工作区恰好绑定一个 `parent: null` 的 Root Goal；`workspace.md` 的 `root_goal` 必须与该 Root Goal 完整 ID 一致。
-2. `canonical_scope` 必须等于包含该 `workspace.md` 的工作区根，例如 `docs/workspace-001-goal-governance/`。该目录直接平铺 `GOAL-*` 与 `goal-tree.md`；层级只由 `parent` 字段表达。
+2. `canonical_scope` 必须等于包含该 `workspace.md` 的工作区根，例如 `docs/workspaces/workspace-001-goal-governance/`。该目录直接平铺 `GOAL-*` 与 `goal-tree.md`；层级只由 `parent` 字段表达。
 3. 工作区之间不得混合目标、候选、草稿、审计意见、写入请求或 AI 上下文。多个工作区而没有明确焦点时，Skills 和消费适配器必须 fail closed，而非猜测默认工作区。
 4. 平台或宿主可以提供导航，但导航缓存不能成为 canonical 目标状态；跨工作区导航字段、运行时授权和用户操作仍属于消费适配器/产品门禁。
 5. 工作区上下文改变 Root Goal 绑定、canonical 范围或共享资料目录指针时，属于治理变更：必须有可追溯决定，并在受影响目标的执行记录中留下事实。
@@ -47,7 +47,7 @@ version: 0.9.0
   | 形式 | 写法 | 默认场景 |
   |------|------|----------|
   | **Q1** 双字段 | `workspace_id` + `goal_id` | 机器/API 载荷 |
-  | **Q2** canonical 路径 | `docs/workspace-<NNN>-<slug>/GOAL-NNN-slug/` | **文档落盘默认** |
+  | **Q2** canonical 路径 | `docs/workspaces/workspace-<NNN>-<slug>/GOAL-NNN-slug/` | **文档落盘默认** |
   | **Q3** 行内标签 | `[workspace-id] GOAL-NNN-slug` | **对话/编排回显默认** |
 
 - **区内 `parent` 与同区相对链接**继续用短 id，不改五件套形状。
@@ -66,13 +66,13 @@ Root Goal 表达稳定目的、初始边界和高层路线图，不要求在立�
 
 ## 4. 工作区上下文文档
 
-新建显式工作区时，从 `docs/templates/workspace-context.md` 复制为 `docs/workspace-<NNN>-<slug>/workspace.md`。frontmatter 的最小字段为：
+新建显式工作区时，从 `docs/templates/workspace-context.md` 复制为 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md`。frontmatter 的最小字段为：
 
 | 字段 | 要求 |
 |------|------|
 | `id` | 工作区稳定标识；资料引用的 `workspace_id` 必须相同。 |
 | `root_goal` | 当前工作区 Root Goal 的完整 ID，且该目标 `parent: null`。 |
-| `canonical_scope` | 当前工作区根；格式为 `docs/workspace-<NNN>-<slug>/`。 |
+| `canonical_scope` | 当前工作区根；格式为 `docs/workspaces/workspace-<NNN>-<slug>/`。 |
 | `shared_materials_catalog` | 共享资料目录的固定路径/URI，或 `none`。它只标识资料来源，不保存资料内容。 |
 | `status`、`created`、`updated`、`version` | 与其他 core Markdown 一致的可追溯元信息。 |
 | `vision_role` | `primary` \| `delivery`（完整治理下必填）。 |
@@ -87,7 +87,7 @@ Root Goal 表达稳定目的、初始边界和高层路线图，不要求在立�
 
 | 条件 | 行为 |
 |------|------|
-| 存在至少一个 `docs/workspace-<NNN>-<slug>/workspace.md` | 必须使用显式工作区；多区无焦点 → fail closed |
+| 存在至少一个 `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` | 必须使用显式工作区；多区无焦点 → fail closed |
 | **无**显式工作区根，**且**存在 `docs/goals/` 与唯一 Root Goal | 仅允许将该 `docs/goals/` 作为 **legacy 隐式单工作区** |
 | 既无显式工作区，也无 `docs/goals/` | **不是**隐式工作区；按空治理 scaffold（见 Skills S0），禁止猜测仓库根或其他路径为 `<workspace-root>` |
 

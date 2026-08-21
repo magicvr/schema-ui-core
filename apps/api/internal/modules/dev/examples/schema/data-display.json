@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "pageId": "data-display",
+    "title": "Data display",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "props": {
+      "title": "Data display"
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Registry display types (statCard / chart) driven by the same single-slash dataSource contract as table.",
+          "textKey": "schema.data-display.text.intro"
+        }
+      },
+      {
+        "type": "grid",
+        "props": {
+          "columns": 3
+        },
+        "children": [
+          {
+            "type": "statCard",
+            "id": "total-roles",
+            "props": {
+              "label": "Total roles",
+              "format": "plain",
+              "valueField": "total",
+              "dataSource": "/api/roles",
+              "labelKey": "schema.data-display.statCard.totalRoles"
+            }
+          },
+          {
+            "type": "statCard",
+            "id": "first-role-users",
+            "props": {
+              "label": "Users on first role",
+              "format": "plain",
+              "valueField": "assignedUsers",
+              "dataSource": "/api/roles",
+              "labelKey": "schema.data-display.statCard.usersOnFirstRole"
+            }
+          }
+        ]
+      },
+      {
+        "type": "chart",
+        "id": "roles-chart",
+        "props": {
+          "chartType": "bar",
+          "xField": "key",
+          "yField": "assignedUsers",
+          "dataSource": "/api/roles"
+        }
+      }
+    ]
+  }
+}

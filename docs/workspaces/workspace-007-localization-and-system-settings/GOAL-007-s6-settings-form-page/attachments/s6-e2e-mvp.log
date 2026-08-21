@@ -1,0 +1,58 @@
+[WebServer] [Fx] PROVIDE	fx.Lifecycle <= go.uber.org/fx.New.func1()
+[WebServer] [Fx] PROVIDE	fx.Shutdowner <= go.uber.org/fx.(*App).shutdowner-fm()
+[WebServer] [Fx] PROVIDE	fx.DotGraph <= go.uber.org/fx.(*App).dotGraph-fm()
+[WebServer] [Fx] PROVIDE	*config.Config <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func1()
+[WebServer] [Fx] PROVIDE	composition.jwtSecret <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func2()
+[WebServer] [Fx] PROVIDE	composition.seedPasswordHash <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func3()
+[WebServer] [Fx] PROVIDE	*slog.Logger <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func4()
+[WebServer] [Fx] PROVIDE	kernel.Plan <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func5()
+[WebServer] [Fx] PROVIDE	*composition.readinessGate <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func6()
+[WebServer] [Fx] PROVIDE	*store.Store <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.openStore()
+[WebServer] [Fx] PROVIDE	*authsession.Repository <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.newAuthSessionRepository()
+[WebServer] [Fx] PROVIDE	*operationlog.Repository <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.newOperationLogRepository()
+[WebServer] [Fx] PROVIDE	*repository.Repository <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.newSettingsRepository()
+[WebServer] [Fx] PROVIDE	*auth.Authenticator <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.newAuthenticator()
+[WebServer] [Fx] PROVIDE	*http.ServeMux <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.newMux()
+[WebServer] [Fx] PROVIDE	*http.Server <= github.com/magicvr/schema-ui-core/apps/api/internal/composition.newServer()
+[WebServer] [Fx] INVOKE		github.com/magicvr/schema-ui-core/apps/api/internal/composition.registerLifecycle()
+[WebServer] [Fx] BEFORE RUN	provide: go.uber.org/fx.New.func1()
+[WebServer] [Fx] RUN	provide: go.uber.org/fx.New.func1() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func1()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func1() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func2()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func2() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func3()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func3() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.openStore()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.openStore() in 157.2782ms
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newAuthSessionRepository()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newAuthSessionRepository() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newAuthenticator()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newAuthenticator() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newOperationLogRepository()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newOperationLogRepository() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newSettingsRepository()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newSettingsRepository() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func5()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func5() in 518.2µs
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func6()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func6() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newMux()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newMux() in 10.8924ms
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func4()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.NewApp.func4() in 0s
+[WebServer] [Fx] BEFORE RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newServer()
+[WebServer] [Fx] RUN	provide: github.com/magicvr/schema-ui-core/apps/api/internal/composition.newServer() in 0s
+[WebServer] [Fx] HOOK OnStart		github.com/magicvr/schema-ui-core/apps/api/internal/composition.registerLifecycle.func2() executing (caller: github.com/magicvr/schema-ui-core/apps/api/internal/composition.registerLifecycle)
+[WebServer] [Fx] HOOK OnStart		github.com/magicvr/schema-ui-core/apps/api/internal/composition.registerLifecycle.func2() called by github.com/magicvr/schema-ui-core/apps/api/internal/composition.registerLifecycle ran successfully in 2.0065ms
+[WebServer] [Fx] RUNNING
+
+Running 4 tests using 1 worker
+
+  -  1 [chromium] › e2e\localization.spec.ts:15:1 › S5 localization: zh switch, lang, error negotiation, settings projection
+  ✓  2 [chromium] › e2e\localization.spec.ts:69:1 › S5 mvp profile: locale switch + no settings surface + branding public (823ms)
+  ✓  3 [chromium] › e2e\schema-crud.spec.ts:19:1 › users and roles drive real authorization management against Go SQLite (2.4s)
+  ✓  4 [chromium] › e2e\shell.spec.ts:9:1 › login gates the shell and the real auth chain works through the proxy (722ms)
+
+  1 skipped
+  3 passed (7.9s)

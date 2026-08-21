@@ -338,8 +338,11 @@ func TestRolesOperationLogEvents(t *testing.T) {
 			if op.Detail != nil {
 				t.Fatalf("delete detail = %q, want nil", *op.Detail)
 			}
-		} else if op.Detail == nil || *op.Detail != `{"key":"oprole"}` {
-			t.Fatalf("%s detail = %v, want key-only JSON", op.Event, op.Detail)
+		} else {
+			envelope, err := operationlog.ParseDetail(*op.Detail)
+			if err != nil || envelope.After["key"] != "oprole" {
+				t.Fatalf("%s detail = %v, want R2 envelope key=oprole: %v", op.Event, op.Detail, err)
+			}
 		}
 	}
 }

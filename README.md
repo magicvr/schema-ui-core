@@ -12,7 +12,8 @@
 | [docs/architecture/monorepo-layout.md](docs/architecture/monorepo-layout.md) | **Monorepo 布局与包管理约定（R1）** |
 | [docs/architecture/directory-layout.md](docs/architecture/directory-layout.md) | 治理目录布局 |
 | [docs/vision/charter.md](docs/vision/charter.md) | 现行愿景 Charter |
-| [docs/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspace-003-modular-admin-architecture/goal-tree.md) | 当前模块化架构工作区目标树 |
+| [docs/workspaces/workspace-008-admin-module-readiness/goal-tree.md](docs/workspaces/workspace-008-admin-module-readiness/goal-tree.md) | 当前准入与基架收敛工作区（VP-008）目标树 |
+| [docs/workspaces/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspaces/workspace-003-modular-admin-architecture/goal-tree.md) | 模块化架构工作区目标树（历史） |
 | [AGENTS.md](AGENTS.md) | AI 协作强制规则 |
 
 ## 仓库布局（摘要）
@@ -35,11 +36,12 @@ skills/    # 治理 Skills 包
 
 ```bash
 cd apps/api
-export APP_PROFILE=mvp       # 或 admin；custom 必须同时设置 APP_MODULES_ENABLED
+export APP_ENV=development   # 必须显式设置；未设置时启动 fail-closed（生产无公开弱默认）
+# 模块启用集只认 config.yaml（T-06）：编辑 apps/api/configs/config.yaml 的 app.modules
 make run
 # 或：go run ./cmd/server
-# 探活：curl http://localhost:8080/healthz
-# 就绪：curl http://localhost:8080/readyz
+# 探活：curl http://localhost:25080/healthz
+# 就绪：curl http://localhost:25080/readyz
 ```
 
 详见 [apps/api/README.md](apps/api/README.md)。
@@ -58,7 +60,7 @@ npm run dev
 ## 工程化与一键启动（R5 · GOAL-008）
 
 > 生产级工程化交付（环境/配置、容器一键启动、健康检查、dev/prod 区分）随 R5 推进。契约见
-> `docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md`。
+> `docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-001-engineering-contract.md`。
 
 ### Docker Compose 一键启动（第二启动路径）
 
@@ -66,42 +68,58 @@ npm run dev
 # 需先提供生产必填密钥（fail-closed）；可写入仓库根 .env（gitignored）或 export
 AUTH_JWT_SECRET=<强随机串>
 ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
-APP_PROFILE=mvp                 # 或 admin
-APP_MODULES_ENABLED=            # 可选，逗号分隔的显式模块覆盖
+# app.modules: preset: mvp|admin|demo，或 list: [模块...]（见 configs/config.yaml）
 
 docker compose up --build
-#  API: http://localhost:8080  (GET /healthz 探活)
-#  Web: http://localhost:8081  (nginx 服务 SPA + /api 反代；同源免 CORS)
+#  API: 容器内 :25080，不发布宿主端口（W7 F-008）；经 Web http://localhost:25081 同源访问
+#  Web: http://localhost:25081  (nginx 服务 SPA + /api 反代；同源免 CORS)
 #  登录种子 admin → 后台首页
 ```
 
 - 本地开发仍为默认双进程路径（见上文 API / Web 段）；fork 使用者可选本地双进程或 Compose。
 - `docker compose down` / 重启后 SQLite 数据由命名卷 `db-data` 保持。
 - 将密钥写入仓库根 `.env`（gitignored）可避免新 shell 里 `docker compose config` / `down` 因 fail-closed 插值重复 export。
-- `APP_PROFILE` 默认为 `mvp`；选择 `admin` 会在同一 Web build 上增加 Settings/Activity。
-- `APP_MODULES_ENABLED` 非空时覆盖 Profile 默认模块集合；`custom` Profile 没有显式模块时 fail-closed。
+- 模块启用集只来自 `configs/config.yaml`（T-06）：`app.profile` 选内置预设 `mvp`/`admin`/`demo`，或 `app.modules` 指向预设文件 / 内联列表。`mvp` = users/roles/account/notifications + Dashboard 首页；`admin` 会在同一 Web build 上增加 Settings/Activity/Data-Transfer；`demo`（**非生产向**）会额外启用 `dev.examples`（home 指向 `overview`）。
+- `app.modules`（preset 或 list）覆盖 Profile 默认模块集合；preset 与 list 互斥，`custom` Profile 没有显式模块时 fail-closed。
 - 完整生产运维 / CI-CD 部署流水线、TLS、多实例为**非目标**。
+
+### 发版前冒烟（W8 起 · 生产 CSP + 真实浏览器 + 隔离种子）
+
+```bash
+# 一键：独立 Compose project 构建/启动生产栈 → scripts/smoke.sh --disposable
+#（SM-001~005 + SM-006 种子可重复 + 可选 SM-007 Profile 合同）+ SMOKE_CSP=1
+#（SM-008 真实浏览器校验生产 CSP 头 / theme-init.js）+ C-006 新建用户跨 API 重启留存 → 默认 down -v 清理
+bash scripts/pre-release-smoke.sh
+
+# 仅单独启用 SM-008（需已运行生产 Web，见 QUICKSTART §3）：
+SMOKE_CSP=1 SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
+  bash scripts/smoke.sh --disposable
+```
 
 ## 模块化 Admin 架构与 Profile（R4 起）
 
 后端以**薄内核 + 模块 Provider + 启动时 Profile** 组装（workspace-003 模块化架构）：
 
 - **模块 Provider**：一方标准 Admin 模块（`admin.users` / `admin.roles` /
-  `admin.settings` / `admin.activity`）以 `kernel.Provider` 结构化贡献 HTTP、Schema、
-  授权、Navigation、Manifest 与 compiled-global Persistence；composition 消费
-  finalize，冲突 fail-closed。
-- **Profile**：`mvp`（core 六项 + users/roles）与 `admin`（+ settings/activity）为
-  编译候选集；`APP_MODULES_ENABLED` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，
-  无需改前端。
-- **数据**：迁移账本 `0001`-`0008` 全局唯一；fresh 与 versioned reconcile 分离；
+  `admin.settings` / `admin.activity` / `admin.dashboard` / `admin.account` /
+  `admin.notifications` / `admin.data-transfer`）以 `kernel.Provider` 结构化贡献
+  HTTP、Schema、授权、Navigation、Manifest 与 compiled-global Persistence；
+  composition 消费 finalize，冲突 fail-closed。
+- **Profile**：`mvp`（core + users/roles + dashboard/account/notifications，
+  home = `dashboard`）与 `admin`（+ settings/activity/data-transfer）为编译候选集；
+  `demo`（W2，非生产向）= mvp + `dev.examples`（范例页演示面，home = `overview`）；
+  `app.modules` 显式覆盖。**同一 Web 构建**随 Profile 切换页面集，无需改前端。
+- **数据**：迁移账本 `0001`-`0017` 全局唯一；fresh 与 versioned reconcile 分离；
   operationlog best-effort；`/api/records` 已退场（`0006` historical-only）。
 - **探测**：`/healthz`（liveness）与 `/readyz`（store ping + 模块图 Start/Ready
   readiness，R5）。
 
-fork 起点：选 Profile + `APP_MODULES_ENABLED` + 模块贡献接入业务，不修改 Renderer/Shell
+fork 起点：在 config.yaml 选 Profile/模块集 + 模块贡献接入业务，不修改 Renderer/Shell
 主路径。
 
 ## 状态说明
 
 - R2 MVP 协议覆盖子集已按 Root `I-PROTO-001` v0.1.3 冻结；这不是「支持全部协议功能」或 R3-R5 已实现的声明。
-- R1 目标：可运行前后端骨架 + 布局约定；账号权限属 R4；Admin 外壳属 R3。
+- R1 目标：可运行前后端骨架 + 布局约定；Admin 外壳属 R3（历史路线图编号）。
+- R2 一等公民波次（[workspace-011](docs/workspaces/workspace-011-admin-functional-modules/goal-tree.md)）：`admin.dashboard` / `admin.account` / `admin.notifications` / `admin.data-transfer` 四个一方标准 Admin 模块已交付；订单/钱包等业务域降档至 R3（S-01～S-14）与 R4（B-01～B-11）。
+- R3 常用波第一批次：`admin.file-library`（文件/附件库）+ `admin.data-dictionary`（数据字典）已交付（admin 默认集；V-008 容器冒烟 exit 0）；R3 其余（S-03～S-14）与 R4 backlog 按路线图推进。

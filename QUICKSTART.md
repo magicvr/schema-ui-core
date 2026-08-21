@@ -1,7 +1,7 @@
 # QUICKSTART · 15 分钟 fork 上手（R5 · GOAL-008 S3）
 
 > 面向 fork 使用者的最小上手段。目标：**按本文档从零配置并启动，≤15 分钟（不含依赖下载/镜像拉取）进入系统**——登录成功 + 后台可交互。
-> 本文件的终点与计时口径按 [I-008-002 fork 复现协议 v0.1.1](docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) 冻结；独立复现记录见 GOAL-008 `02-execution.md`。
+> 本文件的终点与计时口径按 [I-008-002 fork 复现协议 v0.1.1](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) 冻结；独立复现记录见 GOAL-008 `02-execution.md`。
 
 ## 0. 前置
 
@@ -21,17 +21,17 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 配置环境（本地 fork 开发）：
 
 ```bash
-# apps/api/.env.example 只是配置参考；Go API 不会自动加载该文件。
-# Compose 才会读取仓库根 .env（gitignored）。本地进程请 export：
-export APP_PROFILE=mvp                 # 或 admin
+# W7：配置权威是 apps/api/configs/config.yaml（非敏感值直写，敏感值 ${VAR}
+# 占位符）；敏感值可放 apps/api/configs/.env（开发，gitignored；进程 env 优先）。
+# Compose 由仓库根 .env 提供插值。本地进程请 export：
+# T-06：模块启用集只认 apps/api/configs/config.yaml（app.profile / app.modules）
 # custom 时还必须提供完整的显式模块列表：
-# export APP_PROFILE=custom
-# export APP_MODULES_ENABLED=core.server-registration,...
+# app.modules.list: [core.server-registration, admin.users, ...]
 ```
 
-- 开发（`APP_ENV=development`）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。
-- `APP_PROFILE` 只接受 `mvp`、`admin`、`custom`；`APP_MODULES_ENABLED` 非空时覆盖 Profile 默认集合。
-- PowerShell 等价写法为 `$env:APP_PROFILE="mvp"`；每个本地 API/Web 进程都必须继承同一 Profile。
+- 开发（`APP_ENV=development` 显式设置）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。**`APP_ENV` 必须显式设置**——未设置时启动失败（C3：不静默回退到公开开发密钥/密码）。
+- 模块启用集只来自 `apps/api/configs/config.yaml`（T-06）：`app.profile` 接受 `mvp`、`admin`、`demo`（内置预设），`app.modules` 可指向预设文件或内联 `list`。`mvp` = core + `users`/`roles`/`account`/`notifications`（首页 = Dashboard）；`admin` = `mvp` + `settings`/`activity`/`data-transfer`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`；生产只应使用 `mvp` / `admin`。`app.modules` 覆盖 Profile 默认集合。
+- 每个本地 API/Web 进程共用同一份 `configs/config.yaml`，无需再设置 Profile 环境变量。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
 ## 2. 启动（两条路径选一）
@@ -42,23 +42,32 @@ export APP_PROFILE=mvp                 # 或 admin
 # 仓库根 .env（gitignored）写入，避免新 shell 重复 export：
 #   AUTH_JWT_SECRET=<强随机串>
 #   ADMIN_INITIAL_PASSWORD=<初始 admin 密码>
-#   APP_PROFILE=mvp                 # 或 admin
-#   APP_MODULES_ENABLED=            # 可选，逗号分隔
+#   app.profile: mvp            # 或 admin / demo（configs/config.yaml）
 docker compose up -d --build
 ```
 
-- API：`http://localhost:8080`（`GET /healthz` 探活）
-- Web：`http://localhost:8081`（nginx 服务 SPA，`/api` 同源反代到 API）
+- API：容器内 `:25080`（W7 F-008 起**不发布宿主端口**；通过 Web `http://localhost:25081` 同源访问）
+- Web：`http://localhost:25081`（nginx 服务 SPA，`/api` 同源反代到 API）
 - 停止：`docker compose down`（SQLite 数据由命名卷 `db-data` 保持）
 
 ### 路径 B · 本地双进程（开发默认）
 
 ```bash
 # 终端 1 —— API
-cd apps/api && APP_PROFILE=mvp go run ./cmd/server  # 监听 :8080；或改为 admin
+cd apps/api && APP_ENV=development go run ./cmd/server  # 监听 :25080；Profile 由 configs/config.yaml 决定
 
 # 终端 2 —— Web
-cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
+cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-25173}
+```
+
+Windows 也可用仓库根一键脚本 `dev.cmd`（自动起停 API/Web 两个窗口，按端口停止，免手动开终端）：
+
+```cmd
+.\dev.cmd start                              :: 默认 admin profile，自动打开浏览器
+.\dev.cmd start demo --no-browser            :: 切换 profile / 不自动开浏览器
+.\dev.cmd start custom --modules core.server-registration,users
+.\dev.cmd stop                               :: 停止 API + Web
+.\dev.cmd status                             :: 查看端口监听
 ```
 
 ## 3. 验收四终点（≤15 分钟达标判据）
@@ -68,25 +77,25 @@ cd apps/web && npm ci && npm run dev      # 监听 ${WEB_PORT:-5173}
 | 1 | `GET ${API_BASE_URL}/healthz` 与 `/readyz` | HTTP 200，JSON `status: "ok"` |
 | 2 | `POST ${WEB_BASE_URL}/api/auth/login`（admin / `ADMIN_INITIAL_PASSWORD`） | HTTP 200，响应含非空 `accessToken` |
 | 3 | 携带 token `GET ${WEB_BASE_URL}/api/accounts/me` | HTTP 200，含 `user` 与 `features` |
-| 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD） |
+| 4 | **浏览器**登录后打开 `${WEB_BASE_URL}/users` | 页面标题 `Users`，列表已加载 `admin` 种子用户（users 资源 CRUD）。登录默认首页为 `Dashboard`（`demo` 为 `overview`） |
 
-> **默认 base URL**：Compose → API `http://localhost:8080`、Web `http://localhost:8081`；本地双进程 → API `:8080`、Web `http://localhost:${WEB_PORT:-5173}`。以实际端口为准，不得用默认值覆盖实测端口。
+> **默认 base URL**：Compose → API 不发布宿主端口（经 Web `http://localhost:25081` 同源访问）、Web `http://localhost:25081`；本地双进程 → API `:25080`、Web `http://localhost:${WEB_PORT:-25173}`。以实际端口为准，不得用默认值覆盖实测端口。
 
 ### 命令行冒烟（终点 1–3 快速验证）
 
 ```bash
-curl -fsS http://localhost:8080/healthz
-TOKEN=$(curl -fsS -X POST http://localhost:8081/api/auth/login \
+curl -fsS http://localhost:25081/api/healthz
+TOKEN=$(curl -fsS -X POST http://localhost:25081/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"<ADMIN_INITIAL_PASSWORD>"}'
   | node -e 'process.stdin.on("data",d=>process.stdout.write(JSON.parse(d).accessToken))')
-curl -fsS http://localhost:8081/api/accounts/me -H "Authorization: Bearer $TOKEN"
+curl -fsS http://localhost:25081/api/accounts/me -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 完整 smoke（S4 机器可判定）
 
 ```bash
-# 对已启动实例做非破坏性部分检查（SM-001～005）
+# 对已启动实例做非破坏性部分检查（SM-001～005 + 可选 SM-007 Profile/Manifest 合同）
 # 注意：SM-006 未运行 → 退出码 8（部分绿），**不是** S4 完整绿
 SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp bash scripts/smoke.sh
 
@@ -94,12 +103,25 @@ SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROF
 #   1) 用独立 compose project 启动（不得指向普通开发库）：
 #      docker compose -p ci-smoke-local down -v && docker compose -p ci-smoke-local up -d
 #   2) 提供隔离身份 + 书面确认标记（脚本机器校验 project/卷绑定，不满足 → exit 2）
+#   3) 追加 SMOKE_CSP=1 启用 SM-008 真实浏览器 + 生产 CSP 头检查
+#   W16-F01：fresh seed 首登在 SM-004 走真实 /api/account/password 强制改密；可用 SMOKE_PASSWORD_NEW 指定新密码（默认 <初始>-changed）
 SMOKE_USERNAME=admin SMOKE_PASSWORD=<ADMIN_INITIAL_PASSWORD> SMOKE_EXPECTED_PROFILE=mvp \
-SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes \
+SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes SMOKE_CSP=1 \
 bash scripts/smoke.sh --disposable
 ```
 
-> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
+### 发版前完整冒烟（生产 CSP + 真实浏览器 + 隔离种子，一键）
+
+```bash
+# 自动用独立 Compose project 构建/启动生产栈，运行 smoke --disposable + SMOKE_CSP=1（含 C-006 persistence），
+# 结束后默认 docker compose -p <project> down -v 清理。前置：
+#   Docker Compose v2 + Node + apps/web Playwright Chromium（npx playwright install chromium）
+bash scripts/pre-release-smoke.sh
+# 可选 env：PRERELEASE_PROFILE=mvp|admin（默认读 apps/api/configs/config.yaml）
+#          WEB_HOST_PORT=<port>（默认从 .env 或 25081）｜SMOKE_USERNAME｜SMOKE_PASSWORD_NEW｜SMOKE_SKIP_PERSISTENCE=1｜KEEP_STACK=1（保留栈）
+```
+
+> 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`7`=SM-008 真实浏览器 CSP/生产头失败｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
 
 ## 4. 升级与恢复边界
 
@@ -113,13 +135,13 @@ bash scripts/smoke.sh --disposable
 
 ## 5. 下一步：接业务
 
-> **协议覆盖权威**：本仓对 `schema-ui-docs@v2.7.0` 的整份契约覆盖由 **`I-PROTO-FULL-001`** 定义（[workspace-005 Root attachments](docs/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)：12/12 能力域、24/24 registry type、16/16 conformance 套件 include）。历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线（只读）。协议能力清单见 [protocol-inventory-v2.7.0.md](docs/vision/protocol-inventory-v2.7.0.md)；任何「已支持 v2.7.0」声明必须以覆盖表 + 实现证据背书。
+> **协议覆盖权威**：本仓对 `schema-ui-docs@v2.7.0` 的整份契约覆盖由 **`I-PROTO-FULL-001`** 定义（[workspace-005 Root attachments](docs/workspaces/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)：12/12 能力域、24/24 registry type、16/16 conformance 套件 include）。历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线（只读）。协议能力清单见 [protocol-inventory-v2.7.0.md](docs/vision/protocol-inventory-v2.7.0.md)；任何「已支持 v2.7.0」声明必须以覆盖表 + 实现证据背书。
 
 - **完整一方标准 Admin 功能模块**（必须 / 禁止 / 归属判定、组合根与 Profile、全局迁移）：见操作契约  
   **[docs/architecture/module-contribution-playbook.md](docs/architecture/module-contribution-playbook.md)**  
   （架构边界：[docs/architecture/module-architecture.md](docs/architecture/module-architecture.md)；概览入口：[docs/architecture/overview.md](docs/architecture/overview.md)）
 - 新增业务页面（**无需修改 Renderer 主路径**；从属于上表 MUST）：
-  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；标准 Admin 正例：`apps/api/internal/modules/users/`；
+  1. 在对应 owner module 的 `apps/api/internal/modules/<module>/schema/` 添加页面 Schema 文档，并由该模块 Provider 贡献字节（**需重建/重启 API** 后生效）；core 示例位于 `apps/api/internal/modules/schemarender/schema/`；标准 Admin 正例：`apps/api/internal/modules/users/`、`dashboard/`、`account/`、`notifications/`、`datatransfer/`（一等公民波次，workspace-011 R2）；
   2. 在模块 Provider 的 Manifest/Navigation contribution 中登记 `pages[]` 与 `navigation`；不要在 `apps/web/public/` 放置生产 Manifest。Manifest 由 API 聚合并经 `/.well-known/schema-ui/app-manifest.json` 发布。
   - 注意：`docs/schemas/` 是上游 **协议 JSON Schema**（node/page/action…），**不是**业务页面文档目录。
 - 权限：通过模块的 Authorization/Persistence contribution 声明权限键与 system-data reconcile；全局迁移/快照执行仍由 `apps/api/internal/store` 负责；模块迁移须进入全局台账（见 playbook M5）。

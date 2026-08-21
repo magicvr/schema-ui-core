@@ -2,9 +2,9 @@
 title: 目录布局
 status: active
 created: 2026-07-18
-updated: 2026-07-31
+updated: 2026-08-10
 parent: null
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 目录布局
@@ -30,10 +30,11 @@ schema-ui-core/                 # 本仓（Admin 基架 + 治理 dogfood）
 │   │   ├── workspaces.md
 │   │   ├── alignment.md
 │   │   └── consumer-checklist.md
-│   ├── workspace-001-…/        # 显式工作区根（本仓：mvp-admin-foundation）
-│   │   ├── workspace.md        # Root/范围/资料/规划对齐
-│   │   ├── goal-tree.md        # 本工作区目标树与状态总览
-│   │   └── GOAL-00N-…/         # 目标（平铺，无嵌套）
+│   ├── workspaces/             # 全部显式工作区实例（容器）
+│   │   └── workspace-001-…/    # 工作区根（本仓：mvp-admin-foundation）
+│   │       ├── workspace.md    # Root/范围/资料/规划对齐
+│   │       ├── goal-tree.md    # 本工作区目标树与状态总览
+│   │       └── GOAL-00N-…/     # 目标（区内平铺，无嵌套）
 │   ├── shared-materials/       # 工作区外的资料候选库存（可选）
 │   ├── templates/
 │   │   ├── README.md
@@ -45,6 +46,7 @@ schema-ui-core/                 # 本仓（Admin 基架 + 治理 dogfood）
 │       ├── overview.md
 │       ├── principles.md       # 治理原则（元规则）
 │       ├── workspace-protocol.md
+│       ├── independent-audit-execution.md  # 项目级决策：独立审计执行路径
 │       ├── monorepo-layout.md  # 应用 monorepo 约定（R1）
 │       └── directory-layout.md # 本文件
 └── skills/                     # AI/Agent 消费适配器与分发包
@@ -56,10 +58,10 @@ schema-ui-core/                 # 本仓（Admin 基架 + 治理 dogfood）
 
 ## 约束
 
-- `docs/workspace-<NNN>-<slug>/GOAL-*` 之间**不得**再嵌套目标目录。
+- `docs/workspaces/workspace-<NNN>-<slug>/GOAL-*` 之间**不得**再嵌套目标目录。
 - 新目标只新增当前工作区根内的同级文件夹，并改 `parent` + 该工作区 `goal-tree.md`。
 - `docs/templates/goal-folder/` 是核心 canonical 模板；包内分发镜像为 `skills/core/docs/templates/goal-folder/`（由 `scripts/stage_skills_mirrors.py` 从 docs stage；**不**再手维 `skills/templates/` 第三份）。
-- `docs/workspace-<NNN>-<slug>/workspace.md` 是显式工作区上下文，绑定一个 Root Goal 与该工作区根范围；`docs/templates/workspace-context.md` 与 core 镜像必须经 stage 一致。没有显式工作区根时：**仅当**存在 `docs/goals/` 才按 legacy 隐式单工作区处理；否则不得猜测工作区根。
+- `docs/workspaces/workspace-<NNN>-<slug>/workspace.md` 是显式工作区上下文，绑定一个 Root Goal 与该工作区根范围；`docs/templates/workspace-context.md` 与 core 镜像必须经 stage 一致。没有显式工作区根时：**仅当**存在 `docs/goals/` 才按 legacy 隐式单工作区处理；否则不得猜测工作区根。
 - `docs/vision/` 是仓库级愿景与规划对齐层；**不是**目标状态库，不得写入 progress% 或替代各区 goal-tree。Primary 冲突与 VP 空转规则见 `docs/vision/alignment.md`。
 - 共享资料只以版本/哈希固定引用出现在工作区上下文或受控记录中，不能成为跨工作区目标状态或第二真相源。
 - `GOAL-*` id 仅工作区内唯一，**形状不嵌工作区编号**；跨区引用见 [workspace-protocol.md](workspace-protocol.md) §2.6（文档默认 **Q2** 路径，对话默认 **Q3** 标签）。

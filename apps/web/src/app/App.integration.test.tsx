@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { App } from "@/app/App";
+import { I18nProvider } from "@/i18n/runtime";
 import {
   CONFIG_CHANGED_HEADER,
   createConfigAwareFetcher,
@@ -109,6 +110,8 @@ async function renderApp(
   path: string,
   navigationContext?: NavigationContext,
   documents: Record<string, unknown> = DEFAULT_DOCUMENTS,
+  resourceFetcher?: typeof fetch,
+  manifest = testManifest(),
 ): Promise<HTMLDivElement> {
   window.history.replaceState({}, "", path);
   const container = document.createElement("div");
@@ -117,11 +120,14 @@ async function renderApp(
   activeRoots.push({ root, container });
   await act(async () => {
     root.render(
-      <App
-        manifest={testManifest()}
-        navigationContext={navigationContext}
-        schemaFetcher={schemaFetcher(documents)}
-      />,
+      <I18nProvider>
+        <App
+          manifest={manifest}
+          navigationContext={navigationContext}
+          schemaFetcher={schemaFetcher(documents)}
+          resourceFetcher={resourceFetcher}
+        />
+      </I18nProvider>,
     );
   });
   return container;
@@ -159,13 +165,199 @@ describe("App shell integration", () => {
     expect(container.textContent).toContain("Schema home body");
   });
 
+
+  // GOAL-015 semantic breadcrumbs (user ruling 2026-08-14): the trail is
+  // 首页 => 一级页 => ... => n级内页 — the home page (manifest homePageRef)
+  // always leads, then nav group labels, then the current page. It is
+  // hierarchy, not visit history: a deep link shows the same trail.
+  it("shows the semantic breadcrumb trail (首页 => 组 => 内页) on nested pages", async () => {
+    const container = await renderApp("/");
+    // Home is the root — single level, no trail UI, no back button.
+    expect(container.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
+
+    // Deep-link straight into the nested page (no prior visits).
+    window.history.pushState({}, "", "/catalog/42");
+    await act(async () => {
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(container.querySelector("h1")?.textContent).toBe("Catalog detail");
+
+    // Semantic trail: Home (root) / Operations (group label) / Catalog detail.
+    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    expect(breadcrumb).not.toBeNull();
+    expect(breadcrumb?.textContent).toContain("Home");
+    expect(breadcrumb?.textContent).toContain("Operations");
+    expect(breadcrumb?.textContent).toContain("Catalog detail");
+    // No routed ancestor besides home (the group label is not a page) → the
+    // compact back button stays hidden; 首页 itself is the clickable root.
+    expect(breadcrumb?.querySelector('button[aria-label]')).toBeNull();
+  });
+
+
+  // GOAL-015 F-001 (grok audit): a schema-driven navigate action (type
+  // navigate + row navigateMapping, e.g. the dictionary types page 「条目」
+  // row action) must navigate session-internally through the host's
+  // onNavigate — the entries page then keeps its breadcrumb trail + back
+  // button (no full reload that would reset the visit stack).
+  it("keeps the breadcrumb trail when a row navigate action opens the inner page", async () => {
+    const manifest = validateAppManifest({
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+      app: { appId: "integration", name: "Integration", homePageRef: "home" },
+      pages: [
+        { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/home" },
+        {
+          pageId: "data-dictionary",
+          title: "Data dictionary",
+          schemaUrl: "/schema/dictionary",
+          route: "/data-dictionary",
+        },
+        {
+          pageId: "dictionary-entries",
+          title: "Dictionary entries",
+          schemaUrl: "/schema/dictionary-entries",
+          route: "/dictionary-entries/{dictKey}",
+        },
+      ],
+      navigation: {
+        top: [{ pageRef: "home", label: "Home" }],
+        sidebar: [{ pageRef: "data-dictionary", label: "Data dictionary" }],
+      },
+    });
+    const dictionaryDoc = {
+      meta: {
+        pageId: "data-dictionary",
+        title: "Data dictionary",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["app.manifest", "app.navigation", "actions.row.navigate"],
+      },
+      actions: {
+        openEntries: { type: "navigate", url: "/dictionary-entries/{dictKey}" },
+      },
+      body: {
+        type: "section",
+        children: [
+          {
+            type: "table",
+            id: "dict-types-table",
+            data: { source: "api", url: "/api/data-dictionary/types" },
+            props: {
+              rowKey: "id",
+              columns: [
+                { field: "key", label: "Type key" },
+                { field: "name", label: "Type name" },
+              ],
+              actions: [
+                {
+                  key: "entries",
+                  label: "Entries",
+                  actionRef: "openEntries",
+                  navigateMapping: {
+                    path: { dictKey: "$row.key" },
+                    query: { dictTypeName: "$row.name" },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const entriesDoc = {
+      meta: {
+        pageId: "dictionary-entries",
+        title: "Dictionary entries",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["app.manifest", "app.navigation"],
+      },
+      body: {
+        type: "section",
+        children: [{ type: "text", props: { text: "Entries body" } }],
+      },
+    };
+    const documents: Record<string, unknown> = {
+      "/schema/home": schemaDocument("home", "Home", "Schema home body"),
+      "/schema/dictionary": dictionaryDoc,
+      "/schema/dictionary-entries": entriesDoc,
+    };
+    const resourceFetcher = (async () =>
+      new Response(
+        JSON.stringify({
+          items: [{ id: "order_status", key: "order_status", name: "Order status" }],
+          total: 1,
+          page: 1,
+          pageSize: 10,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      )
+    ) as typeof fetch;
+    const container = await renderApp("/", {}, documents, resourceFetcher, manifest);
+
+    // Home → Data dictionary via the sidebar.
+    await act(async () => {
+      container.querySelector('a[href="/data-dictionary"]')?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, button: 0 }),
+      );
+    });
+    expect(container.querySelector("h1")?.textContent).toBe("Data dictionary");
+
+    // Click the row 「条目」 action: session-internal navigate with the row
+    // dictKey binding — the URL carries the query and the visit stack keeps
+    // Home + Data dictionary as ancestors.
+    await act(async () => {
+      (Array.from(container.querySelectorAll("button")).find((button) =>
+        button.textContent?.trim() === "Entries",
+      ) as HTMLButtonElement).click();
+    });
+    expect(window.location.pathname).toBe("/dictionary-entries/order_status");
+    expect(window.location.search).toBe("?dictTypeName=Order%20status");
+    // Semantic trail 首页 => 一级页 => 内页 (independent of how the page was
+    // reached): Home / Data dictionary / Dictionary entries.
+    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    expect(breadcrumb).not.toBeNull();
+    expect(breadcrumb?.textContent).toContain("Home");
+    expect(breadcrumb?.textContent).toContain("Data dictionary");
+    expect(breadcrumb?.textContent).toContain("Dictionary entries");
+    // The compact circular back button (semantic parent = data-dictionary).
+    const backButton = breadcrumb?.querySelector('button[aria-label]') as HTMLButtonElement | null;
+    expect(backButton).not.toBeNull();
+    await act(async () => backButton?.click());
+    expect(window.location.pathname).toBe("/data-dictionary");
+  });
+
+
+  // GOAL-015 F-007(b) (user ruling): the entries inner page requires the
+  // type context — its route is /dictionary-entries/{dictKey}, so a deep
+  // link without the param fails closed at the router (HOST_ROUTE_NOT_FOUND)
+  // instead of showing an unfiltered list / broken create form.
+  it("fails closed when the entries inner page is deep-linked without its dictKey param", async () => {
+    const manifest = validateAppManifest({
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+      app: { appId: "integration", name: "Integration", homePageRef: "home" },
+      pages: [
+        { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/home" },
+        {
+          pageId: "dictionary-entries",
+          title: "Dictionary entries",
+          schemaUrl: "/schema/dictionary-entries",
+          route: "/dictionary-entries/{dictKey}",
+        },
+      ],
+      navigation: { top: [{ pageRef: "home", label: "Home" }] },
+    });
+    const container = await renderApp("/dictionary-entries", {}, DEFAULT_DOCUMENTS, undefined, manifest);
+    expect(container.textContent).toContain("Page not found");
+    expect(container.querySelector("h1")?.textContent).not.toBe("Dictionary entries");
+  });
+
   it("renders a fail-closed fallback and returns to the manifest home route", async () => {
     const container = await renderApp("/unknown");
+    // HOST_ROUTE_NOT_FOUND global failure surface (ADR-0036 D3/D3a).
     expect(container.textContent).toContain("Page not found");
-    expect(container.textContent).toContain("/unknown");
 
     const homeButton = Array.from(container.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Return to home"),
+      button.textContent?.includes("Return home"),
     );
     expect(homeButton).not.toBeUndefined();
     await act(async () => homeButton?.click());
@@ -197,11 +389,13 @@ describe("App shell integration", () => {
     activeRoots.push({ root, container });
     await act(async () => {
       root.render(
-        <App
-          manifest={testManifest()}
-          navigationContext={{}}
-          accountError={new Error("account unavailable")}
-        />,
+        <I18nProvider>
+          <App
+            manifest={testManifest()}
+            navigationContext={{}}
+            accountError={new Error("account unavailable")}
+          />
+        </I18nProvider>,
       );
     });
     // Fail-closed: the shell still renders, but the failure is observable.
@@ -213,7 +407,11 @@ describe("App shell integration", () => {
     const healthyRoot = createRoot(healthy);
     activeRoots.push({ root: healthyRoot, container: healthy });
     await act(async () => {
-      healthyRoot.render(<App manifest={testManifest()} navigationContext={{}} />);
+      healthyRoot.render(
+        <I18nProvider>
+          <App manifest={testManifest()} navigationContext={{}} />
+        </I18nProvider>,
+      );
     });
     expect(healthy.textContent).not.toContain("Account session failed to load");
   });
@@ -242,12 +440,14 @@ describe("App shell integration", () => {
     try {
       await act(async () => {
         root.render(
-          <App
-            manifest={testManifest()}
-            navigationContext={{}}
-            schemaFetcher={schemaFetcher(DEFAULT_DOCUMENTS)}
-            resourceFetcher={resourceFetcher}
-          />,
+          <I18nProvider>
+            <App
+              manifest={testManifest()}
+              navigationContext={{}}
+              schemaFetcher={schemaFetcher(DEFAULT_DOCUMENTS)}
+              resourceFetcher={resourceFetcher}
+            />
+          </I18nProvider>,
         );
         await new Promise((resolve) => setTimeout(resolve, 0));
       });

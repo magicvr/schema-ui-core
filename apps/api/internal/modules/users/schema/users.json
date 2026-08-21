@@ -11,7 +11,8 @@
       "actions.page.trigger",
       "table.sort",
       "form.controls.extended",
-      "form.controls.advanced"
+      "form.controls.advanced",
+      "actions.upload"
     ]
   },
   "actions": {
@@ -19,51 +20,176 @@
       "type": "request",
       "method": "POST",
       "url": "/api/users",
-      "bodyMapping": { "username": "username", "name": "name", "password": "password" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "username": "username",
+        "name": "name",
+        "password": "password"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "updateUser": {
       "type": "request",
       "method": "PATCH",
       "url": "/api/users/{id}",
-      "bodyMapping": { "name": "name" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "name": "name"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "updateUserRoles": {
       "type": "request",
       "method": "PATCH",
       "url": "/api/users/{id}",
-      "bodyMapping": { "roles": "roles" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "roles": "roles"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "changeUserPassword": {
       "type": "request",
       "method": "PATCH",
       "url": "/api/users/{id}",
-      "bodyMapping": { "password": "password" },
-      "onSuccess": { "behavior": "reload" }
+      "bodyMapping": {
+        "password": "password"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
     },
     "deleteUser": {
       "type": "request",
       "method": "DELETE",
       "url": "/api/users/{id}",
-      "onSuccess": { "behavior": "reload" }
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "enableUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/enable",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "disableUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/disable",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "unlockUser": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/unlock",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "resetUserMfa": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/users/{id}/mfa/reset",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "uploadCsv": {
+      "type": "upload",
+      "url": "/api/upload",
+      "multiple": false
+    },
+    "exportUsers": {
+      "type": "custom",
+      "handler": "export.users"
+    },
+    "submitImport": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/import/users",
+      "bodyMapping": {
+        "fileId": "file"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openImport": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "import-users-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"data.import\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "file",
+              "label": "CSV file",
+              "type": "upload",
+              "actionRef": "uploadCsv",
+              "accept": ".csv,text/csv",
+              "labelKey": "schema.users.import.field.file",
+              "afterComponent": "import-template-download"
+            }
+          ],
+          "submitAction": "submitImport",
+          "submitLabel": "Import",
+          "submitLabelKey": "schema.users.import.submit"
+        }
+      }
     },
     "openCreate": {
       "type": "modal",
       "content": {
         "type": "form",
         "id": "create-user-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"users.write\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.write\""
+        },
         "props": {
           "fields": [
-            { "id": "username", "label": "Username", "type": "input" },
-            { "id": "name", "label": "Name", "type": "input" },
-            { "id": "password", "label": "Password", "type": "password" }
+            {
+              "id": "username",
+              "label": "Username",
+              "type": "input",
+              "labelKey": "schema.users.field.username"
+            },
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.users.field.name"
+            },
+            {
+              "id": "password",
+              "label": "Password",
+              "type": "password",
+              "labelKey": "schema.users.field.password"
+            }
           ],
           "submitAction": "createUser",
-          "submitLabel": "Create user"
+          "submitLabel": "Create user",
+          "submitLabelKey": "schema.users.submit.create"
         }
       }
     },
@@ -72,12 +198,26 @@
       "content": {
         "type": "form",
         "id": "edit-user-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"users.write\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.write\""
+        },
         "props": {
-          "fields": [{ "id": "name", "label": "Name", "type": "input" }],
+          "fields": [
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "labelKey": "schema.users.field.name"
+            }
+          ],
           "submitAction": "updateUser",
-          "submitLabel": "Save changes"
+          "submitLabel": "Save changes",
+          "submitLabelKey": "schema.users.submit.save"
         }
       }
     },
@@ -86,16 +226,34 @@
       "content": {
         "type": "form",
         "id": "edit-user-roles-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"roles.assign\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"roles.assign\""
+        },
         "props": {
-          "fields": [{
-            "id": "roles",
-            "label": "Role keys (comma-separated; system: admin, editor, viewer; custom keys allowed)",
-            "type": "textarea"
-          }],
+          "fields": [
+            {
+              "id": "roles",
+              "label": "Roles",
+              "type": "checkboxGroup",
+              "labelKey": "schema.users.field.roles",
+              "optionsSource": {
+                "url": "/api/roles",
+                "params": {
+                  "pageSize": 100
+                },
+                "valueField": "key",
+                "labelField": "name"
+              }
+            }
+          ],
           "submitAction": "updateUserRoles",
-          "submitLabel": "Save roles"
+          "submitLabel": "Save roles",
+          "submitLabelKey": "schema.users.submit.saveRoles"
         }
       }
     },
@@ -104,12 +262,26 @@
       "content": {
         "type": "form",
         "id": "change-user-password-form",
-        "permissionCascade": { "keys": ["edit"] },
-        "permissions": { "edit": "$context.user.permissions contains \"users.write\"" },
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.write\""
+        },
         "props": {
-          "fields": [{ "id": "password", "label": "New password", "type": "password" }],
+          "fields": [
+            {
+              "id": "password",
+              "label": "New password",
+              "type": "password",
+              "labelKey": "schema.users.field.newPassword"
+            }
+          ],
           "submitAction": "changeUserPassword",
-          "submitLabel": "Change password"
+          "submitLabel": "Change password",
+          "submitLabelKey": "schema.users.submit.changePassword"
         }
       }
     }
@@ -119,46 +291,303 @@
     "id": "users",
     "children": [
       {
+        "type": "form",
+        "id": "users-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "users-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.users.search.q"
+            },
+            {
+              "id": "enabled",
+              "type": "select",
+              "labelKey": "schema.users.filter.enabled",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.users.filter.enabled.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.users.filter.enabled.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.users.filter.enabled.no"
+                }
+              ]
+            },
+            {
+              "id": "locked",
+              "type": "select",
+              "labelKey": "schema.users.filter.locked",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.users.filter.locked.all"
+                },
+                {
+                  "value": "true",
+                  "labelKey": "schema.users.filter.locked.yes"
+                },
+                {
+                  "value": "false",
+                  "labelKey": "schema.users.filter.locked.no"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
         "type": "table",
         "id": "users-table",
-        "permissionCascade": { "keys": ["edit", "delete"] },
+        "permissionCascade": {
+          "keys": [
+            "edit",
+            "delete"
+          ]
+        },
         "permissions": {
           "edit": "$context.user.permissions contains \"users.write\"",
           "delete": "$context.user.permissions contains \"users.write\""
         },
         "props": {
           "columns": [
-            { "field": "id", "label": "ID" },
-            { "field": "username", "label": "Username", "sortable": true },
-            { "field": "name", "label": "Name", "sortable": true },
-            { "field": "roles", "label": "Roles" },
-            { "field": "updatedAt", "label": "Updated", "sortable": true }
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "field": "username",
+              "label": "Username",
+              "sortable": true,
+              "labelKey": "schema.users.column.username"
+            },
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.users.column.name"
+            },
+            {
+              "field": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.users.column.enabled"
+            },
+            {
+              "field": "mfaEnabled",
+              "label": "MFA",
+              "labelKey": "schema.users.column.mfaEnabled"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.users.column.updated"
+            }
           ],
           "dataSource": "/api/users",
           "toolbar": [
-            { "key": "create", "label": "New user", "actionRef": "openCreate", "permissionIntent": "edit" }
+            {
+              "key": "create",
+              "label": "New user",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.users.toolbar.newUser"
+            },
+            {
+              "key": "export",
+              "label": "Export",
+              "actionRef": "exportUsers",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"data.export\""
+              },
+              "labelKey": "schema.users.toolbar.export"
+            },
+            {
+              "key": "import",
+              "label": "Import",
+              "actionRef": "openImport",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"data.import\""
+              },
+              "labelKey": "schema.users.toolbar.import"
+            }
           ],
           "actions": [
-            { "key": "edit", "label": "Edit", "actionRef": "openEdit", "permissionIntent": "edit" },
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit",
+              "labelKey": "schema.users.action.edit"
+            },
             {
               "key": "roles",
               "label": "Roles",
               "actionRef": "openRoles",
-              "permissions": { "edit": "$context.user.permissions contains \"roles.assign\"" }
+              "permissions": {
+                "edit": "$context.user.permissions contains \"roles.assign\""
+              },
+              "labelKey": "schema.users.action.roles"
             },
-            { "key": "password", "label": "Password", "actionRef": "openPassword", "permissionIntent": "edit" },
+            {
+              "key": "password",
+              "label": "Password",
+              "actionRef": "openPassword",
+              "permissionIntent": "edit",
+              "labelKey": "schema.users.action.password"
+            },
+            {
+              "key": "enable",
+              "label": "Enable",
+              "actionRef": "enableUser",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.enable\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "enabled",
+                "equals": true
+              },
+              "confirm": "Enable this user?",
+              "labelKey": "schema.users.action.enable",
+              "confirmKey": "schema.users.confirm.enable"
+            },
+            {
+              "key": "disable",
+              "label": "Disable",
+              "actionRef": "disableUser",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.disable\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "enabled",
+                "equals": false
+              },
+              "confirm": "Disable this user? All sessions will be revoked.",
+              "labelKey": "schema.users.action.disable",
+              "confirmKey": "schema.users.confirm.disable"
+            },
+            {
+              "key": "unlock",
+              "label": "Unlock",
+              "actionRef": "unlockUser",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.enable\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "locked",
+                "equals": false
+              },
+              "confirm": "Unlock this user?",
+              "labelKey": "schema.users.action.unlock",
+              "confirmKey": "schema.users.confirm.unlock"
+            },
+            {
+              "key": "resetMfa",
+              "label": "Reset MFA",
+              "actionRef": "resetUserMfa",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.mfa-reset\""
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "disabledWhen": {
+                "field": "mfaEnabled",
+                "equals": false
+              },
+              "confirm": "Reset this user's MFA? All sessions will be revoked.",
+              "labelKey": "schema.users.action.resetMfa",
+              "confirmKey": "schema.users.confirm.resetMfa"
+            },
             {
               "key": "delete",
               "label": "Delete",
               "actionRef": "deleteUser",
               "permissionIntent": "delete",
-              "requestMapping": { "path": { "id": "$row.id" } },
-              "confirm": "Delete this user?"
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "confirm": "Delete this user?",
+              "labelKey": "schema.users.action.delete",
+              "confirmKey": "schema.users.confirm.delete"
             }
           ]
         }
       },
-      { "type": "recordView", "id": "user-detail", "props": {} }
+      {
+        "type": "recordView",
+        "id": "user-detail",
+        "props": {
+          "title": "User details",
+          "titleKey": "schema.users.detail.title",
+          "fields": [
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "key": "username",
+              "label": "Username",
+              "labelKey": "schema.users.column.username"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "labelKey": "schema.users.column.name"
+            },
+            {
+              "key": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.users.column.created"
+            },
+            {
+              "key": "updatedAt",
+              "label": "Updated",
+              "labelKey": "schema.users.column.updated"
+            }
+          ]
+        }
+      }
     ]
   }
 }

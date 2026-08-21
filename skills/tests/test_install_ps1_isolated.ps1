@@ -69,8 +69,8 @@ try {
         (Join-Path $TempRoot 'docs\templates\workspace-context.md'),
         (Join-Path $TempRoot 'docs\templates\goal-folder\00-meta.md'),
         # GOAL-019 phase C: --init-workspace skeleton
-        (Join-Path $TempRoot 'docs\workspace-001-pilot-app\workspace.md'),
-        (Join-Path $TempRoot 'docs\workspace-001-pilot-app\goal-tree.md')
+        (Join-Path $TempRoot 'docs\workspaces\workspace-001-pilot-app\workspace.md'),
+        (Join-Path $TempRoot 'docs\workspaces\workspace-001-pilot-app\goal-tree.md')
     )
 
     $missing = @()
@@ -147,20 +147,20 @@ try {
         $contentOk = $false
     }
 
-    $wsPath = Join-Path $TempRoot 'docs\workspace-001-pilot-app\workspace.md'
+    $wsPath = Join-Path $TempRoot 'docs\workspaces\workspace-001-pilot-app\workspace.md'
     if (Test-Path -LiteralPath $wsPath -PathType Leaf) {
         $wsText = Get-Content -LiteralPath $wsPath -Raw -Encoding UTF8
         if ($wsText -notmatch 'root_goal:\s*GOAL-001-pilot-vision') {
             Write-Host 'FAIL: workspace.md missing bound root_goal GOAL-001-pilot-vision'
             $contentOk = $false
         }
-        if ($wsText -notmatch 'canonical_scope:\s*docs/workspace-001-pilot-app/') {
+        if ($wsText -notmatch 'canonical_scope:\s*docs/workspaces/workspace-001-pilot-app/') {
             Write-Host 'FAIL: workspace.md missing canonical_scope'
             $contentOk = $false
         }
     }
     # Scaffold must NOT create Root five-pack
-    if (Test-Path -LiteralPath (Join-Path $TempRoot 'docs\workspace-001-pilot-app\GOAL-001-pilot-vision') -PathType Container) {
+    if (Test-Path -LiteralPath (Join-Path $TempRoot 'docs\workspaces\workspace-001-pilot-app\GOAL-001-pilot-vision') -PathType Container) {
         Write-Host 'FAIL: init-workspace must not create GOAL-* five-pack'
         $contentOk = $false
     }

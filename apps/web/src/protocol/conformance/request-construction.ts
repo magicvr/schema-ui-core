@@ -43,6 +43,18 @@ function isProtocolRelativeUrl(url: string): boolean {
   return PROTOCOL_URL_RE.test(url);
 }
 
+// safeDecode tolerates malformed percent-encoding: decodeURIComponent throws
+// URIError on inputs like "%zz" or a trailing "%", and an uncaught throw here
+// would crash the whole action path. The raw part is passed through unchanged
+// so a later encodeRFC3986 round-trip produces a valid URL (D4).
+function safeDecode(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return part;
+  }
+}
+
 function splitUrl(url: string): { path: string; query: Map<string, string> } {
   const qIndex = url.indexOf("?");
   if (qIndex < 0) {
@@ -60,7 +72,7 @@ function splitUrl(url: string): { path: string; query: Map<string, string> } {
     const key = eq < 0 ? part : part.slice(0, eq);
     const value = eq < 0 ? "" : part.slice(eq + 1);
     // Base query values in fixtures are already literal (not double-encoded).
-    query.set(decodeURIComponent(key), decodeURIComponent(value));
+    query.set(safeDecode(key), safeDecode(value));
   }
   return { path, query };
 }
@@ -256,9 +268,24 @@ function buildDataRef(input: JsonObject): RequestConstructionResult {
   if (dataRef.requestInterceptor !== undefined) {
     return fail("INTERCEPTOR_VIOLATION", "requestInterceptor");
   }
+  // ADR-0039 (since 2.9): params may bind whole $context.route.query.* /
+  // $context.route.params.* values (any context). A missing route key (or an
+  // absent route input) is a tombstone: the parameter is deleted from the URL
+  // and the request still succeeds (ADR-0010 semantics, data-ref-route-* cases).
+  const route = (input.route as { query?: JsonObject; params?: JsonObject }) ?? {};
   const { path, query } = splitUrl(url);
   const params = (dataRef.params as JsonObject | undefined) ?? {};
   for (const [key, value] of Object.entries(params)) {
+    if (typeof value === "string" && value.startsWith("$context.route.")) {
+      const resolved = resolveRouteExpr(value, route, "dataRef.params." + key);
+      if (!resolved.ok) {
+        // Missing route key / no route context: tombstone delete, keep going.
+        query.delete(key);
+        continue;
+      }
+      query.set(key, resolved.value);
+      continue;
+    }
     if (value === null) {
       query.delete(key);
       continue;
@@ -469,7 +496,11 @@ function buildRecordSource(input: JsonObject): RequestConstructionResult {
     return fail("EMPTY_RESPONSE_MAPPING", "recordSource.responseMapping");
   }
   const url = rs.url as string;
-  if (typeof url !== "string" || (!isProtocolRelativeUrl(url) && !url.startsWith("/"))) {
+  // D-001 P0: recordSource must be a strict relative protocol URL (single
+  // slash, no `//`), matching rowAction/upload validation. `//host` would be
+  // resolved as a protocol-relative external URL, and authFetch would attach
+  // the Bearer access token to the external request.
+  if (typeof url !== "string" || !isRelativeProtocolUrl(url)) {
     return fail("INVALID_PROTOCOL_URL", "recordSource.url");
   }
   const route = (input.route as { query?: JsonObject; params?: JsonObject }) ?? {};
@@ -513,7 +544,10 @@ function buildPageTriggerRequest(input: JsonObject): RequestConstructionResult {
   if (method === "GET") {
     return fail("PAGE_TRIGGER_METHOD_NOT_ALLOWED", "action.method");
   }
-  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
+  // W4 P1-2: same strict relative-protocol check as every other builder
+  // (rejects `//`, backslash, whitespace — `/\\evil.com` would otherwise be
+  // parsed by the browser as the external host `//evil.com`).
+  if (!isRelativeProtocolUrl(url)) {
     return fail("INVALID_PROTOCOL_URL", "action.url");
   }
   if (extractPathParams(url).length > 0) {
@@ -530,7 +564,8 @@ function buildPageTriggerNavigate(input: JsonObject): RequestConstructionResult 
   if (confirm) return confirm;
   const action = input.action as JsonObject;
   const url = action.url as string;
-  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
+  // W4 P1-2: same strict relative-protocol check as buildPageTriggerRequest.
+  if (!isRelativeProtocolUrl(url)) {
     return fail("INVALID_PROTOCOL_URL", "action.url");
   }
   if (extractPathParams(url).length > 0) {
@@ -559,6 +594,12 @@ function buildPageTriggerModal(input: JsonObject): RequestConstructionResult {
 
 function buildOutcomeNavigate(input: JsonObject): RequestConstructionResult {
   const url = input.url as string;
+  // W4 P1-2: navigation outcomes must stay inside the app — reject absolute
+  // URLs (open-redirect surface) and protocol-relative/backslash smuggling.
+  // `input.appRouteRoot` is applied on top of a validated relative path.
+  if (!isRelativeProtocolUrl(url)) {
+    return fail("INVALID_PROTOCOL_URL", "navigation.url");
+  }
   const finalUrl = joinBase(input.appRouteRoot as string | undefined, url);
   return {
     ok: true,

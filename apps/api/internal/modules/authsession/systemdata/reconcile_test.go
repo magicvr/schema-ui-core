@@ -276,3 +276,26 @@ func TestReconcileIdentityConflictRollsBackLedger(t *testing.T) {
 		t.Fatalf("failed reconcile wrote %d ledger rows, want rollback", got)
 	}
 }
+
+// A-002 F-004: NeedsBootstrap reports true on a user-less store and false once
+// a bootstrap admin exists — the C4 retry gate the composition root relies on.
+func TestNeedsBootstrapTracksUserPresence(t *testing.T) {
+	st := openTestStore(t)
+	needed, err := NeedsBootstrap(context.Background(), st)
+	if err != nil {
+		t.Fatalf("NeedsBootstrap on empty store: %v", err)
+	}
+	if !needed {
+		t.Fatal("NeedsBootstrap on a user-less store must be true")
+	}
+	if err := Bootstrap(context.Background(), st, "admin", "hash"); err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+	needed, err = NeedsBootstrap(context.Background(), st)
+	if err != nil {
+		t.Fatalf("NeedsBootstrap after bootstrap: %v", err)
+	}
+	if needed {
+		t.Fatal("NeedsBootstrap after bootstrap must be false")
+	}
+}

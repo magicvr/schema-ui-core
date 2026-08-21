@@ -18,14 +18,14 @@ func TestBuiltinProfilesResolveDeterministically(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := mvp.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles"}; !reflect.DeepEqual(got, want) {
+	if got, want := mvp.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles", "admin.account", "admin.dashboard", "admin.notifications"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("mvp modules = %v, want %v", got, want)
 	}
 	plan, err := registry.Resolve(mvp.Modules)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := plan.IDs(), []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.roles", "admin.users"}; !reflect.DeepEqual(got, want) {
+	if got, want := plan.IDs(), []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.account", "admin.dashboard", "admin.notifications", "admin.roles", "admin.users"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("mvp plan = %v, want %v", got, want)
 	}
 
@@ -36,6 +36,41 @@ func TestBuiltinProfilesResolveDeterministically(t *testing.T) {
 	if _, err := registry.Resolve(admin.Modules); err != nil {
 		t.Fatal(err)
 	}
+
+	// W2 (GOAL-003 / workspace-010): demo = mvp capability set + dev.examples.
+	demo, err := ResolveProfile("demo", nil)
+	if err != nil {
+		t.Fatalf("resolve demo: %v", err)
+	}
+	if got, want := demo.Modules, []string{"core.server-registration", "core.auth-session", "core.manifest-route", "core.navigation-capability", "core.schema-render", "core.operationlog", "admin.users", "admin.roles", "dev.examples", "admin.account", "admin.dashboard", "admin.notifications"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("demo modules = %v, want %v", got, want)
+	}
+	if _, err := registry.Resolve(demo.Modules); err != nil {
+		t.Fatalf("resolve demo plan: %v", err)
+	}
+}
+
+// TestDemoProfileIsNonProduction verifies demo is never used as a production
+// default and mvp/admin keep excluding dev.examples (W1 hygiene, GOAL-003 S3).
+func TestDemoProfileIsNonProduction(t *testing.T) {
+	for _, name := range []ProfileName{ProfileMVP, ProfileAdmin} {
+		resolution, err := ResolveProfile(string(name), nil)
+		if err != nil {
+			t.Fatalf("%s resolve: %v", name, err)
+		}
+		for _, id := range resolution.Modules {
+			if id == "dev.examples" {
+				t.Fatalf("%s default profile must not include dev.examples (W1 S5)", name)
+			}
+		}
+	}
+	demo, err := ResolveProfile(string(ProfileDemo), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if demo.Source != "profile.default" {
+		t.Fatalf("demo source = %q, want profile.default", demo.Source)
+	}
 }
 
 func TestProfileOverrideAndCustomRequireExplicitModules(t *testing.T) {
@@ -43,7 +78,7 @@ func TestProfileOverrideAndCustomRequireExplicitModules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resolved.Source != "modules.enabled" || !reflect.DeepEqual(resolved.Modules, []string{"core.server-registration"}) {
+	if resolved.Source != "modules.list" || !reflect.DeepEqual(resolved.Modules, []string{"core.server-registration"}) {
 		t.Fatalf("unexpected override: %+v", resolved)
 	}
 	if _, err := ResolveProfile("custom", nil); err == nil {

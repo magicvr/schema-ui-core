@@ -64,7 +64,51 @@ func open(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 // WasFresh reports whether the database was empty before migration.
 func (s *Store) WasFresh() bool { return s.fresh }
 
-// WithTx exposes the platform transaction boundary to module repositories.
+// Dialect reports the dialect this store implements (kernel port; R1 v1.4 §2).
+func (s *Store) Dialect() kernel.Dialect { return kernel.DialectSQLite }
+
+// Run executes fn inside one transaction and exposes the dialect-neutral
+// kernel.Tx (R1 v1.4 §2). This is the kernel port entry point; R4 completed the
+// public-surface migration, so modules/jobs/handler speak kernel.Tx — the
+// sqlite-only WithTx below is a retained test/adaptation seam, not part of the
+// module public contract (A-001 F-001).
+//
+// Nested Run is forbidden and detected per-callback via a goroutine-local
+// marker (R1 v1.4 A-008 F-004 permits a ctx value or the equivalent
+// call-stack/goroutine-local): a Store-level flag would misclassify the
+// concurrent Runs that the postgres pool is allowed to carry.
+func (s *Store) Run(ctx context.Context, fn func(kernel.Tx) error) error {
+	if err := enterRun(); err != nil {
+		return err
+	}
+	defer leaveRun()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	// R1 v1.4 §2: a panicking fn rolls the transaction back and re-panics, so
+	// the tx handle is never abandoned and the caller still observes the panic.
+	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			panic(r)
+		}
+	}()
+	if err := fn(sqlTx{tx: tx}); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return nil
+}
+
+// WithTx is the retained sqlite-only adaptation seam (tests / testsupport /
+// legacy callers). It is NOT part of the dialect-neutral module contract, which
+// goes through Run(func(kernel.Tx)); production wiring never injects it after
+// R4 (A-001 F-001 — intentionally kept, documented as hygiene debt).
 func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -78,6 +122,22 @@ func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 		return err
 	}
 	return nil
+}
+
+// sqlTx adapts *sql.Tx to kernel.Tx. SQLite keeps the '?' placeholder, so no
+// rebinding is applied here.
+type sqlTx struct{ tx *sql.Tx }
+
+func (t sqlTx) Exec(ctx context.Context, query string, args ...any) (kernel.Result, error) {
+	return t.tx.ExecContext(ctx, query, args...)
+}
+
+func (t sqlTx) Query(ctx context.Context, query string, args ...any) (kernel.Rows, error) {
+	return t.tx.QueryContext(ctx, query, args...)
+}
+
+func (t sqlTx) QueryRow(ctx context.Context, query string, args ...any) kernel.Row {
+	return t.tx.QueryRowContext(ctx, query, args...)
 }
 
 // MarkSystemDataReady records successful post-finalize reconciliation.

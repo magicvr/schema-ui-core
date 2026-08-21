@@ -1,0 +1,337 @@
+{
+  "meta": {
+    "pageId": "dictionary-entries",
+    "title": "Dictionary entries",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended",
+      "form.controls.advanced",
+      "data.route-binding",
+      "form.controls.readonly"
+    ]
+  },
+  "actions": {
+    "createEntry": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/data-dictionary/entries",
+      "bodyMapping": {
+        "dictKey": "dictKey",
+        "entryKey": "entryKey",
+        "label": "label",
+        "enabled": "enabled",
+        "sort": "sort",
+        "remark": "remark"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "updateEntry": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/data-dictionary/entries/{id}",
+      "bodyMapping": {
+        "dictKey": "dictKey",
+        "label": "label",
+        "enabled": "enabled",
+        "sort": "sort",
+        "remark": "remark"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "deleteEntry": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/data-dictionary/entries/{id}",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-dict-entry-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"dictionary.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "dictKey",
+              "label": "Type (read-only)",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.dictKeyReadonly",
+              "required": true,
+              "readOnly": true
+            },
+            {
+              "id": "dictTypeName",
+              "label": "Type name",
+              "type": "input",
+              "readOnly": true,
+              "labelKey": "schema.dictionaryEntries.field.dictTypeName"
+            },
+            {
+              "id": "entryKey",
+              "label": "Entry key",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.entryKey",
+              "required": true
+            },
+            {
+              "id": "label",
+              "label": "Label",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.label",
+              "required": true
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.dictionaryEntries.field.enabled"
+            },
+            {
+              "id": "sort",
+              "label": "Sort",
+              "type": "inputNumber",
+              "defaultValue": 0,
+              "labelKey": "schema.dictionaryEntries.field.sort"
+            },
+            {
+              "id": "remark",
+              "label": "Remark",
+              "type": "textarea",
+              "labelKey": "schema.dictionaryEntries.field.remark"
+            },
+            {
+              "id": "badgeStyle",
+              "label": "Badge style",
+              "type": "select",
+              "defaultValue": "default",
+              "labelKey": "schema.dictionaryEntries.field.badgeStyle",
+              "options": [
+                { "value": "default", "labelKey": "schema.dictionaryEntries.badge.default" },
+                { "value": "success", "labelKey": "schema.dictionaryEntries.badge.success" },
+                { "value": "warning", "labelKey": "schema.dictionaryEntries.badge.warning" },
+                { "value": "destructive", "labelKey": "schema.dictionaryEntries.badge.destructive" },
+                { "value": "info", "labelKey": "schema.dictionaryEntries.badge.info" }
+              ]
+            }
+          ],
+          "submitAction": "createEntry",
+          "submitLabel": "Create entry",
+          "submitLabelKey": "schema.dictionaryEntries.submit.create"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-dict-entry-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"dictionary.write\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "dictKey",
+              "label": "Type key (read-only)",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.dictKeyReadonly",
+              "readOnly": true
+            },
+            {
+              "id": "dictTypeName",
+              "label": "Type name",
+              "type": "input",
+              "readOnly": true,
+              "labelKey": "schema.dictionaryEntries.field.dictTypeName"
+            },
+            {
+              "id": "label",
+              "label": "Label",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.field.label"
+            },
+            {
+              "id": "enabled",
+              "label": "Enabled",
+              "type": "switch",
+              "defaultValue": true,
+              "labelKey": "schema.dictionaryEntries.field.enabled"
+            },
+            {
+              "id": "sort",
+              "label": "Sort",
+              "type": "inputNumber",
+              "defaultValue": 0,
+              "labelKey": "schema.dictionaryEntries.field.sort"
+            },
+            {
+              "id": "remark",
+              "label": "Remark",
+              "type": "textarea",
+              "labelKey": "schema.dictionaryEntries.field.remark"
+            },
+            {
+              "id": "badgeStyle",
+              "label": "Badge style",
+              "type": "select",
+              "defaultValue": "default",
+              "labelKey": "schema.dictionaryEntries.field.badgeStyle",
+              "options": [
+                { "value": "default", "labelKey": "schema.dictionaryEntries.badge.default" },
+                { "value": "success", "labelKey": "schema.dictionaryEntries.badge.success" },
+                { "value": "warning", "labelKey": "schema.dictionaryEntries.badge.warning" },
+                { "value": "destructive", "labelKey": "schema.dictionaryEntries.badge.destructive" },
+                { "value": "info", "labelKey": "schema.dictionaryEntries.badge.info" }
+              ]
+            }
+          ],
+          "submitAction": "updateEntry",
+          "submitLabel": "Save changes",
+          "submitLabelKey": "schema.dictionaryEntries.submit.save"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "dictionary-entries",
+    "children": [
+      {
+        "type": "form",
+        "id": "dict-entries-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "dict-entries-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.dictionaryEntries.search.q"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "dict-entries-table",
+        "permissionCascade": {
+          "keys": [
+            "edit",
+            "delete"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"dictionary.write\"",
+          "delete": "$context.user.permissions contains \"dictionary.write\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "dictTypeName",
+              "label": "Type",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.dictKey"
+            },
+            {
+              "field": "entryKey",
+              "label": "Entry key",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.entryKey"
+            },
+            {
+              "field": "label",
+              "label": "Label",
+              "sortable": true,
+              "badgeStyleField": "badgeStyle",
+              "labelKey": "schema.dictionaryEntries.column.label"
+            },
+            {
+              "field": "enabled",
+              "label": "Enabled",
+              "labelKey": "schema.dictionaryEntries.column.enabled"
+            },
+            {
+              "field": "sort",
+              "label": "Sort",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.sort"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.dictionaryEntries.column.updated"
+            }
+          ],
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New entry",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.dictionaryEntries.toolbar.newEntry"
+            }
+          ],
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit",
+              "labelKey": "schema.dictionaryEntries.action.edit"
+            },
+            {
+              "key": "delete",
+              "label": "Delete",
+              "actionRef": "deleteEntry",
+              "permissionIntent": "delete",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "confirm": "Delete this entry?",
+              "labelKey": "schema.dictionaryEntries.action.delete",
+              "confirmKey": "schema.dictionaryEntries.confirm.delete"
+            }
+          ]
+        },
+        "data": {
+          "source": "api",
+          "url": "/api/data-dictionary/entries",
+          "params": {
+            "dictKey": "$context.route.params.dictKey"
+          }
+        }
+      }
+    ]
+  }
+}

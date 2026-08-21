@@ -5,11 +5,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
@@ -108,6 +110,62 @@ func TestUsersCreateUpdateDeleteLifecycle(t *testing.T) {
 	code, body := getResource(t, env, "/api/users/usr-nonexistent")
 	if code != http.StatusNotFound || body["error"] != "USER_NOT_FOUND" {
 		t.Fatalf("not found = %d %v, want 404 USER_NOT_FOUND", code, body)
+	}
+}
+
+// D1 hardening: PATCH with "roles": null means "no role change" — it must not
+// clear the user's roles (null ≠ explicit empty array).
+func TestUsersPatchRolesNullKeepsRoles(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+	req := bearer(t, token, http.MethodPost, "/api/users",
+		`{"username":"alice","name":"Alice","password":"secret123","roles":["editor"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatalf("created user missing id: %v", created)
+	}
+
+	// Explicit empty array clears roles (existing contract).
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"roles":[]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("patch empty roles status = %d", rr.Code)
+	}
+	_, detail := getResource(t, env, "/api/users/"+id)
+	if got := detail["roles"]; got != nil {
+		if arr, ok := got.([]any); !ok || len(arr) != 0 {
+			t.Fatalf("roles after explicit [] = %v, want empty", got)
+		}
+	}
+
+	// Re-assign a role, then patch with roles: null → roles must be unchanged.
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"roles":["viewer"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("reassign status = %d", rr.Code)
+	}
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"roles":null,"name":"Alice N."}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("patch null roles status = %d: %s", rr.Code, rr.Body.String())
+	}
+	_, detail = getResource(t, env, "/api/users/"+id)
+	if detail["name"] != "Alice N." {
+		t.Fatalf("name = %v, want updated Alice N.", detail["name"])
+	}
+	roles, _ := detail["roles"].([]any)
+	if len(roles) != 1 || roles[0] != "viewer" {
+		t.Fatalf("roles after null patch = %v, want [viewer] (unchanged)", detail["roles"])
 	}
 }
 
@@ -326,6 +384,102 @@ func TestUsersRoleAssignmentAuthorization(t *testing.T) {
 	}
 }
 
+// D-001 P1 · target-side delegation boundary: a non-admin with users.write
+// (delegated users manager) must not reset an admin's password and must not
+// demote an admin, while still being able to manage non-admin accounts.
+func TestUsersAdminTargetBoundary(t *testing.T) {
+	env := newAuthTestEnv(t)
+	now := time.Now().UTC()
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"users-manager", "Users manager",
+		[]string{"roles.assign", "roles.read", "users.read", "users.write", "operations.read", "data.export"}, nil, now,
+	); err != nil {
+		t.Fatalf("create users-manager role: %v", err)
+	}
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"users-writer", "Users writer",
+		[]string{"users.read", "users.write"}, nil, now,
+	); err != nil {
+		t.Fatalf("create users-writer role: %v", err)
+	}
+	env.addUser(t, "um", "um-password", []string{"users-manager"})
+	env.addUser(t, "uw", "uw-password", []string{"users-writer"})
+	umToken := env.login(t, "um", "um-password")
+	uwToken := env.login(t, "uw", "uw-password")
+
+	// Non-admin cannot reset the admin's password (ADMIN_ACCOUNT_FORBIDDEN, not
+	// ROLE_ASSIGNMENT_FORBIDDEN — no role change is involved).
+	req := bearer(t, umToken, http.MethodPatch, "/api/users/user-admin", `{"password":"newpass123"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("reset admin password = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	var out map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "ADMIN_ACCOUNT_FORBIDDEN" {
+		t.Fatalf("error = %v, want ADMIN_ACCOUNT_FORBIDDEN", out["error"])
+	}
+
+	// A non-admin without roles.assign cannot even attempt the demote path
+	// (assignment-side check fires first, ROLE_ASSIGNMENT_FORBIDDEN).
+	req = bearer(t, uwToken, http.MethodPatch, "/api/users/user-admin", `{"roles":["editor"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("demote without roles.assign = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "ROLE_ASSIGNMENT_FORBIDDEN" {
+		t.Fatalf("demote-without-assign error = %v, want ROLE_ASSIGNMENT_FORBIDDEN", out["error"])
+	}
+
+	// A non-admin WITH roles.assign but not an admin cannot demote the admin
+	// (target-side check, ADMIN_ACCOUNT_FORBIDDEN).
+	req = bearer(t, umToken, http.MethodPatch, "/api/users/user-admin", `{"roles":["editor"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("demote admin = %d, want 403: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "ADMIN_ACCOUNT_FORBIDDEN" {
+		t.Fatalf("demote error = %v, want ADMIN_ACCOUNT_FORBIDDEN", out["error"])
+	}
+
+	// The admin's password still works and roles are unchanged (seed = admin+editor).
+	if _, _, _, err := env.a.Login(testSeedUsername, testSeedPassword, now.Add(time.Minute)); err != nil {
+		t.Fatalf("admin login after boundary rejections: %v", err)
+	}
+	_, detail := getResource(t, env, "/api/users/user-admin")
+	roles, _ := detail["roles"].([]any)
+	if len(roles) != 2 || !slices.Contains(roles, "admin") || !slices.Contains(roles, "editor") {
+		t.Fatalf("admin roles after boundary rejections = %v, want [admin editor]", detail["roles"])
+	}
+
+	// The delegated manager can still manage a non-admin account: create one,
+	// change its password and roles.
+	req = bearer(t, umToken, http.MethodPost, "/api/users",
+		`{"username":"plain-user","name":"Plain","password":"plain-pass-1","roles":["viewer"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("delegated create = %d, want 201: %s", rr.Code, rr.Body.String())
+	}
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	id, _ := out["id"].(string)
+	req = bearer(t, umToken, http.MethodPatch, "/api/users/"+id,
+		`{"password":"plain-pass-2","roles":["viewer","editor"]}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("delegated patch non-admin = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	if _, _, _, err := env.a.Login("plain-user", "plain-pass-2", now.Add(2*time.Minute)); err != nil {
+		t.Fatalf("plain-user login with new password: %v", err)
+	}
+}
+
 func TestUsersPasswordPolicyPreservesBytesAndRevokesRefresh(t *testing.T) {
 	env := newAuthTestEnv(t)
 	token := adminToken(t, env)
@@ -394,8 +548,11 @@ func TestUsersPasswordPolicyPreservesBytesAndRevokesRefresh(t *testing.T) {
 	req = bearer(t, access, http.MethodGet, "/api/accounts/me", "")
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Fatalf("existing access token before TTL expiry = %d, want 200", rr.Code)
+	// W4 P0-3: a password change bumps token_version, so an access token issued
+	// at the older version is revoked immediately (previously it survived until
+	// its TTL expired).
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("existing access token after password change = %d, want 401 (revoked by token_version)", rr.Code)
 	}
 	if _, _, _, err := env.a.Login("password-user", password, now.Add(time.Minute)); !errors.Is(err, auth.ErrInvalidCredentials) {
 		t.Fatalf("old password login err = %v, want ErrInvalidCredentials", err)
@@ -468,12 +625,91 @@ func TestUsersOperationLogEvents(t *testing.T) {
 		if op.Detail != nil && strings.Contains(*op.Detail, "password") {
 			t.Fatalf("detail leaked a secret: %v", *op.Detail)
 		}
-		if op.Event == operationlog.EventUserDelete {
-			if op.Detail != nil {
-				t.Fatalf("delete detail = %q, want nil", *op.Detail)
-			}
-		} else if op.Detail == nil || *op.Detail != `{"username":"opuser"}` {
-			t.Fatalf("%s detail = %v, want username-only JSON", op.Event, op.Detail)
+		if op.Detail == nil {
+			t.Fatalf("%s detail is nil, want R2 envelope", op.Event)
 		}
+		detail, parseErr := operationlog.ParseDetail(*op.Detail)
+		if parseErr != nil {
+			t.Fatalf("%s detail = %q is not R2 envelope: %v", op.Event, *op.Detail, parseErr)
+		}
+		wantAction := "delete"
+		if op.Event == operationlog.EventUserCreate {
+			wantAction = "create"
+		} else if op.Event == operationlog.EventUserUpdate {
+			wantAction = "update"
+		}
+		if detail.Action != wantAction {
+			t.Fatalf("%s detail action = %q, want %q", op.Event, detail.Action, wantAction)
+		}
+		if op.Event != operationlog.EventUserDelete && detail.After["username"] != "opuser" {
+			t.Fatalf("%s detail username = %v, want opuser", op.Event, detail.After["username"])
+		}
+	}
+}
+
+// W4 P0-3: changing a user's password bumps token_version, which revokes every
+// already-issued access token immediately (the auth middleware compares the
+// JWT's tv claim to the persisted value). A stolen access token signed before
+// the password change must stop working at once, not after the access TTL.
+func TestUsersPasswordChangeRevokesAccessToken(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+
+	// Create a user, log in as them → access token at token_version 0.
+	req := bearer(t, admin, http.MethodPost, "/api/users",
+		`{"username":"alice","name":"Alice","password":"old-secret","roles":["editor"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatalf("created user missing id: %v", created)
+	}
+	// W16-F01: API-created users start with must_change_password=1. This test
+	// targets token-version revocation, so clear the forced-change flag before
+	// probing protected routes.
+	mustChange := false
+	if _, err := env.authRepository.UpdateUser(id, authsession.UserPatch{MustChangePassword: &mustChange}, id, time.Now().UTC()); err != nil {
+		t.Fatalf("clear must_change_password: %v", err)
+	}
+	oldToken := env.login(t, "alice", "old-secret")
+
+	// The pre-change token works on a protected route.
+	probe := bearer(t, oldToken, http.MethodGet, "/api/users/"+id, "")
+	probeRR := httptest.NewRecorder()
+	env.mux.ServeHTTP(probeRR, probe)
+	if probeRR.Code != http.StatusOK {
+		t.Fatalf("pre-change access token status = %d, want 200", probeRR.Code)
+	}
+
+	// Admin resets alice's password (token_version bumps from 0 to 1).
+	req = bearer(t, admin, http.MethodPatch, "/api/users/"+id, `{"password":"new-secret"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("password patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// The old access token is now rejected immediately (revoked by version).
+	probe = bearer(t, oldToken, http.MethodGet, "/api/users/"+id, "")
+	probeRR = httptest.NewRecorder()
+	env.mux.ServeHTTP(probeRR, probe)
+	if probeRR.Code != http.StatusUnauthorized {
+		t.Fatalf("post-change access token status = %d, want 401 (revoked)", probeRR.Code)
+	}
+
+	// The new password works, and the old one no longer authenticates.
+	newToken := env.login(t, "alice", "new-secret")
+	if newToken == "" {
+		t.Fatal("login with new password failed")
+	}
+	oldLoginCode, _ := sendJSON(t, env.mux, http.MethodPost, "/api/auth/login",
+		`{"username":"alice","password":"old-secret"}`)
+	if oldLoginCode != http.StatusUnauthorized {
+		t.Fatalf("old password login = %d, want 401", oldLoginCode)
 	}
 }

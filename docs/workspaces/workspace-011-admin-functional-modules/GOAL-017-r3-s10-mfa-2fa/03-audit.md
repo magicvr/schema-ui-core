@@ -1,0 +1,60 @@
+---
+id: GOAL-017-r3-s10-mfa-2fa
+doc: audit
+status: active
+parent: GOAL-001-admin-functional-modules
+created: 2026-08-15
+updated: 2026-08-15
+version: 0.1.5
+---
+
+# 审计 · GOAL-017-r3-s10-mfa-2fa
+
+## 信息就绪核对（按 scope）
+
+| 核对项 | 状态 | 备注 |
+|--------|------|------|
+| 影响本 scope 的 I-00N | I-001~I-004 设计层 verified；A-005 / A-007 / A-008 均未重开；I-003 强制启用仍未裁定（non-blocking） | S5 关门：无到期 required 信息项；A-007 required 已由 A-008 闭合 |
+| 资料引用（若有）是否固定且用户确认 | 无 | shared_materials_catalog: none |
+
+## 意见台账索引
+
+| A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
+|------|------|--------|-------|---------|---------------|------|
+| A-001 | 2026-08-15 | self | 立项（五件套 + 路线图 + goal-tree） | pass | 0 | 03-audit/A-001-scaffold-self.md |
+| A-002 | 2026-08-15 | independent | 立项（五件套 + 分档/C-10·C-11·S-11 边界/信息门禁 + 路线图同步） | pass | 0 | 03-audit/A-002-scaffold-independent.md |
+| A-003 | 2026-08-15 | self | S1 方案冻结 | pass | 0 | 03-audit/A-003-s1-self.md |
+| A-006 | 2026-08-15 | self | S2-S4 实现与验证 | pass | 0 | 03-audit/A-006-s2-s4-self.md |
+| A-007 | 2026-08-15 | independent | S5 关门（两段登录契约 + Enroll 守卫 + MFA UI 残余） | fail | 2（F-001/F-002 全 fixed） | 03-audit/A-007-s5-independent.md |
+| A-008 | 2026-08-15 | independent | S5 复审（A-007 闭合验证） | pass | 0 | 03-audit/A-008-s5-reaudit.md |
+| A-004 | 2026-08-15 | independent | S1 方案冻结（D-002 + I-001~I-004 + 登录集成/安全控制/协议） | conditional | 2（F-001、F-002；已由 D-003/A-005 闭合） | 03-audit/A-004-s1-independent.md |
+| A-005 | 2026-08-15 | independent | A-004 F-001/F-002 required 闭合复审（D-002 §2/§3/§4/§6 + D-003） | pass | 0 | 03-audit/A-005-s1-reaudit.md |
+| A-007 | 2026-08-15 | independent | S5 关门（成功标准 + 审计链 + 安全控制 + 验证证据 + MFA UI 残余 + 协议/go + I-001~I-004） | fail | 2（F-001 web 两段登录断裂、F-002 enroll 覆盖 active；已由实现/A-008 闭合） | 03-audit/A-007-s5-independent.md |
+| A-008 | 2026-08-15 | independent | A-007 F-001/F-002 required 闭合复审（login 第一段 + Enroll active 守卫 + 契约/回归测试） | pass | 0 | 03-audit/A-008-s5-reaudit.md |
+
+## 结论状态
+
+立项 scope：A-001 self pass + A-002 independent pass（0 required）。已放行立项并完成 S1 起草。
+
+S1 方案冻结 scope：A-003 self pass + A-004 independent conditional（当时开放 F-001、F-002）+ **A-005 independent pass**（0 required）。A-004 F-001/F-002 已由 D-002 修正合法闭合（fixed）。**可放行 S2**（含写 0029）；A-005 recommended（pending 再 enroll / 强制启用未裁定 / proof 回传 / 迁移合计数字）随实施处理。独立意见不直接改 status / progress；响应和状态变更走 /govern。
+
+S5 关门 scope：A-006 self pass + A-007 independent fail（当时开放 F-001、F-002）+ **A-008 independent pass**（0 required）。A-007 F-001/F-002 已由实现修正合法闭合（fixed）。个人中心 MFA UI 残余（A-007 / A-008 F-004）仍为 **non-blocking**。**可关门**；`status: done` 由 /govern 执行。独立意见不直接改 status / progress。
+
+## 响应记录（/govern · 2026-08-15）
+
+- 017-F-001（non-blocking）：00-meta 信息表补全「最晚需要阶段」列值 → **fixed**（00-meta.md 信息台账）。
+- 017-F-002（non-blocking）：E-001 更新为实际结果（A-002 已落盘，verdict pass）→ **fixed**（E-001-init.md）。
+- 017-F-003（non-blocking）：与 S-11 登录验证码的 login 链路合成裁定（先后/并存、失败计数分轨）登记为 **I-004**（S1 方案时裁定）→ 已登记，随 S1 冻结稿处理。
+
+## 响应记录（/govern · 2026-08-15 · S1）
+
+- A-004（independent · conditional，2 required：F-001 数据模型不一致、F-002 admin reset 弱化）→ **D-003 全 fixed**（D-002 §2 status pending/active + fail_count + last_used_step、§4 admin reset 强化 token_version+1 + 吊销）；A-005（grok reaudit）**pass**，required 合法闭合。
+- A-005 recommended（pending 重复 enroll 覆盖、强制启用留扩展位、proof 回传形状、迁移合计）→ 已带入 D-002 §8 S2 清单。
+- **S1 门禁放行**：A-001 self pass + A-002 independent pass + A-003 self pass + A-004 conditional（已闭合）+ A-005 reaudit pass → 可进入 S2 实施。
+
+## 响应记录（/govern · 2026-08-15 · S5）
+
+- A-007 fail：F-001（high）/ F-002（med）→ **D-005 全 fixed**（auth-client 顺序 + Enroll 守卫 + 契约/回归测试 + enroll 错误映射）；A-008（grok reaudit）**pass**——required 合法闭合。
+- A-007 F-004（MFA 个人中心 UI 残余）→ **用户书面裁决：阻断关门**，新建 GOAL-018-mfa-manager-ui（renderer custom 节点 + MfaManager，S2/S3 已完成）；GOAL-018 关门后回归关闭本目标。
+- A-008 recommended F-002（整链客户端测试）登记后续补强；F-003 已随回归修正。
+- **关门状态**：A-007 required 闭合（A-008 pass）；本目标 S5 关门待 GOAL-018 回归后执行（含波次级 e2e/冒烟）。

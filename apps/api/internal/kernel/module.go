@@ -234,6 +234,11 @@ func (r *Registry) Module(id string) (Module, bool) {
 type Plan struct {
 	Modules      []Module
 	Capabilities []Capability
+	// NavigationOrder, when non-nil, is the operator-provided full navigation
+	// ordering (GOAL-013 D-002 §4, W7 YAML navigation.order / NAVIGATION_ORDER
+	// env). nil means the built-in DefaultNavigationOrder applies. Unknown
+	// NodeIDs inside a provided order fall back to the default with a warning.
+	NavigationOrder []string
 }
 
 // HasModule reports whether a module was selected in this resolved plan.

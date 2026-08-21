@@ -1,0 +1,19 @@
+---
+id: GOAL-008-audit-log-retention-settings
+doc: execution
+status: done
+parent: GOAL-001-shared-cross-module-contracts
+created: 2026-08-19
+updated: 2026-08-19
+version: 0.1.0
+---
+
+# 执行记录 · GOAL-008
+
+## 执行索引
+
+| E-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| E-001 | 2026-08-19 | 设置字段、归档表、sweeper 与定向测试 | recorded | [E-001-retention-implementation.md](02-execution/E-001-retention-implementation.md) |
+| E-002 | 2026-08-19 | 关门自审前定向复测 | recorded | [E-002-closeout-self-retest.md](02-execution/E-002-closeout-self-retest.md) |
+| E-003 | 2026-08-19 | GOAL-008 关门 | recorded | [E-003-close.md](02-execution/E-003-close.md) |

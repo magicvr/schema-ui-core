@@ -1,0 +1,132 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "admin-list-batch",
+      "title": "List + batch",
+      "schemaUrl": "/api/schema/admin-list-batch",
+      "route": "/admin-list-batch",
+      "titleKey": "manifest.title.admin-list-batch"
+    },
+    {
+      "pageId": "overview",
+      "title": "Overview",
+      "schemaUrl": "/api/schema/overview",
+      "route": "/overview",
+      "titleKey": "manifest.title.overview"
+    },
+    {
+      "pageId": "data-display",
+      "title": "Data display",
+      "schemaUrl": "/api/schema/data-display",
+      "route": "/data-display",
+      "titleKey": "manifest.title.data-display"
+    },
+    {
+      "pageId": "data-table",
+      "title": "Data table",
+      "schemaUrl": "/api/schema/data-table",
+      "route": "/data-table",
+      "titleKey": "manifest.title.data-table"
+    },
+    {
+      "pageId": "search-form-table",
+      "title": "Search + table",
+      "schemaUrl": "/api/schema/search-form-table",
+      "route": "/search-form-table",
+      "titleKey": "manifest.title.search-form-table"
+    },
+    {
+      "pageId": "form-controls",
+      "title": "Form controls",
+      "schemaUrl": "/api/schema/form-controls",
+      "route": "/form-controls",
+      "titleKey": "manifest.title.form-controls"
+    },
+    {
+      "pageId": "form-with-reactions",
+      "title": "Form with reactions",
+      "schemaUrl": "/api/schema/form-with-reactions",
+      "route": "/form-with-reactions",
+      "titleKey": "manifest.title.form-with-reactions"
+    },
+    {
+      "pageId": "form-with-upload",
+      "title": "Form with upload",
+      "schemaUrl": "/api/schema/form-with-upload",
+      "route": "/form-with-upload",
+      "titleKey": "manifest.title.form-with-upload"
+    }
+  ],
+  "navigation": {
+    "top": [
+      {
+        "pageRef": "overview",
+        "label": "Overview",
+        "icon": "dashboard",
+        "labelKey": "manifest.nav.overview"
+      }
+    ],
+    "sidebar": [
+      {
+        "label": "Examples",
+        "icon": "folder",
+        "items": [
+          {
+            "pageRef": "data-table",
+            "label": "Data table",
+            "icon": "table",
+            "labelKey": "manifest.nav.data-table"
+          },
+          {
+            "pageRef": "admin-list-batch",
+            "label": "List + batch",
+            "icon": "batch",
+            "labelKey": "manifest.nav.admin-list-batch"
+          },
+          {
+            "pageRef": "data-display",
+            "label": "Data display",
+            "icon": "chart",
+            "labelKey": "manifest.nav.data-display"
+          },
+          {
+            "pageRef": "search-form-table",
+            "label": "Search + table",
+            "icon": "search",
+            "labelKey": "manifest.nav.search-form-table"
+          },
+          {
+            "pageRef": "form-controls",
+            "label": "Form controls",
+            "icon": "form",
+            "labelKey": "manifest.nav.form-controls"
+          },
+          {
+            "pageRef": "form-with-reactions",
+            "label": "Form with reactions",
+            "icon": "reaction",
+            "labelKey": "manifest.nav.form-with-reactions"
+          },
+          {
+            "pageRef": "form-with-upload",
+            "label": "Form with upload",
+            "icon": "upload",
+            "labelKey": "manifest.nav.form-with-upload"
+          }
+        ],
+        "labelKey": "manifest.nav.examples"
+      }
+    ],
+    "user": []
+  }
+}

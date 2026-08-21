@@ -1,0 +1,41 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "scheduled-tasks",
+      "title": "Scheduled tasks",
+      "schemaUrl": "/api/schema/scheduled-tasks",
+      "route": "/scheduled-tasks",
+      "titleKey": "manifest.title.scheduledTasks"
+    },
+    {
+      "pageId": "task-runs",
+      "title": "Task runs",
+      "schemaUrl": "/api/schema/task-runs",
+      "route": "/task-runs",
+      "titleKey": "manifest.title.taskRuns"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "scheduled-tasks",
+        "label": "Scheduled tasks",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_scheduled_tasks == true"
+        },
+        "labelKey": "manifest.nav.scheduledTasks"
+      }
+    ]
+  }
+}

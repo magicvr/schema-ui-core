@@ -14,23 +14,47 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // Sentinel errors surfaced to handlers for mapping to HTTP status codes.
 var (
 	ErrInvalidCredentials = errors.New("auth: invalid credentials")
+	ErrAccountLocked      = errors.New("auth: account locked")
+	ErrAccountDisabled    = errors.New("auth: account disabled")
 	ErrInvalidToken       = errors.New("auth: invalid token")
 	ErrExpiredToken       = errors.New("auth: expired token")
 	ErrTokenRevoked       = errors.New("auth: token revoked")
+)
+
+// MFARequiredError is returned by Login when the account's second factor must
+// be completed before tokens are issued (S-10 · GOAL-017 D-002 §3). It carries
+// the verified user id so the login handler can begin a second-factor proof.
+type MFARequiredError struct {
+	UserID string
+}
+
+func (e *MFARequiredError) Error() string { return "auth: second factor required" }
+
+// Account-lock policy (GOAL-004 S4-6): 5 consecutive password failures open a
+// 15-minute lock window; the lock expires automatically once now passes
+// locked_until and a successful login resets the counter.
+const (
+	LockThresholdFailures   = 5
+	LockWindow              = 15 * time.Minute
+	serviceCredentialPrefix = "sui_sc_"
 )
 
 // Repository is the account/session persistence surface used by auth.
@@ -42,6 +66,43 @@ type Repository interface {
 	RevokeRefreshToken(string, time.Time) error
 	PermissionsForUser(string) ([]string, error)
 	FeaturesForUser(string) (map[string]bool, error)
+	// Account-lock surface (GOAL-004 S4-6).
+	RecordLoginFailure(string, int, time.Time, time.Time) (bool, error)
+	ResetLoginFailures(string, time.Time) error
+	RevokeAllRefreshTokensForUser(string, time.Time) error
+	ServiceCredentialByHash(string) (*authsession.ServiceCredential, error)
+	MarkServiceCredentialUsed(string, time.Time) error
+}
+
+// ServiceCredentialUse is the safe audit projection for one authenticated
+// machine request. It deliberately excludes the raw token and its hash.
+type ServiceCredentialUse struct {
+	CredentialID  string
+	Name          string
+	ScopeCount    int
+	Method        string
+	Path          string
+	CorrelationID string
+	At            time.Time
+}
+
+type ServiceCredentialUseRecorder func(ServiceCredentialUse) error
+
+// ServiceCredentialUseTxRecorder writes the use audit row on the caller-owned
+// credential transaction. Production composition uses this seam so the audit
+// event and last_used_at update commit or roll back together.
+type ServiceCredentialUseTxRecorder func(kernel.Tx, ServiceCredentialUse) error
+
+type ServiceCredentialUseTransactionalRepository interface {
+	MarkServiceCredentialUsedWithAudit(string, time.Time, authsession.ServiceCredentialAudit) error
+}
+
+// MFAEnforcer is the optional second-factor login gate (S-10 · GOAL-017
+// D-002 §3): Required reports whether the user must complete a second factor
+// before tokens are issued. A nil enforcer keeps the login contract
+// byte-identical. Satisfied structurally by the handler.MFAVerifier.
+type MFAEnforcer interface {
+	Required(userID string) bool
 }
 
 // Authenticator holds the signing secret, token TTLs and the auth-session
@@ -52,6 +113,15 @@ type Authenticator struct {
 	refreshTTL time.Duration
 	repository Repository
 	devSession bool // explicit opt-in: static dev session fallback (M9)
+	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
+	// nil = the login contract is byte-identical to the pre-MFA behavior.
+	mfa                            MFAEnforcer
+	serviceCredentialUseRecorder   ServiceCredentialUseRecorder
+	serviceCredentialUseTxRecorder ServiceCredentialUseTxRecorder
+	// OnLockOpened is an optional best-effort hook fired when a login failure
+	// opens the account-lock window (F-04 · GOAL-006 D-002 §3: system
+	// notification source). Nil = no hook; failures never block Login.
+	OnLockOpened func(userID string)
 }
 
 // New builds an Authenticator. The caller is responsible for a non-empty secret
@@ -68,19 +138,100 @@ func NewWithRepository(secret []byte, accessTTL, refreshTTL time.Duration, repos
 	return &Authenticator{secret: secret, accessTTL: accessTTL, refreshTTL: refreshTTL, repository: repository, devSession: devSession}
 }
 
+// timingDummyHash is compared against when the requested user does not exist,
+// so a missing user burns the same bcrypt time as a wrong password and login
+// responses cannot be used to enumerate usernames (D2 timing side channel).
+var timingDummyHash = func() string {
+	h, err := HashPassword("dummy-timing-password", 10)
+	if err != nil {
+		panic("auth: hash timing dummy: " + err.Error())
+	}
+	return h
+}()
+
 // Login verifies username/password against the store and issues a fresh
 // access/refresh token pair. Fail-closed: a missing user and a bad password
-// both yield ErrInvalidCredentials (no user enumeration).
+// both yield ErrInvalidCredentials (no user enumeration). A locked account
+// (locked_until in the future) yields ErrAccountLocked before password work.
 func (a *Authenticator) Login(username, password string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
 	u, err := a.repository.UserByUsername(username)
 	if errors.Is(err, authsession.ErrNotFound) {
+		VerifyPassword(timingDummyHash, password)
 		return "", "", account.User{}, ErrInvalidCredentials
 	}
 	if err != nil {
 		return "", "", account.User{}, err
 	}
+	if u.LockedUntil > now.Unix() {
+		return "", "", account.User{}, ErrAccountLocked
+	}
+	// F-03 (GOAL-005 D-002 §3): a disabled account fails closed before any
+	// password work; the admin-facing operation is visible, so the state is
+	// surfaced as a distinct 403 rather than a generic credential failure.
+	if !u.Enabled {
+		return "", "", account.User{}, ErrAccountDisabled
+	}
 	if !VerifyPassword(u.PasswordHash, password) {
+		// Consecutive-failure accounting: reaching the threshold opens the lock
+		// window. When the lock just opened, live sessions are revoked too — a
+		// locked account must not keep rotating (access tokens still expire
+		// normally; refresh rotation is the durable session channel).
+		locked, err := a.repository.RecordLoginFailure(u.ID, LockThresholdFailures, now.Add(LockWindow), now)
+		if err != nil {
+			return "", "", account.User{}, err
+		}
+		if locked {
+			_ = a.repository.RevokeAllRefreshTokensForUser(u.ID, now)
+			if a.OnLockOpened != nil {
+				a.OnLockOpened(u.ID)
+			}
+		}
 		return "", "", account.User{}, ErrInvalidCredentials
+	}
+	if u.FailedLoginCount != 0 || u.LockedUntil != 0 {
+		if err := a.repository.ResetLoginFailures(u.ID, now); err != nil {
+			return "", "", account.User{}, err
+		}
+	}
+	// S-10 (GOAL-017 D-002 §3): the second factor gates token issuance after
+	// the password factor succeeded. nil enforcer → original behavior.
+	if a.mfa != nil && a.mfa.Required(u.ID) {
+		return "", "", account.User{}, &MFARequiredError{UserID: u.ID}
+	}
+	return a.issue(u, now)
+}
+
+// SetMFAEnforcer installs the optional second-factor gate (S-10 · GOAL-017
+// D-002 §3). nil restores the pre-MFA login contract.
+func (a *Authenticator) SetMFAEnforcer(mfa MFAEnforcer) {
+	a.mfa = mfa
+}
+
+// SetServiceCredentialUseRecorder installs the machine-use audit hook.
+// Authentication fails closed when the hook cannot persist the audit event.
+func (a *Authenticator) SetServiceCredentialUseRecorder(recorder ServiceCredentialUseRecorder) {
+	a.serviceCredentialUseRecorder = recorder
+}
+
+// SetServiceCredentialUseTransactionalRecorder installs the production audit
+// hook that shares the service-credential usage transaction.
+func (a *Authenticator) SetServiceCredentialUseTransactionalRecorder(recorder ServiceCredentialUseTxRecorder) {
+	a.serviceCredentialUseTxRecorder = recorder
+}
+
+// IssueTokensFor issues a fresh access/refresh pair for an already
+// second-factor-verified user (S-10 · GOAL-017 D-002 §3). Fail-closed on the
+// same terminal states as Login (locked / disabled).
+func (a *Authenticator) IssueTokensFor(userID string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
+	u, err := a.repository.UserByID(userID)
+	if err != nil {
+		return "", "", account.User{}, err
+	}
+	if u.LockedUntil > now.Unix() {
+		return "", "", account.User{}, ErrAccountLocked
+	}
+	if !u.Enabled {
+		return "", "", account.User{}, ErrAccountDisabled
 	}
 	return a.issue(u, now)
 }
@@ -101,12 +252,26 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	if now.After(rt.ExpiresAt) {
 		return "", "", account.User{}, ErrExpiredToken
 	}
-	if err := a.repository.RevokeRefreshToken(rt.ID, now); err != nil && !errors.Is(err, authsession.ErrAlreadyRevoked) {
+	// Rotation is atomic: the guarded revoke is a single UPDATE that exactly one
+	// concurrent caller can win. Losing the race (already revoked) means the
+	// token was already used or revoked — fail closed instead of issuing a
+	// second live pair (double-rotation hardening).
+	if err := a.repository.RevokeRefreshToken(rt.ID, now); err != nil {
+		if errors.Is(err, authsession.ErrAlreadyRevoked) {
+			return "", "", account.User{}, ErrTokenRevoked
+		}
 		return "", "", account.User{}, err
 	}
 	u, err := a.repository.UserByID(rt.UserID)
 	if err != nil {
 		return "", "", account.User{}, err
+	}
+	// Fail-closed if the account is locked or disabled: revoke-on-lock is
+	// best-effort, so Refresh must not mint a new pair from a leftover live
+	// refresh token. Same 401 envelope as an invalid token (no extra lock or
+	// disable oracle on this path).
+	if u.LockedUntil > now.Unix() || !u.Enabled {
+		return "", "", account.User{}, ErrInvalidToken
 	}
 	return a.issue(u, now)
 }
@@ -115,27 +280,30 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 // user id (for the operation log, I-008-003 §5). It is idempotent: unknown or
 // already-revoked tokens are treated as success (user id empty) so a logout
 // cannot be replayed.
-func (a *Authenticator) Logout(rawRefresh string, now time.Time) (string, error) {
+func (a *Authenticator) Logout(rawRefresh string, now time.Time) (userID, sessionID string, err error) {
 	rt, err := a.repository.RefreshTokenByHash(HashToken(rawRefresh))
 	if errors.Is(err, authsession.ErrNotFound) {
-		return "", nil
+		return "", "", nil
 	}
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if rt.RevokedAt != nil {
-		return rt.UserID, nil
+		return rt.UserID, rt.ID, nil
 	}
-	return rt.UserID, a.repository.RevokeRefreshToken(rt.ID, now)
+	err = a.repository.RevokeRefreshToken(rt.ID, now)
+	if err != nil && !errors.Is(err, authsession.ErrAlreadyRevoked) {
+		return rt.UserID, rt.ID, err
+	}
+	// ErrAlreadyRevoked under concurrency: another logout won the race, which is
+	// the same end state (token revoked) — treat as success for idempotency.
+	return rt.UserID, rt.ID, nil
 }
 
 // issue creates a fresh access/refresh pair for an authenticated user and
-// persists the (hashed) opaque refresh token.
+// persists the (hashed) opaque refresh token. The access token carries the
+// user's current token_version so a later password change revokes it.
 func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, string, account.User, error) {
-	access, err := SignAccessToken(a.secret, u.ID, a.accessTTL, now)
-	if err != nil {
-		return "", "", account.User{}, err
-	}
 	raw, hash, err := NewOpaqueToken()
 	if err != nil {
 		return "", "", account.User{}, err
@@ -150,43 +318,72 @@ func (a *Authenticator) issue(u *authsession.User, now time.Time) (string, strin
 	if err := a.repository.CreateRefreshToken(rt); err != nil {
 		return "", "", account.User{}, err
 	}
+	access, err := SignAccessToken(a.secret, u.ID, u.TokenVersion, rt.ID, a.accessTTL, now)
+	if err != nil {
+		return "", "", account.User{}, err
+	}
 	acct, err := a.accountFromUser(u)
 	if err != nil {
 		return "", "", account.User{}, err
 	}
+	acct.SessionID = rt.ID
 	return access, raw, acct, nil
 }
 
+// accessClaims extends the registered claims with the user's token_version
+// (W4 P0-3). The middleware rejects a token whose version is older than the
+// persisted value, so a password change (which bumps the version) revokes
+// every already-signed access token immediately instead of leaving a
+// ~accessTTL window where a stolen token still works.
+type accessClaims struct {
+	TokenVersion int    `json:"tv"`
+	SessionID    string `json:"sid,omitempty"`
+	jwt.RegisteredClaims
+}
+
 // SignAccessToken mints a short-lived HMAC-SHA256 access token whose subject is
-// the user id.
-func SignAccessToken(secret []byte, userID string, ttl time.Duration, now time.Time) (string, error) {
-	claims := jwt.RegisteredClaims{
-		Subject:   userID,
-		IssuedAt:  jwt.NewNumericDate(now),
-		NotBefore: jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+// the user id and which carries the user's current token_version and login session id.
+func SignAccessToken(secret []byte, userID string, tokenVersion int, sessionID string, ttl time.Duration, now time.Time) (string, error) {
+	claims := accessClaims{
+		TokenVersion: tokenVersion,
+		SessionID:    strings.TrimSpace(sessionID),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secret)
 }
 
-// ParseAccessToken verifies signature and expiry, returning the subject user id.
-// Fail-closed: any parse, method or expiry failure is an error.
-func ParseAccessToken(secret []byte, raw string) (string, error) {
-	token, err := jwt.ParseWithClaims(raw, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
+// ParsedAccessToken is the verified access-token identity: subject user id and
+// the token_version claim carried at issue time.
+type ParsedAccessToken struct {
+	UserID       string
+	TokenVersion int
+	SessionID    string
+}
+
+// ParseAccessToken verifies signature and expiry, returning the subject user id
+// and token_version. Fail-closed: any parse, method or expiry failure is an
+// error.
+func ParseAccessToken(secret []byte, raw string) (ParsedAccessToken, error) {
+	token, err := jwt.ParseWithClaims(raw, &accessClaims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("auth: unexpected signing method %v", t.Header["alg"])
 		}
 		return secret, nil
 	}, jwt.WithExpirationRequired())
 	if err != nil {
-		return "", err
+		return ParsedAccessToken{}, err
 	}
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	claims, ok := token.Claims.(*accessClaims)
 	if !ok || !token.Valid {
-		return "", ErrInvalidToken
+		return ParsedAccessToken{}, ErrInvalidToken
 	}
-	return claims.Subject, nil
+	return ParsedAccessToken{UserID: claims.Subject, TokenVersion: claims.TokenVersion, SessionID: strings.TrimSpace(claims.SessionID)}, nil
 }
 
 // HashPassword hashes a plaintext password with bcrypt at the given cost.
@@ -211,6 +408,20 @@ func NewOpaqueToken() (raw, hash string, err error) {
 	return raw, HashToken(raw), nil
 }
 
+// NewServiceCredentialToken returns a one-time 256-bit prefixed secret, its
+// persisted SHA-256 hash, and the display-safe prefix.
+func NewServiceCredentialToken() (raw, hash, tokenPrefix string, err error) {
+	random, _, err := NewOpaqueToken()
+	if err != nil {
+		return "", "", "", err
+	}
+	raw = serviceCredentialPrefix + random
+	return raw, HashToken(raw), raw[:15], nil
+}
+
+// NewServiceCredentialID returns the fixed-width random credential id.
+func NewServiceCredentialID() string { return newID() }
+
 // HashToken hex-encodes the SHA-256 of a raw token.
 func HashToken(raw string) string {
 	sum := sha256.Sum256([]byte(raw))
@@ -219,12 +430,21 @@ func HashToken(raw string) string {
 
 func newID() string {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		// crypto/rand failure is effectively fatal; fall back to a non-cryptographic
-		// timestamp+seq id so a broken RNG does not wedge the server silently.
-		return fmt.Sprintf("rt-%d", time.Now().UnixNano())
+	if _, err := readRandom(b); err != nil {
+		// Preserve uniqueness even if the system CSPRNG is unavailable. This ID
+		// is a database identifier, not the refresh secret itself.
+		return fmt.Sprintf("rt-%x-%x", time.Now().UnixNano(), fallbackIDSequence.Add(1))
 	}
 	return hex.EncodeToString(b)
+}
+
+var fallbackIDSequence atomic.Uint64
+var readRandom = rand.Read
+
+// writeLocalizedError preserves auth's literal error-code call surface for
+// the frozen contract test while delegating wire behavior to shared code.
+func writeLocalizedError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
+	errorcatalog.WriteLocalizedError(w, r, status, code, message)
 }
 
 // accountFromUser builds the identity snapshot, resolving the user's persisted
@@ -234,7 +454,7 @@ func (a *Authenticator) accountFromUser(u *authsession.User) (account.User, erro
 	if err != nil {
 		return account.User{}, fmt.Errorf("resolve permissions for %s: %w", u.ID, err)
 	}
-	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms}, nil
+	return account.User{ID: u.ID, Name: u.Name, Roles: u.Roles, Permissions: perms, AvatarURL: u.AvatarURL, MustChangePassword: u.MustChangePassword}, nil
 }
 
 // Features returns the boolean menu projection for an authenticated identity
@@ -268,6 +488,26 @@ func IdentityFrom(ctx context.Context) (account.User, bool) {
 	return u, ok
 }
 
+// UserIdentityFrom returns only human user identities. User-owned self-service
+// surfaces use this helper to reject service principals.
+func UserIdentityFrom(ctx context.Context) (account.User, bool) {
+	u, ok := IdentityFrom(ctx)
+	return u, ok && !u.IsServiceCredential()
+}
+
+// isMustChangePasswordAllowed reports whether a protected endpoint may be used
+// while the account still has must_change_password=1 (W16-F01). Only the
+// self-service password change and profile surfaces are allowed; everything
+// else stays gated until the user changes the initial/reset password.
+func isMustChangePasswordAllowed(method, path string) bool {
+	switch method + " " + path {
+	case "POST /api/account/password", "GET /api/account/profile", "GET /api/accounts/me":
+		return true
+	default:
+		return false
+	}
+}
+
 func bearer(r *http.Request) (string, bool) {
 	const prefix = "Bearer "
 	h := r.Header.Get("Authorization")
@@ -289,25 +529,52 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "no access token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no access token")
 			return
 		}
-		userID, err := ParseAccessToken(a.secret, raw)
+		if strings.HasPrefix(raw, serviceCredentialPrefix) {
+			a.authenticateServiceCredential(w, r, next, raw)
+			return
+		}
+		parsed, err := ParseAccessToken(a.secret, raw)
 		if err != nil {
 			if a.devSession {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired access token")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired access token")
 			return
 		}
-		u, err := a.repository.UserByID(userID)
+		u, err := a.repository.UserByID(parsed.UserID)
 		if err != nil {
 			if a.devSession {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "unknown access token subject")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "unknown access token subject")
+			return
+		}
+		// W4 P0-3: a password change bumps the user's token_version; an access
+		// token signed at the older version is rejected immediately. Stale
+		// tokens and unknown subjects both fail closed as UNAUTHENTICATED.
+		if parsed.TokenVersion != u.TokenVersion {
+			if a.devSession {
+				a.injectDevSession(w, r, next)
+				return
+			}
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "access token superseded")
+			return
+		}
+		// F-03 (GOAL-005 D-002 §3): disabling bumps token_version too, but the
+		// persisted state is authoritative — a disabled identity is rejected
+		// here even if a token somehow carried the current version (fail
+		// closed, same envelope as superseded; no state oracle).
+		if !u.Enabled {
+			if a.devSession {
+				a.injectDevSession(w, r, next)
+				return
+			}
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "account disabled")
 			return
 		}
 		acct, err := a.accountFromUser(u)
@@ -316,11 +583,72 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				a.injectDevSession(w, r, next)
 				return
 			}
-			writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
+			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "could not resolve identity")
+			return
+		}
+		acct.SessionID = parsed.SessionID
+		// W16-F01: a user with must_change_password=1 is limited to the
+		// password-change and profile surfaces until they replace the initial
+		// password. All other protected business APIs fail closed with 403.
+		if acct.MustChangePassword && !isMustChangePasswordAllowed(r.Method, r.URL.Path) {
+			writeLocalizedError(w, r, http.StatusForbidden, "MUST_CHANGE_PASSWORD", "password change required")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), acct)))
 	})
+}
+
+func (a *Authenticator) authenticateServiceCredential(w http.ResponseWriter, r *http.Request, next http.Handler, raw string) {
+	credential, err := a.repository.ServiceCredentialByHash(HashToken(raw))
+	now := time.Now().UTC()
+	if err != nil || credential.RevokedAt != nil || !now.Before(credential.ExpiresAt) {
+		writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "invalid or expired service credential")
+		return
+	}
+	identity := account.User{
+		ID:            "service-credential:" + credential.ID,
+		Name:          credential.Name,
+		Roles:         []string{},
+		Permissions:   append([]string(nil), credential.Scopes...),
+		PrincipalKind: account.PrincipalKindServiceCredential,
+		CredentialID:  credential.ID,
+		SessionID:     credential.ID,
+	}
+	use := ServiceCredentialUse{
+		CredentialID:  credential.ID,
+		Name:          credential.Name,
+		ScopeCount:    len(credential.Scopes),
+		Method:        r.Method,
+		Path:          r.URL.Path,
+		CorrelationID: requestid.FromContext(r.Context()),
+		At:            now,
+	}
+	if a.serviceCredentialUseTxRecorder != nil {
+		repository, ok := a.repository.(ServiceCredentialUseTransactionalRepository)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+			return
+		}
+		if err := repository.MarkServiceCredentialUsedWithAudit(credential.ID, now, func(tx kernel.Tx) error {
+			return a.serviceCredentialUseTxRecorder(tx, use)
+		}); err != nil {
+			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), identity)))
+		return
+	}
+	if a.serviceCredentialUseRecorder != nil {
+		if err := a.serviceCredentialUseRecorder(use); err != nil {
+			writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+			return
+		}
+	}
+	if err := a.repository.MarkServiceCredentialUsed(credential.ID, now); err != nil {
+		writeLocalizedError(w, r, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "service credential audit unavailable")
+		return
+	}
+	next.ServeHTTP(w, r.WithContext(WithIdentity(r.Context(), identity)))
 }
 
 // injectDevSession is the explicit opt-in local-development fallback (M9). It

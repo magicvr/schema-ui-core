@@ -17,11 +17,17 @@ import {
   setAccessToken,
   setRefreshToken,
 } from "@/account/tokens";
+import { getActiveLocale } from "@/i18n/runtime";
 
 export interface AuthUser {
   id: string;
   name: string;
   roles: string[];
+  /** Self-service avatar asset URL (W13 T-05); absent = no avatar. */
+  avatarUrl?: string;
+  /** True when the account must change its initial/reset password before using
+   * business APIs (W16-F01). */
+  mustChangePassword?: boolean;
   /**
    * Permission keys resolved from persisted RBAC at identity load (`/me`).
    * Required by Schema expressions (`$context.user.permissions contains "…"`).
@@ -40,10 +46,15 @@ export interface AuthSession {
 /** Error with a stable code so the UI can branch (e.g. INVALID_CREDENTIALS). */
 export class AuthError extends Error {
   code: string;
-  constructor(code: string, message: string) {
+  /** Optional HTTP status carried for errors that localize a {status} param. */
+  status?: number;
+  constructor(code: string, message: string, status?: number) {
     super(message);
     this.name = "AuthError";
     this.code = code;
+    if (status !== undefined) {
+      this.status = status;
+    }
   }
 }
 
@@ -65,6 +76,8 @@ export function setAuthLostListener(listener: (() => void) | null): void {
 function jsonHeaders(init?: RequestInit): Headers {
   const headers = new Headers(init?.headers);
   headers.set("Content-Type", "application/json");
+  // VP-007 S4: the server negotiates user-visible messages in the active locale.
+  headers.set("Accept-Language", getActiveLocale());
   return headers;
 }
 
@@ -78,25 +91,78 @@ function postJSON(url: string, body: unknown): Promise<Response> {
 
 /** Exchanges the stored refresh token for a new access/refresh pair (rotation). */
 async function refreshAccess(): Promise<boolean> {
+  // W7 F-011: the long-lived refresh token is NOT attached to every request.
   const refresh = getRefreshToken();
   if (!refresh) {
+    return false;
+  }
+  // Concurrent 401s (parallel requests after access-token expiry) must not each
+  // rotate the same refresh token: the server revokes it on first use, so a
+  // second concurrent rotation would fail and clear a perfectly valid session.
+  // Deduplicate to a single in-flight rotation shared by all callers.
+  if (inflightRefresh !== null) {
+    return inflightRefresh;
+  }
+  const rotation = doRefresh(refresh, refreshGeneration).finally(() => {
+    inflightRefresh = null;
+  });
+  inflightRefresh = rotation;
+  return rotation;
+}
+
+let inflightRefresh: Promise<boolean> | null = null;
+
+// Monotonic session generation (D-001 P2): logout bumps it so an in-flight
+// refresh that resolves after logout cannot write a rotated token pair back
+// into a session the user just closed.
+let refreshGeneration = 0;
+
+function bumpRefreshGeneration(): void {
+  refreshGeneration += 1;
+}
+
+function isCurrentGeneration(generation: number): boolean {
+  return generation === refreshGeneration;
+}
+
+async function doRefresh(refresh: string, generation: number): Promise<boolean> {
+  if (!isCurrentGeneration(generation)) {
     return false;
   }
   let response: Response;
   try {
     response = await postJSON(REFRESH_URL, { refreshToken: refresh });
   } catch {
-    clearTokens();
+    // W15-F01: a network throw is not credential failure — keep tokens so a
+    // later retry can succeed after a blip or server restart.
+    return false;
+  }
+  if (!isCurrentGeneration(generation)) {
+    // The session was closed while the rotation was in flight; never store the
+    // rotated pair, never clear tokens the caller already cleared.
     return false;
   }
   if (!response.ok) {
-    clearTokens();
+    // Cross-tab rotation (A-002 F-003): another tab may have just won the
+    // rotation race and written a fresh refresh token to localStorage while
+    // this request was in flight. The old token is now revoked — but the
+    // session is not lost. Retry once with the newer token before giving up.
+    const current = getRefreshToken();
+    if (current !== null && current !== refresh) {
+      return doRefresh(current, generation);
+    }
+    if (response.status === 401 || response.status === 403) {
+      clearTokens();
+    }
     return false;
   }
   const body = (await response.json()) as {
     accessToken?: string;
     refreshToken?: string;
   };
+  if (!isCurrentGeneration(generation)) {
+    return false;
+  }
   if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string") {
     clearTokens();
     return false;
@@ -106,13 +172,28 @@ async function refreshAccess(): Promise<boolean> {
   return true;
 }
 
-function withAuth(init?: RequestInit): RequestInit {
+function withAuth(input: RequestInfo | URL, init?: RequestInit): RequestInit {
   const access = getAccessToken();
   const headers = new Headers(init?.headers);
   if (access !== null) {
     headers.set("Authorization", `Bearer ${access}`);
   }
+  // W7 F-011: the long-lived refresh token is NOT attached to every request.
+  const refresh = getRefreshToken();
+  if (refresh !== null && isSessionListRequest(input)) {
+    headers.set("X-Refresh-Token", refresh);
+  }
+  // VP-007 S4: attach the active locale so the server negotiates messages.
+  headers.set("Accept-Language", getActiveLocale());
   return { ...init, headers };
+}
+
+function isSessionListRequest(input: RequestInfo | URL): boolean {
+  try {
+    return new URL(String(input), window.location.origin).pathname === "/api/account/sessions";
+  } catch {
+    return false;
+  }
 }
 
 function isAuthEndpoint(input: RequestInfo | URL): boolean {
@@ -130,16 +211,25 @@ function isAuthEndpoint(input: RequestInfo | URL): boolean {
  * and the auth-lost listener fires (UI → login page).
  */
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  let response = await fetch(input, withAuth(init));
+  let response = await fetch(input, withAuth(input, init));
+  if (response.ok && String(input).includes("/api/account/password")) {
+    try {
+      sessionStorage.setItem("password.changedNotice", "1");
+    } catch {
+      // storage unavailable
+    }
+  }
   if (response.status === 401 && !isAuthEndpoint(input)) {
     const refreshed = await refreshAccess();
     if (refreshed) {
-      response = await fetch(input, withAuth(init));
+      response = await fetch(input, withAuth(input, init));
       if (response.status === 401) {
         clearTokens();
         onAuthLost?.();
       }
-    } else {
+    } else if (getRefreshToken() === null) {
+      // Refresh already cleared on 401/403. Network/5xx keep tokens so the
+      // caller can retry without a forced logout (W15-F01 / A-001 F-001).
       clearTokens();
       onAuthLost?.();
     }
@@ -147,25 +237,125 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   return response;
 }
 
-/** Authenticates with username/password and persists the token pair. */
-export async function login(username: string, password: string): Promise<AuthSession> {
+/** Captcha challenge submitted with login (S-11 · GOAL-011 D-002 §5). */
+export interface LoginCaptcha {
+  id: string;
+  answer: string;
+}
+
+/** Second factor required by the login (S-10 · GOAL-017 D-002 §3): the
+ * password factor succeeded; no tokens are issued until /api/auth/mfa/verify
+ * completes with the one-time proof. */
+export interface LoginMFARequired {
+  mfaRequired: true;
+  mfaProof: string;
+}
+
+export function isLoginMFARequired(value: AuthSession | LoginMFARequired): value is LoginMFARequired {
+  return (value as LoginMFARequired).mfaRequired === true;
+}
+
+/** Completes a two-step login with the second factor (S-10 · GOAL-017 D-002
+ * §3): proof + TOTP code (or one-time recovery code) → real token pair. */
+export async function mfaVerify(proof: string, code: string, recoveryCode?: string): Promise<AuthSession> {
   let response: Response;
   try {
-    response = await postJSON(LOGIN_URL, { username, password });
+    response = await postJSON("/api/auth/mfa/verify", {
+      proof,
+      code,
+      ...(recoveryCode === undefined ? {} : { recoveryCode }),
+    });
+  } catch {
+    throw new AuthError("LOGIN_NETWORK", "unable to reach the login service");
+  }
+  if (response.status === 401) {
+    let codeName = "MFA_INVALID";
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error === "MFA_PROOF_EXPIRED" || body.error === "MFA_PROOF_EXHAUSTED") {
+        codeName = body.error;
+      }
+    } catch {
+      // non-JSON error body: keep MFA_INVALID
+    }
+    throw new AuthError(codeName, "second factor failed", 401);
+  }
+  if (!response.ok) {
+    throw new AuthError("LOGIN_FAILED", `mfa verify failed: HTTP ${response.status}`, response.status);
+  }
+  const body = (await response.json()) as {
+    accessToken?: string;
+    refreshToken?: string;
+    user?: { id?: string; name?: string };
+  };
+  if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string") {
+    throw new AuthError("LOGIN_MALFORMED", "mfa verify response was malformed");
+  }
+  setAccessToken(body.accessToken);
+  setRefreshToken(body.refreshToken);
+  try {
+    return await fetchMe();
+  } catch (error) {
+    clearTokens();
+    throw error;
+  }
+}
+
+/** Authenticates with username/password and persists the token pair. When the
+ * account requires a second factor the response carries mfaRequired + a
+ * one-time proof instead of tokens — complete it via mfaVerify. */
+export async function login(username: string, password: string, captcha?: LoginCaptcha): Promise<AuthSession | LoginMFARequired> {
+  let response: Response;
+  try {
+    response = await postJSON(LOGIN_URL, {
+      username,
+      password,
+      ...(captcha === undefined
+        ? {}
+        : { captchaId: captcha.id, captchaAnswer: captcha.answer }),
+    });
   } catch {
     throw new AuthError("LOGIN_NETWORK", "unable to reach the login service");
   }
   if (response.status === 401) {
     throw new AuthError("INVALID_CREDENTIALS", "invalid username or password");
   }
+  // S-11 (GOAL-011 D-002 §2): the gate is on but the challenge was missing,
+  // expired or wrong — surface the captcha error so the UI can refresh the
+  // challenge and let the user retry (fail-open preflight per D-002 §5).
+  if (response.status === 400) {
+    let code = "LOGIN_FAILED";
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error === "INVALID_CAPTCHA") {
+        code = "INVALID_CAPTCHA";
+      }
+    } catch {
+      // non-JSON error body: keep LOGIN_FAILED
+    }
+    throw new AuthError(code, "login failed", 400);
+  }
+  // GOAL-004 S4-6: 423 is the account-lock terminal (ADR-0035 D4/D7 locked
+  // state), distinct from 401 credential failure.
+  if (response.status === 423) {
+    throw new AuthError("ACCOUNT_LOCKED", "account is temporarily locked", 423);
+  }
   if (!response.ok) {
-    throw new AuthError("LOGIN_FAILED", `login failed: HTTP ${response.status}`);
+    throw new AuthError("LOGIN_FAILED", `login failed: HTTP ${response.status}`, response.status);
   }
   const body = (await response.json()) as {
+    mfaRequired?: boolean;
+    mfaProof?: string;
     accessToken?: string;
     refreshToken?: string;
     user?: AuthUser;
   };
+  // S-10 (GOAL-017 D-002 §3): the account requires a second factor — the
+  // first stage returns {mfaRequired, mfaProof} with NO tokens, so this must
+  // run before the token-shape validation (A-007 F-001).
+  if (body.mfaRequired === true && typeof body.mfaProof === "string") {
+    return { mfaRequired: true, mfaProof: body.mfaProof };
+  }
   if (typeof body.accessToken !== "string" || typeof body.refreshToken !== "string" || !body.user) {
     throw new AuthError("LOGIN_MALFORMED", "login response was malformed");
   }
@@ -185,7 +375,11 @@ export async function login(username: string, password: string): Promise<AuthSes
 
 /** Revokes the refresh token (best-effort, idempotent) and clears local state. */
 export async function logout(): Promise<void> {
+  // W7 F-011: the long-lived refresh token is NOT attached to every request.
   const refresh = getRefreshToken();
+  // D-001 P2: bump the generation first so an in-flight refresh can never write
+  // a rotated token pair back after logout.
+  bumpRefreshGeneration();
   if (refresh !== null) {
     try {
       await postJSON(LOGOUT_URL, { refreshToken: refresh });
@@ -197,21 +391,32 @@ export async function logout(): Promise<void> {
   clearTokens();
 }
 
+/** Restore outcomes (ADR-0035 D4 normalized adapter input, GOAL-004 S4-2). */
+export type RestoreSessionResult =
+  | { kind: "none" }
+  | { kind: "reauth" }
+  | { kind: "session"; session: AuthSession };
+
 /**
  * Restores a session on boot: if a refresh token exists, rotate it for a fresh
- * access/refresh pair, then resolve the identity via /me. Returns null when there
- * is no session or the restore fails.
+ * access/refresh pair, then resolve the identity via /me. No refresh token →
+ * `none` (anonymous); rotation or identity resolution failure with an existing
+ * refresh token → `reauth` (the adapter reports reauth-required, ADR-0035 D4).
  */
-export async function restoreSession(): Promise<AuthSession | null> {
+export async function restoreSession(): Promise<RestoreSessionResult> {
   if (getRefreshToken() === null) {
-    return null;
+    return { kind: "none" };
   }
   const refreshed = await refreshAccess();
   if (!refreshed) {
-    return null;
+    return { kind: "reauth" };
   }
-  const session = await fetchMe();
-  return session;
+  try {
+    const session = await fetchMe();
+    return { kind: "session", session };
+  } catch {
+    return { kind: "reauth" };
+  }
 }
 
 /** Normalizes a /me user snapshot so permissions are always an array when present. */
@@ -229,10 +434,18 @@ function parseAuthUser(raw: unknown): AuthUser | null {
   const permissions = Array.isArray(record.permissions)
     ? record.permissions.filter((entry): entry is string => typeof entry === "string")
     : undefined;
+  // W13 T-05: the self-service avatar URL rides the /me user snapshot so the
+  // shell header can render it; absent/empty stays undefined.
+  const avatarUrl =
+    typeof record.avatarUrl === "string" && record.avatarUrl !== "" ? record.avatarUrl : undefined;
+  const mustChangePassword =
+    typeof record.mustChangePassword === "boolean" ? record.mustChangePassword : undefined;
   return {
     id: record.id,
     name: typeof record.name === "string" ? record.name : "",
     roles,
+    ...(avatarUrl === undefined ? {} : { avatarUrl }),
+    ...(mustChangePassword === undefined ? {} : { mustChangePassword }),
     ...(permissions === undefined ? {} : { permissions }),
   };
 }

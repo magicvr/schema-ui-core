@@ -10,9 +10,9 @@ function isVersionString(value: unknown): value is string {
   return typeof value === "string" && /^[0-9]+\.[0-9]+$/.test(value);
 }
 
-/** Capability id pattern from page.schema.json (lowercase dotted). */
+/** Capability id pattern from page.schema.json (lowercase dotted; v2.8 allows segment hyphens). */
 function isCapabilityId(value: unknown): value is string {
-  return typeof value === "string" && /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*$/.test(value);
+  return typeof value === "string" && /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/.test(value);
 }
 
 function pageVersionOf(pageMeta: unknown): unknown {

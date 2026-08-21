@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "pageId": "overview",
+    "title": "Overview",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "props": {
+      "title": "Overview"
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Welcome to the schema-driven admin workspace.",
+          "textKey": "schema.overview.text.welcome"
+        }
+      }
+    ]
+  }
+}

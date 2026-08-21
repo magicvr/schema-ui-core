@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "pageId": "data-table",
+    "title": "Data table",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "table.sort"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "props": {
+      "title": "Data table"
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "text": "Sortable users from the Go list API (/api/users). This page exercises D-DATA list/detail and D-TABLE sort declarations.",
+          "textKey": "schema.data-table.text.intro"
+        }
+      },
+      {
+        "type": "table",
+        "id": "users-table",
+        "props": {
+          "columns": [
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "field": "username",
+              "label": "Username",
+              "sortable": true,
+              "labelKey": "schema.users.column.username"
+            },
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.users.column.name"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.users.column.updated"
+            }
+          ],
+          "dataSource": "/api/users"
+        }
+      }
+    ]
+  }
+}

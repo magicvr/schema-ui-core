@@ -2,27 +2,27 @@
 doc_type: vision-plan
 id: VP-005-design-system-and-ui-experience
 title: 现代设计系统与 Schema 驱动 UI/UX 体验产品化
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-006-design-system-and-ui-experience
 created: 2026-08-08
-updated: 2026-08-09
-version: 0.4.1
+updated: 2026-08-10
+version: 0.5.1
 parent: null
 ---
 
 # VP-005 · 现代设计系统与 Schema 驱动 UI/UX 体验产品化
 
-## 状态与门闩（2026-08-09 更新）
+## 状态与门闩（2026-08-09 更新 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-09 用户书面确认激活） |
-| **lead_workspace** | **`workspace-006-design-system-and-ui-experience`**（同日 `/govern` scaffold；slug 用户确认） |
+| status | **`closed`**（2026-08-09 用户书面确认关门；VRev-015 `F-V027`/`F-V028` → `fixed`） |
+| **lead_workspace** | **`workspace-006-design-system-and-ui-experience`**（同日 `/govern` scaffold；slug 用户确认；Root `GOAL-001-design-system-and-ui-experience` `done 5/5`） |
 | **硬前置 VP-006** | **已满足**：[VP-006](VP-006-full-protocol-contract-v2-7-0.md) 于 2026-08-08 用户书面确认 **`closed`** |
-| **Vision required** | **已满足**：VRev-011 `F-V018`/`F-V019`/`F-V020` → `fixed`（v0.3.0 editorial） |
-| **实施门闩（现行）** | lead 已绑 → 由 `/govern` 在本区推进；**禁止**在 closed workspace-003/004/005 吸收本意图；**禁止**借本 VP 扩张 `I-PROTO-FULL-001` disposition |
-| **激活/开区 ≠ 交付完成** | **不**构成 Design Token / Shell / Renderer 视觉已产品化证据 |
+| **Vision required** | **已满足**：VRev-011 `F-V018`/`F-V019`/`F-V020` → `fixed`（v0.3.0 editorial）；VRev-015 `F-V027`/`F-V028` → `fixed`（v0.5.0 editorial） |
+| **关门门闩（现行）** | 已 `closed`（2026-08-09 用户书面确认）；保留 workspace-006 历史绑定，默认不接新区；reopen 须用户确认。**禁止**借本 VP 扩张 `I-PROTO-FULL-001` disposition |
+| **关门 ≠ 视觉无残余** | residual 点名：F-VUI-007/010/011 `accepted-residual`（Root 台账 A-012）、I-004 open non-blocking（WCAG AA 路径 b）；不阻断关门 |
 
 历史门闩（2026-08-08）：VP-006 未 closed 前禁止视觉实施——**已因 VP-006 closed 失效**。  
 「须用户确认激活」门闩：2026-08-09 用户选择「现在激活」后**已解除**。
@@ -47,7 +47,7 @@ parent: null
 | 来源 | 本 VP 继承 |
 |------|------------|
 | Charter `@0.2.0` | 方向级成功边界第 3 条（前端产品化：Tailwind、shadcn/ui 风格、浅/深色、Linear/Vercel **参考**）；非目标保持排除。 |
-| **VP-006 / `I-PROTO-FULL-001`** | **硬前置已 closed**。视觉升级范围 = 关闭时覆盖表 **include** 面（现行权威：workspace-005 Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.0）。**禁止**回退到仅 `I-PROTO-001 v0.1.3` 子集叙事；**禁止**借本 VP 改写覆盖 disposition 或新增 exclude。 |
+| **VP-006 / `I-PROTO-FULL-001`** | **硬前置已 closed**。视觉升级范围 = 关闭时覆盖表 **include** 面（现行权威：workspace-005 Root `attachments/I-PROTO-FULL-001-coverage-v2-7-0.md` v1.0.1）。**禁止**回退到仅 `I-PROTO-001 v0.1.3` 子集叙事；**禁止**借本 VP 改写覆盖 disposition 或新增 exclude。 |
 | VP-003 / `module-architecture.md` | 单主线模块化、薄内核、后端聚合 Manifest 与 Profile；不破坏单主线。 |
 | VP-004 / playbook | 一方模块与 AI 操作契约；UI 扩展须符合 playbook。 |
 
@@ -129,11 +129,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` 或 `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-09 | **closed**（用户书面确认） | 用户书面「确认关门」（VRev-015 F-V027 fixed）；S1–S5 全部交付；vitest 616/616 + build exit 0 + Playwright e2e 2/2 回归全绿；独立审 A-001/A-004/A-011/A-002(S4+S5) 与编排响应闭环 | `docs/workspaces/workspace-006-design-system-and-ui-experience/goal-tree.md`（Root done 5/5；GOAL-002 6/6、003 2/2、004 3/3、005 2/2）；Root D-008 / A-012 / E-010；GOAL-005 E-001/E-002（616 tests + e2e 2/2）；`reviews/VRev-015-vp005-closeout-readiness.md` | F-VUI-007/010/011 `accepted-residual`（Root 台账 A-012）；I-004 `open non-blocking`（F-V019 路径 b，WCAG AA 不进退出分母） |
 
 ## 规划修订短史
 
@@ -144,3 +142,5 @@ parent: null
 | 2026-08-09 | `0.3.0` | `/vision` 响应 VRev-011：**F-V018** exit 2/S2 钉死 `I-PROTO-FULL-001` 真实 type（禁 Detail/Filter 杜撰名）；**F-V019** 选路径 b（WCAG AA / Cmd+K 默认不进退出分母）；**F-V020** 补交付形态定名 + 过程 exit 6 自洽 + Non-goals 笔误已清。VP-006 硬前置标为已满足；实施门闩改为「须用户书面确认激活」。仍 `planned`。 |
 | 2026-08-09 | `0.4.0` | 用户书面确认「现在激活」：`planned` → **`active`**；解除激活门闩。`lead_workspace` 仍 `null`；物理 scaffold 交 `/govern`（slug 须用户确认）。未宣称视觉产品化已交付。 |
 | 2026-08-09 | `0.4.1` | `/govern` 开区：用户确认 slug `workspace-006-design-system-and-ui-experience`；Root `GOAL-001-design-system-and-ui-experience`；`lead_workspace` 绑定；S1–S5 纲领落盘（`0/5`）。激活/开区 **不**宣称视觉已交付。 |
+| 2026-08-09 | `0.5.0` | `/vision` 响应 VRev-015：用户书面「确认关门」；`active` → **`closed`**；关门记录落盘（exit 1–6 ↔ 证据映射 + residual 点名）；roadmap / workspaces / Charter 关系节原子同步（VR-011 editorial）。`F-V027`/`F-V028` → `fixed`。 |
+| 2026-08-10 | `0.5.1` | editorial 同步 VP-006 现行覆盖权威指针至 `I-PROTO-FULL-001` v1.0.1；保留本 VP 已关门状态与原始协议范围。 |

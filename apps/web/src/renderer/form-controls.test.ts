@@ -4,6 +4,7 @@ import {
   checkFormCapabilities,
   coerceFieldValue,
   isWhitelistedFormControl,
+  validateFieldValues,
   wireKindOf,
   type FormControlField,
 } from "@/renderer/form-controls";
@@ -269,5 +270,91 @@ describe("checkFormCapabilities", () => {
       },
     ]);
     expect(errors.some((error) => error.code === "DATE_RANGE_DEFAULT_VALUE_FORBIDDEN")).toBe(true);
+  });
+});
+
+
+describe("validateFieldValues (GOAL-014 D-002 §3)", () => {
+  it("reports required failures and skips booleans", () => {
+    const fields: FormControlField[] = [
+      { id: "name", type: "input", required: true },
+      { id: "enabled", type: "switch", required: true },
+      { id: "notes", type: "textarea" },
+    ];
+    const errors = validateFieldValues(fields, { name: "", enabled: true, notes: "x" });
+    expect(errors).toEqual([
+      {
+        field: "name",
+        code: "REQUIRED",
+        messageKey: "form.validation.required",
+        message: "this field is required",
+      },
+    ]);
+  });
+
+  it("checks pattern, length and numeric bounds", () => {
+    const fields: FormControlField[] = [
+      { id: "code", type: "input", pattern: "^[a-z]+$" },
+      { id: "bio", type: "textarea", minLength: 3, maxLength: 5 },
+      { id: "age", type: "inputNumber", min: 1, max: 120 },
+    ];
+    const errors = validateFieldValues(fields, {
+      code: "ABC",
+      bio: "ab",
+      age: 200,
+    });
+    const codes = errors.map((e) => e.code).sort();
+    expect(codes).toEqual(["MAX_VALUE", "MIN_LENGTH", "PATTERN"]);
+  });
+
+  it("passes valid values", () => {
+    const fields: FormControlField[] = [
+      { id: "code", type: "input", pattern: "^[a-z]+$", required: true },
+      { id: "age", type: "inputNumber", min: 1, max: 120 },
+    ];
+    expect(validateFieldValues(fields, { code: "abc", age: 30 })).toEqual([]);
+  });
+
+  it("empty non-required values are not pattern-checked", () => {
+    const fields: FormControlField[] = [
+      { id: "code", type: "input", pattern: "^[a-z]+$" },
+    ];
+    expect(validateFieldValues(fields, { code: "" })).toEqual([]);
+  });
+});
+
+describe("checkFormCapabilities · readOnly gate (ADR-0040, since 2.9)", () => {
+  const field: FormControlField = { id: "dictKey", type: "input", readOnly: true };
+
+  it("accepts readOnly at protocol 2.9 with form.controls.readonly", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.9", requiredCapabilities: ["app.manifest", "form.controls.readonly"] },
+      [field],
+    );
+    expect(errors).toEqual([]);
+  });
+
+  it("rejects readOnly below protocol 2.9", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.8", requiredCapabilities: ["app.manifest", "form.controls.readonly"] },
+      [field],
+    );
+    expect(errors.some((e) => e.code === "FORM_VERSION_TOO_LOW" && e.path.includes("readOnly"))).toBe(true);
+  });
+
+  it("rejects readOnly without the form.controls.readonly capability", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.9", requiredCapabilities: ["app.manifest"] },
+      [field],
+    );
+    expect(errors.some((e) => e.code === "FORM_CAPABILITY_REQUIRED" && e.path.includes("readOnly"))).toBe(true);
+  });
+
+  it("leaves non-readOnly fields ungated at lower protocol versions", () => {
+    const errors = checkFormCapabilities(
+      { protocolVersion: "2.8", requiredCapabilities: ["app.manifest"] },
+      [{ id: "label", type: "input" }],
+    );
+    expect(errors).toEqual([]);
   });
 });

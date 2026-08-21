@@ -102,13 +102,13 @@ parent: null
 - closed_at: `2026-07-31`
 - closed_by: `/vision` · V6 响应 VRev-003（用户确认 residual + 分发边界诊断）
 - impact: 将本仓 `docs/contracts` 中 `contractVerificationStatus: verified` / `runtime-verified` 当作**本仓库可复核**运行时证明时会失实；不阻断产品愿景开区，但削弱契约证据链可审计性。
-- finding: `docs/contracts/skills-consumer-compatibility-matrix.json` 多处 `evidence` 指向 `docs/workspace-001-goal-governance/GOAL-008-…/attachments/runtime/…`，本仓 `docs/` 下**不存在**该工作区。独立审计无法在本 worktree 打开这些 JSON。`docs/README.md` 亦声明 monorepo dogfood 过程树不随分发。
+- finding: `docs/contracts/skills-consumer-compatibility-matrix.json` 多处 `evidence` 指向 `docs/workspaces/workspace-001-goal-governance/GOAL-008-…/attachments/runtime/…`，本仓 `docs/` 下**不存在**该工作区。独立审计无法在本 worktree 打开这些 JSON。`docs/README.md` 亦声明 monorepo dogfood 过程树不随分发。
 - evidence: `docs/contracts/skills-consumer-compatibility-matrix.json`；`docs/` 目录列表无 `workspace-*`。
 - closure: 任选其一并留痕——（a）随契约附可解析证据或链接上游 monorepo 固定 ref；（b）将本仓矩阵 verification 降级为 `declared`/`not-verified-in-consumer-tree` 并说明证据外置；（c）用户书面接受 residual（范围：本仓不携带 dogfood runtime）。
 - 建议 class: `editorial`（契约/分发文档；非 Charter 方向变更）
 - resolution: |
   **诊断（用户确认）**：本仓是 **Goal Governance Skills 的消费仓**，不是 monorepo 生成仓。
-  - 消费仓按 `docs/README.md` **不**分发 monorepo dogfood 过程树；因此矩阵里指向 `docs/workspace-001-goal-governance/GOAL-008-…/attachments/runtime/*` 的路径在本 worktree **不可解析是预期现象**，不是本产品愿景（Admin 基架）缺证据。
+  - 消费仓按 `docs/README.md` **不**分发 monorepo dogfood 过程树；因此矩阵里指向 `docs/workspaces/workspace-001-goal-governance/GOAL-008-…/attachments/runtime/*` 的路径在本 worktree **不可解析是预期现象**，不是本产品愿景（Admin 基架）缺证据。
   - 矩阵中的 `verified` / `runtime-verified` 应读作**生成仓 adapter 发布溯源声明**（随 `docs/contracts/`  canonical 镜像拷贝而来），**不是**要求每个消费仓复跑或内嵌生成仓 runtime JSON。
   - 若审计把「路径须在本 worktree 可打开」当成消费仓 MUST，则是把**生成仓 dogfood 要求误带到消费仓**——分发/表述边界问题，而非本仓 Admin 开区门禁失败。
   **本轮闭合路径**：`accepted-residual`（对应原选项 c + 上述边界澄清）。

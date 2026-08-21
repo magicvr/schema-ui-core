@@ -1,14 +1,16 @@
-// Package schemarender provides the core.schema-render module contribution.
+// Package schemarender provides the core.schema-render module contribution:
+// the schema / validation capability shell. W1 (GOAL-002 / workspace-010) moved
+// the 8 example page documents out to the optional dev.examples module, so this
+// module provides the capability but no page contributions of its own.
 package schemarender
 
 import (
 	"context"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	coreschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/schemarender/schema"
 )
 
-const ModuleID = coreschema.ModuleID
+const ModuleID = "core.schema-render"
 
 type Provider struct{}
 
@@ -21,9 +23,6 @@ func (p *Provider) Descriptor() kernel.Module {
 		KernelAPIRange: ">=2.0 <3.0",
 		DependsOn:      []string{"core.server-registration"},
 		Provides:       []kernel.Capability{kernel.CapabilitySchema, kernel.CapabilityValidation},
-		Contributions: kernel.ContributionKeys{
-			Pages: coreschema.PageIDs(),
-		},
 	}
 }
 
@@ -31,17 +30,8 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 	return nil, nil
 }
 
-func (p *Provider) Register(_ context.Context, reg kernel.Registrar) error {
-	documents := coreschema.SchemaDocuments()
-	for _, pageID := range coreschema.PageIDs() {
-		if err := reg.Schema(kernel.PageContribution{
-			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: pageID},
-			PageID:               pageID,
-			Owner:                ModuleID,
-			Document:             documents[pageID],
-		}); err != nil {
-			return err
-		}
-	}
+// Register contributes no surfaces: the schema capability is provided by the
+// module graph, and example/page documents are owned by their own modules.
+func (p *Provider) Register(context.Context, kernel.Registrar) error {
 	return nil
 }

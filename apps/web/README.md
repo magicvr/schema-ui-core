@@ -14,24 +14,24 @@ session + permission-engine gating, and R5 example pages.
 ```bash
 npm install
 npm run dev
-# http://localhost:5173  (Vite proxies /api to :8080)
-# If 5173 is blocked (Windows Hyper-V excluded range), override:
-#   $env:WEB_PORT=9999; npm run dev
-
+# http://localhost:25173  (Vite proxies /api to :25080)
+# Override with WEB_PORT (dev web) and/or HTTP_ADDR (API) when another port is
+# needed, e.g. $env:WEB_PORT=3000; npm run dev
 npm test        # vitest run
-npm run test:e2e  # Playwright Chromium; defaults to APP_PROFILE=mvp
-# Bash: run both runtime module profiles against the same Web code
-APP_PROFILE=mvp npm run test:e2e
-APP_PROFILE=admin npm run test:e2e
-# Windows local workaround when 5173 is blocked:
-#   $env:WEB_PORT=9999; $env:APP_PROFILE="admin"; npm run test:e2e
+npm run test:e2e  # Playwright Chromium; defaults to the config.yaml profile (mvp)
+# Bash: run the runtime profiles against the same Web code (demo = non-production)
+# e2e profile follows apps/api/configs/config.yaml (T-06)
+# e2e profile follows apps/api/configs/config.yaml (T-06)
+# e2e profile follows apps/api/configs/config.yaml (T-06)
+# Default ports (API :25080 / web :25173) are above Windows Hyper-V excluded
+# ranges; override via HTTP_ADDR / WEB_PORT if a port is taken.
 npm run build   # tsc -b && vite build
 ```
 
 ### 生产（compose / nginx · GOAL-008 S2 / I-008-001）
 
 - 生产形态由仓库根 `compose.yaml` 提供第二启动路径：`apps/web/Dockerfile` 多阶段构建（`node:22` → `nginx:alpine`），`nginx.conf` 服务 `dist/` 并做 SPA fallback + `/api` 反代到 `api` 服务；同源免 CORS。
-- SPA 使用相对路径 `/api/*`（`auth-client.ts`），故生产**必须**同源反代（`location /api → proxy_pass http://api:8080`），无需 `VITE_` API base。
+- SPA 使用相对路径 `/api/*`（`auth-client.ts`），故生产**必须**同源反代（`location /api → proxy_pass http://api:25080`），无需 `VITE_` API base。
 - 完整契约见 GOAL-008 `attachments/I-008-001-engineering-contract.md`。
 
 ## Shell & session (R3/R4)

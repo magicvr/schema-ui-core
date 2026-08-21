@@ -1,113 +1,18 @@
 {
   "protocolVersion": "2.7",
-  "requiredCapabilities": ["app.manifest", "app.navigation"],
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
   "app": {
     "appId": "schema-ui-core",
     "name": "Schema UI Core",
-    "homePageRef": "overview",
     "description": "The schema-ui-core administration workspace."
   },
-  "pages": [
-    {
-      "pageId": "admin-list-batch",
-      "title": "List + batch",
-      "schemaUrl": "/api/schema/admin-list-batch",
-      "route": "/admin-list-batch"
-    },
-    {
-      "pageId": "overview",
-      "title": "Overview",
-      "schemaUrl": "/api/schema/overview",
-      "route": "/overview"
-    },
-    {
-      "pageId": "data-display",
-      "title": "Data display",
-      "schemaUrl": "/api/schema/data-display",
-      "route": "/data-display"
-    },
-    {
-      "pageId": "data-table",
-      "title": "Data table",
-      "schemaUrl": "/api/schema/data-table",
-      "route": "/data-table"
-    },
-    {
-      "pageId": "search-form-table",
-      "title": "Search + table",
-      "schemaUrl": "/api/schema/search-form-table",
-      "route": "/search-form-table"
-    },
-    {
-      "pageId": "form-controls",
-      "title": "Form controls",
-      "schemaUrl": "/api/schema/form-controls",
-      "route": "/form-controls"
-    },
-    {
-      "pageId": "form-with-reactions",
-      "title": "Form with reactions",
-      "schemaUrl": "/api/schema/form-with-reactions",
-      "route": "/form-with-reactions"
-    },
-    {
-      "pageId": "form-with-upload",
-      "title": "Form with upload",
-      "schemaUrl": "/api/schema/form-with-upload",
-      "route": "/form-with-upload"
-    }
-  ],
+  "pages": [],
   "navigation": {
-    "top": [
-      {
-        "pageRef": "overview",
-        "label": "Overview",
-        "icon": "dashboard"
-      }
-    ],
-    "sidebar": [
-      {
-        "label": "Examples",
-        "icon": "folder",
-        "items": [
-          {
-            "pageRef": "data-table",
-            "label": "Data table",
-            "icon": "table"
-          },
-          {
-            "pageRef": "admin-list-batch",
-            "label": "List + batch",
-            "icon": "batch"
-          },
-          {
-            "pageRef": "data-display",
-            "label": "Data display",
-            "icon": "chart"
-          },
-          {
-            "pageRef": "search-form-table",
-            "label": "Search + table",
-            "icon": "search"
-          },
-          {
-            "pageRef": "form-controls",
-            "label": "Form controls",
-            "icon": "form"
-          },
-          {
-            "pageRef": "form-with-reactions",
-            "label": "Form with reactions",
-            "icon": "reaction"
-          },
-          {
-            "pageRef": "form-with-upload",
-            "label": "Form with upload",
-            "icon": "upload"
-          }
-        ]
-      }
-    ],
+    "top": [],
+    "sidebar": [],
     "user": []
   }
 }

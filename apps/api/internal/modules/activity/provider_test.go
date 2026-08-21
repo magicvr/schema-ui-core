@@ -56,9 +56,9 @@ func TestActivityProviderRegistersSurfaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
-	// Read-only: no POST/PATCH/DELETE routes.
-	if len(set.Routes) != 2 {
-		t.Fatalf("routes = %d, want 2 (read-only)", len(set.Routes))
+	// Read-only: list/detail + F-03 export route.
+	if len(set.Routes) != 3 {
+		t.Fatalf("routes = %d, want 3 (read-only list/detail/export)", len(set.Routes))
 	}
 	if len(set.Pages) != 1 || set.Pages[0].PageID != "activity" {
 		t.Fatalf("pages = %+v", set.Pages)

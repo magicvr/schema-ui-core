@@ -32,8 +32,25 @@ function buildValidators(): Record<RuntimeSchemaKind, ValidateFunction> {
 
   // Register by both $id and the relative filenames used in $ref so cross-schema
   // references (page -> node -> reaction) resolve exactly like schema-validate.ts.
-  ajv.addSchema(nodeSchema);
-  ajv.addSchema(nodeSchema, "node.schema.json");
+  // GOAL-018 local extension: custom nodes carry a top-level component key.
+  // The extension is applied at validation time so the upstream-pinned
+  // node.schema.json artifact (I-PROTO-004, schema-ui-docs@2.9.0) stays
+  // byte-identical — this is NOT an upstream protocol change.
+  // The upstream node.schema.json types do not know the local extension;
+  // cast through unknown to keep the spread clean (local-only addition).
+  const extendedNodeSchema = {
+    ...nodeSchema,
+    properties: {
+      ...(nodeSchema.properties ?? {}),
+      component: {
+        type: "string",
+        description:
+          "GOAL-018 local extension: custom node component key (renderer custom-components registry)",
+      },
+    },
+  } as unknown as typeof nodeSchema;
+  ajv.addSchema(extendedNodeSchema);
+  ajv.addSchema(extendedNodeSchema, "node.schema.json");
   ajv.addSchema(pageSchema);
   ajv.addSchema(pageSchema, "page.schema.json");
   ajv.addSchema(actionSchema);
