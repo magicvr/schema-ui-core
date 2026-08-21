@@ -38,6 +38,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	// A-002 R-002 (workspace-014 GOAL-002): config accepts driver=s3 from R1,
+	// but the S3 adapter and call-site wiring land in R2/R3 - until then file
+	// storage still uses the local disk adapter and readyz does not cover the
+	// backend. Make that window explicit so operators never mistake a
+	// configured driver for an active backend.
+	if cfg.ObjectsDriver == "s3" {
+		logger.Warn("storage.objects.driver=s3 configured but S3 wiring lands in workspace-014 R2; file storage still uses the local disk adapter")
+	}
+
 	seedHash, err := resolveSeedHash(cfg, logger)
 	if err != nil {
 		logger.Error("startup failed", "err", err)

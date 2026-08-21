@@ -220,3 +220,40 @@ func TestLocalListAndIsolation(t *testing.T) {
 		t.Fatalf("missing namespace list = %v, err %v; want empty non-nil", got, err)
 	}
 }
+
+// A-002 R-003: a missing sidecar is tolerated with empty meta on Get/Stat.
+func TestLocalMissingSidecarTolerated(t *testing.T) {
+	s, root := newTestStore(t)
+	ctx := context.Background()
+	if err := s.Put(ctx, kernel.ObjectNamespaceUploads, idA, []byte("body"), kernel.ObjectMeta{Name: "f.txt", Owner: "u1"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(root, "uploads", idA+".meta.json")); err != nil {
+		t.Fatal(err)
+	}
+	body, meta, err := s.Get(ctx, kernel.ObjectNamespaceUploads, idA)
+	if err != nil || string(body) != "body" || meta != (kernel.ObjectMeta{}) {
+		t.Fatalf("get without sidecar: body=%q meta=%+v err=%v", body, meta, err)
+	}
+	info, err := s.Stat(ctx, kernel.ObjectNamespaceUploads, idA)
+	if err != nil || info.Size != 4 || info.Meta != (kernel.ObjectMeta{}) {
+		t.Fatalf("stat without sidecar: %+v err=%v", info, err)
+	}
+}
+
+// A-002 R-003: a failed sidecar write rolls the body back (no body ever
+// exists without its meta - W7 F-013 fail-closed). The sidecar path is
+// pre-created as a DIRECTORY so WriteFile deterministically fails.
+func TestLocalPutRollsBackWhenMetaWriteFails(t *testing.T) {
+	s, root := newTestStore(t)
+	ctx := context.Background()
+	if err := os.MkdirAll(filepath.Join(root, "uploads", idA+".meta.json"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Put(ctx, kernel.ObjectNamespaceUploads, idA, []byte("x"), kernel.ObjectMeta{Owner: "u1"}); err == nil {
+		t.Fatal("put must fail when the sidecar cannot be written")
+	}
+	if _, _, err := s.Get(ctx, kernel.ObjectNamespaceUploads, idA); !errors.Is(err, kernel.ErrObjectNotFound) {
+		t.Fatalf("body was not rolled back: err = %v", err)
+	}
+}

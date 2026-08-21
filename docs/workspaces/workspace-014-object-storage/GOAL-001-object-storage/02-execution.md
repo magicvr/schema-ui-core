@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-21 | 开区 scaffold（workspace-014 + Root + A2 路线图） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-21 | R1 实施完成（承载于 GOAL-002；commit d403832 + 34db126；全量测试绿） | recorded | [E-002-r1-implementation.md](02-execution/E-002-r1-implementation.md) |
 
 ## 事实边界
 

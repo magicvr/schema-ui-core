@@ -509,9 +509,11 @@ func Load() *Config {
 	switch cfg.ObjectsDriver {
 	case "", "local":
 		cfg.ObjectsDriver = "local"
-		if leak := firstNonEmpty(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region, cfg.ObjectsS3Bucket,
-			cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey); leak != "" {
-			cfg.LoadError = fmt.Errorf("config: storage.objects.s3.* is set (%q) but storage.objects.driver is local — set driver to s3 or remove the s3 keys", leak)
+		// A-002 F-001: report only the offending KEY NAME — never interpolate
+		// the value (a secret may be the only s3 key set, and this string is
+		// logged verbatim by the startup error path).
+		if key := firstSetS3Key(cfg); key != "" {
+			cfg.LoadError = localS3KeyMisconfig(key)
 			return cfg
 		}
 	case "s3":
@@ -881,15 +883,28 @@ func (c *Config) ValidateProd() error {
 	return nil
 }
 
-// firstNonEmpty returns the first trimmed-non-empty value, used to name the
-// offending s3 key when driver=local is misconfigured with s3 settings.
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if t := strings.TrimSpace(v); t != "" {
-			return t
+// firstSetS3Key returns the NAME of the first non-empty storage.objects.s3.*
+// field in a stable order, so misconfiguration errors can name the key
+// without ever carrying a credential value into logs (A-002 F-001).
+func firstSetS3Key(c *Config) string {
+	for _, pair := range []struct{ key, value string }{
+		{"endpoint", c.ObjectsS3Endpoint},
+		{"region", c.ObjectsS3Region},
+		{"bucket", c.ObjectsS3Bucket},
+		{"access_key_id", c.ObjectsS3AccessKeyID},
+		{"secret_access_key", c.ObjectsS3SecretAccessKey},
+	} {
+		if strings.TrimSpace(pair.value) != "" {
+			return pair.key
 		}
 	}
 	return ""
+}
+
+// localS3KeyMisconfig is the shared driver=local + s3.* misconfig error
+// (A-002 R-001): one wording for Load and ValidateProd.
+func localS3KeyMisconfig(key string) error {
+	return fmt.Errorf("config: storage.objects.s3.%s is set but storage.objects.driver is local — set driver to s3 or remove the s3 keys", key)
 }
 
 // validateObjects enforces the storage.objects pairing rules (VP-014
@@ -898,6 +913,11 @@ func firstNonEmpty(values ...string) string {
 func (c *Config) validateObjects() error {
 	switch c.ObjectsDriver {
 	case "", "local":
+		// A-002 R-001: mirror Load's local-misconfig recheck so the contract
+		// holds for configs that bypass Load, exactly like validateDB.
+		if key := firstSetS3Key(c); key != "" {
+			return localS3KeyMisconfig(key)
+		}
 	case "s3":
 		return validateObjectsS3(c)
 	default:

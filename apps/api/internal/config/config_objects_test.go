@@ -88,3 +88,29 @@ func TestObjectsConfig(t *testing.T) {
 		}
 	})
 }
+
+// A-002 F-001: the local-misconfig error names the KEY, never the value.
+func TestObjectsMisconfigErrorDoesNotLeakSecret(t *testing.T) {
+	t.Run("secret-only under local driver", func(t *testing.T) {
+		const secret = "supersecret-value-42"
+		y := "app:\n  env: development\nstorage:\n  objects:\n    s3:\n      secret_access_key: " + secret + "\n"
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("secret-only s3 key with local driver must fail closed")
+		}
+		if !strings.Contains(cfg.LoadError.Error(), "storage.objects.s3.secret_access_key") {
+			t.Fatalf("error must name the offending key, got %v", cfg.LoadError)
+		}
+		if strings.Contains(cfg.LoadError.Error(), secret) {
+			t.Fatal("error must never carry the secret value (A-002 F-001)")
+		}
+	})
+
+	t.Run("ValidateProd re-checks local misconfig (A-002 R-001)", func(t *testing.T) {
+		c := &Config{AppEnv: "development", ObjectsS3Endpoint: "http://minio:9000"}
+		if err := c.ValidateProd(); err == nil || !strings.Contains(err.Error(), "storage.objects.s3.endpoint") {
+			t.Fatalf("ValidateProd must re-check local+s3 misconfig, got %v", err)
+		}
+	})
+}

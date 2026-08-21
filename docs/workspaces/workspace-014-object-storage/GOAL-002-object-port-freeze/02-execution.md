@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| E-001 | 2026-08-21 | R1 实施——端口类型 / 本地适配器 / 配置面（全量测试绿） | recorded | [E-001-port-local-config.md](02-execution/E-001-port-local-config.md) |
+| E-001 | 2026-08-21 | R1 实施——端口类型 / 本地适配器 / 配置面（全量测试绿；commit 34db126） | recorded | [E-001-port-local-config.md](02-execution/E-001-port-local-config.md) |
+| E-002 | 2026-08-21 | A-002 审计响应——F-001 泄露面修复 + R-001/R-002/R-003 闭合 | recorded | [E-002-audit-response.md](02-execution/E-002-audit-response.md) |
 
 ## 事实边界
 
