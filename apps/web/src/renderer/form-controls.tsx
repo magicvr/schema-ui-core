@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
+import { withTimeout } from "@/lib/fetch-timeout";
 import type { UploadableFile } from "@/protocol/conformance/upload-orchestration";
 
 import { getCustomComponent } from "@/renderer/custom-components";
@@ -54,6 +55,9 @@ export interface FormControlsProps {
 
 export type FieldTranslator = (key: string, params?: MessageParams, literalFallback?: string) => string;
 
+/** W10 F-002: timeout-bounded default transport for dynamic option sources. */
+const defaultTimeoutFetch = withTimeout();
+
 /**
  * W11 · U-01/U-02: loads a form field's dynamic option source. Returns
  * null while no source is declared or the fetch is in flight (callers fall
@@ -73,9 +77,12 @@ function useDynamicOptions(
       return;
     }
     // Options-source urls are same-origin single-slash paths like table data
-    // sources, but MAY carry a query string; fragments and scheme/host forms
-    // are rejected (fail closed, no fetch).
-    if (!/^\/(?!\/)[^\s\#]*$/.test(source.url)) {
+    // sources, but MAY carry a query string; fragments, whitespace and
+    // backslashes are rejected (fail closed, no fetch). The backslash ban is
+    // load-bearing: WHATWG URL parsing normalizes "\" to "/" in special
+    // schemes, so "/\host" would otherwise become the protocol-relative
+    // "//host" and escape the origin (W10 F-007).
+    if (!/^\/(?!\/)[^\s\\\#]*$/.test(source.url)) {
       setItems([]);
       return;
     }
@@ -90,7 +97,9 @@ function useDynamicOptions(
         }
       }
     }
-    (fetcher ?? globalThis.fetch)(url.toString(), { headers: { Accept: "application/json" } })
+    // W10 F-002: the default transport is timeout-bounded; an injected
+    // fetcher (tests / authed transport) is honored as-is.
+    (fetcher ?? defaultTimeoutFetch)(url.toString(), { headers: { Accept: "application/json" } })
       .then((response) => (response.ok ? response.json() : null))
       .then((body: unknown) => {
         if (cancelled) {

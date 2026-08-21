@@ -12,6 +12,7 @@
 import type { PageEntry } from "@/protocol/app-manifest";
 import { resolveSchemaUrl } from "@/protocol/app-manifest";
 import { validatePageDocument } from "@/protocol/conformance/runtime-schema-validate";
+import { withTimeout } from "@/lib/fetch-timeout";
 
 export type PageSchemaErrorCode =
   | "PAGE_LOAD_FAILED"
@@ -69,7 +70,9 @@ export async function loadPageDocument(
   options: LoadPageOptions = {},
 ): Promise<unknown> {
   const baseURL = options.baseURL ?? defaultBaseURL();
-  const fetcher = options.fetcher ?? globalThis.fetch;
+  // W10 F-002: the default transport is timeout-bounded; an injected fetcher
+  // (tests) is honored as-is so failure paths stay deterministic.
+  const fetcher = options.fetcher ?? withTimeout();
   const url = resolveSchemaUrl(baseURL, page.schemaUrl, params);
 
   if (typeof fetcher !== "function") {

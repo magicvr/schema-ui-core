@@ -824,19 +824,19 @@ func TestValidateDBPairs(t *testing.T) {
 // via DB_PASSWORD, optional whole-DSN override, and sqlite ignoring the params.
 func TestDBPostgresExplodedParams(t *testing.T) {
 	t.Run("builds DSN from exploded params with env password", func(t *testing.T) {
-		t.Setenv("DB_PASSWORD", "Ss.110110")
+		t.Setenv("DB_PASSWORD", "test-only-password")
 		t.Setenv("DB_DSN", "")
-		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 192.168.31.213\n  port: 5432\n  name: sa\n  user: sa\n  sslmode: disable\n"
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: db.example.internal\n  port: 5432\n  name: appdb\n  user: appuser\n  sslmode: disable\n"
 		writeConfig(t, y)
 		cfg := Load()
 		if cfg.LoadError != nil {
 			t.Fatalf("LoadError: %v", cfg.LoadError)
 		}
-		want := "postgres://sa:Ss.110110@192.168.31.213:5432/sa?sslmode=disable"
+		want := "postgres://appuser:test-only-password@db.example.internal:5432/appdb?sslmode=disable"
 		if cfg.DBDSN != want {
 			t.Fatalf("DBDSN = %q, want %q", cfg.DBDSN, want)
 		}
-		if cfg.DBPassword != "Ss.110110" {
+		if cfg.DBPassword != "test-only-password" {
 			t.Errorf("DBPassword = %q, want value from env", cfg.DBPassword)
 		}
 	})
@@ -844,7 +844,7 @@ func TestDBPostgresExplodedParams(t *testing.T) {
 	t.Run("postgres without password fails closed", func(t *testing.T) {
 		t.Setenv("DB_PASSWORD", "")
 		t.Setenv("DB_DSN", "")
-		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: 192.168.31.213\n  name: sa\n  user: sa\n"
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: db.example.internal\n  name: appdb\n  user: appuser\n"
 		writeConfig(t, y)
 		cfg := Load()
 		if cfg.LoadError == nil || !strings.Contains(cfg.LoadError.Error(), "DB_PASSWORD") {
