@@ -74,12 +74,37 @@ SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-${ADMIN_INITIAL_PASSWORD}-${PROFILE}-s
 # 临时 override：仅为本机/CI 冒烟把 API 端口 loopback 发布给 smoke.sh（生产仍不发布）
 OVERRIDE_DIR="$(mktemp -d)"
 OVERRIDE_FILE="$OVERRIDE_DIR/compose.smoke.yaml"
-cat > "$OVERRIDE_FILE" <<'EOF'
+if [ -n "${PRERELEASE_PROFILE:-}" ]; then
+  # T-06/W7：API 的启用模块集/profile 只认 operator 配置（configs/config.yaml），
+  # 不吃 APP_PROFILE env。显式请求某个冒烟 profile 时，把它的 profile 盖写进一份
+  # 临时 operator 配置并在 override 里用 CONFIG_FILE 指向，让这一矩阵腿真正按该
+  # profile 启动（mvp|admin|demo）。
+  case "$PROFILE" in
+    mvp|admin|demo) ;;
+    *) fail "PRE-RELEASE: 未知冒烟 profile '$PROFILE'（允许 mvp|admin|demo）" ;;
+  esac
+  SMOKE_CFG="$OVERRIDE_DIR/smoke-config.yaml"
+  cp apps/api/configs/config.yaml "$SMOKE_CFG"
+  sed -i -E "s/^([[:space:]]*)profile:.*/\1profile: $PROFILE/" "$SMOKE_CFG"
+  cat > "$OVERRIDE_FILE" <<EOF
+services:
+  api:
+    ports:
+      - "127.0.0.1:25080:25080"
+    environment:
+      CONFIG_FILE: /smoke/smoke-config.yaml
+    volumes:
+      - "$SMOKE_CFG:/smoke/smoke-config.yaml:ro"
+EOF
+else
+  # 独立使用（未显式指定 profile）：与历史行为逐字节一致，仅发布 API 端口。
+  cat > "$OVERRIDE_FILE" <<'EOF'
 services:
   api:
     ports:
       - "127.0.0.1:25080:25080"
 EOF
+fi
 
 printf 'PRE-RELEASE SMOKE | project=%s | profile=%s | web=%s\n' "$PROJECT" "$PROFILE" "$WEB_BASE_URL"
 
