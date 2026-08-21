@@ -12,11 +12,14 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // recorderTracing builds an enabled Tracing backed by an in-memory span
@@ -122,6 +125,68 @@ func TestServerSpanJoinsUpstreamTrace(t *testing.T) {
 	}
 }
 
+// TestServerSpanCarriesCorrelationRequestID pins GOAL-005 D-001 §1: the
+// span attribute correlation.request_id mirrors the context request id, and
+// the id lands in W3C baggage under the frozen key.
+func TestServerSpanCarriesCorrelationRequestID(t *testing.T) {
+	tr, rec := recorderTracing(t)
+	o := NewObserver(BuildInfo{Version: "t", Commit: "t", GoVersion: "t", Profile: "test"})
+	o.SetTracing(tr)
+
+	h := o.Wrap("GET /api/accounts/me", "core", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	// The real chain runs requestid.Middleware OUTSIDE the mux; compose it to
+	// prove the header id reaches the span through the actual middleware.
+	chain := requestid.Middleware(h)
+	req := httptest.NewRequest(http.MethodGet, "/api/accounts/me", nil)
+	req.Header.Set("X-Request-ID", "corr-0001")
+	chain.ServeHTTP(httptest.NewRecorder(), req)
+
+	spans := rec.Ended()
+	if len(spans) != 1 {
+		t.Fatalf("ended spans = %d, want 1", len(spans))
+	}
+	attrs := map[string]string{}
+	for _, kv := range spans[0].Attributes() {
+		if v, ok := kv.Value.AsInterface().(string); ok {
+			attrs[string(kv.Key)] = v
+		}
+	}
+	if got := attrs["correlation.request_id"]; got != "corr-0001" {
+		t.Errorf("correlation.request_id = %q, want %q", got, "corr-0001")
+	}
+}
+
+// TestServerSpanBaggageInjection verifies the baggage side of D-001 §2
+// through the serverSpan seam: the frozen key is set on the resulting ctx.
+func TestServerSpanBaggageInjection(t *testing.T) {
+	tr, rec := recorderTracing(t)
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	ctx, span := tr.serverSpan(req, "GET", "/healthz", "gen-0002")
+	span.End()
+
+	if got := baggage.FromContext(ctx).Member("request-id").Value(); got != "gen-0002" {
+		t.Errorf("baggage request-id = %q, want gen-0002", got)
+	}
+	if len(rec.Ended()) != 1 {
+		t.Errorf("ended spans = %d, want 1", len(rec.Ended()))
+	}
+}
+
+// TestServerSpanSkipsCorrelationWithoutRequestID keeps the seam stable when
+// no requestid middleware ran (focused tests, non-HTTP entry points).
+func TestServerSpanSkipsCorrelationWithoutRequestID(t *testing.T) {
+	tr, rec := recorderTracing(t)
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	ctx, span := tr.serverSpan(req, "GET", "/healthz", "")
+	span.End()
+	if baggage.FromContext(ctx).Member("request-id").Value() != "" {
+		t.Errorf("baggage must stay empty without a request id")
+	}
+	_ = rec
+}
+
 // TestTracingExporterDeliversToOTLPSink proves the export path end to end:
 // a real OTLP/HTTP exporter + BatchSpanProcessor posts to the configured
 // endpoint, and Shutdown force-flushes pending spans.
@@ -129,7 +194,7 @@ func TestTracingExporterDeliversToOTLPSink(t *testing.T) {
 	var posts atomic.Int64
 	sink := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// The exporter's URL/path wrapping is SDK-owned; the assertion here is
-		// DELIVERY 鈥?a POST carrying protobuf reaches the configured endpoint.
+		// DELIVERY - a POST carrying protobuf reaches the configured endpoint.
 		if r.Method == http.MethodPost {
 			_, _ = io.Copy(io.Discard, r.Body)
 			posts.Add(1)

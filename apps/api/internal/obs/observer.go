@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -212,7 +213,9 @@ func (o *Observer) Wrap(pattern, owner string, next http.Handler) http.Handler {
 		var span trace.Span
 		if o.tracing != nil && o.tracing.Enabled() {
 			var ctx context.Context
-			ctx, span = o.tracing.serverSpan(r, method, route)
+			// GOAL-005 D-001 §1: the requestid middleware runs outside the mux,
+			// so the correlation id is always present in the context here.
+			ctx, span = o.tracing.serverSpan(r, method, route, requestid.FromContext(r.Context()))
 			r = r.WithContext(ctx)
 		}
 		next.ServeHTTP(rec, r)

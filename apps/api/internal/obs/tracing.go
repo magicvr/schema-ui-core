@@ -8,6 +8,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
@@ -102,7 +103,10 @@ func (t *Tracing) Shutdown(ctx context.Context) error {
 // trace) and starts a SERVER span for one registered route. Attributes stay
 // bounded per GOAL-004 D-001 §5: method/route come from the registration
 // pattern and url.path carries no query string (credentials never enter).
-func (t *Tracing) serverSpan(r *http.Request, method, route string) (context.Context, trace.Span) {
+// When requestID is non-empty it is stamped as correlation.request_id and
+// injected into W3C baggage (key request-id) so downstream instrumented
+// calls inherit the existing correlation contract (GOAL-005 D-001 §1/§2).
+func (t *Tracing) serverSpan(r *http.Request, method, route, requestID string) (context.Context, trace.Span) {
 	if !t.Enabled() {
 		return r.Context(), nil
 	}
@@ -111,7 +115,7 @@ func (t *Tracing) serverSpan(r *http.Request, method, route string) (context.Con
 	if method != "" {
 		name = method + " " + route
 	}
-	return t.tracer.Start(ctx, name,
+	ctx, span := t.tracer.Start(ctx, name,
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.String("http.request.method", method),
@@ -119,6 +123,15 @@ func (t *Tracing) serverSpan(r *http.Request, method, route string) (context.Con
 			attribute.String("url.path", r.URL.Path),
 		),
 	)
+	if requestID != "" {
+		span.SetAttributes(attribute.String("correlation.request_id", requestID))
+		if member, err := baggage.NewMember("request-id", requestID); err == nil {
+			if updated, err := baggage.FromContext(ctx).SetMember(member); err == nil {
+				ctx = baggage.ContextWithBaggage(ctx, updated)
+			}
+		}
+	}
+	return ctx, span
 }
 
 // finishServerSpan stamps the response status and ends the span. Status >=
