@@ -14,9 +14,9 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -27,28 +27,32 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	xdraw "golang.org/x/image/draw"
 	"golang.org/x/image/webp"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 // RasterAssetStore persists processed raster assets (brand logos/favicons,
-// account avatars) in a dedicated directory. Object ids are 16 random bytes
-// (hex), same shape as the generic upload store; each object carries a
-// {type, kind} meta file.
+// account avatars) through the kernel object-storage port (VP-014 R3 ·
+// workspace-014 GOAL-004 D-001): one shared adapter instance, one namespace
+// per family. Object ids are 16 random bytes (hex), same shape as the
+// generic upload store; each object carries {type, kind, owner} metadata.
 type RasterAssetStore struct {
-	dir       string
+	objects   kernel.ObjectStore
+	ns        kernel.ObjectNamespace
 	opts      BrandingAssetsOptions
 	urlPrefix string
 	// kinds maps a kind name to its longest-edge output target (from opts).
 	kinds map[string]func(BrandingAssetsOptions) int
 }
 
-// NewRasterAssetStore constructs a generic store; zero/out-of-range options
-// fall back to the documented defaults (config validation never passes zeros).
-func NewRasterAssetStore(dir string, opts BrandingAssetsOptions, urlPrefix string, kinds map[string]func(BrandingAssetsOptions) int) *RasterAssetStore {
+// NewRasterAssetStore constructs a generic store over the shared object
+// port; zero/out-of-range options fall back to the documented defaults
+// (config validation never passes zeros).
+func NewRasterAssetStore(objects kernel.ObjectStore, ns kernel.ObjectNamespace, opts BrandingAssetsOptions, urlPrefix string, kinds map[string]func(BrandingAssetsOptions) int) *RasterAssetStore {
 	d := DefaultBrandingAssetsOptions()
 	if opts.MaxBytes > 0 {
 		d.MaxBytes = opts.MaxBytes
@@ -65,7 +69,7 @@ func NewRasterAssetStore(dir string, opts BrandingAssetsOptions, urlPrefix strin
 	if opts.JPEGQuality > 0 && opts.JPEGQuality <= 100 {
 		d.JPEGQuality = opts.JPEGQuality
 	}
-	return &RasterAssetStore{dir: dir, opts: d, urlPrefix: urlPrefix, kinds: kinds}
+	return &RasterAssetStore{objects: objects, ns: ns, opts: d, urlPrefix: urlPrefix, kinds: kinds}
 }
 
 // BrandAssetURLPrefix is the public URL prefix served by GET
@@ -77,18 +81,18 @@ const BrandAssetURLPrefix = "/api/branding/assets/"
 const AvatarAssetURLPrefix = "/api/account/avatars/"
 
 // NewBrandingAssetStore constructs the branding store (kinds logo/favicon,
-// targets from BrandingAssetsOptions).
-func NewBrandingAssetStore(dir string, opts BrandingAssetsOptions) *RasterAssetStore {
-	return NewRasterAssetStore(dir, opts, BrandAssetURLPrefix, map[string]func(BrandingAssetsOptions) int{
+// targets from BrandingAssetsOptions) on the brand-assets namespace.
+func NewBrandingAssetStore(objects kernel.ObjectStore, opts BrandingAssetsOptions) *RasterAssetStore {
+	return NewRasterAssetStore(objects, kernel.ObjectNamespaceBrandAssets, opts, BrandAssetURLPrefix, map[string]func(BrandingAssetsOptions) int{
 		"logo":    func(o BrandingAssetsOptions) int { return o.LogoMaxDim },
 		"favicon": func(o BrandingAssetsOptions) int { return o.FaviconDim },
 	})
 }
 
 // NewAvatarAssetStore constructs the avatar store (kind avatar, target
-// BrandingAssetsOptions.AvatarDim, default 256).
-func NewAvatarAssetStore(dir string, opts BrandingAssetsOptions) *RasterAssetStore {
-	return NewRasterAssetStore(dir, opts, AvatarAssetURLPrefix, map[string]func(BrandingAssetsOptions) int{
+// BrandingAssetsOptions.AvatarDim, default 256) on the avatars namespace.
+func NewAvatarAssetStore(objects kernel.ObjectStore, opts BrandingAssetsOptions) *RasterAssetStore {
+	return NewRasterAssetStore(objects, kernel.ObjectNamespaceAvatars, opts, AvatarAssetURLPrefix, map[string]func(BrandingAssetsOptions) int{
 		"avatar": func(o BrandingAssetsOptions) int { return o.AvatarDim },
 	})
 }
@@ -264,55 +268,46 @@ func (s *RasterAssetStore) file() http.Handler {
 	})
 }
 
-// save persists a processed asset + its meta file.
+// save persists a processed asset + its metadata through the object port.
 func (s *RasterAssetStore) save(contentType, kind, owner string, body []byte) (string, error) {
 	idBytes := make([]byte, 16)
 	if _, err := rand.Read(idBytes); err != nil {
 		return "", err
 	}
 	id := hex.EncodeToString(idBytes)
-	if err := os.MkdirAll(s.dir, 0o755); err != nil {
+	err := s.objects.Put(context.Background(), s.ns, id, body, kernel.ObjectMeta{
+		Type: contentType, Kind: kind, Owner: owner,
+	})
+	if err != nil {
 		return "", err
-	}
-	if err := os.WriteFile(filepath.Join(s.dir, id), body, 0o644); err != nil {
-		return "", err
-	}
-	meta := map[string]string{"type": contentType, "kind": kind, "owner": owner}
-	raw, err := json.Marshal(meta)
-	if err == nil {
-		_ = os.WriteFile(filepath.Join(s.dir, id+".meta.json"), raw, 0o644)
 	}
 	return id, nil
 }
 
-// load reads a stored asset by id (id shape validated — same guard as the
-// generic upload store, so a crafted PathValue cannot escape the directory).
+// load reads a stored asset by id through the port (id shape validated by
+// the adapter); invalid ids and misses both surface as os.ErrNotExist for
+// the HTTP 404 paths, matching the pre-port behavior.
 func (s *RasterAssetStore) load(id string) ([]byte, map[string]string, error) {
 	if !uploadFileIDPattern.MatchString(id) {
 		return nil, nil, os.ErrNotExist
 	}
-	body, err := os.ReadFile(filepath.Join(s.dir, id))
+	body, meta, err := s.objects.Get(context.Background(), s.ns, id)
 	if err != nil {
+		if errors.Is(err, kernel.ErrObjectNotFound) {
+			return nil, nil, os.ErrNotExist
+		}
 		return nil, nil, err
 	}
-	meta := map[string]string{}
-	raw, err := os.ReadFile(filepath.Join(s.dir, id+".meta.json"))
-	if err == nil {
-		_ = json.Unmarshal(raw, &meta)
-	}
-	return body, meta, nil
+	return body, map[string]string{"name": meta.Name, "type": meta.Type, "kind": meta.Kind, "owner": meta.Owner}, nil
 }
 
-// Delete removes an asset (idempotent; a missing file is a no-op).
+// Delete removes an asset through the port (idempotent; a missing object is
+// a no-op). Invalid ids stay a no-op like before the migration.
 func (s *RasterAssetStore) Delete(id string) error {
 	if !uploadFileIDPattern.MatchString(id) {
 		return nil
 	}
-	if err := os.Remove(filepath.Join(s.dir, id)); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	_ = os.Remove(filepath.Join(s.dir, id+".meta.json"))
-	return nil
+	return s.objects.Delete(context.Background(), s.ns, id)
 }
 
 // DeleteOrphan deletes the asset referenced by a raw URL when (and only when)
@@ -345,40 +340,29 @@ func (s *RasterAssetStore) DeleteOrphanOwnedBy(raw string, owner string) error {
 }
 
 
-// CountOwner returns the number of stored assets whose meta marks them as owned
-// by owner. Corrupt/unreadable meta files count conservatively toward every
-// caller so a failed read cannot be used to bypass a per-user avatar quota.
+// CountOwner returns the number of stored assets whose meta marks them as
+// owned by owner, enumerated through the port (List + Stat). Missing or
+// unreadable metadata counts conservatively toward every caller so a failed
+// read cannot be used to bypass a per-user avatar quota.
 func (s *RasterAssetStore) CountOwner(owner string) (int, error) {
 	if owner == "" {
 		return 0, nil
 	}
-	entries, err := os.ReadDir(s.dir)
+	ids, err := s.objects.List(context.Background(), s.ns)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return 0, nil
-		}
 		return 0, err
 	}
 	count := 0
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
-			continue
+	for _, id := range ids {
+		info, statErr := s.objects.Stat(context.Background(), s.ns, id)
+		if statErr != nil {
+			if errors.Is(statErr, kernel.ErrObjectNotFound) {
+				count++ // conservative: ghost id may still be an owned asset
+				continue
+			}
+			return 0, statErr
 		}
-		id := strings.TrimSuffix(entry.Name(), ".meta.json")
-		if !uploadFileIDPattern.MatchString(id) {
-			continue
-		}
-		raw, err := os.ReadFile(filepath.Join(s.dir, entry.Name()))
-		if err != nil {
-			count++ // conservative: unreadable meta may still be an owned asset
-			continue
-		}
-		meta := map[string]string{}
-		if err := json.Unmarshal(raw, &meta); err != nil {
-			count++ // conservative
-			continue
-		}
-		if meta["owner"] == owner {
+		if info.Meta.Owner == owner {
 			count++
 		}
 	}
@@ -387,28 +371,21 @@ func (s *RasterAssetStore) CountOwner(owner string) (int, error) {
 
 // DeleteAll removes every stored asset of this store.
 func (s *RasterAssetStore) DeleteAll() error {
-	entries, err := os.ReadDir(s.dir)
+	ids, err := s.objects.List(context.Background(), s.ns)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
 		return err
 	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if uploadFileIDPattern.MatchString(strings.TrimSuffix(entry.Name(), ".meta.json")) {
-			if err := os.Remove(filepath.Join(s.dir, entry.Name())); err != nil && !os.IsNotExist(err) {
-				return err
-			}
+	for _, id := range ids {
+		if err := s.objects.Delete(context.Background(), s.ns, id); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 // GC deletes stored assets not referenced by the given URL list (startup
-// housekeeping: crashed uploads / cancelled edits).
+// housekeeping: crashed uploads / cancelled edits), enumerated via List and
+// deleted through the port — identical semantics on both adapters (Root D-003).
 func (s *RasterAssetStore) GC(referenced []string) error {
 	keep := map[string]bool{}
 	for _, ref := range referenced {
@@ -416,25 +393,15 @@ func (s *RasterAssetStore) GC(referenced []string) error {
 			keep[id] = true
 		}
 	}
-	entries, err := os.ReadDir(s.dir)
+	ids, err := s.objects.List(context.Background(), s.ns)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
 		return err
 	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		id := strings.TrimSuffix(entry.Name(), ".meta.json")
-		if !uploadFileIDPattern.MatchString(id) {
-			continue
-		}
+	for _, id := range ids {
 		if keep[id] {
 			continue
 		}
-		if err := os.Remove(filepath.Join(s.dir, entry.Name())); err != nil && !os.IsNotExist(err) {
+		if err := s.objects.Delete(context.Background(), s.ns, id); err != nil {
 			return err
 		}
 	}

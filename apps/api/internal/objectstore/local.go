@@ -182,7 +182,7 @@ func (s *LocalStore) Stat(_ context.Context, ns kernel.ObjectNamespace, id strin
 		}
 		return kernel.ObjectInfo{}, err
 	}
-	return kernel.ObjectInfo{ID: id, Size: info.Size(), Meta: parseMeta(sidePath)}, nil
+	return kernel.ObjectInfo{ID: id, Size: info.Size(), Meta: parseMeta(sidePath), ModTime: info.ModTime()}, nil
 }
 
 // Delete removes the object and its sidecar. A missing object is a no-op

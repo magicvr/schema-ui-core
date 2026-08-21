@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 )
 
 // I-PROTO-FULL-001 · D-UPLOAD server-side contract (07-actions-contract.md §7.2):
@@ -319,7 +321,7 @@ func TestUploadFileIDRejectsNonHex(t *testing.T) {
 
 	// Drive load() directly: HTTP path cleaning would turn ".." into a redirect
 	// before the handler sees it.
-	store := &uploadStore{dir: t.TempDir()}
+	store := &uploadStore{objects: objectstore.NewLocal(t.TempDir())}
 	for _, id := range []string{"..", "../x", "C:schema-ui.db", ""} {
 		if _, _, err := store.load(id); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("load(%q) = %v, want ErrNotExist", id, err)

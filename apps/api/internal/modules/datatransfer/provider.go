@@ -23,14 +23,14 @@ type Provider struct {
 	users      *authsession.Repository
 	roles      *authsession.Repository
 	operations operationlog.Recorder
-	uploadDir  string
+	objects    kernel.ObjectStore
 }
 
 // New constructs the data-transfer provider with framework-agnostic
-// dependencies. uploadDir is the shared uploads storage root (same directory
-// as the central upload endpoint).
-func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, uploadDir string) *Provider {
-	return &Provider{a: a, users: repository, roles: repository, operations: operations, uploadDir: uploadDir}
+// dependencies. objects is the shared kernel object-storage port — the same
+// instance the central upload endpoint uses (uploads namespace).
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, objects kernel.ObjectStore) *Provider {
+	return &Provider{a: a, users: repository, roles: repository, operations: operations, objects: objects}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -57,7 +57,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			return err
 		}
 	}
-	for _, route := range handler.ImportRoutes(p.a, p.users, p.operations, p.uploadDir, ModuleID) {
+	for _, route := range handler.ImportRoutes(p.a, p.users, p.operations, p.objects, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

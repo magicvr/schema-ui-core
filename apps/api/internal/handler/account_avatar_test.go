@@ -13,6 +13,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 )
 
 func uploadAvatar(t *testing.T, env *authTestEnv, token string, body []byte, name string) *httptest.ResponseRecorder {
@@ -37,8 +39,18 @@ func uploadAvatar(t *testing.T, env *authTestEnv, token string, body []byte, nam
 	return rr
 }
 
+// avatarDir returns the avatars namespace directory for direct-disk checks
+// (the local adapter layout is byte-compatible by design).
+func avatarDir(env *authTestEnv) string {
+	return filepath.Join(env.objectRoot, "avatars")
+}
+
+// urlOnlyStore is a throwaway local store for URL parsing helpers that never
+// touch storage (AssetIDFromURL is pure).
+var urlOnlyStore = objectstore.NewLocal(filepath.Join(os.TempDir(), "avatar-url-only"))
+
 func avatarIDOk(url string) bool {
-	_, ok := NewAvatarAssetStore("", DefaultBrandingAssetsOptions()).AssetIDFromURL(url)
+	_, ok := NewAvatarAssetStore(urlOnlyStore, DefaultBrandingAssetsOptions()).AssetIDFromURL(url)
 	return ok
 }
 
@@ -169,7 +181,7 @@ func TestAccountAvatarProfileCommitReplaceClear(t *testing.T) {
 	t.Fatalf("upload A = %d: %s", rr.Code, rr.Body.String())
 	}
 	urlA := avatarURL(t, decodeUpload(t, rr))
-	idA, _ := NewAvatarAssetStore("", DefaultBrandingAssetsOptions()).AssetIDFromURL(urlA)
+	idA, _ := NewAvatarAssetStore(urlOnlyStore, DefaultBrandingAssetsOptions()).AssetIDFromURL(urlA)
 	out := patchProfile(t, env, token, "{\"name\":\"Admin\",\"avatarUrl\":\""+urlA+"\"}")
 	if out.Code != http.StatusOK {
 	t.Fatalf("patch A = %d: %s", out.Code, out.Body.String())
@@ -182,7 +194,7 @@ func TestAccountAvatarProfileCommitReplaceClear(t *testing.T) {
 	if row["avatarUrl"] != urlA {
 	t.Fatalf("profile avatarUrl = %v, want %s", row["avatarUrl"], urlA)
 	}
-	if _, err := os.Stat(filepath.Join(env.avatarAssets.dir, idA)); err != nil {
+	if _, err := os.Stat(filepath.Join(avatarDir(env), idA)); err != nil {
 	t.Fatalf("asset A missing after commit: %v", err)
 	}
 
@@ -192,15 +204,15 @@ func TestAccountAvatarProfileCommitReplaceClear(t *testing.T) {
 	t.Fatalf("upload B = %d: %s", rr.Code, rr.Body.String())
 	}
 	urlB := avatarURL(t, decodeUpload(t, rr))
-	idB, _ := NewAvatarAssetStore("", DefaultBrandingAssetsOptions()).AssetIDFromURL(urlB)
+	idB, _ := NewAvatarAssetStore(urlOnlyStore, DefaultBrandingAssetsOptions()).AssetIDFromURL(urlB)
 	out = patchProfile(t, env, token, "{\"name\":\"Admin\",\"avatarUrl\":\""+urlB+"\"}")
 	if out.Code != http.StatusOK {
 	t.Fatalf("patch B = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.avatarAssets.dir, idA)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(avatarDir(env), idA)); !os.IsNotExist(err) {
 	t.Fatalf("asset A still present after replace (err=%v)", err)
 	}
-	if _, err := os.Stat(filepath.Join(env.avatarAssets.dir, idB)); err != nil {
+	if _, err := os.Stat(filepath.Join(avatarDir(env), idB)); err != nil {
 	t.Fatalf("asset B missing after commit: %v", err)
 	}
 
@@ -209,7 +221,7 @@ func TestAccountAvatarProfileCommitReplaceClear(t *testing.T) {
 	if out.Code != http.StatusOK {
 	t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.avatarAssets.dir, idB)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(avatarDir(env), idB)); !os.IsNotExist(err) {
 	t.Fatalf("asset B still present after clear (err=%v)", err)
 	}
 }
@@ -284,7 +296,7 @@ func TestAccountAvatarMissingAsset404(t *testing.T) {
 // not be deleted by DeleteOrphanOwnedBy, while the owner's own asset is.
 func TestDeleteOrphanOwnedBy(t *testing.T) {
 	dir := t.TempDir()
-	store := NewAvatarAssetStore(dir, DefaultBrandingAssetsOptions())
+	store := NewAvatarAssetStore(objectstore.NewLocal(dir), DefaultBrandingAssetsOptions())
 
 	// Owner A stores an asset.
 	idA, err := store.save("image/png", "avatar", "user-a", []byte("a"))
@@ -297,7 +309,7 @@ func TestDeleteOrphanOwnedBy(t *testing.T) {
 	if err := store.DeleteOrphanOwnedBy(urlA, "user-b"); err != nil {
 		t.Fatalf("cross-owner DeleteOrphanOwnedBy: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(store.dir, idA)); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "avatars", idA)); err != nil {
 		t.Fatalf("cross-owner delete removed asset: %v", err)
 	}
 
@@ -305,7 +317,7 @@ func TestDeleteOrphanOwnedBy(t *testing.T) {
 	if err := store.DeleteOrphanOwnedBy(urlA, "user-a"); err != nil {
 		t.Fatalf("owner DeleteOrphanOwnedBy: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(store.dir, idA)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, "avatars", idA)); !os.IsNotExist(err) {
 		t.Fatalf("owner delete did not remove asset: %v", err)
 	}
 }

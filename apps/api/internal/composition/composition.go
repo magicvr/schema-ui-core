@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -302,21 +303,20 @@ func newMuxWithExtraProviders(
 		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret))
 		mfaVerifier = mfaService
 	}
-	// VP-014 R2 (GOAL-003 D-001): an explicitly configured S3-compatible
-	// backend extends readyz with a HeadBucket probe ("配置后 readyz 扩依赖").
-	// The port is constructed here but not yet consumed by call sites - the
-	// three families move onto it in R3; main.go logs that window at startup.
-	var objectProbe func(context.Context) error
-	objectProbe, err := newObjectProbe(cfg)
+	// VP-014 R3 (GOAL-004 D-001): ONE kernel.ObjectStore instance serves all
+	// three first-party families — local disk by default (root derived from
+	// db.path unless storage.objects.local.root overrides) or the explicitly
+	// configured S3-compatible backend, whose HeadBucket probe also extends
+	// readyz ("配置后 readyz 扩依赖", GOAL-003).
+	objects, objectProbe, err := newObjectStore(cfg)
 	if err != nil {
 		return nil, err
 	}
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
-	// uploads directory is shared with admin.data-transfer (F-02 import reads
-	// uploaded CSV files by id).
-	uploadDir := filepath.Join(filepath.Dir(cfg.DBPath), "uploads")
-	handler.RegisterUpload(mux, a, uploadDir,
+	// uploads namespace is shared with admin.data-transfer (F-02 import reads
+	// uploaded CSV files by id) and admin.file-library.
+	handler.RegisterUpload(mux, a, objects,
 		handler.WithAllowedTypes(cfg.UploadAllowedTypes),
 		handler.WithUserLimits(cfg.UploadMaxFilesPerUser, cfg.UploadMaxBytesPerUser),
 	)
@@ -325,7 +325,7 @@ func newMuxWithExtraProviders(
 	// be publicly readable (login page / shell load pre-auth); every stored
 	// object is a server-side re-encoded raster (never raw upload bytes).
 	brandAssets := handler.NewBrandingAssetStore(
-		filepath.Join(filepath.Dir(cfg.DBPath), "brand-assets"),
+		objects,
 		handler.BrandingAssetsOptions{
 			MaxBytes:    cfg.BrandingMaxBytes,
 			LogoMaxDim:  cfg.BrandingLogoMaxDimension,
@@ -344,7 +344,7 @@ func newMuxWithExtraProviders(
 	// uploads never assigned to a profile) by keeping only the avatar URLs
 	// currently referenced by users.
 	avatarAssets := handler.NewAvatarAssetStore(
-		filepath.Join(filepath.Dir(cfg.DBPath), "avatars"),
+		objects,
 		handler.BrandingAssetsOptions{},
 	)
 	if users, _, err := authRepository.ListUsers(authsession.UserFilter{Page: 1, PageSize: 1_000_000}); err == nil {
@@ -400,13 +400,13 @@ func newMuxWithExtraProviders(
 		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets))
 	}
 	if plan.HasModule("admin.data-transfer") {
-		providers = append(providers, datatransfermodule.New(a, authRepository, operations, uploadDir))
+		providers = append(providers, datatransfermodule.New(a, authRepository, operations, objects))
 	}
 	if plan.HasModule("admin.dashboard") {
 		providers = append(providers, dashboardmodule.New())
 	}
 	if plan.HasModule("admin.file-library") {
-		providers = append(providers, filelibrarymodule.New(a, operations, uploadDir))
+		providers = append(providers, filelibrarymodule.New(a, operations, objects))
 	}
 	if plan.HasModule("admin.data-dictionary") {
 		providers = append(providers, datadictionarymodule.New(a, datadictionarystore.NewRepository(st), operations, trash))
@@ -582,20 +582,26 @@ func deriveHomePageRef(plan kernel.Plan) string {
 	return ""
 }
 
-// newObjectProbe builds the readyz probe for an explicitly configured
-// S3-compatible object backend (VP-014 GOAL-003 D-001). nil for the local
-// default so readyz semantics stay unchanged; a Ping closure when driver=s3.
-func newObjectProbe(cfg *config.Config) (func(context.Context) error, error) {
-	if cfg.ObjectsDriver != "s3" {
-		return nil, nil
+// newObjectStore builds THE shared kernel.ObjectStore instance (VP-014
+// GOAL-004 D-001): local disk default rooted at db.path dir (or the
+// explicit override), or the S3-compatible adapter when driver=s3. The
+// second return is the optional readyz probe (HeadBucket on s3; nil for
+// local so readyz semantics stay unchanged).
+func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Context) error, error) {
+	if cfg.ObjectsDriver == "s3" {
+		objStore, err := objectstore.NewS3(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region,
+			cfg.ObjectsS3Bucket, cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey,
+			cfg.ObjectsS3UsePathStyle)
+		if err != nil {
+			return nil, nil, err
+		}
+		return objStore, objStore.Ping, nil
 	}
-	objStore, err := objectstore.NewS3(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region,
-		cfg.ObjectsS3Bucket, cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey,
-		cfg.ObjectsS3UsePathStyle)
-	if err != nil {
-		return nil, err
+	root := cfg.ObjectsLocalRoot
+	if strings.TrimSpace(root) == "" {
+		root = filepath.Dir(cfg.DBPath)
 	}
-	return objStore.Ping, nil
+	return objectstore.NewLocal(root), nil, nil
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {

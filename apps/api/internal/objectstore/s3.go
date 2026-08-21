@@ -188,6 +188,9 @@ func (s *S3Store) Stat(ctx context.Context, ns kernel.ObjectNamespace, id string
 	if out.ContentLength != nil {
 		info.Size = *out.ContentLength
 	}
+	if out.LastModified != nil {
+		info.ModTime = *out.LastModified
+	}
 	return info, nil
 }
 

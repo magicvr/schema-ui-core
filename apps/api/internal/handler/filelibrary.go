@@ -1,19 +1,20 @@
 // File library surface (S-02 · GOAL-007 D-002): the admin.file-library module
 // manages the shared upload store (C-09) as a unified file/attachment library.
-// The list/detail read surfaces scan the store directory — the single source
-// of truth is the disk objects plus their owner meta (same pattern as the
-// per-user quota scan); there is no DB mirror table (D-002 `2). Downloads are
+// The list/detail read surfaces enumerate the uploads namespace through the
+// kernel object-storage port — the single source of truth is the stored
+// objects plus their owner metadata (same pattern as the per-user quota
+// scan); there is no DB mirror table (D-002 `2). Downloads are
 // gated by files.read (management surface, unlike the owner-only control
 // endpoint GET /api/files/{id}), deletion by files.delete, and the upload
 // confirmation endpoint validates ownership and records the audit event.
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,7 +30,7 @@ import (
 // fileLibraryEntity adapts the shared upload store to the generic resource
 // factory (read-only list/detail; write methods are defensive fallbacks).
 type fileLibraryEntity struct {
-	dir        string
+	objects    kernel.ObjectStore
 	operations operationlog.Recorder
 }
 
@@ -72,18 +73,22 @@ func (e *fileLibraryEntity) Get(id string) (map[string]any, error) {
 	if !uploadFileIDPattern.MatchString(id) {
 		return nil, errResourceNotFound
 	}
-	_, meta, err := (&uploadStore{dir: e.dir}).load(id)
+	_, meta, err := e.objects.Get(context.Background(), kernel.ObjectNamespaceUploads, id)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if errors.Is(err, kernel.ErrObjectNotFound) {
 			return nil, errResourceNotFound
 		}
 		return nil, err
 	}
-	row := fileRow{ID: id, Name: meta["name"], Type: meta["type"], Owner: meta["owner"]}
-	if info, err := os.Stat(filepath.Join(e.dir, id)); err == nil {
-		row.Size = info.Size()
-		row.Created = formatRFC3339Milli(info.ModTime())
+	info, err := e.objects.Stat(context.Background(), kernel.ObjectNamespaceUploads, id)
+	if err == nil {
+		row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner, Size: info.Size, Created: formatRFC3339Milli(info.ModTime)}
+		return fileRowToMap(row), nil
 	}
+	if !errors.Is(err, kernel.ErrObjectNotFound) {
+		return nil, err
+	}
+	row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner}
 	return fileRowToMap(row), nil
 }
 
@@ -99,39 +104,26 @@ func (e *fileLibraryEntity) Delete(string, account.User) error {
 	return errReadOnlyResource
 }
 
-// scan lists every stored object with its owner meta. Corrupt or unreadable
-// meta entries are skipped (best-effort read surface); a missing directory is
-// an empty library.
+// scan lists every stored object with its owner metadata through the port
+// (List + Stat). Rows with completely empty metadata are skipped — the
+// legacy read surface only saw objects with a meta sidecar, so body-only
+// leftovers stay invisible (GOAL-004 D-001 §2).
 func (e *fileLibraryEntity) scan() ([]fileRow, error) {
-	entries, err := os.ReadDir(e.dir)
+	ids, err := e.objects.List(context.Background(), kernel.ObjectNamespaceUploads)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	rows := make([]fileRow, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
-			continue
-		}
-		id := strings.TrimSuffix(entry.Name(), ".meta.json")
-		if !uploadFileIDPattern.MatchString(id) {
-			continue
-		}
-		raw, err := os.ReadFile(filepath.Join(e.dir, entry.Name()))
+	rows := make([]fileRow, 0, len(ids))
+	for _, id := range ids {
+		info, err := e.objects.Stat(context.Background(), kernel.ObjectNamespaceUploads, id)
 		if err != nil {
-			continue
+			continue // best-effort read surface: skip unreadable entries
 		}
-		meta := map[string]string{}
-		if err := json.Unmarshal(raw, &meta); err != nil {
-			continue
+		meta := info.Meta
+		if meta.Name == "" && meta.Type == "" && meta.Owner == "" {
+			continue // body-only leftover: invisible, as before the migration
 		}
-		row := fileRow{ID: id, Name: meta["name"], Type: meta["type"], Owner: meta["owner"]}
-		if info, err := os.Stat(filepath.Join(e.dir, id)); err == nil {
-			row.Size = info.Size()
-			row.Created = formatRFC3339Milli(info.ModTime())
-		}
+		row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner, Size: info.Size, Created: formatRFC3339Milli(info.ModTime)}
 		rows = append(rows, row)
 	}
 	return rows, nil
@@ -173,8 +165,8 @@ func fileRowToMap(row fileRow) map[string]any {
 }
 
 // FileLibraryRoutes returns the admin.file-library HTTP surface (D-002 `4).
-func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
-	entity := &fileLibraryEntity{dir: uploadDir, operations: operations}
+func FileLibraryRoutes(a *auth.Authenticator, objects kernel.ObjectStore, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+	entity := &fileLibraryEntity{objects: objects, operations: operations}
 	res := Resource{
 		ID:              "files",
 		Path:            "/api/library/files",
@@ -188,7 +180,7 @@ func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations opera
 		NotFoundCode:    "FILE_NOT_FOUND",
 	}
 	routes := ResourceRoutes(a, res, moduleID)
-	store := &uploadStore{dir: uploadDir}
+	store := &uploadStore{objects: objects}
 	now := time.Now
 
 	routes = append(routes, kernel.RouteContribution{
@@ -205,21 +197,21 @@ func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations opera
 				writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
 				return
 			}
-			// A-003 F-002: remove the object AND its meta best-effort; 404 only
-			// when neither existed. An orphan meta (object already gone) must not
-			// ghost-list in the quota scan, and a deleted object must not leave
-			// its meta behind.
-			removed := false
-			if err := os.Remove(filepath.Join(store.dir, id)); err == nil {
-				removed = true
-			} else if !errors.Is(err, os.ErrNotExist) {
+			// A-003 F-002 (port adaptation, GOAL-004 D-001 §2): Delete removes the
+			// object and its metadata together; a missing object is a port no-op.
+			// A ghost id (body-less sidecar leftover) still gets one best-effort
+			// Delete so it cannot ghost-list in scans, but the response is 404 —
+			// the documented divergence from the pre-port 204.
+			exists, err := store.objects.Exists(r.Context(), kernel.ObjectNamespaceUploads, id)
+			if err != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not delete file")
 				return
 			}
-			if err := os.Remove(filepath.Join(store.dir, id+".meta.json")); err == nil {
-				removed = true
+			if err := store.objects.Delete(r.Context(), kernel.ObjectNamespaceUploads, id); err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not delete file")
+				return
 			}
-			if !removed {
+			if !exists {
 				writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
 				return
 			}
@@ -248,7 +240,7 @@ func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations opera
 				return
 			}
 			recordFileEvent(operations, operationlog.EventFileDownload, user, id, now())
-			contentType := meta["type"]
+			contentType := meta.Type
 			if contentType == "" {
 				contentType = "application/octet-stream"
 			}
@@ -257,7 +249,7 @@ func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations opera
 			// Sanitized literal filename: the stored name is attacker-controlled
 			// and must never reach a header unsanitized (same posture as the
 			// control download endpoint).
-			w.Header().Set("Content-Disposition", `attachment; filename="`+sanitizeFileHeaderName(meta["name"])+`"`)
+			w.Header().Set("Content-Disposition", `attachment; filename="`+sanitizeFileHeaderName(meta.Name)+`"`)
 			w.Header().Set("Content-Security-Policy", "sandbox")
 			w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 			w.WriteHeader(http.StatusOK)
@@ -301,7 +293,7 @@ func FileLibraryRoutes(a *auth.Authenticator, uploadDir string, operations opera
 			}
 			// The upload control stores under the current user, so the owner must
 			// match; a foreign id cannot be confirmed into the library.
-			if strings.TrimSpace(meta["owner"]) != user.ID {
+			if strings.TrimSpace(meta.Owner) != user.ID {
 				writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "not the owner of this file")
 				return
 			}

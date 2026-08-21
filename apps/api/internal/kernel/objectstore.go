@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"time"
 )
 
 // ObjectNamespace isolates the three first-party object families. Anything
@@ -88,6 +89,10 @@ type ObjectInfo struct {
 	ID   string
 	Size int64
 	Meta ObjectMeta
+	// ModTime is the backend's last-modified timestamp for the object
+	// (GOAL-004 D-001 §4: additive evolution for the file-library created
+	// surface; zero when the backend does not expose one).
+	ModTime time.Time
 }
 
 // ObjectStore is the kernel object-storage port (R1). Implementations must

@@ -38,14 +38,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// A-002 R-001 (workspace-014 GOAL-003): readyz already covers the
-	// configured S3 backend (HeadBucket probe), but the three file families
-	// still use the local disk adapter until the R3 call-site wiring lands.
-	// Keep that window explicit for operators.
-	if cfg.ObjectsDriver == "s3" {
-		logger.Warn("storage.objects.driver=s3: backend probe active in readyz, but file families still use the local disk adapter until workspace-014 R3 wiring")
-	}
-
 	seedHash, err := resolveSeedHash(cfg, logger)
 	if err != nil {
 		logger.Error("startup failed", "err", err)
