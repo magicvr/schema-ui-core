@@ -1,7 +1,7 @@
 ---
 id: GOAL-002-object-port-freeze
 doc: decision
-status: active
+status: done
 parent: GOAL-001-object-storage
 created: 2026-08-21
 updated: 2026-08-21

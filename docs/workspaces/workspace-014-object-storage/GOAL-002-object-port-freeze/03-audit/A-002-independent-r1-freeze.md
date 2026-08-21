@@ -137,6 +137,6 @@ Root 信息表：I-001/I-003 最晚 R2 实施前。D-001:66-67 只冻关键名�
 | N-002 | 认可；R3 配额/GC 经 List+Stat 时按 ErrObjectNotFound 跳过或清理 sidecar-only id | 留痕不动作 | 本节记录；R3 子目标立项时引用 |
 | N-003 | 认可；env.example 已顺带补 STORAGE_OBJECTS_* 注释模板（I-003 范围内的文档项），I-001/I-003 保持 open 至 R2 实施前关闭 | 留痕+顺手项已做 | configs/env.example object storage 段 |
 
-**验证**：go build ./... exit 0；go vet（config/objectstore/cmd/server）exit 0；go test ./internal/{config,objectstore,kernel}/ 全绿。修复提交见 E-003。
+**验证**：go build ./... exit 0；go vet（config/objectstore/cmd/server）exit 0；go test ./internal/{config,objectstore,kernel}/ 全绿。修复提交见 GOAL-002 执行台账 E-002（commit b6ac23e）。
 
 **门禁判定**：F-001 以 fixed 合法闭合后，本意见开放 required = 0；R1→R2 门禁放行。verdict 由 conditional 对应的条件已满足，编排器据此推进 R1 收尾（GOAL-002 done、Root progress 1/5）。
