@@ -276,7 +276,7 @@ func TestBrandingAssetCleanupOnReplaceAndClear(t *testing.T) {
 	// Clear the field -> B is deleted too.
 	out = patchSettings(t, env, token, "{\"logoUrl\":\"\"}")
 	if out.Code != http.StatusOK {
-	t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
+		t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
 	}
 	if _, err := os.Stat(filepath.Join(brandDirOf(env), idB)); !os.IsNotExist(err) {
 		t.Fatalf("asset B still present after clear (err=%v)", err)
@@ -344,7 +344,6 @@ func TestBrandingAssetSharedReferenceSurvivesReplace(t *testing.T) {
 	}
 }
 
-
 func TestBrandingAssetStartupGC(t *testing.T) {
 	dir := t.TempDir()
 	store := NewBrandingAssetStore(objectstore.NewLocal(dir), DefaultBrandingAssetsOptions())
@@ -367,7 +366,6 @@ func TestBrandingAssetStartupGC(t *testing.T) {
 		t.Fatalf("orphan asset survived gc (err=%v)", err)
 	}
 }
-
 
 // oversizedPNG builds a PNG header declaring 30000x30000 with a valid IHDR
 // CRC (decompression-bomb fixture, A-002 F-001).

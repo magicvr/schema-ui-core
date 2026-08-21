@@ -21,7 +21,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
@@ -55,6 +54,7 @@ import (
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )

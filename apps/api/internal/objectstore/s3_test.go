@@ -20,10 +20,10 @@ import (
 
 type stubAPIError struct{ code string }
 
-func (e *stubAPIError) ErrorCode() string            { return e.code }
-func (e *stubAPIError) ErrorMessage() string         { return e.code }
+func (e *stubAPIError) ErrorCode() string             { return e.code }
+func (e *stubAPIError) ErrorMessage() string          { return e.code }
 func (e *stubAPIError) ErrorFault() smithy.ErrorFault { return smithy.FaultClient }
-func (e *stubAPIError) Error() string                { return "s3 stub: " + e.code }
+func (e *stubAPIError) Error() string                 { return "s3 stub: " + e.code }
 
 type s3Object struct {
 	body []byte

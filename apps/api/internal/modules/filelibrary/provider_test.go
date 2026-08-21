@@ -18,9 +18,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )

@@ -216,12 +216,12 @@ type yamlFile struct {
 				Root *string `yaml:"root"`
 			} `yaml:"local"`
 			S3 struct {
-				Endpoint       *string `yaml:"endpoint"`
-				Region         *string `yaml:"region"`
-				Bucket         *string `yaml:"bucket"`
-				AccessKeyID    *string `yaml:"access_key_id"`
+				Endpoint        *string `yaml:"endpoint"`
+				Region          *string `yaml:"region"`
+				Bucket          *string `yaml:"bucket"`
+				AccessKeyID     *string `yaml:"access_key_id"`
 				SecretAccessKey *string `yaml:"secret_access_key"`
-				UsePathStyle   *bool   `yaml:"use_path_style"`
+				UsePathStyle    *bool   `yaml:"use_path_style"`
 			} `yaml:"s3"`
 		} `yaml:"objects"`
 	} `yaml:"storage"`

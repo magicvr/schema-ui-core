@@ -92,7 +92,7 @@ func TestAccountAvatarUploadAndPublicServe(t *testing.T) {
 	}
 	body := decodeUpload(t, rr)
 	if body["type"] != "image/jpeg" {
-	t.Fatalf("opaque output type = %v, want image/jpeg", body["type"])
+		t.Fatalf("opaque output type = %v, want image/jpeg", body["type"])
 	}
 	url := avatarURL(t, body)
 
@@ -107,21 +107,21 @@ func TestAccountAvatarUploadAndPublicServe(t *testing.T) {
 		t.Fatalf("content-type = %q", ct)
 	}
 	if serve.Header().Get("X-Content-Type-Options") != "nosniff" {
-	t.Fatal("missing nosniff")
+		t.Fatal("missing nosniff")
 	}
 	if cc := serve.Header().Get("Cache-Control"); cc != "public, max-age=31536000, immutable" {
-	t.Fatalf("cache-control = %q", cc)
+		t.Fatalf("cache-control = %q", cc)
 	}
 	if csp := serve.Header().Get("Content-Security-Policy"); csp != "sandbox" {
-	t.Fatalf("content-security-policy = %q, want sandbox", csp)
+		t.Fatalf("content-security-policy = %q, want sandbox", csp)
 	}
 	decoded, err := jpeg.Decode(bytes.NewReader(serve.Body.Bytes()))
 	if err != nil {
-	t.Fatalf("response is not a decodable jpeg: %v", err)
+		t.Fatalf("response is not a decodable jpeg: %v", err)
 	}
 	b := decoded.Bounds()
 	if b.Dx() > 256 || b.Dy() > 256 {
-	t.Fatalf("avatar dims = %dx%d, want <=256", b.Dx(), b.Dy())
+		t.Fatalf("avatar dims = %dx%d, want <=256", b.Dx(), b.Dy())
 	}
 }
 
@@ -134,14 +134,14 @@ func TestAccountAvatarTransparencyStaysPNG(t *testing.T) {
 	}
 	body := decodeUpload(t, rr)
 	if body["type"] != "image/png" {
-	t.Fatalf("alpha output type = %v, want image/png", body["type"])
+		t.Fatalf("alpha output type = %v, want image/png", body["type"])
 	}
 	url := avatarURL(t, body)
 	req := httptest.NewRequest(http.MethodGet, url, nil)
 	serve := httptest.NewRecorder()
 	env.mux.ServeHTTP(serve, req)
 	if _, err := png.Decode(bytes.NewReader(serve.Body.Bytes())); err != nil {
-	t.Fatalf("response is not a decodable png: %v", err)
+		t.Fatalf("response is not a decodable png: %v", err)
 	}
 }
 
@@ -151,23 +151,23 @@ func TestAccountAvatarRejections(t *testing.T) {
 
 	// Anonymous -> 401.
 	if rr := uploadAvatar(t, env, "", makePNG(t, 8, 8, color.White), "a.png"); rr.Code != http.StatusUnauthorized {
-	t.Fatalf("anonymous upload = %d, want 401", rr.Code)
+		t.Fatalf("anonymous upload = %d, want 401", rr.Code)
 	}
 
 	// SVG (active content) -> 415.
 	svg := []byte("<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>")
 	if rr := uploadAvatar(t, env, token, svg, "logo.svg"); rr.Code != http.StatusUnsupportedMediaType {
-	t.Fatalf("svg upload = %d, want 415", rr.Code)
+		t.Fatalf("svg upload = %d, want 415", rr.Code)
 	}
 
 	// Empty file -> 400.
 	if rr := uploadAvatar(t, env, token, nil, "empty.png"); rr.Code != http.StatusBadRequest {
-	t.Fatalf("empty upload = %d, want 400", rr.Code)
+		t.Fatalf("empty upload = %d, want 400", rr.Code)
 	}
 
 	// Non-decodable bytes -> 415.
 	if rr := uploadAvatar(t, env, token, []byte("just some text"), "x.txt"); rr.Code != http.StatusUnsupportedMediaType {
-	t.Fatalf("text upload = %d, want 415", rr.Code)
+		t.Fatalf("text upload = %d, want 415", rr.Code)
 	}
 }
 
@@ -178,13 +178,13 @@ func TestAccountAvatarProfileCommitReplaceClear(t *testing.T) {
 	// Upload A, commit it via the profile PATCH, and confirm the profile GET.
 	rr := uploadAvatar(t, env, token, makePNG(t, 64, 64, color.RGBA{255, 0, 0, 255}), "a.png")
 	if rr.Code != http.StatusOK {
-	t.Fatalf("upload A = %d: %s", rr.Code, rr.Body.String())
+		t.Fatalf("upload A = %d: %s", rr.Code, rr.Body.String())
 	}
 	urlA := avatarURL(t, decodeUpload(t, rr))
 	idA, _ := NewAvatarAssetStore(urlOnlyStore, DefaultBrandingAssetsOptions()).AssetIDFromURL(urlA)
 	out := patchProfile(t, env, token, "{\"name\":\"Admin\",\"avatarUrl\":\""+urlA+"\"}")
 	if out.Code != http.StatusOK {
-	t.Fatalf("patch A = %d: %s", out.Code, out.Body.String())
+		t.Fatalf("patch A = %d: %s", out.Code, out.Body.String())
 	}
 	// Profile GET returns avatarUrl.
 	get := httptest.NewRecorder()
@@ -192,37 +192,37 @@ func TestAccountAvatarProfileCommitReplaceClear(t *testing.T) {
 	var row map[string]any
 	_ = json.NewDecoder(get.Body).Decode(&row)
 	if row["avatarUrl"] != urlA {
-	t.Fatalf("profile avatarUrl = %v, want %s", row["avatarUrl"], urlA)
+		t.Fatalf("profile avatarUrl = %v, want %s", row["avatarUrl"], urlA)
 	}
 	if _, err := os.Stat(filepath.Join(avatarDir(env), idA)); err != nil {
-	t.Fatalf("asset A missing after commit: %v", err)
+		t.Fatalf("asset A missing after commit: %v", err)
 	}
 
 	// Replace with B -> the profile commit deletes A and keeps B.
 	rr = uploadAvatar(t, env, token, makePNG(t, 64, 64, color.RGBA{0, 255, 0, 255}), "b.png")
 	if rr.Code != http.StatusOK {
-	t.Fatalf("upload B = %d: %s", rr.Code, rr.Body.String())
+		t.Fatalf("upload B = %d: %s", rr.Code, rr.Body.String())
 	}
 	urlB := avatarURL(t, decodeUpload(t, rr))
 	idB, _ := NewAvatarAssetStore(urlOnlyStore, DefaultBrandingAssetsOptions()).AssetIDFromURL(urlB)
 	out = patchProfile(t, env, token, "{\"name\":\"Admin\",\"avatarUrl\":\""+urlB+"\"}")
 	if out.Code != http.StatusOK {
-	t.Fatalf("patch B = %d: %s", out.Code, out.Body.String())
+		t.Fatalf("patch B = %d: %s", out.Code, out.Body.String())
 	}
 	if _, err := os.Stat(filepath.Join(avatarDir(env), idA)); !os.IsNotExist(err) {
-	t.Fatalf("asset A still present after replace (err=%v)", err)
+		t.Fatalf("asset A still present after replace (err=%v)", err)
 	}
 	if _, err := os.Stat(filepath.Join(avatarDir(env), idB)); err != nil {
-	t.Fatalf("asset B missing after commit: %v", err)
+		t.Fatalf("asset B missing after commit: %v", err)
 	}
 
 	// Clearing avatarUrl deletes B too.
 	out = patchProfile(t, env, token, "{\"name\":\"Admin\",\"avatarUrl\":\"\"}")
 	if out.Code != http.StatusOK {
-	t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
+		t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
 	}
 	if _, err := os.Stat(filepath.Join(avatarDir(env), idB)); !os.IsNotExist(err) {
-	t.Fatalf("asset B still present after clear (err=%v)", err)
+		t.Fatalf("asset B still present after clear (err=%v)", err)
 	}
 }
 
@@ -232,7 +232,7 @@ func TestAccountAvatarProfileRejectsForeignURL(t *testing.T) {
 	// A brand-asset URL (or any other origin) must never be committed as an avatar.
 	out := patchProfile(t, env, token, "{\"name\":\"Admin\",\"avatarUrl\":\"/api/branding/assets/00000000000000000000000000000000\"}")
 	if out.Code != http.StatusBadRequest {
-	t.Fatalf("foreign avatarUrl = %d, want 400: %s", out.Code, out.Body.String())
+		t.Fatalf("foreign avatarUrl = %d, want 400: %s", out.Code, out.Body.String())
 	}
 }
 
@@ -287,7 +287,7 @@ func TestAccountAvatarMissingAsset404(t *testing.T) {
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusNotFound {
-	t.Fatalf("missing avatar = %d, want 404", rr.Code)
+		t.Fatalf("missing avatar = %d, want 404", rr.Code)
 	}
 }
 

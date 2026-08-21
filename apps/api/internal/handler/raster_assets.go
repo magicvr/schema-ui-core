@@ -339,7 +339,6 @@ func (s *RasterAssetStore) DeleteOrphanOwnedBy(raw string, owner string) error {
 	return s.Delete(id)
 }
 
-
 // CountOwner returns the number of stored assets whose meta marks them as
 // owned by owner, enumerated through the port (List + Stat). Missing or
 // unreadable metadata counts conservatively toward every caller so a failed
