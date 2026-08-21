@@ -16,3 +16,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-21 | R5 双路径证据采集（本地回归 + MinIO live + readyz 阴性对照） | recorded | [E-001-dual-path-evidence.md](02-execution/E-001-dual-path-evidence.md) |
 | E-002 | 2026-08-21 | 关门审计响应与 Root 结项执行 | recorded | [E-002-closeout.md](02-execution/E-002-closeout.md) |
+| E-003 | 2026-08-21 | 关门后跟进——postgres 方言 users 列表 500 修复（EXISTS bool 扫描 ×9） | recorded | [E-003-postgres-scan-fix.md](02-execution/E-003-postgres-scan-fix.md) |
