@@ -30,4 +30,4 @@ version: 0.5.0
 
 ## checkpoint 追记
 
-- 2026-08-21 关门前最终验证后提交（owned paths：apps/api 修复+测试、apps/web 修复+测试、本目标五件套、goal-tree、workspace.md、构建声明工件）；commit hash 与范围见 git log（W9 S3+S4+recommended 加固单次提交）。
+- 2026-08-21 关门前最终验证后提交：commit `ac39589`（fix(api,web): W9 remediation — 12 required security findings fixed + recommended hardening）。范围 = apps/api 修复+新增回归锁、apps/web 修复+新增回归测试、本目标五件套与台账、goal-tree.md、workspace.md、构建声明工件。验证：API go vet 0 + go test ./... exit 0；Web npm test 1077/1077 + build exit 0。
