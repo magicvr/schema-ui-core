@@ -4,9 +4,9 @@ title: 可观测性（指标导出 + OpenTelemetry）
 status: active
 parent: null
 created: 2026-08-21
-updated: 2026-08-21
-version: 0.3.0
-progress: 2/5
+updated: 2026-08-22
+version: 0.4.0
+progress: 3/5
 plan_refs:
   - VP-015-observability
 primary_plan: VP-015-observability
@@ -27,11 +27,11 @@ serves_summary: 交付架构 A4：Prometheus 类指标导出 + OpenTelemetry tra
 |------|------|------|------|
 | R1 | **导出合同与配置面冻结**：指标 scrape 路径/端口/绑定鉴权、基数、内核 vs 模块最小集合、标签不得含秘密（I-001）；Store/对象存储/Job 是否进本波（I-003）；缺省无收集器。承载子目标：[GOAL-002-metrics-export-contract](../GOAL-002-metrics-export-contract/00-meta.md) | 起点 | 已完成（GOAL-002 done 3/3；D-001 + 配置面落地） |
 | R2 | **指标 scrape 接入**：Prometheus 类 pull 面；系列携带 `module_id`；未显式配置不成为启动硬依赖；是否扩 `readyz`（I-004 已闭合：不扩）。承载子目标：[GOAL-003-metrics-scrape-endpoint](../GOAL-003-metrics-scrape-endpoint/00-meta.md) | 依赖 R1 | 已完成（GOAL-003 done 4/4；live 冒烟实测 suc_* 系列） |
-| R3 | **OpenTelemetry traces 接入**：OTLP 协议/采样/no-op（I-002）；HTTP 请求至少可出 span；未配置 endpoint 不得挡住 mvp/dev。承载子目标：待立项 | 依赖 R1 | 未开始 |
+| R3 | **OpenTelemetry traces 接入**：OTLP 协议/采样/no-op（I-002）；HTTP 请求至少可出 span；未配置 endpoint 不得挡住 mvp/dev。承载子目标：[GOAL-004-otel-traces](../GOAL-004-otel-traces/00-meta.md) | 依赖 R1 | 已完成（GOAL-004 done 4/4；I-002 闭合；live 冒烟实证导出失败不致命） |
 | R4 | **与 request-id 关联**：属性名 / baggage（I-005）；退出 2 的关联判据可核对。承载子目标：待立项 | 依赖 R3 | 未开始 |
 | R5 | **双路径证据**：默认无收集器仍能开发快测 + 显式配置下 metrics scrape **与** 至少一条 trace 导出。承载子目标：待立项 | 依赖 R2/R4 | 未开始 |
 
-`progress` = 已完成阶段数 / 5。当前 `2/5`（R1、R2 已完成）。
+`progress` = 已完成阶段数 / 5。当前 `3/5`（R1、R2、R3 已完成）。
 
 ## 成功标准（方向级）
 
@@ -46,7 +46,7 @@ serves_summary: 交付架构 A4：Prometheus 类指标导出 + OpenTelemetry tra
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 指标面：scrape 路径/端口、绑定/鉴权、基数、内核 vs 模块最小集合、标签不得含秘密 | R1 方案冻结 / 实施 | R1 合同冻结 | R1 决策 | verified（2026-08-21） | — | GOAL-002 D-001 §1–§6（`GOAL-002-metrics-export-contract/01-decision/D-001-metrics-export-contract.md`）；对应 VP I-015-001 |
-| I-002 | required | Tracing：OTLP HTTP vs gRPC、采样默认、未配置 endpoint 的 no-op | R3 方案冻结 / 实施 | R3 接入前 | R3 决策 | open | — | 对应 VP I-015-002 |
+| I-002 | required | Tracing：OTLP HTTP vs gRPC、采样默认、未配置 endpoint 的 no-op | R3 方案冻结 / 实施 | R3 接入前 | R3 决策 | verified（2026-08-22：OTLP/HTTP；ParentBased+ratio 缺省 1.0；disabled 纯 no-op） | — | GOAL-004 D-001（`GOAL-004-otel-traces/01-decision/D-001-tracing-contract.md`）；对应 VP I-015-002 |
 | I-003 | required | Store / 对象存储 / Job 是否进本波分母（HTTP span 已由 VP 退出 2 冻结） | R1 方案冻结 | R1 合同冻结 | R1 决策 | verified（2026-08-21，出局） | — | GOAL-002 D-001 §7：不进本波分母；对应 VP I-015-003（已收窄） |
 | I-004 | required | `/metrics` 或 OTLP 是否进入 `readyz`；默认建议未显式配置则不扩 | R2/R3 方案冻结 | R2/R3 接入前 | R2/R3 决策 | verified（2026-08-21，提前闭合：均不进 readyz） | — | GOAL-002 D-001 §8；对应 VP I-015-004 |
 | I-005 | required | request-id / correlation 如何写入 span（属性名、是否 baggage） | R4 方案冻结 | R4 关联前 | R4 决策 | open | — | 对应 VP I-015-005 |

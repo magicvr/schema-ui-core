@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| （待首次自审后登记） | | | | | | |
+| A-001 | 2026-08-22 | self | R3 OTel traces 接入（I-002 闭合 + obs.Tracing + live 冒烟） | pass | 0 | `03-audit/A-001-self-r3-traces.md` |
 
 ## 结论状态
 
-尚未到达关门审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+关门审计已完成：A-001（self）`pass`，开放 required findings = 0；四项成功标准有证据链（D-001 → E-001/E-002 → 测试与 live 冒烟 → commit `0470307`/`2ab4ec4`）。GOAL-004 关门（`status: done`，4/4）。N-006 建议作为输入带入 R4 立项。

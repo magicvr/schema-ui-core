@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| （随实施追加） | | | | |
+| E-001 | 2026-08-21 | R3 立项与 I-002 闭合 + checkpoint（`0470307`） | recorded | `02-execution/E-001-r3-scaffold-checkpoint.md` |
+| E-002 | 2026-08-22 | R3 traces 接入实施与验证（config 三键/obs.Tracing/live 冒烟，checkpoint `2ab4ec4`） | recorded | `02-execution/E-002-traces-implementation-checkpoint.md` |
 
 ## 事实边界
 

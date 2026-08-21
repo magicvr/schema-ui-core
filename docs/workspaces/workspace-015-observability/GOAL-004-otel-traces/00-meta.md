@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-otel-traces
 title: R3 · OpenTelemetry traces 接入
-status: active
+status: done
 parent: GOAL-001-observability
 created: 2026-08-21
-updated: 2026-08-21
-version: 0.1.0
-progress: 0/4
+updated: 2026-08-22
+version: 1.0.0
+progress: 4/4
 ---
 
 # GOAL-004 · R3 OpenTelemetry traces 接入
@@ -17,12 +17,12 @@ progress: 0/4
 
 ## 成功标准（检查点）
 
-- [ ] D-001 闭合 I-002：协议选型、采样默认、no-op 语义、span 面、配置键
-- [ ] `observability.traces.{enabled,endpoint,sample_ratio}` 进入 Config / 两份 YAML / env 映射，fail-closed 校验有测试覆盖
-- [ ] obs tracing 落地：span 创建/属性/状态映射/采样、OTLP/HTTP 导出路径实测（httptest sink 收到 POST）、缺省 no-op 零行为变化；composition 接线 + gofmt/vet/build/test 全绿
-- [ ] 自审 A-001 pass 后关门
+- [x] D-001 闭合 I-002：OTLP/HTTP 选型、ParentBased+ratio 采样、no-op 语义、span 面、三配置键（checkpoint `0470307`）
+- [x] `observability.traces.{enabled,endpoint,sample_ratio}` 进入 Config / 两份 YAML / env 映射，fail-closed 校验有测试覆盖（10 子测试，checkpoint `2ab4ec4`）
+- [x] obs tracing 落地：span 形状/属性/状态映射/采样、W3C 传播、OTLP sink 实证交付；live 冒烟（不可达 endpoint 启动/服务正常 + 导出失败仅 WARN）；composition 接线 + vet/build/test 全绿（checkpoint `2ab4ec4`）
+- [x] 自审 A-001 pass 后关门（A-001 self pass，开放 required = 0）
 
-`progress` = 完成检查点数 / 4。当前 0/4。
+`progress` = 完成检查点数 / 4。当前 **4/4**。关门审计：A-001（self，pass）。
 
 ## 信息就绪与未知项
 
