@@ -388,6 +388,7 @@ it("navigate actions with navigateMapping bind row query params", async () => {
 it("library.preview opens a blank window before fetching, then embeds the blob in a sandboxed iframe", async () => {
   const previewWindow = {
     closed: false,
+    opener: {} as unknown,
     location: { replace: vi.fn() },
     close: vi.fn(),
     document: {
@@ -452,6 +453,9 @@ it("library.preview opens a blank window before fetching, then embeds the blob i
   expect(downloadFetched).toBe(true);
   expect(objectUrls.length).toBeGreaterThan(0);
   expect(openSpy).toHaveBeenCalledWith("about:blank", "_blank");
+  // A-003 recommended F-003: the opener link is cut once the direct window
+  // reference is held, so the preview document can never reach back.
+  expect(previewWindow.opener).toBeNull();
   expect(previewWindow.document.write).toHaveBeenCalledWith(
     expect.stringContaining('<iframe sandbox="" src="blob:mock-url"></iframe>'),
   );

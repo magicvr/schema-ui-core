@@ -30,13 +30,18 @@ export function withTimeout(
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    // Relay the caller signal onto our controller; the relay listener is
+    // removed once the request settles so a long-lived shared signal does not
+    // accumulate listeners across calls (A-003 recommended F-002).
+    const relayAbort = () => controller.abort();
     if (outer !== undefined) {
-      outer.addEventListener("abort", () => controller.abort(), { once: true });
+      outer.addEventListener("abort", relayAbort, { once: true });
     }
     try {
       return await doFetch(input, { ...init, signal: controller.signal });
     } finally {
       clearTimeout(timer);
+      outer?.removeEventListener("abort", relayAbort);
     }
   };
 }

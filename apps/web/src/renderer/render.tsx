@@ -369,6 +369,10 @@ async function runCustomAction(
       URL.revokeObjectURL(objectUrl);
       return { ok: false, code: "POPUP_BLOCKED", message: "preview window was blocked", messageKey: "error.popupBlocked" };
     }
+    // A-003 recommended F-003: cut the opener link as soon as we hold the
+    // direct reference — if the preview template ever embeds untrusted
+    // content, the opened document can no longer reach back into this app.
+    previewWindow.opener = null;
         // W7 F-010: do not navigate the preview tab directly to a blob: URL — that
     // strips the server Content-Disposition/CSP sandbox headers. Embed the blob
     // in a sandboxed (no allow-scripts, no allow-same-origin) iframe instead.

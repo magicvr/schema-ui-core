@@ -59,6 +59,24 @@ describe("withTimeout fetch wrapper (W10 F-002)", () => {
     expect(impl).not.toHaveBeenCalled();
   });
 
+  // A-003 recommended F-002: the abort relay listener must be removed once
+  // the request settles, so a long-lived shared signal does not accumulate
+  // listeners across calls.
+  it("removes the caller-signal relay listener after the request settles", async () => {
+    const response = new Response("{}", { status: 200 });
+    const impl = vi.fn().mockResolvedValue(response) as unknown as typeof fetch;
+    const wrapped = withTimeout(impl);
+    const caller = new AbortController();
+    const addSpy = vi.spyOn(caller.signal, "addEventListener");
+    const removeSpy = vi.spyOn(caller.signal, "removeEventListener");
+    await wrapped("/api/x", { signal: caller.signal });
+    expect(addSpy).toHaveBeenCalledTimes(1);
+    expect(removeSpy).toHaveBeenCalledTimes(1);
+    expect(removeSpy.mock.calls[0]?.[0]).toBe(addSpy.mock.calls[0]?.[0]);
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
   it("defaults to a 30s ceiling", () => {
     expect(DEFAULT_FETCH_TIMEOUT_MS).toBe(30_000);
   });

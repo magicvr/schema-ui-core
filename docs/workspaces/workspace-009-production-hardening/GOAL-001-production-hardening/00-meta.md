@@ -59,7 +59,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 | W7 | GOAL-007-w7-api-web-security-audit | done | 2026-08-19 独立审计 A-001 fail → 整单采纳 → A-002/A-004 + A-005 pass；VP-008 go 宣称恢复（D-003） |
 | W8 | GOAL-008-w8-api-web-security-audit | done | 2026-08-20 独立审计 A-001 fail → D-002 整单采纳 + go 暂挂 → E-002 修复 → A-002/A-003 pass → D-003 恢复 go；真实浏览器/CSP 回归 E-004 通过 |
 | W9 | GOAL-009-w9-api-web-security-audit | done | 2026-08-21 独立审计 A-001 fail → A-002 conditional → D-003 整单 12 条 required → E-004 实施 12/12 → A-005 independent pass → A-006 闭合 → D-004 恢复 go |
-| W10 | GOAL-010-w10-api-web-security-audit | active | 2026-08-21 独立审计 A-001 conditional（1 HIGH required）→ D-002 整单 7 条 + go 暂挂 → D-003 调和 4 误报作废 → E-002 修复 3 条 + 回归全绿 + A-002 self pass（开放 required = 0）；S4/关门/go 恢复待用户裁决 |
+| W10 | GOAL-010-w10-api-web-security-audit | done | 2026-08-21 独立审计 A-001 conditional（1 HIGH required）→ D-002 整单 7 条 + go 暂挂 → D-003 调和 4 误报作废 → E-002 修复 3 条 + A-002 self pass → A-003 grok independent pass → E-003 A-003 recommended ×3 修正 → A-004 闭合记录（开放 required = 0）→ D-004 关门 + 恢复 go；残余：密码轮换（用户侧） |
 
 ## 信息就绪与未知项
 
