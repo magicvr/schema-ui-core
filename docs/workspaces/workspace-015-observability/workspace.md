@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-015-observability](../../vision/plans/VP-015-observability.md)（**`active`**，架构 A4）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-observability`：纲领 R1～R5；本回合只 scaffold，不创建子目标、不改代码。
+- **Root** `GOAL-001-observability`：纲领 R1～R5；R1 已立项 [GOAL-002-metrics-export-contract](GOAL-002-metrics-export-contract/00-meta.md)（2026-08-21，D-001 合同冻结落盘）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-014-object-storage`。
 - 不承接 Admin 功能或业务域；不重开 VP-012 / VP-013 / VP-014。
@@ -45,7 +45,7 @@ VP-015：Prometheus 类指标导出 + OTLP traces；无收集器为内嵌默认�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | 导出合同与配置面冻结 | 待立项 |
+| R1 | 导出合同与配置面冻结 | 进行中（GOAL-002；D-001 已落盘） |
 | R2 | 指标 scrape 接入 | 待立项 |
 | R3 | OpenTelemetry traces 接入 | 待立项 |
 | R4 | 与现有 request-id / correlation 关联 | 待立项 |

@@ -19,12 +19,14 @@ workspace_id: workspace-015-observability
 
 ```text
 GOAL-001-observability [active]   · 可观测性（指标导出 + OpenTelemetry）
+└── GOAL-002-metrics-export-contract [active] · R1 导出合同与配置面冻结（D-001 落盘；配置面实施中）
 ```
 
-本回合只 scaffold Root。R1～R5 子目标尚未创建。
+R2～R5 子目标按纲领串行，待前序阶段收口后逐段立项。
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-observability | 可观测性（指标导出 + OpenTelemetry） | null | active | 0/5 | 2026-08-21 |
+| GOAL-002-metrics-export-contract | R1 · 指标导出合同与配置面冻结 | GOAL-001-observability | active | 0/3 | 2026-08-21 |
