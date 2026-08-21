@@ -45,6 +45,15 @@ func TestNewObjectStoreWiring(t *testing.T) {
 		}
 	})
 
+	t.Run("unknown driver fails closed (GOAL-005 A-002 R-002)", func(t *testing.T) {
+		for _, driver := range []string{"gcs", "S3"} { // unknown + case-sensitive guard
+			store, probe, err := newObjectStore(&config.Config{ObjectsDriver: driver})
+			if err == nil || store != nil || probe != nil {
+				t.Fatalf("driver %q: store-nil=%t probe-non-nil=%t err=%v; want nil/nil/error", driver, store == nil, probe != nil, err)
+			}
+		}
+	})
+
 	t.Run("s3 driver returns store and failing probe for unreachable endpoint", func(t *testing.T) {
 		cfg := &config.Config{
 			ObjectsDriver:            "s3",

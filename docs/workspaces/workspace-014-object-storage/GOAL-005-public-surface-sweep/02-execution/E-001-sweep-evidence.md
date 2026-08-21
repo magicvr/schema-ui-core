@@ -12,7 +12,7 @@ version: 0.1.0
 
 ## 扫描证据（2026-08-21，commit d99221f 之后的工作树）
 
-1. **导出函数路径参数**：正则 `func [A-Z]\w*\(...(dir|path)... string` 于 internal 全域仅命中 `store.OpenWithCatalog(path, ...)`——SQL 数据库打开（VP-013 Store 方言），**非对象存储合同**。
+1. **导出函数路径参数**：正则 `func [A-Z]\w*\(...(dir|path)... string` 于 internal 全域命中 `store.OpenWithCatalog(path, ...)`、`testsupport.OpenStore`（测试助手）与 `store/migration_catalog_test.go` 的测试构建函数——三者均为 SQL 数据库打开（VP-013 Store 方言），**非对象存储合同**。（A-002 R-001 补记：初版漏列后两处测试侧命中，结论不变、命中集合以此为准。）
 2. **`*os.File`**：internal 非测试代码**零引用**。
 3. **`uploadDir` 残留**：仅 *_test.go 直盘断言（布局字节兼容承诺的合法使用面）。
 4. **模块构造器清点**：datatransfer.New / filelibrary.New 已取 kernel.ObjectStore；account/settings 取 handler 的 RasterAssetStore 包装（无路径暴露）；systemmonitoring.New 的 dbPath 为其自有 SQLite 监控库——Store 方言边界，同第 1 条。
@@ -24,4 +24,8 @@ version: 0.1.0
 
 ## 验证
 
-go build exit 0；TestNewObjectStoreWiring 绿；全量 go test ./... 于提交前复跑（结果记于提交 hash 对应 checkpoint）。
+go build exit 0；TestNewObjectStoreWiring 绿；全量 go test ./... 于提交前复跑（FULL_TEST_EXIT=0，提交 8aa0abc 前完成）。
+
+## 补充扫描（A-002 N-001 独立复核采纳）
+
+apps/api/pkg/、apps/web/src/、scripts/ 独立补扫：无对象存储路径 / os.File / uploadDir 公共契约残留（web 仅经 HTTP API 消费）。

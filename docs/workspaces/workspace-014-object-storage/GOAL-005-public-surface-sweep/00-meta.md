@@ -1,11 +1,12 @@
 ---
 id: GOAL-005-public-surface-sweep
 title: R4 公共面收尾核查（无本地路径 / os.File）
-status: active
+status: done
 parent: GOAL-001-object-storage
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.1.0
+version: 0.2.0
+progress: 4/4
 plan_refs:
   - VP-014-object-storage
 primary_plan: VP-014-object-storage
