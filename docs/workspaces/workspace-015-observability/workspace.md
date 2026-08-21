@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-015-observability](../../vision/plans/VP-015-observability.md)（**`active`**，架构 A4）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-observability`：纲领 R1～R5；R1 已完成（[GOAL-002](GOAL-002-metrics-export-contract/00-meta.md) done 3/3）；R2 进行中（[GOAL-003](GOAL-003-metrics-scrape-endpoint/00-meta.md)）。
+- **Root** `GOAL-001-observability`：纲领 R1～R5；R1 已完成（[GOAL-002](GOAL-002-metrics-export-contract/00-meta.md) done 3/3）；R2 已完成（[GOAL-003](GOAL-003-metrics-scrape-endpoint/00-meta.md) done 4/4）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-014-object-storage`。
 - 不承接 Admin 功能或业务域；不重开 VP-012 / VP-013 / VP-014。
@@ -46,8 +46,8 @@ VP-015：Prometheus 类指标导出 + OTLP traces；无收集器为内嵌默认�
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | R1 | 导出合同与配置面冻结 | 已完成（GOAL-002 done 3/3） |
-| R2 | 指标 scrape 接入 | 进行中（GOAL-003） |
-| R3 | OpenTelemetry traces 接入 | 待立项 |
+| R2 | 指标 scrape 接入 | 已完成（GOAL-003 done 4/4） |
+| R3 | OpenTelemetry traces 接入 | 待立项（I-002 须先闭合） |
 | R4 | 与现有 request-id / correlation 关联 | 待立项 |
 | R5 | 默认无收集器 + 显式导出双路径证据 | 待立项 |
 

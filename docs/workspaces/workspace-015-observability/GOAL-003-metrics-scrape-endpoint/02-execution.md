@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| （随实施追加） | | | | |
+| E-001 | 2026-08-21 | R2 立项与实施接缝冻结 + checkpoint（`ef33b40`） | recorded | `02-execution/E-001-r2-scaffold-checkpoint.md` |
+| E-002 | 2026-08-21 | R2 scrape 接入实施与验证（obs 包/接线/live 冒烟，checkpoint `5ba04c5`） | recorded | `02-execution/E-002-scrape-implementation-checkpoint.md` |
 
 ## 事实边界
 
