@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-21
-updated: 2026-08-21
-version: 0.1.0
+updated: 2026-08-22
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001
@@ -16,16 +16,16 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001～I-005 **open**（最晚 R1/R2/R3/R4；答案未到，登记已满足 V-F064） | 开区 scaffold；无到期未闭合 required（最晚阶段均未到） |
-| 到期 required 是否已 verified / residual | 否（均未到期） | 未进入 R1 方案冻结 |
-| 资料引用 | 无 | `shared_materials_catalog: none` |
+| 影响本 scope 的 I-00N | I-001～I-005 | 全部 **verified**（各阶段 D-001，见 `00-meta.md` 信息表） |
+| 到期 required 是否已 verified / residual | 已核对 | 零开放 |
+| 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚无 A 条目 |
+| A-001 | 2026-08-22 | self | Root 关门（R1–R5 全范围 + 成功标准逐条） | pass | 0 | `03-audit/A-001-self-root-closeout.md` |
 
 ## 结论状态
 
-尚未到达审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+A-001（self）`pass`；独立审计（grok build /audit，项目决策路径）进行中。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。

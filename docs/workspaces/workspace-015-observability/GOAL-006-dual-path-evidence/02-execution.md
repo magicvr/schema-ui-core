@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| （随实施追加） | | | | |
+| E-001 | 2026-08-22 | R5 立项与证据方案冻结 + checkpoint（`8ddbb60`/`cf9df6c`） | recorded | `02-execution/E-001-r5-scaffold-checkpoint.md` |
+| E-002 | 2026-08-22 | R5 双路径证据收集（缺省 + 显式，live 实测输出） | recorded | `02-execution/E-002-dual-path-evidence.md` |
 
 ## 事实边界
 
