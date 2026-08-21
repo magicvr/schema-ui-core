@@ -43,8 +43,16 @@ func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st kernel.
 // login gate (S-10 · GOAL-017 D-002 §3): nil keeps the login contract
 // byte-identical.
 func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier) {
+	RegisterWithMFAProbes(mux, a, st, operations, plan, ready, captcha, mfa)
+}
+
+// RegisterWithMFAProbes is RegisterWithMFA plus optional readiness probes
+// beyond the store ping (VP-014 GOAL-003 D-001): when an S3-compatible object
+// backend is explicitly configured, composition passes a HeadBucket probe so
+// readyz covers the backend too. Nil entries are ignored.
+func RegisterWithMFAProbes(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier, probes ...func(context.Context) error) {
 	mux.Handle("GET /healthz", healthz())
-	mux.Handle("GET /readyz", readyz(st, ready))
+	mux.Handle("GET /readyz", readyz(st, ready, probes...))
 	if plan.HasModule("core.auth-session") {
 		var verifier CaptchaVerifier
 		if len(captcha) > 0 {
@@ -74,7 +82,7 @@ func healthz() http.Handler {
 // non-nil it must also report true (module graph Start+Ready succeeded),
 // otherwise the probe stays unavailable (freeze §3 — readyz is real module-graph
 // readiness, not just store ping).
-func readyz(st kernel.Store, ready func() bool) http.Handler {
+func readyz(st kernel.Store, ready func() bool, extra ...func(context.Context) error) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 		defer cancel()
@@ -95,6 +103,22 @@ func readyz(st kernel.Store, ready func() bool) http.Handler {
 				Commit:    version.Commit,
 			})
 			return
+		}
+		// VP-014 GOAL-003: explicit object-backend probes share the readyz
+		// deadline; any failure keeps the whole probe unavailable.
+		for _, probe := range extra {
+			if probe == nil {
+				continue
+			}
+			if err := probe(ctx); err != nil {
+				writeJSON(w, http.StatusServiceUnavailable, healthResponse{
+					Status:    "unavailable",
+					Timestamp: time.Now().UTC(),
+					Version:   version.Version,
+					Commit:    version.Commit,
+				})
+				return
+			}
 		}
 		writeJSON(w, http.StatusOK, healthResponse{
 			Status:    "ok",

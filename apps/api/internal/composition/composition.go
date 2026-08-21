@@ -20,6 +20,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
@@ -301,7 +302,20 @@ func newMuxWithExtraProviders(
 		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret))
 		mfaVerifier = mfaService
 	}
-	handler.RegisterWithMFA(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier)
+	// VP-014 R2 (GOAL-003 D-001): an explicitly configured S3-compatible
+	// backend extends readyz with a HeadBucket probe ("配置后 readyz 扩依赖").
+	// The port is constructed here but not yet consumed by call sites - the
+	// three families move onto it in R3; main.go logs that window at startup.
+	var objectProbe func(context.Context) error
+	if cfg.ObjectsDriver == "s3" {
+		objStore, err := objectstore.NewS3(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region, cfg.ObjectsS3Bucket,
+			cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey, cfg.ObjectsS3UsePathStyle)
+		if err != nil {
+			return nil, err
+		}
+		objectProbe = objStore.Ping
+	}
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads directory is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id).
