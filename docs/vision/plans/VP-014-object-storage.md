@@ -13,15 +13,15 @@ parent: null
 
 # VP-014 · 对象存储适配器（S3 兼容 + 本地盘内嵌）
 
-## 状态与门闩（2026-08-21 · **closed**）
+## 状态与门闩（2026-08-21 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`closed`**（2026-08-21：lead Root GOAL-001 五阶段完成、关门审计 pass 后结项；详见下方关门记录） |
-| **lead_workspace** | **`workspace-014-object-storage`**（Root `GOAL-001-object-storage`；唯一 delivery） |
-| **Vision required** | **已满足**：VRev-031 `pass`，open required = 0；V-F061/V-F062 recommended 由激活 + Root scaffold 闭合 |
-| **激活门闩（现行）** | 已激活；实现证据在 lead 区。改变 Profile / 模块矩阵 / Manifest / 共同门禁时按 VP-008 `go` 消费有效性暂挂 |
-| **组合位置** | 架构分支 A2；前提 = VP-013 有界 `closed`（A1）+ roadmap **RT-S01** 已 delivered、**RT-S02** 本 VP 冻结退出分母 |
+| status | **`closed`**（2026-08-21 用户书面确认有界组合层关门；VRev-032 `V-F063` → `fixed`） |
+| **lead_workspace** | **`workspace-014-object-storage`**（Root `GOAL-001-object-storage` `done 5/5`） |
+| **Vision required** | **已满足**：VRev-031 / VRev-032 均为 `pass`，open required = 0；`V-F061`/`V-F062`/`V-F063` recommended 已闭合 |
+| **关门门闩（现行）** | 已 `closed`；保留 workspace-014 历史绑定，默认不接新区；reopen 须用户确认 |
+| **组合位置** | 架构分支 A2；前提 = VP-013 有界 `closed`（A1）+ roadmap **RT-S01** 已 delivered、**RT-S02** 本 VP 交付 |
 | **完整 ≠ 架构清单无限扩张** | 本 VP 只承接 A2。签名 URL / 分片 / 扫描 / CDN / 产品搬运器、A3 多实例/Redis/队列、A4 可观测、A5 密钥轮换不进退出分母 |
 
 ## 意图
@@ -84,7 +84,7 @@ parent: null
 5. 未引入第二对象存储方言；未改 Charter；未进入 Admin 功能 / 业务域范围；签名 URL / 分片 / 扫描 / CDN / 产品搬运器均未假装交付。
 6. 开放 required finding = 0（或已合法闭合）。
 
-详细纲领阶段由激活后的 lead Root（P-001）书写。方向级建议顺序（非工作区事实）：R1 端口冻结 → R2 S3 兼容接入 → R3 三类落盘收口 → R4 公共面去本地路径 → R5 双路径证据。
+详细纲领阶段由 lead Root `GOAL-001-object-storage`（P-001）书写：R1 端口冻结 → R2 S3 兼容接入 → R3 三类落盘收口 → R4 公共面去本地路径 → R5 双路径证据。
 
 ## 信息需求（P-005）
 
@@ -101,15 +101,24 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-014-object-storage | GOAL-001-object-storage | lead | 2026-08-21 | 2026-08-21 用户确认激活并开区；唯一 delivery；不重开 workspace-013 |
+| workspace-014-object-storage | GOAL-001-object-storage | lead | 2026-08-21 | 2026-08-21 用户确认激活并开区；2026-08-21 VP 组合层 `closed`；Root done 5/5；默认不接新区 |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| 2026-08-21 | **closed** | 架构 A2 交付完成：内核对象存储端口（put/get/stat/delete/exists/list，命名空间隔离三类落盘）+ S3 兼容适配器（aws-sdk-go-v2 静态凭证，API 公约数子集）+ 本地盘缺省实现（布局字节兼容零迁移）；三类落盘（avatars/brand-assets/uploads，含 file-library 与 data-transfer 共享目录）全部收口走端口；公共面无本地路径/os.File。R5 双路径证据：本地全量回归绿 + MinIO live round-trip PASS + readyz 200/503/200 阴性对照。每阶段 self+independent 双审计通过；关门审计 A-001-independent-closeout pass（开放 required 0） | docs/workspaces/workspace-014-object-storage/goal-tree.md；GOAL-002~GOAL-006 各 E/A 台账；GOAL-006/E-001（R5 证据）；GOAL-001/03-audit/A-001-independent-closeout.md（关门审计） | 存量本地文件无搬运器（I-014-004 用户裁决：运维自备拷贝）；S3 生产端点/凭证由运维按 D-005 注入 |
+| 2026-08-21 | **closed**（有界 · 架构 A2） | 用户确认组合层关门。exit 1：内核对象存储端口 + 公共面无本地路径 / `os.File`。exit 2：S3 三类落盘 put/get/delete；显式配置时 `readyz` 扩依赖。exit 3：本地盘仍为默认；无 MinIO/S3 仍能开发与快测。exit 4：生产向以 S3 为准（配置 fail-closed、live harness、探针接线）。exit 5：无第三方言、未改 Charter、未进 Admin/业务域、未假装签名 URL / 分片 / 扫描 / CDN / 搬运器。exit 6：实现层与 VRev required = 0。V-F063 按本表闭合。 | `workspace-014` goal-tree（Root done 5/5；GOAL-002～006 done）；Root [A-001 independent close-out](../../workspaces/workspace-014-object-storage/GOAL-001-object-storage/03-audit/A-001-independent-closeout.md)；GOAL-006 [E-001](../../workspaces/workspace-014-object-storage/GOAL-006-dual-path-evidence/02-execution/E-001-dual-path-evidence.md)；GOAL-002～005 各 E/A 台账；[VRev-031](../reviews/VRev-031-vp014-intent-activation.md)；[VRev-032](../reviews/VRev-032-vp014-closeout-readiness.md) | **`workspace-014` / `GOAL-001-object-storage` / `I-004`（VP `I-014-004`）**：本 VP 不提供产品级本地盘→对象存储搬运器；既有存量 = 继续本地或运维自备拷贝。S3 生产端点/凭证由运维按 Root D-005 注入，不构成本 VP 未交付项 |
+
+### 退出判据 ↔ 证据
+
+| 退出 | 结论 | 证据 |
+|------|------|------|
+| 1 内核端口 / 公共面 | 满足 | Root A-001：`kernel.ObjectStore`；handler / file-library / data-transfer 公共面取端口；生产路径 `*os.File` 零命中；GOAL-005 R4 |
+| 2 S3 三类落盘 + `readyz` | 满足 | 三命名空间同一适配器；composition s3 `Ping`；health extra probe；`objectprobe_test` |
+| 3 本地盘默认 + 无外部对象存储可开发 | 满足 | `config.yaml` `driver: local`；离线 handler/objectstore/composition 测试绿 |
+| 4 生产向以 S3 为准 | 满足 | 配置 fail-closed；`s3_live_test` harness；GOAL-006 E-001 MinIO live + `readyz` 200/503/200 |
+| 5 无第三方言 / 未改 Charter / 未进业务 | 满足 | `go.mod` 无 Azure/GCS native；Charter 仍 `@0.2.0`；无 Presign / 分片 / 扫描器 / 产品搬运器 |
+| 6 required = 0 | 满足 | Root A-001；VRev-031/VRev-032 open required = 0 |
 
 ## 规划修订短史
 
@@ -117,3 +126,4 @@ parent: null
 |------|--------|
 | 2026-08-21 | 初创 `planned`：用户确认新建本 VP 承接架构 A2；退出分母 = 内核对象存储端口 + S3 兼容实现 + 本地盘默认；签名 URL / 分片 / 扫描 / CDN / 搬运器不进分母。未激活、未开区 |
 | 2026-08-21 | VRev-031 self `pass`（0 required）；用户确认激活并开区。v0.2.0 `planned → active`；lead = `workspace-014-object-storage`；Root 承接 P-001 与 I-00N（V-F061）及架构类 freshness（V-F062） |
+| 2026-08-21 | 实现层 Root `done 5/5` 后文件曾先标 `closed`。VRev-032 self `pass`：组合层关门就绪；V-F063 recommended 约束关门落盘形状。用户确认有界组合层关门：关门记录含 exit↔证据映射 + I-014-004 residual 点名；组合索引原子同步（VR-033） |

@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-21
 parent: null
-version: 1.3.45
+version: 1.3.47
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.45
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-031 `pass`；V-F061/V-F062 recommended 随激活 + Root scaffold → **fixed**。VRev-030 V-F060、VRev-029 V-F058/V-F059 仍为 fixed |
+| — | — | — | **无** | VRev-033 `pass`；V-F064/V-F065 recommended 随激活 + Root scaffold → **fixed**。VRev-032 V-F063 仍为 fixed |
 
-> Vision Review **open required = 0**。**VRev-031（self，`pass`）**：原 verdict 保留；V-F061/V-F062 recommended → **fixed**（激活 + `workspace-014-object-storage` Root P-001/I-00N + 架构类 freshness）。当前交付 VP = **[VP-014-object-storage](plans/VP-014-object-storage.md)**（`active`；架构 A2；lead `workspace-014-object-storage`）。持续程序 **VP-009** / **VP-010**。
+> Vision Review **open required = 0**。**VRev-033（self，`pass`）**：原 verdict 保留；V-F064/V-F065 recommended → **fixed**（激活 + `workspace-015-observability` Root P-001/I-00N + 架构类 freshness）。当前交付 VP = **[VP-015-observability](plans/VP-015-observability.md)**（`active`；架构 A4；lead `workspace-015-observability`）。持续程序 **VP-009** / **VP-010**。
 
 ## 条目索引
 
@@ -69,3 +69,5 @@ version: 1.3.45
 | VRev-029 | 2026-08-20 | self | VP-013 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F058/V-F059 recommended → fixed（激活 + workspace-013 Root P-001/I-00N + 配置面） | [VRev-029-vp013-intent-activation.md](reviews/VRev-029-vp013-intent-activation.md) |
 | VRev-030 | 2026-08-21 | self | VP-013 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F060 recommended → fixed（VP-013 v0.3.0 有界 closed + exit↔证据 + D-002 residual；VR-030） | [VRev-030-vp013-closeout-readiness.md](reviews/VRev-030-vp013-closeout-readiness.md) |
 | VRev-031 | 2026-08-21 | self | VP-014 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F061/V-F062 recommended → fixed（激活 + workspace-014 Root P-001/I-00N + 架构类 freshness） | [VRev-031-vp014-intent-activation.md](reviews/VRev-031-vp014-intent-activation.md) |
+| VRev-032 | 2026-08-21 | self | VP-014 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F063 recommended → fixed（VP-014 有界组合层 closed + exit↔证据 + I-014-004 residual；VR-033） | [VRev-032-vp014-closeout-readiness.md](reviews/VRev-032-vp014-closeout-readiness.md) |
+| VRev-033 | 2026-08-21 | self | VP-015 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F064/V-F065 recommended → fixed（激活 + workspace-015 Root P-001/I-00N + 架构类 freshness） | [VRev-033-vp015-intent-activation.md](reviews/VRev-033-vp015-intent-activation.md) |
