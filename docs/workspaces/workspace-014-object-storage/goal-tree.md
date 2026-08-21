@@ -28,5 +28,5 @@ R1 已由 GOAL-002 承载并结项（端口冻结 + 本地适配器 + 配置面�
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-object-storage | 对象存储适配器（S3 兼容 + 本地盘内嵌） | null | active | 0/5 | 2026-08-21 |
+| GOAL-001-object-storage | 对象存储适配器（S3 兼容 + 本地盘内嵌） | null | active | 1/5 | 2026-08-21 |
 | GOAL-002-object-port-freeze | R1 内核对象存储端口与配置面冻结 | GOAL-001-object-storage | done | 4/4 | 2026-08-21 |
