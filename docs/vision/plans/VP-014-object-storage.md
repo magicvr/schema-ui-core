@@ -2,22 +2,22 @@
 doc_type: vision-plan
 id: VP-014-object-storage
 title: 对象存储适配器（S3 兼容 + 本地盘内嵌）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-014-object-storage
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # VP-014 · 对象存储适配器（S3 兼容 + 本地盘内嵌）
 
-## 状态与门闩（2026-08-21 · active）
+## 状态与门闩（2026-08-21 · **closed**）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-21 用户书面确认：VRev-031 `pass` 后激活并开区） |
+| status | **`closed`**（2026-08-21：lead Root GOAL-001 五阶段完成、关门审计 pass 后结项；详见下方关门记录） |
 | **lead_workspace** | **`workspace-014-object-storage`**（Root `GOAL-001-object-storage`；唯一 delivery） |
 | **Vision required** | **已满足**：VRev-031 `pass`，open required = 0；V-F061/V-F062 recommended 由激活 + Root scaffold 闭合 |
 | **激活门闩（现行）** | 已激活；实现证据在 lead 区。改变 Profile / 模块矩阵 / Manifest / 共同门禁时按 VP-008 `go` 消费有效性暂挂 |
@@ -92,9 +92,9 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-014-001 | S3 API 子集与驱动：MinIO / R2 / AWS 的最低公约数是什么？禁止第三对象存储方言。 | required | 方案冻结 / 实施 | R2 接入前 | open；开区后由 Root 登记并收集 |
-| I-014-002 | 桶模型：单桶 + 前缀 vs 多桶；三类落盘的 key 隔离规则。 | required | 方案冻结 | R1 端口冻结 | open；开区后由 Root 登记并收集 |
-| I-014-003 | 配置键名与凭证注入（YAML + env fail-closed；secret 不入库）。 | required | 方案冻结 | R2 接入前 | open；开区后由 Root 登记并收集 |
+| I-014-001 | S3 API 子集与驱动：MinIO / R2 / AWS 的最低公约数是什么？禁止第三对象存储方言。 | required | 方案冻结 / 实施 | R2 接入前 | **closed**（2026-08-21）：Root D-004——aws-sdk-go-v2；Put/Get/Delete/Head/ListV2+HeadBucket 子集 |
+| I-014-002 | 桶模型：单桶 + 前缀 vs 多桶；三类落盘的 key 隔离规则。 | required | 方案冻结 | R1 端口冻结 | **closed**（2026-08-21）：Root D-002——单桶 + 命名空间前缀 |
+| I-014-003 | 配置键名与凭证注入（YAML + env fail-closed；secret 不入库）。 | required | 方案冻结 | R2 接入前 | **closed**（2026-08-21）：Root D-005/GOAL-002 D-001——键名冻结 + static credentials fail-closed |
 | I-014-004 | 存量本地文件如何进入对象存储？ | non-blocking | 关门叙事 | R5 | **已裁决不进退出分母**：不提供产品搬运器；既有存量 = 继续本地或运维自备拷贝。开区后点名 residual 即可 |
 
 ## 工作区绑定
@@ -109,7 +109,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-21 | **closed** | 架构 A2 交付完成：内核对象存储端口（put/get/stat/delete/exists/list，命名空间隔离三类落盘）+ S3 兼容适配器（aws-sdk-go-v2 静态凭证，API 公约数子集）+ 本地盘缺省实现（布局字节兼容零迁移）；三类落盘（avatars/brand-assets/uploads，含 file-library 与 data-transfer 共享目录）全部收口走端口；公共面无本地路径/os.File。R5 双路径证据：本地全量回归绿 + MinIO live round-trip PASS + readyz 200/503/200 阴性对照。每阶段 self+independent 双审计通过；关门审计 A-001-independent-closeout pass（开放 required 0） | docs/workspaces/workspace-014-object-storage/goal-tree.md；GOAL-002~GOAL-006 各 E/A 台账；GOAL-006/E-001（R5 证据）；GOAL-001/03-audit/A-001-independent-closeout.md（关门审计） | 存量本地文件无搬运器（I-014-004 用户裁决：运维自备拷贝）；S3 生产端点/凭证由运维按 D-005 注入 |
 
 ## 规划修订短史
 

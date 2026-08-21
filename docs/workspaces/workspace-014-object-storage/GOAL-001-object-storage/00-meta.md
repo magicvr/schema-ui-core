@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-object-storage
 title: 对象存储适配器（S3 兼容 + 本地盘内嵌）
-status: active
+status: done
 parent: null
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.2.0
-progress: 4/5
+version: 0.3.0
+progress: 5/5
 plan_refs:
   - VP-014-object-storage
 primary_plan: VP-014-object-storage
@@ -29,9 +29,9 @@ serves_summary: 交付架构 A2：内核对象存储端口 + S3 兼容实现；�
 | R2 | **S3 兼容接入**：驱动公约数（I-001）、凭证键名（I-003）、配置后 `readyz` 扩依赖。承载子目标：GOAL-003-object-s3-driver | 依赖 R1 | **已完成**（2026-08-21：适配器 + readyz 探针；self/independent 审计 pass，recommended 项同批闭合） |
 | R3 | **三类落盘收口**：avatars / brand-assets / uploads（含 file-library 与 data-transfer 共享上传目录）走同一端口。承载子目标：GOAL-004-object-families-migration | 依赖 R2 | **已完成**（2026-08-21：self pass + independent conditional→F-001 fixed 闭合） |
 | R4 | **公共面收口**：Handler / 模块公共契约去掉本地路径与 `os.File`。承载子目标：GOAL-005-public-surface-sweep | 依赖 R1；可与 R3 部分并行 | **已完成**（2026-08-21：三维扫描证据归档，self pass + independent pass；R3 已提前吸收主要迁移） |
-| R5 | **双路径证据**：本地盘默认路径回归 + S3 兼容生产向验收（配置接入、读写删除、就绪探针） | 依赖 R3/R4 | 未开始 |
+| R5 | **双路径证据**：本地盘默认路径回归 + S3 兼容生产向验收（配置接入、读写删除、就绪探针）。承载子目标：GOAL-006-dual-path-evidence | 依赖 R3/R4 | **已完成**（2026-08-21：MinIO live round-trip PASS；readyz 200/503/200 阴性对照；关门审计 pass） |
 
-`progress` = 已完成阶段数 / 5。当前 `4/5`（R1–R4 完成，仅剩 R5 双路径证据）。progress 不放行、不关门。
+`progress` = 已完成阶段数 / 5。当前 `5/5`——**已关门**（2026-08-21，关门审计 A-001-independent-closeout pass）。
 
 ## 成功标准（方向级）
 
@@ -58,3 +58,14 @@ serves_summary: 交付架构 A2：内核对象存储端口 + S3 兼容实现；�
 ## 台账布局
 
 新目标为三个可追加台账创建同名平铺目录：`01-decision/`、`02-execution/`、`03-audit/`。索引文件保留 frontmatter、摘要和条目索引；独立记录使用 `D-NNN-*`、`E-NNN-*`、`A-NNN-*` 文件。
+
+## 关门记录（2026-08-21）
+
+| 项 | 值 |
+|----|-----|
+| outcome | **done**（五阶段 R1–R5 全部完成） |
+| 关门审计 | self A-001-self-closeout pass + independent A-001-independent-closeout **pass**（grok build · grok-4.6 · high；开放 required 0，"Root 可标 done"）——均在本目标 03-audit/ |
+| 判据核对 | VP-014 方向级退出判据 1–6 逐条达成（见 A-001-self-closeout 核对表与独立复现） |
+| evidence_links | [VP-014](../../../vision/plans/VP-014-object-storage.md)；GOAL-002~006 各 E/A 台账；R5 双路径证据 GOAL-006/E-001 |
+| residuals | 存量本地文件无搬运器（I-004 用户裁决：不进退出分母，运维自备拷贝）；S3 真实部署端点/凭证由运维按 D-005 注入 |
+
