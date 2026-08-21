@@ -235,17 +235,17 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 // DeleteUser removes an account and its refresh tokens atomically.
 func (r *Repository) DeleteUser(id, actorID string) error {
 	return r.withTx("delete managed user", func(tx kernel.Tx) error {
-		var exists int
+		var exists bool
 		if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)`, id).Scan(&exists); err != nil {
 			return fmt.Errorf("check delete user: %w", err)
 		}
-		if exists == 0 {
+		if !exists {
 			return ErrNotFound
 		}
 		if id == actorID {
 			return ErrSelfOperation
 		}
-		var isAdmin int
+		var isAdmin bool
 		if err := tx.QueryRow(context.Background(),
 			`SELECT EXISTS(
 				SELECT 1 FROM user_roles ur
@@ -255,7 +255,7 @@ func (r *Repository) DeleteUser(id, actorID string) error {
 		).Scan(&isAdmin); err != nil {
 			return fmt.Errorf("check delete user admin role: %w", err)
 		}
-		if isAdmin == 1 {
+		if isAdmin {
 			other, err := countAdminUsersExcluding(tx, id)
 			if err != nil {
 				return err
@@ -295,17 +295,17 @@ func (r *Repository) DeleteUsersBatch(ids []string, actorID string) (int, error)
 	err := r.withTx("delete managed users batch", func(tx kernel.Tx) error {
 		adminsInBatch := 0
 		for _, id := range keys {
-			var exists int
+			var exists bool
 			if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)`, id).Scan(&exists); err != nil {
 				return fmt.Errorf("check delete user %s: %w", id, err)
 			}
-			if exists == 0 {
+			if !exists {
 				return ErrNotFound
 			}
 			if id == actorID {
 				return ErrSelfOperation
 			}
-			var isAdmin int
+			var isAdmin bool
 			if err := tx.QueryRow(context.Background(),
 				`SELECT EXISTS(
 					SELECT 1 FROM user_roles ur
@@ -315,7 +315,7 @@ func (r *Repository) DeleteUsersBatch(ids []string, actorID string) (int, error)
 			).Scan(&isAdmin); err != nil {
 				return fmt.Errorf("check delete user %s admin role: %w", id, err)
 			}
-			if isAdmin == 1 {
+			if isAdmin {
 				adminsInBatch++
 			}
 		}
@@ -385,7 +385,11 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
 	var createdAt, updatedAt int64
-	var mustChangePassword, mfaEnabled int
+	// mfaEnabled is an EXISTS() projection: postgres yields a native bool
+	// while sqlite yields 0/1 — *bool accepts both via driver.Bool (R6 fix:
+	// an int destination broke every users list on the postgres dialect).
+	var mustChangePassword int
+	var mfaEnabled bool
 	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash,
 		&user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled,
 		&user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &mfaEnabled)
@@ -399,7 +403,7 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 		return nil, fmt.Errorf("unmarshal roles: %w", err)
 	}
 	user.MustChangePassword = mustChangePassword != 0
-	user.MFAEnabled = mfaEnabled != 0
+	user.MFAEnabled = mfaEnabled
 	user.CreatedAt = time.Unix(createdAt, 0).UTC()
 	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	return &user, nil

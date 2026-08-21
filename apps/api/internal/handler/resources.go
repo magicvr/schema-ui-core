@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"runtime/debug"
 	"net/http"
 	"slices"
 	"strconv"
@@ -428,6 +429,13 @@ func (h *resourceHandler) list() http.Handler {
 			if errors.As(err, &domainErr) {
 				writeLocalizedError(w, r, domainErr.Status, domainErr.Code, domainErr.Message)
 				return
+			}
+			// Observability (users-list 500 follow-up): the INTERNAL envelope
+			// must never leak diagnostics, but the underlying cause has to reach
+			// the server log or the failure is undebuggable.
+			slog.ErrorContext(r.Context(), "resource list failed", "resource", h.res.ID, "err", err, "entityType", fmt.Sprintf("%T", h.res.Entity), "repoType", fmt.Sprintf("%T", h.res.Entity))
+			if h.res.ID == "users" {
+				slog.Error("DEBUG users list failure stack", "stack", string(debug.Stack()))
 			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list "+h.res.ID)
 			return

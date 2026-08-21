@@ -83,11 +83,11 @@ func (r *Repository) CreateRoleWithGrants(key, name string, permissions, menuIte
 		return nil, ErrInvalidKey
 	}
 	err := r.withTx("create role", func(tx kernel.Tx) error {
-		var exists int
+		var exists bool
 		if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM roles WHERE key = ?)`, key).Scan(&exists); err != nil {
 			return fmt.Errorf("check role key: %w", err)
 		}
-		if exists == 1 {
+		if exists {
 			return ErrRoleTaken
 		}
 		nowUnix := now.Unix()
@@ -270,11 +270,11 @@ func (r *Repository) PermissionsForRoles(roleKeys []string) ([]string, error) {
 func (r *Repository) ValidatePermissionKeys(keys []string) error {
 	return r.withTx("validate permission keys", func(tx kernel.Tx) error {
 		for _, key := range dedupeKeys(keys) {
-			var exists int
+			var exists bool
 			if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM permissions WHERE key = ?)`, key).Scan(&exists); err != nil {
 				return fmt.Errorf("validate permission %s: %w", key, err)
 			}
-			if exists == 0 {
+			if !exists {
 				return ErrInvalidPermission
 			}
 		}
@@ -286,11 +286,11 @@ func (r *Repository) ValidatePermissionKeys(keys []string) error {
 func (r *Repository) ValidateMenuItemIDs(ids []string) error {
 	return r.withTx("validate menu item ids", func(tx kernel.Tx) error {
 		for _, id := range dedupeKeys(ids) {
-			var exists int
+			var exists bool
 			if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
 				return fmt.Errorf("validate menu item %s: %w", id, err)
 			}
-			if exists == 0 {
+			if !exists {
 				return ErrInvalidMenuItem
 			}
 		}
@@ -382,11 +382,11 @@ func replaceRolePermissions(tx kernel.Tx, roleID string, keys []string) error {
 func replaceRoleMenuItems(tx kernel.Tx, roleID string, ids []string) error {
 	ids = dedupeKeys(ids)
 	for _, id := range ids {
-		var exists int
+		var exists bool
 		if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM menu_items WHERE id = ?)`, id).Scan(&exists); err != nil {
 			return fmt.Errorf("validate menu item %s: %w", id, err)
 		}
-		if exists == 0 {
+		if !exists {
 			return ErrInvalidMenuItem
 		}
 	}
