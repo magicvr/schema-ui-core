@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-21
 parent: null
-version: 1.3.43
+version: 1.3.45
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.43
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-030 `pass`；V-F060 recommended → **fixed**（VP-013 有界 closed + exit↔证据 + D-002 residual）。VRev-029 V-F058/V-F059、VRev-028 V-F057 仍为 fixed |
+| — | — | — | **无** | VRev-031 `pass`；V-F061/V-F062 recommended 随激活 + Root scaffold → **fixed**。VRev-030 V-F060、VRev-029 V-F058/V-F059 仍为 fixed |
 
-> Vision Review **open required = 0**。**VRev-030（self，`pass`）**：原 verdict 保留；V-F060 recommended → **fixed**。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1；lead `workspace-013-store-dialects`；Root done 5/5）。当前无 active 交付 VP。持续程序 **VP-009** / **VP-010**。后续方向按 [roadmap.md](roadmap.md) 三分支并行登记。
+> Vision Review **open required = 0**。**VRev-031（self，`pass`）**：原 verdict 保留；V-F061/V-F062 recommended → **fixed**（激活 + `workspace-014-object-storage` Root P-001/I-00N + 架构类 freshness）。当前交付 VP = **[VP-014-object-storage](plans/VP-014-object-storage.md)**（`active`；架构 A2；lead `workspace-014-object-storage`）。持续程序 **VP-009** / **VP-010**。
 
 ## 条目索引
 
@@ -68,3 +68,4 @@ version: 1.3.43
 | VRev-028 | 2026-08-19 | self | VP-012 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F057 recommended → fixed（VP-012 v0.2.0 完整 closed + exit↔证据 + Tier A 移交；VR-024） | [VRev-028-vp012-closeout-readiness.md](reviews/VRev-028-vp012-closeout-readiness.md) |
 | VRev-029 | 2026-08-20 | self | VP-013 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F058/V-F059 recommended → fixed（激活 + workspace-013 Root P-001/I-00N + 配置面） | [VRev-029-vp013-intent-activation.md](reviews/VRev-029-vp013-intent-activation.md) |
 | VRev-030 | 2026-08-21 | self | VP-013 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F060 recommended → fixed（VP-013 v0.3.0 有界 closed + exit↔证据 + D-002 residual；VR-030） | [VRev-030-vp013-closeout-readiness.md](reviews/VRev-030-vp013-closeout-readiness.md) |
+| VRev-031 | 2026-08-21 | self | VP-014 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F061/V-F062 recommended → fixed（激活 + workspace-014 Root P-001/I-00N + 架构类 freshness） | [VRev-031-vp014-intent-activation.md](reviews/VRev-031-vp014-intent-activation.md) |

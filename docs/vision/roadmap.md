@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-21
 parent: null
-version: 0.29.0
+version: 0.31.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -29,6 +29,7 @@ version: 0.29.0
 | 11 | [VP-011-admin-functional-modules](plans/VP-011-admin-functional-modules.md) | 标准 Admin 功能模块（通用模块 + 常用业务领域）分档交付：有界调研 → 三档分档 → 分波实现；一等公民 / 常用 / 增补。 | 继承 VP-008 `go` 消费有效性（freshness review **PASS**，候选 `f14ab9d`）+ VP-009/010 无开放阻断；VP-001～008 已固化协议/架构/设计/locale 基线 | **closed**（2026-08-18 有界关门；lead: workspace-011-admin-functional-modules；Root done；四档能力地图上提至本 roadmap） |
 | 12 | [VP-012-shared-cross-module-contracts](plans/VP-012-shared-cross-module-contracts.md) | 共享横切契约与平台基架：correlation、审计模型、并发/幂等、异步 Job、maintenance 门控、API Token；不承载业务领域。 | 继承 VP-011 的 R5 四档能力地图；与 VP-009/VP-010 正交分流；不改变 Charter 边界 | **closed**（2026-08-19 完整关门 · 首波；lead: workspace-012-shared-cross-module-contracts；Root done 6/6；后续 session/effective actor、保留/归档、其余 writer envelope 移交本文件 Admin 功能分支） |
 | 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A1；lead: workspace-013-store-dialects；Root done 5/5；residual：无产品 SQLite→PG 搬运器，见 GOAL-006 D-002） |
+| 14 | [VP-014-object-storage](plans/VP-014-object-storage.md) | 架构 A2：内核对象存储端口 + S3 兼容实现；本地盘保留为内嵌默认。 | VP-013 A1 已 closed；RT-S01 delivered；与 VP-009/010 正交；不进签名 URL / 分片 / 扫描 / CDN / 搬运器，不进 A3+ 与 Admin/业务域 | **active**（2026-08-21 用户确认激活；lead: workspace-014-object-storage；Root `GOAL-001-object-storage`；VRev-031 `pass`） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -132,12 +133,26 @@ version: 0.29.0
 
 | id | 项 | 现状 | 状态 | 备注 |
 |----|----|------|------|------|
-| RT-S01 | 本地盘（头像/品牌/上传/库文件） | `./data` | **delivered** | 单机默认 |
-| RT-S02 | 对象存储适配器（S3 兼容） | 无 | **registered** | 与 RT-P02 同级：多机立刻碰到 |
-| RT-S03 | 签名 URL / TTL / 直传 | 无 | **trigger-gated** | 依赖 RT-S02 |
-| RT-S04 | 分片/断点上传 | 无 | **trigger-gated** | Admin 接缝的平台面 |
-| RT-S05 | 恶意内容扫描执行面 | 无 | **trigger-gated** | Admin 定策略，架构接扫描器 |
-| RT-S06 | CDN / 公共资源分发 | 无 | **trigger-gated** | 品牌资源公网分发时 |
+| RT-S01 | 本地盘（头像/品牌/上传/库文件） | `./data` | **delivered** | 内嵌默认；合同上与 S3 兼容实现平等，不得残缺 |
+| RT-S02 | 对象存储适配器（S3 兼容） | 无 | **registered**（退出分母已由 VP-014 冻结，实现未做） | 内核端口 + S3 兼容；本地盘默认；见下节 |
+| RT-S03 | 签名 URL / TTL / 直传 | 无 | **trigger-gated** | 依赖 RT-S02；**不进** VP-014 退出分母 |
+| RT-S04 | 分片/断点上传 | 无 | **trigger-gated** | Admin 接缝的平台面；**不进** VP-014 |
+| RT-S05 | 恶意内容扫描执行面 | 无 | **trigger-gated** | Admin 定策略，架构接扫描器；**不进** VP-014 |
+| RT-S06 | CDN / 公共资源分发 | 无 | **trigger-gated** | 品牌资源公网分发时；**不进** VP-014 |
+
+### 已冻结：对象存储 A2 退出分母（VP-014）
+
+用户确认（2026-08-21）。VP-014 已 `active`；lead `workspace-014-object-storage`。实现未做。
+
+| 项 | 决定 |
+|----|------|
+| 对象存储方言 | 只支持 **S3 兼容** 与 **本地盘**。禁止 Azure Blob / GCS native 作为第三方言。 |
+| 内核 | **对象存储端口**（put / get / delete / exists + 命名空间隔离）。**不是**业务文件管理器。禁止本地路径 / `os.File` 进入 handler 与模块公共契约。 |
+| 生产权威 | **S3 兼容**：生产 fork 推荐与本 VP 验收。 |
+| 内嵌默认 | **本地盘**：现有 avatars / brand-assets / uploads 继续默认。不因「生产首要」强制本地必须有 MinIO/S3。 |
+| 合同平等 | 两实现走同一端口语义。本地盘 **不是** 可残缺的缩水实现。 |
+| 读面 | 继续经 API 代理；签名 URL / 直传不进本波。 |
+| 存量 | **不提供**产品级本地盘→对象存储搬运器。 |
 
 ### 4. 可观测性
 
@@ -213,7 +228,7 @@ A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支下一拍：A1 已由 VP-013 **`closed`** 交付（内核端口 + PostgreSQL + 台账对写；SQLite 仍为内嵌默认；PG 备份合同随 A1 落地）。下一未冻结拍 = **A2 对象存储适配器**（本地盘保留为默认）；须 `/vision` 冻结退出分母后再交 `/govern` 开区。A5 密钥轮换仍后置。
+架构分支下一拍：**[VP-014-object-storage](plans/VP-014-object-storage.md)** 已 **`active`**（lead `workspace-014-object-storage`）。退出分母已冻结；实现未做。A3 仍 trigger-gated；A4 / A5 后置。
 
 ---
 
@@ -276,7 +291,7 @@ Admin 功能下一拍：按触发选一条（常见候选：IAM 运维增强，�
 
 ---
 
-**当前组合焦点**：**无 active 交付 VP。** **[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1；lead `workspace-013-store-dialects`；Root `GOAL-001-store-dialects` done 5/5）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记；架构下一拍为 A2（对象存储，未冻结）。持续程序 = **VP-009 `active`**（共享基架安全与健壮性；lead workspace-009；波次 W1–W4 与 W6 均 done，W5 扫描 0 中高危未开子目标）与 **VP-010 `active`**（设计意图—实现符合性；lead workspace-010；波次 W1–W13 均 done）。VP-001～008 仍为历史 `closed`；**VP-011 已于 2026-08-18 有界 `closed`**；**VP-012 已于 2026-08-19 完整 `closed`**。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
+**当前组合焦点**：**[VP-014-object-storage](plans/VP-014-object-storage.md) `active`**（架构 A2；lead `workspace-014-object-storage`；Root `GOAL-001-object-storage`）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011、VP-012 仍为历史 `closed`。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费（本 VP 为架构接入，不消费业务解锁 scope）。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
 
 ## 单主线模块化策略
 
