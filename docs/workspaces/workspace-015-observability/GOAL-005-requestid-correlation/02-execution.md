@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| （随实施追加） | | | | |
+| E-001 | 2026-08-22 | R4 立项与 I-005 闭合 + checkpoint（`8b52f2d`） | recorded | `02-execution/E-001-r4-scaffold-checkpoint.md` |
+| E-002 | 2026-08-22 | R4 request-id 关联实施与验证（span 属性/baggage，checkpoint `bc5e196`） | recorded | `02-execution/E-002-correlation-implementation-checkpoint.md` |
 
 ## 事实边界
 

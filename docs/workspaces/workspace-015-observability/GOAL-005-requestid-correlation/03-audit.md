@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| （待首次自审后登记） | | | | | | |
+| A-001 | 2026-08-22 | self | R4 与 request-id 关联（I-005 闭合 + span 属性/baggage 注入） | pass | 0 | `03-audit/A-001-self-r4-correlation.md` |
 
 ## 结论状态
 
-尚未到达关门审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+关门审计已完成：A-001（self）`pass`，开放 required findings = 0；四项成功标准有证据链（D-001 → E-001/E-002 → 测试 → commit `8b52f2d`/`bc5e196`）。GOAL-005 关门（`status: done`，4/4）。N-008 建议（R5 核对样例）带入 R5 立项。
