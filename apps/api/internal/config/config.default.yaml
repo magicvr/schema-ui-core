@@ -136,6 +136,21 @@ storage:
       secret_access_key: "" # required SECRET — via STORAGE_OBJECTS_S3_SECRET_ACCESS_KEY only, never a literal
       use_path_style: true  # MinIO/R2 need path-style; AWS can set false
 
+observability:
+  metrics:
+    # VP-015 (workspace-015 GOAL-002 D-001): dedicated Prometheus exposition
+    # listener — never a route on the main mux. Disabled by default: no
+    # collector, no extra port, zero behavior change for mvp/dev/Compose.
+    enabled: false          # OBSERVABILITY_METRICS_ENABLED
+    # Bind address of the separate listener. Default is loopback-only; ANY
+    # non-loopback bind (e.g. ":25081", "0.0.0.0:25081") REQUIRES auth_token
+    # below or startup fails closed.
+    addr: "127.0.0.1:25081" # OBSERVABILITY_METRICS_ADDR
+    # Optional Bearer token guarding the metrics listener (>= 16 chars).
+    # SECRET — supply via OBSERVABILITY_METRICS_AUTH_TOKEN env / configs/.env,
+    # never a literal here; set while enabled=false also fails closed.
+    auth_token: ""          # OBSERVABILITY_METRICS_AUTH_TOKEN
+
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
   mode: normal

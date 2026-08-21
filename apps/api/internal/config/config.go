@@ -110,6 +110,18 @@ type Config struct {
 	// virtual-host style can be enabled for AWS-compatible endpoints.
 	ObjectsS3UsePathStyle bool
 
+	// Observability metrics surface (VP-015 / workspace-015 GOAL-002 D-001).
+	// MetricsEnabled selects the DEDICATED Prometheus exposition listener —
+	// never a route on the main mux. It is off by default so mvp/dev/Compose
+	// keep the documented no-collector default (no extra port, no behavior
+	// change). MetricsAddr defaults to loopback-only; any non-loopback bind
+	// requires MetricsAuthToken (fail-closed at load/validate). The token is
+	// a secret: supply it via OBSERVABILITY_METRICS_AUTH_TOKEN env /
+	// configs/.env, never a YAML literal.
+	MetricsEnabled   bool
+	MetricsAddr      string
+	MetricsAuthToken string
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -225,6 +237,13 @@ type yamlFile struct {
 			} `yaml:"s3"`
 		} `yaml:"objects"`
 	} `yaml:"storage"`
+	Observability struct {
+		Metrics struct {
+			Enabled   *bool   `yaml:"enabled"`
+			Addr      *string `yaml:"addr"`
+			AuthToken *string `yaml:"auth_token"`
+		} `yaml:"metrics"`
+	} `yaml:"observability"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -280,6 +299,9 @@ func Load() *Config {
 		BrandingMaxBytes:         4 << 20,
 		ObjectsDriver:            "local",
 		ObjectsS3UsePathStyle:    true,
+		MetricsEnabled:           false,
+		MetricsAddr:              "127.0.0.1:25081",
+		MetricsAuthToken:         "",
 		RuntimeMode:              RuntimeModeNormal,
 	}
 
@@ -405,6 +427,11 @@ func Load() *Config {
 	if yf.Storage.Objects.S3.UsePathStyle != nil {
 		cfg.ObjectsS3UsePathStyle = *yf.Storage.Objects.S3.UsePathStyle
 	}
+	if yf.Observability.Metrics.Enabled != nil {
+		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
+	}
+	cfg.MetricsAddr = strPtrOr(yf.Observability.Metrics.Addr, cfg.MetricsAddr)
+	cfg.MetricsAuthToken = strPtrOr(yf.Observability.Metrics.AuthToken, cfg.MetricsAuthToken)
 	profile := strPtrOr(yf.App.Profile, string(kernel.ProfileMVP))
 
 	// navigation.order (GOAL-013 D-002 §4): sequence of NodeIDs. A malformed
@@ -475,6 +502,9 @@ func Load() *Config {
 	if v, set := os.LookupEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE"); set && strings.TrimSpace(v) != "" {
 		cfg.ObjectsS3UsePathStyle = boolEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE", cfg.ObjectsS3UsePathStyle)
 	}
+	cfg.MetricsEnabled = boolEnv("OBSERVABILITY_METRICS_ENABLED", cfg.MetricsEnabled)
+	cfg.MetricsAddr = envOr("OBSERVABILITY_METRICS_ADDR", cfg.MetricsAddr)
+	cfg.MetricsAuthToken = envOr("OBSERVABILITY_METRICS_AUTH_TOKEN", cfg.MetricsAuthToken)
 	if yf.Runtime.Mode != nil {
 		cfg.RuntimeMode = RuntimeMode(strings.TrimSpace(*yf.Runtime.Mode))
 	}
@@ -523,6 +553,14 @@ func Load() *Config {
 		}
 	default:
 		cfg.LoadError = fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", cfg.ObjectsDriver)
+		return cfg
+	}
+
+	// observability.metrics (VP-015 / workspace-015 GOAL-002 D-001): pairing
+	// and exposure rules fail closed at load time, mirroring runtime.mode /
+	// db.dialect / storage.objects.driver above.
+	if err := validateMetrics(cfg.MetricsEnabled, cfg.MetricsAddr, cfg.MetricsAuthToken); err != nil {
+		cfg.LoadError = err
 		return cfg
 	}
 
@@ -862,6 +900,11 @@ func (c *Config) ValidateProd() error {
 	if err := c.validateObjects(); err != nil {
 		return err
 	}
+	// VP-015 GOAL-002 D-001: metrics exposure/pairing rules are startup gates
+	// for every environment (including development) as well.
+	if err := c.validateObservability(); err != nil {
+		return err
+	}
 	if c.AppEnv == "development" {
 		return nil
 	}
@@ -942,6 +985,71 @@ func validateObjectsS3(c *Config) error {
 		}
 	}
 	return nil
+}
+
+// minMetricsTokenLen is the minimum length for an observability.metrics
+// bearer token (VP-015 / workspace-015 GOAL-002 D-001 §2). A single-factor
+// gate deserves an entropy floor; the JWT secret keeps its own stricter bar.
+const minMetricsTokenLen = 16
+
+// validateObservability enforces the observability.metrics contract on every
+// Config that reaches ValidateProd, including zero-value/test configs that
+// bypass Load's own checks. An untouched surface (disabled, no addr, no
+// token) is skipped so focused unit Configs keep working.
+func (c *Config) validateObservability() error {
+	if !c.MetricsEnabled && strings.TrimSpace(c.MetricsAddr) == "" && strings.TrimSpace(c.MetricsAuthToken) == "" {
+		return nil
+	}
+	addr := c.MetricsAddr
+	if strings.TrimSpace(addr) == "" {
+		addr = "127.0.0.1:25081" // zero-value Config keeps the documented default
+	}
+	return validateMetrics(c.MetricsEnabled, addr, c.MetricsAuthToken)
+}
+
+// validateMetrics enforces the observability.metrics contract (VP-015 /
+// workspace-015 GOAL-002 D-001 §2): a dead auth_token is rejected (mirroring
+// the s3-keys-with-local-driver precedent), the bind address must parse as
+// host:port with a numeric port, set tokens need a minimal length, and any
+// non-loopback bind requires a bearer token in EVERY environment (exposure
+// risk does not depend on APP_ENV). Error messages name keys only — never a
+// token value.
+func validateMetrics(enabled bool, addr, token string) error {
+	token = strings.TrimSpace(token)
+	if !enabled {
+		if token != "" {
+			return fmt.Errorf("config: observability.metrics.auth_token is set but observability.metrics.enabled is false — enable metrics or remove the token")
+		}
+		return nil
+	}
+	host, port, err := net.SplitHostPort(strings.TrimSpace(addr))
+	if err != nil {
+		return fmt.Errorf("config: observability.metrics.addr %q must be host:port: %v", addr, err)
+	}
+	portNum, err := strconv.Atoi(port)
+	if err != nil || portNum < 1 || portNum > 65535 {
+		return fmt.Errorf("config: observability.metrics.addr %q must use a numeric port in 1-65535", addr)
+	}
+	if token != "" && len(token) < minMetricsTokenLen {
+		return fmt.Errorf("config: observability.metrics.auth_token must be at least %d characters", minMetricsTokenLen)
+	}
+	if !isLoopbackHost(host) && token == "" {
+		return fmt.Errorf("config: observability.metrics.addr %q binds beyond loopback — set observability.metrics.auth_token via OBSERVABILITY_METRICS_AUTH_TOKEN (env / configs/.env) before exposing metrics", addr)
+	}
+	return nil
+}
+
+// isLoopbackHost reports whether a host:port host part binds only the local
+// loopback interface. An empty host (":25081") means ALL interfaces and is
+// therefore NOT loopback; only "localhost" and loopback IPs qualify.
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
 }
 
 // validateDB enforces the VP-013 R1 v1.4 §5 pairing and path-shape rules.
