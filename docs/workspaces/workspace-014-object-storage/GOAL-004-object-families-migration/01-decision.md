@@ -1,7 +1,7 @@
 ---
 id: GOAL-004-object-families-migration
 doc: decision
-status: active
+status: done
 parent: GOAL-001-object-storage
 created: 2026-08-21
 updated: 2026-08-21

@@ -2,19 +2,39 @@ package composition
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 )
 
 // A-002 R-003 (GOAL-003): lock the driver=s3 -> HeadBucket probe wiring and
 // the local-default no-op without standing up a full composition.
 func TestNewObjectStoreWiring(t *testing.T) {
-	t.Run("local default yields store without probe", func(t *testing.T) {
-		store, probe, err := newObjectStore(&config.Config{ObjectsDriver: "local"})
+	t.Run("local default yields store without probe (root = db.path dir)", func(t *testing.T) {
+		store, probe, err := newObjectStore(&config.Config{ObjectsDriver: "local", DBPath: "./data/schema-ui.db"})
 		if err != nil || store == nil || probe != nil {
 			t.Fatalf("local wiring store-nil=%t probe-non-nil=%t err=%v", store == nil, probe != nil, err)
+		}
+		local, ok := store.(*objectstore.LocalStore)
+		if !ok {
+			t.Fatalf("local driver must produce *objectstore.LocalStore, got %T", store)
+		}
+		if want := filepath.Dir("./data/schema-ui.db"); local.Root() != want {
+			t.Fatalf("derived root = %q, want %q (filepath.Dir(db.path))", local.Root(), want)
+		}
+	})
+
+	t.Run("ObjectsLocalRoot overrides the derived root", func(t *testing.T) {
+		store, _, err := newObjectStore(&config.Config{ObjectsDriver: "local", ObjectsLocalRoot: "/tmp/override-root"})
+		if err != nil {
+			t.Fatalf("newObjectStore: %v", err)
+		}
+		local, ok := store.(*objectstore.LocalStore)
+		if !ok || local.Root() != "/tmp/override-root" {
+			t.Fatalf("override root not honored: %T %q", store, local.Root())
 		}
 	})
 
@@ -33,9 +53,12 @@ func TestNewObjectStoreWiring(t *testing.T) {
 			ObjectsS3AccessKeyID:     "k",
 			ObjectsS3SecretAccessKey: "s",
 		}
-		_, probe, err := newObjectStore(cfg)
+		store, probe, err := newObjectStore(cfg)
 		if err != nil || probe == nil {
-			t.Fatalf("s3 probe non-nil=%t err=%v; want true/nil", probe != nil, err)
+			t.Fatalf("s3 wiring store-nil=%t probe-non-nil=%t err=%v; want store/probe/nil-err", store == nil, probe != nil, err)
+		}
+		if _, ok := store.(*objectstore.S3Store); !ok {
+			t.Fatalf("s3 driver must produce *objectstore.S3Store, got %T", store)
 		}
 		// Nothing listens on port 1: HeadBucket must fail fast, proving the
 		// probe is really wired to the configured endpoint.

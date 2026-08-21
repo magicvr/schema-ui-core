@@ -257,3 +257,20 @@ func TestLocalPutRollsBackWhenMetaWriteFails(t *testing.T) {
 		t.Fatalf("body was not rolled back: err = %v", err)
 	}
 }
+
+// A-002 R-003: Stat must surface the backend ModTime (file-library created
+// surface depends on it; a zero value would render as 0001-01-01).
+func TestLocalStatModTimeNonZero(t *testing.T) {
+	s, _ := newTestStore(t)
+	ctx := context.Background()
+	if err := s.Put(ctx, kernel.ObjectNamespaceUploads, idA, []byte("x"), kernel.ObjectMeta{}); err != nil {
+		t.Fatal(err)
+	}
+	info, err := s.Stat(ctx, kernel.ObjectNamespaceUploads, idA)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.ModTime.IsZero() {
+		t.Fatal("Stat.ModTime must not be zero for the local adapter")
+	}
+}

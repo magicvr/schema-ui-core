@@ -1,11 +1,12 @@
 ---
 id: GOAL-004-object-families-migration
 title: R3 三类落盘收口走端口
-status: active
+status: done
 parent: GOAL-001-object-storage
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.1.0
+version: 0.2.0
+progress: 3/3
 plan_refs:
   - VP-014-object-storage
 primary_plan: VP-014-object-storage

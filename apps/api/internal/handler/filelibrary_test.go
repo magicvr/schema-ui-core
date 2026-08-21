@@ -275,3 +275,33 @@ func TestFileLibraryUploadAckValidation(t *testing.T) {
 
 	_ = os.RemoveAll(env.uploadDir)
 }
+
+// A-002 R-002: a ghost sidecar (body-less .meta.json leftover from the
+// pre-port era) must NOT delete with 204 — the response is 404 and the
+// best-effort cleanup still removes the sidecar so it cannot ghost-list.
+func TestFileLibraryGhostSidecarDelete(t *testing.T) {
+	env := newAuthTestEnv(t)
+	admin := adminToken(t, env)
+
+	id := "cccccccccccccccccccccccccccccccc"
+	sidecar := `{"name":"ghost.csv","type":"text/csv","owner":"` + admin + `"}`
+
+	// Simulate pre-port residue: only the meta sidecar, no body.
+	if err := os.MkdirAll(env.uploadDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Resolve the real admin user id first via a normal upload ack flow is
+	// overkill; owner does not matter for the ghost path — write it directly.
+	_ = sidecar
+	if err := os.WriteFile(filepath.Join(env.uploadDir, id+".meta.json"), []byte(`{"name":"ghost.csv","type":"text/csv","owner":"someone"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _ := bearerJSON(t, env, admin, http.MethodDelete, "/api/library/files/"+id, "")
+	if code != http.StatusNotFound {
+		t.Fatalf("ghost sidecar delete = %d, want 404 (GOAL-004 D-001 section 5)", code)
+	}
+	if _, err := os.Stat(filepath.Join(env.uploadDir, id+".meta.json")); !os.IsNotExist(err) {
+		t.Fatalf("best-effort cleanup did not remove the ghost sidecar: %v", err)
+	}
+}
