@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 plan_refs:
   - VP-015-observability
 primary_plan: VP-015-observability
@@ -25,13 +25,13 @@ serves_summary: 交付架构 A4：Prometheus 类指标导出 + OpenTelemetry tra
 
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
-| R1 | **导出合同与配置面冻结**：指标 scrape 路径/端口/绑定鉴权、基数、内核 vs 模块最小集合、标签不得含秘密（I-001）；Store/对象存储/Job 是否进本波（I-003）；缺省无收集器。承载子目标：[GOAL-002-metrics-export-contract](../GOAL-002-metrics-export-contract/00-meta.md) | 起点 | 进行中（D-001 合同冻结已落盘） |
+| R1 | **导出合同与配置面冻结**：指标 scrape 路径/端口/绑定鉴权、基数、内核 vs 模块最小集合、标签不得含秘密（I-001）；Store/对象存储/Job 是否进本波（I-003）；缺省无收集器。承载子目标：[GOAL-002-metrics-export-contract](../GOAL-002-metrics-export-contract/00-meta.md) | 起点 | 已完成（GOAL-002 done 3/3；D-001 + 配置面落地） |
 | R2 | **指标 scrape 接入**：Prometheus 类 pull 面；系列携带 `module_id`；未显式配置不成为启动硬依赖；是否扩 `readyz`（I-004 部分）。承载子目标：待立项 | 依赖 R1 | 未开始 |
 | R3 | **OpenTelemetry traces 接入**：OTLP 协议/采样/no-op（I-002）；HTTP 请求至少可出 span；未配置 endpoint 不得挡住 mvp/dev。承载子目标：待立项 | 依赖 R1 | 未开始 |
 | R4 | **与 request-id 关联**：属性名 / baggage（I-005）；退出 2 的关联判据可核对。承载子目标：待立项 | 依赖 R3 | 未开始 |
 | R5 | **双路径证据**：默认无收集器仍能开发快测 + 显式配置下 metrics scrape **与** 至少一条 trace 导出。承载子目标：待立项 | 依赖 R2/R4 | 未开始 |
 
-`progress` = 已完成阶段数 / 5。当前 `0/5`。
+`progress` = 已完成阶段数 / 5。当前 `1/5`（R1 已完成）。
 
 ## 成功标准（方向级）
 

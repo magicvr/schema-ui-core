@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| E-001 | 2026-08-21 | R1 合同冻结落盘 + checkpoint（文档切片） | recorded | `02-execution/E-001-contract-freeze-checkpoint.md` |
+| E-001 | 2026-08-21 | R1 合同冻结落盘 + checkpoint（文档切片，`499f97d`） | recorded | `02-execution/E-001-contract-freeze-checkpoint.md` |
+| E-002 | 2026-08-21 | observability.metrics 配置面实施与验证 + checkpoint（`45489f4`） | recorded | `02-execution/E-002-config-surface-checkpoint.md` |
 
 ## 事实边界
 

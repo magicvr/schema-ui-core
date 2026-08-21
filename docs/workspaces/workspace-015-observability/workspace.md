@@ -45,7 +45,7 @@ VP-015：Prometheus 类指标导出 + OTLP traces；无收集器为内嵌默认�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | 导出合同与配置面冻结 | 进行中（GOAL-002；D-001 已落盘） |
+| R1 | 导出合同与配置面冻结 | 已完成（GOAL-002 done 3/3） |
 | R2 | 指标 scrape 接入 | 待立项 |
 | R3 | OpenTelemetry traces 接入 | 待立项 |
 | R4 | 与现有 request-id / correlation 关联 | 待立项 |

@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-metrics-export-contract
 title: R1 · 指标导出合同与配置面冻结
-status: active
+status: done
 parent: GOAL-001-observability
 created: 2026-08-21
 updated: 2026-08-21
-version: 0.1.0
-progress: 0/3
+version: 1.0.0
+progress: 3/3
 ---
 
 # GOAL-002 · R1 指标导出合同与配置面冻结
@@ -19,11 +19,11 @@ progress: 0/3
 
 ## 成功标准（检查点）
 
-- [ ] D-001 冻结导出合同：暴露面形态、鉴权、内核最小系列、标签白名单与秘密禁令、基数规则、本波分母（Store/对象存储/Job 出局）、readyz 边界
-- [ ] `observability.metrics.{enabled,addr,auth_token}` 进入 Config / 两份 YAML / env 映射，fail-closed 校验有测试覆盖
-- [ ] `go build ./...` 与 `go test ./internal/config/...` 通过；gofmt 干净
+- [x] D-001 冻结导出合同：暴露面形态、鉴权、内核最小系列、标签白名单与秘密禁令、基数规则、本波分母（Store/对象存储/Job 出局）、readyz 边界（checkpoint `499f97d`）
+- [x] `observability.metrics.{enabled,addr,auth_token}` 进入 Config / 两份 YAML / env 映射，fail-closed 校验有测试覆盖（checkpoint `45489f4`，13 子测试）
+- [x] `go build ./...` 与 `go test ./internal/config/...`（及全仓无 FAIL）通过；gofmt 干净（本切片文件）
 
-`progress` = 完成检查点数 / 3。当前 0/3。
+`progress` = 完成检查点数 / 3。当前 **3/3**。关门审计：A-001（self，pass，开放 required = 0）。
 
 ## 信息就绪与未知项
 

@@ -25,8 +25,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| （待首次自审后登记） | | | | | | |
+| A-001 | 2026-08-21 | self | R1 合同冻结（D-001）+ observability.metrics 配置面切片 | pass | 0 | `03-audit/A-001-self-r1-contract-config.md` |
 
 ## 结论状态
 
-尚未到达关门审计节点。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+关门审计已完成：A-001（self）`pass`，开放 required findings = 0；三项成功标准有证据链（D-001 → E-001/E-002 → 测试与 commit `499f97d`/`45489f4`）。GOAL-002 关门（`status: done`，3/3）。N-002 建议作为输入带入 R2 立项。
