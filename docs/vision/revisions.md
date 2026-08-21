@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-20
+updated: 2026-08-21
 parent: null
-version: 0.4.13
+version: 0.4.14
 ---
 
 # Charter 修订台账
@@ -43,3 +43,4 @@ version: 0.4.13
 | VR-027 | 2026-08-20 | editorial | 架构分支 Store 双方言 | 用户确认：不引入 ORM；自持 PostgreSQL + SQLite 两个 Store 方言；内核 Store 为持久化端口而非业务仓库；逻辑 schema 一份、物理 SQL 可成对；PostgreSQL 为生产验收权威，SQLite 为 dev/mvp/快测默认且合同平等（不得残缺）。写入 roadmap RT-P03。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不建 VP、不开区，**无** strategic、**无** re-align。 |
 | VR-028 | 2026-08-20 | editorial | VP-013 planned | 用户确认新建 `VP-013-store-dialects`（`planned`，0 区）：承接架构 A1（内核持久化端口 + PostgreSQL 实现 + 现有台账对写）；退出分母不含 A2+ / ORM / Admin 功能 / 业务域。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
 | VR-029 | 2026-08-20 | editorial | VP-013 激活 + 开区 | VRev-029 self `pass`（V-F058/V-F059 → fixed）。用户确认激活并开区；slug `workspace-013-store-dialects`，Root `GOAL-001-store-dialects`。VP-013 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-030 | 2026-08-21 | editorial | VP-013 有界关门投影 | 用户确认关闭 VP-013（v0.3.0 `active → closed`，有界 · 架构 A1）：lead workspace-013 Root `done 5/5`；VRev-030 V-F060 → fixed；residual 点名 GOAL-006 D-002（无产品 SQLite→PG 搬运器）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

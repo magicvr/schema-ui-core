@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-20
+updated: 2026-08-21
 parent: null
-version: 0.28.0
+version: 0.29.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -28,7 +28,7 @@ version: 0.28.0
 | 10 | [VP-010-design-implementation-conformance](plans/VP-010-design-implementation-conformance.md) | 设计意图与实现符合性：**共享基架持续对齐程序**（周期对照 as-designed / as-built、conformance gap 分流、波次整改、与 VP-008 `go` 消费有效性接口、与 VP-009 正交）；具体 gap 由工作区波次子目标承接。 | 继承 VP-003/004/005/006/007/008 + **VP-008 `go` 消费有效性**；与 **VP-009** 正交（安全 vs 符合性） | **active**（2026-08-11 用户确认类 VP-009 长期程序；lead: workspace-010-design-implementation-conformance；Root **active** 程序容器；波次 W1–W13 均 done，`go` 均无新暂挂） |
 | 11 | [VP-011-admin-functional-modules](plans/VP-011-admin-functional-modules.md) | 标准 Admin 功能模块（通用模块 + 常用业务领域）分档交付：有界调研 → 三档分档 → 分波实现；一等公民 / 常用 / 增补。 | 继承 VP-008 `go` 消费有效性（freshness review **PASS**，候选 `f14ab9d`）+ VP-009/010 无开放阻断；VP-001～008 已固化协议/架构/设计/locale 基线 | **closed**（2026-08-18 有界关门；lead: workspace-011-admin-functional-modules；Root done；四档能力地图上提至本 roadmap） |
 | 12 | [VP-012-shared-cross-module-contracts](plans/VP-012-shared-cross-module-contracts.md) | 共享横切契约与平台基架：correlation、审计模型、并发/幂等、异步 Job、maintenance 门控、API Token；不承载业务领域。 | 继承 VP-011 的 R5 四档能力地图；与 VP-009/VP-010 正交分流；不改变 Charter 边界 | **closed**（2026-08-19 完整关门 · 首波；lead: workspace-012-shared-cross-module-contracts；Root done 6/6；后续 session/effective actor、保留/归档、其余 writer envelope 移交本文件 Admin 功能分支） |
-| 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **active**（2026-08-20 激活；lead: workspace-013-store-dialects；VRev-029 pass） |
+| 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A1；lead: workspace-013-store-dialects；Root done 5/5；residual：无产品 SQLite→PG 搬运器，见 GOAL-006 D-002） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -213,7 +213,7 @@ A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支下一拍：VP-013 **`active`**，lead `workspace-013-store-dialects`。交 **`/govern`** 立项 R1（端口与配置面冻结）。未开始写驱动。
+架构分支下一拍：A1 已由 VP-013 **`closed`** 交付（内核端口 + PostgreSQL + 台账对写；SQLite 仍为内嵌默认；PG 备份合同随 A1 落地）。下一未冻结拍 = **A2 对象存储适配器**（本地盘保留为默认）；须 `/vision` 冻结退出分母后再交 `/govern` 开区。A5 密钥轮换仍后置。
 
 ---
 
@@ -276,7 +276,7 @@ Admin 功能下一拍：按触发选一条（常见候选：IAM 运维增强，�
 
 ---
 
-**当前组合焦点**：**[VP-013-store-dialects](plans/VP-013-store-dialects.md) `active`**（架构 A1；lead `workspace-013-store-dialects`；Root `GOAL-001-store-dialects` active 0/5）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`**（共享基架安全与健壮性；lead workspace-009；波次 W1–W4 与 W6 均 done，W5 扫描 0 中高危未开子目标）与 **VP-010 `active`**（设计意图—实现符合性；lead workspace-010；波次 W1–W13 均 done）。VP-001～008 仍为历史 `closed`；**VP-011 已于 2026-08-18 有界 `closed`**；**VP-012 已于 2026-08-19 完整 `closed`**。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
+**当前组合焦点**：**无 active 交付 VP。** **[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1；lead `workspace-013-store-dialects`；Root `GOAL-001-store-dialects` done 5/5）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记；架构下一拍为 A2（对象存储，未冻结）。持续程序 = **VP-009 `active`**（共享基架安全与健壮性；lead workspace-009；波次 W1–W4 与 W6 均 done，W5 扫描 0 中高危未开子目标）与 **VP-010 `active`**（设计意图—实现符合性；lead workspace-010；波次 W1–W13 均 done）。VP-001～008 仍为历史 `closed`；**VP-011 已于 2026-08-18 有界 `closed`**；**VP-012 已于 2026-08-19 完整 `closed`**。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
 
 ## 单主线模块化策略
 

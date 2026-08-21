@@ -2,24 +2,25 @@
 doc_type: vision-plan
 id: VP-013-store-dialects
 title: Store 双方言（PostgreSQL 生产权威 + SQLite 内嵌）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-013-store-dialects
 created: 2026-08-20
-updated: 2026-08-20
-version: 0.2.0
+updated: 2026-08-21
+version: 0.3.0
 parent: null
 ---
 
 # VP-013 · Store 双方言（PostgreSQL 生产权威 + SQLite 内嵌）
 
-## 状态与门闩
+## 状态与门闩（2026-08-21 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-20 用户确认激活并开区；VRev-029 `pass`，open required = 0） |
-| **lead_workspace** | **`workspace-013-store-dialects`**（Root `GOAL-001-store-dialects`） |
-| **Vision required** | VRev-029 `pass`；V-F058 / V-F059 recommended 由激活当日 Root P-001 / I-00N 与本节配置面闭合 |
+| status | **`closed`**（2026-08-21 用户书面确认有界关门；VRev-030 `V-F060` → `fixed`） |
+| **lead_workspace** | **`workspace-013-store-dialects`**（Root `GOAL-001-store-dialects` `done 5/5`） |
+| **Vision required** | **已满足**：VRev-029 / VRev-030 均为 `pass`，open required = 0；`V-F060` recommended 由本关门记录闭合 |
+| **关门门闩（现行）** | 已 `closed`；保留 workspace-013 历史绑定，默认不接新区；reopen 须用户确认 |
 | **组合位置** | 架构分支 A1；决策前提 = roadmap **RT-P03**（VR-027）已冻结 |
 | **完整 ≠ 架构清单无限扩张** | 本 VP 只承接 A1。A2 对象存储、A3 多实例/Redis/队列、A4 可观测不进退出分母 |
 
@@ -86,15 +87,24 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-013-store-dialects | GOAL-001-store-dialects | lead | 2026-08-20 | 用户确认激活并开区；slug 由 `/vision` 选定、用户授权「slug 你想一个」 |
+| workspace-013-store-dialects | GOAL-001-store-dialects | lead | 2026-08-20 | 2026-08-20 用户确认激活并开区；2026-08-21 VP `closed`；Root done 5/5；默认不接新区 |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-21 | **closed**（有界 · 架构 A1） | 用户确认关门。exit 1：内核端口 + 公共面无 `*sql.Tx`。exit 2：PG fresh bootstrap 成立；无产品 in-place / 搬运器，按 D-002 有界 residual。exit 3：SQLite 仍为默认；48 迁移双 apply + checksum。exit 4：PG 迁移 / `readyz` / 共事务 / `pg_dump`·`pg_restore` 均可核对。exit 5：无 ORM、未改 Charter、未进 Admin/业务域。exit 6：实现层与 VRev required = 0。V-F060 按本表闭合。 | `workspace-013` goal-tree（Root done 5/5；GOAL-002～006 done）；Root A-001 independent close-out（2026-08-21 代码+复跑+HEAD CI）/ A-002 响应；GOAL-006 D-002 / A-001→A-003；GOAL-005 A-004；GOAL-004 A-005；GOAL-003 A-002；GOAL-002 合同 v1.4；[VRev-029](../reviews/VRev-029-vp013-intent-activation.md)；[VRev-030](../reviews/VRev-030-vp013-closeout-readiness.md) | **`workspace-013` / `GOAL-006-r5-dual-path-acceptance` / `D-002`**：本 VP 不提供自动化 SQLite→PG 搬运器；in-place 跨引擎不可行；既有存量 = fresh bootstrap + 运维自备搬运。sqlite `WithTx` 测试适配器与模块内部 `sql.Null*` 为 Root A-002 卫生债，不构成本 VP residual |
+
+### 退出判据 ↔ 证据
+
+| 退出 | 结论 | 证据 |
+|------|------|------|
+| 1 内核端口 / 公共面 | 满足 | Root A-001：`kernel.Store`/`kernel.Tx`；模块 `TxRunner` 与 handler 无 `*sql.Tx`；GOAL-005 R4 收口 |
+| 2 PG bootstrap + 升级路径 | 满足（有界） | A-001 `TestFullCatalogPostgresBootstrapIntegration` PASS；GOAL-006 D-002：fresh bootstrap + 测例原型；无产品搬运器 |
+| 3 SQLite 默认 + 双方言 checksum | 满足 | `config.yaml` / `compose.yaml` 仍 sqlite；catalog=48 双 apply；checksum fail-closed |
+| 4 生产向以 PG 为准 | 满足 | A-001 本轮：boot、Start/Ready/`readyz`、跨模块共事务、catalog 级 `pg_dump`/`pg_restore` checksum 一致 |
+| 5 无 ORM / 未改 Charter / 未进业务 | 满足 | `go.mod` 无 ORM；Charter 仍 `@0.2.0`；本区无新 Admin/业务页 |
+| 6 required = 0 | 满足 | Root A-001/A-002；VRev-029/VRev-030 open required = 0 |
 
 ## 规划修订短史
 
@@ -102,3 +112,4 @@ parent: null
 |------|--------|
 | 2026-08-20 | 初创 `planned`：用户确认新建本 VP 承接架构 A1；RT-P03 为已冻结前提（VR-027）；未激活、未开区 |
 | 2026-08-20 | VRev-029 self `pass`（0 required）；用户确认激活并开区。v0.2.0 `planned → active`；lead = `workspace-013-store-dialects`；补配置面（V-F059）；Root 承接 P-001 与升级路径 I-00N（V-F058） |
+| 2026-08-21 | VRev-030 self `pass`：关门就绪；V-F060 recommended 约束关门落盘形状。用户确认有界关门：v0.3.0 `active → closed`。关门记录含 exit↔证据映射 + D-002 residual 点名；组合索引原子同步（VR-030） |

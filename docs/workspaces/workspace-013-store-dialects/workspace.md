@@ -10,17 +10,17 @@ plan_refs:
   - VP-013-store-dialects
 primary_plan: VP-013-store-dialects
 created: 2026-08-20
-updated: 2026-08-20
-version: 0.1.0
+updated: 2026-08-21
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · Store 双方言
 
-本工作区是 [VP-013-store-dialects](../../vision/plans/VP-013-store-dialects.md)（**`active`**）的唯一 lead delivery workspace。
+本工作区是 [VP-013-store-dialects](../../vision/plans/VP-013-store-dialects.md)（**`closed`**，2026-08-21 有界关门 · 架构 A1）的唯一 lead delivery workspace。历史绑定保留，默认不接新区。
 
-- **Root** `GOAL-001-store-dialects` 承载架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有台账对写。
-- **子目标**按 Root 纲领阶段 R1～R5 串行立项；同一阶段内可并行。
+- **Root** 已为 `done`（2026-08-20；R1～R5 5/5；A-001 independent / A-002 响应，2026-08-21 补齐闭门依据）。
+- **子目标**按 Root 纲领阶段 R1～R5 全部 `done`。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不承接 Admin 功能或业务域；不重开 VP-012。
 
@@ -33,7 +33,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-013-store-dialects/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-013 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-013-store-dialects`（`active`） | 架构 A1 Store 双方言 |
+| 规划对齐 | `primary_plan` = `VP-013-store-dialects`（`closed`） | 架构 A1 Store 双方言；历史绑定 |
 
 ## 愿景对齐
 
@@ -46,10 +46,10 @@ VP-013：内核 Store 为持久化端口；PostgreSQL 生产权威；SQLite 内�
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | R1 | 内核持久化端口与配置面冻结（Tx ≠ `*sql.Tx`；SQLite 默认 / PG DSN；合同 v1.4） | ✅ GOAL-002 |
-| R2 | PostgreSQL 接入（驱动、连接池、`readyz`） | 依赖 R1 |
-| R3 | 现有 compiled 台账双方言对写 + checksum | 依赖 R2 |
-| R4 | 模块仓库公共面收口（去掉 `*sql.Tx`） | 依赖 R1；可与 R3 部分并行 |
-| R5 | 双路径证据（SQLite 默认 + PG 生产验收） | 依赖 R3/R4 |
+| R2 | PostgreSQL 接入（驱动、连接池、`readyz`） | ✅ GOAL-003 |
+| R3 | 现有 compiled 台账双方言对写 + checksum | ✅ GOAL-004 |
+| R4 | 模块仓库公共面收口（去掉 `*sql.Tx`） | ✅ GOAL-005 |
+| R5 | 双路径证据（SQLite 默认 + PG 生产验收） | ✅ GOAL-006 |
 
 ## 固定共享资料引用
 
