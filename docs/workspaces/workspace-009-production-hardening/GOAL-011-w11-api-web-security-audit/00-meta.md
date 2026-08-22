@@ -5,13 +5,13 @@ status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.4.0
+version: 0.5.0
 progress: 4/4
 ---
 
 # GOAL-011 · W11 api/web 独立安全审计（审计报告落盘）
 
-> **状态：done（4/4 · 2026-08-22 关门）** — S1 审计落盘；S2 裁决整单 6 条 + 波内暂挂 go（D-002）；S3 实施 + recommended 处置（E-002/E-003）；S4 self（A-002）+ independent（A-003 · grok-build · 真实 PG 复跑）双审 pass，开放 required = 0；闭合记录 A-004 + 恢复 VP-008 go 宣称（D-004）。残余移交见 A-004。
+> **状态：done（4/4 · 2026-08-22 关门并正式确认）** — S1 审计落盘；S2 裁决整单 6 条 + 波内暂挂 go（D-002）；S3 实施 + recommended 处置（E-002/E-003）；S4 self（A-002）+ independent（A-003 · grok-build · 真实 PG 复跑）双审 pass，开放 required = 0；闭合记录 A-004 + 恢复 VP-008 go 宣称（D-004）。**关门后独立复核 A-005（DeepSeek Harness /audit）pass → A-006 响应（R-002 fixed，其余有据记录）→ 正式关门确认。** 残余移交见 A-004。
 
 ## 概述
 
