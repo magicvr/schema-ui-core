@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-22
 parent: null
-version: 0.34.0
+version: 0.36.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -31,6 +31,7 @@ version: 0.34.0
 | 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A1；lead: workspace-013-store-dialects；Root done 5/5；residual：无产品 SQLite→PG 搬运器，见 GOAL-006 D-002） |
 | 14 | [VP-014-object-storage](plans/VP-014-object-storage.md) | 架构 A2：内核对象存储端口 + S3 兼容实现；本地盘保留为内嵌默认。 | VP-013 A1 已 closed；RT-S01 delivered；与 VP-009/010 正交；不进签名 URL / 分片 / 扫描 / CDN / 搬运器，不进 A3+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A2；lead: workspace-014-object-storage；Root done 5/5；VRev-032 `pass`；residual：无产品本地盘→对象存储搬运器，见 I-014-004） |
 | 15 | [VP-015-observability](plans/VP-015-observability.md) | 架构 A4：Prometheus 类指标导出 + OpenTelemetry traces；无收集器仍为内嵌默认。 | VP-014 A2 已 closed；RT-O01/O02 delivered；与 VP-009/010 正交；不进 A3 / A5 / Sentry / 剖析 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A4；lead: workspace-015-observability；Root done 5/5；VRev-034 `pass`；residual：otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
+| 16 | [VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) | 架构 A5：JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥仍为内嵌默认。 | VP-015 A4 已 closed；RT-K01 delivered；VP-013 方言级 dump 已交付；与 VP-009/010 正交；不进 A3 / KMS / PITR / 热加载 / Admin 页 / 业务域 | **active**（2026-08-22 用户确认激活并开区；lead: workspace-016-key-rotation-and-backup；VRev-035 `pass`） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -113,7 +114,7 @@ version: 0.34.0
 | RT-P02 | PostgreSQL 方言实现 | 无 | **registered** | 生产权威实现；硬问题是迁移方言 + 备份合同 |
 | RT-P03 | Store 双方言端口（无 ORM） | Store 即 SQLite 平台 | **registered**（决策已冻结，实现未做） | 见上节；A1 前置 |
 | RT-P04 | 连接池 / 读写分离 / replica | `MaxOpenConns=1` | **trigger-gated** | 多实例或 PG 之后才有意义 |
-| RT-P05 | 备份 / 恢复 / PITR | 仅 SQLite 快照 | **registered** | 生产方言必须重做恢复合同 |
+| RT-P05 | 备份 / 恢复 / PITR | SQLite `VACUUM INTO`；PG 逻辑备份 `pg_dump`/`pg_restore`（VP-013 I-004） | **registered**（方言级 dump = **delivered**；PITR 仍 gated；轮换后恢复 = VP-016） | A1 已交付方言级恢复；A5 不重做 dump，只补密钥轮换后的恢复语义 |
 | RT-P06 | 加密静止数据 / 表级密钥 | 无 | **trigger-gated** | 合规触发；密钥见 RT-K\* |
 | RT-P07 | 文档库（MongoDB 等） | 无 | **default-non-goal** | 第二数据模型；无具名 fork 需求则不做 |
 | RT-P08 | 多租户物理隔离（独立库/schema） | 无；Charter 未要求多租户 | **default-non-goal** | 应用层 org 上下文在 Admin 功能分支 |
@@ -197,8 +198,21 @@ version: 0.34.0
 |----|----|------|------|------|
 | RT-K01 | YAML + env 插值；密钥 fail-closed | VP-002/W7 | **delivered** | |
 | RT-K02 | 外部 Secret Provider / KMS / HSM | 无 | **trigger-gated** | VP-012 API Token 推迟 HSM |
-| RT-K03 | JWT/数据密钥轮换合同 | 密钥来自 env，无轮换 | **registered** | |
+| RT-K03 | JWT/数据密钥轮换合同 | 密钥来自 env，无轮换 | **registered**（VP-016 承接） | 本波默认集合 = `AUTH_JWT_SECRET` current+previous；KMS/HSM 仍 gated |
 | RT-K04 | 传输中加密（TLS） | 依赖外置代理 | **trigger-gated** | 同 RT-D05 |
+
+### 已冻结：密钥轮换与恢复 A5 退出分母（VP-016）
+
+用户确认（2026-08-22）。VP-016 已激活；lead `workspace-016-key-rotation-and-backup`（Root `GOAL-001-key-rotation-and-backup`）。
+
+| 项 | 决定 |
+|----|------|
+| 密钥集合 | 默认应用签名密钥 = `AUTH_JWT_SECRET`。禁止把 DB / S3 / 种子密码当成本波轮换对象。 |
+| 轮换合同 | 可声明 **current + previous**；新签发只用 current；校验允许重叠窗。缺 previous = 今日单密钥。 |
+| 生效 | 进程重启后生效。热加载不进本波。 |
+| 备份面 | **不重做** VP-013 方言级 dump。本波只核对：轮换后从既有 SQLite `VACUUM INTO` 与 PG `pg_dump`/`pg_restore` 启动 + 鉴权。 |
+| 内嵌默认 | 无 previous、无外部备份代理仍能开发与快测。 |
+| 不进本波 | A3 多实例/Redis/队列/优雅停机；KMS/HSM（RT-K02）；静止加密（RT-P06）；TLS；PITR；`/readyz` 再扩；Admin 密钥页；业务域。 |
 
 ### 7. 搜索引擎与专用索引
 
@@ -241,7 +255,7 @@ A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支下一拍：A3 仍 trigger-gated（多实例才评估就绪探针扩依赖 / 优雅停机 / PG 锁 vs Redis vs 队列）；A5 密钥轮换 / 备份恢复合同后置。当前无 active 架构交付 VP。
+架构分支下一拍：**[VP-016](plans/VP-016-key-rotation-and-backup.md) `active`** 承接 A5（lead `workspace-016-key-rotation-and-backup`）。A3 仍 trigger-gated（多实例才评估就绪探针扩依赖 / 优雅停机 / PG 锁 vs Redis vs 队列）。
 
 ---
 
@@ -304,7 +318,7 @@ Admin 功能下一拍：按触发选一条（常见候选：IAM 运维增强，�
 
 ---
 
-**当前组合焦点**：无 active 交付 VP。**[VP-015-observability](plans/VP-015-observability.md) 已于 2026-08-22 有界 `closed`**（架构 A4；lead `workspace-015-observability`；Root done 5/5；VRev-034 `pass`）。**[VP-014-object-storage](plans/VP-014-object-storage.md) 已于 2026-08-21 有界 `closed`**（架构 A2）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011、VP-012 仍为历史 `closed`。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
+**当前组合焦点**：**[VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) `active`**（架构 A5；lead `workspace-016-key-rotation-and-backup`）。**[VP-015-observability](plans/VP-015-observability.md) 已于 2026-08-22 有界 `closed`**（架构 A4；lead `workspace-015-observability`；Root done 5/5；VRev-034 `pass`）。**[VP-014-object-storage](plans/VP-014-object-storage.md) 已于 2026-08-21 有界 `closed`**（架构 A2）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011、VP-012 仍为历史 `closed`。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
 
 ## 单主线模块化策略
 

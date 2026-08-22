@@ -1,0 +1,60 @@
+---
+id: GOAL-001-key-rotation-and-backup
+title: 密钥轮换与备份恢复合同（JWT + 轮换后恢复）
+status: active
+parent: null
+created: 2026-08-22
+updated: 2026-08-22
+version: 0.1.0
+progress: 0/5
+plan_refs:
+  - VP-016-key-rotation-and-backup
+primary_plan: VP-016-key-rotation-and-backup
+serves_summary: 交付架构 A5：JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥仍为 dev/mvp/快测默认。不承载 KMS / PITR / A3 / Admin 密钥页或业务域。
+---
+
+# GOAL-001 · 密钥轮换与备份恢复合同（JWT + 轮换后恢复）
+
+## 概述
+
+本 Root 承载 [VP-016-key-rotation-and-backup](../../../vision/plans/VP-016-key-rotation-and-backup.md)（**`active`**）的实现：在已有 YAML + env 密钥注入 fail-closed 与 VP-013 方言级 dump 之上，补齐 JWT 双密钥轮换合同，并核对轮换后从既有备份启动仍能鉴权。
+
+**边界**：不强制本地默认改成必须有 previous 密钥或外部备份代理；不承接 KMS、PITR、热加载、Admin 密钥页或业务域表。不重做 `pg_dump`/`VACUUM INTO`。安全 finding → VP-009；符合性 gap → VP-010。
+
+## 纲领路线图（P-001）
+
+| 阶段 | 内容 | 先后 | 状态 |
+|------|------|------|------|
+| R1 | **轮换合同与配置面冻结**：current/previous 键名、生产 fail-closed、熵规则（I-001）；本波密钥集合是否仅 JWT（I-002）；缺省单密钥。 | 起点 | 未开始 |
+| R2 | **JWT 双密钥实现**：签发只用 current；校验 current 再 previous；重叠窗 / `kid` / refresh 不受签名密钥影响（I-003）；重启生效。 | 依赖 R1 | 未开始 |
+| R3 | **轮换后恢复证据**：在既有 SQLite `VACUUM INTO` 与 PG `pg_dump`/`pg_restore` 上核对轮换后启动 + 鉴权（I-004）。不重做 dump。 | 依赖 R2 | 未开始 |
+| R4 | **默认单密钥仍可用**：未配置 previous 时本地/Compose 仍能开发与快测；轮换不是启动硬依赖。 | 依赖 R2 | 未开始 |
+| R5 | **双路径证据**：显式双密钥下，一轮换路径 **与** 一轮换后恢复路径都有可核对证据。 | 依赖 R3/R4 | 未开始 |
+
+`progress` = 已完成阶段数 / 5。当前 **0/5**。
+
+## 成功标准（方向级）
+
+1. JWT 轮换合同落地：可配置 current + previous；新签发只用 current；重叠窗内 previous 可验 access。
+2. 未配置 previous 时本地/Compose 默认仍能开发与快测。
+3. 轮换后恢复：两方言既有备份路径上，轮换后从备份启动且鉴权可核对。
+4. 显式双密钥配置下，一轮换路径 **与** 一轮换后恢复路径都有可核对证据。
+5. 未进入 A3 / KMS / PITR / Admin 功能 / 业务域；未改 Charter；未假装交付热加载或第二套 dump。
+
+## 信息就绪与未知项
+
+| ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
+|----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
+| I-001 | required | current / previous 配置键名、生产 fail-closed、secret 长度/熵是否沿用 `ValidateProd`；secret 不入库、不进日志 | R1 方案冻结 / 实施 | R1 合同冻结 | R1 决策 | collecting | — | 对应 VP I-016-001 |
+| I-002 | required | 本波密钥集合是否仅 `AUTH_JWT_SECRET`。开区时代码显示服务凭证为 SHA-256 opaque hash，不与 JWT secret 共用；R1 须书面纳入或出局 | R1 方案冻结 | R1 合同冻结 | R1 决策 | collecting | — | 对应 VP I-016-002；输入：`auth.NewServiceCredentialToken` |
+| I-003 | required | 重叠窗语义（旧 access 可验多久）、是否使用 JWT `kid`、refresh 是否受签名密钥轮换影响（opaque refresh 预期不受） | R2 方案冻结 / 实施 | R2 接入前 | R2 决策 | collecting | — | 对应 VP I-016-003 |
+| I-004 | required | 轮换后恢复最小剧本：备份点相对轮换点、两方言证据命令、鉴权断言。不重做 dump | R3 方案冻结 | R3 接入前 | R3 决策 | collecting | — | 对应 VP I-016-004 |
+| I-005 | non-blocking | 重叠窗内旧 access 立即失效是否接受为有界残余。默认：previous 可验 | 退出 1 措辞 | R2 | 用户书面残余时才改变退出 1 | collecting | — | 对应 VP I-016-005 |
+
+## 父目标
+
+- null（Root；Charter `schema-ui-core-admin-foundation@0.2.0` / VP-016）
+
+## 台账布局
+
+新目标为三个可追加台账创建同名平铺目录：`01-decision/`、`02-execution/`、`03-audit/`。索引文件保留 frontmatter、摘要和条目索引；独立记录使用 `D-NNN-*`、`E-NNN-*`、`A-NNN-*` 文件。
