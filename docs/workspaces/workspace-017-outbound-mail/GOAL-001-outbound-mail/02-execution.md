@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-22 | 开区 scaffold（workspace-017 + Root + A6 路线图） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-22 | R1 执行：合同冻结决策 + kernel 端口代码与测试绿 | recorded | [E-002-r1-port-freeze-executed.md](02-execution/E-002-r1-port-freeze-executed.md) |
 
 ## 事实边界
 

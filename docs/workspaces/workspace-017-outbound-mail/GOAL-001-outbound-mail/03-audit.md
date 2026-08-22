@@ -16,8 +16,8 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001～I-004 required collecting；I-005 non-blocking collecting；I-006 non-blocking registered | 无到期未处理 required（最晚阶段均未到） |
-| 到期 required 是否已 verified / residual | 无到期项 | R1 前须关闭 I-001/I-002 |
+| 影响本 scope 的 I-00N | I-001/I-002 **verified**（D-002）；I-003/I-004 required collecting；I-005 non-blocking collecting；I-006 non-blocking registered | R1 门禁已关闭；R2 前须关闭 I-003/I-004 |
+| 到期 required 是否已 verified / residual | 无到期项 | R1 冻结已由 GOAL-002 D-001 + Root D-002 完成 |
 | 资料引用是否固定且用户确认 | 不适用 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
