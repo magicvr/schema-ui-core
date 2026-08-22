@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-22
 parent: null
-version: 0.23.0
+version: 0.24.0
 ---
 
 # 工作区贡献图
@@ -27,7 +27,7 @@ version: 0.23.0
 | workspace-013-store-dialects | docs/workspaces/workspace-013-store-dialects/ | GOAL-001-store-dialects | lead | VP-013-store-dialects | active（历史；VP-013 已于 2026-08-21 有界 closed；Root done 5/5；架构 A1；residual = 无产品 SQLite→PG 搬运器） |
 | workspace-014-object-storage | docs/workspaces/workspace-014-object-storage/ | GOAL-001-object-storage | delivery | VP-014-object-storage | active（历史；VP-014 已于 2026-08-21 有界 closed；Root done 5/5；架构 A2；residual = 无产品本地盘→对象存储搬运器） |
 | workspace-015-observability | docs/workspaces/workspace-015-observability/ | GOAL-001-observability | delivery | VP-015-observability | active（历史；VP-015 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A4；residual = otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
-| workspace-016-key-rotation-and-backup | docs/workspaces/workspace-016-key-rotation-and-backup/ | GOAL-001-key-rotation-and-backup | delivery | VP-016-key-rotation-and-backup | active（2026-08-22 开区；VP-016 `active` 架构 A5；Root active 0/5） |
+| workspace-016-key-rotation-and-backup | docs/workspaces/workspace-016-key-rotation-and-backup/ | GOAL-001-key-rotation-and-backup | delivery | VP-016-key-rotation-and-backup | active（历史；VP-016 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A5；residual = I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
 
 ## 说明
 
@@ -36,7 +36,7 @@ version: 0.23.0
 - **workspace-013（2026-08-20 开区）**：VP-013（Store 双方言）唯一 lead delivery 工作区；首波 = 架构 A1（内核持久化端口 + PostgreSQL + 现有台账对写）；SQLite 为内嵌默认。**2026-08-21：VP-013 有界 closed**；Root `GOAL-001-store-dialects` `done 5/5`。residual：无产品 SQLite→PG 搬运器（GOAL-006 D-002）。不改变 Charter `primary_workspace`。
 - **workspace-014（2026-08-21 开区）**：VP-014（对象存储适配器）唯一 lead delivery 工作区；首波 = 架构 A2（内核对象存储端口 + S3 兼容 + 本地盘默认）。**2026-08-21：VP-014 有界 closed**；Root `GOAL-001-object-storage` `done 5/5`。residual：无产品本地盘→对象存储搬运器（GOAL-001 I-004）。不改变 Charter `primary_workspace`。不重开 workspace-013。
 - **workspace-015（2026-08-21 开区）**：VP-015（可观测性）唯一 lead delivery 工作区；首波 = 架构 A4（Prometheus 类指标导出 + OpenTelemetry traces；无收集器为默认）。**2026-08-22：VP-015 有界 closed**；Root `GOAL-001-observability` `done 5/5`。residual：in-repo `otlp-sink` 不解析（I/A-002 F-003）；Store / 对象存储 / Job 指标不进分母（I-015-003）。不改变 Charter `primary_workspace`。不重开 workspace-014。
-- **workspace-016（2026-08-22 开区）**：VP-016（密钥轮换与备份恢复）唯一 lead delivery 工作区；首波 = 架构 A5（JWT current+previous 轮换 + 既有备份上的轮换后恢复；单密钥为默认）。Root `GOAL-001-key-rotation-and-backup` 纲领 R1～R5。不改变 Charter `primary_workspace`。不重开 workspace-015。
+- **workspace-016（2026-08-22 开区）**：VP-016（密钥轮换与备份恢复）唯一 lead delivery 工作区；首波 = 架构 A5（JWT current+previous 轮换 + 既有备份上的轮换后恢复；单密钥为默认）。**2026-08-22：VP-016 有界 closed**；Root `GOAL-001-key-rotation-and-backup` `done 5/5`。residual：I-016-005 立即失效未选；`admin.mfa` wrapping 不随 JWT previous 重包。不改变 Charter `primary_workspace`。不重开 workspace-015。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

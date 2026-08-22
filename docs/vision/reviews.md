@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-22
 parent: null
-version: 1.3.49
+version: 1.3.50
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.49
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-035 `pass`；V-F067/V-F068 recommended 随激活与开区 → **fixed**。VRev-034 V-F066 仍为 fixed |
+| — | — | — | **无** | VRev-036 `pass`；V-F069 recommended 随有界关门 → **fixed**。V-F067/V-F068 仍为 fixed |
 
-> Vision Review **open required = 0**。**VRev-035（self，`pass`）**：原 verdict 保留；V-F067/V-F068 recommended → **fixed**（VP-016 `active` + Root P-001/I-00N + 架构类 freshness）。当前 active 交付 VP = **VP-016**。持续程序 **VP-009** / **VP-010**。
+> Vision Review **open required = 0**。**VRev-036（self，`pass`）**：原 verdict 保留；V-F069 recommended → **fixed**（VP-016 有界 `closed` + exit↔本轮独立证据 + I-016-005 / `admin.mfa` wrapping residual）。当前无 active 交付 VP。持续程序 **VP-009** / **VP-010**。
 
 ## 条目索引
 
@@ -73,3 +73,4 @@ version: 1.3.49
 | VRev-033 | 2026-08-21 | self | VP-015 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F064/V-F065 recommended → fixed（激活 + workspace-015 Root P-001/I-00N + 架构类 freshness） | [VRev-033-vp015-intent-activation.md](reviews/VRev-033-vp015-intent-activation.md) |
 | VRev-034 | 2026-08-22 | self | VP-015 关门就绪 · 独立代码/测试/live 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F066 recommended → fixed（VP-015 有界 closed + exit↔本轮独立证据 + F-003/I-015-003 residual；VR-036） | [VRev-034-vp015-closeout-readiness.md](reviews/VRev-034-vp015-closeout-readiness.md) |
 | VRev-035 | 2026-08-22 | self | VP-016 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F067/V-F068 recommended → **fixed**（激活 + workspace-016 Root P-001/I-00N + 架构类 freshness） | [VRev-035-vp016-intent-activation.md](reviews/VRev-035-vp016-intent-activation.md) |
+| VRev-036 | 2026-08-22 | self | VP-016 关门就绪 · 独立代码/测试/live 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F069 recommended → **fixed**（VP-016 有界 closed + exit↔本轮独立证据 + I-016-005/`admin.mfa` wrapping residual；VR-039） | [VRev-036-vp016-closeout-readiness.md](reviews/VRev-036-vp016-closeout-readiness.md) |

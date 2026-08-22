@@ -2,25 +2,25 @@
 doc_type: vision-plan
 id: VP-016-key-rotation-and-backup
 title: 密钥轮换与备份恢复合同（JWT + 轮换后恢复）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-016-key-rotation-and-backup
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # VP-016 · 密钥轮换与备份恢复合同（JWT + 轮换后恢复）
 
-## 状态与门闩（2026-08-22 · 已激活）
+## 状态与门闩（2026-08-22 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-22 用户确认：VRev-035 通过后激活并开区；V-F067/V-F068 → `fixed`） |
-| **lead_workspace** | **`workspace-016-key-rotation-and-backup`**（Root `GOAL-001-key-rotation-and-backup`；唯一 delivery；**不**重开 workspace-015） |
-| **Vision required** | **已满足**：VRev-035 `pass`，open required = 0；`V-F067`/`V-F068` recommended 已闭合 |
-| **激活门闩** | 已满足（self Review + 架构类 freshness PASS + 用户书面「通过后开区」） |
+| status | **`closed`**（2026-08-22 用户书面确认有界组合层关门；VRev-036 `V-F069` → `fixed`；关门依据 = 本轮独立代码/测试/live，不以 Goal 台账为充分条件） |
+| **lead_workspace** | **`workspace-016-key-rotation-and-backup`**（Root `GOAL-001-key-rotation-and-backup` `done 5/5`；唯一 delivery；**不**重开 workspace-015） |
+| **Vision required** | **已满足**：VRev-035 / VRev-036 均为 `pass`，open required = 0；`V-F067`/`V-F068`/`V-F069` recommended 已闭合 |
+| **关门门闩（现行）** | 已 `closed`；保留 workspace-016 历史绑定，默认不接新区；reopen 须用户确认 |
 | **组合位置** | 架构分支 A5；前提 = VP-013 A1 与 VP-014 A2、VP-015 A4 均已有界 `closed`；roadmap **RT-K01** 已 delivered，**RT-K03** 本 VP 交付；**RT-P05** 方言级 dump 已由 VP-013 交付，本 VP 只补轮换后恢复语义 |
 | **完整 ≠ 架构清单无限扩张** | 本 VP 只承接 A5。A3 多实例/Redis/队列/优雅停机、KMS/HSM、静止加密、TLS、PITR、Admin 密钥页、业务域不进退出分母 |
 
@@ -106,15 +106,24 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-016-key-rotation-and-backup | GOAL-001-key-rotation-and-backup | lead | 2026-08-22 | 2026-08-22 用户确认激活并开区；惯例 slug（D-001 留痕）；不重开 workspace-015 |
+| workspace-016-key-rotation-and-backup | GOAL-001-key-rotation-and-backup | lead | 2026-08-22 | 2026-08-22 用户确认激活并开区；2026-08-22 VP 组合层 `closed`；Root done 5/5；默认不接新区 |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-22 | **closed**（有界 · 架构 A5） | 用户确认组合层关门，且要求以**独立代码核验**而非治理记录为充分条件。exit 1：current+previous 可配；签发只用 current；重叠窗 previous 可验 access。本轮 live：K2+prev=K1 时旧 access `/api/accounts/me` 200；退役 previous 后旧 access 401。exit 2：缺省无 previous 仍能启动；Compose `AUTH_JWT_SECRET_PREVIOUS: ""`；live 缺省 healthz/readyz/login 200。exit 3：本会话 SQLite `VACUUM INTO` 与 PG `pg_dump`/`pg_restore` 轮换后恢复循环均 PASS。exit 4：本会话 live 轮换路径 **与** 双方言恢复路径同时成立。exit 5：产品 diff 11 文件；Charter 仍 `@0.2.0`；无 KMS/热加载/第二套 dump。exit 6：实现层与 VRev required = 0。V-F069 按本表闭合。 | 本轮 `/vision` 独立核验：`apps/api/internal/auth` + config 面 + composition 接线 + 两份 YAML + `compose.yaml`；`go test` auth/config/composition（含双方言恢复）/cmd/server/handler 指定套件全绿；`go vet` 0 finding；live 缺省路径 + `127.0.0.1:25280` 显式轮换/退役。指针：[VRev-036](../reviews/VRev-036-vp016-closeout-readiness.md)；lead `workspace-016` goal-tree（Root done 5/5）；Root A-002（required 已 fixed，不作充分条件） | **`workspace-016` / `GOAL-001-key-rotation-and-backup` / I-016-005**：立即失效未选；默认 previous 可验已交付，项仍 collecting。**旁路（`admin.mfa` wrapping）**：TOTP 密文用当前 JWT secret 经 HKDF 派生 AES 钥封装（GOAL-017 既有设计；本 VP 未改 `internal/modules/mfa`）。JWT previous **不**重包 MFA；`admin` profile 轮换 current 后须重登记 MFA。缺省 `mvp` 不含 `admin.mfa`。不进 A5 签名密钥分母。 |
+
+### 退出判据 ↔ 证据（本轮独立核验）
+
+| 退出 | 结论 | 证据 |
+|------|------|------|
+| 1 JWT current+previous；签发只用 current；重叠窗 previous 可验 | 满足 | `verifyAccess` current→previous；`issue()` 仅 `a.secret`；无 `kid`。本轮测试绿。live：K2+prev=K1 旧 access 200；退役后 401 |
+| 2 未配置 previous 时默认仍能开发与快测 | 满足 | YAML previous 缺省空；Compose 可选 `""`；live 缺省 healthz/readyz/login 200；`cmd/server` 本轮绿 |
+| 3 轮换后恢复：SQLite **与** PG | 满足 | 本会话 `TestSQLitePostRotationRecovery` PASS；`TestPostgresPostRotationRecovery` PASS（`R16_PG_DUMP_CONTAINER=r2-pg-probe`） |
+| 4 显式双密钥：轮换路径 **与** 恢复路径 | 满足 | 本会话 live 轮换/refresh/退役 **与** 双方言恢复测试 |
+| 5 未进 A3/KMS/PITR/Admin/业务 / 未改 Charter | 满足 | 基线 `5195104` 产品 diff 11 文件；Charter 仍 `@0.2.0`；无热加载 API；备份只消费既有 dump 合同 |
+| 6 required = 0 | 满足 | VRev-035/VRev-036；实现层 Root A-002 后开放 required = 0 |
 
 ## 规划修订短史
 
@@ -122,3 +131,4 @@ parent: null
 |------|--------|
 | 2026-08-22 | 初创 `planned`：用户确认按路线图主路径新建本 VP 承接架构 A5；退出分母 = JWT current+previous 轮换 + 既有备份上的轮换后恢复；不重做 dump；A3 / KMS / PITR / 热加载 / `/readyz` 再扩 / Admin 页 / 业务域不进分母。未激活、未开区 |
 | 2026-08-22 | VRev-035 self `pass`（0 required）；用户确认激活并开区。v0.2.0 `planned → active`；lead = `workspace-016-key-rotation-and-backup`；退出 1 editorial 收口为 previous 默认可验；Root 承接 P-001 与 I-00N（V-F067）及架构类 freshness（V-F068） |
+| 2026-08-22 | VRev-036 self `pass`：组合层关门就绪；核验 = 本轮独立源码/测试/live，不以 Goal 台账为充分条件。用户确认有界组合层关门（v0.3.0）：关门记录含 exit↔证据映射 + I-016-005 / `admin.mfa` wrapping residual 点名；组合索引原子同步（VR-039） |

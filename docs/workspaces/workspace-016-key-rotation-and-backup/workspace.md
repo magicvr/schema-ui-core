@@ -11,15 +11,15 @@ plan_refs:
 primary_plan: VP-016-key-rotation-and-backup
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.1.0
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · 密钥轮换与备份恢复
 
-本工作区是 [VP-016-key-rotation-and-backup](../../vision/plans/VP-016-key-rotation-and-backup.md)（**`active`**，架构 A5）的唯一 lead delivery workspace。
+本工作区是 [VP-016-key-rotation-and-backup](../../vision/plans/VP-016-key-rotation-and-backup.md)（**`closed`**，2026-08-22 有界关门 · 架构 A5）的唯一 lead delivery workspace。历史绑定保留，默认不接新区。
 
-- **Root** `GOAL-001-key-rotation-and-backup`：纲领 R1～R5（合同冻结 → 双密钥实现 → 轮换后恢复 → 默认单密钥 → 双路径证据）。
+- **Root** `GOAL-001-key-rotation-and-backup`：纲领 R1～R5 全部完成；Root 于 2026-08-22 **done 5/5**（GOAL-002～006 均 done）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-015-observability`。
 - 不承接 Admin 功能或业务域；不重开 VP-012 / VP-013 / VP-014 / VP-015。
@@ -33,7 +33,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-016-key-rotation-and-backup/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-016 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-016-key-rotation-and-backup`（`active`） | 架构 A5 JWT 轮换 + 轮换后恢复 |
+| 规划对齐 | `primary_plan` = `VP-016-key-rotation-and-backup`（`closed`） | 架构 A5 JWT 轮换 + 轮换后恢复；历史绑定 |
 
 ## 愿景对齐
 
