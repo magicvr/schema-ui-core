@@ -225,7 +225,11 @@ func newSettingsRepository(st kernel.Store) *settingsrepository.Repository {
 }
 
 func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsession.Repository) *auth.Authenticator {
-	return auth.NewWithRepository([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
+	// VP-016 R2 (workspace-016 GOAL-003 D-001): an empty previous keeps exact
+	// single-key behavior; a configured one opens the rotation overlap window
+	// (verify current, fall back to previous). Strength/difference rules for
+	// the pair are enforced earlier by config.ValidateProd.
+	return auth.NewWithRepositoryAndPrevious([]byte(secret), []byte(cfg.AuthJWTSecretPrevious), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
 }
 
 // newTracing maps the observability.traces config surface onto the tracer

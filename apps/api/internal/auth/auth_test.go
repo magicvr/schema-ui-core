@@ -523,3 +523,95 @@ func TestLoginAndRefreshAfterMigrateDuplicateRoles(t *testing.T) {
 		t.Fatalf("Refresh after migration: %v", err)
 	}
 }
+
+// TestDualKeyRotationOverlapWindow covers the VP-016 R2 rotation contract
+// (workspace-016 GOAL-003 D-001): during the overlap window access tokens
+// signed with the previous key still verify; removing previous closes the
+// window; issuance always uses the current key; and the fallback can never
+// extend an expired token's life.
+func TestDualKeyRotationOverlapWindow(t *testing.T) {
+	const (
+		oldSecret = "rotation-old-secret"
+		newSecret = "rotation-new-secret"
+	)
+
+	newRepository := func(t *testing.T) *authsession.Repository {
+		t.Helper()
+		hash, err := HashPassword("pw", 4)
+		if err != nil {
+			t.Fatalf("hash: %v", err)
+		}
+		st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "dual-key.db"), "admin", hash, true)
+		if err != nil {
+			t.Fatalf("open store: %v", err)
+		}
+		t.Cleanup(func() { _ = st.Close() })
+		return authsession.NewRepository(st)
+	}
+
+	signedWithOld := func(t *testing.T, repository Repository, ttl time.Duration) string {
+		t.Helper()
+		u, err := repository.UserByID("user-admin")
+		if err != nil {
+			t.Fatalf("seeded admin: %v", err)
+		}
+		token, err := SignAccessToken([]byte(oldSecret), "user-admin", u.TokenVersion, "", ttl, now())
+		if err != nil {
+			t.Fatalf("SignAccessToken: %v", err)
+		}
+		return token
+	}
+
+	serveBearer := func(a *Authenticator, token string) (*httptest.ResponseRecorder, bool) {
+		passed := false
+		protected := a.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { passed = true }))
+		request := httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+		request.Header.Set("Authorization", "Bearer "+token)
+		response := httptest.NewRecorder()
+		protected.ServeHTTP(response, request)
+		return response, passed
+	}
+
+	t.Run("old-key token passes during the overlap window", func(t *testing.T) {
+		repository := newRepository(t)
+		a := NewWithRepositoryAndPrevious([]byte(newSecret), []byte(oldSecret), 15*time.Minute, testRefreshTTL, repository, false)
+		response, passed := serveBearer(a, signedWithOld(t, repository, 15*time.Minute))
+		if response.Code != http.StatusOK || !passed {
+			t.Fatalf("overlap-window old-key token rejected: code=%d passed=%v body=%s", response.Code, passed, response.Body.String())
+		}
+	})
+
+	t.Run("removing previous closes the window on next start", func(t *testing.T) {
+		repository := newRepository(t)
+		a := NewWithRepository([]byte(newSecret), 15*time.Minute, testRefreshTTL, repository, false)
+		response, passed := serveBearer(a, signedWithOld(t, repository, 15*time.Minute))
+		if response.Code != http.StatusUnauthorized || passed {
+			t.Fatalf("old-key token must fail once previous is gone: code=%d passed=%v body=%s", response.Code, passed, response.Body.String())
+		}
+	})
+
+	t.Run("issuance always uses the current key", func(t *testing.T) {
+		repository := newRepository(t)
+		a := NewWithRepositoryAndPrevious([]byte(newSecret), []byte(oldSecret), 15*time.Minute, testRefreshTTL, repository, false)
+		access, _, _, err := a.Login("admin", "pw", now())
+		if err != nil {
+			t.Fatalf("Login: %v", err)
+		}
+		if _, err := ParseAccessToken([]byte(newSecret), access); err != nil {
+			t.Fatalf("fresh access must verify under current: %v", err)
+		}
+		if _, err := ParseAccessToken([]byte(oldSecret), access); err == nil {
+			t.Fatal("fresh access verified under the previous key: issuance left single-current contract")
+		}
+	})
+
+	t.Run("fallback cannot extend an expired token's life", func(t *testing.T) {
+		repository := newRepository(t)
+		a := NewWithRepositoryAndPrevious([]byte(newSecret), []byte(oldSecret), 15*time.Minute, testRefreshTTL, repository, false)
+		expired := signedWithOld(t, repository, -1*time.Second)
+		response, passed := serveBearer(a, expired)
+		if response.Code != http.StatusUnauthorized || passed {
+			t.Fatalf("expired old-key token must stay rejected under dual-key: code=%d passed=%v body=%s", response.Code, passed, response.Body.String())
+		}
+	})
+}

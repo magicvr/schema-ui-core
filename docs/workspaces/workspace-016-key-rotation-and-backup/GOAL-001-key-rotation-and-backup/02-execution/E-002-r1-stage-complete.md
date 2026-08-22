@@ -17,6 +17,7 @@ version: 1.0.0
 3. **验证**：`go vet ./...` 0 finding；`go test ./...` exit 0；`TestJWTSecretPreviousConfig` 8/8 PASS；既有 `TestValidateProd` 9/9 PASS（单密钥零变化）。
 4. **自审**：GOAL-002 A-001（self · close-out）verdict pass，0 required finding。审计模式按 Root D-001 §5 = self（R1 合同冻结档）。
 5. **状态**：GOAL-002 `done` 4/4；Root 路线图 R1 → 完成；progress 1/5。
+6. **Git checkpoint**：`c96e963`（feat(api): JWT previous signing key config surface — VP-016 R1），scope = apps/api config 面 + compose/README + workspace-016 台账，21 files / +573。
 
 ## 下一步（计划）
 
