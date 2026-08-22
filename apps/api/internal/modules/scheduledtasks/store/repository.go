@@ -162,19 +162,26 @@ func (r *Repository) GetTask(id string) (*Task, error) {
 // CreateTask inserts a task; key collisions fail with ErrKeyTaken.
 func (r *Repository) CreateTask(t Task) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		_, err := tx.Exec(context.Background(),
-			`INSERT INTO scheduled_tasks (id, key, cron, name, enabled, description, handler, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			t.ID, t.Key, t.Cron, t.Name, boolInt(t.Enabled), t.Description, t.Handler, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
-		)
-		if err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "unique") {
-				return ErrKeyTaken
-			}
-			return fmt.Errorf("insert task: %w", err)
-		}
-		return nil
+		return r.CreateTaskTx(context.Background(), tx, t)
 	})
+}
+
+// CreateTaskTx inserts a task inside the caller's transaction (W11 F-008:
+// recycle restore runs the row INSERT and the snapshot's MarkRestored in ONE
+// transaction — a failed mark rolls the restored row back).
+func (r *Repository) CreateTaskTx(ctx context.Context, tx kernel.Tx, t Task) error {
+	_, err := tx.Exec(ctx,
+		`INSERT INTO scheduled_tasks (id, key, cron, name, enabled, description, handler, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.Key, t.Cron, t.Name, boolInt(t.Enabled), t.Description, t.Handler, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
+	)
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "unique") {
+			return ErrKeyTaken
+		}
+		return fmt.Errorf("insert task: %w", err)
+	}
+	return nil
 }
 
 // UpdateTask patches cron/name/enabled/description/handler.
@@ -197,14 +204,26 @@ func (r *Repository) UpdateTask(id, cron, name string, enabled bool, description
 
 // DeleteTask removes a task and cascades to its run rows.
 func (r *Repository) DeleteTask(id string) error {
-	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		res, err := tx.Exec(context.Background(), `DELETE FROM scheduled_tasks WHERE id = ?`, id)
+	return r.DeleteTaskTx(context.Background(), id, nil)
+}
+
+// DeleteTaskTx removes a task inside the caller's transaction, optionally
+// running the record callback (recycle snapshot) in the SAME transaction
+// (W11 F-002): a snapshot failure rolls the delete back.
+func (r *Repository) DeleteTaskTx(ctx context.Context, id string, record func(ctx context.Context, tx kernel.Tx) error) error {
+	return r.runner.Run(ctx, func(tx kernel.Tx) error {
+		res, err := tx.Exec(ctx, `DELETE FROM scheduled_tasks WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete task: %w", err)
 		}
 		affected, _ := res.RowsAffected()
 		if affected == 0 {
 			return ErrNotFound
+		}
+		if record != nil {
+			if err := record(ctx, tx); err != nil {
+				return fmt.Errorf("record delete side effect: %w", err)
+			}
 		}
 		return nil
 	})

@@ -32,7 +32,7 @@ func newMfaTestEnv(t *testing.T) (*auth.Authenticator, *Service, *authsession.Re
 	t.Cleanup(func() { _ = st.Close() })
 	repository := authsession.NewRepository(st)
 	a := auth.NewWithRepository([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
-	return a, NewService(store.NewRepository(st), []byte("test-secret")), repository, operationlog.NewRepository(st)
+	return a, NewService(store.NewRepository(st), []byte("test-secret"), nil), repository, operationlog.NewRepository(st)
 }
 
 func planWithMFA(t *testing.T) kernel.Plan {

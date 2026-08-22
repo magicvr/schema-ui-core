@@ -6,13 +6,16 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 )
 
@@ -400,5 +403,141 @@ func TestRecycleBinPurgeAll(t *testing.T) {
 	}
 	if list.Total != 0 {
 		t.Fatalf("total after purge-all = %d, want 0", list.Total)
+	}
+}
+
+// W11 F-002: txRecordingTrash implements both TrashRecorder and
+// TrashTxRecorder. RecordTx performs the same recycle_items insert the
+// production recycle-bin service performs (handler tests cannot import the
+// module — comment at file head), so assertions can prove the snapshot
+// committed inside the delete transaction. fail flips the snapshot write
+// into an error to prove rollback.
+type txRecordingTrash struct {
+	fail     bool
+	txWrites int
+}
+
+func (r *txRecordingTrash) Record(context.Context, string, string, map[string]any, account.User, time.Time) error {
+	return errors.New("legacy Record path must not fire when TrashTxRecorder is wired")
+}
+
+func (r *txRecordingTrash) RecordTx(ctx context.Context, tx kernel.Tx, resource, id string, row map[string]any, actor account.User, now time.Time) error {
+	if r.fail {
+		return errors.New("snapshot boom")
+	}
+	payload, err := json.Marshal(row)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO recycle_items (id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
+		"recycle-tx-"+id, resource, id, string(payload), actor.ID, actor.Name, now.Unix(),
+	); err != nil {
+		return err
+	}
+	r.txWrites++
+	return nil
+}
+
+func recycleItemCount(t *testing.T, env *authTestEnv) int {
+	t.Helper()
+	var n int
+	if err := env.st.WithTx(context.Background(), func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT COUNT(*) FROM recycle_items`).Scan(&n)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// TestRecycleFactoryDeleteAndSnapshotSameTx proves W11 F-002 success: when
+// both the entity and the recorder support the transactional surface, the
+// delete and the recycle snapshot commit in ONE transaction.
+func TestRecycleFactoryDeleteAndSnapshotSameTx(t *testing.T) {
+	env := newAuthTestEnv(t)
+	trash := &txRecordingTrash{}
+	mux := http.NewServeMux()
+	for _, route := range DictionaryRoutes(env.a, datadictionarystore.NewRepository(env.st), env.operations, "admin.data-dictionary", trash) {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	token := adminToken(t, env)
+
+	create := bearer(t, token, http.MethodPost, "/api/data-dictionary/types", `{"key":"same-tx","name":"SameTx"}`)
+	createRec := httptest.NewRecorder()
+	mux.ServeHTTP(createRec, create)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", createRec.Code, createRec.Body.String())
+	}
+	var createdBody struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createdBody); err != nil || createdBody.ID == "" {
+		t.Fatalf("create missing id: %v", err)
+	}
+	id := createdBody.ID
+
+	del := bearer(t, token, http.MethodDelete, "/api/data-dictionary/types/"+id, "")
+	delRec := httptest.NewRecorder()
+	mux.ServeHTTP(delRec, del)
+	if delRec.Code != http.StatusNoContent {
+		t.Fatalf("delete = %d: %s", delRec.Code, delRec.Body.String())
+	}
+	if trash.txWrites != 1 {
+		t.Fatalf("tx snapshot writes = %d, want 1 (same-tx path)", trash.txWrites)
+	}
+	// Both the delete AND the snapshot committed.
+	detail := bearer(t, token, http.MethodGet, "/api/data-dictionary/types/"+id, "")
+	detailRec := httptest.NewRecorder()
+	mux.ServeHTTP(detailRec, detail)
+	if detailRec.Code != http.StatusNotFound {
+		t.Fatalf("deleted type detail = %d, want 404", detailRec.Code)
+	}
+	if got := recycleItemCount(t, env); got != 1 {
+		t.Fatalf("recycle_items = %d, want 1 (snapshot committed with the delete)", got)
+	}
+}
+
+// TestRecycleFactorySnapshotFailureRollsBackDelete proves W11 F-002
+// fail-closed: a snapshot failure inside the transaction rolls the delete
+// back — the previous shape committed the delete and returned 204 with only
+// a logged snapshot error, silently dropping the row without a snapshot.
+func TestRecycleFactorySnapshotFailureRollsBackDelete(t *testing.T) {
+	env := newAuthTestEnv(t)
+	trash := &txRecordingTrash{fail: true}
+	mux := http.NewServeMux()
+	for _, route := range DictionaryRoutes(env.a, datadictionarystore.NewRepository(env.st), env.operations, "admin.data-dictionary", trash) {
+		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+	}
+	token := adminToken(t, env)
+
+	create := bearer(t, token, http.MethodPost, "/api/data-dictionary/types", `{"key":"rollback","name":"Rollback"}`)
+	createRec := httptest.NewRecorder()
+	mux.ServeHTTP(createRec, create)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", createRec.Code, createRec.Body.String())
+	}
+	var createdBody struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createdBody); err != nil || createdBody.ID == "" {
+		t.Fatalf("create missing id: %v", err)
+	}
+	id := createdBody.ID
+
+	del := bearer(t, token, http.MethodDelete, "/api/data-dictionary/types/"+id, "")
+	delRec := httptest.NewRecorder()
+	mux.ServeHTTP(delRec, del)
+	if delRec.Code != http.StatusInternalServerError {
+		t.Fatalf("delete with failing snapshot = %d, want 500 (fail-closed)", delRec.Code)
+	}
+	// The delete rolled back: the row still exists and no snapshot exists.
+	detail := bearer(t, token, http.MethodGet, "/api/data-dictionary/types/"+id, "")
+	detailRec := httptest.NewRecorder()
+	mux.ServeHTTP(detailRec, detail)
+	if detailRec.Code != http.StatusOK {
+		t.Fatalf("type after rolled-back delete = %d, want 200", detailRec.Code)
+	}
+	if got := recycleItemCount(t, env); got != 0 {
+		t.Fatalf("recycle_items = %d, want 0 (snapshot failed → nothing committed)", got)
 	}
 }

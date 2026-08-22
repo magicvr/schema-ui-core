@@ -4,6 +4,7 @@
 package recyclebin
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
@@ -27,7 +29,7 @@ func newServiceEnv(t *testing.T) *Service {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	return NewService(recyclestore.NewRepository(st), datadictionarystore.NewRepository(st), tasksstore.NewRepository(st))
+	return NewService(recyclestore.NewRepository(st), datadictionarystore.NewRepository(st), tasksstore.NewRepository(st), st)
 }
 
 func TestRecordWritesSnapshot(t *testing.T) {
@@ -240,5 +242,61 @@ func TestRestoreOrphanDictEntryReturnsDomainError(t *testing.T) {
 	items2, total, _ := s.List(recyclestore.ListFilter{Page: 1, PageSize: 10})
 	if total != 1 || items2[0].ID != items[0].ID {
 		t.Fatalf("snapshot after failed restore = %d items (%v), want the original kept", total, items2)
+	}
+}
+
+// W11 F-008: the restore business INSERT and the snapshot MarkRestored now
+// share ONE transaction (Restore runs both on a caller-owned kernel.Tx). A
+// failed mark rolls the restored row back — the previous shape committed the
+// row first and a crash between the two left "row exists AND snapshot still
+// restorable" (restore would then conflict or duplicate).
+func TestRestoreAtomicityRollsBackOnFailedMark(t *testing.T) {
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "test.db"), "admin", "hash", true)
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	dictionary := datadictionarystore.NewRepository(st)
+	rc := recyclestore.NewRepository(st)
+	now := time.Now().UTC()
+
+	// A live snapshot for a dict type that does not exist yet.
+	if err := rc.Record(recyclestore.Item{
+		ID: "recycle-atomic-1", Resource: "dict-types", ResourceID: "t-atomic",
+		Payload: map[string]any{"id": "t-atomic", "key": "atomic", "name": "Atomic", "enabled": true, "sort": 0},
+		DeletedAt: now,
+	}); err != nil {
+		t.Fatalf("record snapshot: %v", err)
+	}
+
+	// Same-tx seam: the restore INSERT succeeds but MarkRestoredTx targets a
+	// wrong id → the whole transaction rolls back.
+	err = st.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := dictionary.CreateTypeTx(context.Background(), tx, datadictionarystore.DictType{
+			ID: "t-atomic", Key: "atomic", Name: "Atomic", Enabled: true, CreatedAt: now, UpdatedAt: now,
+		}); err != nil {
+			return err
+		}
+		return rc.MarkRestoredTx(context.Background(), tx, "recycle-wrong-id", now)
+	})
+	if err == nil || !strings.Contains(err.Error(), "recycle item already restored") {
+		t.Fatalf("seam err = %v, want ErrItemAlreadyRestored from the failed mark", err)
+	}
+	// Nothing committed: no dict type row, snapshot still unrestored.
+	var count int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_types WHERE id = 't-atomic'`).Scan(&count)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("dict type rows = %d, want 0 (restore rolled back)", count)
+	}
+	item, err := rc.Get("recycle-atomic-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if item.RestoredAt != nil {
+		t.Fatalf("snapshot marked restored after rollback, want unrestored")
 	}
 }

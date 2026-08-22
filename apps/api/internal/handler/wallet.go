@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -291,9 +292,12 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		walletMutate(w, r, service, operations, walletstore.EntryDeductFrozen, "deduct-frozen")
 	})))
 
-	// Reconcile: durable async ledger chain check.
+	// Reconcile: durable async ledger chain check. Submit/cancel/retry are
+	// write operations (they queue jobs against the whole ledger) and require
+	// wallet.write — a read-only role must not be able to trigger or mutate
+	// reconciliation jobs (W11 F-006).
 	add("POST", "/api/wallet/reconcile", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r, "wallet.read")
+		user, ok := requirePermission(w, r, "wallet.write")
 		if !ok {
 			return
 		}
@@ -301,7 +305,15 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			AccountID string `json:"accountId"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
-		_ = json.NewDecoder(r.Body).Decode(&body)
+		// W11 F-006: a garbage body used to silently fall through to the
+		// empty-accountId sentinel and queue a FULL-ledger reconcile. Decode
+		// failures are now a hard 400 — an empty body (io.EOF) stays valid
+		// and means the documented all-accounts reconcile; anything else
+		// that is not a JSON object is rejected.
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil && !errors.Is(err, io.EOF) {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "expected a JSON object with an optional accountId")
+			return
+		}
 		correlationID := requestid.FromContext(r.Context())
 		if correlationID == "" {
 			correlationID = requestid.New()
@@ -328,7 +340,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 	})))
 
 	add("POST", "/api/wallet/jobs/{id}/cancel", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r, "wallet.read")
+		user, ok := requirePermission(w, r, "wallet.write")
 		if !ok {
 			return
 		}
@@ -341,7 +353,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 	})))
 
 	add("POST", "/api/wallet/jobs/{id}/retry", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := requirePermission(w, r, "wallet.read")
+		user, ok := requirePermission(w, r, "wallet.write")
 		if !ok {
 			return
 		}

@@ -216,6 +216,14 @@ function coerceToKind(kind: WireKind, value: unknown): unknown {
           ? value.split(",").map((part) => part.trim()).filter((part) => part !== "")
           : [];
     case "number": {
+      // W11 F-011 (D7 residual): an EMPTY inputNumber must stay absent —
+      // the previous coercion turned it into 0, so clearing a field (e.g.
+      // wallet amountDelta) submitted "0" and silently changed the value.
+      // Absent fields are dropped by the commit layer (PATCH keeps the
+      // stored value); garbage non-numeric strings still fail closed to 0.
+      if (value === "" || value === undefined || value === null) {
+        return undefined;
+      }
       const numeric = typeof value === "number" ? value : Number(value);
       return Number.isFinite(numeric) ? numeric : 0;
     }

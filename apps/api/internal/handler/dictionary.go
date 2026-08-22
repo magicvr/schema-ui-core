@@ -5,6 +5,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -111,6 +112,35 @@ func (e *dictTypeEntity) Update(id string, body map[string]any, now time.Time, a
 	return dictTypeToMap(*row), nil
 }
 
+// DeleteTrashTx implements handler.TrashTxDeleter (W11 F-002): the type
+	// delete (with its entry cascade) and the recycle snapshot commit in ONE
+	// transaction — a snapshot failure rolls the delete back instead of
+	// committing a delete with no recyclable snapshot. Audit events are
+	// recorded only after the transaction committed, so a rolled-back delete
+	// leaves no audit row.
+func (e *dictTypeEntity) DeleteTrashTx(ctx context.Context, id string, actor account.User, now time.Time, record func(context.Context, kernel.Tx) error) error {
+	txrepo, ok := e.repository.(interface {
+		DeleteTypeTx(ctx context.Context, id string, record func(context.Context, kernel.Tx) error) ([]string, error)
+	})
+	if !ok {
+		return errors.New("dictionary repository does not support transactional delete")
+	}
+	entryIDs, err := txrepo.DeleteTypeTx(ctx, id, record)
+	if err != nil {
+		return mapDictStoreError(err)
+	}
+	// A-003 F-003: cascade-deleted entries are recorded in the type event's
+	// detail so forensics keep the entry ids.
+	var detailPtr *string
+	if len(entryIDs) > 0 {
+		detailPtr = auditDetail("delete", map[string]any{"entries": entryIDs})
+	}
+	recordAudit(e.operations, actor, operationlog.EventDictionaryDelete, id, detailPtr, now, ctx)
+	return nil
+}
+
+// Delete serves the legacy delete path (no trash / no transactional
+// recorder); the factory prefers DeleteTrashTx when both sides opt in.
 func (e *dictTypeEntity) Delete(id string, actor account.User) error {
 	entryIDs, err := e.repository.DeleteType(id)
 	if err != nil {
@@ -214,6 +244,26 @@ func (e *dictEntryEntity) Update(id string, body map[string]any, now time.Time, 
 	return dictEntryToMap(*row), nil
 }
 
+// DeleteTrashTx implements handler.TrashTxDeleter (W11 F-002): the entry
+	// delete and the recycle snapshot commit in ONE transaction — a snapshot
+	// failure rolls the delete back. Audit events are recorded only after
+	// the transaction committed.
+func (e *dictEntryEntity) DeleteTrashTx(ctx context.Context, id string, actor account.User, now time.Time, record func(context.Context, kernel.Tx) error) error {
+	txrepo, ok := e.repository.(interface {
+		DeleteEntryTx(ctx context.Context, id string, record func(context.Context, kernel.Tx) error) error
+	})
+	if !ok {
+		return errors.New("dictionary repository does not support transactional delete")
+	}
+	if err := txrepo.DeleteEntryTx(ctx, id, record); err != nil {
+		return mapDictStoreError(err)
+	}
+	recordDictionaryEvent(e.operations, operationlog.EventDictionaryDelete, actor, id, now)
+	return nil
+}
+
+// Delete serves the legacy delete path (no trash / no transactional
+// recorder); the factory prefers DeleteTrashTx when both sides opt in.
 func (e *dictEntryEntity) Delete(id string, actor account.User) error {
 	err := e.repository.DeleteEntry(id)
 	if err != nil {

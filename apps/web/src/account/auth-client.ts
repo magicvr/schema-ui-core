@@ -413,7 +413,16 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
   if (getRefreshToken() === null) {
     return { kind: "none" };
   }
-  const refreshed = await refreshAccess();
+  // W11 F-010: refreshAccess returns false for BOTH a definitive 401/403
+  // (tokens cleared) and a TRANSIENT network/5xx failure (tokens kept —
+  // W15-F01). Mapping the transient case straight to the terminal
+  // reauth-required state logged the user out after any boot-time blip. The
+  // token is still stored after a transient failure, so retry once — only a
+  // second consecutive failure lands on reauth.
+  let refreshed = await refreshAccess();
+  if (!refreshed) {
+    refreshed = await refreshAccess();
+  }
   if (!refreshed) {
     return { kind: "reauth" };
   }

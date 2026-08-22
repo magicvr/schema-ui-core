@@ -275,6 +275,16 @@ func (s *uploadStore) upload() http.Handler {
 		}
 		body, err := io.ReadAll(file)
 		if err != nil {
+			// W11 F-014: MaxBytesReader surfaces oversize bodies as a read
+			// error — map it to the frozen 413 FILE_TOO_LARGE instead of a
+			// misleading 500 STORAGE_UNAVAILABLE (the client-side size check
+			// above only sees the multipart header size; the wrapper enforces
+			// the true stream bound).
+			var tooLarge *http.MaxBytesError
+			if errors.As(err, &tooLarge) {
+				writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "file exceeds the server size limit")
+				return
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read upload")
 			return
 		}

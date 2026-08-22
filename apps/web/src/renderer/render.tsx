@@ -1336,6 +1336,12 @@ function useRecordSourcePrefill(
   const [state, setState] = useState<RecordSourcePrefillState>(() =>
     recordSource !== undefined ? { status: "loading" } : { status: "idle" },
   );
+  // W11 F-012: the route is a prefill input (query/params flow into
+  // recordSource construction). The route OBJECT identity is unstable (App
+  // rebuilds the render context each render), so the effect depends on this
+  // serialized key: it re-runs only when query/params actually change, not
+  // on unrelated parent renders.
+  const routeKey = JSON.stringify(crud?.route ?? null);
   useEffect(() => {
     if (recordSource === undefined) {
       setState({ status: "idle" });
@@ -1434,7 +1440,13 @@ function useRecordSourcePrefill(
     return () => {
       cancelled = true;
     };
-  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken]);
+  // W11 F-012: the route is a prefill input. The route OBJECT identity is
+  // unstable (App rebuilds the render context each render), so depend on a
+  // serialized key — the effect re-runs only when query/params actually
+  // change, not on unrelated parent renders. The previous deps omitted the
+  // route entirely: a same-page query change left the PREVIOUS record's
+  // values pre-filled and a save could write to the wrong row.
+  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken, routeKey]);
   return state;
 }
 

@@ -83,11 +83,14 @@ func (r *Repository) CreateUserManagement(user User) (*User, error) {
 				return ErrInvalidRole
 			}
 		}
-		var exists int
+		// W11 F-001: EXISTS is a native bool on postgres (0/1 on sqlite); an
+		// int destination made every create/import user fail with a scan
+		// error on the postgres dialect (list/delete paths were already bool).
+		var exists bool
 		if err := tx.QueryRow(context.Background(), `SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, user.Username).Scan(&exists); err != nil {
 			return fmt.Errorf("check username: %w", err)
 		}
-		if exists == 1 {
+		if exists {
 			return ErrUsernameTaken
 		}
 		rolesJSON, err := json.Marshal(roles)

@@ -18,6 +18,57 @@ func newRepo(t *testing.T) *Repository {
 	return NewRepository(st)
 }
 
+// W11 F-003: CreateProof lazily purges the user's EXPIRED proof rows in the
+// same transaction (captcha precedent) — proof issuances cannot grow
+// mfa_proofs unboundedly across challenges.
+func TestCreateProofPurgesExpired(t *testing.T) {
+	repo := newRepo(t)
+	now := time.Now().UTC()
+
+	oldExpired, err := repo.CreateProof("user-admin", now.Add(-time.Minute), now.Add(-5*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	live, err := repo.CreateProof("user-admin", now.Add(5*time.Minute), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A new issuance for the same user drops the expired row only.
+	if _, err := repo.CreateProof("user-admin", now.Add(5*time.Minute), now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.GetProof(oldExpired.ID); err == nil {
+		t.Fatalf("expired proof %s survived the purge", oldExpired.ID)
+	}
+	if _, err := repo.GetProof(live.ID); err != nil {
+		t.Fatalf("live proof %s was purged: %v", live.ID, err)
+	}
+}
+
+// W11 F-003: the failure counter is guarded in SQL (fail_count < 5) so
+// concurrent wrong guesses cannot exceed the exhaustion budget via
+// check-then-act.
+func TestIncrementProofFailuresCapped(t *testing.T) {
+	repo := newRepo(t)
+	now := time.Now().UTC()
+	proof, err := repo.CreateProof("user-admin", now.Add(5*time.Minute), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 8; i++ {
+		if err := repo.IncrementProofFailures(proof.ID, now); err != nil {
+			t.Fatalf("increment %d: %v", i, err)
+		}
+	}
+	got, err := repo.GetProof(proof.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.FailCount != proofFailLimit {
+		t.Fatalf("fail_count = %d, want cap %d", got.FailCount, proofFailLimit)
+	}
+}
+
 // W9 A-005 R-F-003: regression locks for the F-005/F-006 guarded primitives —
 // the TOTP watermark only moves forward (CAS), and the recovery-code rewrite
 // only lands when the caller saw the exact previous set value.

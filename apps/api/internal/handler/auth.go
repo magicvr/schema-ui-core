@@ -126,7 +126,14 @@ func (h *authHandler) login() http.HandlerFunc {
 		// distinct 423/403 previously let an attacker distinguish "exists and
 		// locked/disabled" from "does not exist" (account-enumeration oracle).
 		// Fail-closed: no lock/disable status leak on the login surface.
+		// W11 F-007 (D2 residual): these terminal states now also count
+		// against the client's failure bucket — otherwise an attacker could
+		// probe lock/disable transitions without ever being rate-limited
+		// (a missing user and a locked user differ by ~6 timing probes).
 		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
+			if h.rateLimiter != nil {
+				h.rateLimiter.record(limiterKey, h.now().UTC())
+			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
@@ -147,10 +154,29 @@ func (h *authHandler) login() http.HandlerFunc {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
 			}
+			// W11 F-003: the "password passed, awaiting second factor" state
+			// is rate-limited like the password factor itself — each proof
+			// issuance consumes one slot of the same IP|username bucket, so
+			// an attacker with the password cannot mint an unlimited number
+			// of fresh 5-guess proofs. Proofs stay one-shot and 5-failure
+			// capped in the service, but the bucket bounds the TOTAL guess
+			// budget (proofs issued per 15 min).
+			if h.rateLimiter != nil {
+				if !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
+					if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+						w.Header().Set("Retry-After", strconv.Itoa(sec))
+					}
+					writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many login attempts; try again later")
+					return
+				}
+			}
 			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
 			if perr != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
+			}
+			if h.rateLimiter != nil {
+				h.rateLimiter.record(limiterKey, h.now().UTC())
 			}
 			writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "mfaProof": proof})
 			return

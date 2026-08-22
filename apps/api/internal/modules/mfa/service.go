@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -53,18 +54,37 @@ var (
 type Service struct {
 	repo *store.Repository
 	key  []byte // AES-GCM key derived from the server secret (HKDF)
+	// prevKey is the HKDF key derived from the previous JWT secret during a
+	// VP-016 rotation window (W11 F-004); nil/empty when no previous secret
+	// is configured keeps exact single-key behavior.
+	prevKey []byte
 }
 
 // NewService constructs the MFA service. serverSecret is the same value used
 // to sign JWTs (config secret); the TOTP key is derived with HKDF context
 // "mfa/totp" (D-002 §2 — no dedicated key-management surface exists yet).
-func NewService(repo *store.Repository, serverSecret []byte) *Service {
+// previousSecret, when non-empty, is the VP-016 rotation window fallback: a
+// ciphertext sealed under the previous secret stays decryptable after
+// AUTH_JWT_SECRET rotation, and successful second-factor verifications
+// re-wrap the secret under the current key (W11 F-004 — the previous
+// check: only the current secret was derived, so a rotation locked every MFA
+// user into an unsatisfiable second factor forever).
+func NewService(repo *store.Repository, serverSecret, previousSecret []byte) *Service {
 	key := make([]byte, 32)
 	hk := hkdf.New(sha256.New, serverSecret, nil, []byte("mfa/totp"))
 	if _, err := io.ReadFull(hk, key); err != nil {
 		panic("mfa: derive totp key: " + err.Error())
 	}
-	return &Service{repo: repo, key: key}
+	s := &Service{repo: repo, key: key}
+	if len(previousSecret) > 0 {
+		prev := make([]byte, 32)
+		pk := hkdf.New(sha256.New, previousSecret, nil, []byte("mfa/totp"))
+		if _, err := io.ReadFull(pk, prev); err != nil {
+			panic("mfa: derive previous totp key: " + err.Error())
+		}
+		s.prevKey = prev
+	}
+	return s
 }
 
 // --- handler.MFAVerifier ---
@@ -128,7 +148,8 @@ func (s *Service) Verify(proofID, code, recoveryCode string, now time.Time) (str
 	if strings.TrimSpace(recoveryCode) != "" {
 		ok = s.consumeRecoveryCode(st, recoveryCode, now)
 	} else {
-		step, valid := ValidateTotp(decryptSecret(s.key, st.SecretCiphertext), code, now, totpWindow, st.LastUsedStep)
+		plain, fromPrevious := s.decryptSecret(st.SecretCiphertext)
+		step, valid := ValidateTotp(plain, code, now, totpWindow, st.LastUsedStep)
 		if valid {
 			// W9 F-005: the guarded advance IS the replay gate — a concurrent
 			// verification of the same code loses the CAS (0 rows affected) and
@@ -138,6 +159,11 @@ func (s *Service) Verify(proofID, code, recoveryCode string, now time.Time) (str
 				return "", advErr
 			}
 			ok = advanced
+			if ok {
+				// W11 F-004: only the CAS winner re-wraps; a concurrent
+				// loser must not rotate the ciphertext under a stale state.
+				s.maybeRewrap(st, plain, fromPrevious, now)
+			}
 		}
 	}
 	if !ok {
@@ -215,9 +241,13 @@ func (s *Service) Confirm(userID, code string, now time.Time) error {
 	if st.Status == "active" {
 		return ErrActive
 	}
-	if _, ok := ValidateTotp(decryptSecret(s.key, st.SecretCiphertext), code, now, totpWindow, 0); !ok {
+	// W11 F-004: a pending enrollment sealed under the previous secret is
+	// re-wrapped on first successful confirmation.
+	plain, fromPrevious := s.decryptSecret(st.SecretCiphertext)
+	if _, ok := ValidateTotp(plain, code, now, totpWindow, 0); !ok {
 		return ErrMFAInvalid
 	}
+	s.maybeRewrap(st, plain, fromPrevious, now)
 	if err := s.repo.SetLastUsedStep(userID, now.Unix()/totpPeriodSeconds, now); err != nil {
 		return err
 	}
@@ -293,9 +323,13 @@ func (s *Service) requireActiveSecondFactor(userID, code, recoveryCode string, n
 		}
 		return nil
 	}
-	if _, ok := ValidateTotp(decryptSecret(s.key, st.SecretCiphertext), code, now, totpWindow, st.LastUsedStep); !ok {
+	plain, fromPrevious := s.decryptSecret(st.SecretCiphertext)
+	if _, ok := ValidateTotp(plain, code, now, totpWindow, st.LastUsedStep); !ok {
 		return ErrMFAInvalid
 	}
+	// W11 F-004: a rotation-window decrypt re-wraps on any successful
+	// second-factor proof (disable / recovery rotation included).
+	s.maybeRewrap(st, plain, fromPrevious, now)
 	return nil
 }
 
@@ -373,8 +407,37 @@ func encryptSecret(key, plain []byte) string {
 }
 
 // decryptSecret reverses encryptSecret; an undecryptable blob yields "" (a
-// failed second factor, never a panic).
-func decryptSecret(key []byte, encoded string) string {
+// failed second factor, never a panic). W11 F-004: with a previous key
+// configured the previous-secret key is tried as the rotation window
+// fallback; the second result tells the caller the ciphertext was sealed
+// under the PREVIOUS secret so it can re-wrap under the current key.
+func (s *Service) decryptSecret(encoded string) (plain string, fromPrevious bool) {
+	if p := decryptWithKey(s.key, encoded); p != "" {
+		return p, false
+	}
+	if len(s.prevKey) > 0 {
+		if p := decryptWithKey(s.prevKey, encoded); p != "" {
+			return p, true
+		}
+	}
+	return "", false
+}
+
+// maybeRewrap re-encrypts a TOTP secret that was just decrypted with the
+// previous-secret key under the CURRENT key (W11 F-004). Best-effort: a
+// failure keeps the previous-key window open for the next successful login —
+// it must never fail an already-verified second factor.
+func (s *Service) maybeRewrap(state *store.State, plain string, fromPrevious bool, now time.Time) {
+	if !fromPrevious {
+		return
+	}
+	if err := s.repo.UpdateSecretCiphertext(state.UserID, encryptSecret(s.key, []byte(plain)), now); err != nil {
+		slog.Warn("mfa: rewrap totp secret under current key failed", "userID", state.UserID, "err", err)
+	}
+}
+
+// decryptWithKey is the raw AES-256-GCM unwrap under exactly one key.
+func decryptWithKey(key []byte, encoded string) string {
 	sealed, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return ""

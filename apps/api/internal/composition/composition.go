@@ -355,7 +355,10 @@ func newMuxWithExtraProviders(
 	var mfaService *mfamodule.Service
 	var mfaVerifier handler.MFAVerifier
 	if plan.HasModule("admin.mfa") {
-		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret))
+		// W11 F-004: the previous JWT secret (VP-016 rotation window) is passed
+	// to MFA too, so a mid-rotation AUTH_JWT_SECRET change does not lock MFA
+	// users into an undecryptable second factor (empty = single-key behavior).
+	mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
 		mfaVerifier = mfaService
 	}
 	// VP-014 R3 (GOAL-004 D-001): ONE kernel.ObjectStore instance serves all
@@ -433,7 +436,7 @@ func newMuxWithExtraProviders(
 	var recycleService *recyclebinmodule.Service
 	var trash handler.TrashRecorder
 	if plan.HasModule("admin.recycle-bin") {
-		recycleService = recyclebinmodule.NewService(recyclestore.NewRepository(st), datadictionarystore2.NewRepository(st), tasksstore2.NewRepository(st))
+		recycleService = recyclebinmodule.NewService(recyclestore.NewRepository(st), datadictionarystore2.NewRepository(st), tasksstore2.NewRepository(st), st)
 		trash = recycleService
 	}
 	var providers []kernel.Provider

@@ -14,6 +14,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
@@ -28,12 +29,18 @@ type Service struct {
 	repository *recyclestore.Repository
 	dictionary *store.Repository
 	tasks      *tasksstore.Repository
-	now        func() time.Time
+	// runner is the shared transaction boundary used by Restore so the
+	// business INSERT and the snapshot MarkRestored commit atomically
+	// (W11 F-008); the kernel store satisfies it structurally.
+	runner recyclestore.TxRunner
+	now    func() time.Time
 }
 
-// NewService constructs the recycle service.
-func NewService(repository *recyclestore.Repository, dictionary *store.Repository, tasks *tasksstore.Repository) *Service {
-	return &Service{repository: repository, dictionary: dictionary, tasks: tasks, now: time.Now}
+// NewService constructs the recycle service. runner is the shared
+// transaction boundary (the kernel store); it must be the SAME backing store
+// as the three repositories.
+func NewService(repository *recyclestore.Repository, dictionary *store.Repository, tasks *tasksstore.Repository, runner recyclestore.TxRunner) *Service {
+	return &Service{repository: repository, dictionary: dictionary, tasks: tasks, runner: runner, now: time.Now}
 }
 
 // Record implements handler.TrashRecorder (S-12 · GOAL-012 D-002 §2): called
@@ -57,8 +64,34 @@ func (s *Service) Record(_ context.Context, resource, id string, row map[string]
 	})
 }
 
+// RecordTx implements handler.TrashTxRecorder (W11 F-002): writes the
+// snapshot INSIDE the caller's transaction so the factory's delete and the
+// recycle snapshot commit atomically; a snapshot failure rolls the delete
+// back instead of committing a delete without a snapshot.
+func (s *Service) RecordTx(ctx context.Context, tx kernel.Tx, resource, id string, row map[string]any, actor account.User, now time.Time) error {
+	snapshotID, err := newSnapshotID()
+	if err != nil {
+		return err
+	}
+	return s.repository.RecordTx(ctx, tx, recyclestore.Item{
+		ID:         snapshotID,
+		Resource:   resource,
+		ResourceID: id,
+		Payload:    row,
+		ActorID:    actor.ID,
+		ActorName:  actor.Name,
+		DeletedAt:  now,
+	})
+}
+
 // Restore re-creates the deleted row in its owning store. The snapshot is kept
 // on conflict so the item can be retried (D-002 §3).
+//
+// W11 F-008: the business INSERT and the MarkRestored now commit in ONE
+// transaction — the previous shape committed the restored row first, then
+// marked the snapshot; a crash between the two left a live row AND a
+// still-restorable snapshot (restores would then conflict, or worse,
+// duplicate a dict entry).
 func (s *Service) Restore(itemID string, now time.Time) (map[string]any, error) {
 	item, err := s.repository.Get(itemID)
 	if err != nil {
@@ -67,7 +100,13 @@ func (s *Service) Restore(itemID string, now time.Time) (map[string]any, error) 
 	if item.RestoredAt != nil {
 		return nil, recyclestore.ErrItemAlreadyRestored
 	}
-	if err := s.restoreRow(item.Resource, item.Payload, now); err != nil {
+	err = s.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := s.restoreRowTx(tx, item.Resource, item.Payload, now); err != nil {
+			return err
+		}
+		return s.repository.MarkRestoredTx(context.Background(), tx, itemID, now)
+	})
+	if err != nil {
 		if errors.Is(err, store.ErrDictKeyNotFound) {
 			// W6 F2 (GOAL-006 D-001): restoring an orphaned dict entry whose
 			// parent dict type was deleted is a recoverable precondition
@@ -79,9 +118,6 @@ func (s *Service) Restore(itemID string, now time.Time) (map[string]any, error) 
 		if isConflict(err) {
 			return nil, &handler.DomainError{Status: http.StatusConflict, Code: "RECYCLE_RESTORE_CONFLICT", Message: "a row with that key already exists"}
 		}
-		return nil, err
-	}
-	if err := s.repository.MarkRestored(itemID, now); err != nil {
 		return nil, err
 	}
 	return item.Payload, nil
@@ -146,17 +182,14 @@ func toHandlerItem(item recyclestore.Item) handler.RecycleItem {
 	return out
 }
 
-func (s *Service) restoreRow(resource string, payload map[string]any, now time.Time) error {
+func (s *Service) restoreRowTx(tx kernel.Tx, resource string, payload map[string]any, now time.Time) error {
 	switch resource {
 	case "dict-types":
-		t := dictTypeFromPayload(payload, now)
-		return s.dictionary.CreateType(t)
+		return s.dictionary.CreateTypeTx(context.Background(), tx, dictTypeFromPayload(payload, now))
 	case "dict-entries":
-		e := dictEntryFromPayload(payload, now)
-		return s.dictionary.CreateEntry(e)
+		return s.dictionary.CreateEntryTx(context.Background(), tx, dictEntryFromPayload(payload, now))
 	case "scheduled-tasks":
-		t := taskFromPayload(payload, now)
-		return s.tasks.CreateTask(t)
+		return s.tasks.CreateTaskTx(context.Background(), tx, taskFromPayload(payload, now))
 	default:
 		return fmt.Errorf("recycle restore: unsupported resource %q", resource)
 	}
@@ -188,6 +221,7 @@ func dictEntryFromPayload(payload map[string]any, now time.Time) store.DictEntry
 		Enabled:   boolField(payload, "enabled"),
 		Sort:      intField(payload, "sort"),
 		Remark:    stringField(payload, "remark"),
+		BadgeStyle: stringField(payload, "badgeStyle"),
 		CreatedAt: timeField(payload, "createdAt", now),
 		UpdatedAt: timeField(payload, "updatedAt", now),
 	}

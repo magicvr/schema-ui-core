@@ -22,7 +22,7 @@ func newService(t *testing.T) *Service {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	return NewService(store.NewRepository(st), []byte("test-secret"))
+	return NewService(store.NewRepository(st), []byte("test-secret"), nil)
 }
 
 func totpForSecret(t *testing.T, s *Service, secret string, now time.Time) string {
@@ -225,5 +225,72 @@ func TestServiceEnrollCannotOverwriteActive(t *testing.T) {
 	}
 	if _, _, _, err := s.Enroll("user-admin", "Admin", at); err != nil {
 		t.Fatalf("enroll after disable: %v", err)
+	}
+}
+
+// W11 F-004: a JWT-secret rotation must not lock MFA users out. A TOTP
+// secret sealed under the PREVIOUS secret stays decryptable through the
+// rotation-window fallback, and a successful second-factor verification
+// re-wraps the ciphertext under the CURRENT key (after which the previous
+// key is no longer needed).
+func TestServiceRotationWindow(t *testing.T) {
+	hash, err := auth.HashPassword("test-password", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "test.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	repo := store.NewRepository(st)
+	now := time.Now().UTC()
+
+	secretA := []byte("jwt-secret-a")
+	secretB := []byte("jwt-secret-b")
+
+	// Enrollment happens under secret A.
+	first := NewService(repo, secretA, nil)
+	secret, _, _, err := first.Enroll("user-admin", "Rotation", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Confirm("user-admin", totpForSecret(t, first, secret, now), now); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rotation: current = B, previous = A. Login must still complete.
+	mid := NewService(repo, secretB, secretA)
+	at := now.Add(90 * time.Second)
+	proof, err := mid.BeginChallenge("user-admin", at)
+	if err != nil {
+		t.Fatalf("begin challenge after rotation: %v", err)
+	}
+	if got, err := mid.Verify(proof, totpForSecret(t, mid, secret, at), "", at); err != nil || got != "user-admin" {
+		t.Fatalf("verify via previous key = %q %v, want user-admin/nil", got, err)
+	}
+
+	// The successful verify re-wrapped under current key: a service with
+	// ONLY the current key (previous dropped) must still verify.
+	post := NewService(repo, secretB, nil)
+	at2 := at.Add(90 * time.Second)
+	proof2, err := post.BeginChallenge("user-admin", at2)
+	if err != nil {
+		t.Fatalf("begin challenge after rewrap: %v", err)
+	}
+	if got, err := post.Verify(proof2, totpForSecret(t, post, secret, at2), "", at2); err != nil || got != "user-admin" {
+		t.Fatalf("verify after rewrap = %q %v, want user-admin/nil", got, err)
+	}
+
+	// Sanity: the OLD current key alone can no longer decrypt the re-wrapped
+	// ciphertext — the secret now lives under B only.
+	stale := NewService(repo, secretA, nil)
+	at3 := at2.Add(90 * time.Second)
+	proof3, err := stale.BeginChallenge("user-admin", at3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := stale.Verify(proof3, totpForSecret(t, stale, secret, at3), "", at3); err != ErrMFAInvalid {
+		t.Fatalf("stale-key verify err = %v, want ErrMFAInvalid (decrypt failure surface)", err)
 	}
 }

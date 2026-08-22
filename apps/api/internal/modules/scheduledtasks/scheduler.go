@@ -133,7 +133,25 @@ func (s *Scheduler) tick(now time.Time) {
 func (s *Scheduler) Execute(task store.Task, now time.Time) error {
 	handler, ok := s.handlers[task.Handler]
 	if !ok {
-		handler = s.handlers["system.noop"]
+		// W11 F-009: an unknown handler used to silently fall back to
+		// system.noop AND record a successful "ran" row — masking
+		// misconfiguration in the run history. It now records a FAILED run
+		// so the operator can see the task is mis-wired.
+		detail := fmt.Sprintf("unknown task handler %q", task.Handler)
+		run := store.TaskRun{
+			ID:         newRunID(),
+			TaskID:     task.ID,
+			Status:     "failed",
+			StartedAt:  now,
+			FinishedAt: &now,
+			Detail:     detail,
+			CreatedAt:  now,
+		}
+		if err := s.repository.RecordRun(run); err != nil {
+			slog.Error("scheduler unknown-handler run record failed", "task", task.Key, "err", err)
+			return err
+		}
+		return fmt.Errorf("scheduled task %s: %s", task.Key, detail)
 	}
 	started := now
 	finished := now

@@ -79,6 +79,23 @@ func otpauthURL(issuer, account, secret string) string {
 		urlEscape(issuer), urlEscape(account), secret, urlEscape(issuer), totpPeriodSeconds, totpDigits)
 }
 
+// urlEscape percent-encodes every character outside the RFC 3986 unreserved
+// set (W11 F-013): escaping ONLY spaces and colons let a user-controlled
+// label/issuer containing '?', '#' or '&' inject a query/fragment into the
+// otpauth URI and corrupt or redirect authenticator scans.
 func urlEscape(s string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(s, " ", "%20"), ":", "%3A")
+	const hex = "0123456789ABCDEF"
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '~' {
+			b.WriteByte(c)
+			continue
+		}
+		b.WriteByte('%')
+		b.WriteByte(hex[c>>4])
+		b.WriteByte(hex[c&0x0f])
+	}
+	return b.String()
 }

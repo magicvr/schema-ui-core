@@ -170,6 +170,26 @@ func (r *Repository) SetLastUsedStep(userID string, step int64, now time.Time) e
 	})
 }
 
+// UpdateSecretCiphertext re-encrypts the stored TOTP secret (W11 F-004):
+// after a successful second factor decrypted with the previous JWT-derived
+// key, the ciphertext is re-wrapped under the current key so the rotation
+// window only needs the previous secret once per user.
+func (r *Repository) UpdateSecretCiphertext(userID, ciphertext string, now time.Time) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
+			`UPDATE user_mfa SET totp_secret_ciphertext = ?, updated_at = ? WHERE user_id = ?`,
+			ciphertext, now.Unix(), userID,
+		)
+		if err != nil {
+			return fmt.Errorf("update mfa secret ciphertext: %w", err)
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
 // AdvanceLastUsedStep atomically advances the TOTP replay watermark and
 // reports whether THIS caller won: the guarded UPDATE affects a row only when
 // the new step is strictly greater than the persisted one, so two concurrent
@@ -232,7 +252,16 @@ func (r *Repository) UpdateRecoveryCodesIfUnchanged(userID, next, prev string, n
 	return consumed, nil
 }
 
+// proofFailLimit is the per-proof exhaustion threshold (GOAL-017 D-002 §3,
+// mirrored from the service package — the store cannot import the module
+// package without a cycle). The guarded increment below never lets a proof
+// exceed it.
+const proofFailLimit = 5
+
 // CreateProof inserts a one-time login proof (5-minute TTL, GOAL-017 D-002 §3).
+// W11 F-003: expired rows for the same user are purged in the same
+// transaction (lazy GC, captcha precedent) so a long-lived attacker cannot
+// grow mfa_proofs unboundedly across proof issuances.
 func (r *Repository) CreateProof(userID string, expiresAt time.Time, now time.Time) (*Proof, error) {
 	var idBytes [16]byte
 	if _, err := rand.Read(idBytes[:]); err != nil {
@@ -240,6 +269,11 @@ func (r *Repository) CreateProof(userID string, expiresAt time.Time, now time.Ti
 	}
 	id := hex.EncodeToString(idBytes[:])
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
+			`DELETE FROM mfa_proofs WHERE user_id = ? AND expires_at <= ?`, userID, now.Unix(),
+		); err != nil {
+			return fmt.Errorf("purge expired mfa proofs: %w", err)
+		}
 		_, err := tx.Exec(context.Background(),
 			`INSERT INTO mfa_proofs (id, user_id, fail_count, expires_at, created_at) VALUES (?, ?, 0, ?, ?)`,
 			id, userID, expiresAt.Unix(), now.Unix(),
@@ -280,10 +314,14 @@ func (r *Repository) GetProof(id string) (*Proof, error) {
 }
 
 // IncrementProofFailures counts one failed second-factor attempt.
+// W11 F-003: the guarded WHERE (fail_count < limit) makes concurrent
+// failure counting atomic — the previous check-then-act shape let any number
+// of concurrent wrong guesses all pass the read of fail_count and the proof
+// could exceed its exhaustion budget.
 func (r *Repository) IncrementProofFailures(id string, now time.Time) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE mfa_proofs SET fail_count = fail_count + 1 WHERE id = ?`, id,
+			`UPDATE mfa_proofs SET fail_count = fail_count + 1 WHERE id = ? AND fail_count < ?`, id, proofFailLimit,
 		); err != nil {
 			return fmt.Errorf("increment mfa proof failures: %w", err)
 		}

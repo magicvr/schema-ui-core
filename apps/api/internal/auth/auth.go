@@ -180,12 +180,18 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 		return "", "", account.User{}, err
 	}
 	if u.LockedUntil > now.Unix() {
+		// W11 F-007 (D2 residual): burn the same bcrypt time as a wrong
+		// password before surfacing the terminal state, so the locked-account
+		// fast path cannot be used to enumerate existing usernames by timing.
+		VerifyPassword(timingDummyHash, password)
 		return "", "", account.User{}, ErrAccountLocked
 	}
 	// F-03 (GOAL-005 D-002 §3): a disabled account fails closed before any
 	// password work; the admin-facing operation is visible, so the state is
 	// surfaced as a distinct 403 rather than a generic credential failure.
+	// W11 F-007: dummy bcrypt burn as above for the same timing channel.
 	if !u.Enabled {
+		VerifyPassword(timingDummyHash, password)
 		return "", "", account.User{}, ErrAccountDisabled
 	}
 	if !VerifyPassword(u.PasswordHash, password) {

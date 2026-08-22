@@ -17,7 +17,7 @@ version: 0.1.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-001 | verified | A-001 finding 清单已落盘 |
-| 影响本 scope 的 I-002 | open | 待用户书面裁决 required 范围与 go 宣称 |
+| 影响本 scope 的 I-002 | verified | [D-002](01-decision/D-002-w11-scope-and-go-hold.md)：整单 6 条 required + 波内暂挂 VP-008 go |
 | 影响本 scope 的 I-003 | open（deferred） | S4 前是否追加 grok `/audit` 腿 |
 | 资料引用（若有）是否固定且用户确认 | none | 无固定共享资料 |
 

@@ -62,20 +62,26 @@ func NewRepository(runner TxRunner) *Repository {
 
 // Record inserts one snapshot (S-12 · GOAL-012 D-002 §2).
 func (r *Repository) Record(item Item) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		return r.RecordTx(context.Background(), tx, item)
+	})
+}
+
+// RecordTx inserts one snapshot inside the caller's transaction (W11 F-002):
+// the factory's same-transaction delete path commits the row delete and the
+// recycle snapshot atomically, so a snapshot failure rolls the delete back.
+func (r *Repository) RecordTx(ctx context.Context, tx kernel.Tx, item Item) error {
 	payload, err := json.Marshal(item.Payload)
 	if err != nil {
 		return fmt.Errorf("marshal recycle payload: %w", err)
 	}
-	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		_, err := tx.Exec(context.Background(),
-			`INSERT INTO recycle_items (id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
-			item.ID, item.Resource, item.ResourceID, string(payload), item.ActorID, item.ActorName, item.DeletedAt.Unix(),
-		)
-		if err != nil {
-			return fmt.Errorf("insert recycle item: %w", err)
-		}
-		return nil
-	})
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO recycle_items (id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
+		item.ID, item.Resource, item.ResourceID, string(payload), item.ActorID, item.ActorName, item.DeletedAt.Unix(),
+	); err != nil {
+		return fmt.Errorf("insert recycle item: %w", err)
+	}
+	return nil
 }
 
 // List returns active (unrestored) snapshots, newest first by default.
@@ -188,15 +194,22 @@ func (r *Repository) Get(id string) (*Item, error) {
 // MarkRestored flags a snapshot as restored (partial-unique frees the slot).
 func (r *Repository) MarkRestored(id string, now time.Time) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		res, err := tx.Exec(context.Background(), `UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`, now.Unix(), id)
-		if err != nil {
-			return fmt.Errorf("mark restored: %w", err)
-		}
-		if n, _ := res.RowsAffected(); n == 0 {
-			return ErrItemAlreadyRestored
-		}
-		return nil
+		return r.MarkRestoredTx(context.Background(), tx, id, now)
 	})
+}
+
+// MarkRestoredTx flags a snapshot restored inside the caller's transaction
+// (W11 F-008: restore + mark commit atomically; a failed mark rolls the
+// restored row back so the snapshot stays restorable).
+func (r *Repository) MarkRestoredTx(ctx context.Context, tx kernel.Tx, id string, now time.Time) error {
+	res, err := tx.Exec(ctx, `UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`, now.Unix(), id)
+	if err != nil {
+		return fmt.Errorf("mark restored: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrItemAlreadyRestored
+	}
+	return nil
 }
 
 // PurgeAllUnrestored physically removes every active (unrestored) snapshot;

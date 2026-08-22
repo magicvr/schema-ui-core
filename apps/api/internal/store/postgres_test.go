@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1095,5 +1096,130 @@ func TestPostgresDataMigrationPrototype(t *testing.T) {
 	}
 	if len(got.Roles) != len(admin.Roles) {
 		t.Fatalf("roles mismatch: %v vs %v", got.Roles, admin.Roles)
+	}
+}
+
+// postgresScratchDB creates a scratch database on the PG_TEST server and
+// returns an Open() store over it with the full compiled catalog (W11 tests).
+func postgresScratchDB(t *testing.T, dbName string) kernel.Store {
+	t.Helper()
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres scratch-db test")
+	}
+	ctx := context.Background()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	scratchDSN := u.String()
+
+	admin, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{Dialect: kernel.DialectPostgres, DSN: scratchDSN, ConnectTimeout: 15 * time.Second}, catalog)
+	if err != nil {
+		t.Fatalf("open+bootstrap scratch db: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	return st
+}
+
+// W11 F-001: the create-user EXISTS scan regressed to a native bool on
+// postgres — an int destination made every create/CSV-import fail. Pins the
+// postgres create path: a fresh user lands, a duplicate username is rejected
+// with ErrUsernameTaken, and the row reads back.
+func TestPostgresCreateUserManagementExistsScan(t *testing.T) {
+	ctx := context.Background()
+	st := postgresScratchDB(t, "w11f001")
+	now := time.Date(2026, 8, 22, 12, 0, 0, 0, time.UTC)
+
+	// CreateUserManagement validates role keys against the roles table; seed
+	// the admin role the way the system-data bootstrap does.
+	if err := st.Run(ctx, func(tx kernel.Tx) error {
+		_, err := tx.Exec(ctx, `INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES ('role-admin', 'admin', 'Admin', 1, 0, 0)`)
+		return err
+	}); err != nil {
+		t.Fatalf("seed role: %v", err)
+	}
+
+	repo := authsession.NewRepository(st)
+	user := authsession.User{
+		ID: "user-pg-create-1", Username: "pg-create-user", Name: "PG Create User",
+		Roles: []string{"admin"}, PasswordHash: "hash",
+		CreatedAt: now, UpdatedAt: now,
+	}
+	created, err := repo.CreateUserManagement(user)
+	if err != nil {
+		t.Fatalf("CreateUserManagement on postgres = %v (F-001 EXISTS int scan regression)", err)
+	}
+	if created == nil || created.Username != "pg-create-user" || len(created.Roles) != 1 {
+		t.Fatalf("created user = %+v", created)
+	}
+	dup := user
+	dup.ID = "user-pg-create-2"
+	if _, err := repo.CreateUserManagement(dup); !errors.Is(err, authsession.ErrUsernameTaken) {
+		t.Fatalf("duplicate username err = %v, want ErrUsernameTaken", err)
+	}
+}
+
+// W11 F-005: the captcha consume must be a single guarded statement under
+// postgres READ COMMITTED — two concurrent correct answers claim the
+// challenge for exactly one caller (the previous read-then-delete shape
+// let both pass).
+func TestPostgresCaptchaConsumeConcurrent(t *testing.T) {
+	st := postgresScratchDB(t, "w11f005")
+	captcha := logincaptchastore.NewRepository(st)
+	now := time.Now().UTC()
+	if err := captcha.CreateChallenge("cap-concurrent", "hash-answer", now.Add(5*time.Minute), now); err != nil {
+		t.Fatal(err)
+	}
+
+	results := make(chan bool, 2)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ok, err := captcha.ConsumeChallenge("cap-concurrent", "hash-answer", now.Add(time.Second))
+			if err != nil {
+				t.Errorf("concurrent consume: %v", err)
+				results <- false
+				return
+			}
+			results <- ok
+		}()
+	}
+	wg.Wait()
+	close(results)
+	wins := 0
+	for ok := range results {
+		if ok {
+			wins++
+		}
+	}
+	if wins != 1 {
+		t.Fatalf("concurrent consume wins = %d, want exactly 1", wins)
+	}
+	ok, err := captcha.ConsumeChallenge("cap-concurrent", "hash-answer", now.Add(2*time.Second))
+	if err != nil || ok {
+		t.Fatalf("post-race consume = %v %v, want false/nil", ok, err)
 	}
 }
