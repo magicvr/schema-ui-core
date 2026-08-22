@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-22
 parent: null
-version: 0.4.23
+version: 0.4.25
 ---
 
 # Charter 修订台账
@@ -53,3 +53,5 @@ version: 0.4.23
 | VR-037 | 2026-08-22 | editorial | VP-016 planned | 用户确认新建 `VP-016-key-rotation-and-backup`（`planned`，0 区）：承接架构 A5（JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥为默认）。退出分母不含 A3 / KMS / PITR / 热加载 / `/readyz` 再扩 / Admin 功能 / 业务域；不重做 VP-013 dump。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
 | VR-038 | 2026-08-22 | editorial | VP-016 激活 + 开区 | VRev-035 self `pass`（V-F067/V-F068 → fixed）。用户确认激活并开区；slug 按惯例 `workspace-016-key-rotation-and-backup`，Root `GOAL-001-key-rotation-and-backup`。VP-016 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-039 | 2026-08-22 | editorial | VP-016 有界关门投影 | 用户确认关闭 VP-016（组合层有界 · 架构 A5）：lead workspace-016 Root `done 5/5`；VRev-036 V-F069 → fixed；关门依据 = `/vision` 本轮独立源码/测试/live 核验，不以 Goal 台账为充分条件。residual 点名 I-016-005（立即失效未选）与 `admin.mfa` wrapping（JWT previous 不重包 MFA）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-040 | 2026-08-22 | editorial | VP-017 planned + 自助恢复邮件前置 | 用户确认路径 3：自助恢复 + 管理员重置都要；自助恢复证明依据 = 已绑定邮箱；出站先做邮件；SMS 后置。新建 `VP-017-outbound-mail`（`planned`，0 区）：架构 A6 内核发送端口 + SMTP + 无 SMTP 默认 sink。退出分母不含账号 email / 邀请 / 恢复状态机 / 模板 / Notification Transport 产品 / SMS / A3。Charter 关系节改为当前交付意图 = planned VP-017；不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
+| VR-041 | 2026-08-22 | editorial | VP-017 激活 + 开区 | VRev-037 independent `pass`（V-F070/V-F071 → fixed）。VRev-038 self `pass`。用户确认激活并开区；slug 按惯例 `workspace-017-outbound-mail`，Root `GOAL-001-outbound-mail`。VP-017 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
