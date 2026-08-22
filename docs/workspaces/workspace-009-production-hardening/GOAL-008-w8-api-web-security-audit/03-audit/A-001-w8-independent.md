@@ -20,10 +20,10 @@ verdict: fail
 
 **证据**：
 
-- [resources.go:899](../../../../../apps/api/internal/handler/resources.go:899) 的 `intParam` 只检查 `value < 1`，没有 page 上限或乘法溢出保护。
-- [datapermission.go:64](../../../../../apps/api/internal/handler/datapermission.go:64) 计算 `(page - 1) * pageSize` 后直接执行 `policies[start:end]`。
-- [account_self.go:305](../../../../../apps/api/internal/handler/account_self.go:305) 计算分页边界后直接切 `all[start:end]`。
-- [filelibrary.go:62](../../../../../apps/api/internal/handler/filelibrary.go:62) 对通用资源分页同样执行乘法并切片。
+- [resources.go:899](../../../../../apps/api/internal/handler/resources.go) 的 `intParam` 只检查 `value < 1`，没有 page 上限或乘法溢出保护。
+- [datapermission.go:64](../../../../../apps/api/internal/handler/datapermission.go) 计算 `(page - 1) * pageSize` 后直接执行 `policies[start:end]`。
+- [account_self.go:305](../../../../../apps/api/internal/handler/account_self.go) 计算分页边界后直接切 `all[start:end]`。
+- [filelibrary.go:62](../../../../../apps/api/internal/handler/filelibrary.go) 对通用资源分页同样执行乘法并切片。
 
 **触发条件**：已认证用户提交极大的正整数 `page`，使 `(page-1)*pageSize` 在 64 位平台溢出为负数；例如 `page=92233720368547760&pageSize=100`。
 
@@ -37,8 +37,8 @@ verdict: fail
 
 **证据**：
 
-- [index.html:13](../../../../../apps/web/index.html:13) 包含 inline FOUC 主题初始化脚本。
-- [nginx.conf:29](../../../../../apps/web/nginx.conf:29) 设置 `script-src 'self'`，没有 nonce 或 hash。
+- [index.html:13](../../../../../apps/web/index.html) 包含 inline FOUC 主题初始化脚本。
+- [nginx.conf:29](../../../../../apps/web/nginx.conf) 设置 `script-src 'self'`，没有 nonce 或 hash。
 
 **影响**：生产浏览器会阻止该 inline 脚本，首屏可能出现错误主题或主题闪烁；这属于可观察的功能/安全策略不一致。
 
@@ -48,7 +48,7 @@ verdict: fail
 
 ### F-003 · recommended / known residual · refresh token 存储于 localStorage
 
-**证据**：[tokens.ts:2](../../../../../apps/web/src/account/tokens.ts:2) 与 [tokens.ts:30](../../../../../apps/web/src/account/tokens.ts:30) 将长期 refresh token 明文存入 `localStorage`。
+**证据**：[tokens.ts:2](../../../../../apps/web/src/account/tokens.ts) 与 [tokens.ts:30](../../../../../apps/web/src/account/tokens.ts) 将长期 refresh token 明文存入 `localStorage`。
 
 **影响**：任何未来同源 XSS 可读取 token 并跨页面刷新会话。
 
@@ -56,7 +56,7 @@ verdict: fail
 
 ### F-004 · conditional / recommended · development fallback 误用风险
 
-**证据**：[main.go:80](../../../../../apps/api/cmd/server/main.go:80) 在 `APP_ENV=development` 缺少 JWT secret 时使用固定开发密钥；[main.go:91](../../../../../apps/api/cmd/server/main.go:91) 使用固定初始密码 `admin`。
+**证据**：[main.go:80](../../../../../apps/api/cmd/server/main.go) 在 `APP_ENV=development` 缺少 JWT secret 时使用固定开发密钥；[main.go:91](../../../../../apps/api/cmd/server/main.go) 使用固定初始密码 `admin`。
 
 **影响**：若把开发配置暴露到外部环境，可能导致令牌伪造或默认账户接管。
 

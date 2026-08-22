@@ -17,7 +17,7 @@ version: 0.1.0
 
 - **source**：independent
 - **auditor**：grok-build (grok-4.6 · reasoning high)
-- **类型** / **scope**：execution-facts · S2/S3 实施与回归（W15-F01 / F02 / F04 / F05 / F07）对照本目标 D-001 冻结 + [GOAL-020 D-002](../GOAL-020-w15-user-perspective-findings/01-decision/D-002-i001-user-adjudication.md)。**不是**关门审计，**不是** S4。
+- **类型** / **scope**：execution-facts · S2/S3 实施与回归（W15-F01 / F02 / F04 / F05 / F07）对照本目标 D-001 冻结 + [GOAL-020 D-002](../../GOAL-020-w15-user-perspective-findings/01-decision/D-002-i001-user-adjudication.md)。**不是**关门审计，**不是** S4。
 - **verdict**：**conditional**
 - **工作区**：`workspace-010-design-implementation-conformance`（`root_goal` = `GOAL-001-design-implementation-conformance`；`canonical_scope` 已核对；`shared_materials_catalog: none`；`plan_refs` + `primary_plan` = `VP-010-design-implementation-conformance`）
 
@@ -207,7 +207,7 @@ Recommended（不阻断无条件放行，但建议在 S4 前处理或书面 resi
 ## 与既有意见的异同
 
 - 本目标此前 **无** self / independent 条目（索引为「尚未到达审计节点」）。本条为 **A-001**，共用序列首条。
-- 与 [GOAL-020 A-002](../GOAL-020-w15-user-perspective-findings/03-audit/A-002-s1s2-independent.md) 不冲突：彼时审的是台账真实性；W15-F04「首方崩溃」已改写；本次审的是批 A **实施**。
+- 与 [GOAL-020 A-002](../../GOAL-020-w15-user-perspective-findings/03-audit/A-002-s1s2-independent.md) 不冲突：彼时审的是台账真实性；W15-F04「首方崩溃」已改写；本次审的是批 A **实施**。
 - 项目级决策要求交叉审默认先 self 再 independent。本次由用户直接 `/audit` 指定本 scope；本意见不补写 self，也不因此把 S4 标完成。
 
 ## 结论 + 建议给编排器/用户的下一步

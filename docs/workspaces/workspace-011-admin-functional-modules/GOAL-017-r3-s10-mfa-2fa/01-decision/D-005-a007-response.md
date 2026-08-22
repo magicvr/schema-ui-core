@@ -21,7 +21,7 @@ version: 1.0.0
 
 1. **F-001（fixed）**：auth-client login() 的 mfaRequired 分支移到 token 形状校验之前；契约测试（auth-client.test + LoginPage.test 两段流）钉住无 token 第一段响应。
 2. **F-002（fixed）**：Service.Enroll 预检（active → ErrActive）+ store UpsertPending WHERE status='pending' 守卫 + ErrActiveConflict；回归测试覆盖 active 拒绝 / pending 覆盖 / disable 后重登记；handler enroll 错误映射 400 MFA_ALREADY_ACTIVE（A-008 recommended F-001）。
-3. **MFA UI 残余（用户 2026-08-15 书面裁决，mfa-ui-residual）**：**阻断 GOAL-017 关门**——新建下级子目标 [GOAL-018-mfa-manager-ui](../GOAL-018-mfa-manager-ui/00-meta.md) 交付自定义 MFA 管理组件；GOAL-018 关门后回归关闭本目标。
+3. **MFA UI 残余（用户 2026-08-15 书面裁决，mfa-ui-residual）**：**阻断 GOAL-017 关门**——新建下级子目标 [GOAL-018-mfa-manager-ui](../../GOAL-018-mfa-manager-ui/00-meta.md) 交付自定义 MFA 管理组件；GOAL-018 关门后回归关闭本目标。
 4. A-008 recommended F-002（mfaVerify/AuthContext 整链客户端测试）：登记后续补强；F-003（pending 断言 + 注释）：已随回归测试与注释修正。
 
 ## 关门状态
