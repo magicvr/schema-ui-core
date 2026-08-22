@@ -177,6 +177,20 @@ observability:
     # 1.0 = sample everything once enabled; lower to reduce volume.
     sample_ratio: 1.0       # OBSERVABILITY_TRACES_SAMPLE_RATIO
 
+mail:
+  smtp:
+    # VP-017 (workspace-017 GOAL-003 D-001): explicit outbound SMTP endpoint.
+    # ALL keys empty (the default) = unconfigured — sending uses the embedded
+    # capture/log sink and startup is unaffected. Setting ANY one key makes
+    # host/username/password/from REQUIRED (missing keys fail closed at
+    # startup in every environment); port defaults to 465 when omitted.
+    # The only dial shape is implicit TLS with certificate verification ON.
+    host: ""                # MAIL_SMTP_HOST
+    port: 0                 # MAIL_SMTP_PORT; 0 = frozen default 465
+    username: ""            # MAIL_SMTP_USERNAME
+    password: ""            # required SECRET — via MAIL_SMTP_PASSWORD env / configs/.env only, never a literal
+    from: ""                # MAIL_SMTP_FROM; default sender, bare address
+
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
   mode: normal

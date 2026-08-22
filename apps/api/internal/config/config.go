@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/mail"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -141,6 +142,19 @@ type Config struct {
 	TracesEndpoint    string
 	TracesSampleRatio float64
 
+	// Outbound-mail surface (VP-017 / workspace-017 GOAL-003 D-001, R2).
+	// All keys empty = SMTP unconfigured: the process keeps the embedded
+	// capture/log default and mvp/dev startup is unaffected. Any single key
+	// makes the block explicit: host/username/password/from become REQUIRED
+	// (fail-closed at ValidateProd in every environment; port defaults to
+	// 465). The password is a secret: it must arrive via env interpolation
+	// (MAIL_SMTP_PASSWORD via process env / configs/.env), never literals.
+	MailSMTPHost     string
+	MailSMTPPort     int // 0 = unset -> adapter applies the frozen 465
+	MailSMTPUsername string
+	MailSMTPPassword string
+	MailSMTPFrom     string
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -269,6 +283,15 @@ type yamlFile struct {
 			SampleRatio *float64 `yaml:"sample_ratio"`
 		} `yaml:"traces"`
 	} `yaml:"observability"`
+	Mail struct {
+		SMTP struct {
+			Host     *string `yaml:"host"`
+			Port     *int    `yaml:"port"`
+			Username *string `yaml:"username"`
+			Password *string `yaml:"password"`
+			From     *string `yaml:"from"`
+		} `yaml:"smtp"`
+	} `yaml:"mail"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -456,6 +479,13 @@ func Load() *Config {
 	if yf.Storage.Objects.S3.UsePathStyle != nil {
 		cfg.ObjectsS3UsePathStyle = *yf.Storage.Objects.S3.UsePathStyle
 	}
+	cfg.MailSMTPHost = strPtrOr(yf.Mail.SMTP.Host, cfg.MailSMTPHost)
+	if yf.Mail.SMTP.Port != nil {
+		cfg.MailSMTPPort = *yf.Mail.SMTP.Port
+	}
+	cfg.MailSMTPUsername = strPtrOr(yf.Mail.SMTP.Username, cfg.MailSMTPUsername)
+	cfg.MailSMTPPassword = strPtrOr(yf.Mail.SMTP.Password, cfg.MailSMTPPassword)
+	cfg.MailSMTPFrom = strPtrOr(yf.Mail.SMTP.From, cfg.MailSMTPFrom)
 	if yf.Observability.Metrics.Enabled != nil {
 		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
 	}
@@ -538,6 +568,20 @@ func Load() *Config {
 	cfg.ObjectsS3SecretAccessKey = envOr("STORAGE_OBJECTS_S3_SECRET_ACCESS_KEY", cfg.ObjectsS3SecretAccessKey)
 	if v, set := os.LookupEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE"); set && strings.TrimSpace(v) != "" {
 		cfg.ObjectsS3UsePathStyle = boolEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE", cfg.ObjectsS3UsePathStyle)
+	}
+	cfg.MailSMTPHost = envOr("MAIL_SMTP_HOST", cfg.MailSMTPHost)
+	cfg.MailSMTPUsername = envOr("MAIL_SMTP_USERNAME", cfg.MailSMTPUsername)
+	cfg.MailSMTPPassword = envOr("MAIL_SMTP_PASSWORD", cfg.MailSMTPPassword)
+	cfg.MailSMTPFrom = envOr("MAIL_SMTP_FROM", cfg.MailSMTPFrom)
+	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
+		port, err := strconv.Atoi(raw)
+		if err != nil || port < 1 || port > 65535 {
+			// Fail closed instead of silently keeping the default: a typo in
+			// an explicitly supplied port must never degrade to 465.
+			cfg.LoadError = fmt.Errorf("config: MAIL_SMTP_PORT must be a number between 1 and 65535")
+			return cfg
+		}
+		cfg.MailSMTPPort = port
 	}
 	cfg.MetricsEnabled = boolEnv("OBSERVABILITY_METRICS_ENABLED", cfg.MetricsEnabled)
 	cfg.MetricsAddr = envOr("OBSERVABILITY_METRICS_ADDR", cfg.MetricsAddr)
@@ -960,6 +1004,11 @@ func (c *Config) ValidateProd() error {
 	if err := c.validateObservability(); err != nil {
 		return err
 	}
+	// VP-017 GOAL-003 D-001: mail.smtp pairing rules are startup gates for
+	// every environment (including development), like the db/objects rules.
+	if err := c.validateMail(); err != nil {
+		return err
+	}
 	if c.AppEnv == "development" {
 		return nil
 	}
@@ -1061,6 +1110,43 @@ func validateObjectsS3(c *Config) error {
 	} {
 		if strings.TrimSpace(pair.value) == "" {
 			return fmt.Errorf("config: storage.objects.driver=s3 requires storage.objects.s3.%s (provide secrets via STORAGE_OBJECTS_S3_* env / configs/.env)", pair.name)
+		}
+	}
+	return nil
+}
+
+// validateMail enforces the mail.smtp pairing contract (VP-017 / workspace-017
+// GOAL-003 D-001) on every Config that reaches ValidateProd, including
+// zero-value/test configs that bypass Load. The untouched surface (all keys
+// empty) is the valid embedded-default path — capture/log sink, startup
+// unaffected. An explicitly touched block requires host/username/password/from;
+// the error names the first missing KEY and never carries a value.
+func (c *Config) validateMail() error {
+	touched := strings.TrimSpace(c.MailSMTPHost) != "" ||
+		strings.TrimSpace(c.MailSMTPUsername) != "" ||
+		strings.TrimSpace(c.MailSMTPPassword) != "" ||
+		strings.TrimSpace(c.MailSMTPFrom) != "" ||
+		c.MailSMTPPort != 0
+	if !touched {
+		return nil
+	}
+	for _, pair := range []struct{ name, value string }{
+		{"host", c.MailSMTPHost},
+		{"username", c.MailSMTPUsername},
+		{"password", c.MailSMTPPassword},
+		{"from", c.MailSMTPFrom},
+	} {
+		if strings.TrimSpace(pair.value) == "" {
+			return fmt.Errorf("config: an explicit mail.smtp block requires mail.smtp.%s (provide secrets via MAIL_SMTP_* env / configs/.env)", pair.name)
+		}
+	}
+	if c.MailSMTPPort < 0 || c.MailSMTPPort > 65535 {
+		return fmt.Errorf("config: mail.smtp.port must be between 1 and 65535")
+	}
+	if from := strings.TrimSpace(c.MailSMTPFrom); from != "" {
+		parsed, err := mail.ParseAddress(from)
+		if err != nil || parsed.Address != from {
+			return fmt.Errorf("config: mail.smtp.from must be a bare address (got an unusable form)")
 		}
 	}
 	return nil

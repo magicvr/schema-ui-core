@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.2.0
-progress: 1/4
+version: 0.3.0
+progress: 2/4
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
@@ -26,11 +26,11 @@ serves_summary: 交付架构 A6：内核出站邮件发送端口 + SMTP；无 SM
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
 | R1 | **端口与发送合同冻结**：默认 sink 形态与测试如何取报文（I-001 / I-017-003）；单次 `Send` 的 To 基数（I-002 / I-017-004）；公共面不得暴露 SMTP 客户端类型。 | 起点 | **已完成**（D-002；子目标 GOAL-002） |
-| R2 | **SMTP 接入与配置面**：只钉一种拨号路径 STARTTLS 587 vs 隐式 TLS 465（I-003 / I-017-001）；键名与凭证 YAML + env fail-closed（I-004 / I-017-002）。 | 依赖 R1 | 未开始 |
+| R2 | **SMTP 接入与配置面**：只钉一种拨号路径 STARTTLS 587 vs 隐式 TLS 465（I-003 / I-017-001）；键名与凭证 YAML + env fail-closed（I-004 / I-017-002）。 | 依赖 R1 | **已完成**（D-003；子目标 GOAL-003，适配器 + 配置面落地测试绿） |
 | R3 | **默认 sink 落地 + 公共面去客户端类型**：未配置 SMTP 仍能启动；测试可取出最后一封；handler / 模块公共契约无 SMTP 客户端类型。 | 依赖 R1 | 未开始 |
 | R4 | **显式路径证据 + `readyz`**：显式 SMTP 可核对至少一封投递；配置不完整 fail-closed；仅显式配置后 `readyz` 扩依赖。 | 依赖 R2/R3 | 未开始 |
 
-`progress` = 已完成阶段数 / 4。当前 **1/4**（R1 冻结见 D-002，端口代码已落地并测试绿）。
+`progress` = 已完成阶段数 / 4。当前 **2/4**。
 
 ## 成功标准（方向级）
 
@@ -46,8 +46,8 @@ serves_summary: 交付架构 A6：内核出站邮件发送端口 + SMTP；无 SM
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 默认 sink：进程内 capture vs 只写结构化日志；测试如何取出报文 | R1 方案冻结 | R1 端口冻结 | R1 决策 | **verified**（D-002） | — | capture sink 容量 1 + slog 双写；`internal/mail.CaptureSink.Last()` 取报文 |
 | I-002 | required | 单次 `Send` 的 To 基数：只允许一个收件人 vs 小集合。建议单收件人 | R1 方案冻结 | R1 端口冻结 | R1 决策 | **verified**（D-002） | — | 单收件人 `To string`；多收件人将来加法演进 |
-| I-003 | required | SMTP 拨号：STARTTLS（587）vs 隐式 TLS（465）；本波只钉一种可核对路径 | R2 方案冻结 / 实施 | R2 接入前 | R2 决策 | collecting | — | 对应 VP I-017-001 |
-| I-004 | required | 配置键名与凭证注入（主机/端口/用户/密码/From；YAML + env fail-closed；secret 不入库） | R2 方案冻结 | R2 接入前 | R2 决策 | collecting | — | 对应 VP I-017-002 |
+| I-003 | required | SMTP 拨号：STARTTLS（587）vs 隐式 TLS（465）；本波只钉一种可核对路径 | R2 方案冻结 / 实施 | R2 接入前 | R2 决策 | **verified**（D-003） | — | 唯一路径 = 隐式 TLS 465；校验恒开；仅 PlainAuth over TLS |
+| I-004 | required | 配置键名与凭证注入（主机/端口/用户/密码/From；YAML + env fail-closed；secret 不入库） | R2 方案冻结 | R2 接入前 | R2 决策 | **verified**（D-003） | — | `mail.smtp.{host,port,username,password,from}` / `MAIL_SMTP_*`；任一非空则四键必填，校验挂 ValidateProd |
 | I-005 | non-blocking | HTML/MIME 是否作为可选体。建议纯文本进分母，HTML 不进 | 关门叙事 | R4 | R4 或不进分母留痕 | collecting | — | 对应 VP I-017-005 |
 | I-006 | non-blocking | 生效方式：本波默认进程重启后生效；热加载不进退出分母 | 关门叙事 | R4 | 已随 VP 配置面冻结；本行只作台账投影 | **registered**（V-F071） | — | VP-017 §配置面；不阻断 R1 |
 
