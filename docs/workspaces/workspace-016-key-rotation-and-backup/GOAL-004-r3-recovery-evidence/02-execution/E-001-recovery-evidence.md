@@ -41,5 +41,5 @@ version: 1.0.0
 
 - 检查点 1（I-004 决策）：done（D-001；Root I-004 verified）。
 - 检查点 2（自动化循环）：done（本条）。
-- 检查点 3（双方言实跑证据落盘）：done（本条即实跑记录；回归结果见 E-002）。
+- 检查点 3（双方言实跑证据落盘）：done（本条即实跑记录；composition/auth/config 三包 `-count=1` 回归 ok，见提交 `1b8e9b0` 前验证）。
 - 检查点 4（self 审计 + goal-tree）：进行中。

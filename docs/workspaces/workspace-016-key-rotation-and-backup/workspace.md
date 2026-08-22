@@ -49,7 +49,7 @@ VP-016：JWT current+previous 轮换合同；既有 SQLite `VACUUM INTO` 与 PG 
 | R2 | JWT 双密钥实现 | **已完成**（GOAL-003 done · self A-001 + independent A-002 双 pass · F-001/2/3 fixed） |
 | R3 | 轮换后恢复证据 | **已完成**（GOAL-004 done · A-001 self pass · 双方言循环全绿） |
 | R4 | 默认单密钥仍可用 | **已完成**（GOAL-005 done · A-001 self pass · 6/6 判据面成立） |
-| R5 | 显式双密钥：轮换路径 **与** 恢复路径证据 | 未开始 |
+| R5 | 显式双密钥：轮换路径 **与** 恢复路径证据 | **已完成**（GOAL-006 done · 四项新鲜实跑全 PASS · Root 关门审计响应闭合） |
 
 ## 固定共享资料引用
 

@@ -19,7 +19,7 @@ version: 1.0.0
 | 3 | config 层：dev 低门槛不受 previous 影响 | `TestJWTSecretPreviousConfig/development_keeps_the_low_bar_even_with_a_weak_previous`（R1） | 重跑确认 |
 | 4 | composition 层：生产装配路径空 previous = 单密钥语义 | `TestNewAuthenticatorWiresPreviousSecret` 第二段（空 previous 拒绝 old-key token，R2 A-002 F-001） | 重跑确认 |
 | 5 | Compose 层：`AUTH_JWT_SECRET_PREVIOUS` 可选透传默认空；未设时配置合法 | R1 compose.yaml diff（结构证据） | **新增实证**：`docker compose config` 解析（设 dummy 必填项、不设 PREVIOUS）→ 输出中该键为空串 |
-| 6 | dev 启动：本地快测路径不依赖 previous | `cmd/server` 既有启动/重启测试 + `resolveJWTSecret` dev fallback（GOAL-005 D-004 既有合同） | 重跑 server 包测试确认 |
+| 6 | dev 启动：本地快测路径不依赖 previous | `cmd/server` 既有启动/重启测试 + `resolveJWTSecret` dev fallback（[workspace-001] GOAL-005 D-004 既有合同，见 `cmd/server/main.go:74` 注释） | 重跑 server 包测试确认 |
 
 ## 判定标准
 

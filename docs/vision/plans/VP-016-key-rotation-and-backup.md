@@ -96,11 +96,11 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-016-001 | current / previous 配置键名、生产 fail-closed 规则、secret 长度/熵是否沿用现行 `ValidateProd`。禁止把 secret 写入仓库或日志。 | required | 方案冻结 / 实施 | R1 合同冻结 | collecting |
-| I-016-002 | 本波密钥集合是否仅 `AUTH_JWT_SECRET`。若发现第二枚应用签名密钥与 JWT 共用，须书面纳入或出局。DB / S3 / 种子密码默认出局。 | required | 方案冻结 | R1 合同冻结 | collecting |
-| I-016-003 | 重叠窗语义：旧 access 在 previous 下可验多久；是否使用 JWT `kid`；refresh 是否受签名密钥轮换影响（opaque refresh 预期不受）。 | required | 方案冻结 / 实施 | R2 接入前 | collecting |
-| I-016-004 | 轮换后恢复的最小剧本：备份点相对轮换点的先后、两方言各自证据命令、鉴权断言（login / 旧 access / 新 access）。不重做 dump 实现。 | required | 方案冻结 | R3 接入前 | collecting |
-| I-016-005 | 重叠窗内旧 access 立即失效是否可被用户选为有界残余。默认建议：previous 可验，避免 15m access 全断。 | non-blocking | 退出 1 措辞 | R2 | collecting |
+| I-016-001 | current / previous 配置键名、生产 fail-closed 规则、secret 长度/熵是否沿用现行 `ValidateProd`。禁止把 secret 写入仓库或日志。 | required | 方案冻结 / 实施 | R1 合同冻结 | **verified**（2026-08-22 · [workspace-016] Root D-002：`AUTH_JWT_SECRET`/`AUTH_JWT_SECRET_PREVIOUS`；previous 同强度+同值守卫） |
+| I-016-002 | 本波密钥集合是否仅 `AUTH_JWT_SECRET`。若发现第二枚应用签名密钥与 JWT 共用，须书面纳入或出局。DB / S3 / 种子密码默认出局。 | required | 方案冻结 | R1 合同冻结 | **verified**（2026-08-22 · Root D-002 §2：服务凭证 SHA-256 opaque 不共用，书面出局） |
+| I-016-003 | 重叠窗语义：旧 access 在 previous 下可验多久；是否使用 JWT `kid`；refresh 是否受签名密钥轮换影响（opaque refresh 预期不受）。 | required | 方案冻结 / 实施 | R2 接入前 | **verified**（2026-08-22 · GOAL-003 D-001：重叠窗=previous 配置存续期；不用 kid；refresh 不受影响） |
+| I-016-004 | 轮换后恢复的最小剧本：备份点相对轮换点的先后、两方言各自证据命令、鉴权断言（login / 旧 access / 新 access）。不重做 dump 实现。 | required | 方案冻结 | R3 接入前 | **verified**（2026-08-22 · GOAL-004 D-001：T0–T5 剧本 + A1/A2/A3 断言，双方言实跑全 PASS） |
+| I-016-005 | 重叠窗内旧 access 立即失效是否可被用户选为有界残余。默认建议：previous 可验，避免 15m access 全断。 | non-blocking | 退出 1 措辞 | R2 | collecting（默认「previous 可验」已随 VRev-035 冻结进退出判据 1 并按此交付；如用户未来书面选择立即失效再改措辞） |
 
 ## 工作区绑定
 

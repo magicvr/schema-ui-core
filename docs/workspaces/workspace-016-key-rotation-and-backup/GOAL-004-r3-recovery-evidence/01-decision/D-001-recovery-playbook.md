@@ -5,10 +5,12 @@ goal: GOAL-004-r3-recovery-evidence
 status: accepted
 created: 2026-08-22
 updated: 2026-08-22
-version: 1.0.0
+version: 1.1.0
 ---
 
 # D-001 · R3 轮换后恢复最小剧本（关闭 I-004）与证据方案
+
+> v1.1（2026-08-22）：按 Root A-002 F-003 勘误 PG 版本组合措辞；判定标准不变。
 
 ## I-004 裁定（verified）
 
@@ -31,7 +33,9 @@ T5  鉴权断言（在恢复库 + 轮换后密钥集上）：
 | 方言 | 备份（T1） | 恢复（T3） |
 |------|-----------|-----------|
 | SQLite | `VACUUM INTO '<backup>'`（VP-013 sqlite 合同；测试内经 `database/sql` 执行） | 备份文件本身即合法库，直接作为 `db.path` 启动 |
-| PG | `pg_dump -F c -U <user> <db> -f <dump>`（容器内 17 客户端 ↔ 17 服务端，同主版本无 GUC 告警） | `createdb <rest>` + `pg_restore -U <user> -d <rest> <dump>` |
+| PG | `pg_dump -F c -U <user> <db> -f <dump>`（官方客户端；允许 [workspace-013] GOAL-006 D-002 已记录的跨版本客户端 GUC 告警类——restore 出现 1 条 ignored error 属预期，功能不受影响） | `createdb <rest>` + `pg_restore -U <user> -d <rest> <dump>` |
+
+> v1.1 勘误（Root A-002 F-003）：初版写「17 客户端 ↔ 17 服务端同主版本无 GUC 告警」，与实跑环境（17 客户端 → 15.4 服务端，1 条 ignored GUC error）不一致。合同以「官方工具 + ledger 指纹核对」为准，不依赖客户端/服务端同主版本。
 
 ### 断言判据
 

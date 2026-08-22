@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-key-rotation-and-backup
 title: 密钥轮换与备份恢复合同（JWT + 轮换后恢复）
-status: active
+status: done
 parent: null
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.5.0
-progress: 4/5
+version: 0.6.0
+progress: 5/5
 plan_refs:
   - VP-016-key-rotation-and-backup
 primary_plan: VP-016-key-rotation-and-backup
@@ -29,9 +29,9 @@ serves_summary: 交付架构 A5：JWT current+previous 轮换合同 + 既有备�
 | R2 | **JWT 双密钥实现**：签发只用 current；校验 current 再 previous；重叠窗 / `kid` / refresh 不受签名密钥影响（I-003）；重启生效。 | 依赖 R1 | **完成**（GOAL-003 done · self A-001 + independent A-002 双 pass） |
 | R3 | **轮换后恢复证据**：在既有 SQLite `VACUUM INTO` 与 PG `pg_dump`/`pg_restore` 上核对轮换后启动 + 鉴权（I-004）。不重做 dump。 | 依赖 R2 | **完成**（GOAL-004 done · A-001 self pass；双方言循环全绿） |
 | R4 | **默认单密钥仍可用**：未配置 previous 时本地/Compose 仍能开发与快测；轮换不是启动硬依赖。 | 依赖 R2 | **完成**（GOAL-005 done · A-001 self pass；6/6 判据面实跑成立） |
-| R5 | **双路径证据**：显式双密钥下，一轮换路径 **与** 一轮换后恢复路径都有可核对证据。 | 依赖 R3/R4 | 未开始 |
+| R5 | **双路径证据**：显式双密钥下，一轮换路径 **与** 一轮换后恢复路径都有可核对证据。 | 依赖 R3/R4 | **完成**（GOAL-006 E-001 四项新鲜实跑全 PASS；Root 关门审计 A-001 self + A-002 independent 响应闭合） |
 
-`progress` = 已完成阶段数 / 5。当前 **4/5**（R1～R4 完成）。
+`progress` = 已完成阶段数 / 5。当前 **5/5**（R1～R5 完成）。
 
 ## 成功标准（方向级）
 
@@ -48,7 +48,7 @@ serves_summary: 交付架构 A5：JWT current+previous 轮换合同 + 既有备�
 | I-001 | required | current / previous 配置键名、生产 fail-closed、熵规则沿用 `ValidateProd`（≥32 字符且同时含字母与数字）；secret 不入库、不进日志 | R1 方案冻结 / 实施 | R1 合同冻结 | R1 决策 | **verified**（D-002） | — | D-002 §1；`config.go:202/496/953-964`、`main.go:74-85` |
 | I-002 | required | 本波密钥集合仅 `AUTH_JWT_SECRET`（+等价 previous 键）。服务凭证为 SHA-256 opaque hash，不与 JWT secret 共用；D-002 书面出局 | R1 方案冻结 | R1 合同冻结 | R1 决策 | **verified**（D-002） | — | D-002 §2；`auth.NewServiceCredentialToken` = CSPRNG + SHA-256 |
 | I-003 | required | 重叠窗 = previous 配置存续期（退役 ≥access_ttl 后移除并重启）；不用 JWT `kid`；refresh 为 opaque SHA-256，不受签名密钥轮换影响 | R2 方案冻结 / 实施 | R2 接入前 | R2 决策 | **verified**（GOAL-003 D-001） | — | GOAL-003 D-001；`auth.NewOpaqueToken`/`HashToken`/`RefreshTokenByHash` |
-| I-004 | required | 轮换后恢复最小剧本：备份点在轮换前（K1 运行中），恢复后以 K2+prev=K1 启动并断言 A1 旧 access 可验 / A2 新签发仅 current / A3 refresh opaque 连续；SQLite `VACUUM INTO`、PG `pg_dump -F c`→`pg_restore`，不重做 dump | R3 方案冻结 | R3 接入前 | R3 决策 | **verified**（GOAL-004 D-001） | — | GOAL-004 D-001；VP-013 备份合同（GOAL-006 D-002）沿用 |
+| I-004 | required | 轮换后恢复最小剧本：备份点在轮换前（K1 运行中），恢复后以 K2+prev=K1 启动并断言 A1 旧 access 可验 / A2 新签发仅 current / A3 refresh opaque 连续；SQLite `VACUUM INTO`、PG `pg_dump -F c`→`pg_restore`，不重做 dump | R3 方案冻结 | R3 接入前 | R3 决策 | **verified**（GOAL-004 D-001） | — | GOAL-004 D-001；VP-013 备份合同（[workspace-013] GOAL-006 D-002，v1.1 勘误后措辞）沿用 |
 | I-005 | non-blocking | 重叠窗内旧 access 立即失效是否接受为有界残余。默认：previous 可验 | 退出 1 措辞 | R2 | 用户书面残余时才改变退出 1 | collecting | — | 对应 VP I-016-005；默认措辞已随 VRev-035 冻结 |
 
 ## 父目标

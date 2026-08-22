@@ -287,7 +287,7 @@ func (p *pgTooling) restore(t *testing.T, dbName string, dump []byte) {
 	if err == nil {
 		return
 	}
-	// GOAL-006 D-002 (workspace-013 A-001 F-004): a newer pg_dump client
+	// [workspace-013] GOAL-006 D-002 (its A-001 F-004): a newer pg_dump client
 	// against an older server archives `SET transaction_timeout = 0`, which
 	// the older pg_restore reports as ONE ignored error. The contract allows
 	// exactly this warning class; the caller still proves restore fidelity by
