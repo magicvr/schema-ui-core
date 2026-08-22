@@ -458,36 +458,56 @@ func TestOpenPostgresAppliesNonEmptyCatalogIntegration(t *testing.T) {
 	}
 }
 
+// scratchDSN creates an empty database named dbName on the PG_TEST server and
+// returns a DSN pointing at it. The database is dropped in t.Cleanup.
+//
+// WasFresh assertions cannot run against PG_TEST_DB itself: postgresWasFresh
+// counts any user table in the first existing search_path schema, and the
+// shared probe database typically already holds a leftover catalog (or the
+// developer's app schema). Later tests in this file already isolate via
+// dedicated scratch databases; R2-era probe/migrate tests must do the same.
+func scratchDSN(t *testing.T, adminDSN, dbName string) string {
+	t.Helper()
+	ctx := context.Background()
+	u, err := url.Parse(adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := sql.Open("pgx", u.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+	u.Path = "/" + dbName
+	return u.String()
+}
+
 func TestOpenPostgresProbeIntegration(t *testing.T) {
 	dsn := pgtest.DSN()
 	if dsn == "" {
 		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres probe integration (no PG = dev/fast-test keeps working)")
 	}
 	ctx := context.Background()
+	probeDSN := scratchDSN(t, dsn, "r2probe")
 	probe := func() (kernel.Store, error) {
 		return Open(ctx, OpenOptions{
 			Dialect:        kernel.DialectPostgres,
-			DSN:            dsn,
+			DSN:            probeDSN,
 			ConnectTimeout: 10 * time.Second,
 		}, nil)
 	}
 
-	// A freshly created, empty probe database must report WasFresh()=true on
-	// the default $user/public search_path (also exercises $user resolution).
-	// The probe database is shared across tests/processes, so first clean any
-	// leftover scratch table to make the assertion deterministic.
-	seed, err := probe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := seed.Run(ctx, func(tx kernel.Tx) error {
-		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS _r2_wasfresh_probe, r3_users, schema_migrations")
-		return err
-	}); err != nil {
-		t.Fatalf("clean slate: %v", err)
-	}
-	_ = seed.Close()
-
+	// An empty scratch database must report WasFresh()=true on the default
+	// $user/public search_path (also exercises $user resolution).
 	st, err := probe()
 	if err != nil {
 		t.Fatal(err)
@@ -499,7 +519,7 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 		t.Fatalf("ping: %v", err)
 	}
 	if !st.WasFresh() {
-		t.Errorf("empty probe db: WasFresh() = false, want true (search_path resolution)")
+		t.Errorf("empty scratch db: WasFresh() = false, want true (search_path resolution)")
 	}
 
 	// One Run = one tx; placeholders rebound '?' -> $n; commit persists.
@@ -518,8 +538,7 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 	_ = st.Close()
 
 	// A user base table now exists in the first existing schema (public):
-	// WasFresh must flip to false on a fresh open; the table also drops cleanly
-	// so the test stays idempotent.
+	// WasFresh must flip to false on a fresh open.
 	st2, err := probe()
 	if err != nil {
 		t.Fatal(err)
@@ -527,12 +546,6 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 	defer st2.Close()
 	if st2.WasFresh() {
 		t.Errorf("db with a user table: WasFresh() = true, want false")
-	}
-	if err := st2.Run(ctx, func(tx kernel.Tx) error {
-		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS _r2_wasfresh_probe")
-		return err
-	}); err != nil {
-		t.Fatalf("cleanup: %v", err)
 	}
 }
 
@@ -546,10 +559,11 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres migrate runner integration")
 	}
 	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3runner")
 	openPG := func() *postgres {
 		st, err := Open(ctx, OpenOptions{
 			Dialect:        kernel.DialectPostgres,
-			DSN:            dsn,
+			DSN:            scratch,
 			ConnectTimeout: 10 * time.Second,
 		}, nil)
 		if err != nil {
@@ -596,24 +610,7 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 		},
 	}
 
-	// Deterministic clean slate BEFORE WasFresh assertions: drop any leftover
-	// scratch tables from a prior run, then open a fresh probe.
-	seed := openPG()
-	if _, err := seed.db.ExecContext(ctx, `DROP TABLE IF EXISTS r3_users, schema_migrations, _r2_wasfresh_probe`); err != nil {
-		t.Fatalf("clean slate: %v", err)
-	}
-	_ = seed.Close()
-
 	st := openPG()
-	t.Cleanup(func() {
-		// Use a dedicated connection (st may already be closed in the body) so
-		// the scratch tables are always removed for the next test / process.
-		if db, err := sql.Open("pgx", dsn); err == nil {
-			_, _ = db.ExecContext(context.Background(), `DROP TABLE IF EXISTS r3_users, schema_migrations, _r2_wasfresh_probe`)
-			_ = db.Close()
-		}
-	})
-
 	if err := st.migrate(catalog); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
