@@ -10,8 +10,8 @@ plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
 created: 2026-08-10
-updated: 2026-08-21
-version: 0.11.0
+updated: 2026-08-22
+version: 0.12.0
 parent: null
 ---
 
@@ -54,6 +54,7 @@ independent provider（沿用 workspace-008 D-002）：**grok build · grok-4.5 
 | W8 | GOAL-008-w8-api-web-security-audit | **done**（4/4 · 2026-08-20：A-001 fail → D-002 整单采纳 + go 暂挂 → E-002 修复 → A-002 self pass + A-003 independent pass → D-003 恢复 VP-008 go 宣称；真实浏览器/CSP 回归 E-004 通过；发版前冒烟流程集成 E-005） |
 | W9 | GOAL-009-w9-api-web-security-audit | **done**（4/4 · 2026-08-21：A-001 fail + A-002 conditional → D-002 清单 required 12（F-003 作废，F-025=P2-7）→ D-003 整单采纳 + go 暂挂 → E-004 S3 实施 12/12 修复 + 回归全绿 + A-004 self pass → **A-005 grok-build（grok-4.6 · high）independent pass：12/12 genuine fixed** → A-006 闭合记录 fixed ×12、开放 required = 0 → E-005 三条 recommended 全部实施并锁定 → D-004 恢复 VP-008 go 宣称） |
 | W10 | GOAL-010-w10-api-web-security-audit | **done**（4/4 · 2026-08-21：A-001 independent conditional（1 HIGH required）→ D-002 整单 7 条 + go 暂挂 → D-003 调和 4 误报作废 → E-002 修复 3 条 + 回归全绿 + A-002 self pass → **A-003 grok-build（grok-4.6 · high）independent pass：3/3 genuine fixed** → 用户书面闭合授权 → E-003 A-003 recommended ×3 全部修正 + 索引同步 → A-004 闭合记录 fixed ×6 + 作废 ×4、开放 required = 0 → **D-004 关门 + 恢复 VP-008 go 宣称**；残余移交：数据库密码轮换） |
+| W11 | GOAL-011-w11-api-web-security-audit | **active**（1/4 · 2026-08-22：A-001 independent **fail**，开放 required = 6（F-001～F-006）；S2 裁决未开始；不自动暂挂 VP-008 go） |
 
 ## 固定共享资料引用
 

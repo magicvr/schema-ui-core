@@ -2,9 +2,9 @@
 title: 目标树 · workspace-009-production-hardening
 status: active
 created: 2026-08-10
-updated: 2026-08-21
+updated: 2026-08-22
 parent: null
-version: 0.16.0
+version: 0.17.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -25,9 +25,11 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-007-w7-api-web-security-audit [done] (4/4)      · W7
 ├── GOAL-008-w8-api-web-security-audit [done] (4/4)      · W8
 ├── GOAL-009-w9-api-web-security-audit [done] (4/4)     · W9
-└── GOAL-010-w10-api-web-security-audit [done] (4/4)    · W10
+├── GOAL-010-w10-api-web-security-audit [done] (4/4)    · W10
+└── GOAL-011-w11-api-web-security-audit [active] (1/4)  · W11
 ```
 
+**W11（2026-08-22，S1 落盘）**：用户指令独立审计 api/web（禁止加载 skills）→ 开 GOAL-011；A-001 `source: independent` **fail**（3 HIGH required + 3 MEDIUM required = 6 开放；13 recommended；6 informational）。S2 裁决未开始；不自动暂挂 VP-008 go。Root 保持 active。见 [GOAL-011](GOAL-011-w11-api-web-security-audit/00-meta.md) / [A-001](GOAL-011-w11-api-web-security-audit/03-audit/A-001-w11-independent.md) / 全文 [attachments/audit-A-001-w11-full-report.md](GOAL-011-w11-api-web-security-audit/attachments/audit-A-001-w11-full-report.md)。
 **W9（2026-08-21，已关门）**：A-001 fail + A-002 conditional → D-002 调和 required **12**（F-003 作废，全文 P2-7 补号 F-025）→ D-003 整单采纳 + 暂挂 VP-008 go → E-004 S3 实施 12/12 修复 + 回归全绿（A-004 self pass）→ **A-005 independent/pass（grok-build · grok-4.6 · reasoning high · `/audit`）：12/12 genuine fixed、无新引入缺陷、回归复跑一致** → A-006 闭合记录（fixed ×12，开放 required = 0，I-003 verified）→ E-005 将 A-005 三条 recommended 全部实施并锁定（L2 校验器接线生产路径、恢复码 CAS 换值令牌、6 组原缺陷形状回归锁；API/Web/build 再全绿）→ **D-004 用户书面恢复 VP-008 go 宣称**。`status: done` (4/4)。Root 保持 active。见 [GOAL-009](GOAL-009-w9-api-web-security-audit/00-meta.md) / [D-004](GOAL-009-w9-api-web-security-audit/01-decision/D-004-w9-go-restore.md) / [E-005](GOAL-009-w9-api-web-security-audit/02-execution/E-005-w9-recommended-hardening.md) / [A-005](GOAL-009-w9-api-web-security-audit/03-audit/A-005-w9-s4-independent.md) / [A-006](GOAL-009-w9-api-web-security-audit/03-audit/A-006-w9-a005-response.md)。
 **W10（2026-08-21，已关门）**：用户指令独立审计 → A-001 `source: independent` **conditional**（1 HIGH required = F-001 env.example 硬编码凭据；6 recommended；5 informational）→ D-002 整单采纳 7 条 + 暂挂 VP-008 go → S3 实施前逐条核实，**D-003 调和 4 条 recommended 作废**（F-003 不成立 / F-004、F-005、F-006 误报），实际修复 F-001/F-002/F-007 → E-002 回归全绿（go vet/test 全绿；web 1083/1083 + build 全绿）→ A-002 self pass → **A-003 independent/pass（grok-build · grok-4.6 · reasoning high · `/audit`）：3/3 genuine fixed、4 作废有据、无新引入缺陷；新增 recommended ×3** → 用户 `/govern` 书面闭合授权：E-003 将 A-003 三条 recommended 全部修正（索引同步 / fetch-timeout listener 清理 / 预览窗 opener 置空；web 复跑 1084/1084 + tsc 0）→ A-004 闭合记录（fixed ×6 + 作废 ×4，开放 required = 0，I-003 关闭）→ **D-004 关门 + 恢复 VP-008 go 宣称**。`status: done` (4/4)。Root 保持 active。残余移交：数据库密码轮换（用户侧）。见 [GOAL-010](GOAL-010-w10-api-web-security-audit/00-meta.md) / [A-003](GOAL-010-w10-api-web-security-audit/03-audit/A-003-w10-s4-independent.md) / [A-004](GOAL-010-w10-api-web-security-audit/03-audit/A-004-w10-closure-response.md) / [D-004](GOAL-010-w10-api-web-security-audit/01-decision/D-004-w10-go-restore.md)。
 **W8（2026-08-20，已关门）**：独立代码审计 A-001（`source: independent`）判定 **fail**（F-001 分页整数溢出/切片 panic-DoS、F-002 生产 CSP 阻止 inline 主题脚本为 2 条 required；F-003/F-004 为非阻断/条件风险）。用户目标轮次指令授权修复并闭门（D-002 整单采纳 F-001/F-002 + 暂挂 VP-008 go 宣称）；实现 E-002 修复 + E-003 处置 recommended；self A-002 pass + independent A-003 pass（grok-4.6）确认 required 0 开放；D-003 恢复 VP-008 go 宣称。`go test ./...`、web `npm test`（1072）、`npm run build` 全绿。`status: done`。Root 保持 active。见 [GOAL-008](GOAL-008-w8-api-web-security-audit/00-meta.md) / [D-002](GOAL-008-w8-api-web-security-audit/01-decision/D-002-w8-scope-and-go-hold.md) / [A-003](GOAL-008-w8-api-web-security-audit/03-audit/A-003-w8-independent.md)。
@@ -51,6 +53,7 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-008-w8-api-web-security-audit | W8 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-20 |
 | GOAL-009-w9-api-web-security-audit | W9 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-21 |
 | GOAL-010-w10-api-web-security-audit | W10 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-21 |
+| GOAL-011-w11-api-web-security-audit | W11 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | active | 1/4 | 2026-08-22 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
 ## 维护说明

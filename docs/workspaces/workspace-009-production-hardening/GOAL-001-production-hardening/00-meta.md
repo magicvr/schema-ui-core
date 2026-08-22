@@ -4,8 +4,8 @@ title: 生产加固（共享基架持续安全与健壮性）
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-21
-version: 0.9.0
+updated: 2026-08-22
+version: 0.10.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
@@ -42,7 +42,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 - [x] **P2 · 与 go 的接口**：共享基架 Critical/High 可触发 VP-008 `go` 消费有效性暂挂/恢复的路径有台账约定。（见 VP-009；W1 曾完成一次恢复证据）
 - [x] **W1 · 波次档案**：2026-08-10 审查 16 项（C1–C8 + D1–D8）修复 + cross 闭环 — [GOAL-002](../GOAL-002-audit-findings-remediation/00-meta.md) `done` 16/16
 - [x] **W2 · 波次档案**：上传 owner/下载鉴权 + `ReadHeaderTimeout` — [GOAL-003](../GOAL-003-upload-ownership-hardening/00-meta.md) `done` 4/4
-- [x] **P3 · 下一波就绪**：存在约定的触发（例行/发版前/变更后）时，可开新子目标承接扫描，无需重开 Root/VP。（W3–W10 已按此开波；最近：2026-08-21 W10）
+- [x] **P3 · 下一波就绪**：存在约定的触发（例行/发版前/变更后）时，可开新子目标承接扫描，无需重开 Root/VP。（W3–W11 已按此开波；最近：2026-08-22 W11）
 
 > `progress`：不使用「n/n → Root done」推导。波次完成只更新子目标与下表档案；Root `status` 仅在用户明确废弃程序或迁移 `primary_plan` 时改为 `done`/`cancelled`。
 
@@ -60,6 +60,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 | W8 | GOAL-008-w8-api-web-security-audit | done | 2026-08-20 独立审计 A-001 fail → D-002 整单采纳 + go 暂挂 → E-002 修复 → A-002/A-003 pass → D-003 恢复 go；真实浏览器/CSP 回归 E-004 通过 |
 | W9 | GOAL-009-w9-api-web-security-audit | done | 2026-08-21 独立审计 A-001 fail → A-002 conditional → D-003 整单 12 条 required → E-004 实施 12/12 → A-005 independent pass → A-006 闭合 → D-004 恢复 go |
 | W10 | GOAL-010-w10-api-web-security-audit | done | 2026-08-21 独立审计 A-001 conditional（1 HIGH required）→ D-002 整单 7 条 + go 暂挂 → D-003 调和 4 误报作废 → E-002 修复 3 条 + A-002 self pass → A-003 grok independent pass → E-003 A-003 recommended ×3 修正 → A-004 闭合记录（开放 required = 0）→ D-004 关门 + 恢复 go；残余：密码轮换（用户侧） |
+| W11 | GOAL-011-w11-api-web-security-audit | active | 2026-08-22 独立审计 A-001 fail（开放 required = 6）；S1 落盘 1/4；S2 裁决未开始 |
 
 ## 信息就绪与未知项
 
@@ -67,7 +68,7 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 本程序是否为长期意图（非单波关门）？ | 程序定义 | 纠正当日 | 用户 2026-08-10 书面纠正 | verified | — | D-003；VP-009 v0.4.0 |
 | I-002 | non-blocking | 例行扫描的具体日历/cron | 运营节奏 | 下一波前 | 用户或 CI 约定；可先事件触发 | open | deferred：事件触发足够启动 W3；责任人=维护者；复核=首次例行扫描前 | 待确认 |
-| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1–W4、W6 在子目标 verified；W5 扫描 0 中高危见 E-002；W7 清单 = GOAL-007 A-001；W8 清单 = GOAL-008 A-001；W9 清单 = GOAL-009 A-001（均在波次方案前 verified）；W10 清单 = GOAL-010 A-001（2026-08-21 落盘 verified） |
+| I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1–W4、W6 在子目标 verified；W5 扫描 0 中高危见 E-002；W7 清单 = GOAL-007 A-001；W8 清单 = GOAL-008 A-001；W9 清单 = GOAL-009 A-001；W10 清单 = GOAL-010 A-001（均在波次方案前 verified）；W11 清单 = GOAL-011 A-001（2026-08-22 落盘 verified） |
 
 ## 台账布局
 
