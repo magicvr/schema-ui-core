@@ -3,6 +3,8 @@ package composition
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -200,6 +202,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		jobRuntime,
 		[]kernel.Provider{probe},
 		nil,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
 	if err != nil {
 		t.Fatalf("newMuxWithExtraProviders with probe: %v", err)

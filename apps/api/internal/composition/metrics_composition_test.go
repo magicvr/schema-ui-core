@@ -62,6 +62,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 		jobs,
 		[]kernel.Provider{&probeProvider{desc: probeModule()}},
 		observer,
+		slog.Default(),
 	)
 	if err != nil {
 		t.Fatalf("instrumented composition: %v", err)

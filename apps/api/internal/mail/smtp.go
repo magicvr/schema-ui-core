@@ -112,11 +112,7 @@ func (s *SMTP) Send(ctx context.Context, msg kernel.MailMessage) error {
 	}
 
 	dialer := &tls.Dialer{
-		Config: &tls.Config{
-			ServerName: s.host,
-			MinVersion: tls.VersionTLS12,
-			RootCAs:    s.rootCAs, // nil = system roots; verification stays ON
-		},
+		Config: s.tlsConfig(),
 	}
 	conn, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort(s.host, strconv.Itoa(s.port)))
 	if err != nil {
@@ -155,6 +151,35 @@ func (s *SMTP) Send(ctx context.Context, msg kernel.MailMessage) error {
 		return fmt.Errorf("mail: smtp DATA close failed: %w", err)
 	}
 	return client.Quit()
+}
+
+// Ping reports SMTP endpoint reachability for the readiness probe
+// (workspace-017 GOAL-005 D-001). It shares Send's frozen dial shape — TLS
+// from the first byte, certificate verification ON — and completes a minimal
+// ESMTP round trip (greeting + QUIT). Deliberately NOT part of the
+// kernel.MailSender port: like the object-store HeadBucket probe, only
+// composition consumes it, and only when SMTP is explicitly configured.
+func (s *SMTP) Ping(ctx context.Context) error {
+	conn, err := (&tls.Dialer{Config: s.tlsConfig()}).DialContext(ctx, "tcp", net.JoinHostPort(s.host, strconv.Itoa(s.port)))
+	if err != nil {
+		return fmt.Errorf("mail: ping dial smtp %s:%d: %w", s.host, s.port, err)
+	}
+	client, err := smtp.NewClient(conn, s.host)
+	if err != nil {
+		_ = conn.Close()
+		return fmt.Errorf("mail: ping handshake %s: %w", s.host, err)
+	}
+	defer func() { _ = client.Close() }()
+	return client.Quit()
+}
+
+// tlsConfig returns the shared client config for the frozen dial path.
+func (s *SMTP) tlsConfig() *tls.Config {
+	return &tls.Config{
+		ServerName: s.host,
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    s.rootCAs, // nil = system roots; verification stays ON
+	}
 }
 
 // buildRFC5322 renders the wire form: From/To/Subject headers plus a UTF-8

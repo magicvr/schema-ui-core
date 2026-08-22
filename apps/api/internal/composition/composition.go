@@ -125,7 +125,6 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newTracing,
 			newObserver,
 			newMetricsServer,
-			newMailSender,
 			newMux,
 			newServer,
 		),
@@ -283,8 +282,9 @@ func newMux(
 	secret jwtSecret,
 	jobRuntime *jobRuntime,
 	observer *obs.Observer,
+	logger *slog.Logger,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -305,6 +305,7 @@ func newMuxWithExtraProviders(
 	jobRuntime *jobRuntime,
 	extra []kernel.Provider,
 	observer *obs.Observer,
+	logger *slog.Logger,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
 	// interception point — central handler registrations (Handle/HandleFunc)
@@ -366,7 +367,17 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, err
 	}
-	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe)
+	// VP-017 R4 (GOAL-005 D-001): ONE kernel.MailSender — capture/log sink by
+	// default (probe nil, readyz unchanged) or the explicit SMTP adapter whose
+	// ESMTP Ping extends readyz only when explicitly configured. No handler /
+	// module consumes the port this wave; construction doubles as the last
+	// fail-closed validation point before boot.
+	mailSender, mailProbe, err := newMailSender(cfg, logger)
+	if err != nil {
+		return nil, err
+	}
+	_ = mailSender
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id) and admin.file-library.
@@ -669,15 +680,17 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 }
 
 // newMailSender builds THE kernel.MailSender instance (VP-017 / workspace-017
-// GOAL-004 D-001): the embedded capture/log sink when mail.smtp is untouched
-// (mvp/dev/Compose default — startup unaffected, tests read Last()), or the
-// explicit SMTP adapter over the single frozen implicit-TLS dial path.
-// Configuration completeness was already enforced fail-closed by
-// config.ValidateProd (validateMail), so a touched block reaching here is a
-// fully specified endpoint.
-func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, error) {
+// GOAL-004 D-001, R4 wiring per GOAL-005 D-001): the embedded capture/log
+// sink when mail.smtp is untouched (mvp/dev/Compose default — startup
+// unaffected, tests read Last()), or the explicit SMTP adapter over the single
+// frozen implicit-TLS dial path. The second return is the optional readyz
+// probe (ESMTP Ping on the configured endpoint; nil for capture so readyz
+// semantics stay unchanged — "仅显式配置后 readyz 扩依赖"). Configuration
+// completeness was already enforced fail-closed by config.ValidateProd
+// (validateMail); a partial block still fails closed here defensively.
+func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, func(context.Context) error, error) {
 	if !cfg.MailSMTPConfigured() {
-		return mail.NewCaptureSink(logger), nil
+		return mail.NewCaptureSink(logger), nil, nil
 	}
 	sender, err := mail.NewSMTP(mail.SMTPOptions{
 		Host:     cfg.MailSMTPHost,
@@ -687,9 +700,9 @@ func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, 
 		From:     cfg.MailSMTPFrom,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+		return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
 	}
-	return sender, nil
+	return sender, sender.Ping, nil
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {

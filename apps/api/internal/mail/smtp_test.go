@@ -297,3 +297,46 @@ func TestSMTPContextCancellation(t *testing.T) {
 		t.Fatal("Send with cancelled context must fail")
 	}
 }
+
+func TestSMTPPingAgainstImplicitTLSPeer(t *testing.T) {
+	addr, _, pool := startFakeSMTP(t)
+	host, portStr, _ := net.SplitHostPort(addr)
+	port, _ := strconv.Atoi(portStr)
+	s, err := NewSMTP(SMTPOptions{Host: host, Port: port, Username: "u", Password: "p", From: "f@example.com", rootCAs: pool})
+	if err != nil {
+		t.Fatalf("NewSMTP: %v", err)
+	}
+	if err := s.Ping(context.Background()); err != nil {
+		t.Fatalf("Ping over implicit TLS: %v", err)
+	}
+}
+
+func TestSMTPPingFailsAgainstPlaintextPeer(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer ln.Close()
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		_, _ = conn.Write([]byte("220 plaintext-not-tls\r\n"))
+		buf := make([]byte, 512)
+		for {
+			if _, err := conn.Read(buf); err != nil {
+				break
+			}
+		}
+	}()
+	host, portStr, _ := net.SplitHostPort(ln.Addr().String())
+	port, _ := strconv.Atoi(portStr)
+	s, err := NewSMTP(SMTPOptions{Host: host, Port: port, Username: "u", Password: "p", From: "f@example.com"})
+	if err != nil {
+		t.Fatalf("NewSMTP: %v", err)
+	}
+	if err := s.Ping(context.Background()); err == nil {
+		t.Fatal("Ping against a plaintext endpoint must fail (implicit TLS only)")
+	}
+}

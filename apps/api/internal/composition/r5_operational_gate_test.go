@@ -47,6 +47,7 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 		jwtSecret("test-secret"),
 		jobs,
 		nil,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
 	if err != nil {
 		t.Fatal(err)

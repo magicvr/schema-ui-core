@@ -107,8 +107,25 @@ TOKEN=$(...); curl -fsS http://localhost:25080/api/accounts/me -H "Authorization
 ```
 
 - `GET /healthz` 公开返回 `200 {"status":"ok",...}`，作为 liveness 探活与启动验证判据（不访问数据库）。
-- `GET /readyz` 公开返回 `200 {"status":"ok",...}`，为 readiness 就绪探针：在 liveness 之上执行轻量 SQLite 读，**并**仅在模块图 Start+Ready 全部成功后返回 `200`（R5 真实模块图 readiness；未就绪返回 `503 {"status":"not-ready",...}`，数据库不可读返回 `503 {"status":"unavailable",...}`）；Compose 以它作为 `service_healthy`。
+- `GET /readyz` 公开返回 `200 {"status":"ok",...}`，为 readiness 就绪探针：在 liveness 之上执行轻量 SQLite 读，**并**仅在模块图 Start+Ready 全部成功后返回 `200`（R5 真实模块图 readiness；未就绪返回 `503 {"status":"not-ready",...}`，数据库不可读返回 `503 {"status":"unavailable",...}`）；Compose 以它作为 `service_healthy`。显式配置对象存储 S3 后端时扩 HeadBucket 探测；显式配置出站邮件 SMTP 时扩 ESMTP Ping 探测（隐式 TLS 拨号）——两者未配置时均不参与 readyz。
 - API 优雅停机：`SIGINT`/`SIGTERM` → 10s 宽限内 `Shutdown`。
+
+## 出站邮件（VP-017 · workspace-017）
+
+内核同步发送端口 `kernel.MailSender.Send(ctx, MailMessage{To, Subject, TextBody})`：单收件人、纯文本、默认 From 来自配置。**未配置**（默认）走内嵌 capture/log sink——进程照常启动，测试经 `internal/mail.CaptureSink.Last()` 取最后一封。**显式配置**后走唯一拨号路径：隐式 TLS（默认端口 465，证书校验强制开启，仅 AUTH PLAIN over TLS）；配置不完整启动即拒（fail-closed）。
+
+```yaml
+mail:
+  smtp:
+    host: "smtp.example.com"     # MAIL_SMTP_HOST
+    port: 0                      # MAIL_SMTP_PORT；0 = 默认 465
+    username: "api@example.com"  # MAIL_SMTP_USERNAME
+    password: ""                 # SECRET — 仅 MAIL_SMTP_PASSWORD env / configs/.env
+    from: "no-reply@example.com" # MAIL_SMTP_FROM；bare 地址
+```
+
+规则：五个键全空 = 未配置（合法）；任一非空则 host/username/password/from 全必填。生效方式 = 进程重启后生效（热加载不在本波分母）。HTML/MIME、附件、第二拨号路径不进本波交付。
+
 
 ## 端点
 
