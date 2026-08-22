@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-21
+updated: 2026-08-22
 parent: null
-version: 1.3.47
+version: 1.3.48
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.47
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-033 `pass`；V-F064/V-F065 recommended 随激活 + Root scaffold → **fixed**。VRev-032 V-F063 仍为 fixed |
+| — | — | — | **无** | VRev-034 `pass`；V-F066 recommended 随组合层关门 → **fixed**。VRev-033 V-F064/V-F065 仍为 fixed |
 
-> Vision Review **open required = 0**。**VRev-033（self，`pass`）**：原 verdict 保留；V-F064/V-F065 recommended → **fixed**（激活 + `workspace-015-observability` Root P-001/I-00N + 架构类 freshness）。当前交付 VP = **[VP-015-observability](plans/VP-015-observability.md)**（`active`；架构 A4；lead `workspace-015-observability`）。持续程序 **VP-009** / **VP-010**。
+> Vision Review **open required = 0**。**VRev-034（self，`pass`）**：原 verdict 保留；V-F066 recommended → **fixed**（VP-015 有界 `closed` + exit↔本轮独立代码/测试/live 证据 + residual 点名）。当前无 active 交付 VP。持续程序 **VP-009** / **VP-010**。
 
 ## 条目索引
 
@@ -71,3 +71,4 @@ version: 1.3.47
 | VRev-031 | 2026-08-21 | self | VP-014 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F061/V-F062 recommended → fixed（激活 + workspace-014 Root P-001/I-00N + 架构类 freshness） | [VRev-031-vp014-intent-activation.md](reviews/VRev-031-vp014-intent-activation.md) |
 | VRev-032 | 2026-08-21 | self | VP-014 关门就绪 · 区证据 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F063 recommended → fixed（VP-014 有界组合层 closed + exit↔证据 + I-014-004 residual；VR-033） | [VRev-032-vp014-closeout-readiness.md](reviews/VRev-032-vp014-closeout-readiness.md) |
 | VRev-033 | 2026-08-21 | self | VP-015 意图完备 / 可行性 / 激活就绪 | pass | 0 | 原 verdict 保留；V-F064/V-F065 recommended → fixed（激活 + workspace-015 Root P-001/I-00N + 架构类 freshness） | [VRev-033-vp015-intent-activation.md](reviews/VRev-033-vp015-intent-activation.md) |
+| VRev-034 | 2026-08-22 | self | VP-015 关门就绪 · 独立代码/测试/live 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F066 recommended → fixed（VP-015 有界 closed + exit↔本轮独立证据 + F-003/I-015-003 residual；VR-036） | [VRev-034-vp015-closeout-readiness.md](reviews/VRev-034-vp015-closeout-readiness.md) |

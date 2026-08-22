@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-21
+updated: 2026-08-22
 parent: null
-version: 0.4.19
+version: 0.4.20
 ---
 
 # Charter 修订台账
@@ -49,3 +49,4 @@ version: 0.4.19
 | VR-033 | 2026-08-21 | editorial | VP-014 有界关门投影 | 用户确认关闭 VP-014（组合层有界 · 架构 A2）：lead workspace-014 Root `done 5/5`；VRev-032 V-F063 → fixed；residual 点名 GOAL-001 I-004（无产品本地盘→对象存储搬运器）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-034 | 2026-08-21 | editorial | VP-015 planned | 用户确认新建 `VP-015-observability`（`planned`，0 区）：承接架构 A4（Prometheus 类指标导出 + OpenTelemetry traces；无收集器为默认）；退出分母不含 A3 / A5 / Sentry / 剖析 / Admin 功能 / 业务域。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
 | VR-035 | 2026-08-21 | editorial | VP-015 激活 + 开区 | VRev-033 self `pass`（V-F064/V-F065 → fixed）。用户确认激活并开区；slug 按惯例 `workspace-015-observability`，Root `GOAL-001-observability`。VP-015 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-036 | 2026-08-22 | editorial | VP-015 有界关门投影 | 用户确认关闭 VP-015（组合层有界 · 架构 A4）：lead workspace-015 Root `done 5/5`；VRev-034 V-F066 → fixed；关门依据 = `/vision` 本轮独立源码/测试/live 核验，不以 Goal 台账为充分条件。residual 点名 A-002 F-003（otlp-sink 不解析）与 I-015-003（Store/对象/Job 指标出局）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

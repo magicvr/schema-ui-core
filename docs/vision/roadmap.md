@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-21
+updated: 2026-08-22
 parent: null
-version: 0.33.0
+version: 0.34.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -30,7 +30,7 @@ version: 0.33.0
 | 12 | [VP-012-shared-cross-module-contracts](plans/VP-012-shared-cross-module-contracts.md) | 共享横切契约与平台基架：correlation、审计模型、并发/幂等、异步 Job、maintenance 门控、API Token；不承载业务领域。 | 继承 VP-011 的 R5 四档能力地图；与 VP-009/VP-010 正交分流；不改变 Charter 边界 | **closed**（2026-08-19 完整关门 · 首波；lead: workspace-012-shared-cross-module-contracts；Root done 6/6；后续 session/effective actor、保留/归档、其余 writer envelope 移交本文件 Admin 功能分支） |
 | 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A1；lead: workspace-013-store-dialects；Root done 5/5；residual：无产品 SQLite→PG 搬运器，见 GOAL-006 D-002） |
 | 14 | [VP-014-object-storage](plans/VP-014-object-storage.md) | 架构 A2：内核对象存储端口 + S3 兼容实现；本地盘保留为内嵌默认。 | VP-013 A1 已 closed；RT-S01 delivered；与 VP-009/010 正交；不进签名 URL / 分片 / 扫描 / CDN / 搬运器，不进 A3+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A2；lead: workspace-014-object-storage；Root done 5/5；VRev-032 `pass`；residual：无产品本地盘→对象存储搬运器，见 I-014-004） |
-| 15 | [VP-015-observability](plans/VP-015-observability.md) | 架构 A4：Prometheus 类指标导出 + OpenTelemetry traces；无收集器仍为内嵌默认。 | VP-014 A2 已 closed；RT-O01/O02 delivered；与 VP-009/010 正交；不进 A3 / A5 / Sentry / 剖析 / Admin 页 / 业务域 | **active**（2026-08-21 用户确认激活；lead: workspace-015-observability；Root `GOAL-001-observability`；VRev-033 `pass`） |
+| 15 | [VP-015-observability](plans/VP-015-observability.md) | 架构 A4：Prometheus 类指标导出 + OpenTelemetry traces；无收集器仍为内嵌默认。 | VP-014 A2 已 closed；RT-O01/O02 delivered；与 VP-009/010 正交；不进 A3 / A5 / Sentry / 剖析 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A4；lead: workspace-015-observability；Root done 5/5；VRev-034 `pass`；residual：otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -161,14 +161,14 @@ version: 0.33.0
 |----|----|------|------|------|
 | RT-O01 | 结构化日志 + correlation / request-id | VP-012 R1 | **delivered** | |
 | RT-O02 | `/healthz` `/readyz` | 探活 + 迁移/模块图就绪 | **delivered** | 外部依赖（PG/Redis/S3）接入后须扩展 ready |
-| RT-O03 | 指标（Prometheus 等） | 架构要求 `module_id`，无导出面 | **registered**（退出分母已由 VP-015 冻结，实现未做） | 见下节 A4 |
-| RT-O04 | 分布式 tracing（OpenTelemetry） | 无 | **registered**（退出分母已由 VP-015 冻结，实现未做） | VP-012 显式推迟；本波承接 |
+| RT-O03 | 指标（Prometheus 等） | VP-015 已交付专用 scrape listener + `suc_*` 系列（含 `module_id`） | **delivered** | 有界 residual：Store/对象/Job 指标不进分母（I-015-003） |
+| RT-O04 | 分布式 tracing（OpenTelemetry） | VP-015 已交付 OTLP/HTTP SERVER span + `correlation.request_id` | **delivered** | 缺省 no-op；显式 endpoint 才导出。in-repo sink 不解析 |
 | RT-O05 | 剖析 / 连续性能剖析 | 无 | **trigger-gated** | **不进** VP-015 |
 | RT-O06 | 错误汇聚（Sentry 类） | 无 | **trigger-gated** | 可后置于 RT-O04；**不进** VP-015 |
 
 ### 已冻结：可观测 A4 退出分母（VP-015）
 
-用户确认（2026-08-21）。VP-015 已 `active`；lead `workspace-015-observability`。实现未做。
+用户确认（2026-08-21）。VP-015 已于 2026-08-22 有界 `closed`；lead `workspace-015-observability`（Root `done 5/5`）。
 
 | 项 | 决定 |
 |----|------|
@@ -241,7 +241,7 @@ A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支下一拍：**[VP-015-observability](plans/VP-015-observability.md)** 已 **`active`**（lead `workspace-015-observability`）。退出分母已冻结；实现未做。A3 仍 trigger-gated；A5 后置。
+架构分支下一拍：A3 仍 trigger-gated（多实例才评估就绪探针扩依赖 / 优雅停机 / PG 锁 vs Redis vs 队列）；A5 密钥轮换 / 备份恢复合同后置。当前无 active 架构交付 VP。
 
 ---
 
@@ -304,7 +304,7 @@ Admin 功能下一拍：按触发选一条（常见候选：IAM 运维增强，�
 
 ---
 
-**当前组合焦点**：**[VP-015-observability](plans/VP-015-observability.md) `active`**（架构 A4；lead `workspace-015-observability`；Root `GOAL-001-observability`）。**[VP-014-object-storage](plans/VP-014-object-storage.md) 已于 2026-08-21 有界 `closed`**（架构 A2）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011、VP-012 仍为历史 `closed`。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费（本 VP 为架构接入，不消费业务解锁 scope）。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
+**当前组合焦点**：无 active 交付 VP。**[VP-015-observability](plans/VP-015-observability.md) 已于 2026-08-22 有界 `closed`**（架构 A4；lead `workspace-015-observability`；Root done 5/5；VRev-034 `pass`）。**[VP-014-object-storage](plans/VP-014-object-storage.md) 已于 2026-08-21 有界 `closed`**（架构 A2）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011、VP-012 仍为历史 `closed`。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
 
 ## 单主线模块化策略
 

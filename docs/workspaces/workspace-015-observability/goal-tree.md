@@ -13,7 +13,7 @@ workspace_id: workspace-015-observability
 > 工作区：`workspace-015-observability`
 > canonical：`docs/workspaces/workspace-015-observability/`
 > Root：`GOAL-001-observability`（**done** · 5/5）
-> primary_plan：`VP-015-observability`（**active** · 架构 A4；VP 关门记录待 `/vision`）
+> primary_plan：`VP-015-observability`（**closed** · 架构 A4；2026-08-22 组合层关门，VRev-034）
 
 ## 树
 
@@ -26,7 +26,7 @@ GOAL-001-observability [done 5/5]   · 可观测性（指标导出 + OpenTelemet
 └── GOAL-006-dual-path-evidence [done 4/4]    · R5 双路径证据与 Root 关门准备（E-002 live 证据；A-001 self pass）
 ```
 
-Root 关门审计：A-001 self `pass` + A-002 independent `conditional`（F-001/F-002 → **fixed**；F-003 → 文档化残余；F-004/F-005 → **fixed**）→ A-003 响应闭环。VP-015 `closed` 与 roadmap 更新待 `/vision`（愿景层）。
+Root 关门审计：A-001 self `pass` + A-002 independent `conditional`（F-001/F-002 → **fixed**；F-003 → 文档化残余；F-004/F-005 → **fixed**）→ A-003 响应闭环。VP-015 已于 2026-08-22 经 `/vision` 有界组合层 `closed`（VRev-034；VR-036）。
 
 ## 状态表
 

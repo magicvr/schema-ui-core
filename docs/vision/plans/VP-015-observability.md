@@ -2,26 +2,26 @@
 doc_type: vision-plan
 id: VP-015-observability
 title: 可观测性（指标导出 + OpenTelemetry）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-015-observability
 created: 2026-08-21
-updated: 2026-08-21
-version: 0.2.0
+updated: 2026-08-22
+version: 0.3.0
 parent: null
 ---
 
 # VP-015 · 可观测性（指标导出 + OpenTelemetry）
 
-## 状态与门闩（2026-08-21 · active）
+## 状态与门闩（2026-08-22 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-21 用户确认激活并开区；VRev-033 `pass`，V-F064/V-F065 → `fixed`） |
-| **lead_workspace** | **`workspace-015-observability`**（Root `GOAL-001-observability`；唯一 delivery；**不**重开 workspace-014） |
-| **Vision required** | **已满足**：VRev-033 `pass`，open required = 0；V-F064/V-F065 recommended 由激活 + Root scaffold 闭合 |
-| **激活门闩（现行）** | 已激活；实现证据在 lead 区。改变 Profile / 模块矩阵 / Manifest / 共同门禁时按 VP-008 `go` 消费有效性暂挂 |
-| **组合位置** | 架构分支 A4；前提 = VP-013 A1 与 VP-014 A2 均已有界 `closed`；roadmap **RT-O01**/**RT-O02** 已 delivered，**RT-O03**/**RT-O04** 本 VP 冻结退出分母 |
+| status | **`closed`**（2026-08-22 用户书面确认有界组合层关门；VRev-034 `V-F066` → `fixed`；关门依据 = 本轮独立代码/测试/live，不以 Goal 台账为充分条件） |
+| **lead_workspace** | **`workspace-015-observability`**（Root `GOAL-001-observability` `done 5/5`；唯一 delivery；**不**重开 workspace-014） |
+| **Vision required** | **已满足**：VRev-033 / VRev-034 均为 `pass`，open required = 0；`V-F064`/`V-F065`/`V-F066` recommended 已闭合 |
+| **关门门闩（现行）** | 已 `closed`；保留 workspace-015 历史绑定，默认不接新区；reopen 须用户确认 |
+| **组合位置** | 架构分支 A4；前提 = VP-013 A1 与 VP-014 A2 均已有界 `closed`；roadmap **RT-O01**/**RT-O02** 已 delivered，**RT-O03**/**RT-O04** 本 VP 交付 |
 | **完整 ≠ 架构清单无限扩张** | 本 VP 只承接 A4。A3 多实例/Redis/队列、A5 密钥轮换、Sentry、连续剖析、Admin 可观测页、业务域不进退出分母 |
 
 ## 意图
@@ -89,25 +89,34 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-015-001 | 指标面：Prometheus scrape 路径与端口、绑定/鉴权、基数上限、内核 vs 模块贡献最小集合、标签不得含秘密。禁止「先堆业务指标再补合同」。 | required | 方案冻结 / 实施 | R1 合同冻结 | open |
-| I-015-002 | Tracing：OTLP HTTP vs gRPC、采样默认、未配置 endpoint 时的 no-op 语义。 | required | 方案冻结 / 实施 | R3 接入前 | open |
-| I-015-003 | Store / 对象存储 / Job 是否进本 VP 分母还是后续增量。（HTTP 请求 span 已由退出 2 冻结，不再作为本项问题。） | required | 方案冻结 | R1 合同冻结 | open |
-| I-015-004 | `/metrics` 或 OTLP 是否进入 `readyz` 依赖？默认建议：未显式配置则不扩 ready。 | required | 方案冻结 | R2/R3 接入前 | open |
-| I-015-005 | request-id / correlation 如何写入 span（属性名、是否 baggage）才能满足退出 2 的关联判据。 | required | 方案冻结 | R4 关联前 | open |
+| I-015-001 | 指标面：Prometheus scrape 路径与端口、绑定/鉴权、基数上限、内核 vs 模块贡献最小集合、标签不得含秘密。禁止「先堆业务指标再补合同」。 | required | 方案冻结 / 实施 | R1 合同冻结 | verified（GOAL-002 D-001；本轮 live scrape 核对） |
+| I-015-002 | Tracing：OTLP HTTP vs gRPC、采样默认、未配置 endpoint 时的 no-op 语义。 | required | 方案冻结 / 实施 | R3 接入前 | verified（GOAL-004 D-001：OTLP/HTTP、ParentBased+ratio 缺省 1.0、disabled 纯 no-op；本轮 live POST） |
+| I-015-003 | Store / 对象存储 / Job 是否进本 VP 分母还是后续增量。（HTTP 请求 span 已由退出 2 冻结，不再作为本项问题。） | required | 方案冻结 | R1 合同冻结 | verified（出局 · GOAL-002 D-001 §7；本 VP residual 点名） |
+| I-015-004 | `/metrics` 或 OTLP 是否进入 `readyz` 依赖？默认建议：未显式配置则不扩 ready。 | required | 方案冻结 | R2/R3 接入前 | verified（均不进 readyz；composition `metrics.Start` 在 `gate.setReady()` 之前且 health.go 无 metrics probe） |
+| I-015-005 | request-id / correlation 如何写入 span（属性名、是否 baggage）才能满足退出 2 的关联判据。 | required | 方案冻结 | R4 关联前 | verified（属性 `correlation.request_id` + baggage `request-id`；本轮 live 载荷含二者） |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-015-observability | GOAL-001-observability | lead | 2026-08-21 | 2026-08-21 用户确认激活并开区；唯一 delivery；不重开 workspace-014 |
+| workspace-015-observability | GOAL-001-observability | lead | 2026-08-21 | 2026-08-21 用户确认激活并开区；2026-08-22 VP 组合层 `closed`；Root done 5/5；默认不接新区 |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-22 | **closed**（有界 · 架构 A4） | 用户确认组合层关门，且要求以**独立代码核验**而非治理记录为充分条件。exit 1：专用 Prometheus listener + `suc_*` 系列携带 `module_id`；本轮 live scrape 核到 `module_id="core"` `/healthz` 与 `admin.users` gauge。exit 2：OTLP/HTTP SERVER span；属性 `correlation.request_id` + baggage `request-id`；本轮 live 载荷含属性名与请求 id 字节。exit 3：缺省 `enabled: false`；Compose 无收集器；本轮缺省 healthz/readyz 200 且无 metrics 监听。exit 4：同一次显式运行 scrape **与** OTLP POST 同时成立。exit 5：未进 A3/A5/Admin/业务；Charter 仍 `@0.2.0`；无 Sentry/剖析/Grafana。exit 6：实现层与 VRev required = 0。V-F066 按本表闭合。 | 本轮 `/vision` 独立核验：`apps/api/internal/obs` + composition 接线 + 两份 YAML + `compose.yaml` + `go.mod`；`go test ./internal/obs ./internal/config ./internal/composition -count=1` 全绿；live 缺省路径 + 显式 `25199` scrape / `24318` OTLP capture。指针：[VRev-034](../reviews/VRev-034-vp015-closeout-readiness.md)；lead `workspace-015` goal-tree（Root done 5/5）；Root A-002/A-003（required 已 fixed，不作充分条件） | **`workspace-015` / `GOAL-001-observability` / A-002 F-003**：仓库内 `cmd/otlp-sink` 不解析 OTLP protobuf（证据工具，不是 collector）；本轮关门取证用一次性 capture sink 核对 live 载荷含 `correlation.request_id` 与请求 id 字节。**I-015-003**（Root I-003）：Store / 对象存储 / Job 指标不进本波分母（已 verified 出局，不是未交付）。 |
+
+### 退出判据 ↔ 证据（本轮独立核验）
+
+| 退出 | 结论 | 证据 |
+|------|------|------|
+| 1 指标导出 + `module_id` | 满足 | `internal/obs` 私有 registry；`suc_http_*` 标签含 `module_id`；贡献路由 `mux.Own`；主 mux 无 `/metrics`。live：`suc_http_requests_total{module_id="core",route="/healthz"}` 与 `suc_kernel_modules_enabled{module_id="admin.users"}` |
+| 2 OTLP traces + request-id 关联 | 满足 | `otlptracehttp`；SERVER span；`correlation.request_id` + baggage `request-id`。本轮测试绿；live dump 1285 字节含属性名与 `vrev034-corr-0001` |
+| 3 无收集器默认 | 满足 | YAML 缺省 `enabled: false`；Compose 无收集器；live 缺省 healthz/readyz 200、25081/25199 不可 scrape、日志零提及 |
+| 4 显式 scrape **与** trace | 满足 | 本会话同一次显式运行：scrape 200（11771 字节）**与** OTLP POST |
+| 5 未进 A3/A5/Admin/业务 / 未改 Charter | 满足 | 无 sentry/grafana/pprof；Charter 仍 `@0.2.0`；无 Admin 监控页 |
+| 6 required = 0 | 满足 | VRev-033/VRev-034；实现层 A-003 后开放 required = 0 |
 
 ## 规划修订短史
 
@@ -115,3 +124,4 @@ parent: null
 |------|--------|
 | 2026-08-21 | 初创 `planned`：用户确认新建本 VP 承接架构 A4；退出分母 = Prometheus 类指标导出 + OpenTelemetry traces；A3 / A5 / Sentry / 剖析 / Admin 页 / 业务域不进分母。未激活、未开区 |
 | 2026-08-21 | VRev-033 self `pass`（0 required）；用户确认激活并开区。v0.2.0 `planned → active`；lead = `workspace-015-observability`；退出 4 editorial「或→与」；I-015-003 收窄；I-015-001 补绑定/鉴权。Root 承接 P-001 与 I-00N（V-F064）及架构类 freshness（V-F065） |
+| 2026-08-22 | VRev-034 self `pass`：组合层关门就绪；核验 = 本轮独立源码/测试/live，不以 Goal 台账为充分条件。用户确认有界组合层关门（v0.3.0）：关门记录含 exit↔证据映射 + F-003 / I-015-003 residual 点名；组合索引原子同步（VR-036） |
