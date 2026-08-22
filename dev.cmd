@@ -11,6 +11,10 @@ rem Startup order: API starts first; Web is launched only after the API port
 rem   is listening AND /readyz returns HTTP 200 (DB ping + module graph
 rem   Start+Ready), so the Vite /api proxy never races an uninitialized backend.
 rem
+rem Store: dialect follows configs/.env / process env (sqlite default). This
+rem   launcher does not pin sqlite. If the API window would otherwise flash
+rem   and vanish, it now pauses on error so the crash log stays readable.
+rem
 rem Stop precision: each started window records its PID to %TEMP%
 rem   (schema-ui-dev-api-<port>.pid / schema-ui-dev-web-<port>.pid). `stop`
 rem   kills ONLY those recorded processes (plus the listeners on the two
@@ -126,7 +130,7 @@ rem T-06 (GOAL-013 D-007): the module-enabled set is YAML-only. dev.cmd
 rem writes a small overlay config (profile + optional modules) to %TEMP% and
 rem points CONFIG_FILE at it; APP_PROFILE / APP_MODULES_ENABLED env vars are
 rem no longer read by the API.
-set "DEV_CONFIG=%TEMP%schema-ui-dev-config.yaml"
+set "DEV_CONFIG=%TEMP%\schema-ui-dev-config.yaml"
 (
   echo app:
   echo   env: development
@@ -139,9 +143,21 @@ set "DEV_CONFIG=%TEMP%schema-ui-dev-config.yaml"
     echo     preset: %PROFILE%
   )
   echo http:
-  echo   addr: :%API_PORT%
+  echo   addr: ":%API_PORT%"
 ) > "%DEV_CONFIG%"
-set "API_CMD=set CONFIG_FILE=%DEV_CONFIG% && go run ./cmd/server"
+
+rem Wrapper so a crash pauses the window (otherwise cmd /c flashes and
+rem vanishes) and writes an exit-code file the wait loop can fail-fast on.
+set "API_WRAP=%TEMP%\schema-ui-dev-api-%API_PORT%-run.cmd"
+set "API_EXIT=%TEMP%\schema-ui-dev-api-%API_PORT%.exit"
+if exist "%API_EXIT%" del "%API_EXIT%" >nul 2>&1
+>  "%API_WRAP%" echo @echo off
+>> "%API_WRAP%" echo set "APP_ENV=development"
+>> "%API_WRAP%" echo set "CONFIG_FILE=%DEV_CONFIG%"
+>> "%API_WRAP%" echo go run ./cmd/server
+>> "%API_WRAP%" echo set "ERR=%%ERRORLEVEL%%"
+>> "%API_WRAP%" echo echo %%ERR%%^>"%API_EXIT%"
+>> "%API_WRAP%" echo if not "%%ERR%%"=="0" pause
 
 set "API_UP="
 netstat -ano | findstr /R /C:":%API_PORT% " | findstr "LISTENING" >nul 2>&1 && set "API_UP=1"
@@ -149,27 +165,30 @@ if defined API_UP (
   echo [skip] API already listening on :%API_PORT%
 ) else (
   echo [start] API ... go run ./cmd/server
-  set "DEV_CMD=!API_CMD!"
+  set "DEV_CMD=%API_WRAP%"
   set "DEV_DIR=%API_DIR%"
   set "DEV_PIDFILE=%TEMP%\schema-ui-dev-api-%API_PORT%.pid"
-  powershell -NoProfile -Command "$p = Start-Process cmd.exe -ArgumentList '/c',$env:DEV_CMD -WorkingDirectory $env:DEV_DIR -PassThru; $p.Id | Out-File -Encoding ascii $env:DEV_PIDFILE"
+  powershell -NoProfile -Command "$p = Start-Process -FilePath $env:DEV_CMD -WorkingDirectory $env:DEV_DIR -PassThru; $p.Id | Out-File -Encoding ascii $env:DEV_PIDFILE"
 )
 
 rem ---- gate: Web must NOT start until API is up AND fully ready ----
 echo.
 echo Waiting for API to come up ...
+set "WAIT_EXITFILE=%API_EXIT%"
 call :wait_listening "%API_PORT%" "API"
 if errorlevel 1 (
-  echo ERROR: API not listening on :%API_PORT% within ~60s -- Web NOT started.
+  echo ERROR: API not listening on :%API_PORT% -- Web NOT started.
+  echo   If the API window is still open, it is paused on the crash log.
   exit /b 1
 )
 
 call :wait_ready "%API_PORT%"
 if errorlevel 1 (
-  echo ERROR: API /readyz did not return 200 within ~60s -- Web NOT started.
+  echo ERROR: API /readyz did not return 200 -- Web NOT started.
   echo   Check the API window for errors ^(migrations / module Start+Ready^).
   exit /b 1
 )
+set "WAIT_EXITFILE="
 
 rem ---- launch Web (only after API is fully ready) ----
 set "WEB_CMD=set WEB_PORT=%WEB_PORT% && npm run dev"
@@ -216,6 +235,12 @@ if not errorlevel 1 (
   echo   ok   %~2 listening on :%~1
   exit /b 0
 )
+if defined WAIT_EXITFILE if exist "!WAIT_EXITFILE!" (
+  set /p WL_EXIT=<"!WAIT_EXITFILE!"
+  echo   error %~2 process exited ^(code !WL_EXIT!^) before listening on :%~1
+  echo         the %~2 window is paused with the crash log
+  exit /b 1
+)
 set /a WL_N+=1
 if %WL_N% geq 60 (
   echo   error %~2 not listening on :%~1 after ~60s ^(check its window for errors^)
@@ -234,6 +259,12 @@ rem =====================================================================
 set /a WR_N=0
 set "WR_CODE=000"
 :wait_ready_loop
+if defined WAIT_EXITFILE if exist "!WAIT_EXITFILE!" (
+  set /p WR_EXIT=<"!WAIT_EXITFILE!"
+  echo   error API process exited ^(code !WR_EXIT!^) before /readyz 200
+  echo         the API window is paused with the crash log
+  exit /b 1
+)
 for /f "delims=" %%c in ('curl.exe -s -o nul --max-time 2 -w "%%{http_code}" http://127.0.0.1:%~1/readyz 2^>nul') do set "WR_CODE=%%c"
 if "%WR_CODE%"=="200" (
   echo   ok   API ready ^(/readyz 200^)

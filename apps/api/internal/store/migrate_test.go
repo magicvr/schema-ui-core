@@ -407,6 +407,27 @@ func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	}
 }
 
+// V-MIG-03 · a foreign sqlite file (no schema-ui users) is refused and leaves no ledger.
+func TestMigrateFailClosedForeignSQLite(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "foreign.db")
+	db := rawOpen(t, path)
+	if _, err := db.Exec(`CREATE TABLE orders (id TEXT PRIMARY KEY)`); err != nil {
+		t.Fatalf("fixture: %v", err)
+	}
+	db.Close()
+
+	if _, err := OpenSeeded(path, "admin", "hash", false); err == nil {
+		t.Fatal("expected fail closed for foreign sqlite")
+	} else if !strings.Contains(err.Error(), "identity=foreign") {
+		t.Fatalf("want identity=foreign, got %v", err)
+	}
+	check := rawOpen(t, path)
+	defer check.Close()
+	if tableExistsDB(t, check, "schema_migrations") {
+		t.Fatal("foreign sqlite must not create a migration ledger")
+	}
+}
+
 // V-MIG-03 · a partial baseline (users only) is rejected and leaves no ledger.
 func TestMigrateFailClosedPartialBaseline(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "partial.db")

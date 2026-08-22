@@ -647,6 +647,274 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 	}
 }
 
+// TestPostgresMigrateAdoptsLedgerlessR2 is the postgres twin of
+// TestMigrateExistingR2DB: a schema with users+refresh_tokens and no
+// schema_migrations must be fingerprinted and adopted, not fail with
+// 42P07 relation "users" already exists.
+func TestPostgresMigrateAdoptsLedgerlessR2(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping ledger-less R2 adopt")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3r2adopt")
+
+	setup, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stmt := range []string{
+		`CREATE TABLE users (
+  id            TEXT PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL,
+  roles         TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at    BIGINT NOT NULL,
+  updated_at    BIGINT NOT NULL
+)`,
+		`CREATE TABLE refresh_tokens (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at BIGINT NOT NULL,
+  revoked_at BIGINT,
+  created_at BIGINT NOT NULL
+)`,
+		`CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id)`,
+		`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
+		 VALUES ('user-admin', 'admin', 'Admin', '["admin"]', 'hash-v1', 1, 1)`,
+	} {
+		if _, err := setup.ExecContext(ctx, stmt); err != nil {
+			_ = setup.Close()
+			t.Fatalf("r2 fixture: %v", err)
+		}
+	}
+	if err := setup.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 10 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("open ledger-less R2 postgres: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	pg := st.(*postgres)
+	var migCount int
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != len(catalog) {
+		t.Fatalf("ledger rows = %d, want %d (adopted R2 then remaining catalog)", migCount, len(catalog))
+	}
+	var username string
+	if err := pg.db.QueryRowContext(ctx, `SELECT username FROM users WHERE id = 'user-admin'`).Scan(&username); err != nil {
+		t.Fatal(err)
+	}
+	if username != "admin" {
+		t.Fatalf("adopted user = %q, want admin", username)
+	}
+}
+
+// TestPostgresMigrateRejectsConflictingUsersTable: a leftover users table that
+// is not the R2 shape must fail closed with a fingerprint error, not 42P07.
+func TestPostgresMigrateRejectsConflictingUsersTable(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping conflicting-users fingerprint")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3conflict")
+
+	setup, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := setup.ExecContext(ctx, `CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT NOT NULL)`); err != nil {
+		_ = setup.Close()
+		t.Fatalf("conflict fixture: %v", err)
+	}
+	if err := setup.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 10 * time.Second,
+	}, catalog)
+	if err == nil {
+		_ = st.Close()
+		t.Fatal("open against a conflicting users table must fail closed")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "identity=foreign") && !strings.Contains(msg, "refusing to migrate") {
+		t.Fatalf("want foreign-identity refuse, got %v", err)
+	}
+	if strings.Contains(msg, "42P07") || strings.Contains(msg, "SQLSTATE 42P07") {
+		t.Fatalf("must not surface CREATE TABLE 42P07, got %v", err)
+	}
+}
+
+// TestPostgresMigrateRestoresLostLedger: a fully-migrated postgres that lost
+// schema_migrations (the live-dev failure mode) must restore the ledger on
+// reopen instead of failing with 42P07 or replaying operation_log rebuilds.
+func TestPostgresMigrateRestoresLostLedger(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping lost-ledger restore")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3lostled")
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("initial bootstrap: %v", err)
+	}
+	pg := st.(*postgres)
+	if _, err := pg.db.ExecContext(ctx, `INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
+		VALUES ('user-keep', 'keeper', 'Keeper', '["admin"]', 'hash', 1, 1)`); err != nil {
+		_ = st.Close()
+		t.Fatalf("seed user: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	admin, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.ExecContext(ctx, `DROP TABLE schema_migrations`); err != nil {
+		_ = admin.Close()
+		t.Fatalf("drop ledger: %v", err)
+	}
+	if err := admin.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st2, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("reopen after lost ledger: %v", err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+	pg2 := st2.(*postgres)
+
+	var migCount int
+	if err := pg2.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != len(catalog) {
+		t.Fatalf("restored ledger rows = %d, want %d", migCount, len(catalog))
+	}
+	var username string
+	if err := pg2.db.QueryRowContext(ctx, `SELECT username FROM users WHERE id = 'user-keep'`).Scan(&username); err != nil {
+		t.Fatal(err)
+	}
+	if username != "keeper" {
+		t.Fatalf("preserved user = %q, want keeper", username)
+	}
+	var jobs int
+	if err := pg2.db.QueryRowContext(ctx, `SELECT count(*) FROM jobs`).Scan(&jobs); err != nil {
+		t.Fatalf("jobs table missing after ledger restore: %v", err)
+	}
+}
+
+// TestPostgresMigrateRefusesIncompleteLostLedger: jobs-era schema without
+// catalog-head objects must not stamp v44+ as applied (A-001 F-001).
+func TestPostgresMigrateRefusesIncompleteLostLedger(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping incomplete lost-ledger refuse")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3lostinc")
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("initial bootstrap: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	admin, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stmt := range []string{
+		`DROP TABLE schema_migrations`,
+		`DROP TABLE IF EXISTS service_credentials CASCADE`,
+		`DROP TABLE IF EXISTS operation_log_session CASCADE`,
+	} {
+		if _, err := admin.ExecContext(ctx, stmt); err != nil {
+			_ = admin.Close()
+			t.Fatalf("%s: %v", stmt, err)
+		}
+	}
+	if err := admin.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st2, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err == nil {
+		_ = st2.Close()
+		t.Fatal("incomplete lost ledger must fail closed, not stamp current catalog")
+	}
+	if !strings.Contains(err.Error(), "lost-ledger-unsafe") {
+		t.Fatalf("want lost-ledger-unsafe refuse, got %v", err)
+	}
+	check, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer check.Close()
+	var exists bool
+	if err := check.QueryRowContext(ctx, `SELECT to_regclass('schema_migrations') IS NOT NULL`).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatal("refuse must not create schema_migrations")
+	}
+}
+
 // TestPostgresCrossModuleSharedTx proves R5 U3: a caller-owned transaction can
 // span multiple repositories on postgres — authsession credential creation
 // plus an operation-log audit row commit together, and both roll back when the

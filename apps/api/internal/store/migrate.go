@@ -1,8 +1,10 @@
 // Migration runner for the SQLite store.
 //
 // Module packages own migration SQL and Apply functions. This package owns only
-// the platform runner: transaction boundaries, the immutable global ledger,
-// upgrade snapshots, integrity checks, and fail-closed applied-history checks.
+// the platform runner: Identify → Plan → Execute (GOAL-032), transaction
+// boundaries, the immutable global ledger (schema_migrations, the EF-style
+// history table), upgrade snapshots, integrity checks, and fail-closed
+// applied-history checks.
 package store
 
 import (
@@ -31,26 +33,52 @@ func (s *Store) migrate(catalog []kernel.MigrationContribution) error {
 		return err
 	}
 
-	applied, err := s.appliedMigrations()
+	id, err := s.probeIdentity()
 	if err != nil {
 		return err
 	}
-	if applied == nil {
-		// Migration 0001 bootstraps both the baseline schema and the ledger in a
-		// single transaction. Existing ledger-less R2 databases are fingerprinted
-		// by that module-owned Apply function before the ledger is created.
+	if id.Applied != nil {
+		if err := validateApplied(id.Applied, catalog); err != nil {
+			return err
+		}
+	}
+	plan, err := planStartup(id, catalog)
+	if err != nil {
+		return err
+	}
+	switch plan.Action {
+	case actionRefuse:
+		return fmt.Errorf("store: %s", plan.Reason)
+	case actionNoop:
+		return s.verifyIntegrity()
+	case actionApplyPending:
+		if err := validateApplied(id.Applied, catalog); err != nil {
+			return err
+		}
+		return s.applyPending(catalog, id.Applied)
+	case actionFresh, actionAdoptR2, actionAdoptThenPending:
 		if err := s.applyMigration(catalog[0]); err != nil {
 			return err
 		}
-		applied, err = s.appliedMigrations()
+		applied, err := s.appliedMigrations()
 		if err != nil {
 			return err
 		}
+		if err := validateApplied(applied, catalog); err != nil {
+			return err
+		}
+		return s.applyPending(catalog, applied)
+	case actionRestoreLedger:
+		if err := s.restoreLedger(catalog); err != nil {
+			return err
+		}
+		return s.verifyIntegrity()
+	default:
+		return fmt.Errorf("store: unhandled startup action %q", plan.Action)
 	}
-	if err := validateApplied(applied, catalog); err != nil {
-		return err
-	}
+}
 
+func (s *Store) applyPending(catalog []kernel.MigrationContribution, applied []appliedMigration) error {
 	// One recoverable snapshot per pending data-mutating migration (version >= 2,
 	// I-011-002 A-002 F-002): each upgrade step keeps an independent rollback
 	// point. Snapshot filenames carry millisecond precision so an immediate
@@ -174,7 +202,11 @@ func pendingMigrations(applied []appliedMigration, catalog []kernel.MigrationCon
 	for _, row := range applied {
 		appliedSet[row.version] = true
 	}
-	pending := make([]kernel.MigrationContribution, 0, len(catalog)-len(appliedSet))
+	n := len(catalog) - len(appliedSet)
+	if n < 0 {
+		n = 0
+	}
+	pending := make([]kernel.MigrationContribution, 0, n)
 	for _, migration := range catalog {
 		if !appliedSet[migration.Version] {
 			pending = append(pending, migration)

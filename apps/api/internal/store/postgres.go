@@ -75,28 +75,80 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 		return err
 	}
 	ctx := context.Background()
-	applied, err := p.appliedMigrationsPG(ctx)
+	id, err := p.probeIdentity(ctx)
 	if err != nil {
 		return err
 	}
-	if applied == nil {
+	if id.Applied != nil {
+		if err := validateApplied(id.Applied, normalized); err != nil {
+			return err
+		}
+	}
+	plan, err := planStartup(id, normalized)
+	if err != nil {
+		return err
+	}
+	switch plan.Action {
+	case actionRefuse:
+		return fmt.Errorf("store: %s", plan.Reason)
+	case actionNoop:
+		return nil
+	case actionApplyPending:
+		if err := validateApplied(id.Applied, normalized); err != nil {
+			return err
+		}
+		return p.applyPendingPG(ctx, normalized, id.Applied)
+	case actionFresh, actionAdoptR2, actionAdoptThenPending:
 		if err := p.applyMigrationPG(ctx, normalized[0]); err != nil {
 			return err
 		}
-		applied, err = p.appliedMigrationsPG(ctx)
+		applied, err := p.appliedMigrationsPG(ctx)
 		if err != nil {
 			return err
 		}
+		if err := validateApplied(applied, normalized); err != nil {
+			return err
+		}
+		return p.applyPendingPG(ctx, normalized, applied)
+	case actionRestoreLedger:
+		return p.restoreLedger(ctx, normalized)
+	default:
+		return fmt.Errorf("store: unhandled startup action %q", plan.Action)
 	}
-	if err := validateApplied(applied, normalized); err != nil {
-		return err
-	}
-	for _, migration := range pendingMigrations(applied, normalized) {
+}
+
+func (p *postgres) applyPendingPG(ctx context.Context, catalog []kernel.MigrationContribution, applied []appliedMigration) error {
+	for _, migration := range pendingMigrations(applied, catalog) {
 		if err := p.applyMigrationPG(ctx, migration); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (p *postgres) currentSchemaTables(ctx context.Context) ([]string, error) {
+	rows, err := p.db.QueryContext(ctx, `
+		SELECT c.relname
+		FROM pg_catalog.pg_class c
+		JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		WHERE n.nspname = current_schema()
+		  AND c.relkind = 'r'`)
+	if err != nil {
+		return nil, fmt.Errorf("store: list tables: %w", err)
+	}
+	defer rows.Close()
+	var tables []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, fmt.Errorf("store: scan table: %w", err)
+		}
+		tables = append(tables, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("store: list tables: %w", err)
+	}
+	return tables, nil
 }
 
 func (p *postgres) applyMigrationPG(ctx context.Context, migration kernel.MigrationContribution) error {
@@ -120,15 +172,24 @@ func (p *postgres) applyMigrationPG(ctx context.Context, migration kernel.Migrat
 	})
 }
 
-// appliedMigrationsPG returns nil when no schema_migrations ledger exists,
-// otherwise the applied rows ordered by version (postgres variant of the
-// sqlite appliedMigrations).
+// appliedMigrationsPG returns nil when no schema_migrations ledger exists
+// in the current schema (the target of unqualified CREATE TABLE), otherwise
+// the applied rows ordered by version. An existing empty ledger is a partial
+// bootstrap and is rejected, matching the sqlite runner.
 func (p *postgres) appliedMigrationsPG(ctx context.Context) ([]appliedMigration, error) {
-	var reg *string
-	if err := p.db.QueryRowContext(ctx, `SELECT to_regclass('schema_migrations')`).Scan(&reg); err != nil {
+	var exists bool
+	if err := p.db.QueryRowContext(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM pg_catalog.pg_class c
+			JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+			WHERE n.nspname = current_schema()
+			  AND c.relname = 'schema_migrations'
+			  AND c.relkind = 'r'
+		)`).Scan(&exists); err != nil {
 		return nil, fmt.Errorf("store: probe migration ledger: %w", err)
 	}
-	if reg == nil {
+	if !exists {
 		return nil, nil
 	}
 	rows, err := p.db.QueryContext(ctx, `SELECT version, name, checksum FROM schema_migrations ORDER BY version`)
@@ -146,6 +207,9 @@ func (p *postgres) appliedMigrationsPG(ctx context.Context) ([]appliedMigration,
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("store: read migration ledger: %w", err)
+	}
+	if len(applied) == 0 {
+		return nil, errors.New("store: schema_migrations exists but is empty (partial bootstrap)")
 	}
 	return applied, nil
 }

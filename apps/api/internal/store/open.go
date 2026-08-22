@@ -9,11 +9,11 @@ import (
 
 // Open opens a store for the configured dialect (R1 v1.4 §2 terminal shape).
 //
-//   - sqlite: applies the supplied compiled catalog (default dev path
-//     unchanged; this is also the fast-test path).
+//   - sqlite: Identify → Plan → Execute against the compiled catalog
+//     (default dev / fast-test path).
 //   - postgres (R3 dual-dialect ledger): connect + Ping + WasFresh, then,
-//     when a non-empty catalog is supplied, applies it through the postgres
-//     migrate runner (fresh bootstrap / incremental / ledger + checksum). A
+//     when a non-empty catalog is supplied, the same Identify → Plan →
+//     Execute path (fresh / pending / adopt / restore-ledger / refuse). A
 //     nil/empty catalog is the probe-open path (driver, pool, readyz).
 func Open(ctx context.Context, opts OpenOptions, catalog []kernel.MigrationContribution) (kernel.Store, error) {
 	switch opts.Dialect {
