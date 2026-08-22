@@ -90,6 +90,13 @@ func TestPlanStartup(t *testing.T) {
 	}
 }
 
+// lockedHeadExtraTables requires catalog-head object names in the restore
+// fingerprint. Bumping completeFingerprintCatalogHead without adding a map
+// entry fails closed (A-003 F-001).
+var lockedHeadExtraTables = map[int][]string{
+	48: {"service_credentials", "operation_log_session"},
+}
+
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
 	catalog, err := compiledmodules.PersistenceCatalog()
 	if err != nil {
@@ -101,7 +108,17 @@ func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
 			max = m.Version
 		}
 	}
-	if max > completeFingerprintCatalogHead {
-		t.Fatalf("compiled catalog head is v%d; update completeLostLedgerTables and completeFingerprintCatalogHead (was %d) so restore-ledger cannot stamp past missing objects", max, completeFingerprintCatalogHead)
+	if max != completeFingerprintCatalogHead {
+		t.Fatalf("compiled catalog head is v%d; update completeFingerprintCatalogHead, completeLostLedgerTables, and lockedHeadExtraTables[%d]", max, max)
+	}
+	extra, ok := lockedHeadExtraTables[max]
+	if !ok || len(extra) == 0 {
+		t.Fatalf("lockedHeadExtraTables[%d] missing; record the new CREATE TABLE names", max)
+	}
+	have := tableNameSet(completeLostLedgerTables)
+	for _, name := range extra {
+		if !have[name] {
+			t.Fatalf("completeLostLedgerTables missing catalog-head table %q", name)
+		}
 	}
 }

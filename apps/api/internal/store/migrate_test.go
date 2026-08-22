@@ -407,6 +407,41 @@ func TestMigrateFailClosedChecksumDrift(t *testing.T) {
 	}
 }
 
+func TestMigrateRestoresLostLedgerSQLite(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "lostled.db")
+	st, err := OpenSeeded(path, "admin", "hash", true)
+	if err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	db := rawOpen(t, path)
+	if _, err := db.Exec(`DROP TABLE schema_migrations`); err != nil {
+		db.Close()
+		t.Fatalf("drop ledger: %v", err)
+	}
+	db.Close()
+
+	st2, err := OpenSeeded(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatalf("reopen after lost ledger: %v", err)
+	}
+	defer st2.Close()
+	applied, err := st2.appliedMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(applied) != len(compiledMigrations) {
+		t.Fatalf("restored ledger rows = %d, want %d", len(applied), len(compiledMigrations))
+	}
+	var username string
+	if err := st2.db.QueryRow(`SELECT username FROM users WHERE username = 'admin'`).Scan(&username); err != nil {
+		t.Fatalf("preserved admin: %v", err)
+	}
+}
+
 // V-MIG-03 · a foreign sqlite file (no schema-ui users) is refused and leaves no ledger.
 func TestMigrateFailClosedForeignSQLite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "foreign.db")

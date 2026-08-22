@@ -32,6 +32,7 @@ version: 0.1.0
 | PG 反例 | `postgres_test.go` `TestPostgresMigrateRefusesIncompleteLostLedger` |
 | sqlite foreign | `migrate_test.go` `TestMigrateFailClosedForeignSQLite` |
 | 合同修正 | D-002 |
+| checkpoint | `e227266`（owned paths：store/kernel/authsession v1 PG、dev.cmd、GOAL-032 五件套、goal-tree/workspace） |
 
 ### 计划（非事实）
 

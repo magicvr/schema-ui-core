@@ -1,7 +1,6 @@
 package kernel
 
 import (
-	"context"
 	"errors"
 	"strings"
 )
@@ -35,16 +34,4 @@ func IsDuplicateObject(err error) bool {
 		}
 	}
 	return false
-}
-
-// ExecIdempotentDDL runs a DDL statement and treats postgres duplicate-object
-// errors as success. Do not use it inside an already-open postgres
-// transaction to "ignore" 42P07: PostgreSQL aborts the rest of the tx
-// (SQLSTATE 25P02). Probe existence and CREATE only missing objects instead.
-func ExecIdempotentDDL(tx Tx, stmt string) error {
-	_, err := tx.Exec(context.Background(), stmt)
-	if err == nil || IsDuplicateObject(err) {
-		return nil
-	}
-	return err
 }

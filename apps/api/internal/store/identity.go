@@ -104,8 +104,13 @@ var completeLostLedgerTables = []string{
 // mid-catalog lost ledger — refuse rather than CREATE TABLE on existing objects
 // (A-001 F-002).
 var postV1CatalogTables = []string{
-	"roles", "permissions", "menu_items", "operation_log", "jobs",
-	"service_credentials", "notifications",
+	"roles", "user_roles", "permissions", "role_permissions",
+	"menu_items", "role_menu_items",
+	"operation_log", "operation_log_correlation", "operation_log_archive", "operation_log_session",
+	"jobs", "service_credentials", "notifications",
+	"system_data_reconcile", "system_data_grants", "site_settings",
+	"dict_types", "dict_entries", "wallet_accounts", "recycle_items",
+	"captcha_challenges", "scheduled_tasks", "user_mfa",
 }
 
 func lostLedgerLooksComplete(tables []string) bool {

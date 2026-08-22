@@ -49,10 +49,10 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-029-w18-preview-copy-and-import-modal [done] · W18 · 预览弹窗/复制链接与导入模态模板（4/4）
 ├── GOAL-030-w19-my-wallet-lazy-open-empty-state [done] · W19 · 我的钱包惰性开通与未开户空态（4/4）
 ├── GOAL-031-w20-notification-settings-in-account [done] · W20 · 通知设置迁入个人中心（4/4）
-└── GOAL-032-w21-startup-db-identity [active] · W21 · 启动时数据库身份判定与迁移计划（4/5）
+└── GOAL-032-w21-startup-db-identity [done] · W21 · 启动时数据库身份判定与迁移计划（5/5）
 ```
 
-**W21（2026-08-22 立项，4/5）**：启动 Identify→Plan→Execute。`schema_migrations` 当 EF 式历史表；无 ledger 时身份探针（我方完整库 restore、R2/部分 adopt、外库 refuse）。S1 D-001 + S2/S3 代码 + S4 回归；S5 independent 未做。Root/VP 保持 active。
+**W21（2026-08-22 关门，5/5）**：启动 Identify→Plan→Execute。A-003 确认 F-001～F-003 fixed；A-004 self 关门 pass。Root/VP 保持 active。
 
 **W20（2026-08-18 关门，4/4）**：通知设置迁入个人中心。S1 D-001 + S2 实施 + S3 定向 + S4 A-001 self pass。Root/VP 保持 active。
 
@@ -128,7 +128,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-029-w18-preview-copy-and-import-modal | W18 · 预览弹窗/复制链接与导入模态模板 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-030-w19-my-wallet-lazy-open-empty-state | W19 · 我的钱包惰性开通与未开户空态 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-031-w20-notification-settings-in-account | W20 · 通知设置迁入个人中心 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
-| GOAL-032-w21-startup-db-identity | W21 · 启动时数据库身份判定与迁移计划 | GOAL-001-design-implementation-conformance | active | 4/5 | 2026-08-22 |
+| GOAL-032-w21-startup-db-identity | W21 · 启动时数据库身份判定与迁移计划 | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-22 |
 
 
 ## 维护说明

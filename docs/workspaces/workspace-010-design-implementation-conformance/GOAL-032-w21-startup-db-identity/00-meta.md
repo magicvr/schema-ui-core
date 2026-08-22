@@ -1,12 +1,12 @@
 ---
 id: GOAL-032-w21-startup-db-identity
 title: W21 · 启动时数据库身份判定与迁移计划
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.2.0
-progress: 4/5
+version: 0.3.0
+progress: 5/5
 ---
 
 # GOAL-032 · W21 · 启动时数据库身份判定与迁移计划
@@ -28,9 +28,9 @@ VP-010 / workspace-010 的**第二十一波**：把「连上的库是不是我�
 - [x] **S2 · Identify + Plan**：`identity.go` 纯函数 classify/plan + 单测。
 - [x] **S3 · 接入 Open/migrate**：sqlite 与 postgres runner 按计划执行；替换 postgres 内联 stamp 特判。
 - [x] **S4 · 回归**：既有 PG 丢失 ledger / R2 adopt / 冲突 users 测试 + classify 单测。
-- [ ] **S5 · 审计**：migration/data 门禁 → close-out `independent`（默认 grok 4.6 high）。
+- [x] **S5 · 审计**：A-001 independent conditional → A-003 确认 F-001～F-003 fixed → A-004 self 关门 pass。
 
-progress: 五个等权检查点；当前 **4/5**（S5 未做）。progress 不放行、不关门。
+progress: 五个等权检查点；当前 **5/5**。progress 不放行；`done` 由本条关门自审 + 用户书面关门指令。
 
 ## 审计策略
 

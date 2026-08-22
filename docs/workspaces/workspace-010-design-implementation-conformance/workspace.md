@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-22
-version: 0.41.0
+version: 0.42.0
 parent: null
 ---
 
@@ -75,7 +75,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W18 | GOAL-029-w18-preview-copy-and-import-modal | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 | W19 | GOAL-030-w19-my-wallet-lazy-open-empty-state | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 | W20 | GOAL-031-w20-notification-settings-in-account | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
-| W21 | GOAL-032-w21-startup-db-identity | **active**（4/5 · 2026-08-22：启动身份判定与迁移计划；S1 D-001 + Identify/Plan 接入；S5 independent 未做） |
+| W21 | GOAL-032-w21-startup-db-identity | **done**（5/5 · 2026-08-22 关门：Identify/Plan；A-003 F-001～F-003 fixed；A-004 self pass；go 不暂挂） |
 
 
 ## 固定共享资料引用

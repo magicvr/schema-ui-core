@@ -1,11 +1,11 @@
 ---
 id: GOAL-032-w21-startup-db-identity
 doc: decision
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-032 · W21
@@ -23,3 +23,4 @@ version: 0.2.0
 |------|------|------|------|------|
 | [D-001](01-decision/D-001-identity-and-plan-freeze.md) | 启动身份/计划合同（含 EF 历史表对照） | 2026-08-22 | accepted | ledger 权威 + 无 ledger 身份探针；restore/partial 以 D-002 为准 |
 | [D-002](01-decision/D-002-a001-response.md) | 响应 A-001 F-001～F-003 | 2026-08-22 | accepted | restore 绑定 catalog 头；unsafe refuse；sqlite V-MIG-03 保留 |
+| [D-003](01-decision/D-003-a003-remaining-and-close.md) | 响应 A-003 并关门 | 2026-08-22 | accepted | 确认 required fixed；处理 recommended；F-006 residual；GOAL-032 done |
