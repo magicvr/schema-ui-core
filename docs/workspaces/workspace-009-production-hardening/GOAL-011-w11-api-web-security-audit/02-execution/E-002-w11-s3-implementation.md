@@ -63,8 +63,8 @@ version: 0.1.0
 
 ## 回归验证
 
-- API：`go vet ./...` 0 告警（见 A-002 复跑记录）；`go test ./...` 全绿（含本波新增用例；PG 门控用例在无 PG_TEST_* 环境自动 skip）。
-- Web：本波未改任何 web 文件；`npm test` / `npm run build` 基线不变（A-002 记录复跑结果）。
+- API：`go vet ./...` 0 告警；`go test ./...` 全绿（含本波新增用例；PG 门控用例在无 PG_TEST_* 环境自动 skip；A-003 在真实 Postgres 上 PASS）。
+- Web：本波（required 阶段）未改 web 文件；web 改动见 E-003（F-010/F-011/F-012）；web `npm test`（vitest 76 files / 1085 tests）与 `npx tsc -b` 全绿（A-002/A-003 复跑记录）。
 
 ## 产物
 

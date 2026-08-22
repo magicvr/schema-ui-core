@@ -1,17 +1,17 @@
 ---
 id: GOAL-011-w11-api-web-security-audit
 title: W11 api/web 独立安全审计（审计报告落盘）
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.2.0
-progress: 2/4
+version: 0.4.0
+progress: 4/4
 ---
 
 # GOAL-011 · W11 api/web 独立安全审计（审计报告落盘）
 
-> **状态：active** — S1 审计落盘 ✓；S2 裁决 ✓（[D-002](01-decision/D-002-w11-scope-and-go-hold.md)：整单 6 条 required + 波内暂挂 VP-008 go，复核通过后恢复）；S3 实施完成待回归确认（[E-002](02-execution/E-002-w11-s3-implementation.md)）；S4 复核未开始。开放 required = **6 → 0（已实施，待独立复核确认）**。
+> **状态：done（4/4 · 2026-08-22 关门）** — S1 审计落盘；S2 裁决整单 6 条 + 波内暂挂 go（D-002）；S3 实施 + recommended 处置（E-002/E-003）；S4 self（A-002）+ independent（A-003 · grok-build · 真实 PG 复跑）双审 pass，开放 required = 0；闭合记录 A-004 + 恢复 VP-008 go 宣称（D-004）。残余移交见 A-004。
 
 ## 概述
 
@@ -22,16 +22,16 @@ progress: 2/4
 ## 成功标准（显式检查点 · progress 依此派生）
 
 - [x] S1：独立审计意见以 `source: independent` 落盘，含 finding、严重度、required/recommended/info 区分与全文附件 — [A-001](03-audit/A-001-w11-independent.md)（全文：[attachments/audit-A-001-w11-full-report.md](attachments/audit-A-001-w11-full-report.md)）
-- [x] S2：用户确认 required 修复范围及对 VP-008 go 消费有效性宣称的影响 — [D-002](01-decision/D-002-w11-scope-and-go-hold.md)（整单 6 条；波内暂挂 go，复核通过后恢复）
-- [x] S3：按确认范围实施并完成 API/Web 回归验证 — [E-002](02-execution/E-002-w11-s3-implementation.md)（F-001～F-006 修复 + 回归锁 8 个测试；全量回归结果见 A-002）
-- [ ] S4：self/independent 复核确认 required findings 合法闭合，开放 required = 0 后关门
+- [x] S2：用户确认 required 修复范围及对 VP-008 go 消费有效性宣称的影响 — [D-002](01-decision/D-002-w11-scope-and-go-hold.md)（整单 6 条；波内暂挂 go）
+- [x] S3：按确认范围实施并完成 API/Web 回归验证 — [E-002](02-execution/E-002-w11-s3-implementation.md)（F-001～F-006 修复 + 回归锁 8 个测试）＋ [E-003](02-execution/E-003-w11-recommended-disposition.md)（recommended：fixed 11 + overruled 2 有据）
+- [x] S4：self/independent 复核确认 required findings 合法闭合，开放 required = 0 后关门 — [A-002](03-audit/A-002-w11-self.md)（self pass）＋ [A-003](03-audit/A-003-w11-s4-independent.md)（grok-build independent pass：6/6 genuine fixed；真实 PG 复跑）＋ [A-004](03-audit/A-004-w11-closure-response.md)（闭合记录；开放 required = 0；I-003 关闭）＋ [D-004](01-decision/D-004-w11-go-restore.md)（关门 + go 恢复）
 
 ## 高层路线图（P-001）
 
-1. **S1 落盘**（本回合）：开子目标 + A-001 + 全文附件 + 树/工作区同步。
-2. **S2 裁决**：required 范围取舍；是否暂挂 VP-008 go（I-002）。
-3. **S3 实施**：按确认范围修复 + 回归。
-4. **S4 复核关门**：self +（惯例）independent；闭合记录。
+1. **S1 落盘**（完成）：开子目标 + A-001 + 全文附件 + 树/工作区同步。
+2. **S2 裁决**（完成）：required 整单 6 条；波内暂挂 VP-008 go，复核通过后恢复（D-002）。
+3. **S3 实施**（完成）：F-001～F-006 修复 + 回归锁 + recommended 处置（E-002/E-003）。
+4. **S4 复核关门**（完成）：self A-002 + independent A-003 双 pass → 闭合记录 A-004 + 恢复 go 宣称 D-004 + `status: done`。
 
 ## 信息就绪与未知项
 
@@ -39,7 +39,7 @@ progress: 2/4
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-001 | required | 本波 finding 清单、严重度与 required 范围 | 方案 / 实施 | 方案前 | A-001 落盘 | verified | — | [A-001](03-audit/A-001-w11-independent.md)：required 6 = F-001～F-006；recommended 13 = F-007～F-019；informational 6 = F-020～F-025 |
 | I-002 | required | required 修复范围取舍及对 VP-008 go 消费有效性宣称的影响 | go 宣称 / 实施 | 实施前 | 用户书面选择（对齐 W7–W10 D-002） | verified | — | [D-002](01-decision/D-002-w11-scope-and-go-hold.md)：整单 6 条；波内暂挂 go，self+independent 双复核通过后恢复（W9/W10 D-004 模式） |
-| I-003 | non-blocking | 本波审计 provider 为 grok-4.6 会话（用户禁止加载 skills，未走 `/audit`）；非工作区默认 grok-4.5 `/audit` provider；关门前是否按惯例追加 grok 独立复核 | S4 复核 | 关门前 | 用户书面选择是否追加 grok `/audit` 腿 | open | deferred：S1 落盘不依赖此项；责任人=编排器；复核=S4 前 | 偏差已在 A-001 auditor 字段如实记录 |
+| I-003 | non-blocking | 本波审计 provider 为 grok-4.6 会话（用户禁止加载 skills，未走 `/audit`）；非工作区默认 grok-4.5 `/audit` provider；关门前是否按惯例追加 grok 独立复核 | S4 复核 | 关门前 | 用户书面选择是否追加 grok `/audit` 腿 | verified | 关闭于关门记录（A-004） | A-003（grok-build · grok-4.6 · reasoning high · `/audit`）即追加的 grok 复核腿；provider 偏差已在 A-001 auditor 字段如实记录 |
 
 ## 父目标
 
