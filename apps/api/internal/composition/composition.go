@@ -20,6 +20,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
@@ -124,6 +125,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newTracing,
 			newObserver,
 			newMetricsServer,
+			newMailSender,
 			newMux,
 			newServer,
 		),
@@ -664,6 +666,30 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 		root = filepath.Dir(cfg.DBPath)
 	}
 	return objectstore.NewLocal(root), nil, nil
+}
+
+// newMailSender builds THE kernel.MailSender instance (VP-017 / workspace-017
+// GOAL-004 D-001): the embedded capture/log sink when mail.smtp is untouched
+// (mvp/dev/Compose default — startup unaffected, tests read Last()), or the
+// explicit SMTP adapter over the single frozen implicit-TLS dial path.
+// Configuration completeness was already enforced fail-closed by
+// config.ValidateProd (validateMail), so a touched block reaching here is a
+// fully specified endpoint.
+func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, error) {
+	if !cfg.MailSMTPConfigured() {
+		return mail.NewCaptureSink(logger), nil
+	}
+	sender, err := mail.NewSMTP(mail.SMTPOptions{
+		Host:     cfg.MailSMTPHost,
+		Port:     cfg.MailSMTPPort,
+		Username: cfg.MailSMTPUsername,
+		Password: cfg.MailSMTPPassword,
+		From:     cfg.MailSMTPFrom,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+	}
+	return sender, nil
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {

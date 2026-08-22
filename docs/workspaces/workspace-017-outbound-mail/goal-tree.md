@@ -4,7 +4,7 @@ status: active
 created: 2026-08-22
 updated: 2026-08-22
 parent: null
-version: 0.3.0
+version: 0.4.0
 workspace_id: workspace-017-outbound-mail
 ---
 
@@ -12,23 +12,25 @@ workspace_id: workspace-017-outbound-mail
 
 > 工作区：`workspace-017-outbound-mail`
 > canonical：`docs/workspaces/workspace-017-outbound-mail/`
-> Root：`GOAL-001-outbound-mail`（**active** · 2/4）
+> Root：`GOAL-001-outbound-mail`（**active** · 3/4）
 > primary_plan：`VP-017-outbound-mail`（`active`）
 
 ## 树
 
 ```text
-GOAL-001-outbound-mail [active 2/4]     · 出站邮件（SMTP 发送端口）
-├── GOAL-002-port-contract-freeze [done 3/3]   · R1 发送端口与合同冻结（A-001 self pass；I-001/I-002 verified）
-└── GOAL-003-smtp-dial-config [done 3/3]       · R2 SMTP 接入与配置面（A-001 self pass；隐式 TLS 465 唯一路径；I-003/I-004 verified）
+GOAL-001-outbound-mail [active 3/4]     · 出站邮件（SMTP 发送端口）
+├── GOAL-002-port-contract-freeze [done 3/3]        · R1 发送端口与合同冻结（A-001 self pass；I-001/I-002 verified）
+├── GOAL-003-smtp-dial-config [done 3/3]            · R2 SMTP 接入与配置面（A-001 self pass；隐式 TLS 465 唯一路径；I-003/I-004 verified）
+└── GOAL-004-default-sink-surface-sweep [done 3/3]  · R3 默认 sink 落地与公共面 sweep（A-001 self pass；sweep 零泄漏）
 ```
 
-R1/R2 已完成（合同冻结 + 适配器/配置面，测试绿）。下一阶段 R3：capture sink 落地 + composition 接线 + 公共面去客户端类型 sweep。
+R1～R3 已完成。下一阶段 R4：显式路径证据 + `readyz` 扩依赖 + I-005 关门叙事复核，随后 Root 关门审计。
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-outbound-mail | 出站邮件（SMTP 发送端口） | null | active | 2/4 | 2026-08-22 |
+| GOAL-001-outbound-mail | 出站邮件（SMTP 发送端口） | null | active | 3/4 | 2026-08-22 |
 | GOAL-002-port-contract-freeze | R1 发送端口与合同冻结 | GOAL-001-outbound-mail | done | 3/3 | 2026-08-22 |
 | GOAL-003-smtp-dial-config | R2 SMTP 接入与配置面 | GOAL-001-outbound-mail | done | 3/3 | 2026-08-22 |
+| GOAL-004-default-sink-surface-sweep | R3 默认 sink 落地与公共面 sweep | GOAL-001-outbound-mail | done | 3/3 | 2026-08-22 |

@@ -30,3 +30,4 @@ version: 0.1.0
 | D-001 | 2026-08-22 | 开区 scaffold 与 A6 纲领路线图 | accepted | [D-001-workspace-root-establishment.md](01-decision/D-001-workspace-root-establishment.md) |
 | D-002 | 2026-08-22 | R1 发送合同冻结（关闭 I-001 / I-002） | accepted | [D-002-r1-send-contract-freeze.md](01-decision/D-002-r1-send-contract-freeze.md) |
 | D-003 | 2026-08-22 | R2 拨号路径与配置键冻结（关闭 I-003 / I-004） | accepted | [D-003-r2-dial-and-config-freeze.md](01-decision/D-003-r2-dial-and-config-freeze.md) |
+| D-004 | 2026-08-22 | R3 默认 sink 接线与公共面 sweep 规则 | accepted | [D-004-r3-default-sink-wiring.md](01-decision/D-004-r3-default-sink-wiring.md) |

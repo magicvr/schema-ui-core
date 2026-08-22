@@ -1115,6 +1115,17 @@ func validateObjectsS3(c *Config) error {
 	return nil
 }
 
+// MailSMTPConfigured reports whether the operator touched the mail.smtp block
+// at all (workspace-017 GOAL-003 D-001). False keeps the embedded capture/log
+// default; true means the fail-closed pairing rules below apply.
+func (c *Config) MailSMTPConfigured() bool {
+	return strings.TrimSpace(c.MailSMTPHost) != "" ||
+		strings.TrimSpace(c.MailSMTPUsername) != "" ||
+		strings.TrimSpace(c.MailSMTPPassword) != "" ||
+		strings.TrimSpace(c.MailSMTPFrom) != "" ||
+		c.MailSMTPPort != 0
+}
+
 // validateMail enforces the mail.smtp pairing contract (VP-017 / workspace-017
 // GOAL-003 D-001) on every Config that reaches ValidateProd, including
 // zero-value/test configs that bypass Load. The untouched surface (all keys
@@ -1122,12 +1133,7 @@ func validateObjectsS3(c *Config) error {
 // unaffected. An explicitly touched block requires host/username/password/from;
 // the error names the first missing KEY and never carries a value.
 func (c *Config) validateMail() error {
-	touched := strings.TrimSpace(c.MailSMTPHost) != "" ||
-		strings.TrimSpace(c.MailSMTPUsername) != "" ||
-		strings.TrimSpace(c.MailSMTPPassword) != "" ||
-		strings.TrimSpace(c.MailSMTPFrom) != "" ||
-		c.MailSMTPPort != 0
-	if !touched {
+	if !c.MailSMTPConfigured() {
 		return nil
 	}
 	for _, pair := range []struct{ name, value string }{

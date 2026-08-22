@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.3.0
-progress: 2/4
+version: 0.4.0
+progress: 3/4
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
@@ -27,10 +27,10 @@ serves_summary: 交付架构 A6：内核出站邮件发送端口 + SMTP；无 SM
 |------|------|------|------|
 | R1 | **端口与发送合同冻结**：默认 sink 形态与测试如何取报文（I-001 / I-017-003）；单次 `Send` 的 To 基数（I-002 / I-017-004）；公共面不得暴露 SMTP 客户端类型。 | 起点 | **已完成**（D-002；子目标 GOAL-002） |
 | R2 | **SMTP 接入与配置面**：只钉一种拨号路径 STARTTLS 587 vs 隐式 TLS 465（I-003 / I-017-001）；键名与凭证 YAML + env fail-closed（I-004 / I-017-002）。 | 依赖 R1 | **已完成**（D-003；子目标 GOAL-003，适配器 + 配置面落地测试绿） |
-| R3 | **默认 sink 落地 + 公共面去客户端类型**：未配置 SMTP 仍能启动；测试可取出最后一封；handler / 模块公共契约无 SMTP 客户端类型。 | 依赖 R1 | 未开始 |
+| R3 | **默认 sink 落地 + 公共面去客户端类型**：未配置 SMTP 仍能启动；测试可取出最后一封；handler / 模块公共契约无 SMTP 客户端类型。 | 依赖 R1 | **已完成**（D-004；子目标 GOAL-004，sweep 证据留痕） |
 | R4 | **显式路径证据 + `readyz`**：显式 SMTP 可核对至少一封投递；配置不完整 fail-closed；仅显式配置后 `readyz` 扩依赖。 | 依赖 R2/R3 | 未开始 |
 
-`progress` = 已完成阶段数 / 4。当前 **2/4**。
+`progress` = 已完成阶段数 / 4。当前 **3/4**。
 
 ## 成功标准（方向级）
 
