@@ -27,8 +27,8 @@ pkg/version/         # 构建版本变量
 
 ```bash
 # 配置权威是 configs/config.yaml（W7）：非敏感值直接写 YAML；敏感值写 ${VAR}
-# 占位符，真实值来自 configs/.env（开发，gitignored）或进程 env（生产）。
-# 已设置的进程 env 总是覆盖 YAML。Compose 路径由仓库根 .env 提供插值。
+# 占位符。开发：cp configs/.env.example configs/.env（gitignored；唯一模板）。
+# 已设置的进程 env 总是覆盖 YAML / .env。Compose 路径由仓库根 .env 提供插值。
 # 模块启用集只认 configs/config.yaml（T-06）：app.profile 或 app.modules（preset / list）
 
 make run

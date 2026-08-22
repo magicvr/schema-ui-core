@@ -83,7 +83,7 @@ R1 **不含** App manifest 导航壳、多业务路由（属 R3）；**不含**�
 
 ```bash
 cd apps/api
-# 可选：copy .env.example → .env
+# 可选：copy configs/.env.example → configs/.env
 make run
 # 或：go run ./cmd/server
 # 探活：curl http://localhost:25080/healthz

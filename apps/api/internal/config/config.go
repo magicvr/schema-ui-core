@@ -46,7 +46,7 @@ type Config struct {
 	HTTPTrustedProxies []string
 	LogLevelName       string
 
-	AuthJWTSecret  string
+	AuthJWTSecret string
 	// AuthJWTSecretPrevious is the optional previous (rotated-out) signing key
 	// (VP-016 R1 / workspace-016 Root D-002): auth.jwt_secret_previous /
 	// AUTH_JWT_SECRET_PREVIOUS. Empty (the default) keeps single-key behavior
@@ -57,7 +57,7 @@ type Config struct {
 	AuthJWTSecretPrevious string
 	AuthAccessTTL         time.Duration
 	AuthRefreshTTL        time.Duration
-	DBPath         string
+	DBPath                string
 	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
 	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
 	// unknown values and enforces DSN/path pairing rules.
@@ -312,9 +312,10 @@ const defaultYAMLPath = "configs/config.yaml"
 //
 // YAML values support ${VAR} (fail-closed when unset) and ${VAR:-default}.
 // CONFIG_ENV_FILE (default configs/.env) may supply secret values for the
-// interpolation; it never overrides an already-set process env. Load never
-// returns an error: fatal load failures land in LoadError (and therefore
-// ValidateProd) so existing call sites keep working.
+// interpolation; copy configs/.env.example to create it. It never overrides
+// an already-set process env. Load never returns an error: fatal load
+// failures land in LoadError (and therefore ValidateProd) so existing call
+// sites keep working.
 func Load() *Config {
 	cfg := &Config{
 		AppName:      "schema-ui-core-api",

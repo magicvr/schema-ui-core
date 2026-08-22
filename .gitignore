@@ -13,11 +13,14 @@ ehthumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# --- Env & secrets (keep *.example) ---
+# --- Env & secrets (keep .env.example) ---
 .env
 .env.*
 !.env.example
 !**/.env.example
+# API committed env template is apps/api/configs/.env.example only.
+# env.example (no leading dot) was a historical twin — never commit it.
+**/env.example
 
 # --- Logs ---
 *.log

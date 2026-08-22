@@ -29,8 +29,10 @@ skills/    # 治理 Skills 包
 
 ## 本地运行
 
-命令契约详情见 monorepo 约定与各 app README。API 不会自动读取 `.env` 文件；本地进程
-必须通过 shell 环境传入配置，Compose 才会读取仓库根 `.env`。
+命令契约详情见 monorepo 约定与各 app README。本地开发可复制
+`apps/api/configs/.env.example` → `apps/api/configs/.env`（gitignored；唯一模板）。
+`config.Load` 默认读取该文件（`CONFIG_ENV_FILE`）；已设置的进程 env 优先。
+Compose 使用仓库根 `.env` 插值，不读 API 这份文件。
 
 ### API · `apps/api`（GOAL-003）
 

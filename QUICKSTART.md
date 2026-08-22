@@ -22,8 +22,8 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 
 ```bash
 # W7：配置权威是 apps/api/configs/config.yaml（非敏感值直写，敏感值 ${VAR}
-# 占位符）；敏感值可放 apps/api/configs/.env（开发，gitignored；进程 env 优先）。
-# Compose 由仓库根 .env 提供插值。本地进程请 export：
+# 占位符）。开发：cp apps/api/configs/.env.example apps/api/configs/.env
+# （gitignored；唯一模板；进程 env 优先）。Compose 由仓库根 .env 提供插值。
 # T-06：模块启用集只认 apps/api/configs/config.yaml（app.profile / app.modules）
 # custom 时还必须提供完整的显式模块列表：
 # app.modules.list: [core.server-registration, admin.users, ...]

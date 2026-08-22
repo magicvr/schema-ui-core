@@ -5,10 +5,13 @@
 *.out
 coverage.out
 
-# Secrets (keep .env.example)
+# Secrets. The committed template is configs/.env.example only
+# (copy to configs/.env). Do not recreate configs/env.example (no
+# leading dot) — that was a historical twin; config tests reject it.
 .env
 .env.*
 !.env.example
+/configs/env.example
 
 # Local SQLite runtime data (default DB_PATH=./data/schema-ui.db)
 /data/
