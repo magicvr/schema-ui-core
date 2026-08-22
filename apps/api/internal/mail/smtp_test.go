@@ -86,6 +86,12 @@ func testTLS(t *testing.T) (serverCert tls.Certificate, pool *x509.CertPool) {
 
 // startFakeSMTP serves exactly one TLS session on a fresh loopback port.
 func startFakeSMTP(t *testing.T) (addr string, got *capturedSession, pool *x509.CertPool) {
+	return startFakeSMTPVariant(t, true)
+}
+
+// startFakeSMTPVariant is the harness core; advertiseAuth=false emulates a
+// relay without the AUTH extension (A-002 F-002 fail-closed test).
+func startFakeSMTPVariant(t *testing.T, advertiseAuth bool) (addr string, got *capturedSession, pool *x509.CertPool) {
 	t.Helper()
 	serverCert, pool := testTLS(t)
 	ln, err := tls.Listen("tcp", "127.0.0.1:0", &tls.Config{Certificates: []tls.Certificate{serverCert}})
@@ -114,7 +120,11 @@ func startFakeSMTP(t *testing.T) (addr string, got *capturedSession, pool *x509.
 			cmd := strings.ToUpper(line)
 			switch {
 			case strings.HasPrefix(cmd, "EHLO"), strings.HasPrefix(cmd, "HELO"):
-				w.WriteString("250-mail.test\r\n250-AUTH PLAIN\r\n250 8BITMIME\r\n")
+				if advertiseAuth {
+					w.WriteString("250-mail.test\r\n250-AUTH PLAIN\r\n250 8BITMIME\r\n")
+				} else {
+					w.WriteString("250-mail.test\r\n250 8BITMIME\r\n")
+				}
 				_ = w.Flush()
 			case strings.HasPrefix(cmd, "AUTH"):
 				parts := strings.SplitN(line, " ", 3)
@@ -245,6 +255,26 @@ func TestSMTPSendDeliversOverImplicitTLS(t *testing.T) {
 
 // A plaintext listener must never receive a session: the frozen path has
 // no STARTTLS/plain fallback, so the TLS handshake itself must fail.
+// A-002 F-002 (independent closeout, fixed): credentials are mandatory in the
+// configuration contract, so a peer without the AUTH extension must fail
+// closed instead of silently delivering unauthenticated.
+func TestSMTPSendFailsClosedWithoutAuthAdvertisement(t *testing.T) {
+	addr, got, pool := startFakeSMTPVariant(t, false)
+	host, portStr, _ := net.SplitHostPort(addr)
+	port, _ := strconv.Atoi(portStr)
+	s, err := NewSMTP(SMTPOptions{Host: host, Port: port, Username: "mailer", Password: "secret", From: "no-reply@example.com", rootCAs: pool})
+	if err != nil {
+		t.Fatalf("NewSMTP: %v", err)
+	}
+	err = s.Send(context.Background(), kernel.MailMessage{To: "dest@example.com", Subject: "s", TextBody: "b"})
+	if err == nil || !strings.Contains(err.Error(), "does not advertise AUTH") {
+		t.Fatalf("Send against AUTH-less peer must fail closed, got %v", err)
+	}
+	if len(got.rcptTo) != 0 || got.data != "" {
+		t.Fatal("no envelope or payload may reach a peer that refuses AUTH")
+	}
+}
+
 func TestSMTPTLSIsRequired(t *testing.T) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -311,8 +341,7 @@ func TestSMTPPingAgainstImplicitTLSPeer(t *testing.T) {
 	}
 }
 
-func TestSMTPPingFailsAgainstPlaintextPeer(t *testing.T) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+func TestSMTPPingFailsAgainstPlaintextPeer(t *testing.T) {	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}

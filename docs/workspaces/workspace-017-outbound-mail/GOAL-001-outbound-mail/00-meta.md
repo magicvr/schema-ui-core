@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-outbound-mail
 title: 出站邮件（SMTP 发送端口）
-status: active
+status: done
 parent: null
 created: 2026-08-22
 updated: 2026-08-22
-version: 0.5.0
+version: 0.6.0
 progress: 4/4
 plan_refs:
   - VP-017-outbound-mail

@@ -127,11 +127,16 @@ func (s *SMTP) Send(ctx context.Context, msg kernel.MailMessage) error {
 		_ = client.Close()
 	}()
 
+	// A-002 F-002 (independent closeout, fixed): the configuration contract
+	// REQUIRES credentials, so a peer that does not advertise AUTH must fail
+	// closed — silently skipping authentication would downgrade an explicitly
+	// configured endpoint to unauthenticated submission.
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
-	if ok, _ := client.Extension("AUTH"); ok {
-		if err := client.Auth(auth); err != nil {
-			return fmt.Errorf("mail: smtp auth %s: %w", s.host, err)
-		}
+	if ok, _ := client.Extension("AUTH"); !ok {
+		return fmt.Errorf("mail: smtp peer %s does not advertise AUTH; refusing unauthenticated delivery", s.host)
+	}
+	if err := client.Auth(auth); err != nil {
+		return fmt.Errorf("mail: smtp auth %s: %w", s.host, err)
 	}
 	if err := client.Mail(s.from); err != nil {
 		return fmt.Errorf("mail: smtp MAIL FROM rejected: %w", err)

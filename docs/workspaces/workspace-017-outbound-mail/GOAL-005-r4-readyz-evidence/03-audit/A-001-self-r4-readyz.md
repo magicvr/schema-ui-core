@@ -32,7 +32,7 @@ version: 1.0.0
 
 | F-ID | 级别 | 内容 | 处置 | 状态 |
 |------|------|------|------|------|
-| N-001 | note | live 测试本轮未实跑（无真实凭据）；离线 TLS harness + 协议断言已构成"与生产合同等价的 harness"证据，live 面作为 operator 可复跑补充 | 已在 E-001「未做」如实留痕 | **accepted-residual**（范围：真实端点连通性；触发：operator 设置 MAIL_SMTP_TEST_* 后复跑） |
+| N-001 | note | live 测试本轮未实跑（无真实凭据）；离线 TLS harness + 协议断言已构成"与生产合同等价的 harness"证据，live 面作为 operator 可复跑补充 | 按 VP 判据 3 原文（live **或** 等价 harness）属**分母外 note**，非 residual——独立审计 A-002 已复核认可此定性 | **closed（note）** |
 
 > N-001 按残余信息处理：不影响 R4 门禁——VP 判据 3 允许"live 或与生产合同等价的 harness"，本波以等价 harness 交付。若编排器判定需用户书面接受，升级至 P-004。
 
