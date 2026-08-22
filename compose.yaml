@@ -29,6 +29,11 @@ services:
       LOG_LEVEL: info
       # Fail closed: compose aborts if these are unset.
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required (fail-closed)}
+      # Optional PREVIOUS signing key for the JWT rotation overlap window
+      # (VP-016 R1 / workspace-016 Root D-002). Unset/empty = single-key mode;
+      # rotation is never a startup requirement. When set it must satisfy the
+      # same strength rule as AUTH_JWT_SECRET and must differ from it.
+      AUTH_JWT_SECRET_PREVIOUS: ${AUTH_JWT_SECRET_PREVIOUS:-}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD is required (fail-closed)}
       AUTH_DEV_SESSION_ENABLED: "false"
       # Optional upload policy overrides (W7: YAML keys upload.* / env keys

@@ -46,8 +46,16 @@ type Config struct {
 	LogLevelName       string
 
 	AuthJWTSecret  string
-	AuthAccessTTL  time.Duration
-	AuthRefreshTTL time.Duration
+	// AuthJWTSecretPrevious is the optional previous (rotated-out) signing key
+	// (VP-016 R1 / workspace-016 Root D-002): auth.jwt_secret_previous /
+	// AUTH_JWT_SECRET_PREVIOUS. Empty (the default) keeps single-key behavior
+	// identical in every environment. When set outside development it must
+	// satisfy the same strength rule as the current key and must differ from
+	// it; the overlap window lasts as long as the key stays configured and is
+	// retired by removing it and restarting.
+	AuthJWTSecretPrevious string
+	AuthAccessTTL         time.Duration
+	AuthRefreshTTL        time.Duration
 	DBPath         string
 	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
 	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
@@ -200,6 +208,7 @@ type yamlFile struct {
 	} `yaml:"log"`
 	Auth struct {
 		JWTSecret         *string `yaml:"jwt_secret"`
+		JWTSecretPrevious *string `yaml:"jwt_secret_previous"`
 		AccessTTL         *string `yaml:"access_ttl"`
 		RefreshTTL        *string `yaml:"refresh_ttl"`
 		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
@@ -395,6 +404,7 @@ func Load() *Config {
 	}
 	cfg.LogLevelName = strPtrOr(yf.Log.Level, cfg.LogLevelName)
 	cfg.AuthJWTSecret = strPtrOr(yf.Auth.JWTSecret, cfg.AuthJWTSecret)
+	cfg.AuthJWTSecretPrevious = strPtrOr(yf.Auth.JWTSecretPrevious, cfg.AuthJWTSecretPrevious)
 	cfg.AuthAccessTTL = orDurationPtr(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
 	cfg.AuthRefreshTTL = orDurationPtr(yf.Auth.RefreshTTL, cfg.AuthRefreshTTL)
 	if yf.Auth.DevSessionEnabled != nil {
@@ -494,6 +504,7 @@ func Load() *Config {
 	}
 	cfg.LogLevelName = envOr("LOG_LEVEL", cfg.LogLevelName)
 	cfg.AuthJWTSecret = envOr("AUTH_JWT_SECRET", cfg.AuthJWTSecret)
+	cfg.AuthJWTSecretPrevious = envOr("AUTH_JWT_SECRET_PREVIOUS", cfg.AuthJWTSecretPrevious)
 	cfg.AuthAccessTTL = durationEnv("AUTH_ACCESS_TTL", cfg.AuthAccessTTL)
 	cfg.AuthRefreshTTL = durationEnv("AUTH_REFRESH_TTL", cfg.AuthRefreshTTL)
 	cfg.AuthDevSessionEnabled = boolEnv("AUTH_DEV_SESSION_ENABLED", cfg.AuthDevSessionEnabled)
@@ -911,6 +922,11 @@ func interpolateAll(text string) (string, error) {
 // digits, so a short or guessable HS256 key cannot silently start production.
 // Development keeps the explicit low bar (documented insecure dev key).
 //
+// VP-016 R1 (workspace-016 Root D-002): an explicitly configured previous
+// signing key (AUTH_JWT_SECRET_PREVIOUS) must satisfy the same strength rule
+// and must differ from the current key; an absent previous keeps single-key
+// behavior in every environment.
+//
 // W7: a LoadError (bad CONFIG_FILE, unset ${VAR}, invalid YAML) fails startup
 // regardless of environment — configuration must never silently fall back.
 func (c *Config) ValidateProd() error {
@@ -961,6 +977,30 @@ func (c *Config) ValidateProd() error {
 			"AUTH_JWT_SECRET must contain both letters and digits when APP_ENV=%q",
 			c.AppEnv,
 		)
+	}
+	// VP-016 R1 (workspace-016 Root D-002): an explicitly configured previous
+	// signing key follows the same strength rule as the current key — during
+	// the overlap window it still verifies signatures, so a weak previous key
+	// widens the forgery surface exactly like a weak current one. A configured
+	// previous equal to the current key is a no-op "rotation": fail closed so
+	// operators cannot mistake it for a real overlap window. An absent
+	// previous keeps single-key behavior in every environment.
+	if prev := c.AuthJWTSecretPrevious; prev != "" {
+		if len(prev) < minJWTSecretLen {
+			return fmt.Errorf(
+				"AUTH_JWT_SECRET_PREVIOUS must be at least %d characters when APP_ENV=%q",
+				minJWTSecretLen, c.AppEnv,
+			)
+		}
+		if !containsLettersAndDigits(prev) {
+			return fmt.Errorf(
+				"AUTH_JWT_SECRET_PREVIOUS must contain both letters and digits when APP_ENV=%q",
+				c.AppEnv,
+			)
+		}
+		if prev == c.AuthJWTSecret {
+			return fmt.Errorf("AUTH_JWT_SECRET_PREVIOUS must differ from AUTH_JWT_SECRET (a no-op rotation is a misconfiguration)")
+		}
 	}
 	return nil
 }

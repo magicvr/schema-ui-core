@@ -248,6 +248,128 @@ func TestValidateProd(t *testing.T) {
 // strongSecret satisfies the production AUTH_JWT_SECRET rule (≥32 chars, mixed).
 const strongSecret = "a9k2m4n6p8q0r2s4t6u8v0w2x4y6z8a9b1c3d5"
 
+// TestJWTSecretPreviousConfig covers the VP-016 R1 rotation contract
+// (workspace-016 Root D-002 / GOAL-002 D-001): an explicitly configured
+// previous signing key must satisfy the same strength rule as the current key
+// outside development and must differ from it; an absent previous keeps
+// single-key behavior; development keeps its low bar regardless.
+func TestJWTSecretPreviousConfig(t *testing.T) {
+	t.Run("production with a compliant different previous passes", func(t *testing.T) {
+		c := &Config{
+			AppEnv:                "production",
+			AuthDevSessionEnabled: false,
+			AuthJWTSecret:         strongSecret,
+			AuthJWTSecretPrevious: strongSecret + "x7",
+		}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("production with compliant previous should pass, got: %v", err)
+		}
+	})
+
+	t.Run("production with a short previous fails closed naming the PREVIOUS key", func(t *testing.T) {
+		c := &Config{
+			AppEnv:                "production",
+			AuthDevSessionEnabled: false,
+			AuthJWTSecret:         strongSecret,
+			AuthJWTSecretPrevious: "short-previous",
+		}
+		err := c.ValidateProd()
+		if err == nil {
+			t.Fatal("production with a short AUTH_JWT_SECRET_PREVIOUS must be a startup error")
+		}
+		if !strings.Contains(err.Error(), "AUTH_JWT_SECRET_PREVIOUS") {
+			t.Fatalf("error = %v, want mention of AUTH_JWT_SECRET_PREVIOUS", err)
+		}
+	})
+
+	t.Run("production with an all-digit previous fails closed", func(t *testing.T) {
+		c := &Config{
+			AppEnv:                "production",
+			AuthDevSessionEnabled: false,
+			AuthJWTSecret:         strongSecret,
+			AuthJWTSecretPrevious: "12345678901234567890123456789012",
+		}
+		err := c.ValidateProd()
+		if err == nil {
+			t.Fatal("production with an all-digit AUTH_JWT_SECRET_PREVIOUS must be a startup error")
+		}
+		if !strings.Contains(err.Error(), "AUTH_JWT_SECRET_PREVIOUS") {
+			t.Fatalf("error = %v, want mention of AUTH_JWT_SECRET_PREVIOUS", err)
+		}
+	})
+
+	t.Run("production with previous equal to current fails closed", func(t *testing.T) {
+		c := &Config{
+			AppEnv:                "production",
+			AuthDevSessionEnabled: false,
+			AuthJWTSecret:         strongSecret,
+			AuthJWTSecretPrevious: strongSecret,
+		}
+		err := c.ValidateProd()
+		if err == nil {
+			t.Fatal("a no-op rotation (previous == current) must be a startup error")
+		}
+		if !strings.Contains(err.Error(), "differ") {
+			t.Fatalf("error = %v, want the no-op rotation wording", err)
+		}
+	})
+
+	t.Run("development keeps the low bar even with a weak previous", func(t *testing.T) {
+		c := &Config{
+			AppEnv:                "development",
+			AuthJWTSecret:         "dev",
+			AuthJWTSecretPrevious: "old-dev",
+		}
+		if err := c.ValidateProd(); err != nil {
+			t.Fatalf("development should keep the low bar, got: %v", err)
+		}
+	})
+
+	t.Run("absent previous keeps single-key default", func(t *testing.T) {
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecretPrevious != "" {
+			t.Errorf("AuthJWTSecretPrevious default = %q, want empty (single-key mode)", cfg.AuthJWTSecretPrevious)
+		}
+	})
+
+	t.Run("yaml jwt_secret_previous is parsed", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret: yaml-secret
+  jwt_secret_previous: yaml-old-secret
+`
+		writeConfig(t, y)
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecretPrevious != "yaml-old-secret" {
+			t.Errorf("AuthJWTSecretPrevious = %q, want yaml-old-secret", cfg.AuthJWTSecretPrevious)
+		}
+	})
+
+	t.Run("AUTH_JWT_SECRET_PREVIOUS env overrides yaml", func(t *testing.T) {
+		y := `app:
+  env: development
+auth:
+  jwt_secret_previous: yaml-old-secret
+`
+		writeConfig(t, y)
+		t.Setenv("AUTH_JWT_SECRET_PREVIOUS", "env-old-secret")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.AuthJWTSecretPrevious != "env-old-secret" {
+			t.Errorf("AuthJWTSecretPrevious = %q, want env-old-secret (env beats yaml)", cfg.AuthJWTSecretPrevious)
+		}
+	})
+}
+
 // W7 (GOAL-008): YAML authority with env override, interpolation, and
 // fail-closed behavior. These tests write a temp YAML and point CONFIG_FILE
 // at it; process env is cleared/restored per test via t.Setenv.

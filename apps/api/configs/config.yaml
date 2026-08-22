@@ -61,6 +61,13 @@ auth:
   #   jwt_secret: ${AUTH_JWT_SECRET}
   # (no :- default) so startup fails closed when the secret is missing.
   jwt_secret: ${AUTH_JWT_SECRET:-}
+  # VP-016 R1 (workspace-016 Root D-002): optional PREVIOUS signing key for the
+  # rotation overlap window. Empty (default) = single-key mode in every
+  # environment. When set outside development it must satisfy the same rule as
+  # jwt_secret (>=32 chars, letters and digits) and must differ from it.
+  # Rotate: set previous=<old key>, restart; after old access tokens expired
+  # (access_ttl) remove previous and restart. Supply the value only via env:
+  #   jwt_secret_previous: ${AUTH_JWT_SECRET_PREVIOUS:-}
   access_ttl: 15m
   refresh_ttl: 720h
   dev_session_enabled: false

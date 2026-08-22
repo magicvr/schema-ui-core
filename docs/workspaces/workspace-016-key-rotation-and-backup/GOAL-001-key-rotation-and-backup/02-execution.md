@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-22 | 开区 scaffold（workspace-016 + Root + A5 路线图） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-22 | R1 关门：合同冻结（D-002）+ 配置面落地 + A-001 self pass（GOAL-002 4/4） | recorded | [E-002-r1-stage-complete.md](02-execution/E-002-r1-stage-complete.md) |
 
 ## 事实边界
 

@@ -45,6 +45,7 @@ go run ./cmd/server
 | 键 | 默认 | 说明 |
 |----|------|------|
 | `AUTH_JWT_SECRET` | dev 开发密钥 | access token 签发密钥；生产必填，缺失 fail-closed |
+| `AUTH_JWT_SECRET_PREVIOUS` | 空（单密钥） | 可选上一代签发密钥（VP-016 R1 轮换重叠窗）；生产设置时须与现 key 同强度（≥32 字符、含字母与数字）且不得相同；缺省任何环境行为不变 |
 | `AUTH_ACCESS_TTL` | `15m` | access token 时效 |
 | `AUTH_REFRESH_TTL` | `720h` (30d) | refresh token 时效 |
 | `DB_PATH` | `./data/schema-ui.db` | SQLite 路径 |
@@ -73,6 +74,7 @@ go run ./cmd/server
 | 维度 | 开发（`APP_ENV=development`） | 生产（`APP_ENV=production` / compose） |
 |------|-------------------------------|-----------------------------------------|
 | `AUTH_JWT_SECRET` | 未设则用内建 dev 密钥并打警告 | **必填，缺失 fail-closed** |
+| `AUTH_JWT_SECRET_PREVIOUS` | 可选；弱值也接受（低门槛） | 可选；设置时须与现 key 同强度且不同值（VP-016 R1） |
 | `ADMIN_INITIAL_PASSWORD` | 未设则兜底 `admin` | **必填，缺失 fail-closed** |
 | `AUTH_DEV_SESSION_ENABLED` | 显式 opt-in 可选 | **必须 `false`** |
 | `DB_PATH` | `./data/schema-ui.db` | compose 挂载 `/app/data/schema-ui.db`（命名卷） |
