@@ -1,9 +1,9 @@
 ---
 status: done
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-24
 parent: GOAL-001-design-implementation-conformance
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 执行索引 · GOAL-036（W25）
@@ -17,5 +17,6 @@ version: 0.2.0
 | E-005 | 2026-08-23 | I-002 活栈计时复核（双栈实测对比） | 已完成（I-002 closed） |
 | E-006 | 2026-08-23 | A-001 响应实施（F-001～F-006）与复验 | 已完成（A-002 响应落盘） |
 | E-007 | 2026-08-23 | F-007 预存 flake 根因与修复；连环发现 F-008（wallet reconcile，移交） | 已完成（F-007 fixed） |
+| E-008 | 2026-08-24 | A-004 建议 2 浏览器层可选背书——sqlite e2e 双 profile 复跑 | 已完成（non-gate 背书全绿，状态不变） |
 
-S6：I-001/I-002 已 closed；A-001（independent）响应完成（required 全闭，A-002）；F-007 已修（E-007）；F-008（wallet reconcile 竞态）记录移交；**关门自审与关门待用户**（本波不闭门）
+S6：I-001/I-002 已 closed；A-001（independent）响应完成（required 全闭，A-002）；F-007 已修（E-007）；F-008（wallet reconcile 竞态）记录移交；关门自审 A-003 pass（done 6/6）；**关门后可选背书 sqlite e2e 双 profile 复跑全绿（E-008，2026-08-24）**
