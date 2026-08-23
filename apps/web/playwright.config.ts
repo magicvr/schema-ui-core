@@ -63,6 +63,13 @@ export default defineConfig({
         ...process.env,
         CONFIG_FILE: e2eConfigPath,
         DB_PATH: e2eDbPath,
+        // W23 (GOAL-034 D-001): PIN the dialect so a gitignored local
+        // apps/api/configs/.env (DB_DIALECT=postgres, created 2026-08-21)
+        // can never silently redirect the e2e API away from this isolated
+        // temp SQLite. Without the pin, fresh-seed admin/admin login 401s
+        // against the developer's Postgres and every auth-gated spec fails
+        // ("login stays on /" was this isolation drift, not a routing bug).
+        DB_DIALECT: "sqlite",
         ADMIN_INITIAL_PASSWORD: "admin",
         APP_ENV: "development",
       },

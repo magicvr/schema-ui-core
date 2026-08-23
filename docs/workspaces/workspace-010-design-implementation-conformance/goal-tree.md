@@ -50,7 +50,8 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-030-w19-my-wallet-lazy-open-empty-state [done] · W19 · 我的钱包惰性开通与未开户空态（4/4）
 ├── GOAL-031-w20-notification-settings-in-account [done] · W20 · 通知设置迁入个人中心（4/4）
 ├── GOAL-032-w21-startup-db-identity [done] · W21 · 启动时数据库身份判定与迁移计划（5/5）
-└── GOAL-033-w22-residual-closeout [done] · W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 / B 组复核 ×6 / 台账卫生 ×3）（18/18）
+├── GOAL-033-w22-residual-closeout [done] · W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 / B 组复核 ×6 / 台账卫生 ×3）（18/18）
+└── GOAL-034-w23-admin-login-home-redirect [active] · W23 · admin 登录后 home 推导回归修复（N-001 承接）（0/4）
 ```
 
 **W21（2026-08-22 关门，5/5）**：启动 Identify→Plan→Execute。A-003 确认 F-001～F-003 fixed；A-004 self 关门 pass。Root/VP 保持 active。
@@ -133,6 +134,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-031-w20-notification-settings-in-account | W20 · 通知设置迁入个人中心 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-032-w21-startup-db-identity | W21 · 启动时数据库身份判定与迁移计划 | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-22 |
 | GOAL-033-w22-residual-closeout | W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 + B 组触发复核 ×6 + 台账卫生 ×3） | GOAL-001-design-implementation-conformance | done | 18/18 | 2026-08-23 |
+| GOAL-034-w23-admin-login-home-redirect | W23 · admin 登录后 home 推导回归修复（N-001 承接） | GOAL-001-design-implementation-conformance | active | 0/4 | 2026-08-23 |
 
 
 ## 维护说明

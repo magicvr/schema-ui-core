@@ -89,3 +89,5 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 ## 波次补充 · W22（2026-08-23）
 
 GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口；详见该目标五件套与本区 goal-tree）。移交跟踪槽 **N-001**：admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 存在的既有回归，基线实验证实；疑似 W14–W21 home 推导/路由漂移）→ 建议下一符合性波次承接。
+
+**W23（2026-08-23 立项，GOAL-034）**：承接 W22 移交槽 N-001——admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 的 home 推导/路由回归）。S1 根因冻结 → S2 修复+防回退测试 → S3 全量回归（含 e2e admin localization M1）→ S4 关门审计。
