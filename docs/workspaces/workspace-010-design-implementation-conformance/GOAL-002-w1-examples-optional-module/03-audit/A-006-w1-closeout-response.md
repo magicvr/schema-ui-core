@@ -33,6 +33,7 @@ A-004 与 A-005 均 `pass`、findings 同向收敛（无 required），**无 ver
 | F-004 go digest 写死台账 | A-005 | low recommended | **fixed** | `E-004` §go 已补写 `4a2b8cdbaeca1fe1eea9c7fdbe5de552694a41d6` |
 | F-005 StampHomePageRef 5 字段 envelope | A-005 / A-004 F-002 | low recommended | **accepted-residual** | 协议 envelope 固定 5 字段；扩字段需回贴 `StampHomePageRef`，低风险可逆，复审触发=Manifest envelope 变更时 |
 | F-006 web 夹具「范例启用」形态 | A-005 / A-004 F-001 | low recommended | **accepted-residual** | Renderer 内部夹具、非 Profile 契约；后续可改名 `dogfood` 语义，复审触发=新增默认无范例 web 卫生夹具时 |
+| F-006 兑现复核 | **2026-08-23 fixed**：夹具改名 dogfood 语义（纯 rename，8 文件 9 引用同步，vitest 全量绿） | [workspace-010 GOAL-033 E-005](../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-005-s2-completion-facts.md) |
 | F-007 / I-004 i18n 范例 key | A-005 / A-004 F-003 | low recommended（信息项） | **fixed（保留）** | dev.examples fragment 仍引用 titleKeys → 非死 key；I-004 以「保留」闭合，无需删除 |
 | A-004 F-004 go 恢复证据 | A-004 | recommended | **fixed（恢复）** | 见下「go 恢复」 |
 

@@ -61,6 +61,7 @@ version: 0.1.0
 
 - **R-001**：`/api/auth/mfa/verify` 无独立 HTTP 限流——proof 签发已按登录桶限流（约 100 次 TOTP 尝试/15min），6 位 TOTP 不可实用穷举；`fail_count < 5` SQL 守卫封顶并发窗口。**接受 residual**：复审触发 = TOTP 位数缩短 / captcha 关闭且第二因子成为唯一远程秘密 / verify 层 DoS 威胁模型升级。
 - **R-002**：wallet 写口测试用无 wallet 键的 editor 证 403——生产代码三写口为 `wallet.write`（A-003 源码核对确认）；测试缝不构成缺陷。**接受 residual**：下波若建 wallet.read-only 角色夹具可补强。
+  - **2026-08-23 兑现复核：fixed**——verify 独立限流桶（15m/10/IP，429+Retry-After）落地，3 条测试 PASS；independent 复核 pass。[workspace-010 GOAL-033 E-005](../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-005-s2-completion-facts.md)
 - A-003 I-B（重封无 CAS）/ I-C（entries/tasks 无独立 HTTP 回滚用例）：记录在案，非阻断；I-B 窗口极窄且失败不阻断已通过的第二因子。
 - A-003 I-D：E-003 在 A-003 之前处置 recommended 的顺序偏差——用户轮次指令「推进…直到顺利闭门」隐含全波闭环，E-003 内容经 A-003 独立核对全部有据，偏差不构成缺陷，已记录。
 

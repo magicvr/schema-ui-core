@@ -10,8 +10,8 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-08-22
-version: 0.42.0
+updated: 2026-08-23
+version: 0.43.0
 parent: null
 ---
 
@@ -85,3 +85,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | reference_id | workspace_id | material_id | source | version | sha256 | purpose | local_record | status |
 |--------------|--------------|-------------|--------|---------|--------|---------|--------------|--------|
 | — | — | — | — | — | — | — | — | — |
+
+## 波次补充 · W22（2026-08-23）
+
+GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口；详见该目标五件套与本区 goal-tree）。移交跟踪槽 **N-001**：admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 存在的既有回归，基线实验证实；疑似 W14–W21 home 推导/路由漂移）→ 建议下一符合性波次承接。

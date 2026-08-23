@@ -70,8 +70,8 @@ S5 回归与关门              → C17 全量回归（go test + vitest + tsc + 
 |------|------|------|----------|--------------|----------|------|------|
 | I-001 | 本机 8080 端口排除区间是否仍在？能否换端口绑定跑通 e2e？ | required | A1 | C2 执行前 | `netsh interface ipv4 show excludedportrange protocol=tcp` + 试跑 | **verified** | 2026-08-23 复核：8011–8110 区间已不在排除表，8080 无监听占用，可绑定 |
 | I-002 | B1–B4 各触发条件是否确已发生（review date 过期 / VP-003 exit#4 取证完成 / R5、R6 完成）？ | required | B1–B4 复核 | C8 前 | 本轮扫描 + goal-tree 交叉核对 | verified | goal-tree：VP-003 closed 2026-08-06；W3 区 R5/R6 均 done；review date 2026-08-05 < 今日 2026-08-23 |
-| I-003 | B5 F-007 的 freshness trigger 具体内容与当前状态？ | required | B5 | C12 前 | 读 W8 D-001 全文 | open | |
-| I-004 | B6 Root I-001/I-004 是否已按 residual 回写？ | required | B6 | C13 前 | 读 W13 Root 信息表 | open | |
+| I-003 | B5 F-007 的 freshness trigger 具体内容与当前状态？ | required | B5 | C12 前 | 读 W8 D-001 全文 | **closed（E-003）** | 触发为事件型「后续业务 VP 激活前」，未发生，F-007 维持有效 |
+| I-004 | B6 Root I-001/I-004 是否已按 residual 回写？ | required | B6 | C13 前 | 读 W13 Root 信息表 | **closed（E-003/E-004）** | 双账已回写、D-002 追认节落盘 |
 
 ## 边界
 

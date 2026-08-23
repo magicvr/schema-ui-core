@@ -18,3 +18,4 @@ version: 0.2.0
 | E-003 | 2026-08-23 | S3 前批复核：B5 触发未发生维持有效；B6 实质已决、三处台账缺口（含一处待用户追认） | recorded | `02-execution/E-003-s3-b5-b6-conclusions.md` |
 | E-004 | 2026-08-23 | S3 复核：B2/B4 已兑现转 fixed（源台账已回写）；B1 retention 半边兑现、append 半边与 B3 待用户追认续期；W8 F-007 closure 补注、W13 双账回写完成 | recorded | `02-execution/E-004-s3-b1-b4-conclusions.md` |
 | E-005 | 2026-08-23 | S2 完成事实：A2/A4/A5/A6/H3 落地并经编排器验证（go build 干净 + 迁移 2/2 + handler 12/12 + vitest 全量 1088/1088）；e2e 选择器回归修复 ×5；D-002 三项 P-004 裁决落盘与源台账回写 | recorded | `02-execution/E-005-s2-completion-facts.md` |
+| E-006 | 2026-08-23 | S5 回归与 A1 补跑结论：全量回归绿（store 黄金断言修复后 ok / vitest 1088 / tsc+build 0）；基线实验定性 /dashboard 漂移为既有回归（N-001 移交）；A1 按复审履约闭合 | recorded | `02-execution/E-006-s5-regression-and-a1-closure.md` |

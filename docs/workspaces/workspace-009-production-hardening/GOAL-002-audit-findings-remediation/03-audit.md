@@ -31,6 +31,7 @@ Goal 审计模式按 `cross` 记录为 self + independent；independent provider
 - **A-002 F-001（required）**：已 **fixed**（`01b7202` + A-003 复审 pass 确认闭合）。
 - **A-003 N-001（recommended）**：已 **fixed**（`53b9496`：大小写不敏感标记 + 混合大小写测试）。
 - **A-003 N-002（recommended）**：**accepted-residual**（2026-08-10 编排器裁决，用户在场确认路径：启发式完备性边界——无 `<script`/`<svg` 标记的事件处理器形态可入库；安全边界=下载头 attachment + CSP sandbox + nosniff，入库拒绝为 best-effort；复审触发=后续协议判断/上传策略变更）。
+    - **2026-08-23 兑现复核：fixed**——入库嗅探落地（8 KiB 窗口 + svg/script/xml 标记 + `on*=` 启发式；handler 测试 12/12 PASS；independent 复核 pass），见 [workspace-010 GOAL-033 E-005](../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-005-s2-completion-facts.md）。
 - F-002～F-005（recommended）：已随 F-001 处理（专项测试 + 跨标签刷新协调），见 [E-002](02-execution/E-002-a002-response.md)。
 - F-006（recommended，D2 限流 best-effort）：运维边界已知，非阻塞。
 

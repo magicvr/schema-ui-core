@@ -22,6 +22,7 @@ scope: 响应 A-001（F-001/F-002/F-004）
 | A-001 F-002 | **fixed** | `account_self.go` 增加 `newPassword == currentPassword → 400 INVALID_PASSWORD`；`w16_batch_a_test.go` 增加同密码拒绝断言。 |
 | A-001 F-004 | **fixed** | `shell.spec.ts` / `schema-crud.spec.ts` 登录流程兼容强制改密；API 登录使用 `admin-e2e-pass`。 |
 | A-001 F-003 | accepted-residual（recommended） | 老库种子 admin 不自动置 1；作为升级残余，由管理员重置密码或后续迁移处理，不阻断关门。 |
+- **2026-08-23 兑现复核：fixed**——迁移 0049 幂等回填落地并验证（`TestMigrate0049*` PASS；store 包全绿）；见 [workspace-010 GOAL-033 E-005](../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-005-s2-completion-facts.md)。
 | A-001 F-005 | open（recommended） | 并行 401 refresh 竞态；非 required，后续增强。 |
 | A-001 F-006 | open（recommended） | 强制改密成功提示残留；非 required，后续增强。 |
 | A-001 F-007 | open（recommended） | rotate 后下载按钮；非 required，后续增强。 |
