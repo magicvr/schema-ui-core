@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -58,15 +59,27 @@ func (s *walletServiceStub) Mutate(id string, in walletstore.LedgerEntryInput, n
 	if in.Memo == "" {
 		return nil, nil, false, walletstore.ErrInvalidEntry
 	}
-	entryID := fmt.Sprintf("%016x", now.UnixMilli()) + newOperationID()
+	entryID := walletStubEntryID(now)
 	account, entry, err := s.repo.Mutate(id, in, entryID, now)
 	if err != nil {
 		return nil, nil, false, err
 	}
 	return account, entry, entry.ID != entryID, nil
 }
+// walletStubEntryID mirrors the module's newID ordering contract for the
+// store-backed test double (GOAL-037 / F-008): same-millisecond entries must
+// sort in CREATION order for replay. The historical "{ms}%snewOperationID()"
+// random-only suffix made same-ms ordering arbitrary — replay could run a
+// freeze before its funding adjust and reconcile "insufficient balance".
+var walletStubEntrySeq atomic.Uint64
+
+func walletStubEntryID(now time.Time) string {
+	seq := walletStubEntrySeq.Add(1) & 0xFFFFFFFF
+	return fmt.Sprintf("%016x%08x%s", now.UnixMilli(), seq, newOperationID())
+}
+
 func (s *walletServiceStub) Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error) {
-	return s.repo.ReconcileRun(accountID, fmt.Sprintf("%016x", now.UnixMilli())+newOperationID(), actorID, now)
+	return s.repo.ReconcileRun(accountID, walletStubEntryID(now), actorID, now)
 }
 func (s *walletServiceStub) ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error) {
 	return s.repo.ListReconcileRuns(page, pageSize)
@@ -356,7 +369,9 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	}
 	var run map[string]any
 	if err := json.Unmarshal(rr.Body.Bytes(), &run); err != nil || run["result"] != "consistent" {
-		t.Fatalf("reconcile result = %v err=%v", run["result"], err)
+		// F-008 diagnosis: include the mismatch details (checkAccountChain
+		// reason) so an inconsistent reconcile is immediately debuggable.
+		t.Fatalf("reconcile result = %v err=%v details=%v", run["result"], err, run["details"])
 	}
 	for _, tc := range []struct {
 		path string
@@ -389,27 +404,42 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	}
 
 	// A-007 F-001: operationlog actually received the six wallet events.
-	rr = httptest.NewRecorder()
-	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/operations?q=wallet", ""))
-	if rr.Code != http.StatusOK {
-		t.Fatalf("operations = %d %s", rr.Code, rr.Body.String())
-	}
-	var opsResp struct {
-		Items []struct {
-			Event string `json:"event"`
-		} `json:"items"`
-	}
-	if err := json.Unmarshal(rr.Body.Bytes(), &opsResp); err != nil {
-		t.Fatal(err)
-	}
-	events := map[string]bool{}
-	for _, item := range opsResp.Items {
-		events[item.Event] = true
-	}
-	for _, want := range []string{"wallet.account-create", "wallet.account-update", "wallet.adjust", "wallet.freeze", "wallet.unfreeze", "wallet.reconcile"} {
-		if !events[want] {
-			t.Fatalf("missing audit event %s (got %v)", want, events)
+	// F-008: the terminal audit event is a best-effort side effect written
+	// AFTER the job transaction commits (see newWalletJobTestService hook), so
+	// polling is required — asserting synchronously raced the async write.
+	deadlineOps := time.Now().Add(2 * time.Second)
+	for {
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/operations?q=wallet", ""))
+		if rr.Code != http.StatusOK {
+			t.Fatalf("operations = %d %s", rr.Code, rr.Body.String())
 		}
+		var opsResp struct {
+			Items []struct {
+				Event string `json:"event"`
+			} `json:"items"`
+		}
+		if err := json.Unmarshal(rr.Body.Bytes(), &opsResp); err != nil {
+			t.Fatal(err)
+		}
+		events := map[string]bool{}
+		for _, item := range opsResp.Items {
+			events[item.Event] = true
+		}
+		found := true
+		for _, want := range []string{"wallet.account-create", "wallet.account-update", "wallet.adjust", "wallet.freeze", "wallet.unfreeze", "wallet.reconcile"} {
+			if !events[want] {
+				found = false
+				break
+			}
+		}
+		if found {
+			break
+		}
+		if time.Now().After(deadlineOps) {
+			t.Fatalf("missing audit event wallet.reconcile (got %v)", events)
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 }
 
