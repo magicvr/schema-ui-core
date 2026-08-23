@@ -219,6 +219,17 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateWalletLedgerDeduct,
 			ApplyPostgres:        migrateWalletLedgerDeductPG,
 		},
+		{
+			// 0050 · GOAL-037 / F-008 根治：一次性重排既有库中"同一毫秒
+			// 乱序"的流水 id，恢复 D-002 §1 的 (created_at, id) 回放序契约。
+			// 逻辑为方言中立 Go（order_repair.go），无 DDL。
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: orderRepairKey},
+			Version:              orderRepairVersion,
+			Name:                 orderRepairKey,
+			Checksum:             kernel.MigrationChecksum(nil, "0050:wallet-ledger-order-repair:v1"),
+			Apply:                migrateOrderRepair,
+			ApplyPostgres:        migrateOrderRepairPG,
+		},
 	}
 }
 

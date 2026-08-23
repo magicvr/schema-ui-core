@@ -98,6 +98,7 @@ func TestPlanStartup(t *testing.T) {
 var lockedHeadExtraTables = map[int][]string{
 	48: {"service_credentials", "operation_log_session"},
 	49: {},
+	50: {}, // wallet_ledger_order_repair: data-only repair (no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

@@ -97,6 +97,9 @@ type walletJobTestService struct {
 	repository *jobs.Repository
 	runner     *jobs.Runner
 	wallet     *walletstore.Repository
+	// operations drives the atomic success-audit (RecordOperationTx inside
+	// the job CommitFunc — GOAL-037 / F-008 root-cause fix).
+	operations *operationlog.Repository
 }
 
 func newWalletJobTestService(t *testing.T, env *authTestEnv, wallet *walletstore.Repository) *walletJobTestService {
@@ -110,9 +113,12 @@ func newWalletJobTestService(t *testing.T, env *authTestEnv, wallet *walletstore
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := &walletJobTestService{repository: repository, runner: runner, wallet: wallet}
+	service := &walletJobTestService{repository: repository, runner: runner, wallet: wallet, operations: env.operations}
 	if err := runner.RegisterWithTerminalHook("wallet.reconcile", service.handle, func(job jobs.Job) {
-		if job.Status != jobs.StatusSucceeded {
+		// GOAL-037 / F-008 根治：成功审计随 job 事务原子提交（见
+		// service.handle 的 CommitFunc）；terminal 只处理失败/取消路径的
+		// best-effort 事件。
+		if job.Status == jobs.StatusSucceeded {
 			return
 		}
 		detail := `{"jobId":` + jsonQuote(job.ID) + `}`
@@ -179,6 +185,12 @@ func (s *walletJobTestService) handle(_ context.Context, job jobs.Job, reporter 
 	return func(tx kernel.Tx) (json.RawMessage, error) {
 		run, err := s.wallet.ReconcileOnceTx(context.Background(), tx, payload.AccountID, job.ID, job.ActorID, time.Now().UTC())
 		if err != nil {
+			return nil, err
+		}
+		// GOAL-037 / F-008 根治：成功审计与 job 提交同事务（与产品
+		// JobService.runReconcile 同构）。
+		detail := `{"jobId":` + jsonQuote(job.ID) + `}`
+		if err := s.operations.RecordOperationTx(tx, operationlog.Operation{ID: newOperationID(), Event: operationlog.EventWalletReconcile, ActorID: job.ActorID, ActorName: job.ActorID, Detail: &detail, CorrelationID: job.CorrelationID, CreatedAt: time.Now().UTC()}); err != nil {
 			return nil, err
 		}
 		return json.Marshal(reconcileRunToMap(*run))
@@ -403,43 +415,31 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 		t.Fatalf("expired result = %d %s", rr.Code, rr.Body.String())
 	}
 
-	// A-007 F-001: operationlog actually received the six wallet events.
-	// F-008: the terminal audit event is a best-effort side effect written
-	// AFTER the job transaction commits (see newWalletJobTestService hook), so
-	// polling is required — asserting synchronously raced the async write.
-	deadlineOps := time.Now().Add(2 * time.Second)
-	for {
-		rr = httptest.NewRecorder()
-		env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/operations?q=wallet", ""))
-		if rr.Code != http.StatusOK {
-			t.Fatalf("operations = %d %s", rr.Code, rr.Body.String())
+	// A-007 F-001: operationlog actually received the six wallet events. The
+	// wallet.reconcile event is now written ATOMICALLY with the job success
+	// transaction (GOAL-037 / F-008 root-cause fix), so a single synchronous
+	// query suffices — no polling needed.
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/operations?q=wallet", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("operations = %d %s", rr.Code, rr.Body.String())
+	}
+	var opsResp struct {
+		Items []struct {
+			Event string `json:"event"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &opsResp); err != nil {
+		t.Fatal(err)
+	}
+	events := map[string]bool{}
+	for _, item := range opsResp.Items {
+		events[item.Event] = true
+	}
+	for _, want := range []string{"wallet.account-create", "wallet.account-update", "wallet.adjust", "wallet.freeze", "wallet.unfreeze", "wallet.reconcile"} {
+		if !events[want] {
+			t.Fatalf("missing audit event %s (got %v)", want, events)
 		}
-		var opsResp struct {
-			Items []struct {
-				Event string `json:"event"`
-			} `json:"items"`
-		}
-		if err := json.Unmarshal(rr.Body.Bytes(), &opsResp); err != nil {
-			t.Fatal(err)
-		}
-		events := map[string]bool{}
-		for _, item := range opsResp.Items {
-			events[item.Event] = true
-		}
-		found := true
-		for _, want := range []string{"wallet.account-create", "wallet.account-update", "wallet.adjust", "wallet.freeze", "wallet.unfreeze", "wallet.reconcile"} {
-			if !events[want] {
-				found = false
-				break
-			}
-		}
-		if found {
-			break
-		}
-		if time.Now().After(deadlineOps) {
-			t.Fatalf("missing audit event wallet.reconcile (got %v)", events)
-		}
-		time.Sleep(5 * time.Millisecond)
 	}
 }
 
