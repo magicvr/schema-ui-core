@@ -6,6 +6,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -34,8 +35,8 @@ type ImportUsersRepository interface {
 }
 
 // ImportRoutes returns the import route contributions (admin.data-transfer).
-func ImportRoutes(a *auth.Authenticator, repo ImportUsersRepository, operations operationlog.Recorder, uploadDir, moduleID string) []kernel.RouteContribution {
-	h := &importHandler{repository: repo, operations: operations, uploadDir: uploadDir, now: time.Now}
+func ImportRoutes(a *auth.Authenticator, repo ImportUsersRepository, operations operationlog.Recorder, objects kernel.ObjectStore, moduleID string) []kernel.RouteContribution {
+	h := &importHandler{repository: repo, operations: operations, objects: objects, now: time.Now}
 	return []kernel.RouteContribution{
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: moduleID, Key: kernel.RouteKey("POST", "/api/import/{resource}")},
@@ -65,7 +66,7 @@ func importPermissionGate(next http.Handler) http.Handler {
 type importHandler struct {
 	repository ImportUsersRepository
 	operations operationlog.Recorder
-	uploadDir  string
+	objects    kernel.ObjectStore
 	now        func() time.Time
 }
 
@@ -155,7 +156,7 @@ func (h *importHandler) importResource() http.Handler {
 		if strings.HasPrefix(fileID, "/api/files/") {
 			fileID = strings.TrimPrefix(fileID, "/api/files/")
 		}
-		raw, meta, err := loadUploadedFile(h.uploadDir, fileID)
+		raw, meta, err := h.loadUploaded(fileID)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				writeLocalizedError(w, r, http.StatusNotFound, "FILE_NOT_FOUND", "no file with that id")
@@ -166,7 +167,7 @@ func (h *importHandler) importResource() http.Handler {
 		}
 		// Owner-scoped: only the uploader's own file may be imported (C-09
 		// ownership model; missing owner fails closed).
-		if owner := strings.TrimSpace(meta["owner"]); owner == "" || owner != user.ID {
+		if owner := strings.TrimSpace(meta.Owner); owner == "" || owner != user.ID {
 			writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "not the owner of this file")
 			return
 		}
@@ -384,14 +385,18 @@ func (h *importHandler) record(resource string, result importResult, actor accou
 	recordAudit(h.operations, actor, operationlog.EventDataImport, "", auditDetail("import", map[string]any{"resource": resource, "applied": result.Applied, "failed": result.Failed}), h.now().UTC(), nil)
 }
 
-// LoadUploadedFile exposes the upload store's load to sibling handlers (import).
-func LoadUploadedFile(dir, id string) ([]byte, map[string]string, error) {
-	return loadUploadedFile(dir, id)
-}
-
-// loadUploadedFile reads a stored upload by id with its owner meta (same
-// validation as the download endpoint; unexported here, re-exported above).
-func loadUploadedFile(dir, id string) ([]byte, map[string]string, error) {
-	store := &uploadStore{dir: dir}
-	return store.load(id)
+// loadUploaded reads a stored upload by id through the port with its owner
+// metadata; misses map to os.ErrNotExist for the HTTP 404 paths.
+func (h *importHandler) loadUploaded(id string) ([]byte, kernel.ObjectMeta, error) {
+	if !uploadFileIDPattern.MatchString(id) {
+		return nil, kernel.ObjectMeta{}, os.ErrNotExist
+	}
+	raw, meta, err := h.objects.Get(context.Background(), kernel.ObjectNamespaceUploads, id)
+	if err != nil {
+		if errors.Is(err, kernel.ErrObjectNotFound) {
+			return nil, kernel.ObjectMeta{}, os.ErrNotExist
+		}
+		return nil, kernel.ObjectMeta{}, err
+	}
+	return raw, meta, nil
 }

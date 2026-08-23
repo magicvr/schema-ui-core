@@ -9,7 +9,7 @@ version: 0.12.0
 
 # 治理原则
 
-本文件记录 Goal Governance 核心方法论的**元规则**（跨目标、跨交付形态长期适用的原则）。具体操作细则见根目录 [AGENTS.md](../../AGENTS.md)、[docs/README.md](../README.md) 与 canonical 模板 [docs/templates/](../templates/)。Skills 编排落地见 [GOAL-005](../workspaces/workspace-001-goal-governance/GOAL-005-skills-closed-loop-audit/00-meta.md) 及 `skills/prompts/`；Skills 与 Web 都是消费适配器，不改变这些规则的权威性。
+本文件记录 Goal Governance 核心方法论的**元规则**（跨目标、跨交付形态长期适用的原则）。具体操作细则见根目录 [AGENTS.md](../../AGENTS.md)、[docs/README.md](../README.md) 与 canonical 模板 [docs/templates/](../templates/)。Skills 编排落地见 `skills/prompts/`（模板位于 `docs/templates/`）；Skills 与 Web 都是消费适配器，不改变这些规则的权威性。
 
 工作区与共享资料固定引用的操作协议见 [workspace-protocol.md](workspace-protocol.md)。它把 P-001 的路线图与阶段边界、P-002 的证据意识与 P-005 的信息门禁应用到跨工作区边界，不新增第二套生命周期或状态真相；目标状态只在各自工作区根内保存。
 
@@ -517,7 +517,7 @@ required / 必改 finding 只有下列路径可解除对应门禁（与 P-005 �
 | P-005 | 第 6b 节 | `00` 信息就绪扫描与门禁；`01`～`05` 记录、实施与审计 |
 | P-006 | 第 6d / 6e 节 | 编排器愿景门禁；`/vision` 第二刀；alignment 校验 |
 
-关联决策：[GOAL-001 D-009](../workspaces/workspace-001-goal-governance/GOAL-001-main-vision/01-decision.md#d-009--将信息就绪纳入核心闭环2026-07-19)；[GOAL-001 D-017](../workspaces/workspace-001-goal-governance/GOAL-001-main-vision/01-decision.md#d-017--p-006-愿景组合治理与级联对齐第一刀2026-07-28)；[GOAL-005 D-002～D-006](../workspaces/workspace-001-goal-governance/GOAL-005-skills-closed-loop-audit/01-decision.md)；[GOAL-007 D-001～D-002](../workspaces/workspace-001-goal-governance/GOAL-007-information-readiness-governance/01-decision.md)。
+关联决策（上游治理框架演化源头）：`GOAL-001 D-009`（将信息就绪纳入核心闭环）；`GOAL-001 D-017`（P-006 愿景组合治理与级联对齐第一刀）；`GOAL-005 D-002～D-006`（闭环审计与多渠道支持）；`GOAL-007 D-001～D-002`（信息就绪与未知项门禁）。
 
 ## 补充协议：工作区与共享资料引用
 

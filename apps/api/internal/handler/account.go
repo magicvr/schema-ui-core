@@ -10,7 +10,7 @@ import (
 // accountsHandler registers GET /api/accounts/me behind the request-identity
 // middleware: the identity is resolved from the Bearer access token (or the
 // explicit dev-session fallback), never from a process-injected static session.
-func accountsHandler(mux *http.ServeMux, a *auth.Authenticator) {
+func accountsHandler(mux routeRegistrar, a *auth.Authenticator) {
 	mux.Handle("GET /api/accounts/me", a.Middleware(meHandler(a)))
 }
 

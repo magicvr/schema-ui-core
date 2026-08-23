@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { projectNavigation } from "@/app/navigation";
@@ -101,7 +101,7 @@ describe("navigation projection", () => {
 // on $context.features.menu_users / menu_roles (legacy list-edit page retired
 // by 0006). V-MENU-03/04/05/06 semantics carried over to the Admin group.
 const adminManifestFixtureBytes = readFileSync(
-  new URL("../test-fixtures/app-manifest.admin.json", import.meta.url),
+  new URL("../test-fixtures/app-manifest.admin-dogfood.json", import.meta.url),
 );
 
 describe("GOAL-011 · users/roles menu projection", () => {

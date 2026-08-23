@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -69,7 +70,16 @@ func (s *Scheduler) loop() {
 		case <-s.stop:
 			return
 		case now := <-ticker.C:
-			s.tick(now)
+			// W9 F-007: a panicking tick must kill neither the loop goroutine
+			// nor the process; the next tick retries.
+			func() {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						slog.Error("scheduler tick panicked", "err", recovered)
+					}
+				}()
+				s.tick(now)
+			}()
 		}
 	}
 }
@@ -123,13 +133,41 @@ func (s *Scheduler) tick(now time.Time) {
 func (s *Scheduler) Execute(task store.Task, now time.Time) error {
 	handler, ok := s.handlers[task.Handler]
 	if !ok {
-		handler = s.handlers["system.noop"]
+		// W11 F-009: an unknown handler used to silently fall back to
+		// system.noop AND record a successful "ran" row — masking
+		// misconfiguration in the run history. It now records a FAILED run
+		// so the operator can see the task is mis-wired.
+		detail := fmt.Sprintf("unknown task handler %q", task.Handler)
+		run := store.TaskRun{
+			ID:         newRunID(),
+			TaskID:     task.ID,
+			Status:     "failed",
+			StartedAt:  now,
+			FinishedAt: &now,
+			Detail:     detail,
+			CreatedAt:  now,
+		}
+		if err := s.repository.RecordRun(run); err != nil {
+			slog.Error("scheduler unknown-handler run record failed", "task", task.Key, "err", err)
+			return err
+		}
+		return fmt.Errorf("scheduled task %s: %s", task.Key, detail)
 	}
 	started := now
 	finished := now
 	detail := ""
-	if err := handler(context.Background(), task, now); err != nil {
-		detail = err.Error()
+	// W9 F-007: a panicking task handler is recorded as a failed run (same
+	// durable trail as an error return) instead of crashing the process.
+	runErr := func() (err error) {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("task handler panicked: %v", recovered)
+			}
+		}()
+		return handler(context.Background(), task, now)
+	}()
+	if runErr != nil {
+		detail = runErr.Error()
 	}
 	run := store.TaskRun{
 		ID:        newRunID(),

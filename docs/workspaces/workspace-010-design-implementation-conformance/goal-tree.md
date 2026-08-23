@@ -2,9 +2,9 @@
 title: 目标树 · workspace-010-design-implementation-conformance
 status: active
 created: 2026-08-11
-updated: 2026-08-18
+updated: 2026-08-23
 parent: null
-version: 0.40.0
+version: 0.44.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -48,8 +48,20 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-028-w17-cron-preview-field-binding [done] · W17 · Cron 字段绑定与中文 describeCron（4/4）
 ├── GOAL-029-w18-preview-copy-and-import-modal [done] · W18 · 预览弹窗/复制链接与导入模态模板（4/4）
 ├── GOAL-030-w19-my-wallet-lazy-open-empty-state [done] · W19 · 我的钱包惰性开通与未开户空态（4/4）
-└── GOAL-031-w20-notification-settings-in-account [done] · W20 · 通知设置迁入个人中心（4/4）
+├── GOAL-031-w20-notification-settings-in-account [done] · W20 · 通知设置迁入个人中心（4/4）
+├── GOAL-032-w21-startup-db-identity [done] · W21 · 启动时数据库身份判定与迁移计划（5/5）
+├── GOAL-033-w22-residual-closeout [done] · W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 / B 组复核 ×6 / 台账卫生 ×3）（18/18）
+└── GOAL-034-w23-admin-login-home-redirect [done] · W23 · admin 登录后 home 推导回归修复（N-001 承接）（4/4）
+└── GOAL-035-w24-e2e-dual-dialect-matrix [done] · W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次）（4/4）
 ```
+
+**W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
+
+**W23（2026-08-23 关门，4/4）**：N-001 根因 = e2e 挂具 store 隔离失效（本地 gitignored `configs/.env` 2026-08-21 建，`DB_DIALECT=postgres` 劫持临时 SQLite；全新种子 admin/admin 401，登录链第一步断开），**非路由回归**；W22 基线实验（git stash 无法移除 gitignored 文件）结论失效。修复：挂具钉死 `DB_DIALECT=sqlite`（playwright.config.ts）+ signInZh/sign-in fallback 等待硬化 + 连带 F-1（RowActionsMenu scroll-close 竞态，产品面）F-2（fallback 按钮等待）fixed。回归：go 全包 ok / vitest 1088 / tsc+build 0 / e2e admin 连续 5 轮 9/9 + mvp 9/9。A-001 self pass，required 0。I-001 closed。
+
+**W21（2026-08-22 关门，5/5）**：启动 Identify→Plan→Execute。A-003 确认 F-001～F-003 fixed；A-004 self 关门 pass。Root/VP 保持 active。
+
+**W22（2026-08-23 立项，GOAL-033）**：accepted-residual 全库清点收口。全库扫描命中约 420 行，存续 residual 23 项；用户 P-004 裁决执行：A 组一次性修复 ×6（W7 e2e admin M3 补跑 / W10 种子 admin must_change_password 迁移 / W11 导航边界单测 / W6 登录密码可见切换 / W9 上传扩展启发式 / W9 MFA verify 独立限流）+ B 组触发到期复核 ×6（W3 架构债 ×4：R4-I004 retention 过期、F-003b document 字节、C4-004 allowlist、C5-002 Start/Ready 矩阵；W8 F-007 freshness；W13 迁移器回写核实）+ 台账卫生 ×3（H1 GOAL-017 F-004 兑现回写、H2 W17 N-001 用词纠偏、H3 dogfood 夹具重命名）；C 组设计裁决类 11 项保留不动。安全面改动（A5/A6）关门需 independent 审计。
 
 **W20（2026-08-18 关门，4/4）**：通知设置迁入个人中心。S1 D-001 + S2 实施 + S3 定向 + S4 A-001 self pass。Root/VP 保持 active。
 
@@ -125,6 +137,10 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-029-w18-preview-copy-and-import-modal | W18 · 预览弹窗/复制链接与导入模态模板 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-030-w19-my-wallet-lazy-open-empty-state | W19 · 我的钱包惰性开通与未开户空态 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
 | GOAL-031-w20-notification-settings-in-account | W20 · 通知设置迁入个人中心 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-18 |
+| GOAL-032-w21-startup-db-identity | W21 · 启动时数据库身份判定与迁移计划 | GOAL-001-design-implementation-conformance | done | 5/5 | 2026-08-22 |
+| GOAL-033-w22-residual-closeout | W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 + B 组触发复核 ×6 + 台账卫生 ×3） | GOAL-001-design-implementation-conformance | done | 18/18 | 2026-08-23 |
+| GOAL-034-w23-admin-login-home-redirect | W23 · admin 登录后 home 推导回归修复（N-001 承接） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-23 |
+| GOAL-035-w24-e2e-dual-dialect-matrix | W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-23 |
 
 
 ## 维护说明

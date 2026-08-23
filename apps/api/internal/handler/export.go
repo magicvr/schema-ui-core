@@ -225,15 +225,17 @@ func (h *exportHandler) record(event string, r *http.Request, resource string, r
 	recordAudit(h.operations, user, event, "", auditDetail("export", map[string]any{"resource": resource, "rows": rows}), h.now().UTC(), r.Context())
 }
 
-// formulaSafe neutralizes spreadsheet formula injection (F-009): a cell that
-// starts with = + - @ is prefixed with a single quote (visible in Excel, not
-// executed as a formula).
+// formulaSafe neutralizes spreadsheet formula injection (F-009 / W11 F-017):
+// a cell that starts with = + - @ is prefixed with a single quote (visible
+// in Excel, not executed as a formula). W11 F-017 adds tab and carriage
+// return — OWASP lists them as formula-injection prefixes Excel/LibreOffice
+// accept before the operator.
 func formulaSafe(value string) string {
 	if value == "" {
 		return value
 	}
 	switch value[0] {
-	case '=', '+', '-', '@':
+	case '=', '+', '-', '@', '\t', '\r':
 		return "'" + value
 	}
 	return value

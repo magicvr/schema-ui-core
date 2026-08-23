@@ -5,6 +5,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -264,6 +265,26 @@ func (e *taskEntity) Update(id string, body map[string]any, now time.Time, actor
 	return taskToMap(*row), nil
 }
 
+// DeleteTrashTx implements handler.TrashTxDeleter (W11 F-002): the task
+	// delete and the recycle snapshot commit in ONE transaction — a snapshot
+	// failure rolls the delete back. The audit event is recorded only after
+	// the transaction committed.
+func (e *taskEntity) DeleteTrashTx(ctx context.Context, id string, actor account.User, now time.Time, record func(context.Context, kernel.Tx) error) error {
+	txrepo, ok := e.repository.(interface {
+		DeleteTaskTx(ctx context.Context, id string, record func(context.Context, kernel.Tx) error) error
+	})
+	if !ok {
+		return errors.New("tasks repository does not support transactional delete")
+	}
+	if err := txrepo.DeleteTaskTx(ctx, id, record); err != nil {
+		return mapTaskStoreError(err)
+	}
+	recordTaskEvent(e.operations, operationlog.EventTaskDelete, actor, id, now)
+	return nil
+}
+
+// Delete serves the legacy delete path (no trash / no transactional
+// recorder); the factory prefers DeleteTrashTx when both sides opt in.
 func (e *taskEntity) Delete(id string, actor account.User) error {
 	err := e.repository.DeleteTask(id)
 	if err != nil {

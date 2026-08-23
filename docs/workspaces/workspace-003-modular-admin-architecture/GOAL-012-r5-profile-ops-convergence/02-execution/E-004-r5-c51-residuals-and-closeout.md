@@ -25,9 +25,9 @@ status: recorded
 | residual | 依据 | 处置 |
 |----------|------|------|
 | Configuration 运行时迁移 | 冻结 §2.2：「R4 不新增独立 Registrar 方法；ConfigNamespaces 由后续明确配置 contract 处理」 | R5 登记，需独立配置 contract |
-| PolicyID/Visibility allowlist 深化 | R4 最小 trim accepted-residual（GOAL-010 A-003 C4-004） | R5/R6 表达式语法 |
+| PolicyID/Visibility allowlist 深化 | R4 最小 trim accepted-residual（GOAL-010 A-003 C4-004） | R5/R6 表达式语法 → **2026-08-23 复核：R5/R6 未实施，用户书面续期至 2026-12-01（workspace-010 GOAL-033 D-002）** |
 | versioned system-data reconcile 显式版本载体 | 冻结 §4.2；seedRBAC 幂等已覆盖 | R5 续作/R6 |
-| 双 Profile Start/Ready 失败矩阵自动化 | R4 accepted-residual（GOAL-011 A-004 C5-002） | R5 数据门禁补测 |
+| 双 Profile Start/Ready 失败矩阵自动化 | R4 accepted-residual（GOAL-011 A-004 C5-002） | R5 数据门禁补测 → **2026-08-23 复核：已兑现 fixed（`TestDualProfileLifecycleMatrix` + `TestDualProfileContractMatrix`）** |
 
 ## 验证
 

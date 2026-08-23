@@ -1,4 +1,4 @@
-﻿---
+---
 id: GOAL-042-optimize-readme
 title: 优化项目 README 文档结构
 status: active
@@ -36,7 +36,7 @@ progress: 50%
 
 ## 父目标
 
-- [GOAL-040-docs-quality](../GOAL-040-docs-quality/00-meta.md)（示例：子目标指向父目标 ID；Root 则写 `null`）
+- `GOAL-040-docs-quality`（示例：`parent: GOAL-040-docs-quality`；子目标指向父目标 ID，Root 则写 `null`）
 
 ## 台账布局
 

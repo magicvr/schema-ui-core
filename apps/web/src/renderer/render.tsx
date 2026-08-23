@@ -44,6 +44,7 @@ import { useTranslate } from "@/i18n/runtime";
 import {
   executeAction,
   evaluatePermissionTargets,
+  validatePermissions,
 } from "@/renderer/permissions";
 import {
   EMPTY_RESOURCE_LIST,
@@ -368,6 +369,10 @@ async function runCustomAction(
       URL.revokeObjectURL(objectUrl);
       return { ok: false, code: "POPUP_BLOCKED", message: "preview window was blocked", messageKey: "error.popupBlocked" };
     }
+    // A-003 recommended F-003: cut the opener link as soon as we hold the
+    // direct reference — if the preview template ever embeds untrusted
+    // content, the opened document can no longer reach back into this app.
+    previewWindow.opener = null;
         // W7 F-010: do not navigate the preview tab directly to a blob: URL — that
     // strips the server Content-Disposition/CSP sandbox headers. Embed the blob
     // in a sandboxed (no allow-scripts, no allow-same-origin) iframe instead.
@@ -747,13 +752,32 @@ function SchemaCrudProvider({
     [document, context],
   );
 
+  // W9 A-005 R-F-001: the L2 permission validator now runs in the production
+  // render path. A malformed permission structure surfaces at load time
+  // (console.error with codes + paths) and fails CLOSED — while invalid, every
+  // registered permission target is denied instead of trusting a structure the
+  // validator rejected. Unmarked targets keep the protocol's default-allow.
+  const permissionStructureInvalid = useMemo(() => {
+    const l2Errors = validatePermissions(document as unknown as JsonRecord);
+    if (l2Errors.length > 0) {
+      console.error(
+        "[schema-ui] permission L2 validation failed; gated targets are denied",
+        l2Errors,
+      );
+    }
+    return l2Errors.length > 0;
+  }, [document]);
+
   const effectivePermission = useCallback(
     (targetId: string) => {
+      if (permissionStructureInvalid) {
+        return false;
+      }
       const entry = permissionTargets.find((target) => target.targetId === targetId);
       // Absent target = no declared permission (engine default is allow).
       return entry === undefined ? true : entry.effectivePermission;
     },
-    [permissionTargets],
+    [permissionTargets, permissionStructureInvalid],
   );
 
   const registerFetcher = useCallback((next: typeof fetch) => {
@@ -1312,6 +1336,12 @@ function useRecordSourcePrefill(
   const [state, setState] = useState<RecordSourcePrefillState>(() =>
     recordSource !== undefined ? { status: "loading" } : { status: "idle" },
   );
+  // W11 F-012: the route is a prefill input (query/params flow into
+  // recordSource construction). The route OBJECT identity is unstable (App
+  // rebuilds the render context each render), so the effect depends on this
+  // serialized key: it re-runs only when query/params actually change, not
+  // on unrelated parent renders.
+  const routeKey = JSON.stringify(crud?.route ?? null);
   useEffect(() => {
     if (recordSource === undefined) {
       setState({ status: "idle" });
@@ -1410,7 +1440,13 @@ function useRecordSourcePrefill(
     return () => {
       cancelled = true;
     };
-  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken]);
+  // W11 F-012: the route is a prefill input. The route OBJECT identity is
+  // unstable (App rebuilds the render context each render), so depend on a
+  // serialized key — the effect re-runs only when query/params actually
+  // change, not on unrelated parent renders. The previous deps omitted the
+  // route entirely: a same-page query change left the PREVIOUS record's
+  // values pre-filled and a save could write to the wrong row.
+  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken, routeKey]);
   return state;
 }
 

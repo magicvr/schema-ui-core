@@ -15,7 +15,7 @@ type schemaHandler struct {
 // RegisterSchemas publishes only finalized PageContribution documents. Profile
 // filtering, owner validation, duplicate checks and JSON identity validation
 // have already completed in kernel.RegisterContributions.
-func RegisterSchemas(mux *http.ServeMux, pages []kernel.PageContribution) {
+func RegisterSchemas(mux routeRegistrar, pages []kernel.PageContribution) {
 	documents := make(map[string][]byte, len(pages))
 	for _, page := range pages {
 		documents[page.PageID] = append([]byte(nil), page.Document...)

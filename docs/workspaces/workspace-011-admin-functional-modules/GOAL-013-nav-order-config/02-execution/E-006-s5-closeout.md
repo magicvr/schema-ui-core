@@ -23,6 +23,7 @@ version: 1.0.0
 | F-002 缺 manifest 序集成测试 | non-blocking | **fixed**：TestPublishedManifestNavigationOrder（默认序 + env 覆盖序） | composition_test.go |
 | F-003 Notifications 清单位 vs 空 fragment | non-blocking | **accepted**（既有产品形态，非本目标引入） | A-003 响应节 |
 | F-004 重复/大小写边界无测 | non-blocking | **accepted-residual**（行为符合非法回退语义；运维文档注明精确匹配） | A-003 响应节 |
+| ↑ F-004 兑现复核 | | **2026-08-23 fixed**：三条边界单测落地（kernel/navigation_order_test.go，契约一致） | [workspace-010 GOAL-033 E-005](../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-005-s2-completion-facts.md) |
 | F-005 web fixture 旧序 | non-blocking | **accepted**（静态测试数据非 API 输出） | A-003 响应节 |
 
 - 回归：composition 全量 + 新集成测试绿。

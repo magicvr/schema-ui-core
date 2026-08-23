@@ -305,4 +305,36 @@ describe("LoginPage", () => {
     const container2 = await renderLogin(vi.fn());
     expect(container2.querySelector('[data-login-notice="mfa-disabled"]')).toBeNull();
   });
+
+  // F-VUI-011: password visibility toggle
+  it("password input starts as type=password", async () => {
+    const container = await renderLogin(vi.fn());
+    const input = container.querySelector<HTMLInputElement>("#password");
+    expect(input).not.toBeNull();
+    expect(input!.type).toBe("password");
+  });
+
+  it("clicking the toggle reveals the password (type changes to text) and updates aria-label", async () => {
+    const container = await renderLogin(vi.fn());
+    const toggle = container.querySelector<HTMLButtonElement>("[data-password-toggle]");
+    expect(toggle).not.toBeNull();
+    // Initial aria-label is "Show password"
+    expect(toggle!.getAttribute("aria-label")).toMatch(/show/i);
+    await act(async () => toggle!.click());
+    const input = container.querySelector<HTMLInputElement>("#password");
+    expect(input!.type).toBe("text");
+    // aria-label switches to "Hide password"
+    expect(toggle!.getAttribute("aria-label")).toMatch(/hide/i);
+  });
+
+  it("clicking the toggle twice restores type=password and original aria-label", async () => {
+    const container = await renderLogin(vi.fn());
+    const toggle = container.querySelector<HTMLButtonElement>("[data-password-toggle]");
+    expect(toggle).not.toBeNull();
+    await act(async () => toggle!.click());
+    await act(async () => toggle!.click());
+    const input = container.querySelector<HTMLInputElement>("#password");
+    expect(input!.type).toBe("password");
+    expect(toggle!.getAttribute("aria-label")).toMatch(/show/i);
+  });
 });

@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-20
+updated: 2026-08-22
 parent: null
-version: 0.4.13
+version: 0.4.25
 ---
 
 # Charter 修订台账
@@ -43,3 +43,15 @@ version: 0.4.13
 | VR-027 | 2026-08-20 | editorial | 架构分支 Store 双方言 | 用户确认：不引入 ORM；自持 PostgreSQL + SQLite 两个 Store 方言；内核 Store 为持久化端口而非业务仓库；逻辑 schema 一份、物理 SQL 可成对；PostgreSQL 为生产验收权威，SQLite 为 dev/mvp/快测默认且合同平等（不得残缺）。写入 roadmap RT-P03。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），不建 VP、不开区，**无** strategic、**无** re-align。 |
 | VR-028 | 2026-08-20 | editorial | VP-013 planned | 用户确认新建 `VP-013-store-dialects`（`planned`，0 区）：承接架构 A1（内核持久化端口 + PostgreSQL 实现 + 现有台账对写）；退出分母不含 A2+ / ORM / Admin 功能 / 业务域。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
 | VR-029 | 2026-08-20 | editorial | VP-013 激活 + 开区 | VRev-029 self `pass`（V-F058/V-F059 → fixed）。用户确认激活并开区；slug `workspace-013-store-dialects`，Root `GOAL-001-store-dialects`。VP-013 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-030 | 2026-08-21 | editorial | VP-013 有界关门投影 | 用户确认关闭 VP-013（v0.3.0 `active → closed`，有界 · 架构 A1）：lead workspace-013 Root `done 5/5`；VRev-030 V-F060 → fixed；residual 点名 GOAL-006 D-002（无产品 SQLite→PG 搬运器）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-031 | 2026-08-21 | editorial | VP-014 planned | 用户确认新建 `VP-014-object-storage`（`planned`，0 区）：承接架构 A2（内核对象存储端口 + S3 兼容实现 + 本地盘默认）；退出分母不含签名 URL / 分片 / 扫描 / CDN / 产品搬运器 / A3+ / Admin 功能 / 业务域。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
+| VR-032 | 2026-08-21 | editorial | VP-014 激活 + 开区 | VRev-031 self `pass`（V-F061/V-F062 → fixed）。用户确认激活并开区；slug `workspace-014-object-storage`，Root `GOAL-001-object-storage`。VP-014 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-033 | 2026-08-21 | editorial | VP-014 有界关门投影 | 用户确认关闭 VP-014（组合层有界 · 架构 A2）：lead workspace-014 Root `done 5/5`；VRev-032 V-F063 → fixed；residual 点名 GOAL-001 I-004（无产品本地盘→对象存储搬运器）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-034 | 2026-08-21 | editorial | VP-015 planned | 用户确认新建 `VP-015-observability`（`planned`，0 区）：承接架构 A4（Prometheus 类指标导出 + OpenTelemetry traces；无收集器为默认）；退出分母不含 A3 / A5 / Sentry / 剖析 / Admin 功能 / 业务域。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
+| VR-035 | 2026-08-21 | editorial | VP-015 激活 + 开区 | VRev-033 self `pass`（V-F064/V-F065 → fixed）。用户确认激活并开区；slug 按惯例 `workspace-015-observability`，Root `GOAL-001-observability`。VP-015 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-036 | 2026-08-22 | editorial | VP-015 有界关门投影 | 用户确认关闭 VP-015（组合层有界 · 架构 A4）：lead workspace-015 Root `done 5/5`；VRev-034 V-F066 → fixed；关门依据 = `/vision` 本轮独立源码/测试/live 核验，不以 Goal 台账为充分条件。residual 点名 A-002 F-003（otlp-sink 不解析）与 I-015-003（Store/对象/Job 指标出局）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-037 | 2026-08-22 | editorial | VP-016 planned | 用户确认新建 `VP-016-key-rotation-and-backup`（`planned`，0 区）：承接架构 A5（JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥为默认）。退出分母不含 A3 / KMS / PITR / 热加载 / `/readyz` 再扩 / Admin 功能 / 业务域；不重做 VP-013 dump。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
+| VR-038 | 2026-08-22 | editorial | VP-016 激活 + 开区 | VRev-035 self `pass`（V-F067/V-F068 → fixed）。用户确认激活并开区；slug 按惯例 `workspace-016-key-rotation-and-backup`，Root `GOAL-001-key-rotation-and-backup`。VP-016 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-039 | 2026-08-22 | editorial | VP-016 有界关门投影 | 用户确认关闭 VP-016（组合层有界 · 架构 A5）：lead workspace-016 Root `done 5/5`；VRev-036 V-F069 → fixed；关门依据 = `/vision` 本轮独立源码/测试/live 核验，不以 Goal 台账为充分条件。residual 点名 I-016-005（立即失效未选）与 `admin.mfa` wrapping（JWT previous 不重包 MFA）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-040 | 2026-08-22 | editorial | VP-017 planned + 自助恢复邮件前置 | 用户确认路径 3：自助恢复 + 管理员重置都要；自助恢复证明依据 = 已绑定邮箱；出站先做邮件；SMS 后置。新建 `VP-017-outbound-mail`（`planned`，0 区）：架构 A6 内核发送端口 + SMTP + 无 SMTP 默认 sink。退出分母不含账号 email / 邀请 / 恢复状态机 / 模板 / Notification Transport 产品 / SMS / A3。Charter 关系节改为当前交付意图 = planned VP-017；不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
+| VR-041 | 2026-08-22 | editorial | VP-017 激活 + 开区 | VRev-037 independent `pass`（V-F070/V-F071 → fixed）。VRev-038 self `pass`。用户确认激活并开区；slug 按惯例 `workspace-017-outbound-mail`，Root `GOAL-001-outbound-mail`。VP-017 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

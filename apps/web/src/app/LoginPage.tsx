@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 import { AuthError, type LoginCaptcha } from "@/account/auth-client";
 import {
@@ -75,6 +76,7 @@ export function LoginPage({
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   // W11 · M-02: one-time notice after a successful MFA disable (the server
   // revoked all sessions, so the app signed out locally and landed here).
   const [notice, setNotice] = useState<string | null>(() => {
@@ -276,15 +278,31 @@ export function LoginPage({
 
               <div className="space-y-2">
                 <Label htmlFor="password">{t("login.password")}</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder={t("login.password")}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder={t("login.password")}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="pr-9"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? t("login.password.hide") : t("login.password.show")}
+                    data-password-toggle
+                    className="absolute inset-y-0 right-0 flex items-center px-2.5 text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? (
+                      <EyeOff aria-hidden="true" className="size-4" />
+                    ) : (
+                      <Eye aria-hidden="true" className="size-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {captchaChallenge !== null ? (

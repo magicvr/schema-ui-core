@@ -595,3 +595,37 @@ func TestWalletErrorCodesCataloged(t *testing.T) {
 // Keep kernel import used (gates test builds route keys through the provider
 // surface in the module tests).
 var _ = kernel.RouteKey
+
+// W11 F-006: a garbage reconcile body is a hard 400 — it previously decoded
+// with a dropped error and silently queued a FULL-ledger reconcile through
+// the empty-accountId sentinel. The submit/cancel/retry writes also require
+// wallet.write (a read-only role must not queue or mutate jobs).
+func TestWalletReconcileBadBodyAndWriteGate(t *testing.T) {
+	env, _ := newWalletEnv(t)
+	adminToken := env.login(t, testSeedUsername, testSeedPassword)
+
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodPost, "/api/wallet/reconcile", `{not json`))
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("garbage reconcile body = %d, want 400", rr.Code)
+	}
+
+	// A role without wallet.write stays 403 on submit/cancel/retry — even
+	// with a well-formed body (the editor role has no wallet keys at all).
+	env.addUser(t, "editor1", "editor-password", []string{"editor"})
+	editorToken := env.login(t, "editor1", "editor-password")
+	for _, tc := range []struct {
+		method, path, body string
+	}{
+		{http.MethodPost, "/api/wallet/reconcile", `{"accountId":"acct-1"}`},
+		{http.MethodPost, "/api/wallet/jobs/job-1/cancel", ""},
+		{http.MethodPost, "/api/wallet/jobs/job-1/retry", ""},
+	} {
+		req := bearer(t, editorToken, tc.method, tc.path, tc.body)
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("editor %s %s = %d, want 403", tc.method, tc.path, rec.Code)
+		}
+	}
+}

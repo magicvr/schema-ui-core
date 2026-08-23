@@ -216,6 +216,7 @@ E-005 表：装配顺序 / Profile 矩阵 / 协议形状 / 权限集合 / 门禁
 - `menu_notifications` 无 fragment 槽：保持现状；清单维护知悉。
 
 ### F-004 · accepted-residual（边界行为符合非法回退语义）
+> **2026-08-23 兑现复核：fixed**——三条边界单测已落地（GOAL-033 E-005）；原 residual 条款不再适用。
 
 - 重复 NodeID（rank 后者覆盖）与大小写不匹配（整表回退默认 + WARN）行为符合 D-002；无专项测试锁定，运维文档注明 NodeID 精确匹配。
 

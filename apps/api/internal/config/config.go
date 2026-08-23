@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/mail"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -45,10 +46,18 @@ type Config struct {
 	HTTPTrustedProxies []string
 	LogLevelName       string
 
-	AuthJWTSecret  string
-	AuthAccessTTL  time.Duration
-	AuthRefreshTTL time.Duration
-	DBPath         string
+	AuthJWTSecret string
+	// AuthJWTSecretPrevious is the optional previous (rotated-out) signing key
+	// (VP-016 R1 / workspace-016 Root D-002): auth.jwt_secret_previous /
+	// AUTH_JWT_SECRET_PREVIOUS. Empty (the default) keeps single-key behavior
+	// identical in every environment. When set outside development it must
+	// satisfy the same strength rule as the current key and must differ from
+	// it; the overlap window lasts as long as the key stays configured and is
+	// retired by removing it and restarting.
+	AuthJWTSecretPrevious string
+	AuthAccessTTL         time.Duration
+	AuthRefreshTTL        time.Duration
+	DBPath                string
 	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
 	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
 	// unknown values and enforces DSN/path pairing rules.
@@ -88,6 +97,63 @@ type Config struct {
 	BrandingFaviconDimension int
 	BrandingJPEGQuality      int
 	BrandingMaxBytes         int
+
+	// Object-storage surface (VP-014 / workspace-014 GOAL-002 D-001, R1).
+	// ObjectsDriver selects the kernel.ObjectStore adapter: "" / "local" (the
+	// embedded default; root derived from filepath.Dir(DBPath) at composition)
+	// or "s3" (explicit production configuration; readyz extends only then).
+	ObjectsDriver string
+	// ObjectsLocalRoot optionally overrides the local disk root. Empty keeps
+	// the historical derivation (the directory containing the sqlite file).
+	ObjectsLocalRoot string
+	// S3-compatible backend settings. Credentials are secrets: they must come
+	// from env interpolation (configs/.env or process env), never literals.
+	// driver=s3 requires endpoint/bucket/access_key_id/secret_access_key
+	// (fail-closed at load); any non-empty s3.* key with driver=local fails.
+	ObjectsS3Endpoint        string
+	ObjectsS3Region          string
+	ObjectsS3Bucket          string
+	ObjectsS3AccessKeyID     string
+	ObjectsS3SecretAccessKey string
+	// ObjectsS3UsePathStyle defaults to true (MinIO/R2 need path-style);
+	// virtual-host style can be enabled for AWS-compatible endpoints.
+	ObjectsS3UsePathStyle bool
+
+	// Observability metrics surface (VP-015 / workspace-015 GOAL-002 D-001).
+	// MetricsEnabled selects the DEDICATED Prometheus exposition listener —
+	// never a route on the main mux. It is off by default so mvp/dev/Compose
+	// keep the documented no-collector default (no extra port, no behavior
+	// change). MetricsAddr defaults to loopback-only; any non-loopback bind
+	// requires MetricsAuthToken (fail-closed at load/validate). The token is
+	// a secret: supply it via OBSERVABILITY_METRICS_AUTH_TOKEN env /
+	// configs/.env, never a YAML literal.
+	MetricsEnabled   bool
+	MetricsAddr      string
+	MetricsAuthToken string
+
+	// Observability traces surface (VP-015 / workspace-015 GOAL-004 D-001).
+	// TracesEnabled selects OTLP/HTTP export; disabled (the default) keeps a
+	// pure no-op tracer path — no provider, no spans, zero behavior change
+	// (mvp/dev never require a collector). The endpoint is required when
+	// enabled and must be an absolute http(s) URL (the SDK appends
+	// /v1/traces). SampleRatio applies as ParentBased(TraceIDRatioBased)
+	// with default 1.0. Export failures are logged, never fatal.
+	TracesEnabled     bool
+	TracesEndpoint    string
+	TracesSampleRatio float64
+
+	// Outbound-mail surface (VP-017 / workspace-017 GOAL-003 D-001, R2).
+	// All keys empty = SMTP unconfigured: the process keeps the embedded
+	// capture/log default and mvp/dev startup is unaffected. Any single key
+	// makes the block explicit: host/username/password/from become REQUIRED
+	// (fail-closed at ValidateProd in every environment; port defaults to
+	// 465). The password is a secret: it must arrive via env interpolation
+	// (MAIL_SMTP_PASSWORD via process env / configs/.env), never literals.
+	MailSMTPHost     string
+	MailSMTPPort     int // 0 = unset -> adapter applies the frozen 465
+	MailSMTPUsername string
+	MailSMTPPassword string
+	MailSMTPFrom     string
 
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
@@ -156,6 +222,7 @@ type yamlFile struct {
 	} `yaml:"log"`
 	Auth struct {
 		JWTSecret         *string `yaml:"jwt_secret"`
+		JWTSecretPrevious *string `yaml:"jwt_secret_previous"`
 		AccessTTL         *string `yaml:"access_ttl"`
 		RefreshTTL        *string `yaml:"refresh_ttl"`
 		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
@@ -188,6 +255,43 @@ type yamlFile struct {
 		JPEGQuality      int `yaml:"jpeg_quality"`
 		MaxBytes         int `yaml:"max_bytes"`
 	} `yaml:"branding"`
+	Storage struct {
+		Objects struct {
+			Driver *string `yaml:"driver"`
+			Local  struct {
+				Root *string `yaml:"root"`
+			} `yaml:"local"`
+			S3 struct {
+				Endpoint        *string `yaml:"endpoint"`
+				Region          *string `yaml:"region"`
+				Bucket          *string `yaml:"bucket"`
+				AccessKeyID     *string `yaml:"access_key_id"`
+				SecretAccessKey *string `yaml:"secret_access_key"`
+				UsePathStyle    *bool   `yaml:"use_path_style"`
+			} `yaml:"s3"`
+		} `yaml:"objects"`
+	} `yaml:"storage"`
+	Observability struct {
+		Metrics struct {
+			Enabled   *bool   `yaml:"enabled"`
+			Addr      *string `yaml:"addr"`
+			AuthToken *string `yaml:"auth_token"`
+		} `yaml:"metrics"`
+		Traces struct {
+			Enabled     *bool    `yaml:"enabled"`
+			Endpoint    *string  `yaml:"endpoint"`
+			SampleRatio *float64 `yaml:"sample_ratio"`
+		} `yaml:"traces"`
+	} `yaml:"observability"`
+	Mail struct {
+		SMTP struct {
+			Host     *string `yaml:"host"`
+			Port     *int    `yaml:"port"`
+			Username *string `yaml:"username"`
+			Password *string `yaml:"password"`
+			From     *string `yaml:"from"`
+		} `yaml:"smtp"`
+	} `yaml:"mail"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -208,9 +312,10 @@ const defaultYAMLPath = "configs/config.yaml"
 //
 // YAML values support ${VAR} (fail-closed when unset) and ${VAR:-default}.
 // CONFIG_ENV_FILE (default configs/.env) may supply secret values for the
-// interpolation; it never overrides an already-set process env. Load never
-// returns an error: fatal load failures land in LoadError (and therefore
-// ValidateProd) so existing call sites keep working.
+// interpolation; copy configs/.env.example to create it. It never overrides
+// an already-set process env. Load never returns an error: fatal load
+// failures land in LoadError (and therefore ValidateProd) so existing call
+// sites keep working.
 func Load() *Config {
 	cfg := &Config{
 		AppName:      "schema-ui-core-api",
@@ -241,6 +346,14 @@ func Load() *Config {
 		BrandingFaviconDimension: 64,
 		BrandingJPEGQuality:      82,
 		BrandingMaxBytes:         4 << 20,
+		ObjectsDriver:            "local",
+		ObjectsS3UsePathStyle:    true,
+		MetricsEnabled:           false,
+		MetricsAddr:              "127.0.0.1:25081",
+		MetricsAuthToken:         "",
+		TracesEnabled:            false,
+		TracesEndpoint:           "",
+		TracesSampleRatio:        1.0,
 		RuntimeMode:              RuntimeModeNormal,
 	}
 
@@ -315,6 +428,7 @@ func Load() *Config {
 	}
 	cfg.LogLevelName = strPtrOr(yf.Log.Level, cfg.LogLevelName)
 	cfg.AuthJWTSecret = strPtrOr(yf.Auth.JWTSecret, cfg.AuthJWTSecret)
+	cfg.AuthJWTSecretPrevious = strPtrOr(yf.Auth.JWTSecretPrevious, cfg.AuthJWTSecretPrevious)
 	cfg.AuthAccessTTL = orDurationPtr(yf.Auth.AccessTTL, cfg.AuthAccessTTL)
 	cfg.AuthRefreshTTL = orDurationPtr(yf.Auth.RefreshTTL, cfg.AuthRefreshTTL)
 	if yf.Auth.DevSessionEnabled != nil {
@@ -356,6 +470,35 @@ func Load() *Config {
 	if yf.Branding.MaxBytes > 0 {
 		cfg.BrandingMaxBytes = yf.Branding.MaxBytes
 	}
+	cfg.ObjectsDriver = strings.ToLower(strings.TrimSpace(strPtrOr(yf.Storage.Objects.Driver, cfg.ObjectsDriver)))
+	cfg.ObjectsLocalRoot = strPtrOr(yf.Storage.Objects.Local.Root, cfg.ObjectsLocalRoot)
+	cfg.ObjectsS3Endpoint = strPtrOr(yf.Storage.Objects.S3.Endpoint, cfg.ObjectsS3Endpoint)
+	cfg.ObjectsS3Region = strPtrOr(yf.Storage.Objects.S3.Region, cfg.ObjectsS3Region)
+	cfg.ObjectsS3Bucket = strPtrOr(yf.Storage.Objects.S3.Bucket, cfg.ObjectsS3Bucket)
+	cfg.ObjectsS3AccessKeyID = strPtrOr(yf.Storage.Objects.S3.AccessKeyID, cfg.ObjectsS3AccessKeyID)
+	cfg.ObjectsS3SecretAccessKey = strPtrOr(yf.Storage.Objects.S3.SecretAccessKey, cfg.ObjectsS3SecretAccessKey)
+	if yf.Storage.Objects.S3.UsePathStyle != nil {
+		cfg.ObjectsS3UsePathStyle = *yf.Storage.Objects.S3.UsePathStyle
+	}
+	cfg.MailSMTPHost = strPtrOr(yf.Mail.SMTP.Host, cfg.MailSMTPHost)
+	if yf.Mail.SMTP.Port != nil {
+		cfg.MailSMTPPort = *yf.Mail.SMTP.Port
+	}
+	cfg.MailSMTPUsername = strPtrOr(yf.Mail.SMTP.Username, cfg.MailSMTPUsername)
+	cfg.MailSMTPPassword = strPtrOr(yf.Mail.SMTP.Password, cfg.MailSMTPPassword)
+	cfg.MailSMTPFrom = strPtrOr(yf.Mail.SMTP.From, cfg.MailSMTPFrom)
+	if yf.Observability.Metrics.Enabled != nil {
+		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
+	}
+	cfg.MetricsAddr = strPtrOr(yf.Observability.Metrics.Addr, cfg.MetricsAddr)
+	cfg.MetricsAuthToken = strPtrOr(yf.Observability.Metrics.AuthToken, cfg.MetricsAuthToken)
+	if yf.Observability.Traces.Enabled != nil {
+		cfg.TracesEnabled = *yf.Observability.Traces.Enabled
+	}
+	cfg.TracesEndpoint = strPtrOr(yf.Observability.Traces.Endpoint, cfg.TracesEndpoint)
+	if yf.Observability.Traces.SampleRatio != nil {
+		cfg.TracesSampleRatio = *yf.Observability.Traces.SampleRatio
+	}
 	profile := strPtrOr(yf.App.Profile, string(kernel.ProfileMVP))
 
 	// navigation.order (GOAL-013 D-002 §4): sequence of NodeIDs. A malformed
@@ -392,6 +535,7 @@ func Load() *Config {
 	}
 	cfg.LogLevelName = envOr("LOG_LEVEL", cfg.LogLevelName)
 	cfg.AuthJWTSecret = envOr("AUTH_JWT_SECRET", cfg.AuthJWTSecret)
+	cfg.AuthJWTSecretPrevious = envOr("AUTH_JWT_SECRET_PREVIOUS", cfg.AuthJWTSecretPrevious)
 	cfg.AuthAccessTTL = durationEnv("AUTH_ACCESS_TTL", cfg.AuthAccessTTL)
 	cfg.AuthRefreshTTL = durationEnv("AUTH_REFRESH_TTL", cfg.AuthRefreshTTL)
 	cfg.AuthDevSessionEnabled = boolEnv("AUTH_DEV_SESSION_ENABLED", cfg.AuthDevSessionEnabled)
@@ -416,6 +560,40 @@ func Load() *Config {
 	cfg.BrandingLogoMaxDimension = positiveIntEnv("BRANDING_LOGO_MAX_DIMENSION", cfg.BrandingLogoMaxDimension)
 	cfg.BrandingFaviconDimension = positiveIntEnv("BRANDING_FAVICON_DIMENSION", cfg.BrandingFaviconDimension)
 	cfg.BrandingJPEGQuality = positiveIntEnv("BRANDING_JPEG_QUALITY", cfg.BrandingJPEGQuality)
+	cfg.ObjectsDriver = strings.ToLower(envOr("STORAGE_OBJECTS_DRIVER", cfg.ObjectsDriver))
+	cfg.ObjectsLocalRoot = envOr("STORAGE_OBJECTS_LOCAL_ROOT", cfg.ObjectsLocalRoot)
+	cfg.ObjectsS3Endpoint = envOr("STORAGE_OBJECTS_S3_ENDPOINT", cfg.ObjectsS3Endpoint)
+	cfg.ObjectsS3Region = envOr("STORAGE_OBJECTS_S3_REGION", cfg.ObjectsS3Region)
+	cfg.ObjectsS3Bucket = envOr("STORAGE_OBJECTS_S3_BUCKET", cfg.ObjectsS3Bucket)
+	cfg.ObjectsS3AccessKeyID = envOr("STORAGE_OBJECTS_S3_ACCESS_KEY_ID", cfg.ObjectsS3AccessKeyID)
+	cfg.ObjectsS3SecretAccessKey = envOr("STORAGE_OBJECTS_S3_SECRET_ACCESS_KEY", cfg.ObjectsS3SecretAccessKey)
+	if v, set := os.LookupEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE"); set && strings.TrimSpace(v) != "" {
+		cfg.ObjectsS3UsePathStyle = boolEnv("STORAGE_OBJECTS_S3_USE_PATH_STYLE", cfg.ObjectsS3UsePathStyle)
+	}
+	cfg.MailSMTPHost = envOr("MAIL_SMTP_HOST", cfg.MailSMTPHost)
+	cfg.MailSMTPUsername = envOr("MAIL_SMTP_USERNAME", cfg.MailSMTPUsername)
+	cfg.MailSMTPPassword = envOr("MAIL_SMTP_PASSWORD", cfg.MailSMTPPassword)
+	cfg.MailSMTPFrom = envOr("MAIL_SMTP_FROM", cfg.MailSMTPFrom)
+	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
+		port, err := strconv.Atoi(raw)
+		if err != nil || port < 1 || port > 65535 {
+			// Fail closed instead of silently keeping the default: a typo in
+			// an explicitly supplied port must never degrade to 465.
+			cfg.LoadError = fmt.Errorf("config: MAIL_SMTP_PORT must be a number between 1 and 65535")
+			return cfg
+		}
+		cfg.MailSMTPPort = port
+	}
+	cfg.MetricsEnabled = boolEnv("OBSERVABILITY_METRICS_ENABLED", cfg.MetricsEnabled)
+	cfg.MetricsAddr = envOr("OBSERVABILITY_METRICS_ADDR", cfg.MetricsAddr)
+	cfg.MetricsAuthToken = envOr("OBSERVABILITY_METRICS_AUTH_TOKEN", cfg.MetricsAuthToken)
+	cfg.TracesEnabled = boolEnv("OBSERVABILITY_TRACES_ENABLED", cfg.TracesEnabled)
+	cfg.TracesEndpoint = envOr("OBSERVABILITY_TRACES_ENDPOINT", cfg.TracesEndpoint)
+	if raw := strings.TrimSpace(os.Getenv("OBSERVABILITY_TRACES_SAMPLE_RATIO")); raw != "" {
+		if ratio, err := strconv.ParseFloat(raw, 64); err == nil {
+			cfg.TracesSampleRatio = ratio
+		} // invalid value keeps the default; range is enforced by validation
+	}
 	if yf.Runtime.Mode != nil {
 		cfg.RuntimeMode = RuntimeMode(strings.TrimSpace(*yf.Runtime.Mode))
 	}
@@ -441,6 +619,43 @@ func Load() *Config {
 		cfg.DBDialect = "postgres"
 	default:
 		cfg.LoadError = fmt.Errorf("config: db.dialect must be one of sqlite or postgres (got %q)", cfg.DBDialect)
+		return cfg
+	}
+
+	// storage.objects.driver (VP-014 GOAL-002 D-001): empty = local; unknown
+	// drivers fail closed at load. S3 pairing rules mirror the postgres
+	// credential rule above and are re-checked by ValidateProd.
+	switch cfg.ObjectsDriver {
+	case "", "local":
+		cfg.ObjectsDriver = "local"
+		// A-002 F-001: report only the offending KEY NAME — never interpolate
+		// the value (a secret may be the only s3 key set, and this string is
+		// logged verbatim by the startup error path).
+		if key := firstSetS3Key(cfg); key != "" {
+			cfg.LoadError = localS3KeyMisconfig(key)
+			return cfg
+		}
+	case "s3":
+		if err := validateObjectsS3(cfg); err != nil {
+			cfg.LoadError = err
+			return cfg
+		}
+	default:
+		cfg.LoadError = fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", cfg.ObjectsDriver)
+		return cfg
+	}
+
+	// observability.metrics (VP-015 / workspace-015 GOAL-002 D-001): pairing
+	// and exposure rules fail closed at load time, mirroring runtime.mode /
+	// db.dialect / storage.objects.driver above.
+	if err := validateMetrics(cfg.MetricsEnabled, cfg.MetricsAddr, cfg.MetricsAuthToken); err != nil {
+		cfg.LoadError = err
+		return cfg
+	}
+	// observability.traces (VP-015 / workspace-015 GOAL-004 D-001): same
+	// fail-closed posture for the OTLP export surface.
+	if err := validateTraces(cfg.TracesEnabled, cfg.TracesEndpoint, cfg.TracesSampleRatio); err != nil {
+		cfg.LoadError = err
 		return cfg
 	}
 
@@ -752,6 +967,11 @@ func interpolateAll(text string) (string, error) {
 // digits, so a short or guessable HS256 key cannot silently start production.
 // Development keeps the explicit low bar (documented insecure dev key).
 //
+// VP-016 R1 (workspace-016 Root D-002): an explicitly configured previous
+// signing key (AUTH_JWT_SECRET_PREVIOUS) must satisfy the same strength rule
+// and must differ from the current key; an absent previous keeps single-key
+// behavior in every environment.
+//
 // W7: a LoadError (bad CONFIG_FILE, unset ${VAR}, invalid YAML) fails startup
 // regardless of environment — configuration must never silently fall back.
 func (c *Config) ValidateProd() error {
@@ -775,6 +995,21 @@ func (c *Config) ValidateProd() error {
 	if err := c.validateDB(); err != nil {
 		return err
 	}
+	// VP-014 GOAL-002 D-001: object-storage pairing rules are startup gates
+	// for every environment (including development), like the db rules.
+	if err := c.validateObjects(); err != nil {
+		return err
+	}
+	// VP-015 GOAL-002 D-001: metrics exposure/pairing rules are startup gates
+	// for every environment (including development) as well.
+	if err := c.validateObservability(); err != nil {
+		return err
+	}
+	// VP-017 GOAL-003 D-001: mail.smtp pairing rules are startup gates for
+	// every environment (including development), like the db/objects rules.
+	if err := c.validateMail(); err != nil {
+		return err
+	}
 	if c.AppEnv == "development" {
 		return nil
 	}
@@ -792,6 +1027,231 @@ func (c *Config) ValidateProd() error {
 			"AUTH_JWT_SECRET must contain both letters and digits when APP_ENV=%q",
 			c.AppEnv,
 		)
+	}
+	// VP-016 R1 (workspace-016 Root D-002): an explicitly configured previous
+	// signing key follows the same strength rule as the current key — during
+	// the overlap window it still verifies signatures, so a weak previous key
+	// widens the forgery surface exactly like a weak current one. A configured
+	// previous equal to the current key is a no-op "rotation": fail closed so
+	// operators cannot mistake it for a real overlap window. An absent
+	// previous keeps single-key behavior in every environment.
+	if prev := c.AuthJWTSecretPrevious; prev != "" {
+		if len(prev) < minJWTSecretLen {
+			return fmt.Errorf(
+				"AUTH_JWT_SECRET_PREVIOUS must be at least %d characters when APP_ENV=%q",
+				minJWTSecretLen, c.AppEnv,
+			)
+		}
+		if !containsLettersAndDigits(prev) {
+			return fmt.Errorf(
+				"AUTH_JWT_SECRET_PREVIOUS must contain both letters and digits when APP_ENV=%q",
+				c.AppEnv,
+			)
+		}
+		if prev == c.AuthJWTSecret {
+			return fmt.Errorf("AUTH_JWT_SECRET_PREVIOUS must differ from AUTH_JWT_SECRET (a no-op rotation is a misconfiguration)")
+		}
+	}
+	return nil
+}
+
+// firstSetS3Key returns the NAME of the first non-empty storage.objects.s3.*
+// field in a stable order, so misconfiguration errors can name the key
+// without ever carrying a credential value into logs (A-002 F-001).
+func firstSetS3Key(c *Config) string {
+	for _, pair := range []struct{ key, value string }{
+		{"endpoint", c.ObjectsS3Endpoint},
+		{"region", c.ObjectsS3Region},
+		{"bucket", c.ObjectsS3Bucket},
+		{"access_key_id", c.ObjectsS3AccessKeyID},
+		{"secret_access_key", c.ObjectsS3SecretAccessKey},
+	} {
+		if strings.TrimSpace(pair.value) != "" {
+			return pair.key
+		}
+	}
+	return ""
+}
+
+// localS3KeyMisconfig is the shared driver=local + s3.* misconfig error
+// (A-002 R-001): one wording for Load and ValidateProd.
+func localS3KeyMisconfig(key string) error {
+	return fmt.Errorf("config: storage.objects.s3.%s is set but storage.objects.driver is local — set driver to s3 or remove the s3 keys", key)
+}
+
+// validateObjects enforces the storage.objects pairing rules (VP-014
+// workspace-014 GOAL-002 D-001) on every Config that reaches ValidateProd,
+// including zero-value/test configs that bypass Load's own checks.
+func (c *Config) validateObjects() error {
+	switch c.ObjectsDriver {
+	case "", "local":
+		// A-002 R-001: mirror Load's local-misconfig recheck so the contract
+		// holds for configs that bypass Load, exactly like validateDB.
+		if key := firstSetS3Key(c); key != "" {
+			return localS3KeyMisconfig(key)
+		}
+	case "s3":
+		return validateObjectsS3(c)
+	default:
+		return fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", c.ObjectsDriver)
+	}
+	return nil
+}
+
+// validateObjectsS3 fails closed when an explicitly selected S3-compatible
+// backend is missing any required setting. The secret must arrive via env
+// interpolation (configs/.env or process env); a literal in YAML is possible
+// but documented as forbidden — the same contract as DB_PASSWORD.
+func validateObjectsS3(c *Config) error {
+	for _, pair := range []struct{ name, value string }{
+		{"endpoint", c.ObjectsS3Endpoint},
+		{"bucket", c.ObjectsS3Bucket},
+		{"access_key_id", c.ObjectsS3AccessKeyID},
+		{"secret_access_key", c.ObjectsS3SecretAccessKey},
+	} {
+		if strings.TrimSpace(pair.value) == "" {
+			return fmt.Errorf("config: storage.objects.driver=s3 requires storage.objects.s3.%s (provide secrets via STORAGE_OBJECTS_S3_* env / configs/.env)", pair.name)
+		}
+	}
+	return nil
+}
+
+// MailSMTPConfigured reports whether the operator touched the mail.smtp block
+// at all (workspace-017 GOAL-003 D-001). False keeps the embedded capture/log
+// default; true means the fail-closed pairing rules below apply.
+func (c *Config) MailSMTPConfigured() bool {
+	return strings.TrimSpace(c.MailSMTPHost) != "" ||
+		strings.TrimSpace(c.MailSMTPUsername) != "" ||
+		strings.TrimSpace(c.MailSMTPPassword) != "" ||
+		strings.TrimSpace(c.MailSMTPFrom) != "" ||
+		c.MailSMTPPort != 0
+}
+
+// validateMail enforces the mail.smtp pairing contract (VP-017 / workspace-017
+// GOAL-003 D-001) on every Config that reaches ValidateProd, including
+// zero-value/test configs that bypass Load. The untouched surface (all keys
+// empty) is the valid embedded-default path — capture/log sink, startup
+// unaffected. An explicitly touched block requires host/username/password/from;
+// the error names the first missing KEY and never carries a value.
+func (c *Config) validateMail() error {
+	if !c.MailSMTPConfigured() {
+		return nil
+	}
+	for _, pair := range []struct{ name, value string }{
+		{"host", c.MailSMTPHost},
+		{"username", c.MailSMTPUsername},
+		{"password", c.MailSMTPPassword},
+		{"from", c.MailSMTPFrom},
+	} {
+		if strings.TrimSpace(pair.value) == "" {
+			return fmt.Errorf("config: an explicit mail.smtp block requires mail.smtp.%s (provide secrets via MAIL_SMTP_* env / configs/.env)", pair.name)
+		}
+	}
+	if c.MailSMTPPort < 0 || c.MailSMTPPort > 65535 {
+		return fmt.Errorf("config: mail.smtp.port must be between 1 and 65535")
+	}
+	if from := strings.TrimSpace(c.MailSMTPFrom); from != "" {
+		parsed, err := mail.ParseAddress(from)
+		if err != nil || parsed.Address != from {
+			return fmt.Errorf("config: mail.smtp.from must be a bare address (got an unusable form)")
+		}
+	}
+	return nil
+}
+
+// minMetricsTokenLen is the minimum length for an observability.metrics
+// bearer token (VP-015 / workspace-015 GOAL-002 D-001 §2). A single-factor
+// gate deserves an entropy floor; the JWT secret keeps its own stricter bar.
+const minMetricsTokenLen = 16
+
+// validateObservability enforces the observability.metrics contract on every
+// Config that reaches ValidateProd, including zero-value/test configs that
+// bypass Load's own checks. An untouched surface (disabled, no addr, no
+// token) is skipped so focused unit Configs keep working.
+func (c *Config) validateObservability() error {
+	metricsUntouched := !c.MetricsEnabled && strings.TrimSpace(c.MetricsAddr) == "" && strings.TrimSpace(c.MetricsAuthToken) == ""
+	tracesUntouched := !c.TracesEnabled && strings.TrimSpace(c.TracesEndpoint) == "" && c.TracesSampleRatio == 0
+	if metricsUntouched && tracesUntouched {
+		return nil
+	}
+	addr := c.MetricsAddr
+	if strings.TrimSpace(addr) == "" {
+		addr = "127.0.0.1:25081" // zero-value Config keeps the documented default
+	}
+	if err := validateMetrics(c.MetricsEnabled, addr, c.MetricsAuthToken); err != nil {
+		return err
+	}
+	return validateTraces(c.TracesEnabled, c.TracesEndpoint, c.TracesSampleRatio)
+}
+
+// validateMetrics enforces the observability.metrics contract (VP-015 /
+// workspace-015 GOAL-002 D-001 §2): a dead auth_token is rejected (mirroring
+// the s3-keys-with-local-driver precedent), the bind address must parse as
+// host:port with a numeric port, set tokens need a minimal length, and any
+// non-loopback bind requires a bearer token in EVERY environment (exposure
+// risk does not depend on APP_ENV). Error messages name keys only — never a
+// token value.
+func validateMetrics(enabled bool, addr, token string) error {
+	token = strings.TrimSpace(token)
+	if !enabled {
+		if token != "" {
+			return fmt.Errorf("config: observability.metrics.auth_token is set but observability.metrics.enabled is false — enable metrics or remove the token")
+		}
+		return nil
+	}
+	host, port, err := net.SplitHostPort(strings.TrimSpace(addr))
+	if err != nil {
+		return fmt.Errorf("config: observability.metrics.addr %q must be host:port: %v", addr, err)
+	}
+	portNum, err := strconv.Atoi(port)
+	if err != nil || portNum < 1 || portNum > 65535 {
+		return fmt.Errorf("config: observability.metrics.addr %q must use a numeric port in 1-65535", addr)
+	}
+	if token != "" && len(token) < minMetricsTokenLen {
+		return fmt.Errorf("config: observability.metrics.auth_token must be at least %d characters", minMetricsTokenLen)
+	}
+	if !isLoopbackHost(host) && token == "" {
+		return fmt.Errorf("config: observability.metrics.addr %q binds beyond loopback — set observability.metrics.auth_token via OBSERVABILITY_METRICS_AUTH_TOKEN (env / configs/.env) before exposing metrics", addr)
+	}
+	return nil
+}
+
+// isLoopbackHost reports whether a host:port host part binds only the local
+// loopback interface. An empty host (":25081") means ALL interfaces and is
+// therefore NOT loopback; only "localhost" and loopback IPs qualify.
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
+}
+
+// validateTraces enforces the observability.traces contract (VP-015 /
+// workspace-015 GOAL-004 D-001 §2): a dead endpoint is rejected (mirroring
+// the metrics token precedent), an enabled surface requires an absolute
+// http(s) endpoint, and an explicitly provided sample ratio must lie in
+// (0,1]. A zero ratio on hand-built/test Configs means "not set" and is
+// tolerated (the loader default is 1.0). Error messages never carry secrets.
+func validateTraces(enabled bool, endpoint string, ratio float64) error {
+	endpoint = strings.TrimSpace(endpoint)
+	if !enabled {
+		if endpoint != "" {
+			return fmt.Errorf("config: observability.traces.endpoint is set but observability.traces.enabled is false — enable traces or remove the endpoint")
+		}
+		return nil
+	}
+	if endpoint == "" {
+		return fmt.Errorf("config: observability.traces.endpoint is required when observability.traces.enabled is true (OTLP/HTTP base URL, e.g. http://localhost:4318)")
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return fmt.Errorf("config: observability.traces.endpoint %q must be an absolute http(s) URL", endpoint)
+	}
+	if ratio < 0 || ratio > 1 {
+		return fmt.Errorf("config: observability.traces.sample_ratio must be within (0, 1] (got %v)", ratio)
 	}
 	return nil
 }

@@ -21,7 +21,7 @@ version: 1.0.0
 |--------|------|------|
 | 命令矩阵 V-001~V-009 逐项 pass/fail/N/A 登记 | pass | 02-execution「命令矩阵登记」；候选 `852ee7e` clean |
 | 模块适用检查表（10 模块）逐项登记，infra/core 豁免有架构理由 | pass | 02-execution「模块检查表登记」；playbook §3.3 |
-| 缺陷/缺漏/漂移台账按冻结量尺分类，含严重度/影响门禁/证据/关闭路径 | pass | [S1-findings-ledger.md](attachments/S1-findings-ledger.md)（11 findings） |
+| 缺陷/缺漏/漂移台账按冻结量尺分类，含严重度/影响门禁/证据/关闭路径 | pass | [S1-findings-ledger.md](../attachments/S1-findings-ledger.md)（11 findings） |
 | 无未分类项；每条命令/用例/模块检查表均有结论 | pass | 台账汇总：全部已分类 |
 | 未重写量尺；S0 冻结量尺原样应用 | pass | 分类与 D-003 §9/§8 一致 |
 | 领域特有项未默认升为 required | pass | 无领域特有项入账 |

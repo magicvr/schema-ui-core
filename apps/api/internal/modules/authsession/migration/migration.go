@@ -133,22 +133,37 @@ var mustChangePasswordDDL = []string{
 	`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`,
 }
 
+// seedAdminMustChangePasswordSQL (0049 · A2 backfill): sets
+// must_change_password = 1 on the seed admin row (id = 'user-admin') when it
+// was created before migration 0038 introduced the column.  The WHERE clause
+// is intentionally narrow: it targets only the stable seed-admin primary key
+// ('user-admin') AND requires must_change_password = 0, so the UPDATE is a
+// no-op on fresh databases (bootstrap already inserts with value 1) and on any
+// re-run (idempotent).  Human-created accounts with id != 'user-admin' are
+// never touched.
+var seedAdminMustChangePasswordSQL = []string{
+	`UPDATE users SET must_change_password = 1 WHERE id = 'user-admin' AND must_change_password = 0`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
-// COLLATE NOCASE becomes CITEXT, and introspective fingerprinting is omitted
-// (postgres fresh bootstrap has no legacy sqlite file DB to fingerprint).
+// COLLATE NOCASE becomes CITEXT. migrateBaselinePG mirrors sqlite's empty-vs-
+// fingerprint split: a ledger-less database that already has the R2 tables is
+// adopted (create the ledger only), not CREATE-TABLE'd again.
+
+const postgresSchemaMigrationsDDL = `CREATE TABLE schema_migrations (
+  version    INTEGER PRIMARY KEY,
+  name       TEXT NOT NULL UNIQUE,
+  checksum   TEXT NOT NULL CHECK (length(checksum) = 64),
+  applied_at BIGINT NOT NULL
+)`
 
 // postgresBaselineDDL mirrors r2BaselineDDL + schemaMigrationsDDL with BIGINT
 // time columns; the ledger is created here (the sqlite Apply creates it inside
 // migrateBaseline, this postgres body inlines it).
 var postgresBaselineDDL = []string{
-	`CREATE TABLE schema_migrations (
-  version    INTEGER PRIMARY KEY,
-  name       TEXT NOT NULL UNIQUE,
-  checksum   TEXT NOT NULL CHECK (length(checksum) = 64),
-  applied_at BIGINT NOT NULL
-)`,
+	postgresSchemaMigrationsDDL,
 	`CREATE TABLE users (
   id            TEXT PRIMARY KEY,
   username      TEXT NOT NULL UNIQUE,
@@ -343,6 +358,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateServiceCredentials,
 			ApplyPostgres:        migrateServiceCredentialsPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "seed_admin_must_change_password"},
+			Version:              49,
+			Name:                 "seed_admin_must_change_password",
+			Checksum:             kernel.MigrationChecksum(seedAdminMustChangePasswordSQL, "0049:seed-admin-must-change-password:v1"),
+			Apply:                migrateSeedAdminMustChangePassword,
+			// ApplyPostgres nil: portable UPDATE (no dialect difference).
+		},
 	}
 }
 
@@ -411,6 +434,15 @@ func migrateMustChangePassword(tx kernel.Tx) error {
 	return nil
 }
 
+func migrateSeedAdminMustChangePassword(tx kernel.Tx) error {
+	for _, stmt := range seedAdminMustChangePasswordSQL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("backfill seed admin must_change_password: %w", err)
+		}
+	}
+	return nil
+}
+
 func migrateServiceCredentials(tx kernel.Tx) error {
 	for _, stmt := range serviceCredentialsDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
@@ -420,12 +452,60 @@ func migrateServiceCredentials(tx kernel.Tx) error {
 	return nil
 }
 
-// migrateBaselinePG is the postgres fresh-bootstrap variant of migrateBaseline:
-// it always creates the ledger + baseline schema (no R2 sqlite fingerprint).
+// migrateBaselinePG is the postgres variant of migrateBaseline. The runner
+// only calls this when schema_migrations is absent.
+//
+//   - empty schema: create the full baseline (ledger + users + refresh_tokens)
+//   - existing schema-ui `users` (later columns allowed): create the ledger and
+//     skip objects that already exist (42P07), so a second start does not fail
+//   - a `users` table that is not ours: fail closed (do not CREATE around it)
 func migrateBaselinePG(tx kernel.Tx) error {
-	for _, stmt := range postgresBaselineDDL {
-		if _, err := tx.Exec(context.Background(), stmt); err != nil {
-			return fmt.Errorf("create baseline (postgres): %w", err)
+	empty, err := isEmptyDatabasePG(tx)
+	if err != nil {
+		return err
+	}
+	if empty {
+		for _, stmt := range postgresBaselineDDL {
+			if _, err := tx.Exec(context.Background(), stmt); err != nil {
+				return fmt.Errorf("create baseline (postgres): %w", err)
+			}
+		}
+		return nil
+	}
+	ours, err := usersLooksLikeSchemaUIPG(tx)
+	if err != nil {
+		return err
+	}
+	if !ours {
+		hasUsers, err := tableExistsPG(tx, "users")
+		if err != nil {
+			return err
+		}
+		if hasUsers {
+			return errors.New("fingerprint (postgres): relation users already exists but is not a schema-ui users table; use a dedicated empty database (not the cluster 'postgres' database) or restore schema_migrations")
+		}
+		return fmt.Errorf("fingerprint (postgres): schema is not empty and has no schema-ui users table so it cannot be adopted — use an empty dedicated database or restore the ledger")
+	}
+	// Postgres aborts the whole tx on 42P07, so adoption must probe then
+	// CREATE only missing objects — never "create and ignore duplicate".
+	hasLedger, err := tableExistsPG(tx, "schema_migrations")
+	if err != nil {
+		return err
+	}
+	if !hasLedger {
+		if _, err := tx.Exec(context.Background(), postgresSchemaMigrationsDDL); err != nil {
+			return fmt.Errorf("create migration ledger (postgres): %w", err)
+		}
+	}
+	hasRefresh, err := tableExistsPG(tx, "refresh_tokens")
+	if err != nil {
+		return err
+	}
+	if !hasRefresh {
+		for _, stmt := range postgresBaselineDDL[2:] {
+			if _, err := tx.Exec(context.Background(), stmt); err != nil {
+				return fmt.Errorf("create baseline (postgres): %w", err)
+			}
 		}
 	}
 	return nil
@@ -478,6 +558,77 @@ func isEmptyDatabase(tx kernel.Tx) (bool, error) {
 		return false, fmt.Errorf("store: count tables: %w", err)
 	}
 	return count == 0, nil
+}
+
+func isEmptyDatabasePG(tx kernel.Tx) (bool, error) {
+	var count int
+	err := tx.QueryRow(context.Background(), `
+		SELECT COUNT(*)
+		FROM pg_catalog.pg_class c
+		JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		WHERE n.nspname = current_schema()
+		  AND c.relkind = 'r'`).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("store: count tables (postgres): %w", err)
+	}
+	return count == 0, nil
+}
+
+func tableExistsPG(tx kernel.Tx, name string) (bool, error) {
+	var exists bool
+	err := tx.QueryRow(context.Background(), `
+		SELECT EXISTS (
+			SELECT 1
+			FROM pg_catalog.pg_class c
+			JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+			WHERE n.nspname = current_schema()
+			  AND c.relkind = 'r'
+			  AND c.relname = ?
+		)`, name).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("store: probe table %s (postgres): %w", name, err)
+	}
+	return exists, nil
+}
+
+// usersLooksLikeSchemaUIPG reports whether current_schema.users has the R2
+// identity columns (text id/username/name/roles/password_hash). Extra columns
+// from later migrations are allowed so a fully-migrated ledger-less database
+// can still be adopted.
+func usersLooksLikeSchemaUIPG(tx kernel.Tx) (bool, error) {
+	exists, err := tableExistsPG(tx, "users")
+	if err != nil || !exists {
+		return false, err
+	}
+	rows, err := tx.Query(context.Background(), `
+		SELECT column_name, udt_name
+		FROM information_schema.columns
+		WHERE table_schema = current_schema() AND table_name = 'users'`)
+	if err != nil {
+		return false, fmt.Errorf("fingerprint (postgres) users: %w", err)
+	}
+	defer rows.Close()
+	got := map[string]string{}
+	for rows.Next() {
+		var name, typ string
+		if err := rows.Scan(&name, &typ); err != nil {
+			return false, fmt.Errorf("fingerprint (postgres) users: scan: %w", err)
+		}
+		got[name] = strings.ToLower(typ)
+	}
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("fingerprint (postgres) users: %w", err)
+	}
+	want := map[string]string{
+		"id": "text", "username": "text", "name": "text",
+		"roles": "text", "password_hash": "text",
+	}
+	for col, typ := range want {
+		if actual, ok := got[col]; !ok || actual != typ {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func fingerprintR2(tx kernel.Tx) error {
@@ -629,30 +780,46 @@ func backfillRoles(tx kernel.Tx) error {
 	if err != nil {
 		return fmt.Errorf("backfill: list users: %w", err)
 	}
-	defer rows.Close()
-	now := time.Now().UTC().Unix()
+	type userRoles struct {
+		id, rolesJSON string
+	}
+	var users []userRoles
 	for rows.Next() {
-		var id, rolesJSON string
-		if err := rows.Scan(&id, &rolesJSON); err != nil {
+		var u userRoles
+		if err := rows.Scan(&u.id, &u.rolesJSON); err != nil {
+			rows.Close()
 			return err
 		}
+		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return fmt.Errorf("backfill: iterate users: %w", err)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	// Collect-then-write: postgres/pgx forbids Exec on the same connection
+	// while another query's Rows are still open (sqlite allowed it).
+	now := time.Now().UTC().Unix()
+	for _, u := range users {
 		var keys []string
-		if err := json.Unmarshal([]byte(rolesJSON), &keys); err != nil {
-			return fmt.Errorf("backfill user %s: roles %q is not a JSON array: %w", id, rolesJSON, err)
+		if err := json.Unmarshal([]byte(u.rolesJSON), &keys); err != nil {
+			return fmt.Errorf("backfill user %s: roles %q is not a JSON array: %w", u.id, u.rolesJSON, err)
 		}
 		seen := map[string]bool{}
 		for _, key := range keys {
 			if !roleKeyPattern.MatchString(key) {
-				return fmt.Errorf("backfill user %s: invalid role key %q", id, key)
+				return fmt.Errorf("backfill user %s: invalid role key %q", u.id, key)
 			}
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
-			if err := linkUserRole(tx, id, key, now); err != nil {
-				return fmt.Errorf("backfill user %s: %w", id, err)
+			if err := linkUserRole(tx, u.id, key, now); err != nil {
+				return fmt.Errorf("backfill user %s: %w", u.id, err)
 			}
 		}
 	}
-	return rows.Err()
+	return nil
 }

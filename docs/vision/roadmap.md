@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-20
+updated: 2026-08-22
 parent: null
-version: 0.28.0
+version: 0.39.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -28,7 +28,11 @@ version: 0.28.0
 | 10 | [VP-010-design-implementation-conformance](plans/VP-010-design-implementation-conformance.md) | 设计意图与实现符合性：**共享基架持续对齐程序**（周期对照 as-designed / as-built、conformance gap 分流、波次整改、与 VP-008 `go` 消费有效性接口、与 VP-009 正交）；具体 gap 由工作区波次子目标承接。 | 继承 VP-003/004/005/006/007/008 + **VP-008 `go` 消费有效性**；与 **VP-009** 正交（安全 vs 符合性） | **active**（2026-08-11 用户确认类 VP-009 长期程序；lead: workspace-010-design-implementation-conformance；Root **active** 程序容器；波次 W1–W13 均 done，`go` 均无新暂挂） |
 | 11 | [VP-011-admin-functional-modules](plans/VP-011-admin-functional-modules.md) | 标准 Admin 功能模块（通用模块 + 常用业务领域）分档交付：有界调研 → 三档分档 → 分波实现；一等公民 / 常用 / 增补。 | 继承 VP-008 `go` 消费有效性（freshness review **PASS**，候选 `f14ab9d`）+ VP-009/010 无开放阻断；VP-001～008 已固化协议/架构/设计/locale 基线 | **closed**（2026-08-18 有界关门；lead: workspace-011-admin-functional-modules；Root done；四档能力地图上提至本 roadmap） |
 | 12 | [VP-012-shared-cross-module-contracts](plans/VP-012-shared-cross-module-contracts.md) | 共享横切契约与平台基架：correlation、审计模型、并发/幂等、异步 Job、maintenance 门控、API Token；不承载业务领域。 | 继承 VP-011 的 R5 四档能力地图；与 VP-009/VP-010 正交分流；不改变 Charter 边界 | **closed**（2026-08-19 完整关门 · 首波；lead: workspace-012-shared-cross-module-contracts；Root done 6/6；后续 session/effective actor、保留/归档、其余 writer envelope 移交本文件 Admin 功能分支） |
-| 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **active**（2026-08-20 激活；lead: workspace-013-store-dialects；VRev-029 pass） |
+| 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A1；lead: workspace-013-store-dialects；Root done 5/5；residual：无产品 SQLite→PG 搬运器，见 GOAL-006 D-002） |
+| 14 | [VP-014-object-storage](plans/VP-014-object-storage.md) | 架构 A2：内核对象存储端口 + S3 兼容实现；本地盘保留为内嵌默认。 | VP-013 A1 已 closed；RT-S01 delivered；与 VP-009/010 正交；不进签名 URL / 分片 / 扫描 / CDN / 搬运器，不进 A3+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A2；lead: workspace-014-object-storage；Root done 5/5；VRev-032 `pass`；residual：无产品本地盘→对象存储搬运器，见 I-014-004） |
+| 15 | [VP-015-observability](plans/VP-015-observability.md) | 架构 A4：Prometheus 类指标导出 + OpenTelemetry traces；无收集器仍为内嵌默认。 | VP-014 A2 已 closed；RT-O01/O02 delivered；与 VP-009/010 正交；不进 A3 / A5 / Sentry / 剖析 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A4；lead: workspace-015-observability；Root done 5/5；VRev-034 `pass`；residual：otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
+| 16 | [VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) | 架构 A5：JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥仍为内嵌默认。 | VP-015 A4 已 closed；RT-K01 delivered；VP-013 方言级 dump 已交付；与 VP-009/010 正交；不进 A3 / KMS / PITR / 热加载 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A5；lead: workspace-016-key-rotation-and-backup；Root done 5/5；VRev-036 `pass`；residual：I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
+| 17 | [VP-017-outbound-mail](plans/VP-017-outbound-mail.md) | 架构 A6：内核出站邮件发送端口 + SMTP；无 SMTP 仍为内嵌默认（capture/log sink）。 | 用户 2026-08-22：自助恢复须走已绑定邮箱，出站先做邮件；SMS 后置。不进账号 email / 邀请 / 恢复状态机 / 模板 / A3 | **active**（2026-08-22 激活；lead: workspace-017-outbound-mail；VRev-037/038 `pass`；V-F070/V-F071 → fixed） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -111,7 +115,7 @@ version: 0.28.0
 | RT-P02 | PostgreSQL 方言实现 | 无 | **registered** | 生产权威实现；硬问题是迁移方言 + 备份合同 |
 | RT-P03 | Store 双方言端口（无 ORM） | Store 即 SQLite 平台 | **registered**（决策已冻结，实现未做） | 见上节；A1 前置 |
 | RT-P04 | 连接池 / 读写分离 / replica | `MaxOpenConns=1` | **trigger-gated** | 多实例或 PG 之后才有意义 |
-| RT-P05 | 备份 / 恢复 / PITR | 仅 SQLite 快照 | **registered** | 生产方言必须重做恢复合同 |
+| RT-P05 | 备份 / 恢复 / PITR | SQLite `VACUUM INTO`；PG 逻辑备份 `pg_dump`/`pg_restore`（VP-013 I-004） | **registered**（方言级 dump = **delivered**；轮换后恢复 = **delivered**（VP-016）；PITR 仍 gated） | A1 已交付方言级恢复；A5 已补密钥轮换后的恢复语义，不重做 dump |
 | RT-P06 | 加密静止数据 / 表级密钥 | 无 | **trigger-gated** | 合规触发；密钥见 RT-K\* |
 | RT-P07 | 文档库（MongoDB 等） | 无 | **default-non-goal** | 第二数据模型；无具名 fork 需求则不做 |
 | RT-P08 | 多租户物理隔离（独立库/schema） | 无；Charter 未要求多租户 | **default-non-goal** | 应用层 org 上下文在 Admin 功能分支 |
@@ -132,12 +136,26 @@ version: 0.28.0
 
 | id | 项 | 现状 | 状态 | 备注 |
 |----|----|------|------|------|
-| RT-S01 | 本地盘（头像/品牌/上传/库文件） | `./data` | **delivered** | 单机默认 |
-| RT-S02 | 对象存储适配器（S3 兼容） | 无 | **registered** | 与 RT-P02 同级：多机立刻碰到 |
-| RT-S03 | 签名 URL / TTL / 直传 | 无 | **trigger-gated** | 依赖 RT-S02 |
-| RT-S04 | 分片/断点上传 | 无 | **trigger-gated** | Admin 接缝的平台面 |
-| RT-S05 | 恶意内容扫描执行面 | 无 | **trigger-gated** | Admin 定策略，架构接扫描器 |
-| RT-S06 | CDN / 公共资源分发 | 无 | **trigger-gated** | 品牌资源公网分发时 |
+| RT-S01 | 本地盘（头像/品牌/上传/库文件） | `./data` | **delivered** | 内嵌默认；合同上与 S3 兼容实现平等，不得残缺 |
+| RT-S02 | 对象存储适配器（S3 兼容） | VP-014 已交付内核端口 + S3 兼容 + 本地盘默认 | **delivered** | 有界 residual：无产品搬运器（I-014-004） |
+| RT-S03 | 签名 URL / TTL / 直传 | 无 | **trigger-gated** | 依赖 RT-S02；**不进** VP-014 退出分母 |
+| RT-S04 | 分片/断点上传 | 无 | **trigger-gated** | Admin 接缝的平台面；**不进** VP-014 |
+| RT-S05 | 恶意内容扫描执行面 | 无 | **trigger-gated** | Admin 定策略，架构接扫描器；**不进** VP-014 |
+| RT-S06 | CDN / 公共资源分发 | 无 | **trigger-gated** | 品牌资源公网分发时；**不进** VP-014 |
+
+### 已冻结：对象存储 A2 退出分母（VP-014）
+
+用户确认（2026-08-21）。VP-014 已有界 `closed`；lead `workspace-014-object-storage`（Root `done 5/5`）。
+
+| 项 | 决定 |
+|----|------|
+| 对象存储方言 | 只支持 **S3 兼容** 与 **本地盘**。禁止 Azure Blob / GCS native 作为第三方言。 |
+| 内核 | **对象存储端口**（put / get / delete / exists + 命名空间隔离）。**不是**业务文件管理器。禁止本地路径 / `os.File` 进入 handler 与模块公共契约。 |
+| 生产权威 | **S3 兼容**：生产 fork 推荐与本 VP 验收。 |
+| 内嵌默认 | **本地盘**：现有 avatars / brand-assets / uploads 继续默认。不因「生产首要」强制本地必须有 MinIO/S3。 |
+| 合同平等 | 两实现走同一端口语义。本地盘 **不是** 可残缺的缩水实现。 |
+| 读面 | 继续经 API 代理；签名 URL / 直传不进本波。 |
+| 存量 | **不提供**产品级本地盘→对象存储搬运器。 |
 
 ### 4. 可观测性
 
@@ -145,10 +163,22 @@ version: 0.28.0
 |----|----|------|------|------|
 | RT-O01 | 结构化日志 + correlation / request-id | VP-012 R1 | **delivered** | |
 | RT-O02 | `/healthz` `/readyz` | 探活 + 迁移/模块图就绪 | **delivered** | 外部依赖（PG/Redis/S3）接入后须扩展 ready |
-| RT-O03 | 指标（Prometheus 等） | 架构要求 `module_id`，无导出面 | **registered** | VP-012 未做 metrics |
-| RT-O04 | 分布式 tracing（OpenTelemetry） | 无 | **registered** | VP-012 显式推迟 |
-| RT-O05 | 剖析 / 连续性能剖析 | 无 | **trigger-gated** | |
-| RT-O06 | 错误汇聚（Sentry 类） | 无 | **trigger-gated** | 可后置于 RT-O04 |
+| RT-O03 | 指标（Prometheus 等） | VP-015 已交付专用 scrape listener + `suc_*` 系列（含 `module_id`） | **delivered** | 有界 residual：Store/对象/Job 指标不进分母（I-015-003） |
+| RT-O04 | 分布式 tracing（OpenTelemetry） | VP-015 已交付 OTLP/HTTP SERVER span + `correlation.request_id` | **delivered** | 缺省 no-op；显式 endpoint 才导出。in-repo sink 不解析 |
+| RT-O05 | 剖析 / 连续性能剖析 | 无 | **trigger-gated** | **不进** VP-015 |
+| RT-O06 | 错误汇聚（Sentry 类） | 无 | **trigger-gated** | 可后置于 RT-O04；**不进** VP-015 |
+
+### 已冻结：可观测 A4 退出分母（VP-015）
+
+用户确认（2026-08-21）。VP-015 已于 2026-08-22 有界 `closed`；lead `workspace-015-observability`（Root `done 5/5`）。
+
+| 项 | 决定 |
+|----|------|
+| 指标 | Prometheus 类 pull 面；系列至少携带 `module_id`。不是 Grafana 产品或 Admin 仪表盘。 |
+| Tracing | OpenTelemetry / OTLP 导出；与现有 request-id / correlation 可关联。不是替换结构化日志。 |
+| 内嵌默认 | 无 Prometheus / collector / Jaeger 仍能开发与快测。不得把收集器做成 mvp/dev 启动硬依赖。 |
+| 生产验收 | 显式配置后可核对 scrape **与** 至少一条 trace 导出（可分路径）。 |
+| 不进本波 | A3 多实例/Redis/队列；A5 密钥轮换；Sentry（RT-O06）；连续剖析（RT-O05）；Admin 监控页；业务域。 |
 
 ### 5. 进程、部署、网络
 
@@ -169,8 +199,21 @@ version: 0.28.0
 |----|----|------|------|------|
 | RT-K01 | YAML + env 插值；密钥 fail-closed | VP-002/W7 | **delivered** | |
 | RT-K02 | 外部 Secret Provider / KMS / HSM | 无 | **trigger-gated** | VP-012 API Token 推迟 HSM |
-| RT-K03 | JWT/数据密钥轮换合同 | 密钥来自 env，无轮换 | **registered** | |
+| RT-K03 | JWT/数据密钥轮换合同 | VP-016 已交付 current+previous；签发只用 current；校验允许重叠窗；缺 previous = 今日单密钥 | **delivered** | 有界 residual：立即失效未选（I-016-005）；`admin.mfa` wrapping 不随 JWT previous 重包。KMS/HSM 仍 gated |
 | RT-K04 | 传输中加密（TLS） | 依赖外置代理 | **trigger-gated** | 同 RT-D05 |
+
+### 已冻结：密钥轮换与恢复 A5 退出分母（VP-016）
+
+用户确认（2026-08-22）。VP-016 已于 2026-08-22 有界 `closed`；lead `workspace-016-key-rotation-and-backup`（Root `GOAL-001-key-rotation-and-backup` `done 5/5`）。
+
+| 项 | 决定 |
+|----|------|
+| 密钥集合 | 默认应用签名密钥 = `AUTH_JWT_SECRET`。禁止把 DB / S3 / 种子密码当成本波轮换对象。 |
+| 轮换合同 | 可声明 **current + previous**；新签发只用 current；校验允许重叠窗。缺 previous = 今日单密钥。 |
+| 生效 | 进程重启后生效。热加载不进本波。 |
+| 备份面 | **不重做** VP-013 方言级 dump。本波只核对：轮换后从既有 SQLite `VACUUM INTO` 与 PG `pg_dump`/`pg_restore` 启动 + 鉴权。 |
+| 内嵌默认 | 无 previous、无外部备份代理仍能开发与快测。 |
+| 不进本波 | A3 多实例/Redis/队列/优雅停机；KMS/HSM（RT-K02）；静止加密（RT-P06）；TLS；PITR；`/readyz` 再扩；Admin 密钥页；业务域。 |
 
 ### 7. 搜索引擎与专用索引
 
@@ -187,7 +230,28 @@ version: 0.28.0
 | RT-T02 | 分布式 ID / 时间权威 | 应用侧 UUID/随机 token | **trigger-gated** | 多实例写入热点时再评 |
 | RT-T03 | 时区在持久化层的合同 | locale 在 Admin 功能面 | **registered** | 与 Admin 功能「时区/数字/货币」接缝；DB `timestamptz` 属架构 |
 
-### 9. 明确不作为基架一等公民（除非具名触发）
+### 9. 出站消息
+
+| id | 项 | 现状 | 状态 | 备注 |
+|----|----|------|------|------|
+| RT-M01 | 出站邮件发送端口 + SMTP | 无 | **registered**（决策已冻结，实现未做） | 见下节；A6；由 VP-017 承接 |
+| RT-M02 | SMS / 其它推送运输 | 无 | **trigger-gated** | 用户 2026-08-22：审核麻烦，有真实需求再做 |
+
+### 已冻结：出站邮件 A6 退出分母（VP-017）
+
+用户确认（2026-08-22）。VP-017 已 `active`；lead `workspace-017-outbound-mail`。
+
+| 项 | 决定 |
+|----|------|
+| 运输方言 | 本波只支持 **SMTP**。禁止把 Sendgrid/SES HTTP API 做成并列第二方言；禁止 SMS。 |
+| 内核 | **发送端口**（to / subject / text body；默认 From 来自配置）。**不是**通知产品。禁止 SMTP 客户端类型进入 handler 与模块公共契约。 |
+| 生产权威 | **SMTP**：生产 fork 推荐与本 VP 验收。 |
+| 内嵌默认 | **capture / log sink**：无 SMTP 仍能开发与快测。不因「生产首要」强制本地必须有 Mailhog/真实 SMTP。 |
+| 合同平等 | 两实现走同一端口语义。默认 sink **不是**可残缺的缩水实现（至少可取出报文供测试）。 |
+| 发送模型 | 同步 `Send`。事务 outbox / 外部邮件队列不进本波（RT-Q06 仍 gated）。 |
+| 消费者 | 本波用测试/harness。账号 email、校验、邀请、自助恢复不进本波。 |
+
+### 10. 明确不作为基架一等公民（除非具名触发）
 
 | id | 项 | 理由 |
 |----|----|------|
@@ -209,11 +273,12 @@ A3  仅当需要多实例：就绪探针扩依赖、优雅停机、
     再评估 PG 锁/SKIP LOCKED vs Redis vs 外部队列
 A4  指标 + OpenTelemetry（可与 A1 部分并行）
 A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
+A6  出站邮件：内核发送端口 + SMTP；无 SMTP 仍为内嵌默认；SMS 不进
 ```
 
-**刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s。它们是部署或产品触发的后果，或已否决的技术选型。
+**刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s、SMS。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支下一拍：VP-013 **`active`**，lead `workspace-013-store-dialects`。交 **`/govern`** 立项 R1（端口与配置面冻结）。未开始写驱动。
+架构分支下一拍：**[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `active`**（A6；lead `workspace-017-outbound-mail`）。A5 已由 VP-016 有界 `closed`。A3 仍 trigger-gated（多实例才评估就绪探针扩依赖 / 优雅停机 / PG 锁 vs Redis vs 队列）。
 
 ---
 
@@ -226,14 +291,23 @@ VP-011 已交付的标准 Admin 模块（用户/角色/设置/钱包演示面等
 
 ### 仍开放（非立即实施）
 
+**产品事实（2026-08-22 用户确认）**
+
+- 忘密码要 **自助恢复** 与 **管理员重置** 两种。
+- 自助恢复的证明依据 = 用户持有事先绑在账号上的 **邮箱**（验证码或链接只是投递形态）。没有已校验邮箱 + 出站投递，登录页「忘记密码」是空转。
+- 出站通道 **先做邮件**；**SMS 后置**（审核成本高，有真实需求再做）。
+- 管理员重置继续走既有特权路径（`must_change_password`），不冒充自助恢复。
+- 消费链（登记，尚未对后两截立项）：**A6 出站邮件（VP-017）→ 账号邮箱身份（绑定 + 校验）→ IAM（密码策略 / 邀请 / 自助恢复状态机）**。
+
 **基架能力剩余**
 
-1. 密码策略、邀请、账号恢复状态机  
+1. 密码策略、邀请、账号恢复状态机（自助恢复 **硬前置** = VP-017 + 账号邮箱；邀请仍可用管理员出示链接）  
 2. 组织 / 部门 / 岗位，以及数据权限 `org` 扩展  
 3. 配置包导出、diff、dry-run、导入  
 4. 文件扫描 / 隔离**策略**（执行器见架构 RT-S05）  
 5. 时间、时区、数字、货币格式语义（持久化时区合同见架构 RT-T03）  
 6. impersonation / effective actor 产品化——仅当再次出现  
+7. **账号邮箱身份**（`users` email 字段 + 校验状态机）——自助恢复的身份前置；运输面见架构 RT-M01
 
 **扩展接缝**（全部 trigger-gated；运输实现归架构）
 
@@ -243,7 +317,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 全局搜索 / Command Palette、Saved Views、批量结果中心、未保存保护、统一 Toast/错误恢复、版本与维护提示。全局搜索若需要专用引擎，拉动架构 RT-X01。
 
-Admin 功能下一拍：按触发选一条（常见候选：IAM 运维增强，或一条接缝），`/vision` 建独立 VP；不要把基架剩余、接缝、体验打进同一个 VP，更不要混入业务域。
+Admin 功能下一拍：等 **VP-017** 运输面可消费后，再 `/vision` 建 **账号邮箱身份** VP（不要把 SMTP、邮箱字段、恢复状态机打进同一个 VP）。密码策略可与运输并行，但不解锁自助恢复。
 
 ---
 
@@ -276,7 +350,7 @@ Admin 功能下一拍：按触发选一条（常见候选：IAM 运维增强，�
 
 ---
 
-**当前组合焦点**：**[VP-013-store-dialects](plans/VP-013-store-dialects.md) `active`**（架构 A1；lead `workspace-013-store-dialects`；Root `GOAL-001-store-dialects` active 0/5）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`**（共享基架安全与健壮性；lead workspace-009；波次 W1–W4 与 W6 均 done，W5 扫描 0 中高危未开子目标）与 **VP-010 `active`**（设计意图—实现符合性；lead workspace-010；波次 W1–W13 均 done）。VP-001～008 仍为历史 `closed`；**VP-011 已于 2026-08-18 有界 `closed`**；**VP-012 已于 2026-08-19 完整 `closed`**。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
+**当前组合焦点**：**[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `active`**（架构 A6；lead `workspace-017-outbound-mail`）。[VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) 已于 2026-08-22 有界 `closed`（架构 A5）。**[VP-015-observability](plans/VP-015-observability.md) 已于 2026-08-22 有界 `closed`**（架构 A4）。**[VP-014-object-storage](plans/VP-014-object-storage.md) 已于 2026-08-21 有界 `closed`**（架构 A2）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011、VP-012 仍为历史 `closed`。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
 
 ## 单主线模块化策略
 

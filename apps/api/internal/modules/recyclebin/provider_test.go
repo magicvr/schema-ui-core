@@ -40,7 +40,7 @@ func newRecycleTestEnv(t *testing.T) (*auth.Authenticator, *Service, *operationl
 	authRepository := authsession.NewRepository(st)
 	a := auth.NewWithRepository([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, authRepository, false)
 	dictionary := datadictionarystore.NewRepository(st)
-	return a, NewService(recyclestore.NewRepository(st), dictionary, tasksstore.NewRepository(st)), operationlog.NewRepository(st), dictionary
+	return a, NewService(recyclestore.NewRepository(st), dictionary, tasksstore.NewRepository(st), st), operationlog.NewRepository(st), dictionary
 }
 
 func planWithRecycle(t *testing.T) kernel.Plan {

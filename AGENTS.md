@@ -345,12 +345,12 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 
 ## 快速链接（按项目填写）
 
-- 文档说明：`{{DOCS_README_PATH}}`
-- 目标树：`{{WORKSPACE_ROOT}}/goal-tree.md`
-- Root Goal：`{{WORKSPACE_ROOT}}/{{ROOT_GOAL_FOLDER}}/00-meta.md`
-- 核心模板目录：`{{CORE_TEMPLATES_DIR}}`（若项目采用独立核心层）
-- 架构说明：`{{ARCHITECTURE_PATH}}`
+- 文档说明：`docs/README.md`
+- 目标树：`docs/workspaces/<workspace-id>/goal-tree.md`（参见 `docs/vision/workspaces.md` 索引定位当前焦点工作区）
+- Root Goal：`docs/workspaces/<workspace-id>/GOAL-001-<slug>/00-meta.md`
+- 核心模板目录：`docs/templates/`
+- 架构说明：`docs/architecture/overview.md`
 - 治理原则：AGENTS 第 6 / 6b / 6d / 6e 节；`docs/architecture/principles.md`（必备，P-001～**P-006** 全文）
 - 愿景对齐：`docs/vision/alignment.md`；审视台账：`docs/vision/reviews.md`
-- 代码/应用布局：仓库根为常见默认；若已约定子目录则填 `{{APP_DIR}}`（可空）
-- Skills 目录：`{{SKILLS_DIR}}`
+- 代码/应用布局：`apps/`（包含 `apps/api/` 与 `apps/web/`）
+- Skills 目录：`skills/`

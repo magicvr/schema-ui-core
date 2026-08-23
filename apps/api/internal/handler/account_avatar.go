@@ -18,6 +18,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -25,6 +26,11 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
+
+// avatarQuotaMu serializes the quota check + store pair (W11 F-018): two
+// concurrent uploads must not BOTH pass the count check and exceed the
+// per-user avatar cap (check-then-act across the file store).
+var avatarQuotaMu sync.Mutex
 
 // AccountAvatarRoutes returns the account avatar surface: authenticated
 // upload (self-service, no permission key) + public GET.
@@ -58,17 +64,23 @@ func (h *accountAvatarHandler) upload() http.Handler {
 		// W7 F-004: enforce a per-user avatar file cap before storing. A user
 		// may upload the same total number across replace cycles; referenced
 		// avatars still count until the profile switches away (startup GC then
-		// reclaims unreferenced files).
+		// reclaims unreferenced files). W11 F-018: the check AND the store
+		// write hold avatarQuotaMu so concurrent uploads cannot both pass the
+		// count and exceed the cap.
+		avatarQuotaMu.Lock()
 		owned, err := h.store.CountOwner(user.ID)
 		if err != nil {
+			avatarQuotaMu.Unlock()
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not check avatar quota")
 			return
 		}
 		if owned >= maxAvatarPerUser {
+			avatarQuotaMu.Unlock()
 			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "AVATAR_QUOTA_EXCEEDED", "avatar upload quota exceeded; assign or clear your current avatar first")
 			return
 		}
 		payload, ok := h.store.storeUploadForOwner(w, r, user.ID)
+		avatarQuotaMu.Unlock()
 		if !ok {
 			return
 		}

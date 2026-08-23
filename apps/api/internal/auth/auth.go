@@ -108,11 +108,18 @@ type MFAEnforcer interface {
 // Authenticator holds the signing secret, token TTLs and the auth-session
 // repository.
 type Authenticator struct {
-	secret     []byte
-	accessTTL  time.Duration
-	refreshTTL time.Duration
-	repository Repository
-	devSession bool // explicit opt-in: static dev session fallback (M9)
+	secret []byte
+	// previousSecret is the optional rotated-out signing key kept for the
+	// rotation overlap window (VP-016 R2 · workspace-016 GOAL-003 D-001).
+	// Issuance never uses it; verification falls back to it only when the
+	// current-key attempt fails. Empty (the default) keeps exact single-key
+	// behavior. It lives as long as the operator keeps the previous key
+	// configured and disappears with the next restart that omits it.
+	previousSecret []byte
+	accessTTL      time.Duration
+	refreshTTL     time.Duration
+	repository     Repository
+	devSession     bool // explicit opt-in: static dev session fallback (M9)
 	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
 	// nil = the login contract is byte-identical to the pre-MFA behavior.
 	mfa                            MFAEnforcer
@@ -136,6 +143,16 @@ func New(secret []byte, accessTTL, refreshTTL time.Duration, runner authsession.
 // constructed by the composition root.
 func NewWithRepository(secret []byte, accessTTL, refreshTTL time.Duration, repository Repository, devSession bool) *Authenticator {
 	return &Authenticator{secret: secret, accessTTL: accessTTL, refreshTTL: refreshTTL, repository: repository, devSession: devSession}
+}
+
+// NewWithRepositoryAndPrevious builds an Authenticator that additionally
+// accepts access tokens signed with the previous (rotated-out) key during the
+// rotation overlap window (VP-016 R2 · workspace-016 GOAL-003 D-001). Issuance
+// always uses current; an empty previous keeps exact single-key behavior. The
+// overlap window lasts as long as previous stays configured at startup — it is
+// retired by removing the key and restarting.
+func NewWithRepositoryAndPrevious(current, previous []byte, accessTTL, refreshTTL time.Duration, repository Repository, devSession bool) *Authenticator {
+	return &Authenticator{secret: current, previousSecret: previous, accessTTL: accessTTL, refreshTTL: refreshTTL, repository: repository, devSession: devSession}
 }
 
 // timingDummyHash is compared against when the requested user does not exist,
@@ -163,12 +180,18 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 		return "", "", account.User{}, err
 	}
 	if u.LockedUntil > now.Unix() {
+		// W11 F-007 (D2 residual): burn the same bcrypt time as a wrong
+		// password before surfacing the terminal state, so the locked-account
+		// fast path cannot be used to enumerate existing usernames by timing.
+		VerifyPassword(timingDummyHash, password)
 		return "", "", account.User{}, ErrAccountLocked
 	}
 	// F-03 (GOAL-005 D-002 §3): a disabled account fails closed before any
 	// password work; the admin-facing operation is visible, so the state is
 	// surfaced as a distinct 403 rather than a generic credential failure.
+	// W11 F-007: dummy bcrypt burn as above for the same timing channel.
 	if !u.Enabled {
+		VerifyPassword(timingDummyHash, password)
 		return "", "", account.User{}, ErrAccountDisabled
 	}
 	if !VerifyPassword(u.PasswordHash, password) {
@@ -366,6 +389,21 @@ type ParsedAccessToken struct {
 	SessionID    string
 }
 
+// verifyAccess verifies an access token against the current signing key and,
+// when a previous (rotated-out) key is configured, falls back to it after a
+// failed current-key attempt — the rotation overlap window (VP-016 R2 ·
+// workspace-016 GOAL-003 D-001). Both attempts enforce expiry and method
+// checks, so the fallback can never extend any token's lifetime: an expired
+// token fails identically under both keys. Without a configured previous this
+// is exactly ParseAccessToken(current, raw).
+func (a *Authenticator) verifyAccess(raw string) (ParsedAccessToken, error) {
+	parsed, err := ParseAccessToken(a.secret, raw)
+	if err == nil || len(a.previousSecret) == 0 {
+		return parsed, err
+	}
+	return ParseAccessToken(a.previousSecret, raw)
+}
+
 // ParseAccessToken verifies signature and expiry, returning the subject user id
 // and token_version. Fail-closed: any parse, method or expiry failure is an
 // error.
@@ -536,7 +574,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			a.authenticateServiceCredential(w, r, next, raw)
 			return
 		}
-		parsed, err := ParseAccessToken(a.secret, raw)
+		parsed, err := a.verifyAccess(raw)
 		if err != nil {
 			if a.devSession {
 				a.injectDevSession(w, r, next)

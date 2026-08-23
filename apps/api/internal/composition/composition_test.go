@@ -54,6 +54,8 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		gate,
 		jwtSecret("test-secret"),
 		jobRuntime,
+		nil,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
 }
 
@@ -1071,4 +1073,72 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 			t.Fatalf("sidebar = %v, want prefix %v", labels, want)
 		}
 	})
+}
+
+// TestNewAuthenticatorWiresPreviousSecret pins the production dual-key wiring
+// (VP-016 R2 · workspace-016 GOAL-003 A-002 F-001): a non-empty
+// cfg.AuthJWTSecretPrevious must reach the Authenticator through
+// newAuthenticator, so the rotation overlap window verifies previous-signed
+// access tokens via the composed middleware. Without this pin, reverting the
+// wiring to the single-key constructor would keep every auth-package test
+// green while silently disabling the overlap window in real processes.
+func TestNewAuthenticatorWiresPreviousSecret(t *testing.T) {
+	hash, err := auth.HashPassword("pw", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "dual-key-wiring.db"), "admin", hash, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	repository := authsession.NewRepository(st)
+
+	const (
+		oldSecret = "rotation-old-secret"
+		newSecret = "rotation-new-secret"
+	)
+	cfg := &config.Config{
+		AppEnv:                "production",
+		AuthAccessTTL:         15 * time.Minute,
+		AuthRefreshTTL:        30 * 24 * time.Hour,
+		AuthJWTSecretPrevious: oldSecret,
+	}
+	a := newAuthenticator(cfg, jwtSecret(newSecret), repository)
+
+	u, err := repository.UserByID("user-admin")
+	if err != nil {
+		t.Fatalf("seeded admin: %v", err)
+	}
+	oldKeyToken, err := auth.SignAccessToken([]byte(oldSecret), "user-admin", u.TokenVersion, "", 15*time.Minute, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("SignAccessToken: %v", err)
+	}
+
+	serveBearer := func(a *auth.Authenticator, token string) (*httptest.ResponseRecorder, bool) {
+		passed := false
+		protected := a.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { passed = true }))
+		request := httptest.NewRequest(http.MethodGet, "/api/resources/widgets", nil)
+		request.Header.Set("Authorization", "Bearer "+token)
+		response := httptest.NewRecorder()
+		protected.ServeHTTP(response, request)
+		return response, passed
+	}
+
+	response, passed := serveBearer(a, oldKeyToken)
+	if response.Code != http.StatusOK || !passed {
+		t.Fatalf("composition wiring lost the previous key: code=%d passed=%v body=%s", response.Code, passed, response.Body.String())
+	}
+
+	// The same production path with an empty previous must stay single-key:
+	// the old-key token must be rejected once the window is retired.
+	single := newAuthenticator(&config.Config{
+		AppEnv:         "production",
+		AuthAccessTTL:  15 * time.Minute,
+		AuthRefreshTTL: 30 * 24 * time.Hour,
+	}, jwtSecret(newSecret), repository)
+	response2, passed2 := serveBearer(single, oldKeyToken)
+	if response2.Code != http.StatusUnauthorized || passed2 {
+		t.Fatalf("empty previous must stay single-key: code=%d passed=%v", response2.Code, passed2)
+	}
 }

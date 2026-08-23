@@ -4,8 +4,8 @@ doc: decision
 status: active
 parent: GOAL-005-r4-full-module-migration
 created: 2026-08-05
-updated: 2026-08-05
-version: 0.1.0
+updated: 2026-08-23
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-006
@@ -16,7 +16,7 @@ version: 0.1.0
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | C1-I001 | required | Provider/Registrar 精确契约、Contribution 类型和 compiled-global Persistence 是否接受 | C1 close / C2 entry | C1.2 | 用户整包接受冻结包为 D-003 契约正文 | verified | Grok A-006 pass | GOAL-006 D-003、freeze package `status: accepted` |
 | C1-I002 | required | Records historical-only 或恢复产品 CRUD | C1 close / C4 scope | C1.2 | 用户书面选择 historical-only 并更新 canonical 范围 | verified | GOAL-007 承接运行面核验 | GOAL-005/006 D-003、`0006 records_retire` |
-| C1-I003 | required | operationlog Option A/B/C 及 A 的 residual 接受条件 | C1 close / C3/C5 data gate | C1.2 | 用户书面选择 Option A；residual 完整 | accepted-residual | owner `magicvr`；review `2026-08-05 08:32:22 +08:00` | GOAL-006 D-003、A-005 FP-003 |
+| C1-I003 | required | operationlog Option A/B/C 及 A 的 residual 接受条件 | C1 close / C3/C5 data gate | C1.2 | 用户书面选择 Option A；residual 完整 | accepted-residual | owner `magicvr`；review `2026-08-05 08:32:22 +08:00`；**2026-08-23 到期复核（[workspace-010 GOAL-033](../../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-004-s3-b1-b4-conclusions.md)）**：retention 半边已由 W12-GOAL-008 兑现；append 半边续期待用户书面确认 | GOAL-006 D-003、A-005 FP-003 |
 
 ## 决策索引
 

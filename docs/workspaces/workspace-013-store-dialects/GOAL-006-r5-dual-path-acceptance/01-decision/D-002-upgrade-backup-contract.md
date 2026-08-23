@@ -49,3 +49,7 @@ version: 1.0.0
 ## 影响范围
 
 - 文档决策 + 运维剧本；无运行时代码变更（R1–R4 契约冻结）。
+
+## 用户书面追认（2026-08-23）
+
+用户经 ask_user_question 书面追认 §U1.3 的有界残余条款（「本 VP 不提供自动化 SQLite→PG 搬运器；存量路径 = fresh bootstrap + 运维自备导出/回放」）。自此本条构成 P-003 `accepted-residual`：范围 = VP-013 退出判据 2；复审触发 = 出现 in-place 或内置搬运需求时另立目标。裁决留痕：[workspace-010 GOAL-033 D-002](../../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/01-decision/D-002-w22-p004-adjudications.md)。

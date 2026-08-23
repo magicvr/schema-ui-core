@@ -54,27 +54,36 @@ func (r *Repository) CreateChallenge(id, answerHash string, expiresAt, now time.
 // brute-forced, and expiry is enforced inside the same transaction
 // (S-11 · GOAL-011 D-002 §1; grok A-003 F-001/F-004). Returns true only
 // when the challenge existed, was unexpired and the answer hash matched.
+//
+// W11 F-005: the guarded DELETE is the single statement that decides
+// success — there is no read-then-delete window. Under READ COMMITTED two
+// concurrent transactions cannot both claim the same row: the guarded delete
+// wins for exactly one of them (RowsAffected == 1); the loser affects 0 rows
+// and is treated as unmatched. The second best-effort delete preserves the
+// consume-on-ANY-attempt contract (a wrong/expired first attempt removes the
+// row so it cannot be brute-forced afterwards).
 func (r *Repository) ConsumeChallenge(id, answerHash string, now time.Time) (bool, error) {
 	matched := false
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var stored string
-		var expiresAt int64
-		row := tx.QueryRow(context.Background(), `SELECT answer_hash, expires_at FROM captcha_challenges WHERE id = ?`, id)
-		if err := row.Scan(&stored, &expiresAt); err != nil {
-			if errors.Is(err, kernel.ErrNoRows) {
-				return nil // unknown challenge: nothing to consume
-			}
-			return fmt.Errorf("get captcha challenge: %w", err)
+		res, err := tx.Exec(context.Background(),
+			`DELETE FROM captcha_challenges WHERE id = ? AND expires_at > ? AND answer_hash = ?`,
+			id, now.Unix(), answerHash,
+		)
+		if err != nil {
+			return fmt.Errorf("consume captcha challenge: %w", err)
 		}
-		// Consume on ANY attempt — success or failure (D-002 §1). A delete
-		// failure fails the whole verify (fail-closed, A-003 F-004).
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("consume captcha challenge rows: %w", err)
+		}
+		matched = affected == 1
+		// Consume on ANY attempt — success or failure (D-002 §1). The
+		// guarded statement above is the atomicity gate; this cleanup is a
+		// same-transaction no-op for the winner and removes the row for a
+		// wrong-answer or expired first attempt (fail-closed retry safety).
 		if _, err := tx.Exec(context.Background(), `DELETE FROM captcha_challenges WHERE id = ?`, id); err != nil {
-			return fmt.Errorf("delete captcha challenge: %w", err)
+			return fmt.Errorf("consume captcha challenge cleanup: %w", err)
 		}
-		if expiresAt <= now.Unix() || stored != answerHash {
-			return nil // expired or wrong answer: consumed, not matched
-		}
-		matched = true
 		return nil
 	})
 	if err != nil {

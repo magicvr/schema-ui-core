@@ -39,6 +39,7 @@ version: 0.1.0
 | F-VUI-009 | required（用户） | **fixed** | E-009 invokeAction 不 setSelectedRow |
 | F-VUI-010 | recommended | **accepted-residual** | Geist/JetBrains 未 CDN 引入；D-004 允许系统无衬线回退；非退出分母 |
 | F-VUI-011 | recommended | **accepted-residual** | 登录密码可见切换未做；非核心登录分母 |
+| F-VUI-011 兑现复核 | **2026-08-23 fixed**：LoginPage 密码可见 toggle 落地（i18n 双语 + 组件测试 ×3；e2e 选择器连带修复 ×5） | [workspace-010 GOAL-033 E-005](../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-005-s2-completion-facts.md) |
 
 **开放 required = 0**
 

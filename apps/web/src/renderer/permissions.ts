@@ -302,6 +302,21 @@ export function evaluatePermissionTargets(
   return targets;
 }
 
+/**
+ * W9 F-008: the gate target id mirrors the renderer's consumers
+ * (render.tsx invokeAction / schema-table.tsx row + toolbar lookups): an
+ * explicit `key` wins, otherwise the action ref. Registering only `key`
+ * left an intent-marked action without a key unmatchable (targetId ""), so
+ * the client-side permission gate was silently skipped for it.
+ */
+function actionGateTargetId(record: Record<string, unknown>): string {
+  const key = stringValue(record.key);
+  if (key !== "") {
+    return key;
+  }
+  return stringValue(record.actionRef);
+}
+
 function collectTargets(
   node: PermissionsNode,
   ancestors: PermissionsNode[],
@@ -351,7 +366,7 @@ function collectTargets(
       if (action.permissionIntent !== undefined) {
         const key = stringValue(action.permissionIntent) as PermissionKey;
         targets.push({
-          targetId: stringValue(action.key),
+          targetId: actionGateTargetId(action),
           kind: "rowAction",
           key,
           cascadeApplied: cascadingAncestors(mountAncestors, key).length > 0,
@@ -366,7 +381,7 @@ function collectTargets(
         const local = isRecord(action.permissions) ? action.permissions[key] : undefined;
         if (local !== undefined) {
           targets.push({
-            targetId: stringValue(action.key),
+            targetId: actionGateTargetId(action),
             kind: "rowAction",
             key: key as PermissionKey,
             cascadeApplied: false,
@@ -384,7 +399,7 @@ function collectTargets(
       if (trigger.permissionIntent !== undefined) {
         const key = stringValue(trigger.permissionIntent) as PermissionKey;
         targets.push({
-          targetId: stringValue(trigger.key),
+          targetId: actionGateTargetId(trigger),
           kind: "toolbarTrigger",
           key,
           cascadeApplied: cascadingAncestors(mountAncestors, key).length > 0,
@@ -397,7 +412,7 @@ function collectTargets(
         const local = isRecord(trigger.permissions) ? trigger.permissions[key] : undefined;
         if (local !== undefined) {
           targets.push({
-            targetId: stringValue(trigger.key),
+            targetId: actionGateTargetId(trigger),
             kind: "toolbarTrigger",
             key: key as PermissionKey,
             cascadeApplied: false,
@@ -510,7 +525,10 @@ function effectivePermission(
       continue;
     }
     const source = isRecord(ancestor.permissions) ? ancestor.permissions[key] : undefined;
-    if (source !== undefined && !evaluatePermissionValue(source, context)) {
+    // W9 F-009: a cascade-declared key WITHOUT a permission source fails
+    // closed (deny). The previous skip-and-continue evaluated malformed
+    // structures as allow, rendering with the gate open.
+    if (source === undefined || !evaluatePermissionValue(source, context)) {
       return false;
     }
   }

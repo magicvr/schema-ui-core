@@ -10,6 +10,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,20 @@ var (
 	ErrMFANotEnrolled    = errors.New("mfa: not enrolled")
 	ErrMFAPendingOnly    = errors.New("mfa: pending activation")
 	ErrMFAActive         = errors.New("mfa: already active")
+)
+
+// mfaVerifyRateLimiterWindow and mfaVerifyRateLimiterMax define the independent
+// HTTP rate-limit budget for POST /api/auth/mfa/verify (A6 · security audit):
+// 10 attempts per 15-minute window per client IP, matching the window of the
+// login limiter (loginRateLimiter in auth.go: 20 attempts / 15 min). A tighter
+// cap is appropriate because each proof is one-shot and 5-failure capped in the
+// service; the HTTP limiter provides an outer bound independent of the login
+// bucket so a replay-spray cannot exhaust the server's probe budget without
+// being gated at the transport level.
+const (
+	mfaVerifyRateLimiterWindow   = 15 * time.Minute
+	mfaVerifyRateLimiterMax      = 10
+	mfaVerifyRateLimiterCapacity = 1 << 16
 )
 
 // MFASelfService is the identity-scoped self-service surface consumed by the
@@ -63,9 +78,33 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		})
 	}
 
+	// A6 · independent MFA verify rate limiter (security audit finding):
+	// POST /api/auth/mfa/verify gets its own counting bucket, never shared with
+	// the login limiter. Key = client IP (loginClientIP, same proxy trust rules
+	// as the login limiter). Window/threshold mirror the login limiter (15 min /
+	// 20 max) with a tighter cap (10) because each proof is one-shot, so 10
+	// HTTP-level attempts already cover all legitimate retry scenarios.
+	mfaVerifyLimiter := newLoginRateLimiter(
+		mfaVerifyRateLimiterWindow,
+		mfaVerifyRateLimiterMax,
+		mfaVerifyRateLimiterCapacity,
+	)
+
 	// Second-factor completion: public (holds the one-time proof). Issues the
 	// real token pair on success (D-002 §3) and records mfa.login.
 	add("POST", "/api/auth/mfa/verify", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// A6: independent per-IP rate limit on the verify surface. The key is
+		// the client IP only (no username, since the proof already encodes the
+		// user; an IP key still stops a replay-spray from a single host).
+		limiterKey := loginClientIP(r)
+		now := time.Now().UTC()
+		if !mfaVerifyLimiter.allow(limiterKey, now) {
+			if sec := mfaVerifyLimiter.retryAfterSeconds(limiterKey, now); sec > 0 {
+				w.Header().Set("Retry-After", strconv.Itoa(sec))
+			}
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many MFA verify attempts; try again later")
+			return
+		}
 		var body struct {
 			Proof        string `json:"proof"`
 			Code         string `json:"code"`
@@ -78,6 +117,10 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		userID, err := service.Verify(body.Proof, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
+			// Failed verifications count against the limiter bucket so that a
+			// spray of invalid codes from one IP is bounded at the HTTP layer
+			// independently of the service-level proof exhaustion counter.
+			mfaVerifyLimiter.record(limiterKey, now)
 			writeMFAError(w, r, err)
 			return
 		}

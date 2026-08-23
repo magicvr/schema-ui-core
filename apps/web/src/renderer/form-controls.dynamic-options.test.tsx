@@ -141,4 +141,22 @@ describe("FormControls dynamic option sources (W11 · U-01/U-02)", () => {
     expect(fetcher).not.toHaveBeenCalled();
     expect(container.textContent).toContain("Role");
   });
+
+  // W10 F-007: WHATWG URL parsing normalizes "\" to "/" in special schemes,
+  // so "/\host" would otherwise become the protocol-relative "//host" and
+  // escape the origin. The validator must reject backslashes without fetching.
+  it("rejects backslash option sources that would normalize to protocol-relative urls", async () => {
+    const fetcher = vi.fn() as unknown as typeof fetch;
+    for (const url of ["/\\evil.example/api/roles", "/api/roles\\", "/api\\evil"]) {
+      const field: FormControlField = {
+        id: "role",
+        label: "Role",
+        type: "select",
+        optionsSource: { url, valueField: "key", labelField: "name" },
+      };
+      const container = await renderControls([field], {}, fetcher);
+      expect(fetcher).not.toHaveBeenCalled();
+      expect(container.textContent).toContain("Role");
+    }
+  });
 });

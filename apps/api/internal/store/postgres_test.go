@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -458,36 +459,56 @@ func TestOpenPostgresAppliesNonEmptyCatalogIntegration(t *testing.T) {
 	}
 }
 
+// scratchDSN creates an empty database named dbName on the PG_TEST server and
+// returns a DSN pointing at it. The database is dropped in t.Cleanup.
+//
+// WasFresh assertions cannot run against PG_TEST_DB itself: postgresWasFresh
+// counts any user table in the first existing search_path schema, and the
+// shared probe database typically already holds a leftover catalog (or the
+// developer's app schema). Later tests in this file already isolate via
+// dedicated scratch databases; R2-era probe/migrate tests must do the same.
+func scratchDSN(t *testing.T, adminDSN, dbName string) string {
+	t.Helper()
+	ctx := context.Background()
+	u, err := url.Parse(adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := sql.Open("pgx", u.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+	u.Path = "/" + dbName
+	return u.String()
+}
+
 func TestOpenPostgresProbeIntegration(t *testing.T) {
 	dsn := pgtest.DSN()
 	if dsn == "" {
 		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres probe integration (no PG = dev/fast-test keeps working)")
 	}
 	ctx := context.Background()
+	probeDSN := scratchDSN(t, dsn, "r2probe")
 	probe := func() (kernel.Store, error) {
 		return Open(ctx, OpenOptions{
 			Dialect:        kernel.DialectPostgres,
-			DSN:            dsn,
+			DSN:            probeDSN,
 			ConnectTimeout: 10 * time.Second,
 		}, nil)
 	}
 
-	// A freshly created, empty probe database must report WasFresh()=true on
-	// the default $user/public search_path (also exercises $user resolution).
-	// The probe database is shared across tests/processes, so first clean any
-	// leftover scratch table to make the assertion deterministic.
-	seed, err := probe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := seed.Run(ctx, func(tx kernel.Tx) error {
-		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS _r2_wasfresh_probe, r3_users, schema_migrations")
-		return err
-	}); err != nil {
-		t.Fatalf("clean slate: %v", err)
-	}
-	_ = seed.Close()
-
+	// An empty scratch database must report WasFresh()=true on the default
+	// $user/public search_path (also exercises $user resolution).
 	st, err := probe()
 	if err != nil {
 		t.Fatal(err)
@@ -499,7 +520,7 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 		t.Fatalf("ping: %v", err)
 	}
 	if !st.WasFresh() {
-		t.Errorf("empty probe db: WasFresh() = false, want true (search_path resolution)")
+		t.Errorf("empty scratch db: WasFresh() = false, want true (search_path resolution)")
 	}
 
 	// One Run = one tx; placeholders rebound '?' -> $n; commit persists.
@@ -518,8 +539,7 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 	_ = st.Close()
 
 	// A user base table now exists in the first existing schema (public):
-	// WasFresh must flip to false on a fresh open; the table also drops cleanly
-	// so the test stays idempotent.
+	// WasFresh must flip to false on a fresh open.
 	st2, err := probe()
 	if err != nil {
 		t.Fatal(err)
@@ -527,12 +547,6 @@ func TestOpenPostgresProbeIntegration(t *testing.T) {
 	defer st2.Close()
 	if st2.WasFresh() {
 		t.Errorf("db with a user table: WasFresh() = true, want false")
-	}
-	if err := st2.Run(ctx, func(tx kernel.Tx) error {
-		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS _r2_wasfresh_probe")
-		return err
-	}); err != nil {
-		t.Fatalf("cleanup: %v", err)
 	}
 }
 
@@ -546,10 +560,11 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres migrate runner integration")
 	}
 	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3runner")
 	openPG := func() *postgres {
 		st, err := Open(ctx, OpenOptions{
 			Dialect:        kernel.DialectPostgres,
-			DSN:            dsn,
+			DSN:            scratch,
 			ConnectTimeout: 10 * time.Second,
 		}, nil)
 		if err != nil {
@@ -596,24 +611,7 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 		},
 	}
 
-	// Deterministic clean slate BEFORE WasFresh assertions: drop any leftover
-	// scratch tables from a prior run, then open a fresh probe.
-	seed := openPG()
-	if _, err := seed.db.ExecContext(ctx, `DROP TABLE IF EXISTS r3_users, schema_migrations, _r2_wasfresh_probe`); err != nil {
-		t.Fatalf("clean slate: %v", err)
-	}
-	_ = seed.Close()
-
 	st := openPG()
-	t.Cleanup(func() {
-		// Use a dedicated connection (st may already be closed in the body) so
-		// the scratch tables are always removed for the next test / process.
-		if db, err := sql.Open("pgx", dsn); err == nil {
-			_, _ = db.ExecContext(context.Background(), `DROP TABLE IF EXISTS r3_users, schema_migrations, _r2_wasfresh_probe`)
-			_ = db.Close()
-		}
-	})
-
 	if err := st.migrate(catalog); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
@@ -647,6 +645,274 @@ func TestPostgresMigrateRunnerIntegration(t *testing.T) {
 	drifted[1].Checksum = strings.Repeat("a", 64)
 	if err := st3.migrate(drifted); err == nil || !strings.Contains(err.Error(), "drift") {
 		t.Fatalf("checksum drift must fail closed, got %v", err)
+	}
+}
+
+// TestPostgresMigrateAdoptsLedgerlessR2 is the postgres twin of
+// TestMigrateExistingR2DB: a schema with users+refresh_tokens and no
+// schema_migrations must be fingerprinted and adopted, not fail with
+// 42P07 relation "users" already exists.
+func TestPostgresMigrateAdoptsLedgerlessR2(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping ledger-less R2 adopt")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3r2adopt")
+
+	setup, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stmt := range []string{
+		`CREATE TABLE users (
+  id            TEXT PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL,
+  roles         TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at    BIGINT NOT NULL,
+  updated_at    BIGINT NOT NULL
+)`,
+		`CREATE TABLE refresh_tokens (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at BIGINT NOT NULL,
+  revoked_at BIGINT,
+  created_at BIGINT NOT NULL
+)`,
+		`CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id)`,
+		`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
+		 VALUES ('user-admin', 'admin', 'Admin', '["admin"]', 'hash-v1', 1, 1)`,
+	} {
+		if _, err := setup.ExecContext(ctx, stmt); err != nil {
+			_ = setup.Close()
+			t.Fatalf("r2 fixture: %v", err)
+		}
+	}
+	if err := setup.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 10 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("open ledger-less R2 postgres: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	pg := st.(*postgres)
+	var migCount int
+	if err := pg.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != len(catalog) {
+		t.Fatalf("ledger rows = %d, want %d (adopted R2 then remaining catalog)", migCount, len(catalog))
+	}
+	var username string
+	if err := pg.db.QueryRowContext(ctx, `SELECT username FROM users WHERE id = 'user-admin'`).Scan(&username); err != nil {
+		t.Fatal(err)
+	}
+	if username != "admin" {
+		t.Fatalf("adopted user = %q, want admin", username)
+	}
+}
+
+// TestPostgresMigrateRejectsConflictingUsersTable: a leftover users table that
+// is not the R2 shape must fail closed with a fingerprint error, not 42P07.
+func TestPostgresMigrateRejectsConflictingUsersTable(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping conflicting-users fingerprint")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3conflict")
+
+	setup, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := setup.ExecContext(ctx, `CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT NOT NULL)`); err != nil {
+		_ = setup.Close()
+		t.Fatalf("conflict fixture: %v", err)
+	}
+	if err := setup.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 10 * time.Second,
+	}, catalog)
+	if err == nil {
+		_ = st.Close()
+		t.Fatal("open against a conflicting users table must fail closed")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "identity=foreign") && !strings.Contains(msg, "refusing to migrate") {
+		t.Fatalf("want foreign-identity refuse, got %v", err)
+	}
+	if strings.Contains(msg, "42P07") || strings.Contains(msg, "SQLSTATE 42P07") {
+		t.Fatalf("must not surface CREATE TABLE 42P07, got %v", err)
+	}
+}
+
+// TestPostgresMigrateRestoresLostLedger: a fully-migrated postgres that lost
+// schema_migrations (the live-dev failure mode) must restore the ledger on
+// reopen instead of failing with 42P07 or replaying operation_log rebuilds.
+func TestPostgresMigrateRestoresLostLedger(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping lost-ledger restore")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3lostled")
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("initial bootstrap: %v", err)
+	}
+	pg := st.(*postgres)
+	if _, err := pg.db.ExecContext(ctx, `INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
+		VALUES ('user-keep', 'keeper', 'Keeper', '["admin"]', 'hash', 1, 1)`); err != nil {
+		_ = st.Close()
+		t.Fatalf("seed user: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	admin, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.ExecContext(ctx, `DROP TABLE schema_migrations`); err != nil {
+		_ = admin.Close()
+		t.Fatalf("drop ledger: %v", err)
+	}
+	if err := admin.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st2, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("reopen after lost ledger: %v", err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+	pg2 := st2.(*postgres)
+
+	var migCount int
+	if err := pg2.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migCount); err != nil {
+		t.Fatal(err)
+	}
+	if migCount != len(catalog) {
+		t.Fatalf("restored ledger rows = %d, want %d", migCount, len(catalog))
+	}
+	var username string
+	if err := pg2.db.QueryRowContext(ctx, `SELECT username FROM users WHERE id = 'user-keep'`).Scan(&username); err != nil {
+		t.Fatal(err)
+	}
+	if username != "keeper" {
+		t.Fatalf("preserved user = %q, want keeper", username)
+	}
+	var jobs int
+	if err := pg2.db.QueryRowContext(ctx, `SELECT count(*) FROM jobs`).Scan(&jobs); err != nil {
+		t.Fatalf("jobs table missing after ledger restore: %v", err)
+	}
+}
+
+// TestPostgresMigrateRefusesIncompleteLostLedger: jobs-era schema without
+// catalog-head objects must not stamp v44+ as applied (A-001 F-001).
+func TestPostgresMigrateRefusesIncompleteLostLedger(t *testing.T) {
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping incomplete lost-ledger refuse")
+	}
+	ctx := context.Background()
+	scratch := scratchDSN(t, dsn, "r3lostinc")
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err != nil {
+		t.Fatalf("initial bootstrap: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	admin, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stmt := range []string{
+		`DROP TABLE schema_migrations`,
+		`DROP TABLE IF EXISTS service_credentials CASCADE`,
+		`DROP TABLE IF EXISTS operation_log_session CASCADE`,
+	} {
+		if _, err := admin.ExecContext(ctx, stmt); err != nil {
+			_ = admin.Close()
+			t.Fatalf("%s: %v", stmt, err)
+		}
+	}
+	if err := admin.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st2, err := Open(ctx, OpenOptions{
+		Dialect:        kernel.DialectPostgres,
+		DSN:            scratch,
+		ConnectTimeout: 15 * time.Second,
+	}, catalog)
+	if err == nil {
+		_ = st2.Close()
+		t.Fatal("incomplete lost ledger must fail closed, not stamp current catalog")
+	}
+	if !strings.Contains(err.Error(), "lost-ledger-unsafe") {
+		t.Fatalf("want lost-ledger-unsafe refuse, got %v", err)
+	}
+	check, err := sql.Open("pgx", scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer check.Close()
+	var exists bool
+	if err := check.QueryRowContext(ctx, `SELECT to_regclass('schema_migrations') IS NOT NULL`).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatal("refuse must not create schema_migrations")
 	}
 }
 
@@ -830,5 +1096,130 @@ func TestPostgresDataMigrationPrototype(t *testing.T) {
 	}
 	if len(got.Roles) != len(admin.Roles) {
 		t.Fatalf("roles mismatch: %v vs %v", got.Roles, admin.Roles)
+	}
+}
+
+// postgresScratchDB creates a scratch database on the PG_TEST server and
+// returns an Open() store over it with the full compiled catalog (W11 tests).
+func postgresScratchDB(t *testing.T, dbName string) kernel.Store {
+	t.Helper()
+	dsn := pgtest.DSN()
+	if dsn == "" {
+		t.Skip("postgres test env not set (PG_TEST_*); skipping postgres scratch-db test")
+	}
+	ctx := context.Background()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	adminDSN := u.String()
+	u.Path = "/" + dbName
+	scratchDSN := u.String()
+
+	admin, err := sql.Open("pgx", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`)
+		_ = admin.Close()
+	})
+	if _, err := admin.ExecContext(ctx, `DROP DATABASE IF EXISTS `+dbName+` WITH (FORCE)`); err != nil {
+		t.Fatalf("drop prior scratch db: %v", err)
+	}
+	if _, err := admin.ExecContext(ctx, `CREATE DATABASE `+dbName); err != nil {
+		t.Fatalf("create scratch db: %v", err)
+	}
+	catalog, err := compiledmodules.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := Open(ctx, OpenOptions{Dialect: kernel.DialectPostgres, DSN: scratchDSN, ConnectTimeout: 15 * time.Second}, catalog)
+	if err != nil {
+		t.Fatalf("open+bootstrap scratch db: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	return st
+}
+
+// W11 F-001: the create-user EXISTS scan regressed to a native bool on
+// postgres — an int destination made every create/CSV-import fail. Pins the
+// postgres create path: a fresh user lands, a duplicate username is rejected
+// with ErrUsernameTaken, and the row reads back.
+func TestPostgresCreateUserManagementExistsScan(t *testing.T) {
+	ctx := context.Background()
+	st := postgresScratchDB(t, "w11f001")
+	now := time.Date(2026, 8, 22, 12, 0, 0, 0, time.UTC)
+
+	// CreateUserManagement validates role keys against the roles table; seed
+	// the admin role the way the system-data bootstrap does.
+	if err := st.Run(ctx, func(tx kernel.Tx) error {
+		_, err := tx.Exec(ctx, `INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES ('role-admin', 'admin', 'Admin', 1, 0, 0)`)
+		return err
+	}); err != nil {
+		t.Fatalf("seed role: %v", err)
+	}
+
+	repo := authsession.NewRepository(st)
+	user := authsession.User{
+		ID: "user-pg-create-1", Username: "pg-create-user", Name: "PG Create User",
+		Roles: []string{"admin"}, PasswordHash: "hash",
+		CreatedAt: now, UpdatedAt: now,
+	}
+	created, err := repo.CreateUserManagement(user)
+	if err != nil {
+		t.Fatalf("CreateUserManagement on postgres = %v (F-001 EXISTS int scan regression)", err)
+	}
+	if created == nil || created.Username != "pg-create-user" || len(created.Roles) != 1 {
+		t.Fatalf("created user = %+v", created)
+	}
+	dup := user
+	dup.ID = "user-pg-create-2"
+	if _, err := repo.CreateUserManagement(dup); !errors.Is(err, authsession.ErrUsernameTaken) {
+		t.Fatalf("duplicate username err = %v, want ErrUsernameTaken", err)
+	}
+}
+
+// W11 F-005: the captcha consume must be a single guarded statement under
+// postgres READ COMMITTED — two concurrent correct answers claim the
+// challenge for exactly one caller (the previous read-then-delete shape
+// let both pass).
+func TestPostgresCaptchaConsumeConcurrent(t *testing.T) {
+	st := postgresScratchDB(t, "w11f005")
+	captcha := logincaptchastore.NewRepository(st)
+	now := time.Now().UTC()
+	if err := captcha.CreateChallenge("cap-concurrent", "hash-answer", now.Add(5*time.Minute), now); err != nil {
+		t.Fatal(err)
+	}
+
+	results := make(chan bool, 2)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ok, err := captcha.ConsumeChallenge("cap-concurrent", "hash-answer", now.Add(time.Second))
+			if err != nil {
+				t.Errorf("concurrent consume: %v", err)
+				results <- false
+				return
+			}
+			results <- ok
+		}()
+	}
+	wg.Wait()
+	close(results)
+	wins := 0
+	for ok := range results {
+		if ok {
+			wins++
+		}
+	}
+	if wins != 1 {
+		t.Fatalf("concurrent consume wins = %d, want exactly 1", wins)
+	}
+	ok, err := captcha.ConsumeChallenge("cap-concurrent", "hash-answer", now.Add(2*time.Second))
+	if err != nil || ok {
+		t.Fatalf("post-race consume = %v %v, want false/nil", ok, err)
 	}
 }

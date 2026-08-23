@@ -24,14 +24,14 @@ const ModuleID = "admin.file-library"
 type Provider struct {
 	a          *auth.Authenticator
 	operations operationlog.Recorder
-	uploadDir  string
+	objects    kernel.ObjectStore
 }
 
 // New constructs the file-library provider with framework-agnostic
-// dependencies. uploadDir is the shared uploads storage root (the same
-// directory as the central upload endpoint).
-func New(a *auth.Authenticator, operations operationlog.Recorder, uploadDir string) *Provider {
-	return &Provider{a: a, operations: operations, uploadDir: uploadDir}
+// dependencies. objects is the shared kernel object-storage port — the same
+// instance the central upload endpoint uses (uploads namespace).
+func New(a *auth.Authenticator, operations operationlog.Recorder, objects kernel.ObjectStore) *Provider {
+	return &Provider{a: a, operations: operations, objects: objects}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -61,7 +61,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.FileLibraryRoutes(p.a, p.uploadDir, p.operations, ModuleID) {
+	for _, route := range handler.FileLibraryRoutes(p.a, p.objects, p.operations, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

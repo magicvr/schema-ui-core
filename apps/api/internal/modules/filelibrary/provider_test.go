@@ -20,11 +20,12 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
-func newFileLibraryTestEnv(t *testing.T) (*auth.Authenticator, *store.Store, *authsession.Repository, *operationlog.Repository, string) {
+func newFileLibraryTestEnv(t *testing.T) (*auth.Authenticator, *store.Store, *authsession.Repository, *operationlog.Repository, kernel.ObjectStore, string) {
 	t.Helper()
 	hash, err := auth.HashPassword("test-password", 4)
 	if err != nil {
@@ -37,7 +38,9 @@ func newFileLibraryTestEnv(t *testing.T) (*auth.Authenticator, *store.Store, *au
 	t.Cleanup(func() { _ = st.Close() })
 	repository := authsession.NewRepository(st)
 	a := auth.NewWithRepository([]byte("test-secret"), 15*time.Minute, 30*24*time.Hour, repository, false)
-	return a, st, repository, operationlog.NewRepository(st), filepath.Join(t.TempDir(), "uploads")
+	objectRoot := t.TempDir()
+	objects := objectstore.NewLocal(objectRoot)
+	return a, st, repository, operationlog.NewRepository(st), objects, filepath.Join(objectRoot, "uploads")
 }
 
 func planWithFileLibrary(t *testing.T) kernel.Plan {
@@ -58,8 +61,8 @@ func planWithFileLibrary(t *testing.T) kernel.Plan {
 }
 
 func TestFileLibraryProviderRegistersSurfaces(t *testing.T) {
-	a, _, _, operations, uploadDir := newFileLibraryTestEnv(t)
-	provider := New(a, operations, uploadDir)
+	a, _, _, operations, objects, _ := newFileLibraryTestEnv(t)
+	provider := New(a, operations, objects)
 	set, err := kernel.RegisterContributions(context.Background(), planWithFileLibrary(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -116,16 +119,16 @@ func TestFileLibraryProviderRegistersSurfaces(t *testing.T) {
 // admin list 200, unknown detail 404) through the same finalize path the
 // composition root uses.
 func TestFileLibraryProviderServesSurfaces(t *testing.T) {
-	a, st, _, operations, uploadDir := newFileLibraryTestEnv(t)
+	a, st, _, operations, objects, _ := newFileLibraryTestEnv(t)
 	plan := planWithFileLibrary(t)
-	provider := New(a, operations, uploadDir)
+	provider := New(a, operations, objects)
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
 	handler.Register(mux, a, st, operations, plan)
-	handler.RegisterUpload(mux, a, uploadDir)
+	handler.RegisterUpload(mux, a, objects)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"runtime/debug"
 	"net/http"
 	"slices"
 	"strconv"
@@ -140,6 +141,27 @@ var (
 // module service satisfies this interface structurally.
 type TrashRecorder interface {
 	Record(ctx context.Context, resource, id string, row map[string]any, actor account.User, now time.Time) error
+}
+
+// TrashTxRecorder is the same-transaction recycle snapshot surface (W11
+// F-002): RecordTx writes the snapshot INSIDE the caller's transaction, so a
+// delete and its snapshot commit atomically. The recycle-bin service
+// implements both Record and RecordTx; a recorder that only implements
+// Record keeps the legacy delete-then-snapshot path.
+type TrashTxRecorder interface {
+	RecordTx(ctx context.Context, tx kernel.Tx, resource, id string, row map[string]any, actor account.User, now time.Time) error
+}
+
+// TrashTxDeleter is the optional same-transaction delete surface (W11
+// F-002): the entity deletes the row AND invokes record inside ONE
+// transaction. A snapshot failure then rolls the delete back — the previous
+// shape committed the delete and only logged a failed snapshot, silently
+// losing dictionary types/entries or scheduled tasks without a recycle
+// snapshot. Busy entities (dict-types, dict-entries, scheduled-tasks)
+// implement it by running their delete + the recorder callback on one
+// kernel.Tx; entities without it keep the legacy behavior.
+type TrashTxDeleter interface {
+	DeleteTrashTx(ctx context.Context, id string, user account.User, now time.Time, record func(ctx context.Context, tx kernel.Tx) error) error
 }
 
 // ScopeConstraint is the resolved row-level scope for one request actor on
@@ -429,6 +451,13 @@ func (h *resourceHandler) list() http.Handler {
 				writeLocalizedError(w, r, domainErr.Status, domainErr.Code, domainErr.Message)
 				return
 			}
+			// Observability (users-list 500 follow-up): the INTERNAL envelope
+			// must never leak diagnostics, but the underlying cause has to reach
+			// the server log or the failure is undebuggable.
+			slog.ErrorContext(r.Context(), "resource list failed", "resource", h.res.ID, "err", err, "entityType", fmt.Sprintf("%T", h.res.Entity), "repoType", fmt.Sprintf("%T", h.res.Entity))
+			if h.res.ID == "users" {
+				slog.Error("DEBUG users list failure stack", "stack", string(debug.Stack()))
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list "+h.res.ID)
 			return
 		}
@@ -711,14 +740,48 @@ func (h *resourceHandler) delete() http.Handler {
 		// S-12 (GOAL-012 D-002 §2): capture the pre-delete row so a successful
 		// delete can record a recycle snapshot. A failed delete records nothing
 		// (no orphan snapshots); a missing row records nothing.
+		//
+		// W9 F-010: the ownership precheck fails CLOSED on transient read
+		// errors, mirroring update() — the previous shape skipped the self-scope
+		// check whenever Get failed and proceeded to Delete anyway.
 		var snapshot map[string]any
 		if h.res.Trash != nil || (constraint != nil && constraint.ScopeType == "self") {
-			if row, gerr := h.res.Entity.Get(id); gerr == nil {
+			row, gerr := h.res.Entity.Get(id)
+			if gerr != nil && !errors.Is(gerr, errResourceNotFound) {
+				writeEntityError(w, r, h.res, gerr, "delete")
+				return
+			}
+			if gerr == nil {
 				if !scopeOwned(row, constraint) {
 					writeLocalizedError(w, r, http.StatusNotFound, notFoundCode(h.res), "no "+h.res.ID+" with that id")
 					return
 				}
 				snapshot = row
+			}
+		}
+		// W11 F-002: when BOTH the entity (TrashTxDeleter) and the recorder
+		// (TrashTxRecorder) support it, the delete and the recycle snapshot
+		// commit in ONE transaction — a failed snapshot fails the whole
+		// delete (no more committed delete without a snapshot). Otherwise the
+		// legacy delete-then-snapshot path below keeps byte-identical
+		// semantics for entities that have not opted in.
+		now := time.Now().UTC()
+		if h.res.Trash != nil && snapshot != nil {
+			if txDeleter, ok := h.res.Entity.(TrashTxDeleter); ok {
+				if recorder, ok := h.res.Trash.(TrashTxRecorder); ok {
+					err := txDeleter.DeleteTrashTx(r.Context(), id, user, now, func(ctx context.Context, tx kernel.Tx) error {
+						return recorder.RecordTx(ctx, tx, h.res.ID, id, snapshot, user, now)
+					})
+					if err != nil {
+						writeEntityError(w, r, h.res, err, "delete")
+						return
+					}
+					if h.res.OnWrite != nil {
+						h.res.OnWrite(r.Context(), user, writeDelete, id, nil, now)
+					}
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
 			}
 		}
 		if err := h.res.Entity.Delete(id, user); err != nil {
@@ -729,7 +792,6 @@ func (h *resourceHandler) delete() http.Handler {
 			h.res.OnWrite(r.Context(), user, writeDelete, id, nil, time.Now().UTC())
 		}
 		if h.res.Trash != nil && snapshot != nil {
-			now := time.Now().UTC()
 			if err := h.res.Trash.Record(r.Context(), h.res.ID, id, snapshot, user, now); err != nil {
 				slog.Error("recycle snapshot failed", "resource", h.res.ID, "id", id, "err", err)
 			}
@@ -859,6 +921,25 @@ func (h *resourceHandler) batchDelete() http.Handler {
 				if h.res.Trash != nil {
 					if row, err := h.res.Entity.Get(id); err == nil {
 						snapshot = row
+					}
+				}
+				// W11 F-002: same-transaction delete + snapshot when both
+				// sides opt in (see h.delete()); legacy path otherwise.
+				if h.res.Trash != nil && snapshot != nil {
+					if txDeleter, ok := h.res.Entity.(TrashTxDeleter); ok {
+						if recorder, ok := h.res.Trash.(TrashTxRecorder); ok {
+							if err := txDeleter.DeleteTrashTx(r.Context(), id, user, now, func(ctx context.Context, tx kernel.Tx) error {
+								return recorder.RecordTx(ctx, tx, h.res.ID, id, snapshot, user, now)
+							}); err != nil {
+								writeEntityError(w, r, h.res, err, "batch delete")
+								return
+							}
+							if h.res.OnWrite != nil {
+								h.res.OnWrite(r.Context(), user, writeDelete, id, nil, now)
+							}
+							deleted++
+							continue
+						}
 					}
 				}
 				if err := h.res.Entity.Delete(id, user); err != nil {

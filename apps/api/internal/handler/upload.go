@@ -13,20 +13,20 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
 
 // maxUploadBytes bounds a single multipart upload (8 MiB); the server rejects
@@ -102,21 +102,55 @@ var activeContentMarkers = []string{
 	"<?xml",
 }
 
+// sniffWindowBytes is the number of bytes examined for active-content heuristics
+// (A5 · security audit finding): large files are only scanned at the head so
+// the gate adds O(sniffWindowBytes) per upload rather than O(file-size). 8 KiB
+// is enough to catch all header-position event-handler patterns while remaining
+// well under a typical L1 cache footprint. Content pushed beyond this offset
+// cannot execute without a rendering context that the download headers already
+// deny (attachment + CSP sandbox + nosniff), so the residual risk is accepted
+// within the existing defence-in-depth model.
+const sniffWindowBytes = 8 << 10 // 8 KiB
+
+// onEventHandlerPattern matches an HTML/XML/SVG on* event-handler attribute
+// of the form on<name>=  (case-insensitive; name is one or more ASCII letters).
+// This catches patterns such as onload=, onerror=, onmouseover=, etc. that can
+// appear in SVG, XML or plain-HTML markup without a <script> tag and without
+// the literal <svg or <script markers already covered by activeContentMarkers
+// (A5 · security audit: "带事件处理器形态的内容可入库").
+var onEventHandlerPattern = regexp.MustCompile(`(?i)\bon[a-z]+=`)
+
 // containsActiveContent reports whether body contains any active-content
-// marker, case-insensitively. A hard rejection gate on top of the sniffed MIME.
+// marker, case-insensitively. It examines only the first sniffWindowBytes of
+// body so large uploads are not penalised (A5 hardening: head-only sniff).
+// A hard rejection gate on top of the sniffed MIME.
 func containsActiveContent(body []byte) bool {
-	lower := bytes.ToLower(body)
+	window := body
+	if len(window) > sniffWindowBytes {
+		window = window[:sniffWindowBytes]
+	}
+	lower := bytes.ToLower(window)
 	for _, marker := range activeContentMarkers {
 		if bytes.Contains(lower, []byte(marker)) {
 			return true
 		}
 	}
+	// A5 · event-handler heuristic: reject any document whose head contains an
+	// on*= attribute even without a <script>/<svg> literal. This blocks SVG
+	// with inline event handlers that omit the element open-tag (e.g. an
+	// existing <svg> document injected mid-stream) and plain-HTML payloads with
+	// <img onerror=…> / <body onload=…> patterns that bypass tag-name matching.
+	if onEventHandlerPattern.Match(window) {
+		return true
+	}
 	return false
 }
 
 type uploadStore struct {
-	dir      string
-	policy   uploadPolicy
+	// objects is the shared kernel object-storage port (VP-014 R3 · GOAL-004
+	// D-001); every object lives in the uploads namespace.
+	objects kernel.ObjectStore
+	policy  uploadPolicy
 	// quotaMu serializes the quota check + save pair (W7 F-012): without it,
 	// concurrent uploads from one owner could each pass quotaReached before the
 	// other's object is written and collectively exceed the quota.
@@ -129,23 +163,13 @@ func (s *uploadStore) save(name string, contentType string, ownerID string, body
 		return "", err
 	}
 	id := hex.EncodeToString(idBytes)
-	if err := os.MkdirAll(s.dir, 0o755); err != nil {
-		return "", err
-	}
-	if err := os.WriteFile(filepath.Join(s.dir, id), body, 0o644); err != nil {
-		return "", err
-	}
-	meta := map[string]string{"name": name, "type": contentType, "owner": ownerID}
-	raw, err := json.Marshal(meta)
+	// The adapter writes body and metadata atomically (local: rollback on
+	// sidecar failure — W7 F-013; S3: single object), so a successful return
+	// can never leave an object invisible to quota/GET.
+	err := s.objects.Put(context.Background(), kernel.ObjectNamespaceUploads, id, body, kernel.ObjectMeta{
+		Name: name, Type: contentType, Owner: ownerID,
+	})
 	if err != nil {
-		// W7 F-013: fail the upload when the meta record cannot be written;
-		// remove the orphan object so a successful-looking 200 cannot leave a
-		// file that is invisible to quota/GET (fail-closed).
-		_ = os.Remove(filepath.Join(s.dir, id))
-		return "", err
-	}
-	if err := os.WriteFile(filepath.Join(s.dir, id+".meta.json"), raw, 0o644); err != nil {
-		_ = os.Remove(filepath.Join(s.dir, id))
 		return "", err
 	}
 	return id, nil
@@ -157,18 +181,19 @@ func (s *uploadStore) save(name string, contentType string, ownerID string, body
 // or `..` / reserved names.
 var uploadFileIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
-func (s *uploadStore) load(id string) ([]byte, map[string]string, error) {
+// load reads a stored upload by id through the port; invalid ids and misses
+// surface as os.ErrNotExist for the HTTP 404 paths. The metadata comes back
+// typed (name/type/owner).
+func (s *uploadStore) load(id string) ([]byte, kernel.ObjectMeta, error) {
 	if !uploadFileIDPattern.MatchString(id) {
-		return nil, nil, os.ErrNotExist
+		return nil, kernel.ObjectMeta{}, os.ErrNotExist
 	}
-	body, err := os.ReadFile(filepath.Join(s.dir, id))
+	body, meta, err := s.objects.Get(context.Background(), kernel.ObjectNamespaceUploads, id)
 	if err != nil {
-		return nil, nil, err
-	}
-	meta := map[string]string{}
-	raw, err := os.ReadFile(filepath.Join(s.dir, id+".meta.json"))
-	if err == nil {
-		_ = json.Unmarshal(raw, &meta)
+		if errors.Is(err, kernel.ErrObjectNotFound) {
+			return nil, kernel.ObjectMeta{}, os.ErrNotExist
+		}
+		return nil, kernel.ObjectMeta{}, err
 	}
 	return body, meta, nil
 }
@@ -183,49 +208,34 @@ func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string,
 	if s.policy.maxUserFiles <= 0 && s.policy.maxUserBytes <= 0 {
 		return "", false // quotas disabled
 	}
-	entries, err := os.ReadDir(s.dir)
+	ids, err := s.objects.List(context.Background(), kernel.ObjectNamespaceUploads)
 	if err != nil {
-		// Dir absent = no stored files; a real read error fails closed (count
-		// toward quota rather than silently allowing an unbounded store).
-		if os.IsNotExist(err) {
-			return "", false
-		}
+		// Enumeration failure fails closed: count toward quota rather than
+		// silently allowing an unbounded store.
 		return "quota unavailable", true
 	}
 	files := 0
-	bytes := 0
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
-			continue
-		}
-		raw, err := os.ReadFile(filepath.Join(s.dir, entry.Name()))
+	var bytes int64
+	for _, id := range ids {
+		info, err := s.objects.Stat(context.Background(), kernel.ObjectNamespaceUploads, id)
 		if err != nil {
-			files++
-			bytes += maxUploadBytes // conservative: unreadable meta counts max
-			continue
-		}
-		meta := map[string]string{}
-		if err := json.Unmarshal(raw, &meta); err != nil {
+			// A ghost id (body-less sidecar) or unreadable metadata counts
+			// conservatively at the per-object maximum so a failed read cannot
+			// bypass the limit (A-002 N-002 disposition).
 			files++
 			bytes += maxUploadBytes
 			continue
 		}
-		if meta["owner"] != ownerID {
+		if info.Meta.Owner != ownerID {
 			continue
 		}
-		// The stored object is the meta name minus the ".meta.json" suffix;
-		// stat it for the real byte count so the byte quota is accurate.
-		fileSize := 1 << 20 // nominal minimum when stat fails
-		if info, err := os.Stat(filepath.Join(s.dir, strings.TrimSuffix(entry.Name(), ".meta.json"))); err == nil {
-			fileSize = int(info.Size())
-		}
 		files++
-		bytes += fileSize
+		bytes += info.Size
 	}
 	if s.policy.maxUserFiles > 0 && files+1 > s.policy.maxUserFiles {
 		return "per-user file count quota exceeded", true
 	}
-	if s.policy.maxUserBytes > 0 && bytes+nextSize > s.policy.maxUserBytes {
+	if s.policy.maxUserBytes > 0 && bytes+int64(nextSize) > int64(s.policy.maxUserBytes) {
 		return "per-user byte quota exceeded", true
 	}
 	return "", false
@@ -238,9 +248,9 @@ func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string,
 // account cannot fill the disk. The gate mirrors the resource-factory
 // permission model (requirePermission, fail-closed 403 for authenticated users
 // without the key).
-func RegisterUpload(mux *http.ServeMux, a authMiddleware, dir string, opts ...UploadOption) {
+func RegisterUpload(mux routeRegistrar, a authMiddleware, objects kernel.ObjectStore, opts ...UploadOption) {
 	store := &uploadStore{
-		dir: dir,
+		objects: objects,
 		policy: uploadPolicy{
 			// Historical defaults (pre-W7 package-level env values).
 			maxUserFiles: 1000,
@@ -297,6 +307,16 @@ func (s *uploadStore) upload() http.Handler {
 		}
 		body, err := io.ReadAll(file)
 		if err != nil {
+			// W11 F-014: MaxBytesReader surfaces oversize bodies as a read
+			// error — map it to the frozen 413 FILE_TOO_LARGE instead of a
+			// misleading 500 STORAGE_UNAVAILABLE (the client-side size check
+			// above only sees the multipart header size; the wrapper enforces
+			// the true stream bound).
+			var tooLarge *http.MaxBytesError
+			if errors.As(err, &tooLarge) {
+				writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "file exceeds the server size limit")
+				return
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not read upload")
 			return
 		}
@@ -378,12 +398,12 @@ func (s *uploadStore) file() http.Handler {
 		}
 		// GOAL-003: owner-only download. Missing owner (legacy/corrupt meta) fails
 		// closed — never treat an unowned object as world-readable among authed users.
-		owner := strings.TrimSpace(meta["owner"])
+		owner := strings.TrimSpace(meta.Owner)
 		if owner == "" || owner != user.ID {
 			writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "not the owner of this file")
 			return
 		}
-		contentType := meta["type"]
+		contentType := meta.Type
 		if contentType == "" {
 			contentType = "application/octet-stream"
 		}

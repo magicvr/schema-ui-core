@@ -16,7 +16,15 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 )
+
+// brandDirOf returns the brand-assets namespace directory for direct-disk
+// checks (the local adapter layout is byte-compatible by design).
+func brandDirOf(env *authTestEnv) string {
+	return filepath.Join(env.objectRoot, "brand-assets")
+}
 
 // makePNG encodes a solid-color WxH PNG (alpha 0 = fully transparent).
 func makePNG(t *testing.T, w, h int, c color.Color) []byte {
@@ -246,7 +254,7 @@ func TestBrandingAssetCleanupOnReplaceAndClear(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("patch A = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idA)); err != nil {
+	if _, err := os.Stat(filepath.Join(brandDirOf(env), idA)); err != nil {
 		t.Fatalf("asset A missing after commit: %v", err)
 	}
 
@@ -258,19 +266,19 @@ func TestBrandingAssetCleanupOnReplaceAndClear(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("patch B = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idA)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(brandDirOf(env), idA)); !os.IsNotExist(err) {
 		t.Fatalf("asset A still present after replace (err=%v)", err)
 	}
-	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idB)); err != nil {
+	if _, err := os.Stat(filepath.Join(brandDirOf(env), idB)); err != nil {
 		t.Fatalf("asset B missing after commit: %v", err)
 	}
 
 	// Clear the field -> B is deleted too.
 	out = patchSettings(t, env, token, "{\"logoUrl\":\"\"}")
 	if out.Code != http.StatusOK {
-	t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
+		t.Fatalf("clear = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idB)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(brandDirOf(env), idB)); !os.IsNotExist(err) {
 		t.Fatalf("asset B still present after clear (err=%v)", err)
 	}
 }
@@ -298,7 +306,7 @@ func TestBrandingAssetCleanupOnReset(t *testing.T) {
 		t.Fatalf("reset = %d: %s", reset.Code, reset.Body.String())
 	}
 	for _, id := range []string{idRef, idOrphan} {
-		if _, err := os.Stat(filepath.Join(env.brandAssets.dir, id)); !os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(brandDirOf(env), id)); !os.IsNotExist(err) {
 			t.Fatalf("asset %s still present after reset (err=%v)", id, err)
 		}
 	}
@@ -323,7 +331,7 @@ func TestBrandingAssetSharedReferenceSurvivesReplace(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("patch replace = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idShared)); err != nil {
+	if _, err := os.Stat(filepath.Join(brandDirOf(env), idShared)); err != nil {
 		t.Fatalf("shared asset deleted although faviconUrl still references it: %v", err)
 	}
 	// Clearing faviconUrl now releases it.
@@ -331,15 +339,14 @@ func TestBrandingAssetSharedReferenceSurvivesReplace(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("patch clear favicon = %d: %s", out.Code, out.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join(env.brandAssets.dir, idShared)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(env.objectRoot, "brand-assets", idShared)); !os.IsNotExist(err) {
 		t.Fatalf("shared asset still present after last reference cleared (err=%v)", err)
 	}
 }
 
-
 func TestBrandingAssetStartupGC(t *testing.T) {
 	dir := t.TempDir()
-	store := NewBrandingAssetStore(dir, DefaultBrandingAssetsOptions())
+	store := NewBrandingAssetStore(objectstore.NewLocal(dir), DefaultBrandingAssetsOptions())
 	keepID, err := store.save("image/png", "logo", "", makePNG(t, 16, 16, color.RGBA{255, 0, 0, 255}))
 	if err != nil {
 		t.Fatalf("save keep: %v", err)
@@ -352,14 +359,13 @@ func TestBrandingAssetStartupGC(t *testing.T) {
 	if err := store.GC([]string{BrandAssetURLPrefix + keepID, "https://cdn.example/logo.png", ""}); err != nil {
 		t.Fatalf("gc: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, keepID)); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "brand-assets", keepID)); err != nil {
 		t.Fatalf("referenced asset removed by gc: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, dropID)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, "brand-assets", dropID)); !os.IsNotExist(err) {
 		t.Fatalf("orphan asset survived gc (err=%v)", err)
 	}
 }
-
 
 // oversizedPNG builds a PNG header declaring 30000x30000 with a valid IHDR
 // CRC (decompression-bomb fixture, A-002 F-001).

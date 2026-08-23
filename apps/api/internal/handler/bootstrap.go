@@ -43,7 +43,7 @@ func RegisterBootstrap(mux *http.ServeMux, manifestBytes []byte) error {
 // the existing Host availability enum. read-only intentionally uses the
 // existing degraded mode; its precise distinction is carried by the status
 // endpoint, not by a new protocol capability or mode.
-func RegisterBootstrapWithAvailability(mux *http.ServeMux, manifestBytes []byte, runtimeMode string) error {
+func RegisterBootstrapWithAvailability(mux routeRegistrar, manifestBytes []byte, runtimeMode string) error {
 	availability, err := bootstrapAvailability(runtimeMode)
 	if err != nil {
 		return err

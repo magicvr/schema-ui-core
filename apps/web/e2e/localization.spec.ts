@@ -15,19 +15,41 @@ const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
 // W16-F01-aware sign-in on the zh-CN login surface. A fresh seed shows the
 // forced "修改初始密码" screen; an already-replaced seed falls back to the shared
 // e2e password. Mirrors I-008-002 v0.1.3: the first-login change is a real step.
+// W23 (GOAL-034 D-001): wait-based three-stage flow — a one-shot isVisible()
+// check raced the async login round-trip (a fresh seed could still be in flight
+// when the forced screen had not rendered yet) and wrongly fell into the
+// fallback branch with the shared password. Mirrors e2e/sign-in.ts.
 async function signInZh(page: Page): Promise<void> {
   await page.getByLabel("用户名").fill("admin");
-  await page.getByLabel("密码").fill("admin");
+  await page.getByLabel("密码", { exact: true }).fill("admin"); // W22: exact 避免命中密码可见切换按钮 aria-label
   await page.getByRole("button", { name: "登录" }).click();
+
+  // Already replaced (a prior spec changed the password): land straight on home.
+  try {
+    await page.waitForURL(/\/dashboard$/, { timeout: 8000 });
+    return;
+  } catch {
+    // Not signed in yet — the forced-change screen or a failed initial login.
+  }
+
   const forced = page.getByRole("heading", { name: "修改初始密码" });
-  if (await forced.isVisible().catch(() => false)) {
+  try {
+    await forced.waitFor({ state: "visible", timeout: 8000 });
     await page.getByLabel("当前密码").fill("admin");
     await page.getByLabel("新密码", { exact: true }).fill("admin-e2e-pass");
     await page.getByLabel("确认新密码", { exact: true }).fill("admin-e2e-pass");
     await page.getByRole("button", { name: "修改密码" }).click();
-  } else {
-    await page.getByLabel("密码").fill("admin-e2e-pass");
+    await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
+    return;
+  } catch {
+    // Fresh-initial login failed because the password was already replaced:
+    // fall back to the shared e2e password. Wait for the button to re-enable
+    // first — the first attempt's POST must have settled (W23: a slow login
+    // round-trip used to keep the submit disabled and stalled this click).
+    await page.getByLabel("密码", { exact: true }).fill("admin-e2e-pass");
+    await expect(page.getByRole("button", { name: "登录" })).toBeEnabled({ timeout: 15000 });
     await page.getByRole("button", { name: "登录" }).click();
+    await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
   }
 }
 

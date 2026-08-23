@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,7 @@ const pages: PageEntry[] = [
 ];
 
 const adminManifestFixtureBytes = readFileSync(
-  new URL("../test-fixtures/app-manifest.admin.json", import.meta.url),
+  new URL("../test-fixtures/app-manifest.admin-dogfood.json", import.meta.url),
 );
 
 function manifest(overrides: Record<string, unknown> = {}): Record<string, unknown> {

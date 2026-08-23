@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:postgres": "node scripts/run-e2e-postgres.mjs",
     "prebuild": "node scripts/generate-claim.mjs"
   },
   "dependencies": {

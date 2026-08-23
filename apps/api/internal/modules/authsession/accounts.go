@@ -170,25 +170,40 @@ func (r *Repository) FeaturesForUser(userID string) (map[string]bool, error) {
 // RecordLoginFailure bumps the user's consecutive-failure counter and, past
 // the threshold, opens a lock window ending at lockedUntil (GOAL-004 S4-6).
 // It reports whether the lock opened on this failure.
+//
+// W9 F-004: the increment is a single atomic UPDATE (failed_login_count + 1)
+// whose row lock serializes concurrent failures before the threshold read in
+// the same transaction. The previous SELECT-then-UPDATE lost increments under
+// postgres READ COMMITTED, delaying the lockout threshold.
 func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUntil time.Time, now time.Time) (bool, error) {
 	locked := false
 	err := r.withTx("record login failure", func(tx kernel.Tx) error {
+		res, err := tx.Exec(context.Background(),
+			`UPDATE users SET failed_login_count = failed_login_count + 1, updated_at = ? WHERE id = ?`,
+			now.Unix(), userID,
+		)
+		if err != nil {
+			return fmt.Errorf("record login failure: %w", err)
+		}
+		if affected, err := res.RowsAffected(); err == nil && affected == 0 {
+			return ErrNotFound
+		}
 		var count int
 		if err := tx.QueryRow(context.Background(), `SELECT failed_login_count FROM users WHERE id = ?`, userID).Scan(&count); err != nil {
 			return fmt.Errorf("read failed login count: %w", err)
 		}
-		next := count + 1
-		lockedUntilUnix := int64(0)
-		if next >= threshold {
-			lockedUntilUnix = lockedUntil.Unix()
-			next = 0 // counter resets when the lock opens; it counts consecutive failures
-			locked = true
+		if count < threshold {
+			return nil
 		}
+		// Threshold reached: open the lock window and reset the consecutive
+		// counter in the same transaction; the row lock held since the atomic
+		// UPDATE keeps concurrent failures ordered behind this one.
+		locked = true
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE users SET failed_login_count = ?, locked_until = ?, updated_at = ? WHERE id = ?`,
-			next, lockedUntilUnix, now.Unix(), userID,
+			`UPDATE users SET failed_login_count = 0, locked_until = ?, updated_at = ? WHERE id = ?`,
+			lockedUntil.Unix(), now.Unix(), userID,
 		); err != nil {
-			return fmt.Errorf("record login failure: %w", err)
+			return fmt.Errorf("open lock window: %w", err)
 		}
 		return nil
 	})

@@ -54,6 +54,14 @@ auth:
   #   jwt_secret: ${AUTH_JWT_SECRET}
   # (no :- default) so startup fails closed when the secret is missing.
   jwt_secret: ${AUTH_JWT_SECRET:-}
+  # VP-016 R1 (workspace-016 Root D-002): optional PREVIOUS signing key for the
+  # rotation overlap window. Empty (default) = single-key mode in every
+  # environment; rotation is never a startup requirement. When set outside
+  # development it must satisfy the same rule as jwt_secret (>=32 chars, letters
+  # and digits) and must differ from it. Overlap window = how long the key stays
+  # configured: rotate by setting previous=<old key>, restart, then after the
+  # old access tokens have expired (access_ttl) remove previous and restart.
+  #   jwt_secret_previous: ${AUTH_JWT_SECRET_PREVIOUS:-}
   access_ttl: 15m
   refresh_ttl: 720h
   dev_session_enabled: false
@@ -115,6 +123,66 @@ navigation:
   # Empty = the built-in default order. Unknown NodeIDs fall back to the
   # default with a warning. NAVIGATION_ORDER env (comma-separated) overrides.
   order: []
+
+storage:
+  objects:
+    # VP-014 (workspace-014 GOAL-002 D-001): kernel object-storage driver.
+    #   local (default) — embedded disk adapter; root derived from
+    #     filepath.Dir(db.path) unless storage.objects.local.root is set.
+    #   s3 — explicit S3-compatible backend (MinIO / R2 / AWS); requires the
+    #     s3 block below and extends readyz once configured.
+    driver: local
+    local:
+      # Optional override of the derived disk root. Empty keeps the historical
+      # <db dir>/avatars | brand-assets | uploads layout.
+      root: ""
+    s3:
+      endpoint: ""          # required when driver=s3, e.g. http://minio:9000
+      region: ""            # optional; empty = driver default
+      bucket: ""            # required; single bucket, keys namespaced avatars/ brand-assets/ uploads/
+      access_key_id: ""     # required; supply via STORAGE_OBJECTS_S3_ACCESS_KEY_ID
+      secret_access_key: "" # required SECRET — via STORAGE_OBJECTS_S3_SECRET_ACCESS_KEY only, never a literal
+      use_path_style: true  # MinIO/R2 need path-style; AWS can set false
+
+observability:
+  metrics:
+    # VP-015 (workspace-015 GOAL-002 D-001): dedicated Prometheus exposition
+    # listener — never a route on the main mux. Disabled by default: no
+    # collector, no extra port, zero behavior change for mvp/dev/Compose.
+    enabled: false          # OBSERVABILITY_METRICS_ENABLED
+    # Bind address of the separate listener. Default is loopback-only; ANY
+    # non-loopback bind (e.g. ":25081", "0.0.0.0:25081") REQUIRES auth_token
+    # below or startup fails closed.
+    addr: "127.0.0.1:25081" # OBSERVABILITY_METRICS_ADDR
+    # Optional Bearer token guarding the metrics listener (>= 16 chars).
+    # SECRET — supply via OBSERVABILITY_METRICS_AUTH_TOKEN env / configs/.env,
+    # never a literal here; set while enabled=false also fails closed.
+    auth_token: ""          # OBSERVABILITY_METRICS_AUTH_TOKEN
+  traces:
+    # VP-015 (workspace-015 GOAL-004 D-001): OpenTelemetry OTLP/HTTP export.
+    # Disabled by default: pure no-op tracer path, no provider, zero behavior
+    # change for mvp/dev (a collector is never required).
+    enabled: false          # OBSERVABILITY_TRACES_ENABLED
+    # OTLP/HTTP base endpoint (the SDK appends /v1/traces), e.g.
+    # http://localhost:4318. Required when enabled; must be absolute http(s).
+    endpoint: ""            # OBSERVABILITY_TRACES_ENDPOINT
+    # Sampling ratio in (0,1], applied as ParentBased(TraceIDRatioBased).
+    # 1.0 = sample everything once enabled; lower to reduce volume.
+    sample_ratio: 1.0       # OBSERVABILITY_TRACES_SAMPLE_RATIO
+
+mail:
+  smtp:
+    # VP-017 (workspace-017 GOAL-003 D-001): explicit outbound SMTP endpoint.
+    # ALL keys empty (the default) = unconfigured — sending uses the embedded
+    # capture/log sink and startup is unaffected. Setting ANY one key makes
+    # host/username/password/from REQUIRED (missing keys fail closed at
+    # startup in every environment); port defaults to 465 when omitted.
+    # The only dial shape is implicit TLS with certificate verification ON.
+    host: ""                # MAIL_SMTP_HOST
+    port: 0                 # MAIL_SMTP_PORT; 0 = frozen default 465
+    username: ""            # MAIL_SMTP_USERNAME
+    password: ""            # required SECRET — via MAIL_SMTP_PASSWORD env / configs/.env only, never a literal
+    from: ""                # MAIL_SMTP_FROM; default sender, bare address (e.g. no-reply@example.com)
 
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.

@@ -21,7 +21,7 @@ version: 1.0.0
 - **auditor**：用户提供的独立审视（业界主流钱包/账务系统对标）
 - **scope**：admin.wallet 模块整体——GOAL-019（S-14 钱包/账务）方案与实现、GOAL-020（自动开户）产物
 - **verdict**：**conditional**（存在未闭合 P0 缺陷：冻结扣款原语缺失 + 幂等载荷比对遗漏 refType/refId）
-- **完整意见**：[attachments/audit-A-008-independent.md](attachments/audit-A-008-independent.md)
+- **完整意见**：[attachments/audit-A-008-independent.md](../attachments/audit-A-008-independent.md)
 
 ## 范围与区间
 

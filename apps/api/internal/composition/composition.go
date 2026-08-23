@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity"
@@ -53,8 +55,11 @@ import (
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users"
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
 type jwtSecret string
@@ -117,6 +122,9 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newSettingsRepository,
 			newAuthenticator,
 			newJobRuntime,
+			newTracing,
+			newObserver,
+			newMetricsServer,
 			newMux,
 			newServer,
 		),
@@ -218,7 +226,48 @@ func newSettingsRepository(st kernel.Store) *settingsrepository.Repository {
 }
 
 func newAuthenticator(cfg *config.Config, secret jwtSecret, repository *authsession.Repository) *auth.Authenticator {
-	return auth.NewWithRepository([]byte(secret), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
+	// VP-016 R2 (workspace-016 GOAL-003 D-001): an empty previous keeps exact
+	// single-key behavior; a configured one opens the rotation overlap window
+	// (verify current, fall back to previous). Strength/difference rules for
+	// the pair are enforced earlier by config.ValidateProd.
+	return auth.NewWithRepositoryAndPrevious([]byte(secret), []byte(cfg.AuthJWTSecretPrevious), cfg.AuthAccessTTL, cfg.AuthRefreshTTL, repository, cfg.AuthDevSessionEnabled)
+}
+
+// newTracing maps the observability.traces config surface onto the tracer
+// path (GOAL-004 D-001 §3): disabled (the default) is a pure no-op.
+func newTracing(cfg *config.Config) *obs.Tracing {
+	return obs.NewTracing(obs.TracingOptions{
+		Enabled:     cfg.TracesEnabled,
+		Endpoint:    cfg.TracesEndpoint,
+		SampleRatio: cfg.TracesSampleRatio,
+		ServiceName: cfg.AppName,
+		Version:     version.Version,
+		Environment: cfg.AppEnv,
+	}, slog.Default())
+}
+
+// newObserver builds the kernel metrics registry (VP-015 R2 / GOAL-003
+// D-001 §5): static build identity plus one suc_kernel_modules_enabled line
+// per enabled module in the resolved plan. Tracing is attached so Wrap emits
+// both metrics and (when enabled) server spans from the same interception
+// point.
+func newObserver(cfg *config.Config, plan kernel.Plan, tracing *obs.Tracing) *obs.Observer {
+	observer := obs.NewObserver(obs.BuildInfoFromVersion(cfg.ProfileName))
+	observer.SetTracing(tracing)
+	for _, id := range plan.IDs() {
+		observer.RegisterModule(id)
+	}
+	return observer
+}
+
+// newMetricsServer maps the observability.metrics config surface onto the
+// dedicated listener. Disabled (the default) means nothing listens.
+func newMetricsServer(cfg *config.Config, observer *obs.Observer, logger *slog.Logger) *obs.Server {
+	return obs.NewServer(obs.ServerOptions{
+		Enabled:   cfg.MetricsEnabled,
+		Addr:      cfg.MetricsAddr,
+		AuthToken: cfg.MetricsAuthToken,
+	}, observer, logger)
 }
 
 func newMux(
@@ -232,8 +281,10 @@ func newMux(
 	gate *readinessGate,
 	secret jwtSecret,
 	jobRuntime *jobRuntime,
+	observer *obs.Observer,
+	logger *slog.Logger,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -253,8 +304,14 @@ func newMuxWithExtraProviders(
 	secret jwtSecret,
 	jobRuntime *jobRuntime,
 	extra []kernel.Provider,
+	observer *obs.Observer,
+	logger *slog.Logger,
 ) (*http.ServeMux, error) {
-	mux := http.NewServeMux()
+	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
+	// interception point — central handler registrations (Handle/HandleFunc)
+	// and module-contributed routes are all measured with their owning
+	// module_id. A nil observer (metrics disabled) passes through untouched.
+	mux := obs.NewInstrumentedMux(observer)
 	// W7 F-008: install the explicit trusted reverse-proxy CIDR allow-list for
 	// login/captcha client-IP resolution (fail-closed on invalid CIDRs).
 	if err := handler.SetTrustedProxyCIDRs(cfg.HTTPTrustedProxies); err != nil {
@@ -298,15 +355,36 @@ func newMuxWithExtraProviders(
 	var mfaService *mfamodule.Service
 	var mfaVerifier handler.MFAVerifier
 	if plan.HasModule("admin.mfa") {
-		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret))
+		// W11 F-004: the previous JWT secret (VP-016 rotation window) is passed
+	// to MFA too, so a mid-rotation AUTH_JWT_SECRET change does not lock MFA
+	// users into an undecryptable second factor (empty = single-key behavior).
+	mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
 		mfaVerifier = mfaService
 	}
-	handler.RegisterWithMFA(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier)
+	// VP-014 R3 (GOAL-004 D-001): ONE kernel.ObjectStore instance serves all
+	// three first-party families — local disk by default (root derived from
+	// db.path unless storage.objects.local.root overrides) or the explicitly
+	// configured S3-compatible backend, whose HeadBucket probe also extends
+	// readyz ("配置后 readyz 扩依赖", GOAL-003).
+	objects, objectProbe, err := newObjectStore(cfg)
+	if err != nil {
+		return nil, err
+	}
+	// VP-017 R4 (GOAL-005 D-001): ONE kernel.MailSender — capture/log sink by
+	// default (probe nil, readyz unchanged) or the explicit SMTP adapter whose
+	// ESMTP Ping extends readyz only when explicitly configured. No handler /
+	// module consumes the port this wave; construction doubles as the last
+	// fail-closed validation point before boot.
+	mailSender, mailProbe, err := newMailSender(cfg, logger)
+	if err != nil {
+		return nil, err
+	}
+	_ = mailSender
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
-	// uploads directory is shared with admin.data-transfer (F-02 import reads
-	// uploaded CSV files by id).
-	uploadDir := filepath.Join(filepath.Dir(cfg.DBPath), "uploads")
-	handler.RegisterUpload(mux, a, uploadDir,
+	// uploads namespace is shared with admin.data-transfer (F-02 import reads
+	// uploaded CSV files by id) and admin.file-library.
+	handler.RegisterUpload(mux, a, objects,
 		handler.WithAllowedTypes(cfg.UploadAllowedTypes),
 		handler.WithUserLimits(cfg.UploadMaxFilesPerUser, cfg.UploadMaxBytesPerUser),
 	)
@@ -315,7 +393,7 @@ func newMuxWithExtraProviders(
 	// be publicly readable (login page / shell load pre-auth); every stored
 	// object is a server-side re-encoded raster (never raw upload bytes).
 	brandAssets := handler.NewBrandingAssetStore(
-		filepath.Join(filepath.Dir(cfg.DBPath), "brand-assets"),
+		objects,
 		handler.BrandingAssetsOptions{
 			MaxBytes:    cfg.BrandingMaxBytes,
 			LogoMaxDim:  cfg.BrandingLogoMaxDimension,
@@ -334,7 +412,7 @@ func newMuxWithExtraProviders(
 	// uploads never assigned to a profile) by keeping only the avatar URLs
 	// currently referenced by users.
 	avatarAssets := handler.NewAvatarAssetStore(
-		filepath.Join(filepath.Dir(cfg.DBPath), "avatars"),
+		objects,
 		handler.BrandingAssetsOptions{},
 	)
 	if users, _, err := authRepository.ListUsers(authsession.UserFilter{Page: 1, PageSize: 1_000_000}); err == nil {
@@ -358,7 +436,7 @@ func newMuxWithExtraProviders(
 	var recycleService *recyclebinmodule.Service
 	var trash handler.TrashRecorder
 	if plan.HasModule("admin.recycle-bin") {
-		recycleService = recyclebinmodule.NewService(recyclestore.NewRepository(st), datadictionarystore2.NewRepository(st), tasksstore2.NewRepository(st))
+		recycleService = recyclebinmodule.NewService(recyclestore.NewRepository(st), datadictionarystore2.NewRepository(st), tasksstore2.NewRepository(st), st)
 		trash = recycleService
 	}
 	var providers []kernel.Provider
@@ -390,13 +468,13 @@ func newMuxWithExtraProviders(
 		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets))
 	}
 	if plan.HasModule("admin.data-transfer") {
-		providers = append(providers, datatransfermodule.New(a, authRepository, operations, uploadDir))
+		providers = append(providers, datatransfermodule.New(a, authRepository, operations, objects))
 	}
 	if plan.HasModule("admin.dashboard") {
 		providers = append(providers, dashboardmodule.New())
 	}
 	if plan.HasModule("admin.file-library") {
-		providers = append(providers, filelibrarymodule.New(a, operations, uploadDir))
+		providers = append(providers, filelibrarymodule.New(a, operations, objects))
 	}
 	if plan.HasModule("admin.data-dictionary") {
 		providers = append(providers, datadictionarymodule.New(a, datadictionarystore.NewRepository(st), operations, trash))
@@ -488,7 +566,11 @@ func newMuxWithExtraProviders(
 	}
 	st.MarkSystemDataReady()
 	for _, route := range set.Routes {
-		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
+		full := route.Method + " " + route.Pattern
+		// VP-015 R2: contributed routes carry their owning module_id in the
+		// metrics labels (R1 D-001 §6); central registrations default to core.
+		mux.Own(full, route.ModuleID)
+		mux.Handle(full, route.Handler)
 	}
 	for _, route := range handler.ServiceCredentialRoutes(a, authRepository, operations, "core.auth-session") {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
@@ -533,7 +615,7 @@ func newMuxWithExtraProviders(
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: fmt.Sprintf("register bootstrap: %v", err)}
 		}
 	}
-	return mux, nil
+	return mux.ServeMux, nil
 }
 
 // adminFunctionalOrder is the frozen home-page priority (D-003 §2): the first
@@ -572,12 +654,66 @@ func deriveHomePageRef(plan kernel.Plan) string {
 	return ""
 }
 
+// newObjectStore builds THE shared kernel.ObjectStore instance (VP-014
+// GOAL-004 D-001): local disk default rooted at db.path dir (or the
+// explicit override), or the S3-compatible adapter when driver=s3. The
+// second return is the optional readyz probe (HeadBucket on s3; nil for
+// local so readyz semantics stay unchanged).
+func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Context) error, error) {
+	if cfg.ObjectsDriver == "s3" {
+		objStore, err := objectstore.NewS3(cfg.ObjectsS3Endpoint, cfg.ObjectsS3Region,
+			cfg.ObjectsS3Bucket, cfg.ObjectsS3AccessKeyID, cfg.ObjectsS3SecretAccessKey,
+			cfg.ObjectsS3UsePathStyle)
+		if err != nil {
+			return nil, nil, err
+		}
+		return objStore, objStore.Ping, nil
+	}
+	// Defense-in-depth (GOAL-003 A-002 N-005): Load already rejects unknown
+	// drivers fail-closed; re-check here so a hand-built Config cannot silently
+	// fall through to the local adapter.
+	if cfg.ObjectsDriver != "local" && cfg.ObjectsDriver != "" {
+		return nil, nil, fmt.Errorf("composition: unknown storage.objects.driver %q", cfg.ObjectsDriver)
+	}
+	root := cfg.ObjectsLocalRoot
+	if strings.TrimSpace(root) == "" {
+		root = filepath.Dir(cfg.DBPath)
+	}
+	return objectstore.NewLocal(root), nil, nil
+}
+
+// newMailSender builds THE kernel.MailSender instance (VP-017 / workspace-017
+// GOAL-004 D-001, R4 wiring per GOAL-005 D-001): the embedded capture/log
+// sink when mail.smtp is untouched (mvp/dev/Compose default — startup
+// unaffected, tests read Last()), or the explicit SMTP adapter over the single
+// frozen implicit-TLS dial path. The second return is the optional readyz
+// probe (ESMTP Ping on the configured endpoint; nil for capture so readyz
+// semantics stay unchanged — "仅显式配置后 readyz 扩依赖"). Configuration
+// completeness was already enforced fail-closed by config.ValidateProd
+// (validateMail); a partial block still fails closed here defensively.
+func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, func(context.Context) error, error) {
+	if !cfg.MailSMTPConfigured() {
+		return mail.NewCaptureSink(logger), nil, nil
+	}
+	sender, err := mail.NewSMTP(mail.SMTPOptions{
+		Host:     cfg.MailSMTPHost,
+		Port:     cfg.MailSMTPPort,
+		Username: cfg.MailSMTPUsername,
+		Password: cfg.MailSMTPPassword,
+		From:     cfg.MailSMTPFrom,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+	}
+	return sender, sender.Ping, nil
+}
+
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {
 	routes := handler.WithJSONRouteErrors(mux)
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing) {
 	var listener net.Listener
 	var stopRetention func()
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
@@ -618,6 +754,18 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 					Action: settings.OperationLogExpirationAction,
 				}, nil
 			}, time.Hour, logger)
+			// VP-015 R2 (GOAL-003 D-001 §3): the dedicated metrics listener is a
+			// bypass face — it never gates readiness, but an explicitly enabled
+			// listener that cannot bind fails startup (fail-closed).
+			if err := metrics.Start(ctx); err != nil {
+				stopRetention()
+				_ = jobs.Stop(ctx)
+				_ = runtime.Stop(ctx)
+				_ = ln.Close()
+				listener = nil
+				_ = st.Close()
+				return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.server-registration", Detail: fmt.Sprintf("start metrics listener: %v", err)}
+			}
 			// R5 real readiness: only after every module Start + Ready succeeds
 			// does /readyz report ready.
 			gate.setReady()
@@ -647,10 +795,14 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 			if stopRetention != nil {
 				stopRetention()
 			}
+			metricsErr := metrics.Stop(ctx)
 			jobsErr := jobs.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)
 			closeErr := st.Close()
-			return errors.Join(shutdownErr, jobsErr, runtimeErr, closeErr)
+			// GOAL-004 D-001 §6: shutdown flushes pending spans through the
+			// OTLP exporter before the process exits.
+			tracingErr := tracing.Shutdown(ctx)
+			return errors.Join(shutdownErr, metricsErr, jobsErr, runtimeErr, closeErr, tracingErr)
 		},
 	})
 }

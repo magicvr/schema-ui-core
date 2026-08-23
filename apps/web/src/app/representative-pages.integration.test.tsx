@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 //
 // Full-path integration evidence for the R1 representative pages (GOAL-004;
 // GOAL-011 S3 repoints the injected resource surface from the legacy demo to users/roles):
@@ -22,7 +22,7 @@ import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const MANIFEST_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../test-fixtures/app-manifest.admin.json",
+  "../test-fixtures/app-manifest.admin-dogfood.json",
 );
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),

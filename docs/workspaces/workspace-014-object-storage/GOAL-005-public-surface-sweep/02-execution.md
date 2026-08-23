@@ -1,0 +1,17 @@
+---
+id: GOAL-005-public-surface-sweep
+doc: execution
+status: done
+parent: GOAL-001-object-storage
+created: 2026-08-21
+updated: 2026-08-21
+version: 0.1.0
+---
+
+# 执行记录 · GOAL-005
+
+## 执行索引
+
+| E-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| E-001 | 2026-08-21 | R4 核查——公共面扫描证据 + driver 二次校验加固（commit 8aa0abc） | recorded | [E-001-sweep-evidence.md](02-execution/E-001-sweep-evidence.md) |

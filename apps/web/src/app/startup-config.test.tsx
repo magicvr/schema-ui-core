@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 
 /**
  * S3 startup configuration tests (GOAL-004 · C2/C3/C5):
@@ -31,7 +31,7 @@ import { I18nProvider, LOCALE_STORAGE_KEY, useI18n } from "@/i18n/runtime";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin.json");
+const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
 const SETTINGS_SCHEMA_PATH = resolve(
   __dir,
   "../../../api/internal/modules/settings/schema/settings.json",

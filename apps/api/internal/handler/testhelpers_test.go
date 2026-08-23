@@ -33,6 +33,7 @@ import (
 	monitoringschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/systemmonitoring/schema"
 	usersschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/schema"
 	walletschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/schema"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -47,11 +48,15 @@ type authTestEnv struct {
 	authRepository *authsession.Repository
 	operations     *operationlog.Repository
 	settings       *settingsrepository.Repository
-	uploadDir      string
-	brandAssets    *BrandingAssetStore
-	avatarAssets   *RasterAssetStore
-	captcha        *testCaptchaService
-	recycle        *testRecycleService
+	// objectRoot is the shared object-store root (GOAL-004); the uploads
+	// namespace directory lives at <objectRoot>/uploads for direct-disk test
+	// assertions (the local layout is byte-compatible by design).
+	objectRoot   string
+	uploadDir    string
+	brandAssets  *BrandingAssetStore
+	avatarAssets *RasterAssetStore
+	captcha      *testCaptchaService
+	recycle      *testRecycleService
 }
 
 const (
@@ -130,16 +135,19 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
+	// VP-014 R3 (GOAL-004): one shared object-store instance feeds all three
+	// families, mirroring the production composition wiring.
+	objectRoot := t.TempDir()
+	objects := objectstore.NewLocal(objectRoot)
 	// W9 (GOAL-010): dedicated brand-asset surface (auth upload + public GET).
 	// The store is also handed to SettingsRoutes so patch/reset clean up
 	// replaced/cleared assets (I-004).
-	brandDir := filepath.Join(t.TempDir(), "brand-assets")
 	brandOpts := DefaultBrandingAssetsOptions()
 	if testBrandOpts != nil {
 		brandOpts = *testBrandOpts
 	}
-	brandAssets := NewBrandingAssetStore(brandDir, brandOpts)
-	avatarAssets := NewAvatarAssetStore(filepath.Join(t.TempDir(), "avatars"), BrandingAssetsOptions{})
+	brandAssets := NewBrandingAssetStore(objects, brandOpts)
+	avatarAssets := NewAvatarAssetStore(objects, BrandingAssetsOptions{})
 	mountRoutes(SettingsRoutes(a, settings, operations, "admin.settings", settingsconfiguration.Namespace, brandAssets))
 	mountRoutes(BrandingAssetRoutes(a, brandAssets, "admin.settings"))
 	mountRoutes(ResourceRoutes(a, operationsResource(operations), "admin.activity"))
@@ -151,11 +159,11 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(AccountSelfRoutes(a, authRepository, operations, avatarAssets, "admin.account", authRepository))
 	mountRoutes(AccountAvatarRoutes(a, avatarAssets, authRepository, operations, "admin.account"))
 	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account", authRepository))
-	uploadDir := filepath.Join(t.TempDir(), "uploads")
+	uploadDir := filepath.Join(objectRoot, "uploads")
 	mountRoutes(NotificationRoutes(a, authRepository, "admin.notifications"))
 	mountRoutes(ExportRoutes(a, authRepository, authRepository, operations, "admin.data-transfer"))
-	mountRoutes(ImportRoutes(a, authRepository, operations, uploadDir, "admin.data-transfer"))
-	mountRoutes(FileLibraryRoutes(a, uploadDir, operations, "admin.file-library"))
+	mountRoutes(ImportRoutes(a, authRepository, operations, objects, "admin.data-transfer"))
+	mountRoutes(FileLibraryRoutes(a, objects, operations, "admin.file-library"))
 	mountRoutes(DictionaryRoutes(a, datadictionarystore.NewRepository(st), operations, "admin.data-dictionary"))
 	mountRoutes(MonitoringRoutes(a, st, testAdminPlan(t), nil, filepath.Join(t.TempDir(), "monitor.db"), time.Now(), operations, "normal", "admin.system-monitoring"))
 	scheduledTaskRunner := testTaskRunner{repository: tasksstore.NewRepository(st)}
@@ -174,7 +182,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
 	RegisterSchemas(mux, testSchemaContributions())
-	RegisterUpload(mux, a, uploadDir, testUploadOpts...)
+	RegisterUpload(mux, a, objects, testUploadOpts...)
 	// testUploadOpts is reset after each test so per-test policy overrides
 	// cannot leak into sibling tests.
 	t.Cleanup(func() { testUploadOpts = nil; testBrandOpts = nil })
@@ -183,6 +191,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		authRepository: authRepository,
 		operations:     operations,
 		settings:       settings,
+		objectRoot:     objectRoot,
 		uploadDir:      uploadDir,
 		brandAssets:    brandAssets,
 		avatarAssets:   avatarAssets,

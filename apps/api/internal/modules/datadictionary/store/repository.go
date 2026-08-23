@@ -157,19 +157,26 @@ func (r *Repository) GetType(id string) (*DictType, error) {
 // CreateType inserts a type; key collisions fail with ErrTypeKeyTaken.
 func (r *Repository) CreateType(t DictType) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		_, err := tx.Exec(context.Background(),
-			`INSERT INTO dict_types (id, key, name, enabled, description, sort, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			t.ID, t.Key, t.Name, boolInt(t.Enabled), t.Description, t.Sort, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
-		)
-		if err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "unique") {
-				return ErrTypeKeyTaken
-			}
-			return fmt.Errorf("insert dict type: %w", err)
-		}
-		return nil
+		return r.CreateTypeTx(context.Background(), tx, t)
 	})
+}
+
+// CreateTypeTx inserts a type inside the caller's transaction (W11 F-008:
+// recycle restore runs the row INSERT and the snapshot's MarkRestored in ONE
+// transaction — a failed mark rolls the restored row back).
+func (r *Repository) CreateTypeTx(ctx context.Context, tx kernel.Tx, t DictType) error {
+	_, err := tx.Exec(ctx,
+		`INSERT INTO dict_types (id, key, name, enabled, description, sort, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.Key, t.Name, boolInt(t.Enabled), t.Description, t.Sort, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
+	)
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "unique") {
+			return ErrTypeKeyTaken
+		}
+		return fmt.Errorf("insert dict type: %w", err)
+	}
+	return nil
 }
 
 // UpdateType patches name/enabled/description/sort.
@@ -194,9 +201,18 @@ func (r *Repository) UpdateType(id string, name string, enabled bool, descriptio
 // ids are returned so the caller can record per-entry audit detail (A-003
 // F-003).
 func (r *Repository) DeleteType(id string) ([]string, error) {
+	return r.DeleteTypeTx(context.Background(), id, nil)
+}
+
+// DeleteTypeTx removes a type and cascades to its entries inside the
+// caller's transaction, optionally running the record callback (the recycle
+// snapshot) in the SAME transaction (W11 F-002): a snapshot failure rolls
+// the delete back. The deleted entry ids are returned for per-entry audit
+// detail (A-003 F-003).
+func (r *Repository) DeleteTypeTx(ctx context.Context, id string, record func(ctx context.Context, tx kernel.Tx) error) ([]string, error) {
 	entryIDs := []string{}
-	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		rows, err := tx.Query(context.Background(),
+	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
+		rows, err := tx.Query(ctx,
 			`SELECT e.id FROM dict_entries e JOIN dict_types t ON e.dict_key = t.key WHERE t.id = ?`, id,
 		)
 		if err != nil {
@@ -214,13 +230,18 @@ func (r *Repository) DeleteType(id string) ([]string, error) {
 		if err := rows.Err(); err != nil {
 			return err
 		}
-		res, err := tx.Exec(context.Background(), `DELETE FROM dict_types WHERE id = ?`, id)
+		res, err := tx.Exec(ctx, `DELETE FROM dict_types WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete dict type: %w", err)
 		}
 		affected, _ := res.RowsAffected()
 		if affected == 0 {
 			return ErrNotFound
+		}
+		if record != nil {
+			if err := record(ctx, tx); err != nil {
+				return fmt.Errorf("record delete side effect: %w", err)
+			}
 		}
 		return nil
 	})
@@ -320,30 +341,37 @@ func (r *Repository) GetEntry(id string) (*DictEntry, error) {
 // and (dict_key, entry_key) must be unique (ErrEntryKeyTaken).
 func (r *Repository) CreateEntry(e DictEntry) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var exists int
-		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM dict_types WHERE key = ?`, e.DictKey).Scan(&exists); err != nil {
-			return fmt.Errorf("check dict type: %w", err)
-		}
-		if exists == 0 {
-			return ErrDictKeyNotFound
-		}
-		badgeStyle := e.BadgeStyle
-		if badgeStyle == "" {
-			badgeStyle = "default"
-		}
-		_, err := tx.Exec(context.Background(),
-			`INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, badge_style, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, badgeStyle, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
-		)
-		if err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "unique") {
-				return ErrEntryKeyTaken
-			}
-			return fmt.Errorf("insert dict entry: %w", err)
-		}
-		return nil
+		return r.CreateEntryTx(context.Background(), tx, e)
 	})
+}
+
+// CreateEntryTx inserts an entry inside the caller's transaction (W11 F-008:
+// recycle restore runs the row INSERT and the snapshot's MarkRestored in ONE
+// transaction — a failed mark rolls the restored row back).
+func (r *Repository) CreateEntryTx(ctx context.Context, tx kernel.Tx, e DictEntry) error {
+	var exists int
+	if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM dict_types WHERE key = ?`, e.DictKey).Scan(&exists); err != nil {
+		return fmt.Errorf("check dict type: %w", err)
+	}
+	if exists == 0 {
+		return ErrDictKeyNotFound
+	}
+	badgeStyle := e.BadgeStyle
+	if badgeStyle == "" {
+		badgeStyle = "default"
+	}
+	_, err := tx.Exec(ctx,
+		`INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, badge_style, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, badgeStyle, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
+	)
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "unique") {
+			return ErrEntryKeyTaken
+		}
+		return fmt.Errorf("insert dict entry: %w", err)
+	}
+	return nil
 }
 
 // UpdateEntry patches dict_key/label/enabled/sort/remark/badgeStyle with the
@@ -380,14 +408,26 @@ func (r *Repository) UpdateEntry(id string, dictKey string, label string, enable
 
 // DeleteEntry removes one entry row.
 func (r *Repository) DeleteEntry(id string) error {
-	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		res, err := tx.Exec(context.Background(), `DELETE FROM dict_entries WHERE id = ?`, id)
+	return r.DeleteEntryTx(context.Background(), id, nil)
+}
+
+// DeleteEntryTx removes one entry row inside the caller's transaction,
+// optionally running the record callback (recycle snapshot) in the SAME
+// transaction (W11 F-002): a snapshot failure rolls the delete back.
+func (r *Repository) DeleteEntryTx(ctx context.Context, id string, record func(ctx context.Context, tx kernel.Tx) error) error {
+	return r.runner.Run(ctx, func(tx kernel.Tx) error {
+		res, err := tx.Exec(ctx, `DELETE FROM dict_entries WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete dict entry: %w", err)
 		}
 		affected, _ := res.RowsAffected()
 		if affected == 0 {
 			return ErrNotFound
+		}
+		if record != nil {
+			if err := record(ctx, tx); err != nil {
+				return fmt.Errorf("record delete side effect: %w", err)
+			}
 		}
 		return nil
 	})

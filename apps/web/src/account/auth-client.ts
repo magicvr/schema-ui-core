@@ -17,6 +17,7 @@ import {
   setAccessToken,
   setRefreshToken,
 } from "@/account/tokens";
+import { withTimeout } from "@/lib/fetch-timeout";
 import { getActiveLocale } from "@/i18n/runtime";
 
 export interface AuthUser {
@@ -81,8 +82,13 @@ function jsonHeaders(init?: RequestInit): Headers {
   return headers;
 }
 
+// W10 F-002: auth transports bound each request with a timeout so a hung
+// connection cannot pend forever (abort surfaces as a network throw, which
+// existing callers already treat as retryable — never as credential failure).
+const timeoutFetch = withTimeout();
+
 function postJSON(url: string, body: unknown): Promise<Response> {
-  return fetch(url, {
+  return timeoutFetch(url, {
     method: "POST",
     headers: jsonHeaders(),
     body: JSON.stringify(body),
@@ -211,7 +217,7 @@ function isAuthEndpoint(input: RequestInfo | URL): boolean {
  * and the auth-lost listener fires (UI → login page).
  */
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  let response = await fetch(input, withAuth(input, init));
+  let response = await timeoutFetch(input, withAuth(input, init));
   if (response.ok && String(input).includes("/api/account/password")) {
     try {
       sessionStorage.setItem("password.changedNotice", "1");
@@ -222,7 +228,7 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   if (response.status === 401 && !isAuthEndpoint(input)) {
     const refreshed = await refreshAccess();
     if (refreshed) {
-      response = await fetch(input, withAuth(input, init));
+      response = await timeoutFetch(input, withAuth(input, init));
       if (response.status === 401) {
         clearTokens();
         onAuthLost?.();
@@ -407,7 +413,16 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
   if (getRefreshToken() === null) {
     return { kind: "none" };
   }
-  const refreshed = await refreshAccess();
+  // W11 F-010: refreshAccess returns false for BOTH a definitive 401/403
+  // (tokens cleared) and a TRANSIENT network/5xx failure (tokens kept —
+  // W15-F01). Mapping the transient case straight to the terminal
+  // reauth-required state logged the user out after any boot-time blip. The
+  // token is still stored after a transient failure, so retry once — only a
+  // second consecutive failure lands on reauth.
+  let refreshed = await refreshAccess();
+  if (!refreshed) {
+    refreshed = await refreshAccess();
+  }
   if (!refreshed) {
     return { kind: "reauth" };
   }
