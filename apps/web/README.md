@@ -18,15 +18,30 @@ npm run dev
 # Override with WEB_PORT (dev web) and/or HTTP_ADDR (API) when another port is
 # needed, e.g. $env:WEB_PORT=3000; npm run dev
 npm test        # vitest run
-npm run test:e2e  # Playwright Chromium; defaults to the config.yaml profile (mvp)
+npm run test:e2e        # Playwright Chromium, sqlite dialect (default)
+npm run test:e2e:postgres  # same suite against a dedicated scratch PostgreSQL
 # Bash: run the runtime profiles against the same Web code (demo = non-production)
-# e2e profile follows apps/api/configs/config.yaml (T-06)
-# e2e profile follows apps/api/configs/config.yaml (T-06)
 # e2e profile follows apps/api/configs/config.yaml (T-06)
 # Default ports (API :25080 / web :25173) are above Windows Hyper-V excluded
 # ranges; override via HTTP_ADDR / WEB_PORT if a port is taken.
 npm run build   # tsc -b && vite build
 ```
+
+### 浏览器 E2E 双数据库方言（W24 / GOAL-035）
+
+收尾阶段浏览器套件**按方言各跑一次**：sqlite（默认）与 postgres。挂具在
+`playwright.config.ts` 显式声明 `DB_DIALECT` 契约，并在 `e2e/global-setup.ts`
+启动后校验契约（sqlite：临时 DB 文件出现；postgres：scratch 库已迁移），
+违反时立即失败并给出诊断——**本地 `apps/api/configs/.env` 无法再静默改道**
+（W23 N-001 的根因正是它把挂具指向共享开发库）。
+
+- `npm run test:e2e`：每轮全新临时 SQLite（`DB_PATH`），确定性种子。
+- `npm run test:e2e:postgres`：经 `apps/api/cmd/e2e-pgset` 自动
+  create → run → drop 专用 `schema_ui_e2e_*` 库；连接凭据取自进程 env 或
+  `apps/api/configs/.env` 的 `DB_*`（与 API 自身加载一致），要求该用户有
+  CREATEDB 权限。遗留库可用
+  `go run ./cmd/e2e-pgset drop <name>`（cwd: `apps/api`）清理。
+- CI（`r6-basic-matrix.yml` `browser-e2e`）按 `profile × dialect` 矩阵全量覆盖。
 
 ### 生产（compose / nginx · GOAL-008 S2 / I-008-001）
 

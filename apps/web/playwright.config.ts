@@ -1,6 +1,7 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { defineConfig } from "@playwright/test";
 
@@ -31,11 +32,67 @@ writeFileSync(
 // WEB_PORT defaults to 25173 (>25000) so local Windows runs stay outside the
 // Hyper-V excluded ranges; WEB_PORT still overrides when another port is needed.
 //
-// Each Playwright run gets a fresh SQLite file so seedRBAC is deterministic and
+// Each Playwright run gets a fresh store so seedRBAC is deterministic and
 // parallel browser specs do not fight a developer DB.
 const webPort = Number(process.env.WEB_PORT || 25173);
 const webOrigin = `http://127.0.0.1:${webPort}`;
 const e2eDbPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-")), "e2e.db");
+
+// W24 (GOAL-035 / workspace-010): the browser E2E suite is a DUAL-DIALECT
+// acceptance surface 閳?it must run once per store dialect, not merely "not
+// get redirected" (that was W23 N-001: a gitignored apps/api/configs/.env
+// with DB_DIALECT=postgres silently redirected the API to the developer's
+// shared database and every fresh-seed login 401'd).
+//
+// The harness DECLARES the dialect contract:
+//   - DB_DIALECT=sqlite (default): the API gets an isolated temp SQLite at
+//     DB_PATH; configs/.env can never override an already-set process env.
+//   - DB_DIALECT=postgres (explicit opt-in): the harness provisions a
+//     DEDICATED scratch database via cmd/e2e-pgset (create 閳?run 閳?drop,
+//     same pattern as internal/pgtest and the CI api-postgres job) and passes
+//     its name as DB_NAME; credentials come from process env or configs/.env.
+//
+// e2e/global-setup.ts then VALIDATES the contract after boot (sqlite: DB file
+// appeared; postgres: scratch schema_migrations exists) and fails fast with a
+// diagnosis instead of letting specs die with cryptic 401s halfway through.
+const dbDialect = (process.env.DB_DIALECT ?? "sqlite").trim().toLowerCase();
+if (dbDialect !== "sqlite" && dbDialect !== "postgres") {
+  throw new Error(`DB_DIALECT must be sqlite or postgres for browser E2E (got ${dbDialect || "empty"})`);
+}
+const apiDir = resolve(process.cwd(), "../api");
+
+let e2ePgName: string | null = null;
+if (dbDialect === "postgres") {
+  // Playwright evaluates this config more than once per real run (main +
+  // worker config serialization, in DIFFERENT processes). Guard on E2E_PG_NAME
+  // so a later evaluation inherits the first one's scratch database instead
+  // of provisioning a second one.
+  if (process.env.E2E_PG_NAME !== undefined && process.env.E2E_PG_NAME !== "") {
+    e2ePgName = process.env.E2E_PG_NAME;
+  } else {
+    e2ePgName = `schema_ui_e2e_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    const create = spawnSync("go", ["run", "./cmd/e2e-pgset", "create", e2ePgName], {
+      cwd: apiDir,
+      env: process.env,
+      encoding: "utf8",
+    });
+    if (create.status !== 0) {
+      throw new Error(
+        `[e2e] postgres scratch database provisioning failed for ${e2ePgName}: ` +
+          `${(create.stderr ?? create.stdout ?? "").trim() || "go run exited " + create.status}. ` +
+          `Check DB_* credentials (env or apps/api/configs/.env) and CREATEDB rights.`,
+      );
+    }
+    process.env.E2E_PG_NAME = e2ePgName;
+  }
+}
+
+// Carried to e2e/global-setup.ts / global-teardown.ts (spawned workers inherit).
+process.env.E2E_DB_DIALECT = dbDialect;
+process.env.E2E_DB_PATH = e2eDbPath;
+if (e2ePgName !== null) {
+  process.env.E2E_PG_NAME = e2ePgName;
+}
 
 export default defineConfig({
   testDir: "./e2e",
@@ -50,6 +107,8 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { browserName: "chromium" } }],
+  globalSetup: "./e2e/global-setup",
+  globalTeardown: "./e2e/global-teardown",
   webServer: [
     {
       command: "go run ./cmd/server",
@@ -63,13 +122,9 @@ export default defineConfig({
         ...process.env,
         CONFIG_FILE: e2eConfigPath,
         DB_PATH: e2eDbPath,
-        // W23 (GOAL-034 D-001): PIN the dialect so a gitignored local
-        // apps/api/configs/.env (DB_DIALECT=postgres, created 2026-08-21)
-        // can never silently redirect the e2e API away from this isolated
-        // temp SQLite. Without the pin, fresh-seed admin/admin login 401s
-        // against the developer's Postgres and every auth-gated spec fails
-        // ("login stays on /" was this isolation drift, not a routing bug).
-        DB_DIALECT: "sqlite",
+        // The harness contract wins over configs/.env (process env first).
+        DB_DIALECT: dbDialect,
+        ...(e2ePgName !== null ? { DB_NAME: e2ePgName } : {}),
         ADMIN_INITIAL_PASSWORD: "admin",
         APP_ENV: "development",
       },
@@ -87,3 +142,7 @@ export default defineConfig({
     },
   ],
 });
+
+
+
+

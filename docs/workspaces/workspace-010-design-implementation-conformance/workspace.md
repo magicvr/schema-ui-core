@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-23
-version: 0.44.0
+version: 0.45.0
 parent: null
 ---
 
@@ -88,6 +88,8 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 
 ## 波次补充 · W22（2026-08-23）
 
-GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口；详见该目标五件套与本区 goal-tree）。移交跟踪槽 **N-001**：admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 存在的既有回归，基线实验证实；疑似 W14–W21 home 推导/路由漂移）→ 建议下一符合性波次承接。
+GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口；详见该目标五件套与本区 goal-tree）。移交跟踪槽 **N-001**：admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 存在的既有回归，基线实验证实；疑似 W14–W21 home 推导/路由漂移）→ 建议下一符合性波次承接。*（归因更正：N-001 实为挂具 store 隔离失效，非路由回归——见下方 W23 记录与 GOAL-034 D-001；W22 基线实验无法移除 gitignored 文件。）*
 
-**W23（2026-08-23 关门，GOAL-034 done 4/4）**：承接 W22 移交槽 N-001——admin 登录后停留 `/` 未跳 `/dashboard`。根因 = e2e 挂具 store 隔离失效（本机 gitignored `configs/.env` 2026-08-21 建，`DB_DIALECT=postgres` 劫持挂具临时 SQLite，全新种子 admin/admin 401），**非 home 推导/路由回归**；W22「先于 W22 基线实验」结论因 git stash 无法移除 gitignored 文件而失效。修复：`playwright.config.ts` 钉死 `DB_DIALECT=sqlite` + signInZh/sign-in fallback 等待硬化 + 连带 F-1（RowActionsMenu scroll-close 竞态 → 仅触发钮位移才关闭）F-2 fixed。回归：go 全包 ok / vitest 1088 / tsc+build 0 / e2e admin 连续 5 轮 9/9 + mvp 9/9；A-001 self pass（required 0）；I-001 closed。N-001 移交槽闭合。
+**W23（2026-08-23 关门，GOAL-034 done 4/4）**：承接 W22 移交槽 N-001——admin 登录后停留 `/` 未跳 `/dashboard`。根因 = e2e 挂具 store 隔离失效（本机 gitignored `configs/.env` 2026-08-21 建，`DB_DIALECT=postgres` 劫持挂具临时 SQLite，全新种子 admin/admin 401），**非 home 推导/路由回归**；W22「先于 W22 基线实验」结论因 git stash 无法移除 gitignored 文件而失效。修复：`playwright.config.ts` 钉死 `DB_DIALECT=sqlite` + signInZh/sign-in fallback 等待硬化 + 连带 F-1（RowActionsMenu scroll-close 竞态 → 仅触发钮位移才关闭）F-2 fixed。回归：go 全包 ok / vitest 1088 / tsc+build 0 / e2e admin 连续 5 轮 9/9 + mvp 9/9；A-001 self pass（required 0）；I-001 closed。N-001 移交槽闭合。（2026-08-23 用户复审：钉方言属绕过，正确形态 = 双方言矩阵，承接 GOAL-035。）
+
+**W24（2026-08-23 关门，GOAL-035 done 4/4）**：承接 GOAL-034 用户书面复审（「强制 sqlite 属绕过；收尾层 e2e 应双方言各测一次」；实验先证专用 pg 全量 9/9 绿）。实现：`DB_DIALECT` 方言契约（默认 sqlite / pg 显式 opt-in，`.env` 无法再改道）+ `apps/api/cmd/e2e-pgset`（scratch 库 create/verify/drop/list，凭据与 API/pgtest 同源）+ `globalSetup/Teardown` fail-fast 校验与清理 + `npm run test:e2e:postgres` + CI `profile×dialect [sqlite,postgres]` 矩阵。F-1（Playwright 配置双载 → 双份 scratch 库）修复：`E2E_PG_NAME` 守卫复用 + `DROP WITH (FORCE)` + teardown 可见。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass（required 0）；I-001 closed。

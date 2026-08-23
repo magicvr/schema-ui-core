@@ -116,14 +116,36 @@ jobs:
       - run: go build ./...
 
   browser-e2e:
-    name: browser E2E (${{ matrix.profile }}, Linux, Node 22)
+    name: browser E2E (${{ matrix.profile }} / ${{ matrix.dialect }}, Linux, Node 22)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         profile: [mvp, admin]
+        # W24 (GOAL-035): the acceptance-stage browser suite runs once per
+        # store dialect. sqlite = default fresh temp file; postgres = the
+        # harness provisions a dedicated scratch database per run via
+        # apps/api/cmd/e2e-pgset (create → run → drop).
+        dialect: [sqlite, postgres]
     env:
       APP_PROFILE: ${{ matrix.profile }}
+      # The harness dialect contract (playwright.config.ts); explicit value so
+      # the intended target is unambiguous in logs.
+      DB_DIALECT: ${{ matrix.dialect }}
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
     defaults:
       run:
         working-directory: apps/web
@@ -134,9 +156,19 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      # go is required by the postgres leg (cmd/e2e-pgset provisioning and the
+      # API server); harmless for the sqlite legs.
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
+      - name: Postgres connection env (postgres legs only)
+        if: matrix.dialect == 'postgres'
+        run: |
+          echo "DB_HOST=localhost" >> "$GITHUB_ENV"
+          echo "DB_PORT=5432" >> "$GITHUB_ENV"
+          echo "DB_USER=postgres" >> "$GITHUB_ENV"
+          echo "DB_PASSWORD=postgres" >> "$GITHUB_ENV"
+          echo "DB_SSLMODE=disable" >> "$GITHUB_ENV"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
