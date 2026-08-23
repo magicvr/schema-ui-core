@@ -31,7 +31,10 @@ func TestSQLiteDSNPragmas(t *testing.T) {
 		if memory {
 			t.Fatal("file dsn reported as memory")
 		}
-		for _, want := range []string{"_busy_timeout=5000", "_journal_mode=WAL", "_synchronous=NORMAL", "_foreign_keys=on"} {
+		// GOAL-036 A-004 F-010 (independent): _txlock=immediate is part of the
+		// connection-surface invariant (fixes WAL read-then-write snapshot
+		// races); the DSN test must pin it like the other four parameters.
+		for _, want := range []string{"_busy_timeout=5000", "_journal_mode=WAL", "_synchronous=NORMAL", "_foreign_keys=on", "_txlock=immediate"} {
 			if !strings.Contains(dsn, want) {
 				t.Errorf("dsn %q missing %q", dsn, want)
 			}

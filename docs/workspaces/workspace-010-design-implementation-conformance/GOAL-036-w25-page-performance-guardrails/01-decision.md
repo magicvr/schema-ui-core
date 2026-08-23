@@ -1,9 +1,9 @@
 ---
-status: active
+status: done
 created: 2026-08-23
 updated: 2026-08-23
 parent: GOAL-001-design-implementation-conformance
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策索引 · GOAL-036（W25）
