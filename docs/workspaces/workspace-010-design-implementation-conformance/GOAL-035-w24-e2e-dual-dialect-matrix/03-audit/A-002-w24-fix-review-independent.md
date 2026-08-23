@@ -87,6 +87,6 @@ verdict: pass
 |------|------|----------|-----------|
 | F-001 | recommended | **fixed** | `apps/web/playwright.config.ts` L42/L51 乱码已改回 UTF-8「—」/「→」；非 ASCII 残留扫描仅剩预期字符；`--list` 正常 |
 | F-002 | recommended | **fixed** | 证据摘要落盘 `attachments/I-001-evidence.md`（先证实验 / W24 双腿终验 / 本复审现场复跑 / CI 回填节）；00-meta I-001 备注已链 |
-| F-003 | recommended | **触发式回填（未闭合标记）** | 触发条件（main push/PR 后 `browser-e2e` 矩阵首跑）与回填位置已入附件「CI 回填」节；首跑完成即转 fixed |
+| F-003 | recommended | **fixed（2026-08-23 合入后回填）** | PR #5 合并 `cdb2308`；`browser-e2e` 矩阵首跑 https://github.com/magicvr/schema-ui-core/actions/runs/32617287887 9/9 SUCCESS（含 mvp/admin × sqlite/postgres 四腿）；证据见 `attachments/I-001-evidence.md` §4 |
 
-响应事实全量见 `02-execution/E-004-a002-response.md`。GOAL-035 维持 `done`，无 reopen；recommended 无门禁语义，F-003 的未闭合不阻断任何放行。
+响应事实全量见 `02-execution/E-004-a002-response.md`。A-002 三项 recommended 全部闭合；GOAL-035 维持 `done`，无 reopen。

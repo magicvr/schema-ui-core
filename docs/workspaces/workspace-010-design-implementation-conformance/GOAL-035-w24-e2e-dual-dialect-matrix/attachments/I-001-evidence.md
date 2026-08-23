@@ -32,8 +32,23 @@ version: 0.1.0
 - postgres 腿：9 passed（1.8m），exit 0；scratch **`schema_ui_e2e_mt5a0ht1li16q8`** 可见 dropped；事后 `list` 0 遗留。
 - 详见 A-002 成果表（现场复跑 job 输出）。
 
-## 4. CI 回填（F-003 触发器）
+## 4. CI 回填（F-003 · 已触发并完成）
 
-- 状态：**待触发（未闭合）**——`browser-e2e` 工作流仅 `push/PR to main` 触发（`r6-basic-matrix.yml:3-7`），W24 提交在 `dev`。
-- 触发条件：dev 合入 main 的 push/PR 后，`browser-e2e` 矩阵（profile mvp/admin × dialect sqlite/postgres）首跑完成。
-- 回填动作：在此节记录运行 URL / 结果（四腿 9/9 或失败详情）；回填后 F-003 视为已闭合（fixed）。
+- **PR**：https://github.com/magicvr/schema-ui-core/pull/5（dev→main，71 commits）
+- **工作流运行**：https://github.com/magicvr/schema-ui-core/actions/runs/32617287887（event=pull_request，headSha=916a280，conclusion=success）
+- **运行时间**：2026-08-23（PR 合入 `cdb2308`，04:16Z）
+- **矩阵结果（9/9 jobs SUCCESS）**：
+
+| job | 结果 |
+|-----|------|
+| web (Linux, Node 22) | SUCCESS |
+| api (Linux, Go 1.26) | SUCCESS |
+| api + postgres (Linux, Go 1.26) | SUCCESS |
+| browser E2E (mvp / sqlite) | SUCCESS |
+| browser E2E (mvp / postgres) | **SUCCESS**（CI 首次真实跑 pg 腿） |
+| browser E2E (admin / sqlite) | SUCCESS |
+| browser E2E (admin / postgres) | **SUCCESS**（CI 首次真实跑 pg 腿） |
+| container smoke (mvp, docker compose) | SUCCESS |
+| container smoke (admin, docker compose) | SUCCESS |
+
+- 状态：**F-003 closed（fixed）**——`browser-e2e` 矩阵首跑证据已入库（上方回填节）。若未来矩阵变更或失败，在此节追加记录。
