@@ -15,7 +15,7 @@ verdict: conditional
 | finding | 处置 |
 |---------|------|
 | F-008 · R5 residual 未登记 store/Persistence 债 | `fixed`：债已纳入 GOAL-012 R5-I001 为 required 信息项（store 所有权/CollectPersistence 接线/seed 贡献驱动；登记 R5 / 模型与迁出 R6）；GOAL-012 A-003 响应 |
-| F-003 · Schema 非 ContributionSet 驱动 | **拆分（F-012-002）**：F-003a 门禁/owner 贡献驱动 → `fixed`（`RegisterSchemas` 接受 `set.Pages` 派生 owner；composition 传贡献；提交 `d1c372e`）；F-003b document 字节 ContributionSet 发布 → `accepted-residual`（范围=R6 C6.3，复审触发=VP 退出 #4 取证前） |
+| F-003 · Schema 非 ContributionSet 驱动 | **拆分（F-012-002）**：F-003a 门禁/owner 贡献驱动 → `fixed`（`RegisterSchemas` 接受 `set.Pages` 派生 owner；composition 传贡献；提交 `d1c372e`）；F-003b document 字节 ContributionSet 发布 → `accepted-residual`（范围=R6 C6.3，复审触发=VP 退出 #4 取证前）→ **2026-08-23 兑现复核：`fixed`**——发布路径已全面贡献驱动（`PageContribution.Document` 注入；`handler.RegisterSchemas` 仅服务 `set.Pages`、无静态兜底；composition.go R6 C6.3 注释；GOAL-012 E-004 closed），证据见 [workspace-010 GOAL-033](../../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/00-meta.md) E-004 |
 | F-004/F-007 · 中心适配器双轨 | 部分 `fixed`（module 级适配器删除 `5577863`）+ R6 删除清单（handler 级测试路径） |
 | F-001 · store 上帝对象 | `open required`（跟踪）：登记 R5 / 模型与迁出 R6；已登记 R5-I001 |
 | F-002 · CollectPersistence 未生产接线 | `open required`（跟踪）：历史 0001-0008 descriptor 归属 + 生产 Open 消费 Collect 结果；已登记 R5-I001 |

@@ -14,7 +14,7 @@ test("fresh seed forces initial password change before business access", async (
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill(E2E_INITIAL_PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(E2E_INITIAL_PASSWORD); // W22: exact avoids matching the visibility-toggle aria-label
   await page.getByRole("button", { name: "Sign in" }).click();
 
   // The forced-change surface must appear on the fresh seed.

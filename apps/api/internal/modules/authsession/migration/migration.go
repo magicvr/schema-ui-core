@@ -133,6 +133,18 @@ var mustChangePasswordDDL = []string{
 	`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0`,
 }
 
+// seedAdminMustChangePasswordSQL (0049 · A2 backfill): sets
+// must_change_password = 1 on the seed admin row (id = 'user-admin') when it
+// was created before migration 0038 introduced the column.  The WHERE clause
+// is intentionally narrow: it targets only the stable seed-admin primary key
+// ('user-admin') AND requires must_change_password = 0, so the UPDATE is a
+// no-op on fresh databases (bootstrap already inserts with value 1) and on any
+// re-run (idempotent).  Human-created accounts with id != 'user-admin' are
+// never touched.
+var seedAdminMustChangePasswordSQL = []string{
+	`UPDATE users SET must_change_password = 1 WHERE id = 'user-admin' AND must_change_password = 0`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
@@ -346,6 +358,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateServiceCredentials,
 			ApplyPostgres:        migrateServiceCredentialsPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "seed_admin_must_change_password"},
+			Version:              49,
+			Name:                 "seed_admin_must_change_password",
+			Checksum:             kernel.MigrationChecksum(seedAdminMustChangePasswordSQL, "0049:seed-admin-must-change-password:v1"),
+			Apply:                migrateSeedAdminMustChangePassword,
+			// ApplyPostgres nil: portable UPDATE (no dialect difference).
+		},
 	}
 }
 
@@ -409,6 +429,15 @@ func migrateMustChangePassword(tx kernel.Tx) error {
 	for _, stmt := range mustChangePasswordDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add users.must_change_password: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateSeedAdminMustChangePassword(tx kernel.Tx) error {
+	for _, stmt := range seedAdminMustChangePasswordSQL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("backfill seed admin must_change_password: %w", err)
 		}
 	}
 	return nil

@@ -90,7 +90,7 @@ func tableNameSet(tables []string) map[string]bool {
 // completeFingerprintCatalogHead is the compiled catalog max version the
 // restore-ledger object set was reviewed against. TestCompleteFingerprintTracksCatalogHead
 // fails when the catalog grows past this so the table list is updated.
-const completeFingerprintCatalogHead = 48
+const completeFingerprintCatalogHead = 49
 
 // completeLostLedgerTables must include a table created at/after the catalog
 // head (v44 service_credentials, v48 operation_log_session) so restore-ledger

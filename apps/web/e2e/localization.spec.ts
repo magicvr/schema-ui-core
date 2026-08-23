@@ -17,7 +17,7 @@ const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
 // e2e password. Mirrors I-008-002 v0.1.3: the first-login change is a real step.
 async function signInZh(page: Page): Promise<void> {
   await page.getByLabel("用户名").fill("admin");
-  await page.getByLabel("密码").fill("admin");
+  await page.getByLabel("密码", { exact: true }).fill("admin"); // W22: exact 避免命中密码可见切换按钮 aria-label
   await page.getByRole("button", { name: "登录" }).click();
   const forced = page.getByRole("heading", { name: "修改初始密码" });
   if (await forced.isVisible().catch(() => false)) {
@@ -26,7 +26,7 @@ async function signInZh(page: Page): Promise<void> {
     await page.getByLabel("确认新密码", { exact: true }).fill("admin-e2e-pass");
     await page.getByRole("button", { name: "修改密码" }).click();
   } else {
-    await page.getByLabel("密码").fill("admin-e2e-pass");
+    await page.getByLabel("密码", { exact: true }).fill("admin-e2e-pass");
     await page.getByRole("button", { name: "登录" }).click();
   }
 }

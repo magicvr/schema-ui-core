@@ -96,3 +96,57 @@ func TestSortNavigationPartialCustomOrderAppendsRest(t *testing.T) {
 		t.Fatalf("order = %v, want %v", got, want)
 	}
 }
+
+// A3 boundary tests — accepted-residual finding converted to fixed (补测不改生产代码).
+
+// ① Duplicate legacy Order values: when two unlisted nodes share the same Order
+// integer the tiebreak is lexicographic NodeID, giving a deterministic result
+// regardless of original slice position.
+func TestSortNavigationDuplicateLegacyOrderIsStable(t *testing.T) {
+	// Both "menu_alpha" and "menu_zeta" have Order 5 — neither appears in the
+	// (nil) override list, so both fall through to the legacy Order/NodeID branch.
+	// Lexicographic NodeID tiebreak must place "menu_alpha" before "menu_zeta".
+	nodes := []NavigationContribution{
+		{ContributionIdentity: ContributionIdentity{Key: "z"}, NodeID: "menu_zeta", PageID: "z", Order: 5},
+		{ContributionIdentity: ContributionIdentity{Key: "a"}, NodeID: "menu_alpha", PageID: "a", Order: 5},
+	}
+	sortNavigation(nodes, nil) // nil → DefaultNavigationOrder; neither node is listed
+	got := nodeIDs(nodes)
+	want := []string{"menu_alpha", "menu_zeta"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("duplicate-Order tiebreak = %v, want %v (lexicographic NodeID)", got, want)
+	}
+}
+
+// ② Case-sensitive exact match: an override list whose entry differs only in
+// case ("Menu_Users" vs "menu_users") is treated as containing an unknown
+// NodeID — the whole list is invalid and the result falls back to
+// DefaultNavigationOrder, not a partial application.
+func TestNormalizeNavigationOrderCaseSensitiveExactMatch(t *testing.T) {
+	known := []string{"menu_users", "menu_dashboard"}
+	// "Menu_Users" (capital M) is NOT in known — different key.
+	order := []string{"Menu_Users", "menu_dashboard"}
+	got := NormalizeNavigationOrder(order, known)
+	if !reflect.DeepEqual(got, DefaultNavigationOrder) {
+		t.Fatalf("wrong-case key should fall back; got %v, want DefaultNavigationOrder", got)
+	}
+}
+
+// ③ Illegal override value falls back to DefaultNavigationOrder: direct unit
+// test of NormalizeNavigationOrder (not via sortNavigation) to cover the
+// function's own contract boundary — a single unknown ID invalidates the
+// entire list and the returned slice is exactly DefaultNavigationOrder.
+func TestNormalizeNavigationOrderUnknownIDReturnDefault(t *testing.T) {
+	known := []string{"menu_dashboard", "menu_users"}
+	order := []string{"menu_dashboard", "menu_bogus"} // "menu_bogus" not in known
+	got := NormalizeNavigationOrder(order, known)
+	if !reflect.DeepEqual(got, DefaultNavigationOrder) {
+		t.Fatalf("unknown NodeID should return DefaultNavigationOrder; got %v", got)
+	}
+	// Confirm it is the exact same slice value (not just equal content).
+	// This documents that callers must not mutate the returned slice.
+	gotFirst := got[0]
+	if gotFirst != DefaultNavigationOrder[0] {
+		t.Fatalf("first element mismatch: %q vs %q", gotFirst, DefaultNavigationOrder[0])
+	}
+}

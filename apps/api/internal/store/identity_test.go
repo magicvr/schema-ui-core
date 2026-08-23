@@ -92,9 +92,12 @@ func TestPlanStartup(t *testing.T) {
 
 // lockedHeadExtraTables requires catalog-head object names in the restore
 // fingerprint. Bumping completeFingerprintCatalogHead without adding a map
-// entry fails closed (A-003 F-001).
+// entry fails closed (A-003 F-001). A data-only head migration (e.g. 0049
+// seed_admin_must_change_password backfill) registers an empty list to record
+// that omission of new objects was reviewed, not overlooked.
 var lockedHeadExtraTables = map[int][]string{
 	48: {"service_credentials", "operation_log_session"},
+	49: {},
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
@@ -112,8 +115,8 @@ func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
 		t.Fatalf("compiled catalog head is v%d; update completeFingerprintCatalogHead, completeLostLedgerTables, and lockedHeadExtraTables[%d]", max, max)
 	}
 	extra, ok := lockedHeadExtraTables[max]
-	if !ok || len(extra) == 0 {
-		t.Fatalf("lockedHeadExtraTables[%d] missing; record the new CREATE TABLE names", max)
+	if !ok {
+		t.Fatalf("lockedHeadExtraTables[%d] missing; record the new CREATE TABLE names (empty list only for reviewed data-only head migrations)", max)
 	}
 	have := tableNameSet(completeLostLedgerTables)
 	for _, name := range extra {

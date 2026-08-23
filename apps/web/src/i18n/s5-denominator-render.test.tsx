@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 
 /**
  * S5 · F-V029 denominator runtime bilingual render (GOAL-006 A-001 F-002/F-003).
@@ -24,8 +24,8 @@ import { resetMissingTranslationReports } from "@/i18n/catalog";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const ADMIN_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.admin.json");
-const MVP_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.mvp.json");
+const ADMIN_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
+const MVP_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.mvp-dogfood.json");
 const MODULES = resolve(__dir, "../../../api/internal/modules");
 
 const SCHEMA_PATHS: Record<string, string> = {

@@ -17,7 +17,7 @@ version: 0.1.0
 | R4-I001 | verified | C1 freeze-grade inventory 已由 D-002/E-005 落盘并响应 A-001/A-002 的 inventory finding |
 | R4-I002 | verified | 用户接受 framework-agnostic Provider + Registrar surface + compiled-global Persistence；最终独立复审仍需验证 |
 | R4-I003 | verified | 用户 D-003 裁决 historical-only；GOAL-007 承接运行面核验 |
-| R4-I004 | accepted-residual | Option A 已接受；append failure/retention residual 由 `magicvr` 负责，复核时间 `2026-08-05 08:32:22 +08:00` |
+| R4-I004 | accepted-residual | Option A 已接受；append failure/retention residual 由 `magicvr` 负责，复核时间 `2026-08-05 08:32:22 +08:00` → **2026-08-23 到期复核（[workspace-010 GOAL-033](../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-004-s3-b1-b4-conclusions.md)）**：retention 半边已由 workspace-012 GOAL-008 兑现（可配置保留期 1–3650 天 + archive/delete + sweeper 接线）；append best-effort 半边维持 by design，续期待用户书面确认 |
 | R4-I005 | open / non-blocking | hosted E2E 环境可用性，不阻断本地 C1 |
 | C1 | 进行中 | 未关闭 required 信息前，不得进入 C2 实施 |
 

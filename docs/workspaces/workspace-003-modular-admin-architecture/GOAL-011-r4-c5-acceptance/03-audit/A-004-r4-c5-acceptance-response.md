@@ -13,7 +13,7 @@ verdict: conditional
 | finding | 处置 |
 |---------|------|
 | F-IND-C5-001 · goal-tree/meta 进度不同步 | `fixed`：随 C5.4 关门同步 goal-tree（GOAL-005 5/5、GOAL-011 done 4/4）与 meta |
-| F-IND-C5-002 · 双 Profile Start/Ready 矩阵未满 | `accepted-residual`（收窄条文）：C5.2 记为「register 双 Profile + Start 单测 + Ready 代码审 + ledger 充分」；完整双 Profile Start/Ready 自动化矩阵补入 R5 数据门禁。owner `magicvr`。 |
+| F-IND-C5-002 · 双 Profile Start/Ready 矩阵未满 | `accepted-residual`（收窄条文）：C5.2 记为「register 双 Profile + Start 单测 + Ready 代码审 + ledger 充分」；完整双 Profile Start/Ready 自动化矩阵补入 R5 数据门禁。owner `magicvr`。→ **2026-08-23 兑现复核：`fixed`**——`TestDualProfileLifecycleMatrix`（kernel/lifecycle_test.go，mvp/admin × success/start-fail/ready-fail/stop-fail 四维）+ `TestDualProfileContractMatrix`（provider_test.go）已交付，与 R5 数据门禁承诺一致；证据见 [workspace-010 GOAL-033](../../../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/00-meta.md) E-004 |
 | F-IND-C5-003 · Schema 非 ContributionSet 驱动 | 继承 residual（R5/R6 schema 发布接线） |
 | F-IND-C5-004 · 中心适配器双路径 | 继承 residual（R6 删除；测试走 provider finalize） |
 | F-IND-C5-005 · PolicyID/Visibility 最小 trim | 继承 residual（R5/R6 深化） |

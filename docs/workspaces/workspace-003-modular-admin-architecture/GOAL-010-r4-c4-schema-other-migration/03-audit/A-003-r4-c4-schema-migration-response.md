@@ -15,7 +15,7 @@ verdict: conditional
 | F-IND-C4-001 · Schema owner 中心 contributor 表 | `accepted-residual`（登记）：模块 schema 包常量 + 中心枚举作为 C4 终态；完全 ContributionSet.Pages 驱动 refinement 挂 C5/R6。owner `magicvr`，触发 = C5 schema 发布接线。 |
 | F-IND-C4-002 · C4.4 含 ledger residual（**required**） | `fixed`（收窄条文 + 决策留痕）：D-002 将 C4.4 成功标准收窄为 secrecy/Ready 清理/校验器/Records；ledger drift/unknown 运行时 fail-closed 移交 C5 数据门禁。meta 条文已对齐。 |
 | F-IND-C4-003 · Ready 失败清理缺双 Profile 矩阵 | 延至 C5：运行时双 Profile 失败矩阵（register/conflict/Start/Ready 清理）登记 C5；composition 代码审已确认 Ready fail → Stop。 |
-| F-IND-C4-004 · PolicyID/Visibility 校验器过弱 | `accepted-residual`（登记）：R4 采用最小 trim 规则（冻结 §2.2 最小可接受）；allowlist/表达式语法随 C5/R6 校验器深化。owner `magicvr`。 |
+| F-IND-C4-004 · PolicyID/Visibility 校验器过弱 | `accepted-residual`（登记）：R4 采用最小 trim 规则（冻结 §2.2 最小可接受）；allowlist/表达式语法随 C5/R6 校验器深化。owner `magicvr`。→ **2026-08-23 到期复核（[workspace-010 GOAL-033](../../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/02-execution/E-004-s3-b1-b4-conclusions.md)）**：R5/R6 均未实施（仍为 `validDottedIdentifier` 最小语法，表达式由测试拒绝），**用户书面续期（GOAL-033 D-002）**：新 review date **2026-12-01**，触发=R6 后首个多条件 Visibility 需求 / 安全审计要求策略表达能力 |
 | F-IND-C4-005 · 中心 RegisterSettings/RegisterActivity 双路径 | 文档化：测试环境走中心适配器（与生产 provider 同工厂等价）；C5/R6 终态删除（冻结 §7 步骤 5）。 |
 | F-IND-C4-006 · branding 路由未置 Public | `fixed`：`SettingsRoutes` branding 置 `Public: true`。 |
 

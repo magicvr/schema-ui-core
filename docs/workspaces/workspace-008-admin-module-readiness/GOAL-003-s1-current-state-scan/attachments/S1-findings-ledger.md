@@ -63,6 +63,7 @@
 ### F-007 · 上传端点仅认证、无授权权限键门禁（viewer 也可上传/读取）
 - **证据**：`handler/upload.go:74-78` — `POST /api/upload`/`GET /api/files/{id}` 仅 `a.Middleware`，无权限键
 - **关闭路径**：S3 协议判断（D-UPLOAD 是否要求服务端权限键）；若协议要求则补授权门禁
+- **closure（2026-08-23 补注，[workspace-010 GOAL-033](../../../../workspace-010-design-implementation-conformance/GOAL-033-w22-residual-closeout/00-meta.md) B5 复核）**：`accepted-residual` —— 用户 2026-08-10 go 裁决时书面确认维持 deferred、不升 required、不扩 scope（见 [GOAL-007 D-001](../../GOAL-007-s5-admission-audit-and-verdict/01-decision/D-001-s5-go-decision.md)）；owner=VP-008 lead；触发 = 每个后续业务 VP 激活前的消费前 freshness review + 后续协议判断/用户扩 scope；复核结论：触发未发生，状态有效
 
 ### F-008 · S5 分母测试使用不存在的权限键 `activity.read`（真实键 `operations.read`）
 - **证据**：`apps/web/src/i18n/s5-denominator-render.test.tsx:197`；真实键 `modules/activity/provider.go:43,72`

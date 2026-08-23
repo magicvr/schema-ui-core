@@ -405,8 +405,7 @@ func TestUploadRequiresFilesWritePermission(t *testing.T) {
 
 // W4 P0-2: the per-user quota bounds a files.write holder's stored objects —
 // a compromised admin cannot pump the disk past the configured cap. A tiny
-// maxUserFiles makes the gate observable without thousands of uploads. W7:
-// the limits are injected via RegisterUpload options (config-driven), not
+// maxUserFiles makes the gate observable without thousands of uploads. W7:\n// the limits are injected via RegisterUpload options (config-driven), not
 // package-level env reads.
 func TestUploadPerUserQuota(t *testing.T) {
 	testUploadOpts = []UploadOption{WithUserLimits(2, 0)} // disable byte quota for a focused count check
@@ -442,5 +441,155 @@ func TestUploadPerUserQuota(t *testing.T) {
 	if code := uploadOne(); code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("third upload = %d, want 413 (quota)", code)
 	}
+	_ = os.RemoveAll(env.uploadDir)
+}
+
+// A5 · heuristic event-handler sniff: the containsActiveContent function must
+// reject content whose head contains an on*= attribute form even when the
+// body lacks an explicit <script> or <svg> literal. This covers the residual
+// path identified by the independent security audit (A5): markup such as
+// <img onerror=…>, <body onload=…>, or <div onmouseover=…> can carry
+// executable payloads without the tag-name markers already blocked.
+func TestContainsActiveContentEventHandler(t *testing.T) {
+	pass := []struct {
+		name string
+		body []byte
+	}{
+		{"plain text", []byte("just some plain text content")},
+		{"png header", []byte("\x89PNG\r\n\x1a\n" + strings.Repeat("A", 100))},
+		// A word beginning with "on" that is NOT an event handler form.
+		{"word-on", []byte("online services are great")},
+		{"attr-no-eq", []byte("<p class=\"online\">content</p>")},
+		// Attribute with "on" in value, not attribute name.
+		{"value-on", []byte(`<p data-info="onclick details">text</p>`)},
+	}
+	for _, tc := range pass {
+		if containsActiveContent(tc.body) {
+			t.Errorf("pass case %q incorrectly flagged as active content", tc.name)
+		}
+	}
+
+	reject := []struct {
+		name string
+		body []byte
+	}{
+		{"script literal", []byte("<script>alert(1)</script>")},
+		{"svg literal", []byte("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>")},
+		{"xml decl", []byte("<?xml version=\"1.0\"?><root/>")},
+		{"img onerror", []byte("<img src=x onerror=alert(1)>")},
+		{"body onload", []byte("<body onload=\"evil()\">content</body>")},
+		{"div onmouseover", []byte("<div onmouseover=\"track()\">hover</div>")},
+		{"svg onload no script tag", []byte("<svg onload=alert(1) xmlns=\"http://www.w3.org/2000/svg\">")},
+		{"mixed-case OnLoad", []byte("<img OnLoad=\"evil()\">")},
+		// Event handler beyond the 512-byte DetectContentType window but
+		// within the 8 KiB sniff window.
+		{"past-512", append(bytes.Repeat([]byte("A"), 600), []byte("<img onerror=x>")...)},
+	}
+	for _, tc := range reject {
+		if !containsActiveContent(tc.body) {
+			t.Errorf("reject case %q not flagged as active content", tc.name)
+		}
+	}
+}
+
+// A5 · large-file head-only sniff: containsActiveContent must examine only
+// the first sniffWindowBytes of the body so large uploads are not penalised.
+// An event-handler marker at offset sniffWindowBytes must NOT be flagged
+// (the download headers already deny rendering of any slipped content), and
+// the function must return quickly rather than scanning megabytes.
+func TestContainsActiveContentSniffWindowBound(t *testing.T) {
+	const marker = "<script>"
+
+	// Benign header + active payload that starts exactly at sniffWindowBytes
+	// (completely outside the window).
+	padding := bytes.Repeat([]byte("B"), sniffWindowBytes)
+	beyond := append(padding, []byte(marker+"alert(1)</script>")...)
+	if containsActiveContent(beyond) {
+		t.Error("marker starting at window boundary must not be flagged (head-only sniff)")
+	}
+
+	// Marker fully inside the window: starts at sniffWindowBytes-len(marker),
+	// its last byte lands at sniffWindowBytes-1.  Must be rejected.
+	startInside := sniffWindowBytes - len(marker)
+	insidePad := bytes.Repeat([]byte("C"), startInside)
+	inside := append(insidePad, []byte(marker+"x</script>")...)
+	if !containsActiveContent(inside) {
+		t.Errorf("marker at index %d (last byte at %d, window=%d) must be flagged",
+			startInside, startInside+len(marker)-1, sniffWindowBytes)
+	}
+}
+
+// A5 · end-to-end: benign binary (PNG magic) and benign text pass; a .dat
+// file whose content is <script>…</script> is rejected with 415; a .txt whose
+// content contains <svg onload=…> without an explicit <script> tag is also
+// rejected; large benign content is accepted without a full-body scan.
+func TestUploadA5ContentSniffEndToEnd(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	doUpload := func(name, declaredType, content string) *httptest.ResponseRecorder {
+		body := new(bytes.Buffer)
+		writer := multipart.NewWriter(body)
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", `form-data; name="file"; filename="`+name+`"`)
+		h.Set("Content-Type", declaredType)
+		part, err := writer.CreatePart(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = part.Write([]byte(content))
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/upload", body)
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr
+	}
+
+	// Benign text → 200.
+	if rr := doUpload("notes.txt", "text/plain", "hello world"); rr.Code != http.StatusOK {
+		t.Fatalf("benign text upload = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+
+	// .dat file with <script> content → 415 UNSUPPORTED_FILE_TYPE.
+	rr := doUpload("payload.dat", "application/octet-stream", "<script>alert(1)</script>")
+	if rr.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("<script> in .dat status = %d, want 415: %s", rr.Code, rr.Body.String())
+	}
+	var apiError map[string]string
+	if err := json.Unmarshal(rr.Body.Bytes(), &apiError); err != nil {
+		t.Fatal(err)
+	}
+	if apiError["error"] != "UNSUPPORTED_FILE_TYPE" {
+		t.Fatalf("<script> .dat code = %q, want UNSUPPORTED_FILE_TYPE", apiError["error"])
+	}
+
+	// .txt file with <svg onload=…> but no <script> tag → 415.
+	rr = doUpload("attack.txt", "text/plain", `<svg onload="evil()" xmlns="http://www.w3.org/2000/svg">`)
+	if rr.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("<svg onload> .txt status = %d, want 415: %s", rr.Code, rr.Body.String())
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &apiError); err != nil {
+		t.Fatal(err)
+	}
+	if apiError["error"] != "UNSUPPORTED_FILE_TYPE" {
+		t.Fatalf("<svg onload> code = %q, want UNSUPPORTED_FILE_TYPE", apiError["error"])
+	}
+
+	// .txt file with <img onerror=…> (no <svg>/<script>) → 415.
+	rr = doUpload("img.txt", "text/plain", `<img src=x onerror=alert(1)>`)
+	if rr.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("<img onerror> .txt status = %d, want 415: %s", rr.Code, rr.Body.String())
+	}
+
+	// Large benign content (well over 8 KiB, no markers) → 200.
+	largeBenign := strings.Repeat("safe content line\n", 1000) // ~18 KiB
+	if rr := doUpload("large.txt", "text/plain", largeBenign); rr.Code != http.StatusOK {
+		t.Fatalf("large benign upload = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+
 	_ = os.RemoveAll(env.uploadDir)
 }

@@ -22,7 +22,7 @@ export async function signInAsAdmin(page: Page): Promise<void> {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await page.getByLabel("Username").fill("admin");
-  await page.getByLabel("Password").fill(E2E_INITIAL_PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(E2E_INITIAL_PASSWORD); // W22: exact avoids matching the visibility-toggle aria-label
   await page.getByRole("button", { name: "Sign in" }).click();
 
   // Already replaced (a prior spec changed the password): land straight on home.
@@ -45,7 +45,7 @@ export async function signInAsAdmin(page: Page): Promise<void> {
   } catch {
     // Fresh-initial login failed because the password was already replaced:
     // fall back to the shared e2e password.
-    await page.getByLabel("Password").fill(E2E_PASSWORD);
+    await page.getByLabel("Password", { exact: true }).fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(homeRe, { timeout: 15000 });
   }

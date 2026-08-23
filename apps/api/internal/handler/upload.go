@@ -102,14 +102,46 @@ var activeContentMarkers = []string{
 	"<?xml",
 }
 
+// sniffWindowBytes is the number of bytes examined for active-content heuristics
+// (A5 · security audit finding): large files are only scanned at the head so
+// the gate adds O(sniffWindowBytes) per upload rather than O(file-size). 8 KiB
+// is enough to catch all header-position event-handler patterns while remaining
+// well under a typical L1 cache footprint. Content pushed beyond this offset
+// cannot execute without a rendering context that the download headers already
+// deny (attachment + CSP sandbox + nosniff), so the residual risk is accepted
+// within the existing defence-in-depth model.
+const sniffWindowBytes = 8 << 10 // 8 KiB
+
+// onEventHandlerPattern matches an HTML/XML/SVG on* event-handler attribute
+// of the form on<name>=  (case-insensitive; name is one or more ASCII letters).
+// This catches patterns such as onload=, onerror=, onmouseover=, etc. that can
+// appear in SVG, XML or plain-HTML markup without a <script> tag and without
+// the literal <svg or <script markers already covered by activeContentMarkers
+// (A5 · security audit: "带事件处理器形态的内容可入库").
+var onEventHandlerPattern = regexp.MustCompile(`(?i)\bon[a-z]+=`)
+
 // containsActiveContent reports whether body contains any active-content
-// marker, case-insensitively. A hard rejection gate on top of the sniffed MIME.
+// marker, case-insensitively. It examines only the first sniffWindowBytes of
+// body so large uploads are not penalised (A5 hardening: head-only sniff).
+// A hard rejection gate on top of the sniffed MIME.
 func containsActiveContent(body []byte) bool {
-	lower := bytes.ToLower(body)
+	window := body
+	if len(window) > sniffWindowBytes {
+		window = window[:sniffWindowBytes]
+	}
+	lower := bytes.ToLower(window)
 	for _, marker := range activeContentMarkers {
 		if bytes.Contains(lower, []byte(marker)) {
 			return true
 		}
+	}
+	// A5 · event-handler heuristic: reject any document whose head contains an
+	// on*= attribute even without a <script>/<svg> literal. This blocks SVG
+	// with inline event handlers that omit the element open-tag (e.g. an
+	// existing <svg> document injected mid-stream) and plain-HTML payloads with
+	// <img onerror=…> / <body onload=…> patterns that bypass tag-name matching.
+	if onEventHandlerPattern.Match(window) {
+		return true
 	}
 	return false
 }

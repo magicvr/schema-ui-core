@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+﻿import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
@@ -97,7 +97,7 @@ const appNavigationArtifact = readJson<FixtureSuite>(
 );
 const provenanceArtifact = readJson<FixtureProvenance>("./upstream/provenance.json");
 const adminManifestFixture = readJson<JsonObject>(
-  "../test-fixtures/app-manifest.admin.json",
+  "../test-fixtures/app-manifest.admin-dogfood.json",
 );
 
 function isRecord(value: unknown): value is JsonObject {

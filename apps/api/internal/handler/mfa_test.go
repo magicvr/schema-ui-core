@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -325,5 +326,138 @@ func TestMFAResetAdminTargetBoundary(t *testing.T) {
 	}
 	if len(revoker.revoked) != 1 || revoker.revoked[0] != "user-staff" {
 		t.Fatalf("revoker after non-admin reset = %v, want [user-staff]", revoker.revoked)
+	}
+}
+
+// A6 · MFA verify independent rate limit: POST /api/auth/mfa/verify has its
+// own counting bucket (independent of the login limiter); repeated failed
+// attempts from one IP trigger 429 RATE_LIMITED with a Retry-After header.
+// A single successful-path attempt is never blocked.
+func TestMFAVerifyRateLimit(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mux := http.NewServeMux()
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	mountRoutes := func(routes []kernel.RouteContribution) {
+		for _, r := range routes {
+			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
+		}
+	}
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+
+	// Enroll the admin user so BeginChallenge works.
+	fake.required["user-admin"] = true
+
+	// Helper: POST /api/auth/mfa/verify with an invalid code and an invalid
+	// proof (so it hits the rate-limiter record path on each failure).
+	verifyInvalid := func() *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/mfa/verify",
+			strings.NewReader(`{"proof":"no-such-proof","code":"000000"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		mux.ServeHTTP(rr, req)
+		return rr
+	}
+
+	// The first mfaVerifyRateLimiterMax attempts must return a non-429 code
+	// (the service rejects the bogus proof with 401 MFA_PROOF_EXPIRED, not a
+	// rate limit error).
+	for i := range mfaVerifyRateLimiterMax {
+		rr := verifyInvalid()
+		if rr.Code == http.StatusTooManyRequests {
+			t.Fatalf("attempt %d (within budget) got 429, want <429", i+1)
+		}
+	}
+
+	// The very next attempt (one over the limit) must be 429 RATE_LIMITED.
+	rr := verifyInvalid()
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("over-limit attempt = %d, want 429", rr.Code)
+	}
+	var out map[string]string
+	_ = json.NewDecoder(rr.Body).Decode(&out)
+	if out["error"] != "RATE_LIMITED" {
+		t.Fatalf("over-limit code = %q, want RATE_LIMITED", out["error"])
+	}
+	if rr.Header().Get("Retry-After") == "" {
+		t.Fatal("RATE_LIMITED response missing Retry-After header")
+	}
+}
+
+// A6 · MFA verify rate limit is per-IP and independent of the login limiter:
+// two different client IPs each get their own bucket; exhausting one does not
+// affect the other.
+func TestMFAVerifyRateLimitPerIP(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mux := http.NewServeMux()
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	mountRoutes := func(routes []kernel.RouteContribution) {
+		for _, r := range routes {
+			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
+		}
+	}
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+
+	verifyFromIP := func(ip string) int {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/mfa/verify",
+			strings.NewReader(`{"proof":"no-such-proof","code":"000000"}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.RemoteAddr = fmt.Sprintf("%s:50000", ip)
+		rr := httptest.NewRecorder()
+		mux.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	// Exhaust IP-A's bucket.
+	for range mfaVerifyRateLimiterMax {
+		verifyFromIP("10.0.0.1")
+	}
+	if code := verifyFromIP("10.0.0.1"); code != http.StatusTooManyRequests {
+		t.Fatalf("IP-A over limit = %d, want 429", code)
+	}
+
+	// IP-B's bucket is untouched — must not be rate-limited.
+	if code := verifyFromIP("10.0.0.2"); code == http.StatusTooManyRequests {
+		t.Fatalf("IP-B erroneously rate-limited after exhausting IP-A's bucket")
+	}
+}
+
+// A6 · normal single verify is not affected: a valid proof + code succeeds on
+// the first attempt without hitting the rate limiter.
+func TestMFAVerifyRateLimitDoesNotBlockNormalFlow(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mux := http.NewServeMux()
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	mountRoutes := func(routes []kernel.RouteContribution) {
+		for _, r := range routes {
+			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
+		}
+	}
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+
+	// Set up a valid proof as the login flow would.
+	fake.required["user-admin"] = true
+	proof, err := fake.BeginChallenge("user-admin", time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/mfa/verify",
+		strings.NewReader(`{"proof":"`+proof+`","code":"123456"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("normal verify = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	var resp map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&resp)
+	if resp["accessToken"] == nil {
+		t.Fatal("normal verify response missing accessToken")
 	}
 }
