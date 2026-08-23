@@ -6,6 +6,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -30,7 +31,7 @@ func TestSQLiteDSNPragmas(t *testing.T) {
 		if memory {
 			t.Fatal("file dsn reported as memory")
 		}
-		for _, want := range []string{"_busy_timeout=5000", "_journal_mode=WAL", "_synchronous=NORMAL"} {
+		for _, want := range []string{"_busy_timeout=5000", "_journal_mode=WAL", "_synchronous=NORMAL", "_foreign_keys=on"} {
 			if !strings.Contains(dsn, want) {
 				t.Errorf("dsn %q missing %q", dsn, want)
 			}
@@ -95,6 +96,85 @@ func TestMemoryStoreStaysSingleConnection(t *testing.T) {
 	defer st.Close()
 	if got := st.db.Stats().MaxOpenConnections; got != 1 {
 		t.Errorf("memory MaxOpenConnections = %d, want 1", got)
+	}
+}
+
+// TestFileStoreEveryConnectionEnforcesForeignKeys (A-001 F-002, independent
+// audit 2026-08-23): PRAGMA foreign_keys is CONNECTION-scoped. The pool must
+// carry it on every connection (via the driver-level DSN parameter), not only
+// on the connection the migration runner happened to use — otherwise ON DELETE
+// CASCADE silently stops firing and FK invariants (_user_roles_ cascade, RBAC
+// RESTRICT, refresh_tokens checks) are void on the other pooled connections,
+// which is exactly how the W25 e2e regression showed up after pooling.
+func TestFileStoreEveryConnectionEnforcesForeignKeys(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "fk-pool.db")
+	st, err := OpenWithCatalog(path, MigrationCatalog())
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+
+	// Hold one connection per pool slot and assert FK is ON on each of them.
+	conns := make([]*sql.Conn, 0, sqlitePoolDefault)
+	defer func() {
+		for _, c := range conns {
+			_ = c.Close()
+		}
+	}()
+	for i := 0; i < sqlitePoolDefault; i++ {
+		c, err := st.db.Conn(ctx)
+		if err != nil {
+			t.Fatalf("conn %d: %v", i, err)
+		}
+		conns = append(conns, c)
+		var enabled int
+		if err := c.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&enabled); err != nil {
+			t.Fatalf("conn %d PRAGMA foreign_keys: %v", i, err)
+		}
+		if enabled != 1 {
+			t.Errorf("conn %d foreign_keys = %d, want 1 (ON)", i, enabled)
+		}
+	}
+
+	// ON DELETE CASCADE fires on a NON-first pooled connection: deleting a
+	// user must cascade-remove its user_roles link (the W25 e2e scenario).
+	last := conns[len(conns)-1]
+	seed := []string{
+		`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
+		 VALUES ('u-fk', 'fk', 'FK', '[]', 'h', 0, 1, 1)`,
+		`INSERT INTO roles (id, key, name, created_at, updated_at) VALUES ('role-fk', 'role-fk', 'R', 1, 1)`,
+		`INSERT INTO user_roles (user_id, role_id) VALUES ('u-fk', 'role-fk')`,
+	}
+	for _, q := range seed {
+		if _, err := last.ExecContext(ctx, q); err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+	}
+	// RESTRICT (while the link exists): deleting the in-use role must fail on
+	// the non-first connection too.
+	if _, err := last.ExecContext(ctx, `DELETE FROM roles WHERE id = 'role-fk'`); err == nil {
+		t.Error("delete in-use role succeeded, want FK RESTRICT violation")
+	}
+	if _, err := last.ExecContext(ctx, `DELETE FROM users WHERE id = 'u-fk'`); err != nil {
+		t.Fatalf("delete user on non-first conn: %v", err)
+	}
+	var leftover int
+	if err := last.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM user_roles WHERE user_id = 'u-fk'`,
+	).Scan(&leftover); err != nil {
+		t.Fatalf("count leftover user_roles: %v", err)
+	}
+	if leftover != 0 {
+		t.Errorf("user_roles leftover after CASCADE = %d, want 0", leftover)
+	}
+
+	// FK rejection also works off the migrate connection: a refresh_tokens row
+	// pointing at a missing user must fail.
+	if _, err := last.ExecContext(ctx,
+		`INSERT INTO refresh_tokens (id, user_id, created_at) VALUES ('rt-fk', 'missing-user', 1)`,
+	); err == nil {
+		t.Error("insert refresh_tokens with missing user succeeded, want FK violation")
 	}
 }
 

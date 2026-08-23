@@ -434,6 +434,63 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
     expect(requestsFor("/api/other")).toBe(1);
   });
 
+  // W25 (A-001 F-003, independent): refreshList must NOT join an in-flight
+  // request for the targeted URL — symmetric with reloadList, a refresh during
+  // a slow fetch starts its own request (overlapping refresh gets fresh data).
+  it("refreshList does not join an in-flight request for the targeted dataSource", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "section",
+        children: [
+          { type: "custom", id: "ctl", component: "perf-refresh-controller-test" },
+          {
+            id: "status-card",
+            type: "statCard",
+            props: { label: "Status", format: "plain", valueField: "value", dataSource: "/api/status" },
+          },
+        ],
+      },
+    };
+    const calls: string[] = [];
+    const gates: Array<(value: Response) => void> = [];
+    const fetcher = ((input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return new Promise<Response>((resolve) => {
+        gates.push(resolve);
+      });
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(gates.length).toBe(1);
+
+    // Refresh while the first request is still pending.
+    const buttons = container.querySelectorAll<HTMLButtonElement>("button[data-refresh-status]");
+    await act(async () => {
+      buttons[0]!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The old in-flight request was dropped: a NEW request was issued instead
+    // of joining the pending one.
+    expect(calls.length).toBe(2);
+
+    // Settle both requests; the page ends consistent (no stale display).
+    await act(async () => {
+      for (const gate of gates) {
+        gate(
+          new Response(
+            JSON.stringify({ items: [{ id: "x", value: 1 }], total: 1, page: 1, pageSize: 100 }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.textContent).toContain("1");
+  });
+
   it("shows a Skeleton status region for statCard while its dataSource fetch is pending", async () => {
     const pageDoc = displayDocument({
       type: "statCard",

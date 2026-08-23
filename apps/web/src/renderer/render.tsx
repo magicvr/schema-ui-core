@@ -872,6 +872,10 @@ function SchemaCrudProvider({
   const [listRefreshTokens, setListRefreshTokens] = useState<Record<string, number>>({});
   const refreshList = useCallback((dataSource: string) => {
     const key = resourceListURL(dataSource, DISPLAY_LIST_QUERY, undefined);
+    // Symmetric with reloadList (A-001 F-003, independent): drop any in-flight
+    // request for the targeted URL so a refresh issued DURING a slow fetch
+    // starts its own request instead of joining the pre-refresh one.
+    listInFlight.current.delete(key);
     setListRefreshTokens((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
   }, []);
   const listRefreshToken = useCallback(

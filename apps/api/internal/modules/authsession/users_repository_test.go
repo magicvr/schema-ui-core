@@ -140,6 +140,8 @@ func TestDeleteUserCleansRoleAndMfaLinks(t *testing.T) {
 }
 
 // W25/I-001: the batch delete path applies the same per-user link purge.
+// Batch-path MFA coverage added per A-001 F-005 (independent): seed user_mfa
+// for one target and assert it is purged too.
 func TestDeleteUsersBatchCleansRoleAndMfaLinks(t *testing.T) {
 	repository, st := openRepository(t, "delete-batch-links.db", true)
 	now := time.Now().UTC()
@@ -151,11 +153,21 @@ func TestDeleteUsersBatchCleansRoleAndMfaLinks(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	if err := repositoryExec(
+		t, st,
+		`INSERT INTO user_mfa (user_id, status, totp_secret_ciphertext, recovery_codes_hash, created_at, updated_at)
+		 VALUES ('user-dave', 'active', 'x', 'y', 1, 1)`,
+	); err != nil {
+		t.Fatalf("seed user_mfa: %v", err)
+	}
 	if _, err := repository.DeleteUsersBatch([]string{"user-dave", "user-erin"}, "user-external"); err != nil {
 		t.Fatalf("batch delete: %v", err)
 	}
 	if n := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM user_roles WHERE user_id IN ('user-dave','user-erin')`); n != 0 {
 		t.Fatalf("orphan user_roles after batch = %d, want 0", n)
+	}
+	if n := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM user_mfa WHERE user_id = 'user-dave'`); n != 0 {
+		t.Fatalf("orphan user_mfa after batch = %d, want 0", n)
 	}
 }
 

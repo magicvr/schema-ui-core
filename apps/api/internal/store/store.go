@@ -34,7 +34,17 @@ const sqlitePoolDefault = 4
 // readers next to a single writer; synchronous=NORMAL drops the per-commit
 // fsync that dominates SQLite commit latency on Windows/AV-scanned disks
 // (WAL checkpoints keep durability).
-const sqliteDSNParams = "_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL"
+//
+// _foreign_keys=on is CONNECTION-scoped state in SQLite: under the historical
+// MaxOpenConns=1 the migration-runner's one Exec covered the whole database,
+// but once the store pools connections (2026-08-23 W25) the PRAGMA must ride
+// the DSN or 3 of 4 pooled connections silently disable FOREIGN KEY
+// enforcement — ON DELETE CASCADE never fires and every FK-based invariant
+// (user_roles cascade, RBAC RESTRICT, refresh_tokens checks) is void outside
+// the migrate connection. Independent audit A-001 F-001 (independent,
+// conditional): the W25 e2e regression's orphaned user_roles rows were caused
+// by this pool-side FK loss, not merely by the missing explicit cleanup.
+const sqliteDSNParams = "_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL&_foreign_keys=on"
 
 // sqliteDSN appends the connection pragmas to a file DSN. In-memory DSNs are
 // returned unchanged: with no file there is no shared journal to configure,

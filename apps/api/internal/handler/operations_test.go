@@ -65,11 +65,21 @@ func TestOperationLogAuthEvents(t *testing.T) {
 	if len(authOps) != len(want) {
 		t.Fatalf("auth ops = %d, want %d (login/refresh/logout)", len(authOps), len(want))
 	}
-	for i, ev := range want {
-		op := authOps[i]
-		if op.Event != ev {
-			t.Fatalf("authOps[%d].event = %q, want %q", i, op.Event, ev)
+	// W25 (A-001 响应 F-006, self): the historical ORDER assertion relied on
+	// single-connection serialization of same-millisecond writes. Since the
+	// sqlite store pools connections (2026-08-23), same-tick commits may land
+	// in any order and the DESC read tie-break falls to the random id suffix —
+	// ordering is no longer a contract. Assert the event SET plus every
+	// per-operation property instead of positional order.
+	seen := map[string]bool{}
+	for _, ev := range want {
+		seen[ev] = false
+	}
+	for i, op := range authOps {
+		if _, known := seen[op.Event]; !known {
+			t.Fatalf("authOps[%d].event = %q, want one of login/refresh/logout", i, op.Event)
 		}
+		seen[op.Event] = true
 		if op.ActorID != "user-admin" {
 			t.Fatalf("authOps[%d].actor_id = %q, want user-admin", i, op.ActorID)
 		}
