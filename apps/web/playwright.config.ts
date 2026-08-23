@@ -39,7 +39,7 @@ const webOrigin = `http://127.0.0.1:${webPort}`;
 const e2eDbPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-")), "e2e.db");
 
 // W24 (GOAL-035 / workspace-010): the browser E2E suite is a DUAL-DIALECT
-// acceptance surface 閳?it must run once per store dialect, not merely "not
+// acceptance surface — it must run once per store dialect, not merely "not
 // get redirected" (that was W23 N-001: a gitignored apps/api/configs/.env
 // with DB_DIALECT=postgres silently redirected the API to the developer's
 // shared database and every fresh-seed login 401'd).
@@ -48,7 +48,7 @@ const e2eDbPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-")), "e2e.db");
 //   - DB_DIALECT=sqlite (default): the API gets an isolated temp SQLite at
 //     DB_PATH; configs/.env can never override an already-set process env.
 //   - DB_DIALECT=postgres (explicit opt-in): the harness provisions a
-//     DEDICATED scratch database via cmd/e2e-pgset (create 閳?run 閳?drop,
+//     DEDICATED scratch database via cmd/e2e-pgset (create → run → drop,
 //     same pattern as internal/pgtest and the CI api-postgres job) and passes
 //     its name as DB_NAME; credentials come from process env or configs/.env.
 //

@@ -5,7 +5,7 @@ status: done
 created: 2026-08-23
 updated: 2026-08-23
 parent: GOAL-001-design-implementation-conformance
-version: 0.2.0
+version: 0.2.1
 progress: 4/4
 ---
 
@@ -42,7 +42,7 @@ S4 关门   → C4 审计 + 台账同步
 
 | 编号 | 问题 | 级别 | 影响门禁 | 状态 | 证据/结论 |
 |------|------|------|----------|------|-----------|
-| I-001 | 浏览器 e2e 在专用 Postgres（全新+种子）上能否全绿？还是存在真方言缺陷？ | required | C3 | **closed** | 2026-08-23 实验 9/9 绿（专用 scratch 库 `schema_ui_e2e_w23_242e2651`），产品方言无缺陷，缺口在挂具 |
+| I-001 | 浏览器 e2e 在专用 Postgres（全新+种子）上能否全绿？还是存在真方言缺陷？ | required | C3 | **closed** | 2026-08-23 实验 9/9 绿（专用 scratch 库 `schema_ui_e2e_w23_242e2651`），产品方言无缺陷，缺口在挂具；证据摘要已固化于 `attachments/I-001-evidence.md`（A-002 F-002） |
 
 ## 边界与审计声明
 
