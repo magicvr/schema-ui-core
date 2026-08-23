@@ -77,8 +77,9 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBSSLMode  string
-	// DBConnPool carries postgres connection-pool bounds (0 = driver default).
-	// Wired through to store.OpenOptions; sqlite ignores them.
+	// DBConnPool carries connection-pool bounds (0 = driver default for
+	// postgres / the sqlite file-store default of 4). Wired through to
+	// store.OpenOptions; sqlite uses PoolMaxOpenConns only.
 	DBPoolMaxOpen  int
 	DBPoolMaxIdle  int
 	DBConnLifetime time.Duration

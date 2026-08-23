@@ -516,6 +516,7 @@ function SchemaPageSurface({
   context,
   fetcher,
   resourceFetcher,
+  schemaDocumentCache,
   onNavigate,
 }: {
   page: PageEntry;
@@ -524,6 +525,8 @@ function SchemaPageSurface({
   context: NavigationContext;
   fetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
+  /** Shell-owned schema document cache (skips fetch + D-VAL on repeat visits). */
+  schemaDocumentCache?: Map<string, unknown>;
   /** Session-internal navigation for schema navigate actions (GOAL-015 F-001). */
   onNavigate?: (url: string) => void;
 }) {
@@ -533,7 +536,7 @@ function SchemaPageSurface({
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading" });
-    loadPageDocument(page, params, { fetcher })
+    loadPageDocument(page, params, { fetcher, cache: schemaDocumentCache })
       .then((document) => {
         if (!cancelled) {
           setState({ status: "ready", document });
@@ -594,6 +597,7 @@ function PageSurface({
   navigationContext,
   schemaFetcher,
   resourceFetcher,
+  schemaDocumentCache,
 }: {
   manifest: AppManifest;
   path: string;
@@ -602,6 +606,8 @@ function PageSurface({
   navigationContext: NavigationContext;
   schemaFetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
+  /** Shell-owned schema document cache (skips fetch + D-VAL on repeat visits). */
+  schemaDocumentCache?: Map<string, unknown>;
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
@@ -704,6 +710,7 @@ function PageSurface({
           context={navigationContext}
           fetcher={schemaFetcher}
           resourceFetcher={resourceFetcher}
+          schemaDocumentCache={schemaDocumentCache}
           onNavigate={onNavigate}
         />
       </div>
@@ -733,6 +740,11 @@ export function App({
     parseLocationQuery(),
   );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // W19 perf (2026-08): page schema documents are static per (schemaUrl,
+  // params) until a full reload. Holding them in memory (shell-instance
+  // scope) skips one fetch + one D-VAL pass on every navigation; a re-login
+  // remounts the shell and starts a fresh map.
+  const [schemaDocumentCache] = useState(() => new Map<string, unknown>());
   const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
     () => brandingProp ?? defaultBranding(),
@@ -1021,6 +1033,7 @@ export function App({
               navigationContext={navigationContext}
               schemaFetcher={schemaFetcher}
               resourceFetcher={resourceFetcher}
+              schemaDocumentCache={schemaDocumentCache}
             />
           </div>
         </main>

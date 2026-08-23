@@ -270,6 +270,16 @@ func (r *Repository) DeleteUser(id, actorID string) error {
 		if _, err := tx.Exec(context.Background(), `DELETE FROM refresh_tokens WHERE user_id = ?`, id); err != nil {
 			return fmt.Errorf("revoke user tokens: %w", err)
 		}
+		// W25/I-001 (2026-08-23): user delete must purge per-user links —
+		// user_roles (an orphan link keeps roles.assignedUsers > 0 and makes
+		// the role permanently undeletable; browser e2e schema-crud exposed it)
+		// and user_mfa (TOTP ciphertext / recovery hashes are credentials).
+		if _, err := tx.Exec(context.Background(), `DELETE FROM user_roles WHERE user_id = ?`, id); err != nil {
+			return fmt.Errorf("clear deleted user roles: %w", err)
+		}
+		if _, err := tx.Exec(context.Background(), `DELETE FROM user_mfa WHERE user_id = ?`, id); err != nil {
+			return fmt.Errorf("clear deleted user mfa: %w", err)
+		}
 		result, err := tx.Exec(context.Background(), `DELETE FROM users WHERE id = ?`, id)
 		if err != nil {
 			return fmt.Errorf("delete user: %w", err)
@@ -340,6 +350,15 @@ func (r *Repository) DeleteUsersBatch(ids []string, actorID string) (int, error)
 		for _, id := range keys {
 			if _, err := tx.Exec(context.Background(), `DELETE FROM refresh_tokens WHERE user_id = ?`, id); err != nil {
 				return fmt.Errorf("revoke user %s tokens: %w", id, err)
+			}
+			// W25/I-001: same per-user link purge as DeleteUser (see comment
+			// there) — user_roles orphans would otherwise freeze role
+			// deletability; user_mfa rows are credentials.
+			if _, err := tx.Exec(context.Background(), `DELETE FROM user_roles WHERE user_id = ?`, id); err != nil {
+				return fmt.Errorf("clear deleted user %s roles: %w", id, err)
+			}
+			if _, err := tx.Exec(context.Background(), `DELETE FROM user_mfa WHERE user_id = ?`, id); err != nil {
+				return fmt.Errorf("clear deleted user %s mfa: %w", id, err)
 			}
 			if _, err := tx.Exec(context.Background(), `DELETE FROM users WHERE id = ?`, id); err != nil {
 				return fmt.Errorf("delete user %s: %w", id, err)

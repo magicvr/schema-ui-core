@@ -105,6 +105,60 @@ func TestDeleteUsersBatchAtomicRollback(t *testing.T) {
 	}
 }
 
+// W25/I-001 (2026-08-23): deleting a user must purge user_roles links and
+// user_mfa rows. Before this fix the links survived as orphans: roles.assigned
+// Users stayed > 0 forever, roles.deletable stayed false and the browser e2e
+// schema-crud flow (assign role → delete user → delete role) failed.
+func TestDeleteUserCleansRoleAndMfaLinks(t *testing.T) {
+	repository, st := openRepository(t, "delete-user-links.db", true)
+	now := time.Now().UTC()
+	if _, err := repository.CreateUserManagement(User{
+		ID: "user-carol", Username: "carol", Name: "Carol", Roles: []string{"viewer"},
+		PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := repositoryExec(
+		t, st,
+		`INSERT INTO user_mfa (user_id, status, totp_secret_ciphertext, recovery_codes_hash, created_at, updated_at)
+		 VALUES ('user-carol', 'active', 'x', 'y', 1, 1)`,
+	); err != nil {
+		t.Fatalf("seed user_mfa: %v", err)
+	}
+	if n := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-carol'`); n != 1 {
+		t.Fatalf("user_roles before delete = %d, want 1", n)
+	}
+	if err := repository.DeleteUser("user-carol", "user-admin"); err != nil {
+		t.Fatalf("delete user: %v", err)
+	}
+	if n := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM user_roles WHERE user_id = 'user-carol'`); n != 0 {
+		t.Fatalf("orphan user_roles after delete = %d, want 0", n)
+	}
+	if n := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM user_mfa WHERE user_id = 'user-carol'`); n != 0 {
+		t.Fatalf("orphan user_mfa after delete = %d, want 0", n)
+	}
+}
+
+// W25/I-001: the batch delete path applies the same per-user link purge.
+func TestDeleteUsersBatchCleansRoleAndMfaLinks(t *testing.T) {
+	repository, st := openRepository(t, "delete-batch-links.db", true)
+	now := time.Now().UTC()
+	for _, id := range []string{"user-dave", "user-erin"} {
+		if _, err := repository.CreateUserManagement(User{
+			ID: id, Username: id, Name: id, Roles: []string{"viewer"},
+			PasswordHash: "h", CreatedAt: now, UpdatedAt: now,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := repository.DeleteUsersBatch([]string{"user-dave", "user-erin"}, "user-external"); err != nil {
+		t.Fatalf("batch delete: %v", err)
+	}
+	if n := repositoryQueryInt(t, st, `SELECT COUNT(*) FROM user_roles WHERE user_id IN ('user-dave','user-erin')`); n != 0 {
+		t.Fatalf("orphan user_roles after batch = %d, want 0", n)
+	}
+}
+
 // A-002 F-001 regression: a batch containing EVERY admin must fail with
 // ErrLastAdmin — per-id last-admin counting is unsound for a batch (each admin
 // still sees the others present), so the batch-level guard rejects and rolls

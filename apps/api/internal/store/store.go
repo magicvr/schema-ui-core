@@ -10,12 +10,45 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	_ "modernc.org/sqlite"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 )
+
+// sqlitePoolDefault is the SQLite connection-pool bound for file-backed
+// stores. WAL mode permits concurrent readers with one writer, so the
+// historical MaxOpenConns=1 serialization — every request queued behind a
+// single connection, one fsync-committed transaction at a time — is replaced
+// by a small pool. Under MaxOpenConns=1 a single "我的钱包" page view (auth
+// lookup + handler transactions × 8-10 requests) ran as one long serial
+// queue; the wallet performance diagnosis (2026-08) identified it as the
+// dominant latency amplifier.
+const sqlitePoolDefault = 4
+
+// sqliteDSNParams are applied on EVERY pool connection (driver-level "_"
+// pragma query parameters, mattn-compat). busy_timeout removes spurious
+// SQLITE_BUSY under real concurrency; journal_mode=WAL enables concurrent
+// readers next to a single writer; synchronous=NORMAL drops the per-commit
+// fsync that dominates SQLite commit latency on Windows/AV-scanned disks
+// (WAL checkpoints keep durability).
+const sqliteDSNParams = "_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL"
+
+// sqliteDSN appends the connection pragmas to a file DSN. In-memory DSNs are
+// returned unchanged: with no file there is no shared journal to configure,
+// and each pooled connection would otherwise be a separate (empty) database.
+func sqliteDSN(path string) (dsn string, memory bool) {
+	if path == "" || path == ":memory:" || strings.HasPrefix(path, "file::memory:") {
+		return path, true
+	}
+	sep := "?"
+	if strings.Contains(path, "?") {
+		sep = "&"
+	}
+	return path + sep + sqliteDSNParams, false
+}
 
 // Store is the SQLite platform runner. Domain code consumes its transaction
 // boundary and never receives the underlying database handle.
@@ -26,27 +59,39 @@ type Store struct {
 	systemDataReady atomic.Bool
 }
 
-// OpenWithCatalog opens the SQLite DB and applies the compiled-global catalog
-// supplied by the composition root.
+// OpenWithCatalog opens the SQLite DB (default pool settings) and applies the
+// compiled-global catalog supplied by the composition root.
 func OpenWithCatalog(path string, catalog []kernel.MigrationContribution) (*Store, error) {
 	normalized, err := normalizeCatalog(catalog)
 	if err != nil {
 		return nil, err
 	}
-	return open(path, normalized)
+	return open(OpenOptions{Path: path}, normalized)
 }
 
-func open(path string, catalog []kernel.MigrationContribution) (*Store, error) {
+func open(opts OpenOptions, catalog []kernel.MigrationContribution) (*Store, error) {
+	path := opts.Path
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("create db dir: %w", err)
 		}
 	}
-	db, err := sql.Open("sqlite", path)
+	dsn, memory := sqliteDSN(path)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
-	db.SetMaxOpenConns(1)
+	if memory {
+		// In-memory databases are per-connection: a pool would silently fan
+		// transactions out across multiple empty databases.
+		db.SetMaxOpenConns(1)
+	} else {
+		pool := sqlitePoolDefault
+		if opts.PoolMaxOpenConns > 0 {
+			pool = opts.PoolMaxOpenConns
+		}
+		db.SetMaxOpenConns(pool)
+	}
 
 	fresh, err := databaseIsEmpty(db)
 	if err != nil {

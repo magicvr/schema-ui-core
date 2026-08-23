@@ -163,8 +163,32 @@ apps/api/internal/modules/compiled/            # 全局迁移收集（全候选�
 
 ---
 
-## 6. 修订
+## 6. 页面数据面性能规范（Schema 页面 MUST · W25 / 2026-08-23）
+
+背景：2026-08-23 钱包页性能诊断（workspace-010 GOAL-036）暴露四类页面层性能反模式。渲染层已内置全局机制（in-flight 合并、定向刷新、schema 文档缓存），本节约束模块作者**不得破坏这些机制**。
+
+### 6.1 展示节点（statCard / chart）
+
+- 同一 `dataSource` 在多个展示节点重复引用（如系统监控页 6 张 statCard 共用 `/status`）**是允许的**：渲染层将并发同 URL 请求合并为一次网络请求。
+- 不得自行实现"每节点独立 fetch"或绕过渲染层数据源（走自定义组件重复拉取同一端点）。
+- 展示节点需要定时刷新时，用渲染层定向刷新（`crud.refreshList(dataSource)`），只重拉该数据源，**禁止**用 `reloadList()` 做整页重拉波。
+
+### 6.2 自定义组件（{type:"custom", component:"…"}）
+
+- **禁止在挂载时执行写操作（POST/PATCH/DELETE）并触发整页 `reloadList()`**。需要"自动开通/自动创建"时采用**探活后写**：先只读探测（可复用展示节点的请求或 `crud.fetchList`），确认缺失（服务端 404 / `WALLET_NOT_FOUND` 类语义错误）才执行写，并把刷新范围限定在受影响数据源。
+- 读操作应经 `crud.fetchList` / 渲染层数据源而非裸全局 fetch，以继承 in-flight 合并。
+- 挂载即轮询需用户显式开启（默认关闭），且每轮只刷新自己的数据源。
+
+### 6.3 校验
+
+- 新 schema 的渲染层自定义组件**必须**在 web 端 `registerCustomComponent` 注册；CI 存在注册校验测试（`apps/web/src/renderer/custom-components.schema.test.ts`），校验失败即阻断。
+- 编写冲突行为（挂载即写、整页重拉）应补行为回归测试（参考 `apps/web/src/components/wallet-ensure.test.tsx` 的探活契约用例）。
+
+---
+
+## 7. 修订
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | 1.0.0 | 2026-08-06 | VP-004 / workspace-004 Root 首版：MUST / DO NOT / 归属法；路径对齐现网 modules + composition + kernel |
+| 1.1.0 | 2026-08-23 | 新增 §6 页面数据面性能规范（W25：展示节点合并/定向刷新、自定义组件禁止挂载即写 + 整页重拉、注册校验与行为回归要求） |

@@ -176,4 +176,24 @@ describe("loadPageDocument", () => {
     );
     expect(error.message).toContain("catalog");
   });
+
+  it("serves a cached document without refetching or re-validating (W19 perf)", async () => {
+    const fetcher = vi.fn(async () => jsonResponse(VALID_DOCUMENT));
+    const cache = new Map<string, unknown>();
+    const first = await loadPageDocument(OVERVIEW_PAGE, {}, { baseURL: BASE, fetcher, cache });
+    const second = await loadPageDocument(OVERVIEW_PAGE, {}, { baseURL: BASE, fetcher, cache });
+    expect(first).toEqual(VALID_DOCUMENT);
+    expect(second).toBe(first);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("never caches failed loads", async () => {
+    const fetcher = vi.fn(async () => new Response("boom", { status: 500 }));
+    const cache = new Map<string, unknown>();
+    await expectErrorCode(
+      loadPageDocument(OVERVIEW_PAGE, {}, { baseURL: BASE, fetcher, cache }),
+      "PAGE_LOAD_FAILED",
+    );
+    expect(cache.size).toBe(0);
+  });
 });

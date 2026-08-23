@@ -36,6 +36,14 @@ export interface ResourceQuery {
   filters?: Record<string, string>;
 }
 
+/**
+ * Shared query for display components (statCard/chart) that read the first
+ * item + envelope of a list endpoint. The pageSize keeps the historical RPC
+ * shape (one generous bucket); wallet-ensure uses the exact same query so its
+ * existence probe coalesces with the statCards' request (per-page fetch cache).
+ */
+export const DISPLAY_LIST_QUERY: ResourceQuery = { page: 1, pageSize: 100 };
+
 /** One field-level validation failure (GOAL-014 D-002 §2.1). */
 export interface FieldError {
   field: string;
@@ -283,6 +291,36 @@ export function parseResourceList(value: unknown): ResourceList {
 }
 
 /**
+ * Builds the query-string portion of a resource list request — the exact
+ * construction `fetchResourceList` sends on the wire. `extraQuery` carries
+ * v2.9 ADR-0039 dataSource params that already resolved to literal key=value
+ * pairs and is merged over the standard q/sort/order/page/pageSize query.
+ */
+export function resourceListQueryString(query: ResourceQuery, extraQuery?: string): string {
+  const params = new URLSearchParams(buildResourceQuery(query));
+  if (extraQuery !== undefined && extraQuery !== "") {
+    for (const [key, value] of new URLSearchParams(extraQuery).entries()) {
+      params.set(key, value);
+    }
+  }
+  return params.size === 0 ? "" : params.toString();
+}
+
+/**
+ * The final URL for a resource list request (F-001-validated baseURL + query
+ * string). Shared by `fetchResourceList` and the renderer's per-page fetch
+ * cache so the cache key and the wire request can never drift apart.
+ */
+export function resourceListURL(
+  baseURL: string,
+  query: ResourceQuery,
+  extraQuery?: string,
+): string {
+  const qs = resourceListQueryString(query, extraQuery);
+  return qs === "" ? baseURL : `${baseURL}?${qs}`;
+}
+
+/**
  * Fetches a page of a schema-driven resource list (request-construction).
  *
  * `extraQuery` carries v2.9 ADR-0039 dataSource params that already resolved
@@ -304,14 +342,7 @@ export async function fetchResourceList(
       `invalid dataSource "${baseURL}": expected a single-slash same-origin path (no //, scheme, whitespace, backslash, ? or #)`,
     );
   }
-  const params = new URLSearchParams(buildResourceQuery(query));
-  if (extraQuery !== undefined && extraQuery !== "") {
-    for (const [key, value] of new URLSearchParams(extraQuery).entries()) {
-      params.set(key, value);
-    }
-  }
-  const url = params.size === 0 ? baseURL : `${baseURL}?${params.toString()}`;
-  const response = await fetcher(url);
+  const response = await fetcher(resourceListURL(baseURL, query, extraQuery));
   if (!response.ok) {
     throw await readResourceApiError(response, "resource fetch");
   }

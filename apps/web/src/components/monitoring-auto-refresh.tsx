@@ -1,5 +1,10 @@
 // System monitoring auto-refresh control (W16-F06): lets the operator poll the
 // monitoring surface every 5/10/30 seconds without a full page reload.
+// W25 (2026-08-23): the tick now performs a TARGETED refresh of the /status
+// statCards only (six cards share one coalesced request), instead of a
+// full-page reloadList wave that also refetched the events table and every
+// other surface. The events table stays current on manual reload; the
+// operator-visible contract "poll the monitoring surface" is unchanged.
 import { useEffect, useState } from "react";
 
 import { useTranslate } from "@/i18n/runtime";
@@ -16,6 +21,9 @@ const OPTIONS = [
   { value: 30000, labelKey: "monitoringRefresh.30s" },
 ];
 
+/** The display dataSource refreshed by the polling tick (system-monitoring.json). */
+const STATUS_SOURCE = "/api/system-monitoring/status";
+
 export function MonitoringAutoRefresh(_props: CustomComponentProps) {
   const t = useTranslate();
   const crud = useSchemaCrud();
@@ -26,7 +34,7 @@ export function MonitoringAutoRefresh(_props: CustomComponentProps) {
       return;
     }
     const id = window.setInterval(() => {
-      crud?.reloadList();
+      crud?.refreshList(STATUS_SOURCE);
     }, intervalMs);
     return () => window.clearInterval(id);
   }, [intervalMs, crud]);

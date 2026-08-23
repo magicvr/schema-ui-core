@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-23
 parent: null
-version: 0.44.0
+version: 0.46.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -52,10 +52,13 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-032-w21-startup-db-identity [done] · W21 · 启动时数据库身份判定与迁移计划（5/5）
 ├── GOAL-033-w22-residual-closeout [done] · W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 / B 组复核 ×6 / 台账卫生 ×3）（18/18）
 └── GOAL-034-w23-admin-login-home-redirect [done] · W23 · admin 登录后 home 推导回归修复（N-001 承接）（4/4）
-└── GOAL-035-w24-e2e-dual-dialect-matrix [done] · W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次）（4/4）
+├── GOAL-035-w24-e2e-dual-dialect-matrix [done] · W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次）（4/4）
+└── GOAL-036-w25-page-performance-guardrails [active] · W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏）（5/6 · 未闭门）
 ```
 
 **W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
+
+**W25（2026-08-23 立项，GOAL-036 active 5/6，未闭门）**：我的钱包页面性能优化 → **用户升级为全盘修复与此类问题+防复发**（D-002 书面裁决：纳入 monitoring 定向刷新与 schema 注册校验；大表 COUNT 出局）。S1–S4：四因素诊断（SQLite 单连接串行 + fsync / 同 URL 重复请求 / 挂载即写整页重拉 / schema 重取）+ 钱包页实施（后端池 4 + WAL/busy_timeout/synchronous、前端 in-flight 合并 + 探活后写 + shell 级文档缓存）+ 26 页全盘扫描（system-monitoring 6×1、data-display 3×1 由全局机制覆盖）。S5 防复发（E-002）：`store_wal_test.go` 连接面白盒回归（池/WAL/超时，防回退 MaxOpenConns=1）+ 渲染层合并/定向刷新回归（statCard+chart、refreshList）+ `custom-components.schema.test.ts` 注册校验 + provider `refreshList` 定向刷新（monitoring tick 由整页 reloadList 改为只刷 /status，9→3 请求/tick）+ playbook §6 性能规范。**S6 待办（不闭门）**：I-001 e2e 已关闭（双 profile 全绿 9/9×2；暴露并修复后端「删用户遗留 user_roles 孤儿 → 角色永久不可删」缺陷 + 2 单元回归，E-004）；活栈计时复核（I-002）+ 自审 A-001 仍待办。
 
 **W23（2026-08-23 关门，4/4）**：N-001 根因 = e2e 挂具 store 隔离失效（本地 gitignored `configs/.env` 2026-08-21 建，`DB_DIALECT=postgres` 劫持临时 SQLite；全新种子 admin/admin 401，登录链第一步断开），**非路由回归**；W22 基线实验（git stash 无法移除 gitignored 文件）结论失效。修复：挂具钉死 `DB_DIALECT=sqlite`（playwright.config.ts）+ signInZh/sign-in fallback 等待硬化 + 连带 F-1（RowActionsMenu scroll-close 竞态，产品面）F-2（fallback 按钮等待）fixed。回归：go 全包 ok / vitest 1088 / tsc+build 0 / e2e admin 连续 5 轮 9/9 + mvp 9/9。A-001 self pass，required 0。I-001 closed。
 
@@ -141,6 +144,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-033-w22-residual-closeout | W22 · accepted-residual 残余全库清点收口（A 组修复 ×6 + B 组触发复核 ×6 + 台账卫生 ×3） | GOAL-001-design-implementation-conformance | done | 18/18 | 2026-08-23 |
 | GOAL-034-w23-admin-login-home-redirect | W23 · admin 登录后 home 推导回归修复（N-001 承接） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-23 |
 | GOAL-035-w24-e2e-dual-dialect-matrix | W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-23 |
+| GOAL-036-w25-page-performance-guardrails | W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏） | GOAL-001-design-implementation-conformance | active | 5/6 | 2026-08-23 |
 
 
 ## 维护说明
