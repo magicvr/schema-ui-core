@@ -1,12 +1,12 @@
 ---
 id: GOAL-036-w25-page-performance-guardrails
 title: W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏）
-status: active
+status: done
 created: 2026-08-23
 updated: 2026-08-23
 parent: GOAL-001-design-implementation-conformance
-version: 0.2.0
-progress: 5/6
+version: 0.3.0
+progress: 6/6
 ---
 
 # GOAL-036 · W25 · 页面性能问题全盘修复与防复发
@@ -33,7 +33,7 @@ progress: 5/6
 3. **C3 全盘扫描台账**：26 页 schema 扫描（D-001/E-001），全部同类问题由全局机制覆盖；
 4. **C4 防复发机制**：store 回归测试 + 渲染层回归测试 + 注册校验测试 + Playbook 规范章节（E-002）；
 5. **C5 回归全绿**：go test / vitest 全量 / tsc/build（E-001 + E-002）；
-6. **C6 验证与关门**：Playwright e2e（**I-001 closed**）+ 活栈计时复核（**I-002 closed**）+ 自审 + 台账同步（自审 A-001 待办，**本波不闭门**）。
+6. **C6 验证与关门**：Playwright e2e（**I-001 closed**）+ 活栈计时复核（**I-002 closed**）+ A-001（independent）响应完成（A-002）+ **A-003 self 关门审计 pass（2026-08-23 done 6/6）**。
 
 ## 路线图（P-001 · 分母 = 6）
 
@@ -43,7 +43,7 @@ S2 方案     → D-001 取舍 ✓
 S3 钱包页实施 → 后端 A + 前端 B/C/D（E-001）✓
 S4 全盘扫描  → 26 页台账 + 全局机制覆盖确认（E-001）✓
 S5 防复发   → 测试栅栏 + 规范章节 + monitoring 定向刷新（E-002）✓
-S6 验证关门  → C6：e2e（I-001 ✓ closed）/ 活栈（I-002 ✓ closed）/ 自审 / 台账同步（A-001 独立审响应中 —— 不闭门）
+S6 验证关门  → C6：e2e（I-001 ✓ closed）/ 活栈（I-002 ✓ closed）/ A-001 独立审响应（A-002）✓ / **关门自审 A-003 pass ✓（done 6/6，2026-08-23）**
 ```
 
 ## 信息需求登记（P-005）
@@ -57,4 +57,4 @@ S6 验证关门  → C6：e2e（I-001 ✓ closed）/ 活栈（I-002 ✓ closed�
 
 - 改动仅限页面数据请求层 / schema 文档缓存 / SQLite 连接面；postgres 方言（生产权威）零改动。
 - 大表 COUNT(*) 容量优化出局（用户书面裁决，D-002）；monitoring 事件表随手动刷新更新（定向刷新只覆盖 /status，语义取舍留痕 D-002）。
-- 审计模式 `self`（低风险可逆、无门禁语义变化、全自动回归兜底）；**本波尚未关门、尚无 A 条目**——S6 完成后追加审计与关门。
+- 审计模式 `self`；A-001（independent · conditional）响应闭环（A-002/E-006/E-007）；F-008 由下级 **GOAL-037（done 4/4）** 承接闭环；**A-003 self 关门审计 pass（2026-08-23 关门 done 6/6）**。postgres 方言零改动（数据修复迁移 0050 为双方言同一 Go 逻辑）。

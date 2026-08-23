@@ -1,15 +1,15 @@
 ---
-status: active
+status: done
 created: 2026-08-23
 updated: 2026-08-23
 parent: GOAL-036-w25-page-performance-guardrails
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计索引 · GOAL-037（W25 承接 · F-008）
 
-> 本文件是稳定索引。正式意见在 `03-audit/A-NNN-*.md`。关门自审（A-001，self）在 S4；若根因涉及并发语义，审计模式由用户按 P-004 裁定是否升级 `independent`。
+> 关门完成（A-001 self pass · done 4/4 · 2026-08-23）。
 
 | 编号 | date | source | scope | verdict | findings | 关闭 |
 |------|------|--------|-------|---------|----------|------|
-| — | — | — | — | — | —（待 S4） | — |
+| A-001 | 2026-08-23 | self | 全目标（S1 定性 → S4 关门；含根治复核） | pass | required 0（F-002/F-003 根治后 closed） | [A-001-closeout-self.md](03-audit/A-001-closeout-self.md) |
