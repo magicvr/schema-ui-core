@@ -21,6 +21,7 @@ scope: GOAL-036 A-001 响应（F-001～F-006 修复与验证）
 - vitest 全量：**1097/1097（77 文件）**（含 F-003 新用例）。
 - `tsc -b`：exit 0。
 - **e2e admin × sqlite：9 通过 / 1 profile 专属跳过 / 0 失败（exit 0）**——F-001 关闭直接证据（schema-crud 完整通过）。
+- **e2e mvp × sqlite（伴行）：9 通过 / 1 profile 专属跳过 / 0 失败（exit 0）**——双 profile 对称复验完成（2026-08-23，`APP_PROFILE=mvp`）。
 
 ## 环境事项（如实记录）
 

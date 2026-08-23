@@ -1,7 +1,9 @@
 package scheduledtasks
 
 import (
+	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +11,42 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
+
+// A-001 F-007 (independent audit 2026-08-23): run ids must stay unique even
+// when crypto/rand FAILS or returns constant/zero bytes (sandboxed
+// environments) — the historical "8 random bytes" id collided on the
+// task_runs primary key for consecutive manual triggers (500). Uniqueness now
+// comes from (UnixNano, monotonic sequence); rand only perturbs the string.
+func TestNewRunIDUniqueUnderEntropyFailure(t *testing.T) {
+	scenarios := map[string]func([]byte) (int, error){
+		"rand-error":   func([]byte) (int, error) { return 0, errors.New("crypto/rand blocked") },
+		"rand-constant": func(b []byte) (int, error) {
+			for i := range b {
+				b[i] = 0xAB
+			}
+			return len(b), nil
+		},
+	}
+	for name, impl := range scenarios {
+		t.Run(name, func(t *testing.T) {
+			orig := randReader
+			randReader = impl
+			defer func() { randReader = orig }()
+
+			seen := map[string]bool{}
+			for i := 0; i < 1000; i++ {
+				id := newRunID()
+				if !strings.HasPrefix(id, "run-") {
+					t.Fatalf("unexpected run id %q", id)
+				}
+				if seen[id] {
+					t.Fatalf("duplicate run id %q (iteration %d)", id, i)
+				}
+				seen[id] = true
+			}
+		})
+	}
+}
 
 // The scheduler tick executes due enabled tasks and records run rows; manual
 // Execute records immediately; disabled tasks are skipped.

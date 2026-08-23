@@ -269,7 +269,9 @@ func (r *Repository) RecordRun(run TaskRun) error {
 			run.ID, run.TaskID, run.Status, run.StartedAt.Unix(), finished, run.Detail, run.CreatedAt.Unix(),
 		)
 		if err != nil {
-			return fmt.Errorf("insert task run: %w", err)
+			// Include the run id: UNIQUE task_runs.id failures previously hid
+			// which id collided (A-001 F-007 diagnosis).
+			return fmt.Errorf("insert task run %q: %w", run.ID, err)
 		}
 		return nil
 	})

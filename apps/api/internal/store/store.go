@@ -44,7 +44,17 @@ const sqlitePoolDefault = 4
 // the migrate connection. Independent audit A-001 F-001 (independent,
 // conditional): the W25 e2e regression's orphaned user_roles rows were caused
 // by this pool-side FK loss, not merely by the missing explicit cleanup.
-const sqliteDSNParams = "_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL&_foreign_keys=on"
+//
+// _txlock=immediate fixes the WAL read-then-write snapshot race that pooling
+// exposed (wallet freeze/adjust intermittently failed with SQLITE_BUSY:
+// "update wallet balances: database is locked"): a deferred transaction that
+// reads first can have its read snapshot invalidated by a concurrent
+// checkpoint, and sqlite's busy handler does NOT wait for SQLITE_BUSY_SNAPSHOT.
+// BEGIN IMMEDIATE takes the write lock up front (busy_timeout makes writers
+// queue), pinning the snapshot. Trade-off: read-only transactions also take
+// the write slot for their short lifetime — negligible at this deployment's
+// read-mostly short-transaction load, and far cheaper than snapshot failures.
+const sqliteDSNParams = "_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL&_foreign_keys=on&_txlock=immediate"
 
 // sqliteDSN appends the connection pragmas to a file DSN. In-memory DSNs are
 // returned unchanged: with no file there is no shared journal to configure,

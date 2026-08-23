@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -371,10 +372,17 @@ type testTaskRunner struct {
 	repository *tasksstore.Repository
 }
 
+// testRunSeq guarantees run-id uniqueness inside the test process: Windows
+// system clocks quantize, so consecutive time.Now() calls can return the SAME
+// UnixNano value — the historical `"run-test-" + now.UnixNano()` id collided on
+// the task_runs primary key for adjacent manual triggers (pre-existing flake
+// A-001 F-007; root cause identified 2026-08-23 via clock dump).
+var testRunSeq atomic.Int64
+
 func (r testTaskRunner) Execute(task tasksstore.Task, now time.Time) error {
 	finished := now
 	return r.repository.RecordRun(tasksstore.TaskRun{
-		ID: "run-test-" + fmt.Sprint(now.UnixNano()), TaskID: task.ID, Status: "ran",
+		ID: fmt.Sprintf("run-test-%x-%x", now.UnixNano(), testRunSeq.Add(1)), TaskID: task.ID, Status: "ran",
 		StartedAt: now, FinishedAt: &finished, Detail: "manual", CreatedAt: now,
 	})
 }
