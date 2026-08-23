@@ -638,7 +638,11 @@ describe("SchemaTable title / filters / pager", () => {
     expect(document.body.querySelector('[role="menu"]')).toBeNull();
   });
 
-  it("closes the portaled menu on an outside pointerdown and on scroll", async () => {
+  // W23 (GOAL-034): scroll closes the menu only when the trigger actually
+  // MOVED. A scroll that leaves the anchor untouched — e.g. a dialog-close
+  // focus-restore scrolling a row into view, or an unrelated inner container
+  // scroll — must not rip the freshly opened menu away (e2e flake).
+  it("keeps the portaled menu open on a scroll that does not move the trigger, and closes when it moves", async () => {
     const node = tableNode({
       columns: COLUMNS,
       dataSource: "/api/users",
@@ -652,20 +656,56 @@ describe("SchemaTable title / filters / pager", () => {
     const trigger = container.querySelector<HTMLButtonElement>(
       '[data-row-actions-menu] button[aria-label="More actions"]',
     );
+    expect(trigger).not.toBeNull();
+    // Pin a stable rect so the open-time anchor is deterministic in jsdom.
+    const stableRect = {
+      top: 100,
+      bottom: 132,
+      left: 40,
+      right: 72,
+      width: 32,
+      height: 32,
+      x: 40,
+      y: 100,
+      toJSON(): Record<string, number> {
+        return {
+          top: this.top,
+          bottom: this.bottom,
+          left: this.left,
+          right: this.right,
+          width: this.width,
+          height: this.height,
+          x: this.x,
+          y: this.y,
+        };
+      },
+    };
+    Object.defineProperty(trigger!, "getBoundingClientRect", {
+      configurable: true,
+      value: () => stableRect,
+    });
     await act(async () => trigger!.click());
     expect(document.body.querySelector('[role="menu"]')).not.toBeNull();
 
-    // Outside pointerdown closes.
+    // A scroll that does not move the trigger keeps the menu open.
     await act(async () => {
-      document.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+      document.dispatchEvent(new Event("scroll", { bubbles: true }));
+    });
+    expect(document.body.querySelector('[role="menu"]')).not.toBeNull();
+
+    // Once the trigger actually moves, the anchor is invalidated → close.
+    stableRect.top = 140;
+    stableRect.bottom = 172;
+    await act(async () => {
+      document.dispatchEvent(new Event("scroll", { bubbles: true }));
     });
     expect(document.body.querySelector('[role="menu"]')).toBeNull();
 
-    // Reopen, then a scroll event (capture) closes.
+    // Outside pointerdown still closes (unchanged contract).
     await act(async () => trigger!.click());
     expect(document.body.querySelector('[role="menu"]')).not.toBeNull();
     await act(async () => {
-      document.dispatchEvent(new Event("scroll", { bubbles: true }));
+      document.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
     });
     expect(document.body.querySelector('[role="menu"]')).toBeNull();
   });

@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-23
-version: 0.43.0
+version: 0.44.0
 parent: null
 ---
 
@@ -90,4 +90,4 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 
 GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口；详见该目标五件套与本区 goal-tree）。移交跟踪槽 **N-001**：admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 存在的既有回归，基线实验证实；疑似 W14–W21 home 推导/路由漂移）→ 建议下一符合性波次承接。
 
-**W23（2026-08-23 立项，GOAL-034）**：承接 W22 移交槽 N-001——admin 登录后停留 `/` 未跳 `/dashboard`（先于 W22 的 home 推导/路由回归）。S1 根因冻结 → S2 修复+防回退测试 → S3 全量回归（含 e2e admin localization M1）→ S4 关门审计。
+**W23（2026-08-23 关门，GOAL-034 done 4/4）**：承接 W22 移交槽 N-001——admin 登录后停留 `/` 未跳 `/dashboard`。根因 = e2e 挂具 store 隔离失效（本机 gitignored `configs/.env` 2026-08-21 建，`DB_DIALECT=postgres` 劫持挂具临时 SQLite，全新种子 admin/admin 401），**非 home 推导/路由回归**；W22「先于 W22 基线实验」结论因 git stash 无法移除 gitignored 文件而失效。修复：`playwright.config.ts` 钉死 `DB_DIALECT=sqlite` + signInZh/sign-in fallback 等待硬化 + 连带 F-1（RowActionsMenu scroll-close 竞态 → 仅触发钮位移才关闭）F-2 fixed。回归：go 全包 ok / vitest 1088 / tsc+build 0 / e2e admin 连续 5 轮 9/9 + mvp 9/9；A-001 self pass（required 0）；I-001 closed。N-001 移交槽闭合。

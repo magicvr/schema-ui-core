@@ -345,10 +345,32 @@ function RowActionsMenu({
         close();
       }
     };
-    // The menu is fixed to the viewport: any scroll (incl. inside the table's
-    // overflow container, hence capture) or resize invalidates the anchor, so
-    // close instead of rendering a detached menu.
-    const onScroll = () => close();
+    // The menu is fixed to the viewport: any scroll that MOVES the trigger
+    // (incl. inside the table's overflow container, hence capture) invalidates
+    // the anchor, so close instead of rendering a detached menu. W23
+    // (GOAL-034): a scroll that leaves the trigger where it is — e.g. a
+    // dialog-close focus-restore scrolling a row into view before the menu
+    // opened, or an unrelated inner container scroll — must NOT close the
+    // menu: that race ripped the freshly opened menu away and made the e2e
+    // "Password" row-action flaky. Resize still closes unconditionally.
+    const onScroll = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (rect === undefined || rect === null) {
+        close();
+        return;
+      }
+      if (anchor !== null) {
+        const moved =
+          Math.abs(rect.top - anchor.top) > 1 ||
+          Math.abs(rect.left - anchor.left) > 1 ||
+          Math.abs(rect.bottom - anchor.bottom) > 1 ||
+          Math.abs(rect.right - anchor.right) > 1;
+        if (!moved) {
+          return;
+        }
+      }
+      close();
+    };
     const onResize = () => close();
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -360,7 +382,7 @@ function RowActionsMenu({
       window.removeEventListener("resize", onResize);
       document.removeEventListener("scroll", onScroll, true);
     };
-  }, [open, close]);
+  }, [open, close, anchor]);
 
   // Move focus into the menu once it renders (portal mount).
   useEffect(() => {
