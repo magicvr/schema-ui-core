@@ -21,6 +21,10 @@ import (
 // shape or the auth scheme.
 const DefaultResendBaseURL = "https://api.resend.com"
 
+// resendProbeTimeout bounds the readyz availability probe; delivery Sends use
+// the client's own timeout.
+const resendProbeTimeout = 5 * time.Second
+
 // ResendOptions carries the explicitly configured production channel.
 // APIKey/From are required (fail-closed at NewResend, mirroring NewSMTP).
 // BaseURL and Client are test seams: empty/nil select the production values.
@@ -77,6 +81,32 @@ type resendEmailRequest struct {
 	To      []string `json:"to"`
 	Subject string   `json:"subject"`
 	Text    string   `json:"text"`
+}
+
+// Ping performs the readyz availability probe for an explicitly configured
+// Resend channel (VP-017 R8 / workspace-017 GOAL-009): one authenticated GET
+// against the account endpoint with a short timeout. 2xx = available; any
+// transport failure or non-2xx returns an error naming the STATUS only. It is
+// wired into readyz by composition ONLY when Resend is the explicitly
+// configured boot channel ("仅显式配置后 readyz 扩依赖").
+func (r *Resend) Ping(ctx context.Context) error {
+	pingCtx, cancel := context.WithTimeout(ctx, resendProbeTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(pingCtx, http.MethodGet, r.baseURL+"/domains", nil)
+	if err != nil {
+		return fmt.Errorf("mail: build resend probe: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+r.apiKey)
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("mail: resend probe transport: %w", err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("mail: resend probe rejected with status %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // Send delivers one message synchronously:

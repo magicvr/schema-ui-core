@@ -719,16 +719,31 @@ func newMailRuntime(cfg *config.Config, st kernel.Store, logger *slog.Logger) (*
 		return nil, nil, err
 	}
 	var probe func(context.Context) error
-	if channel == config.MailChannelSMTP && cfg.MailSMTPConfigured() {
-		sender, err := mail.NewSMTP(mail.SMTPOptions{
-			Host:     cfg.MailSMTPHost,
-			Port:     cfg.MailSMTPPort,
-			Username: cfg.MailSMTPUsername,
-			Password: cfg.MailSMTPPassword,
-			From:     cfg.MailSMTPFrom,
+	switch channel {
+	case config.MailChannelSMTP:
+		if cfg.MailSMTPConfigured() {
+			sender, err := mail.NewSMTP(mail.SMTPOptions{
+				Host:     cfg.MailSMTPHost,
+				Port:     cfg.MailSMTPPort,
+				Username: cfg.MailSMTPUsername,
+				Password: cfg.MailSMTPPassword,
+				From:     cfg.MailSMTPFrom,
+			})
+			if err != nil {
+				return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+			}
+			probe = sender.Ping
+		}
+	case config.MailChannelResend:
+		// VP-017 R8 (GOAL-009): the explicitly configured production Resend
+		// channel extends readyz with its availability probe, mirroring the
+		// SMTP ESMTP Ping precedent.
+		sender, err := mail.NewResend(mail.ResendOptions{
+			APIKey: cfg.MailResendAPIKey,
+			From:   cfg.MailResendFrom,
 		})
 		if err != nil {
-			return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+			return nil, nil, fmt.Errorf("composition: invalid mail.resend configuration: %w", err)
 		}
 		probe = sender.Ping
 	}

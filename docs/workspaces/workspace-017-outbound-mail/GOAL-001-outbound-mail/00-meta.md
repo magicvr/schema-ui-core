@@ -36,9 +36,9 @@ serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；�
 | R5 | **渠道合同冻结**：具名渠道、mock 站内语义、SMTP 保留、与 `MailSender` 的关系（I-007/I-008/I-011/I-012） | 依赖 R1（端口已在） | **已完成**（子目标 GOAL-006 `done` · D-002；A-001 self pass） |
 | R6 | **mock + Resend 落地**：mock 出站记录可检视；Resend 显式配置可投递；不完整 fail-closed（I-010） | 依赖 R5 | **已完成**（子目标 GOAL-007 `done`；A-001 self pass；live 投递证据归 R8） |
 | R7 | **设置/热切换/试发**：邮件 tab、渠道配置、热切换、同一端口试发（I-009） | 依赖 R6 | **已完成**（子目标 GOAL-008 `done`；A-001 self pass） |
-| R8 | **证据 + `readyz`**：生产渠道探针；现行退出判据可核对；018 解冻仅在 VP 再关门后 | 依赖 R6/R7 | 未开始 |
+| R8 | **证据 + `readyz`**：生产渠道探针；现行退出判据可核对；018 解冻仅在 VP 再关门后 | 依赖 R6/R7 | **已完成**（子目标 GOAL-009 `done`；A-001 self pass；证据包 attachments） |
 
-`progress` = 已完成阶段数 / 8。当前 **7/8**（R1～R7 完成；R8 未完成。progress 不放行再关门）。
+`progress` = 已完成阶段数 / 8。当前 **8/8**（八阶段全部完成；`status: done` 待再关门审计放行——见 E-011）。
 
 ## 成功标准（方向级 · 现行再关门用）
 

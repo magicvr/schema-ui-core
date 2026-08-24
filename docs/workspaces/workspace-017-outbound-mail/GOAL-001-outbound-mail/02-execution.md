@@ -24,6 +24,7 @@ version: 0.3.0
 | E-008 | 2026-08-24 | R6 mock + Resend 落地完成（GOAL-007 done · Root 6/8） | recorded | [E-008-r6-delivery-done.md](02-execution/E-008-r6-delivery-done.md) |
 | E-009 | 2026-08-24 | D-007 关闭 I-009（R7 门禁解除）；F-001 residual 用户裁决闭合 | recorded | [E-009-i009-closed.md](02-execution/E-009-i009-closed.md) |
 | E-010 | 2026-08-24 | R7 设置/热切换/试发完成（GOAL-008 done · Root 7/8） | recorded | [E-010-r7-admin-done.md](02-execution/E-010-r7-admin-done.md) |
+| E-011 | 2026-08-24 | R8 探针+证据包完成（GOAL-009 done · Root 8/8；待关门审计放行） | recorded | [E-011-r8-complete.md](02-execution/E-011-r8-complete.md) |
 
 ## 事实边界
 

@@ -78,7 +78,7 @@ func TestMailRuntimeBootSMTPContributesProbe(t *testing.T) {
 	}
 }
 
-func TestMailRuntimeResendHasNoProbeUntilR8(t *testing.T) {
+func TestMailRuntimeResendBootContributesProbe(t *testing.T) {
 	cfg := lifecycleAppConfig(t, "mvp", "127.0.0.1:0")
 	cfg.MailResendAPIKey = "re-key"
 	cfg.MailResendFrom = "no-reply@example.com"
@@ -87,8 +87,8 @@ func TestMailRuntimeResendHasNoProbeUntilR8(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newMailRuntime: %v", err)
 	}
-	if probe != nil {
-		t.Fatal("resend must not extend readyz before the R8 production probes")
+	if probe == nil {
+		t.Fatal("boot Resend channel must contribute a readyz probe (R8 · 仅显式生产渠道后扩依赖)")
 	}
 	view, err := sender.PublicView()
 	if err != nil || view.Channel != config.MailChannelResend || !view.Secrets.ResendAPIKeySet {
