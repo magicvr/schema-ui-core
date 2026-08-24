@@ -24,7 +24,7 @@
 | 证据 | 指针 |
 |------|------|
 | 等价 harness（离线） | `internal/mail/resend_test.go`：httptest 断言 POST /emails 请求形状（Bearer、from/to/subject/text）、2xx 即成功、非 2xx 报状态码 |
-| live 缝（opt-in） | `internal/mail/resend_live_test.go`：设 `MAIL_RESEND_TEST_API_KEY/FROM/TO`（可选 BASE_URL）即对真实端点执行 Ping + 一封可核对投递；未设时 skip 不阻塞 CI。是否补跑 live 由用户裁决记录于关门审计 |
+| **live 已实跑（2026-08-24，用户裁决补跑）** | `internal/mail/resend_live_test.go` 实跑 PASS：Ping 2xx + POST /emails 2xx，真实投递至 magicvr@hotmail.com。首次尝试 from=eshowy.top 被 403 拒（域名未验证——运营项：生产启用前须在 resend.com/domains 验证）；改用 resend.dev 沙箱发件人成功 |
 | fail-closed | 触碰 resend 块即要求 api-key/from 齐备（双层：validateMail + 构造器）；`TestMailResendMisconfigDoesNotLeakSecret` 等 |
 
 ## 判据 4 — 管理员可在设置面选择渠道、填写配置、热切换、同一 MailSender 试发

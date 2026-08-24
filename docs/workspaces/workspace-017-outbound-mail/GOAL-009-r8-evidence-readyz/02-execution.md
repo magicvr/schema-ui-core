@@ -16,6 +16,7 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-24 | 开设 R8 五件套（未改代码） | recorded | [E-001-r8-scaffold.md](02-execution/E-001-r8-scaffold.md) |
 | E-002 | 2026-08-24 | R8 探针接入 readyz + live 测试缝 + 退出分母证据包 | recorded | [E-002-r8-probes-evidence.md](02-execution/E-002-r8-probes-evidence.md) |
+| E-003 | 2026-08-24 | live 投递实跑 PASS（resend.dev 沙箱→magicvr@hotmail.com）；全量回归绿 | recorded | [E-003-live-delivery.md](02-execution/E-003-live-delivery.md) |
 
 ## 事实边界
 
