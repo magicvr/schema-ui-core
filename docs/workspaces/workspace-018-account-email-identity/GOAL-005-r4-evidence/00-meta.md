@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-evidence
 title: R4 证据与关门就绪
-status: active
+status: done
 parent: GOAL-001-account-email-identity
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
-progress: 0/3
+version: 1.0.0
+progress: 3/3
 plan_refs:
   - VP-018-account-email-identity
 primary_plan: VP-018-account-email-identity

@@ -2,27 +2,27 @@
 doc_type: vision-plan
 id: VP-018-account-email-identity
 title: 账号邮箱身份（绑定与校验）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-018-account-email-identity
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.3.0
+version: 1.0.0
 parent: null
 ---
 
 # VP-018 · 账号邮箱身份（绑定与校验）
 
-## 状态与门闩（2026-08-24 · active · **已解冻**）
+## 状态与门闩（2026-08-24 · **closed** · v1.0.0 同日交付关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（意图仍在；**冻结已解除**：VP-017 于 2026-08-24 按**现行渠道分母**再次 `closed`——本行原冻结条件已满足） |
-| **lead_workspace** | **`workspace-018-account-email-identity`**（Root `GOAL-001-account-email-identity` **`blocked`**；唯一 delivery） |
-| **Vision required** | VRev-040 self `pass`（V-F073/V-F074 → `fixed`）仍成立；冻结不改 VRev-040 原文 |
-| **推进门闩（现行）** | **已解冻**（解冻条件已满足）。R1 开设仍须走 P-001 与本 VP 信息门禁；运输面验收对照 VP-017 交付的渠道模型（默认渠道以当时配置为准） |
-| **组合位置** | **Admin 功能分支**；硬前置改为「VP-017 按现行渠道分母再次关门」后消费 `MailSender`。不进 IAM 恢复状态机、不进架构 A3 |
-| **完整 ≠ 自助恢复** | 本 VP 只交付**账号邮箱身份面**。忘记密码状态机、邀请、密码策略、SMS、模板中心 **不进**退出分母 |
+| status | **`closed`**（解冻当日连续关门 R1～R4：GOAL-002～005 全 done；Root A-001 self pass + A-002 independent conditional→F-001 fixed 后归零） |
+| **lead_workspace** | `workspace-018-account-email-identity`（Root `GOAL-001-account-email-identity` **done · 4/4**；唯一 delivery） |
+| **Vision required** | VRev-040 self `pass`（V-F073/V-F074 → `fixed`）仍成立 |
+| **推进门闩（历史）** | 冻结→解冻→交付完毕，门闩全部解除；无遗留 required |
+| **组合位置** | Admin 功能分支已交付：`users` 可空 email + 校验状态机 + lower(email) 唯一槽 + 最小绑定卡；消费 VP-017 `MailSender` |
+| **完整 ≠ 自助恢复** | 本 VP 只交付**账号邮箱身份面**。忘记密码状态机、邀请、密码策略、SMS、模板中心 **不进**退出分母（留给后续 IAM 波次） |
 
 ## 意图
 
@@ -117,7 +117,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-24 | closed（v1.0.0） | 账号邮箱身份面交付：`users` 可空 email + pending/verified 状态机 + lower(email) 唯一槽 + 换绑覆写；校验信经 `kernel.MailSender`（迁移 0051 出站记录可取码）；最小账号页绑定卡。R1～R4 = GOAL-002～005 全 done；Root A-001 self pass + A-002 independent conditional→F-001 fixed 后归零 | workspace-018 GOAL-005 `attachments/r4-evidence.md`；GOAL-002/003/004 各 A-001；commits `0ae17f09`/`bd1cdff9`/`6c6496d4` | N-1：SQLite lower() ASCII 折叠有界残余（应用层归一补偿，复核触发已留痕） |
 
 ## 规划修订短史
 
@@ -126,3 +126,4 @@ parent: null
 | 2026-08-24 | 初创 `planned`：用户确认按 roadmap Admin 功能下一拍新建本 VP；退出分母 = 账号邮箱绑定+校验（消费 VP-017）；IAM 恢复 / 邀请 / 密码策略 / SMS 不进分母。同日 VRev-040 self `pass` 后激活 |
 | 2026-08-24 | v0.3.0 **冻结**：用户否决 VP-017 关门并升级 017 分母。本 VP 保持 `active` 意图，lead Root `blocked`；017 再次关门前禁止推进 |
 | 2026-08-24 | VRev-040 self `pass`（V-F073/V-F074 recommended）。用户本轮指令含激活并开区。v0.2.0 `planned → active`；lead = `workspace-018-account-email-identity`；Root 承接 P-001 与 I-00N（V-F073）及 Admin 类 freshness（V-F074） |
+| 2026-08-24 | **v1.0.0 `closed`**：解冻当日交付完毕。I-001～I-006 全 verified（三次用户裁决）；R1～R4 = GOAL-002～005 全 done；Root 关门 = self pass + independent conditional→F-001 fixed 归零 |

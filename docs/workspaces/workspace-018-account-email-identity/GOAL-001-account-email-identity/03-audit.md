@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计 · GOAL-001（Root）
@@ -25,11 +25,17 @@ version: 0.4.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-24 | self | Root 关门自审（R1～R4 汇总 · 五判据 · 门禁 · 边界） | pass | 0 | [A-001-self-root-closeout.md](03-audit/A-001-self-root-closeout.md) |
-| A-002 | 待补 | independent | Root 关门独立审计 | **待执行**（grok 代理不可达，见 E-009） | — | — |
+| A-002 | 2026-08-24 | independent | Root 关门独立审计（R1～R4 汇总 · 五判据 · 门禁 · 边界；代码基准 `6c6496d4`） | **conditional** | 1（F-001） | [A-002-independent-root-closeout.md](03-audit/A-002-independent-root-closeout.md) |
 
 ## 结论状态
 
 历史：开区 scaffold → 2026-08-24 Root `blocked`（D-002，VP-017 再关门前冻结；VRev-041）→ 同日解冻（D-003，VP-017 v0.5.0 现行分母再关门 + 用户确认；VRev-042 pass）。
 
-现状：四阶段全关（GOAL-002～005 done），I-001～I-006 全 verified，A-001 self **pass**。
-**A-002 独立关门审计暂缓**：2026-08-24 会话内 grok CLI 两次调用失败 + 端点三探无路由（约 8 分钟跨度）；按 P-003 不由编排器冒充 independent。恢复后立即补审——Root `status` 保持 `active` 直至 A-002 通过。
+现状：四阶段产品交付可核对（GOAL-002～004 `00-meta` 为 done；GOAL-005 正文/goal-tree 主张 done，YAML 仍 active——见 A-002 F-001），A-001 self **pass**。
+**A-002 independent `conditional`（开放 required = 1 · F-001）** 已落盘。本索引不改 Root `status` / `progress`；响应与关门由 `/govern` 处理。
+
+**编排器响应（/govern · 2026-08-24）**：
+- **F-001 → fixed**：GOAL-005 `00-meta` YAML → `status: done` / `progress: 3/3` / v1.0.0；Root `00-meta` YAML `progress: 0/4` → **4/4** 并随关门置 `status: done` / v1.0.0（该 YAML 字段此前从未随轮次更新——审计抓取的漂移属实且为最后一处）。
+- A-002 其余核对（五判据 1–4、门禁闭环、边界、测试复跑）均 pass，无其他 finding。
+
+开放 required 归零。**Root 关门：`status: done` · progress 4/4。**

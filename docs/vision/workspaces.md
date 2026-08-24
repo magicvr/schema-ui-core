@@ -29,7 +29,7 @@ version: 0.27.0
 | workspace-015-observability | docs/workspaces/workspace-015-observability/ | GOAL-001-observability | delivery | VP-015-observability | active（历史；VP-015 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A4；residual = otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
 | workspace-016-key-rotation-and-backup | docs/workspaces/workspace-016-key-rotation-and-backup/ | GOAL-001-key-rotation-and-backup | delivery | VP-016-key-rotation-and-backup | active（历史；VP-016 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A5；residual = I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
 | workspace-017-outbound-mail | docs/workspaces/workspace-017-outbound-mail/ | GOAL-001-outbound-mail | delivery | VP-017-outbound-mail | **done**（2026-08-24 现行分母再关门：VP-017 v0.5.0 `closed`；Root `done` 8/8；R5–R8 = GOAL-006～009 全 done；live 投递 PASS） |
-| workspace-018-account-email-identity | docs/workspaces/workspace-018-account-email-identity/ | GOAL-001-account-email-identity | delivery | VP-018-account-email-identity | active · **解冻**（VP-017 已于 2026-08-24 再关门；其 lead Root 状态由该工作区自行推进） |
+| workspace-018-account-email-identity | docs/workspaces/workspace-018-account-email-identity/ | GOAL-001-account-email-identity | delivery | VP-018-account-email-identity | **done**（2026-08-24 同日解冻→关门：VP-018 v1.0.0 `closed`；Root `done` 4/4；R1–R4 = GOAL-002～005 全 done；A-002 independent 归零） |
 
 ## 说明
 
@@ -40,7 +40,7 @@ version: 0.27.0
 - **workspace-015（2026-08-21 开区）**：VP-015（可观测性）唯一 lead delivery 工作区；首波 = 架构 A4（Prometheus 类指标导出 + OpenTelemetry traces；无收集器为默认）。**2026-08-22：VP-015 有界 closed**；Root `GOAL-001-observability` `done 5/5`。residual：in-repo `otlp-sink` 不解析（I/A-002 F-003）；Store / 对象存储 / Job 指标不进分母（I-015-003）。不改变 Charter `primary_workspace`。不重开 workspace-014。
 - **workspace-016（2026-08-22 开区）**：VP-016（密钥轮换与备份恢复）唯一 lead delivery 工作区；首波 = 架构 A5（JWT current+previous 轮换 + 既有备份上的轮换后恢复；单密钥为默认）。**2026-08-22：VP-016 有界 closed**；Root `GOAL-001-key-rotation-and-backup` `done 5/5`。residual：I-016-005 立即失效未选；`admin.mfa` wrapping 不随 JWT previous 重包。不改变 Charter `primary_workspace`。不重开 workspace-015。
 - **workspace-017（2026-08-22 开区）**：VP-017（出站邮件）唯一 lead delivery 工作区。R1–R4 已实施内核端口 + SMTP + capture（子目标保持 `done`，实施史不回退）。2026-08-24 用户否决同日有界关门并升级分母；随后 R5–R8 由 GOAL-006～009 承接完成，**VP-017 v0.5.0 `closed`、Root `done` 8/8**（现行分母再关门，live 投递实跑 PASS）。不改变 Charter `primary_workspace`。
-- **workspace-018（2026-08-24 开区）**：VP-018（账号邮箱身份）唯一 lead delivery 工作区。冻结已于 2026-08-24 解除（VP-017 按现行分母再次关门）；Root/子目标推进由该工作区自行安排。不改变 Charter `primary_workspace`。
+- **workspace-018（2026-08-24 开区）**：VP-018（账号邮箱身份）唯一 lead delivery 工作区。冻结已于 2026-08-24 解除（VP-017 按现行分母再次关门）；同日连续关门 R1–R4 = GOAL-002～005，**VP-018 v1.0.0 `closed`、Root `done` 4/4**（迁移 0054/0055、绑定/校验流、I-006 代填、最小绑定卡；Root A-002 independent 归零后关门）。residual：N-1 SQLite lower() ASCII 有界声明。不改变 Charter `primary_workspace`。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

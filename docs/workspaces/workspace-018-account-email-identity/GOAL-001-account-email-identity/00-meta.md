@@ -1,16 +1,16 @@
 ---
 id: GOAL-001-account-email-identity
 title: 账号邮箱身份（绑定与校验）
-status: active
+status: done
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.7.0
-progress: 0/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-018-account-email-identity
 primary_plan: VP-018-account-email-identity
-serves_summary: 交付 Admin 功能账号邮箱身份面：users email 可空、绑定/校验状态机、换绑；校验信消费 VP-017 MailSender。R1 身份合同已冻结（GOAL-002 D-001 · 2026-08-24）。不承载自助恢复、邀请、密码策略、SMS 或业务域。
+serves_summary: 已交付 Admin 功能账号邮箱身份面（2026-08-24 关门）：users email 可空、绑定/校验状态机、换绑；校验信消费 VP-017 MailSender 并可从默认渠道出站记录取信。不承载自助恢复、邀请、密码策略、SMS 或业务域。
 ---
 
 # GOAL-001 · 账号邮箱身份（绑定与校验）
