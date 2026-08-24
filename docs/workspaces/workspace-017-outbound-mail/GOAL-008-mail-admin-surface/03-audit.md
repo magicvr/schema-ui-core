@@ -24,8 +24,15 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到达审计节点（关门时走 self） |
+| A-001 | 2026-08-24 | self | R7 实施关门（C1～C4 vs 成功标准 1～5 / D-007 / I-012） | pass | 0（1 recommended accepted-residual + 1 note） | [A-001-self-r7-admin-surface.md](03-audit/A-001-self-r7-admin-surface.md) |
+
+## 编排器响应（A-001 意见闭环 · 2026-08-24）
+
+| F-ID | 级别 | 响应 | 闭合路径 |
+|------|------|------|----------|
+| F-001 | recommended | 范围事实记录：e2e/live 投递证据与生产探针归 R8 分母，R8 子目标开设时承接 | **accepted-residual**（范围事实；复审触发 = R8 开设） |
+| F-002 | note | 体验打磨项记录，无动作 | **closed（note，无动作）** |
 
 ## 结论状态
 
-开项目标。实施进行中；开放 required finding = 0。
+已关门。R7 实施完成且 api/web 全量测试绿；self 审计 A-001 pass（0 required）。四检查点齐：C1 后端 ✓ / C2 web ✓ / C3 回归 ✓ / C4 自审闭合 ✓。开放 required finding = 0。

@@ -1,12 +1,12 @@
 ---
 id: GOAL-008-mail-admin-surface
 title: R7 设置「邮件」tab：渠道配置 / 热切换 / 试发
-status: active
+status: done
 parent: GOAL-001-outbound-mail
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
-progress: 0/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
@@ -31,12 +31,12 @@ serves_summary: 承接 Root R7：管理面选渠道、填配置（密钥写后�
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | 后端渠道配置/热切换 API + 加密密钥存储 + 试发端点，测试绿 | api 代码与测试 |
-| C2 | web 设置「邮件」tab 落地（选择/表单/记录表/试发），构建与测试绿 | apps/web 代码与测试 |
-| C3 | 全量回归绿（api `go test ./...` + web vitest/build） | CI 记录 / E 条目 |
-| C4 | 自审 A-001 闭合（无开放 required finding） | 本目标 `03-audit/` |
+| C1 | 后端渠道配置/热切换 API + 加密密钥存储 + 试发端点，测试绿 | **完成**：E-002 §2-4 |
+| C2 | web 设置「邮件」tab 落地（选择/表单/记录表/试发），构建与测试绿 | **完成**：E-002 §6 |
+| C3 | 全量回归绿（api `go test ./...` + web vitest/build） | **完成**：api exit 0 全绿；web 1097 用例全绿 + build 通过 |
+| C4 | 自审 A-001 闭合（无开放 required finding） | **完成**：A-001 self pass |
 
-`progress` = 已完成检查点 / 4。当前 **0/4**。
+`progress` = 已完成检查点 / 4。当前 **4/4**（已关门）。
 
 ## 边界
 

@@ -23,6 +23,7 @@ version: 0.3.0
 | E-007 | 2026-08-24 | R5 渠道合同冻结完成（GOAL-006 done · Root 5/8） | recorded | [E-007-r5-contract-frozen.md](02-execution/E-007-r5-contract-frozen.md) |
 | E-008 | 2026-08-24 | R6 mock + Resend 落地完成（GOAL-007 done · Root 6/8） | recorded | [E-008-r6-delivery-done.md](02-execution/E-008-r6-delivery-done.md) |
 | E-009 | 2026-08-24 | D-007 关闭 I-009（R7 门禁解除）；F-001 residual 用户裁决闭合 | recorded | [E-009-i009-closed.md](02-execution/E-009-i009-closed.md) |
+| E-010 | 2026-08-24 | R7 设置/热切换/试发完成（GOAL-008 done · Root 7/8） | recorded | [E-010-r7-admin-done.md](02-execution/E-010-r7-admin-done.md) |
 
 ## 事实边界
 
