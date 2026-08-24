@@ -151,6 +151,23 @@ func TestFailedAttemptsVoidChallenge(t *testing.T) {
 	}
 }
 
+func TestBindSamePendingAddressHonorsCooldown(t *testing.T) {
+	repo, sender := openEmailIdentityFixture(t)
+	base := time.Now().UTC().Truncate(time.Second)
+
+	if err := repo.BindEmail("user-admin", "alice@example.com", sender, base); err != nil {
+		t.Fatalf("bind: %v", err)
+	}
+	// Same pending address = resend semantics: cooldown applies (A-001 F-002).
+	if err := repo.BindEmail("user-admin", "ALICE@example.com", sender, base.Add(30*time.Second)); !errors.Is(err, ErrEmailResendCooldown) {
+		t.Fatalf("same-address rebind err = %v, want ErrEmailResendCooldown", err)
+	}
+	// A DIFFERENT address is a rebind: dispatches immediately.
+	if err := repo.BindEmail("user-admin", "other@example.com", sender, base.Add(30*time.Second)); err != nil {
+		t.Fatalf("rebind to new address: %v", err)
+	}
+}
+
 func TestResendCooldown(t *testing.T) {
 	repo, sender := openEmailIdentityFixture(t)
 	base := time.Now().UTC().Truncate(time.Second)

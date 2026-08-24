@@ -11,7 +11,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"slices"
@@ -65,7 +64,10 @@ func usersResourceWithNotifier(repository UsersRepository, operations operationl
 		Entity:          &usersEntity{repository: repository, notifier: notifier},
 		CreateFields:    []string{"username", "name"},
 		PatchFields:     []string{"name"},
-		RawStringFields: []string{"password"},
+		// workspace-018 R3 (I-006): managed email prefill travels raw so an
+		// explicit "" can CLEAR the address back to unbound (PatchFields
+		// rejects empty strings); Update() type-asserts string.
+		RawStringFields: []string{"password", "email"},
 		JSONFields:      []string{"roles"},
 		PermissionRead:  "users.read",
 		PermissionWrite: "users.write",
@@ -214,9 +216,10 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 	}
 	// workspace-018 R3 (I-006): managed email prefill — non-empty binds and
 	// resets to pending, "" clears to unbound. Verified is unreachable here.
+	// The factory hands RawStringFields through verbatim (already decoded).
 	if v, ok := body["email"]; ok {
-		var email string
-		if err := json.Unmarshal(v.(json.RawMessage), &email); err != nil {
+		email, isString := v.(string)
+		if !isString {
 			return nil, &DomainError{Status: 400, Code: "EMAIL_INVALID", Message: "email must be a string"}
 		}
 		patch.Email = &email

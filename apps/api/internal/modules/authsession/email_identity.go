@@ -156,6 +156,18 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 			strings.EqualFold(strings.TrimSpace(*currentEmail), email) {
 			return nil // same address already verified: idempotent no-op
 		}
+		// A-001 F-002: re-binding the SAME pending address is resend semantics
+		// (a fresh code to the same inbox) — honor the frozen cooldown. A
+		// DIFFERENT address is a rebind and dispatches immediately.
+		if currentStatus != nil && *currentStatus == "pending" && currentEmail != nil &&
+			strings.EqualFold(strings.TrimSpace(*currentEmail), email) {
+			var sentAt int64
+			if err := tx.QueryRow(context.Background(),
+				`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
+			).Scan(&sentAt); err == nil && now.Unix()-sentAt < int64(emailResendCooldown/time.Second) {
+				return ErrEmailResendCooldown
+			}
+		}
 		var taken int
 		if err := tx.QueryRow(context.Background(),
 			`SELECT COUNT(*) FROM users WHERE id <> ? AND email IS NOT NULL AND lower(email) = lower(?)`,
