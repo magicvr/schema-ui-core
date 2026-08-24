@@ -11,6 +11,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"slices"
@@ -211,6 +212,15 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 			patch.Roles = &roles
 		}
 	}
+	// workspace-018 R3 (I-006): managed email prefill — non-empty binds and
+	// resets to pending, "" clears to unbound. Verified is unreachable here.
+	if v, ok := body["email"]; ok {
+		var email string
+		if err := json.Unmarshal(v.(json.RawMessage), &email); err != nil {
+			return nil, &DomainError{Status: 400, Code: "EMAIL_INVALID", Message: "email must be a string"}
+		}
+		patch.Email = &email
+	}
 	if err := e.authorizeAdminTargetBoundary(id, patch, user); err != nil {
 		return nil, err
 	}
@@ -377,6 +387,10 @@ func mapUserStoreError(err error) error {
 		return &DomainError{Status: 409, Code: "SELF_OPERATION", Message: "self operation is not allowed"}
 	case errors.Is(err, authsession.ErrInvalidRole):
 		return &DomainError{Status: 400, Code: "INVALID_ROLE_REF", Message: "roles contain an unknown role key"}
+	case errors.Is(err, authsession.ErrEmailTaken):
+		return &DomainError{Status: 409, Code: "EMAIL_TAKEN", Message: "email already bound or pending on another account"}
+	case errors.Is(err, authsession.ErrEmailInvalid):
+		return &DomainError{Status: 400, Code: "EMAIL_INVALID", Message: "invalid email address"}
 	default:
 		return err
 	}

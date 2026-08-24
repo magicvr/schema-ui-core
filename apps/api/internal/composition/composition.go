@@ -470,7 +470,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, activitymodule.New(a, operations))
 	}
 	if plan.HasModule("admin.account") {
-		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets))
+		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets, mailSender))
 	}
 	if plan.HasModule("admin.data-transfer") {
 		providers = append(providers, datatransfermodule.New(a, authRepository, operations, objects))

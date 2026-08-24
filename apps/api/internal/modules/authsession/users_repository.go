@@ -127,9 +127,12 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		var rolesJSON string
 		var createdAt, updatedAt int64
 		var mustChangePassword int
+		// workspace-018 R3 (I-006): email identity read-back for the managed
+		// prefill path — NULL-safe via *string.
+		var currentEmail, currentEmailStatus *string
 		err := tx.QueryRow(context.Background(),
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at FROM users WHERE id = ?`, id,
-		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &mustChangePassword, &createdAt, &updatedAt)
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at, email, email_status FROM users WHERE id = ?`, id,
+		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &currentEmail, &currentEmailStatus)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -188,6 +191,39 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		if patch.MustChangePassword != nil {
 			mustChangePasswordFlag = *patch.MustChangePassword
 		}
+		// workspace-018 R3 (I-006 · GOAL-004 D-001 §3): managed email prefill.
+		// Non-empty → bind + reset to pending (conflict-checked against other
+		// accounts, lower(email)); "" → clear to unbound and drop any live
+		// challenge. Verified is unreachable from here by design: only a
+		// delivered code completes verification. nil = untouched. Delivery of
+		// the code happens when the user hits resend/bind on their own surface.
+		nextEmail := currentEmail
+		nextEmailStatus := currentEmailStatus
+		if patch.Email != nil {
+			requested := strings.TrimSpace(*patch.Email)
+			if requested == "" {
+				nextEmail, nextEmailStatus = nil, nil
+				if _, err := tx.Exec(context.Background(), `DELETE FROM email_verification_challenges WHERE user_id = ?`, id); err != nil {
+					return fmt.Errorf("clear challenges on unbind: %w", err)
+				}
+			} else {
+				if _, err := normalizeEmailInput(requested); err != nil {
+					return ErrEmailInvalid
+				}
+				var taken int
+				if err := tx.QueryRow(context.Background(),
+					`SELECT COUNT(*) FROM users WHERE id <> ? AND email IS NOT NULL AND lower(email) = lower(?)`,
+					id, requested,
+				).Scan(&taken); err != nil {
+					return fmt.Errorf("check email slot: %w", err)
+				}
+				if taken > 0 {
+					return ErrEmailTaken
+				}
+				requestedCopy := requested
+				nextEmail, nextEmailStatus = &requestedCopy, stringPtr("pending")
+			}
+		}
 		rolesBytes, err := json.Marshal(newRoles)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
@@ -205,8 +241,8 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 			nextTokenVersion = current.TokenVersion + 1
 		}
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, must_change_password = ?, updated_at = ? WHERE id = ?`,
-			name, string(rolesBytes), passwordHash, nextTokenVersion, avatarURL, boolInt(mustChangePasswordFlag), nextUpdatedAt, id,
+			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, must_change_password = ?, updated_at = ?, email = ?, email_status = ? WHERE id = ?`,
+			name, string(rolesBytes), passwordHash, nextTokenVersion, avatarURL, boolInt(mustChangePasswordFlag), nextUpdatedAt, nullIfNil(nextEmail), nullIfNil(nextEmailStatus), id,
 		); err != nil {
 			return fmt.Errorf("update user: %w", err)
 		}

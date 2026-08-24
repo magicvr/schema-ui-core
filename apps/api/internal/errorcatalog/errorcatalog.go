@@ -188,6 +188,15 @@ var Catalog = map[string]Entry{
 	"INVALID_MAIL_CONFIG":   {"error.invalidMailConfig", "invalid outbound-mail configuration", "出站邮件配置无效"},
 	"MAIL_SWITCH_REJECTED":  {"error.mailSwitchRejected", "new channel configuration failed validation; the previous channel keeps serving", "新渠道配置校验未通过，继续沿用原渠道"},
 	"MAIL_SEND_FAILED":      {"error.mailSendFailed", "the test message could not be sent", "测试邮件发送失败"},
+
+	// workspace-018 R3 (GOAL-004 D-001 §3): account email identity codes.
+	"EMAIL_INVALID":         {"error.emailInvalid", "invalid email address", "邮箱地址无效"},
+	"EMAIL_TAKEN":           {"error.emailTaken", "email already bound or pending on another account", "该邮箱已被其他账号绑定或待校验"},
+	"EMAIL_NOT_PENDING":     {"error.emailNotPending", "no pending email verification for this account", "该账号没有待校验的邮箱"},
+	"EMAIL_CODE_INVALID":    {"error.emailCodeInvalid", "verification code is invalid", "验证码无效"},
+	"EMAIL_CODE_EXPIRED":    {"error.emailCodeExpired", "verification code expired; request a new one", "验证码已过期，请重新获取"},
+	"EMAIL_RESEND_COOLDOWN": {"error.emailResendCooldown", "please wait before requesting another code", "请求过于频繁，请稍后再试"},
+	"EMAIL_SEND_FAILED":     {"error.emailSendFailed", "the verification email could not be sent", "验证邮件发送失败"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

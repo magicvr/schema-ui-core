@@ -162,6 +162,31 @@ var accountEmailIdentityDDL = []string{
 	`CREATE UNIQUE INDEX idx_users_email_lower ON users(lower(email))`,
 }
 
+// emailVerificationDDL (workspace-018 R3 · GOAL-004 D-001 §1): one active
+// verification challenge per user — PK on user_id makes the upsert an
+// idempotent replace, ON DELETE CASCADE cleans up with the account. Times are
+// unix seconds; the INTEGER/BIGINT split follows the accountLock precedent,
+// so this migration ships paired dialect bodies (not portable).
+var emailVerificationDDL = []string{
+	`CREATE TABLE email_verification_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    INTEGER NOT NULL,
+  sent_at       INTEGER NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+var postgresEmailVerificationDDL = []string{
+	`CREATE TABLE email_verification_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    BIGINT NOT NULL,
+  sent_at       BIGINT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
@@ -392,6 +417,14 @@ func Descriptors() []kernel.MigrationContribution {
 			// ApplyPostgres nil: portable DDL (TEXT column + literal CHECK +
 			// lower() expression unique index are identical on both dialects).
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "email_verification_challenges"},
+			Version:              55,
+			Name:                 "email_verification_challenges",
+			Checksum:             kernel.MigrationChecksum(emailVerificationDDL, "0055:email-verification-challenges:v1"),
+			Apply:                migrateEmailVerification,
+			ApplyPostgres:        migrateEmailVerificationPG,
+		},
 	}
 }
 
@@ -473,6 +506,24 @@ func migrateAccountEmailIdentity(tx kernel.Tx) error {
 	for _, stmt := range accountEmailIdentityDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("add account email identity columns/index: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateEmailVerification(tx kernel.Tx) error {
+	for _, stmt := range emailVerificationDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create email verification challenges: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateEmailVerificationPG(tx kernel.Tx) error {
+	for _, stmt := range postgresEmailVerificationDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create email verification challenges (postgres): %w", err)
 		}
 	}
 	return nil

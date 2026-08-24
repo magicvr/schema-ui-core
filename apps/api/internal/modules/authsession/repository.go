@@ -97,6 +97,12 @@ type UserPatch struct {
 	// MustChangePassword is the forced-password-change flag (W16-F01); nil =
 	// untouched.
 	MustChangePassword *bool
+	// Email is the managed account email (workspace-018 R3 · I-006, user-
+	// adjudicated 2026-08-24): a non-empty value binds the address and resets
+	// it to pending verification (the user completes delivery); "" clears
+	// back to unbound. Admins can never set verified directly. nil =
+	// untouched.
+	Email *string
 }
 
 // Role is the persisted RBAC role projection.

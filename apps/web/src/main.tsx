@@ -12,6 +12,8 @@ import { ForcePasswordChange } from "@/components/force-password-change";
 // GOAL-018: self-registers custom renderer components (mfa-manager in the
 // personal-center MFA block; notification-center on the notifications page).
 import "@/components/mfa-manager";
+// workspace-018 R3: account email identity binding card (GOAL-004 D-001 §4).
+import "@/components/email-identity";
 import "@/components/account-session-toolbar";
 import "@/components/cron-preview";
 import "@/components/monitoring-auto-refresh";

@@ -38,7 +38,7 @@ func TestClassifyIdentity(t *testing.T) {
 		{"empty", nil, nil, false, identityEmpty},
 		{"ledger", []string{"schema_migrations", "users"}, ledger, true, identityOursLedger},
 		{"r2", []string{"users", "refresh_tokens"}, nil, true, identityOursR2},
-		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config"}, nil, true, identityOursCompleteNoLedger},
+		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges"}, nil, true, identityOursCompleteNoLedger},
 		{"four tables without catalog head", []string{"users", "refresh_tokens", "operation_log", "jobs", "roles"}, nil, true, identityLostLedgerUnsafe},
 		{"partial users only", []string{"users"}, nil, true, identityOursPartialNoLedger},
 		{"foreign users", []string{"users"}, nil, false, identityForeign},
@@ -103,6 +103,7 @@ var lockedHeadExtraTables = map[int][]string{
 	52: {"mail_config"}, // VP-017 R7 runtime channel state
 	53: {}, // operation_log_mail_events: CHECK-enum expansion (no new objects)
 	54: {}, // account_email_identity: ALTER + lower(email) unique index only (no new objects)
+	55: {"email_verification_challenges"}, // workspace-018 R3: per-user active verification challenge
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

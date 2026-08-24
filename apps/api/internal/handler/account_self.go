@@ -30,6 +30,9 @@ type AccountRepository interface {
 	ListRefreshTokensForUser(string) ([]authsession.RefreshToken, error)
 	RevokeRefreshTokenIfOwned(string, string, time.Time) error
 	BumpTokenVersionAndRevokeAll(string, time.Time) error
+	// EmailIdentityState reads back the managed email triple (workspace-018
+	// R3): nil/nil = unbound.
+	EmailIdentityState(string) (*string, *string, error)
 }
 
 // AccountSelfRoutes returns the self-service route contributions (admin.account).
@@ -112,7 +115,17 @@ func (h *accountSelfHandler) profile() http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load profile")
 			return
 		}
-		writeJSON(w, http.StatusOK, accountProfileRow(u))
+		row := accountProfileRow(u)
+		// workspace-018 R3: managed email identity projection for the account
+		// page binding card (nil → null = unbound).
+		email, status, err := h.repository.EmailIdentityState(user.ID)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load email identity")
+			return
+		}
+		row["email"] = email
+		row["emailStatus"] = status
+		writeJSON(w, http.StatusOK, row)
 	})
 }
 

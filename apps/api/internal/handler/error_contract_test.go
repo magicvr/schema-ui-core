@@ -109,6 +109,10 @@ var frozenDomainCodes = []string{
 	"RECYCLE_ITEM_NOT_FOUND", "RECYCLE_RESTORE_CONFLICT", "RECYCLE_ITEM_ALREADY_RESTORED",
 	// W14 F-06 (GOAL-019): operations detail not found.
 	"OPERATION_NOT_FOUND",
+	// workspace-018 R3 (GOAL-004 D-001 §3): account email identity codes.
+	"EMAIL_INVALID", "EMAIL_TAKEN", "EMAIL_NOT_PENDING",
+	"EMAIL_CODE_INVALID", "EMAIL_CODE_EXPIRED", "EMAIL_RESEND_COOLDOWN",
+	"EMAIL_SEND_FAILED",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

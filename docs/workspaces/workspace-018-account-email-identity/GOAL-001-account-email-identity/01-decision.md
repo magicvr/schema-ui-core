@@ -20,8 +20,8 @@ version: 0.3.0
 | I-002 | required | 校验投递形态：验证码 vs 链接 | R1 方案 | R1 冻结 | 用户裁决 | **verified**（GOAL-002 D-001） | — | 验证码（时效数值归 I-005） |
 | I-003 | required | 账号可否长期无邮箱 | R1 方案 | R1 | 投影 VP | **registered**（D-001） | — | VP 冻结可空 |
 | I-004 | required | 换绑是否进本波 | R1 方案 | R1 | 投影 VP | **registered**（D-001） | — | VP 冻结换绑进分母 |
-| I-005 | required | 过期与重发冷却 | R3 方案 | R3 接入前 | R3 决策 | collecting | — | I-018-005 |
-| I-006 | non-blocking | 管理员代填待校验 | R3 方案 | R3 | R3 或不进分母 | collecting | — | I-018-006 |
+| I-005 | required | 过期与重发冷却 | R3 方案 | R3 接入前 | 用户裁决 | **verified**（GOAL-004 D-001） | — | TTL 10 分钟 · 冷却 60 秒 |
+| I-006 | non-blocking | 管理员代填待校验 | R3 方案 | R3 | 用户裁决 | **verified**（GOAL-004 D-001） | — | 允许代填→pending |
 
 ## 决策索引
 
