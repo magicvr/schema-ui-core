@@ -17,7 +17,7 @@ serves_summary: 交付架构 A6：内核出站邮件发送端口 + SMTP；无 SM
 
 ## 概述
 
-本 Root 承载 [VP-017-outbound-mail](../../../vision/plans/VP-017-outbound-mail.md)（**`active`**）的实现：在已有 YAML + env 密钥注入 fail-closed 之上，补齐内核同步 `Send` 端口与 SMTP 实现，并把未配置 SMTP 时的默认路径收成可取出报文的 capture/log sink。
+本 Root 承载 [VP-017-outbound-mail](../../../vision/plans/VP-017-outbound-mail.md)（**`closed`** · 2026-08-24 组合层有界关门）的实现：在已有 YAML + env 密钥注入 fail-closed 之上，补齐内核同步 `Send` 端口与 SMTP 实现，并把未配置 SMTP 时的默认路径收成可取出报文的 capture/log sink。
 
 **边界**：不强制本地默认改成必须有 SMTP；不承接用户 email 列、校验邮件、邀请、自助恢复、消息模板页、SMS 或业务域。安全 finding → VP-009；符合性 gap → VP-010。
 

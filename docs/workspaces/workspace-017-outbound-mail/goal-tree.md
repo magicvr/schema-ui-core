@@ -13,7 +13,7 @@ workspace_id: workspace-017-outbound-mail
 > 工作区：`workspace-017-outbound-mail`
 > canonical：`docs/workspaces/workspace-017-outbound-mail/`
 > Root：`GOAL-001-outbound-mail`（**done · 4/4**；A-001 self pass + A-002 independent pass，recommended 全响应）
-> primary_plan：`VP-017-outbound-mail`（`active` → 关门收尾走 `/vision`）
+> primary_plan：`VP-017-outbound-mail`（**`closed`** · 2026-08-24 组合层有界关门；VRev-039 / VR-042）
 
 ## 树
 

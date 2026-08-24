@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-22
+updated: 2026-08-24
 parent: null
-version: 0.4.25
+version: 0.4.27
 ---
 
 # Charter 修订台账
@@ -55,3 +55,5 @@ version: 0.4.25
 | VR-039 | 2026-08-22 | editorial | VP-016 有界关门投影 | 用户确认关闭 VP-016（组合层有界 · 架构 A5）：lead workspace-016 Root `done 5/5`；VRev-036 V-F069 → fixed；关门依据 = `/vision` 本轮独立源码/测试/live 核验，不以 Goal 台账为充分条件。residual 点名 I-016-005（立即失效未选）与 `admin.mfa` wrapping（JWT previous 不重包 MFA）。Charter 关系节改为无 active 交付 VP；持续程序仍为 VP-009/VP-010。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-040 | 2026-08-22 | editorial | VP-017 planned + 自助恢复邮件前置 | 用户确认路径 3：自助恢复 + 管理员重置都要；自助恢复证明依据 = 已绑定邮箱；出站先做邮件；SMS 后置。新建 `VP-017-outbound-mail`（`planned`，0 区）：架构 A6 内核发送端口 + SMTP + 无 SMTP 默认 sink。退出分母不含账号 email / 邀请 / 恢复状态机 / 模板 / Notification Transport 产品 / SMS / A3。Charter 关系节改为当前交付意图 = planned VP-017；不改目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），未激活、未开区，**无** strategic、**无** re-align。 |
 | VR-041 | 2026-08-22 | editorial | VP-017 激活 + 开区 | VRev-037 independent `pass`（V-F070/V-F071 → fixed）。VRev-038 self `pass`。用户确认激活并开区；slug 按惯例 `workspace-017-outbound-mail`，Root `GOAL-001-outbound-mail`。VP-017 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-042 | 2026-08-24 | editorial | VP-017 有界关门投影 | 用户确认关闭 VP-017（v0.3.0 `active → closed`，有界 · 架构 A6）：lead workspace-017 Root `done 4/4`；VRev-039 V-F072 → fixed；关门依据 = `/vision` 本轮独立源码/测试/harness，不以 Goal 台账为充分条件。residual 点名 env-gated live 未实跑。RT-M01 → delivered。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-043 | 2026-08-24 | editorial | VP-018 planned + 激活 + 开区 | 用户确认按 1234 顺序：落盘 `VP-018-account-email-identity`（Admin 功能 · 账号邮箱身份；消费 VP-017）、Admin 类 freshness PASS（`ed99e88` → `092bf37`）、激活并开区。slug 按惯例 `workspace-018-account-email-identity`，Root `GOAL-001-account-email-identity`。VRev-040 self `pass`（V-F073/V-F074 → fixed）。VP-018 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |

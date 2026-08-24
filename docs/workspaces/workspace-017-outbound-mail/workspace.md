@@ -10,14 +10,14 @@ plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
 created: 2026-08-22
-updated: 2026-08-22
-version: 0.1.0
+updated: 2026-08-24
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · 出站邮件
 
-本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`active`**，架构 A6）的唯一 lead delivery workspace。
+本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`closed`**，架构 A6，2026-08-24 有界关门）的唯一 lead delivery workspace。默认不接新区。
 
 - **Root** `GOAL-001-outbound-mail`：纲领 R1～R4（端口冻结 → SMTP 接入 → 默认 sink / 公共面 → 显式路径 + `readyz`）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
@@ -33,7 +33,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-017-outbound-mail/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-017 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-017-outbound-mail`（`active`） | 架构 A6 内核发送端口 + SMTP |
+| 规划对齐 | `primary_plan` = `VP-017-outbound-mail`（`closed`） | 架构 A6 内核发送端口 + SMTP；组合层已有界关门 |
 
 ## 愿景对齐
 
@@ -50,7 +50,7 @@ VP-017：内核出站邮件发送端口；SMTP 为生产实现；capture/log sin
 | R3 | 默认 sink + 公共面去 SMTP 客户端类型 | **已完成**（GOAL-004；D-004） |
 | R4 | 显式路径证据 + `readyz` | **已完成**（GOAL-005；D-005） |
 
-Root progress 4/4；关门审计进行中（03-audit.md）。
+Root progress 4/4；Root 关门审计已完成（A-001/A-002）；VP-017 组合层已于 2026-08-24 有界 `closed`（VRev-039 / VR-042）。
 
 ## 固定共享资料引用
 

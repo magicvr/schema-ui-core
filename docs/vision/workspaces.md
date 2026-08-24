@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-22
+updated: 2026-08-24
 parent: null
-version: 0.25.0
+version: 0.26.0
 ---
 
 # 工作区贡献图
@@ -28,7 +28,8 @@ version: 0.25.0
 | workspace-014-object-storage | docs/workspaces/workspace-014-object-storage/ | GOAL-001-object-storage | delivery | VP-014-object-storage | active（历史；VP-014 已于 2026-08-21 有界 closed；Root done 5/5；架构 A2；residual = 无产品本地盘→对象存储搬运器） |
 | workspace-015-observability | docs/workspaces/workspace-015-observability/ | GOAL-001-observability | delivery | VP-015-observability | active（历史；VP-015 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A4；residual = otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
 | workspace-016-key-rotation-and-backup | docs/workspaces/workspace-016-key-rotation-and-backup/ | GOAL-001-key-rotation-and-backup | delivery | VP-016-key-rotation-and-backup | active（历史；VP-016 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A5；residual = I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
-| workspace-017-outbound-mail | docs/workspaces/workspace-017-outbound-mail/ | GOAL-001-outbound-mail | delivery | VP-017-outbound-mail | active（2026-08-22 开区；VP-017 `active`；架构 A6；Root 纲领 R1–R4） |
+| workspace-017-outbound-mail | docs/workspaces/workspace-017-outbound-mail/ | GOAL-001-outbound-mail | delivery | VP-017-outbound-mail | active（历史；VP-017 已于 2026-08-24 有界 `closed`；Root done 4/4；架构 A6；residual = env-gated live 未实跑） |
+| workspace-018-account-email-identity | docs/workspaces/workspace-018-account-email-identity/ | GOAL-001-account-email-identity | delivery | VP-018-account-email-identity | active（2026-08-24 开区；VP-018 `active`；Admin 功能 · 账号邮箱身份；Root 纲领 R1–R4） |
 
 ## 说明
 
@@ -38,7 +39,8 @@ version: 0.25.0
 - **workspace-014（2026-08-21 开区）**：VP-014（对象存储适配器）唯一 lead delivery 工作区；首波 = 架构 A2（内核对象存储端口 + S3 兼容 + 本地盘默认）。**2026-08-21：VP-014 有界 closed**；Root `GOAL-001-object-storage` `done 5/5`。residual：无产品本地盘→对象存储搬运器（GOAL-001 I-004）。不改变 Charter `primary_workspace`。不重开 workspace-013。
 - **workspace-015（2026-08-21 开区）**：VP-015（可观测性）唯一 lead delivery 工作区；首波 = 架构 A4（Prometheus 类指标导出 + OpenTelemetry traces；无收集器为默认）。**2026-08-22：VP-015 有界 closed**；Root `GOAL-001-observability` `done 5/5`。residual：in-repo `otlp-sink` 不解析（I/A-002 F-003）；Store / 对象存储 / Job 指标不进分母（I-015-003）。不改变 Charter `primary_workspace`。不重开 workspace-014。
 - **workspace-016（2026-08-22 开区）**：VP-016（密钥轮换与备份恢复）唯一 lead delivery 工作区；首波 = 架构 A5（JWT current+previous 轮换 + 既有备份上的轮换后恢复；单密钥为默认）。**2026-08-22：VP-016 有界 closed**；Root `GOAL-001-key-rotation-and-backup` `done 5/5`。residual：I-016-005 立即失效未选；`admin.mfa` wrapping 不随 JWT previous 重包。不改变 Charter `primary_workspace`。不重开 workspace-015。
-- **workspace-017（2026-08-22 开区）**：VP-017（出站邮件）唯一 lead delivery 工作区；首波 = 架构 A6（内核发送端口 + SMTP + 无 SMTP 默认 sink）。slug 按惯例 `workspace-017-outbound-mail`，Root `GOAL-001-outbound-mail`。不改变 Charter `primary_workspace`。不重开 workspace-016。
+- **workspace-017（2026-08-22 开区）**：VP-017（出站邮件）唯一 lead delivery 工作区；首波 = 架构 A6（内核发送端口 + SMTP + 无 SMTP 默认 sink）。**2026-08-24：VP-017 有界 closed**；Root `GOAL-001-outbound-mail` `done 4/4`。residual：env-gated live 未实跑。不改变 Charter `primary_workspace`。不重开 workspace-016。
+- **workspace-018（2026-08-24 开区）**：VP-018（账号邮箱身份）唯一 lead delivery 工作区；首波 = Admin 功能（`users` email 可空 + 绑定/校验 + 换绑；消费 VP-017 `MailSender`）。slug 按惯例 `workspace-018-account-email-identity`，Root `GOAL-001-account-email-identity`。不改变 Charter `primary_workspace`。不重开 workspace-017。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

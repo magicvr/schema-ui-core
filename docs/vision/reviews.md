@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-22
+updated: 2026-08-24
 parent: null
-version: 1.3.52
+version: 1.3.54
 ---
 
 # Vision Review 台账
@@ -30,9 +30,9 @@ version: 1.3.52
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-038 `pass`；VRev-037 V-F070/V-F071 recommended → **fixed**。VRev-036 `pass`；V-F069 recommended 随有界关门 → **fixed** |
+| — | — | — | **无** | VRev-040 `pass`；V-F073/V-F074 recommended → **fixed**。VRev-039 `pass`；V-F072 recommended 随有界关门 → **fixed** |
 
-> Vision Review **open required = 0**。**VRev-038（self，`pass`）**：VP-017 激活就绪；架构类 freshness PASS（`ed99e88` → `250cb9c`）。**VRev-037（independent，`pass`）**：原 verdict 保留；V-F070/V-F071 recommended → **fixed**（激活 + workspace-017 Root P-001/I-00N + I-017-006 + freshness）。当前 active 交付 VP = **VP-017**。持续程序 **VP-009** / **VP-010**。
+> Vision Review **open required = 0**。**VRev-040（self，`pass`）**：VP-018 意图/激活就绪；Admin 类 freshness PASS（`ed99e88` → `092bf37`）。**VRev-039（self，`pass`）**：VP-017 有界关门；V-F072 → **fixed**。当前 active 交付 VP = **VP-018**。持续程序 **VP-009** / **VP-010**。
 
 ## 条目索引
 
@@ -76,3 +76,5 @@ version: 1.3.52
 | VRev-036 | 2026-08-22 | self | VP-016 关门就绪 · 独立代码/测试/live 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F069 recommended → **fixed**（VP-016 有界 closed + exit↔本轮独立证据 + I-016-005/`admin.mfa` wrapping residual；VR-039） | [VRev-036-vp016-closeout-readiness.md](reviews/VRev-036-vp016-closeout-readiness.md) |
 | VRev-037 | 2026-08-22 | independent | VP-017 出站邮件 · 意图完备 / 激活就绪门闩 / 对齐链 / 信息需求 / 架构边界 | pass | 0 | 原 verdict 保留；V-F070/V-F071 recommended → **fixed**（激活 + workspace-017 Root P-001/I-00N + I-017-006 + 架构类 freshness；VR-041） | [VRev-037-vp017-outbound-mail-intent-activation.md](reviews/VRev-037-vp017-outbound-mail-intent-activation.md) |
 | VRev-038 | 2026-08-22 | self | VP-017 激活就绪 · 独立意见响应 / 架构类 freshness / 开区 | pass | 0 | 采纳 VRev-037；无新 finding；freshness PASS（`ed99e88` → `250cb9c`）；允许激活并开 `workspace-017-outbound-mail` | [VRev-038-vp017-activation-self.md](reviews/VRev-038-vp017-activation-self.md) |
+| VRev-039 | 2026-08-24 | self | VP-017 关门就绪 · 独立代码/测试/harness 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F072 recommended → **fixed**（VP-017 有界 closed + exit↔本轮独立证据 + env-gated live residual；VR-042） | [VRev-039-vp017-closeout-readiness.md](reviews/VRev-039-vp017-closeout-readiness.md) |
+| VRev-040 | 2026-08-24 | self | VP-018 意图完备 / 可行性 / 激活就绪 · Admin 类 freshness | pass | 0 | 原 verdict 保留；V-F073/V-F074 recommended → **fixed**（激活 + workspace-018 Root P-001/I-00N + Admin 类 freshness；VR-043） | [VRev-040-vp018-intent-activation.md](reviews/VRev-040-vp018-intent-activation.md) |

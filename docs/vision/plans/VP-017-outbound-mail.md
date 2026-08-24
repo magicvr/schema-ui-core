@@ -2,26 +2,26 @@
 doc_type: vision-plan
 id: VP-017-outbound-mail
 title: 出站邮件（SMTP 发送端口）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-017-outbound-mail
 created: 2026-08-22
-updated: 2026-08-22
-version: 0.2.0
+updated: 2026-08-24
+version: 0.3.0
 parent: null
 ---
 
 # VP-017 · 出站邮件（SMTP 发送端口）
 
-## 状态与门闩（2026-08-22 · active）
+## 状态与门闩（2026-08-24 · 已关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-22 用户书面确认：响应 VRev-037 → 激活 → `/govern` 开区） |
-| **lead_workspace** | **`workspace-017-outbound-mail`**（Root `GOAL-001-outbound-mail`；唯一 delivery；**不**重开 workspace-016） |
-| **Vision required** | **已满足**：VRev-037 independent `pass`（V-F070/V-F071 → `fixed`）；VRev-038 self `pass`；open required = 0 |
-| **关门门闩（现行）** | 已激活并绑定 lead。实现与 R1 合同冻结走 `/govern`；不得把激活写成发送端口已交付 |
-| **组合位置** | 架构分支 **A6**（出站消息）；触发 = 用户确认自助「忘记密码」须投递到邮箱。不替代 A3（多实例仍 gated） |
+| status | **`closed`**（2026-08-24 用户书面确认有界组合层关门；VRev-039 `V-F072` → `fixed`；关门依据 = 本轮独立代码/测试/harness，不以 Goal 台账为充分条件） |
+| **lead_workspace** | **`workspace-017-outbound-mail`**（Root `GOAL-001-outbound-mail` `done 4/4`；唯一 delivery；**不**重开 workspace-016；默认不接新区） |
+| **Vision required** | **已满足**：VRev-037 / VRev-038 / VRev-039 均为 `pass`，open required = 0；`V-F070`/`V-F071`/`V-F072` recommended 已闭合 |
+| **关门门闩（现行）** | 已 `closed`；保留 workspace-017 历史绑定，默认不接新区；reopen 须用户确认 |
+| **组合位置** | 架构分支 **A6**（出站消息）；前提 = VP-016 A5 已有界 `closed`；roadmap **RT-M01** 本 VP 交付。不替代 A3（多实例仍 gated） |
 | **完整 ≠ 通知产品** | 本 VP 只交付**内核发送端口 + SMTP**。账号 email 字段、校验、邀请、自助恢复状态机、消息模板页、站内通知重做、SMS **不进**退出分母 |
 
 ## 意图
@@ -98,26 +98,35 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-017-001 | SMTP 拨号：STARTTLS（587）vs 隐式 TLS（465）；本波只钉一种可核对路径。 | required | 方案冻结 / 实施 | R2 接入前 | open |
-| I-017-002 | 配置键名与凭证注入（主机/端口/用户/密码/From；YAML + env fail-closed；secret 不入库）。 | required | 方案冻结 | R2 接入前 | open |
-| I-017-003 | 默认 sink：进程内 capture vs 只写结构化日志；测试如何取出报文。 | required | 方案冻结 | R1 端口冻结 | open |
-| I-017-004 | 单次 `Send` 的 To 基数：只允许一个收件人 vs 小集合。建议单收件人，降低转发面。 | required | 方案冻结 | R1 端口冻结 | open |
-| I-017-005 | HTML/MIME 是否作为可选体。建议纯文本进分母，HTML 不进。 | non-blocking | 关门叙事 | R4 | open（建议不进退出分母） |
-| I-017-006 | 生效方式：本波默认进程重启后生效；热加载不进退出分母。 | non-blocking | 关门叙事 | R4 | **registered**（V-F071；与配置面已冻结决策同构，答案已写进 VP，不阻断 R1） |
+| I-017-001 | SMTP 拨号：STARTTLS（587）vs 隐式 TLS（465）；本波只钉一种可核对路径。 | required | 方案冻结 / 实施 | R2 接入前 | **verified**（2026-08-22 · [workspace-017] Root D-003：唯一路径 = 隐式 TLS 465） |
+| I-017-002 | 配置键名与凭证注入（主机/端口/用户/密码/From；YAML + env fail-closed；secret 不入库）。 | required | 方案冻结 | R2 接入前 | **verified**（2026-08-22 · Root D-003：`mail.smtp.{host,port,username,password,from}` / `MAIL_SMTP_*`） |
+| I-017-003 | 默认 sink：进程内 capture vs 只写结构化日志；测试如何取出报文。 | required | 方案冻结 | R1 端口冻结 | **verified**（2026-08-22 · Root D-002：`CaptureSink` 容量 1 + `Last()`） |
+| I-017-004 | 单次 `Send` 的 To 基数：只允许一个收件人 vs 小集合。建议单收件人，降低转发面。 | required | 方案冻结 | R1 端口冻结 | **verified**（2026-08-22 · Root D-002：单收件人 `To string`） |
+| I-017-005 | HTML/MIME 是否作为可选体。建议纯文本进分母，HTML 不进。 | non-blocking | 关门叙事 | R4 | **verified**（2026-08-22 · Root D-005：合同仅 `TextBody`；HTML 不进分母） |
+| I-017-006 | 生效方式：本波默认进程重启后生效；热加载不进退出分母。 | non-blocking | 关门叙事 | R4 | **verified**（2026-08-22 · Root D-005 · V-F071：启动时构造 sender 单例；无热加载） |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-017-outbound-mail | GOAL-001-outbound-mail | lead | 2026-08-22 | 2026-08-22 用户确认激活并开区；唯一 delivery；**不**重开 workspace-016 |
+| workspace-017-outbound-mail | GOAL-001-outbound-mail | lead | 2026-08-22 | 2026-08-22 用户确认激活并开区；2026-08-24 VP 组合层 `closed`；Root done 4/4；默认不接新区 |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-24 | **closed**（有界 · 架构 A6） | 用户确认组合层关门，且要求以**独立代码核验**而非治理记录为充分条件。exit 1：`kernel.MailSender`/`MailMessage` 为唯一发送合同；`net/smtp` 仅 `internal/mail/smtp.go`。exit 2：未配置 SMTP 时 `CaptureSink` + `readyz` probe `nil`；YAML 缺省空。exit 3：本会话 `./internal/mail` 全绿（隐式 TLS loopback harness）；显式缺键 fail-closed。exit 4：仅显式配置后 `Ping` 进 `readyz`。exit 5：无 SMS/第二方言；`users` 无 email 列；Charter 仍 `@0.2.0`。exit 6：实现层与 VRev required = 0。V-F072 按本表闭合。 | 本轮 `/vision` 独立核验：`apps/api/internal/kernel/mail.go` + `internal/mail` + config 面 + composition 接线 + YAML；`go test` kernel/mail/config/composition 指定套件全绿；`go vet` 0 finding。指针：[VRev-039](../reviews/VRev-039-vp017-closeout-readiness.md)；lead `workspace-017` goal-tree（Root done 4/4）；Root A-002（required 已 fixed，F-003 本轮收尾，不作充分条件） | **`workspace-017` / `GOAL-001-outbound-mail` / env-gated live 未实跑**：`TestSMTPLiveDelivery` 无 `MAIL_SMTP_TEST_*`；离线 loopback TLS harness 已满足「与生产合同等价」。不把「本波无 handler 消费端口」写成缺口。 |
+
+### 退出判据 ↔ 证据（本轮独立核验）
+
+| 退出 | 结论 | 证据 |
+|------|------|------|
+| 1 内核发送端口；公共面无 SMTP 客户端类型 | 满足 | `MailSender.Send`；`rg net/smtp` 仅适配器包。本轮 kernel Mail 测试绿 |
+| 2 未配置 SMTP 时默认仍能开发与快测 | 满足 | YAML 缺省空；`newMailSender` → capture + probe `nil`；composition 本轮绿 |
+| 3 显式 SMTP 可核对投递；不完整 fail-closed | 满足 | 本会话 mail 包全绿（loopback TLS）；`validateMail`/`NewSMTP` 缺键拒收。真实对端 live 未跑（residual） |
+| 4 仅显式配置后 `readyz` 扩依赖 | 满足 | 显式路径 probe=`Ping`；未配置 probe=`nil` |
+| 5 未进 SMS/账号 email/邀请/恢复/模板/业务 / 未改 Charter | 满足 | 基线 `users` DDL 无 email；Charter `@0.2.0`；单一拨号路径 465 |
+| 6 required = 0 | 满足 | VRev-037/038/039；实现层 Root A-002 后开放 required = 0 |
 
 ## 规划修订短史
 
@@ -125,3 +134,4 @@ parent: null
 |------|--------|
 | 2026-08-22 | 初创 `planned`：用户确认路径 3（自助恢复 + 管理员重置）；自助恢复须已绑定邮箱；先做架构出站邮件；SMS 后置。退出分母 = 内核发送端口 + SMTP + 无 SMTP 默认 sink。账号 email / 邀请 / 恢复状态机 / 模板 / Notification Transport 产品不进分母。未激活、未开区 |
 | 2026-08-22 | VRev-037 independent `pass`（V-F070/V-F071 recommended）。用户确认响应独立意见并激活开区。VRev-038 self `pass`。v0.2.0 `planned → active`；lead = `workspace-017-outbound-mail`；登记 I-017-006；Root 承接 P-001 与 I-00N（V-F071）及架构类 freshness（V-F070） |
+| 2026-08-24 | VRev-039 self `pass`：组合层关门就绪；核验 = 本轮独立源码/测试/harness，不以 Goal 台账为充分条件。用户确认有界组合层关门（v0.3.0）：关门记录含 exit↔证据映射 + env-gated live residual 点名；I-017-001～006 → verified；组合索引原子同步（VR-042） |
