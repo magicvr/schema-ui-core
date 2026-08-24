@@ -26,3 +26,9 @@ version: 1.0.0
 |------|------|
 | live 测试缝 | `apps/api/internal/mail/resend_live_test.go` |
 | 本次运行 | 上方运行日志（PASS；第一次尝试 403 报文原文见审计附件引用） |
+
+## 复跑记录（2026-08-24 · 用户完成域名验证后）
+
+1. 用户已在 resend.com/domains 完成 eshowy.top 域名验证。
+2. 以 `.env` 正式发件地址（admin@eshowy.top）复跑 `TestResendLiveDelivery`：**PASS**——Ping 2xx + POST /emails 2xx，真实投递至 magicvr@hotmail.com。
+3. 至此判据 3 以「live + 生产同款配置」满足；此前的 403 运营阻塞项关闭。
