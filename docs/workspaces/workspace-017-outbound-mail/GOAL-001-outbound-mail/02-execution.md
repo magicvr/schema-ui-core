@@ -25,6 +25,7 @@ version: 0.3.0
 | E-009 | 2026-08-24 | D-007 关闭 I-009（R7 门禁解除）；F-001 residual 用户裁决闭合 | recorded | [E-009-i009-closed.md](02-execution/E-009-i009-closed.md) |
 | E-010 | 2026-08-24 | R7 设置/热切换/试发完成（GOAL-008 done · Root 7/8） | recorded | [E-010-r7-admin-done.md](02-execution/E-010-r7-admin-done.md) |
 | E-011 | 2026-08-24 | R8 探针+证据包完成（GOAL-009 done · Root 8/8；待关门审计放行） | recorded | [E-011-r8-complete.md](02-execution/E-011-r8-complete.md) |
+| E-012 | 2026-08-24 | 现行分母再关门放行（A-003/A-004 pass · Root done · VP-017 closed） | recorded | [E-012-reclose-released.md](02-execution/E-012-reclose-released.md) |
 
 ## 事实边界
 
