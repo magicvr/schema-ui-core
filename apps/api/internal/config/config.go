@@ -156,6 +156,20 @@ type Config struct {
 	MailSMTPPassword string
 	MailSMTPFrom     string
 
+	// Outbound-mail channel surface (VP-017 R6 / workspace-017 GOAL-007,
+	// contract frozen by workspace-017 GOAL-006 D-002 §2/§4). MailChannel is
+	// the explicit selector: "mock" | "resend" | "smtp" | "" (empty derives:
+	// exactly one fully configured production block wins; both -> fail-closed
+	// ambiguity; none -> mock, preserving the pre-R6 behavior for existing
+	// mail.smtp deployments). The resend block mirrors the SMTP pairing
+	// contract: touching ANY mail.resend.* key requires api-key + from
+	// (fail-closed in every environment); api-key is a SECRET — env
+	// interpolation only (MAIL_RESEND_API_KEY via process env /
+	// configs/.env), never a YAML literal.
+	MailChannel      string
+	MailResendAPIKey string
+	MailResendFrom   string
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -285,6 +299,7 @@ type yamlFile struct {
 		} `yaml:"traces"`
 	} `yaml:"observability"`
 	Mail struct {
+		Channel *string `yaml:"channel"`
 		SMTP struct {
 			Host     *string `yaml:"host"`
 			Port     *int    `yaml:"port"`
@@ -292,6 +307,10 @@ type yamlFile struct {
 			Password *string `yaml:"password"`
 			From     *string `yaml:"from"`
 		} `yaml:"smtp"`
+		Resend struct {
+			APIKey *string `yaml:"api-key"`
+			From   *string `yaml:"from"`
+		} `yaml:"resend"`
 	} `yaml:"mail"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
@@ -488,6 +507,9 @@ func Load() *Config {
 	cfg.MailSMTPUsername = strPtrOr(yf.Mail.SMTP.Username, cfg.MailSMTPUsername)
 	cfg.MailSMTPPassword = strPtrOr(yf.Mail.SMTP.Password, cfg.MailSMTPPassword)
 	cfg.MailSMTPFrom = strPtrOr(yf.Mail.SMTP.From, cfg.MailSMTPFrom)
+	cfg.MailChannel = strings.ToLower(strings.TrimSpace(strPtrOr(yf.Mail.Channel, cfg.MailChannel)))
+	cfg.MailResendAPIKey = strPtrOr(yf.Mail.Resend.APIKey, cfg.MailResendAPIKey)
+	cfg.MailResendFrom = strPtrOr(yf.Mail.Resend.From, cfg.MailResendFrom)
 	if yf.Observability.Metrics.Enabled != nil {
 		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
 	}
@@ -575,6 +597,11 @@ func Load() *Config {
 	cfg.MailSMTPUsername = envOr("MAIL_SMTP_USERNAME", cfg.MailSMTPUsername)
 	cfg.MailSMTPPassword = envOr("MAIL_SMTP_PASSWORD", cfg.MailSMTPPassword)
 	cfg.MailSMTPFrom = envOr("MAIL_SMTP_FROM", cfg.MailSMTPFrom)
+	if raw := strings.TrimSpace(os.Getenv("MAIL_CHANNEL")); raw != "" {
+		cfg.MailChannel = strings.ToLower(raw)
+	}
+	cfg.MailResendAPIKey = envOr("MAIL_RESEND_API_KEY", cfg.MailResendAPIKey)
+	cfg.MailResendFrom = envOr("MAIL_RESEND_FROM", cfg.MailResendFrom)
 	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
 		if err != nil || port < 1 || port > 65535 {
@@ -1128,34 +1155,132 @@ func (c *Config) MailSMTPConfigured() bool {
 		c.MailSMTPPort != 0
 }
 
-// validateMail enforces the mail.smtp pairing contract (VP-017 / workspace-017
-// GOAL-003 D-001) on every Config that reaches ValidateProd, including
-// zero-value/test configs that bypass Load. The untouched surface (all keys
-// empty) is the valid embedded-default path — capture/log sink, startup
-// unaffected. An explicitly touched block requires host/username/password/from;
-// the error names the first missing KEY and never carries a value.
-func (c *Config) validateMail() error {
-	if !c.MailSMTPConfigured() {
-		return nil
+// Outbound channel identifiers (workspace-017 GOAL-006 D-002 §1): the frozen
+// first-wave set. The set is closed; a new provider requires a new decision.
+const (
+	MailChannelMock   = "mock"
+	MailChannelResend = "resend"
+	MailChannelSMTP   = "smtp"
+)
+
+// MailResendConfigured reports whether the operator touched the mail.resend
+// block (workspace-017 GOAL-006 D-002 §4). Touching any key makes api-key and
+// from REQUIRED (mirror of the SMTP pairing contract).
+func (c *Config) MailResendConfigured() bool {
+	return strings.TrimSpace(c.MailResendAPIKey) != "" ||
+		strings.TrimSpace(c.MailResendFrom) != ""
+}
+
+// ResolveMailChannel implements the frozen resolution algorithm (workspace-017
+// GOAL-006 D-002 §2):
+//
+//   - An explicit mail.channel wins. The named channel's block must carry its
+//     required keys ("mock" always resolves); an incomplete production block
+//     fails closed naming the missing key.
+//   - Empty selector derives: exactly ONE fully configured production block
+//     (resend / smtp) wins; BOTH fully configured is ambiguous -> fail closed
+//     so the operator must state intent; NEITHER keeps the mock default,
+//     which preserves the pre-R6 behavior of existing mail.smtp deployments.
+//
+// The error names configuration KEYS only, never values.
+func (c *Config) ResolveMailChannel() (string, error) {
+	switch strings.TrimSpace(c.MailChannel) {
+	case "":
+		// derive below
+	case MailChannelMock:
+		return MailChannelMock, nil
+	case MailChannelResend:
+		if err := c.validateResendBlock(); err != nil {
+			return "", err
+		}
+		return MailChannelResend, nil
+	case MailChannelSMTP:
+		if !c.MailSMTPConfigured() {
+			return "", fmt.Errorf("config: mail.channel=smtp requires an explicit mail.smtp.* block (provide secrets via MAIL_SMTP_* env / configs/.env)")
+		}
+		return MailChannelSMTP, nil
+	default:
+		return "", fmt.Errorf("config: mail.channel must be one of mock, resend, smtp (got %q)", c.MailChannel)
 	}
+	resendConfigured := c.MailResendConfigured()
+	smtpConfigured := c.MailSMTPConfigured()
+	switch {
+	case resendConfigured && smtpConfigured:
+		return "", fmt.Errorf("config: both mail.resend and mail.smtp are configured — set mail.channel explicitly to pick the outbound channel")
+	case resendConfigured:
+		if err := c.validateResendBlock(); err != nil {
+			return "", err
+		}
+		return MailChannelResend, nil
+	case smtpConfigured:
+		return MailChannelSMTP, nil
+	default:
+		return MailChannelMock, nil
+	}
+}
+
+// validateResendBlock enforces the mail.resend pairing contract
+// (workspace-017 GOAL-006 D-002 §4): touching the block requires api-key and
+// from; from must be a bare address. Errors name keys only.
+func (c *Config) validateResendBlock() error {
 	for _, pair := range []struct{ name, value string }{
-		{"host", c.MailSMTPHost},
-		{"username", c.MailSMTPUsername},
-		{"password", c.MailSMTPPassword},
-		{"from", c.MailSMTPFrom},
+		{"api-key", c.MailResendAPIKey},
+		{"from", c.MailResendFrom},
 	} {
 		if strings.TrimSpace(pair.value) == "" {
-			return fmt.Errorf("config: an explicit mail.smtp block requires mail.smtp.%s (provide secrets via MAIL_SMTP_* env / configs/.env)", pair.name)
+			return fmt.Errorf("config: an explicit mail.resend block requires mail.resend.%s (provide secrets via MAIL_RESEND_* env / configs/.env)", pair.name)
 		}
 	}
-	if c.MailSMTPPort < 0 || c.MailSMTPPort > 65535 {
-		return fmt.Errorf("config: mail.smtp.port must be between 1 and 65535")
+	from := strings.TrimSpace(c.MailResendFrom)
+	parsed, err := mail.ParseAddress(from)
+	if err != nil || parsed.Address != from {
+		return fmt.Errorf("config: mail.resend.from must be a bare address (got an unusable form)")
 	}
-	if from := strings.TrimSpace(c.MailSMTPFrom); from != "" {
-		parsed, err := mail.ParseAddress(from)
-		if err != nil || parsed.Address != from {
-			return fmt.Errorf("config: mail.smtp.from must be a bare address (got an unusable form)")
+	return nil
+}
+
+// validateMail enforces the outbound-mail contracts (VP-017 / workspace-017
+// GOAL-003 D-001; R6 extension per GOAL-006 D-002 §2/§4) on every Config that
+// reaches ValidateProd, including zero-value/test configs that bypass Load.
+// The untouched surface is the valid embedded-default path — mock default,
+// startup unaffected. Rules:
+//
+//   - A touched production block (mail.smtp OR mail.resend) must be COMPLETE
+//     regardless of the selected channel — a half-filled block always fails
+//     closed and names the first missing KEY (never a value).
+//   - mail.channel must be one of mock|resend|smtp|"", and the frozen
+//     resolution algorithm (ResolveMailChannel) must succeed: an explicit
+//     channel needs its block, and two fully configured production blocks
+//     without an explicit selector are ambiguous.
+func (c *Config) validateMail() error {
+	if c.MailSMTPConfigured() {
+		for _, pair := range []struct{ name, value string }{
+			{"host", c.MailSMTPHost},
+			{"username", c.MailSMTPUsername},
+			{"password", c.MailSMTPPassword},
+			{"from", c.MailSMTPFrom},
+		} {
+			if strings.TrimSpace(pair.value) == "" {
+				return fmt.Errorf("config: an explicit mail.smtp block requires mail.smtp.%s (provide secrets via MAIL_SMTP_* env / configs/.env)", pair.name)
+			}
 		}
+		if c.MailSMTPPort < 0 || c.MailSMTPPort > 65535 {
+			return fmt.Errorf("config: mail.smtp.port must be between 1 and 65535")
+		}
+		if from := strings.TrimSpace(c.MailSMTPFrom); from != "" {
+			parsed, err := mail.ParseAddress(from)
+			if err != nil || parsed.Address != from {
+				return fmt.Errorf("config: mail.smtp.from must be a bare address (got an unusable form)")
+			}
+		}
+	}
+	if c.MailResendConfigured() {
+		if err := c.validateResendBlock(); err != nil {
+			return err
+		}
+	}
+	if _, err := c.ResolveMailChannel(); err != nil {
+		return err
 	}
 	return nil
 }

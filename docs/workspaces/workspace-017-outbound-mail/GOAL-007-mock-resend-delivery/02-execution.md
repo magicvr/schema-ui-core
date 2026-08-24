@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-24 | 开设 R6 五件套（未改代码） | recorded | [E-001-r6-scaffold.md](02-execution/E-001-r6-scaffold.md) |
+| E-002 | 2026-08-24 | R6 实施：配置/迁移0051/mock/Resend/接线+管理 API（全测试绿） | recorded | [E-002-r6-implementation.md](02-execution/E-002-r6-implementation.md) |
 
 ## 事实边界
 

@@ -110,12 +110,20 @@ TOKEN=$(...); curl -fsS http://localhost:25080/api/accounts/me -H "Authorization
 - `GET /readyz` 公开返回 `200 {"status":"ok",...}`，为 readiness 就绪探针：在 liveness 之上执行轻量 SQLite 读，**并**仅在模块图 Start+Ready 全部成功后返回 `200`（R5 真实模块图 readiness；未就绪返回 `503 {"status":"not-ready",...}`，数据库不可读返回 `503 {"status":"unavailable",...}`）；Compose 以它作为 `service_healthy`。显式配置对象存储 S3 后端时扩 HeadBucket 探测；显式配置出站邮件 SMTP 时扩 ESMTP Ping 探测（隐式 TLS 拨号）——两者未配置时均不参与 readyz。
 - API 优雅停机：`SIGINT`/`SIGTERM` → 10s 宽限内 `Shutdown`。
 
-## 出站邮件（VP-017 · workspace-017）
+## 出站邮件（VP-017 · workspace-017 · 渠道模型）
 
-内核同步发送端口 `kernel.MailSender.Send(ctx, MailMessage{To, Subject, TextBody})`：单收件人、纯文本、默认 From 来自配置。**未配置**（默认）走内嵌 capture/log sink——进程照常启动，测试经 `internal/mail.CaptureSink.Last()` 取最后一封。**显式配置**后走唯一拨号路径：隐式 TLS（默认端口 465，证书校验强制开启，仅 AUTH PLAIN over TLS）；配置不完整启动即拒（fail-closed）。
+内核同步发送端口 `kernel.MailSender.Send(ctx, MailMessage{To, Subject, TextBody})`：单收件人、纯文本、默认 From 来自配置；模块与 handler 公共面只见端口，无供应商客户端类型。**当前渠道**由 `mail.channel` 选择（R6 · GOAL-006 D-002 冻结合同）：
+
+- **mock（默认）**：报文写入站内出站记录表 `mail_outbox`，管理员经 `GET /api/mail/outbox`（列表）与 `GET /api/mail/outbox/{id}`（详情）检视；有界保留最近 500 条。进程照常启动。
+- **resend（生产）**：显式配置 `mail.resend.*` 后走 Resend HTTP API；配置不完整启动即拒（fail-closed）。`api-key` 为 SECRET，仅 `MAIL_RESEND_API_KEY` env / configs/.env 注入。
+- **smtp（保留渠道）**：唯一拨号路径隐式 TLS（默认 465，证书校验强制开启）；显式配置后 readyz 扩 ESMTP Ping 探测。
 
 ```yaml
 mail:
+  channel: ""                  # MAIL_CHANNEL；空 = 推导：恰好一个生产块完整则用之，两个全配 = 启动失败，均未配 = mock
+  resend:
+    api-key: ""                # SECRET — 仅 MAIL_RESEND_API_KEY env / configs/.env
+    from: "no-reply@example.com" # MAIL_RESEND_FROM；bare 地址
   smtp:
     host: "smtp.example.com"     # MAIL_SMTP_HOST
     port: 0                      # MAIL_SMTP_PORT；0 = 默认 465
@@ -124,7 +132,7 @@ mail:
     from: "no-reply@example.com" # MAIL_SMTP_FROM；bare 地址
 ```
 
-规则：五个键全空 = 未配置（合法）；任一非空则 host/username/password/from 全必填。生效方式 = 进程重启后生效（热加载不在本波分母）。HTML/MIME、附件、第二拨号路径不进本波交付。
+规则：任一生产块被触碰即要求该块键全齐（缺项点名缺失键、fail-closed）；`mail.channel` 显式选择时所选渠道块必须可用。HTML/MIME、附件、热切换（R7）、生产探针扩展（R8）不在 R6 分母。
 
 
 ## 端点
@@ -151,6 +159,7 @@ mail:
 | GET | `/.well-known/schema-ui/app-manifest.json` | 公开（只读） | API 聚合的 Profile Manifest（生产唯一来源） |
 | GET | `/api/settings`、`/api/branding` | **admin Profile** | Settings 模块路由；未启用时为 404 |
 | GET | `/api/operations` | **admin Profile** | Activity 查询路由；未启用时为 404 |
+| GET | `/api/mail/outbox`、`/api/mail/outbox/{id}` | **Bearer + settings.read** | mock 渠道站内出站记录：列表（`limit`/`offset`，新→旧）与详情（含正文）；R6 渠道模型（GOAL-006 D-002 §3） |
 
 ## 鉴权边界（R3 · 真实认证 + 权限键）
 

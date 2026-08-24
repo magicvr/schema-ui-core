@@ -45,6 +45,34 @@ var recordsRetireDDL = []string{
 	`DELETE FROM menu_items WHERE id = 'menu-list-edit-lifecycle'`,
 }
 
+// mailOutboxDDL creates the mock-channel outbound record table
+// (VP-017 R6 / workspace-017 GOAL-007; contract frozen by GOAL-006 D-002 §3):
+// one row per accepted mock Send, listed newest-first by created_at and
+// evicted oldest-first beyond the bounded retention cap.
+var mailOutboxDDL = []string{
+	`CREATE TABLE mail_outbox (
+  id         TEXT PRIMARY KEY,
+  to_addr    TEXT NOT NULL,
+  subject    TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_mail_outbox_created_at ON mail_outbox(created_at)`,
+}
+
+// mailOutboxPGDDL is the postgres variant of mailOutboxDDL:
+// created_at (Unix time) is BIGINT (R1 v1.4 §3 convention).
+var mailOutboxPGDDL = []string{
+	`CREATE TABLE mail_outbox (
+  id         TEXT PRIMARY KEY,
+  to_addr    TEXT NOT NULL,
+  subject    TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_mail_outbox_created_at ON mail_outbox(created_at)`,
+}
+
 // Descriptors preserves the immutable records migration history after the
 // product surface was retired. The frozen Apply behavior remains executable for
 // fresh and upgrading databases; this historical owner is not a current Records
@@ -65,6 +93,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Name:                 "records_retire",
 			Checksum:             kernel.MigrationChecksum(recordsRetireDDL, "0006:records-retire:v1"),
 			Apply:                migrateRecordsRetire,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "mail_outbox"},
+			Version:              51,
+			Name:                 "mail_outbox",
+			Checksum:             kernel.MigrationChecksum(mailOutboxDDL, "0051:mail-outbox:v1"),
+			Apply:                migrateMailOutbox,
+			ApplyPostgres:        migrateMailOutboxPG,
 		},
 	}
 }
@@ -91,6 +127,24 @@ func migrateRecordsRetire(tx kernel.Tx) error {
 	for _, stmt := range recordsRetireDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("records retire: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateMailOutbox(tx kernel.Tx) error {
+	for _, stmt := range mailOutboxDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create mail_outbox: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateMailOutboxPG(tx kernel.Tx) error {
+	for _, stmt := range mailOutboxPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create mail_outbox (postgres): %w", err)
 		}
 	}
 	return nil

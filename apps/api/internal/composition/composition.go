@@ -370,16 +370,18 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, err
 	}
-	// VP-017 R4 (GOAL-005 D-001): ONE kernel.MailSender — capture/log sink by
-	// default (probe nil, readyz unchanged) or the explicit SMTP adapter whose
-	// ESMTP Ping extends readyz only when explicitly configured. No handler /
-	// module consumes the port this wave; construction doubles as the last
-	// fail-closed validation point before boot.
-	mailSender, mailProbe, err := newMailSender(cfg, logger)
+	// VP-017 R6 (GOAL-007 D-001 over the GOAL-006 D-002 frozen contract): ONE
+	// kernel.MailSender resolved by mail.channel — mock outbox publisher by
+	// default (probe nil, readyz unchanged), Resend or SMTP when explicitly
+	// selected/configured. Construction doubles as the last fail-closed
+	// validation point before boot. The mock record read face is registered
+	// independently of the active channel so the admin API stays stable.
+	mailSender, mailProbe, err := newMailSender(cfg, st, logger)
 	if err != nil {
 		return nil, err
 	}
 	_ = mailSender
+	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
@@ -683,29 +685,51 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 }
 
 // newMailSender builds THE kernel.MailSender instance (VP-017 / workspace-017
-// GOAL-004 D-001, R4 wiring per GOAL-005 D-001): the embedded capture/log
-// sink when mail.smtp is untouched (mvp/dev/Compose default — startup
-// unaffected, tests read Last()), or the explicit SMTP adapter over the single
-// frozen implicit-TLS dial path. The second return is the optional readyz
-// probe (ESMTP Ping on the configured endpoint; nil for capture so readyz
-// semantics stay unchanged — "仅显式配置后 readyz 扩依赖"). Configuration
-// completeness was already enforced fail-closed by config.ValidateProd
-// (validateMail); a partial block still fails closed here defensively.
-func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, func(context.Context) error, error) {
-	if !cfg.MailSMTPConfigured() {
-		return mail.NewCaptureSink(logger), nil, nil
-	}
-	sender, err := mail.NewSMTP(mail.SMTPOptions{
-		Host:     cfg.MailSMTPHost,
-		Port:     cfg.MailSMTPPort,
-		Username: cfg.MailSMTPUsername,
-		Password: cfg.MailSMTPPassword,
-		From:     cfg.MailSMTPFrom,
-	})
+// GOAL-004 D-001; R6 channel model per GOAL-007 D-001 over the GOAL-006
+// D-002 frozen contract): cfg.ResolveMailChannel picks the adapter —
+//
+//   - mock (default): OutboxSink publishes each message to the admin-visible
+//     mail_outbox table (probe nil, readyz unchanged);
+//   - resend: the Resend HTTP adapter over mail.resend.* (fail-closed at
+//     construction; production probe deferred to R8);
+//   - smtp: the explicit SMTP adapter with its ESMTP Ping probe.
+//
+// The second return is the optional readyz probe ("仅显式配置后 readyz 扩依赖"
+// stays true for SMTP; Resend joins in R8). Configuration completeness was
+// already enforced fail-closed by config.ValidateProd (validateMail); the
+// defensive re-resolution here keeps zero-value/test configs honest too.
+func newMailSender(cfg *config.Config, st kernel.Store, logger *slog.Logger) (kernel.MailSender, func(context.Context) error, error) {
+	channel, err := cfg.ResolveMailChannel()
 	if err != nil {
-		return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+		return nil, nil, fmt.Errorf("composition: resolve mail.channel: %w", err)
 	}
-	return sender, sender.Ping, nil
+	switch channel {
+	case config.MailChannelMock:
+		return mail.NewOutboxSink(st, mail.DefaultOutboxCap), nil, nil
+	case config.MailChannelResend:
+		sender, err := mail.NewResend(mail.ResendOptions{
+			APIKey: cfg.MailResendAPIKey,
+			From:   cfg.MailResendFrom,
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("composition: invalid mail.resend configuration: %w", err)
+		}
+		return sender, nil, nil
+	case config.MailChannelSMTP:
+		sender, err := mail.NewSMTP(mail.SMTPOptions{
+			Host:     cfg.MailSMTPHost,
+			Port:     cfg.MailSMTPPort,
+			Username: cfg.MailSMTPUsername,
+			Password: cfg.MailSMTPPassword,
+			From:     cfg.MailSMTPFrom,
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+		}
+		return sender, sender.Ping, nil
+	default:
+		return nil, nil, fmt.Errorf("composition: unknown mail channel %q", channel)
+	}
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {
