@@ -18,6 +18,8 @@ version: 1.0.0
 3. **证据包（C3）**：`attachments/exit-denominator-evidence.md` 对照 VP 现行判据 1～7 与 Root 成功标准逐条登记指针。
 4. 回归：mail/composition/handler 定向全绿；全仓结果见 E-003。
 
-## 未做
+> 更正（同日）：本条「未做」中 live 未实跑的陈述已被 [E-003-live-delivery.md](E-003-live-delivery.md) 取代——用户裁决补跑后 live PASS。
+
+## 未做（历史记录）
 
 - live 投递未实跑（无凭据；opt-in 缝就位）——是否补跑随关门问询裁决。

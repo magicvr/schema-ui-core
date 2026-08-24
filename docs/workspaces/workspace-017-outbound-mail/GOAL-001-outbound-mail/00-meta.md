@@ -1,16 +1,16 @@
 ---
 id: GOAL-001-outbound-mail
 title: 出站邮件（渠道供应商模型）
-status: active
+status: done
 parent: null
 created: 2026-08-22
 updated: 2026-08-24
-version: 1.0.0
+version: 1.1.0
 progress: 7/8
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
-serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；补可切换渠道（默认 mock 站内出站记录 + 生产 Resend；SMTP 适配器保留）；设置热切换/配置与试发。不回退 R1～R4 实施史。不承载账号 email、邀请、自助恢复、模板产品、用户站内通知、SMS 或业务域。
+serves_summary: 已交付并关门（v1.1.0）：架构 A6 升级全量落地——内核 MailSender 保留、渠道模型（mock 默认 + Resend live 核对 + SMTP 保留）、mail.channel 热切换、设置邮件 tab 与试发、readyz 生产探针。不回退 R1～R4 实施史。不承载账号 email、邀请、自助恢复、模板产品、用户站内通知、SMS 或业务域。
 ---
 
 # GOAL-001 · 出站邮件（渠道供应商模型）
@@ -38,7 +38,7 @@ serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；�
 | R7 | **设置/热切换/试发**：邮件 tab、渠道配置、热切换、同一端口试发（I-009） | 依赖 R6 | **已完成**（子目标 GOAL-008 `done`；A-001 self pass） |
 | R8 | **证据 + `readyz`**：生产渠道探针；现行退出判据可核对；018 解冻仅在 VP 再关门后 | 依赖 R6/R7 | **已完成**（子目标 GOAL-009 `done`；A-001 self pass；证据包 attachments） |
 
-`progress` = 已完成阶段数 / 8。当前 **8/8**（八阶段全部完成；`status: done` 待再关门审计放行——见 E-011）。
+`progress` = 已完成阶段数 / 8。当前 **8/8**。2026-08-24 现行分母再关门放行（A-003 self pass + A-004 independent pass，F-001/F-002 fixed）→ **`status: done`**。
 
 ## 成功标准（方向级 · 现行再关门用）
 

@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`active`** · v0.4.0；2026-08-24 用户否决同日有界关门）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-outbound-mail`：`active` · 8/8。八阶段全部完成（R1～R4 历史 + R5～R8 本轮交付）；待再关门审计放行后转 `done`。R5 合同 D-002 / R6 GOAL-007 / R7 GOAL-008 / R8 GOAL-009 均已关门。
+- **Root** `GOAL-001-outbound-mail`：**`done` · 8/8**（2026-08-24 现行分母再关门放行：A-003 self pass + A-004 independent pass）。R5 合同 D-002 / R6 GOAL-007 / R7 GOAL-008 / R8 GOAL-009 均已关门。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-016-key-rotation-and-backup`。
 - 不承接账号 email、邀请、自助恢复、用户站内通知或业务域。VP-018 冻结至本 VP 再次关门。

@@ -2,27 +2,27 @@
 doc_type: vision-plan
 id: VP-017-outbound-mail
 title: 出站邮件（渠道供应商模型）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-017-outbound-mail
 created: 2026-08-22
 updated: 2026-08-24
-version: 0.4.0
+version: 0.5.0
 parent: null
 ---
 
 # VP-017 · 出站邮件（渠道供应商模型）
 
-## 状态与门闩（2026-08-24 · 关门已否决 · 已重开）
+## 状态与门闩（2026-08-24 · 现行分母再关门 · v0.5.0 `closed`）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-24 用户书面**否决**同日有界组合层关门：只回退关门状态，**不**回退、**不**改写 R1～R4 实施历史与审计原文） |
+| status | **`closed`**（v0.5.0 · 2026-08-24 按**现行分母**再关门：R5～R8 = GOAL-006～009 全部 done；live 投递实跑 PASS；Root A-003 self pass + A-004 independent pass） |
 | **lead_workspace** | **`workspace-017-outbound-mail`**（Root `GOAL-001-outbound-mail` 同步 `done → active`；唯一 delivery；不新开工作区） |
-| **Vision required** | 重开后见 [VRev-041](../reviews/VRev-041-vp017-reopen-channel-upgrade.md)；VRev-037/038/039 原文与 verdict **不改写**（它们对照的是当时 SMTP 专用分母） |
-| **关门门闩（现行）** | 未关门。再关门必须满足**现行**退出分母（渠道模型 + mock + Resend + 管理设置/试发），不得只用 R1～R4 历史证据再次 `closed` |
-| **组合位置** | 架构分支 **A6**（出站消息）升级：保留已落地的内核 `MailSender`；补可切换渠道。roadmap **RT-M01** 从 `delivered` 收回为 **in-progress** |
-| **VP-018** | **冻结**：在本 VP **再次** `closed` 之前，不得推进 [VP-018-account-email-identity](VP-018-account-email-identity.md) 及其 lead 工作区 |
+| **Vision required** | 再关门见 [VRev-042](../reviews/VRev-042-vp017-reclose.md)（self pass）；VRev-037～041 原文与 verdict **不改写** |
+| **关门门闩（已解除）** | 已于 2026-08-24 满足**现行**退出分母再次 `closed`：渠道模型 + mock 站内记录 + Resend（live 投递核对）+ 设置/热切换/试发；证据包见 workspace-017 GOAL-009 attachments |
+| **组合位置** | 架构分支 **A6**（出站消息）升级：保留已落地的内核 `MailSender`；补可切换渠道。roadmap **RT-M01** → **delivered**（现行分母兑现） |
+| **VP-018** | **解冻**：本 VP 已按现行分母再次 `closed`，[VP-018-account-email-identity](VP-018-account-email-identity.md) 及其 lead 工作区可恢复推进 |
 
 ### 用户否决关门（2026-08-24）
 
@@ -132,9 +132,9 @@ parent: null
 | I-017-006 | 历史波次重启生效 / 热加载不进 R4。 | non-blocking | 历史 R4 | R4 | **verified**（R4 事实保留；现行热切换见 I-017-009） |
 | I-017-007 | 第一期渠道集：mock 默认 + Resend 生产；SMTP 适配器保留不删。 | required | 现行分母 | R5 | **verified**（2026-08-24 用户采纳讨论方案 · Root D-006） |
 | I-017-008 | mock「站内」= 管理员出站记录，不是用户通知。 | required | R5 / R6 | R5 | **verified**（D-006） |
-| I-017-009 | 热切换：密钥存储（env vs 管理面写后不可读）、切失败保留旧 sender、单进程 vs 多实例。 | required | R7 方案/实施 | R7 实施前 | collecting |
-| I-017-010 | Resend 配置键（API key / From 等）与 fail-closed 规则。 | required | R6 方案/实施 | R6 接入前 | collecting |
-| I-017-011 | mock 持久化：Store 出站记录 vs 扩容进程内 sink；管理端如何列表/详情。 | required | R5 方案冻结 | R5 | collecting |
+| I-017-009 | 热切换：密钥存储（env vs 管理面写后不可读）、切失败保留旧 sender、单进程 vs 多实例。 | required | R7 方案/实施 | R7 实施前 | **verified**（Root D-007；GOAL-008 落地） |
+| I-017-010 | Resend 配置键（API key / From 等）与 fail-closed 规则。 | required | R6 方案/实施 | R6 接入前 | **verified**（GOAL-006 D-002 §4） |
+| I-017-011 | mock 持久化：Store 出站记录 vs 扩容进程内 sink；管理端如何列表/详情。 | required | R5 方案冻结 | R5 | **verified**（GOAL-006 D-002 §3） |
 | I-017-012 | 管理面形状：设置「邮件」tab（配置 + 试发 + mock 表），独立 API，不塞进 `/api/settings/default`。 | required | R7 | R5 可冻结形状 | **verified**（D-006 · 讨论方案） |
 
 ## 工作区绑定
@@ -151,3 +151,4 @@ parent: null
 | 2026-08-22 | VRev-037/038 后 v0.2.0 `planned → active`；lead = workspace-017 |
 | 2026-08-24 | v0.3.0 有界组合层 `closed`（SMTP 专用分母）；RT-M01 delivered；VRev-039 |
 | 2026-08-24 | 用户否决关门。v0.4.0 `closed → active`。现行分母 = 渠道模型 + mock 站内记录 + Resend + 设置/试发。R1～R4 实施史不回退。RT-M01 收回 in-progress。VP-018 冻结至再次关门。VRev-041 |
+| 2026-08-24 | **v0.5.0 `active → closed`**：R5～R8 由 GOAL-006～009 承接并全部 done；`mail.channel` 合同、mock 表、Resend live 投递实跑 PASS、设置邮件 tab、readyz 生产探针；A-003/A-004 pass。RT-M01 delivered。VP-018 解冻。VRev-042 |
