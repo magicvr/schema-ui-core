@@ -80,7 +80,7 @@ func TestMailAdminSurface(t *testing.T) {
 	})
 
 	t.Run("rejected switch keeps previous channel and reports conflict", func(t *testing.T) {
-		body := `{"channel":"resend","resend":{"from":"not-an-address"}}`
+		body := `{"channel":"resend","resendFrom":"not-an-address"}`
 		code, _ := authed(http.MethodPut, "/api/mail/config", body)
 		if code != http.StatusConflict {
 			t.Fatalf("invalid candidate status = %d, want 409", code)

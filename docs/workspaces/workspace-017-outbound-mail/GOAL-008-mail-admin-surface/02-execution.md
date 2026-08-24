@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-24 | 开设 R7 五件套（未改代码） | recorded | [E-001-r7-scaffold.md](02-execution/E-001-r7-scaffold.md) |
+| E-002 | 2026-08-24 | R7 实施：迁移0052/0053 + 加密 + Switcher 热切换 + 管理 API + web 邮件 tab | recorded | [E-002-r7-implementation.md](02-execution/E-002-r7-implementation.md) |
 
 ## 事实边界
 

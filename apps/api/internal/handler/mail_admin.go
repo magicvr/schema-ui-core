@@ -69,23 +69,20 @@ func mailConfigGet(svc MailAdminService) http.Handler {
 	})
 }
 
-// mailConfigPut decodes a partial update. Secret fields left empty keep the
-// stored value; non-empty secrets replace them after candidate validation.
+// mailConfigPut decodes a partial update using FLAT keys (the schema-driven
+// form projects flat bodies). Secret fields left empty keep the stored value;
+// non-empty secrets replace them after candidate validation.
 func mailConfigPut(svc MailAdminService, operations operationlog.Recorder) http.Handler {
 	type putBody struct {
 		Channel       string `json:"channel"`
 		MockRetention *int   `json:"mockRetention"`
-		Resend        *struct {
-			APIKey *string `json:"apiKey"`
-			From   *string `json:"from"`
-		} `json:"resend"`
-		SMTP *struct {
-			Host     *string `json:"host"`
-			Port     *int    `json:"port"`
-			Username *string `json:"username"`
-			Password *string `json:"password"`
-			From     *string `json:"from"`
-		} `json:"smtp"`
+		ResendAPIKey  *string `json:"resendApiKey"`
+		ResendFrom    *string `json:"resendFrom"`
+		SMTPHost      *string `json:"smtpHost"`
+		SMTPPort      *int    `json:"smtpPort"`
+		SMTPUsername  *string `json:"smtpUsername"`
+		SMTPPassword  *string `json:"smtpPassword"`
+		SMTPFrom      *string `json:"smtpFrom"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, _ := auth.IdentityFrom(r.Context())
@@ -94,18 +91,16 @@ func mailConfigPut(svc MailAdminService, operations operationlog.Recorder) http.
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "expected a JSON mail config body")
 			return
 		}
-		req := mail.UpdateRequest{Channel: strings.TrimSpace(body.Channel)}
-		req.MockRetention = body.MockRetention
-		if body.Resend != nil {
-			req.ResendFrom = body.Resend.From
-			req.ResendAPIKey = body.Resend.APIKey
-		}
-		if body.SMTP != nil {
-			req.SMTPHost = body.SMTP.Host
-			req.SMTPPort = body.SMTP.Port
-			req.SMTPUsername = body.SMTP.Username
-			req.SMTPPassword = body.SMTP.Password
-			req.SMTPFrom = body.SMTP.From
+		req := mail.UpdateRequest{
+			Channel:       strings.TrimSpace(body.Channel),
+			MockRetention: body.MockRetention,
+			ResendAPIKey:  body.ResendAPIKey,
+			ResendFrom:    body.ResendFrom,
+			SMTPHost:      body.SMTPHost,
+			SMTPPort:      body.SMTPPort,
+			SMTPUsername:  body.SMTPUsername,
+			SMTPPassword:  body.SMTPPassword,
+			SMTPFrom:      body.SMTPFrom,
 		}
 		view, err := svc.Update(r.Context(), req)
 		if err != nil && errors.Is(err, mail.ErrUnknownChannel) {
