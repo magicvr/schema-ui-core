@@ -4,7 +4,7 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-25
 version: 0.5.0
 ---
 
@@ -26,6 +26,7 @@ version: 0.5.0
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-24 | self | Root 关门自审（R1～R4 汇总 · 五判据 · 门禁 · 边界） | pass | 0 | [A-001-self-root-closeout.md](03-audit/A-001-self-root-closeout.md) |
 | A-002 | 2026-08-24 | independent | Root 关门独立审计（R1～R4 汇总 · 五判据 · 门禁 · 边界；代码基准 `6c6496d4`） | **conditional** | 1（F-001） | [A-002-independent-root-closeout.md](03-audit/A-002-independent-root-closeout.md) |
+| A-003 | 2026-08-25 | independent | 工作区整体完成·代码层独立审计（迁移/服务层/HTTP/Web/复跑/构建/git；以代码为判据） | **pass** | 0（1 recommended） | [A-003-independent-workspace-code-closeout.md](03-audit/A-003-independent-workspace-code-closeout.md) |
 
 ## 结论状态
 
@@ -39,3 +40,11 @@ version: 0.5.0
 - A-002 其余核对（五判据 1–4、门禁闭环、边界、测试复跑）均 pass，无其他 finding。
 
 开放 required 归零。**Root 关门：`status: done` · progress 4/4。**
+
+**追审（independent · 2026-08-25）**：A-003 以**产品代码为判据**复核工作区 018 整体完成——迁移 0054/0055 与冻结 checksum、绑定/校验/重发服务层、HTTP 三端点与 7 错误码、I-006 代填、Web 绑定卡、golden 断言全部走读核对；`go build ./...`、`npm run build`、authsession 全包（含 R4 e2e 经真实 OutboxSink 取码）、store 迁移/golden 专项、`TestUsersPatchEmailPrefillFlows`、web vitest 复跑**全绿**；git 基准与文档 commit 链可核对。verdict **pass**，0 required（新发现 F-001 recommended/low：未绑定账号 verify 返回 500 INTERNAL 而非受控 EMAIL_NOT_PENDING；N-1/N-2 为 note）。A-003 不改任何状态；响应归 /govern。
+
+**编排器响应 A-003（/govern · 2026-08-25）**：
+- **F-001 → fixed**：`evaluateVerification` 对 users 无行（email IS NULL / 用户不存在）判为受控 `verificationNotPending`（`errNotSentinel`），仅真实存储错误继续上抛 INTERNAL；新增回归用例 `TestVerifyUnboundAccountIsControlledNotPending`。authsession 全包复跑 ok——未绑定账号 verify 现返回 409 `EMAIL_NOT_PENDING`，HTTP 契约缺口闭合。
+- **N-1 → 维持 known-boundary 台账**（rowsAffected 守卫 + best-effort 计数已文档化）。
+- **N-2 → 维持 known-boundary 台账**（两阶段崩溃窗口有 resend 补投与管理员清空两条恢复路径）。
+- 关门状态不重开：A-003 verdict pass 且 0 required，本响应为关门后低危契约修缮（Root 保持 `done`）。

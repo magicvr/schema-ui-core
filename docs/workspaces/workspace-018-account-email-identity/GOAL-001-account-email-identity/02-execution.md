@@ -24,6 +24,7 @@ version: 0.3.0
 | E-008 | 2026-08-24 | R4 关门（GOAL-005 done · 端到端证据 · self pass · Root 4/4 待关门审计） | recorded | [E-008-r4-closed.md](02-execution/E-008-r4-closed.md) |
 | E-009 | 2026-08-24 | 关门审计环中断（grok 代理不可达 · A-002 挂起） | recorded | [E-009-closeout-audit-deferred.md](02-execution/E-009-closeout-audit-deferred.md) |
 | E-010 | 2026-08-24 | **Root 关门**（A-002 independent 归零 · done 4/4 · VP-018 closed） | recorded | [E-010-root-closed.md](02-execution/E-010-root-closed.md) |
+| E-011 | 2026-08-25 | A-003 响应：recommended F-001 fixed（unbound verify → 受控 409） | recorded | [E-011-a003-response.md](02-execution/E-011-a003-response.md) |
 
 ## 事实边界
 

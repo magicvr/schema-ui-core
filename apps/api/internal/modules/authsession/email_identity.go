@@ -290,6 +290,13 @@ func (r *Repository) evaluateVerification(userID, code string, now time.Time) (v
 			`SELECT email_status FROM users WHERE id = ? AND email IS NOT NULL`, userID,
 		).Scan(&status); err != nil {
 			outcome = verificationNotPending
+			// A-003 F-001: a missing row means the account has NO email at all
+			// (unbound) or does not exist — a controlled "nothing to verify"
+			// outcome, not a storage failure. Without this branch an unbound
+			// verify surfaced as 500 INTERNAL instead of EMAIL_NOT_PENDING.
+			if errors.Is(err, kernel.ErrNoRows) {
+				return errNotSentinel
+			}
 			return err
 		}
 		if status == nil || *status != "pending" {

@@ -232,6 +232,16 @@ func TestAdminPrefillPendingCannotVerifyDirectly(t *testing.T) {
 	}
 }
 
+func TestVerifyUnboundAccountIsControlledNotPending(t *testing.T) {
+	// A-003 F-001: an account that never bound an email must get the
+	// controlled ErrEmailNotPending (→ HTTP 409), not an internal error.
+	repo, _ := openEmailIdentityFixture(t)
+	err := repo.VerifyEmail("u-bob", "123456", time.Now().UTC())
+	if !errors.Is(err, ErrEmailNotPending) {
+		t.Fatalf("unbound verify err = %v, want ErrEmailNotPending", err)
+	}
+}
+
 func TestSendFailureRollsBindBack(t *testing.T) {
 	repo := func() *Repository {
 		st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "send-fail.db"), "admin", "hash-v1", true)
