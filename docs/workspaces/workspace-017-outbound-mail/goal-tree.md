@@ -23,10 +23,11 @@ GOAL-001-outbound-mail [active 5/8]       · 出站邮件（渠道供应商模�
 ├── GOAL-003-smtp-dial-config [done 3/3]            · R2 SMTP 接入与配置面（历史；不回退）
 ├── GOAL-004-default-sink-surface-sweep [done 3/3]  · R3 默认 sink 落地与公共面 sweep（历史；不回退）
 ├── GOAL-005-r4-readyz-evidence [done 3/3]          · R4 显式路径证据与 readyz 扩依赖（历史；不回退）
-└── GOAL-006-channel-provider-contract [done 3/3]   · R5 渠道供应商合同冻结（D-002；I-010/I-011 verified）
+├── GOAL-006-channel-provider-contract [done 3/3]   · R5 渠道供应商合同冻结（D-002；I-010/I-011 verified）
+└── GOAL-007-mock-resend-delivery [active 0/4]      · R6 mock 站内出站记录与 Resend 渠道落地
 ```
 
-历史 Root 关门（A-001 self pass + A-002 independent pass）原文保留，**已由用户否决其作为现行 `done` 的效力**。开放 required Goal finding = 0。R6～R8 子目标按 P-001 尚未创建；下一阶段 = R6（mock + Resend 落地），开设时承接 D-002 合同条款与已 verified 的 I-010/I-011。
+历史 Root 关门（A-001 self pass + A-002 independent pass）原文保留，**已由用户否决其作为现行 `done` 的效力**。开放 required Goal finding = 0。R7～R8 子目标按 P-001 尚未创建。
 
 ## 状态表
 
@@ -38,3 +39,4 @@ GOAL-001-outbound-mail [active 5/8]       · 出站邮件（渠道供应商模�
 | GOAL-004-default-sink-surface-sweep | R3 默认 sink 落地与公共面 sweep | GOAL-001-outbound-mail | done | 3/3 | 2026-08-22 |
 | GOAL-005-r4-readyz-evidence | R4 显式路径证据与 readyz 扩依赖 | GOAL-001-outbound-mail | done | 3/3 | 2026-08-22 |
 | GOAL-006-channel-provider-contract | R5 渠道供应商合同冻结 | GOAL-001-outbound-mail | done | 3/3 | 2026-08-24 |
+| GOAL-007-mock-resend-delivery | R6 mock 站内出站记录与 Resend 渠道落地 | GOAL-001-outbound-mail | active | 0/4 | 2026-08-24 |
