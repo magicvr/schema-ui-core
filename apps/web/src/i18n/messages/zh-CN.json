@@ -824,5 +824,18 @@
   "schema.mail.outbox.title": "mock 出站记录",
   "schema.mail.column.to": "收件人",
   "schema.mail.column.subject": "主题",
-  "schema.mail.column.created": "创建时间"
+  "schema.mail.column.created": "创建时间",
+  "schema.mail.test.subject": "邮件标题",
+  "schema.mail.test.subjectPlaceholder": "留空使用默认标题",
+  "schema.mail.test.body": "邮件正文",
+  "schema.mail.test.bodyPlaceholder": "留空使用默认正文",
+  "schema.mail.action.save": "保存配置",
+  "schema.mail.secret.keep": "已设置——留空保持不变",
+  "schema.mail.smtp.portPlaceholder": "留空 = 465",
+  "schema.mail.feedback.saved": "配置已保存，新渠道对后续发送立即生效。",
+  "schema.mail.feedback.saveFailed": "保存配置失败。",
+  "schema.mail.feedback.sendOk": "测试邮件已经由当前渠道发送。",
+  "schema.mail.feedback.sendFailed": "测试邮件发送失败",
+  "schema.mail.feedback.loadFailed": "无法加载出站邮件配置。",
+  "schema.mail.outbox.refresh": "刷新"
 }

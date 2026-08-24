@@ -69,13 +69,21 @@ func TestMailAdminSurface(t *testing.T) {
 		if code != http.StatusOK || out["mockRetention"].(float64) != 42 {
 			t.Fatalf("put = %d %v", code, out)
 		}
-		code, sent := authed(http.MethodPost, "/api/mail/test-send", `{"to":"user@example.com"}`)
+		code, sent := authed(http.MethodPost, "/api/mail/test-send", `{"to":"user@example.com","subject":"custom subject","body":"custom body"}`)
 		if code != http.StatusOK || sent["sent"] != true {
 			t.Fatalf("test-send = %d %v", code, sent)
 		}
 		reader := mail.NewOutboxSink(env.st, 0)
 		if n, err := reader.Count(context.Background()); err != nil || n != 1 {
 			t.Fatalf("outbox count = %d, %v; want the test message in the mock channel", n, err)
+		}
+		rows, err := reader.List(context.Background(), 10, 0)
+		if err != nil || len(rows) != 1 || rows[0].Subject != "custom subject" {
+			t.Fatalf("stored record = %+v, %v; want custom subject persisted", rows, err)
+		}
+		full, err := reader.Get(context.Background(), rows[0].ID)
+		if err != nil || full.Body != "custom body" {
+			t.Fatalf("stored body = %+v, %v; want custom body persisted", full, err)
 		}
 	})
 

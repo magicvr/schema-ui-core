@@ -122,20 +122,31 @@ func mailConfigPut(svc MailAdminService, operations operationlog.Recorder) http.
 }
 
 // mailTestSend sends ONE test message through the current channel — the same
-// Switcher every consumer uses, never an adapter bypass.
+// Switcher every consumer uses, never an adapter bypass. Subject/body come
+// from the admin console (R7 UX refinement); empty values fall back to the
+// frozen defaults so the endpoint stays usable from a bare harness.
 func mailTestSend(svc MailAdminService, operations operationlog.Recorder) http.Handler {
 	type testBody struct {
-		To string `json:"to"`
+		To      string `json:"to"`
+		Subject string `json:"subject"`
+		Body    string `json:"body"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, _ := auth.IdentityFrom(r.Context())
 		var body testBody
-		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil {
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&body); err != nil {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "expected a JSON test-send body")
 			return
 		}
-		msg := kernel.MailMessage{To: strings.TrimSpace(body.To), Subject: "Schema UI test mail",
-			TextBody: "This is a test message sent from the Schema UI outbound-mail console."}
+		subject := strings.TrimSpace(body.Subject)
+		if subject == "" {
+			subject = "Schema UI test mail"
+		}
+		text := body.Body
+		if strings.TrimSpace(text) == "" {
+			text = "This is a test message sent from the Schema UI outbound-mail console."
+		}
+		msg := kernel.MailMessage{To: strings.TrimSpace(body.To), Subject: subject, TextBody: text}
 		if err := svc.Send(r.Context(), msg); err != nil {
 			writeLocalizedError(w, r, http.StatusBadGateway, "MAIL_SEND_FAILED", firstLine(err))
 			return
@@ -144,7 +155,7 @@ func mailTestSend(svc MailAdminService, operations operationlog.Recorder) http.H
 		if view, err := svc.PublicView(); err == nil {
 			channel = view.Channel
 		}
-		recordAudit(operations, user, operationlog.EventMailTestSend, "", auditDetail("test-send", map[string]any{"to": msg.To, "channel": channel}), time.Now().UTC(), r.Context())
+		recordAudit(operations, user, operationlog.EventMailTestSend, "", auditDetail("test-send", map[string]any{"to": msg.To, "subject": msg.Subject, "channel": channel}), time.Now().UTC(), r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"sent": true, "channel": channel})
 	})
 }

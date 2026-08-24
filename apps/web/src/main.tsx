@@ -20,6 +20,9 @@ import "@/components/wallet-ensure";
 import "@/components/notification-center";
 import "@/components/data-permission-scopes";
 import "@/components/activity-export";
+// VP-017 R7 UX refinement: settings「邮件」tab console (channel-conditional
+// fields, mock-record table under mock only, test composer with subject/body).
+import "@/components/mail-admin-tab";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,

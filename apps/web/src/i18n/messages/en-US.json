@@ -824,5 +824,18 @@
   "schema.mail.outbox.title": "Mock outbound records",
   "schema.mail.column.to": "To",
   "schema.mail.column.subject": "Subject",
-  "schema.mail.column.created": "Created"
+  "schema.mail.column.created": "Created",
+  "schema.mail.test.subject": "Subject",
+  "schema.mail.test.subjectPlaceholder": "Empty = default subject",
+  "schema.mail.test.body": "Body",
+  "schema.mail.test.bodyPlaceholder": "Empty = default text",
+  "schema.mail.action.save": "Save configuration",
+  "schema.mail.secret.keep": "configured — leave empty to keep",
+  "schema.mail.smtp.portPlaceholder": "Empty = 465",
+  "schema.mail.feedback.saved": "Configuration saved. New channel applies to subsequent sends.",
+  "schema.mail.feedback.saveFailed": "Could not save the configuration.",
+  "schema.mail.feedback.sendOk": "Test mail sent through the current channel.",
+  "schema.mail.feedback.sendFailed": "Test mail failed",
+  "schema.mail.feedback.loadFailed": "Could not load the outbound-mail configuration.",
+  "schema.mail.outbox.refresh": "Refresh"
 }

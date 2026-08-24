@@ -24,6 +24,7 @@ import "@/components/wallet-ensure";
 import "@/components/notification-center";
 import "@/components/data-permission-scopes";
 import "@/components/activity-export";
+import "@/components/mail-admin-tab";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
