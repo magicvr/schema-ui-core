@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-dual-dialect-email-schema
 title: R2 双方言 schema + 唯一性
-status: active
+status: done
 parent: GOAL-001-account-email-identity
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
-progress: 0/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-018-account-email-identity
 primary_plan: VP-018-account-email-identity
@@ -29,12 +29,12 @@ serves_summary: 承接 Root R2：迁移 0054 为 users 加 email（可空）与 
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | 迁移 0054 双方言落地（DDL 可移植；ApplyPostgres nil 先例一致），checksum 台账参与 | 待完成 |
-| C2 | 五处黄金断言同步（identity.go head / identity_test lockedHead / migrate_test ×2 / operations_test / restart_test） | 待完成 |
-| C3 | 专项测试通过（升级路径 + 全新库 + 大小写唯一冲突 + 多 NULL 共存 + CHECK 拒绝） | 待完成 |
-| C4 | independent 审计（grok build · grok-4.6 · high）意见落盘且开放 required = 0 | 待完成 |
+| C1 | 迁移 0054 双方言落地（DDL 可移植；ApplyPostgres nil 先例一致），checksum 台账参与 | **完成**：migration.go v54；冻结目录行 checksum 与独立复算一致（A-001 核对） |
+| C2 | 五处黄金断言同步（identity.go head / identity_test lockedHead / migrate_test ×2 / operations_test / restart_test） | **完成**：五文件位置 + 冻结 checksum 目录追加（A-001 N-2 口径说明） |
+| C3 | 专项测试通过（升级路径 + 全新库 + 大小写唯一冲突 + 多 NULL 共存 + CHECK 拒绝） | **完成**：migrate_0054_test.go 全 PASS；PG 全 catalog bootstrap 实跑 PASS |
+| C4 | independent 审计（grok build · grok-4.6 · high）意见落盘且开放 required = 0 | **完成**：A-001 independent pass（0 required；F-001/F-002/F-003 recommended 响应见 E-003） |
 
-`progress` = 已完成检查点 / 4。当前 **0/4**。
+`progress` = 已完成检查点 / 4。当前 **4/4**（已关门）。
 
 ## 边界
 

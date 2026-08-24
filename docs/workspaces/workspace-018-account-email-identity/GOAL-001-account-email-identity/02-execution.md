@@ -18,6 +18,8 @@ version: 0.3.0
 | E-002 | 2026-08-24 | Root 冻结（017 再关门前不得推进） | recorded | [E-002-frozen.md](02-execution/E-002-frozen.md) |
 | E-003 | 2026-08-24 | Root 解冻（VP-017 v0.5.0 现行分母再关门 + 用户确认） | recorded | [E-003-unfrozen.md](02-execution/E-003-unfrozen.md) |
 | E-004 | 2026-08-24 | 创建 R1 子目标 GOAL-002-identity-contract-freeze（五件套齐全） | recorded | [E-004-r1-subgoal-created.md](02-execution/E-004-r1-subgoal-created.md) |
+| E-005 | 2026-08-24 | R1 关门（GOAL-002 done · A-001 self pass · Root 1/4） | recorded | [E-005-r1-closed.md](02-execution/E-005-r1-closed.md) |
+| E-006 | 2026-08-24 | R2 关门（GOAL-003 done · 迁移 0054 · A-001 independent pass · Root 2/4） | recorded | [E-006-r2-closed.md](02-execution/E-006-r2-closed.md) |
 
 ## 事实边界
 

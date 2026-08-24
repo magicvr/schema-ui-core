@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-018-account-email-identity](../../vision/plans/VP-018-account-email-identity.md)（**`active` · 已解冻**）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-account-email-identity`：**`active`** · 1/4。2026-08-24 解冻（D-003）：VP-017 已按现行渠道分母再次 `closed`（v0.5.0），用户确认恢复推进；R1 身份合同已冻结（GOAL-002 D-001 · A-001 self pass）。
+- **Root** `GOAL-001-account-email-identity`：**`active`** · 2/4。2026-08-24 解冻（D-003）：VP-017 已按现行渠道分母再次 `closed`（v0.5.0），用户确认恢复推进；R1 身份合同已冻结（GOAL-002 D-001）、R2 双方言 schema 已落地（GOAL-003 · 迁移 0054 · A-001 independent pass）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不承接自助恢复状态机、邀请、密码策略、SMS、模板产品或业务域。
 
@@ -45,7 +45,7 @@ VP-018：账号邮箱身份面；消费 `MailSender`；2026-08-24 解冻（VP-01
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | R1 | 身份合同冻结（唯一性细则、校验形态、可空、换绑） | **已完成**（GOAL-002 done · A-001 pass） |
-| R2 | 双方言 schema + 唯一性约束 | **待启动** |
+| R2 | 双方言 schema + 唯一性约束 | **已完成**（GOAL-003 done · 迁移 0054 · A-001 independent pass） |
 | R3 | 绑定/校验消费 `MailSender` | **待启动** |
 | R4 | 证据 | **待启动** |
 
