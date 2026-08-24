@@ -129,10 +129,15 @@ func sendVerificationMail(ctx context.Context, sender kernel.MailSender, to, cod
 // occupies its unique slot immediately (pending), any previous challenge is
 // replaced, and the code goes out through the given MailSender. Rebinding to
 // a new address is the same operation (overwrite releases the old slot).
-// Idempotent when the SAME address is already verified. The Send happens
-// inside the transaction so a delivery failure rolls the whole bind back
-// (no pending row without a dispatched mail); the write window held during
-// the synchronous Send is accepted at admin-scale traffic.
+// Idempotent when the SAME address is already verified.
+//
+// Dispatch is TWO-PHASE (R4 e2e evidence): channel adapters may open their
+// own store transactions (the mock OutboxSink publishes to mail_outbox), and
+// nested runner.Run is forbidden (R1 v1.4 §2) — so the Send runs OUTSIDE the
+// reservation transaction. A dispatch failure is COMPENSATED: the staged
+// challenge is dropped and the prior identity restored, leaving no pending
+// row without a dispatched mail (same end-state the old single-transaction
+// rollback provided).
 func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender, now time.Time) error {
 	email, err := normalizeEmailInput(rawEmail)
 	if err != nil {
@@ -143,24 +148,26 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 		return err
 	}
 	expires := now.Add(emailCodeTTL)
-	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var currentEmail *string
-		var currentStatus *string
-		err := tx.QueryRow(context.Background(),
+
+	var priorEmail, priorStatus *string
+	idempotent := false
+	err = r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		idempotent = false
+		if err := tx.QueryRow(context.Background(),
 			`SELECT email, email_status FROM users WHERE id = ?`, userID,
-		).Scan(&currentEmail, &currentStatus)
-		if err != nil {
+		).Scan(&priorEmail, &priorStatus); err != nil {
 			return fmt.Errorf("load user %s: %w", userID, err)
 		}
-		if currentStatus != nil && *currentStatus == "verified" && currentEmail != nil &&
-			strings.EqualFold(strings.TrimSpace(*currentEmail), email) {
-			return nil // same address already verified: idempotent no-op
+		if priorStatus != nil && *priorStatus == "verified" && priorEmail != nil &&
+			strings.EqualFold(strings.TrimSpace(*priorEmail), email) {
+			idempotent = true // same address already verified: no-op, no mail
+			return nil
 		}
 		// A-001 F-002: re-binding the SAME pending address is resend semantics
 		// (a fresh code to the same inbox) — honor the frozen cooldown. A
 		// DIFFERENT address is a rebind and dispatches immediately.
-		if currentStatus != nil && *currentStatus == "pending" && currentEmail != nil &&
-			strings.EqualFold(strings.TrimSpace(*currentEmail), email) {
+		if priorStatus != nil && *priorStatus == "pending" && priorEmail != nil &&
+			strings.EqualFold(strings.TrimSpace(*priorEmail), email) {
 			var sentAt int64
 			if err := tx.QueryRow(context.Background(),
 				`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
@@ -194,7 +201,35 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 		); err != nil {
 			return fmt.Errorf("store challenge: %w", err)
 		}
-		return sendVerificationMail(context.Background(), sender, email, code, expires)
+		return nil
+	})
+	if err != nil || idempotent {
+		return err
+	}
+
+	// Phase 2 — dispatch outside the store transaction.
+	if serr := sendVerificationMail(context.Background(), sender, email, code, expires); serr != nil {
+		if cerr := r.compensateBind(userID, priorEmail, priorStatus); cerr != nil {
+			return fmt.Errorf("%w: %v (compensation failed: %v)", ErrEmailSendFailed, serr, cerr)
+		}
+		return serr
+	}
+	return nil
+}
+
+// compensateBind restores the pre-bind identity and drops the staged
+// challenge after a failed dispatch.
+func (r *Repository) compensateBind(userID string, priorEmail, priorStatus *string) error {
+	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(),
+			`UPDATE users SET email = ?, email_status = ?, updated_at = ? WHERE id = ?`,
+			nullIfNil(priorEmail), nullIfNil(priorStatus), time.Now().Unix(), userID,
+		); err != nil {
+			return err
+		}
+		_, err := tx.Exec(context.Background(),
+			`DELETE FROM email_verification_challenges WHERE user_id = ?`, userID)
+		return err
 	})
 }
 
@@ -344,30 +379,45 @@ func (r *Repository) registerFailedAttempt(userID string, maxAttempts int) bool 
 var errNotSentinel = errors.New("authsession: controlled verification outcome")
 
 // ResendEmailCode issues a fresh code for an existing pending address,
-// honoring the frozen resend cooldown.
+// honoring the frozen resend cooldown. Two-phase like BindEmail: the refresh
+// commits first; a dispatch failure compensates by restoring the prior
+// challenge verbatim (or dropping it when none existed).
 func (r *Repository) ResendEmailCode(userID string, sender kernel.MailSender, now time.Time) error {
 	code, err := generateEmailCode()
 	if err != nil {
 		return err
 	}
 	expires := now.Add(emailCodeTTL)
-	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+
+	var address string
+	var hadPrior bool
+	var priorHash string
+	var priorExpires, priorSent, priorAttempts int64
+	err = r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		hadPrior = false
 		var status *string
-		var email *string
 		if err := tx.QueryRow(context.Background(),
 			`SELECT email_status, email FROM users WHERE id = ? AND email IS NOT NULL`, userID,
-		).Scan(&status, &email); err != nil || status == nil || *status != "pending" || email == nil {
+		).Scan(&status, &address); err != nil || status == nil || *status != "pending" || address == "" {
 			return ErrEmailNotPending
 		}
 		var sentAt int64
-		err := tx.QueryRow(context.Background(),
+		scanErr := tx.QueryRow(context.Background(),
 			`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
 		).Scan(&sentAt)
 		switch {
-		case err == nil:
+		case scanErr == nil:
 			if now.Unix()-sentAt < int64(emailResendCooldown/time.Second) {
 				return ErrEmailResendCooldown
 			}
+			// Snapshot the full prior row so compensation is verbatim.
+			if err := tx.QueryRow(context.Background(),
+				`SELECT code_hash, expires_at, sent_at, attempt_count FROM email_verification_challenges WHERE user_id = ?`,
+				userID,
+			).Scan(&priorHash, &priorExpires, &priorSent, &priorAttempts); err != nil {
+				return fmt.Errorf("snapshot challenge: %w", err)
+			}
+			hadPrior = true
 		default:
 			// No live challenge (expired/consumed): issuing a fresh one is fine.
 		}
@@ -381,6 +431,28 @@ func (r *Repository) ResendEmailCode(userID string, sender kernel.MailSender, no
 		); err != nil {
 			return fmt.Errorf("store refreshed challenge: %w", err)
 		}
-		return sendVerificationMail(context.Background(), sender, *email, code, expires)
+		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	if serr := sendVerificationMail(context.Background(), sender, address, code, expires); serr != nil {
+		cerr := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+			if !hadPrior {
+				_, err := tx.Exec(context.Background(),
+					`DELETE FROM email_verification_challenges WHERE user_id = ?`, userID)
+				return err
+			}
+			_, err := tx.Exec(context.Background(),
+				`UPDATE email_verification_challenges SET code_hash = ?, expires_at = ?, sent_at = ?, attempt_count = ? WHERE user_id = ?`,
+				priorHash, priorExpires, priorSent, priorAttempts, userID)
+			return err
+		})
+		if cerr != nil {
+			return fmt.Errorf("%w: %v (compensation failed: %v)", ErrEmailSendFailed, serr, cerr)
+		}
+		return serr
+	}
+	return nil
 }
