@@ -145,6 +145,23 @@ var seedAdminMustChangePasswordSQL = []string{
 	`UPDATE users SET must_change_password = 1 WHERE id = 'user-admin' AND must_change_password = 0`,
 }
 
+// accountEmailIdentityDDL (workspace-018 R2 · GOAL-003 D-001): account email
+// identity per the frozen R1 contract (GOAL-002 D-001 §1/§2/§3/§6).
+//   - email TEXT NULL: NULL = unbound; NULLs are mutually distinct in unique
+//     indexes on both dialects, so accounts without email never collide.
+//   - email_status TEXT NULL CHECK ('pending'|'verified'): meaningful only
+//     when email IS NOT NULL — a NULL email means unbound regardless.
+//   - idx_users_email_lower on lower(email): the physical carrier of
+//     bind-reserves-slot case-insensitive uniqueness. All three statements
+//     are byte-identical on sqlite and postgres, so ApplyPostgres stays nil;
+//     sqlite lower() folds ASCII only, compensated by application-layer
+//     normalization in R3 repositories (GOAL-002 A-001 F-2).
+var accountEmailIdentityDDL = []string{
+	`ALTER TABLE users ADD COLUMN email TEXT`,
+	`ALTER TABLE users ADD COLUMN email_status TEXT CHECK (email_status IN ('pending','verified'))`,
+	`CREATE UNIQUE INDEX idx_users_email_lower ON users(lower(email))`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
@@ -366,6 +383,15 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateSeedAdminMustChangePassword,
 			// ApplyPostgres nil: portable UPDATE (no dialect difference).
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account_email_identity"},
+			Version:              54,
+			Name:                 "account_email_identity",
+			Checksum:             kernel.MigrationChecksum(accountEmailIdentityDDL, "0054:account-email-identity:v1"),
+			Apply:                migrateAccountEmailIdentity,
+			// ApplyPostgres nil: portable DDL (TEXT column + literal CHECK +
+			// lower() expression unique index are identical on both dialects).
+		},
 	}
 }
 
@@ -438,6 +464,15 @@ func migrateSeedAdminMustChangePassword(tx kernel.Tx) error {
 	for _, stmt := range seedAdminMustChangePasswordSQL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("backfill seed admin must_change_password: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateAccountEmailIdentity(tx kernel.Tx) error {
+	for _, stmt := range accountEmailIdentityDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("add account email identity columns/index: %w", err)
 		}
 	}
 	return nil

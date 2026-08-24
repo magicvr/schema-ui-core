@@ -102,6 +102,7 @@ var lockedHeadExtraTables = map[int][]string{
 	51: {"mail_outbox"}, // VP-017 R6 mock-channel outbound record table
 	52: {"mail_config"}, // VP-017 R7 runtime channel state
 	53: {}, // operation_log_mail_events: CHECK-enum expansion (no new objects)
+	54: {}, // account_email_identity: ALTER + lower(email) unique index only (no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
