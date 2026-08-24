@@ -38,7 +38,7 @@ func TestClassifyIdentity(t *testing.T) {
 		{"empty", nil, nil, false, identityEmpty},
 		{"ledger", []string{"schema_migrations", "users"}, ledger, true, identityOursLedger},
 		{"r2", []string{"users", "refresh_tokens"}, nil, true, identityOursR2},
-		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox"}, nil, true, identityOursCompleteNoLedger},
+		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config"}, nil, true, identityOursCompleteNoLedger},
 		{"four tables without catalog head", []string{"users", "refresh_tokens", "operation_log", "jobs", "roles"}, nil, true, identityLostLedgerUnsafe},
 		{"partial users only", []string{"users"}, nil, true, identityOursPartialNoLedger},
 		{"foreign users", []string{"users"}, nil, false, identityForeign},
@@ -100,6 +100,8 @@ var lockedHeadExtraTables = map[int][]string{
 	49: {},
 	50: {}, // wallet_ledger_order_repair: data-only repair (no new objects)
 	51: {"mail_outbox"}, // VP-017 R6 mock-channel outbound record table
+	52: {"mail_config"}, // VP-017 R7 runtime channel state
+	53: {}, // operation_log_mail_events: CHECK-enum expansion (no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

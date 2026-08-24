@@ -275,6 +275,7 @@ var (
 	operationLogAvatarEventsPGDDL       = pgTimeDDL(operationLogAvatarEventsDDL)
 	operationLogWalletJobsPGDDL         = pgTimeDDL(operationLogWalletJobsDDL)
 	operationLogServiceCredentialsPGDDL = pgTimeDDL(operationLogServiceCredentialsDDL)
+	operationLogMailEventsPGDDL         = pgTimeDDL(operationLogMailEventsDDL)
 	operationLogArchivePGDDL            = pgTimeDDL(operationLogArchiveDDL)
 )
 
@@ -469,7 +470,31 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(operationLogSessionDDL, "0048:operation-log-session:v1"),
 			Apply:                migrateOperationLogSession,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_mail_events"},
+			Version:              53,
+			Name:                 "operation_log_mail_events",
+			Checksum:             kernel.MigrationChecksum(operationLogMailEventsDDL, "0053:operation-log-mail-events:v1"),
+			Apply:                migrateOperationLogMailEvents,
+			ApplyPostgres:        MailEventsPGApply(),
+		},
 	}
+}
+
+// operationLogMailEventsDDL (0053 · VP-017 R7): adds the outbound-mail admin
+// surface audit events (channel config update + test send) to the frozen
+// CHECK enumeration.
+var operationLogMailEventsDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update','mfa.enroll','mfa.confirm','mfa.disable','mfa.recovery-rotate','mfa.admin-reset','mfa.login','wallet.account-create','wallet.account-update','wallet.adjust','wallet.freeze','wallet.unfreeze','wallet.reconcile','wallet.deduct-frozen','account.avatar-change','wallet.reconcile.queued','wallet.reconcile.failed','wallet.reconcile.cancelled','service-credentials.create','service-credentials.use','service-credentials.revoke','mail.channel-update','mail.test-send')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
 }
 
 // operationLogArchiveDDL (0047): cold store for expired audit rows.
@@ -620,6 +645,73 @@ func migrateOperationLogDataPermission(tx kernel.Tx) error {
 
 func migrateOperationLogMFA(tx kernel.Tx) error {
 	return rebuildOperationLog(tx, operationLogMFADDL, "mfa-events-expanded")
+}
+
+// MailEventsDDL exposes the 0053 DDL for checksum tooling and tests.
+func MailEventsDDL() []string { return operationLogMailEventsDDL }
+
+func migrateOperationLogMailEvents(tx kernel.Tx) error {
+	return rebuildOperationLogMailEvents(tx, operationLogMailEventsDDL)
+}
+
+// MailEventsPGApply returns the postgres-flavored 0053 apply.
+func MailEventsPGApply() func(kernel.Tx) error {
+	return func(tx kernel.Tx) error {
+		return rebuildOperationLogMailEvents(tx, pgTimeDDL(operationLogMailEventsDDL))
+	}
+}
+
+// rebuildOperationLogMailEvents is the shared dialect-neutral dance used by
+// 0053: like rebuildOperationLogWithCorrelation, plus the 0048
+// operation_log_session side table — BOTH carry an FK that the rebuild rename
+// would rewrite onto operation_log_old (leaving dangling references after the
+// drop), so each is backed up, dropped before the rename, recreated after,
+// and refilled.
+func rebuildOperationLogMailEvents(tx kernel.Tx, ddl []string) error {
+	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
+SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
+		return fmt.Errorf("backup operation log correlations: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_session_backup AS
+SELECT operation_id, session_id FROM operation_log_session`); err != nil {
+		return fmt.Errorf("backup operation log sessions: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_session`); err != nil {
+		return fmt.Errorf("drop operation log sessions before rebuild: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
+		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
+	}
+	if err := rebuildOperationLog(tx, ddl, "mail-events-expanded"); err != nil {
+		return err
+	}
+	for _, statement := range operationLogCorrelationDDL {
+		if _, err := tx.Exec(context.Background(), statement); err != nil {
+			return fmt.Errorf("recreate operation log correlations: %w", err)
+		}
+	}
+	// Recreate ONLY the session table + index (operationLogSessionDDL[2:] is
+	// the 0048-era archive_session table, which still exists untouched).
+	for _, statement := range operationLogSessionDDL[:2] {
+		if _, err := tx.Exec(context.Background(), statement); err != nil {
+			return fmt.Errorf("recreate operation log sessions: %w", err)
+		}
+	}
+	if _, err := tx.Exec(context.Background(), `INSERT INTO operation_log_correlation (operation_id, correlation_id)
+SELECT operation_id, correlation_id FROM operation_log_correlation_backup`); err != nil {
+		return fmt.Errorf("restore operation log correlations: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `INSERT INTO operation_log_session (operation_id, session_id)
+SELECT operation_id, session_id FROM operation_log_session_backup`); err != nil {
+		return fmt.Errorf("restore operation log sessions: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation_backup`); err != nil {
+		return fmt.Errorf("drop operation log correlation backup: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_session_backup`); err != nil {
+		return fmt.Errorf("drop operation log session backup: %w", err)
+	}
+	return nil
 }
 
 func rebuildOperationLog(tx kernel.Tx, ddl []string, label string) error {

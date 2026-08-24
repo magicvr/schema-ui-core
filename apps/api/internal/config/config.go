@@ -170,6 +170,12 @@ type Config struct {
 	MailResendAPIKey string
 	MailResendFrom   string
 
+	// MailConfigMasterKey is the optional passphrase for the local master key
+	// that encrypts admin-entered channel secrets at rest (VP-017 R7 / Root
+	// D-007). ENV ONLY (MAIL_CONFIG_MASTER_KEY) — never a YAML literal. Empty
+	// keeps the auto-generated key file under the data directory.
+	MailConfigMasterKey string
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -602,6 +608,7 @@ func Load() *Config {
 	}
 	cfg.MailResendAPIKey = envOr("MAIL_RESEND_API_KEY", cfg.MailResendAPIKey)
 	cfg.MailResendFrom = envOr("MAIL_RESEND_FROM", cfg.MailResendFrom)
+	cfg.MailConfigMasterKey = envOr("MAIL_CONFIG_MASTER_KEY", cfg.MailConfigMasterKey)
 	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
 		if err != nil || port < 1 || port > 65535 {

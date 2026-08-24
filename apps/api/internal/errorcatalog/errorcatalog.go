@@ -183,6 +183,11 @@ var Catalog = map[string]Entry{
 	"RECYCLE_ITEM_NOT_FOUND":        {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},
 	"RECYCLE_RESTORE_CONFLICT":      {"error.recycleRestoreConflict", "a row with that key already exists; resolve the conflict and retry", "存在相同键的行，解决冲突后重试"},
 	"RECYCLE_ITEM_ALREADY_RESTORED": {"error.recycleItemAlreadyRestored", "recycle item is already restored", "回收站记录已恢复"},
+
+	// VP-017 R7 (GOAL-008 D-001): outbound-mail admin surface codes.
+	"INVALID_MAIL_CONFIG":   {"error.invalidMailConfig", "invalid outbound-mail configuration", "出站邮件配置无效"},
+	"MAIL_SWITCH_REJECTED":  {"error.mailSwitchRejected", "new channel configuration failed validation; the previous channel keeps serving", "新渠道配置校验未通过，继续沿用原渠道"},
+	"MAIL_SEND_FAILED":      {"error.mailSendFailed", "the test message could not be sent", "测试邮件发送失败"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

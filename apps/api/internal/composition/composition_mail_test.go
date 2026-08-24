@@ -14,12 +14,11 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
-// R6 evidence (workspace-017 GOAL-007 D-001 over the GOAL-006 D-002 frozen
-// contract): newMailSender resolves ONE kernel.MailSender by mail.channel —
-// the mock outbox publisher with nil probe by default (readyz semantics
-// unchanged), explicit Resend (nil probe until R8) and explicit SMTP (ESMTP
-// Ping probe) adapters. Wiring mirrors the objectStore precedent: direct
-// construction inside NewApp, probe passed to RegisterWithMFAProbes.
+// R7 evidence (workspace-017 GOAL-008 D-001 over Root D-007 / GOAL-006
+// D-002): newMailRuntime builds THE switching kernel.MailSender — mock outbox
+// publisher by default with nil probe (readyz semantics unchanged), boot-time
+// SMTP contributing its ESMTP Ping probe exactly as frozen in R4, and Resend
+// without a probe until R8.
 
 func testLogger() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
@@ -37,16 +36,12 @@ func outboxTestStore(t *testing.T) *store.Store {
 	return st
 }
 
-func TestMailSenderDefaultsToMockOutboxWithoutProbe(t *testing.T) {
+func TestMailRuntimeDefaultsToSwitcherOverMockWithoutProbe(t *testing.T) {
 	cfg := lifecycleAppConfig(t, "mvp", "127.0.0.1:0")
 	st := outboxTestStore(t)
-	sender, probe, err := newMailSender(cfg, st, testLogger())
+	sender, probe, err := newMailRuntime(cfg, st, testLogger())
 	if err != nil {
-		t.Fatalf("newMailSender: %v", err)
-	}
-	sink, ok := sender.(*mail.OutboxSink)
-	if !ok {
-		t.Fatalf("unconfigured mail sender = %T, want *mail.OutboxSink", sender)
+		t.Fatalf("newMailRuntime: %v", err)
 	}
 	if probe != nil {
 		t.Fatal("mock default must NOT extend readyz (仅显式生产渠道后 readyz 扩依赖)")
@@ -55,12 +50,17 @@ func TestMailSenderDefaultsToMockOutboxWithoutProbe(t *testing.T) {
 	if err := sender.Send(context.Background(), msg); err != nil {
 		t.Fatalf("Send through the port: %v", err)
 	}
-	if n, err := sink.Count(context.Background()); err != nil || n != 1 {
+	view, err := sender.PublicView()
+	if err != nil || view.Channel != config.MailChannelMock {
+		t.Fatalf("runtime channel = %+v, %v; want mock", view, err)
+	}
+	reader := mail.NewOutboxSink(st, 0)
+	if n, err := reader.Count(context.Background()); err != nil || n != 1 {
 		t.Fatalf("outbox count = %d, %v; want 1 persisted record", n, err)
 	}
 }
 
-func TestMailSenderSelectsExplicitSMTPWithProbe(t *testing.T) {
+func TestMailRuntimeBootSMTPContributesProbe(t *testing.T) {
 	cfg := lifecycleAppConfig(t, "mvp", "127.0.0.1:0")
 	cfg.MailChannel = config.MailChannelSMTP
 	cfg.MailSMTPHost = "smtp.example.com"
@@ -69,42 +69,42 @@ func TestMailSenderSelectsExplicitSMTPWithProbe(t *testing.T) {
 	cfg.MailSMTPPassword = "secret"
 	cfg.MailSMTPFrom = "no-reply@example.com"
 	st := outboxTestStore(t)
-	sender, probe, err := newMailSender(cfg, st, testLogger())
+	_, probe, err := newMailRuntime(cfg, st, testLogger())
 	if err != nil {
-		t.Fatalf("newMailSender: %v", err)
-	}
-	if _, ok := sender.(*mail.SMTP); !ok {
-		t.Fatalf("explicitly configured mail sender = %T, want *mail.SMTP", sender)
+		t.Fatalf("newMailRuntime: %v", err)
 	}
 	if probe == nil {
-		t.Fatal("explicitly configured endpoint must contribute a readyz probe")
+		t.Fatal("boot SMTP channel must contribute a readyz probe")
 	}
 }
 
-func TestMailSenderSelectsResendWithoutProbeUntilR8(t *testing.T) {
+func TestMailRuntimeResendHasNoProbeUntilR8(t *testing.T) {
 	cfg := lifecycleAppConfig(t, "mvp", "127.0.0.1:0")
 	cfg.MailResendAPIKey = "re-key"
 	cfg.MailResendFrom = "no-reply@example.com"
 	st := outboxTestStore(t)
-	sender, probe, err := newMailSender(cfg, st, testLogger())
+	sender, probe, err := newMailRuntime(cfg, st, testLogger())
 	if err != nil {
-		t.Fatalf("newMailSender: %v", err)
-	}
-	if _, ok := sender.(*mail.Resend); !ok {
-		t.Fatalf("resend-configured mail sender = %T, want *mail.Resend", sender)
+		t.Fatalf("newMailRuntime: %v", err)
 	}
 	if probe != nil {
 		t.Fatal("resend must not extend readyz before the R8 production probes")
 	}
+	view, err := sender.PublicView()
+	if err != nil || view.Channel != config.MailChannelResend || !view.Secrets.ResendAPIKeySet {
+		t.Fatalf("seeded runtime view = %+v, %v; want resend with api key set", view, err)
+	}
+	// The PublicView struct carries presence booleans only — no secret field
+	// exists to leak (verified by construction).
 }
 
-func TestNewMailSenderRejectsIncompleteBlockDefensively(t *testing.T) {
+func TestNewMailRuntimeRejectsIncompleteBlockDefensively(t *testing.T) {
 	// ValidateProd already gates partial blocks; this proves the composition
 	// constructor itself also fails closed if a hand-built Config bypasses it.
 	cfg := lifecycleAppConfig(t, "mvp", "127.0.0.1:0")
 	cfg.MailSMTPHost = "smtp.example.com" // everything else missing
 	st := outboxTestStore(t)
-	if _, _, err := newMailSender(cfg, st, testLogger()); err == nil {
+	if _, _, err := newMailRuntime(cfg, st, testLogger()); err == nil {
 		t.Fatal("partial mail.smtp block must fail closed in composition")
 	}
 
@@ -116,7 +116,7 @@ func TestNewMailSenderRejectsIncompleteBlockDefensively(t *testing.T) {
 	ambiguous.MailSMTPFrom = "no-reply@example.com"
 	ambiguous.MailResendAPIKey = "re-key"
 	ambiguous.MailResendFrom = "no-reply@example.com"
-	if _, _, err := newMailSender(ambiguous, st, testLogger()); err == nil {
+	if _, _, err := newMailRuntime(ambiguous, st, testLogger()); err == nil {
 		t.Fatal("two fully configured production channels without an explicit selector must fail closed in composition")
 	}
 }

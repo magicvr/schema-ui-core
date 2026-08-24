@@ -77,6 +77,9 @@ const (
 	EventServiceCredentialCreate = "service-credentials.create"
 	EventServiceCredentialUse    = "service-credentials.use"
 	EventServiceCredentialRevoke = "service-credentials.revoke"
+	// VP-017 R7 (GOAL-008 D-001): outbound-mail admin surface events.
+	EventMailChannelUpdate = "mail.channel-update"
+	EventMailTestSend      = "mail.test-send"
 )
 
 // Operation is one append-only operation log row.

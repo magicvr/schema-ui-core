@@ -90,16 +90,17 @@ func tableNameSet(tables []string) map[string]bool {
 // completeFingerprintCatalogHead is the compiled catalog max version the
 // restore-ledger object set was reviewed against. TestCompleteFingerprintTracksCatalogHead
 // fails when the catalog grows past this so the table list is updated.
-const completeFingerprintCatalogHead = 51
+const completeFingerprintCatalogHead = 53
 
 // completeLostLedgerTables must include a table created at/after the catalog
-// head (v44 service_credentials, v48 operation_log_session, v51 mail_outbox)
+// head (v44 service_credentials, v48 operation_log_session, v51 mail_outbox, v52 mail_config)
 // so restore-ledger cannot stamp current catalog while later objects are
 // missing (A-001 F-001).
 var completeLostLedgerTables = []string{
 	"users", "refresh_tokens", "operation_log", "jobs",
 	"service_credentials", "operation_log_session",
 	"mail_outbox",
+	"mail_config",
 }
 
 // postV1CatalogTables: any of these without a complete fingerprint means a
@@ -114,6 +115,7 @@ var postV1CatalogTables = []string{
 	"dict_types", "dict_entries", "wallet_accounts", "recycle_items",
 	"captcha_challenges", "scheduled_tasks", "user_mfa",
 	"mail_outbox",
+	"mail_config",
 }
 
 func lostLedgerLooksComplete(tables []string) bool {

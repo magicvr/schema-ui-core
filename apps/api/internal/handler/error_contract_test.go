@@ -70,6 +70,8 @@ var frozenLiteralCodes = []string{
 	"WALLET_USER_AUTO_ONLY",
 	// VP-012 R4 (GOAL-005 D-002 §7): actor-scoped async Job HTTP codes.
 	"JOB_NOT_FOUND", "JOB_NOT_CANCELLABLE", "JOB_NOT_RETRYABLE", "JOB_RESULT_NOT_READY", "JOB_RESULT_EXPIRED",
+	// VP-017 R7 (workspace-017 GOAL-008): outbound-mail admin surface codes.
+	"INVALID_MAIL_CONFIG", "MAIL_SWITCH_REJECTED", "MAIL_SEND_FAILED",
 }
 
 // frozenStoredCodes are stable Job terminal codes persisted in Job.error.

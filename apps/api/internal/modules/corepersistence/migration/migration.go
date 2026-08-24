@@ -73,6 +73,46 @@ var mailOutboxPGDDL = []string{
 	`CREATE INDEX idx_mail_outbox_created_at ON mail_outbox(created_at)`,
 }
 
+// mailConfigDDL creates the single-row runtime channel state
+// (VP-017 R7 / workspace-017 GOAL-008; Root D-007): the admin-selected
+// channel plus per-channel parameters. Secrets (resend_api_key_enc /
+// smtp_password_enc) are stored AES-GCM encrypted under the local master
+// key — never plaintext ("secret 不入库明文可读") and never returned by any
+// read face (write-only).
+var mailConfigDDL = []string{
+	`CREATE TABLE mail_config (
+  id                 INTEGER PRIMARY KEY CHECK (id = 1),
+  channel            TEXT    NOT NULL DEFAULT 'mock',
+  mock_retention     INTEGER NOT NULL DEFAULT 500,
+  resend_from        TEXT    NOT NULL DEFAULT '',
+  resend_api_key_enc TEXT    NOT NULL DEFAULT '',
+  smtp_host          TEXT    NOT NULL DEFAULT '',
+  smtp_port          INTEGER NOT NULL DEFAULT 0,
+  smtp_username      TEXT    NOT NULL DEFAULT '',
+  smtp_password_enc  TEXT    NOT NULL DEFAULT '',
+  smtp_from          TEXT    NOT NULL DEFAULT '',
+  updated_at         INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+// mailConfigPGDDL mirrors mailConfigDDL for postgres: updated_at (Unix time)
+// is BIGINT (R1 v1.4 §3 convention).
+var mailConfigPGDDL = []string{
+	`CREATE TABLE mail_config (
+  id                 INTEGER PRIMARY KEY CHECK (id = 1),
+  channel            TEXT    NOT NULL DEFAULT 'mock',
+  mock_retention     INTEGER NOT NULL DEFAULT 500,
+  resend_from        TEXT    NOT NULL DEFAULT '',
+  resend_api_key_enc TEXT    NOT NULL DEFAULT '',
+  smtp_host          TEXT    NOT NULL DEFAULT '',
+  smtp_port          INTEGER NOT NULL DEFAULT 0,
+  smtp_username      TEXT    NOT NULL DEFAULT '',
+  smtp_password_enc  TEXT    NOT NULL DEFAULT '',
+  smtp_from          TEXT    NOT NULL DEFAULT '',
+  updated_at         BIGINT  NOT NULL DEFAULT 0
+)`,
+}
+
 // Descriptors preserves the immutable records migration history after the
 // product surface was retired. The frozen Apply behavior remains executable for
 // fresh and upgrading databases; this historical owner is not a current Records
@@ -101,6 +141,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(mailOutboxDDL, "0051:mail-outbox:v1"),
 			Apply:                migrateMailOutbox,
 			ApplyPostgres:        migrateMailOutboxPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "mail_config"},
+			Version:              52,
+			Name:                 "mail_config",
+			Checksum:             kernel.MigrationChecksum(mailConfigDDL, "0052:mail-config:v1"),
+			Apply:                migrateMailConfig,
+			ApplyPostgres:        migrateMailConfigPG,
 		},
 	}
 }
@@ -145,6 +193,24 @@ func migrateMailOutboxPG(tx kernel.Tx) error {
 	for _, stmt := range mailOutboxPGDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create mail_outbox (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateMailConfig(tx kernel.Tx) error {
+	for _, stmt := range mailConfigDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create mail_config: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateMailConfigPG(tx kernel.Tx) error {
+	for _, stmt := range mailConfigPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create mail_config (postgres): %w", err)
 		}
 	}
 	return nil
