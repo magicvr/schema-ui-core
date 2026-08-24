@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到达审计节点（关门时走 self） |
+| A-001 | 2026-08-24 | self | R6 实施关门（C1～C4 vs D-002 合同 / 成功标准 1～4） | pass | 0（1 recommended accepted-residual + 1 note） | [A-001-self-r6-delivery.md](03-audit/A-001-self-r6-delivery.md) |
 
 ## 结论状态
 
-开项目标。实施进行中；开放 required finding = 0。
+已关门。R6 实施完成且全测试绿；self 审计 A-001 pass（0 required）。四检查点齐：C1 配置层 ✓ / C2 持久层 ✓ / C3 面层 ✓ / C4 自审闭合 ✓。开放 required finding = 0。F-001 residual（settings.read 复用）留待 R7 开设时复核。

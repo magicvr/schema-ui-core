@@ -1,16 +1,16 @@
 ---
 id: GOAL-007-mock-resend-delivery
 title: R6 mock 站内出站记录与 Resend 渠道落地
-status: active
+status: done
 parent: GOAL-001-outbound-mail
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
-progress: 0/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
-serves_summary: 承接 Root R6：按 GOAL-006 D-002 已冻合同实施——`mail.channel` 解析、mock DB 表（0051 迁移）+ 有界保留（默认 500）+ 独立管理 API（list/detail）、Resend HTTP 适配器（I-010 键名）、默认接线从 CaptureSink 切到 mock。不实施设置页/热切换/试发（R7），不做生产探针（R8）。
+serves_summary: 承接 Root R6：按 GOAL-006 D-002 已冻合同实施——`mail.channel` 解析、mock DB 表（0051 迁移）+ 有界保留（默认 500）+ 独立管理 API（list/detail）、Resend HTTP 适配器（I-010 键名）、默认接线从 CaptureSink 切到 mock。（已交付：E-002 实施；A-001 self pass）
 ---
 
 # GOAL-007 · R6 mock 站内出站记录与 Resend 渠道落地
@@ -31,12 +31,12 @@ serves_summary: 承接 Root R6：按 GOAL-006 D-002 已冻合同实施——`mai
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | 配置层落地：`mail.channel` + `mail.resend.*` + 解析算法 + 双层 fail-closed，测试绿 | `internal/config` 代码与测试 |
-| C2 | 持久层落地：0051 迁移双方言生效；mock 写入/分页列表/详情/淘汰（默认 500）测试绿 | 迁移贡献 + `internal/mail` 测试 |
-| C3 | 面层落地：独立管理 API（list/detail，管理员鉴权）；composition 解析接线切换；全量测试绿 | handler/composition 代码与测试 |
-| C4 | 自审 A-001 闭合（无开放 required finding） | 本目标 `03-audit/` |
+| C1 | 配置层落地：`mail.channel` + `mail.resend.*` + 解析算法 + 双层 fail-closed，测试绿 | **完成**：E-002 §1；`config_mail_channel_test.go` |
+| C2 | 持久层落地：0051 迁移双方言生效；mock 写入/分页列表/详情/淘汰（默认 500）测试绿 | **完成**：E-002 §2-3；迁移 0051 + `outbox_test.go` |
+| C3 | 面层落地：独立管理 API（list/detail，管理员鉴权）；composition 解析接线切换；全量测试绿 | **完成**：E-002 §5；`mail_outbox_test.go` / `composition_mail_test.go`；`go test ./...` 全绿 |
+| C4 | 自审 A-001 闭合（无开放 required finding） | **完成**：A-001 self pass |
 
-`progress` = 已完成检查点 / 4。当前 **0/4**。
+`progress` = 已完成检查点 / 4。当前 **4/4**（已关门）。
 
 ## 边界
 

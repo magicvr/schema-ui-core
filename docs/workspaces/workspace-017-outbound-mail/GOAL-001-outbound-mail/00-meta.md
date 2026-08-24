@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-22
 updated: 2026-08-24
-version: 0.8.0
-progress: 5/8
+version: 0.9.0
+progress: 6/8
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
@@ -34,11 +34,11 @@ serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；�
 | R3 | **默认 sink 落地 + 公共面去客户端类型**（历史） | 依赖 R1 | **已完成**（D-004；GOAL-004 `done`） |
 | R4 | **显式路径证据 + `readyz`**（历史） | 依赖 R2/R3 | **已完成**（D-005；GOAL-005 `done`）。历史 Root 关门已由用户否决，本阶段实施史不回退 |
 | R5 | **渠道合同冻结**：具名渠道、mock 站内语义、SMTP 保留、与 `MailSender` 的关系（I-007/I-008/I-011/I-012） | 依赖 R1（端口已在） | **已完成**（子目标 GOAL-006 `done` · D-002；A-001 self pass） |
-| R6 | **mock + Resend 落地**：mock 出站记录可检视；Resend 显式配置可投递；不完整 fail-closed（I-010） | 依赖 R5 | 未开始 |
+| R6 | **mock + Resend 落地**：mock 出站记录可检视；Resend 显式配置可投递；不完整 fail-closed（I-010） | 依赖 R5 | **已完成**（子目标 GOAL-007 `done`；A-001 self pass；live 投递证据归 R8） |
 | R7 | **设置/热切换/试发**：邮件 tab、渠道配置、热切换、同一端口试发（I-009） | 依赖 R6 | 未开始 |
 | R8 | **证据 + `readyz`**：生产渠道探针；现行退出判据可核对；018 解冻仅在 VP 再关门后 | 依赖 R6/R7 | 未开始 |
 
-`progress` = 已完成阶段数 / 8。当前 **5/8**（R1～R5 完成；R6～R8 未完成。progress 不放行再关门）。
+`progress` = 已完成阶段数 / 8。当前 **6/8**（R1～R6 完成；R7～R8 未完成。progress 不放行再关门）。
 
 ## 成功标准（方向级 · 现行再关门用）
 

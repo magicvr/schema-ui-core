@@ -21,6 +21,7 @@ version: 0.3.0
 | E-005 | 2026-08-22 | R4 执行：readyz 扩依赖与显式路径证据 | recorded | [E-005-r4-readyz-executed.md](02-execution/E-005-r4-readyz-executed.md) |
 | E-006 | 2026-08-24 | 用户否决关门并升级分母（Root 重开；未改代码） | recorded | [E-006-closeout-revoked.md](02-execution/E-006-closeout-revoked.md) |
 | E-007 | 2026-08-24 | R5 渠道合同冻结完成（GOAL-006 done · Root 5/8） | recorded | [E-007-r5-contract-frozen.md](02-execution/E-007-r5-contract-frozen.md) |
+| E-008 | 2026-08-24 | R6 mock + Resend 落地完成（GOAL-007 done · Root 6/8） | recorded | [E-008-r6-delivery-done.md](02-execution/E-008-r6-delivery-done.md) |
 
 ## 事实边界
 
