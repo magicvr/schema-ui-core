@@ -11,46 +11,50 @@ plan_refs:
 primary_plan: VP-017-outbound-mail
 created: 2026-08-22
 updated: 2026-08-24
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # 工作区上下文 · 出站邮件
 
-本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`closed`**，架构 A6，2026-08-24 有界关门）的唯一 lead delivery workspace。默认不接新区。
+本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`active`** · v0.4.0；2026-08-24 用户否决同日有界关门）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-outbound-mail`：纲领 R1～R4（端口冻结 → SMTP 接入 → 默认 sink / 公共面 → 显式路径 + `readyz`）。
+- **Root** `GOAL-001-outbound-mail`：`active` · 4/8。R1～R4 历史完成（子目标保持 `done`，实施史不回退）；R5～R8 承接渠道升级。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-016-key-rotation-and-backup`。
-- 不承接账号 email、邀请、自助恢复、Admin 功能或业务域；不重开 VP-012～016。
+- 不承接账号 email、邀请、自助恢复、用户站内通知或业务域。VP-018 冻结至本 VP 再次关门。
 
 ## 绑定
 
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-017-outbound-mail` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-outbound-mail` | `parent: null`；交付目标 |
+| Root Goal | `GOAL-001-outbound-mail` | `parent: null`；交付目标；关门已否决 |
 | canonical 范围 | `docs/workspaces/workspace-017-outbound-mail/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-017 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-017-outbound-mail`（`closed`） | 架构 A6 内核发送端口 + SMTP；组合层已有界关门 |
+| 规划对齐 | `primary_plan` = `VP-017-outbound-mail`（`active`） | 架构 A6 渠道升级 |
 
 ## 愿景对齐
 
 Charter：`schema-ui-core-admin-foundation@0.2.0`。  
-VP-017：内核出站邮件发送端口；SMTP 为生产实现；capture/log sink 为内嵌默认；重启生效。  
+VP-017：内核出站邮件发送端口 + 可切换渠道（mock 默认 + Resend 生产；SMTP 保留）；管理设置/试发。  
 与 VP-009/VP-010 正交：安全/符合性 gap 不进本区。
 
 ## 纲领阶段（Root 路线图指针）
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | 端口与发送合同冻结 | **已完成**（GOAL-002；D-002） |
-| R2 | SMTP 接入与配置面 | **已完成**（GOAL-003；D-003，隐式 TLS 465 唯一路径） |
-| R3 | 默认 sink + 公共面去 SMTP 客户端类型 | **已完成**（GOAL-004；D-004） |
-| R4 | 显式路径证据 + `readyz` | **已完成**（GOAL-005；D-005） |
+| R1 | 端口与发送合同冻结 | **已完成**（GOAL-002；D-002）· 历史，不回退 |
+| R2 | SMTP 接入与配置面 | **已完成**（GOAL-003；D-003）· 历史，不回退 |
+| R3 | 默认 sink + 公共面去 SMTP 客户端类型 | **已完成**（GOAL-004；D-004）· 历史，不回退 |
+| R4 | 显式路径证据 + `readyz` | **已完成**（GOAL-005；D-005）· 历史；当时 Root 关门已否决 |
+| R5 | 渠道合同冻结 | **进行中**（GOAL-006） |
+| R6 | mock + Resend 落地 | 未开始 |
+| R7 | 设置 / 热切换 / 试发 | 未开始 |
+| R8 | 证据 + `readyz`（现行分母） | 未开始 |
 
-Root progress 4/4；Root 关门审计已完成（A-001/A-002）；VP-017 组合层已于 2026-08-24 有界 `closed`（VRev-039 / VR-042）。
+Root progress 4/8；历史关门审计 A-001/A-002 原文保留，不构成现行 `done`。
 
 ## 固定共享资料引用
 

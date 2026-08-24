@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-24
 parent: null
-version: 1.3.54
+version: 1.3.55
 ---
 
 # Vision Review 台账
@@ -78,3 +78,4 @@ version: 1.3.54
 | VRev-038 | 2026-08-22 | self | VP-017 激活就绪 · 独立意见响应 / 架构类 freshness / 开区 | pass | 0 | 采纳 VRev-037；无新 finding；freshness PASS（`ed99e88` → `250cb9c`）；允许激活并开 `workspace-017-outbound-mail` | [VRev-038-vp017-activation-self.md](reviews/VRev-038-vp017-activation-self.md) |
 | VRev-039 | 2026-08-24 | self | VP-017 关门就绪 · 独立代码/测试/harness 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F072 recommended → **fixed**（VP-017 有界 closed + exit↔本轮独立证据 + env-gated live residual；VR-042） | [VRev-039-vp017-closeout-readiness.md](reviews/VRev-039-vp017-closeout-readiness.md) |
 | VRev-040 | 2026-08-24 | self | VP-018 意图完备 / 可行性 / 激活就绪 · Admin 类 freshness | pass | 0 | 原 verdict 保留；V-F073/V-F074 recommended → **fixed**（激活 + workspace-018 Root P-001/I-00N + Admin 类 freshness；VR-043） | [VRev-040-vp018-intent-activation.md](reviews/VRev-040-vp018-intent-activation.md) |
+| VRev-041 | 2026-08-24 | self | VP-017 否决关门 / 渠道分母升级 / 018 冻结 / 实施史保全 | pass | 0 | 用户书面否决 017 组合层关门（不回退实施史）；现行分母 = mock+Resend+设置/试发；V-F075 recommended open（再次关门须 independent） | [VRev-041-vp017-reopen-channel-upgrade.md](reviews/VRev-041-vp017-reopen-channel-upgrade.md) |

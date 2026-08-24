@@ -1,23 +1,25 @@
 ---
 id: GOAL-001-account-email-identity
 title: 账号邮箱身份（绑定与校验）
-status: active
+status: blocked
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
+version: 0.2.0
 progress: 0/4
 plan_refs:
   - VP-018-account-email-identity
 primary_plan: VP-018-account-email-identity
-serves_summary: 交付 Admin 功能账号邮箱身份面：users email 可空、绑定/校验状态机、换绑；校验信消费已 closed 的 VP-017 MailSender。不承载自助恢复、邀请、密码策略、SMS 或业务域。
+serves_summary: 交付 Admin 功能账号邮箱身份面：users email 可空、绑定/校验状态机、换绑；校验信消费 VP-017 MailSender。当前冻结至 VP-017 再次关门。不承载自助恢复、邀请、密码策略、SMS 或业务域。
 ---
 
 # GOAL-001 · 账号邮箱身份（绑定与校验）
 
 ## 概述
 
-本 Root 承载 [VP-018-account-email-identity](../../../vision/plans/VP-018-account-email-identity.md)（**`active`**）的实现：在已有 `core.auth-session` 与内核 `MailSender` 之上，补齐账号邮箱字段、绑定与校验状态机、唯一性与换绑。无邮箱账号必须继续能登录；无 SMTP 时用 capture sink 测通校验信。
+本 Root 承载 [VP-018-account-email-identity](../../../vision/plans/VP-018-account-email-identity.md)（**`active` · 冻结**）的实现：在已有 `core.auth-session` 与内核 `MailSender` 之上，补齐账号邮箱字段、绑定与校验状态机、唯一性与换绑。
+
+**冻结（D-002）**：2026-08-24 用户书面 — 在 VP-017 按现行渠道分母再次 `closed` 之前不得推进。禁止 R1 合同冻结与 `users` DDL 变更。
 
 **边界**：不承接登录页「忘记密码」状态机、邀请入职、密码策略产品化、管理员重置冒充自助恢复、SMS、消息模板或业务域。安全 finding → VP-009；符合性 gap → VP-010。
 
@@ -25,17 +27,17 @@ serves_summary: 交付 Admin 功能账号邮箱身份面：users email 可空、
 
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
-| R1 | **身份合同冻结**：非空邮箱唯一性细则（I-001 / I-018-001）；校验投递形态验证码 vs 链接（I-002 / I-018-002）；可空与换绑已由 VP 冻结（I-003 / I-004）。 | 起点 | 未开始 |
-| R2 | **双方言 schema + 唯一性**：`users` 加列与约束；SQLite 与 PostgreSQL 同一逻辑 schema、成对物理 SQL、checksum 台账。 | 依赖 R1 | 未开始 |
-| R3 | **绑定/校验消费 `MailSender`**：发起绑定、投递、完成校验、过期/重发（I-005）；缺省 capture；显式 SMTP 可实投。管理员代填（I-006）若纳入则在本阶段。 | 依赖 R2 | 未开始 |
-| R4 | **证据**：capture `Last()` 可取出校验信；唯一性 fail-closed 可核对；无 IAM 恢复 / 邀请 / 密码策略产品进入本波。 | 依赖 R3 | 未开始 |
+| R1 | **身份合同冻结**：非空邮箱唯一性细则（I-001 / I-018-001）；校验投递形态验证码 vs 链接（I-002 / I-018-002）；可空与换绑已由 VP 冻结（I-003 / I-004）。 | 起点 | **冻结**（D-002；017 再关门前不得开始） |
+| R2 | **双方言 schema + 唯一性**：`users` 加列与约束；SQLite 与 PostgreSQL 同一逻辑 schema、成对物理 SQL、checksum 台账。 | 依赖 R1 | **冻结** |
+| R3 | **绑定/校验消费 `MailSender`**：发起绑定、投递、完成校验、过期/重发（I-005）。解冻后走 017 当时默认渠道，不以历史 capture `Last()` 为冻结期验收。管理员代填（I-006）若纳入则在本阶段。 | 依赖 R2 | **冻结** |
+| R4 | **证据**：解冻后从 017 默认渠道取出校验信；唯一性 fail-closed 可核对；无 IAM 恢复 / 邀请 / 密码策略产品进入本波。 | 依赖 R3 | **冻结** |
 
-`progress` = 已完成阶段数 / 4。当前 **0/4**。
+`progress` = 已完成阶段数 / 4。当前 **0/4**。Root **`blocked`**，冻结期间不得把 collecting 信息项写成 verified。
 
 ## 成功标准（方向级）
 
 1. `users` 可持有可空邮箱与可核对的校验状态；无邮箱账号仍能登录。
-2. 绑定与校验流落地；校验信经 `kernel.MailSender` 发送；未配置 SMTP 时 capture sink 可取出最后一封。
+2. 绑定与校验流落地；校验信经 `kernel.MailSender` 发送；无生产渠道时须能从 VP-017 当时默认渠道取出校验信（解冻后对齐，冻结期不验收）。
 3. 非空邮箱唯一性 fail-closed 可核对；换绑走同一校验合同。
 4. 未引入忘记密码状态机、邀请、密码策略产品、SMS、第二运输、模板中心；未改 Charter；未改 Profile 默认集作为本波成功条件。
 

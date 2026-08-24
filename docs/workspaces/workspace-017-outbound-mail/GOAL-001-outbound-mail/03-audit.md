@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-22
-updated: 2026-08-22
-version: 0.1.0
+updated: 2026-08-24
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001（Root）
@@ -16,8 +16,8 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001～I-006 **全部 verified**（D-002～D-005） | 无 collecting / 到期未处理项 |
-| 到期 required 是否已 verified / residual | 无到期项 | R1～R4 门禁全数关闭 |
+| 影响本 scope 的 I-00N | I-001～I-008、I-012 verified；I-009/I-010/I-011 collecting | 现行 R5～R8；I-011 最晚 R5 |
+| 到期 required 是否已 verified / residual | 无到期项 | 未进入 R6/R7 实施；I-011 须在 R5 冻结前关闭 |
 | 资料引用是否固定且用户确认 | 不适用 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -37,6 +37,12 @@ version: 0.1.0
 
 开放 required finding = 0（self A-001 + independent A-002 双 pass；三条 recommended 全部响应留痕）。N-001 定性按独立意见更正为分母外 note。
 
+## 编排器注记（2026-08-24 · 用户否决关门）
+
+用户书面否决 Root / VP 组合层关门（D-006）。**不改写** A-001 / A-002 原文、verdict 或 finding 闭合路径。A-001/A-002 仍是当时 SMTP 专用分母下的关门向意见；它们**不再**构成现行 `status: done`。
+
+现行 Root = `active` · 4/8。再关门必须对照升级后的渠道分母，并新开审计条目（不得把 A-001/A-002 当现行分母的充分证据）。愿景层见 VRev-041；VRev-039 原文不改写。
+
 ## 结论状态
 
-R1～R4 全部完成（4/4）；Root 自审 A-001 `pass` + 独立审计 A-002 `pass`，recommended 全部响应。**Root GOAL-001-outbound-mail 于 2026-08-22 关门（done）**。VP-017 关门记录走 `/vision` 收尾（F-003）。愿景层独立意见见 `docs/vision/reviews/`，不写入本 Goal 台账。
+R1～R4 实施与当时关门向审计完成（历史）。**2026-08-24 用户否决 Root `done`。** 现行未关门；开放 required Goal finding = 0；开放 required 信息项 I-009/I-010/I-011 collecting（未到期至 R6/R7；I-011 阻断 R5 方案冻结完成）。

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-001
@@ -28,3 +28,4 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-24 | 开区 scaffold 与 Admin 邮箱身份纲领路线图 | accepted | [D-001-workspace-root-establishment.md](01-decision/D-001-workspace-root-establishment.md) |
+| D-002 | 2026-08-24 | 冻结本 Root 直至 VP-017 再次关门 | accepted | [D-002-freeze-until-vp017-reclose.md](01-decision/D-002-freeze-until-vp017-reclose.md) |

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-001
@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-24 | 开区 scaffold（workspace-018 + Root + 邮箱身份路线图） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-24 | Root 冻结（017 再关门前不得推进） | recorded | [E-002-frozen.md](02-execution/E-002-frozen.md) |
 
 ## 事实边界
 

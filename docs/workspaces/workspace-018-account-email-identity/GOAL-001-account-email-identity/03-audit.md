@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001（Root）
@@ -28,4 +28,4 @@ version: 0.1.0
 
 ## 结论状态
 
-开区 scaffold 完成。愿景层意见见 `docs/vision/reviews/VRev-040-vp018-intent-activation.md`，不写入本 Goal 台账。R1 合同冻结前不得改 `users` DDL。
+开区 scaffold 完成。**2026-08-24 Root `blocked`（D-002）**：VP-017 再次关门前不得推进。愿景层意见见 VRev-040（激活史）与 VRev-041（017 重开 / 本 VP 冻结），不写入本 Goal 台账。冻结期不得改 `users` DDL。

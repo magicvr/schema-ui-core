@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-08-22
-updated: 2026-08-22
-version: 0.1.0
+updated: 2026-08-24
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-001
@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-22 | R2 执行：SMTP 适配器与配置面落地 | recorded | [E-003-r2-smtp-executed.md](02-execution/E-003-r2-smtp-executed.md) |
 | E-004 | 2026-08-22 | R3 执行：默认 sink 落地 + composition 接线 + sweep | recorded | [E-004-r3-default-sink-executed.md](02-execution/E-004-r3-default-sink-executed.md) |
 | E-005 | 2026-08-22 | R4 执行：readyz 扩依赖与显式路径证据 | recorded | [E-005-r4-readyz-executed.md](02-execution/E-005-r4-readyz-executed.md) |
+| E-006 | 2026-08-24 | 用户否决关门并升级分母（Root 重开；未改代码） | recorded | [E-006-closeout-revoked.md](02-execution/E-006-closeout-revoked.md) |
 
 ## 事实边界
 

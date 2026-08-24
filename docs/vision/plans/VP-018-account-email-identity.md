@@ -7,43 +7,43 @@ vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-018-account-email-identity
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # VP-018 · 账号邮箱身份（绑定与校验）
 
-## 状态与门闩（2026-08-24 · active）
+## 状态与门闩（2026-08-24 · active · 冻结中）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-24 用户书面确认：按 1234 顺序落盘 planned → Admin 类 freshness → 激活 → `/govern` 开区） |
-| **lead_workspace** | **`workspace-018-account-email-identity`**（Root `GOAL-001-account-email-identity`；唯一 delivery；**不**重开 workspace-017） |
-| **Vision required** | **已满足**：VRev-040 self `pass`（V-F073/V-F074 → `fixed`）；open required = 0 |
-| **关门门闩（现行）** | 已激活并绑定 lead。实现与 R1 合同冻结走 `/govern`；不得把激活写成邮箱身份已交付 |
-| **组合位置** | **Admin 功能分支**；硬前置 = VP-017 A6 已有界 `closed`（运输面可消费）。不进 IAM 恢复状态机、不进架构 A3 |
+| status | **`active`**（意图仍在；**冻结**：2026-08-24 用户书面 — 在 VP-017 **再次** `closed` 之前不得推进） |
+| **lead_workspace** | **`workspace-018-account-email-identity`**（Root `GOAL-001-account-email-identity` **`blocked`**；唯一 delivery） |
+| **Vision required** | VRev-040 self `pass`（V-F073/V-F074 → `fixed`）仍成立；冻结不改 VRev-040 原文 |
+| **推进门闩（现行）** | **冻结**。禁止 R1 合同冻结、禁止改 `users` DDL、禁止消费运输面验收。解冻条件 = VP-017 按**现行**渠道分母再次 `closed` |
+| **组合位置** | **Admin 功能分支**；硬前置改为「VP-017 按现行渠道分母再次关门」后消费 `MailSender`。不进 IAM 恢复状态机、不进架构 A3 |
 | **完整 ≠ 自助恢复** | 本 VP 只交付**账号邮箱身份面**。忘记密码状态机、邀请、密码策略、SMS、模板中心 **不进**退出分母 |
 
 ## 意图
 
-在 VP-003 单主线、已交付的 `core.auth-session` 账号模型，以及 **VP-017 已 closed 的内核 `MailSender`** 之上，把「用户持有事先绑在账号上的、已校验邮箱」收成**可核对的 Admin 身份合同**：
+在 VP-003 单主线、已交付的 `core.auth-session` 账号模型，以及内核 `MailSender`（所有权在 VP-017；**本 VP 冻结至 017 再关门**）之上，把「用户持有事先绑在账号上的、已校验邮箱」收成**可核对的 Admin 身份合同**：
 
 1. **邮箱字段**：`users` 可持有一个邮箱地址（可空）。现有无邮箱账号必须继续能登录——不得把「每个账号强制有 email」做成 mvp/dev 启动硬依赖。
-2. **绑定 + 校验状态机**：账号可发起绑定；校验信经 `kernel.MailSender` 投递（缺省 capture sink，显式 SMTP 可实投）。状态至少可区分未绑定 / 待校验 / 已校验。
+2. **绑定 + 校验状态机**：账号可发起绑定；校验信经 `kernel.MailSender` 投递（解冻后走 017 当时的默认渠道，不得在冻结期把 capture `Last()` 锁成验收权威）。状态至少可区分未绑定 / 待校验 / 已校验。
 3. **唯一性**：非空邮箱在账号之间唯一，失败语义可核对（占用、冲突）。占用未校验地址的细则由 lead Root R1 冻结（I-018-001）。
 4. **换绑**：已绑定或已校验邮箱可以换成另一个地址并重新校验。换绑属于本波身份面，不是另一次「恢复密码」。
-5. **内嵌默认**：无 SMTP 时绑定/校验流仍能用 capture sink 测通。不得把 Mailhog/真实 SMTP 做成 mvp/dev 硬依赖。
+5. **内嵌默认**：解冻后绑定/校验流须能在无生产邮件渠道时测通（走 VP-017 当时默认渠道）。不得把 Mailhog/真实 SMTP/Resend 做成 mvp/dev 硬依赖。
 
 本 VP 属 **Admin 功能分支**。它是自助恢复的**身份前置**，不是恢复本身。没有已校验邮箱，登录页「忘记密码」仍是空转——那一截留给后续 IAM VP。
 
-不重开 VP-012 / VP-017。不把密码策略、邀请入职、管理员重置、消息模板并进本波。
+不重开 VP-012。不在冻结期推进本 VP。不把密码策略、邀请入职、管理员重置、消息模板并进本波。
 
 ## 配置面与模块归属
 
 邮箱身份走**既有** `core.auth-session`（及消费它的 `admin.users` / `admin.account` 表面），**不是**新模块、也不是改 Profile 默认集：
 
-- **缺省**：账号可以没有 email；未配置 SMTP 时校验信进 capture sink。
-- **生产 / 本 VP 验收**：显式 SMTP 后可核对一封校验信投递（或与生产合同等价的 harness）。
+- **缺省**：账号可以没有 email；无生产邮件渠道时校验信进 VP-017 默认渠道（解冻后以 mock/出站记录为准，不以本 VP 锁死 capture `Last()`）。
+- **生产 / 本 VP 验收**：017 再关门后，按当时生产渠道核对一封校验信（或等价 harness）。
 - **生效方式**：schema / 状态机随迁移与进程启动生效。热加载不进退出分母。
 - 不得为「邮箱身份」新增 Profile 或把 `core.auth-session` 从 mvp/admin/demo 默认集拿掉。
 
@@ -75,7 +75,7 @@ parent: null
 | VP / 分支 | 关系 |
 |-----------|------|
 | **VP-003** | 遵守薄内核。邮箱身份是 `core.auth-session` 的账号属性，不是平行认证模块 |
-| **VP-017** | 已 closed 的发送端口是本 VP 的运输前置。本 VP 不改 SMTP 拨号、不重做 capture sink |
+| **VP-017** | 运输前置。2026-08-24 用户否决 017 关门并升级渠道分母；**本 VP 冻结至 017 再次 `closed`**。解冻后消费当时的 `MailSender`（含 mock/Resend），不另做第二套运输 |
 | **VP-012** | 已 closed 的横切契约不重开。校验信审计若需要，用既有 envelope |
 | **VP-008 `go`** | 本 VP 是 Admin 功能（身份面），**不是** Tier D 业务域。激活前做 Admin 类 freshness。若实现改变 Profile 默认集 / 模块矩阵 / Manifest 装配 / 共同门禁，按消费有效性暂挂 |
 | **VP-009 / VP-010** | 邮箱枚举、接管、open-relay 等安全 finding 与符合性 gap 仍归持续程序 |
@@ -85,7 +85,7 @@ parent: null
 ## 方向级退出判据
 
 1. `users` 可持有可空邮箱与可核对的校验状态；无邮箱账号仍能登录。
-2. 绑定与校验流已落地；校验信经 `kernel.MailSender` 发送。未配置 SMTP 时 capture sink 可取出最后一封。
+2. 绑定与校验流已落地；校验信经 `kernel.MailSender` 发送。无生产渠道时须能从 017 默认渠道取出校验信（解冻后对齐，不在冻结期验收）。
 3. 非空邮箱唯一性 fail-closed 可核对；换绑走同一校验合同。
 4. 未引入忘记密码状态机、邀请、密码策略产品、SMS、第二运输、模板中心；未改 Charter；未改 Profile 默认集作为本波成功条件。
 5. 开放 required finding = 0（或已合法闭合）。
@@ -109,7 +109,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-018-account-email-identity | GOAL-001-account-email-identity | lead | 2026-08-24 | 2026-08-24 用户确认激活并开区；唯一 delivery；**不**重开 workspace-017 |
+| workspace-018-account-email-identity | GOAL-001-account-email-identity | lead | 2026-08-24 | 激活后同日冻结：Root `blocked`；直至 VP-017 再次 `closed` 不得推进 |
 
 ## 关门记录
 
@@ -124,4 +124,5 @@ parent: null
 | date | change |
 |------|--------|
 | 2026-08-24 | 初创 `planned`：用户确认按 roadmap Admin 功能下一拍新建本 VP；退出分母 = 账号邮箱绑定+校验（消费 VP-017）；IAM 恢复 / 邀请 / 密码策略 / SMS 不进分母。同日 VRev-040 self `pass` 后激活 |
+| 2026-08-24 | v0.3.0 **冻结**：用户否决 VP-017 关门并升级 017 分母。本 VP 保持 `active` 意图，lead Root `blocked`；017 再次关门前禁止推进 |
 | 2026-08-24 | VRev-040 self `pass`（V-F073/V-F074 recommended）。用户本轮指令含激活并开区。v0.2.0 `planned → active`；lead = `workspace-018-account-email-identity`；Root 承接 P-001 与 I-00N（V-F073）及 Admin 类 freshness（V-F074） |

@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-24
 parent: null
-version: 0.4.27
+version: 0.4.28
 ---
 
 # Charter 修订台账
@@ -57,3 +57,4 @@ version: 0.4.27
 | VR-041 | 2026-08-22 | editorial | VP-017 激活 + 开区 | VRev-037 independent `pass`（V-F070/V-F071 → fixed）。VRev-038 self `pass`。用户确认激活并开区；slug 按惯例 `workspace-017-outbound-mail`，Root `GOAL-001-outbound-mail`。VP-017 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-042 | 2026-08-24 | editorial | VP-017 有界关门投影 | 用户确认关闭 VP-017（v0.3.0 `active → closed`，有界 · 架构 A6）：lead workspace-017 Root `done 4/4`；VRev-039 V-F072 → fixed；关门依据 = `/vision` 本轮独立源码/测试/harness，不以 Goal 台账为充分条件。residual 点名 env-gated live 未实跑。RT-M01 → delivered。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
 | VR-043 | 2026-08-24 | editorial | VP-018 planned + 激活 + 开区 | 用户确认按 1234 顺序：落盘 `VP-018-account-email-identity`（Admin 功能 · 账号邮箱身份；消费 VP-017）、Admin 类 freshness PASS（`ed99e88` → `092bf37`）、激活并开区。slug 按惯例 `workspace-018-account-email-identity`，Root `GOAL-001-account-email-identity`。VRev-040 self `pass`（V-F073/V-F074 → fixed）。VP-018 v0.2.0 `planned → active`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
+| VR-044 | 2026-08-24 | editorial | 否决 VP-017 关门 + 渠道升级 + 冻结 VP-018 | 用户书面：不作废 017；只回退关门状态、不回退实施史；升级 VP-017/Root 为渠道供应商模型（mock + Resend + 设置/试发）；后继子目标实现；018 冻结至 017 再关门。VP-017 v0.4.0 `closed → active`；RT-M01 `delivered → in-progress`。不改 Charter 目的/成功边界/非目标或 `vision_id@version`（仍 `@0.2.0`），**无** strategic、**无** re-align。 |
