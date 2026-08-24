@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-binding-flow
 title: R3 绑定/校验消费 MailSender
-status: active
+status: done
 parent: GOAL-001-account-email-identity
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
-progress: 0/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-018-account-email-identity
 primary_plan: VP-018-account-email-identity
@@ -25,12 +25,12 @@ serves_summary: 承接 Root R3：迁移 0055 验证挑战表；绑定（占槽�
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | 迁移 0055 挑战表落地（双方言成对 DDL）+ 黄金断言全套同步 | 待完成 |
-| C2 | 绑定/校验/重发流实现且合同映射可核对（占槽冲突 fail-closed、覆写换绑、三态迁移、常量时间比较、尝试上限） | 待完成 |
-| C3 | 身份面 API + 账号页最小绑定 UI 可用；测试绿（sqlite 全量 + PG 集成） | 待完成 |
-| C4 | independent 审计（grok build · grok-4.6 · high）落盘且开放 required = 0 | 待完成 |
+| C1 | 迁移 0055 挑战表落地（双方言成对 DDL）+ 黄金断言全套同步 | **完成**：v55 checksum `1556bda2…` 独立复算一致（A-001 核对）；head 55 全链 |
+| C2 | 绑定/校验/重发流实现且合同映射可核对（占槽冲突 fail-closed、覆写换绑、三态迁移、常量时间比较、尝试上限） | **完成**：服务流 9 测试；F-002 同址重绑冷却补齐 |
+| C3 | 身份面 API + 账号页最小绑定 UI 可用；测试绿（sqlite 全量 + PG 集成） | **完成**：三端点 + email-identity 卡片；store/authsession/handler/composition 全绿 + PG 集成 + web vitest/build；I-006 HTTP 链路修复后全通（bd1cdff9） |
+| C4 | independent 审计（grok build · grok-4.6 · high）落盘且开放 required = 0 | **完成**：A-001 conditional → F-001 fixed（bd1cdff9），其余响应 E-003，开放 required 归零 |
 
-`progress` = 已完成检查点 / 4。当前 **0/4**。
+`progress` = 已完成检查点 / 4。当前 **4/4**（已关门）。
 
 ## 边界
 

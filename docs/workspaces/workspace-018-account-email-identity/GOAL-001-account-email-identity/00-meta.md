@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.5.0
+version: 0.6.0
 progress: 0/4
 plan_refs:
   - VP-018-account-email-identity
@@ -29,10 +29,10 @@ serves_summary: 交付 Admin 功能账号邮箱身份面：users email 可空、
 |------|------|------|------|
 | R1 | **身份合同冻结**：非空邮箱唯一性细则（I-001 / I-018-001）；校验投递形态验证码 vs 链接（I-002 / I-018-002）；可空与换绑已由 VP 冻结（I-003 / I-004）。 | 起点 | **已完成**（GOAL-002 done · A-001 pass；D-001 七条款） |
 | R2 | **双方言 schema + 唯一性**：`users` 加列与约束；SQLite 与 PostgreSQL 同一逻辑 schema、成对物理 SQL、checksum 台账。 | 依赖 R1 | **已完成**（GOAL-003 done · 迁移 0054 · A-001 independent pass） |
-| R3 | **绑定/校验消费 `MailSender`**：发起绑定、投递、完成校验、过期/重发（I-005）。走 017 当时默认渠道，不以历史 capture `Last()` 为验收权威。管理员代填（I-006）若纳入则在本阶段。 | 依赖 R2 | **待启动** |
+| R3 | **绑定/校验消费 `MailSender`**：发起绑定、投递、完成校验、过期/重发（I-005）。走 017 当时默认渠道，不以历史 capture `Last()` 为验收权威。管理员代填（I-006）若纳入则在本阶段。 | 依赖 R2 | **已完成**（GOAL-004 done · 迁移 0055 · required 归零后关门） |
 | R4 | **证据**：从 017 默认渠道取出校验信；唯一性 fail-closed 可核对；无 IAM 恢复 / 邀请 / 密码策略产品进入本波。 | 依赖 R3 | **待启动** |
 
-`progress` = 已完成阶段数 / 4。当前 **2/4**。Root **`active`**；collecting 信息项仍不得未经证据写成 verified。
+`progress` = 已完成阶段数 / 4。当前 **3/4**。Root **`active`**；collecting 信息项仍不得未经证据写成 verified。
 
 ## 成功标准（方向级）
 
@@ -49,8 +49,8 @@ serves_summary: 交付 Admin 功能账号邮箱身份面：users email 可空、
 | I-002 | required | 校验投递形态：验证码 vs 魔术链接 | R1 方案冻结 | R1 合同冻结 | 用户裁决 | **verified**（GOAL-002 D-001） | — | 验证码（6 位短时效）（2026-08-24 裁决）；时效数值归 I-005 |
 | I-003 | required | 账号可否长期无邮箱 | R1 方案冻结 | R1 | 投影 VP 冻结 | **registered**（D-001） | — | VP 已冻结可空；兼容现有 `users` |
 | I-004 | required | 换绑是否进本波 | R1 方案冻结 | R1 | 投影 VP 冻结 | **registered**（D-001） | — | VP 已冻结换绑进分母 |
-| I-005 | required | 校验令牌/验证码过期与重发冷却 | R3 方案 / 实施 | R3 接入前 | R3 决策 | collecting | — | 对应 I-018-005 |
-| I-006 | non-blocking | 管理员可否代填邮箱并保持待校验 | R3 方案 | R3 | R3 或不进分母 | collecting | — | 对应 I-018-006 |
+| I-005 | required | 校验令牌/验证码过期与重发冷却 | R3 方案 / 实施 | R3 接入前 | 用户裁决 | **verified**（GOAL-004 D-001） | — | TTL 10 分钟 · 冷却 60 秒（2026-08-24） |
+| I-006 | non-blocking | 管理员可否代填邮箱并保持待校验 | R3 方案 | R3 | 用户裁决 | **verified**（GOAL-004 D-001） | — | 允许代填→pending；无直达 verified 旁路 |
 
 ## 父目标
 

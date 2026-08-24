@@ -20,6 +20,7 @@ version: 0.3.0
 | E-004 | 2026-08-24 | 创建 R1 子目标 GOAL-002-identity-contract-freeze（五件套齐全） | recorded | [E-004-r1-subgoal-created.md](02-execution/E-004-r1-subgoal-created.md) |
 | E-005 | 2026-08-24 | R1 关门（GOAL-002 done · A-001 self pass · Root 1/4） | recorded | [E-005-r1-closed.md](02-execution/E-005-r1-closed.md) |
 | E-006 | 2026-08-24 | R2 关门（GOAL-003 done · 迁移 0054 · A-001 independent pass · Root 2/4） | recorded | [E-006-r2-closed.md](02-execution/E-006-r2-closed.md) |
+| E-007 | 2026-08-24 | R3 关门（GOAL-004 done · 迁移 0055 + 绑定流 · required 归零 · Root 3/4） | recorded | [E-007-r3-closed.md](02-execution/E-007-r3-closed.md) |
 
 ## 事实边界
 
