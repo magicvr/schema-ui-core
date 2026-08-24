@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到达审计节点 |
+| A-001 | 2026-08-24 | self | R5 渠道供应商合同冻结（D-002 vs C1～C3 / 成功标准 / I-010、I-011） | pass | 0 | [A-001-self-r5-contract.md](03-audit/A-001-self-r5-contract.md) |
 
 ## 结论状态
 
-开项目标完成。合同未冻结。开放 required finding = 0。
+已关门。D-002 冻结渠道合同（I-011 关闭、I-010 预冻）；self 审计 A-001 pass（0 required，2 条 note 已留处置）。三检查点齐：C1 决策落盘 ✓ / C2 合同可被 R6 消费 ✓ / C3 自审闭合 ✓。开放 required finding = 0。

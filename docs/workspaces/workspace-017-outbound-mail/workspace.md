@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`active`** · v0.4.0；2026-08-24 用户否决同日有界关门）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-outbound-mail`：`active` · 4/8。R1～R4 历史完成（子目标保持 `done`，实施史不回退）；R5～R8 承接渠道升级。
+- **Root** `GOAL-001-outbound-mail`：`active` · 5/8。R1～R5 历史完成（子目标保持 `done`，实施史不回退）；R6～R8 承接渠道落地与管理面。R5 渠道合同已由 GOAL-006 D-002 冻结（I-010/I-011 verified）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 不重开 `workspace-016-key-rotation-and-backup`。
 - 不承接账号 email、邀请、自助恢复、用户站内通知或业务域。VP-018 冻结至本 VP 再次关门。
@@ -49,12 +49,12 @@ VP-017：内核出站邮件发送端口 + 可切换渠道（mock 默认 + Resend
 | R2 | SMTP 接入与配置面 | **已完成**（GOAL-003；D-003）· 历史，不回退 |
 | R3 | 默认 sink + 公共面去 SMTP 客户端类型 | **已完成**（GOAL-004；D-004）· 历史，不回退 |
 | R4 | 显式路径证据 + `readyz` | **已完成**（GOAL-005；D-005）· 历史；当时 Root 关门已否决 |
-| R5 | 渠道合同冻结 | **进行中**（GOAL-006） |
+| R5 | 渠道合同冻结 | **已完成**（GOAL-006；D-002；A-001 self pass）· I-011 关闭、I-010 预冻 |
 | R6 | mock + Resend 落地 | 未开始 |
 | R7 | 设置 / 热切换 / 试发 | 未开始 |
 | R8 | 证据 + `readyz`（现行分母） | 未开始 |
 
-Root progress 4/8；历史关门审计 A-001/A-002 原文保留，不构成现行 `done`。
+Root progress 5/8；历史关门审计 A-001/A-002 原文保留，不构成现行 `done`。
 
 ## 固定共享资料引用
 

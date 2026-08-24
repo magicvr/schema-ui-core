@@ -1,16 +1,16 @@
 ---
 id: GOAL-006-channel-provider-contract
 title: R5 渠道供应商合同冻结
-status: active
+status: done
 parent: GOAL-001-outbound-mail
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.1.0
-progress: 0/3
+version: 1.0.0
+progress: 3/3
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
-serves_summary: 承接 Root R5：冻结具名渠道与 MailSender 的关系、mock 站内语义与持久化、SMTP 保留规则；关闭 I-011。不实施 Resend/设置页，不回退 R1～R4 代码。
+serves_summary: 承接 Root R5：冻结具名渠道与 MailSender 的关系、mock 站内语义与持久化、SMTP 保留规则；关闭 I-011。不实施 Resend/设置页，不回退 R1～R4 代码。（已交付：D-002 合同冻结；A-001 self pass）
 ---
 
 # GOAL-006 · R5 渠道供应商合同冻结
@@ -27,11 +27,11 @@ Root D-006 已冻结 I-007（渠道集）、I-008（mock = 管理员记录）、
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | 渠道合同冻结决策落盘（本目标 D-00N；Root I-011 → verified） | 决策文件 |
-| C2 | 合同可被 R6 消费：渠道 id / 默认 mock / SMTP 保留 / 公共面无供应商类型，有可核对说明或最小类型骨架 | 决策附件或 kernel/composition 注释级骨架（若本目标选择只写决策则 C2=决策中的可实施条款） |
-| C3 | 自审 A-001 闭合（无开放 required finding） | 本目标 `03-audit/` |
+| C1 | 渠道合同冻结决策落盘（本目标 D-00N；Root I-011 → verified） | **完成**：D-002 §3 |
+| C2 | 合同可被 R6 消费：渠道 id / 默认 mock / SMTP 保留 / 公共面无供应商类型，有可核对说明或最小类型骨架 | **完成**：D-002 §1～§4 可实施条款（选择只写决策路径） |
+| C3 | 自审 A-001 闭合（无开放 required finding） | **完成**：A-001 self pass（0 required） |
 
-`progress` = 已完成检查点 / 3。当前 **0/3**。
+`progress` = 已完成检查点 / 3。当前 **3/3**（已关门）。
 
 ## 边界
 

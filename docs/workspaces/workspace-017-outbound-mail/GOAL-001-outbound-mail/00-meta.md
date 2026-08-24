@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-22
 updated: 2026-08-24
-version: 0.7.0
-progress: 4/8
+version: 0.8.0
+progress: 5/8
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
@@ -33,12 +33,12 @@ serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；�
 | R2 | **SMTP 接入与配置面**（历史） | 依赖 R1 | **已完成**（D-003；GOAL-003 `done`） |
 | R3 | **默认 sink 落地 + 公共面去客户端类型**（历史） | 依赖 R1 | **已完成**（D-004；GOAL-004 `done`） |
 | R4 | **显式路径证据 + `readyz`**（历史） | 依赖 R2/R3 | **已完成**（D-005；GOAL-005 `done`）。历史 Root 关门已由用户否决，本阶段实施史不回退 |
-| R5 | **渠道合同冻结**：具名渠道、mock 站内语义、SMTP 保留、与 `MailSender` 的关系（I-007/I-008/I-011/I-012） | 依赖 R1（端口已在） | **进行中**（D-006 升级分母；子目标 GOAL-006） |
+| R5 | **渠道合同冻结**：具名渠道、mock 站内语义、SMTP 保留、与 `MailSender` 的关系（I-007/I-008/I-011/I-012） | 依赖 R1（端口已在） | **已完成**（子目标 GOAL-006 `done` · D-002；A-001 self pass） |
 | R6 | **mock + Resend 落地**：mock 出站记录可检视；Resend 显式配置可投递；不完整 fail-closed（I-010） | 依赖 R5 | 未开始 |
 | R7 | **设置/热切换/试发**：邮件 tab、渠道配置、热切换、同一端口试发（I-009） | 依赖 R6 | 未开始 |
 | R8 | **证据 + `readyz`**：生产渠道探针；现行退出判据可核对；018 解冻仅在 VP 再关门后 | 依赖 R6/R7 | 未开始 |
 
-`progress` = 已完成阶段数 / 8。当前 **4/8**（R1～R4 历史完成；R5～R8 未完成。progress 不放行再关门）。
+`progress` = 已完成阶段数 / 8。当前 **5/8**（R1～R5 完成；R6～R8 未完成。progress 不放行再关门）。
 
 ## 成功标准（方向级 · 现行再关门用）
 
@@ -63,8 +63,8 @@ serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；�
 | I-007 | required | 第一期渠道集：mock 默认 + Resend 生产；SMTP 保留不删 | 现行分母 / R5 | R5 | D-006 | **verified**（D-006） | — | 用户 2026-08-24 采纳讨论方案 |
 | I-008 | required | mock「站内」= 管理员出站记录，不是用户通知 | R5 / R6 | R5 | D-006 | **verified**（D-006） | — | 非 Notification Transport |
 | I-009 | required | 热切换：密钥存储、切失败保留旧 sender、单进程 vs 多实例 | R7 方案/实施 | R7 实施前 | R7 决策 | collecting | — | 对应 I-017-009 |
-| I-010 | required | Resend 配置键与 fail-closed | R6 方案/实施 | R6 接入前 | R6 决策 | collecting | — | 对应 I-017-010 |
-| I-011 | required | mock 持久化：Store vs 扩容进程内；管理端列表/详情 | R5 方案冻结 | R5 | GOAL-006 | collecting | — | 对应 I-017-011；未关闭不得实施 R6 mock 产品面 |
+| I-010 | required | Resend 配置键与 fail-closed | R6 方案/实施 | R6 接入前 | GOAL-006 D-002 §4（提前冻结） | **verified**（2026-08-24 用户裁决） | — | 对应 I-017-010；键名 `mail.resend.api-key`（env-only secret）/ `mail.resend.from`；触碰即要求完整、缺项双层 fail-closed |
+| I-011 | required | mock 持久化：Store vs 扩容进程内；管理端列表/详情 | R5 方案冻结 | R5 | GOAL-006 D-002 §3 | **verified**（2026-08-24 用户裁决） | — | DB 表 + 迁移；独立 API `GET /api/mail/outbox`(+`/{id}`)；有界保留默认 500 条、管理员可调；对应 I-017-011 |
 | I-012 | required | 管理面形状：设置「邮件」tab + 独立 API | R7 | R5 可冻形状 | D-006 | **verified**（D-006） | — | 不塞进 `/api/settings/default` |
 
 ## 父目标
