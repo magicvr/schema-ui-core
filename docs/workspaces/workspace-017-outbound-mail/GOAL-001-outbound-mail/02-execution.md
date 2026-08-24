@@ -26,6 +26,7 @@ version: 0.3.0
 | E-010 | 2026-08-24 | R7 设置/热切换/试发完成（GOAL-008 done · Root 7/8） | recorded | [E-010-r7-admin-done.md](02-execution/E-010-r7-admin-done.md) |
 | E-011 | 2026-08-24 | R8 探针+证据包完成（GOAL-009 done · Root 8/8；待关门审计放行） | recorded | [E-011-r8-complete.md](02-execution/E-011-r8-complete.md) |
 | E-012 | 2026-08-24 | 现行分母再关门放行（A-003/A-004 pass · Root done · VP-017 closed） | recorded | [E-012-reclose-released.md](02-execution/E-012-reclose-released.md) |
+| E-013 | 2026-08-24 | /govern 响应 A-005 独立审计（F-001/F-002 fixed · 合并 pass） | recorded | [E-013-a005-response.md](02-execution/E-013-a005-response.md) |
 
 ## 事实边界
 

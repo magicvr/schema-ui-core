@@ -5,8 +5,8 @@ status: done
 parent: GOAL-001-outbound-mail
 created: 2026-08-24
 updated: 2026-08-24
-version: 1.0.0
-progress: 0/3
+version: 1.1.0
+progress: 4/4
 plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
@@ -29,12 +29,12 @@ serves_summary: 承接 Root R8（收官阶段）：显式生产渠道（Resend/S
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | Resend 探针接入 readyz（仅显式配置时），测试绿 | api 代码与测试 |
-| C2 | Resend live 测试缝 + harness 证据核对记录 | live 测试文件 + E 条目 |
-| C3 | 现行退出分母证据包落盘（attachments 对照表） | attachments/exit-denominator-evidence.md |
-| C4 | 自审 A-001 闭合（无开放 required finding） | 本目标 `03-audit/` |
+| C1 | Resend 探针接入 readyz（仅显式配置时），测试绿 | **完成**：`resend.go Ping` + composition 三态测试（`TestMailRuntime*` / `TestResendPing`）；E-002 §1 |
+| C2 | Resend live 测试缝 + harness 证据核对记录 | **完成**：`resend_live_test.go`；E-002 §2、E-003（live 实跑 PASS，含域名验证后正式发件地址复跑） |
+| C3 | 现行退出分母证据包落盘（attachments 对照表） | **完成**：[attachments/exit-denominator-evidence.md](attachments/exit-denominator-evidence.md)（判据 1～7 全覆盖；live 行已更新为实跑结果） |
+| C4 | 自审 A-001 闭合（无开放 required finding） | **完成**：A-001 self pass |
 
-`progress` = 已完成检查点 / 4。当前 **0/4**。
+`progress` = 已完成检查点 / 4。当前 **4/4**（已关门）。
 
 ## 边界
 
