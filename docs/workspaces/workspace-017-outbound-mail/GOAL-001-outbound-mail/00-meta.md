@@ -62,7 +62,7 @@ serves_summary: 交付架构 A6 升级：保留已落地的内核 MailSender；�
 | I-006 | non-blocking | 历史波次重启生效；热加载不进 R4 | 历史 R4 | R4 | R4 | **verified**（D-005） | 现行热切换见 I-009 | R4 启动单例事实保留 |
 | I-007 | required | 第一期渠道集：mock 默认 + Resend 生产；SMTP 保留不删 | 现行分母 / R5 | R5 | D-006 | **verified**（D-006） | — | 用户 2026-08-24 采纳讨论方案 |
 | I-008 | required | mock「站内」= 管理员出站记录，不是用户通知 | R5 / R6 | R5 | D-006 | **verified**（D-006） | — | 非 Notification Transport |
-| I-009 | required | 热切换：密钥存储、切失败保留旧 sender、单进程 vs 多实例 | R7 方案/实施 | R7 实施前 | R7 决策 | collecting | — | 对应 I-017-009 |
+| I-009 | required | 热切换：密钥存储、切失败保留旧 sender、单进程 vs 多实例 | R7 方案/实施 | R7 实施前 | D-007（用户裁决密钥方案） | **verified**（2026-08-24） | — | 可填密钥+写后不可读回+主密钥加密落库；DB 渠道状态即时生效；单进程语义。对应 I-017-009 |
 | I-010 | required | Resend 配置键与 fail-closed | R6 方案/实施 | R6 接入前 | GOAL-006 D-002 §4（提前冻结） | **verified**（2026-08-24 用户裁决） | — | 对应 I-017-010；键名 `mail.resend.api-key`（env-only secret）/ `mail.resend.from`；触碰即要求完整、缺项双层 fail-closed |
 | I-011 | required | mock 持久化：Store vs 扩容进程内；管理端列表/详情 | R5 方案冻结 | R5 | GOAL-006 D-002 §3 | **verified**（2026-08-24 用户裁决） | — | DB 表 + 迁移；独立 API `GET /api/mail/outbox`(+`/{id}`)；有界保留默认 500 条、管理员可调；对应 I-017-011 |
 | I-012 | required | 管理面形状：设置「邮件」tab + 独立 API | R7 | R5 可冻形状 | D-006 | **verified**（D-006） | — | 不塞进 `/api/settings/default` |

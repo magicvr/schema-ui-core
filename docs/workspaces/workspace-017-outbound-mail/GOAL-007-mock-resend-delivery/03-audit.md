@@ -26,6 +26,13 @@ version: 0.1.0
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-24 | self | R6 实施关门（C1～C4 vs D-002 合同 / 成功标准 1～4） | pass | 0（1 recommended accepted-residual + 1 note） | [A-001-self-r6-delivery.md](03-audit/A-001-self-r6-delivery.md) |
 
+## 编排器响应（A-001 意见闭环 · 2026-08-24）
+
+| F-ID | 级别 | 响应 | 闭合路径 |
+|------|------|------|----------|
+| F-001 | recommended | 用户书面裁决（会话问答留痕）：outbox 读面**维持 `settings.read`** 门禁，不新增 mail.read。范围 = mock 出站记录读面；复审触发 = R7 权限需要更细粒度时再按消费有效性复核 | **accepted-residual**（用户书面接受） |
+| F-002 | note | 范围事实记录（web 未动、e2e 归 R8 组合证据），无需响应动作 | **closed（note，无动作）** |
+
 ## 结论状态
 
-已关门。R6 实施完成且全测试绿；self 审计 A-001 pass（0 required）。四检查点齐：C1 配置层 ✓ / C2 持久层 ✓ / C3 面层 ✓ / C4 自审闭合 ✓。开放 required finding = 0。F-001 residual（settings.read 复用）留待 R7 开设时复核。
+已关门。R6 实施完成且全测试绿；self 审计 A-001 pass；A-001 findings 全部合法闭合（F-001 accepted-residual 留痕、F-002 note 无动作）。四检查点齐：C1 配置层 ✓ / C2 持久层 ✓ / C3 面层 ✓ / C4 自审闭合 ✓。开放 required finding = 0。
