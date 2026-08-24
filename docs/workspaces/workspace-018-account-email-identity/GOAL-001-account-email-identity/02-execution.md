@@ -21,6 +21,8 @@ version: 0.3.0
 | E-005 | 2026-08-24 | R1 关门（GOAL-002 done · A-001 self pass · Root 1/4） | recorded | [E-005-r1-closed.md](02-execution/E-005-r1-closed.md) |
 | E-006 | 2026-08-24 | R2 关门（GOAL-003 done · 迁移 0054 · A-001 independent pass · Root 2/4） | recorded | [E-006-r2-closed.md](02-execution/E-006-r2-closed.md) |
 | E-007 | 2026-08-24 | R3 关门（GOAL-004 done · 迁移 0055 + 绑定流 · required 归零 · Root 3/4） | recorded | [E-007-r3-closed.md](02-execution/E-007-r3-closed.md) |
+| E-008 | 2026-08-24 | R4 关门（GOAL-005 done · 端到端证据 · self pass · Root 4/4 待关门审计） | recorded | [E-008-r4-closed.md](02-execution/E-008-r4-closed.md) |
+| E-009 | 2026-08-24 | 关门审计环中断（grok 代理不可达 · A-002 挂起） | recorded | [E-009-closeout-audit-deferred.md](02-execution/E-009-closeout-audit-deferred.md) |
 
 ## 事实边界
 

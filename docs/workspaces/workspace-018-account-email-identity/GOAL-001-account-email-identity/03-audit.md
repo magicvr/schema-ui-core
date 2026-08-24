@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计 · GOAL-001（Root）
@@ -16,18 +16,20 @@ version: 0.3.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-001/I-002/I-005 collecting；I-003/I-004 registered；I-006 collecting | 开区 scaffold；未进入 R1 冻结 |
-| 到期 required 是否已 verified / residual | 无到期项 | R1 尚未开始，I-001/I-002 未到期 |
+| 影响本 scope 的 I-00N | I-001～I-006 **全部 verified**（三次用户书面裁决：R1 两项 / R3 四项，GOAL-002 D-001 与 GOAL-004 D-001 v1.1.0） | I-003/I-004 为 VP 冻结投影 registered→verified 同步 |
+| 到期 required 是否已 verified / residual | 无到期未关项 | N-1（SQLite lower() ASCII）为有界残余声明，含复核触发 |
 | 资料引用是否固定且用户确认 | 不适用 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到达审计节点 |
+| A-001 | 2026-08-24 | self | Root 关门自审（R1～R4 汇总 · 五判据 · 门禁 · 边界） | pass | 0 | [A-001-self-root-closeout.md](03-audit/A-001-self-root-closeout.md) |
+| A-002 | 待补 | independent | Root 关门独立审计 | **待执行**（grok 代理不可达，见 E-009） | — | — |
 
 ## 结论状态
 
-开区 scaffold 完成。**2026-08-24 Root `blocked`（D-002）**：VP-017 再次关门前不得推进。愿景层意见见 VRev-040（激活史）与 VRev-041（017 重开 / 本 VP 冻结），不写入本 Goal 台账。
+历史：开区 scaffold → 2026-08-24 Root `blocked`（D-002，VP-017 再关门前冻结；VRev-041）→ 同日解冻（D-003，VP-017 v0.5.0 现行分母再关门 + 用户确认；VRev-042 pass）。
 
-**2026-08-24 解冻（D-003）**：解冻条件满足——VP-017 v0.5.0 按现行分母再关门（VRev-042 self pass）+ 用户确认。Root 回到 `active`；开放 required = 0 不变；R1 合同冻结前仍须关闭 I-001 / I-002，DDL 变更仍归 R2 且以 I-001 关闭为前置。
+现状：四阶段全关（GOAL-002～005 done），I-001～I-006 全 verified，A-001 self **pass**。
+**A-002 独立关门审计暂缓**：2026-08-24 会话内 grok CLI 两次调用失败 + 端点三探无路由（约 8 分钟跨度）；按 P-003 不由编排器冒充 independent。恢复后立即补审——Root `status` 保持 `active` 直至 A-002 通过。
