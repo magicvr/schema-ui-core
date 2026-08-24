@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-08-24
 updated: 2026-08-24
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计 · GOAL-001（Root）
@@ -28,4 +28,6 @@ version: 0.2.0
 
 ## 结论状态
 
-开区 scaffold 完成。**2026-08-24 Root `blocked`（D-002）**：VP-017 再次关门前不得推进。愿景层意见见 VRev-040（激活史）与 VRev-041（017 重开 / 本 VP 冻结），不写入本 Goal 台账。冻结期不得改 `users` DDL。
+开区 scaffold 完成。**2026-08-24 Root `blocked`（D-002）**：VP-017 再次关门前不得推进。愿景层意见见 VRev-040（激活史）与 VRev-041（017 重开 / 本 VP 冻结），不写入本 Goal 台账。
+
+**2026-08-24 解冻（D-003）**：解冻条件满足——VP-017 v0.5.0 按现行分母再关门（VRev-042 self pass）+ 用户确认。Root 回到 `active`；开放 required = 0 不变；R1 合同冻结前仍须关闭 I-001 / I-002，DDL 变更仍归 R2 且以 I-001 关闭为前置。
