@@ -127,7 +127,11 @@
               "permissionIntent": "edit",
               "labelKey": "invite.panel.revoke",
               "confirm": "Revoke this invitation?",
-              "confirmKey": "invite.panel.confirmRevoke"
+              "confirmKey": "invite.panel.confirmRevoke",
+              "disabledWhen": {
+                "field": "revokable",
+                "equals": false
+              }
             }
           ]
         }

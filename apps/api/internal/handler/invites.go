@@ -52,6 +52,9 @@ func inviteToMap(inv *authsession.Invite) map[string]any {
 	} else if !time.Now().UTC().Before(inv.ExpiresAt) {
 		out["status"] = "expired"
 	}
+	// Derived flag for the schema table: only a live pending invite can be
+	// revoked/resend (drives disabledWhen on row actions).
+	out["revokable"] = out["status"] == "pending"
 	return out
 }
 
