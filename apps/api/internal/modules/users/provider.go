@@ -50,7 +50,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"GET /api/users/invites", "POST /api/users/invites",
 				"DELETE /api/users/invites/{id}", "POST /api/users/invites/{id}/resend",
 			},
-			Pages:       []string{"users"},
+			Pages:       []string{"users", "users-invites"},
 			Navigation:  []string{"menu_users"},
 			Permissions: []string{"users.read", "users.write", "users.invite"},
 			Fragments:   []string{"users"},
@@ -83,6 +83,20 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		DataSource:           "/api/users",
 		Owner:                ModuleID,
 		Document:             usersschema.SchemaDocuments()["users"],
+	}); err != nil {
+		return err
+	}
+	// workspace-019 UX polish: invitation management lives on its own child
+	// page (data-dictionary → dictionary-entries precedent); the users page
+	// toolbar holds the users.invite-gated entry navigation.
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users-invites"},
+		PageID:               "users-invites",
+		Resources:            []string{"users", "invites"},
+		Actions:              []string{"list", "create"},
+		DataSource:           "/api/users/invites",
+		Owner:                ModuleID,
+		Document:             usersschema.SchemaDocuments()["users-invites"],
 	}); err != nil {
 		return err
 	}

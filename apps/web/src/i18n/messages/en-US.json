@@ -199,6 +199,7 @@
   "schema.account.filter.status.all": "All statuses",
   "schema.account.filter.status.active": "Active",
   "schema.account.filter.status.revoked": "Revoked",
+  "schema.users.toolbar.invites": "Invitations",
   "schema.users.toolbar.export": "Export",
   "schema.users.toolbar.import": "Import",
   "schema.users.import.field.file": "CSV file",

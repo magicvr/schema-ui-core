@@ -199,6 +199,7 @@
   "schema.account.filter.status.all": "全部状态",
   "schema.account.filter.status.active": "活跃",
   "schema.account.filter.status.revoked": "已吊销",
+  "schema.users.toolbar.invites": "邀请管理",
   "schema.users.toolbar.export": "导出",
   "schema.users.toolbar.import": "导入",
   "schema.users.import.field.file": "CSV 文件",

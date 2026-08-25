@@ -16,6 +16,10 @@
     ]
   },
   "actions": {
+    "openInvites": {
+      "type": "navigate",
+      "url": "/users-invites"
+    },
     "createUser": {
       "type": "request",
       "method": "POST",
@@ -23,7 +27,8 @@
       "bodyMapping": {
         "username": "username",
         "name": "name",
-        "password": "password"
+        "password": "password",
+        "roles": "roles"
       },
       "onSuccess": {
         "behavior": "reload"
@@ -305,12 +310,6 @@
     "id": "users",
     "children": [
       {
-        "type": "custom",
-        "id": "user-invites-panel",
-        "component": "user-invites-panel",
-        "props": {}
-      },
-      {
         "type": "form",
         "id": "users-search",
         "props": {
@@ -427,6 +426,15 @@
               "actionRef": "openCreate",
               "permissionIntent": "edit",
               "labelKey": "schema.users.toolbar.newUser"
+            },
+            {
+              "key": "invites",
+              "label": "Invitations",
+              "actionRef": "openInvites",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.invite\""
+              },
+              "labelKey": "schema.users.toolbar.invites"
             },
             {
               "key": "export",

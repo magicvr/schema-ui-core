@@ -71,8 +71,8 @@ func TestUsersProviderRegistersSurfaces(t *testing.T) {
 			t.Fatalf("route %q missing from provider set", key)
 		}
 	}
-	if len(set.Pages) != 1 || set.Pages[0].PageID != "users" || set.Pages[0].Owner != ModuleID {
-		t.Fatalf("pages = %+v, want single users page owned by %s", set.Pages, ModuleID)
+	if len(set.Pages) != 2 || set.Pages[0].PageID != "users" || set.Pages[0].Owner != ModuleID || set.Pages[1].PageID != "users-invites" {
+		t.Fatalf("pages = %+v, want users + users-invites owned by %s", set.Pages, ModuleID)
 	}
 	wantPerms := []string{"users.read", "users.write", "users.invite"}
 	if len(set.Permissions) != len(wantPerms) {

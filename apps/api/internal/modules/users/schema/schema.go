@@ -11,14 +11,17 @@ import "embed"
 const ModuleID = "admin.users"
 
 // PageIDs are the page identifiers this module contributes.
-func PageIDs() []string { return []string{"users"} }
+func PageIDs() []string { return []string{"users", "users-invites"} }
 
-//go:embed users.json
+//go:embed users.json users-invites.json
 var schemaFiles embed.FS
 
 // SchemaDocuments returns the page documents owned by the users module.
 func SchemaDocuments() map[string][]byte {
-	return map[string][]byte{"users": mustRead("users.json")}
+	return map[string][]byte{
+		"users":         mustRead("users.json"),
+		"users-invites": mustRead("users-invites.json"),
+	}
 }
 
 func mustRead(path string) []byte {

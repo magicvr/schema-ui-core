@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "pageId": "users-invites",
+    "title": "Invitations",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "data.route-binding"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "users-invites",
+    "children": [
+      {
+        "type": "custom",
+        "id": "user-invites-panel",
+        "component": "user-invites-panel",
+        "props": {}
+      }
+    ]
+  }
+}
