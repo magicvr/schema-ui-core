@@ -4,8 +4,8 @@ doc: decision
 status: active
 parent: null
 created: 2026-08-25
-updated: 2026-08-25
-version: 0.1.0
+updated: 2026-08-26
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-001
@@ -32,3 +32,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | D-001 | 2026-08-25 | 开区 scaffold 与 IAM 纲领路线图（含 Admin 类 freshness） | accepted | [D-001-workspace-root-establishment.md](01-decision/D-001-workspace-root-establishment.md) |
 | D-002 | 2026-08-25 | R1 门禁三项用户裁决（I-001 / I-002 / I-009） | accepted | [D-002-r1-gate-adjudications.md](01-decision/D-002-r1-gate-adjudications.md) |
+| D-003 | 2026-08-26 | 响应 Root A-001：F-001 fixed（sentinel+冻结码复用）/ F-002 登记闭合 | accepted | [D-003-a001-finding-response.md](01-decision/D-003-a001-finding-response.md) |

@@ -122,6 +122,13 @@ func (h *policySettingsHandler) patch() http.Handler {
 			return
 		}
 		if uerr := h.repo.UpdatePasswordPolicy(next); uerr != nil {
+			// A-001 F-001 sentinel split: a missing singleton row (legacy
+			// pre-0057 store) is a 404 on the frozen SETTINGS_NOT_FOUND code,
+			// not a blanket 500; anything else stays a storage failure.
+			if errors.Is(uerr, authsession.ErrPasswordPolicyNotSeeded) {
+				writeLocalizedError(w, r, http.StatusNotFound, "SETTINGS_NOT_FOUND", "password policy row is not seeded")
+				return
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not save the password policy")
 			return
 		}
@@ -132,5 +139,3 @@ func (h *policySettingsHandler) patch() http.Handler {
 		})
 	})
 }
-
-var _ = errors.Is // keep errors imported for future sentinel mapping

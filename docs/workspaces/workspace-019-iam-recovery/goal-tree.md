@@ -2,9 +2,9 @@
 title: 目标树 · workspace-019-iam-recovery
 status: active
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 parent: null
-version: 0.2.0
+version: 0.2.1
 workspace_id: workspace-019-iam-recovery
 ---
 
@@ -27,7 +27,7 @@ GOAL-001-iam-recovery [done 4/4]                · IAM：密码策略 / 邀请�
 
 R1 关门（GOAL-002）：I-001～I-009 全闭 + 合同条款落盘。R2 关门（GOAL-003）：迁移 0056 + 恢复全链 + MFA 第二因子门。R3 关门（GOAL-004 · A-001 independent conditional→F-001～F-004 fixed 归零 + A-002 self pass）：迁移 0057–0059 + 策略四口强制 + 邀请全链 + Web 面（含新建用户表单角色选择）。**根目标已收官（done 4/4 · 2026-08-25）**：R1～R4 全链关门，开放 required = 0，VP-019 三件交付完成。
 
-> **关后维护**（不改变状态）：邀请管理 UX 连续修正已作为维护事实记录于 Root `GOAL-001-iam-recovery/02-execution/E-008-invites-ux-maintenance.md`（角色多选、子页化、筛选/分页、schema 化、行级条件禁用、协议弹窗重发、明细抽屉，及 `createUser.bodyMapping.roles` 缺陷修复）。
+> **关后维护**（不改变状态）：邀请管理 UX 连续修正已作为维护事实记录于 Root `GOAL-001-iam-recovery/02-execution/E-008-invites-ux-maintenance.md`（角色多选、子页化、筛选/分页、schema 化、行级条件禁用、协议弹窗重发、明细抽屉，及 `createUser.bodyMapping.roles` 缺陷修复）。2026-08-26 关后独立复审 A-001（`pass` · recommended ×2）响应闭合：F-001 fixed（D-003/E-009）+ F-002 登记闭合（E-009 §F-002），复核 A-002 self `pass`，见 `03-audit/A-002-finding-response-self.md`。
 
 ## 状态表
 

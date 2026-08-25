@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-08-25
-updated: 2026-08-25
-version: 0.1.0
+updated: 2026-08-26
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-001
@@ -22,6 +22,7 @@ version: 0.1.0
 | E-006 | 2026-08-25 | R3 关门（GOAL-004 done 5/5 · Root 3/4） | recorded | [E-006-r3-closeout.md](02-execution/E-006-r3-closeout.md) |
 | E-007 | 2026-08-25 | R4 与根目标关门（GOAL-005 done · Root 4/4 done） | recorded | [E-007-root-closeout.md](02-execution/E-007-root-closeout.md) |
 | E-008 | 2026-08-25 | 关后维护：邀请管理 UX 修正实录（角色多选/子页/筛选分页/schema 化/行级条件/弹窗重发/明细；含 bodyMapping roles 缺陷修复与协议化判断修正） | recorded | [E-008-invites-ux-maintenance.md](02-execution/E-008-invites-ux-maintenance.md) |
+| E-009 | 2026-08-26 | 响应 Root A-001：F-001 代码修正（sentinel fail-closed + 冻结码细分 + 死导入清除 + 4 测试）/ F-002 部署拓扑注意项登记 | recorded | [E-009-a001-finding-fixes.md](02-execution/E-009-a001-finding-fixes.md) |
 
 ## 事实边界
 

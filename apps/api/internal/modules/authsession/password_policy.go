@@ -31,6 +31,12 @@ const (
 // the granular reason stays in the service log, never in the response.
 var ErrPasswordPolicyViolation = fmt.Errorf("authsession: password violates the active policy")
 
+// ErrPasswordPolicyNotSeeded reports that the singleton policy row (id=1) is
+// missing — a legacy pre-0057 store. UpdatePasswordPolicy refuses to silently
+// no-op in that state (A-001 F-001: the admin PATCH must not answer 200 while
+// nothing was persisted); handlers map it to 404 SETTINGS_NOT_FOUND.
+var ErrPasswordPolicyNotSeeded = errors.New("authsession: password policy row not seeded")
+
 // PasswordPolicy is one row of the singleton table.
 type PasswordPolicy struct {
 	MinLength     int
@@ -64,12 +70,25 @@ func (r *Repository) GetPasswordPolicy() (PasswordPolicy, error) {
 
 // UpdatePasswordPolicy writes the admin-tuned values after handler-side range
 // validation (D-001 §2: length ∈[8,72], categories ∈[0,4], depth ∈[0,10]).
+// A missing singleton row is NOT tolerated here (unlike the read-side degrade
+// to frozen defaults): an UPDATE that matches zero rows returns
+// ErrPasswordPolicyNotSeeded instead of a silent no-op success.
 func (r *Repository) UpdatePasswordPolicy(p PasswordPolicy) error {
 	return r.withTx("update password policy", func(tx kernel.Tx) error {
-		_, err := tx.Exec(context.Background(),
+		res, err := tx.Exec(context.Background(),
 			`UPDATE password_policy SET min_length = ?, min_categories = ?, history_depth = ? WHERE id = 1`,
 			p.MinLength, p.MinCategories, p.HistoryDepth)
-		return err
+		if err != nil {
+			return err
+		}
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return ErrPasswordPolicyNotSeeded // fail closed: never a silent no-op
+		}
+		return nil
 	})
 }
 

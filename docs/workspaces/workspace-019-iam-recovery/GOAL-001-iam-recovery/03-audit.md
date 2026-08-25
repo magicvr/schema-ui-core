@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-08-25
-updated: 2026-08-25
-version: 0.1.0
+updated: 2026-08-26
+version: 0.3.0
 ---
 
 # 审计 · GOAL-001（Root）
@@ -24,8 +24,11 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-26 | independent | 全链关门复审（close-out · Root + R1～R4；代码证据制） | pass | 0 | [A-001-closeout-independent.md](03-audit/A-001-closeout-independent.md) |
+| A-002 | 2026-08-26 | self | A-001 响应复核（F-001 fixed · F-002 登记闭合；recommended ×2，无 required） | pass | 0 | [A-002-finding-response-self.md](03-audit/A-002-finding-response-self.md) |
 
 ## 结论状态
 
 2026-08-25 开区（E-001；VR-047；VRev-043 independent `pass`）。R1 合同冻结关门（GOAL-002 done · A-001 self `pass` 0 required · D-002 + GOAL-002 D-001 五节条款）。R1～R4 全部关门：R1 合同（GOAL-002）、R2 恢复全链（GOAL-003）、R3 策略+邀请（GOAL-004）、R4 证据（GOAL-005 · A-001 independent conditional→F-001/F-002 fixed 归零 + A-002 self `pass`）。**Root done 4/4 · 2026-08-25**：开放 required = 0，无越界，VP-019 三件交付完成。
+
+2026-08-26 关后独立复审 **A-001（independent · close-out）`pass`**（代码证据制全量复跑绿；增量 recommended ×2）。同日响应闭合：F-001 fixed（sentinel 细分 + 死导入清除，D-003/E-009）、F-002 按审计处方登记为部署拓扑注意项（E-009 §F-002；后续生产化波次评估）；响应复核 **A-002 self `pass`**。开放 required 仍 = 0。
