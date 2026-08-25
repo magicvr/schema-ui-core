@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-iam-recovery
 created: 2026-08-25
 updated: 2026-08-25
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-003
@@ -24,8 +24,9 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-25 | independent | R2 实施切片 C2–C4（execution-facts · 对照 D-001） | conditional → **响应后归零** | ~~1（F-001）~~ 0（F-001 fixed · `ddd20500`） | [A-001-r2-recovery-independent.md](03-audit/A-001-r2-recovery-independent.md) |
+| A-002 | 2026-08-25 | self | GOAL-003 关门向（合同一致性 / 意见闭环 / 台账） | **pass** | 0 | [A-002-self-closeout.md](03-audit/A-002-self-closeout.md) |
 
 ## 结论状态
 
-2026-08-25 开题（E-001；D-001 方案冻结）。实施切片按既定模式走 independent（grok build · grok-4.6 · high）；关门须 self + independent 双审且开放 required = 0。
+2026-08-25 independent A-001（grok-build · grok-4.6 · high）conditional → 编排器响应：F-001 **fixed**（限流桶 + 测试）、F-002 fixed（真实 bcrypt e2e + 真 mfa 服务链测试）、F-003 fixed（detail username）、F-004 fixed（D-001 回写例外）；开放 required = 0。A-002 self `pass` 复核关门条件达成——GOAL-003 关门，Root R2 记完成（2/4）。

@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-25 | R1 门禁三项裁决入账（I-001/I-002/I-009 verified · D-002）+ GOAL-002 立项 | recorded | [E-002-r1-gate-adjudications.md](02-execution/E-002-r1-gate-adjudications.md) |
 | E-003 | 2026-08-25 | R1 冻结范围全量裁决完成（I-003～I-008 verified · GOAL-002 D-001） | recorded | [E-003-r1-freeze-inputs-complete.md](02-execution/E-003-r1-freeze-inputs-complete.md) |
 | E-004 | 2026-08-25 | R1 关门（GOAL-002 done 3/3 · Root 1/4） | recorded | [E-004-r1-closeout.md](02-execution/E-004-r1-closeout.md) |
+| E-005 | 2026-08-25 | R2 关门（GOAL-003 done 5/5 · Root 2/4） | recorded | [E-005-r2-closeout.md](02-execution/E-005-r2-closeout.md) |
 
 ## 事实边界
 
