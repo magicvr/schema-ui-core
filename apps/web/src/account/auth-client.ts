@@ -397,6 +397,72 @@ export async function logout(): Promise<void> {
   clearTokens();
 }
 
+// --- workspace-019 R2 (GOAL-003 D-001 §2): self-service password recovery ---
+
+const RECOVERY_START_URL = "/api/auth/recovery/start";
+const RECOVERY_COMPLETE_URL = "/api/auth/recovery/complete";
+
+/** Reads the cataloged error code off a recovery failure response. */
+async function recoveryError(response: Response, fallback: string): Promise<AuthError> {
+  let code = fallback;
+  try {
+    const body = (await response.json()) as { error?: string };
+    if (body.error !== undefined && body.error !== "") {
+      code = body.error;
+    }
+  } catch {
+    // non-JSON error body: keep the fallback code
+  }
+  return new AuthError(code, "recovery failed", response.status);
+}
+
+/** Requests a reset code for the account (username or its verified email).
+ * The server answers 202 dispatched even when no recovery path exists, so a
+ * resolved promise NEVER means an email was actually sent — only that the
+ * request was accepted. */
+export async function recoveryStart(account: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await postJSON(RECOVERY_START_URL, { account });
+  } catch {
+    throw new AuthError("LOGIN_NETWORK", "unable to reach the recovery service");
+  }
+  if (!response.ok) {
+    throw await recoveryError(response, "LOGIN_FAILED");
+  }
+}
+
+export interface RecoveryCompleteInput {
+  account: string;
+  code: string;
+  newPassword: string;
+  /** TOTP code — required when the account has MFA enrolled. */
+  secondFactorCode?: string;
+  /** One-time recovery code as the TOTP alternative. */
+  recoveryCode?: string;
+}
+
+/** Completes self-recovery: verifies the emailed code (+ second factor for
+ * MFA accounts), swaps the password and revokes every live session. Success
+ * returns WITHOUT tokens — the user signs in with the new password. */
+export async function recoveryComplete(input: RecoveryCompleteInput): Promise<void> {
+  let response: Response;
+  try {
+    response = await postJSON(RECOVERY_COMPLETE_URL, {
+      account: input.account,
+      code: input.code,
+      newPassword: input.newPassword,
+      ...(input.secondFactorCode === undefined ? {} : { secondFactorCode: input.secondFactorCode }),
+      ...(input.recoveryCode === undefined ? {} : { recoveryCode: input.recoveryCode }),
+    });
+  } catch {
+    throw new AuthError("LOGIN_NETWORK", "unable to reach the recovery service");
+  }
+  if (!response.ok) {
+    throw await recoveryError(response, "LOGIN_FAILED");
+  }
+}
+
 /** Restore outcomes (ADR-0035 D4 normalized adapter input, GOAL-004 S4-2). */
 export type RestoreSessionResult =
   | { kind: "none" }

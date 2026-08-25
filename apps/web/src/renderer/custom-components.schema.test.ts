@@ -25,6 +25,9 @@ import "@/components/notification-center";
 import "@/components/data-permission-scopes";
 import "@/components/activity-export";
 import "@/components/mail-admin-tab";
+// workspace-018 R3 shipped the component but missed this side-effect import,
+// so the W25 guard failed at HEAD (account:email-identity "unregistered").
+import "@/components/email-identity";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
