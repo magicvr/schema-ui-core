@@ -24,8 +24,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-25 | self | R1 合同冻结关门审计（完备性 / 可实施性 / 台账一致性） | **pass** | 0 | [A-001-self-contract-freeze.md](03-audit/A-001-self-contract-freeze.md) |
 
 ## 结论状态
 
-2026-08-25 开题（E-001）。审计模式：开题 none；合同落盘后 self（C3）；R2 起实施切片按 Root 决策走 independent。
+2026-08-25 开题（E-001）；同日 D-001 合同落盘（E-002，C2）并经 **A-001 self `pass`（0 required；N-1～N-3 notes 移交 R2/R3 设计）** 关门——C1/C2/C3 全满。R1 记完成，Root 进入 R2。

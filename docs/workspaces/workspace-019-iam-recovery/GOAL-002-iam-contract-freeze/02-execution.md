@@ -16,6 +16,7 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-25 | R1 立项（C1 已满：Root D-002 三项 verified） | recorded | [E-001-goal-opened.md](02-execution/E-001-goal-opened.md) |
 | E-002 | 2026-08-25 | 第二轮五项裁决入账 + D-001 合同条款落盘（C2 满） | recorded | [E-002-contract-frozen.md](02-execution/E-002-contract-frozen.md) |
+| E-003 | 2026-08-25 | 关门：A-001 self pass（0 required）→ done 3/3 · Root R1 记完成 | recorded | [E-003-closeout.md](02-execution/E-003-closeout.md) |
 
 ## 事实边界
 

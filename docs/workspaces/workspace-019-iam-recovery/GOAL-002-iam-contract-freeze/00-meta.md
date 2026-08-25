@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-iam-contract-freeze
 title: R1 IAM 合同冻结（恢复 / 策略 / 邀请）
-status: active
+status: done
 parent: GOAL-001-iam-recovery
 created: 2026-08-25
 updated: 2026-08-25
-version: 0.1.0
-progress: 1/3
+version: 1.0.0
+progress: 3/3
 plan_refs:
   - VP-019-iam-recovery
 primary_plan: VP-019-iam-recovery
@@ -32,9 +32,9 @@ serves_summary: 承接 Root R1：在已 verified 的 I-001/I-002/I-009（Root D-
 |---|--------|------|
 | C1 | I-001 / I-002 / I-009 关闭（verified；用户书面裁决留痕），立项解锁 | **完成**：Root D-002 + 结构化裁决会话（i001_proof_form / i002_ttl_cooldown / i009_mfa_boundary，均取推荐项）；Root 镜像表已同步 |
 | C2 | IAM 合同冻结决策落盘（本目标 D-NNN）：恢复状态机条款 + 策略默认参数与生效边界 + 邀请形态与生命周期 + 会话语义投影；I-003/I-004/I-005 verified，I-007/I-008 投影留痕 | **完成**：D-001 §1～§5 五节条款；第二轮裁决会话五项均取推荐项；Root 镜像表 I-003～I-008 已同步 |
-| C3 | 自审 A-001 闭合（self；无开放 required finding） | 待完成 |
+| C3 | 自审 A-001 闭合（self；无开放 required finding） | **完成**：A-001 self `pass`（0 required；N-1～N-3 notes 移交 R2/R3 设计，不阻断关门） |
 
-`progress` = 已完成检查点 / 3。当前 **2/3**。
+`progress` = 已完成检查点 / 3。当前 **3/3**（已关门 · 2026-08-25）。
 
 ## 边界
 
