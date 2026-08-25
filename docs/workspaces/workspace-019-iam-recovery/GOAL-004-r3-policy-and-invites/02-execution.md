@@ -16,6 +16,7 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-25 | R3 开题 + D-001 方案冻结（C1 满） | recorded | [E-001-goal-opened.md](02-execution/E-001-goal-opened.md) |
 | E-002 | 2026-08-25 | C2 迁移落地 + C3 策略半场四口强制（2/5） | recorded | [E-002-policy-backend.md](02-execution/E-002-policy-backend.md) |
+| E-003 | 2026-08-25 | C3 满：邀请域 + 管理/激活 API + settings 配置 API（3/5） | recorded | [E-003-invites-backend.md](02-execution/E-003-invites-backend.md) |
 
 ## 事实边界
 

@@ -1,0 +1,166 @@
+// Invitation domain tests (workspace-019 R3 · GOAL-004 D-001 §3): roles fixed
+// at issuance (user adjudication), one-time redemption, instant revoke,
+// token-rotating resend with 60 s cooldown, role-gone fail-closed, and
+// username-conflict rejection. Policy tests live beside them.
+package authsession
+
+import (
+	"errors"
+	"testing"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+func openInviteFixture(t *testing.T) (*Repository, time.Time) {
+	t.Helper()
+	repo, _ := openRecoveryFixture(t)
+	base := time.Now().UTC().Truncate(time.Second)
+	return repo, base
+}
+
+func TestCreateAndAcceptInviteAssignsIssuedRoles(t *testing.T) {
+	repo, base := openInviteFixture(t)
+	raw, inv, err := repo.CreateInvite("user-admin", []string{"admin"}, "", defaultInviteTTL, base)
+	if err != nil {
+		t.Fatalf("create invite: %v", err)
+	}
+	if raw == "" || len(inv.Roles) != 1 || inv.Roles[0] != "admin" {
+		t.Fatalf("created = (%q, %+v)", raw, inv)
+	}
+	hash, herr := bcrypt.GenerateFromPassword([]byte("invited-pass-1"), 4)
+	if herr != nil {
+		t.Fatalf("hash: %v", herr)
+	}
+	u, err := repo.AcceptInvite(raw, "newbie", "New Bie", string(hash), base.Add(time.Minute))
+	if err != nil {
+		t.Fatalf("accept: %v", err)
+	}
+	// The issued role travels to the new account (裁决：角色以邀请为准).
+	granted, err := repo.PermissionsForRoles(u.Roles)
+	_ = granted // permissions projection is a management concern; role keys matter:
+	if len(u.Roles) != 1 || u.Roles[0] != "admin" {
+		t.Fatalf("accepted roles = %v, want [admin]", u.Roles)
+	}
+	if u.Username != "newbie" || u.MustChangePassword {
+		t.Fatalf("accepted user = %+v (must_change must stay false — invitee chose the password)", u)
+	}
+	// One-time: replay of the same token is dead.
+	if _, err := repo.AcceptInvite(raw, "second", "S", string(hash), base.Add(2*time.Minute)); !errors.Is(err, ErrInviteInvalid) {
+		t.Fatalf("replay accept err = %v, want ErrInviteInvalid", err)
+	}
+}
+
+func TestAcceptInviteRejectsUnknownTokenUsernameConflictAndRoleGone(t *testing.T) {
+	repo, base := openInviteFixture(t)
+	if _, err := repo.AcceptInvite("no-such-token", "x", "X", "h", base); !errors.Is(err, ErrInviteInvalid) {
+		t.Fatalf("unknown token err = %v, want ErrInviteInvalid", err)
+	}
+	raw, _, err := repo.CreateInvite("user-admin", []string{"viewer"}, "", defaultInviteTTL, base)
+	if err != nil {
+		t.Fatalf("create invite: %v", err)
+	}
+	hash, _ := bcrypt.GenerateFromPassword([]byte("invited-pass-1"), 4)
+	// Username conflict → fail-closed, invite stays live.
+	if _, err := repo.AcceptInvite(raw, "admin", "Dup", string(hash), base.Add(time.Minute)); !errors.Is(err, ErrUsernameTaken) {
+		t.Fatalf("conflict err = %v, want ErrUsernameTaken", err)
+	}
+	if _, err := repo.AcceptInvite(raw, "ok-name", "Ok", string(hash), base.Add(2*time.Minute)); err != nil {
+		t.Fatalf("accept after failed conflict attempt: %v", err)
+	}
+	// Role deletion between issue and acceptance → INVITE_ROLE_GONE.
+	repo2, base2 := openInviteFixture(t)
+	raw2, _, err := repo2.CreateInvite("user-admin", []string{"ghost-role"}, "", defaultInviteTTL, base2)
+	if err == nil {
+		t.Fatal("unknown role at creation must fail")
+	}
+	if !errors.Is(err, ErrInviteRoleGone) {
+		t.Fatalf("create with unknown role err = %v, want ErrInviteRoleGone", err)
+	}
+	_ = raw2
+}
+
+func TestInviteResendCooldownRotationAndRevoke(t *testing.T) {
+	repo, base := openInviteFixture(t)
+	raw, inv, err := repo.CreateInvite("user-admin", []string{"editor"}, "ed@example.com", defaultInviteTTL, base)
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	// Cooldown: immediate resend rejected.
+	if _, _, err := repo.ResendInvite(inv.ID, defaultInviteTTL, base.Add(10*time.Second)); !errors.Is(err, ErrInviteCooldown) {
+		t.Fatalf("resend cooldown err = %v, want ErrInviteCooldown", err)
+	}
+	// After the window: resend rotates the token; old link dies.
+	raw2, inv2, err := repo.ResendInvite(inv.ID, defaultInviteTTL, base.Add(61*time.Second))
+	if err != nil {
+		t.Fatalf("resend: %v", err)
+	}
+	if raw2 == raw {
+		t.Fatal("resend must rotate the token")
+	}
+	hash, _ := bcrypt.GenerateFromPassword([]byte("invited-pass-1"), 4)
+	if _, err := repo.AcceptInvite(raw, "old-link", "O", string(hash), base.Add(62*time.Second)); !errors.Is(err, ErrInviteInvalid) {
+		t.Fatalf("old link after resend err = %v, want ErrInviteInvalid", err)
+	}
+	// Revoke kills the rotated link instantly.
+	if err := repo.RevokeInvite(inv2.ID, base.Add(70*time.Second)); err != nil {
+		t.Fatalf("revoke: %v", err)
+	}
+	if _, err := repo.AcceptInvite(raw2, "revoked", "R", string(hash), base.Add(80*time.Second)); !errors.Is(err, ErrInviteInvalid) {
+		t.Fatalf("revoked accept err = %v, want ErrInviteInvalid", err)
+	}
+	// Unknown id surfaces distinctly for the admin surface.
+	if err := repo.RevokeInvite("inv-nothing", base.Add(90*time.Second)); !errors.Is(err, ErrInviteNotFound) {
+		t.Fatalf("revoke unknown err = %v, want ErrInviteNotFound", err)
+	}
+}
+
+// --- password policy ---
+
+func TestValidateNewPasswordBaselineCategoriesHistory(t *testing.T) {
+	repo, base := openInviteFixture(t)
+
+	// Baseline (frozen defaults): 8–72 bytes non-blank.
+	if err := repo.ValidateNewPassword("", "short"); !errors.Is(err, ErrPasswordPolicyViolation) {
+		t.Fatalf("short err = %v, want violation", err)
+	}
+	if err := repo.ValidateNewPassword("", "long-enough-pass"); err != nil {
+		t.Fatalf("default-policy pass err = %v, want nil", err)
+	}
+	// Complexity knob: two categories demanded.
+	if err := repo.UpdatePasswordPolicy(PasswordPolicy{MinLength: 8, MinCategories: 3}); err != nil {
+		t.Fatalf("update policy: %v", err)
+	}
+	if err := repo.ValidateNewPassword("", "alllowercase"); !errors.Is(err, ErrPasswordPolicyViolation) {
+		t.Fatal("single-category password must violate min_categories=3")
+	}
+	if err := repo.ValidateNewPassword("", "GoodPass12"); err != nil {
+		t.Fatalf("three-category pass err = %v, want nil", err)
+	}
+
+	// History: set a real hash via UpdateUser, then try to reuse it.
+	if err := repo.UpdatePasswordPolicy(PasswordPolicy{MinLength: 8, HistoryDepth: 3}); err != nil {
+		t.Fatalf("enable history: %v", err)
+	}
+	oldHash, _ := bcrypt.GenerateFromPassword([]byte("old-password-1"), 4)
+	newHash, _ := bcrypt.GenerateFromPassword([]byte("fresh-password-9"), 4)
+	u, err := repo.CreateUserManagement(User{
+		ID: "u-hist", Username: "hist", Name: "Hist", Roles: []string{"viewer"},
+		PasswordHash: string(oldHash), CreatedAt: base, UpdatedAt: base,
+	})
+	if err != nil {
+		t.Fatalf("seed history user: %v", err)
+	}
+	if err := repo.ValidateNewPassword(u.ID, "old-password-1"); err != nil {
+		t.Fatalf("pre-rotation current password must pass (not yet in history): %v", err)
+	}
+	if _, err := repo.UpdateUser(u.ID, UserPatch{PasswordHash: stringPtr(string(newHash))}, u.ID, base.Add(time.Minute)); err != nil {
+		t.Fatalf("rotate: %v", err)
+	}
+	if err := repo.ValidateNewPassword(u.ID, "old-password-1"); !errors.Is(err, ErrPasswordPolicyViolation) {
+		t.Fatalf("history reuse err = %v, want violation", err)
+	}
+	if err := repo.ValidateNewPassword(u.ID, "never-used-pass"); err != nil {
+		t.Fatalf("fresh pass err = %v, want nil", err)
+	}
+}

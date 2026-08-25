@@ -395,6 +395,7 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("admin.mfa") {
 		recoveryGate = mfaService
 	}
+	handler.RegisterInviteAccept(mux, authRepository)
 	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
@@ -462,13 +463,13 @@ func newMuxWithExtraProviders(
 		providers = append(providers, devexamplesmodule.New())
 	}
 	if plan.HasModule("admin.users") {
-		providers = append(providers, usersmodule.New(a, authRepository, operations))
+		providers = append(providers, usersmodule.New(a, authRepository, operations, mailSender))
 	}
 	if plan.HasModule("admin.roles") {
 		providers = append(providers, rolesmodule.New(a, authRepository, operations))
 	}
 	if plan.HasModule("admin.settings") {
-		providers = append(providers, settingsmodule.New(a, settingsRepository, operations, brandAssets))
+		providers = append(providers, settingsmodule.New(a, settingsRepository, operations, brandAssets, authRepository))
 	} else {
 		// Public bootstrap must work on mvp (and any profile without the
 		// settings edit module). Edit/list/patch/reset stay admin.settings-only;

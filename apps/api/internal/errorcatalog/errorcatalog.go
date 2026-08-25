@@ -205,6 +205,12 @@ var Catalog = map[string]Entry{
 	"RECOVERY_CODE_INVALID":            {"error.recoveryCodeInvalid", "recovery code is invalid", "恢复码无效"},
 	"RECOVERY_CODE_EXPIRED":            {"error.recoveryCodeExpired", "recovery code expired; request a new one", "恢复码已过期，请重新获取"},
 	"RECOVERY_SECOND_FACTOR_REQUIRED":  {"error.recoverySecondFactorRequired", "your second factor is required to finish recovery", "完成恢复需要第二因素验证码"},
+
+	// workspace-019 R3 (GOAL-004 D-001 §3): invitation codes. Unknown /
+	// expired / consumed / revoked share ONE code on the pre-auth surface.
+	"INVALID_INVITE_BODY": {"error.invalidInviteBody", "body must be JSON with token, username and password", "请求体必须是包含 token、username 和 password 的 JSON"},
+	"INVITE_INVALID":      {"error.inviteInvalid", "invitation is unknown, expired, already used or revoked", "邀请无效：不存在、已过期、已使用或已撤销"},
+	"INVITE_ROLE_GONE":    {"error.inviteRoleGone", "invited roles changed; ask for a new invitation", "邀请中的角色已变更，请索取新邀请"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

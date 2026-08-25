@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-iam-recovery
 created: 2026-08-25
 updated: 2026-08-25
-version: 0.2.0
-progress: 2/5
+version: 0.3.0
+progress: 3/5
 plan_refs:
   - VP-019-iam-recovery
 primary_plan: VP-019-iam-recovery
@@ -25,7 +25,7 @@ serves_summary: 承接 Root R3：按 R1 合同（GOAL-002 D-001 §2/§3）实施
 |---|--------|------|
 | C1 | R3 方案冻结决策落盘（本目标 D-001，含角色裁决） | **完成**：D-001 §1～§5（f65f9b01） |
 | C2 | 迁移 0057/0058 落地（策略行/历史/邀请表；checksum 台账 + 黄金断言同步） | **完成**：v57/58/59 checksum 入台账（bfc7c4f2…/04f77fdc…/a35bbb21…）；identity head 56→59 + 三表清单；四处黄金断言同步；store 全绿 |
-| C3 | 后端实施：策略域 ValidateNewPassword + 四口强制 + 配置 API；邀请域 + 管理 API + 公开激活 + 测试绿 | **进行中**：策略域 + 四口接线完成（E-002）；配置 API 与邀请域待做 |
+| C3 | 后端实施：策略域 ValidateNewPassword + 四口强制 + 配置 API；邀请域 + 管理 API + 公开激活 + 测试绿 | **完成**：E-002 策略半场 + E-003 邀请域/配置 API；全包测试绿（E-003） |
 | C4 | Web 面：设置页策略 tab、用户页邀请管理、公开激活页、新建用户表单补角色选择 + i18n | 待完成 |
 | C5 | independent 审计开放 required = 0 + self 关门审 | 待完成 |
 

@@ -10,6 +10,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/configuration"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/settings/manifest"
@@ -26,13 +27,16 @@ type Provider struct {
 	repository *settingsrepository.Repository
 	operations operationlog.Recorder
 	assets     *handler.BrandingAssetStore
+	// authRepo feeds the password-policy configuration surface (workspace-019
+	// R3 · GOAL-004 D-001 §2): the policy row is owned by core.auth-session.
+	authRepo *authsession.Repository
 }
 
 // New constructs the settings provider with framework-agnostic dependencies.
 // assets is the W9 dedicated brand-asset store (may be nil in narrow tests
 // that never exercise brand uploads).
-func New(a *auth.Authenticator, repository *settingsrepository.Repository, operations operationlog.Recorder, assets *handler.BrandingAssetStore) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations, assets: assets}
+func New(a *auth.Authenticator, repository *settingsrepository.Repository, operations operationlog.Recorder, assets *handler.BrandingAssetStore, authRepo *authsession.Repository) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, assets: assets, authRepo: authRepo}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -46,6 +50,7 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/branding", "GET /api/settings", "GET /api/settings/{id}", "PATCH /api/settings/{id}", "POST /api/settings/{id}/reset",
 				"POST /api/branding/assets", "GET /api/branding/assets/{id}",
+				"GET /api/settings/password-policy", "PATCH /api/settings/password-policy",
 			},
 			Pages:            []string{"settings"},
 			Navigation:       []string{"menu_settings"},
@@ -66,6 +71,13 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		return err
 	}
 	for _, route := range handler.SettingsRoutes(p.a, p.repository, p.operations, ModuleID, configuration.Namespace, p.assets) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
+	// workspace-019 R3 (GOAL-004 D-001 §2): password-policy configuration —
+	// GET/PATCH on the admin.settings tab extension.
+	for _, route := range handler.PasswordPolicyRoutes(p.a, p.authRepo, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

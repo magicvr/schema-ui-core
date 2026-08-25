@@ -118,6 +118,8 @@ var frozenDomainCodes = []string{
 	// the pre-auth surface stays enumeration-neutral.
 	"INVALID_RECOVERY_BODY", "RECOVERY_CODE_INVALID", "RECOVERY_CODE_EXPIRED",
 	"RECOVERY_SECOND_FACTOR_REQUIRED",
+	// workspace-019 R3 (GOAL-004 D-001 §3): invitation codes.
+	"INVALID_INVITE_BODY", "INVITE_INVALID", "INVITE_ROLE_GONE",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

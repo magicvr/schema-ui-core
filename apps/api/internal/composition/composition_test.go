@@ -457,7 +457,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// (+1 navigation, no permissions) to mvp and admin.
 		// VP-012 R6: core.auth-session contributes service-credentials.read/write
 		// (+2 permissions, no page/navigation) to every profile.
-		{profile: "mvp", wantPermissions: 10, wantNavigation: 5},
+		// workspace-019 R3 (GOAL-004): admin.users adds users.invite (+1
+		// permission, no navigation — invitation management panel).
+		{profile: "mvp", wantPermissions: 11, wantNavigation: 5},
 		// S-02 (GOAL-007): admin.file-library contributes files.read/files.delete
 		// (+2 permissions) and menu_files (+1 navigation) to admin only.
 		// S-01 (GOAL-008): admin.data-dictionary contributes dictionary.read/
@@ -481,7 +483,7 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
 		// GOAL-022: admin.wallet adds menu_wallet_self (+1 navigation, no
 		// permission keys — identity-only self-service).
-		{profile: "admin", wantPermissions: 32, wantNavigation: 15},
+		{profile: "admin", wantPermissions: 33, wantNavigation: 15},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
