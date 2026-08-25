@@ -48,6 +48,8 @@ func (f *fakeRecoveryRepo) UserByID(id string) (*authsession.User, error) {
 	return &authsession.User{ID: id, Name: f.userName}, nil
 }
 
+func (f *fakeRecoveryRepo) ValidateNewPassword(userID, plain string) error { return nil }
+
 type fakeGate struct {
 	required bool
 	verifyErr error

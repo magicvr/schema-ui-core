@@ -44,6 +44,7 @@ type UsersRepository interface {
 	DeleteUser(string, string) error
 	DeleteUsersBatch([]string, string) (int, error)
 	PermissionsForRoles([]string) ([]string, error)
+	ValidateNewPassword(userID, plain string) error
 }
 
 func usersResource(repository UsersRepository, operations operationlog.Recorder) Resource {
@@ -161,6 +162,11 @@ func (e *usersEntity) Create(body map[string]any, id string, now time.Time, acto
 	if err != nil {
 		return nil, err
 	}
+	// workspace-019 R3 (GOAL-004 D-001 §2): account creation is one of the
+	// four policy enforcement points (no history exists yet — userID empty).
+	if err := e.repository.ValidateNewPassword("", password); err != nil {
+		return nil, &DomainError{Status: 400, Code: "INVALID_PASSWORD", Message: "initial password violates the active password policy"}
+	}
 	hash, err := auth.HashPassword(password, passwordHashCost)
 	if err != nil {
 		return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
@@ -191,6 +197,11 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 		password, err := managedPasswordFromBody(body)
 		if err != nil {
 			return nil, err
+		}
+		// workspace-019 R3 (GOAL-004 D-001 §2): admin reset is one of the four
+		// policy enforcement points.
+		if err := e.repository.ValidateNewPassword(id, password); err != nil {
+			return nil, &DomainError{Status: 400, Code: "INVALID_PASSWORD", Message: "new password violates the active password policy"}
 		}
 		hash, err := auth.HashPassword(password, passwordHashCost)
 		if err != nil {

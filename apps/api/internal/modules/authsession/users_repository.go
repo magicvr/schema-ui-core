@@ -239,6 +239,13 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		nextTokenVersion := current.TokenVersion
 		if patch.PasswordHash != nil {
 			nextTokenVersion = current.TokenVersion + 1
+			// workspace-019 R3 (GOAL-004 D-001 §2): push the OUTGOING hash
+			// into the policy-history store inside the SAME transaction;
+			// depth comes from the singleton policy row (best-effort read).
+			var historyDepth int
+			_ = tx.QueryRow(context.Background(),
+				`SELECT history_depth FROM password_policy WHERE id = 1`).Scan(&historyDepth)
+			r.capturePasswordHistory(tx, id, current.PasswordHash, historyDepth, nextUpdatedAt)
 		}
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, must_change_password = ?, updated_at = ?, email = ?, email_status = ? WHERE id = ?`,

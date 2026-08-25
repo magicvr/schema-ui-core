@@ -214,6 +214,81 @@ var passwordRecoveryPGDDL = []string{
 )`,
 }
 
+// passwordPolicyDDL (workspace-019 R3 · GOAL-004 D-001 §1): singleton policy
+// row (id=1) with the frozen defaults — minLength 8 (= current baseline),
+// complexity categories off, history off (I-003 起步宽松). Portable: INTEGER
+// columns and literal CHECK are identical on both dialects.
+var passwordPolicyDDL = []string{
+	`CREATE TABLE password_policy (
+  id             INTEGER PRIMARY KEY CHECK (id = 1),
+  min_length     INTEGER NOT NULL DEFAULT 8,
+  min_categories INTEGER NOT NULL DEFAULT 0,
+  history_depth  INTEGER NOT NULL DEFAULT 0
+)`,
+	`INSERT INTO password_policy (id) VALUES (1)`,
+}
+
+// userPasswordHistoryDDL (GOAL-004 D-001 §2): previous password hashes for
+// history_depth comparison; populated only when a set-password mutation goes
+// through UpdateUser. Times follow the accountLock INTEGER/BIGINT split.
+var userPasswordHistoryDDL = []string{
+	`CREATE TABLE user_password_history (
+  id            TEXT PRIMARY KEY,
+  user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  created_at    INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_user_password_history_user ON user_password_history(user_id, created_at DESC)`,
+}
+
+var userPasswordHistoryPGDDL = []string{
+	`CREATE TABLE user_password_history (
+  id            TEXT PRIMARY KEY,
+  user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  created_at    BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_user_password_history_user ON user_password_history(user_id, created_at DESC)`,
+}
+
+// userInvitesDDL (GOAL-004 D-001 §3): admin-issued invitations. The raw token
+// is shown once at creation/resend; only its SHA-256 hash is stored. roles is
+// the JSON array of role keys assigned at activation (user adjudication:
+// 受邀账号角色以发布邀请时指定为准). consumed_at marks one-time use; revoked_at
+// an admin revoke; resend = revoke-old + fresh row (60 s cooldown via
+// last_sent_at of the predecessor).
+var userInvitesDDL = []string{
+	`CREATE TABLE user_invites (
+  id           TEXT PRIMARY KEY,
+  token_hash   TEXT NOT NULL UNIQUE,
+  roles        TEXT NOT NULL,
+  invited_by   TEXT NOT NULL REFERENCES users(id),
+  email        TEXT,
+  expires_at   INTEGER NOT NULL,
+  consumed_at  INTEGER,
+  revoked_at   INTEGER,
+  last_sent_at INTEGER NOT NULL,
+  created_at   INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_user_invites_created ON user_invites(created_at DESC)`,
+}
+
+var userInvitesPGDDL = []string{
+	`CREATE TABLE user_invites (
+  id           TEXT PRIMARY KEY,
+  token_hash   TEXT NOT NULL UNIQUE,
+  roles        TEXT NOT NULL,
+  invited_by   TEXT NOT NULL REFERENCES users(id),
+  email        TEXT,
+  expires_at   BIGINT NOT NULL,
+  consumed_at  BIGINT,
+  revoked_at   BIGINT,
+  last_sent_at BIGINT NOT NULL,
+  created_at   BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_user_invites_created ON user_invites(created_at DESC)`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
@@ -460,6 +535,30 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migratePasswordRecovery,
 			ApplyPostgres:        migratePasswordRecoveryPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "password_policy"},
+			Version:              57,
+			Name:                 "password_policy",
+			Checksum:             kernel.MigrationChecksum(passwordPolicyDDL, "0057:password-policy:v1"),
+			// ApplyPostgres nil: portable DDL (literal CHECK + singleton seed).
+			Apply: migratePasswordPolicy,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "user_password_history"},
+			Version:              58,
+			Name:                 "user_password_history",
+			Checksum:             kernel.MigrationChecksum(userPasswordHistoryDDL, "0058:user-password-history:v1"),
+			Apply:                migrateUserPasswordHistory,
+			ApplyPostgres:        migrateUserPasswordHistoryPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "user_invites"},
+			Version:              59,
+			Name:                 "user_invites",
+			Checksum:             kernel.MigrationChecksum(userInvitesDDL, "0059:user-invites:v1"),
+			Apply:                migrateUserInvites,
+			ApplyPostgres:        migrateUserInvitesPG,
+		},
 	}
 }
 
@@ -577,6 +676,51 @@ func migratePasswordRecoveryPG(tx kernel.Tx) error {
 	for _, stmt := range passwordRecoveryPGDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create password recovery challenges (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migratePasswordPolicy(tx kernel.Tx) error {
+	for _, stmt := range passwordPolicyDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create password policy: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserPasswordHistory(tx kernel.Tx) error {
+	for _, stmt := range userPasswordHistoryDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user password history: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserPasswordHistoryPG(tx kernel.Tx) error {
+	for _, stmt := range userPasswordHistoryPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user password history (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserInvites(tx kernel.Tx) error {
+	for _, stmt := range userInvitesDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user invites: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserInvitesPG(tx kernel.Tx) error {
+	for _, stmt := range userInvitesPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user invites (postgres): %w", err)
 		}
 	}
 	return nil

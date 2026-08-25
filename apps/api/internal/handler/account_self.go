@@ -33,6 +33,9 @@ type AccountRepository interface {
 	// EmailIdentityState reads back the managed email triple (workspace-018
 	// R3): nil/nil = unbound.
 	EmailIdentityState(string) (*string, *string, error)
+	// ValidateNewPassword enforces the active password policy at the self
+	// change enforcement point (workspace-019 R3 · GOAL-004 D-001 §2).
+	ValidateNewPassword(userID, plain string) error
 }
 
 // AccountSelfRoutes returns the self-service route contributions (admin.account).
@@ -250,6 +253,12 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 		}
 		if body.NewPassword == body.CurrentPassword {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password must differ from the current password")
+			return
+		}
+		// workspace-019 R3 (GOAL-004 D-001 §2): self change is one of the four
+		// policy enforcement points.
+		if err := h.repository.ValidateNewPassword(user.ID, body.NewPassword); err != nil {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password violates the active password policy")
 			return
 		}
 		u, err := h.repository.GetUser(user.ID)

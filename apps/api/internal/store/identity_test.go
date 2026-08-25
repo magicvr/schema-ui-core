@@ -38,7 +38,7 @@ func TestClassifyIdentity(t *testing.T) {
 		{"empty", nil, nil, false, identityEmpty},
 		{"ledger", []string{"schema_migrations", "users"}, ledger, true, identityOursLedger},
 		{"r2", []string{"users", "refresh_tokens"}, nil, true, identityOursR2},
-		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges"}, nil, true, identityOursCompleteNoLedger},
+		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges", "password_policy", "user_password_history", "user_invites"}, nil, true, identityOursCompleteNoLedger},
 		{"four tables without catalog head", []string{"users", "refresh_tokens", "operation_log", "jobs", "roles"}, nil, true, identityLostLedgerUnsafe},
 		{"partial users only", []string{"users"}, nil, true, identityOursPartialNoLedger},
 		{"foreign users", []string{"users"}, nil, false, identityForeign},
@@ -105,6 +105,9 @@ var lockedHeadExtraTables = map[int][]string{
 	54: {}, // account_email_identity: ALTER + lower(email) unique index only (no new objects)
 	55: {"email_verification_challenges"}, // workspace-018 R3: per-user active verification challenge
 	56: {"password_recovery_challenges"}, // workspace-019 R2: per-user active recovery challenge
+	57: {"password_policy"},           // workspace-019 R3: singleton policy row
+	58: {"user_password_history"},     // workspace-019 R3: history-depth store
+	59: {"user_invites"},              // workspace-019 R3: admin invitations
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
