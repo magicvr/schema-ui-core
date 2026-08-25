@@ -197,9 +197,14 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		}
 
 		newPassword := body.NewPassword
+		length := len([]byte(newPassword))
+		if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(newPassword) == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password must be a non-whitespace string of 8 to 72 bytes")
+			return
+		}
 		// workspace-019 R3 (GOAL-004 D-001 §2): recovery completion is one of
-		// the four policy enforcement points (baseline + complexity + history;
-		// does NOT consume a challenge attempt — A-001 F-004 write-back).
+		// the four policy enforcement points (complexity/history on top of the
+		// baseline; does NOT consume a challenge attempt — A-001 F-004 note).
 		if err := h.repo.ValidateNewPassword(target.UserID, newPassword); err != nil {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password violates the active password policy")
 			return
