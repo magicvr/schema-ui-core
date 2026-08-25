@@ -115,6 +115,37 @@ func TestInviteResendCooldownRotationAndRevoke(t *testing.T) {
 	}
 }
 
+// A-001 F-002: expiry and acceptance-side role deletion surface as the
+// uniform invalid / role-gone answers respectively.
+func TestAcceptInviteExpiredAndRoleGoneAfterIssue(t *testing.T) {
+	repo, base := openInviteFixture(t)
+	raw, _, err := repo.CreateInvite("user-admin", []string{"editor"}, "", 1*time.Hour, base)
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	hash, _ := bcrypt.GenerateFromPassword([]byte("invited-pass-1"), 4)
+	// Expired window → uniform invalid.
+	if _, err := repo.AcceptInvite(raw, "late", "L", string(hash), base.Add(2*time.Hour)); !errors.Is(err, ErrInviteInvalid) {
+		t.Fatalf("expired accept err = %v, want ErrInviteInvalid", err)
+	}
+	// Role deleted AFTER issuance → role-gone (fail-closed, admin reissues).
+	// A NON-system role is required: system roles refuse deletion.
+	repo2, base2 := openInviteFixture(t)
+	if _, err := repo2.CreateRole("temp-guest", "Temp Guest", base2); err != nil {
+		t.Fatalf("create temp role: %v", err)
+	}
+	raw2, _, err := repo2.CreateInvite("user-admin", []string{"temp-guest"}, "", defaultInviteTTL, base2)
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if err := repo2.DeleteRole("role-temp-guest"); err != nil {
+		t.Fatalf("delete role: %v", err)
+	}
+	if _, err := repo2.AcceptInvite(raw2, "stale-roles", "S", string(hash), base2.Add(time.Minute)); !errors.Is(err, ErrInviteRoleGone) {
+		t.Fatalf("role-gone accept err = %v, want ErrInviteRoleGone", err)
+	}
+}
+
 // --- password policy ---
 
 func TestValidateNewPasswordBaselineCategoriesHistory(t *testing.T) {
@@ -162,5 +193,20 @@ func TestValidateNewPasswordBaselineCategoriesHistory(t *testing.T) {
 	}
 	if err := repo.ValidateNewPassword(u.ID, "never-used-pass"); err != nil {
 		t.Fatalf("fresh pass err = %v, want nil", err)
+	}
+}
+
+// A-001 F-001: the CONFIGURED minimum is authoritative — tightening to 12
+// must reject 8–11 byte passwords at every enforcement call.
+func TestValidateNewPasswordConfiguredMinLengthBites(t *testing.T) {
+	repo, _ := openInviteFixture(t)
+	if err := repo.UpdatePasswordPolicy(PasswordPolicy{MinLength: 12}); err != nil {
+		t.Fatalf("tighten minLength: %v", err)
+	}
+	if err := repo.ValidateNewPassword("", "eight-byte"); !errors.Is(err, ErrPasswordPolicyViolation) {
+		t.Fatal("8-byte password must violate a configured minLength of 12")
+	}
+	if err := repo.ValidateNewPassword("", "twelve-bytes!"); err != nil {
+		t.Fatalf("12+ byte pass err = %v, want nil", err)
 	}
 }

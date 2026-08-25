@@ -75,15 +75,21 @@ func (r *Repository) UpdatePasswordPolicy(p PasswordPolicy) error {
 
 // ValidateNewPassword enforces the active policy for a candidate plaintext.
 // userID may be empty (account creation — no history exists yet). Every
-// violation collapses into ErrPasswordPolicyViolation.
+// violation collapses into ErrPasswordPolicyViolation. The CONFIGURED
+// MinLength is authoritative (clamped to the 8-byte floor) — A-001 F-001:
+// a tightened minimum must actually bite at all four set-password points.
 func (r *Repository) ValidateNewPassword(userID, plain string) error {
-	length := len([]byte(plain))
-	if length < policyMinLengthFloor || length > policyMinLengthCeiling || strings.TrimSpace(plain) == "" {
-		return ErrPasswordPolicyViolation
-	}
 	policy, err := r.GetPasswordPolicy()
 	if err != nil {
 		return err
+	}
+	minLength := policy.MinLength
+	if minLength < policyMinLengthFloor {
+		minLength = policyMinLengthFloor // never below the bcrypt-safe baseline
+	}
+	length := len([]byte(plain))
+	if length < minLength || length > policyMinLengthCeiling || strings.TrimSpace(plain) == "" {
+		return ErrPasswordPolicyViolation
 	}
 	if policy.MinCategories > 0 && countCategories(plain) < policy.MinCategories {
 		return ErrPasswordPolicyViolation

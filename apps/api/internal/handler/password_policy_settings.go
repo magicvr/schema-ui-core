@@ -35,8 +35,8 @@ func PasswordPolicyRoutes(a *auth.Authenticator, repo PolicySettingsRepository, 
 			Handler:              handler,
 		})
 	}
-	add("GET", "/api/settings/password-policy", a.Middleware(h.requireSettingsWrite(h.get())))
-	add("PATCH", "/api/settings/password-policy", a.Middleware(h.requireSettingsWrite(h.patch())))
+	add("GET", "/api/settings/password-policy", a.Middleware(h.requirePermission("settings.read", h.get())))
+	add("PATCH", "/api/settings/password-policy", a.Middleware(h.requirePermission("settings.write", h.patch())))
 	return routes
 }
 
@@ -46,7 +46,10 @@ type policySettingsHandler struct {
 	now  func() time.Time
 }
 
-func (h *policySettingsHandler) requireSettingsWrite(next http.Handler) http.Handler {
+// requirePermission gates on ONE resolved permission key; the read face takes
+// settings.read while only the write face demands settings.write (A-001 F-004,
+// mirroring the mail-tab read/write split).
+func (h *policySettingsHandler) requirePermission(permission string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor, ok := auth.UserIdentityFrom(r.Context())
 		if !ok {
@@ -59,12 +62,12 @@ func (h *policySettingsHandler) requireSettingsWrite(next http.Handler) http.Han
 			return
 		}
 		for _, p := range granted {
-			if p == "settings.write" {
+			if p == permission {
 				next.ServeHTTP(w, r)
 				return
 			}
 		}
-		writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "you do not have permission to change settings")
+		writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "you do not have permission for this action")
 	})
 }
 

@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -184,13 +183,14 @@ func inviteLink(r *http.Request, rawToken string) string {
 // sendInviteMail dispatches the invitation letter through the ONE composed
 // MailSender (GOAL-002 D-001 §3: 只经 kernel.MailSender).
 func sendInviteMail(sender kernel.MailSender, to, link string, expires time.Time) error {
+	body := "您收到一份账号邀请。请在此链接完成激活（设置用户名与密码）：\n" + link +
+		"\n\n有效期至 " + expires.Format(time.RFC3339) + "。\n\n" +
+		"You have been invited. Activate your account via this link:\n" + link +
+		"\n\nValid until " + expires.Format(time.RFC3339) + ".\n"
 	msg := kernel.MailMessage{
-		To:      to,
-		Subject: "账号邀请 · Account invitation",
-		TextBody: fmt.Sprintf(
-			"您收到一份账号邀请。请在此链接完成激活（设置用户名与密码）：`n%s`n`n有效期至 %s。`n`n"+
-				"You have been invited. Activate your account via this link:`n%s`n`nValid until %s.`n",
-			link, expires.Format(time.RFC3339), link, expires.Format(time.RFC3339)),
+		To:       to,
+		Subject:  "账号邀请 · Account invitation",
+		TextBody: body,
 	}
 	if err := msg.Validate(); err != nil {
 		return err
@@ -251,8 +251,14 @@ func (h *inviteAdminHandler) resend() http.Handler {
 			return
 		}
 		link := inviteLink(r, raw)
-		if strings.TrimSpace(r.PathValue("id")) != "" && inv.Email != nil {
-			_ = sendInviteMail(h.sender, *inv.Email, link, inv.ExpiresAt)
+		// A-001 F-003: a failed dispatch surfaces (502) instead of being
+		// swallowed — the invite stays live with its rotated token, so the
+		// admin retries resend after the cooldown.
+		if inv.Email != nil {
+			if serr := sendInviteMail(h.sender, *inv.Email, link, inv.ExpiresAt); serr != nil {
+				writeLocalizedError(w, r, http.StatusBadGateway, "EMAIL_SEND_FAILED", "the invitation email could not be sent")
+				return
+			}
 		}
 		out := inviteToMap(inv)
 		out["token"] = raw

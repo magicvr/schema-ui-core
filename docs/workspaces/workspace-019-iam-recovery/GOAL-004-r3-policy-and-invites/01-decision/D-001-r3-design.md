@@ -12,7 +12,7 @@ version: 1.0.0
 
 ## 背景
 
-R1 合同（GOAL-002 D-001 §2/§3）与 I-003/I-004/I-005/I-007（verified）冻结产品语义。2026-08-25 用户裁决新增两点：①**受邀账号初始角色 = 管理员发布邀请时指定**（激活后按邀请角色建号）；②Web 新建用户表单应支持直接选角色（后端 `POST /api/users` 已收 roles，表单缺字段 → 列入 C4）。技术细节按惯例留痕：纯链接邀请允许不带邮箱；邀请链接返回相对路径，邮件正文以请求 Host 推导绝对基址。
+R1 合同（GOAL-002 D-001 §2/§3）与 I-003/I-004/I-005/I-007（verified）冻结产品语义。2026-08-25 用户裁决新增两点：①**受邀账号初始角色 = 管理员发布邀请时指定**（激活后按邀请角色建号）；②Web 新建用户表单应支持直接选角色（后端 `POST /api/users` 已收 roles，表单缺字段 → 列入 C4）。技术细节按惯例留痕：纯链接邀请允许不带邮箱。链接形态（A-001 F-003 回写定稿）：激活页路径为相对路由 `/invite/accept?token=…`；管理 API 响应与邀请邮件中的链接由请求 Host（含 X-Forwarded-Proto 推导 scheme）拼接为**绝对链接**——比纯相对路径更实用，邮件场景必须可点击。
 
 ## 方案条款（冻结）
 
@@ -25,9 +25,9 @@ R1 合同（GOAL-002 D-001 §2/§3）与 I-003/I-004/I-005/I-007（verified）�
 ### §2 密码策略域与四口强制
 
 - `authsession.ValidateNewPassword(userID, plain) error`：读策略行 → 基线 8–72 字节非空白 → min_categories>0 时字符类别计数（小写/大写/数字/其他）不足即拒 → history_depth>0 时对最近 N 条历史 bcrypt 比较命中即拒。错误哨兵映射 INVALID_PASSWORD（复用）。
-- 历史捕获：UpdateUser 带 PasswordHash patch 时同事务把旧 hash 推入历史并按 depth 裁剪；创建账号无历史写入。
+- 历史捕获：UpdateUser 带 PasswordHash patch 时同事务把旧 hash 推入历史并按 depth 裁剪（捕获为 best-effort，失败不阻断设密）；创建账号无历史写入。校验语义注明（A-001 F-004 回写）：**轮换前的当前密码不在历史中**——它在成功轮换的同一事务内才入史，因此「改回当前密码」需先完成一次轮换后才被拦；这是既定口径而非缺陷。
 - 四口接线（设密前调用 ValidateNewPassword）：users Create / users Update(password) / account_self changePassword / recovery complete。
-- 配置面：admin.settings 模块新增 GET/PATCH `/api/settings/password-policy`（复用既有 settings 管理权限）；PATCH 范围校验 minLength∈[8,72]、minCategories∈[0,4]、historyDepth∈[0,10]；UI 形状为 admin.settings tab 扩展（C4）。
+- 配置面：admin.settings 模块新增 GET/PATCH `/api/settings/password-policy`；**GET 走 `settings.read`、PATCH 走 `settings.write`**（A-001 F-004 回写，与邮件 tab 读/写分权同形）；PATCH 范围校验 minLength∈[8,72]、minCategories∈[0,4]、historyDepth∈[0,10]；UI 形状为 admin.settings tab 扩展（C4）。
 
 ### §3 邀请入职（角色由邀请指定 · 用户裁决 2026-08-25）
 
