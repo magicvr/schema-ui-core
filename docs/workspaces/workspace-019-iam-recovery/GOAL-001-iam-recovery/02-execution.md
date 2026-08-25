@@ -21,6 +21,7 @@ version: 0.1.0
 | E-005 | 2026-08-25 | R2 关门（GOAL-003 done 5/5 · Root 2/4） | recorded | [E-005-r2-closeout.md](02-execution/E-005-r2-closeout.md) |
 | E-006 | 2026-08-25 | R3 关门（GOAL-004 done 5/5 · Root 3/4） | recorded | [E-006-r3-closeout.md](02-execution/E-006-r3-closeout.md) |
 | E-007 | 2026-08-25 | R4 与根目标关门（GOAL-005 done · Root 4/4 done） | recorded | [E-007-root-closeout.md](02-execution/E-007-root-closeout.md) |
+| E-008 | 2026-08-25 | 关后维护：邀请管理 UX 修正实录（角色多选/子页/筛选分页/schema 化/行级条件/弹窗重发/明细；含 bodyMapping roles 缺陷修复与协议化判断修正） | recorded | [E-008-invites-ux-maintenance.md](02-execution/E-008-invites-ux-maintenance.md) |
 
 ## 事实边界
 
