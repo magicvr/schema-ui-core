@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-22
-version: 0.7.0
+updated: 2026-08-26
+version: 0.8.0
 ---
 
 # 执行记录 · GOAL-001
@@ -20,6 +20,7 @@ version: 0.7.0
 | E-004 | 2026-08-20 | W8 波次关门 + 真实浏览器/CSP 回归 · Root 汇总 | recorded | [E-004-w8-closed.md](02-execution/E-004-w8-closed.md) |
 | E-005 | 2026-08-20 | W8 CSP/真实浏览器冒烟纳入发版前流程 | recorded | [E-005-prerelease-smoke-integration.md](02-execution/E-005-prerelease-smoke-integration.md) |
 | E-006 | 2026-08-22 | 开 W11 子目标承接独立审计落盘 | recorded | [E-006-w11-opened.md](02-execution/E-006-w11-opened.md) |
+| E-007 | 2026-08-26 | 开 W12 子目标承接跨区限流登记项（workspace-019 E-009 §F-002；评估先行） | recorded | [E-007-w12-opened.md](02-execution/E-007-w12-opened.md) |
 
 ## 波次执行（子目标）
 
@@ -35,4 +36,5 @@ version: 0.7.0
 - W8 → [GOAL-008](../GOAL-008-w8-api-web-security-audit/02-execution.md)（done）
 - W9 → [GOAL-009](../GOAL-009-w9-api-web-security-audit/02-execution.md)（done）
 - W10 → [GOAL-010](../GOAL-010-w10-api-web-security-audit/02-execution.md)（done）
-- W11 → [GOAL-011](../GOAL-011-w11-api-web-security-audit/02-execution.md)（active · S1）
+- W11 → [GOAL-011](../GOAL-011-w11-api-web-security-audit/02-execution.md)（done · 2026-08-22 关门正式确认）
+- W12 → [GOAL-012](../GOAL-012-w12-multi-instance-rate-limiting/02-execution.md)（active · S1 立项落盘）

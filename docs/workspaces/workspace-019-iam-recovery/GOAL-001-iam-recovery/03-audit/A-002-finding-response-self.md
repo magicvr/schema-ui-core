@@ -8,7 +8,7 @@ audit_type: finding-response
 verdict: pass
 created: 2026-08-26
 updated: 2026-08-26
-version: 1.0.0
+version: 1.1.0
 ---
 
 # A-002 · A-001 findings 响应复核（F-001 fixed · F-002 登记闭合）
@@ -33,6 +33,7 @@ version: 1.0.0
 
 - 无开放 required。
 - F-002 指向的**多实例共享限流评估**为遗留跟踪项，归属后续生产化波次（VP-009 程序域），不构成本工作区任何门禁；是否立项由该程序波次规划决定。
+- **2026-08-26 更新**：该项已经用户指示正式立项 → [workspace-009] `GOAL-012-w12-multi-instance-rate-limiting`（评估先行 · active 1/4；Q2 路径见 E-009 §F-002 立项回执）。本响应记录的开放项就此全部移交/闭合。
 - 建议：无需为此重开 `/audit` 复审（两条均非 required 且核验证据可重复）；若后续生产化波次启动，可在其 scope 内自然覆盖。
 
 ## 结论

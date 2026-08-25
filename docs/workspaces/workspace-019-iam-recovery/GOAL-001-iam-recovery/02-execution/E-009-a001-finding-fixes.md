@@ -5,7 +5,7 @@ goal: GOAL-001-iam-recovery
 status: recorded
 created: 2026-08-26
 updated: 2026-08-26
-version: 1.0.0
+version: 1.1.0
 ---
 
 # E-009 · 响应 Root A-001：F-001 代码修正 + F-002 部署拓扑注意项登记
@@ -31,6 +31,8 @@ version: 1.0.0
 2. **多实例部署时限流预算按节点各自计算**：N 节点实际放行上限 ≈ N × 单节点预算；跨节点无共享状态。
 3. **本区未引入新模式**：workspace-019 R2 复用既有 login 面同型限流器（W4 P0-1 / D-001 P1 已有实现），非本区新增强化项。
 4. **边界归属**：分布式/共享存储限流属生产化部署拓扑决策，不在 workspace-019 边界内（A-001 F-002 审计原文同判）。后续生产化波次评估的**自然归属位为 VP-009 production-hardening 程序**（长期共享基架安全与健壮性容器）；是否立项由该程序波次规划决定，本次仅完成登记，不代为立项。
+
+> **2026-08-26 立项回执**：经用户指示，本注意项已由生产化程序正式承接为波次 **[workspace-009] GOAL-012-w12-multi-instance-rate-limiting**（Q2：`docs/workspaces/workspace-009-production-hardening/GOAL-012-w12-multi-instance-rate-limiting/00-meta.md`；评估先行 · S1 1/4，I-001/I-002 required 裁决前不进方案冻结）。本区登记责任已移交完毕，后续进展在该波次台账跟踪。
 
 ## 治理同步
 

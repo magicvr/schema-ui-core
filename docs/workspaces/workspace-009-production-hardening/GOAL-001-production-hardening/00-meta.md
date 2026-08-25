@@ -4,8 +4,8 @@ title: 生产加固（共享基架持续安全与健壮性）
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-08-22
-version: 0.10.0
+updated: 2026-08-26
+version: 0.11.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
@@ -60,7 +60,8 @@ serves_summary: 长期安全程序容器——周期扫描、波次修复、与 
 | W8 | GOAL-008-w8-api-web-security-audit | done | 2026-08-20 独立审计 A-001 fail → D-002 整单采纳 + go 暂挂 → E-002 修复 → A-002/A-003 pass → D-003 恢复 go；真实浏览器/CSP 回归 E-004 通过 |
 | W9 | GOAL-009-w9-api-web-security-audit | done | 2026-08-21 独立审计 A-001 fail → A-002 conditional → D-003 整单 12 条 required → E-004 实施 12/12 → A-005 independent pass → A-006 闭合 → D-004 恢复 go |
 | W10 | GOAL-010-w10-api-web-security-audit | done | 2026-08-21 独立审计 A-001 conditional（1 HIGH required）→ D-002 整单 7 条 + go 暂挂 → D-003 调和 4 误报作废 → E-002 修复 3 条 + A-002 self pass → A-003 grok independent pass → E-003 A-003 recommended ×3 修正 → A-004 闭合记录（开放 required = 0）→ D-004 关门 + 恢复 go；残余：密码轮换（用户侧） |
-| W11 | GOAL-011-w11-api-web-security-audit | active | 2026-08-22 独立审计 A-001 fail（开放 required = 6）；S1 落盘 1/4；S2 裁决未开始 |
+| W11 | GOAL-011-w11-api-web-security-audit | done | 2026-08-22 独立审计 A-001 fail（6 required）→ D-002 整单采纳 + go 暂挂 → E-002/E-003 实施 + recommended 处置 → A-002 self + A-003 grok independent pass → A-004 闭合（开放 required = 0）→ D-004 关门 + 恢复 go；关门后 A-005 post-close pass + A-006 正式确认 |
+| W12 | GOAL-012-w12-multi-instance-rate-limiting | active | 2026-08-26 开波：承接跨区登记项 [workspace-019 E-009 §F-002](../../workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-009-a001-finding-fixes.md)（多实例限流拓扑；评估先行 · S1 1/4；I-001/I-002 裁决前不进方案冻结） |
 
 ## 信息就绪与未知项
 
