@@ -27,7 +27,7 @@ import "@/components/activity-export";
 // fields, mock-record table under mock only, test composer with subject/body).
 import "@/components/mail-admin-tab";
 import "@/components/password-policy-tab";
-import "@/components/user-invites-panel";
+import "@/components/invite-issue-card";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,

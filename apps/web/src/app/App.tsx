@@ -188,6 +188,8 @@ const BREADCRUMB_PAGE_PARENTS: Record<string, string> = {
   "task-runs": "scheduled-tasks",
   // GOAL-020 (user 2026-08-16): wallet entries is the wallet inner page.
   "wallet-entries": "wallet",
+  // workspace-019: invitation management is the users inner page.
+  "users-invites": "users",
 };
 
 // Parses the current URL's query string into a plain record; deep-linked query

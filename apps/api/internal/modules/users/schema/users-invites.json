@@ -7,9 +7,22 @@
       "app.manifest",
       "app.navigation",
       "permissions.inheritance",
+      "actions.row.request",
       "actions.page.trigger",
-      "data.route-binding"
+      "table.sort",
+      "form.controls.extended"
     ]
+  },
+  "actions": {
+    "revokeInvite": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/users/invites/{id}",
+      "bodyMapping": {},
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
   },
   "body": {
     "type": "section",
@@ -17,9 +30,107 @@
     "children": [
       {
         "type": "custom",
-        "id": "user-invites-panel",
-        "component": "user-invites-panel",
+        "id": "invite-issue-card",
+        "component": "invite-issue-card",
         "props": {}
+      },
+      {
+        "type": "form",
+        "id": "invites-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "invites-table",
+          "fields": [
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "invite.panel.filter",
+              "options": [
+                {
+                  "value": "",
+                  "label": "All",
+                  "labelKey": "invite.panel.filterAll"
+                },
+                {
+                  "value": "pending",
+                  "labelKey": "invite.panel.filterPending"
+                },
+                {
+                  "value": "consumed",
+                  "labelKey": "invite.panel.filterConsumed"
+                },
+                {
+                  "value": "revoked",
+                  "labelKey": "invite.panel.filterRevoked"
+                },
+                {
+                  "value": "expired",
+                  "labelKey": "invite.panel.filterExpired"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "invites-table",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.invite\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "field": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "field": "email",
+              "label": "Email",
+              "labelKey": "invite.panel.email"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "invite.panel.status"
+            },
+            {
+              "field": "expiresAt",
+              "label": "Expires",
+              "labelKey": "invite.panel.expires"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.users.column.created"
+            }
+          ],
+          "dataSource": "/api/users/invites",
+          "actions": [
+            {
+              "key": "revoke",
+              "label": "Revoke",
+              "actionRef": "revokeInvite",
+              "permissionIntent": "edit",
+              "labelKey": "invite.panel.revoke",
+              "confirm": "Revoke this invitation?",
+              "confirmKey": "invite.panel.confirmRevoke"
+            }
+          ]
+        }
       }
     ]
   }

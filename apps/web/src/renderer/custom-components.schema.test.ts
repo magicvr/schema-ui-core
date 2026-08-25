@@ -29,7 +29,7 @@ import "@/components/mail-admin-tab";
 // so the W25 guard failed at HEAD (account:email-identity "unregistered").
 import "@/components/email-identity";
 import "@/components/password-policy-tab";
-import "@/components/user-invites-panel";
+import "@/components/invite-issue-card";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
