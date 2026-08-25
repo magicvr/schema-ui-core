@@ -28,6 +28,7 @@ import "@/components/activity-export";
 import "@/components/mail-admin-tab";
 import "@/components/password-policy-tab";
 import "@/components/invite-issue-card";
+import "@/components/invite-resend-dialog";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,

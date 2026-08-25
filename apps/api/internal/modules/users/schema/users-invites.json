@@ -24,8 +24,12 @@
       }
     },
     "resendInvite": {
-      "type": "custom",
-      "handler": "invites.resend"
+      "type": "modal",
+      "content": {
+        "type": "custom",
+        "component": "invite-resend-dialog",
+        "props": {}
+      }
     }
   },
   "body": {

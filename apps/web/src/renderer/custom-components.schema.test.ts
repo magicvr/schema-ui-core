@@ -30,6 +30,7 @@ import "@/components/mail-admin-tab";
 import "@/components/email-identity";
 import "@/components/password-policy-tab";
 import "@/components/invite-issue-card";
+import "@/components/invite-resend-dialog";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
