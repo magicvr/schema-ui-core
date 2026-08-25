@@ -155,10 +155,12 @@ export function UserInvitesPanel(_props: unknown) {
   const [disclosed, setDisclosed] = useState<{ link: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  // List filter: server-side narrowing so paged filters never mislead.
+  const [filter, setFilter] = useState("all");
 
   const load = useCallback(async () => {
     try {
-      const response = await fetcher("/api/users/invites?page=1&pageSize=50");
+      const response = await fetcher(`/api/users/invites?page=1&pageSize=50${filter === "all" ? "" : `&status=${filter}`}`);
       if (!response.ok) {
         setLoadState("error");
         return;
@@ -169,7 +171,7 @@ export function UserInvitesPanel(_props: unknown) {
     } catch {
       setLoadState("error");
     }
-  }, [fetcher]);
+  }, [fetcher, filter]);
 
   // Role catalog for the multi-select (same /api/roles source the schema
   // checkboxGroup uses). Fail-open: an empty catalog leaves create disabled.
@@ -254,97 +256,126 @@ export function UserInvitesPanel(_props: unknown) {
   };
 
   return (
-    <section data-user-invites-panel className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4">
-      <div className="space-y-1">
-        <h3 className="text-sm font-semibold">{t("invite.panel.title")}</h3>
-        <p className="text-xs text-muted-foreground">{t("invite.panel.description")}</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-4">
+    <div data-user-invites-panel className="space-y-4">
+      {/* Issue card: the create operation lives apart from the records list. */}
+      <section data-invite-issue-card className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4">
         <div className="space-y-1">
-          <Label htmlFor="inviteEmail" className="text-xs">{t("invite.panel.email")}</Label>
-          <Input id="inviteEmail" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+          <h3 className="text-sm font-semibold">{t("invite.panel.issueTitle")}</h3>
+          <p className="text-xs text-muted-foreground">{t("invite.panel.description")}</p>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="inviteRoles" className="text-xs">{t("invite.panel.roles")}</Label>
-          <RoleMultiSelect
-            options={roleOptions}
-            selected={roles}
-            onChange={setRoles}
-            disabled={!rolesLoaded}
-            placeholder={t("invite.panel.rolesPlaceholder")}
-          />
+        <div className="grid gap-3 sm:grid-cols-4">
+          <div className="space-y-1">
+            <Label htmlFor="inviteEmail" className="text-xs">{t("invite.panel.email")}</Label>
+            <Input id="inviteEmail" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="inviteRoles" className="text-xs">{t("invite.panel.roles")}</Label>
+            <RoleMultiSelect
+              options={roleOptions}
+              selected={roles}
+              onChange={setRoles}
+              disabled={!rolesLoaded}
+              placeholder={t("invite.panel.rolesPlaceholder")}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="inviteDays" className="text-xs">{t("invite.panel.days")}</Label>
+            <Input id="inviteDays" inputMode="numeric" className={inputClass} value={days} onChange={(e) => setDays(e.target.value)} />
+          </div>
+          <div className="flex items-end">
+            <Button
+              type="button"
+              data-invite-create
+              disabled={busy || !rolesLoaded || roles.length === 0}
+              className={`${buttonClass} w-full`}
+              onClick={() => void create()}
+            >
+              {t("invite.panel.create")}
+            </Button>
+          </div>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="inviteDays" className="text-xs">{t("invite.panel.days")}</Label>
-          <Input id="inviteDays" inputMode="numeric" className={inputClass} value={days} onChange={(e) => setDays(e.target.value)} />
+        {disclosed !== null ? (
+          <p role="status" data-invite-link className="break-all rounded-md bg-muted px-3 py-2 text-xs">
+            {t("invite.panel.disclose")}{" "}
+            <code className="font-mono">{disclosed.link}</code>
+          </p>
+        ) : null}
+        {feedback !== null ? (
+          <p role="alert" data-invite-feedback className={feedback.kind === "success" ? "text-sm text-success" : "text-sm text-destructive"}>
+            {feedback.message}
+          </p>
+        ) : null}
+      </section>
+
+      {/* Records card: filterable, server-side narrowed list. */}
+      <section data-invite-records-card className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">{t("invite.panel.recordsTitle")}</h3>
+            <p className="text-xs text-muted-foreground">{t("invite.panel.recordsHint")}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="inviteStatusFilter" className="text-xs">{t("invite.panel.filter")}</Label>
+            <select
+              id="inviteStatusFilter"
+              data-invite-status-filter
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              className="h-9 cursor-pointer rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+            >
+              <option value="all">{t("invite.panel.filterAll")}</option>
+              <option value="pending">{t("invite.panel.filterPending")}</option>
+              <option value="consumed">{t("invite.panel.filterConsumed")}</option>
+              <option value="revoked">{t("invite.panel.filterRevoked")}</option>
+              <option value="expired">{t("invite.panel.filterExpired")}</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-end">
-          <Button
-            type="button"
-            data-invite-create
-            disabled={busy || !rolesLoaded || roles.length === 0}
-            className={`${buttonClass} w-full`}
-            onClick={() => void create()}
-          >
-            {t("invite.panel.create")}
-          </Button>
-        </div>
-      </div>
-      {disclosed !== null ? (
-        <p role="status" data-invite-link className="break-all rounded-md bg-muted px-3 py-2 text-xs">
-          {t("invite.panel.disclose")}{" "}
-          <code className="font-mono">{disclosed.link}</code>
-        </p>
-      ) : null}
-      {feedback !== null ? (
-        <p role="alert" data-invite-feedback className={feedback.kind === "success" ? "text-sm text-success" : "text-sm text-destructive"}>
-          {feedback.message}
-        </p>
-      ) : null}
-      {loadState === "loading" ? (
-        <p className="text-sm text-muted-foreground">{t("login.signingIn")}</p>
-      ) : loadState === "error" ? (
-        <p className="text-sm text-destructive">{t("invite.panel.loadError")}</p>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("invite.panel.empty")}</p>
-      ) : (
-        <table data-invite-table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-border/60">
-              <th className="py-2 pr-2 font-medium">{t("schema.users.column.roles")}</th>
-              <th className="py-2 pr-2 font-medium">{t("invite.panel.email")}</th>
-              <th className="py-2 pr-2 font-medium">{t("invite.panel.status")}</th>
-              <th className="py-2 pr-2 font-medium">{t("invite.panel.expires")}</th>
-              <th className="py-2 font-medium">{t("invite.panel.actions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-border/40 last:border-b-0">
-                <td className="py-2 pr-2">{row.roles.map(roleName).join(", ") || "—"}</td>
-                <td className="py-2 pr-2">{row.email ?? "—"}</td>
-                <td className="py-2 pr-2" data-invite-status>{row.status}</td>
-                <td className="py-2 pr-2">{row.expiresAt?.slice(0, 10) ?? "—"}</td>
-                <td className="py-2">
-                  {row.status === "pending" ? (
-                    <span className="flex gap-2">
-                      <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "resend")}>
-                        {t("invite.panel.resend")}
-                      </Button>
-                      <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "revoke")}>
-                        {t("invite.panel.revoke")}
-                      </Button>
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </td>
+        {loadState === "loading" ? (
+          <p className="text-sm text-muted-foreground">{t("login.signingIn")}</p>
+        ) : loadState === "error" ? (
+          <p className="text-sm text-destructive">{t("invite.panel.loadError")}</p>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("invite.panel.empty")}</p>
+        ) : (
+          <table data-invite-table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-border/60">
+                <th className="py-2 pr-2 font-medium">{t("schema.users.column.roles")}</th>
+                <th className="py-2 pr-2 font-medium">{t("invite.panel.email")}</th>
+                <th className="py-2 pr-2 font-medium">{t("invite.panel.status")}</th>
+                <th className="py-2 pr-2 font-medium">{t("invite.panel.expires")}</th>
+                <th className="py-2 font-medium">{t("invite.panel.actions")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b border-border/40 last:border-b-0">
+                  <td className="py-2 pr-2">{row.roles.map(roleName).join(", ") || "—"}</td>
+                  <td className="py-2 pr-2">{row.email ?? "—"}</td>
+                  <td className="py-2 pr-2" data-invite-status>{row.status}</td>
+                  <td className="py-2 pr-2">{row.expiresAt?.slice(0, 10) ?? "—"}</td>
+                  <td className="py-2">
+                    {row.status === "pending" ? (
+                      <span className="flex gap-2">
+                        <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "resend")}>
+                          {t("invite.panel.resend")}
+                        </Button>
+                        <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "revoke")}>
+                          {t("invite.panel.revoke")}
+                        </Button>
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
   );
 }
 

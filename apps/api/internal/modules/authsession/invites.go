@@ -170,18 +170,63 @@ func getInviteRow(tx kernel.Tx, id string) (kernel.Row, error) {
 		`SELECT `+inviteColumns+` FROM user_invites WHERE id = ?`, id), nil
 }
 
-// ListInvites returns newest-first paged invites for the admin surface.
-func (r *Repository) ListInvites(page, pageSize int) ([]Invite, int, error) {
+// InviteStatusFilter narrows the admin listing (empty = everything).
+type InviteStatusFilter string
+
+const (
+	InviteStatusAll      InviteStatusFilter = ""
+	InviteStatusPending  InviteStatusFilter = "pending"
+	InviteStatusConsumed InviteStatusFilter = "consumed"
+	InviteStatusRevoked  InviteStatusFilter = "revoked"
+	InviteStatusExpired  InviteStatusFilter = "expired"
+)
+
+// ParseInviteStatus maps a raw query value; unknown values fall back to "all"
+// so a stale client never gets an error for a future filter key.
+func ParseInviteStatus(raw string) InviteStatusFilter {
+	switch InviteStatusFilter(strings.ToLower(strings.TrimSpace(raw))) {
+	case InviteStatusPending, InviteStatusConsumed, InviteStatusRevoked, InviteStatusExpired:
+		return InviteStatusFilter(strings.ToLower(strings.TrimSpace(raw)))
+	}
+	return InviteStatusAll
+}
+
+// where returns the SQL predicate + args for the filter; empty predicate
+// means no filtering. Times compare against the caller-provided now so tests
+// stay deterministic.
+func (f InviteStatusFilter) where(now time.Time) (string, []any) {
+	switch f {
+	case InviteStatusPending:
+		return `consumed_at IS NULL AND revoked_at IS NULL AND expires_at > ?`, []any{now.Unix()}
+	case InviteStatusConsumed:
+		return `consumed_at IS NOT NULL`, nil
+	case InviteStatusRevoked:
+		return `revoked_at IS NOT NULL`, nil
+	case InviteStatusExpired:
+		return `consumed_at IS NULL AND revoked_at IS NULL AND expires_at <= ?`, []any{now.Unix()}
+	default:
+		return "", nil
+	}
+}
+
+// ListInvites returns newest-first paged invites for the admin surface,
+// optionally narrowed by status.
+func (r *Repository) ListInvites(page, pageSize int, status InviteStatusFilter, now time.Time) ([]Invite, int, error) {
+	predicate, args := status.where(now)
+	whereClause := ""
+	if predicate != "" {
+		whereClause = " WHERE " + predicate
+	}
 	var out []Invite
 	var total int
 	err := r.withTx("list invites", func(tx kernel.Tx) error {
 		if err := tx.QueryRow(context.Background(),
-			`SELECT COUNT(*) FROM user_invites`).Scan(&total); err != nil {
+			`SELECT COUNT(*) FROM user_invites`+whereClause, args...).Scan(&total); err != nil {
 			return err
 		}
 		rows, err := tx.Query(context.Background(),
-			`SELECT `+inviteColumns+` FROM user_invites ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-			pageSize, (page-1)*pageSize)
+			`SELECT `+inviteColumns+` FROM user_invites`+whereClause+` ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+			append(append([]any{}, args...), pageSize, (page-1)*pageSize)...)
 		if err != nil {
 			return err
 		}

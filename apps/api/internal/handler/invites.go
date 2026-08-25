@@ -23,7 +23,7 @@ import (
 // endpoints (admin management + public acceptance).
 type InviteRepository interface {
 	CreateInvite(invitedBy string, roles []string, email string, ttl time.Duration, now time.Time) (string, *authsession.Invite, error)
-	ListInvites(page, pageSize int) ([]authsession.Invite, int, error)
+	ListInvites(page, pageSize int, status authsession.InviteStatusFilter, now time.Time) ([]authsession.Invite, int, error)
 	RevokeInvite(id string, now time.Time) error
 	ResendInvite(id string, ttl time.Duration, now time.Time) (string, *authsession.Invite, error)
 	AcceptInvite(rawToken, username, name, passwordHash string, now time.Time) (*authsession.User, error)
@@ -201,7 +201,8 @@ func (h *inviteAdminHandler) list() http.Handler {
 		if pageSize < 1 || pageSize > 100 {
 			pageSize = 20
 		}
-		invites, total, err := h.repo.ListInvites(page, pageSize)
+		status := authsession.ParseInviteStatus(r.URL.Query().Get("status"))
+		invites, total, err := h.repo.ListInvites(page, pageSize, status, h.now().UTC())
 		if err != nil {
 			writeInviteDomainError(w, r, err)
 			return

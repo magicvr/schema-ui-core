@@ -146,6 +146,61 @@ func TestAcceptInviteExpiredAndRoleGoneAfterIssue(t *testing.T) {
 	}
 }
 
+
+func TestListInvitesStatusFilter(t *testing.T) {
+	repo, base := openInviteFixture(t)
+	hash, _ := bcrypt.GenerateFromPassword([]byte("invited-pass-1"), 4)
+
+	// A: pending (TTL 1h, viewed before expiry).
+	if _, _, err := repo.CreateInvite("user-admin", []string{"viewer"}, "a@example.com", defaultInviteTTL, base); err != nil {
+		t.Fatalf("create A: %v", err)
+	}
+	// B: consumed.
+	rawB, _, err := repo.CreateInvite("user-admin", []string{"editor"}, "b@example.com", defaultInviteTTL, base)
+	if err != nil {
+		t.Fatalf("create B: %v", err)
+	}
+	if _, err := repo.AcceptInvite(rawB, "consume-b", "B", string(hash), base.Add(time.Minute)); err != nil {
+		t.Fatalf("consume B: %v", err)
+	}
+	// C: revoked.
+	_, invC, err := repo.CreateInvite("user-admin", []string{"viewer"}, "c@example.com", defaultInviteTTL, base)
+	if err != nil {
+		t.Fatalf("create C: %v", err)
+	}
+	if err := repo.RevokeInvite(invC.ID, base.Add(2*time.Minute)); err != nil {
+		t.Fatalf("revoke C: %v", err)
+	}
+	// D: short TTL so it expires before the view time.
+	if _, _, err := repo.CreateInvite("user-admin", []string{"viewer"}, "d@example.com", time.Hour, base); err != nil {
+		t.Fatalf("create D: %v", err)
+	}
+
+	view := base.Add(2 * time.Hour)
+	cases := []struct {
+		filter InviteStatusFilter
+		want   int
+	}{
+		{InviteStatusAll, 4},
+		{InviteStatusPending, 1}, // A only; D has expired by view time
+		{InviteStatusConsumed, 1},
+		{InviteStatusRevoked, 1},
+		{InviteStatusExpired, 1},
+	}
+	for _, tc := range cases {
+		got, total, err := repo.ListInvites(1, 50, tc.filter, view)
+		if err != nil {
+			t.Fatalf("list %q: %v", tc.filter, err)
+		}
+		if len(got) != tc.want || total != tc.want {
+			t.Fatalf("filter %q = (%d rows, total %d), want %d", tc.filter, len(got), total, tc.want)
+		}
+	}
+	// Unknown raw values parse to "all" (stale-client tolerance).
+	if ParseInviteStatus("bogus") != InviteStatusAll || ParseInviteStatus(" PENDING ") != InviteStatusPending {
+		t.Fatal("ParseInviteStatus mapping broken")
+	}
+}
 // --- password policy ---
 
 func TestValidateNewPasswordBaselineCategoriesHistory(t *testing.T) {

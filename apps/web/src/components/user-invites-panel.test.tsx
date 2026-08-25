@@ -46,6 +46,22 @@ function stubRoutes(posts: Array<Record<string, unknown>>) {
         }),
       });
     }
+    if (path.includes("/api/users/invites")) {
+      const status = new URL(path, "http://x").searchParams.get("status") ?? "all";
+      const items =
+        status === "consumed"
+          ? [
+              {
+                id: "inv-1",
+                roles: ["viewer"],
+                status: "consumed",
+                email: "u@example.com",
+                expiresAt: "2026-09-01T00:00:00Z",
+              },
+            ]
+          : [];
+      return Promise.resolve({ ok: true, json: async () => ({ items, total: items.length }) });
+    }
     return Promise.resolve({ ok: true, json: async () => ({ items: [], total: 0 }) });
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -116,5 +132,29 @@ describe("UserInvitesPanel role multi-select", () => {
     });
     // Deselecting the only chosen role disables the create action.
     expect(container.querySelector<HTMLButtonElement>("[data-invite-create]")!.disabled).toBe(true);
+  });
+
+  it("filters the records via the server-side status parameter", async () => {
+    const fetchMock = stubRoutes([]);
+    const container = await renderPanel();
+    // Two cards: issue + records are separate surfaces.
+    expect(container.querySelector("[data-invite-issue-card]")).not.toBeNull();
+    expect(container.querySelector("[data-invite-records-card]")).not.toBeNull();
+    // Default: no status param, empty list.
+    expect(container.querySelector("[data-invite-table]")).toBeNull();
+
+    const select = container.querySelector<HTMLSelectElement>("[data-invite-status-filter]")!;
+    await act(async () => {
+      select.value = "consumed";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => {});
+    const calledWithStatus = fetchMock.mock.calls.some(([url]) =>
+      String(url).includes("/api/users/invites") && String(url).includes("status=consumed"),
+    );
+    expect(calledWithStatus).toBe(true);
+    expect(container.querySelector("[data-invite-table]")).not.toBeNull();
+    expect(container.querySelector('[data-invite-status]')?.textContent).toBe("consumed");
+    expect(container.textContent).toContain("u@example.com");
   });
 });
