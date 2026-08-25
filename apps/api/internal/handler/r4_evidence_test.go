@@ -104,6 +104,13 @@ func TestR4InviteChainOverHTTP(t *testing.T) {
 	if roles := roleKeysOf(body); len(roles) != 1 || roles[0] != "viewer" {
 		t.Fatalf("invitee roles = %v, want [viewer]", roles)
 	}
+	// A-001 F-001/F-002: the invitee (viewer, no users.invite) gains NOTHING
+	// on the management quartet — the GET 403 proves the gate at the HTTP seam.
+	if inviteeToken, _ := body["accessToken"].(string); inviteeToken == "" {
+		t.Fatal("invitee token missing")
+	} else if rec := serveBearer(t, env.mux, inviteeToken, http.MethodGet, "/api/users/invites", ""); rec.Code != http.StatusForbidden {
+		t.Fatalf("invitee list status = %d body %s, want 403", rec.Code, rec.Body.String())
+	}
 	_, replay := sendJSON(t, env.mux, http.MethodPost, "/api/auth/invite/accept",
 		`{"token":"`+tok+`","username":"r4again","password":"r4-invited-pass-1"}`)
 	if !strings.Contains(stringify(replay), "INVITE_INVALID") {

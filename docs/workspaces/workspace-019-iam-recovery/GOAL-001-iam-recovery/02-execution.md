@@ -20,6 +20,7 @@ version: 0.1.0
 | E-004 | 2026-08-25 | R1 关门（GOAL-002 done 3/3 · Root 1/4） | recorded | [E-004-r1-closeout.md](02-execution/E-004-r1-closeout.md) |
 | E-005 | 2026-08-25 | R2 关门（GOAL-003 done 5/5 · Root 2/4） | recorded | [E-005-r2-closeout.md](02-execution/E-005-r2-closeout.md) |
 | E-006 | 2026-08-25 | R3 关门（GOAL-004 done 5/5 · Root 3/4） | recorded | [E-006-r3-closeout.md](02-execution/E-006-r3-closeout.md) |
+| E-007 | 2026-08-25 | R4 与根目标关门（GOAL-005 done · Root 4/4 done） | recorded | [E-007-root-closeout.md](02-execution/E-007-root-closeout.md) |
 
 ## 事实边界
 

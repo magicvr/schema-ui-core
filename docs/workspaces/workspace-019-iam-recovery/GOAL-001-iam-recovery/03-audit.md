@@ -28,4 +28,4 @@ version: 0.1.0
 
 ## 结论状态
 
-2026-08-25 开区（E-001；VR-047；VRev-043 independent `pass`）。R1 合同冻结关门（GOAL-002 done · A-001 self `pass` 0 required · D-002 + GOAL-002 D-001 五节条款）。R2 自助恢复全链关门（GOAL-003 done 5/5 · A-001 independent conditional→F-001～F-004 fixed 归零 + A-002 self `pass`）。R3 密码策略+邀请入职关门（GOAL-004 done 5/5 · A-001 independent conditional→F-001～F-004 fixed 归零 + A-002 self `pass`）；Root **3/4**，进入 R4。
+2026-08-25 开区（E-001；VR-047；VRev-043 independent `pass`）。R1 合同冻结关门（GOAL-002 done · A-001 self `pass` 0 required · D-002 + GOAL-002 D-001 五节条款）。R1～R4 全部关门：R1 合同（GOAL-002）、R2 恢复全链（GOAL-003）、R3 策略+邀请（GOAL-004）、R4 证据（GOAL-005 · A-001 independent conditional→F-001/F-002 fixed 归零 + A-002 self `pass`）。**Root done 4/4 · 2026-08-25**：开放 required = 0，无越界，VP-019 三件交付完成。

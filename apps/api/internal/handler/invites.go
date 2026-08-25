@@ -190,6 +190,9 @@ func queryInt(r *http.Request, key string, fallback int) int {
 
 func (h *inviteAdminHandler) list() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "users.invite"); !ok {
+			return
+		}
 		page := queryInt(r, "page", 1)
 		pageSize := queryInt(r, "pageSize", 20)
 		if page < 1 {
@@ -213,6 +216,9 @@ func (h *inviteAdminHandler) list() http.Handler {
 
 func (h *inviteAdminHandler) revoke() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "users.invite"); !ok {
+			return
+		}
 		if err := h.repo.RevokeInvite(r.PathValue("id"), h.now().UTC()); err != nil {
 			writeInviteDomainError(w, r, err)
 			return
@@ -223,6 +229,9 @@ func (h *inviteAdminHandler) revoke() http.Handler {
 
 func (h *inviteAdminHandler) resend() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "users.invite"); !ok {
+			return
+		}
 		raw, inv, err := h.repo.ResendInvite(r.PathValue("id"), 7*24*time.Hour, h.now().UTC())
 		if err != nil {
 			writeInviteDomainError(w, r, err)

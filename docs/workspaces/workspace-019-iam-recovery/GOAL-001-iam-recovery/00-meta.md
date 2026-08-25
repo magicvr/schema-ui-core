@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-iam-recovery
 title: IAM：密码策略 / 邀请入职 / 自助恢复状态机
-status: active
+status: done
 parent: null
 created: 2026-08-25
 updated: 2026-08-25
-version: 0.4.0
-progress: 3/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-019-iam-recovery
 primary_plan: VP-019-iam-recovery
@@ -30,9 +30,9 @@ serves_summary: 承载 VP-019（Admin 功能 · IAM）实现：自助恢复状�
 | R1 | **合同冻结**：证明形态（默认候选 = VP-018 6 位码，I-001）、TTL/冷却最晚 R2 方案冻结前（I-002）、策略默认参数与配置边界（I-003，UI 仅 `admin.settings`、强制面 `core.auth-session`、禁止加入 mvp 默认集）、邀请形态（I-004/005）、无邮箱边界（I-006，2026-08-22 产品事实 registered）、策略对既有账号生效边界（I-007）、会话语义（I-008）、MFA 与自助恢复（I-009，防 MFA 旁路） | 起点 | **已完成**（GOAL-002 done · A-001 self pass；D-002 + GOAL-002 D-001 五节条款） |
 | R2 | **自助恢复全链**：登录页发起 → 经已校验邮箱投递 → 校验 → 设新密码 → 恢复登录；过期/重发冷却；MFA 语义按 I-009 | 依赖 R1 | **已完成**（GOAL-003 done · A-001 independent conditional→归零 + A-002 self pass；迁移 0056 + start/complete 公开面 + MFA 第二因子门 + Web 两步流） |
 | R3 | **密码策略 + 邀请入职**：策略配置面与强制面、渐进生效；管理员生成邀请（邮件/链接）、受邀激活、有效期/撤销 | 依赖 R2 | **已完成**（GOAL-004 done · A-001 independent conditional→归零 + A-002 self pass；迁移 0057–0059 + 四口强制 + 邀请全链 + Web 面） |
-| R4 | **证据与关门**：端到端经 VP-017 现行渠道取信；策略强制可核对；邀请全链；无越界（SMS/模板/多邮箱/业务域）；required = 0 | 依赖 R3 | 待启动 |
+| R4 | **证据与关门**：端到端经 VP-017 现行渠道取信；策略强制可核对；邀请全链；无越界（SMS/模板/多邮箱/业务域）；required = 0 | 依赖 R3 | **已完成**（GOAL-005 done · A-001 independent 归零 + A-002 self pass；三条链 HTTP e2e 真实渠道取信） |
 
-`progress` = 已完成阶段数 / 4。当前 **3/4**（R1/R2/R3 关门 · 2026-08-25）。
+`progress` = 已完成阶段数 / 4。当前 **4/4**（R1～R4 全部关门 · 2026-08-25）。**Root done。**
 
 ## 成功标准（方向级）
 
