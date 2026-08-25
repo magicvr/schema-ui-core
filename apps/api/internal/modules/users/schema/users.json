@@ -185,6 +185,20 @@
               "label": "Password",
               "type": "password",
               "labelKey": "schema.users.field.password"
+            },
+            {
+              "id": "roles",
+              "label": "Roles",
+              "type": "checkboxGroup",
+              "labelKey": "schema.users.field.roles",
+              "optionsSource": {
+                "url": "/api/roles",
+                "params": {
+                  "pageSize": 100
+                },
+                "valueField": "key",
+                "labelField": "name"
+              }
             }
           ],
           "submitAction": "createUser",
@@ -290,6 +304,12 @@
     "type": "section",
     "id": "users",
     "children": [
+      {
+        "type": "custom",
+        "id": "user-invites-panel",
+        "component": "user-invites-panel",
+        "props": {}
+      },
       {
         "type": "form",
         "id": "users-search",

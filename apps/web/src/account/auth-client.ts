@@ -544,3 +544,35 @@ export async function fetchMe(): Promise<AuthSession> {
   }
   return { user, features: body.features ?? {} };
 }
+
+// --- workspace-019 R3 (GOAL-004 D-001 §3): invitation acceptance ---
+
+const INVITE_ACCEPT_URL = "/api/auth/invite/accept";
+
+export interface InviteAcceptInput {
+  token: string;
+  username: string;
+  name: string;
+  password: string;
+}
+
+/** Redeems an invitation into a real account. Success returns WITHOUT tokens
+ * (GOAL-002 D-001 §4 projection): the invitee signs in with their new
+ * credentials. Errors carry the cataloged server codes (INVITE_INVALID /
+ * USERNAME_TAKEN / INVALID_PASSWORD). */
+export async function inviteAccept(input: InviteAcceptInput): Promise<void> {
+  let response: Response;
+  try {
+    response = await postJSON(INVITE_ACCEPT_URL, {
+      token: input.token,
+      username: input.username,
+      name: input.name,
+      password: input.password,
+    });
+  } catch {
+    throw new AuthError("LOGIN_NETWORK", "unable to reach the invitation service");
+  }
+  if (!response.ok) {
+    throw await recoveryError(response, "LOGIN_FAILED");
+  }
+}

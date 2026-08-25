@@ -28,6 +28,8 @@ import "@/components/mail-admin-tab";
 // workspace-018 R3 shipped the component but missed this side-effect import,
 // so the W25 guard failed at HEAD (account:email-identity "unregistered").
 import "@/components/email-identity";
+import "@/components/password-policy-tab";
+import "@/components/user-invites-panel";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),

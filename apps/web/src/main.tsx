@@ -8,6 +8,7 @@ import { I18nProvider, useI18n } from "@/i18n/runtime";
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { App } from "@/app/App";
 import { LoginPage } from "@/app/LoginPage";
+import { InviteAcceptPage } from "@/components/invite-accept";
 import { ForcePasswordChange } from "@/components/force-password-change";
 // GOAL-018: self-registers custom renderer components (mfa-manager in the
 // personal-center MFA block; notification-center on the notifications page).
@@ -25,6 +26,8 @@ import "@/components/activity-export";
 // VP-017 R7 UX refinement: settings「邮件」tab console (channel-conditional
 // fields, mock-record table under mock only, test composer with subject/body).
 import "@/components/mail-admin-tab";
+import "@/components/password-policy-tab";
+import "@/components/user-invites-panel";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,
@@ -86,6 +89,15 @@ function AuthGate({ manifest }: { manifest: AppManifest }) {
     return <HostFailureScreen failure={lockedFailure()} onAction={executeBootRecovery} />;
   }
   if (status === "unauthenticated") {
+    // workspace-019 R3 (GOAL-004 C4): the public invitation acceptance page
+    // lives on the pre-auth surface, keyed by /invite/accept?token=…
+    try {
+      if (window.location.pathname.startsWith("/invite/accept")) {
+        return <InviteAcceptPage />;
+      }
+    } catch {
+      // non-browser context — fall through to login
+    }
     return <LoginPage onLogin={login} />;
   }
   if (user?.mustChangePassword === true) {

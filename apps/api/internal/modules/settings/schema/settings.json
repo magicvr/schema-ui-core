@@ -463,6 +463,22 @@
                 "props": {}
               }
             ]
+          },
+          {
+            "type": "section",
+            "id": "tab-password-policy",
+            "props": {
+              "labelKey": "invite.policy.title",
+              "label": "Password policy"
+            },
+            "children": [
+              {
+                "type": "custom",
+                "id": "password-policy-tab",
+                "component": "password-policy-tab",
+                "props": {}
+              }
+            ]
           }
         ]
       },
