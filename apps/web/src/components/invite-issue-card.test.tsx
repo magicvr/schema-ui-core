@@ -26,15 +26,9 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-function stubRoutes(posts: Array<Record<string, unknown>>, resendLinks: string[] = []) {
-  let resendIndex = 0;
+function stubRoutes(posts: Array<Record<string, unknown>>) {
   const fetchMock = vi.fn().mockImplementation((url: RequestInfo | URL, init?: RequestInit) => {
     const path = String(url);
-    if (path.includes("/api/users/invites/") && (init?.method ?? "GET") === "POST") {
-      const link = resendLinks[Math.min(resendIndex, resendLinks.length - 1)] ?? "/invite/accept?token=rotated-1";
-      resendIndex += 1;
-      return Promise.resolve({ ok: true, status: 200, json: async () => ({ link }) });
-    }
     if ((init?.method ?? "GET") === "POST") {
       posts.push(JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>);
       return Promise.resolve({ ok: true, status: 201, json: async () => ({ link: "/invite/accept?token=new-1" }) });
@@ -114,20 +108,5 @@ describe("InviteIssueCard", () => {
       container.querySelector<HTMLInputElement>('[data-role-multiselect-option="viewer"]')!.click();
     });
     expect(container.querySelector<HTMLButtonElement>("[data-invite-create]")!.disabled).toBe(true);
-  });
-
-  it("resends by invite id and discloses the rotated link", async () => {
-    stubRoutes([], ["/invite/accept?token=rotated-1"]);
-    const container = await renderCard();
-    const idInput = container.querySelector<HTMLInputElement>("[data-invite-resend-id]")!;
-    await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-      setter?.call(idInput, "inv-42");
-      idInput.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    await act(async () => {
-      container.querySelector<HTMLButtonElement>("[data-invite-resend]")!.click();
-    });
-    expect(container.querySelector("[data-invite-link]")?.textContent).toContain("/invite/accept?token=rotated-1");
   });
 });

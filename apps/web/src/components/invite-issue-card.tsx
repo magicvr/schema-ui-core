@@ -139,7 +139,6 @@ export function InviteIssueCard(_props: unknown) {
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<string[]>(["viewer"]);
   const [days, setDays] = useState("7");
-  const [resendId, setResendId] = useState("");
   const [disclosed, setDisclosed] = useState<{ link: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
@@ -186,33 +185,6 @@ export function InviteIssueCard(_props: unknown) {
         setDisclosed({ link: body.link });
       }
       setEmail("");
-    } catch {
-      setFeedback({ kind: "error", message: t("invite.panel.actionError") });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function resend() {
-    const id = resendId.trim();
-    if (id === "") {
-      setFeedback({ kind: "error", message: t("invite.card.resendIdRequired") });
-      return;
-    }
-    setBusy(true);
-    setFeedback(null);
-    setDisclosed(null);
-    try {
-      const response = await fetcher(`/api/users/invites/${id}/resend`, { method: "POST" });
-      const body = (await response.json().catch(() => ({}))) as { link?: string; message?: string };
-      if (!response.ok) {
-        setFeedback({ kind: "error", message: body.message ?? t("invite.panel.actionError") });
-        return;
-      }
-      if (typeof body.link === "string") {
-        setDisclosed({ link: body.link });
-      }
-      setResendId("");
     } catch {
       setFeedback({ kind: "error", message: t("invite.panel.actionError") });
     } finally {
@@ -268,31 +240,6 @@ export function InviteIssueCard(_props: unknown) {
           {feedback.message}
         </p>
       ) : null}
-      {/* Resend: the schema table cannot disclose the rotated link, so the
-          invite id (table column) is pasted here and the fresh link lands in
-          the disclosure band above (workspace-019 rendering decision). */}
-      <div className="flex flex-wrap items-end gap-3 border-t border-border/60 pt-3">
-        <div className="min-w-52 flex-1 space-y-1">
-          <Label htmlFor="inviteResendId" className="text-xs">{t("invite.card.resendLabel")}</Label>
-          <Input
-            id="inviteResendId"
-            data-invite-resend-id
-            className={inputClass}
-            value={resendId}
-            placeholder={t("invite.card.resendPlaceholder")}
-            onChange={(e) => setResendId(e.target.value)}
-          />
-        </div>
-        <Button
-          type="button"
-          data-invite-resend
-          variant="outline"
-          disabled={busy || resendId.trim() === ""}
-          onClick={() => void resend()}
-        >
-          {t("invite.panel.resend")}
-        </Button>
-      </div>
     </section>
   );
 }

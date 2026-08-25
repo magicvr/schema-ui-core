@@ -657,15 +657,18 @@
   "invite.panel.rolesPlaceholder": "请选择至少一个角色…",
   "invite.panel.rolesEmpty": "暂无可用角色。",
   "invite.panel.confirmRevoke": "撤销该邀请？链接将立即失效。",
-  "invite.card.resendLabel": "重发（粘贴表格中的邀请 ID）",
-  "invite.card.resendPlaceholder": "inv-…",
-  "invite.card.resendIdRequired": "请输入表格首列显示的邀请 ID。",
+
+
+
   "invite.panel.days": "有效天数",
   "invite.panel.create": "生成邀请",
   "invite.panel.disclose": "一次性链接（请立即复制）：",
   "invite.panel.status": "状态",
   "invite.panel.expires": "过期时间",
   "invite.panel.actions": "操作",
+  "invite.panel.linkCopied": "新邀请链接已复制到剪贴板。",
+  "invite.detail.title": "邀请详情",
+  "invite.detail.invitedBy": "邀请人",
   "invite.panel.resend": "重发",
   "invite.panel.revoke": "撤销",
   "invite.panel.empty": "暂无邀请。",

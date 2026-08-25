@@ -180,7 +180,7 @@ export interface TableSelection {
 }
 
 export type ActionResult =
-  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }> }
+  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>; message?: string; messageKey?: string }
   | {
       ok: false;
       code: string;
@@ -339,6 +339,9 @@ const CUSTOM_HANDLER_URLS: Record<string, string> = {
   // copyLink writes the URL to the clipboard.
   "library.preview": "/api/library/files/{id}/download",
   "library.copyLink": "/api/library/files/{id}/download",
+  // workspace-019: invitation resend — the rotated one-time link is copied to
+  // the clipboard (the schema engine cannot render response bodies).
+  "invites.resend": "/api/users/invites/{id}/resend",
 };
 
 async function runCustomAction(
@@ -415,6 +418,37 @@ async function runCustomAction(
     previewDocument.close();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     return { ok: true };
+  }
+  if (handler === "invites.resend") {
+    // The rotated link is returned ONCE in the response body; clipboard is
+    // the disclosure channel (same posture as library.copyLink). The row is
+    // required for {id} — enforced above by the URL templating check.
+    let response: Response;
+    try {
+      response = await fetcher(url, { method: "POST", headers: { "Content-Type": "application/json" } });
+    } catch (error) {
+      return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    }
+    if (!response.ok) {
+      const apiError = await readResourceApiError(response, handler);
+      return { ok: false, code: apiError.code, message: apiError.message };
+    }
+    let link: unknown;
+    try {
+      const body = (await response.json()) as { link?: unknown };
+      link = body.link;
+    } catch {
+      link = undefined;
+    }
+    if (typeof link !== "string" || link === "") {
+      return { ok: false, code: "REQUEST_FAILED", message: "resend response carried no link", messageKey: "error.requestFailed" };
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      return { ok: false, code: "CLIPBOARD_UNAVAILABLE", message: "clipboard is unavailable", messageKey: "error.clipboardUnavailable" };
+    }
+    return { ok: true, message: "", messageKey: "invite.panel.linkCopied" };
   }
   let response: Response;
   try {
@@ -927,7 +961,11 @@ function SchemaCrudProvider({
     async (actionRef: string, opts: RunRequestOptions): Promise<ActionResult> => {
       const result = await runRequestCallback(actionRef, opts);
       if (result.ok) {
-        setFeedback({ kind: "success", message: successMessageFor(actionOf(document, actionRef)?.method, t) });
+        setFeedback({
+          kind: "success",
+          message: result.message !== undefined && result.message !== "" ? result.message : successMessageFor(actionOf(document, actionRef)?.method, t),
+          ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
+        });
         reloadList();
         setSelectedRow(null);
       } else {

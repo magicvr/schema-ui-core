@@ -657,15 +657,18 @@
   "invite.panel.rolesPlaceholder": "Select at least one role…",
   "invite.panel.rolesEmpty": "No roles available.",
   "invite.panel.confirmRevoke": "Revoke this invitation? Its link stops working immediately.",
-  "invite.card.resendLabel": "Resend (paste invite id from the table)",
-  "invite.card.resendPlaceholder": "inv-…",
-  "invite.card.resendIdRequired": "Enter the invite id shown in the first table column.",
+
+
+
   "invite.panel.days": "Valid days",
   "invite.panel.create": "Create invitation",
   "invite.panel.disclose": "One-time link (copy now):",
   "invite.panel.status": "Status",
   "invite.panel.expires": "Expires",
   "invite.panel.actions": "Actions",
+  "invite.panel.linkCopied": "New invitation link copied to clipboard.",
+  "invite.detail.title": "Invitation details",
+  "invite.detail.invitedBy": "Invited by",
   "invite.panel.resend": "Resend",
   "invite.panel.revoke": "Revoke",
   "invite.panel.empty": "No invitations yet.",

@@ -22,6 +22,10 @@
       "onSuccess": {
         "behavior": "reload"
       }
+    },
+    "resendInvite": {
+      "type": "custom",
+      "handler": "invites.resend"
     }
   },
   "body": {
@@ -132,6 +136,62 @@
                 "field": "revokable",
                 "equals": false
               }
+            },
+            {
+              "key": "resend",
+              "label": "Resend",
+              "actionRef": "resendInvite",
+              "permissionIntent": "edit",
+              "labelKey": "invite.panel.resend",
+              "disabledWhen": {
+                "field": "revokable",
+                "equals": false
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "recordView",
+        "id": "invite-detail",
+        "props": {
+          "title": "Invitation details",
+          "titleKey": "invite.detail.title",
+          "fields": [
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "key": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "key": "email",
+              "label": "Email",
+              "labelKey": "invite.panel.email"
+            },
+            {
+              "key": "status",
+              "label": "Status",
+              "labelKey": "invite.panel.status"
+            },
+            {
+              "key": "invitedBy",
+              "label": "Invited by",
+              "labelKey": "invite.detail.invitedBy"
+            },
+            {
+              "key": "expiresAt",
+              "label": "Expires",
+              "labelKey": "invite.panel.expires"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.users.column.created"
             }
           ]
         }
