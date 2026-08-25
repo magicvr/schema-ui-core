@@ -16,6 +16,13 @@
       "schemaUrl": "/api/schema/users",
       "route": "/users",
       "titleKey": "manifest.title.users"
+    },
+    {
+      "pageId": "users-invites",
+      "title": "Invitations",
+      "schemaUrl": "/api/schema/users-invites",
+      "route": "/users-invites",
+      "titleKey": "manifest.title.usersInvites"
     }
   ],
   "navigation": {
