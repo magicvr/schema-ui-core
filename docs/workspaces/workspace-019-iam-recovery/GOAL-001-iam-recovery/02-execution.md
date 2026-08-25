@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-25 | 开区 scaffold（workspace-019 + Root + IAM 纲领路线图 + I-00N） | recorded | [E-001-workspace-scaffold.md](02-execution/E-001-workspace-scaffold.md) |
+| E-002 | 2026-08-25 | R1 门禁三项裁决入账（I-001/I-002/I-009 verified · D-002）+ GOAL-002 立项 | recorded | [E-002-r1-gate-adjudications.md](02-execution/E-002-r1-gate-adjudications.md) |
 
 ## 事实边界
 
