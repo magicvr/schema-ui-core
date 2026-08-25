@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-25 | R2 开题 + D-001 方案冻结（C1 满） | recorded | [E-001-goal-opened.md](02-execution/E-001-goal-opened.md) |
+| E-002 | 2026-08-25 | R2 实施切片落地（C2/C3/C4 满 · 4/5） | recorded | [E-002-implementation.md](02-execution/E-002-implementation.md) |
 
 ## 事实边界
 

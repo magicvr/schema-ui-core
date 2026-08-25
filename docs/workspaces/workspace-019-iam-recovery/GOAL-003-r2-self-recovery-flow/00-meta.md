@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-iam-recovery
 created: 2026-08-25
 updated: 2026-08-25
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 4/5
 plan_refs:
   - VP-019-iam-recovery
 primary_plan: VP-019-iam-recovery
@@ -31,13 +31,13 @@ serves_summary: 承接 Root R2：按 R1 冻结合同（Root D-002 + GOAL-002 D-0
 
 | # | 检查点 | 证据 |
 |---|--------|------|
-| C1 | R2 方案冻结决策落盘（本目标 D-001）：API 形状、错误码、MFA 门接口、会话语义 | 待完成 |
-| C2 | 迁移 0056 双方言落地（checksum 台账 + 黄金断言同步 + 升级/全新库测试） | 待完成 |
-| C3 | 域逻辑 + HTTP 面实施（start/complete、MFA 门、限流、审计/通知）+ 包测试绿 | 待完成 |
-| C4 | 端到端证据（经 mock 渠道取码全链测试）+ Web 登录页恢复流 + i18n | 待完成 |
-| C5 | independent 审计（grok build · grok-4.6 · high）意见落盘且开放 required = 0；self 关门审 | 待完成 |
+| C1 | R2 方案冻结决策落盘（本目标 D-001）：API 形状、错误码、MFA 门接口、会话语义 | **完成**：D-001 §1～§6（19edbf8a） |
+| C2 | 迁移 0056 双方言落地（checksum 台账 + 黄金断言同步 + 升级/全新库测试） | **完成**：migration.go v56 `password_recovery_challenges`（checksum e19db1a2… 入台账）；identity.go head 55→56 + 两表清单；identity/migrate/operations/restart 四处黄金断言同步；store 包全绿 |
+| C3 | 域逻辑 + HTTP 面实施（start/complete、MFA 门、限流、审计/通知）+ 包测试绿 | **完成**：recovery.go 域逻辑（解析/两阶段派发+补偿/评估/尝试记账/完成消费）；handler/recovery.go 公开面 + loginRateLimiter + 错误码映射（catalog 新增 4 码入契约测试冻结集）；mfa.VerifySecondFactor 薄封装；operational allowlist 扩两路径；composition 中央装配；authsession/handler 全绿 |
+| C4 | 端到端证据（经 mock 渠道取码全链测试）+ Web 登录页恢复流 + i18n | **完成**：recovery_e2e_test.go 经 OutboxSink 取码闭环；LoginPage 两步恢复流（第二因子按需展示、过期回步骤一）+ zh/en i18n + 3 组新测试；web tsc + vitest 1105/1105 绿 |
+| C5 | independent 审计（grok build · grok-4.6 · high）意见落盘且开放 required = 0；self 关门审 | 进行中：grok 会话已发起 |
 
-`progress` = 已完成检查点 / 5。当前 **0/5**。
+`progress` = 已完成检查点 / 5。当前 **4/5**。
 
 ## 边界
 
