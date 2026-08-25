@@ -88,10 +88,10 @@ func InviteAdminRoutes(a *auth.Authenticator, repo InviteRepository, sender kern
 			Handler:              handler,
 		})
 	}
-	add("POST", "/api/users/invites", a.Middleware(h.requireInvitePermission(h.create())))
-	add("GET", "/api/users/invites", a.Middleware(h.requireInvitePermission(h.list())))
-	add("DELETE", "/api/users/invites/{id}", a.Middleware(h.requireInvitePermission(h.revoke())))
-	add("POST", "/api/users/invites/{id}/resend", a.Middleware(h.requireInvitePermission(h.resend())))
+	add("POST", "/api/users/invites", a.Middleware(h.create()))
+	add("GET", "/api/users/invites", a.Middleware(h.list()))
+	add("DELETE", "/api/users/invites/{id}", a.Middleware(h.revoke()))
+	add("POST", "/api/users/invites/{id}/resend", a.Middleware(h.resend()))
 	return routes
 }
 
@@ -103,34 +103,12 @@ type inviteAdminHandler struct {
 	now        func() time.Time
 }
 
-func (h *inviteAdminHandler) requireInvitePermission(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actor, ok := auth.UserIdentityFrom(r.Context())
-		if !ok {
-			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "no active session")
-			return
-		}
-		granted, err := h.repo.PermissionsForUser(actor.ID)
-		if err != nil {
-			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve permissions")
-			return
-		}
-		for _, p := range granted {
-			if p == "users.invite" {
-				next.ServeHTTP(w, r)
-				return
-			}
-		}
-		writeLocalizedError(w, r, http.StatusForbidden, "FORBIDDEN", "you do not have permission to manage invitations")
-	})
-}
-
-type inviteMailSender interface {
-	Send(r *http.Request, to, link string) error
-}
-
 func (h *inviteAdminHandler) create() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "users.invite"); !ok {
+			return
+		}
+
 		actor, _ := auth.UserIdentityFrom(r.Context())
 		var body struct {
 			Email         string   `json:"email"`

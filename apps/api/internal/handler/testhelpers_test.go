@@ -14,6 +14,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	accountschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/account/schema"
 	activityschema "github.com/magicvr/schema-ui-core/apps/api/internal/modules/activity/schema"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
@@ -44,6 +45,9 @@ import (
 // directly; write-route tests log in first to obtain a Bearer access token.
 type authTestEnv struct {
 	mux            *http.ServeMux
+	// recoverySender exposes the env's mock mail channel so R4 evidence tests
+	// pull codes/links straight from the outbox records (workspace-019).
+	recoverySender *mail.OutboxSink
 	a              *auth.Authenticator
 	st             *store.Store
 	authRepository *authsession.Repository
@@ -119,6 +123,9 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		})
 	})
 	mux := http.NewServeMux()
+	// workspace-019 R2/R3: the REAL mock channel backs recovery/invite mail —
+	// R4 HTTP evidence pulls codes/links from its outbox records.
+	recoverySender := mail.NewOutboxSink(st, 0)
 	// S-11 (GOAL-011): the fake is constructed BEFORE RegisterWithReadiness so
 	// the login gate receives a live (non-nil) verifier — a typed-nil passed
 	// through the variadic would satisfy the != nil check and panic on use.
@@ -158,6 +165,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 	}
 	mountRoutes(AccountSelfRoutes(a, authRepository, operations, avatarAssets, "admin.account", authRepository))
+	mountRoutes(EmailIdentityRoutes(a, authRepository, recoverySender, "admin.account"))
 	mountRoutes(AccountAvatarRoutes(a, avatarAssets, authRepository, operations, "admin.account"))
 	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account", authRepository))
 	uploadDir := filepath.Join(objectRoot, "uploads")
@@ -182,13 +190,20 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	mountRoutes(RecycleBinRoutes(a, recycleService, operations, "admin.recycle-bin"))
 	mountRoutes(resourceRoutes(a, usersResourceWithNotifier(authRepository, operations, authRepository), "admin.users"))
 	mountRoutes(resourceRoutes(a, rolesResource(authRepository, operations), "admin.roles"))
+	// workspace-019 R2/R3 (GOAL-003/004): the central pre-auth surfaces plus
+	// the invitation management quartet ride the REAL mock channel — R4 HTTP
+	// evidence walks codes/links out of the outbox records.
+	RegisterRecovery(mux, operations, authRepository, authRepository, recoverySender, nil)
+	RegisterInviteAccept(mux, authRepository)
+	mountRoutes(InviteAdminRoutes(a, authRepository, recoverySender, operations, "admin.users"))
+	mountRoutes(PasswordPolicyRoutes(a, authRepository, "admin.settings"))
 	RegisterSchemas(mux, testSchemaContributions())
 	RegisterUpload(mux, a, objects, testUploadOpts...)
 	// testUploadOpts is reset after each test so per-test policy overrides
 	// cannot leak into sibling tests.
 	t.Cleanup(func() { testUploadOpts = nil; testBrandOpts = nil })
 	return &authTestEnv{
-		mux: mux, a: a, st: st,
+		mux: mux, recoverySender: recoverySender, a: a, st: st,
 		authRepository: authRepository,
 		operations:     operations,
 		settings:       settings,
