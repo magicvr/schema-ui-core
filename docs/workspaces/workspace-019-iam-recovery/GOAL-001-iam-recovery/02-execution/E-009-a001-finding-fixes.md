@@ -36,3 +36,7 @@ version: 1.0.0
 
 - 索引更新：`01-decision.md`（+D-003）、`02-execution.md`（+E-009）、`03-audit.md`（+A-002 响应条目）、`goal-tree.md` 关后维护指针。
 - A-001 独立意见正文保持原样未改（响应走独立 A-002 条目，不污染 `source: independent` 台账）。
+
+## Checkpoint
+
+- Git checkpoint：`ce96df92`（dev 分支；scope = 上述 4 个代码文件 + 本区治理文档 8 个；验证 = gofmt 干净 + 定向测试绿 + 全量 `go test ./... -count=1` exit 0）。
