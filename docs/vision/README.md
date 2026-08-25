@@ -2,9 +2,9 @@
 title: docs/vision · 规则面与本仓实例索引
 status: active
 created: 2026-07-29
-updated: 2026-08-11
+updated: 2026-08-25
 parent: null
-version: 0.9.0
+version: 0.10.0
 ---
 
 # docs/vision · 愿景层
@@ -56,6 +56,15 @@ version: 0.9.0
 | [plans/VP-005-design-system-and-ui-experience.md](plans/VP-005-design-system-and-ui-experience.md) | **closed**（2026-08-09 用户书面确认）· lead: workspace-006-design-system-and-ui-experience |
 | [plans/VP-007-localization-and-system-settings.md](plans/VP-007-localization-and-system-settings.md) | **closed**（2026-08-09 用户书面确认）· lead: workspace-007-localization-and-system-settings |
 | [plans/VP-008-admin-module-readiness-and-foundation-convergence.md](plans/VP-008-admin-module-readiness-and-foundation-convergence.md) | **closed**（2026-08-10 用户书面确认；`go` 签发）· lead: workspace-008-admin-module-readiness |
+| [plans/VP-011-admin-functional-modules.md](plans/VP-011-admin-functional-modules.md) | **closed**（2026-08-18 有界）· lead: workspace-011-admin-functional-modules（四档能力地图上提 roadmap） |
+| [plans/VP-012-shared-cross-module-contracts.md](plans/VP-012-shared-cross-module-contracts.md) | **closed**（2026-08-19 完整 · 首波）· lead: workspace-012-shared-cross-module-contracts |
+| [plans/VP-013-store-dialects.md](plans/VP-013-store-dialects.md) | **closed**（2026-08-21 有界 · 架构 A1）· lead: workspace-013-store-dialects |
+| [plans/VP-014-object-storage.md](plans/VP-014-object-storage.md) | **closed**（2026-08-21 有界 · 架构 A2）· lead: workspace-014-object-storage |
+| [plans/VP-015-observability.md](plans/VP-015-observability.md) | **closed**（2026-08-22 有界 · 架构 A4）· lead: workspace-015-observability |
+| [plans/VP-016-key-rotation-and-backup.md](plans/VP-016-key-rotation-and-backup.md) | **closed**（2026-08-22 有界 · 架构 A5）· lead: workspace-016-key-rotation-and-backup |
+| [plans/VP-017-outbound-mail.md](plans/VP-017-outbound-mail.md) | **closed**（2026-08-24 现行渠道分母再关门 · v0.5.0）· lead: workspace-017-outbound-mail |
+| [plans/VP-018-account-email-identity.md](plans/VP-018-account-email-identity.md) | **closed**（2026-08-24 解冻当日关门 · v1.0.0）· lead: workspace-018-account-email-identity |
+| [plans/VP-019-iam-recovery.md](plans/VP-019-iam-recovery.md) | **active**（2026-08-25 激活 · Admin 功能 IAM：密码策略 / 邀请 / 自助恢复；VRev-043 independent `pass`） |
 | [plans/VP-009-production-hardening.md](plans/VP-009-production-hardening.md) | **active** · 共享基架**持续安全与健壮性程序** · lead: workspace-009-production-hardening（Root 长期容器） |
 | [plans/VP-010-design-implementation-conformance.md](plans/VP-010-design-implementation-conformance.md) | **active** · 设计意图—实现符合性**持续对齐程序** · lead: workspace-010-design-implementation-conformance（Root 长期容器；与 VP-009 正交） |
 | [../architecture/module-architecture.md](../architecture/module-architecture.md) | VP-003 终态架构权威（Fx、Profile、Manifest、数据与生命周期边界） |
@@ -63,9 +72,9 @@ version: 0.9.0
 | [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
-| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-013`；仓库级 1 open required = `F-V018` 仅 VP-005） |
+| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-043`；open required = 0） |
 | [reviews/](reviews/) | 正式报告目录 |
-| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 4 delivery；VP-006 lead = workspace-005） |
+| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 17 delivery/lead） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议全量实施清单（`F-V001` 证据；整份契约收口见 VP-006） |
 | [../workspace-001-mvp-admin-foundation/](../workspaces/workspace-001-mvp-admin-foundation/) | primary · Root `GOAL-001-mvp-VP-006 lead（closed 历史绑定） |
 | [../workspace-006-design-system-and-ui-experience/](../workspaces/workspace-006-design-system-and-ui-experience/) | delivery · VP-005 lead（closed 历史绑定） |
@@ -76,7 +85,16 @@ version: 0.9.0
 | [../workspace-002-production-admin-foundation/](../workspaces/workspace-002-production-admin-foundation/) | delivery · VP-002 lead（closed 历史绑定） |
 | [../workspace-003-modular-admin-architecture/](../workspaces/workspace-003-modular-admin-architecture/) | delivery · VP-003 lead（closed 历史绑定） |
 | [../workspace-004-module-contribution-readiness/](../workspaces/workspace-004-module-contribution-readiness/) | delivery · VP-004 lead（closed 历史绑定） |
-| [../workspace-005-full-protocol-contract-v2-7-0/](../workspaces/workspace-005-full-protocol-contract-v2-7-0/) | delivery · **VP-006 lead**（现行） |
+| [../workspace-005-full-protocol-contract-v2-7-0/](../workspaces/workspace-005-full-protocol-contract-v2-7-0/) | delivery · **VP-006 lead**（closed 历史绑定） |
+| [../workspace-011-admin-functional-modules/](../workspaces/workspace-011-admin-functional-modules/) | lead · VP-011（closed 历史绑定） |
+| [../workspace-012-shared-cross-module-contracts/](../workspaces/workspace-012-shared-cross-module-contracts/) | lead · VP-012（closed 历史绑定） |
+| [../workspace-013-store-dialects/](../workspaces/workspace-013-store-dialects/) | lead · VP-013（closed 历史绑定） |
+| [../workspace-014-object-storage/](../workspaces/workspace-014-object-storage/) | delivery · VP-014（closed 历史绑定） |
+| [../workspace-015-observability/](../workspaces/workspace-015-observability/) | delivery · VP-015（closed 历史绑定） |
+| [../workspace-016-key-rotation-and-backup/](../workspaces/workspace-016-key-rotation-and-backup/) | delivery · VP-016（closed 历史绑定） |
+| [../workspace-017-outbound-mail/](../workspaces/workspace-017-outbound-mail/) | delivery · VP-017（closed · 现行分母再关门历史绑定） |
+| [../workspace-018-account-email-identity/](../workspaces/workspace-018-account-email-identity/) | delivery · VP-018（closed 历史绑定） |
+| [../workspace-019-iam-recovery/](../workspaces/workspace-019-iam-recovery/) | lead · **VP-019**（active · 2026-08-25 开区） |
 
 模板（冷启动 / Review 复制源）：`docs/templates/vision/charter.md`、`vision-plan.md`、`reviews-index.md`、`review.md`。
 

@@ -53,3 +53,12 @@ parent: null
 ## 声明
 
 本意见不直接修改 Charter / VP / Goal status。required finding 的响应由 `/vision` 追加在本报告中；原 verdict 与 finding 原文不得改写。VRev-037/038/039 原文与 verdict 不在本报告改写。
+
+## `/vision` 响应（2026-08-25 · V-F075 → fixed）
+
+V-F075（recommended）要求再关门前对现行分母完成 **independent** 核验。VP-017 v0.5.0 再关门（2026-08-24）的实际独立通道：
+
+- **Goal 层独立**：workspace-017 Root `GOAL-001-outbound-mail` `03-audit/A-004-independent-reclose`（source: independent；conditional → F-001/F-002 fixed 后归零；覆盖渠道模型、live 投递实跑、密钥与热切换高影响面）。
+- **Vision 层**：[VRev-042](VRev-042-vp017-reclose.md)（self · `pass`）支持现行分母再关门。
+
+两通道满足「independent Vision Review **或** Goal independent」的关闭要求 → **V-F075 → `fixed`**（2026-08-25 `/vision` 响应；未改写 VRev-041 原 verdict 与 finding 原文）。

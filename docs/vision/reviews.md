@@ -32,7 +32,7 @@ version: 1.3.55
 |---------|-------|------|------|------|
 | — | — | — | **无** | VRev-040 `pass`；V-F073/V-F074 recommended → **fixed**。VRev-039 `pass`；V-F072 recommended 随有界关门 → **fixed** |
 
-> Vision Review **open required = 0**。**VRev-040（self，`pass`）**：VP-018 意图/激活就绪；Admin 类 freshness PASS（`ed99e88` → `092bf37`）。**VRev-039（self，`pass`）**：VP-017 有界关门；V-F072 → **fixed**。当前 active 交付 VP = **VP-018**。持续程序 **VP-009** / **VP-010**。
+> Vision Review **open required = 0**。**VRev-040（self，`pass`）**：VP-018 意图/激活就绪；Admin 类 freshness PASS（`ed99e88` → `092bf37`）。**VRev-042（self，`pass`）**：VP-017 现行分母再关门（v0.5.0）。**VRev-043（independent · grok build，`pass`）**：VP-019 意图/激活就绪 + Admin 类 freshness PASS（`092bf37` → `66f5fd1f`，不暂挂 `go`）；V-F076/077/078 → **fixed**。当前 active 交付 VP = **VP-019-iam-recovery**（2026-08-25 激活）。持续程序 **VP-009** / **VP-010**。
 
 ## 条目索引
 
@@ -78,5 +78,6 @@ version: 1.3.55
 | VRev-038 | 2026-08-22 | self | VP-017 激活就绪 · 独立意见响应 / 架构类 freshness / 开区 | pass | 0 | 采纳 VRev-037；无新 finding；freshness PASS（`ed99e88` → `250cb9c`）；允许激活并开 `workspace-017-outbound-mail` | [VRev-038-vp017-activation-self.md](reviews/VRev-038-vp017-activation-self.md) |
 | VRev-039 | 2026-08-24 | self | VP-017 关门就绪 · 独立代码/测试/harness 核验 / 退出判据 / 有界 residual / 组合索引 | pass | 0 | 原 verdict 保留；V-F072 recommended → **fixed**（VP-017 有界 closed + exit↔本轮独立证据 + env-gated live residual；VR-042） | [VRev-039-vp017-closeout-readiness.md](reviews/VRev-039-vp017-closeout-readiness.md) |
 | VRev-040 | 2026-08-24 | self | VP-018 意图完备 / 可行性 / 激活就绪 · Admin 类 freshness | pass | 0 | 原 verdict 保留；V-F073/V-F074 recommended → **fixed**（激活 + workspace-018 Root P-001/I-00N + Admin 类 freshness；VR-043） | [VRev-040-vp018-intent-activation.md](reviews/VRev-040-vp018-intent-activation.md) |
-| VRev-041 | 2026-08-24 | self | VP-017 否决关门 / 渠道分母升级 / 018 冻结 / 实施史保全 | pass | 0 | 用户书面否决 017 组合层关门（不回退实施史）；现行分母 = mock+Resend+设置/试发；V-F075 recommended open（再次关门须 independent） | [VRev-041-vp017-reopen-channel-upgrade.md](reviews/VRev-041-vp017-reopen-channel-upgrade.md) |
+| VRev-041 | 2026-08-24 | self | VP-017 否决关门 / 渠道分母升级 / 018 冻结 / 实施史保全 | pass | 0 | 用户书面否决 017 组合层关门（不回退实施史）；现行分母 = mock+Resend+设置/试发；V-F075 recommended → **fixed**（2026-08-25：A-004 independent + VRev-042 满足再关门独立核验） | [VRev-041-vp017-reopen-channel-upgrade.md](reviews/VRev-041-vp017-reopen-channel-upgrade.md) |
 | VRev-042 | 2026-08-24 | self | VP-017 再关门就绪 · 现行分母（R5～R8 交付 / live 投递 PASS / 判据 1～7 / 信息全 verified） | pass | 0 | 原 verdict 保留；支持 v0.5.0 closed；RT-M01 delivered；VP-018 解冻（R-045） | [VRev-042-vp017-reclose.md](reviews/VRev-042-vp017-reclose.md) |
+| VRev-043 | 2026-08-25 | independent | VP-019 意图完备 / 对齐链 / 可行性 / 激活就绪 · Admin 类 freshness（`092bf37` → `66f5fd1f`） | pass | 0 | grok build 独立 Vision Review（grok-4.6 · high）；VP-019 可激活并开区；V-F076/077/078 recommended → **fixed**（激活事务内闭合） | [VRev-043-vp019-iam-recovery-intent-activation.md](reviews/VRev-043-vp019-iam-recovery-intent-activation.md) |
