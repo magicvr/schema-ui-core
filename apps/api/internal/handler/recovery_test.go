@@ -165,3 +165,44 @@ func TestRecoveryCompletePasswordBaseline(t *testing.T) {
 		t.Fatalf("baseline violations must not complete: %v", repo.completed)
 	}
 }
+
+// A-001 F-001: complete failures feed the IP|identifier limiter bucket, so a
+// known-account brute force hits 429 RATE_LIMITED even though the per-challenge
+// attempt cap (≤5) would otherwise be the only brake. The bucket fills the same
+// way for existing and non-existing accounts — no existence oracle leaks.
+func TestRecoveryCompleteRateLimitedAfterTwentyFailures(t *testing.T) {
+	repo := &fakeRecoveryRepo{target: &authsession.RecoveryTarget{UserID: "u1"}, outcome: authsession.RecoveryMismatch}
+	mux := newRecoveryMux(repo, nil)
+	const budget = 20 // this handler's loginRateLimiter max
+	for i := 0; i < budget; i++ {
+		rec := postJSON(t, mux, "/api/auth/recovery/complete", `{"account":"x","code":"000000","newPassword":"new-password-1"}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("failure %d status = %d (%s), want 400", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	rec := postJSON(t, mux, "/api/auth/recovery/complete", `{"account":"x","code":"000000","newPassword":"new-password-1"}`)
+	if rec.Code != http.StatusTooManyRequests || !strings.Contains(rec.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("post-budget status = %d body %s, want 429 RATE_LIMITED", rec.Code, rec.Body.String())
+	}
+}
+
+// A-001 F-001 corollary: the second-factor DEMAND (missing field — not a
+// guess) and INVALID_PASSWORD after a matched code consume neither bucket nor
+// challenge budget; a legitimate user mid-flow must not lock themselves out.
+func TestRecoveryCompleteNonGuessFailuresDoNotRecord(t *testing.T) {
+	repo := &fakeRecoveryRepo{target: &authsession.RecoveryTarget{UserID: "u1"}, outcome: authsession.RecoveryMatch}
+	gate := &fakeGate{required: true}
+	mux := newRecoveryMux(repo, gate)
+	for i := 0; i < 25; i++ {
+		rec := postJSON(t, mux, "/api/auth/recovery/complete", `{"account":"x","code":"123456","secondFactorCode":"654321","newPassword":"short"}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("iteration %d status = %d, want 400 (limiter must stay idle)", i+1, rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), "INVALID_PASSWORD") {
+			t.Fatalf("iteration %d body = %s, want INVALID_PASSWORD", i+1, rec.Body.String())
+		}
+	}
+	if len(repo.completed) != 0 {
+		t.Fatalf("weak-password completes must never land: %v", repo.completed)
+	}
+}

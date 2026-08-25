@@ -148,7 +148,11 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		}
 		target, err := h.repo.ResolveRecoveryTarget(body.Account)
 		if err != nil {
-			// Unknown identifier: uniform invalid-code answer (no oracle).
+			// Unknown identifier: uniform invalid-code answer (no oracle). The
+			// failure still feeds the IP|identifier bucket — the 429 that
+			// eventually fires is identical for existing and non-existing
+			// accounts, so the limiter stays enumeration-neutral (A-001 F-001).
+			h.recordFailure(key)
 			writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_INVALID", "recovery code is invalid")
 			return
 		}
@@ -162,14 +166,16 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		case authsession.RecoveryMatch:
 			// continue below
 		case authsession.RecoveryExpired:
+			h.recordFailure(key) // A-001 F-001: expired guesses feed the bucket too
 			h.repo.DropStaleRecoveryChallenge(target.UserID, h.now().UTC())
 			writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_EXPIRED", "recovery code expired; request a new one")
 			return
 		case authsession.RecoveryNotPending:
+			h.recordFailure(key)
 			writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_INVALID", "recovery code is invalid")
 			return
 		default: // mismatch
-			h.failAttempt(w, r, target.UserID)
+			h.failAttempt(w, r, key, target.UserID)
 			return
 		}
 
@@ -184,7 +190,7 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			if verr := h.gate.VerifySecondFactor(target.UserID, code2, rec2, h.now().UTC()); verr != nil {
 				// A wrong second factor burns a challenge attempt too: the
 				// 6-digit code alone must never unlock unlimited TOTP guesses.
-				h.failAttemptMFA(w, r, target.UserID, verr)
+				h.failAttemptMFA(w, r, key, target.UserID, verr)
 				return
 			}
 		}
@@ -218,8 +224,11 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 	}
 }
 
-// failAttempt records the failed code guess and answers uniformly.
-func (h *recoveryHandler) failAttempt(w http.ResponseWriter, r *http.Request, userID string) {
+// failAttempt records the failed code guess in BOTH budgets — the per-user
+// challenge attempt count (≤5 voids it) and the IP|identifier rate-limiter
+// bucket (D-001 §2 / A-001 F-001) — then answers uniformly.
+func (h *recoveryHandler) failAttempt(w http.ResponseWriter, r *http.Request, key, userID string) {
+	h.recordFailure(key)
 	if h.repo.ConsumeRecoveryAttempt(userID) {
 		writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_EXPIRED", "recovery code expired; request a new one")
 		return
@@ -228,8 +237,10 @@ func (h *recoveryHandler) failAttempt(w http.ResponseWriter, r *http.Request, us
 }
 
 // failAttemptMFA records the rejected second factor as a challenge attempt
-// and maps the underlying mfa error when the budget survives.
-func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request, userID string, verr error) {
+// (and into the limiter bucket) and maps the underlying mfa error when the
+// budget survives.
+func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request, key, userID string, verr error) {
+	h.recordFailure(key)
 	if h.repo.ConsumeRecoveryAttempt(userID) {
 		writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_EXPIRED", "recovery code expired; request a new one")
 		return
@@ -242,19 +253,32 @@ func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// recordFailure feeds one failed complete attempt into the IP|identifier
+// limiter bucket (D-001 §2 · A-001 F-001). Deliberately NOT called for the
+// second-factor demand (missing field, not a guess) or INVALID_PASSWORD after
+// a matched code (legitimate user mid-flow) — see D-001 §2 write-back.
+func (h *recoveryHandler) recordFailure(key string) {
+	if h.rateLimiter != nil {
+		h.rateLimiter.record(key, h.now().UTC())
+	}
+}
+
 // recordRecoveryEvent appends the audit row under the existing
 // account.password-change event family (D-001 §5: no CHECK-rebuild migration);
-// the detail action distinguishes the recovery path. Actor name resolves
-// best-effort and never blocks the 204.
+// the detail action distinguishes the recovery path and carries the USERNAME
+// for searchability (A-001 F-003). Actor name resolves best-effort and never
+// blocks the 204.
 func (h *recoveryHandler) recordRecoveryEvent(userID string) {
 	if h.operations == nil {
 		return
 	}
 	actorName := ""
+	username := ""
 	if u, err := h.repo.UserByID(userID); err == nil && u != nil {
 		actorName = u.Name
+		username = u.Username
 	}
-	detail, derr := operationlog.NewDetail("password-recovery", nil, map[string]any{"userId": userID})
+	detail, derr := operationlog.NewDetail("password-recovery", nil, map[string]any{"username": username})
 	if derr != nil {
 		return
 	}

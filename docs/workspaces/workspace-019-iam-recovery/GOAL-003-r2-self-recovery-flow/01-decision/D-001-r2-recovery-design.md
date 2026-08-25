@@ -29,8 +29,8 @@ R1 合同（Root D-002 + GOAL-002 D-001 §1）冻结了产品语义。本决策�
   - body 非法 → 400 INVALID_RECOVERY_BODY；发送失败 → 补偿删挑战 + 502 EMAIL_SEND_FAILED（此时挑战存在性已暴露，属 VP-009 记录在案的残余，不在本波分母）。
 - **`POST /api/auth/recovery/complete`** `{account, code, newPassword, secondFactorCode?, recoveryCode?}` → 204。
   - 校验顺序：body → 账号定位（未命中/无挑战/错码 → 400 RECOVERY_CODE_INVALID 统一码；过期 → RECOVERY_CODE_EXPIRED）→ MFA 门（如登记）→ 密码基线校验（现行 8–72 字节非空白，INVALID_PASSWORD）→ 设密。
-  - 任一失败路径消耗挑战 attempt_count（≤5 次作废，含第二因子失败），封死「绕过邮箱码预算爆破 TOTP」。
-- 两端点共用 loginRateLimiter 模型（IP|identifier 桶；complete 失败也 record）。
+  - 任一消耗型失败路径（错码/无挑战/未知账号/过期/第二因子校验失败）消耗挑战 attempt_count（≤5 次作废）并写入 IP|identifier 限流桶（A-001 F-001 fixed），封死「绕过邮箱码预算爆破 TOTP」。**记录在案例外**（A-001 F-004 回写）：①缺第二因子字段（`RECOVERY_SECOND_FACTOR_REQUIRED`）不消耗——缺字段不是猜测行为，Web 端依赖该响应揭示因子输入；②邮箱码已匹配后的 `INVALID_PASSWORD` 不消耗——合法用户设密中途失败不应烧预算（恢复码已在第二因子步一次性消费后若密码基线再失败，恢复码不回滚，属可接受损耗，重新发起即可）。
+- 两端点共用 loginRateLimiter 模型（IP|identifier 桶；complete 的上述消耗型失败也 record）；限流桶对存在/不存在账号同形增长，不构成存在性预言机。
 
 ### §3 MFA 第二因子门
 
