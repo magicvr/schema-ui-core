@@ -74,6 +74,9 @@ var operationalRecoveryPaths = map[string]struct{}{
 	// stay reachable in maintenance/read-only modes (GOAL-003 D-001 §2).
 	"/api/auth/recovery/start":     {},
 	"/api/auth/recovery/complete":  {},
+	// workspace-019 R3: invitation acceptance is the account-creation path
+	// for invitees — reachable like recovery (GOAL-004 D-001 §3).
+	"/api/auth/invite/accept":      {},
 }
 
 func operationalAllowlisted(r *http.Request) bool {

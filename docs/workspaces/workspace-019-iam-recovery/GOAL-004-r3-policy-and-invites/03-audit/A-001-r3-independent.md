@@ -126,3 +126,20 @@ C2 迁移与黄金断言本会话复算/复跑通过。C3 邀请域与四口接�
 ### 声明
 
 本意见不修改 status/progress；响应由 /govern 处理。
+
+---
+
+## 编排器响应（2026-08-25 · /govern · git 2f088d55）
+
+> 本节为编排器响应留痕，不改动上方独立意见正文。
+
+| Finding | 处置 | 证据 |
+|---------|------|------|
+| F-001（required · high） | **fixed** | ValidateNewPassword 先读策略行，采用配置 MinLength（下限钳制 8）再校验；新增 TestValidateNewPasswordConfiguredMinLengthBites（minLength=12 时 8 字节拒绝/12+ 通过）；authsession 包全绿 |
+| F-002（recommended） | **fixed（域层+HTTP 最小集补齐）**：①域层补 accept 过期与「签发后角色删除」两组测试；②公开 accept 面新增 TestInviteAcceptPublicSurface（204 不签发 + INVALID_PASSWORD + INVITE_INVALID 统一 + USERNAME_TAKEN 分明）。管理四路的完整 HTTP 表格化测试**接受为残余移交 R4 端到端证据阶段**（域逻辑已全测，HTTP 仅薄映射层），R4 e2e 将经真实 HTTP 覆盖 |
+| F-003（recommended） | **fixed**：邀请信正文改真实换行（原 raw-string 字面 `n 缺陷确认并修复）；resend 发信失败显式 502 EMAIL_SEND_FAILED（邀请保持 live，冷却后可重试）；绝对链接口径回写 D-001 §3 |
+| F-004（recommended） | **fixed**：策略 GET 分离 settings.read / PATCH settings.write（与邮件 tab 同形）；「历史不含轮换前当前密码」「捕获 best-effort」两处口径回写 D-001 §2 |
+
+注释处置：00-meta 正文进度句已同步 4/5；`/api/auth/invite/accept` 已入 operational allowlist（含测试）；goal-tree 以状态表为准。
+
+**开放 required = 0**（F-001 fixed）。

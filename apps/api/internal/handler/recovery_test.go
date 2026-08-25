@@ -208,3 +208,57 @@ func TestRecoveryCompleteNonGuessFailuresDoNotRecord(t *testing.T) {
 		t.Fatalf("weak-password completes must never land: %v", repo.completed)
 	}
 }
+
+// A-001 F-002 (GOAL-004): the PUBLIC accept surface answers 204 without
+// issuing tokens and maps domain failures to cataloged codes.
+type fakeInviteAcceptRepo struct {
+	accepted []string
+	failWith error
+}
+
+func (f *fakeInviteAcceptRepo) AcceptInvite(rawToken, username, name, passwordHash string, now time.Time) (*authsession.User, error) {
+	if f.failWith != nil {
+		return nil, f.failWith
+	}
+	f.accepted = append(f.accepted, username)
+	return &authsession.User{ID: "u-new", Username: username}, nil
+}
+func (f *fakeInviteAcceptRepo) ValidateNewPassword(userID, plain string) error {
+	if len(plain) < 8 {
+		return authsession.ErrPasswordPolicyViolation
+	}
+	return nil
+}
+
+func newAcceptMux(repo InviteAcceptRepository) *http.ServeMux {
+	mux := http.NewServeMux()
+	RegisterInviteAccept(mux, repo)
+	return mux
+}
+
+func TestInviteAcceptPublicSurface(t *testing.T) {
+	repo := &fakeInviteAcceptRepo{}
+	mux := newAcceptMux(repo)
+
+	if rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"t","username":"u","password":"short"}`); !strings.Contains(rec.Body.String(), "INVALID_PASSWORD") {
+		t.Fatalf("weak password body = %s", rec.Body.String())
+	}
+	rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"tok-1","username":"newbie","name":"New","password":"invited-pass-1"}`)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("accept status = %d body %s, want 204", rec.Code, rec.Body.String())
+	}
+	// Domain failure maps uniformly; unknown token never leaks existence.
+	repo.failWith = authsession.ErrInviteInvalid
+	if rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"tok-2","username":"x","password":"invited-pass-1"}`); !strings.Contains(rec.Body.String(), "INVITE_INVALID") {
+		t.Fatalf("invalid body = %s", rec.Body.String())
+	}
+	// Username conflict surfaces distinctly (authenticated-grade semantics on
+	// a pre-auth form the invitee can simply retry with another name).
+	repo.failWith = authsession.ErrUsernameTaken
+	if rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"tok-2","username":"x","password":"invited-pass-1"}`); !strings.Contains(rec.Body.String(), "USERNAME_TAKEN") {
+		t.Fatalf("conflict body = %s", rec.Body.String())
+	}
+	if len(repo.accepted) != 1 {
+		t.Fatalf("accepted = %v, want exactly the happy path", repo.accepted)
+	}
+}

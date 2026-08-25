@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-019-iam-recovery](../../vision/plans/VP-019-iam-recovery.md)（**`active`** · 2026-08-25 激活；VRev-043 independent `pass`）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-iam-recovery`：**`active`** · 2/4（R1 合同冻结 + R2 自助恢复全链关门 · 2026-08-25；GOAL-002/003 done）。
+- **Root** `GOAL-001-iam-recovery`：**`active`** · 3/4（R1/R2/R3 关门 · 2026-08-25；GOAL-002/003/004 done）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 硬前置已完成：VP-017（运输，渠道模型 v0.5.0 closed）+ VP-018（邮箱身份 v1.0.0 closed）。
 - 边界：不承接 SMS、模板中心、多邮箱、组织权限、OIDC、业务域；不改 Profile 默认集 / 模块矩阵 / Manifest 装配语义。
@@ -29,7 +29,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-019-iam-recovery` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-iam-recovery` | `parent: null`；**active** · 2/4（纲领 R1～R4；R1/R2 已关门） |
+| Root Goal | `GOAL-001-iam-recovery` | `parent: null`；**active** · 3/4（纲领 R1～R4；R1/R2/R3 已关门） |
 | canonical 范围 | `docs/workspaces/workspace-019-iam-recovery/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-019 lead；不改变 Charter primary workspace |
@@ -48,7 +48,7 @@ VP-008 `go` 消费有效性：Admin 类 freshness **PASS**（`092bf37` → `66f5
 |------|------|------|
 | R1 | 合同冻结：证明形态（I-019-001/6 位码候选）、TTL/冷却（I-019-002 → R2 前）、策略参数与 Profile 边界（I-019-003/007）、邀请形态（I-019-004/005）、MFA 与自助恢复（I-019-009） | **已完成**（2026-08-25 · GOAL-002 done；D-001 §1～§5；I-001～009 全闭） |
 | R2 | 自助恢复全链：登录页发起 → 投递 → 校验 → 设新码 → 登录；会话/令牌语义 | 依赖 R1 | **已完成**（2026-08-25 · GOAL-003 done；A-001 independent 归零 + A-002 self pass） |
-| R3 | 密码策略（配置面 + 强制面）+ 邀请入职 | 依赖 R2 |
+| R3 | 密码策略（配置面 + 强制面）+ 邀请入职 | 依赖 R2 | **已完成**（2026-08-25 · GOAL-004 done；A-001 independent 归零 + A-002 self pass） |
 | R4 | 证据与关门：端到端经现行渠道取信、策略强制可核对、邀请全链、无越界 | 依赖 R3 |
 
 ## 固定共享资料引用

@@ -19,6 +19,7 @@ version: 0.1.0
 | E-003 | 2026-08-25 | R1 冻结范围全量裁决完成（I-003～I-008 verified · GOAL-002 D-001） | recorded | [E-003-r1-freeze-inputs-complete.md](02-execution/E-003-r1-freeze-inputs-complete.md) |
 | E-004 | 2026-08-25 | R1 关门（GOAL-002 done 3/3 · Root 1/4） | recorded | [E-004-r1-closeout.md](02-execution/E-004-r1-closeout.md) |
 | E-005 | 2026-08-25 | R2 关门（GOAL-003 done 5/5 · Root 2/4） | recorded | [E-005-r2-closeout.md](02-execution/E-005-r2-closeout.md) |
+| E-006 | 2026-08-25 | R3 关门（GOAL-004 done 5/5 · Root 3/4） | recorded | [E-006-r3-closeout.md](02-execution/E-006-r3-closeout.md) |
 
 ## 事实边界
 

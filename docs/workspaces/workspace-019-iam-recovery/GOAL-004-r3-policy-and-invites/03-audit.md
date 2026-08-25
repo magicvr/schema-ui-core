@@ -1,4 +1,4 @@
-﻿---
+---
 id: GOAL-004-r3-policy-and-invites
 doc: audit
 status: active
