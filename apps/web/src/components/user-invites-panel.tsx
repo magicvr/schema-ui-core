@@ -157,21 +157,41 @@ export function UserInvitesPanel(_props: unknown) {
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   // List filter: server-side narrowing so paged filters never mislead.
   const [filter, setFilter] = useState("all");
+  // Pagination: server-side LIMIT/OFFSET (notification-center precedent).
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const load = useCallback(async () => {
     try {
-      const response = await fetcher(`/api/users/invites?page=1&pageSize=50${filter === "all" ? "" : `&status=${filter}`}`);
+      const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      if (filter !== "all") {
+        query.set("status", filter);
+      }
+      const response = await fetcher(`/api/users/invites?${query.toString()}`);
       if (!response.ok) {
         setLoadState("error");
         return;
       }
-      const body = (await response.json()) as { items?: InviteRow[] };
+      const body = (await response.json()) as { items?: InviteRow[]; total?: number };
       setRows(Array.isArray(body.items) ? body.items : []);
+      setTotal(typeof body.total === "number" ? body.total : 0);
       setLoadState("ready");
     } catch {
       setLoadState("error");
     }
-  }, [fetcher, filter]);
+  }, [fetcher, page, pageSize, filter]);
+
+  // Changing the filter or page size restarts at page 1 (a stale page number
+  // could exceed the new result set).
+  const changeFilter = (value: string) => {
+    setFilter(value);
+    setPage(1);
+  };
+  const changePageSize = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
 
   // Role catalog for the multi-select (same /api/roles source the schema
   // checkboxGroup uses). Fail-open: an empty catalog leaves create disabled.
@@ -218,7 +238,13 @@ export function UserInvitesPanel(_props: unknown) {
         setDisclosed({ link: body.link });
       }
       setEmail("");
-      await load();
+      // A fresh invite appears at the top of page 1 — return there when the
+      // admin was browsing deeper pages.
+      if (page !== 1) {
+        setPage(1);
+      } else {
+        await load();
+      }
     } catch {
       setFeedback({ kind: "error", message: t("invite.panel.actionError") });
     } finally {
@@ -320,7 +346,7 @@ export function UserInvitesPanel(_props: unknown) {
               id="inviteStatusFilter"
               data-invite-status-filter
               value={filter}
-              onChange={(event) => setFilter(event.target.value)}
+              onChange={(event) => changeFilter(event.target.value)}
               className="h-9 cursor-pointer rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
             >
               <option value="all">{t("invite.panel.filterAll")}</option>
@@ -328,6 +354,17 @@ export function UserInvitesPanel(_props: unknown) {
               <option value="consumed">{t("invite.panel.filterConsumed")}</option>
               <option value="revoked">{t("invite.panel.filterRevoked")}</option>
               <option value="expired">{t("invite.panel.filterExpired")}</option>
+            </select>
+            <select
+              aria-label={t("feedback.pageSize")}
+              data-invite-page-size
+              value={pageSize}
+              onChange={(event) => changePageSize(Number(event.target.value))}
+              className="h-9 cursor-pointer rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
             </select>
           </div>
         </div>
@@ -338,41 +375,70 @@ export function UserInvitesPanel(_props: unknown) {
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("invite.panel.empty")}</p>
         ) : (
-          <table data-invite-table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-border/60">
-                <th className="py-2 pr-2 font-medium">{t("schema.users.column.roles")}</th>
-                <th className="py-2 pr-2 font-medium">{t("invite.panel.email")}</th>
-                <th className="py-2 pr-2 font-medium">{t("invite.panel.status")}</th>
-                <th className="py-2 pr-2 font-medium">{t("invite.panel.expires")}</th>
-                <th className="py-2 font-medium">{t("invite.panel.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-b-0">
-                  <td className="py-2 pr-2">{row.roles.map(roleName).join(", ") || "—"}</td>
-                  <td className="py-2 pr-2">{row.email ?? "—"}</td>
-                  <td className="py-2 pr-2" data-invite-status>{row.status}</td>
-                  <td className="py-2 pr-2">{row.expiresAt?.slice(0, 10) ?? "—"}</td>
-                  <td className="py-2">
-                    {row.status === "pending" ? (
-                      <span className="flex gap-2">
-                        <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "resend")}>
-                          {t("invite.panel.resend")}
-                        </Button>
-                        <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "revoke")}>
-                          {t("invite.panel.revoke")}
-                        </Button>
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
+          <>
+            <table data-invite-table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-border/60">
+                  <th className="py-2 pr-2 font-medium">{t("schema.users.column.roles")}</th>
+                  <th className="py-2 pr-2 font-medium">{t("invite.panel.email")}</th>
+                  <th className="py-2 pr-2 font-medium">{t("invite.panel.status")}</th>
+                  <th className="py-2 pr-2 font-medium">{t("invite.panel.expires")}</th>
+                  <th className="py-2 font-medium">{t("invite.panel.actions")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id} className="border-b border-border/40 last:border-b-0">
+                    <td className="py-2 pr-2">{row.roles.map(roleName).join(", ") || "—"}</td>
+                    <td className="py-2 pr-2">{row.email ?? "—"}</td>
+                    <td className="py-2 pr-2" data-invite-status>{row.status}</td>
+                    <td className="py-2 pr-2">{row.expiresAt?.slice(0, 10) ?? "—"}</td>
+                    <td className="py-2">
+                      {row.status === "pending" ? (
+                        <span className="flex gap-2">
+                          <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "resend")}>
+                            {t("invite.panel.resend")}
+                          </Button>
+                          <Button type="button" variant="outline" disabled={busy} onClick={() => void act(row.id, "revoke")}>
+                            {t("invite.panel.revoke")}
+                          </Button>
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {Math.max(1, Math.ceil(total / pageSize)) > 1 ? (
+              <nav data-invite-pagination className="flex items-center gap-1.5" aria-label={t("feedback.pagination")}>
+                <button
+                  type="button"
+                  data-invite-prev-page
+                  disabled={page <= 1}
+                  aria-label={t("feedback.previousPage")}
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+                >
+                  {"‹"}
+                </button>
+                <span className="px-1.5 text-xs text-muted-foreground">
+                  {page} / {Math.max(1, Math.ceil(total / pageSize))}
+                </span>
+                <button
+                  type="button"
+                  data-invite-next-page
+                  disabled={page >= Math.max(1, Math.ceil(total / pageSize))}
+                  aria-label={t("feedback.nextPage")}
+                  onClick={() => setPage(page + 1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+                >
+                  {"›"}
+                </button>
+              </nav>
+            ) : null}
+          </>
         )}
       </section>
     </div>

@@ -27,7 +27,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-function stubRoutes(posts: Array<Record<string, unknown>>) {
+function stubRoutes(posts: Array<Record<string, unknown>>, allRows: InviteRowFixture[] = []) {
   const fetchMock = vi.fn().mockImplementation((url: RequestInfo | URL, init?: RequestInit) => {
     const path = String(url);
     if ((init?.method ?? "GET") === "POST") {
@@ -47,8 +47,11 @@ function stubRoutes(posts: Array<Record<string, unknown>>) {
       });
     }
     if (path.includes("/api/users/invites")) {
-      const status = new URL(path, "http://x").searchParams.get("status") ?? "all";
-      const items =
+      const q = new URL(path, "http://x").searchParams;
+      const status = q.get("status") ?? "all";
+      const page = Number(q.get("page") ?? "1");
+      const pageSize = Number(q.get("pageSize") ?? "10");
+      const source =
         status === "consumed"
           ? [
               {
@@ -59,13 +62,40 @@ function stubRoutes(posts: Array<Record<string, unknown>>) {
                 expiresAt: "2026-09-01T00:00:00Z",
               },
             ]
-          : [];
-      return Promise.resolve({ ok: true, json: async () => ({ items, total: items.length }) });
+          : allRows;
+      const start = (page - 1) * pageSize;
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          items: source.slice(start, start + pageSize),
+          total: source.length,
+          page,
+          pageSize,
+        }),
+      });
     }
     return Promise.resolve({ ok: true, json: async () => ({ items: [], total: 0 }) });
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+}
+
+interface InviteRowFixture {
+  id: string;
+  roles: string[];
+  status: string;
+  email?: string;
+  expiresAt?: string;
+}
+
+function seededRows(count: number): InviteRowFixture[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `inv-${i + 1}`,
+    roles: ["viewer"],
+    status: "pending",
+    email: `inv${i + 1}@example.com`,
+    expiresAt: "2026-09-01T00:00:00Z",
+  }));
 }
 
 async function renderPanel() {
@@ -156,5 +186,39 @@ describe("UserInvitesPanel role multi-select", () => {
     expect(container.querySelector("[data-invite-table]")).not.toBeNull();
     expect(container.querySelector('[data-invite-status]')?.textContent).toBe("consumed");
     expect(container.textContent).toContain("u@example.com");
+  });
+
+  it("paginates the records list server-side", async () => {
+    const fetchMock = stubRoutes([], seededRows(25));
+    const container = await renderPanel();
+    // 25 rows at pageSize=10 → 3 pages; page 1 shows 10 rows.
+    expect(container.querySelector("[data-invite-pagination]")).not.toBeNull();
+    expect(container.querySelectorAll("[data-invite-table] tbody tr").length).toBe(10);
+    const prev = container.querySelector<HTMLButtonElement>("[data-invite-prev-page]")!;
+    const next = container.querySelector<HTMLButtonElement>("[data-invite-next-page]")!;
+    expect(prev.disabled).toBe(true); // already on page 1
+
+    await act(async () => {
+      next.click();
+    });
+    await act(async () => {});
+    const calledWithPageTwo = fetchMock.mock.calls.some(
+      ([url]) => String(url).includes("/api/users/invites") && String(url).includes("page=2"),
+    );
+    expect(calledWithPageTwo).toBe(true);
+    // Page 2 shows rows 11..20.
+    expect(container.textContent).toContain("inv11@example.com");
+    expect(container.textContent).not.toContain("inv1@example.com");
+    expect(container.querySelector<HTMLButtonElement>("[data-invite-prev-page]")!.disabled).toBe(false);
+
+    // pageSize switch resets to page 1 and narrows the slice.
+    await act(async () => {
+      const size = container.querySelector<HTMLSelectElement>("[data-invite-page-size]")!;
+      size.value = "50";
+      size.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => {});
+    expect(container.querySelectorAll("[data-invite-table] tbody tr").length).toBe(25);
+    expect(container.querySelector("[data-invite-pagination]")).toBeNull(); // single page now
   });
 });
