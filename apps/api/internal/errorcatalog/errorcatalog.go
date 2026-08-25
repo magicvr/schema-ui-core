@@ -197,6 +197,14 @@ var Catalog = map[string]Entry{
 	"EMAIL_CODE_EXPIRED":    {"error.emailCodeExpired", "verification code expired; request a new one", "验证码已过期，请重新获取"},
 	"EMAIL_RESEND_COOLDOWN": {"error.emailResendCooldown", "please wait before requesting another code", "请求过于频繁，请稍后再试"},
 	"EMAIL_SEND_FAILED":     {"error.emailSendFailed", "the verification email could not be sent", "验证邮件发送失败"},
+
+	// workspace-019 R2 (GOAL-003 D-001 §6): self-recovery codes. Unknown
+	// account / no challenge / wrong code deliberately share ONE code so the
+	// pre-auth surface stays enumeration-neutral.
+	"INVALID_RECOVERY_BODY":            {"error.invalidRecoveryBody", "body must be JSON with account, code and newPassword", "请求体必须是包含 account、code 和 newPassword 的 JSON"},
+	"RECOVERY_CODE_INVALID":            {"error.recoveryCodeInvalid", "recovery code is invalid", "恢复码无效"},
+	"RECOVERY_CODE_EXPIRED":            {"error.recoveryCodeExpired", "recovery code expired; request a new one", "恢复码已过期，请重新获取"},
+	"RECOVERY_SECOND_FACTOR_REQUIRED":  {"error.recoverySecondFactorRequired", "your second factor is required to finish recovery", "完成恢复需要第二因素验证码"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

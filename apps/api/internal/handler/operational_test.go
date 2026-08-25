@@ -101,7 +101,9 @@ func TestOperationalGateCoversAllMutationMethods(t *testing.T) {
 }
 
 func TestOperationalGateAllowsEveryRecoveryPath(t *testing.T) {
-	paths := []string{"/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/mfa/verify", "/api/account/password", "/api/mfa/enroll", "/api/mfa/confirm", "/api/mfa/disable", "/api/mfa/recovery/rotate"}
+	paths := []string{"/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/mfa/verify", "/api/account/password", "/api/mfa/enroll", "/api/mfa/confirm", "/api/mfa/disable", "/api/mfa/recovery/rotate",
+		// workspace-019 R2: self-recovery stays reachable in maintenance mode.
+		"/api/auth/recovery/start", "/api/auth/recovery/complete"}
 	mux := http.NewServeMux()
 	for _, path := range paths {
 		mux.Handle("POST "+path, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

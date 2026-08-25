@@ -113,6 +113,11 @@ var frozenDomainCodes = []string{
 	"EMAIL_INVALID", "EMAIL_TAKEN", "EMAIL_NOT_PENDING",
 	"EMAIL_CODE_INVALID", "EMAIL_CODE_EXPIRED", "EMAIL_RESEND_COOLDOWN",
 	"EMAIL_SEND_FAILED",
+	// workspace-019 R2 (GOAL-003 D-001 §6): self-recovery codes. Unknown
+	// account / no challenge / wrong code share ONE uniform invalid code so
+	// the pre-auth surface stays enumeration-neutral.
+	"INVALID_RECOVERY_BODY", "RECOVERY_CODE_INVALID", "RECOVERY_CODE_EXPIRED",
+	"RECOVERY_SECOND_FACTOR_REQUIRED",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

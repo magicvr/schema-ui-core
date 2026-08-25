@@ -386,6 +386,16 @@ func newMuxWithExtraProviders(
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
+	// workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery start/complete
+	// pair is a CENTRAL pre-auth surface (same layer as login) so every
+	// profile with core.auth-session gets it. The completion second-factor
+	// gate reuses the MFA service; admin.mfa off keeps a TRUE nil interface,
+	// which means no second factor is demanded (GOAL-002 D-001 §1).
+	var recoveryGate handler.RecoverySecondFactor
+	if plan.HasModule("admin.mfa") {
+		recoveryGate = mfaService
+	}
+	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id) and admin.file-library.

@@ -333,6 +333,21 @@ func (s *Service) requireActiveSecondFactor(userID, code, recoveryCode string, n
 	return nil
 }
 
+// VerifySecondFactor validates a TOTP code or consumes a one-time recovery
+// code against an active enrollment WITHOUT a login proof (workspace-019 R2 ·
+// GOAL-003 D-001 §3): the self-recovery completion gate. Unlike the login
+// path there is no mfa_proofs row — the caller's recovery challenge carries
+// the guess budget (≤5 failed attempts void it), so this check stays a thin
+// export of the self-service step-up semantics. A typed-nil receiver fails
+// closed (the composition root passes a true nil interface when admin.mfa is
+// off, but the guard mirrors Service.Required against future misuse).
+func (s *Service) VerifySecondFactor(userID, code, recoveryCode string, now time.Time) error {
+	if s == nil || s.repo == nil {
+		return ErrNotEnrolled
+	}
+	return s.requireActiveSecondFactor(userID, code, recoveryCode, now)
+}
+
 // consumeRecoveryCode bcrypt-compares the code against the stored hash set and
 // removes the matched hash (one-time consumption). W9 F-006: the rewrite is a
 // guarded compare-and-set on updated_at — a concurrent redemption of another

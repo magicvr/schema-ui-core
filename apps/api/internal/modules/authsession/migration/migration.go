@@ -187,6 +187,33 @@ var postgresEmailVerificationDDL = []string{
 )`,
 }
 
+// passwordRecoveryDDL (workspace-019 R2 · GOAL-003 D-001 §1): one active
+// self-recovery challenge per user — same shape as the email verification
+// table (0055) so the frozen numbers (TTL 10 min / cooldown 60 s / 5 failed
+// attempts void) reuse the identical bookkeeping. PK on user_id makes the
+// upsert an idempotent replace, ON DELETE CASCADE cleans up with the account.
+// Times are unix seconds; INTEGER/BIGINT split follows the 0055 precedent,
+// so this migration ships paired dialect bodies (not portable).
+var passwordRecoveryDDL = []string{
+	`CREATE TABLE password_recovery_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    INTEGER NOT NULL,
+  sent_at       INTEGER NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+var passwordRecoveryPGDDL = []string{
+	`CREATE TABLE password_recovery_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    BIGINT NOT NULL,
+  sent_at       BIGINT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
@@ -425,6 +452,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateEmailVerification,
 			ApplyPostgres:        migrateEmailVerificationPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "password_recovery_challenges"},
+			Version:              56,
+			Name:                 "password_recovery_challenges",
+			Checksum:             kernel.MigrationChecksum(passwordRecoveryDDL, "0056:password-recovery-challenges:v1"),
+			Apply:                migratePasswordRecovery,
+			ApplyPostgres:        migratePasswordRecoveryPG,
+		},
 	}
 }
 
@@ -524,6 +559,24 @@ func migrateEmailVerificationPG(tx kernel.Tx) error {
 	for _, stmt := range postgresEmailVerificationDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create email verification challenges (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migratePasswordRecovery(tx kernel.Tx) error {
+	for _, stmt := range passwordRecoveryDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create password recovery challenges: %w", err)
+		}
+	}
+	return nil
+}
+
+func migratePasswordRecoveryPG(tx kernel.Tx) error {
+	for _, stmt := range passwordRecoveryPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create password recovery challenges (postgres): %w", err)
 		}
 	}
 	return nil

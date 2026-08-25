@@ -61,15 +61,19 @@ func isBusinessMutation(r *http.Request) bool {
 // sync with the registered recovery routes; ordinary auth-adjacent mutations
 // must remain gated.
 var operationalRecoveryPaths = map[string]struct{}{
-	"/api/auth/login":          {},
-	"/api/auth/refresh":        {},
-	"/api/auth/logout":         {},
-	"/api/auth/mfa/verify":     {},
-	"/api/account/password":    {},
-	"/api/mfa/enroll":          {},
-	"/api/mfa/confirm":         {},
-	"/api/mfa/disable":         {},
-	"/api/mfa/recovery/rotate": {},
+	"/api/auth/login":                {},
+	"/api/auth/refresh":              {},
+	"/api/auth/logout":               {},
+	"/api/auth/mfa/verify":           {},
+	"/api/account/password":          {},
+	"/api/mfa/enroll":                {},
+	"/api/mfa/confirm":               {},
+	"/api/mfa/disable":               {},
+	"/api/mfa/recovery/rotate":       {},
+	// workspace-019 R2: self-recovery IS the session-recovery path — it must
+	// stay reachable in maintenance/read-only modes (GOAL-003 D-001 §2).
+	"/api/auth/recovery/start":     {},
+	"/api/auth/recovery/complete":  {},
 }
 
 func operationalAllowlisted(r *http.Request) bool {
