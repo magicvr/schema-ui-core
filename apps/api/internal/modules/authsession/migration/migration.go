@@ -187,6 +187,39 @@ var postgresEmailVerificationDDL = []string{
 )`,
 }
 
+// loginFailuresDDL (GOAL-014 D-002 · W13 F-007 targeted-DoS fix): layered
+// login-lockout state. One row per (account | client identity): a lock on
+// the pair denies THAT source only — third-party failures can no longer
+// lock the legitimate user out of their own account. The users table keeps
+// the GLOBAL consecutive-failure ceiling (threshold raised to
+// auth.LockThresholdFailures); last_login_failure_at gives that counter a
+// 24h sliding restart so stale failures decay instead of accumulating
+// forever. Times are unix seconds; INTEGER/BIGINT split follows 0055/0056,
+// so this migration ships paired dialect bodies (not portable).
+var loginFailuresDDL = []string{
+	`CREATE TABLE login_failures (
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ip          TEXT NOT NULL,
+  fail_count  INTEGER NOT NULL DEFAULT 0,
+  locked_until INTEGER NOT NULL DEFAULT 0,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (user_id, ip)
+)`,
+	`ALTER TABLE users ADD COLUMN last_login_failure_at INTEGER NOT NULL DEFAULT 0`,
+}
+
+var postgresLoginFailuresDDL = []string{
+	`CREATE TABLE login_failures (
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ip           TEXT NOT NULL,
+  fail_count   INTEGER NOT NULL DEFAULT 0,
+  locked_until BIGINT NOT NULL DEFAULT 0,
+  updated_at   BIGINT NOT NULL,
+  PRIMARY KEY (user_id, ip)
+)`,
+	`ALTER TABLE users ADD COLUMN last_login_failure_at BIGINT NOT NULL DEFAULT 0`,
+}
+
 // passwordRecoveryDDL (workspace-019 R2 · GOAL-003 D-001 §1): one active
 // self-recovery challenge per user — same shape as the email verification
 // table (0055) so the frozen numbers (TTL 10 min / cooldown 60 s / 5 failed
@@ -559,6 +592,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateUserInvites,
 			ApplyPostgres:        migrateUserInvitesPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "login_failures"},
+			Version:              61,
+			Name:                 "login_failures",
+			Checksum:             kernel.MigrationChecksum(loginFailuresDDL, "0061:login-failures:v1"),
+			Apply:                migrateLoginFailures,
+			ApplyPostgres:        migrateLoginFailuresPG,
+		},
 	}
 }
 
@@ -721,6 +762,24 @@ func migrateUserInvitesPG(tx kernel.Tx) error {
 	for _, stmt := range userInvitesPGDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create user invites (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateLoginFailures(tx kernel.Tx) error {
+	for _, stmt := range loginFailuresDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create login failures: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateLoginFailuresPG(tx kernel.Tx) error {
+	for _, stmt := range postgresLoginFailuresDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create login failures (postgres): %w", err)
 		}
 	}
 	return nil

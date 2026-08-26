@@ -172,10 +172,13 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 
 // UnlockUser manually clears the account-lock window and the consecutive
 // failure counter (C-11 lock state). It does not touch the enabled flag.
+// GOAL-014 D-002: an admin unlock also clears every per-(account|source)
+// pair row — otherwise a source locked before the unlock would keep denying
+// that client after the global state was wiped.
 func (r *Repository) UnlockUser(id string, now time.Time) (*User, error) {
 	err := r.withTx("unlock user", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
-			`UPDATE users SET locked_until = 0, failed_login_count = 0, updated_at = ? WHERE id = ?`,
+			`UPDATE users SET locked_until = 0, failed_login_count = 0, last_login_failure_at = 0, updated_at = ? WHERE id = ?`,
 			now.Unix(), id)
 		if err != nil {
 			return fmt.Errorf("unlock user: %w", err)
@@ -192,6 +195,11 @@ func (r *Repository) UnlockUser(id string, now time.Time) (*User, error) {
 			if exists == 0 {
 				return ErrNotFound
 			}
+		}
+		if _, err := tx.Exec(context.Background(),
+			`DELETE FROM login_failures WHERE user_id = ?`, id,
+		); err != nil {
+			return fmt.Errorf("clear source lock rows: %w", err)
 		}
 		return nil
 	})

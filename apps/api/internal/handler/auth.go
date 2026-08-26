@@ -120,7 +120,10 @@ func (h *authHandler) login() http.HandlerFunc {
 				return
 			}
 		}
-		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC())
+		// GOAL-014 D-002: the real client identity feeds the per-(account|
+		// source) lockout bucket — third-party failures against a known
+		// username no longer lock the legitimate user's own logins.
+		access, refresh, user, err := h.a.Login(creds.Username, creds.Password, h.now().UTC(), loginClientIP(r))
 		// W7 F-009: locked / disabled accounts surface the SAME 401
 		// UNAUTHORIZED envelope as an unknown user / wrong password. The
 		// distinct 423/403 previously let an attacker distinguish "exists and

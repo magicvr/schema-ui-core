@@ -54,11 +54,13 @@ func TestAuthLoginUnknownUser(t *testing.T) {
 	}
 }
 
-// TestAccountLockLifecycle covers the GOAL-004 S4-6 production lock source,
-// hardened per W7 F-009: the login surface no longer distinguishes a locked
-// account from an unknown user — both are a generic 401 UNAUTHORIZED so an
-// attacker cannot enumerate account existence via the lock/disable codes. The
-// underlying lock still opens after 5 failures and still expires.
+// TestAccountLockLifecycle covers the production login-lock source (GOAL-004
+// S4-6 → GOAL-014 D-002 layered model): the login surface never distinguishes
+// a locked account from an unknown user — both are a generic 401
+// UNAUTHORIZED so an attacker cannot enumerate account existence via
+// lock/disable codes. Repeated failures from ONE source open the
+// per-(account|source) lock; correct-password logins from that source answer
+// the same generic envelope, and the lock expires automatically.
 func TestAccountLockLifecycle(t *testing.T) {
 	env := newAuthTestEnv(t)
 
@@ -69,8 +71,9 @@ func TestAccountLockLifecycle(t *testing.T) {
 			t.Fatalf("failure status = %d, want 401: %v", code, body)
 		}
 	}
-	// The 5th failure opened the lock: even the correct password is now a
-	// generic 401 UNAUTHORIZED (W7 F-009 — no distinct lock/disable oracle).
+	// The 5th failure opened the SOURCE lock: even the correct password is
+	// now a generic 401 UNAUTHORIZED (W7 F-009 — no distinct lock/disable
+	// oracle).
 	code, body := loginBody(t, env, testSeedUsername, testSeedPassword)
 	if code != http.StatusUnauthorized {
 		t.Fatalf("locked login status = %d, want 401: %v", code, body)
@@ -79,20 +82,26 @@ func TestAccountLockLifecycle(t *testing.T) {
 		t.Fatalf("error = %v, want UNAUTHORIZED", body["error"])
 	}
 
-	// Expiry: move the clock past the lock window and the account recovers.
+	// Expiry: move past the lock window and the SAME source recovers.
 	u, err := env.authRepository.UserByUsername(testSeedUsername)
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := time.Unix(u.LockedUntil+1, 0)
-	access, refresh, _, err := env.a.Login(testSeedUsername, testSeedPassword, now)
+	// httptest.NewRequest defaults RemoteAddr to 192.0.2.1 — the source the
+	// failures above were recorded under.
+	const httpSourceIP = "192.0.2.1"
+	if locked, err := env.authRepository.LoginLockedFor(u.ID, httpSourceIP, time.Now()); err != nil || !locked {
+		t.Fatalf("source lock expected open: locked=%v err=%v", locked, err)
+	}
+	afterWindow := time.Now().Add(auth.LockWindow + time.Minute)
+	access, refresh, _, err := env.a.Login(testSeedUsername, testSeedPassword, afterWindow, httpSourceIP)
 	if err != nil {
 		t.Fatalf("login after expiry: %v", err)
 	}
 	if access == "" || refresh == "" {
 		t.Fatal("tokens missing after lock expiry")
 	}
-	// A successful login resets the failure counter.
+	// A successful login resets every failure counter.
 	u2, err := env.authRepository.UserByUsername(testSeedUsername)
 	if err != nil {
 		t.Fatal(err)
@@ -102,31 +111,31 @@ func TestAccountLockLifecycle(t *testing.T) {
 	}
 }
 
-// TestAccountLockRevokesSessions: opening the lock revokes live refresh
-// tokens — a locked account must not keep rotating sessions.
-func TestAccountLockRevokesSessions(t *testing.T) {
+// GOAL-014 D-002 (W13 F-007): a per-(account|source) lock from repeated
+// failures denies THAT client only and — deliberately — does NOT revoke any
+// session: forced logout was the weaponizable edge of the old global-lock
+// model. The pre-existing refresh token stays live; rotation during the
+// window is denied by the locked-account check, not by revocation.
+func TestAccountSourceLockKeepsSessions(t *testing.T) {
 	env := newAuthTestEnv(t)
 	_, refresh, _, err := env.a.Login(testSeedUsername, testSeedPassword, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
 	for range 5 {
-		_, body := loginBody(t, env, testSeedUsername, "wrong")
-		_ = body
+		loginBody(t, env, testSeedUsername, "wrong")
 	}
-	u, err := env.authRepository.UserByUsername(testSeedUsername)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if u.LockedUntil == 0 {
-		t.Fatal("expected a lock window")
+	// Same-source correct-password login is denied (the pair lock).
+	code, _ := loginBody(t, env, testSeedUsername, testSeedPassword)
+	if code != http.StatusUnauthorized {
+		t.Fatalf("locked-source login = %d, want 401 (W7 F-009 envelope)", code)
 	}
 	rt, err := env.authRepository.RefreshTokenByHash(auth.HashToken(refresh))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rt.RevokedAt == nil {
-		t.Fatal("refresh token should be revoked when the lock opens")
+	if rt.RevokedAt != nil {
+		t.Fatal("source lock must NOT revoke the live refresh token (GOAL-014 D-002 §3)")
 	}
 }
 

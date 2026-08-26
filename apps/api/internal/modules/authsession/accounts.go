@@ -167,20 +167,37 @@ func (r *Repository) FeaturesForUser(userID string) (map[string]bool, error) {
 	return features, err
 }
 
-// RecordLoginFailure bumps the user's consecutive-failure counter and, past
-// the threshold, opens a lock window ending at lockedUntil (GOAL-004 S4-6).
-// It reports whether the lock opened on this failure.
+// globalFailureWindow is the sliding restart for the GLOBAL consecutive-
+// failure counter (GOAL-014 D-002): failures older than 24h no longer feed
+// the ceiling. Duplicated as a duration literal mirror — auth owns the
+// canonical constants and imports this module (no reverse import).
+const globalFailureWindow = 24 * time.Hour
+
+// RecordLoginFailure bumps the user's GLOBAL consecutive-failure counter and,
+// past the threshold, opens a lock window ending at lockedUntil. It reports
+// whether the lock opened on this failure.
 //
 // W9 F-004: the increment is a single atomic UPDATE (failed_login_count + 1)
 // whose row lock serializes concurrent failures before the threshold read in
 // the same transaction. The previous SELECT-then-UPDATE lost increments under
 // postgres READ COMMITTED, delaying the lockout threshold.
+//
+// GOAL-014 D-002: this counter is now the GLOBAL ceiling only (threshold
+// raised at the auth layer from 5 to 100) with a 24h sliding restart via
+// last_login_failure_at; the per-(account|source) lock lives in
+// login_failures (RecordLoginFailureFor). Opening THIS lock no longer
+// revokes refresh tokens anywhere in the codebase — forced logout was the
+// weaponizable edge of the old model.
 func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUntil time.Time, now time.Time) (bool, error) {
 	locked := false
 	err := r.withTx("record login failure", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
-			`UPDATE users SET failed_login_count = failed_login_count + 1, updated_at = ? WHERE id = ?`,
-			now.Unix(), userID,
+			`UPDATE users SET failed_login_count =
+			   CASE WHEN last_login_failure_at < ? THEN 1 ELSE failed_login_count + 1 END,
+			   last_login_failure_at = ?,
+			   updated_at = ?
+			 WHERE id = ?`,
+			now.Add(-globalFailureWindow).Unix(), now.Unix(), now.Unix(), userID,
 		)
 		if err != nil {
 			return fmt.Errorf("record login failure: %w", err)
@@ -200,8 +217,8 @@ func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUnti
 		// UPDATE keeps concurrent failures ordered behind this one.
 		locked = true
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE users SET failed_login_count = 0, locked_until = ?, updated_at = ? WHERE id = ?`,
-			lockedUntil.Unix(), now.Unix(), userID,
+			`UPDATE users SET failed_login_count = 0, locked_until = ?, last_login_failure_at = ?, updated_at = ? WHERE id = ?`,
+			lockedUntil.Unix(), now.Unix(), now.Unix(), userID,
 		); err != nil {
 			return fmt.Errorf("open lock window: %w", err)
 		}
@@ -210,12 +227,12 @@ func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUnti
 	return locked, err
 }
 
-// ResetLoginFailures clears the consecutive-failure counter and lock window on
-// a successful login.
+// ResetLoginFailures clears the GLOBAL consecutive-failure counter and lock
+// window on a successful login.
 func (r *Repository) ResetLoginFailures(userID string, now time.Time) error {
 	return r.withTx("reset login failures", func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE users SET failed_login_count = 0, locked_until = 0, updated_at = ? WHERE id = ?`,
+			`UPDATE users SET failed_login_count = 0, locked_until = 0, last_login_failure_at = 0, updated_at = ? WHERE id = ?`,
 			now.Unix(), userID,
 		); err != nil {
 			return fmt.Errorf("reset login failures: %w", err)
