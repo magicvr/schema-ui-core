@@ -17,8 +17,9 @@ version: 0.1.0
 | E-001 | 2026-08-26 | 立项与 R2 实施方案冻结 | recorded | `02-execution/E-001-r2-establishment.md` |
 | E-002 | 2026-08-26 | C1 生效时区解析器实施（timezone.ts + 15 快测；i18n 全量 79/79） | done | `02-execution/E-002-r2-c1-timezone-resolver.md` |
 | E-003 | 2026-08-26 | C2/C3/C4 实施（头部时区选择 + 站点默认接入 + 统一语义接线；10 快测；web 全量 1155/1155） | done | `02-execution/E-003-r2-c2-c3-c4-timezone-wiring.md` |
+| E-004 | 2026-08-26 | 关门自审 A-001 落盘（self · pass · required=0） | recorded | `03-audit/A-001-r2-timezone-semantics-closeout-self.md` |
 
 ## 推进状态
 
-- C1～C4 **done**（4/5）；C5（关门自审）待关门。
-- 下一步：关门自审 A-001（self）→ 用户确认关门 → R3 立项（GOAL-004 数字/货币语义）。
+- C1～C4 **done**；C5 **进行中**（A-001 已落盘，待用户确认关门）。
+- 下一步（用户确认后）：GOAL-003 → `done`（R2 关门）→ 立项 GOAL-004（R3 数字/货币语义）。
