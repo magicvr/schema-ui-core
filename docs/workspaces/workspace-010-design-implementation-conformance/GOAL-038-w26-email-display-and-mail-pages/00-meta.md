@@ -5,8 +5,8 @@ status: active
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-001-design-implementation-conformance
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 1/4
 ---
 
 # GOAL-038 · W26 · 邮箱身份展示与邮件面页面化对齐
@@ -38,21 +38,21 @@ progress: 0/4
 ## 路线图（分母 = 4）
 
 ```text
-S1 方案冻结   → D-001（三问题修复设计 + 全渠道出站记录表结构演进 + 权限复用方式；I-001～I-003 verified）
+S1 方案冻结   → D-001（三问题修复设计 + 全渠道出站记录表结构演进 + 权限复用方式；I-001～I-003 verified）✅ 2026-08-26
 S2 实施       → C1/C2/C3 落地（后端读面/记录面 + 页面/导航/schema/i18n + 契约测试）
 S3 回归       → Go 全量 + vitest/tsc/build + go 消费判定落盘
 S4 关门       → A-001 self 审计 pass + goal-tree/workspace 同步
 ```
 
-`progress: 0/4` 由上述 4 个显式检查点等权派生；仅为展示，不放行阶段、不关闭 finding、不覆盖信息门禁。
+`progress: 1/4` 由上述 4 个显式检查点等权派生；仅为展示，不放行阶段、不关闭 finding、不覆盖信息门禁。
 
 ## 信息需求登记（P-005）
 
 | 编号 | 问题 | 级别 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 证据 / 结论 |
 |------|------|------|----------|--------------|-----------------|------|-------------|
-| I-001 | 全渠道出站记录的存储演进方式（`mail_outbox` 加 channel/投递状态列 vs 新表）+ 存量 mock 记录兼容 + 双方言（sqlite/pg）DDL 与投递状态取值集 | required | S2 方案冻结 | S1 | 迁移设计写入 D-001；核对既有 ALTER 先例（0053/0054） | open | E-001 已锚定现状（0051 表结构、OutboxSink 单渠道） |
-| I-002 | 两个独立页面的导航挂载与权限复用方式（模块 Pages/Navigation 贡献、菜单权限级联沿用 `settings.read`） | required | S2 方案冻结 | S1 | 勘察 navigation 贡献先例（users-invites 子页、data-permission-scopes）并写入 D-001 | open | E-001 锚定 admin.users/admin.account 贡献清单形态 |
-| I-003 | 用户列表批量返回邮箱状态的读取路径（避免逐行 N+1；ListUsers 联查或批量 EmailIdentityState） | required | S2 方案冻结 | S1 | 存储层勘察后写入 D-001 | open | E-001 锚定 userToMap 缺口与 EmailIdentityState 现有签名 |
+| I-001 | 全渠道出站记录的存储演进方式（`mail_outbox` 加 channel/投递状态列 vs 新表）+ 存量 mock 记录兼容 + 双方言（sqlite/pg）DDL 与投递状态取值集 | required | S2 方案冻结 | S1 | 迁移设计写入 D-001；核对既有 ALTER 先例（0053/0054） | closed（verified 2026-08-26） | D-001 §2.1：0060 portable additive ALTER，存量行默认值即真实语义；取值集 {mock,resend,smtp}×{delivered,sent,failed} 冻结 |
+| I-002 | 两个独立页面的导航挂载与权限复用方式（模块 Pages/Navigation 贡献、菜单权限级联沿用 `settings.read`） | required | S2 方案冻结 | S1 | 勘察 navigation 贡献先例（users-invites 子页、data-permission-scopes）并写入 D-001 | closed（verified 2026-08-26） | D-001 §2.2：admin.settings 贡献 mail/mail-outbox 两页 + menu_mail/menu_mail_outbox（Permission=settings.read 复用，Visibility=PolicyAdmin）；provider/profile 描述符 lockstep |
+| I-003 | 用户列表批量返回邮箱状态的读取路径（避免逐行 N+1；ListUsers 联查或批量 EmailIdentityState） | required | S2 方案冻结 | S1 | 存储层勘察后写入 D-001 | closed（verified 2026-08-26） | D-001 §1：users 表 0054 已有 email/email_status 列，ListUsers 投影直接加两列，同查询完成无 N+1 |
 
 ## 边界与审计声明
 
