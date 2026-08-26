@@ -29,6 +29,11 @@ const legacyLoginSource = "-"
 // here would cycle).
 const lockCounterWindow = 15 * time.Minute
 
+// errSourceInsertRace marks the concurrent-first-failure INSERT conflict: the
+// losing transaction must retry in a FRESH one (a failed INSERT aborts its
+// own postgres transaction — W9 F-001 precedent).
+var errSourceInsertRace = errors.New("authsession: login failure insert race")
+
 func normalizeLoginSource(ip string) string {
 	trimmed := strings.TrimSpace(ip)
 	if trimmed == "" {
@@ -43,6 +48,17 @@ func normalizeLoginSource(ip string) string {
 // whose last move is older than the lock window restarts at 1 instead of
 // accumulating forever. Mirrors W9 F-004's atomic-increment discipline.
 func (r *Repository) RecordLoginFailureFor(userID, ip string, threshold int, lockedUntil time.Time, now time.Time) (bool, error) {
+	locked, err := r.recordLoginFailureForOnce(userID, ip, threshold, lockedUntil, now)
+	if errors.Is(err, errSourceInsertRace) {
+		// Concurrent first failure from the same source won the INSERT: the
+		// loser's transaction was aborted (postgres), so retry the increment
+		// in a fresh transaction — never inside the aborted one.
+		return r.recordLoginFailureForOnce(userID, ip, threshold, lockedUntil, now)
+	}
+	return locked, err
+}
+
+func (r *Repository) recordLoginFailureForOnce(userID, ip string, threshold int, lockedUntil time.Time, now time.Time) (bool, error) {
 	source := normalizeLoginSource(ip)
 	locked := false
 	err := r.withTx("record login failure for source", func(tx kernel.Tx) error {
@@ -63,6 +79,9 @@ func (r *Repository) RecordLoginFailureFor(userID, ip string, threshold int, loc
 				 VALUES (?, ?, 1, 0, ?)`,
 				userID, source, now.Unix(),
 			); ierr != nil {
+				if kernel.IsUniqueViolation(ierr) {
+					return errSourceInsertRace
+				}
 				return fmt.Errorf("insert source failure: %w", ierr)
 			}
 			return nil
