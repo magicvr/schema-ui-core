@@ -24,7 +24,7 @@ version: 0.1.0
 2. **authsession 仓储**（新文件 `accounts_lock_source.go`）：`RecordLoginFailureFor`（原子 UPSERT+滑动窗：计数器上次移动早于锁窗则重置为 1）、`LoginLockedFor`（存储错误 fail-closed）、`ResetLoginFailuresFor`（成功登录清除该账号全部来源行）。既有全局方法 `RecordLoginFailure`/`ResetLoginFailures` 接入 last_login_failure_at 滑动语义。`UnlockUser` 同步清除来源行（管理员解锁必须解除全部锁定面——首轮全量回归暴露的实现缺口，已修）。
 3. **auth 核心**（`internal/auth/auth.go`）：`Login` 增加可选 clientIP（variadic，缺省落 "-" 单桶以保持既有测试语义）；校验顺序 = 用户存在（dummy burn）→ 来源对锁 → 全局锁 → disabled → 密码。失败路径双记账（来源桶阈值 `IPSourceLockThreshold=5` / 全局天花板 `LockThresholdFailures=100`，24h 滑动）；**移除失败触发的 RevokeAllRefreshTokensForUser**；OnLockOpened 仅在全局熔断开启时触发（来源锁静默——防止攻击者刷受害者的通知中心）。生产调用点 `handler/auth.go` 传入 `loginClientIP(r)`。
 4. **测试**：新增 `lockout_source_test.go` 三组缺陷形状回归锁（来源隔离：他源失败不影响本源登录；全局天花板分布式制动 + OnLockOpened 恰一次 + 锁窗自愈；失败不再吊销刷新令牌——双令牌对照）。既有四条旧契约测试按 D-002 重写/修正：TestAccountLockLifecycle（过期断言改走来源对锁）、TestAccountLockRevokesSessions→TestAccountSourceLockKeepsSessions（不吊销为新契约）、两个通知测试改驱动全局路径。
-5. **验证**：go vet ./... 0 输出；受影响包（handler/auth/authsession）全绿后全量复跑确认。
+5. **验证**：go vet ./... 0 输出；受影响包（handler/auth/authsession）全绿后全量复跑确认。**补充（同日）**：真实 Postgres 方言复核——`TestAuthsessionPostgresApplyIntegration`、`TestFullCatalogPostgresBootstrapIntegration` 等 PG 门控集成测试全绿（0061 成对 DDL 在 PG 上实际应用）；另对 `RecordLoginFailureFor` 首插并发竞态补兜底（唯一冲突→新事务重试，`cf5675f1`）。
 
 **路线图状态**：S1 ✅ S2 ✅ S3 ✅；下一阶段 S4 全量回归 + checkpoint。
 
