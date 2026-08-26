@@ -22,12 +22,12 @@ progress: 0/5
 | # | 检查点 | 状态 |
 |---|--------|------|
 | C1 | 生效时区解析器：L1 `schema-ui:timezone` → L2 Intl 探测 → L3 `siteTimezone` → L4 auto；无效 IANA 降级；快测覆盖 | **done**（2026-08-26 · `apps/web/src/i18n/timezone.ts` + 15 快测） |
-| C2 | 用户级覆盖 UI：头部 locale 通道旁时区选择；`auto` = 移除 key；登录/登出不清除；快测 | 待实施 |
-| C3 | 站点默认接入：`/api/branding.siteTimezone` → L3；Localization tab 字段核对（已有字段，不改 schema） | 待实施 |
-| C4 | 统一语义接线：`formatDate`/时间输入使用生效时区（同一时刻双向一致、无偏移）；快测 | 待实施 |
+| C2 | 用户级覆盖 UI：头部 locale 通道旁时区选择；`auto` = 移除 key；登录/登出不清除；快测 | **done**（2026-08-26 · `timezone-switcher.tsx` 挂载头部；4 快测） |
+| C3 | 站点默认接入：`/api/branding.siteTimezone` → L3；Localization tab 字段核对（已有字段，不改 schema） | **done**（2026-08-26 · runtime `fetchedSiteTimezone`；字段未动） |
+| C4 | 统一语义接线：`formatDate`/时间输入使用生效时区（同一时刻双向一致、无偏移）；快测 | **done**（2026-08-26 · `formatDate` 默认注入 + 显式覆盖；6 快测） |
 | C5 | 关门自审 A-001（self）+ 用户确认 → `status: done` | 待关门 |
 
-`progress` = 1/5（2026-08-26：C1 done）。
+`progress` = 4/5（2026-08-26：C1～C4 done；C5 待关门）。
 
 ## 成功标准
 

@@ -3,6 +3,8 @@
   "locale.name.en-US": "English",
   "locale.switcher.label": "Language",
   "locale.switcher.auto": "Auto (follow browser)",
+  "timezone.switcher.label": "Timezone",
+  "timezone.switcher.auto": "Auto (system)",
   "app.boot.checkingSession": "Checking session…",
   "manifest.title.overview": "Overview",
   "manifest.title.admin-list-batch": "List + batch",

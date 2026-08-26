@@ -29,6 +29,15 @@ import {
   type Locale,
   type LocalePreference,
 } from "./locale";
+import {
+  AUTO_TIMEZONE,
+  detectBrowserTimezone,
+  normalizeTimezonePreference,
+  readStoredTimezone,
+  resolveEffectiveTimezone,
+  writeStoredTimezone,
+  type TimezonePreference,
+} from "./timezone";
 export const LOCALE_STORAGE_KEY = "schema-ui:locale";
 
 export function readStoredLocale(): string | null {
@@ -89,9 +98,15 @@ export interface I18nState {
   preference: LocalePreference;
   /** Sets the user preference and persists it (localStorage single channel). */
   setPreference: (preference: LocalePreference) => void;
+  /** Effective timezone (IANA name or "auto" per contract §2 / L1–L4). */
+  timezone: string;
+  /** User timezone preference; "auto" defers to session/site defaults. */
+  timezonePreference: TimezonePreference;
+  /** Sets the user timezone preference and persists it (single channel). */
+  setTimezonePreference: (preference: TimezonePreference) => void;
   /** Translate a catalog key with the effective locale. */
   t: (key: string, params?: MessageParams) => string;
-  /** Locale-aware date formatting. */
+  /** Locale-aware date formatting (defaults to the effective timezone). */
   formatDate: (value: Date | string | number, options?: { timeZone?: string }) => string;
   /** Locale-aware number formatting. */
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
@@ -108,10 +123,20 @@ export interface I18nProviderProps {
   /** Test seam: browser language list (defaults to navigator.languages). */
   browserLanguages?: readonly string[];
   /**
+   * Site default timezone from /api/branding (contract §2 · L3). The provider
+   * also captures it from `systemDefaultUrl` when present; this prop wins.
+   */
+  siteTimezone?: string | null;
+  /** Test seam: explicit stored timezone preference (defaults to localStorage). */
+  storedTimezone?: string | null;
+  /** Test seam: session timezone probe (defaults to detectBrowserTimezone). */
+  detectTimezone?: () => string;
+  /**
    * When set, the provider fetches this public startup endpoint once and
    * re-resolves the system default locale from `defaultLocale` (VP-007 S3:
    * the shell/login apply the site-wide default when the user has no
-   * explicit choice). Applies after the initial resolve.
+   * explicit choice) and the site default timezone from `siteTimezone`
+   * (workspace-020 · contract §2 · L3). Applies after the initial resolve.
    */
   systemDefaultUrl?: string;
 }
@@ -121,6 +146,9 @@ export function I18nProvider({
   systemDefault = null,
   stored,
   browserLanguages,
+  siteTimezone = null,
+  storedTimezone,
+  detectTimezone,
   systemDefaultUrl,
 }: I18nProviderProps) {
   const [preference, setPreferenceState] = useState<LocalePreference>(() => {
@@ -128,6 +156,11 @@ export function I18nProvider({
     return normalizePreference(raw);
   });
   const [fetchedSystemDefault, setFetchedSystemDefault] = useState<string | null>(null);
+  const [fetchedSiteTimezone, setFetchedSiteTimezone] = useState<string | null>(null);
+  const [timezonePreference, setTimezonePreferenceState] = useState<TimezonePreference>(() => {
+    const raw = storedTimezone !== undefined ? storedTimezone : readStoredTimezone();
+    return normalizeTimezonePreference(raw);
+  });
 
   const browserList = browserLanguages !== undefined ? browserLanguages : defaultBrowserLanguages();
 
@@ -145,10 +178,13 @@ export function I18nProvider({
         const record = body as Record<string, unknown> | null;
         const locale = typeof record?.defaultLocale === "string" ? record.defaultLocale : null;
         setFetchedSystemDefault(locale === "auto" ? null : locale);
+        const zone = typeof record?.siteTimezone === "string" ? record.siteTimezone : null;
+        setFetchedSiteTimezone(zone === "auto" ? null : zone);
       })
       .catch(() => {
         if (!cancelled) {
           setFetchedSystemDefault(null);
+          setFetchedSiteTimezone(null);
         }
       });
     return () => {
@@ -157,6 +193,7 @@ export function I18nProvider({
   }, [systemDefaultUrl]);
 
   const effectiveSystemDefault = systemDefault ?? fetchedSystemDefault;
+  const effectiveSiteTimezone = siteTimezone ?? fetchedSiteTimezone;
 
   const locale = useMemo<Locale>(
     () =>
@@ -166,6 +203,16 @@ export function I18nProvider({
         browserLanguages: browserList,
       }),
     [preference, effectiveSystemDefault, browserList],
+  );
+
+  const timezone = useMemo(
+    () =>
+      resolveEffectiveTimezone({
+        stored: timezonePreference === AUTO_TIMEZONE ? null : timezonePreference,
+        siteDefault: effectiveSiteTimezone,
+        detect: detectTimezone ?? detectBrowserTimezone,
+      }),
+    [timezonePreference, effectiveSiteTimezone, detectTimezone],
   );
 
   useEffect(() => {
@@ -178,12 +225,21 @@ export function I18nProvider({
     setPreferenceState(next);
   }, []);
 
+  const setTimezonePreference = useCallback((next: TimezonePreference) => {
+    writeStoredTimezone(next);
+    setTimezonePreferenceState(next);
+  }, []);
+
   const t = useMemo(() => createTranslator(locale), [locale]);
 
   const formatDate = useCallback(
-    (value: Date | string | number, options?: { timeZone?: string }) =>
-      formatDateImpl(value, locale, options ?? {}),
-    [locale],
+    (value: Date | string | number, options: { timeZone?: string } = {}) => {
+      const requested =
+        options.timeZone !== undefined && options.timeZone !== "" ? options.timeZone : null;
+      const zone = requested ?? (timezone === AUTO_TIMEZONE ? null : timezone);
+      return formatDateImpl(value, locale, zone === null ? {} : { timeZone: zone });
+    },
+    [locale, timezone],
   );
 
   const formatNumber = useCallback(
@@ -193,8 +249,28 @@ export function I18nProvider({
   );
 
   const value = useMemo<I18nState>(
-    () => ({ locale, preference, setPreference, t, formatDate, formatNumber }),
-    [locale, preference, setPreference, t, formatDate, formatNumber],
+    () => ({
+      locale,
+      preference,
+      setPreference,
+      timezone,
+      timezonePreference,
+      setTimezonePreference,
+      t,
+      formatDate,
+      formatNumber,
+    }),
+    [
+      locale,
+      preference,
+      setPreference,
+      timezone,
+      timezonePreference,
+      setTimezonePreference,
+      t,
+      formatDate,
+      formatNumber,
+    ],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

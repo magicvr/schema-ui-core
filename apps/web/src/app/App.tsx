@@ -34,6 +34,7 @@ import {
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TimezoneSwitcher } from "@/components/timezone-switcher";
 import { Breadcrumbs, resolveBreadcrumbTrail } from "@/components/ui/breadcrumbs";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
@@ -936,9 +937,11 @@ export function App({
 
           {/* T-01 (GOAL-013 D-002): user nav + signout folded into the user dropdown. */}
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
-            {/* W13 T-04: theme toggle on the left, language switcher on the right. */}
+            {/* W13 T-04: theme toggle on the left, language switcher on the right;
+                workspace-020 R2: timezone switcher shares the header locale channel. */}
             <ThemeToggle />
             <LocaleSwitcher className="inline-flex" />
+            <TimezoneSwitcher className="inline-flex" />
             {currentUser !== undefined && currentUser !== null ? (
               <NotificationBell
                 fetcher={resourceFetcher}

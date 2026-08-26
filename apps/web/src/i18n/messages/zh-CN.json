@@ -3,6 +3,8 @@
   "locale.name.en-US": "English",
   "locale.switcher.label": "语言",
   "locale.switcher.auto": "自动（跟随浏览器）",
+  "timezone.switcher.label": "时区",
+  "timezone.switcher.auto": "自动（跟随系统）",
   "app.boot.checkingSession": "正在检查会话…",
   "manifest.title.overview": "总览",
   "manifest.title.admin-list-batch": "列表 + 批量",
