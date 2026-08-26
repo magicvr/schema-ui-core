@@ -112,10 +112,11 @@ func TestAccountLockLifecycle(t *testing.T) {
 }
 
 // GOAL-014 D-002 (W13 F-007): a per-(account|source) lock from repeated
-// failures denies THAT client only and — deliberately — does NOT revoke any
-// session: forced logout was the weaponizable edge of the old global-lock
-// model. The pre-existing refresh token stays live; rotation during the
-// window is denied by the locked-account check, not by revocation.
+// failures denies THAT client's logins only and — deliberately — does NOT
+// revoke any session: forced logout was the weaponizable edge of the old
+// global-lock model. The pre-existing refresh token stays live and unrevoked.
+// (A source lock never writes users.locked_until, so Refresh is unaffected;
+// the global ceiling keeps its separate locked-account rotation denial.)
 func TestAccountSourceLockKeepsSessions(t *testing.T) {
 	env := newAuthTestEnv(t)
 	_, refresh, _, err := env.a.Login(testSeedUsername, testSeedPassword, time.Now())

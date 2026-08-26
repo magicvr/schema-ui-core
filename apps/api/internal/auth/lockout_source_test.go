@@ -32,11 +32,25 @@ func TestLoginSourceScopedLockout(t *testing.T) {
 	a := newTestAuth(t, false)
 	start := now()
 
+	// A second device holds a live session BEFORE the abuse starts.
+	_, otherDeviceRefresh, _, err := a.Login("admin", "pw", start.Add(-time.Minute))
+	if err != nil {
+		t.Fatalf("pre-abuse login: %v", err)
+	}
+
+	opened := 0
+	a.OnLockOpened = func(string) { opened++ }
+
 	failuresFrom(t, a, "10.0.0.1", IPSourceLockThreshold, start)
 
 	// The abusive source is locked.
 	if _, _, _, err := a.Login("admin", "pw", start.Add(time.Minute), "10.0.0.1"); !errors.Is(err, ErrAccountLocked) {
 		t.Fatalf("locked-source correct password = %v, want ErrAccountLocked", err)
+	}
+	// Per-source locks stay SILENT: the admin-visibility hook fires on the
+	// GLOBAL ceiling only (an attacker must not spam notifications).
+	if opened != 0 {
+		t.Fatalf("OnLockOpened fired %d times for a per-source lock, want 0", opened)
 	}
 	// Even a WRONG password from another source stays a plain credential
 	// failure (its own bucket is empty).
@@ -51,6 +65,12 @@ func TestLoginSourceScopedLockout(t *testing.T) {
 	}
 	if access == "" {
 		t.Fatal("expected an access token")
+	}
+	// Sessions are untouched by a per-source lock: the pre-abuse refresh
+	// token still rotates (source locks deny LOGINS from one source, never
+	// the account's sessions).
+	if _, _, _, err := a.Refresh(otherDeviceRefresh, start.Add(2*time.Minute)); err != nil {
+		t.Fatalf("refresh under per-source lock = %v, want success (sessions unaffected)", err)
 	}
 }
 
