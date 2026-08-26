@@ -5,8 +5,8 @@ status: active
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-001-production-hardening
-version: 0.2.0
-progress: 2/6
+version: 0.3.0
+progress: 5/6
 ---
 
 # GOAL-013 · W13 api/web 全量安全审查发现修复
@@ -21,9 +21,9 @@ progress: 2/6
 
 - [x] **S1 审计意见落盘与范围冻结** —— A-001 findings 台账（F-001～F-020 + B-1～B-4）写入 `03-audit/`；D-001 记录用户两项裁决（落位 workspace-009/W13；范围=全量）
 - [x] **S2 API 必修批** —— F-001 invite-accept 先验 token + 限流；F-002/F-003 MFA 三端点限流；F-004 Confirm 匹配步进；回归全绿（checkpoint `9da0084e`）
-- [ ] **S3 API P3 与健壮性批** —— F-005～F-013 + B-1～B-4（含逐条处置裁决：fixed / accepted-residual / overruled，留痕于 02-execution）
-- [ ] **S4 Web 前端批** —— F-014～F-016；vitest + build 回归全绿
-- [ ] **S5 部署/运维批** —— F-017～F-019 就地实施；F-020 受 I-001（TLS 终结拓扑未知，non-blocking）约束按可行范围实施
+- [x] **S3 API P3 与健壮性批** —— F-005～F-012 + B-1～B-4 全量 fixed；F-007=fixed 承载于子目标 GOAL-014、F-013=accepted-residual（用户裁决 D-002 留痕）；checkpoint `b7954235`
+- [x] **S4 Web 前端批** —— F-014～F-016 fixed + 回归锁；vitest 1128/1128 + build 全绿（checkpoint `e93f7228`）
+- [x] **S5 部署/运维批** —— F-017 密钥路径分置配置化；F-018 缓存窗口收敛；F-020 HSTS 实施、img-src https: 经用户裁决保留（D-002）
 - [ ] **S6 审计闭合与关门** —— self 审计 pass → independent 审计（项目默认 grok build · grok-4.6 · reasoning high · `/audit`）确认全部 required 闭合 → 用户书面关门
 
 ## 边界
