@@ -1,0 +1,15 @@
+---
+status: active
+created: 2026-08-26
+updated: 2026-08-26
+parent: GOAL-013-w13-api-web-security-audit
+version: 0.1.0
+---
+
+# 审计索引 · GOAL-013
+
+| 编号 | source | 日期 | scope | verdict | 文件 |
+|------|--------|------|-------|---------|------|
+| A-001 | independent | 2026-08-26 | apps/api 全量（auth/MFA/持久层/上传/邮件密钥/composition/config）+ apps/web 全量（令牌传输/host/renderer/protocol/nginx） | conditional（required 开放 = F-001～F-004 共 4 条） | [A-001-w13-security-review-findings.md](03-audit/A-001-w13-security-review-findings.md) |
+
+> 台账约定：A-00N 起递增，self 与 independent 共用序列；长文证据入 `attachments/`，本文件与 `03-audit/A-NNN-*.md` 共同构成唯一正式台账。
