@@ -194,7 +194,7 @@ func TestBrandingVp007StartupFieldsAndPatch(t *testing.T) {
 
 	// Patch the VP-007 fields across all four categories.
 	req := bearer(t, token, http.MethodPatch, "/api/settings/default",
-		`{"logoUrlLight":"/assets/logo-light.svg","logoUrlDark":"/assets/logo-dark.svg","faviconUrl":"/favicon.ico","defaultLocale":"zh-CN","siteTimezone":"Asia/Shanghai","defaultTheme":"dark"}`)
+		`{"logoUrlLight":"/assets/logo-light.svg","logoUrlDark":"/assets/logo-dark.svg","faviconUrl":"/favicon.ico","defaultLocale":"zh-CN","siteTimezone":"Asia/Shanghai","defaultCurrency":"CNY","defaultTheme":"dark"}`)
 	rr := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
@@ -202,7 +202,7 @@ func TestBrandingVp007StartupFieldsAndPatch(t *testing.T) {
 	}
 	var row map[string]any
 	_ = json.NewDecoder(rr.Body).Decode(&row)
-	if row["defaultLocale"] != "zh-CN" || row["defaultTheme"] != "dark" || row["siteTimezone"] != "Asia/Shanghai" {
+	if row["defaultLocale"] != "zh-CN" || row["defaultTheme"] != "dark" || row["siteTimezone"] != "Asia/Shanghai" || row["defaultCurrency"] != "CNY" {
 		t.Fatalf("patched row = %v", row)
 	}
 	if row["logoUrlLight"] != "/assets/logo-light.svg" || row["logoUrlDark"] != "/assets/logo-dark.svg" || row["faviconUrl"] != "/favicon.ico" {
@@ -218,7 +218,7 @@ func TestBrandingVp007StartupFieldsAndPatch(t *testing.T) {
 	}
 	var branding map[string]any
 	_ = json.NewDecoder(rr.Body).Decode(&branding)
-	if branding["defaultLocale"] != "zh-CN" || branding["defaultTheme"] != "dark" || branding["siteTimezone"] != "Asia/Shanghai" {
+	if branding["defaultLocale"] != "zh-CN" || branding["defaultTheme"] != "dark" || branding["siteTimezone"] != "Asia/Shanghai" || branding["defaultCurrency"] != "CNY" {
 		t.Fatalf("branding startup = %v", branding)
 	}
 	if branding["logoUrlLight"] != "/assets/logo-light.svg" || branding["logoUrlDark"] != "/assets/logo-dark.svg" || branding["faviconUrl"] != "/favicon.ico" {
@@ -261,6 +261,27 @@ func TestSettingsValidationAndReset(t *testing.T) {
 		t.Fatalf("bad theme = %d %s", rr.Code, rr.Body.String())
 	}
 
+	// workspace-020 R3: invalid default currency → 400 INVALID_DEFAULT_CURRENCY.
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"defaultCurrency":"cny"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest || !bodyHasCode(rr, "INVALID_DEFAULT_CURRENCY") {
+		t.Fatalf("bad currency = %d %s", rr.Code, rr.Body.String())
+	}
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"defaultCurrency":"USDX"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest || !bodyHasCode(rr, "INVALID_DEFAULT_CURRENCY") {
+		t.Fatalf("4-letter currency = %d %s", rr.Code, rr.Body.String())
+	}
+	// Valid ISO 4217 round-trips through the settings row.
+	req = bearer(t, token, http.MethodPatch, "/api/settings/default", `{"defaultCurrency":"USD"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("usd patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+
 	// Reset restores defaults and fires the config-change header.
 	req = bearer(t, token, http.MethodPost, "/api/settings/default/reset", "")
 	rr = httptest.NewRecorder()
@@ -273,7 +294,7 @@ func TestSettingsValidationAndReset(t *testing.T) {
 	}
 	var row map[string]any
 	_ = json.NewDecoder(rr.Body).Decode(&row)
-	if row["siteTitle"] != "Schema UI Core" || row["defaultLocale"] != "auto" || row["defaultTheme"] != "auto" || row["siteTimezone"] != "auto" {
+	if row["siteTitle"] != "Schema UI Core" || row["defaultLocale"] != "auto" || row["defaultTheme"] != "auto" || row["siteTimezone"] != "auto" || row["defaultCurrency"] != "" {
 		t.Fatalf("reset row = %v", row)
 	}
 	if row["logoUrlLight"] != "" || row["logoUrlDark"] != "" || row["faviconUrl"] != "" {

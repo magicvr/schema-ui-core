@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
-progress: 0/6
+version: 0.2.0
+progress: 5/6
 ---
 
 # GOAL-004 · R3 数字 / 货币语义

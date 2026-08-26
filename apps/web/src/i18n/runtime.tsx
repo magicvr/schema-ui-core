@@ -104,6 +104,12 @@ export interface I18nState {
   timezonePreference: TimezonePreference;
   /** Sets the user timezone preference and persists it (single channel). */
   setTimezonePreference: (preference: TimezonePreference) => void;
+  /**
+   * Site-wide default currency (ISO 4217 from /api/branding; "" = unset).
+   * Money consumers use this as the explicit currency before falling back
+   * to the embedded per-locale map (contract §4.1 / §4.3).
+   */
+  defaultCurrency: string;
   /** Translate a catalog key with the effective locale. */
   t: (key: string, params?: MessageParams) => string;
   /** Locale-aware date formatting (defaults to the effective timezone). */
@@ -131,6 +137,8 @@ export interface I18nProviderProps {
   storedTimezone?: string | null;
   /** Test seam: session timezone probe (defaults to detectBrowserTimezone). */
   detectTimezone?: () => string;
+  /** Site default currency (ISO 4217); test seam for /api/branding. */
+  siteDefaultCurrency?: string | null;
   /**
    * When set, the provider fetches this public startup endpoint once and
    * re-resolves the system default locale from `defaultLocale` (VP-007 S3:
@@ -149,6 +157,7 @@ export function I18nProvider({
   siteTimezone = null,
   storedTimezone,
   detectTimezone,
+  siteDefaultCurrency = null,
   systemDefaultUrl,
 }: I18nProviderProps) {
   const [preference, setPreferenceState] = useState<LocalePreference>(() => {
@@ -157,6 +166,7 @@ export function I18nProvider({
   });
   const [fetchedSystemDefault, setFetchedSystemDefault] = useState<string | null>(null);
   const [fetchedSiteTimezone, setFetchedSiteTimezone] = useState<string | null>(null);
+  const [fetchedSiteDefaultCurrency, setFetchedSiteDefaultCurrency] = useState<string | null>(null);
   const [timezonePreference, setTimezonePreferenceState] = useState<TimezonePreference>(() => {
     const raw = storedTimezone !== undefined ? storedTimezone : readStoredTimezone();
     return normalizeTimezonePreference(raw);
@@ -180,11 +190,14 @@ export function I18nProvider({
         setFetchedSystemDefault(locale === "auto" ? null : locale);
         const zone = typeof record?.siteTimezone === "string" ? record.siteTimezone : null;
         setFetchedSiteTimezone(zone === "auto" ? null : zone);
+        const currency = typeof record?.defaultCurrency === "string" ? record.defaultCurrency.trim().toUpperCase() : null;
+        setFetchedSiteDefaultCurrency(currency === "" || currency === null ? null : currency);
       })
       .catch(() => {
         if (!cancelled) {
           setFetchedSystemDefault(null);
           setFetchedSiteTimezone(null);
+          setFetchedSiteDefaultCurrency(null);
         }
       });
     return () => {
@@ -194,6 +207,7 @@ export function I18nProvider({
 
   const effectiveSystemDefault = systemDefault ?? fetchedSystemDefault;
   const effectiveSiteTimezone = siteTimezone ?? fetchedSiteTimezone;
+  const effectiveSiteDefaultCurrency = siteDefaultCurrency ?? fetchedSiteDefaultCurrency;
 
   const locale = useMemo<Locale>(
     () =>
@@ -256,6 +270,7 @@ export function I18nProvider({
       timezone,
       timezonePreference,
       setTimezonePreference,
+      defaultCurrency: effectiveSiteDefaultCurrency ?? "",
       t,
       formatDate,
       formatNumber,
@@ -267,6 +282,7 @@ export function I18nProvider({
       timezone,
       timezonePreference,
       setTimezonePreference,
+      effectiveSiteDefaultCurrency,
       t,
       formatDate,
       formatNumber,

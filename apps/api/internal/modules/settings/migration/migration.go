@@ -169,19 +169,20 @@ func Descriptors() []kernel.MigrationContribution {
 			Version:              62,
 			Name:                 "site_default_currency",
 			Checksum:             kernel.MigrationChecksum(siteCurrencyDDL, "0062:site-default-currency:v1"),
-			Apply:                migrate0052,
+			Apply:                migrate0062,
 		},
 	}
 }
 
-// siteCurrencyDDL (0052 · workspace-020 R3): site-wide default currency
+// siteCurrencyDDL (0062 · workspace-020 R3): site-wide default currency
 // (ISO 4217 code; part of the format-semantics contract GOAL-002 D-001 §4.1).
 // Empty string keeps the "unset" semantics consistent with locale/timezone.
 var siteCurrencyDDL = []string{
 	`ALTER TABLE site_settings ADD COLUMN default_currency TEXT NOT NULL DEFAULT ''`,
 }
 
-func migrate0052(tx kernel.Tx) error {
+// migrate0062 applies the default-currency column extension.
+func migrate0062(tx kernel.Tx) error {
 	for _, stmt := range siteCurrencyDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("extend site_settings currency: %w", err)

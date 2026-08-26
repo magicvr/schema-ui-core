@@ -46,6 +46,7 @@ function Harness() {
       data-testid="harness"
       data-timezone={i18n.timezone}
       data-preference={i18n.timezonePreference}
+      data-currency={i18n.defaultCurrency}
       data-date={i18n.formatDate(new Date("2026-08-09T03:00:00.000Z"))}
     >
       <button
@@ -156,6 +157,37 @@ describe("I18nProvider timezone wiring", () => {
     await act(async () => {});
     const probe = container.querySelector("[data-testid='harness']");
     expect(probe?.getAttribute("data-timezone")).toBe("Europe/London");
+  });
+
+  it("R3 F-002: site default currency reaches the runtime (prop + fetch)", async () => {
+    const viaProp = mount(
+      <I18nProvider browserLanguages={["en-US"]} siteDefaultCurrency="CNY">
+        <Harness />
+      </I18nProvider>,
+    );
+    expect(viaProp.querySelector("[data-testid='harness']")?.getAttribute("data-currency")).toBe("CNY");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ defaultLocale: "zh-CN", siteTimezone: "auto", defaultCurrency: "USD" }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    const viaFetch = mount(
+      <I18nProvider
+        browserLanguages={["en-US"]}
+        storedTimezone="auto"
+        systemDefaultUrl="/api/branding"
+      >
+        <Harness />
+      </I18nProvider>,
+    );
+    await act(async () => {});
+    const probe = viaFetch.querySelector("[data-testid='harness']");
+    expect(probe?.getAttribute("data-currency")).toBe("USD");
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatMoney, parseLocalizedMoney, parseLocalizedNumber, defaultCurrencyFor, normalizeCurrencyCode, DEFAULT_CURRENCY } from "./money";
+import { formatMoney, parseLocalizedMoney, parseLocalizedNumber, defaultCurrencyFor, normalizeCurrencyCode, resolveEffectiveCurrency, DEFAULT_CURRENCY } from "./money";
 
 // ── formatMoney (C1 · §3.1) ───────────────────────────────────────────────────
 
@@ -38,6 +38,17 @@ describe("formatMoney", () => {
     expect(formatMoney(12345, "en-US", { currency: "JPY", minorUnits: 0 })).toBe("¥12,345");
     expect(parseLocalizedMoney("¥12,345", "en-US", { currency: "JPY", minorUnits: 0 })).toBe(12345);
   });
+
+  it("R3 F-002: site default currency wins over the per-locale map, explicit wins over site", () => {
+    // en-US with site default CNY → ¥ (site over locale map which would be USD)
+    expect(formatMoney(12345, "en-US", { siteDefaultCurrency: "CNY" })).toContain("¥");
+    // explicit currency always wins over the site default
+    expect(formatMoney(12345, "en-US", { siteDefaultCurrency: "CNY", currency: "USD" })).toBe("$123.45");
+    // unset site default → embedded map
+    expect(formatMoney(12345, "en-US", { siteDefaultCurrency: "" })).toBe("$123.45");
+    // invalid site default is ignored (per-locale map applies)
+    expect(formatMoney(12345, "en-US", { siteDefaultCurrency: "nope" })).toBe("$123.45");
+  });
 });
 
 // ── defaultCurrencyFor (C2 · §4.3) ────────────────────────────────────────────
@@ -51,6 +62,23 @@ describe("defaultCurrencyFor", () => {
   it("falls back to USD for unknown locales and never throws", () => {
     expect(defaultCurrencyFor("fr-FR")).toBe(DEFAULT_CURRENCY);
     expect(defaultCurrencyFor("")).toBe(DEFAULT_CURRENCY);
+  });
+});
+
+// ── resolveEffectiveCurrency (R3 F-002 · site default channel) ───────────────
+
+describe("resolveEffectiveCurrency", () => {
+  it("site default wins when set; map applies otherwise", () => {
+    expect(resolveEffectiveCurrency("en-US", "CNY")).toBe("CNY");
+    expect(resolveEffectiveCurrency("zh-CN", "USD")).toBe("USD");
+    expect(resolveEffectiveCurrency("en-US", null)).toBe("USD");
+    expect(resolveEffectiveCurrency("en-US", undefined)).toBe("USD");
+    expect(resolveEffectiveCurrency("en-US", "")).toBe("USD");
+    expect(resolveEffectiveCurrency("zh-CN", "CNY")).toBe("CNY");
+  });
+
+  it("ignores invalid site values (falls back to the map)", () => {
+    expect(resolveEffectiveCurrency("en-US", "nope")).toBe("USD");
   });
 });
 
@@ -73,6 +101,9 @@ describe("parseLocalizedMoney", () => {
   it("parses en-US currency strings into minor units", () => {
     expect(parseLocalizedMoney("$1,234.56", "en-US", { currency: "USD" })).toBe(123456);
     expect(parseLocalizedMoney("$123.45", "en-US", { currency: "USD" })).toBe(12345);
+    // site default currency participates in symbol stripping too — en-US
+    // renders CNY with the "CN¥" prefix.
+    expect(parseLocalizedMoney("CN¥123.45", "en-US", { siteDefaultCurrency: "CNY" })).toBe(12345);
   });
 
   it("parses zh-CN currency strings", () => {

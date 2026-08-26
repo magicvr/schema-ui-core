@@ -47,6 +47,19 @@ export function defaultCurrencyFor(locale: Locale | string): string {
   return key === null ? DEFAULT_CURRENCY : DEFAULT_CURRENCY_MAP[key];
 }
 
+/**
+ * Effective default currency: the explicit site default (branding
+ * `defaultCurrency`, ISO 4217) wins when set; otherwise the embedded
+ * per-locale map (§4.3) applies. Never throws.
+ */
+export function resolveEffectiveCurrency(
+  locale: Locale,
+  siteDefault: string | null | undefined,
+): string {
+  const site = normalizeCurrencyCode(siteDefault);
+  return site !== null ? site : defaultCurrencyFor(locale);
+}
+
 /** Locale group/decimal separators derived from Intl (no hardcoded tables). */
 export interface LocaleSeparators {
   group: string;
@@ -71,10 +84,20 @@ export function localeSeparators(locale: Locale): LocaleSeparators {
 }
 
 export interface MoneyFormatOptions {
-  /** ISO 4217 currency code (uppercase 3 letters). Defaults per locale (§4.3). */
+  /** ISO 4217 currency code (uppercase 3 letters). Explicit override. */
   currency?: string;
+  /** Site-wide default currency from /api/branding ("" = unset). */
+  siteDefaultCurrency?: string;
   /** Minor-unit exponent. Defaults to 2 (CNY/USD). */
   minorUnits?: number;
+}
+
+/** Priority: explicit option → site default → embedded per-locale map. */
+function resolveCurrency(locale: Locale, options: MoneyFormatOptions): string | null {
+  if (options.currency !== undefined) {
+    return normalizeCurrencyCode(options.currency);
+  }
+  return normalizeCurrencyCode(options.siteDefaultCurrency) ?? defaultCurrencyFor(locale);
 }
 
 /**
@@ -89,7 +112,7 @@ export function formatMoney(
   if (typeof minorValue !== "number" || !Number.isFinite(minorValue)) {
     return "";
   }
-  const currency = normalizeCurrencyCode(options.currency ?? defaultCurrencyFor(locale));
+  const currency = resolveCurrency(locale, options);
   if (currency === null) {
     return "";
   }
@@ -166,6 +189,8 @@ function stripCurrencyAffixes(raw: string, locale: Locale, currency: string): st
 export interface MoneyParseOptions {
   /** Expected ISO 4217 currency (affects symbol stripping only). */
   currency?: string;
+  /** Site-wide default currency from /api/branding ("" = unset). */
+  siteDefaultCurrency?: string;
   /** Minor-unit exponent for the returned integer. Defaults to 2. */
   minorUnits?: number;
 }
@@ -180,7 +205,7 @@ export function parseLocalizedMoney(
   locale: Locale,
   options: MoneyParseOptions = {},
 ): number | null {
-  const currency = normalizeCurrencyCode(options.currency ?? defaultCurrencyFor(locale));
+  const currency = resolveCurrency(locale, options);
   if (currency === null) {
     return null;
   }

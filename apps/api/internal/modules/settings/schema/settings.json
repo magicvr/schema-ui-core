@@ -61,7 +61,8 @@
       "url": "/api/settings/default",
       "bodyMapping": {
         "defaultLocale": "defaultLocale",
-        "siteTimezone": "siteTimezone"
+        "siteTimezone": "siteTimezone",
+        "defaultCurrency": "defaultCurrency"
       },
       "onSuccess": {
         "behavior": "reload"

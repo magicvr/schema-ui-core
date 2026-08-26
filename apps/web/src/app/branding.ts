@@ -21,6 +21,8 @@ export interface Branding {
   defaultLocale: string;
   supportedLocales: string[];
   siteTimezone: string;
+  /** Site-wide default currency (ISO 4217; ""/unset = per-locale map). */
+  defaultCurrency: string;
   defaultTheme: string;
   copyrightText: string;
   icpNumber: string;
@@ -72,6 +74,7 @@ export async function fetchBranding(fetcher: typeof fetch = fetch): Promise<Bran
         ? body.supportedLocales.filter((entry): entry is string => typeof entry === "string")
         : [],
       siteTimezone: str("siteTimezone") !== "" ? str("siteTimezone") : "auto",
+      defaultCurrency: str("defaultCurrency").toUpperCase(), // ISO 4217; "" = unset
       defaultTheme: str("defaultTheme") !== "" ? str("defaultTheme") : "auto",
       copyrightText: str("copyrightText"),
       icpNumber: str("icpNumber"),
@@ -91,6 +94,7 @@ export function defaultBranding(): Branding {
     defaultLocale: "auto",
     supportedLocales: [],
     siteTimezone: "auto",
+    defaultCurrency: "",
     defaultTheme: "auto",
     copyrightText: "",
     icpNumber: "",

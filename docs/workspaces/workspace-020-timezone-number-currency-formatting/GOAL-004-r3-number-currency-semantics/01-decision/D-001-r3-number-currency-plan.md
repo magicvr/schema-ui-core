@@ -25,7 +25,7 @@ GOAL-003（R2 时区语义）已关门（A-001 self pass · 用户 2026-08-26 �
    - `parseLocalizedNumber(raw, locale) → number | null`：普通数字归一化（§3.2）。
    - 快测矩阵覆盖 zh-CN / en-US 各至少一场景（双 locale 双向一致，C5）。
 3. **设置面 `defaultCurrency` 字段（C4 · 站点级）**：
-   - API：`apps/api/internal/modules/settings/migration/migration.go` 增量迁移（`ALTER TABLE site_settings ADD COLUMN default_currency TEXT NOT NULL DEFAULT ''`，沿用既有模式）；`repository.go` struct + PATCH 参数 + 校验（`"" | "auto" | 有效 ISO 4217 三字母`）；`settings.go` handler 行/公开投影（`defaultCurrency`）；错误码 `error.invalidDefaultCurrency`。
+   - API：`apps/api/internal/modules/settings/migration/migration.go` 增量迁移（`ALTER TABLE site_settings ADD COLUMN default_currency TEXT NOT NULL DEFAULT ''`，沿用既有模式）；`repository.go` struct + PATCH 参数 + 校验（ISO 4217 三字母大写；空 = 未配置——**与 locale/timezone 不同，无 `"auto"` 语义**，合同 §4.1）；`settings.go` handler 行/公开投影（`defaultCurrency`）；错误码 `error.invalidDefaultCurrency`。（F-004 回写：方案初稿误写 `"" | "auto" | 有效 ISO 4217 三字母`，实现与合同均不接受 `"auto"`——已按合同更正。）
    - Web：settings schema（`apps/api/internal/modules/settings/schema/settings.json`）Localization tab 增字段；catalog 文案；Settings 页快测断言（沿用 `startup-config.test.tsx` 模式）。
    - **不改**：Profile 默认集 / 模块矩阵 / Manifest / `docs/contracts/`；时区字段语义不动。
 4. **双向一致性（C5）**：展示 ↔ 输入逆运算快测（`formatMoney → parseLocalizedMoney` 往返；双 locale）；API 机器合同不变量（§3.3）断言不改。

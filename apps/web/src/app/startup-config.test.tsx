@@ -1,4 +1,4 @@
-﻿// @vitest-environment jsdom
+// @vitest-environment jsdom
 
 /**
  * S3 startup configuration tests (GOAL-004 · C2/C3/C5):
@@ -48,6 +48,7 @@ const STARTUP_BODY: Record<string, unknown> = {
   defaultLocale: "zh-CN",
   supportedLocales: ["zh-CN", "en-US"],
   siteTimezone: "Asia/Shanghai",
+  defaultCurrency: "CNY",
   defaultTheme: "dark",
 };
 
@@ -60,6 +61,7 @@ const SETTINGS_ROW: Record<string, unknown> = {
   faviconUrl: "/favicon.ico",
   defaultLocale: "zh-CN",
   siteTimezone: "Asia/Shanghai",
+  defaultCurrency: "CNY",
   defaultTheme: "dark",
   updatedAt: "2026-08-09T00:00:00.000Z",
 };
@@ -175,6 +177,7 @@ describe("S3 · fetchBranding startup payload", () => {
     expect(branding.defaultLocale).toBe("zh-CN");
     expect(branding.supportedLocales).toEqual(["zh-CN", "en-US"]);
     expect(branding.siteTimezone).toBe("Asia/Shanghai");
+    expect(branding.defaultCurrency).toBe("CNY");
     expect(branding.defaultTheme).toBe("dark");
   });
 
@@ -191,6 +194,8 @@ describe("S3 · fetchBranding startup payload", () => {
     const sparse = await fetchBranding();
     expect(sparse.defaultLocale).toBe("auto");
     expect(sparse.siteTimezone).toBe("auto");
+    // workspace-020 R3: missing defaultCurrency → "" (unset, per-locale map).
+    expect(sparse.defaultCurrency).toBe("");
   });
 
   it("applyDocumentBranding sets the title and favicon from faviconUrl", () => {
@@ -438,6 +443,9 @@ describe("S3 · settings page four-category surface", () => {
     const localeSelect = container.querySelector<HTMLSelectElement>("#field-defaultLocale");
     expect(localeSelect?.value).toBe("zh-CN");
     expect(container.textContent).toContain("时区");
+    // workspace-020 R3: default currency prefilled from the settings row.
+    const currencyInput = container.querySelector<HTMLInputElement>("#field-defaultCurrency");
+    expect(currencyInput?.value).toBe("CNY");
 
     // 外观 tab → theme prefilled.
     await act(async () => {
@@ -501,6 +509,60 @@ describe("S3 · settings page four-category surface", () => {
     expect(patched.length).toBe(1);
     expect(patched[0]!.url).toContain("/api/settings/default");
     expect((patched[0]!.body as Record<string, unknown>).siteTitle).toBe("Renamed");
+  });
+
+  it("saves the Localization form incl. defaultCurrency through the real PATCH action (R3 F-001)", async () => {
+    const patched: Array<{ url: string; body: unknown }> = [];
+    const base = fetcherFor();
+    const tracking: typeof fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === "PATCH" && url.startsWith("/api/settings/")) {
+        patched.push({ url, body: JSON.parse(String(init.body)) });
+        return new Response(JSON.stringify({ ...SETTINGS_ROW, ...JSON.parse(String(init.body)) }), {
+          status: 200,
+          headers: { "X-Schema-UI-Config-Changed": "settings.branding", "Content-Type": "application/json" },
+        });
+      }
+      return base(input, init);
+    }) as typeof fetch;
+    const container = await renderAt(
+      "/settings",
+      <I18nProvider stored="zh-CN" browserLanguages={["en-US"]}>
+        <App
+          manifest={adminManifest()}
+          navigationContext={adminContext()}
+          schemaFetcher={tracking}
+          resourceFetcher={tracking}
+        />
+      </I18nProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
+    });
+    await act(async () => {
+      clickTab(container, "本地化");
+    });
+    const currencyInput = container.querySelector<HTMLInputElement>("#field-defaultCurrency");
+    expect(currencyInput).not.toBeNull();
+    expect(currencyInput?.value).toBe("CNY");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
+        currencyInput,
+        "USD",
+      );
+      currencyInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const form = container.querySelector("form");
+    expect(form).not.toBeNull();
+    await act(async () => {
+      form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    expect(patched.length).toBe(1);
+    expect(patched[0]!.url).toContain("/api/settings/default");
+    const body = patched[0]!.body as Record<string, unknown>;
+    // F-001 guard: the bodyMapping whitelist must carry defaultCurrency.
+    expect(body.defaultCurrency).toBe("USD");
+    expect(body.defaultLocale).toBe("zh-CN");
   });
 
   it("gates the category actions behind settings.write (no write → disabled)", async () => {
