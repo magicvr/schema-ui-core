@@ -103,13 +103,15 @@ function resolveCurrency(locale: Locale, options: MoneyFormatOptions): string | 
 /**
  * Formats an amount given as machine value (minor units) into a
  * locale+currency display string. Invalid input renders "" (fail-safe).
+ * R4 F-007: values beyond Number.MAX_SAFE_INTEGER render "" — the machine
+ * contract declares int64 minor units, which JS number cannot carry.
  */
 export function formatMoney(
   minorValue: number,
   locale: Locale,
   options: MoneyFormatOptions = {},
 ): string {
-  if (typeof minorValue !== "number" || !Number.isFinite(minorValue)) {
+  if (typeof minorValue !== "number" || !Number.isFinite(minorValue) || !Number.isSafeInteger(minorValue)) {
     return "";
   }
   const currency = resolveCurrency(locale, options);
@@ -217,7 +219,11 @@ export function parseLocalizedMoney(
   const minorUnits = Number.isInteger(options.minorUnits) && options.minorUnits! >= 0
     ? options.minorUnits!
     : DEFAULT_MINOR_UNITS;
-  return Math.round(value * Math.pow(10, minorUnits));
+  const minor = Math.round(value * Math.pow(10, minorUnits));
+  // R4 F-007: the machine contract declares int64 minor units; JS number
+  // cannot represent values beyond MAX_SAFE_INTEGER — reject instead of
+  // silently losing precision.
+  return Number.isSafeInteger(minor) ? minor : null;
 }
 
 /** Parses a localized plain number into a machine number; null on failure. */

@@ -30,7 +30,7 @@ serves_summary: 承载 VP-020（Admin 功能 · 时区/数字/货币格式语义
 | R1 | **合同冻结**：时区来源（会话级 vs 用户级 vs 两者，I-001）、数字/货币语义落点（前端 vs 序列化合同，I-002）、设置归属与字段（I-005）；I-003（RT-T03 不进）/I-004（汇率不进）保持 VP 冻结投影 | 起点 | **已关门**（GOAL-002 done 3/3 · A-001 self pass · 合同正文 = GOAL-002 D-001） |
 | R2 | **时区语义**：会话/用户级时区解析与展示（IANA / offset / `auto`）；时间输入与展示统一语义 | 依赖 R1 | **已关门**（GOAL-003 done 5/5 · A-001 self pass · timezone.ts + 头部时区选择 + 站点默认接入 + 统一语义） |
 | R3 | **数字 / 货币语义**：locale 驱动千分位 / 小数位 / 百分比 / ISO 4217 展示与输入解析合同 | 依赖 R2 | **已关门**（GOAL-004 done 6/6 · A-001 self → A-002 grok independent fail（2 required）→ A-003 fixed → A-004 grok 复审 pass；money.ts + defaultCurrency 端到端） |
-| R4 | **证据与关门**：快测 + `zh-CN`/`en-US` 双 locale 范例；无越界（汇率/计费/RT-T03）；required = 0 | 依赖 R3 | **待立项**（GOAL-005） |
+| R4 | **证据与关门**：快测 + `zh-CN`/`en-US` 双 locale 范例；无越界（汇率/计费/RT-T03）；required = 0 | 依赖 R3 | **已立项**（GOAL-005 **active** 3/4 · 证据矩阵/越界核账/F-007 加严 done；Root 关门审计进行中） |
 
 `progress` = 已完成阶段数 / 4。当前 **3/4**（R1～R3 已关门；R4 待立项）。
 

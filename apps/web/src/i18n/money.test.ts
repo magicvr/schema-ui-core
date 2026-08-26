@@ -140,6 +140,18 @@ describe("parseLocalizedMoney", () => {
     expect(rendered).toContain("JP¥");
     expect(parseLocalizedMoney(rendered, "zh-CN", { currency: "JPY", minorUnits: 0 })).toBe(1234);
   });
+
+  it("R4 F-007: rejects non-safe-integer machine values instead of losing precision", () => {
+    const beyond = Number.MAX_SAFE_INTEGER + 1; // 2^53
+    expect(formatMoney(beyond, "en-US", { currency: "USD" })).toBe("");
+    // The maximum safe minor-unit value still renders (major = /100).
+    expect(formatMoney(Number.MAX_SAFE_INTEGER, "en-US", { currency: "USD" })).not.toBe("");
+    // 9e15 major × 100 → 9e17 minor is beyond MAX_SAFE_INTEGER → rejected.
+    expect(parseLocalizedMoney("9007199254740992.00", "en-US", { currency: "USD" })).toBeNull();
+    // 9007199254740991 minor units = MAX_SAFE_INTEGER exactly → accepted.
+    expect(parseLocalizedMoney("90071992547409.91", "en-US", { currency: "USD" })).toBe(Number.MAX_SAFE_INTEGER);
+    expect(parseLocalizedMoney("90071992547409.92", "en-US", { currency: "USD" })).toBeNull();
+  });
 });
 
 // ── parseLocalizedNumber (C3 · §3.2) ──────────────────────────────────────────
