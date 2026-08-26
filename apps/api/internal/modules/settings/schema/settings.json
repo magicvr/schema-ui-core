@@ -279,6 +279,12 @@
                       "label": "Default timezone (IANA name or auto)",
                       "labelKey": "schema.settings.field.siteTimezone",
                       "type": "input"
+                    },
+                    {
+                      "id": "defaultCurrency",
+                      "label": "Default currency (ISO 4217)",
+                      "labelKey": "schema.settings.field.defaultCurrency",
+                      "type": "input"
                     }
                   ],
                   "recordSource": {
@@ -286,7 +292,8 @@
                     "url": "/api/settings/default",
                     "responseMapping": {
                       "defaultLocale": "defaultLocale",
-                      "siteTimezone": "siteTimezone"
+                      "siteTimezone": "siteTimezone",
+                      "defaultCurrency": "defaultCurrency"
                     }
                   },
                   "submitAction": "updateLocalization",

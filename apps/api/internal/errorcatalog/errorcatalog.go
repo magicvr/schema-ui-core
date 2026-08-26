@@ -48,6 +48,7 @@ var Catalog = map[string]Entry{
 	"INVALID_DEFAULT_LOCALE": {"error.invalidDefaultLocale", "defaultLocale must be auto, zh-CN or en-US", "默认语种必须是 auto、zh-CN 或 en-US"},
 	"INVALID_DEFAULT_THEME":  {"error.invalidDefaultTheme", "defaultTheme must be auto, light or dark", "默认主题必须是 auto、light 或 dark"},
 	"INVALID_TIMEZONE":          {"error.invalidTimezone", "siteTimezone must be auto or a valid IANA timezone", "默认时区必须是 auto 或有效的 IANA 时区"},
+	"INVALID_DEFAULT_CURRENCY":  {"error.invalidDefaultCurrency", "defaultCurrency must be empty or a valid ISO 4217 code", "默认货币必须是空或有效的 ISO 4217 代码"},
 	"INVALID_RETENTION_DAYS":    {"error.invalidRetentionDays", "operationLogRetentionDays must be between 1 and 3650", "审计日志保留天数必须是 1 到 3650 之间的整数"},
 	"INVALID_EXPIRATION_ACTION": {"error.invalidExpirationAction", "operationLogExpirationAction must be archive or delete", "过期处理必须是归档或删除"},
 

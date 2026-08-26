@@ -28,7 +28,7 @@ import (
 // module providers reuse it so the provider surface matches the central adapter.
 type SettingsRepository interface {
 	GetSiteSettings() (*settingsrepository.SiteSettings, error)
-	PatchSiteSettings(*string, *string, *string, *string, *string, *string, *string, *string, *string, *string, *int, *string, time.Time) (*settingsrepository.SiteSettings, error)
+	PatchSiteSettings(*string, *string, *string, *string, *string, *string, *string, *string, *string, *string, *string, *int, *string, time.Time) (*settingsrepository.SiteSettings, error)
 	ResetSiteSettings(time.Time) (*settingsrepository.SiteSettings, error)
 }
 
@@ -61,6 +61,7 @@ type brandingResponse struct {
 	DefaultLocale    string   `json:"defaultLocale"`
 	SupportedLocales []string `json:"supportedLocales"`
 	SiteTimezone     string   `json:"siteTimezone"`
+	DefaultCurrency  string   `json:"defaultCurrency"`
 	DefaultTheme     string   `json:"defaultTheme"`
 	CopyrightText    string   `json:"copyrightText"`
 	ICPNumber        string   `json:"icpNumber"`
@@ -101,6 +102,7 @@ func brandingRow(s *settingsrepository.SiteSettings) brandingResponse {
 		DefaultLocale:    locale,
 		SupportedLocales: settingsrepository.SupportedLocales,
 		SiteTimezone:     timezone,
+		DefaultCurrency:  s.DefaultCurrency,
 		DefaultTheme:     theme,
 		CopyrightText:    s.CopyrightText,
 		ICPNumber:        s.ICPNumber,
@@ -117,6 +119,7 @@ func settingsRow(s *settingsrepository.SiteSettings) map[string]any {
 		"faviconUrl":    s.FaviconURL,
 		"defaultLocale": s.DefaultLocale,
 		"siteTimezone":  s.SiteTimezone,
+		"defaultCurrency": s.DefaultCurrency,
 		"defaultTheme":  s.DefaultTheme,
 		"copyrightText":                  s.CopyrightText,
 		"icpNumber":                      s.ICPNumber,
@@ -184,6 +187,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 			FaviconURL                   *string  `json:"faviconUrl"`
 			DefaultLocale                *string  `json:"defaultLocale"`
 			SiteTimezone                 *string  `json:"siteTimezone"`
+			DefaultCurrency              *string  `json:"defaultCurrency"`
 			DefaultTheme                 *string  `json:"defaultTheme"`
 			CopyrightText                *string  `json:"copyrightText"`
 			ICPNumber                    *string  `json:"icpNumber"`
@@ -211,7 +215,7 @@ func settingsPatch(repository SettingsRepository, operations operationlog.Record
 		now := time.Now().UTC()
 		updated, err := repository.PatchSiteSettings(
 			body.SiteTitle, body.LogoURL, body.LogoURLLight, body.LogoURLDark, body.FaviconURL,
-			body.DefaultLocale, body.SiteTimezone, body.DefaultTheme, body.CopyrightText, body.ICPNumber,
+			body.DefaultLocale, body.SiteTimezone, body.DefaultCurrency, body.DefaultTheme, body.CopyrightText, body.ICPNumber,
 			retentionDays, body.OperationLogExpirationAction, now,
 		)
 		if err != nil {
@@ -301,6 +305,8 @@ func writeSettingsError(w http.ResponseWriter, r *http.Request, err error) {
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_DEFAULT_THEME", "defaultTheme must be auto, light or dark")
 	case errors.Is(err, settingsrepository.ErrInvalidSiteTimezone):
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_TIMEZONE", "siteTimezone must be auto or a valid IANA timezone")
+	case errors.Is(err, settingsrepository.ErrInvalidDefaultCurrency):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_DEFAULT_CURRENCY", "defaultCurrency must be empty or an ISO 4217 code")
 	case errors.Is(err, settingsrepository.ErrInvalidRetentionDays):
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_RETENTION_DAYS", "operationLogRetentionDays must be between 1 and 3650")
 	case errors.Is(err, settingsrepository.ErrInvalidExpirationAction):
@@ -348,6 +354,7 @@ func settingsAuditValues(settings *settingsrepository.SiteSettings) map[string]a
 		"faviconUrl":    settings.FaviconURL,
 		"defaultLocale": settings.DefaultLocale,
 		"siteTimezone":  settings.SiteTimezone,
+		"defaultCurrency": settings.DefaultCurrency,
 		"defaultTheme":  settings.DefaultTheme,
 		"copyrightText":                settings.CopyrightText,
 		"icpNumber":                    settings.ICPNumber,

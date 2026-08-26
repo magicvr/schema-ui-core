@@ -16,8 +16,9 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-26 | 立项与 R3 实施方案冻结 | recorded | `02-execution/E-001-r3-establishment.md` |
 | E-002 | 2026-08-26 | C1/C2/C3/C5 前端工具实施（money.ts + 20 快测；双向 round-trip） | done | `02-execution/E-002-r3-c1-c2-c3-c5-money-tools.md` |
+| E-003 | 2026-08-26 | C4 设置面 defaultCurrency 字段（migration v62 + repository/handler + schema + pin 同步；Go/Web 全量绿） | done | `02-execution/E-003-r3-c4-default-currency-field.md` |
 
 ## 推进状态
 
-- C1/C2/C3/C5 **done**（4/6）；C4（设置字段 API+schema+UI）待实施；C6 待关门（self + grok independent）。
-- 下一步：C4（defaultCurrency 端到端）→ C6 关门。
+- C1～C5 **done**（5/6）；C6（关门：self + grok independent + 用户确认）待关门。
+- 下一步：关门自审 → 本地 grok build（grok-4.6 · high）independent 审 → 用户确认 → R4 立项。

@@ -24,11 +24,11 @@ progress: 0/6
 | C1 | 货币展示工具：`formatMoney`（Intl `style: currency`，ISO 4217 符号/位置/小数位随 locale）+ 快测（zh-CN/en-US） | **done**（2026-08-26 · `apps/web/src/i18n/money.ts` + 快测） |
 | C2 | 默认货币映射表 `defaultCurrencyFor(locale)`（§4.3：zh-CN→CNY、en-US→USD；缺省不抛错）+ 快测 | **done**（2026-08-26 · `defaultCurrencyFor` + `normalizeCurrencyCode`） |
 | C3 | 输入解析归一化：locale 化数字/货币输入 → 机器值（金额 int64 最小单位；普通数字 number）；错误语义明确 + 快测 | **done**（2026-08-26 · `parseLocalizedMoney`/`parseLocalizedNumber` → null 语义） |
-| C4 | 设置面 `defaultCurrency` 字段：API（site_settings 增量 migration + repository/PATCH 校验 + settings 行/公开投影）+ settings schema（Localization tab）+ 单测/快测 | 待实施 |
+| C4 | 设置面 `defaultCurrency` 字段：API（site_settings 增量 migration + repository/PATCH 校验 + settings 行/公开投影）+ settings schema（Localization tab）+ 单测/快测 | **done**（2026-08-26 · migration v62 + repository/handler/errorcatalog + schema 字段 + pin 同步；Go 全量/Web 1175 全绿） |
 | C5 | 双向一致性核对：展示 ↔ 输入逆运算一致（同一合同反向）+ 双 locale 场景快测 | **done**（2026-08-26 · round-trip 快测 en-US/zh-CN） |
 | C6 | 关门：自审 + grok build independent + 用户确认 → `status: done` | 待关门 |
 
-`progress` = 4/6（2026-08-26：C1/C2/C3/C5 done；C4 待实施；C6 待关门）。
+`progress` = 5/6（2026-08-26：C1/C2/C3/C4/C5 done；C6 待关门）。
 
 ## 成功标准
 

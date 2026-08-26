@@ -31,6 +31,8 @@ var frozenLiteralCodes = []string{
 	// S3 settings validation additions (D-002 appendix A family).
 	"INVALID_DEFAULT_LOCALE", "INVALID_DEFAULT_THEME", "INVALID_TIMEZONE",
 	"INVALID_RETENTION_DAYS", "INVALID_EXPIRATION_ACTION",
+	// workspace-020 R3 (contract §4.1): site default currency validation.
+	"INVALID_DEFAULT_CURRENCY",
 	// D2 login rate limiting.
 	"RATE_LIMITED",
 	// GOAL-004 S4-6 account lock terminal (423).
