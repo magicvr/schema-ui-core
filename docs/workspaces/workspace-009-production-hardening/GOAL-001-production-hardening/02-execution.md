@@ -21,6 +21,7 @@ version: 0.8.0
 | E-005 | 2026-08-20 | W8 CSP/真实浏览器冒烟纳入发版前流程 | recorded | [E-005-prerelease-smoke-integration.md](02-execution/E-005-prerelease-smoke-integration.md) |
 | E-006 | 2026-08-22 | 开 W11 子目标承接独立审计落盘 | recorded | [E-006-w11-opened.md](02-execution/E-006-w11-opened.md) |
 | E-007 | 2026-08-26 | 开 W12 子目标承接跨区限流登记项（workspace-019 E-009 §F-002；评估先行） | recorded | [E-007-w12-opened.md](02-execution/E-007-w12-opened.md) |
+| E-008 | 2026-08-26 | W13 残余移交登记：F-013 self-scope TOCTOU 复审触发（accepted-residual 硬门，指回 GOAL-013 D-002） | recorded | [E-008-w13-f013-residual-trigger.md](02-execution/E-008-w13-f013-residual-trigger.md) |
 
 ## 波次执行（子目标）
 
@@ -38,3 +39,5 @@ version: 0.8.0
 - W10 → [GOAL-010](../GOAL-010-w10-api-web-security-audit/02-execution.md)（done）
 - W11 → [GOAL-011](../GOAL-011-w11-api-web-security-audit/02-execution.md)（done · 2026-08-22 关门正式确认）
 - W12 → [GOAL-012](../GOAL-012-w12-multi-instance-rate-limiting/02-execution.md)（done · 评估型收官：单实例边界维持 + 载体预登记 Redis 方向，D-002/A-001 self pass）
+- W13 → [GOAL-013](../GOAL-013-w13-api-web-security-audit/02-execution.md)（active 5/6 · F-007 fixed 承载于子目标 GOAL-014）
+- 残余移交 → [E-008](02-execution/E-008-w13-f013-residual-trigger.md)（F-013 self-scope TOCTOU 复审触发硬门）

@@ -59,8 +59,8 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-010-w10-api-web-security-audit | W10 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-21 |
 | GOAL-011-w11-api-web-security-audit | W11 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-22 |
 | GOAL-012-w12-multi-instance-rate-limiting | W12 多实例限流拓扑评估与加固（承接 workspace-019 E-009 §F-002） | GOAL-001-production-hardening | done | 4/4 | 2026-08-26 |
-| GOAL-013-w13-api-web-security-audit | W13 api/web 全量安全审查发现修复（P1×1+P2×3 必修 + P3 全量） | GOAL-001-production-hardening | active | 2/6 | 2026-08-26 |
-| GOAL-014-w13-account-lockout-redesign | W13-F007 账号锁定模型重设计（fixed · 承载自 GOAL-013） | GOAL-013-w13-api-web-security-audit | active | 1/6 | 2026-08-26 |
+| GOAL-013-w13-api-web-security-audit | W13 api/web 全量安全审查发现修复（P1×1+P2×3 必修 + P3 全量） | GOAL-001-production-hardening | active | 5/6 | 2026-08-26 |
+| GOAL-014-w13-account-lockout-redesign | W13-F007 账号锁定模型重设计（fixed · 承载自 GOAL-013） | GOAL-013-w13-api-web-security-audit | active | 2/6 | 2026-08-26 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
 ## 维护说明
