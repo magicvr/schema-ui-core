@@ -2,26 +2,26 @@
 doc_type: vision-plan
 id: VP-021-graceful-shutdown-and-connection-drain
 title: 优雅停机 / 连接排空合同
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
-lead_workspace:
+lead_workspace: workspace-021-graceful-shutdown-and-connection-drain
 created: 2026-08-26
-updated: 2026-08-26
-version: 0.1.0
+updated: 2026-08-27
+version: 0.2.0
 parent: null
 ---
 
 # VP-021 · 优雅停机 / 连接排空合同（RT-D02）
 
-## 状态与门闩（2026-08-26 · **planned**）
+## 状态与门闩（2026-08-27 · **active**）
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-08-26 用户确认立项 · 架构分支 RT-D02 承接） |
-| **lead_workspace** | 待绑定（激活时由 `/govern` 开区，预计 `workspace-021-graceful-shutdown-and-connection-drain`） |
-| **Vision required** | 无（激活前须 VRev intent-activation：self；可加 independent） |
-| **推进门闩** | 激活前置 = 架构类 freshness（VP-008 `go` 消费有效性；最近一次为 VP-017 激活时）；激活与开区交 `/govern` |
-| **组合位置** | 架构分支 · RT-D02（`registered` → 本 VP 承接） |
+| status | **`active`**（2026-08-26 用户确认立项；2026-08-27 激活 · VRev-046 self `pass` · 架构分支 RT-D02 承接） |
+| **lead_workspace** | `workspace-021-graceful-shutdown-and-connection-drain`（2026-08-27 `/govern` 开区；Root `GOAL-001-graceful-shutdown-and-connection-drain`） |
+| **Vision required** | 无（VRev-046 intent-activation：self `pass` · 0 required · 2026-08-27；V-F081/V-F082 → 激活事务内 fixed） |
+| **推进门闩** | 激活前置满足 = **架构类 freshness PASS**（VP-008 `go` 消费有效性：`ed99e88` → `250cb9c`（VP-017 激活）→ `fddaf638`（2026-08-27 HEAD）；不暂挂 `go`）；R1 方案冻结前须关闭 I-021-001/I-021-002，R2 前须关闭 I-021-003 |
+| **组合位置** | 架构分支 · RT-D02（`planned` → 本 VP 承接 → `active`） |
 | **完整 ≠ A3** | 只做**单进程基线**的优雅停机 / 连接排空合同。A3 多实例、就绪探针扩依赖、PG 锁 vs Redis vs 队列评估仍 `trigger-gated` |
 
 ## 意图
@@ -98,7 +98,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead（待定） | — | `planned` 0 区；激活时经 `/govern` 开区绑定，预计 `workspace-021-graceful-shutdown-and-connection-drain` |
+| workspace-021-graceful-shutdown-and-connection-drain | GOAL-001-graceful-shutdown-and-connection-drain | lead（delivery） | 2026-08-27 | `active` 1 区；开区经 `/govern`（Root 五件套 + P-001 纲领 R1～R3 + I-021-001～004 投影台账） |
 
 ## 关门记录
 
@@ -113,3 +113,4 @@ parent: null
 | date | change |
 |------|--------|
 | 2026-08-26 | 初创 `planned`：用户确认立项（架构分支 RT-D02 · 优雅停机 / 连接排空合同）；退出分母 = 单进程基线合同；A3 余项、Job 租约、进程分离仍 gated 不进。roadmap 索引原子同步 |
+| 2026-08-27 | **v0.2.0 `planned → active`**：VRev-046（self）`pass`（0 required；V-F081/V-F082 → **fixed**）；架构类 freshness **PASS**（`ed99e88` → `fddaf638`，不暂挂 `go`）；lead `workspace-021-graceful-shutdown-and-connection-drain` 同日开区（Root `GOAL-001-graceful-shutdown-and-connection-drain`，P-001 纲领 R1～R3 + I-021-001～004 台账）。VR-048 |
