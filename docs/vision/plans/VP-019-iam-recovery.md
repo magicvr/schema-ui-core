@@ -2,23 +2,23 @@
 doc_type: vision-plan
 id: VP-019-iam-recovery
 title: IAM：密码策略 / 邀请入职 / 自助恢复状态机
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-019-iam-recovery
 created: 2026-08-25
-updated: 2026-08-25
-version: 0.2.0
+updated: 2026-08-26
+version: 0.3.0
 parent: null
 ---
 
 # VP-019 · IAM：密码策略 / 邀请入职 / 自助恢复状态机
 
-## 状态与门闩（2026-08-25 · active）
+## 状态与门闩（2026-08-26 · **closed** · v0.3.0 交付后关门）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（v0.2.0 · 2026-08-25 激活；lead `workspace-019-iam-recovery`） |
-| 组合位置 | Admin 功能分支下一拍（roadmap §Admin 功能「再下一截 = IAM VP」） |
+| status | **`closed`**（v0.3.0 · 2026-08-26 用户书面确认关门；实现于 2026-08-25 同日全链交付，Root `GOAL-001-iam-recovery` `done 4/4`） |
+| 组合位置 | Admin 功能分支下一拍（roadmap §Admin 功能「再下一截 = IAM VP」）；已交付收官 |
 | 硬前置 | ✅ **VP-017 已按现行分母再关门**（v0.5.0 · 渠道模型 = mock 默认 + Resend 生产 + 设置/试发）；✅ **VP-018 已关门**（v1.0.0 · `users` 可空 email + 绑定/校验状态机 + 换绑）。两条身份/运输前置均满足 |
 | 激活门禁 | ✅ 2026-08-25 全部满足：[VRev-043](../reviews/VRev-043-vp019-iam-recovery-intent-activation.md)（independent · grok build）`pass`（required = 0；V-F076/077/078 → fixed）；VP-008 `go` 消费有效性 **Admin 类 freshness** PASS（基线 `092bf37` → 现行 `66f5fd1f`，不暂挂 `go`）；VP-009/VP-010 无开放阻断 |
 | 结构 | 新 VP + 单 delivery 工作区（`workspace-019-iam-recovery`，2026-08-25 开区）；不重开 VP-012～018；不改 Charter |
@@ -113,7 +113,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-26 | closed（v0.3.0 · 用户 ask_user_question 书面确认） | IAM 三件交付收官：①自助恢复全链（登录页发起 → 迁移 0056 挑战表 → 6 位码投递 → MFA 第二因子门 → 设新码 → 会话撤销语义；防枚举同形 202、挑战预算 ≤5、重发冷却 60s、IP\|identifier 限流）；②密码策略配置面 + 四口强制统一 `INVALID_PASSWORD`（MinLength 权威咬合）；③邀请入职双形态投递 + 即建号 + 有效期/撤销/重发 + Web 面（含 bodyMapping roles 缺陷修复）。全部投递经 `kernel.MailSender` 现行渠道（r4_evidence_test 三链真实 mux 取码）；无越界（composition 黄金计数吻合）。R1–R4 = GOAL-002～005 全 done（2026-08-25 同日）；关后维护 E-008/E-009 + 独立复审 A-001 `pass`（代码证据制全量复跑绿）/ 响应 A-002 | [workspace-019 goal-tree](../../workspaces/workspace-019-iam-recovery/goal-tree.md)；Root [E-007-root-closeout](../../workspaces/workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-007-root-closeout.md)；关后 [03-audit/A-001-closeout-independent.md](../../workspaces/workspace-019-iam-recovery/GOAL-001-iam-recovery/03-audit/A-001-closeout-independent.md) + [A-002](../../workspaces/workspace-019-iam-recovery/GOAL-001-iam-recovery/03-audit/A-002-finding-response-self.md)；commits `299f8f52`/`9628ca8f`/`2f088d55`→`9ced003d`、`ce96df92` | 本波无新增未闭合残余；继承性平台边界照旧——SQLite lower() ASCII 折叠（VP-018 N-1 口径）、认证限流进程内单实例边界（[workspace-009] W12 D-002 2026-08-26 维持，复审触发 = 多实例形态出现） |
 
 ## 规划修订短史
 
@@ -121,3 +121,4 @@ parent: null
 |------|--------|
 | 2026-08-25 | 初创 `planned`：按 roadmap Admin 功能分支「再下一截 = IAM VP」立项。硬前置 VP-017（v0.5.0 再关门）与 VP-018（v1.0.0 关门）均已满足；退出分母 = 密码策略 / 邀请入职 / 自助恢复状态机。VRev-043（independent · grok build）待办 |
 | 2026-08-25 | **v0.2.0 `planned → active`**：VRev-043（independent · grok build）`pass`（0 required；V-F076/077/078 → **fixed**）；Admin 类 freshness **PASS**（`092bf37` → `66f5fd1f`，不暂挂 `go`；W11 已恢复 `go`、F-007 不升格）；lead `workspace-019-iam-recovery` 同日开区（Root `GOAL-001-iam-recovery`）。信息项按 V-F076 修正：I-019-002 最晚阶段 → R2 方案冻结前；增补 I-019-009（MFA，最晚 R1）；I-019-001 默认候选 = VP-018 6 位码；I-019-003 冻结策略面/Profile 边界；I-019-006 → registered（2026-08-22 产品事实） |
+| 2026-08-26 | **v0.3.0 `active → closed`**：实现已于 2026-08-25 同日全链交付（Root done 4/4，六条方向级退出判据全达成）；关后独立复审 A-001 `pass`（代码证据制全量复跑绿）+ recommended ×2 于当日闭合（F-001 fixed / F-002 登记移交 [workspace-009] W12）。用户 ask_user_question 书面确认关门；历史绑定保留，不重开 |
