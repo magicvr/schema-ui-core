@@ -1,11 +1,11 @@
 ---
 id: GOAL-038-w26-email-display-and-mail-pages
 doc: decision
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-038
