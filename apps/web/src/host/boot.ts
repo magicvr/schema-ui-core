@@ -326,7 +326,12 @@ export function executeBootRecovery(action: { type: string; url?: string }): voi
       window.history.back();
       break;
     case "support":
-      if (action.url) {
+      // W13 F-015 (GOAL-013 A-001): only http(s) targets may be opened. The
+      // previous shape assigned action.url to an anchor href unchecked — a
+      // javascript: value reaching the recovery document would execute on
+      // click (a latent sink; the bootstrap artifact is server-controlled,
+      // which makes this defense-in-depth, not a known open door).
+      if (action.url && isSafeSupportUrl(action.url)) {
         const link = document.createElement("a");
         link.href = action.url;
         link.rel = "noopener noreferrer";
@@ -335,5 +340,15 @@ export function executeBootRecovery(action: { type: string; url?: string }): voi
       break;
     default:
       break;
+  }
+}
+
+/** W13 F-015: a support URL is only navigable when it resolves to http(s). */
+export function isSafeSupportUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
   }
 }

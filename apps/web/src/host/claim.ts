@@ -272,10 +272,18 @@ export function validateClaim(claim: Claim, options: ClaimOptions): { code: Clai
 
   const listed = new Set(capabilities);
   for (const capability of capabilities) {
+    // W13 F-016 (GOAL-013 A-001): this dependency walk previously re-pushed
+    // every dependency's own dependsOn with no visited set — a cycle in the
+    // registry graph looped forever (and shared DAG deps blew up
+    // exponentially). Each dependency is now expanded at most once per walk;
+    // the INCOMPLETE check still fires on every first encounter.
     const pending = [...((registryCapabilities[capability].dependsOn as string[]) ?? [])];
+    const seen = new Set<string>([capability]);
     while (pending.length > 0) {
       const dependency = pending.pop()!;
       if (!listed.has(dependency)) return invalid("INCOMPLETE_CAPABILITY_DEPENDENCY");
+      if (seen.has(dependency)) continue;
+      seen.add(dependency);
       const dependencyEntry = registryCapabilities[dependency];
       if (dependencyEntry !== undefined && Array.isArray(dependencyEntry.dependsOn)) {
         pending.push(...(dependencyEntry.dependsOn as string[]));

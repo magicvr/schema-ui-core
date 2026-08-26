@@ -136,6 +136,20 @@ describe("auth-client", () => {
     expect((init.headers as Headers).get("Authorization")).toBe("Bearer access-1");
   });
 
+  // W13 F-014 (GOAL-013 A-001): credentials attach ONLY to same-origin
+  // targets — an absolute cross-origin URL must stay token-free.
+  it("authFetch does not attach tokens to a cross-origin URL", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await authFetch("https://evil.example.com/api/account/sessions");
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Headers;
+    expect(headers.get("Authorization")).toBeNull();
+    expect(headers.get("X-Refresh-Token")).toBeNull();
+    expect(headers.get("Accept-Language")).not.toBeNull(); // locale still flows
+  });
+
   it("authFetch refreshes once on 401 and retries, without notifying auth loss", async () => {
     setAccessToken("expired");
     setRefreshToken("refresh-1");

@@ -179,19 +179,33 @@ async function doRefresh(refresh: string, generation: number): Promise<boolean> 
 }
 
 function withAuth(input: RequestInfo | URL, init?: RequestInit): RequestInit {
-  const access = getAccessToken();
   const headers = new Headers(init?.headers);
-  if (access !== null) {
-    headers.set("Authorization", `Bearer ${access}`);
-  }
-  // W7 F-011: the long-lived refresh token is NOT attached to every request.
-  const refresh = getRefreshToken();
-  if (refresh !== null && isSessionListRequest(input)) {
-    headers.set("X-Refresh-Token", refresh);
+  // W13 F-014 (GOAL-013 A-001): tokens attach ONLY to same-origin targets.
+  // The previous shape decided by pathname alone, so an absolute cross-origin
+  // URL (should a future call site ever pass one) would receive the Bearer —
+  // and the session-list refresh — credentials.
+  if (isSameOrigin(input)) {
+    const access = getAccessToken();
+    if (access !== null) {
+      headers.set("Authorization", `Bearer ${access}`);
+    }
+    // W7 F-011: the long-lived refresh token is NOT attached to every request.
+    const refresh = getRefreshToken();
+    if (refresh !== null && isSessionListRequest(input)) {
+      headers.set("X-Refresh-Token", refresh);
+    }
   }
   // VP-007 S4: attach the active locale so the server negotiates messages.
   headers.set("Accept-Language", getActiveLocale());
   return { ...init, headers };
+}
+
+function isSameOrigin(input: RequestInfo | URL): boolean {
+  try {
+    return new URL(String(input), window.location.origin).origin === window.location.origin;
+  } catch {
+    return false;
+  }
 }
 
 function isSessionListRequest(input: RequestInfo | URL): boolean {
