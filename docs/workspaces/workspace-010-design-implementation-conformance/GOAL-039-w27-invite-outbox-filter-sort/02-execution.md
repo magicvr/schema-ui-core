@@ -1,7 +1,7 @@
 ---
 id: GOAL-039-w27-invite-outbox-filter-sort
 doc: execution
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-08-26
 updated: 2026-08-26

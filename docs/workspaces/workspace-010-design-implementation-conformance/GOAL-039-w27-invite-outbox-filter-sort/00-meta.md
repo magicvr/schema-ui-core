@@ -1,12 +1,12 @@
 ---
 id: GOAL-039-w27-invite-outbox-filter-sort
 title: W27 · 邀请管理与邮件出站记录页面的筛选与排序对齐
-status: active
+status: done
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-001-design-implementation-conformance
-version: 0.3.0
-progress: 3/4
+version: 0.4.0
+progress: 4/4
 ---
 
 # GOAL-039 · W27 · 邀请管理与邮件出站记录页面的筛选与排序
@@ -36,10 +36,10 @@ progress: 3/4
 S1 方案冻结   → D-001（两页筛选/排序设计；白名单与默认序冻结）✅ 2026-08-26
 S2 实施       → 后端查询参数 + 页面 schema/i18n ✅ 2026-08-26（E-001）
 S3 回归       → Go 全量 + vitest/tsc/build + go 判定落盘 ✅ 2026-08-26（E-001：全绿，无影响不暂挂）
-S4 关门       → A-001 self 审计 pass + goal-tree/workspace 同步
+S4 关门       → A-001 self 审计 pass + goal-tree/workspace 同步 ✅ 2026-08-26（A-001 pass，0 开放 required）
 ```
 
-`progress: 3/4` 由上述 4 个显式检查点等权派生；仅为展示。
+`progress: 4/4` 由上述 4 个显式检查点等权派生；仅为展示。
 
 ## 信息需求登记（P-005）
 
