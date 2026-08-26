@@ -73,22 +73,17 @@ func (e *fileLibraryEntity) Get(id string) (map[string]any, error) {
 	if !uploadFileIDPattern.MatchString(id) {
 		return nil, errResourceNotFound
 	}
-	_, meta, err := e.objects.Get(context.Background(), kernel.ObjectNamespaceUploads, id)
+	// W13 B-2 (GOAL-013 A-001): Stat alone carries meta + size + mtime. The
+	// previous shape read the WHOLE body via Get just to obtain the metadata
+	// sidecar and then ran a second Stat — two full passes for one row.
+	info, err := e.objects.Stat(context.Background(), kernel.ObjectNamespaceUploads, id)
 	if err != nil {
 		if errors.Is(err, kernel.ErrObjectNotFound) {
 			return nil, errResourceNotFound
 		}
 		return nil, err
 	}
-	info, err := e.objects.Stat(context.Background(), kernel.ObjectNamespaceUploads, id)
-	if err == nil {
-		row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner, Size: info.Size, Created: formatRFC3339Milli(info.ModTime)}
-		return fileRowToMap(row), nil
-	}
-	if !errors.Is(err, kernel.ErrObjectNotFound) {
-		return nil, err
-	}
-	row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner}
+	row := fileRow{ID: id, Name: info.Meta.Name, Type: info.Meta.Type, Owner: info.Meta.Owner, Size: info.Size, Created: formatRFC3339Milli(info.ModTime)}
 	return fileRowToMap(row), nil
 }
 
@@ -180,7 +175,7 @@ func FileLibraryRoutes(a *auth.Authenticator, objects kernel.ObjectStore, operat
 		NotFoundCode:    "FILE_NOT_FOUND",
 	}
 	routes := ResourceRoutes(a, res, moduleID)
-	store := &uploadStore{objects: objects}
+	store := &uploadStore{objects: objects, quotaLocks: newKeyedMutex()}
 	now := time.Now
 
 	routes = append(routes, kernel.RouteContribution{

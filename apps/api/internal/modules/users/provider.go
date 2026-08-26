@@ -28,11 +28,15 @@ type Provider struct {
 	// mailSender is THE composed kernel.MailSender (workspace-019 R3):
 	// invitation letters ride it when an invite carries a target email.
 	mailSender kernel.MailSender
+	// publicBaseURL is the optional canonical external origin for emailed
+	// invite links (W13 F-006 · GOAL-013 A-001); empty keeps the
+	// request-derived fallback.
+	publicBaseURL string
 }
 
 // New constructs the users provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, mailSender kernel.MailSender) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations, mailSender: mailSender}
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, mailSender kernel.MailSender, publicBaseURL string) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, mailSender: mailSender, publicBaseURL: publicBaseURL}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -70,7 +74,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}
 	// workspace-019 R3 (GOAL-004 D-001 §3): invitation management quartet,
 	// gated by the users.invite permission inside the handler.
-	for _, route := range handler.InviteAdminRoutes(p.a, p.repository, p.mailSender, p.operations, ModuleID) {
+	for _, route := range handler.InviteAdminRoutes(p.a, p.repository, p.mailSender, p.operations, ModuleID, p.publicBaseURL) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

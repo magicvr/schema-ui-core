@@ -107,7 +107,7 @@ func mailConfigPut(svc MailAdminService, operations operationlog.Recorder) http.
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_MAIL_CONFIG", firstLine(err))
 			return
 		}
-		if err != nil && strings.Contains(err.Error(), "retention") {
+		if err != nil && errors.Is(err, mail.ErrInvalidRetention) {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_MAIL_CONFIG", firstLine(err))
 			return
 		}

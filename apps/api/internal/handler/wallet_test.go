@@ -88,7 +88,7 @@ func (s *walletServiceStub) ListReconcileRuns(page, pageSize int) ([]walletstore
 func mountWalletRoutes(t *testing.T, env *authTestEnv, service WalletService) {
 	t.Helper()
 	jobService := newWalletJobTestService(t, env, service.(*walletServiceStub).repo)
-	for _, r := range WalletRoutes(env.a, service, jobService, env.operations, "admin.wallet") {
+	for _, r := range WalletRoutes(env.a, service, jobService, env.operations, "admin.wallet", nil) {
 		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 	}
 }

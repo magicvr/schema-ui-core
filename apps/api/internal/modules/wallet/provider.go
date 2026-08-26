@@ -159,11 +159,15 @@ type Provider struct {
 	service    *Service
 	jobs       *JobService
 	operations operationlog.Recorder
+	// ownerExists is the W13 F-012 gate (GOAL-013 A-001): auto-create wallet
+	// paths verify the owner id against the live user table before opening an
+	// account. Wired from the composition root (auth-session repository).
+	ownerExists handler.OwnerExistsFunc
 }
 
 // New constructs the wallet provider.
-func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, service: service, jobs: jobs, operations: operations}
+func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder, ownerExists handler.OwnerExistsFunc) *Provider {
+	return &Provider{a: a, service: service, jobs: jobs, operations: operations, ownerExists: ownerExists}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -203,7 +207,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.WalletRoutes(p.a, p.service, p.jobs, p.operations, ModuleID) {
+	for _, route := range handler.WalletRoutes(p.a, p.service, p.jobs, p.operations, ModuleID, p.ownerExists) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

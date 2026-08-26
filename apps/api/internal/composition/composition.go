@@ -463,7 +463,10 @@ func newMuxWithExtraProviders(
 		providers = append(providers, devexamplesmodule.New())
 	}
 	if plan.HasModule("admin.users") {
-		providers = append(providers, usersmodule.New(a, authRepository, operations, mailSender))
+		// W13 F-006 (GOAL-013 A-001): the canonical public origin (when
+		// configured) replaces client-influenceable Host/Proto headers in
+		// emailed invitation links.
+		providers = append(providers, usersmodule.New(a, authRepository, operations, mailSender, cfg.AuthPublicBaseURL))
 	}
 	if plan.HasModule("admin.roles") {
 		providers = append(providers, rolesmodule.New(a, authRepository, operations))
@@ -532,7 +535,13 @@ func newMuxWithExtraProviders(
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("register wallet jobs: %v", err)}
 		}
 		jobRuntime.enabled.Store(true)
-		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations))
+		// W13 F-012 (GOAL-013 A-001): auto-create wallet paths verify the
+		// owner id against the live user table — no orphan account books.
+		walletOwnerExists := handler.OwnerExistsFunc(func(ownerID string) bool {
+			_, err := authRepository.UserByID(ownerID)
+			return err == nil
+		})
+		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))
@@ -593,7 +602,7 @@ func newMuxWithExtraProviders(
 	}
 	// R6 C6.3: finalized page contributions own both metadata and document bytes;
 	// the handler has no static document or owner fallback.
-	handler.RegisterSchemas(mux, set.Pages)
+	handler.RegisterSchemas(mux, a, set.Pages)
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))
 		for _, fragment := range set.Fragments {
@@ -710,8 +719,15 @@ func newMailRuntime(cfg *config.Config, st kernel.Store, logger *slog.Logger) (*
 	if err != nil {
 		return nil, nil, fmt.Errorf("composition: resolve mail.channel: %w", err)
 	}
-	masterKey, err := mail.LoadOrCreateMasterKey(cfg.MailConfigMasterKey,
-		filepath.Join(filepath.Dir(cfg.DBPath), "mail-master.key"))
+	masterKeyPath := cfg.MailMasterKeyPath
+	if strings.TrimSpace(masterKeyPath) == "" {
+		// W13 F-017 (GOAL-013 A-001): the historical default co-locates the
+		// key with the data directory, so one backup/ snapshot leaks both the
+		// encrypted channel secrets AND the key that unlocks them. Operators
+		// can relocate it via mail.master_key_path / MAIL_MASTER_KEY_PATH.
+		masterKeyPath = filepath.Join(filepath.Dir(cfg.DBPath), "mail-master.key")
+	}
+	masterKey, err := mail.LoadOrCreateMasterKey(cfg.MailConfigMasterKey, masterKeyPath)
 	if err != nil {
 		return nil, nil, err
 	}

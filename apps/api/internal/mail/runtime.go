@@ -104,6 +104,11 @@ type UpdateRequest struct {
 // ErrUnknownChannel guards the closed first-wave channel set.
 var ErrUnknownChannel = errors.New("mail: unknown channel")
 
+// ErrInvalidRetention guards the mock outbox retention bounds (W13 B-4 ·
+// GOAL-013 A-001: a typed sentinel replaces the handler-side substring match
+// on the error string).
+var ErrInvalidRetention = errors.New("mail: invalid mock retention")
+
 // Switcher is THE composed kernel.MailSender once R7 lands: every Send
 // resolves the current runtime state (cached by updated_at; the cache is
 // refreshed whenever the row changes) and delegates to the matching adapter.
@@ -324,7 +329,7 @@ func (s *Switcher) Update(ctx context.Context, req UpdateRequest) (*PublicView, 
 	}
 	if req.MockRetention != nil {
 		if *req.MockRetention < 1 || *req.MockRetention > 100000 {
-			return nil, fmt.Errorf("mail: mock retention must be between 1 and 100000")
+			return nil, fmt.Errorf("mail: %w: mock retention must be between 1 and 100000", ErrInvalidRetention)
 		}
 		cfg.MockRetention = *req.MockRetention
 	}

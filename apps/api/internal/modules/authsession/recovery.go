@@ -222,8 +222,19 @@ func (r *Repository) EvaluateRecoveryCode(userID, rawCode string, now time.Time)
 		if err != nil {
 			return fmt.Errorf("load recovery challenge: %w", err)
 		}
+		// W13 F-008 (GOAL-013 A-001): expiry alone must not classify the
+		// response. The previous shape answered RECOVERY_CODE_EXPIRED for ANY
+		// submitted value once a challenge had aged out, letting anyone who
+		// knows an account identifier probe whether that account recently
+		// requested a reset. Expiry is only surfaced when the code hash
+		// MATCHES (the legitimate holder gets the helpful message); every
+		// other value falls through to the uniform invalid classification.
 		if now.Unix() >= expiresAt {
-			outcome = RecoveryExpired
+			if subtle.ConstantTimeCompare([]byte(hashCode(code)), []byte(codeHash)) == 1 {
+				outcome = RecoveryExpired
+			} else {
+				outcome = RecoveryMismatch
+			}
 			return nil
 		}
 		if subtle.ConstantTimeCompare([]byte(hashCode(code)), []byte(codeHash)) == 1 {

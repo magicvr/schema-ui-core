@@ -195,9 +195,9 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	// evidence walks codes/links out of the outbox records.
 	RegisterRecovery(mux, operations, authRepository, authRepository, recoverySender, nil)
 	RegisterInviteAccept(mux, authRepository)
-	mountRoutes(InviteAdminRoutes(a, authRepository, recoverySender, operations, "admin.users"))
+	mountRoutes(InviteAdminRoutes(a, authRepository, recoverySender, operations, "admin.users", ""))
 	mountRoutes(PasswordPolicyRoutes(a, authRepository, "admin.settings"))
-	RegisterSchemas(mux, testSchemaContributions())
+	RegisterSchemas(mux, a, testSchemaContributions())
 	RegisterUpload(mux, a, objects, testUploadOpts...)
 	// testUploadOpts is reset after each test so per-test policy overrides
 	// cannot leak into sibling tests.

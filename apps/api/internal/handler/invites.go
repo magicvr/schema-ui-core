@@ -80,8 +80,12 @@ func writeInviteDomainError(w http.ResponseWriter, r *http.Request, err error) {
 // InviteAdminRoutes returns the four management route contributions. Every
 // request must carry the users.invite permission — resolved from the actor's
 // own permission set so no new middleware machinery is needed.
-func InviteAdminRoutes(a *auth.Authenticator, repo InviteRepository, sender kernel.MailSender, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
-	h := &inviteAdminHandler{auth: a, repo: repo, sender: sender, operations: operations, now: time.Now}
+// publicBaseURL is the optional canonical external origin (W13 F-006 ·
+// GOAL-013 A-001): when set, emailed invite links ALWAYS use it instead of
+// the request's Host / X-Forwarded-Proto headers, which a client can control
+// and thereby poison the link text an invitee sees in their inbox.
+func InviteAdminRoutes(a *auth.Authenticator, repo InviteRepository, sender kernel.MailSender, operations operationlog.Recorder, moduleID string, publicBaseURL string) []kernel.RouteContribution {
+	h := &inviteAdminHandler{auth: a, repo: repo, sender: sender, operations: operations, now: time.Now, publicBaseURL: strings.TrimRight(strings.TrimSpace(publicBaseURL), "/")}
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, handler http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -104,6 +108,9 @@ type inviteAdminHandler struct {
 	sender     kernel.MailSender
 	operations operationlog.Recorder
 	now        func() time.Time
+	// publicBaseURL is the optional canonical external origin for emailed
+	// invite links (W13 F-006). Empty keeps the request-derived fallback.
+	publicBaseURL string
 }
 
 func (h *inviteAdminHandler) create() http.Handler {
@@ -129,7 +136,7 @@ func (h *inviteAdminHandler) create() http.Handler {
 			writeInviteDomainError(w, r, err)
 			return
 		}
-		link := inviteLink(r, raw)
+		link := inviteLink(r, raw, h.publicBaseURL)
 		if strings.TrimSpace(body.Email) != "" {
 			if serr := sendInviteMail(h.sender, *inv.Email, link, inv.ExpiresAt); serr != nil {
 				// Compensate: an unsendable invite must not linger as live
@@ -153,7 +160,14 @@ func defaultTTL(days int) time.Duration {
 	return time.Duration(days) * 24 * time.Hour
 }
 
-func inviteLink(r *http.Request, rawToken string) string {
+// inviteLink builds the absolute accept link. W13 F-006: when a canonical
+// public base URL is configured it wins — the request's Host and
+// X-Forwarded-Proto are client-influenceable, so header-derived links let an
+// attacker plant arbitrary origins in emailed invitations (phishing surface).
+func inviteLink(r *http.Request, rawToken string, publicBaseURL string) string {
+	if publicBaseURL != "" {
+		return publicBaseURL + "/invite/accept?token=" + rawToken
+	}
 	scheme := "http"
 	if proto := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")); proto != "" {
 		scheme = proto
@@ -246,7 +260,7 @@ func (h *inviteAdminHandler) resend() http.Handler {
 			writeInviteDomainError(w, r, err)
 			return
 		}
-		link := inviteLink(r, raw)
+		link := inviteLink(r, raw, h.publicBaseURL)
 		// A-001 F-003: a failed dispatch surfaces (502) instead of being
 		// swallowed — the invite stays live with its rotated token, so the
 		// admin retries resend after the cooldown.

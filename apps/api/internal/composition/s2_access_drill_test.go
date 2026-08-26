@@ -180,7 +180,9 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — inject the dev session so the
+	// probe schema assertion reaches the handler.
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 
 	// composition root 装配：extra 传入 probe（等效 M3 静态 import + plan 分支）。
 	// 不包含任何 handler / Web Renderer-Shell 中央业务注册改动。

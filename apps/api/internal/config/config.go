@@ -57,6 +57,13 @@ type Config struct {
 	AuthJWTSecretPrevious string
 	AuthAccessTTL         time.Duration
 	AuthRefreshTTL        time.Duration
+	// AuthPublicBaseURL is the optional canonical external origin
+	// (auth.public_base_url / AUTH_PUBLIC_BASE_URL; W13 F-006 · GOAL-013
+	// A-001). When set (e.g. "https://ops.example.com") emailed invitation
+	// links are always built from it — never from the request's Host /
+	// X-Forwarded-Proto headers, which a client can influence. Empty keeps
+	// the request-derived fallback (single-host dev / direct deployments).
+	AuthPublicBaseURL string
 	DBPath                string
 	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
 	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
@@ -175,6 +182,13 @@ type Config struct {
 	// D-007). ENV ONLY (MAIL_CONFIG_MASTER_KEY) — never a YAML literal. Empty
 	// keeps the auto-generated key file under the data directory.
 	MailConfigMasterKey string
+	// MailMasterKeyPath optionally relocates the auto-generated master key
+	// FILE (mail.master_key_path / MAIL_MASTER_KEY_PATH; W13 F-017 · GOAL-013
+	// A-001). The default keeps the key beside the sqlite data directory,
+	// which means one backup/ snapshot leaks both the ciphertext AND its key;
+	// an operator who backs up that directory can point this at a separate
+	// volume instead.
+	MailMasterKeyPath string
 
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
@@ -247,6 +261,7 @@ type yamlFile struct {
 		AccessTTL         *string `yaml:"access_ttl"`
 		RefreshTTL        *string `yaml:"refresh_ttl"`
 		DevSessionEnabled *bool   `yaml:"dev_session_enabled"`
+		PublicBaseURL     *string `yaml:"public_base_url"`
 	} `yaml:"auth"`
 	DB struct {
 		Path         *string `yaml:"path"`
@@ -305,7 +320,8 @@ type yamlFile struct {
 		} `yaml:"traces"`
 	} `yaml:"observability"`
 	Mail struct {
-		Channel *string `yaml:"channel"`
+		Channel       *string `yaml:"channel"`
+		MasterKeyPath *string `yaml:"master_key_path"`
 		SMTP struct {
 			Host     *string `yaml:"host"`
 			Port     *int    `yaml:"port"`
@@ -460,6 +476,7 @@ func Load() *Config {
 	if yf.Auth.DevSessionEnabled != nil {
 		cfg.AuthDevSessionEnabled = *yf.Auth.DevSessionEnabled
 	}
+	cfg.AuthPublicBaseURL = strPtrOr(yf.Auth.PublicBaseURL, cfg.AuthPublicBaseURL)
 	cfg.DBPath = strPtrOr(yf.DB.Path, cfg.DBPath)
 	cfg.DBDialect = strPtrOr(yf.DB.Dialect, cfg.DBDialect)
 	cfg.DBDSN = strPtrOr(yf.DB.DSN, cfg.DBDSN)
@@ -516,6 +533,7 @@ func Load() *Config {
 	cfg.MailChannel = strings.ToLower(strings.TrimSpace(strPtrOr(yf.Mail.Channel, cfg.MailChannel)))
 	cfg.MailResendAPIKey = strPtrOr(yf.Mail.Resend.APIKey, cfg.MailResendAPIKey)
 	cfg.MailResendFrom = strPtrOr(yf.Mail.Resend.From, cfg.MailResendFrom)
+	cfg.MailMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Mail.MasterKeyPath, cfg.MailMasterKeyPath))
 	if yf.Observability.Metrics.Enabled != nil {
 		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
 	}
@@ -568,6 +586,7 @@ func Load() *Config {
 	cfg.AuthAccessTTL = durationEnv("AUTH_ACCESS_TTL", cfg.AuthAccessTTL)
 	cfg.AuthRefreshTTL = durationEnv("AUTH_REFRESH_TTL", cfg.AuthRefreshTTL)
 	cfg.AuthDevSessionEnabled = boolEnv("AUTH_DEV_SESSION_ENABLED", cfg.AuthDevSessionEnabled)
+	cfg.AuthPublicBaseURL = strings.TrimRight(strings.TrimSpace(envOr("AUTH_PUBLIC_BASE_URL", cfg.AuthPublicBaseURL)), "/")
 	cfg.DBPath = envOr("DB_PATH", cfg.DBPath)
 	cfg.DBDialect = envOr("DB_DIALECT", cfg.DBDialect)
 	cfg.DBDSN = envOr("DB_DSN", cfg.DBDSN)
@@ -608,6 +627,7 @@ func Load() *Config {
 	}
 	cfg.MailResendAPIKey = envOr("MAIL_RESEND_API_KEY", cfg.MailResendAPIKey)
 	cfg.MailResendFrom = envOr("MAIL_RESEND_FROM", cfg.MailResendFrom)
+	cfg.MailMasterKeyPath = strings.TrimSpace(envOr("MAIL_MASTER_KEY_PATH", cfg.MailMasterKeyPath))
 	cfg.MailConfigMasterKey = envOr("MAIL_CONFIG_MASTER_KEY", cfg.MailConfigMasterKey)
 	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
@@ -1044,6 +1064,17 @@ func (c *Config) ValidateProd() error {
 	// every environment (including development), like the db/objects rules.
 	if err := c.validateMail(); err != nil {
 		return err
+	}
+	// W13 F-006 (GOAL-013 A-001): a malformed public base URL is a startup
+	// gate in every environment — a bad value would corrupt every emailed
+	// invitation link.
+	if c.AuthPublicBaseURL != "" {
+		parsed, perr := url.Parse(c.AuthPublicBaseURL)
+		if perr != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" ||
+			parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" ||
+			strings.ContainsAny(c.AuthPublicBaseURL, " \t\r\n") {
+			return fmt.Errorf("AUTH_PUBLIC_BASE_URL must be an absolute origin like https://host (no path, query or fragment); got %q", c.AuthPublicBaseURL)
+		}
 	}
 	if c.AppEnv == "development" {
 		return nil

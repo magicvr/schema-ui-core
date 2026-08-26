@@ -52,8 +52,14 @@ type WalletJobService interface {
 	Retry(ctx context.Context, id, actorID string) (*jobs.Job, error)
 }
 
+// OwnerExistsFunc reports whether a user owner id refers to an existing
+// account (W13 F-012 · GOAL-013 A-001). The auto-create paths must not mint
+// ledger rows for nonexistent owners (orphan account books). nil disables the
+// gate (bare test environments only).
+type OwnerExistsFunc func(ownerID string) bool
+
 // WalletRoutes returns the admin.wallet HTTP surface.
-func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string, ownerExists OwnerExistsFunc) []kernel.RouteContribution {
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, h http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -120,6 +126,12 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_OWNER", "ownerId is required")
 			return
 		}
+		// W13 F-012: an explicit create must reference a REAL user — an
+		// unknown owner would otherwise open an orphan account book.
+		if ownerExists != nil && !ownerExists(ownerID) {
+			writeLocalizedError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "no user with that ownerId")
+			return
+		}
 		now := time.Now().UTC()
 		account, created, err := service.GetOrCreateUserAccount(ownerID, now)
 		if err != nil {
@@ -142,6 +154,13 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		ownerID := strings.TrimSpace(r.PathValue("ownerId"))
 		if ownerID == "" {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_WALLET_OWNER", "ownerId is required")
+			return
+		}
+		// W13 F-012: the adjust path auto-creates on first sight — same
+		// existence gate as the explicit create so a typo'd ownerId can never
+		// silently open an orphan ledger.
+		if ownerExists != nil && !ownerExists(ownerID) {
+			writeLocalizedError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "no user with that ownerId")
 			return
 		}
 		var body struct {

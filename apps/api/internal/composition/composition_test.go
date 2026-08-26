@@ -92,7 +92,9 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — this projection-only test
+	// injects the static dev session so requests reach the handler.
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 	mux, err := testMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
@@ -190,11 +192,34 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 					t.Fatalf("GET %s status = %d, want %d; body=%s", path, recorder.Code, want, recorder.Body.String())
 				}
 			}
+			assertStatusOn := func(m *http.ServeMux, path string, want int) {
+				t.Helper()
+				recorder := httptest.NewRecorder()
+				m.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+				if recorder.Code != want {
+					t.Fatalf("GET %s status = %d, want %d; body=%s", path, recorder.Code, want, recorder.Body.String())
+				}
+			}
+			// W13 F-010 (GOAL-013 A-001): schemas are authenticated now — an
+			// ANONYMOUS caller gets a uniform 401 and can no longer probe page
+			// existence. The per-profile projection property is therefore
+			// asserted on a dev-session mux: enabled page → 200, disabled
+			// page → SCHEMA_NOT_FOUND (404).
+			stAuthed, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer stAuthed.Close()
+			aAuthed := auth.New([]byte("test-secret"), 0, 0, stAuthed, true)
+			muxAuthed, err := testMux(aAuthed, stAuthed, plan, &readinessGate{})
+			if err != nil {
+				t.Fatal(err)
+			}
 			assertStatus("/api/settings", tc.settingsRoute)
 			assertStatus("/api/operations", tc.operationsRoute)
 			assertStatus("/api/branding", tc.brandingRoute)
-			assertStatus("/api/schema/settings", tc.settingsSchema)
-			assertStatus("/api/schema/activity", tc.activitySchema)
+			assertStatusOn(muxAuthed, "/api/schema/settings", tc.settingsSchema)
+			assertStatusOn(muxAuthed, "/api/schema/activity", tc.activitySchema)
 
 			manifestResponse := httptest.NewRecorder()
 			mux.ServeHTTP(manifestResponse, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
@@ -245,7 +270,9 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() { _ = st.Close() })
-		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		// W13 F-010: schemas are authenticated now — inject the dev session so
+		// the helper can also probe /api/schema/{pageId}.
+		a := auth.New([]byte("test-secret"), 0, 0, st, true)
 		mux, err := testMux(a, st, plan, &readinessGate{})
 		if err != nil {
 			t.Fatal(err)
@@ -382,7 +409,9 @@ func TestDemoProfileManifest(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — inject the dev session so
+	// the example-schema probe below reaches the handler.
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 	mux, err := testMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
@@ -677,7 +706,9 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — inject the dev session so the
+	// disabled-page probes below still reach the handler (and 404 there).
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 	gate := &readinessGate{}
 	gate.setReady()
 	mux, err := testMux(a, st, plan, gate)

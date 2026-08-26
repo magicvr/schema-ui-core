@@ -162,9 +162,15 @@ func TestBindSamePendingAddressHonorsCooldown(t *testing.T) {
 	if err := repo.BindEmail("user-admin", "ALICE@example.com", sender, base.Add(30*time.Second)); !errors.Is(err, ErrEmailResendCooldown) {
 		t.Fatalf("same-address rebind err = %v, want ErrEmailResendCooldown", err)
 	}
-	// A DIFFERENT address is a rebind: dispatches immediately.
-	if err := repo.BindEmail("user-admin", "other@example.com", sender, base.Add(30*time.Second)); err != nil {
-		t.Fatalf("rebind to new address: %v", err)
+	// W13 F-009 (GOAL-013 A-001): a DIFFERENT address honors the same
+	// cooldown — unlimited immediate dispatch to arbitrary addresses was a
+	// mail-bomb primitive. Within the window it must be rejected…
+	if err := repo.BindEmail("user-admin", "other@example.com", sender, base.Add(30*time.Second)); !errors.Is(err, ErrEmailResendCooldown) {
+		t.Fatalf("rebind to new address within cooldown err = %v, want ErrEmailResendCooldown", err)
+	}
+	// …and after the cooldown window the rebind dispatches normally.
+	if err := repo.BindEmail("user-admin", "other@example.com", sender, base.Add(61*time.Second)); err != nil {
+		t.Fatalf("rebind to new address after cooldown: %v", err)
 	}
 }
 

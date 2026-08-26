@@ -164,16 +164,19 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 			return nil
 		}
 		// A-001 F-002: re-binding the SAME pending address is resend semantics
-		// (a fresh code to the same inbox) — honor the frozen cooldown. A
-		// DIFFERENT address is a rebind and dispatches immediately.
-		if priorStatus != nil && *priorStatus == "pending" && priorEmail != nil &&
-			strings.EqualFold(strings.TrimSpace(*priorEmail), email) {
-			var sentAt int64
-			if err := tx.QueryRow(context.Background(),
-				`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
-			).Scan(&sentAt); err == nil && now.Unix()-sentAt < int64(emailResendCooldown/time.Second) {
-				return ErrEmailResendCooldown
-			}
+		// (a fresh code to the same inbox) — honor the frozen cooldown.
+		// W13 F-009 (GOAL-013 A-001): a DIFFERENT address used to dispatch
+		// immediately with no step limit, so a session holder could pump
+		// unbounded outbound mail to arbitrary addresses by cycling targets.
+		// EVERY dispatch now honors the per-account cooldown read from the
+		// existing challenge row regardless of address; the frozen rebind
+		// semantics (overwrite to pending) are unchanged.
+		var sentAt int64
+		scanErr := tx.QueryRow(context.Background(),
+			`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
+		).Scan(&sentAt)
+		if scanErr == nil && now.Unix()-sentAt < int64(emailResendCooldown/time.Second) {
+			return ErrEmailResendCooldown
 		}
 		var taken int
 		if err := tx.QueryRow(context.Background(),
@@ -350,12 +353,22 @@ func (r *Repository) evaluateVerification(userID, code string, now time.Time) (v
 
 // registerFailedAttempt bumps the failure counter in its own transaction and
 // reports whether the challenge reached the void threshold (deleted).
+// W13 B-1 (GOAL-013 A-001): the previous shape unconditionally read the
+// counter back and treated a MISSING row as "voided", so a verify racing a
+// concurrent consume surfaced EXPIRED for a challenge that this call never
+// voided. The UPDATE's affected-rows count now separates "no live challenge"
+// (nothing booked, not voided) from a real threshold deletion.
 func (r *Repository) registerFailedAttempt(userID string, maxAttempts int) bool {
+	voided := false
 	_ = r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		if _, err := tx.Exec(context.Background(),
+		result, err := tx.Exec(context.Background(),
 			`UPDATE email_verification_challenges SET attempt_count = attempt_count + 1 WHERE user_id = ?`,
-			userID); err != nil {
+			userID)
+		if err != nil {
 			return err
+		}
+		if rows, rerr := result.RowsAffected(); rerr == nil && rows == 0 {
+			return nil // no live challenge: nothing was booked and NOT voided here
 		}
 		var attempts int
 		if err := tx.QueryRow(context.Background(),
@@ -364,21 +377,15 @@ func (r *Repository) registerFailedAttempt(userID string, maxAttempts int) bool 
 			return err
 		}
 		if attempts >= maxAttempts {
-			_, err := tx.Exec(context.Background(),
-				`DELETE FROM email_verification_challenges WHERE user_id = ?`, userID)
-			return err
+			if _, err := tx.Exec(context.Background(),
+				`DELETE FROM email_verification_challenges WHERE user_id = ?`, userID); err != nil {
+				return err
+			}
+			voided = true
 		}
 		return nil
 	})
-	// Read-back is best-effort; a voided challenge surfaces as expired on the
-	// next evaluate pass either way.
-	var attempts int
-	_ = r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		return tx.QueryRow(context.Background(),
-			`SELECT COALESCE(attempt_count, 0) FROM email_verification_challenges WHERE user_id = ?`, userID,
-		).Scan(&attempts)
-	})
-	return attempts == 0
+	return voided
 }
 
 // errNotSentinel is a control-flow marker: abort a transaction for a

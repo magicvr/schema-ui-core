@@ -55,7 +55,7 @@ func planWithUsers(t *testing.T) kernel.Plan {
 
 func TestUsersProviderRegistersSurfaces(t *testing.T) {
 	a, _, repository, operations := newTestEnv(t)
-	provider := New(a, repository, operations, nil)
+	provider := New(a, repository, operations, nil, "")
 	set, err := kernel.RegisterContributions(context.Background(), planWithUsers(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -99,7 +99,7 @@ func TestUsersProviderRegistersSurfaces(t *testing.T) {
 func TestUsersProviderServesAuthenticatedCRUD(t *testing.T) {
 	a, st, repository, operations := newTestEnv(t)
 	plan := planWithUsers(t)
-	provider := New(a, repository, operations, nil)
+	provider := New(a, repository, operations, nil, "")
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -155,7 +155,7 @@ func TestUsersProviderServesAuthenticatedCRUD(t *testing.T) {
 func TestUsersProviderFullCRUD(t *testing.T) {
 	a, st, repository, operations := newTestEnv(t)
 	plan := planWithUsers(t)
-	provider := New(a, repository, operations, nil)
+	provider := New(a, repository, operations, nil, "")
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
