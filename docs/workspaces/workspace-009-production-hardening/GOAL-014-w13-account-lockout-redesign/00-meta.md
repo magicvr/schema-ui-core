@@ -5,8 +5,8 @@ status: active
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-013-w13-api-web-security-audit
-version: 0.1.0
-progress: 1/6
+version: 0.2.0
+progress: 2/6
 ---
 
 # GOAL-014 · W13-F007 账号锁定模型重设计
@@ -20,7 +20,7 @@ progress: 1/6
 ## 路线图（progress 来源：以下 6 个检查点等权）
 
 - [x] **S1 立项与裁决落盘** —— 用户三路径选择 fixed（经子目标承载）；五件套建立
-- [ ] **S2 方案设计与冻结** —— 候选模型对比（IP+账号联合维度计数 / 指数退避 / 锁定与吊销解耦），选定方案写入 D-002 并冻结
+- [x] **S2 方案设计与冻结** —— 候选模型对比（A 纯 IP 锁 / B 全局退避 / C 分层），选定模型 C（IP 维度锁 + 高阈值全局熔断 + 移除失败触发吊销），写入 D-002 并冻结
 - [ ] **S3 实施** —— 持久层字段/迁移（如需）+ auth.Login 失败记账改造 + 管理员通知语义保持
 - [ ] **S4 回归** —— go vet 0 + 全量 go test 全绿；缺陷形状回归锁（定向 DoS 场景不可复现、分布式猜测防护不弱化）
 - [ ] **S5 审计** —— self 审计 pass → independent 审计（项目默认 grok build · grok-4.6 · reasoning high · `/audit`）
