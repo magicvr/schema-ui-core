@@ -4,7 +4,7 @@ status: active
 created: 2026-08-10
 updated: 2026-08-26
 parent: null
-version: 0.20.0
+version: 0.21.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -27,7 +27,7 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-009-w9-api-web-security-audit [done] (4/4)     · W9
 ├── GOAL-010-w10-api-web-security-audit [done] (4/4)    · W10
 ├── GOAL-011-w11-api-web-security-audit [done] (4/4)  · W11
-└── GOAL-012-w12-multi-instance-rate-limiting [active] (1/4) · W12 · 多实例限流拓扑评估与加固
+└── GOAL-012-w12-multi-instance-rate-limiting [done] (4/4) · W12 · 多实例限流拓扑评估（单实例边界维持 · 载体预登记 Redis）
 ```
 
 **W11（2026-08-22，已关门）**：用户指令独立审计 api/web（禁止加载 skills）→ 开 GOAL-011；A-001 `source: independent` **fail**（3 HIGH required + 3 MEDIUM required = 6 开放；13 recommended；6 informational）。用户轮次指令「推进…直到顺利闭门」授权闭门路径：**D-002 整单采纳 6 条 + 波内暂挂 VP-008 go**（不因 fail 单点自动悬挂的原则保留）→ E-002 S3 实施 6/6 修复（F-001 PG EXISTS bool；F-002 删除+快照同事务；F-003 MFA proof 限流+原子计数；F-004 MFA 双密钥轮换窗口；F-005 验证码单语句消费；F-006 对账 400+写权限）→ E-003 recommended 处置（fixed 11：F-007/008/010/011/012/013/014/016/017/018 + F-009 部分；overruled 2 有据：F-015 客户端跨标签重试协议依赖、F-019 API 硬门禁不变）→ **A-002 self pass** → **A-003 grok-build（grok-4.6 · reasoning high）independent pass：6/6 genuine fixed + F-001/F-005 真实 Postgres 复跑**（回归全绿：go vet 0 / go test 全绿 / web 1085/1085 / tsc 0；checkpoint `72a5397`）→ A-004 闭合记录（fixed ×6 + overruled ×2 + recommended ×11；开放 required = 0；I-003 关闭）→ **D-004 关门 + 恢复 VP-008 go 宣称**。`status: done` (4/4)。**关门后复核：A-005（independent · DeepSeek Harness）post-close pass（代码直接核验 6/6 genuine fixed；无必改项）→ A-006 响应（R-002：03-audit.md frontmatter 转 done；R-001/R-003/I-A/I-B 有据记录）→ 正式关门确认，无重新打开条件。** Root 保持 active。残余移交：数据库密码轮换（用户侧）；R-001/R-002 与 F-009 lastRun（见 A-004）。见 [GOAL-011](GOAL-011-w11-api-web-security-audit/00-meta.md) / [D-002](GOAL-011-w11-api-web-security-audit/01-decision/D-002-w11-scope-and-go-hold.md) / [A-003](GOAL-011-w11-api-web-security-audit/03-audit/A-003-w11-s4-independent.md) / [A-004](GOAL-011-w11-api-web-security-audit/03-audit/A-004-w11-closure-response.md) / [D-004](GOAL-011-w11-api-web-security-audit/01-decision/D-004-w11-go-restore.md) / [A-005](GOAL-011-w11-api-web-security-audit/03-audit/A-005-w11-post-close-independent.md) / [A-006](GOAL-011-w11-api-web-security-audit/03-audit/A-006-w11-a005-response.md)。
@@ -55,7 +55,7 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-009-w9-api-web-security-audit | W9 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-21 |
 | GOAL-010-w10-api-web-security-audit | W10 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-21 |
 | GOAL-011-w11-api-web-security-audit | W11 api/web 独立安全审计（审计报告落盘） | GOAL-001-production-hardening | done | 4/4 | 2026-08-22 |
-| GOAL-012-w12-multi-instance-rate-limiting | W12 多实例限流拓扑评估与加固（承接 workspace-019 E-009 §F-002） | GOAL-001-production-hardening | active | 1/4 | 2026-08-26 |
+| GOAL-012-w12-multi-instance-rate-limiting | W12 多实例限流拓扑评估与加固（承接 workspace-019 E-009 §F-002） | GOAL-001-production-hardening | done | 4/4 | 2026-08-26 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
 ## 维护说明

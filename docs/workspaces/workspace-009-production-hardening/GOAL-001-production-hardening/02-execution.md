@@ -37,4 +37,4 @@ version: 0.8.0
 - W9 → [GOAL-009](../GOAL-009-w9-api-web-security-audit/02-execution.md)（done）
 - W10 → [GOAL-010](../GOAL-010-w10-api-web-security-audit/02-execution.md)（done）
 - W11 → [GOAL-011](../GOAL-011-w11-api-web-security-audit/02-execution.md)（done · 2026-08-22 关门正式确认）
-- W12 → [GOAL-012](../GOAL-012-w12-multi-instance-rate-limiting/02-execution.md)（active · S1 立项落盘）
+- W12 → [GOAL-012](../GOAL-012-w12-multi-instance-rate-limiting/02-execution.md)（done · 评估型收官：单实例边界维持 + 载体预登记 Redis 方向，D-002/A-001 self pass）
