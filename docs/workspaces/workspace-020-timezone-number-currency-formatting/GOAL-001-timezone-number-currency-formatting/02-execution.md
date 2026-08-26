@@ -19,6 +19,6 @@ version: 0.1.0
 
 ## 推进状态速览
 
-- Root **active** · 3/4：R1～R3 **已关门**（GOAL-002 done 3/3、GOAL-003 done 5/5、GOAL-004 done 6/6 —— 其中 R3 经 grok build 独立审 fail→fixed→复审 pass）；R4 **待立项**（GOAL-005 证据与关门）。
+- Root **active** · 3/4：R1～R3 **已关门**（GOAL-002 done 3/3、GOAL-003 done 5/5、GOAL-004 done 6/6 —— 其中 R3 经 grok build 独立审 fail→fixed→复审 pass）；R4 **已立项**（GOAL-005 active 3/4 · 证据矩阵/越界核账/F-007 加严 done；Root 关门审计 A-001 self pass + A-002 grok independent pass，待用户书面确认关门）。
 - I-001 / I-002 / I-005 已用户裁决（D-002 accepted）；合同正文 = GOAL-002 D-001，随 R2/R3 消费。
-- R3 移交核账项（F-002/F-005/F-006/F-007 recommended/residual）随 R4 评估。
+- R3 移交核账项（F-002/F-005/F-006/F-007 recommended/residual）已在 R4 核账处置（F-007 fixed；其余 final residual 用户书面接受）。

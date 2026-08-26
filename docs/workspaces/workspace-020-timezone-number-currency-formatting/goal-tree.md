@@ -12,7 +12,7 @@ workspace_id: workspace-020-timezone-number-currency-formatting
 
 > 工作区：`workspace-020-timezone-number-currency-formatting`
 > canonical：`docs/workspaces/workspace-020-timezone-number-currency-formatting/`
-> Root：`GOAL-001-timezone-number-currency-formatting`（**active** · 2/4）
+> Root：`GOAL-001-timezone-number-currency-formatting`（**active** · 3/4）
 > primary_plan：`VP-020-timezone-number-currency-formatting`（**active** · VRev-044 self `pass`）
 
 ## 树

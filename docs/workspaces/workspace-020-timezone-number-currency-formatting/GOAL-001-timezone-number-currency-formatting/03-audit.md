@@ -14,6 +14,7 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | findings | 文件 |
 |------|------|--------|-------|---------|----------|------|
-| — | — | — | — | — | — | （尚无 Goal 级审计条目） |
+| A-001 | 2026-08-26 | self | close-out · Root 全量（R1～R4 交付链 · 信息门禁 · 成功标准 1～4 · 无越界 · 审计闭环） | pass | 0 required（F-001 VP-020 关门收尾 recommended；F-002 残余留痕 informational） | [A-001-root-closeout-self.md](03-audit/A-001-root-closeout-self.md) |
+| A-002 | 2026-08-27 | independent | close-out · Root 全量（grok-build grok-4.6 · high；当场复跑 Go 全量 + web 1181 + git diff 越界复核） | **pass** | 0 required（F-001 台账指针陈旧 recommended·结项收口；F-002 VP-020 决策层收尾 recommended；F-003 informational） | [A-002-root-closeout-independent.md](03-audit/A-002-root-closeout-independent.md) |
 
 > **激活审查备注**：2026-08-26 激活审查 VRev-044（`source: self`，`pass`；V-F079/V-F080 → fixed）属 **vision 台账**（`docs/vision/reviews/VRev-044-vp020-intent-activation.md` + `docs/vision/reviews.md` 索引），不是本 Goal `03-audit`。本 03-audit 台账自关门审计起登记。
