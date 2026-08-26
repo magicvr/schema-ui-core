@@ -85,10 +85,16 @@ test("login gates the shell and the real auth chain works through the proxy", as
   expect(manifestPageIds.includes("settings")).toBe(isAdminProfile);
   expect(manifestPageIds.includes("activity")).toBe(isAdminProfile);
 
+  // F-010 (GOAL-013): every /api/schema/* route sits behind the auth
+  // middleware and is mounted globally, so an UNAUTHENTICATED probe fails
+  // closed with 401 BEFORE any module-presence resolution — on any profile.
+  // (Pre-F-010 this probe expected 200/404 per profile; the stale assertion
+  // surfaced in the GOAL-015 W14 close-out full e2e run and was re-contracted
+  // there — see workspace-009 GOAL-015 E-004.)
   const settingsSchema = await request.get("/api/schema/settings");
   const activitySchema = await request.get("/api/schema/activity");
-  expect(settingsSchema.status()).toBe(isAdminProfile ? 200 : 404);
-  expect(activitySchema.status()).toBe(isAdminProfile ? 200 : 404);
+  expect(settingsSchema.status()).toBe(401);
+  expect(activitySchema.status()).toBe(401);
   const settingsRoute = await request.get("/api/settings");
   const activityRoute = await request.get("/api/operations");
   expect(settingsRoute.status()).toBe(isAdminProfile ? 401 : 404);

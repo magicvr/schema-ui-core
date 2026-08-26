@@ -1,15 +1,12 @@
-import { Component, StrictMode, useCallback, useEffect, useState, type ReactNode } from "react";
+import { Component, StrictMode, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { AuthProvider, useAuth } from "@/account/AuthContext";
-import { createConfigAwareFetcher } from "@/app/config-events";
 import { HostFailureScreen } from "@/app/HostFailureScreen";
-import { I18nProvider, useI18n } from "@/i18n/runtime";
-import type { NavigationContext } from "@/protocol/app-manifest";
-import { App } from "@/app/App";
-import { LoginPage } from "@/app/LoginPage";
-import { InviteAcceptPage } from "@/components/invite-accept";
-import { ForcePasswordChange } from "@/components/force-password-change";
+import { I18nProvider } from "@/i18n/runtime";
+// W14 F-001: the production gate lives in its own module so its <App> wiring
+// (Bearer transports for page schemas + resources) is locked by unit tests.
+import { AuthGate, BootScreen } from "@/app/AuthGate";
 // GOAL-018: self-registers custom renderer components (mfa-manager in the
 // personal-center MFA block; notification-center on the notifications page).
 import "@/components/mfa-manager";
@@ -32,14 +29,13 @@ import "@/components/invite-resend-dialog";
 import { ManifestFailure } from "@/app/ManifestFailure";
 import {
   loadAppManifestBytes,
-  type AppManifest,
 } from "@/protocol/app-manifest";
 import {
   discoverBootstrapDocument,
   type BootstrapAuth,
   type BootstrapDiscovery,
 } from "@/host/bootstrap";
-import { adapterAuthFor, bootHost, executeBootRecovery, lockedFailure, reauthFailure, type HostBootState, type SessionAdapterState } from "@/host/boot";
+import { adapterAuthFor, bootHost, executeBootRecovery, type HostBootState, type SessionAdapterState } from "@/host/boot";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 import "./index.css";
 
@@ -50,75 +46,6 @@ import "./index.css";
 import { initTheme } from "@/theme/theme";
 function applyStoredTheme() {
   initTheme();
-}
-
-function BootScreen() {
-  const { t } = useI18n();
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
-      {t("app.boot.checkingSession")}
-    </div>
-  );
-}
-
-/**
- * Host-layer configuration side effects after successful resource writes
- * (A-006 R-002). Modules identify changed namespaces through a response
- * header; the generic Renderer remains unaware of product-specific behavior.
- */
-function useResourceFetcher(authFetch: typeof fetch): typeof fetch {
-  return useCallback(createConfigAwareFetcher(authFetch), [authFetch]);
-}
-
-/** Renders the login page when unauthenticated, the shell when authenticated. */
-function AuthGate({ manifest }: { manifest: AppManifest }) {
-  const { status, user, session, login, logout, authFetch } = useAuth();
-  const resourceFetcher = useResourceFetcher(authFetch);
-
-  if (status === "loading") {
-    return <BootScreen />;
-  }
-  if (status === "reauth-required") {
-    // Post-boot session loss: the adapter reports reauth-required (ADR-0035
-    // D4/D7) — a terminal failure surface, not the anonymous login page.
-    // `reauth` captures the return intent before leaving for /login.
-    return <HostFailureScreen failure={reauthFailure()} onAction={executeBootRecovery} />;
-  }
-  if (status === "locked") {
-    // GOAL-004 S4-6: account-lock terminal (ADR-0035 D7 / ADR-0036 D6) —
-    // home/support only, no reauth, no retry loop.
-    return <HostFailureScreen failure={lockedFailure()} onAction={executeBootRecovery} />;
-  }
-  if (status === "unauthenticated") {
-    // workspace-019 R3 (GOAL-004 C4): the public invitation acceptance page
-    // lives on the pre-auth surface, keyed by /invite/accept?token=…
-    try {
-      if (window.location.pathname.startsWith("/invite/accept")) {
-        return <InviteAcceptPage />;
-      }
-    } catch {
-      // non-browser context — fall through to login
-    }
-    return <LoginPage onLogin={login} />;
-  }
-  if (user?.mustChangePassword === true) {
-    // W16-F01: force the initial/reset password change before entering the app.
-    return <ForcePasswordChange />;
-  }
-
-  const context: NavigationContext = {
-    user: user === null ? undefined : (user as unknown as Record<string, unknown>),
-    features: session?.features,
-  };
-  return (
-    <App
-      manifest={manifest}
-      navigationContext={context}
-      resourceFetcher={resourceFetcher}
-      onLogout={logout}
-      currentUser={user}
-    />
-  );
 }
 
 /** Maps the session adapter state to the bootstrap normalized auth input (D4). */
