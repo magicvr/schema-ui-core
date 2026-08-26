@@ -37,14 +37,31 @@ type OutboxSink struct {
 // (GOAL-006 D-002 §3.3): keep the most recent 500 records.
 const DefaultOutboxCap = 500
 
-// OutboxRecord is one mock outbound message as surfaced through the admin
-// retrieval API. List views omit Body; Get fills it.
+// Frozen delivery-status vocabulary (W26 · GOAL-038 D-001 §2.1). delivered =
+// accepted by the in-app mock transport; sent = the real channel accepted the
+// message (2xx / 250); failed = the channel adapter returned an error.
+const (
+	ChannelMock   = "mock"
+	ChannelResend = "resend"
+	ChannelSMTP   = "smtp"
+
+	DeliveryDelivered = "delivered"
+	DeliverySent      = "sent"
+	DeliveryFailed    = "failed"
+)
+
+// OutboxRecord is one outbound message as surfaced through the admin
+// retrieval API. Since W26 every channel records here; list views carry the
+// body too (D-001 §2.1 contract revision — the declarative recordView drawer
+// renders detail straight from the selected row).
 type OutboxRecord struct {
-	ID        string    `json:"id"`
-	To        string    `json:"to"`
-	Subject   string    `json:"subject"`
-	Body      string    `json:"body,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	ID             string    `json:"id"`
+	To             string    `json:"to"`
+	Subject        string    `json:"subject"`
+	Body           string    `json:"body,omitempty"`
+	Channel        string    `json:"channel"`
+	DeliveryStatus string    `json:"delivery_status"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // outboxIDSeq guarantees process-local uniqueness regardless of entropy
@@ -70,20 +87,17 @@ func NewOutboxSink(store kernel.Store, retentionCap int) *OutboxSink {
 	return &OutboxSink{store: store, cap: retentionCap, now: time.Now}
 }
 
-// Send validates the message against the frozen port contract, then appends
-// one record and enforces the bounded retention inside the same transaction:
-// either both succeed or neither does. There is no delivery to fail.
-func (s *OutboxSink) Send(ctx context.Context, msg kernel.MailMessage) error {
-	if err := msg.Validate(); err != nil {
-		return fmt.Errorf("mail: %v", err)
-	}
-	now := s.now().UTC()
+// publishOutboundRecord appends one outbound record with the frozen delivery
+// status and enforces bounded retention inside the same transaction: either
+// both succeed or neither does. Shared by the mock transport (Send below) and
+// the runtime switcher's real-channel recording (runtime.go).
+func publishOutboundRecord(store kernel.Store, retentionCap int, now time.Time, msg kernel.MailMessage, channel, status string) error {
 	id := newOutboxID(now)
-	err := s.store.Run(ctx, func(tx kernel.Tx) error {
+	err := store.Run(context.Background(), func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
-			`INSERT INTO mail_outbox (id, to_addr, subject, body, created_at)
-			 VALUES (?, ?, ?, ?, ?)`,
-			id, msg.To, msg.Subject, msg.TextBody, now.UnixMilli(),
+			`INSERT INTO mail_outbox (id, to_addr, subject, body, channel, delivery_status, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			id, msg.To, msg.Subject, msg.TextBody, channel, status, now.UnixMilli(),
 		); err != nil {
 			return err
 		}
@@ -91,12 +105,26 @@ func (s *OutboxSink) Send(ctx context.Context, msg kernel.MailMessage) error {
 			`DELETE FROM mail_outbox WHERE id NOT IN (
 				 SELECT id FROM mail_outbox ORDER BY created_at DESC, id DESC LIMIT ?
 			 )`,
-			s.cap,
+			retentionCap,
 		)
 		return err
 	})
 	if err != nil {
 		return fmt.Errorf("mail: publish outbox record: %w", err)
+	}
+	return nil
+}
+
+// Send validates the message against the frozen port contract, then appends
+// one record (mock → delivered) and enforces the bounded retention inside the
+// same transaction. There is no delivery to fail.
+func (s *OutboxSink) Send(ctx context.Context, msg kernel.MailMessage) error {
+	if err := msg.Validate(); err != nil {
+		return fmt.Errorf("mail: %v", err)
+	}
+	now := s.now().UTC()
+	if err := publishOutboundRecord(s.store, s.cap, now, msg, ChannelMock, DeliveryDelivered); err != nil {
+		return err
 	}
 	return nil
 }
@@ -113,7 +141,7 @@ func (s *OutboxSink) List(ctx context.Context, limit, offset int) ([]OutboxRecor
 	var records []OutboxRecord
 	err := s.store.Run(ctx, func(tx kernel.Tx) error {
 		rows, err := tx.Query(context.Background(),
-			`SELECT id, to_addr, subject, created_at FROM mail_outbox
+			`SELECT id, to_addr, subject, body, channel, delivery_status, created_at FROM mail_outbox
 			 ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
 			limit, offset,
 		)
@@ -124,7 +152,7 @@ func (s *OutboxSink) List(ctx context.Context, limit, offset int) ([]OutboxRecor
 		for rows.Next() {
 			var rec OutboxRecord
 			var ms int64
-			if err := rows.Scan(&rec.ID, &rec.To, &rec.Subject, &ms); err != nil {
+			if err := rows.Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &rec.Channel, &rec.DeliveryStatus, &ms); err != nil {
 				return fmt.Errorf("scan outbox row: %w", err)
 			}
 			rec.CreatedAt = time.UnixMilli(ms).UTC()
@@ -156,8 +184,8 @@ func (s *OutboxSink) Get(ctx context.Context, id string) (OutboxRecord, error) {
 	var ms int64
 	err := s.store.Run(ctx, func(tx kernel.Tx) error {
 		switch err := tx.QueryRow(context.Background(),
-			`SELECT id, to_addr, subject, body, created_at FROM mail_outbox WHERE id = ?`, id,
-		).Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &ms); {
+			`SELECT id, to_addr, subject, body, channel, delivery_status, created_at FROM mail_outbox WHERE id = ?`, id,
+		).Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &rec.Channel, &rec.DeliveryStatus, &ms); {
 		case errors.Is(err, kernel.ErrNoRows):
 			return ErrOutboxRecordNotFound
 		default:

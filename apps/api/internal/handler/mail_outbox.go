@@ -1,5 +1,6 @@
-// Mock-channel outbound record read surface (VP-017 R6 / workspace-017
-// GOAL-007; contract frozen by workspace-017 GOAL-006 D-002 §3): authenticated,
+// All-channel outbound record read surface (VP-017 R6 / workspace-017
+// GOAL-007; contract frozen by workspace-017 GOAL-006 D-002 §3, revised by
+// W26 GOAL-038 D-001 §2.1 to cover every channel): authenticated,
 // settings.read-gated list + detail over the Store-backed OutboxSink. This is
 // the independent admin API per Root I-012 — deliberately NOT folded into
 // /api/settings/*, no PATCH surface. Provider types never appear here: the
@@ -113,15 +114,21 @@ func outboxDetail(reader OutboxReader) http.Handler {
 	})
 }
 
-// toMapItems adapts typed records into the generic envelope items.
+// toMapItems adapts typed records into the generic envelope items. Since W26
+// (GOAL-038 D-001 §2.1) items carry the full record — channel, delivery
+// status and body ride the list so the declarative recordView drawer can
+// render detail from the selected row (bounded by retention + page size).
 func toMapItems(items []mail.OutboxRecord) []map[string]any {
 	out := make([]map[string]any, 0, len(items))
 	for _, rec := range items {
 		out = append(out, map[string]any{
-			"id":         rec.ID,
-			"to":         rec.To,
-			"subject":    rec.Subject,
-			"created_at": rec.CreatedAt,
+			"id":             rec.ID,
+			"to":             rec.To,
+			"subject":        rec.Subject,
+			"body":           rec.Body,
+			"channel":        rec.Channel,
+			"delivery_status": rec.DeliveryStatus,
+			"created_at":     rec.CreatedAt,
 		})
 	}
 	return out

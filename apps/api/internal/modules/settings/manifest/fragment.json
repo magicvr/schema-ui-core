@@ -16,9 +16,43 @@
       "schemaUrl": "/api/schema/settings",
       "route": "/settings",
       "titleKey": "manifest.title.settings"
+    },
+    {
+      "pageId": "mail",
+      "title": "Mail console",
+      "schemaUrl": "/api/schema/mail",
+      "route": "/mail",
+      "titleKey": "manifest.title.mail"
+    },
+    {
+      "pageId": "mail-outbox",
+      "title": "Outbound email log",
+      "schemaUrl": "/api/schema/mail-outbox",
+      "route": "/mail-outbox",
+      "titleKey": "manifest.title.mailOutbox"
     }
   ],
   "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "mail",
+        "label": "Mail console",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_mail == true"
+        },
+        "labelKey": "manifest.nav.mail"
+      },
+      {
+        "pageRef": "mail-outbox",
+        "label": "Outbound email log",
+        "icon": "table",
+        "visibleWhen": {
+          "when": "$context.features.menu_mail_outbox == true"
+        },
+        "labelKey": "manifest.nav.mailOutbox"
+      }
+    ],
     "user": [
       {
         "pageRef": "settings",

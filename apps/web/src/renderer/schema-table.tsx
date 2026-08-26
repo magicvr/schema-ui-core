@@ -772,13 +772,23 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         : {}),
       ...(column.badgeStyleField !== undefined
         ? {
-            render: (row: ResourceItem) => (
-              <span
-                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${badgeClassesFor(row[column.badgeStyleField as string])}`}
-              >
-                {String(row[column.field] ?? "")}
-              </span>
-            ),
+            render: (row: ResourceItem) => {
+              // W26 (GOAL-038 D-001 §1): an empty cell value (e.g. unbound
+              // email) renders the universal muted placeholder instead of an
+              // empty pill — cellContent's fallback only applies when no
+              // render fn exists.
+              const badgeText = stringOf(row[column.field]);
+              if (badgeText === "") {
+                return <span className="text-muted-foreground">—</span>;
+              }
+              return (
+                <span
+                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${badgeClassesFor(row[column.badgeStyleField as string])}`}
+                >
+                  {badgeText}
+                </span>
+              );
+            },
           }
         : {}),
     })),

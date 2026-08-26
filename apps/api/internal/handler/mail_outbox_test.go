@@ -49,7 +49,7 @@ func TestMailOutboxSurface(t *testing.T) {
 		t.Fatalf("seed send: %v", err)
 	}
 
-	t.Run("list returns newest-first envelope without bodies", func(t *testing.T) {
+	t.Run("list returns newest-first envelope with full records", func(t *testing.T) {
 		code, out := authedGet("/api/mail/outbox")
 		if code != http.StatusOK {
 			t.Fatalf("list status = %d, want 200: %v", code, out)
@@ -62,8 +62,11 @@ func TestMailOutboxSurface(t *testing.T) {
 		if first["subject"] != "second" {
 			t.Fatalf("newest-first violated: %v", items)
 		}
-		if _, hasBody := first["body"]; hasBody {
-			t.Fatal("list rows must not carry bodies")
+		// W26 (GOAL-038 D-001 §2.1): list rows carry the full record — body,
+		// channel and delivery status ride every item so the declarative
+		// recordView drawer renders detail from the selected row.
+		if first["body"] != "b2" || first["channel"] != "mock" || first["delivery_status"] != "delivered" {
+			t.Fatalf("list row = %v, want full mock/delivered record with body", first)
 		}
 		if total, _ := out["total"].(float64); int(total) != 2 {
 			t.Fatalf("total = %v, want 2", out["total"])

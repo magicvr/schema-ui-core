@@ -178,33 +178,49 @@ func (s *Switcher) ensureSeeded(seed SeedConfig) error {
 }
 
 // Send implements kernel.MailSender over the CURRENT runtime channel.
+// W26 (GOAL-038 D-001 §2.1): every channel's outbound mail is recorded in
+// mail_outbox. The mock transport records itself (delivered on accept); for
+// resend/smtp the switcher appends one record AFTER the adapter returns —
+// sent / failed per the frozen vocabulary, inside the shared bounded
+// retention. A record-write failure never changes the send result.
 func (s *Switcher) Send(ctx context.Context, msg kernel.MailMessage) error {
-	sender, err := s.currentSender()
+	cfg, sender, err := s.currentSender()
 	if err != nil {
 		return fmt.Errorf("mail: resolve active channel: %w", err)
 	}
-	return sender.Send(ctx, msg)
+	serr := sender.Send(ctx, msg)
+	if cfg.Channel == RuntimeChannelMock {
+		return serr // OutboxSink already published the delivered record
+	}
+	status := DeliverySent
+	if serr != nil {
+		status = DeliveryFailed
+	}
+	if rerr := publishOutboundRecord(s.store, cfg.MockRetention, time.Now().UTC(), msg, cfg.Channel, status); rerr != nil {
+		s.logger.Error("outbound record write failed", "channel", cfg.Channel, "err", rerr)
+	}
+	return serr
 }
 
-// currentSender returns the adapter for the stored state, rebuilding it when
-// the row changed since the cache was filled.
-func (s *Switcher) currentSender() (kernel.MailSender, error) {
+// currentSender returns the runtime row plus the adapter for the stored
+// state, rebuilding it when the row changed since the cache was filled.
+func (s *Switcher) currentSender() (*RuntimeConfig, kernel.MailSender, error) {
 	cfg, err := s.LoadRuntime()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.cached != nil && s.cached.updatedAt == cfg.UpdatedAt {
-		return s.cached.sender, nil
+		return cfg, s.cached.sender, nil
 	}
 	sender, err := s.buildAdapter(*cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	s.cached = &cachedAdapter{updatedAt: cfg.UpdatedAt, sender: sender}
 	s.logger.Info("outbound mail channel active", "channel", cfg.Channel)
-	return sender, nil
+	return cfg, sender, nil
 }
 
 // buildAdapter constructs the adapter for a candidate config. It is shared by

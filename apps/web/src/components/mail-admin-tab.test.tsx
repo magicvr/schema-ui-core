@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 //
-// R7 UX refinement (user-requested 2026-08-24): the mail admin tab shows only
-// the selected channel's settings, the mock record table renders ONLY under
-// the mock channel, and the test composer offers subject/body inputs.
+// R7 UX refinement (user-requested 2026-08-24): the mail admin console shows
+// only the selected channel's settings and the test composer offers
+// subject/body inputs. W26 (GOAL-038 D-001 §2.2): the component is promoted
+// to the standalone mail-console page and no longer renders any outbound
+// record table — records live on the dedicated mail-outbox page.
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -79,13 +81,14 @@ describe("MailAdminTab (R7 UX refinement)", () => {
     });
     await settle();
 
-    // mock selected: retention visible, table visible, resend/smtp absent.
+    // mock selected: retention visible, resend/smtp absent. W26: the console
+    // never renders an outbound table — records live on mail-outbox.
     expect(container.querySelector("#mail-mock-retention")).not.toBeNull();
-    expect(container.querySelector("[data-mail-admin-tab] table")).not.toBeNull();
+    expect(container.querySelector("[data-mail-admin-tab] table")).toBeNull();
     expect(container.querySelector("#mail-resend-from")).toBeNull();
     expect(container.querySelector("#mail-smtp-host")).toBeNull();
 
-    // Switch to resend: retention + table disappear, resend fields appear.
+    // Switch to resend: retention disappears, resend fields appear.
     const select = container.querySelector("#mail-channel") as HTMLSelectElement;
     await act(async () => {
       select.value = "resend";

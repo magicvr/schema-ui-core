@@ -1,12 +1,12 @@
-// Outbound-mail admin tab (VP-017 R7 UX refinement, user-requested
-// 2026-08-24): a single cohesive console for the settings「邮件」tab —
-// channel select drives conditional per-channel fields (mock → retention,
-// resend → key/from, smtp → host/port/username/password/from), the mock
-// outbound record table renders ONLY while mock is the selected channel, and
-// the test-send composer lets the admin author their own subject/body.
+// Outbound-mail admin console (VP-017 R7 UX refinement, user-requested
+// 2026-08-24; W26 GOAL-038 D-001 §2.2: promoted to the standalone「邮件控制台」
+// page — channel select drives conditional per-channel fields (mock →
+// retention, resend → key/from, smtp → host/port/username/password/from) and
+// the test-send composer lets the admin author their own subject/body. The
+// outbound records mini-table moved to the dedicated mail-outbox page).
 //
 // Implemented as a custom component (data-permission-scopes precedent):
-// the three requirements are tightly coupled to one channel-selection state,
+// the requirements are tightly coupled to one channel-selection state,
 // which declarative sibling nodes cannot share. Secrets stay write-only —
 // empty inputs mean "keep current" and no read face ever returns them
 // (Root D-007).
@@ -23,13 +23,6 @@ interface MailConfigView {
   smtp: { host: string; port: number; username: string; from: string };
   secrets: { resendApiKeySet: boolean; smtpPasswordSet: boolean };
   updated_at?: string;
-}
-
-interface OutboxRow {
-  id: string;
-  to: string;
-  subject: string;
-  created_at: string;
 }
 
 const CHANNELS = [
@@ -68,7 +61,6 @@ export function MailAdminTab(_props: CustomComponentProps) {
   const [testSubject, setTestSubject] = useState("");
   const [testBody, setTestBody] = useState("");
 
-  const [outbox, setOutbox] = useState<OutboxRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
@@ -90,19 +82,6 @@ export function MailAdminTab(_props: CustomComponentProps) {
     }
   }, []);
 
-  const loadOutbox = useCallback(async () => {
-    try {
-      const response = await fetcher("/api/mail/outbox?limit=50");
-      if (!response.ok) {
-        return;
-      }
-      const body = (await response.json()) as { items?: OutboxRow[] };
-      setOutbox(Array.isArray(body.items) ? body.items : []);
-    } catch {
-      // Records are an inspection aid; a failed refresh keeps stale rows.
-    }
-  }, [fetcher]);
-
   const loadConfig = useCallback(async () => {
     setLoadState("loading");
     try {
@@ -121,13 +100,6 @@ export function MailAdminTab(_props: CustomComponentProps) {
   useEffect(() => {
     void loadConfig();
   }, [loadConfig]);
-
-  // Requirement 2: the mock record table exists only under the mock channel.
-  useEffect(() => {
-    if (loadState === "ready" && channel === "mock") {
-      void loadOutbox();
-    }
-  }, [loadState, channel, loadOutbox]);
 
   async function extractError(response: Response): Promise<string> {
     try {
@@ -199,9 +171,6 @@ export function MailAdminTab(_props: CustomComponentProps) {
         return;
       }
       setFeedback({ kind: "success", message: t("schema.mail.feedback.sendOk") });
-      if (channel === "mock") {
-        void loadOutbox();
-      }
     } catch {
       setFeedback({ kind: "error", message: t("schema.mail.feedback.sendFailed") });
     } finally {
@@ -368,42 +337,6 @@ export function MailAdminTab(_props: CustomComponentProps) {
           {sending ? t("feedback.submitting") : t("schema.mail.test.submit")}
         </button>
       </div>
-
-      {/* Requirement 2: mock records exist only under the mock channel. */}
-      {channel === "mock" ? (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold">{t("schema.mail.outbox.title")}</h3>
-            <button type="button" onClick={() => void loadOutbox()} className="cursor-pointer rounded-md border border-border/70 px-2.5 py-1 text-xs hover:bg-muted/40">
-              {t("schema.mail.outbox.refresh")}
-            </button>
-          </div>
-          {outbox.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("feedback.listEmpty")}</p>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/60">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th scope="col" className="px-3 py-2">{t("schema.mail.column.to")}</th>
-                    <th scope="col" className="px-3 py-2">{t("schema.mail.column.subject")}</th>
-                    <th scope="col" className="px-3 py-2">{t("schema.mail.column.created")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {outbox.map((row) => (
-                    <tr key={row.id}>
-                      <td className="px-3 py-2 font-medium">{row.to}</td>
-                      <td className="px-3 py-2">{row.subject}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{new Date(row.created_at).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      ) : null}
 
       {feedback !== null ? (
         <p role={feedback.kind === "error" ? "alert" : "status"} className={"text-sm " + (feedback.kind === "error" ? "text-destructive" : "text-emerald-600")}>

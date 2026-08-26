@@ -53,8 +53,13 @@ func TestOutboxSinkPublishesAndLists(t *testing.T) {
 	if records[0].Subject != "s3" || records[2].Subject != "s1" {
 		t.Fatalf("list must be newest-first, got %+v", subjects(records))
 	}
-	if records[0].Body != "" {
-		t.Fatalf("list rows must omit bodies, got %q", records[0].Body)
+	// W26 (GOAL-038 D-001 §2.1): the list carries the full record — channel,
+	// delivery status and body ride every row (contract revision; the
+	// declarative recordView drawer renders detail from the selected row).
+	for _, rec := range records {
+		if rec.Body != "b" || rec.Channel != ChannelMock || rec.DeliveryStatus != DeliveryDelivered {
+			t.Fatalf("list row = %+v, want body %q + mock/delivered", rec, "b")
+		}
 	}
 	rec, err := sink.Get(context.Background(), records[0].ID)
 	if err != nil {

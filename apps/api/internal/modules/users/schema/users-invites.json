@@ -134,6 +134,11 @@
               "actionRef": "revokeInvite",
               "permissionIntent": "edit",
               "labelKey": "invite.panel.revoke",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
               "confirm": "Revoke this invitation?",
               "confirmKey": "invite.panel.confirmRevoke",
               "disabledWhen": {

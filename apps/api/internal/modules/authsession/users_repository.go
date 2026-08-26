@@ -25,7 +25,8 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 
 		rows, err := tx.Query(context.Background(),
 			`SELECT u.id, u.username, u.name, u.roles, u.password_hash, u.token_version, u.failed_login_count, u.locked_until, u.enabled, u.avatar_url, u.must_change_password, u.created_at, u.updated_at,
-			        EXISTS(SELECT 1 FROM user_mfa um WHERE um.user_id = u.id AND um.status = 'active') AS mfa_enabled
+			        EXISTS(SELECT 1 FROM user_mfa um WHERE um.user_id = u.id AND um.status = 'active') AS mfa_enabled,
+			        u.email, u.email_status
 			 FROM users u`+where+
 				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, u.id ASC`+
 				` LIMIT ? OFFSET ?`,
@@ -442,9 +443,10 @@ func countAdminUsersExcluding(tx kernel.Tx, id string) (int, error) {
 	return count, nil
 }
 
-// scanUserListRow scans the ListUsers projection: the 11 user columns plus the
+// scanUserListRow scans the ListUsers projection: the 11 user columns, the
 // cross-module MFA flag (S-10 · GOAL-017 D-002 §4, user_mfa table contract
-// from migration 0029). One Scan call — sql.Rows requires dest count ==
+// from migration 0029), and the managed email identity pair (W26 read face ·
+// migration 0054 columns). One Scan call — sql.Rows requires dest count ==
 // column count.
 func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
@@ -457,7 +459,8 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var mfaEnabled bool
 	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash,
 		&user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled,
-		&user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &mfaEnabled)
+		&user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &mfaEnabled,
+		&user.Email, &user.EmailStatus)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}

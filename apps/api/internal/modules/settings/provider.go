@@ -52,8 +52,11 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/branding/assets", "GET /api/branding/assets/{id}",
 				"GET /api/settings/password-policy", "PATCH /api/settings/password-policy",
 			},
-			Pages:            []string{"settings"},
-			Navigation:       []string{"menu_settings"},
+			// W26 (GOAL-038 D-001 §2.2): the mail console + outbound log are
+			// standalone pages under the SAME settings.read gate (no new
+			// permission keys); the settings page no longer hosts them.
+			Pages:            []string{"settings", "mail", "mail-outbox"},
+			Navigation:       []string{"menu_settings", "menu_mail", "menu_mail_outbox"},
 			Permissions:      []string{"settings.read", "settings.write"},
 			ConfigNamespaces: []string{settingsconfiguration.Namespace},
 			Fragments:        []string{"settings"},
@@ -99,6 +102,32 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
+	// W26 (GOAL-038 D-001 §2.2): standalone mail console (channel config +
+	// test send via the shared custom component) and all-channel outbound
+	// log. Both ride the settings.read gate through the menu visibility; the
+	// underlying APIs keep their existing per-route gates.
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "mail"},
+		PageID:               "mail",
+		Resources:            []string{"mail"},
+		Actions:              []string{"detail", "update"},
+		DataSource:           "/api/mail/config",
+		Owner:                ModuleID,
+		Document:             settingsschema.SchemaDocuments()["mail"],
+	}); err != nil {
+		return err
+	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "mail-outbox"},
+		PageID:               "mail-outbox",
+		Resources:            []string{"mail-outbox"},
+		Actions:              []string{"list", "detail"},
+		DataSource:           "/api/mail/outbox",
+		Owner:                ModuleID,
+		Document:             settingsschema.SchemaDocuments()["mail-outbox"],
+	}); err != nil {
+		return err
+	}
 	for _, permission := range []kernel.PermissionContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings.read"}, Permission: "settings.read", Resource: "settings", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings.write"}, Permission: "settings.write", Resource: "settings", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -118,6 +147,32 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
+	}
+	// W26 (GOAL-038 D-001 §2.2): standalone mail pages reuse the settings.read
+	// permission — the user red line is NO new permission keys.
+	for _, node := range []kernel.NavigationContribution{
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_mail"},
+			NodeID:               "menu_mail",
+			PageID:               "mail",
+			Label:                "Mail console",
+			Visibility:           authsessiondata.PolicyAdmin,
+			Permission:           "settings.read",
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_mail_outbox"},
+			NodeID:               "menu_mail_outbox",
+			PageID:               "mail-outbox",
+			Label:                "Outbound email log",
+			Visibility:           authsessiondata.PolicyAdmin,
+			Permission:           "settings.read",
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+	} {
+		if err := reg.Navigation(node); err != nil {
+			return err
+		}
 	}
 	if err := reg.Manifest(kernel.FragmentContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "settings"},

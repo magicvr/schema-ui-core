@@ -5,8 +5,8 @@ status: active
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-001-design-implementation-conformance
-version: 0.2.0
-progress: 1/4
+version: 0.3.0
+progress: 3/4
 ---
 
 # GOAL-038 · W26 · 邮箱身份展示与邮件面页面化对齐
@@ -39,12 +39,12 @@ progress: 1/4
 
 ```text
 S1 方案冻结   → D-001（三问题修复设计 + 全渠道出站记录表结构演进 + 权限复用方式；I-001～I-003 verified）✅ 2026-08-26
-S2 实施       → C1/C2/C3 落地（后端读面/记录面 + 页面/导航/schema/i18n + 契约测试）
-S3 回归       → Go 全量 + vitest/tsc/build + go 消费判定落盘
+S2 实施       → C1/C2/C3 落地（后端读面/记录面 + 页面/导航/schema/i18n + 契约测试）✅ 2026-08-26（E-002）
+S3 回归       → Go 全量 + vitest/tsc/build + go 消费判定落盘 ✅ 2026-08-26（E-003：全绿，无影响不暂挂）
 S4 关门       → A-001 self 审计 pass + goal-tree/workspace 同步
 ```
 
-`progress: 1/4` 由上述 4 个显式检查点等权派生；仅为展示，不放行阶段、不关闭 finding、不覆盖信息门禁。
+`progress: 3/4` 由上述 4 个显式检查点等权派生；仅为展示，不放行阶段、不关闭 finding、不覆盖信息门禁。
 
 ## 信息需求登记（P-005）
 

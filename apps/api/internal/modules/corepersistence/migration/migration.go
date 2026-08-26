@@ -73,6 +73,17 @@ var mailOutboxPGDDL = []string{
 	`CREATE INDEX idx_mail_outbox_created_at ON mail_outbox(created_at)`,
 }
 
+// mailOutboxChannelsDDL evolves the outbound record table to ALL channels
+// (W26 · GOAL-038 D-001 §2.1): portable additive ALTER adding the sending
+// channel and the frozen delivery-status vocabulary. Existing rows are
+// mock-channel records, so the constant defaults ARE their true semantics —
+// zero backfill, non-destructive. Value sets are enforced at the write layer
+// (mail package), not by CHECK constraints (portable-ADD-COLUMN boundary).
+var mailOutboxChannelsDDL = []string{
+	`ALTER TABLE mail_outbox ADD COLUMN channel TEXT NOT NULL DEFAULT 'mock'`,
+	`ALTER TABLE mail_outbox ADD COLUMN delivery_status TEXT NOT NULL DEFAULT 'delivered'`,
+}
+
 // mailConfigDDL creates the single-row runtime channel state
 // (VP-017 R7 / workspace-017 GOAL-008; Root D-007): the admin-selected
 // channel plus per-channel parameters. Secrets (resend_api_key_enc /
@@ -150,6 +161,15 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateMailConfig,
 			ApplyPostgres:        migrateMailConfigPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "mail_outbox_channels"},
+			Version:              60,
+			Name:                 "mail_outbox_channels",
+			Checksum:             kernel.MigrationChecksum(mailOutboxChannelsDDL, "0060:mail-outbox-channels:v1"),
+			Apply:                migrateMailOutboxChannels,
+			// ApplyPostgres nil: portable additive ALTER (constant DEFAULT on
+			// TEXT columns is identical on both dialects; 0011/0038 precedent).
+		},
 	}
 }
 
@@ -211,6 +231,15 @@ func migrateMailConfigPG(tx kernel.Tx) error {
 	for _, stmt := range mailConfigPGDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create mail_config (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateMailOutboxChannels(tx kernel.Tx) error {
+	for _, stmt := range mailOutboxChannelsDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("extend mail_outbox channels: %w", err)
 		}
 	}
 	return nil

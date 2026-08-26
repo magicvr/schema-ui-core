@@ -6,8 +6,10 @@ import "embed"
 // page gating (R4 C4.3).
 const ModuleID = "admin.settings"
 
-// PageIDs are the page identifiers this module contributes.
-func PageIDs() []string { return []string{"settings"} }
+// PageIDs are the page identifiers this module contributes. W26 (GOAL-038
+// D-001 §2.2) adds the standalone mail console + outbound log pages; the
+// settings page no longer hosts either block.
+func PageIDs() []string { return []string{"settings", "mail", "mail-outbox"} }
 
 //go:embed *.json
 var schemaFiles embed.FS
@@ -18,7 +20,9 @@ var schemaFiles embed.FS
 // fallback.
 func SchemaDocuments() map[string][]byte {
 	return map[string][]byte{
-		"settings": mustRead("settings.json"),
+		"settings":   mustRead("settings.json"),
+		"mail":       mustRead("mail.json"),
+		"mail-outbox": mustRead("mail-outbox.json"),
 	}
 }
 

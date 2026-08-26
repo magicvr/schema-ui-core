@@ -43,7 +43,7 @@ func (r *Repository) CreateUser(user User) error {
 func (r *Repository) UserByUsername(username string) (*User, error) {
 	return r.userBy("get user by username", func(tx kernel.Tx) kernel.Row {
 		return tx.QueryRow(context.Background(),
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at, email, email_status
 			 FROM users WHERE username = ?`, username)
 	})
 }
@@ -52,7 +52,7 @@ func (r *Repository) UserByUsername(username string) (*User, error) {
 func (r *Repository) UserByID(id string) (*User, error) {
 	return r.userBy("get user by id", func(tx kernel.Tx) kernel.Row {
 		return tx.QueryRow(context.Background(),
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at, email, email_status
 			 FROM users WHERE id = ?`, id)
 	})
 }
@@ -265,7 +265,7 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var roles string
 	var createdAt, updatedAt int64
 	var mustChangePassword int
-	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled, &user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt)
+	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled, &user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &user.Email, &user.EmailStatus)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}

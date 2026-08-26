@@ -15,6 +15,8 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-26 | 立项扫描：三问题根因锚定（代码证据） | recorded | `02-execution/E-001-scan-root-causes.md` |
+| E-002 | 2026-08-26 | S2 实施：C1/C2/C3 落地事实（文件级清单 + 快照同步） | recorded | `02-execution/E-002-s2-implementation.md` |
+| E-003 | 2026-08-26 | S3 回归结果与 go 消费判定（Go 全量绿 / vitest 1116 / tsc 0 / build ok → 无影响不暂挂） | recorded | `02-execution/E-003-s3-regression-and-go-verdict.md` |
 
 ## 事实边界
 

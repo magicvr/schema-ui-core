@@ -450,22 +450,6 @@
           },
           {
             "type": "section",
-            "id": "tab-mail",
-            "props": {
-              "labelKey": "schema.settings.tab.mail",
-              "label": "Mail"
-            },
-            "children": [
-              {
-                "type": "custom",
-                "id": "mail-admin-tab",
-                "component": "mail-admin-tab",
-                "props": {}
-              }
-            ]
-          },
-          {
-            "type": "section",
             "id": "tab-password-policy",
             "props": {
               "labelKey": "invite.policy.title",

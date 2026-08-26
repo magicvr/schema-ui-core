@@ -87,3 +87,79 @@ func TestUsersPatchEmailPrefillFlows(t *testing.T) {
 		t.Fatalf("conflict error = %v, want EMAIL_TAKEN", errBody["error"])
 	}
 }
+
+// W26 (GOAL-038 D-001 §1 · C1): the managed email identity rides the users
+// read faces — list and detail return email/emailStatus plus the derived
+// emailStatusStyle badge preset (verified→success, pending→warning,
+// unbound→""). Same-query projection: no N+1.
+func TestUsersReadFacesCarryEmailIdentity(t *testing.T) {
+	env := newAuthTestEnv(t)
+	token := adminToken(t, env)
+
+	req := bearer(t, token, http.MethodPost, "/api/users",
+		`{"username":"carol","name":"Carol","password":"secret123","roles":["viewer"]}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&created)
+	id, _ := created["id"].(string)
+
+	assertIdentity := func(row map[string]any, wantEmail any, wantStatus any, wantStyle string) {
+		t.Helper()
+		if row["email"] != wantEmail || row["emailStatus"] != wantStatus || row["emailStatusStyle"] != wantStyle {
+			t.Fatalf("identity = (%v, %v, %v), want (%v, %v, %q)", row["email"], row["emailStatus"], row["emailStatusStyle"], wantEmail, wantStatus, wantStyle)
+		}
+	}
+
+	// Unbound: null/null + empty style preset.
+	assertIdentity(created, nil, nil, "")
+
+	// Prefill → pending + warning style on list AND detail.
+	req = bearer(t, token, http.MethodPatch, "/api/users/"+id, `{"email":"carol@example.com"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("prefill patch status = %d: %s", rr.Code, rr.Body.String())
+	}
+	var patched map[string]any
+	_ = json.NewDecoder(rr.Body).Decode(&patched)
+	assertIdentity(patched, "carol@example.com", "pending", "warning")
+
+	list := func() map[string]any {
+		t.Helper()
+		lreq := bearer(t, token, http.MethodGet, "/api/users?q=carol", "")
+		lrr := httptest.NewRecorder()
+		env.mux.ServeHTTP(lrr, lreq)
+		if lrr.Code != http.StatusOK {
+			t.Fatalf("list status = %d: %s", lrr.Code, lrr.Body.String())
+		}
+		var out struct {
+			Items []map[string]any `json:"items"`
+		}
+		if err := json.NewDecoder(lrr.Body).Decode(&out); err != nil {
+			t.Fatalf("decode list: %v", err)
+		}
+		if len(out.Items) != 1 {
+			t.Fatalf("list items = %d, want 1", len(out.Items))
+		}
+		return out.Items[0]
+	}
+	assertIdentity(list(), "carol@example.com", "pending", "warning")
+
+	detail := func() map[string]any {
+		t.Helper()
+		dreq := bearer(t, token, http.MethodGet, "/api/users/"+id, "")
+		drr := httptest.NewRecorder()
+		env.mux.ServeHTTP(drr, dreq)
+		if drr.Code != http.StatusOK {
+			t.Fatalf("detail status = %d: %s", drr.Code, drr.Body.String())
+		}
+		var row map[string]any
+		_ = json.NewDecoder(drr.Body).Decode(&row)
+		return row
+	}
+	assertIdentity(detail(), "carol@example.com", "pending", "warning")
+}

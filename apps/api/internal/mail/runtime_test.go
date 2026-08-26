@@ -168,6 +168,75 @@ func TestSwitcherHotSwitchSemantics(t *testing.T) {
 	})
 }
 
+// W26 (GOAL-038 D-001 §2.1): every channel's outbound mail lands in
+// mail_outbox. Mock records delivered exactly once (no double-write); a real
+// channel records sent on success and failed on adapter error; a record
+// write never changes the send result.
+func TestSwitcherRecordsAllChannelOutbound(t *testing.T) {
+	st := openOutboxStore(t)
+
+	failNext := false
+	resendSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if failNext {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]any{"message": "boom"})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "resend-1"})
+	}))
+	defer resendSrv.Close()
+
+	sw, err := NewSwitcher(st, masterKeyFixed(), SeedConfig{Channel: RuntimeChannelMock}, testSwitchLogger())
+	if err != nil {
+		t.Fatalf("NewSwitcher: %v", err)
+	}
+	sw.resendBaseURL = resendSrv.URL
+
+	sink := NewOutboxSink(st, 0)
+	if err := sw.Send(context.Background(), msg("u@example.com", "mock-mail", "b")); err != nil {
+		t.Fatalf("mock send: %v", err)
+	}
+
+	from := "no-reply@example.com"
+	if _, err := sw.Update(context.Background(), UpdateRequest{
+		Channel:      RuntimeChannelResend,
+		ResendAPIKey: strPtr("re-key"),
+		ResendFrom:   &from,
+	}); err != nil {
+		t.Fatalf("switch to resend: %v", err)
+	}
+	if err := sw.Send(context.Background(), msg("u@example.com", "resend-ok", "b")); err != nil {
+		t.Fatalf("resend send: %v", err)
+	}
+	failNext = true
+	if err := sw.Send(context.Background(), msg("u@example.com", "resend-fail", "b")); err == nil {
+		t.Fatal("failed resend must surface its error")
+	}
+
+	records, err := sink.List(context.Background(), 10, 0)
+	if err != nil {
+		t.Fatalf("list records: %v", err)
+	}
+	statuses := map[string]string{}
+	for _, rec := range records {
+		statuses[rec.Subject] = rec.Channel + "/" + rec.DeliveryStatus
+	}
+	want := map[string]string{
+		"mock-mail":   ChannelMock + "/" + DeliveryDelivered,
+		"resend-ok":   ChannelResend + "/" + DeliverySent,
+		"resend-fail": ChannelResend + "/" + DeliveryFailed,
+	}
+	for subject, expect := range want {
+		if statuses[subject] != expect {
+			t.Fatalf("record %q = %q, want %q", subject, statuses[subject], expect)
+		}
+	}
+	if len(records) != 3 {
+		t.Fatalf("records = %d, want exactly one per send (no mock double-write)", len(records))
+	}
+}
+
 // D-007: admin intent survives restarts (DB wins over the file seed).
 func TestSwitcherConfigSurvivesRestart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "runtime.db")

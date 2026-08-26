@@ -483,7 +483,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
 		// GOAL-022: admin.wallet adds menu_wallet_self (+1 navigation, no
 		// permission keys — identity-only self-service).
-		{profile: "admin", wantPermissions: 33, wantNavigation: 15},
+		// W26 (GOAL-038): admin.settings adds menu_mail/menu_mail_outbox
+		// (+2 navigation, no new permission keys — settings.read reuse).
+		{profile: "admin", wantPermissions: 33, wantNavigation: 17},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
@@ -545,11 +547,14 @@ func TestSystemDataReconcilePreservesDisabledProfileData(t *testing.T) {
 	if got := compositionCount(t, st, `SELECT COUNT(*) FROM menu_items WHERE feature_key IN ('menu_settings', 'menu_activity')`); got != 2 {
 		t.Fatalf("disabled-profile navigation retained = %d, want 2", got)
 	}
-	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_reconcile WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 5 {
-		t.Fatalf("disabled-profile ledger retained = %d, want 5", got)
+	// W26 (GOAL-038): admin.settings now owns menu_mail/menu_mail_outbox too
+	// (settings.read reuse) — a downgrade to mvp retains all three nav rows
+	// and the settings module ledger grows to 7 entries.
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_reconcile WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 7 {
+		t.Fatalf("disabled-profile ledger retained = %d, want 7", got)
 	}
-	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_grants WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 7 {
-		t.Fatalf("disabled-profile managed grants retained = %d, want 7", got)
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_grants WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 9 {
+		t.Fatalf("disabled-profile managed grants retained = %d, want 9", got)
 	}
 }
 
@@ -1056,7 +1061,11 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		labels := fetchSidebar(t, plan, nil)
 		want := []string{
 			"Dashboard", "Users", "Roles", "Wallet",
-			"Activity", "File library", "Data dictionary",
+			"Activity",
+			// W26 (GOAL-038): standalone mail pages after the settings entry
+			// they split off from (settings itself lives in the user menu).
+			"Mail console", "Outbound email log",
+			"File library", "Data dictionary",
 			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
 		}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {

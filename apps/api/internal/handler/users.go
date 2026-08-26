@@ -99,8 +99,22 @@ type usersEntity struct {
 
 // userToMap maps a persisted user to the API row. password_hash is intentionally
 // absent; createdAt/updatedAt serialize with the frozen 3-digit-millisecond shape.
+// W26 (GOAL-038 D-001 §1): the managed email identity rides every read face —
+// email/emailStatus are the raw identity pair (nil = unbound) and
+// emailStatusStyle is the W16-F09 badge preset (verified→success,
+// pending→warning, unbound→"") so the list column carries binding semantics
+// without a renderer value-mapping capability.
 func userToMap(u authsession.User) map[string]any {
 	locked := u.LockedUntil > time.Now().UTC().Unix()
+	emailStatusStyle := ""
+	switch {
+	case u.EmailStatus == nil:
+		emailStatusStyle = ""
+	case *u.EmailStatus == "verified":
+		emailStatusStyle = "success"
+	case *u.EmailStatus == "pending":
+		emailStatusStyle = "warning"
+	}
 	return map[string]any{
 		"id":                 u.ID,
 		"username":           u.Username,
@@ -110,6 +124,9 @@ func userToMap(u authsession.User) map[string]any {
 		"mfaEnabled":         u.MFAEnabled,
 		"mustChangePassword": u.MustChangePassword,
 		"locked":             locked,
+		"email":              u.Email,
+		"emailStatus":        u.EmailStatus,
+		"emailStatusStyle":   emailStatusStyle,
 		"createdAt":          u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"updatedAt":          u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}

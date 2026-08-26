@@ -62,8 +62,18 @@ func TestSettingsProviderRegistersSurfaces(t *testing.T) {
 	if len(set.Routes) != len(wantRoutes) {
 		t.Fatalf("routes = %d, want %d", len(set.Routes), len(wantRoutes))
 	}
-	if len(set.Pages) != 1 || set.Pages[0].PageID != "settings" || set.Pages[0].Owner != ModuleID {
-		t.Fatalf("pages = %+v", set.Pages)
+	// W26 (GOAL-038 D-001 §2.2): the settings module now owns three pages —
+	// settings + the standalone mail console / outbound log (sorted by PageID).
+	if len(set.Pages) != 3 {
+		t.Fatalf("pages = %d, want 3", len(set.Pages))
+	}
+	for i, wantID := range []string{"mail", "mail-outbox", "settings"} {
+		if set.Pages[i].PageID != wantID || set.Pages[i].Owner != ModuleID {
+			t.Fatalf("pages[%d] = %+v, want PageID %q owned by %s", i, set.Pages[i], wantID, ModuleID)
+		}
+	}
+	if len(set.Navigation) != 3 {
+		t.Fatalf("navigation = %d, want 3 (menu_settings + menu_mail + menu_mail_outbox)", len(set.Navigation))
 	}
 	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "settings" {
 		t.Fatalf("fragments = %+v", set.Fragments)

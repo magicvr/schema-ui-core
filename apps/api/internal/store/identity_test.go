@@ -108,6 +108,7 @@ var lockedHeadExtraTables = map[int][]string{
 	57: {"password_policy"},           // workspace-019 R3: singleton policy row
 	58: {"user_password_history"},     // workspace-019 R3: history-depth store
 	59: {"user_invites"},              // workspace-019 R3: admin invitations
+	60: {}, // W26 GOAL-038: mail_outbox additive ALTER (channel/delivery_status columns; no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
