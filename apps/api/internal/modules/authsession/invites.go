@@ -209,14 +209,51 @@ func (f InviteStatusFilter) where(now time.Time) (string, []any) {
 	}
 }
 
-// ListInvites returns newest-first paged invites for the admin surface,
-// optionally narrowed by status.
-func (r *Repository) ListInvites(page, pageSize int, status InviteStatusFilter, now time.Time) ([]Invite, int, error) {
-	predicate, args := status.where(now)
-	whereClause := ""
-	if predicate != "" {
-		whereClause = " WHERE " + predicate
+// W27 (GOAL-039 D-001 §1): sortable whitelist for the admin listing —
+// createdAt is the default; expiresAt covers "who runs out first". Unknown
+// values fall back to createdAt (ParseInviteStatus fallback philosophy).
+func inviteSortSQL(sort, order string) string {
+	column := "created_at"
+	if strings.ToLower(strings.TrimSpace(sort)) == "expiresat" {
+		column = "expires_at"
 	}
+	direction := "DESC"
+	if strings.EqualFold(strings.TrimSpace(order), "asc") {
+		direction = "ASC"
+	}
+	return column + " " + direction + ", id ASC"
+}
+
+// inviteWhereQ builds the portable keyword predicate over email / id /
+// invited_by (W27 GOAL-039 D-001 §1; usersWhere LOWER+LIKE precedent).
+// coalesce keeps a NULL email from vetoing the OR chain.
+func inviteWhereQ(q string) (string, []any) {
+	needle := strings.ToLower(strings.TrimSpace(q))
+	if needle == "" {
+		return "", nil
+	}
+	clause := `(lower(coalesce(email, '')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(id) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(coalesce(invited_by, '')) LIKE '%' || CAST(? AS TEXT) || '%')`
+	return clause, []any{needle, needle, needle}
+}
+
+// ListInvites returns paged invites for the admin surface: newest-first by
+// default, optionally narrowed by status, keyword-searched over email/id/
+// invited_by, and sorted per the frozen whitelist.
+func (r *Repository) ListInvites(page, pageSize int, status InviteStatusFilter, q, sort, order string, now time.Time) ([]Invite, int, error) {
+	predicate, args := status.where(now)
+	qClause, qArgs := inviteWhereQ(q)
+	clauses := make([]string, 0, 2)
+	if predicate != "" {
+		clauses = append(clauses, predicate)
+	}
+	if qClause != "" {
+		clauses = append(clauses, qClause)
+	}
+	whereClause := ""
+	if len(clauses) > 0 {
+		whereClause = " WHERE " + strings.Join(clauses, " AND ")
+	}
+	args = append(args, qArgs...)
 	var out []Invite
 	var total int
 	err := r.withTx("list invites", func(tx kernel.Tx) error {
@@ -225,7 +262,7 @@ func (r *Repository) ListInvites(page, pageSize int, status InviteStatusFilter, 
 			return err
 		}
 		rows, err := tx.Query(context.Background(),
-			`SELECT `+inviteColumns+` FROM user_invites`+whereClause+` ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+			`SELECT `+inviteColumns+` FROM user_invites`+whereClause+` ORDER BY `+inviteSortSQL(sort, order)+` LIMIT ? OFFSET ?`,
 			append(append([]any{}, args...), pageSize, (page-1)*pageSize)...)
 		if err != nil {
 			return err

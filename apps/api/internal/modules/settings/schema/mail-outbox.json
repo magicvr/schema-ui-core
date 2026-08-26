@@ -6,13 +6,85 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "permissions.inheritance"
+      "permissions.inheritance",
+      "table.sort"
     ]
   },
   "body": {
     "type": "section",
     "id": "mail-outbox",
     "children": [
+      {
+        "type": "form",
+        "id": "mail-outbox-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "mail-outbox-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.mail.search.q"
+            },
+            {
+              "id": "channel",
+              "type": "select",
+              "labelKey": "schema.mail.filter.channel",
+              "options": [
+                {
+                  "value": "",
+                  "label": "All channels",
+                  "labelKey": "schema.mail.filter.all"
+                },
+                {
+                  "value": "mock",
+                  "label": "mock",
+                  "labelKey": "schema.settings.option.channelMock"
+                },
+                {
+                  "value": "resend",
+                  "label": "resend",
+                  "labelKey": "schema.settings.option.channelResend"
+                },
+                {
+                  "value": "smtp",
+                  "label": "smtp",
+                  "labelKey": "schema.settings.option.channelSMTP"
+                }
+              ]
+            },
+            {
+              "id": "delivery_status",
+              "type": "select",
+              "labelKey": "schema.mail.filter.deliveryStatus",
+              "options": [
+                {
+                  "value": "",
+                  "label": "All statuses",
+                  "labelKey": "schema.mail.filter.all"
+                },
+                {
+                  "value": "delivered",
+                  "label": "Delivered",
+                  "labelKey": "schema.mail.status.delivered"
+                },
+                {
+                  "value": "sent",
+                  "label": "Sent",
+                  "labelKey": "schema.mail.status.sent"
+                },
+                {
+                  "value": "failed",
+                  "label": "Failed",
+                  "labelKey": "schema.mail.status.failed"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
       {
         "type": "table",
         "id": "mail-outbox-table",
@@ -48,6 +120,7 @@
             {
               "field": "created_at",
               "label": "Created",
+              "sortable": true,
               "labelKey": "schema.mail.column.created"
             }
           ],

@@ -214,7 +214,7 @@ func TestSwitcherRecordsAllChannelOutbound(t *testing.T) {
 		t.Fatal("failed resend must surface its error")
 	}
 
-	records, err := sink.List(context.Background(), 10, 0)
+	records, _, err := sink.List(context.Background(), OutboxListQuery{PageSize: 10})
 	if err != nil {
 		t.Fatalf("list records: %v", err)
 	}

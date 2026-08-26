@@ -159,7 +159,7 @@ mail:
 | GET | `/.well-known/schema-ui/app-manifest.json` | 公开（只读） | API 聚合的 Profile Manifest（生产唯一来源） |
 | GET | `/api/settings`、`/api/branding` | **admin Profile** | Settings 模块路由；未启用时为 404 |
 | GET | `/api/operations` | **admin Profile** | Activity 查询路由；未启用时为 404 |
-| GET | `/api/mail/outbox`、`/api/mail/outbox/{id}` | **Bearer + settings.read** | mock 渠道站内出站记录：列表（`limit`/`offset`，新→旧）与详情（含正文）；R6 渠道模型（GOAL-006 D-002 §3） |
+| GET | `/api/mail/outbox`、`/api/mail/outbox/{id}` | **Bearer + settings.read** | 全渠道出站记录：列表（`page`/`pageSize` + `q`/`channel`/`delivery_status` 筛选与 `sort`/`order` 排序，默认 created_at 降序；W27 · GOAL-039）与详情（含正文）；R6 渠道模型（GOAL-006 D-002 §3）+ W26 全渠道化 |
 | GET | `/api/mail/config` | **Bearer + settings.read** | 当前渠道与非敏感参数（密钥仅返回是否已设置的布尔值，永不回显） |
 | PUT | `/api/mail/config` | **Bearer + settings.write** | 保存渠道选择/配置并热切换（保存后对后续 Send 生效；新配置校验失败保留原渠道）；密钥写后不可读回，AES-GCM 加密落库 |
 | POST | `/api/mail/test-send` | **Bearer + settings.write** | 经当前渠道发送一封测试信（走同一 `MailSender`），记 operation log |

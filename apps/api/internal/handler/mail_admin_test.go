@@ -77,7 +77,7 @@ func TestMailAdminSurface(t *testing.T) {
 		if n, err := reader.Count(context.Background()); err != nil || n != 1 {
 			t.Fatalf("outbox count = %d, %v; want the test message in the mock channel", n, err)
 		}
-		rows, err := reader.List(context.Background(), 10, 0)
+		rows, _, err := reader.List(context.Background(), mail.OutboxListQuery{PageSize: 10})
 		if err != nil || len(rows) != 1 || rows[0].Subject != "custom subject" {
 			t.Fatalf("stored record = %+v, %v; want custom subject persisted", rows, err)
 		}

@@ -22,7 +22,7 @@ var outboxCodePattern = regexp.MustCompile(`\b\d{6}\b`)
 
 func codeFromOutbox(t *testing.T, sink *mail.OutboxSink, to string) string {
 	t.Helper()
-	records, err := sink.List(context.Background(), 50, 0)
+	records, _, err := sink.List(context.Background(), mail.OutboxListQuery{Q: to})
 	if err != nil {
 		t.Fatalf("list outbox records: %v", err)
 	}

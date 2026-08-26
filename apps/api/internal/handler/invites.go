@@ -23,7 +23,7 @@ import (
 // endpoints (admin management + public acceptance).
 type InviteRepository interface {
 	CreateInvite(invitedBy string, roles []string, email string, ttl time.Duration, now time.Time) (string, *authsession.Invite, error)
-	ListInvites(page, pageSize int, status authsession.InviteStatusFilter, now time.Time) ([]authsession.Invite, int, error)
+	ListInvites(page, pageSize int, status authsession.InviteStatusFilter, q, sort, order string, now time.Time) ([]authsession.Invite, int, error)
 	RevokeInvite(id string, now time.Time) error
 	ResendInvite(id string, ttl time.Duration, now time.Time) (string, *authsession.Invite, error)
 	AcceptInvite(rawToken, username, name, passwordHash string, now time.Time) (*authsession.User, error)
@@ -205,7 +205,12 @@ func (h *inviteAdminHandler) list() http.Handler {
 			pageSize = 20
 		}
 		status := authsession.ParseInviteStatus(r.URL.Query().Get("status"))
-		invites, total, err := h.repo.ListInvites(page, pageSize, status, h.now().UTC())
+		// W27 (GOAL-039 D-001 §1): q keyword search + whitelist sorting — the
+		// repository maps unknown sort values to the createdAt default.
+		q := r.URL.Query().Get("q")
+		sort := r.URL.Query().Get("sort")
+		order := r.URL.Query().Get("order")
+		invites, total, err := h.repo.ListInvites(page, pageSize, status, q, sort, order, h.now().UTC())
 		if err != nil {
 			writeInviteDomainError(w, r, err)
 			return

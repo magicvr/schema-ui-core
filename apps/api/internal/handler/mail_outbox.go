@@ -11,17 +11,18 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 )
 
-// OutboxReader is the retrieval face of the mock publisher (satisfied by
-// *mail.OutboxSink). Keeping it an interface mirrors the repository-consumer
-// convention and keeps the handler testable without a store.
+// OutboxReader is the retrieval face of the outbound record store (satisfied
+// by *mail.OutboxSink). Keeping it an interface mirrors the
+// repository-consumer convention and keeps the handler testable without a
+// store. The listing contract (filters/sort/pagination) lives on
+// mail.OutboxListQuery — the store owns its query vocabulary.
 type OutboxReader interface {
-	List(ctx context.Context, limit, offset int) ([]mail.OutboxRecord, error)
-	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context, query mail.OutboxListQuery) ([]mail.OutboxRecord, int, error)
 	Get(ctx context.Context, id string) (mail.OutboxRecord, error)
 }
 
@@ -45,43 +46,29 @@ func outboxPermissionGate(next http.Handler) http.Handler {
 	})
 }
 
-const (
-	outboxDefaultPageSize = 50
-	outboxMaxPageSize     = 200
-)
+// parseOutboxQuery maps request query params onto the mail.OutboxListQuery
+// contract. page/pageSize follow the generic resource table convention; the
+// store normalizes unknown enum/sort values and page-size bounds.
+func parseOutboxQuery(r *http.Request) mail.OutboxListQuery {
+	return mail.OutboxListQuery{
+		Page:           queryInt(r, "page", 1),
+		PageSize:       queryInt(r, "pageSize", mail.DefaultOutboxPageSize),
+		Q:              strings.TrimSpace(r.URL.Query().Get("q")),
+		Channel:        r.URL.Query().Get("channel"),
+		DeliveryStatus: r.URL.Query().Get("delivery_status"),
+		Sort:           r.URL.Query().Get("sort"),
+		Order:          r.URL.Query().Get("order"),
+	}
+}
 
-// outboxList serves GET /api/mail/outbox?limit=&offset= with the unified list
-// envelope {items,total,page,pageSize} (I-010-001 §3), newest first.
+// outboxList serves GET /api/mail/outbox with the unified list envelope
+// {items,total,page,pageSize} (I-010-001 §3). W27 (GOAL-039 D-001 §2):
+// q/channel/delivery_status filters + created_at sort; pagination switched
+// from legacy limit/offset to page/pageSize (no remaining consumers).
 func outboxList(reader OutboxReader) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		limit := outboxDefaultPageSize
-		if raw := r.URL.Query().Get("limit"); raw != "" {
-			parsed, err := strconv.Atoi(raw)
-			if err != nil || parsed < 1 {
-				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "limit must be a positive integer")
-				return
-			}
-			limit = parsed
-		}
-		offset := 0
-		if raw := r.URL.Query().Get("offset"); raw != "" {
-			parsed, err := strconv.Atoi(raw)
-			if err != nil || parsed < 0 {
-				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "offset must be a non-negative integer")
-				return
-			}
-			offset = parsed
-		}
-		total64, err := reader.Count(r.Context())
-		if err != nil {
-			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not count outbound records")
-			return
-		}
-		total := int(total64)
-		if limit > outboxMaxPageSize {
-			limit = outboxMaxPageSize
-		}
-		items, err := reader.List(r.Context(), limit, offset)
+		query := parseOutboxQuery(r)
+		items, total, err := reader.List(r.Context(), query)
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load outbound records")
 			return
@@ -89,11 +76,7 @@ func outboxList(reader OutboxReader) http.Handler {
 		if items == nil {
 			items = []mail.OutboxRecord{}
 		}
-		page := 1
-		if limit > 0 {
-			page = offset/limit + 1
-		}
-		writeJSON(w, http.StatusOK, resourceList{Items: toMapItems(items), Total: total, Page: page, PageSize: limit})
+		writeJSON(w, http.StatusOK, resourceList{Items: toMapItems(items), Total: total, Page: query.Page, PageSize: query.PageSize})
 	})
 }
 

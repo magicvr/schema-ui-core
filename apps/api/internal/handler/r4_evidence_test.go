@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 )
 
 var evidenceCodePattern = regexp.MustCompile(`\b\d{6}\b`)
@@ -21,7 +23,7 @@ var evidenceTokenPattern = regexp.MustCompile(`token=([A-Za-z0-9_-]+)`)
 
 func testOutboxCurrent(t *testing.T, env *authTestEnv, to, mustContain string) (body string) {
 	t.Helper()
-	records, err := env.recoverySender.List(context.Background(), 50, 0)
+	records, _, err := env.recoverySender.List(context.Background(), mail.OutboxListQuery{PageSize: 50})
 	if err != nil {
 		t.Fatalf("list outbox: %v", err)
 	}

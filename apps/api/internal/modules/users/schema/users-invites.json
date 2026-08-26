@@ -50,6 +50,11 @@
           "targetTable": "invites-table",
           "fields": [
             {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.usersInvites.search.q"
+            },
+            {
               "id": "status",
               "type": "select",
               "labelKey": "invite.panel.filter",
@@ -118,12 +123,14 @@
             {
               "field": "expiresAt",
               "label": "Expires",
-              "labelKey": "invite.panel.expires"
+              "labelKey": "invite.panel.expires",
+              "sortable": true
             },
             {
               "field": "createdAt",
               "label": "Created",
-              "labelKey": "schema.users.column.created"
+              "labelKey": "schema.users.column.created",
+              "sortable": true
             }
           ],
           "dataSource": "/api/users/invites",

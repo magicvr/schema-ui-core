@@ -43,12 +43,12 @@ func TestOutboxSinkPublishesAndLists(t *testing.T) {
 	if n, err := sink.Count(context.Background()); err != nil || n != 3 {
 		t.Fatalf("count = %d, %v; want 3", n, err)
 	}
-	records, err := sink.List(context.Background(), 10, 0)
+	records, total, err := sink.List(context.Background(), OutboxListQuery{PageSize: 10})
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if len(records) != 3 {
-		t.Fatalf("list len = %d, want 3", len(records))
+	if len(records) != 3 || total != 3 {
+		t.Fatalf("list len = %d (total %d), want 3", len(records), total)
 	}
 	if records[0].Subject != "s3" || records[2].Subject != "s1" {
 		t.Fatalf("list must be newest-first, got %+v", subjects(records))
@@ -97,7 +97,7 @@ func TestOutboxSinkEvictsOldestBeyondCap(t *testing.T) {
 	if n, err := sink.Count(t.Context()); err != nil || n != 5 {
 		t.Fatalf("count after eviction = %d, %v; want 5", n, err)
 	}
-	records, err := sink.List(t.Context(), 10, 0)
+	records, _, err := sink.List(t.Context(), OutboxListQuery{PageSize: 10})
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestOutboxSinkSurvivesRestart(t *testing.T) {
 	}
 	defer st2.Close()
 	sink2 := NewOutboxSink(st2, 0)
-	records, err := sink2.List(context.Background(), 10, 0)
+	records, _, err := sink2.List(context.Background(), OutboxListQuery{PageSize: 10})
 	if err != nil || len(records) != 1 {
 		t.Fatalf("after restart list = %v, %v; want exactly one persisted record", records, err)
 	}

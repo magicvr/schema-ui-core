@@ -188,7 +188,7 @@ func TestListInvitesStatusFilter(t *testing.T) {
 		{InviteStatusExpired, 1},
 	}
 	for _, tc := range cases {
-		got, total, err := repo.ListInvites(1, 50, tc.filter, view)
+		got, total, err := repo.ListInvites(1, 50, tc.filter, "", "", "", view)
 		if err != nil {
 			t.Fatalf("list %q: %v", tc.filter, err)
 		}
@@ -199,6 +199,71 @@ func TestListInvitesStatusFilter(t *testing.T) {
 	// Unknown raw values parse to "all" (stale-client tolerance).
 	if ParseInviteStatus("bogus") != InviteStatusAll || ParseInviteStatus(" PENDING ") != InviteStatusPending {
 		t.Fatal("ParseInviteStatus mapping broken")
+	}
+}
+
+// W27 (GOAL-039 D-001 §1): the admin listing supports keyword search over
+// email/id/invited_by and whitelist sorting (createdAt default, expiresAt;
+// asc/desc; stable id tiebreak). Unknown values fall back to defaults.
+func TestListInvitesSearchAndSort(t *testing.T) {
+	repo, base := openInviteFixture(t)
+
+	// Insert out of chronological order so created_at ordering is observable:
+	// first@example.com (oldest), then zeta, then alpha (newest).
+	if _, _, err := repo.CreateInvite("user-admin", []string{"viewer"}, "first@example.com", defaultInviteTTL, base); err != nil {
+		t.Fatalf("create first: %v", err)
+	}
+	if _, _, err := repo.CreateInvite("user-admin", []string{"viewer"}, "zeta@example.com", defaultInviteTTL, base.Add(time.Minute)); err != nil {
+		t.Fatalf("create zeta: %v", err)
+	}
+	if _, invAlpha, err := repo.CreateInvite("user-admin", []string{"editor"}, "alpha@example.com", 48*time.Hour, base.Add(2*time.Minute)); err != nil {
+		t.Fatalf("create alpha: %v", err)
+	} else if len(invAlpha.Roles) == 0 {
+		t.Fatal("unexpected empty roles")
+	}
+
+	view := base.Add(time.Hour)
+	listEmails := func(q, sort, order string) []string {
+		t.Helper()
+		got, total, err := repo.ListInvites(1, 50, InviteStatusAll, q, sort, order, view)
+		if err != nil {
+			t.Fatalf("list(q=%q sort=%q order=%q): %v", q, sort, order, err)
+		}
+		emails := make([]string, 0, len(got))
+		for i := range got {
+			if got[i].Email != nil {
+				emails = append(emails, *got[i].Email)
+			}
+		}
+		if total != len(emails) {
+			t.Fatalf("total = %d, rows = %d", total, len(emails))
+		}
+		return emails
+	}
+
+	// Default order: newest first.
+	if got := listEmails("", "", ""); len(got) != 3 || got[0] != "alpha@example.com" || got[2] != "first@example.com" {
+		t.Fatalf("default order = %v, want newest-first", got)
+	}
+	// createdAt ascending flips it.
+	if got := listEmails("", "createdAt", "asc"); len(got) != 3 || got[0] != "first@example.com" {
+		t.Fatalf("createdAt asc = %v, want oldest-first", got)
+	}
+	// expiresAt ordering: alpha has a 48h TTL so it is LAST under expiresAt desc.
+	if got := listEmails("", "expiresat", "desc"); len(got) != 3 || got[2] != "alpha@example.com" {
+		t.Fatalf("expiresAt desc = %v, want longest-TTL last", got)
+	}
+	// Keyword search hits email (case-insensitive substring).
+	if got := listEmails("ZETA", "", ""); len(got) != 1 || got[0] != "zeta@example.com" {
+		t.Fatalf("q=ZETA = %v, want only zeta", got)
+	}
+	// Keyword search hits invited_by.
+	if got := listEmails("user-admin", "", ""); len(got) != 3 {
+		t.Fatalf("q=user-admin = %v, want all three", got)
+	}
+	// No match → zero rows, zero total.
+	if got, total, err := repo.ListInvites(1, 50, InviteStatusAll, "no-such-needle", "", "", view); err != nil || len(got) != 0 || total != 0 {
+		t.Fatalf("q=no-such-needle = (%d rows, total %d, err %v), want empty", len(got), total, err)
 	}
 }
 // --- password policy ---

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -129,21 +130,99 @@ func (s *OutboxSink) Send(ctx context.Context, msg kernel.MailMessage) error {
 	return nil
 }
 
-// List returns at most limit records, newest first, without bodies. limit<=0
-// falls back to a page of 50; offset<0 is treated as 0.
-func (s *OutboxSink) List(ctx context.Context, limit, offset int) ([]OutboxRecord, error) {
-	if limit <= 0 {
-		limit = 50
+// OutboxListQuery is the admin listing contract (W27 · GOAL-039 D-001 §2):
+// standard page/pageSize pagination plus keyword / channel / delivery-status
+// filters and a whitelist sort. Empty filter values mean "all"; unknown enum
+// or sort values fall back to the defaults ("all" / created_at DESC,
+// ParseInviteStatus fallback philosophy). The stable secondary key keeps
+// pagination deterministic across dialects.
+type OutboxListQuery struct {
+	Page           int    // 1-based; <=0 → 1
+	PageSize       int    // <=0 → DefaultOutboxPageSize; > MaxOutboxPageSize → capped
+	Q              string // matches lower(to_addr) / lower(subject)
+	Channel        string // mock | resend | smtp ("": all)
+	DeliveryStatus string // delivered | sent | failed ("": all)
+	Sort           string // created_at (only whitelist entry); unknown → created_at
+	Order          string // asc | desc (default desc)
+}
+
+const (
+	DefaultOutboxPageSize = 50
+	MaxOutboxPageSize     = 200
+)
+
+func (q OutboxListQuery) normalized() OutboxListQuery {
+	if q.Page < 1 {
+		q.Page = 1
 	}
-	if offset < 0 {
-		offset = 0
+	if q.PageSize < 1 {
+		q.PageSize = DefaultOutboxPageSize
 	}
+	if q.PageSize > MaxOutboxPageSize {
+		q.PageSize = MaxOutboxPageSize
+	}
+	switch q.Channel {
+	case ChannelMock, ChannelResend, ChannelSMTP:
+	default:
+		q.Channel = ""
+	}
+	switch q.DeliveryStatus {
+	case DeliveryDelivered, DeliverySent, DeliveryFailed:
+	default:
+		q.DeliveryStatus = ""
+	}
+	return q
+}
+
+// whereClause builds the portable filter predicate + args (usersWhere
+// LOWER+LIKE precedent); empty clause = no filtering.
+func (q OutboxListQuery) whereClause() (string, []any) {
+	clauses := make([]string, 0, 3)
+	args := make([]any, 0, 3)
+	if needle := strings.ToLower(strings.TrimSpace(q.Q)); needle != "" {
+		clauses = append(clauses, `(lower(to_addr) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(subject) LIKE '%' || CAST(? AS TEXT) || '%')`)
+		args = append(args, needle, needle)
+	}
+	if q.Channel != "" {
+		clauses = append(clauses, `channel = ?`)
+		args = append(args, q.Channel)
+	}
+	if q.DeliveryStatus != "" {
+		clauses = append(clauses, `delivery_status = ?`)
+		args = append(args, q.DeliveryStatus)
+	}
+	if len(clauses) == 0 {
+		return "", nil
+	}
+	return ` WHERE ` + strings.Join(clauses, ` AND `), args
+}
+
+func (q OutboxListQuery) orderClause() string {
+	direction := "DESC"
+	if strings.EqualFold(strings.TrimSpace(q.Order), "asc") {
+		direction = "ASC"
+	}
+	// created_at is the only sortable column (log-style list); the same-
+	// direction id tiebreak keeps pagination stable across dialects.
+	return "created_at " + direction + ", id " + direction
+}
+
+// List returns one page of records matching the query, newest-first by
+// default, together with the filtered total for pagination.
+func (s *OutboxSink) List(ctx context.Context, query OutboxListQuery) ([]OutboxRecord, int, error) {
+	query = query.normalized()
+	where, args := query.whereClause()
 	var records []OutboxRecord
+	var total int
 	err := s.store.Run(ctx, func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(),
+			`SELECT COUNT(*) FROM mail_outbox`+where, args...).Scan(&total); err != nil {
+			return err
+		}
 		rows, err := tx.Query(context.Background(),
-			`SELECT id, to_addr, subject, body, channel, delivery_status, created_at FROM mail_outbox
-			 ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
-			limit, offset,
+			`SELECT id, to_addr, subject, body, channel, delivery_status, created_at FROM mail_outbox`+where+
+				` ORDER BY `+query.orderClause()+` LIMIT ? OFFSET ?`,
+			append(append([]any{}, args...), query.PageSize, (query.Page-1)*query.PageSize)...,
 		)
 		if err != nil {
 			return err
@@ -161,9 +240,9 @@ func (s *OutboxSink) List(ctx context.Context, limit, offset int) ([]OutboxRecor
 		return rows.Err()
 	})
 	if err != nil {
-		return nil, fmt.Errorf("mail: list outbox: %w", err)
+		return nil, 0, fmt.Errorf("mail: list outbox: %w", err)
 	}
-	return records, nil
+	return records, total, nil
 }
 
 // Count returns the current number of stored records (pagination total).

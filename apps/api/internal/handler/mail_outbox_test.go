@@ -97,8 +97,8 @@ func TestMailOutboxSurface(t *testing.T) {
 		}
 	})
 
-	t.Run("limit pagination caps at 200 and pages via offset", func(t *testing.T) {
-		code, out := authedGet("/api/mail/outbox?limit=1&offset=1")
+	t.Run("page/pageSize pagination and created_at sort", func(t *testing.T) {
+		code, out := authedGet("/api/mail/outbox?page=2&pageSize=1&order=asc")
 		if code != http.StatusOK {
 			t.Fatalf("paged list status = %d, want 200: %v", code, out)
 		}
@@ -107,11 +107,52 @@ func TestMailOutboxSurface(t *testing.T) {
 			t.Fatalf("paged items = %v, want exactly 1", items)
 		}
 		first, _ := items[0].(map[string]any)
-		if first["subject"] != "first" {
-			t.Fatalf("offset=1 must skip newest, got %v", first)
+		// Ascending order puts the OLDEST first, so page 2 skips it.
+		if first["subject"] != "second" {
+			t.Fatalf("page 2 under asc must be the newer record, got %v", first)
 		}
 		if page, _ := out["page"].(float64); int(page) != 2 {
 			t.Fatalf("page = %v, want 2", out["page"])
+		}
+		if size, _ := out["pageSize"].(float64); int(size) != 1 {
+			t.Fatalf("pageSize = %v, want 1", out["pageSize"])
+		}
+	})
+
+	t.Run("q keyword search matches recipient and subject", func(t *testing.T) {
+		code, out := authedGet("/api/mail/outbox?q=second")
+		if code != http.StatusOK {
+			t.Fatalf("search status = %d, want 200: %v", code, out)
+		}
+		items, _ := out["items"].([]any)
+		if len(items) != 1 {
+			t.Fatalf("q=second items = %v, want exactly the matching subject", items)
+		}
+		first, _ := items[0].(map[string]any)
+		if first["subject"] != "second" || first["to"] != "b@example.com" {
+			t.Fatalf("match = %v, want subject second to b@", first)
+		}
+		code, out = authedGet("/api/mail/outbox?q=B@EXAMPLE")
+		if code != http.StatusOK {
+			t.Fatalf("case-insensitive search status = %d", code)
+		}
+		items, _ = out["items"].([]any)
+		if len(items) != 1 || items[0].(map[string]any)["to"] != "b@example.com" {
+			t.Fatalf("q=B@EXAMPLE = %v, want case-insensitive recipient match", items)
+		}
+		if total, _ := out["total"].(float64); int(total) != 1 {
+			t.Fatalf("filtered total = %v, want 1", out["total"])
+		}
+	})
+
+	t.Run("unknown channel and delivery_status filters mean all", func(t *testing.T) {
+		code, out := authedGet("/api/mail/outbox?channel=bogus&delivery_status=whatever")
+		if code != http.StatusOK {
+			t.Fatalf("status = %d, want 200", code)
+		}
+		items, _ := out["items"].([]any)
+		if len(items) != 2 {
+			t.Fatalf("unknown enums = %v, want all rows (fallback-all)", items)
 		}
 	})
 
