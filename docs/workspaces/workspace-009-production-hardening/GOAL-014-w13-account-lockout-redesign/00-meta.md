@@ -1,12 +1,12 @@
 ---
 id: GOAL-014-w13-account-lockout-redesign
 title: W13-F007 账号锁定模型重设计（fixed · 承载自 GOAL-013）
-status: active
+status: done
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-013-w13-api-web-security-audit
-version: 0.4.0
-progress: 5/6
+version: 0.5.0
+progress: 6/6
 ---
 
 # GOAL-014 · W13-F007 账号锁定模型重设计
@@ -24,7 +24,12 @@ progress: 5/6
 - [x] **S3 实施** —— 迁移 0061 login_failures + users.last_login_failure_at；auth.Login 分层校验（来源锁 5/15min → 全局锁 100/24h 滑动）；移除失败触发会话吊销；UnlockUser 清来源行；handler 登录传真实客户端身份（checkpoint `26655b55`）
 - [x] **S4 回归** —— go vet ./... 0 输出；go test ./... -count=1 全绿 46 包（含 store 目录头 pin 更新至 v61）；缺陷形状回归锁 ×3（来源隔离 / 全局制动+通知恰一次+自愈 / 失败不吊销令牌）
 - [x] **S5 审计** —— self 审计 pass（A-001）→ independent 审计 pass（A-002 · grok build · grok-4.6 · reasoning high，开放 required=0；recommended ×3 已由 A-003 全部响应闭合）
-- [ ] **S6 关门** —— 用户书面关门确认（按 GOAL-013 D-003 与 GOAL-013 一并执行）
+- [x] **S6 关门** —— 用户书面关门确认已获得（2026-08-26，[D-003](01-decision/D-003-closeout.md)）：与 GOAL-013 一并 `status: done`
+
+## 残余移交（留痕）
+
+- 全局熔断后的 15min 账号级登录拒绝——**设计意图**（分布式猜测制动），非缺陷。
+- 全局锁窗内 Refresh rotate-before-checks（仅锁窗内主动出示的那张令牌被消费）——A-003 R-F002 accepted-residual；复审触发：产品提出"全局锁窗内出示也不丢会话"时另开决策改 Refresh 校验顺序。
 
 ## 边界
 

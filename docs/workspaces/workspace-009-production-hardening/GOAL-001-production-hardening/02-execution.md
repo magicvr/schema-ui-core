@@ -39,5 +39,5 @@ version: 0.8.0
 - W10 → [GOAL-010](../GOAL-010-w10-api-web-security-audit/02-execution.md)（done）
 - W11 → [GOAL-011](../GOAL-011-w11-api-web-security-audit/02-execution.md)（done · 2026-08-22 关门正式确认）
 - W12 → [GOAL-012](../GOAL-012-w12-multi-instance-rate-limiting/02-execution.md)（done · 评估型收官：单实例边界维持 + 载体预登记 Redis 方向，D-002/A-001 self pass）
-- W13 → [GOAL-013](../GOAL-013-w13-api-web-security-audit/02-execution.md)（active 5/6 · F-007 fixed 承载于子目标 GOAL-014）
+- W13 → [GOAL-013](../GOAL-013-w13-api-web-security-audit/02-execution.md)（**done · 2026-08-26 关门** · F-007 genuine fixed 于子目标 [GOAL-014](../GOAL-014-w13-account-lockout-redesign/02-execution.md)，同日关门）
 - 残余移交 → [E-008](02-execution/E-008-w13-f013-residual-trigger.md)（F-013 self-scope TOCTOU 复审触发硬门）

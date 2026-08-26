@@ -1,12 +1,12 @@
 ---
 id: GOAL-013-w13-api-web-security-audit
 title: W13 api/web 全量安全审查发现修复（P1×1 + P2×3 必修 + P3 加固全量）
-status: active
+status: done
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-001-production-hardening
-version: 0.3.0
-progress: 5/6
+version: 0.4.0
+progress: 6/6
 ---
 
 # GOAL-013 · W13 api/web 全量安全审查发现修复
@@ -24,7 +24,7 @@ progress: 5/6
 - [x] **S3 API P3 与健壮性批** —— F-005～F-012 + B-1～B-4 全量 fixed；F-007=fixed 承载于子目标 GOAL-014、F-013=accepted-residual（用户裁决 D-002 留痕）；checkpoint `b7954235`
 - [x] **S4 Web 前端批** —— F-014～F-016 fixed + 回归锁；vitest 1128/1128 + build 全绿（checkpoint `e93f7228`）
 - [x] **S5 部署/运维批** —— F-017 密钥路径分置配置化；F-018 缓存窗口收敛；F-020 HSTS 实施、img-src https: 经用户裁决保留（D-002）
-- [ ] **S6 审计闭合与关门** —— 审计腿已完成：self pass（A-002）+ independent pass（A-003 · grok build · grok-4.6 · reasoning high，开放 required=0；recommended ×3 已由 A-004 响应闭合）；**关门动作经用户裁决 D-003 挂起——待 GOAL-014 完成后两目标一并执行 `status: done`**
+- [x] **S6 审计闭合与关门** —— 审计腿：self pass（A-002）+ independent pass（A-003 · grok build · grok-4.6 · reasoning high，开放 required=0；recommended ×3 已由 A-004 响应闭合）；关门动作经 D-003 挂起至 GOAL-014 完成，**现已按 D-004 用户裁决两目标一并 `status: done`**
 
 ## 边界
 
