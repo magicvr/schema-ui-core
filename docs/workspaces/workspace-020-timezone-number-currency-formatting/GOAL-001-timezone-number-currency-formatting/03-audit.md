@@ -1,7 +1,7 @@
 ---
 id: GOAL-001-timezone-number-currency-formatting
 doc: audit
-status: active
+status: done
 parent: null
 created: 2026-08-26
 updated: 2026-08-26

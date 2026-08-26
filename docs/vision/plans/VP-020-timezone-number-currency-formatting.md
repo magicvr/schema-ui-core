@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-020-timezone-number-currency-formatting
 title: 时区 / 数字 / 货币格式语义
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-020-timezone-number-currency-formatting
 created: 2026-08-26
-updated: 2026-08-26
-version: 0.2.0
+updated: 2026-08-27
+version: 0.3.0
 parent: null
 ---
 
@@ -87,11 +87,11 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-020-001 | 时区来源：会话级（客户端 / 请求探测）vs 用户级（存库）vs 两者；影响设置归属与 schema。 | required | 方案冻结 | R1 合同冻结 | collecting |
-| I-020-002 | 数字 / 货币语义落点：仅前端展示 vs 后端 API 序列化也携带语义（如 decimal 字符串合同）。 | required | 方案冻结 | R1 合同冻结 | collecting |
+| I-020-001 | 时区来源：会话级（客户端 / 请求探测）vs 用户级（存库）vs 两者；影响设置归属与 schema。 | required | 方案冻结 | R1 合同冻结 | **verified**（用户 2026-08-26 裁决：会话级 auto + 站点兜底 + 用户级 localStorage 覆盖 · Root D-002；合同 §2 L1～L4 实现） |
+| I-020-002 | 数字 / 货币语义落点：仅前端展示 vs 后端 API 序列化也携带语义（如 decimal 字符串合同）。 | required | 方案冻结 | R1 合同冻结 | **verified**（用户 2026-08-26 裁决：前端落点；API 机器合同文档化 · Root D-002；§3 实现） |
 | I-020-003 | 持久化时区合同（DB `timestamptz`）是否进本波？**本 VP 冻结为不进**（架构 RT-T03 仍 `registered`）。本行只作台账投影。 | required | 退出分母 | R1 | **registered**（VP 已冻结不进；Root D-001 投影） |
 | I-020-004 | 汇率 / 换算是否进本波？**本 VP 冻结为不进**（业务域）。本行只作台账投影。 | required | 退出分母 | R1 | **registered**（VP 已冻结不进；Root D-001 投影） |
-| I-020-005 | 默认时区 / 数字 / 货币的配置归属：Settings 哪一 tab、哪些字段。 | non-blocking | 方案冻结 | R2 | collecting |
+| I-020-005 | 默认时区 / 数字 / 货币的配置归属：Settings 哪一 tab、哪些字段。 | non-blocking | 方案冻结 | R2 | **verified**（用户 2026-08-26 确认：Localization tab 站点默认 + 头部 locale 通道 · Root D-002；实现于 GOAL-003/004） |
 
 ## 工作区绑定
 
@@ -101,11 +101,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-27 | **closed v0.3.0**（用户书面确认「Root done 4/4 + VP-020 收尾」） | lead workspace-020 结项：Root done 4/4（R1 合同冻结 → R2 时区语义 → R3 数字/货币语义 → R4 证据与关门）；关门审计双腿 pass（Root A-001 self + A-002 grok build independent，0 required）；全量回归（Go 全绿 / web 1181）；退出判据 1–4 全部满足；VRev-045（self）关门审查 pass | 工作区 goal-tree / Root 03-audit A-001/A-002 / GOAL-005 `attachments/r4-evidence-matrix.md` | 无开放必改；书面接受残余：分组位序容差、`defaultCurrency` 句法三字母（非完整 ISO 目录）、业务金额展示不接线（钱包演示面不重开）；RT-T03 保持 registered |
 
 ## 规划修订短史
 
@@ -113,3 +111,4 @@ parent: null
 |------|--------|
 | 2026-08-26 | 初创 `planned`：用户确认立项（Admin 功能分支基架能力剩余 #5 · 时区/数字/货币格式语义）；退出分母 = Admin 格式语义面；DB 持久化时区合同（RT-T03）、汇率/计费不进分母。roadmap 索引原子同步 |
 | 2026-08-26 | v0.2.0 **激活**：VRev-044 self `pass`（V-F079/V-F080 → 激活事务内 fixed）；Admin 类 freshness PASS（`66f5fd1f` → `c6fda691`，不暂挂 `go`）；lead = `workspace-020-timezone-number-currency-formatting`；Root 五件套与 ledger 目录建立（跨入口调用 govern 原语，用户 2026-08-26 明确指令） |
+| 2026-08-26→27 | **交付与关门**：R1 合同冻结（用户裁决 I-001/I-002/I-005，D-002）→ R2 时区语义（GOAL-003）→ R3 数字/货币语义（GOAL-004 · grok 独立审 fail→fixed→复审 pass；migration v62 `default_currency`）→ R4 证据与关门（GOAL-005 · 证据矩阵/越界核账/F-007 加严；Root 关门审计 A-001 self + A-002 grok independent 双 pass）→ **v0.3.0 `closed`**（2026-08-27 用户书面确认）；VRev-045 关门审查；I-020-001/002/005 回写 verified |

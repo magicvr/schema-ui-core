@@ -15,8 +15,10 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-26 | 立项与 R4 实施方案冻结 | recorded | `02-execution/E-001-r4-establishment.md` |
+| E-002 | 2026-08-26 | C1/C2/C3 证据矩阵与核账项处置（F-007 加严 fixed） | done | `02-execution/E-002-r4-evidence-c1-c2-c3.md` |
+| E-003 | 2026-08-27 | R4 关门确认（用户书面确认；Root done 4/4 · 工作区结项） | recorded | `02-execution/E-003-r4-closeout-confirmed.md` |
 
 ## 推进状态
 
-- C1～C3 待实施（方案 D-001 已冻结）；C4（Root 关门）待审计与用户确认。
-- 下一步：证据矩阵 → 越界核账 → 核账项处置（F-007 安全整数加严）→ Root 关门审计。
+- **done**（2026-08-27 关门）：C1～C4 全部完成；Root 关门审计双腿 pass；用户确认。
+- 工作区 20 结项：goal-tree 收官、workspace.md 结项记录、VP-020 `closed` v0.3.0（VRev-045）。

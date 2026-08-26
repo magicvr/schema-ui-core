@@ -1,7 +1,7 @@
 ---
 id: GOAL-005-r4-evidence-closeout
 doc: decision
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26

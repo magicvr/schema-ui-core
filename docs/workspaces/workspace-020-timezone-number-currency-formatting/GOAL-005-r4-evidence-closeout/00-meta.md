@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-evidence-closeout
 title: R4 · 证据与关门（快测 + 双 locale 范例 · 无越界 · required = 0）
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
-updated: 2026-08-26
-version: 0.2.0
-progress: 3/4
+updated: 2026-08-27
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-005 · R4 证据与关门
@@ -24,9 +24,9 @@ progress: 3/4
 | C1 | 证据矩阵落盘：快测汇总（时区 15 + money 24 + runtime 接线 7 + switcher 4 + settings 保存/预填）映射到合同条款；双 locale 范例（zh-CN/en-US 各展示+输入场景） | **done**（2026-08-26 · `attachments/r4-evidence-matrix.md`） |
 | C2 | 无越界核账：汇率/换算/计费、DB `timestamptz`（RT-T03）、Profile 默认集/模块矩阵/Manifest、`docs/contracts/`、热加载等逐项核对；API 机器合同不变量复证 | **done**（2026-08-26 · 矩阵 §5 逐项） |
 | C3 | 核账项处置：GOAL-002 F-001/F-002（closed）；GOAL-003 F-001/F-002（epoch 输入控件·TIMEZONE_OPTIONS 留痕）；GOAL-004 F-002/F-005/F-006/F-007（grouping 位序评估 / FAIL 币种目录 / 安全整数评估→加拒） | **done**（2026-08-26 · F-007 **fixed**（safe-integer 守卫）；F-002/F-005/F-006 final residual；其余 closed/accepted） |
-| C4 | Root 关门：自审 A-001（self）+ grok build independent（Root 03-audit）→ 用户书面确认 → Root done 4/4 + goal-tree/workspace/VP-020 关门记录同步 | 待关门 |
+| C4 | Root 关门：自审 A-001（self）+ grok build independent（Root 03-audit）→ 用户书面确认 → Root done 4/4 + goal-tree/workspace/VP-020 关门记录同步 | **done**（Root A-001 self pass → A-002 grok independent pass（0 required）→ 用户 2026-08-27 书面确认关门；Root done 4/4，VP-020 收尾同步） |
 
-`progress` = 3/4（2026-08-26：C1～C3 done；C4 待关门）。
+`progress` = 4/4（2026-08-27 关门：用户书面确认；Root 关门审计双腿 pass）。
 
 ## 成功标准
 

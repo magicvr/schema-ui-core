@@ -16,9 +16,9 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-26 | 开区与激活记录（VRev-044 · freshness · 五件套建立） | done | `02-execution/E-001-workspace-scaffold.md` |
 | E-002 | 2026-08-26 | R1 信息门禁裁决落盘 + GOAL-002（合同冻结）立项 | done | `02-execution/E-002-r1-adjudication-goal002-establishment.md` |
+| E-003 | 2026-08-27 | Root 关门确认（用户书面确认；工作区 20 结项） | recorded | `02-execution/E-003-root-closeout-confirmed.md` |
 
 ## 推进状态速览
 
-- Root **active** · 3/4：R1～R3 **已关门**（GOAL-002 done 3/3、GOAL-003 done 5/5、GOAL-004 done 6/6 —— 其中 R3 经 grok build 独立审 fail→fixed→复审 pass）；R4 **已立项**（GOAL-005 active 3/4 · 证据矩阵/越界核账/F-007 加严 done；Root 关门审计 A-001 self pass + A-002 grok independent pass，待用户书面确认关门）。
-- I-001 / I-002 / I-005 已用户裁决（D-002 accepted）；合同正文 = GOAL-002 D-001，随 R2/R3 消费。
-- R3 移交核账项（F-002/F-005/F-006/F-007 recommended/residual）已在 R4 核账处置（F-007 fixed；其余 final residual 用户书面接受）。
+- Root **done · 4/4**（2026-08-27 用户书面确认）：R1～R4 全部关门（GOAL-002 3/3、GOAL-003 5/5、GOAL-004 6/6、GOAL-005 4/4）；关门审计 A-001 self + A-002 grok independent 双 pass（0 required）。
+- VP-020 决策层收尾（关门记录 + I-020-* 回写 + VRev-045）随本结项同步；工作区历史绑定保留，默认不接新区。
