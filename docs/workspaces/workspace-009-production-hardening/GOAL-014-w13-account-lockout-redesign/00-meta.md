@@ -5,8 +5,8 @@ status: active
 created: 2026-08-26
 updated: 2026-08-26
 parent: GOAL-013-w13-api-web-security-audit
-version: 0.2.0
-progress: 2/6
+version: 0.3.0
+progress: 4/6
 ---
 
 # GOAL-014 · W13-F007 账号锁定模型重设计
@@ -21,8 +21,8 @@ progress: 2/6
 
 - [x] **S1 立项与裁决落盘** —— 用户三路径选择 fixed（经子目标承载）；五件套建立
 - [x] **S2 方案设计与冻结** —— 候选模型对比（A 纯 IP 锁 / B 全局退避 / C 分层），选定模型 C（IP 维度锁 + 高阈值全局熔断 + 移除失败触发吊销），写入 D-002 并冻结
-- [ ] **S3 实施** —— 持久层字段/迁移（如需）+ auth.Login 失败记账改造 + 管理员通知语义保持
-- [ ] **S4 回归** —— go vet 0 + 全量 go test 全绿；缺陷形状回归锁（定向 DoS 场景不可复现、分布式猜测防护不弱化）
+- [x] **S3 实施** —— 迁移 0061 login_failures + users.last_login_failure_at；auth.Login 分层校验（来源锁 5/15min → 全局锁 100/24h 滑动）；移除失败触发会话吊销；UnlockUser 清来源行；handler 登录传真实客户端身份（checkpoint `26655b55`）
+- [x] **S4 回归** —— go vet ./... 0 输出；go test ./... -count=1 全绿 46 包（含 store 目录头 pin 更新至 v61）；缺陷形状回归锁 ×3（来源隔离 / 全局制动+通知恰一次+自愈 / 失败不吊销令牌）
 - [ ] **S5 审计** —— self 审计 pass → independent 审计（项目默认 grok build · grok-4.6 · reasoning high · `/audit`）
 - [ ] **S6 关门** —— 用户书面关门确认
 
