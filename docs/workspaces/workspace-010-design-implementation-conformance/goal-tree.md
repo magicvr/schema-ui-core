@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-08-26
 parent: null
-version: 0.50.0
+version: 0.51.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -56,6 +56,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-036-w25-page-performance-guardrails [done] · W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏）（6/6）
 │   └── GOAL-037-w25-f008-wallet-reconcile-race [done] · W25 承接 · F-008 钱包对账竞态修复（池化+FK 时代偶发不一致）（4/4）
 └── GOAL-038-w26-email-display-and-mail-pages [done] · W26 · 邮箱身份展示与邮件面页面化对齐（用户邮箱绑定显示 / 邮件控制台与出站记录独立页 / 邀请撤销修复）（4/4）
+└── GOAL-039-w27-invite-outbox-filter-sort [active] · W27 · 邀请管理与邮件出站记录页面的筛选与排序对齐（q 搜索 + 状态/渠道/投递状态筛选 + 列排序）（0/4）
 ```
 
 **W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
@@ -151,6 +152,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-036-w25-page-performance-guardrails | W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏） | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-23 |
 | GOAL-037-w25-f008-wallet-reconcile-race | W25 承接 · F-008 钱包对账竞态修复（池化+FK 时代偶发不一致） | GOAL-036-w25-page-performance-guardrails | done | 4/4 | 2026-08-23 |
 | GOAL-038-w26-email-display-and-mail-pages | W26 · 邮箱身份展示与邮件面页面化对齐（用户邮箱绑定显示 / 邮件控制台与出站记录独立页 / 邀请撤销修复） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-26 |
+| GOAL-039-w27-invite-outbox-filter-sort | W27 · 邀请管理与邮件出站记录页面的筛选与排序对齐（q 搜索 + 状态/渠道/投递状态筛选 + 列排序） | GOAL-001-design-implementation-conformance | active | 0/4 | 2026-08-26 |
 
 
 ## 维护说明
@@ -160,3 +162,4 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 - 层级唯一来源是目标 `00-meta.md` 的 `parent`。
 - **W25/W25-承接（2026-08-23 关门）**：GOAL-036 done 6/6（A-003 pass）→ GOAL-037 done 4/4；Root 保持 active 程序容器。
 - **W26（2026-08-26 关门）**：GOAL-038 done 4/4（A-001 self pass，required 0）；Root 保持 active 程序容器。
+- **W27（2026-08-26 立项）**：GOAL-039 active 0/4，挂 Root 直下；两页筛选/排序补强，勘察锚点见该目标 00-meta。
