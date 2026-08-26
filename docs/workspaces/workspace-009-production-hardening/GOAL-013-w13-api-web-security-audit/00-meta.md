@@ -24,7 +24,7 @@ progress: 5/6
 - [x] **S3 API P3 与健壮性批** —— F-005～F-012 + B-1～B-4 全量 fixed；F-007=fixed 承载于子目标 GOAL-014、F-013=accepted-residual（用户裁决 D-002 留痕）；checkpoint `b7954235`
 - [x] **S4 Web 前端批** —— F-014～F-016 fixed + 回归锁；vitest 1128/1128 + build 全绿（checkpoint `e93f7228`）
 - [x] **S5 部署/运维批** —— F-017 密钥路径分置配置化；F-018 缓存窗口收敛；F-020 HSTS 实施、img-src https: 经用户裁决保留（D-002）
-- [ ] **S6 审计闭合与关门** —— self 审计 pass → independent 审计（项目默认 grok build · grok-4.6 · reasoning high · `/audit`）确认全部 required 闭合 → 用户书面关门
+- [ ] **S6 审计闭合与关门** —— 审计腿已完成：self pass（A-002）+ independent pass（A-003 · grok build · grok-4.6 · reasoning high，开放 required=0；recommended ×3 已由 A-004 响应闭合）；**关门动作经用户裁决 D-003 挂起——待 GOAL-014 完成后两目标一并执行 `status: done`**
 
 ## 边界
 
