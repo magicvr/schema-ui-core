@@ -62,7 +62,9 @@ func main() {
 	<-ctx.Done()
 
 	logger.Info("shutting down")
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// VP-021 contract v0.1.0 §6: drain budget = http.shutdown_timeout
+	// (default 10s; invalid values fail closed at startup).
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTPShutdownTimeout)
 	defer cancel()
 	if err := app.Stop(shutdownCtx); err != nil {
 		logger.Error("shutdown", "err", err)

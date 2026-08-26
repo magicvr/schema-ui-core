@@ -28,10 +28,10 @@ serves_summary: 承载 VP-021（架构 RT-D02 · 优雅停机 / 连接排空合�
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
 | R1 | **合同冻结**：停机顺序（新请求停止 → 存量排空 → Store 排空 → 超时/退出码）；grace period / 超时默认值与配置键（I-002）；运行中 Job 停机语义（I-001：等完成 vs 中断标记重跑或按类型分流）；I-003（Store 排空与迁移窗口重叠）确认语义口径并登记（最晚 R2 关闭） | 起点 | **已关门**（GOAL-002 done 3/3 · A-001 self `pass` · 合同 v0.1.0 = GOAL-002 D-002） |
-| R2 | **实现与测试**：`http.Server` Shutdown 合同化（grace / 超时 / 退出码）；Job 停机行为实现（R1 冻结语义）；双方言连接关闭顺序 + 迁移窗口重叠时停机语义（I-003 required，方案冻结前关闭）；复用 VP-015 结构化日志 / correlation | 依赖 R1 | 待立项（GOAL-003） |
+| R2 | **实现与测试**：`http.Server` Shutdown 合同化（grace / 超时 / 退出码）；Job 停机行为实现（R1 冻结语义）；双方言连接关闭顺序 + 迁移窗口重叠时停机语义（I-003 required，方案冻结前关闭）；复用 VP-015 结构化日志 / correlation | 依赖 R1 | **已关门**（GOAL-003 done 3/3 · A-001 self `pass` · shutdown_timeout 配置键 + main 接线 + compose 15s + 测试锁；I-003 已 verified 承接） |
 | R3 | **证据与关门**：SIGTERM / SIGINT → 排空 → 退出码可核对（信号测试或等价 harness，单进程 + Compose）；SQLite / PG 双方言排空一致；checksum 台账不变；退出判据 1～5；开放 required = 0 | 依赖 R2 | 待立项（GOAL-004） |
 
-`progress` = 已关门纲领阶段数 / 3。当前 **2/3**（2026-08-27：R1 已关门；R2 待立项）。
+`progress` = 已关门纲领阶段数 / 3。当前 **2/3**（2026-08-27：R1、R2 已关门；R3 待立项。口径与校正见 GOAL-003 E-003）。
 
 ## 成功标准（方向级 · 与 VP-021 退出判据镜像）
 

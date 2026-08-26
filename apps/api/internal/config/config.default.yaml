@@ -33,6 +33,10 @@ http:
   read_timeout: 5s
   write_timeout: 10s
   idle_timeout: 60s
+  # Graceful-shutdown drain budget (VP-021 contract v0.1.0 §6): SIGINT/SIGTERM
+  # -> http.Server.Shutdown grace -> forced exit. Default 10s; invalid
+  # (unparsable or <=0) values fail closed at startup. Env: HTTP_SHUTDOWN_TIMEOUT.
+  shutdown_timeout: 10s
   # Optional comma-separated CORS allow-list (W15-F05). Empty = no CORS
   # headers (same-origin reverse proxy). Env override: HTTP_CORS_ORIGINS.
   cors_origins: ""

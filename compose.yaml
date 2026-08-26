@@ -60,6 +60,11 @@ services:
       timeout: 3s
       retries: 12
       start_period: 10s
+    # VP-021 contract v0.1.0 §2: the orchestration stop grace must be >= the
+    # in-process drain budget (http.shutdown_timeout, default 10s) so compose
+    # stop never SIGKILLs a draining process mid-drain. 15s = default budget
+    # + margin.
+    stop_grace_period: 15s
     restart: on-failure
 
   web:

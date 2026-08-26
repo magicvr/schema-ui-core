@@ -35,6 +35,11 @@ type Config struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
+	// HTTPShutdownTimeout is the graceful-shutdown drain budget (VP-021
+	// contract §6): SIGINT/SIGTERM -> http.Server.Shutdown grace -> forced
+	// exit. Default 10s; invalid (unparsable or <=0) values fail closed at
+	// startup. Env override: HTTP_SHUTDOWN_TIMEOUT.
+	HTTPShutdownTimeout time.Duration
 	// HTTPCORSOrigins is the optional CORS allow-list (W15-F05). Empty means
 	// no Access-Control headers (same-origin Nginx remains the default).
 	HTTPCORSOrigins []string
@@ -245,12 +250,13 @@ type yamlFile struct {
 		Modules yaml.Node `yaml:"modules"`
 	} `yaml:"app"`
 	HTTP struct {
-		Addr           *string `yaml:"addr"`
-		ReadTimeout    *string `yaml:"read_timeout"`
-		WriteTimeout   *string `yaml:"write_timeout"`
-		IdleTimeout    *string `yaml:"idle_timeout"`
-		CORSOrigins    *string `yaml:"cors_origins"`
-		TrustedProxies *string `yaml:"trusted_proxies"`
+		Addr            *string `yaml:"addr"`
+		ReadTimeout     *string `yaml:"read_timeout"`
+		WriteTimeout    *string `yaml:"write_timeout"`
+		IdleTimeout     *string `yaml:"idle_timeout"`
+		ShutdownTimeout *string `yaml:"shutdown_timeout"`
+		CORSOrigins     *string `yaml:"cors_origins"`
+		TrustedProxies  *string `yaml:"trusted_proxies"`
 	} `yaml:"http"`
 	Log struct {
 		Level *string `yaml:"level"`
@@ -366,6 +372,9 @@ func Load() *Config {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
+		// VP-021 contract §6: default drain budget = 10s (mirrors the legacy
+		// hard-coded shutdown context in cmd/server/main.go).
+		HTTPShutdownTimeout: 10 * time.Second,
 		LogLevelName: "info",
 
 		AuthJWTSecret:            "",
@@ -462,6 +471,9 @@ func Load() *Config {
 	cfg.ReadTimeout = orDurationPtr(yf.HTTP.ReadTimeout, cfg.ReadTimeout)
 	cfg.WriteTimeout = orDurationPtr(yf.HTTP.WriteTimeout, cfg.WriteTimeout)
 	cfg.IdleTimeout = orDurationPtr(yf.HTTP.IdleTimeout, cfg.IdleTimeout)
+	if cfg.HTTPShutdownTimeout, cfg.LoadError = strictDurationPtr(yf.HTTP.ShutdownTimeout, "http.shutdown_timeout", cfg.HTTPShutdownTimeout); cfg.LoadError != nil {
+		return cfg
+	}
 	if yf.HTTP.CORSOrigins != nil {
 		cfg.HTTPCORSOrigins = splitCSV(*yf.HTTP.CORSOrigins)
 	}
@@ -574,6 +586,22 @@ func Load() *Config {
 	cfg.ReadTimeout = durationEnv("HTTP_READ_TIMEOUT", cfg.ReadTimeout)
 	cfg.WriteTimeout = durationEnv("HTTP_WRITE_TIMEOUT", cfg.WriteTimeout)
 	cfg.IdleTimeout = durationEnv("HTTP_IDLE_TIMEOUT", cfg.IdleTimeout)
+	if v := strings.TrimSpace(os.Getenv("HTTP_SHUTDOWN_TIMEOUT")); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			// VP-021 contract §6: an unparsable drain budget is a startup
+			// error (fail-closed), not a silent fallback.
+			cfg.LoadError = fmt.Errorf("HTTP_SHUTDOWN_TIMEOUT: invalid duration %q (fail-closed)", v)
+			return cfg
+		}
+		cfg.HTTPShutdownTimeout = d
+	}
+	// VP-021 contract §6: a non-positive drain budget is invalid in every
+	// environment (fail-closed at startup via ValidateProd -> LoadError).
+	if cfg.HTTPShutdownTimeout <= 0 {
+		cfg.LoadError = fmt.Errorf("HTTP_SHUTDOWN_TIMEOUT must be > 0 (drain budget), got %s", cfg.HTTPShutdownTimeout)
+		return cfg
+	}
 	if raw := strings.TrimSpace(os.Getenv("HTTP_CORS_ORIGINS")); raw != "" {
 		cfg.HTTPCORSOrigins = splitCSV(raw)
 	}
@@ -1586,6 +1614,25 @@ func orDurationPtr(v *string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return orDuration(*v, fallback)
+}
+
+// strictDurationPtr parses a YAML duration string strictly (VP-021 contract
+// §6 / config http.shutdown_timeout): a nil pointer keeps the fallback; an
+// explicitly set empty or unparsable value is a startup error (fail-closed),
+// unlike the lenient orDurationPtr used by request-level timeouts.
+func strictDurationPtr(v *string, key string, fallback time.Duration) (time.Duration, error) {
+	if v == nil {
+		return fallback, nil
+	}
+	s := strings.TrimSpace(*v)
+	if s == "" {
+		return fallback, fmt.Errorf("%s: must not be empty when set (fail-closed)", key)
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return fallback, fmt.Errorf("%s: invalid duration %q (fail-closed)", key, s)
+	}
+	return d, nil
 }
 
 func boolEnv(key string, fallback bool) bool {
