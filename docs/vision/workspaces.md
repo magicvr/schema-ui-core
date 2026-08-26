@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-25
+updated: 2026-08-26
 parent: null
-version: 0.28.0
+version: 0.29.0
 ---
 
 # 工作区贡献图
@@ -20,7 +20,7 @@ version: 0.28.0
 | workspace-006-design-system-and-ui-experience | docs/workspaces/workspace-006-design-system-and-ui-experience/ | GOAL-001-design-system-and-ui-experience | delivery | VP-005-design-system-and-ui-experience | active |
 | workspace-007-localization-and-system-settings | docs/workspaces/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
 | workspace-008-admin-module-readiness | docs/workspaces/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
-| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1–W4 与 W6 done，W5 扫描 0 中高危未开子目标；2026-08-10 语义纠正） |
+| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1–W4 与 W6–W12 done，W5 扫描 0 中高危未开子目标；2026-08-10 语义纠正） |
 | workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；波次 W1–W13 done，`go` 均无新暂挂） |
 | workspace-011-admin-functional-modules | docs/workspaces/workspace-011-admin-functional-modules/ | GOAL-001-admin-functional-modules | lead | VP-011-admin-functional-modules | active（历史；VP-011 已于 2026-08-18 有界 closed；Root done；四档能力地图上提至 vision roadmap） |
 | workspace-012-shared-cross-module-contracts | docs/workspaces/workspace-012-shared-cross-module-contracts/ | GOAL-001-shared-cross-module-contracts | lead | VP-012-shared-cross-module-contracts | active（历史；VP-012 已于 2026-08-19 完整 closed；Root done 8/8；后续 Tier A 移交 vision roadmap） |
@@ -30,7 +30,7 @@ version: 0.28.0
 | workspace-016-key-rotation-and-backup | docs/workspaces/workspace-016-key-rotation-and-backup/ | GOAL-001-key-rotation-and-backup | delivery | VP-016-key-rotation-and-backup | active（历史；VP-016 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A5；residual = I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
 | workspace-017-outbound-mail | docs/workspaces/workspace-017-outbound-mail/ | GOAL-001-outbound-mail | delivery | VP-017-outbound-mail | **done**（2026-08-24 现行分母再关门：VP-017 v0.5.0 `closed`；Root `done` 8/8；R5–R8 = GOAL-006～009 全 done；live 投递 PASS） |
 | workspace-018-account-email-identity | docs/workspaces/workspace-018-account-email-identity/ | GOAL-001-account-email-identity | delivery | VP-018-account-email-identity | **done**（2026-08-24 同日解冻→关门：VP-018 v1.0.0 `closed`；Root `done` 4/4；R1–R4 = GOAL-002～005 全 done；A-002 independent 归零） |
-| workspace-019-iam-recovery | docs/workspaces/workspace-019-iam-recovery/ | GOAL-001-iam-recovery | delivery | VP-019-iam-recovery | **active**（2026-08-25 开区：VP-019 `active`，VRev-043 independent `pass`；Root active · 0/4；R1 合同冻结待立项） |
+| workspace-019-iam-recovery | docs/workspaces/workspace-019-iam-recovery/ | GOAL-001-iam-recovery | delivery | VP-019-iam-recovery | active（2026-08-25 开区；**Root `done` 4/4 · 2026-08-25 全链关门**：R1 合同冻结 / R2 恢复全链 / R3 策略+邀请 / R4 证据 = GOAL-002～005 全 done；关后独立复审 A-001 `pass` + 响应 A-002 · recommended ×2 闭合，2026-08-26。**VP-019 计划文件仍 `active`——实现已交付，正式关门待用户确认**） |
 
 ## 说明
 
@@ -43,6 +43,7 @@ version: 0.28.0
 - **workspace-017（2026-08-22 开区）**：VP-017（出站邮件）唯一 lead delivery 工作区。R1–R4 已实施内核端口 + SMTP + capture（子目标保持 `done`，实施史不回退）。2026-08-24 用户否决同日有界关门并升级分母；随后 R5–R8 由 GOAL-006～009 承接完成，**VP-017 v0.5.0 `closed`、Root `done` 8/8**（现行分母再关门，live 投递实跑 PASS）。不改变 Charter `primary_workspace`。
 - **workspace-018（2026-08-24 开区）**：VP-018（账号邮箱身份）唯一 lead delivery 工作区。冻结已于 2026-08-24 解除（VP-017 按现行分母再次关门）；同日连续关门 R1–R4 = GOAL-002～005，**VP-018 v1.0.0 `closed`、Root `done` 4/4**（迁移 0054/0055、绑定/校验流、I-006 代填、最小绑定卡；Root A-002 independent 归零后关门）。residual：N-1 SQLite lower() ASCII 有界声明。不改变 Charter `primary_workspace`。
 - **workspace-019（2026-08-25 开区）**：VP-019（IAM：密码策略 / 邀请入职 / 自助恢复状态机）唯一 lead delivery 工作区；开区前 grok build 独立 Vision Review **VRev-043 `pass`**（0 required；V-F076/077/078 → fixed）+ Admin 类 freshness **PASS**（`092bf37` → `66f5fd1f`）。Root `GOAL-001-iam-recovery` active · 0/4；R1 合同冻结待立项（I-001/I-002/I-009 须先用户裁决）。不改变 Charter `primary_workspace`。不重开 workspace-017/018。
+- **2026-08-26 索引同步**（本文件维护，不改任何 Charter/VP status）：① workspace-009 波次摘要更新——W7～W11 审计波与 W12（跨区限流评估：维持单实例边界 + 载体预登记 Redis 方向）均 done；② workspace-019 行对齐实际——Root done 4/4（2026-08-25）+ 关后独立复审 A-001 `pass` / A-002 响应闭合（2026-08-26）；**VP-019 计划文件仍 `active`，实现已交付、正式关门待用户确认**（V2.5：须用户确认 + 工作区证据链接）。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。
