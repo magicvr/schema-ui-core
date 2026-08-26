@@ -23,4 +23,4 @@ version: 1.0.0
 
 ## Checkpoint
 
-- Git checkpoint hash 于关门提交后回填本节（scope = 本波五件套 + 区索引/goal-tree/workspace + Root meta/02-execution 指针）。
+- Git checkpoint：`a96beab3`（dev 分支；scope = 本波五件套 11 个文件 + goal-tree/workspace/Root meta/Root 02-execution 指针；验证 = 关门条件核对见 A-001，零代码变更故无测试面）。
