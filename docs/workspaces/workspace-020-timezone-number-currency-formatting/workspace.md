@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-020-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-020-timezone-number-currency-formatting](../../vision/plans/VP-020-timezone-number-currency-formatting.md)（**`active`** · 2026-08-26 激活；VRev-044 self `pass`）的唯一 lead delivery workspace。
 
-- **Root** `GOAL-001-timezone-number-currency-formatting`：**`active`** · 1/4（R1 已关门；R2 已立项 GOAL-003；R3～R4 待立项）。
+- **Root** `GOAL-001-timezone-number-currency-formatting`：**`active`** · 2/4（R1/R2 已关门；R3 已立项 GOAL-004；R4 待立项）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 消费已交付基架：VP-007 locale 运行时（closed v0.3.0）、VP-005 设计系统（closed）、VP-011 用户/角色边界（closed）。
 - 边界：不承接汇率/换算/计费（业务域）、DB `timestamptz` 持久化合同（架构 RT-T03，仍 `registered`）、翻译中心（VP-007）、改 Profile 默认集 / 模块矩阵 / Manifest 装配语义。
@@ -29,7 +29,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-020-timezone-number-currency-formatting` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-timezone-number-currency-formatting` | `parent: null`；**active** · 1/4（R1 已关门；R2 已立项 GOAL-003；R3～R4 待立项） |
+| Root Goal | `GOAL-001-timezone-number-currency-formatting` | `parent: null`；**active** · 2/4（R1/R2 已关门；R3 已立项 GOAL-004；R4 待立项） |
 | canonical 范围 | `docs/workspaces/workspace-020-timezone-number-currency-formatting/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-020 lead；不改变 Charter primary workspace |
@@ -47,8 +47,8 @@ VP-008 `go` 消费有效性：Admin 类 freshness **PASS**（`66f5fd1f` → `c6f
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | R1 | 合同冻结：时区来源（I-020-001）、数字/货币落点（I-020-002）、设置归属（I-020-005）；I-003/I-004 保持 VP 冻结投影 | **已关门**（GOAL-002 done 3/3 · A-001 self pass；合同正文 = GOAL-002 D-001） |
-| R2 | 时区语义：会话/用户级解析与展示（IANA / offset / auto） | 依赖 R1 | **已立项**（GOAL-003 active · 方案 D-001 冻结，C1～C4 待实施） |
-| R3 | 数字 / 货币语义：locale 驱动格式与输入解析合同 | 依赖 R2 | 待立项 |
+| R2 | 时区语义：会话/用户级解析与展示（IANA / offset / auto） | 依赖 R1 | **已关门**（GOAL-003 done 5/5 · A-001 self pass；timezone.ts + 头部时区选择 + 站点默认接入 + 统一语义） |
+| R3 | 数字 / 货币语义：locale 驱动格式与输入解析合同 | 依赖 R2 | **已立项**（GOAL-004 active 0/6 · 方案 D-001 冻结；审计模式 independent（migration 涉及）） |
 | R4 | 证据与关门：快测 + 双 locale 范例；无越界；required = 0 | 依赖 R3 | 待立项 |
 
 ## 固定共享资料引用

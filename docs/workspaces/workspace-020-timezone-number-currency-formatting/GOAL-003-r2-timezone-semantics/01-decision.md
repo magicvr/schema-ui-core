@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r2-timezone-semantics
 doc: decision
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-003 R2 时区语义

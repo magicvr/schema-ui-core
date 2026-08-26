@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-timezone-semantics
 title: R2 · 时区语义（会话/用户级解析与展示）
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 5/5
 ---
 
 # GOAL-003 · R2 时区语义
@@ -25,9 +25,9 @@ progress: 0/5
 | C2 | 用户级覆盖 UI：头部 locale 通道旁时区选择；`auto` = 移除 key；登录/登出不清除；快测 | **done**（2026-08-26 · `timezone-switcher.tsx` 挂载头部；4 快测） |
 | C3 | 站点默认接入：`/api/branding.siteTimezone` → L3；Localization tab 字段核对（已有字段，不改 schema） | **done**（2026-08-26 · runtime `fetchedSiteTimezone`；字段未动） |
 | C4 | 统一语义接线：`formatDate`/时间输入使用生效时区（同一时刻双向一致、无偏移）；快测 | **done**（2026-08-26 · `formatDate` 默认注入 + 显式覆盖；6 快测） |
-| C5 | 关门自审 A-001（self）+ 用户确认 → `status: done` | **进行中**（A-001 已落盘 · pass · required = 0；待用户确认关门） |
+| C5 | 关门自审 A-001（self）+ 用户确认 → `status: done` | **done**（A-001 pass · required = 0；用户 2026-08-26 书面确认关门） |
 
-`progress` = 4/5（2026-08-26：C1～C4 done；C5 待关门）。
+`progress` = 5/5（2026-08-26 关门：用户书面确认；A-001 self pass，required = 0）。F-001/F-002（recommended）随 R3（GOAL-004）/R4 跟踪。
 
 ## 成功标准
 
