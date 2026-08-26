@@ -2,9 +2,9 @@
 title: 目标树 · workspace-010-design-implementation-conformance
 status: active
 created: 2026-08-11
-updated: 2026-08-23
+updated: 2026-08-26
 parent: null
-version: 0.48.0
+version: 0.49.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -55,11 +55,14 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 ├── GOAL-035-w24-e2e-dual-dialect-matrix [done] · W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次）（4/4）
 ├── GOAL-036-w25-page-performance-guardrails [done] · W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏）（6/6）
 │   └── GOAL-037-w25-f008-wallet-reconcile-race [done] · W25 承接 · F-008 钱包对账竞态修复（池化+FK 时代偶发不一致）（4/4）
+└── GOAL-038-w26-email-display-and-mail-pages [active] · W26 · 邮箱身份展示与邮件面页面化对齐（用户邮箱绑定显示 / 邮件控制台与出站记录独立页 / 邀请撤销修复）（0/4）
 ```
 
 **W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
 
 **W25（2026-08-23 关门，GOAL-036 done 6/6）**：我的钱包页面性能优化 → 全盘修复与此类问题+防复发（D-002 书面裁决）。四因素诊断与实施（池 4 + WAL/busy_timeout/synchronous + 前端 in-flight 合并 + 探活后写 + schema 缓存 + 定向刷新 + 防复发三支柱 + playbook §6）；A-001（independent）响应闭环（F-001 FK 每连接入 DSN、F-002 多连接回归、F-003 refreshList 对称、F-004/F-005 卫生、F-006 顺序断言，A-002/E-006）；F-007 修复（E-007，测试替身时钟量化 + 产品 newRunID 加固）；**F-008（wallet reconcile 竞态：同毫秒流水 id 随机后缀乱序）由下级 GOAL-037 承接根治（done 4/4：同毫秒单调计数 + 0050 数据修复迁移 + 成功审计原子化）**；I-001/I-002 closed（e2e 9/9×2、双栈实测 −47%～−86%）；A-003 self 关门审计 pass。**GOAL-037 关门后回归关门 GOAL-036（用户书面约定）——2026-08-23 完成**。
+
+**W26（2026-08-26 立项，GOAL-038 active 0/4）**：用户点名三项对齐——① 用户邮箱身份绑定在列表/详情无读面（`userToMap` 与 users.json 均缺 email，VP-018 能力遗漏展示）；② 邮件控制台与出站记录移出设置页为独立页面并注册左侧导航，出站记录覆盖全部渠道（含 mock；列表 = 唯一ID/收件箱/主题/发送渠道/投递状态/创建时间，详情含正文），权限沿用 `settings.read` 不新设；③ 邀请管理「撤销」缺 `requestMapping.path.id` 绑定报 MISSING_PATH_BINDING。根因锚定 E-001；S1 方案冻结待 I-001～I-003 闭合。
 
 **W23（2026-08-23 关门，4/4）**：N-001 根因 = e2e 挂具 store 隔离失效（本地 gitignored `configs/.env` 2026-08-21 建，`DB_DIALECT=postgres` 劫持临时 SQLite；全新种子 admin/admin 401，登录链第一步断开），**非路由回归**；W22 基线实验（git stash 无法移除 gitignored 文件）结论失效。修复：挂具钉死 `DB_DIALECT=sqlite`（playwright.config.ts）+ signInZh/sign-in fallback 等待硬化 + 连带 F-1（RowActionsMenu scroll-close 竞态，产品面）F-2（fallback 按钮等待）fixed。回归：go 全包 ok / vitest 1088 / tsc+build 0 / e2e admin 连续 5 轮 9/9 + mvp 9/9。A-001 self pass，required 0。I-001 closed。
 
@@ -147,6 +150,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-035-w24-e2e-dual-dialect-matrix | W24 · 浏览器 e2e 双数据库方言矩阵（收尾层双方言各测一次） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-23 |
 | GOAL-036-w25-page-performance-guardrails | W25 · 页面性能问题全盘修复与防复发（钱包页 + 全局机制 + 防复发栅栏） | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-08-23 |
 | GOAL-037-w25-f008-wallet-reconcile-race | W25 承接 · F-008 钱包对账竞态修复（池化+FK 时代偶发不一致） | GOAL-036-w25-page-performance-guardrails | done | 4/4 | 2026-08-23 |
+| GOAL-038-w26-email-display-and-mail-pages | W26 · 邮箱身份展示与邮件面页面化对齐（用户邮箱绑定显示 / 邮件控制台与出站记录独立页 / 邀请撤销修复） | GOAL-001-design-implementation-conformance | active | 0/4 | 2026-08-26 |
 
 
 ## 维护说明
@@ -155,3 +159,4 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 - 波次 progress 只写在子目标；不得用波次完成数推导 Root done。
 - 层级唯一来源是目标 `00-meta.md` 的 `parent`。
 - **W25/W25-承接（2026-08-23 关门）**：GOAL-036 done 6/6（A-003 pass）→ GOAL-037 done 4/4；Root 保持 active 程序容器。
+- **W26（2026-08-26 立项）**：GOAL-038 active 0/4，挂 Root 直下；三问题根因锚定见该目标 E-001。

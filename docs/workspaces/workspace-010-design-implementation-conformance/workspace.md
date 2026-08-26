@@ -10,8 +10,8 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-08-23
-version: 0.49.0
+updated: 2026-08-26
+version: 0.50.0
 parent: null
 ---
 
@@ -95,3 +95,5 @@ GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口
 **W24（2026-08-23 关门，GOAL-035 done 4/4）**：承接 GOAL-034 用户书面复审（「强制 sqlite 属绕过；收尾层 e2e 应双方言各测一次」；实验先证专用 pg 全量 9/9 绿）。实现：`DB_DIALECT` 方言契约（默认 sqlite / pg 显式 opt-in，`.env` 无法再改道）+ `apps/api/cmd/e2e-pgset`（scratch 库 create/verify/drop/list，凭据与 API/pgtest 同源）+ `globalSetup/Teardown` fail-fast 校验与清理 + `npm run test:e2e:postgres` + CI `profile×dialect [sqlite,postgres]` 矩阵。F-1（Playwright 配置双载 → 双份 scratch 库）修复：`E2E_PG_NAME` 守卫复用 + `DROP WITH (FORCE)` + teardown 可见。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass（required 0）；I-001 closed。
 
 **W25（2026-08-23 立项，GOAL-036 active 5/6，未闭门）**：我的钱包页面性能优化 → **用户升级为全盘修复此类问题 + 防复发**（D-002 书面裁决；文件夹改名 `GOAL-036-w25-page-performance-guardrails`）。S1–S4：四因素诊断（SQLite `MaxOpenConns=1` 全局串行 + 逐提交 fsync；同 URL 展示节点重复请求；wallet-ensure 挂载即写 + 整页重拉；schema 每次导航重取）+ 钱包页实施（后端文件库池 4 + `_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL`，`:memory:` 保单连接，pg 零改动；前端 provider `fetchList` in-flight 合并 + 探活后写 + shell 级文档缓存）+ 26 页全盘扫描（system-monitoring 6×同 URL、data-display 3×同 URL 由全局机制覆盖；无第二例挂载即写组件）。S5 防复发（E-002）：store 连接面白盒回归测试（池/WAL/超时，防回退单连接）+ 渲染层合并/定向刷新回归 + schema 组件注册校验测试 + provider `refreshList` 定向刷新（monitoring 轮询 tick 由整页 `reloadList` 改为只刷 `/status`，9→3 请求/tick；事件表随手动刷新）+ `module-contribution-playbook.md` §6 页面数据面性能规范（1.1.0）。回归：go store 全绿 + build 0；vitest 定向全绿；全量回归于 E-003 补跑。**S6 进展**：**I-001 closed（2026-08-23）**——e2e 双 profile 全绿（admin 9/9 + mvp 9/9，另各 1 profile 专属跳过）；回归暴露后端缺陷「删用户遗留 `user_roles` 孤儿行 → 角色 `deletable=false` 永久化」（`DeleteUser`/`DeleteUsersBatch` 不清理关联；探针实证），已修复（同事务补删 `user_roles` + `user_mfa`）并加 2 项单元回归（E-004）。**I-002 closed（2026-08-23）**——双栈活栈实测（基线 `0878d7f` vs 当前，Playwright）：页面相关请求数 −47%～−86%（SPA 二次回访 14→2、schema 缓存命中 1→0）；呈现耗时本机 −17%～−51%、RTT150ms −25%（−1.4s/次）（E-005）。A-001（independent · conditional）响应完成：F-001～F-006 fixed（FK 每连接入 DSN + 多连接回归 + refreshList 对称 + 台账卫生 + 批删 MFA + 顺序断言）、F-007 fixed（E-007：测试替身 run id 时钟量化；产品 newRunID 防御加固）；**F-008（wallet reconcile 竞态，偶发 inconsistent）由下级 GOAL-037 承接根治**：机制 = 同毫秒流水 id 随机后缀乱序 → 回放先遇 freeze 未入账；修复 = 产品/替身 id 同毫秒单调计数 + **0050 数据修复迁移**（既库乱序重排，fail-closed）+ **成功审计原子化**（job 事务内 RecordOperationTx）+ 失败路径可观测（E-002/E-003，GOAL-037 done 4/4）。**GOAL-036 回归关门（用户书面约定）：A-003 self pass → done 6/6（2026-08-23）**。Root/VP 保持 active 程序容器。（承接 W19/GOAL-030 开通语义不变；与 workspace-009 正交。）
+
+**W26（2026-08-26 立项，[workspace_id] workspace-010-design-implementation-conformance 内 GOAL-038 active 0/4）**：用户点名三项符合性对齐——① 用户邮箱身份绑定在管理端用户列表页与详情均无读面（VP-018 能力遗漏展示；`userToMap` 与 `users.json` 均缺 email）；② 发送邮件控制台与邮件出站记录移出设置页为两个独立页面并注册左侧边栏导航；出站记录须覆盖**全部渠道**（含 mock），列表含唯一 ID、收件箱、主题、发送渠道、投递状态、创建时间，详情显示正文；两页权限沿用现有 `settings.read` 门禁，**不新设权限**；③ 邀请管理「撤销」行动作缺 `requestMapping.path.id = "$row.id"` 绑定 → MISSING_PATH_BINDING 报错。三问题根因已锚定（该目标 E-001）；路线图 S1 方案冻结（I-001～I-003 required 待闭合）→ S2 实施 → S3 回归（含 go 消费判定落盘）→ S4 self 关门审计。
