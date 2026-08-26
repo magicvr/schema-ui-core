@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.2.0
-progress: 0/4
+version: 0.3.0
+progress: 1/4
 plan_refs:
   - VP-020-timezone-number-currency-formatting
 primary_plan: VP-020-timezone-number-currency-formatting
@@ -27,12 +27,12 @@ serves_summary: 承载 VP-020（Admin 功能 · 时区/数字/货币格式语义
 
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
-| R1 | **合同冻结**：时区来源（会话级 vs 用户级 vs 两者，I-001）、数字/货币语义落点（前端 vs 序列化合同，I-002）、设置归属与字段（I-005）；I-003（RT-T03 不进）/I-004（汇率不进）保持 VP 冻结投影 | 起点 | **已立项**（GOAL-002 **active** · 2026-08-26；I-001/I-002/I-005 已裁决 accepted（D-002），方案冻结已解锁） |
-| R2 | **时区语义**：会话/用户级时区解析与展示（IANA / offset / `auto`）；时间输入与展示统一语义 | 依赖 R1 | **待立项**（GOAL-003） |
+| R1 | **合同冻结**：时区来源（会话级 vs 用户级 vs 两者，I-001）、数字/货币语义落点（前端 vs 序列化合同，I-002）、设置归属与字段（I-005）；I-003（RT-T03 不进）/I-004（汇率不进）保持 VP 冻结投影 | 起点 | **已关门**（GOAL-002 done 3/3 · A-001 self pass · 合同正文 = GOAL-002 D-001） |
+| R2 | **时区语义**：会话/用户级时区解析与展示（IANA / offset / `auto`）；时间输入与展示统一语义 | 依赖 R1 | **已立项**（GOAL-003 **active** · 方案 D-001 冻结；C1～C4 待实施） |
 | R3 | **数字 / 货币语义**：locale 驱动千分位 / 小数位 / 百分比 / ISO 4217 展示与输入解析合同 | 依赖 R2 | **待立项**（GOAL-004） |
 | R4 | **证据与关门**：快测 + `zh-CN`/`en-US` 双 locale 范例；无越界（汇率/计费/RT-T03）；required = 0 | 依赖 R3 | **待立项**（GOAL-005） |
 
-`progress` = 已完成阶段数 / 4。当前 **0/4**（R1 已立项未完成；R2～R4 待立项）。
+`progress` = 已完成阶段数 / 4。当前 **1/4**（R1 已关门；R2 已立项未完成；R3～R4 待立项）。
 
 ## 成功标准（方向级）
 

@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-contract-freeze
 title: R1 · 合同冻结（时区来源 / 数字货币落点 / 设置归属）
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
-progress: 2/3
+version: 0.2.0
+progress: 3/3
 ---
 
 # GOAL-002 · R1 合同冻结
@@ -23,9 +23,9 @@ progress: 2/3
 |---|--------|------|
 | C1 | 合同正文落盘：`01-decision/D-001-r1-contract-freeze.md` 覆盖时区来源 / 数字货币落点 / 设置归属与字段 / 内嵌默认 / 越界声明 | **done**（2026-08-26 落盘） |
 | C2 | 合同与代码基现状核对一致（siteTimezone/defaultLocale 已有；金额 int64；RFC3339 UTC；Intl.* 前端展示；Localization tab 已有 locale/timezone） | **done**（2026-08-26，证据见执行 E-001 与 Root E-002） |
-| C3 | 关门自审：`03-audit/A-001`（source=self）落盘，open required = 0，经用户确认后 `status: done` | **进行中**（A-001 已落盘 · verdict pass · required = 0；待用户审阅合同并确认关门） |
+| C3 | 关门自审：`03-audit/A-001`（source=self）落盘，open required = 0，经用户确认后 `status: done` | **done**（A-001 pass · required = 0；用户 2026-08-26 书面确认关门） |
 
-`progress` = 2/3（2026-08-26；C3 未完成）。
+`progress` = 3/3（2026-08-26 关门：用户书面确认；A-001 self pass，required = 0）。F-001/F-002（recommended）随 R3 立项/关门继续跟踪。
 
 ## 成功标准
 

@@ -16,8 +16,9 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-26 | 立项与合同正文落盘（引用 Root E-002 裁决证据） | recorded | `02-execution/E-001-r1-establishment-and-contract-write.md` |
 | E-002 | 2026-08-26 | 关门自审 A-001 落盘（self · pass · required=0） | recorded | `03-audit/A-001-r1-contract-freeze-closeout-self.md` |
+| E-003 | 2026-08-26 | R1 关门确认（用户书面确认；GOAL-002 done 3/3） | recorded | `02-execution/E-003-r1-closeout-confirmed.md` |
 
 ## 推进状态
 
-- C1/C2 **done**；C3 **进行中**（A-001 已落盘，待用户审阅合同并确认关门）。
-- 下一步（用户确认后）：GOAL-002 → `done`（R1 关门）→ 立项 GOAL-003（R2 时区语义）。
+- **done**（2026-08-26 关门）：C1～C3 全部完成；A-001 self pass · required = 0；用户确认。
+- F-001/F-002（recommended）随 R3（GOAL-004）立项继续跟踪。

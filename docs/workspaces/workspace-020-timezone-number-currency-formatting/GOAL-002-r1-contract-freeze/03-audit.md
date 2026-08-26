@@ -1,11 +1,11 @@
 ---
 id: GOAL-002-r1-contract-freeze
 doc: audit
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计台账 · GOAL-002 R1 合同冻结
