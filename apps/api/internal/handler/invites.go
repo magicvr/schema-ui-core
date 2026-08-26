@@ -265,8 +265,25 @@ func (h *inviteAdminHandler) resend() http.Handler {
 
 // --- public acceptance (central pre-auth surface) ---
 
+// W13 F-001 (GOAL-013 A-001): this pre-auth endpoint used to run bcrypt
+// BEFORE any token validation and had no rate limiting — an unauthenticated
+// client could burn a full hash cost per request (CPU DoS). Two independent
+// brakes, both process-local best-effort like every limiter here:
+//
+//  1. Ordering: the cheap token liveness check (PeekInviteToken — one indexed
+//     SELECT) runs before ValidateNewPassword/bcrypt, so unknown, expired,
+//     consumed or revoked tokens never reach password work.
+//  2. A per-client-IP sliding window bounds every request that reaches the
+//     endpoint at all (loginRateLimiter model, rate_limit.go).
+const (
+	inviteAcceptWindow   = 15 * time.Minute
+	inviteAcceptMax      = 10
+	inviteAcceptCapacity = 1 << 16
+)
+
 type InviteAcceptRepository interface {
 	AcceptInvite(rawToken, username, name, passwordHash string, now time.Time) (*authsession.User, error)
+	PeekInviteToken(rawToken string, now time.Time) error
 	ValidateNewPassword(userID, plain string) error
 }
 
@@ -274,6 +291,7 @@ type InviteAcceptRepository interface {
 // (same pre-auth layer as login/recovery; GOAL-004 D-001 §3). Success answers
 // 204 WITHOUT tokens — the new user signs in (GOAL-002 D-001 §4 projection).
 func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
+	limiter := newLoginRateLimiter(inviteAcceptWindow, inviteAcceptMax, inviteAcceptCapacity)
 	mux.HandleFunc("POST /api/auth/invite/accept", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Token    string `json:"token"`
@@ -290,6 +308,22 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_INVITE_BODY", "token, username and password are required")
 			return
 		}
+		key := loginClientIP(r)
+		now := time.Now().UTC()
+		if !limiter.allow(key, now) {
+			if sec := limiter.retryAfterSeconds(key, now); sec > 0 {
+				w.Header().Set("Retry-After", strconv.Itoa(sec))
+			}
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many invite acceptance attempts; try again later")
+			return
+		}
+		// F-001 ordering gate: dead tokens are rejected here, before any
+		// password policy or bcrypt work.
+		if err := repo.PeekInviteToken(strings.TrimSpace(body.Token), now); err != nil {
+			limiter.record(key, now)
+			writeInviteDomainError(w, r, err)
+			return
+		}
 		length := len([]byte(body.Password))
 		if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(body.Password) == "" {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "password must be a non-whitespace string of 8 to 72 bytes")
@@ -304,7 +338,8 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not hash password")
 			return
 		}
-		if _, aerr := repo.AcceptInvite(strings.TrimSpace(body.Token), body.Username, body.Name, hash, time.Now().UTC()); aerr != nil {
+		if _, aerr := repo.AcceptInvite(strings.TrimSpace(body.Token), body.Username, body.Name, hash, now); aerr != nil {
+			limiter.record(key, now)
 			writeInviteDomainError(w, r, aerr)
 			return
 		}

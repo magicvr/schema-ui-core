@@ -351,6 +351,35 @@ func (r *Repository) ResendInvite(id string, ttl time.Duration, now time.Time) (
 	return raw, inv, nil
 }
 
+// PeekInviteToken runs the CHEAP liveness half of AcceptInvite without
+// consuming or mutating anything: a single indexed lookup by token hash plus
+// the live check. Unknown hashes answer the same uniform ErrInviteInvalid as
+// AcceptInvite (expired/consumed/revoked included — no enumeration oracle).
+// W13 F-001 (GOAL-013 A-001): lets the public accept endpoint reject dead
+// tokens BEFORE any bcrypt password work, closing the unauthenticated CPU
+// DoS where every request burned a full hash cost.
+func (r *Repository) PeekInviteToken(rawToken string, now time.Time) error {
+	hash := hashInviteToken(rawToken)
+	var inv *Invite
+	err := r.withTx("peek invite", func(tx kernel.Tx) error {
+		row := tx.QueryRow(context.Background(),
+			`SELECT `+inviteColumns+` FROM user_invites WHERE token_hash = ?`, hash)
+		var serr error
+		inv, serr = scanInvite(row)
+		return serr
+	})
+	if errors.Is(err, ErrInviteNotFound) {
+		return ErrInviteInvalid // uniform invalid answer (no oracle)
+	}
+	if err != nil {
+		return err
+	}
+	if !inv.live(now) {
+		return ErrInviteInvalid
+	}
+	return nil
+}
+
 // AcceptInvite redeems a raw token into a real account: live checks → role
 // re-validation against the CURRENT role table (deleted roles fail closed) →
 // username uniqueness → account creation WITH the invite's roles and a

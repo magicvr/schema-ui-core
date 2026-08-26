@@ -211,9 +211,14 @@ func TestRecoveryCompleteNonGuessFailuresDoNotRecord(t *testing.T) {
 
 // A-001 F-002 (GOAL-004): the PUBLIC accept surface answers 204 without
 // issuing tokens and maps domain failures to cataloged codes.
+// W13 F-001: peekFailWith simulates dead tokens; the counters prove the
+// ordering fix (no password-policy/bcrypt/accept work behind a dead token).
 type fakeInviteAcceptRepo struct {
-	accepted []string
-	failWith error
+	accepted    []string
+	failWith    error
+	peekFailWith error
+	peeked      int
+	policyCalls int
 }
 
 func (f *fakeInviteAcceptRepo) AcceptInvite(rawToken, username, name, passwordHash string, now time.Time) (*authsession.User, error) {
@@ -223,7 +228,12 @@ func (f *fakeInviteAcceptRepo) AcceptInvite(rawToken, username, name, passwordHa
 	f.accepted = append(f.accepted, username)
 	return &authsession.User{ID: "u-new", Username: username}, nil
 }
+func (f *fakeInviteAcceptRepo) PeekInviteToken(rawToken string, now time.Time) error {
+	f.peeked++
+	return f.peekFailWith
+}
 func (f *fakeInviteAcceptRepo) ValidateNewPassword(userID, plain string) error {
+	f.policyCalls++
 	if len(plain) < 8 {
 		return authsession.ErrPasswordPolicyViolation
 	}
@@ -260,5 +270,38 @@ func TestInviteAcceptPublicSurface(t *testing.T) {
 	}
 	if len(repo.accepted) != 1 {
 		t.Fatalf("accepted = %v, want exactly the happy path", repo.accepted)
+	}
+}
+
+// W13 F-001 (GOAL-013 A-001) · ordering: a dead token (unknown/expired/
+// consumed/revoked) is rejected at the cheap peek — password-policy and
+// bcrypt work must never run behind it.
+func TestInviteAcceptDeadTokenShortCircuitsBeforePasswordWork(t *testing.T) {
+	repo := &fakeInviteAcceptRepo{peekFailWith: authsession.ErrInviteInvalid}
+	mux := newAcceptMux(repo)
+	rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"dead","username":"u","password":"invited-pass-1"}`)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "INVITE_INVALID") {
+		t.Fatalf("dead token = %d body %s, want 400 INVITE_INVALID", rec.Code, rec.Body.String())
+	}
+	if repo.policyCalls != 0 || len(repo.accepted) != 0 {
+		t.Fatalf("dead token must short-circuit before password work: policy=%d accepted=%v", repo.policyCalls, repo.accepted)
+	}
+}
+
+// W13 F-001 · rate limit: repeated failed acceptances from one client IP hit
+// the sliding-window budget and then get 429 RATE_LIMITED (unauthenticated
+// CPU-DoS brake, independent of the token-ordering fix).
+func TestInviteAcceptRateLimitBoundsUnauthenticatedSpray(t *testing.T) {
+	repo := &fakeInviteAcceptRepo{peekFailWith: authsession.ErrInviteInvalid}
+	mux := newAcceptMux(repo)
+	for i := 0; i < inviteAcceptMax; i++ {
+		rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"dead","username":"u","password":"invited-pass-1"}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("attempt %d status = %d (%s), want 400", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"dead","username":"u","password":"invited-pass-1"}`)
+	if rec.Code != http.StatusTooManyRequests || !strings.Contains(rec.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("post-budget status = %d body %s, want 429 RATE_LIMITED", rec.Code, rec.Body.String())
 	}
 }

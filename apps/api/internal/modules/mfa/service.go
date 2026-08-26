@@ -244,11 +244,20 @@ func (s *Service) Confirm(userID, code string, now time.Time) error {
 	// W11 F-004: a pending enrollment sealed under the previous secret is
 	// re-wrapped on first successful confirmation.
 	plain, fromPrevious := s.decryptSecret(st.SecretCiphertext)
-	if _, ok := ValidateTotp(plain, code, now, totpWindow, 0); !ok {
+	// W13 F-004 (GOAL-013 A-001): persist the MATCHED time step, not the
+	// wall-clock step. ValidateTotp accepts the ±1 neighbor steps, so the
+	// previous `now.Unix()/period` watermark could exceed the actually
+	// consumed code's step (e.g. a confirm with the next-step code wrote the
+	// current step); the first login then presented its current-step code,
+	// which lost the `candidate <= lastUsedStep` replay check and was
+	// rejected for up to two periods (~30–60s). Persisting the matched step
+	// mirrors the login path (AdvanceLastUsedStep with the validated step).
+	matchedStep, ok := ValidateTotp(plain, code, now, totpWindow, 0)
+	if !ok {
 		return ErrMFAInvalid
 	}
 	s.maybeRewrap(st, plain, fromPrevious, now)
-	if err := s.repo.SetLastUsedStep(userID, now.Unix()/totpPeriodSeconds, now); err != nil {
+	if err := s.repo.SetLastUsedStep(userID, matchedStep, now); err != nil {
 		return err
 	}
 	return s.repo.Activate(userID, now)
