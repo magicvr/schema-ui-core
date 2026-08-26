@@ -23,7 +23,7 @@ progress: 2/3
 |---|--------|------|
 | C1 | 合同正文落盘：`01-decision/D-001-r1-contract-freeze.md` 覆盖时区来源 / 数字货币落点 / 设置归属与字段 / 内嵌默认 / 越界声明 | **done**（2026-08-26 落盘） |
 | C2 | 合同与代码基现状核对一致（siteTimezone/defaultLocale 已有；金额 int64；RFC3339 UTC；Intl.* 前端展示；Localization tab 已有 locale/timezone） | **done**（2026-08-26，证据见执行 E-001 与 Root E-002） |
-| C3 | 关门自审：`03-audit/A-001`（source=self）落盘，open required = 0，经用户确认后 `status: done` | 待关门 |
+| C3 | 关门自审：`03-audit/A-001`（source=self）落盘，open required = 0，经用户确认后 `status: done` | **进行中**（A-001 已落盘 · verdict pass · required = 0；待用户审阅合同并确认关门） |
 
 `progress` = 2/3（2026-08-26；C3 未完成）。
 
