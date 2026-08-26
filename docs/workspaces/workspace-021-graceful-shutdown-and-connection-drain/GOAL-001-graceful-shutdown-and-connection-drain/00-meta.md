@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-27
 updated: 2026-08-27
 version: 0.1.0
-progress: 1/3
+progress: 2/3
 plan_refs:
   - VP-021-graceful-shutdown-and-connection-drain
 primary_plan: VP-021-graceful-shutdown-and-connection-drain
@@ -27,11 +27,11 @@ serves_summary: 承载 VP-021（架构 RT-D02 · 优雅停机 / 连接排空合�
 
 | 阶段 | 内容 | 先后 | 状态 |
 |------|------|------|------|
-| R1 | **合同冻结**：停机顺序（新请求停止 → 存量排空 → Store 排空 → 超时/退出码）；grace period / 超时默认值与配置键（I-002）；运行中 Job 停机语义（I-001：等完成 vs 中断标记重跑或按类型分流）；I-003（Store 排空与迁移窗口重叠）确认语义口径并登记（最晚 R2 关闭） | 起点 | **进行中**（GOAL-002 active 0/3 · C1 信息裁决待用户） |
+| R1 | **合同冻结**：停机顺序（新请求停止 → 存量排空 → Store 排空 → 超时/退出码）；grace period / 超时默认值与配置键（I-002）；运行中 Job 停机语义（I-001：等完成 vs 中断标记重跑或按类型分流）；I-003（Store 排空与迁移窗口重叠）确认语义口径并登记（最晚 R2 关闭） | 起点 | **已关门**（GOAL-002 done 3/3 · A-001 self `pass` · 合同 v0.1.0 = GOAL-002 D-002） |
 | R2 | **实现与测试**：`http.Server` Shutdown 合同化（grace / 超时 / 退出码）；Job 停机行为实现（R1 冻结语义）；双方言连接关闭顺序 + 迁移窗口重叠时停机语义（I-003 required，方案冻结前关闭）；复用 VP-015 结构化日志 / correlation | 依赖 R1 | 待立项（GOAL-003） |
 | R3 | **证据与关门**：SIGTERM / SIGINT → 排空 → 退出码可核对（信号测试或等价 harness，单进程 + Compose）；SQLite / PG 双方言排空一致；checksum 台账不变；退出判据 1～5；开放 required = 0 | 依赖 R2 | 待立项（GOAL-004） |
 
-`progress` = 已关门纲领阶段数 / 3。当前 **1/3**（2026-08-27：R1 进行中，GOAL-002 已立项）。
+`progress` = 已关门纲领阶段数 / 3。当前 **2/3**（2026-08-27：R1 已关门；R2 待立项）。
 
 ## 成功标准（方向级 · 与 VP-021 退出判据镜像）
 
@@ -47,10 +47,10 @@ serves_summary: 承载 VP-021（架构 RT-D02 · 优雅停机 / 连接排空合�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | 停机时运行中 Job 语义：等完成 vs 中断标记重跑（或二者按 Job 类型分流） | 方案冻结 | R1 | 用户裁决 | **collecting** | — | 待裁决（I-021-001） |
-| I-002 | required | grace period / 超时默认值与可配置键（含超时后的强制退出语义） | 方案冻结 | R1 | lead 提案 + 用户确认 | **collecting** | — | 待裁决（I-021-002） |
-| I-003 | required | Store 排空与迁移窗口重叠时的停机语义（fail-closed？排队？） | 方案冻结 / 实施 | R2 | 用户裁决 | **collecting** | — | 待裁决（I-021-003；R1 确认口径，R2 前关闭） |
-| I-004 | non-blocking | 停机是否需日志 / 指标断言（消费 VP-015 已交付面） | 验收 | R3 | lead 提案 | **collecting** | — | 待定（I-021-004） |
+| I-001 | required | 停机时运行中 Job 语义：等完成 vs 中断标记重跑（或二者按 Job 类型分流） | 方案冻结 | R1 | 用户裁决 | **verified** | — | 2026-08-27 用户裁决：**中断标记重跑**（GOAL-002 D-001 accepted；合同 §4） |
+| I-002 | required | grace period / 超时默认值与可配置键（含超时后的强制退出语义） | 方案冻结 | R1 | lead 提案 + 用户确认 | **verified** | — | 2026-08-27 用户裁决：默认 `10s` + `http.shutdown_timeout` / `HTTP_SHUTDOWN_TIMEOUT`；非法值 fail-closed（GOAL-002 D-001；合同 §6） |
+| I-003 | required | Store 排空与迁移窗口重叠时的停机语义（fail-closed？排队？） | 方案冻结 / 实施 | R2 | 用户裁决 | **verified** | — | 2026-08-27 用户裁决：**fail-closed 启动期校验**，无运行时迁移窗口（GOAL-002 D-001；合同 §5） |
+| I-004 | non-blocking | 停机是否需日志 / 指标断言（消费 VP-015 已交付面） | 验收 | R3 | lead 提案 | **verified** | — | lead 口径：结构化日志三事件断言；指标不进分母（GOAL-002 D-001；合同 §7） |
 
 ## 父目标
 

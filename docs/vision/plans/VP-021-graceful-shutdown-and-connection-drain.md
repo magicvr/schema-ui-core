@@ -89,10 +89,10 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-021-001 | 停机时运行中 Job 语义：等完成 vs 中断标记重跑（或二者按 Job 类型分流）。 | required | 方案冻结 | R1 合同冻结 | collecting |
-| I-021-002 | grace period / 超时默认值与可配置键（含超时后的强制退出语义）。 | required | 方案冻结 | R1 合同冻结 | collecting |
-| I-021-003 | Store 排空与迁移窗口重叠时的停机语义（fail-closed？排队？）。 | required | 方案冻结 / 实施 | R2 | collecting |
-| I-021-004 | 停机是否需日志 / 指标断言（消费 VP-015 已交付面）。 | non-blocking | 验收 | R3 | collecting |
+| I-021-001 | 停机时运行中 Job 语义：等完成 vs 中断标记重跑（或二者按 Job 类型分流）。 | required | 方案冻结 | R1 合同冻结 | **verified**（2026-08-27 用户裁决：**中断标记重跑**；合同 v0.1.0 §4 = workspace-021 GOAL-002 D-002） |
+| I-021-002 | grace period / 超时默认值与可配置键（含超时后的强制退出语义）。 | required | 方案冻结 | R1 合同冻结 | **verified**（2026-08-27 用户裁决：默认 `10s` + `http.shutdown_timeout` / `HTTP_SHUTDOWN_TIMEOUT`，非法值 fail-closed；合同 §6） |
+| I-021-003 | Store 排空与迁移窗口重叠时的停机语义（fail-closed？排队？）。 | required | 方案冻结 / 实施 | R2 | **verified**（2026-08-27 用户裁决：**fail-closed 启动期校验**，无运行时迁移窗口；合同 §5） |
+| I-021-004 | 停机是否需日志 / 指标断言（消费 VP-015 已交付面）。 | non-blocking | 验收 | R3 | **verified**（lead 口径：结构化日志三事件断言；指标不进分母；合同 §7） |
 
 ## 工作区绑定
 

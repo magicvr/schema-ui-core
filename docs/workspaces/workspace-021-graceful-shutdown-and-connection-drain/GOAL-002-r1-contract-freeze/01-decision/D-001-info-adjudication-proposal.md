@@ -1,11 +1,13 @@
 ---
 id: D-001
-title: 信息裁决提案：I-001 / I-002 / I-003 证据与建议（待用户裁决）
+title: 信息裁决：I-001 / I-002 / I-003（用户 2026-08-27 采纳建议）
 date: 2026-08-27
-status: proposed
+status: accepted
 ---
 
-# D-001 · 信息裁决提案（2026-08-27 · P-004 / P-005）
+# D-001 · 信息裁决（2026-08-27 · P-004 / P-005）
+
+> 2026-08-27 用户裁决：三条 required 全部**采纳建议**（界面裁决记录）：I-001 = 中断标记重跑；I-002 = 默认 10s + `http.shutdown_timeout` / `HTTP_SHUTDOWN_TIMEOUT`（非法值 fail-closed）；I-003 = fail-closed 启动期校验（无运行时迁移窗口）。I-004（non-blocking）= lead 口径：结构化日志断言，指标不进分母。对应 I-001/002/003 → `verified`；I-004 → `verified`（lead 提案，符合 VP-021 首波冻结）。合同正文见 D-002。
 
 ## 意图
 
@@ -67,6 +69,11 @@ R1 方案冻结（合同正文）前，关闭 C1 的三条 required 信息项。
 
 **建议**：验收面 = 结构化日志断言（停机开始/完成/超时三行，走 VP-015 已交付的结构化日志与 correlation 通道）；**指标断言不进本波分母**（VP-021 首波冻结已声明）。
 
-## 待确认
+## 裁决结果（2026-08-27 · 用户界面裁决，全部采纳建议）
 
-- 上述三条建议 + I-004 口径，请用户裁决（采纳 / 修改 / 否决）。裁决后本条目转 accepted，I-001/002/003 → verified，随后 C2 合同正文落盘（D-002）。
+- **I-001 → `verified`**：中断标记重跑（上方建议原样冻结）。
+- **I-002 → `verified`**：默认 10s + `http.shutdown_timeout` / `HTTP_SHUTDOWN_TIMEOUT`，非法值 fail-closed；退出码 0（clean）/ 1（error|timeout）。
+- **I-003 → `verified`**：无运行时迁移窗口；迁移完整性 fail-closed = 启动期 ledger 校验；停机 Store 语义 = 排干后 `Close`；双方言一致。
+- **I-004 → `verified`（lead 口径）**：结构化日志三事件断言（shutdown.starting / complete / timeout|error）；指标断言不进分母。
+
+合同正文 = `01-decision/D-002-contract-freeze.md`（C2）。
