@@ -15,8 +15,9 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-26 | 开区与激活记录（VRev-044 · freshness · 五件套建立） | done | `02-execution/E-001-workspace-scaffold.md` |
+| E-002 | 2026-08-26 | R1 信息门禁裁决落盘 + GOAL-002（合同冻结）立项 | done | `02-execution/E-002-r1-adjudication-goal002-establishment.md` |
 
 ## 推进状态速览
 
-- Root **active** · 0/4：R1～R4 均未立项（2026-08-26 开区当日）。
-- 下一步前置：I-001 / I-002 用户裁决 → 立项 GOAL-002（R1 合同冻结）。
+- Root **active** · 0/4：R1 **已立项**（GOAL-002 active）；R2～R4 待立项（2026-08-26）。
+- I-001 / I-002 / I-005 已用户裁决（D-002 accepted），R1 方案冻结已解锁；合同正文已落盘（GOAL-002 D-001）。
