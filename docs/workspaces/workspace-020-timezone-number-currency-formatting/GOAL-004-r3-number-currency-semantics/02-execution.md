@@ -19,8 +19,9 @@ version: 0.1.0
 | E-003 | 2026-08-26 | C4 设置面 defaultCurrency 字段（migration v62 + repository/handler + schema + pin 同步；Go/Web 全量绿） | done | `02-execution/E-003-r3-c4-default-currency-field.md` |
 | E-004 | 2026-08-26 | C6 关门审计启动（self leg A-001 落盘；grok build independent 执行） | recorded | `02-execution/E-004-r3-c6-closeout-audits.md` |
 | E-005 | 2026-08-26 | A-002 required 修复（F-001/F-002 + F-003/F-004/F-009/F-010；双全量绿） | done | `02-execution/E-005-r3-a002-fixes.md` |
+| E-006 | 2026-08-26 | R3 关门确认（用户书面确认；GOAL-004 done 6/6；A-004 grok 复审 pass） | recorded | `02-execution/E-006-r3-closeout-confirmed.md` |
 
 ## 推进状态
 
-- C1～C5 **done**（5/6）；C6（关门：self + grok independent + 用户确认）进行中。
-- 独立审 A-002（grok-build）fail → A-003 响应：required F-001/F-002 `fixed`（开放 required = 0）；F-005/F-006/F-007 residual 待用户书面接受；待（可选 grok 复审 +）用户确认关门。
+- **done**（2026-08-26 关门）：C1～C6 全部完成；审计闭环 A-001→A-004（grok 复审 pass）；用户确认。
+- F-002/F-005/F-006/F-007（recommended/residual）随 R4（GOAL-005）核账。

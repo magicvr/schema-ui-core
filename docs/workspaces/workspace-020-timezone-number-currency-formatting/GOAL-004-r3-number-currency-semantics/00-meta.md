@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-number-currency-semantics
 title: R3 · 数字 / 货币语义（locale 驱动格式与输入解析合同）
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.2.0
-progress: 5/6
+version: 0.3.0
+progress: 6/6
 ---
 
 # GOAL-004 · R3 数字 / 货币语义
@@ -26,9 +26,9 @@ progress: 5/6
 | C3 | 输入解析归一化：locale 化数字/货币输入 → 机器值（金额 int64 最小单位；普通数字 number）；错误语义明确 + 快测 | **done**（2026-08-26 · `parseLocalizedMoney`/`parseLocalizedNumber` → null 语义） |
 | C4 | 设置面 `defaultCurrency` 字段：API（site_settings 增量 migration + repository/PATCH 校验 + settings 行/公开投影）+ settings schema（Localization tab）+ 单测/快测 | **done**（2026-08-26 · migration v62 + repository/handler/errorcatalog + schema 字段 + pin 同步；Go 全量/Web 1175 全绿） |
 | C5 | 双向一致性核对：展示 ↔ 输入逆运算一致（同一合同反向）+ 双 locale 场景快测 | **done**（2026-08-26 · round-trip 快测 en-US/zh-CN） |
-| C6 | 关门：自审 + grok build independent + 用户确认 → `status: done` | 待关门 |
+| C6 | 关门：自审 + grok build independent + 用户确认 → `status: done` | **done**（A-001 self pass → A-002 independent fail（2 required）→ A-003 响应 fixed → A-004 grok 复审 pass（F-001/F-002 closed）→ 用户 2026-08-26 书面接受 residual 并确认关门） |
 
-`progress` = 5/6（2026-08-26：C1/C2/C3/C4/C5 done；C6 待关门）。
+`progress` = 6/6（2026-08-26 关门：用户书面确认；self + independent 均 pass/闭合）。F-002/F-005/F-006/F-007（recommended/residual）随 R4（GOAL-005）核账。
 
 ## 成功标准
 

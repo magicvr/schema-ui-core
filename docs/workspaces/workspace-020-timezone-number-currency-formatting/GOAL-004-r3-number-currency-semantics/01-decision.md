@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-number-currency-semantics
 doc: decision
-status: active
+status: done
 parent: GOAL-001-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-26
-version: 0.1.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-004 R3 数字/货币语义
