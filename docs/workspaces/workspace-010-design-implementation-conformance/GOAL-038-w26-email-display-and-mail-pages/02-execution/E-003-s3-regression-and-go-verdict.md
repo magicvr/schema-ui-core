@@ -27,4 +27,15 @@ author: govern orchestrator（S3 回归）
 
 ## 遗留观察（non-blocking）
 
-- e2e（playwright 双方言矩阵）不在本波 S3 冻结范围（00-meta 路线图 S3 = Go 全量 + vitest/tsc/build + go 判定）；活栈点验可在用户验收时进行。
+- ~~e2e（playwright 双方言矩阵）不在本波 S3 冻结范围~~ → **2026-08-26 用户指示补跑，双方言全绿**（见下节）。
+
+## E-003 补充 · e2e 双方言矩阵补跑（2026-08-26，用户指示）
+
+| 方言 | 命令 | 结果 |
+|------|------|------|
+| sqlite | `npm run test:e2e`（apps/web，临时隔离库） | **9 passed / 1 skipped**（skip = admin 专属用例在 mvp profile 的预期跳过），exit 0，约 1.9 分钟 |
+| postgres | `npm run test:e2e:postgres`（`cmd/e2e-pgset` scratch 库 create→run→drop；凭据取自 gitignored `apps/api/configs/.env` DB_* 键） | **9 passed / 1 skipped**（同上预期跳过），exit 0；teardown 输出确认 scratch 库 `schema_ui_e2e_mt9hakmzcm1ji1` 已 drop |
+
+- 跑前探针：`e2e-pgset create/verify/drop` 生命周期验证通过（verify=1 为新库无 schema_migrations 的预期 fail-fast）。
+- 两轮串行执行（共用 WEB_PORT 25173 / API 25080，挂具 `reuseExistingServer: false` 禁并行复用）。
+- 结论：W26 改动在双数据库方言下的浏览器验收面均绿，GOAL-038 关门证据链补全（不改变 A-001 pass 与 done 4/4 状态，仅扩充回归证据）。
