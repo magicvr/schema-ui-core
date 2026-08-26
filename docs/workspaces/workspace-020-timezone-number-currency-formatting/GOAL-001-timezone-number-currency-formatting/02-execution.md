@@ -1,0 +1,22 @@
+---
+id: GOAL-001-timezone-number-currency-formatting
+doc: execution
+status: active
+parent: null
+created: 2026-08-26
+updated: 2026-08-26
+version: 0.1.0
+---
+
+# 执行记录 · GOAL-001 时区/数字/货币格式语义
+
+> 本文件是稳定索引。独立执行记录放在 `02-execution/E-NNN-<slug>.md`；只记事实与证据，计划单独标注（P-002）。
+
+| E-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| E-001 | 2026-08-26 | 开区与激活记录（VRev-044 · freshness · 五件套建立） | done | `02-execution/E-001-workspace-scaffold.md` |
+
+## 推进状态速览
+
+- Root **active** · 0/4：R1～R4 均未立项（2026-08-26 开区当日）。
+- 下一步前置：I-001 / I-002 用户裁决 → 立项 GOAL-002（R1 合同冻结）。

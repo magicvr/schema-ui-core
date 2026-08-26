@@ -2,9 +2,9 @@
 title: docs/vision · 规则面与本仓实例索引
 status: active
 created: 2026-07-29
-updated: 2026-08-25
+updated: 2026-08-26
 parent: null
-version: 0.10.0
+version: 0.12.0
 ---
 
 # docs/vision · 愿景层
@@ -64,7 +64,9 @@ version: 0.10.0
 | [plans/VP-016-key-rotation-and-backup.md](plans/VP-016-key-rotation-and-backup.md) | **closed**（2026-08-22 有界 · 架构 A5）· lead: workspace-016-key-rotation-and-backup |
 | [plans/VP-017-outbound-mail.md](plans/VP-017-outbound-mail.md) | **closed**（2026-08-24 现行渠道分母再关门 · v0.5.0）· lead: workspace-017-outbound-mail |
 | [plans/VP-018-account-email-identity.md](plans/VP-018-account-email-identity.md) | **closed**（2026-08-24 解冻当日关门 · v1.0.0）· lead: workspace-018-account-email-identity |
-| [plans/VP-019-iam-recovery.md](plans/VP-019-iam-recovery.md) | **active**（2026-08-25 激活 · Admin 功能 IAM：密码策略 / 邀请 / 自助恢复；VRev-043 independent `pass`） |
+| [plans/VP-019-iam-recovery.md](plans/VP-019-iam-recovery.md) | **closed**（2026-08-26 用户书面确认 · v0.3.0；Admin 功能 IAM：密码策略 / 邀请 / 自助恢复；2026-08-25 激活并同日全链交付；VRev-043 independent `pass`）· lead: workspace-019-iam-recovery |
+| [plans/VP-020-timezone-number-currency-formatting.md](plans/VP-020-timezone-number-currency-formatting.md) | **active**（2026-08-26 激活 · Admin 功能：时区 / 数字 / 货币格式语义；VRev-044 self `pass` + Admin freshness PASS `c6fda691`）· lead: workspace-020-timezone-number-currency-formatting |
+| [plans/VP-021-graceful-shutdown-and-connection-drain.md](plans/VP-021-graceful-shutdown-and-connection-drain.md) | **planned**（2026-08-26 立项 · 架构 RT-D02：优雅停机 / 连接排空合同） |
 | [plans/VP-009-production-hardening.md](plans/VP-009-production-hardening.md) | **active** · 共享基架**持续安全与健壮性程序** · lead: workspace-009-production-hardening（Root 长期容器） |
 | [plans/VP-010-design-implementation-conformance.md](plans/VP-010-design-implementation-conformance.md) | **active** · 设计意图—实现符合性**持续对齐程序** · lead: workspace-010-design-implementation-conformance（Root 长期容器；与 VP-009 正交） |
 | [../architecture/module-architecture.md](../architecture/module-architecture.md) | VP-003 终态架构权威（Fx、Profile、Manifest、数据与生命周期边界） |
