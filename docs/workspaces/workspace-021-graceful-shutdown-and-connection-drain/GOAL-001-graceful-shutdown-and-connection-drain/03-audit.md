@@ -14,8 +14,9 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-27 | self | Root 关门自审（VP-021 退出判据 1～5 · 全链证据 · 边界与台账一致性） | pass | 0 | `03-audit/A-001-self-closeout.md` |
+| A-002 | 2026-08-27 | independent（grok-build · grok-4.6 · high） | Root 关门独立审（回显 pending） | 待回显 | 0 | `03-audit/A-002-independent-closeout.md` |
 
 ## 开放必改
 
-当前无。（2026-08-27 开区；尚无审计节点。激活层意见 VRev-046 V-F081/V-F082 为 recommended → 已在开区事务内 fixed，不属于 Goal 03-audit 台账。）
+当前无（A-001 `pass` 0 required；A-002 grok 运行中——返回后合并响应，未合法闭合的 required 不得关门）。

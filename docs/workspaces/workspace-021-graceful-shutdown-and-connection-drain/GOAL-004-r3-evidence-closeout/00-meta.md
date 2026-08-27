@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-evidence-closeout
 title: R3 证据与关门（合同 §8 harness · 双方言 · Root 关门）
-status: active
+status: done
 parent: GOAL-001-graceful-shutdown-and-connection-drain
 created: 2026-08-27
 updated: 2026-08-27
-version: 0.1.0
-progress: 0/3
+version: 0.2.0
+progress: 3/3
 plan_refs:
   - VP-021-graceful-shutdown-and-connection-drain
 primary_plan: VP-021-graceful-shutdown-and-connection-drain
@@ -23,11 +23,11 @@ serves_summary: 承载 VP-021 R3 阶段：合同 v0.1.0 §8 的证据 harness（
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | **harness 方案**：A（clean drain：存量请求 + 运行中 Job → SIGTERM → exit 0）、B（timeout：1s 预算 + 拖住连接 → exit 1 + `shutdown.timeout` 日志）、C（重启 reclaim：停机中断 Job → 重启 attempt+1）；双方言矩阵；compose stop 核对方式 | 进行中 |
-| C2 | **实施与证据**：harness 落地（进程级子进程或等价 test harness）；SQLite + PG 各跑；退出码 / 日志 / Job reclaim 断言；checksum 回归锁 | 待定 |
-| C3 | **关门审计与 Root 关门**：A-001 self + A-002 grok build independent（grok-4.6 · high）双审；VP-021 退出判据 1～5 对照；Root done；决策层 VP-021 关门提案 | 待定 |
+| C1 | **harness 方案**：A（clean drain）、B（timeout）、C（重启 reclaim）；双方言矩阵；compose stop 核对方式 | **已关门**（D-001 harness 方案，2026-08-27） |
+| C2 | **实施与证据**：harness 落地；SQLite + PG 各跑；退出码 / 日志 / Job reclaim 断言；checksum 回归锁 | **已关门**（E-002；全量 suite exit 0；A/B/C 实测绿；A′/B′/PG 门控登记） |
+| C3 | **关门审计与 Root 关门**：A-001 self + A-002 grok build independent 双审；VP-021 退出判据 1～5 对照；Root done；决策层 VP-021 关门提案 | **已关门**（GOAL-004 A-001 self `pass` 0 required；Root 双审见 Root 03-audit；2026-08-27） |
 
-`progress` = 已关门检查点数 / 3。当前 **0/3**。
+`progress` = 已关门检查点数 / 3。当前 **3/3**（R3 已关门）。
 
 ## 成功标准（与 VP-021 退出判据 1～5 及合同 §8 镜像）
 

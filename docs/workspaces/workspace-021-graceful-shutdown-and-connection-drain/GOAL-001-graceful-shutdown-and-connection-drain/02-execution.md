@@ -16,8 +16,10 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-27 | 开区与激活记录（VRev-046 · 架构类 freshness · 五件套建立） | done | `02-execution/E-001-workspace-scaffold.md` |
 | E-002 | 2026-08-27 | R1 立项 GOAL-002（合同冻结）+ 信息裁决提案 | done | `02-execution/E-002-r1-goal002-established.md` |
+| E-003 | 2026-08-27 | R1 关门（GOAL-002 done 3/3）· Root 信息台账回写 | done | `02-execution/E-003-r1-closed.md` |
+| E-004 | 2026-08-27 | R2 关门（GOAL-003 done 3/3）· 纲领进度 2/3 | done | `02-execution/E-004-r2-closed.md` |
+| E-005 | 2026-08-27 | R3 证据与关门（GOAL-004 done 3/3）· Root 双审启动 | done | `02-execution/E-005-r3-closed-and-dual-audit.md` |
 
 ## 推进状态速览
 
-- Root **active · 1/3**（2026-08-27）：R1 进行中（GOAL-002 active 0/3，C1 信息裁决等待用户裁决）；R2/R3 待 R1 关门后立项。
-- R1 方案冻结门禁：I-001 / I-002 / I-003 三条 required（D-001 提案已交用户）。
+- Root **关门双审中**（2026-08-27）：A-001 self `pass`（0 required）→ grok independent（A-002）运行中；核销后 Root `done · 3/3`。
