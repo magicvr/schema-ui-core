@@ -61,15 +61,21 @@ func main() {
 	defer stop()
 	<-ctx.Done()
 
-	logger.Info("shutting down")
+	// VP-021 contract v0.1.0 §1/§7: structured lifecycle events.
+	logger.Info("shutdown.starting")
 	// VP-021 contract v0.1.0 §6: drain budget = http.shutdown_timeout
 	// (default 10s; invalid values fail closed at startup).
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTPShutdownTimeout)
 	defer cancel()
 	if err := app.Stop(shutdownCtx); err != nil {
-		logger.Error("shutdown", "err", err)
+		if shutdownCtx.Err() != nil {
+			logger.Error("shutdown.timeout", "err", err)
+		} else {
+			logger.Error("shutdown.error", "err", err)
+		}
 		os.Exit(1)
 	}
+	logger.Info("shutdown.complete")
 	fmt.Println("bye")
 }
 
