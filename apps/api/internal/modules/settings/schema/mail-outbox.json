@@ -1,0 +1,177 @@
+{
+  "meta": {
+    "pageId": "mail-outbox",
+    "title": "Outbound email log",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "table.sort"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "mail-outbox",
+    "children": [
+      {
+        "type": "form",
+        "id": "mail-outbox-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "mail-outbox-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.mail.search.q"
+            },
+            {
+              "id": "channel",
+              "type": "select",
+              "labelKey": "schema.mail.filter.channel",
+              "options": [
+                {
+                  "value": "",
+                  "label": "All channels",
+                  "labelKey": "schema.mail.filter.all"
+                },
+                {
+                  "value": "mock",
+                  "label": "mock",
+                  "labelKey": "schema.settings.option.channelMock"
+                },
+                {
+                  "value": "resend",
+                  "label": "resend",
+                  "labelKey": "schema.settings.option.channelResend"
+                },
+                {
+                  "value": "smtp",
+                  "label": "smtp",
+                  "labelKey": "schema.settings.option.channelSMTP"
+                }
+              ]
+            },
+            {
+              "id": "delivery_status",
+              "type": "select",
+              "labelKey": "schema.mail.filter.deliveryStatus",
+              "options": [
+                {
+                  "value": "",
+                  "label": "All statuses",
+                  "labelKey": "schema.mail.filter.all"
+                },
+                {
+                  "value": "delivered",
+                  "label": "Delivered",
+                  "labelKey": "schema.mail.status.delivered"
+                },
+                {
+                  "value": "sent",
+                  "label": "Sent",
+                  "labelKey": "schema.mail.status.sent"
+                },
+                {
+                  "value": "failed",
+                  "label": "Failed",
+                  "labelKey": "schema.mail.status.failed"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "mail-outbox-table",
+        "props": {
+          "columns": [
+            {
+              "field": "id",
+              "label": "Record ID",
+              "labelKey": "schema.mail.column.id",
+              "truncate": true
+            },
+            {
+              "field": "to",
+              "label": "Recipient",
+              "labelKey": "schema.mail.column.to"
+            },
+            {
+              "field": "subject",
+              "label": "Subject",
+              "labelKey": "schema.mail.column.subject",
+              "truncate": true
+            },
+            {
+              "field": "channel",
+              "label": "Channel",
+              "labelKey": "schema.mail.column.channel"
+            },
+            {
+              "field": "delivery_status",
+              "label": "Delivery status",
+              "labelKey": "schema.mail.column.deliveryStatus"
+            },
+            {
+              "field": "created_at",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.mail.column.created"
+            }
+          ],
+          "dataSource": "/api/mail/outbox"
+        }
+      },
+      {
+        "type": "recordView",
+        "id": "mail-outbox-detail",
+        "props": {
+          "title": "Outbound record details",
+          "titleKey": "schema.mail.outbox.detailTitle",
+          "fields": [
+            {
+              "key": "id",
+              "label": "Record ID",
+              "labelKey": "schema.mail.column.id"
+            },
+            {
+              "key": "to",
+              "label": "Recipient",
+              "labelKey": "schema.mail.column.to"
+            },
+            {
+              "key": "subject",
+              "label": "Subject",
+              "labelKey": "schema.mail.column.subject"
+            },
+            {
+              "key": "channel",
+              "label": "Channel",
+              "labelKey": "schema.mail.column.channel"
+            },
+            {
+              "key": "delivery_status",
+              "label": "Delivery status",
+              "labelKey": "schema.mail.column.deliveryStatus"
+            },
+            {
+              "key": "created_at",
+              "label": "Created",
+              "labelKey": "schema.mail.column.created"
+            },
+            {
+              "key": "body",
+              "label": "Body",
+              "labelKey": "schema.mail.column.body"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

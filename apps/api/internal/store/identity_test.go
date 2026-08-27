@@ -38,7 +38,7 @@ func TestClassifyIdentity(t *testing.T) {
 		{"empty", nil, nil, false, identityEmpty},
 		{"ledger", []string{"schema_migrations", "users"}, ledger, true, identityOursLedger},
 		{"r2", []string{"users", "refresh_tokens"}, nil, true, identityOursR2},
-		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session"}, nil, true, identityOursCompleteNoLedger},
+		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges", "password_policy", "user_password_history", "user_invites", "login_failures"}, nil, true, identityOursCompleteNoLedger},
 		{"four tables without catalog head", []string{"users", "refresh_tokens", "operation_log", "jobs", "roles"}, nil, true, identityLostLedgerUnsafe},
 		{"partial users only", []string{"users"}, nil, true, identityOursPartialNoLedger},
 		{"foreign users", []string{"users"}, nil, false, identityForeign},
@@ -98,6 +98,19 @@ func TestPlanStartup(t *testing.T) {
 var lockedHeadExtraTables = map[int][]string{
 	48: {"service_credentials", "operation_log_session"},
 	49: {},
+	50: {}, // wallet_ledger_order_repair: data-only repair (no new objects)
+	51: {"mail_outbox"}, // VP-017 R6 mock-channel outbound record table
+	52: {"mail_config"}, // VP-017 R7 runtime channel state
+	53: {}, // operation_log_mail_events: CHECK-enum expansion (no new objects)
+	54: {}, // account_email_identity: ALTER + lower(email) unique index only (no new objects)
+	55: {"email_verification_challenges"}, // workspace-018 R3: per-user active verification challenge
+	56: {"password_recovery_challenges"}, // workspace-019 R2: per-user active recovery challenge
+	57: {"password_policy"},           // workspace-019 R3: singleton policy row
+	58: {"user_password_history"},     // workspace-019 R3: history-depth store
+	59: {"user_invites"},              // workspace-019 R3: admin invitations
+	60: {}, // W26 GOAL-038: mail_outbox additive ALTER (channel/delivery_status columns; no new objects)
+	61: {"login_failures"}, // GOAL-014 D-002: per-(account|source) login-lockout state
+	62: {}, // workspace-020 R3: site_settings additive ALTER (default_currency column; no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

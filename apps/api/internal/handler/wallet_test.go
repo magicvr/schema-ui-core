@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -58,15 +59,27 @@ func (s *walletServiceStub) Mutate(id string, in walletstore.LedgerEntryInput, n
 	if in.Memo == "" {
 		return nil, nil, false, walletstore.ErrInvalidEntry
 	}
-	entryID := fmt.Sprintf("%016x", now.UnixMilli()) + newOperationID()
+	entryID := walletStubEntryID(now)
 	account, entry, err := s.repo.Mutate(id, in, entryID, now)
 	if err != nil {
 		return nil, nil, false, err
 	}
 	return account, entry, entry.ID != entryID, nil
 }
+// walletStubEntryID mirrors the module's newID ordering contract for the
+// store-backed test double (GOAL-037 / F-008): same-millisecond entries must
+// sort in CREATION order for replay. The historical "{ms}%snewOperationID()"
+// random-only suffix made same-ms ordering arbitrary — replay could run a
+// freeze before its funding adjust and reconcile "insufficient balance".
+var walletStubEntrySeq atomic.Uint64
+
+func walletStubEntryID(now time.Time) string {
+	seq := walletStubEntrySeq.Add(1) & 0xFFFFFFFF
+	return fmt.Sprintf("%016x%08x%s", now.UnixMilli(), seq, newOperationID())
+}
+
 func (s *walletServiceStub) Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error) {
-	return s.repo.ReconcileRun(accountID, fmt.Sprintf("%016x", now.UnixMilli())+newOperationID(), actorID, now)
+	return s.repo.ReconcileRun(accountID, walletStubEntryID(now), actorID, now)
 }
 func (s *walletServiceStub) ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error) {
 	return s.repo.ListReconcileRuns(page, pageSize)
@@ -75,7 +88,7 @@ func (s *walletServiceStub) ListReconcileRuns(page, pageSize int) ([]walletstore
 func mountWalletRoutes(t *testing.T, env *authTestEnv, service WalletService) {
 	t.Helper()
 	jobService := newWalletJobTestService(t, env, service.(*walletServiceStub).repo)
-	for _, r := range WalletRoutes(env.a, service, jobService, env.operations, "admin.wallet") {
+	for _, r := range WalletRoutes(env.a, service, jobService, env.operations, "admin.wallet", nil) {
 		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 	}
 }
@@ -84,6 +97,9 @@ type walletJobTestService struct {
 	repository *jobs.Repository
 	runner     *jobs.Runner
 	wallet     *walletstore.Repository
+	// operations drives the atomic success-audit (RecordOperationTx inside
+	// the job CommitFunc — GOAL-037 / F-008 root-cause fix).
+	operations *operationlog.Repository
 }
 
 func newWalletJobTestService(t *testing.T, env *authTestEnv, wallet *walletstore.Repository) *walletJobTestService {
@@ -97,9 +113,12 @@ func newWalletJobTestService(t *testing.T, env *authTestEnv, wallet *walletstore
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := &walletJobTestService{repository: repository, runner: runner, wallet: wallet}
+	service := &walletJobTestService{repository: repository, runner: runner, wallet: wallet, operations: env.operations}
 	if err := runner.RegisterWithTerminalHook("wallet.reconcile", service.handle, func(job jobs.Job) {
-		if job.Status != jobs.StatusSucceeded {
+		// GOAL-037 / F-008 根治：成功审计随 job 事务原子提交（见
+		// service.handle 的 CommitFunc）；terminal 只处理失败/取消路径的
+		// best-effort 事件。
+		if job.Status == jobs.StatusSucceeded {
 			return
 		}
 		detail := `{"jobId":` + jsonQuote(job.ID) + `}`
@@ -166,6 +185,12 @@ func (s *walletJobTestService) handle(_ context.Context, job jobs.Job, reporter 
 	return func(tx kernel.Tx) (json.RawMessage, error) {
 		run, err := s.wallet.ReconcileOnceTx(context.Background(), tx, payload.AccountID, job.ID, job.ActorID, time.Now().UTC())
 		if err != nil {
+			return nil, err
+		}
+		// GOAL-037 / F-008 根治：成功审计与 job 提交同事务（与产品
+		// JobService.runReconcile 同构）。
+		detail := `{"jobId":` + jsonQuote(job.ID) + `}`
+		if err := s.operations.RecordOperationTx(tx, operationlog.Operation{ID: newOperationID(), Event: operationlog.EventWalletReconcile, ActorID: job.ActorID, ActorName: job.ActorID, Detail: &detail, CorrelationID: job.CorrelationID, CreatedAt: time.Now().UTC()}); err != nil {
 			return nil, err
 		}
 		return json.Marshal(reconcileRunToMap(*run))
@@ -356,7 +381,9 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	}
 	var run map[string]any
 	if err := json.Unmarshal(rr.Body.Bytes(), &run); err != nil || run["result"] != "consistent" {
-		t.Fatalf("reconcile result = %v err=%v", run["result"], err)
+		// F-008 diagnosis: include the mismatch details (checkAccountChain
+		// reason) so an inconsistent reconcile is immediately debuggable.
+		t.Fatalf("reconcile result = %v err=%v details=%v", run["result"], err, run["details"])
 	}
 	for _, tc := range []struct {
 		path string
@@ -388,7 +415,10 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 		t.Fatalf("expired result = %d %s", rr.Code, rr.Body.String())
 	}
 
-	// A-007 F-001: operationlog actually received the six wallet events.
+	// A-007 F-001: operationlog actually received the six wallet events. The
+	// wallet.reconcile event is now written ATOMICALLY with the job success
+	// transaction (GOAL-037 / F-008 root-cause fix), so a single synchronous
+	// query suffices — no polling needed.
 	rr = httptest.NewRecorder()
 	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/operations?q=wallet", ""))
 	if rr.Code != http.StatusOK {

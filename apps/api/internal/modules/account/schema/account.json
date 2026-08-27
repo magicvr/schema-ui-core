@@ -112,6 +112,11 @@
               "submitLabel": "Save profile",
               "submitLabelKey": "schema.account.submit.saveProfile"
             }
+          },
+          {
+            "type": "custom",
+            "id": "email-identity-block",
+            "component": "email-identity"
           }
         ]
       },

@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-22
+updated: 2026-08-27
 parent: null
-version: 0.25.0
+version: 0.32.0
 ---
 
 # 工作区贡献图
@@ -20,7 +20,7 @@ version: 0.25.0
 | workspace-006-design-system-and-ui-experience | docs/workspaces/workspace-006-design-system-and-ui-experience/ | GOAL-001-design-system-and-ui-experience | delivery | VP-005-design-system-and-ui-experience | active |
 | workspace-007-localization-and-system-settings | docs/workspaces/workspace-007-localization-and-system-settings/ | GOAL-001-localization-and-system-settings | delivery | VP-007-localization-and-system-settings | active |
 | workspace-008-admin-module-readiness | docs/workspaces/workspace-008-admin-module-readiness/ | GOAL-001-admin-module-readiness | delivery | VP-008-admin-module-readiness-and-foundation-convergence | active |
-| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1–W4 与 W6 done，W5 扫描 0 中高危未开子目标；2026-08-10 语义纠正） |
+| workspace-009-production-hardening | docs/workspaces/workspace-009-production-hardening/ | GOAL-001-production-hardening | lead | VP-009-production-hardening | active（Root **active** 长期程序容器；波次 W1–W4 与 W6–W12 done，W5 扫描 0 中高危未开子目标；2026-08-10 语义纠正） |
 | workspace-010-design-implementation-conformance | docs/workspaces/workspace-010-design-implementation-conformance/ | GOAL-001-design-implementation-conformance | lead | VP-010-design-implementation-conformance | active（Root **active** 长期程序容器；2026-08-11 开区；波次 W1–W13 done，`go` 均无新暂挂） |
 | workspace-011-admin-functional-modules | docs/workspaces/workspace-011-admin-functional-modules/ | GOAL-001-admin-functional-modules | lead | VP-011-admin-functional-modules | active（历史；VP-011 已于 2026-08-18 有界 closed；Root done；四档能力地图上提至 vision roadmap） |
 | workspace-012-shared-cross-module-contracts | docs/workspaces/workspace-012-shared-cross-module-contracts/ | GOAL-001-shared-cross-module-contracts | lead | VP-012-shared-cross-module-contracts | active（历史；VP-012 已于 2026-08-19 完整 closed；Root done 8/8；后续 Tier A 移交 vision roadmap） |
@@ -28,7 +28,11 @@ version: 0.25.0
 | workspace-014-object-storage | docs/workspaces/workspace-014-object-storage/ | GOAL-001-object-storage | delivery | VP-014-object-storage | active（历史；VP-014 已于 2026-08-21 有界 closed；Root done 5/5；架构 A2；residual = 无产品本地盘→对象存储搬运器） |
 | workspace-015-observability | docs/workspaces/workspace-015-observability/ | GOAL-001-observability | delivery | VP-015-observability | active（历史；VP-015 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A4；residual = otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
 | workspace-016-key-rotation-and-backup | docs/workspaces/workspace-016-key-rotation-and-backup/ | GOAL-001-key-rotation-and-backup | delivery | VP-016-key-rotation-and-backup | active（历史；VP-016 已于 2026-08-22 有界 `closed`；Root done 5/5；架构 A5；residual = I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
-| workspace-017-outbound-mail | docs/workspaces/workspace-017-outbound-mail/ | GOAL-001-outbound-mail | delivery | VP-017-outbound-mail | active（2026-08-22 开区；VP-017 `active`；架构 A6；Root 纲领 R1–R4） |
+| workspace-017-outbound-mail | docs/workspaces/workspace-017-outbound-mail/ | GOAL-001-outbound-mail | delivery | VP-017-outbound-mail | **done**（2026-08-24 现行分母再关门：VP-017 v0.5.0 `closed`；Root `done` 8/8；R5–R8 = GOAL-006～009 全 done；live 投递 PASS） |
+| workspace-018-account-email-identity | docs/workspaces/workspace-018-account-email-identity/ | GOAL-001-account-email-identity | delivery | VP-018-account-email-identity | **done**（2026-08-24 同日解冻→关门：VP-018 v1.0.0 `closed`；Root `done` 4/4；R1–R4 = GOAL-002～005 全 done；A-002 independent 归零） |
+| workspace-019-iam-recovery | docs/workspaces/workspace-019-iam-recovery/ | GOAL-001-iam-recovery | delivery | VP-019-iam-recovery | **done**（2026-08-25 开区同日全链关门：VP-019 v0.3.0 `closed`（2026-08-26 用户确认）；Root `done` 4/4：R1–R4 = GOAL-002～005 全 done；关后 A-001 independent `pass` + A-002 recommended ×2 闭合） |
+| workspace-020-timezone-number-currency-formatting | docs/workspaces/workspace-020-timezone-number-currency-formatting/ | GOAL-001-timezone-number-currency-formatting | delivery | VP-020-timezone-number-currency-formatting | **done**（2026-08-26 激活开区 · 2026-08-27 结项：VP-020 v0.3.0 `closed`（用户书面确认 · VRev-045 pass）；Root `done` 4/4：R1–R4 = GOAL-002～005 全 done；关门审计 A-001 self + A-002 grok independent 双 pass） |
+| workspace-021-graceful-shutdown-and-connection-drain | docs/workspaces/workspace-021-graceful-shutdown-and-connection-drain/ | GOAL-001-graceful-shutdown-and-connection-drain | delivery | VP-021-graceful-shutdown-and-connection-drain | **done**（2026-08-27 激活开区 · 同日全链结项：Root `done` 3/3（R1 合同冻结 → R2 实现与测试 → R3 证据与关门）；关闭审计 A-001 self `pass` + A-002 grok independent `conditional` → required fixed → 0 开放；PG drain 独立复跑 PASS；**VP-021 `closed` v0.3.0**（2026-08-27 用户指令授权 · VRev-047 pass） |
 
 ## 说明
 
@@ -38,7 +42,13 @@ version: 0.25.0
 - **workspace-014（2026-08-21 开区）**：VP-014（对象存储适配器）唯一 lead delivery 工作区；首波 = 架构 A2（内核对象存储端口 + S3 兼容 + 本地盘默认）。**2026-08-21：VP-014 有界 closed**；Root `GOAL-001-object-storage` `done 5/5`。residual：无产品本地盘→对象存储搬运器（GOAL-001 I-004）。不改变 Charter `primary_workspace`。不重开 workspace-013。
 - **workspace-015（2026-08-21 开区）**：VP-015（可观测性）唯一 lead delivery 工作区；首波 = 架构 A4（Prometheus 类指标导出 + OpenTelemetry traces；无收集器为默认）。**2026-08-22：VP-015 有界 closed**；Root `GOAL-001-observability` `done 5/5`。residual：in-repo `otlp-sink` 不解析（I/A-002 F-003）；Store / 对象存储 / Job 指标不进分母（I-015-003）。不改变 Charter `primary_workspace`。不重开 workspace-014。
 - **workspace-016（2026-08-22 开区）**：VP-016（密钥轮换与备份恢复）唯一 lead delivery 工作区；首波 = 架构 A5（JWT current+previous 轮换 + 既有备份上的轮换后恢复；单密钥为默认）。**2026-08-22：VP-016 有界 closed**；Root `GOAL-001-key-rotation-and-backup` `done 5/5`。residual：I-016-005 立即失效未选；`admin.mfa` wrapping 不随 JWT previous 重包。不改变 Charter `primary_workspace`。不重开 workspace-015。
-- **workspace-017（2026-08-22 开区）**：VP-017（出站邮件）唯一 lead delivery 工作区；首波 = 架构 A6（内核发送端口 + SMTP + 无 SMTP 默认 sink）。slug 按惯例 `workspace-017-outbound-mail`，Root `GOAL-001-outbound-mail`。不改变 Charter `primary_workspace`。不重开 workspace-016。
+- **workspace-017（2026-08-22 开区）**：VP-017（出站邮件）唯一 lead delivery 工作区。R1–R4 已实施内核端口 + SMTP + capture（子目标保持 `done`，实施史不回退）。2026-08-24 用户否决同日有界关门并升级分母；随后 R5–R8 由 GOAL-006～009 承接完成，**VP-017 v0.5.0 `closed`、Root `done` 8/8**（现行分母再关门，live 投递实跑 PASS）。不改变 Charter `primary_workspace`。
+- **workspace-018（2026-08-24 开区）**：VP-018（账号邮箱身份）唯一 lead delivery 工作区。冻结已于 2026-08-24 解除（VP-017 按现行分母再次关门）；同日连续关门 R1–R4 = GOAL-002～005，**VP-018 v1.0.0 `closed`、Root `done` 4/4**（迁移 0054/0055、绑定/校验流、I-006 代填、最小绑定卡；Root A-002 independent 归零后关门）。residual：N-1 SQLite lower() ASCII 有界声明。不改变 Charter `primary_workspace`。
+- **workspace-019（2026-08-25 开区）**：VP-019（IAM：密码策略 / 邀请入职 / 自助恢复状态机）唯一 lead delivery 工作区；开区前 grok build 独立 Vision Review **VRev-043 `pass`**（0 required；V-F076/077/078 → fixed）+ Admin 类 freshness **PASS**（`092bf37` → `66f5fd1f`）。Root `GOAL-001-iam-recovery` active · 0/4；R1 合同冻结待立项（I-001/I-002/I-009 须先用户裁决）。不改变 Charter `primary_workspace`。不重开 workspace-017/018。
+- **2026-08-26 索引同步**（本文件维护，不改任何 Charter/VP status）：① workspace-009 波次摘要更新——W7～W11 审计波与 W12（跨区限流评估：维持单实例边界 + 载体预登记 Redis 方向）均 done；② workspace-019 行对齐实际——Root done 4/4（2026-08-25）+ 关后独立复审 A-001 `pass` / A-002 响应闭合（2026-08-26）；**VP-019 计划文件仍 `active`，实现已交付、正式关门待用户确认**（V2.5：须用户确认 + 工作区证据链接）。
+- **VP-019 已于 2026-08-26 经用户书面确认关门（`closed` v0.3.0）**：workspace-019 与 Root `GOAL-001-iam-recovery`（`done / 4/4`，2026-08-25 同日全链交付）的历史绑定保留，默认不接新区（reopen 须用户确认）；六条退出判据全达成，关门证据链见该区五件套与关后 A-001/A-002。组合回到持续程序（VP-009/010）+ 三分支候选待立项态。不改变 Charter `primary_workspace`。
+- **workspace-020（2026-08-26 开区 · 2026-08-27 结项）**：VP-020（时区 / 数字 / 货币格式语义）唯一 lead delivery 工作区；激活前 VRev-044 self `pass`（V-F079/V-F080 → 激活事务内 fixed）+ Admin 类 freshness **PASS**（`66f5fd1f` → `c6fda691`，不暂挂 `go`）。**已结项**：Root `GOAL-001-timezone-number-currency-formatting` `done / 4/4`（R1 合同冻结 → R2 时区语义 → R3 数字/货币语义 → R4 证据与关门，GOAL-002～005 全 done）；关门审计 A-001 self + A-002 grok independent 双 `pass`；VP-020 `closed` v0.3.0（2026-08-27 用户书面确认 · VRev-045）。历史绑定保留，默认不接新区。不改变 Charter `primary_workspace`。不重开 workspace-007/011。
+- **workspace-021（2026-08-27 开区 · 当日结项）**：VP-021（优雅停机 / 连接排空合同）唯一 lead delivery 工作区；激活前 VRev-046 self `pass`（V-F081/V-F082 → 激活事务内 fixed）+ **架构类 freshness PASS**（`ed99e88` → `fddaf638`，不暂挂 `go`）。**已结项**：Root `GOAL-001-graceful-shutdown-and-connection-drain` `done / 3/3`（R1 合同 v0.1.1 冻结（用户裁决：中断重跑 / 10s+shutdown_timeout / 启动期迁移 fail-closed）→ R2 `http.shutdown_timeout` 配置键+compose 15s+测试锁 → R3 harness A/B/C + PG 实测 + 双审闭合）；关闭审计 A-001 self `pass` + A-002 grok independent `conditional`（required ×2 → fixed；0 开放）。**VP-021 `closed` v0.3.0**（2026-08-27 用户指令授权 · VRev-047 self `pass`）；RT-D02 → delivered；移余 = 进程级 harness（`!windows`）CI 核销登记。不改变 Charter `primary_workspace`。不重开 workspace-013/017。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

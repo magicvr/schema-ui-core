@@ -31,6 +31,8 @@ var frozenLiteralCodes = []string{
 	// S3 settings validation additions (D-002 appendix A family).
 	"INVALID_DEFAULT_LOCALE", "INVALID_DEFAULT_THEME", "INVALID_TIMEZONE",
 	"INVALID_RETENTION_DAYS", "INVALID_EXPIRATION_ACTION",
+	// workspace-020 R3 (contract §4.1): site default currency validation.
+	"INVALID_DEFAULT_CURRENCY",
 	// D2 login rate limiting.
 	"RATE_LIMITED",
 	// GOAL-004 S4-6 account lock terminal (423).
@@ -70,6 +72,8 @@ var frozenLiteralCodes = []string{
 	"WALLET_USER_AUTO_ONLY",
 	// VP-012 R4 (GOAL-005 D-002 §7): actor-scoped async Job HTTP codes.
 	"JOB_NOT_FOUND", "JOB_NOT_CANCELLABLE", "JOB_NOT_RETRYABLE", "JOB_RESULT_NOT_READY", "JOB_RESULT_EXPIRED",
+	// VP-017 R7 (workspace-017 GOAL-008): outbound-mail admin surface codes.
+	"INVALID_MAIL_CONFIG", "MAIL_SWITCH_REJECTED", "MAIL_SEND_FAILED",
 }
 
 // frozenStoredCodes are stable Job terminal codes persisted in Job.error.
@@ -107,6 +111,17 @@ var frozenDomainCodes = []string{
 	"RECYCLE_ITEM_NOT_FOUND", "RECYCLE_RESTORE_CONFLICT", "RECYCLE_ITEM_ALREADY_RESTORED",
 	// W14 F-06 (GOAL-019): operations detail not found.
 	"OPERATION_NOT_FOUND",
+	// workspace-018 R3 (GOAL-004 D-001 §3): account email identity codes.
+	"EMAIL_INVALID", "EMAIL_TAKEN", "EMAIL_NOT_PENDING",
+	"EMAIL_CODE_INVALID", "EMAIL_CODE_EXPIRED", "EMAIL_RESEND_COOLDOWN",
+	"EMAIL_SEND_FAILED",
+	// workspace-019 R2 (GOAL-003 D-001 §6): self-recovery codes. Unknown
+	// account / no challenge / wrong code share ONE uniform invalid code so
+	// the pre-auth surface stays enumeration-neutral.
+	"INVALID_RECOVERY_BODY", "RECOVERY_CODE_INVALID", "RECOVERY_CODE_EXPIRED",
+	"RECOVERY_SECOND_FACTOR_REQUIRED",
+	// workspace-019 R3 (GOAL-004 D-001 §3): invitation codes.
+	"INVALID_INVITE_BODY", "INVITE_INVALID", "INVITE_ROLE_GONE",
 }
 
 var codeLiteralPattern = regexp.MustCompile(`(?:writeError|writeLocalizedError|writeLocalizedFieldError)\(w, [^,]+, [^,]+, "([A-Z_]+)"`)

@@ -321,7 +321,7 @@ func TestUploadFileIDRejectsNonHex(t *testing.T) {
 
 	// Drive load() directly: HTTP path cleaning would turn ".." into a redirect
 	// before the handler sees it.
-	store := &uploadStore{objects: objectstore.NewLocal(t.TempDir())}
+	store := &uploadStore{objects: objectstore.NewLocal(t.TempDir()), quotaLocks: newKeyedMutex()}
 	for _, id := range []string{"..", "../x", "C:schema-ui.db", ""} {
 		if _, _, err := store.load(id); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("load(%q) = %v, want ErrNotExist", id, err)

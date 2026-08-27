@@ -244,11 +244,20 @@ func (s *Service) Confirm(userID, code string, now time.Time) error {
 	// W11 F-004: a pending enrollment sealed under the previous secret is
 	// re-wrapped on first successful confirmation.
 	plain, fromPrevious := s.decryptSecret(st.SecretCiphertext)
-	if _, ok := ValidateTotp(plain, code, now, totpWindow, 0); !ok {
+	// W13 F-004 (GOAL-013 A-001): persist the MATCHED time step, not the
+	// wall-clock step. ValidateTotp accepts the ±1 neighbor steps, so the
+	// previous `now.Unix()/period` watermark could exceed the actually
+	// consumed code's step (e.g. a confirm with the next-step code wrote the
+	// current step); the first login then presented its current-step code,
+	// which lost the `candidate <= lastUsedStep` replay check and was
+	// rejected for up to two periods (~30–60s). Persisting the matched step
+	// mirrors the login path (AdvanceLastUsedStep with the validated step).
+	matchedStep, ok := ValidateTotp(plain, code, now, totpWindow, 0)
+	if !ok {
 		return ErrMFAInvalid
 	}
 	s.maybeRewrap(st, plain, fromPrevious, now)
-	if err := s.repo.SetLastUsedStep(userID, now.Unix()/totpPeriodSeconds, now); err != nil {
+	if err := s.repo.SetLastUsedStep(userID, matchedStep, now); err != nil {
 		return err
 	}
 	return s.repo.Activate(userID, now)
@@ -331,6 +340,21 @@ func (s *Service) requireActiveSecondFactor(userID, code, recoveryCode string, n
 	// second-factor proof (disable / recovery rotation included).
 	s.maybeRewrap(st, plain, fromPrevious, now)
 	return nil
+}
+
+// VerifySecondFactor validates a TOTP code or consumes a one-time recovery
+// code against an active enrollment WITHOUT a login proof (workspace-019 R2 ·
+// GOAL-003 D-001 §3): the self-recovery completion gate. Unlike the login
+// path there is no mfa_proofs row — the caller's recovery challenge carries
+// the guess budget (≤5 failed attempts void it), so this check stays a thin
+// export of the self-service step-up semantics. A typed-nil receiver fails
+// closed (the composition root passes a true nil interface when admin.mfa is
+// off, but the guard mirrors Service.Required against future misuse).
+func (s *Service) VerifySecondFactor(userID, code, recoveryCode string, now time.Time) error {
+	if s == nil || s.repo == nil {
+		return ErrNotEnrolled
+	}
+	return s.requireActiveSecondFactor(userID, code, recoveryCode, now)
 }
 
 // consumeRecoveryCode bcrypt-compares the code against the stored hash set and

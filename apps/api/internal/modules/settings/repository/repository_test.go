@@ -69,7 +69,7 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 		t.Fatalf("settings = %+v", settings)
 	}
 	title := "Operations"
-	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
+	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
 	if err != nil {
 		t.Fatalf("title-only patch: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestRepositoryValidationAndUpdate(t *testing.T) {
 		t.Fatalf("title-only patch overwrote unsubmitted logo: %+v", settings)
 	}
 	logo := "/assets/logo.svg"
-	settings, err = repository.PatchSiteSettings(nil, &logo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
+	settings, err = repository.PatchSiteSettings(nil, &logo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
 	if err != nil {
 		t.Fatalf("logo-only patch: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 	light := "/assets/logo-light.svg"
 	dark := "/assets/logo-dark.svg"
 	favicon := "/favicon.ico"
-	settings, err := repository.PatchSiteSettings(nil, nil, &light, &dark, &favicon, &locale, &timezone, &theme, nil, nil, nil, nil, now)
+	settings, err := repository.PatchSiteSettings(nil, nil, &light, &dark, &favicon, &locale, &timezone, nil, &theme, nil, nil, nil, nil, now)
 	if err != nil {
 		t.Fatalf("vp007 patch: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 
 	// Field-level merge: a locale-only patch must not touch theme/timezone.
 	locale = "en-US"
-	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, &locale, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
+	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, &locale, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
 	if err != nil {
 		t.Fatalf("locale-only patch: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 
 	// Empty string clears a branding field.
 	empty := ""
-	settings, err = repository.PatchSiteSettings(nil, nil, &empty, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
+	settings, err = repository.PatchSiteSettings(nil, nil, &empty, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(2*time.Second))
 	if err != nil {
 		t.Fatalf("clear light logo: %v", err)
 	}
@@ -129,15 +129,15 @@ func TestRepositoryVp007FieldPatchMergeAndValidation(t *testing.T) {
 
 	// Validation: enums + IANA timezone.
 	badLocale := "fr-FR"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &badLocale, nil, nil, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultLocale) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &badLocale, nil, nil, nil, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultLocale) {
 		t.Fatalf("bad locale = %v, want ErrInvalidDefaultLocale", err)
 	}
 	badTheme := "neon"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &badTheme, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultTheme) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, &badTheme, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultTheme) {
 		t.Fatalf("bad theme = %v, want ErrInvalidDefaultTheme", err)
 	}
 	badTimezone := "Foo/Bar"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, &badTimezone, nil, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidSiteTimezone) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, &badTimezone, nil, nil, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidSiteTimezone) {
 		t.Fatalf("bad timezone = %v, want ErrInvalidSiteTimezone", err)
 	}
 	// A rejected patch must leave the previous values untouched.
@@ -177,7 +177,7 @@ func TestRepositoryOperationLogRetentionPatch(t *testing.T) {
 
 	days := 30
 	action := "delete"
-	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &days, &action, now)
+	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &days, &action, now)
 	if err != nil {
 		t.Fatalf("retention patch: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestRepositoryOperationLogRetentionPatch(t *testing.T) {
 	}
 
 	title := "Kept"
-	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
+	settings, err = repository.PatchSiteSettings(&title, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now.Add(time.Second))
 	if err != nil {
 		t.Fatalf("title-only: %v", err)
 	}
@@ -195,15 +195,15 @@ func TestRepositoryOperationLogRetentionPatch(t *testing.T) {
 	}
 
 	badDays := 0
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &badDays, nil, now); !errors.Is(err, ErrInvalidRetentionDays) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &badDays, nil, now); !errors.Is(err, ErrInvalidRetentionDays) {
 		t.Fatalf("days 0 = %v", err)
 	}
 	badDays = 4000
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &badDays, nil, now); !errors.Is(err, ErrInvalidRetentionDays) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &badDays, nil, now); !errors.Is(err, ErrInvalidRetentionDays) {
 		t.Fatalf("days 4000 = %v", err)
 	}
 	badAction := "compress"
-	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &badAction, now); !errors.Is(err, ErrInvalidExpirationAction) {
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &badAction, now); !errors.Is(err, ErrInvalidExpirationAction) {
 		t.Fatalf("bad action = %v", err)
 	}
 }
@@ -216,7 +216,7 @@ func TestRepositoryEmptyLocaleThemeNormalizedToAuto(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 
 	empty := ""
-	settings, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &empty, nil, &empty, nil, nil, nil, nil, now)
+	settings, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &empty, nil, nil, &empty, nil, nil, nil, nil, now)
 	if err != nil {
 		t.Fatalf("empty locale/theme patch: %v", err)
 	}
@@ -234,5 +234,65 @@ func TestRepositoryEmptyLocaleThemeNormalizedToAuto(t *testing.T) {
 	}
 	if reRead.DefaultLocale != "auto" || reRead.DefaultTheme != "auto" {
 		t.Fatalf("stored = %+v, want locale/theme auto", reRead)
+	}
+}
+
+// workspace-020 R3 (§4.1): site-wide default currency patch, validation and
+// merge semantics (empty = unset; uppercase ISO 4217 only).
+func TestRepositoryDefaultCurrencyPatch(t *testing.T) {
+	repository, _ := openSettingsRepository(t, "settings-currency.db")
+	now := time.Now().UTC().Truncate(time.Second)
+
+	currency := "CNY"
+	locale := "zh-CN"
+	timezone := "Asia/Shanghai"
+	// Seed locale/timezone first, then patch currency alone — merge semantics:
+	// unsubmitted fields must keep their stored values.
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, &locale, &timezone, nil, nil, nil, nil, nil, nil, now); err != nil {
+		t.Fatalf("seed locale/timezone: %v", err)
+	}
+	settings, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &currency, nil, nil, nil, nil, nil, now.Add(time.Second))
+	if err != nil {
+		t.Fatalf("currency patch: %v", err)
+	}
+	if settings.DefaultCurrency != "CNY" {
+		t.Fatalf("DefaultCurrency = %q, want CNY", settings.DefaultCurrency)
+	}
+	// Unsubmitted fields stay untouched.
+	if settings.DefaultLocale != "zh-CN" || settings.SiteTimezone != "Asia/Shanghai" {
+		t.Fatalf("currency patch overwrote unsubmitted fields: %+v", settings)
+	}
+
+	// Lowercase input is rejected (ISO 4217 codes are uppercase).
+	bad := "cny"
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &bad, nil, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultCurrency) {
+		t.Fatalf("lowercase currency = %v, want ErrInvalidDefaultCurrency", err)
+	}
+	bad = "USDX"
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &bad, nil, nil, nil, nil, nil, now); !errors.Is(err, ErrInvalidDefaultCurrency) {
+		t.Fatalf("4-letter currency = %v, want ErrInvalidDefaultCurrency", err)
+	}
+
+	// Empty string clears the field back to unset.
+	empty := ""
+	settings, err = repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &empty, nil, nil, nil, nil, nil, now.Add(time.Second))
+	if err != nil {
+		t.Fatalf("clear currency: %v", err)
+	}
+	if settings.DefaultCurrency != "" {
+		t.Fatalf("DefaultCurrency = %q, want cleared", settings.DefaultCurrency)
+	}
+
+	// Reset restores unset too.
+	currency = "USD"
+	if _, err := repository.PatchSiteSettings(nil, nil, nil, nil, nil, nil, nil, &currency, nil, nil, nil, nil, nil, now.Add(2*time.Second)); err != nil {
+		t.Fatalf("re-set currency: %v", err)
+	}
+	reset, err := repository.ResetSiteSettings(now.Add(3 * time.Second))
+	if err != nil {
+		t.Fatalf("reset: %v", err)
+	}
+	if reset.DefaultCurrency != "" {
+		t.Fatalf("reset DefaultCurrency = %q, want empty", reset.DefaultCurrency)
 	}
 }

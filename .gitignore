@@ -19,7 +19,7 @@ ehthumbs.db
 !.env.example
 !**/.env.example
 # API committed env template is apps/api/configs/.env.example only.
-# env.example (no leading dot) was a historical twin — never commit it.
+# env.example (no leading dot) was a historical twin 鈥?never commit it.
 **/env.example
 
 # --- Logs ---
@@ -104,3 +104,7 @@ apps/**/bin/
 .grok/*.md
 .grok/*.txt
 
+
+# Local outbound-mail master key (auto-generated; never commit)
+mail-master.key
+*.key

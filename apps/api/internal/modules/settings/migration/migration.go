@@ -164,7 +164,31 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(siteOperationLogRetentionDDL, "0046:site-operation-log-retention:v1"),
 			Apply:                migrate0046,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_default_currency"},
+			Version:              62,
+			Name:                 "site_default_currency",
+			Checksum:             kernel.MigrationChecksum(siteCurrencyDDL, "0062:site-default-currency:v1"),
+			Apply:                migrate0062,
+		},
 	}
+}
+
+// siteCurrencyDDL (0062 · workspace-020 R3): site-wide default currency
+// (ISO 4217 code; part of the format-semantics contract GOAL-002 D-001 §4.1).
+// Empty string keeps the "unset" semantics consistent with locale/timezone.
+var siteCurrencyDDL = []string{
+	`ALTER TABLE site_settings ADD COLUMN default_currency TEXT NOT NULL DEFAULT ''`,
+}
+
+// migrate0062 applies the default-currency column extension.
+func migrate0062(tx kernel.Tx) error {
+	for _, stmt := range siteCurrencyDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("extend site_settings currency: %w", err)
+		}
+	}
+	return nil
 }
 
 // siteOperationLogRetentionDDL (0046): admin-editable audit log retention.

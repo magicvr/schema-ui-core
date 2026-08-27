@@ -20,8 +20,10 @@ type OpenOptions struct {
 	// empty for sqlite (enforced by config validation).
 	DSN string
 
-	// Connection-pool / lifetime knobs (postgres; sqlite keeps
-	// MaxOpenConns=1 and ignores these). Zero leaves the driver default.
+	// Connection-pool / lifetime knobs. sqlite honors PoolMaxOpenConns
+	// (default 4 for file DBs; in-memory DBs keep MaxOpenConns=1 because each
+	// connection would be a separate database). postgres uses all four. Zero
+	// leaves the driver default.
 	PoolMaxOpenConns int
 	PoolMaxIdleConns int
 	ConnMaxLifetime  time.Duration

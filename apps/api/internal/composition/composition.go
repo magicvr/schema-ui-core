@@ -370,17 +370,33 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, err
 	}
-	// VP-017 R4 (GOAL-005 D-001): ONE kernel.MailSender — capture/log sink by
-	// default (probe nil, readyz unchanged) or the explicit SMTP adapter whose
-	// ESMTP Ping extends readyz only when explicitly configured. No handler /
-	// module consumes the port this wave; construction doubles as the last
-	// fail-closed validation point before boot.
-	mailSender, mailProbe, err := newMailSender(cfg, logger)
+	// VP-017 R6+R7 (GOAL-007/008 D-001 over the GOAL-006 D-002 frozen
+	// contract): ONE kernel.MailSender — the SwitchingSender. The runtime row
+	// (migration 0052) seeds ONCE from the file/env resolution; admin saves
+	// then hot-switch the active channel (single-process, secrets AES-GCM
+	// encrypted at rest under a local master key, never read back). readyz
+	// keeps its R4 semantics: only an explicitly configured SMTP boot channel
+	// contributes the ESMTP Ping probe; production probes extend in R8. The
+	// mock record read face and the admin config/test-send surface register
+	// independently of the active channel.
+	mailSender, mailProbe, err := newMailRuntime(cfg, st, logger)
 	if err != nil {
 		return nil, err
 	}
-	_ = mailSender
+	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
+	handler.RegisterMailAdmin(mux, a, mailSender, operations)
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
+	// workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery start/complete
+	// pair is a CENTRAL pre-auth surface (same layer as login) so every
+	// profile with core.auth-session gets it. The completion second-factor
+	// gate reuses the MFA service; admin.mfa off keeps a TRUE nil interface,
+	// which means no second factor is demanded (GOAL-002 D-001 §1).
+	var recoveryGate handler.RecoverySecondFactor
+	if plan.HasModule("admin.mfa") {
+		recoveryGate = mfaService
+	}
+	handler.RegisterInviteAccept(mux, authRepository)
+	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id) and admin.file-library.
@@ -447,13 +463,16 @@ func newMuxWithExtraProviders(
 		providers = append(providers, devexamplesmodule.New())
 	}
 	if plan.HasModule("admin.users") {
-		providers = append(providers, usersmodule.New(a, authRepository, operations))
+		// W13 F-006 (GOAL-013 A-001): the canonical public origin (when
+		// configured) replaces client-influenceable Host/Proto headers in
+		// emailed invitation links.
+		providers = append(providers, usersmodule.New(a, authRepository, operations, mailSender, cfg.AuthPublicBaseURL))
 	}
 	if plan.HasModule("admin.roles") {
 		providers = append(providers, rolesmodule.New(a, authRepository, operations))
 	}
 	if plan.HasModule("admin.settings") {
-		providers = append(providers, settingsmodule.New(a, settingsRepository, operations, brandAssets))
+		providers = append(providers, settingsmodule.New(a, settingsRepository, operations, brandAssets, authRepository))
 	} else {
 		// Public bootstrap must work on mvp (and any profile without the
 		// settings edit module). Edit/list/patch/reset stay admin.settings-only;
@@ -465,7 +484,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, activitymodule.New(a, operations))
 	}
 	if plan.HasModule("admin.account") {
-		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets))
+		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets, mailSender))
 	}
 	if plan.HasModule("admin.data-transfer") {
 		providers = append(providers, datatransfermodule.New(a, authRepository, operations, objects))
@@ -516,7 +535,13 @@ func newMuxWithExtraProviders(
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("register wallet jobs: %v", err)}
 		}
 		jobRuntime.enabled.Store(true)
-		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations))
+		// W13 F-012 (GOAL-013 A-001): auto-create wallet paths verify the
+		// owner id against the live user table — no orphan account books.
+		walletOwnerExists := handler.OwnerExistsFunc(func(ownerID string) bool {
+			_, err := authRepository.UserByID(ownerID)
+			return err == nil
+		})
+		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))
@@ -577,7 +602,7 @@ func newMuxWithExtraProviders(
 	}
 	// R6 C6.3: finalized page contributions own both metadata and document bytes;
 	// the handler has no static document or owner fallback.
-	handler.RegisterSchemas(mux, set.Pages)
+	handler.RegisterSchemas(mux, a, set.Pages)
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))
 		for _, fragment := range set.Fragments {
@@ -682,30 +707,74 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 	return objectstore.NewLocal(root), nil, nil
 }
 
-// newMailSender builds THE kernel.MailSender instance (VP-017 / workspace-017
-// GOAL-004 D-001, R4 wiring per GOAL-005 D-001): the embedded capture/log
-// sink when mail.smtp is untouched (mvp/dev/Compose default — startup
-// unaffected, tests read Last()), or the explicit SMTP adapter over the single
-// frozen implicit-TLS dial path. The second return is the optional readyz
-// probe (ESMTP Ping on the configured endpoint; nil for capture so readyz
-// semantics stay unchanged — "仅显式配置后 readyz 扩依赖"). Configuration
-// completeness was already enforced fail-closed by config.ValidateProd
-// (validateMail); a partial block still fails closed here defensively.
-func newMailSender(cfg *config.Config, logger *slog.Logger) (kernel.MailSender, func(context.Context) error, error) {
-	if !cfg.MailSMTPConfigured() {
-		return mail.NewCaptureSink(logger), nil, nil
-	}
-	sender, err := mail.NewSMTP(mail.SMTPOptions{
-		Host:     cfg.MailSMTPHost,
-		Port:     cfg.MailSMTPPort,
-		Username: cfg.MailSMTPUsername,
-		Password: cfg.MailSMTPPassword,
-		From:     cfg.MailSMTPFrom,
-	})
+// newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /
+// workspace-017 GOAL-008; Root D-007): a *mail.Switcher over the mail_config
+// runtime row. The row seeds once from the file/env layer resolution
+// (mock by default, explicit resend/smtp when configured — fail-closed on
+// ambiguity or incomplete blocks via ResolveMailChannel). The second return
+// is the optional readyz probe: nil except when the BOOT channel is SMTP
+// (its ESMTP Ping extends readyz exactly as frozen in R4; Resend joins R8).
+func newMailRuntime(cfg *config.Config, st kernel.Store, logger *slog.Logger) (*mail.Switcher, func(context.Context) error, error) {
+	channel, err := cfg.ResolveMailChannel()
 	if err != nil {
-		return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+		return nil, nil, fmt.Errorf("composition: resolve mail.channel: %w", err)
 	}
-	return sender, sender.Ping, nil
+	masterKeyPath := cfg.MailMasterKeyPath
+	if strings.TrimSpace(masterKeyPath) == "" {
+		// W13 F-017 (GOAL-013 A-001): the historical default co-locates the
+		// key with the data directory, so one backup/ snapshot leaks both the
+		// encrypted channel secrets AND the key that unlocks them. Operators
+		// can relocate it via mail.master_key_path / MAIL_MASTER_KEY_PATH.
+		masterKeyPath = filepath.Join(filepath.Dir(cfg.DBPath), "mail-master.key")
+	}
+	masterKey, err := mail.LoadOrCreateMasterKey(cfg.MailConfigMasterKey, masterKeyPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	switcher, err := mail.NewSwitcher(st, masterKey, mail.SeedConfig{
+		Channel:       channel,
+		MockRetention: mail.DefaultOutboxCap,
+		ResendFrom:    cfg.MailResendFrom,
+		ResendAPIKey:  cfg.MailResendAPIKey,
+		SMTPHost:      cfg.MailSMTPHost,
+		SMTPPort:      cfg.MailSMTPPort,
+		SMTPUsername:  cfg.MailSMTPUsername,
+		SMTPPassword:  cfg.MailSMTPPassword,
+		SMTPFrom:      cfg.MailSMTPFrom,
+	}, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	var probe func(context.Context) error
+	switch channel {
+	case config.MailChannelSMTP:
+		if cfg.MailSMTPConfigured() {
+			sender, err := mail.NewSMTP(mail.SMTPOptions{
+				Host:     cfg.MailSMTPHost,
+				Port:     cfg.MailSMTPPort,
+				Username: cfg.MailSMTPUsername,
+				Password: cfg.MailSMTPPassword,
+				From:     cfg.MailSMTPFrom,
+			})
+			if err != nil {
+				return nil, nil, fmt.Errorf("composition: invalid mail.smtp configuration: %w", err)
+			}
+			probe = sender.Ping
+		}
+	case config.MailChannelResend:
+		// VP-017 R8 (GOAL-009): the explicitly configured production Resend
+		// channel extends readyz with its availability probe, mirroring the
+		// SMTP ESMTP Ping precedent.
+		sender, err := mail.NewResend(mail.ResendOptions{
+			APIKey: cfg.MailResendAPIKey,
+			From:   cfg.MailResendFrom,
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("composition: invalid mail.resend configuration: %w", err)
+		}
+		probe = sender.Ping
+	}
+	return switcher, probe, nil
 }
 
 func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *http.Server {

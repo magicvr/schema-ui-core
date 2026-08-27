@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
 
 // pageDocument is the minimal slice of a page document asserted by the schema
@@ -21,7 +24,11 @@ type pageDocument struct {
 func TestSchemaEndpoint(t *testing.T) {
 	mux := http.NewServeMux()
 	pages := testSchemaContributions()
-	RegisterSchemas(mux, pages)
+	// W13 F-010: the surface is authenticated now — a dev-session-enabled
+	// authenticator keeps the request shape unchanged (middleware injects the
+	// static dev identity when no bearer is present).
+	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, nil, true)
+	RegisterSchemas(mux, a, pages)
 	documents := make(map[string][]byte, len(pages))
 	for _, page := range pages {
 		documents[page.PageID] = page.Document
@@ -135,4 +142,20 @@ func TestSchemaEndpoint(t *testing.T) {
 		}
 	})
 
+}
+
+// W13 F-010 (GOAL-013 A-001): without a session (and with the dev-session
+// fallback off) the schema surface must answer 401 — anonymous visitors must
+// not enumerate authenticated page documents.
+func TestSchemaEndpointRejectsAnonymous(t *testing.T) {
+	mux := http.NewServeMux()
+	a := auth.NewWithRepository([]byte(testJWTSecret), 15*time.Minute, 30*24*time.Hour, nil, false)
+	RegisterSchemas(mux, a, testSchemaContributions())
+
+	req := httptest.NewRequest(http.MethodGet, "/api/schema/overview", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("anonymous schema fetch = %d, want 401", rec.Code)
+	}
 }

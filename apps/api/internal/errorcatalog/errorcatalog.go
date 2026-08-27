@@ -48,6 +48,7 @@ var Catalog = map[string]Entry{
 	"INVALID_DEFAULT_LOCALE": {"error.invalidDefaultLocale", "defaultLocale must be auto, zh-CN or en-US", "默认语种必须是 auto、zh-CN 或 en-US"},
 	"INVALID_DEFAULT_THEME":  {"error.invalidDefaultTheme", "defaultTheme must be auto, light or dark", "默认主题必须是 auto、light 或 dark"},
 	"INVALID_TIMEZONE":          {"error.invalidTimezone", "siteTimezone must be auto or a valid IANA timezone", "默认时区必须是 auto 或有效的 IANA 时区"},
+	"INVALID_DEFAULT_CURRENCY":  {"error.invalidDefaultCurrency", "defaultCurrency must be empty or a valid ISO 4217 code", "默认货币必须是空或有效的 ISO 4217 代码"},
 	"INVALID_RETENTION_DAYS":    {"error.invalidRetentionDays", "operationLogRetentionDays must be between 1 and 3650", "审计日志保留天数必须是 1 到 3650 之间的整数"},
 	"INVALID_EXPIRATION_ACTION": {"error.invalidExpirationAction", "operationLogExpirationAction must be archive or delete", "过期处理必须是归档或删除"},
 
@@ -183,6 +184,34 @@ var Catalog = map[string]Entry{
 	"RECYCLE_ITEM_NOT_FOUND":        {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},
 	"RECYCLE_RESTORE_CONFLICT":      {"error.recycleRestoreConflict", "a row with that key already exists; resolve the conflict and retry", "存在相同键的行，解决冲突后重试"},
 	"RECYCLE_ITEM_ALREADY_RESTORED": {"error.recycleItemAlreadyRestored", "recycle item is already restored", "回收站记录已恢复"},
+
+	// VP-017 R7 (GOAL-008 D-001): outbound-mail admin surface codes.
+	"INVALID_MAIL_CONFIG":   {"error.invalidMailConfig", "invalid outbound-mail configuration", "出站邮件配置无效"},
+	"MAIL_SWITCH_REJECTED":  {"error.mailSwitchRejected", "new channel configuration failed validation; the previous channel keeps serving", "新渠道配置校验未通过，继续沿用原渠道"},
+	"MAIL_SEND_FAILED":      {"error.mailSendFailed", "the test message could not be sent", "测试邮件发送失败"},
+
+	// workspace-018 R3 (GOAL-004 D-001 §3): account email identity codes.
+	"EMAIL_INVALID":         {"error.emailInvalid", "invalid email address", "邮箱地址无效"},
+	"EMAIL_TAKEN":           {"error.emailTaken", "email already bound or pending on another account", "该邮箱已被其他账号绑定或待校验"},
+	"EMAIL_NOT_PENDING":     {"error.emailNotPending", "no pending email verification for this account", "该账号没有待校验的邮箱"},
+	"EMAIL_CODE_INVALID":    {"error.emailCodeInvalid", "verification code is invalid", "验证码无效"},
+	"EMAIL_CODE_EXPIRED":    {"error.emailCodeExpired", "verification code expired; request a new one", "验证码已过期，请重新获取"},
+	"EMAIL_RESEND_COOLDOWN": {"error.emailResendCooldown", "please wait before requesting another code", "请求过于频繁，请稍后再试"},
+	"EMAIL_SEND_FAILED":     {"error.emailSendFailed", "the verification email could not be sent", "验证邮件发送失败"},
+
+	// workspace-019 R2 (GOAL-003 D-001 §6): self-recovery codes. Unknown
+	// account / no challenge / wrong code deliberately share ONE code so the
+	// pre-auth surface stays enumeration-neutral.
+	"INVALID_RECOVERY_BODY":            {"error.invalidRecoveryBody", "body must be JSON with account, code and newPassword", "请求体必须是包含 account、code 和 newPassword 的 JSON"},
+	"RECOVERY_CODE_INVALID":            {"error.recoveryCodeInvalid", "recovery code is invalid", "恢复码无效"},
+	"RECOVERY_CODE_EXPIRED":            {"error.recoveryCodeExpired", "recovery code expired; request a new one", "恢复码已过期，请重新获取"},
+	"RECOVERY_SECOND_FACTOR_REQUIRED":  {"error.recoverySecondFactorRequired", "your second factor is required to finish recovery", "完成恢复需要第二因素验证码"},
+
+	// workspace-019 R3 (GOAL-004 D-001 §3): invitation codes. Unknown /
+	// expired / consumed / revoked share ONE code on the pre-auth surface.
+	"INVALID_INVITE_BODY": {"error.invalidInviteBody", "body must be JSON with token, username and password", "请求体必须是包含 token、username 和 password 的 JSON"},
+	"INVITE_INVALID":      {"error.inviteInvalid", "invitation is unknown, expired, already used or revoked", "邀请无效：不存在、已过期、已使用或已撤销"},
+	"INVITE_ROLE_GONE":    {"error.inviteRoleGone", "invited roles changed; ask for a new invitation", "邀请中的角色已变更，请索取新邀请"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

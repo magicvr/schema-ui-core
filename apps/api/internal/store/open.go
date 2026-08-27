@@ -24,7 +24,7 @@ func Open(ctx context.Context, opts OpenOptions, catalog []kernel.MigrationContr
 		if err != nil {
 			return nil, err
 		}
-		return open(opts.Path, normalized)
+		return open(opts, normalized)
 	default:
 		return nil, fmt.Errorf("store: unknown dialect %q", opts.Dialect)
 	}

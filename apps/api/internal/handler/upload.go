@@ -23,7 +23,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
@@ -151,10 +150,11 @@ type uploadStore struct {
 	// D-001); every object lives in the uploads namespace.
 	objects kernel.ObjectStore
 	policy  uploadPolicy
-	// quotaMu serializes the quota check + save pair (W7 F-012): without it,
-	// concurrent uploads from one owner could each pass quotaReached before the
-	// other's object is written and collectively exceed the quota.
-	quotaMu sync.Mutex
+	// quotaLocks serializes the quota check + save pair PER OWNER (W7 F-012
+	// invariant kept; W13 B-3: was one global mutex that serialized ALL
+	// users' uploads — concurrent uploads from different owners now proceed
+	// in parallel while the same owner's check+write stays exclusive).
+	quotaLocks *keyedMutex
 }
 
 func (s *uploadStore) save(name string, contentType string, ownerID string, body []byte) (string, error) {
@@ -250,7 +250,8 @@ func (s *uploadStore) quotaReached(ownerID string, nextSize int) (reason string,
 // without the key).
 func RegisterUpload(mux routeRegistrar, a authMiddleware, objects kernel.ObjectStore, opts ...UploadOption) {
 	store := &uploadStore{
-		objects: objects,
+		objects:    objects,
+		quotaLocks: newKeyedMutex(),
 		policy: uploadPolicy{
 			// Historical defaults (pre-W7 package-level env values).
 			maxUserFiles: 1000,
@@ -355,17 +356,17 @@ func (s *uploadStore) upload() http.Handler {
 		}
 		// W4 P0-2: per-user quota gate before storage. Combined with the
 		// files.write permission gate, a single account cannot fill the disk.
-		// W7 F-012: quota check + save are serialized per store so concurrent
+		// W7 F-012: quota check + save are serialized PER OWNER so concurrent
 		// uploads from one owner cannot each pass the check before the other's
-		// object is counted.
-		s.quotaMu.Lock()
+		// object is counted (W13 B-3: keyed lock, not a global one).
+		unlock := s.quotaLocks.lock(user.ID)
 		if reason, reached := s.quotaReached(user.ID, len(body)); reached {
-			s.quotaMu.Unlock()
+			unlock()
 			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "UPLOAD_QUOTA_EXCEEDED", "upload rejected: "+reason)
 			return
 		}
 		id, err := s.save(header.Filename, detected, user.ID, body)
-		s.quotaMu.Unlock()
+		unlock()
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not store upload")
 			return

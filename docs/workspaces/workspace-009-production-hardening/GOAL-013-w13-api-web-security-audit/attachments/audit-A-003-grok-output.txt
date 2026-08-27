@@ -1,0 +1,152 @@
+﻿我先按 `/audit` skill 加载独立审计规范，并读取工作区绑定、GOAL-013/014 权威材料和当前 HEAD，再逐条核源码与回归。工作区绑定已确认。接下来读独立审计提示词和 GOAL-013/014 的决策、执行、审计台账。提示词已对齐。接下来通读 GOAL-013/014 的 meta、决策、执行与 A-001/A-002 台账，再按 finding 对源码。台账已读完。接下来读 A-001 全文证据，并直接核源码里 F-001～F-004 的修复是否 genuine。源码命中已定位。接下来通读 F-001～F-004 相关实现与测试，并抽查 P3/D-002 处置。P3 抽查继续：补读前端守卫、HSTS、B 项、operationID，并开跑 API/Web 回归。HEAD 比 A-002 又前进了两次提交。我先核对最新 HEAD 与 GOAL-014 S2，再跑回归。刚才回归跑错了目录。接下来在 `apps/api` 和 `apps/web` 里用项目本地工具复跑。`go vet` 已通过。接着跑 `apps/api` 全量测试。**verdict: pass。** A-001 四条 required 均经源码核对为 genuine fixed；开放 required = 0。本轮按用户书面约束只出意见、不落盘。
+
+---
+
+## 字段表
+
+| 字段 | 值 |
+|------|----|
+| **source** | independent |
+| **auditor** | grok-build grok-4.6 reasoning high |
+| **类型** | finding-closure / close-out |
+| **scope** | GOAL-013 S6 关门前复核：A-001 required F-001～F-004 源码闭合；P3/健壮性与 D-002 三项裁决留痕；A-002 三条备注；回归复跑。子目标 GOAL-014 仅作 F-007 承载核对。 |
+| **verdict** | **pass** |
+| **日期** | 2026-08-26 |
+| **工作区** | `workspace-009-production-hardening`（Root `GOAL-001-production-hardening`；canonical 已校验；`shared_materials_catalog: none`） |
+| **被审 HEAD** | `19802d69`（会话初读为 `ac3f4bc2` A-002；其后 `3ff67ba2` GOAL-014 S2 方案冻结、`19802d69` conformance claim 工件。F-001～F-004 代码仍停在 `9da0084e`，本轮未改。） |
+| **写入路径** | **未落盘**（用户本轮书面约束：只输出意见、不修改任何文件）。建议 `/govern` 将本意见写入 `03-audit/A-003-w13-independent-closeout.md` 并更新索引。 |
+
+---
+
+## 逐条核对
+
+### a) A-001 required ×4 — genuine fixed
+
+**F-001（P1）invite/accept 先验 token + 限流 — fixed**
+
+- `PeekInviteToken`（`authsession/invites.go`）为 SHA-256 索引 SELECT；未知/过期/已用/已撤销一律 `ErrInviteInvalid`，无枚举面。
+- 公开 accept（`handler/invites.go` `RegisterInviteAccept`）顺序：IP 滑窗 `allow` → Peek → 密码策略 → bcrypt → `AcceptInvite`。死 token 在 bcrypt 前返回。
+- 限流：15 min / 10 次 / 容量 64K，key = `loginClientIP`；Peek 失败与 Accept 失败 `record`。比 A-001 建议的 20 次更紧。
+- 接线：`composition.go` `RegisterInviteAccept(mux, authRepository)`。
+- 回归锁：`TestInviteAcceptDeadTokenShortCircuitsBeforePasswordWork`、`TestInviteAcceptRateLimitBoundsUnauthenticatedSpray`。
+
+**F-002（P2）disable / recovery-rotate 第二因子失败限流 — fixed**
+
+- 共享 `mfaStepUpLimiter`（15 min / 5 次），key = `op|IP|userID`。
+- 两端点均 `guardMFAStepUp` 后再调 service；仅 `ErrMFAInvalid` `record`；成功 `clear`；超限 429 `RATE_LIMITED` + `Retry-After`。
+- `requireActiveSecondFactor` 仍是猜测面；限流把它从无界压到每操作 5/15 min。
+- 桶为进程内 best-effort（与 login/changePassword 同模型；W12 单实例官方边界）。A-001「持久化 per-user 计数」未做，但不构成 required 未闭合。
+- 回归锁：`TestMFAStepUpDisableAndRotateRateLimited`（两操作分桶、超限后合法码也 429、不吊销会话）。
+
+**F-003（P2）enroll currentPassword 限流 — fixed**
+
+- 同一 step-up 桶，`op=enroll`；`guard` 在 `VerifyPassword`（bcrypt）之前；错密 `record`，成功 `clear`。与 `account_self` `passwordLimiter` 5/15 min 同构。
+- 回归锁：`TestMFAEnrollWrongPasswordRateLimited`。
+
+**F-004（P2·bug）Confirm 匹配步进 — fixed**
+
+- `Confirm` 取 `ValidateTotp` 的 `matchedStep` 写入 `SetLastUsedStep`，不再写 `now.Unix()/30`。
+- 用 −1 邻步确认后，同周期当前步码登录可通过（原墙上时钟水位会拒 30–60 s）。
+- 回归锁：`TestServiceConfirmPersistsMatchedStep`（注释写明旧代码必败）。
+- 残余见下方 A-002 备注 1，不构成未修复。
+
+### b) P3 / 健壮性 × D-002 三项裁决
+
+抽查源码与 D-002 一致，**无静默扩大或缩小分母**。
+
+| 编号 | 宣称 | 源码/台账 | 结论 |
+|------|------|-----------|------|
+| F-005 | fixed | `totp.go` `subtle.ConstantTimeCompare` | 成立 |
+| F-006 | fixed | `AUTH_PUBLIC_BASE_URL` → `inviteLink`；未配置仍走 Host/XFP（A-002 已文档化） | 成立（opt-in） |
+| **F-007** | **fixed（承载 GOAL-014）** | D-002 决策 1 + GOAL-014 五件套（parent=GOAL-013）；S1+S2 完成（分层模型冻结于 GOAL-014 D-002）；**`auth.go` 仍为 5 连败全局锁 15 min + 吊销全部刷新令牌，S3 未实施** | 治理层「fixed」有据；**代码面定向 DoS 仍在**，与 D-002「实施承载于子目标、关门顺序不静默裁定」一致，不是偷偷改成 residual/overruled |
+| F-008 | fixed | 过期分类仅哈希匹配时 `RecoveryExpired` | 成立 |
+| F-009 | fixed | `BindEmail` 任意地址共享 60 s 冷却；测试锁新契约 | 成立 |
+| F-010 | fixed | `RegisterSchemas` 挂 `a.Middleware`；匿名 401 | 成立 |
+| F-011 | fixed | wallet×2 + recyclebin×1 `escapeLikePattern` + `ESCAPE '\'` | 成立 |
+| F-012 | fixed | 显式 create / adjust `OwnerExistsFunc`；`POST /accounts` 仍拒 `OwnerUser` 手建 | 成立 |
+| **F-013** | **accepted-residual** | `resources.go` update/delete 仍为 Go 侧预检 + 无谓词 UPDATE；D-002 决策 2 用户书面 + 范围（仅 scope=self）+ 复审触发 | **残余接受路径合法**；D-002「同时登记于 Root 执行台账」**未兑现**（GOAL-001 无 W13/F-013/TOCTOU 条目，最新执行仍为 E-007 W12）——见 findings F-001 |
+| F-014～F-016 | fixed | `isSameOrigin`；`isSafeSupportUrl`；claim `seen` 集；三组回归锁 | 成立 |
+| F-017 | fixed | `MAIL_MASTER_KEY_PATH` 可选分置；默认同目录 | 成立（opt-in） |
+| F-018 | fixed | `Cache-Control: public, max-age=300` | 成立 |
+| F-019 | fixed | 导入 load 后立即 best-effort `Delete` uploads | 成立 |
+| **F-020** | **HSTS 实施 + img-src https: 保留** | `nginx.conf` `Strict-Transport-Security max-age=31536000`；CSP `img-src 'self' data: https:` 未收；`normalizeLogoURL` 接受 http(s) 绝对 URL | 与 D-002 决策 3 一致，未扩大也未缩小 |
+| B-1～B-4 | fixed | RowsAffected 分支；Stat 单遍；`keyedMutex`（upload/avatar）；`mail.ErrInvalidRetention` + `errors.Is` | 成立 |
+
+F-007 / F-013 / F-020 均有用户书面三路径留痕，无静默裁。
+
+### c) A-002 三条备注
+
+1. **F-004 高水位残余 — 成立，非新缺陷。** Confirm 以 `lastUsedStep=0` 接受 ±1；若匹配的是下一步码，水位写成 `P+1`，随后同窗当前步/该步均被拒，直到 `P+2`。与登录 `AdvanceLastUsedStep` 一致。A-002 写「≤30 s」偏紧：等待约为 `60s − 当前周期内偏移`，即约 **30–60 s**。属 TOTP 高水位固有权衡，不是回归。
+2. **F-009 换址冷却 — 成立，非静默偏离。** 冷却在 overwrite 之前失败返回，60 s 内不能换址发信；冷却后 overwrite→pending、旧槽释放仍在。`email_identity_test.go` 明确锁「新地址 30 s 内 cooldown、61 s 后成功」。审计驱动的有意行为变更。
+3. **operationID 时间有序化 — 成立，非新引入缺陷。** `newOperationID`：毫秒前缀 + 进程单调计数 + 随机尾，对应 `created_at DESC, id DESC`；与 GOAL-037 F-008 同因。id 含时间戳，但操作日志读者本就能见 `created_at`。附带稳定化，不在 A-001 分母内。
+
+### d) 回归复跑（本轮独立执行）
+
+| 命令 | 结果 |
+|------|------|
+| `apps/api` `go vet ./...` | 0 输出，exit 0 |
+| `apps/api` `go test ./... -count=1` | **46 包 ok，0 FAIL** |
+| `apps/web` `npm test`（项目 vitest 3.2.7） | **83 files / 1128 tests passed** |
+
+与 E-002/E-003/E-004 及 A-002「回归全绿」宣称一致。
+
+---
+
+## Findings
+
+**开放 required = 0。** 下列为 recommended，不阻断本波 required 闭合；编排器响应后处理即可。
+
+### F-001 · recommended · 中 · D-002 F-013 复审触发未登记 Root 台账
+
+- **位置**：GOAL-013 `01-decision/D-002-w13-s3-dispositions.md` 决策 2 vs `GOAL-001-production-hardening/`（`02-execution/` 至 E-007、`00-meta` 信息项均无 F-013/W13/self-scope/TOCTOU）。
+- **证据**：D-002 写「该触发同时登记于 Root 执行台账」；对 GOAL-001 全文检索无命中。触发正文仍在 D-002（「首个使用行级 self-scope 的生产角色上线前必须谓词化 UPDATE 并经独立审计」），**accepted-residual 本身合法**。
+- **风险**：若后续波次只扫 Root 台账，会漏掉这条硬复审门。属于承诺未兑现，不是静默缩小残余范围。
+- **建议**：在 Root 执行台账补一条移交记录（或 00-meta 残余表），指针指回 GOAL-013 D-002。
+
+### F-002 · recommended · 低 · F-007「fixed」是治理转移，代码面未修
+
+- **位置**：`apps/api/internal/auth/auth.go:54-57,197-212`；GOAL-014 `00-meta` progress 2/6（S3 未勾选）。
+- **证据**：锁定模型仍是「5 连败 → 全局 15 min 锁 + `RevokeAllRefreshTokensForUser`」。GOAL-014 D-002 已冻结分层模型，但未实施。
+- **与 D-002**：一致（用户选 fixed + 子目标承载；F-007 为 recommended，不构成 A-001 required 门禁）。
+- **建议**：GOAL-013 关门叙事写清「F-007 = 处置闭合 / 实施在 GOAL-014」；**不得**把定向 DoS 说成已消失。两目标关门顺序仍按 D-002 交用户裁决。
+
+### F-003 · recommended · 低 · GOAL-013 缺 P-005 信息项表
+
+- **位置**：GOAL-013 `00-meta.md` / `01-decision.md` 无 I-00N 表。
+- **证据**：D-001/D-002/F-020 引用「I-001 TLS 终结拓扑未知，non-blocking」，但本目标未登记该项（Root I-001 是「是否长期程序」，不是 TLS 拓扑）。
+- **影响**：F-020 已按可行范围实施 HSTS；拓扑未知被标 non-blocking，不构成到期 required 信息门禁。属卫生缺口。
+- **建议**：补一条 non-blocking I-00N（TLS 拓扑 / HSTS 生效点），状态 `deferred` 或 `accepted-residual`，复审触发 = 生产 TLS 终结方案确定时。
+
+（另：`goal-tree.md` 状态表 GOAL-013 progress 仍为 `2/6`、GOAL-014 仍为 `1/6`，与 00-meta / ASCII 树 5/6、2/6 不一致。progress 不得作闭合证据；建议 `/govern` 顺手对齐。不单列 finding。）
+
+---
+
+## 必改项汇总
+
+无。开放 required = **0**。
+
+---
+
+## 与既有意见的异同
+
+- **A-001**：required 四条在当前树已闭合；本意见不重开。
+- **A-002 self pass**：独立腿同意「四条 genuine fixed + 回归全绿」。三条备注均成立、不构成新缺陷。补充：F-004 等待窗口宜写 30–60 s；F-013 Root 登记与 F-007 代码未实施两条 A-002 未写。
+- **D-002**：三项用户裁决与代码/子目标状态一致；唯一缺口是 F-013 的 Root 台账承诺。
+
+---
+
+## 结论 + 给编排器/用户的下一步
+
+A-001 四条 required 在 HEAD `19802d69`（代码基线 `9da0084e`）上可重复核对为 **genuine fixed**，缺陷形状回归锁存在且本轮复跑全绿。P3/健壮性按 D-001 全量分母处置，D-002 三项裁决有据、无静默改范围。A-002 三条备注成立。**具备用户书面关门条件**（S6 仍须用户确认，尤其 GOAL-013 是否在 GOAL-014 完成前先行 `done`——D-002 明确不静默裁定）。
+
+建议下一句：
+
+```text
+/govern 响应 GOAL-013 A-003 independent pass：将本意见落盘为 A-003；F-001～F-003 recommended 按需记 Root 移交 / 关门叙事约束 / I-00N；对齐 goal-tree progress；然后请用户书面确认关门（及与 GOAL-014 的关门顺序）。
+```
+
+---
+
+## 声明
+
+本意见 `source: independent`，不修改 `status` / `progress` / goal-tree / 源码 / 方案正文。响应与落盘由 `/govern` 处理。本轮因用户书面「只输出、不改文件」而未写入 `03-audit/`。

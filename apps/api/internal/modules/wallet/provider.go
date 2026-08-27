@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
@@ -35,16 +36,24 @@ func NewService(repo *walletstore.Repository) *Service {
 	return &Service{repo: repo, now: time.Now}
 }
 
-// newID returns a time-ordered hex id: a Unix-millisecond prefix plus a random
-// suffix. The D-002 §1 chain order is (created_at ASC, id ASC); the millisecond
-// prefix keeps same-second ledger entries in creation order for replay, while
-// the random suffix prevents primary-key collisions.
+// newID returns a time-ordered hex id: a Unix-millisecond prefix, a
+// per-process monotonic counter (8 hex) for entries created within the SAME
+// millisecond, and a random suffix that prevents primary-key collisions. The
+// D-002 §1 chain order is (created_at ASC, id ASC); the millisecond prefix
+// keeps same-second entries ordered, and the counter restores CREATION order
+// inside one millisecond — the historical random-only suffix made same-ms
+// entries sort by chance, so replay could run a freeze before its funding
+// adjust and report "insufficient balance" (GOAL-037 / F-008, 2026-08-23).
+var entryIDSeq atomic.Uint64
+
 func newID(now time.Time) (string, error) {
 	buf := make([]byte, 12)
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(buf)), nil
+	// Counter is per-process; wraps only after 2^32 same-millisecond entries.
+	seq := entryIDSeq.Add(1) & 0xFFFFFFFF
+	return fmt.Sprintf("%016x%08x%s", now.UnixMilli(), seq, hex.EncodeToString(buf)), nil
 }
 
 // ListAccounts implements handler.WalletService.
@@ -150,11 +159,15 @@ type Provider struct {
 	service    *Service
 	jobs       *JobService
 	operations operationlog.Recorder
+	// ownerExists is the W13 F-012 gate (GOAL-013 A-001): auto-create wallet
+	// paths verify the owner id against the live user table before opening an
+	// account. Wired from the composition root (auth-session repository).
+	ownerExists handler.OwnerExistsFunc
 }
 
 // New constructs the wallet provider.
-func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, service: service, jobs: jobs, operations: operations}
+func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder, ownerExists handler.OwnerExistsFunc) *Provider {
+	return &Provider{a: a, service: service, jobs: jobs, operations: operations, ownerExists: ownerExists}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -194,7 +207,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.WalletRoutes(p.a, p.service, p.jobs, p.operations, ModuleID) {
+	for _, route := range handler.WalletRoutes(p.a, p.service, p.jobs, p.operations, ModuleID, p.ownerExists) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

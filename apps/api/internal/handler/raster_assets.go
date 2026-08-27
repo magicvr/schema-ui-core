@@ -241,7 +241,8 @@ func (s *RasterAssetStore) upload() http.Handler {
 
 // file serves GET {urlPrefix}{id} publicly. The store only ever contains
 // server-produced raster output, so inline rendering is safe; the headers
-// still pin type, nosniff and immutable caching (content-addressed).
+// still pin type, nosniff and bounded caching (W13 F-018: deletions must
+// become effective quickly, so the year-long immutable cache was retired).
 func (s *RasterAssetStore) file() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -261,7 +262,13 @@ func (s *RasterAssetStore) file() http.Handler {
 		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Content-Security-Policy", "sandbox")
-		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		// W13 F-018 (GOAL-013 A-001): the previous year-long immutable cache
+		// kept a deleted avatar/brand asset fetchable for up to a year from
+		// browser/CDN caches after the origin had dropped it. A bounded window
+		// keeps ordinary re-visit traffic cached while making deletions
+		// effective within minutes; ids stay content-addressed, so correctness
+		// never depended on immutability.
+		w.Header().Set("Cache-Control", "public, max-age=300")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(body)

@@ -145,6 +145,50 @@ func TestServiceLifecycle(t *testing.T) {
 	}
 }
 
+// W13 F-004 (GOAL-013 A-001): Confirm must persist the MATCHED TOTP step,
+// not the wall-clock step. The previous behavior wrote now.Unix()/period
+// even when validation matched the ±1 neighbor step — a confirm with the
+// PREVIOUS-step code (slow submit / device clock behind) set a watermark at
+// the current step, so the first login's current-step code lost the replay
+// check and was rejected for 30–60s. After the fix the first login right
+// after confirm succeeds immediately.
+func TestServiceConfirmPersistsMatchedStep(t *testing.T) {
+	s := newService(t)
+	now := time.Now().UTC()
+	secret, _, _, err := s.Enroll("user-admin", "U", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prevStep := now.Unix()/totpPeriodSeconds - 1
+	if prevStep < 0 {
+		t.Skip("process started within the first TOTP period")
+	}
+	prevCode, err := totpCode(secret, prevStep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Confirm("user-admin", prevCode, now); err != nil {
+		t.Fatalf("confirm with previous-step code: %v", err)
+	}
+	st, err := s.repo.GetState("user-admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.LastUsedStep != prevStep {
+		t.Fatalf("last_used_step = %d, want matched step %d", st.LastUsedStep, prevStep)
+	}
+	// Behavioral half: the first login in the SAME period as confirm accepts
+	// the current-step code (the old wall-clock watermark rejected it).
+	proof, err := s.BeginChallenge("user-admin", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Verify(proof, totpForSecret(t, s, secret, now), "", now)
+	if err != nil || got != "user-admin" {
+		t.Fatalf("first login after confirm = %q %v, want immediate success", got, err)
+	}
+}
+
 func TestServiceExpiredProof(t *testing.T) {
 	s := newService(t)
 	now := time.Now().UTC()

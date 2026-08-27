@@ -33,6 +33,10 @@ http:
   read_timeout: 5s
   write_timeout: 10s
   idle_timeout: 60s
+  # Graceful-shutdown drain budget (VP-021 contract v0.1.0 §6): SIGINT/SIGTERM
+  # -> http.Server.Shutdown grace -> forced exit. Default 10s; invalid
+  # (unparsable or <=0) values fail closed at startup. Env: HTTP_SHUTDOWN_TIMEOUT.
+  shutdown_timeout: 10s
   # Optional comma-separated CORS allow-list (W15-F05). Empty = no CORS
   # headers (same-origin reverse proxy). Env override: HTTP_CORS_ORIGINS.
   cors_origins: ""
@@ -171,6 +175,13 @@ observability:
     sample_ratio: 1.0       # OBSERVABILITY_TRACES_SAMPLE_RATIO
 
 mail:
+  # VP-017 R6 (workspace-017 GOAL-007; contract frozen by GOAL-006 D-002 §2).
+  # Explicit outbound channel selector: mock | resend | smtp. Empty (the
+  # default) derives: exactly one fully configured production block wins;
+  # BOTH mail.resend and mail.smtp fully configured is ambiguous and fails
+  # closed until you set channel explicitly; NEITHER keeps mock — the
+  # in-app outbound record surface.
+  channel: ""             # MAIL_CHANNEL
   smtp:
     # VP-017 (workspace-017 GOAL-003 D-001): explicit outbound SMTP endpoint.
     # ALL keys empty (the default) = unconfigured — sending uses the embedded
@@ -183,6 +194,13 @@ mail:
     username: ""            # MAIL_SMTP_USERNAME
     password: ""            # required SECRET — via MAIL_SMTP_PASSWORD env / configs/.env only, never a literal
     from: ""                # MAIL_SMTP_FROM; default sender, bare address (e.g. no-reply@example.com)
+  resend:
+    # VP-017 R6 (GOAL-006 D-002 §4): production Resend HTTP API channel.
+    # ALL keys empty (the default) = unconfigured. Touching ANY key makes
+    # api-key/from REQUIRED (fail-closed in every environment). api-key is a
+    # SECRET — via MAIL_RESEND_API_KEY env / configs/.env only, never literal.
+    api-key: ""             # MAIL_RESEND_API_KEY
+    from: ""                # MAIL_RESEND_FROM; default sender, bare address
 
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.

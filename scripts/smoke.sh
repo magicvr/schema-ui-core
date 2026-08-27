@@ -81,6 +81,11 @@ http_status() {
   curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "$1" 2>/dev/null || true
 }
 
+http_status_auth() {
+  # usage: http_status_auth <url> <access-token>
+  curl -sS --max-time 5 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $2" "$1" 2>/dev/null || true
+}
+
 fail_check() {
   local id="$1" detail="$2" code="${3:-70}"
   smoke_line "$id" "FAIL"
@@ -286,8 +291,15 @@ if [ -n "$SMOKE_EXPECTED_PROFILE" ]; then
     elif json_has_page "$api_manifest" "$page_id"; then
       fail_check "007" "${SMOKE_EXPECTED_PROFILE} Manifest 不应包含 ${page_id} 页面" 5
     fi
-    if [ "$(http_status "${API_BASE_URL}/api/schema/${page_id}")" != "$optional_status" ]; then
-      fail_check "007" "${page_id} Schema 状态不符合 ${SMOKE_EXPECTED_PROFILE} profile" 5
+    # W13 F-010（GOAL-013）：/api/schema/* 已挂认证中间件——匿名请求任何
+    # profile 下都先吃 401（不得枚举页面文档），页面存在性须以 Bearer 请求
+    # 断言（200=页在 profile、404=profile 过滤后未注册）。与 W14 E-004
+    # shell.spec 对齐先例同一契约（E-004 漏改本脚本，自 F-010 起未运行过）。
+    if [ "$(http_status "${API_BASE_URL}/api/schema/${page_id}")" != "401" ]; then
+      fail_check "007" "${page_id} Schema 匿名请求未被拒绝（F-010 期望统一 401）" 5
+    fi
+    if [ "$(http_status_auth "${API_BASE_URL}/api/schema/${page_id}" "$ACCESS_TOKEN")" != "$optional_status" ]; then
+      fail_check "007" "${page_id} Schema 状态不符合 ${SMOKE_EXPECTED_PROFILE} profile（认证后）" 5
     fi
   done
   if [ "$(http_status "${API_BASE_URL}/api/settings")" != "$protected_status" ] \

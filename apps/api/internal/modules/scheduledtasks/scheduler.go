@@ -8,10 +8,10 @@ package scheduledtasks
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
@@ -213,11 +213,28 @@ func (s *Scheduler) HandlerKeys() []string {
 	return keys
 }
 
-// newRunID returns "run-" + 16 lowercase hex chars (8 bytes of crypto/rand).
+// randReader is indirected so tests can simulate crypto/rand failure or
+// constant output.
+var randReader = rand.Read
+
+// runIDSeq guarantees process-local uniqueness regardless of entropy quality:
+// (UnixNano, monotonic sequence) cannot collide inside one process. crypto/rand
+// bytes remain as a best-effort cross-process/restart perturbation only — it is
+// NOT the uniqueness contract. Background: a sandboxed environment returned
+// constant/zero rand output, so the "8 random bytes" id collided on the
+// task_runs primary key for consecutive manual triggers (pre-existing flake
+// A-001 F-007; the F-007 candidate fix of a time-string fallback alone was
+// insufficient for the same reason).
+var runIDSeq atomic.Uint64
+
+// newRunID returns a unique run id. Uniqueness contract (process-local):
+// monotonic sequence + UnixNano; rand bytes only perturb the string.
 func newRunID() string {
-	var b [8]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "run-" + hex.EncodeToString([]byte(time.Now().Format("150405.000000000")))
+	seq := runIDSeq.Add(1)
+	n := time.Now().UnixNano()
+	var b [4]byte
+	if _, err := randReader(b[:]); err == nil {
+		return fmt.Sprintf("run-%x-%x-%x", n, seq, b)
 	}
-	return "run-" + hex.EncodeToString(b[:])
+	return fmt.Sprintf("run-%x-%x", n, seq)
 }

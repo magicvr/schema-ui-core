@@ -145,6 +145,183 @@ var seedAdminMustChangePasswordSQL = []string{
 	`UPDATE users SET must_change_password = 1 WHERE id = 'user-admin' AND must_change_password = 0`,
 }
 
+// accountEmailIdentityDDL (workspace-018 R2 · GOAL-003 D-001): account email
+// identity per the frozen R1 contract (GOAL-002 D-001 §1/§2/§3/§6).
+//   - email TEXT NULL: NULL = unbound; NULLs are mutually distinct in unique
+//     indexes on both dialects, so accounts without email never collide.
+//   - email_status TEXT NULL CHECK ('pending'|'verified'): meaningful only
+//     when email IS NOT NULL — a NULL email means unbound regardless.
+//   - idx_users_email_lower on lower(email): the physical carrier of
+//     bind-reserves-slot case-insensitive uniqueness. All three statements
+//     are byte-identical on sqlite and postgres, so ApplyPostgres stays nil;
+//     sqlite lower() folds ASCII only, compensated by application-layer
+//     normalization in R3 repositories (GOAL-002 A-001 F-2).
+var accountEmailIdentityDDL = []string{
+	`ALTER TABLE users ADD COLUMN email TEXT`,
+	`ALTER TABLE users ADD COLUMN email_status TEXT CHECK (email_status IN ('pending','verified'))`,
+	`CREATE UNIQUE INDEX idx_users_email_lower ON users(lower(email))`,
+}
+
+// emailVerificationDDL (workspace-018 R3 · GOAL-004 D-001 §1): one active
+// verification challenge per user — PK on user_id makes the upsert an
+// idempotent replace, ON DELETE CASCADE cleans up with the account. Times are
+// unix seconds; the INTEGER/BIGINT split follows the accountLock precedent,
+// so this migration ships paired dialect bodies (not portable).
+var emailVerificationDDL = []string{
+	`CREATE TABLE email_verification_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    INTEGER NOT NULL,
+  sent_at       INTEGER NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+var postgresEmailVerificationDDL = []string{
+	`CREATE TABLE email_verification_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    BIGINT NOT NULL,
+  sent_at       BIGINT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+// loginFailuresDDL (GOAL-014 D-002 · W13 F-007 targeted-DoS fix): layered
+// login-lockout state. One row per (account | client identity): a lock on
+// the pair denies THAT source only — third-party failures can no longer
+// lock the legitimate user out of their own account. The users table keeps
+// the GLOBAL consecutive-failure ceiling (threshold raised to
+// auth.LockThresholdFailures); last_login_failure_at gives that counter a
+// 24h sliding restart so stale failures decay instead of accumulating
+// forever. Times are unix seconds; INTEGER/BIGINT split follows 0055/0056,
+// so this migration ships paired dialect bodies (not portable).
+var loginFailuresDDL = []string{
+	`CREATE TABLE login_failures (
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ip          TEXT NOT NULL,
+  fail_count  INTEGER NOT NULL DEFAULT 0,
+  locked_until INTEGER NOT NULL DEFAULT 0,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (user_id, ip)
+)`,
+	`ALTER TABLE users ADD COLUMN last_login_failure_at INTEGER NOT NULL DEFAULT 0`,
+}
+
+var postgresLoginFailuresDDL = []string{
+	`CREATE TABLE login_failures (
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ip           TEXT NOT NULL,
+  fail_count   INTEGER NOT NULL DEFAULT 0,
+  locked_until BIGINT NOT NULL DEFAULT 0,
+  updated_at   BIGINT NOT NULL,
+  PRIMARY KEY (user_id, ip)
+)`,
+	`ALTER TABLE users ADD COLUMN last_login_failure_at BIGINT NOT NULL DEFAULT 0`,
+}
+
+// passwordRecoveryDDL (workspace-019 R2 · GOAL-003 D-001 §1): one active
+// self-recovery challenge per user — same shape as the email verification
+// table (0055) so the frozen numbers (TTL 10 min / cooldown 60 s / 5 failed
+// attempts void) reuse the identical bookkeeping. PK on user_id makes the
+// upsert an idempotent replace, ON DELETE CASCADE cleans up with the account.
+// Times are unix seconds; INTEGER/BIGINT split follows the 0055 precedent,
+// so this migration ships paired dialect bodies (not portable).
+var passwordRecoveryDDL = []string{
+	`CREATE TABLE password_recovery_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    INTEGER NOT NULL,
+  sent_at       INTEGER NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+var passwordRecoveryPGDDL = []string{
+	`CREATE TABLE password_recovery_challenges (
+  user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash     TEXT NOT NULL,
+  expires_at    BIGINT NOT NULL,
+  sent_at       BIGINT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0
+)`,
+}
+
+// passwordPolicyDDL (workspace-019 R3 · GOAL-004 D-001 §1): singleton policy
+// row (id=1) with the frozen defaults — minLength 8 (= current baseline),
+// complexity categories off, history off (I-003 起步宽松). Portable: INTEGER
+// columns and literal CHECK are identical on both dialects.
+var passwordPolicyDDL = []string{
+	`CREATE TABLE password_policy (
+  id             INTEGER PRIMARY KEY CHECK (id = 1),
+  min_length     INTEGER NOT NULL DEFAULT 8,
+  min_categories INTEGER NOT NULL DEFAULT 0,
+  history_depth  INTEGER NOT NULL DEFAULT 0
+)`,
+	`INSERT INTO password_policy (id) VALUES (1)`,
+}
+
+// userPasswordHistoryDDL (GOAL-004 D-001 §2): previous password hashes for
+// history_depth comparison; populated only when a set-password mutation goes
+// through UpdateUser. Times follow the accountLock INTEGER/BIGINT split.
+var userPasswordHistoryDDL = []string{
+	`CREATE TABLE user_password_history (
+  id            TEXT PRIMARY KEY,
+  user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  created_at    INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_user_password_history_user ON user_password_history(user_id, created_at DESC)`,
+}
+
+var userPasswordHistoryPGDDL = []string{
+	`CREATE TABLE user_password_history (
+  id            TEXT PRIMARY KEY,
+  user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  created_at    BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_user_password_history_user ON user_password_history(user_id, created_at DESC)`,
+}
+
+// userInvitesDDL (GOAL-004 D-001 §3): admin-issued invitations. The raw token
+// is shown once at creation/resend; only its SHA-256 hash is stored. roles is
+// the JSON array of role keys assigned at activation (user adjudication:
+// 受邀账号角色以发布邀请时指定为准). consumed_at marks one-time use; revoked_at
+// an admin revoke; resend = revoke-old + fresh row (60 s cooldown via
+// last_sent_at of the predecessor).
+var userInvitesDDL = []string{
+	`CREATE TABLE user_invites (
+  id           TEXT PRIMARY KEY,
+  token_hash   TEXT NOT NULL UNIQUE,
+  roles        TEXT NOT NULL,
+  invited_by   TEXT NOT NULL REFERENCES users(id),
+  email        TEXT,
+  expires_at   INTEGER NOT NULL,
+  consumed_at  INTEGER,
+  revoked_at   INTEGER,
+  last_sent_at INTEGER NOT NULL,
+  created_at   INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_user_invites_created ON user_invites(created_at DESC)`,
+}
+
+var userInvitesPGDDL = []string{
+	`CREATE TABLE user_invites (
+  id           TEXT PRIMARY KEY,
+  token_hash   TEXT NOT NULL UNIQUE,
+  roles        TEXT NOT NULL,
+  invited_by   TEXT NOT NULL REFERENCES users(id),
+  email        TEXT,
+  expires_at   BIGINT NOT NULL,
+  consumed_at  BIGINT,
+  revoked_at   BIGINT,
+  last_sent_at BIGINT NOT NULL,
+  created_at   BIGINT NOT NULL
+)`,
+	`CREATE INDEX idx_user_invites_created ON user_invites(created_at DESC)`,
+}
+
 // ---- postgres-flavored apply bodies (R3 dual-dialect ledger; R1 v1.4 §3/§4).
 // The sqlite/canonical SQL above is untouched so its checksums stay stable;
 // these bodies run only on the postgres runner. Unix time columns are BIGINT,
@@ -366,6 +543,63 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateSeedAdminMustChangePassword,
 			// ApplyPostgres nil: portable UPDATE (no dialect difference).
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "account_email_identity"},
+			Version:              54,
+			Name:                 "account_email_identity",
+			Checksum:             kernel.MigrationChecksum(accountEmailIdentityDDL, "0054:account-email-identity:v1"),
+			Apply:                migrateAccountEmailIdentity,
+			// ApplyPostgres nil: portable DDL (TEXT column + literal CHECK +
+			// lower() expression unique index are identical on both dialects).
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "email_verification_challenges"},
+			Version:              55,
+			Name:                 "email_verification_challenges",
+			Checksum:             kernel.MigrationChecksum(emailVerificationDDL, "0055:email-verification-challenges:v1"),
+			Apply:                migrateEmailVerification,
+			ApplyPostgres:        migrateEmailVerificationPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "password_recovery_challenges"},
+			Version:              56,
+			Name:                 "password_recovery_challenges",
+			Checksum:             kernel.MigrationChecksum(passwordRecoveryDDL, "0056:password-recovery-challenges:v1"),
+			Apply:                migratePasswordRecovery,
+			ApplyPostgres:        migratePasswordRecoveryPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "password_policy"},
+			Version:              57,
+			Name:                 "password_policy",
+			Checksum:             kernel.MigrationChecksum(passwordPolicyDDL, "0057:password-policy:v1"),
+			// ApplyPostgres nil: portable DDL (literal CHECK + singleton seed).
+			Apply: migratePasswordPolicy,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "user_password_history"},
+			Version:              58,
+			Name:                 "user_password_history",
+			Checksum:             kernel.MigrationChecksum(userPasswordHistoryDDL, "0058:user-password-history:v1"),
+			Apply:                migrateUserPasswordHistory,
+			ApplyPostgres:        migrateUserPasswordHistoryPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "user_invites"},
+			Version:              59,
+			Name:                 "user_invites",
+			Checksum:             kernel.MigrationChecksum(userInvitesDDL, "0059:user-invites:v1"),
+			Apply:                migrateUserInvites,
+			ApplyPostgres:        migrateUserInvitesPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "login_failures"},
+			Version:              61,
+			Name:                 "login_failures",
+			Checksum:             kernel.MigrationChecksum(loginFailuresDDL, "0061:login-failures:v1"),
+			Apply:                migrateLoginFailures,
+			ApplyPostgres:        migrateLoginFailuresPG,
+		},
 	}
 }
 
@@ -438,6 +672,114 @@ func migrateSeedAdminMustChangePassword(tx kernel.Tx) error {
 	for _, stmt := range seedAdminMustChangePasswordSQL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("backfill seed admin must_change_password: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateAccountEmailIdentity(tx kernel.Tx) error {
+	for _, stmt := range accountEmailIdentityDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("add account email identity columns/index: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateEmailVerification(tx kernel.Tx) error {
+	for _, stmt := range emailVerificationDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create email verification challenges: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateEmailVerificationPG(tx kernel.Tx) error {
+	for _, stmt := range postgresEmailVerificationDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create email verification challenges (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migratePasswordRecovery(tx kernel.Tx) error {
+	for _, stmt := range passwordRecoveryDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create password recovery challenges: %w", err)
+		}
+	}
+	return nil
+}
+
+func migratePasswordRecoveryPG(tx kernel.Tx) error {
+	for _, stmt := range passwordRecoveryPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create password recovery challenges (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migratePasswordPolicy(tx kernel.Tx) error {
+	for _, stmt := range passwordPolicyDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create password policy: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserPasswordHistory(tx kernel.Tx) error {
+	for _, stmt := range userPasswordHistoryDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user password history: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserPasswordHistoryPG(tx kernel.Tx) error {
+	for _, stmt := range userPasswordHistoryPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user password history (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserInvites(tx kernel.Tx) error {
+	for _, stmt := range userInvitesDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user invites: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateUserInvitesPG(tx kernel.Tx) error {
+	for _, stmt := range userInvitesPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create user invites (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateLoginFailures(tx kernel.Tx) error {
+	for _, stmt := range loginFailuresDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create login failures: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateLoginFailuresPG(tx kernel.Tx) error {
+	for _, stmt := range postgresLoginFailuresDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create login failures (postgres): %w", err)
 		}
 	}
 	return nil

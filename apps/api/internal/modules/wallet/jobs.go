@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
@@ -113,6 +115,32 @@ func (s *JobService) runReconcile(ctx context.Context, job jobs.Job, reporter jo
 		if err != nil {
 			return nil, err
 		}
+		// GOAL-037 / F-008 根治：成功审计与 job 状态同事务提交（原子），
+		// 杜绝"job succeeded 可见而 wallet.reconcile 事件缺失/迟到"的竞态。
+		// 注入的 Recorder 必须实现 TransactionalRecorder（*operationlog.
+		// Repository 满足）；失败则本次 job 失败（fail closed with the
+		// domain write —— operationlog 事务接口语义）。
+		if s.operations != nil {
+			if tr, ok := s.operations.(operationlog.TransactionalRecorder); ok {
+				now := s.now().UTC()
+				id, err := newID(now)
+				if err != nil {
+					return nil, fmt.Errorf("wallet reconcile audit id: %w", err)
+				}
+				action := strings.TrimPrefix(operationlog.EventWalletReconcile, "wallet.")
+				detail, err := operationlog.NewDetail(action, nil, reconciliationResult(*run))
+				if err != nil {
+					return nil, err
+				}
+				if err := tr.RecordOperationTx(tx, operationlog.Operation{
+					ID: id, Event: operationlog.EventWalletReconcile, ActorID: job.ActorID,
+					ActorName: job.ActorID, RecordID: &job.ID, Detail: &detail,
+					CorrelationID: job.CorrelationID, CreatedAt: now,
+				}); err != nil {
+					return nil, fmt.Errorf("record wallet reconcile audit: %w", err)
+				}
+			}
+		}
 		return json.Marshal(reconciliationResult(*run))
 	}, nil
 }
@@ -121,13 +149,9 @@ func (s *JobService) recordTerminal(job jobs.Job) {
 	now := s.now().UTC()
 	switch job.Status {
 	case jobs.StatusSucceeded:
-		var result struct {
-			ID     string `json:"id"`
-			Result string `json:"result"`
-		}
-		_ = json.Unmarshal(job.Result, &result)
-		s.recordOperation(operationlog.EventWalletReconcile, job, job.ActorID,
-			map[string]any{"jobId": job.ID, "runId": result.ID, "result": result.Result}, now)
+		// Success audit is written atomically inside the job transaction
+		// (runReconcile CommitFunc); nothing to do here — duplicate events
+		// would double-report.
 	case jobs.StatusFailed:
 		s.recordOperation(operationlog.EventWalletReconcileFailed, job, job.ActorID,
 			map[string]any{"jobId": job.ID, "errorCode": job.ErrorCode}, now)
@@ -143,17 +167,23 @@ func (s *JobService) recordOperation(event string, job jobs.Job, actorName strin
 	}
 	id, err := newID(now)
 	if err != nil {
+		slog.Error("wallet: audit id generation failed", "event", event, "err", err)
 		return
 	}
 	action := strings.TrimPrefix(event, "wallet.")
 	detail, err := operationlog.NewDetail(action, nil, detailValue)
 	if err != nil {
+		slog.Error("wallet: audit detail failed", "event", event, "err", err)
 		return
 	}
-	_ = s.operations.RecordOperation(operationlog.Operation{
+	// Best-effort side effect (failed/cancelled terminal paths have no job
+	// transaction to join); failures must at least be observable.
+	if err := s.operations.RecordOperation(operationlog.Operation{
 		ID: id, Event: event, ActorID: job.ActorID, ActorName: actorName,
 		RecordID: &job.ID, Detail: &detail, CorrelationID: job.CorrelationID, CreatedAt: now,
-	})
+	}); err != nil {
+		slog.Error("wallet: audit event failed to record", "event", event, "err", err)
+	}
 }
 
 func reconciliationResult(run walletstore.ReconciliationRun) map[string]any {

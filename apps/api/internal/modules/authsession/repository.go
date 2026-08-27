@@ -59,8 +59,13 @@ type User struct {
 	// MustChangePassword is true when the user has not yet replaced the
 	// initial/reset password (W16-F01).
 	MustChangePassword bool
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	// Email / EmailStatus is the managed email identity projection
+	// (workspace-018 R3 · migration 0054 columns; W26 read face). nil/nil =
+	// unbound; status ∈ {pending, verified} once an address is bound.
+	Email       *string
+	EmailStatus *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // RefreshToken is a stored opaque refresh token; only its hash is persisted.
@@ -97,6 +102,12 @@ type UserPatch struct {
 	// MustChangePassword is the forced-password-change flag (W16-F01); nil =
 	// untouched.
 	MustChangePassword *bool
+	// Email is the managed account email (workspace-018 R3 · I-006, user-
+	// adjudicated 2026-08-24): a non-empty value binds the address and resets
+	// it to pending verification (the user completes delivery); "" clears
+	// back to unbound. Admins can never set verified directly. nil =
+	// untouched.
+	Email *string
 }
 
 // Role is the persisted RBAC role projection.

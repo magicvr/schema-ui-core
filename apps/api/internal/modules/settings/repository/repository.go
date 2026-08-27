@@ -39,7 +39,9 @@ type SiteSettings struct {
 	FaviconURL    string
 	DefaultLocale string
 	SiteTimezone  string
-	DefaultTheme  string
+	// workspace-020 R3 (§4.1): site-wide default currency (ISO 4217; "" = unset).
+	DefaultCurrency string
+	DefaultTheme    string
 	// W16-F10: optional footer text.
 	CopyrightText string
 	ICPNumber     string
@@ -55,6 +57,7 @@ var (
 	ErrInvalidDefaultLocale    = errors.New("settings: invalid default locale")
 	ErrInvalidDefaultTheme     = errors.New("settings: invalid default theme")
 	ErrInvalidSiteTimezone     = errors.New("settings: invalid site timezone")
+	ErrInvalidDefaultCurrency  = errors.New("settings: invalid default currency")
 	ErrInvalidRetentionDays    = errors.New("settings: invalid operation log retention days")
 	ErrInvalidExpirationAction = errors.New("settings: invalid operation log expiration action")
 )
@@ -82,7 +85,7 @@ func (r *Repository) GetSiteSettings() (*SiteSettings, error) {
 // UpdateSiteSettings is the legacy two-field convenience wrapper (title + logo);
 // kept for the composition recovery tests and callers that predate VP-007.
 func (r *Repository) UpdateSiteSettings(siteTitle, logoURL string, now time.Time) (*SiteSettings, error) {
-	return r.writeSiteSettings(&siteTitle, &logoURL, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now)
+	return r.writeSiteSettings(&siteTitle, &logoURL, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now)
 }
 
 // PatchSiteSettings updates only the supplied fields in one SQL statement.
@@ -90,20 +93,20 @@ func (r *Repository) UpdateSiteSettings(siteTitle, logoURL string, now time.Time
 // they did not submit. Empty-string values clear a field (logo/theming);
 // validation errors reject the whole patch atomically.
 func (r *Repository) PatchSiteSettings(
-	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber *string,
+	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultCurrency, defaultTheme, copyrightText, icpNumber *string,
 	retentionDays *int, expirationAction *string,
 	now time.Time,
 ) (*SiteSettings, error) {
-	return r.writeSiteSettings(siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber, retentionDays, expirationAction, now)
+	return r.writeSiteSettings(siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultCurrency, defaultTheme, copyrightText, icpNumber, retentionDays, expirationAction, now)
 }
 
 // ResetSiteSettings restores every VP-007 field to its frozen default.
 func (r *Repository) ResetSiteSettings(now time.Time) (*SiteSettings, error) {
-	return r.writeSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now, true)
+	return r.writeSiteSettings(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, now, true)
 }
 
 func (r *Repository) writeSiteSettings(
-	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultTheme, copyrightText, icpNumber *string,
+	siteTitle, logoURL, logoURLLight, logoURLDark, faviconURL, defaultLocale, siteTimezone, defaultCurrency, defaultTheme, copyrightText, icpNumber *string,
 	retentionDays *int, expirationAction *string,
 	now time.Time,
 	reset ...bool,
@@ -157,6 +160,13 @@ func (r *Repository) writeSiteSettings(
 	if err := validateTimezone(timezone); err != nil {
 		return nil, err
 	}
+	currency, currencySet, err := optionalEnum(defaultCurrency, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCurrency(currency); err != nil {
+		return nil, err
+	}
 	copyright := ""
 	copyrightSet := 0
 	if copyrightText != nil {
@@ -198,7 +208,7 @@ func (r *Repository) writeSiteSettings(
 			stmt = `UPDATE site_settings SET
 			  site_title = ?, logo_url = '', logo_url_light = '', logo_url_dark = '',
 			  favicon_url = '', default_locale = 'auto', site_timezone = 'auto',
-			  default_theme = 'auto', copyright_text = '', icp_number = '',
+			  default_currency = '', default_theme = 'auto', copyright_text = '', icp_number = '',
 			  operation_log_retention_days = ?, operation_log_expiration_action = ?,
 			  updated_at = ? WHERE id = 'default'`
 			args = []any{
@@ -210,9 +220,9 @@ func (r *Repository) writeSiteSettings(
 		} else {
 			stmt = `INSERT INTO site_settings (
 			  id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
-			  default_locale, site_timezone, default_theme, copyright_text, icp_number,
+			  default_locale, site_timezone, default_currency, default_theme, copyright_text, icp_number,
 			  operation_log_retention_days, operation_log_expiration_action, updated_at)
-			 VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			 VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			 ON CONFLICT(id) DO UPDATE SET
 			   site_title = CASE WHEN ? = 1 THEN excluded.site_title ELSE site_settings.site_title END,
 			   logo_url = CASE WHEN ? = 1 THEN excluded.logo_url ELSE site_settings.logo_url END,
@@ -221,6 +231,7 @@ func (r *Repository) writeSiteSettings(
 			   favicon_url = CASE WHEN ? = 1 THEN excluded.favicon_url ELSE site_settings.favicon_url END,
 			   default_locale = CASE WHEN ? = 1 THEN excluded.default_locale ELSE site_settings.default_locale END,
 			   site_timezone = CASE WHEN ? = 1 THEN excluded.site_timezone ELSE site_settings.site_timezone END,
+			   default_currency = CASE WHEN ? = 1 THEN excluded.default_currency ELSE site_settings.default_currency END,
 			   default_theme = CASE WHEN ? = 1 THEN excluded.default_theme ELSE site_settings.default_theme END,
 			   copyright_text = CASE WHEN ? = 1 THEN excluded.copyright_text ELSE site_settings.copyright_text END,
 			   icp_number = CASE WHEN ? = 1 THEN excluded.icp_number ELSE site_settings.icp_number END,
@@ -228,8 +239,8 @@ func (r *Repository) writeSiteSettings(
 			   operation_log_expiration_action = CASE WHEN ? = 1 THEN excluded.operation_log_expiration_action ELSE site_settings.operation_log_expiration_action END,
 			   updated_at = excluded.updated_at`
 			args = []any{
-				title, logo, logoLight, logoDark, favicon, locale, timezone, theme, copyright, icp, days, action, now.Unix(),
-				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, themeSet, copyrightSet, icpSet, daysSet, actionSet,
+				title, logo, logoLight, logoDark, favicon, locale, timezone, currency, theme, copyright, icp, days, action, now.Unix(),
+				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, currencySet, themeSet, copyrightSet, icpSet, daysSet, actionSet,
 			}
 		}
 		if _, err := tx.Exec(context.Background(), stmt, args...); err != nil {
@@ -287,6 +298,26 @@ func validateTimezone(raw string) error {
 	return nil
 }
 
+// validateCurrency accepts empty or an uppercase three-letter ISO 4217 code.
+func validateCurrency(raw string) error {
+	if raw == "" {
+		return nil
+	}
+	if len(raw) != 3 || !isUpperAlpha(raw) {
+		return ErrInvalidDefaultCurrency
+	}
+	return nil
+}
+
+func isUpperAlpha(raw string) bool {
+	for _, r := range raw {
+		if r < 'A' || r > 'Z' {
+			return false
+		}
+	}
+	return true
+}
+
 func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 	if r == nil || r.runner == nil {
 		return fmt.Errorf("%s: settings repository is not configured", operation)
@@ -302,13 +333,13 @@ func getSiteSettings(tx kernel.Tx) (*SiteSettings, error) {
 	var updatedAt int64
 	err := tx.QueryRow(context.Background(),
 		`SELECT id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
-		        default_locale, site_timezone, default_theme, copyright_text, icp_number,
+		        default_locale, site_timezone, default_currency, default_theme, copyright_text, icp_number,
 		        operation_log_retention_days, operation_log_expiration_action, updated_at
 		 FROM site_settings WHERE id = 'default'`,
 	).Scan(
 		&settings.ID, &settings.SiteTitle, &settings.LogoURL, &settings.LogoURLLight,
 		&settings.LogoURLDark, &settings.FaviconURL, &settings.DefaultLocale,
-		&settings.SiteTimezone, &settings.DefaultTheme, &settings.CopyrightText,
+		&settings.SiteTimezone, &settings.DefaultCurrency, &settings.DefaultTheme, &settings.CopyrightText,
 		&settings.ICPNumber, &settings.OperationLogRetentionDays, &settings.OperationLogExpirationAction,
 		&updatedAt,
 	)
@@ -318,6 +349,7 @@ func getSiteSettings(tx kernel.Tx) (*SiteSettings, error) {
 			SiteTitle:                    settingsmigration.DefaultSiteTitle,
 			DefaultLocale:                "auto",
 			SiteTimezone:                 "auto",
+			DefaultCurrency:              "",
 			DefaultTheme:                 "auto",
 			OperationLogRetentionDays:    settingsmigration.DefaultOperationLogRetentionDays,
 			OperationLogExpirationAction: settingsmigration.DefaultOperationLogExpirationAction,

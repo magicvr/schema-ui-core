@@ -10,6 +10,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
@@ -25,6 +26,13 @@ func (r *operationRecorder) RecordOperation(operation operationlog.Operation) er
 	defer r.mu.Unlock()
 	r.operations = append(r.operations, operation)
 	return nil
+}
+
+// RecordOperationTx implements operationlog.TransactionalRecorder — the
+// success audit is now written INSIDE the job transaction (GOAL-037 / F-008
+// root-cause fix); the recorder collects it like any other event.
+func (r *operationRecorder) RecordOperationTx(_ kernel.Tx, operation operationlog.Operation) error {
+	return r.RecordOperation(operation)
 }
 
 func (r *operationRecorder) events() []string {

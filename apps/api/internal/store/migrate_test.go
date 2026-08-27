@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 49 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" || applied[43].version != 44 || applied[43].name != "service_credentials" || applied[44].version != 45 || applied[44].name != "operation_log_service_credentials" || applied[45].version != 46 || applied[45].name != "site_operation_log_retention" || applied[46].version != 47 || applied[46].name != "operation_log_archive" || applied[47].version != 48 || applied[47].name != "operation_log_session" || applied[48].version != 49 || applied[48].name != "seed_admin_must_change_password" {
-		t.Fatalf("applied = %+v, want versions [1..49]", applied)
+	if len(applied) != 62 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" || applied[43].version != 44 || applied[43].name != "service_credentials" || applied[44].version != 45 || applied[44].name != "operation_log_service_credentials" || applied[45].version != 46 || applied[45].name != "site_operation_log_retention" || applied[46].version != 47 || applied[46].name != "operation_log_archive" || applied[47].version != 48 || applied[47].name != "operation_log_session" || applied[48].version != 49 || applied[48].name != "seed_admin_must_change_password" || applied[49].version != 50 || applied[49].name != "wallet_ledger_order_repair" || applied[50].version != 51 || applied[50].name != "mail_outbox" || applied[51].version != 52 || applied[51].name != "mail_config" || applied[52].version != 53 || applied[52].name != "operation_log_mail_events" || applied[53].version != 54 || applied[53].name != "account_email_identity" || applied[54].version != 55 || applied[54].name != "email_verification_challenges" || applied[55].version != 56 || applied[55].name != "password_recovery_challenges" || applied[56].version != 57 || applied[56].name != "password_policy" || applied[57].version != 58 || applied[57].name != "user_password_history" || applied[58].version != 59 || applied[58].name != "user_invites" || applied[59].version != 60 || applied[59].name != "mail_outbox_channels" || applied[60].version != 61 || applied[60].name != "login_failures" || applied[61].version != 62 || applied[61].name != "site_default_currency" {
+		t.Fatalf("applied = %+v, want versions [1..62] ending in site_default_currency", applied)
 	}
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
@@ -185,7 +185,7 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 49 {
+	if len(applied2) != 62 {
 		t.Fatalf("migrations re-applied on reopen: %v", applied2)
 	}
 	// Reopen of a fully-migrated fresh DB: no new snapshots for any version.
@@ -685,6 +685,40 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"core.operationlog", "operation_log_session", "1427328e3942b8bddf0d0970ac173d72a4bbefeee427f32a819e16cb3935edf5"},
 		// W22 A2: seed admin must_change_password backfill for upgraded databases.
 		{"core.auth-session", "seed_admin_must_change_password", "b2c6bbf113733ce7fb89933ac33735eb4dc448112ef99ef41d519fb88badbc32"},
+		// GOAL-037 / F-008: 0050 data-only ledger-order repair for legacy
+		// same-millisecond disordered entries.
+		{"admin.wallet", "wallet_ledger_order_repair", "835902cb80352790f36c56bb57ce186071dd26dac50c13816b2f401e9c340720"},
+		// VP-017 R6 (workspace-017 GOAL-007; GOAL-006 D-002 §3): mock-channel
+		// outbound record table.
+		{"core.persistence", "mail_outbox", "4b42ffe91c15ed143237f3cefa5c6be7227efcb66ffd718ce05753843cf0187c"},
+		// VP-017 R7 (workspace-017 GOAL-008; Root D-007): single-row runtime
+		// channel state (secrets stored encrypted).
+		{"core.persistence", "mail_config", "51633d08fffa540eefcebd6b14e551c9c35506af587fad2cd9b0be3687906887"},
+		// VP-017 R7 (GOAL-008): operation_log event enum gains the mail admin events.
+		{"core.operationlog", "operation_log_mail_events", "b447a4b6249893390b111fdd359178766bc48f03771b0ef30d3cddd1797fd075"},
+		// workspace-018 R2 (GOAL-003 D-001): account email identity columns +
+		// lower(email) unique expression index.
+		{"core.auth-session", "account_email_identity", "f9a0bc654dffece5610e30097c04730654a7e9b40f4bdbe253ab04ec87032b0b"},
+		// workspace-018 R3 (GOAL-004 D-001 §1): per-user active verification
+		// challenge table (bind-reserves-slot delivery state).
+		{"core.auth-session", "email_verification_challenges", "1556bda28a7fb995807eea2b376a35ea79cf497fa76c73171b2973304ce5b754"},
+		// workspace-019 R2 (GOAL-003 D-001 §1): per-user active self-recovery
+		// challenge table (forgot-password delivery state).
+		{"core.auth-session", "password_recovery_challenges", "e19db1a293a013e801abbf60c47be55174dec7f8722fd2a5cd05eb971b4520c3"},
+		// workspace-019 R3 (GOAL-004 D-001 §1): singleton policy row + history
+		// store + admin invitation table.
+		{"core.auth-session", "password_policy", "bfc7c4f292ad6d1574078d2ad9b34e63e67635290de7004d610aac731d261647"},
+		{"core.auth-session", "user_password_history", "04f77fdcbf7fba87761c51d58a02e5839b65a3cfcf3f6bf6ea6a95b98151d4db"},
+		{"core.auth-session", "user_invites", "a35bbb213cb12b962b3b0eb76fa26d971aa0a01662cf78c6022c84a6c951521e"},
+		// W26 (GOAL-038 D-001 §2.1): mail_outbox gains channel + delivery
+		// status columns (portable additive ALTER; all-channel outbound log).
+		{"core.persistence", "mail_outbox_channels", "6f9d3771311188d57f60081238c237c1215594a3d9a00396c0549c715430377e"},
+		// GOAL-014 D-002 (W13 F-007): per-(account|source) login-lockout state
+		// + users.last_login_failure_at (global-ceiling 24h sliding restart).
+		{"core.auth-session", "login_failures", "b1c8dd0269c8b2e780a7d5803e5cc99e7a6f0ba612fd5f07bb73fb18b8084015"},
+		// workspace-020 R3 (contract §4.1): site-wide default currency column
+		// (additive ALTER on site_settings; no new objects).
+		{"admin.settings", "site_default_currency", "74ede1278137b3ce454255c87283315dbff69fed4e64cf18950bf9b8bb104391"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

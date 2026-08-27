@@ -37,6 +37,13 @@ func NewRepository(runner TxRunner) *Repository {
 	return &Repository{runner: runner}
 }
 
+// escapeLikePattern escapes SQL LIKE metacharacters in user-supplied search
+// input so the value matches literally (W13 F-011 · GOAL-013 A-001). Every
+// clause using it must pin ESCAPE '\'.
+func escapeLikePattern(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
+}
+
 // Domain sentinels mapped by the handler to frozen error codes.
 var (
 	ErrNotFound            = errors.New("wallet account not found")
@@ -153,9 +160,12 @@ func (r *Repository) ListAccounts(filter ListFilter) ([]Account, int, error) {
 		if filter.Q != "" {
 			// R4 S2: portable case-insensitive search (sqlite LIKE is CI for
 			// ASCII; postgres LIKE is CS). LOWER(...) LIKE LOWER(?) restores
-			// parity on both dialects.
-			where += " AND (LOWER(owner_id) LIKE LOWER(?) OR LOWER(owner_type) LIKE LOWER(?) OR LOWER(currency) LIKE LOWER(?))"
-			like := "%" + filter.Q + "%"
+			// parity on both dialects. W13 F-011 (GOAL-013 A-001): q is escaped
+			// and the pattern pins ESCAPE '\' so user input cannot inject %
+			// / _ wildcards (scan amplification + character-by-character
+			// probing).
+			where += " AND (LOWER(owner_id) LIKE LOWER(?) ESCAPE '\\' OR LOWER(owner_type) LIKE LOWER(?) ESCAPE '\\' OR LOWER(currency) LIKE LOWER(?) ESCAPE '\\')"
+			like := "%" + escapeLikePattern(filter.Q) + "%"
 			args = append(args, like, like, like)
 		}
 		if filter.OwnerType != "" {
@@ -582,8 +592,8 @@ func (r *Repository) ListEntries(accountID, entryType, q string, page, pageSize 
 			args = append(args, entryType)
 		}
 		if q != "" {
-			where += " AND (lower(COALESCE(memo,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(ref_type,'')) LIKE '%' || CAST(? AS TEXT) || '%' OR lower(COALESCE(ref_id,'')) LIKE '%' || CAST(? AS TEXT) || '%')"
-			lq := strings.ToLower(q)
+			where += " AND (lower(COALESCE(memo,'')) LIKE '%' || CAST(? AS TEXT) || '%' ESCAPE '\\' OR lower(COALESCE(ref_type,'')) LIKE '%' || CAST(? AS TEXT) || '%' ESCAPE '\\' OR lower(COALESCE(ref_id,'')) LIKE '%' || CAST(? AS TEXT) || '%' ESCAPE '\\')"
+			lq := escapeLikePattern(strings.ToLower(q))
 			args = append(args, lq, lq, lq)
 		}
 		if err := tx.QueryRow(context.Background(), "SELECT COUNT(*) FROM wallet_ledger_entries "+where, args...).Scan(&total); err != nil {

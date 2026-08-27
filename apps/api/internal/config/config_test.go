@@ -1063,3 +1063,84 @@ func TestDBPoolKnobs(t *testing.T) {
 		t.Errorf("unset pool knobs: open=%d idle=%d lifetime=%v, want 0/0/0", cfg3.DBPoolMaxOpen, cfg3.DBPoolMaxIdle, cfg3.DBConnLifetime)
 	}
 }
+
+// TestHTTPShutdownTimeout covers the VP-021 contract v0.1.0 §6 drain budget:
+// default 10s, YAML/env overrides, and strict fail-closed parsing (unparsable
+// or <=0 values are startup errors in every environment).
+func TestHTTPShutdownTimeout(t *testing.T) {
+	t.Run("default 10s", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\n")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.HTTPShutdownTimeout != 10*time.Second {
+			t.Errorf("HTTPShutdownTimeout = %v, want default 10s", cfg.HTTPShutdownTimeout)
+		}
+	})
+
+	t.Run("yaml override", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\nhttp:\n  shutdown_timeout: 7s\n")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.HTTPShutdownTimeout != 7*time.Second {
+			t.Errorf("HTTPShutdownTimeout = %v, want 7s", cfg.HTTPShutdownTimeout)
+		}
+	})
+
+	t.Run("env overrides yaml", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\nhttp:\n  shutdown_timeout: 8s\n")
+		t.Setenv("HTTP_SHUTDOWN_TIMEOUT", "5s")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.HTTPShutdownTimeout != 5*time.Second {
+			t.Errorf("HTTPShutdownTimeout = %v, want env override 5s", cfg.HTTPShutdownTimeout)
+		}
+	})
+
+	t.Run("yaml invalid value fails closed", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\nhttp:\n  shutdown_timeout: bogus\n")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("LoadError = nil, want fail-closed on invalid http.shutdown_timeout")
+		}
+		if err := cfg.ValidateProd(); err == nil {
+			t.Error("ValidateProd = nil, want startup failure for invalid shutdown_timeout")
+		}
+	})
+
+	t.Run("yaml empty value fails closed", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\nhttp:\n  shutdown_timeout: \"\"\n")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("LoadError = nil, want fail-closed on empty http.shutdown_timeout")
+		}
+	})
+
+	t.Run("env invalid value fails closed", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\n")
+		t.Setenv("HTTP_SHUTDOWN_TIMEOUT", "bogus")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("LoadError = nil, want fail-closed on invalid HTTP_SHUTDOWN_TIMEOUT")
+		}
+	})
+
+	t.Run("non-positive value fails closed", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\n")
+		t.Setenv("HTTP_SHUTDOWN_TIMEOUT", "0s")
+		cfg := Load()
+		if cfg.LoadError == nil {
+			t.Fatal("LoadError = nil, want fail-closed on HTTP_SHUTDOWN_TIMEOUT=0s")
+		}
+		t.Setenv("HTTP_SHUTDOWN_TIMEOUT", "-1s")
+		cfg2 := Load()
+		if cfg2.LoadError == nil {
+			t.Fatal("LoadError = nil, want fail-closed on negative HTTP_SHUTDOWN_TIMEOUT")
+		}
+	})
+}

@@ -25,11 +25,18 @@ type Provider struct {
 	a          *auth.Authenticator
 	repository *authsession.Repository
 	operations operationlog.Recorder
+	// mailSender is THE composed kernel.MailSender (workspace-019 R3):
+	// invitation letters ride it when an invite carries a target email.
+	mailSender kernel.MailSender
+	// publicBaseURL is the optional canonical external origin for emailed
+	// invite links (W13 F-006 · GOAL-013 A-001); empty keeps the
+	// request-derived fallback.
+	publicBaseURL string
 }
 
 // New constructs the users provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations}
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, mailSender kernel.MailSender, publicBaseURL string) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, mailSender: mailSender, publicBaseURL: publicBaseURL}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -44,10 +51,12 @@ func (p *Provider) Descriptor() kernel.Module {
 				"GET /api/users", "GET /api/users/{id}", "POST /api/users",
 				"PATCH /api/users/{id}", "DELETE /api/users/{id}",
 				"POST /api/users/batch-delete",
+				"GET /api/users/invites", "POST /api/users/invites",
+				"DELETE /api/users/invites/{id}", "POST /api/users/invites/{id}/resend",
 			},
-			Pages:       []string{"users"},
+			Pages:       []string{"users", "users-invites"},
 			Navigation:  []string{"menu_users"},
-			Permissions: []string{"users.read", "users.write"},
+			Permissions: []string{"users.read", "users.write", "users.invite"},
 			Fragments:   []string{"users"},
 		},
 	}
@@ -63,6 +72,13 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			return err
 		}
 	}
+	// workspace-019 R3 (GOAL-004 D-001 §3): invitation management quartet,
+	// gated by the users.invite permission inside the handler.
+	for _, route := range handler.InviteAdminRoutes(p.a, p.repository, p.mailSender, p.operations, ModuleID, p.publicBaseURL) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
 	if err := reg.Schema(kernel.PageContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users"},
 		PageID:               "users",
@@ -74,9 +90,24 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
+	// workspace-019 UX polish: invitation management lives on its own child
+	// page (data-dictionary → dictionary-entries precedent); the users page
+	// toolbar holds the users.invite-gated entry navigation.
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users-invites"},
+		PageID:               "users-invites",
+		Resources:            []string{"users", "invites"},
+		Actions:              []string{"list", "create"},
+		DataSource:           "/api/users/invites",
+		Owner:                ModuleID,
+		Document:             usersschema.SchemaDocuments()["users-invites"],
+	}); err != nil {
+		return err
+	}
 	for _, permission := range []kernel.PermissionContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.read"}, Permission: "users.read", Resource: "users", Action: "read", PolicyID: authsessiondata.PolicyAdminEditorViewer, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.write"}, Permission: "users.write", Resource: "users", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "users.invite"}, Permission: "users.invite", Resource: "users", Action: "invite", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	} {
 		if err := reg.Authorization(permission); err != nil {
 			return err

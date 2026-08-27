@@ -10,9 +10,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
@@ -60,6 +61,13 @@ func NewRepository(runner TxRunner) *Repository {
 	return &Repository{runner: runner}
 }
 
+// escapeLikePattern escapes SQL LIKE metacharacters in user-supplied search
+// input so the value matches literally (W13 F-011 · GOAL-013 A-001). Every
+// clause using it must pin ESCAPE '\'.
+func escapeLikePattern(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
+}
+
 // Record inserts one snapshot (S-12 · GOAL-012 D-002 §2).
 func (r *Repository) Record(item Item) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
@@ -98,9 +106,11 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 		if filter.Q != "" {
 			// R4 S2: portable case-insensitive search (sqlite LIKE is CI for
 			// ASCII; postgres LIKE is CS). LOWER(...) LIKE LOWER(?) restores
-			// parity on both dialects.
-			where += ` AND (LOWER(resource_id) LIKE LOWER(?) OR LOWER(actor_name) LIKE LOWER(?))`
-			like := "%" + filter.Q + "%"
+			// parity on both dialects. W13 F-011 (GOAL-013 A-001): q is escaped
+			// with ESCAPE '\' pinned so user input cannot inject % / _
+			// wildcards.
+			where += ` AND (LOWER(resource_id) LIKE LOWER(?) ESCAPE '\\' OR LOWER(actor_name) LIKE LOWER(?) ESCAPE '\\')`
+			like := "%" + escapeLikePattern(filter.Q) + "%"
 			args = append(args, like, like)
 		}
 		order := "DESC"

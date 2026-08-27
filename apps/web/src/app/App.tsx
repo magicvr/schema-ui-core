@@ -34,6 +34,7 @@ import {
 import { projectNavigation, type ProjectedItem } from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TimezoneSwitcher } from "@/components/timezone-switcher";
 import { Breadcrumbs, resolveBreadcrumbTrail } from "@/components/ui/breadcrumbs";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
@@ -188,6 +189,8 @@ const BREADCRUMB_PAGE_PARENTS: Record<string, string> = {
   "task-runs": "scheduled-tasks",
   // GOAL-020 (user 2026-08-16): wallet entries is the wallet inner page.
   "wallet-entries": "wallet",
+  // workspace-019: invitation management is the users inner page.
+  "users-invites": "users",
 };
 
 // Parses the current URL's query string into a plain record; deep-linked query
@@ -516,6 +519,7 @@ function SchemaPageSurface({
   context,
   fetcher,
   resourceFetcher,
+  schemaDocumentCache,
   onNavigate,
 }: {
   page: PageEntry;
@@ -524,6 +528,8 @@ function SchemaPageSurface({
   context: NavigationContext;
   fetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
+  /** Shell-owned schema document cache (skips fetch + D-VAL on repeat visits). */
+  schemaDocumentCache?: Map<string, unknown>;
   /** Session-internal navigation for schema navigate actions (GOAL-015 F-001). */
   onNavigate?: (url: string) => void;
 }) {
@@ -533,7 +539,7 @@ function SchemaPageSurface({
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading" });
-    loadPageDocument(page, params, { fetcher })
+    loadPageDocument(page, params, { fetcher, cache: schemaDocumentCache })
       .then((document) => {
         if (!cancelled) {
           setState({ status: "ready", document });
@@ -594,6 +600,7 @@ function PageSurface({
   navigationContext,
   schemaFetcher,
   resourceFetcher,
+  schemaDocumentCache,
 }: {
   manifest: AppManifest;
   path: string;
@@ -602,6 +609,8 @@ function PageSurface({
   navigationContext: NavigationContext;
   schemaFetcher?: typeof fetch;
   resourceFetcher?: typeof fetch;
+  /** Shell-owned schema document cache (skips fetch + D-VAL on repeat visits). */
+  schemaDocumentCache?: Map<string, unknown>;
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
@@ -704,6 +713,7 @@ function PageSurface({
           context={navigationContext}
           fetcher={schemaFetcher}
           resourceFetcher={resourceFetcher}
+          schemaDocumentCache={schemaDocumentCache}
           onNavigate={onNavigate}
         />
       </div>
@@ -733,6 +743,11 @@ export function App({
     parseLocationQuery(),
   );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // W19 perf (2026-08): page schema documents are static per (schemaUrl,
+  // params) until a full reload. Holding them in memory (shell-instance
+  // scope) skips one fetch + one D-VAL pass on every navigation; a re-login
+  // remounts the shell and starts a fresh map.
+  const [schemaDocumentCache] = useState(() => new Map<string, unknown>());
   const t = useTranslate();
   const [branding, setBranding] = useState<Branding>(
     () => brandingProp ?? defaultBranding(),
@@ -922,9 +937,11 @@ export function App({
 
           {/* T-01 (GOAL-013 D-002): user nav + signout folded into the user dropdown. */}
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
-            {/* W13 T-04: theme toggle on the left, language switcher on the right. */}
+            {/* W13 T-04: theme toggle on the left, language switcher on the right;
+                workspace-020 R2: timezone switcher shares the header locale channel. */}
             <ThemeToggle />
             <LocaleSwitcher className="inline-flex" />
+            <TimezoneSwitcher className="inline-flex" />
             {currentUser !== undefined && currentUser !== null ? (
               <NotificationBell
                 fetcher={resourceFetcher}
@@ -1021,6 +1038,7 @@ export function App({
               navigationContext={navigationContext}
               schemaFetcher={schemaFetcher}
               resourceFetcher={resourceFetcher}
+              schemaDocumentCache={schemaDocumentCache}
             />
           </div>
         </main>

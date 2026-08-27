@@ -48,11 +48,20 @@ type MFARequiredError struct {
 
 func (e *MFARequiredError) Error() string { return "auth: second factor required" }
 
-// Account-lock policy (GOAL-004 S4-6): 5 consecutive password failures open a
-// 15-minute lock window; the lock expires automatically once now passes
-// locked_until and a successful login resets the counter.
+// Account-lock policy (GOAL-004 S4-6 → GOAL-014 D-002 layered model):
+//   - PER-SOURCE lock: 5 consecutive failures from ONE client identity lock
+//     only that (account|source) pair for 15 minutes — a third party who
+//     knows a username can no longer deny the legitimate user (W13 F-007).
+//   - GLOBAL ceiling: the account-wide consecutive counter opens a 15-minute
+//     lock at 100 failures (24h sliding restart), keeping a distributed-
+//     guessing brake while making targeted abuse 20× more expensive and
+//     admin-visible via OnLockOpened.
+//   - NO revocation is triggered by login failures anymore: forced logout
+//     was the weaponizable edge of the old model; genuine compromise
+//     response remains password change (token_version bump) / admin disable.
 const (
-	LockThresholdFailures   = 5
+	LockThresholdFailures   = 100
+	IPSourceLockThreshold   = 5
 	LockWindow              = 15 * time.Minute
 	serviceCredentialPrefix = "sui_sc_"
 )
@@ -66,9 +75,13 @@ type Repository interface {
 	RevokeRefreshToken(string, time.Time) error
 	PermissionsForUser(string) ([]string, error)
 	FeaturesForUser(string) (map[string]bool, error)
-	// Account-lock surface (GOAL-004 S4-6).
+	// Account-lock surface (GOAL-004 S4-6 → GOAL-014 D-002 layered model).
 	RecordLoginFailure(string, int, time.Time, time.Time) (bool, error)
 	ResetLoginFailures(string, time.Time) error
+	// Per-(account|source) lockout (GOAL-014 · W13 F-007).
+	RecordLoginFailureFor(userID, ip string, threshold int, lockedUntil time.Time, now time.Time) (bool, error)
+	LoginLockedFor(userID, ip string, now time.Time) (bool, error)
+	ResetLoginFailuresFor(userID string) error
 	RevokeAllRefreshTokensForUser(string, time.Time) error
 	ServiceCredentialByHash(string) (*authsession.ServiceCredential, error)
 	MarkServiceCredentialUsed(string, time.Time) error
@@ -170,7 +183,15 @@ var timingDummyHash = func() string {
 // access/refresh token pair. Fail-closed: a missing user and a bad password
 // both yield ErrInvalidCredentials (no user enumeration). A locked account
 // (locked_until in the future) yields ErrAccountLocked before password work.
-func (a *Authenticator) Login(username, password string, now time.Time) (accessToken, refreshToken string, user account.User, err error) {
+//
+// clientIP is the optional rate-limiting client identity (GOAL-014 D-002):
+// when supplied, per-source failures lock only that (account|source) pair;
+// absent (variadic-empty, tests/dev) all failures share one legacy bucket.
+func (a *Authenticator) Login(username, password string, now time.Time, clientIP ...string) (accessToken, refreshToken string, user account.User, err error) {
+	source := ""
+	if len(clientIP) > 0 {
+		source = clientIP[0]
+	}
 	u, err := a.repository.UserByUsername(username)
 	if errors.Is(err, authsession.ErrNotFound) {
 		VerifyPassword(timingDummyHash, password)
@@ -179,7 +200,15 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 	if err != nil {
 		return "", "", account.User{}, err
 	}
-	if u.LockedUntil > now.Unix() {
+	// GOAL-014 F-007: the per-(account|source) lock is checked FIRST and is
+	// fail-closed on storage errors — a third party's failures from other
+	// sources never reach this pair's bucket, so the legitimate user keeps
+	// logging in from their own device while the abusive source is denied.
+	pairLocked, err := a.repository.LoginLockedFor(u.ID, source, now)
+	if err != nil {
+		return "", "", account.User{}, err
+	}
+	if u.LockedUntil > now.Unix() || pairLocked {
 		// W11 F-007 (D2 residual): burn the same bcrypt time as a wrong
 		// password before surfacing the terminal state, so the locked-account
 		// fast path cannot be used to enumerate existing usernames by timing.
@@ -195,19 +224,19 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 		return "", "", account.User{}, ErrAccountDisabled
 	}
 	if !VerifyPassword(u.PasswordHash, password) {
-		// Consecutive-failure accounting: reaching the threshold opens the lock
-		// window. When the lock just opened, live sessions are revoked too — a
-		// locked account must not keep rotating (access tokens still expire
-		// normally; refresh rotation is the durable session channel).
+		// Layered failure accounting (GOAL-014 D-002): the source bucket may
+		// open its pair lock; the global ceiling keeps its 24h-sliding brake.
+		// Neither opens any session revocation anymore — forced logout was
+		// the weaponizable edge of the old model.
+		if _, err := a.repository.RecordLoginFailureFor(u.ID, source, IPSourceLockThreshold, now.Add(LockWindow), now); err != nil {
+			return "", "", account.User{}, err
+		}
 		locked, err := a.repository.RecordLoginFailure(u.ID, LockThresholdFailures, now.Add(LockWindow), now)
 		if err != nil {
 			return "", "", account.User{}, err
 		}
-		if locked {
-			_ = a.repository.RevokeAllRefreshTokensForUser(u.ID, now)
-			if a.OnLockOpened != nil {
-				a.OnLockOpened(u.ID)
-			}
+		if locked && a.OnLockOpened != nil {
+			a.OnLockOpened(u.ID)
 		}
 		return "", "", account.User{}, ErrInvalidCredentials
 	}
@@ -215,6 +244,9 @@ func (a *Authenticator) Login(username, password string, now time.Time) (accessT
 		if err := a.repository.ResetLoginFailures(u.ID, now); err != nil {
 			return "", "", account.User{}, err
 		}
+	}
+	if err := a.repository.ResetLoginFailuresFor(u.ID); err != nil {
+		return "", "", account.User{}, err
 	}
 	// S-10 (GOAL-017 D-002 §3): the second factor gates token issuance after
 	// the password factor succeeded. nil enforcer → original behavior.

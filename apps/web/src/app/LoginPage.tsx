@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-import { AuthError, type LoginCaptcha } from "@/account/auth-client";
+import { AuthError, recoveryComplete, recoveryStart, type LoginCaptcha } from "@/account/auth-client";
 import {
   applyDocumentBranding,
   defaultBranding,
@@ -25,6 +25,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslate } from "@/i18n/runtime";
 import { applySystemDefaultTheme } from "@/theme/theme";
+
+/**
+ * Maps a stable recovery error code to a catalog key (workspace-019 R2 ·
+ * GOAL-003 D-001 §2; server codes are the single source of truth).
+ */
+function recoveryErrorKey(code: string): string {
+  switch (code) {
+    case "LOGIN_NETWORK":
+      return "login.error.network";
+    case "EMAIL_RESEND_COOLDOWN":
+      return "login.recovery.error.cooldown";
+    case "RECOVERY_CODE_INVALID":
+      return "login.recovery.error.codeInvalid";
+    case "RECOVERY_CODE_EXPIRED":
+      return "login.recovery.error.codeExpired";
+    case "RECOVERY_SECOND_FACTOR_REQUIRED":
+      return "login.recovery.error.secondFactorRequired";
+    case "MFA_INVALID":
+      return "login.error.mfaInvalid";
+    case "INVALID_PASSWORD":
+      return "login.recovery.error.passwordPolicy";
+    case "EMAIL_SEND_FAILED":
+      return "login.recovery.error.sendFailed";
+    default:
+      return "login.error.generic";
+  }
+}
 
 /**
  * Maps a stable auth error code to a catalog key (frontend localization
@@ -110,6 +137,21 @@ export function LoginPage({
   const [mfaRecovery, setMfaRecovery] = useState("");
   const mfaResolverRef = useRef<((v: { code: string; recoveryCode?: string }) => void) | null>(null);
   const mfaCancelRef = useRef<(() => void) | null>(null);
+  // workspace-019 R2 (GOAL-003 D-001 §2): two-step self-recovery — step 1
+  // requests the email code, step 2 carries code (+ second factor for MFA
+  // accounts) and the replacement password. Success returns WITHOUT tokens:
+  // the user signs in with the new password.
+  const [mode, setMode] = useState<"signin" | "recover">("signin");
+  const [recStep, setRecStep] = useState<1 | 2>(1);
+  const [recAccount, setRecAccount] = useState("");
+  const [recCode, setRecCode] = useState("");
+  const [recNewPassword, setRecNewPassword] = useState("");
+  const [recSecondFactor, setRecSecondFactor] = useState("");
+  const [recRecoveryCode, setRecRecoveryCode] = useState("");
+  const [recSecondFactorNeeded, setRecSecondFactorNeeded] = useState(false);
+  const [recSubmitting, setRecSubmitting] = useState(false);
+  const [recError, setRecError] = useState<string | null>(null);
+  const [recDone, setRecDone] = useState(false);
   const showSeedHint = import.meta.env.DEV;
 
   useEffect(() => {
@@ -154,8 +196,7 @@ export function LoginPage({
     refreshCaptcha();
   }, [refreshCaptcha]);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit(event: FormEvent) {    event.preventDefault();
     if (submitting) {
       return;
     }
@@ -205,6 +246,88 @@ export function LoginPage({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  /** workspace-019 R2: step 1 — request the reset code (enumeration-neutral:
+   * the server answers dispatched even when no recovery path exists). */
+  async function handleRecoveryStart(event: FormEvent) {
+    event.preventDefault();
+    if (recSubmitting || recAccount.trim() === "") {
+      return;
+    }
+    setRecSubmitting(true);
+    setRecError(null);
+    try {
+      await recoveryStart(recAccount.trim());
+      setRecStep(2);
+      setRecSecondFactorNeeded(false);
+    } catch (err: unknown) {
+      const code = err instanceof AuthError ? err.code : "LOGIN_UNKNOWN";
+      setError(null);
+      if (code === "EMAIL_RESEND_COOLDOWN") {
+        // The code from a previous request may still be valid — jump ahead.
+        setRecStep(2);
+      } else {
+        setRecError(t(recoveryErrorKey(code)));
+      }
+    } finally {
+      setRecSubmitting(false);
+    }
+  }
+
+  /** workspace-019 R2: step 2 — verify code (+ second factor) and rotate the
+   * password. RECOVERY_SECOND_FACTOR_REQUIRED flips the extra fields in. */
+  async function handleRecoveryComplete(event: FormEvent) {
+    event.preventDefault();
+    if (recSubmitting || recCode.trim() === "" || recNewPassword === "") {
+      return;
+    }
+    setRecSubmitting(true);
+    setRecError(null);
+    try {
+      await recoveryComplete({
+        account: recAccount.trim(),
+        code: recCode.trim(),
+        newPassword: recNewPassword,
+        ...(recSecondFactor.trim() === "" ? {} : { secondFactorCode: recSecondFactor.trim() }),
+        ...(recRecoveryCode.trim() === "" ? {} : { recoveryCode: recRecoveryCode.trim() }),
+      });
+      setRecDone(true);
+    } catch (err: unknown) {
+      const code = err instanceof AuthError ? err.code : "LOGIN_UNKNOWN";
+      if (code === "RECOVERY_SECOND_FACTOR_REQUIRED") {
+        setRecSecondFactorNeeded(true);
+        setRecError(t("login.recovery.error.secondFactorRequired"));
+        return;
+      }
+      if (code === "RECOVERY_CODE_EXPIRED") {
+        // The challenge is voided/expired — restart at step 1 with the hint.
+        setRecStep(1);
+        setRecCode("");
+        setRecNewPassword("");
+        setRecSecondFactor("");
+        setRecRecoveryCode("");
+        setRecSecondFactorNeeded(false);
+        setRecError(t("login.recovery.error.codeExpired"));
+        return;
+      }
+      setRecError(t(recoveryErrorKey(code)));
+    } finally {
+      setRecSubmitting(false);
+    }
+  }
+
+  function backToSignIn(): void {
+    setMode("signin");
+    setRecStep(1);
+    setRecAccount("");
+    setRecCode("");
+    setRecNewPassword("");
+    setRecSecondFactor("");
+    setRecRecoveryCode("");
+    setRecSecondFactorNeeded(false);
+    setRecError(null);
+    setRecDone(false);
   }
 
   const showLogo = branding.logoUrl !== "";
@@ -399,9 +522,170 @@ export function LoginPage({
               >
                 {submitting ? t("login.signingIn") : t("login.signIn")}
               </Button>
+              <button
+                type="button"
+                data-recovery-link
+                className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                onClick={() => {
+                  setMode("recover");
+                  setRecStep(1);
+                  setRecDone(false);
+                  setRecError(null);
+                }}
+              >
+                {t("login.recovery.link")}
+              </button>
             </CardFooter>
           </form>
         </Card>
+
+        {mode === "recover" ? (
+          <Card className="shadow-md" data-recovery-surface>
+            {recDone ? (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  backToSignIn();
+                }}
+                aria-label={t("login.recovery.title")}
+              >
+                <CardHeader className="space-y-1 pb-4">
+                  <CardTitle className="text-2xl tracking-tight" data-recovery-done-title>
+                    {t("login.recovery.title")}
+                  </CardTitle>
+                  <CardDescription>{t("login.recovery.success")}</CardDescription>
+                </CardHeader>
+                <CardContent />
+                <CardFooter className="flex-col gap-3">
+                  <Button type="submit" className="w-full">
+                    {t("login.recovery.back")}
+                  </Button>
+                </CardFooter>
+              </form>
+            ) : recStep === 1 ? (
+              <form onSubmit={handleRecoveryStart} aria-label={t("login.recovery.title")}>
+                <CardHeader className="space-y-1 pb-4">
+                  <CardTitle className="text-2xl tracking-tight">{t("login.recovery.title")}</CardTitle>
+                  <CardDescription>{t("login.recovery.description")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recoveryAccount">{t("login.recovery.account")}</Label>
+                    <Input
+                      id="recoveryAccount"
+                      name="account"
+                      autoComplete="username"
+                      placeholder={t("login.recovery.accountPlaceholder")}
+                      value={recAccount}
+                      onChange={(event) => setRecAccount(event.target.value)}
+                    />
+                  </div>
+                  {recError !== null ? (
+                    <p role="alert" data-recovery-error className="text-sm text-destructive">
+                      {recError}
+                    </p>
+                  ) : null}
+                </CardContent>
+                <CardFooter className="flex-col gap-3">
+                  <Button
+                    type="submit"
+                    data-recovery-send
+                    disabled={recSubmitting || recAccount.trim() === ""}
+                    className="w-full"
+                  >
+                    {recSubmitting ? t("login.signingIn") : t("login.recovery.sendCode")}
+                  </Button>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                    onClick={backToSignIn}
+                  >
+                    {t("login.recovery.back")}
+                  </button>
+                </CardFooter>
+              </form>
+            ) : (
+              <form onSubmit={handleRecoveryComplete} aria-label={t("login.recovery.title")}>
+                <CardHeader className="space-y-1 pb-4">
+                  <CardTitle className="text-2xl tracking-tight">{t("login.recovery.title")}</CardTitle>
+                  <CardDescription>{t("login.recovery.codeSent")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recoveryCode">{t("login.recovery.code")}</Label>
+                    <Input
+                      id="recoveryCode"
+                      name="code"
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={recCode}
+                      onChange={(event) => setRecCode(event.target.value)}
+                    />
+                  </div>
+                  {recSecondFactorNeeded ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="recoverySecondFactor">{t("login.recovery.secondFactor")}</Label>
+                        <Input
+                          id="recoverySecondFactor"
+                          name="secondFactorCode"
+                          autoComplete="one-time-code"
+                          inputMode="numeric"
+                          value={recSecondFactor}
+                          onChange={(event) => setRecSecondFactor(event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="recoveryMfaCode">{t("login.recovery.recoveryCode")}</Label>
+                        <Input
+                          id="recoveryMfaCode"
+                          name="recoveryCode"
+                          autoComplete="off"
+                          value={recRecoveryCode}
+                          onChange={(event) => setRecRecoveryCode(event.target.value)}
+                        />
+                      </div>
+                    </>
+                  ) : null}
+                  <div className="space-y-2">
+                    <Label htmlFor="recoveryNewPassword">{t("login.recovery.newPassword")}</Label>
+                    <Input
+                      id="recoveryNewPassword"
+                      name="newPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      value={recNewPassword}
+                      onChange={(event) => setRecNewPassword(event.target.value)}
+                    />
+                  </div>
+                  {recError !== null ? (
+                    <p role="alert" data-recovery-error className="text-sm text-destructive">
+                      {recError}
+                    </p>
+                  ) : null}
+                </CardContent>
+                <CardFooter className="flex-col gap-3">
+                  <Button
+                    type="submit"
+                    data-recovery-reset
+                    disabled={recSubmitting || recCode.trim() === "" || recNewPassword === ""}
+                    className="w-full"
+                  >
+                    {recSubmitting ? t("login.signingIn") : t("login.recovery.complete")}
+                  </Button>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                    onClick={backToSignIn}
+                  >
+                    {t("login.recovery.back")}
+                  </button>
+                </CardFooter>
+              </form>
+            )}
+          </Card>
+        ) : null}
 
         {showSeedHint ? (
           <p className="mt-4 text-center text-xs text-muted-foreground">

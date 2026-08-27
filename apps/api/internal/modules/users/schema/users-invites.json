@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "pageId": "users-invites",
+    "title": "Invitations",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended"
+    ]
+  },
+  "actions": {
+    "revokeInvite": {
+      "type": "request",
+      "method": "DELETE",
+      "url": "/api/users/invites/{id}",
+      "bodyMapping": {},
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "resendInvite": {
+      "type": "modal",
+      "content": {
+        "type": "custom",
+        "component": "invite-resend-dialog",
+        "props": {}
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "users-invites",
+    "children": [
+      {
+        "type": "custom",
+        "id": "invite-issue-card",
+        "component": "invite-issue-card",
+        "props": {}
+      },
+      {
+        "type": "form",
+        "id": "invites-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "invites-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.usersInvites.search.q"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "invite.panel.filter",
+              "options": [
+                {
+                  "value": "",
+                  "label": "All",
+                  "labelKey": "invite.panel.filterAll"
+                },
+                {
+                  "value": "pending",
+                  "labelKey": "invite.panel.filterPending"
+                },
+                {
+                  "value": "consumed",
+                  "labelKey": "invite.panel.filterConsumed"
+                },
+                {
+                  "value": "revoked",
+                  "labelKey": "invite.panel.filterRevoked"
+                },
+                {
+                  "value": "expired",
+                  "labelKey": "invite.panel.filterExpired"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "invites-table",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"users.invite\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "field": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "field": "email",
+              "label": "Email",
+              "labelKey": "invite.panel.email"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "invite.panel.status"
+            },
+            {
+              "field": "expiresAt",
+              "label": "Expires",
+              "labelKey": "invite.panel.expires",
+              "sortable": true
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.users.column.created",
+              "sortable": true
+            }
+          ],
+          "dataSource": "/api/users/invites",
+          "actions": [
+            {
+              "key": "revoke",
+              "label": "Revoke",
+              "actionRef": "revokeInvite",
+              "permissionIntent": "edit",
+              "labelKey": "invite.panel.revoke",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "confirm": "Revoke this invitation?",
+              "confirmKey": "invite.panel.confirmRevoke",
+              "disabledWhen": {
+                "field": "revokable",
+                "equals": false
+              }
+            },
+            {
+              "key": "resend",
+              "label": "Resend",
+              "actionRef": "resendInvite",
+              "permissionIntent": "edit",
+              "labelKey": "invite.panel.resend",
+              "disabledWhen": {
+                "field": "revokable",
+                "equals": false
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "recordView",
+        "id": "invite-detail",
+        "props": {
+          "title": "Invitation details",
+          "titleKey": "invite.detail.title",
+          "fields": [
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.users.column.id"
+            },
+            {
+              "key": "roles",
+              "label": "Roles",
+              "labelKey": "schema.users.column.roles"
+            },
+            {
+              "key": "email",
+              "label": "Email",
+              "labelKey": "invite.panel.email"
+            },
+            {
+              "key": "status",
+              "label": "Status",
+              "labelKey": "invite.panel.status"
+            },
+            {
+              "key": "invitedBy",
+              "label": "Invited by",
+              "labelKey": "invite.detail.invitedBy"
+            },
+            {
+              "key": "expiresAt",
+              "label": "Expires",
+              "labelKey": "invite.panel.expires"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.users.column.created"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

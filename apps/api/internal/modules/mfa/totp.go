@@ -9,6 +9,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
+	"crypto/subtle"
 	"encoding/base32"
 	"encoding/binary"
 	"fmt"
@@ -54,16 +55,19 @@ func totpCode(secretBase32 string, step int64) (string, error) {
 
 // ValidateTotp checks a 6-digit code within ±window steps around now. It
 // returns the matched time step (for same-step replay rejection) and true on
-// success. A matched step <= lastUsedStep is rejected as a replay.
+// success. A matched step <= lastUsedStep is rejected as a replay. The
+// candidate comparison is constant-time (W13 F-005 · GOAL-013 A-001), matching
+// the recovery/email code paths.
 func ValidateTotp(secretBase32, code string, now time.Time, window int, lastUsedStep int64) (int64, bool) {
 	step := now.Unix() / totpPeriodSeconds
+	trimmed := strings.TrimSpace(code)
 	for offset := -window; offset <= window; offset++ {
 		candidate := step + int64(offset)
 		want, err := totpCode(secretBase32, candidate)
 		if err != nil {
 			return 0, false
 		}
-		if want == strings.TrimSpace(code) {
+		if subtle.ConstantTimeCompare([]byte(want), []byte(trimmed)) == 1 {
 			if candidate <= lastUsedStep {
 				return 0, false // same-window replay rejected (D-002 §6)
 			}

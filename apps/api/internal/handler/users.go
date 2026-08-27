@@ -44,6 +44,7 @@ type UsersRepository interface {
 	DeleteUser(string, string) error
 	DeleteUsersBatch([]string, string) (int, error)
 	PermissionsForRoles([]string) ([]string, error)
+	ValidateNewPassword(userID, plain string) error
 }
 
 func usersResource(repository UsersRepository, operations operationlog.Recorder) Resource {
@@ -64,7 +65,10 @@ func usersResourceWithNotifier(repository UsersRepository, operations operationl
 		Entity:          &usersEntity{repository: repository, notifier: notifier},
 		CreateFields:    []string{"username", "name"},
 		PatchFields:     []string{"name"},
-		RawStringFields: []string{"password"},
+		// workspace-018 R3 (I-006): managed email prefill travels raw so an
+		// explicit "" can CLEAR the address back to unbound (PatchFields
+		// rejects empty strings); Update() type-asserts string.
+		RawStringFields: []string{"password", "email"},
 		JSONFields:      []string{"roles"},
 		PermissionRead:  "users.read",
 		PermissionWrite: "users.write",
@@ -95,8 +99,22 @@ type usersEntity struct {
 
 // userToMap maps a persisted user to the API row. password_hash is intentionally
 // absent; createdAt/updatedAt serialize with the frozen 3-digit-millisecond shape.
+// W26 (GOAL-038 D-001 §1): the managed email identity rides every read face —
+// email/emailStatus are the raw identity pair (nil = unbound) and
+// emailStatusStyle is the W16-F09 badge preset (verified→success,
+// pending→warning, unbound→"") so the list column carries binding semantics
+// without a renderer value-mapping capability.
 func userToMap(u authsession.User) map[string]any {
 	locked := u.LockedUntil > time.Now().UTC().Unix()
+	emailStatusStyle := ""
+	switch {
+	case u.EmailStatus == nil:
+		emailStatusStyle = ""
+	case *u.EmailStatus == "verified":
+		emailStatusStyle = "success"
+	case *u.EmailStatus == "pending":
+		emailStatusStyle = "warning"
+	}
 	return map[string]any{
 		"id":                 u.ID,
 		"username":           u.Username,
@@ -106,6 +124,9 @@ func userToMap(u authsession.User) map[string]any {
 		"mfaEnabled":         u.MFAEnabled,
 		"mustChangePassword": u.MustChangePassword,
 		"locked":             locked,
+		"email":              u.Email,
+		"emailStatus":        u.EmailStatus,
+		"emailStatusStyle":   emailStatusStyle,
 		"createdAt":          u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"updatedAt":          u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
@@ -158,6 +179,11 @@ func (e *usersEntity) Create(body map[string]any, id string, now time.Time, acto
 	if err != nil {
 		return nil, err
 	}
+	// workspace-019 R3 (GOAL-004 D-001 §2): account creation is one of the
+	// four policy enforcement points (no history exists yet — userID empty).
+	if err := e.repository.ValidateNewPassword("", password); err != nil {
+		return nil, &DomainError{Status: 400, Code: "INVALID_PASSWORD", Message: "initial password violates the active password policy"}
+	}
 	hash, err := auth.HashPassword(password, passwordHashCost)
 	if err != nil {
 		return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
@@ -189,6 +215,11 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 		if err != nil {
 			return nil, err
 		}
+		// workspace-019 R3 (GOAL-004 D-001 §2): admin reset is one of the four
+		// policy enforcement points.
+		if err := e.repository.ValidateNewPassword(id, password); err != nil {
+			return nil, &DomainError{Status: 400, Code: "INVALID_PASSWORD", Message: "new password violates the active password policy"}
+		}
 		hash, err := auth.HashPassword(password, passwordHashCost)
 		if err != nil {
 			return nil, &DomainError{Status: 500, Code: "INTERNAL", Message: "could not hash password"}
@@ -210,6 +241,16 @@ func (e *usersEntity) Update(id string, body map[string]any, now time.Time, user
 			}
 			patch.Roles = &roles
 		}
+	}
+	// workspace-018 R3 (I-006): managed email prefill — non-empty binds and
+	// resets to pending, "" clears to unbound. Verified is unreachable here.
+	// The factory hands RawStringFields through verbatim (already decoded).
+	if v, ok := body["email"]; ok {
+		email, isString := v.(string)
+		if !isString {
+			return nil, &DomainError{Status: 400, Code: "EMAIL_INVALID", Message: "email must be a string"}
+		}
+		patch.Email = &email
 	}
 	if err := e.authorizeAdminTargetBoundary(id, patch, user); err != nil {
 		return nil, err
@@ -377,6 +418,10 @@ func mapUserStoreError(err error) error {
 		return &DomainError{Status: 409, Code: "SELF_OPERATION", Message: "self operation is not allowed"}
 	case errors.Is(err, authsession.ErrInvalidRole):
 		return &DomainError{Status: 400, Code: "INVALID_ROLE_REF", Message: "roles contain an unknown role key"}
+	case errors.Is(err, authsession.ErrEmailTaken):
+		return &DomainError{Status: 409, Code: "EMAIL_TAKEN", Message: "email already bound or pending on another account"}
+	case errors.Is(err, authsession.ErrEmailInvalid):
+		return &DomainError{Status: 400, Code: "EMAIL_INVALID", Message: "invalid email address"}
 	default:
 		return err
 	}

@@ -413,6 +413,10 @@ var DefaultNavigationOrder = []string{
 	"menu_wallet_self",
 	"menu_activity",
 	"menu_settings",
+	// W26 (GOAL-038 D-001 §2.2): standalone mail pages sit right after the
+	// settings entry they split off from.
+	"menu_mail",
+	"menu_mail_outbox",
 	"menu_notifications",
 	"menu_files",
 	"menu_dictionary",

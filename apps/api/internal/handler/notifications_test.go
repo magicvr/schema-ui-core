@@ -7,11 +7,28 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
 )
+
+// driveGlobalLock opens the GLOBAL ceiling for username through real failed
+// logins spread over distinct sources (GOAL-014 D-002: only the global lock
+// produces the account.locked notification).
+func driveGlobalLock(t *testing.T, env *authTestEnv, username string) {
+	t.Helper()
+	body := fmt.Sprintf(`{"username":%q,"password":"wrong-pass"}`, username)
+	for i := range auth.LockThresholdFailures {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.RemoteAddr = fmt.Sprintf("10.%d.%d.%d:50000", 1+i/250%250, (i/8)%250, i%8+2)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+	}
+}
 
 func notificationsList(t *testing.T, env *authTestEnv, path string) (int, map[string]any) {
 	t.Helper()
@@ -28,10 +45,10 @@ func notificationsList(t *testing.T, env *authTestEnv, path string) (int, map[st
 func TestNotificationLockEventProduced(t *testing.T) {
 	env := newAuthTestEnv(t)
 	env.addUser(t, "editor1", "editor-password", []string{"editor"})
-	// 5 failed logins open the lock window → account.locked notification.
-	for i := 0; i < 5; i++ {
-		sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", `{"username":"editor1","password":"wrong-pass"}`)
-	}
+	// GOAL-014 D-002: the account.locked user notification fires on the
+	// GLOBAL ceiling only (per-source locks stay silent — an attacker must
+	// not be able to spam a victim's notification center).
+	driveGlobalLock(t, env, "editor1")
 	// editor is locked → cannot login; check via repository directly.
 	rows, _, err := env.authRepository.ListNotifications("user-editor1", authsession.NotificationFilter{Page: 1, PageSize: 20})
 	if err != nil {
@@ -63,15 +80,13 @@ func TestNotificationDisableAndUnlockEvents(t *testing.T) {
 	if rrDup.Code != http.StatusNoContent {
 		t.Fatalf("re-disable = %d", rrDup.Code)
 	}
-	// enable → lock via 5 failures → unlock → account.unlocked
+	// enable → lock via the global ceiling → unlock → account.unlocked
 	rr3 := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr3, bearer(t, token, http.MethodPost, "/api/users/user-editor1/enable", ""))
 	if rr3.Code != http.StatusNoContent {
 		t.Fatalf("enable = %d", rr3.Code)
 	}
-	for i := 0; i < 5; i++ {
-		sendJSON(t, env.mux, http.MethodPost, "/api/auth/login", `{"username":"editor1","password":"wrong-pass"}`)
-	}
+	driveGlobalLock(t, env, "editor1")
 	rr4 := httptest.NewRecorder()
 	env.mux.ServeHTTP(rr4, bearer(t, token, http.MethodPost, "/api/users/user-editor1/unlock", ""))
 	if rr4.Code != http.StatusNoContent {

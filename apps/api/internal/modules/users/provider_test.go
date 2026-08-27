@@ -55,13 +55,14 @@ func planWithUsers(t *testing.T) kernel.Plan {
 
 func TestUsersProviderRegistersSurfaces(t *testing.T) {
 	a, _, repository, operations := newTestEnv(t)
-	provider := New(a, repository, operations)
+	provider := New(a, repository, operations, nil, "")
 	set, err := kernel.RegisterContributions(context.Background(), planWithUsers(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 
-	wantRoutes := []string{"GET /api/users", "GET /api/users/{id}", "POST /api/users", "PATCH /api/users/{id}", "DELETE /api/users/{id}", "POST /api/users/batch-delete"}
+	wantRoutes := []string{"GET /api/users", "GET /api/users/{id}", "POST /api/users", "PATCH /api/users/{id}", "DELETE /api/users/{id}", "POST /api/users/batch-delete",
+		"GET /api/users/invites", "POST /api/users/invites", "DELETE /api/users/invites/{id}", "POST /api/users/invites/{id}/resend"}
 	if len(set.Routes) != len(wantRoutes) {
 		t.Fatalf("routes = %d, want %d", len(set.Routes), len(wantRoutes))
 	}
@@ -70,10 +71,10 @@ func TestUsersProviderRegistersSurfaces(t *testing.T) {
 			t.Fatalf("route %q missing from provider set", key)
 		}
 	}
-	if len(set.Pages) != 1 || set.Pages[0].PageID != "users" || set.Pages[0].Owner != ModuleID {
-		t.Fatalf("pages = %+v, want single users page owned by %s", set.Pages, ModuleID)
+	if len(set.Pages) != 2 || set.Pages[0].PageID != "users" || set.Pages[0].Owner != ModuleID || set.Pages[1].PageID != "users-invites" {
+		t.Fatalf("pages = %+v, want users + users-invites owned by %s", set.Pages, ModuleID)
 	}
-	wantPerms := []string{"users.read", "users.write"}
+	wantPerms := []string{"users.read", "users.write", "users.invite"}
 	if len(set.Permissions) != len(wantPerms) {
 		t.Fatalf("permissions = %d, want %d", len(set.Permissions), len(wantPerms))
 	}
@@ -98,7 +99,7 @@ func TestUsersProviderRegistersSurfaces(t *testing.T) {
 func TestUsersProviderServesAuthenticatedCRUD(t *testing.T) {
 	a, st, repository, operations := newTestEnv(t)
 	plan := planWithUsers(t)
-	provider := New(a, repository, operations)
+	provider := New(a, repository, operations, nil, "")
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -154,7 +155,7 @@ func TestUsersProviderServesAuthenticatedCRUD(t *testing.T) {
 func TestUsersProviderFullCRUD(t *testing.T) {
 	a, st, repository, operations := newTestEnv(t)
 	plan := planWithUsers(t)
-	provider := New(a, repository, operations)
+	provider := New(a, repository, operations, nil, "")
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)

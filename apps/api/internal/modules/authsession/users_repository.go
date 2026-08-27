@@ -25,7 +25,8 @@ func (r *Repository) ListUsers(filter UserFilter) ([]User, int, error) {
 
 		rows, err := tx.Query(context.Background(),
 			`SELECT u.id, u.username, u.name, u.roles, u.password_hash, u.token_version, u.failed_login_count, u.locked_until, u.enabled, u.avatar_url, u.must_change_password, u.created_at, u.updated_at,
-			        EXISTS(SELECT 1 FROM user_mfa um WHERE um.user_id = u.id AND um.status = 'active') AS mfa_enabled
+			        EXISTS(SELECT 1 FROM user_mfa um WHERE um.user_id = u.id AND um.status = 'active') AS mfa_enabled,
+			        u.email, u.email_status
 			 FROM users u`+where+
 				` ORDER BY `+usersSortSQL(filter.Sort, filter.Order)+`, u.id ASC`+
 				` LIMIT ? OFFSET ?`,
@@ -127,9 +128,12 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		var rolesJSON string
 		var createdAt, updatedAt int64
 		var mustChangePassword int
+		// workspace-018 R3 (I-006): email identity read-back for the managed
+		// prefill path — NULL-safe via *string.
+		var currentEmail, currentEmailStatus *string
 		err := tx.QueryRow(context.Background(),
-			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at FROM users WHERE id = ?`, id,
-		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &mustChangePassword, &createdAt, &updatedAt)
+			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at, email, email_status FROM users WHERE id = ?`, id,
+		).Scan(&current.ID, &current.Username, &current.Name, &rolesJSON, &current.PasswordHash, &current.TokenVersion, &current.FailedLoginCount, &current.LockedUntil, &current.Enabled, &current.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &currentEmail, &currentEmailStatus)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -188,6 +192,39 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		if patch.MustChangePassword != nil {
 			mustChangePasswordFlag = *patch.MustChangePassword
 		}
+		// workspace-018 R3 (I-006 · GOAL-004 D-001 §3): managed email prefill.
+		// Non-empty → bind + reset to pending (conflict-checked against other
+		// accounts, lower(email)); "" → clear to unbound and drop any live
+		// challenge. Verified is unreachable from here by design: only a
+		// delivered code completes verification. nil = untouched. Delivery of
+		// the code happens when the user hits resend/bind on their own surface.
+		nextEmail := currentEmail
+		nextEmailStatus := currentEmailStatus
+		if patch.Email != nil {
+			requested := strings.TrimSpace(*patch.Email)
+			if requested == "" {
+				nextEmail, nextEmailStatus = nil, nil
+				if _, err := tx.Exec(context.Background(), `DELETE FROM email_verification_challenges WHERE user_id = ?`, id); err != nil {
+					return fmt.Errorf("clear challenges on unbind: %w", err)
+				}
+			} else {
+				if _, err := normalizeEmailInput(requested); err != nil {
+					return ErrEmailInvalid
+				}
+				var taken int
+				if err := tx.QueryRow(context.Background(),
+					`SELECT COUNT(*) FROM users WHERE id <> ? AND email IS NOT NULL AND lower(email) = lower(?)`,
+					id, requested,
+				).Scan(&taken); err != nil {
+					return fmt.Errorf("check email slot: %w", err)
+				}
+				if taken > 0 {
+					return ErrEmailTaken
+				}
+				requestedCopy := requested
+				nextEmail, nextEmailStatus = &requestedCopy, stringPtr("pending")
+			}
+		}
 		rolesBytes, err := json.Marshal(newRoles)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
@@ -203,10 +240,17 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		nextTokenVersion := current.TokenVersion
 		if patch.PasswordHash != nil {
 			nextTokenVersion = current.TokenVersion + 1
+			// workspace-019 R3 (GOAL-004 D-001 §2): push the OUTGOING hash
+			// into the policy-history store inside the SAME transaction;
+			// depth comes from the singleton policy row (best-effort read).
+			var historyDepth int
+			_ = tx.QueryRow(context.Background(),
+				`SELECT history_depth FROM password_policy WHERE id = 1`).Scan(&historyDepth)
+			r.capturePasswordHistory(tx, id, current.PasswordHash, historyDepth, nextUpdatedAt)
 		}
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, must_change_password = ?, updated_at = ? WHERE id = ?`,
-			name, string(rolesBytes), passwordHash, nextTokenVersion, avatarURL, boolInt(mustChangePasswordFlag), nextUpdatedAt, id,
+			`UPDATE users SET name = ?, roles = ?, password_hash = ?, token_version = ?, avatar_url = ?, must_change_password = ?, updated_at = ?, email = ?, email_status = ? WHERE id = ?`,
+			name, string(rolesBytes), passwordHash, nextTokenVersion, avatarURL, boolInt(mustChangePasswordFlag), nextUpdatedAt, nullIfNil(nextEmail), nullIfNil(nextEmailStatus), id,
 		); err != nil {
 			return fmt.Errorf("update user: %w", err)
 		}
@@ -269,6 +313,16 @@ func (r *Repository) DeleteUser(id, actorID string) error {
 		}
 		if _, err := tx.Exec(context.Background(), `DELETE FROM refresh_tokens WHERE user_id = ?`, id); err != nil {
 			return fmt.Errorf("revoke user tokens: %w", err)
+		}
+		// W25/I-001 (2026-08-23): user delete must purge per-user links —
+		// user_roles (an orphan link keeps roles.assignedUsers > 0 and makes
+		// the role permanently undeletable; browser e2e schema-crud exposed it)
+		// and user_mfa (TOTP ciphertext / recovery hashes are credentials).
+		if _, err := tx.Exec(context.Background(), `DELETE FROM user_roles WHERE user_id = ?`, id); err != nil {
+			return fmt.Errorf("clear deleted user roles: %w", err)
+		}
+		if _, err := tx.Exec(context.Background(), `DELETE FROM user_mfa WHERE user_id = ?`, id); err != nil {
+			return fmt.Errorf("clear deleted user mfa: %w", err)
 		}
 		result, err := tx.Exec(context.Background(), `DELETE FROM users WHERE id = ?`, id)
 		if err != nil {
@@ -341,6 +395,15 @@ func (r *Repository) DeleteUsersBatch(ids []string, actorID string) (int, error)
 			if _, err := tx.Exec(context.Background(), `DELETE FROM refresh_tokens WHERE user_id = ?`, id); err != nil {
 				return fmt.Errorf("revoke user %s tokens: %w", id, err)
 			}
+			// W25/I-001: same per-user link purge as DeleteUser (see comment
+			// there) — user_roles orphans would otherwise freeze role
+			// deletability; user_mfa rows are credentials.
+			if _, err := tx.Exec(context.Background(), `DELETE FROM user_roles WHERE user_id = ?`, id); err != nil {
+				return fmt.Errorf("clear deleted user %s roles: %w", id, err)
+			}
+			if _, err := tx.Exec(context.Background(), `DELETE FROM user_mfa WHERE user_id = ?`, id); err != nil {
+				return fmt.Errorf("clear deleted user %s mfa: %w", id, err)
+			}
 			if _, err := tx.Exec(context.Background(), `DELETE FROM users WHERE id = ?`, id); err != nil {
 				return fmt.Errorf("delete user %s: %w", id, err)
 			}
@@ -380,9 +443,10 @@ func countAdminUsersExcluding(tx kernel.Tx, id string) (int, error) {
 	return count, nil
 }
 
-// scanUserListRow scans the ListUsers projection: the 11 user columns plus the
+// scanUserListRow scans the ListUsers projection: the 11 user columns, the
 // cross-module MFA flag (S-10 · GOAL-017 D-002 §4, user_mfa table contract
-// from migration 0029). One Scan call — sql.Rows requires dest count ==
+// from migration 0029), and the managed email identity pair (W26 read face ·
+// migration 0054 columns). One Scan call — sql.Rows requires dest count ==
 // column count.
 func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
@@ -395,7 +459,8 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var mfaEnabled bool
 	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash,
 		&user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled,
-		&user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &mfaEnabled)
+		&user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &mfaEnabled,
+		&user.Email, &user.EmailStatus)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}

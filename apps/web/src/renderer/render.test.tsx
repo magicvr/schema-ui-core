@@ -5,7 +5,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/i18n/runtime";
-import { RenderPage } from "@/renderer/render.tsx";
+import { RenderPage, useSchemaCrud } from "@/renderer/render.tsx";
+import { registerCustomComponent } from "@/renderer/custom-components";
 import type { RenderMeta, RenderPageDocument } from "@/renderer/render";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
@@ -62,6 +63,22 @@ function displayDocument(body: RenderPageDocument["body"]): RenderPageDocument {
     body,
   };
 }
+
+// W25: targeted refresh controller — the test counterpart of
+// monitoring-auto-refresh; calls crud.refreshList for one dataSource.
+function PerfRefreshController() {
+  const crud = useSchemaCrud();
+  return (
+    <button
+      type="button"
+      data-refresh-status
+      onClick={() => crud?.refreshList("/api/status")}
+    >
+      refresh status
+    </button>
+  );
+}
+registerCustomComponent("perf-refresh-controller-test", PerfRefreshController);
 
 describe("RenderPage full $deps reactions (I-PROTO-FULL-001 · D-EXPR integration)", () => {
   it("commits fulfill values and hides a field through the multi-round engine", async () => {
@@ -272,6 +289,208 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
   // S4 (GOAL-004): before the fetch settles, statCard/chart show a Skeleton
   // `role="status"` region instead of the previous ad-hoc "Loading…" text —
   // this asserts the real render.tsx dispatch path, not a re-implementation.
+  // W19 perf: three statCards sharing one dataSource must coalesce onto a
+  // single network request through the page fetch cache.
+  it("coalesces identical dataSource fetches into one network request", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "grid",
+        props: { columns: 3 },
+        children: [
+          {
+            id: "total",
+            type: "statCard",
+            props: { label: "Total", format: "plain", valueField: "balanceTotal", dataSource: "/api/wallet/me" },
+          },
+          {
+            id: "available",
+            type: "statCard",
+            props: { label: "Available", format: "plain", valueField: "balanceAvailable", dataSource: "/api/wallet/me" },
+          },
+          {
+            id: "frozen",
+            type: "statCard",
+            props: { label: "Frozen", format: "plain", valueField: "balanceFrozen", dataSource: "/api/wallet/me" },
+          },
+        ],
+      },
+    };
+    const seen: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      seen.push(String(input));
+      return new Response(
+        JSON.stringify({
+          items: [{ id: "w1", balanceTotal: 7, balanceAvailable: 5, balanceFrozen: 2 }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(seen).toHaveLength(1);
+    expect(container.textContent).toContain("5");
+    expect(container.textContent).toContain("2");
+  });
+
+  // W25: the coalescing applies to every display node — statCards and charts
+  // sharing one dataSource still produce a single network request.
+  it("coalesces statCard + chart sharing one dataSource into one request", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "section",
+        children: [
+          {
+            id: "card",
+            type: "statCard",
+            props: { label: "Total", format: "plain", valueField: "value", dataSource: "/api/roles" },
+          },
+          {
+            id: "card2",
+            type: "statCard",
+            props: { label: "Total2", format: "plain", valueField: "value", dataSource: "/api/roles" },
+          },
+          {
+            id: "chart",
+            type: "chart",
+            props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/roles" },
+          },
+        ],
+      },
+    };
+    const seen: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      seen.push(String(input));
+      return new Response(
+        JSON.stringify({
+          items: [{ id: "r1", value: 3, month: "2026-08", count: 1 }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(seen).toHaveLength(1);
+    expect(container.textContent).toContain("3");
+  });
+
+  // W25: refreshList refetches ONLY the targeted dataSource — no full-page
+  // reload wave (monitoring-auto-refresh's per-tick behavior).
+  it("refreshList refetches only the targeted dataSource", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "section",
+        children: [
+          { type: "custom", id: "ctl", component: "perf-refresh-controller-test" },
+          {
+            id: "status-card",
+            type: "statCard",
+            props: { label: "Status", format: "plain", valueField: "value", dataSource: "/api/status" },
+          },
+          {
+            id: "other-card",
+            type: "statCard",
+            props: { label: "Other", format: "plain", valueField: "value", dataSource: "/api/other" },
+          },
+        ],
+      },
+    };
+    const report: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      report.push(String(input));
+      return new Response(
+        JSON.stringify({ items: [{ id: "x", value: 1 }], total: 1, page: 1, pageSize: 100 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const requestsFor = (url: string) => report.filter((entry) => entry.includes(url)).length;
+    expect(requestsFor("/api/status")).toBe(1);
+    expect(requestsFor("/api/other")).toBe(1);
+
+    const buttons = container.querySelectorAll<HTMLButtonElement>("button[data-refresh-status]");
+    expect(buttons.length).toBe(1);
+    await act(async () => {
+      buttons[0]!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // Only /api/status was refetched; /api/other stayed untouched.
+    expect(requestsFor("/api/status")).toBe(2);
+    expect(requestsFor("/api/other")).toBe(1);
+  });
+
+  // W25 (A-001 F-003, independent): refreshList must NOT join an in-flight
+  // request for the targeted URL — symmetric with reloadList, a refresh during
+  // a slow fetch starts its own request (overlapping refresh gets fresh data).
+  it("refreshList does not join an in-flight request for the targeted dataSource", async () => {
+    const pageDoc: RenderPageDocument = {
+      meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+      body: {
+        type: "section",
+        children: [
+          { type: "custom", id: "ctl", component: "perf-refresh-controller-test" },
+          {
+            id: "status-card",
+            type: "statCard",
+            props: { label: "Status", format: "plain", valueField: "value", dataSource: "/api/status" },
+          },
+        ],
+      },
+    };
+    const calls: string[] = [];
+    const gates: Array<(value: Response) => void> = [];
+    const fetcher = ((input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return new Promise<Response>((resolve) => {
+        gates.push(resolve);
+      });
+    }) as typeof fetch;
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(gates.length).toBe(1);
+
+    // Refresh while the first request is still pending.
+    const buttons = container.querySelectorAll<HTMLButtonElement>("button[data-refresh-status]");
+    await act(async () => {
+      buttons[0]!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The old in-flight request was dropped: a NEW request was issued instead
+    // of joining the pending one.
+    expect(calls.length).toBe(2);
+
+    // Settle both requests; the page ends consistent (no stale display).
+    await act(async () => {
+      for (const gate of gates) {
+        gate(
+          new Response(
+            JSON.stringify({ items: [{ id: "x", value: 1 }], total: 1, page: 1, pageSize: 100 }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.textContent).toContain("1");
+  });
+
   it("shows a Skeleton status region for statCard while its dataSource fetch is pending", async () => {
     const pageDoc = displayDocument({
       type: "statCard",

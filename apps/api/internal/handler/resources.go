@@ -22,6 +22,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -101,15 +102,26 @@ func jsonQuote(s string) string {
 	return string(b)
 }
 
-// newOperationID returns a random 128-bit hex id for operation log rows.
+// opLogIDSeq is a per-process monotonic counter keeping same-millisecond
+// operation ids creation-ordered (see newOperationID).
+var opLogIDSeq atomic.Uint64
+
+// newOperationID returns a TIME-ORDERED id for operation log rows: a
+// Unix-millisecond prefix, a per-process monotonic counter (8 hex) and a
+// random suffix. The list surface sorts `created_at DESC, id DESC`; with the
+// historical random-only suffix, rows written within the same clock
+// granularity ordered by CHANCE, scrambling create→update→delete sequences
+// under load (observed in TestRolesOperationLogEvents during W13 S3; same
+// root cause and remedy as admin.wallet's GOAL-037 / F-008).
 func newOperationID() string {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
+	buf := make([]byte, 8)
+	if _, err := rand.Read(buf); err != nil {
 		// crypto/rand failure is effectively fatal; fall back to a timestamp id
 		// so logging never wedges a successful request (best-effort contract).
 		return fmt.Sprintf("op-%d", time.Now().UnixNano())
 	}
-	return "op-" + hex.EncodeToString(b[:])
+	seq := opLogIDSeq.Add(1) & 0xFFFFFFFF
+	return "op-" + fmt.Sprintf("%012x%08x%s", time.Now().UnixMilli(), seq, hex.EncodeToString(buf))
 }
 
 // writeKind identifies a successful write so a resource can attach side effects

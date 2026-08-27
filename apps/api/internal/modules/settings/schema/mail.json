@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "pageId": "mail",
+    "title": "Mail console",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "mail",
+    "children": [
+      {
+        "type": "custom",
+        "id": "mail-console",
+        "component": "mail-admin-tab",
+        "props": {}
+      }
+    ]
+  }
+}

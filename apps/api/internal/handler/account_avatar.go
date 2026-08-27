@@ -18,7 +18,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
@@ -27,10 +26,10 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
 )
 
-// avatarQuotaMu serializes the quota check + store pair (W11 F-018): two
-// concurrent uploads must not BOTH pass the count check and exceed the
-// per-user avatar cap (check-then-act across the file store).
-var avatarQuotaMu sync.Mutex
+// avatarQuotaLocks serializes the quota check + store pair PER OWNER (W11
+// F-018 invariant kept; W13 B-3: was one global mutex that serialized every
+// user's avatar upload — including the image re-encode — behind all others).
+var avatarQuotaLocks = newKeyedMutex()
 
 // AccountAvatarRoutes returns the account avatar surface: authenticated
 // upload (self-service, no permission key) + public GET.
@@ -65,22 +64,22 @@ func (h *accountAvatarHandler) upload() http.Handler {
 		// may upload the same total number across replace cycles; referenced
 		// avatars still count until the profile switches away (startup GC then
 		// reclaims unreferenced files). W11 F-018: the check AND the store
-		// write hold avatarQuotaMu so concurrent uploads cannot both pass the
-		// count and exceed the cap.
-		avatarQuotaMu.Lock()
+		// write hold the per-owner lock so concurrent uploads cannot both pass
+		// the count and exceed the cap (W13 B-3: keyed, not global).
+		unlock := avatarQuotaLocks.lock(user.ID)
 		owned, err := h.store.CountOwner(user.ID)
 		if err != nil {
-			avatarQuotaMu.Unlock()
+			unlock()
 			writeLocalizedError(w, r, http.StatusInternalServerError, "STORAGE_UNAVAILABLE", "could not check avatar quota")
 			return
 		}
 		if owned >= maxAvatarPerUser {
-			avatarQuotaMu.Unlock()
+			unlock()
 			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "AVATAR_QUOTA_EXCEEDED", "avatar upload quota exceeded; assign or clear your current avatar first")
 			return
 		}
 		payload, ok := h.store.storeUploadForOwner(w, r, user.ID)
-		avatarQuotaMu.Unlock()
+		unlock()
 		if !ok {
 			return
 		}

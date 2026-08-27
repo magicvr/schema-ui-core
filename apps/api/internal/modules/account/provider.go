@@ -27,11 +27,14 @@ type Provider struct {
 	operations operationlog.Recorder
 	// avatarAssets is the account avatar store (W13 T-05).
 	avatarAssets *handler.RasterAssetStore
+	// mailSender is THE composed kernel.MailSender (workspace-018 R3): the
+	// email identity surface sends verification codes through it.
+	mailSender kernel.MailSender
 }
 
 // New constructs the account provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, avatarAssets *handler.RasterAssetStore) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations, avatarAssets: avatarAssets}
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, avatarAssets *handler.RasterAssetStore, mailSender kernel.MailSender) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, avatarAssets: avatarAssets, mailSender: mailSender}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -47,6 +50,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/account/avatar", "GET /api/account/avatars/{id}",
 				"POST /api/account/password", "GET /api/account/sessions",
 				"POST /api/account/sessions/{id}/revoke", "POST /api/account/sessions/revoke-others",
+				"POST /api/account/email/bind", "POST /api/account/email/verify", "POST /api/account/email/resend",
 				"POST /api/users/{id}/enable", "POST /api/users/{id}/disable",
 				"POST /api/users/{id}/unlock",
 			},
@@ -64,6 +68,13 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, p.avatarAssets, ModuleID, p.repository) {
+		if err := reg.HTTP(route); err != nil {
+			return err
+		}
+	}
+	// workspace-018 R3: self-service email bind/verify/resend through the ONE
+	// composed MailSender (GOAL-004 D-001 §3).
+	for _, route := range handler.EmailIdentityRoutes(p.a, p.repository, p.mailSender, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

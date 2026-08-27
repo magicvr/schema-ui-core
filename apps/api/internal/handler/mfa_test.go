@@ -461,3 +461,90 @@ func TestMFAVerifyRateLimitDoesNotBlockNormalFlow(t *testing.T) {
 		t.Fatal("normal verify response missing accessToken")
 	}
 }
+
+// W13 F-002 (GOAL-013 A-001): failed second-factor proofs on the identity-
+// scoped disable / recovery-rotate surfaces are bounded by the shared step-up
+// bucket — after mfaStepUpLimiterMax failures per operation|IP|user, even a
+// VALID code answers 429 RATE_LIMITED instead of leaving an unbounded TOTP
+// guessing oracle behind a session token.
+func TestMFAStepUpDisableAndRotateRateLimited(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mountMFASurface(t, env, fake, revoker)
+	token := adminToken(t, env)
+
+	// Activate a real enrollment so the surface matches production state.
+	req := bearer(t, token, http.MethodPost, "/api/mfa/enroll", `{"currentPassword":"test-password"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("enroll = %d: %s", rr.Code, rr.Body.String())
+	}
+	req = bearer(t, token, http.MethodPost, "/api/mfa/confirm", `{"code":"123456"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("confirm = %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// Exhaust the DISABLE bucket with wrong codes (each records one failure).
+	for i := range mfaStepUpLimiterMax {
+		req = bearer(t, token, http.MethodPost, "/api/mfa/disable", `{"code":"wrong"}`)
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("disable failure %d status = %d (%s), want 400 MFA_INVALID", i+1, rr.Code, rr.Body.String())
+		}
+		expectError(t, rr, http.StatusBadRequest, "MFA_INVALID")
+	}
+	// Over budget → 429 even for a valid code.
+	req = bearer(t, token, http.MethodPost, "/api/mfa/disable", `{"code":"123456"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTooManyRequests || !strings.Contains(rr.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("disable over budget = %d body %s, want 429 RATE_LIMITED", rr.Code, rr.Body.String())
+	}
+	if len(revoker.revoked) != 0 {
+		t.Fatalf("rate-limited disable must not revoke sessions: %v", revoker.revoked)
+	}
+
+	// The RECOVERY-ROTATE bucket is keyed per operation — still usable.
+	for i := range mfaStepUpLimiterMax {
+		req = bearer(t, token, http.MethodPost, "/api/mfa/recovery/rotate", `{"code":"wrong"}`)
+		rr = httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("rotate failure %d status = %d (%s), want 400 MFA_INVALID", i+1, rr.Code, rr.Body.String())
+		}
+	}
+	req = bearer(t, token, http.MethodPost, "/api/mfa/recovery/rotate", `{"recoveryCode":"RECOVERY"}`)
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("rotate over budget = %d body %s, want 429 RATE_LIMITED", rr.Code, rr.Body.String())
+	}
+}
+
+// W13 F-003 (GOAL-013 A-001): wrong currentPassword guesses on enroll share
+// the login-limiter model — bounded failures then 429 RATE_LIMITED.
+func TestMFAEnrollWrongPasswordRateLimited(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mountMFASurface(t, env, fake, revoker)
+	token := adminToken(t, env)
+
+	for range mfaStepUpLimiterMax {
+		req := bearer(t, token, http.MethodPost, "/api/mfa/enroll", `{"currentPassword":"wrong-password"}`)
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		expectError(t, rr, http.StatusBadRequest, "INVALID_PASSWORD")
+	}
+	req := bearer(t, token, http.MethodPost, "/api/mfa/enroll", `{"currentPassword":"test-password"}`)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTooManyRequests || !strings.Contains(rr.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("enroll over budget = %d body %s, want 429 RATE_LIMITED", rr.Code, rr.Body.String())
+	}
+}

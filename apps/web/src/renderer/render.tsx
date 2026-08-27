@@ -47,12 +47,14 @@ import {
   validatePermissions,
 } from "@/renderer/permissions";
 import {
+  DISPLAY_LIST_QUERY,
   EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
   isWalletNotFoundError,
   readResourceApiError,
   resolveDataParamsQuery,
+  resourceListURL,
   type ResourceList,
   type ResourceQuery,
 } from "@/renderer/resource";
@@ -178,7 +180,7 @@ export interface TableSelection {
 }
 
 export type ActionResult =
-  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }> }
+  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>; message?: string; messageKey?: string }
   | {
       ok: false;
       code: string;
@@ -196,6 +198,33 @@ export interface SchemaCrudValue {
   setTableQuery: (id: string, query: ResourceQuery) => void;
   reloadToken: number;
   reloadList: () => void;
+  /**
+   * Fetches a resource list through the page-level in-flight coalescer:
+   * simultaneous consumers of the same URL share ONE network request (three
+   * statCards + the wallet-ensure probe on one "我的钱包" visit merge into a
+   * single GET /me). Requests are otherwise never memoized — every query,
+   * reset or reload refetches — and reloadList drops the in-flight map so a
+   * reload issued during a slow fetch starts its own fresh request.
+   * `transport` is the caller's own transport (a directly injected fixture or
+   * the auth fetcher); defaults to the provider's registered fetcher.
+   */
+  fetchList: (
+    dataSource: string,
+    query: ResourceQuery,
+    extraQuery?: string,
+    transport?: typeof fetch,
+  ) => Promise<ResourceList>;
+  /**
+   * Targeted display-data refresh (W25): bumps the per-URL refresh token for
+   * the standard display query of `dataSource` (statCard/chart consume it),
+   * so a consumer can refetch ONE surface without a full-page reload wave.
+   * Only applies to display nodes without route-param bindings (the standard
+   * DISPLAY_LIST_QUERY shape); tables/misc surfaces keep their data until a
+   * manual reload.
+   */
+  refreshList: (dataSource: string) => void;
+  /** Current refresh token for a display dataSource (0 when untouched). */
+  listRefreshToken: (dataSource: string) => number;
   activeModal: { actionRef: string; row: Record<string, unknown> | null; title: string } | null;
   modalRow: Record<string, unknown> | null;
   openModal: (actionRef: string, row: Record<string, unknown> | null, title: string) => void;
@@ -243,7 +272,8 @@ export interface RunRequestOptions {
   confirmed?: boolean;
 }
 
-const SchemaCrudContext = createContext<SchemaCrudValue | null>(null);
+/** Page CRUD context consumed by custom components (rendered nodes). */
+export const SchemaCrudContext = createContext<SchemaCrudValue | null>(null);
 
 /** Reads the page-level Schema CRUD provider (null when rendered bare). */
 export function useSchemaCrud(): SchemaCrudValue | null {
@@ -718,6 +748,13 @@ function SchemaCrudProvider({
   const [queries, setQueries] = useState<Record<string, ResourceQuery>>({});
   const [selections, setSelections] = useState<Record<string, unknown[]>>({});
   const [reloadToken, setReloadToken] = useState(0);
+  // Page-level in-flight coalescing (per wire URL): simultaneous consumers of
+  // the same dataSource — three statCards + the wallet-ensure probe on GET
+  // /api/wallet/me — share ONE network request. There is deliberately no
+  // long-lived result memo: every query change / reset / reload must observe
+  // fresh data, so only requests still in flight are merged. Scoped to this
+  // provider (one page view); a navigation remount starts fresh.
+  const listInFlight = useRef<Map<string, Promise<ResourceList>>>(new Map());
   const [activeModal, setActiveModal] = useState<{
     actionRef: string;
     row: Record<string, unknown> | null;
@@ -814,11 +851,62 @@ function SchemaCrudProvider({
       return next;
     });
   }, []);
-  // ADR-0022 D2: any data reload success clears every table selection.
+  // ADR-0022 D2: any data reload success clears every table selection. The
+  // in-flight map is dropped too, so a reload issued DURING a slow fetch
+  // starts its own fresh request instead of joining the (pre-mutation) one.
   const reloadList = useCallback(() => {
     setSelections({});
+    listInFlight.current = new Map();
     setReloadToken((token) => token + 1);
   }, []);
+
+  // A transport swap must never join requests that started through the
+  // previous transport (auth identity / fixture skew).
+  useEffect(() => {
+    listInFlight.current = new Map();
+  }, [fetcher]);
+
+  // Per-URL refresh tokens for display data (W25): statCard/chart consume the
+  // standard DISPLAY_LIST_QUERY shape, so a targeted refresh — e.g.
+  // monitoring-auto-refresh refetching only its /status cards — bumps the
+  // token for that exact key without a full-page reload wave.
+  const [listRefreshTokens, setListRefreshTokens] = useState<Record<string, number>>({});
+  const refreshList = useCallback((dataSource: string) => {
+    const key = resourceListURL(dataSource, DISPLAY_LIST_QUERY, undefined);
+    // Symmetric with reloadList (A-001 F-003, independent): drop any in-flight
+    // request for the targeted URL so a refresh issued DURING a slow fetch
+    // starts its own request instead of joining the pre-refresh one.
+    listInFlight.current.delete(key);
+    setListRefreshTokens((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+  }, []);
+  const listRefreshToken = useCallback(
+    (dataSource: string) =>
+      listRefreshTokens[resourceListURL(dataSource, DISPLAY_LIST_QUERY, undefined)] ?? 0,
+    [listRefreshTokens],
+  );
+
+  const fetchList = useCallback(
+    (
+      dataSource: string,
+      query: ResourceQuery,
+      extraQuery?: string,
+      transport?: typeof fetch,
+    ): Promise<ResourceList> => {
+      const key = resourceListURL(dataSource, query, extraQuery);
+      const inFlight = listInFlight.current.get(key);
+      if (inFlight !== undefined) {
+        return inFlight;
+      }
+      const promise = fetchResourceList(transport ?? fetcher, dataSource, query, extraQuery).finally(
+        () => {
+          listInFlight.current.delete(key);
+        },
+      );
+      listInFlight.current.set(key, promise);
+      return promise;
+    },
+    [fetcher],
+  );
 
   const openModal = useCallback(
     (actionRef: string, row: Record<string, unknown> | null, title: string) => {
@@ -1185,6 +1273,9 @@ function SchemaCrudProvider({
       clearSelection,
       reloadToken,
       reloadList,
+      fetchList,
+      refreshList,
+      listRefreshToken,
       activeModal,
       modalRow: activeModal?.row ?? null,
       openModal,
@@ -1213,6 +1304,9 @@ function SchemaCrudProvider({
       clearSelection,
       reloadToken,
       reloadList,
+      fetchList,
+      refreshList,
+      listRefreshToken,
       activeModal,
       openModal,
       closeModal,
@@ -2295,6 +2389,10 @@ function useDisplayData(
     }
     return { query, params: {} };
   }, [crud]);
+  // W25: targeted refresh token for this dataSource (refreshList): a change
+  // re-runs the fetch effect for THIS URL only, without a full page reload.
+  const targetedRefreshToken =
+    crud === null || dataSource === null ? 0 : crud.listRefreshToken(dataSource);
   useEffect(() => {
     if (dataSource === null) {
       setList(null);
@@ -2308,7 +2406,11 @@ function useDisplayData(
     // resolveAsyncDisplayState prefers `error` over `ready`.
     setError(null);
     const paramsQuery = resolveDataParamsQuery(params, routeSnapshot);
-    fetchResourceList(fetcher ?? fetch, dataSource, { page: 1, pageSize: 100 }, paramsQuery)
+    const request =
+      crud !== null
+        ? crud.fetchList(dataSource, DISPLAY_LIST_QUERY, paramsQuery, fetcher)
+        : fetchResourceList(fetcher ?? fetch, dataSource, DISPLAY_LIST_QUERY, paramsQuery);
+    request
       .then((next) => {
         if (!cancelled) {
           setList(next);
@@ -2328,7 +2430,7 @@ function useDisplayData(
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken]);
+  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken, targetedRefreshToken]);
   return { list, error };
 }
 
@@ -2820,7 +2922,9 @@ function RenderPageSurface({
             node: modalContent,
             path: `actions.${crud.activeModal!.actionRef}.content`,
             metaValue: document.meta,
-            context,
+            // The triggering row rides the modal context so custom content can
+            // act on it (workspace-019 resend dialog consumes modalRow).
+            context: { ...context, modalRow: crud.activeModal?.row ?? null },
             tableRenderer,
             onAction: resolvedOnAction,
             formComponent,

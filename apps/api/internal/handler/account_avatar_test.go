@@ -109,7 +109,7 @@ func TestAccountAvatarUploadAndPublicServe(t *testing.T) {
 	if serve.Header().Get("X-Content-Type-Options") != "nosniff" {
 		t.Fatal("missing nosniff")
 	}
-	if cc := serve.Header().Get("Cache-Control"); cc != "public, max-age=31536000, immutable" {
+	if cc := serve.Header().Get("Cache-Control"); cc != "public, max-age=300" {
 		t.Fatalf("cache-control = %q", cc)
 	}
 	if csp := serve.Header().Get("Content-Security-Policy"); csp != "sandbox" {

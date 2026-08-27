@@ -52,6 +52,14 @@ export interface LoadPageOptions {
   baseURL?: string;
   /** Injectable fetch; defaults to `globalThis.fetch`. */
   fetcher?: typeof fetch;
+  /**
+   * Optional in-memory document cache keyed by resolved schemaUrl (owned by
+   * the App shell). A hit skips the network fetch AND the D-VAL structural
+   * validation (the stored document was already validated at load time, and
+   * its meta.pageId was verified against the manifest page). Intentionally
+   * opt-in: tests and callers that must observe every load pass none.
+   */
+  cache?: Map<string, unknown>;
 }
 
 function defaultBaseURL(): string {
@@ -74,6 +82,16 @@ export async function loadPageDocument(
   // (tests) is honored as-is so failure paths stay deterministic.
   const fetcher = options.fetcher ?? withTimeout();
   const url = resolveSchemaUrl(baseURL, page.schemaUrl, params);
+
+  // W19 perf (2026-08): per-visit schema rediscovery was pure waste — the
+  // document is static per (schemaUrl, params) until the app reloads. The
+  // shell-owned cache skips one fetch + one D-VAL pass per navigation.
+  if (options.cache !== undefined) {
+    const cached = options.cache.get(url);
+    if (cached !== undefined) {
+      return cached;
+    }
+  }
 
   if (typeof fetcher !== "function") {
     throw new PageSchemaError("PAGE_LOAD_FAILED", url, "Fetch is unavailable.");
@@ -122,6 +140,15 @@ export async function loadPageDocument(
       url,
       `Page document meta.pageId (${meta.pageId}) does not match manifest pageId (${page.pageId}).`,
     );
+  }
+
+  // Cache only validated documents; a bounded map keeps param-paged schema
+  // URLs (e.g. /schema/orders/{id}) from growing without limit.
+  if (options.cache !== undefined) {
+    if (options.cache.size >= 64) {
+      options.cache.clear();
+    }
+    options.cache.set(url, document);
   }
 
   return document;

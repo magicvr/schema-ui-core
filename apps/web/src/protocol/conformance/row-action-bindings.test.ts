@@ -44,6 +44,12 @@ describe("row actions carry path bindings for templated URLs", () => {
       schema: "scheduledtasks/schema/scheduled-tasks.json",
       actions: [["run", "runTask"], ["delete", "deleteTask"]],
     },
+    // W26 (GOAL-038 C3): the users-invites page (workspace-019 R3 follow-up)
+    // shipped without its revoke binding — MISSING_PATH_BINDING on click.
+    {
+      schema: "users/schema/users-invites.json",
+      actions: [["revoke", "revokeInvite"]],
+    },
   ];
 
   for (const suite of suites) {

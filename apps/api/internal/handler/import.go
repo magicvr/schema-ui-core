@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"slices"
@@ -178,6 +179,14 @@ func (h *importHandler) importResource() http.Handler {
 		if len(raw) > maxImportBytes {
 			writeLocalizedError(w, r, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "file exceeds the import size limit")
 			return
+		}
+		// W13 F-019 (GOAL-013 A-001): the uploaded users CSV carries PLAINTEXT
+		// passwords. Once its bytes are in memory, the stored copy is a
+		// standing credential-exposure surface (library listing + owner
+		// re-download forever). Delete it immediately (best-effort) — parsing
+		// proceeds from memory and a failed cleanup must not fail the import.
+		if derr := h.objects.Delete(context.Background(), kernel.ObjectNamespaceUploads, fileID); derr != nil {
+			slog.Warn("import: source csv cleanup failed", "fileId", fileID, "err", derr)
 		}
 
 		result, err := h.importUsersCSV(raw, user)

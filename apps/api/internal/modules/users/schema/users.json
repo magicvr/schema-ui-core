@@ -16,6 +16,10 @@
     ]
   },
   "actions": {
+    "openInvites": {
+      "type": "navigate",
+      "url": "/users-invites"
+    },
     "createUser": {
       "type": "request",
       "method": "POST",
@@ -23,7 +27,8 @@
       "bodyMapping": {
         "username": "username",
         "name": "name",
-        "password": "password"
+        "password": "password",
+        "roles": "roles"
       },
       "onSuccess": {
         "behavior": "reload"
@@ -185,6 +190,20 @@
               "label": "Password",
               "type": "password",
               "labelKey": "schema.users.field.password"
+            },
+            {
+              "id": "roles",
+              "label": "Roles",
+              "type": "checkboxGroup",
+              "labelKey": "schema.users.field.roles",
+              "optionsSource": {
+                "url": "/api/roles",
+                "params": {
+                  "pageSize": 100
+                },
+                "valueField": "key",
+                "labelField": "name"
+              }
             }
           ],
           "submitAction": "createUser",
@@ -378,6 +397,13 @@
               "labelKey": "schema.users.column.name"
             },
             {
+              "field": "email",
+              "label": "Email",
+              "labelKey": "schema.users.column.email",
+              "badgeStyleField": "emailStatusStyle",
+              "truncate": true
+            },
+            {
               "field": "roles",
               "label": "Roles",
               "labelKey": "schema.users.column.roles"
@@ -407,6 +433,15 @@
               "actionRef": "openCreate",
               "permissionIntent": "edit",
               "labelKey": "schema.users.toolbar.newUser"
+            },
+            {
+              "key": "invites",
+              "label": "Invitations",
+              "actionRef": "openInvites",
+              "permissions": {
+                "edit": "$context.user.permissions contains \"users.invite\""
+              },
+              "labelKey": "schema.users.toolbar.invites"
             },
             {
               "key": "export",
@@ -574,6 +609,16 @@
               "key": "roles",
               "label": "Roles",
               "labelKey": "schema.users.column.roles"
+            },
+            {
+              "key": "email",
+              "label": "Email",
+              "labelKey": "schema.users.column.email"
+            },
+            {
+              "key": "emailStatus",
+              "label": "Email status",
+              "labelKey": "schema.users.column.emailStatus"
             },
             {
               "key": "createdAt",

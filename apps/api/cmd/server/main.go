@@ -57,17 +57,26 @@ func main() {
 	}
 	startCancel()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	<-ctx.Done()
+	// VP-021 contract §1 step 1: the starting event carries the signal type.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	sig := <-signals
+	signal.Stop(signals)
 
-	logger.Info("shutting down")
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	logger.Info("shutdown.starting", "signal", sig.String())
+	// VP-021 contract v0.1.0 §6: drain budget = http.shutdown_timeout
+	// (default 10s; invalid values fail closed at startup).
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTPShutdownTimeout)
 	defer cancel()
 	if err := app.Stop(shutdownCtx); err != nil {
-		logger.Error("shutdown", "err", err)
+		if shutdownCtx.Err() != nil {
+			logger.Error("shutdown.timeout", "err", err)
+		} else {
+			logger.Error("shutdown.error", "err", err)
+		}
 		os.Exit(1)
 	}
+	logger.Info("shutdown.complete")
 	fmt.Println("bye")
 }
 

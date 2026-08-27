@@ -337,4 +337,116 @@ describe("LoginPage", () => {
     expect(input!.type).toBe("password");
     expect(toggle!.getAttribute("aria-label")).toMatch(/show/i);
   });
+
+  // workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery flow on the login
+  // card — start → code + new password → success panel, no tokens issued.
+  function recoveryFetchMock(responses: Array<{ status: number; body: unknown }>) {
+    let postCalls = 0;
+    const fetchMock = vi.fn().mockImplementation((_url: RequestInfo | URL, init?: RequestInit) => {
+      if ((init?.method ?? "GET") === "POST") {
+        const index = Math.min(postCalls, responses.length - 1);
+        postCalls += 1;
+        const response = responses[index];
+        return Promise.resolve({
+          ok: response.status < 400,
+          status: response.status,
+          json: async () => response.body,
+        });
+      }
+      // branding / captcha preflights fail open
+      return Promise.resolve({ ok: false, json: async () => ({}) });
+    });
+    return { fetchMock, calls: () => postCalls };
+  }
+
+  it("walks the two-step recovery flow to the success panel", async () => {
+    const { fetchMock } = recoveryFetchMock([
+      { status: 202, body: { status: "dispatched" } },
+      { status: 204, body: "" },
+    ]);
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const container = await renderLogin(vi.fn());
+      const link = container.querySelector<HTMLButtonElement>("[data-recovery-link]");
+      await act(async () => link!.click());
+      fill(container, "#recoveryAccount", "admin");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-send]")!.click(),
+      );
+      // Step 2 is visible with code + new password fields.
+      expect(container.querySelector("#recoveryCode")).not.toBeNull();
+      expect(container.querySelector("#recoveryNewPassword")).not.toBeNull();
+      fill(container, "#recoveryCode", "123456");
+      fill(container, "#recoveryNewPassword", "brand-new-pass-1");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-reset]")!.click(),
+      );
+      expect(container.querySelector("[data-recovery-done-title]")).not.toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("reveals the second-factor fields when the server demands them", async () => {
+    const { fetchMock } = recoveryFetchMock([
+      { status: 202, body: { status: "dispatched" } },
+      { status: 400, body: { error: "RECOVERY_SECOND_FACTOR_REQUIRED" } },
+      { status: 204, body: "" },
+    ]);
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const container = await renderLogin(vi.fn());
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-link]")!.click(),
+      );
+      fill(container, "#recoveryAccount", "admin");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-send]")!.click(),
+      );
+      fill(container, "#recoveryCode", "123456");
+      fill(container, "#recoveryNewPassword", "brand-new-pass-1");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-reset]")!.click(),
+      );
+      // The demand reveals TOTP + recovery-code inputs and surfaces the hint.
+      expect(container.querySelector("#recoverySecondFactor")).not.toBeNull();
+      expect(container.textContent).toContain("Enter your authenticator code to finish recovery");
+      fill(container, "#recoverySecondFactor", "654321");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-reset]")!.click(),
+      );
+      expect(container.querySelector("[data-recovery-done-title]")).not.toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("returns to step 1 with a hint when the code expired", async () => {
+    const { fetchMock } = recoveryFetchMock([
+      { status: 202, body: { status: "dispatched" } },
+      { status: 400, body: { error: "RECOVERY_CODE_EXPIRED" } },
+    ]);
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const container = await renderLogin(vi.fn());
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-link]")!.click(),
+      );
+      fill(container, "#recoveryAccount", "admin");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-send]")!.click(),
+      );
+      fill(container, "#recoveryCode", "123456");
+      fill(container, "#recoveryNewPassword", "brand-new-pass-1");
+      await act(async () =>
+        container.querySelector<HTMLButtonElement>("[data-recovery-reset]")!.click(),
+      );
+      // Back at step 1; the account field keeps its value for the retry.
+      expect(container.querySelector("#recoveryAccount")).not.toBeNull();
+      expect(container.querySelector<HTMLInputElement>("#recoveryAccount")!.value).toBe("admin");
+      expect(container.textContent).toContain("Recovery code expired; request a new one");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

@@ -130,9 +130,9 @@ func TestScheduledTaskRunsPagination(t *testing.T) {
 	admin := adminToken(t, env)
 	id := taskCreate(t, env, admin, "paginated-runs", "*/5 * * * *", "Paginated")
 	for i := 0; i < 3; i++ {
-		code, _ := bearerJSON(t, env, admin, http.MethodPost, "/api/scheduled-tasks/"+id+"/run", "")
+		code, body := bearerJSON(t, env, admin, http.MethodPost, "/api/scheduled-tasks/"+id+"/run", "")
 		if code != http.StatusNoContent {
-			t.Fatalf("run %d = %d", i, code)
+			t.Fatalf("run %d = %d: %v", i, code, body)
 		}
 	}
 	code, body := getResourceAs(t, env, admin, "/api/scheduled-tasks/"+id+"/runs?pageSize=1")

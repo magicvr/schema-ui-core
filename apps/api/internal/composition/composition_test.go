@@ -92,7 +92,9 @@ func TestNewMuxPublishesOnlySelectedProfileManifestPages(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — this projection-only test
+	// injects the static dev session so requests reach the handler.
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 	mux, err := testMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
@@ -190,11 +192,34 @@ func TestNewMuxProjectsProfileRoutesAndSchemasFromOnePlan(t *testing.T) {
 					t.Fatalf("GET %s status = %d, want %d; body=%s", path, recorder.Code, want, recorder.Body.String())
 				}
 			}
+			assertStatusOn := func(m *http.ServeMux, path string, want int) {
+				t.Helper()
+				recorder := httptest.NewRecorder()
+				m.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+				if recorder.Code != want {
+					t.Fatalf("GET %s status = %d, want %d; body=%s", path, recorder.Code, want, recorder.Body.String())
+				}
+			}
+			// W13 F-010 (GOAL-013 A-001): schemas are authenticated now — an
+			// ANONYMOUS caller gets a uniform 401 and can no longer probe page
+			// existence. The per-profile projection property is therefore
+			// asserted on a dev-session mux: enabled page → 200, disabled
+			// page → SCHEMA_NOT_FOUND (404).
+			stAuthed, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer stAuthed.Close()
+			aAuthed := auth.New([]byte("test-secret"), 0, 0, stAuthed, true)
+			muxAuthed, err := testMux(aAuthed, stAuthed, plan, &readinessGate{})
+			if err != nil {
+				t.Fatal(err)
+			}
 			assertStatus("/api/settings", tc.settingsRoute)
 			assertStatus("/api/operations", tc.operationsRoute)
 			assertStatus("/api/branding", tc.brandingRoute)
-			assertStatus("/api/schema/settings", tc.settingsSchema)
-			assertStatus("/api/schema/activity", tc.activitySchema)
+			assertStatusOn(muxAuthed, "/api/schema/settings", tc.settingsSchema)
+			assertStatusOn(muxAuthed, "/api/schema/activity", tc.activitySchema)
 
 			manifestResponse := httptest.NewRecorder()
 			mux.ServeHTTP(manifestResponse, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
@@ -245,7 +270,9 @@ func TestManifestHomePageRefDerivation(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() { _ = st.Close() })
-		a := auth.New([]byte("test-secret"), 0, 0, st, false)
+		// W13 F-010: schemas are authenticated now — inject the dev session so
+		// the helper can also probe /api/schema/{pageId}.
+		a := auth.New([]byte("test-secret"), 0, 0, st, true)
 		mux, err := testMux(a, st, plan, &readinessGate{})
 		if err != nil {
 			t.Fatal(err)
@@ -382,7 +409,9 @@ func TestDemoProfileManifest(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — inject the dev session so
+	// the example-schema probe below reaches the handler.
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 	mux, err := testMux(a, st, plan, &readinessGate{})
 	if err != nil {
 		t.Fatal(err)
@@ -457,7 +486,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// (+1 navigation, no permissions) to mvp and admin.
 		// VP-012 R6: core.auth-session contributes service-credentials.read/write
 		// (+2 permissions, no page/navigation) to every profile.
-		{profile: "mvp", wantPermissions: 10, wantNavigation: 5},
+		// workspace-019 R3 (GOAL-004): admin.users adds users.invite (+1
+		// permission, no navigation — invitation management panel).
+		{profile: "mvp", wantPermissions: 11, wantNavigation: 5},
 		// S-02 (GOAL-007): admin.file-library contributes files.read/files.delete
 		// (+2 permissions) and menu_files (+1 navigation) to admin only.
 		// S-01 (GOAL-008): admin.data-dictionary contributes dictionary.read/
@@ -481,7 +512,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
 		// GOAL-022: admin.wallet adds menu_wallet_self (+1 navigation, no
 		// permission keys — identity-only self-service).
-		{profile: "admin", wantPermissions: 32, wantNavigation: 15},
+		// W26 (GOAL-038): admin.settings adds menu_mail/menu_mail_outbox
+		// (+2 navigation, no new permission keys — settings.read reuse).
+		{profile: "admin", wantPermissions: 33, wantNavigation: 17},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
@@ -543,11 +576,14 @@ func TestSystemDataReconcilePreservesDisabledProfileData(t *testing.T) {
 	if got := compositionCount(t, st, `SELECT COUNT(*) FROM menu_items WHERE feature_key IN ('menu_settings', 'menu_activity')`); got != 2 {
 		t.Fatalf("disabled-profile navigation retained = %d, want 2", got)
 	}
-	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_reconcile WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 5 {
-		t.Fatalf("disabled-profile ledger retained = %d, want 5", got)
+	// W26 (GOAL-038): admin.settings now owns menu_mail/menu_mail_outbox too
+	// (settings.read reuse) — a downgrade to mvp retains all three nav rows
+	// and the settings module ledger grows to 7 entries.
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_reconcile WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 7 {
+		t.Fatalf("disabled-profile ledger retained = %d, want 7", got)
 	}
-	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_grants WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 7 {
-		t.Fatalf("disabled-profile managed grants retained = %d, want 7", got)
+	if got := compositionCount(t, st, `SELECT COUNT(*) FROM system_data_grants WHERE module_id IN ('admin.settings', 'admin.activity')`); got != 9 {
+		t.Fatalf("disabled-profile managed grants retained = %d, want 9", got)
 	}
 }
 
@@ -670,7 +706,9 @@ func TestMVPRecoveryRestoresOptionalModuleDataAndCoreReadiness(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := auth.New([]byte("test-secret"), 0, 0, st, false)
+	// W13 F-010: schemas are authenticated now — inject the dev session so the
+	// disabled-page probes below still reach the handler (and 404 there).
+	a := auth.New([]byte("test-secret"), 0, 0, st, true)
 	gate := &readinessGate{}
 	gate.setReady()
 	mux, err := testMux(a, st, plan, gate)
@@ -1054,7 +1092,11 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		labels := fetchSidebar(t, plan, nil)
 		want := []string{
 			"Dashboard", "Users", "Roles", "Wallet",
-			"Activity", "File library", "Data dictionary",
+			"Activity",
+			// W26 (GOAL-038): standalone mail pages after the settings entry
+			// they split off from (settings itself lives in the user menu).
+			"Mail console", "Outbound email log",
+			"File library", "Data dictionary",
 			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
 		}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {

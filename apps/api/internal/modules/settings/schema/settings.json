@@ -61,7 +61,8 @@
       "url": "/api/settings/default",
       "bodyMapping": {
         "defaultLocale": "defaultLocale",
-        "siteTimezone": "siteTimezone"
+        "siteTimezone": "siteTimezone",
+        "defaultCurrency": "defaultCurrency"
       },
       "onSuccess": {
         "behavior": "reload"
@@ -104,9 +105,6 @@
       "url": "/api/captcha/settings",
       "bodyMapping": {
         "enabled": "enabled"
-      },
-      "onSuccess": {
-        "behavior": "reload"
       }
     }
   },
@@ -282,6 +280,12 @@
                       "label": "Default timezone (IANA name or auto)",
                       "labelKey": "schema.settings.field.siteTimezone",
                       "type": "input"
+                    },
+                    {
+                      "id": "defaultCurrency",
+                      "label": "Default currency (ISO 4217)",
+                      "labelKey": "schema.settings.field.defaultCurrency",
+                      "type": "input"
                     }
                   ],
                   "recordSource": {
@@ -289,7 +293,8 @@
                     "url": "/api/settings/default",
                     "responseMapping": {
                       "defaultLocale": "defaultLocale",
-                      "siteTimezone": "siteTimezone"
+                      "siteTimezone": "siteTimezone",
+                      "defaultCurrency": "defaultCurrency"
                     }
                   },
                   "submitAction": "updateLocalization",
@@ -448,6 +453,22 @@
                   "submitAction": "updateCaptcha",
                   "submitLabelKey": "schema.settings.submit.save"
                 }
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "id": "tab-password-policy",
+            "props": {
+              "labelKey": "invite.policy.title",
+              "label": "Password policy"
+            },
+            "children": [
+              {
+                "type": "custom",
+                "id": "password-policy-tab",
+                "component": "password-policy-tab",
+                "props": {}
               }
             ]
           }
