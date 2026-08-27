@@ -20,8 +20,8 @@ workspace_id: workspace-021-graceful-shutdown-and-connection-drain
 ```text
 GOAL-001-graceful-shutdown-and-connection-drain [active 2/3]  · 优雅停机 / 连接排空合同
 ├── GOAL-002-r1-contract-freeze [done 3/3]  · R1 合同冻结（停机顺序 / 超时与配置键 / Job 停机语义 / Store 排空）
-└── GOAL-003-r2-impl-and-test [done 3/3]  · R2 实现与测试（shutdown_timeout 配置键 / main 接线 / compose 对齐 / 测试锁）
-    （R3 证据与关门待立项）
+├── GOAL-003-r2-impl-and-test [done 3/3]  · R2 实现与测试（shutdown_timeout 配置键 / main 接线 / compose 对齐 / 测试锁）
+└── GOAL-004-r3-evidence-closeout [active 0/3]  · R3 证据与关门（合同 §8 harness · 双方言 · grok 独立审）
 ```
 
 ## 状态表
@@ -31,3 +31,4 @@ GOAL-001-graceful-shutdown-and-connection-drain [active 2/3]  · 优雅停机 / 
 | GOAL-001-graceful-shutdown-and-connection-drain | 优雅停机 / 连接排空合同 | null | active | 2/3 | 2026-08-27 |
 | GOAL-002-r1-contract-freeze | R1 合同冻结（停机顺序 / 超时与配置键 / Job 语义 / Store 排空） | GOAL-001-graceful-shutdown-and-connection-drain | done | 3/3 | 2026-08-27 |
 | GOAL-003-r2-impl-and-test | R2 实现与测试（shutdown_timeout 配置键 / main 接线 / compose 对齐 / 测试锁） | GOAL-001-graceful-shutdown-and-connection-drain | done | 3/3 | 2026-08-27 |
+| GOAL-004-r3-evidence-closeout | R3 证据与关门（合同 §8 harness · 双方言 · Root 关门审计） | GOAL-001-graceful-shutdown-and-connection-drain | active | 0/3 | 2026-08-27 |
