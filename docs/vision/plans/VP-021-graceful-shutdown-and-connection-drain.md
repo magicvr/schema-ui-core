@@ -2,26 +2,26 @@
 doc_type: vision-plan
 id: VP-021-graceful-shutdown-and-connection-drain
 title: 优雅停机 / 连接排空合同
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.2.0
 lead_workspace: workspace-021-graceful-shutdown-and-connection-drain
 created: 2026-08-26
 updated: 2026-08-27
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # VP-021 · 优雅停机 / 连接排空合同（RT-D02）
 
-## 状态与门闩（2026-08-27 · **active**）
+## 状态与门闩（2026-08-27 · **closed**）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-26 用户确认立项；2026-08-27 激活 · VRev-046 self `pass` · 架构分支 RT-D02 承接） |
-| **lead_workspace** | `workspace-021-graceful-shutdown-and-connection-drain`（2026-08-27 `/govern` 开区；Root `GOAL-001-graceful-shutdown-and-connection-drain`） |
-| **Vision required** | 无（VRev-046 intent-activation：self `pass` · 0 required · 2026-08-27；V-F081/V-F082 → 激活事务内 fixed） |
-| **推进门闩** | 激活前置满足 = **架构类 freshness PASS**（VP-008 `go` 消费有效性：`ed99e88` → `250cb9c`（VP-017 激活）→ `fddaf638`（2026-08-27 HEAD）；不暂挂 `go`）；R1 方案冻结前须关闭 I-021-001/I-021-002，R2 前须关闭 I-021-003 |
-| **组合位置** | 架构分支 · RT-D02（`planned` → 本 VP 承接 → `active`） |
+| status | **`closed`**（2026-08-26 用户确认立项 → 2026-08-27 激活 → **2026-08-27 关门** v0.3.0 · VRev-047 self `pass` · 用户指令授权） |
+| **lead_workspace** | `workspace-021-graceful-shutdown-and-connection-drain`（2026-08-27 `/govern` 开区并结项；Root `GOAL-001-graceful-shutdown-and-connection-drain` `done 3/3`） |
+| **Vision required** | 无（VRev-046 intent-activation self `pass`；VRev-047 closeout self `pass` · 0 required） |
+| **推进门闩** | 激活前置满足 = **架构类 freshness PASS**（`ed99e88` → `fddaf638`，不暂挂 `go`）；R1 方案冻结前关闭 I-021-001/I-021-002，R2 前关闭 I-021-003（全部 `verified`） |
+| **组合位置** | 架构分支 · RT-D02（`registered` → 本 VP 承接 → `active` → **`delivered`**，2026-08-27） |
 | **完整 ≠ A3** | 只做**单进程基线**的优雅停机 / 连接排空合同。A3 多实例、就绪探针扩依赖、PG 锁 vs Redis vs 队列评估仍 `trigger-gated` |
 
 ## 意图
@@ -102,11 +102,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-27 | **closed**（v0.3.0 · `active → closed`） | 退出判据 1～5 全部成立（VRev-047 self `pass` · 0 required）：合同 v0.1.1 冻结（含 §9 Shutdown 状态机勘误）+ 进程内 harness A/B 实测 + 进程级 A′/B′（linux/CI）+ Job 中断标记重跑实测（reclaim attempt+1）+ 双方言（SQLite 实测 + **PG drain 实测 PASS**）+ 迁移 checksum 回归锁；lead workspace-021 Root `done 3/3`；关闭双审 A-001 self `pass` + A-002 grok independent `conditional` → required fixed → 0 开放；越界为零（未进 A3 / 未改 Charter / Profile）。RT-D02 → **delivered** | `docs/workspaces/workspace-021-graceful-shutdown-and-connection-drain/`（Root E-006 结项 + GOAL-002/003/004 五件套）；closeout 审计 `GOAL-001/03-audit/A-001`（self）+ `A-002`（grok independent）；VRev-047 本报告 | 有界 residual：进程级 SIGTERM harness（`cmd/server/shutdown_harness_test.go` · `!windows`）与 `docker compose stop` 实跑以 **linux CI** 核销（V-F083 登记；复审触发 = CI 失败或下一架构 VP 激活前；闭合 = CI 证据或用户书面 accepted-residual） |
 
 ## 规划修订短史
 
@@ -114,3 +112,4 @@ parent: null
 |------|--------|
 | 2026-08-26 | 初创 `planned`：用户确认立项（架构分支 RT-D02 · 优雅停机 / 连接排空合同）；退出分母 = 单进程基线合同；A3 余项、Job 租约、进程分离仍 gated 不进。roadmap 索引原子同步 |
 | 2026-08-27 | **v0.2.0 `planned → active`**：VRev-046（self）`pass`（0 required；V-F081/V-F082 → **fixed**）；架构类 freshness **PASS**（`ed99e88` → `fddaf638`，不暂挂 `go`）；lead `workspace-021-graceful-shutdown-and-connection-drain` 同日开区（Root `GOAL-001-graceful-shutdown-and-connection-drain`，P-001 纲领 R1～R3 + I-021-001～004 台账）。VR-048 |
+| 2026-08-27 | **v0.3.0 `active → closed`**：VRev-047（self）`pass`（0 required；V-F083 → **fixed**）；退出判据 1～5 全部成立（lead Root `done 3/3`；关闭双审闭合；PG drain 实测 PASS）；RT-D02 → **delivered**；关门记录与有界 residual 落盘。VR-049 |
