@@ -19,7 +19,8 @@ version: 0.1.0
 | E-003 | 2026-08-27 | R1 关门（GOAL-002 done 3/3）· Root 信息台账回写 | done | `02-execution/E-003-r1-closed.md` |
 | E-004 | 2026-08-27 | R2 关门（GOAL-003 done 3/3）· 纲领进度 2/3 | done | `02-execution/E-004-r2-closed.md` |
 | E-005 | 2026-08-27 | R3 证据与关门（GOAL-004 done 3/3）· Root 双审启动 | done | `02-execution/E-005-r3-closed-and-dual-audit.md` |
+| E-006 | 2026-08-27 | Root 关门（双审闭合 · 结项）· VP-021 关门提案就绪 | done | `02-execution/E-006-root-closeout.md` |
 
 ## 推进状态速览
 
-- Root **关门双审中**（2026-08-27）：A-001 self `pass`（0 required）→ grok independent（A-002）运行中；核销后 Root `done · 3/3`。
+- Root **done · 3/3**（2026-08-27 结项）：R1～R3 全部关门；双审闭合（A-001 self pass + A-002 grok conditional → required fixed → 0 开放）；全量回归绿（含 PG drain 独立复跑 PASS）。VP-021 关门提案待 `/vision` 用户确认。

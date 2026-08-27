@@ -25,7 +25,7 @@ serves_summary: 承载 VP-021 R3 阶段：合同 v0.1.0 §8 的证据 harness（
 |--------|------|------|
 | C1 | **harness 方案**：A（clean drain）、B（timeout）、C（重启 reclaim）；双方言矩阵；compose stop 核对方式 | **已关门**（D-001 harness 方案，2026-08-27） |
 | C2 | **实施与证据**：harness 落地；SQLite + PG 各跑；退出码 / 日志 / Job reclaim 断言；checksum 回归锁 | **已关门**（E-002；全量 suite exit 0；A/B/C 实测绿；A′/B′/PG 门控登记） |
-| C3 | **关门审计与 Root 关门**：A-001 self + A-002 grok build independent 双审；VP-021 退出判据 1～5 对照；Root done；决策层 VP-021 关门提案 | **已关门**（GOAL-004 A-001 self `pass` 0 required；Root 双审见 Root 03-audit；2026-08-27） |
+| C3 | **关门审计与 Root 关门**：GOAL-004 证据自审（A-001 self）→ Root 关门双审（Root A-001 self + A-002 grok build independent）另记 Root 03-audit；VP-021 退出判据 1～5 对照；Root done；决策层 VP-021 关门提案 | **已关门**（GOAL-004 A-001 self `pass` 0 required；Root 双审与结项见 Root 03-audit / E-006；2026-08-27） |
 
 `progress` = 已关门检查点数 / 3。当前 **3/3**（R3 已关门）。
 

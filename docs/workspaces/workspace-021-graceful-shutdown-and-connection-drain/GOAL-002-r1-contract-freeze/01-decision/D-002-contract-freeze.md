@@ -1,6 +1,6 @@
 ---
 id: D-002
-title: 优雅停机 / 连接排空合同 v0.1.0（冻结 · RT-D02 · 单进程基线）
+title: 优雅停机 / 连接排空合同 v0.1.1（冻结 + 勘误 · RT-D02 · 单进程基线）
 date: 2026-08-27
 status: accepted
 ---
@@ -98,3 +98,14 @@ SIGKILL 无合同（部署层恢复策略负责；Compose `restart: on-failure` 
 ---
 
 **引用链**：证据 → `GOAL-002/01-decision/D-001`（信息裁决）；实施责任 → R2（GOAL-003）；验收 → R3（GOAL-004）。
+
+## 9. 勘误（v0.1.1 · editorial · 2026-08-27 · grok A-002 F-006 响应）
+
+§1 步骤 2/3 与 §2 措辞校准到 `net/http.Server.Shutdown` 实际状态机（语义不变、表述精确化）：
+
+1. **拒绝新连接** = Shutdown 关闭全部监听器后，已排队/新到达的连接被拒（不再接受）。
+2. **空闲连接立即关闭**：`StateIdle`（含超过 5s 仍无首包头的 `StateNew`，Go 22682 规则）在 Shutdown 时立即关闭——它们不参与「排空」。
+3. **排空对象 = 活跃连接**：`StateActive`（handler 或 body 读取中）及近期 `StateNew` 在预算内等待其返回 idle；预算耗尽 → Shutdown 返回 deadline 错误 → 进程 `os.Exit(1)` 截断（不主动掐断仍活跃的连接）。
+4. 「存量请求排空」即「活跃请求（StateActive）在预算内完成」；不应理解为保留空闲 keep-alive 连接。
+
+原合同 §1 步骤 2/3、§2 正文视为按本勘误理解；其余条款不变。

@@ -145,6 +145,12 @@ func TestShutdownDrainHarness(t *testing.T) {
 		if err := app.Stop(stopCtx); err != nil {
 			t.Fatalf("clean-drain Stop = %v, want nil (in-flight request drained within budget)", err)
 		}
+		// Contract §8: after shutdown the listener is closed — new
+		// connections must be refused, not accepted.
+		if conn2, err := net.Dial("tcp", addr); err == nil {
+			_ = conn2.Close()
+			t.Fatal("new connection accepted after Stop; want refused (listener closed)")
+		}
 		select {
 		case res := <-got:
 			if res.err != nil {

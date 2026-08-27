@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-evidence-closeout
 doc: execution
-status: active
+status: done
 parent: GOAL-001-graceful-shutdown-and-connection-drain
 created: 2026-08-27
 updated: 2026-08-27
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-004 R3 证据与关门
