@@ -25,5 +25,6 @@ version: 0.1.0
 ## 残余与登记
 
 1. **hosted runner 实触发**（workflow_dispatch / repository_dispatch）：登记 R7 收口复核项（本地/容器等价已证；hosted 触发 = 外部网络动作，随 R7 报告或用户指令）。
-2. R1 残余 1（信号级 drain harness）→ **核销**（harness A/B 本次容器实跑完成）。
-3. workspace-023 A-002 F-007（workflow 无 pnpm setup / 跨仓 token）→ **核销**（重构后 setup-node cache pnpm + 免 token）。
+2. R1 残余 1（信号级 drain harness）→ **部分核销（口径精化，A-002 F-003 fixed）**：**compose `cmd/server` 容器 A/B 已证**（exit 0/1 + drain 日志）；**serve 面（`server.Serve`）SIGTERM = golden-field workflow 文件交付，实跑随 R7 hosted 触发核销**（Windows 本地不伪造 SIGTERM）。
+3. workspace-023 A-002 F-007（workflow 无 pnpm setup / 跨仓 token）→ **核销**（重构后 pnpm/action-setup + setup-node cache + 免 token）；GOAL-005 F-001（compose 未实跑）→ **核销**。
+4. A-002 F-002（pnpm cache 顺序）→ **fixed**（golden-field `3f2a5c2`：pnpm/action-setup 先于 setup-node + packageManager 声明）。

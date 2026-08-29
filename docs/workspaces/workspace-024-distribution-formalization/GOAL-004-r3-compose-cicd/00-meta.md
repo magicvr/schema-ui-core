@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-compose-cicd
 title: R3 · compose/CI 实跑（主仓 compose 全服务 + consumer-regression 免凭据重构 + 信号级 drain harness linux 容器）
-status: active
+status: done
 parent: GOAL-001-distribution-formalization
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/4
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-004 · R3 · compose/CI 实跑
@@ -29,7 +29,7 @@ progress: 0/4
 | S1 | workflow 重构 + compose 实跑准备（env 注入不落盘） | **已关门**（2026-08-29 · D-001 · workflow commit `c4d14ea`） |
 | S2 | compose 实跑（api+web · healthz/readyz · stop drain 日志） | **已关门**（2026-08-29 · E-002） |
 | S3 | drain harness A/B（linux 容器）+ workflow 本地等价实跑 | **已关门**（2026-08-29 · E-002） |
-| S4 | 证据 + 自审 + 独立审计（grok）→ 关门 | 独立审计 A-002 收取中 |
+| S4 | 证据 + 自审 + 独立审计（grok）→ 关门 | **已关门**（2026-08-29 · A-002 grok independent `pass`（0 required）· F-001~F-003 fixed · GOAL-004 done） |
 
 ## 信息就绪与未知项（P-005）
 
