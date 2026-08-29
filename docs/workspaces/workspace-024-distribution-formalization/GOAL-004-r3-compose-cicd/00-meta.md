@@ -17,25 +17,25 @@ progress: 0/4
 
 ## 成功标准（可验证检查点）
 
-- [ ] C1：主仓 `docker compose up -d --build`（api + web 全服务）→ api healthy（readyz）；`docker compose stop`（grace 15s）→ 日志含 `shutdown.starting`/`shutdown.complete` 且容器退出 0
-- [ ] C2：golden-field `consumer-regression.yml` 重构提交：移除 GH Packages token 步骤、补 pnpm（corepack/setup-node cache）、Go 侧 `go build` + serve 后台 + healthz 轮询 + 四探针、SIGTERM 收尾；**本地等价实跑全绿**（Go build/安装/探针/serve 起停；Windows 无 SIGTERM → 信号面以 C3 容器证据 + hosted 触发登记）
-- [ ] C3：信号级 drain harness（linux 容器 → CI 等价）：harness A = SIGTERM → `shutdown.starting`+`shutdown.complete` + **exit 0**；harness B = `HTTP_SHUTDOWN_TIMEOUT=1s` + 在途慢请求 → `shutdown.timeout` + **exit 1**
-- [ ] C4：I-024-002 核销（CI 环境 = 本地等价 + linux 容器；**hosted runner 实触发登记**为 R7 收口复核项，不主张 hosted acceptance——workspace-002 先例）
+- [x] C1：主仓 `docker compose up -d --build`（api + web 全服务）→ api healthy（readyz `{"status":"ok"}`）· web 反代 200；`docker compose stop`（grace 15s）→ 日志含 `shutdown.starting`/`shutdown.complete` 且 api **ExitCode 0**
+- [x] C2：golden-field `consumer-regression.yml` 重构提交（免 GH token · setup-node pnpm cache · Go build + serve 后台 + healthz/readyz + 四探针 + SIGTERM 收尾断言 `shutdown.complete`）；**本地等价实跑全绿**（Windows 无 SIGTERM → 信号面由 C3 容器证据 + hosted 触发登记覆盖）
+- [x] C3：信号级 drain harness（linux 容器 = CI 等价）：A = stop → `shutdown.starting`+`shutdown.complete` + **exit 0**；B = `HTTP_SHUTDOWN_TIMEOUT=1s` + 在途慢请求 → `shutdown.timeout` + **exit 1**
+- [x] C4：I-024-002 核销（CI 环境 = 本地等价 + linux 容器实跑）；**hosted runner 实触发登记**为 R7 复核查项（不主张 hosted acceptance——workspace-002 先例）
 
 ## 方案与路线（P-001）
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S1 | workflow 重构 + compose 实跑准备（env 注入不落盘） | 未开 |
-| S2 | compose 实跑（api+web · healthz/readyz · stop drain 日志） | 依赖 S1 |
-| S3 | drain harness A/B（linux 容器）+ workflow 本地等价实跑 | 依赖 S2 |
-| S4 | 证据 + 自审 + 独立审计（grok）→ 关门 | 依赖 S2/S3 |
+| S1 | workflow 重构 + compose 实跑准备（env 注入不落盘） | **已关门**（2026-08-29 · D-001 · workflow commit `c4d14ea`） |
+| S2 | compose 实跑（api+web · healthz/readyz · stop drain 日志） | **已关门**（2026-08-29 · E-002） |
+| S3 | drain harness A/B（linux 容器）+ workflow 本地等价实跑 | **已关门**（2026-08-29 · E-002） |
+| S4 | 证据 + 自审 + 独立审计（grok）→ 关门 | 独立审计 A-002 收取中 |
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-024-002 | required | CI 槽位环境（真实 runner / 用户环境等价 + 凭据） | 判据 #3 | R3 | workflow 实跑验证（本地等价 + linux 容器；hosted 触发登记） | open | R3 前置 | 本目标核销 |
+| I-024-002 | required | CI 槽位环境（真实 runner / 用户环境等价 + 凭据） | 判据 #3 | R3 | workflow 实跑验证（本地等价 + linux 容器；hosted 触发登记） | **verified**（2026-08-29 · 本地等价 + linux 容器实跑 · hosted 触发登记 R7） | — | E-002 |
 
 ## 父目标
 
