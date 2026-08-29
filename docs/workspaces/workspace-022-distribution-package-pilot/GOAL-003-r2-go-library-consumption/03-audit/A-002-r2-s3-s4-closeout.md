@@ -34,3 +34,6 @@ GOAL-003 S3 装配闭环验证（方案 β 实证）+ S4 关门：判据 #1（Go
 ## 结论
 
 判据 #1 方向满足；GOAL-003 可关门（4/4）。R2 完成，Root progress 2/5。
+## 响应回填（2026-08-29 · workspace-023）
+
+- **F-005 → `fixed`**：PG external 消费实测完成（workspace-023 GOAL-005 E-001：docker postgres:16 → 组合根双方言参数化 → dialect=postgres fresh=true 64 迁移 apply + 幂等重入 + 库内核对；ops-playbook 备份/停机契约引用）。

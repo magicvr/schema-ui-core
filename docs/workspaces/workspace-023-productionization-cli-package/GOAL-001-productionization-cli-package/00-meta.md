@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.4.0
-progress: 3/5
+version: 0.5.0
+progress: 4/5
 plan_refs:
   - VP-023-productionization-cli-package
 primary_plan: VP-023-productionization-cli-package
@@ -35,7 +35,7 @@ serves_summary: 把 VP-022 验证的构建期包消费可行性闭环升级为�
 | R1 | 真实发布通道：Go tag+`go get`（或私有 proxy）实效；npm registry 上传+安装实效；golden-field 初始化并移除 replace/file: 依赖 | **已关门**（2026-08-29 · GOAL-002 done 4/4 · A-001 self `pass` · 判据 #1 满足；golden-field 全程 registry 语义；升级演练绑定 R2 发布） |
 | R2 | CLI 闭环：create-schema-ui / add / upgrade（对标 dotnet new + NuGet）——golden-field 双轨对照 | 依赖 R1 |
 | R3 | 六包细化（protocol/lib/theme/ui/renderer/shell）+ d.ts 自动化（TS5056）→ 冻结面 v1.3.0 | 依赖 R1 |
-| R4 | PG external 实测（F-005 核销）+ 运维路径文档（启动/升级/迁移/备份/drain）+ golden 仓 CI 槽位 | 依赖 R1–R3 |
+| R4 | PG external 实测（F-005 核销）+ 运维路径文档（启动/升级/迁移/备份/drain）+ golden 仓 CI 槽位 | 依赖 R1–R3 | **已关门**（2026-08-29 · GOAL-005 done 4/4 · A-001 self `pass` · 判据 #4 满足；PG 双方言实证 · ops-playbook+compose+workflow；F-001 推荐 compose 实跑留 CI） |
 | R5 | 产线化报告（判据 #6）+ 核销表 + 建议 → independent 审计（grok）→ 关门 | 依赖 R1–R4 |
 
 ## 信息就绪与未知项（P-005）
