@@ -10,10 +10,10 @@ version: 0.1.0
 
 ## 决策
 
-1. **公开 scope = `@schema-ui`**（用户裁决）：npmjs.com 发布
-   `@schema-ui/schema-ui-{protocol,lib,theme,ui,renderer,shell}`；版本沿用
+1. **公开 scope = `@magicvr` 先行**（用户裁决 2026-08-29；初选 `@schema-ui` 因账号非同名 org 不可直接发布，变更记录见 §6）：npmjs.com 发布
+   `@magicvr/schema-ui-{protocol,lib,theme,ui,renderer,shell}`；版本沿用
    （protocol/renderer 0.2.0 · lib/theme/ui/shell 0.1.0）。GH Packages
-   旧包（`@magicvr/schema-ui-*`）保留不删（历史消费面）。
+   旧包（`@magicvr/schema-ui-*` 私有）保留不删（历史消费面）。
 2. **真实发布授权**（用户裁决 2026-08-29）：token = 仓库根 `.env` 的
    `npm_token` 键（`.env` 已在 `.gitignore`，不入库）。
    **凭据处置**：发布脚本运行时读取 `.env` 注入**临时** `.npmrc`

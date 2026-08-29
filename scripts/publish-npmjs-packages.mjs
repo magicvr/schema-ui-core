@@ -9,8 +9,9 @@
  *   node scripts/publish-npmjs-packages.mjs [--dry-run]
  *
  * 流程：读取 .env npm_token → 临时 .npmrc（仅 stage 临时目录，随 stage 删除）→
- *       逐包解包改名为 @schema-ui/schema-ui-* → npm publish --registry
- *       https://registry.npmjs.org（已发布版本自动跳过）。
+ *       逐包解包改名为 <PUBLISH_SCOPE>/schema-ui-*（默认 @magicvr · npmjs 公开）
+ *       → npm publish --registry https://registry.npmjs.org --access public
+ *       （已发布版本自动跳过：npm view versions 预检 + 403「cannot publish over」兜底）。
  */
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync, cpSync, existsSync, rmSync } from "node:fs";
@@ -22,7 +23,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const artifacts = path.join(root, "apps/web/dist-lib/artifacts");
 const registry = "https://registry.npmjs.org";
-const scope = process.env.PUBLISH_SCOPE || "@schema-ui";
+// 实发 scope = @magicvr（D-001 §6 · 用户裁决：npmjs 公开 @magicvr 先行；
+// @schema-ui 需同名 org，为 org 就绪后的正式化候选，届时覆写本默认值）。
+const scope = process.env.PUBLISH_SCOPE || "@magicvr";
 const dryRun = process.argv.includes("--dry-run");
 
 // 从仓库根 .env 读取 npm_token（值不打印、不落盘）。

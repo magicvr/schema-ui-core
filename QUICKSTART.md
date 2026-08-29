@@ -152,7 +152,7 @@ bash scripts/pre-release-smoke.sh
 ## 方法 B · cli+包 起步（15 分钟对标 · VP-023 产线化）
 
 > 面向「不 fork 主仓」的消费者（fork = 方法 A 见上）：全流程经 registry/CLI 获得同一基架（单主线 · 同协议 pin 2.9.0 · 同冻结面 v1.3.0）。
-> 预置：Go 1.26+、Node 22+；GitHub Packages 认证一次（用户级）：pnpm config set "//npm.pkg.github.com/:_authToken" <token>。
+> 预置：Go 1.26+、Node 22+；Go 走公共 proxy、npm 包走 npmjs.com 公开发布（@magicvr/schema-ui-*）——均免凭据（VP-024 R2 · 2026-08-29；历史 GH Packages 认证路径保留为私有面）。
 
 ```bash
 # 1. 安装 CLI（公共 Go proxy）
@@ -172,4 +172,4 @@ schema-ui upgrade                    # go get @latest + pnpm add @latest + 探�
 
 - 计时口径（VP-023 R5 实测）：create → 双端绿 = **分钟级**（去依赖下载）；升级 = 秒级；冲突计数 = 0、无 git merge。
 - 双方言：SQLite 内嵌默认；生产权威 PostgreSQL：golden-field -dialect postgres -dsn …（迁移/备份契约与 fork 形态一致，见 workspace-023 ops-playbook）。
-- 包面：@magicvr/schema-ui-{protocol,lib,theme,ui,renderer,shell}（GitHub Packages）。
+- 包面：@magicvr/schema-ui-{protocol,lib,theme,ui,renderer,shell}（npmjs.com 公开发布 · 免凭据；`schema-ui upgrade` 自动装配六包）。

@@ -1,6 +1,6 @@
 ---
 id: GOAL-003-r2-public-release-channel
-title: R2 · 公开发布通道闭环（npmjs @schema-ui 六包 + apps/api/v0.4.0 + golden-field 无凭据消费实证）
+title: R2 · 公开发布通道闭环（npmjs @magicvr 六包 + apps/api/v0.4.0 + golden-field 无凭据消费实证）
 status: active
 parent: GOAL-001-distribution-formalization
 created: 2026-08-29
@@ -13,7 +13,7 @@ progress: 0/4
 
 ## 概述
 
-承接 Root R2 与 VP-024 判据 #2：把 R1 的 serve 面与六包**真实公开发布**——npmjs.com `@schema-ui/schema-ui-*` 六包（用户授权 · token 注入点 = 仓库根 `.env` 的 `npm_token`）、Go `apps/api/v0.4.0` origin tag + 公共 proxy；golden-field 升级到 v0.4.0 + `@schema-ui` 六包并完成**无凭据消费实证**（npmjs 公开免 token · go proxy 免认证）；发布流程成文（脚本 + 凭据注入点 + scope 迁移 changelog 注记）。核销 go 后清单第 ② 项（npmjs 公开可见性）与 R1 残余 2（registry 级骨架消费）的发布前提。
+承接 Root R2 与 VP-024 判据 #2：把 R1 的 serve 面与六包**真实公开发布**——npmjs.com `@magicvr/schema-ui-*` 六包（用户裁决：@magicvr 先行 · truthful 公开；@schema-ui 为 org 就绪后正式化候选，见 D-001 §6）、Go `apps/api/v0.4.0` origin tag + 公共 proxy；golden-field 升级到 v0.4.0 + 六包并完成**无凭据消费实证**（npmjs 公开免 token · go proxy 免认证）；发布流程成文（脚本 + 凭据注入点 + scope 迁移 changelog 注记）。核销 go 后清单第 ② 项（npmjs 公开可见性）与 R1 残余 2（registry 级骨架消费）的发布前提。
 
 ## 成功标准（可验证检查点）
 
@@ -35,7 +35,7 @@ progress: 0/4
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-024-001 | required | npmjs 公开发布授权（scope 名 + 凭据方式） | 判据 #2 | R2 | 用户书面授权或裁决 | **verified**（2026-08-29 用户裁决：`@schema-ui` 公开 scope · 真实发布 · token = 仓库根 `.env` `npm_token`） | — | 用户裁决 2026-08-29（goal round）· D-001 |
+| I-024-001 | required | npmjs 公开发布授权（scope 名 + 凭据方式） | 判据 #2 | R2 | 用户书面授权或裁决 | **verified**（2026-08-29 用户裁决：@magicvr 先行真实发布 · token = 仓库根 `.env` `npm_token`；@schema-ui = org 就绪后正式化候选） | — | 用户裁决（goal round）· D-001 §6 |
 | I-024-002 | required | CI 槽位环境（真实 runner / 用户环境等价 + 凭据） | 判据 #3（R3） | R3 | workflow 实跑验证 | **verified 于 R3**（不阻 R2） | R3 前置 | — |
 | I-024-003 | required | fork 对照的同一演进集样本（V 演进选择） | 判据 #4（R4） | R4 | 样本设计与 fork 基线 | open | R4 前置 | 待确认 |
 
