@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-022-distribution-package-pilot
 title: 分发形态试点 · 构建期包消费路径（对标 dotnet new + NuGet / Spring Boot starters）
 status: active
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-022-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29

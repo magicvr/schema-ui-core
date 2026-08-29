@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-005-design-system-and-ui-experience
 title: 现代设计系统与 Schema 驱动 UI/UX 体验产品化
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-006-design-system-and-ui-experience
 created: 2026-08-08
 updated: 2026-08-10

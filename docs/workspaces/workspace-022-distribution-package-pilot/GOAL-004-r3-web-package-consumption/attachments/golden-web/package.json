@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Web 包消费试点黄金仓（GOAL-004）——仅依赖 npm 包组形态的 @schema-ui/protocol（file: 本地产物）",
+  "description": "Web 包消费试点黄金仓（GOAL-004/006）——仅经 npm tarball（registry 安装语义）消费 @schema-ui/*",
   "dependencies": {
-    "@schema-ui/protocol": "file:../../../../../../apps/web/dist-lib/@schema-ui/protocol",
-    "@schema-ui/renderer": "file:../../../../../../apps/web/dist-lib/@schema-ui/renderer",
+    "@schema-ui/protocol": "file:../../../../../../apps/web/dist-lib/artifacts/schema-ui-protocol-0.2.0.tgz",
+    "@schema-ui/renderer": "file:../../../../../../apps/web/dist-lib/artifacts/schema-ui-renderer-0.1.0.tgz",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   }

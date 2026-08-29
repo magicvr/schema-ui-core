@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-017-outbound-mail
 title: 出站邮件（渠道供应商模型）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-017-outbound-mail
 created: 2026-08-22
 updated: 2026-08-24

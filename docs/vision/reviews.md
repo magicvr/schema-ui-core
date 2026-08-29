@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-29
 parent: null
-version: 1.3.61
+version: 1.3.62
 ---
 
 # Vision Review 台账
@@ -87,3 +87,4 @@ version: 1.3.61
 | VRev-047 | 2026-08-27 | self | VP-021 关门就绪 · 退出判据 1～5 / 区证据（lead workspace-021）/ 有界 residual | pass | 0 | 支持 v0.2.0 **`active → closed`** v0.3.0（2026-08-27 用户指令授权 · Root done 3/3 · 关闭双审闭合 0 required · PG drain 实测 PASS）；V-F083 recommended 随闭环 → **fixed**（residual 登记：进程级 harness / compose stop 以 linux CI 核销） | [VRev-047-vp021-closeout.md](reviews/VRev-047-vp021-closeout.md) |
 | VRev-048 | 2026-08-29 | independent | VP-022 分发形态试点 · 意图完备性 / 可行性 / 退出判据 / Charter 对齐 / 组合层定位 | pass | 0 | VP-022 v0.1.0 意图完备、退出判据可判定、Charter 不冲突；`planned` 0 区合法；V-F084/V-F085/V-F086 recommended（激活前 freshness 类型、go/no-go 触发框架、lead_workspace 格式）→ **fixed**（2026-08-29 `/vision` 响应 · VP-022 v0.2.0） | [VRev-048-vp022-distribution-package-pilot-intent.md](reviews/VRev-048-vp022-distribution-package-pilot-intent.md) |
 | VRev-049 | 2026-08-29 | self | VP-022 激活就绪 · 意图已审（VRev-048 闭合）+ 平台/架构类 freshness 轻量复核（`fddaf638` → `5c168070`） | pass | 0 | VP-022 可激活并开区：`planned → active` v0.3.0（2026-08-29 用户指令）；lead `workspace-022-distribution-package-pilot`；freshness **PASS**（协议 pin / 依赖锁 / 迁移 / Profile 默认集无变更；compose +5 = VP-021 交付内核销项）不暂挂 `go`；无新 finding | [VRev-049-vp022-activation.md](reviews/VRev-049-vp022-activation.md) |
+| VRev-050 | 2026-08-29 | self | Charter 0.3.0 strategic（构建期包消费 + pin 2.9.0 + 全量 re-align） | pass | 0 | strategic 分类正确（VR-050）；证据 = workspace-022 go/no-go 报告；22/22 VP `vision_ref` → `@0.3.0`（宽阻断解除）；历史证据/红线未触碰；无 finding | [VRev-050-charter-0-3-0-strategic.md](reviews/VRev-050-charter-0-3-0-strategic.md) |

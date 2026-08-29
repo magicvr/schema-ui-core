@@ -1,9 +1,9 @@
-# 契约冻结面清单 v1.1.0（2026-08-29 · R2 收口：B+ 层 + B 层盘点）
+# 契约冻结面清单 v1.2.0（2026-08-29 · R5 定稿：Web 面 + 发布形态）
 
-- 来源：workspace-022 R1 扫描（2026-08-29；GOAL-002 E-001 / A-001）+ R2 收口（GOAL-003 E-002/E-003/E-004）
+- 来源：workspace-022 R1 扫描（2026-08-29；GOAL-002 E-001 / A-001）+ R2 收口（GOAL-003）+ R5 定稿（GOAL-006）
 - 锚点：`KernelAPIVersion = "2.0.0"`（`apps/api/kernel/module.go`）
-- 范围：**Go 侧**；Web 侧 npm 包组冻结面 = I-002（R3 另行落盘）
-- 状态：~~v0.1.0 草案~~ → **v1.0.0 生效**（2026-08-29 用户确认「确认冻结面，关门 R1，开 R2」；GOAL-002 D-002）→ **v1.0.1**（2026-08-29 · R2 S2 外移重构路径勘误，editorial）→ **v1.1.0**（2026-08-29 · R2 收口 additive：增列 **B+ 层装配工厂面**（§2b，`apps/api/assembly`）；B 层全量符号盘点引用 = `GOAL-003 attachments/modules-export-inventory-v0.1.md`（F-002 回填））
+- 范围：**Go 侧 + Web 侧**（R3 起）
+- 状态：~~v0.1.0 草案~~ → **v1.0.0 生效**（GOAL-002 D-002）→ v1.0.1（R2 S2 路径勘误）→ **v1.1.0**（R2 收口：B+ 层）→ **v1.2.0**（R5 定稿：**Web 六包边界 + peer 矩阵**（§2c）+ **发布形态注记**（§6）；B 层盘点引用 = `GOAL-003 attachments/modules-export-inventory-v0.1.md`）
 
 ## 0. 分界规则（冻结面 vs 内部自由演进面）
 
@@ -75,3 +75,18 @@
 
 - **C 层命名面（已闭合）**：R1 记录的三候选经 R2 实测收敛 = **方案 β**（公开装配工厂 `apps/api/assembly`，用户 2026-08-29 裁决）；① kernel 接口化（β'）与③ 白名单外移（α：auth/store 提升）留 **go/no-go 后评估**。
 - **`kernel.Registrar` 调用面**：模块 Register 体使用 handler 工厂（C 层）构造路由——B 层内部实现可引用 C 层；此属模块自身实现自由，不要求模块内部纯净隔离。
+## 2c. Web 侧包面（v1.2.0 定稿 · I-002 闭合）
+
+| 包 | 来源 | 导出面（v0.1/v0.2 产物） | peer | 状态 |
+|----|------|--------------------------|------|------|
+| @schema-ui/protocol | src/protocol | app-manifest 协商/校验/路由 + page 文档加载 + conformance | ajv（bundle 自包含） | 0.2.0 产物实证 |
+| @schema-ui/renderer（粗粒度单包含 ui/i18n 面） | src/renderer + components + i18n | RenderPage / I18nProvider / registerCustomComponent / 类型 | react ^19 / react-dom ^19（external） | 0.1.0 产物实证 |
+| @schema-ui/ui / 	heme / lib / shell（六包细化目标） | 待六包化专项 | 按边界设计 v0.1 | React/Tailwind | **go 后正式化**（F-006 随 monorepo 化） |
+
+Tailwind 契约：包组件仅 className，零 CSS 产物；样式由下游构建编译（Tailwind 4 @source 扫描包产物——golden-web README 指引）。
+
+## 6. 发布形态注记（v1.2.0 · R5）
+
+- Go：单模块粗粒度 tag（0.0.x 试点 → 语义版本随 semver-breaking-policy）；发布载荷 = go get + replace/registry；装配经 pps/api/assembly（B+ 层）。
+- Web：scripts/pack-npm-packages.mjs 一键 tgz（registry 载荷）；golden-web tarball 安装实证（GOAL-006 E-001）。
+- 版本绑定：changelog 三向一致（kernel 主号 / 模块 KernelAPIRange / npm peer 窗）。

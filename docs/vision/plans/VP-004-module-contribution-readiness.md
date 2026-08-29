@@ -3,9 +3,9 @@ doc_type: vision-plan
 id: VP-004-module-contribution-readiness
 title: 一方模块贡献就绪（作者与 AI 操作契约）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-004-module-contribution-readiness
-closed_under_vision_ref: schema-ui-core-admin-foundation@0.2.0
+closed_under_vision_ref: schema-ui-core-admin-foundation@0.3.0
 created: 2026-08-06
 updated: 2026-08-06
 version: 0.2.0

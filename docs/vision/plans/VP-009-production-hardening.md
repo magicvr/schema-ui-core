@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-009-production-hardening
 title: 生产加固（共享基架持续安全与健壮性）
 status: active
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-009-production-hardening
 created: 2026-08-10
 updated: 2026-08-10

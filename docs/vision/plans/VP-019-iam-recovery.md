@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-019-iam-recovery
 title: IAM：密码策略 / 邀请入职 / 自助恢复状态机
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-019-iam-recovery
 created: 2026-08-25
 updated: 2026-08-26

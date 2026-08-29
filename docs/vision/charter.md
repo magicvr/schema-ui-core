@@ -3,11 +3,11 @@ doc_type: vision-charter
 vision_id: schema-ui-core-admin-foundation
 title: Schema UI Core 中型项目 Admin 基架
 status: active
-version: 0.2.0
-effective_date: 2026-08-04
+version: 0.3.0
+effective_date: 2026-08-29
 primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-08-25
+updated: 2026-08-29
 parent: null
 ---
 
@@ -22,9 +22,9 @@ parent: null
 | 项 | 值 |
 |----|----|
 | canonical source | https://github.com/magicvr/schema-ui-docs |
-| release ref | `v2.8.0` |
-| pinned commit | `521cff8`（tag `v2.8.0`；content `sha256:4fae4605…`、artifact `sha256:6cdbffcc…`） |
-| manifest | https://raw.githubusercontent.com/magicvr/schema-ui-docs/521cff8/protocol-manifest.json |
+| release ref | `v2.9.0` |
+| pinned commit | `81aa1d8`（tag `v2.9.0`；支持窗含 v2.7/v2.8 additive 子集） |
+| manifest | https://raw.githubusercontent.com/magicvr/schema-ui-docs/81aa1d8/protocol-manifest.json |
 
 该外部协议是语义、结构与行为契约的来源。本仓库当前未 vendor 该协议全文；**本地实施清单与前后端映射**已提取于 [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)（`F-V001` → `fixed`）。**2026-08-14 pin bump（VR-020 · editorial）**：协议来源由 `v2.7.0` 升至 `v2.8.0`（additive 超集，v2.7.0 机器契约保留）；身份权威 = `apps/web/src/protocol/upstream/provenance-v2.8.json`（VP-010 W3 固定）。
 
@@ -34,7 +34,7 @@ parent: null
 
 在本愿景仍为 `active` 的前提下，下列方向成立即视为仍在愿景内；它们不是可关门的执行 checklist：
 
-1. 提供可 fork 的 React 前端与 Go 后端 Admin 基架，并对 `schema-ui-docs` `v2.8.0` 的协议能力（含 `v2.7.0` additive 子集与新增 Host/App 互操作层）形成可验证的兼容实现与示例路径。
+1. 提供可 fork 的 React 前端与 Go 后端 Admin 基架，并对 `schema-ui-docs` `v2.9.0` 的协议能力（含 v2.7/v2.8 additive 子集与 Host/App 互操作层）形成可验证的兼容实现与示例路径；**或经构建期包消费路径**（Go 模块 `go get` / npm 包组 `@schema-ui/*` + 公开装配工厂 `apps/api/assembly` + changelog 迁移说明）获得同一基架与协议兼容实现——fork 与包消费为同一单主线的两种交付形态，不维护平行代码线。**（strategic 0.3.0 · VR-050 · 2026-08-29；试点证据 = workspace-022 go/no-go 报告）**
 2. MVP 覆盖最核心的账号与权限能力；每一纳入范围的协议功能均有范例页面和对应的验证路径。
 3. 前端经产品化后可被 fork 项目直接使用，采用 Tailwind CSS 与 shadcn/ui 风格组件，支持浅色和深色模式，并以 Linear 与 Vercel Dashboard 的克制、工作导向体验为参考。
 4. 以单一代码主线、薄内核、框架无关模块契约和启动时 Profile 提供不同 fork 起点；MVP 与完整 Admin 是同一架构的配置形态，不维护长期平行演进代码线。
@@ -46,8 +46,8 @@ parent: null
 
 - 不建设特定业务领域的终端产品；钱包、订单、类目、通知等属于后续 VP 的候选能力。
 - 不在本项目内重新定义或替代 `schema-ui-docs` 的协议语义；协议变更应回到上游契约或形成明确的兼容决策。
-- 不建设运行时插件市场、远程模块下载、`.so` 加载或运行中热插拔；Profile 只在已编译候选集中选择模块。
-- 不承诺 Profile 从二进制中物理移除未启用模块；需要物理裁剪时由 fork 或独立构建目标负责。
+- 不建设运行时插件市场、远程模块下载、`.so` 加载或运行中热插拔；Profile 只在已编译候选集中选择模块。澄清（strategic 0.3.0 · VR-050）：**构建期包组装允许**（包在编译时进入组合根与冻结面），禁止的是运行时下载/热插拔。
+- 不承诺 Profile 从二进制中物理移除未启用模块；需要物理裁剪时由 fork 或按需装包承担。**不承诺以 fork 为唯一消费路径**（strategic 0.3.0 · VR-050）。
 
 ## 原则摘要
 
@@ -76,8 +76,8 @@ parent: null
 | 项 | 值 |
 |----|----|
 | `vision_id` | `schema-ui-core-admin-foundation` |
-| 版本 | `0.2.0` |
+| 版本 | `0.3.0` |
 | 状态 | `active` |
-| 引用格式 | `schema-ui-core-admin-foundation@0.2.0` |
+| 引用格式 | `schema-ui-core-admin-foundation@0.3.0` |
 
 修订史见 [revisions.md](revisions.md)，愿景审视台账见 [reviews.md](reviews.md)。

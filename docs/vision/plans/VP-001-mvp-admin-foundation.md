@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-001-mvp-admin-foundation
 title: MVP Admin 基架
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 closed_under_vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31

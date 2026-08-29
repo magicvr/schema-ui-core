@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-007-localization-and-system-settings
 title: 多语种与系统设置产品化
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-007-localization-and-system-settings
 created: 2026-08-09
 updated: 2026-08-09

@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-013-store-dialects
 title: Store 双方言（PostgreSQL 生产权威 + SQLite 内嵌）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-013-store-dialects
 created: 2026-08-20
 updated: 2026-08-21

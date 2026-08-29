@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-021-graceful-shutdown-and-connection-drain
 title: 优雅停机 / 连接排空合同
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-021-graceful-shutdown-and-connection-drain
 created: 2026-08-26
 updated: 2026-08-27

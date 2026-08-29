@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-016-key-rotation-and-backup
 title: 密钥轮换与备份恢复合同（JWT + 轮换后恢复）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-016-key-rotation-and-backup
 created: 2026-08-22
 updated: 2026-08-22

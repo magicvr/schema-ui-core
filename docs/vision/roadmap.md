@@ -45,7 +45,8 @@ version: 0.52.0
 2. **MVP 子集不是终态成功条件**：`I-PROTO-001 v0.1.3` 是历史 MVP 冻结切片；整份 v2.7.0 契约由 VP-006 收口。  
 3. 已关闭 VP-001～004 的历史证据与 status **不重写**。
 
-> **协议 pin 注记（2026-08-14 · VR-020 · editorial）**：协议覆盖权威由 `v2.7.0` 升至 `v2.8.0`（additive 超集；`I-PROTO-FULL-001` v1.0.1 仍为 v2.7.0 历史分母、已被 v2.8.0 覆盖）。身份权威见 `apps/web/src/protocol/upstream/provenance-v2.8.json`。
+> **协议 pin 注记（2026-08-14 · VR-020 · editorial）**：协议覆盖权威由 `v2.7.0` 升至 `v2.8.0`（additive 超集；`I-PROTO-FULL-001` v1.0.1 仍为 v2.7.0 历史分母、已被 v2.8.0 覆盖）。身份权威见 `apps/web/src/protocol/upstream/provenance-v2.8.json`。  
+> **协议 pin 注记（2026-08-29 · VR-050 · strategic）**：协议来源升至 **`v2.9.0`**（pinned `81aa1d8`；支持窗 2.7–2.9 additive 超集——代码实现追认，I-007 闭合；Charter `@0.3.0`）。
 
 ---
 

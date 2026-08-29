@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-018-account-email-identity
 title: 账号邮箱身份（绑定与校验）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-018-account-email-identity
 created: 2026-08-24
 updated: 2026-08-24
