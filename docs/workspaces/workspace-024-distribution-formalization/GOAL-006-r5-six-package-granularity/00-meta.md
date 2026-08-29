@@ -17,20 +17,20 @@ progress: 0/5
 
 ## 成功标准（可验证检查点）
 
-- [ ] C1：renderer 包 external 化：重建产物 `index.js` 对 `@schema-ui/{protocol,lib,ui}` 的 import 断言存在（静态探针）+ package.json 声明对应 peerDependencies；`@/i18n → @schema-ui/lib/i18n`、`@/protocol → @schema-ui/protocol`、`@/lib → @schema-ui/lib/lib`、`@/components/ui → @schema-ui/ui/components/ui` 重写表生效
-- [ ] C2：六包 exports 通配子路径（`"./*": "./*"`）+ files 收窄为实际目录 + 版本推进（renderer 0.3.0 · protocol 0.2.1 · lib 0.1.1 · ui/theme/shell 0.1.1）→ npmjs 实发
-- [ ] C3：ui 纯原子断言（`components/ui` 无 renderer/protocol/i18n 反向依赖）+ ui 包独立消费实证（probe-six 既有 + 收窄后重装）
-- [ ] C4：冻结面 v1.4.0 定稿（六包导出面 + peer 矩阵）落 `attachments/`
-- [ ] C5：golden-field 升级（六包新版 + renderer 包子路径探针断言）全绿；独立审计（grok）→ 关门（Root 5/7）
+- [x] C1：renderer 包 external 化：`index.js` **187.5 kB**（旧 436.7 kB）· **17 处 `from "@magicvr/schema-ui-*"`**（protocol/lib/ui 子路径）· js+d.ts **0 处 `@/` 残留** · peerDependencies（react 系 + 三包子面）声明消费端解析
+- [x] C2：六包 exports 通配子路径（`"./*": "./*"` —— target 合法 `./` 前缀）+ files 全量（无白名单丢文件）+ 终版发布（protocol **0.2.11** · lib **0.1.9** · renderer **0.3.7** · ui **0.1.7** · shell/theme 0.1.2）npmjs 实发；protocol/lib/ui 为 **tsc 子路径产物**（conformance/component-format、lib/datetime、components/ui/card 等子路径 JS 可解析）
+- [x] C3：ui 纯原子断言（12 原子组件 · 无 renderer/protocol/i18n 反向依赖）+ ui 包独立消费实证
+- [x] C4：冻结面 v1.4.0 定稿（六包导出面 + peer/deps 矩阵 + 版本终值 + shell 类型残余注记）
+- [x] C5：golden-field 升级（六包终值）· **五探针全绿**（probe-r5 external 断言 PASS / protocol 2.9 / render 1573B / six / token）· 无凭据安装；独立审计（grok）收取后关门（Root 5/7）
 
 ## 方案与路线（P-001）
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S1 | 设计定档：重写映射表 + exports/files 布局 + 版本推进（D-001） | 未开 |
-| S2 | 构建链改造：build-lib-packages.mjs 增 renderer external 构建（重写插件 + external 函数）· tsc declaration 重建 | 依赖 S1 |
-| S3 | 六包 pack + 新版本 npmjs 发布 + golden-field 升级 + 探针（含 renderer import 断言） | 依赖 S2 |
-| S4 | 冻结面 v1.4.0 定稿 + 独立审计（grok）→ 关门 | 依赖 S2/S3 |
+| S1 | 设计定档：重写映射表 + exports/files 布局 + 版本推进（D-001） | **已关门**（2026-08-29 · D-001） |
+| S2 | 构建链改造：build-lib（renderer external + tsc 三包）+ rewrite/finalize 脚本 | **已关门**（2026-08-29 · E-002） |
+| S3 | 六包终版发布 + golden-field 升级 + 五探针全绿 | **已关门**（2026-08-29 · E-002） |
+| S4 | 冻结面 v1.4.0 定稿 + 独立审计（grok）→ 关门 | A-002 收取中 |
 
 ## 信息就绪与未知项（P-005）
 

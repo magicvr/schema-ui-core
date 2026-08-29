@@ -6,23 +6,25 @@
 
 | 包 | 版本 | 入口 | 子路径 | files |
 |----|------|------|--------|-------|
-| `@schema-ui/protocol` | 0.2.1 | `"types": ./protocol/index.d.ts · "import": ./index.js` | `"./*": "./*"`（protocol/ · lib/） | index.js + protocol/ + lib/ |
-| `@schema-ui/lib` | 0.1.1 | ./lib/index.d.ts · ./index.js | `"./*": "./*"`（lib/ · i18n/） | index.js + lib/ + i18n/ |
-| `@schema-ui/theme` | 0.1.1 | ./theme/index.d.ts · ./index.js | `"./*": "./*"`（theme/） | index.js + theme/ |
-| `@schema-ui/ui` | 0.1.1 | ./components/ui/index.d.ts · ./index.js | `"./*": "./*"`（components/ · lib/ · i18n/） | index.js + components/ + lib/ + i18n/ |
-| `@schema-ui/renderer` | **0.3.0** | ./renderer/index.d.ts · ./index.js | `"./*": "./*"`（renderer/） | index.js + renderer/ |
-| `@schema-ui/shell` | 0.1.1 | ./app/index.d.ts · ./index.js | `"./*": "./*"`（app/ host/ account/ …） | index.js + 全部目录 |
+| `@schema-ui/protocol` | 0.2.11 | `"types": ./protocol/index.d.ts · "import": ./protocol/index.js` | `"./*": "./*"`（protocol/ · lib/ · schemas/） | 全量（无 files 白名单） |
+| `@schema-ui/lib` | 0.1.9 | ./lib/index.d.ts · ./lib/index.js | `"./*": "./*"`（lib/ · i18n/ · messages 资产） | 全量 |
+| `@schema-ui/theme` | 0.1.2 | ./theme/index.d.ts · ./index.js | `"./*": "./*"`（theme/） | 全量 |
+| `@schema-ui/ui` | 0.1.7 | ./components/ui/index.d.ts · ./components/ui/index.js | `"./*": "./*"`（components/ · lib/ · i18n/） | 全量 |
+| `@schema-ui/renderer` | **0.3.7** | ./renderer/index.d.ts · ./index.js | `"./*": "./*"`（renderer/ · components/） | 全量 |
+| `@schema-ui/shell` | 0.1.2 | ./app/index.d.ts · ./index.js | `"./*": "./*"`（app/ host/ account/ …） | 全量 |
+
+> 终值版本 = npmjs 实发（命名/元数据/运行链全绿后定稿）；早期中间版（0.3.0~0.3.6 等修正链）为历史记录，消费指引以终值为准。
 
 ## 2. peer 矩阵（消费端解析 · R5 定稿）
 
-| 包 | peerDependencies | 说明 |
-|----|------------------|------|
-| protocol | — | 自包含 bundle（ajv 打包） |
-| lib | — | 自包含 |
-| theme | — | Token CSS/TS，无运行时依赖 |
-| ui | react ^19 · react-dom ^19 | 原子组件；lib/i18n 面 bundle 自含（无包级依赖） |
-| renderer | react ^19 · react-dom ^19 · **@schema-ui/protocol ^0.2.1 · @schema-ui/lib ^0.1.1 · @schema-ui/ui ^0.1.1** | 依赖图 external 化：产物 import 包子路径（17 处），消费端解析；不再自包含 protocol/lib/ui/i18n 面 |
-| shell | react ^19 · react-dom ^19 | App/Host 壳 bundle 自包含 |
+| 包 | peerDependencies | dependencies | 说明 |
+|----|------------------|---------------|------|
+| protocol | — | ajv ^8.20 | 协议面；schema JSON 资产入包（import attributes） |
+| lib | react ^19（i18n React 面） | clsx · tailwind-merge | i18n/messages 资产入包 |
+| theme | — | — | Token CSS/TS |
+| ui | react ^19 · react-dom ^19 | clsx · tailwind-merge · class-variance-authority · lucide-react · @radix-ui/react-slot | 原子组件；lib/i18n 面 bundle 自含 |
+| renderer | react ^19 · react-dom ^19 · **@magicvr/schema-ui-protocol ^0.2.11 · @magicvr/schema-ui-lib ^0.1.9 · @magicvr/schema-ui-ui ^0.1.7** | — | 依赖图 external 化：产物 import 包子路径（17 处），消费端解析；不再自包含 protocol/lib/ui/i18n 面 |
+| shell | react ^19 · react-dom ^19 | — | App/Host 壳 bundle 自包含 |
 
 ## 3. 契约记录
 
