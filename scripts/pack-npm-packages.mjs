@@ -29,14 +29,19 @@ for (const f of readdirSync(artifacts)) {
   rmSync(path.join(artifacts, f), { recursive: true, force: true });
 }
 
-const packages = readdirSync(distLib, { withFileTypes: true })
-  .filter((e) => e.isDirectory() && e.name.startsWith("@"))
-  .flatMap((e) => {
-    const pkgDir = path.join(distLib, e.name);
-    return readdirSync(pkgDir, { withFileTypes: true })
-      .filter((n) => n.isDirectory())
-      .map((n) => ({ parent: e.name, dir: path.join(pkgDir, n.name) }));
-  });
+// 对每个含 package.json 的包目录执行 pnpm pack（包根优先；子目录含 json 亦支持）。
+// R5 修正：renderer clean 后子目录无 package.json，旧逻辑沿父链误拾 apps/web 包。
+const packages = [];
+for (const e of readdirSync(distLib, { withFileTypes: true }).filter((x) => x.isDirectory() && x.name.startsWith("@"))) {
+  const pkgDir = path.join(distLib, e.name);
+  if (existsSync(path.join(pkgDir, "package.json"))) packages.push({ parent: e.name, dir: pkgDir });
+  for (const n of readdirSync(pkgDir, { withFileTypes: true }).filter((x) => x.isDirectory())) {
+    const dir = path.join(pkgDir, n.name);
+    if (existsSync(path.join(dir, "package.json")) && !packages.some((p) => p.dir === dir)) {
+      packages.push({ parent: e.name, dir });
+    }
+  }
+}
 
 const built = [];
 for (const { dir } of packages) {

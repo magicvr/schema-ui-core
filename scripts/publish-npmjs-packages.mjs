@@ -64,15 +64,17 @@ try {
     writeFileSync(path.join(stage, ".npmrc"), `//registry.npmjs.org/:_authToken=${token}\n`);
   }
   for (const tgz of tgzs) {
-    const base = path.basename(tgz, ".tgz"); // schema-ui-protocol-0.2.0
-    const [, name, version] = base.match(/^(.*)-(\d+\.\d+\.\d+)$/);
-    const pkgName = `${scope}/${name}`;
+    const base = path.basename(tgz, ".tgz"); // magicvr-schema-ui-protocol-0.2.2 | schema-ui-protocol-0.2.1
     const dir = path.join(stage, base);
     cpSync(path.join(artifacts, tgz), path.join(stage, `${base}.tgz`));
     mkdirSync(dir, { recursive: true });
     execFileSync("tar", ["-xzf", path.join(stage, `${base}.tgz`), "-C", dir], { shell: process.platform === "win32" });
     const pkgPath = path.join(dir, "package/package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+    // 包名 = scope + 解包 json 的 name 尾段（兼容 pack 出的两种命名：schema-ui-* 与 magicvr-schema-ui-*）。
+    const namePart = (pkg.name || base).includes("/") ? (pkg.name || base).split("/").pop() : (pkg.name || base);
+    const pkgName = `${scope}/${namePart}`;
+    const version = pkg.version || (() => { const m = base.match(/-(\d+\.\d+\.\d+)$/); return m ? m[1] : ""; })();
     pkg.name = pkgName;
     // scoped 包默认 private：显式公开（免费账号私有包发布会被 E402 拒绝），
     // 并写 publishConfig 使后续发布默认公开。
