@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-cli
 title: R2 · CLI 闭环
-status: active
+status: done
 parent: GOAL-001-productionization-cli-package
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-003 · R2 · CLI 闭环
@@ -17,10 +17,10 @@ progress: 0/4
 
 ## 成功标准（阶段检查点）
 
-- [ ] **S1 · CLI 实现**：`apps/api/cmd/schema-ui`（标准库解析 · 零新依赖 · go:embed 模板）——`create`（骨架生成）+ `add`（可用模块清单/registry 装配）+ `upgrade`（registry 升级 + 探针回归）
-- [ ] **S2 · create 验证**：CLI 生成仓 == golden-field 骨架等价（双轨 diff）· 生成仓 go run/install/probes 全绿
-- [ ] **S3 · 发布与升级演练**：CLI 首版 registry 发布（Go tag apps/api/v0.2.0 或独立？——CLI 在 apps/api 模块内 → 随模块发布）+ **registry 升级演练**（F-001 核销：bump → 安装 → 回归，含 breaking 场景预演）
-- [ ] **S4 · 关门**：self 审计 + 判据 #2 满足声明 + F-001 fixed
+- [x] **S1 · CLI 实现**：`apps/api/cmd/schema-ui`（标准库解析 · 零新依赖 · go:embed 模板）——`create`（骨架生成）+ `add`（可用模块清单/registry 装配）+ `upgrade`（registry 升级 + 探针回归）
+- [x] **S2 · create 验证**：CLI 生成仓 == golden-field 骨架等价（双轨 diff）· 生成仓 go run/install/probes 全绿
+- [x] **S3 · 发布与升级演练**：CLI 首版 registry 发布（Go tag apps/api/v0.2.0 或独立？——CLI 在 apps/api 模块内 → 随模块发布）+ **registry 升级演练**（F-001 核销：bump → 安装 → 回归，含 breaking 场景预演）
+- [x] **S4 · 关门**：A-001 self ``pass``（0 required）→ 判据 #2 满足声明 · F-001 fixed（跨目标回填）
 
 ## 信息就绪
 

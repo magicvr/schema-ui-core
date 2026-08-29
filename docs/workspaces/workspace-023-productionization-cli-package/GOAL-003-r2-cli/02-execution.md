@@ -12,4 +12,5 @@ version: 0.1.0
 
 | id | date | summary | file |
 |----|------|---------|------|
-| — | — | （S1 实施后落首条 E） | — |
+| E-001 | 2026-08-29 | CLI 实现（create/add/upgrade · 零依赖 · go:embed）与 create 验证双端全绿 | [E-001-r2-cli-impl.md](02-execution/E-001-r2-cli-impl.md) |
+| E-002 | 2026-08-29 | registry 升级演练（v0.1.0→v0.2.0 · 冲突 0 · 探针回归）· F-001 核销 | [E-002-r2-upgrade-drill.md](02-execution/E-002-r2-upgrade-drill.md) |
