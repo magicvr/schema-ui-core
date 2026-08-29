@@ -2,7 +2,7 @@ module golden.local/consumer
 
 go 1.26
 
-require github.com/magicvr/schema-ui-core/apps/api v0.0.0
+require github.com/magicvr/schema-ui-core/apps/api v0.0.2 // R4 演练：仅 bump 版本（v0.0.1 → v0.0.2，replace 本地）
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect

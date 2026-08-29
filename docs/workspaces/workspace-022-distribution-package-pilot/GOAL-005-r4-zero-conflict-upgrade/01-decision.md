@@ -12,4 +12,4 @@ version: 0.1.0
 
 | id | date | summary | file |
 |----|------|---------|------|
-| D-001 | 2026-08-29 | 演练样本定案：kernel additive（JoinKeys）+ protocol additive（normalizePageID）+ 新迁移 0011（site_settings updated_at index）；版本 bump 符号 = require/依赖版本号 + changelog 迁移说明 | [D-001-r4-drill-samples.md](01-decision/D-001-r4-drill-samples.md) |
+| D-001 | 2026-08-29 | 演练样本定案：kernel additive（JoinKeys）+ protocol additive（normalizePageID）+ 新迁移 0063（site_settings updated_at index）；版本 bump 符号 = require/依赖版本号 + changelog 迁移说明 | [D-001-r4-drill-samples.md](01-decision/D-001-r4-drill-samples.md) |

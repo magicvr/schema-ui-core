@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-zero-conflict-upgrade
 title: R4 · 零冲突升级演练
-status: active
+status: done
 parent: GOAL-001-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-005 · R4 · 零冲突升级演练
@@ -17,10 +17,10 @@ progress: 0/4
 
 ## 成功标准（阶段检查点）
 
-- [ ] **S1 · 样本设计与基线冻结**：演进样本集（≥3 类变更：kernel additive / protocol additive / 新迁移）；V1 基线证据（golden-consumer `go run` + golden-web 三探针，E-001）
-- [ ] **S2 · 上游 V2 演进**：真实代码变更 + changelog 迁移说明（V1→V2）+ 主仓回归（build + 全量测试）
-- [ ] **S3 · 下游升级演练**：golden 仓仅 bump（require/依赖版本号）→ 回归全绿 · 新迁移 apply · **冲突计数 = 0 · 无 git merge**
-- [ ] **S4 · 关门**：self 审计 + 判据 #3 满足声明 + 挂账复核（F-005 PG external / I-007 pin / F-003 drain 时序 → R5 前状态声明）
+- [x] **S1 · 样本设计与基线冻结**：演进样本集（kernel additive / protocol additive / 新迁移 0063）；V1 基线证据（E-001）
+- [x] **S2 · 上游 V2 演进**：commit `b0b41405`（三样本 + 测试夹具同步）+ changelog 迁移说明（E-002）
+- [x] **S3 · 下游升级演练**：gc 仅 go.mod 1 行 bump → 输出与基线逐字节一致；gw 0 行代码 diff + pnpm install 重拉 → 旧探针全过 + V2 能力可用；**冲突计数 = 0 · 无 git merge**（E-002）
+- [x] **S4 · 关门**：A-001 self `pass`（0 required · F-003 复核通过）→ **判据 #3 满足声明**；GOAL-005 `done 4/4`
 
 ## 信息就绪
 
