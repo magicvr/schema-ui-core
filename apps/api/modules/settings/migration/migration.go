@@ -171,7 +171,33 @@ func Descriptors() []kernel.MigrationContribution {
 			Checksum:             kernel.MigrationChecksum(siteCurrencyDDL, "0062:site-default-currency:v1"),
 			Apply:                migrate0062,
 		},
+		{
+			// 0063 · R4 零冲突升级演练样本（GOAL-005 S2）：site_settings.updated_at 索引。
+			// 双方言同一语法（CREATE INDEX IF NOT EXISTS），单一 Apply。
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_settings_updated_at_index"},
+			Version:              63,
+			Name:                 "site_settings_updated_at_index",
+			Checksum:             kernel.MigrationChecksum(siteUpdatedAtIndexDDL, transformV0050ID),
+			Apply:                migrate0063,
+		},
 	}
+}
+
+// siteUpdatedAtIndexDDL (0063 · R4 演练样本)。SQLite 与 PostgreSQL 均支持
+// CREATE INDEX IF NOT EXISTS——单一 Apply 覆盖双方言。
+var siteUpdatedAtIndexDDL = []string{
+	`CREATE INDEX IF NOT EXISTS idx_site_settings_updated_at ON site_settings (updated_at)`,
+}
+
+const transformV0050ID = "0063:site-settings:updated-at-index:v1"
+
+func migrate0063(tx kernel.Tx) error {
+	for _, stmt := range siteUpdatedAtIndexDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("index site_settings updated_at: %w", err)
+		}
+	}
+	return nil
 }
 
 // siteCurrencyDDL (0062 · workspace-020 R3): site-wide default currency

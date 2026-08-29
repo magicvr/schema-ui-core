@@ -993,3 +993,9 @@ export function isNavigationItemVisible(
     (condition === undefined || evaluateExpression(condition, context))
   );
 }
+
+/** Normalizes a page identifier for contribution-key matching (trim + lowercase).
+ *  Added in the R4 zero-conflict upgrade drill as a protocol additive sample. */
+export function normalizePageID(id: string): string {
+  return id.trim().toLowerCase();
+}
