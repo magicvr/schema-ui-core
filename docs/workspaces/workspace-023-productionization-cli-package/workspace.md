@@ -1,7 +1,7 @@
 ---
 id: workspace-023-productionization-cli-package
 title: 包消费产线化工作区
-status: active
+status: done
 root_goal: GOAL-001-productionization-cli-package
 canonical_scope: docs/workspaces/workspace-023-productionization-cli-package/
 shared_materials_catalog: none
@@ -29,7 +29,7 @@ parent: null
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | **真实发布通道**：Go origin tag + `go get @vX`（或私有 proxy）实效；npm registry 上传 + `pnpm add @ver` 实效；golden-field 移除 replace/file: 依赖 | 未开 |
+| R1 | **真实发布通道**：Go origin tag + `go get @vX`（或私有 proxy）实效；npm registry 上传 + `pnpm add @ver` 实效；golden-field 移除 replace/file: 依赖 | **已关门**（R1–R4 GOAL-002~005） |
 | R2 | **CLI 闭环**：create/add/upgrade（对标 dotnet new + NuGet）双轨对照 | 依赖 R1 |
 | R3 | **六包细化 + d.ts 自动化**（TS5056 修复）→ 冻结面 v1.3.0 | 依赖 R1 |
 | R4 | **覆盖运维**：PG external 实测 + 运维路径文档 + golden 仓团队化（CI 槽位） | 依赖 R1–R3 |

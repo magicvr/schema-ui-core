@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-productionization-cli-package
 title: 包消费产线化（cli+包 分发路径可运营化）
-status: active
+status: done
 parent: null
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.5.0
-progress: 4/5
+version: 0.6.0
+progress: 5/5
 plan_refs:
   - VP-023-productionization-cli-package
 primary_plan: VP-023-productionization-cli-package
@@ -42,9 +42,9 @@ serves_summary: 把 VP-022 验证的构建期包消费可行性闭环升级为�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-023-001 | required | Go 发布通道形态（origin tag + 公共 proxy vs 私有 proxy/file proxy）与凭据可用性 | R1 发布实证 | R1 | 通道探测 + `go get` 实测 | open | — | 待确认 |
-| I-023-002 | required | npm registry 目标（npmjs scope vs GitHub Packages）与发布凭据 | R1 发布实证 | R1 | 通道探测 + 上传样例 | open | — | 待确认 |
-| I-023-003 | required | PG 可用实例（本机 CI 或容器）供 external 消费实测 | R4 实测 | R4 | 环境探测（docker/pg 服务） | open | — | 待确认 |
+| I-023-001 | required | Go 发布通道形态（origin tag + 公共 proxy）与凭据可用性 | R1 发布实证 | R1 | `go get` 实测 | **verified**（`apps/api/v0.1.0/v0.2.0` tag + 公共 proxy 下载实证） | — | GOAL-002 E-001 |
+| I-023-002 | required | npm registry 目标（GitHub Packages）与发布凭据 | R1 发布实证 | R1 | 上传样例 | **verified**（GH Packages 六包发布 + golden-field registry 安装实证） | — | GOAL-002 E-002 / GOAL-004 E-001 |
+| I-023-003 | required | PG 可用实例（docker postgres:16 容器 gf-pg） | R4 实测 | R4 | 容器就绪检查 | **verified**（15432→5432 · 63 迁移 apply · 幂等重入） | — | GOAL-005 E-001 |
 
 ## 父目标
 

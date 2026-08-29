@@ -22,9 +22,13 @@ var templateFS embed.FS
 
 const (
 	apiModule   = "github.com/magicvr/schema-ui-core/apps/api"
-	apiVersion  = "v0.1.0" // 随发布推进更新；upgrade 用 @latest
+	apiVersion  = "v0.2.0" // 随发布推进更新；upgrade 用 @latest
 	protocolVer = "0.2.0"
-	rendererVer = "0.1.0"
+	libVersion    = "0.1.0"
+	shellVersion  = "0.1.0"
+	themeVersion  = "0.1.0"
+	uiVersion     = "0.1.0"
+	rendererVer = "0.2.0"
 )
 
 type createOpts struct {
@@ -122,6 +126,10 @@ func generate(o createOpts) error {
 	}
 	data := map[string]string{
 		"Name":           o.name,
+		"LibVersion":      libVersion,
+		"ShellVersion":    shellVersion,
+		"ThemeVersion":    themeVersion,
+		"UiVersion":       uiVersion,
 		"Module":         o.module,
 		"APIVersion":     apiVersion,
 		"ProtocolVersion": protocolVer,
@@ -137,6 +145,7 @@ func generate(o createOpts) error {
 		"templates/probe.mjs":            filepath.Join(o.dir, "web", "probe.mjs"),
 		"templates/probe-render.mjs":     filepath.Join(o.dir, "web", "probe-render.mjs"),
 		"templates/token-check.mjs":      filepath.Join(o.dir, "web", "token-check.mjs"),
+		"templates/probe-six.mjs":            filepath.Join(o.dir, "web", "probe-six.mjs"),
 		"templates/index.css":            filepath.Join(o.dir, "web", "index.css"),
 		"templates/brand.css":            filepath.Join(o.dir, "web", "brand.css"),
 	}
@@ -244,9 +253,9 @@ func cmdUpgrade(args []string) error {
 		}
 	}
 	if _, err := os.Stat("web/package.json"); err == nil {
-		cmd := "pnpm add @magicvr/schema-ui-protocol@latest @magicvr/schema-ui-renderer@latest"
+		cmd := "pnpm add @magicvr/schema-ui-lib@latest @magicvr/schema-ui-protocol@latest @magicvr/schema-ui-renderer@latest @magicvr/schema-ui-shell@latest @magicvr/schema-ui-theme@latest @magicvr/schema-ui-ui@latest"
 		if dry {
-			cmd = "pnpm outdated @magicvr/schema-ui-protocol @magicvr/schema-ui-renderer"
+			cmd = "pnpm outdated @magicvr/schema-ui-lib @magicvr/schema-ui-protocol @magicvr/schema-ui-renderer @magicvr/schema-ui-shell @magicvr/schema-ui-theme @magicvr/schema-ui-ui"
 		}
 		fmt.Println("> " + cmd)
 		if !dry {
@@ -264,8 +273,8 @@ func cmdUpgrade(args []string) error {
 			}
 		}
 		if _, err := os.Stat("cmd/server"); err == nil {
-			fmt.Println("> go run ./cmd/server ./data-upgrade.db")
-			if err := runCmd(shell, buildShellCmd("go run ./cmd/server ./data-upgrade.db")); err != nil {
+			fmt.Println("> go run ./cmd/server -dialect sqlite -dsn ./data-upgrade.db")
+			if err := runCmd(shell, buildShellCmd("go run ./cmd/server -dialect sqlite -dsn ./data-upgrade.db")); err != nil {
 				return fmt.Errorf("组合根冒烟失败: %w", err)
 			}
 		}

@@ -26,7 +26,7 @@ progress: 4/4
 
 | ID | 级别 | 所需信息 | 影响门禁 | 最晚阶段 | 状态 | 证据 |
 |----|------|----------|----------|----------|------|------|
-| I-023-004 | required | CLI 分发形态（apps/api 模块内 cmd → `go install …/cmd/schema-ui@vX` 复用模块 tag 链） | S3 发布 | S3 | collecting（S1 实证后转 verified） | — |
+| I-023-004 | required | CLI 分发形态（apps/api 模块内 cmd → `go install …/cmd/schema-ui@vX` 复用模块 tag 链） | S3 发布 | S3 | **verified**（随 tag 分发 · `go install …/cmd/schema-ui@v0.2.0` 载荷） | — | GOAL-002 E-001/GOAL-003 E-001 |
 
 ## 父目标
 

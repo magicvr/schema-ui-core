@@ -20,7 +20,7 @@ GOAL-005 全阶段 + VP-023 判据 #4（覆盖运维 + golden 仓团队化）满
 
 | # | 判据 #4 条款 | 证据 | 结论 |
 |---|--------------|------|------|
-| 1 | PG external 消费实测（生产权威方言） | docker postgres:16 → 组合根 `dialect=postgres fresh=true`（64 迁移 apply）+ 幂等重入 + 库内种子行（E-001）；**F-005 核销** | ✅ |
+| 1 | PG external 消费实测（生产权威方言） | docker postgres:16 → 组合根 `dialect=postgres fresh=true`（63 迁移 apply）+ 幂等重入 + 库内种子行（E-001）；**F-005 核销** | ✅ |
 | 2 | 运维路径文档 | ops-playbook（启动/升级/迁移/备份/停机对照主仓契约）+ compose 样例 + Dockerfile（附件） | ✅ |
 | 3 | golden 仓团队化 | consumer-regression workflow（dispatch/repository_dispatch · 双端探针） | ✅（文件交付） |
 | 4 | 契约引用 | RT-D02 停机 / VP-013 备份 / VP-016 轮换恢复——均以主仓已交付面引用 | ✅ |

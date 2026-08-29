@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-023-productionization-cli-package
 title: 包消费产线化（发布运营 + CLI + 形态细化 + 覆盖与迁移）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-023-productionization-cli-package
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.2.0
+version: 0.3.0
 ---
 
 # VP-023 · 包消费产线化
@@ -56,7 +56,7 @@ version: 0.2.0
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-29 | closed | 六条判据全部满足（#1 发布通道 · #2 CLI · #3 六包+d.ts · #4 PG+运维 · #5 上手迁移（走查 8.4s）· #6 报告+breaking 实演）；grok 独立双审 required 全闭合；用户 P-004 裁决（breaking 实发） | workspace-023 Root done 5/5（GOAL-002~006 A/E 条目）；golden-field 双端 registry；产线化报告 | go 后清单：`schema-ui serve` 壳 · 六包 external 化 · 纯原子拆分 · fork 对照计时 · 迁移工具化 · 包公开可见性 · compose CI 实跑 |
 
 ## 规划修订短史
 

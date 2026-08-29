@@ -26,7 +26,7 @@ progress: 4/4
 
 | ID | 级别 | 所需信息 | 影响门禁 | 最晚阶段 | 状态 | 证据 |
 |----|------|----------|----------|----------|------|------|
-| I-023-003 | required | PG 实例（docker postgres:16 已起 · 127.0.0.1:15432） | S1 实测 | R4 | **collecting**（S1 执行中） | — |
+| I-023-003 | required | PG 实例（docker postgres:16 已起 · 127.0.0.1:15432） | S1 实测 | R4 | **verified**（docker postgres:16 · 63 迁移 apply 实证） | — | E-001 |
 
 ## 父目标
 

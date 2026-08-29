@@ -9,7 +9,7 @@
 | 1 | 真实发布通道 | Go：`apps/api/v0.1.0/v0.2.0` tag + 公共 proxy `go get` 实证；npm：六包 GitHub Packages 发布（protocol 0.2.0 / lib 0.1.0 / theme 0.1.0 / ui 0.1.0 / renderer 0.2.0 / shell 0.1.0）+ golden-field `pnpm add @ver` 安装实证 | ✅ |
 | 2 | CLI 闭环 | `schema-ui create/add/upgrade`（Go 单二进制 · 零依赖 · go:embed 模板）；create 双端全绿（双轨同构）；一次 registry 升级零冲突（v0.1.0→v0.2.0）· F-001 核销 | ✅ |
 | 3 | 六包细化 + d.ts | 六包独立发布 + TS5056 根治（render/form-controls 改名 · 五包 tsc declaration 全 0）· F-006 核销；冻结面 v1.3.0 | ✅ |
-| 4 | 覆盖运维 | PG external 实测（postgres:16 · 64 迁移 apply · 幂等）· F-005 核销；ops-playbook + compose/Dockerfile；consumer-regression workflow | ✅ |
+| 4 | 覆盖运维 | PG external 实测（postgres:16 · 63 迁移 apply · 幂等）· F-005 核销；ops-playbook + compose/Dockerfile；consumer-regression workflow | ✅ |
 | 5 | 上手与迁移 | QUICKSTART 方法 B（cli+包 起步）；fork→包迁移指南；**从零走查 8.4s**（create 0.5 + 装配 6.9 + web/探针 1.1，依赖缓存预置口径） | ✅ |
 | 6 | 产线化报告 | 本报告（下节） | ✅ |
 

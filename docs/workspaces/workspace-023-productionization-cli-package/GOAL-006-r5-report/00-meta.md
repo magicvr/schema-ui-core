@@ -1,12 +1,12 @@
 ---
 id: GOAL-006-r5-report
 title: R5 · 产线化报告与关门
-status: active
+status: done
 parent: GOAL-001-productionization-cli-package
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.2.0
-progress: 2/4
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-006 · R5 · 产线化报告与关门
@@ -19,8 +19,8 @@ progress: 2/4
 
 - [x] **S1 · 上手与迁移交付**：QUICKSTART 方法 B + 迁移指南 + 走查计时 8.4s（E-001）
 - [x] **S2 · 产线化报告**：productionization-report（判据/数据/核销/建议；breaking 演练 = 流程侧 + 实演留 go 后）（E-001）
-- [ ] **S3 · 独立审计与关门**：自审 A-001 ✓ → **grok independent（运行中）** → 响应闭合 → Root `done 5/5` → VP-023 关闭提案
-- [ ] **S4 · 提案落盘**：roadmap/workspaces/VP-023 关闭同步
+- [x] **S3 · 独立审计与关门**：grok A-001/A-002 `conditional`（8 findings）→ 全部 fixed（含用户裁决 breaking 实演）→ 响应闭合 → **Root `done 5/5`** → VP-023 关闭提案
+- [x] **S4 · 提案落盘**：roadmap/workspaces/VP-023 closed 同步（随本 commit）
 
 ## 父目标
 

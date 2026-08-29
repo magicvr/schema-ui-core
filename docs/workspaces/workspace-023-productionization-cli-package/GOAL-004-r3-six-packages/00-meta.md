@@ -26,7 +26,7 @@ progress: 4/4
 
 | ID | 级别 | 所需信息 | 影响门禁 | 最晚阶段 | 状态 | 证据 |
 |----|------|----------|----------|----------|------|------|
-| I-023-005 | required | d.ts 管线方案（dts-bundle-generator vs 目录化改名）对 TS5056 的修复有效性 | S2 产物 | S2 | collecting | — |
+| I-023-005 | required | d.ts 管线方案（dts-bundle-generator vs 目录化改名）对 TS5056 的修复有效性 | S2 产物 | S2 | **verified**（改名方案根治 TS5056 · 五包 declaration 全 0） | — | GOAL-004 E-001 |
 
 ## 父目标
 

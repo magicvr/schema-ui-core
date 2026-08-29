@@ -1,11 +1,12 @@
-// {{ .Name }} 组合根（由 schema-ui CLI 生成 · VP-023 R2）。
+// {{ .Name }} 组合根（由 schema-ui CLI 生成 · VP-023 R5 双轨同步）。
+// 用法：{{ .Name }} [-dialect sqlite|postgres] -dsn <path|conn>（sqlite 内嵌默认）。
 package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/assembly"
@@ -17,16 +18,25 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Fatal("usage: {{ .Name }} <sqlite-path>")
-	}
+	dialect := flag.String("dialect", "sqlite", "sqlite | postgres")
+	dsn := flag.String("dsn", "", "连接串（sqlite = 文件路径；postgres = DSN）")
+	flag.Parse()
 	ctx := context.Background()
 
 	catalog, err := compiled.PersistenceCatalog()
 	if err != nil {
 		log.Fatal("catalog:", err)
 	}
-	st, err := assembly.OpenStore(ctx, kernel.Dialect("sqlite"), os.Args[1], "", catalog)
+	if *dsn == "" {
+		log.Fatal("usage: {{ .Name }} [-dialect sqlite|postgres] -dsn <path|conn>")
+	}
+	var path, pgDSN string
+	if *dialect == "postgres" {
+		pgDSN = *dsn
+	} else {
+		path = *dsn
+	}
+	st, err := assembly.OpenStore(ctx, kernel.Dialect(*dialect), path, pgDSN, catalog)
 	if err != nil {
 		log.Fatal("store:", err)
 	}
