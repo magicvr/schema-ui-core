@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-08-27
+updated: 2026-08-29
 parent: null
-version: 1.3.58
+version: 1.3.61
 ---
 
 # Vision Review 台账
@@ -30,7 +30,7 @@ version: 1.3.58
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | VRev-040 `pass`；V-F073/V-F074 recommended → **fixed**。VRev-039 `pass`；V-F072 recommended 随有界关门 → **fixed** |
+| — | — | — | **无** | VRev-040 `pass`；V-F073/V-F074 recommended → **fixed**。VRev-039 `pass`；V-F072 recommended 随有界关门 → **fixed**。VRev-048 `pass`；V-F084/V-F085/V-F086 recommended → **fixed**（2026-08-29 `/vision` 响应 · VP-022 v0.2.0：freshness 类型 + go/no-go 触发框架 + `lead_workspace` 占位符；V-F084 的 workspace D-001 复刻为激活义务）。VRev-049 self `pass`；无新 finding |
 
 > Vision Review **open required = 0**。**VRev-040（self，`pass`）**：VP-018 意图/激活就绪；Admin 类 freshness PASS（`ed99e88` → `092bf37`）。**VRev-042（self，`pass`）**：VP-017 现行分母再关门（v0.5.0）。**VRev-043（independent · grok build，`pass`）**：VP-019 意图/激活就绪 + Admin 类 freshness PASS（`092bf37` → `66f5fd1f`，不暂挂 `go`）；V-F076/077/078 → **fixed**）。**VRev-044（self · `/vision`，`pass`）**：VP-020 意图/激活就绪 + Admin 类 freshness PASS（`66f5fd1f` → `c6fda691`，不暂挂 `go`）；V-F079/080 → **fixed**。**VRev-045（self · `/vision`，`pass`）**：VP-020 关门就绪（退出判据 1～4；lead workspace-020 Root done 4/4；关门审计双腿 pass）——2026-08-27 **VP-020 `closed` v0.3.0**（用户书面确认）。**VRev-046（self · `/vision`，`pass`）**：VP-021 意图/激活就绪 + **架构类 freshness PASS**（`ed99e88` → `fddaf638`，不暂挂 `go`；pin/部署基线/依赖锁无变更）；V-F081/082 → **fixed**（激活 + 开区事务内）——2026-08-27 **VP-021 `planned → active`**（v0.2.0），lead `workspace-021-graceful-shutdown-and-connection-drain` 开区。**VRev-047（self · `/vision`，`pass`）**：VP-021 关门就绪（退出判据 1～5；lead workspace-021 Root done 3/3；关闭双审 A-001 self + A-002 grok independent 0 开放；PG drain 实测 PASS）——2026-08-27 **VP-021 `active → closed`**（v0.3.0，用户指令授权）；V-F083 → **fixed**（有界 residual：进程级 harness / compose stop 以 linux CI 核销）。当前 active 交付 VP = **无**（组合回到持续程序 + 三分支候选待立项态）。持续程序 **VP-009** / **VP-010**。
 
@@ -85,3 +85,5 @@ version: 1.3.58
 | VRev-045 | 2026-08-27 | self | VP-020 关门就绪 · 退出判据 1～4 / 结项证据 / 信息项回写 / 索引一致性 | pass | 0 | 支持 v0.3.0 **closed**（2026-08-27 用户书面确认；lead workspace-020 Root done 4/4；关门审计 A-001 self + A-002 grok independent 双 pass；残余书面接受） | [VRev-045-vp020-closeout.md](reviews/VRev-045-vp020-closeout.md) |
 | VRev-046 | 2026-08-27 | self | VP-021 意图完备 / 可行性 / 激活就绪 · 架构类 freshness（`ed99e88` → `fddaf638`） | pass | 0 | VP-021 可激活并开区（lead `workspace-021`；Root `GOAL-001-graceful-shutdown-and-connection-drain`）；V-F081/V-F082 recommended → **fixed**（激活事务内闭合） | [VRev-046-vp021-intent-activation.md](reviews/VRev-046-vp021-intent-activation.md) |
 | VRev-047 | 2026-08-27 | self | VP-021 关门就绪 · 退出判据 1～5 / 区证据（lead workspace-021）/ 有界 residual | pass | 0 | 支持 v0.2.0 **`active → closed`** v0.3.0（2026-08-27 用户指令授权 · Root done 3/3 · 关闭双审闭合 0 required · PG drain 实测 PASS）；V-F083 recommended 随闭环 → **fixed**（residual 登记：进程级 harness / compose stop 以 linux CI 核销） | [VRev-047-vp021-closeout.md](reviews/VRev-047-vp021-closeout.md) |
+| VRev-048 | 2026-08-29 | independent | VP-022 分发形态试点 · 意图完备性 / 可行性 / 退出判据 / Charter 对齐 / 组合层定位 | pass | 0 | VP-022 v0.1.0 意图完备、退出判据可判定、Charter 不冲突；`planned` 0 区合法；V-F084/V-F085/V-F086 recommended（激活前 freshness 类型、go/no-go 触发框架、lead_workspace 格式）→ **fixed**（2026-08-29 `/vision` 响应 · VP-022 v0.2.0） | [VRev-048-vp022-distribution-package-pilot-intent.md](reviews/VRev-048-vp022-distribution-package-pilot-intent.md) |
+| VRev-049 | 2026-08-29 | self | VP-022 激活就绪 · 意图已审（VRev-048 闭合）+ 平台/架构类 freshness 轻量复核（`fddaf638` → `5c168070`） | pass | 0 | VP-022 可激活并开区：`planned → active` v0.3.0（2026-08-29 用户指令）；lead `workspace-022-distribution-package-pilot`；freshness **PASS**（协议 pin / 依赖锁 / 迁移 / Profile 默认集无变更；compose +5 = VP-021 交付内核销项）不暂挂 `go`；无新 finding | [VRev-049-vp022-activation.md](reviews/VRev-049-vp022-activation.md) |

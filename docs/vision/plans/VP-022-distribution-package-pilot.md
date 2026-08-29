@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-022-distribution-package-pilot
 title: 分发形态试点 · 构建期包消费路径（对标 dotnet new + NuGet / Spring Boot starters）
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.2.0
-lead_workspace: 
+lead_workspace: workspace-022-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
+version: 0.3.0
 ---
 
 # VP-022 · 分发形态试点 · 构建期包消费路径
@@ -31,6 +31,15 @@ version: 0.1.0
 5. **发布可复现**：脚本/CI 一键产出 Go 版本 tag + npm 包组（复用 `scripts/pre-release-smoke.sh` 思路），golden consumer（示例下游）消费回归通过。
 6. **go/no-go 报告**：包路径 vs fork 路径的实测对比（升级耗时、冲突数、契约迁移成本、契约稳定性税），并给出「是否推进 Charter strategic 修订（把构建期包消费写入成功边界）」的建议。
 
+## 激活前置要求
+
+（响应 VRev-048 · V-F084 / V-F085，2026-08-29）
+
+1. **freshness 复核类型**：本 VP 属组合层平台波，激活时适用**平台/架构类 freshness 轻量复核**（类比 VP-013/VP-021 先例），不适用 Admin 业务类完整矩阵；在 `workspace-022` 的 `D-001-workspace-root-establishment.md` 按先例留痕（`consumer_vp` / `last_freshness_review_at` / `next_freshness_review_trigger`）。
+2. **go/no-go 触发框架**（关门判定用）：
+   - **倾向推进 Charter strategic 修订**：判据 #1～#5 全部达成，且零冲突演练冲突计数 = 0、包路径升级总耗时 ≤ 同演进集的 fork 同步对照基线、golden consumer 回归稳定。
+   - **倾向搁置**：任一判据未达成；或暴露无法经版本化解决的契约障碍（如 Go 公共 API 无法冻结、前端 peer 依赖成环/不可解、跨版本迁移台账不可合并）；或 golden consumer 回归不稳定。
+
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
@@ -50,3 +59,5 @@ version: 0.1.0
 | date | change |
 |------|--------|
 | 2026-08-29 | 初创 v0.1.0（用户 2026-08-29 选择「试点先行」；组合层平台波，与三分支正交、与 VP-009/010 正交；对标 dotnet new + NuGet / Spring Boot starters） |
+| 2026-08-29 | v0.2.0 · 响应 [VRev-048](reviews/VRev-048-vp022-distribution-package-pilot-intent.md) V-F084/085/086 同批**fixed**：激活前置「freshness 类型 = 平台/架构类轻量复核」+「go/no-go 触发框架」+ `lead_workspace: —` 占位符 |
+| 2026-08-29 | v0.3.0 · **激活**（用户指令）：[VRev-049](reviews/VRev-049-vp022-activation.md) self `pass`（0 required；架构类轻量 freshness PASS `fddaf638`→`5c168070` 不暂挂 `go`）；`planned → active`；lead `workspace-022-distribution-package-pilot` 开区（Root 纲领路线图 R1～R5） |

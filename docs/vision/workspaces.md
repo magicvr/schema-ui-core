@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-08-27
+updated: 2026-08-29
 parent: null
-version: 0.32.0
+version: 0.33.0
 ---
 
 # 工作区贡献图
@@ -33,6 +33,7 @@ version: 0.32.0
 | workspace-019-iam-recovery | docs/workspaces/workspace-019-iam-recovery/ | GOAL-001-iam-recovery | delivery | VP-019-iam-recovery | **done**（2026-08-25 开区同日全链关门：VP-019 v0.3.0 `closed`（2026-08-26 用户确认）；Root `done` 4/4：R1–R4 = GOAL-002～005 全 done；关后 A-001 independent `pass` + A-002 recommended ×2 闭合） |
 | workspace-020-timezone-number-currency-formatting | docs/workspaces/workspace-020-timezone-number-currency-formatting/ | GOAL-001-timezone-number-currency-formatting | delivery | VP-020-timezone-number-currency-formatting | **done**（2026-08-26 激活开区 · 2026-08-27 结项：VP-020 v0.3.0 `closed`（用户书面确认 · VRev-045 pass）；Root `done` 4/4：R1–R4 = GOAL-002～005 全 done；关门审计 A-001 self + A-002 grok independent 双 pass） |
 | workspace-021-graceful-shutdown-and-connection-drain | docs/workspaces/workspace-021-graceful-shutdown-and-connection-drain/ | GOAL-001-graceful-shutdown-and-connection-drain | delivery | VP-021-graceful-shutdown-and-connection-drain | **done**（2026-08-27 激活开区 · 同日全链结项：Root `done` 3/3（R1 合同冻结 → R2 实现与测试 → R3 证据与关门）；关闭审计 A-001 self `pass` + A-002 grok independent `conditional` → required fixed → 0 开放；PG drain 独立复跑 PASS；**VP-021 `closed` v0.3.0**（2026-08-27 用户指令授权 · VRev-047 pass） |
+| workspace-022-distribution-package-pilot | docs/workspaces/workspace-022-distribution-package-pilot/ | GOAL-001-distribution-package-pilot | delivery | VP-022-distribution-package-pilot | **active**（2026-08-29 激活开区：VP-022 `active` v0.3.0；VRev-049 self `pass` + 架构类轻量 freshness PASS `fddaf638`→`5c168070` 不暂挂 `go`；组合层平台波 · 分发形态包化试点；Root `GOAL-001-distribution-package-pilot` active 0/5；V-F084 的 D-001 freshness 三字段留痕随开区执行） |
 
 ## 说明
 
@@ -49,6 +50,7 @@ version: 0.32.0
 - **VP-019 已于 2026-08-26 经用户书面确认关门（`closed` v0.3.0）**：workspace-019 与 Root `GOAL-001-iam-recovery`（`done / 4/4`，2026-08-25 同日全链交付）的历史绑定保留，默认不接新区（reopen 须用户确认）；六条退出判据全达成，关门证据链见该区五件套与关后 A-001/A-002。组合回到持续程序（VP-009/010）+ 三分支候选待立项态。不改变 Charter `primary_workspace`。
 - **workspace-020（2026-08-26 开区 · 2026-08-27 结项）**：VP-020（时区 / 数字 / 货币格式语义）唯一 lead delivery 工作区；激活前 VRev-044 self `pass`（V-F079/V-F080 → 激活事务内 fixed）+ Admin 类 freshness **PASS**（`66f5fd1f` → `c6fda691`，不暂挂 `go`）。**已结项**：Root `GOAL-001-timezone-number-currency-formatting` `done / 4/4`（R1 合同冻结 → R2 时区语义 → R3 数字/货币语义 → R4 证据与关门，GOAL-002～005 全 done）；关门审计 A-001 self + A-002 grok independent 双 `pass`；VP-020 `closed` v0.3.0（2026-08-27 用户书面确认 · VRev-045）。历史绑定保留，默认不接新区。不改变 Charter `primary_workspace`。不重开 workspace-007/011。
 - **workspace-021（2026-08-27 开区 · 当日结项）**：VP-021（优雅停机 / 连接排空合同）唯一 lead delivery 工作区；激活前 VRev-046 self `pass`（V-F081/V-F082 → 激活事务内 fixed）+ **架构类 freshness PASS**（`ed99e88` → `fddaf638`，不暂挂 `go`）。**已结项**：Root `GOAL-001-graceful-shutdown-and-connection-drain` `done / 3/3`（R1 合同 v0.1.1 冻结（用户裁决：中断重跑 / 10s+shutdown_timeout / 启动期迁移 fail-closed）→ R2 `http.shutdown_timeout` 配置键+compose 15s+测试锁 → R3 harness A/B/C + PG 实测 + 双审闭合）；关闭审计 A-001 self `pass` + A-002 grok independent `conditional`（required ×2 → fixed；0 开放）。**VP-021 `closed` v0.3.0**（2026-08-27 用户指令授权 · VRev-047 self `pass`）；RT-D02 → delivered；移余 = 进程级 harness（`!windows`）CI 核销登记。不改变 Charter `primary_workspace`。不重开 workspace-013/017。
+- **workspace-022（2026-08-29 开区）**：VP-022（分发形态 · 构建期包消费试点）唯一 lead delivery 工作区；组合层平台波（与三分支正交、与 VP-009/010 正交）。激活门禁 = VRev-049 self `pass`（0 required）+ 平台/架构类轻量 freshness PASS（`fddaf638` → `5c168070`，协议 pin / 依赖锁 / 迁移 / Profile 默认集无变更；compose +5 = VP-021 交付内核销项，不暂挂 `go`）。Root `GOAL-001-distribution-package-pilot` `active` · 0/5（R1 契约冻结面 → R2 Go 库包闭环 → R3 Web 包闭环 → R4 零冲突升级演练 → R5 证据与 go/no-go）。freshness 三字段（`consumer_vp` / `last_freshness_review_at` / `next_freshness_review_trigger`）落 Root `D-001`。不改变 Charter `primary_workspace`。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。
