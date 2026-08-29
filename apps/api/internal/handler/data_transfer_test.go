@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 func uploadCSV(t *testing.T, env *authTestEnv, token, filename, content string) string {

@@ -12,7 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	"path/filepath"
 	"strings"
 	"testing"

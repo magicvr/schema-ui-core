@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 func TestInviteToMapRevokableFlag(t *testing.T) {

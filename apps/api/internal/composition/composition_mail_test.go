@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 

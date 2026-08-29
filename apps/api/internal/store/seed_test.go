@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 // V-SEED-01 · seeding with no prior users creates the stable roles

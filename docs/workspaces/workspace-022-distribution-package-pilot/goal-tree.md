@@ -4,7 +4,7 @@ status: active
 created: 2026-08-29
 updated: 2026-08-29
 parent: null
-version: 0.3.0
+version: 0.4.0
 workspace_id: workspace-022-distribution-package-pilot
 ---
 
@@ -19,8 +19,8 @@ workspace_id: workspace-022-distribution-package-pilot
 
 ```text
 GOAL-001-distribution-package-pilot [active 1/5]  · 分发形态包化试点（构建期包消费路径）
-├── GOAL-002-r1-contract-freeze [done 4/4]  · R1 契约冻结面（清单 v1.0.0 生效 / semver 流程 / changelog 模板）
-└── GOAL-003-r2-go-library-consumption [active 0/4]  · R2 Go 库包闭环（internal 阻断实验完成 · 外移方案待裁决）
+├── GOAL-002-r1-contract-freeze [done 4/4]  · R1 契约冻结面（清单 v1.0.1 生效 / semver 流程 / changelog 模板）
+└── GOAL-003-r2-go-library-consumption [active 2/4]  · R2 Go 库包闭环（外移重构 done · 装配首验 PASS · S3 剩余迁移台账/users 装配）
 ```
 
 ## 状态表
@@ -29,4 +29,4 @@ GOAL-001-distribution-package-pilot [active 1/5]  · 分发形态包化试点（
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-distribution-package-pilot | 分发形态包化试点（构建期包消费路径） | null | active | 1/5 | 2026-08-29 |
 | GOAL-002-r1-contract-freeze | R1 契约冻结面（清单 v1.0.0 / semver 流程 / changelog 模板） | GOAL-001-distribution-package-pilot | done | 4/4 | 2026-08-29 |
-| GOAL-003-r2-go-library-consumption | R2 Go 库包闭环（internal 外移 + 黄金下游仓装配） | GOAL-001-distribution-package-pilot | active | 0/4 | 2026-08-29 |
+| GOAL-003-r2-go-library-consumption | R2 Go 库包闭环（internal 外移 + 黄金下游仓装配） | GOAL-001-distribution-package-pilot | active | 2/4 | 2026-08-29 |

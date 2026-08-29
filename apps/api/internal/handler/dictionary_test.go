@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 func dictionaryCreateType(t *testing.T, env *authTestEnv, token, key, name string) string {

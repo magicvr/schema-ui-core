@@ -1,19 +1,19 @@
-# 契约冻结面清单 v1.0.0（2026-08-29 用户确认生效）
+# 契约冻结面清单 v1.0.1（2026-08-29 · R2 S2 路径勘误）
 
 - 来源：workspace-022 R1 扫描（2026-08-29；GOAL-002 E-001 / A-001）
-- 锚点：`KernelAPIVersion = "2.0.0"`（`apps/api/internal/kernel/module.go`）
+- 锚点：`KernelAPIVersion = "2.0.0"`（`apps/api/kernel/module.go`）
 - 范围：**Go 侧**；Web 侧 npm 包组冻结面 = I-002（R3 另行落盘）
-- 状态：~~v0.1.0 草案~~ → **v1.0.0 生效**（2026-08-29 用户确认「确认冻结面，关门 R1，开 R2」；GOAL-002 D-002）；B 层全量符号随 R2 回填（A-001 F-002）
+- 状态：~~v0.1.0 草案~~ → **v1.0.0 生效**（2026-08-29 用户确认「确认冻结面，关门 R1，开 R2」；GOAL-002 D-002）→ **v1.0.1**（2026-08-29 · R2 S2 外移重构路径勘误：`apps/api/internal/kernel` → `apps/api/kernel`、`apps/api/internal/modules` → `apps/api/modules`；契约内容不变，editorial）；B 层全量符号随 R2 回填（A-001 F-002）
 
 ## 0. 分界规则（冻结面 vs 内部自由演进面）
 
 | 层 | 范围 | 下游 import | 变更纪律 |
 |----|------|-------------|----------|
-| **A · 内核冻结面** | `internal/kernel` 全部导出（见 §1） | ✅ 允许 | semver 约束；breaking = major + changelog 迁移说明 |
-| **B · 模块契约面** | `internal/modules/*` 装配面（ModuleID / Provider / New* / Descriptor / CompiledPersistence / Register） | ✅ 允许（含模块 store 附件包） | 与 A 同纪律；先 deprecate 再删 |
+| **A · 内核冻结面** | `apps/api/kernel` 全部导出（见 §1） | ✅ 允许 | semver 约束；breaking = major + changelog 迁移说明 |
+| **B · 模块契约面** | `apps/api/modules/*` 装配面（ModuleID / Provider / New* / Descriptor / CompiledPersistence / Register） | ✅ 允许（含模块 store 附件包） | 与 A 同纪律；先 deprecate 再删 |
 | **C · 内部实现面** | composition / handler / server / auth / config / jobs / mail / objectstore / obs / manifest / migration / store 方言 | ❌ 默认禁止（张力项见 §5） | 内部自由演进，无版本承诺 |
 
-## 1. A 层清单（internal/kernel · 11 非测试文件 · ~45 导出符号）
+## 1. A 层清单（apps/api/kernel · 11 非测试文件 · ~45 导出符号）
 
 | 文件 | 导出符号 |
 |------|----------|
@@ -31,7 +31,7 @@
 
 ## 2. B 层规则（模块契约面）
 
-每模块包（`internal/modules/<id>`）暴露：
+每模块包（`apps/api/modules/<id>`）暴露：
 
 - `const ModuleID`（如 `"admin.users"`）
 - `type Provider struct` + `New*(...)` 构造（签名属冻结面，见 §5 张力）

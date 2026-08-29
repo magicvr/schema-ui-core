@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 func operationsResource(repository operationlog.Reader) Resource {

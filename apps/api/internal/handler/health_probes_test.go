@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // VP-014 GOAL-003 D-001: an explicitly configured object backend extends

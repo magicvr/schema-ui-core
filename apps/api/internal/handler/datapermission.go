@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 

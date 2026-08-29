@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	rolesmanifest "github.com/magicvr/schema-ui-core/apps/api/internal/modules/roles/manifest"
-	usersmanifest "github.com/magicvr/schema-ui-core/apps/api/internal/modules/users/manifest"
+	rolesmanifest "github.com/magicvr/schema-ui-core/apps/api/modules/roles/manifest"
+	usersmanifest "github.com/magicvr/schema-ui-core/apps/api/modules/users/manifest"
 )
 
 const manifestApp = `{"name":"Test","version":"1.0.0"}`

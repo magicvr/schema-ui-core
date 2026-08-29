@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // Startup identity + plan (GOAL-032 / W21).

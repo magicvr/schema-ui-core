@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // GOAL-011 S2 · roles list/detail expose the seed system roles with system=true

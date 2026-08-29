@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // Runtime channel model (VP-017 R7 / workspace-017 GOAL-008; semantics frozen

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // schemaHandler serves page schema documents by manifest pageId. Documents are

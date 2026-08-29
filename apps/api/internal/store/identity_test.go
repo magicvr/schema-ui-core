@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 )
 
 func testCatalog(n int) []kernel.MigrationContribution {

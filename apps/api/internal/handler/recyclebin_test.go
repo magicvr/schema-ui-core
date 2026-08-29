@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/store"
 )
 
 func recycleItem(id, resource, resourceID string) RecycleItem {

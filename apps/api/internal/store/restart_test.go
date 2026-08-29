@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 // S6 · 服务重启持久化：重新 Open 同一数据库后，迁移台账不重跑、种子不重复，

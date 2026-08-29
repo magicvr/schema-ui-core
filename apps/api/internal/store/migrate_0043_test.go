@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 func TestMigrate0043PreservesOperationCorrelations(t *testing.T) {

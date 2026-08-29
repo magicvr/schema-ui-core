@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // DefaultSMTPPort is the frozen dial port (workspace-017 GOAL-003 D-001):

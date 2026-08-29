@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // DefaultResendBaseURL is the production Resend HTTP API root

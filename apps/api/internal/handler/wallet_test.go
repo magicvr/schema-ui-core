@@ -16,9 +16,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
 
 // walletServiceStub adapts the wallet store to WalletService (the module

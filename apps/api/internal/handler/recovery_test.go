@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	kernel "github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	kernel "github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 type fakeRecoveryRepo struct {

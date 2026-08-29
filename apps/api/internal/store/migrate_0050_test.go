@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
 
 func seedTx050(t *testing.T, st *Store, q string, args ...any) {

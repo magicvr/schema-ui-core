@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 // fakeRBACCatalog is an in-memory RBACCatalog test double.

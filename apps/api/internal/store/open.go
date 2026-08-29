@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // Open opens a store for the configured dialect (R1 v1.4 §2 terminal shape).
