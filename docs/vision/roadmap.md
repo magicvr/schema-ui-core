@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-29
 parent: null
-version: 0.52.0
+version: 0.53.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -37,6 +37,8 @@ version: 0.52.0
 | 19 | [VP-019-iam-recovery](plans/VP-019-iam-recovery.md) | Admin 功能 · IAM：密码策略 / 邀请入职 / 自助恢复状态机（忘密全链消费 VP-018 已校验邮箱 + VP-017 `MailSender`）。 | 硬前置 = VP-018 邮箱身份 + VP-017 运输（均已 `closed`）。不进 SMS / 模板中心 / 多邮箱 / 组织权限 / OIDC / 业务域 / A3；不改 Profile 默认集 | **closed**（2026-08-26 交付后关门 v0.3.0 · 用户书面确认；实现 2026-08-25 同日全链交付，Root done 4/4；关后 A-001 independent `pass` + A-002 recommended ×2 闭合；lead: workspace-019-iam-recovery） |
 | 20 | [VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) | Admin 功能 · 时区 / 数字 / 货币**格式语义**：会话/用户级时区 + locale 数字/货币展示与输入合同（消费 VP-007 locale 运行时 / VP-005 设计系统）。 | 继承 VP-007 locale / VP-005 设计系统 / VP-011 用户角色边界；Admin 类 freshness（VP-019 时效 `66f5fd1f`）；DB 时区持久化合同仍归架构 RT-T03 | **closed**（v0.3.0 · 2026-08-27 关门 · 用户书面确认；lead workspace-020 结项 Root done 4/4；关门审计 A-001 self + A-002 grok independent 双 pass；VRev-045 self `pass`） |
 | 21 | [VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md) | 架构 RT-D02：优雅停机 / 连接排空**合同**（停机顺序、HTTP drain、运行中 Job 语义、双方言 Store 排空）；单进程 + Compose 基线。 | 继承 VP-012 Job 六态、VP-013 双方言 Store；与 VP-009/010 正交；A3 余项仍 trigger-gated | **closed**（v0.3.0 · 2026-08-27 关门 · 用户指令授权；lead workspace-021 结项 Root done 3/3；关闭双审 A-001 self + A-002 grok independent 0 开放；VRev-047 self `pass`；RT-D02 → **delivered**；residual = 进程级 harness / compose stop 以 linux CI 核销） |
+
+| 23 | [VP-023-productionization-cli-package](plans/VP-023-productionization-cli-package.md) | 包消费产线化：发布运营（Go tag/proxy go get + npm registry）+ CLI（create/add/upgrade，对标 dotnet new + NuGet）+ 六包细化与 d.ts 自动化 + PG external/运维 + golden-field 从零上线与 fork→包迁移指南。 | 继承 VP-022（dist-lib/pack/双 golden/冻结面 v1.2.0/go 后清单）+ VP-003/005/006（pin 2.9.0）/008；**组合层平台波，与三分支正交**；不改 Charter（fork 与包并存维持）；与 VP-009/010 正交 | **planned**（2026-08-29 用户指令立项；未激活、0 区；实验下游仓 golden-field 用户建仓中） |
 | 22 | [VP-022-distribution-package-pilot](plans/VP-022-distribution-package-pilot.md) | 分发形态试点：**构建期包消费**最小闭环（Go 库模块 + npm 包组 + 空下游仓零冲突升级演练；对标 dotnet new + NuGet / Spring Boot starters）；不改 Charter、不弃 fork（保留为深度定制逃生舱）。 | 继承 VP-003 模块契约 / VP-004 playbook（仅评估）/ VP-005 主题覆盖 / VP-006 协议面 / VP-008 `go` 消费基线；**组合层平台波，与三分支正交**；与 VP-009/010 正交 | **closed**（2026-08-29 v0.4.0 关闭 · 用户 P-004 裁决：六条判据按有界口径满足；independent 双审闭合；Charter 0.3.0 strategic 随 GO 裁决落地（VR-050）；lead workspace-022 Root done 5/5） |
 
 ## 组合门闩（用户 2026-08-08）
