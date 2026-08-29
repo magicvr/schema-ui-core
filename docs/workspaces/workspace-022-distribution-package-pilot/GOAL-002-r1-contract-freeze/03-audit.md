@@ -16,4 +16,4 @@ version: 0.1.0
 
 ## 开放必改
 
-- 无（A-001 findings 均为 recommended；F-001 随 R2 打包试点闭合，见条目）
+- 无（A-001 findings 均为 recommended：F-001 随 R2 打包试点闭合 · F-002 随 R2 符号回填闭合；R1 已按 D-002 用户确认关门）

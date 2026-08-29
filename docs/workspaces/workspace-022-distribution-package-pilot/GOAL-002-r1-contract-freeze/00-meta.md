@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-contract-freeze
 title: R1 · 契约冻结面落盘
-status: active
+status: done
 parent: GOAL-001-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 3/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-002 · R1 · 契约冻结面落盘
@@ -20,7 +20,7 @@ progress: 3/4
 - [x] **S1 · 扫描与草案**：`apps/api` Go 面扫描——kernel 导出面全量、模块契约模式、组合根装配面（E-001；冻结面清单 v0.1.0 草案）
 - [x] **S2 · 成文**：semver/breaking 流程 + changelog 模板 + 分界规则（attachments ×2 + 清单 §0）
 - [x] **S3 · 对账验证**：清单 vs 实际代码核对（A-001 self 审计：文件计数 / 导出锚点抽样 / 模块模式抽样）
-- [ ] **S4 · 关门**：**用户确认**冻结面清单 v0.1.0 后关门（关键决策，P-004：冻结面直接决定契约稳定性税与后续打包范围）
+- [x] **S4 · 关门**：**用户确认**冻结面清单 v0.1.0 → **v1.0.0 生效**（2026-08-29 · D-002；关键决策，P-004）
 
 ## 信息就绪
 
