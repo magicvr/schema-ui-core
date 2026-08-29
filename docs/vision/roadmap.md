@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-27
+updated: 2026-08-29
 parent: null
-version: 0.49.0
+version: 0.50.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -312,7 +312,7 @@ VP-011 已交付的标准 Admin 模块（用户/角色/设置/钱包演示面等
 **基架能力剩余**
 
 1. 密码策略、邀请、账号恢复状态机（自助恢复 **硬前置** = VP-017 + 账号邮箱；邀请仍可用管理员出示链接）  
-2. 组织 / 部门 / 岗位，以及数据权限 `org` 扩展  
+2. 组织 / 部门 / 岗位，以及数据权限 `org` 扩展 —— **trigger-gated**（2026-08-29 用户书面：自用优先下调权；触发 = 多组织/多团队 fork 消费或真实多组织管理需求出现，再经 `/vision` 立项；应用层 org 上下文仍归 Admin 分支，见架构 RT-P08 注）  
 3. 配置包导出、diff、dry-run、导入  
 4. 文件扫描 / 隔离**策略**（执行器见架构 RT-S05）  
 5. 时间、时区、数字、货币格式语义（持久化时区合同见架构 RT-T03）＝ **[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活 · lead `workspace-020`；2026-08-27 关门）  
@@ -327,7 +327,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 全局搜索 / Command Palette、Saved Views、批量结果中心、未保存保护、统一 Toast/错误恢复、版本与维护提示。全局搜索若需要专用引擎，拉动架构 RT-X01。
 
-Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后仍未立项 = 组织/部门/岗位 + 数据权限 `org` 等，见「基架能力剩余」。
+Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
 
 ---
 
