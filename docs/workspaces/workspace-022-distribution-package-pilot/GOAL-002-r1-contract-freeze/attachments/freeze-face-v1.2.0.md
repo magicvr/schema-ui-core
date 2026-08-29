@@ -68,8 +68,8 @@
 ## 4. 待完成（后续阶段回填）
 
 - [x] R2：B 层符号盘点回填（F-002 fixed · inventory v0.1）；C 层泄漏收敛（F-001 fixed · 方案 β assembly 实证）
-- [ ] R3：Web 侧 npm 包组冻结面（protocol / renderer / shell / ui 导出边界 + peer 版本耦合矩阵）（I-002）
-- [ ] R5：发布通道与 Go tag / npm artifact 版本绑定（I-003）
+- [x] R3：Web 侧 npm 包组冻结面（I-002 闭合 · §2c）
+- [x] R5：发布通道与 Go tag / npm artifact 版本绑定（I-003 定案 · §6）
 
 ## 5. 边界张力与决策点
 
@@ -87,6 +87,6 @@ Tailwind 契约：包组件仅 className，零 CSS 产物；样式由下游构�
 
 ## 6. 发布形态注记（v1.2.0 · R5）
 
-- Go：单模块粗粒度 tag（0.0.x 试点 → 语义版本随 semver-breaking-policy）；发布载荷 = go get + replace/registry；装配经 pps/api/assembly（B+ 层）。
+- Go：单模块粗粒度 tag（v0.0.x 试点 → 语义版本随 semver-breaking-policy）；发布载荷 = go get + replace/registry；装配经 apps/api/assembly（B+ 层）。
 - Web：scripts/pack-npm-packages.mjs 一键 tgz（registry 载荷）；golden-web tarball 安装实证（GOAL-006 E-001）。
 - 版本绑定：changelog 三向一致（kernel 主号 / 模块 KernelAPIRange / npm peer 窗）。

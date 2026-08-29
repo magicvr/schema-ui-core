@@ -38,8 +38,8 @@ parent: null
 
 ## 愿景对齐
 
-Charter：`schema-ui-core-admin-foundation@0.2.0`。
-VP-022：分发形态试点 · 构建期包消费路径最小闭环——以 Go 库模块 + npm 包组形态发布 kernel / 标准模块 / Renderer / Shell，下游 `go get` / `pnpm add` 组装组合根与骨架应用，升级 = 版本 bump + changelog 迁移说明、全程无 git merge。六条方向级退出判据见 VP 文件；试点不改 Charter，结论 = go/no-go 报告。
+Charter：`schema-ui-core-admin-foundation@0.3.0`（2026-08-29 strategic：构建期包消费 + pin 2.9.0）。
+VP-022：分发形态试点 · 构建期包消费路径最小闭环（vision_ref @0.3.0）——以 Go 库模块 + npm 包组形态发布 kernel / 标准模块 / Renderer / Shell，下游 `go get` / `pnpm add` 组装组合根与骨架应用，升级 = 版本 bump + changelog 迁移说明、全程无 git merge。六条方向级退出判据见 VP 文件；试点不改 Charter，结论 = go/no-go 报告。
 
 ## 纲领阶段（Root 路线图指针）
 

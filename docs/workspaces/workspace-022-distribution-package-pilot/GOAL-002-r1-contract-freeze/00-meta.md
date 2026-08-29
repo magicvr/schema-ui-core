@@ -26,7 +26,7 @@ progress: 4/4
 
 | ID | 级别 | 所需信息 | 影响门禁 | 最晚阶段 | 状态 | 证据 |
 |----|------|----------|----------|----------|------|------|
-| I-001 | required | kernel 公共 API 冻结面清单 | R1 冻结 / R2/R3 实施 | R1 | **collecting**（S1 已扫描，草案落盘；B 层逐包符号清单随 R2 收尾） | `attachments/freeze-face-v0.1.0.md` |
+| I-001 | required | kernel 公共 API 冻结面清单 | R1 冻结 / R2/R3 实施 | R1 | **collecting**（S1 已扫描，草案落盘；B 层逐包符号清单随 R2 收尾） | `attachments/freeze-face-v1.2.0.md` |
 
 ## 父目标
 

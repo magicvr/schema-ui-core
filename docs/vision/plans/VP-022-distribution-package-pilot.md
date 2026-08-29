@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-022-distribution-package-pilot
 title: 分发形态试点 · 构建期包消费路径（对标 dotnet new + NuGet / Spring Boot starters）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-022-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.3.0
+version: 0.4.0
 ---
 
 # VP-022 · 分发形态试点 · 构建期包消费路径
@@ -52,7 +52,7 @@ version: 0.3.0
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-29 | closed | 六条退出判据按**有界试点口径**满足（用户 P-004 书面接受：F-001/F-002/F-003 residual 范围）；independent 双审闭合（grok A-002/Root A-001 响应节）；Charter 0.3.0 strategic 落地（VR-050 · VRev-050 pass） | workspace-022 Root done 5/5（GOAL-002~006 A/E 条目）；go/no-go 报告；grok 审计响应 | go 后清单：origin tag+Go proxy 发布 / 配置键+依赖样本补测 / CI+registry 上传 / 六包细化+d.ts 链路 / PG external 实测 / fork 对照计时 |
 
 ## 规划修订短史
 
@@ -61,3 +61,4 @@ version: 0.3.0
 | 2026-08-29 | 初创 v0.1.0（用户 2026-08-29 选择「试点先行」；组合层平台波，与三分支正交、与 VP-009/010 正交；对标 dotnet new + NuGet / Spring Boot starters） |
 | 2026-08-29 | v0.2.0 · 响应 [VRev-048](reviews/VRev-048-vp022-distribution-package-pilot-intent.md) V-F084/085/086 同批**fixed**：激活前置「freshness 类型 = 平台/架构类轻量复核」+「go/no-go 触发框架」+ `lead_workspace: —` 占位符 |
 | 2026-08-29 | v0.3.0 · **激活**（用户指令）：[VRev-049](reviews/VRev-049-vp022-activation.md) self `pass`（0 required；架构类轻量 freshness PASS `fddaf638`→`5c168070` 不暂挂 `go`）；`planned → active`；lead `workspace-022-distribution-package-pilot` 开区（Root 纲领路线图 R1～R5） |
+| 2026-08-29 | v0.4.0 · **关闭**（用户 P-004 裁决后）：Root `GOAL-001-distribution-package-pilot` `done 5/5`；独立关门审计（grok A-002 + Root A-001）required 全闭合；Charter 0.3.0 strategic 已随 GO 裁决定稿；go 后清单落款 |
