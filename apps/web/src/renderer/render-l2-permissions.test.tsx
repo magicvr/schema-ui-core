@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RenderPage } from "@/renderer/render.tsx";
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 

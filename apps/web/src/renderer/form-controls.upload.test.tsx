@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { I18nProvider } from "@/i18n/runtime";
 import { FormControls } from "@/renderer/form-controls.tsx";
-import type { FormControlField } from "@/renderer/form-controls";
+import type { FormControlField } from "@/renderer/form-controls.types";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 

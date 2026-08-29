@@ -33,3 +33,6 @@ GOAL-004 全阶段 + VP-022 判据 #2（Web 包消费闭环）满足声明核对
 ## 结论
 
 判据 #2 方向满足；GOAL-004 `done 4/4`；R3 完成 → Root progress 2/5 → 3/5。
+## 响应回填（2026-08-29 · workspace-023）
+
+- **F-006 → `fixed`**：d.ts 自动化链路 TS5056 已在 workspace-023 R3 根治（GOAL-004 E-001：render/form-controls 改名 render.types/form-controls.types + 五包 tsc declaration 全 0；renderer 0.2.0 携带全量 d.ts）。

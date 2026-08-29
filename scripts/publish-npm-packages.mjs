@@ -65,6 +65,21 @@ try {
     }
     const args = ["publish", "--registry", registry];
     if (dryRun) args.push("--dry-run");
+    // 版本存在性检查：已发布则跳过（registry 禁止覆盖同一版本）；404 = 未发布 → 继续。
+    let published = "";
+    try {
+      published = execFileSync(
+        "npm",
+        ["view", `${pkgName}@${version}`, "version", "--registry", registry],
+        { cwd: path.join(dir, "package"), encoding: "utf8", shell: process.platform === "win32" },
+      ).trim();
+    } catch {
+      published = "";
+    }
+    if (published.length > 0) {
+      console.log(`skip ${pkgName}@${version}（已发布）`);
+      continue;
+    }
     execFileSync("npm", args, { cwd: path.join(dir, "package"), stdio: "inherit", shell: process.platform === "win32" });
     console.log(`published ${pkgName}@${version}${dryRun ? " (dry-run)" : ""}`);
   }

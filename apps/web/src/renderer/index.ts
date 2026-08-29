@@ -19,7 +19,7 @@ export {
 } from "./render.tsx";
 
 export { registerCustomComponent } from "./custom-components";
-export type * from "./render";
+export type * from "./render.types";
 
 export {
   I18nProvider,

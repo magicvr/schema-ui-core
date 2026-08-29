@@ -6,7 +6,7 @@
 // node and the page context.
 import type { ComponentType } from "react";
 
-import type { RenderCustomNode, RenderNode } from "@/renderer/render";
+import type { RenderCustomNode, RenderNode } from "@/renderer/render.types";
 
 export interface CustomComponentProps {
   node: RenderCustomNode;

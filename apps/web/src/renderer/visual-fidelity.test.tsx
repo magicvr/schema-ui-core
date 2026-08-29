@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DataTable } from "@/components/data-table";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { RenderPage } from "@/renderer/render.tsx";
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 import { SchemaTable } from "@/renderer/schema-table";
 
 const __dir = dirname(fileURLToPath(import.meta.url));

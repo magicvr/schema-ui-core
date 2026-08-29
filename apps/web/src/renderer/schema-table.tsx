@@ -14,7 +14,7 @@ import {
   type ResourceItem,
   type ResourceList,
 } from "@/renderer/resource";
-import type { RenderTableNode } from "@/renderer/render";
+import type { RenderTableNode } from "@/renderer/render.types";
 import { useSchemaCrud } from "@/renderer/render.tsx";
 
 /**

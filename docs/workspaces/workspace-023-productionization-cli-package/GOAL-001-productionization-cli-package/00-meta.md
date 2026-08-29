@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.3.0
-progress: 2/5
+version: 0.4.0
+progress: 3/5
 plan_refs:
   - VP-023-productionization-cli-package
 primary_plan: VP-023-productionization-cli-package

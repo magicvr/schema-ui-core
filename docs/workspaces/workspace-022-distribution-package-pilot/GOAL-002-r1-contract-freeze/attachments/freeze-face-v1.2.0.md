@@ -1,9 +1,9 @@
-# 契约冻结面清单 v1.2.0（2026-08-29 · R5 定稿：Web 面 + 发布形态）
+# 契约冻结面清单 v1.3.0（2026-08-29 · R6（workspace-023 R3）：六包 accounts 实态）
 
 - 来源：workspace-022 R1 扫描（2026-08-29；GOAL-002 E-001 / A-001）+ R2 收口（GOAL-003）+ R5 定稿（GOAL-006）
 - 锚点：`KernelAPIVersion = "2.0.0"`（`apps/api/kernel/module.go`）
 - 范围：**Go 侧 + Web 侧**（R3 起）
-- 状态：~~v0.1.0 草案~~ → **v1.0.0 生效**（GOAL-002 D-002）→ v1.0.1（R2 S2 路径勘误）→ **v1.1.0**（R2 收口：B+ 层）→ **v1.2.0**（R5 定稿：**Web 六包边界 + peer 矩阵**（§2c）+ **发布形态注记**（§6）；B 层盘点引用 = `GOAL-003 attachments/modules-export-inventory-v0.1.md`）
+- 状态：~~v0.1.0 草案~~ → **v1.0.0 生效**（GOAL-002 D-002）→ v1.0.1（R2 S2 路径勘误）→ **v1.1.0**（R2 收口：B+ 层）→ **v1.2.0**（R5 定稿）→ **v1.3.0**（2026-08-29 · workspace-023 R3：六包 registry 实态 = protocol 0.2.0 / lib 0.1.0 / theme 0.1.0 / ui 0.1.0 / renderer 0.2.0 / shell 0.1.0 · d.ts 自动化管线就绪（TS5056 根治，F-006 fixed））
 
 ## 0. 分界规则（冻结面 vs 内部自由演进面）
 
@@ -80,7 +80,7 @@
 | 包 | 来源 | 导出面（v0.1/v0.2 产物） | peer | 状态 |
 |----|------|--------------------------|------|------|
 | @schema-ui/protocol | src/protocol | app-manifest 协商/校验/路由 + page 文档加载 + conformance | ajv（bundle 自包含） | 0.2.0 产物实证 |
-| @schema-ui/renderer（粗粒度单包含 ui/i18n 面） | src/renderer + components + i18n | RenderPage / I18nProvider / registerCustomComponent / 类型 | react ^19 / react-dom ^19（external） | 0.1.0 产物实证 |
+| `@schema-ui/renderer`（粗粒度单包含 ui/i18n 面） | src/renderer + components + i18n | RenderPage / I18nProvider / registerCustomComponent / 类型 | react ^19 / react-dom ^19（external） | **0.2.0 registry**（d.ts 管线版） |
 | @schema-ui/ui / 	heme / lib / shell（六包细化目标） | 待六包化专项 | 按边界设计 v0.1 | React/Tailwind | **go 后正式化**（F-006 随 monorepo 化） |
 
 Tailwind 契约：包组件仅 className，零 CSS 产物；样式由下游构建编译（Tailwind 4 @source 扫描包产物——golden-web README 指引）。

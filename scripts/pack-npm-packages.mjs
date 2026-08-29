@@ -25,7 +25,9 @@ if (!existsSync(distLib)) {
 }
 
 mkdirSync(artifacts, { recursive: true });
-rmSync(path.join(artifacts, "*"), { recursive: true, force: true });
+for (const f of readdirSync(artifacts)) {
+  rmSync(path.join(artifacts, f), { recursive: true, force: true });
+}
 
 const packages = readdirSync(distLib, { withFileTypes: true })
   .filter((e) => e.isDirectory() && e.name.startsWith("@"))

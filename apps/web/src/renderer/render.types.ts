@@ -5,7 +5,7 @@ import {
   isWhitelistedFormControl,
   type FormControlField,
   type FormControlGateError,
-} from "@/renderer/form-controls";
+} from "@/renderer/form-controls.types";
 import {
   parseAndEvaluateReactions,
   type FormControlStateMap,
