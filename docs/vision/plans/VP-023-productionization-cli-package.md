@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-023-productionization-cli-package
 title: 包消费产线化（发布运营 + CLI + 形态细化 + 覆盖与迁移）
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.3.0
-lead_workspace: 
+lead_workspace: workspace-023-productionization-cli-package
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
+version: 0.2.0
 ---
 
 # VP-023 · 包消费产线化
@@ -62,4 +62,4 @@ version: 0.1.0
 
 | date | change |
 |------|--------|
-| 2026-08-29 | 初创 v0.1.0（用户指令：维持 Charter 并存战略 + 立项产线化 VP-023；承接 VP-022 go 后清单；组合层平台波 · 与三分支正交；对标 .NET dotnet new + NuGet 产线化） |
+| 2026-08-29 | 初创 v0.1.0（用户指令：维持 Charter 并存战略 + 立项产线化 VP-023；承接 VP-022 go 后清单；组合层平台波 · 与三分支正交；对标 .NET dotnet new + NuGet 产线化） |`n| 2026-08-29 | v0.2.0 · **激活**（用户建仓授权）：[VRev-051](reviews/VRev-051-vp023-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `5c168070`→`041744b3` 不暂挂 `go`）；`planned → active`；lead `workspace-023-productionization-cli-package`；实验仓 `golden-field` 初始化随开区 |

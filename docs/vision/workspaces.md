@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-29
 parent: null
-version: 0.33.0
+version: 0.34.0
 ---
 
 # 工作区贡献图

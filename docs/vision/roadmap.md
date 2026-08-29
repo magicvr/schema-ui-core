@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-08-29
 parent: null
-version: 0.53.0
+version: 0.54.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
