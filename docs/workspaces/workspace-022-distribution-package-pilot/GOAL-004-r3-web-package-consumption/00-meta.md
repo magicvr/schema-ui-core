@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-web-package-consumption
 title: R3 · Web 包闭环
-status: active
+status: done
 parent: GOAL-001-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.2.0
-progress: 2/4
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-004 · R3 · Web 包闭环
@@ -19,8 +19,8 @@ progress: 2/4
 
 - [x] **S1 · 拆包边界设计**：I-002 落盘——六包清单/导出面规则/peer 耦合矩阵/三路径评估；用户裁决 **B · Vite lib 产物打包**（E-001 + 设计附件 + D-001）
 - [x] **S2 · 打包链路与首包**：Vite lib + declaration 链路 → `@schema-ui/protocol` v0.1.0（306 kB 自包含 + d.ts）；golden-web 仅包依赖 `pnpm install` + probe **PASS**（E-002）
-- [ ] **S3 · 渲染闭环**：renderer/shell/ui 包化（React/Tailwind/CSS 产物面）→ 空下游 app 渲染同一 schema 页面集 + Token 覆盖（brand.css）验证
-- [ ] **S4 · 关门**：self 审计 + 判据 #2 满足声明（供 R5 go/no-go）
+- [x] **S3 · 渲染闭环**：用户裁决粗粒度单包（D-002）→ `@schema-ui/renderer` v0.1.0（436.7 kB · React peer）→ golden-web SSR 渲染真实形态 schema 文档 **PASS** + Token 覆盖纪律断言 **PASS** + 能力门控 fail-closed 可观测（E-003）
+- [x] **S4 · 关门**：A-001 self `pass`（0 required；F-006 recommended = d.ts 链路 TS5056 留 go 后）；**判据 #2 满足声明成立**；GOAL-004 `done 4/4`
 
 ## 信息就绪
 

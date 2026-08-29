@@ -5,6 +5,9 @@
   "version": "0.1.0",
   "description": "Web 包消费试点黄金仓（GOAL-004）——仅依赖 npm 包组形态的 @schema-ui/protocol（file: 本地产物）",
   "dependencies": {
-    "@schema-ui/protocol": "file:../../../../../../apps/web/dist-lib/@schema-ui/protocol"
+    "@schema-ui/protocol": "file:../../../../../../apps/web/dist-lib/@schema-ui/protocol",
+    "@schema-ui/renderer": "file:../../../../../../apps/web/dist-lib/@schema-ui/renderer",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

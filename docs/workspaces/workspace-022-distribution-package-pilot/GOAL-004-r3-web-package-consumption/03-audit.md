@@ -12,4 +12,8 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | file |
 |----|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | （尚未到复盘节点） |
+| A-001 | 2026-08-29 | self | S1–S4 关门（判据 #2 核对 · 三探针证据 · F-006 登记） | pass | 0 | [A-001-r3-s1-s4-closeout.md](03-audit/A-001-r3-s1-s4-closeout.md) |
+
+## 开放必改
+
+- 无（F-006 recommended = d.ts 链路 TS5056，随 go 后 monorepo 化；GOAL-004 `done 4/4`）
