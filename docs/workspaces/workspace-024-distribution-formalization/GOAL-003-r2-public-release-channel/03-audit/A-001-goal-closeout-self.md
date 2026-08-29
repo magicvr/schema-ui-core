@@ -29,7 +29,13 @@ GOAL-003（R2 公开发布通道）关门：C1–C4 证据链（发布日志 / n
 
 ## Findings
 
-- `R-001`（recommended）：`@schema-ui` org scope 的迁移方案（新包名 + 消费方迁移清单）登记为复审触发项（触发 = org 创建）→ **登记**（E-002 残余 1）。
+- `R-001`（recommended）：`@schema-ui` org scope 的迁移方案（新包名 + 消费方迁移清单）登记为复审触发项（触发 = org 创建）→ **user-overruled**（用户裁决 2026-08-29：候选取消 · 定稿 `@magicvr` · D-001 §7）。
+
+---
+
+## 响应（2026-08-29 · /govern · source: self）
+
+C3 判定按 A-002（independent）修正：committed lockfile 曾钉 GH Packages（401 不可复现）→ 已 F-001 fixed（golden-field `fb957a9`：项目级 npmjs 钉死 + 空 store 重装 · lockfile 全 npmjs · integrity 一致）。R-001 → user-overruled（候选取消）；R-002 保持登记（R7）。GOAL-003 关门成立（Root 2/7）。
 - `R-002`（recommended）：GH Packages 私有包退役决策留 R7 收口报告（R2 边界外）→ **登记**。
 
 ## 结论

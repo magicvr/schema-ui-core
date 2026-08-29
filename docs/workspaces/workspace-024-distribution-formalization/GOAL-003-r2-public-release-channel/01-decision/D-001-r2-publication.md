@@ -47,4 +47,8 @@ version: 0.1.0
 
 ## 信息门禁
 
-- I-024-001 → **verified**（用户裁决：@schema-ui · 真实发布 · npm_token 注入点）。
+- I-024-001 → **verified**（用户裁决：@magicvr 定稿 · 真实发布 · npm_token 注入点）。
+
+## 7. 定稿裁决（v0.1.2 · 2026-08-29 · 用户）
+
+**scope 定稿 = `@magicvr`（npmjs 公开）**：用户裁决「维持当前发布的发布形式，不再改为 `@schema-ui/xxx` 形式」——§2/§6 中的 `@schema-ui` 正式化候选**取消**；计划文档（VP-024 判据 #2 · GOAL-003 · 本文件）已随之定稿。Charter 成功边界 #1 的 npm 包组占位 `@schema-ui/*` 经 editorial（VR-051）对齐为 `@magicvr/schema-ui-*`。

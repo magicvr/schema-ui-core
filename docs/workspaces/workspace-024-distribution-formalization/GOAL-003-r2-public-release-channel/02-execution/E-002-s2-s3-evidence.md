@@ -48,5 +48,5 @@ version: 0.1.0
 
 ## 残余与登记
 
-1. `@schema-ui` org scope：正式化候选（D-001 §6；触发 = org 创建 + 用户指令，届时新包名发布 + 消费方迁移）。
+1. ~~`@schema-ui` org scope 正式化候选~~ → **取消**（2026-08-29 用户裁决：维持 `@magicvr` 发布形式定稿，不再改用该形态；D-001 §7）。
 2. 既有 GH Packages `@magicvr/schema-ui-*`（私有）：保留不删（历史消费面）；新消费一律指向 npmjs 公开版。

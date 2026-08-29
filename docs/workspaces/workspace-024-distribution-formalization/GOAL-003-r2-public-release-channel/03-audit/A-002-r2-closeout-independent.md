@@ -156,6 +156,7 @@ C1（npmjs 六包公开）、C2（v0.4.0 tag + 公共 proxy + serve 面）、凭
 - **F-002 → fixed**：发布脚本默认 `PUBLISH_SCOPE=@magicvr`，头注释对齐 D-001 §6。
 - **F-003 → fixed**：00-meta title/概述/I-024-001 结论句、D-001 决策条 1 → `@magicvr` 先行（§6 保留历史）；02-execution 索引补 E-002/E-003。
 - **F-004 → fixed（下一发布生效）**：`templates/web/npmrc.tmpl` 改 npmjs 正向钉死；v0.4.0 已发旧模板影响面注册到 R5 发布核销。
-- **F-005 / F-006 → 保持登记**（同意 A-001 R-001/R-002：org 触发 / R7）。
+- **F-005 → user-overruled**（用户裁决 2026-08-29：`@schema-ui` 正式化候选取消——维持 `@magicvr` 发布形式定稿，计划文档与 Charter 占位已对齐、VR-051 editorial 留痕）。
+- **F-006 → 保持登记**（同意 A-001 R-002：GH Packages 私有同名包退役评述留 R7 收口报告）。
 
 全部 required 合法闭合（fixed ×1 + 无 residual）。C3 在可复现制品上成立（lockfile = npmjs 公开 tarball · 无凭据可装）。GOAL-003 可关门。

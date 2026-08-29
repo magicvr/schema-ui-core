@@ -18,15 +18,15 @@ workspace_id: workspace-024-distribution-formalization
 ## 树
 
 ```text
-GOAL-001-distribution-formalization [active 1/7]  · 分发形态正式化（cli+包 对外服务化收口：VP-022/023 go 后残余 7 项 + 方法 B 置顶）
+GOAL-001-distribution-formalization [active 2/7]  · 分发形态正式化（cli+包 对外服务化收口：VP-022/023 go 后残余 7 项 + 方法 B 置顶）
 ├── GOAL-002-r1-serve-shell [done 5/5]  · R1 serve 壳闭环（schema-ui serve · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 接线 · 判据 #1）
-└── GOAL-003-r2-public-release-channel [active 0/4]  · R2 公开发布通道（npmjs @schema-ui 六包 + apps/api/v0.4.0 + golden-field 无凭据消费 · 判据 #2）
+└── GOAL-003-r2-public-release-channel [done 4/4]  · R2 公开发布通道（npmjs @magicvr 六包 + apps/api/v0.4.0 + golden-field 无凭据消费 · 判据 #2）
 ```
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-distribution-formalization | 分发形态正式化（cli+包 对外服务化收口） | null | active | 1/7 | 2026-08-29 |
+| GOAL-001-distribution-formalization | 分发形态正式化（cli+包 对外服务化收口） | null | active | 2/7 | 2026-08-29 |
 | GOAL-002-r1-serve-shell | R1 serve 壳闭环（schema-ui serve · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 接线） | GOAL-001-distribution-formalization | done | 5/5 | 2026-08-29 |
-| GOAL-003-r2-public-release-channel | R2 公开发布通道（npmjs @schema-ui 六包 + apps/api/v0.4.0 + golden-field 无凭据消费） | GOAL-001-distribution-formalization | active | 0/4 | 2026-08-29 |
+| GOAL-003-r2-public-release-channel | R2 公开发布通道（npmjs @magicvr 六包 + apps/api/v0.4.0 + golden-field 无凭据消费） | GOAL-001-distribution-formalization | done | 4/4 | 2026-08-29 |

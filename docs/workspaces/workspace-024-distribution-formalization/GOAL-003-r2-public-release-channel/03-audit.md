@@ -30,4 +30,4 @@ A-002 independent **fail**（C1/C2/C4 与凭据卫生可重复；C3 committed lo
 
 ## 响应（2026-08-29 · /govern · source: self）
 
-**F-001 → fixed**（golden-field `fb957a9`：项目级 `.npmrc` 钉死 `@magicvr:registry=https://registry.npmjs.org` + 全新空 store 重装 → lockfile 六包 tarball 全 npmjs · integrity 与 npmjs dist 一致 · GH 残留 0；根因 = pnpm 无视 NPM_CONFIG_USERCONFIG、沿用用户级 GH Packages 映射）；**F-002/F-003/F-004 → fixed**；**F-005/F-006 → 保持登记**。详见 E-003 与 A-002 响应节。全部 required 合法闭合 → GOAL-003 可关门（待用户确认后执行 · Root 2/7）。
+**F-001 → fixed**（golden-field `fb957a9`：项目级 `.npmrc` 钉死 `@magicvr:registry=https://registry.npmjs.org` + 全新空 store 重装 → lockfile 六包 tarball 全 npmjs · integrity 与 npmjs dist 一致 · GH 残留 0；根因 = pnpm 无视 NPM_CONFIG_USERCONFIG、沿用用户级 GH Packages 映射）；**F-002/F-003/F-004 → fixed**；**F-005 → user-overruled**（用户裁决：`@schema-ui` 候选取消 · 定稿 `@magicvr` · VR-051 editorial）；**F-006 → 保持登记**（R7）。详见 E-003 与 A-002 响应节。全部 required 合法闭合 → **GOAL-003 done 4/4（2026-08-29 用户确认）· Root 2/7**。

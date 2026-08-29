@@ -20,7 +20,7 @@ version: 0.1.0
 
 ## F-002（recommended）· 脚本默认 scope —— **fixed**
 
-`scripts/publish-npmjs-packages.mjs` 默认 `PUBLISH_SCOPE` 改 `@magicvr`；头注释与 D-001 §6 对齐（`@schema-ui` 保留为 org 就绪后候选覆写点）。
+`scripts/publish-npmjs-packages.mjs` 默认 `PUBLISH_SCOPE` 改 `@magicvr`；头注释与 D-001 §6/§7 对齐（`@schema-ui` 候选已由用户裁决取消，scope 定稿 `@magicvr`）。
 
 ## F-003（recommended）· 台账措辞/索引 —— **fixed**
 
@@ -32,10 +32,10 @@ version: 0.1.0
 
 `apps/api/cmd/schema-ui/templates/web/npmrc.tmpl` 改为 npmjs 正向钉死映射（无 token、无 GH Packages）；**生效版本 = 下一次模块 tag**（模板随发布分发；v0.4.0 已发布的旧模板仅影响该版本骨架，注册到 R5 发布时核销）。
 
-## F-005 / F-006（recommended）· 候选登记 —— **保持登记**（同意 A-001 R-001/R-002）
+## F-005 / F-006（recommended）· 候选登记 —— **F-005 取消登记（user-overruled）· F-006 保持登记**
 
-- `@schema-ui` org 正式化 = org 创建 + 用户指令触发；
-- GH Packages 私有同名包退役评述 = R7 收口报告。
+- F-005（`@schema-ui` org 正式化候选）→ **user-overruled**（2026-08-29 用户裁决：维持 `@magicvr` 发布形式定稿，不再改为 `@schema-ui` 形态；计划文档随之定稿，Charter 占位 VR-051 editorial 对齐）；
+- F-006（GH Packages 私有同名包退役评述）= R7 收口报告。
 
 ## 复核
 

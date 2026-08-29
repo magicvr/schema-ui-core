@@ -34,7 +34,7 @@ parent: null
 
 在本愿景仍为 `active` 的前提下，下列方向成立即视为仍在愿景内；它们不是可关门的执行 checklist：
 
-1. 提供可 fork 的 React 前端与 Go 后端 Admin 基架，并对 `schema-ui-docs` `v2.9.0` 的协议能力（含 v2.7/v2.8 additive 子集与 Host/App 互操作层）形成可验证的兼容实现与示例路径；**或经构建期包消费路径**（Go 模块 `go get` / npm 包组 `@schema-ui/*` + 公开装配工厂 `apps/api/assembly` + changelog 迁移说明）获得同一基架与协议兼容实现——fork 与包消费为同一单主线的两种交付形态，不维护平行代码线。**（strategic 0.3.0 · VR-050 · 2026-08-29；试点证据 = workspace-022 go/no-go 报告）**
+1. 提供可 fork 的 React 前端与 Go 后端 Admin 基架，并对 `schema-ui-docs` `v2.9.0` 的协议能力（含 v2.7/v2.8 additive 子集与 Host/App 互操作层）形成可验证的兼容实现与示例路径；**或经构建期包消费路径**（Go 模块 `go get` / npm 包组 `@magicvr/schema-ui-*` + 公开装配工厂 `apps/api/assembly` + changelog 迁移说明）获得同一基架与协议兼容实现——fork 与包消费为同一单主线的两种交付形态，不维护平行代码线。**（strategic 0.3.0 · VR-050 · 2026-08-29；试点证据 = workspace-022 go/no-go 报告；包名占位对齐 VR-051 · editorial · 2026-08-29）**
 2. MVP 覆盖最核心的账号与权限能力；每一纳入范围的协议功能均有范例页面和对应的验证路径。
 3. 前端经产品化后可被 fork 项目直接使用，采用 Tailwind CSS 与 shadcn/ui 风格组件，支持浅色和深色模式，并以 Linear 与 Vercel Dashboard 的克制、工作导向体验为参考。
 4. 以单一代码主线、薄内核、框架无关模块契约和启动时 Profile 提供不同 fork 起点；MVP 与完整 Admin 是同一架构的配置形态，不维护长期平行演进代码线。

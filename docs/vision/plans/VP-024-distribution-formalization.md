@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-024-distribution-formalization
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.2.0
+version: 0.2.1
 ---
 
 # VP-024 · 分发形态正式化（cli+包 对外服务化）
@@ -23,7 +23,7 @@ version: 0.2.0
 在同时满足下列方向时，本 VP **可以**有界或完整关门（证据必须在工作区目标内）：
 
 1. **serve 壳闭环**：`schema-ui serve` 子命令（HTTP 壳 + config 装载 + assembly 服务器面）落地，CLI create 生成骨架可直接 `serve` 启动；按 RT-D02 合同接线（停机顺序 / HTTP drain / 双方言 Store 排空）。
-2. **公开发布通道闭环**：npmjs.com 公开发布六包 + CLI；golden-field 免凭据 `pnpm add @schema-ui/*@<ver>` 与 `go get @vX` 消费实证（无 token / 无 replace / 无 file:）；发布流程成文（脚本 + 凭据注入点）。**npmjs 正式 scope/凭据属外部动作，真实上传以用户授权为界**（同 I-003 / VP-023 先例）。
+2. **公开发布通道闭环**：npmjs.com 公开发布六包 `@magicvr/schema-ui-*`（**scope 定稿 @magicvr**，2026-08-29 用户裁决：维持现行发布形式，不再改用 `@schema-ui` 形态）+ CLI；golden-field 免凭据 `pnpm add @magicvr/schema-ui-*@<ver>` 与 `go get @vX` 消费实证（无 token / 无 replace / 无 file:）；发布流程成文（脚本 + 凭据注入点）。**npmjs 正式 scope/凭据属外部动作，真实上传以用户授权为界**（同 I-003 / VP-023 先例）。
 3. **compose CI 实跑**：compose/Dockerfile + golden-field `consumer-regression` workflow 在真实 CI（或用户环境等价）实跑 PASS；workflow 补齐 pnpm setup 与跨仓包 token 注记（核销 GOAL-005 F-001 / A-002 F-007 残留）。
 4. **fork 对照计时实验**：同一演进集在 fork 同步 vs 包路径 bump 下的实测对比（耗时 / 冲突计数 / 契约迁移成本）出定量结论（核销 VP-022 判据 #6 遗留的对比半项）。
 5. **renderer 依赖图 external 化**：renderer 对 ui/protocol 依赖图细化（ui 包可消费 renderer），六包 peer 矩阵定稿 → 冻结面升格 v1.4.0。
@@ -64,3 +64,4 @@ version: 0.2.0
 |------|--------|
 | 2026-08-29 | 初创 v0.1.0（用户 P-004 立项裁决：全量 7 项一次收口 / npmjs.com 公开发布 / 方法 B 置顶纳入退出判据 / VP-024 命名；组合层平台波，承接 VP-022+VP-023 go 后清单合并残余；与三分支、VP-009/010 正交；不改 Charter） |
 | 2026-08-29 | v0.2.0 · **激活**（用户激活审视授权）：[VRev-052](reviews/VRev-052-vp024-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `041744b3`→`c9122478` 不暂挂 `go`；V-F087/V-F088 recommended → 激活事务内 fixed）；`planned → active`；lead `workspace-024-distribution-formalization` 开区（Root 纲领路线图 R1～R7） |
+| 2026-08-29 | v0.2.1 · **判据 #2 措辞定稿**（用户裁决：维持 `@magicvr` 发布形式，不再改用 `@schema-ui` 形态 · D-001 §7）；R1/R2 已关门（Root 2/7） |
