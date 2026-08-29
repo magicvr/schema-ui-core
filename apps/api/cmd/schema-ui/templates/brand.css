@@ -1,0 +1,5 @@
+/* golden-web 品牌覆盖（fork 定制演示）：只允许覆盖 index.css 已声明 Token。 */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
+}

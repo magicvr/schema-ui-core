@@ -1,0 +1,20 @@
+# {{ .Name }} · schema-ui CLI 生成的下游骨架（VP-023 R2）
+
+- 上游：schema-ui-core（`schema-ui-core-admin-foundation@0.3.0`）· 分发 = cli+包（Go proxy / GitHub Packages registry）
+- 生成：2026-08-29 `schema-ui create {{ .Name }}`（module `{{ .Module }}` · api {{ .APIVersion }}）
+
+## 结构
+
+```
+cmd/server/   Go 组合根（apps/api kernel + assembly + 模块；装配/迁移冒烟）
+web/          前端骨架（@magicvr/schema-ui-* registry 消费 + 主题覆盖 + 探针）
+```
+
+## 验证探针
+
+- Go：`go run ./cmd/server <db>` → {{ .Name }} kernel=... 装配/迁移冒烟
+- Web：`pnpm install` 后 `node web/probe.mjs` / `probe-render.mjs` / `token-check.mjs`
+
+## 升级
+
+`schema-ui upgrade`（registry 语义：go get @latest / pnpm add @latest + 探针回归）。

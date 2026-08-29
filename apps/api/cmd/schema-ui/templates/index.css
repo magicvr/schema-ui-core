@@ -1,0 +1,10 @@
+/* golden-web 基础 Token 子集（判据 #2 定制面锚点）。
+   真实 fork 形态：复制主仓 apps/web/src/index.css 的完整 Token 体系；
+   试点此处声明最小变量集，用于验证「brand.css 只覆盖已声明 Token」的定制纪律。 */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #18181b;
+  --color-primary: #18181b;
+  --color-primary-foreground: #fafafa;
+  --radius: 0.5rem;
+}

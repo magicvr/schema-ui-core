@@ -1,0 +1,13 @@
+{
+  "name": "{{ .Name }}-web",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "{{ .Name }} 前端骨架（schema-ui CLI 生成）——@magicvr/schema-ui-* 经 GitHub Packages registry 消费",
+  "dependencies": {
+    "@magicvr/schema-ui-protocol": "{{ .ProtocolVersion }}",
+    "@magicvr/schema-ui-renderer": "{{ .RendererVersion }}",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

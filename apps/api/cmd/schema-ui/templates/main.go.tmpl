@@ -1,0 +1,71 @@
+// {{ .Name }} 组合根（由 schema-ui CLI 生成 · VP-023 R2）。
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/assembly"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/users"
+)
+
+func main() {
+	if len(os.Args) != 2 {
+		log.Fatal("usage: {{ .Name }} <sqlite-path>")
+	}
+	ctx := context.Background()
+
+	catalog, err := compiled.PersistenceCatalog()
+	if err != nil {
+		log.Fatal("catalog:", err)
+	}
+	st, err := assembly.OpenStore(ctx, kernel.Dialect("sqlite"), os.Args[1], "", catalog)
+	if err != nil {
+		log.Fatal("store:", err)
+	}
+	defer st.Close()
+
+	authn := assembly.NewAuthenticator([]byte("{{ .Name }}-secret"), 15*time.Minute, 24*time.Hour, st)
+	repo := authsession.NewRepository(st)
+	ops := operationlog.NewRepository(st)
+	mailer := assembly.NewMailSender(st, 1000)
+	usersProvider := users.New(authn, repo, ops, mailer, "http://127.0.0.1")
+
+	plan, err := kernel.ResolveProfile("admin", nil)
+	if err != nil {
+		log.Fatal("resolve:", err)
+	}
+	builtin := kernel.BuiltinModules()
+	if _, err := kernel.NewRegistry(builtin); err != nil {
+		log.Fatal("registry:", err)
+	}
+	byID := make(map[string]kernel.Module, len(builtin))
+	for _, m := range builtin {
+		byID[m.ID] = m
+	}
+	planModules := make([]kernel.Module, 0, len(plan.Modules))
+	for _, id := range plan.Modules {
+		if m, ok := byID[id]; ok {
+			planModules = append(planModules, m)
+		}
+	}
+	contribs, err := kernel.RegisterContributions(ctx, kernel.Plan{
+		Modules:      planModules,
+		Capabilities: kernel.StandardAdminCapabilities(),
+	}, []kernel.Provider{usersProvider})
+	if err != nil {
+		log.Fatal("contribs:", err)
+	}
+
+	fmt.Printf("{{ .Name }} kernel=%s profile=%s dialect=%s fresh=%v contrib{r=%d p=%d perm=%d nav=%d frag=%d}\n",
+		kernel.KernelAPIVersion, plan.Name, st.Dialect(), st.WasFresh(),
+		len(contribs.Routes), len(contribs.Pages), len(contribs.Permissions),
+		len(contribs.Navigation), len(contribs.Fragments))
+}
