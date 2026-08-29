@@ -12,4 +12,4 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | file |
 |----|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | （S4 关门时新增） |
+| A-001 | 2026-08-29 | self | S1–S4 关门（判据 #1 核对 · 双通道实证） | pass | 0 | [A-001-r1-closeout.md](03-audit/A-001-r1-closeout.md) |

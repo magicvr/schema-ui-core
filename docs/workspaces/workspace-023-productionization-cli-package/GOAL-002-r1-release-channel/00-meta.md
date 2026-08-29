@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-release-channel
 title: R1 · 真实发布通道
-status: active
+status: done
 parent: GOAL-001-productionization-cli-package
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 2/4
+version: 0.2.0
+progress: 4/4
 ---
 
 # GOAL-002 · R1 · 真实发布通道
@@ -19,8 +19,8 @@ progress: 2/4
 
 - [x] **S1 · Go 通道实证**：tag 命名教训（`apps/api/v0.1.0` 而非 `v0.1.0`——子目录 module path 约定）+ 公共 proxy 真实拉取 + `go.sum` 哈希 + golden-field 运行全绿（E-002）；sumdb 收录时延 = 知识项，后续默认校验复核
 - [x] **S2 · npm 通道实证**：GitHub Packages 双包发布（凭据 = 用户 .env `github_token`）+ golden-field registry 安装（lockfile tarball+integrity 证据）· 三探针全绿（E-002）
-- [ ] **S3 · 占位依赖清零与升级演练**：golden-field 移除 file: tarball → registry 安装；一次 registry 升级（含 breaking 场景预演）零冲突
-- [ ] **S4 · 关门**：self 审计 + 判据 #1 满足声明（供 R2 CLI 依赖）
+- [x] **S3 · 占位依赖清零**（go.sum/锁文件 → registry 语义；升级演练绑定 R2 发布，A-001 F-001）：golden-field 移除 file: tarball → registry 安装；一次 registry 升级（含 breaking 场景预演）零冲突
+- [x] **S4 · 关门**：A-001 self `pass`（0 required）→ **判据 #1 满足声明**；GOAL-002 `done 4/4`
 
 ## 信息就绪
 
