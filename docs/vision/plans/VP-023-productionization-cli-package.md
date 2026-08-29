@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-023-productionization-cli-package
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.3.0
+version: 0.3.1
 ---
 
 # VP-023 · 包消费产线化
@@ -46,7 +46,7 @@ version: 0.3.0
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；激活时开 `workspace-023-productionization-cli-package` 并填表 |
+| workspace-023-productionization-cli-package | GOAL-001-productionization-cli-package | delivery | 2026-08-29（激活开区） | lead；2026-08-29 结项（用户 P-004 裁决 breaking 实演 v0.3.0 后） |
 
 > **实验下游仓命名（2026-08-29 用户指定用途）**：主推 **`golden-field`**（产线化验证的试验田；与 golden-consumer/golden-web 系列一致）。备选：`golden-field-admin` / `petstore-admin`。用户建仓后于激活事务中登记 URL/路径。
 
@@ -62,4 +62,6 @@ version: 0.3.0
 
 | date | change |
 |------|--------|
-| 2026-08-29 | 初创 v0.1.0（用户指令：维持 Charter 并存战略 + 立项产线化 VP-023；承接 VP-022 go 后清单；组合层平台波 · 与三分支正交；对标 .NET dotnet new + NuGet 产线化） |`n| 2026-08-29 | v0.2.0 · **激活**（用户建仓授权）：[VRev-051](reviews/VRev-051-vp023-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `5c168070`→`041744b3` 不暂挂 `go`）；`planned → active`；lead `workspace-023-productionization-cli-package`；实验仓 `golden-field` 初始化随开区 |
+| 2026-08-29 | 初创 v0.1.0（用户指令：维持 Charter 并存战略 + 立项产线化 VP-023；承接 VP-022 go 后清单；组合层平台波 · 与三分支正交；对标 .NET dotnet new + NuGet 产线化） |
+| 2026-08-29 | v0.2.0 · **激活**（用户建仓授权）：[VRev-051](reviews/VRev-051-vp023-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `5c168070`→`041744b3` 不暂挂 `go`）；`planned → active`；lead `workspace-023-productionization-cli-package`；实验仓 `golden-field` 初始化随开区 |
+| 2026-08-29 | v0.3.0 · **关闭**（用户 P-004 裁决：breaking 实演以 v0.3.0 真实执行）：六条判据全达成；grok 独立双审（Root A-002 + R5 A-001）F-001～F-008 全闭合（CLI 双轨同步 / I-023-001~005 登记闭合 / 冻结面路径 / 台账修正）；Root `GOAL-001-productionization-cli-package` `done 5/5`；go 后清单落款 |

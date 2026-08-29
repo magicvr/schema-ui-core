@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-022-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.4.0
+version: 0.4.1
 ---
 
 # VP-022 · 分发形态试点 · 构建期包消费路径
@@ -44,7 +44,7 @@ version: 0.4.0
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；激活时开 `workspace-022-distribution-package-pilot` 并填表 |
+| workspace-022-distribution-package-pilot | GOAL-001-distribution-package-pilot | delivery | 2026-08-29（激活开区） | lead；2026-08-29 结项（用户 P-004 有界口径）· Charter 0.3.0 strategic 随 GO 落地 |
 
 ## 关门记录
 

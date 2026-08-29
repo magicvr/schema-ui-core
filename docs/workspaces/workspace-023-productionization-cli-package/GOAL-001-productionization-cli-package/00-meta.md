@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.6.0
+version: 0.7.0
 progress: 5/5
 plan_refs:
   - VP-023-productionization-cli-package
@@ -17,26 +17,28 @@ serves_summary: 把 VP-022 验证的构建期包消费可行性闭环升级为�
 
 ## 概述
 
-承接 [VP-023-productionization-cli-package](../../vision/plans/VP-023-productionization-cli-package.md)（active v0.2.0）：六条方向级退出判据落地（真实发布通道 / CLI / 六包细化+d.ts / PG+运维 / 上手迁移 / 产线化报告）。**不改 Charter**（fork 与包消费并存）。实验下游仓 = `github.com/magicvr/golden-field`（本仓平级 · 空仓待初始化）。
+承接 [VP-023-productionization-cli-package](../../vision/plans/VP-023-productionization-cli-package.md)（**closed** v0.3.0 · 2026-08-29）：六条方向级退出判据全部落地（真实发布通道 / CLI / 六包细化+d.ts / PG+运维 / 上手迁移 / 产线化报告）。**不改 Charter**（fork 与包消费并存维持，Charter @0.3.0 表述未动）。实验下游仓 = `github.com/magicvr/golden-field`（已初始化 · Go 无 replace · 六包 GH Packages registry 语义消费 · consumer-regression workflow 槽位）。breaking 实演以 v0.3.0 真实执行（用户 P-004 裁决）。
 
 ## 成功标准（对应 VP-023 六条判据）
 
-- [ ] 判据 #1：真实发布通道闭环（Go `go get @vX` + npm registry 安装；golden-field 无 replace/file:）
-- [ ] 判据 #2：CLI 闭环（create/add/upgrade · 一次 registry 升级零冲突 · 双轨对照）
-- [ ] 判据 #3：六包独立发布 + d.ts 自动化（TS5056 修复）→ 冻结面 v1.3.0
-- [ ] 判据 #4：PG external 实测 + 运维路径文档 + golden 仓团队化
-- [ ] 判据 #5：QUICKSTART cli+包 主路径章节 + fork→包迁移指南 + golden-field 从零上线走查
-- [ ] 判据 #6：产线化报告（往返耗时/CLI 实测/breaking 演练/核销表/默认主路径建议）
+- [x] 判据 #1：真实发布通道闭环（Go `go get @vX` + npm registry 安装；golden-field 无 replace/file:）
+- [x] 判据 #2：CLI 闭环（create/add/upgrade · 一次 registry 升级零冲突 · 双轨对照）
+- [x] 判据 #3：六包独立发布 + d.ts 自动化（TS5056 修复）→ 冻结面 v1.3.0
+- [x] 判据 #4：PG external 实测 + 运维路径文档 + golden 仓团队化
+- [x] 判据 #5：QUICKSTART cli+包 主路径章节 + fork→包迁移指南 + golden-field 从零上线走查
+- [x] 判据 #6：产线化报告（往返耗时/CLI 实测/breaking 演练/核销表/默认主路径建议）
+
+> 六条全部达成（2026-08-29 关门）；breaking 演练 = 真实实演（v0.3.0 `kernel.JoinKeys → JoinIdentifiers` · 用户 P-004 裁决）；grok 独立双审 F-001～F-008 全闭合。残余 = go 后清单 7 项（serve 壳 / 六包 external 化 / 纯原子拆分 / fork 对照计时 / 迁移工具化 / 包公开可见性 / compose CI 实跑）→ 已立项收口（VP-024 · planned）。
 
 ## 纲领路线图（P-001）
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
 | R1 | 真实发布通道：Go tag+`go get`（或私有 proxy）实效；npm registry 上传+安装实效；golden-field 初始化并移除 replace/file: 依赖 | **已关门**（2026-08-29 · GOAL-002 done 4/4 · A-001 self `pass` · 判据 #1 满足；golden-field 全程 registry 语义；升级演练绑定 R2 发布） |
-| R2 | CLI 闭环：create-schema-ui / add / upgrade（对标 dotnet new + NuGet）——golden-field 双轨对照 | 依赖 R1 |
-| R3 | 六包细化（protocol/lib/theme/ui/renderer/shell）+ d.ts 自动化（TS5056）→ 冻结面 v1.3.0 | 依赖 R1 |
+| R2 | CLI 闭环：create-schema-ui / add / upgrade（对标 dotnet new + NuGet）——golden-field 双轨对照 | 依赖 R1 | **已关门**（2026-08-29 · GOAL-003 done 4/4 · A-001 self `pass` · 判据 #2 满足；CLI 实现 + create 双端全绿 + registry 升级演练零冲突） |
+| R3 | 六包细化（protocol/lib/theme/ui/renderer/shell）+ d.ts 自动化（TS5056）→ 冻结面 v1.3.0 | 依赖 R1 | **已关门**（2026-08-29 · GOAL-004 done 4/4 · A-001 self `pass` · 判据 #3 满足；六包 registry 发布 + TS5056 根治 · F-006 核销） |
 | R4 | PG external 实测（F-005 核销）+ 运维路径文档（启动/升级/迁移/备份/drain）+ golden 仓 CI 槽位 | 依赖 R1–R3 | **已关门**（2026-08-29 · GOAL-005 done 4/4 · A-001 self `pass` · 判据 #4 满足；PG 双方言实证 · ops-playbook+compose+workflow；F-001 推荐 compose 实跑留 CI） |
-| R5 | 产线化报告（判据 #6）+ 核销表 + 建议 → independent 审计（grok）→ 关门 | 依赖 R1–R4 |
+| R5 | 产线化报告（判据 #6）+ 核销表 + 建议 → independent 审计（grok）→ 关门 | 依赖 R1–R4 | **已关门**（2026-08-29 · GOAL-006 done 4/4 · 判据 #5/#6 满足 · breaking 实演 v0.3.0 · grok 独立双审 F-001～F-008 全闭合 · Root done 5/5） |
 
 ## 信息就绪与未知项（P-005）
 
