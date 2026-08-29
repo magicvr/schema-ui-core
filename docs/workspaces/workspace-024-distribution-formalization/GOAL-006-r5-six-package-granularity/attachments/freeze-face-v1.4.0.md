@@ -7,11 +7,11 @@
 | 包 | 版本 | 入口 | 子路径 | files |
 |----|------|------|--------|-------|
 | `@schema-ui/protocol` | 0.2.11 | `"types": ./protocol/index.d.ts · "import": ./protocol/index.js` | `"./*": "./*"`（protocol/ · lib/ · schemas/） | 全量（无 files 白名单） |
-| `@schema-ui/lib` | 0.1.9 | ./lib/index.d.ts · ./lib/index.js | `"./*": "./*"`（lib/ · i18n/ · messages 资产） | 全量 |
-| `@schema-ui/theme` | 0.1.2 | ./theme/index.d.ts · ./index.js | `"./*": "./*"`（theme/） | 全量 |
-| `@schema-ui/ui` | 0.1.7 | ./components/ui/index.d.ts · ./components/ui/index.js | `"./*": "./*"`（components/ · lib/ · i18n/） | 全量 |
-| `@schema-ui/renderer` | **0.3.7** | ./renderer/index.d.ts · ./index.js | `"./*": "./*"`（renderer/ · components/） | 全量 |
-| `@schema-ui/shell` | 0.1.2 | ./app/index.d.ts · ./index.js | `"./*": "./*"`（app/ host/ account/ …） | 全量 |
+| `@schema-ui/lib` | 0.1.10 | ./lib/index.d.ts · ./lib/index.js | `"./*": "./*"`（lib/ · i18n/ · messages 资产） | 全量 |
+| `@schema-ui/theme` | 0.1.4 | ./theme/index.d.ts · ./index.js | `"./*": "./*"`（theme/） | 全量 |
+| `@schema-ui/ui` | 0.1.8 | ./components/ui/index.d.ts · ./components/ui/index.js | `"./*": "./*"`（components/ · lib/ · i18n/） | 全量 |
+| `@schema-ui/renderer` | **0.3.8** | ./renderer/index.d.ts · ./index.js | `"./*": "./*"`（renderer/ · components/） | 全量 |
+| `@schema-ui/shell` | 0.1.4 | ./app/index.d.ts · ./index.js | `"./*": "./*"`（app/ host/ account/ …） | 全量 |
 
 > 终值版本 = npmjs 实发（命名/元数据/运行链全绿后定稿）；早期中间版（0.3.0~0.3.6 等修正链）为历史记录，消费指引以终值为准。
 
@@ -23,7 +23,7 @@
 | lib | react ^19（i18n React 面） | clsx · tailwind-merge | i18n/messages 资产入包 |
 | theme | — | — | Token CSS/TS |
 | ui | react ^19 · react-dom ^19 | clsx · tailwind-merge · class-variance-authority · lucide-react · @radix-ui/react-slot | 原子组件；lib/i18n 面 bundle 自含 |
-| renderer | react ^19 · react-dom ^19 · **@magicvr/schema-ui-protocol ^0.2.11 · @magicvr/schema-ui-lib ^0.1.9 · @magicvr/schema-ui-ui ^0.1.7** | — | 依赖图 external 化：产物 import 包子路径（17 处），消费端解析；不再自包含 protocol/lib/ui/i18n 面 |
+| renderer | react ^19 · react-dom ^19 · **@magicvr/schema-ui-protocol ^0.2.11 · @magicvr/schema-ui-lib ^0.1.10 · @magicvr/schema-ui-ui ^0.1.8** | — | 依赖图 external 化：产物 import 包子路径（17 处），消费端解析；不再自包含 protocol/lib/ui/i18n 面 |
 | shell | react ^19 · react-dom ^19 | — | App/Host 壳 bundle 自包含 |
 
 ## 3. 契约记录

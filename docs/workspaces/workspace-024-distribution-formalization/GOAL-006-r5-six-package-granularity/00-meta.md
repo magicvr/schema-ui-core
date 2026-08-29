@@ -1,12 +1,12 @@
 ---
 id: GOAL-006-r5-six-package-granularity
 title: R5 · 六包形态细化（renderer 依赖图 external 化 + ui 纯原子断言 + 冻结面 v1.4.0）
-status: active
+status: done
 parent: GOAL-001-distribution-formalization
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/5
+version: 0.4.0
+progress: 5/5
 ---
 
 # GOAL-006 · R5 · 六包形态细化
@@ -30,14 +30,14 @@ progress: 0/5
 | S1 | 设计定档：重写映射表 + exports/files 布局 + 版本推进（D-001） | **已关门**（2026-08-29 · D-001） |
 | S2 | 构建链改造：build-lib（renderer external + tsc 三包）+ rewrite/finalize 脚本 | **已关门**（2026-08-29 · E-002） |
 | S3 | 六包终版发布 + golden-field 升级 + 五探针全绿 | **已关门**（2026-08-29 · E-002） |
-| S4 | 冻结面 v1.4.0 定稿 + 独立审计（grok）→ 关门 | A-002 收取中 |
+| S4 | 冻结面 v1.4.0 定稿 + 独立审计（grok）→ 关门 | **已关门**（2026-08-29 · A-002 conditional → F-001~F-004 fixed（用户裁决 F-003 口径）· 五探针 + UI-ONLY 全绿 · Root 5/7） |
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | renderer 对内部面包化面的完整 import 清单（重写表覆盖性） | C1 | S2 | 静态扫描 `src/renderer/**` | open | S2 前闭合 | 待确认（勘察已得：i18n 16 · protocol 13 · ui 9 · lib 3） |
-| I-002 | non-blocking | 旧包（renderer 0.2.0 自包含）消费者的兼容口径 | 发布 | S3 | changelog 注记（external 化 = 消费契约变化 → minor bump） | open | — | 待确认 |
+| I-001 | required | renderer 对内部面包化面的完整 import 清单（重写表覆盖性） | C1 | S2 | 静态扫描 `src/renderer/**` | **verified**（41 处前缀 → 17 个唯一包子路径 import · 产物 js+d.ts 零 `@/` 残留） | — | A-002 独立扫描 |
+| I-002 | non-blocking | 旧包（renderer 0.2.0 自包含）消费者的兼容口径 | 发布 | S3 | changelog 注记（external 化 = 消费契约变化 → minor bump） | **verified**（冻结面 §3「0.2.0 自包含 → 0.3.0 external 化」迁移句） | — | freeze-face v1.4.0 §3 |
 
 ## 父目标
 

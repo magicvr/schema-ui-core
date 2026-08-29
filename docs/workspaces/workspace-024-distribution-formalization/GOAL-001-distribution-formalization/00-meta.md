@@ -25,8 +25,8 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 - [ ] 判据 #2：公开发布通道闭环（npmjs.com 六包 + CLI · golden-field 免凭据消费实证 · 发布流程成文）
 - [x] 判据 #3：compose CI 实跑（compose/Dockerfile + consumer-regression workflow 真实 CI 或等价实跑 PASS）——R3 已关门（GOAL-004 done 4/4 · grok independent `pass`（0 required）· harness A/B linux 容器 · hosted 触发登记 R7）
 - [x] 判据 #4：fork 对照计时实验（同一演进集实测对比：耗时/冲突计数/契约迁移成本）——R4 已关门（GOAL-005 done 4/4 · A-002 grok `pass`（0 required）· v0.4.0 定量实证：冲突 1 vs 0 · 改写点 2 vs 0 · ≈13.2s vs ≈4.8s）
-- [ ] 判据 #5：renderer 依赖图 external 化（ui 包可消费 renderer）→ 冻结面 v1.4.0
-- [ ] 判据 #6：纯原子拆分（业务组件出 ui 包）
+- [x] 判据 #5：renderer 依赖图 external 化（ui 包可消费 renderer）→ 冻结面 v1.4.0——R5 已关门（GOAL-006 done 5/5 · 187.5kB · 17 处包子路径 · peer 矩阵实发 · 五探针 + UI-ONLY 全绿）
+- [x] 判据 #6：纯原子拆分（业务组件出 ui 包）——data-table 属 ui 设计系统面（用户 P-004 裁决 · 2026-08-29）；ui 独立消费实证（仅装 ui+peer）
 - [ ] 判据 #7：fork→包迁移工具化（`schema-ui migrate-fork` 或等价）
 - [ ] 判据 #8：默认主路径宣告与收口报告（方法 B 置顶 · 核销表 · 残余清零）
 

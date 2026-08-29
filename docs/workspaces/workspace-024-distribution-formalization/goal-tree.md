@@ -25,7 +25,7 @@ GOAL-001-distribution-formalization [active 4/7]  · 分发形态正式化（cli
 └── GOAL-005-r4-fork-comparison [done 4/4]  · R4 fork 对照计时（同一演进集 v0.3.0→v0.4.0：fork 同步 vs 包 bump 实测对比 · 判据 #4）
 ```
 
-> 下一波：GOAL-006-r5-six-package-granularity（R5 六包形态细化 · active 0/5 · 判据 #5/#6）
+> 下一波：GOAL-006-r5-six-package-granularity（R5 六包形态细化 · done 5/5 · 判据 #5/#6）
 
 ## 状态表
 
