@@ -6,7 +6,7 @@ parent: null
 created: 2026-08-29
 updated: 2026-08-29
 version: 0.1.0
-progress: 5/7
+progress: 6/7
 plan_refs:
   - VP-024-distribution-formalization
 primary_plan: VP-024-distribution-formalization
@@ -27,7 +27,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 - [x] 判据 #4：fork 对照计时实验（同一演进集实测对比：耗时/冲突计数/契约迁移成本）——R4 已关门（GOAL-005 done 4/4 · A-002 grok `pass`（0 required）· v0.4.0 定量实证：冲突 1 vs 0 · 改写点 2 vs 0 · ≈13.2s vs ≈4.8s）
 - [x] 判据 #5：renderer 依赖图 external 化（ui 包可消费 renderer）→ 冻结面 v1.4.0——R5 已关门（GOAL-006 done 5/5 · 187.5kB · 17 处包子路径 · peer 矩阵实发 · 五探针 + UI-ONLY 全绿）
 - [x] 判据 #6：纯原子拆分（业务组件出 ui 包）——data-table 属 ui 设计系统面（用户 P-004 裁决 · 2026-08-29）；ui 独立消费实证（仅装 ui+peer）
-- [ ] 判据 #7：fork→包迁移工具化（`schema-ui migrate-fork` 或等价）
+- [x] 判据 #7：fork→包迁移工具化（`schema-ui migrate-fork` 或等价）——R6 已关门（GOAL-007 done 4/4 · A-002 grok `pass`（0 required）· 9510023 旧态实测：v0.3.0→v0.4.0 · npmjs 钉死 · build 绿）
 - [ ] 判据 #8：默认主路径宣告与收口报告（方法 B 置顶 · 核销表 · 残余清零）
 
 ## 纲领路线图（P-001）
@@ -41,7 +41,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 | R3 | compose/CI 实跑（判据 #3） | 依赖 R1/R2 | **已关门**（2026-08-29 · GOAL-004 done 4/4 · A-002 grok `pass`（0 required）· harness A/B · hosted 触发登记 R7） |
 | R4 | fork 对照计时（判据 #4） | 依赖 R2/R3 | **已关门**（2026-08-29 · GOAL-005 done 4/4 · A-002 grok `pass`（0 required）· 附件 fork-comparison-report） |
 | R5 | 六包形态细化（判据 #5/#6） | 依赖 R1 | **已关门**（2026-08-29 · GOAL-006 done 5/5 · A-002 conditional → F-001~F-004 fixed · 判据 #5/#6 核销） |
-| R6 | 迁移工具化（判据 #7） | 依赖 R2 |
+| R6 | 迁移工具化（判据 #7） | 依赖 R2 | **已关门**（2026-08-29 · GOAL-007 done 4/4 · A-002 grok `pass`（0 required）· F-001~F-003 fixed） |
 | R7 | 置顶与收口报告（判据 #8） | 依赖 R1–R6 |
 
 ## 信息就绪与未知项（P-005）

@@ -20,6 +20,7 @@ import (
 const npmjsRegistryLine = "@magicvr:registry=https://registry.npmjs.org"
 
 var requireRe = regexp.MustCompile(`(?m)^\s*require\s+` + apiModule + `\s+v?([0-9]+\.[0-9]+\.[0-9]+)`)
+var requireBlockRe = regexp.MustCompile(`(?m)^\s*` + apiModule + `\s+v?([0-9]+\.[0-9]+\.[0-9]+)$`)
 var kernelCoverRe = regexp.MustCompile(`(?m)(kernel\.|assembly\.OpenStore|"github.com/magicvr/schema-ui-core/apps/api/(kernel|assembly|modules)/)`)
 
 type migrationReport struct {
@@ -67,13 +68,15 @@ func runMigrateFork(dir string, dry bool) error {
 		fmt.Println("（--dry-run：未写任何文件）")
 		return nil
 	}
-	// 实跑：1) go.mod require bump（registry 语义）
+	// 实跑：1) go.mod require bump（registry 语义；无论是否已依赖都执行 go get @latest——F-002）
+	fmt.Println("> go get " + apiModule + "@latest")
+	if err := runIn(abs, "go", "get", apiModule+"@latest"); err != nil {
+		return fmt.Errorf("go.mod bump 失败: %w", err)
+	}
 	if rep.goVersion != "" {
-		fmt.Println("> go get " + apiModule + "@latest")
-		if err := runIn(abs, "go", "get", apiModule+"@latest"); err != nil {
-			return fmt.Errorf("go.mod bump 失败: %w", err)
-		}
-		fmt.Printf("  ok: require %s 已升至 registry @latest\n", apiModule)
+		fmt.Printf("  ok: require %s 已升至 registry @latest（原 %s）\n", apiModule, rep.goVersion)
+	} else {
+		fmt.Printf("  ok: require %s 已添加（registry @latest）\n", apiModule)
 	}
 	// 实跑：2) web/.npmrc 钉 npmjs（先备份）
 	if rep.npmrcLine != "" && rep.npmrcLine != npmjsRegistryLine {
@@ -111,10 +114,12 @@ func runMigrateFork(dir string, dry bool) error {
 // inspectFork 读取目标仓并判定类型与步骤（不写文件）。
 func inspectFork(dir string) (*migrationReport, error) {
 	rep := &migrationReport{dir: dir}
-	// 1) go.mod
+	// 1) go.mod（单行 require 或 require ( … ) 块形态——F-002 补块解析）
 	goMod := filepath.Join(dir, "go.mod")
 	if raw, err := os.ReadFile(goMod); err == nil {
 		if m := requireRe.FindSubmatch(raw); m != nil {
+			rep.goVersion = strings.TrimSpace(string(m[1]))
+		} else if m := requireBlockRe.FindSubmatch(raw); m != nil {
 			rep.goVersion = strings.TrimSpace(string(m[1]))
 		}
 	}

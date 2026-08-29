@@ -24,6 +24,12 @@ version: 0.1.0
 5. **最新已发布版本来源**：`go list -m -json github.com/magicvr/schema-ui-core/apps/api@latest`（registry 语义 · 免 .env token；github proxy 版——主仓 tag 已 push；migrate 目标仓 go get 会用 proxy ✓）。注意：`apps/api` 消费 = `github.com/magicvr/schema-ui-core/apps/api`（实际 module 路径）。
 6. **验收**：golden-field `9510023`（v0.3.0 旧态）worktree 实测——dry-run 报 A 型 + 步骤清单；实跑后 go.mod bump ✓ + .npmrc 钉死（备份）✓ + main 引导 ✓；`go build ./cmd/server` 绿。
 
+## 7. 校准注记（2026-08-29 · A-002 F-001 响应）
+
+- **类型判定终版**：A = `server.Serve(` 薄封装或尚未依赖包面；B = 旧组合根（`assembly.OpenStore` 标准组合路径存在 · 无 kernel 覆盖——组合根模板标准件 `kernel.JoinIdentifiers` 等**不算**覆盖）；C = 手搓 kernel 面且未走组合路径。
+- **9510023 实测定型 = B**（dry-run 原 §6 写作「报 A 型」为执行偏差，以本注记为准）；A/C 由独立审计夹具复现。
+- **F-002 补丁**（同日）：`require ( … )` 块形态解析 + 实跑无条件执行 `go get @latest`（含原未依赖场景）。
+
 ## 未选方案
 
 | 项 | 未选 | 理由 |
