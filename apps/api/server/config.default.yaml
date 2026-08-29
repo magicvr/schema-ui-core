@@ -1,0 +1,27 @@
+# schema-ui serve 默认配置（内嵌）。覆盖方式：
+#   1. 显式文件：schema-ui serve -config <path>（或生成骨架 config.example.yaml 复制为 config.yaml）
+#   2. env 定向覆盖：HTTP_ADDR / HTTP_SHUTDOWN_TIMEOUT / DB_DIALECT / DB_PATH / DB_DSN /
+#      PROFILE_NAME / APP_ENV / LOG_LEVEL / AUTH_JWT_SECRET / ADMIN_INITIAL_PASSWORD
+# 插值：$VAR（无默认，未设置 fail-closed）/ $VAR:-default。
+app:
+  name: schema-ui-app
+  env: ${APP_ENV:-development}
+http:
+  addr: ":25080"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 10s
+db:
+  dialect: sqlite
+  path: ./data/schema-ui.db
+profile: admin
+auth:
+  access_ttl: 15m
+  refresh_ttl: 720h
+  jwt_secret: ${AUTH_JWT_SECRET:-}
+  public_base_url: ${AUTH_PUBLIC_BASE_URL:-}
+admin:
+  initial_password: ${ADMIN_INITIAL_PASSWORD:-}
+log:
+  level: info

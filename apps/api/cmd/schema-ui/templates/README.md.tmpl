@@ -1,4 +1,4 @@
-# {{ .Name }} · schema-ui CLI 生成的下游骨架（VP-023 R2）
+# {{ .Name }} · schema-ui CLI 生成的下游骨架（VP-024 R1 serve 壳）
 
 - 上游：schema-ui-core（`schema-ui-core-admin-foundation@0.3.0`）· 分发 = cli+包（Go proxy / GitHub Packages registry）
 - 生成：2026-08-29 `schema-ui create {{ .Name }}`（module `{{ .Module }}` · api {{ .APIVersion }}）
@@ -6,13 +6,20 @@
 ## 结构
 
 ```
-cmd/server/   Go 组合根（apps/api kernel + assembly + 模块；装配/迁移冒烟）
+cmd/server/   Go 组合根（thin wrapper → apps/api/server 公开 serve 面；RT-D02 优雅停机）
 web/          前端骨架（@magicvr/schema-ui-* registry 消费 + 主题覆盖 + 探针）
+config.example.yaml  serve 配置示例（复制为 config.yaml 或走 env 覆盖）
 ```
+
+## 运行
+
+- `go mod tidy && go run ./cmd/server` → serve 面启动（内嵌默认配置；/healthz /readyz 就绪）
+- 覆盖：`-config config.yaml` / `-dialect postgres -dsn <DSN>` / `-addr :25080`
+- 生产：`APP_ENV=production AUTH_JWT_SECRET=... ADMIN_INITIAL_PASSWORD=...`（缺省即 fail-closed）
 
 ## 验证探针
 
-- Go：`go run ./cmd/server <db>` → {{ .Name }} kernel=... 装配/迁移冒烟
+- Go：`go run ./cmd/server` → http://127.0.0.1:25080/healthz 返回 200（dev 种子 admin/admin）
 - Web：`pnpm install` 后 `node web/probe.mjs` / `probe-render.mjs` / `token-check.mjs`
 
 ## 升级

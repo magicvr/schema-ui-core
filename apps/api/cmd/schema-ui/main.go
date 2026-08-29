@@ -15,6 +15,8 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+
+	"github.com/magicvr/schema-ui-core/apps/api/server"
 )
 
 //go:embed templates
@@ -22,7 +24,7 @@ var templateFS embed.FS
 
 const (
 	apiModule   = "github.com/magicvr/schema-ui-core/apps/api"
-	apiVersion  = "v0.2.0" // 随发布推进更新；upgrade 用 @latest
+	apiVersion  = "v0.4.0" // 模板钉 = 含公开 serve 面（server pkg）的下一发布；R2 发布通道核销
 	protocolVer = "0.2.0"
 	libVersion    = "0.1.0"
 	shellVersion  = "0.1.0"
@@ -43,12 +45,14 @@ func main() {
 
 用法:
   schema-ui create <name> [--module <path>] [--dir <dir>]   生成下游骨架（Go 组合根 + Web 骨架 + 探针）
+  schema-ui serve [-config <path>] [-dialect sqlite|postgres] [-dsn <path|conn>] [-addr <addr>]   运行下游 serve 面（RT-D02 优雅停机）
   schema-ui add [module-id]                                  列出可用模块 / registry 装配
   schema-ui upgrade [--dry-run]                               registry 升级 + 探针回归
 
 示例:
   schema-ui create my-admin
-  schema-ui create my-admin --module github.com/acme/my-admin
+  schema-ui serve -config config.yaml
+  schema-ui serve -dialect postgres -dsn "postgres://user:pass@127.0.0.1:5432/db"
   schema-ui add                     # 列出 kernel.BuiltinModules
   schema-ui upgrade --dry-run
 `)
@@ -63,6 +67,8 @@ func main() {
 	switch flag.Arg(0) {
 	case "create":
 		err = cmdCreate(flag.Args()[1:])
+	case "serve":
+		err = cmdServe(flag.Args()[1:])
 	case "add":
 		err = cmdAdd(flag.Args()[1:])
 	case "upgrade":
@@ -138,6 +144,7 @@ func generate(o createOpts) error {
 	files := map[string]string{
 		"templates/go.mod.tmpl":              filepath.Join(o.dir, "go.mod"),
 		"templates/main.go.tmpl":             filepath.Join(o.dir, "cmd", "server", "main.go"),
+		"templates/config.yaml.tmpl":         filepath.Join(o.dir, "config.example.yaml"),
 		"templates/README.md.tmpl":           filepath.Join(o.dir, "README.md"),
 		"templates/gitignore.tmpl":           filepath.Join(o.dir, ".gitignore"),
 		"templates/web/package.json.tmpl":    filepath.Join(o.dir, "web", "package.json"),
@@ -154,9 +161,41 @@ func generate(o createOpts) error {
 			return err
 		}
 	}
-	fmt.Printf("created %s\n  module: %s\n  api:    %s@%s\n\n下一步:\n  cd %s && go mod tidy && go run ./cmd/server ./data.db\n  cd %s/web && pnpm install && node probe.mjs\n",
+	fmt.Printf("created %s\n  module: %s\n  api:    %s@%s\n\n下一步:\n  cd %s && go mod tidy && go run ./cmd/server\n  cd %s/web && pnpm install && node probe.mjs\n",
 		o.dir, o.module, apiModule, apiVersion, o.dir, o.dir)
 	return nil
+}
+
+// ---- serve ----
+
+// cmdServe 运行下游 serve 面（public server 包 + RT-D02 优雅停机）。
+func cmdServe(args []string) error {
+	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
+	configPath := fs.String("config", "", "serve 配置路径（缺省 = 内嵌默认 + env）")
+	dialect := fs.String("dialect", "", "覆盖方言（sqlite|postgres）")
+	dsn := fs.String("dsn", "", "覆盖连接串（sqlite=文件路径；postgres=DSN）")
+	addr := fs.String("addr", "", "覆盖监听地址")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	cfg, err := server.LoadConfig(*configPath)
+	if err != nil {
+		return err
+	}
+	if *dialect != "" {
+		cfg.DBDialect = *dialect
+	}
+	if *dsn != "" {
+		if cfg.DBDialect == "postgres" {
+			cfg.DBDSN = *dsn
+		} else {
+			cfg.DBPath = *dsn
+		}
+	}
+	if *addr != "" {
+		cfg.HTTPAddr = *addr
+	}
+	return server.Serve(server.Options{Config: cfg})
 }
 
 func writeTemplate(src, dst string, data map[string]string) error {

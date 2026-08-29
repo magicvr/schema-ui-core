@@ -163,7 +163,7 @@ schema-ui create my-admin            # 11 文件：Go 组合根 + web 骨架 + �
 cd my-admin
 
 # 3. 双端装配（registry 语义）
-go mod tidy && go run ./cmd/server -dialect sqlite -dsn ./data.db   # 迁移随 Open 自动 apply
+go mod tidy && go run ./cmd/server                    # serve 面启动（迁移随 Open 自动 apply · RT-D02 优雅停机）
 cd web && pnpm install && node probe.mjs                             # 三探针基线
 
 # 4. 升级 = 一条命令，零冲突（不再有 fork merge）

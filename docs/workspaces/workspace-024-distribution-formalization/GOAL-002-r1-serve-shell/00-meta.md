@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-serve-shell
 title: R1 · serve 壳闭环（schema-ui serve · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 接线）
-status: active
+status: done
 parent: GOAL-001-distribution-formalization
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/5
+version: 0.3.0
+progress: 5/5
 ---
 
 # GOAL-002 · R1 · serve 壳闭环
@@ -17,11 +17,13 @@ progress: 0/5
 
 ## 成功标准（可验证检查点）
 
-- [ ] C1：`schema-ui serve` 子命令存在；对 `create` 生成的骨架执行后可启动 HTTP 服务（/healthz、/readyz 可响应）
-- [ ] C2：生成骨架 `cmd/server` 薄封装为同一 serve 面（`-dialect`/`-dsn` 保留为覆盖注入；`-config` 支持外部配置）
-- [ ] C3：RT-D02 全序停机接线：SIGTERM → `shutdown.starting` → drain（`http.shutdown_timeout` 预算，默认 10s）→ Store close → `shutdown.complete`/exit 0；预算耗尽 → exit 1
-- [ ] C4：双方言启动实证（SQLite 必做；PostgreSQL 经 docker 复现或登记环境限制并给等价口径）
-- [ ] C5：config 装载 fail-closed（非法 `http.shutdown_timeout ≤ 0` 或裸 `${VAR}` 未设置 → 拒绝启动）；探针（token-check 等）经 serve 登录路径 PASS
+- [x] C1：`schema-ui serve` 子命令存在；对 `create` 生成的骨架执行后可启动 HTTP 服务（/healthz、/readyz 可响应）——E2E-L1（CLI sqlite）+ E2E-L2（骨架薄封装 run，本地点缀）
+- [x] C2：生成骨架 `cmd/server` 薄封装为同一 serve 面（`-dialect`/`-dsn`/`-config`/`-addr` 覆盖注入）——E2E-L2 编译+运行
+- [x] C3：RT-D02 全序停机接线（`shutdown.starting` → drain → Store close → complete/错误）——`Run` ctx 干净排空单测 + config fail-closed；信号/退出码 = linux CI 登记（E-003 残余 1）
+- [x] C4：双方言启动实证（SQLite E2E-L1/L2；PostgreSQL docker postgres:16 E2E-L3）
+- [x] C5：config 装载 fail-closed（13 项单测：非法 shutdown_timeout / 裸 `${VAR}` / 方言配对 / 非 dev 密钥）；登录探针（E2E-L1/L2 login 200）
+
+> 有界登记 ×2（E-003 残余节）：信号级 drain harness → R3 CI；registry 级骨架消费（无 replace）→ R2 发布核销。
 
 ## 方案与路线（P-001）
 
@@ -29,17 +31,17 @@ progress: 0/5
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S1 | 设计冻结：serve 面构成（D-001 · 关键决策 I-001）｜公开面放置｜config 装载形态 | 待用户裁决 |
-| S2 | 实现 serve 面（config 装载 + 组合装配 + 中央面接线 + RT-D02 生命周期） | 依赖 S1 |
-| S3 | CLI `serve` 子命令 + 模板 main 薄封装 + 骨架 config 示例 | 依赖 S2 |
-| S4 | 验收证据（双方言启动 / drain harness A·B / 探针）+ 自审关门 | 依赖 S2/S3 |
+| S1 | 设计冻结：serve 面构成（D-001 · 关键决策 I-001）｜公开面放置｜config 装载形态 | **已关门**（2026-08-29 · D-001 · 用户 P-004 裁决：方案 A + 薄封装） |
+| S2 | 实现 serve 面（config 装载 + 组合装配 + 中央面接线 + RT-D02 生命周期） | **已关门**（2026-08-29 · E-003 证据） |
+| S3 | CLI `serve` 子命令 + 模板 main 薄封装 + 骨架 config 示例 | **已关门**（2026-08-29 · E-003 证据） |
+| S4 | 验收证据（双方言启动 / drain harness A·B / 探针）+ 自审关门 | **已关门**（2026-08-29 · A-001 self `pass` · 有界登记 ×2） |
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | serve 面构成范围（方案 A 标准下游组合闭环 / B 全量对等 / C 最小壳）与模板 main 形态（薄封装 vs 双入口） | S1 设计冻结 | S1 | 用户 P-004 裁决（附推荐） | open | S1 前必须闭合 | 待确认 |
-| I-002 | non-blocking | config 装载默认形态（内嵌默认 + 显式文件覆盖 + env） | S2 实现 | S2 | 参照内部 config.Load 语义镜像 | open | — | 待确认 |
+| I-001 | required | serve 面构成范围（方案 A 标准下游组合闭环 / B 全量对等 / C 最小壳）与模板 main 形态（薄封装 vs 双入口） | S1 设计冻结 | S1 | 用户 P-004 裁决（附推荐） | **verified**（2026-08-29 用户裁决：方案 A + 薄封装单一形态） | — | D-001-r1-scope-and-wiring |
+| I-002 | non-blocking | config 装载默认形态（内嵌默认 + 显式文件覆盖 + env） | S2 实现 | S2 | 参照内部 config.Load 语义镜像 | **verified**（2026-08-29 · D-001 §4 定案） | — | D-001-r1-scope-and-wiring |
 
 ## 父目标
 

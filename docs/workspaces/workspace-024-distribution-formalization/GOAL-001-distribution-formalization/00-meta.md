@@ -21,7 +21,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 
 ## 成功标准（对应 VP-024 八条退出判据）
 
-- [ ] 判据 #1：serve 壳闭环（`schema-ui serve` · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 合同接线）
+- [x] 判据 #1：serve 壳闭环（`schema-ui serve` · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 合同接线）——R1 已关门（GOAL-002 done 5/5 · A-001 self `pass`）；registry 级骨架消费随 R2 发布核销
 - [ ] 判据 #2：公开发布通道闭环（npmjs.com 六包 + CLI · golden-field 免凭据消费实证 · 发布流程成文）
 - [ ] 判据 #3：compose CI 实跑（compose/Dockerfile + consumer-regression workflow 真实 CI 或等价实跑 PASS）
 - [ ] 判据 #4：fork 对照计时实验（同一演进集实测对比：耗时/冲突计数/契约迁移成本）
@@ -36,7 +36,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
-| R1 | serve 壳闭环（判据 #1） | 未开 |
+| R1 | serve 壳闭环（判据 #1） | **已关门**（2026-08-29 · GOAL-002 done 5/5 · A-001 self `pass` · E2E-L1~L3 · 有界登记：信号 harness→R3 CI · registry 消费→R2） |
 | R2 | 公开发布通道（判据 #2；前置门禁 I-024-001） | 依赖 R1 |
 | R3 | compose/CI 实跑（判据 #3） | 依赖 R1/R2 |
 | R4 | fork 对照计时（判据 #4） | 依赖 R2/R3 |
@@ -51,7 +51,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 | I-024-001 | required | npmjs 公开发布授权（正式 scope 名 + 凭据方式）；未授权时裁决降级方案 | 判据 #2 | R2 | 用户书面授权或裁决（V-F088 → 激活事务内登记） | open | R2 到达前必须闭合 | 待确认 |
 | I-024-002 | required | CI 槽位环境（真实 runner / 用户环境等价 + 凭据） | 判据 #3 | R3 | workflow 实跑验证 | open | — | 待确认 |
 | I-024-003 | required | fork 对照的同一演进集样本（V 演进选择） | 判据 #4 | R4 | 样本设计与 fork 基线 | open | — | 待确认 |
-| I-024-004 | non-blocking | serve 壳与 assembly 服务器面接线方式（新壳 vs 扩展 assembly） | 判据 #1 设计 | R1 | 设计核对（复用 RT-D02 合同） | open | — | 待确认 |
+| I-024-004 | non-blocking | serve 壳与 assembly 服务器面接线方式（新壳 vs 扩展 assembly） | 判据 #1 设计 | R1 | 设计核对（复用 RT-D02 合同） | **verified**（2026-08-29 · D-001 定案：公开 `server` 面 = assembly 服务器面扩展；RT-D02 全序接线） | — | GOAL-002 D-001 |
 
 ## 父目标
 
