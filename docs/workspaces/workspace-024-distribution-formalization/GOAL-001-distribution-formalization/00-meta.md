@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-distribution-formalization
 title: 分发形态正式化（cli+包 对外服务化收口）
-status: active
+status: done
 parent: null
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 6/7
+version: 0.4.0
+progress: 7/7
 plan_refs:
   - VP-024-distribution-formalization
 primary_plan: VP-024-distribution-formalization
@@ -28,7 +28,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 - [x] 判据 #5：renderer 依赖图 external 化（ui 包可消费 renderer）→ 冻结面 v1.4.0——R5 已关门（GOAL-006 done 5/5 · 187.5kB · 17 处包子路径 · peer 矩阵实发 · 五探针 + UI-ONLY 全绿）
 - [x] 判据 #6：纯原子拆分（业务组件出 ui 包）——data-table 属 ui 设计系统面（用户 P-004 裁决 · 2026-08-29）；ui 独立消费实证（仅装 ui+peer）
 - [x] 判据 #7：fork→包迁移工具化（`schema-ui migrate-fork` 或等价）——R6 已关门（GOAL-007 done 4/4 · A-002 grok `pass`（0 required）· 9510023 旧态实测：v0.3.0→v0.4.0 · npmjs 钉死 · build 绿）
-- [ ] 判据 #8：默认主路径宣告与收口报告（方法 B 置顶 · 核销表 · 残余清零）
+- [x] 判据 #8：默认主路径宣告与收口报告（方法 B 置顶 · 核销表 · 残余清零）——R7 已关门（GOAL-008 done 4/4 · QUICKSTART 首段置顶 · closure-report 判据 8 条核销 · 残余四项登记/评述/候选 · Root 关门审计 A-002 grok `pass`）· **用户 2026-08-29 书面确认关门 → Root done 7/7 · VP-024 closed**
 
 ## 纲领路线图（P-001）
 
@@ -42,7 +42,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 | R4 | fork 对照计时（判据 #4） | 依赖 R2/R3 | **已关门**（2026-08-29 · GOAL-005 done 4/4 · A-002 grok `pass`（0 required）· 附件 fork-comparison-report） |
 | R5 | 六包形态细化（判据 #5/#6） | 依赖 R1 | **已关门**（2026-08-29 · GOAL-006 done 5/5 · A-002 conditional → F-001~F-004 fixed · 判据 #5/#6 核销） |
 | R6 | 迁移工具化（判据 #7） | 依赖 R2 | **已关门**（2026-08-29 · GOAL-007 done 4/4 · A-002 grok `pass`（0 required）· F-001~F-003 fixed） |
-| R7 | 置顶与收口报告（判据 #8） | 依赖 R1–R6 |
+| R7 | 置顶与收口报告（判据 #8） | 依赖 R1–R6 | **已关门**（2026-08-29 · GOAL-008 done 4/4 · Root 关门审计 A-002 grok `pass`（0 required · F-001~F-006 fixed）· 用户书面确认 · VP-024 closed（VRev-053）） |
 
 ## 信息就绪与未知项（P-005）
 

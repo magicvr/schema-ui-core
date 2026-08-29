@@ -18,14 +18,14 @@ workspace_id: workspace-024-distribution-formalization
 ## 树
 
 ```text
-GOAL-001-distribution-formalization [active 6/7]  · 分发形态正式化（cli+包 对外服务化收口：VP-022/023 go 后残余 7 项 + 方法 B 置顶）
+GOAL-001-distribution-formalization [done 7/7]  · 分发形态正式化（cli+包 对外服务化收口：VP-022/023 go 后残余 7 项 + 方法 B 置顶）
 ├── GOAL-002-r1-serve-shell [done 5/5]  · R1 serve 壳闭环（schema-ui serve · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 接线 · 判据 #1）
 ├── GOAL-003-r2-public-release-channel [done 4/4]  · R2 公开发布通道（npmjs @magicvr 六包 + apps/api/v0.4.0 + golden-field 无凭据消费 · 判据 #2）
 ├── GOAL-004-r3-compose-cicd [done 4/4]  · R3 compose/CI 实跑（compose 全服务 + consumer-regression 免凭据重构 + 信号级 drain harness · 判据 #3）
 ├── GOAL-005-r4-fork-comparison [done 4/4]  · R4 fork 对照计时（同一演进集 v0.3.0→v0.4.0：fork 同步 vs 包 bump 实测对比 · 判据 #4）
 ├── GOAL-006-r5-six-package-granularity [done 5/5]  · R5 六包形态细化（renderer external 化 · tsc 子路径产物 · 冻结面 v1.4.0 · 判据 #5/#6）
 ├── GOAL-007-r6-migration-tooling [done 4/4]  · R6 迁移工具化（schema-ui migrate-fork · 非破坏辅助 · A/B 型实测 · 判据 #7）
-└── GOAL-008-r7-topline-and-closeout [active 0/4]  · R7 置顶与收口报告（方法 B 置顶 · 核销表 · Root 关门 · 判据 #8）
+└── GOAL-008-r7-topline-and-closeout [done 4/4]  · R7 置顶与收口报告（方法 B 置顶 · 核销表 · Root 关门 · 判据 #8）
 ```
 
 > 下一波：GOAL-007-r6-migration-tooling（R6 迁移工具化 · done 4/4 · 判据 #7）
@@ -34,11 +34,11 @@ GOAL-001-distribution-formalization [active 6/7]  · 分发形态正式化（cli
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-distribution-formalization | 分发形态正式化（cli+包 对外服务化收口） | null | active | 6/7 | 2026-08-29 |
+| GOAL-001-distribution-formalization | 分发形态正式化（cli+包 对外服务化收口） | null | done | 7/7 | 2026-08-29 |
 | GOAL-002-r1-serve-shell | R1 serve 壳闭环（schema-ui serve · HTTP 壳 + config 装载 + assembly 服务器面 · RT-D02 接线） | GOAL-001-distribution-formalization | done | 5/5 | 2026-08-29 |
 | GOAL-003-r2-public-release-channel | R2 公开发布通道（npmjs @magicvr 六包 + apps/api/v0.4.0 + golden-field 无凭据消费） | GOAL-001-distribution-formalization | done | 4/4 | 2026-08-29 |
 | GOAL-004-r3-compose-cicd | R3 compose/CI 实跑（compose 全服务 + consumer-regression 免凭据重构 + 信号级 drain harness） | GOAL-001-distribution-formalization | done | 4/4 | 2026-08-29 |
 | GOAL-005-r4-fork-comparison | R4 fork 对照计时（同一演进集 v0.3.0→v0.4.0：fork 同步 vs 包 bump 实测对比） | GOAL-001-distribution-formalization | done | 4/4 | 2026-08-29 |
 | GOAL-006-r5-six-package-granularity | R5 六包形态细化（renderer external 化 + ui 纯原子断言 + 冻结面 v1.4.0） | GOAL-001-distribution-formalization | done | 5/5 | 2026-08-29 |
 | GOAL-007-r6-migration-tooling | R6 迁移工具化（schema-ui migrate-fork · 非破坏辅助 · A/B 型实测） | GOAL-001-distribution-formalization | done | 4/4 | 2026-08-29 |
-| GOAL-008-r7-topline-and-closeout | R7 置顶宣告与收口报告（方法 B 置顶 · 核销表 · Root 关门） | GOAL-001-distribution-formalization | active | 0/4 | 2026-08-29 |
+| GOAL-008-r7-topline-and-closeout | R7 置顶宣告与收口报告（方法 B 置顶 · 核销表 · Root 关门） | GOAL-001-distribution-formalization | done | 4/4 | 2026-08-29 |

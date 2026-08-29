@@ -2,7 +2,7 @@
 doc_type: vision-plan
 id: VP-024-distribution-formalization
 title: 分发形态正式化 · cli+包 对外服务化（go 后收口）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-024-distribution-formalization
 created: 2026-08-29

@@ -94,3 +94,4 @@ version: 1.3.65
 
 **workspace-023 关闭**（2026-08-29）：Root done 5/5 · VP-023 closed v0.3.0（六条判据满足）；grok 独立双审（A-001/A-002 · 8 findings）→ 全部 fixed（含用户裁决 breaking 实演）；go 后清单落款。当前组合：**无 active 交付 VP**；持续程序 VP-009/010。
 **VRev-052（self · /vision，pass）**：VP-024 激活就绪——意图/退出判据/边界可判定，架构类轻量 freshness PASS（`041744b3`→`c9122478`，消费面无变更）；**VP-024 激活**（`planned → active` v0.2.0 · 2026-08-29 用户 P-004 裁决 + 激活授权）：lead `workspace-024-distribution-formalization` 开区（Root 纲领 R1~R7，承接 VP-022/023 go 后残余收口）。当前组合：**active 交付 VP = VP-024**；持续程序 VP-009/010。
+| VRev-053-vp024-closeout | 2026-08-29 | closed | VP-024-distribution-formalization 收口：八判据核销（R1–R7 · grok 独立审闭环）· 残余四项登记 · 方法 B 宣告 | independent（grok）+ user decision | [reviews/VRev-053-vp024-closeout.md](reviews/VRev-053-vp024-closeout.md) |

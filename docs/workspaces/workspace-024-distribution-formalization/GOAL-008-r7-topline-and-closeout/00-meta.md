@@ -1,12 +1,12 @@
 ---
 id: GOAL-008-r7-topline-and-closeout
 title: R7 · 方法 B 置顶宣告 + 收口报告 + 残余复核（Root 关门）
-status: active
+status: done
 parent: GOAL-001-distribution-formalization
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/4
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-008 · R7 · 置顶宣告与收口报告
@@ -17,19 +17,19 @@ progress: 0/4
 
 ## 成功标准（可验证检查点）
 
-- [ ] C1：QUICKSTART 方法 B 置顶（首段 cli+包 起步 · fork 为第二路径）；通读无断链（create/serve/upgrade 命令与六包终值一致）
-- [ ] C2：收口报告（`attachments/closure-report.md`）：判据 #1–#8 核销表 + 往返实证 + fork 对照回引 + 残余复核清单（hosted CI 触发 / shell 类型面 / GH 包退役评述 / C 类面）逐项结论
-- [ ] C3：残余复核定稿：hosted CI 触发 = 注记（等价证据已证 · 实触发随 R7 后用户指令）· shell 类型面 = 登记（JS 运行时自包含）· GH 私有包 = 保留不删（历史消费面；新消费 npmjs 公开）· C 类 fork = 保持 fork（assembly 扩展面 = R7 后候选）
-- [ ] C4：Root 关门审计（grok independent）→ 用户确认 → Root done 7/7 · VP-024 closed · 收官提交
+- [x] C1：QUICKSTART 方法 B 置顶（§0 决策块 + §1 cli+包 首节 + §2 migrate-fork + §3 fork 复现顺延）；create 钉终值 + upgrade 拉 latest 注记；命令族/终值一致性
+- [x] C2：收口报告 `attachments/closure-report.md`：判据 #1–#8 核销表 + 公开消费往返实证 + fork 对照回引 + 残余复核四项逐项结论
+- [x] C3：残余复核四项定稿（D-001）：hosted CI 触发 = 登记（不主张 acceptance）· shell 类型面 = 登记 · GH 私有包 = 保留 + npmjs 新消费面 · C 类 fork 面 = 未来候选
+- [x] C4：Root 关门审计（grok independent）→ **pass（0 required · F-001~F-006 fixed）** → 用户书面确认 → **Root done 7/7 · VP-024 closed（VRev-053）**
 
 ## 方案与路线（P-001）
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| S1 | 方法 B 置顶（QUICKSTART 首段调整 + 一致性通读） | 未开 |
-| S2 | 收口报告成文（核销表 + 残余复核清单 + 宣告） | 依赖 S1 |
-| S3 | 残余复核定稿（四项）（C3） | 依赖 S2 |
-| S4 | Root 关门独立审计（grok）→ 用户确认 → 收官 | 依赖 S2/S3 |
+| S1 | 方法 B 置顶（QUICKSTART 首段调整 + 一致性通读） | **已关门**（2026-08-29 · E-001） |
+| S2 | 收口报告成文（核销表 + 残余复核清单 + 宣告） | **已关门**（2026-08-29 · E-002 · closure-report） |
+| S3 | 残余复核定稿（四项）（C3） | **已关门**（2026-08-29 · D-001） |
+| S4 | Root 关门独立审计（grok）→ 用户确认 → 收官 | **已关门**（2026-08-29 · A-002 `pass`（0 required · F-001~F-006 fixed）· 用户书面确认 · VRev-053 · VP-024 closed） |
 
 ## 信息就绪与未知项（P-005）
 
