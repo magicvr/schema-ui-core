@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-go-library-consumption
 title: R2 · Go 库包闭环
-status: active
+status: done
 parent: GOAL-001-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.2.0
-progress: 2/4
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-003 · R2 · Go 库包闭环
@@ -19,8 +19,8 @@ progress: 2/4
 
 - [x] **S1 · 阻断验证与外移方案**：internal 规则实验证据（E-001）；外移方案评估与**用户裁决**（D-001/D-002：方案 A 目录提升）
 - [x] **S2 · 外移重构**：A 层（kernel）+ B 层（modules）移出 `internal/`；223 文件 import 改写；build 0 + 全量回归（A-001 pass；freeze-face v1.0.1 勘误）
-- [ ] **S3 · 黄金下游仓装配闭环**：`attachments/golden-consumer`（嵌套 go.mod + replace）自建组合根装配 kernel + ≥1 标准模块；迁移台账收集、启动冒烟、双方言 apply 与 fork 形态功能基线等价；**F-001（C 层泄漏）/F-002（B 层符号回填）fixed**（首验已 PASS：kernel+profile+registry+dashboard `go run` 绿）
-- [ ] **S4 · 关门**：self 审计（A-001）+ 证据链接；判据 #1 满足声明（供 R5 go/no-go 使用）
+- [x] **S3 · 黄金下游仓装配闭环**：`golden-consumer` 自建组合根装配 kernel + users（方案 β：`assembly` 公开装配工厂）——迁移 apply（fresh=true）+ 贡献注册 = Descriptor 声明 + 零 internal 命名；**F-001/F-002 fixed**（A-002）
+- [x] **S4 · 关门**：self 审计 A-002 `pass`（0 required；PG external 消费 = 有界 residual F-005，R4/R5 复审）；**判据 #1 满足声明成立**；GOAL-003 `done 4/4`
 
 ## 信息就绪
 

@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.2.0
-progress: 1/5
+version: 0.3.0
+progress: 2/5
 plan_refs:
   - VP-022-distribution-package-pilot
 primary_plan: VP-022-distribution-package-pilot
@@ -35,7 +35,7 @@ serves_summary: 以证据驱动验证「构建期包消费」分发路径（Go �
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
 | R1 | 契约冻结面落盘：kernel 公共 API / 模块契约 / npm 包组 semver + breaking 流程 + changelog 模板；「冻结面 vs 内部自由演进面」分界；发布通道初选 | **已关门**（2026-08-29 · GOAL-002 done 4/4 · 用户确认清单 v1.0.0 生效 · D-002；F-001/F-002 交接 R2） |
-| R2 | Go 库包闭环：空下游仓 `go get` + 组合根装配（kernel + ≥1 标准模块），功能基线等价证据 | 依赖 R1 | **进行中**（GOAL-003 2/4：S1 internal 阻断实验 + 方案 A 用户裁决 → S2 外移重构 done（223 文件改写 · build 0 · 全量回归 A-001 pass · freeze-face v1.0.1）→ S3 装配首验 PASS（golden-consumer `go run` 绿）；剩余：迁移台账双方言 apply + users 装配（F-001）+ B 层符号回填（F-002）） |
+| R2 | Go 库包闭环：空下游仓 `go get` + 组合根装配（kernel + ≥1 标准模块），功能基线等价证据 | 依赖 R1 | **已关门**（2026-08-29 · GOAL-003 done 4/4 · A-002 self `pass` · 判据 #1 满足声明；外移重构 + assembly 工厂实证；residual：PG external 消费 F-005，R4/R5 复审） |
 | R3 | Web 包闭环：npm 包组组装 + schema 页面渲染 + Token 覆盖定制证据 | 依赖 R1（可评估与 R2 并行） |
 | R4 | 零冲突升级演练：上游真实演进样本 → 下游仅 bump + 迁移说明 → 回归全绿、冲突 0、无 merge | 依赖 R2/R3 |
 | R5 | 证据与 go/no-go：发布可复现（脚本/CI + golden consumer）+ 实测对比报告 + Charter 修订建议 | 依赖 R1–R4 |

@@ -34,3 +34,9 @@ GOAL-002 S1 扫描事实、S2 成文（冻结面清单 v0.1.0 / semver 流程 / 
 ## 响应
 
 - F-001/F-002：采纳为 R2 前置项（GOAL-003 S1 纳入）；本条目随 R2 关门时以 fixed 回填。
+
+## 响应回填（2026-08-29 · R2 关门）
+
+- **F-001 → `fixed`**：C 层泄漏收敛 = 用户裁决方案 β（GOAL-003 D-003）→ `apps/api/assembly` 公开装配工厂实证（GOAL-003 E-004：users 全链零 internal 命名装配 + 贡献计数 = Descriptor 声明；A-002 核对点 #5）。
+- **F-002 → `fixed`**：B 层符号全量盘点 = `GOAL-003 attachments/modules-export-inventory-v0.1.md`（22 包 · 279 行），冻结面 v1.1.0 增列引用（A-002 核对点 #6）。
+- 冻结面 v1.0.1 → **v1.1.0**：增列 B+ 层（assembly 导出签名）+ B 层盘点引用；契约内容 additive，无 breaking。
