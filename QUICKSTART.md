@@ -146,3 +146,30 @@ bash scripts/pre-release-smoke.sh
   - 注意：`docs/schemas/` 是上游 **协议 JSON Schema**（node/page/action…），**不是**业务页面文档目录。
 - 权限：通过模块的 Authorization/Persistence contribution 声明权限键与 system-data reconcile；全局迁移/快照执行仍由 `apps/api/internal/store` 负责；模块迁移须进入全局台账（见 playbook M5）。
 - 参考：[README.md](README.md) 工程化段；`apps/api/README.md` / `apps/web/README.md` 端点与配置表。
+
+---
+
+## 方法 B · cli+包 起步（15 分钟对标 · VP-023 产线化）
+
+> 面向「不 fork 主仓」的消费者（fork = 方法 A 见上）：全流程经 registry/CLI 获得同一基架（单主线 · 同协议 pin 2.9.0 · 同冻结面 v1.3.0）。
+> 预置：Go 1.26+、Node 22+；GitHub Packages 认证一次（用户级）：pnpm config set "//npm.pkg.github.com/:_authToken" <token>。
+
+```bash
+# 1. 安装 CLI（公共 Go proxy）
+go install github.com/magicvr/schema-ui-core/apps/api/cmd/schema-ui@latest
+
+# 2. 生成下游骨架（对标 dotnet new）
+schema-ui create my-admin            # 11 文件：Go 组合根 + web 骨架 + 探针 + 主题覆盖
+cd my-admin
+
+# 3. 双端装配（registry 语义）
+go mod tidy && go run ./cmd/server -dialect sqlite -dsn ./data.db   # 迁移随 Open 自动 apply
+cd web && pnpm install && node probe.mjs                             # 三探针基线
+
+# 4. 升级 = 一条命令，零冲突（不再有 fork merge）
+schema-ui upgrade                    # go get @latest + pnpm add @latest + 探针回归
+```
+
+- 计时口径（VP-023 R5 实测）：create → 双端绿 = **分钟级**（去依赖下载）；升级 = 秒级；冲突计数 = 0、无 git merge。
+- 双方言：SQLite 内嵌默认；生产权威 PostgreSQL：golden-field -dialect postgres -dsn …（迁移/备份契约与 fork 形态一致，见 workspace-023 ops-playbook）。
+- 包面：@magicvr/schema-ui-{protocol,lib,theme,ui,renderer,shell}（GitHub Packages）。
