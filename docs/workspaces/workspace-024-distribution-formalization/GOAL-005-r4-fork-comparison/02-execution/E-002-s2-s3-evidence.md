@@ -12,7 +12,7 @@ version: 0.1.0
 
 - 演进集：`apps/api/v0.3.0`（`4f7cb0f1`）→ `apps/api/v0.4.0`（`00d97b5b`）真实演进（serve 面 + CLI + 模板）。
 - 环境：本地 Windows · Go 1.26 · git；暖缓存口径（Go 模块缓存预热）；相对对比为结论依据。
-- 全部实验仓为临时构建（`%TEMP%`），实验后清理，不影响主仓/golden-field。
+- 全部实验仓为临时构建（`%TEMP%`），实验后已清理（A-002 F-003 核销：残留 fork-sim 目录已删）；独立审同机复跑秒数 = fork build 10.7s · gf tidy+build 4.4s（钉数量级，不锁绝对值）。
 
 ## fork 模型实测（S2）
 
@@ -32,7 +32,7 @@ golden-field worktree 检 `9510023`（v0.3.0 完整态）→ 按 **v0.4.0 迁移
 
 | 阶段 | 结果 |
 |------|------|
-| 迁移编辑 | go.mod bump 1 行 · cmd/server 换薄封装（server.Serve 面）· web/.npmrc 钉 npmjs —— **0.0s**（3 个文件，无 diff 上游） |
+| 迁移编辑 | go.mod bump 1 行 · cmd/server 换薄封装（server.Serve 面）· web/.npmrc 钉 npmjs —— **可忽略**（3 个文件编辑，非墙钟基准；A-002 F-004 口径） |
 | 冲突 | **0**（无 git merge · 无 replace/file:） |
 | tidy + build | **4.8s**（暖缓存 · 公共 proxy） |
 | serve 冒烟 | `/healthz` 200 · readyz 通过 |
