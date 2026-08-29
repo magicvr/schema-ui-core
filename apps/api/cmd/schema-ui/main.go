@@ -25,12 +25,13 @@ var templateFS embed.FS
 const (
 	apiModule   = "github.com/magicvr/schema-ui-core/apps/api"
 	apiVersion  = "v0.4.0" // 模板钉 = 含公开 serve 面（server pkg）的下一发布；R2 发布通道核销
-	protocolVer = "0.2.0"
-	libVersion    = "0.1.0"
-	shellVersion  = "0.1.0"
-	themeVersion  = "0.1.0"
-	uiVersion     = "0.1.0"
-	rendererVer = "0.2.0"
+	// 六包终值（R5 · A-002 F-002 响应）：create 骨架生成即装终值；upgrade 拉 npm/Go latest 保对齐
+	protocolVer = "0.2.11"
+	libVersion    = "0.1.10"
+	shellVersion  = "0.1.4"
+	themeVersion  = "0.1.4"
+	uiVersion     = "0.1.8"
+	rendererVer = "0.3.8"
 )
 
 type createOpts struct {
@@ -315,10 +316,8 @@ func cmdUpgrade(args []string) error {
 			}
 		}
 		if _, err := os.Stat("cmd/server"); err == nil {
-			fmt.Println("> go run ./cmd/server -dialect sqlite -dsn ./data-upgrade.db")
-			if err := runCmd(shell, buildShellCmd("go run ./cmd/server -dialect sqlite -dsn ./data-upgrade.db")); err != nil {
-				return fmt.Errorf("组合根冒烟失败: %w", err)
-			}
+			// A-002 F-006：serve 为常驻进程，upgrade 不再同步执行（防挂起）；改为提示手动冒烟
+			fmt.Println("（组合根冒烟：另起终端 `go run ./cmd/server -dialect sqlite -dsn ./data.db`，随后验 /healthz）")
 		}
 	}
 	fmt.Println("upgrade" + map[bool]string{true: "（dry-run）", false: ""}[dry] + " 完成")

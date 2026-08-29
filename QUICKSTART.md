@@ -33,6 +33,8 @@ cd web && pnpm install && node probe.mjs                             # 三探针
 schema-ui upgrade                    # go get @latest + pnpm add @latest + 探针回归
 ```
 
+> 注：`schema-ui create` 生成骨架钉在 API tag 时刻的包面（当前 = 冻结面 v1.4.0 终值）；`schema-ui upgrade` 会把 Go/npm 依赖拉到最新（registry 语义 · 零冲突）。
+
 - 计时口径（VP-023 R5 实测）：create → 双端绿 = **分钟级**（去依赖下载）；升级 = 秒级；冲突计数 = 0、无 git merge。
 - 双方言：SQLite 内嵌默认；生产权威 PostgreSQL：golden-field -dialect postgres -dsn …（迁移/备份契约与 fork 形态一致，见 workspace-023 ops-playbook）。
 - 包面：@magicvr/schema-ui-{protocol,lib,theme,ui,renderer,shell}（npmjs.com 公开发布 · 免凭据；`schema-ui upgrade` 自动装配六包）。

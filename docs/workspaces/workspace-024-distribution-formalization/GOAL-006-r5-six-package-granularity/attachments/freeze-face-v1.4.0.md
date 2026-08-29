@@ -22,17 +22,17 @@
 | protocol | — | ajv ^8.20 | 协议面；schema JSON 资产入包（import attributes） |
 | lib | react ^19（i18n React 面） | clsx · tailwind-merge | i18n/messages 资产入包 |
 | theme | — | — | Token CSS/TS |
-| ui | react ^19 · react-dom ^19 | clsx · tailwind-merge · class-variance-authority · lucide-react · @radix-ui/react-slot | 原子组件；lib/i18n 面 bundle 自含 |
+| ui | react ^19 · react-dom ^19 · **@magicvr/schema-ui-lib ^0.1.10（breadcrumbs i18n 面经 lib peer）** | clsx · tailwind-merge · class-variance-authority · lucide-react · @radix-ui/react-slot | 原子组件 + DataTable 设计系统面（data-table 归 ui · 用户 P-004 裁决）；独立消费实证 = UI-ONLY（仅装 ui+peer · exports=18 PASS） |
 | renderer | react ^19 · react-dom ^19 · **@magicvr/schema-ui-protocol ^0.2.11 · @magicvr/schema-ui-lib ^0.1.10 · @magicvr/schema-ui-ui ^0.1.8** | — | 依赖图 external 化：产物 import 包子路径（17 处），消费端解析；不再自包含 protocol/lib/ui/i18n 面 |
 | shell | react ^19 · react-dom ^19 | — | App/Host 壳 bundle 自包含 |
 
 ## 3. 契约记录
 
 - **renderer 0.2.0（自包含）→ 0.3.0（external 化）为消费契约变化**（changelog 迁移说明：消费方安装 renderer 新版时需同时具备 protocol/lib/ui peer；npm 8+/pnpm 自动解析 peer）。
-- **d.ts alias 重写**：六包产物 d.ts 的 `@/` 引用已按映射表重写为包子路径（protocol 1 · ui 1 · shell 12 处）；**shell 类型面残余 7 处引用（`@/account/*`、`@/host/*`、`@/components/data-table` 无对应包）→ 消费端 tsc 类型面未验证，登记 R7 复核**（JS 运行时自包含不受影响）。
+- **d.ts alias 重写**：六包产物 d.ts 的 `@/` 引用已按映射表重写为包子路径（protocol 1 · ui 1 · shell 12 处）；**shell 类型面残余 4 文件 7 处引用（`@/account/*`、`@/host/*` 无对应包）→ 消费端 tsc 类型面未验证，登记 R7 复核（GOAL-008 D-001 残余 2）**（JS 运行时自包含不受影响；`components/data-table` 不在此列——属 ui 设计系统面）。
 - 主仓源码（`apps/web/src`）不受影响（重写仅作用于 dist-lib 产物）；`tsc -b` 回归绿。
 
 ## 4. 判定
 
 - 判据 #5（renderer 依赖图 external 化 · 六包 peer 矩阵定稿）：**满足**。
-- 判据 #6（ui 纯原子拆分 · 独立消费）：ui 包 = 12 个原子组件（无 renderer/protocol/i18n 反向依赖）+ 独立消费实证（见 GOAL-006 E-002）；业务组件（form-controls 等 schema 驱动面）留在 renderer ——**满足**。
+- 判据 #6（ui 纯原子拆分 · 独立消费）：ui 包 = 设计系统面（原子组件 12 + DataTable 通用数据表——归 ui 为用户 P-004 裁决；breadcrumbs 的 i18n 经 `@magicvr/schema-ui-lib` peer）；业务组件（form-controls 等 schema 驱动面）留在 renderer ——**满足**（UI-ONLY 独立消费实证）。

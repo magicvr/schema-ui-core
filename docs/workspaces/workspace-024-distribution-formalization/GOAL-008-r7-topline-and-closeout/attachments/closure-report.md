@@ -26,7 +26,7 @@
 
 | 项 | 结论 | 处置 |
 |----|------|------|
-| 1 · hosted CI 实触发（consumer-regression workflow） | 本地等价 + linux 容器 harness A/B 已证；hosted 触发需 CI 槽位授权（用户环境事实） | **登记**：触发脚本/流程已就绪（workflow 已提交）；随用户下一次 CI 槽位授权执行（触发 = `workflow_dispatch`） |
+| 1 · hosted CI 实触发（consumer-regression workflow） | 本地等价 + linux 容器 harness A/B 已证；**工作流文件本地就绪**（含 `workflow_dispatch`）；hosted 实触发需 CI 槽位授权（用户环境事实） | **登记**（不主张 hosted acceptance）：随用户下一次 CI 槽位授权执行 `workflow_dispatch`；或后续波次声明「CI 实跑」时 |
 | 2 · shell 类型面（4 文件 7 处 `@/account|@/host`） | JS 运行时自包含（五探针绿中 shell 消费正常）；消费端 tsc 类型面未验证 | **登记**：R7 后候选（shell 包声明类型面进阶或登记为已知面）；不影响运行时消费 |
 | 3 · GH Packages 私有包 | 历史消费面（VP-023 时代安装/凭证），保留不删；**新消费一律 npmjs 公开**（F-004 已钉） | **评述定稿**：双 registry 并存策略（GH=私有历史面 · npmjs=公开现面） |
 | 4 · C 类深度定制 fork 的包化承载面 | kernel 契约扩展通道（assembly 扩展 + 六包 external 组合）不在本 VP；`migrate-fork` C 型建议保持 fork | **登记**：未来候选（新 VP/波次）；Charter fork 并存维持 |
