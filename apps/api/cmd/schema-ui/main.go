@@ -48,6 +48,7 @@ func main() {
   schema-ui serve [-config <path>] [-dialect sqlite|postgres] [-dsn <path|conn>] [-addr <addr>]   运行下游 serve 面（RT-D02 优雅停机）
   schema-ui add [module-id]                                  列出可用模块 / registry 装配
   schema-ui upgrade [--dry-run]                               registry 升级 + 探针回归
+  schema-ui migrate-fork [--dir <path>] [--dry-run]           fork → 包 迁移辅助（非破坏性 · A/B 型）
 
 示例:
   schema-ui create my-admin
@@ -73,6 +74,8 @@ func main() {
 		err = cmdAdd(flag.Args()[1:])
 	case "upgrade":
 		err = cmdUpgrade(flag.Args()[1:])
+	case "migrate-fork":
+		err = cmdMigrateFork(flag.Args()[1:])
 	default:
 		flag.Usage()
 		os.Exit(2)
