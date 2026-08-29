@@ -2,9 +2,9 @@ package kernel
 
 import "strings"
 
-// JoinKeys joins contribution-key segments with "." (module-id style),
+// JoinIdentifiers joins contribution-key segments with "." (module-id style),
 // mirroring the ContributionIdentity key grammar used across the registry.
-// Added in the R4 zero-conflict upgrade drill as an A-layer additive sample.
-func JoinKeys(parts ...string) string {
+// Renamed from JoinKeys in the v0.3.0 breaking drill（VP-023 R5 F-008）.
+func JoinIdentifiers(parts ...string) string {
 	return strings.Join(parts, ".")
 }
