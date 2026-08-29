@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist-lib/@schema-ui/protocol",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@schemas/*": ["../../docs/schemas/*"]
+    },
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src/protocol/index.ts", "src/protocol/**/*.ts", "src/lib/fetch-timeout.ts"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/test-fixtures/**", "src/protocol/upstream/**"]
+}

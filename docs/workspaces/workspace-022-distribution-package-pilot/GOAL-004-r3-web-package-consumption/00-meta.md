@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-distribution-package-pilot
 created: 2026-08-29
 updated: 2026-08-29
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 2/4
 ---
 
 # GOAL-004 · R3 · Web 包闭环
@@ -17,9 +17,9 @@ progress: 0/4
 
 ## 成功标准（阶段检查点）
 
-- [ ] **S1 · 拆包边界设计**：I-002 落盘——包清单（protocol/lib/theme/ui/renderer/shell 六包）+ 导出面规则 + peer 依赖耦合矩阵（React/Tailwind/ajv）+ 实施路径评估（E-001 扫描事实 + 设计附件）
-- [ ] **S2 · 打包链路与首包**：npm 包可发布形态（tsc/Vite lib + `pnpm pack` 链路）产出 ≥1 包（protocol 优先）；golden web app（`attachments/golden-web/`，仅包依赖）消费验证
-- [ ] **S3 · 渲染闭环**：空下游 app 经包组渲染与主线同一 schema 页面集；Token 覆盖（brand.css 机制）定制验证；peer 矩阵实测
+- [x] **S1 · 拆包边界设计**：I-002 落盘——六包清单/导出面规则/peer 耦合矩阵/三路径评估；用户裁决 **B · Vite lib 产物打包**（E-001 + 设计附件 + D-001）
+- [x] **S2 · 打包链路与首包**：Vite lib + declaration 链路 → `@schema-ui/protocol` v0.1.0（306 kB 自包含 + d.ts）；golden-web 仅包依赖 `pnpm install` + probe **PASS**（E-002）
+- [ ] **S3 · 渲染闭环**：renderer/shell/ui 包化（React/Tailwind/CSS 产物面）→ 空下游 app 渲染同一 schema 页面集 + Token 覆盖（brand.css）验证
 - [ ] **S4 · 关门**：self 审计 + 判据 #2 满足声明（供 R5 go/no-go）
 
 ## 信息就绪
