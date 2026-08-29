@@ -25,10 +25,12 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | file |
 |----|------|--------|-------|---------|---------------|------|
-| A-002 | 2026-08-29 | independent | Root 关门全链（R1–R7 · VP-024 判据 #1–#8 · 残余四项 · GOAL-008 C1–C3） | **pass** | 0（F-001～F-006 recommended） | [A-002-r7-root-closeout-independent.md](03-audit/A-002-r7-root-closeout-independent.md) |
+| A-002 | 2026-08-29 | independent | Root 关门全链（R1–R7 · VP-024 判据 #1–#8 · 残余四项 · GOAL-008 C1–C3） | **pass** → 闭合（0 required；F-001~F-006 → fixed） | 0 | [A-002-r7-root-closeout-independent.md](03-audit/A-002-r7-root-closeout-independent.md) |
 
 > 本波无 self `A-001`（Root 关门模式 `independent`）。编号按独立关门槽位写入 A-002；空洞不赋予新含义。
 
-## 结论状态
+## 结论 + 用户确认（P-004 留痕）
 
-independent A-002：**pass** · 0 required。八条判据在有界口径下可核销；残余四项为登记/评述/候选（非 hosted/类型面 acceptance）。响应、检查点勾选、Root/VP 关门由 `/govern` 与用户书面确认处理。本索引不修改目标 status。
+- independent A-002：**pass** · 0 required。八条判据在有界口径下可核销；残余四项为登记/评述/候选（非 hosted/类型面 acceptance）。
+- /govern 响应：F-001～F-006（recommended）全部 fixed 留痕（GOAL-008 D-001 + 01-decision · create 终值钉版 + upgrade 去常驻 · freeze-face/GOAL-006 索引回写 · 指针同步 · closure-report hosted 口径收紧）。
+- **用户 2026-08-29 书面确认关门**（ask_user_question · rootclose = 确认关门）→ **Root done 7/7 · VP-024 closed（VRev-053）· workspace-024 closed**。
