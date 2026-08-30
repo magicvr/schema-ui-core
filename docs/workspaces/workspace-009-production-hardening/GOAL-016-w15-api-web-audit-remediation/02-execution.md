@@ -13,8 +13,10 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| — | — | 尚未进入执行阶段 | — | — |
+| E-001 | 2026-08-30 | S3 API 修正实施与回归（F-001～F-004） | recorded | [E-001-w15-s3-api-fixes.md](02-execution/E-001-w15-s3-api-fixes.md) |
+| E-002 | 2026-08-30 | S4 Web 修正实施与回归（F-005～F-006） | recorded | [E-002-w15-s4-web-fixes.md](02-execution/E-002-w15-s4-web-fixes.md) |
+| E-003 | 2026-08-30 | S5 F-007 落地与全量验证 | recorded | [E-003-w15-s5-f007-and-full-verification.md](02-execution/E-003-w15-s5-f007-and-full-verification.md) |
 
 ## 事实边界
 
-本目标当前只完成治理上下文创建。没有代码修改、配置变更、测试修复、部署验证或 checkpoint 事实；路线图中的 S2～S6 仍是计划，不得当作已完成事实。
+S3～S5 已实施并通过回归（checkpoint `609cd6d6`）：F-001～F-007 全部落地；`go vet`/`go test ./...`、`tsc -b`、vitest 1183/1183、`vite build` 全绿。required findings 的正式 fixed 标记待 S6 分层审计闭合后在 03-audit 响应节落盘。

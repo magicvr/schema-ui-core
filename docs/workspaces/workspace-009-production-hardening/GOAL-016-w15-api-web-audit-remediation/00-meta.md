@@ -1,12 +1,12 @@
 ---
 id: GOAL-016-w15-api-web-audit-remediation
 title: W15 api/web 独立审计问题修正准备
-status: draft
+status: active
 parent: GOAL-001-production-hardening
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.1.0
-progress: 1/6
+version: 0.3.0
+progress: 5/6
 ---
 
 # GOAL-016 · W15 api/web 独立审计问题修正准备
@@ -35,28 +35,28 @@ progress: 1/6
 ## 成功标准（路线图检查点，progress 依此派生）
 
 - [x] S1 立项与审计意见落盘：创建本目标、记录 A-001、登记范围与暂不推进约束
-- [ ] S2 配置/部署范围与修正方案冻结：确认 `schema-ui serve` 支持边界、密钥/密码策略、MFA 一次性语义、邀请 URL 处理与测试 fixture 权威路径
-- [ ] S3 API 修正与回归：完成 F-001～F-004 的实现、单元/集成测试和配置启动负例
-- [ ] S4 Web 修正与回归：完成 F-005～F-006 的实现/fixture 修复，并通过 TypeScript、构建和完整 Vitest
-- [ ] S5 主机存储评估与全量验证：对 F-007 形成 fixed 或有界 residual 决策；完成 API/Web 回归与必要部署检查
-- [ ] S6 分层审计与关门：self + 项目约定 independent 复核，按 P-003 闭合 required findings；用户书面授权后再决定是否 `done`
+- [x] S2 配置/部署范围与修正方案冻结：D-002 确认 serve 支持边界、密钥/密码策略、MFA 一次性语义、邀请 URL 处理与测试 fixture 权威路径；I-001～I-005 全部关闭（P-005）
+- [x] S3 API 修正与回归：F-001～F-004 实现 + 单元/集成测试 + 配置启动负例（E-001；`go vet` 0 / `go test ./...` 全绿）
+- [x] S4 Web 修正与回归：F-005～F-006 实现 + fixture 根统一 + guard 测试；`tsc -b` 0、`vite build` 0、vitest 1183/1183（E-002）
+- [x] S5 主机存储评估与全量验证：F-007 用户裁决 = fixed（0700/0600，E-003 + 权限测试）；API/Web 全量回归与部署检查完成
+- [ ] S6 分层审计与关门：self + 项目约定 independent（grok build · grok-4.6 · high）复核，按 P-003 闭合 required findings；用户书面授权后再决定是否 `done`
 
 ## 边界
 
 - 只覆盖本次审计列出的 API、Web、测试 fixture 与 LocalStore 权限问题；不承载新的业务模块。
 - 不修改 Charter、VP-009、Root `GOAL-001-production-hardening` 或 VP-008 `go` 状态。
 - 不重开既有 `localStorage` refresh-token residual；若安全模型改变，另行走 P-004 决策。
-- 当前目标保持 `draft`；S2 及以后均未开始。
+- 目标已从 `draft` 转 `active`：S2 冻结完成，进入 S3～S6 实施与验收。
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | workspace-009 与 Root 当前记录的 independent provider 版本不一致（workspace 页写 `grok-4.6`，Root 旧记录写 `grok-4.5`）；本波 cross 审计采用哪一声明？ | S2 / S6 审计门禁 | S2 前 | 核对当前 provider 可用性与用户/项目约定，并在 D-002 或审计记录留痕 | open | 未延期 | 待确认 |
-| I-002 | required | `schema-ui serve` 是仅本地开发入口，还是受支持的生产/局域网入口？默认监听地址与反向代理拓扑是什么？ | F-001/F-002 方案与验收 | S2 前 | 读取 CLI/部署文档并确认实际暴露边界；必要时做回环/非回环启动检查 | open | 未延期 | 待确认 |
-| I-003 | required | 初始管理员密码是否必须复用现有 8–72 字节密码策略；对已有空库/升级库的兼容迁移如何处理？ | F-003 实施 | S2 前 | 对照 `authsession` policy、bootstrap migration 与部署合同，补启动负例 | open | 未延期 | 待确认 |
-| I-004 | required | Web 测试 fixture 的 canonical 根是否统一为 `apps/api/modules`，缺失的 schema 是否需要补齐或删去过时断言？ | F-006 S4 门禁 | S2 前 | 盘点测试引用与实际文件，形成一次性路径/fixture 映射并在 CI 验证 | open | 未延期 | 待确认 |
-| I-005 | non-blocking | Unix 主机是否存在同机不同 OS 用户读取 LocalStore 的威胁模型？ | F-007 S5 范围 | S5 前 | 结合 Docker 非 root/volume 拓扑确认；无该场景时记录有界 residual | open | 未延期 | 待确认 |
+| I-001 | required | workspace-009 与 Root 当前记录的 independent provider 版本不一致（workspace 页写 `grok-4.6`，Root 旧记录写 `grok-4.5`）；本波 cross 审计采用哪一声明？ | S2 / S6 审计门禁 | S2 前 | 核对当前 provider 可用性与用户/项目约定，并在 D-002 或审计记录留痕 | verified | 无延期 | 用户目标指令 + workspace 页眉 + `docs/architecture/independent-audit-execution.md` v1.0.0 = **grok build · grok-4.6 · high · `/audit`**（D-002 §2） |
+| I-002 | required | `schema-ui serve` 是仅本地开发入口，还是受支持的生产/局域网入口？默认监听地址与反向代理拓扑是什么？ | F-001/F-002 方案与验收 | S2 前 | 读取 CLI/部署文档并确认实际暴露边界；必要时做回环/非回环启动检查 | verified | 无延期 | **受支持的下游运行入口**（VP-024 R1；双方言 E2E；create 骨架直接 serve）；默认 `:25080` 全网监听；YAML/template 三处 + 代码默认改回环并由 D-002 冻结（D-002 §2/§3） |
+| I-003 | required | 初始管理员密码是否必须复用现有 8–72 字节密码策略；对已有空库/升级库的兼容迁移如何处理？ | F-003 实施 | S2 前 | 对照 `authsession` policy、bootstrap migration 与部署合同，补启动负例 | verified | 无延期 | 必须复用冻结默认（8–72 非空；migration 0057 播种 min_length=8）；bootstrap 仅零用户 fresh 库执行、静态检查与 default 等价；非 dev 强制、dev 保留回退（D-002 §2/§3） |
+| I-004 | required | Web 测试 fixture 的 canonical 根是否统一为 `apps/api/modules`，缺失的 schema 是否需要补齐或删去过时断言？ | F-006 S4 门禁 | S2 前 | 盘点测试引用与实际文件，形成一次性路径/fixture 映射并在 CI 验证 | verified | 无延期 | canonical 根 = `apps/api/modules`（internal/modules 不存在）；13 suite / 76 tests 基线复现；被引用 fixture 全部存在；guard 测试落地路径存在性检查（D-002 §2/§3） |
+| I-005 | non-blocking | Unix 主机是否存在同机不同 OS 用户读取 LocalStore 的威胁模型？ | F-007 S5 范围 | S5 前 | 结合 Docker 非 root/volume 拓扑确认；无该场景时记录有界 residual | verified | 无延期 | 文档化拓扑 = Docker 非 root 单用户卷（I-008-001）；多 OS 账号非文档化；用户裁决 **fixed**（0700/0600 廉价无损，D-002 §1）；S5 实施 |
 
 ## 愿景与工作区对齐
 
