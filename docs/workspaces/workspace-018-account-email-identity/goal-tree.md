@@ -2,15 +2,15 @@
 title: 目标树 · workspace-018-account-email-identity
 status: done
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-30
 parent: null
-version: 1.0.0
+version: 1.0.1
 workspace_id: workspace-018-account-email-identity
 ---
 
 # 目标树 · 账号邮箱身份
 
-> 工作区：`workspace-018-account-email-identity`
+> 工作区：`workspace-018-account-email-identity`（**done** · 2026-08-24 结项）
 > canonical：`docs/workspaces/workspace-018-account-email-identity/`
 > Root：`GOAL-001-account-email-identity`（**done · 4/4**；2026-08-24 关门：A-001 self pass + A-002 independent conditional→F-001 fixed 后归零）
 > primary_plan：`VP-018-account-email-identity`（**closed** · 同日关门）

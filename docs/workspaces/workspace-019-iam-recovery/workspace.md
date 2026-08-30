@@ -10,14 +10,14 @@ plan_refs:
   - VP-019-iam-recovery
 primary_plan: VP-019-iam-recovery
 created: 2026-08-25
-updated: 2026-08-25
-version: 0.1.0
+updated: 2026-08-30
+version: 0.1.1
 parent: null
 ---
 
 # 工作区上下文 · IAM（密码策略 / 邀请入职 / 自助恢复状态机）
 
-本工作区是 [VP-019-iam-recovery](../../vision/plans/VP-019-iam-recovery.md)（**`active`** · 2026-08-25 激活；VRev-043 independent `pass`）的唯一 lead delivery workspace。
+本工作区是 [VP-019-iam-recovery](../../vision/plans/VP-019-iam-recovery.md)（**`closed`** · v0.3.0 · 2026-08-26 用户书面确认；激活审 VRev-043 independent `pass`）的唯一 lead delivery workspace。**工作区已结项**（2026-08-26）：历史绑定保留，默认不接新区。
 
 - **Root** `GOAL-001-iam-recovery`：**`done`** · 4/4（2026-08-25 全链关门；GOAL-002～005 done）。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
@@ -33,7 +33,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-019-iam-recovery/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-019 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-019-iam-recovery`（`active`） | 2026-08-25 激活/开区（VR-047；VRev-043 pass） |
+| 规划对齐 | `primary_plan` = `VP-019-iam-recovery`（`closed` v0.3.0） | 2026-08-25 激活/开区（VR-047；VRev-043 pass）· 2026-08-26 用户书面确认关门 |
 
 ## 愿景对齐
 

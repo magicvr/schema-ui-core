@@ -1,19 +1,19 @@
 ---
 title: 目标树 · workspace-019-iam-recovery
-status: active
+status: done
 created: 2026-08-25
-updated: 2026-08-26
+updated: 2026-08-30
 parent: null
-version: 0.2.1
+version: 0.2.2
 workspace_id: workspace-019-iam-recovery
 ---
 
 # 目标树 · IAM（密码策略 / 邀请入职 / 自助恢复状态机）
 
-> 工作区：`workspace-019-iam-recovery`
+> 工作区：`workspace-019-iam-recovery`（**done** · 2026-08-26 结项）
 > canonical：`docs/workspaces/workspace-019-iam-recovery/`
 > Root：`GOAL-001-iam-recovery`（**done** · 4/4；2026-08-25 全链关门）
-> primary_plan：`VP-019-iam-recovery`（**active** · VRev-043 independent `pass`）
+> primary_plan：`VP-019-iam-recovery`（**closed** v0.3.0 · 2026-08-26 用户书面确认 · VRev-043 pass）
 
 ## 树
 

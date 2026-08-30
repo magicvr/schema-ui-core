@@ -10,8 +10,8 @@ plan_refs:
   - VP-022-distribution-package-pilot
 primary_plan: VP-022-distribution-package-pilot
 created: 2026-08-29
-updated: 2026-08-29
-version: 0.2.0
+updated: 2026-08-30
+version: 0.2.1
 parent: null
 ---
 
@@ -23,7 +23,7 @@ parent: null
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - 消费已交付基架：VP-003 模块契约（closed）、VP-004 playbook（仅评估）、VP-005 Token 主题覆盖（closed）、VP-006 协议面（closed）、VP-008 `go` 消费基线（closed）。
 - 边界（保持与 VP-022 冻结一致）：不进 G2 多模块细版本、CLI 交付（仅评估）、运行时镜像/模块下载、VP-004 修订、fork 消费者迁移；不引入第二套持久化/运输栈。
-- **试点结论**：六条退出判据按**有界口径**满足（用户 P-004 接受 F-001/F-002/F-003 residual 范围）；go/no-go **GO** → Charter 0.3.0 strategic 落地（VR-050 · VRev-050 pass：构建期包消费写入成功边界 #1 + pin 2.9.0）。残余落 VP-022 go 后清单（origin tag+Go proxy 发布 / 配置键+依赖样本补测 / CI+registry 上传 / 六包细化+d.ts 链路 / PG external 实测 / fork 对照计时）——其中 5 项已由 VP-023 核销（origin tag+proxy · CI+registry · 六包+d.ts · PG external；配置键/依赖样本随 breaking 实演 v0.3.0）；**fork 对照计时**延续，与 VP-023 go 后残余合并收口（VP-024 · planned）。
+- **试点结论**：六条退出判据按**有界口径**满足（用户 P-004 接受 F-001/F-002/F-003 residual 范围）；go/no-go **GO** → Charter 0.3.0 strategic 落地（VR-050 · VRev-050 pass：构建期包消费写入成功边界 #1 + pin 2.9.0）。残余落 VP-022 go 后清单（origin tag+Go proxy 发布 / 配置键+依赖样本补测 / CI+registry 上传 / 六包细化+d.ts 链路 / PG external 实测 / fork 对照计时）——其中 5 项已由 VP-023 核销（origin tag+proxy · CI+registry · 六包+d.ts · PG external；配置键/依赖样本随 breaking 实演 v0.3.0）；**fork 对照计时**已由 **VP-024 R4 核销**（2026-08-29 定量实证：冲突 1 vs 0 · ≈13.2s vs ≈4.8s）；与 VP-023 go 后残余合并收口 = **VP-024（closed · 2026-08-29 · 八判据核销）**。
 
 ## 绑定
 

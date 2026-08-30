@@ -10,8 +10,8 @@ plan_refs:
   - VP-023-productionization-cli-package
 primary_plan: VP-023-productionization-cli-package
 created: 2026-08-29
-updated: 2026-08-29
-version: 0.2.0
+updated: 2026-08-30
+version: 0.2.1
 parent: null
 ---
 
@@ -24,7 +24,7 @@ parent: null
 - **实验下游仓**：`github.com/magicvr/golden-field`（registry 语义消费：Go 无 replace · 六包 GH Packages 安装 · `consumer-regression` workflow 槽位）。
 - 消费基线：VP-022 交付（dist-lib 链路 / pack 脚本 / golden-consumer/golden-web / 冻结面 v1.2.0 / go 后清单）。
 - **产出**：origin tag `apps/api/v0.1.0/v0.2.0/v0.3.0` + 公共 proxy `go get`；GH Packages 六包发布（protocol 0.2.0 / lib·theme·ui·shell 0.1.0 / renderer 0.2.0）；CLI `schema-ui create/add/upgrade`（Go 单二进制 · go:embed 模板）；TS5056 根治（d.ts 管线）+ 冻结面 v1.3.0；PG external 实测（postgres:16 · 63 迁移 apply · 幂等）；ops-playbook + compose/Dockerfile；QUICKSTART 方法 B；fork→包迁移指南；从零走查 8.4s；**真实 breaking 实演 v0.3.0**（`kernel.JoinKeys → JoinIdentifiers`，用户 P-004 裁决）。
-- **go 后残余（已立项收口 = VP-024 · planned）**：`schema-ui serve` 壳 · renderer 依赖图 external 化 · 纯原子拆分 · fork 对照计时 · fork→包迁移工具化 · npm registry 公开可见性决策 · compose CI 实跑。
+- **go 后残余（已收口 = VP-024 closed · 2026-08-29 · 八判据核销 · 见 workspace-024）**：`schema-ui serve` 壳 · renderer 依赖图 external 化 · 纯原子拆分 · fork 对照计时 · fork→包迁移工具化 · npm registry 公开可见性决策 · compose CI 实跑。
 
 ## 纲领阶段（Root 路线图指针 · 全部已关门）
 

@@ -2,9 +2,9 @@
 title: 目标树 · workspace-021-graceful-shutdown-and-connection-drain
 status: done
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-30
 parent: null
-version: 0.2.0
+version: 0.2.1
 workspace_id: workspace-021-graceful-shutdown-and-connection-drain
 ---
 
@@ -13,7 +13,7 @@ workspace_id: workspace-021-graceful-shutdown-and-connection-drain
 > 工作区：`workspace-021-graceful-shutdown-and-connection-drain`（**done** · 2026-08-27 结项）
 > canonical：`docs/workspaces/workspace-021-graceful-shutdown-and-connection-drain/`
 > Root：`GOAL-001-graceful-shutdown-and-connection-drain`（**done** · 3/3）
-> primary_plan：`VP-021-graceful-shutdown-and-connection-drain`（active v0.2.0 · closeout 提案待 `/vision` 用户确认）
+> primary_plan：`VP-021-graceful-shutdown-and-connection-drain`（closed v0.3.0 · 2026-08-27 用户指令授权 · VRev-047）
 
 ## 树
 
