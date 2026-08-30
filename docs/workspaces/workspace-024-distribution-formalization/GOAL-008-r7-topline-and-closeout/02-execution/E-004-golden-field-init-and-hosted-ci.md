@@ -17,4 +17,4 @@ version: 0.1.0
 - **结论**：**残余 1 → 核销**（hosted 实触发完成）；A-002 F-005 → **fixed**。宿主证据：https://github.com/magicvr/golden-field/actions/runs/33286302663
 - **副产品认知**：hosted 与本地执行面存在差异（action-setup 版本源解析、bash 收尾语义）——正是「登记而非 hosted acceptance」口径（D-001 / closure-report §3-1）的价值实证；两处修复均回写 workflow 注释留痕。
 - **golden-field commits**：`8631d53`（初始化）· `ba052e7` / `8ef02e9`（hosted 修复）· `52b7220`（README 闭环记录）。
-- **主仓 git checkpoint**：`<hash>`（见下条 E-004 修订记入）。
+- **主仓 git checkpoint**：`95f5d78b`（GOAL-008 台账 · 残余 1 核销与 F-005 闭合 · E-004 首版）。
