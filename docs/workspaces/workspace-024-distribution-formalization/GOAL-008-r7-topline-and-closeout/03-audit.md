@@ -1,7 +1,7 @@
 ---
 status: active
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 parent: GOAL-008-r7-topline-and-closeout
 version: 0.1.0
 ---
@@ -34,3 +34,11 @@ version: 0.1.0
 - independent A-002：**pass** · 0 required。八条判据在有界口径下可核销；残余四项为登记/评述/候选（非 hosted/类型面 acceptance）。
 - /govern 响应：F-001～F-006（recommended）全部 fixed 留痕（GOAL-008 D-001 + 01-decision · create 终值钉版 + upgrade 去常驻 · freeze-face/GOAL-006 索引回写 · 指针同步 · closure-report hosted 口径收紧）。
 - **用户 2026-08-29 书面确认关门**（ask_user_question · rootclose = 确认关门）→ **Root done 7/7 · VP-024 closed（VRev-053）· workspace-024 closed**。
+
+## 响应节（2026-08-30 · 残余 1 核销与 F-005 闭合）
+
+- **A-002 F-005（recommended · golden-field origin 头部不可见 / hosted 触发保持登记）→ fixed**：golden-field 线上初始化（本地 12 commits 首次推送 `origin main` · 远端空仓 → 公开实证宿主）· hosted `consumer-regression` 首跑三连闭环（`33286154992` action-setup 版本源 ❌ → `33286191334` 清理段 exit 1 ❌ → `33286302663` **PASS** 1m9s）。
+- **残余 1（hosted CI 实触发）→ 核销**：run `33286302663` 全绿（四探针 + `shutdown.complete` · RT-D02 出口）；宿主 URL 见 E-004。
+- **I-024-002 口径升级**：原「本地等价 + linux 容器 + hosted 登记（有界）」→ 含 **hosted 实触发 PASS**，有界性解除。
+- 用户授权留痕：2026-08-30 ask_user_question（「初始化并推送（推荐）」「推送后立即尝试触发」）。
+- 事实与证据：E-004；golden-field commits `8631d53`/`ba052e7`/`8ef02e9`/`52b7220`。

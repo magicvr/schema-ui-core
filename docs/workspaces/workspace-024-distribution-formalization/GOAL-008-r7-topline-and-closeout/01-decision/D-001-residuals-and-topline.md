@@ -1,7 +1,7 @@
 ---
 status: active
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 parent: GOAL-008-r7-topline-and-closeout
 version: 0.1.0
 ---
@@ -10,7 +10,7 @@ version: 0.1.0
 
 ## 决策
 
-1. **残余 1 · hosted CI 实触发（consumer-regression）**：`登记`——本地 + linux 容器等价证据已证（R3 harness A/B · workflow 文件本地就绪且顺序已修）；hosted 实触发需要 GitHub CI 槽位授权。**复审触发**：用户提供 CI 槽位授权后 `workflow_dispatch` 执行一次；或后续任一波次声明「CI 实跑」时。
+1. **残余 1 · hosted CI 实触发（consumer-regression）**：`核销`（2026-08-30）——用户授权后初始化并推送（origin `main` 首推），hosted 首跑三连闭环：`33286154992`（action-setup 版本源 ❌）→ `33286191334`（探针/断言全绿但清理段 exit 1 ❌）→ `33286302663` **PASS**（1m9s · 四探针 + `shutdown.complete`）；A-002 F-005 → fixed。原「登记」口径的复审触发已满足，证据见 E-004。
 2. **残余 2 · shell 类型面**：`登记`——4 文件 7 处 `@/account|@/host` 引用（JS 运行时自包含 · 五探针绿）；消费端 tsc 类型面未验证。**复审触发**：shell 包发布类型面进阶或消费者报告类型错误时。
 3. **残余 3 · GH Packages 私有包**：`评述定稿`——**保留不删**（历史消费面 / VP-023 安装凭证链）；新消费一律 npmjs 公开（create/golden-field `.npmrc` 已钉）。
 4. **残余 4 · C 类深度定制 fork 包化承载面**：`未来候选`——kernel 契约扩展通道（assembly 扩展 + 六包 external 组合）不在本 VP 边界；`migrate-fork` 对 C 型建议保持 fork（Charter fork 并存）。
