@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-evidence-closeout
 title: R4 证据与关门（证据矩阵 / 越界核账 / 双审 / VP 关门呈报）
-status: active
+status: done
 parent: GOAL-001-config-export-diff-dryrun-import
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.2.0
-progress: 2/3
+version: 0.3.0
+progress: 3/3
 plan_refs:
   - VP-025-config-export-diff-dryrun-import
 primary_plan: VP-025-config-export-diff-dryrun-import
@@ -25,7 +25,7 @@ serves_summary: 承载 VP-025 R4 阶段：证据矩阵、越界核账、Root 双
 |--------|------|------|
 | C1 | **证据矩阵 + 越界核账**：六条判据 ↔ 阶段证据（`attachments/r4-evidence-matrix.md`）；红线零触碰全量核对（开区~R3 提交面） | **已关门**（2026-08-30 · 矩阵 1～5 verified · `git diff` 全量红线域零触碰（cf68c7ce..HEAD）） |
 | C2 | **A-001 self 关门审计**（Root 03-audit）：合同↔实现↔判据↔信息台账全链一致性 + 测试/冒烟证据 + verdict | **已关门**（2026-08-30 · Root 03-audit/A-001-self-closeout · verdict `pass`（0 required）） |
-| C3 | **A-002 grok build independent 合并响应 + VRev-055 + VP 关闭呈报**：独立意见闭合（三路径）→ /vision 关门审视 → VP-025 `active → closed`（用户书面确认）· roadmap/workspaces 同步 | 进行中（A-002 后台运行 · job pwsh-26） |
+| C3 | **A-002 grok build independent 合并响应 + VRev-055 + VP 关闭呈报**：独立意见闭合（三路径）→ /vision 关门审视 → VP-025 `active → closed`（用户书面确认）· roadmap/workspaces 同步 | **已关门**（2026-08-30 · A-002 `conditional` F-001～F-008 全部 `fixed`（开放 required=0）· VRev-055 pass · **用户书面确认 VP-025 closed v0.3.0** · 组合索引同步） |
 
 `progress` = 已关门检查点数 / 3。
 

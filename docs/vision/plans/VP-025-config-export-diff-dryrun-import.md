@@ -2,27 +2,27 @@
 doc_type: vision-plan
 id: VP-025-config-export-diff-dryrun-import
 title: 配置包导出 / diff / dry-run / 导入
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-025-config-export-diff-dryrun-import
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
 # VP-025 · 配置包导出 / diff / dry-run / 导入
 
-## 状态与激活门禁（2026-08-30 · **active**）
+## 状态与激活门禁（2026-08-30 · **closed**）
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-08-30 激活 · 用户书面确认；VRev-054 self `pass`） |
-| **lead_workspace** | `workspace-025-config-export-diff-dryrun-import`（Root `GOAL-001-config-export-diff-dryrun-import` **active** · 0/4：R1 合同冻结 → R2 导出+diff → R3 dry-run+导入 → R4 证据与关门） |
-| **Vision required** | VRev-054 self `pass`（0 required；V-F089/090/091 recommended → 开区事务内闭合义务登记，见 [VRev-054](reviews/VRev-054-vp025-activation.md) 响应节） |
-| **freshness 消费候选** | HEAD `055da2fd` · `apps/api/v0.3.0` · 六包（Admin 类 freshness PASS `c9122478` → `055da2fd` · 五域零变更 · 不暂挂 `go`） |
-| **组合位置** | Admin 功能分支 · 基架能力剩余 #3（roadmap 明文点名非门控项） |
-| **红线（激活即生效）** | 不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go`）；密钥 fail-closed；热加载不进分母 |
+| status | **`closed`**（2026-08-30 · v0.3.0 · 用户书面确认关门） |
+| **lead_workspace** | `workspace-025-config-export-diff-dryrun-import`（Root `GOAL-001-config-export-diff-dryrun-import` **done 4/4**） |
+| **Vision required** | VRev-054 self `pass`（激活）· VRev-055 self `pass`（关门）——0 required |
+| **freshness 消费候选** | HEAD `055da2fd`（激活时）· `apps/api/v0.3.0` · 六包（Admin 类 freshness PASS · 不暂挂 `go`） |
+| **组合位置** | Admin 功能分支 · 基架能力剩余 #3（roadmap 点名非门控项）——**已交付关闭** |
+| **红线（全程保持）** | 不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go`）；密钥 fail-closed；热加载不进分母 |
 
 ## 意图
 
@@ -102,7 +102,7 @@ parent: null
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-30 | **closed v0.3.0**（用户书面确认） | 六条退出判据全部满足：导出闭环（往返一致 · 无明文）、diff 可断言（0/1/2）、dry-run 无副作用（含类型/区间校验）、导入不破坏（方案 A · 失败目标原样 · serve 实证）、边界保持（红线零触碰）、审计闭合（A-001 self `pass` + A-002 grok build independent F-001～F-008 全部 fixed · 开放 required=0 · VRev-055 `pass`）；18→22 用例 + 全量 49 包 + web 1186 + CLI 往返 | workspace-025 Root `done 4/4`（GOAL-002～005 全 done）；[r4-evidence-matrix](../workspaces/workspace-025-config-export-diff-dryrun-import/GOAL-001-config-export-diff-dryrun-import/attachments/r4-evidence-matrix.md)；VRev-055 | 无开放必改；无残余（`.pre-import.bak` 为产品语义；credential 类零残留） |
 
 ## 规划修订短史
 
@@ -110,3 +110,4 @@ parent: null
 |------|--------|
 | 2026-08-30 | 初创 `planned`：用户确认立项（Admin 功能分支基架能力剩余 #3 · 配置包导出/diff/dry-run/导入；roadmap 明文「其后非门控未立项」点名）；退出分母 = 配置包操作化；不改 Profile 默认集/Manifest（VP-008 `go` 红线）、密钥 fail-closed 保持、热加载不进分母。roadmap 索引原子同步（并修正 VP-024 状态滞后） |
 | 2026-08-30 | v0.2.0 · **激活**（用户书面确认）：[VRev-054](reviews/VRev-054-vp025-activation.md) self `pass`（0 required · Admin 类 freshness PASS `c9122478`→`055da2fd`，五域零变更，不暂挂 `go`；V-F089/090/091 recommended → 开区事务内 fixed）；`planned → active`；lead `workspace-025-config-export-diff-dryrun-import` 开区（Root active 0/4 · D-001 落痕） |
+| 2026-08-30 | v0.2.1 → **交付与关门**：R1 合同 v0.1.0 冻结（GOAL-002 done 3/3）→ R2 export+diff（GOAL-003 done 3/3 · 判据 #1/#2）→ R3 dry-run+import（I-025-004 用户裁决方案 A · GOAL-004 done 3/3 · 判据 #3/#4）→ R4 证据与关门（GOAL-005 done 3/3 · 证据矩阵 · A-001 self + A-002 grok build independent（F-001～F-008 → fixed · 开放 required=0）· [VRev-055](reviews/VRev-055-vp025-closeout.md) `pass`）→ **v0.3.0 `closed`**（2026-08-30 用户书面确认 · Root done 4/4） |

@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-config-export-diff-dryrun-import
 title: 配置包导出 / diff / dry-run / 导入
-status: active
+status: done
 parent: null
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.4.0
-progress: 3/4
+version: 0.5.0
+progress: 4/4
 plan_refs:
   - VP-025-config-export-diff-dryrun-import
 primary_plan: VP-025-config-export-diff-dryrun-import
@@ -26,7 +26,7 @@ serves_summary: 配置包导出 / diff / dry-run / 导入（Admin 功能分支 �
 - [x] 判据 #3（dry-run 无副作用）：预检覆盖校验与影响报告，成功/失败路径均有快测，不产生写副作用——R3（TestDryRunPass 快照对比 · 冒烟 exit 0/1）
 - [x] 判据 #4（导入不破坏）：预检通过后应用；导入前后实例可启动、回归快测通过；失败路径不破坏既有配置（快照/回滚语义按 I-025-004 冻结）——R3（用户裁决方案 A：备份+tmp+校验+rename · TestImport* 失败路径目标原样）
 - [x] 判据 #5（边界保持）：未改 Charter；未改 Profile 默认集 / 模块矩阵 / Manifest 装配语义；热加载不进分母；密钥 fail-closed 保持——全程（R1/R2 已核对）
-- [ ] 判据 #6（审计闭合）：开放 required finding = 0（或已合法闭合）——R4
+- [x] 判据 #6（审计闭合）：开放 required finding = 0（或已合法闭合）——R4（A-001 self `pass` · A-002 grok build independent → F-001～F-008 全部 fixed · 开放 required=0 · VRev-055 `pass` · **2026-08-30 用户书面确认 VP-025 closed v0.3.0**）
 
 ## 纲领路线图（P-001）
 
@@ -37,7 +37,7 @@ serves_summary: 配置包导出 / diff / dry-run / 导入（Admin 功能分支 �
 | R1 | 合同冻结（判据 #5/6 边界）：配置包内容边界（I-025-001）· 落地形态（I-025-002）· diff/dry-run 语义基线 | **已关门**（2026-08-30 · GOAL-002 done 3/3 · A-001 self `pass` · 配置包合同 v0.1.0 冻结（D-002）；I-025-001/002/003 `verified`；I-025-004 预告 R3） |
 | R2 | 导出 + diff（判据 #1/2） | 依赖 R1 | **已关门**（2026-08-30 · GOAL-003 done 3/3 · A-001 self `pass`（0 required）· configpkg.go 实现 · 10 用例 + 全量 49 包 + CLI 冒烟 exit 0/1 实证；判据 #1/#2 本阶段交付） |
 | R3 | dry-run + 导入（判据 #3/4；I-025-004 前置裁决） | 依赖 R2 | **已关门**（2026-08-30 · GOAL-004 done 3/3 · A-001 self `pass`（0 required）· dry-run 三件套 + import 方案 A（用户裁决）· 18 用例 + 全量 49 包 + 往返冒烟 diff `[]`；判据 #3/#4 交付） |
-| R4 | 证据与关门（判据 #6） | 依赖 R1–R3 | **进行中**（GOAL-005-r4-evidence-closeout **active · 2/3**：C1 证据矩阵 + 越界核账已关门 · C2 A-001 self `pass` 已关门 · C3 grok build A-002 `conditional`（F-001/002/003 required 响应中）→ VRev-055 → 用户书面确认） |
+| R4 | 证据与关门（判据 #6） | 依赖 R1–R3 | **已关门**（2026-08-30 · GOAL-005 done 3/3 · 证据矩阵 verified · A-001 self `pass` + A-002 grok build independent（F-001～F-008 全部 fixed · 开放 required=0）· VRev-055 `pass` · **用户书面确认 VP-025 `closed` v0.3.0**） |
 
 ## 信息就绪与未知项（P-005）
 

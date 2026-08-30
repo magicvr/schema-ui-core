@@ -1,7 +1,7 @@
 ---
 id: workspace-025-config-export-diff-dryrun-import
-title: 配置包导出 / diff / dry-run / 导入工作区（Admin 功能分支）
-status: active
+title: 配置包导出 / diff / dry-run / 导入工作区（Admin 功能分支 · 已结项）
+status: done
 root_goal: GOAL-001-config-export-diff-dryrun-import
 canonical_scope: docs/workspaces/workspace-025-config-export-diff-dryrun-import/
 shared_materials_catalog: none
@@ -11,13 +11,13 @@ plan_refs:
 primary_plan: VP-025-config-export-diff-dryrun-import
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.1.0
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · 配置包导出 / diff / dry-run / 导入
 
-本工作区是 [VP-025-config-export-diff-dryrun-import](../../vision/plans/VP-025-config-export-diff-dryrun-import.md)（**`active`** v0.2.0 · 2026-08-30 用户书面确认激活）的唯一 lead delivery workspace。**Admin 功能分支**（基架能力剩余 #3 · roadmap 明文点名「其后非门控未立项」）：在 RT-K01 配置系统（YAML + env 插值 · 密钥 fail-closed）与 VP-023/024 CLI/包产线之上，把「配置包导出 / diff / dry-run / 导入」收成可核对的 Admin 合同。**工作区已开区**（2026-08-30）：Root `active · 3/4`（R1 合同冻结 **已关门**（配置包合同 v0.1.0）· R2 导出+diff **已关门**（configpkg.go · 判据 #1/#2）· R3 dry-run+导入 **已关门**（方案 A · 判据 #3/#4）；R4 证据与关门待启动）。
+本工作区是 [VP-025-config-export-diff-dryrun-import](../../vision/plans/VP-025-config-export-diff-dryrun-import.md)（**`closed`** v0.3.0 · 2026-08-30 用户书面确认）的唯一 lead delivery workspace。**Admin 功能分支**（基架能力剩余 #3 · roadmap 明文点名「其后非门控未立项」）：在 RT-K01 配置系统（YAML + env 插值 · 密钥 fail-closed）与 VP-023/024 CLI/包产线之上，把「配置包导出 / diff / dry-run / 导入」收成可核对的 Admin 合同。**工作区已结项**（2026-08-30）：Root `done · 4/4`，关门双审闭合（A-002 开放 required=0），VRev-055 `pass`。
 
 - **Root** `GOAL-001-config-export-diff-dryrun-import`：**`active`** · 3/4（R1 合同冻结 · R2 导出+diff · R3 dry-run+导入 均已关门；R4 证据与关门进行中（GOAL-005 2/3），纲领见 Root `00-meta.md`）。
 - 激活门禁已满足（2026-08-30）：[VRev-054](../../vision/reviews/VRev-054-vp025-activation.md) self `pass`（0 required；V-F089/V-F090/V-F091 recommended → 开区事务内 fixed）；**Admin 类轻量 freshness PASS**（`c9122478` → `055da2fd`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更）不暂挂 `go`。
