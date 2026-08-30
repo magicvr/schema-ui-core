@@ -102,7 +102,9 @@ func TestLoadConfigInvalidShutdownTimeout(t *testing.T) {
 	for _, val := range []string{"0s", "-1s", "abc"} {
 		dir := t.TempDir()
 		path := filepath.Join(dir, "config.yaml")
-		if err := os.WriteFile(path, []byte("http:\n  shutdown_timeout: "+val+"\n"), 0o644); err != nil {
+		// F-009（A-003）：显式声明 development，确保用例真正咬到超时分支而非
+		// 空 APP_ENV 门禁（F-001 后 validate 先拒绝空 env）。
+		if err := os.WriteFile(path, []byte("app:\n  env: development\nhttp:\n  shutdown_timeout: "+val+"\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := LoadConfig(path); err == nil {
@@ -113,9 +115,9 @@ func TestLoadConfigInvalidShutdownTimeout(t *testing.T) {
 
 func TestLoadConfigDialectPairing(t *testing.T) {
 	dir := t.TempDir()
-	// sqlite + dsn → 拒绝
+	// sqlite + dsn → 拒绝（F-009：显式 development，避免先命中空 APP_ENV 门禁）
 	path := filepath.Join(dir, "bad-sqlite.yaml")
-	if err := os.WriteFile(path, []byte("db:\n  dialect: sqlite\n  dsn: postgres://x\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("app:\n  env: development\ndb:\n  dialect: sqlite\n  dsn: postgres://x\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := LoadConfig(path); err == nil {
@@ -123,7 +125,7 @@ func TestLoadConfigDialectPairing(t *testing.T) {
 	}
 	// postgres 无 dsn → 拒绝
 	path = filepath.Join(dir, "bad-pg.yaml")
-	if err := os.WriteFile(path, []byte("db:\n  dialect: postgres\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("app:\n  env: development\ndb:\n  dialect: postgres\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := LoadConfig(path); err == nil {

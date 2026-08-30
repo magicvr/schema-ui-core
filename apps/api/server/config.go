@@ -36,7 +36,7 @@ var defaultConfigYAML []byte
 // 裸 ${VAR} 未设置 fail-closed，同 internal/config 语义）→ 进程 env 定向覆盖。
 type Config struct {
 	AppName string
-	AppEnv  string // "" = development（缺省）；非 development 时密钥类键 fail-closed
+	AppEnv  string // "" = 未声明（validate 拒绝，refusing to guess；W15 F-001）；非 development 时密钥/种子类键 fail-closed
 	LogLevel string
 
 	HTTPAddr        string
