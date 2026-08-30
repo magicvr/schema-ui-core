@@ -7,6 +7,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -50,6 +51,10 @@ func main() {
   schema-ui add [module-id]                                  列出可用模块 / registry 装配
   schema-ui upgrade [--dry-run]                               registry 升级 + 探针回归
   schema-ui migrate-fork [--dir <path>] [--dry-run]           fork → 包 迁移辅助（非破坏性 · A/B 型）
+  schema-ui config export [-config <path>] [-o <path>] [-f yaml|json]   导出配置包 v1（VP-025 R2）
+  schema-ui config diff <pkg-a> <pkg-b> | <pkg> --against <config> [-f yaml|json]   键级差量（0 无差 / 1 有差 / 2 错误）
+  schema-ui config dry-run <pkg>                             导入前预检（仅注册 · R3）
+  schema-ui config import <pkg> [-file <path>]               导入配置包（仅注册 · R3）
 
 示例:
   schema-ui create my-admin
@@ -57,6 +62,8 @@ func main() {
   schema-ui serve -dialect postgres -dsn "postgres://user:pass@127.0.0.1:5432/db"
   schema-ui add                     # 列出 kernel.BuiltinModules
   schema-ui upgrade --dry-run
+  schema-ui config export -o config.package.yaml
+  schema-ui config diff a.yaml b.yaml
 `)
 	}
 	flag.Parse()
@@ -77,11 +84,18 @@ func main() {
 		err = cmdUpgrade(flag.Args()[1:])
 	case "migrate-fork":
 		err = cmdMigrateFork(flag.Args()[1:])
+	case "config":
+		err = cmdConfig(flag.Args()[1:])
 	default:
 		flag.Usage()
 		os.Exit(2)
 	}
 	if err != nil {
+		var ce *cliError
+		if errors.As(err, &ce) {
+			fmt.Fprintln(os.Stderr, "schema-ui:", ce.err)
+			os.Exit(ce.code)
+		}
 		fmt.Fprintln(os.Stderr, "schema-ui:", err)
 		os.Exit(1)
 	}

@@ -30,6 +30,12 @@ import (
 //go:embed config.default.yaml
 var defaultConfigYAML []byte
 
+// DefaultConfigYAML returns the embedded default serve configuration text
+// (config.default.yaml) as a copy. Exported for configuration tooling
+// (VP-025 config export/diff) that must preserve ${VAR} reference shapes —
+// LoadConfig interpolates, the raw text is the package-tree source.
+func DefaultConfigYAML() []byte { return append([]byte(nil), defaultConfigYAML...) }
+
 // Config 是下游 serve 面的公开配置（RT-K01 YAML+env 语义子集；RT-D02 §6 键）。
 //
 // 装载链：代码默认 →（显式 path 或内嵌默认）YAML（${VAR}/${VAR:-default} 插值，
