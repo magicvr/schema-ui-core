@@ -4,7 +4,7 @@ status: active
 created: 2026-08-10
 updated: 2026-08-30
 parent: null
-version: 0.25.0
+version: 0.26.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -31,7 +31,7 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-013-w13-api-web-security-audit [done] (6/6)      · W13 · api/web 全量安全审查发现修复（P1×1+P2×3 必修 + P3 全量）
 │   └── GOAL-014-w13-account-lockout-redesign [done] (6/6) · W13-F007 账号锁定模型重设计（fixed · 用户裁决承载子目标）
 ├── GOAL-015-w14-schema-auth-wiring-lock [done] (4/4)     · W14 · 页面 Schema 鉴权装配修复与生产装配回归锁
-└── GOAL-016-w15-api-web-audit-remediation [active] (5/6)  · W15 · api/web 独立审计问题修正（S3～S5 已实施）
+└── GOAL-016-w15-api-web-audit-remediation [done] (6/6)  · W15 · api/web 独立审计问题修正（关门）
 ```
 
 **W14（2026-08-26 开波，2026-08-26 关门 · done 4/4）**：用户报障「所有页面都显示无法显示此页面」→ 定位为 GOAL-013 F-010（`/api/schema` 挂认证，checkpoint `b7954235`）之后**生产入口缺 `schemaFetcher` 认证传输**——页面文档请求全部匿名 401，全站渲染 PageSchemaErrorSurface；30+ 测试均显式注入 fetcher，测试全绿与生产断裂并存（「测试装配 ≠ 生产装配」）。hotfix `schemaFetcher={authFetch}` 经用户确认先行落地；用户追加指令补防回归锁并在本区立项承载。**S2** 冻结双措施：hotfix 追认 + AuthGate 提取为可测模块与生产装配回归锁（[D-001](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-001-w14-scope-and-freeze.md)；三项替代方案有据否决）。**S3** 实施落地：`AuthGate.tsx` 提取 + `auth-gate.wiring.test.tsx` ×2，全量 vitest **1130/1130**（84 文件）+ `tsc -b` 0。**S4 复核关门**：self [A-001](GOAL-015-w14-schema-auth-wiring-lock/03-audit/A-001-w14-self-closeout.md) `pass`（含变异验证红→绿）；用户指令「把 R-001 并入本波。处理完再关门」→ **R-001 fixed**：新增 `e2e/schema-auth-transport.spec.ts` 真实网络层 Bearer 冒烟（[E-003](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-003-w14-r001-e2e-bearer-smoke.md)）；关门验证附带修复 shell.spec 匿名 schema 探测陈旧契约（F-010 后匿名恒 401；定性非本波回归，[E-004](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-004-w14-shell-spec-contract-fix.md)；根因=e2e 自 F-010 起未再完整运行）；最终全量绿：vitest 1130/1130 + Playwright chromium **10 passed / 1 skipped · exit 0**。**[D-002](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-002-w14-closeout.md) 用户书面关门：done (4/4)**。Root 保持 active。见 [GOAL-015](GOAL-015-w14-schema-auth-wiring-lock/00-meta.md)。
@@ -65,10 +65,10 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-013-w13-api-web-security-audit | W13 api/web 全量安全审查发现修复（P1×1+P2×3 必修 + P3 全量） | GOAL-001-production-hardening | done | 6/6 | 2026-08-26 |
 | GOAL-014-w13-account-lockout-redesign | W13-F007 账号锁定模型重设计（fixed · 承载自 GOAL-013） | GOAL-013-w13-api-web-security-audit | done | 6/6 | 2026-08-26 |
 | GOAL-015-w14-schema-auth-wiring-lock | W14 页面 Schema 鉴权装配修复与生产装配回归锁 | GOAL-001-production-hardening | done | 4/4 | 2026-08-26 |
-| GOAL-016-w15-api-web-audit-remediation | W15 api/web 独立审计问题修正 | GOAL-001-production-hardening | active | 5/6 | 2026-08-30 |
+| GOAL-016-w15-api-web-audit-remediation | W15 api/web 独立审计问题修正 | GOAL-001-production-hardening | done | 6/6 | 2026-08-30 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
-**W15（2026-08-30 开波 · active 5/6）**：承接本轮 api/web 独立审计；A-001（independent · conditional）登记 F-001～F-007（required F-001～F-006 + recommended F-007）。**S2** 方案冻结 [D-002](GOAL-016-w15-api-web-audit-remediation/01-decision/D-002-w15-freeze-and-go.md)：用户书面裁决四项（回环默认+显式 env / 非 dev 密钥强度 + bootstrap 8–72 策略 / F-007=fixed / 放行 S3～S6）；I-001～I-005 全部关闭（provider grok-4.6 · serve 支持边界 · 策略语义 · fixture 根 · 主机威胁模型）。**S3～S5** 实施（checkpoint `609cd6d6`）：F-001 默认 `127.0.0.1:25080` + 空 env fail-closed；F-002 共享 `ValidateJWTSecretStrength`（≥32 字母数字）；F-003 bootstrap 策略门禁（cmd/server + serve，dev 回退保留）；F-004 MFA step-up CAS 水位（重放拒绝）；F-005 invite token `replaceState` 清理；F-006 fixture 根统一 `apps/api/modules`（13 suite）+ guard 测试；F-007 LocalStore `0700/0600` + 权限测试。回归：`go vet` 0 / `go test ./...` 全绿；`tsc -b` 0；vitest **1183/1183**（基线 76 失败 → 全绿）；`vite build` 0。执行台账 [E-001](GOAL-016-w15-api-web-audit-remediation/02-execution/E-001-w15-s3-api-fixes.md) / [E-002](GOAL-016-w15-api-web-audit-remediation/02-execution/E-002-w15-s4-web-fixes.md) / [E-003](GOAL-016-w15-api-web-audit-remediation/02-execution/E-003-w15-s5-f007-and-full-verification.md)。S6 待 self → grok build（grok-4.6 · high）独立复核 → 用户书面关门。Root/VP-009 保持 active。
+**W15（2026-08-30 开波 · 当日关门 · done 6/6）**：承接本轮 api/web 独立审计；A-001（independent · conditional）登记 F-001～F-007（required F-001～F-006 + recommended F-007）。**S2** 方案冻结 [D-002](GOAL-016-w15-api-web-audit-remediation/01-decision/D-002-w15-freeze-and-go.md)：用户书面裁决四项（回环默认+显式 env / 非 dev 密钥强度 + bootstrap 8–72 策略 / F-007=fixed / 放行 S3～S6）；I-001～I-005 全部关闭。**S3～S5** 实施（checkpoint `609cd6d6`）：F-001 默认 `127.0.0.1:25080` + 空 env fail-closed；F-002 共享 `ValidateJWTSecretStrength`（≥32 字母数字）；F-003 bootstrap 策略门禁（cmd/server + serve，dev 回退保留）；F-004 MFA step-up CAS 水位（重放拒绝）；F-005 invite token `replaceState` 清理；F-006 fixture 根统一 `apps/api/modules`（13 suite）+ guard 测试；F-007 LocalStore `0700/0600` + 权限测试。回归：`go vet` 0 / `go test ./...` 全绿；`tsc -b` 0；vitest **1186/1186**（基线 76 失败 → 全绿）；`vite build` 0。**S6 审计腿**：self [A-002](GOAL-016-w15-api-web-audit-remediation/03-audit/A-002-w15-self-s34.md) pass → **A-003 grok-build（grok-4.6 · high）independent pass：F-001～F-007 全部 genuine-fixed + 独立复跑**（首次全量曾遇 VP-021 PG drain flake，隔离+第二次全绿）→ [A-004](GOAL-016-w15-api-web-audit-remediation/03-audit/A-004-w15-closure-response.md) 闭合记录（fixed ×7，开放 required = 0；A-003 新发现 F-008/F-009 → fixed，E-004）→ **D-003 用户书面关门：done (6/6)**。Root 保持 active。残余移交：F-007 权限断言 Linux CI 复跑可选（N-001）；VP-021 drain harness 并行 flake 留痕（N-003）。见 [GOAL-016](GOAL-016-w15-api-web-audit-remediation/00-meta.md) / [E-001](GOAL-016-w15-api-web-audit-remediation/02-execution/E-001-w15-s3-api-fixes.md) / [A-003](GOAL-016-w15-api-web-audit-remediation/03-audit/A-003-w15-s6-independent.md)。
 
 ## 维护说明
 

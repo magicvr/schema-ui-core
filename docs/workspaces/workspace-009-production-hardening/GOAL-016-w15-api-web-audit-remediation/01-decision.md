@@ -19,5 +19,6 @@ version: 0.1.0
 |------|------|------|------|------|
 | D-001 | 2026-08-30 | W15 范围收录与暂不推进 | recorded | [D-001-w15-intake-and-hold.md](01-decision/D-001-w15-intake-and-hold.md) |
 | D-002 | 2026-08-30 | W15 方案冻结与放行（S2；I-001～I-005 关闭；F-007=fixed 用户裁决） | recorded | [D-002-w15-freeze-and-go.md](01-decision/D-002-w15-freeze-and-go.md) |
+| D-003 | 2026-08-30 | W15 关门（用户书面授权；done 6/6） | recorded | [D-003-w15-closeout.md](01-decision/D-003-w15-closeout.md) |
 
 条目正文见 `01-decision/` 平铺目录。

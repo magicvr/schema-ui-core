@@ -1,12 +1,12 @@
 ---
 id: GOAL-016-w15-api-web-audit-remediation
-title: W15 api/web 独立审计问题修正准备
-status: active
+title: W15 api/web 独立审计问题修正
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.3.0
-progress: 5/6
+version: 0.4.0
+progress: 6/6
 ---
 
 # GOAL-016 · W15 api/web 独立审计问题修正准备
@@ -39,14 +39,14 @@ progress: 5/6
 - [x] S3 API 修正与回归：F-001～F-004 实现 + 单元/集成测试 + 配置启动负例（E-001；`go vet` 0 / `go test ./...` 全绿）
 - [x] S4 Web 修正与回归：F-005～F-006 实现 + fixture 根统一 + guard 测试；`tsc -b` 0、`vite build` 0、vitest 1183/1183（E-002）
 - [x] S5 主机存储评估与全量验证：F-007 用户裁决 = fixed（0700/0600，E-003 + 权限测试）；API/Web 全量回归与部署检查完成
-- [ ] S6 分层审计与关门：self + 项目约定 independent（grok build · grok-4.6 · high）复核，按 P-003 闭合 required findings；用户书面授权后再决定是否 `done`
+- [x] S6 分层审计与关门：self A-002 pass + independent A-003（grok build · grok-4.6 · high）pass；A-004 按 P-003 闭合 F-001～F-007（fixed ×7，开放 required = 0）；F-008/F-009 → fixed（E-004）；**D-003 用户书面授权关门（done 6/6）**
 
 ## 边界
 
 - 只覆盖本次审计列出的 API、Web、测试 fixture 与 LocalStore 权限问题；不承载新的业务模块。
 - 不修改 Charter、VP-009、Root `GOAL-001-production-hardening` 或 VP-008 `go` 状态。
 - 不重开既有 `localStorage` refresh-token residual；若安全模型改变，另行走 P-004 决策。
-- 目标已从 `draft` 转 `active`：S2 冻结完成，进入 S3～S6 实施与验收。
+- 目标已 `done`（6/6，D-003 用户书面授权）：S2～S6 全部完成，required ×7 按 P-003 闭合，开放 required = 0。
 
 ## 信息就绪与未知项（P-005）
 
