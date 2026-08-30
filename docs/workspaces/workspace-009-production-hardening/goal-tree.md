@@ -2,9 +2,9 @@
 title: 目标树 · workspace-009-production-hardening
 status: active
 created: 2026-08-10
-updated: 2026-08-26
+updated: 2026-08-30
 parent: null
-version: 0.24.0
+version: 0.25.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -30,7 +30,8 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-012-w12-multi-instance-rate-limiting [done] (4/4) · W12 · 多实例限流拓扑评估（单实例边界维持 · 载体预登记 Redis）
 ├── GOAL-013-w13-api-web-security-audit [done] (6/6)      · W13 · api/web 全量安全审查发现修复（P1×1+P2×3 必修 + P3 全量）
 │   └── GOAL-014-w13-account-lockout-redesign [done] (6/6) · W13-F007 账号锁定模型重设计（fixed · 用户裁决承载子目标）
-└── GOAL-015-w14-schema-auth-wiring-lock [done] (4/4)     · W14 · 页面 Schema 鉴权装配修复与生产装配回归锁
+├── GOAL-015-w14-schema-auth-wiring-lock [done] (4/4)     · W14 · 页面 Schema 鉴权装配修复与生产装配回归锁
+└── GOAL-016-w15-api-web-audit-remediation [draft] (1/6)  · W15 · api/web 独立审计问题修正准备
 ```
 
 **W14（2026-08-26 开波，2026-08-26 关门 · done 4/4）**：用户报障「所有页面都显示无法显示此页面」→ 定位为 GOAL-013 F-010（`/api/schema` 挂认证，checkpoint `b7954235`）之后**生产入口缺 `schemaFetcher` 认证传输**——页面文档请求全部匿名 401，全站渲染 PageSchemaErrorSurface；30+ 测试均显式注入 fetcher，测试全绿与生产断裂并存（「测试装配 ≠ 生产装配」）。hotfix `schemaFetcher={authFetch}` 经用户确认先行落地；用户追加指令补防回归锁并在本区立项承载。**S2** 冻结双措施：hotfix 追认 + AuthGate 提取为可测模块与生产装配回归锁（[D-001](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-001-w14-scope-and-freeze.md)；三项替代方案有据否决）。**S3** 实施落地：`AuthGate.tsx` 提取 + `auth-gate.wiring.test.tsx` ×2，全量 vitest **1130/1130**（84 文件）+ `tsc -b` 0。**S4 复核关门**：self [A-001](GOAL-015-w14-schema-auth-wiring-lock/03-audit/A-001-w14-self-closeout.md) `pass`（含变异验证红→绿）；用户指令「把 R-001 并入本波。处理完再关门」→ **R-001 fixed**：新增 `e2e/schema-auth-transport.spec.ts` 真实网络层 Bearer 冒烟（[E-003](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-003-w14-r001-e2e-bearer-smoke.md)）；关门验证附带修复 shell.spec 匿名 schema 探测陈旧契约（F-010 后匿名恒 401；定性非本波回归，[E-004](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-004-w14-shell-spec-contract-fix.md)；根因=e2e 自 F-010 起未再完整运行）；最终全量绿：vitest 1130/1130 + Playwright chromium **10 passed / 1 skipped · exit 0**。**[D-002](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-002-w14-closeout.md) 用户书面关门：done (4/4)**。Root 保持 active。见 [GOAL-015](GOAL-015-w14-schema-auth-wiring-lock/00-meta.md)。
@@ -64,7 +65,10 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-013-w13-api-web-security-audit | W13 api/web 全量安全审查发现修复（P1×1+P2×3 必修 + P3 全量） | GOAL-001-production-hardening | done | 6/6 | 2026-08-26 |
 | GOAL-014-w13-account-lockout-redesign | W13-F007 账号锁定模型重设计（fixed · 承载自 GOAL-013） | GOAL-013-w13-api-web-security-audit | done | 6/6 | 2026-08-26 |
 | GOAL-015-w14-schema-auth-wiring-lock | W14 页面 Schema 鉴权装配修复与生产装配回归锁 | GOAL-001-production-hardening | done | 4/4 | 2026-08-26 |
+| GOAL-016-w15-api-web-audit-remediation | W15 api/web 独立审计问题修正准备 | GOAL-001-production-hardening | draft | 1/6 | 2026-08-30 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
+
+**W15（2026-08-30 开设 · 暂不推进 · draft 1/6）**：承接本轮 api/web 独立代码审计；A-001 登记 F-001～F-007（required F-001～F-006，F-007 recommended）；仅完成立项、范围、信息项与路线图，未实施代码、未进入方案冻结/回归/关门；Root/VP-009 保持 active。见 [GOAL-016](GOAL-016-w15-api-web-audit-remediation/00-meta.md)。
 
 ## 维护说明
 
