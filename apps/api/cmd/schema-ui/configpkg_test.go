@@ -134,6 +134,103 @@ func TestExportBadConfigFails(t *testing.T) {
 	}
 }
 
+// ---- dry-run ----
+
+func TestDryRunPass(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("AUTH_JWT_SECRET", "test-key")
+	t.Setenv("ADMIN_INITIAL_PASSWORD", "test-pw")
+	dir := t.TempDir()
+	pkgPath := exportToFile(t, filepath.Join(dir, "pkg.yaml"))
+	report, err := dryRun(pkgPath, "")
+	if err != nil {
+		t.Fatalf("dryRun: %v", err)
+	}
+	for _, c := range report.Checks {
+		if c.Status != "ok" {
+			t.Errorf("check %s = %s (%s)", c.Path, c.Status, c.Message)
+		}
+	}
+	// 与默认目标一致 → 无变更
+	if len(report.Changes) != 0 {
+		t.Errorf("changes = %+v, want empty", report.Changes)
+	}
+	// 零副作用：dry-run 不得修改目标文件（快照对比）
+	src := writeTemp(t, "target.yaml", "app:\n  env: ${APP_ENV:-development}\nhttp:\n  addr: \"0.0.0.0:27080\"\n")
+	before, _ := os.ReadFile(src)
+	if _, err := dryRun(pkgPath, src); err != nil {
+		t.Fatalf("dryRun against src: %v", err)
+	}
+	after, _ := os.ReadFile(src)
+	if string(before) != string(after) {
+		t.Error("dry-run modified the target file (side effect)")
+	}
+}
+
+func TestDryRunEnvMissingFailsClosed(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("AUTH_JWT_SECRET", "test-key")
+	t.Setenv("ADMIN_INITIAL_PASSWORD", "test-pw")
+	dir := t.TempDir()
+	pkgPath := exportToFile(t, filepath.Join(dir, "pkg.yaml"))
+	os.Unsetenv("AUTH_JWT_SECRET") // 彻底缺失 → fail-closed
+	report, err := dryRun(pkgPath, "")
+	if err == nil {
+		t.Fatal("expected fail-closed error when AUTH_JWT_SECRET missing")
+	}
+	failed := false
+	for _, c := range report.Checks {
+		if c.Status == "fail" && strings.Contains(c.Path, "auth.jwt_secret") {
+			failed = true
+		}
+	}
+	if !failed {
+		t.Errorf("no fail check for auth.jwt_secret: %+v", report.Checks)
+	}
+	err = cmdConfigDryRun([]string{pkgPath})
+	var ce *cliError
+	if !errors.As(err, &ce) || ce.code != 1 {
+		t.Errorf("cmdConfigDryRun err = %v, want cliError code 1", err)
+	}
+}
+
+func TestDryRunChanges(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("AUTH_JWT_SECRET", "test-key")
+	t.Setenv("ADMIN_INITIAL_PASSWORD", "test-pw")
+	dir := t.TempDir()
+	pkgPath := exportToFile(t, filepath.Join(dir, "pkg.yaml"))
+	src := writeTemp(t, "target.yaml", "app:\n  env: ${APP_ENV:-development}\nhttp:\n  addr: \"0.0.0.0:27080\"\n")
+	report, err := dryRun(pkgPath, src)
+	if err != nil {
+		t.Fatalf("dryRun: %v", err)
+	}
+	if len(report.Changes) != 1 || report.Changes[0].Path != "http.addr" || report.Changes[0].Kind != "modify" {
+		t.Fatalf("changes = %+v, want single modify http.addr", report.Changes)
+	}
+	if report.Changes[0].Old != "0.0.0.0:27080" || report.Changes[0].New != "127.0.0.1:25080" {
+		t.Errorf("old/new direction wrong: %+v", report.Changes[0])
+	}
+}
+
+func TestDryRunInvalidPackage(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("AUTH_JWT_SECRET", "test-key")
+	t.Setenv("ADMIN_INITIAL_PASSWORD", "test-pw")
+	dir := t.TempDir()
+	bad := writeTemp(t, "bad.yaml", "package:\n  format: other\nconfig:\n  bogus: 1\n")
+	err := cmdConfigDryRun([]string{bad})
+	var ce *cliError
+	if !errors.As(err, &ce) || ce.code != 1 {
+		t.Fatalf("err = %v, want cliError code 1 (precheck failure)", err)
+	}
+	missing := filepath.Join(dir, "missing.yaml")
+	err = cmdConfigDryRun([]string{missing})
+	if !errors.As(err, &ce) || ce.code != 2 {
+		t.Fatalf("err = %v, want cliError code 2 (tool error)", err)
+	}
+}
+
 // ---- diff ----
 
 func TestDiffIdenticalAndIgnoredMeta(t *testing.T) {

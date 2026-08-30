@@ -53,7 +53,7 @@ func main() {
   schema-ui migrate-fork [--dir <path>] [--dry-run]           fork → 包 迁移辅助（非破坏性 · A/B 型）
   schema-ui config export [-config <path>] [-o <path>] [-f yaml|json]   导出配置包 v1（VP-025 R2）
   schema-ui config diff <pkg-a> <pkg-b> | <pkg> --against <config> [-f yaml|json]   键级差量（0 无差 / 1 有差 / 2 错误）
-  schema-ui config dry-run <pkg>                             导入前预检（仅注册 · R3）
+  schema-ui config dry-run <pkg> [-config <path>] [-f yaml|json]      导入前只读预检（VP-025 R3）
   schema-ui config import <pkg> [-file <path>]               导入配置包（仅注册 · R3）
 
 示例:

@@ -307,7 +307,7 @@ func cmdConfig(args []string) error {
 	case "diff":
 		return cmdConfigDiff(args[1:])
 	case "dry-run":
-		return errCli(2, "config dry-run: 尚未实现（VP-025 R3）")
+		return cmdConfigDryRun(args[1:])
 	case "import":
 		return errCli(2, "config import: 尚未实现（VP-025 R3）")
 	default:
@@ -356,6 +356,193 @@ func cmdConfigExport(args []string) error {
 		if _, err := os.Stdout.Write(out); err != nil {
 			return errCli(1, "config export: %v", err)
 		}
+	}
+	return nil
+}
+
+// ---- dry-run ----
+
+// dryRunReport 是预检输出：checks（结构/env 各检查项）+ changes（将变更键）。
+type dryRunReport struct {
+	Checks  []checkItem `yaml:"checks" json:"checks"`
+	Changes []diffEntry `yaml:"changes" json:"changes"`
+}
+
+type checkItem struct {
+	Path    string `yaml:"path" json:"path"`
+	Status  string `yaml:"status" json:"status"` // ok | fail
+	Message string `yaml:"message,omitempty" json:"message,omitempty"`
+}
+
+// parsePackageStrict 严格解码配置包（KnownFields + 多文档拒绝 + 格式/版本检查；
+// 合同 §2.3 结构校验）。
+func parsePackageStrict(raw []byte) (configPackage, error) {
+	var pkg configPackage
+	dec := yaml.NewDecoder(strings.NewReader(string(raw)))
+	dec.KnownFields(true)
+	if err := dec.Decode(&pkg); err != nil {
+		if errors.Is(err, io.EOF) {
+			return pkg, errors.New("config package is empty")
+		}
+		return pkg, fmt.Errorf("config package invalid: %w", err)
+	}
+	var extra configPackage
+	if err := dec.Decode(&extra); err != io.EOF {
+		return pkg, errors.New("config package: multiple YAML documents are not supported")
+	}
+	if pkg.Package.Format != "" && pkg.Package.Format != configPackageFormat {
+		return pkg, fmt.Errorf("config package: unknown format %q", pkg.Package.Format)
+	}
+	if pkg.Package.Version > configPackageVer {
+		return pkg, fmt.Errorf("config package: unsupported version %d (max %d)", pkg.Package.Version, configPackageVer)
+	}
+	return pkg, nil
+}
+
+// flattenTree 把导出树序列化为扁平「点分路径 → 显示串」（与 loadConfigLeaf
+// 的包 config 子树同一语义；marshal→unmarshal 曲径保证两侧一致）。
+func flattenTree(tree cfgTree) (map[string]string, error) {
+	raw, err := yaml.Marshal(&tree)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err := yaml.Unmarshal(raw, &m); err != nil {
+		return nil, err
+	}
+	leaf := map[string]string{}
+	flattenLeaf("", m, leaf)
+	return leaf, nil
+}
+
+// dryRun 执行只读预检（合同 §2.3）：结构校验 + env fail-closed + 影响报告。
+// 零写副作用；pkgPath 为包文件，configPath 空 = 内嵌默认目标。
+func dryRun(pkgPath, configPath string) (dryRunReport, error) {
+	raw, err := os.ReadFile(pkgPath)
+	if err != nil {
+		return dryRunReport{}, fmt.Errorf("config dry-run: read %q: %w", pkgPath, err)
+	}
+	pkg, err := parsePackageStrict(raw)
+	if err != nil {
+		// 结构不合格 = 预检失败（exit 1），与 env 缺失同级。
+		return dryRunReport{}, fmt.Errorf("config dry-run: %w", err)
+	}
+
+	report := dryRunReport{Checks: []checkItem{}, Changes: []diffEntry{}}
+	report.Checks = append(report.Checks, checkItem{Path: "package", Status: "ok", Message: "structure valid"})
+
+	// ② secrets.exclude env fail-closed（合同 §3：缺失 → 预检失败）。
+	failed := false
+	for _, e := range pkg.Secrets.Exclude {
+		if strings.TrimSpace(e.Env) == "" {
+			continue // 源值无 ${} 引用 → 无所需环境变量可查
+		}
+		if _, ok := os.LookupEnv(e.Env); !ok {
+			report.Checks = append(report.Checks, checkItem{
+				Path:    "secrets.exclude/" + e.Key,
+				Status:  "fail",
+				Message: "required env " + e.Env + " is not set (fail-closed)",
+			})
+			failed = true
+		} else {
+			report.Checks = append(report.Checks, checkItem{Path: "secrets.exclude/" + e.Key, Status: "ok"})
+		}
+	}
+
+	// ③ 影响报告：包 → 目标方向差量（old = 目标当前值 / new = 包将应用值）。
+	target, _, err := buildExportTree(configPath)
+	if err != nil {
+		return dryRunReport{}, fmt.Errorf("config dry-run: target: %w", err)
+	}
+	targetLeaf, err := flattenTree(target)
+	if err != nil {
+		return dryRunReport{}, err
+	}
+	pkgLeaf, err := flattenTree(pkg.Config)
+	if err != nil {
+		return dryRunReport{}, err
+	}
+	report.Changes = diffLeafMaps(targetLeaf, pkgLeaf)
+
+	if failed {
+		return report, fmt.Errorf("config dry-run: %d check(s) failed (fail-closed)", failedChecks(report))
+	}
+	return report, nil
+}
+
+func failedChecks(r dryRunReport) int {
+	n := 0
+	for _, c := range r.Checks {
+		if c.Status == "fail" {
+			n++
+		}
+	}
+	return n
+}
+
+// cmdConfigDryRun 执行只读预检；退出码 0 通过 / 1 预检失败 / 2 工具错误。
+func cmdConfigDryRun(args []string) error {
+	var configPath, format string
+	var pos []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "-config" || a == "--config":
+			if i+1 >= len(args) {
+				return errCli(2, "config dry-run: -config 需要值")
+			}
+			configPath = args[i+1]
+			i++
+		case strings.HasPrefix(a, "-config=") || strings.HasPrefix(a, "--config="):
+			configPath = strings.TrimPrefix(strings.TrimPrefix(a, "-config="), "--config=")
+		case a == "-f" || a == "--f":
+			if i+1 >= len(args) {
+				return errCli(2, "config dry-run: -f 需要值")
+			}
+			format = args[i+1]
+			i++
+		case strings.HasPrefix(a, "-f="):
+			format = strings.TrimPrefix(a, "-f=")
+		case strings.HasPrefix(a, "-") && a != "-":
+			return errCli(2, "config dry-run: 未知参数 %q", a)
+		default:
+			pos = append(pos, a)
+		}
+	}
+	if format == "" {
+		format = "yaml"
+	}
+	if format != "yaml" && format != "json" {
+		return errCli(2, "config dry-run: 未知格式 %q（yaml|json）", format)
+	}
+	if len(pos) != 1 {
+		return errCli(2, "config dry-run 需要 <pkg> [-config <path>]")
+	}
+
+	report, err := dryRun(pos[0], configPath)
+	if err != nil {
+		// 读取/参数类错误 = 2（工具层）；包内容/校验/env = 1（预检失败）。
+		if strings.HasPrefix(err.Error(), "config dry-run: read") {
+			return errCli(2, "%v", err)
+		}
+		return errCli(1, "%v", err)
+	}
+
+	var out []byte
+	if format == "json" {
+		out, err = json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return errCli(2, "config dry-run: %v", err)
+		}
+		out = append(out, '\n')
+	} else {
+		out, err = yaml.Marshal(&report)
+		if err != nil {
+			return errCli(2, "config dry-run: %v", err)
+		}
+	}
+	if _, err := os.Stdout.Write(out); err != nil {
+		return errCli(2, "config dry-run: %v", err)
 	}
 	return nil
 }
