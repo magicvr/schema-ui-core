@@ -48,6 +48,20 @@ func (s *JobService) SubmitReconcile(ctx context.Context, accountID string, acto
 	if err != nil {
 		return nil, err
 	}
+	// Pre-allocate the queued audit ID BEFORE the job becomes visible to
+	// the scheduler: the runner signals its scan loop from inside Submit,
+	// so a fast-failing worker can record the first terminal event before
+	// SubmitReconcile returns. Allocating here keeps the (created_at ASC,
+	// id ASC) chain order (D-002 §1) deterministic even when submit and
+	// the first terminal event share a millisecond — any worker-side
+	// newID() allocation necessarily follows this one in the monotonic seq.
+	queuedAuditID, err := newID(now)
+	if err != nil {
+		// crypto/rand failure is the only path; same best-effort
+		// semantics as recordOperation's internal generation.
+		slog.Error("wallet: queued audit id generation failed", "err", err)
+		queuedAuditID = ""
+	}
 	payload, err := json.Marshal(reconcileJobPayload{AccountID: accountID})
 	if err != nil {
 		return nil, err
@@ -59,7 +73,7 @@ func (s *JobService) SubmitReconcile(ctx context.Context, accountID string, acto
 	if err != nil {
 		return nil, err
 	}
-	s.recordOperation(operationlog.EventWalletReconcileQueued, *job, actor.Name,
+	s.recordOperationID(queuedAuditID, operationlog.EventWalletReconcileQueued, *job, actor.Name,
 		map[string]any{"jobId": job.ID, "correlationId": job.CorrelationID}, now)
 	return job, nil
 }
@@ -162,13 +176,24 @@ func (s *JobService) recordTerminal(job jobs.Job) {
 }
 
 func (s *JobService) recordOperation(event string, job jobs.Job, actorName string, detailValue map[string]any, now time.Time) {
+	s.recordOperationID("", event, job, actorName, detailValue, now)
+}
+
+// recordOperationID records a best-effort audit operation, optionally with a
+// pre-allocated ID (SubmitReconcile pre-allocates the queued audit ID to keep
+// the D-002 §1 chain order deterministic under the submit/worker race; an
+// empty id falls back to internal generation).
+func (s *JobService) recordOperationID(id, event string, job jobs.Job, actorName string, detailValue map[string]any, now time.Time) {
 	if s.operations == nil {
 		return
 	}
-	id, err := newID(now)
-	if err != nil {
-		slog.Error("wallet: audit id generation failed", "event", event, "err", err)
-		return
+	if id == "" {
+		var err error
+		id, err = newID(now)
+		if err != nil {
+			slog.Error("wallet: audit id generation failed", "event", event, "err", err)
+			return
+		}
 	}
 	action := strings.TrimPrefix(event, "wallet.")
 	detail, err := operationlog.NewDetail(action, nil, detailValue)

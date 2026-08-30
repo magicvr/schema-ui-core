@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -38,8 +39,21 @@ func (r *operationRecorder) RecordOperationTx(_ kernel.Tx, operation operationlo
 func (r *operationRecorder) events() []string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	events := make([]string, 0, len(r.operations))
-	for _, operation := range r.operations {
+	// Return events in the operation_log read order (D-002 §1 chain
+	// order: created_at ASC, id ASC), not in append order. The queued
+	// audit is appended by the submitter AFTER the job is persisted, and
+	// the runner signals its scan loop from inside Submit — a
+	// fast-failing worker can therefore append its terminal event before
+	// the caller appends queued. Append order is not the audit order.
+	ops := append([]operationlog.Operation(nil), r.operations...)
+	sort.SliceStable(ops, func(i, j int) bool {
+		if ops[i].CreatedAt.Equal(ops[j].CreatedAt) {
+			return ops[i].ID < ops[j].ID
+		}
+		return ops[i].CreatedAt.Before(ops[j].CreatedAt)
+	})
+	events := make([]string, 0, len(ops))
+	for _, operation := range ops {
 		events = append(events, operation.Event)
 	}
 	return events
