@@ -1,6 +1,6 @@
 # schema-ui-core
 
-面向中型项目、可 fork 的 **Admin 基架**（React + Go），协议兼容边界对齐 [`schema-ui-docs`](https://github.com/magicvr/schema-ui-docs) `v2.7.0`。
+面向中型项目、可 fork 的 **Admin 基架**（React + Go），协议兼容边界对齐 [`schema-ui-docs`](https://github.com/magicvr/schema-ui-docs) `v2.9.0`（含 v2.7/v2.8 additive 子集）。
 
 本仓库同时承载 **Goal Governance** 核心文档与 Skills 分发（`docs/`、`skills/`）。
 
@@ -12,7 +12,8 @@
 | [docs/architecture/monorepo-layout.md](docs/architecture/monorepo-layout.md) | **Monorepo 布局与包管理约定（R1）** |
 | [docs/architecture/directory-layout.md](docs/architecture/directory-layout.md) | 治理目录布局 |
 | [docs/vision/charter.md](docs/vision/charter.md) | 现行愿景 Charter |
-| [docs/workspaces/workspace-008-admin-module-readiness/goal-tree.md](docs/workspaces/workspace-008-admin-module-readiness/goal-tree.md) | 当前准入与基架收敛工作区（VP-008）目标树 |
+| [QUICKSTART.md](QUICKSTART.md) | 快速上手：**默认主路径 = cli+包（方法 B）**（`schema-ui create/serve/upgrade/migrate-fork` · npmjs `@magicvr/schema-ui-*` 六包）· fork 为深度定制路径 |
+| [docs/vision/workspaces.md](docs/vision/workspaces.md) | 组合层工作区贡献图（现行状态索引） |
 | [docs/workspaces/workspace-003-modular-admin-architecture/goal-tree.md](docs/workspaces/workspace-003-modular-admin-architecture/goal-tree.md) | 模块化架构工作区目标树（历史） |
 | [AGENTS.md](AGENTS.md) | AI 协作强制规则 |
 
@@ -125,3 +126,4 @@ fork 起点：在 config.yaml 选 Profile/模块集 + 模块贡献接入业务�
 - R1 目标：可运行前后端骨架 + 布局约定；Admin 外壳属 R3（历史路线图编号）。
 - R2 一等公民波次（[workspace-011](docs/workspaces/workspace-011-admin-functional-modules/goal-tree.md)）：`admin.dashboard` / `admin.account` / `admin.notifications` / `admin.data-transfer` 四个一方标准 Admin 模块已交付；订单/钱包等业务域降档至 R3（S-01～S-14）与 R4（B-01～B-11）。
 - R3 常用波第一批次：`admin.file-library`（文件/附件库）+ `admin.data-dictionary`（数据字典）已交付（admin 默认集；V-008 容器冒烟 exit 0）；R3 其余（S-03～S-14）与 R4 backlog 按路线图推进。
+- 分发形态（2026-08-29 方法 B 置顶）：**cli+包 为默认主路径**（`schema-ui create / serve / upgrade / migrate-fork` · npmjs 公开发布 `@magicvr/schema-ui-*` 六包 · 免凭据消费实证）；fork 保持一等公民路径（深度定制 / 贡献者）。VP-022～024 已 closed（分发试点 → 产线化 → 对外正式化）；组合层最新状态见 `docs/vision/workspaces.md`。

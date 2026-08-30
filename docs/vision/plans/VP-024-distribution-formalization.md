@@ -6,8 +6,8 @@ status: closed
 vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-024-distribution-formalization
 created: 2026-08-29
-updated: 2026-08-29
-version: 0.2.1
+updated: 2026-08-30
+version: 0.3.0
 ---
 
 # VP-024 · 分发形态正式化（cli+包 对外服务化）
@@ -56,7 +56,7 @@ version: 0.2.1
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-08-29 | closed | 八条退出判据全部核销（#1 serve 壳 · #2 npmjs 公开发布 · #3 compose/CI 实跑（hosted 登记）· #4 fork 对照计时 · #5 renderer external 化 / 冻结面 v1.4.0 · #6 纯原子拆分 · #7 migrate-fork · #8 方法 B 置顶 + 收口报告）；grok 独立审闭环 F-001～F-008 全闭合；用户 P-004 裁决（scope `@magicvr` 定稿 · breaking 实演） | workspace-024 Root `done 7/7`（GOAL-002～008 A/E 条目）；[closure-report](../workspaces/workspace-024-distribution-formalization/GOAL-008-r7-topline-and-closeout/attachments/closure-report.md)；QUICKSTART 方法 B 置顶 v1 | 四项书面登记（GOAL-008 D-001 · 2026-08-29）：①hosted CI 实触发（登记 · 需用户 CI 槽位授权或后续「CI 实跑」波次触发）②shell 类型面（登记 · 候选）③GH Packages 私有包（评述定稿 · 保留不删）④C 类深度定制 fork 的包化承载面（未来候选） |
 
 ## 规划修订短史
 
@@ -65,3 +65,4 @@ version: 0.2.1
 | 2026-08-29 | 初创 v0.1.0（用户 P-004 立项裁决：全量 7 项一次收口 / npmjs.com 公开发布 / 方法 B 置顶纳入退出判据 / VP-024 命名；组合层平台波，承接 VP-022+VP-023 go 后清单合并残余；与三分支、VP-009/010 正交；不改 Charter） |
 | 2026-08-29 | v0.2.0 · **激活**（用户激活审视授权）：[VRev-052](reviews/VRev-052-vp024-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `041744b3`→`c9122478` 不暂挂 `go`；V-F087/V-F088 recommended → 激活事务内 fixed）；`planned → active`；lead `workspace-024-distribution-formalization` 开区（Root 纲领路线图 R1～R7） |
 | 2026-08-29 | v0.2.1 · **判据 #2 措辞定稿**（用户裁决：维持 `@magicvr` 发布形式，不再改用 `@schema-ui` 形态 · D-001 §7）；R1/R2 已关门（Root 2/7） |
+| 2026-08-29 | v0.3.0 · **关闭**（用户书面确认关门 · P-004 有界口径）：八判据核销（[closure-report](../workspaces/workspace-024-distribution-formalization/GOAL-008-r7-topline-and-closeout/attachments/closure-report.md)）· 残余四项登记/评述/候选（GOAL-008 D-001）· Root `GOAL-001-distribution-formalization` `done 7/7` · [VRev-053](../reviews/VRev-053-vp024-closeout.md)（independent · grok）`pass` · 0 required |

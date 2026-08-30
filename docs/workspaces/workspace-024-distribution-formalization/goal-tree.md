@@ -1,19 +1,19 @@
 ---
 title: 目标树 · workspace-024-distribution-formalization
-status: active
+status: done
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 parent: null
-version: 0.2.0
+version: 0.2.1
 workspace_id: workspace-024-distribution-formalization
 ---
 
-# 目标树 · 分发形态正式化（cli+包 对外服务化收口）
+# 目标树 · 分发形态正式化（cli+包 对外服务化收口 · 已结项）
 
-> 工作区：`workspace-024-distribution-formalization`（**active** · 2026-08-29 开区）
+> 工作区：`workspace-024-distribution-formalization`（**done** · 2026-08-29 结项）
 > canonical：`docs/workspaces/workspace-024-distribution-formalization/`
-> Root：`GOAL-001-distribution-formalization`（**active** · 1/7）
-> primary_plan：`VP-024-distribution-formalization`（active v0.2.0）
+> Root：`GOAL-001-distribution-formalization`（**done** · 7/7）
+> primary_plan：`VP-024-distribution-formalization`（closed v0.3.0 · VRev-053）
 
 ## 树
 
@@ -28,7 +28,7 @@ GOAL-001-distribution-formalization [done 7/7]  · 分发形态正式化（cli+�
 └── GOAL-008-r7-topline-and-closeout [done 4/4]  · R7 置顶与收口报告（方法 B 置顶 · 核销表 · Root 关门 · 判据 #8）
 ```
 
-> 下一波：GOAL-007-r6-migration-tooling（R6 迁移工具化 · done 4/4 · 判据 #7）
+> 状态：八判据全部核销（closure-report）· 残余四项书面登记（GOAL-008 D-001）· 关后台账同步（2026-08-30）
 
 ## 状态表
 
