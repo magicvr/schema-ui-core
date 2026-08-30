@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 1/4
 plan_refs:
   - VP-025-config-export-diff-dryrun-import
 primary_plan: VP-025-config-export-diff-dryrun-import
@@ -34,19 +34,19 @@ serves_summary: 配置包导出 / diff / dry-run / 导入（Admin 功能分支 �
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
-| R1 | 合同冻结（判据 #5/6 边界）：配置包内容边界（I-025-001）· 落地形态（I-025-002）· diff/dry-run 语义基线 | **active · 待立项**（0/1；GOAL-002 候选） |
-| R2 | 导出 + diff（判据 #1/2） | 依赖 R1 | 计划 |
-| R3 | dry-run + 导入（判据 #3/4；I-025-004 前置裁决） | 依赖 R2 | 计划 |
-| R4 | 证据与关门（判据 #6） | 依赖 R1–R3 | 计划 |
+| R1 | 合同冻结（判据 #5/6 边界）：配置包内容边界（I-025-001）· 落地形态（I-025-002）· diff/dry-run 语义基线 | **已关门**（2026-08-30 · GOAL-002 done 3/3 · A-001 self `pass` · 配置包合同 v0.1.0 冻结（D-002）；I-025-001/002/003 `verified`；I-025-004 预告 R3） |
+| R2 | 导出 + diff（判据 #1/2） | 依赖 R1 | 计划（GOAL-003 候选） |
+| R3 | dry-run + 导入（判据 #3/4；I-025-004 前置裁决） | 依赖 R2 | 计划（GOAL-004 候选） |
+| R4 | 证据与关门（判据 #6） | 依赖 R1–R3 | 计划（GOAL-005 候选） |
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-025-001 | required | 配置包内容边界：包 = 当前生效配置树的哪些键；env 引用（不解析 vs 解析后值）；密钥/敏感值处理（排除 / 脱敏 / 占位 + fail-closed）。 | 方案冻结 + 退出判据 #1 | R1 | 用户裁决（R1 合同冻结前置；VRev-054 V-F090 登记） | open（待裁决） | — | 待确认 |
-| I-025-002 | required | 落地形态：CLI（`schema-ui config *`）vs 管理面 vs 两者；与 VP-007 Settings 面的关系。 | 方案冻结 | R1 | 用户裁决（R1 合同冻结前置） | open（待裁决） | — | 待确认 |
-| I-025-003 | non-blocking | diff 语义与输出：键级规范化/排序/类型；输出格式（text / yaml / json 合一或分面）。 | 退出判据 #2 | R2 | lead 建议 + 用户确认 | open | — | 待确认 |
-| I-025-004 | required | 导入失败语义：预检失败即止 vs 应用期失败快照回滚；与既有升级前快照（VP-013 方言级 / VACUUM INTO）的关系。 | 退出判据 #4 | R3 | 用户裁决（R3 前置） | open（待裁决） | — | 待确认 |
+| I-025-001 | required | 配置包内容边界：包 = 当前生效配置树的哪些键；env 引用（不解析 vs 解析后值）；密钥/敏感值处理（排除 / 脱敏 / 占位 + fail-closed）。 | 方案冻结 + 退出判据 #1 | R1 | 用户裁决（R1 合同冻结前置；VRev-054 V-F090 登记） | **verified** | — | 2026-08-30 用户裁决：非敏感结构键全集 + env 保留 `$VAR` 形态 + 敏感键占位/`secrets.exclude` 清单 + 导入 fail-closed（GOAL-002 D-001 accepted · 合同 §1/§3） |
+| I-025-002 | required | 落地形态：CLI（`schema-ui config *`）vs 管理面 vs 两者；与 VP-007 Settings 面的关系。 | 方案冻结 | R1 | 用户裁决（R1 合同冻结前置） | **verified** | — | 2026-08-30 用户裁决：**CLI 主路径**四子命令（export/diff/dry-run/import）；管理面不做；yaml/json 双格式；diff 机器可读（GOAL-002 D-001 accepted · 合同 §2） |
+| I-025-003 | non-blocking | diff 语义与输出：键级规范化/排序/类型；输出格式（text / yaml / json 合一或分面）。 | 退出判据 #2 | R2 | lead 建议 + 用户确认 | **verified** | — | 随裁决确认（用户采纳建议）：规范化键级差量 + yaml/json 双输出 + 退出码 0/1/2（GOAL-002 D-001 accepted · 合同 §2.2） |
+| I-025-004 | required | 导入失败语义：预检失败即止 vs 应用期失败快照回滚；与既有升级前快照（VP-013 方言级 / VACUUM INTO）的关系。 | 退出判据 #4 | R3 | 用户裁决（R3 前置） | open（待裁决） | R3 前复核 | 合同 §2.4/§7 边界预告（候选 = 应用前快照 + 失败回滚） |
 | I-025-005 | required | 是否触及 Profile 默认集 / 模块矩阵 / Manifest 装配？**本 VP 冻结为不进**（VP-008 `go` 红线）。台账投影。 | 退出分母 | R1 | 投影（V-F090 / D-001） | **registered**（冻结不进） | — | VP-025 §边界 |
 
 ## 父目标
@@ -61,4 +61,4 @@ serves_summary: 配置包导出 / diff / dry-run / 导入（Admin 功能分支 �
 
 - 审计模式（D-001 已定）：阶段关门 default self；实证门禁（R4 证据 / 关门）可按需 independent（grok build 先例，项目级默认执行路径）。
 - freshness 三字段（V-F089 执行）与现状锚点（V-F091 执行）：见 `01-decision/D-001-workspace-root-establishment.md`。
-- I-025-001 / I-025-002 为 R1 合同冻结前置裁决点；到达 R1 检查点前必须经用户裁决（P-004），未裁决不得冻结合同。
+- I-025-001 / I-025-002 已于 R1 合同冻结（2026-08-30）经用户裁决 `verified`（GOAL-002 D-001）；I-025-004 为 R3 前置裁决点。

@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-08-30 | 工作区开区（激活事务 → workspace+Root 五件套+goal-tree+workspaces 同步） | recorded | `02-execution/E-001-workspace-establishment.md` |
+| E-002 | 2026-08-30 | R1 关门投影（GOAL-002 done 3/3 · 合同 v0.1.0 · Root 1/4） | recorded | `02-execution/E-002-r1-closeout.md` |
 
 ## 事实边界
 
