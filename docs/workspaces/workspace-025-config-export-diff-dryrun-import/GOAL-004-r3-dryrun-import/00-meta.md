@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-dryrun-import
 title: R3 dry-run + 导入（配置包预检 / 安全应用）
-status: active
+status: done
 parent: GOAL-001-config-export-diff-dryrun-import
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.2.0
-progress: 1/3
+version: 0.3.0
+progress: 3/3
 plan_refs:
   - VP-025-config-export-diff-dryrun-import
 primary_plan: VP-025-config-export-diff-dryrun-import
@@ -28,8 +28,8 @@ serves_summary: 承载 VP-025 R3 阶段：config dry-run（只读预检：结构
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | **dry-run 实现**：三件套预检 + 退出码 0/1/2 + yaml/json + 快测（通过 / env 缺失 / 影响列表 / 坏包 / IO 错误） | **已关门**（2026-08-30 · parsePackageStrict/dryRun/cmdConfigDryRun · TestDryRun* 4 用例全绿 · CLI 冒烟 exit 0/1 + fail-closed 实证；无裁决依赖） |
-| C2 | **import 实现**：预检接线 + 安全应用（I-025-004 裁决后冻结写入语义）+ 快测（往返 / 失败路径不破坏） | 待 I-025-004 用户裁决 |
-| C3 | **审视与关门**：self 审计（合同↔实现 · 红线 · 证据）+ R3 关门、Root 信息台账回写 | 待 C1/C2 |
+| C2 | **import 实现**：预检接线 + 安全应用（I-025-004 裁决后冻结写入语义）+ 快测（往返 / 失败路径不破坏） | **已关门**（2026-08-30 · 用户裁决方案 A（D-002 冻结）· cmdConfigImport：备份 → tmp → LoadConfig 校验 → rename 原子替换 · TestImport* 4 用例 + 冒烟往返 diff `[]`） |
+| C3 | **审视与关门**：self 审计（合同↔实现 · 红线 · 证据）+ R3 关门、Root 信息台账回写 | **已关门**（2026-08-30 · A-001 self `pass`（0 required）· Root 3/4） |
 
 `progress` = 已关门检查点数 / 3。
 
@@ -45,7 +45,7 @@ serves_summary: 承载 VP-025 R3 阶段：config dry-run（只读预检：结构
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-025-004 | required | 导入失败语义：预检失败即止 vs 应用期失败快照回滚；与既有升级前快照的关系。 | 判据 #4（C2 方案冻结） | R3 | 用户裁决（2026-08-30 已呈报 A/B/C 建议，待裁决） | open（待裁决） | 已到最晚阶段 | 合同 §2.4/§7 边界预告 |
+| I-025-004 | required | 导入失败语义：预检失败即止 vs 应用期失败快照回滚；与既有升级前快照的关系。 | 判据 #4（C2 方案冻结） | R3 | 用户裁决（2026-08-30 GUI 确认） | **verified** | — | 用户裁决**方案 A**：原子替换 + 应用前备份 `.pre-import.bak`；失败路径清 tmp、原文件不被触碰（GOAL-004 D-002 冻结 · 2026-08-30） |
 
 C1（dry-run）不依赖 I-025-004，先行推进；C2 冻结前必须裁决。
 

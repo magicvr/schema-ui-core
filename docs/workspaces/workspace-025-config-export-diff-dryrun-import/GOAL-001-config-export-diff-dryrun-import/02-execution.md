@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-08-30 | R1 关门投影（GOAL-002 done 3/3 · 合同 v0.1.0 · Root 1/4） | recorded | `02-execution/E-002-r1-closeout.md` |
 | E-003 | 2026-08-30 | R2 关门投影（GOAL-003 done 3/3 · export+diff · Root 2/4） | recorded | `02-execution/E-003-r2-closeout.md` |
 | E-004 | 2026-08-30 | 红线核账预检（开区至 R3 C1 代码面 = 4 文件 · 红线域零触碰 · R4 证据预积累） | recorded | `02-execution/E-004-redline-precheck.md` |
+| E-005 | 2026-08-30 | R3 关门投影（GOAL-004 done 3/3 · dry-run+import · Root 3/4） | recorded | `02-execution/E-005-r3-closeout.md` |
 
 ## 事实边界
 

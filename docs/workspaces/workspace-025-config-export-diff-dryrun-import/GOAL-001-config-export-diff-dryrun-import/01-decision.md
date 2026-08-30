@@ -32,5 +32,6 @@ version: 0.1.0
 | D-002 | 2026-08-30 | R1 关门投影：信息裁决与合同冻结完成（GOAL-002 D-001/D-002 · A-001 pass）→ Root 1/4 | accepted | `01-decision/D-002-r1-closeout-projection.md` |
 | D-003 | 2026-08-30 | R2 关门投影：export+diff 实现与测试完成（GOAL-003 · A-001 pass）→ Root 2/4 | accepted | `01-decision/D-003-r2-closeout-projection.md` |
 | D-004 | 2026-08-30 | R4 关门设计：证据矩阵 / 越界核账 / 双审（self + grok build independent）/ VRev-055 / 用户书面确认路径 | accepted | `01-decision/D-004-r4-closeout-design.md` |
+| D-005 | 2026-08-30 | R3 关门投影：dry-run+import 完成（GOAL-004 · 方案 A 裁决 · A-001 pass）→ Root 3/4 | accepted | `01-decision/D-005-r3-closeout-projection.md` |
 
 > 编号在本目标内单调不复用。

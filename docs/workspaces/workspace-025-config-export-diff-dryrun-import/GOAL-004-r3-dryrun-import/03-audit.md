@@ -22,8 +22,8 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | — |
+| A-001 | 2026-08-30 | self | R3 dry-run + import（合同↔实现 / 方案 A 落实 / 红线 / 证据） | pass | 0 | `03-audit/A-001-self-r3-dryrun-import.md` |
 
 ## 结论状态
 
-尚未到达审计节点（C3）。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+R3 已关门（2026-08-30）：A-001 self `pass`（0 required）。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。

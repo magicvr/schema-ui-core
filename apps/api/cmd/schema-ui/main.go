@@ -24,15 +24,15 @@ import (
 var templateFS embed.FS
 
 const (
-	apiModule   = "github.com/magicvr/schema-ui-core/apps/api"
-	apiVersion  = "v0.4.0" // 模板钉 = 含公开 serve 面（server pkg）的下一发布；R2 发布通道核销
+	apiModule  = "github.com/magicvr/schema-ui-core/apps/api"
+	apiVersion = "v0.4.0" // 模板钉 = 含公开 serve 面（server pkg）的下一发布；R2 发布通道核销
 	// 六包终值（R5 · A-002 F-002 响应）：create 骨架生成即装终值；upgrade 拉 npm/Go latest 保对齐
-	protocolVer = "0.2.11"
-	libVersion    = "0.1.10"
-	shellVersion  = "0.1.4"
-	themeVersion  = "0.1.4"
-	uiVersion     = "0.1.8"
-	rendererVer = "0.3.8"
+	protocolVer  = "0.2.11"
+	libVersion   = "0.1.10"
+	shellVersion = "0.1.4"
+	themeVersion = "0.1.4"
+	uiVersion    = "0.1.8"
+	rendererVer  = "0.3.8"
 )
 
 type createOpts struct {
@@ -54,7 +54,7 @@ func main() {
   schema-ui config export [-config <path>] [-o <path>] [-f yaml|json]   导出配置包 v1（VP-025 R2）
   schema-ui config diff <pkg-a> <pkg-b> | <pkg> --against <config> [-f yaml|json]   键级差量（0 无差 / 1 有差 / 2 错误）
   schema-ui config dry-run <pkg> [-config <path>] [-f yaml|json]      导入前只读预检（VP-025 R3）
-  schema-ui config import <pkg> [-file <path>]               导入配置包（仅注册 · R3）
+  schema-ui config import <pkg> [-file <path>] [-f yaml|json]     导入配置包（预检后安全应用 · VP-025 R3）
 
 示例:
   schema-ui create my-admin
@@ -149,30 +149,30 @@ func generate(o createOpts) error {
 		return fmt.Errorf("目标目录已存在: %s", o.dir)
 	}
 	data := map[string]string{
-		"Name":           o.name,
+		"Name":            o.name,
 		"LibVersion":      libVersion,
 		"ShellVersion":    shellVersion,
 		"ThemeVersion":    themeVersion,
 		"UiVersion":       uiVersion,
-		"Module":         o.module,
-		"APIVersion":     apiVersion,
+		"Module":          o.module,
+		"APIVersion":      apiVersion,
 		"ProtocolVersion": protocolVer,
 		"RendererVersion": rendererVer,
 	}
 	files := map[string]string{
-		"templates/go.mod.tmpl":              filepath.Join(o.dir, "go.mod"),
-		"templates/main.go.tmpl":             filepath.Join(o.dir, "cmd", "server", "main.go"),
-		"templates/config.yaml.tmpl":         filepath.Join(o.dir, "config.example.yaml"),
-		"templates/README.md.tmpl":           filepath.Join(o.dir, "README.md"),
-		"templates/gitignore.tmpl":           filepath.Join(o.dir, ".gitignore"),
-		"templates/web/package.json.tmpl":    filepath.Join(o.dir, "web", "package.json"),
-		"templates/web/npmrc.tmpl":           filepath.Join(o.dir, "web", ".npmrc"),
-		"templates/probe.mjs":            filepath.Join(o.dir, "web", "probe.mjs"),
-		"templates/probe-render.mjs":     filepath.Join(o.dir, "web", "probe-render.mjs"),
-		"templates/token-check.mjs":      filepath.Join(o.dir, "web", "token-check.mjs"),
-		"templates/probe-six.mjs":            filepath.Join(o.dir, "web", "probe-six.mjs"),
-		"templates/index.css":            filepath.Join(o.dir, "web", "index.css"),
-		"templates/brand.css":            filepath.Join(o.dir, "web", "brand.css"),
+		"templates/go.mod.tmpl":           filepath.Join(o.dir, "go.mod"),
+		"templates/main.go.tmpl":          filepath.Join(o.dir, "cmd", "server", "main.go"),
+		"templates/config.yaml.tmpl":      filepath.Join(o.dir, "config.example.yaml"),
+		"templates/README.md.tmpl":        filepath.Join(o.dir, "README.md"),
+		"templates/gitignore.tmpl":        filepath.Join(o.dir, ".gitignore"),
+		"templates/web/package.json.tmpl": filepath.Join(o.dir, "web", "package.json"),
+		"templates/web/npmrc.tmpl":        filepath.Join(o.dir, "web", ".npmrc"),
+		"templates/probe.mjs":             filepath.Join(o.dir, "web", "probe.mjs"),
+		"templates/probe-render.mjs":      filepath.Join(o.dir, "web", "probe-render.mjs"),
+		"templates/token-check.mjs":       filepath.Join(o.dir, "web", "token-check.mjs"),
+		"templates/probe-six.mjs":         filepath.Join(o.dir, "web", "probe-six.mjs"),
+		"templates/index.css":             filepath.Join(o.dir, "web", "index.css"),
+		"templates/brand.css":             filepath.Join(o.dir, "web", "brand.css"),
 	}
 	for src, dst := range files {
 		if err := writeTemplate(src, dst, data); err != nil {
