@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
 
 // GetOrCreateUserAccount adapter lives here (walletServiceStub is declared in

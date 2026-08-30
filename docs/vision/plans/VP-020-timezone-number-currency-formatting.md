@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-020-timezone-number-currency-formatting
 title: 时区 / 数字 / 货币格式语义
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-020-timezone-number-currency-formatting
 created: 2026-08-26
 updated: 2026-08-27

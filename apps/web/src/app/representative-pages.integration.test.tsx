@@ -1,4 +1,4 @@
-﻿// @vitest-environment jsdom
+// @vitest-environment jsdom
 //
 // Full-path integration evidence for the R1 representative pages (GOAL-004;
 // GOAL-011 S3 repoints the injected resource surface from the legacy demo to users/roles):
@@ -26,24 +26,24 @@ const MANIFEST_PATH = resolve(
 );
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/dev/examples/schema",
+  "../../../api/modules/dev/examples/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/settings/schema",
+    "../../../api/modules/settings/schema",
   ),
   activity: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/activity/schema",
+    "../../../api/modules/activity/schema",
   ),
   users: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/users/schema",
+    "../../../api/modules/users/schema",
   ),
   roles: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/roles/schema",
+    "../../../api/modules/roles/schema",
   ),
 };
 

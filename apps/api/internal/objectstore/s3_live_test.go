@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // Live round-trip against a real S3-compatible endpoint (MinIO suffices).

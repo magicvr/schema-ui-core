@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // Live round-trip against a real implicit-TLS (465) SMTP submission endpoint.

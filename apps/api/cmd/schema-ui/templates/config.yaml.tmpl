@@ -1,0 +1,29 @@
+# {{ .Name }} serve 配置示例：复制为 config.yaml（或直接走 env 覆盖）后运行
+#   go run ./cmd/server                          # 内嵌默认 + env
+#   go run ./cmd/server -config config.yaml      # 显式配置
+# env 覆盖：HTTP_ADDR / HTTP_SHUTDOWN_TIMEOUT / DB_DIALECT / DB_PATH / DB_DSN /
+#           PROFILE_NAME / APP_ENV / LOG_LEVEL / AUTH_JWT_SECRET / ADMIN_INITIAL_PASSWORD
+# 插值：$VAR（无默认，未设置 fail-closed）/ $VAR:-default。
+# W15 F-001（workspace-009）：默认监听回环地址；对外暴露需显式 http.addr / -addr / HTTP_ADDR。
+app:
+  name: {{ .Name }}
+  env: ${APP_ENV:-development}
+http:
+  addr: "127.0.0.1:25080"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 10s
+db:
+  dialect: sqlite
+  path: ./data/schema-ui.db
+profile: admin
+auth:
+  access_ttl: 15m
+  refresh_ttl: 720h
+  jwt_secret: ${AUTH_JWT_SECRET:-}
+  public_base_url: ${AUTH_PUBLIC_BASE_URL:-}
+admin:
+  initial_password: ${ADMIN_INITIAL_PASSWORD:-}
+log:
+  level: info

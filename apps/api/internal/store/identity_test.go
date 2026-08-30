@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 )
 
 func testCatalog(n int) []kernel.MigrationContribution {
@@ -111,6 +111,7 @@ var lockedHeadExtraTables = map[int][]string{
 	60: {}, // W26 GOAL-038: mail_outbox additive ALTER (channel/delivery_status columns; no new objects)
 	61: {"login_failures"}, // GOAL-014 D-002: per-(account|source) login-lockout state
 	62: {}, // workspace-020 R3: site_settings additive ALTER (default_currency column; no new objects)
+	63: {}, // R4 演练（GOAL-005 S2）: CREATE INDEX IF NOT EXISTS only (no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

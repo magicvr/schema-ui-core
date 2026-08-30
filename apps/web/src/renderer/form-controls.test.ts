@@ -7,7 +7,7 @@ import {
   validateFieldValues,
   wireKindOf,
   type FormControlField,
-} from "@/renderer/form-controls";
+} from "@/renderer/form-controls.types";
 
 const baseMeta = { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] };
 

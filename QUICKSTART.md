@@ -1,9 +1,62 @@
-# QUICKSTART · 15 分钟 fork 上手（R5 · GOAL-008 S3）
+# QUICKSTART · 15 分钟上手（cli+包 = 默认主路径 · VP-024 R7 置顶）
 
-> 面向 fork 使用者的最小上手段。目标：**按本文档从零配置并启动，≤15 分钟（不含依赖下载/镜像拉取）进入系统**——登录成功 + 后台可交互。
-> 本文件的终点与计时口径按 [I-008-002 fork 复现协议 v0.1.1](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) 冻结；独立复现记录见 GOAL-008 `02-execution.md`。
+> 目标：**按本文档从零配置并启动，≤15 分钟（不含依赖下载/镜像拉取）进入系统**——登录成功 + 后台可交互。
+> 主路径（方法 B）：**cli+包 消费**——不 fork 主仓，经 registry/CLI 获得同一基架，升级零冲突。
+> fork 路径（方法 A）保留给深度定制/开源贡献者；既有 fork 用户优先走迁移辅助（§2）。
 
-## 0. 前置
+## 0. 先选你的路径（30 秒）
+
+| 你属于 | 路径 |
+|--------|------|
+| **新项目 / 无深度定制** | **方法 B（§1 · cli+包 起步）——默认主路径（15 分钟对标）** |
+| 已有 fork（A/B 型：未改 kernel 契约面） | **§2 · fork→包 迁移（`schema-ui migrate-fork` 工具化）** |
+| 深度定制 fork（改 kernel/渲染器主路径） | §3 · 方法 A（fork 上手）· 保持 fork（Charter fork 并存） |
+
+## 1. 方法 B · cli+包 起步（默认 · ≤15 分钟 · VP-023 产线化 / VP-024 置顶）
+
+> 面向「不 fork 主仓」的消费者：全流程经 registry/CLI 获得同一基架（单主线 · 同协议 pin 2.9.0 · 同冻结面 v1.4.0）。
+> 预置：Go 1.26+、Node 22+；Go 走公共 proxy、npm 包走 npmjs.com 公开发布（@magicvr/schema-ui-*）——均免凭据（VP-024 R2/R5 · 2026-08-29；历史 GH Packages 认证路径保留为私有面）。
+
+```bash
+# 1. 安装 CLI（公共 Go proxy）
+go install github.com/magicvr/schema-ui-core/apps/api/cmd/schema-ui@latest
+
+# 2. 生成下游骨架（对标 dotnet new）
+schema-ui create my-admin            # 11 文件：Go 组合根 + web 骨架 + 探针 + 主题覆盖
+cd my-admin
+
+# 3. 双端装配（registry 语义）
+go mod tidy && go run ./cmd/server                    # serve 面启动（迁移随 Open 自动 apply · RT-D02 优雅停机）
+cd web && pnpm install && node probe.mjs                             # 三探针基线
+
+# 4. 升级 = 一条命令，零冲突（不再有 fork merge）
+schema-ui upgrade                    # go get @latest + pnpm add @latest + 探针回归
+```
+
+> 注：`schema-ui create` 生成骨架钉在 API tag 时刻的包面（当前 = 冻结面 v1.4.0 终值）；`schema-ui upgrade` 会把 Go/npm 依赖拉到最新（registry 语义 · 零冲突）。
+
+- 计时口径（VP-023 R5 实测）：create → 双端绿 = **分钟级**（去依赖下载）；升级 = 秒级；冲突计数 = 0、无 git merge。
+- 双方言：SQLite 内嵌默认；生产权威 PostgreSQL：golden-field -dialect postgres -dsn …（迁移/备份契约与 fork 形态一致，见 workspace-023 ops-playbook）。
+- 包面：@magicvr/schema-ui-{protocol,lib,theme,ui,renderer,shell}（npmjs.com 公开发布 · 免凭据；`schema-ui upgrade` 自动装配六包）。
+
+## 2. fork → 包 迁移（A/B 型既有 fork · 工具化 · R6）
+
+```bash
+# 对既有 fork 仓做类型判定 + 低侵入迁移（非破坏：仅 go.mod bump + .npmrc 钉 npmjs（带备份）；用户代码只引导不覆盖）
+schema-ui migrate-fork --dir <你的 fork 根> --dry-run     # 判定（A/B/C）+ 步骤清单
+schema-ui migrate-fork --dir <你的 fork 根>               # 实跑：go.mod @latest · .npmrc 钉 npmjs · 组合根引导
+```
+
+- 判定语义：A 纯装配/薄封装 · B 旧组合根（无 kernel 覆盖，引导重建）· C 深度定制（改 kernel 契约面 → **建议保持 fork**）。
+- 完整迁移地图（含组合根重建与业务迁入）：[fork → 包 迁移指南](docs/workspaces/workspace-023-productionization-cli-package/GOAL-006-r5-report/attachments/fork-to-package-migration-guide.md)。
+- 同步对照实验：同一演进集 v0.3.0→v0.4.0 实测——fork 同步 1 冲突 + 2 改写点 + ≈13.2s vs 包 bump 0 冲突 + ≈4.8s（VP-024 R4 附件 fork-comparison-report）。
+
+## 3. 方法 A · fork 上手（深度定制 / 开源贡献者）
+
+> 面向 fork 使用者的最小上手段。本文件位于主仓（fork 源），深度定制 fork 以本仓为基线持续同步。
+> 终点与计时口径按 [I-008-002 fork 复现协议 v0.1.1](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) 冻结；独立复现记录见 GOAL-008 `02-execution.md`。
+
+### 3.0 前置
 
 | 项 | 要求 |
 |----|------|
@@ -11,7 +64,7 @@
 | 数据库 | 无需手动安装；SQLite 内嵌于 API |
 | 依赖缓存（不计时） | `go mod download`、`npm ci`、Compose 镜像 pull/build 缓存**提前完成**，否则耗时计入仍 ≤15 分钟 |
 
-## 1. 获取并准备
+### 3.1 获取并准备
 
 ```bash
 git clone <your-fork-url> && cd schema-ui-core
@@ -34,9 +87,9 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 - 每个本地 API/Web 进程共用同一份 `configs/config.yaml`，无需再设置 Profile 环境变量。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 
-## 2. 启动（两条路径选一）
+### 3.2 启动（两条路径选一）
 
-### 路径 A · Docker Compose（推荐，无需本机 Go/Node）
+#### 路径 A · Docker Compose（推荐，无需本机 Go/Node）
 
 ```bash
 # 仓库根 .env（gitignored）写入，避免新 shell 重复 export：
@@ -50,7 +103,7 @@ docker compose up -d --build
 - Web：`http://localhost:25081`（nginx 服务 SPA，`/api` 同源反代到 API）
 - 停止：`docker compose down`（SQLite 数据由命名卷 `db-data` 保持）
 
-### 路径 B · 本地双进程（开发默认）
+#### 路径 B · 本地双进程（开发默认）
 
 ```bash
 # 终端 1 —— API
@@ -70,7 +123,7 @@ Windows 也可用仓库根一键脚本 `dev.cmd`（自动起停 API/Web 两个�
 .\dev.cmd status                             :: 查看端口监听
 ```
 
-## 3. 验收四终点（≤15 分钟达标判据）
+### 3.3 验收四终点（≤15 分钟达标判据）
 
 | 终点 | 检查 | 达标 |
 |------|------|------|
@@ -81,7 +134,7 @@ Windows 也可用仓库根一键脚本 `dev.cmd`（自动起停 API/Web 两个�
 
 > **默认 base URL**：Compose → API 不发布宿主端口（经 Web `http://localhost:25081` 同源访问）、Web `http://localhost:25081`；本地双进程 → API `:25080`、Web `http://localhost:${WEB_PORT:-25173}`。以实际端口为准，不得用默认值覆盖实测端口。
 
-### 命令行冒烟（终点 1–3 快速验证）
+#### 命令行冒烟（终点 1–3 快速验证）
 
 ```bash
 curl -fsS http://localhost:25081/api/healthz
@@ -92,7 +145,7 @@ TOKEN=$(curl -fsS -X POST http://localhost:25081/api/auth/login \
 curl -fsS http://localhost:25081/api/accounts/me -H "Authorization: Bearer $TOKEN"
 ```
 
-### 完整 smoke（S4 机器可判定）
+#### 完整 smoke（S4 机器可判定）
 
 ```bash
 # 对已启动实例做非破坏性部分检查（SM-001～005 + 可选 SM-007 Profile/Manifest 合同）
@@ -110,7 +163,7 @@ SMOKE_ISOLATION_ID=ci-smoke-local SMOKE_DISPOSABLE_CONFIRM=yes SMOKE_CSP=1 \
 bash scripts/smoke.sh --disposable
 ```
 
-### 发版前完整冒烟（生产 CSP + 真实浏览器 + 隔离种子，一键）
+#### 发版前完整冒烟（生产 CSP + 真实浏览器 + 隔离种子，一键）
 
 ```bash
 # 自动用独立 Compose project 构建/启动生产栈，运行 smoke --disposable + SMOKE_CSP=1（含 C-006 persistence），
@@ -123,7 +176,7 @@ bash scripts/pre-release-smoke.sh
 
 > 退出码：`0`=完整绿（含 disposable SM-006）｜`2`=参数/工具/安全前提（隔离校验失败等）｜`3`=readiness 超时｜`4`=登录/身份｜`5`=路由/数据｜`6`=种子断言｜`7`=SM-008 真实浏览器 CSP/生产头失败｜`8`=部分绿（非 disposable）｜`70`=内部错误。判据见 [I-008-002 协议 v0.1.2](docs/workspaces/workspace-002-production-admin-foundation/GOAL-008-r5-engineering-fork/attachments/I-008-002-fork-reproduction-protocol.md) §5.3。
 
-## 4. 升级与恢复边界
+### 3.4 升级与恢复边界
 
 - API 启动时会为每个待执行的数据迁移在非空 SQLite 文件旁创建
   `schema-ui.db.pre-vNNNN-<UTC>.sqlite` 快照，并执行完整性检查；新库不会生成快照。
@@ -133,7 +186,7 @@ bash scripts/pre-release-smoke.sh
 - Compose 使用命名卷 `db-data`；恢复前先 `docker compose stop api`，把快照导出/复制回
   `/app/data/schema-ui.db`，再启动 API 并检查 `/readyz`。Profile 切换不会删除禁用模块的表或数据。
 
-## 5. 下一步：接业务
+### 3.5 下一步：接业务
 
 > **协议覆盖权威**：本仓对 `schema-ui-docs@v2.7.0` 的整份契约覆盖由 **`I-PROTO-FULL-001`** 定义（[workspace-005 Root attachments](docs/workspaces/workspace-005-full-protocol-contract-v2-7-0/GOAL-001-full-protocol-contract-v2-7-0/attachments/I-PROTO-FULL-001-coverage-v2-7-0.md)：12/12 能力域、24/24 registry type、16/16 conformance 套件 include）。历史 `I-PROTO-001 v0.1.3` 仅为 MVP 回归基线（只读）。协议能力清单见 [protocol-inventory-v2.7.0.md](docs/vision/protocol-inventory-v2.7.0.md)；任何「已支持 v2.7.0」声明必须以覆盖表 + 实现证据背书。
 

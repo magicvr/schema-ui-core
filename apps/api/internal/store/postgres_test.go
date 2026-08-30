@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	authmigration "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/migration"
-	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
-	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/logincaptcha/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	authmigration "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/migration"
+	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
+	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pgtest"
 )

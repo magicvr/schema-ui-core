@@ -10,9 +10,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
-	recyclestore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/recyclebin/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
+	recyclestore "github.com/magicvr/schema-ui-core/apps/api/modules/recyclebin/store"
 )
 
 // RecycleItem is the wire projection of one recycle snapshot.

@@ -34,7 +34,7 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
 const SETTINGS_SCHEMA_PATH = resolve(
   __dir,
-  "../../../api/internal/modules/settings/schema/settings.json",
+  "../../../api/modules/settings/schema/settings.json",
 );
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];

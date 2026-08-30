@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // RolesRepository is the RBAC-domain persistence required by the roles

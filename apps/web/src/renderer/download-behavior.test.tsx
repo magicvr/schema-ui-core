@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { I18nProvider } from "@/i18n/runtime";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 
 /**
  * F-02 local extension (GOAL-004 D-002 §5): the protocol's CustomAction

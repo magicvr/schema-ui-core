@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-011-admin-functional-modules
 title: 标准 Admin 功能模块（通用模块 + 常用业务领域 · 分档交付）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-011-admin-functional-modules
 created: 2026-08-14
 updated: 2026-08-18

@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-008-admin-module-readiness-and-foundation-convergence
 title: Admin 业务模块准入与基架收敛
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-008-admin-module-readiness
 created: 2026-08-10
 updated: 2026-08-10

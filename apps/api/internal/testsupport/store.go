@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 

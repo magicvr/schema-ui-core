@@ -15,7 +15,7 @@ import { getCustomComponent } from "@/renderer/custom-components";
 import {
   coerceFieldValue,
   type FormControlField,
-} from "@/renderer/form-controls";
+} from "@/renderer/form-controls.types";
 
 export interface FormControlsProps {
   fields: FormControlField[];

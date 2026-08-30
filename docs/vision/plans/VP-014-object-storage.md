@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-014-object-storage
 title: 对象存储适配器（S3 兼容 + 本地盘内嵌）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-014-object-storage
 created: 2026-08-21
 updated: 2026-08-21

@@ -22,8 +22,8 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // avatarQuotaLocks serializes the quota check + store pair PER OWNER (W11

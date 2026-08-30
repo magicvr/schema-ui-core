@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	tasksstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/scheduledtasks/store"
+	tasksstore "github.com/magicvr/schema-ui-core/apps/api/modules/scheduledtasks/store"
 )
 
 func TestDescribeCronPatterns(t *testing.T) {

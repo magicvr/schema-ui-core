@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-015-observability
 title: 可观测性（指标导出 + OpenTelemetry）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-015-observability
 created: 2026-08-21
 updated: 2026-08-22

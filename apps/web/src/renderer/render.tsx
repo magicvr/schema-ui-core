@@ -36,7 +36,7 @@ import {
   coerceFieldValue,
   validateFieldValues,
   type FormControlField,
-} from "@/renderer/form-controls";
+} from "@/renderer/form-controls.types";
 import { optionList } from "@/renderer/form-controls.tsx";
 import { ModalHost } from "@/renderer/modal";
 import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
@@ -81,7 +81,7 @@ import {
   type RenderTabsNode,
   type RenderTableNode,
   type RenderTextNode,
-} from "@/renderer/render";
+} from "@/renderer/render.types";
 
 /**
  * R5 D-COMP minimal Renderer (resolve R4 F-002) + S4 Schema CRUD (GOAL-007).

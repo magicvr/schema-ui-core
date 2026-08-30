@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -15,7 +15,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 

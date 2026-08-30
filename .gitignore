@@ -108,3 +108,6 @@ apps/**/bin/
 # Local outbound-mail master key (auto-generated; never commit)
 mail-master.key
 *.key
+
+# R3 web 包分发试点构建产物
+apps/web/dist-lib/

@@ -28,7 +28,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // Body and page-size bounds shared by every registered resource (I-010-001 §4);

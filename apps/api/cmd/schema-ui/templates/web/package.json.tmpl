@@ -1,0 +1,17 @@
+{
+  "name": "{{ .Name }}-web",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "{{ .Name }} 前端骨架（schema-ui CLI 生成 · VP-023 六包面）",
+  "dependencies": {
+    "@magicvr/schema-ui-lib": "{{ .LibVersion }}",
+    "@magicvr/schema-ui-protocol": "{{ .ProtocolVersion }}",
+    "@magicvr/schema-ui-renderer": "{{ .RendererVersion }}",
+    "@magicvr/schema-ui-shell": "{{ .ShellVersion }}",
+    "@magicvr/schema-ui-theme": "{{ .ThemeVersion }}",
+    "@magicvr/schema-ui-ui": "{{ .UiVersion }}",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

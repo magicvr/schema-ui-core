@@ -34,7 +34,7 @@ import "@/components/invite-resend-dialog";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules",
+  "../../../api/modules",
 );
 
 interface ComponentRef {

@@ -18,38 +18,38 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { PageEntry } from "@/protocol/app-manifest";
 import { validatePageDocument } from "@/protocol/conformance/runtime-schema-validate";
 import { loadPageDocument } from "@/protocol/load-page";
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/dev/examples/schema",
+  "../../../api/modules/dev/examples/schema",
 );
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
   settings: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/settings/schema",
+    "../../../api/modules/settings/schema",
   ),
   activity: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/activity/schema",
+    "../../../api/modules/activity/schema",
   ),
   users: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/users/schema",
+    "../../../api/modules/users/schema",
   ),
   "users-invites": resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/users/schema",
+    "../../../api/modules/users/schema",
   ),
   roles: resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/roles/schema",
+    "../../../api/modules/roles/schema",
   ),
   "data-permission": resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../api/internal/modules/datapermission/schema",
+    "../../../api/modules/datapermission/schema",
   ),
 };
 

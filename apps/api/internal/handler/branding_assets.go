@@ -20,7 +20,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // BrandingAssetsOptions is the W9 processing policy; values are config-driven

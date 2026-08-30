@@ -4,8 +4,8 @@ id: VP-003-modular-admin-architecture
 title: 单主线模块化 Admin 架构
 status: closed
 lead_workspace: workspace-003-modular-admin-architecture
-vision_ref: schema-ui-core-admin-foundation@0.2.0
-closed_under_vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
+closed_under_vision_ref: schema-ui-core-admin-foundation@0.3.0
 created: 2026-08-04
 updated: 2026-08-06
 version: 0.2.0

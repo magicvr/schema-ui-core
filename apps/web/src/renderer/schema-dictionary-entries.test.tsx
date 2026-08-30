@@ -3,7 +3,7 @@
 // GOAL-015 · 数据字典内页（按类型过滤）+ 面包屑层级导航 — S3 验证证据。
 //
 // T-DE-01..T-DE-05 drive the REAL module-owned dictionary-entries page schema
-// (apps/api/internal/modules/datadictionary/schema/dictionary-entries.json)
+// (apps/api/modules/datadictionary/schema/dictionary-entries.json)
 // through the frozen §5 main render path, emulating the dictionary API:
 //   - T-DE-01: v2.9 data.route-binding (ADR-0039) — table dataSource params
 //     bind dictKey from $context.route.query.dictKey and the list request
@@ -26,14 +26,14 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 import type { ResourceItem } from "@/renderer/resource";
 
 const ENTRIES_SCHEMA_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/datadictionary/schema/dictionary-entries.json",
+  "../../../api/modules/datadictionary/schema/dictionary-entries.json",
 );
 
 function entriesDocument(): unknown {

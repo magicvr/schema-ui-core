@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 // driveGlobalLock opens the GLOBAL ceiling for username through real failed

@@ -11,7 +11,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib" // registers driver name "pgx"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // postgres implements kernel.Store for the postgres dialect. R2 delivers

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
 
 func newWalletSelfEnv(t *testing.T) (*authTestEnv, *walletServiceStub) {

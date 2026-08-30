@@ -20,20 +20,20 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 import type { ResourceItem } from "@/renderer/resource";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../api/internal/modules/dev/examples/schema",
+  "../../../api/modules/dev/examples/schema",
 );
 // R4 C3.3: users/roles schema documents are module-owned.
 const MODULE_FIXTURE_DIRS: Record<string, string> = {
-  users: resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/internal/modules/users/schema"),
-  "users-invites": resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/internal/modules/users/schema"),
-  roles: resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/internal/modules/roles/schema"),
+  users: resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/modules/users/schema"),
+  "users-invites": resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/modules/users/schema"),
+  roles: resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/modules/roles/schema"),
 };
 const WEB_SRC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 

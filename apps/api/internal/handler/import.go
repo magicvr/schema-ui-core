@@ -21,9 +21,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // maxImportBytes bounds the CSV body read from the uploaded file (D-002 `4).

@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-010-design-implementation-conformance
 title: 设计意图与实现符合性（持续对齐程序）
 status: active
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-08-13

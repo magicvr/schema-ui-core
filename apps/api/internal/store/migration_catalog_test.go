@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession/systemdata"
-	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/internal/modules/compiled"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
+	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 )
 
 // compiledMigrations is test-only compatibility for focused runner tests. The

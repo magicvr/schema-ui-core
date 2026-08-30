@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // maxUploadBytes bounds a single multipart upload (8 MiB); the server rejects

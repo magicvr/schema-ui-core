@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // LocalStore implements kernel.ObjectStore on the local filesystem.
@@ -110,13 +110,19 @@ func parseMeta(path string) kernel.ObjectMeta {
 // inside the same directory (atomic on all supported platforms); if the
 // sidecar cannot be written the body is removed again so a successful-looking
 // return never leaves an invisible object (W7 F-013 precedent).
+//
+// W15 F-007 (GOAL-016 A-001): directories are created 0700 and object files /
+// sidecars 0600 — the serving process is the only OS account that reads them,
+// so a same-host co-tenant cannot bypass the HTTP owner checks through the
+// filesystem. Existing files written by an earlier version are left untouched
+// (no migration churn); every new write is tightened.
 func (s *LocalStore) Put(_ context.Context, ns kernel.ObjectNamespace, id string, body []byte, meta kernel.ObjectMeta) error {
 	bodyPath, sidePath, err := s.objectPaths(ns, id)
 	if err != nil {
 		return err
 	}
 	dir := filepath.Dir(bodyPath)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
 	tmp, err := os.CreateTemp(dir, ".put-"+id+"-*.tmp")
@@ -134,7 +140,7 @@ func (s *LocalStore) Put(_ context.Context, ns kernel.ObjectNamespace, id string
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Chmod(tmpName, 0o644); err != nil {
+	if err := os.Chmod(tmpName, 0o600); err != nil {
 		return err
 	}
 	if err := os.Rename(tmpName, bodyPath); err != nil {
@@ -142,7 +148,7 @@ func (s *LocalStore) Put(_ context.Context, ns kernel.ObjectNamespace, id string
 	}
 	raw, err := metaFile(meta)
 	if err == nil {
-		err = os.WriteFile(sidePath, raw, 0o644)
+		err = os.WriteFile(sidePath, raw, 0o600)
 	}
 	if err != nil {
 		// Roll the object back: a stored body without its meta would be

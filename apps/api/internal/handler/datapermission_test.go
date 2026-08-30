@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datapermission/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
 )
 
 // fakeDataPermissionService is an in-memory DataPermissionService test double

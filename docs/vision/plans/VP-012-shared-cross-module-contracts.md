@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-012-shared-cross-module-contracts
 title: 共享横切契约与平台基架（Cross-module Contracts）
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-012-shared-cross-module-contracts
 created: 2026-08-18
 updated: 2026-08-19

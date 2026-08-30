@@ -18,9 +18,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/concurrency"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
-	walletstore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
+	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 

@@ -1,16 +1,16 @@
 ---
 title: 目标树 · workspace-017-outbound-mail
-status: active
+status: done
 created: 2026-08-22
-updated: 2026-08-24
+updated: 2026-08-30
 parent: null
-version: 1.0.0
+version: 1.0.1
 workspace_id: workspace-017-outbound-mail
 ---
 
 # 目标树 · 出站邮件
 
-> 工作区：`workspace-017-outbound-mail`
+> 工作区：`workspace-017-outbound-mail`（**done** · 2026-08-24 结项）
 > canonical：`docs/workspaces/workspace-017-outbound-mail/`
 > Root：`GOAL-001-outbound-mail`（**done · 8/8**；2026-08-24 用户否决旧关门并升级分母后，R5～R8 重开交付完毕，现行分母再关门审计 A-003/A-004 pass 放行）
 > primary_plan：`VP-017-outbound-mail`（v0.4.0 → v0.5.0 `closed`；VRev-041 / VRev-042）

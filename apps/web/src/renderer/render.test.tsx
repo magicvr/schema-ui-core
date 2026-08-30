@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "@/i18n/runtime";
 import { RenderPage, useSchemaCrud } from "@/renderer/render.tsx";
 import { registerCustomComponent } from "@/renderer/custom-components";
-import type { RenderMeta, RenderPageDocument } from "@/renderer/render";
+import type { RenderMeta, RenderPageDocument } from "@/renderer/render.types";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 

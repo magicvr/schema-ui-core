@@ -3,7 +3,7 @@ package store
 import (
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // OpenOptions carries the configured dialect connection surface (R1 v1.4 §2 /

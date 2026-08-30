@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 
 import { validatePageDocument } from "@/protocol/conformance/runtime-schema-validate";
 
-const MODULES = resolve(__dirname, "../../../api/internal/modules");
+const MODULES = resolve(__dirname, "../../../api/modules");
 
 function collectSchemaFiles(): Array<{ module: string; file: string; abs: string }> {
 	const out: Array<{ module: string; file: string; abs: string }> = [];

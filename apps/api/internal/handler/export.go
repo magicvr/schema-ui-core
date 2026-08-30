@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	authsession "github.com/magicvr/schema-ui-core/apps/api/internal/modules/authsession"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // maxExportRows is the documented export cap (D-002 `3): full exports beyond

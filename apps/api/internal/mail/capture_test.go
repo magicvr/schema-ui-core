@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // R3 evidence (workspace-017 GOAL-004 D-001): the embedded default sink keeps

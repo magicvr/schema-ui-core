@@ -12,7 +12,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 
@@ -20,7 +20,7 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 
 function loadDoc(rel: string): unknown {
 	return JSON.parse(
-		readFileSync(resolve(__dir, "../../../api/internal/modules/" + rel), "utf8"),
+		readFileSync(resolve(__dir, "../../../api/modules/" + rel), "utf8"),
 	);
 }
 

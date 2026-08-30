@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist-lib/@schema-ui/renderer",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@schemas/*": ["../../docs/schemas/*"]
+    },
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "src/renderer/index.ts",
+    "src/renderer/**/*.ts*",
+    "src/components/**/*.ts*",
+    "src/i18n/**/*.ts*",
+    "src/lib/**/*.ts",
+    "src/protocol/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/test-fixtures/**",
+    "src/protocol/upstream/**",
+    "src/components/**/*.test.tsx"
+  ]
+}

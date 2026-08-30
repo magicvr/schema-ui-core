@@ -1,7 +1,7 @@
 ---
 id: workspace-017-outbound-mail
 title: 出站邮件工作区
-status: active
+status: done
 root_goal: GOAL-001-outbound-mail
 canonical_scope: docs/workspaces/workspace-017-outbound-mail/
 shared_materials_catalog: none
@@ -10,14 +10,14 @@ plan_refs:
   - VP-017-outbound-mail
 primary_plan: VP-017-outbound-mail
 created: 2026-08-22
-updated: 2026-08-24
-version: 0.3.0
+updated: 2026-08-30
+version: 0.3.1
 parent: null
 ---
 
 # 工作区上下文 · 出站邮件
 
-本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`active`** · v0.4.0；2026-08-24 用户否决同日有界关门）的唯一 lead delivery workspace。
+本工作区是 [VP-017-outbound-mail](../../vision/plans/VP-017-outbound-mail.md)（**`closed`** · v0.5.0；2026-08-24 现行分母再关门 · VRev-041/VRev-042）的唯一 lead delivery workspace。**工作区已结项**（2026-08-24）：历史绑定保留，默认不接新区。
 
 - **Root** `GOAL-001-outbound-mail`：**`done` · 8/8**（2026-08-24 现行分母再关门放行：A-003 self pass + A-004 independent pass）。R5 合同 D-002 / R6 GOAL-007 / R7 GOAL-008 / R8 GOAL-009 均已关门。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
@@ -29,11 +29,11 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-017-outbound-mail` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-outbound-mail` | `parent: null`；交付目标；关门已否决 |
+| Root Goal | `GOAL-001-outbound-mail` | `parent: null`；**done** · 8/8（2026-08-24 现行分母再关门） |
 | canonical 范围 | `docs/workspaces/workspace-017-outbound-mail/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-017 lead；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-017-outbound-mail`（`active`） | 架构 A6 渠道升级 |
+| 规划对齐 | `primary_plan` = `VP-017-outbound-mail`（`closed` v0.5.0 · VRev-041/042） | 架构 A6 渠道升级 · 2026-08-24 现行分母再关门 |
 
 ## 愿景对齐
 

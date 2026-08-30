@@ -65,10 +65,10 @@ func TestModuleContributionPlaybookShippedContent(t *testing.T) {
 		"不要私建平行认证",
 		"不要把「按需能力」当成核心六项",
 		"不要做运行时插件",
-		"apps/api/internal/modules/users",
+		"apps/api/modules/users",
 		"apps/api/internal/composition/composition.go",
-		"apps/api/internal/kernel/profile.go",
-		"apps/api/internal/modules/compiled/persistence.go",
+		"apps/api/kernel/profile.go",
+		"apps/api/modules/compiled/persistence.go",
 	}
 	for _, snip := range requiredSnippets {
 		if !strings.Contains(body, snip) {
@@ -78,10 +78,10 @@ func TestModuleContributionPlaybookShippedContent(t *testing.T) {
 
 	// Cited real paths must exist on disk (not invented).
 	for _, rel := range []string{
-		"apps/api/internal/modules/users/provider.go",
+		"apps/api/modules/users/provider.go",
 		"apps/api/internal/composition/composition.go",
-		"apps/api/internal/kernel/profile.go",
-		"apps/api/internal/modules/compiled/persistence.go",
+		"apps/api/kernel/profile.go",
+		"apps/api/modules/compiled/persistence.go",
 		"docs/architecture/module-architecture.md",
 	} {
 		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); err != nil {

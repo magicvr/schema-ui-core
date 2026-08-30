@@ -25,8 +25,8 @@ architecture_boundary: module-architecture.md
 
 **不是**本文件职责：Goal Governance 元规则（[principles.md](principles.md) P-001～P-006）、workspace-protocol、默认代码脚手架、`AGENTS.md`/Skills 改写。
 
-参考正例（一方标准 Admin 功能模块）：`admin.users` → `apps/api/internal/modules/users/`（`provider.go`、`schema/`、`manifest/`）。  
-横切基础设施对照：`core.operationlog` → `apps/api/internal/modules/operationlog/`。
+参考正例（一方标准 Admin 功能模块）：`admin.users` → `apps/api/modules/users/`（`provider.go`、`schema/`、`manifest/`）。  
+横切基础设施对照：`core.operationlog` → `apps/api/modules/operationlog/`。
 
 ---
 
@@ -36,17 +36,17 @@ architecture_boundary: module-architecture.md
 
 | # | 必须完成项 | 落点 / 证据 |
 |---|------------|-------------|
-| M1 | **模块 id / 版本 / 内核 API 范围 / 依赖** | 实现 `kernel.Provider`：`Descriptor()` 返回稳定不可复用 `ID`、`Version`、`KernelAPIRange`、显式 `DependsOn`（可为空列表但必须声明）。契约类型：`apps/api/internal/kernel/module.go`。 |
+| M1 | **模块 id / 版本 / 内核 API 范围 / 依赖** | 实现 `kernel.Provider`：`Descriptor()` 返回稳定不可复用 `ID`、`Version`、`KernelAPIRange`、显式 `DependsOn`（可为空列表但必须声明）。契约类型：`apps/api/kernel/module.go`。 |
 | M2 | **核心六项贡献** | 标准 Admin 功能模块必须实现 HTTP、Schema、Authorization、Navigation、Manifest、Persistence（语义见 architecture §2.1）。通过 `Register(ctx, Registrar)` 注册；不得以「按需」永久缺省六项。 |
 | M3 | **组合根静态候选注册** | 在 `apps/api/internal/composition/composition.go` 将 Provider 纳入已编译候选集（静态 import + 按 `plan.HasModule(...)` 装配）。不得依赖运行时下载/插件加载。 |
-| M4 | **Profile / `modules.list` 成员关系** | 新模块若需进入默认 Profile，更新 `apps/api/internal/kernel/profile.go` 中 `profileDefaults`（`mvp` / `admin` 等）；custom 须显式 `app.modules`（list / preset）。解析优先级见 architecture §3 与 config。 |
-| M5 | **全局迁移台账参与** | 若模块拥有 schema 迁移：经 `apps/api/internal/modules/compiled/persistence.go` 的 `PersistenceProviders()` 参与 **全局** 不可变 checksum 台账；**不以是否启用以过滤迁移**（architecture §4.1）。无迁移时 `CompiledPersistence()` 可返回空，但仍须声明 Persistence 能力语义。 |
-| M6 | **验证 / 回归最小集** | 至少：模块级 Provider/契约测试；依赖/冲突 fail-closed；相关 Profile 启动路径；页面/权限/导航可观察。仓库范例：`apps/api/internal/modules/users/provider_test.go`、`apps/api/internal/kernel/provider_test.go`、`apps/api/internal/composition/composition_test.go`。 |
+| M4 | **Profile / `modules.list` 成员关系** | 新模块若需进入默认 Profile，更新 `apps/api/kernel/profile.go` 中 `profileDefaults`（`mvp` / `admin` 等）；custom 须显式 `app.modules`（list / preset）。解析优先级见 architecture §3 与 config。 |
+| M5 | **全局迁移台账参与** | 若模块拥有 schema 迁移：经 `apps/api/modules/compiled/persistence.go` 的 `PersistenceProviders()` 参与 **全局** 不可变 checksum 台账；**不以是否启用以过滤迁移**（architecture §4.1）。无迁移时 `CompiledPersistence()` 可返回空，但仍须声明 Persistence 能力语义。 |
+| M6 | **验证 / 回归最小集** | 至少：模块级 Provider/契约测试；依赖/冲突 fail-closed；相关 Profile 启动路径；页面/权限/导航可观察。仓库范例：`apps/api/modules/users/provider_test.go`、`apps/api/kernel/provider_test.go`、`apps/api/internal/composition/composition_test.go`。 |
 
 ### 1.1 推荐目录骨架（与现网一致）
 
 ```text
-apps/api/internal/modules/<short-name>/
+apps/api/modules/<short-name>/
   provider.go          # kernel.Provider：Descriptor + Register + CompiledPersistence
   provider_test.go
   schema/              # 页面 Schema 文档与贡献
@@ -58,13 +58,13 @@ apps/api/internal/modules/<short-name>/
 
 ```text
 apps/api/internal/composition/composition.go   # Fx 组合根、静态 import Provider
-apps/api/internal/kernel/                      # Module / Provider / Registrar / Profile
-apps/api/internal/modules/compiled/            # 全局迁移收集（全候选）
+apps/api/kernel/                      # Module / Provider / Registrar / Profile
+apps/api/modules/compiled/            # 全局迁移收集（全候选）
 ```
 
 ### 1.2 最小 Register 覆盖（对照 `admin.users`）
 
-正例 `apps/api/internal/modules/users/provider.go` 展示了标准 Admin 模块在 `Register` 中应覆盖的六面：
+正例 `apps/api/modules/users/provider.go` 展示了标准 Admin 模块在 `Register` 中应覆盖的六面：
 
 1. **HTTP** — `reg.HTTP(...)` 路由（如 `/api/users`）
 2. **Schema** — `reg.Schema(PageContribution{... Document: ...})`
@@ -106,11 +106,11 @@ apps/api/internal/modules/compiled/            # 全局迁移收集（全候选�
 
 ```text
 1. 是否为全站稳定基础契约（配置/日志/DB/HTTP 生命周期/认证授权接口/模块协议）？
-   → 是：薄内核（apps/api/internal/kernel、config、store、auth 等）
+   → 是：薄内核（apps/api/kernel、config、store、auth 等）
 2. 是否仅为「静态 import、解析 Profile、装配 Provider、生命周期编排」？
    → 是：组合根（apps/api/internal/composition）
 3. 是否为可装配的一方业务/产品能力（有稳定 module id，可被 Profile 启停暴露）？
-   → 是：独立（或既有）模块 apps/api/internal/modules/<name>
+   → 是：独立（或既有）模块 apps/api/modules/<name>
 4. 是否仅为某模块内部实现细节（私有 repo、helper）？
    → 是：模块内 util；不提升为内核 API
 5. 是否横切且始终启用、无标准管理 UI 要求？

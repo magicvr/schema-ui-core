@@ -1,0 +1,6 @@
+# schema-ui 六包消费指向（VP-024 R2 · 2026-08-29）：npmjs.com 公开发布 · 免凭据。
+# 正向钉死 @magicvr scope → npmjs：覆盖任何用户级 GH Packages 残留映射
+# （VP-023 时代 pnpm config set --location=user 留下的条目；否则 pnpm 会
+# 按用户级映射拉私有 GH Packages tarball 并需 token）。
+@magicvr:registry=https://registry.npmjs.org
+# 历史：R1 · VP-023 曾用 @magicvr:registry=https://npm.pkg.github.com（私有认证面）。

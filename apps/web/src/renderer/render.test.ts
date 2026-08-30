@@ -12,7 +12,7 @@ import {
   tableActionGate,
   type RenderFormNode,
   type RenderRecordViewNode,
-} from "@/renderer/render";
+} from "@/renderer/render.types";
 
 const CONTEXT = { user: { roles: ["admin"] }, features: { audit: true } };
 

@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-006-full-protocol-contract-v2-7-0
 title: schema-ui-docs@v2.7.0 整份契约可验证兼容
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 lead_workspace: workspace-005-full-protocol-contract-v2-7-0
 created: 2026-08-08
 updated: 2026-08-10

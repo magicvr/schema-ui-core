@@ -14,9 +14,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/kernel"
-	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/internal/modules/datadictionary/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/modules/operationlog"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // DictionaryRepository is the persistence boundary consumed by the two

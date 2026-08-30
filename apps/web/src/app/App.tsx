@@ -48,7 +48,7 @@ import {
   stripPathQuery,
 } from "@/protocol/app-manifest";
 import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
-import type { RenderPageDocument } from "@/renderer/render";
+import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
 import { HostFailureScreen } from "@/app/HostFailureScreen";

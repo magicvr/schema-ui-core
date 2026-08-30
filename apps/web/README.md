@@ -65,8 +65,8 @@ npm run build   # tsc -b && vite build
 Pages are Schema documents owned by a Go module (`GET /api/schema/{pageId}`)
 and rendered through the schema-driven default path
 (`manifest route → loadPageDocument → RenderPage`). New/adjusted pages add a
-document under the owning module schema package (core examples are in
-`apps/api/internal/modules/schemarender/schema/`) and a Provider contribution;
+document under the owning module schema package (canonical fixture root
+`apps/api/modules/`; core examples in `apps/api/modules/dev/examples/schema/`) and a Provider contribution;
 the Renderer main path
 stays generic (T-UI-10).
 

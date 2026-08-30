@@ -3,7 +3,7 @@ doc_type: vision-plan
 id: VP-002-production-admin-foundation
 title: 生产级可用 Admin 基架
 status: closed
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+vision_ref: schema-ui-core-admin-foundation@0.3.0
 closed_under_vision_ref: schema-ui-core-admin-foundation@0.1.0
 lead_workspace: workspace-002-production-admin-foundation
 created: 2026-08-01
@@ -174,7 +174,7 @@ VP-002 只有在以下方向级标准全部满足时，才可提出关闭：
 
 ## 治理与落盘边界
 
-- 唯一现行 Charter 已 re-align 为 `schema-ui-core-admin-foundation@0.2.0`；本 VP 的历史关门版本由 `closed_under_vision_ref` 保留。
+- 唯一现行 Charter 已 re-align 为 `schema-ui-core-admin-foundation@0.3.0`；本 VP 的历史关门版本由 `closed_under_vision_ref` 保留。
 - VP-001 与 GOAL-001 保持历史关闭状态。
 - 本 VP 于 2026-08-01 从 `planned` 激活为 `active`，并绑定 `workspace-002-production-admin-foundation` 为当前唯一 lead workspace。
 - 新工作区角色为 `delivery`；仓库级 `primary_workspace` 仍为 `workspace-001-mvp-admin-foundation`，不改写 Charter 或历史交付树。
