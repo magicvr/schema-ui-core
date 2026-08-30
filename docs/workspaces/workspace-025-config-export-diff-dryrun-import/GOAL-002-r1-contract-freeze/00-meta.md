@@ -46,7 +46,7 @@ serves_summary: 承载 VP-025 R1 阶段：把 serve 壳配置树收成可核对�
 | I-025-001 | required | 配置包内容边界与密钥处理 | 方案冻结 + 判据 #1 | R1 | 用户裁决 | **verified** | — | 2026-08-30 用户裁决：非敏感结构键全集；env 引用保留 `$VAR` 形态不解析；敏感键导出为占位 + `secrets.exclude` 清单；导入 fail-closed（缺 env 即拒绝）（D-001 accepted；合同 §1/§3） |
 | I-025-002 | required | 落地形态：CLI vs 管理面 | 方案冻结 | R1 | 用户裁决 | **verified** | — | 2026-08-30 用户裁决：**CLI 主路径**（`schema-ui config export/diff/dry-run/import`）；管理面本波不做（VP-007 Settings 不重开）；yaml/json 双格式 + diff 机器可读（D-001 accepted；合同 §2） |
 | I-025-003 | non-blocking | diff 语义与输出格式 | 判据 #2 | R2 | lead 提案 + 用户确认 | **verified** | — | 随裁决确认（用户采纳建议）：规范化键级差量 + yaml/json 双输出 + 退出码 0/1/2（D-001；合同 §2.2） |
-| I-025-004 | required | 导入失败快照/回滚语义 | 判据 #4 | R3 | 用户裁决（R3 前置） | open（待裁决） | R3 前复核 | 本合同 §7 仅边界预告 |
+| I-025-004 | required | 导入失败快照/回滚语义 | 判据 #4 | R3 | 用户裁决（R3 前置） | **verified** | — | 2026-08-30 用户 GUI 裁决**方案 A**（GOAL-004 D-002 冻结 · 原子替换 + 应用前备份）；本合同 §7 当时仅边界预告 |
 
 ## 父目标
 

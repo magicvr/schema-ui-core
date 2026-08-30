@@ -16,8 +16,8 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | open | I-025-001 / I-025-002（R1 前置）与 I-025-004（R3 前置）待用户裁决；I-025-005 registered（冻结不进） |
-| 到期 required 是否已 verified / residual | 未到期 | R1 合同冻结前必须完成 I-025-001/002 裁决，否则阻断方案冻结 |
+| 影响本 scope 的 I-00N | closed | I-025-001/002/003（R1 裁决）与 I-025-004（2026-08-30 用户裁决方案 A）均 `verified`；I-025-005 `registered`（冻结不进） |
+| 到期 required 是否已 verified / residual | 已闭合 | 全部已裁决闭合（见上）；A-002 required（F-001/002/003）响应详见 A-002 响应节 |
 | 资料引用（若有）是否固定且用户确认 | 无 | shared_materials_catalog = none |
 
 ## 意见台账索引
@@ -25,7 +25,8 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-30 | self | Root 关门（R1～R4 全链 · 合同↔实现↔判据↔信息台账） | pass | 0 | `03-audit/A-001-self-closeout.md` |
+| A-002 | 2026-08-30 | independent | Root 关门就绪（VP-025 六判据 / 合同↔实现 / 红线 / I-025-001～005 / 测试证据） | conditional | **0**（F-001/002/003 fixed · F-004～008 fixed） | `03-audit/A-002-r4-closeout-independent.md` |
 
 ## 结论状态
 
-关门双审进行中：A-001 self `pass`（0 required）；A-002 grok build independent 后台运行中（项目级路径 · `/audit`），合流后合并响应（P-003）。独立意见不直接改 `status` / `progress`；最终关门 = 用户书面确认。
+关门双审已落盘：A-001 self `pass`（0 required）；A-002 grok-build independent **`conditional`**（开放 required = F-001 / F-002 / F-003）。独立意见不直接改 `status` / `progress`；合并响应与 required 三路径闭合走 `/govern`。最终关门 = 用户书面确认。

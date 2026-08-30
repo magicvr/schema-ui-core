@@ -369,6 +369,132 @@ func TestImportDefaultFile(t *testing.T) {
 	}
 }
 
+// F-001（A-002）对抗用例：手改包携带明文敏感键必须被拒绝，且永不输出明文。
+func plaintextSecretPkg(t *testing.T, name string) string {
+	t.Helper()
+	return writeTemp(t, name, `package:
+  format: schema-ui-config-package
+  version: 1
+  app: schema-ui-app
+  env: development
+  profile: admin
+  exported_at: "2026-08-30T00:00:00Z"
+config:
+  app:
+    env: ${APP_ENV:-development}
+  auth:
+    jwt_secret: supersecret-plaintext
+    access_ttl: 15m
+  http:
+    addr: "127.0.0.1:25080"
+  profile: admin
+secrets:
+  exclude: []
+`)
+}
+
+func TestDryRunRejectsPlaintextSecret(t *testing.T) {
+	importEnv(t)
+	pkgPath := plaintextSecretPkg(t, "leak.yaml")
+	report, err := dryRun(pkgPath, "")
+	if err == nil {
+		t.Fatal("expected precheck failure for plaintext secret")
+	}
+	hit := false
+	for _, c := range report.Checks {
+		if c.Status == "fail" && strings.Contains(c.Path, "jwt_secret") {
+			hit = true
+		}
+	}
+	if !hit {
+		t.Errorf("no fail check for plaintext secret: %+v", report.Checks)
+	}
+	for _, ch := range report.Changes {
+		if strings.Contains(ch.Old, "supersecret") || strings.Contains(ch.New, "supersecret") {
+			t.Errorf("plaintext leaked into changes: %+v", ch)
+		}
+	}
+	err = cmdConfigDryRun([]string{pkgPath})
+	var ce *cliError
+	if !errors.As(err, &ce) || ce.code != 1 {
+		t.Errorf("cmdConfigDryRun err = %v, want cliError code 1", err)
+	}
+}
+
+func TestImportRejectsPlaintextSecret(t *testing.T) {
+	importEnv(t)
+	dir := t.TempDir()
+	pkgPath := plaintextSecretPkg(t, "leak.yaml")
+	target := filepath.Join(dir, "config.yaml")
+	err := cmdConfigImport([]string{pkgPath, "-file", target})
+	var ce *cliError
+	if !errors.As(err, &ce) || ce.code != 1 {
+		t.Fatalf("err = %v, want cliError code 1", err)
+	}
+	if _, statErr := os.Stat(target); !os.IsNotExist(statErr) {
+		t.Error("target created despite plaintext secret")
+	}
+}
+
+// F-002（A-002）对抗用例：类型/区间非法（read_timeout: banana）在 dry-run 即失败。
+func TestDryRunTypeRangeCheck(t *testing.T) {
+	importEnv(t)
+	bad := writeTemp(t, "banana.yaml", `package:
+  format: schema-ui-config-package
+  version: 1
+  app: schema-ui-app
+  env: development
+  profile: admin
+  exported_at: "2026-08-30T00:00:00Z"
+config:
+  app:
+    env: ${APP_ENV:-development}
+  http:
+    addr: "127.0.0.1:25080"
+    read_timeout: banana
+  profile: admin
+secrets:
+  exclude: []
+`)
+	err := cmdConfigDryRun([]string{bad})
+	var ce *cliError
+	if !errors.As(err, &ce) || ce.code != 1 {
+		t.Fatalf("err = %v, want cliError code 1 (type check)", err)
+	}
+	report, _ := dryRun(bad, "")
+	hit := false
+	for _, c := range report.Checks {
+		if c.Status == "fail" && strings.Contains(c.Message, "type") {
+			hit = true
+		}
+	}
+	if !hit {
+		t.Errorf("no type/range fail check: %+v", report.Checks)
+	}
+}
+
+func TestDryRunStillZeroSideEffects(t *testing.T) {
+	importEnv(t)
+	// 类型校验用系统 temp 文件（loadCheckText），不得在目标目录产生文件。
+	dir := t.TempDir()
+	pkgPath := exportToFile(t, filepath.Join(dir, "pkg.yaml"))
+	src := writeTemp(t, "target.yaml", "app:\n  env: ${APP_ENV:-development}\nhttp:\n  addr: \"0.0.0.0:27080\"\n")
+	before, _ := os.ReadFile(src)
+	if _, err := dryRun(pkgPath, src); err != nil {
+		t.Fatalf("dryRun: %v", err)
+	}
+	after, _ := os.ReadFile(src)
+	if string(before) != string(after) {
+		t.Error("dry-run modified the target file")
+	}
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		if strings.Contains(e.Name(), ".tmp") || strings.Contains(e.Name(), "schema-ui-") {
+			t.Errorf("dry-run left artifact in target dir: %s", e.Name())
+		}
+	}
+}
+
 // ---- diff ----
 
 func TestDiffIdenticalAndIgnoredMeta(t *testing.T) {
@@ -500,11 +626,11 @@ func TestDiffErrors(t *testing.T) {
 	} else if ce2, ok := err.(*cliError); !ok || ce2.code != 2 {
 		t.Errorf("arg error = %#v, want cliError code 2", err)
 	}
-	// dry-run / import 占位（R3）
+	// dry-run / import 已实现（R3）：对不存在的包路径 = 工具错误（code 2）。
 	for _, sub := range []string{"dry-run", "import"} {
 		err := cmdConfig([]string{sub, "x.yaml"})
 		if ce2, ok := err.(*cliError); !ok || ce2.code != 2 {
-			t.Errorf("%s placeholder = %#v, want cliError code 2", sub, err)
+			t.Errorf("%s missing-file err = %#v, want cliError code 2", sub, err)
 		}
 	}
 	if err := cmdConfig(nil); err == nil {

@@ -21,7 +21,7 @@ version: 0.1.0
 | I-025-001 | required | 配置包内容边界与密钥处理 | 方案冻结 + 判据 #1 | R1 | 用户裁决 | **verified** | — | 2026-08-30 用户裁决（GOAL-002 D-001 accepted · 合同 §1/§3） |
 | I-025-002 | required | 落地形态（CLI vs 管理面 vs 两者） | 方案冻结 | R1 | 用户裁决 | **verified** | — | 2026-08-30 用户裁决：CLI 主路径（GOAL-002 D-001 accepted · 合同 §2） |
 | I-025-003 | non-blocking | diff 语义与输出格式 | 判据 #2 | R2 | lead 建议 + 用户确认 | **verified** | — | 随裁决确认（GOAL-002 D-001 accepted · 合同 §2.2） |
-| I-025-004 | required | 导入失败快照/回滚语义 | 判据 #4 | R3 | 用户裁决 | open（待裁决） | R3 前复核 | 合同 §2.4/§7 边界预告 |
+| I-025-004 | required | 导入失败快照/回滚语义 | 判据 #4 | R3 | 用户裁决 | **verified** | — | 2026-08-30 用户 GUI 裁决方案 A（GOAL-004 D-002 冻结） |
 | I-025-005 | required（投影） | Profile 默认集/Manifest 红线 | 退出分母 | R1 | 冻结不进（台账投影） | **registered** | — | VP-025 §边界 |
 
 ## 决策索引

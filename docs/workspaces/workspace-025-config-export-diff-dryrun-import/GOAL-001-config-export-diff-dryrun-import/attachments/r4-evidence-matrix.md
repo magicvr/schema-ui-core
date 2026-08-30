@@ -13,7 +13,8 @@
 
 ## 回归与实证汇总
 
-- 单元测试：`apps/api/cmd/schema-ui/configpkg_test.go` **18 用例全绿**（export×4 · dry-run×4 · import×4 · diff×6）
-- 全量回归：`go test ./...`（apps/api 49 包）PASS（R2/R3 各轮复核）
-- CLI 端到端：export（产物形态）→ diff（0/1 退出码）→ dry-run（0/1 · fail-closed）→ import（往返 diff `[]` · `.bak` 生成 · 失败不破坏）——全部实证留痕于各 E 条目
-- Checkpoints：cf68c7ce → 70e9ecd7 → 48ba2ebd → 0f60fbc1 → 9983f206 → 98d33cc2 → f542c677（→ R4 追加）
+- 单元测试：`apps/api/cmd/schema-ui/configpkg_test.go` **22 用例全绿**（export×4 · dry-run×6 · import×5 · diff×6（5 个 TestDiff* + TestRoundtrip）· 对抗×1+1）——其中 F-001（plaintext secret 拒绝 ×2）与 F-002（type/range + 零副作用 ×2）为 A-002 响应后新增
+- 全量回归：`go test ./...`（apps/api 49 包）PASS（R2/R3 各轮复核）+ **web vitest 90 文件 / 1186 用例 PASS**（A-002 F-008 响应 · 变更面不含 web）
+- CLI 端到端：export（产物形态）→ diff（0/1 退出码）→ dry-run（0/1 · fail-closed · 类型校验）→ import（往返 diff `[]` · `.bak` 生成 · 失败不破坏 · 明文包拒绝）——全部实证留痕于各 E 条目
+- **serve 进程级实证**（A-002 F-006 响应）：import 生成的配置启动 `schema-ui serve`（profile=admin · 8 modules）→ `/healthz` **200** `{"status":"ok",...}`
+- Checkpoints：cf68c7ce → 70e9ecd7 → 48ba2ebd → 0f60fbc1 → 9983f206 → 98d33cc2 → f542c677 → 6a495a24（→ R4 A-002 响应批）

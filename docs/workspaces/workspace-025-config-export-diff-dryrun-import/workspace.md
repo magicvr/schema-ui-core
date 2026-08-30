@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-025-config-export-diff-dryrun-import](../../vision/plans/VP-025-config-export-diff-dryrun-import.md)（**`active`** v0.2.0 · 2026-08-30 用户书面确认激活）的唯一 lead delivery workspace。**Admin 功能分支**（基架能力剩余 #3 · roadmap 明文点名「其后非门控未立项」）：在 RT-K01 配置系统（YAML + env 插值 · 密钥 fail-closed）与 VP-023/024 CLI/包产线之上，把「配置包导出 / diff / dry-run / 导入」收成可核对的 Admin 合同。**工作区已开区**（2026-08-30）：Root `active · 3/4`（R1 合同冻结 **已关门**（配置包合同 v0.1.0）· R2 导出+diff **已关门**（configpkg.go · 判据 #1/#2）· R3 dry-run+导入 **已关门**（方案 A · 判据 #3/#4）；R4 证据与关门待启动）。
 
-- **Root** `GOAL-001-config-export-diff-dryrun-import`：**`active`** · 0/4（R1 合同冻结 → R2 导出+diff → R3 dry-run+导入 → R4 证据与关门，纲领见 Root `00-meta.md`）。
+- **Root** `GOAL-001-config-export-diff-dryrun-import`：**`active`** · 3/4（R1 合同冻结 · R2 导出+diff · R3 dry-run+导入 均已关门；R4 证据与关门进行中（GOAL-005 2/3），纲领见 Root `00-meta.md`）。
 - 激活门禁已满足（2026-08-30）：[VRev-054](../../vision/reviews/VRev-054-vp025-activation.md) self `pass`（0 required；V-F089/V-F090/V-F091 recommended → 开区事务内 fixed）；**Admin 类轻量 freshness PASS**（`c9122478` → `055da2fd`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更）不暂挂 `go`。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - **消费基线**：RT-K01 配置系统 · VP-023/024 CLI 产线（`schema-ui create/add/upgrade/migrate-fork`）与六包 · `apps/api/v0.3.0`。**对象面 = serve 壳配置树**：`apps/api/server/config.default.yaml`（内嵌默认 · `profile: admin`）· `server/config.go` 装载（env 插值 `$VAR` fail-closed / `$VAR:-default`）· 骨架模板 `config.yaml.tmpl`。

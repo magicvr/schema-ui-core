@@ -37,7 +37,7 @@ serves_summary: 配置包导出 / diff / dry-run / 导入（Admin 功能分支 �
 | R1 | 合同冻结（判据 #5/6 边界）：配置包内容边界（I-025-001）· 落地形态（I-025-002）· diff/dry-run 语义基线 | **已关门**（2026-08-30 · GOAL-002 done 3/3 · A-001 self `pass` · 配置包合同 v0.1.0 冻结（D-002）；I-025-001/002/003 `verified`；I-025-004 预告 R3） |
 | R2 | 导出 + diff（判据 #1/2） | 依赖 R1 | **已关门**（2026-08-30 · GOAL-003 done 3/3 · A-001 self `pass`（0 required）· configpkg.go 实现 · 10 用例 + 全量 49 包 + CLI 冒烟 exit 0/1 实证；判据 #1/#2 本阶段交付） |
 | R3 | dry-run + 导入（判据 #3/4；I-025-004 前置裁决） | 依赖 R2 | **已关门**（2026-08-30 · GOAL-004 done 3/3 · A-001 self `pass`（0 required）· dry-run 三件套 + import 方案 A（用户裁决）· 18 用例 + 全量 49 包 + 往返冒烟 diff `[]`；判据 #3/#4 交付） |
-| R4 | 证据与关门（判据 #6） | 依赖 R1–R3 | **待启动**（GOAL-005 候选 · 设计见 D-004：证据矩阵 / 越界核账 / 双审 self+grok build / VRev-055 / 用户书面确认） |
+| R4 | 证据与关门（判据 #6） | 依赖 R1–R3 | **进行中**（GOAL-005-r4-evidence-closeout **active · 2/3**：C1 证据矩阵 + 越界核账已关门 · C2 A-001 self `pass` 已关门 · C3 grok build A-002 `conditional`（F-001/002/003 required 响应中）→ VRev-055 → 用户书面确认） |
 
 ## 信息就绪与未知项（P-005）
 
