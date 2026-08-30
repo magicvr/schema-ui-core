@@ -22,7 +22,9 @@ version: 0.1.0
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-08-30 | independent | 本次 `apps/api` + `apps/web` 代码审计及验证基线 | conditional | 6 | [A-001-w15-independent-intake.md](03-audit/A-001-w15-independent-intake.md) |
+| A-002 | 2026-08-30 | self | W15 S3～S5 实现复核（F-001～F-007 + 回归） | pass | 0 | [A-002-w15-self-s34.md](03-audit/A-002-w15-self-s34.md) |
 
 ## 结论状态
 
-已将独立审计发现作为 W15 修正分母登记；没有 finding 被标记为 fixed、accepted-residual 或 user-overruled。项目约定的 provider-specific independent 复核尚未执行。
+- A-001（independent）6 required + 1 recommended 已全部实现并有回归证据（E-001～E-003；checkpoint `609cd6d6`）；正式的 fixed 标记在 A-003 independent 复核后由编排器响应节（A-004）按 P-003 三路径闭合。
+- A-002（self）pass；无开放必改项。项目约定的 provider-specific independent 复核（A-003 · grok build · grok-4.6 · high）待执行。
