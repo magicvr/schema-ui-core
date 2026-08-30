@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -92,6 +93,42 @@ func TestLocalNotFoundSentinel(t *testing.T) {
 	}
 	if _, err := s.Stat(ctx, kernel.ObjectNamespaceAvatars, idB); !errors.Is(err, kernel.ErrObjectNotFound) {
 		t.Fatalf("stat miss err = %v, want errors.Is ErrObjectNotFound", err)
+	}
+}
+
+// W15 F-007 (GOAL-016 A-001): directories are 0700 and object files/sidecars
+// 0600, so a same-host co-tenant OS account cannot read objects through the
+// filesystem. Windows reports 0666-style modes for its emulated perms, so the
+// assertion only runs where the OS honors POSIX modes (darwin/linux/bsd).
+func TestLocalPutTightenedUnixPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX file modes are not enforced on Windows")
+	}
+	s, _ := newTestStore(t)
+	ctx := context.Background()
+	if err := s.Put(ctx, kernel.ObjectNamespaceUploads, idA, []byte("secret-bytes"), kernel.ObjectMeta{
+		Name: "notes.txt", Type: "text/plain", Owner: "user-1",
+	}); err != nil {
+		t.Fatalf("put: %v", err)
+	}
+	dir := filepath.Join(s.Root(), string(kernel.ObjectNamespaceUploads))
+	bodyPath := filepath.Join(dir, idA)
+	sidePath := bodyPath + ".meta.json"
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o700 {
+		t.Errorf("directory mode = %o, want 0700", got)
+	}
+	for name, path := range map[string]string{"body": bodyPath, "sidecar": sidePath} {
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o600 {
+			t.Errorf("%s mode = %o, want 0600", name, got)
+		}
 	}
 }
 

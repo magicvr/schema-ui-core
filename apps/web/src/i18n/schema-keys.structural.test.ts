@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const MODULES = resolve(__dir, "../../../api/internal/modules");
+const MODULES = resolve(__dir, "../../../api/modules");
 
 const SCHEMA_FILES = [
   "dev/examples/schema/overview.json",
@@ -138,16 +138,16 @@ describe("S2 · F-V029 denominator schema key completeness", () => {
   it("manifest titleKey/labelKey used by the served manifests exist in both catalogs", () => {
     const manifestFiles = [
       "apps/api/internal/manifest/app-manifest.json",
-      "apps/api/internal/modules/users/manifest/fragment.json",
-      "apps/api/internal/modules/roles/manifest/fragment.json",
-      "apps/api/internal/modules/settings/manifest/fragment.json",
-      "apps/api/internal/modules/activity/manifest/fragment.json",
-      "apps/api/internal/modules/account/manifest/fragment.json",
-      "apps/api/internal/modules/dashboard/manifest/fragment.json",
-      "apps/api/internal/modules/filelibrary/manifest/fragment.json",
-      "apps/api/internal/modules/datadictionary/manifest/fragment.json",
-      "apps/api/internal/modules/systemmonitoring/manifest/fragment.json",
-      "apps/api/internal/modules/scheduledtasks/manifest/fragment.json",
+      "apps/api/modules/users/manifest/fragment.json",
+      "apps/api/modules/roles/manifest/fragment.json",
+      "apps/api/modules/settings/manifest/fragment.json",
+      "apps/api/modules/activity/manifest/fragment.json",
+      "apps/api/modules/account/manifest/fragment.json",
+      "apps/api/modules/dashboard/manifest/fragment.json",
+      "apps/api/modules/filelibrary/manifest/fragment.json",
+      "apps/api/modules/datadictionary/manifest/fragment.json",
+      "apps/api/modules/systemmonitoring/manifest/fragment.json",
+      "apps/api/modules/scheduledtasks/manifest/fragment.json",
     ];
     const unknown: string[] = [];
     const keys: string[] = [];

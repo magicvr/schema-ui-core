@@ -20,7 +20,7 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 
 function loadDoc(rel: string): unknown {
 	return JSON.parse(
-		readFileSync(resolve(__dir, "../../../api/internal/modules/" + rel), "utf8"),
+		readFileSync(resolve(__dir, "../../../api/modules/" + rel), "utf8"),
 	);
 }
 

@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -118,5 +119,31 @@ func TestRunRejectsBadConfig(t *testing.T) {
 	// server.Serve / Run 对 nil Config fail-closed。
 	if _, err := Run(context.Background(), Options{}, nil); err == nil {
 		t.Error("Run(nil Config) should fail")
+	}
+}
+
+// W15 F-003 (GOAL-016 A-001): a production bootstrap seed that violates the
+// frozen 8–72 byte policy must fail startup BEFORE the listener comes up —
+// the seed is hashed only after the policy check.
+func TestRunRejectsWeakSeedPasswordNonDev(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("AUTH_JWT_SECRET", "0123456789abcdef0123456789abcdef")
+	t.Setenv("ADMIN_INITIAL_PASSWORD", "weak")
+	cfg, err := LoadConfig("")
+	if err != nil {
+		t.Fatalf("LoadConfig(production) with compliant secret should load (weak seed check happens at bootstrap): %v", err)
+	}
+	cfg.HTTPAddr = "127.0.0.1:0"
+	cfg.DBPath = filepath.Join(t.TempDir(), "weak-seed.db")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if _, err := Run(ctx, Options{
+		Config: cfg,
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+	}, nil); err == nil {
+		t.Fatal("production bootstrap with a 4-byte seed must fail closed")
+	} else if !strings.Contains(err.Error(), "bootstrap seed password") {
+		t.Fatalf("error = %v, want bootstrap seed password policy failure", err)
 	}
 }

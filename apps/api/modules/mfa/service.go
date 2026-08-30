@@ -333,7 +333,19 @@ func (s *Service) requireActiveSecondFactor(userID, code, recoveryCode string, n
 		return nil
 	}
 	plain, fromPrevious := s.decryptSecret(st.SecretCiphertext)
-	if _, ok := ValidateTotp(plain, code, now, totpWindow, st.LastUsedStep); !ok {
+	step, ok := ValidateTotp(plain, code, now, totpWindow, st.LastUsedStep)
+	if !ok {
+		return ErrMFAInvalid
+	}
+	// W15 F-004 (GOAL-016 A-001): the step-up path must advance the replay
+	// watermark exactly like the login path — the CAS winner proceeds, a
+	// same-window replay or concurrent double-submit loses the guarded UPDATE
+	// and is rejected instead of being accepted twice.
+	advanced, advErr := s.repo.AdvanceLastUsedStep(userID, step, now)
+	if advErr != nil {
+		return advErr
+	}
+	if !advanced {
 		return ErrMFAInvalid
 	}
 	// W11 F-004: a rotation-window decrypt re-wraps on any successful

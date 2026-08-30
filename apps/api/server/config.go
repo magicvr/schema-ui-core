@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -105,7 +106,7 @@ func LoadConfig(path string) (*Config, error) {
 		AppName:           "schema-ui-app",
 		AppEnv:            "",
 		LogLevel:          "info",
-		HTTPAddr:          ":25080",
+		HTTPAddr:          "127.0.0.1:25080", // W15 F-001: loopback default; LAN exposure requires explicit config
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       60 * time.Second,
@@ -256,6 +257,12 @@ func parseDurationStrict(v string) (time.Duration, error) {
 
 // validate 实施 fail-closed 规则（镜像主仓 ValidateProd 的必要子集）。
 func (c *Config) validate() error {
+	// W15 F-001: an explicitly declared APP_ENV is mandatory; the embedded
+	// default pins "development", so only a custom YAML that omits app.env
+	// reaches this gate. Never guess an environment from silence.
+	if c.AppEnv == "" {
+		return errors.New("server: APP_ENV must be set explicitly (development for local runs, production for deployments); refusing to guess")
+	}
 	if c.HTTPAddr == "" {
 		return errors.New("server: http.addr must not be empty")
 	}
@@ -286,9 +293,17 @@ func (c *Config) validate() error {
 			return fmt.Errorf("server: invalid http.trusted_proxies entry %q", cidr)
 		}
 	}
-	dev := c.AppEnv == "" || c.AppEnv == "development"
+	dev := c.AppEnv == "development"
 	if !dev && c.AuthJWTSecret == "" {
 		return errors.New("server: AUTH_JWT_SECRET must be set in non-development environment")
+	}
+	// W15 F-002: reuse the main production HS256 bar (≥32 chars + letters and
+	// digits) as a single source — a short or guessable key must not silently
+	// start the public serve surface.
+	if !dev {
+		if err := config.ValidateJWTSecretStrength("AUTH_JWT_SECRET", c.AuthJWTSecret); err != nil {
+			return fmt.Errorf("server: %w", err)
+		}
 	}
 	if !dev && c.AdminInitialPassword == "" {
 		return errors.New("server: ADMIN_INITIAL_PASSWORD must be set to seed the initial admin user in non-development environment")

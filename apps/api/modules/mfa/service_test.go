@@ -209,6 +209,43 @@ func TestServiceExpiredProof(t *testing.T) {
 	}
 }
 
+// W15 F-004 (GOAL-016 A-001): the self-service step-up path (disable /
+// recovery rotation / self-recovery gate) must advance the TOTP replay
+// watermark like the login path. The same code resubmitted inside the window
+// is rejected on the second use instead of succeeding twice.
+func TestServiceStepUpTotpReplayRejected(t *testing.T) {
+	s := newService(t)
+	now := time.Now().UTC()
+	secret, _, _, err := s.Enroll("user-admin", "U", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Confirm("user-admin", totpForSecret(t, s, secret, now), now); err != nil {
+		t.Fatal(err)
+	}
+	at := now.Add(90 * time.Second) // advance past the confirm step
+	code := totpForSecret(t, s, secret, at)
+
+	// First use succeeds and advances the watermark (non-destructive op so the
+	// enrollment survives for the replay probe).
+	if _, err := s.RotateRecovery("user-admin", code, "", at); err != nil {
+		t.Fatalf("first rotate: %v", err)
+	}
+	// Same-window replay of the same code must fail closed.
+	if _, err := s.RotateRecovery("user-admin", code, "", at); err != ErrMFAInvalid {
+		t.Fatalf("same-window replay err = %v, want ErrMFAInvalid", err)
+	}
+	// The self-recovery gate shares the same step-up semantics.
+	if err := s.VerifySecondFactor("user-admin", code, "", at); err != ErrMFAInvalid {
+		t.Fatalf("VerifySecondFactor replay err = %v, want ErrMFAInvalid", err)
+	}
+	// A FRESH code from the next step still works (window not poisoned).
+	next := at.Add(time.Duration(totpPeriodSeconds) * time.Second)
+	if _, err := s.RotateRecovery("user-admin", totpForSecret(t, s, secret, next), "", next); err != nil {
+		t.Fatalf("next-step rotate: %v", err)
+	}
+}
+
 func TestServiceAdminReset(t *testing.T) {
 	s := newService(t)
 	now := time.Now().UTC()

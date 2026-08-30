@@ -268,7 +268,7 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 }
 
 // bootstrapAdmin 在 needs-bootstrap 时种入 admin 用户（dev 缺省 admin/admin；
-// 非 dev 已由 Config.validate fail-closed 强制密码）。
+// 非 dev 已由 Config.validate fail-closed 强制密码，且种子必须满足冻结策略）。
 func bootstrapAdmin(ctx context.Context, st kernel.Store, cfg *Config) error {
 	needs, err := systemdata.NeedsBootstrap(ctx, st)
 	if err != nil {
@@ -280,6 +280,13 @@ func bootstrapAdmin(ctx context.Context, st kernel.Store, cfg *Config) error {
 	seed := cfg.AdminInitialPassword
 	if seed == "" {
 		seed = "admin"
+	}
+	// W15 F-003: production bootstrap enforces the frozen 8–72 byte policy
+	// before hashing (dev keeps the documented "admin" fallback).
+	if cfg.AppEnv != "development" {
+		if err := authsession.ValidateSeedPassword(seed); err != nil {
+			return fmt.Errorf("server: bootstrap seed password: %w", err)
+		}
 	}
 	hash, err := auth.HashPassword(seed, bcryptCost)
 	if err != nil {

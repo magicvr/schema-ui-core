@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import { constructRequest } from "./request-construction";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MODULES = join(__dirname, "../../../../../apps/api/internal/modules");
+const MODULES = join(__dirname, "../../../../../apps/api/modules");
 
 interface SchemaDoc {
   actions?: Record<string, Record<string, unknown>>;

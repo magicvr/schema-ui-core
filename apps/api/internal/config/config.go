@@ -1110,17 +1110,10 @@ func (c *Config) ValidateProd() error {
 	if c.AuthDevSessionEnabled {
 		return fmt.Errorf("AUTH_DEV_SESSION_ENABLED must be false when APP_ENV=%q", c.AppEnv)
 	}
-	if len(c.AuthJWTSecret) < minJWTSecretLen {
-		return fmt.Errorf(
-			"AUTH_JWT_SECRET must be at least %d characters when APP_ENV=%q",
-			minJWTSecretLen, c.AppEnv,
-		)
-	}
-	if !containsLettersAndDigits(c.AuthJWTSecret) {
-		return fmt.Errorf(
-			"AUTH_JWT_SECRET must contain both letters and digits when APP_ENV=%q",
-			c.AppEnv,
-		)
+	// W15 F-002 (GOAL-016 A-001): the strength rule is exported so the public
+	// serve surface (apps/api/server) enforces the same bar, single-source.
+	if err := ValidateJWTSecretStrength("AUTH_JWT_SECRET", c.AuthJWTSecret); err != nil {
+		return fmt.Errorf("%w when APP_ENV=%q", err, c.AppEnv)
 	}
 	// VP-016 R1 (workspace-016 Root D-002): an explicitly configured previous
 	// signing key follows the same strength rule as the current key — during
@@ -1130,17 +1123,8 @@ func (c *Config) ValidateProd() error {
 	// operators cannot mistake it for a real overlap window. An absent
 	// previous keeps single-key behavior in every environment.
 	if prev := c.AuthJWTSecretPrevious; prev != "" {
-		if len(prev) < minJWTSecretLen {
-			return fmt.Errorf(
-				"AUTH_JWT_SECRET_PREVIOUS must be at least %d characters when APP_ENV=%q",
-				minJWTSecretLen, c.AppEnv,
-			)
-		}
-		if !containsLettersAndDigits(prev) {
-			return fmt.Errorf(
-				"AUTH_JWT_SECRET_PREVIOUS must contain both letters and digits when APP_ENV=%q",
-				c.AppEnv,
-			)
+		if err := ValidateJWTSecretStrength("AUTH_JWT_SECRET_PREVIOUS", prev); err != nil {
+			return fmt.Errorf("%w when APP_ENV=%q", err, c.AppEnv)
 		}
 		if prev == c.AuthJWTSecret {
 			return fmt.Errorf("AUTH_JWT_SECRET_PREVIOUS must differ from AUTH_JWT_SECRET (a no-op rotation is a misconfiguration)")
@@ -1533,6 +1517,21 @@ func buildPostgresDSN(c *Config) string {
 // minJWTSecretLen is the minimum HS256 signing-key length enforced outside
 // development (A-002 F-002-005).
 const minJWTSecretLen = 32
+
+// ValidateJWTSecretStrength enforces the production HS256 signing-key bar
+// shared by the main configuration and the public serve surface (W15 F-002,
+// GOAL-016 A-001): a minimum length plus both letters and digits, so a short
+// or guessable key cannot silently start signing tokens outside development.
+// The error names the key but never carries the secret value.
+func ValidateJWTSecretStrength(keyName, secret string) error {
+	if len(secret) < minJWTSecretLen {
+		return fmt.Errorf("%s must be at least %d characters", keyName, minJWTSecretLen)
+	}
+	if !containsLettersAndDigits(secret) {
+		return fmt.Errorf("%s must contain both letters and digits", keyName)
+	}
+	return nil
+}
 
 // containsLettersAndDigits rejects all-digit / all-letter / single-class keys
 // (weak entropy) while keeping the rule simple and checkable.

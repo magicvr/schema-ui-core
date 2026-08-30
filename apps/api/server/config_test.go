@@ -13,8 +13,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadConfig(default) error: %v", err)
 	}
-	if cfg.HTTPAddr != ":25080" {
-		t.Errorf("HTTPAddr = %q, want :25080", cfg.HTTPAddr)
+	if cfg.HTTPAddr != "127.0.0.1:25080" {
+		t.Errorf("HTTPAddr = %q, want 127.0.0.1:25080 (W15 F-001 loopback default)", cfg.HTTPAddr)
 	}
 	if cfg.ShutdownTimeout != 10*time.Second {
 		t.Errorf("ShutdownTimeout = %s, want 10s", cfg.ShutdownTimeout)
@@ -31,6 +31,8 @@ func TestLoadConfigExplicitFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	content := `
+app:
+  env: development
 http:
   addr: ":28080"
   shutdown_timeout: 3s
@@ -129,6 +131,48 @@ func TestLoadConfigDialectPairing(t *testing.T) {
 	}
 }
 
+func TestLoadConfigRequiresExplicitAppEnv(t *testing.T) {
+	// W15 F-001: a custom YAML that omits app.env must fail closed — the
+	// embedded default pins "development", so only explicit configs can
+	// silently omit it, and guessing an environment from silence is refused.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(path, []byte("http:\n  addr: \"127.0.0.1:28080\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadConfig(path); err == nil {
+		t.Fatal("custom YAML without app.env must fail closed (refusing to guess)")
+	}
+	// Explicit development (or production with secrets) loads fine.
+	if err := os.WriteFile(path, []byte("app:\n  env: development\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadConfig(path); err != nil {
+		t.Fatalf("explicit development should load: %v", err)
+	}
+}
+
+func TestLoadConfigJWTSecretStrengthNonDev(t *testing.T) {
+	// W15 F-002: non-development reuses the main production bar — a short or
+	// single-class secret is a startup error, not a warning.
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("ADMIN_INITIAL_PASSWORD", "seed-password-ok")
+	for name, secret := range map[string]string{
+		"short":     "short",
+		"all-letter": "abcdefghijklmnopqrstuvwxyzabcdefghij",
+		"all-digit":  "12345678901234567890123456789012",
+	} {
+		t.Setenv("AUTH_JWT_SECRET", secret)
+		if _, err := LoadConfig(""); err == nil {
+			t.Errorf("production with %s AUTH_JWT_SECRET must fail closed", name)
+		}
+	}
+	t.Setenv("AUTH_JWT_SECRET", "0123456789abcdef0123456789abcdef")
+	if _, err := LoadConfig(""); err != nil {
+		t.Fatalf("production with compliant AUTH_JWT_SECRET should load: %v", err)
+	}
+}
+
 func TestLoadConfigSecretFailClosedNonDev(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	if _, err := LoadConfig(""); err == nil {
@@ -156,7 +200,7 @@ func TestLoadConfigSecretsViaInterpolation(t *testing.T) {
 	t.Setenv("SERVE_TEST_SECRET", "interp-secret")
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
-	if err := os.WriteFile(path, []byte("auth:\n  jwt_secret: ${SERVE_TEST_SECRET}\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("app:\n  env: development\nauth:\n  jwt_secret: ${SERVE_TEST_SECRET}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := LoadConfig(path)

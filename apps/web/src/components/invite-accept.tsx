@@ -44,7 +44,18 @@ export function InviteAcceptPage() {
   const t = useTranslate();
   const [token] = useState(() => {
     try {
-      return new URLSearchParams(window.location.search).get("token") ?? "";
+      const params = new URLSearchParams(window.location.search);
+      const value = params.get("token") ?? "";
+      // W15 F-005 (GOAL-016 A-001): the invitation token is a one-time bearer
+      // with a multi-day TTL — scrub it from the address bar and history the
+      // moment it is read, so it never lingers in the URL, screenshots or
+      // same-origin history after the visitor lands.
+      if (value !== "") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("token");
+        window.history.replaceState(window.history.state, "", url);
+      }
+      return value;
     } catch {
       return "";
     }

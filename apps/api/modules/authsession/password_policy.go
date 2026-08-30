@@ -92,6 +92,19 @@ func (r *Repository) UpdatePasswordPolicy(p PasswordPolicy) error {
 	})
 }
 
+// ValidateSeedPassword enforces the frozen-default bootstrap bounds (W15
+// F-003, GOAL-016 A-001): 8–72 bytes and non-blank — the exact bounds
+// migration 0057 seeds for a fresh store, so a static check at the bootstrap
+// surfaces is equivalent to the policy row that exists there. HTTP-surface
+// set-password flows keep using ValidateNewPassword (configurable row).
+func ValidateSeedPassword(plain string) error {
+	length := len([]byte(plain))
+	if length < policyMinLengthFloor || length > policyMinLengthCeiling || strings.TrimSpace(plain) == "" {
+		return ErrPasswordPolicyViolation
+	}
+	return nil
+}
+
 // ValidateNewPassword enforces the active policy for a candidate plaintext.
 // userID may be empty (account creation — no history exists yet). Every
 // violation collapses into ErrPasswordPolicyViolation. The CONFIGURED

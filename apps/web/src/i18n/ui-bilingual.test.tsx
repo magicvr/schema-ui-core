@@ -1,4 +1,4 @@
-﻿// @vitest-environment jsdom
+// @vitest-environment jsdom
 
 /**
  * S2 bilingual coverage (GOAL-003 · C1–C4).
@@ -27,7 +27,7 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
 const USERS_SCHEMA_PATH = resolve(
   __dir,
-  "../../../api/internal/modules/users/schema/users.json",
+  "../../../api/modules/users/schema/users.json",
 );
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];

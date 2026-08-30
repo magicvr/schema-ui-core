@@ -12,6 +12,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/composition"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
 
 const bcryptCost = 10
@@ -103,6 +104,15 @@ func resolveSeedHash(cfg *config.Config, logger *slog.Logger) (string, error) {
 			seed = "admin"
 		} else {
 			return "", fmt.Errorf("ADMIN_INITIAL_PASSWORD must be set to seed the initial admin user")
+		}
+	}
+	// W15 F-003 (GOAL-016 A-001): a production bootstrap seed must satisfy the
+	// frozen 8–72 byte policy BEFORE hashing; a weak seed is a startup error,
+	// never a runtime surprise. Development keeps its documented "admin"
+	// fallback unchanged.
+	if cfg.AppEnv != "development" {
+		if err := authsession.ValidateSeedPassword(seed); err != nil {
+			return "", fmt.Errorf("ADMIN_INITIAL_PASSWORD must satisfy the password policy (8–72 bytes, non-blank): %w", err)
 		}
 	}
 	hash, err := auth.HashPassword(seed, bcryptCost)
