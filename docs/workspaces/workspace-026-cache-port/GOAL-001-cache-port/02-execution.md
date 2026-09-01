@@ -12,7 +12,8 @@ version: 0.1.0
 
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
-| [E-001-workspace-establishment](02-execution/E-001-workspace-establishment.md) | 2026-08-31 | 开区建立 | 工作区 scaffold + Root 五件套 + goal-tree + workspaces.md 索引 | active |
+| [E-001-workspace-establishment](02-execution/E-001-workspace-establishment.md) | 2026-08-31 | 开区建立 | 工作区 scaffold + Root 五件套 + goal-tree + workspaces.md 索引 | done |
+| [E-002-r1-goal-established](02-execution/E-002-r1-goal-established.md) | 2026-09-01 | R1 立项 + 合同冻结 | GOAL-002 五件套；三信息项用户裁决；D-002 合同 + kernel/cache.go + 快测绿；A-001 self pass；A-002 grok independent 复核中 | done |
 
 ## 执行记录（ledger）
 

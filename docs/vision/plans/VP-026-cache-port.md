@@ -6,7 +6,7 @@ status: planned
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: 
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-09-01
 version: 0.2.0
 parent: null
 ---
@@ -87,16 +87,16 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-026-001 | Cache 端口 API 形态：Go 泛型 vs `[]byte` vs 结构化值；零值/未命中语义。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | 待裁决 |
-| I-026-002 | TTL 清理语义：惰性（读时清理） vs 后台协程清理；边界与容量来源。 | required | 退出判据 3 | R2 | 待裁决 |
-| I-026-003 | 命名空间 / key 前缀约定：模块 ID 前缀 vs 独立命名空间参数。 | non-blocking | 退出判据 1/4 | R1 | 待确认 |
+| I-026-001 | Cache 端口 API 形态：Go 泛型 vs `[]byte` vs 结构化值；零值/未命中语义。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | **verified**（2026-09-01 用户裁决：`[]byte` 负载 + 非泛型端口 + 类型化封装；GOAL-002 D-001） |
+| I-026-002 | TTL 清理语义：惰性（读时清理） vs 后台协程清理；边界与容量来源。 | required | 退出判据 3/6 | R1（语义随合同冻结；容量键 R2 落） | **verified**（2026-09-01 用户裁决：惰性清理 + 配置化容量驱逐；GOAL-002 D-001；F-007 对齐） |
+| I-026-003 | 命名空间 / key 前缀约定：模块 ID 前缀 vs 独立命名空间参数。 | non-blocking | 退出判据 1/4 | R1 | **verified**（2026-09-01 用户确认：显式命名空间 scoped 视图；GOAL-002 D-001） |
 | I-026-004 | 既有 mail runtime `cachedAdapter` 是否迁移到端口（评估，不强制；其版本戳失效语义可能不匹配通用 TTL）。 | non-blocking | 退出判据 2 | R3 | 待确认 |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-026-cache-port | GOAL-001-cache-port | lead | 2026-08-31（激活开区） | 唯一 delivery；激活审视 VRev-060 self `pass` + 架构类 freshness PASS（`055da2fd`→`54fb57e7`）；Root active 0/4（R1～R4） |
+| workspace-026-cache-port | GOAL-001-cache-port | lead | 2026-08-31（激活开区） | 唯一 delivery；激活审视 VRev-060 self `pass` + 架构类 freshness PASS（`055da2fd`→`54fb57e7`）；Root active 1/4（R1 ✅ 2026-09-01 · R2～R4） |
 
 ## 关门记录
 
@@ -113,3 +113,4 @@ parent: null
 | 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q03（缓存端口 · 内存默认 + Redis 接缝声明）；vision_ref @0.4.0；roadmap / revisions 原子同步 |
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 本 VP 无 required）：V-F100 **fixed**——Redis 轨道约定收窄为 VP-026/027（架构短文或 owner VP 单一所有者，不跨区绑 D-001），VP-028 不属 Redis 轨道；V-F102 **fixed**——补"不消耗 RT-Q03 trigger"解释规则；V-F104 **fixed**——补 TTL 清理停机语义（后台协程须声明 SIGTERM 排空，否则惰性清理） |
 | 2026-08-31 | v0.2.0 · **激活**（用户指令）：VRev-060 self `pass`（0 required · 架构类 freshness PASS `055da2fd`→`54fb57e7` 五域零变更不暂挂 `go`）；`planned → active`；lead `workspace-026-cache-port` 开区（Root `GOAL-001-cache-port` active 0/4 · R1～R4 纲领） |
+| 2026-09-01 | I-026-001/002/003 用户裁决（P-004）：`[]byte` 负载+类型化封装 / 惰性清理+配置化容量驱逐 / 显式命名空间 scoped 视图 → 信息台账 verified；R1 合同（GOAL-002 D-002）冻结 + 端口本体落地（kernel/cache.go） |
