@@ -30,6 +30,18 @@ var defaultConfigYAML []byte
 // composition root for zero-value (loader-bypassed) Configs.
 const DefaultCacheMaxEntries = 10000
 
+// DefaultEventBusBuffer is the fallback per-subscription buffer size for the
+// in-memory event-bus provider (VP-028 / workspace-028 GOAL-003 D-001): applied
+// by Load when neither YAML nor env configures eventbus.buffer_size, and by the
+// composition root for zero-value (loader-bypassed) Configs. Must match
+// kernel.DefaultEventBusBuffer.
+const DefaultEventBusBuffer = 64
+
+// MaxEventBusBuffer is the upper bound on eventbus.buffer_size (D-001): buffers
+// larger than this are rejected fail-closed at config load to prevent unbounded
+// memory growth or configuration typos from causing resource exhaustion.
+const MaxEventBusBuffer = 4096
+
 // Config is the R2 runtime configuration: HTTP + logging, plus the auth
 // (JWT / refresh / SQLite) and dev-session surface defined by GOAL-005 D-004,
 // and the upload surface (W7: UPLOAD_* moved from handler package vars into
@@ -145,6 +157,14 @@ type Config struct {
 	// Default 10000; non-positive values fail closed at load (a typo must
 	// never silently degrade to the default).
 	CacheMaxEntries int
+
+	// EventBus surface (VP-028 / workspace-028 GOAL-003 D-001, R2).
+	// EventBusBufferSize is the in-memory event-bus provider's per-subscription
+	// buffered-channel capacity. When a subscriber's buffer is full, Publish
+	// blocks until space is available, the context is cancelled, or Stop drains.
+	// Default 64 (kernel.DefaultEventBusBuffer); <= 0 falls back to that default;
+	// > MaxEventBusBuffer (4096) fails closed at load.
+	EventBusBufferSize int
 
 	// Observability metrics surface (VP-015 / workspace-015 GOAL-002 D-001).
 	// MetricsEnabled selects the DEDICATED Prometheus exposition listener —
@@ -360,6 +380,13 @@ type yamlFile struct {
 		// closed at load). Env: CACHE_MAX_ENTRIES.
 		MaxEntries *int `yaml:"max_entries"`
 	} `yaml:"cache"`
+	EventBus struct {
+		// VP-028 / workspace-028 GOAL-003 D-001: per-subscription buffer size
+		// of the in-memory event-bus provider. <= 0 falls back to
+		// DefaultEventBusBuffer (64); > MaxEventBusBuffer (4096) fails closed.
+		// Env: EVENTBUS_BUFFER_SIZE.
+		BufferSize *int `yaml:"buffer_size"`
+	} `yaml:"eventbus"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -420,6 +447,7 @@ func Load() *Config {
 		ObjectsDriver:            "local",
 		ObjectsS3UsePathStyle:    true,
 		CacheMaxEntries:          DefaultCacheMaxEntries,
+		EventBusBufferSize:       DefaultEventBusBuffer,
 		MetricsEnabled:           false,
 		MetricsAddr:              "127.0.0.1:25081",
 		MetricsAuthToken:         "",
@@ -570,6 +598,9 @@ func Load() *Config {
 	if yf.Cache.MaxEntries != nil {
 		cfg.CacheMaxEntries = *yf.Cache.MaxEntries
 	}
+	if yf.EventBus.BufferSize != nil {
+		cfg.EventBusBufferSize = *yf.EventBus.BufferSize
+	}
 	if yf.Observability.Metrics.Enabled != nil {
 		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
 	}
@@ -692,6 +723,21 @@ func Load() *Config {
 		}
 		cfg.CacheMaxEntries = n
 	}
+	// eventbus.buffer_size (VP-028 / workspace-028 GOAL-003 D-001): strict env
+	// parse. <= 0 is acceptable (falls back to DefaultEventBusBuffer); unparsable
+	// or > MaxEventBusBuffer fails closed.
+	if raw := strings.TrimSpace(os.Getenv("EVENTBUS_BUFFER_SIZE")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil {
+			cfg.LoadError = fmt.Errorf("config: EVENTBUS_BUFFER_SIZE must be an integer")
+			return cfg
+		}
+		if n > MaxEventBusBuffer {
+			cfg.LoadError = fmt.Errorf("config: EVENTBUS_BUFFER_SIZE must be <= %d (got %d)", MaxEventBusBuffer, n)
+			return cfg
+		}
+		cfg.EventBusBufferSize = n
+	}
 	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
 		if err != nil || port < 1 || port > 65535 {
@@ -769,6 +815,15 @@ func Load() *Config {
 	// block is the fail-closed net for any value that reached the struct.
 	if cfg.CacheMaxEntries <= 0 {
 		cfg.LoadError = fmt.Errorf("config: cache.max_entries must be a positive integer (got %d)", cfg.CacheMaxEntries)
+		return cfg
+	}
+
+	// eventbus.buffer_size (VP-028 / workspace-028 GOAL-003 D-001): the in-memory
+	// event-bus provider's per-subscription buffer size. Explicit YAML / env values
+	// are checked above; <= 0 is acceptable (composition falls back to default);
+	// this block is the fail-closed net for out-of-range values.
+	if cfg.EventBusBufferSize > MaxEventBusBuffer {
+		cfg.LoadError = fmt.Errorf("config: eventbus.buffer_size must be <= %d (got %d)", MaxEventBusBuffer, cfg.EventBusBufferSize)
 		return cfg
 	}
 
@@ -1137,6 +1192,12 @@ func (c *Config) ValidateProd() error {
 	// Config means "use load defaults" and is skipped (mirrors the db rules).
 	if c.CacheMaxEntries < 0 {
 		return fmt.Errorf("cache.max_entries must be positive (got %d)", c.CacheMaxEntries)
+	}
+	// VP-028 (workspace-028 GOAL-003 D-001): the event-bus buffer size is a
+	// startup gate for every environment; <= 0 means "use default" and is
+	// skipped; > MaxEventBusBuffer is rejected.
+	if c.EventBusBufferSize > MaxEventBusBuffer {
+		return fmt.Errorf("eventbus.buffer_size must be <= %d (got %d)", MaxEventBusBuffer, c.EventBusBufferSize)
 	}
 	// VP-017 GOAL-003 D-001: mail.smtp pairing rules are startup gates for
 	// every environment (including development), like the db/objects rules.

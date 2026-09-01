@@ -219,3 +219,11 @@ cache:
   # Non-positive or unparsable values fail closed at startup.
   # Env override: CACHE_MAX_ENTRIES.
   max_entries: 10000
+
+eventbus:
+  # VP-028 (workspace-028 GOAL-003 D-001): per-subscription buffered-channel
+  # capacity of the in-memory event-bus provider. When a subscriber's buffer
+  # is full, Publish blocks until space, ctx cancel, or Stop drains. <= 0
+  # falls back to DefaultEventBusBuffer (64); > MaxEventBusBuffer (4096) fails
+  # closed. Env override: EVENTBUS_BUFFER_SIZE.
+  buffer_size: 64

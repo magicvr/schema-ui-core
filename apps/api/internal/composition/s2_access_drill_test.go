@@ -196,6 +196,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	eventBusPort := newEventBus(&config.Config{ProfileName: "admin"}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mux, err := newMuxWithExtraProviders(
 		&config.Config{ProfileName: "admin"},
 		a,
@@ -211,6 +212,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		cachePort,
+		eventBusPort,
 		ratelimit.NewProvider(),
 	)
 	if err != nil {

@@ -40,6 +40,7 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 	if err != nil {
 		t.Fatal(err)
 	}
+	eventBusPort := newEventBus(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mux, err := newMux(
 		cfg,
 		a,
@@ -54,6 +55,7 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		cachePort,
+		eventBusPort,
 		ratelimit.NewProvider(),
 	)
 	if err != nil {

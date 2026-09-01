@@ -54,6 +54,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 	if err != nil {
 		t.Fatal(err)
 	}
+	eventBusPort := newEventBus(cfg, slog.Default())
 	mux, err := newMuxWithExtraProviders(
 		cfg,
 		a,
@@ -69,6 +70,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 		observer,
 		slog.Default(),
 		cachePort,
+		eventBusPort,
 		ratelimit.NewProvider(),
 	)
 	if err != nil {

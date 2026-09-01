@@ -18,6 +18,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/cache"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/eventbus"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
@@ -128,6 +129,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newObserver,
 			newMetricsServer,
 			newCache,
+			newEventBus,
 			newRateLimiters,
 			newMux,
 			newServer,
@@ -288,9 +290,10 @@ func newMux(
 	observer *obs.Observer,
 	logger *slog.Logger,
 	cachePort kernel.Cache,
+	eventBusPort kernel.EventBus,
 	rateLimiters kernel.RateLimiterProvider,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, rateLimiters)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, eventBusPort, rateLimiters)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -313,6 +316,7 @@ func newMuxWithExtraProviders(
 	observer *obs.Observer,
 	logger *slog.Logger,
 	cachePort kernel.Cache,
+	eventBusPort kernel.EventBus,
 	rateLimiters kernel.RateLimiterProvider,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
@@ -401,6 +405,13 @@ func newMuxWithExtraProviders(
 	// docs/architecture/cache-redis-seam-and-track.md).
 	_ = cachePort // accepted, not yet consumed (intentional until a consumer lands)
 	logger.Info("kernel cache port ready", "provider", "memory", "max_entries", cfg.CacheMaxEntries)
+	// VP-028 / workspace-028 GOAL-003 D-001 (R2): the kernel.EventBus single
+	// instance arrives via dependency injection — the Fx container owns it for
+	// the process lifetime, and this seam is its explicit injection point. No
+	// probe: an in-process channel bus has no external dependency. Stop drain
+	// happens in registerLifecycle OnStop (D-002 §5).
+	_ = eventBusPort // accepted, not yet consumed (intentional until a consumer lands)
+	logger.Info("kernel event-bus port ready", "provider", "memory", "buffer_size", cfg.EventBusBufferSize)
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
@@ -751,6 +762,20 @@ func newCache(cfg *config.Config) (kernel.Cache, error) {
 	return cache.NewMemory(budget)
 }
 
+// newEventBus builds THE shared kernel.EventBus instance (VP-028 / workspace-028
+// GOAL-003 D-001): the in-memory provider with the configured per-subscription
+// buffer size. There is no readyz probe — an in-process channel bus has no
+// external dependency. <= 0 on a loader-bypassed Config or explicit YAML/env
+// means "use the default" (mirrors the cache zero-value handling); the provider
+// falls back to kernel.DefaultEventBusBuffer.
+func newEventBus(cfg *config.Config, logger *slog.Logger) kernel.EventBus {
+	buffer := cfg.EventBusBufferSize
+	if buffer == 0 {
+		buffer = config.DefaultEventBusBuffer
+	}
+	return eventbus.NewMemory(buffer, logger)
+}
+
 // newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /
 // workspace-017 GOAL-008; Root D-007): a *mail.Switcher over the mail_config
 // runtime row. The row seeds once from the file/env layer resolution
@@ -826,7 +851,7 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing, eventBusPort kernel.EventBus) {
 	var listener net.Listener
 	var stopRetention func()
 	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
@@ -910,12 +935,16 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 			}
 			metricsErr := metrics.Stop(ctx)
 			jobsErr := jobs.Stop(ctx)
+			// VP-028 / workspace-028 GOAL-003 D-001 (R2 / D-002 §5): Stop drains
+			// buffered events, waits in-flight handlers against ctx, then rejects
+			// further Publish/Register/Subscribe.
+			eventBusErr := eventBusPort.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)
 			closeErr := st.Close()
 			// GOAL-004 D-001 §6: shutdown flushes pending spans through the
 			// OTLP exporter before the process exits.
 			tracingErr := tracing.Shutdown(ctx)
-			return errors.Join(shutdownErr, metricsErr, jobsErr, runtimeErr, closeErr, tracingErr)
+			return errors.Join(shutdownErr, metricsErr, jobsErr, eventBusErr, runtimeErr, closeErr, tracingErr)
 		},
 	})
 }

@@ -48,6 +48,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 	if err != nil {
 		return nil, err
 	}
+	eventBusPort := newEventBus(&config.Config{DBPath: "test.db"}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	return newMux(
 		&config.Config{DBPath: "test.db"},
 		a,
@@ -62,6 +63,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		cachePort,
+		eventBusPort,
 		ratelimit.NewProvider(),
 	)
 }
