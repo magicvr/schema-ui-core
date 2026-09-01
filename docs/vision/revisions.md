@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-08-24
+updated: 2026-08-31
 parent: null
-version: 0.4.28
+version: 0.4.29
 ---
 
 # Charter 修订台账
@@ -66,3 +66,4 @@ version: 0.4.28
 
 | VR-050 | 2026-08-29 | strategic | 分发形态：构建期包消费 + 协议 pin 2.9.0 | 用户裁决（workspace-022 R5 go/no-go · GO：推进 Charter 修订 + 升级 pin）：成功边界 #1 追加「构建期包消费路径」（Go go get / npm 包组 / assembly 装配工厂 / changelog 迁移说明，fork 与包消费 = 单主线两种交付形态）；非目标澄清「构建期包组装允许 · 禁止运行时下载/热插拔」与「不承诺 fork 为唯一消费路径」；协议来源 v2.8.0 → **v2.9.0**（pinned 81aa1d8；支持窗 2.7–2.9 additive 超集，I-007 闭合）；Charter 升至 schema-ui-core-admin-foundation@0.3.0；**strategic → 全量 re-align 本轮完成**（22 个 VP ision_ref → @0.3.0）；VRev-050 self pass（0 required）。workspace-022 R5 随附关闭。 |
 | VR-051 | 2026-08-29 | editorial | 成功边界 #1 npm 包组占位对齐 | 实际公开发布形态定稿 `@magicvr/schema-ui-*`（VP-024 R2 · 用户裁决 2026-08-29「维持当前发布形式，不再改为 @schema-ui 形态」）：成功边界 #1 的 npm 包组占位 `@schema-ui/*` → `@magicvr/schema-ui-*`。不改目的/边界/非目标或 `vision_id@version`（仍 `@0.3.0`），**无** strategic、**无** re-align。 |
+| VR-052 | 2026-08-31 | strategic | 同进程基座：C 端 API 与 Admin 共用后端 | 用户书面裁决（2026-08-31）：下游 fork 预期主要形态为"同进程基座"——C 端 API 以业务域模块方式在同一 Go 进程内扩展，共用持久化、认证、可观测、Job 等基础设施端口；单独部署 Admin 服务仍是合法形态但非主要预期。**Charter 升至 `schema-ui-core-admin-foundation@0.4.0`**。改动：① 目的陈述补充"后端基座"定语与同进程预期语义；② 成功边界追加第 6 条（基础设施端口可被业务域模块直接消费，缓存/限流扩展/队列不预制、业务域触发时由架构分支按需交付）；③ 非目标追加"不预制 C 端 API 业务逻辑"条款（含双形态合法声明）；④ 战略假设表新增 H-002（同进程基座冻结假设，触发 RT-Q03/Q05 触发条件扩展）。**Re-align**：当前无 active VP，re-align 负担为零；已 closed 历史 VP 封存不变；roadmap RT-Q03/RT-Q05 触发条件注记随本次更新。VRev-056 self review 记录本次 strategic。 |

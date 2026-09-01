@@ -137,9 +137,9 @@ version: 0.60.0
 |----|----|------|------|------|
 | RT-Q01 | 进程内 Job 六态 | VP-012 R4 | **delivered** | 外部队列当时显式推迟 |
 | RT-Q02 | 外部消息队列 / Job broker | 无 | **trigger-gated** | 触发：多实例、跨机长任务、或领域事件要 fan-out。优先评估 PG `SKIP LOCKED` |
-| RT-Q03 | 缓存（Redis 等） | 无 | **trigger-gated** | 用途须先钉死：共享限流 / 分布式锁 / 热配置 / 查询缓存。禁止「先上 Redis 再找场景」 |
+| RT-Q03 | 缓存（Redis 等） | 无 | **trigger-gated** | 用途须先钉死：共享限流 / 分布式锁 / 热配置 / 查询缓存。禁止「先上 Redis 再找场景」。**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块正式接入同进程。业务域 VP 激活即视为触发条件成立，架构分支须在该 VP 开区前完成评估并在路线图中登记位置（可选「不需要」结论，但评估本身不可跳过） |
 | RT-Q04 | 分布式锁 / leader election | 无 | **trigger-gated** | 定时任务、单飞 Job；PG advisory lock 可推迟 Redis |
-| RT-Q05 | 登录/API 限流跨实例 | 进程内滑动窗口 | **trigger-gated** | 单实例够用；多实例才需要共享存储 |
+| RT-Q05 | 登录/API 限流跨实例 | 进程内滑动窗口 | **trigger-gated** | 单实例够用；**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块接入且 C 端限流需求不可共用进程内 limiter。业务域 VP 激活即视为触发条件成立，须评估进程内 limiter 是否满足 C 端场景并登记路线图位置 |
 | RT-Q06 | 事务 outbox / inbox | 无 | **trigger-gated** | Admin 功能「领域事件」契约的运输前置；先 DB outbox，后可选 broker |
 | RT-Q07 | 分布式 cron | 定时任务模块，单进程 | **trigger-gated** | 与 RT-Q04 绑定 |
 
