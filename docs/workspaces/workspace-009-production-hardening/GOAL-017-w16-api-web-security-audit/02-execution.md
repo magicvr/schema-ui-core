@@ -19,6 +19,7 @@ version: 0.2.0
 | E-003 | 2026-08-30 | S3-P2/P3 发现分类评估 | done | `02-execution/E-003-findings-assessment.md` |
 | E-004 | 2026-08-30 | S3-P2/P3 发现分类汇总 | recorded | 本文件 § E-004 |
 | E-005 | 2026-09-01 | S5 独立验证审计执行 | done | `02-execution/E-005-s5-independent-verification.md` |
+| E-006 | 2026-09-01 | W17 子目标创建（承接 F-003 残余） | recorded | `02-execution/E-006-w17-goal-creation.md` |
 
 ## 事实边界
 
@@ -179,3 +180,44 @@ version: 0.2.0
 **S5 阶段完成**: 独立审计通过，所有 required findings genuine fixed，无开放必改项。
 
 **下一步**：S6 关门准备（更新 00-meta status=done、更新 goal-tree、登记 F-003 残余风险至 GOAL-001）。
+
+## E-006 · W17 子目标创建（承接 F-003 残余）（2026-09-01）
+
+**事实**：
+- 创建 GOAL-018 (W17 · Refresh Token httpOnly Cookie 双模式架构) 承接 F-003 残余风险
+- 详细记录见：`02-execution/E-006-w17-goal-creation.md`
+
+**子目标属性**：
+- **id**: GOAL-018-w17-refresh-token-httponly
+- **parent**: GOAL-001-production-hardening
+- **status**: draft（等待 I-001/I-002/I-003 信息就绪后进入 active）
+- **progress**: 0/5（5 个阶段检查点：S1–S5）
+
+**技术方案（初步）**：
+- **优先模式**: httpOnly cookie（防 XSS）
+- **回退模式**: `X-Refresh-Token` header（非浏览器环境）
+- **API 改造**: 3 端点（login/refresh/logout）
+- **Web 改造**: cookie 优先 + localStorage 回退检测
+
+**信息需求（阻断 S1 方案冻结）**：
+- I-001 (required): Cookie 属性配置（SameSite/Secure/Path/Domain）
+- I-002 (required): 非浏览器环境兼容性策略
+- I-003 (required): Token 轮换时的 cookie 更新策略
+- I-004 (non-blocking): 开发环境 cookie 配置
+
+**产物路径**：
+- `docs/workspaces/workspace-009-production-hardening/GOAL-018-w17-refresh-token-httponly/` (五件套)
+- `docs/workspaces/workspace-009-production-hardening/goal-tree.md` (已同步树 + 表格 + 叙事)
+
+**残余移交确认**：
+- ✅ W16 已关门，F-003 accepted-residual 记录在 D-002
+- ✅ W17 子目标已创建，承载修复工作
+- ✅ goal-tree.md 已更新 W16 叙事段落，注明残余移交到 GOAL-018
+
+**验证**：
+- [x] 五件套文件已创建并填充真实 id/title/parent
+- [x] `goal-tree.md` 已同步（树 + 表格 + 叙事）
+- [x] W16 叙事中已添加残余移交引用
+- [x] 目标处于 draft 状态，信息门禁明确
+
+**S6 阶段完成**: W17 子目标已创建，W16 可正式关门。
