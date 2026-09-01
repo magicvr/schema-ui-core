@@ -19,12 +19,12 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func compositionCount(t *testing.T, st *store.Store, query string, args ...any) int {
@@ -43,6 +43,10 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 	if err != nil {
 		return nil, err
 	}
+	cachePort, err := newCache(&config.Config{DBPath: "test.db"})
+	if err != nil {
+		return nil, err
+	}
 	return newMux(
 		&config.Config{DBPath: "test.db"},
 		a,
@@ -56,6 +60,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		jobRuntime,
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		cachePort,
 	)
 }
 

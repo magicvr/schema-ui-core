@@ -126,6 +126,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newTracing,
 			newObserver,
 			newMetricsServer,
+			newCache,
 			newMux,
 			newServer,
 		),
@@ -284,8 +285,9 @@ func newMux(
 	jobRuntime *jobRuntime,
 	observer *obs.Observer,
 	logger *slog.Logger,
+	cachePort kernel.Cache,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -307,6 +309,7 @@ func newMuxWithExtraProviders(
 	extra []kernel.Provider,
 	observer *obs.Observer,
 	logger *slog.Logger,
+	cachePort kernel.Cache,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
 	// interception point — central handler registrations (Handle/HandleFunc)
@@ -384,23 +387,16 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, err
 	}
-	// VP-026 / workspace-026 GOAL-003 D-001 (R2): ONE kernel.Cache — the
-	// in-memory provider with the cache.max_entries budget. No probe: an
-	// in-process store has no external dependency (Redis stays trigger-gated,
-	// R3 declares only the seam). No module consumes it yet; the port is
-	// ready for R3 (mail cachedAdapter migration evaluation) and future
-	// business-domain modules.
-	cachePort, err := newCache(cfg)
-	if err != nil {
-		return nil, err
-	}
+	// VP-026 / workspace-026 GOAL-003/004 D-001 (R2/R3): the kernel.Cache
+	// single instance arrives via dependency injection — the Fx container
+	// (fx.Provide(newCache)) owns it for the process lifetime (F-002
+	// disposition), and this seam is its explicit injection point: the FIRST
+	// consumer (a future business-domain module or an explicit caching need)
+	// requests it here. No probe: an in-process store has no external
+	// dependency (Redis stays trigger-gated; the seam declaration lives in
+	// docs/architecture/cache-redis-seam-and-track.md).
+	_ = cachePort // accepted, not yet consumed (intentional until a consumer lands)
 	logger.Info("kernel cache port ready", "provider", "memory", "max_entries", cfg.CacheMaxEntries)
-	// Holder pattern (A-002 F-002 disposition): building the instance now
-	// makes construction errors fail startup; no module consumes the port yet
-	// and the local variable does NOT keep it alive across the function —
-	// R3 (mail cachedAdapter migration evaluation) must attach the single
-	// instance to a long-lived structure and drop this blank assign.
-	_ = cachePort
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)

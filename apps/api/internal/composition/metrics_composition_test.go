@@ -12,12 +12,12 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 // metricsDrillMux assembles the composition mux with a live observer and the
@@ -49,6 +49,10 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 		t.Fatal(err)
 	}
 	observer := newObserver(cfg, plan, obs.NewTracing(obs.TracingOptions{Enabled: false}, slog.Default()))
+	cachePort, err := newCache(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
 	mux, err := newMuxWithExtraProviders(
 		cfg,
 		a,
@@ -63,6 +67,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 		[]kernel.Provider{&probeProvider{desc: probeModule()}},
 		observer,
 		slog.Default(),
+		cachePort,
 	)
 	if err != nil {
 		t.Fatalf("instrumented composition: %v", err)

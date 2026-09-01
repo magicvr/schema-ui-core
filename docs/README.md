@@ -25,6 +25,7 @@ docs/
 │   ├── principles.md         # P-001～P-006
 │   ├── workspace-protocol.md
 │   ├── independent-audit-execution.md  # 项目级决策：独立审计执行路径（grok build）
+│   ├── cache-redis-seam-and-track.md    # Cache Redis 接缝声明 + VP-026/027 轨道 owner 约定
 │   ├── overview.md
 │   └── directory-layout.md
 ├── templates/                # 五件套 + workspace-context + vision 冷启动模板

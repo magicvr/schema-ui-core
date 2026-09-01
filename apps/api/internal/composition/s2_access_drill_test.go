@@ -11,11 +11,11 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 // S2 非领域化接入演练（VP-008 §最小可枚举证据面 6）：
@@ -191,6 +191,10 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cachePort, err := newCache(&config.Config{ProfileName: "admin"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	mux, err := newMuxWithExtraProviders(
 		&config.Config{ProfileName: "admin"},
 		a,
@@ -205,6 +209,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		[]kernel.Provider{probe},
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		cachePort,
 	)
 	if err != nil {
 		t.Fatalf("newMuxWithExtraProviders with probe: %v", err)
