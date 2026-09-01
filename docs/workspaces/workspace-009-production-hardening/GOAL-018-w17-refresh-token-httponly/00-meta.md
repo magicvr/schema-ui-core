@@ -94,8 +94,8 @@ version: 0.1.0
 - [ ] 回归测试：go test、vitest、tsc、build 全绿
 
 ### S5 · 审计与关门
-- [ ] Self 审计：F-003 genuine fixed + 变异测试
-- [ ] Independent 审计（若需要）
+- [x] Self 审计：F-003 genuine fixed + 变异测试（A-001 PASS）
+- [⏳] Independent 审计（进行中，agent a0016883e1323dfc6）
 - [ ] 无开放 required findings
 - [ ] 用户书面关门授权
 
@@ -128,6 +128,25 @@ version: 0.1.0
 
 ## 备注
 
-- 本目标为 **draft** 状态，等待 S1 方案冻结后进入 `active`
+- 本目标 S1 方案冻结完成，S2 API 端实施完成（Commit 59da02a1）
+- Self 审计通过（A-001 PASS），F-003 genuine fixed 已验证
+- Independent 审计进行中，等待交叉验证结果
 - 双模式设计旨在平衡安全性与兼容性
 - 不破坏现有客户端集成（通过 header 回退保证）
+
+## 当前状态
+
+**阶段**: S2 完成 + Self 审计 PASS，Independent 审计进行中
+
+**已完成**:
+- ✅ S1 方案冻结（D-001）
+- ✅ S2 API 端实施（E-001, Commit 59da02a1）
+- ✅ Self 审计（A-001 PASS, 无开放 required findings）
+- ✅ F-003 残余解决登记（GOAL-017 → GOAL-018 溯源链）
+
+**进行中**:
+- ⏳ Independent 审计（agent a0016883e1323dfc6）
+
+**待决策**:
+- S3 Web 端改造（API 端已完成，Web 端可选：浏览器自动发送 Cookie，无需客户端改造）
+- 关门流程（Independent 审计完成后）
