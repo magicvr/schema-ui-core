@@ -90,10 +90,10 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-028-001 | 事件类型化机制：Go 接口断言 vs 注册表（topic → type）。**显式取舍（V-F103）**：进程内 channel 可传非序列化负载 vs 为 outbox/RT-Q06 预留的可序列化约束——R1 须记录未选方案；若选注册表，I-028-004 升为 required。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | 待裁决 |
-| I-028-002 | 投递语义默认：同步（发布者阻塞） vs 异步（channel 缓冲）；**缓冲满时的最小语义（V-F103）** = 阻塞 / 丢弃 / 返回错误（R1 只冻结其一；完整背压产品仍 gated）。 | required | 退出判据 2 | R1 | 待裁决 |
-| I-028-003 | handler 错误语义：失败吞掉 + 日志 vs 回传发布者 vs 隔离失败（panic 恢复）；重复发布者可见性。 | required | 退出判据 2 | R1 | 待裁决 |
-| I-028-004 | 事件类型注册权属（业务域 VP vs Admin 功能 VP）与 typed domain event gated 保持：本 VP 不解除 Admin gated（V-F101）；若 I-028-001 选注册表则升 required。 | non-blocking | 退出判据 4 | R3 | 待确认 |
+| I-028-001 | 事件类型化机制：Go 接口断言 vs 注册表（topic → type）。**显式取舍（V-F103）**：进程内 channel 可传非序列化负载 vs 为 outbox/RT-Q06 预留的可序列化约束——R1 须记录未选方案；若选注册表，I-028-004 升为 required。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | **verified**（2026-09-01 用户裁决：注册表 + JSON 可序列化） |
+| I-028-002 | 投递语义默认：同步（发布者阻塞） vs 异步（channel 缓冲）；**缓冲满时的最小语义（V-F103）** = 阻塞 / 丢弃 / 返回错误（R1 只冻结其一；完整背压产品仍 gated）。 | required | 退出判据 2 | R1 | **verified**（2026-09-01 用户裁决：异步 + 缓冲满阻塞） |
+| I-028-003 | handler 错误语义：失败吞掉 + 日志 vs 回传发布者 vs 隔离失败（panic 恢复）；重复发布者可见性。 | required | 退出判据 2 | R1 | **verified**（2026-09-01 用户裁决：吞掉+日志 + panic 隔离） |
+| I-028-004 | 事件类型注册权属（业务域 VP vs Admin 功能 VP）与 typed domain event gated 保持：本 VP 不解除 Admin gated（V-F101）；因 I-028-001 选注册表升 required。 | required | 退出判据 4 | R3 | 待确认 |
 
 ## 工作区绑定
 

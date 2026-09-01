@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-028-event-bus-port](../../vision/plans/VP-028-event-bus-port.md)（**`active`** v0.2.0 · 2026-09-01 用户指令激活）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q02 运输端口前置）：交付进程内事件总线**运输端口**——EventBus 端口（类型化 Publish/Subscribe/Unsubscribe + 订阅生命周期 + 错误语义）+ 进程内 channel 实现 + outbox/MQ 接缝声明（不实现）。
 
-- **Root** `GOAL-001-event-bus-port`：`active` · **0/4**（R1 契约冻结 → R2 进程内实现 → R3 接缝与对齐 → R4 证据与关门），纲领见 Root `00-meta.md`。
+- **Root** `GOAL-001-event-bus-port`：`active` · **1/4**（R1 ✅ 契约冻结 → R2 进程内实现 → R3 接缝与对齐 → R4 证据与关门），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-01）：[VRev-064](../../vision/reviews/VRev-064-vp028-event-bus-port-activation.md) self `pass`（0 required；VRev-058/059 全部 findings 已闭合）；**架构类轻量 freshness PASS**（`5744868d` → `29727510`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码全部为 VP-027 已审结目交付）不暂挂 `go`。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - **消费基线**：VP-003 模块契约（kernel Provider/Registrar）· 内核基础设施端口形态参照 Cache / RateLimiter / Store / ObjectStore / Mail（VP-026/027/013/014/017 先例）· 停机合同 VP-021（若选异步 channel 投递须声明 SIGTERM 取消订阅/排空）。
@@ -45,7 +45,7 @@ VP-028：进程内事件总线运输端口（vision_ref @0.4.0）——八条方
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | **契约冻结**（判据 #1/#6 + I-028-001/002/003 裁决）：EventBus 端口 API 形态 · 类型化机制 · 投递语义（同步 vs 异步 + 缓冲满最小语义）· handler 错误语义 · 停机语义（异步须 SIGTERM 排空，否则同步） | 待立项（I-028-001/002/003 required 前置裁决） |
+| R1 | **契约冻结**（判据 #1/#6 + I-028-001/002/003 裁决）：EventBus 端口 API 形态 · 类型化机制 · 投递语义（同步 vs 异步 + 缓冲满最小语义）· handler 错误语义 · 停机语义（异步须 SIGTERM 排空，否则同步） | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：三信息项用户裁决 + D-002 v0.1.0 + kernel/eventbus.go + 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
 | R2 | **进程内实现**（判据 #2）：channel 分发 + 订阅管理 + 错误语义实现与测试（发布/订阅/退订、并发、顺序、handler panic 隔离） | 待 R1 |
 | R3 | **接缝与对齐**（判据 #3/#4/#5）：outbox/MQ 运输接缝声明 + Admin typed domain event gated 对齐登记 + topic/订阅命名与契约测试 harness | 待 R2 |
 | R4 | **证据与关门**（判据 #7/#8）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R3 |
