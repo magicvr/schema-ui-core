@@ -96,6 +96,9 @@ export function acceptTokenMatches(token: string, file: UploadFile): boolean {
     return false;
   }
   if (trimmed.startsWith(".")) {
+    if (!file.name) {
+      return false;
+    }
     const dot = file.name.lastIndexOf(".");
     if (dot < 0 || dot === file.name.length - 1) {
       return false;
@@ -103,8 +106,14 @@ export function acceptTokenMatches(token: string, file: UploadFile): boolean {
     return file.name.slice(dot).toLowerCase() === trimmed.toLowerCase();
   }
   if (trimmed.endsWith("/*")) {
+    if (!file.type) {
+      return false;
+    }
     const main = trimmed.slice(0, trimmed.length - 2);
     return file.type.toLowerCase().startsWith(`${main.toLowerCase()}/`);
+  }
+  if (!file.type) {
+    return false;
   }
   return file.type.toLowerCase() === trimmed.toLowerCase();
 }
