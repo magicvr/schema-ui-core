@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-028-event-bus-port
 title: 进程内事件总线端口（outbox/MQ 接缝）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-028-event-bus-port
 created: 2026-08-31
 updated: 2026-09-01
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
@@ -17,7 +17,7 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-01 · v0.2.0 · 用户指令激活 + VRev-064 self `pass`） |
+| status | **`closed`**（2026-09-01 · v0.3.0 · Root Goal 关门 · 八条退出判据全部满足） |
 | lead_workspace | `workspace-028-event-bus-port`（2026-09-01 开区） |
 | Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 conditional → VP-028 无 required；V-F101/102/103/104 响应 **fixed**）· **VRev-064 self（激活就绪 `pass` · 0 required · 2026-09-01）** |
 | 组合位置 | **架构分支** · H-002 同进程基座基础设施端口早期化（成功边界 #6）· RT-Q02 承接（**运输端口**前置；broker 仍 gated） |
@@ -93,7 +93,7 @@ parent: null
 | I-028-001 | 事件类型化机制：Go 接口断言 vs 注册表（topic → type）。**显式取舍（V-F103）**：进程内 channel 可传非序列化负载 vs 为 outbox/RT-Q06 预留的可序列化约束——R1 须记录未选方案；若选注册表，I-028-004 升为 required。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | **verified**（2026-09-01 用户裁决：注册表 + JSON 可序列化） |
 | I-028-002 | 投递语义默认：同步（发布者阻塞） vs 异步（channel 缓冲）；**缓冲满时的最小语义（V-F103）** = 阻塞 / 丢弃 / 返回错误（R1 只冻结其一；完整背压产品仍 gated）。 | required | 退出判据 2 | R1 | **verified**（2026-09-01 用户裁决：异步 + 缓冲满阻塞） |
 | I-028-003 | handler 错误语义：失败吞掉 + 日志 vs 回传发布者 vs 隔离失败（panic 恢复）；重复发布者可见性。 | required | 退出判据 2 | R1 | **verified**（2026-09-01 用户裁决：吞掉+日志 + panic 隔离） |
-| I-028-004 | 事件类型注册权属（业务域 VP vs Admin 功能 VP）与 typed domain event gated 保持：本 VP 不解除 Admin gated（V-F101）；因 I-028-001 选注册表升 required。 | required | 退出判据 4 | R3 | 待确认 |
+| I-028-004 | 事件类型注册权属（业务域 VP vs Admin 功能 VP）与 typed domain event gated 保持：本 VP 不解除 Admin gated（V-F101）；因 I-028-001 选注册表升 required。 | required | 退出判据 4 | R3 | **verified**（2026-09-01 用户确认：系统级/业务域/Admin 三类划分；本 VP 不解除 Admin gated） |
 
 ## 工作区绑定
 
@@ -103,11 +103,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-09-01 | **成功关门** | VP-028 八条退出判据全部满足；4 个 required 信息项全 verified；Root Goal (GOAL-001) 顺利关门；开放 required findings = 0 | workspace-028-event-bus-port/GOAL-001-event-bus-port（Root done 4/4）<br/>GOAL-005-r4-evidence-closeout/E-002-evidence-matrix.md（八条判据证据）<br/>commit 5aecd2c7 | 独立审计工具链受阻（R2/R3/R4 independent deferred，non-blocking）；后续可建立更稳定的多模型独立审计能力 |
 
 ## 规划修订短史
 
@@ -116,3 +114,4 @@ parent: null
 | 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q02 的应用契约前置（进程内 EventBus + outbox/MQ 接缝声明，broker 仍 gated）；与 Admin 功能分支 typed domain event 扩展接缝对齐；vision_ref @0.4.0；roadmap / revisions 原子同步 |
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 本 VP 无 required）：V-F101 **fixed**——定位统一为"运输端口 + 进程内实现 + outbox/MQ 接缝声明"，删除"应用契约前置"含糊措辞，明确不解除 Admin typed domain event gated、EventBus ≠ Job 端口；V-F102 **fixed**——补"不消耗 RT-Q02 trigger"解释规则；V-F103 **fixed**——序列化取舍改为 R1 显式取舍（含未选方案），I-028-002 背压收窄为缓冲满最小语义；V-F104 **fixed**——补异步投递停机语义声明；V-F100 部分 **fixed**——共享约定改为 topic/订阅命名（不纳入 Redis key 轨道） |
 | 2026-09-01 | v0.2.0 · **激活**：用户指令「/vision 激活 vp-028，然后交 /govern 开设新工作区」；VRev-064 self `pass`（0 required · 架构类 freshness PASS `5744868d`→`29727510` 五域零变更 · 区间代码 = VP-027 已审结目交付，不暂挂 `go`）；lead `workspace-028-event-bus-port` / Root `GOAL-001-event-bus-port` |
+| 2026-09-01 | v0.3.0 · **关门**：Root Goal (GOAL-001-event-bus-port) 完成 R1–R4 纲领路线图；八条退出判据全部满足；4 个 required 信息项全 verified；开放 required findings = 0；交付：`kernel/eventbus.go` 端口 + `kernel/eventbus/memory.go` 进程内实现 + 接缝声明文档 + 11 个测试（含 -race）；commit 5aecd2c7 |
