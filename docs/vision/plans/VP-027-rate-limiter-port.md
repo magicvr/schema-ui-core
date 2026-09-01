@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-027-rate-limiter-port
 title: 通用限流器端口（内存默认 + Redis 接缝）
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-027-rate-limiter-port
 created: 2026-08-31
 updated: 2026-09-01
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
@@ -17,7 +17,7 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-01 · v0.2.0 · 用户指令激活） |
+| status | **`closed`**（2026-09-01 · v0.3.0 · **用户书面确认关门**） |
 | lead_workspace | `workspace-027-rate-limiter-port`（2026-09-01 开区） |
 | Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 **conditional** → V-F099 **fixed** 2026-08-31）· **VRev-062 self（激活就绪 `pass` · 0 required · 2026-09-01）** |
 | 组合位置 | **架构分支** · H-002 同进程基座基础设施端口早期化（成功边界 #6）· RT-Q05 承接 |
@@ -111,11 +111,9 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-09-01 | **closed**（v0.3.0 · 用户书面确认） | 七条退出判据证据矩阵 7/7 verified（GOAL-005 attachments/r4-evidence-matrix.md）；阶段链 R1～R3 双审 0 required + Root 双审（A-001 self + A-002 grok independent `pass` · 0 required）；最终回归 `go test ./... -count=1` exit 0；全波次红线零触碰 · `go.mod` redis 0；VRev-063 self `pass` | lead `workspace-027-rate-limiter-port` Root `GOAL-001-rate-limiter-port` **done 4/4**（GOAL-002～005 全 done）· 架构短文 `cache-redis-seam-and-track.md` v1.1.0（§2.6 + §3.3 `rl`） | Redis 实现保持 **RT-Q05 trigger-gated**（短文 §2.6.5 / §4 跟踪项：容量 Redis 映射 · Retry-After TTL 位级关系 · 滑动窗口表达——触发立项时处理） |
 
 ## 规划修订短史
 
@@ -124,3 +122,4 @@ parent: null
 | 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q05（限流器端口 · 内存默认 + Redis 接缝声明），迁移既有 loginRateLimiter；vision_ref @0.4.0；roadmap / revisions 原子同步 |
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 闭合）：V-F099 required **fixed**——使用点分母补全为代码扫描的 7 处构造点（登录/captcha/密码修改/恢复/MFA verify 独立桶/MFA step-up/邀请接受），意图/冻结表/退出判据 3 三处对齐，显式排除 GOAL-014 分层锁定；V-F100 **fixed**——Redis 轨道约定改为单一所有者（架构短文或 owner VP，不跨区绑 D-001），VP-028 不属 Redis 轨道；V-F102 **fixed**——补"不消耗 RT-Q05 trigger"解释规则；V-F104 **fixed**——继承 W12 D-002（窗口常量保持）与 VP-021 停机语义声明 |
 | 2026-09-01 | v0.2.0 · **激活**（用户指令「/vision 激活 vp-027，然后交 /govern 开设工作区」）：VRev-062 self `pass`（0 required · VRev-058/059 全闭合）+ 架构类轻量 freshness PASS（`54fb57e7` → `5744868d` 五域零变更 · 区间代码 = VP-026 已审结目交付 · 不暂挂 `go`）；lead `workspace-027-rate-limiter-port` 交 `/govern` 开区；roadmap / reviews / workspaces / revisions 原子同步 |
+| 2026-09-01 | v0.3.0 · **关门**（用户书面确认 · P-004）：R1 合同冻结（GOAL-002）→ R2 内存供应商+7 处使用点迁移（GOAL-003）→ R3 接缝与登记（GOAL-004）→ R4 证据与关门（GOAL-005）四轮全链完成；七条判据证据矩阵 7/7 verified · Root 双审 0 required · VRev-063 `pass` · 最终回归 exit 0 · 红线零触碰；lead Root `done` 4/4；roadmap / workspaces / reviews / revisions 原子同步 |

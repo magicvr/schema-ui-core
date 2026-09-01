@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-rate-limiter-port
 title: 通用限流器端口
-status: active
+status: done
 parent: null
 created: 2026-09-01
 updated: 2026-09-01
-version: 0.1.0
-progress: 3/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-027-rate-limiter-port
 primary_plan: VP-027-rate-limiter-port
@@ -26,8 +26,8 @@ serves_summary: 通用限流器端口（架构分支 · H-002 同进程基座早
 - [x] 判据 #3（使用点迁移不回归 · 完整分母 V-F099）：7 处构造点（登录 / 验证码生成 / 密码修改 / 自助恢复 / MFA verify 独立桶 / MFA step-up / 邀请接受）全部接入端口；回归证据形态 = 各迁入点既有 handler 测试套件全量通过（`go test ./...` exit 0）+ `newLoginRateLimiter` 0 残留 + W12 D-002 窗口常量保持；GOAL-014 分层锁定显式排除——R2（2026-09-01）
 - [x] 判据 #4（Redis 接缝声明落盘）：供应商边界（端口不变）+ 原子窗口语义（INCR + EXPIRE）+ 连接管理约定写入；不引入 Redis 客户端依赖——R3（2026-09-01：owner 短文 v1.1.0 §2.6.1～2.6.5 · GOAL-004 done 3/3 · A-001 + A-002 双审 pass · `go.mod` redis 0）
 - [x] 判据 #5（共享约定登记）：Redis 轨道约定（VP-026/027：key 前缀 / 命名空间 / 连接管理 / 测试 harness）继承 owner 文档登记（单一所有者；VP-028 不属 Redis 轨道）——R3（2026-09-01：短文 §3.3 首条 `rl` 登记 · 026 登记义务闭环 · 修订史 v1.1.0）
-- [ ] 判据 #6（边界保持）：未改 Charter；未改 Profile 默认集 / 模块矩阵 / Manifest 装配；未预制 Redis 实现；未重开历史 VP——全程
-- [ ] 判据 #7（审计闭合）：开放 required finding = 0（或已合法闭合）——R4
+- [x] 判据 #6（边界保持）：未改 Charter；未改 Profile 默认集 / 模块矩阵 / Manifest 装配；未预制 Redis 实现；未重开历史 VP——全程（2026-09-01：全波次 `889a80bb^..HEAD` 105 文件核账——96 允许集 + 9 测试装配级联 · 红线 0 · `go.mod` redis 0）
+- [x] 判据 #7（审计闭合）：开放 required finding = 0（或已合法闭合）——R4（2026-09-01：阶段链 R1～R3 + Root 双审 A-001 self + A-002 grok independent 全部 `pass` · 0 required · VRev-063 `pass` · vision 开放 required = 0 · **用户书面确认关门** → Root done 4/4）
 
 ## 纲领路线图（P-001）
 
@@ -38,7 +38,7 @@ serves_summary: 通用限流器端口（架构分支 · H-002 同进程基座早
 | R1 | 合同冻结（判据 #1 + I-027-001/003/004）：端口 API 形态（Allow/Record 拆分 vs 内聚 Allow）· RetryAfter 语义 · 窗口语义默认（滑动保持）· key 维度扩展 · 供应商无关面 | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：三信息项用户裁决 · D-002 v0.1.1 合同 + kernel.RateLimiter 端口落地 · A-001 self + A-002 grok independent 双审 pass · 开放 required=0） |
 | R2 | 内存供应商 + 使用点迁移（判据 #2/#3 + I-027-002）：演进 `loginRateLimiter`（迁移 vs 并存双轨）· 7 处构造点接入 · 回归（D-001 P1 防暴破 + W12 D-002 窗口常量保持） | **已关门**（2026-09-01 · GOAL-003 `done` 3/3：I-027-002 用户裁决方案 A + `internal/ratelimit` 供应商 + 7 处注入 + `rate_limit.go` 删除 + 全量回归绿 · A-001 self + A-002 grok independent 双审 pass · 开放 required=0） |
 | R3 | 接缝与共享约定（判据 #4/#5）：Redis 接缝声明（端口不变 / INCR+EXPIRE / 连接管理）+ Redis 轨道约定继承登记（owner = cache-redis-seam-and-track.md） | **已关门**（2026-09-01 · GOAL-004 `done` 3/3：短文 v1.1.0 §2.6 + §3.3 `rl` 首条登记（026 义务闭环）· 零 Go 变更 · A-001 self + A-002 grok independent 双审 pass · 开放 required=0） |
-| R4 | 证据与关门（判据 #7；依赖 R1–R3 ✅）：证据矩阵 / 越界核账 / 审计闭合 | **待启动** |
+| R4 | 证据与关门（判据 #7；依赖 R1–R3 ✅）：证据矩阵 / 越界核账 / 审计闭合 | **已关门**（2026-09-01 · GOAL-005 `done` 3/3：证据矩阵 7/7 verified · 全波次红线零触碰 · Root 双审 A-001 self + A-002 grok independent `pass` 0 required · VRev-063 `pass` · **用户书面确认关门** → Root done 4/4） |
 
 ## 信息就绪与未知项（P-005）
 
@@ -60,6 +60,7 @@ serves_summary: 通用限流器端口（架构分支 · H-002 同进程基座早
 ## 备注
 
 - **开区（2026-09-01 · 用户指令）**：VP-027 `planned → active` v0.2.0（VRev-062 self `pass` 0 required · 架构类 freshness PASS `54fb57e7`→`5744868d` 五域零变更 · 不暂挂 `go`）；lead `workspace-027-rate-limiter-port`。
-- 审计模式（D-001 已定）：阶段关门 default self；实证门禁（R4 证据 / 关门）可按需 independent（grok build 先例，项目级默认执行路径）。
+- **结项（2026-09-01 · 用户书面确认）**：R1～R4 全部关门；七条判据 7/7 verified（GOAL-005 r4-evidence-matrix）；阶段链 + Root 双审 0 required；VRev-063 pass；最终回归 exit 0；**VP-027 `closed` v0.3.0**。残余：RT-Q05 Redis 实现 trigger-gated（短文 §4 三条跟踪项 · 触发立项时处理）。
+- 审计模式（D-001 已定）：阶段关门 default self；实证门禁（R4 证据 / 关门）按需 independent（grok build 先例，项目级默认执行路径）。
 - freshness 三字段与激活锚点见 D-001：消费候选 = HEAD `5744868d`；next trigger = 首个 C 端业务域 VP 激活或多实例部署评估（H-002）。
 - 三端口第二个：Redis 轨道共享约定（key 前缀 / 命名空间 / 连接管理 / 测试 harness）由 workspace-026 交付的 `docs/architecture/cache-redis-seam-and-track.md` owner 文档承载，本区激活为命名空间登记义务触发点之一（细则以短文为准，R3 按短文登记）。

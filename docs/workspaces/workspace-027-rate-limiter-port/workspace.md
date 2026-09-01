@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-027-rate-limiter-port](../../vision/plans/VP-027-rate-limiter-port.md)（**`active`** v0.2.0 · 2026-09-01 用户指令激活）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）：交付通用限流器端口——RateLimiter 端口（Allow/Record/Clear/RetryAfterSeconds + key 寻址 + 供应商无关）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 供应商接缝声明（不实现）。
 
-- **Root** `GOAL-001-rate-limiter-port`：**`active`** · **0/4**（R1 合同冻结 → R2 内存供应商+使用点迁移 → R3 接缝与共享约定 → R4 证据与关门），纲领见 Root `00-meta.md`。
+- **Root** `GOAL-001-rate-limiter-port`：**`done`** · **4/4**（R1 ✅ 合同冻结 → R2 ✅ 供应商+迁移 → R3 ✅ 接缝与登记 → R4 ✅ 证据与关门 · **2026-09-01 用户书面确认关门** · VP-027 `closed` v0.3.0），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-01）：[VRev-062](../../vision/reviews/VRev-062-vp027-rate-limiter-port-activation.md) self `pass`（0 required；VRev-058/059 全部 findings 已闭合）；**架构类轻量 freshness PASS**（`54fb57e7` → `5744868d`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码全部为 VP-026 已审结目交付）不暂挂 `go`。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - **消费基线**：VP-003 模块契约（kernel Provider/Registrar）· 内核基础设施端口形态参照 Cache / Store / ObjectStore / Mail（VP-026/013/014/017 先例）· 停机合同 VP-021（后台协程须声明 SIGTERM 排空）· 使用点迁移须保持 D-001 P1 防暴破防护与 W12 D-002 窗口常量；GOAL-014 账号分层锁定（DB 行锁）显式排除，不纳入端口。
@@ -30,7 +30,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-027-rate-limiter-port` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-rate-limiter-port` | `parent: null`；**active** · 0/4 |
+| Root Goal | `GOAL-001-rate-limiter-port` | `parent: null`；**done** · 4/4（2026-09-01 用户书面确认关门 · VP-027 closed v0.3.0） |
 | canonical 范围 | `docs/workspaces/workspace-027-rate-limiter-port/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-027 lead（active）；不改变 Charter primary workspace |
@@ -48,7 +48,15 @@ VP-027：通用限流器端口（vision_ref @0.4.0）——七条方向级退出
 | R1 | **合同冻结**（判据 #1 + I-027-001/003/004 裁决）：RateLimiter 端口 API 形态 · RetryAfter 语义 · 窗口语义（滑动窗口保持）· key 维度 · 供应商无关面 | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：三信息项用户裁决 + D-002 v0.1.1 + kernel/ratelimit.go + 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
 | R2 | **内存供应商 + 使用点迁移**（判据 #2/#3 + I-027-002）：演进 `loginRateLimiter`（用户裁决方案 A）+ 7 处构造点接入 + 回归（D-001 P1 / W12 D-002 常量保持） | **已关门**（2026-09-01 · GOAL-003 `done` 3/3：internal/ratelimit + 7 处注入 + rate_limit.go 删除 + client_ip.go + 全量回归绿（`go test ./...` exit 0）+ 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
 | R3 | **接缝与共享约定**（判据 #4/#5）：Redis 接缝声明 + 轨道约定继承登记（owner = cache-redis-seam-and-track.md） | **已关门**（2026-09-01 · GOAL-004 `done` 3/3：短文 v1.1.0 §2.6 + §3.3 `rl` 首条登记（026 义务闭环）· redis 0 · 零 Go 变更 · 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
-| R4 | **证据与关门**（判据 #6/#7）：证据矩阵 / 越界核账 / 审计闭合 | **待启动** |
+| R4 | **证据与关门**（判据 #6/#7）：证据矩阵 / 越界核账 / 审计闭合 | **已关门**（2026-09-01 · GOAL-005 `done` 3/3：证据矩阵 7/7 verified · 全波次红线零触碰 · Root 双审 A-001 self + A-002 grok independent `pass` 0 required · VRev-063 `pass` · **用户书面确认关门**） |
+
+## 结项记录
+
+**2026-09-01 用户书面确认关门**：Root `GOAL-001-rate-limiter-port` `done` 4/4 · **VP-027 `active → closed` v0.3.0**（VRev-063 self `pass` · vision 台账原子同步：roadmap 行 27 / workspaces.md 027 行 / reviews.md / revisions VR-057）。
+
+- 交付物：`kernel/ratelimit.go` 端口（RateLimiter / Provider + 可执行谓词）· `internal/ratelimit` 内存供应商（allow 不注册 / FIFO 驱逐 / RetryAfter）· 7 处使用点全量注入（登录/验证码/密码/恢复/MFA verify 独立桶/MFA step-up/邀请接受）· `handler/client_ip.go` · composition fx 单一持有 · owner 短文 `cache-redis-seam-and-track.md` v1.1.0（§2.6 接缝 + §3.3 `rl` 首条登记）。
+- 审计闭环：R1～R3 各阶段 self + grok build（grok-4.6 · high）independent 双审 0 required + Root 关门双审 0 required；VRev-062/063 `pass`；vision 开放 required = 0。
+- 关门后跟踪（无残余交付义务）：RT-Q05 Redis 实现保持 **trigger-gated**（短文 §4 三条跟踪项：容量 Redis 映射 · Retry-After TTL 位级关系 · 滑动窗口表达——触发立项时处理）。
 
 ## 固定共享资料引用
 
