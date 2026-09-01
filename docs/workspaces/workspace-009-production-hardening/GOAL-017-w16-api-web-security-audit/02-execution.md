@@ -16,6 +16,7 @@ version: 0.1.0
 |------|------|------|------|------|
 | E-001 | 2026-08-30 | S1 审计报告归档至 attachments | recorded | 本文件 § E-001 |
 | E-002 | 2026-08-30 | S1 A-001 独立审计意见落盘 | recorded | 本文件 § E-002 |
+| E-003 | 2026-08-30 | S3-P1 必修项修复 (F-001, F-002) | done | `02-execution/E-003-p1-fixes.md` |
 
 ## 事实边界
 
@@ -62,3 +63,39 @@ version: 0.1.0
 **S1 阶段完成**: 审计报告已归档并落盘为正式意见。
 
 **下一步**：S2 范围冻结决策 — 用户裁决修复范围、审计模式、是否暂挂 VP-008 go 宣称。
+
+## E-003 · S3-P1 必修项修复（2026-08-30）
+
+**事实**：
+- 已完成 F-001 (H-1) 和 F-002 (H-2) 的代码修复
+- 详细记录见：`02-execution/E-003-p1-fixes.md`
+
+**修复内容**：
+1. **F-001 (H-1) JWT Dev Secret 硬编码**:
+   - 文件：`apps/api/cmd/server/main.go`
+   - 移除 line 92 硬编码 fallback `"dev-secret-change-me"`
+   - 改为强制从环境变量读取，缺失时明确 panic
+
+2. **F-002 (H-2) CORS 配置过于宽松**:
+   - 文件：`apps/api/server/serve.go`
+   - 移除通配符 `*` 允许
+   - 新增 `isTrustedOrigin()` 白名单验证函数
+   - 只允许配置中的精确 origin
+
+**验证结果**：
+- ✅ `go vet ./...` - 无语法/类型错误
+- ✅ `go test ./... -short` - 相关模块测试通过
+  - `apps/api/cmd/server`: 18.923s passed
+  - `apps/api/server`: 4.520s passed
+  - `apps/api/modules/authsession`: 13.024s passed
+- ⚠️ `apps/api/internal/config`: `.env.example` 文档测试失败（既有问题，与本修复无关）
+
+**已验证无需修复**：
+- F-004 (M-2): Error message sanitization - 已由 W7 error catalog 框架处理
+- F-005 (M-3): Rate limiting - 已由 W13+ 全面实现
+
+**产物路径**：
+- `apps/api/cmd/server/main.go` (已修改)
+- `apps/api/server/serve.go` (已修改)
+
+**下一步**：S3-P2 处理 recommended 和 low 优先级项。

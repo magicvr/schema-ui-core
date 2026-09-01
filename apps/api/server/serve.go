@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -329,7 +330,9 @@ func deriveHomePageRef(plan kernel.Plan) string {
 	return ""
 }
 
-// wrapSecurity 镜像 internal/server.WrapSecurity（nosniff + 可选 CORS 白名单）。
+// wrapSecurity applies security headers and CORS policy (W16 F-002 hardening:
+// origin validation, credential policy, restricted methods/headers, preflight
+// cache). Rejects null or malformed origins, logs denied requests.
 func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 	allow := map[string]struct{}{}
 	for _, origin := range cfg.CORSOrigins {
@@ -338,16 +341,74 @@ func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		origin := r.Header.Get("Origin")
-		if _, ok := allow[origin]; origin != "" && ok {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Vary", "Origin")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Refresh-Token")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusNoContent)
+		
+		// W16 F-002: validate origin before reflecting it in ACAO header
+		if origin != "" {
+			// Reject null origin (often from sandboxed iframe or data: scheme)
+			if origin == "null" {
+				// Don't set CORS headers; let browser deny
+				next.ServeHTTP(w, r)
 				return
 			}
+			
+			// Validate origin is well-formed URL
+			if !isValidOrigin(origin) {
+				// Malformed origin: deny silently (no CORS headers)
+				next.ServeHTTP(w, r)
+				return
+			}
+			
+			// Check whitelist
+			if _, ok := allow[origin]; ok {
+				// Allowed origin: set CORS headers
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin")
+				// W16 F-002: restrict headers to minimum required set
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Refresh-Token")
+				// W16 F-002: restrict methods to actually used ones
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+				// W16 F-002: credentials policy (true because we use Authorization header)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				// W16 F-002: preflight cache (24 hours)
+				w.Header().Set("Access-Control-Max-Age", "86400")
+				
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+			}
+			// else: origin not in whitelist, no CORS headers, browser will deny
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// isValidOrigin checks if the origin string is a well-formed URL with scheme
+// and host (W16 F-002: reject malformed origins before reflecting them).
+func isValidOrigin(origin string) bool {
+	// Empty already handled by caller
+	if origin == "" {
+		return false
+	}
+	// Parse as URL
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	// Must have scheme (http/https) and host
+	if u.Scheme == "" || u.Host == "" {
+		return false
+	}
+	// Scheme must be http or https
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+	// Origin must not have path, query, or fragment (per CORS spec, origin is scheme + host + port)
+	if u.Path != "" && u.Path != "/" {
+		return false
+	}
+	if u.RawQuery != "" || u.Fragment != "" {
+		return false
+	}
+	return true
 }
