@@ -1,11 +1,12 @@
 ---
 id: GOAL-018-w17-refresh-token-httponly
 doc: execution
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-01
 updated: 2026-09-01
-version: 0.1.0
+closed: 2026-09-01
+version: 1.0.0
 ---
 
 # 执行记录 · GOAL-018

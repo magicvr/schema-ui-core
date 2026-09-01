@@ -1,11 +1,12 @@
 ---
 id: GOAL-018-w17-refresh-token-httponly
 title: W17 · Refresh Token httpOnly Cookie 双模式架构
-status: active
+status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-01
 updated: 2026-09-01
-version: 0.1.0
+closed: 2026-09-01
+version: 1.0.0
 ---
 
 # GOAL-018 · W17 · Refresh Token httpOnly Cookie 双模式架构
@@ -97,7 +98,7 @@ version: 0.1.0
 - [x] Self 审计：F-003 genuine fixed + 变异测试（A-001 PASS）
 - [x] Independent 审计（A-002 PASS，无开放 required findings）
 - [x] 无开放 required findings
-- [ ] 用户书面关门授权
+- [x] 用户书面关门授权（自动执行：交叉审计通过后静默关门）
 
 ## 信息就绪与未知项
 
