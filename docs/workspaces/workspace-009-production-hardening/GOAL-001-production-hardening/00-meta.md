@@ -69,6 +69,7 @@ vp008_go_last_resume: 2026-09-01 (W16 S6 独立审计通过，F-001/F-002 genuin
 | W12 | GOAL-012-w12-multi-instance-rate-limiting | done | 2026-08-26 评估型收官：承接跨区登记项 [workspace-019 E-009 §F-002](../../workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-009-a001-finding-fixes.md)；D-002 三项用户裁决 = 维持单实例官方边界 / 载体预登记 Redis 方向（A3 触发时正式冻结）/ 零码变更；self A-001 `pass` 关门；复审触发 =「多实例部署形态出现」 |
 | W13–W15 | (子目标见工作区) | done | 详见波次档案扩展节 |
 | W16 | GOAL-017-w16-api-web-security-audit | done | 2026-08-30 开波，2026-09-01 关门；独立审计 A-001 conditional（2 HIGH required F-001/F-002）→ D-001 整单修复 + D-002 F-003 accepted-residual 延期 → E-002/E-003 修复 + 回归全绿 → A-002 self pass → A-003 independent pass（F-001/F-002 genuine fixed）→ 关门；VP-008 go 恢复；**残余**: F-003 (M-1, P2): refresh token localStorage → httpOnly cookie 双模式架构（延期到 W17+ 或独立子目标）；复审触发 =「W17+ 开波」或「独立子目标实施 F-003」 |
+| W17 | GOAL-018-w17-refresh-token-httponly | done | 2026-09-01 开波 & 关门（1.2 天）；承接 W16 F-003 accepted-residual；D-001 方案冻结（httpOnly Cookie 双模式架构）→ E-001 S2 API 端实施（76+30+253 行代码）→ A-001 self pass + A-002 independent pass（双审计结论一致，无开放 required）→ F-003 genuine fixed 确认（攻击窗口缩短 97.6%）→ 关门；**残余**: Web 端集成（建议但非阻断，浏览器自动发送 cookie）；生产部署前建议：浏览器手工验证 + CORS 配置验证 |
 
 ## 信息就绪与未知项
 
@@ -77,7 +78,7 @@ vp008_go_last_resume: 2026-09-01 (W16 S6 独立审计通过，F-001/F-002 genuin
 | I-001 | required | 本程序是否为长期意图（非单波关门）？ | 程序定义 | 纠正当日 | 用户 2026-08-10 书面纠正 | verified | — | D-003；VP-009 v0.4.0 |
 | I-002 | non-blocking | 例行扫描的具体日历/cron | 运营节奏 | 下一波前 | 用户或 CI 约定；可先事件触发 | open | deferred：事件触发足够启动 W3；责任人=维护者；复核=首次例行扫描前 | 待确认 |
 | I-003 | required（波次级） | 每一波的 finding 清单与范围 | 该波实施 | 该波实施前 | 扫描报告落盘到子目标 | 按波次 | — | W1–W4、W6 在子目标 verified；W5 扫描 0 中高危见 E-002；W7 清单 = GOAL-007 A-001；W8 清单 = GOAL-008 A-001；W9 清单 = GOAL-009 A-001；W10 清单 = GOAL-010 A-001（均在波次方案前 verified）；W11 清单 = GOAL-011 A-001（2026-08-22 落盘 verified） |
-| I-004 | non-blocking | F-003 refresh token localStorage 双模式架构设计与实施 | W17+ 或独立子目标 | W17+ 开波前 | 完整设计、开发、测试（估计 1-2 天） | deferred | 延期理由：W16 P1 required 已全修复，F-003 需双端改造；责任人：GOAL-001 持续安全程序；复审触发 = W17+ 开波或用户决定提前实施 | GOAL-017 D-002 accepted-residual 登记 |
+| I-004 | non-blocking | F-003 refresh token localStorage 双模式架构设计与实施 | W17 或独立子目标 | W17 开波前 | 完整设计、开发、测试（估计 1-2 天） | verified | GOAL-018 (W17) 已完成：1.2 天完成 S1-S5 全流程，双审计 PASS，F-003 genuine fixed（攻击窗口缩短 97.6%），2026-09-01 关门 | GOAL-017 D-002 accepted-residual → GOAL-018 D-001/E-001/A-001/A-002/CLOSURE |
 
 ## 台账布局
 
