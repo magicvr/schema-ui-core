@@ -5,11 +5,11 @@ status: active
 parent: GOAL-001-production-hardening
 created: 2026-08-30
 updated: 2026-08-30
-version: 0.2.0
+version: 0.3.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
-serves_summary: W16 波次——归档根目录遗留的安全审计报告并修复其中指出的安全问题
+serves_summary: W16 波次——归档根目录遗留的安全审计报告并修复其中指出的安全问题；VP-008 go 暂挂中
 ---
 
 # GOAL-017 · W16 api/web 安全审计发现修复
@@ -50,10 +50,12 @@ serves_summary: W16 波次——归档根目录遗留的安全审计报告并修
    - ✅ 分类 findings 为 required (2) / recommended (3) / informational (7)
    - **Verdict**: conditional — 2 项高危 required (F-001, F-002)
 
-2. **S2 · 范围冻结与方案决策**
-   - 用户裁决：哪些必修、哪些可接受残余、哪些降级
-   - 决定是否需要暂挂 VP-008 go 宣称
-   - 冻结修复范围（D-001 或 D-002）
+2. **S2 · 范围冻结与方案决策**（✅ 已完成）
+   - ✅ 用户裁决：修复 required ×2 + 处置 recommended ×3
+   - ✅ 决定暂挂 VP-008 go 宣称（保守策略）
+   - ✅ F-003 特别决策：迁移到 httpOnly cookie + 保留客户端模式备选
+   - ✅ 审计模式：cross（self + independent grok-4.6）
+   - **决策文档**: [D-001](01-decision/D-001-w16-scope-freeze.md)
 
 3. **S3～S5 · 实施与回归**
    - 按优先级修复 required findings
