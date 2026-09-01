@@ -205,3 +205,11 @@ mail:
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
   mode: normal
+
+cache:
+  # VP-026 (workspace-026 GOAL-003 D-001): PROCESS-WIDE bounded-entry budget
+  # of the in-memory cache provider (total entries across all namespaces,
+  # incl. not-yet-swept expired ones). After every Set the total count is <=
+  # this value; the globally oldest entry is FIFO-evicted. Non-positive or
+  # unparsable values fail closed at startup. Env override: CACHE_MAX_ENTRIES.
+  max_entries: 10000

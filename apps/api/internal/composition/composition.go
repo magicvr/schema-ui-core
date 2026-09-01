@@ -16,12 +16,17 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/cache"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
-	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
@@ -55,10 +60,6 @@ import (
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/modules/users"
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -356,9 +357,9 @@ func newMuxWithExtraProviders(
 	var mfaVerifier handler.MFAVerifier
 	if plan.HasModule("admin.mfa") {
 		// W11 F-004: the previous JWT secret (VP-016 rotation window) is passed
-	// to MFA too, so a mid-rotation AUTH_JWT_SECRET change does not lock MFA
-	// users into an undecryptable second factor (empty = single-key behavior).
-	mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
+		// to MFA too, so a mid-rotation AUTH_JWT_SECRET change does not lock MFA
+		// users into an undecryptable second factor (empty = single-key behavior).
+		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
 		mfaVerifier = mfaService
 	}
 	// VP-014 R3 (GOAL-004 D-001): ONE kernel.ObjectStore instance serves all
@@ -383,6 +384,23 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, err
 	}
+	// VP-026 / workspace-026 GOAL-003 D-001 (R2): ONE kernel.Cache — the
+	// in-memory provider with the cache.max_entries budget. No probe: an
+	// in-process store has no external dependency (Redis stays trigger-gated,
+	// R3 declares only the seam). No module consumes it yet; the port is
+	// ready for R3 (mail cachedAdapter migration evaluation) and future
+	// business-domain modules.
+	cachePort, err := newCache(cfg)
+	if err != nil {
+		return nil, err
+	}
+	logger.Info("kernel cache port ready", "provider", "memory", "max_entries", cfg.CacheMaxEntries)
+	// Holder pattern (A-002 F-002 disposition): building the instance now
+	// makes construction errors fail startup; no module consumes the port yet
+	// and the local variable does NOT keep it alive across the function —
+	// R3 (mail cachedAdapter migration evaluation) must attach the single
+	// instance to a long-lived structure and drop this blank assign.
+	_ = cachePort
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
 	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
@@ -705,6 +723,23 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 		root = filepath.Dir(cfg.DBPath)
 	}
 	return objectstore.NewLocal(root), nil, nil
+}
+
+// newCache builds THE shared kernel.Cache instance (VP-026 / workspace-026
+// GOAL-003 D-001): the in-memory provider with the configured bounded-entry
+// budget. There is no readyz probe — an in-process store has no external
+// dependency. Zero on a loader-bypassed (zero-value) Config means "use the
+// load default" (mirrors the db rules and newObjectStore's empty-driver
+// handling); a negative budget is a programming error and fails closed.
+func newCache(cfg *config.Config) (kernel.Cache, error) {
+	budget := cfg.CacheMaxEntries
+	if budget < 0 {
+		return nil, fmt.Errorf("composition: cache.max_entries must be positive (got %d)", cfg.CacheMaxEntries)
+	}
+	if budget == 0 {
+		budget = config.DefaultCacheMaxEntries
+	}
+	return cache.NewMemory(budget)
 }
 
 // newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /

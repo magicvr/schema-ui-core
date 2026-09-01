@@ -96,7 +96,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-026-cache-port | GOAL-001-cache-port | lead | 2026-08-31（激活开区） | 唯一 delivery；激活审视 VRev-060 self `pass` + 架构类 freshness PASS（`055da2fd`→`54fb57e7`）；Root active 1/4（R1 ✅ 2026-09-01 · R2～R4） |
+| workspace-026-cache-port | GOAL-001-cache-port | lead | 2026-08-31（激活开区） | 唯一 delivery；激活审视 VRev-060 self `pass` + 架构类 freshness PASS（`055da2fd`→`54fb57e7`）；Root active 2/4（R1 ✅ + R2 ✅ 2026-09-01 · R3～R4） |
 
 ## 关门记录
 
@@ -114,3 +114,4 @@ parent: null
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 本 VP 无 required）：V-F100 **fixed**——Redis 轨道约定收窄为 VP-026/027（架构短文或 owner VP 单一所有者，不跨区绑 D-001），VP-028 不属 Redis 轨道；V-F102 **fixed**——补"不消耗 RT-Q03 trigger"解释规则；V-F104 **fixed**——补 TTL 清理停机语义（后台协程须声明 SIGTERM 排空，否则惰性清理） |
 | 2026-08-31 | v0.2.0 · **激活**（用户指令）：VRev-060 self `pass`（0 required · 架构类 freshness PASS `055da2fd`→`54fb57e7` 五域零变更不暂挂 `go`）；`planned → active`；lead `workspace-026-cache-port` 开区（Root `GOAL-001-cache-port` active 0/4 · R1～R4 纲领） |
 | 2026-09-01 | I-026-001/002/003 用户裁决（P-004）：`[]byte` 负载+类型化封装 / 惰性清理+配置化容量驱逐 / 显式命名空间 scoped 视图 → 信息台账 verified；R1 合同（GOAL-002 D-002）冻结 + 端口本体落地（kernel/cache.go） |
+| 2026-09-01 | **R2 关门**（GOAL-003 done 3/3）：FIFO 驱逐 + **进程总预算**（A-002 grok independent F-001 · 用户裁决）→ 内存供应商 + 绝对/滑动双策略 + Typed + `cache.max_entries` 键落地；判据 #2/#3 达成；changelog：R2 波证据见 GOAL-003 （E-003 / A-002 / A-003） |

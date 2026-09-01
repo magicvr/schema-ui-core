@@ -24,6 +24,12 @@ import (
 //go:embed config.default.yaml
 var defaultConfigYAML []byte
 
+// DefaultCacheMaxEntries is the fallback bounded-entry budget for the
+// in-memory cache provider (VP-026 / workspace-026 GOAL-003 D-001): applied
+// by Load when neither YAML nor env configures cache.max_entries, and by the
+// composition root for zero-value (loader-bypassed) Configs.
+const DefaultCacheMaxEntries = 10000
+
 // Config is the R2 runtime configuration: HTTP + logging, plus the auth
 // (JWT / refresh / SQLite) and dev-session surface defined by GOAL-005 D-004,
 // and the upload surface (W7: UPLOAD_* moved from handler package vars into
@@ -69,7 +75,7 @@ type Config struct {
 	// X-Forwarded-Proto headers, which a client can influence. Empty keeps
 	// the request-derived fallback (single-host dev / direct deployments).
 	AuthPublicBaseURL string
-	DBPath                string
+	DBPath            string
 	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
 	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
 	// unknown values and enforces DSN/path pairing rules.
@@ -131,6 +137,14 @@ type Config struct {
 	// ObjectsS3UsePathStyle defaults to true (MinIO/R2 need path-style);
 	// virtual-host style can be enabled for AWS-compatible endpoints.
 	ObjectsS3UsePathStyle bool
+
+	// Cache surface (VP-026 / workspace-026 GOAL-003 D-001, R2).
+	// CacheMaxEntries is the in-memory cache provider's bounded-entry budget:
+	// after every Set the TOTAL stored entry count (including not-yet-swept
+	// expired entries) is <= this value; the oldest entry is FIFO-evicted.
+	// Default 10000; non-positive values fail closed at load (a typo must
+	// never silently degrade to the default).
+	CacheMaxEntries int
 
 	// Observability metrics surface (VP-015 / workspace-015 GOAL-002 D-001).
 	// MetricsEnabled selects the DEDICATED Prometheus exposition listener —
@@ -328,7 +342,7 @@ type yamlFile struct {
 	Mail struct {
 		Channel       *string `yaml:"channel"`
 		MasterKeyPath *string `yaml:"master_key_path"`
-		SMTP struct {
+		SMTP          struct {
 			Host     *string `yaml:"host"`
 			Port     *int    `yaml:"port"`
 			Username *string `yaml:"username"`
@@ -340,6 +354,12 @@ type yamlFile struct {
 			From   *string `yaml:"from"`
 		} `yaml:"resend"`
 	} `yaml:"mail"`
+	Cache struct {
+		// VP-026 / workspace-026 GOAL-003 D-001: bounded-entry budget of the
+		// in-memory cache provider (respects only positive values; <= 0 fails
+		// closed at load). Env: CACHE_MAX_ENTRIES.
+		MaxEntries *int `yaml:"max_entries"`
+	} `yaml:"cache"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
@@ -375,7 +395,7 @@ func Load() *Config {
 		// VP-021 contract §6: default drain budget = 10s (mirrors the legacy
 		// hard-coded shutdown context in cmd/server/main.go).
 		HTTPShutdownTimeout: 10 * time.Second,
-		LogLevelName: "info",
+		LogLevelName:        "info",
 
 		AuthJWTSecret:            "",
 		AuthAccessTTL:            15 * time.Minute,
@@ -399,6 +419,7 @@ func Load() *Config {
 		BrandingMaxBytes:         4 << 20,
 		ObjectsDriver:            "local",
 		ObjectsS3UsePathStyle:    true,
+		CacheMaxEntries:          DefaultCacheMaxEntries,
 		MetricsEnabled:           false,
 		MetricsAddr:              "127.0.0.1:25081",
 		MetricsAuthToken:         "",
@@ -546,6 +567,9 @@ func Load() *Config {
 	cfg.MailResendAPIKey = strPtrOr(yf.Mail.Resend.APIKey, cfg.MailResendAPIKey)
 	cfg.MailResendFrom = strPtrOr(yf.Mail.Resend.From, cfg.MailResendFrom)
 	cfg.MailMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Mail.MasterKeyPath, cfg.MailMasterKeyPath))
+	if yf.Cache.MaxEntries != nil {
+		cfg.CacheMaxEntries = *yf.Cache.MaxEntries
+	}
 	if yf.Observability.Metrics.Enabled != nil {
 		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
 	}
@@ -657,6 +681,17 @@ func Load() *Config {
 	cfg.MailResendFrom = envOr("MAIL_RESEND_FROM", cfg.MailResendFrom)
 	cfg.MailMasterKeyPath = strings.TrimSpace(envOr("MAIL_MASTER_KEY_PATH", cfg.MailMasterKeyPath))
 	cfg.MailConfigMasterKey = envOr("MAIL_CONFIG_MASTER_KEY", cfg.MailConfigMasterKey)
+	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): strict env
+	// parse mirroring MAIL_SMTP_PORT — an explicitly supplied invalid value
+	// fails closed instead of silently keeping the default.
+	if raw := strings.TrimSpace(os.Getenv("CACHE_MAX_ENTRIES")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 {
+			cfg.LoadError = fmt.Errorf("config: CACHE_MAX_ENTRIES must be a positive integer")
+			return cfg
+		}
+		cfg.CacheMaxEntries = n
+	}
 	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
 		if err != nil || port < 1 || port > 65535 {
@@ -725,6 +760,15 @@ func Load() *Config {
 		}
 	default:
 		cfg.LoadError = fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", cfg.ObjectsDriver)
+		return cfg
+	}
+
+	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): the in-memory
+	// cache provider's bounded-entry budget must be positive. Explicit YAML /
+	// env values are checked above (pointer mapping / strict env parse); this
+	// block is the fail-closed net for any value that reached the struct.
+	if cfg.CacheMaxEntries <= 0 {
+		cfg.LoadError = fmt.Errorf("config: cache.max_entries must be a positive integer (got %d)", cfg.CacheMaxEntries)
 		return cfg
 	}
 
@@ -1087,6 +1131,12 @@ func (c *Config) ValidateProd() error {
 	// for every environment (including development) as well.
 	if err := c.validateObservability(); err != nil {
 		return err
+	}
+	// VP-026 (workspace-026 GOAL-003 D-001): the cache entry budget is a
+	// startup gate for every environment; zero on a bypassed/zero-value
+	// Config means "use load defaults" and is skipped (mirrors the db rules).
+	if c.CacheMaxEntries < 0 {
+		return fmt.Errorf("cache.max_entries must be positive (got %d)", c.CacheMaxEntries)
 	}
 	// VP-017 GOAL-003 D-001: mail.smtp pairing rules are startup gates for
 	// every environment (including development), like the db/objects rules.
