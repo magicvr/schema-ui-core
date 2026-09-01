@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-027-rate-limiter-port
 title: 通用限流器端口（内存默认 + Redis 接缝）
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace: 
+lead_workspace: workspace-027-rate-limiter-port
 created: 2026-08-31
-updated: 2026-08-31
-version: 0.1.1
+updated: 2026-09-01
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-08-31 · v0.1.1 · 用户确认立项 + VRev-059 响应修订） |
-| lead_workspace | —（待激活开区） |
-| Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 **conditional** → V-F099 **fixed** 2026-08-31） |
+| status | **`active`**（2026-09-01 · v0.2.0 · 用户指令激活） |
+| lead_workspace | `workspace-027-rate-limiter-port`（2026-09-01 开区） |
+| Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 **conditional** → V-F099 **fixed** 2026-08-31）· **VRev-062 self（激活就绪 `pass` · 0 required · 2026-09-01）** |
 | 组合位置 | **架构分支** · H-002 同进程基座基础设施端口早期化（成功边界 #6）· RT-Q05 承接 |
 
 ## 意图
@@ -107,7 +107,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；激活时指定 |
+| workspace-027-rate-limiter-port | GOAL-001-rate-limiter-port | lead | 2026-09-01 | `active` · 激活开区（VRev-062 `pass`） |
 
 ## 关门记录
 
@@ -123,3 +123,4 @@ parent: null
 |------|--------|
 | 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q05（限流器端口 · 内存默认 + Redis 接缝声明），迁移既有 loginRateLimiter；vision_ref @0.4.0；roadmap / revisions 原子同步 |
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 闭合）：V-F099 required **fixed**——使用点分母补全为代码扫描的 7 处构造点（登录/captcha/密码修改/恢复/MFA verify 独立桶/MFA step-up/邀请接受），意图/冻结表/退出判据 3 三处对齐，显式排除 GOAL-014 分层锁定；V-F100 **fixed**——Redis 轨道约定改为单一所有者（架构短文或 owner VP，不跨区绑 D-001），VP-028 不属 Redis 轨道；V-F102 **fixed**——补"不消耗 RT-Q05 trigger"解释规则；V-F104 **fixed**——继承 W12 D-002（窗口常量保持）与 VP-021 停机语义声明 |
+| 2026-09-01 | v0.2.0 · **激活**（用户指令「/vision 激活 vp-027，然后交 /govern 开设工作区」）：VRev-062 self `pass`（0 required · VRev-058/059 全闭合）+ 架构类轻量 freshness PASS（`54fb57e7` → `5744868d` 五域零变更 · 区间代码 = VP-026 已审结目交付 · 不暂挂 `go`）；lead `workspace-027-rate-limiter-port` 交 `/govern` 开区；roadmap / reviews / workspaces / revisions 原子同步 |
