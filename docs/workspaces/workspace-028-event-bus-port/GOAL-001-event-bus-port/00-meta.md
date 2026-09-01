@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-event-bus-port
 title: 进程内事件总线端口
-status: active
+status: done
 parent: null
 created: 2026-09-01
 updated: 2026-09-01
 version: 0.3.0
-progress: 3/4
+progress: 4/4
 plan_refs:
   - VP-028-event-bus-port
 primary_plan: VP-028-event-bus-port
@@ -27,8 +27,8 @@ serves_summary: 进程内事件总线运输端口（架构分支 · H-002 同进
 - [x] 判据 #4（对齐登记）：与 roadmap Admin 功能分支 typed domain event 扩展接缝登记对齐；**不解除**其 trigger-gated——R3（2026-09-01：D-001 §2 注册权属划分 + Admin gated 保持声明；I-028-004 用户确认 verified）
 - [x] 判据 #5（共享约定登记）：topic / 订阅命名 + 契约测试 harness 约定在架构短文或 owner VP 决策登记；**不**纳入 Redis key 轨道——R3（2026-09-01：D-001 §3 topic 格式正则 + 订阅生命周期 + 3 个测试模板）
 - [x] 判据 #6（停机与边界语义 · V-F104）：若选异步投递须声明 SIGTERM 取消订阅/排空；否则同步投递——R1（用户裁决异步 → D-002 §5 六条 Stop 义务冻结；R2 实现挂停机路径）
-- [ ] 判据 #7（边界保持）：未改 Charter；未改 Profile 默认集 / 模块矩阵 / Manifest 装配；未预制 outbox/broker；未重开历史 VP
-- [ ] 判据 #8（审计闭合）：开放 required finding = 0（或已合法闭合）
+- [x] 判据 #7（边界保持）：未改 Charter；未改 Profile 默认集 / 模块矩阵 / Manifest 装配；未预制 outbox/broker；未重开历史 VP——R4（2026-09-01：E-001 七项验证全 PASS · git log 82c702e8..HEAD 确认）
+- [x] 判据 #8（审计闭合）：开放 required finding = 0（或已合法闭合）——R4（2026-09-01：E-003 汇总 R1–R3 开放 required=0 · A-001 self pass 0 required）
 
 ## 纲领路线图（P-001）
 
@@ -39,7 +39,7 @@ serves_summary: 进程内事件总线运输端口（架构分支 · H-002 同进
 | R1 | 契约冻结（判据 #1/#6 + I-028-001/002/003）：类型化机制（接口断言 vs 注册表，含可序列化约束取舍）· 投递语义默认（同步 vs 异步 + 缓冲满最小语义）· handler 错误语义 · 停机语义 | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：用户裁决注册表+JSON / 异步+缓冲满阻塞 / 吞掉+panic 隔离 · D-002 v0.1.0 + kernel.EventBus · A-001 self + A-002 grok independent 双审 pass · 开放 required=0） |
 | R2 | 进程内实现（判据 #2）：channel 分发 + 订阅管理 + 错误语义实现与测试 | **已关门**（2026-09-01 · GOAL-003 `done` 4/4：Memory 实现 447+554行 · config/composition 注入 · 11测试含-race PASS · A-001 self conditional 0 required · A-002 independent deferred） |
 | R3 | 接缝与对齐（判据 #3/#4/#5 + I-028-004）：outbox/MQ 运输接缝声明 + Admin typed domain event gated 对齐 + topic/订阅命名与契约测试 harness | **已关门**（2026-09-01 · GOAL-004 `done` 4/4：D-001 三层架构+对齐声明+命名约定 · I-028-004 用户确认 verified · A-001 self pass 0 required · A-002 independent deferred） |
-| R4 | 证据与关门（判据 #7/#8；依赖 R1–R3）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R3 |
+| R4 | 证据与关门（判据 #7/#8；依赖 R1–R3）：证据矩阵 / 越界核账 / 审计闭合 | **已关门**（2026-09-01 · GOAL-005 `done` 3/3：E-001 判据#7七项验证 PASS · E-002 八条判据证据矩阵 · E-003 R1–R3审计汇总开放req=0 · A-001 self pass 0 required · A-002 independent deferred） |
 
 ## 信息就绪与未知项（P-005）
 
