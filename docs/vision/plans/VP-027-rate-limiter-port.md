@@ -30,7 +30,7 @@ parent: null
 
 设计要点：
 
-1. **RateLimiter 端口契约**：`Allow / Record / Reset / RetryAfter` 语义，key 寻址（client IP / 用户 ID / 自定义维度），供应商无关。
+1. **RateLimiter 端口契约**：`Allow / Record / Clear / RetryAfterSeconds` 语义（VRev-062 后统一命名，对齐 R1 冻结合同），key 寻址（client IP / 用户 ID / 自定义维度），供应商无关。
 2. **内存供应商（默认）**：**滑动窗口**语义 + 容量边界 + 驱逐——**演进既有 `loginRateLimiter`**（`apps/api/internal/handler/rate_limit.go`），不是平行另写一套。
 3. **既有使用点迁移（完整分母 · VRev-059 V-F099 → fixed）**：代码扫描冻结 **7 处构造点** 全部接入端口，行为语义不回归（含 D-001 P1 防暴破防护）：
    | # | 构造点 | 位置 | 参数 |
@@ -54,7 +54,7 @@ parent: null
 
 | 项 | 本 VP 交付 | 不进本 VP |
 |----|-----------|-----------|
-| 端口契约 | RateLimiter 端口（Allow/Record/Reset/RetryAfter + key 寻址 + 供应商无关） | 分布式限流协调（多实例触发后评估）；按用户/路由配额的业务策略（业务域） |
+| 端口契约 | RateLimiter 端口（Allow/Record/Clear/RetryAfterSeconds + key 寻址 + 供应商无关） | 分布式限流协调（多实例触发后评估）；按用户/路由配额的业务策略（业务域） |
 | 内存供应商 | 滑动窗口 + 容量边界 + 驱逐（演进 `loginRateLimiter`） | 令牌桶 / 漏桶 / 固定窗口（策略接口可扩展，实现待消费者触发） |
 | 迁移 | 7 处构造点全部接入端口（登录 / captcha 生成 / 密码修改 / 恢复 / MFA verify / MFA step-up / 邀请接受）；行为不回归（D-001 P1 + W12 D-002 窗口常量保持）；GOAL-014 分层锁定显式排除 | 非限流语义的进程内状态（如 scheduler 去重 map——那是调度状态，不是限流） |
 | 接缝 | Redis 供应商接缝声明（端口不变 / INCR+EXPIRE 语义 / 连接管理约定） | Redis 客户端依赖引入；跨实例一致性协议（触发后随实现） |
@@ -84,7 +84,7 @@ parent: null
 
 ## 方向级退出判据
 
-1. **端口契约冻结**：RateLimiter 端口（Allow/Record/Reset/RetryAfter + key 寻址 + 供应商无关）冻结并可用；快测可断言。
+1. **端口契约冻结**：RateLimiter 端口（Allow/Record/Clear/RetryAfterSeconds + key 寻址 + 供应商无关）冻结并可用；快测可断言。
 2. **内存供应商可用**：滑动窗口 + 容量边界 + 驱逐语义实现并有测试（并发、窗口边界、驱逐、RetryAfter 计算）。
 3. **既有使用点迁移不回归（完整分母 · V-F099）**：7 处构造点（登录 / 验证码生成 / 密码修改 / 自助恢复 / MFA verify 独立桶 / MFA step-up / 邀请接受）全部接入端口；回归证据形态 = 各迁入点既有 handler 测试套件全量通过 + `rate_limit.go` 单元语义（allow 不注册 key、容量驱逐、Retry-After、trusted-proxy/`loginClientIP`）+ W12 D-002 窗口常量保持；GOAL-014 分层锁定显式排除。
 4. **Redis 接缝声明落盘**：供应商边界（端口不变）、原子窗口语义（INCR + EXPIRE）、连接管理约定写入；不引入 Redis 客户端依赖。
@@ -98,10 +98,10 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-027-001 | 端口 API 形态：Allow/Record 拆分 vs 内聚 Allow（内部记数）；RetryAfter 语义（现有 `retryAfterSeconds` 演进）。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | 待裁决 |
-| I-027-002 | 既有 `loginRateLimiter` 迁移策略：演进为内存供应商（推荐） vs 保留并存（双轨）；多实例 limiter 实例的 key 维度是否扩展。 | required | 退出判据 3 | R2 | 待裁决 |
-| I-027-003 | 窗口语义默认：滑动窗口（现状保持） vs 固定窗口 vs 混合；策略接口是否与缓存 VP-026 共用形态。 | non-blocking | 退出判据 2 | R1 | 待确认 |
-| I-027-004 | 限流 key 维度扩展：是否新增"路由+用户"复合 key（C 端 API 防刷典型）；或留给业务域 VP 自行定义维度。 | non-blocking | 退出判据 1 | R1 | 待确认 |
+| I-027-001 | 端口 API 形态：Allow/Record 拆分 vs 内聚 Allow（内部记数）；RetryAfter 语义（现有 `retryAfterSeconds` 演进）。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | **verified**（2026-09-01 用户裁决：语义拆分保持——GOAL-002 D-001 accepted；合同 §1） |
+| I-027-002 | 既有 `loginRateLimiter` 迁移策略：演进为内存供应商（推荐） vs 保留并存（双轨）；多实例 limiter 实例的 key 维度是否扩展。 | required | 退出判据 3 | R2 | 待裁决（R2 前置） |
+| I-027-003 | 窗口语义默认：滑动窗口（现状保持） vs 固定窗口 vs 混合；策略接口是否与缓存 VP-026 共用形态。 | non-blocking | 退出判据 2 | R1 | **verified**（2026-09-01 用户确认：滑动窗口保持 + 策略接口独立——GOAL-002 D-001 accepted；合同 §3） |
+| I-027-004 | 限流 key 维度扩展：是否新增"路由+用户"复合 key（C 端 API 防刷典型）；或留给业务域 VP 自行定义维度。 | non-blocking | 退出判据 1 | R1 | **verified**（2026-09-01 用户确认：本波不新增复合 key——GOAL-002 D-001 accepted；合同 §2） |
 
 ## 工作区绑定
 

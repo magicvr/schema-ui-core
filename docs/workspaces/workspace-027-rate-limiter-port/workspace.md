@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · 通用限流器端口
 
-本工作区是 [VP-027-rate-limiter-port](../../vision/plans/VP-027-rate-limiter-port.md)（**`active`** v0.2.0 · 2026-09-01 用户指令激活）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）：交付通用限流器端口——RateLimiter 端口（Allow/Record/Reset/RetryAfter + key 寻址 + 供应商无关）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 供应商接缝声明（不实现）。
+本工作区是 [VP-027-rate-limiter-port](../../vision/plans/VP-027-rate-limiter-port.md)（**`active`** v0.2.0 · 2026-09-01 用户指令激活）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）：交付通用限流器端口——RateLimiter 端口（Allow/Record/Clear/RetryAfterSeconds + key 寻址 + 供应商无关）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 供应商接缝声明（不实现）。
 
 - **Root** `GOAL-001-rate-limiter-port`：**`active`** · **0/4**（R1 合同冻结 → R2 内存供应商+使用点迁移 → R3 接缝与共享约定 → R4 证据与关门），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-01）：[VRev-062](../../vision/reviews/VRev-062-vp027-rate-limiter-port-activation.md) self `pass`（0 required；VRev-058/059 全部 findings 已闭合）；**架构类轻量 freshness PASS**（`54fb57e7` → `5744868d`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码全部为 VP-026 已审结目交付）不暂挂 `go`。
@@ -45,7 +45,7 @@ VP-027：通用限流器端口（vision_ref @0.4.0）——七条方向级退出
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | **合同冻结**（判据 #1 + I-027-001/003/004 裁决）：RateLimiter 端口 API 形态 · RetryAfter 语义 · 窗口语义（滑动窗口保持）· key 维度 · 供应商无关面 | **待启动**（I-027-001 required 前置裁决） |
+| R1 | **合同冻结**（判据 #1 + I-027-001/003/004 裁决）：RateLimiter 端口 API 形态 · RetryAfter 语义 · 窗口语义（滑动窗口保持）· key 维度 · 供应商无关面 | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：三信息项用户裁决 + D-002 v0.1.1 + kernel/ratelimit.go + 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
 | R2 | **内存供应商 + 使用点迁移**（判据 #2/#3 + I-027-002）：演进 `loginRateLimiter` + 7 处构造点接入 + 回归（D-001 P1 / W12 D-002 常量保持） | **待启动** |
 | R3 | **接缝与共享约定**（判据 #4/#5）：Redis 接缝声明 + 轨道约定继承登记（owner = cache-redis-seam-and-track.md） | **待启动** |
 | R4 | **证据与关门**（判据 #6/#7）：证据矩阵 / 越界核账 / 审计闭合 | **待启动** |
