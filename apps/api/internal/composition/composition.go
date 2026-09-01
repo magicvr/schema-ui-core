@@ -24,6 +24,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -127,6 +128,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newObserver,
 			newMetricsServer,
 			newCache,
+			newRateLimiters,
 			newMux,
 			newServer,
 		),
@@ -286,8 +288,9 @@ func newMux(
 	observer *obs.Observer,
 	logger *slog.Logger,
 	cachePort kernel.Cache,
+	rateLimiters kernel.RateLimiterProvider,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, rateLimiters)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -310,6 +313,7 @@ func newMuxWithExtraProviders(
 	observer *obs.Observer,
 	logger *slog.Logger,
 	cachePort kernel.Cache,
+	rateLimiters kernel.RateLimiterProvider,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
 	// interception point — central handler registrations (Handle/HandleFunc)
@@ -399,7 +403,7 @@ func newMuxWithExtraProviders(
 	logger.Info("kernel cache port ready", "provider", "memory", "max_entries", cfg.CacheMaxEntries)
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
-	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
 	// workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery start/complete
 	// pair is a CENTRAL pre-auth surface (same layer as login) so every
 	// profile with core.auth-session gets it. The completion second-factor
@@ -409,8 +413,8 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("admin.mfa") {
 		recoveryGate = mfaService
 	}
-	handler.RegisterInviteAccept(mux, authRepository)
-	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate)
+	handler.RegisterInviteAccept(mux, authRepository, rateLimiters)
+	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate, rateLimiters)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id) and admin.file-library.
@@ -498,7 +502,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, activitymodule.New(a, operations))
 	}
 	if plan.HasModule("admin.account") {
-		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets, mailSender))
+		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets, mailSender, rateLimiters))
 	}
 	if plan.HasModule("admin.data-transfer") {
 		providers = append(providers, datatransfermodule.New(a, authRepository, operations, objects))
@@ -519,7 +523,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations, trash))
 	}
 	if plan.HasModule("admin.login-captcha") {
-		providers = append(providers, logincaptchamodule.New(a, captchaService, operations))
+		providers = append(providers, logincaptchamodule.New(a, captchaService, operations, rateLimiters))
 	}
 	// S-09 (GOAL-016 D-002 §2): the data-permission service feeds both the
 	// management routes and the RowScopeProvider contract. v1 wires NO
@@ -534,7 +538,7 @@ func newMuxWithExtraProviders(
 	// admin-reset routes and users.mfa-reset. The auth-session repository
 	// satisfies handler.SessionRevoker for disable/reset session invalidation.
 	if plan.HasModule("admin.mfa") {
-		providers = append(providers, mfamodule.New(a, mfaService, operations, authRepository))
+		providers = append(providers, mfamodule.New(a, mfaService, operations, authRepository, rateLimiters))
 	}
 	if plan.HasModule("admin.recycle-bin") {
 		providers = append(providers, recyclebinmodule.New(a, recycleService, operations))
@@ -719,6 +723,15 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 		root = filepath.Dir(cfg.DBPath)
 	}
 	return objectstore.NewLocal(root), nil, nil
+}
+
+// newRateLimiters builds THE shared kernel.RateLimiterProvider (VP-027 /
+// workspace-027 GOAL-003 D-001, R2): the in-memory factory. The Fx container
+// owns it for the process lifetime (combination-root single holder, seam doc
+// §2.4); a future Redis-tier provider replaces it at composition when RT-Q05
+// triggers. No probe: an in-process store has no external dependency.
+func newRateLimiters() kernel.RateLimiterProvider {
+	return ratelimit.NewProvider()
 }
 
 // newCache builds THE shared kernel.Cache instance (VP-026 / workspace-026

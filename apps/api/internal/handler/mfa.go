@@ -68,12 +68,12 @@ func mfaStepUpKey(op string, r *http.Request, userID string) string {
 // guardMFAStepUp runs the allow-check for a second-factor step-up attempt.
 // It writes the 429 response (with Retry-After) and returns false when the
 // bucket for this operation/IP/user is exhausted.
-func guardMFAStepUp(limiter *loginRateLimiter, op string, w http.ResponseWriter, r *http.Request, userID string) bool {
+func guardMFAStepUp(limiter kernel.RateLimiter, op string, w http.ResponseWriter, r *http.Request, userID string) bool {
 	key := mfaStepUpKey(op, r, userID)
-	if limiter.allow(key, time.Now().UTC()) {
+	if limiter.Allow(key, time.Now().UTC()) {
 		return true
 	}
-	if sec := limiter.retryAfterSeconds(key, time.Now().UTC()); sec > 0 {
+	if sec := limiter.RetryAfterSeconds(key, time.Now().UTC()); sec > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(sec))
 	}
 	writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed attempts; try again later")
@@ -101,7 +101,7 @@ type SessionRevoker interface {
 }
 
 // MFARoutes returns the admin.mfa HTTP surface.
-func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operationlog.Recorder, revoker SessionRevoker, moduleID string) []kernel.RouteContribution {
+func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operationlog.Recorder, revoker SessionRevoker, moduleID string, limiters kernel.RateLimiterProvider) []kernel.RouteContribution {
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, h http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -118,7 +118,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 	// as the login limiter). Window/threshold mirror the login limiter (15 min /
 	// 20 max) with a tighter cap (10) because each proof is one-shot, so 10
 	// HTTP-level attempts already cover all legitimate retry scenarios.
-	mfaVerifyLimiter := newLoginRateLimiter(
+	mfaVerifyLimiter := limiters.NewRateLimiter(
 		mfaVerifyRateLimiterWindow,
 		mfaVerifyRateLimiterMax,
 		mfaVerifyRateLimiterCapacity,
@@ -126,7 +126,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 
 	// W13 F-002/F-003: shared failure bucket for enroll/disable/recovery
 	// rotate (see the mfaStepUp* constants above).
-	mfaStepUpLimiter := newLoginRateLimiter(
+	mfaStepUpLimiter := limiters.NewRateLimiter(
 		mfaStepUpLimiterWindow,
 		mfaStepUpLimiterMax,
 		mfaStepUpLimiterCapacity,
@@ -140,8 +140,8 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		// user; an IP key still stops a replay-spray from a single host).
 		limiterKey := loginClientIP(r)
 		now := time.Now().UTC()
-		if !mfaVerifyLimiter.allow(limiterKey, now) {
-			if sec := mfaVerifyLimiter.retryAfterSeconds(limiterKey, now); sec > 0 {
+		if !mfaVerifyLimiter.Allow(limiterKey, now) {
+			if sec := mfaVerifyLimiter.RetryAfterSeconds(limiterKey, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many MFA verify attempts; try again later")
@@ -162,7 +162,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			// Failed verifications count against the limiter bucket so that a
 			// spray of invalid codes from one IP is bounded at the HTTP layer
 			// independently of the service-level proof exhaustion counter.
-			mfaVerifyLimiter.record(limiterKey, now)
+			mfaVerifyLimiter.Record(limiterKey, now)
 			writeMFAError(w, r, err)
 			return
 		}
@@ -222,11 +222,11 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			return
 		}
 		if !auth.VerifyPassword(current.PasswordHash, body.CurrentPassword) {
-			mfaStepUpLimiter.record(stepUpKey, time.Now().UTC())
+			mfaStepUpLimiter.Record(stepUpKey, time.Now().UTC())
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "current password is incorrect")
 			return
 		}
-		mfaStepUpLimiter.clear(stepUpKey)
+		mfaStepUpLimiter.Clear(stepUpKey)
 		secret, otpauth, codes, err := service.Enroll(user.ID, user.Name, time.Now().UTC())
 		if err != nil {
 			// A-008 recommended: an active enrollment maps to 400
@@ -285,12 +285,12 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		if err := service.Disable(user.ID, body.Code, body.RecoveryCode, now); err != nil {
 			if errors.Is(err, ErrMFAInvalid) {
-				mfaStepUpLimiter.record(mfaStepUpKey("disable", r, user.ID), now)
+				mfaStepUpLimiter.Record(mfaStepUpKey("disable", r, user.ID), now)
 			}
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
-		mfaStepUpLimiter.clear(mfaStepUpKey("disable", r, user.ID))
+		mfaStepUpLimiter.Clear(mfaStepUpKey("disable", r, user.ID))
 		if err := revoker.BumpTokenVersionAndRevokeAll(user.ID, now); err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not invalidate sessions")
 			return
@@ -322,12 +322,12 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		codes, err := service.RotateRecovery(user.ID, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
 			if errors.Is(err, ErrMFAInvalid) {
-				mfaStepUpLimiter.record(mfaStepUpKey("recovery-rotate", r, user.ID), time.Now().UTC())
+				mfaStepUpLimiter.Record(mfaStepUpKey("recovery-rotate", r, user.ID), time.Now().UTC())
 			}
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
-		mfaStepUpLimiter.clear(mfaStepUpKey("recovery-rotate", r, user.ID))
+		mfaStepUpLimiter.Clear(mfaStepUpKey("recovery-rotate", r, user.ID))
 		recordAudit(operations, user, operationlog.EventMFARecoveryRotate, user.ID, auditDetail("recovery-rotate", map[string]any{"userId": user.ID}), time.Now().UTC(), r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"recoveryCodes": codes})
 	})))

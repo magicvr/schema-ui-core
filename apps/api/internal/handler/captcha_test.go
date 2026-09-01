@@ -66,9 +66,6 @@ func TestCaptchaPreflightRateLimited(t *testing.T) {
 	if err := env.captcha.SetEnabled(true, time.Now().UTC()); err != nil {
 		t.Fatalf("enable: %v", err)
 	}
-	old := captchaGenerateLimiter
-	captchaGenerateLimiter = newLoginRateLimiter(time.Minute, 10, 1<<16)
-	defer func() { captchaGenerateLimiter = old }()
 
 	for i := 0; i < 10; i++ {
 		rec := httptest.NewRecorder()

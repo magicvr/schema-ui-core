@@ -11,8 +11,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // MFAVerifier is the optional second-factor login gate (S-10 · GOAL-017
@@ -45,19 +46,19 @@ type authHandler struct {
 	a           *auth.Authenticator
 	operations  operationlog.Recorder
 	now         func() time.Time
-	rateLimiter *loginRateLimiter
+	rateLimiter kernel.RateLimiter
 	captcha     CaptchaVerifier
 	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
 	// nil keeps the login contract byte-identical.
 	mfa MFAVerifier
 }
 
-func authsHandler(mux routeRegistrar, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier, mfa ...MFAVerifier) {
+func authsHandler(mux routeRegistrar, a *auth.Authenticator, operations operationlog.Recorder, limiters kernel.RateLimiterProvider, captcha CaptchaVerifier, mfa ...MFAVerifier) {
 	h := &authHandler{
 		a:           a,
 		operations:  operations,
 		now:         time.Now,
-		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
+		rateLimiter: limiters.NewRateLimiter(15*time.Minute, 20, 1<<16),
 		captcha:     captcha,
 	}
 	if len(mfa) > 0 && mfa[0] != nil {
@@ -103,8 +104,8 @@ func (h *authHandler) login() http.HandlerFunc {
 		// X-Real-IP) plus the attempted username, so one attacker spraying many
 		// usernames cannot lock out unrelated clients behind the same proxy.
 		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
-		if h.rateLimiter != nil && !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
-			if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+		if h.rateLimiter != nil && !h.rateLimiter.Allow(limiterKey, h.now().UTC()) {
+			if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
@@ -135,14 +136,14 @@ func (h *authHandler) login() http.HandlerFunc {
 		// (a missing user and a locked user differ by ~6 timing probes).
 		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
 			if h.rateLimiter != nil {
-				h.rateLimiter.record(limiterKey, h.now().UTC())
+				h.rateLimiter.Record(limiterKey, h.now().UTC())
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			if h.rateLimiter != nil {
-				h.rateLimiter.record(limiterKey, h.now().UTC())
+				h.rateLimiter.Record(limiterKey, h.now().UTC())
 			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
@@ -165,8 +166,8 @@ func (h *authHandler) login() http.HandlerFunc {
 			// capped in the service, but the bucket bounds the TOTAL guess
 			// budget (proofs issued per 15 min).
 			if h.rateLimiter != nil {
-				if !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
-					if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+				if !h.rateLimiter.Allow(limiterKey, h.now().UTC()) {
+					if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
 						w.Header().Set("Retry-After", strconv.Itoa(sec))
 					}
 					writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many login attempts; try again later")
@@ -179,7 +180,7 @@ func (h *authHandler) login() http.HandlerFunc {
 				return
 			}
 			if h.rateLimiter != nil {
-				h.rateLimiter.record(limiterKey, h.now().UTC())
+				h.rateLimiter.Record(limiterKey, h.now().UTC())
 			}
 			writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "mfaProof": proof})
 			return
@@ -192,7 +193,7 @@ func (h *authHandler) login() http.HandlerFunc {
 		// legitimate user who mis-typed the password a few times must not be
 		// locked out by their own earlier failures.
 		if h.rateLimiter != nil {
-			h.rateLimiter.clear(limiterKey)
+			h.rateLimiter.Clear(limiterKey)
 		}
 		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()), user.SessionID)
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})

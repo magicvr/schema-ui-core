@@ -19,6 +19,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
@@ -147,7 +148,7 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 		_ = st.Close()
 		return "", fmt.Errorf("server: trusted proxies: %w", err)
 	}
-	handler.RegisterWithMFAProbes(mux, authn, st, ops, plan, gate.Ready, nil, nil)
+	handler.RegisterWithMFAProbes(mux, authn, st, ops, plan, gate.Ready, ratelimit.NewProvider(), nil, nil)
 	handler.RegisterSchemas(mux, authn, set.Pages)
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))

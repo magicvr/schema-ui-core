@@ -30,11 +30,13 @@ type Provider struct {
 	// mailSender is THE composed kernel.MailSender (workspace-018 R3): the
 	// email identity surface sends verification codes through it.
 	mailSender kernel.MailSender
+	// limiters is THE composed kernel.RateLimiterProvider (VP-027 R2).
+	limiters kernel.RateLimiterProvider
 }
 
 // New constructs the account provider with framework-agnostic dependencies.
-func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, avatarAssets *handler.RasterAssetStore, mailSender kernel.MailSender) *Provider {
-	return &Provider{a: a, repository: repository, operations: operations, avatarAssets: avatarAssets, mailSender: mailSender}
+func New(a *auth.Authenticator, repository *authsession.Repository, operations operationlog.Recorder, avatarAssets *handler.RasterAssetStore, mailSender kernel.MailSender, limiters kernel.RateLimiterProvider) *Provider {
+	return &Provider{a: a, repository: repository, operations: operations, avatarAssets: avatarAssets, mailSender: mailSender, limiters: limiters}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -67,7 +69,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, p.avatarAssets, ModuleID, p.repository) {
+	for _, route := range handler.AccountSelfRoutes(p.a, p.repository, p.operations, p.limiters, p.avatarAssets, ModuleID, p.repository) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

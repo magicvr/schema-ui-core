@@ -19,6 +19,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/store"
@@ -61,7 +62,7 @@ func planWithCaptcha(t *testing.T) kernel.Plan {
 
 func TestCaptchaProviderRegistersSurfaces(t *testing.T) {
 	a, service, operations, _ := newCaptchaTestEnv(t)
-	provider := New(a, service, operations)
+	provider := New(a, service, operations, ratelimit.NewProvider())
 	set, err := kernel.RegisterContributions(context.Background(), planWithCaptcha(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
@@ -95,13 +96,13 @@ func TestCaptchaProviderRegistersSurfaces(t *testing.T) {
 func TestCaptchaProviderServesSurfaces(t *testing.T) {
 	a, service, operations, _ := newCaptchaTestEnv(t)
 	plan := planWithCaptcha(t)
-	provider := New(a, service, operations)
+	provider := New(a, service, operations, ratelimit.NewProvider())
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, ratelimit.NewProvider(), service)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
@@ -173,13 +174,13 @@ func TestCaptchaProviderServesSurfaces(t *testing.T) {
 func TestCaptchaRealServiceChallengeLogin(t *testing.T) {
 	a, service, operations, _ := newCaptchaTestEnv(t)
 	plan := planWithCaptcha(t)
-	provider := New(a, service, operations)
+	provider := New(a, service, operations, ratelimit.NewProvider())
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, ratelimit.NewProvider(), service)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
@@ -228,13 +229,13 @@ func TestCaptchaRealServiceChallengeLogin(t *testing.T) {
 func TestCaptchaRealServiceSettingsForbiddenForNonAdmin(t *testing.T) {
 	a, service, operations, authRepository := newCaptchaTestEnv(t)
 	plan := planWithCaptcha(t)
-	provider := New(a, service, operations)
+	provider := New(a, service, operations, ratelimit.NewProvider())
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, ratelimit.NewProvider(), service)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
@@ -274,13 +275,13 @@ func TestCaptchaRealServiceSettingsForbiddenForNonAdmin(t *testing.T) {
 func TestCaptchaRealServiceFailuresDoNotLock(t *testing.T) {
 	a, service, operations, _ := newCaptchaTestEnv(t)
 	plan := planWithCaptcha(t)
-	provider := New(a, service, operations)
+	provider := New(a, service, operations, ratelimit.NewProvider())
 	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)
 	}
 	mux := http.NewServeMux()
-	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, service)
+	handler.RegisterWithReadiness(mux, a, nil, operations, plan, nil, ratelimit.NewProvider(), service)
 	for _, route := range set.Routes {
 		mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}

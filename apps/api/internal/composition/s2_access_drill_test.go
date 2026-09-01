@@ -11,6 +11,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
@@ -210,6 +211,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		cachePort,
+		ratelimit.NewProvider(),
 	)
 	if err != nil {
 		t.Fatalf("newMuxWithExtraProviders with probe: %v", err)

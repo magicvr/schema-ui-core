@@ -47,15 +47,15 @@ type RecoveryRepository interface {
 // RegisterRecovery mounts the two public routes on the central mux (same
 // layer as login/refresh/logout — NOT a module provider: self-recovery must
 // exist on every profile that has core.auth-session).
-func RegisterRecovery(mux routeRegistrar, operations operationlog.Recorder, repo RecoveryRepository, notifier NotifyRepository, sender kernel.MailSender, gate RecoverySecondFactor) {
+func RegisterRecovery(mux routeRegistrar, operations operationlog.Recorder, repo RecoveryRepository, notifier NotifyRepository, sender kernel.MailSender, gate RecoverySecondFactor, limiters kernel.RateLimiterProvider) {
 	h := &recoveryHandler{
-		repo:       repo,
-		notifier:   notifier,
-		sender:     sender,
-		gate:       gate,
-		operations: operations,
-		now:        time.Now,
-		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
+		repo:         repo,
+		notifier:     notifier,
+		sender:       sender,
+		gate:         gate,
+		operations:   operations,
+		now:          time.Now,
+		rateLimiter:  limiters.NewRateLimiter(15*time.Minute, 20, 1<<16),
 	}
 	mux.HandleFunc("POST /api/auth/recovery/start", h.start())
 	mux.HandleFunc("POST /api/auth/recovery/complete", h.complete())
@@ -68,7 +68,7 @@ type recoveryHandler struct {
 	gate        RecoverySecondFactor
 	operations  operationlog.Recorder
 	now         func() time.Time
-	rateLimiter *loginRateLimiter
+	rateLimiter kernel.RateLimiter
 }
 
 func (h *recoveryHandler) limiterKey(r *http.Request, account string) string {
@@ -90,8 +90,8 @@ func (h *recoveryHandler) start() http.HandlerFunc {
 			return
 		}
 		key := h.limiterKey(r, body.Account)
-		if !h.rateLimiter.allow(key, h.now().UTC()) {
-			if sec := h.rateLimiter.retryAfterSeconds(key, h.now().UTC()); sec > 0 {
+		if !h.rateLimiter.Allow(key, h.now().UTC()) {
+			if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many recovery requests; try again later")
@@ -101,7 +101,7 @@ func (h *recoveryHandler) start() http.HandlerFunc {
 			switch {
 			case errors.Is(err, authsession.ErrRecoveryNotAvailable):
 				// Enumeration-neutral: identical shape, nothing was sent.
-				h.rateLimiter.record(key, h.now().UTC())
+				h.rateLimiter.Record(key, h.now().UTC())
 			case errors.Is(err, authsession.ErrRecoveryCooldown):
 				writeLocalizedError(w, r, http.StatusTooManyRequests, "EMAIL_RESEND_COOLDOWN", "please wait before requesting another code")
 				return
@@ -140,8 +140,8 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			return
 		}
 		key := h.limiterKey(r, body.Account)
-		if !h.rateLimiter.allow(key, h.now().UTC()) {
-			if sec := h.rateLimiter.retryAfterSeconds(key, h.now().UTC()); sec > 0 {
+		if !h.rateLimiter.Allow(key, h.now().UTC()) {
+			if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many recovery attempts; try again later")
@@ -267,7 +267,7 @@ func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request,
 // a matched code (legitimate user mid-flow) — see D-001 §2 write-back.
 func (h *recoveryHandler) recordFailure(key string) {
 	if h.rateLimiter != nil {
-		h.rateLimiter.record(key, h.now().UTC())
+		h.rateLimiter.Record(key, h.now().UTC())
 	}
 }
 

@@ -304,8 +304,8 @@ type InviteAcceptRepository interface {
 // RegisterInviteAccept mounts POST /api/auth/invite/accept on the central mux
 // (same pre-auth layer as login/recovery; GOAL-004 D-001 §3). Success answers
 // 204 WITHOUT tokens — the new user signs in (GOAL-002 D-001 §4 projection).
-func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
-	limiter := newLoginRateLimiter(inviteAcceptWindow, inviteAcceptMax, inviteAcceptCapacity)
+func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limiters kernel.RateLimiterProvider) {
+	limiter := limiters.NewRateLimiter(inviteAcceptWindow, inviteAcceptMax, inviteAcceptCapacity)
 	mux.HandleFunc("POST /api/auth/invite/accept", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Token    string `json:"token"`
@@ -324,8 +324,8 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
 		}
 		key := loginClientIP(r)
 		now := time.Now().UTC()
-		if !limiter.allow(key, now) {
-			if sec := limiter.retryAfterSeconds(key, now); sec > 0 {
+		if !limiter.Allow(key, now) {
+			if sec := limiter.RetryAfterSeconds(key, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many invite acceptance attempts; try again later")
@@ -334,7 +334,7 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
 		// F-001 ordering gate: dead tokens are rejected here, before any
 		// password policy or bcrypt work.
 		if err := repo.PeekInviteToken(strings.TrimSpace(body.Token), now); err != nil {
-			limiter.record(key, now)
+			limiter.Record(key, now)
 			writeInviteDomainError(w, r, err)
 			return
 		}
@@ -353,7 +353,7 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
 			return
 		}
 		if _, aerr := repo.AcceptInvite(strings.TrimSpace(body.Token), body.Username, body.Name, hash, now); aerr != nil {
-			limiter.record(key, now)
+			limiter.Record(key, now)
 			writeInviteDomainError(w, r, aerr)
 			return
 		}

@@ -36,6 +36,7 @@ import (
 	usersschema "github.com/magicvr/schema-ui-core/apps/api/modules/users/schema"
 	walletschema "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/schema"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
@@ -132,7 +133,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	captchaService := newTestCaptchaService()
 	recycleService := newTestRecycleService()
 	plan := testAdminPlan(t)
-	RegisterWithReadiness(mux, a, st, operations, plan, nil, captchaService)
+	RegisterWithReadiness(mux, a, st, operations, plan, nil, ratelimit.NewProvider(), captchaService)
 	// R6 C6.1: test env mounts the same resource-factory routes the module
 	// providers register (behavior-identical to the production finalize path);
 	// dead handler adapters MountProviderRoutes/RegisterSettings/RegisterActivity
@@ -164,7 +165,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	a.OnLockOpened = func(userID string) {
 		NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 	}
-	mountRoutes(AccountSelfRoutes(a, authRepository, operations, avatarAssets, "admin.account", authRepository))
+	mountRoutes(AccountSelfRoutes(a, authRepository, operations, ratelimit.NewProvider(), avatarAssets, "admin.account", authRepository))
 	mountRoutes(EmailIdentityRoutes(a, authRepository, recoverySender, "admin.account"))
 	mountRoutes(AccountAvatarRoutes(a, avatarAssets, authRepository, operations, "admin.account"))
 	mountRoutes(UserStateRoutes(a, authRepository, operations, "admin.account", authRepository))
@@ -182,7 +183,7 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	// above (a test double: the module package imports handler, so handler
 	// tests cannot import the real service; the module's own tests cover the
 	// real store-backed service).
-	mountRoutes(CaptchaRoutes(a, captchaService, operations, "admin.login-captcha"))
+	mountRoutes(CaptchaRoutes(a, captchaService, operations, "admin.login-captcha", ratelimit.NewProvider()))
 	// S-12 (GOAL-012): the admin plan enables admin.recycle-bin — the env
 	// mounts its routes with a fake service; the real store-backed service is
 	// covered by the module tests.
@@ -193,8 +194,8 @@ func newAuthTestEnvWith(t *testing.T, devSession bool) *authTestEnv {
 	// workspace-019 R2/R3 (GOAL-003/004): the central pre-auth surfaces plus
 	// the invitation management quartet ride the REAL mock channel — R4 HTTP
 	// evidence walks codes/links out of the outbox records.
-	RegisterRecovery(mux, operations, authRepository, authRepository, recoverySender, nil)
-	RegisterInviteAccept(mux, authRepository)
+	RegisterRecovery(mux, operations, authRepository, authRepository, recoverySender, nil, ratelimit.NewProvider())
+	RegisterInviteAccept(mux, authRepository, ratelimit.NewProvider())
 	mountRoutes(InviteAdminRoutes(a, authRepository, recoverySender, operations, "admin.users", ""))
 	mountRoutes(PasswordPolicyRoutes(a, authRepository, "admin.settings"))
 	RegisterSchemas(mux, a, testSchemaContributions())

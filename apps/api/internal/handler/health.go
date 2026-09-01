@@ -27,30 +27,30 @@ type healthResponse struct {
 // composition root from their kernel.Provider surfaces (RegisterContributions),
 // not by this central Register. This function keeps core auth/accounts/health
 // registration only.
-func Register(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan) {
-	RegisterWithReadiness(mux, a, st, operations, plan, nil)
+func Register(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, limiters kernel.RateLimiterProvider) {
+	RegisterWithReadiness(mux, a, st, operations, plan, nil, limiters)
 }
 
 // RegisterWithReadiness is Register plus an optional module-graph readiness
 // probe (R5). ready, when non-nil, gates /readyz on Start+Ready success.
 // Schema pages are registered separately via RegisterSchemas so composition can
 // pass runtime contribution ownership (R5 C5.1).
-func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha ...CaptchaVerifier) {
-	RegisterWithMFA(mux, a, st, operations, plan, ready, captcha, nil)
+func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, limiters kernel.RateLimiterProvider, captcha ...CaptchaVerifier) {
+	RegisterWithMFA(mux, a, st, operations, plan, ready, limiters, captcha, nil)
 }
 
 // RegisterWithMFA is RegisterWithReadiness plus the optional second-factor
 // login gate (S-10 · GOAL-017 D-002 §3): nil keeps the login contract
 // byte-identical.
-func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier) {
-	RegisterWithMFAProbes(mux, a, st, operations, plan, ready, captcha, mfa)
+func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, limiters kernel.RateLimiterProvider, captcha []CaptchaVerifier, mfa MFAVerifier) {
+	RegisterWithMFAProbes(mux, a, st, operations, plan, ready, limiters, captcha, mfa)
 }
 
 // RegisterWithMFAProbes is RegisterWithMFA plus optional readiness probes
 // beyond the store ping (VP-014 GOAL-003 D-001): when an S3-compatible object
 // backend is explicitly configured, composition passes a HeadBucket probe so
 // readyz covers the backend too. Nil entries are ignored.
-func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, captcha []CaptchaVerifier, mfa MFAVerifier, probes ...func(context.Context) error) {
+func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, limiters kernel.RateLimiterProvider, captcha []CaptchaVerifier, mfa MFAVerifier, probes ...func(context.Context) error) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready, probes...))
 	if plan.HasModule("core.auth-session") {
@@ -58,7 +58,7 @@ func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.
 		if len(captcha) > 0 {
 			verifier = captcha[0]
 		}
-		authsHandler(mux, a, operations, verifier, mfa)
+		authsHandler(mux, a, operations, limiters, verifier, mfa)
 		accountsHandler(mux, a)
 	}
 }

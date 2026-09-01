@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -106,7 +107,7 @@ func mountMFASurface(t *testing.T, env *authTestEnv, service MFASelfService, rev
 			env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(MFARoutes(env.a, service, env.operations, revoker, "admin.mfa"))
+	mountRoutes(MFARoutes(env.a, service, env.operations, revoker, "admin.mfa", ratelimit.NewProvider()))
 }
 
 // Two-step login: password factor OK + MFA required → proof, no tokens; then
@@ -117,13 +118,13 @@ func TestMFALoginTwoStep(t *testing.T) {
 	revoker := &fakeSessionRevoker{}
 	// A dedicated mux so the MFA gate can be injected into the login handler.
 	mux := http.NewServeMux()
-	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, ratelimit.NewProvider(), nil, fake)
 	mountRoutes := func(routes []kernel.RouteContribution) {
 		for _, r := range routes {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa", ratelimit.NewProvider()))
 
 	// Without an enrollment: normal login issues tokens.
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`{"username":"admin","password":"test-password"}`))
@@ -338,13 +339,13 @@ func TestMFAVerifyRateLimit(t *testing.T) {
 	fake := newFakeMFAService()
 	revoker := &fakeSessionRevoker{}
 	mux := http.NewServeMux()
-	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, ratelimit.NewProvider(), nil, fake)
 	mountRoutes := func(routes []kernel.RouteContribution) {
 		for _, r := range routes {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa", ratelimit.NewProvider()))
 
 	// Enroll the admin user so BeginChallenge works.
 	fake.required["user-admin"] = true
@@ -393,13 +394,13 @@ func TestMFAVerifyRateLimitPerIP(t *testing.T) {
 	fake := newFakeMFAService()
 	revoker := &fakeSessionRevoker{}
 	mux := http.NewServeMux()
-	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, ratelimit.NewProvider(), nil, fake)
 	mountRoutes := func(routes []kernel.RouteContribution) {
 		for _, r := range routes {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa", ratelimit.NewProvider()))
 
 	verifyFromIP := func(ip string) int {
 		req := httptest.NewRequest(http.MethodPost, "/api/auth/mfa/verify",
@@ -432,13 +433,13 @@ func TestMFAVerifyRateLimitDoesNotBlockNormalFlow(t *testing.T) {
 	fake := newFakeMFAService()
 	revoker := &fakeSessionRevoker{}
 	mux := http.NewServeMux()
-	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, nil, fake)
+	RegisterWithMFA(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, ratelimit.NewProvider(), nil, fake)
 	mountRoutes := func(routes []kernel.RouteContribution) {
 		for _, r := range routes {
 			mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 		}
 	}
-	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa"))
+	mountRoutes(MFARoutes(env.a, fake, env.operations, revoker, "admin.mfa", ratelimit.NewProvider()))
 
 	// Set up a valid proof as the login flow would.
 	fake.required["user-admin"] = true

@@ -13,6 +13,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
@@ -68,6 +69,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 		observer,
 		slog.Default(),
 		cachePort,
+		ratelimit.NewProvider(),
 	)
 	if err != nil {
 		t.Fatalf("instrumented composition: %v", err)

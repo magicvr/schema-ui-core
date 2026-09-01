@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	kernel "github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 )
@@ -63,7 +64,7 @@ func (g *fakeGate) VerifySecondFactor(userID, code, recoveryCode string, now tim
 
 func newRecoveryMux(repo RecoveryRepository, gate RecoverySecondFactor) *http.ServeMux {
 	mux := http.NewServeMux()
-	RegisterRecovery(mux, nil, repo, nil, nil, gate)
+	RegisterRecovery(mux, nil, repo, nil, nil, gate, ratelimit.NewProvider())
 	return mux
 }
 
@@ -242,7 +243,7 @@ func (f *fakeInviteAcceptRepo) ValidateNewPassword(userID, plain string) error {
 
 func newAcceptMux(repo InviteAcceptRepository) *http.ServeMux {
 	mux := http.NewServeMux()
-	RegisterInviteAccept(mux, repo)
+	RegisterInviteAccept(mux, repo, ratelimit.NewProvider())
 	return mux
 }
 

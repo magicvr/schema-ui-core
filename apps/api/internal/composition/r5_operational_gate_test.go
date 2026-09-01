@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
@@ -53,6 +54,7 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		cachePort,
+		ratelimit.NewProvider(),
 	)
 	if err != nil {
 		t.Fatal(err)
