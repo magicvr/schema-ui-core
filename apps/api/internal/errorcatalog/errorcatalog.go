@@ -37,6 +37,7 @@ var Catalog = map[string]Entry{
 	"INVALID_LOGIN_BODY":     {"error.invalidLoginBody", "body must be JSON with username and password", "请求体必须是包含用户名和密码的 JSON"},
 	"LOGIN_FAILED":           {"error.loginFailed", "authentication unavailable", "认证服务暂不可用"},
 	"INVALID_REFRESH_BODY":   {"error.invalidRefreshBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
+	"MISSING_REFRESH_TOKEN":  {"error.missingRefreshToken", "refresh token required in cookie, header, or body", "需要在 cookie、header 或 body 中提供 refresh token"},
 	"REFRESH_FAILED":         {"error.refreshFailed", "refresh unavailable", "刷新服务暂不可用"},
 	"INVALID_LOGOUT_BODY":    {"error.invalidLogoutBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
 	"LOGOUT_FAILED":          {"error.logoutFailed", "logout unavailable", "退出服务暂不可用"},

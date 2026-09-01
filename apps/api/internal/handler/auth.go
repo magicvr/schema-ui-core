@@ -196,6 +196,11 @@ func (h *authHandler) login() http.HandlerFunc {
 			h.rateLimiter.Clear(limiterKey)
 		}
 		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()), user.SessionID)
+		// W17 GOAL-018 D-001 I-003: set the refresh token as an httpOnly cookie
+		// (priority 1: browser SPA defense against XSS exfiltration). The JSON
+		// response still contains refreshToken for non-browser client compatibility
+		// (mobile SDKs, CLI tools) per I-002 three-layer fallback.
+		setRefreshCookie(w, refresh, !isDevMode(r))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -203,13 +208,23 @@ func (h *authHandler) login() http.HandlerFunc {
 // refresh rotates a valid refresh token into a new access/refresh pair.
 func (h *authHandler) refresh() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body tokenRequest
-		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
+		// W17 GOAL-018 D-001 I-002: three-layer fallback (Cookie → Header → Body)
+		refreshToken := extractRefreshToken(r)
+		if refreshToken == "" {
+			// Priority 3: try JSON body if Cookie and Header both empty
+			var body tokenRequest
+			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
+				return
+			}
+			refreshToken = body.RefreshToken
+		}
+		if refreshToken == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "MISSING_REFRESH_TOKEN", "refresh token required in cookie, header, or body")
 			return
 		}
-		access, refresh, user, err := h.a.Refresh(body.RefreshToken, h.now().UTC())
+		access, refresh, user, err := h.a.Refresh(refreshToken, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidToken) || errors.Is(err, auth.ErrExpiredToken) || errors.Is(err, auth.ErrTokenRevoked) {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "REFRESH_TOKEN_EXPIRED", "invalid, expired or revoked refresh token")
 			return
@@ -219,6 +234,10 @@ func (h *authHandler) refresh() http.HandlerFunc {
 			return
 		}
 		h.authEvent(operationlog.EventAuthRefresh, user.ID, requestid.FromContext(r.Context()), user.SessionID)
+		// W17 GOAL-018 D-001 I-003: update the httpOnly cookie with the new token
+		// (cookie rotation on every refresh). The JSON response still contains
+		// refreshToken for non-browser client compatibility.
+		setRefreshCookie(w, refresh, !isDevMode(r))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -227,13 +246,23 @@ func (h *authHandler) refresh() http.HandlerFunc {
 // auth.logout operation for the token's owner (I-008-003 §2/§5).
 func (h *authHandler) logout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body tokenRequest
-		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
+		// W17 GOAL-018 D-001 I-002: three-layer fallback (Cookie → Header → Body)
+		refreshToken := extractRefreshToken(r)
+		if refreshToken == "" {
+			// Priority 3: try JSON body if Cookie and Header both empty
+			var body tokenRequest
+			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
+				return
+			}
+			refreshToken = body.RefreshToken
+		}
+		if refreshToken == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "MISSING_REFRESH_TOKEN", "refresh token required in cookie, header, or body")
 			return
 		}
-		userID, sessionID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
+		userID, sessionID, err := h.a.Logout(refreshToken, h.now().UTC())
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
 			return
@@ -241,6 +270,8 @@ func (h *authHandler) logout() http.HandlerFunc {
 		if userID != "" {
 			h.authEvent(operationlog.EventAuthLogout, userID, requestid.FromContext(r.Context()), sessionID)
 		}
+		// W17 GOAL-018 D-001: clear the httpOnly cookie on logout
+		clearRefreshCookie(w)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
