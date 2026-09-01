@@ -25,5 +25,7 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-08-30 | S2 范围冻结与方案决策 | accepted | [D-001-w16-scope-freeze.md](01-decision/D-001-w16-scope-freeze.md) |
+| D-002 | 2026-08-30 | F-003 延期处置决策 | accepted | [D-002-w16-f003-deferral.md](01-decision/D-002-w16-f003-deferral.md) |
 
-> S2 范围冻结决策已完成：修复 required ×2 + 处置 recommended ×3；暂挂 VP-008 go；cross 审计模式。
+> S2 范围冻结决策已完成：修复 required ×2 + 处置 recommended ×3；暂挂 VP-008 go；cross 审计模式。  
+> D-002 已裁决：F-003 接受 accepted-residual 延期到后续波次（2026-08-30）。

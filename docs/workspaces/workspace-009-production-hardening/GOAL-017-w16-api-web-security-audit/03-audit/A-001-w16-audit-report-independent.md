@@ -123,6 +123,13 @@ func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 
 **级别**: **recommended** （已知权衡，建议改进但非阻断）
 
+**闭合状态**: ✅ **accepted-residual** (2026-08-30)
+- **决策**: D-002 用户裁决延期到后续波次
+- **接受范围**: F-003 refresh token localStorage 风险（XSS 防护失效时可能泄露）
+- **复审触发**: W17+ 或独立子目标开设时实施双模式架构（httpOnly cookie + localStorage fallback）
+- **责任人**: 持续安全程序（GOAL-001-production-hardening）
+- **理由**: F-003 需要实质性双端改造（API + Web），估计 1-2 天工作量；当前波次 P1 required 已全部修复；延期允许 W16 快速关门，F-003 可在后续波次完整设计、开发、测试
+
 ---
 
 #### F-004 (M-2): 错误消息可能泄露系统内部信息
@@ -273,20 +280,22 @@ func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 
 ## Required Findings 汇总
 
-| Finding | 描述 | 当前状态 | 优先级 |
-|---------|------|----------|--------|
-| **F-001** | JWT Secret 开发环境硬编码 | 部分存在（dev fallback 仍硬编码） | P1 (HIGH) |
-| **F-002** | CORS 配置缺乏 origin 验证 | 仍存在 | P1 (HIGH) |
+| Finding | 描述 | 当前状态 | 优先级 | 闭合状态 |
+|---------|------|----------|--------|----------|
+| **F-001** | JWT Secret 开发环境硬编码 | 部分存在（dev fallback 仍硬编码） | P1 (HIGH) | ✅ fixed (S3) |
+| **F-002** | CORS 配置缺乏 origin 验证 | 仍存在 | P1 (HIGH) | ✅ fixed (S3) |
 
-**开放 required 总数**: **2 项**
+**开放 required 总数**: **0 项** （全部已修复）
 
 ## Recommended Findings 汇总
 
-| Finding | 描述 | 当前状态 | 优先级 |
-|---------|------|----------|--------|
-| **F-003** | Refresh token in localStorage | 已知权衡、已文档化 | P2 |
-| **F-004** | 错误消息泄露内部信息 | 待核对 | P2 |
-| **F-005** | 速率限制覆盖范围 | 已部分实现，待验证 | P2 |
+| Finding | 描述 | 当前状态 | 优先级 | 闭合状态 |
+|---------|------|----------|--------|----------|
+| **F-003** | Refresh token in localStorage | 已知权衡、已文档化 | P2 | ✅ accepted-residual (D-002) |
+| **F-004** | 错误消息泄露内部信息 | 待核对 | P2 | ✅ 先前波次已修复 |
+| **F-005** | 速率限制覆盖范围 | 已部分实现，待验证 | P2 | ✅ 先前波次已修复 |
+
+**开放 recommended 总数**: **0 项** （F-003 延期接受，F-004/F-005 先前已修复）
 
 ## Informational Findings
 

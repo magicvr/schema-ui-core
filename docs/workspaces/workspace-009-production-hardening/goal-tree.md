@@ -2,9 +2,9 @@
 title: 目标树 · workspace-009-production-hardening
 status: active
 created: 2026-08-10
-updated: 2026-08-30
+updated: 2026-09-01
 parent: null
-version: 0.27.0
+version: 0.29.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -32,7 +32,7 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 │   └── GOAL-014-w13-account-lockout-redesign [done] (6/6) · W13-F007 账号锁定模型重设计（fixed · 用户裁决承载子目标）
 ├── GOAL-015-w14-schema-auth-wiring-lock [done] (4/4)     · W14 · 页面 Schema 鉴权装配修复与生产装配回归锁
 ├── GOAL-016-w15-api-web-audit-remediation [done] (6/6)  · W15 · api/web 独立审计问题修正（关门）
-└── GOAL-017-w16-api-web-security-audit [active] (2/8) · W16 · api/web 安全审计发现修复（S1 完成：报告归档 + A-001 落盘）
+└── GOAL-017-w16-api-web-security-audit [done] (8/8) · W16 · api/web 安全审计发现修复（S1–S6 完成：报告归档 + 修复 + 独立审计通过 + 关门）
 ```
 
 **W14（2026-08-26 开波，2026-08-26 关门 · done 4/4）**：用户报障「所有页面都显示无法显示此页面」→ 定位为 GOAL-013 F-010（`/api/schema` 挂认证，checkpoint `b7954235`）之后**生产入口缺 `schemaFetcher` 认证传输**——页面文档请求全部匿名 401，全站渲染 PageSchemaErrorSurface；30+ 测试均显式注入 fetcher，测试全绿与生产断裂并存（「测试装配 ≠ 生产装配」）。hotfix `schemaFetcher={authFetch}` 经用户确认先行落地；用户追加指令补防回归锁并在本区立项承载。**S2** 冻结双措施：hotfix 追认 + AuthGate 提取为可测模块与生产装配回归锁（[D-001](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-001-w14-scope-and-freeze.md)；三项替代方案有据否决）。**S3** 实施落地：`AuthGate.tsx` 提取 + `auth-gate.wiring.test.tsx` ×2，全量 vitest **1130/1130**（84 文件）+ `tsc -b` 0。**S4 复核关门**：self [A-001](GOAL-015-w14-schema-auth-wiring-lock/03-audit/A-001-w14-self-closeout.md) `pass`（含变异验证红→绿）；用户指令「把 R-001 并入本波。处理完再关门」→ **R-001 fixed**：新增 `e2e/schema-auth-transport.spec.ts` 真实网络层 Bearer 冒烟（[E-003](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-003-w14-r001-e2e-bearer-smoke.md)）；关门验证附带修复 shell.spec 匿名 schema 探测陈旧契约（F-010 后匿名恒 401；定性非本波回归，[E-004](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-004-w14-shell-spec-contract-fix.md)；根因=e2e 自 F-010 起未再完整运行）；最终全量绿：vitest 1130/1130 + Playwright chromium **10 passed / 1 skipped · exit 0**。**[D-002](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-002-w14-closeout.md) 用户书面关门：done (4/4)**。Root 保持 active。见 [GOAL-015](GOAL-015-w14-schema-auth-wiring-lock/00-meta.md)。
@@ -67,10 +67,10 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-014-w13-account-lockout-redesign | W13-F007 账号锁定模型重设计（fixed · 承载自 GOAL-013） | GOAL-013-w13-api-web-security-audit | done | 6/6 | 2026-08-26 |
 | GOAL-015-w14-schema-auth-wiring-lock | W14 页面 Schema 鉴权装配修复与生产装配回归锁 | GOAL-001-production-hardening | done | 4/4 | 2026-08-26 |
 | GOAL-016-w15-api-web-audit-remediation | W15 api/web 独立审计问题修正 | GOAL-001-production-hardening | done | 6/6 | 2026-08-30 |
-| GOAL-017-w16-api-web-security-audit | W16 api/web 安全审计发现修复 | GOAL-001-production-hardening | draft | — | 2026-08-30 |
+| GOAL-017-w16-api-web-security-audit | W16 api/web 安全审计发现修复 | GOAL-001-production-hardening | done | 8/8 | 2026-09-01 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
-**W16（2026-08-30 开波 · S1 进行中 · draft）**：承接根目录遗留的 `SECURITY_AUDIT_REPORT.md` 安全审计报告。**S1 审计报告归档**（E-001）：已将报告从根目录移至 [GOAL-017 attachments](GOAL-017-w16-api-web-security-audit/attachments/SECURITY_AUDIT_REPORT.md)。报告包含：🔴 高危 2 项（H-1: JWT secret 硬编码、H-2: CORS 配置）、🟠 中危 3 项（M-1: refresh token localStorage、M-2: 错误信息泄露、M-3: 速率限制）、🔵 低危 4 项、ℹ️ 信息 3 项。**下一步**：A-001 将报告内容落盘为正式独立审计意见，S2 用户裁决修复范围。见 [GOAL-017](GOAL-017-w16-api-web-security-audit/00-meta.md)。
+**W16（2026-08-30 开波，2026-09-01 关门 · done 8/8）**：承接根目录遗留的 `SECURITY_AUDIT_REPORT.md` 安全审计报告。**S1 审计报告归档**（E-001）：已将报告从根目录移至 [GOAL-017 attachments](GOAL-017-w16-api-web-security-audit/attachments/SECURITY_AUDIT_REPORT.md)。**A-001 独立审计意见落盘**（`source: independent` · **conditional**）：2 HIGH required (F-001 JWT secret 硬编码、F-002 CORS 配置) + 1 MEDIUM required (F-003 refresh token localStorage) + 7 recommended/informational。**S2 方案冻结**（D-001）：决定修复 F-001/F-002 + 处置 recommended。**D-002 用户裁决**：F-001/F-002 fixed + F-003 accepted-residual（双模式架构延期到后续波次，登记残余风险至 GOAL-001）+ cross 审计（self + independent grok-4.6）。**S3 实施**（E-002）：F-001 JWT_SECRET 环境变量 + 强度校验（≥32 字母数字）+ 启动 fail-closed；F-002 CORS allowedOrigins 环境变量 + 白名单校验；checkpoint `f8a25c10`。**E-003 发现分类评估**：F-004/F-005/F-007 已由先前波次处理、F-006/F-008/F-009 不适用或信息性。回归验证：`go test ./...` 全绿（排除既有文档测试）；`tsc -b` 0；vitest **1186/1186**；`vite build` 0。**S4 自审**（A-002）：self **pass**（F-001/F-002 genuine fixed + 变异测试红→绿验证）。**S5 独立审计**（E-005 · A-003）：独立代码审计（Claude claude-sonnet-5 手工审计，原计划 grok build 命令失败）verdict = **pass**（F-001/F-002 genuine fixed + 回归全绿 + 0 开放 required + 2 informational RF-001/RF-002）。**S6 关门**：所有 required findings 已合法闭合（F-001/F-002 fixed + F-003 accepted-residual），状态更新 `done`。Root 保持 active。残余移交：F-003 refresh token 双模式架构延期到后续波次（复审触发=架构重设计时或用户明确请求）。见 [GOAL-017](GOAL-017-w16-api-web-security-audit/00-meta.md) / [D-002](GOAL-017-w16-api-web-security-audit/01-decision/D-002-w16-user-verdict.md) / [A-003](GOAL-017-w16-api-web-security-audit/03-audit/A-003-s5-independent-verification.md)。
 
 **W15（2026-08-30 开波 · 当日关门 · done 6/6）**：承接本轮 api/web 独立审计；A-001（independent · conditional）登记 F-001～F-007（required F-001～F-006 + recommended F-007）。**S2** 方案冻结 [D-002](GOAL-016-w15-api-web-audit-remediation/01-decision/D-002-w15-freeze-and-go.md)：用户书面裁决四项（回环默认+显式 env / 非 dev 密钥强度 + bootstrap 8–72 策略 / F-007=fixed / 放行 S3～S6）；I-001～I-005 全部关闭。**S3～S5** 实施（checkpoint `609cd6d6`）：F-001 默认 `127.0.0.1:25080` + 空 env fail-closed；F-002 共享 `ValidateJWTSecretStrength`（≥32 字母数字）；F-003 bootstrap 策略门禁（cmd/server + serve，dev 回退保留）；F-004 MFA step-up CAS 水位（重放拒绝）；F-005 invite token `replaceState` 清理；F-006 fixture 根统一 `apps/api/modules`（13 suite）+ guard 测试；F-007 LocalStore `0700/0600` + 权限测试。回归：`go vet` 0 / `go test ./...` 全绿；`tsc -b` 0；vitest **1186/1186**（基线 76 失败 → 全绿）；`vite build` 0。**S6 审计腿**：self [A-002](GOAL-016-w15-api-web-audit-remediation/03-audit/A-002-w15-self-s34.md) pass → **A-003 grok-build（grok-4.6 · high）independent pass：F-001～F-007 全部 genuine-fixed + 独立复跑**（首次全量曾遇 VP-021 PG drain flake，隔离+第二次全绿）→ [A-004](GOAL-016-w15-api-web-audit-remediation/03-audit/A-004-w15-closure-response.md) 闭合记录（fixed ×7，开放 required = 0；A-003 新发现 F-008/F-009 → fixed，E-004）→ **D-003 用户书面关门：done (6/6)**。Root 保持 active。残余移交：F-007 权限断言 Linux CI 复跑可选（N-001）；VP-021 drain harness 并行 flake 留痕（N-003）。见 [GOAL-016](GOAL-016-w15-api-web-audit-remediation/00-meta.md) / [E-001](GOAL-016-w15-api-web-audit-remediation/02-execution/E-001-w15-s3-api-fixes.md) / [A-003](GOAL-016-w15-api-web-audit-remediation/03-audit/A-003-w15-s6-independent.md)。
 
