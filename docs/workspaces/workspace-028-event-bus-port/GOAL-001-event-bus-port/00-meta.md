@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-01
 updated: 2026-09-01
-version: 0.1.0
-progress: 1/4
+version: 0.2.0
+progress: 2/4
 plan_refs:
   - VP-028-event-bus-port
 primary_plan: VP-028-event-bus-port
@@ -22,7 +22,7 @@ serves_summary: 进程内事件总线运输端口（架构分支 · H-002 同进
 ## 成功标准（对应 VP-028 八条方向级退出判据）
 
 - [x] 判据 #1（端口契约冻结）：EventBus 端口（类型化 Publish/Subscribe/Unsubscribe + 订阅生命周期 + 错误语义）冻结并可用；快测可断言——R1（2026-09-01：D-002 v0.1.0 冻结 + `kernel/eventbus.go` 端口落地 + 快测绿；A-001 self + A-002 grok independent 双审 pass · 0 required）
-- [ ] 判据 #2（进程内实现可用）：channel 分发 + 订阅管理 + 错误语义实现并有测试（发布/订阅/退订、并发、顺序、handler panic 隔离）
+- [x] 判据 #2（进程内实现可用）：channel 分发 + 订阅管理 + 错误语义实现并有测试（发布/订阅/退订、并发、顺序、handler panic 隔离）——R2（2026-09-01：Memory 实现 447+554行 · 11测试含-race · A-001 self conditional 0 required · A-002 independent deferred 工具链受阻）
 - [ ] 判据 #3（接缝声明落盘）：应用契约 vs 运输实现边界（outbox/MQ）写入；不引入 broker 客户端依赖；不实现 outbox
 - [ ] 判据 #4（对齐登记）：与 roadmap Admin 功能分支 typed domain event 扩展接缝登记对齐；**不解除**其 trigger-gated
 - [ ] 判据 #5（共享约定登记）：topic / 订阅命名 + 契约测试 harness 约定在架构短文或 owner VP 决策登记；**不**纳入 Redis key 轨道
@@ -37,7 +37,7 @@ serves_summary: 进程内事件总线运输端口（架构分支 · H-002 同进
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
 | R1 | 契约冻结（判据 #1/#6 + I-028-001/002/003）：类型化机制（接口断言 vs 注册表，含可序列化约束取舍）· 投递语义默认（同步 vs 异步 + 缓冲满最小语义）· handler 错误语义 · 停机语义 | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：用户裁决注册表+JSON / 异步+缓冲满阻塞 / 吞掉+panic 隔离 · D-002 v0.1.0 + kernel.EventBus · A-001 self + A-002 grok independent 双审 pass · 开放 required=0） |
-| R2 | 进程内实现（判据 #2）：channel 分发 + 订阅管理 + 错误语义实现与测试 | 待 R1 |
+| R2 | 进程内实现（判据 #2）：channel 分发 + 订阅管理 + 错误语义实现与测试 | **已关门**（2026-09-01 · GOAL-003 `done` 4/4：Memory 实现 447+554行 · config/composition 注入 · 11测试含-race PASS · A-001 self conditional 0 required · A-002 independent deferred） |
 | R3 | 接缝与对齐（判据 #3/#4/#5 + I-028-004）：outbox/MQ 运输接缝声明 + Admin typed domain event gated 对齐 + topic/订阅命名与契约测试 harness | 待 R2 |
 | R4 | 证据与关门（判据 #7/#8；依赖 R1–R3）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R3 |
 
