@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-028-event-bus-port
 title: 进程内事件总线端口（outbox/MQ 接缝）
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace: 
+lead_workspace: workspace-028-event-bus-port
 created: 2026-08-31
-updated: 2026-08-31
-version: 0.1.1
+updated: 2026-09-01
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-08-31 · v0.1.1 · 用户确认立项 + VRev-059 响应修订） |
-| lead_workspace | —（待激活开区） |
-| Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 conditional → VP-028 无 required；V-F101/102/103/104 响应 **fixed**） |
+| status | **`active`**（2026-09-01 · v0.2.0 · 用户指令激活 + VRev-064 self `pass`） |
+| lead_workspace | `workspace-028-event-bus-port`（2026-09-01 开区） |
+| Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 conditional → VP-028 无 required；V-F101/102/103/104 响应 **fixed**）· **VRev-064 self（激活就绪 `pass` · 0 required · 2026-09-01）** |
 | 组合位置 | **架构分支** · H-002 同进程基座基础设施端口早期化（成功边界 #6）· RT-Q02 承接（**运输端口**前置；broker 仍 gated） |
 
 ## 意图
@@ -99,7 +99,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；激活时指定 |
+| workspace-028-event-bus-port | GOAL-001-event-bus-port | lead | 2026-09-01 | 激活开区（VRev-064 self `pass` · 架构类 freshness PASS `5744868d`→`29727510`） |
 
 ## 关门记录
 
@@ -115,3 +115,4 @@ parent: null
 |------|--------|
 | 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q02 的应用契约前置（进程内 EventBus + outbox/MQ 接缝声明，broker 仍 gated）；与 Admin 功能分支 typed domain event 扩展接缝对齐；vision_ref @0.4.0；roadmap / revisions 原子同步 |
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 本 VP 无 required）：V-F101 **fixed**——定位统一为"运输端口 + 进程内实现 + outbox/MQ 接缝声明"，删除"应用契约前置"含糊措辞，明确不解除 Admin typed domain event gated、EventBus ≠ Job 端口；V-F102 **fixed**——补"不消耗 RT-Q02 trigger"解释规则；V-F103 **fixed**——序列化取舍改为 R1 显式取舍（含未选方案），I-028-002 背压收窄为缓冲满最小语义；V-F104 **fixed**——补异步投递停机语义声明；V-F100 部分 **fixed**——共享约定改为 topic/订阅命名（不纳入 Redis key 轨道） |
+| 2026-09-01 | v0.2.0 · **激活**：用户指令「/vision 激活 vp-028，然后交 /govern 开设新工作区」；VRev-064 self `pass`（0 required · 架构类 freshness PASS `5744868d`→`29727510` 五域零变更 · 区间代码 = VP-027 已审结目交付，不暂挂 `go`）；lead `workspace-028-event-bus-port` / Root `GOAL-001-event-bus-port` |
