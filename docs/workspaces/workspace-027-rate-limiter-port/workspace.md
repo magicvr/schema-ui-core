@@ -47,7 +47,7 @@ VP-027：通用限流器端口（vision_ref @0.4.0）——七条方向级退出
 |------|------|------|
 | R1 | **合同冻结**（判据 #1 + I-027-001/003/004 裁决）：RateLimiter 端口 API 形态 · RetryAfter 语义 · 窗口语义（滑动窗口保持）· key 维度 · 供应商无关面 | **已关门**（2026-09-01 · GOAL-002 `done` 3/3：三信息项用户裁决 + D-002 v0.1.1 + kernel/ratelimit.go + 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
 | R2 | **内存供应商 + 使用点迁移**（判据 #2/#3 + I-027-002）：演进 `loginRateLimiter`（用户裁决方案 A）+ 7 处构造点接入 + 回归（D-001 P1 / W12 D-002 常量保持） | **已关门**（2026-09-01 · GOAL-003 `done` 3/3：internal/ratelimit + 7 处注入 + rate_limit.go 删除 + client_ip.go + 全量回归绿（`go test ./...` exit 0）+ 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
-| R3 | **接缝与共享约定**（判据 #4/#5）：Redis 接缝声明 + 轨道约定继承登记（owner = cache-redis-seam-and-track.md） | **待启动** |
+| R3 | **接缝与共享约定**（判据 #4/#5）：Redis 接缝声明 + 轨道约定继承登记（owner = cache-redis-seam-and-track.md） | **已关门**（2026-09-01 · GOAL-004 `done` 3/3：短文 v1.1.0 §2.6 + §3.3 `rl` 首条登记（026 义务闭环）· redis 0 · 零 Go 变更 · 双审 pass（A-001 self + A-002 grok independent · 0 required）） |
 | R4 | **证据与关门**（判据 #6/#7）：证据矩阵 / 越界核账 / 审计闭合 | **待启动** |
 
 ## 固定共享资料引用
