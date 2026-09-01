@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: 
 created: 2026-08-31
 updated: 2026-08-31
-version: 0.1.1
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,10 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-08-31 · v0.1.1 · 用户确认立项 + VRev-059 响应修订） |
-| lead_workspace | —（待激活开区） |
-| Vision required | VRev-058 self（计划阶段）· VRev-059 grok build independent（复审 conditional → VP-026 无 required；V-F100/102/104 响应 **fixed**） |
+| status | **`active`**（2026-08-31 · v0.2.0 · 用户指令「激活 VP-026 并交编排器开始工作区」） |
+| lead_workspace | `workspace-026-cache-port`（Root `GOAL-001-cache-port` · `/govern` 同日开区） |
+| Vision required | VRev-058 self（计划）· VRev-059 grok build independent（复审 conditional → 全部闭合 · 0 required）· **VRev-060 self `pass`（激活就绪）** |
+| freshness 消费候选 | `055da2fd`（VP-025 关门锚点）→ **`54fb57e7`**（架构类轻量 PASS · 五域零变更 · 不暂挂 `go` · VRev-060） |
 | 组合位置 | **架构分支** · H-002 同进程基座基础设施端口早期化（成功边界 #6）· RT-Q03 承接 |
 
 ## 意图
@@ -95,7 +96,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；激活时指定 |
+| workspace-026-cache-port | GOAL-001-cache-port | lead | 2026-08-31（激活开区） | 唯一 delivery；激活审视 VRev-060 self `pass` + 架构类 freshness PASS（`055da2fd`→`54fb57e7`）；Root active 0/4（R1～R4） |
 
 ## 关门记录
 
@@ -111,3 +112,4 @@ parent: null
 |------|--------|
 | 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q03（缓存端口 · 内存默认 + Redis 接缝声明）；vision_ref @0.4.0；roadmap / revisions 原子同步 |
 | 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 本 VP 无 required）：V-F100 **fixed**——Redis 轨道约定收窄为 VP-026/027（架构短文或 owner VP 单一所有者，不跨区绑 D-001），VP-028 不属 Redis 轨道；V-F102 **fixed**——补"不消耗 RT-Q03 trigger"解释规则；V-F104 **fixed**——补 TTL 清理停机语义（后台协程须声明 SIGTERM 排空，否则惰性清理） |
+| 2026-08-31 | v0.2.0 · **激活**（用户指令）：VRev-060 self `pass`（0 required · 架构类 freshness PASS `055da2fd`→`54fb57e7` 五域零变更不暂挂 `go`）；`planned → active`；lead `workspace-026-cache-port` 开区（Root `GOAL-001-cache-port` active 0/4 · R1～R4 纲领） |
