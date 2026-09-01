@@ -73,15 +73,15 @@ version: 0.1.0
 ## 成功标准（阶段检查点）
 
 ### S1 · 方案冻结
-- [ ] 详细设计完成（API 端点改造、Web 客户端逻辑、cookie 属性）
-- [ ] 向后兼容性策略明确（header 回退、localStorage 保留）
-- [ ] 测试计划完成（单元、集成、回归）
+- [x] 详细设计完成（API 端点改造、Web 客户端逻辑、cookie 属性）
+- [x] 向后兼容性策略明确（header 回退、localStorage 保留）
+- [x] 测试计划完成（单元、集成、回归）
 
-### S2 · API 端实施
-- [ ] `/api/auth/login`: 设置 httpOnly cookie
-- [ ] `/api/auth/refresh`: cookie 优先 + header 回退
-- [ ] `/api/auth/logout`: 清除 cookie
-- [ ] Go 单元测试通过（cookie 设置/读取/优先级逻辑）
+### S2 · API 端实施 ✅
+- [x] `/api/auth/login`: 设置 httpOnly cookie
+- [x] `/api/auth/refresh`: cookie 优先 + header 回退
+- [x] `/api/auth/logout`: 清除 cookie
+- [x] Go 单元测试通过（cookie 设置/读取/优先级逻辑）
 
 ### S3 · Web 端实施
 - [ ] SPA 客户端逻辑改造（cookie 模式优先）
@@ -103,9 +103,10 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | Cookie 属性配置（SameSite/Secure/Path） | 方案冻结 | S1 | 参考业界最佳实践 + 现有架构 | open | — | 待确认 |
-| I-002 | required | 非浏览器环境（移动客户端/CLI）兼容性策略 | 方案冻结 | S1 | 明确回退逻辑 + 文档 | open | — | 待确认 |
-| I-003 | non-blocking | token 轮换时的 cookie 更新策略 | 实施 | S2 | 代码实现 + 测试 | open | — | 待确认 |
+| I-001 | required | Cookie 属性配置（SameSite/Secure/Path） | 方案冻结 | S1 | 参考业界最佳实践 + 现有架构 | verified | — | D-001 §2: HttpOnly=true, SameSite=Lax, Secure(adaptive), Path=/api/auth |
+| I-002 | required | 非浏览器环境（移动客户端/CLI）兼容性策略 | 方案冻结 | S1 | 明确回退逻辑 + 文档 | verified | — | D-001 §3: 三层回退 Cookie → Header → Body |
+| I-003 | required | token 轮换时的 cookie 更新策略 | 实施 | S2 | 代码实现 + 测试 | verified | — | refresh_cookie.go:16 setRefreshCookie() 每次 refresh 更新 |
+| I-004 | non-blocking | 开发环境 HTTP localhost Secure 属性兼容 | 实施 | S2 | 代码实现 + 测试 | verified | — | refresh_cookie.go:62 isDevMode() 检测 HTTP localhost 禁用 Secure |
 
 ## 父目标
 
