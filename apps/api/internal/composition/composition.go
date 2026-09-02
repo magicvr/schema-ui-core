@@ -564,11 +564,17 @@ func newMuxWithExtraProviders(
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("register wallet jobs: %v", err)}
 		}
 		jobRuntime.enabled.Store(true)
-		// W13 F-012 (GOAL-013 A-001): auto-create wallet paths verify the
-		// owner id against the live user table — no orphan account books.
+		// W13 F-012 (GOAL-013 A-001) / VP-029: auto-create wallet paths verify the
+		// owner id against the live user table or external subjects table — no orphan account books.
 		walletOwnerExists := handler.OwnerExistsFunc(func(ownerID string) bool {
-			_, err := authRepository.UserByID(ownerID)
-			return err == nil
+			if _, err := authRepository.UserByID(ownerID); err == nil {
+				return true
+			}
+			if walletService.SubjectStore() != nil {
+				exists, err := walletService.SubjectStore().SubjectExists(context.Background(), ownerID)
+				return err == nil && exists
+			}
+			return false
 		})
 		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists))
 	}

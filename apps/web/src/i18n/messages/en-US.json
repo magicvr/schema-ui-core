@@ -778,6 +778,7 @@
   "schema.walletVouchers.field.count": "Count",
   "schema.walletVouchers.field.amount": "Amount",
   "schema.walletVouchers.field.currency": "Currency",
+  "schema.walletVouchers.field.expiresAt": "Expires at (Unix timestamp, optional)",
   "schema.walletVouchers.submit.generate": "Generate & Export",
   "schema.myWallet.text.intro": "Your wallet balance and recent ledger entries. Amounts are in min units.",
   "schema.myWallet.statCard.total": "Total balance (min units)",

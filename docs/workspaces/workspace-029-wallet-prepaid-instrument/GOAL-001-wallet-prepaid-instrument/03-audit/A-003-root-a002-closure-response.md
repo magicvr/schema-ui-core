@@ -24,8 +24,8 @@ version: 0.1.0
 | **F-002** | required / med | 核销忽略凭证币种，非 CNY 面额记入默认 CNY 账户 | **fixed** | 1. `modules/wallet/voucher/voucher.go` 新增哨兵错误 `ErrCurrencyMismatch`；<br>2. `modules/wallet/voucher/service.go`：`GenerateBatch` 与 `Redeem` 增加严格币种校验，非 `CNY` 凭证核销时直接返回 `ErrCurrencyMismatch` fail-closed 拒绝入账；生成端点传非法币种返回 400 `INVALID_VOUCHER_PARAMS`；<br>3. `modules/wallet/voucher/voucher_test.go` 新增 `TestRedeemCurrencyMismatchFailClosed` 单测通过；`handler/wallet_voucher_test.go` 增加非法币种生成拦截测试通过。 |
 | **F-003** | required / med | Redeem 同事务内账户 UNIQUE 冲突重读，复用已被否决的 PG-unsafe 模式 | **fixed** | 1. `modules/wallet/store/repository.go` 改写 `GetOrCreateSubjectAccountInTx`，采用 `INSERT INTO wallet_accounts (...) VALUES (...) ON CONFLICT (owner_type, owner_id, currency) DO NOTHING` 并在同事务内安全重读，彻底消除 PostgreSQL 事务 abort 缺陷；<br>2. `internal/store/postgres_test.go` 新增 `TestPostgresWalletVoucherAndSubject0064` 验证 PG 方言下同事务内并发冲突无 abort 错误。 |
 | **F-004** | recommended / med | 凭证页 i18n 键缺失 | **fixed** | `apps/web/src/i18n/messages/zh-CN.json` 与 `en-US.json` 补齐 `manifest.title.walletVouchers`、`manifest.nav.walletVouchers`、`schema.walletVouchers.*` 全部双语键。 |
-| **F-005** | recommended / low | composition 的 `OwnerExistsFunc` 语义 | **fixed** | 明确主体门禁由 `Service.CreateAccount` / `Redeem.SubjectExists` 严格守护，未登记主体禁止开户。 |
-| **F-006** | recommended / low | 生成页增加过期字段；batch_id 处理 | **fixed** | 表单与 API 规范对齐。 |
+| **F-005** | recommended / low | composition 的 `OwnerExistsFunc` 语义 | **fixed** | `internal/composition/composition.go` 中的 `walletOwnerExists` 已更新为同时校验 `authRepository.UserByID` 与 `SubjectStore().SubjectExists`，既识别 Admin 用户也识别已登记主体，未登记 ID 拒绝开户，彻底消除路径误判与孤儿账本。 |
+| **F-006** | recommended / low | 生成页增加过期字段；batch_id 处理 | **fixed** | `wallet-vouchers.json` 生成模态表单已增加 `expiresAt` 可选过期时间戳输入控件与 bodyMapping 映射，并在双语字典中完成国际化配置。 |
 
 ## 关门放行判定
 

@@ -778,6 +778,7 @@
   "schema.walletVouchers.field.count": "数量",
   "schema.walletVouchers.field.amount": "面额（分）",
   "schema.walletVouchers.field.currency": "币种",
+  "schema.walletVouchers.field.expiresAt": "过期时间（Unix 秒，可选）",
   "schema.walletVouchers.submit.generate": "生成并导出",
   "schema.myWallet.text.intro": "你的钱包余额与最近流水。金额单位为最小单位（分）。",
   "schema.myWallet.statCard.total": "总余额（分）",

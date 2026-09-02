@@ -23,7 +23,8 @@
         "batchId": "batchId",
         "count": "count",
         "amount": "amount",
-        "currency": "currency"
+        "currency": "currency",
+        "expiresAt": "expiresAt"
       },
       "onSuccess": {
         "behavior": "reload"
@@ -71,6 +72,12 @@
               "type": "input",
               "defaultValue": "CNY",
               "labelKey": "schema.walletVouchers.field.currency"
+            },
+            {
+              "id": "expiresAt",
+              "label": "Expires at (Unix timestamp, optional)",
+              "type": "inputNumber",
+              "labelKey": "schema.walletVouchers.field.expiresAt"
             }
           ],
           "submitAction": "generateBatch",
