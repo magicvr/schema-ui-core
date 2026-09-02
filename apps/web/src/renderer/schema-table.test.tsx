@@ -9,6 +9,7 @@ import {
   SchemaTable,
   pagerPages,
   rowActionDisabled,
+  rowActionVisible,
   schemaTableColumns,
   schemaTableDataSource,
   schemaTableFilters,
@@ -28,6 +29,24 @@ describe("rowActionDisabled", () => {
     expect(
       rowActionDisabled({ disabledWhen: { field: "editable", equals: false } }, { id: "role-admin" }),
     ).toBe(true);
+  });
+});
+
+describe("rowActionVisible", () => {
+  it("hides the action unless visibleField is strictly true", () => {
+    const action = { visibleField: "voidable" };
+    expect(rowActionVisible(action, { id: "v-unused", voidable: true })).toBe(true);
+    expect(rowActionVisible(action, { id: "v-redeemed", voidable: false })).toBe(false);
+    expect(rowActionVisible(action, { id: "v-missing" })).toBe(false);
+  });
+
+  it("defaults to visible when visibleField is omitted", () => {
+    expect(rowActionVisible({ key: "void" }, { id: "v-1" })).toBe(true);
+  });
+
+  it("fails closed on a malformed visibleField", () => {
+    expect(rowActionVisible({ visibleField: "" }, { id: "v-1", voidable: true })).toBe(false);
+    expect(rowActionVisible({ visibleField: 1 }, { id: "v-1", voidable: true })).toBe(false);
   });
 });
 
@@ -163,6 +182,27 @@ describe("SchemaTable (R1 list-data injection)", () => {
     expect(container.textContent).toContain("Acme Console");
     expect(container.textContent).toContain("Northwind Sales");
     expect(container.textContent).toContain("2 items · page 1 of 1");
+  });
+
+  it("hides a row action when visibleField is not true", async () => {
+    const fetcher = itemsFetcher([
+      { id: "v-unused", name: "Unused", voidable: true },
+      { id: "v-redeemed", name: "Redeemed", voidable: false },
+    ]);
+    const container = await renderTable(
+      tableNode({
+        columns: [{ field: "name", label: "Name" }],
+        dataSource: "/api/wallet/vouchers",
+        actions: [{ key: "void", label: "Void", visibleField: "voidable" }],
+      }),
+      fetcher,
+    );
+    const voidButtonsIn = (root: ParentNode | null) =>
+      Array.from(root?.querySelectorAll("button") ?? []).filter((button) => button.textContent === "Void");
+    // Desktop table + mobile cards both render the action column (jsdom has no
+    // breakpoint hiding). Only the unused row should expose Void in each surface.
+    expect(voidButtonsIn(container.querySelector("table"))).toHaveLength(1);
+    expect(voidButtonsIn(container.querySelector('[data-table-presentation="mobile-cards"]'))).toHaveLength(1);
   });
 
   it("formats currency columns from cent values (W16-F04)", async () => {

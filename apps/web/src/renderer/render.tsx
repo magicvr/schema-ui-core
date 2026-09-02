@@ -2499,6 +2499,18 @@ function useDisplayData(
   return { list, error };
 }
 
+/** W16-F04: cent-valued integers as yuan with two decimals (table currency columns). */
+function formatStatCardCents(value: unknown): string {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "";
+  }
+  return (numeric / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 function StatCardView({ node }: { node: RenderStatCardNode }) {
   const crud = useSchemaCrud();
   const t = useTranslate();
@@ -2566,6 +2578,10 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
+  // W16-F04: currency wire values are minor units (分). Present yuan with two
+  // decimals, matching table columns with format: currency.
+  const displayValue =
+    format === "currency" ? formatStatCardCents(formatResult.value) : String(formatResult.value);
   const label = resolveTextProp(
     node.props as unknown as Record<string, unknown>,
     "labelKey",
@@ -2579,7 +2595,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       <CardContent className="p-4">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-          {String(formatResult.value)}
+          {displayValue}
           {unit !== undefined && unit !== "" ? (
             <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
           ) : null}

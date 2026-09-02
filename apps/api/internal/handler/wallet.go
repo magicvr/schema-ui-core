@@ -70,6 +70,33 @@ type WalletJobService interface {
 // gate (bare test environments only).
 type OwnerExistsFunc func(ownerID string) bool
 
+// voucherJSON is the operator-facing voucher row (list + get). Wire amounts
+// stay cents; voidable is true only while status is unused so the table can
+// hide the Void action after redeem/void.
+func voucherJSON(v voucher.Voucher) map[string]any {
+	row := map[string]any{
+		"id":         v.ID,
+		"batchId":    v.BatchID,
+		"codePrefix": v.CodePrefix,
+		"amount":     v.Amount,
+		"currency":   v.Currency,
+		"status":     string(v.Status),
+		"voidable":   v.Status == voucher.StatusUnused,
+		"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+	}
+	if v.ExpiresAt != nil {
+		row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+	}
+	if v.RedeemedBy != nil {
+		row["redeemedBy"] = *v.RedeemedBy
+	}
+	if v.RedeemedAt != nil {
+		row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+	}
+	return row
+}
+
 // WalletRoutes returns the admin.wallet HTTP surface.
 func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string, ownerExists OwnerExistsFunc) []kernel.RouteContribution {
 	var routes []kernel.RouteContribution
@@ -575,26 +602,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		}
 		rows := make([]map[string]any, len(vouchers))
 		for i, v := range vouchers {
-			row := map[string]any{
-				"id":         v.ID,
-				"batchId":    v.BatchID,
-				"codePrefix": v.CodePrefix,
-				"amount":     v.Amount,
-				"currency":   v.Currency,
-				"status":     string(v.Status),
-				"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-				"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-			}
-			if v.ExpiresAt != nil {
-				row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
-			}
-			if v.RedeemedBy != nil {
-				row["redeemedBy"] = *v.RedeemedBy
-			}
-			if v.RedeemedAt != nil {
-				row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
-			}
-			rows[i] = row
+			rows[i] = voucherJSON(v)
 		}
 		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
 	})))
@@ -618,25 +626,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not get voucher")
 			return
 		}
-		row := map[string]any{
-			"id":         v.ID,
-			"batchId":    v.BatchID,
-			"codePrefix": v.CodePrefix,
-			"amount":     v.Amount,
-			"currency":   v.Currency,
-			"status":     string(v.Status),
-			"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-			"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		}
-		if v.ExpiresAt != nil {
-			row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
-		}
-		if v.RedeemedBy != nil {
-			row["redeemedBy"] = *v.RedeemedBy
-		}
-		if v.RedeemedAt != nil {
-			row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
-		}
+		row := voucherJSON(*v)
 		writeJSON(w, http.StatusOK, row)
 	})))
 

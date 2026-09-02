@@ -125,6 +125,28 @@ export function rowActionDisabled(action: unknown, row: ResourceItem): boolean {
   return row[field] === (condition as Record<string, unknown>).equals;
 }
 
+/**
+ * Registry visibleField sugar (table.actions): hide the action unless the
+ * named row field is strictly true. Absent / malformed visibleField fails
+ * closed (hidden). Missing visibleField keeps the default (visible).
+ */
+export function rowActionVisible(action: unknown, row: ResourceItem): boolean {
+  if (typeof action !== "object" || action === null || Array.isArray(action)) {
+    return false;
+  }
+  const visibleField = (action as Record<string, unknown>).visibleField;
+  if (visibleField === undefined) {
+    return true;
+  }
+  if (typeof visibleField !== "string" || visibleField === "") {
+    return false;
+  }
+  if (!(visibleField in row)) {
+    return false;
+  }
+  return row[visibleField] === true;
+}
+
 function isColumnSpec(value: unknown): value is SchemaTableColumnSpec {
   return (
     typeof value === "object" &&
@@ -798,8 +820,9 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             key: "actions",
             label: "",
             render: (row: ResourceItem) => {
-              const primary = rowActions.slice(0, MAX_INLINE_ROW_ACTIONS);
-              const overflow = rowActions.slice(MAX_INLINE_ROW_ACTIONS);
+              const visible = rowActions.filter((action) => rowActionVisible(action, row));
+              const primary = visible.slice(0, MAX_INLINE_ROW_ACTIONS);
+              const overflow = visible.slice(MAX_INLINE_ROW_ACTIONS);
               return (
                 <div
                   className="flex items-center justify-end gap-1"

@@ -80,7 +80,7 @@
             "id": "my-wallet-total",
             "props": {
               "label": "Total balance",
-              "format": "plain",
+              "format": "currency",
               "valueField": "balanceTotal",
               "dataSource": "/api/wallet/me",
               "labelKey": "schema.myWallet.statCard.total"
@@ -91,7 +91,7 @@
             "id": "my-wallet-available",
             "props": {
               "label": "Available",
-              "format": "plain",
+              "format": "currency",
               "valueField": "balanceAvailable",
               "dataSource": "/api/wallet/me",
               "labelKey": "schema.myWallet.statCard.available"
@@ -102,7 +102,7 @@
             "id": "my-wallet-frozen",
             "props": {
               "label": "Frozen",
-              "format": "plain",
+              "format": "currency",
               "valueField": "balanceFrozen",
               "dataSource": "/api/wallet/me",
               "labelKey": "schema.myWallet.statCard.frozen"
@@ -125,11 +125,13 @@
               "field": "amountDelta",
               "label": "Amount",
               "sortable": true,
+              "format": "currency",
               "labelKey": "schema.walletEntries.column.amountDelta"
             },
             {
               "field": "balanceAfterTotal",
               "label": "Balance after",
+              "format": "currency",
               "labelKey": "schema.walletEntries.column.balanceAfterTotal"
             },
             {

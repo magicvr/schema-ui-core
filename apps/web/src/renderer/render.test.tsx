@@ -168,7 +168,7 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(container.textContent).toContain("Revenue");
-    expect(container.textContent).toContain("1250");
+    expect(container.textContent).toContain("12.50");
   });
 
   // GOAL-015 / ADR-0039 (F-002 follow-up): a statCard node-level DataRef

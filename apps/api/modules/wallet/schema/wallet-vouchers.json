@@ -219,8 +219,10 @@
               "label": "Void",
               "actionRef": "voidVoucher",
               "permissionIntent": "edit",
-              "visibleWhen": {
-                "when": "$row.status == 'unused'"
+              "visibleField": "voidable",
+              "disabledWhen": {
+                "field": "voidable",
+                "equals": false
               },
               "labelKey": "schema.walletVouchers.action.void"
             }

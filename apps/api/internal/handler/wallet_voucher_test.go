@@ -177,6 +177,9 @@ func TestVouchersListAndGet(t *testing.T) {
 		if _, ok := row["codePrefix"]; !ok {
 			t.Fatal("expected codePrefix in list vouchers")
 		}
+		if row["voidable"] != true {
+			t.Fatalf("unused voucher voidable = %v, want true", row["voidable"])
+		}
 	}
 
 	// 3. Query single voucher: GET /api/wallet/vouchers/{id}
@@ -193,6 +196,9 @@ func TestVouchersListAndGet(t *testing.T) {
 	}
 	if single["id"] != firstID || single["codePrefix"] != firstCode[:6] {
 		t.Fatalf("unexpected single voucher: %+v", single)
+	}
+	if single["voidable"] != true {
+		t.Fatalf("unused voucher get voidable = %v, want true", single["voidable"])
 	}
 	if _, ok := single["code"]; ok {
 		t.Fatal("security violation: single voucher get must never return plaintext code")
@@ -278,6 +284,9 @@ func TestVoucherVoidAndConflict(t *testing.T) {
 	if single["status"] != "void" {
 		t.Fatalf("status = %v, want void", single["status"])
 	}
+	if single["voidable"] != false {
+		t.Fatalf("voided voucher voidable = %v, want false", single["voidable"])
+	}
 
 	// 5. F-004: Redeem the second voucher, then try to void it -> 409 VOUCHER_ALREADY_REDEEMED
 	subStore := subject.NewStore(env.st)
@@ -300,6 +309,19 @@ func TestVoucherVoidAndConflict(t *testing.T) {
 	_ = json.NewDecoder(w.Body).Decode(&conflictErr)
 	if conflictErr["error"] != "VOUCHER_ALREADY_REDEEMED" {
 		t.Fatalf("error = %v, want VOUCHER_ALREADY_REDEEMED", conflictErr["error"])
+	}
+
+	req = httptest.NewRequest("GET", "/api/wallet/vouchers/"+redeemID, nil)
+	req.Header.Set("Authorization", "Bearer "+adminTok)
+	w = httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+	var redeemed map[string]any
+	_ = json.NewDecoder(w.Body).Decode(&redeemed)
+	if redeemed["status"] != "redeemed" {
+		t.Fatalf("redeemed status = %v, want redeemed", redeemed["status"])
+	}
+	if redeemed["voidable"] != false {
+		t.Fatalf("redeemed voucher voidable = %v, want false", redeemed["voidable"])
 	}
 }
 
@@ -371,6 +393,7 @@ func TestVoucherSchemaRegistration(t *testing.T) {
 			Children []struct {
 				Props struct {
 					Toolbar []map[string]any `json:"toolbar"`
+					Actions []map[string]any `json:"actions"`
 				} `json:"props"`
 			} `json:"children"`
 		} `json:"body"`
@@ -389,6 +412,20 @@ func TestVoucherSchemaRegistration(t *testing.T) {
 	}
 	if _, ok := doc.Actions["voidVoucher"]; !ok {
 		t.Fatal("missing voidVoucher action in schema")
+	}
+	var voidAction map[string]any
+	for _, child := range doc.Body.Children {
+		for _, action := range child.Props.Actions {
+			if action["key"] == "void" {
+				voidAction = action
+			}
+		}
+	}
+	if voidAction == nil {
+		t.Fatal("missing void row action in wallet-vouchers table")
+	}
+	if voidAction["visibleField"] != "voidable" {
+		t.Fatalf("void visibleField = %v, want voidable", voidAction["visibleField"])
 	}
 }
 
