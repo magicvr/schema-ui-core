@@ -340,6 +340,21 @@ func TestVoucherInvalidBodyAndParams(t *testing.T) {
 	if paramErr["error"] != "INVALID_VOUCHER_PARAMS" {
 		t.Fatalf("error = %v, want INVALID_VOUCHER_PARAMS", paramErr["error"])
 	}
+
+	// 3. F-002: Invalid Currency USD -> 400 INVALID_VOUCHER_PARAMS
+	req = httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(`{"batchId":"b","count":1,"amount":100,"currency":"USD"}`))
+	req.Header.Set("Authorization", "Bearer "+adminTok)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("USD currency status = %d, want 400", w.Code)
+	}
+	var currErr map[string]any
+	_ = json.NewDecoder(w.Body).Decode(&currErr)
+	if currErr["error"] != "INVALID_VOUCHER_PARAMS" {
+		t.Fatalf("error = %v, want INVALID_VOUCHER_PARAMS", currErr["error"])
+	}
 }
 
 func TestVoucherSchemaRegistration(t *testing.T) {

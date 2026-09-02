@@ -462,6 +462,11 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with batchId, count, and amount")
 			return
 		}
+		currency := strings.TrimSpace(body.Currency)
+		if currency != "" && currency != walletstore.DefaultCurrency {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "currency must be CNY")
+			return
+		}
 		if strings.TrimSpace(body.BatchID) == "" || body.Count <= 0 || body.Count > 1000 || body.Amount <= 0 {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "invalid batchId, count (1-1000), or amount (>0)")
 			return

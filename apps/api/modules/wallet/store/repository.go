@@ -368,6 +368,8 @@ func (r *Repository) GetSubjectAccountByOwnerInTx(tx kernel.Tx, subjectID string
 }
 
 // GetOrCreateSubjectAccountInTx returns the subject account within an ongoing transaction.
+// It uses ON CONFLICT (owner_type, owner_id, currency) DO NOTHING to safely handle concurrent
+// creations on both SQLite and PostgreSQL without aborting the transaction (W9 F-001 / F-003 root fix).
 func (r *Repository) GetOrCreateSubjectAccountInTx(tx kernel.Tx, subjectID string, now time.Time) (*Account, bool, error) {
 	existing, err := r.GetSubjectAccountByOwnerInTx(tx, subjectID)
 	if err == nil {
@@ -381,20 +383,26 @@ func (r *Repository) GetOrCreateSubjectAccountInTx(tx kernel.Tx, subjectID strin
 		return nil, false, fmt.Errorf("auto-create wallet id: %w", err)
 	}
 	id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
-	_, err = tx.Exec(context.Background(),
+	res, err := tx.Exec(context.Background(),
 		`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)`,
+		 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)
+		 ON CONFLICT (owner_type, owner_id, currency) DO NOTHING`,
 		id, OwnerSubject, subjectID, DefaultCurrency, StatusActive, now.Unix(), now.Unix(),
 	)
 	if err != nil {
-		if isUniqueViolation(err) {
-			reloaded, reloadErr := r.GetSubjectAccountByOwnerInTx(tx, subjectID)
-			if reloadErr != nil {
-				return nil, false, fmt.Errorf("reload subject wallet account after conflict: %w", reloadErr)
-			}
-			return reloaded, false, nil
-		}
 		return nil, false, fmt.Errorf("insert subject wallet account: %w", err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, false, err
+	}
+	if affected == 0 {
+		// Concurrent create won: read the existing row safely inside this same transaction.
+		reloaded, reloadErr := r.GetSubjectAccountByOwnerInTx(tx, subjectID)
+		if reloadErr != nil {
+			return nil, false, fmt.Errorf("reload subject wallet account after conflict: %w", reloadErr)
+		}
+		return reloaded, false, nil
 	}
 	a := Account{ID: id, OwnerType: OwnerSubject, OwnerID: subjectID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
 	return &a, true, nil

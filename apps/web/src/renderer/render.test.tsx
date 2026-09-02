@@ -1304,4 +1304,77 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("automatically triggers CSV download when voucher generation returns plaintext codes (VP-029 F-001)", async () => {
+    let downloadedFilename = "";
+    const originalCreate = globalThis.URL.createObjectURL;
+    const originalRevoke = globalThis.URL.revokeObjectURL;
+    globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
+    globalThis.URL.revokeObjectURL = vi.fn();
+
+    const origCreateElement = document.createElement.bind(document);
+    const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tagName: string, options?: ElementCreationOptions) => {
+      const el = origCreateElement(tagName, options);
+      if (tagName.toLowerCase() === "a") {
+        el.click = () => {
+          downloadedFilename = el.getAttribute("download") || (el as HTMLAnchorElement).download;
+        };
+      }
+      return el;
+    });
+
+    await withFetchSpy(async (fetchSpy) => {
+      const pageDoc = submitFormDocument(
+        [
+          { id: "batchId", label: "Batch ID", type: "input" },
+          { id: "count", label: "Count", type: "input" },
+        ],
+        [],
+      );
+      pageDoc.actions.submit.url = "/api/wallet/vouchers/batches";
+
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/wallet/vouchers/batches")) {
+          return new Response(
+            JSON.stringify({
+              items: [
+                {
+                  id: "v1",
+                  batchId: "b-test",
+                  code: "CODE11112222333344445555",
+                  codePrefix: "CODE11",
+                  amount: 500,
+                  currency: "CNY",
+                  createdAt: "2026-09-02T10:00:00Z",
+                },
+              ],
+              total: 1,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      try {
+        const container = await renderDocument(pageDoc, {});
+        const button = submitButton(container);
+        expect(button.disabled).toBe(false);
+        await act(async () => {
+          button.click();
+        });
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+
+        expect(fetchSpy).toHaveBeenCalled();
+        expect(downloadedFilename).toBe("vouchers_b-test.csv");
+      } finally {
+        createElementSpy.mockRestore();
+        globalThis.URL.createObjectURL = originalCreate;
+        globalThis.URL.revokeObjectURL = originalRevoke;
+      }
+    });
+  });
 });

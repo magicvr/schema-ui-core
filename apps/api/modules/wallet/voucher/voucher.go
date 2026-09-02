@@ -24,6 +24,7 @@ var (
 	ErrVoucherInvalid         = errors.New("invalid voucher status")
 	ErrVoucherConflict        = errors.New("voucher redemption conflict (race lost)")
 	ErrSubjectNotFound        = errors.New("subject not found")
+	ErrCurrencyMismatch       = errors.New("voucher currency mismatch")
 	ErrInvalidInput           = errors.New("invalid voucher input")
 )
 

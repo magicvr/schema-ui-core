@@ -37,8 +37,12 @@ func NewService(runner walletstore.TxRunner, walletRepo *walletstore.Repository,
 // one-time plaintext codes.
 func (s *Service) GenerateBatch(ctx context.Context, batchID string, count int, amount int64, currency string, expiresAt *time.Time, now time.Time) ([]GeneratedVoucher, error) {
 	batchID = strings.TrimSpace(batchID)
+	currency = strings.TrimSpace(currency)
 	if batchID == "" || count <= 0 || count > 1000 || amount <= 0 {
 		return nil, ErrInvalidInput
+	}
+	if currency != "" && currency != walletstore.DefaultCurrency {
+		return nil, ErrCurrencyMismatch
 	}
 	if currency == "" {
 		currency = walletstore.DefaultCurrency
@@ -161,6 +165,9 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 		}
 		if status != string(StatusUnused) {
 			return ErrVoucherInvalid
+		}
+		if currency != "" && currency != walletstore.DefaultCurrency {
+			return ErrCurrencyMismatch
 		}
 		if expiresAt.Valid && expiresAt.Int64 > 0 && expiresAt.Int64 < now.Unix() {
 			return ErrVoucherExpired

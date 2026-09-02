@@ -193,14 +193,46 @@ func TestRedeemVoidAndExpired(t *testing.T) {
 	}
 }
 
-func TestRedeemSubjectMustExist(t *testing.T) {
+func TestRedeemCurrencyMismatchFailClosed(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 
-	batch, _ := e.service.GenerateBatch(ctx, "b1", 1, 100, "CNY", nil, now())
-	_, err := e.service.Redeem(ctx, "non-existent-subject-id", batch[0].Code, now())
-	if !errors.Is(err, voucher.ErrSubjectNotFound) {
-		t.Fatalf("redeem non-existent subject err = %v, want ErrSubjectNotFound", err)
+	// 1. Generate with non-CNY must fail closed.
+	_, err := e.service.GenerateBatch(ctx, "b-usd", 1, 100, "USD", nil, now())
+	if !errors.Is(err, voucher.ErrCurrencyMismatch) {
+		t.Fatalf("generate USD voucher err = %v, want ErrCurrencyMismatch", err)
+	}
+
+	// 2. If a non-CNY voucher exists in DB, Redeem must fail closed.
+	code, prefix, hash, _ := voucher.GenerateCode()
+
+	dbStore, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dbStore.Close()
+	subStore := subject.NewStore(dbStore)
+	wRepo := walletstore.NewRepository(dbStore)
+	svc := voucher.NewService(dbStore, wRepo, subStore)
+	sub, _, _ := subStore.GetOrCreateSubject(ctx, "tg", "u2", now())
+
+	_ = dbStore.Run(ctx, func(tx kernel.Tx) error {
+		_, err := tx.Exec(ctx,
+			`INSERT INTO vouchers (id, batch_id, code_hash, code_prefix, amount, currency, status, created_at, updated_at)
+			 VALUES ('v-usd', 'b-usd', ?, ?, 1000, 'USD', 'unused', 1000, 1000)`,
+			hash, prefix,
+		)
+		return err
+	})
+
+	_, err = svc.Redeem(ctx, sub.ID, code, now())
+	if !errors.Is(err, voucher.ErrCurrencyMismatch) {
+		t.Fatalf("redeem USD voucher err = %v, want ErrCurrencyMismatch", err)
+	}
+
+	// Verify no account balance was credited
+	if _, err := wRepo.GetSubjectAccountByOwner(sub.ID); !errors.Is(err, walletstore.ErrNotFound) {
+		t.Fatalf("expected no account created for currency mismatch, got %v", err)
 	}
 }
 

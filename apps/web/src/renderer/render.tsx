@@ -180,7 +180,7 @@ export interface TableSelection {
 }
 
 export type ActionResult =
-  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>; message?: string; messageKey?: string }
+  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>; message?: string; messageKey?: string; data?: unknown }
   | {
       ok: false;
       code: string;
@@ -597,10 +597,12 @@ async function runRequest(
   // W16-F03: a 200 import response may still carry `fieldErrors` (partial
   // failure) — surface them to the form instead of pretending full success.
   let successFieldErrors: Array<{ field: string; reason: string }> | undefined;
+  let parsedData: unknown = undefined;
   try {
     const text = await response.text();
     if (text !== "") {
       const parsed = JSON.parse(text) as { fieldErrors?: unknown };
+      parsedData = parsed;
       if (Array.isArray(parsed.fieldErrors)) {
         const cleaned = parsed.fieldErrors
           .filter((entry): entry is { field?: unknown; reason?: unknown; rowNumber?: unknown } =>
@@ -621,8 +623,8 @@ async function runRequest(
     // non-JSON success body (e.g. 204/CSV) — nothing to surface
   }
   return successFieldErrors !== undefined
-    ? { ok: true, fieldErrors: successFieldErrors }
-    : { ok: true };
+    ? { ok: true, fieldErrors: successFieldErrors, data: parsedData }
+    : { ok: true, data: parsedData };
 }
 
 function requestFailedMessage(error: unknown): string {
@@ -1196,6 +1198,36 @@ function SchemaCrudProvider({
         gateTargetId,
       });
       if (result.ok && (result.fieldErrors === undefined || result.fieldErrors.length === 0)) {
+        // F-001 (VP-029 判据 #2 / #5): if the response contains generated voucher items with plaintext codes,
+        // export them directly as a CSV download in the same user gesture before closing the modal.
+        if (isRecord(result.data) && Array.isArray(result.data.items)) {
+          const vouchersWithCode = result.data.items.filter(
+            (it): it is Record<string, unknown> => isRecord(it) && typeof it.code === "string",
+          );
+          if (vouchersWithCode.length > 0) {
+            const lines = ["Code,Prefix,BatchId,Amount,Currency,CreatedAt"];
+            for (const v of vouchersWithCode) {
+              lines.push(
+                [
+                  `"${String(v.code ?? "")}"`,
+                  `"${String(v.codePrefix ?? "")}"`,
+                  `"${String(v.batchId ?? "")}"`,
+                  String(v.amount ?? 0),
+                  `"${String(v.currency ?? "CNY")}"`,
+                  `"${String(v.createdAt ?? "")}"`,
+                ].join(","),
+              );
+            }
+            const csvBlob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+            const batchId =
+              typeof prepared.batchId === "string" && prepared.batchId !== ""
+                ? prepared.batchId
+                : typeof vouchersWithCode[0]?.batchId === "string" && vouchersWithCode[0].batchId !== ""
+                ? (vouchersWithCode[0].batchId as string)
+                : "vouchers";
+            triggerBlobDownload(csvBlob, sanitizeClientFilename(`vouchers_${batchId}.csv`));
+          }
+        }
         setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method, t) });
         reloadList();
         setActiveModal(null);

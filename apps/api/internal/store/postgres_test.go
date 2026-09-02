@@ -1223,3 +1223,50 @@ func TestPostgresCaptchaConsumeConcurrent(t *testing.T) {
 		t.Fatalf("post-race consume = %v %v, want false/nil", ok, err)
 	}
 }
+
+// VP-029 R2 / F-003: verify 0064 wallet_accounts owner_type check includes 'subject'
+// and GetOrCreateSubjectAccountInTx handles concurrent creations safely on PostgreSQL.
+func TestPostgresWalletVoucherAndSubject0064(t *testing.T) {
+	st := postgresScratchDB(t, "vp029f003")
+	now := time.Now().UTC()
+
+	// 1. Verify subjects table exists and insert works on PG.
+	err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), `INSERT INTO subjects (id, issuer, external_id, created_at) VALUES ('sub-pg-1', 'telegram', 'tg-pg-1', $1)`, now.Unix())
+		return err
+	})
+	if err != nil {
+		t.Fatalf("insert subjects on PG: %v", err)
+	}
+
+	// 2. Verify wallet_accounts owner_type='subject' is accepted by the rebuilt CHECK constraint.
+	err = st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), `INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
+			VALUES ('acct-pg-1', 'subject', 'sub-pg-1', 'CNY', 0, 0, 0, 'active', 0, $1, $1)`, now.Unix())
+		return err
+	})
+	if err != nil {
+		t.Fatalf("insert wallet_accounts with owner_type=subject on PG: %v", err)
+	}
+
+	// 3. Verify ON CONFLICT DO NOTHING does not abort ongoing transaction on duplicate insert.
+	err = st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(),
+			`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
+			 VALUES ('acct-conflict', 'subject', 'sub-pg-1', 'CNY', 0, 0, 0, 'active', 0, $1, $1)
+			 ON CONFLICT (owner_type, owner_id, currency) DO NOTHING`,
+			now.Unix(),
+		)
+		if err != nil {
+			return err
+		}
+		// Subsequent query in the SAME transaction must succeed without abort error
+		var existingID string
+		return tx.QueryRow(context.Background(),
+			`SELECT id FROM wallet_accounts WHERE owner_type = 'subject' AND owner_id = 'sub-pg-1' AND currency = 'CNY'`,
+		).Scan(&existingID)
+	})
+	if err != nil {
+		t.Fatalf("PG same-transaction ON CONFLICT DO NOTHING: %v", err)
+	}
+}
