@@ -82,6 +82,35 @@ func TestGenerateBatchAndEntropy(t *testing.T) {
 	}
 }
 
+// A-005 F-004 (A-008): the 0065 batch registry rejects a repeated batch_id —
+// two GenerateBatch runs must never mix into one batch list.
+func TestGenerateBatchDuplicateIDRejected(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+
+	first, err := e.service.GenerateBatch(ctx, "batch-dup", 2, 1000, "CNY", nil, now())
+	if err != nil {
+		t.Fatalf("first generate batch: %v", err)
+	}
+	if len(first) != 2 {
+		t.Fatalf("first batch len = %d, want 2", len(first))
+	}
+
+	if _, err := e.service.GenerateBatch(ctx, "batch-dup", 1, 1000, "CNY", nil, now()); !errors.Is(err, voucher.ErrVoucherBatchExists) {
+		t.Fatalf("duplicate batch err = %v, want ErrVoucherBatchExists", err)
+	}
+
+	// The rejected run must not have added any rows: the list still shows the
+	// original two codes only.
+	items, total, err := e.service.ListVouchers(ctx, "batch-dup", "", 1, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 2 || len(items) != 2 {
+		t.Fatalf("batch-dup list after rejected duplicate = total %d len %d, want 2/2", total, len(items))
+	}
+}
+
 func TestRedeemSuccess(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()

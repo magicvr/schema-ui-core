@@ -473,12 +473,30 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		}
 		now := time.Now().UTC()
 		var exp *time.Time
-		if body.ExpiresAt != nil && *body.ExpiresAt > 0 {
-			t := time.Unix(*body.ExpiresAt, 0).UTC()
-			exp = &t
+		if body.ExpiresAt != nil {
+			// A-005 F-005 (A-008): expiresAt is Unix SECONDS. Millisecond
+			// timestamps (~1.7e12) or far-out-of-range values are rejected
+			// fail-closed instead of silently minting an immediate/never
+			// expiry; <= 0 keeps the historical "absent" semantics.
+			const minExpiryUnix int64 = 1_000_000_000 // 2001-09-09T01:46:40Z
+			const maxExpiryUnix int64 = 4_102_444_800 // 2100-01-01T00:00:00Z
+			if *body.ExpiresAt > 0 && (*body.ExpiresAt < minExpiryUnix || *body.ExpiresAt > maxExpiryUnix) {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "expiresAt must be Unix seconds between 2001-09-09 and 2100-01-01, or omitted")
+				return
+			}
+			if *body.ExpiresAt > 0 {
+				t := time.Unix(*body.ExpiresAt, 0).UTC()
+				exp = &t
+			}
 		}
 		generated, err := service.GenerateVouchers(r.Context(), strings.TrimSpace(body.BatchID), body.Count, body.Amount, strings.TrimSpace(body.Currency), exp, now)
 		if err != nil {
+			// A-005 F-004 (A-008): repeated batchId is a conflict (0065
+			// registry), not an internal error.
+			if errors.Is(err, voucher.ErrVoucherBatchExists) {
+				writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_BATCH_EXISTS", "a batch with that batchId already exists")
+				return
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate voucher batch")
 			return
 		}

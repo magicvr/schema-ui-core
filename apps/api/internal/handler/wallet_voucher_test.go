@@ -391,3 +391,99 @@ func TestVoucherSchemaRegistration(t *testing.T) {
 		t.Fatal("missing voidVoucher action in schema")
 	}
 }
+
+// A-005 F-004 (A-008): the 0065 batch registry turns a repeated batchId into a
+// 409 VOUCHER_BATCH_EXISTS conflict and never mixes a second list into the
+// existing batch.
+func TestVouchersBatchDuplicateConflict(t *testing.T) {
+	env := newAuthTestEnv(t)
+	repo := walletstore.NewRepository(env.st)
+	service := newWalletStub(env, repo)
+	mountWalletRoutes(t, env, service)
+	adminTok := adminToken(t, env)
+
+	post := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminTok)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		env.mux.ServeHTTP(w, req)
+		return w
+	}
+	listTotal := func() int {
+		req := httptest.NewRequest("GET", "/api/wallet/vouchers?batchId=batch-dup-h", nil)
+		req.Header.Set("Authorization", "Bearer "+adminTok)
+		w := httptest.NewRecorder()
+		env.mux.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("list status = %d", w.Code)
+		}
+		var list struct {
+			Total int `json:"total"`
+		}
+		if err := json.NewDecoder(w.Body).Decode(&list); err != nil {
+			t.Fatal(err)
+		}
+		return list.Total
+	}
+
+	if w := post(`{"batchId":"batch-dup-h","count":2,"amount":500,"currency":"CNY"}`); w.Code != http.StatusCreated {
+		t.Fatalf("first generate = %d %s", w.Code, w.Body.String())
+	}
+
+	w := post(`{"batchId":"batch-dup-h","count":1,"amount":500,"currency":"CNY"}`)
+	if w.Code != http.StatusConflict {
+		t.Fatalf("duplicate generate status = %d, want 409; body=%s", w.Code, w.Body.String())
+	}
+	var errBody map[string]any
+	_ = json.NewDecoder(w.Body).Decode(&errBody)
+	if errBody["error"] != "VOUCHER_BATCH_EXISTS" {
+		t.Fatalf("error = %v, want VOUCHER_BATCH_EXISTS", errBody["error"])
+	}
+	if total := listTotal(); total != 2 {
+		t.Fatalf("list total after rejected duplicate = %d, want 2 (no mixed rows)", total)
+	}
+}
+
+// A-005 F-005 (A-008): expiresAt must be Unix SECONDS in 2001-09-09..2100 —
+// millisecond timestamps and out-of-range values fail closed with 400 instead
+// of silently minting immediate/never expiry.
+func TestVouchersGenerateExpiresAtValidation(t *testing.T) {
+	env := newAuthTestEnv(t)
+	repo := walletstore.NewRepository(env.st)
+	service := newWalletStub(env, repo)
+	mountWalletRoutes(t, env, service)
+	adminTok := adminToken(t, env)
+
+	post := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminTok)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		env.mux.ServeHTTP(w, req)
+		return w
+	}
+
+	// 1. Millisecond timestamp (2027-01-15T10:00:00 in ms) → 400.
+	w := post(`{"batchId":"b-exp-ms","count":1,"amount":100,"currency":"CNY","expiresAt":1800000000000}`)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("milliseconds expiresAt status = %d, want 400; body=%s", w.Code, w.Body.String())
+	}
+	var msErr map[string]any
+	_ = json.NewDecoder(w.Body).Decode(&msErr)
+	if msErr["error"] != "INVALID_VOUCHER_PARAMS" {
+		t.Fatalf("error = %v, want INVALID_VOUCHER_PARAMS", msErr["error"])
+	}
+
+	// 2. Pre-epoch-ish / ancient seconds value → 400.
+	w = post(`{"batchId":"b-exp-old","count":1,"amount":100,"currency":"CNY","expiresAt":999999999}`)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("out-of-range expiresAt status = %d, want 400; body=%s", w.Code, w.Body.String())
+	}
+
+	// 3. Valid future seconds (2027-01-15T10:00:00Z) → 201.
+	w = post(`{"batchId":"b-exp-ok","count":1,"amount":100,"currency":"CNY","expiresAt":1800000000}`)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("valid expiresAt status = %d, want 201; body=%s", w.Code, w.Body.String())
+	}
+}

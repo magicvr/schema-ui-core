@@ -26,6 +26,9 @@ var (
 	ErrSubjectNotFound        = errors.New("subject not found")
 	ErrCurrencyMismatch       = errors.New("voucher currency mismatch")
 	ErrInvalidInput           = errors.New("invalid voucher input")
+	// A-005 F-004 (0065): batch_id is unique registry identity; a second
+	// GenerateBatch with the same id is rejected instead of mixing lists.
+	ErrVoucherBatchExists = errors.New("voucher batch already exists")
 )
 
 // Status represents the lifecycle status of a prepaid voucher.

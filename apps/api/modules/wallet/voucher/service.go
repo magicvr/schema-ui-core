@@ -77,6 +77,24 @@ func (s *Service) GenerateBatch(ctx context.Context, batchID string, count int, 
 	}
 
 	err := s.runner.Run(ctx, func(tx kernel.Tx) error {
+		// A-005 F-004 (0065): batch_id is a first-class unique identity — the
+		// same tx registers the batch BEFORE its codes land, so a repeated id
+		// (0 affected rows) aborts the whole run and never mixes two lists.
+		res, err := tx.Exec(ctx,
+			`INSERT INTO voucher_batches (batch_id, created_at, updated_at) VALUES (?, ?, ?)
+			 ON CONFLICT (batch_id) DO NOTHING`,
+			batchID, now.Unix(), now.Unix(),
+		)
+		if err != nil {
+			return fmt.Errorf("register voucher batch: %w", err)
+		}
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return ErrVoucherBatchExists
+		}
 		for _, g := range generated {
 			v := g.Voucher
 			var exp sql.NullInt64

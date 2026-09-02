@@ -1305,7 +1305,7 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
     }
   });
 
-  it("automatically triggers CSV download when voucher generation returns plaintext codes (VP-029 F-001)", async () => {
+  it("downloads the voucher CSV when the submit action declares downloadCsv (VP-029 F-001 · A-008)", async () => {
     let downloadedFilename = "";
     const originalCreate = globalThis.URL.createObjectURL;
     const originalRevoke = globalThis.URL.revokeObjectURL;
@@ -1332,6 +1332,15 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
         [],
       );
       pageDoc.actions.submit.url = "/api/wallet/vouchers/batches";
+      // A-005 F-002 (A-008): export is protocol-declared — the heuristic no
+      // longer fires on any items[].code response.
+      (pageDoc.actions.submit as unknown as Record<string, unknown>).onSuccess = {
+        behavior: "reload",
+        downloadCsv: {
+          columns: ["code", "codePrefix", "batchId", "amount", "currency", "createdAt"],
+          fileName: "vouchers_{batchId}.csv",
+        },
+      };
 
       fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
         const url = String(input);
@@ -1370,6 +1379,69 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
 
         expect(fetchSpy).toHaveBeenCalled();
         expect(downloadedFilename).toBe("vouchers_b-test.csv");
+      } finally {
+        createElementSpy.mockRestore();
+        globalThis.URL.createObjectURL = originalCreate;
+        globalThis.URL.revokeObjectURL = originalRevoke;
+      }
+    });
+  });
+
+  it("does NOT download when the submit action lacks the downloadCsv declaration (A-005 F-002)", async () => {
+    let downloadedFilename = "";
+    const originalCreate = globalThis.URL.createObjectURL;
+    const originalRevoke = globalThis.URL.revokeObjectURL;
+    globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
+    globalThis.URL.revokeObjectURL = vi.fn();
+
+    const origCreateElement = document.createElement.bind(document);
+    const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+      const el = origCreateElement(tagName);
+      if (tagName.toLowerCase() === "a") {
+        el.click = () => {
+          downloadedFilename = el.getAttribute("download") || (el as HTMLAnchorElement).download;
+        };
+      }
+      return el;
+    });
+
+    await withFetchSpy(async (fetchSpy) => {
+      // An unrelated form whose success response happens to carry items[].code
+      // must NOT trigger a browser download — export is declaration-only.
+      const pageDoc = submitFormDocument(
+        [{ id: "name", label: "Name", type: "input" }],
+        [],
+      );
+      pageDoc.actions.submit.url = "/api/unrelated/import";
+
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/unrelated/import")) {
+          return new Response(
+            JSON.stringify({
+              items: [
+                { id: "u1", code: "CODE11112222333344445555", name: "imported row" },
+              ],
+              total: 1,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      try {
+        const container = await renderDocument(pageDoc, {});
+        const button = submitButton(container);
+        await act(async () => {
+          button.click();
+        });
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+
+        expect(fetchSpy).toHaveBeenCalled();
+        expect(downloadedFilename).toBe("");
       } finally {
         createElementSpy.mockRestore();
         globalThis.URL.createObjectURL = originalCreate;

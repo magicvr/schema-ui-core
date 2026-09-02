@@ -238,6 +238,19 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateWalletVoucherAndSubject,
 			ApplyPostgres:        migrateWalletVoucherAndSubjectPG,
 		},
+		{
+			// 0065 · VP-029 A-005 F-004（A-008 处理）：vouchers 每行一张卡，同
+			// batch_id 可被两次 GenerateBatch 混入同一列表。注册表把 batch_id
+			// 提升为一级唯一身份：新生成先登记批次，冲突即拒绝。回填把既有
+			// vouchers 的 batch_id 收敛为一行（历史重复批次不拆解——非资金
+			// 不变式加固，约束只防 NEW 混批）。
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet_voucher_batches"},
+			Version:              65,
+			Name:                 "wallet_voucher_batches",
+			Checksum:             kernel.MigrationChecksum(walletVoucherBatchDDL, "0065:wallet-voucher-batches:v1"),
+			Apply:                migrateWalletVoucherBatches,
+			ApplyPostgres:        migrateWalletVoucherBatchesPG,
+		},
 	}
 }
 
@@ -368,6 +381,46 @@ func migrateWalletVoucherAndSubjectPG(tx kernel.Tx) error {
 	}
 	if _, err := tx.Exec(context.Background(), `ALTER TABLE wallet_accounts ADD CONSTRAINT wallet_accounts_owner_type_check CHECK (owner_type IN ('user','business','system','subject'))`); err != nil {
 		return fmt.Errorf("add wallet_accounts owner_type check: %w", err)
+	}
+	return nil
+}
+
+// walletVoucherBatchDDL (0065 · A-005 F-004): batch registry — batch_id is the
+// unique identity of one generation run.
+var walletVoucherBatchDDL = []string{
+	`CREATE TABLE voucher_batches (
+  batch_id   TEXT PRIMARY KEY,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`,
+	`INSERT INTO voucher_batches (batch_id, created_at, updated_at)
+ SELECT batch_id, MIN(created_at), MAX(updated_at) FROM vouchers GROUP BY batch_id`,
+}
+
+var walletVoucherBatchPGDDL = []string{
+	`CREATE TABLE voucher_batches (
+  batch_id   TEXT PRIMARY KEY,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+)`,
+	`INSERT INTO voucher_batches (batch_id, created_at, updated_at)
+ SELECT batch_id, MIN(created_at), MAX(updated_at) FROM vouchers GROUP BY batch_id`,
+}
+
+func migrateWalletVoucherBatches(tx kernel.Tx) error {
+	for _, stmt := range walletVoucherBatchDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create voucher_batches registry: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateWalletVoucherBatchesPG(tx kernel.Tx) error {
+	for _, stmt := range walletVoucherBatchPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create voucher_batches registry (postgres): %w", err)
+		}
 	}
 	return nil
 }

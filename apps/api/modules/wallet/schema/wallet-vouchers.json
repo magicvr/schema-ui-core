@@ -27,7 +27,18 @@
         "expiresAt": "expiresAt"
       },
       "onSuccess": {
-        "behavior": "reload"
+        "behavior": "reload",
+        "downloadCsv": {
+          "columns": [
+            "code",
+            "codePrefix",
+            "batchId",
+            "amount",
+            "currency",
+            "createdAt"
+          ],
+          "fileName": "vouchers_{batchId}.csv"
+        }
       }
     },
     "openGenerate": {
@@ -75,7 +86,7 @@
             },
             {
               "id": "expiresAt",
-              "label": "Expires at (Unix timestamp, optional)",
+              "label": "Expires at (Unix seconds, 2001-09-09 to 2100-01-01; optional)",
               "type": "inputNumber",
               "labelKey": "schema.walletVouchers.field.expiresAt"
             }

@@ -215,11 +215,15 @@ var Catalog = map[string]Entry{
 	"INVITE_ROLE_GONE":    {"error.inviteRoleGone", "invited roles changed; ask for a new invitation", "邀请中的角色已变更，请索取新邀请"},
 
 	// VP-029 R3 (GOAL-003): prepaid voucher codes.
+	// A-008: INVALID_VOUCHER_PARAMS text widened to cover the expiresAt Unix
+	// seconds range guard (A-005 F-005); VOUCHER_BATCH_EXISTS added for the
+	// 0065 batch registry conflict (A-005 F-004).
 	"INVALID_VOUCHER_BODY":     {"error.invalidVoucherBody", "body must be JSON with batchId, count, and amount", "请求体必须是包含 batchId、count 和 amount 的 JSON"},
-	"INVALID_VOUCHER_PARAMS":   {"error.invalidVoucherParams", "invalid batchId, count (1-1000), or amount (>0)", "批次号、数量 (1-1000) 或金额 (>0) 参数无效"},
+	"INVALID_VOUCHER_PARAMS":   {"error.invalidVoucherParams", "invalid batchId, count (1-1000), amount (>0), or expiresAt (Unix seconds, 2001-09-09 to 2100-01-01)", "批次号、数量 (1-1000)、金额 (>0) 或过期时间（Unix 秒，2001-09-09 至 2100-01-01）参数无效"},
 	"INVALID_VOUCHER_ID":       {"error.invalidVoucherId", "id is required", "缺少凭证 id"},
 	"VOUCHER_NOT_FOUND":        {"error.voucherNotFound", "voucher not found", "预付凭证不存在"},
 	"VOUCHER_ALREADY_REDEEMED": {"error.voucherAlreadyRedeemed", "cannot void already redeemed voucher", "已核销的预付凭证不可作废"},
+	"VOUCHER_BATCH_EXISTS":     {"error.voucherBatchExists", "a batch with that batchId already exists", "该 batchId 对应的批次已存在"},
 }
 
 // SupportedLocales are the negotiation targets in preference order.

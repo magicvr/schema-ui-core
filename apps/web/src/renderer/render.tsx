@@ -1198,34 +1198,63 @@ function SchemaCrudProvider({
         gateTargetId,
       });
       if (result.ok && (result.fieldErrors === undefined || result.fieldErrors.length === 0)) {
-        // F-001 (VP-029 判据 #2 / #5): if the response contains generated voucher items with plaintext codes,
-        // export them directly as a CSV download in the same user gesture before closing the modal.
-        if (isRecord(result.data) && Array.isArray(result.data.items)) {
+        // VP-029 判据 #2/#5（A-005 F-002 → A-008）：一次性明文 CSV 导出改为
+        // 协议声明驱动——只有提交动作的 onSuccess 声明 downloadCsv 时才在同
+        // 一手势导出 items[].code；任何其它表单响应携带同名字段不再被启发式
+        // 误触发浏览器下载。
+        const submitActionRecord = actionOf(document, submitAction);
+        const onSuccessDecl = isRecord(submitActionRecord)
+          ? (submitActionRecord as Record<string, unknown>).onSuccess
+          : undefined;
+        const downloadDecl = isRecord(onSuccessDecl) && isRecord(onSuccessDecl.downloadCsv)
+          ? (onSuccessDecl.downloadCsv as Record<string, unknown>)
+          : undefined;
+        const columns = Array.isArray(downloadDecl?.columns)
+          ? (downloadDecl.columns as unknown[]).filter(
+              (column): column is string => typeof column === "string" && column !== "",
+            )
+          : [];
+        const fileNameTemplate =
+          typeof downloadDecl?.fileName === "string" && downloadDecl.fileName !== ""
+            ? downloadDecl.fileName
+            : "";
+        const csvHeaders: Record<string, string> = {
+          code: "Code",
+          codePrefix: "Prefix",
+          batchId: "BatchId",
+          amount: "Amount",
+          currency: "Currency",
+          createdAt: "CreatedAt",
+        };
+        if (
+          downloadDecl !== undefined &&
+          columns.includes("code") &&
+          fileNameTemplate !== "" &&
+          isRecord(result.data) &&
+          Array.isArray(result.data.items)
+        ) {
           const vouchersWithCode = result.data.items.filter(
             (it): it is Record<string, unknown> => isRecord(it) && typeof it.code === "string",
           );
           if (vouchersWithCode.length > 0) {
-            const lines = ["Code,Prefix,BatchId,Amount,Currency,CreatedAt"];
+            const lines = [columns.map((column) => csvHeaders[column] ?? column).join(",")];
             for (const v of vouchersWithCode) {
-              lines.push(
-                [
-                  `"${String(v.code ?? "")}"`,
-                  `"${String(v.codePrefix ?? "")}"`,
-                  `"${String(v.batchId ?? "")}"`,
-                  String(v.amount ?? 0),
-                  `"${String(v.currency ?? "CNY")}"`,
-                  `"${String(v.createdAt ?? "")}"`,
-                ].join(","),
-              );
+              const cells = columns.map((column) => {
+                if (column === "amount") {
+                  return String(v[column] ?? 0);
+                }
+                return `"${String(v[column] ?? "")}"`;
+              });
+              lines.push(cells.join(","));
             }
             const csvBlob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
             const batchId =
               typeof prepared.batchId === "string" && prepared.batchId !== ""
                 ? prepared.batchId
                 : typeof vouchersWithCode[0]?.batchId === "string" && vouchersWithCode[0].batchId !== ""
-                ? (vouchersWithCode[0].batchId as string)
-                : "vouchers";
-            triggerBlobDownload(csvBlob, sanitizeClientFilename(`vouchers_${batchId}.csv`));
+                  ? (vouchersWithCode[0].batchId as string)
+                  : "vouchers";
+            triggerBlobDownload(csvBlob, sanitizeClientFilename(fileNameTemplate.replace("{batchId}", batchId)));
           }
         }
         setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method, t) });
