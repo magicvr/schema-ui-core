@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.0
+version: 0.1.1
 ---
 
 # 执行记录 · GOAL-001-wallet-prepaid-instrument
@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-09-02 | R1 核心合同冻结与选型用户裁决留痕 | recorded | `02-execution/E-002-r1-contract-freeze.md` |
 | E-003 | 2026-09-02 | 工作区29 根目标全量关门与实证收官 | recorded | `02-execution/E-003-root-closeout.md` |
 | E-004 | 2026-09-02 | A-002 修复复审与 VP-029 关门 | recorded | `02-execution/E-004-a002-fix-and-vp-close.md` |
+| E-005 | 2026-09-02 | A-005 独立审计响应：F-001 修复与闭合验证 | recorded | `02-execution/E-005-a005-f001-fix.md` |
 
 ## 事实边界
 
