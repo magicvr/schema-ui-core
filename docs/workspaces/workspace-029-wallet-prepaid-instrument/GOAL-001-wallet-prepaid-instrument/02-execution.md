@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.4
+version: 0.1.5
 ---
 
 # 执行记录 · GOAL-001-wallet-prepaid-instrument
@@ -22,6 +22,7 @@ version: 0.1.4
 | E-006 | 2026-09-02 | A-007 响应与 A-005 recommended（F-002～F-005）处置 | recorded | `02-execution/E-006-a007-recommended-fixes.md` |
 | E-007 | 2026-09-02 | 预付凭证页面修复：Schema 校验（声明载体）、导航图标与排序 | recorded | `02-execution/E-007-vouchers-page-fixes.md` |
 | E-008 | 2026-09-02 | 生成体验：批次号自动生成（可选）+ 面额单位元两位小数 | recorded | `02-execution/E-008-voucher-generation-ux.md` |
+| E-009 | 2026-09-02 | 过期时间改日期选择（datePicker）并自动换算 UTC 当日末秒 | recorded | `02-execution/E-009-voucher-expiry-date-picker.md` |
 
 ## 事实边界
 
