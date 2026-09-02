@@ -215,11 +215,11 @@ var Catalog = map[string]Entry{
 	"INVITE_ROLE_GONE":    {"error.inviteRoleGone", "invited roles changed; ask for a new invitation", "邀请中的角色已变更，请索取新邀请"},
 
 	// VP-029 R3 (GOAL-003): prepaid voucher codes.
-	// E-008: batchId optional (server auto-generates VB-… ids); amount is CNY
-	// yuan with up to 2 decimal places (converted to min units internally);
-	// VOUCHER_BATCH_EXISTS stays for explicit batchId conflicts (0065).
+	// E-008/E-009: batchId optional (server auto-generates VB-… ids); amount is
+	// CNY yuan with up to 2 decimal places (converted to min units internally);
+	// expiresAt accepts Unix seconds or a UTC YYYY-MM-DD date (end of that day).
 	"INVALID_VOUCHER_BODY":     {"error.invalidVoucherBody", "body must be JSON with count and amount", "请求体必须是包含 count 和 amount 的 JSON"},
-	"INVALID_VOUCHER_PARAMS":   {"error.invalidVoucherParams", "invalid count (1-1000), amount (CNY yuan with up to 2 decimal places, >0), or expiresAt (Unix seconds, 2001-09-09 to 2100-01-01)", "数量 (1-1000)、金额（人民币元，最多 2 位小数，须大于 0）或过期时间（Unix 秒，2001-09-09 至 2100-01-01）参数无效"},
+	"INVALID_VOUCHER_PARAMS":   {"error.invalidVoucherParams", "invalid count (1-1000), amount (CNY yuan with up to 2 decimal places, >0), or expiresAt (Unix seconds, or a UTC date YYYY-MM-DD valid through 23:59:59 that day, 2001-09-09 to 2099-12-31)", "数量 (1-1000)、金额（人民币元，最多 2 位小数，须大于 0）或过期时间（Unix 秒，或 UTC 日期 YYYY-MM-DD——所选日期当日 23:59:59 前有效，范围 2001-09-09 至 2099-12-31）参数无效"},
 	"INVALID_VOUCHER_ID":       {"error.invalidVoucherId", "id is required", "缺少凭证 id"},
 	"VOUCHER_NOT_FOUND":        {"error.voucherNotFound", "voucher not found", "预付凭证不存在"},
 	"VOUCHER_ALREADY_REDEEMED": {"error.voucherAlreadyRedeemed", "cannot void already redeemed voucher", "已核销的预付凭证不可作废"},

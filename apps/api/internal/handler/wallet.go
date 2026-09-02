@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -459,7 +460,7 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			Count     int             `json:"count"`
 			Amount    json.RawMessage `json:"amount"`
 			Currency  string          `json:"currency"`
-			ExpiresAt *int64          `json:"expiresAt"`
+			ExpiresAt json.RawMessage `json:"expiresAt"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -490,22 +491,18 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			}
 			batchID = id
 		}
+		// E-009: expiresAt accepts legacy Unix seconds or a UTC date
+		// (YYYY-MM-DD) picked in the admin form — the server converts the date
+		// to end-of-day seconds (valid through 23:59:59 of the chosen day).
+		expiry, okExpiry := parseVoucherExpiry(body.ExpiresAt)
+		if !okExpiry {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "expiresAt must be omitted, Unix seconds, or a YYYY-MM-DD UTC date (valid through 23:59:59 that day; range 2001-09-09..2099-12-31)")
+			return
+		}
 		var exp *time.Time
-		if body.ExpiresAt != nil {
-			// A-005 F-005 (A-008): expiresAt is Unix SECONDS. Millisecond
-			// timestamps (~1.7e12) or far-out-of-range values are rejected
-			// fail-closed instead of silently minting an immediate/never
-			// expiry; <= 0 keeps the historical "absent" semantics.
-			const minExpiryUnix int64 = 1_000_000_000 // 2001-09-09T01:46:40Z
-			const maxExpiryUnix int64 = 4_102_444_800 // 2100-01-01T00:00:00Z
-			if *body.ExpiresAt > 0 && (*body.ExpiresAt < minExpiryUnix || *body.ExpiresAt > maxExpiryUnix) {
-				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "expiresAt must be Unix seconds between 2001-09-09 and 2100-01-01, or omitted")
-				return
-			}
-			if *body.ExpiresAt > 0 {
-				t := time.Unix(*body.ExpiresAt, 0).UTC()
-				exp = &t
-			}
+		if expiry != nil {
+			t := time.Unix(*expiry, 0).UTC()
+			exp = &t
 		}
 		generated, err := service.GenerateVouchers(r.Context(), batchID, body.Count, amountCents, currency, exp, now)
 		if err != nil {
@@ -751,6 +748,76 @@ func walletMutate(w http.ResponseWriter, r *http.Request, service WalletService,
 		recordWalletEvent(operations, user, "wallet."+eventSuffix, eventSuffix, map[string]any{"accountId": account.ID, "entryId": entry.ID, "amountDelta": entry.AmountDelta}, now)
 	}
 	writeWalletMutation(w, *account, *entry, replayed)
+}
+
+// voucher expiry window (A-005 F-005 / A-008): 2001-09-09T00:00:00Z ..
+// 2100-01-01T00:00:00Z in Unix seconds.
+const (
+	voucherExpiryMinUnix int64 = 1_000_000_000
+	voucherExpiryMaxUnix int64 = 4_102_444_800
+)
+
+// parseVoucherExpiry normalizes an expiresAt payload to Unix seconds:
+//   - absent / "" / <=0 seconds → nil (no expiry, historical semantics)
+//   - numeric Unix seconds (JSON int, exponent form, or quoted digits)
+//   - a "YYYY-MM-DD" UTC date (E-009): converted to 23:59:59 UTC of that day,
+//     so the whole chosen day stays redeemable
+//
+// Out-of-window values and malformed input return ok=false (fail-closed).
+func parseVoucherExpiry(raw json.RawMessage) (*int64, bool) {
+	if len(raw) == 0 {
+		return nil, true
+	}
+	s := strings.TrimSpace(string(raw))
+	if s == "" {
+		return nil, true
+	}
+	var sec int64
+	if s[0] == '"' {
+		var str string
+		if err := json.Unmarshal(raw, &str); err != nil {
+			return nil, false
+		}
+		s = strings.TrimSpace(str)
+		if s == "" {
+			return nil, true
+		}
+		if endOfDay, ok := voucherDateToEndOfDaySeconds(s); ok {
+			sec = endOfDay
+		} else {
+			n, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				return nil, false
+			}
+			sec = n
+		}
+	} else {
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil || f != math.Trunc(f) {
+			return nil, false
+		}
+		sec = int64(f)
+	}
+	if sec <= 0 {
+		return nil, true // historical "absent" semantics
+	}
+	if sec < voucherExpiryMinUnix || sec > voucherExpiryMaxUnix {
+		return nil, false
+	}
+	return &sec, true
+}
+
+// voucherDateToEndOfDaySeconds converts a strict YYYY-MM-DD date (interpreted
+// in UTC, the store's clock) to 23:59:59 UTC of the same day.
+func voucherDateToEndOfDaySeconds(s string) (int64, bool) {
+	if len(s) != len("2006-01-02") {
+		return 0, false
+	}
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return 0, false
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.UTC).Unix(), true
 }
 
 // parseYuanToCents converts a CNY amount given in yuan (JSON number or quoted

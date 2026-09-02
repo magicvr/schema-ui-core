@@ -629,3 +629,75 @@ func TestVouchersGenerateAmountYuanDecimals(t *testing.T) {
 		}
 	}
 }
+
+// E-009: expiresAt accepts a UTC date (YYYY-MM-DD) from the admin datePicker;
+// the server converts it to end-of-day Unix seconds (23:59:59 UTC of the
+// chosen day), so the whole day stays redeemable. Legacy Unix seconds input
+// keeps working.
+func TestVouchersGenerateExpiresAtDatePicker(t *testing.T) {
+	env := newAuthTestEnv(t)
+	repo := walletstore.NewRepository(env.st)
+	service := newWalletStub(env, repo)
+	mountWalletRoutes(t, env, service)
+	adminTok := adminToken(t, env)
+
+	post := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminTok)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		env.mux.ServeHTTP(w, req)
+		return w
+	}
+	firstExpiry := func(w *httptest.ResponseRecorder) (string, bool) {
+		t.Helper()
+		if w.Code != http.StatusCreated {
+			t.Fatalf("status = %d, want 201; body=%s", w.Code, w.Body.String())
+		}
+		var res struct {
+			Items []map[string]any `json:"items"`
+		}
+		if err := json.NewDecoder(w.Body).Decode(&res); err != nil {
+			t.Fatal(err)
+		}
+		exp, ok := res.Items[0]["expiresAt"]
+		if !ok {
+			return "", false
+		}
+		return exp.(string), true
+	}
+
+	// 1. Chosen date → expiry at 23:59:59 UTC of the SAME day.
+	exp, ok := firstExpiry(post(`{"count":1,"amount":"1.00","expiresAt":"2027-01-15"}`))
+	if !ok || exp != "2027-01-15T23:59:59.000Z" {
+		t.Fatalf("date expiry = %q (ok=%v), want 2027-01-15T23:59:59.000Z", exp, ok)
+	}
+
+	// 2. Upper-edge date (2099-12-31) is accepted; the day after the window is not.
+	if exp, ok := firstExpiry(post(`{"count":1,"amount":"1.00","expiresAt":"2099-12-31"}`)); !ok || exp != "2099-12-31T23:59:59.000Z" {
+		t.Fatalf("2099-12-31 expiry = %q (ok=%v)", exp, ok)
+	}
+	rejects := []string{
+		`{"count":1,"amount":"1.00","expiresAt":"2100-01-01"}`,
+		`{"count":1,"amount":"1.00","expiresAt":"2001-09-08"}`,
+		`{"count":1,"amount":"1.00","expiresAt":"2027-1-5"}`,             // not zero padded
+		`{"count":1,"amount":"1.00","expiresAt":"2027-13-01"}`,           // invalid month
+		`{"count":1,"amount":"1.00","expiresAt":"2027-01-15T10:00:00Z"}`, // time not accepted in date mode
+	}
+	for _, body := range rejects {
+		w := post(body)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expiry %s status = %d, want 400; body=%s", body, w.Code, w.Body.String())
+		}
+		var errBody map[string]any
+		_ = json.NewDecoder(w.Body).Decode(&errBody)
+		if errBody["error"] != "INVALID_VOUCHER_PARAMS" {
+			t.Fatalf("expiry %s error = %v, want INVALID_VOUCHER_PARAMS", body, errBody["error"])
+		}
+	}
+
+	// 3. Empty date string = omitted (no expiry).
+	if _, ok := firstExpiry(post(`{"count":1,"amount":"1.00","expiresAt":""}`)); ok {
+		t.Fatal("empty expiry date must behave like omitted (no expiresAt in response)")
+	}
+}

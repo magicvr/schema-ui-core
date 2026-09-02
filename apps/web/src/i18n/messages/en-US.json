@@ -777,7 +777,7 @@
   "schema.walletVouchers.field.count": "Count",
   "schema.walletVouchers.field.amount": "Amount (CNY, up to 2 decimals)",
   "schema.walletVouchers.field.currency": "Currency",
-  "schema.walletVouchers.field.expiresAt": "Expires at (Unix seconds, 2001-09-09 to 2100-01-01; optional)",
+  "schema.walletVouchers.field.expiresAt": "Expiry date (UTC, optional; valid through 23:59:59 of the chosen date)",
   "schema.walletVouchers.submit.generate": "Generate & Export",
   "schema.myWallet.text.intro": "Your wallet balance and recent ledger entries. Amounts are in min units.",
   "schema.myWallet.statCard.total": "Total balance (min units)",

@@ -68,8 +68,10 @@
             },
             {
               "id": "expiresAt",
-              "label": "Expires at (Unix seconds, 2001-09-09 to 2100-01-01; optional)",
-              "type": "inputNumber",
+              "label": "Expiry date (UTC, optional; valid through 23:59:59 of the chosen date)",
+              "type": "datePicker",
+              "min": "2001-09-09",
+              "max": "2099-12-31",
               "labelKey": "schema.walletVouchers.field.expiresAt"
             }
           ],

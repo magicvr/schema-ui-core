@@ -943,6 +943,8 @@ function FieldControl({
           readOnly={readOnly}
           required={required}
           describedBy={errorId}
+          min={field.min}
+          max={field.max}
           onChange={emitChange}
         />
       );

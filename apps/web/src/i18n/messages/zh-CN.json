@@ -777,7 +777,7 @@
   "schema.walletVouchers.field.count": "数量",
   "schema.walletVouchers.field.amount": "面额（元，最多 2 位小数）",
   "schema.walletVouchers.field.currency": "币种",
-  "schema.walletVouchers.field.expiresAt": "过期时间（Unix 秒，2001-09-09 至 2100-01-01；可选）",
+  "schema.walletVouchers.field.expiresAt": "过期日期（UTC，可选；所选日期当日 23:59:59 前有效）",
   "schema.walletVouchers.submit.generate": "生成并导出",
   "schema.myWallet.text.intro": "你的钱包余额与最近流水。金额单位为最小单位（分）。",
   "schema.myWallet.statCard.total": "总余额（分）",
