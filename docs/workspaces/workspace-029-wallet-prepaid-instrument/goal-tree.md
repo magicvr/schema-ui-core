@@ -5,12 +5,12 @@
 ## 目标树
 
 ```text
-GOAL-001-wallet-prepaid-instrument (钱包预付资金凭证与外部主体接缝 · active · 0/4)
-（R1 合同冻结 → R2 主体接缝+账本入金 → R3 Admin 批次面+导出 → R4 证据与关门）
+GOAL-001-wallet-prepaid-instrument (钱包预付资金凭证与外部主体接缝 · active · 1/4)
+（R1 合同冻结 [done] → R2 主体接缝+账本入金 → R3 Admin 批次面+导出 → R4 证据与关门）
 ```
 
 ## 状态表
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-wallet-prepaid-instrument | 钱包预付资金凭证与外部主体接缝 | **active** | 0/4 | null | 2026-09-02 开区：VP-029 v0.2.0 active · VRev-066 independent `pass` · Admin 类 freshness PASS `29727510`→`b5c39dfb` 不暂挂 `go`；R1 合同冻结待立项（I-029-001/002/003/006 须先用户裁决） |
+| GOAL-001-wallet-prepaid-instrument | 钱包预付资金凭证与外部主体接缝 | **active** | 1/4 | null | 2026-09-02 开区：VP-029 v0.2.0 active · VRev-066 independent `pass`；R1 合同冻结已完成（D-002 用户裁决冻结主体落点/入金类型/权限键/哈希并发合同） |

@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-09-02 | 工作区骨架与 Root 五件套落盘 | recorded | `02-execution/E-001-scaffold.md` |
+| E-002 | 2026-09-02 | R1 核心合同冻结与选型用户裁决留痕 | recorded | `02-execution/E-002-r1-contract-freeze.md` |
 
 ## 事实边界
 
