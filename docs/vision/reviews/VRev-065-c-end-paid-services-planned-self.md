@@ -108,6 +108,14 @@ VP-029：Admin 类 freshness。VP-030：架构类 freshness + 限流评估。VP-
 | V-F109 | **fixed** | VP-029 退出判据 1 增加：主体查询/get-or-create 不依赖 `admin.wallet` 已启 |
 | V-F110 | 保持 open | 激活 VP-029 前独立 Vision Review；不阻断本批 `planned` |
 
+## Finding 响应（2026-09-02 · `/vision` · VP-029 激活事务）
+
+| id | 路径 | 说明 |
+|----|------|------|
+| V-F110 | **fixed** | [VRev-066](VRev-066-vp029-wallet-prepaid-instrument-independent.md) independent `pass`：资金哈希、并发双花、主体与 Admin 用户隔离三项方向级可判定；算法/UNIQUE/`owner_type` 下沉为 V-F111/112 recommended 并在激活+开区事务内登记 I-029-006 与 I-029-001 扩写 |
+
+原 verdict（pass）与 finding 原文未改写；本响应为 append-only 补充。
+
 ## 声明
 
 本意见不直接修改 Charter / VP / Goal status。required finding 的响应由 `/vision` 追加在本报告中；原 verdict 与 finding 原文不得改写。

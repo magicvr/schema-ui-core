@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-029-wallet-prepaid-instrument
 title: 钱包预付资金凭证与外部主体接缝
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace:
+lead_workspace: workspace-029-wallet-prepaid-instrument
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.0
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-09-02 · v0.1.0 · 0 区） |
-| lead_workspace | 未绑定（激活时按惯例 `workspace-029-wallet-prepaid-instrument`） |
-| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活前另做 Admin 类 freshness + 激活审视 |
+| status | **`active`**（2026-09-02 · v0.2.0 · lead `workspace-029-wallet-prepaid-instrument`） |
+| lead_workspace | `workspace-029-wallet-prepaid-instrument`（2026-09-02 `/govern` 开区） |
+| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活独立审视 = [VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) `pass`（0 required）+ Admin 类 freshness PASS（`29727510`→`b5c39dfb`） |
 | 组合位置 | **Admin 功能分支** · 扩展已交付的 `admin.wallet`（VP-011 S-14），**不是**支付/结算业务域 |
 
 ## 意图
@@ -82,17 +82,18 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-029-001 | 主体落点：薄模块 vs `authsession` vs `admin.wallet` 表。公共契约必须通道无关。 | required | 方案冻结 + 判据 1 | R1 | open |
+| I-029-001 | 主体落点：薄模块 vs `authsession` vs `admin.wallet` 表。公共契约必须通道无关。须同时冻结：`owner_type` 是否新增取值（现行 CHECK 仅 `user/business/system`）；`OwnerExistsFunc` 改为「已登记主体」、**禁止**回退 `UserByID`；查询/get-or-create 不依赖 `admin.wallet` 已启。W13 F-012 孤儿账本相对主体登记表。 | required | 方案冻结 + 判据 1 | R1 | open |
 | I-029-002 | 核销入金的 `entry_type`：新类型 vs `adjust` + `ref_type=voucher`。 | required | 判据 3/4 | R1 | open |
 | I-029-003 | 生成权限键：复用 `wallet.adjust` vs 新 `wallet.voucher.issue`。 | required | 判据 5 | R1 | open |
 | I-029-004 | 导出格式（CSV/TXT、是否含明文、一次性下载）。 | non-blocking | 判据 5 | R3 | open |
-| I-029-005 | C 端自助核销 HTTP 是否本波交付，或仅模块 API（Telegram 进程内调用）。 | non-blocking | 判据面 | R1 | open（默认倾向：模块 API 必做，HTTP 自助核销可选） |
+| I-029-005 | C 端自助核销 HTTP 是否本波交付，或仅模块 API（Telegram 进程内调用）。若选 HTTP，本 VP 必须完成 RT-Q05 精神的限流评估，不得推到未激活的 VP-030。 | non-blocking | 判据面 | R1 | open（默认倾向：模块 API 必做，HTTP 自助核销可选） |
+| I-029-006 | 凭证哈希与双花合同：哈希算法（默认候选 = 高熵码 SHA-256 或 HMAC-SHA256+pepper；禁止 6 位恢复码或 bcrypt 当卡密默认）；码字母表与长度（熵下限）；核销常时比较；`UNIQUE(code_hash)`（或等价）+ 同事务「未用→已核销 AND 账本入金」，并发失败者 fail-closed，重复 Redeem 不双记。 | required | 判据 2/3 | R1 | open |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；激活后唯一 delivery |
+| workspace-029-wallet-prepaid-instrument | GOAL-001-wallet-prepaid-instrument | lead | 2026-09-02 | 唯一 delivery；VRev-066 independent `pass` + Admin 类 freshness PASS |
 
 ## 关门记录
 
@@ -103,3 +104,4 @@ parent: null
 | date | change |
 |------|--------|
 | 2026-09-02 | 初创 `planned`：用户确认 Telegram 付费服务下游为真实触发；结构选型 C（基座一方可复用）+ 切分 1（钱包密钥 = Admin 功能，不是支付域）+ 外部主体接缝（不建 Admin 登录账号）。与 VP-030/031 同批落盘。 |
+| 2026-09-02 | **激活** `planned → active` v0.2.0（用户指令：独立审视通过则激活并开区）。[VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) independent `pass`（0 required）。Admin 类 freshness **PASS**（`29727510` → `b5c39dfb`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码 = VP-028 已审结目 + VP-009 W16/W17；不暂挂 `go`）。V-F110 → fixed（本独立审视）；V-F111/112/113 → 激活+开区事务内 fixed（I-029-001 扩写 + I-029-006 + freshness 留痕 + VP-028 组合索引同步）。lead `workspace-029-wallet-prepaid-instrument`。 |
