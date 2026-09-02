@@ -83,6 +83,14 @@ export interface RenderFormNode {
     recordSource?: Record<string, unknown>;
     /** GOAL-014 D-002 §4: responsive form column count (>1 enables the grid). */
     columns?: number;
+    /**
+     * VP-029（A-005 F-002 → A-008；载体修正 E-007）：声明驱动的提交响应 CSV
+     * 导出（一次性明文码）。声明放在表单业务 props——node schema（upstream
+     * pin）允许任意业务键，而 action.onSuccess 受 OutcomeBehavior 严格结构
+     * 约束无法扩展。submitForm 仅在 columns 含 "code" 且响应 items 携带
+     * code 时触发同一手势下载。
+     */
+    downloadCsv?: { columns?: string[]; fileName?: string };
   };
   children?: RenderNode[];
 }
@@ -429,6 +437,10 @@ export function parseRenderNode(value: unknown, path: string): RenderNode | Rend
         ...(isRecord(value.props.recordSource)
           ? { recordSource: value.props.recordSource }
           : {}),
+        // E-007: declaration-driven CSV export rides the form's business props
+        // (see RenderFormNode.props.downloadCsv) — projected like the other
+        // known business props so submitForm can honor the declaration.
+        ...(isRecord(value.props.downloadCsv) ? { downloadCsv: value.props.downloadCsv } : {}),
       },
       ...(value.children === undefined ? {} : { children: value.children }),
     } as RenderFormNode;

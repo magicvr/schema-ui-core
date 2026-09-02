@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -1103,15 +1103,16 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		labels := fetchSidebar(t, plan, nil)
 		want := []string{
 			"Dashboard", "Users", "Roles", "Wallet",
+			// VP-029 R3 (GOAL-003, user 2026-09-02): prepaid vouchers sits
+			// directly below Wallet (menu_wallet_vouchers in
+			// DefaultNavigationOrder, right after menu_wallet).
+			"Prepaid vouchers",
 			"Activity",
 			// W26 (GOAL-038): standalone mail pages after the settings entry
 			// they split off from (settings itself lives in the user menu).
 			"Mail console", "Outbound email log",
 			"File library", "Data dictionary",
 			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
-			// VP-029 R3 (GOAL-003 / GOAL-001): wallet-vouchers page joins the
-			// admin set (menu_wallet_vouchers, Order 11) after data permission.
-			"Prepaid vouchers",
 		}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {
 			t.Fatalf("sidebar = %v, want %v", labels, want)

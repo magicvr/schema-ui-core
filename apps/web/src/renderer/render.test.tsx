@@ -1305,7 +1305,7 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
     }
   });
 
-  it("downloads the voucher CSV when the submit action declares downloadCsv (VP-029 F-001 · A-008)", async () => {
+  it("downloads the voucher CSV when the form props declare downloadCsv (VP-029 F-001 · A-008 · E-007)", async () => {
     let downloadedFilename = "";
     const originalCreate = globalThis.URL.createObjectURL;
     const originalRevoke = globalThis.URL.revokeObjectURL;
@@ -1332,14 +1332,13 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
         [],
       );
       pageDoc.actions.submit.url = "/api/wallet/vouchers/batches";
-      // A-005 F-002 (A-008): export is protocol-declared — the heuristic no
-      // longer fires on any items[].code response.
-      (pageDoc.actions.submit as unknown as Record<string, unknown>).onSuccess = {
-        behavior: "reload",
-        downloadCsv: {
-          columns: ["code", "codePrefix", "batchId", "amount", "currency", "createdAt"],
-          fileName: "vouchers_{batchId}.csv",
-        },
+      // A-005 F-002 (A-008 · E-007): export is declaration-driven — declared on
+      // the form node's business props (the pinned OutcomeBehavior schema
+      // cannot carry extra onSuccess keys), never inferred from items[].code.
+      const formNode = pageDoc.body as unknown as { props: Record<string, unknown> };
+      formNode.props.downloadCsv = {
+        columns: ["code", "codePrefix", "batchId", "amount", "currency", "createdAt"],
+        fileName: "vouchers_{batchId}.csv",
       };
 
       fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {

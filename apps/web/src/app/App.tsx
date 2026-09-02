@@ -15,6 +15,7 @@ import {
   Settings,
   Shield,
   Table2,
+  Ticket,
   UserRound,
   Wallet,
   X,
@@ -58,6 +59,9 @@ import { nextFailureId, type HostFailure } from "@/host/failure";
 const iconRegistry: Record<string, LucideIcon> = {
   activity: Activity,
   boxes: Boxes,
+  // VP-029 R3 (GOAL-003): prepaid vouchers nav semantic icon (fragment icon
+  // name "card" → ticket glyph; see wallet manifest fragment).
+  card: Ticket,
   dashboard: LayoutDashboard,
   folder: FolderKanban,
   form: FormInput,

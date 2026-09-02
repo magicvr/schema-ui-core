@@ -1198,16 +1198,16 @@ function SchemaCrudProvider({
         gateTargetId,
       });
       if (result.ok && (result.fieldErrors === undefined || result.fieldErrors.length === 0)) {
-        // VP-029 判据 #2/#5（A-005 F-002 → A-008）：一次性明文 CSV 导出改为
-        // 协议声明驱动——只有提交动作的 onSuccess 声明 downloadCsv 时才在同
-        // 一手势导出 items[].code；任何其它表单响应携带同名字段不再被启发式
-        // 误触发浏览器下载。
-        const submitActionRecord = actionOf(document, submitAction);
-        const onSuccessDecl = isRecord(submitActionRecord)
-          ? (submitActionRecord as Record<string, unknown>).onSuccess
-          : undefined;
-        const downloadDecl = isRecord(onSuccessDecl) && isRecord(onSuccessDecl.downloadCsv)
-          ? (onSuccessDecl.downloadCsv as Record<string, unknown>)
+        // VP-029 判据 #2/#5（A-005 F-002 → A-008；声明载体修正见 E-007）：一次性
+        // 明文 CSV 导出是**声明驱动**——只有提交表单节点的 props 声明 downloadCsv
+        // 时，才在同一手势导出 items[].code；其它表单响应携带同名字段不再被启发
+        // 式误触发下载。声明放在表单节点 props（node schema 的业务级参数区，upstream
+        // pin 允许任意业务键）而不是 action.onSuccess：后者受 pinned action.schema
+        // OutcomeBehavior 严格结构约束（additionalProperties: false），放在那里会
+        // 使页面文档 D-VAL 失败（PAGE_SCHEMA_INVALID，用户可见「页面 Schema 错误」）。
+        const formProps = isRecord(form.props) ? form.props : undefined;
+        const downloadDecl = isRecord(formProps?.downloadCsv)
+          ? (formProps.downloadCsv as Record<string, unknown>)
           : undefined;
         const columns = Array.isArray(downloadDecl?.columns)
           ? (downloadDecl.columns as unknown[]).filter(

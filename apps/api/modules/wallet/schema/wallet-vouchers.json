@@ -27,18 +27,7 @@
         "expiresAt": "expiresAt"
       },
       "onSuccess": {
-        "behavior": "reload",
-        "downloadCsv": {
-          "columns": [
-            "code",
-            "codePrefix",
-            "batchId",
-            "amount",
-            "currency",
-            "createdAt"
-          ],
-          "fileName": "vouchers_{batchId}.csv"
-        }
+        "behavior": "reload"
       }
     },
     "openGenerate": {
@@ -93,7 +82,18 @@
           ],
           "submitAction": "generateBatch",
           "submitLabel": "Generate & Export",
-          "submitLabelKey": "schema.walletVouchers.submit.generate"
+          "submitLabelKey": "schema.walletVouchers.submit.generate",
+          "downloadCsv": {
+            "columns": [
+              "code",
+              "codePrefix",
+              "batchId",
+              "amount",
+              "currency",
+              "createdAt"
+            ],
+            "fileName": "vouchers_{batchId}.csv"
+          }
         }
       }
     },

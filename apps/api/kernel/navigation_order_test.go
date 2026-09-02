@@ -15,6 +15,8 @@ func TestDefaultNavigationOrderSnapshot(t *testing.T) {
 		"menu_roles",
 		// S-14 (GOAL-019, user 2026-08-16): wallet directly below Roles.
 		"menu_wallet",
+		// VP-029 R3 (GOAL-003, user 2026-09-02): prepaid vouchers below wallet.
+		"menu_wallet_vouchers",
 		"menu_account",
 		// GOAL-022 (D-002 §2): my-wallet self-service — user slot between
 		// 个人中心 and 设置.
