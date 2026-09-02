@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-wallet-prepaid-instrument
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-005-my-wallet-voucher-redeem
@@ -26,3 +26,4 @@ version: 0.1.0
 |------|------|------|------|------|
 | D-001 | 2026-09-02 | R5 子目标立项（继承 Root D-003） | accepted | `01-decision/D-001-r5-goal-established.md` |
 | D-002 | 2026-09-02 | S1 合同冻结（HTTP 路径 + 限流） | accepted | `01-decision/D-002-s1-contract-freeze.md` |
+| D-003 | 2026-09-02 | 响应 A-001：F-001～F-004 fixed；F-005 待用户确认 self | accepted | `01-decision/D-003-a001-response.md` |

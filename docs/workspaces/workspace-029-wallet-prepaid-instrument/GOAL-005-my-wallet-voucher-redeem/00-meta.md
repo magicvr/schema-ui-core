@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-wallet-prepaid-instrument
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.0
+version: 0.2.0
 progress: 3/4
 ---
 
@@ -24,7 +24,7 @@ progress: 3/4
 
 ## 派生进度展示
 
-`progress: 3/4`（S1～S3 完成；S4 independent 未做）。
+`progress: 3/4`（S1～S3 完成；S4 independent = A-001 pass，A-002 已响应 F-001～F-004；缺 self / 用户书面降级，检查点未勾）。
 
 ## 信息就绪与未知项
 
