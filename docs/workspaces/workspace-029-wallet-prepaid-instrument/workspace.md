@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · 钱包预付资金凭证与外部主体接缝
 
-本工作区是 [VP-029-wallet-prepaid-instrument](../../vision/plans/VP-029-wallet-prepaid-instrument.md)（**`active`** v0.2.0 · 2026-09-02 用户指令激活）的唯一 lead delivery workspace。**Admin 功能分支**：扩展已交付的 `admin.wallet`——通道无关外部主体接缝 `(issuer, external_id) → subject_id`（不创建 `admin.users`）+ 预付资金凭证（批次生成/导出/作废/核销入账，哈希存储、幂等 Redeem）。**不是**支付/结算业务域。
+本工作区是 [VP-029-wallet-prepaid-instrument](../../vision/plans/VP-029-wallet-prepaid-instrument.md)（**`closed`** v0.3.0 · 2026-09-02 用户书面确认关门 · VRev-067 self `pass`）的唯一 lead delivery workspace。**Admin 功能分支**：扩展已交付的 `admin.wallet`——通道无关外部主体接缝 `(issuer, external_id) → subject_id`（不创建 `admin.users`）+ 预付资金凭证（批次生成/导出/作废/核销入账，哈希存储、幂等 Redeem）。**不是**支付/结算业务域。
 
 - **Root** `GOAL-001-wallet-prepaid-instrument`：`done` · **4/4**（R1 合同冻结 [done] → R2 主体接缝+账本入金 [done] → R3 Admin 批次面+导出 [done] → R4 证据与关门 [done]），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-02）：[VRev-066](../../vision/reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) independent `pass`（0 required；V-F111/112/113 → 开区事务内 fixed；V-F110 核销）；**Admin 类轻量 freshness PASS**（`29727510` → `b5c39dfb`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码 = VP-028 已审结目 + VP-009 W16/W17）不暂挂 `go`。
@@ -30,11 +30,11 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-029-wallet-prepaid-instrument` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-wallet-prepaid-instrument` | `parent: null`；active · 0/4 |
+| Root Goal | `GOAL-001-wallet-prepaid-instrument` | `parent: null`；done · 4/4 |
 | canonical 范围 | `docs/workspaces/workspace-029-wallet-prepaid-instrument/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
-| 愿景角色 | `delivery` | VP-029 lead（active）；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-029-wallet-prepaid-instrument`（`active` v0.2.0） | 2026-09-02 激活/开区（VRev-066 independent `pass`；Admin 类 freshness PASS `29727510`→`b5c39dfb`） |
+| 愿景角色 | `delivery` | VP-029 lead（closed v0.3.0）；不改变 Charter primary workspace |
+| 规划对齐 | `primary_plan` = `VP-029-wallet-prepaid-instrument`（`closed` v0.3.0） | 2026-09-02 关门（VRev-067 self `pass`；A-004 independent `pass`） |
 
 ## 愿景对齐
 

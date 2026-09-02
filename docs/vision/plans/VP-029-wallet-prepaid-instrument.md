@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-029-wallet-prepaid-instrument
 title: 钱包预付资金凭证与外部主体接缝
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-029-wallet-prepaid-instrument
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-02 · v0.2.0 · lead `workspace-029-wallet-prepaid-instrument`） |
+| status | **`closed`**（2026-09-02 · v0.3.0 · 用户书面确认关门 · VRev-067 self `pass` · Root done 4/4 · A-004 independent `pass`） |
 | lead_workspace | `workspace-029-wallet-prepaid-instrument`（2026-09-02 `/govern` 开区） |
-| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活独立审视 = [VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) `pass`（0 required）+ Admin 类 freshness PASS（`29727510`→`b5c39dfb`） |
+| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活独立审视 = [VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) `pass`；关门就绪 = [VRev-067](../reviews/VRev-067-vp029-wallet-prepaid-instrument-close-out.md) self `pass`（0 required） |
 | 组合位置 | **Admin 功能分支** · 扩展已交付的 `admin.wallet`（VP-011 S-14），**不是**支付/结算业务域 |
 
 ## 意图
@@ -97,7 +97,13 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
+2026-09-02 · **`active → closed` v0.3.0**。用户指令：「已做修改，复审修复情况。没问题的话走流程闭门对应 vp」。
+
+- 区证据：lead `workspace-029-wallet-prepaid-instrument` · Root `GOAL-001-wallet-prepaid-instrument` `done` 4/4（GOAL-002～004 done）
+- 七条退出判据：见 [VRev-067](../reviews/VRev-067-vp029-wallet-prepaid-instrument-close-out.md) 矩阵 **verified**
+- 关门审计：A-002 independent conditional → A-003 self `fixed` → **A-004 independent finding-closure `pass`**（F-001 CSV 同手势下载 · F-002 异币种 fail-closed · F-003 PG `ON CONFLICT` 实测 PASS）；open required = 0
+- 红线：未改 Charter；未改 `mvp`/`admin` 默认模块集；无支付网关/Telegram 依赖；未重开 VP-011
+- 有界残余：无 required residual；生成表单 `expiresAt` 与 CSV 正文断言为 recommended，不进分母
 
 ## 规划修订短史
 
@@ -105,3 +111,4 @@ parent: null
 |------|--------|
 | 2026-09-02 | 初创 `planned`：用户确认 Telegram 付费服务下游为真实触发；结构选型 C（基座一方可复用）+ 切分 1（钱包密钥 = Admin 功能，不是支付域）+ 外部主体接缝（不建 Admin 登录账号）。与 VP-030/031 同批落盘。 |
 | 2026-09-02 | **激活** `planned → active` v0.2.0（用户指令：独立审视通过则激活并开区）。[VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) independent `pass`（0 required）。Admin 类 freshness **PASS**（`29727510` → `b5c39dfb`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码 = VP-028 已审结目 + VP-009 W16/W17；不暂挂 `go`）。V-F110 → fixed（本独立审视）；V-F111/112/113 → 激活+开区事务内 fixed（I-029-001 扩写 + I-029-006 + freshness 留痕 + VP-028 组合索引同步）。lead `workspace-029-wallet-prepaid-instrument`。 |
+| 2026-09-02 | **关门** `active → closed` v0.3.0（用户书面确认）。[VRev-067](../reviews/VRev-067-vp029-wallet-prepaid-instrument-close-out.md) self `pass`（0 required）。Root done 4/4；A-004 independent 核销 A-002 F-001/F-002/F-003。 |
