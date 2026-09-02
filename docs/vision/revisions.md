@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-01
+updated: 2026-09-02
 parent: null
-version: 0.4.33
+version: 0.4.34
 ---
 
 # Charter 修订台账
@@ -73,3 +73,4 @@ version: 0.4.33
 | VR-057 | 2026-09-01 | editorial | VP-027 关门投影 | 用户书面确认（2026-09-01 · P-004）：VP-027 七条方向级退出判据证据矩阵 7/7 **verified**（GOAL-005 `r4-evidence-matrix.md`：端口契约 / 内存供应商 / 7 处迁移不回归 / Redis 接缝 / 轨道登记 / 边界保持 / 审计闭合）；阶段链 R1～R3 双审 0 required + Root 双审（A-001 self + A-002 grok build independent `pass` · 0 required）；**VRev-063 self `pass`**；最终回归 `go test ./... -count=1` exit 0；全波次红线零触碰 · `go.mod` redis 0。VP-027 v0.2.0 `active → closed`（**v0.3.0**）；lead `workspace-027-rate-limiter-port` Root `GOAL-001-rate-limiter-port` **`done` 4/4**；RT-Q05 承接注记更新（端口 + 内存默认 + 接缝已交付；Redis 实现仍 trigger-gated）。**当前组合**：无 active 交付 VP（VP-027 closed · VP-028 仍 planned）；持续程序 VP-009/010。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），**无** strategic、**无** re-align。 |
 | VR-056 | 2026-09-01 | editorial | VP-027 激活 + 开区 | 用户指令（2026-09-01）「/vision 激活 vp-027，然后交 /govern 开设工作区」（slug 用户确认）：**VRev-062 self `pass`**（0 required · VRev-058/059 全部 findings 已闭合）· 架构类轻量 **freshness PASS**（`54fb57e7` → `5744868d`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码全部为 VP-026 已审结目交付——R1～R3 落地 + R4 关门双审 + VRev-061 `pass`）不暂挂 `go`。VP-027 v0.1.1 `planned → active`（v0.2.0）；lead `workspace-027-rate-limiter-port`（Root `GOAL-001-rate-limiter-port`）交 `/govern` 开区（P-001 纲领 R1 合同冻结 → R2 内存供应商+使用点迁移 → R3 接缝与共享约定 → R4 证据与关门；I-027-001~004 台账投影）。**当前组合**：active 交付 VP = **VP-027**（架构分支 · 三端口第二个）；VP-028 仍 planned；VP-026 closed；持续程序 VP-009/010。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），**无** strategic、**无** re-align。 |
 | VR-058 | 2026-09-01 | editorial | VP-028 激活 + 开区 | 用户指令（2026-09-01）「/vision 激活 vp-028，然后交 /govern 开设新工作区」（slug 按 VP-013～027 惯例确认）：**VRev-064 self `pass`**（0 required · VRev-058/059 全部 findings 已闭合）· 架构类轻量 **freshness PASS**（`5744868d` → `29727510`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码全部为 VP-027 已审结目交付——R1～R4 落地 + 关门双审 + VRev-063 `pass`）不暂挂 `go`。VP-028 v0.1.1 `planned → active`（v0.2.0）；lead `workspace-028-event-bus-port`（Root `GOAL-001-event-bus-port`）交 `/govern` 开区（P-001 纲领 R1 契约冻结 → R2 进程内实现 → R3 接缝与对齐 → R4 证据与关门；I-028-001~004 台账投影）。**当前组合**：active 交付 VP = **VP-028**（架构分支 · 三端口第三个）；VP-026/027 closed；持续程序 VP-009/010。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），**无** strategic、**无** re-align。 |
+| VR-059 | 2026-09-02 | editorial | VP-029/030/031 planned（C 端付费服务触发） | 用户确认：下游 Telegram 付费服务为真实触发；**同进程**（H-002 保持）；外部主体接缝（不把 Bot 用户做成 `admin.users`）；**不要**电商类目/商品/物流订单三件套。新建 **VP-029-wallet-prepaid-instrument**（Admin 功能 · 钱包卡密 + 通道无关主体接缝，不重开 VP-011，不是支付域）、**VP-030-telegram-channel-runtime**（架构 · C 端 Telegram 通道运行时，对标 VP-017，不是业务域）、**VP-031-digital-offer-entitlement**（业务域 · 本仓首个业务域 VP，数字 Offer+薄购买+本域权益）。三 VP 均 `planned` 0 区、`vision_ref` `@0.4.0`；建议激活序 029→030→031。roadmap 索引 + Admin/业务域/RT-M03/RT-Q05 注记同步。计划阶段 self Review = VRev-065。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），**无** strategic、**无** re-align（planned 不改变 active VP 集）。 |
