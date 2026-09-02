@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-02
 parent: null
-version: 0.66.0
+version: 0.67.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -45,7 +45,7 @@ version: 0.66.0
 | 26 | [VP-026-cache-port](plans/VP-026-cache-port.md) | 架构 · **通用缓存端口**（H-002 同进程基座早期化 · 承接 RT-Q03）：Cache 端口（Get/Set/Delete + TTL）+ 绝对/滑动过期 + 可插拔策略接口 + **内存供应商（默认）** + **Redis 接缝声明（不实现）**；.NET IMemoryCache 式轻量分层。 | 继承 VP-003 模块契约 + Charter 0.4.0 成功边界 #6 / H-002；与 VP-027/028 按"触发条件独立 × 关门能力独立"分立；Redis 实现仍 trigger-gated；与 VP-009/010 正交 | **closed**（2026-09-01 v0.3.0 · **用户书面确认关门**：八条判据证据矩阵 verified · R1～R4 阶段 self + grok independent 双审闭合（开放 required=0）· VRev-061 `pass`；lead `workspace-026-cache-port` · Root `GOAL-001-cache-port` `done` 4/4；Redis 实现仍 trigger-gated（不消耗 RT-Q03）） |
 | 27 | [VP-027-rate-limiter-port](plans/VP-027-rate-limiter-port.md) | 架构 · **通用限流器端口**（H-002 早期化 · 承接 RT-Q05）：RateLimiter 端口（Allow/Record/Reset/RetryAfter）+ 滑动窗口**内存供应商**（演进既有 loginRateLimiter）+ **7 处使用点完整迁移**（含 MFA verify 独立桶 / 邀请接受）+ **Redis 接缝声明（不实现）**；W12 D-002 窗口常量保持。 | 继承 VP-003 模块契约 + Charter 0.4.0 成功边界 #6 / H-002；与 VP-026/028 分立；Redis 实现仍 trigger-gated；与 VP-009/010 正交 | **closed**（2026-09-01 · v0.3.0 · **用户书面确认关门** · VRev-063 self `pass` · 判据 #1～#7 证据矩阵 7/7 · Root 双审 0 required；lead workspace-027-rate-limiter-port · Root done 4/4） |
 | 28 | [VP-028-event-bus-port](plans/VP-028-event-bus-port.md) | 架构 · **进程内事件总线运输端口**（H-002 早期化 · 承接 RT-Q02 运输端口前置）：类型化 EventBus（Publish/Subscribe/Unsubscribe）+ 进程内 channel 实现 + **outbox/MQ 接缝声明（不实现）**；**不解除** Admin 功能分支 typed domain event 扩展接缝的 trigger-gated（应用契约仍归 Admin 功能）；EventBus ≠ Job 端口。 | 继承 VP-003 模块契约 + Charter 0.4.0 成功边界 #6 / H-002；与 VP-026/027 分立；outbox/broker 仍 trigger-gated；不重开 VP-012；与 VP-009/010 正交 | **closed**（2026-09-01 · v0.3.0 · Root `done` 4/4；lead `workspace-028-event-bus-port`；outbox/broker 仍 trigger-gated，不消耗 RT-Q02） |
-| 29 | [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) | Admin 功能 · **钱包预付资金凭证 + 外部主体接缝**：`(issuer, external_id) → subject_id`（不创建 `admin.users`）+ 卡密批次生成/导出/作废/核销入账（哈希存储、幂等 Redeem）。扩展 `admin.wallet`，**不是**支付业务域。 | 继承 VP-011 钱包账本；不重开 VP-011；与 VP-030/031 同批；硬前置于 030 身份与 031 扣款主体 | **closed**（2026-09-02 · v0.3.0 · 用户书面确认 · VRev-067 self `pass` · Root done 4/4 · A-004 independent `pass`；lead `workspace-029-wallet-prepaid-instrument`） |
+| 29 | [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) | Admin 功能 · **钱包预付资金凭证 + 外部主体接缝**：`(issuer, external_id) → subject_id`（不创建 `admin.users`）+ 卡密批次生成/导出/作废/核销入账（哈希存储、幂等 Redeem）。**R5**：Admin 已登录自助核销 HTTP + 「我的钱包」入口（入账 `owner_type=user`）。扩展 `admin.wallet`，**不是**支付业务域。 | 继承 VP-011 钱包账本；不重开 VP-011；与 VP-030/031 同批；硬前置于 030 身份与 031 扣款主体 | **active**（2026-09-02 · v0.4.0 · 用户确认结构选型 A reopen · VRev-068 self `pass`；R1～R4 历史关门 VRev-067 保全；lead `workspace-029-wallet-prepaid-instrument` · Root active 4/5 · GOAL-005 R5） |
 | 30 | [VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) | 架构 · **C 端 Telegram 通道运行时**（对标 VP-017）：webhook + Update 分发端口 + SendMessage 文本 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域、**不是**付费命令实现。 | 硬前置 = VP-029 主体接缝；消费 VP-027 限流；激活前评估 C 端桶（可结论不需要 Redis）；与 VP-009/010 正交 | **planned**（2026-09-02 · v0.1.0 · 0 区 · VRev-065 self；建议激活序第二） |
 | 31 | [VP-031-digital-offer-entitlement](plans/VP-031-digital-offer-entitlement.md) | 业务域 · **数字 Offer + 薄购买凭证 + 权益**（本仓首个业务域 VP）。服务视为可售 Offer，不是电商类目/SKU/税/库存/物流订单。 | 硬前置 = VP-029 资金原语；软前置 = VP-030 命令注册；激活前业务域 freshness + H-002 同进程再确认 + RT-Q03/Q05 评估 | **planned**（2026-09-02 · v0.1.0 · 0 区 · VRev-065 self；建议激活序第三） |
 

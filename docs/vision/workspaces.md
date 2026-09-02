@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-02
 parent: null
-version: 0.44.0
+version: 0.45.0
 ---
 
 # 工作区贡献图
@@ -41,7 +41,7 @@ version: 0.44.0
 | workspace-027-rate-limiter-port | docs/workspaces/workspace-027-rate-limiter-port/ | GOAL-001-rate-limiter-port | delivery | VP-027-rate-limiter-port | active（2026-09-01 激活开区：VP-027 v0.2.0（用户指令 · VRev-062 self `pass` · 架构类 freshness PASS `54fb57e7`→`5744868d` 五域零变更 · 区间代码 = VP-026 已审结目交付，不暂挂 `go`）；Root `GOAL-001-rate-limiter-port` active · 0/4（R1 合同冻结 → R2 内存供应商+使用点迁移 → R3 接缝与共享约定 → R4 证据与关门；I-027-001/002 required R1/R2 前置裁决）；三端口第二个 · 继承 cache-redis-seam-and-track 轨道 owner 约定（VP-026 交付 · 命名空间登记义务触达本区）） |
 | workspace-027-rate-limiter-port | docs/workspaces/workspace-027-rate-limiter-port/ | GOAL-001-rate-limiter-port | delivery | VP-027-rate-limiter-port | **done**（2026-09-01 激活开区 · 四轮同日全链关门：R1 合同冻结 → R2 供应商+7 处迁移 → R3 接缝与登记 → R4 证据与关门，Root `GOAL-001-rate-limiter-port` `done` 4/4（GOAL-002～005 全 done）；**VP-027 `closed` v0.3.0（2026-09-01 用户书面确认 · VRev-063 pass）**；七条判据 7/7 verified · I-027 四项全 verified · 红线零触碰 · 全量回归绿；RT-Q05 Redis 实现仍 trigger-gated（短文 §4 跟踪项）） |
 | workspace-028-event-bus-port | docs/workspaces/workspace-028-event-bus-port/ | GOAL-001-event-bus-port | delivery | VP-028-event-bus-port | **done**（2026-09-01 激活开区 · 四轮同日/随后全链关门：Root `GOAL-001-event-bus-port` `done` 4/4；**VP-028 `closed` v0.3.0**；outbox/broker 仍 trigger-gated，不消耗 RT-Q02） |
-| workspace-029-wallet-prepaid-instrument | docs/workspaces/workspace-029-wallet-prepaid-instrument/ | GOAL-001-wallet-prepaid-instrument | delivery | VP-029-wallet-prepaid-instrument | **done**（2026-09-02 激活开区 · 全链关门：**VP-029 `closed` v0.3.0**（VRev-067 self `pass` · 用户书面确认）；Root `GOAL-001-wallet-prepaid-instrument` `done` 4/4；A-002 required → A-004 independent `pass`；七条判据 7/7 · I-029 六项 closed · 红线零触碰 · 开放 required=0） |
+| workspace-029-wallet-prepaid-instrument | docs/workspaces/workspace-029-wallet-prepaid-instrument/ | GOAL-001-wallet-prepaid-instrument | delivery | VP-029-wallet-prepaid-instrument | **active**（2026-09-02 reopen · **VP-029 `active` v0.4.0**（用户确认结构选型 A · VRev-068 self `pass`）；Root `GOAL-001-wallet-prepaid-instrument` `active` 4/5 · R5 = GOAL-005；R1～R4 / VRev-067 实施史保全；不新开区） |
 
 ## 说明
 
@@ -65,7 +65,7 @@ version: 0.44.0
 - **workspace-026（2026-08-31 开区 · 2026-09-01 结项）**：VP-026（通用缓存端口 · 架构分支 · 三端口第一个）唯一 lead delivery 工作区；H-002 同进程基座基础设施端口早期化（Charter 0.4.0 成功边界 #6 · 承接 RT-Q03）。激活门禁 = VRev-060 self `pass`（0 required · VRev-058/059 全闭合）+ 架构类轻量 freshness PASS（`055da2fd` → `54fb57e7`：五域零变更，不暂挂 `go`）。**已结项**：Root `GOAL-001-cache-port` **`done` 4/4**（R1 合同冻结 → R2 内存供应商+双策略 → R3 接缝与共享约定 → R4 证据与关门；GOAL-002～005 全 done）；关门双审 A-001 self `pass` + A-002 grok build independent `pass`（0 required）+ VRev-061 `pass`；**VP-026 `closed` v0.3.0（2026-09-01 用户书面确认）**；快测/回归全绿（全模块 exit 0 · redis 0 命中 · 红线零触碰）。对象面 = `kernel.Cache` 端口 + `internal/cache` 内存供应商（进程总预算 FIFO）+ `cache.max_entries` + 架构短文 `cache-redis-seam-and-track.md`（VP-026/027 轨道 owner · VP-027 激活时继承）。残余 = Redis 实现保持 RT-Q03 trigger-gated；命名空间登记义务跟踪至首个消费者/VP-027 激活。不改变 Charter `primary_workspace`。不重开 workspace-013/014/017。
 - **workspace-027（2026-09-01 激活开区 · 当日全链关门）**：VP-027（通用限流器端口 · 架构分支 · 三端口第二个）唯一 lead delivery 工作区；H-002 同进程基座基础设施端口早期化（Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）。激活门禁 = VRev-062 self `pass`（0 required · VRev-058/059 全闭合）+ 架构类轻量 freshness PASS（`54fb57e7` → `5744868d`：五域零变更，不暂挂 `go`）。**已结项**：Root `GOAL-001-rate-limiter-port` **`done` 4/4**；**VP-027 `closed` v0.3.0（2026-09-01 用户书面确认 · VRev-063 `pass`）**。Redis 轨道约定继承 workspace-026 owner 文档（cache-redis-seam-and-track.md · `rl` 首条登记）。不改变 Charter `primary_workspace`。不重开 workspace-013/014/017/026。
 - **workspace-028（2026-09-01 激活开区 · 随后全链关门）**：VP-028（进程内事件总线运输端口 · 架构分支 · 三端口第三个）唯一 lead delivery 工作区。**已结项**：Root `GOAL-001-event-bus-port` **`done` 4/4**；**VP-028 `closed` v0.3.0**。outbox/broker 仍 trigger-gated（不消耗 RT-Q02 trigger）。不改变 Charter `primary_workspace`。不重开 workspace-012/013/014/017/026/027。
-- **workspace-029（2026-09-02 激活开区 · 当日全链关门）**：VP-029（钱包预付资金凭证与外部主体接缝 · Admin 功能分支）唯一 lead delivery 工作区；扩展已交付的 `admin.wallet`（不重开 VP-011，不是支付域）。激活门禁 = VRev-066 independent `pass` + Admin 类 freshness PASS。**已结项**：**VP-029 `closed` v0.3.0**（VRev-067 self `pass` · 用户书面确认）；Root `GOAL-001-wallet-prepaid-instrument` **`done` 4/4**；A-002 required 经 A-004 independent `pass` 核销（CSV 导出 / 异币种 fail-closed / PG ON CONFLICT）；七条退出判据 7/7 · I-029 六项 closed · 红线零触碰。不改变 Charter `primary_workspace`。不重开 workspace-011。
+- **workspace-029（2026-09-02 激活开区 · 当日全链首波关门 · 同日 reopen R5）**：VP-029（钱包预付资金凭证与外部主体接缝 · Admin 功能分支）唯一 lead delivery 工作区；扩展已交付的 `admin.wallet`（不重开 VP-011，不是支付域）。激活门禁 = VRev-066 independent `pass` + Admin 类 freshness PASS。首波结项曾 **VP-029 `closed` v0.3.0**（VRev-067 · Root 当时 `done` 4/4）。**同日用户确认结构选型 A reopen**：VP-029 `active` v0.4.0（VRev-068 self `pass`）；Root `active` 4/5；R5 = GOAL-005（「我的钱包」已登录自助核销）。不改变 Charter `primary_workspace`。不重开 workspace-011。不把本增量放入 workspace-010。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

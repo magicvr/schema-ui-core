@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-wallet-prepaid-instrument
 doc: audit
-status: done
+status: active
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.5
+version: 0.1.6
 ---
 
 # 审计 · GOAL-001-wallet-prepaid-instrument
@@ -33,6 +33,8 @@ version: 0.1.5
 
 ## 结论状态
 
-A-005 F-001（required）经 A-006 self → A-007 independent `pass` 合法闭合；F-002～F-005（recommended）由 **A-008** 全部按 `fixed` 处置：F-002 导出改为协议声明（downloadCsv）；F-003 PG Redeem/并发 e2e 落地并实证（docker postgres:15 PASS）；F-004 0065 `voucher_batches` 批次注册表（重复 batchId → 409）；F-005 expiresAt Unix 秒范围 fail-closed + 标签提示。**open required = 0 · recommended = 0**；Root 维持 `done`（4/4）。本索引不修改目标 `status`/`progress`。
+A-005 F-001（required）经 A-006 self → A-007 independent `pass` 合法闭合；F-002～F-005（recommended）由 **A-008** 全部按 `fixed` 处置：F-002 导出改为协议声明（downloadCsv）；F-003 PG Redeem/并发 e2e 落地并实证（docker postgres:15 PASS）；F-004 0065 `voucher_batches` 批次注册表（重复 batchId → 409）；F-005 expiresAt Unix 秒范围 fail-closed + 标签提示。**open required = 0 · recommended = 0**（R1～R4 当时分母）。本索引不改写 A-001～A-008 原文与 verdict。
+
+> **E-010 重开注记（2026-09-02 · 用户确认结构选型 A）**：Root `done → active`（4/5）；R5 = GOAL-005。历史 A 条目不构成现行「无 HTTP 核销」成功交付。R5 开放 required 信息项 = I-029-007 / I-029-008（阻断 GOAL-005 实施，不回溯闭合 R4 findings）。
 
 > **E-007 修订注记（2026-09-02 · 用户反馈修复）**：A-008 F-002 的**实现载体**原为 `generateBatch.onSuccess.downloadCsv`，违反 pinned `OutcomeBehavior`（additionalProperties:false）→ 页面文档 D-VAL 失败（页面 Schema 错误）。已按 upstream pin 约束修订：声明改放生成表单节点的**业务 props**（node schema 允许），renderer/类型同步，onSuccess 还原纯 `reload`；语义不变（声明驱动 CSV 导出）。同时补齐 voucher 导航图标（card→Ticket）与 DefaultNavigationOrder 排序（menu_wallet 下一位）。详情见 `02-execution/E-007-vouchers-page-fixes.md`；11 件 pinned docs/schemas 未改动。
